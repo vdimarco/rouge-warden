@@ -1,0 +1,206 @@
+{
+  "passed": true,
+  "source_head": "1b6455c31648f340a6d7748b3c473b26f7b30b9a",
+  "completed_utc": "2026-10-14T08:41:33.262652+00:00",
+  "scope": "CPU-only regression checks and manual OpenSpec structure/scenario review; no UE/GPU/service/browser-live actions or tracked edits",
+  "checks": [
+    {
+      "name": "graphic-novel-import",
+      "command": [
+        "python3",
+        "Scripts/test_graphic_novel_import.py"
+      ],
+      "cwd": "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal",
+      "exit_code": 0,
+      "passed": true,
+      "wall_seconds": 0.114,
+      "log": "Saved/Tests/GraphicNovel/HighDetail-20261014T082624Z/FinalCPU-20261014T084038Z/graphic-novel-import.log",
+      "log_sha256": "a6505191684e7b3d7cf7129035898c8201ba90dfd9a22f3da466ee673335473a"
+    },
+    {
+      "name": "graphic-novel-capture",
+      "command": [
+        "python3",
+        "Scripts/test_graphic_novel_capture.py"
+      ],
+      "cwd": "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal",
+      "exit_code": 0,
+      "passed": true,
+      "wall_seconds": 0.164,
+      "log": "Saved/Tests/GraphicNovel/HighDetail-20261014T082624Z/FinalCPU-20261014T084038Z/graphic-novel-capture.log",
+      "log_sha256": "2e194c54a445d201934f33cbf3bbe9d88d7ff64c6c3ce79974085d2c93b966b5"
+    },
+    {
+      "name": "refine-generated-pilot",
+      "command": [
+        "python3",
+        "Scripts/test_refine_generated_pilot.py"
+      ],
+      "cwd": "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal",
+      "exit_code": 0,
+      "passed": true,
+      "wall_seconds": 0.032,
+      "log": "Saved/Tests/GraphicNovel/HighDetail-20261014T082624Z/FinalCPU-20261014T084038Z/refine-generated-pilot.log",
+      "log_sha256": "9bf8e79af6c53e0054394cdc9e3a3bf777f7bcaf6f04102f5ea954831db14740"
+    },
+    {
+      "name": "player-quality-cadence",
+      "command": [
+        "python3",
+        "Scripts/test_player_quality_cadence.py"
+      ],
+      "cwd": "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal",
+      "exit_code": 0,
+      "passed": true,
+      "wall_seconds": 0.032,
+      "log": "Saved/Tests/GraphicNovel/HighDetail-20261014T082624Z/FinalCPU-20261014T084038Z/player-quality-cadence.log",
+      "log_sha256": "9126a78fcd4ab17a933f276c0dc0261ba3e447bb8cbd05ffdeabf95e4b890557"
+    },
+    {
+      "name": "browser-contracts",
+      "command": [
+        "npm",
+        "test",
+        "--prefix",
+        "Browser"
+      ],
+      "cwd": "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal",
+      "exit_code": 0,
+      "passed": true,
+      "wall_seconds": 3.219,
+      "log": "Saved/Tests/GraphicNovel/HighDetail-20261014T082624Z/FinalCPUDeps-20261014T084129Z/browser-contracts.log",
+      "log_sha256": "13ca6faf1149f02f599507d6de83f19d735dc0e0f0eb759d3d80e17416088e98"
+    },
+    {
+      "name": "python-compile",
+      "command": [
+        "python3",
+        "-m",
+        "py_compile",
+        "Scripts/import_meshy_crew.py",
+        "Scripts/capture_player_quality.py",
+        "Scripts/refine_generated_pilot.py",
+        "Scripts/test_graphic_novel_import.py",
+        "Scripts/test_graphic_novel_capture.py",
+        "Scripts/test_refine_generated_pilot.py",
+        "Scripts/test_player_quality_cadence.py"
+      ],
+      "cwd": "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal",
+      "exit_code": 0,
+      "passed": true,
+      "wall_seconds": 0.064,
+      "log": "Saved/Tests/GraphicNovel/HighDetail-20261014T082624Z/FinalCPU-20261014T084038Z/python-compile.log",
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "git-diff-check",
+      "command": [
+        "git",
+        "diff",
+        "--check"
+      ],
+      "cwd": "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal",
+      "exit_code": 0,
+      "passed": true,
+      "wall_seconds": 0.064,
+      "log": "Saved/Tests/GraphicNovel/HighDetail-20261014T082624Z/FinalCPU-20261014T084038Z/git-diff-check.log",
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "source_sha256": {
+    "Scripts/import_meshy_crew.py": "a08101d3a3e5e7355df9e90cfccf6f19c71de3ce2f1b0a0b4127aecf9e88ebcc",
+    "Scripts/capture_player_quality.py": "e6ad0ca59dab8919d374520ffb3579a60f3bb587fbf5b0e80d5a5c872cc1ac98",
+    "Scripts/refine_generated_pilot.py": "e0ecb0cf9ecd8f928e35dcd025cc4164c4fef2d3c561b24561866d9b2bd110d0",
+    "Scripts/test_graphic_novel_import.py": "ff6a0d59b80e897bb23b0b1828ce9e39f78d596f972bc1aaa648af234eef8c09",
+    "Scripts/test_graphic_novel_capture.py": "4680b9964e07819f093ca60f0d15c35461113684a9ff49d47789cb960d07ca49",
+    "Scripts/test_refine_generated_pilot.py": "449a188ead93695384770cc8ffa19c2a231310ef4db452d7221363012f2c3682",
+    "Scripts/test_player_quality_cadence.py": "89683f262f427f8becd3967210cc20c020c1076d0866e5a09ef257ce2e6d4a22",
+    "Source/Quebec/QuebecGameplay.cpp": "75905d8f87a26ef3970c2636ba123a832d689abef34fc124aaf5fbb105775221",
+    "Source/Quebec/QuebecCrewAnimationTests.cpp": "47579b61e6b42ee592593eb4629b59e9ef0e9688bdc33e1ddb8847ec1396f26b",
+    "Browser/package.json": "5041e0c854499e750e8f9107a8dd5e906a2867c6b311783ef1822dff7126bb13",
+    "Browser/config.test.mjs": "6536e109133a2914b0c900a39b0e449c7f0f702ce004badd2ad474cdc05c8a04",
+    "Browser/touch-controls.test.mjs": "71bac12462a9397ff081bb0a418a1362599faa34bd66ffd285a3a519ff08bd93",
+    "Browser/stream-sample.test.mjs": "d0f91cb0f396c06e1c29d9f6f8f6e17d9d4efcdec2fbe8dd8f0ceccddf8a875f",
+    "Browser/hero.test.mjs": "cb119b9d882caedeba6fb7e02ba37d014c6b4161b861663ca1ca96b9fadc326e",
+    "Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/generation.json": "a23277ea16f38bf8123e4c5f8e4b64323c6b07843158a4b84a7f2bcf7d910632",
+    "Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/files.json": "d942b4ec45c3b28ef54c0afeb991278528fd74252ec7208cd518519277fd18bc",
+    "Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/jump.json": "94deb47f51e5cbfd6e5694efb8dcb8052c2abf6c91df7ceee2a35def47838e3f",
+    "Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/source-review.json": "a2ea79458aef0ad20ee1cb00b262269c509db230ca94b9c03cfc8bebeaacd3d8"
+  },
+  "openspec": {
+    "passed": true,
+    "method": "Manual semantic read plus heading/SHALL/WHEN/THEN/uniqueness checks; no OpenSpec CLI available",
+    "openspec_cli": null,
+    "requirements": 13,
+    "scenarios": 29,
+    "errors": [],
+    "semantic_note": "HighDetail preserves earlier routes, rejects provenance mismatch before mutation and keeps art/package/performance limits open. Headless hand/eye wording now applies only where rig supplies those controls; body-only variants report zero."
+  },
+  "openspec_sha256": {
+    "openspec/changes/nord-city-quality/proposal.md": "57e0e01d1d240dd387eaa0a54e67fc97ef324c4fbf38d1d304f994365609edab",
+    "openspec/changes/nord-city-quality/design.md": "4a2fd27dc926afa013094500fea58e7575887b55c56d7ee7d2c5806de108bc86",
+    "openspec/changes/nord-city-quality/tasks.md": "33c7aaf655539951444c38a402e5ab406985cd9e7e9eb23a2b3400cec64714d2",
+    "openspec/changes/nord-city-quality/specs/nord-unreal/spec.md": "14171a1ac2e058d67949144c679ad2eb815f8b509c0d6124b50093131c73f83f"
+  },
+  "excluded": [
+    {
+      "test": "Scripts/test_compact_hud.py",
+      "reason": "Requires native rendered story fixture; existing native RadarClip and graphics capture evidence remain separate."
+    },
+    {
+      "test": "Browser/browser.test.mjs, mobile.test.mjs, media.test.mjs, live.test.mjs",
+      "reason": "Launch browser/build/server or attach to live media; CPU scope uses package pure Node contract suite only."
+    },
+    {
+      "test": "Blender branch of test_refine_generated_pilot.py",
+      "reason": "Pure Python branch validates immutable FBX element logic/mask rejection; previous CPU Blender synthetic round-trip and current native2UV evidence retained separately."
+    }
+  ],
+  "limits": [
+    "No rendered graphics, native/stream FPS or physical controls accepted by these CPU checks.",
+    "OpenSpec CLI absent: structural and scenario review is manual, not CLI validation."
+  ],
+  "dependency_preparation": {
+    "command": [
+      "npm",
+      "ci",
+      "--prefix",
+      "Browser",
+      "--offline",
+      "--ignore-scripts",
+      "--no-audit",
+      "--no-fund"
+    ],
+    "cwd": "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal",
+    "exit_code": 0,
+    "wall_seconds": 0.264,
+    "log": "Saved/Tests/GraphicNovel/HighDetail-20261014T082624Z/FinalCPUDeps-20261014T084129Z/install.log",
+    "log_sha256": "bd431e44c9d4492bc6d844a94de1f44cd1bf4067cb591158678bb53fac7a2ecc",
+    "locked_inputs_before": {
+      "Browser/package-lock.json": "e4ed35ec170f3ab3b7abfc77139187b1d60ff4d624372c2ffac438d277844005",
+      "Browser/package.json": "5041e0c854499e750e8f9107a8dd5e906a2867c6b311783ef1822dff7126bb13"
+    },
+    "locked_inputs_after": {
+      "Browser/package-lock.json": "e4ed35ec170f3ab3b7abfc77139187b1d60ff4d624372c2ffac438d277844005",
+      "Browser/package.json": "5041e0c854499e750e8f9107a8dd5e906a2867c6b311783ef1822dff7126bb13"
+    },
+    "scope": "Ignored local Browser/node_modules only; offline locked dependencies with lifecycle scripts disabled; no service/build/browser launch"
+  },
+  "initial_attempts": [
+    {
+      "name": "browser-contracts",
+      "command": [
+        "npm",
+        "test",
+        "--prefix",
+        "Browser"
+      ],
+      "cwd": "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal",
+      "exit_code": 1,
+      "passed": false,
+      "wall_seconds": 3.221,
+      "log": "Saved/Tests/GraphicNovel/HighDetail-20261014T082624Z/FinalCPU-20261014T084038Z/browser-contracts.log",
+      "log_sha256": "1f42dc7e3cbcf9bf1f9607a0beb07a6053f8deb2696a0048e9036e672df0c3a6"
+    }
+  ]
+}

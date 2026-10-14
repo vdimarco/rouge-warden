@@ -19,6 +19,7 @@
 #include "Misc/ScopeExit.h"
 #include "Misc/MemStack.h"
 #include "Materials/MaterialInterface.h"
+#include "Rendering/SkeletalMeshRenderData.h"
 
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FQuebecCrewAnimationTest, "Quebec.Animation.BlendedLocomotion",
     EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
@@ -247,7 +248,9 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(FQuebecGraphicNovelCandidateTest, "Quebec.Anima
 bool FQuebecGraphicNovelCandidateTest::RunTest(const FString& Parameters)
 {
     const FString OriginalCommandLine = FCommandLine::Get();
-    const FString DefaultCommandLine = OriginalCommandLine.Replace(TEXT("-NordGraphicNovelCandidate"), TEXT(""), ESearchCase::IgnoreCase);
+    const FString DefaultCommandLine = OriginalCommandLine.Replace(TEXT("-NordGraphicNovelCandidate"), TEXT(""), ESearchCase::IgnoreCase)
+        .Replace(TEXT("-NordGraphicNovelGenerated"), TEXT(""), ESearchCase::IgnoreCase)
+        .Replace(TEXT("-NordGraphicNovelHighDetail"), TEXT(""), ESearchCase::IgnoreCase);
     FCommandLine::Set(*DefaultCommandLine);
     ON_SCOPE_EXIT { FCommandLine::Set(*OriginalCommandLine); };
     UWorld::InitializationValues Initialization;
@@ -272,6 +275,17 @@ bool FQuebecGraphicNovelCandidateTest::RunTest(const FString& Parameters)
     TestTrue(TEXT("Default controller lazily loads the production ink"), DefaultController->ComicMaterial &&
         DefaultController->ComicMaterial->GetPathName() == TEXT("/Game/Art/Comic/M_ComicInk.M_ComicInk"));
     TestFalse(TEXT("The default view starts in standard mode"), DefaultController->IsComicStyle());
+    FCommandLine::Set(*(DefaultCommandLine + TEXT(" -NordGraphicNovelGenerated")));
+    ApplyAppearance();
+    TestEqual(TEXT("Generated flag alone cannot replace the production body"), Character->GetMesh()->GetSkeletalMeshAsset(), DefaultBody);
+    TestEqual(TEXT("Generated flag alone retains production stencil"), Character->GetMesh()->CustomDepthStencilValue, 255);
+    for (const TCHAR* IncompleteFlags : {TEXT(" -NordGraphicNovelHighDetail"), TEXT(" -NordGraphicNovelGenerated -NordGraphicNovelHighDetail")})
+    {
+        FCommandLine::Set(*(DefaultCommandLine + IncompleteFlags));
+        ApplyAppearance();
+        TestEqual(TEXT("High-detail without Candidate cannot replace production"), Character->GetMesh()->GetSkeletalMeshAsset(), DefaultBody);
+        TestEqual(TEXT("Incomplete high-detail flags retain production stencil"), Character->GetMesh()->CustomDepthStencilValue, 255);
+    }
 
     USkeletalMesh* CandidateBody = LoadObject<USkeletalMesh>(nullptr,
         TEXT("/Game/ParkComic/CrewGraphicNovel/Resident9/SK_Body.SK_Body"), nullptr, LOAD_NoWarn | LOAD_Quiet);
@@ -284,6 +298,10 @@ bool FQuebecGraphicNovelCandidateTest::RunTest(const FString& Parameters)
     ApplyAppearance();
     TestEqual(TEXT("Opt-in style 9 loads the actual native pilot body"), Character->GetMesh()->GetSkeletalMeshAsset(), CandidateBody);
     TestEqual(TEXT("Opt-in pilot uses the candidate ink stencil"), Character->GetMesh()->CustomDepthStencilValue, 254);
+    FCommandLine::Set(*(DefaultCommandLine + TEXT(" -NordGraphicNovelCandidate -NordGraphicNovelHighDetail")));
+    ApplyAppearance();
+    TestEqual(TEXT("High-detail without Generated retains the original pilot"), Character->GetMesh()->GetSkeletalMeshAsset(), CandidateBody);
+    FCommandLine::Set(*(DefaultCommandLine + TEXT(" -NordGraphicNovelCandidate")));
     if (!TestNotNull(TEXT("Opt-in pilot creates a live animation instance"), Character->GetMesh()->GetAnimInstance())) return false;
     TestTrue(TEXT("Opt-in pilot selects the engine blended graph without an override"), Character->GetMesh()->GetAnimInstance()->IsA<UQuebecCrewAnimInstance>());
     AQuebecController* CandidateController = World->SpawnActor<AQuebecController>();
@@ -297,6 +315,83 @@ bool FQuebecGraphicNovelCandidateTest::RunTest(const FString& Parameters)
     TestFalse(TEXT("Another controller's view stays private"), DefaultController->IsComicStyle());
     CandidateController->ToggleComicStyle();
     TestFalse(TEXT("F2 returns the candidate view to standard mode"), CandidateController->IsComicStyle());
+    const FString GeneratedFolder = TEXT("/Game/ParkComic/CrewGraphicNovelGenerated/Resident9/");
+    USkeletalMesh* GeneratedBody = LoadObject<USkeletalMesh>(nullptr,
+        *(GeneratedFolder + TEXT("SK_Body.SK_Body")), nullptr, LOAD_NoWarn | LOAD_Quiet);
+    if (GeneratedBody)
+    {
+        const FSkeletalMeshRenderData* RenderData = GeneratedBody->GetResourceForRendering();
+        if (!TestTrue(TEXT("Generated collar retains UV0 and its separate albedo UV1 buffer"),
+            RenderData && RenderData->LODRenderData.Num() > 0 && RenderData->LODRenderData[0].GetNumTexCoords() == 2)) return false;
+        FCommandLine::Set(*(DefaultCommandLine + TEXT(" -NordGraphicNovelCandidate -NordGraphicNovelGenerated")));
+        ApplyAppearance();
+        TestEqual(TEXT("Both flags select the isolated generated body"), Character->GetMesh()->GetSkeletalMeshAsset(), GeneratedBody);
+        TestEqual(TEXT("Generated body reuses candidate stencil"), Character->GetMesh()->CustomDepthStencilValue, 254);
+        UQuebecCrewAnimInstance* Animation = Cast<UQuebecCrewAnimInstance>(Character->GetMesh()->GetAnimInstance());
+        if (!TestNotNull(TEXT("Generated body's native blended graph"), Animation)) return false;
+        if (!TestNotNull(TEXT("Generated body's own locomotion asset"), Animation->LocomotionAsset.Get()) ||
+            !TestNotNull(TEXT("Generated body's own jump asset"), Animation->JumpAsset.Get())) return false;
+        TestTrue(TEXT("Generated graph loads from its isolated folder"), Animation->LocomotionAsset->GetPathName().StartsWith(GeneratedFolder));
+        TestEqual(TEXT("Generated graph has three own locomotion clips"), Animation->LocomotionAsset->GetBlendSamples().Num(), 3);
+        for (const FBlendSample& Sample : Animation->LocomotionAsset->GetBlendSamples())
+            TestTrue(TEXT("Generated locomotion never borrows an older body's clip"), Sample.Animation &&
+                Sample.Animation->GetPathName().StartsWith(GeneratedFolder) && Sample.Animation->GetSkeleton() == GeneratedBody->GetSkeleton());
+        TestTrue(TEXT("Generated jump belongs to its own body"), Animation->JumpAsset->GetPathName().StartsWith(GeneratedFolder) &&
+            Animation->JumpAsset->GetSkeleton() == GeneratedBody->GetSkeleton() && !Animation->JumpAsset->HasRootMotion());
+        AQuebecController* GeneratedController = World->SpawnActor<AQuebecController>();
+        if (!TestNotNull(TEXT("Generated local controller"), GeneratedController)) return false;
+        GeneratedController->ApplyComicStyle();
+        TestTrue(TEXT("Generated view reuses the unchanged candidate ink"), GeneratedController->ComicMaterial == CandidateController->ComicMaterial);
+        TestFalse(TEXT("Generated view still starts in standard mode"), GeneratedController->IsComicStyle());
+    }
+    else AddWarning(TEXT("NORD_GRAPHIC_NOVEL_GENERATED_SELECTION_SKIPPED: generated body has not been imported; no generated selection acceptance"));
+    const FString HighDetailFolder = TEXT("/Game/ParkComic/CrewGraphicNovelHighDetail/Resident9/");
+    USkeletalMesh* HighDetailBody = LoadObject<USkeletalMesh>(nullptr,
+        *(HighDetailFolder + TEXT("SK_Body.SK_Body")), nullptr, LOAD_NoWarn | LOAD_Quiet);
+    if (HighDetailBody)
+    {
+        const FSkeletalMeshRenderData* RenderData = HighDetailBody->GetResourceForRendering();
+        if (!TestTrue(TEXT("High-detail raw body retains its single UV0 buffer"),
+            RenderData && RenderData->LODRenderData.Num() > 0 && RenderData->LODRenderData[0].GetNumTexCoords() == 1)) return false;
+        FCommandLine::Set(*(DefaultCommandLine + TEXT(" -NordGraphicNovelCandidate -NordGraphicNovelGenerated -NordGraphicNovelHighDetail")));
+        ApplyAppearance();
+        TestEqual(TEXT("All three flags select the isolated high-detail body"), Character->GetMesh()->GetSkeletalMeshAsset(), HighDetailBody);
+        TestEqual(TEXT("High-detail body reuses candidate stencil"), Character->GetMesh()->CustomDepthStencilValue, 254);
+        TestTrue(TEXT("High-detail has its own imported rig"), HighDetailBody->GetSkeleton() &&
+            HighDetailBody->GetSkeleton() != CandidateBody->GetSkeleton() &&
+            (!GeneratedBody || HighDetailBody->GetSkeleton() != GeneratedBody->GetSkeleton()));
+        for (const TCHAR* Kind : {TEXT("Idle"), TEXT("Walk"), TEXT("Run"), TEXT("Jump")})
+        {
+            UAnimSequence* Clip = LoadObject<UAnimSequence>(nullptr,
+                *(HighDetailFolder + FString::Printf(TEXT("A_%s.A_%s"), Kind, Kind)), nullptr, LOAD_NoWarn | LOAD_Quiet);
+            if (!TestNotNull(TEXT("High-detail owns each of its four clips"), Clip)) return false;
+            TestTrue(TEXT("High-detail clip matches its own rig and disables root motion"),
+                Clip->GetSkeleton() == HighDetailBody->GetSkeleton() && !Clip->HasRootMotion());
+        }
+        UQuebecCrewAnimInstance* Animation = Cast<UQuebecCrewAnimInstance>(Character->GetMesh()->GetAnimInstance());
+        if (!TestNotNull(TEXT("High-detail body's native blended graph"), Animation)) return false;
+        if (!TestNotNull(TEXT("High-detail body's own locomotion asset"), Animation->LocomotionAsset.Get()) ||
+            !TestNotNull(TEXT("High-detail body's own jump asset"), Animation->JumpAsset.Get())) return false;
+        TestTrue(TEXT("High-detail graph loads from its isolated folder"), Animation->LocomotionAsset->GetPathName().StartsWith(HighDetailFolder));
+        TestEqual(TEXT("High-detail graph has three own locomotion clips"), Animation->LocomotionAsset->GetBlendSamples().Num(), 3);
+        for (const FBlendSample& Sample : Animation->LocomotionAsset->GetBlendSamples())
+            TestTrue(TEXT("High-detail locomotion never borrows another body's clip"), Sample.Animation &&
+                Sample.Animation->GetPathName().StartsWith(HighDetailFolder) && Sample.Animation->GetSkeleton() == HighDetailBody->GetSkeleton());
+        TestTrue(TEXT("High-detail jump belongs to its own body"), Animation->JumpAsset->GetPathName().StartsWith(HighDetailFolder) &&
+            Animation->JumpAsset->GetSkeleton() == HighDetailBody->GetSkeleton());
+        AQuebecController* HighDetailController = World->SpawnActor<AQuebecController>();
+        if (!TestNotNull(TEXT("High-detail local controller"), HighDetailController)) return false;
+        HighDetailController->ApplyComicStyle();
+        TestTrue(TEXT("High-detail view reuses unchanged candidate ink"), HighDetailController->ComicMaterial == CandidateController->ComicMaterial);
+        TestFalse(TEXT("High-detail view still starts in standard mode"), HighDetailController->IsComicStyle());
+        if (GeneratedBody)
+        {
+            FCommandLine::Set(*(DefaultCommandLine + TEXT(" -NordGraphicNovelCandidate -NordGraphicNovelGenerated")));
+            ApplyAppearance();
+            TestEqual(TEXT("Removing HighDetail restores the retained refined generated body"), Character->GetMesh()->GetSkeletalMeshAsset(), GeneratedBody);
+        }
+    }
+    else AddWarning(TEXT("NORD_GRAPHIC_NOVEL_HIGH_DETAIL_SELECTION_SKIPPED: high-detail body has not been imported; no high-detail selection acceptance"));
     TestTrue(TEXT("Opt-in still permits native crew selection"), Character->ChooseCrew(8));
     TestTrue(TEXT("Other styles keep their production body under the candidate flag"),
         Character->GetMesh()->GetSkeletalMeshAsset()->GetPathName().Contains(TEXT("/ParkComic/Crew/Resident8/SK_Body")));

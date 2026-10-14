@@ -1,0 +1,728 @@
+{
+  "reviewer": "/root/style_review",
+  "recorded_utc": "2026-10-14T08:22:27.117545+00:00",
+  "scope": "Independent CPU studio comparison of generated-v2-high-detail with the successful original generated-v1 studio pass; no native rendering or source edits.",
+  "source": "Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail",
+  "request_id": "01a13971-5e0a-73e0-8e68-730896d2cee3",
+  "process_exit": {
+    "code": 0,
+    "confirmation": "Parent reported completed Blender exec session 59697 with exit 0; this reviewer did not launch Blender."
+  },
+  "new_cpu_report": {
+    "file": "Saved/Tests/GraphicNovel/FundedPilot/cpu-review-hires-20261014T0814Z/cpu-review.json",
+    "sha256": "528717e4e71da3e77680e6a40c8b6a3a10f6f0a9dfe8468416cd080f86ac6222",
+    "bytes": 197959
+  },
+  "prior_cpu_report": {
+    "file": "Saved/Tests/GraphicNovel/FundedPilot/cpu-review-20261014T041542Z/cpu-review.json",
+    "sha256": "c59ab4a9f6da0c08da06f5f4a8ff2317a6f40caa7ec656a365ee8ecb221508b8",
+    "bytes": 195551
+  },
+  "prior_review_verdict": {
+    "file": "Saved/Tests/GraphicNovel/FundedPilot/cpu-review-20261014T041542Z/review-verdict.json",
+    "sha256": "e51c6638ed25e2c9fa4cae7e31a146897bd2519138ccff3cb4e2ab1221d519b6",
+    "bytes": 3705
+  },
+  "studio_helper": {
+    "file": "Saved/Tests/GraphicNovel/FundedPilot/review_generated_pilot_cpu.py",
+    "sha256": "9bce405c48c3d7cf825f963bdce6e8cc443862b6b2664f92ab7e949c1ce0596c",
+    "bytes": 22606
+  },
+  "same_studio_helper_as_prior": true,
+  "views_reviewed": 11,
+  "prior_views_reviewed": 11,
+  "matched_inspection_sheets": [
+    {
+      "file": "Saved/Tests/GraphicNovel/FundedPilot/cpu-review-hires-20261014T0814Z/IndependentVisualReview/pair-CPU-body-front.png",
+      "sha256": "9d3bbf15f189d7ecb7f43c89a489437157c6de344acf4f02fec3e1b8ef5d4821",
+      "old_file": "Saved/Tests/GraphicNovel/FundedPilot/cpu-review-20261014T041542Z/CPU-body-front.png",
+      "new_file": "Saved/Tests/GraphicNovel/FundedPilot/cpu-review-hires-20261014T0814Z/CPU-body-front.png",
+      "old_dimensions": [
+        768,
+        1024
+      ],
+      "new_dimensions": [
+        1024,
+        1365
+      ],
+      "display_dimensions_each": [
+        768,
+        1024
+      ],
+      "old_view_metadata": {
+        "file": "CPU-body-front.png",
+        "sha256": "56c5a69581777d067a807848e5444a5daf04d1a754a7c8959198347469819862",
+        "device": "CPU",
+        "samples": 16,
+        "frame": null,
+        "clip_fraction": null,
+        "ortho_scale_m": 2.1476004123687744,
+        "target_world": [
+          2.9802322387695312e-08,
+          5.21540641784668e-08,
+          0.9099997878074646
+        ],
+        "camera_world": [
+          -3.891536834998988e-06,
+          -7.280001163482666,
+          0.9099997878074646
+        ]
+      },
+      "new_view_metadata": {
+        "file": "CPU-body-front.png",
+        "sha256": "1390d82703af7c82e423f031e535e9826a9dfad9c9d0ccebb5f99adf57cb517a",
+        "device": "CPU",
+        "samples": 16,
+        "frame": null,
+        "clip_fraction": null,
+        "ortho_scale_m": 2.1476001739501953,
+        "target_world": [
+          -1.6391277313232422e-07,
+          3.725290298461914e-08,
+          0.910000205039978
+        ],
+        "camera_world": [
+          -4.75379636100115e-07,
+          -7.280000686645508,
+          0.910000205039978
+        ]
+      }
+    },
+    {
+      "file": "Saved/Tests/GraphicNovel/FundedPilot/cpu-review-hires-20261014T0814Z/IndependentVisualReview/pair-CPU-body-three-quarter.png",
+      "sha256": "f5db3a0e891f8ff1fcb54984e882aa7e12776e2c3f4d3671616950ff8344d356",
+      "old_file": "Saved/Tests/GraphicNovel/FundedPilot/cpu-review-20261014T041542Z/CPU-body-three-quarter.png",
+      "new_file": "Saved/Tests/GraphicNovel/FundedPilot/cpu-review-hires-20261014T0814Z/CPU-body-three-quarter.png",
+      "old_dimensions": [
+        768,
+        1024
+      ],
+      "new_dimensions": [
+        1024,
+        1365
+      ],
+      "display_dimensions_each": [
+        768,
+        1024
+      ],
+      "old_view_metadata": {
+        "file": "CPU-body-three-quarter.png",
+        "sha256": "5808f7494f5f88391bbb2f2aba5a8a3474bb3236293bc5943e63af2d492dd943",
+        "device": "CPU",
+        "samples": 16,
+        "frame": null,
+        "clip_fraction": null,
+        "ortho_scale_m": 2.1476004123687744,
+        "target_world": [
+          2.9802322387695312e-08,
+          5.21540641784668e-08,
+          0.9099997878074646
+        ],
+        "camera_world": [
+          -4.253742218017578,
+          -5.907968521118164,
+          0.9099997878074646
+        ]
+      },
+      "new_view_metadata": {
+        "file": "CPU-body-three-quarter.png",
+        "sha256": "19d2b994b43023d9ad3408f1ab28a533f3a521f0048831ee53b36a973f1cbce1",
+        "device": "CPU",
+        "samples": 16,
+        "frame": null,
+        "clip_fraction": null,
+        "ortho_scale_m": 2.1476001739501953,
+        "target_world": [
+          -1.6391277313232422e-07,
+          3.725290298461914e-08,
+          0.910000205039978
+        ],
+        "camera_world": [
+          -4.253739356994629,
+          -5.907969951629639,
+          0.910000205039978
+        ]
+      }
+    },
+    {
+      "file": "Saved/Tests/GraphicNovel/FundedPilot/cpu-review-hires-20261014T0814Z/IndependentVisualReview/pair-CPU-body-back.png",
+      "sha256": "aeec8fd0ba92ebd73616722871f172c0df1719a4e4c393bdc90a21d1ee30df20",
+      "old_file": "Saved/Tests/GraphicNovel/FundedPilot/cpu-review-20261014T041542Z/CPU-body-back.png",
+      "new_file": "Saved/Tests/GraphicNovel/FundedPilot/cpu-review-hires-20261014T0814Z/CPU-body-back.png",
+      "old_dimensions": [
+        768,
+        1024
+      ],
+      "new_dimensions": [
+        1024,
+        1365
+      ],
+      "display_dimensions_each": [
+        768,
+        1024
+      ],
+      "old_view_metadata": {
+        "file": "CPU-body-back.png",
+        "sha256": "650d4868ed60e891288255c49cf21881c7bc689d1df3f40c188f1de353dcce44",
+        "device": "CPU",
+        "samples": 16,
+        "frame": null,
+        "clip_fraction": null,
+        "ortho_scale_m": 2.1476004123687744,
+        "target_world": [
+          2.9802322387695312e-08,
+          5.21540641784668e-08,
+          0.9099997878074646
+        ],
+        "camera_world": [
+          3.951141479774378e-06,
+          7.280001163482666,
+          0.9099997878074646
+        ]
+      },
+      "new_view_metadata": {
+        "file": "CPU-body-back.png",
+        "sha256": "2ded121b576c56fff69b2f165117b011476d90325044475e21d7479ff3ee7768",
+        "device": "CPU",
+        "samples": 16,
+        "frame": null,
+        "clip_fraction": null,
+        "ortho_scale_m": 2.1476001739501953,
+        "target_world": [
+          -1.6391277313232422e-07,
+          3.725290298461914e-08,
+          0.910000205039978
+        ],
+        "camera_world": [
+          1.4755408983546658e-07,
+          7.280000686645508,
+          0.910000205039978
+        ]
+      }
+    },
+    {
+      "file": "Saved/Tests/GraphicNovel/FundedPilot/cpu-review-hires-20261014T0814Z/IndependentVisualReview/pair-CPU-face-front.png",
+      "sha256": "3dd1d8969e27ca91cf9ddac9eee5906a94d84ccea441f9a30f1c3e865d7de08f",
+      "old_file": "Saved/Tests/GraphicNovel/FundedPilot/cpu-review-20261014T041542Z/CPU-face-front.png",
+      "new_file": "Saved/Tests/GraphicNovel/FundedPilot/cpu-review-hires-20261014T0814Z/CPU-face-front.png",
+      "old_dimensions": [
+        768,
+        768
+      ],
+      "new_dimensions": [
+        1024,
+        1024
+      ],
+      "display_dimensions_each": [
+        768,
+        768
+      ],
+      "old_view_metadata": {
+        "file": "CPU-face-front.png",
+        "sha256": "1d01effdcdea5c3a4edd13d7829c869789227ce10d17ad43a710bad2afa53033",
+        "device": "CPU",
+        "samples": 16,
+        "frame": null,
+        "clip_fraction": null,
+        "ortho_scale_m": 0.4192469120025635,
+        "target_world": [
+          0.001531265676021576,
+          0.019318412989377975,
+          1.6423529386520386
+        ],
+        "camera_world": [
+          0.0015273443423211575,
+          -7.260682582855225,
+          1.6423529386520386
+        ]
+      },
+      "new_view_metadata": {
+        "file": "CPU-face-front.png",
+        "sha256": "6820c50faa93e04feab54ed7c93ef66675394278a900bb78677d51c3389385f3",
+        "device": "CPU",
+        "samples": 16,
+        "frame": null,
+        "clip_fraction": null,
+        "ortho_scale_m": 0.4241637885570526,
+        "target_world": [
+          0.010046824812889099,
+          -0.025425292551517487,
+          1.6402698755264282
+        ],
+        "camera_world": [
+          0.010046513751149178,
+          -7.305426120758057,
+          1.6402698755264282
+        ]
+      }
+    },
+    {
+      "file": "Saved/Tests/GraphicNovel/FundedPilot/cpu-review-hires-20261014T0814Z/IndependentVisualReview/pair-CPU-hand-left.png",
+      "sha256": "e350ffb6becd8326a91d6654f04bfc008355243c7346bf0ecbbe2e9a5875c48b",
+      "old_file": "Saved/Tests/GraphicNovel/FundedPilot/cpu-review-20261014T041542Z/CPU-hand-left.png",
+      "new_file": "Saved/Tests/GraphicNovel/FundedPilot/cpu-review-hires-20261014T0814Z/CPU-hand-left.png",
+      "old_dimensions": [
+        768,
+        768
+      ],
+      "new_dimensions": [
+        1024,
+        1024
+      ],
+      "display_dimensions_each": [
+        768,
+        768
+      ],
+      "old_view_metadata": {
+        "file": "CPU-hand-left.png",
+        "sha256": "fd7bcc62c43174cb6c03c2fc89890ca82e37b07f47cac5e08585d6fad1694062",
+        "device": "CPU",
+        "samples": 16,
+        "frame": null,
+        "clip_fraction": null,
+        "ortho_scale_m": 0.27918803691864014,
+        "target_world": [
+          0.4696006178855896,
+          0.0135568268597126,
+          0.9543538093566895
+        ],
+        "camera_world": [
+          -1.62229585647583,
+          -6.959417819976807,
+          0.9543538093566895
+        ]
+      },
+      "new_view_metadata": {
+        "file": "CPU-hand-left.png",
+        "sha256": "674a8222056f28cedd77d1e5f1e92e0768847154b3fbdeb4dbc0dc6d33a91c2e",
+        "device": "CPU",
+        "samples": 16,
+        "frame": null,
+        "clip_fraction": null,
+        "ortho_scale_m": 0.27918803691864014,
+        "target_world": [
+          0.35266512632369995,
+          -0.050026699900627136,
+          0.876320481300354
+        ],
+        "camera_world": [
+          -1.7392277717590332,
+          -7.023002624511719,
+          0.876320481300354
+        ]
+      }
+    },
+    {
+      "file": "Saved/Tests/GraphicNovel/FundedPilot/cpu-review-hires-20261014T0814Z/IndependentVisualReview/pair-CPU-hand-left-side.png",
+      "sha256": "e47af5ef83581626adf61cc67d23f867de33d65f4ffab87ab9a6f4ae208f17e7",
+      "old_file": "Saved/Tests/GraphicNovel/FundedPilot/cpu-review-20261014T041542Z/CPU-hand-left-side.png",
+      "new_file": "Saved/Tests/GraphicNovel/FundedPilot/cpu-review-hires-20261014T0814Z/CPU-hand-left-side.png",
+      "old_dimensions": [
+        768,
+        768
+      ],
+      "new_dimensions": [
+        1024,
+        1024
+      ],
+      "display_dimensions_each": [
+        768,
+        768
+      ],
+      "old_view_metadata": {
+        "file": "CPU-hand-left-side.png",
+        "sha256": "3c8139487c27e04ab3c50b012c49e5a01b9c97302d93d21f9ae80a7ef294c2b8",
+        "device": "CPU",
+        "samples": 16,
+        "frame": null,
+        "clip_fraction": null,
+        "ortho_scale_m": 0.27918803691864014,
+        "target_world": [
+          0.4696006178855896,
+          0.0135568268597126,
+          0.9543538093566895
+        ],
+        "camera_world": [
+          -6.810400485992432,
+          0.013560748659074306,
+          0.9543538093566895
+        ]
+      },
+      "new_view_metadata": {
+        "file": "CPU-hand-left-side.png",
+        "sha256": "36de15462b032ce99f1fe0703ecd373e7b461d8875a43350bc94f4c4755ee620",
+        "device": "CPU",
+        "samples": 16,
+        "frame": null,
+        "clip_fraction": null,
+        "ortho_scale_m": 0.27918803691864014,
+        "target_world": [
+          0.35266512632369995,
+          -0.050026699900627136,
+          0.876320481300354
+        ],
+        "camera_world": [
+          -6.927335739135742,
+          -0.050026386976242065,
+          0.876320481300354
+        ]
+      }
+    },
+    {
+      "file": "Saved/Tests/GraphicNovel/FundedPilot/cpu-review-hires-20261014T0814Z/IndependentVisualReview/pair-CPU-hand-right.png",
+      "sha256": "708681689ebe3df2b86e0d6a6c31afcd3433c0371227c4728d328b89f27b1f04",
+      "old_file": "Saved/Tests/GraphicNovel/FundedPilot/cpu-review-20261014T041542Z/CPU-hand-right.png",
+      "new_file": "Saved/Tests/GraphicNovel/FundedPilot/cpu-review-hires-20261014T0814Z/CPU-hand-right.png",
+      "old_dimensions": [
+        768,
+        768
+      ],
+      "new_dimensions": [
+        1024,
+        1024
+      ],
+      "display_dimensions_each": [
+        768,
+        768
+      ],
+      "old_view_metadata": {
+        "file": "CPU-hand-right.png",
+        "sha256": "f130dad257c0e2c2a16fd6b7343f532d9593afcead8707ca13fabd5dc8e0b92a",
+        "device": "CPU",
+        "samples": 16,
+        "frame": null,
+        "clip_fraction": null,
+        "ortho_scale_m": 0.27918803691864014,
+        "target_world": [
+          -0.46884021162986755,
+          0.01373014785349369,
+          0.9541670083999634
+        ],
+        "camera_world": [
+          -2.560736656188965,
+          -6.959244728088379,
+          0.9541670083999634
+        ]
+      },
+      "new_view_metadata": {
+        "file": "CPU-hand-right.png",
+        "sha256": "29b08e18726086f8d41994a42cd528b02e3f97205983099e7ad125b36419e084",
+        "device": "CPU",
+        "samples": 16,
+        "frame": null,
+        "clip_fraction": null,
+        "ortho_scale_m": 0.27918803691864014,
+        "target_world": [
+          -0.35260704159736633,
+          -0.05017468333244324,
+          0.8724731206893921
+        ],
+        "camera_world": [
+          -2.444499969482422,
+          -7.023150444030762,
+          0.8724731206893921
+        ]
+      }
+    },
+    {
+      "file": "Saved/Tests/GraphicNovel/FundedPilot/cpu-review-hires-20261014T0814Z/IndependentVisualReview/pair-CPU-hand-right-side.png",
+      "sha256": "bf237b4194ec421bb4d171a6451d6bacdd8d02b3cec461906640ed13244b978e",
+      "old_file": "Saved/Tests/GraphicNovel/FundedPilot/cpu-review-20261014T041542Z/CPU-hand-right-side.png",
+      "new_file": "Saved/Tests/GraphicNovel/FundedPilot/cpu-review-hires-20261014T0814Z/CPU-hand-right-side.png",
+      "old_dimensions": [
+        768,
+        768
+      ],
+      "new_dimensions": [
+        1024,
+        1024
+      ],
+      "display_dimensions_each": [
+        768,
+        768
+      ],
+      "old_view_metadata": {
+        "file": "CPU-hand-right-side.png",
+        "sha256": "18a95a86492a0edfb1ba1f4bc3769c1fa5cfed97db7f155ca0912b3e34b03267",
+        "device": "CPU",
+        "samples": 16,
+        "frame": null,
+        "clip_fraction": null,
+        "ortho_scale_m": 0.27918803691864014,
+        "target_world": [
+          -0.46884021162986755,
+          0.01373014785349369,
+          0.9541670083999634
+        ],
+        "camera_world": [
+          6.811161041259766,
+          0.013726226054131985,
+          0.9541670083999634
+        ]
+      },
+      "new_view_metadata": {
+        "file": "CPU-hand-right-side.png",
+        "sha256": "bbef7e8a999a4cb4ff18fc85cc5f51dd80ea31ec9d2d70f81c414dadddab2e04",
+        "device": "CPU",
+        "samples": 16,
+        "frame": null,
+        "clip_fraction": null,
+        "ortho_scale_m": 0.27918803691864014,
+        "target_world": [
+          -0.35260704159736633,
+          -0.05017468333244324,
+          0.8724731206893921
+        ],
+        "camera_world": [
+          6.927393436431885,
+          -0.05017499625682831,
+          0.8724731206893921
+        ]
+      }
+    },
+    {
+      "file": "Saved/Tests/GraphicNovel/FundedPilot/cpu-review-hires-20261014T0814Z/IndependentVisualReview/pair-CPU-idle-mid-three-quarter.png",
+      "sha256": "1c1e0dd594e0d8ed4749064d211c659a26038c70de1f689da6dce2a780b6d36c",
+      "old_file": "Saved/Tests/GraphicNovel/FundedPilot/cpu-review-20261014T041542Z/CPU-idle-mid-three-quarter.png",
+      "new_file": "Saved/Tests/GraphicNovel/FundedPilot/cpu-review-hires-20261014T0814Z/CPU-idle-mid-three-quarter.png",
+      "old_dimensions": [
+        768,
+        1024
+      ],
+      "new_dimensions": [
+        1024,
+        1365
+      ],
+      "display_dimensions_each": [
+        768,
+        1024
+      ],
+      "old_view_metadata": {
+        "file": "CPU-idle-mid-three-quarter.png",
+        "sha256": "b09eb211072e5cdad3eadc750fca0bd62704b9e36f563b4beeb5e6acc3758798",
+        "device": "CPU",
+        "samples": 16,
+        "frame": 61.0,
+        "clip_fraction": 0.5,
+        "ortho_scale_m": 2.052461624145508,
+        "target_world": [
+          -0.025646954774856567,
+          0.008897826075553894,
+          0.8586539030075073
+        ],
+        "camera_world": [
+          -4.279386520385742,
+          -5.899071216583252,
+          0.8586539030075073
+        ]
+      },
+      "new_view_metadata": {
+        "file": "CPU-idle-mid-three-quarter.png",
+        "sha256": "3b70ff457bd609dc17feb66fb1c83a5f83a90a01b44127d312daef1bd7f50e89",
+        "device": "CPU",
+        "samples": 16,
+        "frame": 61.0,
+        "clip_fraction": 0.5,
+        "ortho_scale_m": 2.0481410026550293,
+        "target_world": [
+          -0.025502189993858337,
+          -0.02643166482448578,
+          0.8496806025505066
+        ],
+        "camera_world": [
+          -4.279240131378174,
+          -5.934401035308838,
+          0.8496806025505066
+        ]
+      }
+    },
+    {
+      "file": "Saved/Tests/GraphicNovel/FundedPilot/cpu-review-hires-20261014T0814Z/IndependentVisualReview/pair-CPU-walk-mid-three-quarter.png",
+      "sha256": "076e1c3465767591a444b4cc412ac7fa56c87299fc7de41dddc7f67c4d626dc4",
+      "old_file": "Saved/Tests/GraphicNovel/FundedPilot/cpu-review-20261014T041542Z/CPU-walk-mid-three-quarter.png",
+      "new_file": "Saved/Tests/GraphicNovel/FundedPilot/cpu-review-hires-20261014T0814Z/CPU-walk-mid-three-quarter.png",
+      "old_dimensions": [
+        768,
+        1024
+      ],
+      "new_dimensions": [
+        1024,
+        1365
+      ],
+      "display_dimensions_each": [
+        768,
+        1024
+      ],
+      "old_view_metadata": {
+        "file": "CPU-walk-mid-three-quarter.png",
+        "sha256": "831552ca5c74423e4893bfc09c2a0140efcc420d9e85cd7e18d2afbc4101b7b7",
+        "device": "CPU",
+        "samples": 16,
+        "frame": 16.5,
+        "clip_fraction": 0.5,
+        "ortho_scale_m": 2.115856885910034,
+        "target_world": [
+          0.011341452598571777,
+          -0.004682853817939758,
+          0.9302763342857361
+        ],
+        "camera_world": [
+          -4.242397785186768,
+          -5.912652015686035,
+          0.9302763342857361
+        ]
+      },
+      "new_view_metadata": {
+        "file": "CPU-walk-mid-three-quarter.png",
+        "sha256": "af4b7408ef339edb274482b3cea87568949d661ce92c363b8fbfd544638d65ed",
+        "device": "CPU",
+        "samples": 16,
+        "frame": 16.5,
+        "clip_fraction": 0.5,
+        "ortho_scale_m": 2.127284049987793,
+        "target_world": [
+          0.014760032296180725,
+          -0.046787530183792114,
+          0.9239242672920227
+        ],
+        "camera_world": [
+          -4.238977909088135,
+          -5.954757213592529,
+          0.9239242672920227
+        ]
+      }
+    },
+    {
+      "file": "Saved/Tests/GraphicNovel/FundedPilot/cpu-review-hires-20261014T0814Z/IndependentVisualReview/pair-CPU-run-mid-three-quarter.png",
+      "sha256": "93615336b974127b8243b0e79133cc7a2670f2bb3cc4d598072977479deab89b",
+      "old_file": "Saved/Tests/GraphicNovel/FundedPilot/cpu-review-20261014T041542Z/CPU-run-mid-three-quarter.png",
+      "new_file": "Saved/Tests/GraphicNovel/FundedPilot/cpu-review-hires-20261014T0814Z/CPU-run-mid-three-quarter.png",
+      "old_dimensions": [
+        768,
+        1024
+      ],
+      "new_dimensions": [
+        1024,
+        1365
+      ],
+      "display_dimensions_each": [
+        768,
+        1024
+      ],
+      "old_view_metadata": {
+        "file": "CPU-run-mid-three-quarter.png",
+        "sha256": "f313172be935d1e8775f64584cdb053fec411cfa81061d18f3a1b9c3daa5410f",
+        "device": "CPU",
+        "samples": 16,
+        "frame": 10.5,
+        "clip_fraction": 0.5,
+        "ortho_scale_m": 2.028642177581787,
+        "target_world": [
+          -0.01610592007637024,
+          0.03029543161392212,
+          0.9048260450363159
+        ],
+        "camera_world": [
+          -4.269845485687256,
+          -5.877673625946045,
+          0.9048260450363159
+        ]
+      },
+      "new_view_metadata": {
+        "file": "CPU-run-mid-three-quarter.png",
+        "sha256": "5456b0be50f632dceced5ad7c05229dc1888b86e21def97c5a7a97841e371cfa",
+        "device": "CPU",
+        "samples": 16,
+        "frame": 10.5,
+        "clip_fraction": 0.5,
+        "ortho_scale_m": 2.015714168548584,
+        "target_world": [
+          -0.01119329035282135,
+          -0.012679755687713623,
+          0.8983334302902222
+        ],
+        "camera_world": [
+          -4.2649312019348145,
+          -5.92064905166626,
+          0.8983334302902222
+        ]
+      }
+    }
+  ],
+  "counts": {
+    "prior_triangles": 31026,
+    "new_triangles": 103544,
+    "triangle_ratio": 3.3373299813060013,
+    "prior_vertices": 43807,
+    "new_vertices": 130901,
+    "new_bones": 24,
+    "new_morph_count": 0,
+    "new_height_m": 1.82000019319905,
+    "own_idle_walk_run_bind_errors": {
+      "idle": 0.0,
+      "walk": 0.0,
+      "run": 0.0
+    }
+  },
+  "source_hashes_rechecked_unchanged": true,
+  "new_unweighted_vertices": 0,
+  "new_weight_sums_outside_tolerance": 0,
+  "suitable_for_isolated_native_ab": true,
+  "production_replacement_accepted": false,
+  "graphics_accepted": false,
+  "continuous_motion_accepted": false,
+  "wider_cast_spending_supported": false,
+  "visual_verdict": "Promote to a bounded isolated native comparison. The neutral neck/collar surface and finer hair/hand shapes visibly improve; sampled animated shirt facets and static rig controls remain material limits. Preserve the earlier pilot and decide replacement only after native deformed-pose and motion evidence.",
+  "findings": [
+    {
+      "area": "neck and collar",
+      "improvement": "Neutral front face/body and three-quarter body show a markedly rounder neck-to-shirt boundary and smoother actual neck surface. The original jagged skin-painted flange and large triangular neck planes are substantially reduced in this studio view.",
+      "limit": "A thin pale edge remains in places, and animated Idle/Run neck folds still form small sharp planes. Native full-normal lighting must confirm that the gain survives deformation and comic processing."
+    },
+    {
+      "area": "hair",
+      "improvement": "Finer separated curls/strands and a less solid perimeter survive downsampling to the prior resolution. Adult curly-haired identity remains readable.",
+      "limit": "Hair remains shiny tubular geometry, with dense clumps and wiry loops; it is not yet deliberate graphic-novel hair design. Thin perimeter strands could alias or shimmer in native motion."
+    },
+    {
+      "area": "face and adult likeness",
+      "improvement": "Mature proportions, beard, brows and wardrobe identity are retained; no return to a goofy body silhouette.",
+      "limit": "Face/jaw and hair arrangement differ slightly from the prior stochastic output. Skin still looks pale/smooth in studio lighting and the rig has no facial morphs."
+    },
+    {
+      "area": "hands and fingers",
+      "improvement": "Both side views show five separated digits. Tips and finger contours are rounder than the prior faceted shapes; skin detail is more continuous in these crops.",
+      "limit": "Knuckles/webbing remain creased or planar; hands still have a static whole-hand rig with no individual finger controls. Surface detail does not establish expressive posing or prop grip."
+    },
+    {
+      "area": "clothing and footwear",
+      "improvement": "Black skull tee, teal cargo trousers/pockets, cuffs and canvas high-tops remain integrated and readable in front/three-quarter/back views. Neutral shirt and trouser surfaces show smoother, more organic folds with no gross detached part.",
+      "limit": "Own Idle/Walk/Run previews show conspicuous triangular shading/sharp folds across chest, underarm and raised sleeve, more obvious than the earlier model in several sampled regions. Do not infer their exact geometric/normal/bake cause from these images alone."
+    },
+    {
+      "area": "sampled own clips",
+      "improvement": "Idle/Walk/Run midpoint poses retain a coherent adult silhouette and complete clothing/shoe coverage, with no gross exploding vertices or detached shoe. Own-body rest-bind errors are zero in the CPU report.",
+      "limit": "Armpit/crotch/knee folds still pinch; continuous foot planting, transitions, jump deformation and fluidity were not reviewed."
+    }
+  ],
+  "comparison_limits": [
+    "The latest provider input schema exposes no seed input. This is a same-reference/prompt stochastic candidate comparison, not a same-seed geometry ablation; shape differences cannot all be attributed to higher geometry settings.",
+    "Prior closeups are 768\u00d7768 and body/pose views 768\u00d71024; new closeups are 1024\u00d71024 and body/pose views 1024\u00d71365. Both use 16 CPU samples and the identical studio helper. New images were downsampled to prior dimensions for paired inspection; original new face/left-hand/body-front images were also inspected at their own resolution.",
+    "Framing is anatomically comparable but not pixel-locked: face/pose crop scales and rest arm angles differ slightly.",
+    "Rest views use supplied GLB materials, while own-clip views use FBX geometry with the helper retained-PBR shader and supplied maps. Normal-map Y orientation is not inferred. Compare corresponding view families; rest-versus-pose surface differences do not establish a single cause.",
+    "The 4k option refers to geometry settings; retained material images in both GLBs are 2048\u00d72048. No 4k texture claim.",
+    "Disposable position-weld topology metrics are not visual hole counts or a watertightness guarantee. New copy-only metric 344 boundary/286 non-manifold edges versus prior 48/91 does not by itself reject or certify visible surfaces.",
+    "No Unreal renderer, GPU, service, provider submission, deployment or generated source mutation was performed by this reviewer."
+  ],
+  "native_gate": [
+    "Compare front/35-degree face closeups in Standard and Comic using full supplied normal strength; verify round neck/collar contour and preserve adult face identity.",
+    "Inspect actual deformed Idle, Run and Airborne clothing/neck/shoulders, with material source/UV/native bone readbacks; reject a replacement if triangular artifacts or pinching are materially worse.",
+    "Review thin hair strands and hand silhouette at 720p/1080p plus normal-speed transitions for aliasing, contact and visual stability.",
+    "Measure added native package/memory/frame-time cost separately; 3.34 times triangles is a cost to justify, not a quality verdict."
+  ],
+  "not_checked": [
+    "Native lighting/material/shader results, native own-clip integration and jump.",
+    "Continuous playback, exact contact, fluidity, temporal line stability, performance and packaged impact.",
+    "Face/finger acting, physical controls, co-op, phone/audio and production rollout."
+  ]
+}

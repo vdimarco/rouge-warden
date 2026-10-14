@@ -1,0 +1,38 @@
+# NORD higher-detail pilot comparison — 2026-10-14
+
+The second funded body improves the neck surface and curl detail, while retaining the adult identity and outfit. Keep it as a **separate review candidate**. Chipped collar edges, raised/pinched airborne shoulders, rigid hands, shiny hair, stray calf/ground shadows and the busy indigo comic treatment still prevent final graphics acceptance. [1080p visual review](GraphicNovelHighDetailPilot/Independent1080StillReview.md) · [720p review](GraphicNovelHighDetailPilot/Independent720StillReview.md) · [motion review](GraphicNovelHighDetailPilot/IndependentMotionReview.md).
+
+[Comic face](../Preview/GraphicNovelHighDetail/Comic/1920/Resident9_Face.png) · [Standard three-quarter face](../Preview/GraphicNovelHighDetail/Standard/1920/Resident9_FaceThreeQuarter.png) · [Standard motion](../Preview/GraphicNovelHighDetail/Motion/Standard1920.mp4) · [Comic motion](../Preview/GraphicNovelHighDetail/Motion/Comic1920.mp4). These are actual Unreal captures. The separate [CPU studio views](../Preview/GraphicNovelHighDetail/CPU/CPU-body-three-quarter.png) use Cycles and do not establish native appearance.
+
+The retained reference/prompt was reused for request `01a13971-5e0a-73e0-8e68-730896d2cee3`, requesting 4k geometry and 100,000 triangles. The output contains **103,544 triangles / 130,901 UV-split vertices**, compared with the earlier body's 31,026 triangles. Returned PBR maps are 2048². Its own 24-bone rig has no facial or finger controls. Idle/Walk/Run match that body's hierarchy/binds; Jump was locally authored and round-tripped against its own rig. [Generation receipt](../Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/generation.json) · [14-file immutable source manifest](../Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/files.json) · [source review](../Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/source-review.json).
+
+All three flags select the new style-9 folder `/Game/ParkComic/CrewGraphicNovelHighDetail/Resident9`:
+
+```text
+-NordGraphicNovelCandidate -NordGraphicNovelGenerated -NordGraphicNovelHighDetail
+```
+
+Incomplete combinations retain the appropriate earlier route. Candidate alone keeps the 44-bone pilot; Candidate+Generated keeps the [UV1 collar-refined body](GraphicNovelCollarRefinement.md). Ordinary launches retain the production cast. The new body's four PBR samples use UV0, with full-strength normals and the existing private ink/stencil/native blended graph. Generation/manifest/body/reference checks reject mismatches before import mutation.
+
+| Check | Result |
+| --- | --- |
+| Fresh build/import | Exit 0; 12 new packages; all 6,761 existing Content files and 210 retained source files unchanged during import |
+| Native regressions | Four animation tests, pond geometry and radar clipping pass; actual new-body UV0/own rig/clips and preserved old/default routes checked |
+| Headless fixtures | Seven states and eight-phase 1× transitions pass in both modes |
+| Rendered stills | All 28 views pass: seven states × Standard/Comic × 720p/1080p |
+| Unpaused native motion | Both 1080p jobs pass; 172/169 selected observations across eight phases, 90° turns, approximately 183.6 cm jump, zero horizontal jump drift; CSV finalized before clean native/recorder exit |
+| CPU/contracts | Four focused Python suites, syntax/diff checks and 36 browser contract tests pass; initial missing-dependency failure retained after locked offline installation |
+| Final preservation | All 6,773 Content files, 214 frozen graphic-novel source files, 48 live-package files and source/global editor settings unchanged; tunnels/TURN retained and demo restored |
+| Public-player restoration | All seven ordinary-network checks pass on this PC: independent streams, input/release, occupied-slot rejection/recovery and reconnect |
+
+[Curated commands/hashes](GraphicNovelHighDetailPilot.json) and [file mapping](GraphicNovelHighDetailPilot/files.json) distinguish raw evidence from the two motion reports' removal of unnecessary CSV login metadata. Body/maps/clips were not edited during native verification. The source metadata update after import is recorded separately. A 720p-plus-motion window received an external SIGTERM: its two completed still jobs remain valid, its interrupted motion is excluded, and the whole window remains failed. The successful motion rerun used a managed service; both windows restored the demo. The signal's sender is unresolved. Raw attempts remain under ignored `Saved/Tests/GraphicNovel/HighDetail*`.
+
+The motion review inspected 82 selected frames in 12 contact sheets plus three full-resolution gameplay frames. It did not view continuous playback. Standard contains 541 encoded frames / 9.016667 s; Comic contains 571 / 9.516667 s, both encoded at 60 FPS. Gameplay is visible at sampled 7 s, editor UI at 8 s and black at 9 s; CSV debug text is visible during gameplay. These are diagnostic recordings.
+
+The [CPU shadow audit](GraphicNovelHighDetailPilot/SourceShadowAudit.md) finds one connected body and no gross split-skin outlier across 210 own-clip integer poses, with open/non-manifold edges and small-edge stretching still present. It does not establish good anatomy or the shadow cause. The source GLB declares a double-sided material, while [saved native readback](GraphicNovelHighDetailPilot/NativeSidednessAudit.json) confirms single-sided rendering. A subsequent material-only [14-view A/B](GraphicNovelHighDetailPilot/Sidedness/Review.md) found no clear collar/hair/shoulder/shadow gain and more conspicuous diagonal neck streaks. The trial is rejected; [restoration](GraphicNovelHighDetailPilot/Sidedness/Restoration.json) verifies the exact original package and all 6,773 Content hashes. The first authoring attempt stopped on an outdated helper import before mutation; its corrected fresh NullRHI replacement passed. Two-sided rendering is not a demonstrated repair for these defects. A strict final check also caught two editor INIs changed before the A/B snapshot; [original settings were restored](GraphicNovelHighDetailPilot/Sidedness/SettingsRestoration.json), and the unchanged original preservation assertions then pass.
+
+At unchanged Epic settings, the single warmed Standard editor comparison records **11.10 ms mean GPU / 40.08 ms frame** versus 11.15 / 40.27 ms for the refined draft. Comic records **11.18 / 40.66 ms** versus 10.56 / 39.70 ms. The observed Comic increase is 0.62 ms GPU / 0.96 ms frame; one sequential run per cell cannot prove equivalence or a repeatable regression. The existing Slate/render-synchronization wait remains dominant. [Measured comparison](GraphicNovelHighDetailPilot/Performance/analysis.md). This is a stochastic body/maps/own-clips comparison: the API exposes no input seed, and the old draft additionally has its UV1 collar repair. Higher polygon count alone is not established as the cause of any difference.
+
+The [budget ledger](../Data/GraphicNovel/budget-2026-10-14.json) records exactly two completed model jobs: **US$3.04 configured estimate, US$4 reserved, US$21 uncommitted** from the authorized US$25. Settled charges and account balance remain unavailable. No additional cast jobs were submitted.
+
+No production promotion or package replacement occurred. The higher-detail folder adds about 43.7 MiB before cooking and enters future cooks through ParkComic's existing AlwaysCook rule; cooked impact is unmeasured. Continuous playback/line stability, full-cycle foot planting, facial/finger acting, candidate co-op, current packaged performance, physical phones/controls, audible playback and off-LAN acceptance remain open. `graphics_accepted=false`; the city-quality change stays active.

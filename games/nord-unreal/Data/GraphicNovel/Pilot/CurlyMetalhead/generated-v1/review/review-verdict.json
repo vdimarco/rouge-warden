@@ -1,0 +1,83 @@
+{
+  "exit_code": 0,
+  "scope": "CPU model/texture and sampled-pose review; not full motion or engine acceptance",
+  "review_report": "cpu-review.json",
+  "source_unchanged": true,
+  "body_triangles": 31026,
+  "body_vertices": 43807,
+  "height_m": 1.82000028214145,
+  "bones": 24,
+  "morph_count": 0,
+  "own_clip_bind_errors": {
+    "idle": 0.0,
+    "walk": 0.0,
+    "run": 0.0
+  },
+  "views": [
+    {
+      "file": "CPU-body-front.png",
+      "sha256": "56c5a69581777d067a807848e5444a5daf04d1a754a7c8959198347469819862"
+    },
+    {
+      "file": "CPU-body-three-quarter.png",
+      "sha256": "5808f7494f5f88391bbb2f2aba5a8a3474bb3236293bc5943e63af2d492dd943"
+    },
+    {
+      "file": "CPU-body-back.png",
+      "sha256": "650d4868ed60e891288255c49cf21881c7bc689d1df3f40c188f1de353dcce44"
+    },
+    {
+      "file": "CPU-face-front.png",
+      "sha256": "1d01effdcdea5c3a4edd13d7829c869789227ce10d17ad43a710bad2afa53033"
+    },
+    {
+      "file": "CPU-hand-left.png",
+      "sha256": "fd7bcc62c43174cb6c03c2fc89890ca82e37b07f47cac5e08585d6fad1694062"
+    },
+    {
+      "file": "CPU-hand-left-side.png",
+      "sha256": "3c8139487c27e04ab3c50b012c49e5a01b9c97302d93d21f9ae80a7ef294c2b8"
+    },
+    {
+      "file": "CPU-hand-right.png",
+      "sha256": "f130dad257c0e2c2a16fd6b7343f532d9593afcead8707ca13fabd5dc8e0b92a"
+    },
+    {
+      "file": "CPU-hand-right-side.png",
+      "sha256": "18a95a86492a0edfb1ba1f4bc3769c1fa5cfed97db7f155ca0912b3e34b03267"
+    },
+    {
+      "file": "CPU-idle-mid-three-quarter.png",
+      "sha256": "b09eb211072e5cdad3eadc750fca0bd62704b9e36f563b4beeb5e6acc3758798"
+    },
+    {
+      "file": "CPU-walk-mid-three-quarter.png",
+      "sha256": "831552ca5c74423e4893bfc09c2a0140efcc420d9e85cd7e18d2afbc4101b7b7"
+    },
+    {
+      "file": "CPU-run-mid-three-quarter.png",
+      "sha256": "f313172be935d1e8775f64584cdb053fec411cfa81061d18f3a1b9c3daa5410f"
+    }
+  ],
+  "visual_verdict": "Suitable initial third-person engine draft. Hold crew expansion/final hero acceptance until native appearance and continuous motion are reviewed.",
+  "improvements": [
+    "Recognizable curly-haired bearded adult, mature proportions and original wardrobe identity.",
+    "Integrated teal cargo trousers/pockets, clean continuous cuffs, detailed high-top canvas shoes.",
+    "Side hand views show five separated digits on each hand.",
+    "Sampled Idle/Walk/Run deform without gross exploding vertices, detached clothing or obvious major tears."
+  ],
+  "visible_defects": [
+    "Hands remain coarse and faceted at knuckles/tips; right hand has a planar crease/seam, whole-hand rig lacks individual finger controls.",
+    "Face looks smoother and paler than the reference under this studio setup; native lighting/material still needs review.",
+    "Jagged pale collar/neck rim and thick shiny rope-like curls are visible in close crops.",
+    "Armpit/crotch/knee folds pinch sharply during sampled motion; no cloth simulation."
+  ],
+  "limits": [
+    "Static views cannot establish fluid motion, planted feet, transition quality or runtime performance.",
+    "Fixed neutral floor: sampled lowest shoe vertices are approximately -1.1cm Idle, +3.4cm Walk, +4.5cm Run; flight/contact correctness needs continuous/native review.",
+    "Raw UV/normal-split boundary counts are not hole counts. Disposable 1-micrometre position-weld metric still has48boundary and91non-manifold edges; no watertightness claim or geometry repair.",
+    "These are supplied PBR textures in Cycles, not the final comic-book engine shading."
+  ],
+  "first_rejected_review_retained": "../cpu-review-20261014T041355Z",
+  "review_script_sha256": "9bce405c48c3d7cf825f963bdce6e8cc443862b6b2664f92ab7e949c1ce0596c"
+}

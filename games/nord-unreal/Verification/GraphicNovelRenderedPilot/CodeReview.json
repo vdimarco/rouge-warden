@@ -1,0 +1,16 @@
+{
+  "scope": "Read-only source/evidence review; calibration re-review by its author, independent generated-normal branch review",
+  "reviewer": "merge_review",
+  "blocking_findings": [],
+  "facts": [
+    "Generated normal const_alpha=0 applies only to generated route; default/neutral/older candidate remain .65.",
+    "motion_tick, transition_checks, motion_phase, start_style, animation_state and record_locomotion ASTs are unchanged from 261c1ced.",
+    "Both native motion reports substantiate 1920x1080, exact three native/desktop probes, all eight phases,158/161 observations, engine exit 0 / recorder exit 0 and matching artifact hashes.",
+    "Captured wrapper differs from current capture source only in the fresh output directory.",
+    "Capture/import/cadence focused checks and diff whitespace checks pass."
+  ],
+  "limits": [
+    "Calibration portion is a re-review of code authored by this reviewer.",
+    "No visual graphics, fluidity or target FPS acceptance inferred."
+  ]
+}

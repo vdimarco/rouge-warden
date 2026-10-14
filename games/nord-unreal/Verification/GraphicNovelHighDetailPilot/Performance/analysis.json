@@ -1,0 +1,1601 @@
+{
+  "scope": "Two successful high-detail Epic editor motion diagnostics at 1920x1080, compared by mode with retained corrected-fixture 075500Z. One sequential run per cell; first/last two CSV frames discarded. Whole editor view cost, not isolated character GPU cost.",
+  "window": "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/GraphicNovel/HighDetailMotion-20261014T084528Z",
+  "window_status_sha256": "2520862a36f123131050f0ec222f25c48acb077999ab42e6a58156c9293b8400",
+  "window_passed": true,
+  "demo_restored": true,
+  "managed_unit_completion": {
+    "source": "Root completion confirmation",
+    "inactive": true,
+    "result": "success",
+    "exec_main_code": 0,
+    "exec_main_status": 0
+  },
+  "parser": "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/GraphicNovel/PerformanceAudit/parse_editor_csv.py",
+  "parser_sha256": "28ad8a23fa22df96e3995fe543df74aa4f280221fef446078747271ff0afa540",
+  "matrix": {
+    "HighDetailStandard": {
+      "summary": "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/GraphicNovel/HighDetailMotion-20261014T084528Z/Performance/HighDetailStandard.json",
+      "summary_sha256": "2ff8d6bc3d5b08444b324f2b3f8d155af6a9562b5195cd89663355d99b4db09e",
+      "csv": "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/GraphicNovel/HighDetailMotion-20261014T084528Z/MotionProfile/Capture/Motion/Standard/HighDetail-20261014T084528Z-Standard-1920.csv",
+      "csv_sha256": "321e171132054a281d4d3e7386a4b1abaebc784763899471adcdb5b806173f52",
+      "native_report": "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/GraphicNovel/HighDetailMotion-20261014T084528Z/MotionProfile/Capture/Motion/Standard/PlayerMotion1920.json",
+      "native_report_sha256": "38a8fca8a73026717afac0f015228e8b637cd6bb2fec1047346c4ca935f931a8",
+      "native_passed": true,
+      "csv_flushed_and_hash_verified": true,
+      "csv_numeric_frames": 173,
+      "selected_frames": 169,
+      "csv_average_hz": 24.950561716867934,
+      "editor_counter_hz": 24.94955692778118,
+      "timings": {
+        "FrameTime": {
+          "observations": 169,
+          "mean_ms": 40.07925798816568,
+          "median_ms": 39.0596,
+          "p95_ms": 46.8405,
+          "p99_ms": 53.2211,
+          "min_ms": 32.0933,
+          "max_ms": 54.5422,
+          "over_16_67ms_percent": 100.0,
+          "over_33_33ms_percent": 99.40828402366864,
+          "nonpositive_or_missing_observations": 0
+        },
+        "GameThreadTime": {
+          "observations": 169,
+          "mean_ms": 5.365331360946746,
+          "median_ms": 5.125,
+          "p95_ms": 6.892,
+          "p99_ms": 7.682,
+          "min_ms": 4.059,
+          "max_ms": 8.363,
+          "over_16_67ms_percent": 0.0,
+          "over_33_33ms_percent": 0.0,
+          "nonpositive_or_missing_observations": 0
+        },
+        "RenderThreadTime": {
+          "observations": 169,
+          "mean_ms": 0.002106508875739645,
+          "median_ms": 0.002,
+          "p95_ms": 0.003,
+          "p99_ms": 0.004,
+          "min_ms": 0.001,
+          "max_ms": 0.005,
+          "over_16_67ms_percent": 0.0,
+          "over_33_33ms_percent": 0.0,
+          "nonpositive_or_missing_observations": 0
+        },
+        "RHIThreadTime": {
+          "observations": 169,
+          "mean_ms": 0.1358639053254438,
+          "median_ms": 0.105,
+          "p95_ms": 0.309,
+          "p99_ms": 0.371,
+          "min_ms": 0.064,
+          "max_ms": 0.402,
+          "over_16_67ms_percent": 0.0,
+          "over_33_33ms_percent": 0.0,
+          "nonpositive_or_missing_observations": 0
+        },
+        "GPUTime": {
+          "observations": 169,
+          "mean_ms": 11.102325443786983,
+          "median_ms": 10.966,
+          "p95_ms": 12.38,
+          "p99_ms": 15.242,
+          "min_ms": 9.586,
+          "max_ms": 16.966,
+          "over_16_67ms_percent": 0.591715976331361,
+          "over_33_33ms_percent": 0.0,
+          "nonpositive_or_missing_observations": 0
+        },
+        "GameThreadTime_CriticalPath": {
+          "observations": 169,
+          "mean_ms": 5.365331360946746,
+          "median_ms": 5.125,
+          "p95_ms": 6.892,
+          "p99_ms": 7.682,
+          "min_ms": 4.059,
+          "max_ms": 8.363,
+          "over_16_67ms_percent": 0.0,
+          "over_33_33ms_percent": 0.0,
+          "nonpositive_or_missing_observations": 0
+        },
+        "RenderThreadTime_CriticalPath": {
+          "observations": 169,
+          "mean_ms": 0.002106508875739645,
+          "median_ms": 0.002,
+          "p95_ms": 0.003,
+          "p99_ms": 0.004,
+          "min_ms": 0.001,
+          "max_ms": 0.005,
+          "over_16_67ms_percent": 0.0,
+          "over_33_33ms_percent": 0.0,
+          "nonpositive_or_missing_observations": 0
+        }
+      },
+      "callback_timings": {
+        "motion_callback_ms": {
+          "observations": 173,
+          "mean_ms": 0.4461706298702219,
+          "median_ms": 0.3807760003837757,
+          "p95_ms": 0.6943359985598363,
+          "p99_ms": 0.8139390047290362,
+          "min_ms": 0.06949700036784634,
+          "max_ms": 0.819591004983522,
+          "over_16_67ms_percent": 0.0,
+          "over_33_33ms_percent": 0.0
+        },
+        "sample_ms": {
+          "observations": 172,
+          "mean_ms": 0.2815841628119436,
+          "median_ms": 0.22785200053476728,
+          "p95_ms": 0.44048799463780597,
+          "p99_ms": 0.5257099983282387,
+          "min_ms": 0.17923599807545543,
+          "max_ms": 0.5450789976748638,
+          "over_16_67ms_percent": 0.0,
+          "over_33_33ms_percent": 0.0
+        }
+      },
+      "extra_native_timings": {
+        "Exclusive/GameThread/EventWait": {
+          "observations": 169,
+          "mean_ms": 34.76229112426036,
+          "median_ms": 33.8333,
+          "p95_ms": 41.7637,
+          "p99_ms": 47.3409,
+          "min_ms": 30.004,
+          "max_ms": 48.8225,
+          "over_16_67ms_percent": 100.0,
+          "over_33_33ms_percent": 62.72189349112426
+        },
+        "Exclusive/RenderThread/EventWait": {
+          "observations": 169,
+          "mean_ms": 35.087688165680476,
+          "median_ms": 34.1508,
+          "p95_ms": 41.8916,
+          "p99_ms": 48.3022,
+          "min_ms": 30.7145,
+          "max_ms": 50.3749,
+          "over_16_67ms_percent": 100.0,
+          "over_33_33ms_percent": 68.63905325443787
+        },
+        "Slate/GameThread/DrawPrePass": {
+          "observations": 169,
+          "mean_ms": 35.98129822485207,
+          "median_ms": 34.9837,
+          "p95_ms": 42.883,
+          "p99_ms": 49.0838,
+          "min_ms": 31.6131,
+          "max_ms": 50.102,
+          "over_16_67ms_percent": 100.0,
+          "over_33_33ms_percent": 86.3905325443787
+        },
+        "RenderThreadIdle/SwapBuffer": {
+          "observations": 169,
+          "mean_ms": 0.0031005917159763314,
+          "median_ms": 0.003,
+          "p95_ms": 0.005,
+          "p99_ms": 0.005,
+          "min_ms": 0.002,
+          "max_ms": 0.008,
+          "over_16_67ms_percent": 0.0,
+          "over_33_33ms_percent": 0.0
+        },
+        "RenderThreadIdle/GPUQuery": {
+          "observations": 169,
+          "mean_ms": 0.0,
+          "median_ms": 0.0,
+          "p95_ms": 0.0,
+          "p99_ms": 0.0,
+          "min_ms": 0.0,
+          "max_ms": 0.0,
+          "over_16_67ms_percent": 0.0,
+          "over_33_33ms_percent": 0.0
+        },
+        "Exclusive/GameThread/TickActors": {
+          "observations": 169,
+          "mean_ms": 0.21396863905325444,
+          "median_ms": 0.1964,
+          "p95_ms": 0.301,
+          "p99_ms": 0.3392,
+          "min_ms": 0.1615,
+          "max_ms": 0.3858,
+          "over_16_67ms_percent": 0.0,
+          "over_33_33ms_percent": 0.0
+        },
+        "Exclusive/GameThread/Animation": {
+          "observations": 169,
+          "mean_ms": 0.07946153846153846,
+          "median_ms": 0.0718,
+          "p95_ms": 0.1143,
+          "p99_ms": 0.1297,
+          "min_ms": 0.063,
+          "max_ms": 0.1417,
+          "over_16_67ms_percent": 0.0,
+          "over_33_33ms_percent": 0.0
+        }
+      },
+      "wait_correlations": {
+        "SlatePrepass_vs_GameEventWait": 0.993661628888702,
+        "SlatePrepass_vs_following_FrameTime": 0.9866071257179142
+      },
+      "renderer_settings": {
+        "sg.ViewDistanceQuality": 3,
+        "sg.AntiAliasingQuality": 3,
+        "sg.ShadowQuality": 3,
+        "sg.GlobalIlluminationQuality": 3,
+        "sg.ReflectionQuality": 3,
+        "sg.PostProcessQuality": 3,
+        "sg.TextureQuality": 3,
+        "sg.EffectsQuality": 3,
+        "sg.FoliageQuality": 3,
+        "r.Streaming.PoolSize": 1000,
+        "r.Shadow.Virtual.MaxPhysicalPages": 4096,
+        "r.ScreenPercentage": 0.0,
+        "t.MaxFPS": 60.0
+      },
+      "effective_readbacks": {
+        "auto_stream_pie": false,
+        "start_on_launch": false,
+        "throttle_cpu_when_not_foreground": false,
+        "csv_block_on_capture_end": 1,
+        "csv_compression_mode": 0,
+        "t.MaxFPS": 60.0,
+        "r.VSync": 0,
+        "r.VSyncEditor": 0
+      },
+      "fixture_isolation": {
+        "requested_actor_counts": {
+          "ParkResident": 110,
+          "Car": 44
+        },
+        "requested_owned_component_counts": {
+          "ParkResident": 1100,
+          "Car": 1382
+        },
+        "checkpoints": [
+          {
+            "stage": "warm_up",
+            "passed": true,
+            "observed": {
+              "ParkResident": {
+                "actors": 110,
+                "hidden": 110,
+                "collision_disabled": 110,
+                "actor_ticks_disabled": 110,
+                "owned_components": 1100,
+                "component_ticks_disabled": 1100
+              },
+              "Car": {
+                "actors": 44,
+                "hidden": 44,
+                "collision_disabled": 44,
+                "actor_ticks_disabled": 44,
+                "owned_components": 1382,
+                "component_ticks_disabled": 1382
+              }
+            },
+            "failures": []
+          },
+          {
+            "stage": "completion",
+            "passed": true,
+            "observed": {
+              "ParkResident": {
+                "actors": 110,
+                "hidden": 110,
+                "collision_disabled": 110,
+                "actor_ticks_disabled": 110,
+                "owned_components": 1100,
+                "component_ticks_disabled": 1100
+              },
+              "Car": {
+                "actors": 44,
+                "hidden": 44,
+                "collision_disabled": 44,
+                "actor_ticks_disabled": 44,
+                "owned_components": 1382,
+                "component_ticks_disabled": 1382
+              }
+            },
+            "failures": []
+          }
+        ],
+        "scope": "disposable PIE residents/cars only; actor and owned component primary ticks, visibility and actor collision; no render/FPS acceptance"
+      },
+      "candidate_asset_status": {
+        "body_source": "Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/body.fbx",
+        "body_sha256": "b7e7ca0d9c486412108cba85e1cd4a5512fecd4ad36b8cfdb4677259ff6f9244",
+        "generation_request_id": "01a13971-5e0a-73e0-8e68-730896d2cee3",
+        "manifest_sha256": "d942b4ec45c3b28ef54c0afeb991278528fd74252ec7208cd518519277fd18bc",
+        "source_review": "Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/source-review.json",
+        "source_review_sha256": "a2ea79458aef0ad20ee1cb00b262269c509db230ca94b9c03cfc8bebeaacd3d8",
+        "source_files_verified": 14,
+        "weighted_body_bones": 24,
+        "uv_channels": 1,
+        "graphics_accepted": false,
+        "scope": "isolated high-detail native A/B; raw UV0 body and own clips; static face and fingers; no default promotion or art acceptance"
+      },
+      "native_motion_observations": 172,
+      "native_phase_checks": {
+        "phase_counts": {
+          "idle": 9,
+          "walk": 36,
+          "sprint": 35,
+          "turn": 21,
+          "stop": 18,
+          "jump": 32,
+          "landing": 6,
+          "recover": 15
+        },
+        "steady_motion": {
+          "walk": {
+            "steady_samples": 28,
+            "foot_pose_change_pairs": 27
+          },
+          "sprint": {
+            "steady_samples": 28,
+            "foot_pose_change_pairs": 27
+          }
+        },
+        "directional_turn_degrees": 90.0,
+        "jump_peak_cm": 183.67,
+        "jump_horizontal_drift_cm": 0.0,
+        "airborne_knee_degrees": 62.55,
+        "scope": "selected native state and pose observations at 1x; no rendered fluidity or FPS acceptance"
+      },
+      "finger_control_count": 0,
+      "face_morph_count": 0,
+      "mapped_normal_strength": 1.0,
+      "material_uv_channels": {
+        "base_color": 0,
+        "normal": 0,
+        "roughness": 0,
+        "metallic": 0
+      },
+      "native_material_readback": {
+        "slots": [
+          {
+            "index": 0,
+            "imported": "/Game/ParkComic/CrewGraphicNovelHighDetail/Resident9/M_Crew.M_Crew",
+            "live": "/Game/ParkComic/CrewGraphicNovelHighDetail/Resident9/M_Crew.M_Crew",
+            "matches": true
+          }
+        ],
+        "override_count": 0,
+        "assigned_override_count": 0,
+        "scope": "read only; native component materials were not repaired by this motion fixture"
+      },
+      "fixture_sha256": "b39d99e4026fbd98728956bc8e7fcfb72546c51b83a5a179f87b19e8694e175f",
+      "wrapper_sha256": "39aea46a85932e3168940ded8255871995bd7f68986c37fda569fea67bb516de"
+    },
+    "RefinedBaselineStandard": {
+      "summary": "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/GraphicNovel/RefinedRender-20261014T075500Z/Performance/FixedStandard.json",
+      "summary_sha256": "129581b6a6ef22cac0219e422dbed11e1fa0ab1bb2e79b0979d663e5ae780f2d",
+      "csv": "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/GraphicNovel/RefinedRender-20261014T075500Z/Fixed/Capture/Motion/Standard/FixedRefinedRender20261014T075500Z-Standard-1920.csv",
+      "csv_sha256": "549adccfb6135c56840fb643ed31e8798a726cdd98d46b1aab965e36bdd5ea41",
+      "native_report": "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/GraphicNovel/RefinedRender-20261014T075500Z/Fixed/Capture/Motion/Standard/PlayerMotion1920.json",
+      "native_report_sha256": "8de0bfcff46697f10b29589448c6a4a8a7e733cfaee862da90a77c670734267b",
+      "native_passed": true,
+      "csv_flushed_and_hash_verified": true,
+      "csv_numeric_frames": 172,
+      "selected_frames": 168,
+      "csv_average_hz": 24.835026315888673,
+      "editor_counter_hz": 24.79274138126017,
+      "timings": {
+        "FrameTime": {
+          "observations": 168,
+          "mean_ms": 40.26571130952381,
+          "median_ms": 38.99095,
+          "p95_ms": 48.1514,
+          "p99_ms": 57.9539,
+          "min_ms": 33.7302,
+          "max_ms": 64.551,
+          "over_16_67ms_percent": 100.0,
+          "over_33_33ms_percent": 100.0,
+          "nonpositive_or_missing_observations": 0
+        },
+        "GameThreadTime": {
+          "observations": 168,
+          "mean_ms": 5.3819404761904766,
+          "median_ms": 5.192,
+          "p95_ms": 6.834,
+          "p99_ms": 7.849,
+          "min_ms": 4.252,
+          "max_ms": 7.947,
+          "over_16_67ms_percent": 0.0,
+          "over_33_33ms_percent": 0.0,
+          "nonpositive_or_missing_observations": 0
+        },
+        "RenderThreadTime": {
+          "observations": 168,
+          "mean_ms": 0.002375,
+          "median_ms": 0.002,
+          "p95_ms": 0.004,
+          "p99_ms": 0.018,
+          "min_ms": 0.001,
+          "max_ms": 0.031,
+          "over_16_67ms_percent": 0.0,
+          "over_33_33ms_percent": 0.0,
+          "nonpositive_or_missing_observations": 0
+        },
+        "RHIThreadTime": {
+          "observations": 168,
+          "mean_ms": 0.14922619047619048,
+          "median_ms": 0.1145,
+          "p95_ms": 0.338,
+          "p99_ms": 0.413,
+          "min_ms": 0.067,
+          "max_ms": 0.49,
+          "over_16_67ms_percent": 0.0,
+          "over_33_33ms_percent": 0.0,
+          "nonpositive_or_missing_observations": 0
+        },
+        "GPUTime": {
+          "observations": 168,
+          "mean_ms": 11.15467857142857,
+          "median_ms": 11.119,
+          "p95_ms": 12.326,
+          "p99_ms": 12.765,
+          "min_ms": 9.975,
+          "max_ms": 13.037,
+          "over_16_67ms_percent": 0.0,
+          "over_33_33ms_percent": 0.0,
+          "nonpositive_or_missing_observations": 0
+        },
+        "GameThreadTime_CriticalPath": {
+          "observations": 168,
+          "mean_ms": 5.3819404761904766,
+          "median_ms": 5.192,
+          "p95_ms": 6.834,
+          "p99_ms": 7.849,
+          "min_ms": 4.252,
+          "max_ms": 7.947,
+          "over_16_67ms_percent": 0.0,
+          "over_33_33ms_percent": 0.0,
+          "nonpositive_or_missing_observations": 0
+        },
+        "RenderThreadTime_CriticalPath": {
+          "observations": 168,
+          "mean_ms": 0.002375,
+          "median_ms": 0.002,
+          "p95_ms": 0.004,
+          "p99_ms": 0.018,
+          "min_ms": 0.001,
+          "max_ms": 0.031,
+          "over_16_67ms_percent": 0.0,
+          "over_33_33ms_percent": 0.0,
+          "nonpositive_or_missing_observations": 0
+        }
+      },
+      "callback_timings": {
+        "motion_callback_ms": {
+          "observations": 172,
+          "mean_ms": 0.46100970355964394,
+          "median_ms": 0.39395500061800703,
+          "p95_ms": 0.6902940003783442,
+          "p99_ms": 0.8672729964018799,
+          "min_ms": 0.07000299956416711,
+          "max_ms": 0.8975259988801554,
+          "over_16_67ms_percent": 0.0,
+          "over_33_33ms_percent": 0.0
+        },
+        "sample_ms": {
+          "observations": 171,
+          "mean_ms": 0.2906063394736749,
+          "median_ms": 0.24134500563377514,
+          "p95_ms": 0.45245799992699176,
+          "p99_ms": 0.4684000014094636,
+          "min_ms": 0.19369600340723991,
+          "max_ms": 0.6155460068839602,
+          "over_16_67ms_percent": 0.0,
+          "over_33_33ms_percent": 0.0
+        }
+      },
+      "extra_native_timings": {
+        "Exclusive/GameThread/EventWait": {
+          "observations": 168,
+          "mean_ms": 34.938653571428574,
+          "median_ms": 34.0375,
+          "p95_ms": 42.4316,
+          "p99_ms": 50.7557,
+          "min_ms": 29.5672,
+          "max_ms": 58.8904,
+          "over_16_67ms_percent": 100.0,
+          "over_33_33ms_percent": 61.904761904761905
+        },
+        "Exclusive/RenderThread/EventWait": {
+          "observations": 168,
+          "mean_ms": 35.347569642857145,
+          "median_ms": 34.3534,
+          "p95_ms": 43.3619,
+          "p99_ms": 49.3444,
+          "min_ms": 28.9569,
+          "max_ms": 59.1601,
+          "over_16_67ms_percent": 100.0,
+          "over_33_33ms_percent": 72.61904761904762
+        },
+        "Slate/GameThread/DrawPrePass": {
+          "observations": 168,
+          "mean_ms": 36.14833273809524,
+          "median_ms": 35.1798,
+          "p95_ms": 43.6463,
+          "p99_ms": 52.5644,
+          "min_ms": 31.091,
+          "max_ms": 60.1685,
+          "over_16_67ms_percent": 100.0,
+          "over_33_33ms_percent": 89.28571428571429
+        },
+        "RenderThreadIdle/SwapBuffer": {
+          "observations": 168,
+          "mean_ms": 0.003119047619047619,
+          "median_ms": 0.003,
+          "p95_ms": 0.005,
+          "p99_ms": 0.008,
+          "min_ms": 0.002,
+          "max_ms": 0.008,
+          "over_16_67ms_percent": 0.0,
+          "over_33_33ms_percent": 0.0
+        },
+        "RenderThreadIdle/GPUQuery": {
+          "observations": 168,
+          "mean_ms": 0.0,
+          "median_ms": 0.0,
+          "p95_ms": 0.0,
+          "p99_ms": 0.0,
+          "min_ms": 0.0,
+          "max_ms": 0.0,
+          "over_16_67ms_percent": 0.0,
+          "over_33_33ms_percent": 0.0
+        },
+        "Exclusive/GameThread/TickActors": {
+          "observations": 168,
+          "mean_ms": 0.2168327380952381,
+          "median_ms": 0.1953,
+          "p95_ms": 0.3058,
+          "p99_ms": 0.329,
+          "min_ms": 0.1557,
+          "max_ms": 0.3322,
+          "over_16_67ms_percent": 0.0,
+          "over_33_33ms_percent": 0.0
+        },
+        "Exclusive/GameThread/Animation": {
+          "observations": 168,
+          "mean_ms": 0.08185535714285715,
+          "median_ms": 0.07350000000000001,
+          "p95_ms": 0.1135,
+          "p99_ms": 0.1393,
+          "min_ms": 0.0632,
+          "max_ms": 0.1396,
+          "over_16_67ms_percent": 0.0,
+          "over_33_33ms_percent": 0.0
+        }
+      },
+      "wait_correlations": {
+        "SlatePrepass_vs_GameEventWait": 0.9961749319750846,
+        "SlatePrepass_vs_following_FrameTime": 0.9902184508217995
+      },
+      "renderer_settings": {
+        "sg.ViewDistanceQuality": 3,
+        "sg.AntiAliasingQuality": 3,
+        "sg.ShadowQuality": 3,
+        "sg.GlobalIlluminationQuality": 3,
+        "sg.ReflectionQuality": 3,
+        "sg.PostProcessQuality": 3,
+        "sg.TextureQuality": 3,
+        "sg.EffectsQuality": 3,
+        "sg.FoliageQuality": 3,
+        "r.Streaming.PoolSize": 1000,
+        "r.Shadow.Virtual.MaxPhysicalPages": 4096,
+        "r.ScreenPercentage": 0.0,
+        "t.MaxFPS": 60.0
+      },
+      "effective_readbacks": {
+        "auto_stream_pie": false,
+        "start_on_launch": false,
+        "throttle_cpu_when_not_foreground": false,
+        "csv_block_on_capture_end": 1,
+        "csv_compression_mode": 0,
+        "t.MaxFPS": 60.0,
+        "r.VSync": 0,
+        "r.VSyncEditor": 0
+      },
+      "fixture_isolation": {
+        "requested_actor_counts": {
+          "ParkResident": 110,
+          "Car": 44
+        },
+        "requested_owned_component_counts": {
+          "ParkResident": 1100,
+          "Car": 1382
+        },
+        "checkpoints": [
+          {
+            "stage": "warm_up",
+            "passed": true,
+            "observed": {
+              "ParkResident": {
+                "actors": 110,
+                "hidden": 110,
+                "collision_disabled": 110,
+                "actor_ticks_disabled": 110,
+                "owned_components": 1100,
+                "component_ticks_disabled": 1100
+              },
+              "Car": {
+                "actors": 44,
+                "hidden": 44,
+                "collision_disabled": 44,
+                "actor_ticks_disabled": 44,
+                "owned_components": 1382,
+                "component_ticks_disabled": 1382
+              }
+            },
+            "failures": []
+          },
+          {
+            "stage": "completion",
+            "passed": true,
+            "observed": {
+              "ParkResident": {
+                "actors": 110,
+                "hidden": 110,
+                "collision_disabled": 110,
+                "actor_ticks_disabled": 110,
+                "owned_components": 1100,
+                "component_ticks_disabled": 1100
+              },
+              "Car": {
+                "actors": 44,
+                "hidden": 44,
+                "collision_disabled": 44,
+                "actor_ticks_disabled": 44,
+                "owned_components": 1382,
+                "component_ticks_disabled": 1382
+              }
+            },
+            "failures": []
+          }
+        ],
+        "scope": "disposable PIE residents/cars only; actor and owned component primary ticks, visibility and actor collision; no render/FPS acceptance"
+      },
+      "candidate_asset_status": {
+        "body_source": "Data/GraphicNovel/Pilot/CurlyMetalhead/refined-v1/body.fbx",
+        "body_sha256": "e231d727117e76ac2fe0f44921517a0c6256ce9abc2f97dd36c92e1add05930b",
+        "provenance_file": "Data/GraphicNovel/Pilot/CurlyMetalhead/refined-v1/body.json",
+        "provenance_sha256": "d0be37e3288dce9d9f701b799e882e25edbb2bdb3597ba97450ffd7114a6f5c4",
+        "original_generated_body_sha256": "a9f1a81f16986a17a50571b7ed536b1e4137778a8024979576cd427365c3a62e",
+        "reviewed_mask_sha256": "bba92f3782f8056f08b0f41160940c561688f7c07d80de9565a7177aa7746ba8",
+        "original_fbx_contents_identical_except_appended_uv1_layer": true,
+        "fresh_reimport_geometry_normals_uv0_weights_binds_identical": true,
+        "graphics_accepted": false,
+        "scope": "refined UV1 collar color only; original generated maps and own clips; body-only rig with static face and fingers; no visual acceptance"
+      },
+      "native_motion_observations": 171,
+      "native_phase_checks": {
+        "phase_counts": {
+          "idle": 9,
+          "walk": 35,
+          "sprint": 36,
+          "turn": 20,
+          "stop": 18,
+          "jump": 32,
+          "landing": 5,
+          "recover": 16
+        },
+        "steady_motion": {
+          "walk": {
+            "steady_samples": 27,
+            "foot_pose_change_pairs": 26
+          },
+          "sprint": {
+            "steady_samples": 29,
+            "foot_pose_change_pairs": 28
+          }
+        },
+        "directional_turn_degrees": 90.0,
+        "jump_peak_cm": 183.475,
+        "jump_horizontal_drift_cm": 0.0,
+        "airborne_knee_degrees": 60.863,
+        "scope": "selected native state and pose observations at 1x; no rendered fluidity or FPS acceptance"
+      },
+      "finger_control_count": 0,
+      "face_morph_count": 0,
+      "mapped_normal_strength": 1.0,
+      "material_uv_channels": {
+        "base_color": 1,
+        "normal": 0,
+        "roughness": 0,
+        "metallic": 0
+      },
+      "native_material_readback": {
+        "slots": [
+          {
+            "index": 0,
+            "imported": "/Game/ParkComic/CrewGraphicNovelGenerated/Resident9/M_Crew.M_Crew",
+            "live": "/Game/ParkComic/CrewGraphicNovelGenerated/Resident9/M_Crew.M_Crew",
+            "matches": true
+          }
+        ],
+        "override_count": 0,
+        "assigned_override_count": 0,
+        "scope": "read only; native component materials were not repaired by this motion fixture"
+      },
+      "fixture_sha256": "1ae3ac548e738ddc1ca5948a47230ac56f7b02338deb2c15e90ac99f42c6e9b7",
+      "wrapper_sha256": "afc14f554402a3cc60e6aa8b21904b6cdfd8d3563c1ccbed7ead1fc8ffb6b066"
+    },
+    "HighDetailComic": {
+      "summary": "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/GraphicNovel/HighDetailMotion-20261014T084528Z/Performance/HighDetailComic.json",
+      "summary_sha256": "0b759a8c000db2715570b238b3dda7bd475920d2e809cc7c4643de01912643d8",
+      "csv": "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/GraphicNovel/HighDetailMotion-20261014T084528Z/MotionProfile/Capture/Motion/Comic/HighDetail-20261014T084528Z-Comic-1920.csv",
+      "csv_sha256": "cb50ee017459ee981ad1f4f3acd896c327c767971f2dd40b91d1e5806d767e58",
+      "native_report": "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/GraphicNovel/HighDetailMotion-20261014T084528Z/MotionProfile/Capture/Motion/Comic/PlayerMotion1920.json",
+      "native_report_sha256": "ca3a34d1b9d21d49b3a4ab0e128ca8323b041013d8db56af845c76b1c8bc1a1b",
+      "native_passed": true,
+      "csv_flushed_and_hash_verified": true,
+      "csv_numeric_frames": 170,
+      "selected_frames": 166,
+      "csv_average_hz": 24.59438160612868,
+      "editor_counter_hz": 24.574633452619675,
+      "timings": {
+        "FrameTime": {
+          "observations": 166,
+          "mean_ms": 40.65969277108434,
+          "median_ms": 39.13655,
+          "p95_ms": 51.6416,
+          "p99_ms": 54.8201,
+          "min_ms": 36.4418,
+          "max_ms": 57.1747,
+          "over_16_67ms_percent": 100.0,
+          "over_33_33ms_percent": 100.0,
+          "nonpositive_or_missing_observations": 0
+        },
+        "GameThreadTime": {
+          "observations": 166,
+          "mean_ms": 5.4311566265060245,
+          "median_ms": 5.3375,
+          "p95_ms": 7.151,
+          "p99_ms": 7.831,
+          "min_ms": 4.06,
+          "max_ms": 9.26,
+          "over_16_67ms_percent": 0.0,
+          "over_33_33ms_percent": 0.0,
+          "nonpositive_or_missing_observations": 0
+        },
+        "RenderThreadTime": {
+          "observations": 166,
+          "mean_ms": 0.002024096385542169,
+          "median_ms": 0.002,
+          "p95_ms": 0.003,
+          "p99_ms": 0.004,
+          "min_ms": 0.001,
+          "max_ms": 0.004,
+          "over_16_67ms_percent": 0.0,
+          "over_33_33ms_percent": 0.0,
+          "nonpositive_or_missing_observations": 0
+        },
+        "RHIThreadTime": {
+          "observations": 166,
+          "mean_ms": 0.15530722891566265,
+          "median_ms": 0.11699999999999999,
+          "p95_ms": 0.365,
+          "p99_ms": 0.392,
+          "min_ms": 0.058,
+          "max_ms": 0.396,
+          "over_16_67ms_percent": 0.0,
+          "over_33_33ms_percent": 0.0,
+          "nonpositive_or_missing_observations": 0
+        },
+        "GPUTime": {
+          "observations": 166,
+          "mean_ms": 11.179885542168675,
+          "median_ms": 11.086,
+          "p95_ms": 12.281,
+          "p99_ms": 18.305,
+          "min_ms": 9.916,
+          "max_ms": 19.504,
+          "over_16_67ms_percent": 1.2048192771084338,
+          "over_33_33ms_percent": 0.0,
+          "nonpositive_or_missing_observations": 0
+        },
+        "GameThreadTime_CriticalPath": {
+          "observations": 166,
+          "mean_ms": 5.4311566265060245,
+          "median_ms": 5.3375,
+          "p95_ms": 7.151,
+          "p99_ms": 7.831,
+          "min_ms": 4.06,
+          "max_ms": 9.26,
+          "over_16_67ms_percent": 0.0,
+          "over_33_33ms_percent": 0.0,
+          "nonpositive_or_missing_observations": 0
+        },
+        "RenderThreadTime_CriticalPath": {
+          "observations": 166,
+          "mean_ms": 0.002024096385542169,
+          "median_ms": 0.002,
+          "p95_ms": 0.003,
+          "p99_ms": 0.004,
+          "min_ms": 0.001,
+          "max_ms": 0.004,
+          "over_16_67ms_percent": 0.0,
+          "over_33_33ms_percent": 0.0,
+          "nonpositive_or_missing_observations": 0
+        }
+      },
+      "callback_timings": {
+        "motion_callback_ms": {
+          "observations": 170,
+          "mean_ms": 0.4620936232694315,
+          "median_ms": 0.38459149800473824,
+          "p95_ms": 0.7093550011632033,
+          "p99_ms": 0.7679460031795315,
+          "min_ms": 0.0715019996277988,
+          "max_ms": 0.7739349966868758,
+          "over_16_67ms_percent": 0.0,
+          "over_33_33ms_percent": 0.0
+        },
+        "sample_ms": {
+          "observations": 169,
+          "mean_ms": 0.2945944439628735,
+          "median_ms": 0.23279299784917384,
+          "p95_ms": 0.4498769994825125,
+          "p99_ms": 0.4811489998246543,
+          "min_ms": 0.19292800425319,
+          "max_ms": 0.5341290016076528,
+          "over_16_67ms_percent": 0.0,
+          "over_33_33ms_percent": 0.0
+        }
+      },
+      "extra_native_timings": {
+        "Exclusive/GameThread/EventWait": {
+          "observations": 166,
+          "mean_ms": 35.28642590361446,
+          "median_ms": 34.05605,
+          "p95_ms": 45.3156,
+          "p99_ms": 50.1616,
+          "min_ms": 30.0389,
+          "max_ms": 51.3957,
+          "over_16_67ms_percent": 100.0,
+          "over_33_33ms_percent": 65.66265060240964
+        },
+        "Exclusive/RenderThread/EventWait": {
+          "observations": 166,
+          "mean_ms": 35.62027469879518,
+          "median_ms": 34.23725,
+          "p95_ms": 46.7327,
+          "p99_ms": 49.2631,
+          "min_ms": 30.8041,
+          "max_ms": 51.636,
+          "over_16_67ms_percent": 100.0,
+          "over_33_33ms_percent": 70.48192771084338
+        },
+        "Slate/GameThread/DrawPrePass": {
+          "observations": 166,
+          "mean_ms": 36.54787409638554,
+          "median_ms": 35.2237,
+          "p95_ms": 46.7473,
+          "p99_ms": 51.513,
+          "min_ms": 31.1447,
+          "max_ms": 52.7863,
+          "over_16_67ms_percent": 100.0,
+          "over_33_33ms_percent": 87.34939759036145
+        },
+        "RenderThreadIdle/SwapBuffer": {
+          "observations": 166,
+          "mean_ms": 0.0030722891566265062,
+          "median_ms": 0.003,
+          "p95_ms": 0.005,
+          "p99_ms": 0.005,
+          "min_ms": 0.002,
+          "max_ms": 0.006,
+          "over_16_67ms_percent": 0.0,
+          "over_33_33ms_percent": 0.0
+        },
+        "RenderThreadIdle/GPUQuery": {
+          "observations": 166,
+          "mean_ms": 0.0,
+          "median_ms": 0.0,
+          "p95_ms": 0.0,
+          "p99_ms": 0.0,
+          "min_ms": 0.0,
+          "max_ms": 0.0,
+          "over_16_67ms_percent": 0.0,
+          "over_33_33ms_percent": 0.0
+        },
+        "Exclusive/GameThread/TickActors": {
+          "observations": 166,
+          "mean_ms": 0.21465963855421688,
+          "median_ms": 0.19175,
+          "p95_ms": 0.2965,
+          "p99_ms": 0.3245,
+          "min_ms": 0.1572,
+          "max_ms": 0.5022,
+          "over_16_67ms_percent": 0.0,
+          "over_33_33ms_percent": 0.0
+        },
+        "Exclusive/GameThread/Animation": {
+          "observations": 166,
+          "mean_ms": 0.07964277108433734,
+          "median_ms": 0.07135,
+          "p95_ms": 0.1122,
+          "p99_ms": 0.1223,
+          "min_ms": 0.0614,
+          "max_ms": 0.1253,
+          "over_16_67ms_percent": 0.0,
+          "over_33_33ms_percent": 0.0
+        }
+      },
+      "wait_correlations": {
+        "SlatePrepass_vs_GameEventWait": 0.9942452020534506,
+        "SlatePrepass_vs_following_FrameTime": 0.9924592097571976
+      },
+      "renderer_settings": {
+        "sg.ViewDistanceQuality": 3,
+        "sg.AntiAliasingQuality": 3,
+        "sg.ShadowQuality": 3,
+        "sg.GlobalIlluminationQuality": 3,
+        "sg.ReflectionQuality": 3,
+        "sg.PostProcessQuality": 3,
+        "sg.TextureQuality": 3,
+        "sg.EffectsQuality": 3,
+        "sg.FoliageQuality": 3,
+        "r.Streaming.PoolSize": 1000,
+        "r.Shadow.Virtual.MaxPhysicalPages": 4096,
+        "r.ScreenPercentage": 0.0,
+        "t.MaxFPS": 60.0
+      },
+      "effective_readbacks": {
+        "auto_stream_pie": false,
+        "start_on_launch": false,
+        "throttle_cpu_when_not_foreground": false,
+        "csv_block_on_capture_end": 1,
+        "csv_compression_mode": 0,
+        "t.MaxFPS": 60.0,
+        "r.VSync": 0,
+        "r.VSyncEditor": 0
+      },
+      "fixture_isolation": {
+        "requested_actor_counts": {
+          "ParkResident": 110,
+          "Car": 45
+        },
+        "requested_owned_component_counts": {
+          "ParkResident": 1100,
+          "Car": 1413
+        },
+        "checkpoints": [
+          {
+            "stage": "warm_up",
+            "passed": true,
+            "observed": {
+              "ParkResident": {
+                "actors": 110,
+                "hidden": 110,
+                "collision_disabled": 110,
+                "actor_ticks_disabled": 110,
+                "owned_components": 1100,
+                "component_ticks_disabled": 1100
+              },
+              "Car": {
+                "actors": 45,
+                "hidden": 45,
+                "collision_disabled": 45,
+                "actor_ticks_disabled": 45,
+                "owned_components": 1413,
+                "component_ticks_disabled": 1413
+              }
+            },
+            "failures": []
+          },
+          {
+            "stage": "completion",
+            "passed": true,
+            "observed": {
+              "ParkResident": {
+                "actors": 110,
+                "hidden": 110,
+                "collision_disabled": 110,
+                "actor_ticks_disabled": 110,
+                "owned_components": 1100,
+                "component_ticks_disabled": 1100
+              },
+              "Car": {
+                "actors": 45,
+                "hidden": 45,
+                "collision_disabled": 45,
+                "actor_ticks_disabled": 45,
+                "owned_components": 1413,
+                "component_ticks_disabled": 1413
+              }
+            },
+            "failures": []
+          }
+        ],
+        "scope": "disposable PIE residents/cars only; actor and owned component primary ticks, visibility and actor collision; no render/FPS acceptance"
+      },
+      "candidate_asset_status": {
+        "body_source": "Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/body.fbx",
+        "body_sha256": "b7e7ca0d9c486412108cba85e1cd4a5512fecd4ad36b8cfdb4677259ff6f9244",
+        "generation_request_id": "01a13971-5e0a-73e0-8e68-730896d2cee3",
+        "manifest_sha256": "d942b4ec45c3b28ef54c0afeb991278528fd74252ec7208cd518519277fd18bc",
+        "source_review": "Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/source-review.json",
+        "source_review_sha256": "a2ea79458aef0ad20ee1cb00b262269c509db230ca94b9c03cfc8bebeaacd3d8",
+        "source_files_verified": 14,
+        "weighted_body_bones": 24,
+        "uv_channels": 1,
+        "graphics_accepted": false,
+        "scope": "isolated high-detail native A/B; raw UV0 body and own clips; static face and fingers; no default promotion or art acceptance"
+      },
+      "native_motion_observations": 169,
+      "native_phase_checks": {
+        "phase_counts": {
+          "idle": 9,
+          "walk": 35,
+          "sprint": 35,
+          "turn": 19,
+          "stop": 18,
+          "jump": 32,
+          "landing": 6,
+          "recover": 15
+        },
+        "steady_motion": {
+          "walk": {
+            "steady_samples": 28,
+            "foot_pose_change_pairs": 27
+          },
+          "sprint": {
+            "steady_samples": 28,
+            "foot_pose_change_pairs": 27
+          }
+        },
+        "directional_turn_degrees": 90.0,
+        "jump_peak_cm": 183.576,
+        "jump_horizontal_drift_cm": 0.0,
+        "airborne_knee_degrees": 62.485,
+        "scope": "selected native state and pose observations at 1x; no rendered fluidity or FPS acceptance"
+      },
+      "finger_control_count": 0,
+      "face_morph_count": 0,
+      "mapped_normal_strength": 1.0,
+      "material_uv_channels": {
+        "base_color": 0,
+        "normal": 0,
+        "roughness": 0,
+        "metallic": 0
+      },
+      "native_material_readback": {
+        "slots": [
+          {
+            "index": 0,
+            "imported": "/Game/ParkComic/CrewGraphicNovelHighDetail/Resident9/M_Crew.M_Crew",
+            "live": "/Game/ParkComic/CrewGraphicNovelHighDetail/Resident9/M_Crew.M_Crew",
+            "matches": true
+          }
+        ],
+        "override_count": 0,
+        "assigned_override_count": 0,
+        "scope": "read only; native component materials were not repaired by this motion fixture"
+      },
+      "fixture_sha256": "b39d99e4026fbd98728956bc8e7fcfb72546c51b83a5a179f87b19e8694e175f",
+      "wrapper_sha256": "39aea46a85932e3168940ded8255871995bd7f68986c37fda569fea67bb516de"
+    },
+    "RefinedBaselineComic": {
+      "summary": "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/GraphicNovel/RefinedRender-20261014T075500Z/Performance/FixedComic.json",
+      "summary_sha256": "14ddad7fcfef4ae9826e066fbd2e91df6abc9549f84e3b7b5acf1cab7acd5bd7",
+      "csv": "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/GraphicNovel/RefinedRender-20261014T075500Z/Fixed/Capture/Motion/Comic/FixedRefinedRender20261014T075500Z-Comic-1920.csv",
+      "csv_sha256": "0509ce083ad442a766e32d65c6a97fba06ffe469816319ad89a7aec47b0c5824",
+      "native_report": "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/GraphicNovel/RefinedRender-20261014T075500Z/Fixed/Capture/Motion/Comic/PlayerMotion1920.json",
+      "native_report_sha256": "04f538c96f98daa10f2d17e8f74ef1b235a327ae49b418acf0f1349f0bb1afaf",
+      "native_passed": true,
+      "csv_flushed_and_hash_verified": true,
+      "csv_numeric_frames": 173,
+      "selected_frames": 169,
+      "csv_average_hz": 25.191265428066306,
+      "editor_counter_hz": 25.17660215406324,
+      "timings": {
+        "FrameTime": {
+          "observations": 169,
+          "mean_ms": 39.696298816568046,
+          "median_ms": 38.6123,
+          "p95_ms": 45.9945,
+          "p99_ms": 53.096,
+          "min_ms": 33.9499,
+          "max_ms": 59.7914,
+          "over_16_67ms_percent": 100.0,
+          "over_33_33ms_percent": 100.0,
+          "nonpositive_or_missing_observations": 0
+        },
+        "GameThreadTime": {
+          "observations": 169,
+          "mean_ms": 5.553420118343195,
+          "median_ms": 5.315,
+          "p95_ms": 6.886,
+          "p99_ms": 7.483,
+          "min_ms": 4.249,
+          "max_ms": 8.096,
+          "over_16_67ms_percent": 0.0,
+          "over_33_33ms_percent": 0.0,
+          "nonpositive_or_missing_observations": 0
+        },
+        "RenderThreadTime": {
+          "observations": 169,
+          "mean_ms": 0.0022781065088757395,
+          "median_ms": 0.002,
+          "p95_ms": 0.004,
+          "p99_ms": 0.004,
+          "min_ms": 0.001,
+          "max_ms": 0.006,
+          "over_16_67ms_percent": 0.0,
+          "over_33_33ms_percent": 0.0,
+          "nonpositive_or_missing_observations": 0
+        },
+        "RHIThreadTime": {
+          "observations": 169,
+          "mean_ms": 0.15695266272189348,
+          "median_ms": 0.109,
+          "p95_ms": 0.339,
+          "p99_ms": 0.388,
+          "min_ms": 0.066,
+          "max_ms": 0.398,
+          "over_16_67ms_percent": 0.0,
+          "over_33_33ms_percent": 0.0,
+          "nonpositive_or_missing_observations": 0
+        },
+        "GPUTime": {
+          "observations": 169,
+          "mean_ms": 10.55676923076923,
+          "median_ms": 10.518,
+          "p95_ms": 11.551,
+          "p99_ms": 12.134,
+          "min_ms": 9.278,
+          "max_ms": 12.153,
+          "over_16_67ms_percent": 0.0,
+          "over_33_33ms_percent": 0.0,
+          "nonpositive_or_missing_observations": 0
+        },
+        "GameThreadTime_CriticalPath": {
+          "observations": 169,
+          "mean_ms": 5.553420118343195,
+          "median_ms": 5.315,
+          "p95_ms": 6.886,
+          "p99_ms": 7.483,
+          "min_ms": 4.249,
+          "max_ms": 8.096,
+          "over_16_67ms_percent": 0.0,
+          "over_33_33ms_percent": 0.0,
+          "nonpositive_or_missing_observations": 0
+        },
+        "RenderThreadTime_CriticalPath": {
+          "observations": 169,
+          "mean_ms": 0.0022781065088757395,
+          "median_ms": 0.002,
+          "p95_ms": 0.004,
+          "p99_ms": 0.004,
+          "min_ms": 0.001,
+          "max_ms": 0.006,
+          "over_16_67ms_percent": 0.0,
+          "over_33_33ms_percent": 0.0,
+          "nonpositive_or_missing_observations": 0
+        }
+      },
+      "callback_timings": {
+        "motion_callback_ms": {
+          "observations": 173,
+          "mean_ms": 0.481471901566377,
+          "median_ms": 0.39441099943360314,
+          "p95_ms": 0.715811998816207,
+          "p99_ms": 0.922271006857045,
+          "min_ms": 0.07124800322344527,
+          "max_ms": 0.9499029983999208,
+          "over_16_67ms_percent": 0.0,
+          "over_33_33ms_percent": 0.0
+        },
+        "sample_ms": {
+          "observations": 172,
+          "mean_ms": 0.3100089130850054,
+          "median_ms": 0.24431400015600957,
+          "p95_ms": 0.47860499762464315,
+          "p99_ms": 0.681847996020224,
+          "min_ms": 0.19519199850037694,
+          "max_ms": 0.6952330004423857,
+          "over_16_67ms_percent": 0.0,
+          "over_33_33ms_percent": 0.0
+        }
+      },
+      "extra_native_timings": {
+        "Exclusive/GameThread/EventWait": {
+          "observations": 169,
+          "mean_ms": 34.17746627218935,
+          "median_ms": 33.2132,
+          "p95_ms": 40.6158,
+          "p99_ms": 46.4702,
+          "min_ms": 29.7561,
+          "max_ms": 51.8479,
+          "over_16_67ms_percent": 100.0,
+          "over_33_33ms_percent": 47.928994082840234
+        },
+        "Exclusive/RenderThread/EventWait": {
+          "observations": 169,
+          "mean_ms": 34.53255325443787,
+          "median_ms": 33.5802,
+          "p95_ms": 41.3362,
+          "p99_ms": 47.2821,
+          "min_ms": 29.2126,
+          "max_ms": 52.0568,
+          "over_16_67ms_percent": 100.0,
+          "over_33_33ms_percent": 55.02958579881657
+        },
+        "Slate/GameThread/DrawPrePass": {
+          "observations": 169,
+          "mean_ms": 35.48631597633136,
+          "median_ms": 34.4318,
+          "p95_ms": 41.7279,
+          "p99_ms": 48.0038,
+          "min_ms": 30.9299,
+          "max_ms": 54.191,
+          "over_16_67ms_percent": 100.0,
+          "over_33_33ms_percent": 78.10650887573965
+        },
+        "RenderThreadIdle/SwapBuffer": {
+          "observations": 169,
+          "mean_ms": 0.003242603550295858,
+          "median_ms": 0.003,
+          "p95_ms": 0.005,
+          "p99_ms": 0.007,
+          "min_ms": 0.002,
+          "max_ms": 0.009,
+          "over_16_67ms_percent": 0.0,
+          "over_33_33ms_percent": 0.0
+        },
+        "RenderThreadIdle/GPUQuery": {
+          "observations": 169,
+          "mean_ms": 0.0,
+          "median_ms": 0.0,
+          "p95_ms": 0.0,
+          "p99_ms": 0.0,
+          "min_ms": 0.0,
+          "max_ms": 0.0,
+          "over_16_67ms_percent": 0.0,
+          "over_33_33ms_percent": 0.0
+        },
+        "Exclusive/GameThread/TickActors": {
+          "observations": 169,
+          "mean_ms": 0.2160644970414201,
+          "median_ms": 0.1955,
+          "p95_ms": 0.2987,
+          "p99_ms": 0.331,
+          "min_ms": 0.1581,
+          "max_ms": 0.3334,
+          "over_16_67ms_percent": 0.0,
+          "over_33_33ms_percent": 0.0
+        },
+        "Exclusive/GameThread/Animation": {
+          "observations": 169,
+          "mean_ms": 0.08209644970414201,
+          "median_ms": 0.0721,
+          "p95_ms": 0.12,
+          "p99_ms": 0.1381,
+          "min_ms": 0.0621,
+          "max_ms": 0.2689,
+          "over_16_67ms_percent": 0.0,
+          "over_33_33ms_percent": 0.0
+        }
+      },
+      "wait_correlations": {
+        "SlatePrepass_vs_GameEventWait": 0.9938724330634173,
+        "SlatePrepass_vs_following_FrameTime": 0.9847530067397845
+      },
+      "renderer_settings": {
+        "sg.ViewDistanceQuality": 3,
+        "sg.AntiAliasingQuality": 3,
+        "sg.ShadowQuality": 3,
+        "sg.GlobalIlluminationQuality": 3,
+        "sg.ReflectionQuality": 3,
+        "sg.PostProcessQuality": 3,
+        "sg.TextureQuality": 3,
+        "sg.EffectsQuality": 3,
+        "sg.FoliageQuality": 3,
+        "r.Streaming.PoolSize": 1000,
+        "r.Shadow.Virtual.MaxPhysicalPages": 4096,
+        "r.ScreenPercentage": 0.0,
+        "t.MaxFPS": 60.0
+      },
+      "effective_readbacks": {
+        "auto_stream_pie": false,
+        "start_on_launch": false,
+        "throttle_cpu_when_not_foreground": false,
+        "csv_block_on_capture_end": 1,
+        "csv_compression_mode": 0,
+        "t.MaxFPS": 60.0,
+        "r.VSync": 0,
+        "r.VSyncEditor": 0
+      },
+      "fixture_isolation": {
+        "requested_actor_counts": {
+          "ParkResident": 110,
+          "Car": 45
+        },
+        "requested_owned_component_counts": {
+          "ParkResident": 1100,
+          "Car": 1413
+        },
+        "checkpoints": [
+          {
+            "stage": "warm_up",
+            "passed": true,
+            "observed": {
+              "ParkResident": {
+                "actors": 110,
+                "hidden": 110,
+                "collision_disabled": 110,
+                "actor_ticks_disabled": 110,
+                "owned_components": 1100,
+                "component_ticks_disabled": 1100
+              },
+              "Car": {
+                "actors": 45,
+                "hidden": 45,
+                "collision_disabled": 45,
+                "actor_ticks_disabled": 45,
+                "owned_components": 1413,
+                "component_ticks_disabled": 1413
+              }
+            },
+            "failures": []
+          },
+          {
+            "stage": "completion",
+            "passed": true,
+            "observed": {
+              "ParkResident": {
+                "actors": 110,
+                "hidden": 110,
+                "collision_disabled": 110,
+                "actor_ticks_disabled": 110,
+                "owned_components": 1100,
+                "component_ticks_disabled": 1100
+              },
+              "Car": {
+                "actors": 45,
+                "hidden": 45,
+                "collision_disabled": 45,
+                "actor_ticks_disabled": 45,
+                "owned_components": 1413,
+                "component_ticks_disabled": 1413
+              }
+            },
+            "failures": []
+          }
+        ],
+        "scope": "disposable PIE residents/cars only; actor and owned component primary ticks, visibility and actor collision; no render/FPS acceptance"
+      },
+      "candidate_asset_status": {
+        "body_source": "Data/GraphicNovel/Pilot/CurlyMetalhead/refined-v1/body.fbx",
+        "body_sha256": "e231d727117e76ac2fe0f44921517a0c6256ce9abc2f97dd36c92e1add05930b",
+        "provenance_file": "Data/GraphicNovel/Pilot/CurlyMetalhead/refined-v1/body.json",
+        "provenance_sha256": "d0be37e3288dce9d9f701b799e882e25edbb2bdb3597ba97450ffd7114a6f5c4",
+        "original_generated_body_sha256": "a9f1a81f16986a17a50571b7ed536b1e4137778a8024979576cd427365c3a62e",
+        "reviewed_mask_sha256": "bba92f3782f8056f08b0f41160940c561688f7c07d80de9565a7177aa7746ba8",
+        "original_fbx_contents_identical_except_appended_uv1_layer": true,
+        "fresh_reimport_geometry_normals_uv0_weights_binds_identical": true,
+        "graphics_accepted": false,
+        "scope": "refined UV1 collar color only; original generated maps and own clips; body-only rig with static face and fingers; no visual acceptance"
+      },
+      "native_motion_observations": 172,
+      "native_phase_checks": {
+        "phase_counts": {
+          "idle": 9,
+          "walk": 35,
+          "sprint": 36,
+          "turn": 21,
+          "stop": 18,
+          "jump": 32,
+          "landing": 6,
+          "recover": 15
+        },
+        "steady_motion": {
+          "walk": {
+            "steady_samples": 27,
+            "foot_pose_change_pairs": 26
+          },
+          "sprint": {
+            "steady_samples": 29,
+            "foot_pose_change_pairs": 28
+          }
+        },
+        "directional_turn_degrees": 90.0,
+        "jump_peak_cm": 183.633,
+        "jump_horizontal_drift_cm": 0.0,
+        "airborne_knee_degrees": 60.997,
+        "scope": "selected native state and pose observations at 1x; no rendered fluidity or FPS acceptance"
+      },
+      "finger_control_count": 0,
+      "face_morph_count": 0,
+      "mapped_normal_strength": 1.0,
+      "material_uv_channels": {
+        "base_color": 1,
+        "normal": 0,
+        "roughness": 0,
+        "metallic": 0
+      },
+      "native_material_readback": {
+        "slots": [
+          {
+            "index": 0,
+            "imported": "/Game/ParkComic/CrewGraphicNovelGenerated/Resident9/M_Crew.M_Crew",
+            "live": "/Game/ParkComic/CrewGraphicNovelGenerated/Resident9/M_Crew.M_Crew",
+            "matches": true
+          }
+        ],
+        "override_count": 0,
+        "assigned_override_count": 0,
+        "scope": "read only; native component materials were not repaired by this motion fixture"
+      },
+      "fixture_sha256": "1ae3ac548e738ddc1ca5948a47230ac56f7b02338deb2c15e90ac99f42c6e9b7",
+      "wrapper_sha256": "afc14f554402a3cc60e6aa8b21904b6cdfd8d3563c1ccbed7ead1fc8ffb6b066"
+    }
+  },
+  "per_mode_comparison": {
+    "Standard": {
+      "settings_and_readbacks_match": true,
+      "per_mode_isolation_counts_match": true,
+      "csv_average_hz_delta": 0.11553540097926174,
+      "timings": {
+        "FrameTime": {
+          "baseline_mean_ms": 40.26571130952381,
+          "high_detail_mean_ms": 40.07925798816568,
+          "delta_mean_ms": -0.18645332135812964,
+          "delta_mean_percent": -0.46305731426139973,
+          "baseline_p95_ms": 48.1514,
+          "high_detail_p95_ms": 46.8405,
+          "delta_p95_ms": -1.3109000000000037
+        },
+        "GameThreadTime": {
+          "baseline_mean_ms": 5.3819404761904766,
+          "high_detail_mean_ms": 5.365331360946746,
+          "delta_mean_ms": -0.016609115243730876,
+          "delta_mean_percent": -0.30860830433203496,
+          "baseline_p95_ms": 6.834,
+          "high_detail_p95_ms": 6.892,
+          "delta_p95_ms": 0.05800000000000072
+        },
+        "RenderThreadTime": {
+          "baseline_mean_ms": 0.002375,
+          "high_detail_mean_ms": 0.002106508875739645,
+          "delta_mean_ms": -0.0002684911242603551,
+          "delta_mean_percent": -11.304889442541267,
+          "baseline_p95_ms": 0.004,
+          "high_detail_p95_ms": 0.003,
+          "delta_p95_ms": -0.001
+        },
+        "RHIThreadTime": {
+          "baseline_mean_ms": 0.14922619047619048,
+          "high_detail_mean_ms": 0.1358639053254438,
+          "delta_mean_ms": -0.013362285150746694,
+          "delta_mean_percent": -8.95438334792758,
+          "baseline_p95_ms": 0.338,
+          "high_detail_p95_ms": 0.309,
+          "delta_p95_ms": -0.029000000000000026
+        },
+        "GPUTime": {
+          "baseline_mean_ms": 11.15467857142857,
+          "high_detail_mean_ms": 11.102325443786983,
+          "delta_mean_ms": -0.05235312764158806,
+          "delta_mean_percent": -0.4693378415733519,
+          "baseline_p95_ms": 12.326,
+          "high_detail_p95_ms": 12.38,
+          "delta_p95_ms": 0.05400000000000027
+        }
+      }
+    },
+    "Comic": {
+      "settings_and_readbacks_match": true,
+      "per_mode_isolation_counts_match": true,
+      "csv_average_hz_delta": -0.5968838219376238,
+      "timings": {
+        "FrameTime": {
+          "baseline_mean_ms": 39.696298816568046,
+          "high_detail_mean_ms": 40.65969277108434,
+          "delta_mean_ms": 0.9633939545162917,
+          "delta_mean_percent": 2.4269112820014342,
+          "baseline_p95_ms": 45.9945,
+          "high_detail_p95_ms": 51.6416,
+          "delta_p95_ms": 5.647099999999995
+        },
+        "GameThreadTime": {
+          "baseline_mean_ms": 5.553420118343195,
+          "high_detail_mean_ms": 5.4311566265060245,
+          "delta_mean_ms": -0.12226349183717033,
+          "delta_mean_percent": -2.201589097020205,
+          "baseline_p95_ms": 6.886,
+          "high_detail_p95_ms": 7.151,
+          "delta_p95_ms": 0.2649999999999997
+        },
+        "RenderThreadTime": {
+          "baseline_mean_ms": 0.0022781065088757395,
+          "high_detail_mean_ms": 0.002024096385542169,
+          "delta_mean_ms": -0.0002540101233335706,
+          "delta_mean_percent": -11.15005476451258,
+          "baseline_p95_ms": 0.004,
+          "high_detail_p95_ms": 0.003,
+          "delta_p95_ms": -0.001
+        },
+        "RHIThreadTime": {
+          "baseline_mean_ms": 0.15695266272189348,
+          "high_detail_mean_ms": 0.15530722891566265,
+          "delta_mean_ms": -0.0016454338062308338,
+          "delta_mean_percent": -1.0483631036871288,
+          "baseline_p95_ms": 0.339,
+          "high_detail_p95_ms": 0.365,
+          "delta_p95_ms": 0.025999999999999968
+        },
+        "GPUTime": {
+          "baseline_mean_ms": 10.55676923076923,
+          "high_detail_mean_ms": 11.179885542168675,
+          "delta_mean_ms": 0.6231163113994445,
+          "delta_mean_percent": 5.902528489334425,
+          "baseline_p95_ms": 11.551,
+          "high_detail_p95_ms": 12.281,
+          "delta_p95_ms": 0.7300000000000004
+        }
+      }
+    }
+  },
+  "model_comparison": {
+    "baseline_body": "refined-v1/body.fbx",
+    "baseline_source_triangles": 31026,
+    "high_detail_body": "generated-v2-high-detail/body.fbx",
+    "high_detail_source_triangles": 103544,
+    "high_detail_weighted_body_bones": 24,
+    "high_detail_face_controls": false,
+    "high_detail_finger_controls": false,
+    "same_reference_hash": true,
+    "same_texture_prompt": true,
+    "same_seed_geometry_ablation": false,
+    "input_seed_control_supported": false,
+    "scope": "Stochastic body, topology, textures and own clips differ; the baseline also has the semantic UV1 collar colour repair. No polygon-only cost or causal visual claim."
+  },
+  "findings": [
+    "Standard is nearly unchanged in this observation: GPU 11.102 versus 11.155 ms; Game 5.365 versus 5.382 ms; frame mean 40.079 versus 40.266 ms; CSV rate 24.951 versus 24.835 Hz.",
+    "Comic records higher GPU and frame cost in this observation: GPU 11.180 versus 10.557 ms (+0.623 ms); frame mean 40.660 versus 39.696 ms (+0.963 ms), with frame p95 51.642 versus 45.995 ms. A single sequential comparison does not establish a reproducible regression or equivalence.",
+    "High-detail motion callbacks average 0.446/0.462 ms, with maxima 0.820/0.774 ms for Standard/Comic. Sample averages 0.282/0.295 ms and is already included; costs must not be added.",
+    "Corrected fixture counts match each corresponding baseline: Standard 110 residents/44 cars and 1100/1382 components; Comic 110/45 and 1100/1413. Warm and completion checkpoints all pass.",
+    "Both high-detail runs retain long editor waiting: Game EventWait 34.762/35.286 ms and Slate DrawPrePass 35.981/36.548 ms. These costs continue to limit observed editor cadence near 25 Hz despite MaxFPS 60.",
+    "The earlier trace establishes FlushRenderingCommands and render/frame synchronization as the enclosing wait owner. This analysis does not capture a new callstack or identify the triggering window/callsite or pending render/RHI operation.",
+    "Native high-detail selection precedes fixture overrides, its own skeleton/clips and one material match, live material override count is zero, UV0 is used for all maps and mapped normal strength is 1.0. Face and finger articulation remain absent."
+  ],
+  "settings_notes": {
+    "quality": "All recorded scalability groups 3 (Epic); texture pool 1000 MiB; virtual-shadow pages 4096.",
+    "screen_percentage": "0 is engine default policy, not measured explicit 100 percent.",
+    "streaming_and_throttle": "AutoStreamPIE, StartOnLaunch and background throttle false; VSync and VSyncEditor zero; MaxFPS 60.",
+    "parallel_timings": "Thread measurements overlap; the tiny aggregate RenderThreadTime is not complete editor rendering cost."
+  },
+  "prior_trace": {
+    "file": "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Verification/GraphicNovelCollarRefinement/EditorWaitTrace.json",
+    "sha256": "2df30ca67e264c2eadeb5baa4278d7ea3a890e9a43c3139620495ad5a4e68f97",
+    "enclosing_owner_identified": true,
+    "exact_triggering_caller_identified": false,
+    "status": "dominant enclosing wait owner resolved; triggering window/callsite and underlying render/RHI workload unresolved"
+  },
+  "excluded_attempt": {
+    "window": "HighDetailRender-20261014T083947Z",
+    "reason": "External SIGTERM interrupted the first motion job; two 720p still cells passed separately. No accepted motion evidence from that window is used here."
+  },
+  "acceptance": {
+    "native_functional_motion_checks": true,
+    "packaged_60fps": false,
+    "rendered_fluidity": false,
+    "performance_equivalence": false,
+    "reproducible_performance_regression": false,
+    "high_detail_adoption": false,
+    "final_graphics": false
+  },
+  "limits": [
+    "No continuous video playback or visual-quality review by this performance analysis.",
+    "No current cooked/package frame-time profile, co-op, physical controls or phone test.",
+    "No additional paid jobs, engine, GPU or service actions by this CPU analysis.",
+    "Use visual verdicts independently before any adoption; geometry count alone establishes neither art quality nor articulation."
+  ]
+}

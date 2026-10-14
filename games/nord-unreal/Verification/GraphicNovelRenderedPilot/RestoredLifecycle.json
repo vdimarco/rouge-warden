@@ -1,0 +1,33 @@
+{
+  "phase": "running",
+  "launcher_pid": 2729591,
+  "infrastructure_sha": "e5e243ed038313d3dad4e3fb9087d4393a5df192",
+  "stream_settings": {
+    "flags": [
+      "idle"
+    ],
+    "start_bitrate": 2000000,
+    "min_bitrate": 100000,
+    "max_bitrate": 12000000,
+    "scheduling": 0
+  },
+  "children": [
+    {
+      "name": "signalling",
+      "pid": 2729610,
+      "stdout": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/BrowserStreaming/signalling-20261014-052444-2729591.stdout.log"
+    },
+    {
+      "name": "host",
+      "pid": 2729657,
+      "stdout": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/BrowserStreaming/host-20261014-052444-2729591.stdout.log"
+    },
+    {
+      "name": "friend",
+      "pid": 2730064,
+      "stdout": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/BrowserStreaming/friend-20261014-052444-2729591.stdout.log"
+    }
+  ],
+  "post_browser_package_and_save_hashes_preserved": true,
+  "turn_container_preserved": true
+}

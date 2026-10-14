@@ -1,0 +1,21 @@
+{
+  "passed": true,
+  "recorded_utc": "2026-10-14T09:18:47.776463+00:00",
+  "scope": "Read-only after final A/B restoration/browser check; original6773Content/frozenmodels/settings/package/tunnels. Runtime guest-ID/connection state excluded.",
+  "source_head": "1b6455c31648f340a6d7748b3c473b26f7b30b9a",
+  "source_binary_sha256": "ccf4e229192cbf7360d93b155979a07c244caa5cb0fb2837fa94aeb79438b554",
+  "all_content_checked": 6773,
+  "all_content_changed": [],
+  "graphic_novel_sources_checked": 214,
+  "graphic_novel_sources_changed": [],
+  "live_package_checked": 48,
+  "live_package_changed": [],
+  "source_editor_ini_unchanged": true,
+  "global_editor_ini_unchanged": true,
+  "preserved_units_unchanged": true,
+  "turn_unchanged_running": true,
+  "demo": {
+    "ActiveState": "active",
+    "MainPID": "3609615"
+  }
+}

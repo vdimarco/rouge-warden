@@ -1,0 +1,468 @@
+{
+  "recorded_utc": "2026-10-14T08:40:22.867986+00:00",
+  "scope": "Opt-in generated-v1 collar albedo refinement checkpoint; higher-detail experiment is a separate forthcoming comparison.",
+  "accepted": {
+    "bounded_collar_colour_improvement": true,
+    "complete_collar_repair": false,
+    "final_graphics": false,
+    "continuous_motion": false,
+    "packaged_60fps": false,
+    "higher_detail_adoption": false,
+    "candidate_production_deployment": false
+  },
+  "curation": {
+    "manifest": "Verification/GraphicNovelCollarRefinement/files.json",
+    "manifest_sha256": "213ed131d9d070d88a6b0ec490af995934d27dadab13b9592134d76757f6dc4a",
+    "files": 64,
+    "all_manifest_hashes_verified": true,
+    "native_still_pngs": 28,
+    "raw_motion_videos": 2,
+    "other_reports_and_reviews": 34,
+    "raw_csv_trace_and_selected_frames": "Retained locally under ignored Saved/Tests/GraphicNovel; curated reports retain input hashes and review scope."
+  },
+  "refinement": {
+    "source": "Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v1/body.fbx",
+    "source_sha256": "a9f1a81f16986a17a50571b7ed536b1e4137778a8024979576cd427365c3a62e",
+    "body": "Data/GraphicNovel/Pilot/CurlyMetalhead/refined-v1/body.fbx",
+    "body_sha256": "e231d727117e76ac2fe0f44921517a0c6256ce9abc2f97dd36c92e1add05930b",
+    "provenance": "Data/GraphicNovel/Pilot/CurlyMetalhead/refined-v1/body.json",
+    "provenance_sha256": "d0be37e3288dce9d9f701b799e882e25edbb2bdb3597ba97450ffd7114a6f5c4",
+    "semantic_faces": 113,
+    "changed_uv1_corners": 339,
+    "mask_sha256": "bba92f3782f8056f08b0f41160940c561688f7c07d80de9565a7177aa7746ba8",
+    "remapped_texture": "albedo only; albedo-fed emission follows the same colour sample",
+    "material_uv_channels": {
+      "base_color": 1,
+      "normal": 0,
+      "roughness": 0,
+      "metallic": 0
+    },
+    "mapped_normal_strength": 1.0,
+    "preserved": [
+      "original source files and bitmaps",
+      "positions, topology, normals, UV0, weights and binds",
+      "own animation clips and skeleton"
+    ],
+    "original_fbx_contents_identical_except_appended_uv1_layer": true,
+    "fresh_reimport_geometry_normals_uv0_weights_binds_identical": true,
+    "allowed_native_asset_changes": [
+      "Content/ParkComic/CrewGraphicNovelGenerated/Resident9/SK_Body.uasset",
+      "Content/ParkComic/CrewGraphicNovelGenerated/Resident9/M_Crew.uasset"
+    ],
+    "remaining_defects": [
+      "jagged triangular neck-wall geometry",
+      "chunky shiny hair",
+      "static coarse fingers and face",
+      "pinched airborne shoulders",
+      "noisy scene ink and indigo comic palette shift"
+    ]
+  },
+  "native_verification": {
+    "animation_tests_passed": 4,
+    "pond_geometry_tests_passed": 1,
+    "radar_clip_tests_passed": 1,
+    "headless_jobs_passed": 4,
+    "still_matrix": "Standard/Comic x 1280x720/1920x1080 x seven views; all 28 cells pass. StillWindow overall fails later at its first motion wrapper.",
+    "motion": {
+      "Standard": {
+        "selected_observations": 171,
+        "checks": {
+          "phase_counts": {
+            "idle": 9,
+            "walk": 35,
+            "sprint": 36,
+            "turn": 20,
+            "stop": 18,
+            "jump": 32,
+            "landing": 5,
+            "recover": 16
+          },
+          "steady_motion": {
+            "walk": {
+              "steady_samples": 27,
+              "foot_pose_change_pairs": 26
+            },
+            "sprint": {
+              "steady_samples": 29,
+              "foot_pose_change_pairs": 28
+            }
+          },
+          "directional_turn_degrees": 90.0,
+          "jump_peak_cm": 183.475,
+          "jump_horizontal_drift_cm": 0.0,
+          "airborne_knee_degrees": 60.863,
+          "scope": "selected native state and pose observations at 1x; no rendered fluidity or FPS acceptance"
+        }
+      },
+      "Comic": {
+        "selected_observations": 172,
+        "checks": {
+          "phase_counts": {
+            "idle": 9,
+            "walk": 35,
+            "sprint": 36,
+            "turn": 21,
+            "stop": 18,
+            "jump": 32,
+            "landing": 6,
+            "recover": 15
+          },
+          "steady_motion": {
+            "walk": {
+              "steady_samples": 27,
+              "foot_pose_change_pairs": 26
+            },
+            "sprint": {
+              "steady_samples": 29,
+              "foot_pose_change_pairs": 28
+            }
+          },
+          "directional_turn_degrees": 90.0,
+          "jump_peak_cm": 183.633,
+          "jump_horizontal_drift_cm": 0.0,
+          "airborne_knee_degrees": 60.997,
+          "scope": "selected native state and pose observations at 1x; no rendered fluidity or FPS acceptance"
+        }
+      }
+    }
+  },
+  "fixture_erratum": {
+    "historical_claim": "One-time hidden/collision-off requests were not persistent isolation.",
+    "cause": "Resident Tick reconciles worn-crew visibility and unhides unworn residents; owned component ticks continue independently of actor tick.",
+    "correction": "Disable actor and owned-component primary ticks before hiding; verify exact actor/component sets, hidden state, collision and disabled ticks at warm-up/completion.",
+    "historical_comparison_limit": "Prior still captures remain real images, but their runtime background isolation was unverified; A/B is qualitative, with slight phase/camera differences.",
+    "production_simulation_changed": false
+  },
+  "editor_performance": {
+    "scope": "One sequential warmed Epic 1920x1080 editor run per cell on RTX 4090/i9-14900K; first/last two CSV frames discarded. No cooked-build benchmark.",
+    "results": {
+      "FixedStandard": {
+        "csv_numeric_frames": 172,
+        "selected_frames": 168,
+        "csv_average_hz": 24.835026315888673,
+        "editor_counter_hz": 24.79274138126017,
+        "frame_mean_ms": 40.26571130952381,
+        "frame_p95_ms": 48.1514,
+        "game_mean_ms": 5.3819404761904766,
+        "gpu_mean_ms": 11.15467857142857,
+        "motion_callback_mean_ms": 0.46100970355964394,
+        "motion_callback_max_ms": 0.8975259988801554,
+        "fixture_isolation": {
+          "requested_actor_counts": {
+            "ParkResident": 110,
+            "Car": 44
+          },
+          "requested_owned_component_counts": {
+            "ParkResident": 1100,
+            "Car": 1382
+          },
+          "checkpoints": [
+            {
+              "stage": "warm_up",
+              "passed": true,
+              "observed": {
+                "ParkResident": {
+                  "actors": 110,
+                  "hidden": 110,
+                  "collision_disabled": 110,
+                  "actor_ticks_disabled": 110,
+                  "owned_components": 1100,
+                  "component_ticks_disabled": 1100
+                },
+                "Car": {
+                  "actors": 44,
+                  "hidden": 44,
+                  "collision_disabled": 44,
+                  "actor_ticks_disabled": 44,
+                  "owned_components": 1382,
+                  "component_ticks_disabled": 1382
+                }
+              },
+              "failures": []
+            },
+            {
+              "stage": "completion",
+              "passed": true,
+              "observed": {
+                "ParkResident": {
+                  "actors": 110,
+                  "hidden": 110,
+                  "collision_disabled": 110,
+                  "actor_ticks_disabled": 110,
+                  "owned_components": 1100,
+                  "component_ticks_disabled": 1100
+                },
+                "Car": {
+                  "actors": 44,
+                  "hidden": 44,
+                  "collision_disabled": 44,
+                  "actor_ticks_disabled": 44,
+                  "owned_components": 1382,
+                  "component_ticks_disabled": 1382
+                }
+              },
+              "failures": []
+            }
+          ],
+          "scope": "disposable PIE residents/cars only; actor and owned component primary ticks, visibility and actor collision; no render/FPS acceptance"
+        }
+      },
+      "FixedComic": {
+        "csv_numeric_frames": 173,
+        "selected_frames": 169,
+        "csv_average_hz": 25.191265428066306,
+        "editor_counter_hz": 25.17660215406324,
+        "frame_mean_ms": 39.696298816568046,
+        "frame_p95_ms": 45.9945,
+        "game_mean_ms": 5.553420118343195,
+        "gpu_mean_ms": 10.55676923076923,
+        "motion_callback_mean_ms": 0.481471901566377,
+        "motion_callback_max_ms": 0.9499029983999208,
+        "fixture_isolation": {
+          "requested_actor_counts": {
+            "ParkResident": 110,
+            "Car": 45
+          },
+          "requested_owned_component_counts": {
+            "ParkResident": 1100,
+            "Car": 1413
+          },
+          "checkpoints": [
+            {
+              "stage": "warm_up",
+              "passed": true,
+              "observed": {
+                "ParkResident": {
+                  "actors": 110,
+                  "hidden": 110,
+                  "collision_disabled": 110,
+                  "actor_ticks_disabled": 110,
+                  "owned_components": 1100,
+                  "component_ticks_disabled": 1100
+                },
+                "Car": {
+                  "actors": 45,
+                  "hidden": 45,
+                  "collision_disabled": 45,
+                  "actor_ticks_disabled": 45,
+                  "owned_components": 1413,
+                  "component_ticks_disabled": 1413
+                }
+              },
+              "failures": []
+            },
+            {
+              "stage": "completion",
+              "passed": true,
+              "observed": {
+                "ParkResident": {
+                  "actors": 110,
+                  "hidden": 110,
+                  "collision_disabled": 110,
+                  "actor_ticks_disabled": 110,
+                  "owned_components": 1100,
+                  "component_ticks_disabled": 1100
+                },
+                "Car": {
+                  "actors": 45,
+                  "hidden": 45,
+                  "collision_disabled": 45,
+                  "actor_ticks_disabled": 45,
+                  "owned_components": 1413,
+                  "component_ticks_disabled": 1413
+                }
+              },
+              "failures": []
+            }
+          ],
+          "scope": "disposable PIE residents/cars only; actor and owned component primary ticks, visibility and actor collision; no render/FPS acceptance"
+        }
+      },
+      "OldFixtureStandard": {
+        "csv_numeric_frames": 167,
+        "selected_frames": 163,
+        "csv_average_hz": 23.860844841079672,
+        "editor_counter_hz": 23.883448770002385,
+        "frame_mean_ms": 41.909664417177915,
+        "frame_p95_ms": 53.0616,
+        "game_mean_ms": 10.048331288343558,
+        "gpu_mean_ms": 11.291920245398773,
+        "motion_callback_mean_ms": 0.4417451017436538,
+        "motion_callback_max_ms": 0.8947910027927719,
+        "fixture_isolation": {
+          "requested_actor_counts": {
+            "ParkResident": 110,
+            "Car": 44
+          },
+          "verification": "unverified one-time hide/collision requests; actor and component ticks unchanged"
+        }
+      }
+    },
+    "matched_standard_game_work_reduction_ms": 4.6663908121530815,
+    "matched_standard_game_work_reduction_percent": 46.43946022725455,
+    "matched_standard_frame_period_reduction_ms": 1.6439531076541058,
+    "comparison_limit": "Combined resident/car actor/component fixture cost; old runtime visibility/collision unverified, so not a CPU-only ablation.",
+    "readbacks": {
+      "auto_stream_pie": false,
+      "start_on_launch": false,
+      "throttle_cpu_when_not_foreground": false,
+      "csv_block_on_capture_end": 1,
+      "csv_compression_mode": 0,
+      "t.MaxFPS": 60.0,
+      "r.VSync": 0,
+      "r.VSyncEditor": 0
+    },
+    "screen_percentage_note": "0 is recorded default policy, not measured 100 percent.",
+    "callback_scope": "Sample is included in motion callback timing; do not add these overlapping costs.",
+    "trace_enclosing_owner": "Slate DrawPrePass -> FlushRenderingCommands -> render/frame synchronization -> GameThreadWaitForTask",
+    "trace_wait_share_percent": 99.6068311844887,
+    "trace_prepass_median_ms": 35.7713,
+    "trace_contained_wait_median_ms": 34.547599999999996,
+    "exact_triggering_window_or_callsite_identified": false,
+    "underlying_render_rhi_workload_identified": false,
+    "production_bottleneck_or_shader_identified": false,
+    "packaged_fps_accepted": false
+  },
+  "motion_review": {
+    "selected_decoded_frames_inspected": 85,
+    "contact_sheets_inspected": 12,
+    "additional_full_resolution_images": 2,
+    "continuous_playback_viewed": false,
+    "videos_each": {
+      "width": 1920,
+      "height": 1080,
+      "seconds": 9.516667,
+      "encoded_frames": 571,
+      "encoded_fps": 60,
+      "native_60fps_proven": false
+    },
+    "tail_scope": "Gameplay visible at sampled 7 seconds; editor UI at 8 seconds. At 9 seconds Comic is black while Standard still shows editor UI. Tail is closure, not an art defect.",
+    "diagnostic_overlay": "CsvProfiler debug counter visible; recordings are not clean trailers.",
+    "limits": [
+      "no continuous line-stability or fluidity acceptance",
+      "no exact full-cycle foot-planting acceptance",
+      "no audio, physical controls, co-op or cooked performance review"
+    ]
+  },
+  "restoration_and_browser": {
+    "still_window_restored": true,
+    "motion_window_restored": true,
+    "trace_window_restored": true,
+    "protected_assets_sources_derivative_live_package_saves_ini_and_tunnels_preserved": true,
+    "browser_checks_passed": 7,
+    "network_mode": "ordinary",
+    "scope": "Restored unchanged production package through public URL on the host PC; advancing streams, input/Escape, occupied-slot rejection and reconnect.",
+    "excluded": [
+      "candidate package or deployment acceptance",
+      "audible playback",
+      "physical phones",
+      "external NAT/carrier coverage",
+      "candidate co-op and current packaged performance"
+    ]
+  },
+  "failed_attempts": [
+    {
+      "attempt": "Refinement-20261014T070254Z/FailedRunnerUTF8BOM",
+      "reason": "Runner JSON reader rejected a UTF-8 BOM; repeated native merge checks pass.",
+      "raw_log": "Saved/Tests/GraphicNovel/Refinement-20261014T070254Z/FailedRunnerUTF8BOM/native-merge-runner.log",
+      "raw_log_sha256": "0ed11c059993eb7f145fc4ea809b07e6edcf45c8b1ce965c99e09ca1f781b230",
+      "retained_locally_in_ignored_saved": true
+    },
+    {
+      "attempt": "RefinedRender-20261014T073722Z",
+      "reason": "Interrupted after editor INI baseline mismatch; superseded.",
+      "scope": "No accepted matrix from this attempt.",
+      "raw_status": "Saved/Tests/GraphicNovel/RefinedRender-20261014T073722Z/window-status.json",
+      "raw_status_sha256": "53f70cf8d18a8e45781935fc600db94683f280bfd6caa70da8b8483caaeddf30",
+      "retained_locally_in_ignored_saved": true,
+      "demo_restored": true
+    },
+    {
+      "attempt": "RefinedRender-20261014T074547Z",
+      "reason": "Unsupported PixelStreaming settings-property readback stopped motion before CSV start.",
+      "scope": "Four passing still cells retained; failed motion excluded.",
+      "raw_status": "Saved/Tests/GraphicNovel/RefinedRender-20261014T074547Z/window-status.json",
+      "raw_status_sha256": "2a42553fe103b6ea1367b9e6b994986c0f08969bba97c2b04b62ef1f9f0f5867",
+      "retained_locally_in_ignored_saved": true,
+      "demo_restored": true
+    },
+    {
+      "attempt": "RefinedRender-20261014T075159Z",
+      "reason": "CSV footer validator assumed uppercase metadata keys; native CSV finalized but overall motion report failed.",
+      "scope": "Diagnostic timings retained; motion report/video excluded from acceptance.",
+      "raw_status": "Saved/Tests/GraphicNovel/RefinedRender-20261014T075159Z/window-status.json",
+      "raw_status_sha256": "f8dafdddf6628de7c950f93fc67595fb79eec24e6999525f59c1f8f30448eb01",
+      "retained_locally_in_ignored_saved": true,
+      "demo_restored": true
+    }
+  ],
+  "budget": {
+    "ledger": "Data/GraphicNovel/budget-2026-10-14.json",
+    "ledger_sha256": "8b79067e26cfc75dc0aa04228f3b60ad1303d60aede207907187f596be5cb6a5",
+    "authorized_usd": 25,
+    "completed_model_jobs": 2,
+    "published_estimated_total_usd": 3.04,
+    "conservative_reserved_total_usd": 4,
+    "uncommitted_budget_usd": 21,
+    "settled_charges_and_provider_balance_available": false,
+    "higher_detail_comparison_adopted": false
+  },
+  "next_comparison": {
+    "file": "Verification/GraphicNovelHighDetailPilot.md",
+    "status": "completed separate native comparison; isolated candidate retained, no production adoption"
+  },
+  "evidence": {
+    "AuthoringPreservation.json": {
+      "file": "Verification/GraphicNovelCollarRefinement/AuthoringPreservation.json",
+      "sha256": "264dbe8272f1baf59a6b9852f4c50759514fb57171729b6820dd2a0c6c770a9c"
+    },
+    "NativeAuthoring.json": {
+      "file": "Verification/GraphicNovelCollarRefinement/NativeAuthoring.json",
+      "sha256": "0e7af20a655e48912df9777bbcac6c1a37e578579361f1831ae9059221695c95"
+    },
+    "NativeAnimationChecks.json": {
+      "file": "Verification/GraphicNovelCollarRefinement/NativeAnimationChecks.json",
+      "sha256": "2dc3918183dd7e8f19b8e636c5f8a499eff17e3d2ad4a4e33ed09713288b8b9f"
+    },
+    "NativeMergeChecks.json": {
+      "file": "Verification/GraphicNovelCollarRefinement/NativeMergeChecks.json",
+      "sha256": "59145c9500941cc0dc056f30d6afb17f591fbaa0e10e53047e18db1bf39ffa3f"
+    },
+    "HeadlessChecks.json": {
+      "file": "Verification/GraphicNovelCollarRefinement/HeadlessChecks.json",
+      "sha256": "ea976515afdac7fbfa613f959ab9b2045f938484ee968b810e95451e2b3d87f2"
+    },
+    "IndependentStillReview.json": {
+      "file": "Verification/GraphicNovelCollarRefinement/IndependentStillReview.json",
+      "sha256": "01bdf03e532c07df41deb4b3dd64c27a6096c490c357539ebdaf72846eb94bd7"
+    },
+    "IndependentMotionReview.json": {
+      "file": "Verification/GraphicNovelCollarRefinement/IndependentMotionReview.json",
+      "sha256": "1d9a5dc00308c0c01ae21fdf4b3fa266b559f4d34ae2675f5e424895c2ea1231"
+    },
+    "StillWindow.json": {
+      "file": "Verification/GraphicNovelCollarRefinement/StillWindow.json",
+      "sha256": "2a42553fe103b6ea1367b9e6b994986c0f08969bba97c2b04b62ef1f9f0f5867"
+    },
+    "MotionWindow.json": {
+      "file": "Verification/GraphicNovelCollarRefinement/MotionWindow.json",
+      "sha256": "e3e4c63f6bebe99d4b0732012dcf22fe68c99fa0d485f059c4d83486335f5a51"
+    },
+    "WaitTraceWindow.json": {
+      "file": "Verification/GraphicNovelCollarRefinement/WaitTraceWindow.json",
+      "sha256": "f24e3c3f5e639982d67fa9885ed47c386bd716bfabcacca59fe05e8e37350081"
+    },
+    "Performance/analysis.json": {
+      "file": "Verification/GraphicNovelCollarRefinement/Performance/analysis.json",
+      "sha256": "a612e1752acdd79e01e3ab57d338073a001ff55c574ee3778b7d75fb9dfb4ae3"
+    },
+    "EditorWaitTrace.json": {
+      "file": "Verification/GraphicNovelCollarRefinement/EditorWaitTrace.json",
+      "sha256": "2df30ca67e264c2eadeb5baa4278d7ea3a890e9a43c3139620495ad5a4e68f97"
+    },
+    "RestoredBrowser.json": {
+      "file": "Verification/GraphicNovelCollarRefinement/RestoredBrowser.json",
+      "sha256": "ab3f1129b674e664af6a1067d6297868b89e8c56d5d893cc1b952b82357dbcd9"
+    }
+  }
+}

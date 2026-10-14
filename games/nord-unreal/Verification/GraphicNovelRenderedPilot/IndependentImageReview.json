@@ -1,0 +1,758 @@
+{
+  "reviewer": "character_audit with delegated720p independent reviewer",
+  "scope": "Independent full-normal retry still matrix comparison; initial engine draft only",
+  "status": "COMPLETE_STILL_MATRIX_REVIEW",
+  "updated_utc": "2026-10-14T05:23:51.515745+00:00",
+  "reviewed_image_count": 28,
+  "graphics_final_accepted": false,
+  "initial_engine_draft_accepted": true,
+  "normal_strength_change_accepted_for_draft": true,
+  "original_review": "Saved/Tests/GraphicNovel/Rendered-20261014T045140Z/independent-image-review.json",
+  "original_review_sha256": "6e51e323b72468735c86d817484c22fe0090e689dead7350a496b572dc6943f8",
+  "normal_strength_setting": {
+    "actual_retry_report_field": "characters[0].mapped_normal_strength",
+    "actual_retry_value": 1.0,
+    "prior_session_declared_value": 0.35,
+    "prior_actual_report_value": null,
+    "prior_report_caveat": "First-window reports omit mapped_normal_strength;35percent comes from parent material/session evidence, not report measurement."
+  },
+  "cells": {
+    "standard-1280": {
+      "resolution": [
+        1280,
+        720
+      ],
+      "mode": "standard",
+      "report": "Capture/Standard/PlayerQuality1280.json",
+      "report_sha256": "fa28343a359004b3b67afa2da5a56d3726d3af42cdf58d9b5dc6eecfe43d1403",
+      "native_report_passed": true,
+      "native_body_sha256": "a9f1a81f16986a17a50571b7ed536b1e4137778a8024979576cd427365c3a62e",
+      "images": [
+        {
+          "file": "Capture/Standard/1280/Resident9_Idle.png",
+          "sha256": "5d18e293d9024be936b02e854a1c91197747ea6e71e710d202832e61eee5c43a",
+          "dimensions": [
+            1280,
+            720
+          ],
+          "state": "Idle",
+          "positives": [
+            "Mature recognizable adult silhouette; integrated cargo pockets/cuffs/high-tops, with no obvious clothing holes or detached layers.",
+            "Feet and shadow have plausible proximity; no gross floor penetration at screenshot scale."
+          ],
+          "defects": [
+            "Hands remain stiff and coarse at gameplay size.",
+            "Red plunger beside the head distracts from mature visual tone."
+          ],
+          "acceptance": "INITIAL_DRAFT_WITH_LIMITS",
+          "comparison_to_first_window": "Near-identical at gameplay distance; no clear new material artifact. Coarse hands and precise contact uncertainty remain.",
+          "prior_file": "Saved/Tests/GraphicNovel/Rendered-20261014T045140Z/Capture/Standard/1280/Resident9_Idle.png",
+          "prior_sha256": "3806562d59d181c31f4bf03e4dc2bdf8ac8b2f8bccc69eb0b56958e086b1deca"
+        },
+        {
+          "file": "Capture/Standard/1280/Resident9_Face.png",
+          "sha256": "304ef1fa21cacc9de592dffdbb28dc221b0038b9205de2a48caff3508ed34762",
+          "dimensions": [
+            1280,
+            720
+          ],
+          "state": "Face",
+          "positives": [
+            "Eyes, brows, mouth and beard are readable; native daylight removes most pale CPU-studio washout.",
+            "Curly-haired/bearded adult identity is recognizable.",
+            "Full mapped normal preserves eyes/beard and modestly improves shoulder highlight continuity; collar/neck defect persists."
+          ],
+          "defects": [
+            "Jagged pale collar/neck rim is clearly visible.",
+            "Triangular neck and shoulder planes read as coarse mesh/shading facets.",
+            "Hair is thick shiny rope-like curls; cheek/forehead surface is smoother than illustrated reference.",
+            "Red plunger frames/obstructs background immediately behind the head."
+          ],
+          "acceptance": "INITIAL_DRAFT_ONLY_CLOSEUP_REFINEMENT_REQUIRED",
+          "comparison_to_first_window": "Subtle shoulder-highlight improvement without losing eyes/beard. Broad neck facets, pale jagged collar and chunky shiny curls persist.",
+          "prior_file": "Saved/Tests/GraphicNovel/Rendered-20261014T045140Z/Capture/Standard/1280/Resident9_Face.png",
+          "prior_sha256": "548765a17cd8abc3c67f6a9ee937fcd4a63e9648652df170edcdb16488b67c4a"
+        },
+        {
+          "file": "Capture/Standard/1280/Resident9_FaceThreeQuarter.png",
+          "sha256": "cecbd77c2d97fed44aa3b2fc5fd1d42de2fb57f10f3cb1792a84b7f9e28a9052",
+          "dimensions": [
+            1280,
+            720
+          ],
+          "state": "FaceThreeQuarter",
+          "positives": [
+            "Eyes, beard and facial silhouette remain clear at oblique angle; adult proportions retained.",
+            "Full mapped normal preserves eyes/beard and modestly improves shoulder highlight continuity; collar/neck defect persists."
+          ],
+          "defects": [
+            "Jagged pale collar rim and angular neck planes remain obvious.",
+            "Chunky shiny curls and overly smooth face differ from controlled illustrated reference.",
+            "Large red plunger is a strong distracting foreground shape."
+          ],
+          "acceptance": "INITIAL_DRAFT_ONLY_CLOSEUP_REFINEMENT_REQUIRED",
+          "comparison_to_first_window": "Modest shoulder continuity gain; profile remains readable. Irregular skin/collar boundary and triangular neck shading remain; angle differs slightly from prior.",
+          "prior_file": "Saved/Tests/GraphicNovel/Rendered-20261014T045140Z/Capture/Standard/1280/Resident9_FaceThreeQuarter.png",
+          "prior_sha256": "b3f057a155ebae0678167d5c3480bf7457411e57114bacc821a198b850cb72fa"
+        },
+        {
+          "file": "Capture/Standard/1280/Resident9_Walk.png",
+          "sha256": "bcf1bb4907b3a4ec3afda385363d8b3babe7c394a7acd975a5a2567e097b2926",
+          "dimensions": [
+            1280,
+            720
+          ],
+          "state": "Walk",
+          "positives": [
+            "Walk stance is readable; cargo silhouette/cuffs/shoes remain continuous and no gross cloth tearing is visible.",
+            "One shoe lifts while the other approaches the surface."
+          ],
+          "defects": [
+            "Hands remain rigid/open; consistent foot planting cannot be judged from one state.",
+            "Plunger prop dominates the left silhouette."
+          ],
+          "acceptance": "INITIAL_DRAFT_POSE_ONLY",
+          "comparison_to_first_window": "Readable stride and continuous cargo/shoe coverage; no obvious new material artifact. Simplified static fingers and exact foot contact remain unproven.",
+          "prior_file": "Saved/Tests/GraphicNovel/Rendered-20261014T045140Z/Capture/Standard/1280/Resident9_Walk.png",
+          "prior_sha256": "99823aa7ab49993507671f9f98300790694615efc08f35dadf44e19c1178bd5b"
+        },
+        {
+          "file": "Capture/Standard/1280/Resident9_Run.png",
+          "sha256": "302aa01cce6f2740f0b2566d4e591ae3fae8a070f7a53306881032912b319a3e",
+          "dimensions": [
+            1280,
+            720
+          ],
+          "state": "Run",
+          "positives": [
+            "Bent running leg and arm opposition distinguish run from walk; no gross garment explosion or detached shoes."
+          ],
+          "defects": [
+            "Open/coarse hand silhouette and angular upper-arm folds persist.",
+            "One still does not establish stride timing, sliding or fluidity."
+          ],
+          "acceptance": "INITIAL_DRAFT_POSE_ONLY",
+          "comparison_to_first_window": "Readable running silhouette; no obvious new normal artifact. Angular limbs/coarse hand shapes and timing/contact limits persist.",
+          "prior_file": "Saved/Tests/GraphicNovel/Rendered-20261014T045140Z/Capture/Standard/1280/Resident9_Run.png",
+          "prior_sha256": "fd4933a65b1f00b003f80892e2c01493fa6746d502113b4320c1fbd06f90e365"
+        },
+        {
+          "file": "Capture/Standard/1280/Resident9_Airborne.png",
+          "sha256": "1ba3436fa1ce57538a74d1426babd51c194a7f0410a4981a2ea2e4f59545d1a7",
+          "dimensions": [
+            1280,
+            720
+          ],
+          "state": "Airborne",
+          "positives": [
+            "Airborne silhouette is clear; cuffs and shoes retain coverage."
+          ],
+          "defects": [
+            "Shoulder/sleeve/upper-arm deformation pinches into sharp angular shapes.",
+            "Rigid spread hands and wrists are conspicuous in this pose."
+          ],
+          "acceptance": "INITIAL_DRAFT_POSE_ONLY_DEFORMATION_LIMIT",
+          "comparison_to_first_window": "Clear airborne silhouette; source shoulder/upper-arm lobes and drooping stiff hands remain as in prior. Material change does not repair deformation.",
+          "prior_file": "Saved/Tests/GraphicNovel/Rendered-20261014T045140Z/Capture/Standard/1280/Resident9_Airborne.png",
+          "prior_sha256": "dd6cc8d53a8f58b648446117a10807fe3acf4e22331e823c56a928476cf16401"
+        },
+        {
+          "file": "Capture/Standard/1280/Resident9_Landing.png",
+          "sha256": "bbcc99f11723e2ec519fb008fed4fef692dbf22ff708a1e61b1a15d36a1dfacf",
+          "dimensions": [
+            1280,
+            720
+          ],
+          "state": "Landing",
+          "positives": [
+            "Landing stance remains coherent; no obvious cloth tear or detached lower-body piece.",
+            "Feet approach the ground and shadow plausibly at this scale."
+          ],
+          "defects": [
+            "Rigid hands and angular shoulder shapes persist.",
+            "Contact/recoil timing and subtle float/sink require continuous footage."
+          ],
+          "acceptance": "INITIAL_DRAFT_POSE_ONLY",
+          "comparison_to_first_window": "Coherent pose/folds and near-ground shoe/shadow relation; coarse hooklike hands remain. Exact sole planting/recoil timing cannot be validated from still.",
+          "prior_file": "Saved/Tests/GraphicNovel/Rendered-20261014T045140Z/Capture/Standard/1280/Resident9_Landing.png",
+          "prior_sha256": "2e0aa036db663a68ce59c792f5daa603f80f37eb953f35bed5d117262720eb81"
+        }
+      ],
+      "summary": "Initial engine draft remains acceptable with visible limits. Full mapped normal offers modest shoulder-shading improvement only.",
+      "mapped_normal_strength": 1.0,
+      "review_method": "Actual pixels reviewed via view_image;720p delegated,1080p character_audit"
+    },
+    "standard-1920": {
+      "resolution": [
+        1920,
+        1080
+      ],
+      "mode": "standard",
+      "report": "Capture/Standard/PlayerQuality1920.json",
+      "report_sha256": "719b205c92e9bb269218b0b6a780abeaab6d96ee600acac1e5d546c4355a000e",
+      "native_report_passed": true,
+      "native_body_sha256": "a9f1a81f16986a17a50571b7ed536b1e4137778a8024979576cd427365c3a62e",
+      "images": [
+        {
+          "file": "Capture/Standard/1920/Resident9_Idle.png",
+          "sha256": "926d4852cd702a3c8c5f8548eb9df6bb23b3e8a4d0feedf8326fb3e2e17a2c4f",
+          "dimensions": [
+            1920,
+            1080
+          ],
+          "state": "Idle",
+          "positives": [
+            "Mature recognizable adult silhouette; integrated cargo pockets/cuffs/high-tops, with no obvious clothing holes or detached layers.",
+            "Feet and shadow have plausible proximity; no gross floor penetration at screenshot scale.",
+            "At1080p the adult silhouette, cargo volume and canvas-shoe details remain readable."
+          ],
+          "defects": [
+            "Hands remain stiff and coarse at gameplay size.",
+            "Red plunger beside the head distracts from mature visual tone."
+          ],
+          "acceptance": "INITIAL_DRAFT_WITH_LIMITS",
+          "comparison_to_first_window": "Near-identical at gameplay distance; no clear new material artifact. Coarse hands and precise contact uncertainty remain.",
+          "prior_file": "Saved/Tests/GraphicNovel/Rendered-20261014T045140Z/Capture/Standard/1920/Resident9_Idle.png",
+          "prior_sha256": "aff2062b353110069763311c9e2ff39a9b958f669b55f8f80412dcbfb6ec6e38"
+        },
+        {
+          "file": "Capture/Standard/1920/Resident9_Face.png",
+          "sha256": "4865dfa5f06089afcd18eae6dda58b6b8324ad74009c3694533ad33e559c225e",
+          "dimensions": [
+            1920,
+            1080
+          ],
+          "state": "Face",
+          "positives": [
+            "Eyes, brows, mouth and beard are readable; native daylight removes most pale CPU-studio washout.",
+            "Curly-haired/bearded adult identity is recognizable.",
+            "Full mapped normal preserves eyes/beard and modestly improves shoulder highlight continuity; collar/neck defect persists."
+          ],
+          "defects": [
+            "Jagged pale collar/neck rim is clearly visible.",
+            "Triangular neck and shoulder planes read as coarse mesh/shading facets.",
+            "Hair is thick shiny rope-like curls; cheek/forehead surface is smoother than illustrated reference.",
+            "Red plunger frames/obstructs background immediately behind the head.",
+            "At1080p the irregular collar edge and coarse neck polygons are especially clear; resolution does not hide them."
+          ],
+          "acceptance": "INITIAL_DRAFT_ONLY_CLOSEUP_REFINEMENT_REQUIRED",
+          "comparison_to_first_window": "Subtle shoulder-highlight improvement without losing eyes/beard. Broad neck facets, pale jagged collar and chunky shiny curls persist.",
+          "prior_file": "Saved/Tests/GraphicNovel/Rendered-20261014T045140Z/Capture/Standard/1920/Resident9_Face.png",
+          "prior_sha256": "6a40057fbde69ca6574ec4fc66683c4dd393ed7515f3555a793d2407aa29f27b"
+        },
+        {
+          "file": "Capture/Standard/1920/Resident9_FaceThreeQuarter.png",
+          "sha256": "9235d0ffc308e67e2baa90719b93b1909d744afd5b34db2ce33334238fbd4d46",
+          "dimensions": [
+            1920,
+            1080
+          ],
+          "state": "FaceThreeQuarter",
+          "positives": [
+            "Eyes, beard and facial silhouette remain clear at oblique angle; adult proportions retained.",
+            "Full mapped normal preserves eyes/beard and modestly improves shoulder highlight continuity; collar/neck defect persists."
+          ],
+          "defects": [
+            "Jagged pale collar rim and angular neck planes remain obvious.",
+            "Chunky shiny curls and overly smooth face differ from controlled illustrated reference.",
+            "Large red plunger is a strong distracting foreground shape.",
+            "At1080p the irregular collar edge and coarse neck polygons are especially clear; resolution does not hide them."
+          ],
+          "acceptance": "INITIAL_DRAFT_ONLY_CLOSEUP_REFINEMENT_REQUIRED",
+          "comparison_to_first_window": "Modest shoulder continuity gain; profile remains readable. Irregular skin/collar boundary and triangular neck shading remain; angle differs slightly from prior.",
+          "prior_file": "Saved/Tests/GraphicNovel/Rendered-20261014T045140Z/Capture/Standard/1920/Resident9_FaceThreeQuarter.png",
+          "prior_sha256": "0994eeb74d1537930b4daf55b5817176670e848e5375f6491f37af1439d1e0bb"
+        },
+        {
+          "file": "Capture/Standard/1920/Resident9_Walk.png",
+          "sha256": "45452e73d0902710765e8bd94951139ea8896980b804bca0a5c24b1707350f50",
+          "dimensions": [
+            1920,
+            1080
+          ],
+          "state": "Walk",
+          "positives": [
+            "Walk stance is readable; cargo silhouette/cuffs/shoes remain continuous and no gross cloth tearing is visible.",
+            "One shoe lifts while the other approaches the surface.",
+            "At1080p the adult silhouette, cargo volume and canvas-shoe details remain readable."
+          ],
+          "defects": [
+            "Hands remain rigid/open; consistent foot planting cannot be judged from one state.",
+            "Plunger prop dominates the left silhouette."
+          ],
+          "acceptance": "INITIAL_DRAFT_POSE_ONLY",
+          "comparison_to_first_window": "Readable stride and continuous cargo/shoe coverage; no obvious new material artifact. Simplified static fingers and exact foot contact remain unproven.",
+          "prior_file": "Saved/Tests/GraphicNovel/Rendered-20261014T045140Z/Capture/Standard/1920/Resident9_Walk.png",
+          "prior_sha256": "3436fdd843835885c26f2ecdc48053a52ad88d887ccdfec4e2ac20247ffc40af"
+        },
+        {
+          "file": "Capture/Standard/1920/Resident9_Run.png",
+          "sha256": "b308c6acd163c9f7132b84a4676c2cfc0ee772409eec4bebc52b485fdf2cb251",
+          "dimensions": [
+            1920,
+            1080
+          ],
+          "state": "Run",
+          "positives": [
+            "Bent running leg and arm opposition distinguish run from walk; no gross garment explosion or detached shoes.",
+            "At1080p the adult silhouette, cargo volume and canvas-shoe details remain readable."
+          ],
+          "defects": [
+            "Open/coarse hand silhouette and angular upper-arm folds persist.",
+            "One still does not establish stride timing, sliding or fluidity."
+          ],
+          "acceptance": "INITIAL_DRAFT_POSE_ONLY",
+          "comparison_to_first_window": "Readable running silhouette; no obvious new normal artifact. Angular limbs/coarse hand shapes and timing/contact limits persist.",
+          "prior_file": "Saved/Tests/GraphicNovel/Rendered-20261014T045140Z/Capture/Standard/1920/Resident9_Run.png",
+          "prior_sha256": "a36bb3314f833e0d400b6d3a1d2a2cfbd24fc993c65e1a3a1b076e981bdf6018"
+        },
+        {
+          "file": "Capture/Standard/1920/Resident9_Airborne.png",
+          "sha256": "d2cf2ba462bf07b76a971bd55469a2f81606b85130f44e3d58d64f294f2bdaaf",
+          "dimensions": [
+            1920,
+            1080
+          ],
+          "state": "Airborne",
+          "positives": [
+            "Airborne silhouette is clear; cuffs and shoes retain coverage.",
+            "At1080p the adult silhouette, cargo volume and canvas-shoe details remain readable."
+          ],
+          "defects": [
+            "Shoulder/sleeve/upper-arm deformation pinches into sharp angular shapes.",
+            "Rigid spread hands and wrists are conspicuous in this pose."
+          ],
+          "acceptance": "INITIAL_DRAFT_POSE_ONLY_DEFORMATION_LIMIT",
+          "comparison_to_first_window": "Clear airborne silhouette; source shoulder/upper-arm lobes and drooping stiff hands remain as in prior. Material change does not repair deformation.",
+          "prior_file": "Saved/Tests/GraphicNovel/Rendered-20261014T045140Z/Capture/Standard/1920/Resident9_Airborne.png",
+          "prior_sha256": "e2c2e348938a6c6eafc7e6d567154585207867dee788434bccc8b1c0a7c75514"
+        },
+        {
+          "file": "Capture/Standard/1920/Resident9_Landing.png",
+          "sha256": "f0732e52958c6b4499e9a76665f4c1bc232b556e3ca3817fb87470ca5ca36a6f",
+          "dimensions": [
+            1920,
+            1080
+          ],
+          "state": "Landing",
+          "positives": [
+            "Landing stance remains coherent; no obvious cloth tear or detached lower-body piece.",
+            "Feet approach the ground and shadow plausibly at this scale.",
+            "At1080p the adult silhouette, cargo volume and canvas-shoe details remain readable."
+          ],
+          "defects": [
+            "Rigid hands and angular shoulder shapes persist.",
+            "Contact/recoil timing and subtle float/sink require continuous footage."
+          ],
+          "acceptance": "INITIAL_DRAFT_POSE_ONLY",
+          "comparison_to_first_window": "Coherent pose/folds and near-ground shoe/shadow relation; coarse hooklike hands remain. Exact sole planting/recoil timing cannot be validated from still.",
+          "prior_file": "Saved/Tests/GraphicNovel/Rendered-20261014T045140Z/Capture/Standard/1920/Resident9_Landing.png",
+          "prior_sha256": "dd57aa36a300b818f5ad73c8f74e9a9ac1ec9814edb641f8a795567cbcc07965"
+        }
+      ],
+      "summary": "Initial engine draft remains acceptable with visible limits. Full mapped normal offers modest shoulder-shading improvement only.",
+      "resolution_comparison": "No new gross geometry or readability failure relative to720p. Higher resolution exposes existing collar/neck/hair/finger coarseness more clearly.",
+      "mapped_normal_strength": 1.0,
+      "review_method": "Actual pixels reviewed via view_image;720p delegated,1080p character_audit"
+    },
+    "comic-1280": {
+      "resolution": [
+        1280,
+        720
+      ],
+      "mode": "comic",
+      "report": "Capture/PlayerQuality1280.json",
+      "report_sha256": "60cf3e6b2dc6978d22f0a5c4b44f7bc9ead40a0cde2218ee20013b3153edc3d8",
+      "native_report_passed": true,
+      "native_body_sha256": "a9f1a81f16986a17a50571b7ed536b1e4137778a8024979576cd427365c3a62e",
+      "images": [
+        {
+          "file": "Capture/1280/Resident9_Idle.png",
+          "sha256": "a13934a607a104d55c903bebc6aaa777ca3dea003568d2661cb66d1fbbf60f42",
+          "dimensions": [
+            1280,
+            720
+          ],
+          "state": "Idle",
+          "positives": [
+            "Mature recognizable adult silhouette; integrated cargo pockets/cuffs/high-tops, with no obvious clothing holes or detached layers.",
+            "Feet and shadow have plausible proximity; no gross floor penetration at screenshot scale.",
+            "Ink silhouette remains readable; eyes/mouth survive comic shadow planes where visible."
+          ],
+          "defects": [
+            "Hands remain stiff and coarse at gameplay size.",
+            "Red plunger beside the head distracts from mature visual tone.",
+            "Whole-scene tree outlines and ground/shadow stipple are visually busy.",
+            "Black tee shifts strongly indigo/purple under comic treatment; palette identity is altered."
+          ],
+          "acceptance": "INITIAL_DRAFT_WITH_LIMITS",
+          "comparison_to_first_window": "Near-identical at gameplay distance; no clear new material artifact. Coarse hands and precise contact uncertainty remain.",
+          "prior_file": "Saved/Tests/GraphicNovel/Rendered-20261014T045140Z/Capture/1280/Resident9_Idle.png",
+          "prior_sha256": "0b331c1924ae3ecec8e9f91c8d73883b7ec8cf951d909526e82f19e21447b857"
+        },
+        {
+          "file": "Capture/1280/Resident9_Face.png",
+          "sha256": "efd3ded1365d7055a20754beae25292eb24a2ac2da42d9de1ab6eb76cfcb4e65",
+          "dimensions": [
+            1280,
+            720
+          ],
+          "state": "Face",
+          "positives": [
+            "Eyes, brows, mouth and beard are readable; native daylight removes most pale CPU-studio washout.",
+            "Curly-haired/bearded adult identity is recognizable.",
+            "Ink silhouette remains readable; eyes/mouth survive comic shadow planes where visible.",
+            "Full mapped normal preserves eyes/beard and modestly improves shoulder highlight continuity; collar/neck defect persists."
+          ],
+          "defects": [
+            "Jagged pale collar/neck rim is clearly visible.",
+            "Triangular neck and shoulder planes read as coarse mesh/shading facets.",
+            "Hair is thick shiny rope-like curls; cheek/forehead surface is smoother than illustrated reference.",
+            "Red plunger frames/obstructs background immediately behind the head.",
+            "Whole-scene tree outlines and ground/shadow stipple are visually busy.",
+            "Black tee shifts strongly indigo/purple under comic treatment; palette identity is altered."
+          ],
+          "acceptance": "INITIAL_DRAFT_ONLY_CLOSEUP_REFINEMENT_REQUIRED",
+          "comparison_to_first_window": "Subtle shoulder-highlight improvement without losing eyes/beard. Broad neck facets, pale jagged collar and chunky shiny curls persist.",
+          "prior_file": "Saved/Tests/GraphicNovel/Rendered-20261014T045140Z/Capture/1280/Resident9_Face.png",
+          "prior_sha256": "ca30bc7fa8505f6940f204ac9c6615ca618fd60742f7edf1d37831dcf46add27"
+        },
+        {
+          "file": "Capture/1280/Resident9_FaceThreeQuarter.png",
+          "sha256": "b8897143c689738ca45068223a1c640a9490c56f788be9df8a60320bebd29827",
+          "dimensions": [
+            1280,
+            720
+          ],
+          "state": "FaceThreeQuarter",
+          "positives": [
+            "Eyes, beard and facial silhouette remain clear at oblique angle; adult proportions retained.",
+            "Ink silhouette remains readable; eyes/mouth survive comic shadow planes where visible.",
+            "Full mapped normal preserves eyes/beard and modestly improves shoulder highlight continuity; collar/neck defect persists."
+          ],
+          "defects": [
+            "Jagged pale collar rim and angular neck planes remain obvious.",
+            "Chunky shiny curls and overly smooth face differ from controlled illustrated reference.",
+            "Large red plunger is a strong distracting foreground shape.",
+            "Whole-scene tree outlines and ground/shadow stipple are visually busy.",
+            "Black tee shifts strongly indigo/purple under comic treatment; palette identity is altered."
+          ],
+          "acceptance": "INITIAL_DRAFT_ONLY_CLOSEUP_REFINEMENT_REQUIRED",
+          "comparison_to_first_window": "Modest shoulder continuity gain; profile remains readable. Irregular skin/collar boundary and triangular neck shading remain; angle differs slightly from prior.",
+          "prior_file": "Saved/Tests/GraphicNovel/Rendered-20261014T045140Z/Capture/1280/Resident9_FaceThreeQuarter.png",
+          "prior_sha256": "e5ba289a085f8e0f32f882e8dce9ca20ba2ec4baf77e2def55c457b8da1d155c"
+        },
+        {
+          "file": "Capture/1280/Resident9_Walk.png",
+          "sha256": "a905ee8e8f24e77e89d271c3087c4592b5259d32f83926bf98e61c621cbe8bb2",
+          "dimensions": [
+            1280,
+            720
+          ],
+          "state": "Walk",
+          "positives": [
+            "Walk stance is readable; cargo silhouette/cuffs/shoes remain continuous and no gross cloth tearing is visible.",
+            "One shoe lifts while the other approaches the surface.",
+            "Ink silhouette remains readable; eyes/mouth survive comic shadow planes where visible."
+          ],
+          "defects": [
+            "Hands remain rigid/open; consistent foot planting cannot be judged from one state.",
+            "Plunger prop dominates the left silhouette.",
+            "Whole-scene tree outlines and ground/shadow stipple are visually busy.",
+            "Black tee shifts strongly indigo/purple under comic treatment; palette identity is altered."
+          ],
+          "acceptance": "INITIAL_DRAFT_POSE_ONLY",
+          "comparison_to_first_window": "Readable stride and continuous cargo/shoe coverage; no obvious new material artifact. Simplified static fingers and exact foot contact remain unproven.",
+          "prior_file": "Saved/Tests/GraphicNovel/Rendered-20261014T045140Z/Capture/1280/Resident9_Walk.png",
+          "prior_sha256": "36c150bdb441e50335ce59753af294667a7319f682f80d8264c9183e54d2e80c"
+        },
+        {
+          "file": "Capture/1280/Resident9_Run.png",
+          "sha256": "cfa7478c2a539f7b584d55cea8d0e699f9ea3b643c1744a570c672b5a9683265",
+          "dimensions": [
+            1280,
+            720
+          ],
+          "state": "Run",
+          "positives": [
+            "Bent running leg and arm opposition distinguish run from walk; no gross garment explosion or detached shoes.",
+            "Ink silhouette remains readable; eyes/mouth survive comic shadow planes where visible."
+          ],
+          "defects": [
+            "Open/coarse hand silhouette and angular upper-arm folds persist.",
+            "One still does not establish stride timing, sliding or fluidity.",
+            "Whole-scene tree outlines and ground/shadow stipple are visually busy.",
+            "Black tee shifts strongly indigo/purple under comic treatment; palette identity is altered."
+          ],
+          "acceptance": "INITIAL_DRAFT_POSE_ONLY",
+          "comparison_to_first_window": "Readable running silhouette; no obvious new normal artifact. Angular limbs/coarse hand shapes and timing/contact limits persist.",
+          "prior_file": "Saved/Tests/GraphicNovel/Rendered-20261014T045140Z/Capture/1280/Resident9_Run.png",
+          "prior_sha256": "d73533ba2e1c0aa08d3eeb59284fc85a84eb00d08d3cde652074dbf640aad371"
+        },
+        {
+          "file": "Capture/1280/Resident9_Airborne.png",
+          "sha256": "60aa8514776ff8ffc929b44cd968820655f56e050a00b2228c53191336062616",
+          "dimensions": [
+            1280,
+            720
+          ],
+          "state": "Airborne",
+          "positives": [
+            "Airborne silhouette is clear; cuffs and shoes retain coverage.",
+            "Ink silhouette remains readable; eyes/mouth survive comic shadow planes where visible."
+          ],
+          "defects": [
+            "Shoulder/sleeve/upper-arm deformation pinches into sharp angular shapes.",
+            "Rigid spread hands and wrists are conspicuous in this pose.",
+            "Whole-scene tree outlines and ground/shadow stipple are visually busy.",
+            "Black tee shifts strongly indigo/purple under comic treatment; palette identity is altered."
+          ],
+          "acceptance": "INITIAL_DRAFT_POSE_ONLY_DEFORMATION_LIMIT",
+          "comparison_to_first_window": "Clear airborne silhouette; source shoulder/upper-arm lobes and drooping stiff hands remain as in prior. Material change does not repair deformation.",
+          "prior_file": "Saved/Tests/GraphicNovel/Rendered-20261014T045140Z/Capture/1280/Resident9_Airborne.png",
+          "prior_sha256": "8b500a832d9fd1c12254c3afedb9907242a728eb76515cf76708304479bc0f92"
+        },
+        {
+          "file": "Capture/1280/Resident9_Landing.png",
+          "sha256": "061c73b6cdc915aee85f0f8de36e018ee1009827b6ca6952c1e6d6463fe09410",
+          "dimensions": [
+            1280,
+            720
+          ],
+          "state": "Landing",
+          "positives": [
+            "Landing stance remains coherent; no obvious cloth tear or detached lower-body piece.",
+            "Feet approach the ground and shadow plausibly at this scale.",
+            "Ink silhouette remains readable; eyes/mouth survive comic shadow planes where visible."
+          ],
+          "defects": [
+            "Rigid hands and angular shoulder shapes persist.",
+            "Contact/recoil timing and subtle float/sink require continuous footage.",
+            "Whole-scene tree outlines and ground/shadow stipple are visually busy.",
+            "Black tee shifts strongly indigo/purple under comic treatment; palette identity is altered."
+          ],
+          "acceptance": "INITIAL_DRAFT_POSE_ONLY",
+          "comparison_to_first_window": "Coherent pose/folds and near-ground shoe/shadow relation; coarse hooklike hands remain. Exact sole planting/recoil timing cannot be validated from still.",
+          "prior_file": "Saved/Tests/GraphicNovel/Rendered-20261014T045140Z/Capture/1280/Resident9_Landing.png",
+          "prior_sha256": "a45186de66e18ecb7a2c8c80572f66de92221458cb62a3c3aba96cd988c91afc"
+        }
+      ],
+      "summary": "Initial engine draft remains acceptable with visible limits. Full mapped normal offers modest shoulder-shading improvement only.",
+      "mapped_normal_strength": 1.0,
+      "review_method": "Actual pixels reviewed via view_image;720p delegated,1080p character_audit"
+    },
+    "comic-1920": {
+      "resolution": [
+        1920,
+        1080
+      ],
+      "mode": "comic",
+      "report": "Capture/PlayerQuality1920.json",
+      "report_sha256": "2ab329777f4c8c80d0ed40477257a101800da85c95d20fc2ad65a797be6b51c3",
+      "native_report_passed": true,
+      "native_body_sha256": "a9f1a81f16986a17a50571b7ed536b1e4137778a8024979576cd427365c3a62e",
+      "images": [
+        {
+          "file": "Capture/1920/Resident9_Idle.png",
+          "sha256": "c788a27b3116c4e19fc07278e375b7ac864eb3bc7319b617c0903e3f659d06b2",
+          "dimensions": [
+            1920,
+            1080
+          ],
+          "state": "Idle",
+          "positives": [
+            "Mature recognizable adult silhouette; integrated cargo pockets/cuffs/high-tops, with no obvious clothing holes or detached layers.",
+            "Feet and shadow have plausible proximity; no gross floor penetration at screenshot scale.",
+            "Ink silhouette remains readable; eyes/mouth survive comic shadow planes where visible.",
+            "At1080p the adult silhouette, cargo volume and canvas-shoe details remain readable."
+          ],
+          "defects": [
+            "Hands remain stiff and coarse at gameplay size.",
+            "Red plunger beside the head distracts from mature visual tone.",
+            "Whole-scene tree outlines and ground/shadow stipple are visually busy.",
+            "Black tee shifts strongly indigo/purple under comic treatment; palette identity is altered."
+          ],
+          "acceptance": "INITIAL_DRAFT_WITH_LIMITS",
+          "comparison_to_first_window": "Near-identical at gameplay distance; no clear new material artifact. Coarse hands and precise contact uncertainty remain.",
+          "prior_file": "Saved/Tests/GraphicNovel/Rendered-20261014T045140Z/Capture/1920/Resident9_Idle.png",
+          "prior_sha256": "fb185c4e526f746b1a919e93d8135322b7bd284e66d0c2c788760e33fb8dc73a"
+        },
+        {
+          "file": "Capture/1920/Resident9_Face.png",
+          "sha256": "68bcef5f82fa668c9f06ec5dbdf25566aa4e042d0b6bd26c491912f1cdf9cc7c",
+          "dimensions": [
+            1920,
+            1080
+          ],
+          "state": "Face",
+          "positives": [
+            "Eyes, brows, mouth and beard are readable; native daylight removes most pale CPU-studio washout.",
+            "Curly-haired/bearded adult identity is recognizable.",
+            "Ink silhouette remains readable; eyes/mouth survive comic shadow planes where visible.",
+            "Full mapped normal preserves eyes/beard and modestly improves shoulder highlight continuity; collar/neck defect persists."
+          ],
+          "defects": [
+            "Jagged pale collar/neck rim is clearly visible.",
+            "Triangular neck and shoulder planes read as coarse mesh/shading facets.",
+            "Hair is thick shiny rope-like curls; cheek/forehead surface is smoother than illustrated reference.",
+            "Red plunger frames/obstructs background immediately behind the head.",
+            "Whole-scene tree outlines and ground/shadow stipple are visually busy.",
+            "Black tee shifts strongly indigo/purple under comic treatment; palette identity is altered.",
+            "At1080p the irregular collar edge and coarse neck polygons are especially clear; resolution does not hide them."
+          ],
+          "acceptance": "INITIAL_DRAFT_ONLY_CLOSEUP_REFINEMENT_REQUIRED",
+          "comparison_to_first_window": "Subtle shoulder-highlight improvement without losing eyes/beard. Broad neck facets, pale jagged collar and chunky shiny curls persist.",
+          "prior_file": "Saved/Tests/GraphicNovel/Rendered-20261014T045140Z/Capture/1920/Resident9_Face.png",
+          "prior_sha256": "a12ce609e6a65959e7afb006599f565665617552da15d36cc715b8459e05b255"
+        },
+        {
+          "file": "Capture/1920/Resident9_FaceThreeQuarter.png",
+          "sha256": "fbb7593f2507286a9ba15c572143a9662a5afdcd0b91b536fee050e9231d8344",
+          "dimensions": [
+            1920,
+            1080
+          ],
+          "state": "FaceThreeQuarter",
+          "positives": [
+            "Eyes, beard and facial silhouette remain clear at oblique angle; adult proportions retained.",
+            "Ink silhouette remains readable; eyes/mouth survive comic shadow planes where visible.",
+            "Full mapped normal preserves eyes/beard and modestly improves shoulder highlight continuity; collar/neck defect persists."
+          ],
+          "defects": [
+            "Jagged pale collar rim and angular neck planes remain obvious.",
+            "Chunky shiny curls and overly smooth face differ from controlled illustrated reference.",
+            "Large red plunger is a strong distracting foreground shape.",
+            "Whole-scene tree outlines and ground/shadow stipple are visually busy.",
+            "Black tee shifts strongly indigo/purple under comic treatment; palette identity is altered.",
+            "At1080p the irregular collar edge and coarse neck polygons are especially clear; resolution does not hide them."
+          ],
+          "acceptance": "INITIAL_DRAFT_ONLY_CLOSEUP_REFINEMENT_REQUIRED",
+          "comparison_to_first_window": "Modest shoulder continuity gain; profile remains readable. Irregular skin/collar boundary and triangular neck shading remain; angle differs slightly from prior.",
+          "prior_file": "Saved/Tests/GraphicNovel/Rendered-20261014T045140Z/Capture/1920/Resident9_FaceThreeQuarter.png",
+          "prior_sha256": "a24d58691724995d1127d8ef412808209e231cd9f7d6afae40993a0fd43112c6"
+        },
+        {
+          "file": "Capture/1920/Resident9_Walk.png",
+          "sha256": "2b75f12638c6c94e31c4ab1ca43b0ae06c58e44b7082526c8900b7d2c355dcad",
+          "dimensions": [
+            1920,
+            1080
+          ],
+          "state": "Walk",
+          "positives": [
+            "Walk stance is readable; cargo silhouette/cuffs/shoes remain continuous and no gross cloth tearing is visible.",
+            "One shoe lifts while the other approaches the surface.",
+            "Ink silhouette remains readable; eyes/mouth survive comic shadow planes where visible.",
+            "At1080p the adult silhouette, cargo volume and canvas-shoe details remain readable."
+          ],
+          "defects": [
+            "Hands remain rigid/open; consistent foot planting cannot be judged from one state.",
+            "Plunger prop dominates the left silhouette.",
+            "Whole-scene tree outlines and ground/shadow stipple are visually busy.",
+            "Black tee shifts strongly indigo/purple under comic treatment; palette identity is altered."
+          ],
+          "acceptance": "INITIAL_DRAFT_POSE_ONLY",
+          "comparison_to_first_window": "Readable stride and continuous cargo/shoe coverage; no obvious new material artifact. Simplified static fingers and exact foot contact remain unproven.",
+          "prior_file": "Saved/Tests/GraphicNovel/Rendered-20261014T045140Z/Capture/1920/Resident9_Walk.png",
+          "prior_sha256": "7f52d18769f100a6c71e4c7c5b672f9b234b41f0e2e1699249380bec5c9b929b"
+        },
+        {
+          "file": "Capture/1920/Resident9_Run.png",
+          "sha256": "8f89e9c4529873271ca8879f9000225127d4c895089e4e5b5ac06fb782bd62a6",
+          "dimensions": [
+            1920,
+            1080
+          ],
+          "state": "Run",
+          "positives": [
+            "Bent running leg and arm opposition distinguish run from walk; no gross garment explosion or detached shoes.",
+            "Ink silhouette remains readable; eyes/mouth survive comic shadow planes where visible.",
+            "At1080p the adult silhouette, cargo volume and canvas-shoe details remain readable."
+          ],
+          "defects": [
+            "Open/coarse hand silhouette and angular upper-arm folds persist.",
+            "One still does not establish stride timing, sliding or fluidity.",
+            "Whole-scene tree outlines and ground/shadow stipple are visually busy.",
+            "Black tee shifts strongly indigo/purple under comic treatment; palette identity is altered."
+          ],
+          "acceptance": "INITIAL_DRAFT_POSE_ONLY",
+          "comparison_to_first_window": "Readable running silhouette; no obvious new normal artifact. Angular limbs/coarse hand shapes and timing/contact limits persist.",
+          "prior_file": "Saved/Tests/GraphicNovel/Rendered-20261014T045140Z/Capture/1920/Resident9_Run.png",
+          "prior_sha256": "96707ce61622b3e8f2181382a6f3ff9d6288f8326ae0ad0c702a8b99185aef2c"
+        },
+        {
+          "file": "Capture/1920/Resident9_Airborne.png",
+          "sha256": "dc6cb1bde03cb5b75a0d88a5ed0a4687c1f44df3e14289048914634a18eae46d",
+          "dimensions": [
+            1920,
+            1080
+          ],
+          "state": "Airborne",
+          "positives": [
+            "Airborne silhouette is clear; cuffs and shoes retain coverage.",
+            "Ink silhouette remains readable; eyes/mouth survive comic shadow planes where visible.",
+            "At1080p the adult silhouette, cargo volume and canvas-shoe details remain readable."
+          ],
+          "defects": [
+            "Shoulder/sleeve/upper-arm deformation pinches into sharp angular shapes.",
+            "Rigid spread hands and wrists are conspicuous in this pose.",
+            "Whole-scene tree outlines and ground/shadow stipple are visually busy.",
+            "Black tee shifts strongly indigo/purple under comic treatment; palette identity is altered."
+          ],
+          "acceptance": "INITIAL_DRAFT_POSE_ONLY_DEFORMATION_LIMIT",
+          "comparison_to_first_window": "Clear airborne silhouette; source shoulder/upper-arm lobes and drooping stiff hands remain as in prior. Material change does not repair deformation.",
+          "prior_file": "Saved/Tests/GraphicNovel/Rendered-20261014T045140Z/Capture/1920/Resident9_Airborne.png",
+          "prior_sha256": "6bc22f9e0d3884ab340887555d59c3c520dfa2986571cc5b249f4fbd62805749"
+        },
+        {
+          "file": "Capture/1920/Resident9_Landing.png",
+          "sha256": "4b4bb50a660a566d5088a090194e48588557f7638d32d83bbdd948a7c13000cd",
+          "dimensions": [
+            1920,
+            1080
+          ],
+          "state": "Landing",
+          "positives": [
+            "Landing stance remains coherent; no obvious cloth tear or detached lower-body piece.",
+            "Feet approach the ground and shadow plausibly at this scale.",
+            "Ink silhouette remains readable; eyes/mouth survive comic shadow planes where visible.",
+            "At1080p the adult silhouette, cargo volume and canvas-shoe details remain readable."
+          ],
+          "defects": [
+            "Rigid hands and angular shoulder shapes persist.",
+            "Contact/recoil timing and subtle float/sink require continuous footage.",
+            "Whole-scene tree outlines and ground/shadow stipple are visually busy.",
+            "Black tee shifts strongly indigo/purple under comic treatment; palette identity is altered."
+          ],
+          "acceptance": "INITIAL_DRAFT_POSE_ONLY",
+          "comparison_to_first_window": "Coherent pose/folds and near-ground shoe/shadow relation; coarse hooklike hands remain. Exact sole planting/recoil timing cannot be validated from still.",
+          "prior_file": "Saved/Tests/GraphicNovel/Rendered-20261014T045140Z/Capture/1920/Resident9_Landing.png",
+          "prior_sha256": "8986fa4583b73b3edbdb7b5b0e820c4ccdce84ef5a043f777fb5fd63c1cc8918"
+        }
+      ],
+      "summary": "Initial engine draft remains acceptable with visible limits. Full mapped normal offers modest shoulder-shading improvement only.",
+      "resolution_comparison": "No new gross geometry or readability failure relative to720p. Higher resolution exposes existing collar/neck/hair/finger coarseness more clearly.",
+      "mapped_normal_strength": 1.0,
+      "review_method": "Actual pixels reviewed via view_image;720p delegated,1080p character_audit"
+    }
+  },
+  "comparison": {
+    "shoulders": "Modest gain: highlight continuity has fewer conspicuous flat patches. Neck facets/irregular collar geometry remain.",
+    "face": "Small visible change. Eyes, brows, beard and adult identity stay readable; no clear new gross normal-map artifact.",
+    "poses": "Integrated cargos/cuffs/shoes and general silhouettes remain coherent in Idle/Walk/Run/Airborne/Landing. Stiff hands and pinched angular airborne shoulders persist.",
+    "style": "Comic contours remain legible, with unchanged broad indigo cast and busy scene-wide tree/ground edge noise. The material normal change does not add authored graphic-novel linework."
+  },
+  "limits": [
+    "No GPU, Unreal, paid provider or service launched by reviewer.",
+    "Stills do not prove fluidity, full-cycle foot contact, transition quality, input delivery or frame rate.",
+    "Generated pilot has24body bones and static face/fingers; no claimed facial/finger acting.",
+    "Old pilot comparison uses retained CPU front view, not a matching native capture in this render window.",
+    "Native screenshots provide no dedicated hand close-up; five-digit count is supported by retained CPU side views, not certified from tiny native hand pixels.",
+    "Clear-pitch fixture and deliberate frontal/face cameras do not establish readability in crowds, HUD-heavy play or the default camera.",
+    "No matching old-pilot native matrix in this render window; old-model comparison is limited to CPU evidence.",
+    "Qualitative A/B only: native animation phases/camera angles differ slightly between runs.",
+    "720p FaceThreeQuarter yaw: comic retry123.38983154296875/original126.56900787353516; standard retry122.77478027343751/original121.97085571289061 degrees.",
+    "Geometry-only defects cannot be accepted as fixed by this material change. No continuous video reviewed in this still report."
+  ],
+  "recommendation": "Retain full mapped normal for this bounded generated-v1 draft; do not claim collar/neck/hand/whole-graphics or motion completion. Hold for geometry fix and final continuous-motion evidence."
+}

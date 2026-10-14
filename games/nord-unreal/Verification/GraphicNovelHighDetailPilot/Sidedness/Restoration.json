@@ -1,0 +1,17 @@
+{
+  "passed": true,
+  "recorded_utc": "2026-10-14T09:16:23.009069+00:00",
+  "decision": "reject_two_sided_trial_restore_original",
+  "reason": "No clear native defect improvement; stronger diagonal neck streaks in review",
+  "restored_asset": "Content/ParkComic/CrewGraphicNovelHighDetail/Resident9/M_Crew.uasset",
+  "restored_sha256": "db14c297074e4ce14cdc3f90aed0070987550ca24c779862656dd068bea6188e",
+  "original_sha256": "db14c297074e4ce14cdc3f90aed0070987550ca24c779862656dd068bea6188e",
+  "all_content_checked": 6773,
+  "all_content_changed": [],
+  "source_models_mutated": false,
+  "managed_service": {
+    "Result": "success",
+    "ExecMainStatus": "0"
+  },
+  "review": "Saved/Tests/GraphicNovel/HighDetailSideAB-20261014T090708Z/IndependentVisualReview/material-ab-review.json"
+}

@@ -1,0 +1,334 @@
+[
+  {
+    "source": "Saved/Tests/GraphicNovel/RefinedRender-20261014T074547Z/Capture/Standard/PlayerQuality1280.json",
+    "file": "Verification/GraphicNovelCollarRefinement/Standard1280.json",
+    "sha256": "25d041f27773495c153990eafcc4cfda0662a1c8cf3fefe80627af156b0e8d5a"
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/RefinedRender-20261014T074547Z/Capture/Standard/1280/Resident9_Idle.png",
+    "file": "Preview/GraphicNovelRefined/Standard/1280/Resident9_Idle.png",
+    "sha256": "7366b863c277f0e56d43928faff68f5361c677c5bb51d887aa920dd0bba8c880"
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/RefinedRender-20261014T074547Z/Capture/Standard/1280/Resident9_Face.png",
+    "file": "Preview/GraphicNovelRefined/Standard/1280/Resident9_Face.png",
+    "sha256": "50661a05a97b21d12bc74769a476000beac5ac8e5d9c23c95cfa9d942c6f5fe0"
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/RefinedRender-20261014T074547Z/Capture/Standard/1280/Resident9_FaceThreeQuarter.png",
+    "file": "Preview/GraphicNovelRefined/Standard/1280/Resident9_FaceThreeQuarter.png",
+    "sha256": "660978ae6070652f40efadcbe8cc2e2cb6b6765814de5f911fdc5e7dd5bed067"
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/RefinedRender-20261014T074547Z/Capture/Standard/1280/Resident9_Walk.png",
+    "file": "Preview/GraphicNovelRefined/Standard/1280/Resident9_Walk.png",
+    "sha256": "5d1888de5cacfc6a7f21b989d097abbc89ef836eefb91ef925514814b2522c2c"
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/RefinedRender-20261014T074547Z/Capture/Standard/1280/Resident9_Run.png",
+    "file": "Preview/GraphicNovelRefined/Standard/1280/Resident9_Run.png",
+    "sha256": "490a37485c611615b8c16a6ee9bfad33faee0f04a96903a0d8064d07884fb2ea"
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/RefinedRender-20261014T074547Z/Capture/Standard/1280/Resident9_Airborne.png",
+    "file": "Preview/GraphicNovelRefined/Standard/1280/Resident9_Airborne.png",
+    "sha256": "1fd9f000c0626b8fafb610aea0b0917a1f479e5eabab5f4981a7276f0fe77637"
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/RefinedRender-20261014T074547Z/Capture/Standard/1280/Resident9_Landing.png",
+    "file": "Preview/GraphicNovelRefined/Standard/1280/Resident9_Landing.png",
+    "sha256": "4486634f7afe047f0fb0cd6a2f27f9a4e79bcbb2bec193a3b7a49bf2a71b25f4"
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/RefinedRender-20261014T074547Z/Capture/PlayerQuality1280.json",
+    "file": "Verification/GraphicNovelCollarRefinement/Comic1280.json",
+    "sha256": "4dbc50e89dce91634699c31ed4cce2eec44d33531b99ca861fac03a0871739cd"
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/RefinedRender-20261014T074547Z/Capture/1280/Resident9_Idle.png",
+    "file": "Preview/GraphicNovelRefined/Comic/1280/Resident9_Idle.png",
+    "sha256": "2e13fd7c0cee92d1c0ab47fddd063633aca87adb79e79dc036f1208c7114ab41"
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/RefinedRender-20261014T074547Z/Capture/1280/Resident9_Face.png",
+    "file": "Preview/GraphicNovelRefined/Comic/1280/Resident9_Face.png",
+    "sha256": "5a6bff058ddb30f1fb039c7223f824121f12b9939c5e264b7092ebdb19f90226"
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/RefinedRender-20261014T074547Z/Capture/1280/Resident9_FaceThreeQuarter.png",
+    "file": "Preview/GraphicNovelRefined/Comic/1280/Resident9_FaceThreeQuarter.png",
+    "sha256": "1a88a13791052a080def0a90892cf33039696373437883710b81ee68f9dbd080"
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/RefinedRender-20261014T074547Z/Capture/1280/Resident9_Walk.png",
+    "file": "Preview/GraphicNovelRefined/Comic/1280/Resident9_Walk.png",
+    "sha256": "227b018864a8d9ca4e85316d0d128051f4724be96b8df014d6c2c5e70d880edf"
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/RefinedRender-20261014T074547Z/Capture/1280/Resident9_Run.png",
+    "file": "Preview/GraphicNovelRefined/Comic/1280/Resident9_Run.png",
+    "sha256": "831bd71fed201e784108d50221a7cbbdce50fd81946c7cb4b4b331edead42b03"
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/RefinedRender-20261014T074547Z/Capture/1280/Resident9_Airborne.png",
+    "file": "Preview/GraphicNovelRefined/Comic/1280/Resident9_Airborne.png",
+    "sha256": "ff695e43543179427399c28e17e1c51fb60259d67db1ea11e67f8c49e4d2bfba"
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/RefinedRender-20261014T074547Z/Capture/1280/Resident9_Landing.png",
+    "file": "Preview/GraphicNovelRefined/Comic/1280/Resident9_Landing.png",
+    "sha256": "46070d19628950086467948233f0780835c9fc1cd7c36592015a3249531c45a5"
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/RefinedRender-20261014T074547Z/Capture/Standard/PlayerQuality1920.json",
+    "file": "Verification/GraphicNovelCollarRefinement/Standard1920.json",
+    "sha256": "40b6a8c19edf4790d864c421ceb9a4564346578f03ff34fbee84e2a19ce976af"
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/RefinedRender-20261014T074547Z/Capture/Standard/1920/Resident9_Idle.png",
+    "file": "Preview/GraphicNovelRefined/Standard/1920/Resident9_Idle.png",
+    "sha256": "93b2732c01ef6886176931651916440d97dc8743733e756ddd67a1a016b47ad9"
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/RefinedRender-20261014T074547Z/Capture/Standard/1920/Resident9_Face.png",
+    "file": "Preview/GraphicNovelRefined/Standard/1920/Resident9_Face.png",
+    "sha256": "acf189e0f6fe58fe5823f0d078e3e2460941377dfca6947a1db97ce3c049105f"
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/RefinedRender-20261014T074547Z/Capture/Standard/1920/Resident9_FaceThreeQuarter.png",
+    "file": "Preview/GraphicNovelRefined/Standard/1920/Resident9_FaceThreeQuarter.png",
+    "sha256": "9e8a064dc026719f943c554dd49f4dab7d60981b1f4cffb09ab3460c02520d2c"
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/RefinedRender-20261014T074547Z/Capture/Standard/1920/Resident9_Walk.png",
+    "file": "Preview/GraphicNovelRefined/Standard/1920/Resident9_Walk.png",
+    "sha256": "e05fed7001d3c798071732421b551397afc94e96c1195be89ae94c33ad34044b"
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/RefinedRender-20261014T074547Z/Capture/Standard/1920/Resident9_Run.png",
+    "file": "Preview/GraphicNovelRefined/Standard/1920/Resident9_Run.png",
+    "sha256": "ac9b9a2b3b94bfbf0bdd64f6858133623c85759cccdbae032990f9c214d90ace"
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/RefinedRender-20261014T074547Z/Capture/Standard/1920/Resident9_Airborne.png",
+    "file": "Preview/GraphicNovelRefined/Standard/1920/Resident9_Airborne.png",
+    "sha256": "7ee12a5b829faa0c193259d52dad3e35b2a5c6d6df2af5c50c98374ada0a1aa1"
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/RefinedRender-20261014T074547Z/Capture/Standard/1920/Resident9_Landing.png",
+    "file": "Preview/GraphicNovelRefined/Standard/1920/Resident9_Landing.png",
+    "sha256": "1b5fd4212e39b62aad191a90457e806fb9c177c7347ccb0abfcb9f62d051b9bc"
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/RefinedRender-20261014T074547Z/Capture/PlayerQuality1920.json",
+    "file": "Verification/GraphicNovelCollarRefinement/Comic1920.json",
+    "sha256": "570facbc6002fcd7386bd121f479a2e6f1afc838bc9976df70f0f3e87974d2a8"
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/RefinedRender-20261014T074547Z/Capture/1920/Resident9_Idle.png",
+    "file": "Preview/GraphicNovelRefined/Comic/1920/Resident9_Idle.png",
+    "sha256": "24c12e929061962a9bbd8e4ae93ce26d30ea75b2f6f917e5aa74a9f703c45b39"
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/RefinedRender-20261014T074547Z/Capture/1920/Resident9_Face.png",
+    "file": "Preview/GraphicNovelRefined/Comic/1920/Resident9_Face.png",
+    "sha256": "59c9623be2733931311ae18c1350c3dbf78562e94408822a098e49bf54aeafdb"
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/RefinedRender-20261014T074547Z/Capture/1920/Resident9_FaceThreeQuarter.png",
+    "file": "Preview/GraphicNovelRefined/Comic/1920/Resident9_FaceThreeQuarter.png",
+    "sha256": "1527fee94b7a2aa467bc28722f3ff5ddddb4a71c1818b8c03a39cb54527d451f"
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/RefinedRender-20261014T074547Z/Capture/1920/Resident9_Walk.png",
+    "file": "Preview/GraphicNovelRefined/Comic/1920/Resident9_Walk.png",
+    "sha256": "5a5c98667c54366631c40bce7cd81b9be66c0fb2d54e2989af93f9652ce8c2b0"
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/RefinedRender-20261014T074547Z/Capture/1920/Resident9_Run.png",
+    "file": "Preview/GraphicNovelRefined/Comic/1920/Resident9_Run.png",
+    "sha256": "fe5cb8635383141ef311e189cc432b6e1bffb824a5647499ea5471c3b57e1e60"
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/RefinedRender-20261014T074547Z/Capture/1920/Resident9_Airborne.png",
+    "file": "Preview/GraphicNovelRefined/Comic/1920/Resident9_Airborne.png",
+    "sha256": "90b9fec2d3f358daff0548cd1d8eb4bd4eb1eb1cb4ba7ac58cfd37f366d5c25c"
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/RefinedRender-20261014T074547Z/Capture/1920/Resident9_Landing.png",
+    "file": "Preview/GraphicNovelRefined/Comic/1920/Resident9_Landing.png",
+    "sha256": "621d6c16bf6051886fe9746b2837149e79a734968b30f9aaae8f08ac71e498f3"
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/RefinedRender-20261014T075500Z/Fixed/Capture/Motion/Standard/PlayerMotion1920.json",
+    "file": "Verification/GraphicNovelCollarRefinement/MotionStandard1920.json",
+    "sha256": "4d87f770cebefb87a5c3071f80183a3177b67f28f438657533eeeeb89644e936",
+    "source_sha256": "8de0bfcff46697f10b29589448c6a4a8a7e733cfaee862da90a77c670734267b",
+    "curation_redactions": [
+      "[loginid]"
+    ]
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/RefinedRender-20261014T075500Z/FixedMotion1920Standard/raw.mp4",
+    "file": "Preview/GraphicNovelRefined/Motion/Standard1920.mp4",
+    "sha256": "e0662f4174110c0e844b46e502804982fe8190adc94d000d8a158b42b057847a"
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/RefinedRender-20261014T075500Z/Fixed/Capture/Motion/Comic/PlayerMotion1920.json",
+    "file": "Verification/GraphicNovelCollarRefinement/MotionComic1920.json",
+    "sha256": "59ababb84c5b81227c8f121786f8f7533703a341dfee00c9e3e468424af08f1c",
+    "source_sha256": "04f538c96f98daa10f2d17e8f74ef1b235a327ae49b418acf0f1349f0bb1afaf",
+    "curation_redactions": [
+      "[loginid]"
+    ]
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/RefinedRender-20261014T075500Z/FixedMotion1920Comic/raw.mp4",
+    "file": "Preview/GraphicNovelRefined/Motion/Comic1920.mp4",
+    "sha256": "a90781483fdf97e97b8bbb5c72842fbc2e862dfbb4b0a2788526493740bf7bce"
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/RefinedRender-20261014T074547Z/IndependentVisualReview/review-verdict.json",
+    "file": "Verification/GraphicNovelCollarRefinement/IndependentStillReview.json",
+    "sha256": "01bdf03e532c07df41deb4b3dd64c27a6096c490c357539ebdaf72846eb94bd7"
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/RefinedRender-20261014T074547Z/IndependentVisualReview/review-verdict.md",
+    "file": "Verification/GraphicNovelCollarRefinement/IndependentStillReview.md",
+    "sha256": "13aa728ba82e38d5a90d8d6a0bb5a9fda630962111048372957b6b4e8a66c6d5"
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/RefinedRender-20261014T075500Z/IndependentMotionReview/motion-review.json",
+    "file": "Verification/GraphicNovelCollarRefinement/IndependentMotionReview.json",
+    "sha256": "1d9a5dc00308c0c01ae21fdf4b3fa266b559f4d34ae2675f5e424895c2ea1231"
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/RefinedRender-20261014T075500Z/IndependentMotionReview/motion-review.md",
+    "file": "Verification/GraphicNovelCollarRefinement/IndependentMotionReview.md",
+    "sha256": "5e37b8b7e7c850b5c8bbcccbb2e7052e12fa6ccac789e44f851b0ca15c03224d"
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/RefinedRender-20261014T080041Z/wait-owner.json",
+    "file": "Verification/GraphicNovelCollarRefinement/EditorWaitTrace.json",
+    "sha256": "2df30ca67e264c2eadeb5baa4278d7ea3a890e9a43c3139620495ad5a4e68f97"
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/RefinedRender-20261014T080041Z/wait-owner.md",
+    "file": "Verification/GraphicNovelCollarRefinement/EditorWaitTrace.md",
+    "sha256": "f071438eef095d586201a886940c0099ad7d2bcb1112e6dcadc722b5a1334ee0"
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/Refinement-20261014T070254Z/post-authoring-preservation.json",
+    "file": "Verification/GraphicNovelCollarRefinement/AuthoringPreservation.json",
+    "sha256": "264dbe8272f1baf59a6b9852f4c50759514fb57171729b6820dd2a0c6c770a9c"
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/Refinement-20261014T070254Z/native-authoring.json",
+    "file": "Verification/GraphicNovelCollarRefinement/NativeAuthoring.json",
+    "sha256": "0e7af20a655e48912df9777bbcac6c1a37e578579361f1831ae9059221695c95"
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/Refinement-20261014T070254Z/native-animation-checks.json",
+    "file": "Verification/GraphicNovelCollarRefinement/NativeAnimationChecks.json",
+    "sha256": "2dc3918183dd7e8f19b8e636c5f8a499eff17e3d2ad4a4e33ed09713288b8b9f"
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/Refinement-20261014T070254Z/native-merge-checks.json",
+    "file": "Verification/GraphicNovelCollarRefinement/NativeMergeChecks.json",
+    "sha256": "59145c9500941cc0dc056f30d6afb17f591fbaa0e10e53047e18db1bf39ffa3f"
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/Refinement-20261014T070254Z/headless-checks.json",
+    "file": "Verification/GraphicNovelCollarRefinement/HeadlessChecks.json",
+    "sha256": "ea976515afdac7fbfa613f959ab9b2045f938484ee968b810e95451e2b3d87f2"
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/RefinedRender-20261014T075500Z/Performance/FixedStandard.json",
+    "file": "Verification/GraphicNovelCollarRefinement/Performance/FixedStandard.json",
+    "sha256": "129581b6a6ef22cac0219e422dbed11e1fa0ab1bb2e79b0979d663e5ae780f2d"
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/RefinedRender-20261014T075500Z/Performance/FixedComic.json",
+    "file": "Verification/GraphicNovelCollarRefinement/Performance/FixedComic.json",
+    "sha256": "14ddad7fcfef4ae9826e066fbd2e91df6abc9549f84e3b7b5acf1cab7acd5bd7"
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/RefinedRender-20261014T075500Z/Performance/OldFixtureStandard.json",
+    "file": "Verification/GraphicNovelCollarRefinement/Performance/OldFixtureStandard.json",
+    "sha256": "3c875fe9f9985ee15e9de24519a94f7e8c0db8cd4ccc348163e6c41f9feb0710"
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/RefinedRender-20261014T075500Z/Performance/analysis.json",
+    "file": "Verification/GraphicNovelCollarRefinement/Performance/analysis.json",
+    "sha256": "a612e1752acdd79e01e3ab57d338073a001ff55c574ee3778b7d75fb9dfb4ae3"
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/RefinedRender-20261014T075500Z/Performance/analysis.md",
+    "file": "Verification/GraphicNovelCollarRefinement/Performance/analysis.md",
+    "sha256": "437dddc0623884d917d132203288f76dee797ec368904b0cbee45539c931f329"
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/RefinedRender-20261014T075500Z/OldFixture/Capture/Motion/Standard/PlayerMotion1920.json",
+    "file": "Verification/GraphicNovelCollarRefinement/OldFixtureMotionStandard1920.json",
+    "sha256": "a205e940cc56ff8daee07a6b210df794627bb43db3ca4cf05e3524c45da881da",
+    "source_sha256": "2b13cc4c649a06767e6c3d83e4bc9dbaed0eb78b77e9402dc60f3a53cdf41c3d",
+    "curation_redactions": [
+      "[loginid]"
+    ]
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/RefinedRender-20261014T074547Z/window-status.json",
+    "file": "Verification/GraphicNovelCollarRefinement/StillWindow.json",
+    "sha256": "2a42553fe103b6ea1367b9e6b994986c0f08969bba97c2b04b62ef1f9f0f5867"
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/RefinedRender-20261014T075500Z/window-status.json",
+    "file": "Verification/GraphicNovelCollarRefinement/MotionWindow.json",
+    "sha256": "e3e4c63f6bebe99d4b0732012dcf22fe68c99fa0d485f059c4d83486335f5a51"
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/RefinedRender-20261014T080041Z/window-status.json",
+    "file": "Verification/GraphicNovelCollarRefinement/WaitTraceWindow.json",
+    "sha256": "f24e3c3f5e639982d67fa9885ed47c386bd716bfabcacca59fe05e8e37350081"
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/Refinement-20261014T070254Z/Headless/Standard/PlayerQuality1280Headless.json",
+    "file": "Verification/GraphicNovelCollarRefinement/HeadlessStandardStates.json",
+    "sha256": "a263a938bc3ab787bfbe51cf92b9b193a9127074676149ebc55ae434bd6470f9"
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/Refinement-20261014T070254Z/Headless/Motion/Standard/PlayerMotion1280Headless.json",
+    "file": "Verification/GraphicNovelCollarRefinement/HeadlessStandardMotion.json",
+    "sha256": "e24328d1271c56b5ec2b95d9bdcb4fbed3c743d44ab917f04a31ea15065e4269"
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/Refinement-20261014T070254Z/Headless/PlayerQuality1280Headless.json",
+    "file": "Verification/GraphicNovelCollarRefinement/HeadlessComicStates.json",
+    "sha256": "fb1e31bfbc9eaf419d78a51a9897ce7c30af791a13a96cef2944ad12ce9cf75d"
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/Refinement-20261014T070254Z/Headless/Motion/Comic/PlayerMotion1280Headless.json",
+    "file": "Verification/GraphicNovelCollarRefinement/HeadlessComicMotion.json",
+    "sha256": "28707ced25f0cb11d328ac2eaabfaa1c2616a3c3dfbb00583bd631f58ff79ab8"
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/Refinement-20261014T070254Z/Animation/Report/index.json",
+    "file": "Verification/GraphicNovelCollarRefinement/AnimationAutomation.json",
+    "sha256": "31d3bb6b504d3116b11578e2dd8101822217e12af00ffe694bd9c3172bf9502f"
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/Refinement-20261014T070254Z/PondGeometry/Report/index.json",
+    "file": "Verification/GraphicNovelCollarRefinement/PondGeometryAutomation.json",
+    "sha256": "c7f1c9e8195cae065720fb2d2822dea9b7872c689e1bb8d2e204766d033b726b"
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/Refinement-20261014T070254Z/RadarClip/Report/index.json",
+    "file": "Verification/GraphicNovelCollarRefinement/RadarClipAutomation.json",
+    "sha256": "41ab62d880be42958d9a8fc63faa54bd152a2799bef1498199c27e2dffba0c36"
+  },
+  {
+    "source": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Browser/.qa/live-2026-10-14T08-08-08-352Z/summary.json",
+    "file": "Verification/GraphicNovelCollarRefinement/RestoredBrowser.json",
+    "sha256": "ab3f1129b674e664af6a1067d6297868b89e8c56d5d893cc1b952b82357dbcd9"
+  }
+]

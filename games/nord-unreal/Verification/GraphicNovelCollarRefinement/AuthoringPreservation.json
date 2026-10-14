@@ -1,0 +1,18 @@
+{
+  "passed": true,
+  "changes": {
+    "protected_sha256": [],
+    "generated_assets_sha256": [
+      "Content/ParkComic/CrewGraphicNovelGenerated/Resident9/SK_Body.uasset",
+      "Content/ParkComic/CrewGraphicNovelGenerated/Resident9/M_Crew.uasset"
+    ],
+    "frozen_graphic_novel_source_sha256": []
+  },
+  "allowed": {
+    "allowed_native_assets": [
+      "Content/ParkComic/CrewGraphicNovelGenerated/Resident9/SK_Body.uasset",
+      "Content/ParkComic/CrewGraphicNovelGenerated/Resident9/M_Crew.uasset"
+    ],
+    "reason": "Append semantic collar UV1 to saved mesh; route only base colour/emission to UV1. Preserve UV0 normal/roughness/metallic, source, rig, clips, all other packages."
+  }
+}

@@ -1,9 +1,9 @@
 {
   "passed": true,
   "source": "body.fbx",
-  "source_sha256": "84c558f01abb100982463d164cdfbd34d288f8ab2b3a645932bb6aa0fa56a883",
+  "source_sha256": "bcce8e49db5d86cb09b6d9fd53e74489044779b315ebc8bfb5662a48e3adc8fb",
   "output": "body-bind-pose.fbx",
-  "output_sha256": "56ba509f1875ffcfd018aa7df95c3fe255d0446b3b56eaf1b708a81081095f23",
+  "output_sha256": "ed1da668f343a09fc8876ebc0429604f187011136c87ea60d428eaace8a462a2",
   "method": "union of identical shared-node matrices from partial BindPose entries; exactly one complete pose",
   "source_pose_count": 46,
   "output_pose_count": 1,
@@ -19,7 +19,7 @@
     "Blender binary writer normalizes file timestamp/header IDs"
   ],
   "limits": [
-    "No geometry/topology correction: the eight tiny trouser boundary edges remain.",
+    "Bind-pose consolidation does not change geometry; see roundtrip.json for current topology status.",
     "Unreal SDK validation and native rendering still require fresh checks."
   ]
 }

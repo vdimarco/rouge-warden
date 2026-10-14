@@ -1,0 +1,50 @@
+{
+  "body": {
+    "triangles": 31026,
+    "vertices": 43807,
+    "bones": 24,
+    "height_m": 1.82
+  },
+  "hierarchy": {
+    "head_end": "Head",
+    "headfront": "Head",
+    "Head": "neck",
+    "neck": "Spine",
+    "LeftHand": "LeftForeArm",
+    "LeftForeArm": "LeftArm",
+    "LeftArm": "LeftShoulder",
+    "LeftShoulder": "Spine",
+    "RightHand": "RightForeArm",
+    "RightForeArm": "RightArm",
+    "RightArm": "RightShoulder",
+    "RightShoulder": "Spine",
+    "Spine": "Spine01",
+    "Spine01": "Spine02",
+    "Spine02": "Hips",
+    "LeftToeBase": "LeftFoot",
+    "LeftFoot": "LeftLeg",
+    "LeftLeg": "LeftUpLeg",
+    "LeftUpLeg": "Hips",
+    "RightToeBase": "RightFoot",
+    "RightFoot": "RightLeg",
+    "RightLeg": "RightUpLeg",
+    "RightUpLeg": "Hips",
+    "Hips": null
+  },
+  "clips": {
+    "idle": {
+      "curves": 138,
+      "max_bind_error": 0.0
+    },
+    "walk": {
+      "curves": 138,
+      "max_bind_error": 0.0
+    },
+    "run": {
+      "curves": 138,
+      "max_bind_error": 0.0
+    }
+  },
+  "passed": true,
+  "scope": "Retained geometry and own clip bind/track validation; no visual or motion acceptance"
+}

@@ -1,0 +1,49 @@
+{
+  "passed": true,
+  "baseline_body_sha256": "84c558f01abb100982463d164cdfbd34d288f8ab2b3a645932bb6aa0fa56a883",
+  "repaired_body_sha256": "bcce8e49db5d86cb09b6d9fd53e74489044779b315ebc8bfb5662a48e3adc8fb",
+  "source_fbx": "Data/GraphicNovel/Pilot/CurlyMetalhead/rigged/body.fbx",
+  "source_sha256": "0150f48b3b74a0eb797ce4cc6a5bcb99c7fc4b4e9599e40e22e2ee7cb48bedd0",
+  "root_cause": {
+    "thigh_edges": "Eight tiny faces formed two dangling source-seam flaps attached across four three-face edges; repeated hole fill left those flaps in place.",
+    "ankle_notch": "The dark collar piping and canvas upper collar protruded through the trousers at the retained side-view sightline near z0.197m."
+  },
+  "repair": {
+    "removed_flap_faces": 8,
+    "ankle_trim_height_metres": [
+      0.182,
+      0.188
+    ],
+    "upper_canvas_collar_radial_scale": 0.9
+  },
+  "roundtrip": {
+    "passed": true,
+    "mode": "fresh FBX reimport in Blender CPU",
+    "bind_bones": 44,
+    "meshes": 45,
+    "morphs": [
+      "Basis",
+      "GN_EyeNarrow_L",
+      "GN_EyeNarrow_R"
+    ],
+    "original_body_rest_positions_preserved": true,
+    "weight_sums_normalized": true,
+    "max_original_body_morph_error_metres": 1.5797921292655255e-10,
+    "unintended_trouser_boundary_edges": 0,
+    "nonmanifold_trouser_edges": 0,
+    "degenerate_trouser_faces": 0,
+    "outer_ankle_notch_sightlines_covered_by_trousers": 36,
+    "boundary_edge_world_metres": [],
+    "body_fbx_sha256": "bcce8e49db5d86cb09b6d9fd53e74489044779b315ebc8bfb5662a48e3adc8fb"
+  },
+  "protected_original_sources_unchanged": true,
+  "cpu_only": true,
+  "render_threads": 4,
+  "prior_candidates": "Ignored revisions/ contains timestamped copies of prior exports/reports/previews.",
+  "not_checked": [
+    "Fresh Unreal import/rendering",
+    "runtime motion and multiplayer",
+    "whole-crew visual integration"
+  ],
+  "bind_pose_consolidation": "Existing body-bind-pose files intentionally unchanged by the wardrobe author; root coordinates regeneration from repaired canonical body.fbx."
+}

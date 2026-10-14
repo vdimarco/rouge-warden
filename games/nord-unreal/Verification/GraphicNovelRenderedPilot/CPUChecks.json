@@ -1,0 +1,43 @@
+[
+  {
+    "command": [
+      "python3",
+      "Scripts/test_graphic_novel_capture.py"
+    ],
+    "exit_code": 0,
+    "stdout": "NORD_GRAPHIC_NOVEL_CAPTURE_CPU_OK isolated modes/motion, bounded viewport geometry, rejected flags, native transition failures, graph weights/times and legacy sampling\n",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "python3",
+      "Scripts/test_graphic_novel_import.py"
+    ],
+    "exit_code": 0,
+    "stdout": "NORD_GRAPHIC_NOVEL_IMPORT_CPU_OK original routes preserved; generated source/destination/report isolated; unsafe flags rejected\n",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "python3",
+      "Scripts/test_player_quality_cadence.py"
+    ],
+    "exit_code": 0,
+    "stdout": "NORD_PLAYER_QUALITY_CADENCE_OK smooth Walk/Run at 30/60/120 world samples/s and wraps; 12-Hz holds, phase jumps, frozen bones and sparse/duplicate observations rejected\n",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "python3",
+      "-m",
+      "py_compile",
+      "Scripts/capture_player_quality.py",
+      "Scripts/import_meshy_crew.py",
+      "Scripts/test_graphic_novel_capture.py",
+      "Scripts/test_graphic_novel_import.py"
+    ],
+    "exit_code": 0,
+    "stdout": "",
+    "stderr": ""
+  }
+]
