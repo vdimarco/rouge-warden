@@ -1,0 +1,1906 @@
+{
+  "passed": true,
+  "package": "Linux Development",
+  "runner": "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Builds/District-20261014T160237Z/Archive/Linux/Quebec.sh",
+  "runner_sha256": "78808122cea23ff2d53b21341ff4538184e5d197ee403ee74ebfdfa2c0f8572e",
+  "default_player_route": true,
+  "rendered_startup": true,
+  "districts": {
+    "montreal": {
+      "map": "/Game/Maps/LaFontaine",
+      "layout": "Data/LaFontaine/layout.json",
+      "layout_sha256": "4238d6ed45d5fb890e0f8dbcb672de0803c6dc7079b0b6a86b386d82ebbb4250",
+      "source_spawn_cm": [
+        38793.0165416717,
+        -7522.815200551502,
+        120
+      ],
+      "source_starter_cm": [
+        37671.380310415516,
+        -7274.786971080566,
+        115
+      ],
+      "source_starter_yaw": 77.53080143026988,
+      "renderer_settings_before_cycle": {
+        "sg.ViewDistanceQuality": 3.0,
+        "sg.AntiAliasingQuality": 3.0,
+        "sg.ShadowQuality": 3.0,
+        "sg.GlobalIlluminationQuality": 3.0,
+        "sg.ReflectionQuality": 3.0,
+        "sg.PostProcessQuality": 3.0,
+        "sg.TextureQuality": 3.0,
+        "sg.EffectsQuality": 3.0,
+        "sg.FoliageQuality": 3.0,
+        "sg.ShadingQuality": 3.0,
+        "sg.LandscapeQuality": 3.0,
+        "r.ScreenPercentage": 100.0
+      },
+      "standalone_crew_cycle": {
+        "selections": [
+          {
+            "step": 1,
+            "walker": "QuebecCharacter_2147482355",
+            "crew_style": 10,
+            "mesh_component": "/Game/Maps/LaFontaine.LaFontaine:PersistentLevel.QuebecCharacter_2147482355.CharacterMesh0",
+            "instance": "/Game/Maps/LaFontaine.LaFontaine:PersistentLevel.QuebecCharacter_2147482355.CharacterMesh0.QuebecCrewAnimInstance_2147482103",
+            "locomotion_asset": "/Game/ParkComic/Crew/Resident10/BS_Locomotion.BS_Locomotion",
+            "jump_asset": "/Game/ParkComic/Crew/Resident10/A_Jump.A_Jump",
+            "observed_clip": null,
+            "observed_clip_time": 1.2,
+            "visibility_based_anim_tick_option": "AlwaysTickPose",
+            "scope": "Active mesh-bound native graph selection; no animation policy/velocity/state writes",
+            "body_asset": "/Game/ParkComic/Crew/Resident10/SK_Body.SK_Body",
+            "own_clip_assets": [
+              "/Game/ParkComic/Crew/Resident10/A_Idle.A_Idle",
+              "/Game/ParkComic/Crew/Resident10/A_Jump.A_Jump",
+              "/Game/ParkComic/Crew/Resident10/A_Run.A_Run",
+              "/Game/ParkComic/Crew/Resident10/A_Walk.A_Walk"
+            ]
+          },
+          {
+            "step": 2,
+            "walker": "QuebecCharacter_2147482355",
+            "crew_style": 3,
+            "mesh_component": "/Game/Maps/LaFontaine.LaFontaine:PersistentLevel.QuebecCharacter_2147482355.CharacterMesh0",
+            "instance": "/Game/Maps/LaFontaine.LaFontaine:PersistentLevel.QuebecCharacter_2147482355.CharacterMesh0.QuebecCrewAnimInstance_2147482100",
+            "locomotion_asset": "/Game/ParkComic/Crew/Resident3/BS_Locomotion.BS_Locomotion",
+            "jump_asset": "/Game/ParkComic/Crew/Resident3/A_Jump.A_Jump",
+            "observed_clip": null,
+            "observed_clip_time": 1.2,
+            "visibility_based_anim_tick_option": "AlwaysTickPose",
+            "scope": "Active mesh-bound native graph selection; no animation policy/velocity/state writes",
+            "body_asset": "/Game/ParkComic/Crew/Resident3/SK_Body.SK_Body",
+            "own_clip_assets": [
+              "/Game/ParkComic/Crew/Resident3/A_Idle.A_Idle",
+              "/Game/ParkComic/Crew/Resident3/A_Jump.A_Jump",
+              "/Game/ParkComic/Crew/Resident3/A_Run.A_Run",
+              "/Game/ParkComic/Crew/Resident3/A_Walk.A_Walk"
+            ]
+          },
+          {
+            "step": 3,
+            "walker": "QuebecCharacter_2147482355",
+            "crew_style": 4,
+            "mesh_component": "/Game/Maps/LaFontaine.LaFontaine:PersistentLevel.QuebecCharacter_2147482355.CharacterMesh0",
+            "instance": "/Game/Maps/LaFontaine.LaFontaine:PersistentLevel.QuebecCharacter_2147482355.CharacterMesh0.QuebecCrewAnimInstance_2147482097",
+            "locomotion_asset": "/Game/ParkComic/Crew/Resident4/BS_Locomotion.BS_Locomotion",
+            "jump_asset": "/Game/ParkComic/Crew/Resident4/A_Jump.A_Jump",
+            "observed_clip": null,
+            "observed_clip_time": 1.2,
+            "visibility_based_anim_tick_option": "AlwaysTickPose",
+            "scope": "Active mesh-bound native graph selection; no animation policy/velocity/state writes",
+            "body_asset": "/Game/ParkComic/Crew/Resident4/SK_Body.SK_Body",
+            "own_clip_assets": [
+              "/Game/ParkComic/Crew/Resident4/A_Idle.A_Idle",
+              "/Game/ParkComic/Crew/Resident4/A_Jump.A_Jump",
+              "/Game/ParkComic/Crew/Resident4/A_Run.A_Run",
+              "/Game/ParkComic/Crew/Resident4/A_Walk.A_Walk"
+            ]
+          },
+          {
+            "step": 4,
+            "walker": "QuebecCharacter_2147482355",
+            "crew_style": 5,
+            "mesh_component": "/Game/Maps/LaFontaine.LaFontaine:PersistentLevel.QuebecCharacter_2147482355.CharacterMesh0",
+            "instance": "/Game/Maps/LaFontaine.LaFontaine:PersistentLevel.QuebecCharacter_2147482355.CharacterMesh0.QuebecCrewAnimInstance_2147482094",
+            "locomotion_asset": "/Game/ParkComic/Crew/Resident5/BS_Locomotion.BS_Locomotion",
+            "jump_asset": "/Game/ParkComic/Crew/Resident5/A_Jump.A_Jump",
+            "observed_clip": null,
+            "observed_clip_time": 1.2,
+            "visibility_based_anim_tick_option": "AlwaysTickPose",
+            "scope": "Active mesh-bound native graph selection; no animation policy/velocity/state writes",
+            "body_asset": "/Game/ParkComic/Crew/Resident5/SK_Body.SK_Body",
+            "own_clip_assets": [
+              "/Game/ParkComic/Crew/Resident5/A_Idle.A_Idle",
+              "/Game/ParkComic/Crew/Resident5/A_Jump.A_Jump",
+              "/Game/ParkComic/Crew/Resident5/A_Run.A_Run",
+              "/Game/ParkComic/Crew/Resident5/A_Walk.A_Walk"
+            ]
+          },
+          {
+            "step": 5,
+            "walker": "QuebecCharacter_2147482355",
+            "crew_style": 6,
+            "mesh_component": "/Game/Maps/LaFontaine.LaFontaine:PersistentLevel.QuebecCharacter_2147482355.CharacterMesh0",
+            "instance": "/Game/Maps/LaFontaine.LaFontaine:PersistentLevel.QuebecCharacter_2147482355.CharacterMesh0.QuebecCrewAnimInstance_2147482091",
+            "locomotion_asset": "/Game/ParkComic/Crew/Resident6/BS_Locomotion.BS_Locomotion",
+            "jump_asset": "/Game/ParkComic/Crew/Resident6/A_Jump.A_Jump",
+            "observed_clip": null,
+            "observed_clip_time": 1.2,
+            "visibility_based_anim_tick_option": "AlwaysTickPose",
+            "scope": "Active mesh-bound native graph selection; no animation policy/velocity/state writes",
+            "body_asset": "/Game/ParkComic/Crew/Resident6/SK_Body.SK_Body",
+            "own_clip_assets": [
+              "/Game/ParkComic/Crew/Resident6/A_Idle.A_Idle",
+              "/Game/ParkComic/Crew/Resident6/A_Jump.A_Jump",
+              "/Game/ParkComic/Crew/Resident6/A_Run.A_Run",
+              "/Game/ParkComic/Crew/Resident6/A_Walk.A_Walk"
+            ]
+          },
+          {
+            "step": 6,
+            "walker": "QuebecCharacter_2147482355",
+            "crew_style": 7,
+            "mesh_component": "/Game/Maps/LaFontaine.LaFontaine:PersistentLevel.QuebecCharacter_2147482355.CharacterMesh0",
+            "instance": "/Game/Maps/LaFontaine.LaFontaine:PersistentLevel.QuebecCharacter_2147482355.CharacterMesh0.QuebecCrewAnimInstance_2147482088",
+            "locomotion_asset": "/Game/ParkComic/Crew/Resident7/BS_Locomotion.BS_Locomotion",
+            "jump_asset": "/Game/ParkComic/Crew/Resident7/A_Jump.A_Jump",
+            "observed_clip": null,
+            "observed_clip_time": 1.2,
+            "visibility_based_anim_tick_option": "AlwaysTickPose",
+            "scope": "Active mesh-bound native graph selection; no animation policy/velocity/state writes",
+            "body_asset": "/Game/ParkComic/Crew/Resident7/SK_Body.SK_Body",
+            "own_clip_assets": [
+              "/Game/ParkComic/Crew/Resident7/A_Idle.A_Idle",
+              "/Game/ParkComic/Crew/Resident7/A_Jump.A_Jump",
+              "/Game/ParkComic/Crew/Resident7/A_Run.A_Run",
+              "/Game/ParkComic/Crew/Resident7/A_Walk.A_Walk"
+            ]
+          },
+          {
+            "step": 7,
+            "walker": "QuebecCharacter_2147482355",
+            "crew_style": 8,
+            "mesh_component": "/Game/Maps/LaFontaine.LaFontaine:PersistentLevel.QuebecCharacter_2147482355.CharacterMesh0",
+            "instance": "/Game/Maps/LaFontaine.LaFontaine:PersistentLevel.QuebecCharacter_2147482355.CharacterMesh0.QuebecCrewAnimInstance_2147482085",
+            "locomotion_asset": "/Game/ParkComic/Crew/Resident8/BS_Locomotion.BS_Locomotion",
+            "jump_asset": "/Game/ParkComic/Crew/Resident8/A_Jump.A_Jump",
+            "observed_clip": null,
+            "observed_clip_time": 1.2,
+            "visibility_based_anim_tick_option": "AlwaysTickPose",
+            "scope": "Active mesh-bound native graph selection; no animation policy/velocity/state writes",
+            "body_asset": "/Game/ParkComic/Crew/Resident8/SK_Body.SK_Body",
+            "own_clip_assets": [
+              "/Game/ParkComic/Crew/Resident8/A_Idle.A_Idle",
+              "/Game/ParkComic/Crew/Resident8/A_Jump.A_Jump",
+              "/Game/ParkComic/Crew/Resident8/A_Run.A_Run",
+              "/Game/ParkComic/Crew/Resident8/A_Walk.A_Walk"
+            ]
+          },
+          {
+            "step": 8,
+            "walker": "QuebecCharacter_2147482355",
+            "crew_style": 9,
+            "mesh_component": "/Game/Maps/LaFontaine.LaFontaine:PersistentLevel.QuebecCharacter_2147482355.CharacterMesh0",
+            "instance": "/Game/Maps/LaFontaine.LaFontaine:PersistentLevel.QuebecCharacter_2147482355.CharacterMesh0.QuebecCrewAnimInstance_2147482082",
+            "locomotion_asset": "/Game/ParkComic/Crew/Resident9/BS_Locomotion.BS_Locomotion",
+            "jump_asset": "/Game/ParkComic/Crew/Resident9/A_Jump.A_Jump",
+            "observed_clip": null,
+            "observed_clip_time": 1.2,
+            "visibility_based_anim_tick_option": "AlwaysTickPose",
+            "scope": "Active mesh-bound native graph selection; no animation policy/velocity/state writes",
+            "body_asset": "/Game/ParkComic/Crew/Resident9/SK_Body.SK_Body",
+            "own_clip_assets": [
+              "/Game/ParkComic/Crew/Resident9/A_Idle.A_Idle",
+              "/Game/ParkComic/Crew/Resident9/A_Jump.A_Jump",
+              "/Game/ParkComic/Crew/Resident9/A_Run.A_Run",
+              "/Game/ParkComic/Crew/Resident9/A_Walk.A_Walk"
+            ]
+          }
+        ],
+        "body_assets": [
+          "/Game/ParkComic/Crew/Resident10/SK_Body.SK_Body",
+          "/Game/ParkComic/Crew/Resident3/SK_Body.SK_Body",
+          "/Game/ParkComic/Crew/Resident4/SK_Body.SK_Body",
+          "/Game/ParkComic/Crew/Resident5/SK_Body.SK_Body",
+          "/Game/ParkComic/Crew/Resident6/SK_Body.SK_Body",
+          "/Game/ParkComic/Crew/Resident7/SK_Body.SK_Body",
+          "/Game/ParkComic/Crew/Resident8/SK_Body.SK_Body",
+          "/Game/ParkComic/Crew/Resident9/SK_Body.SK_Body"
+        ],
+        "clip_assets": [
+          "/Game/ParkComic/Crew/Resident10/A_Idle.A_Idle",
+          "/Game/ParkComic/Crew/Resident10/A_Jump.A_Jump",
+          "/Game/ParkComic/Crew/Resident10/A_Run.A_Run",
+          "/Game/ParkComic/Crew/Resident10/A_Walk.A_Walk",
+          "/Game/ParkComic/Crew/Resident3/A_Idle.A_Idle",
+          "/Game/ParkComic/Crew/Resident3/A_Jump.A_Jump",
+          "/Game/ParkComic/Crew/Resident3/A_Run.A_Run",
+          "/Game/ParkComic/Crew/Resident3/A_Walk.A_Walk",
+          "/Game/ParkComic/Crew/Resident4/A_Idle.A_Idle",
+          "/Game/ParkComic/Crew/Resident4/A_Jump.A_Jump",
+          "/Game/ParkComic/Crew/Resident4/A_Run.A_Run",
+          "/Game/ParkComic/Crew/Resident4/A_Walk.A_Walk",
+          "/Game/ParkComic/Crew/Resident5/A_Idle.A_Idle",
+          "/Game/ParkComic/Crew/Resident5/A_Jump.A_Jump",
+          "/Game/ParkComic/Crew/Resident5/A_Run.A_Run",
+          "/Game/ParkComic/Crew/Resident5/A_Walk.A_Walk",
+          "/Game/ParkComic/Crew/Resident6/A_Idle.A_Idle",
+          "/Game/ParkComic/Crew/Resident6/A_Jump.A_Jump",
+          "/Game/ParkComic/Crew/Resident6/A_Run.A_Run",
+          "/Game/ParkComic/Crew/Resident6/A_Walk.A_Walk",
+          "/Game/ParkComic/Crew/Resident7/A_Idle.A_Idle",
+          "/Game/ParkComic/Crew/Resident7/A_Jump.A_Jump",
+          "/Game/ParkComic/Crew/Resident7/A_Run.A_Run",
+          "/Game/ParkComic/Crew/Resident7/A_Walk.A_Walk",
+          "/Game/ParkComic/Crew/Resident8/A_Idle.A_Idle",
+          "/Game/ParkComic/Crew/Resident8/A_Jump.A_Jump",
+          "/Game/ParkComic/Crew/Resident8/A_Run.A_Run",
+          "/Game/ParkComic/Crew/Resident8/A_Walk.A_Walk",
+          "/Game/ParkComic/Crew/Resident9/A_Idle.A_Idle",
+          "/Game/ParkComic/Crew/Resident9/A_Jump.A_Jump",
+          "/Game/ParkComic/Crew/Resident9/A_Run.A_Run",
+          "/Game/ParkComic/Crew/Resident9/A_Walk.A_Walk"
+        ],
+        "scope": "Eight separate native selections, each with its currently possessed body, own four clips and active mesh-bound graph. World/population inventory is a separate fresh final snapshot."
+      },
+      "standalone_inventory": {
+        "campaigns": 1,
+        "residents": 110,
+        "cars": 47,
+        "traffic": 16,
+        "population_scope": "authority complete",
+        "plateau": {
+          "mesh_families": {
+            "Meshes": 721,
+            "Context": 742,
+            "Background": 418,
+            "Landmarks": 13,
+            "Park": 284,
+            "Edges": 8,
+            "Wayfinding": 4,
+            "Perimeter": 347
+          },
+          "loaded_meshes": 2537,
+          "pedestrian_actors": 12,
+          "vegetation_actors": 1,
+          "mapped_tree_mesh": "/Game/Art/Tree/tree_small_02/StaticMeshes/tree_small_02.tree_small_02",
+          "civilian_rigs": 6,
+          "tree_instance_count_source": "verified on saved map by verify_plateau.py, not inferred from package log"
+        },
+        "east_extension_meshes": 40,
+        "crew": 8,
+        "original_clips": 32
+      },
+      "standalone_graph": {
+        "first": {
+          "walker": "QuebecCharacter_2147482355",
+          "crew_style": 9,
+          "mesh_component": "/Game/Maps/LaFontaine.LaFontaine:PersistentLevel.QuebecCharacter_2147482355.CharacterMesh0",
+          "instance": "/Game/Maps/LaFontaine.LaFontaine:PersistentLevel.QuebecCharacter_2147482355.CharacterMesh0.QuebecCrewAnimInstance_2147482082",
+          "locomotion_asset": "/Game/ParkComic/Crew/Resident9/BS_Locomotion.BS_Locomotion",
+          "jump_asset": "/Game/ParkComic/Crew/Resident9/A_Jump.A_Jump",
+          "observed_clip": "/Game/ParkComic/Crew/Resident9/A_Idle.A_Idle",
+          "observed_clip_time": 1.500023,
+          "visibility_based_anim_tick_option": "AlwaysTickPose",
+          "scope": "Active mesh-bound native graph selection; no animation policy/velocity/state writes"
+        },
+        "clock_advance_required": true,
+        "clock_scope": "Rendered native startup only",
+        "second": {
+          "walker": "QuebecCharacter_2147482355",
+          "crew_style": 9,
+          "mesh_component": "/Game/Maps/LaFontaine.LaFontaine:PersistentLevel.QuebecCharacter_2147482355.CharacterMesh0",
+          "instance": "/Game/Maps/LaFontaine.LaFontaine:PersistentLevel.QuebecCharacter_2147482355.CharacterMesh0.QuebecCrewAnimInstance_2147482082",
+          "locomotion_asset": "/Game/ParkComic/Crew/Resident9/BS_Locomotion.BS_Locomotion",
+          "jump_asset": "/Game/ParkComic/Crew/Resident9/A_Jump.A_Jump",
+          "observed_clip": "/Game/ParkComic/Crew/Resident9/A_Idle.A_Idle",
+          "observed_clip_time": 2.00003,
+          "visibility_based_anim_tick_option": "AlwaysTickPose",
+          "scope": "Active mesh-bound native graph selection; no animation policy/velocity/state writes"
+        },
+        "clock_advanced": true
+      },
+      "renderer_settings_after_cycle": {
+        "sg.ViewDistanceQuality": 3.0,
+        "sg.AntiAliasingQuality": 3.0,
+        "sg.ShadowQuality": 3.0,
+        "sg.GlobalIlluminationQuality": 3.0,
+        "sg.ReflectionQuality": 3.0,
+        "sg.PostProcessQuality": 3.0,
+        "sg.TextureQuality": 3.0,
+        "sg.EffectsQuality": 3.0,
+        "sg.FoliageQuality": 3.0,
+        "sg.ShadingQuality": 3.0,
+        "sg.LandscapeQuality": 3.0,
+        "r.ScreenPercentage": 100.0
+      },
+      "screenshots": {
+        "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/DistrictRuntime/SingleRenderWindow-20261014T172829Z/Package/montreal-standalone/User/Saved/Screenshots/Linux/NordComic_Car.png": "1fc137bc69935c7df1fb65e8f7d7dea3a67528efd27c895aefe3f7f78ac7df71",
+        "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/DistrictRuntime/SingleRenderWindow-20261014T172829Z/Package/montreal-standalone/User/Saved/Screenshots/Linux/NordComic_East.png": "2e93aba3eda2306ae4839fe386f4341fff8383ffae753d86eed7867ed237a6c9",
+        "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/DistrictRuntime/SingleRenderWindow-20261014T172829Z/Package/montreal-standalone/User/Saved/Screenshots/Linux/NordComic_Jump.png": "31e118cf87f6041411ebfd13fd51d3bff6cdaeb32a370a3a81b936a3ed5cc034",
+        "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/DistrictRuntime/SingleRenderWindow-20261014T172829Z/Package/montreal-standalone/User/Saved/Screenshots/Linux/NordComic_North.png": "9149d25c17d5d1d0d040cae8c9eaf6a9d8d659d4e78e0fae8dce4482832dda00",
+        "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/DistrictRuntime/SingleRenderWindow-20261014T172829Z/Package/montreal-standalone/User/Saved/Screenshots/Linux/NordComic_West.png": "f15f97bbed67cd82410bfc99e9934738c25f0a5e03045d38e7fa99c46c3dbe59",
+        "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/DistrictRuntime/SingleRenderWindow-20261014T172829Z/Package/montreal-standalone/User/Saved/Screenshots/Linux/NordRealistic_East.png": "dd7f7fb6534e02235905ee5998ac565b09cc620de9ae4a47aa0306ea062097bf",
+        "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/DistrictRuntime/SingleRenderWindow-20261014T172829Z/Package/montreal-standalone/User/Saved/Screenshots/Linux/NordRealistic_North.png": "fb00b2207bd6e52964359a6a8866a16731dce0545d3df0fd13b05529f43a6675"
+      },
+      "standalone": {
+        "exit_code": 0,
+        "clean_exit_required": true,
+        "graceful_quit_timed_out": false,
+        "argv": [
+          "bash",
+          "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Builds/District-20261014T160237Z/Archive/Linux/Quebec.sh",
+          "/Game/Maps/LaFontaine",
+          "-port=7795",
+          "-unattended",
+          "-nosound",
+          "-NordNoCampaignSave",
+          "-UserDir=/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/DistrictRuntime/SingleRenderWindow-20261014T172829Z/Package/montreal-standalone/User",
+          "-abslog=/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/DistrictRuntime/SingleRenderWindow-20261014T172829Z/Package/montreal-standalone/game.log",
+          "-ExecCmds=Scalability 3,r.ScreenPercentage 100,t.MaxFPS 60",
+          "-csvCaptureFrames=180000",
+          "-csvExecCmds=r30:exec /tmp/nord-district-Binaries-1e2pe1e3/montreal-standalone.txt",
+          "-vulkan",
+          "-graphicsadapter=0",
+          "-RenderOffscreen",
+          "-ForceRes",
+          "-windowed",
+          "-ResX=1280",
+          "-ResY=720",
+          "-NordCapture"
+        ],
+        "log": "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/DistrictRuntime/SingleRenderWindow-20261014T172829Z/Package/montreal-standalone/game.log",
+        "log_sha256": "bbbdca6da4d9c81bbfba1949fb34efd2d6ecc8b0f06ad251f2121d8817ca9ece"
+      },
+      "host_crew_cycle": {
+        "selections": [
+          {
+            "step": 1,
+            "walker": "QuebecCharacter_2147482295",
+            "crew_style": 10,
+            "mesh_component": "/Game/Maps/LaFontaine.LaFontaine:PersistentLevel.QuebecCharacter_2147482295.CharacterMesh0",
+            "instance": "/Game/Maps/LaFontaine.LaFontaine:PersistentLevel.QuebecCharacter_2147482295.CharacterMesh0.QuebecCrewAnimInstance_2147482042",
+            "locomotion_asset": "/Game/ParkComic/Crew/Resident10/BS_Locomotion.BS_Locomotion",
+            "jump_asset": "/Game/ParkComic/Crew/Resident10/A_Jump.A_Jump",
+            "observed_clip": null,
+            "observed_clip_time": 1.2,
+            "visibility_based_anim_tick_option": "AlwaysTickPose",
+            "scope": "Active mesh-bound native graph selection; no animation policy/velocity/state writes",
+            "body_asset": "/Game/ParkComic/Crew/Resident10/SK_Body.SK_Body",
+            "own_clip_assets": [
+              "/Game/ParkComic/Crew/Resident10/A_Idle.A_Idle",
+              "/Game/ParkComic/Crew/Resident10/A_Jump.A_Jump",
+              "/Game/ParkComic/Crew/Resident10/A_Run.A_Run",
+              "/Game/ParkComic/Crew/Resident10/A_Walk.A_Walk"
+            ]
+          },
+          {
+            "step": 2,
+            "walker": "QuebecCharacter_2147482295",
+            "crew_style": 3,
+            "mesh_component": "/Game/Maps/LaFontaine.LaFontaine:PersistentLevel.QuebecCharacter_2147482295.CharacterMesh0",
+            "instance": "/Game/Maps/LaFontaine.LaFontaine:PersistentLevel.QuebecCharacter_2147482295.CharacterMesh0.QuebecCrewAnimInstance_2147482039",
+            "locomotion_asset": "/Game/ParkComic/Crew/Resident3/BS_Locomotion.BS_Locomotion",
+            "jump_asset": "/Game/ParkComic/Crew/Resident3/A_Jump.A_Jump",
+            "observed_clip": null,
+            "observed_clip_time": 1.2,
+            "visibility_based_anim_tick_option": "AlwaysTickPose",
+            "scope": "Active mesh-bound native graph selection; no animation policy/velocity/state writes",
+            "body_asset": "/Game/ParkComic/Crew/Resident3/SK_Body.SK_Body",
+            "own_clip_assets": [
+              "/Game/ParkComic/Crew/Resident3/A_Idle.A_Idle",
+              "/Game/ParkComic/Crew/Resident3/A_Jump.A_Jump",
+              "/Game/ParkComic/Crew/Resident3/A_Run.A_Run",
+              "/Game/ParkComic/Crew/Resident3/A_Walk.A_Walk"
+            ]
+          },
+          {
+            "step": 3,
+            "walker": "QuebecCharacter_2147482295",
+            "crew_style": 4,
+            "mesh_component": "/Game/Maps/LaFontaine.LaFontaine:PersistentLevel.QuebecCharacter_2147482295.CharacterMesh0",
+            "instance": "/Game/Maps/LaFontaine.LaFontaine:PersistentLevel.QuebecCharacter_2147482295.CharacterMesh0.QuebecCrewAnimInstance_2147482036",
+            "locomotion_asset": "/Game/ParkComic/Crew/Resident4/BS_Locomotion.BS_Locomotion",
+            "jump_asset": "/Game/ParkComic/Crew/Resident4/A_Jump.A_Jump",
+            "observed_clip": null,
+            "observed_clip_time": 1.2,
+            "visibility_based_anim_tick_option": "AlwaysTickPose",
+            "scope": "Active mesh-bound native graph selection; no animation policy/velocity/state writes",
+            "body_asset": "/Game/ParkComic/Crew/Resident4/SK_Body.SK_Body",
+            "own_clip_assets": [
+              "/Game/ParkComic/Crew/Resident4/A_Idle.A_Idle",
+              "/Game/ParkComic/Crew/Resident4/A_Jump.A_Jump",
+              "/Game/ParkComic/Crew/Resident4/A_Run.A_Run",
+              "/Game/ParkComic/Crew/Resident4/A_Walk.A_Walk"
+            ]
+          },
+          {
+            "step": 4,
+            "walker": "QuebecCharacter_2147482295",
+            "crew_style": 5,
+            "mesh_component": "/Game/Maps/LaFontaine.LaFontaine:PersistentLevel.QuebecCharacter_2147482295.CharacterMesh0",
+            "instance": "/Game/Maps/LaFontaine.LaFontaine:PersistentLevel.QuebecCharacter_2147482295.CharacterMesh0.QuebecCrewAnimInstance_2147482033",
+            "locomotion_asset": "/Game/ParkComic/Crew/Resident5/BS_Locomotion.BS_Locomotion",
+            "jump_asset": "/Game/ParkComic/Crew/Resident5/A_Jump.A_Jump",
+            "observed_clip": null,
+            "observed_clip_time": 1.2,
+            "visibility_based_anim_tick_option": "AlwaysTickPose",
+            "scope": "Active mesh-bound native graph selection; no animation policy/velocity/state writes",
+            "body_asset": "/Game/ParkComic/Crew/Resident5/SK_Body.SK_Body",
+            "own_clip_assets": [
+              "/Game/ParkComic/Crew/Resident5/A_Idle.A_Idle",
+              "/Game/ParkComic/Crew/Resident5/A_Jump.A_Jump",
+              "/Game/ParkComic/Crew/Resident5/A_Run.A_Run",
+              "/Game/ParkComic/Crew/Resident5/A_Walk.A_Walk"
+            ]
+          },
+          {
+            "step": 5,
+            "walker": "QuebecCharacter_2147482295",
+            "crew_style": 6,
+            "mesh_component": "/Game/Maps/LaFontaine.LaFontaine:PersistentLevel.QuebecCharacter_2147482295.CharacterMesh0",
+            "instance": "/Game/Maps/LaFontaine.LaFontaine:PersistentLevel.QuebecCharacter_2147482295.CharacterMesh0.QuebecCrewAnimInstance_2147482030",
+            "locomotion_asset": "/Game/ParkComic/Crew/Resident6/BS_Locomotion.BS_Locomotion",
+            "jump_asset": "/Game/ParkComic/Crew/Resident6/A_Jump.A_Jump",
+            "observed_clip": null,
+            "observed_clip_time": 1.2,
+            "visibility_based_anim_tick_option": "AlwaysTickPose",
+            "scope": "Active mesh-bound native graph selection; no animation policy/velocity/state writes",
+            "body_asset": "/Game/ParkComic/Crew/Resident6/SK_Body.SK_Body",
+            "own_clip_assets": [
+              "/Game/ParkComic/Crew/Resident6/A_Idle.A_Idle",
+              "/Game/ParkComic/Crew/Resident6/A_Jump.A_Jump",
+              "/Game/ParkComic/Crew/Resident6/A_Run.A_Run",
+              "/Game/ParkComic/Crew/Resident6/A_Walk.A_Walk"
+            ]
+          },
+          {
+            "step": 6,
+            "walker": "QuebecCharacter_2147482295",
+            "crew_style": 7,
+            "mesh_component": "/Game/Maps/LaFontaine.LaFontaine:PersistentLevel.QuebecCharacter_2147482295.CharacterMesh0",
+            "instance": "/Game/Maps/LaFontaine.LaFontaine:PersistentLevel.QuebecCharacter_2147482295.CharacterMesh0.QuebecCrewAnimInstance_2147482027",
+            "locomotion_asset": "/Game/ParkComic/Crew/Resident7/BS_Locomotion.BS_Locomotion",
+            "jump_asset": "/Game/ParkComic/Crew/Resident7/A_Jump.A_Jump",
+            "observed_clip": null,
+            "observed_clip_time": 1.2,
+            "visibility_based_anim_tick_option": "AlwaysTickPose",
+            "scope": "Active mesh-bound native graph selection; no animation policy/velocity/state writes",
+            "body_asset": "/Game/ParkComic/Crew/Resident7/SK_Body.SK_Body",
+            "own_clip_assets": [
+              "/Game/ParkComic/Crew/Resident7/A_Idle.A_Idle",
+              "/Game/ParkComic/Crew/Resident7/A_Jump.A_Jump",
+              "/Game/ParkComic/Crew/Resident7/A_Run.A_Run",
+              "/Game/ParkComic/Crew/Resident7/A_Walk.A_Walk"
+            ]
+          },
+          {
+            "step": 7,
+            "walker": "QuebecCharacter_2147482295",
+            "crew_style": 8,
+            "mesh_component": "/Game/Maps/LaFontaine.LaFontaine:PersistentLevel.QuebecCharacter_2147482295.CharacterMesh0",
+            "instance": "/Game/Maps/LaFontaine.LaFontaine:PersistentLevel.QuebecCharacter_2147482295.CharacterMesh0.QuebecCrewAnimInstance_2147482024",
+            "locomotion_asset": "/Game/ParkComic/Crew/Resident8/BS_Locomotion.BS_Locomotion",
+            "jump_asset": "/Game/ParkComic/Crew/Resident8/A_Jump.A_Jump",
+            "observed_clip": null,
+            "observed_clip_time": 1.2,
+            "visibility_based_anim_tick_option": "AlwaysTickPose",
+            "scope": "Active mesh-bound native graph selection; no animation policy/velocity/state writes",
+            "body_asset": "/Game/ParkComic/Crew/Resident8/SK_Body.SK_Body",
+            "own_clip_assets": [
+              "/Game/ParkComic/Crew/Resident8/A_Idle.A_Idle",
+              "/Game/ParkComic/Crew/Resident8/A_Jump.A_Jump",
+              "/Game/ParkComic/Crew/Resident8/A_Run.A_Run",
+              "/Game/ParkComic/Crew/Resident8/A_Walk.A_Walk"
+            ]
+          },
+          {
+            "step": 8,
+            "walker": "QuebecCharacter_2147482295",
+            "crew_style": 9,
+            "mesh_component": "/Game/Maps/LaFontaine.LaFontaine:PersistentLevel.QuebecCharacter_2147482295.CharacterMesh0",
+            "instance": "/Game/Maps/LaFontaine.LaFontaine:PersistentLevel.QuebecCharacter_2147482295.CharacterMesh0.QuebecCrewAnimInstance_2147482021",
+            "locomotion_asset": "/Game/ParkComic/Crew/Resident9/BS_Locomotion.BS_Locomotion",
+            "jump_asset": "/Game/ParkComic/Crew/Resident9/A_Jump.A_Jump",
+            "observed_clip": null,
+            "observed_clip_time": 1.2,
+            "visibility_based_anim_tick_option": "AlwaysTickPose",
+            "scope": "Active mesh-bound native graph selection; no animation policy/velocity/state writes",
+            "body_asset": "/Game/ParkComic/Crew/Resident9/SK_Body.SK_Body",
+            "own_clip_assets": [
+              "/Game/ParkComic/Crew/Resident9/A_Idle.A_Idle",
+              "/Game/ParkComic/Crew/Resident9/A_Jump.A_Jump",
+              "/Game/ParkComic/Crew/Resident9/A_Run.A_Run",
+              "/Game/ParkComic/Crew/Resident9/A_Walk.A_Walk"
+            ]
+          }
+        ],
+        "body_assets": [
+          "/Game/ParkComic/Crew/Resident10/SK_Body.SK_Body",
+          "/Game/ParkComic/Crew/Resident3/SK_Body.SK_Body",
+          "/Game/ParkComic/Crew/Resident4/SK_Body.SK_Body",
+          "/Game/ParkComic/Crew/Resident5/SK_Body.SK_Body",
+          "/Game/ParkComic/Crew/Resident6/SK_Body.SK_Body",
+          "/Game/ParkComic/Crew/Resident7/SK_Body.SK_Body",
+          "/Game/ParkComic/Crew/Resident8/SK_Body.SK_Body",
+          "/Game/ParkComic/Crew/Resident9/SK_Body.SK_Body"
+        ],
+        "clip_assets": [
+          "/Game/ParkComic/Crew/Resident10/A_Idle.A_Idle",
+          "/Game/ParkComic/Crew/Resident10/A_Jump.A_Jump",
+          "/Game/ParkComic/Crew/Resident10/A_Run.A_Run",
+          "/Game/ParkComic/Crew/Resident10/A_Walk.A_Walk",
+          "/Game/ParkComic/Crew/Resident3/A_Idle.A_Idle",
+          "/Game/ParkComic/Crew/Resident3/A_Jump.A_Jump",
+          "/Game/ParkComic/Crew/Resident3/A_Run.A_Run",
+          "/Game/ParkComic/Crew/Resident3/A_Walk.A_Walk",
+          "/Game/ParkComic/Crew/Resident4/A_Idle.A_Idle",
+          "/Game/ParkComic/Crew/Resident4/A_Jump.A_Jump",
+          "/Game/ParkComic/Crew/Resident4/A_Run.A_Run",
+          "/Game/ParkComic/Crew/Resident4/A_Walk.A_Walk",
+          "/Game/ParkComic/Crew/Resident5/A_Idle.A_Idle",
+          "/Game/ParkComic/Crew/Resident5/A_Jump.A_Jump",
+          "/Game/ParkComic/Crew/Resident5/A_Run.A_Run",
+          "/Game/ParkComic/Crew/Resident5/A_Walk.A_Walk",
+          "/Game/ParkComic/Crew/Resident6/A_Idle.A_Idle",
+          "/Game/ParkComic/Crew/Resident6/A_Jump.A_Jump",
+          "/Game/ParkComic/Crew/Resident6/A_Run.A_Run",
+          "/Game/ParkComic/Crew/Resident6/A_Walk.A_Walk",
+          "/Game/ParkComic/Crew/Resident7/A_Idle.A_Idle",
+          "/Game/ParkComic/Crew/Resident7/A_Jump.A_Jump",
+          "/Game/ParkComic/Crew/Resident7/A_Run.A_Run",
+          "/Game/ParkComic/Crew/Resident7/A_Walk.A_Walk",
+          "/Game/ParkComic/Crew/Resident8/A_Idle.A_Idle",
+          "/Game/ParkComic/Crew/Resident8/A_Jump.A_Jump",
+          "/Game/ParkComic/Crew/Resident8/A_Run.A_Run",
+          "/Game/ParkComic/Crew/Resident8/A_Walk.A_Walk",
+          "/Game/ParkComic/Crew/Resident9/A_Idle.A_Idle",
+          "/Game/ParkComic/Crew/Resident9/A_Jump.A_Jump",
+          "/Game/ParkComic/Crew/Resident9/A_Run.A_Run",
+          "/Game/ParkComic/Crew/Resident9/A_Walk.A_Walk"
+        ],
+        "scope": "Eight separate native selections, each with its currently possessed body, own four clips and active mesh-bound graph. World/population inventory is a separate fresh final snapshot."
+      },
+      "host_inventory": {
+        "campaigns": 1,
+        "residents": 110,
+        "cars": 47,
+        "traffic": 16,
+        "population_scope": "authority complete",
+        "plateau": {
+          "mesh_families": {
+            "Meshes": 721,
+            "Context": 742,
+            "Background": 418,
+            "Landmarks": 13,
+            "Park": 284,
+            "Edges": 8,
+            "Wayfinding": 4,
+            "Perimeter": 347
+          },
+          "loaded_meshes": 2537,
+          "pedestrian_actors": 12,
+          "vegetation_actors": 1,
+          "mapped_tree_mesh": "/Game/Art/Tree/tree_small_02/StaticMeshes/tree_small_02.tree_small_02",
+          "civilian_rigs": 6,
+          "tree_instance_count_source": "verified on saved map by verify_plateau.py, not inferred from package log"
+        },
+        "east_extension_meshes": 40,
+        "crew": 8,
+        "original_clips": 32
+      },
+      "starter_readback": {
+        "actor": "QuebecCar_0",
+        "component": "VehicleHull",
+        "position_cm": [
+          38569.679242,
+          -7473.428568,
+          107.5
+        ],
+        "yaw_degrees": -102.469199,
+        "source_offset_cm": 919.9997035393684,
+        "teleported_car": false,
+        "selection": "unique native StarterCar tag and exact source curb-search formula",
+        "native_logged_offset_cm": 920.0,
+        "source_road_index": 63,
+        "native_along_offset_cm": 0,
+        "curb_side": -1,
+        "sampled_curb_edge_cm": 1059.9997035393626,
+        "source_width_cm": 1400,
+        "formula_error_cm": 0.00010429811237600006
+      },
+      "client_state": {
+        "campaigns": 1,
+        "residents": 29,
+        "cars": 39,
+        "traffic": 9,
+        "population_scope": "client network-relevant subset"
+      },
+      "paired_player_identity": {
+        "client": {
+          "controller_path": "/Game/Maps/LaFontaine.LaFontaine:PersistentLevel.QuebecController_2147482306",
+          "player": "/Script/Engine.LocalPlayer'/Engine/Transient.GameEngine_2147482592:LocalPlayer_2147482472'",
+          "pawn": "QuebecCharacter_2147482297",
+          "player_state_path": "/Game/Maps/LaFontaine.LaFontaine:PersistentLevel.PlayerState_2147482227",
+          "player_id": 257
+        },
+        "authority_remote": {
+          "controller_path": "/Game/Maps/LaFontaine.LaFontaine:PersistentLevel.QuebecController_2147482015",
+          "player": "/Script/OnlineSubsystemUtils.IpConnection'/Engine/Transient.IpConnection_2147482020'",
+          "pawn": "QuebecCharacter_2147482009",
+          "player_state_path": "/Game/Maps/LaFontaine.LaFontaine:PersistentLevel.PlayerState_2147482014",
+          "player_id": 257
+        }
+      },
+      "joined_native_graphs": {
+        "host_local": {
+          "first": {
+            "walker": "QuebecCharacter_2147482295",
+            "crew_style": 9,
+            "mesh_component": "/Game/Maps/LaFontaine.LaFontaine:PersistentLevel.QuebecCharacter_2147482295.CharacterMesh0",
+            "instance": "/Game/Maps/LaFontaine.LaFontaine:PersistentLevel.QuebecCharacter_2147482295.CharacterMesh0.QuebecCrewAnimInstance_2147482021",
+            "locomotion_asset": "/Game/ParkComic/Crew/Resident9/BS_Locomotion.BS_Locomotion",
+            "jump_asset": "/Game/ParkComic/Crew/Resident9/A_Jump.A_Jump",
+            "observed_clip": "/Game/ParkComic/Crew/Resident9/A_Idle.A_Idle",
+            "observed_clip_time": 2.503861,
+            "visibility_based_anim_tick_option": "AlwaysTickPose",
+            "scope": "Active mesh-bound native graph selection; no animation policy/velocity/state writes"
+          },
+          "clock_advance_required": false,
+          "clock_scope": "NullRHI asset selection only; no pose/clock acceptance"
+        },
+        "host_remote": {
+          "first": {
+            "walker": "QuebecCharacter_2147482009",
+            "crew_style": 10,
+            "mesh_component": "/Game/Maps/LaFontaine.LaFontaine:PersistentLevel.QuebecCharacter_2147482009.CharacterMesh0",
+            "instance": "/Game/Maps/LaFontaine.LaFontaine:PersistentLevel.QuebecCharacter_2147482009.CharacterMesh0.QuebecCrewAnimInstance_2147482003",
+            "locomotion_asset": "/Game/ParkComic/Crew/Resident10/BS_Locomotion.BS_Locomotion",
+            "jump_asset": "/Game/ParkComic/Crew/Resident10/A_Jump.A_Jump",
+            "observed_clip": "/Game/ParkComic/Crew/Resident10/A_Idle.A_Idle",
+            "observed_clip_time": 2.900025,
+            "visibility_based_anim_tick_option": "AlwaysTickPose",
+            "scope": "Active mesh-bound native graph selection; no animation policy/velocity/state writes"
+          },
+          "clock_advance_required": false,
+          "clock_scope": "NullRHI asset selection only; no pose/clock acceptance"
+        },
+        "client_local": {
+          "first": {
+            "walker": "QuebecCharacter_2147482297",
+            "crew_style": 10,
+            "mesh_component": "/Game/Maps/LaFontaine.LaFontaine:PersistentLevel.QuebecCharacter_2147482297.CharacterMesh0",
+            "instance": "/Game/Maps/LaFontaine.LaFontaine:PersistentLevel.QuebecCharacter_2147482297.CharacterMesh0.QuebecCrewAnimInstance_2147482276",
+            "locomotion_asset": "/Game/ParkComic/Crew/Resident10/BS_Locomotion.BS_Locomotion",
+            "jump_asset": "/Game/ParkComic/Crew/Resident10/A_Jump.A_Jump",
+            "observed_clip": "/Game/ParkComic/Crew/Resident10/A_Idle.A_Idle",
+            "observed_clip_time": 3.904582,
+            "visibility_based_anim_tick_option": "AlwaysTickPose",
+            "scope": "Active mesh-bound native graph selection; no animation policy/velocity/state writes"
+          },
+          "clock_advance_required": false,
+          "clock_scope": "NullRHI asset selection only; no pose/clock acceptance"
+        }
+      },
+      "replicated_starter": {
+        "host_actor": "QuebecCar_0",
+        "client_actor": "QuebecCar_0",
+        "client_pose": [
+          [
+            38569.68,
+            -7473.43,
+            107.51
+          ],
+          -102.65625
+        ],
+        "identity": "unique nontraffic authority pose match, then replicated occupant and local possession"
+      },
+      "entry_fixture": {
+        "authority_teleported_remote_walker_only": "QuebecCharacter_2147482009",
+        "target_cm": [
+          38750.31550259001,
+          -7513.372796119421,
+          127.5
+        ],
+        "native_interact": true
+      },
+      "native_drive": {
+        "speed_cm_s": 665.75,
+        "position_cm": [
+          38538.352755,
+          -7615.093574,
+          107.5
+        ]
+      },
+      "native_brake": {
+        "stopped_cm": [
+          38402.491022,
+          -8478.886756,
+          112.842024
+        ],
+        "held_cm": [
+          38402.491022,
+          -8478.886756,
+          112.842024
+        ],
+        "hold_seconds": 0.5
+      },
+      "client_final_state": {
+        "campaigns": 1,
+        "residents": 29,
+        "cars": 38,
+        "traffic": 8,
+        "population_scope": "client network-relevant subset"
+      },
+      "client": {
+        "exit_code": 0,
+        "clean_exit_required": true,
+        "graceful_quit_timed_out": false,
+        "argv": [
+          "bash",
+          "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Builds/District-20261014T160237Z/Archive/Linux/Quebec.sh",
+          "127.0.0.1:7795",
+          "-port=7795",
+          "-unattended",
+          "-nosound",
+          "-NordNoCampaignSave",
+          "-UserDir=/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/DistrictRuntime/SingleRenderWindow-20261014T172829Z/Package/montreal-client/User",
+          "-abslog=/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/DistrictRuntime/SingleRenderWindow-20261014T172829Z/Package/montreal-client/game.log",
+          "-ExecCmds=t.MaxFPS 60",
+          "-csvCaptureFrames=180000",
+          "-csvExecCmds=r30:exec /tmp/nord-district-Binaries-1e2pe1e3/montreal-client.txt",
+          "-nullrhi"
+        ],
+        "log": "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/DistrictRuntime/SingleRenderWindow-20261014T172829Z/Package/montreal-client/game.log",
+        "log_sha256": "613ada52166caf27b99707c041394061bae70b91ea8c7c9fc43faf23eeaa14eb"
+      },
+      "host_final_state": {
+        "campaigns": 1,
+        "residents": 110,
+        "cars": 47,
+        "traffic": 16,
+        "population_scope": "authority complete"
+      },
+      "host": {
+        "exit_code": 0,
+        "clean_exit_required": true,
+        "graceful_quit_timed_out": false,
+        "argv": [
+          "bash",
+          "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Builds/District-20261014T160237Z/Archive/Linux/Quebec.sh",
+          "/Game/Maps/LaFontaine?listen",
+          "-port=7795",
+          "-unattended",
+          "-nosound",
+          "-NordNoCampaignSave",
+          "-UserDir=/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/DistrictRuntime/SingleRenderWindow-20261014T172829Z/Package/montreal-host/User",
+          "-abslog=/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/DistrictRuntime/SingleRenderWindow-20261014T172829Z/Package/montreal-host/game.log",
+          "-ExecCmds=t.MaxFPS 60",
+          "-csvCaptureFrames=180000",
+          "-csvExecCmds=r30:exec /tmp/nord-district-Binaries-1e2pe1e3/montreal-host.txt",
+          "-nullrhi"
+        ],
+        "log": "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/DistrictRuntime/SingleRenderWindow-20261014T172829Z/Package/montreal-host/game.log",
+        "log_sha256": "65709a1d546a1f15cbfd56689f0b5b06b6516308e9e2b373590ba6e723d5927f"
+      },
+      "checks": [
+        "standalone exact district and original crew/clips load",
+        "separate listen/client join",
+        "current VehicleHull source fixture readback",
+        "authority-only remote walker arrangement",
+        "native client enter/drive/brake/exit replication",
+        "mesh-bound own production graph/clip selection per process",
+        "clean peer departure",
+        "district-correct progression and population isolation",
+        "clean logs/exits and isolated save paths"
+      ],
+      "passed": true
+    },
+    "toronto": {
+      "map": "/Game/Maps/CollegeBathurst",
+      "layout": "Data/CollegeBathurst/layout.json",
+      "layout_sha256": "199b3371798f174a19e619aacdbfc5e5f258747e3b517bca15bf8dd35f6f3730",
+      "source_spawn_cm": [
+        1787.278,
+        -786.374,
+        120
+      ],
+      "source_starter_cm": [
+        2770.615,
+        354.556,
+        115
+      ],
+      "source_starter_yaw": 15.322,
+      "renderer_settings_before_cycle": {
+        "sg.ViewDistanceQuality": 3.0,
+        "sg.AntiAliasingQuality": 3.0,
+        "sg.ShadowQuality": 3.0,
+        "sg.GlobalIlluminationQuality": 3.0,
+        "sg.ReflectionQuality": 3.0,
+        "sg.PostProcessQuality": 3.0,
+        "sg.TextureQuality": 3.0,
+        "sg.EffectsQuality": 3.0,
+        "sg.FoliageQuality": 3.0,
+        "sg.ShadingQuality": 3.0,
+        "sg.LandscapeQuality": 3.0,
+        "r.ScreenPercentage": 100.0
+      },
+      "standalone_crew_cycle": {
+        "selections": [
+          {
+            "step": 1,
+            "walker": "QuebecCharacter_2147482379",
+            "crew_style": 10,
+            "mesh_component": "/Game/Maps/CollegeBathurst.CollegeBathurst:PersistentLevel.QuebecCharacter_2147482379.CharacterMesh0",
+            "instance": "/Game/Maps/CollegeBathurst.CollegeBathurst:PersistentLevel.QuebecCharacter_2147482379.CharacterMesh0.QuebecCrewAnimInstance_2147482368",
+            "locomotion_asset": "/Game/ParkComic/Crew/Resident10/BS_Locomotion.BS_Locomotion",
+            "jump_asset": "/Game/ParkComic/Crew/Resident10/A_Jump.A_Jump",
+            "observed_clip": null,
+            "observed_clip_time": 1.2,
+            "visibility_based_anim_tick_option": "AlwaysTickPose",
+            "scope": "Active mesh-bound native graph selection; no animation policy/velocity/state writes",
+            "body_asset": "/Game/ParkComic/Crew/Resident10/SK_Body.SK_Body",
+            "own_clip_assets": [
+              "/Game/ParkComic/Crew/Resident10/A_Idle.A_Idle",
+              "/Game/ParkComic/Crew/Resident10/A_Jump.A_Jump",
+              "/Game/ParkComic/Crew/Resident10/A_Run.A_Run",
+              "/Game/ParkComic/Crew/Resident10/A_Walk.A_Walk"
+            ]
+          },
+          {
+            "step": 2,
+            "walker": "QuebecCharacter_2147482379",
+            "crew_style": 3,
+            "mesh_component": "/Game/Maps/CollegeBathurst.CollegeBathurst:PersistentLevel.QuebecCharacter_2147482379.CharacterMesh0",
+            "instance": "/Game/Maps/CollegeBathurst.CollegeBathurst:PersistentLevel.QuebecCharacter_2147482379.CharacterMesh0.QuebecCrewAnimInstance_2147482365",
+            "locomotion_asset": "/Game/ParkComic/Crew/Resident3/BS_Locomotion.BS_Locomotion",
+            "jump_asset": "/Game/ParkComic/Crew/Resident3/A_Jump.A_Jump",
+            "observed_clip": null,
+            "observed_clip_time": 1.2,
+            "visibility_based_anim_tick_option": "AlwaysTickPose",
+            "scope": "Active mesh-bound native graph selection; no animation policy/velocity/state writes",
+            "body_asset": "/Game/ParkComic/Crew/Resident3/SK_Body.SK_Body",
+            "own_clip_assets": [
+              "/Game/ParkComic/Crew/Resident3/A_Idle.A_Idle",
+              "/Game/ParkComic/Crew/Resident3/A_Jump.A_Jump",
+              "/Game/ParkComic/Crew/Resident3/A_Run.A_Run",
+              "/Game/ParkComic/Crew/Resident3/A_Walk.A_Walk"
+            ]
+          },
+          {
+            "step": 3,
+            "walker": "QuebecCharacter_2147482379",
+            "crew_style": 4,
+            "mesh_component": "/Game/Maps/CollegeBathurst.CollegeBathurst:PersistentLevel.QuebecCharacter_2147482379.CharacterMesh0",
+            "instance": "/Game/Maps/CollegeBathurst.CollegeBathurst:PersistentLevel.QuebecCharacter_2147482379.CharacterMesh0.QuebecCrewAnimInstance_2147482362",
+            "locomotion_asset": "/Game/ParkComic/Crew/Resident4/BS_Locomotion.BS_Locomotion",
+            "jump_asset": "/Game/ParkComic/Crew/Resident4/A_Jump.A_Jump",
+            "observed_clip": null,
+            "observed_clip_time": 1.2,
+            "visibility_based_anim_tick_option": "AlwaysTickPose",
+            "scope": "Active mesh-bound native graph selection; no animation policy/velocity/state writes",
+            "body_asset": "/Game/ParkComic/Crew/Resident4/SK_Body.SK_Body",
+            "own_clip_assets": [
+              "/Game/ParkComic/Crew/Resident4/A_Idle.A_Idle",
+              "/Game/ParkComic/Crew/Resident4/A_Jump.A_Jump",
+              "/Game/ParkComic/Crew/Resident4/A_Run.A_Run",
+              "/Game/ParkComic/Crew/Resident4/A_Walk.A_Walk"
+            ]
+          },
+          {
+            "step": 4,
+            "walker": "QuebecCharacter_2147482379",
+            "crew_style": 5,
+            "mesh_component": "/Game/Maps/CollegeBathurst.CollegeBathurst:PersistentLevel.QuebecCharacter_2147482379.CharacterMesh0",
+            "instance": "/Game/Maps/CollegeBathurst.CollegeBathurst:PersistentLevel.QuebecCharacter_2147482379.CharacterMesh0.QuebecCrewAnimInstance_2147482359",
+            "locomotion_asset": "/Game/ParkComic/Crew/Resident5/BS_Locomotion.BS_Locomotion",
+            "jump_asset": "/Game/ParkComic/Crew/Resident5/A_Jump.A_Jump",
+            "observed_clip": null,
+            "observed_clip_time": 1.2,
+            "visibility_based_anim_tick_option": "AlwaysTickPose",
+            "scope": "Active mesh-bound native graph selection; no animation policy/velocity/state writes",
+            "body_asset": "/Game/ParkComic/Crew/Resident5/SK_Body.SK_Body",
+            "own_clip_assets": [
+              "/Game/ParkComic/Crew/Resident5/A_Idle.A_Idle",
+              "/Game/ParkComic/Crew/Resident5/A_Jump.A_Jump",
+              "/Game/ParkComic/Crew/Resident5/A_Run.A_Run",
+              "/Game/ParkComic/Crew/Resident5/A_Walk.A_Walk"
+            ]
+          },
+          {
+            "step": 5,
+            "walker": "QuebecCharacter_2147482379",
+            "crew_style": 6,
+            "mesh_component": "/Game/Maps/CollegeBathurst.CollegeBathurst:PersistentLevel.QuebecCharacter_2147482379.CharacterMesh0",
+            "instance": "/Game/Maps/CollegeBathurst.CollegeBathurst:PersistentLevel.QuebecCharacter_2147482379.CharacterMesh0.QuebecCrewAnimInstance_2147482356",
+            "locomotion_asset": "/Game/ParkComic/Crew/Resident6/BS_Locomotion.BS_Locomotion",
+            "jump_asset": "/Game/ParkComic/Crew/Resident6/A_Jump.A_Jump",
+            "observed_clip": null,
+            "observed_clip_time": 1.2,
+            "visibility_based_anim_tick_option": "AlwaysTickPose",
+            "scope": "Active mesh-bound native graph selection; no animation policy/velocity/state writes",
+            "body_asset": "/Game/ParkComic/Crew/Resident6/SK_Body.SK_Body",
+            "own_clip_assets": [
+              "/Game/ParkComic/Crew/Resident6/A_Idle.A_Idle",
+              "/Game/ParkComic/Crew/Resident6/A_Jump.A_Jump",
+              "/Game/ParkComic/Crew/Resident6/A_Run.A_Run",
+              "/Game/ParkComic/Crew/Resident6/A_Walk.A_Walk"
+            ]
+          },
+          {
+            "step": 6,
+            "walker": "QuebecCharacter_2147482379",
+            "crew_style": 7,
+            "mesh_component": "/Game/Maps/CollegeBathurst.CollegeBathurst:PersistentLevel.QuebecCharacter_2147482379.CharacterMesh0",
+            "instance": "/Game/Maps/CollegeBathurst.CollegeBathurst:PersistentLevel.QuebecCharacter_2147482379.CharacterMesh0.QuebecCrewAnimInstance_2147482353",
+            "locomotion_asset": "/Game/ParkComic/Crew/Resident7/BS_Locomotion.BS_Locomotion",
+            "jump_asset": "/Game/ParkComic/Crew/Resident7/A_Jump.A_Jump",
+            "observed_clip": null,
+            "observed_clip_time": 1.2,
+            "visibility_based_anim_tick_option": "AlwaysTickPose",
+            "scope": "Active mesh-bound native graph selection; no animation policy/velocity/state writes",
+            "body_asset": "/Game/ParkComic/Crew/Resident7/SK_Body.SK_Body",
+            "own_clip_assets": [
+              "/Game/ParkComic/Crew/Resident7/A_Idle.A_Idle",
+              "/Game/ParkComic/Crew/Resident7/A_Jump.A_Jump",
+              "/Game/ParkComic/Crew/Resident7/A_Run.A_Run",
+              "/Game/ParkComic/Crew/Resident7/A_Walk.A_Walk"
+            ]
+          },
+          {
+            "step": 7,
+            "walker": "QuebecCharacter_2147482379",
+            "crew_style": 8,
+            "mesh_component": "/Game/Maps/CollegeBathurst.CollegeBathurst:PersistentLevel.QuebecCharacter_2147482379.CharacterMesh0",
+            "instance": "/Game/Maps/CollegeBathurst.CollegeBathurst:PersistentLevel.QuebecCharacter_2147482379.CharacterMesh0.QuebecCrewAnimInstance_2147482350",
+            "locomotion_asset": "/Game/ParkComic/Crew/Resident8/BS_Locomotion.BS_Locomotion",
+            "jump_asset": "/Game/ParkComic/Crew/Resident8/A_Jump.A_Jump",
+            "observed_clip": null,
+            "observed_clip_time": 1.2,
+            "visibility_based_anim_tick_option": "AlwaysTickPose",
+            "scope": "Active mesh-bound native graph selection; no animation policy/velocity/state writes",
+            "body_asset": "/Game/ParkComic/Crew/Resident8/SK_Body.SK_Body",
+            "own_clip_assets": [
+              "/Game/ParkComic/Crew/Resident8/A_Idle.A_Idle",
+              "/Game/ParkComic/Crew/Resident8/A_Jump.A_Jump",
+              "/Game/ParkComic/Crew/Resident8/A_Run.A_Run",
+              "/Game/ParkComic/Crew/Resident8/A_Walk.A_Walk"
+            ]
+          },
+          {
+            "step": 8,
+            "walker": "QuebecCharacter_2147482379",
+            "crew_style": 9,
+            "mesh_component": "/Game/Maps/CollegeBathurst.CollegeBathurst:PersistentLevel.QuebecCharacter_2147482379.CharacterMesh0",
+            "instance": "/Game/Maps/CollegeBathurst.CollegeBathurst:PersistentLevel.QuebecCharacter_2147482379.CharacterMesh0.QuebecCrewAnimInstance_2147482347",
+            "locomotion_asset": "/Game/ParkComic/Crew/Resident9/BS_Locomotion.BS_Locomotion",
+            "jump_asset": "/Game/ParkComic/Crew/Resident9/A_Jump.A_Jump",
+            "observed_clip": null,
+            "observed_clip_time": 1.2,
+            "visibility_based_anim_tick_option": "AlwaysTickPose",
+            "scope": "Active mesh-bound native graph selection; no animation policy/velocity/state writes",
+            "body_asset": "/Game/ParkComic/Crew/Resident9/SK_Body.SK_Body",
+            "own_clip_assets": [
+              "/Game/ParkComic/Crew/Resident9/A_Idle.A_Idle",
+              "/Game/ParkComic/Crew/Resident9/A_Jump.A_Jump",
+              "/Game/ParkComic/Crew/Resident9/A_Run.A_Run",
+              "/Game/ParkComic/Crew/Resident9/A_Walk.A_Walk"
+            ]
+          }
+        ],
+        "body_assets": [
+          "/Game/ParkComic/Crew/Resident10/SK_Body.SK_Body",
+          "/Game/ParkComic/Crew/Resident3/SK_Body.SK_Body",
+          "/Game/ParkComic/Crew/Resident4/SK_Body.SK_Body",
+          "/Game/ParkComic/Crew/Resident5/SK_Body.SK_Body",
+          "/Game/ParkComic/Crew/Resident6/SK_Body.SK_Body",
+          "/Game/ParkComic/Crew/Resident7/SK_Body.SK_Body",
+          "/Game/ParkComic/Crew/Resident8/SK_Body.SK_Body",
+          "/Game/ParkComic/Crew/Resident9/SK_Body.SK_Body"
+        ],
+        "clip_assets": [
+          "/Game/ParkComic/Crew/Resident10/A_Idle.A_Idle",
+          "/Game/ParkComic/Crew/Resident10/A_Jump.A_Jump",
+          "/Game/ParkComic/Crew/Resident10/A_Run.A_Run",
+          "/Game/ParkComic/Crew/Resident10/A_Walk.A_Walk",
+          "/Game/ParkComic/Crew/Resident3/A_Idle.A_Idle",
+          "/Game/ParkComic/Crew/Resident3/A_Jump.A_Jump",
+          "/Game/ParkComic/Crew/Resident3/A_Run.A_Run",
+          "/Game/ParkComic/Crew/Resident3/A_Walk.A_Walk",
+          "/Game/ParkComic/Crew/Resident4/A_Idle.A_Idle",
+          "/Game/ParkComic/Crew/Resident4/A_Jump.A_Jump",
+          "/Game/ParkComic/Crew/Resident4/A_Run.A_Run",
+          "/Game/ParkComic/Crew/Resident4/A_Walk.A_Walk",
+          "/Game/ParkComic/Crew/Resident5/A_Idle.A_Idle",
+          "/Game/ParkComic/Crew/Resident5/A_Jump.A_Jump",
+          "/Game/ParkComic/Crew/Resident5/A_Run.A_Run",
+          "/Game/ParkComic/Crew/Resident5/A_Walk.A_Walk",
+          "/Game/ParkComic/Crew/Resident6/A_Idle.A_Idle",
+          "/Game/ParkComic/Crew/Resident6/A_Jump.A_Jump",
+          "/Game/ParkComic/Crew/Resident6/A_Run.A_Run",
+          "/Game/ParkComic/Crew/Resident6/A_Walk.A_Walk",
+          "/Game/ParkComic/Crew/Resident7/A_Idle.A_Idle",
+          "/Game/ParkComic/Crew/Resident7/A_Jump.A_Jump",
+          "/Game/ParkComic/Crew/Resident7/A_Run.A_Run",
+          "/Game/ParkComic/Crew/Resident7/A_Walk.A_Walk",
+          "/Game/ParkComic/Crew/Resident8/A_Idle.A_Idle",
+          "/Game/ParkComic/Crew/Resident8/A_Jump.A_Jump",
+          "/Game/ParkComic/Crew/Resident8/A_Run.A_Run",
+          "/Game/ParkComic/Crew/Resident8/A_Walk.A_Walk",
+          "/Game/ParkComic/Crew/Resident9/A_Idle.A_Idle",
+          "/Game/ParkComic/Crew/Resident9/A_Jump.A_Jump",
+          "/Game/ParkComic/Crew/Resident9/A_Run.A_Run",
+          "/Game/ParkComic/Crew/Resident9/A_Walk.A_Walk"
+        ],
+        "scope": "Eight separate native selections, each with its currently possessed body, own four clips and active mesh-bound graph. World/population inventory is a separate fresh final snapshot."
+      },
+      "standalone_inventory": {
+        "campaigns": 0,
+        "residents": 0,
+        "cars": 1,
+        "traffic": 0,
+        "district_meshes": 12,
+        "sneaky_dees_meshes": 8,
+        "crew": 8,
+        "original_clips": 32
+      },
+      "standalone_graph": {
+        "first": {
+          "walker": "QuebecCharacter_2147482379",
+          "crew_style": 9,
+          "mesh_component": "/Game/Maps/CollegeBathurst.CollegeBathurst:PersistentLevel.QuebecCharacter_2147482379.CharacterMesh0",
+          "instance": "/Game/Maps/CollegeBathurst.CollegeBathurst:PersistentLevel.QuebecCharacter_2147482379.CharacterMesh0.QuebecCrewAnimInstance_2147482347",
+          "locomotion_asset": "/Game/ParkComic/Crew/Resident9/BS_Locomotion.BS_Locomotion",
+          "jump_asset": "/Game/ParkComic/Crew/Resident9/A_Jump.A_Jump",
+          "observed_clip": "/Game/ParkComic/Crew/Resident9/A_Idle.A_Idle",
+          "observed_clip_time": 1.500018,
+          "visibility_based_anim_tick_option": "AlwaysTickPose",
+          "scope": "Active mesh-bound native graph selection; no animation policy/velocity/state writes"
+        },
+        "clock_advance_required": true,
+        "clock_scope": "Rendered native startup only",
+        "second": {
+          "walker": "QuebecCharacter_2147482379",
+          "crew_style": 9,
+          "mesh_component": "/Game/Maps/CollegeBathurst.CollegeBathurst:PersistentLevel.QuebecCharacter_2147482379.CharacterMesh0",
+          "instance": "/Game/Maps/CollegeBathurst.CollegeBathurst:PersistentLevel.QuebecCharacter_2147482379.CharacterMesh0.QuebecCrewAnimInstance_2147482347",
+          "locomotion_asset": "/Game/ParkComic/Crew/Resident9/BS_Locomotion.BS_Locomotion",
+          "jump_asset": "/Game/ParkComic/Crew/Resident9/A_Jump.A_Jump",
+          "observed_clip": "/Game/ParkComic/Crew/Resident9/A_Idle.A_Idle",
+          "observed_clip_time": 2.000023,
+          "visibility_based_anim_tick_option": "AlwaysTickPose",
+          "scope": "Active mesh-bound native graph selection; no animation policy/velocity/state writes"
+        },
+        "clock_advanced": true
+      },
+      "renderer_settings_after_cycle": {
+        "sg.ViewDistanceQuality": 3.0,
+        "sg.AntiAliasingQuality": 3.0,
+        "sg.ShadowQuality": 3.0,
+        "sg.GlobalIlluminationQuality": 3.0,
+        "sg.ReflectionQuality": 3.0,
+        "sg.PostProcessQuality": 3.0,
+        "sg.TextureQuality": 3.0,
+        "sg.EffectsQuality": 3.0,
+        "sg.FoliageQuality": 3.0,
+        "sg.ShadingQuality": 3.0,
+        "sg.LandscapeQuality": 3.0,
+        "r.ScreenPercentage": 100.0
+      },
+      "screenshots": {
+        "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/DistrictRuntime/SingleRenderWindow-20261014T172829Z/Package/toronto-standalone/User/Saved/Screenshots/Linux/NordComic_Car.png": "70e6c7c0c8f554360160cce6b691b20f38abf79037c26ff1e4b1991070773e75",
+        "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/DistrictRuntime/SingleRenderWindow-20261014T172829Z/Package/toronto-standalone/User/Saved/Screenshots/Linux/NordComic_East.png": "44c1b87c3b42fc59f066982747c840611bd3ed64a6c0e09f182046fb6e4a560d",
+        "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/DistrictRuntime/SingleRenderWindow-20261014T172829Z/Package/toronto-standalone/User/Saved/Screenshots/Linux/NordComic_Jump.png": "fd5b9a96ede462c033af6a3862d909919db85886314a02812d4ef1e4e7bcfb4f",
+        "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/DistrictRuntime/SingleRenderWindow-20261014T172829Z/Package/toronto-standalone/User/Saved/Screenshots/Linux/NordComic_North.png": "02a3d818591d420cf6f49abf6b3fae82ceb8289f476143fd734b354161fc258c",
+        "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/DistrictRuntime/SingleRenderWindow-20261014T172829Z/Package/toronto-standalone/User/Saved/Screenshots/Linux/NordComic_West.png": "009b54dbc68d7c49c9a3ad7df6b7dd5864b3dbb8cb0ae598a8bcd8db252a843d",
+        "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/DistrictRuntime/SingleRenderWindow-20261014T172829Z/Package/toronto-standalone/User/Saved/Screenshots/Linux/NordRealistic_East.png": "0b34dcc60784acf64b98072e7a9c1be36d5f8d5e7db71b2e8def0fa0c48f8243",
+        "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/DistrictRuntime/SingleRenderWindow-20261014T172829Z/Package/toronto-standalone/User/Saved/Screenshots/Linux/NordRealistic_North.png": "4295dea35397a334d0c19055c72ea170803a8b78b533c6ea312a23d5afa680ea"
+      },
+      "standalone": {
+        "exit_code": 0,
+        "clean_exit_required": true,
+        "graceful_quit_timed_out": false,
+        "argv": [
+          "bash",
+          "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Builds/District-20261014T160237Z/Archive/Linux/Quebec.sh",
+          "/Game/Maps/CollegeBathurst",
+          "-port=7795",
+          "-unattended",
+          "-nosound",
+          "-NordNoCampaignSave",
+          "-UserDir=/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/DistrictRuntime/SingleRenderWindow-20261014T172829Z/Package/toronto-standalone/User",
+          "-abslog=/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/DistrictRuntime/SingleRenderWindow-20261014T172829Z/Package/toronto-standalone/game.log",
+          "-ExecCmds=Scalability 3,r.ScreenPercentage 100,t.MaxFPS 60",
+          "-csvCaptureFrames=180000",
+          "-csvExecCmds=r30:exec /tmp/nord-district-Binaries-1e2pe1e3/toronto-standalone.txt",
+          "-vulkan",
+          "-graphicsadapter=0",
+          "-RenderOffscreen",
+          "-ForceRes",
+          "-windowed",
+          "-ResX=1280",
+          "-ResY=720",
+          "-NordCapture"
+        ],
+        "log": "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/DistrictRuntime/SingleRenderWindow-20261014T172829Z/Package/toronto-standalone/game.log",
+        "log_sha256": "f3f9d895576059800e0f2e8e79394e5f5f90022867e29a08753e33b024f0278a"
+      },
+      "host_crew_cycle": {
+        "selections": [
+          {
+            "step": 1,
+            "walker": "QuebecCharacter_2147482319",
+            "crew_style": 10,
+            "mesh_component": "/Game/Maps/CollegeBathurst.CollegeBathurst:PersistentLevel.QuebecCharacter_2147482319.CharacterMesh0",
+            "instance": "/Game/Maps/CollegeBathurst.CollegeBathurst:PersistentLevel.QuebecCharacter_2147482319.CharacterMesh0.QuebecCrewAnimInstance_2147482307",
+            "locomotion_asset": "/Game/ParkComic/Crew/Resident10/BS_Locomotion.BS_Locomotion",
+            "jump_asset": "/Game/ParkComic/Crew/Resident10/A_Jump.A_Jump",
+            "observed_clip": null,
+            "observed_clip_time": 1.2,
+            "visibility_based_anim_tick_option": "AlwaysTickPose",
+            "scope": "Active mesh-bound native graph selection; no animation policy/velocity/state writes",
+            "body_asset": "/Game/ParkComic/Crew/Resident10/SK_Body.SK_Body",
+            "own_clip_assets": [
+              "/Game/ParkComic/Crew/Resident10/A_Idle.A_Idle",
+              "/Game/ParkComic/Crew/Resident10/A_Jump.A_Jump",
+              "/Game/ParkComic/Crew/Resident10/A_Run.A_Run",
+              "/Game/ParkComic/Crew/Resident10/A_Walk.A_Walk"
+            ]
+          },
+          {
+            "step": 2,
+            "walker": "QuebecCharacter_2147482319",
+            "crew_style": 3,
+            "mesh_component": "/Game/Maps/CollegeBathurst.CollegeBathurst:PersistentLevel.QuebecCharacter_2147482319.CharacterMesh0",
+            "instance": "/Game/Maps/CollegeBathurst.CollegeBathurst:PersistentLevel.QuebecCharacter_2147482319.CharacterMesh0.QuebecCrewAnimInstance_2147482304",
+            "locomotion_asset": "/Game/ParkComic/Crew/Resident3/BS_Locomotion.BS_Locomotion",
+            "jump_asset": "/Game/ParkComic/Crew/Resident3/A_Jump.A_Jump",
+            "observed_clip": null,
+            "observed_clip_time": 1.2,
+            "visibility_based_anim_tick_option": "AlwaysTickPose",
+            "scope": "Active mesh-bound native graph selection; no animation policy/velocity/state writes",
+            "body_asset": "/Game/ParkComic/Crew/Resident3/SK_Body.SK_Body",
+            "own_clip_assets": [
+              "/Game/ParkComic/Crew/Resident3/A_Idle.A_Idle",
+              "/Game/ParkComic/Crew/Resident3/A_Jump.A_Jump",
+              "/Game/ParkComic/Crew/Resident3/A_Run.A_Run",
+              "/Game/ParkComic/Crew/Resident3/A_Walk.A_Walk"
+            ]
+          },
+          {
+            "step": 3,
+            "walker": "QuebecCharacter_2147482319",
+            "crew_style": 4,
+            "mesh_component": "/Game/Maps/CollegeBathurst.CollegeBathurst:PersistentLevel.QuebecCharacter_2147482319.CharacterMesh0",
+            "instance": "/Game/Maps/CollegeBathurst.CollegeBathurst:PersistentLevel.QuebecCharacter_2147482319.CharacterMesh0.QuebecCrewAnimInstance_2147482301",
+            "locomotion_asset": "/Game/ParkComic/Crew/Resident4/BS_Locomotion.BS_Locomotion",
+            "jump_asset": "/Game/ParkComic/Crew/Resident4/A_Jump.A_Jump",
+            "observed_clip": null,
+            "observed_clip_time": 1.2,
+            "visibility_based_anim_tick_option": "AlwaysTickPose",
+            "scope": "Active mesh-bound native graph selection; no animation policy/velocity/state writes",
+            "body_asset": "/Game/ParkComic/Crew/Resident4/SK_Body.SK_Body",
+            "own_clip_assets": [
+              "/Game/ParkComic/Crew/Resident4/A_Idle.A_Idle",
+              "/Game/ParkComic/Crew/Resident4/A_Jump.A_Jump",
+              "/Game/ParkComic/Crew/Resident4/A_Run.A_Run",
+              "/Game/ParkComic/Crew/Resident4/A_Walk.A_Walk"
+            ]
+          },
+          {
+            "step": 4,
+            "walker": "QuebecCharacter_2147482319",
+            "crew_style": 5,
+            "mesh_component": "/Game/Maps/CollegeBathurst.CollegeBathurst:PersistentLevel.QuebecCharacter_2147482319.CharacterMesh0",
+            "instance": "/Game/Maps/CollegeBathurst.CollegeBathurst:PersistentLevel.QuebecCharacter_2147482319.CharacterMesh0.QuebecCrewAnimInstance_2147482298",
+            "locomotion_asset": "/Game/ParkComic/Crew/Resident5/BS_Locomotion.BS_Locomotion",
+            "jump_asset": "/Game/ParkComic/Crew/Resident5/A_Jump.A_Jump",
+            "observed_clip": null,
+            "observed_clip_time": 1.2,
+            "visibility_based_anim_tick_option": "AlwaysTickPose",
+            "scope": "Active mesh-bound native graph selection; no animation policy/velocity/state writes",
+            "body_asset": "/Game/ParkComic/Crew/Resident5/SK_Body.SK_Body",
+            "own_clip_assets": [
+              "/Game/ParkComic/Crew/Resident5/A_Idle.A_Idle",
+              "/Game/ParkComic/Crew/Resident5/A_Jump.A_Jump",
+              "/Game/ParkComic/Crew/Resident5/A_Run.A_Run",
+              "/Game/ParkComic/Crew/Resident5/A_Walk.A_Walk"
+            ]
+          },
+          {
+            "step": 5,
+            "walker": "QuebecCharacter_2147482319",
+            "crew_style": 6,
+            "mesh_component": "/Game/Maps/CollegeBathurst.CollegeBathurst:PersistentLevel.QuebecCharacter_2147482319.CharacterMesh0",
+            "instance": "/Game/Maps/CollegeBathurst.CollegeBathurst:PersistentLevel.QuebecCharacter_2147482319.CharacterMesh0.QuebecCrewAnimInstance_2147482295",
+            "locomotion_asset": "/Game/ParkComic/Crew/Resident6/BS_Locomotion.BS_Locomotion",
+            "jump_asset": "/Game/ParkComic/Crew/Resident6/A_Jump.A_Jump",
+            "observed_clip": null,
+            "observed_clip_time": 1.2,
+            "visibility_based_anim_tick_option": "AlwaysTickPose",
+            "scope": "Active mesh-bound native graph selection; no animation policy/velocity/state writes",
+            "body_asset": "/Game/ParkComic/Crew/Resident6/SK_Body.SK_Body",
+            "own_clip_assets": [
+              "/Game/ParkComic/Crew/Resident6/A_Idle.A_Idle",
+              "/Game/ParkComic/Crew/Resident6/A_Jump.A_Jump",
+              "/Game/ParkComic/Crew/Resident6/A_Run.A_Run",
+              "/Game/ParkComic/Crew/Resident6/A_Walk.A_Walk"
+            ]
+          },
+          {
+            "step": 6,
+            "walker": "QuebecCharacter_2147482319",
+            "crew_style": 7,
+            "mesh_component": "/Game/Maps/CollegeBathurst.CollegeBathurst:PersistentLevel.QuebecCharacter_2147482319.CharacterMesh0",
+            "instance": "/Game/Maps/CollegeBathurst.CollegeBathurst:PersistentLevel.QuebecCharacter_2147482319.CharacterMesh0.QuebecCrewAnimInstance_2147482292",
+            "locomotion_asset": "/Game/ParkComic/Crew/Resident7/BS_Locomotion.BS_Locomotion",
+            "jump_asset": "/Game/ParkComic/Crew/Resident7/A_Jump.A_Jump",
+            "observed_clip": null,
+            "observed_clip_time": 1.2,
+            "visibility_based_anim_tick_option": "AlwaysTickPose",
+            "scope": "Active mesh-bound native graph selection; no animation policy/velocity/state writes",
+            "body_asset": "/Game/ParkComic/Crew/Resident7/SK_Body.SK_Body",
+            "own_clip_assets": [
+              "/Game/ParkComic/Crew/Resident7/A_Idle.A_Idle",
+              "/Game/ParkComic/Crew/Resident7/A_Jump.A_Jump",
+              "/Game/ParkComic/Crew/Resident7/A_Run.A_Run",
+              "/Game/ParkComic/Crew/Resident7/A_Walk.A_Walk"
+            ]
+          },
+          {
+            "step": 7,
+            "walker": "QuebecCharacter_2147482319",
+            "crew_style": 8,
+            "mesh_component": "/Game/Maps/CollegeBathurst.CollegeBathurst:PersistentLevel.QuebecCharacter_2147482319.CharacterMesh0",
+            "instance": "/Game/Maps/CollegeBathurst.CollegeBathurst:PersistentLevel.QuebecCharacter_2147482319.CharacterMesh0.QuebecCrewAnimInstance_2147482289",
+            "locomotion_asset": "/Game/ParkComic/Crew/Resident8/BS_Locomotion.BS_Locomotion",
+            "jump_asset": "/Game/ParkComic/Crew/Resident8/A_Jump.A_Jump",
+            "observed_clip": null,
+            "observed_clip_time": 1.2,
+            "visibility_based_anim_tick_option": "AlwaysTickPose",
+            "scope": "Active mesh-bound native graph selection; no animation policy/velocity/state writes",
+            "body_asset": "/Game/ParkComic/Crew/Resident8/SK_Body.SK_Body",
+            "own_clip_assets": [
+              "/Game/ParkComic/Crew/Resident8/A_Idle.A_Idle",
+              "/Game/ParkComic/Crew/Resident8/A_Jump.A_Jump",
+              "/Game/ParkComic/Crew/Resident8/A_Run.A_Run",
+              "/Game/ParkComic/Crew/Resident8/A_Walk.A_Walk"
+            ]
+          },
+          {
+            "step": 8,
+            "walker": "QuebecCharacter_2147482319",
+            "crew_style": 9,
+            "mesh_component": "/Game/Maps/CollegeBathurst.CollegeBathurst:PersistentLevel.QuebecCharacter_2147482319.CharacterMesh0",
+            "instance": "/Game/Maps/CollegeBathurst.CollegeBathurst:PersistentLevel.QuebecCharacter_2147482319.CharacterMesh0.QuebecCrewAnimInstance_2147482286",
+            "locomotion_asset": "/Game/ParkComic/Crew/Resident9/BS_Locomotion.BS_Locomotion",
+            "jump_asset": "/Game/ParkComic/Crew/Resident9/A_Jump.A_Jump",
+            "observed_clip": null,
+            "observed_clip_time": 1.2,
+            "visibility_based_anim_tick_option": "AlwaysTickPose",
+            "scope": "Active mesh-bound native graph selection; no animation policy/velocity/state writes",
+            "body_asset": "/Game/ParkComic/Crew/Resident9/SK_Body.SK_Body",
+            "own_clip_assets": [
+              "/Game/ParkComic/Crew/Resident9/A_Idle.A_Idle",
+              "/Game/ParkComic/Crew/Resident9/A_Jump.A_Jump",
+              "/Game/ParkComic/Crew/Resident9/A_Run.A_Run",
+              "/Game/ParkComic/Crew/Resident9/A_Walk.A_Walk"
+            ]
+          }
+        ],
+        "body_assets": [
+          "/Game/ParkComic/Crew/Resident10/SK_Body.SK_Body",
+          "/Game/ParkComic/Crew/Resident3/SK_Body.SK_Body",
+          "/Game/ParkComic/Crew/Resident4/SK_Body.SK_Body",
+          "/Game/ParkComic/Crew/Resident5/SK_Body.SK_Body",
+          "/Game/ParkComic/Crew/Resident6/SK_Body.SK_Body",
+          "/Game/ParkComic/Crew/Resident7/SK_Body.SK_Body",
+          "/Game/ParkComic/Crew/Resident8/SK_Body.SK_Body",
+          "/Game/ParkComic/Crew/Resident9/SK_Body.SK_Body"
+        ],
+        "clip_assets": [
+          "/Game/ParkComic/Crew/Resident10/A_Idle.A_Idle",
+          "/Game/ParkComic/Crew/Resident10/A_Jump.A_Jump",
+          "/Game/ParkComic/Crew/Resident10/A_Run.A_Run",
+          "/Game/ParkComic/Crew/Resident10/A_Walk.A_Walk",
+          "/Game/ParkComic/Crew/Resident3/A_Idle.A_Idle",
+          "/Game/ParkComic/Crew/Resident3/A_Jump.A_Jump",
+          "/Game/ParkComic/Crew/Resident3/A_Run.A_Run",
+          "/Game/ParkComic/Crew/Resident3/A_Walk.A_Walk",
+          "/Game/ParkComic/Crew/Resident4/A_Idle.A_Idle",
+          "/Game/ParkComic/Crew/Resident4/A_Jump.A_Jump",
+          "/Game/ParkComic/Crew/Resident4/A_Run.A_Run",
+          "/Game/ParkComic/Crew/Resident4/A_Walk.A_Walk",
+          "/Game/ParkComic/Crew/Resident5/A_Idle.A_Idle",
+          "/Game/ParkComic/Crew/Resident5/A_Jump.A_Jump",
+          "/Game/ParkComic/Crew/Resident5/A_Run.A_Run",
+          "/Game/ParkComic/Crew/Resident5/A_Walk.A_Walk",
+          "/Game/ParkComic/Crew/Resident6/A_Idle.A_Idle",
+          "/Game/ParkComic/Crew/Resident6/A_Jump.A_Jump",
+          "/Game/ParkComic/Crew/Resident6/A_Run.A_Run",
+          "/Game/ParkComic/Crew/Resident6/A_Walk.A_Walk",
+          "/Game/ParkComic/Crew/Resident7/A_Idle.A_Idle",
+          "/Game/ParkComic/Crew/Resident7/A_Jump.A_Jump",
+          "/Game/ParkComic/Crew/Resident7/A_Run.A_Run",
+          "/Game/ParkComic/Crew/Resident7/A_Walk.A_Walk",
+          "/Game/ParkComic/Crew/Resident8/A_Idle.A_Idle",
+          "/Game/ParkComic/Crew/Resident8/A_Jump.A_Jump",
+          "/Game/ParkComic/Crew/Resident8/A_Run.A_Run",
+          "/Game/ParkComic/Crew/Resident8/A_Walk.A_Walk",
+          "/Game/ParkComic/Crew/Resident9/A_Idle.A_Idle",
+          "/Game/ParkComic/Crew/Resident9/A_Jump.A_Jump",
+          "/Game/ParkComic/Crew/Resident9/A_Run.A_Run",
+          "/Game/ParkComic/Crew/Resident9/A_Walk.A_Walk"
+        ],
+        "scope": "Eight separate native selections, each with its currently possessed body, own four clips and active mesh-bound graph. World/population inventory is a separate fresh final snapshot."
+      },
+      "host_inventory": {
+        "campaigns": 0,
+        "residents": 0,
+        "cars": 1,
+        "traffic": 0,
+        "district_meshes": 12,
+        "sneaky_dees_meshes": 8,
+        "crew": 8,
+        "original_clips": 32
+      },
+      "starter_readback": {
+        "actor": "QuebecCar_0",
+        "component": "VehicleHull",
+        "position_cm": [
+          2770.615,
+          354.556,
+          102.934575
+        ],
+        "yaw_degrees": 15.322,
+        "source_offset_cm": 0.0,
+        "teleported_car": false,
+        "selection": "sole Toronto manual car at authored spawn"
+      },
+      "client_state": {
+        "campaigns": 0,
+        "residents": 0,
+        "cars": 1,
+        "traffic": 0
+      },
+      "paired_player_identity": {
+        "client": {
+          "controller_path": "/Game/Maps/CollegeBathurst.CollegeBathurst:PersistentLevel.QuebecController_2147482330",
+          "player": "/Script/Engine.LocalPlayer'/Engine/Transient.GameEngine_2147482592:LocalPlayer_2147482472'",
+          "pawn": "QuebecCharacter_2147482321",
+          "player_state_path": "/Game/Maps/CollegeBathurst.CollegeBathurst:PersistentLevel.PlayerState_2147482294",
+          "player_id": 257
+        },
+        "authority_remote": {
+          "controller_path": "/Game/Maps/CollegeBathurst.CollegeBathurst:PersistentLevel.QuebecController_2147482280",
+          "player": "/Script/OnlineSubsystemUtils.IpConnection'/Engine/Transient.IpConnection_2147482285'",
+          "pawn": "QuebecCharacter_2147482274",
+          "player_state_path": "/Game/Maps/CollegeBathurst.CollegeBathurst:PersistentLevel.PlayerState_2147482279",
+          "player_id": 257
+        }
+      },
+      "joined_native_graphs": {
+        "host_local": {
+          "first": {
+            "walker": "QuebecCharacter_2147482319",
+            "crew_style": 9,
+            "mesh_component": "/Game/Maps/CollegeBathurst.CollegeBathurst:PersistentLevel.QuebecCharacter_2147482319.CharacterMesh0",
+            "instance": "/Game/Maps/CollegeBathurst.CollegeBathurst:PersistentLevel.QuebecCharacter_2147482319.CharacterMesh0.QuebecCrewAnimInstance_2147482286",
+            "locomotion_asset": "/Game/ParkComic/Crew/Resident9/BS_Locomotion.BS_Locomotion",
+            "jump_asset": "/Game/ParkComic/Crew/Resident9/A_Jump.A_Jump",
+            "observed_clip": "/Game/ParkComic/Crew/Resident9/A_Idle.A_Idle",
+            "observed_clip_time": 1.000038,
+            "visibility_based_anim_tick_option": "AlwaysTickPose",
+            "scope": "Active mesh-bound native graph selection; no animation policy/velocity/state writes"
+          },
+          "clock_advance_required": false,
+          "clock_scope": "NullRHI asset selection only; no pose/clock acceptance"
+        },
+        "host_remote": {
+          "first": {
+            "walker": "QuebecCharacter_2147482274",
+            "crew_style": 10,
+            "mesh_component": "/Game/Maps/CollegeBathurst.CollegeBathurst:PersistentLevel.QuebecCharacter_2147482274.CharacterMesh0",
+            "instance": "/Game/Maps/CollegeBathurst.CollegeBathurst:PersistentLevel.QuebecCharacter_2147482274.CharacterMesh0.QuebecCrewAnimInstance_2147482268",
+            "locomotion_asset": "/Game/ParkComic/Crew/Resident10/BS_Locomotion.BS_Locomotion",
+            "jump_asset": "/Game/ParkComic/Crew/Resident10/A_Jump.A_Jump",
+            "observed_clip": "/Game/ParkComic/Crew/Resident10/A_Idle.A_Idle",
+            "observed_clip_time": 2.550106,
+            "visibility_based_anim_tick_option": "AlwaysTickPose",
+            "scope": "Active mesh-bound native graph selection; no animation policy/velocity/state writes"
+          },
+          "clock_advance_required": false,
+          "clock_scope": "NullRHI asset selection only; no pose/clock acceptance"
+        },
+        "client_local": {
+          "first": {
+            "walker": "QuebecCharacter_2147482321",
+            "crew_style": 10,
+            "mesh_component": "/Game/Maps/CollegeBathurst.CollegeBathurst:PersistentLevel.QuebecCharacter_2147482321.CharacterMesh0",
+            "instance": "/Game/Maps/CollegeBathurst.CollegeBathurst:PersistentLevel.QuebecCharacter_2147482321.CharacterMesh0.QuebecCrewAnimInstance_2147482308",
+            "locomotion_asset": "/Game/ParkComic/Crew/Resident10/BS_Locomotion.BS_Locomotion",
+            "jump_asset": "/Game/ParkComic/Crew/Resident10/A_Jump.A_Jump",
+            "observed_clip": "/Game/ParkComic/Crew/Resident10/A_Idle.A_Idle",
+            "observed_clip_time": 3.367737,
+            "visibility_based_anim_tick_option": "AlwaysTickPose",
+            "scope": "Active mesh-bound native graph selection; no animation policy/velocity/state writes"
+          },
+          "clock_advance_required": false,
+          "clock_scope": "NullRHI asset selection only; no pose/clock acceptance"
+        }
+      },
+      "replicated_starter": {
+        "host_actor": "QuebecCar_0",
+        "client_actor": "QuebecCar_0",
+        "client_pose": [
+          [
+            2770.62,
+            354.56,
+            102.94
+          ],
+          15.46875
+        ],
+        "identity": "unique nontraffic authority pose match, then replicated occupant and local possession"
+      },
+      "entry_fixture": {
+        "authority_teleported_remote_walker_only": "QuebecCharacter_2147482274",
+        "target_cm": [
+          2721.729972116416,
+          532.9803650649238,
+          122.934575
+        ],
+        "native_interact": true
+      },
+      "native_drive": {
+        "speed_cm_s": 941.063599,
+        "position_cm": [
+          3055.057542,
+          432.488076,
+          102.934575
+        ]
+      },
+      "native_brake": {
+        "stopped_cm": [
+          3799.891258,
+          636.558949,
+          102.934575
+        ],
+        "held_cm": [
+          3799.891258,
+          636.558949,
+          102.934575
+        ],
+        "hold_seconds": 0.5
+      },
+      "client_final_state": {
+        "campaigns": 0,
+        "residents": 0,
+        "cars": 1,
+        "traffic": 0
+      },
+      "client": {
+        "exit_code": 0,
+        "clean_exit_required": true,
+        "graceful_quit_timed_out": false,
+        "argv": [
+          "bash",
+          "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Builds/District-20261014T160237Z/Archive/Linux/Quebec.sh",
+          "127.0.0.1:7795",
+          "-port=7795",
+          "-unattended",
+          "-nosound",
+          "-NordNoCampaignSave",
+          "-UserDir=/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/DistrictRuntime/SingleRenderWindow-20261014T172829Z/Package/toronto-client/User",
+          "-abslog=/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/DistrictRuntime/SingleRenderWindow-20261014T172829Z/Package/toronto-client/game.log",
+          "-ExecCmds=t.MaxFPS 60",
+          "-csvCaptureFrames=180000",
+          "-csvExecCmds=r30:exec /tmp/nord-district-Binaries-1e2pe1e3/toronto-client.txt",
+          "-nullrhi"
+        ],
+        "log": "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/DistrictRuntime/SingleRenderWindow-20261014T172829Z/Package/toronto-client/game.log",
+        "log_sha256": "694ee1e5060b3e8edfadde3a49cc8da7234b6d7ba5c9bd62246726636995ad74"
+      },
+      "host_final_state": {
+        "campaigns": 0,
+        "residents": 0,
+        "cars": 1,
+        "traffic": 0
+      },
+      "host": {
+        "exit_code": 0,
+        "clean_exit_required": true,
+        "graceful_quit_timed_out": false,
+        "argv": [
+          "bash",
+          "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Builds/District-20261014T160237Z/Archive/Linux/Quebec.sh",
+          "/Game/Maps/CollegeBathurst?listen",
+          "-port=7795",
+          "-unattended",
+          "-nosound",
+          "-NordNoCampaignSave",
+          "-UserDir=/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/DistrictRuntime/SingleRenderWindow-20261014T172829Z/Package/toronto-host/User",
+          "-abslog=/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/DistrictRuntime/SingleRenderWindow-20261014T172829Z/Package/toronto-host/game.log",
+          "-ExecCmds=t.MaxFPS 60",
+          "-csvCaptureFrames=180000",
+          "-csvExecCmds=r30:exec /tmp/nord-district-Binaries-1e2pe1e3/toronto-host.txt",
+          "-nullrhi"
+        ],
+        "log": "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/DistrictRuntime/SingleRenderWindow-20261014T172829Z/Package/toronto-host/game.log",
+        "log_sha256": "135f37d2d9fa0af6faa8886aa9854fd41e3169a8ebdc0ead09682a640ff54a28"
+      },
+      "checks": [
+        "standalone exact district and original crew/clips load",
+        "separate listen/client join",
+        "current VehicleHull source fixture readback",
+        "authority-only remote walker arrangement",
+        "native client enter/drive/brake/exit replication",
+        "mesh-bound own production graph/clip selection per process",
+        "clean peer departure",
+        "district-correct progression and population isolation",
+        "clean logs/exits and isolated save paths"
+      ],
+      "passed": true
+    }
+  },
+  "limits": [
+    "Loopback native console handlers; no physical input, internet or continuous video acceptance.",
+    "No packaged frame-rate target, long soak, full campaign or save persistence claim.",
+    "Mesh inventory proves loaded assets; fresh editor collision/visual audits remain separate."
+  ],
+  "peers": [
+    {
+      "streaming_warnings": {
+        "missing_packages": [],
+        "missing_count": 0,
+        "source_assets_absent": null,
+        "current_production_sources_present": 8,
+        "explanation": "Historical source-absent BlendSpace warnings remain labelled; current QA requires all eight new source/cooked graphs before launch, so any missing production BS now fails."
+      },
+      "name": "montreal-standalone",
+      "argv": [
+        "bash",
+        "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Builds/District-20261014T160237Z/Archive/Linux/Quebec.sh",
+        "/Game/Maps/LaFontaine",
+        "-port=7795",
+        "-unattended",
+        "-nosound",
+        "-NordNoCampaignSave",
+        "-UserDir=/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/DistrictRuntime/SingleRenderWindow-20261014T172829Z/Package/montreal-standalone/User",
+        "-abslog=/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/DistrictRuntime/SingleRenderWindow-20261014T172829Z/Package/montreal-standalone/game.log",
+        "-ExecCmds=Scalability 3,r.ScreenPercentage 100,t.MaxFPS 60",
+        "-csvCaptureFrames=180000",
+        "-csvExecCmds=r30:exec /tmp/nord-district-Binaries-1e2pe1e3/montreal-standalone.txt",
+        "-vulkan",
+        "-graphicsadapter=0",
+        "-RenderOffscreen",
+        "-ForceRes",
+        "-windowed",
+        "-ResX=1280",
+        "-ResY=720",
+        "-NordCapture"
+      ],
+      "exit_code": 0,
+      "log": "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/DistrictRuntime/SingleRenderWindow-20261014T172829Z/Package/montreal-standalone/game.log",
+      "log_sha256": "bbbdca6da4d9c81bbfba1949fb34efd2d6ecc8b0f06ad251f2121d8817ca9ece"
+    },
+    {
+      "streaming_warnings": {
+        "missing_packages": [],
+        "missing_count": 0,
+        "source_assets_absent": null,
+        "current_production_sources_present": 8,
+        "explanation": "Historical source-absent BlendSpace warnings remain labelled; current QA requires all eight new source/cooked graphs before launch, so any missing production BS now fails."
+      },
+      "name": "montreal-host",
+      "argv": [
+        "bash",
+        "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Builds/District-20261014T160237Z/Archive/Linux/Quebec.sh",
+        "/Game/Maps/LaFontaine?listen",
+        "-port=7795",
+        "-unattended",
+        "-nosound",
+        "-NordNoCampaignSave",
+        "-UserDir=/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/DistrictRuntime/SingleRenderWindow-20261014T172829Z/Package/montreal-host/User",
+        "-abslog=/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/DistrictRuntime/SingleRenderWindow-20261014T172829Z/Package/montreal-host/game.log",
+        "-ExecCmds=t.MaxFPS 60",
+        "-csvCaptureFrames=180000",
+        "-csvExecCmds=r30:exec /tmp/nord-district-Binaries-1e2pe1e3/montreal-host.txt",
+        "-nullrhi"
+      ],
+      "exit_code": 0,
+      "log": "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/DistrictRuntime/SingleRenderWindow-20261014T172829Z/Package/montreal-host/game.log",
+      "log_sha256": "65709a1d546a1f15cbfd56689f0b5b06b6516308e9e2b373590ba6e723d5927f"
+    },
+    {
+      "streaming_warnings": {
+        "missing_packages": [],
+        "missing_count": 0,
+        "source_assets_absent": null,
+        "current_production_sources_present": 8,
+        "explanation": "Historical source-absent BlendSpace warnings remain labelled; current QA requires all eight new source/cooked graphs before launch, so any missing production BS now fails."
+      },
+      "name": "montreal-client",
+      "argv": [
+        "bash",
+        "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Builds/District-20261014T160237Z/Archive/Linux/Quebec.sh",
+        "127.0.0.1:7795",
+        "-port=7795",
+        "-unattended",
+        "-nosound",
+        "-NordNoCampaignSave",
+        "-UserDir=/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/DistrictRuntime/SingleRenderWindow-20261014T172829Z/Package/montreal-client/User",
+        "-abslog=/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/DistrictRuntime/SingleRenderWindow-20261014T172829Z/Package/montreal-client/game.log",
+        "-ExecCmds=t.MaxFPS 60",
+        "-csvCaptureFrames=180000",
+        "-csvExecCmds=r30:exec /tmp/nord-district-Binaries-1e2pe1e3/montreal-client.txt",
+        "-nullrhi"
+      ],
+      "exit_code": 0,
+      "log": "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/DistrictRuntime/SingleRenderWindow-20261014T172829Z/Package/montreal-client/game.log",
+      "log_sha256": "613ada52166caf27b99707c041394061bae70b91ea8c7c9fc43faf23eeaa14eb"
+    },
+    {
+      "streaming_warnings": {
+        "missing_packages": [],
+        "missing_count": 0,
+        "source_assets_absent": null,
+        "current_production_sources_present": 8,
+        "explanation": "Historical source-absent BlendSpace warnings remain labelled; current QA requires all eight new source/cooked graphs before launch, so any missing production BS now fails."
+      },
+      "name": "toronto-standalone",
+      "argv": [
+        "bash",
+        "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Builds/District-20261014T160237Z/Archive/Linux/Quebec.sh",
+        "/Game/Maps/CollegeBathurst",
+        "-port=7795",
+        "-unattended",
+        "-nosound",
+        "-NordNoCampaignSave",
+        "-UserDir=/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/DistrictRuntime/SingleRenderWindow-20261014T172829Z/Package/toronto-standalone/User",
+        "-abslog=/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/DistrictRuntime/SingleRenderWindow-20261014T172829Z/Package/toronto-standalone/game.log",
+        "-ExecCmds=Scalability 3,r.ScreenPercentage 100,t.MaxFPS 60",
+        "-csvCaptureFrames=180000",
+        "-csvExecCmds=r30:exec /tmp/nord-district-Binaries-1e2pe1e3/toronto-standalone.txt",
+        "-vulkan",
+        "-graphicsadapter=0",
+        "-RenderOffscreen",
+        "-ForceRes",
+        "-windowed",
+        "-ResX=1280",
+        "-ResY=720",
+        "-NordCapture"
+      ],
+      "exit_code": 0,
+      "log": "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/DistrictRuntime/SingleRenderWindow-20261014T172829Z/Package/toronto-standalone/game.log",
+      "log_sha256": "f3f9d895576059800e0f2e8e79394e5f5f90022867e29a08753e33b024f0278a"
+    },
+    {
+      "streaming_warnings": {
+        "missing_packages": [],
+        "missing_count": 0,
+        "source_assets_absent": null,
+        "current_production_sources_present": 8,
+        "explanation": "Historical source-absent BlendSpace warnings remain labelled; current QA requires all eight new source/cooked graphs before launch, so any missing production BS now fails."
+      },
+      "name": "toronto-host",
+      "argv": [
+        "bash",
+        "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Builds/District-20261014T160237Z/Archive/Linux/Quebec.sh",
+        "/Game/Maps/CollegeBathurst?listen",
+        "-port=7795",
+        "-unattended",
+        "-nosound",
+        "-NordNoCampaignSave",
+        "-UserDir=/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/DistrictRuntime/SingleRenderWindow-20261014T172829Z/Package/toronto-host/User",
+        "-abslog=/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/DistrictRuntime/SingleRenderWindow-20261014T172829Z/Package/toronto-host/game.log",
+        "-ExecCmds=t.MaxFPS 60",
+        "-csvCaptureFrames=180000",
+        "-csvExecCmds=r30:exec /tmp/nord-district-Binaries-1e2pe1e3/toronto-host.txt",
+        "-nullrhi"
+      ],
+      "exit_code": 0,
+      "log": "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/DistrictRuntime/SingleRenderWindow-20261014T172829Z/Package/toronto-host/game.log",
+      "log_sha256": "135f37d2d9fa0af6faa8886aa9854fd41e3169a8ebdc0ead09682a640ff54a28"
+    },
+    {
+      "streaming_warnings": {
+        "missing_packages": [],
+        "missing_count": 0,
+        "source_assets_absent": null,
+        "current_production_sources_present": 8,
+        "explanation": "Historical source-absent BlendSpace warnings remain labelled; current QA requires all eight new source/cooked graphs before launch, so any missing production BS now fails."
+      },
+      "name": "toronto-client",
+      "argv": [
+        "bash",
+        "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Builds/District-20261014T160237Z/Archive/Linux/Quebec.sh",
+        "127.0.0.1:7795",
+        "-port=7795",
+        "-unattended",
+        "-nosound",
+        "-NordNoCampaignSave",
+        "-UserDir=/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/DistrictRuntime/SingleRenderWindow-20261014T172829Z/Package/toronto-client/User",
+        "-abslog=/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/DistrictRuntime/SingleRenderWindow-20261014T172829Z/Package/toronto-client/game.log",
+        "-ExecCmds=t.MaxFPS 60",
+        "-csvCaptureFrames=180000",
+        "-csvExecCmds=r30:exec /tmp/nord-district-Binaries-1e2pe1e3/toronto-client.txt",
+        "-nullrhi"
+      ],
+      "exit_code": 0,
+      "log": "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/DistrictRuntime/SingleRenderWindow-20261014T172829Z/Package/toronto-client/game.log",
+      "log_sha256": "694ee1e5060b3e8edfadde3a49cc8da7234b6d7ba5c9bd62246726636995ad74"
+    }
+  ],
+  "package_files_sha256_before": {
+    "Quebec.sh": "78808122cea23ff2d53b21341ff4538184e5d197ee403ee74ebfdfa2c0f8572e",
+    "NOTICES.txt": "ba49ae5586f817b36a2772269f71f899cb1f54b5f2720fad951319edd5e140b8",
+    "Manifest_NonUFSFiles_Linux.txt": "4076c1e77341934622372920b65165cdb23ff5bf3e2ee939981dbf299d30b3b2",
+    "Manifest_UFSFiles_Linux.txt": "95724a5064071df93e2600b1adc8bec60a52a3e77d7c608cbb327401f28125bc",
+    "Manifest_DebugFiles_Linux.txt": "82afcd25dfe3a02f02a51c2adc50a3eee8a9c5f214b377b8100003a3372196cb",
+    "Engine/Config/StagedBuild_Quebec.ini": "f1945cd6c19e56b3c1c78943ef5ec18116907a4ca1efc40a57d48ab1db7adfc5",
+    "Engine/Extras/GPUDumpViewer/GPUDumpViewer.html": "48c80e61730ae73eb59df3fb1c2fd9d0831f878925d5c52c4a8f984d9543e694",
+    "Engine/Extras/GPUDumpViewer/OpenGPUDumpViewer.bat": "6fdf0d7304b1b10e721da566d10b3f5a402ad85349a57abf1092af8abf713af3",
+    "Engine/Extras/GPUDumpViewer/OpenGPUDumpViewer.sh": "36c1b4731dc096b05bea7024259aa375479ba631c44b7f81f1f10d85fcd3d1f3",
+    "Engine/Plugins/NNE/NNERuntimeORT/Binaries/ThirdParty/Onnxruntime/Linux/libonnxruntime.so": "bc33abfd6154771fe4cb4268d8a8323ce86ab5ee3e110f87f36d26eb1126079c",
+    "Engine/Plugins/NNE/NNERuntimeORT/Binaries/ThirdParty/Onnxruntime/Linux/libonnxruntime.so.1.24": "bc33abfd6154771fe4cb4268d8a8323ce86ab5ee3e110f87f36d26eb1126079c",
+    "Engine/Content/Renderer/TessellationTable.bin": "edc4f3b628a139c5e185bbaeca661c95c1f427368d3b92892c5cff36c56dd941",
+    "Engine/Content/SlateDebug/Fonts/LastResort.tps": "1a89a055e643272d999b80b89e7ae84083bd2bbd5fdd5c131b386fb1056be0d9",
+    "Engine/Content/SlateDebug/Fonts/LastResort.ttf": "fff0f8de0b868b964950fe97c9b60f893e9bc85a4f90b3629c5693db058b97b9",
+    "Engine/Binaries/ThirdParty/Vulkan/Linux/libvulkan.so": "d59b6a2b184887fb6eddea3dd754bd2f5b59abc647577c3cd71bb530213ebbb0",
+    "Engine/Binaries/ThirdParty/Vulkan/Linux/libVkLayer_api_dump.so": "1b9871125c6f9afb2b0f09adbe3af3049a20837dca80ccea5d642be4dec31474",
+    "Engine/Binaries/ThirdParty/Vulkan/Linux/libVkLayer_crash_diagnostic.so": "99dda3ecafd809f0de42453536a2ea6299ac6216db9352e301065542e6685fbf",
+    "Engine/Binaries/ThirdParty/Vulkan/Linux/libVkLayer_gfxreconstruct.so": "2e8397383a72eb200e99a560a2b58947b8a0dc6cef3d1fe67245674df0d9e546",
+    "Engine/Binaries/ThirdParty/Vulkan/Linux/libVkLayer_khronos_profiles.so": "e2e9422a15730cd14904a0d27bbd7d463b5598fc7ffa1744d14fc47ce0dc87bf",
+    "Engine/Binaries/ThirdParty/Vulkan/Linux/libVkLayer_khronos_shader_object.so": "da3db6756cccaf502dab09a3de0cece49168654f7735612bb51f7555ef9f7cda",
+    "Engine/Binaries/ThirdParty/Vulkan/Linux/libVkLayer_khronos_synchronization2.so": "daa4bf2da5600deeff440b4c98fc3d68ba04121fdbb2f21d3463126c8d0a2c99",
+    "Engine/Binaries/ThirdParty/Vulkan/Linux/VkLayer_api_dump.json": "4616e485e4dacaa8c1ef365fed23d2c117e8848148720a7acea70c96cb975179",
+    "Engine/Binaries/ThirdParty/Vulkan/Linux/VkLayer_crash_diagnostic.json": "77b6e62bc24994b056e316aa0bd5e056e8ff0dfa377ef1e0ec5b291a181b6a88",
+    "Engine/Binaries/ThirdParty/Vulkan/Linux/VkLayer_gfxreconstruct.json": "93065b7975a70a250569bfce2ee655bf6bc188a7844204d2c37700a770afb02e",
+    "Engine/Binaries/ThirdParty/Vulkan/Linux/VkLayer_khronos_profiles.json": "88deb508a3d16131cd747335063826a31f237e024f396542c05908b44760b895",
+    "Engine/Binaries/ThirdParty/Vulkan/Linux/VkLayer_khronos_shader_object.json": "1c6dd4b56db0e2dc4a7eb1e44e7ad933f399685436c644add05dadf4258e6b1d",
+    "Engine/Binaries/ThirdParty/Vulkan/Linux/VkLayer_khronos_synchronization2.json": "307c8b906289b7a3329fb44137dd3af595d91f26e5bde9cff1b4280801a45139",
+    "Engine/Binaries/ThirdParty/Vulkan/Linux/VkLayer_khronos_validation.json": "328861629130912c27f1db4f2be4fa3d64608ca7edf6f3d886c09cb5856834cc",
+    "Engine/Binaries/ThirdParty/Vulkan/Linux/libVkLayer_khronos_validation.so": "cbecbd0d82217a789a3c3e1493cc60cb7cc036df8f22a0501af9b8ca23342e81",
+    "Engine/Binaries/ThirdParty/MsQuic/v220/linux/libmsquic.so": "51aec15c714c5d96969f6a7608cdefc5c163e7fec0b2e0974ec1382380d11c5e",
+    "Engine/Binaries/ThirdParty/MsQuic/v220/linux/libmsquic.so.2": "ed3698c20005885c61a20f04ba772e329f67855713f5fecb26152a8f949ad280",
+    "Quebec/Samples/PixelStreaming2/WebServers/get_ps_servers.bat": "bc0832aa6df8a84149d1601817d5c52cf241b03f07cd2ffec1a57823f96cec76",
+    "Quebec/Samples/PixelStreaming2/WebServers/get_ps_servers.sh": "3c3586338bbfa5392ee9ca0aa476e6fa29a43189b21fe8ced375f1e40006c00f",
+    "Quebec/Binaries/Linux/Quebec": "9ab9538dcfb14b42bcee71195ed0a6a870ecfed13544c2bdad52c93a83badf1d",
+    "Quebec/Binaries/Linux/libNvmlWrapper.so": "6f10ec281413bf770e613ade92df49a93be88eb4c644ec2b2df52ce8f7b228c8",
+    "Quebec/Binaries/Linux/libtbb.so": "748be7c496c9e9cc6a6c7a00733ef044fd98690b47ce16d4351a16b87ef72df1",
+    "Quebec/Binaries/Linux/libtbb.so.12": "748be7c496c9e9cc6a6c7a00733ef044fd98690b47ce16d4351a16b87ef72df1",
+    "Quebec/Binaries/Linux/libtbb.so.12.17": "748be7c496c9e9cc6a6c7a00733ef044fd98690b47ce16d4351a16b87ef72df1",
+    "Quebec/Binaries/Linux/libtbbmalloc.so": "249b0d63b446db091e8af272ebcd0d3ea7b09e9b326ec227d9c8abf313501ae2",
+    "Quebec/Binaries/Linux/libtbbmalloc.so.2": "249b0d63b446db091e8af272ebcd0d3ea7b09e9b326ec227d9c8abf313501ae2",
+    "Quebec/Binaries/Linux/libtbbmalloc.so.2.17": "249b0d63b446db091e8af272ebcd0d3ea7b09e9b326ec227d9c8abf313501ae2",
+    "Quebec/Binaries/Linux/Quebec.debug": "84f363b5b627c22ba13c7e7b6ed03d13d51a7a3a02beb84cd209421b9265efb6",
+    "Quebec/Binaries/Linux/Quebec.sym": "fb79cd897eb24e840c84cef2143f922af4081c634ae528597d201a4bbaeb9d37",
+    "Quebec/Content/Paks/Quebec-Linux.pak": "3385a7cabb1a609d5a212d5154868675cad9191a7d56c608afdd48c15f4bd4e7",
+    "Quebec/Content/Paks/global.ucas": "605150539a3b57062fdcebcb4e24c4b08623f166295b724f9685247448937a12",
+    "Quebec/Content/Paks/Quebec-Linux.ucas": "84b564afeb04d064de9caaccecb5b4e1d297cbdafe2e87b47eb66d66291b38de",
+    "Quebec/Content/Paks/global.utoc": "940e0bd5e8336ad0a356694e3c9e0dd1e3cb33e6e2673486839019e5907a0f61",
+    "Quebec/Content/Paks/Quebec-Linux.utoc": "86a38e43b76c47ad76f37b907aa820908abfaa7e0e713e0e1bdbc82b6662490c"
+  },
+  "fixture_source_sha256": {
+    "Scripts/verify_district_package.py": "d0fb08d3f0b0f7cb16ff2e748f1d95099af319bef14511f2265ad51387fee040",
+    "Scripts/package_inventory.py": "6e427a1b8aa90215a4b51f449188d1e5fca8720f42d3c9dac2139526ef1f9fc1",
+    "Scripts/render_log_guard.py": "fefcc6497b39deee609372ef6cedad98c0f7ad5deec1ddf027ed30d3e1541620",
+    "Data/Plateau/EastExtension/extension.json": "c19300127f80c9ebd4483610544acab9162a05280ab5a2717376c88c6770dcbf",
+    "Data/CollegeBathurst/SneakyDees/facade.json": "2f054cb949fc0f63da185a99e75ecc290fcba15b3c6b44511d467366b2bb49b3"
+  },
+  "cooked_production_graphs": {
+    "count": 8,
+    "graphs": {
+      "3": {
+        "source_sha256": "9cd9f8a4424734e5e65e4d9859774e616cee40e094d703112c47b50d76a8a933",
+        "cooked_header_sha256": "9db2473d4a9dc1ac3656e479ca29c51e1db03b392c5f540afc0552faf94a61fc",
+        "cooked_export_sha256": "6a6c013549df3eeb5412a728ab111818a436fdcd059200c646181626fc88dda2",
+        "header": "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Builds/District-20261014T160237Z/Cooked/Linux/Quebec/Content/ParkComic/Crew/Resident3/BS_Locomotion.uasset",
+        "exports": "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Builds/District-20261014T160237Z/Cooked/Linux/Quebec/Content/ParkComic/Crew/Resident3/BS_Locomotion.uexp"
+      },
+      "4": {
+        "source_sha256": "c68b2ccb71b94ec1de0bf32c26311e7db0979dbdde55677e600e633035c89c93",
+        "cooked_header_sha256": "005a1413bd9121e37288b912052a5c3061c925a2c4bf9d8fa5a307a2d8fa2e5c",
+        "cooked_export_sha256": "9c924754540c2475255cf53e1dd8e01b755432ef582985f904d0b9ab0d31cd69",
+        "header": "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Builds/District-20261014T160237Z/Cooked/Linux/Quebec/Content/ParkComic/Crew/Resident4/BS_Locomotion.uasset",
+        "exports": "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Builds/District-20261014T160237Z/Cooked/Linux/Quebec/Content/ParkComic/Crew/Resident4/BS_Locomotion.uexp"
+      },
+      "5": {
+        "source_sha256": "2291c891e328de9b091156ba35cd935640a73146e0d72e757128a19768d8c2ea",
+        "cooked_header_sha256": "9b200e2df8460324c4ec73092e0d746262848a7cf07240bd0ba6ad4aa1a1b39c",
+        "cooked_export_sha256": "05311482672f883b1bc27f5f7064026ed6d7a6b839c427196cf4bccf72f066c1",
+        "header": "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Builds/District-20261014T160237Z/Cooked/Linux/Quebec/Content/ParkComic/Crew/Resident5/BS_Locomotion.uasset",
+        "exports": "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Builds/District-20261014T160237Z/Cooked/Linux/Quebec/Content/ParkComic/Crew/Resident5/BS_Locomotion.uexp"
+      },
+      "6": {
+        "source_sha256": "3d9e69a9728d9e153349f4145b6284734df14d6107037316c93d7d9775b01916",
+        "cooked_header_sha256": "9f15f828ac732b17c05a93b50d9986d0a35e5750526ddc7a59894b4c21089451",
+        "cooked_export_sha256": "9609aaca0150ef70c6a9b86637edbf7317f837638d29b9aac8f307e6239d1676",
+        "header": "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Builds/District-20261014T160237Z/Cooked/Linux/Quebec/Content/ParkComic/Crew/Resident6/BS_Locomotion.uasset",
+        "exports": "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Builds/District-20261014T160237Z/Cooked/Linux/Quebec/Content/ParkComic/Crew/Resident6/BS_Locomotion.uexp"
+      },
+      "7": {
+        "source_sha256": "24b5f9a7de7404e181557528f3c9c76eb187583abe44b1add91e9da08077d5fa",
+        "cooked_header_sha256": "8006a2ad577bdc3bdf04ae9c8ab8d4dc809e0fca03af0d0b6735c21f9c0df746",
+        "cooked_export_sha256": "4ff28859660dcfb82654b710eb9c0fc9200c36c2abeff134331ad61a4199da32",
+        "header": "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Builds/District-20261014T160237Z/Cooked/Linux/Quebec/Content/ParkComic/Crew/Resident7/BS_Locomotion.uasset",
+        "exports": "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Builds/District-20261014T160237Z/Cooked/Linux/Quebec/Content/ParkComic/Crew/Resident7/BS_Locomotion.uexp"
+      },
+      "8": {
+        "source_sha256": "29a320aeef9db8b95cf6ed9228a5fcd1e02632f83d5654626d10a3ebbb4eeb14",
+        "cooked_header_sha256": "7cf1135afa378b2545b8f166d8e2e25eb55781258957f9ac5e7e7b056b03dfb8",
+        "cooked_export_sha256": "daf407a58b1e4b8f0e991eb093d7d574fd4781bdce5fc31cd89167b11c802e0d",
+        "header": "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Builds/District-20261014T160237Z/Cooked/Linux/Quebec/Content/ParkComic/Crew/Resident8/BS_Locomotion.uasset",
+        "exports": "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Builds/District-20261014T160237Z/Cooked/Linux/Quebec/Content/ParkComic/Crew/Resident8/BS_Locomotion.uexp"
+      },
+      "9": {
+        "source_sha256": "d7495584c777a1953ea24f074ff29967217017e2c1b499aff96bbd75d88e8b9c",
+        "cooked_header_sha256": "8e64cb8881286ef2cb082e7f72fa197616a19130c36ca13421e879c5496af33d",
+        "cooked_export_sha256": "d005540794aa5f9df67adc766b68554e5eb325e500d07c991351dfb3985f830e",
+        "header": "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Builds/District-20261014T160237Z/Cooked/Linux/Quebec/Content/ParkComic/Crew/Resident9/BS_Locomotion.uasset",
+        "exports": "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Builds/District-20261014T160237Z/Cooked/Linux/Quebec/Content/ParkComic/Crew/Resident9/BS_Locomotion.uexp"
+      },
+      "10": {
+        "source_sha256": "44eae2867d15df26c37018db83ed73c441cb8748e4fb6a378333092cbdca944f",
+        "cooked_header_sha256": "5b18e2d6bcf43b7d5ac887eead09390f95ee449a26a98b32c0a7916af6a4412f",
+        "cooked_export_sha256": "b905347b9c135d84f18a633f4d045390d7b149d44638ef0dd06c9a23c869b62d",
+        "header": "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Builds/District-20261014T160237Z/Cooked/Linux/Quebec/Content/ParkComic/Crew/Resident10/BS_Locomotion.uasset",
+        "exports": "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Builds/District-20261014T160237Z/Cooked/Linux/Quebec/Content/ParkComic/Crew/Resident10/BS_Locomotion.uexp"
+      }
+    },
+    "scope": "Eight fresh isolated cooker outputs; not an independent IoStore archive listing. Actual selected archived graph is separately proved by each packaged peer."
+  },
+  "package_files_sha256_after": {
+    "Quebec.sh": "78808122cea23ff2d53b21341ff4538184e5d197ee403ee74ebfdfa2c0f8572e",
+    "NOTICES.txt": "ba49ae5586f817b36a2772269f71f899cb1f54b5f2720fad951319edd5e140b8",
+    "Manifest_NonUFSFiles_Linux.txt": "4076c1e77341934622372920b65165cdb23ff5bf3e2ee939981dbf299d30b3b2",
+    "Manifest_UFSFiles_Linux.txt": "95724a5064071df93e2600b1adc8bec60a52a3e77d7c608cbb327401f28125bc",
+    "Manifest_DebugFiles_Linux.txt": "82afcd25dfe3a02f02a51c2adc50a3eee8a9c5f214b377b8100003a3372196cb",
+    "Engine/Config/StagedBuild_Quebec.ini": "f1945cd6c19e56b3c1c78943ef5ec18116907a4ca1efc40a57d48ab1db7adfc5",
+    "Engine/Extras/GPUDumpViewer/GPUDumpViewer.html": "48c80e61730ae73eb59df3fb1c2fd9d0831f878925d5c52c4a8f984d9543e694",
+    "Engine/Extras/GPUDumpViewer/OpenGPUDumpViewer.bat": "6fdf0d7304b1b10e721da566d10b3f5a402ad85349a57abf1092af8abf713af3",
+    "Engine/Extras/GPUDumpViewer/OpenGPUDumpViewer.sh": "36c1b4731dc096b05bea7024259aa375479ba631c44b7f81f1f10d85fcd3d1f3",
+    "Engine/Plugins/NNE/NNERuntimeORT/Binaries/ThirdParty/Onnxruntime/Linux/libonnxruntime.so": "bc33abfd6154771fe4cb4268d8a8323ce86ab5ee3e110f87f36d26eb1126079c",
+    "Engine/Plugins/NNE/NNERuntimeORT/Binaries/ThirdParty/Onnxruntime/Linux/libonnxruntime.so.1.24": "bc33abfd6154771fe4cb4268d8a8323ce86ab5ee3e110f87f36d26eb1126079c",
+    "Engine/Content/Renderer/TessellationTable.bin": "edc4f3b628a139c5e185bbaeca661c95c1f427368d3b92892c5cff36c56dd941",
+    "Engine/Content/SlateDebug/Fonts/LastResort.tps": "1a89a055e643272d999b80b89e7ae84083bd2bbd5fdd5c131b386fb1056be0d9",
+    "Engine/Content/SlateDebug/Fonts/LastResort.ttf": "fff0f8de0b868b964950fe97c9b60f893e9bc85a4f90b3629c5693db058b97b9",
+    "Engine/Binaries/ThirdParty/Vulkan/Linux/libvulkan.so": "d59b6a2b184887fb6eddea3dd754bd2f5b59abc647577c3cd71bb530213ebbb0",
+    "Engine/Binaries/ThirdParty/Vulkan/Linux/libVkLayer_api_dump.so": "1b9871125c6f9afb2b0f09adbe3af3049a20837dca80ccea5d642be4dec31474",
+    "Engine/Binaries/ThirdParty/Vulkan/Linux/libVkLayer_crash_diagnostic.so": "99dda3ecafd809f0de42453536a2ea6299ac6216db9352e301065542e6685fbf",
+    "Engine/Binaries/ThirdParty/Vulkan/Linux/libVkLayer_gfxreconstruct.so": "2e8397383a72eb200e99a560a2b58947b8a0dc6cef3d1fe67245674df0d9e546",
+    "Engine/Binaries/ThirdParty/Vulkan/Linux/libVkLayer_khronos_profiles.so": "e2e9422a15730cd14904a0d27bbd7d463b5598fc7ffa1744d14fc47ce0dc87bf",
+    "Engine/Binaries/ThirdParty/Vulkan/Linux/libVkLayer_khronos_shader_object.so": "da3db6756cccaf502dab09a3de0cece49168654f7735612bb51f7555ef9f7cda",
+    "Engine/Binaries/ThirdParty/Vulkan/Linux/libVkLayer_khronos_synchronization2.so": "daa4bf2da5600deeff440b4c98fc3d68ba04121fdbb2f21d3463126c8d0a2c99",
+    "Engine/Binaries/ThirdParty/Vulkan/Linux/VkLayer_api_dump.json": "4616e485e4dacaa8c1ef365fed23d2c117e8848148720a7acea70c96cb975179",
+    "Engine/Binaries/ThirdParty/Vulkan/Linux/VkLayer_crash_diagnostic.json": "77b6e62bc24994b056e316aa0bd5e056e8ff0dfa377ef1e0ec5b291a181b6a88",
+    "Engine/Binaries/ThirdParty/Vulkan/Linux/VkLayer_gfxreconstruct.json": "93065b7975a70a250569bfce2ee655bf6bc188a7844204d2c37700a770afb02e",
+    "Engine/Binaries/ThirdParty/Vulkan/Linux/VkLayer_khronos_profiles.json": "88deb508a3d16131cd747335063826a31f237e024f396542c05908b44760b895",
+    "Engine/Binaries/ThirdParty/Vulkan/Linux/VkLayer_khronos_shader_object.json": "1c6dd4b56db0e2dc4a7eb1e44e7ad933f399685436c644add05dadf4258e6b1d",
+    "Engine/Binaries/ThirdParty/Vulkan/Linux/VkLayer_khronos_synchronization2.json": "307c8b906289b7a3329fb44137dd3af595d91f26e5bde9cff1b4280801a45139",
+    "Engine/Binaries/ThirdParty/Vulkan/Linux/VkLayer_khronos_validation.json": "328861629130912c27f1db4f2be4fa3d64608ca7edf6f3d886c09cb5856834cc",
+    "Engine/Binaries/ThirdParty/Vulkan/Linux/libVkLayer_khronos_validation.so": "cbecbd0d82217a789a3c3e1493cc60cb7cc036df8f22a0501af9b8ca23342e81",
+    "Engine/Binaries/ThirdParty/MsQuic/v220/linux/libmsquic.so": "51aec15c714c5d96969f6a7608cdefc5c163e7fec0b2e0974ec1382380d11c5e",
+    "Engine/Binaries/ThirdParty/MsQuic/v220/linux/libmsquic.so.2": "ed3698c20005885c61a20f04ba772e329f67855713f5fecb26152a8f949ad280",
+    "Quebec/Samples/PixelStreaming2/WebServers/get_ps_servers.bat": "bc0832aa6df8a84149d1601817d5c52cf241b03f07cd2ffec1a57823f96cec76",
+    "Quebec/Samples/PixelStreaming2/WebServers/get_ps_servers.sh": "3c3586338bbfa5392ee9ca0aa476e6fa29a43189b21fe8ced375f1e40006c00f",
+    "Quebec/Binaries/Linux/Quebec": "9ab9538dcfb14b42bcee71195ed0a6a870ecfed13544c2bdad52c93a83badf1d",
+    "Quebec/Binaries/Linux/libNvmlWrapper.so": "6f10ec281413bf770e613ade92df49a93be88eb4c644ec2b2df52ce8f7b228c8",
+    "Quebec/Binaries/Linux/libtbb.so": "748be7c496c9e9cc6a6c7a00733ef044fd98690b47ce16d4351a16b87ef72df1",
+    "Quebec/Binaries/Linux/libtbb.so.12": "748be7c496c9e9cc6a6c7a00733ef044fd98690b47ce16d4351a16b87ef72df1",
+    "Quebec/Binaries/Linux/libtbb.so.12.17": "748be7c496c9e9cc6a6c7a00733ef044fd98690b47ce16d4351a16b87ef72df1",
+    "Quebec/Binaries/Linux/libtbbmalloc.so": "249b0d63b446db091e8af272ebcd0d3ea7b09e9b326ec227d9c8abf313501ae2",
+    "Quebec/Binaries/Linux/libtbbmalloc.so.2": "249b0d63b446db091e8af272ebcd0d3ea7b09e9b326ec227d9c8abf313501ae2",
+    "Quebec/Binaries/Linux/libtbbmalloc.so.2.17": "249b0d63b446db091e8af272ebcd0d3ea7b09e9b326ec227d9c8abf313501ae2",
+    "Quebec/Binaries/Linux/Quebec.debug": "84f363b5b627c22ba13c7e7b6ed03d13d51a7a3a02beb84cd209421b9265efb6",
+    "Quebec/Binaries/Linux/Quebec.sym": "fb79cd897eb24e840c84cef2143f922af4081c634ae528597d201a4bbaeb9d37",
+    "Quebec/Content/Paks/Quebec-Linux.pak": "3385a7cabb1a609d5a212d5154868675cad9191a7d56c608afdd48c15f4bd4e7",
+    "Quebec/Content/Paks/global.ucas": "605150539a3b57062fdcebcb4e24c4b08623f166295b724f9685247448937a12",
+    "Quebec/Content/Paks/Quebec-Linux.ucas": "84b564afeb04d064de9caaccecb5b4e1d297cbdafe2e87b47eb66d66291b38de",
+    "Quebec/Content/Paks/global.utoc": "940e0bd5e8336ad0a356694e3c9e0dd1e3cb33e6e2673486839019e5907a0f61",
+    "Quebec/Content/Paks/Quebec-Linux.utoc": "86a38e43b76c47ad76f37b907aa820908abfaa7e0e713e0e1bdbc82b6662490c"
+  },
+  "archive_preserved": true,
+  "elapsed_seconds": 116.304
+}

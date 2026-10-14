@@ -1,0 +1,391 @@
+{
+  "reviewer": "Independent style_review agent",
+  "reviewed_utc": "2026-10-14T17:38:20.719297+00:00",
+  "verdict": "PASS_SCOPED_PACKAGE_RENDERING_AND_READABILITY",
+  "scope": "All fourteen actual native packaged 1280x720 images independently viewed; no new visible missing/checkerboard asset, blank viewport or HUD failure. This supports the bounded district-package QA merge only.",
+  "actual_images_viewed": 14,
+  "continuous_playback_viewed": false,
+  "graphics_final_acceptance": false,
+  "higher_detail_pilot_default_promotion": false,
+  "districts": {
+    "montreal": {
+      "map": "/Game/Maps/LaFontaine",
+      "passed": true,
+      "native_graph_clock_advanced": true,
+      "renderer_settings": {
+        "renderer_settings_before_cycle": {
+          "sg.ViewDistanceQuality": 3.0,
+          "sg.AntiAliasingQuality": 3.0,
+          "sg.ShadowQuality": 3.0,
+          "sg.GlobalIlluminationQuality": 3.0,
+          "sg.ReflectionQuality": 3.0,
+          "sg.PostProcessQuality": 3.0,
+          "sg.TextureQuality": 3.0,
+          "sg.EffectsQuality": 3.0,
+          "sg.FoliageQuality": 3.0,
+          "sg.ShadingQuality": 3.0,
+          "sg.LandscapeQuality": 3.0,
+          "r.ScreenPercentage": 100.0
+        },
+        "renderer_settings_after_cycle": {
+          "sg.ViewDistanceQuality": 3.0,
+          "sg.AntiAliasingQuality": 3.0,
+          "sg.ShadowQuality": 3.0,
+          "sg.GlobalIlluminationQuality": 3.0,
+          "sg.ReflectionQuality": 3.0,
+          "sg.PostProcessQuality": 3.0,
+          "sg.TextureQuality": 3.0,
+          "sg.EffectsQuality": 3.0,
+          "sg.FoliageQuality": 3.0,
+          "sg.ShadingQuality": 3.0,
+          "sg.LandscapeQuality": 3.0,
+          "r.ScreenPercentage": 100.0
+        }
+      },
+      "layout_sha256": "4238d6ed45d5fb890e0f8dbcb672de0803c6dc7079b0b6a86b386d82ebbb4250"
+    },
+    "toronto": {
+      "map": "/Game/Maps/CollegeBathurst",
+      "passed": true,
+      "native_graph_clock_advanced": true,
+      "renderer_settings": {
+        "renderer_settings_before_cycle": {
+          "sg.ViewDistanceQuality": 3.0,
+          "sg.AntiAliasingQuality": 3.0,
+          "sg.ShadowQuality": 3.0,
+          "sg.GlobalIlluminationQuality": 3.0,
+          "sg.ReflectionQuality": 3.0,
+          "sg.PostProcessQuality": 3.0,
+          "sg.TextureQuality": 3.0,
+          "sg.EffectsQuality": 3.0,
+          "sg.FoliageQuality": 3.0,
+          "sg.ShadingQuality": 3.0,
+          "sg.LandscapeQuality": 3.0,
+          "r.ScreenPercentage": 100.0
+        },
+        "renderer_settings_after_cycle": {
+          "sg.ViewDistanceQuality": 3.0,
+          "sg.AntiAliasingQuality": 3.0,
+          "sg.ShadowQuality": 3.0,
+          "sg.GlobalIlluminationQuality": 3.0,
+          "sg.ReflectionQuality": 3.0,
+          "sg.PostProcessQuality": 3.0,
+          "sg.TextureQuality": 3.0,
+          "sg.EffectsQuality": 3.0,
+          "sg.FoliageQuality": 3.0,
+          "sg.ShadingQuality": 3.0,
+          "sg.LandscapeQuality": 3.0,
+          "r.ScreenPercentage": 100.0
+        }
+      },
+      "layout_sha256": "199b3371798f174a19e619aacdbfc5e5f258747e3b517bca15bf8dd35f6f3730"
+    }
+  },
+  "images": [
+    {
+      "source": "Saved/Tests/DistrictRuntime/SingleRenderWindow-20261014T172829Z/Package/montreal-standalone/User/Saved/Screenshots/Linux/NordComic_Car.png",
+      "copy": "Verification/DistrictPackage/RenderedImages/montreal/NordComic_Car.png",
+      "sha256": "1fc137bc69935c7df1fb65e8f7d7dea3a67528efd27c895aefe3f7f78ac7df71",
+      "district": "montreal",
+      "dimensions": [
+        1280,
+        720
+      ],
+      "actual_pixels_independently_viewed": true,
+      "observation": "Car, brick facades, exterior stairs, mature trees and road assets render. Car exit/speed/control HUD is legible; foreground tree dominates the left composition."
+    },
+    {
+      "source": "Saved/Tests/DistrictRuntime/SingleRenderWindow-20261014T172829Z/Package/montreal-standalone/User/Saved/Screenshots/Linux/NordComic_East.png",
+      "copy": "Verification/DistrictPackage/RenderedImages/montreal/NordComic_East.png",
+      "sha256": "2e93aba3eda2306ae4839fe386f4341fff8383ffae753d86eed7867ed237a6c9",
+      "district": "montreal",
+      "dimensions": [
+        1280,
+        720
+      ],
+      "actual_pixels_independently_viewed": true,
+      "observation": "Existing default skull-shirt body, palm shorts and red prop render against populated brick/window/stair frontage. Face has soft baked detail and hands remain rigid; close framing crops feet. Objective and control HUD readable."
+    },
+    {
+      "source": "Saved/Tests/DistrictRuntime/SingleRenderWindow-20261014T172829Z/Package/montreal-standalone/User/Saved/Screenshots/Linux/NordComic_Jump.png",
+      "copy": "Verification/DistrictPackage/RenderedImages/montreal/NordComic_Jump.png",
+      "sha256": "31e118cf87f6041411ebfd13fd51d3bff6cdaeb32a370a3a81b936a3ed5cc034",
+      "district": "montreal",
+      "dimensions": [
+        1280,
+        720
+      ],
+      "actual_pixels_independently_viewed": true,
+      "observation": "Airborne default body, HOP burst and ground shadow visible against exterior stairs. Single still shows state only; it cannot establish transition quality or fluidity."
+    },
+    {
+      "source": "Saved/Tests/DistrictRuntime/SingleRenderWindow-20261014T172829Z/Package/montreal-standalone/User/Saved/Screenshots/Linux/NordComic_North.png",
+      "copy": "Verification/DistrictPackage/RenderedImages/montreal/NordComic_North.png",
+      "sha256": "9149d25c17d5d1d0d040cae8c9eaf6a9d8d659d4e78e0fae8dce4482832dda00",
+      "district": "montreal",
+      "dimensions": [
+        1280,
+        720
+      ],
+      "actual_pixels_independently_viewed": true,
+      "observation": "Sidewalk, parked cars, trees and intersection retain readable silhouettes and outlined materials. Mini-map/attribution/objective readable; no blank or checkerboard surfaces observed."
+    },
+    {
+      "source": "Saved/Tests/DistrictRuntime/SingleRenderWindow-20261014T172829Z/Package/montreal-standalone/User/Saved/Screenshots/Linux/NordComic_West.png",
+      "copy": "Verification/DistrictPackage/RenderedImages/montreal/NordComic_West.png",
+      "sha256": "f15f97bbed67cd82410bfc99e9934738c25f0a5e03045d38e7fa99c46c3dbe59",
+      "district": "montreal",
+      "dimensions": [
+        1280,
+        720
+      ],
+      "actual_pixels_independently_viewed": true,
+      "observation": "Street-facing body/car and long opposite frontage render. Ground joins and patterned outlines remain visible. Distant frontage is repetitive; no new missing-asset symptom observed."
+    },
+    {
+      "source": "Saved/Tests/DistrictRuntime/SingleRenderWindow-20261014T172829Z/Package/montreal-standalone/User/Saved/Screenshots/Linux/NordRealistic_East.png",
+      "copy": "Verification/DistrictPackage/RenderedImages/montreal/NordRealistic_East.png",
+      "sha256": "dd7f7fb6534e02235905ee5998ac565b09cc620de9ae4a47aa0306ea062097bf",
+      "district": "montreal",
+      "dimensions": [
+        1280,
+        720
+      ],
+      "actual_pixels_independently_viewed": true,
+      "observation": "Standard-mode brick/stone/windows/stair surfaces and default body/prop render. Moving body is softer than static architecture; pose differs from Comic, so no pixel-matched comparison claim."
+    },
+    {
+      "source": "Saved/Tests/DistrictRuntime/SingleRenderWindow-20261014T172829Z/Package/montreal-standalone/User/Saved/Screenshots/Linux/NordRealistic_North.png",
+      "copy": "Verification/DistrictPackage/RenderedImages/montreal/NordRealistic_North.png",
+      "sha256": "fb00b2207bd6e52964359a6a8866a16731dce0545d3df0fd13b05529f43a6675",
+      "district": "montreal",
+      "dimensions": [
+        1280,
+        720
+      ],
+      "actual_pixels_independently_viewed": true,
+      "observation": "Standard-mode tree shadows, parked cars, brick frontage and ground render. HUD remains legible against darker shadows; no missing geometry or error screen observed."
+    },
+    {
+      "source": "Saved/Tests/DistrictRuntime/SingleRenderWindow-20261014T172829Z/Package/toronto-standalone/User/Saved/Screenshots/Linux/NordComic_Car.png",
+      "copy": "Verification/DistrictPackage/RenderedImages/toronto/NordComic_Car.png",
+      "sha256": "70e6c7c0c8f554360160cce6b691b20f38abf79037c26ff1e4b1991070773e75",
+      "district": "toronto",
+      "dimensions": [
+        1280,
+        720
+      ],
+      "actual_pixels_independently_viewed": true,
+      "observation": "Streetcar rails/markings, shell blocks and car render with legible Toronto free-roam, attribution, mini-map, exit/speed/control HUD. Corridor is very sparse and recedes to an abrupt horizon."
+    },
+    {
+      "source": "Saved/Tests/DistrictRuntime/SingleRenderWindow-20261014T172829Z/Package/toronto-standalone/User/Saved/Screenshots/Linux/NordComic_East.png",
+      "copy": "Verification/DistrictPackage/RenderedImages/toronto/NordComic_East.png",
+      "sha256": "44c1b87c3b42fc59f066982747c840611bd3ed64a6c0e09f182046fb6e4a560d",
+      "district": "toronto",
+      "dimensions": [
+        1280,
+        720
+      ],
+      "actual_pixels_independently_viewed": true,
+      "observation": "Sneaky Dee's original stone, framed ground windows, door and partial fascia render; cropped visible DEE'S reads forward. Close side fixture excludes most of the sign and upper storey. Pavement texture/joins remain visible."
+    },
+    {
+      "source": "Saved/Tests/DistrictRuntime/SingleRenderWindow-20261014T172829Z/Package/toronto-standalone/User/Saved/Screenshots/Linux/NordComic_Jump.png",
+      "copy": "Verification/DistrictPackage/RenderedImages/toronto/NordComic_Jump.png",
+      "sha256": "fd5b9a96ede462c033af6a3862d909919db85886314a02812d4ef1e4e7bcfb4f",
+      "district": "toronto",
+      "dimensions": [
+        1280,
+        720
+      ],
+      "actual_pixels_independently_viewed": true,
+      "observation": "Corrected SNEAKY DEE'S lettering reads forward, with left edge cropped. White cladding, coloured panels, trim, door, default airborne body and HOP burst render. This is a strong glyph-handness package proof, not full-facade composition approval."
+    },
+    {
+      "source": "Saved/Tests/DistrictRuntime/SingleRenderWindow-20261014T172829Z/Package/toronto-standalone/User/Saved/Screenshots/Linux/NordComic_North.png",
+      "copy": "Verification/DistrictPackage/RenderedImages/toronto/NordComic_North.png",
+      "sha256": "02a3d818591d420cf6f49abf6b3fae82ceb8289f476143fd734b354161fc258c",
+      "district": "toronto",
+      "dimensions": [
+        1280,
+        720
+      ],
+      "actual_pixels_independently_viewed": true,
+      "observation": "Default skull-shirt body/face, car and repetitive shell frontage render; HUD legible. Wide paving has thin diagonal joins and shell frontage lacks street-level detail."
+    },
+    {
+      "source": "Saved/Tests/DistrictRuntime/SingleRenderWindow-20261014T172829Z/Package/toronto-standalone/User/Saved/Screenshots/Linux/NordComic_West.png",
+      "copy": "Verification/DistrictPackage/RenderedImages/toronto/NordComic_West.png",
+      "sha256": "009b54dbc68d7c49c9a3ad7df6b7dd5864b3dbb8cb0ae598a8bcd8db252a843d",
+      "district": "toronto",
+      "dimensions": [
+        1280,
+        720
+      ],
+      "actual_pixels_independently_viewed": true,
+      "observation": "Landmark windows/door/partial forward-reading fascia and side corridor render. Thin angular road/sidewalk joins remain. Partial close fascia cannot prove all three complete signs in this packaged suite."
+    },
+    {
+      "source": "Saved/Tests/DistrictRuntime/SingleRenderWindow-20261014T172829Z/Package/toronto-standalone/User/Saved/Screenshots/Linux/NordRealistic_East.png",
+      "copy": "Verification/DistrictPackage/RenderedImages/toronto/NordRealistic_East.png",
+      "sha256": "0b34dcc60784acf64b98072e7a9c1be36d5f8d5e7db71b2e8def0fa0c48f8243",
+      "district": "toronto",
+      "dimensions": [
+        1280,
+        720
+      ],
+      "actual_pixels_independently_viewed": true,
+      "observation": "Standard stone, original window/door/fascia material and moving default body/prop render. Clear difference from Comic without default/checkerboard failure. Sparse long corridor remains."
+    },
+    {
+      "source": "Saved/Tests/DistrictRuntime/SingleRenderWindow-20261014T172829Z/Package/toronto-standalone/User/Saved/Screenshots/Linux/NordRealistic_North.png",
+      "copy": "Verification/DistrictPackage/RenderedImages/toronto/NordRealistic_North.png",
+      "sha256": "4295dea35397a334d0c19055c72ea170803a8b78b533c6ea312a23d5afa680ea",
+      "district": "toronto",
+      "dimensions": [
+        1280,
+        720
+      ],
+      "actual_pixels_independently_viewed": true,
+      "observation": "Standard-mode default body/shirt/hair/prop, shell walls and car render. Shadows make shells dark but HUD stays legible. Existing simple body/rig and empty frontage remain art limitations."
+    }
+  ],
+  "source_sha256_recorded_at_run": {
+    "Scripts/verify_district_package.py": "d0fb08d3f0b0f7cb16ff2e748f1d95099af319bef14511f2265ad51387fee040",
+    "Scripts/package_inventory.py": "6e427a1b8aa90215a4b51f449188d1e5fca8720f42d3c9dac2139526ef1f9fc1",
+    "Scripts/render_log_guard.py": "fefcc6497b39deee609372ef6cedad98c0f7ad5deec1ddf027ed30d3e1541620",
+    "Data/Plateau/EastExtension/extension.json": "c19300127f80c9ebd4483610544acab9162a05280ab5a2717376c88c6770dcbf",
+    "Data/CollegeBathurst/SneakyDees/facade.json": "2f054cb949fc0f63da185a99e75ecc290fcba15b3c6b44511d467366b2bb49b3"
+  },
+  "runner_sha256": "78808122cea23ff2d53b21341ff4538184e5d197ee403ee74ebfdfa2c0f8572e",
+  "receipts": [
+    {
+      "source": "Saved/Tests/DistrictRuntime/SingleRenderWindow-20261014T172829Z/Package/report.json",
+      "copy": "Verification/DistrictPackage/RenderedReceipts/report.json",
+      "sha256": "2b095e06bd2955f258acab561bab06255281aa3cf72d9ab0eaf523dbaab1a859"
+    },
+    {
+      "source": "Saved/Tests/DistrictRuntime/SingleRenderWindow-20261014T172829Z/window-status.json",
+      "copy": "Verification/DistrictPackage/RenderedReceipts/window-status.json",
+      "sha256": "8b0d4568e92b892541ea1412f83eb4da8f844dfedd80bca1707bdf27b19ff089"
+    },
+    {
+      "source": "Saved/Tests/DistrictRuntime/SingleRenderWindow-20261014T172829Z/run_window.py",
+      "copy": "Verification/DistrictPackage/RenderedReceipts/run_window.py",
+      "sha256": "4223a78728b06852e9aaf6905fa3dac7b650ef640160bd168ee2d2b99181b282"
+    }
+  ],
+  "preservation": {
+    "passed": true,
+    "restored": true,
+    "global_settings_restored": true,
+    "source_settings_restored": true,
+    "protected_changed": [],
+    "all_content_changed": [],
+    "frozen_source_changed": [],
+    "live_package_changed": [],
+    "source_savegames_unchanged": true
+  },
+  "archive_preserved": true,
+  "native_processes": [
+    {
+      "name": "montreal-standalone",
+      "exit_code": 0,
+      "log": "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/DistrictRuntime/SingleRenderWindow-20261014T172829Z/Package/montreal-standalone/game.log",
+      "log_sha256": "bbbdca6da4d9c81bbfba1949fb34efd2d6ecc8b0f06ad251f2121d8817ca9ece",
+      "missing_package_warning_count": 0
+    },
+    {
+      "name": "montreal-host",
+      "exit_code": 0,
+      "log": "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/DistrictRuntime/SingleRenderWindow-20261014T172829Z/Package/montreal-host/game.log",
+      "log_sha256": "65709a1d546a1f15cbfd56689f0b5b06b6516308e9e2b373590ba6e723d5927f",
+      "missing_package_warning_count": 0
+    },
+    {
+      "name": "montreal-client",
+      "exit_code": 0,
+      "log": "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/DistrictRuntime/SingleRenderWindow-20261014T172829Z/Package/montreal-client/game.log",
+      "log_sha256": "613ada52166caf27b99707c041394061bae70b91ea8c7c9fc43faf23eeaa14eb",
+      "missing_package_warning_count": 0
+    },
+    {
+      "name": "toronto-standalone",
+      "exit_code": 0,
+      "log": "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/DistrictRuntime/SingleRenderWindow-20261014T172829Z/Package/toronto-standalone/game.log",
+      "log_sha256": "f3f9d895576059800e0f2e8e79394e5f5f90022867e29a08753e33b024f0278a",
+      "missing_package_warning_count": 0
+    },
+    {
+      "name": "toronto-host",
+      "exit_code": 0,
+      "log": "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/DistrictRuntime/SingleRenderWindow-20261014T172829Z/Package/toronto-host/game.log",
+      "log_sha256": "135f37d2d9fa0af6faa8886aa9854fd41e3169a8ebdc0ead09682a640ff54a28",
+      "missing_package_warning_count": 0
+    },
+    {
+      "name": "toronto-client",
+      "exit_code": 0,
+      "log": "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/DistrictRuntime/SingleRenderWindow-20261014T172829Z/Package/toronto-client/game.log",
+      "log_sha256": "694ee1e5060b3e8edfadde3a49cc8da7234b6d7ba5c9bd62246726636995ad74",
+      "missing_package_warning_count": 0
+    }
+  ],
+  "retained_failed_attempts": [
+    {
+      "window": "Saved/Tests/DistrictRuntime/SingleRenderWindow-20261014T165204Z",
+      "passed": false,
+      "restored": true,
+      "reason": "First quality query read frame-zero Constructor sentinel ScreenPercentage 0 before frame-one startup ExecCmds applied 100; strict quality check rejected.",
+      "error": "AssertionError: ('Rendered package requires actual screen percentage100', {'sg.ViewDistanceQuality': 3.0, 'sg.AntiAliasingQuality': 3.0, 'sg.ShadowQuality': 3.0, 'sg.GlobalIlluminationQuality': 3.0, 'sg.ReflectionQuality': 3.0, 'sg.PostProcessQuality': 3.0, 'sg.TextureQuality': 3.0, 'sg.EffectsQuality': 3.0, 'sg.FoliageQuality': 3.0, 'sg.ShadingQuality': 3.0, 'sg.LandscapeQuality': 3.0, 'r.ScreenPercentage': 0.0})",
+      "receipts": [
+        {
+          "source": "Saved/Tests/DistrictRuntime/SingleRenderWindow-20261014T165204Z/Package/report.json",
+          "copy": "Verification/DistrictPackage/RenderedReceipts/20261014T165204Z/report.json",
+          "sha256": "921d1928a7cebd932b4d3b3539025b014464cdc7779a60023c191a85681ce386"
+        },
+        {
+          "source": "Saved/Tests/DistrictRuntime/SingleRenderWindow-20261014T165204Z/window-status.json",
+          "copy": "Verification/DistrictPackage/RenderedReceipts/20261014T165204Z/window-status.json",
+          "sha256": "a319f3fcee1e2ae482ea04be7cf79bd6c461a6abb5dad22fb224af52954c230c"
+        }
+      ]
+    },
+    {
+      "window": "Saved/Tests/DistrictRuntime/SingleRenderWindow-20261014T172143Z",
+      "passed": false,
+      "restored": true,
+      "reason": "Quality snapshot spanned the startup setter and query, returning duplicate 100 rows; strict duplicate parser rejected. Ordered final startup command barrier now precedes the first snapshot; duplicate rejection remains strict.",
+      "error": "AssertionError: ('Missing/duplicate native rendered CVar readback', 'r.ScreenPercentage', ['100', '100'])",
+      "receipts": [
+        {
+          "source": "Saved/Tests/DistrictRuntime/SingleRenderWindow-20261014T172143Z/Package/report.json",
+          "copy": "Verification/DistrictPackage/RenderedReceipts/20261014T172143Z/report.json",
+          "sha256": "438c8e8a059da0ba9ab5257de20c095d74e4247840e5ba8ee8a25ca02f1dbb4f"
+        },
+        {
+          "source": "Saved/Tests/DistrictRuntime/SingleRenderWindow-20261014T172143Z/window-status.json",
+          "copy": "Verification/DistrictPackage/RenderedReceipts/20261014T172143Z/window-status.json",
+          "sha256": "0f0d434e0124d2b536d97451545f6c72e44ce9e623f1c8827e7db15ee07b87f1"
+        }
+      ]
+    }
+  ],
+  "limits": [
+    "Loopback native console handlers; no physical input, internet or continuous video acceptance.",
+    "No packaged frame-rate target, long soak, full campaign or save persistence claim.",
+    "Mesh inventory proves loaded assets; fresh editor collision/visual audits remain separate.",
+    "Existing default production bodies remain the package route; the private higher-detail candidate is unpromoted.",
+    "No continuous playback, input feel, 60 FPS, physical-input or finished graphic-novel character/city acceptance.",
+    "Existing Toronto sparse shell facades, empty corridors, abrupt distant horizon, thin paving joins and cropped landmark framing remain visible.",
+    "Comic/Standard body pose and foliage timing differ; no pixel identity or performance comparison claim.",
+    "The packaged close fixtures do not frame all three complete landmark signs; the earlier full landmark 720/1080 editor review remains separate."
+  ],
+  "private_baseline_payload_copied": false,
+  "private_baseline_note": "Private baseline remains in the local Saved window; only passed sanitation/preservation guards are shared.",
+  "private_baseline_local_record": {
+    "source": "Saved/Tests/DistrictRuntime/SingleRenderWindow-20261014T172829Z/baseline.json",
+    "sha256": "933c543bd6d94ae679b287e76684b0d2f5c0fc9bfeb3c562711d338bfc6d4657"
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "passed": true,
+  "phase": "complete",
+  "restored": true,
+  "global_settings_restored": true,
+  "source_settings_restored": true,
+  "all_content_changed": [],
+  "frozen_source_changed": [],
+  "derivative_changed": [],
+  "stream_helper_unchanged": true,
+  "live_package_changed": [],
+  "live_saves_changed_before_restart": false,
+  "source_savegames_unchanged": true,
+  "preserved_units_unchanged": true,
+  "turn_running_after": true,
+  "window": "Saved/Tests/DistrictRuntime/SingleRenderWindow-20261014T172829Z",
+  "window_sha256": "8b0d4568e92b892541ea1412f83eb4da8f844dfedd80bca1707bdf27b19ff089"
+}
