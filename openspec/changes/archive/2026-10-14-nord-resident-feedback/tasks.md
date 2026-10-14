@@ -1,0 +1,11 @@
+- [x] Inspect current game, Argon source and affected controls/tests; record bounded scope.
+- [x] Implement authoritative resident reactions and private, priority-aware ambient captions.
+- [x] Add original feedback assets and semantic authority sound events.
+- [x] Add shared session lap results and clean-best replay feedback without changing saves.
+- [x] Build and run targeted native checks plus affected story/save/multiplayer regressions.
+- [x] Fresh-load sound assets and verify the isolated cooked package with separate native host/client processes.
+- [x] Record evidence, preservation and remaining audio/device limits.
+- [x] Inspect rendered resident/result caption priority at desktop and tall-phone sizes, and verify all three cues in actual native PCM.
+- [x] Validate the live public player, mobile layouts and decoded audio; preserve saves and both package rollbacks.
+- [x] Correct QA screenshot paths, native possession bootstrap and Vulkan teardown; retain rejected attempts.
+- [x] Update canonical specs and archive the change after presentation acceptance.

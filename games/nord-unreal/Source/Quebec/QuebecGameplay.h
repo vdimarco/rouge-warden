@@ -20,6 +20,9 @@ class UStaticMeshComponent;
 class UTextRenderComponent;
 class UHierarchicalInstancedStaticMeshComponent;
 class APhysicsVolume;
+class USoundBase;
+
+enum class EQuebecFeedbackCue : uint8 { Checkpoint, Complete, Dialogue };
 
 // Two fixed map origins. Unknown/synthetic worlds retain the Montréal defaults.
 namespace QuebecDistrict
@@ -51,6 +54,7 @@ UCLASS()
 class QUEBEC_API AQuebecParkResident : public AActor
 {
     GENERATED_BODY()
+    friend class FQuebecResidentReactionTest;
 public:
     AQuebecParkResident();
     virtual void BeginPlay() override;
@@ -65,6 +69,7 @@ public:
     UPROPERTY(EditAnywhere, Replicated, meta=(ClampMin="1", ClampMax="10")) float PauseSeconds = 4.f;
     static const TCHAR* NameForStyle(int32 Index);
     static const TCHAR* DialogueForStyle(int32 Index);
+    bool Acknowledge(AActor* Player, bool bManual = false);
 private:
     UPROPERTY() TArray<TObjectPtr<UStaticMeshComponent>> Pieces;
     UPROPERTY() TObjectPtr<USkeletalMeshComponent> GeneratedBody;
@@ -75,6 +80,12 @@ private:
     UPROPERTY() TObjectPtr<UAnimSequence> CurrentAnimation;
     UPROPERTY() TObjectPtr<UTextRenderComponent> Label;
     float RouteLength = 0.f;
+    UPROPERTY(VisibleAnywhere, Replicated) float ReactionStartedAt = 0.f;
+    UPROPERTY(VisibleAnywhere, Replicated) float ReactionUntil = 0.f;
+    UPROPERTY(VisibleAnywhere, Replicated) float RouteDelay = 0.f;
+    UPROPERTY(VisibleAnywhere, Replicated) float ReactionYaw = 0.f;
+    float NextReactionAt = 0.f;
+    float RouteTime(float ServerTime) const;
     UFUNCTION() void UpdateRouteLength();
     UFUNCTION() void ApplyAppearance();
 };
@@ -228,9 +239,12 @@ UCLASS()
 class QUEBEC_API AQuebecController : public APlayerController
 {
     GENERATED_BODY()
+    friend class FQuebecFeedbackAssetsTest;
     friend class FQuebecBrowserInputReleaseTest;
     friend class FQuebecGraphicNovelCandidateTest;
 public:
+    AQuebecController();
+    void PlayFeedback(EQuebecFeedbackCue Cue);
     virtual void BeginPlay() override;
     virtual void SetupInputComponent() override;
     virtual void PlayerTick(float DeltaTime) override;
@@ -238,6 +252,7 @@ public:
     virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
     AQuebecCar* FindInteractableCar() const;
     AQuebecParkResident* FindInteractableResident() const;
+    void TickResidentGreetings(float DeltaTime);
     bool IsComicStyle() const { return bComicStyle; }
     void ShowInteractionMessage(const FString& Message) { ClientInteractionMessage(Message); }
     // Console commands for the shared sky. The host applies them; they do nothing without a sky.
@@ -248,6 +263,7 @@ public:
     UPROPERTY(VisibleAnywhere, Transient) float ResidentCaptionUntil = 0.f;
 
 private:
+    UPROPERTY() TArray<TObjectPtr<USoundBase>> FeedbackSounds;
     UPROPERTY() TObjectPtr<AQuebecCharacter> WalkingCharacter;
     UPROPERTY() TObjectPtr<UMaterialInterface> ComicMaterial;
     bool bComicStyle = false;
@@ -255,6 +271,8 @@ private:
     float CaptureClock = 0.f;
     int32 CaptureStep = 0;
     float CampaignAimElapsed = 0.f;
+    float ResidentGreetingElapsed = 0.f;
+    float NextResidentGreetingAt = 0.f;
     float BrowserStateElapsed = 0.f;
     FString BrowserStreamerId;
     void BindBrowserInputRelease();
@@ -282,6 +300,7 @@ private:
     UFUNCTION() void Interact();
     UFUNCTION(Server, Reliable) void ServerInteract();
     UFUNCTION(Client, Reliable) void ClientInteractionMessage(const FString& Message);
+    UFUNCTION(Client, Reliable) void ClientResidentGreeting(const FString& Message);
     void ExitCar(AQuebecCar* Car);
 };
 
@@ -291,6 +310,7 @@ class QUEBEC_API AQuebecHUD : public AHUD
     GENERATED_BODY()
 public:
     virtual void DrawHUD() override;
+    bool CanShowResidentGreeting() const;
 private:
     int32 LastMissionIndex = -1;
     float FirstHUDTime = -1.f;

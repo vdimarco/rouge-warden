@@ -1,0 +1,11 @@
+# Design
+
+Reference: the inspected [Argon resident reactions](https://github.com/ammaarreshi/argon-games/blob/main/grand-theft-argon/src/combat_weapons_targeting.js), [event callbacks](https://github.com/ammaarreshi/argon-games/blob/main/grand-theft-argon/src/main.js) and [audio cooldowns](https://github.com/ammaarreshi/argon-games/blob/main/grand-theft-argon/src/vfx_hud_audio.js). Adapt observable behaviors, without copying their implementation or assets.
+
+Reuse `AQuebecParkResident`, private controller captions and existing route/animation logic. Replicate authority-owned reaction holds and compensate the shared route clock on resume. Check visibility, approach direction/speed, and cooldowns before reacting. Ambient captions yield to manual dialogue and campaign briefings. Residents stay on their safe authored routes; no new flee navigation or crowd system.
+
+Use built-in `ClientPlaySound` from accepted authority gameplay transitions. Hard-reference three original short SoundWaves so they cook with the controller class. Keep visual feedback usable without audio. Successful race finishes store the elapsed result and best clean lap in replicated session state, never in the production save. Recovery-assisted laps do not improve the clean best.
+
+Validate new native logic, existing story/save and multiplayer regressions, original WAV envelopes and fresh imported assets. Record new evidence under `Saved/Tests/ResidentFeedback`; render and package jobs require a serialized GPU window and preservation of the running demo/saves. No claim of physical-device audio or subjective playtest acceptance.
+
+Acceptance: native30 checks, two-player story123 and residents10, desktop720p/1080p and482×1072 touch-HUD captures, three original cues matched in captured native PCM, both48file package promotions, public desktop8/mobile17 checks, and decoded WebRTC audio all passed. Saves, map/layout, tunnels and previous package rollbacks were preserved. See [verification](../../../../games/nord-unreal/Verification/ResidentFeedback.md). Physical device/off-LAN/subjective playtests remain outside this unattended acceptance. OpenSpec CLI was unavailable; requirement/scenario structure and canonical merge were checked manually.

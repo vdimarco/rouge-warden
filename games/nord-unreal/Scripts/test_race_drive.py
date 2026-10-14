@@ -4,8 +4,10 @@ Run with LaFontaine loaded and -NordCampaignQA. This seeds a real isolated
 completed-M1 save, enters the authored loan car through native E, then drives
 with MoveForward/MoveRight. It does not teleport the car, skip gates, disable
 traffic/collision, or claim subjective handling enjoyment.
+Add -NordResidentFeedbackQA to retain this run under a fresh UTC report directory.
 """
 import configparser
+from datetime import datetime, timezone
 import hashlib
 import json
 import math
@@ -26,6 +28,8 @@ OLD_QA = SAVE_PATH.read_bytes() if SAVE_PATH.exists() else None
 PRODUCTION = {str(p.relative_to(SAVE_DIR)): hashlib.sha256(p.read_bytes()).hexdigest()
               for p in SAVE_DIR.rglob('*.sav') if p != SAVE_PATH} if SAVE_DIR.exists() else {}
 OUT = ROOT / 'Verification/RaceDrive.json'
+if '-NordResidentFeedbackQA' in COMMAND:
+    OUT = ROOT / 'Saved/Tests/ResidentFeedback' / ('ContinuousRace-'+datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%S.%fZ')) / 'RaceDrive.json'
 LEVELS = u.get_editor_subsystem(u.LevelEditorSubsystem)
 SETTINGS = u.get_default_object(u.load_class(None, '/Script/UnrealEd.LevelEditorPlaySettings'))
 SYSTEM = u.get_default_object(u.load_class(None, '/Script/Engine.KismetSystemLibrary'))
@@ -47,6 +51,10 @@ REPORT = {'passed': False, 'mode': 'standalone authority PIE; continuous native 
           'not_checked': ['physical keyboard/mouse delivery', 'subjective handling enjoyment',
                           'audio quality', 'multiplayer', 'external internet', 'performance acceptance'],
           'collision_observation': 'Optional native OnActorHit observer not yet bound; contact counts are unavailable until binding succeeds.'}
+REPORT['source_sha256'] = {str(path.relative_to(ROOT)): hashlib.sha256(path.read_bytes()).hexdigest()
+    for path in (ROOT/'Scripts/test_race_drive.py', ROOT/'Source/Quebec/QuebecCampaign.h',
+                 ROOT/'Source/Quebec/QuebecCampaign.cpp', ROOT/'Source/Quebec/QuebecGameplay.h',
+                 ROOT/'Source/Quebec/QuebecGameplay.cpp', ROOT/'Source/Quebec/LaFontaineMap.h')}
 STATE = {'stage': 'begin', 'started': time.monotonic(), 'finished': False}
 
 
@@ -317,6 +325,12 @@ def drive():
         assert saved and saved.get_editor_property('CompletedMissions') == 2
         assert len(REPORT['gate_crossings']) == len(STATE['gates']), 'Every authored directional gate must be crossed'
         assert STATE['travel'] > STATE['lengths'][-1]*.8, 'Route completion needs continuous physical travel'
+        result = {key: campaign.get_editor_property(key)
+                  for key in ('LastRaceTime', 'RaceElapsed', 'BestCleanRaceTime', 'bLastRaceRetried')}
+        REPORT['clean_race_result'] = result
+        assert result['LastRaceTime'] > 0, 'Continuous native finish did not record an elapsed result'
+        assert result['LastRaceTime'] == result['RaceElapsed'] == result['BestCleanRaceTime'], 'Fresh continuous clean lap must establish the actual session best'
+        assert not result['bLastRaceRetried'], 'Continuous native finish was labelled as recovered'
         REPORT.update(world_seconds=round(now-STATE['drive_started'], 3), actual_travel_cm=round(STATE['travel'], 2),
                       completed_missions=2, saved_completed_missions=2, all_gates_crossed_in_order=True,
                       actor_collision_enabled_throughout=True)

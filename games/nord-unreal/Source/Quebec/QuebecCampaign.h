@@ -42,6 +42,7 @@ UCLASS()
 class QUEBEC_API AQuebecCampaign : public AActor
 {
     GENERATED_BODY()
+    friend class FQuebecRaceResultTest;
 public:
     AQuebecCampaign();
     virtual void BeginPlay() override;
@@ -76,6 +77,9 @@ public:
     UPROPERTY(VisibleAnywhere, Replicated) int32 RaceGateIndex = 0;
     UPROPERTY(VisibleAnywhere, Replicated) float RaceStartTime = 0.f;
     UPROPERTY(VisibleAnywhere, Replicated) float RaceElapsed = 0.f;
+    UPROPERTY(VisibleAnywhere, Replicated) float LastRaceTime = 0.f;
+    UPROPERTY(VisibleAnywhere, Replicated) float BestCleanRaceTime = 0.f;
+    UPROPERTY(VisibleAnywhere, Replicated) bool bLastRaceRetried = false;
     UPROPERTY(VisibleAnywhere, Replicated) float RaceTimeLimit = 180.f;
     UPROPERTY(VisibleAnywhere, Replicated) bool bRaceRetried = false;
     UPROPERTY(VisibleAnywhere, Replicated) bool bRaceTimedOut = false;
@@ -130,14 +134,14 @@ private:
     float RivalDistance = 0.f;
     float LastPresentationTime = -1.f;
     bool bBuilt = false;
-    bool bRaceWonThisSession = false;
     bool bSaveBlocked = false;
+    void RecordRaceResult();
 
     void BuildEncounter();
     void SetupRaceRoute();
     void TickTerrace(float DeltaSeconds);
     void TickRace(float DeltaSeconds);
-    void ChangePhase(EQuebecCampaignPhase Next);
+    void ChangePhase(EQuebecCampaignPhase Next, bool bFeedback = true);
     void StopAiming();
     void SaveBoundary();
     FString SaveSlot() const;

@@ -36,7 +36,13 @@ async function check(name, action) {
     console.log(`PASS ${name}`);
   } catch (error) {
     report.checks.push({ name, passed: false, durationMs: Date.now() - started, error: error.message });
-    if (page) report.input.lastStats = await page.evaluate(() => window.__nordQaStats?.slice(-8));
+    if (page) {
+      report.input.lastStats = await page.evaluate(() => window.__nordQaStats?.slice(-8));
+      report.input.nativeHeartbeat = await page.evaluate(() => ({
+        peers: window.__nordQaPeers.map(peer => ({ state: peer.connectionState, driving: peer.__nordQaDriving })),
+        messages: window.__nordQaReceives
+      }));
+    }
     throw error;
   }
 }
@@ -313,10 +319,35 @@ try {
   await page.addInitScript(() => {
     const NativePeerConnection = window.RTCPeerConnection;
     window.__nordQaPeers = [];
+    window.__nordQaReceives = [];
     window.RTCPeerConnection = class extends NativePeerConnection {
       constructor(...args) {
         super(...args);
         window.__nordQaPeers.push(this);
+        this.__nordQaChannels = new WeakSet();
+        this.addEventListener('datachannel', ({ channel }) => this.observeDataChannel(channel));
+      }
+      createDataChannel(...args) {
+        return this.observeDataChannel(super.createDataChannel(...args));
+      }
+      observeDataChannel(channel) {
+        if (this.__nordQaChannels.has(channel)) return channel;
+        this.__nordQaChannels.add(channel);
+        channel.addEventListener('message', ({ data }) => {
+          const bytes = data instanceof ArrayBuffer ? new Uint8Array(data)
+            : ArrayBuffer.isView(data) ? new Uint8Array(data.buffer, data.byteOffset, data.byteLength) : null;
+          const record = { id: bytes?.[0], type: Object.prototype.toString.call(data),
+            length: bytes?.byteLength ?? data?.size, channel: channel.label,
+            peer: window.__nordQaPeers.indexOf(this), at: performance.now() };
+          if (bytes?.[0] === 1) {
+            let state;
+            try { state = JSON.parse(new TextDecoder('utf-16').decode(bytes.subarray(1))); }
+            catch { record.parseFailed = true; }
+            if (typeof state?.nordDriving === 'boolean') record.driving = this.__nordQaDriving = state.nordDriving;
+          }
+          if (window.__nordQaReceives.length < 32) window.__nordQaReceives.push(record);
+        });
+        return channel;
       }
     };
     // Observe successful sends on the real browser data channel. The original
@@ -356,14 +387,19 @@ try {
     await check('tapping Play takes the game fullscreen', () =>
       page.waitForFunction(() => document.fullscreenElement?.id === 'frame', null, { timeout: 5000 }));
     await check('actual native possession arrives on reconnect and restores the matching controls', async () => {
-      await page.waitForFunction(() => ['true', 'false'].includes(document.querySelector('#touch-controls').dataset.driving));
-      const driving = await page.locator('#touch-controls').getAttribute('data-driving');
-      report.input.reconnectedDriving = driving === 'true';
-      if (driving === 'true') {
+      // Controls initialize as walking before the native possession heartbeat arrives.
+      await page.waitForFunction(() => typeof window.__nordQaPeers.at(-1)?.__nordQaDriving === 'boolean');
+      const driving = await page.evaluate(() => window.__nordQaPeers.at(-1).__nordQaDriving);
+      await page.waitForFunction(value => document.querySelector('#touch-controls').dataset.driving === String(value), driving);
+      report.input.reconnectedDriving = driving;
+      if (driving) {
         assert.equal(await page.locator('#touch-gas').getAttribute('data-key'), '87');
         await page.locator('#touch-use').tap();
-        await page.waitForFunction(() => document.querySelector('#touch-controls').dataset.driving === 'false');
+        await page.waitForFunction(() => window.__nordQaPeers.at(-1).__nordQaDriving === false &&
+          document.querySelector('#touch-controls').dataset.driving === 'false');
       }
+      report.input.possessionTelemetry = await page.evaluate(() => window.__nordQaReceives
+        .filter(message => typeof message.driving === 'boolean').slice(-4));
     });
     await check('the game sends the frame the page asks for', streamSettled);
     await check('real mobile media', () => advancingMedia('initial'));

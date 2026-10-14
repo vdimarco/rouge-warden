@@ -25,7 +25,7 @@ Continue within the user's next requested scope, using the existing pipelines an
 | Project / map | `Quebec.uproject`; `/Game/Maps/LaFontaine` |
 | Public player | <https://nord-montreal.vercel.app/> |
 | Arcade title page | <https://arcade.uptick.systems/gta/> — prior-release trailer; not recaptured in this graphics pass |
-| Separate source project | `/home/von/Documents/ChatGPT/GTA_ Quebec` — **read-only for this gameplay/streaming work** |
+| Retired prototype archive | `/home/von/Documents/ChatGPT/Archive/NORD-prototype-20261014` — original project/launchers disabled; former source path contains only retirement instructions |
 
 Read the repository's `AGENTS.md` before editing. Substantial new changes use the existing OpenSpec workflow. The accepted graphics change is archived at `openspec/changes/archive/2026-10-11-nord-environment-polish`; its requirement is merged into `openspec/specs/nord-unreal/spec.md`. All 14 tasks and ten scenarios are recorded complete. OpenSpec CLI validation was unavailable; structure was validated manually.
 
