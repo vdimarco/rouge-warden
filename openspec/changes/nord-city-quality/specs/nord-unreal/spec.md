@@ -1,5 +1,32 @@
 ## ADDED Requirements
 
+### Requirement: Mature graphic-novel character direction
+The graphics follow-up SHALL pursue original NORD characters with mature human silhouettes, convincing anatomy/clothing and expressive illustrated faces, using the user's Spider-Verse visual reference with smooth motion. Crew roles/style IDs SHALL remain stable; likeness and outfit continuity SHALL be reviewed through redesign feedback. Earlier neutral-face acceptance SHALL NOT be treated as acceptance of this new target.
+
+#### Scenario: Review the first style study
+- **WHEN** the initial concept is presented
+- **THEN** it is clearly labelled as a direction study rather than an implemented character or gameplay capture
+- **AND** mature silhouettes, graphic shapes, drawn shading and controlled expressions can be reviewed independently of runtime motion
+
+#### Scenario: Review an implemented character pilot
+- **WHEN** the actual possessed pilot is reviewed at 1280×720 and 1920×1080
+- **THEN** front/three-quarter face and whole-body views show the intended human proportions, readable face/hands and dimensional clothing
+- **AND** unpaused idle/start/stop/walk/sprint/turn/jump/landing video in both render modes demonstrates smooth pose updates, blended transitions, stable line treatment and grounded feet
+- **AND** source provenance, remaining facial/finger/material limits and separate native/co-op/package/performance verdicts are recorded before the whole crew is accepted
+
+### Requirement: Isolated native pilot review
+The local pilot SHALL be available only through the explicit `-NordGraphicNovelCandidate` review flag until graphics acceptance. Original sources and production crew/map packages SHALL remain recoverable and unchanged.
+
+#### Scenario: Opt into the local character
+- **WHEN** the native game starts with the candidate flag and style 9 is selected
+- **THEN** its candidate body, own clips, blended graph and ink stencil are selected without a Python asset override
+- **AND** other styles and normal launches retain production assets, and F2 remains private and initially off
+
+#### Scenario: Observe native motion without a renderer
+- **WHEN** the candidate runs the explicit headless verification fixture
+- **THEN** actual bone refresh is enabled for observation and real evaluated foot/knee poses and hand/eye controls must change with movement
+- **AND** the report identifies fixture overrides, skipped images, failed topology and unverified visual/performance acceptance instead of treating graph clocks as graphics evidence
+
 ### Requirement: Detailed animated playable crew
 The supplied playable characters SHALL retain readable facial details and distinct locomotion in the comic view.
 
@@ -137,6 +164,14 @@ Player-controlled cars SHALL provide progressive acceleration, braking before re
 - **AND** ambient traffic retains its route/yield behavior and local audio does not create an audible fleet of unoccupied cars
 
 ## MODIFIED Requirements
+
+### Requirement: Smooth character animation
+Playable crew and visible ambient residents SHALL update their poses with their active animation updates in both standard and comic views, without deliberate 12 Hz holds or animation-clock quantization. Movement and camera SHALL remain continuous; enabling the comic filter SHALL NOT impose a lower pose cadence. This requirement does not promise a fixed render or stream frame rate.
+
+#### Scenario: Watch the character run
+- **WHEN** the player runs or observes a moving resident in either render mode
+- **THEN** the animation clock advances without deliberate held steps while ground movement remains continuous
+- **AND** pressing F2 changes the local look without reducing the character's pose-update cadence or another player's rendering
 
 ### Requirement: Textured cottage crew
 The eight supplied cottage characters SHALL use complete textured skeletal models with recognizable face, hair, clothing and accessories and relaxed default expressions, in the established comic art direction.

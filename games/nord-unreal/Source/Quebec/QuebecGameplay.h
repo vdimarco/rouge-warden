@@ -10,6 +10,7 @@
 #include "QuebecGameplay.generated.h"
 
 class UAnimSequence;
+class UBlendSpace;
 class USkeletalMeshComponent;
 class UBoxComponent;
 class UCameraComponent;
@@ -64,6 +65,8 @@ UCLASS()
 class QUEBEC_API AQuebecCharacter : public ACharacter
 {
     GENERATED_BODY()
+    friend class FQuebecCrewAnimationTest;
+    friend class FQuebecGraphicNovelControlsTest;
 public:
     AQuebecCharacter();
     virtual void BeginPlay() override;
@@ -77,6 +80,7 @@ public:
     virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
     virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
     void SetInVehicle(bool bNewInVehicle);
+    UFUNCTION() bool ConfigureCrewAnimation();
 
 private:
     UPROPERTY(VisibleAnywhere) TObjectPtr<USpringArmComponent> CameraArm;
@@ -87,6 +91,7 @@ private:
     UPROPERTY() TObjectPtr<UAnimSequence> CrewIdle;
     UPROPERTY() TObjectPtr<UAnimSequence> CrewRun;
     UPROPERTY() TObjectPtr<UAnimSequence> CrewJump;
+    UPROPERTY() TObjectPtr<UBlendSpace> CrewLocomotion;
     bool bCrewWasFalling = false;
     float CrewLandingTime = 1.f;
     float CrewAnimationTime = 0.f;
@@ -197,6 +202,7 @@ class QUEBEC_API AQuebecController : public APlayerController
 {
     GENERATED_BODY()
     friend class FQuebecBrowserInputReleaseTest;
+    friend class FQuebecGraphicNovelCandidateTest;
 public:
     virtual void BeginPlay() override;
     virtual void SetupInputComponent() override;

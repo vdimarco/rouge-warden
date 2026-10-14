@@ -18,28 +18,37 @@ def comic_hlsl():
                 if isinstance(node, ast.Assign) and any(isinstance(t, ast.Name) and t.id == 'HLSL' for t in node.targets))
 
 
-def shader_light(luminance, *, sky=False, roughness=.95, normal_z=1., shading_model=1., foliage=0., crew=0.):
+def shader_light(luminance, *, sky=False, roughness=.95, normal_z=1., shading_model=1., foliage=0., crew=0., novel_crew=0.):
     """Evaluate the actual scalar HLSL banding block, so a removed exemption fails continuity checks."""
     def smoothstep(a, b, value):
         t = max(0., min(1., (value - a) / (b - a)))
         return t * t * (3. - 2. * t)
 
     values = {'Lum': luminance, 'Sky': sky, 'Roughness': roughness, 'NormalZ': normal_z,
-              'ShadingModel': shading_model, 'Foliage': foliage, 'Crew': crew, 'Bands': 5.,
+              'ShadingModel': shading_model, 'Foliage': foliage, 'Crew': crew, 'NovelCrew': novel_crew, 'Bands': 5.,
               'abs': abs, 'pow': pow, 'floor': math.floor, 'smoothstep': smoothstep,
               'step': lambda edge, value: float(value >= edge), 'lerp': lambda a, b, t: a + (b - a) * t}
     hlsl = comic_hlsl()
     for name in ('SmoothReflection', 'GradientMask', 'Banded', 'BandMix', 'Light'):
-        expression = re.search(r'float ' + name + r' = ([^;]+);', hlsl).group(1).replace('NormalC.z', 'NormalZ')
-        if '?' in expression:
-            condition, choices = expression.split('?', 1)
-            yes, no = choices.split(':', 1)
-            expression = f'({yes} if {condition} else {no})'
-        values[name] = eval(expression, {'__builtins__': {}}, values)
+        for expression in re.findall(r'(?:float )?' + name + r' = ([^;]+);', hlsl):
+            expression = expression.replace('NormalC.z', 'NormalZ')
+            if '?' in expression:
+                condition, choices = expression.split('?', 1)
+                yes, no = choices.split(':', 1)
+                expression = f'({yes} if {condition} else {no})'
+            values[name] = eval(expression, {'__builtins__': {}}, values)
     return values['Light'], values['BandMix']
 
 
 class TreeAppearanceTests(unittest.TestCase):
+    def test_pilot_uses_restrained_bands_and_protected_print_mask(self):
+        self.assertAlmostEqual(shader_light(.4, novel_crew=1.)[1], .22)
+        self.assertEqual(shader_light(.4, crew=1.)[1], 0.)
+        hlsl = comic_hlsl()
+        self.assertIn('Stencil > 253.0 && Stencil <= 254.0 && abs(CrewDepth - DepthC)', hlsl)
+        self.assertIn('float PrintedCrew = max(Crew, NovelCrew)', hlsl)
+        self.assertEqual(hlsl.count('(1.0 - max(PrintedCrew, Foliage))'), 3)
+
     def test_original_cutout_source(self):
         data = source_inventory()
         self.assertEqual(data['leaf_triangles'], 1939380)

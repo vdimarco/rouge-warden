@@ -1,0 +1,38 @@
+{
+  "created_at_utc": "2026-10-14T00:19:28.090656+00:00",
+  "tool": "built-in image_gen.imagegen",
+  "mode": "builtin",
+  "asset_type": "stylized-concept",
+  "generation_count": 1,
+  "concept_not_gameplay": true,
+  "transparent_background": false,
+  "original_generated_image": "/home/von/.codex/generated_images/01a137c3-2191-7db3-80a9-4f85e87d280b/exec-4eed64dd-a206-4383-bd28-b84dd033fb90.png",
+  "retained_image": "/home/von/.codex/generated_images/nord-graphic-novel-study-20261013/nord-graphic-novel-study.png",
+  "image_sha256": "0e9ccb06f91af91fb5c3ee7d1c46f04ae9ef009b837f2e5b632dd6e2c6ca641a",
+  "dimensions": [
+    1536,
+    1024
+  ],
+  "prompt_file": "/home/von/.codex/generated_images/nord-graphic-novel-study-20261013/prompt.txt",
+  "prompt_sha256": "1c9f18ec384bc29403357a7a28e1e522af7c945c5fe9cdd54ce2ac8d270a8be5",
+  "references": [
+    {
+      "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/CharactersNeutral/CurlyMetalhead/reference.png",
+      "role": "identity",
+      "sha256": "6919135c8695bef6bdcb61c66ced507979bcdb09157d231f99be4b7eee70d0a0"
+    },
+    {
+      "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Preview/EnvironmentPolish/PlateauCorner_Comic.png",
+      "role": "Montreal-place",
+      "sha256": "9c4ab7496c5f4416cf01a4959b073da97641c93539eb5545930fc6d04e9b2c59"
+    }
+  ],
+  "review": {
+    "identity": "Curly hair, short beard and adult facial proportions consistent across three panels.",
+    "style": "Authored tapered lines, deliberate form shadows, painterly textures and restrained shadow print detail.",
+    "layout": "One action panel and two stacked face/idle studies.",
+    "limitations": "Still concept image cannot demonstrate real motion, native engine rendering, animation transitions or runtime performance. Sprint frame has a forward extended foot and reads as an action-flight phase rather than unequivocally planted weight."
+  },
+  "project_image": "games/nord-unreal/Data/GraphicNovel/style-study.png",
+  "project_prompt": "games/nord-unreal/Data/GraphicNovel/style-study-prompt.txt"
+}

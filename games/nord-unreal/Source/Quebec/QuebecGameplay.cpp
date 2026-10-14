@@ -1,6 +1,7 @@
 #include "QuebecGameplay.h"
 #include "QuebecCampaign.h"
 #include "QuebecSky.h"
+#include "QuebecCrewAnimation.h"
 #include "LaFontaineMap.h"
 
 #include "Animation/AnimInstance.h"
@@ -189,22 +190,36 @@ void AQuebecCharacter::CycleCrew()
 void AQuebecCharacter::ApplyCrewAppearance()
 {
     if (CrewStyle < 3 || CrewStyle > 10) return;
-    const FString Folder = FString::Printf(TEXT("/Game/ParkComic/Crew/Resident%d/"), CrewStyle);
+    const bool bGraphicNovelCandidate = CrewStyle == 9 && FParse::Param(FCommandLine::Get(), TEXT("NordGraphicNovelCandidate"));
+    const FString Folder = bGraphicNovelCandidate ? TEXT("/Game/ParkComic/CrewGraphicNovel/Resident9/")
+        : FString::Printf(TEXT("/Game/ParkComic/Crew/Resident%d/"), CrewStyle);
     USkeletalMesh* Body = LoadObject<USkeletalMesh>(nullptr, *(Folder + TEXT("SK_Body.SK_Body")));
     if (!Body) return;
-    GetMesh()->SetAnimInstanceClass(nullptr);
+    GetMesh()->SetAnimationMode(EAnimationMode::AnimationSingleNode);
     GetMesh()->SetSkeletalMesh(Body);
     GetMesh()->SetRelativeRotation(FRotator::ZeroRotator);
-    GetMesh()->SetAnimationMode(EAnimationMode::AnimationSingleNode);
     GetMesh()->SetRenderCustomDepth(true);
-    GetMesh()->SetCustomDepthStencilValue(255);
+    GetMesh()->SetCustomDepthStencilValue(bGraphicNovelCandidate ? 254 : 255);
     CrewWalk = LoadObject<UAnimSequence>(nullptr, *(Folder + TEXT("A_Walk.A_Walk")));
     CrewIdle = LoadObject<UAnimSequence>(nullptr, *(Folder + TEXT("A_Idle.A_Idle")));
     CrewRun = LoadObject<UAnimSequence>(nullptr, *(Folder + TEXT("A_Run.A_Run")));
     CrewJump = LoadObject<UAnimSequence>(nullptr, *(Folder + TEXT("A_Jump.A_Jump")));
+    CrewLocomotion = LoadObject<UBlendSpace>(nullptr, *(Folder + TEXT("BS_Locomotion.BS_Locomotion")), nullptr, LOAD_NoWarn | LOAD_Quiet);
     CrewAnimation = nullptr;
     CrewProp->SetStaticMesh(LoadObject<UStaticMesh>(nullptr, CrewStyle == 8
         ? TEXT("/Game/ParkComic/Crew/SM_PVCTube.SM_PVCTube") : TEXT("/Game/ParkComic/Crew/SM_Plunger.SM_Plunger")));
+    ConfigureCrewAnimation();
+}
+
+bool AQuebecCharacter::ConfigureCrewAnimation()
+{
+    const USkeletalMesh* Mesh = GetMesh()->GetSkeletalMeshAsset();
+    if (!CrewLocomotion || !CrewJump || !Mesh || CrewLocomotion->GetSkeleton() != Mesh->GetSkeleton() ||
+        CrewJump->GetSkeleton() != Mesh->GetSkeleton() || CrewJump->HasRootMotion() ||
+        CrewLocomotion->GetBlendSamples().Num() != 3) return false;
+    GetMesh()->SetAnimInstanceClass(UQuebecCrewAnimInstance::StaticClass());
+    UQuebecCrewAnimInstance* Animation = Cast<UQuebecCrewAnimInstance>(GetMesh()->GetAnimInstance());
+    return Animation && Animation->SetAssets(CrewLocomotion, CrewJump);
 }
 
 void AQuebecCharacter::SetupPlayerInputComponent(UInputComponent* Input)
@@ -267,7 +282,7 @@ void AQuebecCharacter::Tick(float DeltaSeconds)
 {
     Super::Tick(DeltaSeconds);
     KeepCharacterInView(CameraArm, GetViewRotation());
-    if (!bInVehicle && CrewIdle)
+    if (!bInVehicle && CrewIdle && !Cast<UQuebecCrewAnimInstance>(GetMesh()->GetAnimInstance()))
     {
         const float Speed = GetVelocity().Size2D();
         const bool bFalling = GetCharacterMovement()->IsFalling();
@@ -402,7 +417,6 @@ namespace
 AQuebecParkResident::AQuebecParkResident()
 {
     PrimaryActorTick.bCanEverTick = true;
-    PrimaryActorTick.TickInterval = 1.f / 24.f;
     bReplicates = true;
     SetReplicateMovement(true);
     SetNetUpdateFrequency(12.f);
@@ -529,7 +543,7 @@ void AQuebecParkResident::Tick(float DeltaSeconds)
     if (!bLocalView || FVector::DistSquared(Eye,GetActorLocation()) > FMath::Square(14000.f)) return;
     const float AnimationClock = Activity == 2 ? Time :
         Travel.AnimationTime*(bWalking ? Pace/(Activity == 1 ? 260.f : 120.f) : 1.f)+Phase;
-    const float Pose = FMath::FloorToFloat(AnimationClock * 12.f) / 12.f;
+    const float Pose = AnimationClock;
     if (GeneratedBody->GetSkeletalMeshAsset())
     {
         UAnimSequence* Animation = bWalking ? (Activity == 1 && RunAnimation ? RunAnimation : WalkAnimation) : IdleAnimation;
@@ -1458,7 +1472,10 @@ void AQuebecController::ApplyComicStyle()
 {
     // The look is local: each player's view target cameras carry the blendable at weight 0 or 1.
     // Loaded lazily so the editor can regenerate the asset without a rooted reference.
-    if (!ComicMaterial) ComicMaterial = LoadObject<UMaterialInterface>(nullptr, TEXT("/Game/Art/Comic/M_ComicInk.M_ComicInk"));
+    if (!ComicMaterial) ComicMaterial = LoadObject<UMaterialInterface>(nullptr,
+        FParse::Param(FCommandLine::Get(), TEXT("NordGraphicNovelCandidate"))
+            ? TEXT("/Game/ParkComic/CrewGraphicNovel/Resident9/M_ComicInk.M_ComicInk")
+            : TEXT("/Game/Art/Comic/M_ComicInk.M_ComicInk"));
     const float Weight = bComicStyle ? 1.f : 0.f;
     if (AActor* Target = GetViewTarget(); Target && ComicMaterial)
     {
@@ -1472,9 +1489,9 @@ void AQuebecController::ApplyComicStyle()
             else Blendables.Add(FWeightedBlendable(Weight, ComicMaterial));
         }
     }
-    // Animation on twos: poses step at 12 per second while movement stays smooth.
+    // Ink affects the picture; character poses keep the full simulation cadence.
     for (TActorIterator<AQuebecCharacter> It(GetWorld()); It; ++It)
-        It->GetMesh()->SetComponentTickInterval(bComicStyle ? 1.f / 12.f : 0.f);
+        It->GetMesh()->SetComponentTickInterval(0.f);
 }
 
 void AQuebecController::ApplySkyGrading()
@@ -2565,6 +2582,38 @@ void AQuebecGameMode::BeginPlay()
 }
 
 #if WITH_DEV_AUTOMATION_TESTS
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FQuebecCrewReapplyTest, "Quebec.Animation.ReapplyCrew", EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+bool FQuebecCrewReapplyTest::RunTest(const FString& Parameters)
+{
+    const FString OriginalCommandLine = FCommandLine::Get();
+    FCommandLine::Set(*OriginalCommandLine.Replace(TEXT("-NordGraphicNovelCandidate"), TEXT(""), ESearchCase::IgnoreCase));
+    ON_SCOPE_EXIT { FCommandLine::Set(*OriginalCommandLine); };
+    UWorld* World = UWorld::CreateWorld(EWorldType::Game, false);
+    if (!TestNotNull(TEXT("Crew test world"), World)) return false;
+    ON_SCOPE_EXIT { World->DestroyWorld(false); };
+    AQuebecCharacter* Walker = World->SpawnActor<AQuebecCharacter>();
+    if (!TestNotNull(TEXT("Crew character"), Walker)) return false;
+    World->InitializeActorsForPlay(FURL());
+    Walker->ProcessEvent(Walker->FindFunctionChecked(TEXT("ApplyCrewAppearance")), nullptr);
+    if (!TestNotNull(TEXT("Initial single-node animation"), Walker->GetMesh()->GetAnimInstance())) return false;
+    USkeletalMesh* Body = Walker->GetMesh()->GetSkeletalMeshAsset();
+    TestTrue(TEXT("Fixture wears the real selected crew body"), Body && Body->GetPathName().Contains(TEXT("/ParkComic/Crew/Resident9/SK_Body")));
+    Walker->ProcessEvent(Walker->FindFunctionChecked(TEXT("ApplyCrewAppearance")), nullptr);
+    TestEqual(TEXT("Reapplying retains the selected body"), Walker->GetMesh()->GetSkeletalMeshAsset(), Body);
+    if (!TestNotNull(TEXT("Reapplying retains a live animation instance"), Walker->GetMesh()->GetAnimInstance())) return false;
+    UAnimSequence* Idle = LoadObject<UAnimSequence>(nullptr, TEXT("/Game/ParkComic/Crew/Resident9/A_Idle.A_Idle"));
+    if (!TestNotNull(TEXT("Selected crew's idle clip"), Idle)) return false;
+    Walker->GetMesh()->SetAnimation(Idle);
+    Walker->GetMesh()->SetPosition(.25f, false);
+    TestEqual(TEXT("Reapplied crew accepts an animation pose"), Walker->GetMesh()->GetPosition(), .25f);
+    Walker->GetCharacterMovement()->SetMovementMode(MOVE_Walking);
+    Walker->Tick(1.f / 60.f);
+    const float First = Walker->GetMesh()->GetPosition();
+    Walker->Tick(1.f / 60.f);
+    TestTrue(TEXT("Grounded crew advances on successive simulation frames"), Walker->GetMesh()->GetPosition() > First);
+    return true;
+}
+
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FQuebecHUDRadarClipTest, "Quebec.HUD.RadarClip", EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
 bool FQuebecHUDRadarClipTest::RunTest(const FString& Parameters)
 {

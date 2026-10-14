@@ -19,6 +19,9 @@ Build/*/FileOpenOrder/
 
 # FBX importer extracts embedded textures locally.
 Data/CharactersMeshy/**/*.fbm/
+Data/GraphicNovel/**/*.fbm/
+Data/GraphicNovel/**/*.blend1
+Data/GraphicNovel/Pilot/CurlyMetalhead/wardrobe/revisions/
 
 # PixelStreaming2 copies these UE server-download helpers during packaging.
 Samples/PixelStreaming2/WebServers/

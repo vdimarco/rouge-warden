@@ -1,0 +1,17 @@
+{
+  "accepted": false,
+  "reason": "Full closing of a painted eye on coarse face triangles pulls the right brow into the eye. No full blink claimed.",
+  "centres_m": {
+    "L": [
+      0.034,
+      1.684
+    ],
+    "R": [
+      -0.031,
+      1.684
+    ]
+  },
+  "outer_x_m": 0.027,
+  "outer_z_m": 0.015,
+  "compression": 0.92
+}
