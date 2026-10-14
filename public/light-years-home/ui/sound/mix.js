@@ -12,7 +12,7 @@ import { createRadio } from './radio.js';
 export const SOUND_KEY = 'arcade.sound';
 export const VOICES = 16;
 const VOL = 0.8;
-const BUS = { engine: 0.5, sfx: 0.9, music: 0.38, radio: 0.75 };
+const BUS = { engine: 0.42, sfx: 0.9, music: 0.5, radio: 0.75 };
 const TALK_DUCK = 0.63;            // music −4 dB under a radio line
 const VISTA_DUCK = 0.25;           // engine, music and radio under the vista chord
 const QUIET_MODES = new Set(['title', 'paused', 'log']);
@@ -33,20 +33,20 @@ function onSourceEnded() {
 
 /**
  * createMix(opts) → the mixer. opts: { storage (default localStorage), context (an AudioContext or
- * OfflineAudioContext to use, for tests), AudioContext (a constructor), music (the music switch, default true),
- * haptics (default true) }. Modules register a builder with onStart(fn); start() runs them inside the PLAY tap.
+ * OfflineAudioContext to use, for tests), AudioContext (a constructor), music (the music switch, default true) }.
+ * Modules register a builder with onStart(fn); start() runs them inside the PLAY tap.
  */
 export function createMix(opts = {}) {
   const local = () => { try { return globalThis.localStorage ?? null; } catch { return null; } };
   const storage = 'storage' in opts ? opts.storage : local();
   let on = readSoundOn(storage);
   let musicOn = opts.music !== false;
-  let haptics = opts.haptics !== false;
   let ctx = null, offline = false, started = false, quiet = false, sleepTimer = 0;
-  let made = 0, sourcesMade = 0, sourcesLive = 0, stolen = 0, lastVibe = -1;
+  let made = 0, sourcesMade = 0, sourcesLive = 0, stolen = 0;
   const builders = [];
   const played = {};
-  const wanted = new Map();         // AudioParam → last value steered to
+  const clock = { now: 0, inFrame: false };   // audio time read once a frame (each read of currentTime boxes a number)
+  const wanted = new Map();         // AudioParam → { v: last value steered to } (a record, so no number is boxed)
   const plugged = new Map();        // node → the destination it is connected to now
   const voices = [];
   const ducks = { talkUntil: 0, vistaUntil: 0, station: 1 };
@@ -117,13 +117,14 @@ export function createMix(opts = {}) {
   // Steer a parameter toward a value, scheduling only when it really changes (no automation churn per frame).
   mix.steer = (param, value, tau = 0.06) => {
     if (!ctx || !finite(value)) return;
-    const was = wanted.get(param);
-    if (was !== undefined && Math.abs(value - was) <= Math.max(1e-4, Math.abs(was) * 0.004)) return;
-    wanted.set(param, value);
-    param.setTargetAtTime(value, ctx.currentTime, Math.max(0.002, tau));
+    let w = wanted.get(param);
+    if (!w) { w = { v: 0.5, set: false }; wanted.set(param, w); }
+    if (w.set && Math.abs(value - w.v) <= Math.max(1e-4, Math.abs(w.v) * 0.004)) return;
+    w.v = value; w.set = true;
+    param.setTargetAtTime(value, clock.inFrame ? clock.now : ctx.currentTime, Math.max(0.002, tau));
   };
   // Forget a steered value (after a param was automated directly), so the next steer schedules again.
-  mix.unsteer = (param) => wanted.delete(param);
+  mix.unsteer = (param) => { const w = wanted.get(param); if (w) w.set = false; };
   // Connect or disconnect a node's output on change only. A subgraph that is not connected costs nothing to run.
   mix.plug = (n, dest, want) => {
     const cur = plugged.get(n) || null;
@@ -136,7 +137,7 @@ export function createMix(opts = {}) {
       plugged.delete(n);
     }
   };
-  mix.now = () => (ctx ? ctx.currentTime : 0);
+  mix.now = () => (clock.inFrame ? clock.now : ctx ? ctx.currentTime : 0);
 
   // ---------------------------------------------------------------- start
 
@@ -257,7 +258,6 @@ export function createMix(opts = {}) {
   };
   mix.toggle = () => mix.setOn(!on);
   mix.setMusic = (v) => { musicOn = !!v; apply(); return musicOn; };
-  mix.setHaptics = (v) => { haptics = !!v; return haptics; };
   // Pause, the log and the title are quiet. update() sets this from game.mode; main.js may also call it.
   mix.setQuiet = (v) => {
     if (!!v === quiet) return;
@@ -283,7 +283,8 @@ export function createMix(opts = {}) {
   // Music −4 dB until `until` (s of audio time).
   mix.duckTalk = (until) => { ducks.talkUntil = Math.max(ducks.talkUntil, until); };
   // Engine, music and radio down for `sec` (the vista): the one-shot on the sfx bus rides on top.
-  mix.duckAll = (sec) => { if (ctx) ducks.vistaUntil = Math.max(ducks.vistaUntil, ctx.currentTime + sec); };
+  mix.duckAll = (sec) => { if (ctx) ducks.vistaUntil = Math.max(ducks.vistaUntil, mix.now() + sec); };
+  mix.frameEnd = () => { clock.inFrame = false; };
   // The station on the radio pushes the score down while it is loud (0 to 1).
   mix.duckStation = (level) => { ducks.station = clamp(level, 0, 1); };
 
@@ -386,21 +387,16 @@ export function createMix(opts = {}) {
 
   // Count a sound that really started.
   mix.count = (type) => { played[type] = (played[type] || 0) + 1; };
-  // Android haptics, at most one buzz every 50 ms; nothing depends on it.
-  mix.vibrate = (ms) => {
-    if (!haptics || !started || !(ms > 0)) return;
-    const now = typeof performance !== 'undefined' ? performance.now() : 0;
-    if (now - lastVibe < 50) return;
-    lastVibe = now;
-    try { if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(ms); } catch { /* none */ }
-  };
-
-  // Ducks and quiet modes, once a frame.
+  // Ducks and quiet modes, once a frame, before the modules. frameEnd() (createSound's update calls it) lets mix.now()
+  // read the context's clock again.
   mix.update = (view) => {
     const mode = view?.game?.mode;
     if (mode) mix.setQuiet(QUIET_MODES.has(mode));
+    clock.inFrame = false;
     if (!started || !mix.duckNodes || !mix.live()) return;
     const now = ctx.currentTime;
+    clock.now = now;
+    clock.inFrame = true;
     const vista = now < ducks.vistaUntil ? VISTA_DUCK : 1;
     const talk = now < ducks.talkUntil ? TALK_DUCK : 1;
     const station = 1 - 0.85 * ducks.station;
@@ -426,7 +422,7 @@ const BELL = [[1, 1, 1], [2.76, 0.4, 0.55], [5.4, 0.2, 0.3]];
 
 /**
  * createSound(opts) → every module on one mixer, for main.js: { mix, engine, sfx, music, radio, start(),
- * update(view, dt), play(type, opts), played, setOn, toggle, isOn, setMusic, setHaptics, setTape, stats }.
+ * update(view, dt), play(type, opts), played, setOn, toggle, isOn, setMusic, setTape, stats }.
  * view: { game (the core state), events (this frame's core events: an array or the event buffer), input? }.
  */
 export function createSound(opts = {}) {
@@ -444,6 +440,7 @@ export function createSound(opts = {}) {
       music.update(view, dt);
       engine.update(view, dt);
       sfx.update(view, dt);
+      mix.frameEnd();
     },
     play: (type, e) => sfx.play(type, e),
     get played() { return mix.played; },
@@ -451,7 +448,6 @@ export function createSound(opts = {}) {
     toggle: () => mix.toggle(),
     isOn: () => mix.isOn(),
     setMusic: (v) => mix.setMusic(v),
-    setHaptics: (v) => mix.setHaptics(v),
     setTape: (id) => radio.setTape(id),
     stats: () => mix.stats(),
   };

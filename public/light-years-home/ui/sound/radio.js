@@ -281,6 +281,7 @@ export function createRadio(mix) {
       mix.duckTalk(now);
     }
     squelch(now, skip ? 0.14 : 0.07);
+    mix.count(skip ? 'lineSkip' : 'lineEnd');
     return true;
   }
 
