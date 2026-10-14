@@ -34,3 +34,5 @@ The supplied Google Street View photo and a public Rachel/De Lanaudière view in
 ![Front wheels supported on an 18 cm fixture](CurbParking/curb-support.png)
 
 Physical-phone/carrier performance, subjective feel/audio and a complete campaign/race replay were not checked. These remain arcade wheel supports and swept convex contacts, rather than a Chaos Vehicles suspension/tire-force simulation. OpenSpec CLI is unavailable; requirement/scenario structure was checked manually.
+
+Subsequent verification: [Driving and sustained streaming follow-up](DrivingStreamFollowup.md) passes the complete native-input Mission 2 race circuit and a separate 60-second public-player camera sweep. Its explicit PIE/device/network limits still apply.

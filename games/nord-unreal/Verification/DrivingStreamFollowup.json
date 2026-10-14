@@ -1,0 +1,1260 @@
+{
+  "passed": true,
+  "tested_native_delivery_commit": "df1da8dc",
+  "native_source_and_package_unchanged": true,
+  "package_files_verified": 48,
+  "race": {
+    "passed": true,
+    "mode": "standalone authority PIE; continuous native vehicle input callbacks",
+    "save_slot": "NordCampaign_StorySliceQA_v1",
+    "initial_fixture_relocations": [
+      {
+        "actor": "QuebecCharacter_0",
+        "from_cm": [
+          39113.0165,
+          -7522.8152,
+          98.15
+        ],
+        "to_cm": [
+          35144.1596,
+          -20480.8132,
+          102.0
+        ]
+      }
+    ],
+    "gate_crossings": [
+      {
+        "gate": 1,
+        "world_seconds": 1.7014,
+        "position_cm": [
+          34575.9398,
+          -20926.5942,
+          106.5
+        ],
+        "travel_cm": 696.88
+      },
+      {
+        "gate": 2,
+        "world_seconds": 3.8516,
+        "position_cm": [
+          32604.0068,
+          -23592.7866,
+          106.5
+        ],
+        "travel_cm": 4013.1
+      },
+      {
+        "gate": 3,
+        "world_seconds": 7.5043,
+        "position_cm": [
+          30476.4356,
+          -27231.6066,
+          106.5
+        ],
+        "travel_cm": 8241.98
+      },
+      {
+        "gate": 4,
+        "world_seconds": 17.9599,
+        "position_cm": [
+          31400.6957,
+          -26806.4217,
+          106.5
+        ],
+        "travel_cm": 11468.58
+      },
+      {
+        "gate": 5,
+        "world_seconds": 29.5035,
+        "position_cm": [
+          34207.2706,
+          -26304.0346,
+          106.5
+        ],
+        "travel_cm": 14902.74
+      },
+      {
+        "gate": 6,
+        "world_seconds": 36.2008,
+        "position_cm": [
+          34349.4557,
+          -22562.3253,
+          106.5
+        ],
+        "travel_cm": 18780.35
+      },
+      {
+        "gate": 7,
+        "world_seconds": 63.3996,
+        "position_cm": [
+          34303.8499,
+          -20679.9683,
+          106.483
+        ],
+        "travel_cm": 27162.06
+      }
+    ],
+    "blocking_hit_callbacks": [],
+    "blocking_hit_callback_count": null,
+    "ground_contact_callback_count": null,
+    "collision_observer_available": false,
+    "samples": [
+      {
+        "world_seconds": 1.401,
+        "position_cm": [
+          34747.2698,
+          -20697.5198,
+          106.5
+        ],
+        "speed_cm_s": 604.67,
+        "throttle": 1.0,
+        "steer": 0.029,
+        "path_error_cm": 29.58,
+        "gate": 0
+      },
+      {
+        "world_seconds": 2.402,
+        "position_cm": [
+          33936.6998,
+          -21794.1486,
+          106.5
+        ],
+        "speed_cm_s": 1644.93,
+        "throttle": 0.0,
+        "steer": -0.013,
+        "path_error_cm": 0.43,
+        "gate": 1
+      },
+      {
+        "world_seconds": 3.402,
+        "position_cm": [
+          33009.2181,
+          -23040.1605,
+          106.5
+        ],
+        "speed_cm_s": 1543.73,
+        "throttle": 0.0,
+        "steer": 0.045,
+        "path_error_cm": 0.28,
+        "gate": 1
+      },
+      {
+        "world_seconds": 4.402,
+        "position_cm": [
+          32121.7842,
+          -24280.5759,
+          106.5
+        ],
+        "speed_cm_s": 1535.28,
+        "throttle": 0.0,
+        "steer": -0.002,
+        "path_error_cm": 4.47,
+        "gate": 2
+      },
+      {
+        "world_seconds": 5.403,
+        "position_cm": [
+          31279.4531,
+          -25549.878,
+          106.5
+        ],
+        "speed_cm_s": 1517.48,
+        "throttle": 1.0,
+        "steer": 0.22,
+        "path_error_cm": 10.99,
+        "gate": 2
+      },
+      {
+        "world_seconds": 6.413,
+        "position_cm": [
+          30638.2226,
+          -26907.6778,
+          106.5
+        ],
+        "speed_cm_s": 1351.25,
+        "throttle": -1.0,
+        "steer": -0.258,
+        "path_error_cm": 13.06,
+        "gate": 2
+      },
+      {
+        "world_seconds": 7.421,
+        "position_cm": [
+          30499.3182,
+          -27190.1042,
+          106.5
+        ],
+        "speed_cm_s": 428.54,
+        "throttle": 0.0,
+        "steer": -0.146,
+        "path_error_cm": 24.99,
+        "gate": 2
+      },
+      {
+        "world_seconds": 8.427,
+        "position_cm": [
+          30314.4076,
+          -27531.8198,
+          106.5
+        ],
+        "speed_cm_s": 276.13,
+        "throttle": 0.0,
+        "steer": 1.0,
+        "path_error_cm": 0.96,
+        "gate": 3
+      },
+      {
+        "world_seconds": 9.43,
+        "position_cm": [
+          30289.6028,
+          -27827.999,
+          106.5
+        ],
+        "speed_cm_s": 285.84,
+        "throttle": 0.0,
+        "steer": 1.0,
+        "path_error_cm": 213.35,
+        "gate": 3
+      },
+      {
+        "world_seconds": 10.434,
+        "position_cm": [
+          30403.6305,
+          -28074.5594,
+          106.5
+        ],
+        "speed_cm_s": 270.37,
+        "throttle": 0.0,
+        "steer": 1.0,
+        "path_error_cm": 484.3,
+        "gate": 3
+      },
+      {
+        "world_seconds": 11.442,
+        "position_cm": [
+          30623.3273,
+          -28239.0574,
+          103.4818
+        ],
+        "speed_cm_s": 278.98,
+        "throttle": 0.0,
+        "steer": 1.0,
+        "path_error_cm": 733.19,
+        "gate": 3
+      },
+      {
+        "world_seconds": 12.443,
+        "position_cm": [
+          30891.9832,
+          -28279.3495,
+          100.5
+        ],
+        "speed_cm_s": 272.93,
+        "throttle": 0.0,
+        "steer": 0.996,
+        "path_error_cm": 936.35,
+        "gate": 3
+      },
+      {
+        "world_seconds": 13.449,
+        "position_cm": [
+          31149.0586,
+          -28187.7789,
+          100.5
+        ],
+        "speed_cm_s": 277.58,
+        "throttle": 0.0,
+        "steer": 0.952,
+        "path_error_cm": 1056.5,
+        "gate": 3
+      },
+      {
+        "world_seconds": 14.449,
+        "position_cm": [
+          31336.7484,
+          -27990.2516,
+          100.5
+        ],
+        "speed_cm_s": 274.56,
+        "throttle": 0.0,
+        "steer": 0.789,
+        "path_error_cm": 1053.01,
+        "gate": 3
+      },
+      {
+        "world_seconds": 15.458,
+        "position_cm": [
+          31434.9798,
+          -27734.0677,
+          100.5
+        ],
+        "speed_cm_s": 266.2,
+        "throttle": 1.0,
+        "steer": 0.567,
+        "path_error_cm": 944.52,
+        "gate": 3
+      },
+      {
+        "world_seconds": 16.468,
+        "position_cm": [
+          31455.1069,
+          -27424.8466,
+          100.5
+        ],
+        "speed_cm_s": 401.92,
+        "throttle": 0.0,
+        "steer": 0.277,
+        "path_error_cm": 743.07,
+        "gate": 3
+      },
+      {
+        "world_seconds": 17.474,
+        "position_cm": [
+          31411.3212,
+          -26988.4809,
+          106.483
+        ],
+        "speed_cm_s": 375.69,
+        "throttle": 0.0,
+        "steer": -0.326,
+        "path_error_cm": 407.11,
+        "gate": 3
+      },
+      {
+        "world_seconds": 18.478,
+        "position_cm": [
+          31413.6385,
+          -26647.8532,
+          106.5
+        ],
+        "speed_cm_s": 290.01,
+        "throttle": 0.0,
+        "steer": -0.74,
+        "path_error_cm": 162.07,
+        "gate": 4
+      },
+      {
+        "world_seconds": 19.483,
+        "position_cm": [
+          31508.4737,
+          -26392.9889,
+          106.483
+        ],
+        "speed_cm_s": 268.56,
+        "throttle": 1.0,
+        "steer": -0.682,
+        "path_error_cm": 34.51,
+        "gate": 4
+      },
+      {
+        "world_seconds": 20.488,
+        "position_cm": [
+          31681.6522,
+          -26179.6895,
+          106.483
+        ],
+        "speed_cm_s": 276.14,
+        "throttle": 0.0,
+        "steer": -0.597,
+        "path_error_cm": 62.35,
+        "gate": 4
+      },
+      {
+        "world_seconds": 21.494,
+        "position_cm": [
+          31906.3096,
+          -26025.3361,
+          103.4832
+        ],
+        "speed_cm_s": 272.84,
+        "throttle": 0.0,
+        "steer": -0.527,
+        "path_error_cm": 102.87,
+        "gate": 4
+      },
+      {
+        "world_seconds": 22.494,
+        "position_cm": [
+          32162.5435,
+          -25930.8595,
+          103.4517
+        ],
+        "speed_cm_s": 278.65,
+        "throttle": 0.0,
+        "steer": -0.494,
+        "path_error_cm": 108.52,
+        "gate": 4
+      },
+      {
+        "world_seconds": 23.495,
+        "position_cm": [
+          32431.8645,
+          -25896.0321,
+          103.4517
+        ],
+        "speed_cm_s": 272.92,
+        "throttle": 0.0,
+        "steer": -0.459,
+        "path_error_cm": 139.03,
+        "gate": 4
+      },
+      {
+        "world_seconds": 24.498,
+        "position_cm": [
+          32704.52,
+          -25919.1795,
+          103.4517
+        ],
+        "speed_cm_s": 267.94,
+        "throttle": 1.0,
+        "steer": -0.395,
+        "path_error_cm": 111.52,
+        "gate": 4
+      },
+      {
+        "world_seconds": 25.498,
+        "position_cm": [
+          32968.9128,
+          -25992.6873,
+          106.483
+        ],
+        "speed_cm_s": 276.44,
+        "throttle": 0.0,
+        "steer": -0.326,
+        "path_error_cm": 98.09,
+        "gate": 4
+      },
+      {
+        "world_seconds": 26.502,
+        "position_cm": [
+          33351.9786,
+          -26178.7677,
+          106.5
+        ],
+        "speed_cm_s": 443.55,
+        "throttle": 0.0,
+        "steer": -0.108,
+        "path_error_cm": 102.99,
+        "gate": 4
+      },
+      {
+        "world_seconds": 27.503,
+        "position_cm": [
+          33675.6289,
+          -26366.4596,
+          106.5
+        ],
+        "speed_cm_s": 356.03,
+        "throttle": 0.0,
+        "steer": 1.0,
+        "path_error_cm": 156.46,
+        "gate": 4
+      },
+      {
+        "world_seconds": 28.503,
+        "position_cm": [
+          33953.6861,
+          -26399.8981,
+          106.5
+        ],
+        "speed_cm_s": 274.09,
+        "throttle": 0.0,
+        "steer": 0.955,
+        "path_error_cm": 8.46,
+        "gate": 4
+      },
+      {
+        "world_seconds": 29.503,
+        "position_cm": [
+          34207.2706,
+          -26304.0346,
+          106.5
+        ],
+        "speed_cm_s": 272.71,
+        "throttle": 0.0,
+        "steer": 1.0,
+        "path_error_cm": 252.95,
+        "gate": 5
+      },
+      {
+        "world_seconds": 30.504,
+        "position_cm": [
+          34391.8473,
+          -26102.3912,
+          106.5
+        ],
+        "speed_cm_s": 278.0,
+        "throttle": 0.0,
+        "steer": 1.0,
+        "path_error_cm": 409.93,
+        "gate": 5
+      },
+      {
+        "world_seconds": 31.504,
+        "position_cm": [
+          34458.9901,
+          -25841.8032,
+          106.5
+        ],
+        "speed_cm_s": 269.59,
+        "throttle": 1.0,
+        "steer": 0.937,
+        "path_error_cm": 438.54,
+        "gate": 5
+      },
+      {
+        "world_seconds": 32.504,
+        "position_cm": [
+          34382.7973,
+          -25505.2752,
+          106.5
+        ],
+        "speed_cm_s": 463.63,
+        "throttle": 0.0,
+        "steer": 0.037,
+        "path_error_cm": 314.31,
+        "gate": 5
+      },
+      {
+        "world_seconds": 33.504,
+        "position_cm": [
+          34240.3899,
+          -25125.9934,
+          106.5
+        ],
+        "speed_cm_s": 381.5,
+        "throttle": 0.0,
+        "steer": -0.422,
+        "path_error_cm": 118.36,
+        "gate": 5
+      },
+      {
+        "world_seconds": 34.504,
+        "position_cm": [
+          34179.1709,
+          -24755.9049,
+          106.5
+        ],
+        "speed_cm_s": 382.42,
+        "throttle": 1.0,
+        "steer": -0.28,
+        "path_error_cm": 4.07,
+        "gate": 5
+      },
+      {
+        "world_seconds": 35.504,
+        "position_cm": [
+          34247.6522,
+          -23676.7863,
+          106.5
+        ],
+        "speed_cm_s": 1536.94,
+        "throttle": 0.0,
+        "steer": 0.082,
+        "path_error_cm": 8.78,
+        "gate": 5
+      },
+      {
+        "world_seconds": 36.509,
+        "position_cm": [
+          34389.0519,
+          -22333.2788,
+          106.5
+        ],
+        "speed_cm_s": 740.61,
+        "throttle": -1.0,
+        "steer": -0.19,
+        "path_error_cm": 8.68,
+        "gate": 6
+      },
+      {
+        "world_seconds": 37.509,
+        "position_cm": [
+          34470.4366,
+          -22066.2168,
+          106.5
+        ],
+        "speed_cm_s": 520.41,
+        "throttle": 0.0,
+        "steer": -0.202,
+        "path_error_cm": 9.09,
+        "gate": 6
+      },
+      {
+        "world_seconds": 38.509,
+        "position_cm": [
+          34643.269,
+          -21655.0754,
+          106.5
+        ],
+        "speed_cm_s": 386.3,
+        "throttle": 0.0,
+        "steer": -0.16,
+        "path_error_cm": 25.44,
+        "gate": 6
+      },
+      {
+        "world_seconds": 39.509,
+        "position_cm": [
+          34828.2586,
+          -21327.2037,
+          106.5
+        ],
+        "speed_cm_s": 379.66,
+        "throttle": 0.0,
+        "steer": -0.108,
+        "path_error_cm": 17.12,
+        "gate": 6
+      },
+      {
+        "world_seconds": 40.509,
+        "position_cm": [
+          35035.4602,
+          -21014.547,
+          106.5
+        ],
+        "speed_cm_s": 372.84,
+        "throttle": 0.0,
+        "steer": -0.06,
+        "path_error_cm": 32.76,
+        "gate": 6
+      },
+      {
+        "world_seconds": 41.509,
+        "position_cm": [
+          35253.2891,
+          -20711.2018,
+          106.5
+        ],
+        "speed_cm_s": 374.17,
+        "throttle": 0.0,
+        "steer": 0.452,
+        "path_error_cm": 34.33,
+        "gate": 6
+      },
+      {
+        "world_seconds": 42.511,
+        "position_cm": [
+          35385.6748,
+          -20433.3999,
+          106.5
+        ],
+        "speed_cm_s": 274.74,
+        "throttle": 0.0,
+        "steer": 0.892,
+        "path_error_cm": 43.15,
+        "gate": 6
+      },
+      {
+        "world_seconds": 43.511,
+        "position_cm": [
+          35377.0959,
+          -20157.9847,
+          106.5
+        ],
+        "speed_cm_s": 275.47,
+        "throttle": 0.0,
+        "steer": 0.888,
+        "path_error_cm": 191.88,
+        "gate": 6
+      },
+      {
+        "world_seconds": 44.512,
+        "position_cm": [
+          35254.9188,
+          -19913.6583,
+          106.5
+        ],
+        "speed_cm_s": 276.09,
+        "throttle": 0.0,
+        "steer": 0.882,
+        "path_error_cm": 463.2,
+        "gate": 6
+      },
+      {
+        "world_seconds": 45.512,
+        "position_cm": [
+          35044.8826,
+          -19742.8814,
+          106.5
+        ],
+        "speed_cm_s": 272.48,
+        "throttle": 0.0,
+        "steer": 0.874,
+        "path_error_cm": 721.18,
+        "gate": 6
+      },
+      {
+        "world_seconds": 46.513,
+        "position_cm": [
+          34784.024,
+          -19672.1068,
+          106.5
+        ],
+        "speed_cm_s": 266.5,
+        "throttle": 1.0,
+        "steer": 0.834,
+        "path_error_cm": 923.38,
+        "gate": 6
+      },
+      {
+        "world_seconds": 47.513,
+        "position_cm": [
+          34511.3789,
+          -19710.175,
+          106.483
+        ],
+        "speed_cm_s": 280.39,
+        "throttle": 0.0,
+        "steer": 0.705,
+        "path_error_cm": 1041.02,
+        "gate": 6
+      },
+      {
+        "world_seconds": 48.513,
+        "position_cm": [
+          34271.2971,
+          -19836.312,
+          103.4832
+        ],
+        "speed_cm_s": 265.52,
+        "throttle": 1.0,
+        "steer": 0.575,
+        "path_error_cm": 1067.16,
+        "gate": 6
+      },
+      {
+        "world_seconds": 49.513,
+        "position_cm": [
+          34072.7469,
+          -20026.3857,
+          100.5
+        ],
+        "speed_cm_s": 276.84,
+        "throttle": 0.0,
+        "steer": 0.465,
+        "path_error_cm": 1017.05,
+        "gate": 6
+      },
+      {
+        "world_seconds": 50.513,
+        "position_cm": [
+          33923.0873,
+          -20253.932,
+          100.5
+        ],
+        "speed_cm_s": 278.47,
+        "throttle": 0.0,
+        "steer": 0.466,
+        "path_error_cm": 935.72,
+        "gate": 6
+      },
+      {
+        "world_seconds": 51.513,
+        "position_cm": [
+          33824.0753,
+          -20509.3858,
+          100.5
+        ],
+        "speed_cm_s": 273.12,
+        "throttle": 0.0,
+        "steer": 0.468,
+        "path_error_cm": 856.95,
+        "gate": 6
+      },
+      {
+        "world_seconds": 52.516,
+        "position_cm": [
+          33781.6727,
+          -20780.3765,
+          100.5
+        ],
+        "speed_cm_s": 274.16,
+        "throttle": 0.0,
+        "steer": 0.474,
+        "path_error_cm": 729.18,
+        "gate": 6
+      },
+      {
+        "world_seconds": 53.518,
+        "position_cm": [
+          33810.1882,
+          -21120.8333,
+          103.4818
+        ],
+        "speed_cm_s": 457.79,
+        "throttle": 0.0,
+        "steer": 0.535,
+        "path_error_cm": 503.04,
+        "gate": 6
+      },
+      {
+        "world_seconds": 54.519,
+        "position_cm": [
+          33960.7275,
+          -21493.3126,
+          106.5
+        ],
+        "speed_cm_s": 387.41,
+        "throttle": 0.0,
+        "steer": 0.784,
+        "path_error_cm": 159.9,
+        "gate": 6
+      },
+      {
+        "world_seconds": 55.519,
+        "position_cm": [
+          34204.8989,
+          -21720.8851,
+          106.5
+        ],
+        "speed_cm_s": 289.81,
+        "throttle": 0.0,
+        "steer": 1.0,
+        "path_error_cm": 171.94,
+        "gate": 6
+      },
+      {
+        "world_seconds": 56.52,
+        "position_cm": [
+          34471.8953,
+          -21777.6607,
+          106.5
+        ],
+        "speed_cm_s": 279.11,
+        "throttle": 0.0,
+        "steer": 1.0,
+        "path_error_cm": 419.94,
+        "gate": 6
+      },
+      {
+        "world_seconds": 57.52,
+        "position_cm": [
+          34730.4165,
+          -21703.1449,
+          106.5
+        ],
+        "speed_cm_s": 267.45,
+        "throttle": 1.0,
+        "steer": 1.0,
+        "path_error_cm": 582.84,
+        "gate": 6
+      },
+      {
+        "world_seconds": 58.52,
+        "position_cm": [
+          34926.75,
+          -21512.0123,
+          106.5
+        ],
+        "speed_cm_s": 279.28,
+        "throttle": 0.0,
+        "steer": 1.0,
+        "path_error_cm": 626.23,
+        "gate": 6
+      },
+      {
+        "world_seconds": 59.52,
+        "position_cm": [
+          35008.3462,
+          -21255.8207,
+          106.5
+        ],
+        "speed_cm_s": 267.29,
+        "throttle": 1.0,
+        "steer": 1.0,
+        "path_error_cm": 538.74,
+        "gate": 6
+      },
+      {
+        "world_seconds": 60.52,
+        "position_cm": [
+          34958.5132,
+          -20986.2886,
+          106.5
+        ],
+        "speed_cm_s": 279.85,
+        "throttle": 0.0,
+        "steer": 1.0,
+        "path_error_cm": 363.33,
+        "gate": 6
+      },
+      {
+        "world_seconds": 61.522,
+        "position_cm": [
+          34790.5629,
+          -20775.9146,
+          106.5
+        ],
+        "speed_cm_s": 265.39,
+        "throttle": 1.0,
+        "steer": 1.0,
+        "path_error_cm": 216.51,
+        "gate": 6
+      },
+      {
+        "world_seconds": 62.524,
+        "position_cm": [
+          34539.9835,
+          -20667.9358,
+          106.5
+        ],
+        "speed_cm_s": 272.63,
+        "throttle": 0.0,
+        "steer": 0.992,
+        "path_error_cm": 233.89,
+        "gate": 6
+      }
+    ],
+    "retries": 0,
+    "not_checked": [
+      "physical keyboard/mouse delivery",
+      "subjective handling enjoyment",
+      "audio quality",
+      "multiplayer",
+      "external internet",
+      "performance acceptance",
+      "collision contact counts (Python sparse-delegate binding unavailable)"
+    ],
+    "collision_observation": "Native OnActorHit binding unavailable; contact counts were not measured. Actor collision stays enabled and actual continuous swept driving is required.",
+    "seeded_save_sha256": "3b829d88f2cbdbfd019a9b897524e928558d44ec354fc5e77a24735c4ed22abf",
+    "route_cm": [
+      [
+        34953.92110059191,
+        -20256.556708083153
+      ],
+      [
+        34607.68471008708,
+        -20891.811617327225
+      ],
+      [
+        32737.223012799426,
+        -23405.183623753863
+      ],
+      [
+        32644.331044476778,
+        -23538.491651104483
+      ],
+      [
+        31448.12418586909,
+        -25255.152192416215
+      ],
+      [
+        31076.31208912522,
+        -25956.567234723036
+      ],
+      [
+        30512.082289931604,
+        -27222.863732294023
+      ],
+      [
+        30221.40415443447,
+        -27625.844921965316
+      ],
+      [
+        31208.69982149304,
+        -26613.113066395483
+      ],
+      [
+        31542.245296821515,
+        -26316.839044663404
+      ],
+      [
+        32110.874751760257,
+        -26040.22411038836
+      ],
+      [
+        32718.34971157875,
+        -26030.490440361238
+      ],
+      [
+        33130.06250722854,
+        -26134.632572803384
+      ],
+      [
+        34001.78313663003,
+        -26823.71590005961
+      ],
+      [
+        33951.56524874891,
+        -26286.303701665212
+      ],
+      [
+        33953.49277174338,
+        -26266.287441878412
+      ],
+      [
+        34208.08156907008,
+        -24530.758334465914
+      ],
+      [
+        34317.65700446062,
+        -22595.967605229813
+      ],
+      [
+        34601.52725940027,
+        -21669.336042024308
+      ],
+      [
+        35668.788431882174,
+        -20196.205461240792
+      ],
+      [
+        34607.68471008708,
+        -20891.811617327225
+      ],
+      [
+        34070.36663901344,
+        -21613.8152810975
+      ]
+    ],
+    "guidance": "actual native RaceRoute; +145 cm forward lane, modest inside-tip guidance, exposed side-gate center, wide finish approach with 950 cm final-gate lookahead",
+    "native_route_cm": [
+      [
+        35028.68,
+        -20083.24,
+        102.0
+      ],
+      [
+        32619.55,
+        -23320.43,
+        102.0
+      ],
+      [
+        31324.13,
+        -25179.47,
+        102.0
+      ],
+      [
+        30945.88,
+        -25893.03,
+        102.0
+      ],
+      [
+        30099.68,
+        -27792.15,
+        102.0
+      ],
+      [
+        31623.62,
+        -26438.5,
+        102.0
+      ],
+      [
+        32145.37,
+        -26184.69,
+        102.0
+      ],
+      [
+        32701.44,
+        -26175.78,
+        102.0
+      ],
+      [
+        33071.12,
+        -26269.29,
+        102.0
+      ],
+      [
+        34038.2,
+        -26899.36,
+        102.0
+      ],
+      [
+        34097.48,
+        -26283.77,
+        102.0
+      ],
+      [
+        34351.73,
+        -24550.51,
+        102.0
+      ],
+      [
+        34744.8,
+        -21691.82,
+        102.0
+      ],
+      [
+        35028.68,
+        -20083.24,
+        102.0
+      ]
+    ],
+    "route_length_cm": 22633.468453915535,
+    "gate_count": 7,
+    "ambient_traffic_count": 16,
+    "car": "QuebecCar_10",
+    "car_initial_position_cm": [
+      34995.7478,
+      -20370.3645,
+      102.0
+    ],
+    "collision_observer_error": "SystemError: <method 'get_editor_property' of '_ObjectBase' objects> returned NULL without setting an exception",
+    "world_seconds": 63.0,
+    "actual_travel_cm": 27162.06,
+    "completed_missions": 2,
+    "saved_completed_missions": 2,
+    "all_gates_crossed_in_order": true,
+    "actor_collision_enabled_throughout": true,
+    "production_saves_unchanged": true,
+    "qa_save_restored": true,
+    "wall_seconds": 64.087
+  },
+  "stream": {
+    "startedAt": "2026-10-14T02:05:43.757Z",
+    "playerUrl": "https://nord-montreal.vercel.app/",
+    "slot": "NordHost",
+    "mode": "ordinary",
+    "cameraSweep": true,
+    "passed": true,
+    "limits": [
+      "Host-PC Chromium is not a physical phone or an off-LAN network.",
+      "No walking, driving, campaign input or audible playback is checked."
+    ],
+    "firstPlayedWorldDelayMs": 4,
+    "firstWorldAt": "2026-10-14T02:05:45.635Z",
+    "summary": {
+      "seconds": 60.409,
+      "decodedFps": 29.962422817792053,
+      "receivedMbps": 0.4243415385124733,
+      "framesDropped": 0,
+      "freezes": 0,
+      "freezeSeconds": 0,
+      "longestFrameGapMs": 100.09999999999991,
+      "width": 640,
+      "height": 360,
+      "candidate": {
+        "type": "host",
+        "protocol": "udp"
+      },
+      "codec": "video/VP8",
+      "decodeMsPerFrame": 0.4523198895027624,
+      "jitterBufferMsPerFrame": 54.779540883977894,
+      "packetsLost": 0,
+      "framesReceived": 1811
+    },
+    "finishedAt": "2026-10-14T02:06:48.242Z"
+  },
+  "native_host_tick_samples": [
+    {
+      "utc": "2026-10-14T02:05:48.254000+00:00",
+      "frames": 152,
+      "seconds": 5.066,
+      "fps": 30.003947887879985
+    },
+    {
+      "utc": "2026-10-14T02:05:53.320000+00:00",
+      "frames": 152,
+      "seconds": 5.066,
+      "fps": 30.003947887879985
+    },
+    {
+      "utc": "2026-10-14T02:05:58.388000+00:00",
+      "frames": 152,
+      "seconds": 5.068,
+      "fps": 29.99210734017364
+    },
+    {
+      "utc": "2026-10-14T02:06:03.454000+00:00",
+      "frames": 152,
+      "seconds": 5.066,
+      "fps": 30.003947887879985
+    },
+    {
+      "utc": "2026-10-14T02:06:08.521000+00:00",
+      "frames": 152,
+      "seconds": 5.067,
+      "fps": 29.998026445628575
+    },
+    {
+      "utc": "2026-10-14T02:06:13.588000+00:00",
+      "frames": 152,
+      "seconds": 5.067,
+      "fps": 29.998026445628575
+    },
+    {
+      "utc": "2026-10-14T02:06:18.654000+00:00",
+      "frames": 152,
+      "seconds": 5.067,
+      "fps": 29.998026445628575
+    },
+    {
+      "utc": "2026-10-14T02:06:23.721000+00:00",
+      "frames": 152,
+      "seconds": 5.066,
+      "fps": 30.003947887879985
+    },
+    {
+      "utc": "2026-10-14T02:06:28.787000+00:00",
+      "frames": 152,
+      "seconds": 5.067,
+      "fps": 29.998026445628575
+    },
+    {
+      "utc": "2026-10-14T02:06:33.854000+00:00",
+      "frames": 152,
+      "seconds": 5.067,
+      "fps": 29.998026445628575
+    },
+    {
+      "utc": "2026-10-14T02:06:38.921000+00:00",
+      "frames": 152,
+      "seconds": 5.066,
+      "fps": 30.003947887879985
+    },
+    {
+      "utc": "2026-10-14T02:06:43.988000+00:00",
+      "frames": 152,
+      "seconds": 5.067,
+      "fps": 29.998026445628575
+    }
+  ],
+  "native_host_median_tick_fps": 29.998026445628575,
+  "identities": {
+    "files": {
+      "Source/Quebec/CollegeBathurstMap.h": "5e011de207a3d4a2430c5cdd723c878f6ed10ee5b47424dbc68c2c1bcb6a997d",
+      "Source/Quebec/LaFontaineLamps.h": "1ebba4641df8b7589ba2c81f89e6ff75587cbe0b5efe4f1b2fc87459cb1fac6f",
+      "Source/Quebec/LaFontaineMap.h": "80a96e858c315584598acd8d87dfb758ba45f64a58ccd4b6f5222ddb56ff1700",
+      "Source/Quebec/Quebec.Build.cs": "1b25476ebdfce13a85a7b0c4a9cf11739c7b6f1e98adb45d6385f192df794cce",
+      "Source/Quebec/Quebec.cpp": "bfa80510f164ae216ed79f7efa9e93c54ac6f3caa1c1a4e3fe634027a64badad",
+      "Source/Quebec/QuebecCampaign.cpp": "924c87f8123e18391b52c26bb3b5363924544b31e8160f335abdb89855dd8d62",
+      "Source/Quebec/QuebecCampaign.h": "59154cdfeddcf61bb5dd664bbbee6c202943a4bcbfa171379d51a465d9a7733b",
+      "Source/Quebec/QuebecCampaignSaveTests.cpp": "dcbeb910e523e2b2193983a41713ce9e66a1c34b47c1375b7b92491c6a7a8b68",
+      "Source/Quebec/QuebecCarHandlingTests.cpp": "4dd5c3a1f5e3d7cabdfc4b524c255a309073843ba4f86e1df3c63cb2deed5248",
+      "Source/Quebec/QuebecGameplay.cpp": "20bf0bc4c8ca5b664c631ff36eb5caf83b935ea64cfa9d8e69becc8d2cdc9525",
+      "Source/Quebec/QuebecGameplay.h": "87039a1e330e2646f2b4255c1b1e6defe43e9143557c8e4cebd50e5600a95a08",
+      "Source/Quebec/QuebecPedestrian.cpp": "f25815f5ff6034550c65152dc409e68033c9a7f872517c762b28a22ed1e14634",
+      "Source/Quebec/QuebecPedestrian.h": "37a4b88edff6a8dcc32e70e66c307b01f78eac5feec1db2a0d10e83654bcce9d",
+      "Source/Quebec/QuebecSky.cpp": "b05e83c071a80b35f18c358022134196a271213cb60c047a242dd0855bcf12cc",
+      "Source/Quebec/QuebecSky.h": "e617ab5f8d73567f307cdde7c5c79bf907903378953a74f442a2ab7d3f01bb66",
+      "Source/Quebec/QuebecSkyModel.h": "faf3cd73241a83e0a7ba509c4a344741b6d42697de22964b4a7431e54fd2d034",
+      "Source/Quebec/QuebecSkyTests.cpp": "86ab012c441d996e5d765601a7a8a35f9964a0539c15f791e10379fc941067c3",
+      "Source/Quebec/QuebecStreamIdle.cpp": "36e7342b6e36c9ef386471822acccf64862b1fca357362d40195deea71dc5299",
+      "Source/Quebec/QuebecStreamIdle.h": "18223123773b0fd9a460b903e7cb50a2a725e3de9980b1f6f3fb5c54f8fba800",
+      "Source/Quebec/QuebecVegetation.cpp": "f54866e7ecb8afa1730eafe4892f485ba339de885d23d724f5a038523c0b0a8a",
+      "Source/Quebec/QuebecVegetation.h": "27a9966ded6bb9249e1e2d303f094e384d1fa50c90809a1ac70aa082dbab7a9e",
+      "Binaries/Linux/libUnrealEditor-Quebec.so": "095b05616be14decc4fa58f221e2df1cab232f3e08415ce9a507b5c2253411c4",
+      "Scripts/test_race_drive.py": "007cf16be1d45535469f965ba8a2f0391414abd72f71307564824ca8be0e4402"
+    },
+    "production_saves": {
+      "Builds/Browser/Linux/Quebec/Saved_BrowserSaveQA/SaveGames/NordCampaign_StorySliceQA_v1.sav": "cec872fd0b2c1b7ea7f18814c787448e00117c6acd8ac46a71f674a26470e88e"
+    },
+    "scope": "NullRHI standalone PIE race input; fresh Saved_RaceCurb20261014; live service unchanged"
+  },
+  "production_save_hashes_preserved": true,
+  "raw_sha256": {
+    "Saved/RaceCurb-20261014/RaceDrive.json": "e6cd3387f2573ff82a61f9295d0a7054d36ae7307127a58af67b4b9cfaf59272",
+    "Saved/RaceCurb-20261014/race.log": "629edf397bfaa1d823fdb85234e6e7c759c043b412684bf6097927a6bb788dea",
+    "Saved/BrowserStreaming/samples/2026-10-14T02-05-43-754Z-NordHost/sample.json": "022b63192570ba168e3de04b80d5a63a1b7cf375905f5a90effb328e086df8b4",
+    "Scripts/test_race_drive.py": "007cf16be1d45535469f965ba8a2f0391414abd72f71307564824ca8be0e4402",
+    "Browser/stream-sample.mjs": "d5ca289398e20845d4506adf21de405327e094bb3bcbea7d2a7a19ca4cc9d2cd",
+    "Verification/CurbParking.json": "917888013d9ab85e1cdea6f1d3be2b7d612ac3fe44ce2c7a4534633f6f8388be"
+  },
+  "limits": [
+    "Native race uses standalone NullRHI PIE and input callbacks; it is not a rendered packaged campaign replay.",
+    "The browser sample uses Chromium touch emulation and a direct host UDP path on this PC, not a physical phone or carrier connection.",
+    "Native host FPS is GFrameCounter telemetry, not a GPU frame-time distribution.",
+    "No new code, deployment, package change, restart or comparative speedup is claimed."
+  ]
+}
