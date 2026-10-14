@@ -122,7 +122,7 @@ h1, h2, .brand h1, #title h2, #ending h2, #flash-year {
 #mapwrap {
   position: relative;
   height: 26vh;
-  min-height: 132px;
+  min-height: 160px;
   max-height: 220px;
   overflow: hidden;
   border-top: 1px solid rgba(43, 42, 51, 0.08);
@@ -754,7 +754,48 @@ a.ghost { display: flex; align-items: center; justify-content: center; box-sizin
   64% { transform: translateX(112px); }
   100% { transform: translateX(224px); }
 }
-#ending { overflow: auto; justify-content: flex-start; padding-top: 22px; }
+#ending {
+  z-index: 8;
+  padding: 0;
+  gap: 0;
+  justify-content: flex-start;
+  background: transparent;
+  pointer-events: none;
+  overflow: hidden;
+}
+#ending[data-layout="side"]:not([hidden]) { flex-direction: row; }
+#end-map-gap { flex: none; pointer-events: none; }
+#end-panel {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+  pointer-events: auto;
+  background: #F3E9D6;
+  color: #2B2A33;
+  padding: 22px 20px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+#end-panel .kicker,
+#end-panel h2,
+#end-panel p,
+#end-panel li,
+#end-panel strong { color: #2B2A33; }
+html[data-ending="1"] #mapwrap {
+  opacity: 0.85;
+  filter: blur(2px);
+  pointer-events: none;
+}
+html[data-ending="1"] #top,
+html[data-ending="1"] #hud,
+html[data-ending="1"] #sheet,
+html[data-ending="1"] #break,
+html[data-ending="1"] #seed-warn {
+  visibility: hidden;
+  pointer-events: none;
+}
 #timeline { margin: 0; padding: 0 0 0 18px; }
 #timeline li { margin: 0 0 8px; font-size: 13px; line-height: 1.35; }
 #timeline b { font-weight: 700; }

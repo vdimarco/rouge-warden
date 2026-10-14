@@ -8,7 +8,7 @@ import {
   createRun,
   readIndicators,
 } from "./model.js";
-import { PREVIEW, paintWorld } from "./map.js";
+import { PREVIEW, artPlacement, paintWorld, seaState, smogAlpha } from "./map.js";
 
 const $ = (id) => document.getElementById(id);
 
@@ -888,6 +888,37 @@ function showBreakthrough(info, entry) {
   }, motionOn() ? 900 : 700);
 }
 
+const UNDER_ENDING = ["top", "mapwrap", "hud", "sheet", "break", "seed-warn"];
+
+function setEndingChrome(on) {
+  document.documentElement.dataset.ending = on ? "1" : "";
+  for (const id of UNDER_ENDING) {
+    const node = $(id);
+    if (!node) continue;
+    if (on) node.setAttribute("inert", "");
+    else node.removeAttribute("inert");
+  }
+  if (on) placeEnding();
+}
+
+function placeEnding() {
+  const ending = $("ending");
+  const gap = $("end-map-gap");
+  if (!ending || !gap || ending.hidden) return;
+  const app = $("app").getBoundingClientRect();
+  const map = mapwrap.getBoundingClientRect();
+  const side = map.width < app.width * 0.8 && map.height > 140;
+  if (side) {
+    ending.dataset.layout = "side";
+    gap.style.height = "auto";
+    gap.style.width = `${Math.max(0, Math.round(map.right - app.left))}px`;
+  } else {
+    ending.dataset.layout = "stack";
+    gap.style.width = "auto";
+    gap.style.height = `${Math.max(0, Math.round(map.bottom - app.top))}px`;
+  }
+}
+
 function showEnding() {
   $("break").hidden = true;
   const state = run.state();
@@ -926,6 +957,7 @@ function showEnding() {
   }
   $("ending").hidden = false;
   ui = "end";
+  setEndingChrome(true);
 }
 
 const REFUSAL = {
@@ -997,6 +1029,7 @@ function startGame(next) {
   chartSig = "";
   $("ending").hidden = true;
   $("ending").classList.remove("leaving");
+  setEndingChrome(false);
   $("note").textContent = "";
   dismiss("title");
   dismiss("howto");
@@ -1080,6 +1113,7 @@ $("howto").addEventListener("click", (event) => {
 
 window.addEventListener("resize", () => {
   paintShown();
+  if (ui === "end") placeEnding();
   if (run && ui !== "title") {
     const ind = readIndicators(run.state(), run.log());
     paintTrajectory(ind);
@@ -1137,6 +1171,23 @@ if (exposeTest) {
       return readIndicators(run.state(), run.log());
     },
     motion: () => motionOn(),
+    atmosphere() {
+      const view = shown || PREVIEW;
+      const box = canvas.getBoundingClientRect();
+      const cssW = box.width || canvas.width;
+      const sea = seaState(view.warming);
+      return {
+        seaOffset: sea.offset * (cssW / 390),
+        seaAlpha: sea.alpha,
+        smogAlpha: smogAlpha(view),
+        warming: view.warming,
+        emissions: view.emissions,
+      };
+    },
+    artFrame() {
+      const place = artPlacement(canvas.width, canvas.height);
+      return { w: canvas.width, h: canvas.height, ...place };
+    },
   };
 }
 
