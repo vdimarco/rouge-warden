@@ -57,9 +57,9 @@ footer p { margin: 0; }
 /* The stick name is a small caption tag inside the bottom of the ring. */
 .stick-label { position: absolute; bottom: 7px; left: 50%; transform: translateX(-50%); isolation: isolate; padding: 2px 6px 1px; color: var(--paper); font: 900 8px/1 Impact, "Arial Black", Arial, sans-serif; letter-spacing: .08em; white-space: nowrap; pointer-events: none; }
 .stick-label::before { content: ""; position: absolute; z-index: -1; inset: 0; background: var(--ink); border: 1px solid var(--paper); transform: skewX(-9deg); }
-/* While a thumb holds the move stick, hide it so it does not cover the game. */
+/* Keep direction feedback visible under the moving thumb. */
 .move-stick { transition: opacity .15s; }
-.move-stick[data-pressed="true"] { opacity: 0; }
+.move-stick[data-pressed="true"] { opacity: .7; }
 .touch-steering { position: absolute; left: max(16px, env(safe-area-inset-left)); bottom: max(90px, calc(env(safe-area-inset-bottom) + 74px)); display: grid; grid-template-columns: repeat(2, auto); gap: 12px; }
 .touch-primary { position: absolute; right: max(16px, env(safe-area-inset-right)); bottom: max(16px, env(safe-area-inset-bottom)); display: grid; grid-template-columns: repeat(2, auto); gap: 12px; }
 .touch-input { height: 100dvh; overflow: hidden; }

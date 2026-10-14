@@ -21,6 +21,7 @@ document.body.classList.toggle('touch-input', touchMode);
 let stream;
 let touchControls;
 let started = false;
+let reconnecting = false;
 let timeout;
 let muted = false;
 let streamSize = '';
@@ -86,19 +87,24 @@ function stopTimeout() {
 function waitForConnection() {
   stopTimeout();
   timeout = setTimeout(() => {
+    reconnecting = false;
     stream.disconnect();
     status('offline', 'The game isn’t responding.', 'The host may be offline, or this network may be unable to reach it. Try reconnecting.');
   }, 20000);
 }
 
 function readyToPlay() {
+  if (!['connecting', 'ready', 'playing'].includes(document.body.dataset.state)) return;
   stopTimeout();
+  streamSelect.disabled = false;
+  reconnecting = false;
   status('ready', 'Your player is ready.', touchMode
     ? 'Tap Play with sound. Drag to look; double-tap Move or Sprint to run. Turn your phone sideways for a wider view.'
     : 'Click Play with sound, then click the game to take control.');
 }
 
 function fail(title, detail, state = 'error') {
+  reconnecting = false;
   stopTimeout();
   status(state, title, detail);
 }
@@ -157,7 +163,8 @@ if (endpoint) {
         const label = id === 'NordHost' ? 'Player 1 · Host' : id === 'NordFriend1' ? 'Player 2 · Friend' : id;
         streamSelect.add(new Option(label, id));
       }
-      streamSelect.disabled = false;
+      // Refusals carry no request ID: finish one subscription before accepting another.
+      streamSelect.disabled = Boolean(event.data.autoSelectedStreamerId) && document.body.dataset.state === 'connecting';
       streamSelect.value = event.data.autoSelectedStreamerId || '';
       if (!event.data.autoSelectedStreamerId) {
         stopTimeout();
@@ -184,14 +191,25 @@ if (endpoint) {
     stream.addEventListener('playStreamError', event => fail('The stream couldn’t play.', event.data.message));
     stream.addEventListener('webRtcFailed', () => fail('The game couldn’t be reached.', 'The video connection failed. Reconnect, or try another network.'));
     stream.addEventListener('webRtcDisconnected', () => {
+      // SDK reconnect closes the old socket before opening its replacement.
+      if (reconnecting && document.body.dataset.state === 'connecting') return;
       streamSelect.disabled = true;
       disconnectButton.disabled = true;
-      fail('Your game disconnected.', 'Reconnect to continue when the host is available.', 'disconnected');
+      if (document.body.dataset.state !== 'error') fail('Your game disconnected.', 'Reconnect to continue when the host is available.', 'disconnected');
     });
-    stream.addEventListener('subscribeFailed', event => fail('This player is unavailable.', `${event.data.message} Choose another player in the menu, or reconnect.`));
-    stream.addEventListener('dataChannelError', () => fail('The controls disconnected.', 'Reconnect before continuing to play.'));
+    stream.addEventListener('subscribeFailed', event => {
+      if (!['connecting', 'selecting'].includes(document.body.dataset.state)) return;
+      streamSelect.disabled = false;
+      fail('This player is unavailable.', `${event.data.message} Choose another player in the menu, or reconnect.`);
+    });
+    stream.addEventListener('dataChannelError', () => {
+      touchControls.setEnabled(false);
+      stream.disconnect();
+      fail('The controls disconnected.', 'Reconnect before continuing to play.');
+    });
     const video = stream.webRtcController.videoPlayer.getVideoElement();
     video.addEventListener('playing', () => {
+      if (!['ready', 'playing'].includes(document.body.dataset.state)) return;
       stopTimeout();
       status('playing', 'You’re in Montréal.', '');
       phoneStream.changedAt = performance.now();
@@ -209,10 +227,12 @@ if (endpoint) {
 
     connectButton.addEventListener('click', () => {
       const reconnect = started;
+      reconnecting = reconnect;
       started = true;
       streamSize = '';
       phoneStream = phoneStreamState(performance.now());
       disconnectButton.disabled = false;
+      streamSelect.disabled = true;
       status('connecting', 'Connecting to Montréal…', 'Finding the game host and available players.');
       waitForConnection();
       try {
@@ -224,6 +244,7 @@ if (endpoint) {
     });
     streamSelect.addEventListener('change', () => {
       if (streamSelect.disabled || !streamSelect.value) return;
+      streamSelect.disabled = true;
       streamSize = '';
       phoneStream = phoneStreamState(performance.now());
       status('connecting', 'Opening your player…', 'Connecting to the selected player.');
@@ -236,6 +257,7 @@ if (endpoint) {
       videoParent.focus();
     });
     disconnectButton.addEventListener('click', () => {
+      reconnecting = false;
       stopTimeout();
       streamSelect.disabled = true;
       touchControls.setEnabled(false);
@@ -247,6 +269,7 @@ if (endpoint) {
       setMuted(!muted);
     });
     window.addEventListener('pagehide', () => {
+      reconnecting = false;
       touchControls.setEnabled(false);
       stream.disconnect();
     });

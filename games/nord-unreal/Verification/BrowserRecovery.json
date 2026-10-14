@@ -1,0 +1,117 @@
+{
+  "date": "2026-10-14",
+  "status": "local candidate verified; publication pending",
+  "working_base": "ef586fc6",
+  "checks": {
+    "unit": 36,
+    "browser_ui": "passed: late media/refusal guards, disabled pending selector, control-error socket closure/reconnect, existing page/fullscreen/story/media tests and held-stick feedback in both orientations",
+    "local_live": {
+      "report": "Browser/.qa/live-2026-10-14T14-27-26-460Z/summary.json",
+      "checks": [
+        {
+          "name": "host real stream",
+          "passed": true,
+          "durationMs": 2408
+        },
+        {
+          "name": "friend independent real stream",
+          "passed": true,
+          "durationMs": 2214
+        },
+        {
+          "name": "control-channel failure closes its session and late media cannot hide Reconnect",
+          "passed": true,
+          "durationMs": 2414
+        },
+        {
+          "name": "host native input and Escape release",
+          "passed": true,
+          "durationMs": 2857
+        },
+        {
+          "name": "friend native input and Escape release",
+          "passed": true,
+          "durationMs": 2846
+        },
+        {
+          "name": "occupied host slot rejects a third browser",
+          "passed": true,
+          "durationMs": 684
+        },
+        {
+          "name": "occupied browser reconnects after host frees its slot",
+          "passed": true,
+          "durationMs": 4655
+        },
+        {
+          "name": "original host reconnects and retains Disconnect control",
+          "passed": true,
+          "durationMs": 7010
+        }
+      ]
+    },
+    "local_touch": {
+      "passed": true,
+      "playerUrl": "http://127.0.0.1:8100/",
+      "checks": [
+        "title source released while waiting for real game playback",
+        "portrait: advancing real video with both page videos unloaded",
+        "landscape: advancing real video with both page videos unloaded",
+        "no new MP4 requests during real play/rotation; no page errors",
+        "touch control failure sends KeyUp before closing, hides controls and retains Reconnect despite late media"
+      ],
+      "mp4Requests": [
+        "https://d2ol7oe51mr4n9.cloudfront.net/user_3JnxFRyLd68bfjwUMHz1De16TMw/4d0928ae-27d4-4c7e-92ec-f3927c66a4b0.mp4",
+        "https://d2ol7oe51mr4n9.cloudfront.net/user_3JnxFRyLd68bfjwUMHz1De16TMw/a7a1e663-b152-4806-9a6c-6907f9738a44.mp4"
+      ],
+      "errors": [],
+      "limits": [
+        "Host-PC Chromium emulated touch, not a physical phone/carrier.",
+        "MP4 requests are observed and aborted; trailer audio/playback and bandwidth/FPS gains are not measured."
+      ],
+      "touchFailure": {
+        "key": 16,
+        "packets": [
+          {
+            "type": 60,
+            "key": 16,
+            "channel": "open"
+          },
+          {
+            "type": 61,
+            "key": 16,
+            "channel": "open"
+          }
+        ]
+      }
+    },
+    "visual_review": "Primary agent inspected controlled UI held-stick captures in portrait/landscape; these are UI fixtures, not rendered-world acceptance."
+  },
+  "source_sha256": {
+    "Browser/player.js": "5fe51c3d7e2c43522ff91ab625dfa96e695d6aa80816754d8674e1eb2a745103",
+    "Browser/styles.css": "479bb2d3faa53a144789c586519ce27c70e3a7f16eb14b82d3d641663a2ffb24",
+    "Browser/browser.test.mjs": "70fc2c989d60bd19332560b45e5f24506b016802f1fc22995ebf122179951025",
+    "Browser/live.test.mjs": "dad3712913c27de5118d2e492e92daeaa4443d3a4fab66b3395c8727ce1d6be9",
+    "Browser/media.test.mjs": "da63f05464f8b02aeafd157ea4b81bb3a581d47fdfab9ee094cba7c37db77e0a"
+  },
+  "raw_sha256": {
+    "Browser/.qa/live-2026-10-14T14-27-26-460Z/summary.json": "af1d1254be6ade15bfb1d60fd87fcaae777bf7f106c4ab6afc2d749a9b460f83",
+    "Browser/.qa/media-2026-10-14T14-28-14-414Z/summary.json": "e70261a8fd35ead243ed83dd36d75cc6d78161045831fa64be1ecdbf59a2e988",
+    "Saved/BrowserRecovery-20261014/unit.log": "be5ac14d12a70a54a95a20dc131f66c4324c9cca38bd5851af0e4f2643d509e6",
+    "Saved/BrowserRecovery-20261014/browser-ui-accepted.log": "114c9d7b0b9fcad26800baeca657deb1ac42f682cea8b75d6ba9a4ea1ce060a8",
+    "Saved/BrowserRecovery-20261014/baseline.json": "17243df08d9f9d89db1ce29fd4546b818cb83668c35249c1b89dc653db4a081b"
+  },
+  "rejected_attempts": [
+    "Original real-stream injected data-channel failure left peers open; preserved live-reproduction.log.",
+    "First guarded candidate exposed old slot refusal poisoning the new connected Friend peer; recorded state trace and fixed pending selection.",
+    "SDK reconnect old-socket disconnect also poisoned replacement readiness; fixed explicit reconnect handoff and late refusal guard.",
+    "Two UI attempts failed in a new WebSocket fixture reading this before super, and one diagnostic init observed documentElement before it existed; fixtures fixed, attempts retained.",
+    "One CLI invocation used a mistyped runtime path and did not launch; retained separately."
+  ],
+  "limits": [
+    "Host-PC Chromium with injected SDK errors and trusted emulated touch; no physical-phone/carrier dropout acceptance.",
+    "No full campaign, audible playback, sustained FPS or bandwidth improvement claim.",
+    "Native package is preserved; unrelated opt-in graphic-novel source/assets from main will be retained without recooking in this frontend release.",
+    "OpenSpec CLI unavailable; artifacts and scenarios validated manually."
+  ]
+}
