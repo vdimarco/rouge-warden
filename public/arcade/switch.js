@@ -221,7 +221,7 @@
   }
   function build() {
     // the arcade fonts; a game page that has them already loads nothing new, and without them the list falls back to system fonts
-    if (!document.querySelector("link[href*='Press+Start+2P']")) {
+    if (!document.querySelector("link[href*='Press+Start+2P'], [data-arcade-fonts]")) {
       const ln = document.createElement("link");
       ln.rel = "stylesheet";
       ln.href = "https://fonts.googleapis.com/css2?family=Bungee&family=Press+Start+2P&display=swap";

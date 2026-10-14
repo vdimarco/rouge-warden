@@ -34,12 +34,21 @@ async function server(){
   delete process.env.POSTHOG_PERSONAL_API_KEY;let r=res();await handler({method:'GET'},r);assert.equal(r.code,503);
   process.env.posthog_personal_api_key='test-private-key';r=res();await handler({method:'POST'},r);assert.equal(r.code,405);
   global.fetch=async(url,options)=>{fetches++;assert.equal(url,'https://us.posthog.com/api/projects/653362/query/');assert.equal(options.headers.Authorization,'Bearer test-private-key');assert.ok(JSON.parse(options.body).query.query.includes('INTERVAL 30 DAY'));if(fail)throw Error('private secret');return {ok:true,json:async()=>({results:bad?[['fish',-1,2,3,4]]:nulls?[['brawl',1,0,0,null],[null,4,4,0,9]]:[['fish',90,12,2,100.5]]})};};
-  const a=res(),b=res();await Promise.all([handler({method:'GET',query:{sql:'DROP'}},a),handler({method:'GET'},b)]);assert.equal(fetches,1);assert.equal(a.data.games.fish.plays,12);assert.equal(a.data.games.fish.active_seconds,101);assert.equal(JSON.stringify(a.data).includes('test-private-key'),false);
+  const a=res(),b=res();await Promise.all([handler({method:'GET',query:{sql:'DROP'}},a),handler({method:'GET'},b)]);assert.equal(fetches,1);assert.equal(a.data.games.fish.plays,12);assert.equal(a.data.games.fish.active_seconds,101);assert.equal(a.data.stale,undefined);assert.equal(JSON.stringify(a.data).includes('test-private-key'),false);
+  assert.match(a.headers['Cache-Control'], /s-maxage=300/);assert.match(a.headers['Cache-Control'], /stale-while-revalidate=/);assert.match(a.headers['Cache-Control'], /stale-if-error=/);
   r=res();await handler({method:'GET'},r);assert.equal(fetches,1);assert.equal(r.code,200);
-  delete require.cache[path];fail=true;r=res();await require(path)({method:'GET'},r);assert.equal(r.code,503);assert.equal(JSON.stringify(r.data).includes('secret'),false);
+  const realNow=Date.now; let clock=realNow()+6*60*1000; Date.now=()=>clock;
+  const beforeFail=fetches; fail=true; r=res(); await handler({method:'GET'},r);
+  assert.equal(r.code,200); assert.equal(r.data.stale,true); assert.equal(r.data.games.fish.plays,12); assert.equal(JSON.stringify(r.data).includes('secret'),false);
+  assert.match(r.headers['Cache-Control'], /s-maxage=/); assert.match(r.headers['Cache-Control'], /stale-while-revalidate=/);
+  assert.equal(fetches, beforeFail+1);
+  r=res(); await handler({method:'GET'},r); assert.equal(r.code,200); assert.equal(r.data.stale,true); assert.equal(fetches, beforeFail+1);
+  clock+=6*60*1000; fail=false; r=res(); await handler({method:'GET'},r); assert.equal(r.code,200); assert.equal(r.data.stale,undefined); assert.equal(r.data.games.fish.plays,12);
+  Date.now=realNow; fail=true;
+  delete require.cache[path];r=res();await require(path)({method:'GET'},r);assert.equal(r.code,503);assert.equal(r.headers['Cache-Control'],'no-store');assert.equal(JSON.stringify(r.data).includes('secret'),false);
   delete require.cache[path];fail=false;bad=true;r=res();await require(path)({method:'GET'},r);assert.equal(r.code,503);
   delete require.cache[path];bad=false;nulls=true;r=res();await require(path)({method:'GET'},r);assert.equal(r.code,200);assert.deepEqual(r.data.games,{brawl:{views:1,plays:0,likes:0,active_seconds:0}});
   global.fetch=oldFetch;if(oldKey)process.env.POSTHOG_PERSONAL_API_KEY=oldKey;else delete process.env.POSTHOG_PERSONAL_API_KEY;delete process.env.posthog_personal_api_key;
-  console.log('PASS aggregate API: missing key, methods, bounded query, coalesced requests, cache, private credential isolation, upstream and malformed response failures, null sums and events without a game');
+  console.log('PASS aggregate API: missing key, methods, bounded query, coalesced requests, cache, stale last-good result, edge cache header, private credential isolation, upstream and malformed response failures, null sums and events without a game');
 }
 server().catch(e=>{console.error(e);process.exitCode=1;});
