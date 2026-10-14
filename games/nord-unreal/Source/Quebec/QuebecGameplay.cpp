@@ -35,6 +35,7 @@
 #include "Misc/Parse.h"
 #include "Net/UnrealNetwork.h"
 #include "Sound/SoundWaveProcedural.h"
+#include "Sound/SoundBase.h"
 #include "UnrealClient.h"
 #include "UObject/ConstructorHelpers.h"
 
@@ -528,16 +529,23 @@ void AQuebecParkResident::Tick(float DeltaSeconds)
         SetActorEnableCollision(!bPlayerWears);
     }
     const AGameStateBase* State = GetWorld()->GetGameState();
-    const float Time = (State ? State->GetServerWorldTimeSeconds() : GetWorld()->GetTimeSeconds()) + Phase;
+    const float ServerTime = State ? State->GetServerWorldTimeSeconds() : GetWorld()->GetTimeSeconds();
+    const float Time = RouteTime(ServerTime);
+    const bool bReacting = ServerTime >= ReactionStartedAt && ServerTime < ReactionUntil;
     const FResidentTravel Travel = SampleResidentTravel(Time,RouteLength,Pace,PauseSeconds);
-    const bool bWalking = Activity != 2 && Route.Num() > 1 && Travel.bMoving;
+    const bool bWalking = !bReacting && Activity != 2 && Route.Num() > 1 && Travel.bMoving;
     if (Activity != 2 && Route.Num() > 1 && HasAuthority())
     {
         FVector Direction;
         SetActorLocation(ResidentPointOnRoute(Route,Travel.Distance,Direction));
-        const FRotator Facing = (Travel.bReturn ? -Direction : Direction).Rotation();
-        SetActorRotation(FMath::RInterpTo(GetActorRotation(),Facing,DeltaSeconds,6.f));
+        if (!bReacting)
+        {
+            const FRotator Facing = (Travel.bReturn ? -Direction : Direction).Rotation();
+            SetActorRotation(FMath::RInterpTo(GetActorRotation(),Facing,DeltaSeconds,6.f));
+        }
     }
+    if (bReacting && HasAuthority())
+        SetActorRotation(FMath::RInterpTo(GetActorRotation(),FRotator(0.f,ReactionYaw,0.f),DeltaSeconds,6.f));
     APlayerController* Player = GetWorld()->GetFirstPlayerController();
     const bool bLocalView = Player && Player->IsLocalController() && Player->PlayerCameraManager;
     const FVector Eye = bLocalView ? Player->PlayerCameraManager->GetCameraLocation() : FVector::ZeroVector;
@@ -548,7 +556,7 @@ void AQuebecParkResident::Tick(float DeltaSeconds)
     Label->SetVisibility(bLocalView && TowardLabel.SizeSquared() < FMath::Square(900.f) &&
         FVector::DotProduct(View,TowardLabel.GetSafeNormal()) > .99f);
     if (!bLocalView || FVector::DistSquared(Eye,GetActorLocation()) > FMath::Square(14000.f)) return;
-    const float AnimationClock = Activity == 2 ? Time :
+    const float AnimationClock = bReacting || Activity == 2 ? ServerTime + Phase :
         Travel.AnimationTime*(bWalking ? Pace/(Activity == 1 ? 260.f : 120.f) : 1.f)+Phase;
     const float Pose = AnimationClock;
     if (GeneratedBody->GetSkeletalMeshAsset())
@@ -583,6 +591,10 @@ void AQuebecParkResident::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& 
     DOREPLIFETIME(AQuebecParkResident, Activity);
     DOREPLIFETIME(AQuebecParkResident, Pace);
     DOREPLIFETIME(AQuebecParkResident, PauseSeconds);
+    DOREPLIFETIME(AQuebecParkResident, ReactionStartedAt);
+    DOREPLIFETIME(AQuebecParkResident, ReactionUntil);
+    DOREPLIFETIME(AQuebecParkResident, RouteDelay);
+    DOREPLIFETIME(AQuebecParkResident, ReactionYaw);
 }
 
 AQuebecCar::AQuebecCar()
@@ -1314,6 +1326,8 @@ void AQuebecGameState::Tick(float DeltaSeconds)
 {
     Super::Tick(DeltaSeconds);
     if (!HasAuthority()) return;
+    // Remote controllers skip PlayerTick on the server; resident decisions must include every player.
+    for (TActorIterator<AQuebecController> It(GetWorld()); It; ++It) It->TickResidentGreetings(DeltaSeconds);
     // A client loses a player character that is far away or parked while its player drives; the game state always replicates.
     int32 Mask = 0;
     for (int32 Style = 3; Style <= 10; ++Style)
@@ -1328,6 +1342,21 @@ void AQuebecGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
     DOREPLIFETIME(AQuebecGameState, WornCrewMask);
 }
 
+
+AQuebecController::AQuebecController()
+{
+    static ConstructorHelpers::FObjectFinderOptional<USoundBase> Checkpoint(TEXT("/Game/Audio/Feedback/Checkpoint.Checkpoint"));
+    static ConstructorHelpers::FObjectFinderOptional<USoundBase> Complete(TEXT("/Game/Audio/Feedback/Complete.Complete"));
+    static ConstructorHelpers::FObjectFinderOptional<USoundBase> Dialogue(TEXT("/Game/Audio/Feedback/Dialogue.Dialogue"));
+    FeedbackSounds = {Checkpoint.Get(), Complete.Get(), Dialogue.Get()};
+}
+
+void AQuebecController::PlayFeedback(EQuebecFeedbackCue Cue)
+{
+    const int32 Index = static_cast<int32>(Cue);
+    if (FeedbackSounds.IsValidIndex(Index) && FeedbackSounds[Index])
+        ClientPlaySound(FeedbackSounds[Index], 1.f);
+}
 
 void AQuebecController::BeginPlay()
 {
@@ -1696,7 +1725,11 @@ void AQuebecController::ServerInteract_Implementation()
     else if (AQuebecGameState* State = GetWorld()->GetGameState<AQuebecGameState>())
         if (State->AdvanceMissionNear(Character->GetActorLocation())) return;
     if (AQuebecParkResident* Resident = FindInteractableResident())
+    {
+        Resident->Acknowledge(Character, true);
         ClientInteractionMessage(FString(AQuebecParkResident::NameForStyle(Resident->Style)) + TEXT("  /  ") + AQuebecParkResident::DialogueForStyle(Resident->Style));
+        PlayFeedback(EQuebecFeedbackCue::Dialogue);
+    }
 }
 
 void AQuebecController::ExitCar(AQuebecCar* Car)
@@ -1758,6 +1791,11 @@ void AQuebecController::EndPlay(const EEndPlayReason::Type EndPlayReason)
         if (IsValid(WalkingCharacter)) WalkingCharacter->Destroy();
     }
     Super::EndPlay(EndPlayReason);
+}
+
+bool AQuebecHUD::CanShowResidentGreeting() const
+{
+    return GetWorld() && FirstHUDTime >= 0.f && GetWorld()->GetTimeSeconds() >= BriefingUntil && BriefingPausedAt < 0.f;
 }
 
 void AQuebecHUD::DrawHUD()

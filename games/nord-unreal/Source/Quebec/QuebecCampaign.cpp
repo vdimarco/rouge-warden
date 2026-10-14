@@ -529,11 +529,14 @@ void AQuebecCampaign::TickRace(float DeltaSeconds)
                     }
                     else if (++RaceGateIndex >= RaceGates.Num())
                     {
+                        RecordRaceResult();
                         CompletedMissions = 2;
-                        bRaceWonThisSession = true;
                         SaveBoundary();
                         ChangePhase(EQuebecCampaignPhase::Complete);
                     }
+                    if (Phase == EQuebecCampaignPhase::RaceRunning && RaceGateIndex > 1)
+                        for (TActorIterator<AQuebecController> Player(GetWorld()); Player; ++Player)
+                            Player->PlayFeedback(EQuebecFeedbackCue::Checkpoint);
                     ForceNetUpdate();
                 }
             }
@@ -544,11 +547,17 @@ void AQuebecCampaign::TickRace(float DeltaSeconds)
     for (auto It=TrappedUntil.CreateIterator(); It; ++It) if (!It.Key().IsValid()) It.RemoveCurrent();
 }
 
-void AQuebecCampaign::ChangePhase(EQuebecCampaignPhase Next)
+void AQuebecCampaign::ChangePhase(EQuebecCampaignPhase Next, bool bFeedback)
 {
+    const EQuebecCampaignPhase Previous = Phase;
     Phase = Next;
     for (TActorIterator<AQuebecController> It(GetWorld()); It; ++It)
+    {
         It->ShowInteractionMessage(TEXT(""));
+        if (bFeedback && Next > Previous)
+            It->PlayFeedback(Next == EQuebecCampaignPhase::RaceReady || Next == EQuebecCampaignPhase::Complete
+                ? EQuebecFeedbackCue::Complete : EQuebecFeedbackCue::Checkpoint);
+    }
     if (Next == EQuebecCampaignPhase::RaceReady)
     {
         FVector Direction;
@@ -660,7 +669,7 @@ void AQuebecCampaign::RequestRetry(AQuebecController* Controller)
         bRaceTimedOut = false;
         RaceStartTime = GetWorld()->GetTimeSeconds();
         RaceElapsed = 0.f;
-        if (RaceGateIndex > 0) ChangePhase(EQuebecCampaignPhase::RaceRunning);
+        if (RaceGateIndex > 0) ChangePhase(EQuebecCampaignPhase::RaceRunning, false);
     }
     ForceNetUpdate();
 }
@@ -678,6 +687,15 @@ void AQuebecCampaign::RequestReplay(AQuebecController* Controller)
     RequestRetry(Controller);
     bRaceRetried = false;
     Controller->ShowInteractionMessage(TEXT("Race replay ready. Your two completed scenes stay banked."));
+}
+
+void AQuebecCampaign::RecordRaceResult()
+{
+    if (!HasAuthority() || !FMath::IsFinite(RaceElapsed) || RaceElapsed <= 0.f || RaceElapsed > RaceTimeLimit) return;
+    LastRaceTime = RaceElapsed;
+    bLastRaceRetried = bRaceRetried;
+    if (!bRaceRetried && (BestCleanRaceTime <= 0.f || RaceElapsed < BestCleanRaceTime))
+        BestCleanRaceTime = RaceElapsed;
 }
 
 FString AQuebecCampaign::GetInteractionPrompt(const AQuebecController* Controller) const
@@ -733,7 +751,13 @@ FString AQuebecCampaign::GetStatusText() const
     if (Phase == EQuebecCampaignPhase::CrossCable) return FString::Printf(TEXT("Sprint %s / jump %s / R: recover"),bSprintSeen?TEXT("banked"):TEXT("needed"),bJumpSeen?TEXT("banked"):TEXT("needed"));
     if (Phase == EQuebecCampaignPhase::PullClamp || Phase == EQuebecCampaignPhase::ReleaseTable) return bClampOpen ? TEXT("GREEN BEAT / pull now / R: recover") : TEXT("Press squeezing / wait for green / R: recover");
     if (Phase == EQuebecCampaignPhase::RaceRunning) return FString::Printf(TEXT("%.1fs / %.0fs / gate %d of 6 / R: recover"),RaceElapsed,RaceTimeLimit,RaceGateIndex);
-    if (Phase == EQuebecCampaignPhase::Complete) return bRaceWonThisSession && !bRaceRetried ? TEXT("Clean lap / shared progress saved") : TEXT("Shared progress saved / T: replay");
+    if (Phase == EQuebecCampaignPhase::Complete && LastRaceTime > 0.f)
+    {
+        const FString Best = BestCleanRaceTime > 0.f ? FString::Printf(TEXT("best clean %.1fs"), BestCleanRaceTime) : TEXT("no clean best yet");
+        return FString::Printf(TEXT("Lap %.1fs / %s / %s / T: replay"), LastRaceTime,
+            bLastRaceRetried ? TEXT("recovered") : TEXT("clean"), *Best);
+    }
+    if (Phase == EQuebecCampaignPhase::Complete) return TEXT("Shared progress saved / T: replay");
     return TEXT("Shared checkpoints / R: recover");
 }
 
@@ -838,6 +862,9 @@ void AQuebecCampaign::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutL
     DOREPLIFETIME(AQuebecCampaign,RaceGateIndex);
     DOREPLIFETIME(AQuebecCampaign,RaceStartTime);
     DOREPLIFETIME(AQuebecCampaign,RaceElapsed);
+    DOREPLIFETIME(AQuebecCampaign,LastRaceTime);
+    DOREPLIFETIME(AQuebecCampaign,BestCleanRaceTime);
+    DOREPLIFETIME(AQuebecCampaign,bLastRaceRetried);
     DOREPLIFETIME(AQuebecCampaign,RaceTimeLimit);
     DOREPLIFETIME(AQuebecCampaign,bRaceRetried);
     DOREPLIFETIME(AQuebecCampaign,bRaceTimedOut);

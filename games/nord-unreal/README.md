@@ -58,6 +58,10 @@ The host owns shared progression and saves completed mission boundaries to `Save
 
 The current driving implementation adds progressive acceleration, service braking, speed-sensitive steering and controllable lateral slip under the handbrake; physical handling enjoyment is still pending playtest. The camera follows turns after two seconds without mouse input and widens slightly with speed. Wheels steer and spin; bumpers, mirrors, and rims add detail to the car. The compact HUD keeps a nearby road radar, parked-car markers, one contextual interaction prompt, mission/status text, speed/handbrake feedback and shared completion. Private dialogue pauses the briefing's reading budget, and R Recover remains discoverable during active missions.
 
+The resident-feedback update adds short original Québec French greetings and approaching-car warnings, brief replicated resident pause/facing reactions, original progress/completion sounds, and shared last-lap/session-best results for T race replay. Recovery-assisted laps are labelled and cannot improve the clean best; lap results reset when the session ends, while the existing story save format remains unchanged. The verified package is installed for both local play and the browser demo; the candidate and previous-package rollbacks are retained. See [verification and device limits](Verification/ResidentFeedback.md).
+
+The older standalone prototype is [retired and archived](Verification/RetiredPrototype.md). All new gameplay, builds and capture work use this integrated project.
+
 ## Comic-book look
 
 The game renders in an animated comic-book style by default, inspired by the look of *Spider-Man: Into the Spider-Verse*. No characters, suits, logos or sound words from the film are used. The post-process material `/Game/Art/Comic/M_ComicInk` adds:

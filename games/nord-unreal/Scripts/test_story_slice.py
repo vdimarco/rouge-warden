@@ -22,6 +22,7 @@ COMMAND = u.SystemLibrary.get_command_line()
 assert '-NordCampaignQA' in COMMAND, 'Use -NordCampaignQA; production saves must not be used by this suite'
 assert '-NordNoCampaign' not in COMMAND and '-NordNoCampaignSave' not in COMMAND, 'Campaign and isolated persistence are required'
 RENDER = '-NordStoryRenderChecks' in COMMAND
+FEEDBACK_QA = '-NordResidentFeedbackQA' in COMMAND
 LAG = '-NordLag' in COMMAND
 LIGHT_DIAGNOSTICS = RENDER or '-NordStoryDiagnostics' in COMMAND
 WIDTH_FLAG = re.search(r'(?:^|\s)-NordCaptureWidth=(\d+)(?:\s|$)', COMMAND)
@@ -34,7 +35,10 @@ SAVE_PATH = SAVE_DIR / (SLOT + '.sav')
 QA_OLD_BYTES = SAVE_PATH.read_bytes() if SAVE_PATH.exists() else None
 PRODUCTION_SAVES = {str(p.relative_to(SAVE_DIR)): hashlib.sha256(p.read_bytes()).hexdigest()
                     for p in SAVE_DIR.rglob('*.sav') if p != SAVE_PATH} if SAVE_DIR.exists() else {}
-OUT = ROOT / 'Preview' / f'StorySlice{WIDTH}'
+TEST_OUT = Path(u.Paths.project_saved_dir()).resolve() / 'Tests'
+if FEEDBACK_QA:
+    TEST_OUT /= 'ResidentFeedback'
+OUT = TEST_OUT / f'StorySlice{WIDTH}' if FEEDBACK_QA else ROOT / 'Preview' / f'StorySlice{WIDTH}'
 if RENDER:
     OUT.mkdir(parents=True, exist_ok=True)
 LEVELS = u.get_editor_subsystem(u.LevelEditorSubsystem)
@@ -90,6 +94,9 @@ def snapshot(actor):
             'race_gate': actor.get_editor_property('RaceGateIndex'),
             'race_elapsed': round(actor.get_editor_property('RaceElapsed'), 4),
             'race_retried': actor.get_editor_property('bRaceRetried'),
+            'last_race_time': actor.get_editor_property('LastRaceTime'),
+            'best_clean_race_time': actor.get_editor_property('BestCleanRaceTime'),
+            'last_race_retried': actor.get_editor_property('bLastRaceRetried'),
             'light_operator': operator.get_name() if operator else None,
             'light_yaw': round(actor.get_editor_property('LightYaw'), 4),
             'light_pitch': round(actor.get_editor_property('LightPitch'), 4),
@@ -321,9 +328,39 @@ def partial_boundary_unchanged(expected):
     return True
 
 
+def race_result_preserved(record=False):
+    keys = ('LastRaceTime', 'BestCleanRaceTime', 'bLastRaceRetried')
+    result, replica = (tuple(STATE[side+'_campaign'].get_editor_property(key) for key in keys)
+                       for side in ('server', 'client'))
+    if result != replica:
+        return False
+    if record:
+        assert result[0] > 0 and result[0] == result[1] and not result[2], 'Native clean finish did not record a clean session best'
+        assert not STATE['server_campaign'].get_editor_property('bRaceRetried'), 'Expected the clean attempt after actual reload'
+        STATE['finished_race_result'] = result
+    else:
+        assert result == STATE['finished_race_result'], 'Late join or T replay erased the session lap result'
+    REPORT.setdefault('session_race_results', []).append({'step': STEPS[STATE['step']][0],
+                                                         **dict(zip(keys, result)), 'replicated': True})
+    return True
+
+
 def end_session():
     STATE.pop('foot_axis', None)
     STATE.pop('drive_axis', None)
+    worlds = u.EditorLevelLibrary.get_pie_worlds(True)
+    if RENDER and worlds:
+        # UE 5.8 Vulkan can delete pending viewport queries during PIE teardown.
+        for world in worlds:
+            u.GameplayStatics.set_enable_world_rendering(world, False)
+        target = u.RenderingLibrary.create_render_target2d(worlds[0], 1, 1,
+            u.TextureRenderTargetFormat.RTF_RGBA8, u.LinearColor(0, 0, 0, 1))
+        assert target, 'GPU teardown fence target was not created'
+        STATE['teardown_render_target'] = target
+        u.RenderingLibrary.clear_render_target2d(worlds[0], target, u.LinearColor(0, 0, 0, 1))
+        pixel = u.RenderingLibrary.read_render_target_pixel(worlds[0], target, 0, 0)
+        assert pixel.r == pixel.g == pixel.b == 0 and pixel.a == 255, 'GPU teardown readback did not complete'
+        REPORT['completed_gpu_teardown_drains'] = REPORT.get('completed_gpu_teardown_drains', 0) + 1
     LEVELS.editor_request_end_play()
 
 
@@ -389,6 +426,11 @@ def require_phase(expected, completed=None, gate=None):
 def unchanged_phase(expected, completed=0):
     assert require_phase(expected, completed)
     return partial_boundary_unchanged(completed)
+
+
+def out_of_range_e_unchanged():
+    assert isinstance(STATE['client_pc'].get_controlled_pawn(), u.QuebecCharacter), 'Out-of-range E unexpectedly entered a nearby car'
+    return unchanged_phase(0)
 
 
 def comic_weights(client_weight, host_weight=1):
@@ -980,7 +1022,9 @@ step('both players start in standard view', lambda: None, lambda: comic_weights(
 step('both players enable comic view independently',
      lambda: [native(STATE[side+'_pc'], 'ToggleComicStyle') for side in ('host', 'client')],
      lambda: comic_weights(1, 1))
-step('out-of-range E cannot advance opening', lambda: interact(), lambda: unchanged_phase(0))
+step('fixture keeps opening E outside car and worklight range',
+     lambda: foot_position('WorklightLocation', u.Vector(-800, 0, -20)), foot_arrived)
+step('out-of-range E cannot advance opening', lambda: interact(), out_of_range_e_unchanged)
 step('fixture approaches future table clamp', lambda: clamp_fixture('FinalClampLocation'), foot_arrived)
 step('future clamp E cannot skip worklight', interact, lambda: unchanged_phase(0))
 step('fixture places loan car beside worklight', priority_fixture, foot_arrived)
@@ -1065,8 +1109,11 @@ for index in range(1, 7):
          'SliceComplete' if index == 6 else 'BlueAlternativeGate' if index == 5 else None, timeout=8, delay=0)
     step(f'brake after ordered gate{index}', lambda: None, car_stopped)
 step('second mission writes actual completed save2', lambda: None, lambda: save_boundary(2))
+step('native ordered clean finish records the replicated session best', lambda: None, lambda: race_result_preserved(True))
 step('client departs completed shared slice', disconnect, disconnected)
-step('late join receives both banked missions and final gate', reconnect, lambda: discover() and state_equal(7, 2, 7))
+step('late join receives both banked missions and final gate', reconnect, lambda: discover() and state_equal(7, 2, 7) and race_result_preserved())
+step('native T preserves replicated lap result and saved missions', lambda: native(STATE['client_pc'], 'ReplayCampaign'),
+     lambda: state_equal(5, 2, 0) and race_result_preserved() and save_boundary(2))
 step('stop completed slice session', end_session, no_worlds)
 step('actual reload restores both completed missions', start_session, lambda: loaded(7, 2))
 step('ordinary E cannot increment completed campaign', interact, lambda: require_phase(7, 2) and partial_boundary_unchanged(2))
@@ -1137,7 +1184,7 @@ def finish(error=None):
     except Exception as restore_error:
         # EndPlay below destroys the per-world emulation even after teardown.
         REPORT['authority_lag_restore_before_endplay_error'] = str(restore_error)
-    LEVELS.editor_request_end_play()
+    end_session()
 
 
 def cleanup():
@@ -1175,7 +1222,7 @@ def write_report():
     REPORT['passed'] = not STATE.get('finish_error')
     REPORT['elapsed_seconds'] = round(time.monotonic()-STATE['started'], 2)
     name = ('StorySliceLag' if LAG else 'StorySlice') + (f'Render{WIDTH}' if RENDER else '')
-    path = Path(u.Paths.project_saved_dir()) / 'Tests' / (name + '.json')
+    path = TEST_OUT / (name + '.json')
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(REPORT, indent=2), encoding='utf-8')
     if REPORT['passed']:
