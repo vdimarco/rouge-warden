@@ -578,6 +578,13 @@ export function createOverlay(canvas, { tune = TUNE } = {}) {
     const x = pips[0] + pips[2] / 2;
     let y = big ? H * 0.38 : pips[1] - px * 0.9;
     if (big && L.rects.toast) y = Math.max(y, L.rects.toast[1] + L.rects.toast[3] + px * 2);
+    // Under the reading rows (toast, info box, a hint in its slot) that sit in the top half.
+    if (big) {
+      for (const n of ['info', 'hint']) {
+        const r = L.rects[n];
+        if (r && r[1] < H / 2) y = Math.max(y, r[1] + r[3] + px);
+      }
+    }
     const hr = L.rects.hint;
     if (!big && hr && y + px > hr[1] && y - px < hr[1] + hr[3]) y = hr[1] - px * 0.8;
     return { x, y, px };
@@ -640,6 +647,10 @@ export function createOverlay(canvas, { tune = TUNE } = {}) {
         if (m.dir) projectPoint(cam, m.dir, 0, pt); else if (m.pos) projectPoint(cam, m.pos, 1, pt); else continue;
         let r = m.dir ? fin(m.rPx, 16) : ringPx(cam, fin(m.r, 2), pt.depth);
         if (m.kind === 'scanned' && m.pos && r > Math.min(W, H) * 0.3) continue;   // too close to need a label
+        // Inside an objective's area (a ring of tens of u round a place) the ring would fill the screen: the radar
+        // and the leader already say where it is.
+        if (m.kind === 'objective' && m.pos && m.ring !== false && fin(m.r) > 8 && g?.ship?.pos
+          && Math.hypot(m.pos[0] - g.ship.pos[0], m.pos[1] - g.ship.pos[1]) < fin(m.r) * 1.2) continue;
         r = clamp(r, MIN_RING_PX, Math.min(W, H) * 0.42);
         const on = pt.front && pt.x > -r && pt.x < W + r && pt.y > -r && pt.y < H + r;
         const entry = { id: m.id, kind: m.kind, x: pt.x, y: pt.y, r, front: pt.front, onScreen: on, mark: m,
@@ -725,11 +736,18 @@ export function createOverlay(canvas, { tune = TUNE } = {}) {
           chevron(c, ORANGE, 10);
           chevronLabel(c, label, ORANGE, font(fpx, 700), hudBoxes);
           drawn.chevrons.push({ id: 'home', x: c.x, y: c.y, angle: c.angle });
-        } else {
+        } else if (!hudBoxes.some((r) => pt.x > r[0] - 6 && pt.x < r[0] + r[2] + 6 && pt.y > r[1] - 6
+          && pt.y < r[1] + r[3] + 6)) {
+          // On screen: a marker where Earth lies, its label above or below it, whichever is clear of the HUD.
           ctx.beginPath();
           ctx.moveTo(pt.x, pt.y + 6); ctx.lineTo(pt.x - 6, pt.y - 4); ctx.lineTo(pt.x + 6, pt.y - 4); ctx.closePath();
           ctx.fillStyle = ORANGE; ctx.fill();
-          ctx.font = font(fpx, 700); ctx.textAlign = 'center'; ctx.fillText(label, pt.x, pt.y - 14);
+          ctx.font = font(fpx, 700); ctx.textAlign = 'center';
+          const lw = measure(label, font(fpx, 700));
+          const hit = (y) => hudBoxes.some((r) => pt.x + lw / 2 > r[0] && pt.x - lw / 2 < r[0] + r[2]
+            && y + fpx / 2 + 2 > r[1] && y - fpx / 2 - 2 < r[1] + r[3]);
+          const ly = !hit(pt.y - 14) ? pt.y - 14 : !hit(pt.y + 18) ? pt.y + 18 : null;
+          if (ly !== null) ctx.fillText(label, pt.x, ly);
           drawn.chevrons.push({ id: 'home', x: pt.x, y: pt.y, angle: Math.PI / 2, onScreen: true });
         }
       }

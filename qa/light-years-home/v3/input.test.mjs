@@ -5,7 +5,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   expo, deadScale, stickAxes, follow, FOLLOW, createFlick, createAction, nextSource, kindForSource, keyAxes,
-  mouseAxes, padAxes, padPressed, PAD, tiltSteer, rollOf, pedalAt, hitTarget, canSteer, createInput,
+  mouseAxes, padAxes, padPressed, PAD, tiltSteer, rollOf, pedalAt, hitTarget, canSteer, createInput, corridorAxes,
 } from '../../../public/light-years-home/ui/input.js';
 import { TUNE } from '../../../public/light-years-home/core/tune.js';
 import { layoutFor } from '../../../public/light-years-home/core/layout.js';
@@ -295,6 +295,27 @@ test('touch: BOOST holds the boost; a flick up on the stick is one burst and doe
   }
   assert.equal(fired, 1);
   assert.equal(maxClimb, 0, 'the flick re-centres the stick');
+});
+
+test('touch, corridor: Y steers like X (no climb scale, no delay) and a quick push up is a dodge, not a boost', () => {
+  assert.equal(corridorAxes(0, -I.STICK_FULL).climb, 1, 'full up at the stick reach');
+  assert.equal(corridorAxes(0, I.STICK_FULL).climb, -1);
+  assert.equal(corridorAxes(0, -I.STICK_DEAD).climb, 0, 'the same small dead zone as X');
+  assert.ok(near(corridorAxes(0, -(I.STICK_DEAD + I.STICK_FULL) / 2).climb, 0.5 ** TUNE.SHIP.EXPO));
+  assert.equal(corridorAxes(0, -I.STICK_FULL, TUNE, true).climb, -1, 'invert flips');
+  const { inp, down, move } = rig();
+  inp.context('tunnel');
+  down(1, 120, 700, 100);
+  let fired = 0, first = null;
+  for (let t = 8; t <= 64; t += 8) {
+    move(1, 120, 700 - 80 * (t / 64), 100 + t);
+    const r = inp.read(100 + t);
+    if (r.boostBurst) fired++;
+    if (first === null && r.climb > 0) first = t;
+  }
+  assert.equal(fired, 0, 'no flick boost in the corridor');
+  assert.ok(first !== null && first <= 16, `the dodge reads at once (${first} ms)`);
+  assert.equal(inp.read(200).climb, 1, 'and holds full up');
 });
 
 test('touch: a slow push up climbs, 120 ms late while a flick is possible', () => {
