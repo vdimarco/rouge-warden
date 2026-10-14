@@ -1141,6 +1141,7 @@ function boot() {
       keys.space = performance.now();
       e.preventDefault();
     }
+    match.setSteer(keys.left ? -2.4 : keys.right ? 2.4 : null);
   });
   window.addEventListener('keyup', (e) => {
     if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') keys.left = false;
