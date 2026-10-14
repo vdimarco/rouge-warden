@@ -15,17 +15,18 @@ const WHINE_LEAD = 1.0;                         // s: the whine starts this long
 
 export function createEngine(mix) {
   let E = null;
-  let last = -1, acc = 0, boostAt = -1, wasBoost = false, whine = false, cutUntil = 0;
-  const engine = { update, cutWhine, get built() { return !!E; }, get load() { return acc; } };
+  const S = { last: -1, acc: 0, boostAt: -1, cutUntil: 0 };   // numbers on one object: no boxing per frame
+  let wasBoost = false, whine = false;
+  const engine = { update, cutWhine, get built() { return !!E; }, get load() { return S.acc; } };
   mix.engine = engine;
 
   mix.onStart(() => {
     const bus = mix.bus.engine;
     // the motor
-    const lp = mix.filter('lowpass', 400, 1.3);
+    const lp = mix.filter('lowpass', 400, 1.6);
     const body = mix.gain(0, bus);
     lp.connect(body);
-    const parts = [['sawtooth', -7, 0.22], ['sawtooth', 7, 0.22], ['sine', 0, 0.55]].map(([type, cents, level]) => {
+    const parts = [['sawtooth', -7, 0.28], ['sawtooth', 7, 0.28], ['sine', 0, 0.35]].map(([type, cents, level]) => {
       const o = mix.osc(type, 110);
       o.detune.value = cents;
       o.connect(mix.gain(level, lp));
@@ -71,7 +72,7 @@ export function createEngine(mix) {
   function cutWhine() {
     if (!E || !mix.live()) return;
     const now = mix.now();
-    cutUntil = now + 0.3;
+    S.cutUntil = now + 0.3;
     E.whine.g.gain.cancelScheduledValues(now);
     E.whine.g.gain.setTargetAtTime(0, now, 0.01);
     mix.unsteer(E.whine.g.gain);
@@ -102,10 +103,10 @@ export function createEngine(mix) {
     if (tunnel) s = boostS * (1 + 0.25 * clamp(eta - 2, 0, 2));
     // load: how hard the ship accelerates (smoothed), or the gas and brake when main.js passes the input
     const d = clamp(dt || 1 / 60, 1e-3, 0.1);
-    const a = last < 0 || tunnel ? 0 : (s - last) / d;
-    last = s;
-    acc += (clamp(a / 12, -1, 1) - acc) * clamp(d / 0.15, 0, 1);
-    let load = acc;
+    const a = S.last < 0 || tunnel ? 0 : (s - S.last) / d;
+    S.last = s;
+    S.acc += (clamp(a / 12, -1, 1) - S.acc) * clamp(d / 0.15, 0, 1);
+    let load = S.acc;
     const inp = view.input;
     if (inp) {
       if (inp.gas > 0 && s < top) load = Math.max(load, 0.6 * inp.gas);
@@ -120,8 +121,8 @@ export function createEngine(mix) {
     const fc = clamp((400 + 2800 * sx ** 1.1) * (1 + 0.35 * Math.max(0, load)) * (1 - 0.25 * Math.max(0, -load)), 300,
       4200);
     mix.steer(E.lp.frequency, fc, 0.05);
-    const loud = (0.26 + 0.14 * Math.min(1, sx) + 0.1 * Math.max(0, load) - 0.08 * Math.max(0, -load)
-      + (ship.boosting ? 0.06 : 0)) * (mode === 'ended' ? 0.6 : 1);
+    const loud = (0.18 + 0.2 * Math.min(1.4, sx) + 0.1 * Math.max(0, load) - 0.08 * Math.max(0, -load)
+      + (ship.boosting ? 0.06 : 0)) * (mode === 'ended' ? 0.6 : mode === 'runup' ? 0.8 : 1);
     mix.steer(E.body.gain, loud, 0.08);
 
     // wind, or the rush of light in the jump
@@ -149,9 +150,9 @@ export function createEngine(mix) {
 
     // the boost sweep, 400 to 2,400 Hz over 1.2 s, while any boost lasts
     const boosting = !!ship.boosting || (ship.db?.t ?? 0) > 0 || (ship.burstT ?? 0) > 0;
-    if (boosting && !wasBoost) boostAt = now;
+    if (boosting && !wasBoost) S.boostAt = now;
     wasBoost = boosting;
-    if (boosting) mix.steer(E.boost.flt.frequency, 400 * 6 ** clamp((now - boostAt) / 1.2, 0, 1), 0.03);
+    if (boosting) mix.steer(E.boost.flt.frequency, 400 * 6 ** clamp((now - S.boostAt) / 1.2, 0, 1), 0.03);
     level(E.boost, boosting && !tunnel ? (ship.boosting ? 0.22 : 0.16) : 0, boosting ? 0.03 : 0.15, now);
 
     // skim and draft
@@ -161,7 +162,7 @@ export function createEngine(mix) {
     // the corridor's whine: on while your line would hit within WHINE_LEAD, rising as it nears, panned to the way out
     const danger = tunnel && Number.isFinite(jump?.danger) ? jump.danger : 0;
     const w = E.whine;
-    if (danger > 0 && danger <= WHINE_LEAD && now > cutUntil) {
+    if (danger > 0 && danger <= WHINE_LEAD && now > S.cutUntil) {
       const k = 1 - danger / WHINE_LEAD;
       if (!whine) { whine = true; mix.count('whine'); }
       mix.steer(w.o.frequency, 620 + 560 * k, 0.02);

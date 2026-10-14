@@ -1,0 +1,348 @@
+{
+  "reviewer": "character_audit",
+  "status": "BOUNDED_PHASE_CAMERA_FRAMING_REVIEW_COMPLETE",
+  "created_utc": "2026-10-14T05:36:45.019974+00:00",
+  "method": "CPU software-decoded full1Hz overview and phase-boundary/midphase crop sequences inspected via view_image. No temporal playback; no fluidity claim.",
+  "frame_sequence_reviewed": true,
+  "temporal_playback_reviewed": false,
+  "fluidity_accepted": false,
+  "native_fps_target_accepted": false,
+  "final_graphics_quality_accepted": false,
+  "initial_draft_phase_camera_framing_accepted": true,
+  "extraction_manifest": "IndependentMotionFrames/manifest.json",
+  "extraction_manifest_sha256": "b3008acb01721607554a2008687a2649c258a32068a2e94b5a6c6dfc174d0f9c",
+  "source_videos_unchanged": true,
+  "modes": {
+    "Standard": {
+      "video": "Motion1920Standard/raw.mp4",
+      "video_sha256": "3d9a427d3262cf7e064dca115f67c961d7e93ac799427683ccce6f9176b4cd5a",
+      "report": "Capture/Motion/Standard/PlayerMotion1920.json",
+      "report_sha256": "baf9cd3c019d800775dc257aab0b2662874a87aa53f3657171e9eedd47c8df3c",
+      "encoded_metadata": {
+        "width": 1920,
+        "height": 1080,
+        "seconds": 9.016667,
+        "frames": 541,
+        "encoded_avg_rate": "60/1",
+        "native_render_fps_proven": false
+      },
+      "native_observations": 158,
+      "native_checks": {
+        "phase_counts": {
+          "idle": 9,
+          "walk": 33,
+          "sprint": 32,
+          "turn": 19,
+          "stop": 17,
+          "jump": 29,
+          "landing": 5,
+          "recover": 14
+        },
+        "steady_motion": {
+          "walk": {
+            "steady_samples": 26,
+            "foot_pose_change_pairs": 25
+          },
+          "sprint": {
+            "steady_samples": 26,
+            "foot_pose_change_pairs": 25
+          }
+        },
+        "directional_turn_degrees": 90.0,
+        "jump_peak_cm": 183.673,
+        "jump_horizontal_drift_cm": 0.0,
+        "airborne_knee_degrees": 60.966,
+        "scope": "selected native state and pose observations at 1x; no rendered fluidity or FPS acceptance"
+      },
+      "all_selected_observations_unpaused_dilation1": true,
+      "editor_counter_rate": {
+        "engine_counter_delta": 158,
+        "selected_wall_span_seconds": 6.835439999999998,
+        "observed_hz": 23.114825088070415,
+        "scope": "Editor engine counter / selected wall time under capture conditions; not packaged FPS profile or target acceptance."
+      },
+      "mapped_normal_strength": 1.0,
+      "reviewed_frames": 42,
+      "reviewed_contact_sheets": [
+        {
+          "file": "IndependentMotionFrames/Standard/full-1Hz-contact.png",
+          "sha256": "9e8620e0c3a121cb5188b517d136a95a03a2670c9dd89a890b1c1abc5c2a35d6",
+          "crop": null
+        },
+        {
+          "file": "IndependentMotionFrames/Standard/phase-crops-01.png",
+          "sha256": "7a60fcfd4c9c2fc299b53d4b1ede1b7cc7b34121b6ac1d3b7241bb014b3e6d8f",
+          "crop": [
+            660,
+            360,
+            1260,
+            1040
+          ]
+        },
+        {
+          "file": "IndependentMotionFrames/Standard/phase-crops-02.png",
+          "sha256": "6b674cdcf81434ecb1accace82e05b758a891047a552143de2926d7e9ea50a21",
+          "crop": [
+            660,
+            360,
+            1260,
+            1040
+          ]
+        },
+        {
+          "file": "IndependentMotionFrames/Standard/phase-crops-03.png",
+          "sha256": "190ece4c64fe4e59434f9bb24c2833a41b4053ce19fe577ecf0d386f20f70aab",
+          "crop": [
+            660,
+            360,
+            1260,
+            1040
+          ]
+        },
+        {
+          "file": "IndependentMotionFrames/Standard/phase-crops-04.png",
+          "sha256": "4998502fe7145b9b163d2051eac4700593ad2b2b516f034effa444995ed4a1b7",
+          "crop": [
+            660,
+            360,
+            1260,
+            1040
+          ]
+        },
+        {
+          "file": "IndependentMotionFrames/Standard/phase-crops-05.png",
+          "sha256": "a47edaaadfa5f6988d226de5289e2161389cc0f3eb1dcaf5204f23c08675122a",
+          "crop": [
+            660,
+            360,
+            1260,
+            1040
+          ]
+        }
+      ],
+      "phase_events_approx": [
+        {
+          "phase": "idle",
+          "video_seconds_approx": -0.182931
+        },
+        {
+          "phase": "walk",
+          "video_seconds_approx": 0.199069
+        },
+        {
+          "phase": "sprint",
+          "video_seconds_approx": 1.601069
+        },
+        {
+          "phase": "turn",
+          "video_seconds_approx": 3.032069
+        },
+        {
+          "phase": "stop",
+          "video_seconds_approx": 3.841069
+        },
+        {
+          "phase": "jump",
+          "video_seconds_approx": 4.561069
+        },
+        {
+          "phase": "landing",
+          "video_seconds_approx": 5.838069
+        },
+        {
+          "phase": "recover",
+          "video_seconds_approx": 6.059069
+        }
+      ],
+      "findings": [
+        "Correct rear player/HUD and native scene visible from first frame.",
+        "Walk/sprint sampled limb poses differ and change; clothing remains integrated with no gross tearing.",
+        "Camera/player turns rear-to-side while keeping body in frame; world pans coherently, then stop settles to standing. No sampled catastrophic camera jump or mesh explosion during native gameplay.",
+        "Jump rises with clear shoe/shadow separation and bent knees; descent/landing returns toward same area, then recovers. Shoes remain attached/covered; pinched shoulders and stiff drooping hands persist.",
+        "Stop/landing/recovery shoe-shadow proximity plausible; exact planting/skating/subtle penetration unproven.",
+        "Around7\u20138s player/HUD are gone and editor toolbar is visible, followed by black shutdown tail. Post-native PIE/editor closure is excluded from art defects."
+      ],
+      "gameplay_review_approx_seconds": [
+        0,
+        6.4
+      ],
+      "editor_return_samples_seconds": [
+        7,
+        8
+      ],
+      "black_tail_parent_cpu_blackdetect99percent": {
+        "start_seconds": 8.5333,
+        "end_seconds": 9.0,
+        "excluded_from_art_defects": true
+      }
+    },
+    "Comic": {
+      "video": "Motion1920Comic/raw.mp4",
+      "video_sha256": "7e0277bae574e69e3c6790fb4f2501cbfd2d2777b4e460b75261906f10a4a511",
+      "report": "Capture/Motion/Comic/PlayerMotion1920.json",
+      "report_sha256": "58fd7af7f136c9a235d49348eb13790c8f22b4189a8b4ecbaa20516f6740ee51",
+      "encoded_metadata": {
+        "width": 1920,
+        "height": 1080,
+        "seconds": 9.016667,
+        "frames": 541,
+        "encoded_avg_rate": "60/1",
+        "native_render_fps_proven": false
+      },
+      "native_observations": 161,
+      "native_checks": {
+        "phase_counts": {
+          "idle": 9,
+          "walk": 33,
+          "sprint": 33,
+          "turn": 20,
+          "stop": 17,
+          "jump": 30,
+          "landing": 5,
+          "recover": 14
+        },
+        "steady_motion": {
+          "walk": {
+            "steady_samples": 26,
+            "foot_pose_change_pairs": 25
+          },
+          "sprint": {
+            "steady_samples": 27,
+            "foot_pose_change_pairs": 26
+          }
+        },
+        "directional_turn_degrees": 90.0,
+        "jump_peak_cm": 183.593,
+        "jump_horizontal_drift_cm": 0.0,
+        "airborne_knee_degrees": 60.822,
+        "scope": "selected native state and pose observations at 1x; no rendered fluidity or FPS acceptance"
+      },
+      "all_selected_observations_unpaused_dilation1": true,
+      "editor_counter_rate": {
+        "engine_counter_delta": 161,
+        "selected_wall_span_seconds": 6.89011,
+        "observed_hz": 23.36682578362319,
+        "scope": "Editor engine counter / selected wall time under capture conditions; not packaged FPS profile or target acceptance."
+      },
+      "mapped_normal_strength": 1.0,
+      "reviewed_frames": 41,
+      "reviewed_contact_sheets": [
+        {
+          "file": "IndependentMotionFrames/Comic/full-1Hz-contact.png",
+          "sha256": "73ddb5226634d2f840077b7f759c19c5d1e6143a5e759b6e05198d0dfd9392b9",
+          "crop": null
+        },
+        {
+          "file": "IndependentMotionFrames/Comic/phase-crops-01.png",
+          "sha256": "6fde0285d16119c14b77da26b79779c45d8b8cd20557b745d47095dbe4448f49",
+          "crop": [
+            660,
+            360,
+            1260,
+            1040
+          ]
+        },
+        {
+          "file": "IndependentMotionFrames/Comic/phase-crops-02.png",
+          "sha256": "194ab250d87c7f45a52c6beb7bf25a5b5a3505eb83626fb69492e8db2774daaa",
+          "crop": [
+            660,
+            360,
+            1260,
+            1040
+          ]
+        },
+        {
+          "file": "IndependentMotionFrames/Comic/phase-crops-03.png",
+          "sha256": "b59f15c6d5a4b1704193dd6f3bf5b249513bf178763f153ef1781d56d5752859",
+          "crop": [
+            660,
+            360,
+            1260,
+            1040
+          ]
+        },
+        {
+          "file": "IndependentMotionFrames/Comic/phase-crops-04.png",
+          "sha256": "72db94a7a0caf0fdf831fe4aca7877b64bc3018fc7cb100f65db5c914f23baab",
+          "crop": [
+            660,
+            360,
+            1260,
+            1040
+          ]
+        }
+      ],
+      "phase_events_approx": [
+        {
+          "phase": "idle",
+          "video_seconds_approx": -0.194022
+        },
+        {
+          "phase": "walk",
+          "video_seconds_approx": 0.178978
+        },
+        {
+          "phase": "sprint",
+          "video_seconds_approx": 1.613978
+        },
+        {
+          "phase": "turn",
+          "video_seconds_approx": 3.024978
+        },
+        {
+          "phase": "stop",
+          "video_seconds_approx": 3.846978
+        },
+        {
+          "phase": "jump",
+          "video_seconds_approx": 4.562978
+        },
+        {
+          "phase": "landing",
+          "video_seconds_approx": 5.861978
+        },
+        {
+          "phase": "recover",
+          "video_seconds_approx": 6.084978
+        }
+      ],
+      "findings": [
+        "Correct rear player/HUD and native scene visible from first frame.",
+        "Walk/sprint sampled limb poses differ and change; clothing remains integrated with no gross tearing.",
+        "Camera/player turns rear-to-side while keeping body in frame; world pans coherently, then stop settles to standing. No sampled catastrophic camera jump or mesh explosion during native gameplay.",
+        "Jump rises with clear shoe/shadow separation and bent knees; descent/landing returns toward same area, then recovers. Shoes remain attached/covered; pinched shoulders and stiff drooping hands persist.",
+        "Stop/landing/recovery shoe-shadow proximity plausible; exact planting/skating/subtle penetration unproven.",
+        "Around7\u20138s player/HUD are gone and editor toolbar is visible, followed by black shutdown tail. Post-native PIE/editor closure is excluded from art defects.",
+        "HOP burst appears ahead/right near hand/prop region during jump; actor silhouette stays visible. This is authored effect, not a blocking dialog."
+      ],
+      "gameplay_review_approx_seconds": [
+        0,
+        6.4
+      ],
+      "editor_return_samples_seconds": [
+        7,
+        8
+      ],
+      "black_tail_parent_cpu_blackdetect99percent": {
+        "start_seconds": 8.6333,
+        "end_seconds": 9.0,
+        "excluded_from_art_defects": true
+      }
+    }
+  },
+  "retained_art_defects": [
+    "Stiff coarse hands and pinched/angular upper arms during jump.",
+    "Fast sprint/turn samples show foot/limb/plunger blur or ghost-like trails; temporal severity not assessed.",
+    "Comic whole-scene tree-edge noise and indigo cast persist.",
+    "Red plunger is a distracting/gag-like shoulder/head prop.",
+    "Collar/neck geometry and shiny rope curls remain defects from dedicated still review."
+  ],
+  "limits": [
+    "No Unreal/GPU/service/paid jobs launched by reviewer; only CPU extraction and local review artifacts.",
+    "Sparse frames do not establish smoothness, full-cycle foot sliding, temporal outline stability or collision quality.",
+    "Phase-log UTC and x11grab timestamp alignment is approximate due display/encoder latency.",
+    "Encoded60fps is not native renderFPS; observed editor counter rate is not packaged frametime/target acceptance.",
+    "Clear-pitch scripted-input fixture does not establish crowds/collision/physical inputs/full city play."
+  ]
+}

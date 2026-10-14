@@ -1,0 +1,9 @@
+{
+  "passed": true,
+  "exit_code": 0,
+  "succeeded": 4,
+  "failed": 0,
+  "report": "Saved/Tests/GraphicNovel/Refinement-20261014T070254Z/Animation/Report/index.json",
+  "generated_uv_channels": 2,
+  "scope": "Current merged source, saved refined body and unchanged old/production candidate controls."
+}

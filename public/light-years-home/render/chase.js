@@ -12,6 +12,8 @@ const DEG = Math.PI / 180;
 // Framing (deg): a well's core comes EDGE_MARGIN onto the screen; the ship never goes nearer the side than
 // SHIP_MARGIN; the camera swings at most SWING_MAX round the ship to fit both.
 const EDGE_MARGIN = 11, SHIP_MARGIN = 9, SWING_MAX = 70;
+const LOOK_RATE = 4;              // rad/s: the fastest the drift look-in turns to keep a well's core on screen
+const PULL_MAX = 1.8;             // × CAM DIST: the furthest a close pass round a core pulls the camera back
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 const wrap = (a) => Math.atan2(Math.sin(a), Math.cos(a));
 const ease = (dt, tc) => (tc > 0 ? 1 - Math.exp(-dt / tc) : 1);
@@ -87,7 +89,7 @@ export function createChase(camTune = TUNE.CAM, layoutKind = 'desktop', opts = {
   const st = {
     init: false, heading: 0, rel: [0, -6, 1.6], relV: [0, 0, 0], last: [0, 0, 0], fov: K.FOV, boost: 0, dbKick: 0,
     dbHold: 0, punch: 0, lookIn: 0, lean: 0, lookBack: 0, block: 1, bodies: [], wells: [], aspect: 16 / 9, swing: 0,
-    look: [0, 0, 0],
+    look: [0, 0, 0], pull: 1,
   };
   const N = [0, 1, 0], E = [1, 0, 0], F = [0, 1, 0], R = [1, 0, 0];
   const out = { pos: [0, 0, 0], quat: [0, 0, 0, 1], fov: 60, fovSet: K.FOV, up: [0, 0, 1], fwd: [0, 1, 0] };
@@ -147,6 +149,7 @@ export function createChase(camTune = TUNE.CAM, layoutKind = 'desktop', opts = {
       st.fov = K.FOV;
       st.lookIn = 0;
       st.lean = 0;
+      st.pull = 1;
     }
     st.last[0] = p[0]; st.last[1] = p[1]; st.last[2] = p[2];
 
@@ -171,28 +174,36 @@ export function createChase(camTune = TUNE.CAM, layoutKind = 'desktop', opts = {
     const drift = ship.drift && ship.drift.on ? ship.drift.dir || 0 : 0;
     const hHalf = Math.atan(Math.tan(vertical(st.fov) * DEG / 2) * st.aspect);
     const well = drift ? wellNear(p) : null;
-    let swingT = 0;
+    let swingT = 0, pullT = 1;
     if (well) {
       basisFrom(U, st.heading, F, R);
       const rx = well.pos[0] - p[0], ry = well.pos[1] - p[1], rz = (well.pos[2] || 0) - p[2];
       const fwd = rx * F[0] + ry * F[1] + rz * F[2], lat = (rx * R[0] + ry * R[1] + rz * R[2]) * drift;
       if (lat > 0 && fwd > -1.5 * K.DIST) {               // not once the well is well behind you
         const D = K.DIST, usable = 2 * hHalf - (2 * EDGE_MARGIN + SHIP_MARGIN) * DEG;
-        const sep = (b) => Math.atan2(lat + D * Math.sin(b), fwd + D * Math.cos(b)) - b;
+        const sep = (b, dd = D) => Math.atan2(lat + dd * Math.sin(b), fwd + dd * Math.cos(b)) - b;
         if (sep(0) > usable) {
           let lo = 0, hi = SWING_MAX * DEG;
           for (let i = 0; i < 12; i++) { const m = (lo + hi) / 2; if (sep(m) > usable) lo = m; else hi = m; }
           swingT = hi;
+          // Still too wide at the full swing (a pass close to the core): pull the camera back until both fit.
+          const b = SWING_MAX * DEG;
+          if (sep(b) > usable) {
+            let a = 1, z = PULL_MAX;
+            for (let i = 0; i < 12; i++) { const m = (a + z) / 2; if (sep(b, D * m) > usable) a = m; else z = m; }
+            pullT = z;
+          }
         }
       }
     }
     st.swing += (swingT - st.swing) * ease(d, C.DRIFT_LOOK_T * (swingT > st.swing ? 0.6 : 1.5));
+    st.pull += (pullT - st.pull) * ease(d, C.DRIFT_LOOK_T * (pullT > st.pull ? 0.6 : 2));
     if (st.swingDir === undefined || drift) st.swingDir = drift || st.swingDir || 1;
     const h = st.heading + Math.PI * st.lookBack + st.swingDir * st.swing;
     basisFrom(U, h, F, R);
 
     // Position: an offset behind and above, sprung in the ship's frame so speed adds no lag.
-    const dist = K.DIST * (1 + (C.BOOST_DIST_X - 1) * st.boost) * st.block;
+    const dist = K.DIST * (1 + (C.BOOST_DIST_X - 1) * st.boost) * st.block * st.pull;
     desired[0] = -F[0] * dist + U[0] * K.HEIGHT;
     desired[1] = -F[1] * dist + U[1] * K.HEIGHT;
     desired[2] = -F[2] * dist + U[2] * K.HEIGHT;
@@ -241,7 +252,7 @@ export function createChase(camTune = TUNE.CAM, layoutKind = 'desktop', opts = {
     vU.set(U[0], U[1], U[2]);
     // Drift look-in: toward the inside of the drift; inside a well's sling ring, toward the well, far enough that
     // its core comes onto the screen while the ship stays on it (final.md 6.8, CAM.DRIFT_LOOK_IN).
-    let look = drift * K.DRIFT_LOOK_IN * DEG;
+    let look = drift * K.DRIFT_LOOK_IN * DEG, floor = 0;
     if (drift) {
       const w = well;
       if (w) {
@@ -257,10 +268,16 @@ export function createChase(camTune = TUNE.CAM, layoutKind = 'desktop', opts = {
           const need = Math.abs(ang) - (hHalf - EDGE_MARGIN * DEG);
           const most = Math.max(shipIn, 0) + hHalf - SHIP_MARGIN * DEG;
           look = drift * clamp(Math.max(K.DRIFT_LOOK_IN * DEG, need), 0, Math.max(0, most));
+          floor = clamp(need, 0, Math.max(0, most));
         }
       }
     }
     st.lookIn += (look - st.lookIn) * ease(d, C.DRIFT_LOOK_T);
+    // A close pass swings the core across the view faster than the ease follows: never let it leave the screen,
+    // turning at most LOOK_RATE to catch it (a hard floor would whip on the first frame of a drift).
+    if (floor > 0 && st.lookIn * drift < floor) {
+      st.lookIn = drift * Math.min(floor, Math.abs(st.lookIn) + LOOK_RATE * d);
+    }
     if (Math.abs(st.lookIn) > 1e-5) vD.applyAxisAngle(vU, -st.lookIn);
     let leanT = 0;
     const ip = interest ? (Array.isArray(interest) ? interest : interest.pos) : null;

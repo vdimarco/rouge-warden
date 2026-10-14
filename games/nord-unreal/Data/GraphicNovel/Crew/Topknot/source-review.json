@@ -1,0 +1,62 @@
+{
+  "schema_version": 1,
+  "reviewed_at_utc": "2026-10-14T04:28:19.619351+00:00",
+  "reviewer": "style_scope; independent image comparison, not the generation author",
+  "character": "Topknot",
+  "generation": {
+    "tool": "built-in image_gen.imagegen",
+    "mode": "builtin",
+    "operation": "identity-preserving image edit",
+    "reported_by": "parent agent; existing retained image and exact prompt reviewed"
+  },
+  "original_reference": {
+    "path": "games/nord-unreal/Data/CharactersNeutral/Topknot/reference.png",
+    "sha256": "20c388f288b0195bedd900c172f95dfae1a462a1b1afe216a1d2db4f178d1ce3",
+    "dimensions": [
+      1024,
+      1536
+    ]
+  },
+  "clean_reference": {
+    "path": "games/nord-unreal/Data/GraphicNovel/Crew/Topknot/reference.png",
+    "sha256": "ea303ba5b08813fb7ff5c3da1eae5d842094a0687f78a06e0d4abed158ab7b3b",
+    "dimensions": [
+      1024,
+      1536
+    ]
+  },
+  "prompt": {
+    "path": "games/nord-unreal/Data/GraphicNovel/Crew/Topknot/prompt.txt",
+    "sha256": "13bf5d03fb82d91e5562b8f9144af28d32aa5b65d6cc309e60c1838334cb2fc0"
+  },
+  "acceptance": {
+    "edited_image_only": true,
+    "suitable_for_bounded_model_draft": true,
+    "3d_model_accepted": false,
+    "unreal_visual_accepted": false,
+    "crew_rollout_established": false
+  },
+  "checks": {
+    "identity": "Recognizable mature lean face, moustache/goatee, dark sunglasses, high bun and loose dark curls retained; calm closed-mouth expression.",
+    "outfit": "Open-collar white short-sleeve button shirt, navy shorts, white/navy running shoes and black crossbody strap/bag with visible white/pale-blue contents retained.",
+    "mature_adult_proportions_retained": true,
+    "arm_clearance": "Broad visible gaps from torso/hips; usable approximate front A-pose. Exact 35-degree joint angles are not measured.",
+    "visible_digits_per_hand": {
+      "image_left": 5,
+      "image_right": 5
+    },
+    "hands": "Separated digits and forward-facing open palms are readable for generation; this is a rigging reference pose, not a natural idle.",
+    "full_body_and_both_shoes_visible": true,
+    "surface": "Heavy outlines and hatching reduced into cleaner dimensional cloth planes; subtle shirt variation, bag mesh and body-hair detail remain.",
+    "background_and_lighting": "Neutral gray with a soft gradient and balanced lighting; no scene, panels or added text."
+  },
+  "remaining_3d_risks": [
+    "Inspect the strap, bag and visible contents for fusion, thin geometry, body intersections and skinning.",
+    "Bun, loose curls, thin sunglasses and face likeness require generated-mesh inspection.",
+    "Visible five-digit count and gaps do not establish separate finger topology, skin weights or controls.",
+    "A single front view does not establish backside geometry, complete anatomy or topology.",
+    "No finger articulation, facial rig, blink, jaw or speech controls are guaranteed by this edited image.",
+    "Rigging, skinning, clips, materials, native motion and rendered appearance require actual model and engine review."
+  ],
+  "review_action": "Read-only comparison followed by this source-review record; no image edits, uploads, model submissions or budget changes."
+}

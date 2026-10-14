@@ -1,0 +1,26 @@
+{
+  "passed": true,
+  "recorded_utc": "2026-10-14T09:18:47.749482+00:00",
+  "reason": "Strict final check detected editor INI changes between successful motion baseline and the later commandlets/A-B baseline. Restore original verified bytes, retaining changed snapshots. No assertion relaxed.",
+  "restored": [
+    {
+      "path": "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Config/LinuxEditor/EditorPerProjectUserSettings.ini",
+      "observed_sha256": "2f434bc0abd9ee959bff5ee6033418fc430e8cec19e0a5acfcfa90c626256710",
+      "expected_sha256": "7985cd32d2acae5b7eff6c308bbd3dd3f3fb828c1e67c29398bfd7efa94ea579",
+      "changed_snapshot": "Saved/Tests/GraphicNovel/HighDetail-20261014T082624Z/PostCommandletSettings/0-EditorPerProjectUserSettings.ini"
+    },
+    {
+      "path": "/home/von/.config/Epic/UnrealEngine/5.8/Saved/Config/LinuxEditor/EditorSettings.ini",
+      "observed_sha256": "3ecaee1adb16e3f7060acbfec821abf638dd4a35ca88bcf4e656a7b9279f4377",
+      "expected_sha256": "35c124b8406a24ef63df0fa88ec4b326e8349b4896a167e6a4afbf3e49206327",
+      "changed_snapshot": "Saved/Tests/GraphicNovel/HighDetail-20261014T082624Z/PostCommandletSettings/6-EditorSettings.ini"
+    }
+  ],
+  "all_seven_ini_files_match_original": true,
+  "art_package_sources_changed": false,
+  "strict_initial_check_exit_code": 1,
+  "initial_failed_checks": [
+    "source_editor_ini_unchanged",
+    "global_editor_ini_unchanged"
+  ]
+}

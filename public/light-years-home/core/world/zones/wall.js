@@ -12,7 +12,7 @@ const FIRST_LIGHT = {
   line: [[25, 30], [70, 110], [140, 170], [175, 240], [240, 290], [300, 330]],
   gates: [{ at: 1, r: 4.5, name: 'D ROAD' }, { at: 2, r: 4.5 }, { at: 3, r: 4.5, split: true }, { at: 4, r: 4.5 },
     { at: 5, r: 7, name: 'FINISH' }],
-  length: 417, tern: 10.0, gold: 10.7, silver: 12.0, bronze: 15.0,     // [V] races-calc; the bots set the final times
+  length: 417, tern: 11.0, gold: 11.8, silver: 13.4, bronze: 16.6,     // the bots' table (races §2.6, race.test)
   note: 'oncoming on the D road; finishes beside the exit gate',
 };
 

@@ -1,0 +1,46 @@
+[
+  {
+    "name": "PondGeometry",
+    "command": [
+      "/home/von/.local/share/Epic/UE_5.8.3/Engine/Binaries/Linux/UnrealEditor",
+      "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Quebec.uproject",
+      "/Game/Maps/LaFontaine",
+      "-NullRHI",
+      "-unattended",
+      "-nop4",
+      "-nosound",
+      "-NordNoCampaign",
+      "-NordNoCampaignSave",
+      "-UDPMESSAGING_TRANSPORT_ENABLE=0",
+      "-ExecCmds=Automation RunTests Quebec.Swimming.PondGeometry;SoftQuit",
+      "-ReportExportPath=/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/GraphicNovel/Refinement-20261014T070254Z/PondGeometry/Report",
+      "-abslog=/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/GraphicNovel/Refinement-20261014T070254Z/PondGeometry/native.log"
+    ],
+    "exit_code": 0,
+    "succeeded": 1,
+    "failed": 0,
+    "notRun": 0
+  },
+  {
+    "name": "RadarClip",
+    "command": [
+      "/home/von/.local/share/Epic/UE_5.8.3/Engine/Binaries/Linux/UnrealEditor",
+      "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Quebec.uproject",
+      "/Game/Maps/LaFontaine",
+      "-NullRHI",
+      "-unattended",
+      "-nop4",
+      "-nosound",
+      "-NordNoCampaign",
+      "-NordNoCampaignSave",
+      "-UDPMESSAGING_TRANSPORT_ENABLE=0",
+      "-ExecCmds=Automation RunTests Quebec.HUD.RadarClip;SoftQuit",
+      "-ReportExportPath=/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/GraphicNovel/Refinement-20261014T070254Z/RadarClip/Report",
+      "-abslog=/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/GraphicNovel/Refinement-20261014T070254Z/RadarClip/native.log"
+    ],
+    "exit_code": 0,
+    "succeeded": 1,
+    "failed": 0,
+    "notRun": 0
+  }
+]

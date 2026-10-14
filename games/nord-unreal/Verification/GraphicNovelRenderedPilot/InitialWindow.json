@@ -1,0 +1,291 @@
+{
+  "passed": true,
+  "phase": "complete",
+  "jobs": [
+    {
+      "name": "Still1280Standard",
+      "command": [
+        "/home/von/.local/share/Epic/UE_5.8.3/Engine/Binaries/Linux/UnrealEditor",
+        "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Quebec.uproject",
+        "/Game/Maps/LaFontaine",
+        "-vulkan",
+        "-graphicsadapter=0",
+        "-windowed",
+        "-ForceRes",
+        "-ResX=1280",
+        "-ResY=720",
+        "-WinX=0",
+        "-WinY=0",
+        "-unattended",
+        "-nop4",
+        "-nosound",
+        "-NoSplash",
+        "-NordNoCampaign",
+        "-NordNoCampaignSave",
+        "-NordGraphicNovelCandidate",
+        "-NordGraphicNovelGenerated",
+        "-UDPMESSAGING_TRANSPORT_ENABLE=0",
+        "-ExecutePythonScript=/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/GraphicNovel/Rendered-20261014T045140Z/capture.py",
+        "-abslog=/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/GraphicNovel/Rendered-20261014T045140Z/Still1280Standard/native.log",
+        "-NordGraphicNovelStandard",
+        "-RenderOffscreen"
+      ],
+      "process_exit_code": 0,
+      "report": "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/GraphicNovel/Rendered-20261014T045140Z/Capture/Standard/PlayerQuality1280.json",
+      "video": null,
+      "log_guard": {
+        "passed": true,
+        "dependency_shader_and_fatal_errors": 0
+      },
+      "report_sha256": "b0f964f1c8135151d5165156e064aa42e0ff71aee002f09f824ab6f94fe27053",
+      "passed": true
+    },
+    {
+      "name": "Still1280Comic",
+      "command": [
+        "/home/von/.local/share/Epic/UE_5.8.3/Engine/Binaries/Linux/UnrealEditor",
+        "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Quebec.uproject",
+        "/Game/Maps/LaFontaine",
+        "-vulkan",
+        "-graphicsadapter=0",
+        "-windowed",
+        "-ForceRes",
+        "-ResX=1280",
+        "-ResY=720",
+        "-WinX=0",
+        "-WinY=0",
+        "-unattended",
+        "-nop4",
+        "-nosound",
+        "-NoSplash",
+        "-NordNoCampaign",
+        "-NordNoCampaignSave",
+        "-NordGraphicNovelCandidate",
+        "-NordGraphicNovelGenerated",
+        "-UDPMESSAGING_TRANSPORT_ENABLE=0",
+        "-ExecutePythonScript=/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/GraphicNovel/Rendered-20261014T045140Z/capture.py",
+        "-abslog=/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/GraphicNovel/Rendered-20261014T045140Z/Still1280Comic/native.log",
+        "-RenderOffscreen"
+      ],
+      "process_exit_code": 0,
+      "report": "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/GraphicNovel/Rendered-20261014T045140Z/Capture/PlayerQuality1280.json",
+      "video": null,
+      "log_guard": {
+        "passed": true,
+        "dependency_shader_and_fatal_errors": 0
+      },
+      "report_sha256": "892eb6d498f9dcb780147c67f42ad7dd7cdbd8da2107ed7b8c5a66864fc42c2f",
+      "passed": true
+    },
+    {
+      "name": "Still1920Standard",
+      "command": [
+        "/home/von/.local/share/Epic/UE_5.8.3/Engine/Binaries/Linux/UnrealEditor",
+        "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Quebec.uproject",
+        "/Game/Maps/LaFontaine",
+        "-vulkan",
+        "-graphicsadapter=0",
+        "-windowed",
+        "-ForceRes",
+        "-ResX=1920",
+        "-ResY=1080",
+        "-WinX=0",
+        "-WinY=0",
+        "-unattended",
+        "-nop4",
+        "-nosound",
+        "-NoSplash",
+        "-NordNoCampaign",
+        "-NordNoCampaignSave",
+        "-NordGraphicNovelCandidate",
+        "-NordGraphicNovelGenerated",
+        "-UDPMESSAGING_TRANSPORT_ENABLE=0",
+        "-ExecutePythonScript=/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/GraphicNovel/Rendered-20261014T045140Z/capture.py",
+        "-abslog=/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/GraphicNovel/Rendered-20261014T045140Z/Still1920Standard/native.log",
+        "-NordGraphicNovelStandard",
+        "-NordQuality1920",
+        "-RenderOffscreen"
+      ],
+      "process_exit_code": 0,
+      "report": "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/GraphicNovel/Rendered-20261014T045140Z/Capture/Standard/PlayerQuality1920.json",
+      "video": null,
+      "log_guard": {
+        "passed": true,
+        "dependency_shader_and_fatal_errors": 0
+      },
+      "report_sha256": "c0de728e3095076b7d2ca7eb20f1e1dcbdc951f011f67d99c83efada1080a597",
+      "passed": true
+    },
+    {
+      "name": "Still1920Comic",
+      "command": [
+        "/home/von/.local/share/Epic/UE_5.8.3/Engine/Binaries/Linux/UnrealEditor",
+        "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Quebec.uproject",
+        "/Game/Maps/LaFontaine",
+        "-vulkan",
+        "-graphicsadapter=0",
+        "-windowed",
+        "-ForceRes",
+        "-ResX=1920",
+        "-ResY=1080",
+        "-WinX=0",
+        "-WinY=0",
+        "-unattended",
+        "-nop4",
+        "-nosound",
+        "-NoSplash",
+        "-NordNoCampaign",
+        "-NordNoCampaignSave",
+        "-NordGraphicNovelCandidate",
+        "-NordGraphicNovelGenerated",
+        "-UDPMESSAGING_TRANSPORT_ENABLE=0",
+        "-ExecutePythonScript=/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/GraphicNovel/Rendered-20261014T045140Z/capture.py",
+        "-abslog=/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/GraphicNovel/Rendered-20261014T045140Z/Still1920Comic/native.log",
+        "-NordQuality1920",
+        "-RenderOffscreen"
+      ],
+      "process_exit_code": 0,
+      "report": "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/GraphicNovel/Rendered-20261014T045140Z/Capture/PlayerQuality1920.json",
+      "video": null,
+      "log_guard": {
+        "passed": true,
+        "dependency_shader_and_fatal_errors": 0
+      },
+      "report_sha256": "2b250e9db4ea65989b1f3e88d65c2eb677e4f0da592b0d55883cd0be9ca9a12f",
+      "passed": true
+    },
+    {
+      "name": "Motion1920Standard",
+      "command": [
+        "/home/von/.local/share/Epic/UE_5.8.3/Engine/Binaries/Linux/UnrealEditor",
+        "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Quebec.uproject",
+        "/Game/Maps/LaFontaine",
+        "-vulkan",
+        "-graphicsadapter=0",
+        "-windowed",
+        "-ForceRes",
+        "-ResX=1920",
+        "-ResY=1080",
+        "-WinX=0",
+        "-WinY=0",
+        "-unattended",
+        "-nop4",
+        "-nosound",
+        "-NoSplash",
+        "-NordNoCampaign",
+        "-NordNoCampaignSave",
+        "-NordGraphicNovelCandidate",
+        "-NordGraphicNovelGenerated",
+        "-UDPMESSAGING_TRANSPORT_ENABLE=0",
+        "-ExecutePythonScript=/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/GraphicNovel/Rendered-20261014T045140Z/capture.py",
+        "-abslog=/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/GraphicNovel/Rendered-20261014T045140Z/Motion1920Standard/native.log",
+        "-NordGraphicNovelStandard",
+        "-NordQuality1920",
+        "-immersive",
+        "-NordGraphicNovelMotion",
+        "-ExecCmds=t.MaxFPS 60"
+      ],
+      "process_exit_code": 0,
+      "report": "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/GraphicNovel/Rendered-20261014T045140Z/Capture/Motion/Standard/PlayerMotion1920.json",
+      "video": "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/GraphicNovel/Rendered-20261014T045140Z/Motion1920Standard/raw.mp4",
+      "recording_started_monotonic": 39247.381373647,
+      "recorder_exit_code": 0,
+      "log_guard": {
+        "passed": true,
+        "dependency_shader_and_fatal_errors": 0
+      },
+      "video_sha256": "1fde6551611d799cec99f973eee89993f39eca8dcf7eef7fc9085c0549147989",
+      "viewport_pixels_observed": [
+        7612,
+        2040
+      ],
+      "report_sha256": "9e35dcaa137fae54db9e2c280e6358f6f3b59b76c7554515600f6eddab697c03",
+      "passed": true
+    },
+    {
+      "name": "Motion1920Comic",
+      "command": [
+        "/home/von/.local/share/Epic/UE_5.8.3/Engine/Binaries/Linux/UnrealEditor",
+        "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Quebec.uproject",
+        "/Game/Maps/LaFontaine",
+        "-vulkan",
+        "-graphicsadapter=0",
+        "-windowed",
+        "-ForceRes",
+        "-ResX=1920",
+        "-ResY=1080",
+        "-WinX=0",
+        "-WinY=0",
+        "-unattended",
+        "-nop4",
+        "-nosound",
+        "-NoSplash",
+        "-NordNoCampaign",
+        "-NordNoCampaignSave",
+        "-NordGraphicNovelCandidate",
+        "-NordGraphicNovelGenerated",
+        "-UDPMESSAGING_TRANSPORT_ENABLE=0",
+        "-ExecutePythonScript=/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/GraphicNovel/Rendered-20261014T045140Z/capture.py",
+        "-abslog=/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/GraphicNovel/Rendered-20261014T045140Z/Motion1920Comic/native.log",
+        "-NordQuality1920",
+        "-immersive",
+        "-NordGraphicNovelMotion",
+        "-ExecCmds=t.MaxFPS 60"
+      ],
+      "process_exit_code": 0,
+      "report": "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/GraphicNovel/Rendered-20261014T045140Z/Capture/Motion/Comic/PlayerMotion1920.json",
+      "video": "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/GraphicNovel/Rendered-20261014T045140Z/Motion1920Comic/raw.mp4",
+      "recording_started_monotonic": 39289.168716859,
+      "recorder_exit_code": 0,
+      "log_guard": {
+        "passed": true,
+        "dependency_shader_and_fatal_errors": 0
+      },
+      "video_sha256": "99f1b8911334c3b551eb3ca2613f7d564498f730cff04dab089328d2ab7c28b3",
+      "viewport_pixels_observed": [
+        7612,
+        2040
+      ],
+      "report_sha256": "30e8720e94cd4e90a01505b8d41c4a345e0ac20892249e1e56ff2de058aabb28",
+      "passed": true
+    }
+  ],
+  "service_actions": [
+    "stop nord-browser-demo.service",
+    "restore nord-browser-demo.service"
+  ],
+  "restored": true,
+  "live_saves_before_render": {
+    "Builds/Browser/Linux/Quebec/Saved_BrowserSaveQA/SaveGames/NordCampaign_StorySliceQA_v1.sav": "cec872fd0b2c1b7ea7f18814c787448e00117c6acd8ac46a71f674a26470e88e"
+  },
+  "display": ":0",
+  "source_settings_restored": true,
+  "protected_changed": [],
+  "generated_assets_changed": [],
+  "live_package_changed": [],
+  "live_saves_changed_before_restart": [],
+  "restored_main_pid": 2637515,
+  "restored_children": [
+    {
+      "name": "signalling",
+      "pid": 2637520,
+      "stdout": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/BrowserStreaming/signalling-20261014-050233-2637515.stdout.log"
+    },
+    {
+      "name": "host",
+      "pid": 2637569,
+      "stdout": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/BrowserStreaming/host-20261014-050233-2637515.stdout.log"
+    },
+    {
+      "name": "friend",
+      "pid": 2637941,
+      "stdout": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/BrowserStreaming/friend-20261014-050233-2637515.stdout.log"
+    }
+  ],
+  "preserved_units_after": {
+    "nord-browser-public.service": "ActiveState=active\nMainPID=109459",
+    "nord-browser-funnel.service": "ActiveState=active\nMainPID=109441",
+    "nord-browser-turn-funnel.service": "ActiveState=active\nMainPID=109422"
+  },
+  "preserved_units_unchanged": true
+}

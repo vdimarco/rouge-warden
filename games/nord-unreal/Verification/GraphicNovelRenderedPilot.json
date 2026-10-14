@@ -1,0 +1,1417 @@
+{
+  "recorded_utc": "2026-10-14T05:37:47.236130+00:00",
+  "scope": "Native generated-v1 standard/comic still matrix, bounded full-normal A/B, unpaused native transition recordings, live demo restoration and same-PC public browser regression; final graphic-novel art acceptance remains false.",
+  "source_head_before_capture": "261c1cedf2f86c6cd9cfb0e4d1aefc16bda7859e",
+  "editor_binary_sha256": "71a02ca2c724639dc445fa7d696c0b8efe031b38dc90fbbdb064a603462c58cd",
+  "graphics_accepted": false,
+  "production_rollout": false,
+  "selection": {
+    "flags": [
+      "-NordGraphicNovelCandidate",
+      "-NordGraphicNovelGenerated"
+    ],
+    "style": 9,
+    "asset_folder": "/Game/ParkComic/CrewGraphicNovelGenerated/Resident9",
+    "older_pilot_and_production_preserved": true
+  },
+  "normal_material_revision": {
+    "mapped_strength_before": 0.35,
+    "mapped_strength_after": 1.0,
+    "before": {
+      "path": "Saved/Tests/GraphicNovel/NormalDetailAB-20261014/M_Crew.before.uasset",
+      "sha256": "6c1335505da2dbb25905ba04773f306189ba1859a984430d945deb6b87955412",
+      "bytes": 11979
+    },
+    "before_git_revision": "261c1cedf2f86c6cd9cfb0e4d1aefc16bda7859e:games/nord-unreal/Content/ParkComic/CrewGraphicNovelGenerated/Resident9/M_Crew.uasset",
+    "after": {
+      "path": "Content/ParkComic/CrewGraphicNovelGenerated/Resident9/M_Crew.uasset",
+      "sha256": "72f7d9ddc41489d35df427066f57eee6a2904b65861f716e476d4b64778579dd",
+      "bytes": 11979
+    },
+    "material_only_change": true,
+    "other_11_generated_packages_unchanged": true,
+    "authoring": {
+      "path": "Verification/GraphicNovelRenderedPilot/NormalAuthor.json",
+      "sha256": "6e68c9bf9500ff9a39b1becdaaa4c7ebfe59ed557d04d57f62217e95c677f4e7",
+      "bytes": 314
+    },
+    "source_audit": {
+      "path": "Verification/GraphicNovelRenderedPilot/SourceNormalAudit.json",
+      "sha256": "43e4ec4234fba7ab1521759ef492c52868d133e135728139914ccaa7b8f364d3",
+      "bytes": 8523
+    },
+    "independent_image_review": {
+      "path": "Verification/GraphicNovelRenderedPilot/IndependentImageReview.json",
+      "sha256": "3c36e582684b520b313ecf285b707d62073af1f325dfe2e7be8f421b2277a42b",
+      "bytes": 45388
+    },
+    "decision": "Retain full normal for this bounded draft: modest shoulder-continuity improvement, face definition intact. Does not repair collar UV/albedo, split-normal neck planes, coarse hands or rope hair. Prior still reports omit the normal-strength readback; .35 baseline is separately recorded by authoring, not inferred from those reports."
+  },
+  "windows": [
+    {
+      "run": "Rendered-20261014T045140Z",
+      "baseline": {
+        "path": "Saved/Tests/GraphicNovel/Rendered-20261014T045140Z/baseline.json",
+        "sha256": "0ffd6386a9c46ec5e0b312883656e44da6daca2598d64103dc660c1511e0289b",
+        "bytes": 52757
+      },
+      "status": {
+        "path": "Saved/Tests/GraphicNovel/Rendered-20261014T045140Z/window-status.json",
+        "sha256": "b4a0ece638f7326da64a87b554a7a432574ad68950de027a6250c5bf44305625",
+        "bytes": 11683
+      },
+      "passed": true,
+      "restored": true,
+      "restored_main_pid": 2637515,
+      "jobs": [
+        {
+          "name": "Still1280Standard",
+          "process_exit_code": 0,
+          "passed": true,
+          "command": [
+            "/home/von/.local/share/Epic/UE_5.8.3/Engine/Binaries/Linux/UnrealEditor",
+            "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Quebec.uproject",
+            "/Game/Maps/LaFontaine",
+            "-vulkan",
+            "-graphicsadapter=0",
+            "-windowed",
+            "-ForceRes",
+            "-ResX=1280",
+            "-ResY=720",
+            "-WinX=0",
+            "-WinY=0",
+            "-unattended",
+            "-nop4",
+            "-nosound",
+            "-NoSplash",
+            "-NordNoCampaign",
+            "-NordNoCampaignSave",
+            "-NordGraphicNovelCandidate",
+            "-NordGraphicNovelGenerated",
+            "-UDPMESSAGING_TRANSPORT_ENABLE=0",
+            "-ExecutePythonScript=/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/GraphicNovel/Rendered-20261014T045140Z/capture.py",
+            "-abslog=/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/GraphicNovel/Rendered-20261014T045140Z/Still1280Standard/native.log",
+            "-NordGraphicNovelStandard",
+            "-RenderOffscreen"
+          ],
+          "report": "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/GraphicNovel/Rendered-20261014T045140Z/Capture/Standard/PlayerQuality1280.json",
+          "report_sha256": "b0f964f1c8135151d5165156e064aa42e0ff71aee002f09f824ab6f94fe27053",
+          "log_guard": {
+            "passed": true,
+            "dependency_shader_and_fatal_errors": 0
+          },
+          "video_sha256": null
+        },
+        {
+          "name": "Still1280Comic",
+          "process_exit_code": 0,
+          "passed": true,
+          "command": [
+            "/home/von/.local/share/Epic/UE_5.8.3/Engine/Binaries/Linux/UnrealEditor",
+            "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Quebec.uproject",
+            "/Game/Maps/LaFontaine",
+            "-vulkan",
+            "-graphicsadapter=0",
+            "-windowed",
+            "-ForceRes",
+            "-ResX=1280",
+            "-ResY=720",
+            "-WinX=0",
+            "-WinY=0",
+            "-unattended",
+            "-nop4",
+            "-nosound",
+            "-NoSplash",
+            "-NordNoCampaign",
+            "-NordNoCampaignSave",
+            "-NordGraphicNovelCandidate",
+            "-NordGraphicNovelGenerated",
+            "-UDPMESSAGING_TRANSPORT_ENABLE=0",
+            "-ExecutePythonScript=/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/GraphicNovel/Rendered-20261014T045140Z/capture.py",
+            "-abslog=/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/GraphicNovel/Rendered-20261014T045140Z/Still1280Comic/native.log",
+            "-RenderOffscreen"
+          ],
+          "report": "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/GraphicNovel/Rendered-20261014T045140Z/Capture/PlayerQuality1280.json",
+          "report_sha256": "892eb6d498f9dcb780147c67f42ad7dd7cdbd8da2107ed7b8c5a66864fc42c2f",
+          "log_guard": {
+            "passed": true,
+            "dependency_shader_and_fatal_errors": 0
+          },
+          "video_sha256": null
+        },
+        {
+          "name": "Still1920Standard",
+          "process_exit_code": 0,
+          "passed": true,
+          "command": [
+            "/home/von/.local/share/Epic/UE_5.8.3/Engine/Binaries/Linux/UnrealEditor",
+            "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Quebec.uproject",
+            "/Game/Maps/LaFontaine",
+            "-vulkan",
+            "-graphicsadapter=0",
+            "-windowed",
+            "-ForceRes",
+            "-ResX=1920",
+            "-ResY=1080",
+            "-WinX=0",
+            "-WinY=0",
+            "-unattended",
+            "-nop4",
+            "-nosound",
+            "-NoSplash",
+            "-NordNoCampaign",
+            "-NordNoCampaignSave",
+            "-NordGraphicNovelCandidate",
+            "-NordGraphicNovelGenerated",
+            "-UDPMESSAGING_TRANSPORT_ENABLE=0",
+            "-ExecutePythonScript=/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/GraphicNovel/Rendered-20261014T045140Z/capture.py",
+            "-abslog=/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/GraphicNovel/Rendered-20261014T045140Z/Still1920Standard/native.log",
+            "-NordGraphicNovelStandard",
+            "-NordQuality1920",
+            "-RenderOffscreen"
+          ],
+          "report": "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/GraphicNovel/Rendered-20261014T045140Z/Capture/Standard/PlayerQuality1920.json",
+          "report_sha256": "c0de728e3095076b7d2ca7eb20f1e1dcbdc951f011f67d99c83efada1080a597",
+          "log_guard": {
+            "passed": true,
+            "dependency_shader_and_fatal_errors": 0
+          },
+          "video_sha256": null
+        },
+        {
+          "name": "Still1920Comic",
+          "process_exit_code": 0,
+          "passed": true,
+          "command": [
+            "/home/von/.local/share/Epic/UE_5.8.3/Engine/Binaries/Linux/UnrealEditor",
+            "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Quebec.uproject",
+            "/Game/Maps/LaFontaine",
+            "-vulkan",
+            "-graphicsadapter=0",
+            "-windowed",
+            "-ForceRes",
+            "-ResX=1920",
+            "-ResY=1080",
+            "-WinX=0",
+            "-WinY=0",
+            "-unattended",
+            "-nop4",
+            "-nosound",
+            "-NoSplash",
+            "-NordNoCampaign",
+            "-NordNoCampaignSave",
+            "-NordGraphicNovelCandidate",
+            "-NordGraphicNovelGenerated",
+            "-UDPMESSAGING_TRANSPORT_ENABLE=0",
+            "-ExecutePythonScript=/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/GraphicNovel/Rendered-20261014T045140Z/capture.py",
+            "-abslog=/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/GraphicNovel/Rendered-20261014T045140Z/Still1920Comic/native.log",
+            "-NordQuality1920",
+            "-RenderOffscreen"
+          ],
+          "report": "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/GraphicNovel/Rendered-20261014T045140Z/Capture/PlayerQuality1920.json",
+          "report_sha256": "2b250e9db4ea65989b1f3e88d65c2eb677e4f0da592b0d55883cd0be9ca9a12f",
+          "log_guard": {
+            "passed": true,
+            "dependency_shader_and_fatal_errors": 0
+          },
+          "video_sha256": null
+        },
+        {
+          "name": "Motion1920Standard",
+          "process_exit_code": 0,
+          "passed": true,
+          "command": [
+            "/home/von/.local/share/Epic/UE_5.8.3/Engine/Binaries/Linux/UnrealEditor",
+            "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Quebec.uproject",
+            "/Game/Maps/LaFontaine",
+            "-vulkan",
+            "-graphicsadapter=0",
+            "-windowed",
+            "-ForceRes",
+            "-ResX=1920",
+            "-ResY=1080",
+            "-WinX=0",
+            "-WinY=0",
+            "-unattended",
+            "-nop4",
+            "-nosound",
+            "-NoSplash",
+            "-NordNoCampaign",
+            "-NordNoCampaignSave",
+            "-NordGraphicNovelCandidate",
+            "-NordGraphicNovelGenerated",
+            "-UDPMESSAGING_TRANSPORT_ENABLE=0",
+            "-ExecutePythonScript=/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/GraphicNovel/Rendered-20261014T045140Z/capture.py",
+            "-abslog=/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/GraphicNovel/Rendered-20261014T045140Z/Motion1920Standard/native.log",
+            "-NordGraphicNovelStandard",
+            "-NordQuality1920",
+            "-immersive",
+            "-NordGraphicNovelMotion",
+            "-ExecCmds=t.MaxFPS 60"
+          ],
+          "report": "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/GraphicNovel/Rendered-20261014T045140Z/Capture/Motion/Standard/PlayerMotion1920.json",
+          "report_sha256": "9e35dcaa137fae54db9e2c280e6358f6f3b59b76c7554515600f6eddab697c03",
+          "log_guard": {
+            "passed": true,
+            "dependency_shader_and_fatal_errors": 0
+          },
+          "video_sha256": "1fde6551611d799cec99f973eee89993f39eca8dcf7eef7fc9085c0549147989"
+        },
+        {
+          "name": "Motion1920Comic",
+          "process_exit_code": 0,
+          "passed": true,
+          "command": [
+            "/home/von/.local/share/Epic/UE_5.8.3/Engine/Binaries/Linux/UnrealEditor",
+            "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Quebec.uproject",
+            "/Game/Maps/LaFontaine",
+            "-vulkan",
+            "-graphicsadapter=0",
+            "-windowed",
+            "-ForceRes",
+            "-ResX=1920",
+            "-ResY=1080",
+            "-WinX=0",
+            "-WinY=0",
+            "-unattended",
+            "-nop4",
+            "-nosound",
+            "-NoSplash",
+            "-NordNoCampaign",
+            "-NordNoCampaignSave",
+            "-NordGraphicNovelCandidate",
+            "-NordGraphicNovelGenerated",
+            "-UDPMESSAGING_TRANSPORT_ENABLE=0",
+            "-ExecutePythonScript=/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/GraphicNovel/Rendered-20261014T045140Z/capture.py",
+            "-abslog=/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/GraphicNovel/Rendered-20261014T045140Z/Motion1920Comic/native.log",
+            "-NordQuality1920",
+            "-immersive",
+            "-NordGraphicNovelMotion",
+            "-ExecCmds=t.MaxFPS 60"
+          ],
+          "report": "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/GraphicNovel/Rendered-20261014T045140Z/Capture/Motion/Comic/PlayerMotion1920.json",
+          "report_sha256": "30e8720e94cd4e90a01505b8d41c4a345e0ac20892249e1e56ff2de058aabb28",
+          "log_guard": {
+            "passed": true,
+            "dependency_shader_and_fatal_errors": 0
+          },
+          "video_sha256": "99f1b8911334c3b551eb3ca2613f7d564498f730cff04dab089328d2ab7c28b3"
+        }
+      ],
+      "scope": "still matrix valid; both oversized-viewport videos rejected",
+      "preserved": {
+        "protected_count": 333,
+        "generated_count": 12,
+        "live_package_count": 48,
+        "all_hashes_unchanged": true,
+        "live_saves_unchanged_before_restart": true,
+        "tunnel_units_and_pids_unchanged": true,
+        "source_editor_ini_restored": true,
+        "global_editor_ini_restored": null
+      }
+    },
+    {
+      "run": "RenderedRetry-20261014T051210Z",
+      "baseline": {
+        "path": "Saved/Tests/GraphicNovel/RenderedRetry-20261014T051210Z/baseline.json",
+        "sha256": "e237ded6c97d0c3771029194f3bd1ace28e42c365ec4b848a9eaf91a0b89725a",
+        "bytes": 54222
+      },
+      "status": {
+        "path": "Saved/Tests/GraphicNovel/RenderedRetry-20261014T051210Z/window-status.json",
+        "sha256": "dbde638082085c5c92e3f8409914da6c33e9b45800bf3344c3a736ef7390590d",
+        "bytes": 10681
+      },
+      "passed": false,
+      "restored": true,
+      "restored_main_pid": 2694165,
+      "jobs": [
+        {
+          "name": "Still1280Standard",
+          "process_exit_code": 0,
+          "passed": true,
+          "command": [
+            "/home/von/.local/share/Epic/UE_5.8.3/Engine/Binaries/Linux/UnrealEditor",
+            "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Quebec.uproject",
+            "/Game/Maps/LaFontaine",
+            "-vulkan",
+            "-graphicsadapter=0",
+            "-windowed",
+            "-ForceRes",
+            "-ResX=1280",
+            "-ResY=720",
+            "-WinX=0",
+            "-WinY=0",
+            "-unattended",
+            "-nop4",
+            "-nosound",
+            "-NoSplash",
+            "-NordNoCampaign",
+            "-NordNoCampaignSave",
+            "-ini:Engine:[ConsoleVariables]:Slate.bAllowNotifications=0",
+            "-NordGraphicNovelCandidate",
+            "-NordGraphicNovelGenerated",
+            "-UDPMESSAGING_TRANSPORT_ENABLE=0",
+            "-ExecutePythonScript=/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/GraphicNovel/RenderedRetry-20261014T051210Z/capture.py",
+            "-abslog=/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/GraphicNovel/RenderedRetry-20261014T051210Z/Still1280Standard/native.log",
+            "-NordGraphicNovelStandard",
+            "-RenderOffscreen"
+          ],
+          "report": "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/GraphicNovel/RenderedRetry-20261014T051210Z/Capture/Standard/PlayerQuality1280.json",
+          "report_sha256": "fa28343a359004b3b67afa2da5a56d3726d3af42cdf58d9b5dc6eecfe43d1403",
+          "log_guard": {
+            "passed": true,
+            "dependency_shader_and_fatal_errors": 0
+          },
+          "video_sha256": null
+        },
+        {
+          "name": "Still1280Comic",
+          "process_exit_code": 0,
+          "passed": true,
+          "command": [
+            "/home/von/.local/share/Epic/UE_5.8.3/Engine/Binaries/Linux/UnrealEditor",
+            "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Quebec.uproject",
+            "/Game/Maps/LaFontaine",
+            "-vulkan",
+            "-graphicsadapter=0",
+            "-windowed",
+            "-ForceRes",
+            "-ResX=1280",
+            "-ResY=720",
+            "-WinX=0",
+            "-WinY=0",
+            "-unattended",
+            "-nop4",
+            "-nosound",
+            "-NoSplash",
+            "-NordNoCampaign",
+            "-NordNoCampaignSave",
+            "-ini:Engine:[ConsoleVariables]:Slate.bAllowNotifications=0",
+            "-NordGraphicNovelCandidate",
+            "-NordGraphicNovelGenerated",
+            "-UDPMESSAGING_TRANSPORT_ENABLE=0",
+            "-ExecutePythonScript=/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/GraphicNovel/RenderedRetry-20261014T051210Z/capture.py",
+            "-abslog=/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/GraphicNovel/RenderedRetry-20261014T051210Z/Still1280Comic/native.log",
+            "-RenderOffscreen"
+          ],
+          "report": "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/GraphicNovel/RenderedRetry-20261014T051210Z/Capture/PlayerQuality1280.json",
+          "report_sha256": "60cf3e6b2dc6978d22f0a5c4b44f7bc9ead40a0cde2218ee20013b3153edc3d8",
+          "log_guard": {
+            "passed": true,
+            "dependency_shader_and_fatal_errors": 0
+          },
+          "video_sha256": null
+        },
+        {
+          "name": "Still1920Standard",
+          "process_exit_code": 0,
+          "passed": true,
+          "command": [
+            "/home/von/.local/share/Epic/UE_5.8.3/Engine/Binaries/Linux/UnrealEditor",
+            "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Quebec.uproject",
+            "/Game/Maps/LaFontaine",
+            "-vulkan",
+            "-graphicsadapter=0",
+            "-windowed",
+            "-ForceRes",
+            "-ResX=1920",
+            "-ResY=1080",
+            "-WinX=0",
+            "-WinY=0",
+            "-unattended",
+            "-nop4",
+            "-nosound",
+            "-NoSplash",
+            "-NordNoCampaign",
+            "-NordNoCampaignSave",
+            "-ini:Engine:[ConsoleVariables]:Slate.bAllowNotifications=0",
+            "-NordGraphicNovelCandidate",
+            "-NordGraphicNovelGenerated",
+            "-UDPMESSAGING_TRANSPORT_ENABLE=0",
+            "-ExecutePythonScript=/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/GraphicNovel/RenderedRetry-20261014T051210Z/capture.py",
+            "-abslog=/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/GraphicNovel/RenderedRetry-20261014T051210Z/Still1920Standard/native.log",
+            "-NordGraphicNovelStandard",
+            "-NordQuality1920",
+            "-RenderOffscreen"
+          ],
+          "report": "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/GraphicNovel/RenderedRetry-20261014T051210Z/Capture/Standard/PlayerQuality1920.json",
+          "report_sha256": "719b205c92e9bb269218b0b6a780abeaab6d96ee600acac1e5d546c4355a000e",
+          "log_guard": {
+            "passed": true,
+            "dependency_shader_and_fatal_errors": 0
+          },
+          "video_sha256": null
+        },
+        {
+          "name": "Still1920Comic",
+          "process_exit_code": 0,
+          "passed": true,
+          "command": [
+            "/home/von/.local/share/Epic/UE_5.8.3/Engine/Binaries/Linux/UnrealEditor",
+            "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Quebec.uproject",
+            "/Game/Maps/LaFontaine",
+            "-vulkan",
+            "-graphicsadapter=0",
+            "-windowed",
+            "-ForceRes",
+            "-ResX=1920",
+            "-ResY=1080",
+            "-WinX=0",
+            "-WinY=0",
+            "-unattended",
+            "-nop4",
+            "-nosound",
+            "-NoSplash",
+            "-NordNoCampaign",
+            "-NordNoCampaignSave",
+            "-ini:Engine:[ConsoleVariables]:Slate.bAllowNotifications=0",
+            "-NordGraphicNovelCandidate",
+            "-NordGraphicNovelGenerated",
+            "-UDPMESSAGING_TRANSPORT_ENABLE=0",
+            "-ExecutePythonScript=/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/GraphicNovel/RenderedRetry-20261014T051210Z/capture.py",
+            "-abslog=/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/GraphicNovel/RenderedRetry-20261014T051210Z/Still1920Comic/native.log",
+            "-NordQuality1920",
+            "-RenderOffscreen"
+          ],
+          "report": "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/GraphicNovel/RenderedRetry-20261014T051210Z/Capture/PlayerQuality1920.json",
+          "report_sha256": "2ab329777f4c8c80d0ed40477257a101800da85c95d20fc2ad65a797be6b51c3",
+          "log_guard": {
+            "passed": true,
+            "dependency_shader_and_fatal_errors": 0
+          },
+          "video_sha256": null
+        },
+        {
+          "name": "Motion1920Standard",
+          "process_exit_code": 0,
+          "passed": false,
+          "command": [
+            "/home/von/.local/share/Epic/UE_5.8.3/Engine/Binaries/Linux/UnrealEditor",
+            "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Quebec.uproject",
+            "/Game/Maps/LaFontaine",
+            "-vulkan",
+            "-graphicsadapter=0",
+            "-windowed",
+            "-ForceRes",
+            "-ResX=1920",
+            "-ResY=1080",
+            "-WinX=0",
+            "-WinY=0",
+            "-unattended",
+            "-nop4",
+            "-nosound",
+            "-NoSplash",
+            "-NordNoCampaign",
+            "-NordNoCampaignSave",
+            "-ini:Engine:[ConsoleVariables]:Slate.bAllowNotifications=0",
+            "-NordGraphicNovelCandidate",
+            "-NordGraphicNovelGenerated",
+            "-UDPMESSAGING_TRANSPORT_ENABLE=0",
+            "-ExecutePythonScript=/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/GraphicNovel/RenderedRetry-20261014T051210Z/capture.py",
+            "-abslog=/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/GraphicNovel/RenderedRetry-20261014T051210Z/Motion1920Standard/native.log",
+            "-NordGraphicNovelStandard",
+            "-NordQuality1920",
+            "-immersive",
+            "-NordGraphicNovelMotion",
+            "-ExecCmds=t.MaxFPS 60"
+          ],
+          "report": "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/GraphicNovel/RenderedRetry-20261014T051210Z/Capture/Motion/Standard/PlayerMotion1920.json",
+          "report_sha256": null,
+          "log_guard": null,
+          "video_sha256": null
+        }
+      ],
+      "scope": "still matrix valid; motion rejected empty UMG geometry before recording",
+      "preserved": {
+        "protected_count": 333,
+        "generated_count": 12,
+        "live_package_count": 48,
+        "all_hashes_unchanged": true,
+        "live_saves_unchanged_before_restart": true,
+        "tunnel_units_and_pids_unchanged": true,
+        "source_editor_ini_restored": true,
+        "global_editor_ini_restored": true
+      }
+    },
+    {
+      "run": "RenderedMotion-20261014T051948Z",
+      "baseline": {
+        "path": "Saved/Tests/GraphicNovel/RenderedMotion-20261014T051948Z/baseline.json",
+        "sha256": "9fcd86a535977a58615e24ee3086206415e0a2e286cad0a2bdfed774a29ca628",
+        "bytes": 54222
+      },
+      "status": {
+        "path": "Saved/Tests/GraphicNovel/RenderedMotion-20261014T051948Z/window-status.json",
+        "sha256": "b1b3b36eb8e76e9bc99944c365061e6adf4bd3cb135130f48e269cfd434df62a",
+        "bytes": 6200
+      },
+      "passed": true,
+      "restored": true,
+      "restored_main_pid": 2729591,
+      "jobs": [
+        {
+          "name": "Motion1920Standard",
+          "process_exit_code": 0,
+          "passed": true,
+          "command": [
+            "/home/von/.local/share/Epic/UE_5.8.3/Engine/Binaries/Linux/UnrealEditor",
+            "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Quebec.uproject",
+            "/Game/Maps/LaFontaine",
+            "-vulkan",
+            "-graphicsadapter=0",
+            "-windowed",
+            "-ForceRes",
+            "-ResX=1920",
+            "-ResY=1080",
+            "-WinX=0",
+            "-WinY=0",
+            "-unattended",
+            "-nop4",
+            "-nosound",
+            "-NoSplash",
+            "-NordNoCampaign",
+            "-NordNoCampaignSave",
+            "-ini:Engine:[ConsoleVariables]:Slate.bAllowNotifications=0",
+            "-NordGraphicNovelCandidate",
+            "-NordGraphicNovelGenerated",
+            "-UDPMESSAGING_TRANSPORT_ENABLE=0",
+            "-ExecutePythonScript=/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/GraphicNovel/RenderedMotion-20261014T051948Z/capture.py",
+            "-abslog=/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/GraphicNovel/RenderedMotion-20261014T051948Z/Motion1920Standard/native.log",
+            "-NordGraphicNovelStandard",
+            "-NordQuality1920",
+            "-immersive",
+            "-NordGraphicNovelMotion",
+            "-ExecCmds=t.MaxFPS 60"
+          ],
+          "report": "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/GraphicNovel/RenderedMotion-20261014T051948Z/Capture/Motion/Standard/PlayerMotion1920.json",
+          "report_sha256": "baf9cd3c019d800775dc257aab0b2662874a87aa53f3657171e9eedd47c8df3c",
+          "log_guard": {
+            "passed": true,
+            "dependency_shader_and_fatal_errors": 0
+          },
+          "video_sha256": "3d9a427d3262cf7e064dca115f67c961d7e93ac799427683ccce6f9176b4cd5a"
+        },
+        {
+          "name": "Motion1920Comic",
+          "process_exit_code": 0,
+          "passed": true,
+          "command": [
+            "/home/von/.local/share/Epic/UE_5.8.3/Engine/Binaries/Linux/UnrealEditor",
+            "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Quebec.uproject",
+            "/Game/Maps/LaFontaine",
+            "-vulkan",
+            "-graphicsadapter=0",
+            "-windowed",
+            "-ForceRes",
+            "-ResX=1920",
+            "-ResY=1080",
+            "-WinX=0",
+            "-WinY=0",
+            "-unattended",
+            "-nop4",
+            "-nosound",
+            "-NoSplash",
+            "-NordNoCampaign",
+            "-NordNoCampaignSave",
+            "-ini:Engine:[ConsoleVariables]:Slate.bAllowNotifications=0",
+            "-NordGraphicNovelCandidate",
+            "-NordGraphicNovelGenerated",
+            "-UDPMESSAGING_TRANSPORT_ENABLE=0",
+            "-ExecutePythonScript=/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/GraphicNovel/RenderedMotion-20261014T051948Z/capture.py",
+            "-abslog=/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/GraphicNovel/RenderedMotion-20261014T051948Z/Motion1920Comic/native.log",
+            "-NordQuality1920",
+            "-immersive",
+            "-NordGraphicNovelMotion",
+            "-ExecCmds=t.MaxFPS 60"
+          ],
+          "report": "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/GraphicNovel/RenderedMotion-20261014T051948Z/Capture/Motion/Comic/PlayerMotion1920.json",
+          "report_sha256": "58fd7af7f136c9a235d49348eb13790c8f22b4189a8b4ecbaa20516f6740ee51",
+          "log_guard": {
+            "passed": true,
+            "dependency_shader_and_fatal_errors": 0
+          },
+          "video_sha256": "7e0277bae574e69e3c6790fb4f2501cbfd2d2777b4e460b75261906f10a4a511"
+        }
+      ],
+      "scope": "both bounded native viewport motion captures valid",
+      "preserved": {
+        "protected_count": 333,
+        "generated_count": 12,
+        "live_package_count": 48,
+        "all_hashes_unchanged": true,
+        "live_saves_unchanged_before_restart": true,
+        "tunnel_units_and_pids_unchanged": true,
+        "source_editor_ini_restored": true,
+        "global_editor_ini_restored": true
+      }
+    }
+  ],
+  "current_source_sha256": {
+    "Scripts/capture_player_quality.py": "6265dbfabe345b50d8ca11b0f814ceb9475549f6e767d74c165cb79beafad3e9",
+    "Scripts/import_meshy_crew.py": "0033ff91a1ef620f452a2ed4b751a32b7111a172e90fe7ad460300ef34406f5a",
+    "Scripts/test_graphic_novel_capture.py": "7515f7f7ac7fdd2778e021c87903cdc7bca23dec30e7548a2895c7827ef1107c",
+    "Scripts/test_graphic_novel_import.py": "b4c1d1f22cfcd804acc537e0095e2ee20c025ace8a6953c633249754c1b3b205"
+  },
+  "generated_assets_sha256": {
+    "Content/ParkComic/CrewGraphicNovelGenerated/Resident9/SK_Body.uasset": "baba38bed9de13e1ce20bbb523fc3fbaea6e8a33cc82d11477d24b871ca89360",
+    "Content/ParkComic/CrewGraphicNovelGenerated/Resident9/SK_Body_Skeleton.uasset": "e3fb1649bd6d76b84cbe96489346c0b3138df71250280c68fd0af71fbf4246af",
+    "Content/ParkComic/CrewGraphicNovelGenerated/Resident9/BS_Locomotion.uasset": "60538f616154dd8b9bd4eafd10632caa57869a7db15647ee7abd82b4d3547c38",
+    "Content/ParkComic/CrewGraphicNovelGenerated/Resident9/A_Jump.uasset": "b8b0e8b2d60a4d7f8986e55f83b86414776197ac5adaa4eb396bfb9874621cbf",
+    "Content/ParkComic/CrewGraphicNovelGenerated/Resident9/T_base_color.uasset": "17f601631fc68f22155112796fe35d2c5110ccef44fe3ef2dc230ff8312f7033",
+    "Content/ParkComic/CrewGraphicNovelGenerated/Resident9/A_Run.uasset": "0aeee0f293581175bab9998ad5ad86b4161b275c75256340263a6e1d52f10b27",
+    "Content/ParkComic/CrewGraphicNovelGenerated/Resident9/T_normal.uasset": "04168eb9151172b22f2a947c8fd4bce13406581a36ad1c742192be77bb395c50",
+    "Content/ParkComic/CrewGraphicNovelGenerated/Resident9/A_Idle.uasset": "3d9301217a4dadb34f4dc2094cc268c3a71e580a75e8f83be17a8b80e359046d",
+    "Content/ParkComic/CrewGraphicNovelGenerated/Resident9/T_roughness.uasset": "628b02da39c008402a683765267cf7eec2930ede84e4fba781830a631baf4cd0",
+    "Content/ParkComic/CrewGraphicNovelGenerated/Resident9/A_Walk.uasset": "ff7ce8804ae72eae355b4279f98f7a45e949736c038b6ede3686cb33c3697f2e",
+    "Content/ParkComic/CrewGraphicNovelGenerated/Resident9/T_metallic.uasset": "9075cd56616b385fd7515d341f7ba0925fb80347ef22a0c1246f921ade061c09",
+    "Content/ParkComic/CrewGraphicNovelGenerated/Resident9/M_Crew.uasset": "72f7d9ddc41489d35df427066f57eee6a2904b65861f716e476d4b64778579dd"
+  },
+  "protected_sha256": {
+    "Config/DefaultEngine.ini": "3a0412a1ec924ec0a2b77d21d15052cb10568089f419ce2787933889cc82f3e3",
+    "Config/DefaultGame.ini": "f168d73e126207536458a814c366183397f6d4af3fc2d8c31186f4db63d02c6f",
+    "Config/DefaultInput.ini": "a864d7243a40372be158558da9a050774480063edc4d502c303d7fa3929d2b58",
+    "Content/Art/Comic/M_ComicInk.uasset": "d648ff1756dd57eb277773669d57fa4d0f19e5563b558af9449097d397aa0895",
+    "Content/Maps/LaFontaine.umap": "ed0056d27b3a9496871c538bcbe7e6214b5dbe7d4ae87b88c03015900c3662ce",
+    "Content/ParkComic/Crew/Resident10/A_Idle.uasset": "747fe74f464a49cdb7b66ccd5834dcbf168e5aca420e79cc8c0f3b34abc6f6ad",
+    "Content/ParkComic/Crew/Resident10/A_Jump.uasset": "eac319d2e4ff4165a3b8e69039f6dc7b5e26c0ee59bea74b5ea9380e3d480fcd",
+    "Content/ParkComic/Crew/Resident10/A_Run.uasset": "f730aab1e83a014903d89fa82fde46d925bbec08a86520840095b41bd18df3d5",
+    "Content/ParkComic/Crew/Resident10/A_Walk.uasset": "0bf97b339ed5bb876eacaea69dea4695ad38f520b72d1809c43df2e0fa295283",
+    "Content/ParkComic/Crew/Resident10/M_Crew.uasset": "4a1e4be305f0ee243fc8448584abc778a58358012f3e315241e3503408bf4466",
+    "Content/ParkComic/Crew/Resident10/SK_Body.uasset": "9029381d25acb9abd0d8fa20e0264362c72512be6af78893430b3d14373ac005",
+    "Content/ParkComic/Crew/Resident10/SK_Body_Skeleton.uasset": "3a7114d852306a27ce399156373f0e2bc08f293356fa74e6b66ae594d8005c7b",
+    "Content/ParkComic/Crew/Resident10/T_base_color.uasset": "96595e94a9f5175ff35cd7d53e83ebd22a99886f126048393215adf421595f7a",
+    "Content/ParkComic/Crew/Resident10/T_metallic.uasset": "6ae24d962589d0eab716417e93f41e7f1d5a37931934a8472e5542c67c8d288f",
+    "Content/ParkComic/Crew/Resident10/T_normal.uasset": "6c0fc4377cf190385de63d85c170c23df81369df171b4d42157a67fbc36ac4d0",
+    "Content/ParkComic/Crew/Resident10/T_roughness.uasset": "8d0e0fe8172b293b0d05a42101c1c7893fbe65b88f79cac69a18e97a1877f58e",
+    "Content/ParkComic/Crew/Resident3/A_Idle.uasset": "8493d0694a8877a060e607dd687577c950710bad450e40f024f5802a91897a1c",
+    "Content/ParkComic/Crew/Resident3/A_Jump.uasset": "22564f48894670939165358194f4fcbc2ee4b7319e61dc76afdda66189ab6e4d",
+    "Content/ParkComic/Crew/Resident3/A_Run.uasset": "918ce9042e4f9c735d938da64bda25ca204967ac3a1a152a6be2f51f7f07bb05",
+    "Content/ParkComic/Crew/Resident3/A_Walk.uasset": "8988ee1ab0e3382a6809a75706907f1671dfe1a22ae9b046c47477f8342d8224",
+    "Content/ParkComic/Crew/Resident3/M_Crew.uasset": "56be0b0fe65e218f416bd8d606443e50f91deb94043867aaa589c75f3493edf7",
+    "Content/ParkComic/Crew/Resident3/SK_Body.uasset": "42a8242be21ae4b7c72f52d20dc4530795f71dd10661e15bc88e0af8d873361d",
+    "Content/ParkComic/Crew/Resident3/SK_Body_Skeleton.uasset": "450330f36b04f5a8a696cce2aeec3f8f1eeac7a4ec1f7a8f1254b2da1cdb838e",
+    "Content/ParkComic/Crew/Resident3/T_base_color.uasset": "7d84335d7efc974158539367cac9b83de8b32bc4fc2115b52a41e09fc5437d98",
+    "Content/ParkComic/Crew/Resident3/T_metallic.uasset": "6fe4d632cfcc30d9b1ede64ca67dcc8388e59122171776d0ae0a7ab3af529cd2",
+    "Content/ParkComic/Crew/Resident3/T_normal.uasset": "442d4b88fbc08e84db94968f10588834eb8d42b072ff237e8d43d940197aab46",
+    "Content/ParkComic/Crew/Resident3/T_roughness.uasset": "a161189dd69ba12385a9934c336e7806993b2ae2fcf6cabd66239d14863ffe2a",
+    "Content/ParkComic/Crew/Resident4/A_Idle.uasset": "9346efba3ee71c26480fdbb358d1b8b4d1d8567c9e9f49a9ff661840dc286355",
+    "Content/ParkComic/Crew/Resident4/A_Jump.uasset": "4e32b8bbcb5d218a6421e82b26fa838cba980b15ce13a50a5ce15c88b0d2254d",
+    "Content/ParkComic/Crew/Resident4/A_Run.uasset": "4f868065550c813a087cd19e53b27a2f4b215e952bb0a3b047d287939dfe2156",
+    "Content/ParkComic/Crew/Resident4/A_Walk.uasset": "eb543125bf94bd6f3bd2d3d244ec0cc4635a01f3f54eadaaa08546f8780925d8",
+    "Content/ParkComic/Crew/Resident4/M_Crew.uasset": "9e98ae9271a143438a7e48cd10ae000d23611698a0a3bf6c73537dbe5f07d06c",
+    "Content/ParkComic/Crew/Resident4/SK_Body.uasset": "c8fcebc43fab45986fd9728ed52a0844f22cf68646d02adb7e0e1d51c4cdd084",
+    "Content/ParkComic/Crew/Resident4/SK_Body_Skeleton.uasset": "8d8ba320191c821ef84a5b0c14a7eb00c0e0049bcf25b31541b70482861cc8d8",
+    "Content/ParkComic/Crew/Resident4/T_base_color.uasset": "6ee58fdd7f933a3e695015dccbcdccdc53b4fffe82f04fb9aeb787a33dcc6886",
+    "Content/ParkComic/Crew/Resident4/T_metallic.uasset": "95d6d8e50bb010f04320fa1faabf7ffb96dd84338949e66dd3c429efe4b33772",
+    "Content/ParkComic/Crew/Resident4/T_normal.uasset": "6806966aff512ad68348269a19f0589d50ae485a4cc3b4e3986a211e11ca53b6",
+    "Content/ParkComic/Crew/Resident4/T_roughness.uasset": "9c9e76d1f7fa0938f6a803b8c3504648d10ea1fa49a2faded12e85b9dc622342",
+    "Content/ParkComic/Crew/Resident5/A_Idle.uasset": "8c571790bb64e45b4adf719d64c7bc05dbd78ed184e1f0a9c7ba3e5df47a0e5b",
+    "Content/ParkComic/Crew/Resident5/A_Jump.uasset": "3f78b7fef49c957484861f65ce9282c72ae8696316ed9da4ae20c92c1f85b219",
+    "Content/ParkComic/Crew/Resident5/A_Run.uasset": "3d1cad020bc77f1719494073315c8e219dc42fc90443bf1110569d3eaa236234",
+    "Content/ParkComic/Crew/Resident5/A_Walk.uasset": "f7c24b9090bd901271efb89b2f8521c00894133fd03e58cffe9d0edcfa85fba4",
+    "Content/ParkComic/Crew/Resident5/M_Crew.uasset": "1d151bd52d06fb33f388c94f51938e05d0c942dfc02b081194be2d54d90258b8",
+    "Content/ParkComic/Crew/Resident5/SK_Body.uasset": "fa62321f79ad91ed19b8fd49ad3596d913ec93926e06bc20bff8e373a29a80a0",
+    "Content/ParkComic/Crew/Resident5/SK_Body_Skeleton.uasset": "d1fd0c794eb9d7ede1f0c8d4ce6a18b6a46436c4cabcbc8877d928a788dc9e58",
+    "Content/ParkComic/Crew/Resident5/T_base_color.uasset": "65b50139bca86463f7c9ed598cbe8a0747e67a7aef3d45a094d656eb9848f996",
+    "Content/ParkComic/Crew/Resident5/T_metallic.uasset": "5313a9f388ab22ff4976e176bab31f78685c1a2270715bc16aa5a809d2e88772",
+    "Content/ParkComic/Crew/Resident5/T_normal.uasset": "e2ac1cc6f04cc5b2eda7293228e3f7d2f44028a3900739801821e0b80019a12f",
+    "Content/ParkComic/Crew/Resident5/T_roughness.uasset": "40a186f7e0b6c8634445b140c07b7b6926cd96245be0e1d8fe9f5a8ecee901c6",
+    "Content/ParkComic/Crew/Resident6/A_Idle.uasset": "2eb2b7250b6d88a20209d0e9b703838c839d8344e517c5386748f7d4f68dba4a",
+    "Content/ParkComic/Crew/Resident6/A_Jump.uasset": "b1a7a30bd607b8a3b39890552fa4c1091eb9db01a63d97953b4a7a9c5fbaa0de",
+    "Content/ParkComic/Crew/Resident6/A_Run.uasset": "4bb8e3a895067380f4e57f718f2d398c1fc2fb5f043b52304ae65b8595e0c51a",
+    "Content/ParkComic/Crew/Resident6/A_Walk.uasset": "07b44ddabd0b74187f8702a7e20bf491d2f34ea351b5f5262b114c5dcbdbdbc5",
+    "Content/ParkComic/Crew/Resident6/M_Crew.uasset": "3e0f985629b1e5f4b0cdd0c6d89f74ef2556935f2dddad5133553d64e3807b59",
+    "Content/ParkComic/Crew/Resident6/SK_Body.uasset": "e2dfc580f219ef06b9c1942ae810f533648537306f16f874342253a2468fe2ba",
+    "Content/ParkComic/Crew/Resident6/SK_Body_Skeleton.uasset": "2d7f017df68e8e2094659041f2c8fb89a1d546bd924f3ba1d39742fbee660dfd",
+    "Content/ParkComic/Crew/Resident6/T_base_color.uasset": "187f9bb874b3dc43f82a247e9f08d530f22658349e18cc63197fbdda940f44d6",
+    "Content/ParkComic/Crew/Resident6/T_metallic.uasset": "f3fb7fd91cc4fd4f5718fbbd24ca0915379f68330c8901190763721dcfd423a4",
+    "Content/ParkComic/Crew/Resident6/T_normal.uasset": "1d04da21c37fa76d9dbd952b48b8766c045b83560502277bb58ea5a4523c95a5",
+    "Content/ParkComic/Crew/Resident6/T_roughness.uasset": "c4f9ed25010ef769917c528c465f4c4c37262daa27844085775eef5599e54523",
+    "Content/ParkComic/Crew/Resident7/A_Idle.uasset": "0180323132f91bf4e453dd41c0291d26d8337a29e8b77becc238f63603c7b7a9",
+    "Content/ParkComic/Crew/Resident7/A_Jump.uasset": "95c4255753729a0b513df5c38221675eda41b2983b27281eb6923f669ce1fcb1",
+    "Content/ParkComic/Crew/Resident7/A_Run.uasset": "ca29a3d0e0f0be7e02dd41df85828ba72a0f06f3292ff8511645d89658db4be4",
+    "Content/ParkComic/Crew/Resident7/A_Walk.uasset": "7998aba9e3d12909f0271e0e59c32babcc4a97fa2c82d84243afbf88ccd44f8a",
+    "Content/ParkComic/Crew/Resident7/M_Crew.uasset": "2a2d3abc011be242b0cbf2523ae0a6a039041d4bbdc27c03dcdaff3b970981da",
+    "Content/ParkComic/Crew/Resident7/SK_Body.uasset": "8b7c8715317537e34e6e96e776896c76abc73ee16b380674d923ba57ea65c78b",
+    "Content/ParkComic/Crew/Resident7/SK_Body_Skeleton.uasset": "e0f81a6bbd3a678262de824a7f65f72e9a769626aa3dae78373d286f9d5c62a1",
+    "Content/ParkComic/Crew/Resident7/T_base_color.uasset": "25b413c8ece49c277901996fcbce573d2aadc764fe72eb9ff85f74803de5bf2c",
+    "Content/ParkComic/Crew/Resident7/T_metallic.uasset": "17f14d7ff1daeff28d8b48eded7ffa02f274ec5073e60cb47c851f18c3a460ca",
+    "Content/ParkComic/Crew/Resident7/T_normal.uasset": "bc0d74fe8dd6bc7618ce27b16980c5c1b54f2c7572b20d55fafcc3769694c8dc",
+    "Content/ParkComic/Crew/Resident7/T_roughness.uasset": "1a001047955fa27078ee8718862886a5cf028cfbe06883210be4cb8e7cfebb6e",
+    "Content/ParkComic/Crew/Resident8/A_Idle.uasset": "e61c199e166ace4ddac4fdc500400bf6d658ee8b556b52754d934edb97f44157",
+    "Content/ParkComic/Crew/Resident8/A_Jump.uasset": "034aa0b4b836024a57df5de7e985246393c0b3c8cb9cf1e4a66bbafd3c12ed6b",
+    "Content/ParkComic/Crew/Resident8/A_Run.uasset": "91f3ad3362c62822d5a5b8682369cd0261917a7f2cc7ae9afdb782160938b15f",
+    "Content/ParkComic/Crew/Resident8/A_Walk.uasset": "cef1c28f58fb391809cb379597c9d2ab1516990d5e1757ba74e32cfa0da3ac37",
+    "Content/ParkComic/Crew/Resident8/M_Crew.uasset": "f0dea6293cc42ac0539c416f17ea82e4b37377fd27efbb737736ed42e2031ea1",
+    "Content/ParkComic/Crew/Resident8/SK_Body.uasset": "975c6f2cb5551b273956cbedd9282b06adc478eafa99250ea47a56bd7d41410a",
+    "Content/ParkComic/Crew/Resident8/SK_Body_Skeleton.uasset": "5915d68d05e2fd4ae02cfb330c5e314de87ffee339628db9b6a36983cbc9db67",
+    "Content/ParkComic/Crew/Resident8/T_base_color.uasset": "720b54d845536c8894134c0694f7ec5ad67af925ee893822a74352ec41835279",
+    "Content/ParkComic/Crew/Resident8/T_metallic.uasset": "7880e2cf5d2d1f0bcd2e518f4c230a55dafccf1c80e0d08edcfea34d865edd01",
+    "Content/ParkComic/Crew/Resident8/T_normal.uasset": "fea3dbfe30b0c84afa6740d82355297d3b3048116ae48406cd06c047a04268d7",
+    "Content/ParkComic/Crew/Resident8/T_roughness.uasset": "23505c09707bc6fa370a2f3ab0930c6b7332f4fc258d801ce07367f7d3b26bd0",
+    "Content/ParkComic/Crew/Resident9/A_Idle.uasset": "c72a8a98cc9d767f1d91c05d483208537858c1af5e82cbc425a9064c23fcd6a8",
+    "Content/ParkComic/Crew/Resident9/A_Jump.uasset": "456f51f3e206e9ce9975881c5e8eed791a071de603bd7dfbf788c805ab99b130",
+    "Content/ParkComic/Crew/Resident9/A_Run.uasset": "d2abcc55060c63800f83dd36ba9cb66e80694d218cd5c5e7ecdbc55c8c20b930",
+    "Content/ParkComic/Crew/Resident9/A_Walk.uasset": "4a30192200a399ca1f69335fd45f359ffd56f91d242ed5894305b84082e1c7b6",
+    "Content/ParkComic/Crew/Resident9/M_Crew.uasset": "a62e625c97aa77d1cd1c731ba75196d10ce9bacc0edff479b591dee53caee929",
+    "Content/ParkComic/Crew/Resident9/SK_Body.uasset": "6a4dc9e01012a30adc9276b1d2c69c03dbfb7fe1813c7db9b355456329e94b08",
+    "Content/ParkComic/Crew/Resident9/SK_Body_Skeleton.uasset": "d469e95b1b4073ccf4cb5278d40585fc2be4bc7f5146e20f9977c73dc0f4f421",
+    "Content/ParkComic/Crew/Resident9/T_base_color.uasset": "132b0793f6b8c5a99040d1174982fd91b8b3deb124b29f11bd2b04e76074e13c",
+    "Content/ParkComic/Crew/Resident9/T_metallic.uasset": "44f405ad27057b3c249c2ba6977a118ea71296f78bc72f6549c383621667a1ee",
+    "Content/ParkComic/Crew/Resident9/T_normal.uasset": "cf5661557b13aa33f83b143b7c9082dd4d8a1e2ffb64f7f5f3d89bd7fe447cf5",
+    "Content/ParkComic/Crew/Resident9/T_roughness.uasset": "eb31a1fa88dd5d53fd96fc51fd208b12044186affdfd3b090f23d3150af763f7",
+    "Content/ParkComic/Crew/SM_PVCTube.uasset": "ef9183762d262d319de2bd207b324593139843154154ce922339839aef20142d",
+    "Content/ParkComic/Crew/SM_Plunger.uasset": "be37718aeadaa8ddc9fc407a4fbbe45fd5251a79897f36a9272e78e73a607e56",
+    "Content/ParkComic/CrewGraphicNovel/Resident9/A_Idle.uasset": "798cdca71ff21fa1d7967fd4538a5bf376abbf9e604768890d1f25979718b3e5",
+    "Content/ParkComic/CrewGraphicNovel/Resident9/A_Jump.uasset": "98aa0ad5b1eef5697a09066d1fb35e0ee48d86164de1ab06ffa33b6acca06bae",
+    "Content/ParkComic/CrewGraphicNovel/Resident9/A_Run.uasset": "c702044be8bc0d2792ea3570f468f9038f0593a2fd87d54ec6f454fed9b53050",
+    "Content/ParkComic/CrewGraphicNovel/Resident9/A_Walk.uasset": "bf5d040dc63ee2d7a7a557e7df2b1c46794488704e7b14cb1cd814bf545031b2",
+    "Content/ParkComic/CrewGraphicNovel/Resident9/BS_Locomotion.uasset": "40b5e8ca24b1b220c9e164d13dde669bce1b1815e2c127f4718530819c2f4541",
+    "Content/ParkComic/CrewGraphicNovel/Resident9/M_Canvas.uasset": "4fb9e4b1cc504cf407a88144c2ca62e67907ad62a14bbfe8998f155233320469",
+    "Content/ParkComic/CrewGraphicNovel/Resident9/M_ComicInk.uasset": "d0b11d883093bc9dc76418981f9fa0292a6b32e99b883073d2921e413047b7aa",
+    "Content/ParkComic/CrewGraphicNovel/Resident9/M_Crew.uasset": "cd2bb92a101135e4d4ca4f4aae1fcfe9c2b4f5c2f70c00dc8a6fccd150663cc1",
+    "Content/ParkComic/CrewGraphicNovel/Resident9/M_Laces.uasset": "c98d3d7a3434241602869ed9239c2ffc6f99e76159964d703d11fde192019739",
+    "Content/ParkComic/CrewGraphicNovel/Resident9/M_RubberStripe.uasset": "df91682e0b143548d98c52726383815e8a6b91e2927a87fecdff35e6be72dcba",
+    "Content/ParkComic/CrewGraphicNovel/Resident9/M_Sole.uasset": "5cedb00a1f8f8ead6394c4a45ae67b2a3da2e636324193de9532f4c7ea31c2d5",
+    "Content/ParkComic/CrewGraphicNovel/Resident9/M_Trousers.uasset": "c5d38545649f4e2cdbc883eaed7977ef7f6eae883868e272483f33baa9d0c9be",
+    "Content/ParkComic/CrewGraphicNovel/Resident9/M_TrousersSeam.uasset": "b89f10ddd238afb33052b536a467ef5a635edd52475ed32108a13b22947ee4a6",
+    "Content/ParkComic/CrewGraphicNovel/Resident9/SK_Body.uasset": "cb5614c7026c56b2f1bfc90d52aca1e814e5140f1e79ca5ccbcaad8f9b4f20d2",
+    "Content/ParkComic/CrewGraphicNovel/Resident9/SK_Body_Skeleton.uasset": "6d42adba1bc91a1e3fb2be1ef087c08bba99efd95aef479d0208917e7ef1e85c",
+    "Content/ParkComic/CrewGraphicNovel/Resident9/T_base_color.uasset": "f08a27acd6a0d480e6aa8f7d9ad78e17acb28914dee02ccf146a00a3c466a21d",
+    "Content/ParkComic/CrewGraphicNovel/Resident9/T_metallic.uasset": "2d70fbdc64b32eb29a13bbe5f160c1a19d1ead55f979db80f33ee51efbb119a3",
+    "Content/ParkComic/CrewGraphicNovel/Resident9/T_normal.uasset": "d79da9df5a68b0c1341c8ff5840045d246fbae6f4a33d184cad7315d6cf6970f",
+    "Content/ParkComic/CrewGraphicNovel/Resident9/T_roughness.uasset": "cb7f36a640a4d30a292b2461c7c2d6d9288aef29f132da06a12bfe5a961c1be9",
+    "Data/CharactersNeutral/BlackCap/base_color.png": "4532f1b81eecea3d848a711661b41174f613aa8e8dadc61ad2c10751ca026a5d",
+    "Data/CharactersNeutral/BlackCap/body.fbm/Material_0_baseColor.jpg": "454bf4b6acb895c4b2b8f714b66180f23a893b459638640e5ed142078d96642d",
+    "Data/CharactersNeutral/BlackCap/body.fbx": "bbadf9714665fb71f7981307261926de682c615eb33503d2ccbfa6e7aca71a37",
+    "Data/CharactersNeutral/BlackCap/body.glb": "1539d56fc1d9842ce0a0e4a8276381a85d2826a1ea34506c87604aa1b845bb78",
+    "Data/CharactersNeutral/BlackCap/idle.fbm/Material_0_baseColor.jpg": "454bf4b6acb895c4b2b8f714b66180f23a893b459638640e5ed142078d96642d",
+    "Data/CharactersNeutral/BlackCap/idle.fbx": "ae5d4840d9e08427c153cc0d48c7a17059cfbc47f677def455b5bafd16ba8b4d",
+    "Data/CharactersNeutral/BlackCap/jump.fbx": "7b04c5b9289b19960f24f46825bf7898b9069b47bd6456a4a693c75313e67059",
+    "Data/CharactersNeutral/BlackCap/jump.json": "1ac3538a8d369bb910d9cb7743ae6a7058b78a72243a52313fa14bbe9b6e9f2e",
+    "Data/CharactersNeutral/BlackCap/metallic.png": "eca5b049d03110d51e49ad46c8834b3fe203d660f8ef0752f2c877e0458a08f3",
+    "Data/CharactersNeutral/BlackCap/normal.png": "de3594d3340f949930f396798d48a9fe289f1de4845d0225e9c167195f4f16f0",
+    "Data/CharactersNeutral/BlackCap/preview.png": "cc9a66c30c7cec7e2c936294e8480bf121a187dacba094b2c61b72991a82cd76",
+    "Data/CharactersNeutral/BlackCap/reference.png": "6b2adba3d5f3fbef09bec9dc9bf4be27d799c0bf2e4349106bbde3ec2b3f5048",
+    "Data/CharactersNeutral/BlackCap/request.json": "db90c8891489ee95ab121678087af390d9e0da2cfd9e0dcf2ef5287331ab79c3",
+    "Data/CharactersNeutral/BlackCap/result.json": "9684bb49e8bad7e44512985d260b7cceb186a33193e6567d5d3518cef3d6bfc4",
+    "Data/CharactersNeutral/BlackCap/roughness.png": "8b36ddf095d560333d2722d4f5f4125385957c3eceae10afd13cfa40d9919777",
+    "Data/CharactersNeutral/BlackCap/run.fbm/Material_0_baseColor.jpg": "454bf4b6acb895c4b2b8f714b66180f23a893b459638640e5ed142078d96642d",
+    "Data/CharactersNeutral/BlackCap/run.fbx": "7af8c9a855da5b72487234af75dac0921713c188c22eb65903e0c61ee6c5c62c",
+    "Data/CharactersNeutral/BlackCap/run.glb": "265d9aea1a517d4b58c203dd997c3e6664ab996e4c747dd23ee428133b247b9b",
+    "Data/CharactersNeutral/BlackCap/walk.fbm/Material_0_baseColor.jpg": "454bf4b6acb895c4b2b8f714b66180f23a893b459638640e5ed142078d96642d",
+    "Data/CharactersNeutral/BlackCap/walk.fbx": "22c0b2794cbe1ef088b1f1f645217a5c7d652d9c4a1a516d076e0da024e015fb",
+    "Data/CharactersNeutral/CurlyMetalhead/base_color.png": "3ee07417a3c4d084f1c8b4ada7800bce28a7a52813ad91ea952e3b723df562ba",
+    "Data/CharactersNeutral/CurlyMetalhead/body.fbm/Material_0_baseColor.jpg": "0657d390691864ad2fe168ccdd2f47bc2ae5d1e3c3d49237c298b3710e7db02c",
+    "Data/CharactersNeutral/CurlyMetalhead/body.fbx": "71c636200855ee3747586e42dfc460730258c6ad88d2fbc2bd5200a04a58e4c3",
+    "Data/CharactersNeutral/CurlyMetalhead/body.glb": "b45d08362fb27c95d9d1855727a2ae66bc2f1be85d2db2301b3879b8e1860148",
+    "Data/CharactersNeutral/CurlyMetalhead/idle.fbm/Material_0_baseColor.jpg": "0657d390691864ad2fe168ccdd2f47bc2ae5d1e3c3d49237c298b3710e7db02c",
+    "Data/CharactersNeutral/CurlyMetalhead/idle.fbx": "76fa07af7e50bbe3517ff6c7f22b20d9b38b49f0cbe912882813a57e8f4c8279",
+    "Data/CharactersNeutral/CurlyMetalhead/jump.fbx": "82cd0c4336e0c505d4b2db6b4d8d65e25b42568215d841491fdd2b6d97ad47c0",
+    "Data/CharactersNeutral/CurlyMetalhead/jump.json": "3df068c2f34b8b443480d95afc3e2bbc1d77d5055a5e86e039b2b6dae9a608cc",
+    "Data/CharactersNeutral/CurlyMetalhead/metallic.png": "1982f17db54c0a5512af9b0513eda1e57e04339581beaf232bbe702b4c3d5452",
+    "Data/CharactersNeutral/CurlyMetalhead/normal.png": "5e2f2416cc665276ea264e85ab9b8762d84243c7a3341f720562f2701aced9cc",
+    "Data/CharactersNeutral/CurlyMetalhead/preview.png": "9ca29886f3c460b5f4eb24997cdfd1ecad7615133af3bbeb845fd8a5807c449e",
+    "Data/CharactersNeutral/CurlyMetalhead/reference.png": "6919135c8695bef6bdcb61c66ced507979bcdb09157d231f99be4b7eee70d0a0",
+    "Data/CharactersNeutral/CurlyMetalhead/request.json": "d18dde32801c42001d0505c7502b4580eb95d095daa60a41a3e587ea8149465a",
+    "Data/CharactersNeutral/CurlyMetalhead/result.json": "2e113645af3bf8de64a2a0b2c6d4857e620a9ad8de13556338892f1491c573b7",
+    "Data/CharactersNeutral/CurlyMetalhead/roughness.png": "b689f69c19291026ccfb4041d3d48223ce2f5d4564b1617576d6c8fd7a81a923",
+    "Data/CharactersNeutral/CurlyMetalhead/run.fbm/Material_0_baseColor.jpg": "0657d390691864ad2fe168ccdd2f47bc2ae5d1e3c3d49237c298b3710e7db02c",
+    "Data/CharactersNeutral/CurlyMetalhead/run.fbx": "edd6a60193010153cb7f73de287a040383bb9accb818430e4051439423bc0cef",
+    "Data/CharactersNeutral/CurlyMetalhead/run.glb": "8d04d7668c13e45578ecee3dd231ab359eb2d8cb5582781720305617232e5280",
+    "Data/CharactersNeutral/CurlyMetalhead/walk.fbm/Material_0_baseColor.jpg": "0657d390691864ad2fe168ccdd2f47bc2ae5d1e3c3d49237c298b3710e7db02c",
+    "Data/CharactersNeutral/CurlyMetalhead/walk.fbx": "81164edb631d62d92fdebdeb7e6895d20528e6c66b76890d66ddcba32a72d459",
+    "Data/CharactersNeutral/GreenCap51/base_color.png": "cd5caf43649ebe507c1fc449c951c7bc17903fbee93ba459f08ff352d3aaca42",
+    "Data/CharactersNeutral/GreenCap51/body.fbm/Material_0_baseColor.jpg": "494e2fdd78ffa877cc15723f3fb5a2b29a2f1c6a5416c157dfa43a3aadb66994",
+    "Data/CharactersNeutral/GreenCap51/body.fbx": "3a65c20c923852a0bf16baf7130792ad951a9e72069e079339b4aa71349fcee3",
+    "Data/CharactersNeutral/GreenCap51/body.glb": "e3d51790a0a236f907d62db524964226b0020248b214e7b3a46a51f73e02fcbc",
+    "Data/CharactersNeutral/GreenCap51/idle.fbm/Material_0_baseColor.jpg": "494e2fdd78ffa877cc15723f3fb5a2b29a2f1c6a5416c157dfa43a3aadb66994",
+    "Data/CharactersNeutral/GreenCap51/idle.fbx": "5d6e820fa4f9b652a2ec813f1577734d3da4d97006f16d5689eb987ee9e5125b",
+    "Data/CharactersNeutral/GreenCap51/jump.fbx": "88bf3bf0f523c3cff7ba5b07a573dfd034a1addea8ea5ff8acd77b1a0ae6cd19",
+    "Data/CharactersNeutral/GreenCap51/jump.json": "dbbf0f030274d2895a281f87b78d36d7bc0fac9ad2c2cd59eba68baf95ddc1b4",
+    "Data/CharactersNeutral/GreenCap51/metallic.png": "113237b39a2c443fe24c476f773f0d983a92933f259c497b71b3d9dc1cb13028",
+    "Data/CharactersNeutral/GreenCap51/normal.png": "d0ce72da567b378451fc74c3abfe548e4306a9ceab4d4427993867eaf3b08f08",
+    "Data/CharactersNeutral/GreenCap51/preview.png": "7823a4d550d29bd365fc990449501f220d4671bd8a3acaba689e2ab35f50ef8b",
+    "Data/CharactersNeutral/GreenCap51/reference.png": "29d562d8f65a356b0c56611e5a525074219ee63640fd0f3baca9fb7b432ca43a",
+    "Data/CharactersNeutral/GreenCap51/request.json": "a03c3454d7a05c95dd6cef7580808761d4326510c3e671f10c0cd46c9e26374e",
+    "Data/CharactersNeutral/GreenCap51/result.json": "9a0a129f2bfdfb5059826b7b737c9c570703e1f1aab70cb89147c1e13251dbd4",
+    "Data/CharactersNeutral/GreenCap51/roughness.png": "2fbbb1a237a4555d1bd3c3c79fd041e398265d2143ecf344be23da56e815e85d",
+    "Data/CharactersNeutral/GreenCap51/run.fbm/Material_0_baseColor.jpg": "494e2fdd78ffa877cc15723f3fb5a2b29a2f1c6a5416c157dfa43a3aadb66994",
+    "Data/CharactersNeutral/GreenCap51/run.fbx": "d23ef3e92f09fe3eee4dfc6b9f3b1d71d3dc05a6648cf98818e724e486884710",
+    "Data/CharactersNeutral/GreenCap51/run.glb": "eb73ffe9a9a52c6e29d06940d824649e903f9102a751857212673e4ae667b97d",
+    "Data/CharactersNeutral/GreenCap51/walk.fbm/Material_0_baseColor.jpg": "494e2fdd78ffa877cc15723f3fb5a2b29a2f1c6a5416c157dfa43a3aadb66994",
+    "Data/CharactersNeutral/GreenCap51/walk.fbx": "739a555e6ea88e8b8a95b8585a6c390612cca4d2168f26ab77466e1bb9a04d76",
+    "Data/CharactersNeutral/LimeJacket/base_color.png": "7da41cb1d4ac748db19dd922f1d04d6c6b6afddbe6d064d1a482ae47648be7ac",
+    "Data/CharactersNeutral/LimeJacket/body.fbm/Material_0_baseColor.jpg": "8b71e8ad8f3bb0f6197ea04142d118005a1fdeb3d3154e404ba193a9f81caa2c",
+    "Data/CharactersNeutral/LimeJacket/body.fbx": "e3bccdf06bac149803a86cd86a98d085e6f5bccc40997b933e8fd0ed4097d24b",
+    "Data/CharactersNeutral/LimeJacket/body.glb": "ee8179a0eef36145a8cdd635eb33ef9b5540c7759bfdcd17a4b9298c6f0c9a8f",
+    "Data/CharactersNeutral/LimeJacket/idle.fbm/Material_0_baseColor.jpg": "8b71e8ad8f3bb0f6197ea04142d118005a1fdeb3d3154e404ba193a9f81caa2c",
+    "Data/CharactersNeutral/LimeJacket/idle.fbx": "519b4763069274602880cd9de4f9106ec3895c1ffc1c5369f34fcb1c76b5abcf",
+    "Data/CharactersNeutral/LimeJacket/jump.fbx": "1bf34250260b671e4a71612993d966b84f51c665173b2170f6aa9a8fe96256da",
+    "Data/CharactersNeutral/LimeJacket/jump.json": "f625b18cee14946b5d8e1f7200e1eee52606d220468e31320576dad15420dc25",
+    "Data/CharactersNeutral/LimeJacket/metallic.png": "a2296c83dfa44df957009cd2709be417542960f589e46d7ccb912b198b2f8605",
+    "Data/CharactersNeutral/LimeJacket/normal.png": "35abf7f9ba9712d7c4541f8e41ee44da109962be272ede9926a82038cb35afd5",
+    "Data/CharactersNeutral/LimeJacket/preview.png": "fa80083399cb60baa119c7a548b3a6fbaef7c2dbbc345ba74f576db20be4f494",
+    "Data/CharactersNeutral/LimeJacket/reference.png": "ca23a0037f043fa6a66caa516bbd216c1ee6cd042e36b8aadbc4783c0579aa91",
+    "Data/CharactersNeutral/LimeJacket/request.json": "090741f7578b099824367e2fdd70ebc572b33ccdc1377cde3664d54755c147d4",
+    "Data/CharactersNeutral/LimeJacket/result.json": "83658c2d682f70547658b8ca55823879e074d1d8bc18159fcd215fe414995753",
+    "Data/CharactersNeutral/LimeJacket/roughness.png": "ddb5f269f96d2d58aa392f883a133b4d3428441beb565425896a402d1a48f4f6",
+    "Data/CharactersNeutral/LimeJacket/run.fbm/Material_0_baseColor.jpg": "8b71e8ad8f3bb0f6197ea04142d118005a1fdeb3d3154e404ba193a9f81caa2c",
+    "Data/CharactersNeutral/LimeJacket/run.fbx": "a1b45476d41e8c50f5f240148610e41a2bf514d5457f358fad5c0485b2b5d248",
+    "Data/CharactersNeutral/LimeJacket/run.glb": "0760599a88f82fc03ef46ad882877bbc5d537f6b989d18b184ca88bd463acb41",
+    "Data/CharactersNeutral/LimeJacket/walk.fbm/Material_0_baseColor.jpg": "8b71e8ad8f3bb0f6197ea04142d118005a1fdeb3d3154e404ba193a9f81caa2c",
+    "Data/CharactersNeutral/LimeJacket/walk.fbx": "a91105b299958b2a52a8f63936d3943642cfbc1818c2a6457f4216a45f14d9dc",
+    "Data/CharactersNeutral/Memphis33/base_color.png": "e970b97b56c82fa511b87fa945b15fccb72c095354917620639e29ed95de4b8d",
+    "Data/CharactersNeutral/Memphis33/body.fbm/Material_0_baseColor.jpg": "bd0c20c6485c3fc07b6371b3e8e6d0360e54b94781b49d613fbf561eb303a70f",
+    "Data/CharactersNeutral/Memphis33/body.fbx": "c246f2b61487ad8bc5a411f5300b27648ed9b73aa001e6c4f5c76a8cd480f055",
+    "Data/CharactersNeutral/Memphis33/body.glb": "fec6c35a974efac9bd0e600ee99be5e8ee3feaf0e617b118d4a9a724eaf62a37",
+    "Data/CharactersNeutral/Memphis33/idle.fbm/Material_0_baseColor.jpg": "bd0c20c6485c3fc07b6371b3e8e6d0360e54b94781b49d613fbf561eb303a70f",
+    "Data/CharactersNeutral/Memphis33/idle.fbx": "5e351f16116da1b2aa33f2fc1664d733de549f600abe47f3853cb9c19a57135a",
+    "Data/CharactersNeutral/Memphis33/jump.fbx": "59f917e31ab4330d92045990285c8d13159cd949fc479d783dee378301ae5a7c",
+    "Data/CharactersNeutral/Memphis33/jump.json": "b2d594195a28280189e41e6edfdb4c6d2ca9411ca5e642b2d3c82d3948c186c6",
+    "Data/CharactersNeutral/Memphis33/metallic.png": "27f39f5212f778b391c6b95bb92dcf6fe670d12549908706492b18619fec5f7c",
+    "Data/CharactersNeutral/Memphis33/normal.png": "3cc116cfd74574e63dd0cc80cd745400ae06a2e9f898e3ab23edf863014d12b1",
+    "Data/CharactersNeutral/Memphis33/preview.png": "1f98061a078a19494c48118eb2eb79ecd816c5fd46be0d0a8d7679c8139be086",
+    "Data/CharactersNeutral/Memphis33/reference.png": "1445627cd6f7a8fe8530fdd32f995f4be2603545c3fe6bccff66506c8374e1b9",
+    "Data/CharactersNeutral/Memphis33/request.json": "88be4894e236b469d5ab52280051a9547552d6911ad91193a3f5a0852138fef1",
+    "Data/CharactersNeutral/Memphis33/result.json": "f681d402b32291f8848f63ba5c4f73921e824df27f3bbe4629d9568b3e814380",
+    "Data/CharactersNeutral/Memphis33/roughness.png": "d8a13495f0314fcf7a36474f6f5dbdb1f429602a2b6fbac80a97778f62e26b57",
+    "Data/CharactersNeutral/Memphis33/run.fbm/Material_0_baseColor.jpg": "bd0c20c6485c3fc07b6371b3e8e6d0360e54b94781b49d613fbf561eb303a70f",
+    "Data/CharactersNeutral/Memphis33/run.fbx": "c7b962895148afc5bca13102ee71ae6555ce4c2d9c578bd6e3c3aa56feb39233",
+    "Data/CharactersNeutral/Memphis33/run.glb": "a3b5d098fb83824367a2f135da95c4d5000624defa169e8372b0d500e37ec300",
+    "Data/CharactersNeutral/Memphis33/walk.fbm/Material_0_baseColor.jpg": "bd0c20c6485c3fc07b6371b3e8e6d0360e54b94781b49d613fbf561eb303a70f",
+    "Data/CharactersNeutral/Memphis33/walk.fbx": "4362f3c3caad46e6899289c24d9a5bc6b2124aac2d894def4da8dcda3a60e06f",
+    "Data/CharactersNeutral/README.md": "d4c248fcededa547338d8018844432cd232bc7b462934237294c5e2752aa7093",
+    "Data/CharactersNeutral/RedJersey/base_color.png": "11780568780e912d255022dce8dada4e92ee87f83105a1fb8abdfeb8fbde7fd4",
+    "Data/CharactersNeutral/RedJersey/body.fbm/Material_0_baseColor.jpg": "eec5edb80ea79bb7eb79cffcd108ba76a619487171dfb173fe787de3d2c14f99",
+    "Data/CharactersNeutral/RedJersey/body.fbx": "a019dd99a3a783d14bed1c60672d977688dd9955fcddc25f73127e2d541e5295",
+    "Data/CharactersNeutral/RedJersey/body.glb": "47665d2802a2154c4296b55c1d1ed01d6fdbc1867d33c1a44d55e7927f7f7f02",
+    "Data/CharactersNeutral/RedJersey/idle.fbm/Material_0_baseColor.jpg": "eec5edb80ea79bb7eb79cffcd108ba76a619487171dfb173fe787de3d2c14f99",
+    "Data/CharactersNeutral/RedJersey/idle.fbx": "4e30c9b44f7f5d52cb976fee0dcc098e0b18119c484d91787fef3be70c67c56b",
+    "Data/CharactersNeutral/RedJersey/jump.fbx": "92d3ce2cd48cfe34b6c406d9b8e930630f523d1dc9ec0712e2a05f7a96696a0b",
+    "Data/CharactersNeutral/RedJersey/jump.json": "081c75aa835fea2b77b0c8cb3b6c5b7f635fc62e4d81861018bf6d0f24dd10e0",
+    "Data/CharactersNeutral/RedJersey/metallic.png": "8f5591feb66ef47af3ea408bc7129f8ac983e155278de651285515b72887bee4",
+    "Data/CharactersNeutral/RedJersey/normal.png": "859796c3ae4a06467d4171202642093a6a36f4f755d29f2f6a68af58ae8530d3",
+    "Data/CharactersNeutral/RedJersey/preview.png": "38f8a234f3d7c669f8ee057580fda10e53383624da00f29726cb213bf592b6dd",
+    "Data/CharactersNeutral/RedJersey/reference.png": "2ee33cfa0e62806cfedef7a81628885b35fe3974baca1518ea9283092717515a",
+    "Data/CharactersNeutral/RedJersey/request.json": "a026dc03c75e6dae7fc9852a53e64f06c26c0cc49dd2f112eb8efc9bec6a0374",
+    "Data/CharactersNeutral/RedJersey/result.json": "29ab5bb6cc230e972a6a6f876564bbe26ee03d83781c0e4ba33e149cf363c2b1",
+    "Data/CharactersNeutral/RedJersey/roughness.png": "6a80f24dcc8dba442cb6c2d462b65713673aa5442d6b7adde946623090d1daf7",
+    "Data/CharactersNeutral/RedJersey/run.fbm/Material_0_baseColor.jpg": "eec5edb80ea79bb7eb79cffcd108ba76a619487171dfb173fe787de3d2c14f99",
+    "Data/CharactersNeutral/RedJersey/run.fbx": "a9225af857a434da7e7827edb2a51e77c0aeb0c53214e800f740244b429eeabb",
+    "Data/CharactersNeutral/RedJersey/run.glb": "d0c04de3452a21545cbded14f0fc978f819e8cf5a4632aa7c5a1bd7d43f25d99",
+    "Data/CharactersNeutral/RedJersey/walk.fbm/Material_0_baseColor.jpg": "eec5edb80ea79bb7eb79cffcd108ba76a619487171dfb173fe787de3d2c14f99",
+    "Data/CharactersNeutral/RedJersey/walk.fbx": "e384488866bcf2e963a9a2fd4ccae76632d4462f93f0d887d40258815ac4d668",
+    "Data/CharactersNeutral/Revisions/LimeJacket-v1/Preview/1280_Face.png": "5fbe1dd23c4e9e4692a3b60044a7f5b0f8d26a471aceb2a1b8cc5f6411cb91ab",
+    "Data/CharactersNeutral/Revisions/LimeJacket-v1/Preview/1280_FaceThreeQuarter.png": "0bb2ea736bd19085c30189e10d5cb5fed69c349a88ea59c341ceae62b9481c6c",
+    "Data/CharactersNeutral/Revisions/LimeJacket-v1/Preview/1920_Face.png": "a84d6f2c833a6c646ad7417c365e47729bcc054739386ec39fe99f94d3e168c9",
+    "Data/CharactersNeutral/Revisions/LimeJacket-v1/Preview/1920_FaceThreeQuarter.png": "1609bd2215d02552f594a99f2444fec029defcef070c933bd37585d5a8df0dd7",
+    "Data/CharactersNeutral/Revisions/LimeJacket-v1/base_color.png": "a42c4ebb2ca9f4130ee8d557b9fd05d4b1e4382bb217ad1164c7e464ab589e85",
+    "Data/CharactersNeutral/Revisions/LimeJacket-v1/body.fbm/Material_0_baseColor.jpg": "90530d1aac59ba915d29039535829189d39005cbcbfd78440c7a0d1eb2965ea1",
+    "Data/CharactersNeutral/Revisions/LimeJacket-v1/body.fbx": "20d283d2274fc24f52ce248f02ab1b4165671145b051d39fbea6b1903cdb4071",
+    "Data/CharactersNeutral/Revisions/LimeJacket-v1/body.glb": "da5ad9a835b7df8a4f8b4c46f5f2b218727ec9bfa4026f3ec360ff06ea66ef7f",
+    "Data/CharactersNeutral/Revisions/LimeJacket-v1/files-before.json": "e7a149aa507f0e86762b13f072113a3ee0797bcf07bb62f306f3acaf8719bf0d",
+    "Data/CharactersNeutral/Revisions/LimeJacket-v1/idle.fbm/Material_0_baseColor.jpg": "90530d1aac59ba915d29039535829189d39005cbcbfd78440c7a0d1eb2965ea1",
+    "Data/CharactersNeutral/Revisions/LimeJacket-v1/idle.fbx": "54dc3dec8fbf98e1d60921ea9b97f064b94bba097dbe48d751c7d3218cbe5d96",
+    "Data/CharactersNeutral/Revisions/LimeJacket-v1/jump.fbx": "66dcc1c2b54bdce28685a874bdb8fdf9a6b1c88df4e570cbfa6d0baeaad39734",
+    "Data/CharactersNeutral/Revisions/LimeJacket-v1/jump.json": "228209a09fa4999497bda81caa35be34b2b724774356d7ca1e011646cf1e8251",
+    "Data/CharactersNeutral/Revisions/LimeJacket-v1/metallic.png": "adee7f7353d316872af8f4b02e6807449fc0a33ddf07d66f05f8493b16dab5d4",
+    "Data/CharactersNeutral/Revisions/LimeJacket-v1/normal.png": "4c6cefa9fd545ac8842cb8d0ec82f98545bcae3bca3865fdf4785dd4c4e285e2",
+    "Data/CharactersNeutral/Revisions/LimeJacket-v1/preview.png": "72b46d8cf42a9fa620408f27deee8508780fafff0482d1588d8d3625c45cb4ff",
+    "Data/CharactersNeutral/Revisions/LimeJacket-v1/reference.png": "d8254aafff0b1a63f7add67d3a6946699f40d317196733c46a5836e37b328ebd",
+    "Data/CharactersNeutral/Revisions/LimeJacket-v1/request.json": "66e4e6f3d32db82ecfd38f670a07c60b3d45f82a079b701a69766d19250d07ec",
+    "Data/CharactersNeutral/Revisions/LimeJacket-v1/result.json": "e8985e93552e558e8b8b2729733684bc8b2452a7dbe87746b535a4a9ea2a4cc0",
+    "Data/CharactersNeutral/Revisions/LimeJacket-v1/revision.json": "67c44cb0d05064e32dc6018e032e379bc3dc511888ef9e7d2488a82183ff1c8f",
+    "Data/CharactersNeutral/Revisions/LimeJacket-v1/roughness.png": "3b773abbcbd33af15fbdaf63dc8b41e0553fc934804cfbbd5277e3226f367df1",
+    "Data/CharactersNeutral/Revisions/LimeJacket-v1/run.fbm/Material_0_baseColor.jpg": "90530d1aac59ba915d29039535829189d39005cbcbfd78440c7a0d1eb2965ea1",
+    "Data/CharactersNeutral/Revisions/LimeJacket-v1/run.fbx": "af6577da293481172bec771fda61c37f90f305ee1db23be34a437e2de0804643",
+    "Data/CharactersNeutral/Revisions/LimeJacket-v1/run.glb": "a172683a5bbaf59396bb482f05385ce636642d4565e1866a95827933ac89bd5a",
+    "Data/CharactersNeutral/Revisions/LimeJacket-v1/walk.fbm/Material_0_baseColor.jpg": "90530d1aac59ba915d29039535829189d39005cbcbfd78440c7a0d1eb2965ea1",
+    "Data/CharactersNeutral/Revisions/LimeJacket-v1/walk.fbx": "44691c3beead19e8a601ae357c9616cdeb017de92711d1816327909bc2d65d46",
+    "Data/CharactersNeutral/Topknot/base_color.png": "2a3abd3a1d0279c9edde4563ee1ba16e3e3866a0bd01d4a0fe5f23d96e79745d",
+    "Data/CharactersNeutral/Topknot/body.fbm/Material_0_baseColor.jpg": "fe58610a4851a26c4d2cda698bbf42123a903f819695ad80c7a845e9144ae5a5",
+    "Data/CharactersNeutral/Topknot/body.fbx": "5adc8300b149cc8cae9d1b483c649f05f4265aa47cda65e4d3068e737cb39176",
+    "Data/CharactersNeutral/Topknot/body.glb": "d6432134e3f2b70a1b9cf2b2c1d8e74e9d2fa2bea46121e2f8ec0eef5b852f01",
+    "Data/CharactersNeutral/Topknot/idle.fbm/Material_0_baseColor.jpg": "fe58610a4851a26c4d2cda698bbf42123a903f819695ad80c7a845e9144ae5a5",
+    "Data/CharactersNeutral/Topknot/idle.fbx": "8e3d9f685a72a4c4c95761a9d11852baf2f737cfeb8c194ff4eac917df650ec8",
+    "Data/CharactersNeutral/Topknot/jump.fbx": "781e957841c7ad080fe37e37dbe0d3926aeccd4ba49a6e4929d03a5705639494",
+    "Data/CharactersNeutral/Topknot/jump.json": "17c1f81883467aa2c8a3998ec9c4fb02d8b58da21c6f87b2a81a8c30716763cb",
+    "Data/CharactersNeutral/Topknot/metallic.png": "f2c81f6310608bc48c626d14a9554646cf746b27a447b85bc6606cdb98a44286",
+    "Data/CharactersNeutral/Topknot/normal.png": "1fc1b42b19334226f232dd22b769cddbae8fec116e212cc51070683db277ab43",
+    "Data/CharactersNeutral/Topknot/preview.png": "8f23c74b38a14e6b1c1e8406f60bdd62941838fd0aebaf1c53d999d6b80b66c2",
+    "Data/CharactersNeutral/Topknot/reference.png": "20c388f288b0195bedd900c172f95dfae1a462a1b1afe216a1d2db4f178d1ce3",
+    "Data/CharactersNeutral/Topknot/request.json": "624e826db8056322cdfc0217dfb0c70a01a2b960c32032a66c498c9dfdf8689d",
+    "Data/CharactersNeutral/Topknot/result.json": "551c1350e83135c3fd9a510e32b9c0d4092240e56f0e241a469e88e93b5ba90e",
+    "Data/CharactersNeutral/Topknot/roughness.png": "8c3ca986af972a4b6a902cd0be8f9feb8372e2feac0724a7bec19f84c6988170",
+    "Data/CharactersNeutral/Topknot/run.fbm/Material_0_baseColor.jpg": "fe58610a4851a26c4d2cda698bbf42123a903f819695ad80c7a845e9144ae5a5",
+    "Data/CharactersNeutral/Topknot/run.fbx": "24ec14cd8e3d613074a8a0fed2d409f74a751b2968bc051ccdb0ee1dd41a4917",
+    "Data/CharactersNeutral/Topknot/run.glb": "85c4a4e09d11d2c7fd86ed0527c0c1c67dc879b74a25eacdb5896efe7ce4e349",
+    "Data/CharactersNeutral/Topknot/walk.fbm/Material_0_baseColor.jpg": "fe58610a4851a26c4d2cda698bbf42123a903f819695ad80c7a845e9144ae5a5",
+    "Data/CharactersNeutral/Topknot/walk.fbx": "5df55560593ff167c202fc6b7e1b8650a2e38b788a286044772fe8f7204b4bd5",
+    "Data/CharactersNeutral/WhiteCap/base_color.png": "84f8cd5c9ef6be21ea2850ec4e6689c62320df7bde0c9ce6821258007e3f5afe",
+    "Data/CharactersNeutral/WhiteCap/body.fbm/Material_0_baseColor.jpg": "900d819becb49c5175fcfd6a42aad928cb9828dafc95c62db15c9e60f8a791ff",
+    "Data/CharactersNeutral/WhiteCap/body.fbx": "7b687a80ca150b3b011bfb3ba33f880da391a835ecdb2236f04627ad40950b44",
+    "Data/CharactersNeutral/WhiteCap/body.glb": "47f562f973879f79418966c77a2a81a06ada9c42966c1f6934417618caffeeee",
+    "Data/CharactersNeutral/WhiteCap/idle.fbm/Material_0_baseColor.jpg": "900d819becb49c5175fcfd6a42aad928cb9828dafc95c62db15c9e60f8a791ff",
+    "Data/CharactersNeutral/WhiteCap/idle.fbx": "d8b855ee066aaf808ddfda19923bdf8974b2887da5861b57e011a7ff6bb6f6f5",
+    "Data/CharactersNeutral/WhiteCap/jump.fbx": "58ddd18878713598901943082d6bab210e846474a9556f5e69eac606f9c5312c",
+    "Data/CharactersNeutral/WhiteCap/jump.json": "a5c7b9b4d433f7776c22e59a90dfd201c2c172ca318dc84ae4f32257a471a02e",
+    "Data/CharactersNeutral/WhiteCap/metallic.png": "455ed7260eea9eba46fd16a28e630561e3876b823dc0ce350637c86453074f3c",
+    "Data/CharactersNeutral/WhiteCap/normal.png": "73612a514fa9933796540b48b19fc084ea8181affbf6a30bd8b066d116b69d1d",
+    "Data/CharactersNeutral/WhiteCap/preview.png": "acc5663ce8d0bf3bb26d77fa5f57f7da787667310497adf32feb888c6a3de9f7",
+    "Data/CharactersNeutral/WhiteCap/reference.png": "5f247969b9589235a5aedd20ea7f5c2ac921cc5b5a2c4600a89eb30939ace79a",
+    "Data/CharactersNeutral/WhiteCap/request.json": "e57d9434b3e8af45842c5ee2c1be2e3a0fca23ccf22f417b05e3b1a8d55babbf",
+    "Data/CharactersNeutral/WhiteCap/result.json": "4c2d71dbae7595fbad059b478dd4231621e4939cb5f6d02acd1cb9af99172223",
+    "Data/CharactersNeutral/WhiteCap/roughness.png": "28c5685a3c445ec55b6bddb3a9300f7ea3e4df4e700e1e4ce40764bd196932fc",
+    "Data/CharactersNeutral/WhiteCap/run.fbm/Material_0_baseColor.jpg": "900d819becb49c5175fcfd6a42aad928cb9828dafc95c62db15c9e60f8a791ff",
+    "Data/CharactersNeutral/WhiteCap/run.fbx": "c404e1d9ddeca84d2fc23604454e2ddd4252155ea353f9dbfd019bbc155af422",
+    "Data/CharactersNeutral/WhiteCap/run.glb": "433093f57c189bc93951ee3e563ac5451b4ebd3af55767fd75658c6ca36a0aa0",
+    "Data/CharactersNeutral/WhiteCap/walk.fbm/Material_0_baseColor.jpg": "900d819becb49c5175fcfd6a42aad928cb9828dafc95c62db15c9e60f8a791ff",
+    "Data/CharactersNeutral/WhiteCap/walk.fbx": "b6c1cd7afba9010bcc0d43b2da82c6ba6acc88120938b49e7c8685274b7b919e",
+    "Data/CharactersNeutral/files.json": "d1903fb2c71a20eecb031abc88a8d7500383fc8cdfab3fe3f0fb23bce24fbd99",
+    "Data/GraphicNovel/Pilot/CurlyMetalhead/rigged/README.md": "897673a7e2ebbbe642edc2c374063e6f9c37f277e70496420082ade242b92883",
+    "Data/GraphicNovel/Pilot/CurlyMetalhead/rigged/authoring.log": "d4af2a6aba1e4849331d02f966bfed52548519690d381265d9760cff03ef5a32",
+    "Data/GraphicNovel/Pilot/CurlyMetalhead/rigged/body.fbx": "0150f48b3b74a0eb797ce4cc6a5bcb99c7fc4b4e9599e40e22e2ee7cb48bedd0",
+    "Data/GraphicNovel/Pilot/CurlyMetalhead/rigged/body.glb": "25e95cc85aeb43c0f2a4e0fa31db4d89531d025ac3cdff60577b921d9a7f219b",
+    "Data/GraphicNovel/Pilot/CurlyMetalhead/rigged/pilot-face-narrow.png": "464fb0362d734bdfe545b2b463268b60125b93b93f6056862d7bd0ff44298814",
+    "Data/GraphicNovel/Pilot/CurlyMetalhead/rigged/pilot-face-open.png": "c03956f3d9723f2a5b7cfea9f506e3329cf993ec3abe7d513a6b033eae6d7e8b",
+    "Data/GraphicNovel/Pilot/CurlyMetalhead/rigged/pilot-hand-flex-side.png": "8eea56db5f34da83391ec071adff7729c898d988163dd5c67cf3e3b4df3f8b44",
+    "Data/GraphicNovel/Pilot/CurlyMetalhead/rigged/pilot-hand-flex.png": "f7b467010e620cecfab4189748150fdff7849e2e9b7e665c6813f93050e1782e",
+    "Data/GraphicNovel/Pilot/CurlyMetalhead/rigged/pilot-hand-rest.png": "de5e67c0cb61ebcca8c6b75de5ff6c5f9df98a7a61509e2763bbe84e67215d6b",
+    "Data/GraphicNovel/Pilot/CurlyMetalhead/rigged/pilot.blend": "32fc369417099d1eee3a6a7fef318c040d5948ee88097e54892e0eaecf72d208",
+    "Data/GraphicNovel/Pilot/CurlyMetalhead/rigged/provenance.json": "2acbf61aa769124f360c5f1afd06906855d88cde544f974c0df8053caed8a53b",
+    "Data/GraphicNovel/Pilot/CurlyMetalhead/rigged/rejected-full-blink.json": "381ad9164479e12f7d31e70adba341a5a63d310b855a32cc5a6f53a6d11362f2",
+    "Data/GraphicNovel/Pilot/CurlyMetalhead/rigged/rejected-full-blink.png": "844676226b12d4dafe11220a8d5a2e0f6bbc88253a918367b8487c9700dbad5e",
+    "Data/GraphicNovel/Pilot/CurlyMetalhead/rigged/source-audit.json": "e0554febcd0123aa299778d1c487cad25fedb90453dd61ab6126acf11d29b4e8",
+    "Data/GraphicNovel/Pilot/CurlyMetalhead/rigged/source-face-clay.png": "a08c907e609f287473dd199915e60e8a0674d53d6bffd620969056098bf4c9eb",
+    "Data/GraphicNovel/Pilot/CurlyMetalhead/rigged/source-face.png": "ea85dc56c05289146c4e27ee356ce8f664932a74545402b13b0230d726e8b2ed",
+    "Data/GraphicNovel/Pilot/CurlyMetalhead/rigged/source-left-hand-side.png": "3ae60b35dfc786973b9ab92a63dd8df68d97cd9284b87421bc1a9af4aec3e2c2",
+    "Data/GraphicNovel/Pilot/CurlyMetalhead/rigged/source-left-hand.png": "a63d7f62f5cb4af1a0c8ad7b3dd3bdd429ae503488da6ba204b6738aa54df591",
+    "Data/GraphicNovel/Pilot/CurlyMetalhead/rigged/source-right-hand.png": "b7798344c64c224adfc70ec3da98ca48c1d1866a785e392cddfc9703253e9a41",
+    "Data/GraphicNovel/Pilot/CurlyMetalhead/wardrobe/bent-knee.png": "df70d9861777a811e21512e1562fa2f2b9cb687407d3350e7f76498acfaeade4",
+    "Data/GraphicNovel/Pilot/CurlyMetalhead/wardrobe/body-bind-pose.fbx": "ed1da668f343a09fc8876ebc0429604f187011136c87ea60d428eaace8a462a2",
+    "Data/GraphicNovel/Pilot/CurlyMetalhead/wardrobe/body-bind-pose.json": "6750ff4541c7f0a16f31b9ecfa00e684a3e40e36bb6503ff5528de3186ace002",
+    "Data/GraphicNovel/Pilot/CurlyMetalhead/wardrobe/body.fbx": "bcce8e49db5d86cb09b6d9fd53e74489044779b315ebc8bfb5662a48e3adc8fb",
+    "Data/GraphicNovel/Pilot/CurlyMetalhead/wardrobe/defect-repair.json": "dbea07848bf78ca97b9b0844891153411017cbd3307e77c09485a56d867b1dc1",
+    "Data/GraphicNovel/Pilot/CurlyMetalhead/wardrobe/front.png": "42b3515c07ceab7fb6ba4f72c5879818d72a8a6e91f4868fcc9fbbec5663c4e9",
+    "Data/GraphicNovel/Pilot/CurlyMetalhead/wardrobe/lower-front.png": "d9c65c30d10b7c9704a3b17ef224adc7f3c4bfd56d4c7ee87c20ca5ae772cfa5",
+    "Data/GraphicNovel/Pilot/CurlyMetalhead/wardrobe/lower-side.png": "6f0dee9ee48961cc4bb03954d4adf3aa082eb82927abcd0f2778f43ec9aeeb5c",
+    "Data/GraphicNovel/Pilot/CurlyMetalhead/wardrobe/pilot.blend": "7ad7a77cf679867260ae517cd73e91a21bf07cc15574229fbe765e2353623cd6",
+    "Data/GraphicNovel/Pilot/CurlyMetalhead/wardrobe/pilot.blend1": "de4cb78d202cdf15274c096109bee9a4876fd94a4f21e957f4d0e093b6790c09",
+    "Data/GraphicNovel/Pilot/CurlyMetalhead/wardrobe/report.json": "444d1a52fe452949a1b979061a2c2ee0c3019e18032a3cc6530124063f697057",
+    "Data/GraphicNovel/Pilot/CurlyMetalhead/wardrobe/roundtrip.json": "5341b24793b29758f7a8076b9b8425a2ce47c46c79d5071e54da0e8d6698106d"
+  },
+  "current_native_stills": [
+    {
+      "path": "Preview/GraphicNovelGenerated/Comic/1280/Resident9_Airborne.png",
+      "sha256": "60aa8514776ff8ffc929b44cd968820655f56e050a00b2228c53191336062616",
+      "bytes": 1470861
+    },
+    {
+      "path": "Preview/GraphicNovelGenerated/Comic/1280/Resident9_Face.png",
+      "sha256": "efd3ded1365d7055a20754beae25292eb24a2ac2da42d9de1ab6eb76cfcb4e65",
+      "bytes": 1859014
+    },
+    {
+      "path": "Preview/GraphicNovelGenerated/Comic/1280/Resident9_FaceThreeQuarter.png",
+      "sha256": "b8897143c689738ca45068223a1c640a9490c56f788be9df8a60320bebd29827",
+      "bytes": 1982150
+    },
+    {
+      "path": "Preview/GraphicNovelGenerated/Comic/1280/Resident9_Idle.png",
+      "sha256": "a13934a607a104d55c903bebc6aaa777ca3dea003568d2661cb66d1fbbf60f42",
+      "bytes": 1529408
+    },
+    {
+      "path": "Preview/GraphicNovelGenerated/Comic/1280/Resident9_Landing.png",
+      "sha256": "061c73b6cdc915aee85f0f8de36e018ee1009827b6ca6952c1e6d6463fe09410",
+      "bytes": 1471434
+    },
+    {
+      "path": "Preview/GraphicNovelGenerated/Comic/1280/Resident9_Run.png",
+      "sha256": "cfa7478c2a539f7b584d55cea8d0e699f9ea3b643c1744a570c672b5a9683265",
+      "bytes": 1481170
+    },
+    {
+      "path": "Preview/GraphicNovelGenerated/Comic/1280/Resident9_Walk.png",
+      "sha256": "a905ee8e8f24e77e89d271c3087c4592b5259d32f83926bf98e61c621cbe8bb2",
+      "bytes": 1509208
+    },
+    {
+      "path": "Preview/GraphicNovelGenerated/Comic/1920/Resident9_Airborne.png",
+      "sha256": "dc6cb1bde03cb5b75a0d88a5ed0a4687c1f44df3e14289048914634a18eae46d",
+      "bytes": 3170379
+    },
+    {
+      "path": "Preview/GraphicNovelGenerated/Comic/1920/Resident9_Face.png",
+      "sha256": "68bcef5f82fa668c9f06ec5dbdf25566aa4e042d0b6bd26c491912f1cdf9cc7c",
+      "bytes": 3955384
+    },
+    {
+      "path": "Preview/GraphicNovelGenerated/Comic/1920/Resident9_FaceThreeQuarter.png",
+      "sha256": "fbb7593f2507286a9ba15c572143a9662a5afdcd0b91b536fee050e9231d8344",
+      "bytes": 4211689
+    },
+    {
+      "path": "Preview/GraphicNovelGenerated/Comic/1920/Resident9_Idle.png",
+      "sha256": "c788a27b3116c4e19fc07278e375b7ac864eb3bc7319b617c0903e3f659d06b2",
+      "bytes": 3284261
+    },
+    {
+      "path": "Preview/GraphicNovelGenerated/Comic/1920/Resident9_Landing.png",
+      "sha256": "4b4bb50a660a566d5088a090194e48588557f7638d32d83bbdd948a7c13000cd",
+      "bytes": 3155476
+    },
+    {
+      "path": "Preview/GraphicNovelGenerated/Comic/1920/Resident9_Run.png",
+      "sha256": "8f89e9c4529873271ca8879f9000225127d4c895089e4e5b5ac06fb782bd62a6",
+      "bytes": 3191345
+    },
+    {
+      "path": "Preview/GraphicNovelGenerated/Comic/1920/Resident9_Walk.png",
+      "sha256": "2b75f12638c6c94e31c4ab1ca43b0ae06c58e44b7082526c8900b7d2c355dcad",
+      "bytes": 3259527
+    },
+    {
+      "path": "Preview/GraphicNovelGenerated/Standard/1280/Resident9_Airborne.png",
+      "sha256": "1ba3436fa1ce57538a74d1426babd51c194a7f0410a4981a2ea2e4f59545d1a7",
+      "bytes": 1417673
+    },
+    {
+      "path": "Preview/GraphicNovelGenerated/Standard/1280/Resident9_Face.png",
+      "sha256": "304ef1fa21cacc9de592dffdbb28dc221b0038b9205de2a48caff3508ed34762",
+      "bytes": 1765268
+    },
+    {
+      "path": "Preview/GraphicNovelGenerated/Standard/1280/Resident9_FaceThreeQuarter.png",
+      "sha256": "cecbd77c2d97fed44aa3b2fc5fd1d42de2fb57f10f3cb1792a84b7f9e28a9052",
+      "bytes": 1800235
+    },
+    {
+      "path": "Preview/GraphicNovelGenerated/Standard/1280/Resident9_Idle.png",
+      "sha256": "5d18e293d9024be936b02e854a1c91197747ea6e71e710d202832e61eee5c43a",
+      "bytes": 1478822
+    },
+    {
+      "path": "Preview/GraphicNovelGenerated/Standard/1280/Resident9_Landing.png",
+      "sha256": "bbcc99f11723e2ec519fb008fed4fef692dbf22ff708a1e61b1a15d36a1dfacf",
+      "bytes": 1428668
+    },
+    {
+      "path": "Preview/GraphicNovelGenerated/Standard/1280/Resident9_Run.png",
+      "sha256": "302aa01cce6f2740f0b2566d4e591ae3fae8a070f7a53306881032912b319a3e",
+      "bytes": 1411126
+    },
+    {
+      "path": "Preview/GraphicNovelGenerated/Standard/1280/Resident9_Walk.png",
+      "sha256": "bcf1bb4907b3a4ec3afda385363d8b3babe7c394a7acd975a5a2567e097b2926",
+      "bytes": 1459181
+    },
+    {
+      "path": "Preview/GraphicNovelGenerated/Standard/1920/Resident9_Airborne.png",
+      "sha256": "d2cf2ba462bf07b76a971bd55469a2f81606b85130f44e3d58d64f294f2bdaaf",
+      "bytes": 3091838
+    },
+    {
+      "path": "Preview/GraphicNovelGenerated/Standard/1920/Resident9_Face.png",
+      "sha256": "4865dfa5f06089afcd18eae6dda58b6b8324ad74009c3694533ad33e559c225e",
+      "bytes": 3772667
+    },
+    {
+      "path": "Preview/GraphicNovelGenerated/Standard/1920/Resident9_FaceThreeQuarter.png",
+      "sha256": "9235d0ffc308e67e2baa90719b93b1909d744afd5b34db2ce33334238fbd4d46",
+      "bytes": 3808460
+    },
+    {
+      "path": "Preview/GraphicNovelGenerated/Standard/1920/Resident9_Idle.png",
+      "sha256": "926d4852cd702a3c8c5f8548eb9df6bb23b3e8a4d0feedf8326fb3e2e17a2c4f",
+      "bytes": 3205346
+    },
+    {
+      "path": "Preview/GraphicNovelGenerated/Standard/1920/Resident9_Landing.png",
+      "sha256": "f0732e52958c6b4499e9a76665f4c1bc232b556e3ca3817fb87470ca5ca36a6f",
+      "bytes": 3095589
+    },
+    {
+      "path": "Preview/GraphicNovelGenerated/Standard/1920/Resident9_Run.png",
+      "sha256": "b308c6acd163c9f7132b84a4676c2cfc0ee772409eec4bebc52b485fdf2cb251",
+      "bytes": 3098204
+    },
+    {
+      "path": "Preview/GraphicNovelGenerated/Standard/1920/Resident9_Walk.png",
+      "sha256": "45452e73d0902710765e8bd94951139ea8896980b804bca0a5c24b1707350f50",
+      "bytes": 3181925
+    }
+  ],
+  "raw_native_videos": [
+    {
+      "path": "Preview/GraphicNovelGenerated/Motion/Comic1920.mp4",
+      "sha256": "7e0277bae574e69e3c6790fb4f2501cbfd2d2777b4e460b75261906f10a4a511",
+      "bytes": 20904364
+    },
+    {
+      "path": "Preview/GraphicNovelGenerated/Motion/Standard1920.mp4",
+      "sha256": "3d9a427d3262cf7e064dca115f67c961d7e93ac799427683ccce6f9176b4cd5a",
+      "bytes": 8751672
+    }
+  ],
+  "native_video_scope": {
+    "size": [
+      1920,
+      1080
+    ],
+    "encoded_fps": 60,
+    "packaged_frame_times_profiled": false,
+    "duration_seconds_each": 9.016667,
+    "frames_each": 541,
+    "native_phases": [
+      "idle",
+      "walk",
+      "sprint",
+      "turn",
+      "stop",
+      "jump",
+      "landing",
+      "recover"
+    ],
+    "camera_and_hud": "actual native controller camera and AHUD",
+    "viewport_origin": [
+      34,
+      86
+    ],
+    "display_size": [
+      2048,
+      1280
+    ],
+    "framing_proof": "Three native cursor positions mapped through FSceneViewport cached geometry; exact one-pixel mapping, integral coordinates and display bounds asserted. Raw probes retained in both motion reports.",
+    "shutdown_black_tail_seconds": {
+      "Standard": 0.466667,
+      "Comic": 0.366667
+    },
+    "black_tail_method": "ffmpeg blackdetect d=.1 pix_th=.05 pic_th=.99; occurs after native completion while editor closes",
+    "visual_review": "Selected full-size frames/phase strips; does not establish fluidity at normal playback or a performance target.",
+    "observed_editor_engine_counter": {
+      "Standard": {
+        "frame_counter_delta": 158,
+        "selected_wall_seconds": 6.83544,
+        "average_hz": 23.1148,
+        "scope": "Editor engine frame counter over selected unpaused motion; Epic settings and capture overhead. Not a packaged frame-time profile or accepted performance target."
+      },
+      "Comic": {
+        "frame_counter_delta": 161,
+        "selected_wall_seconds": 6.89011,
+        "average_hz": 23.3668,
+        "scope": "Editor engine frame counter over selected unpaused motion; Epic settings and capture overhead. Not a packaged frame-time profile or accepted performance target."
+      }
+    },
+    "native_gameplay_review_approx_seconds": [
+      0,
+      6.4
+    ],
+    "editor_return_samples_seconds": [
+      7,
+      8
+    ],
+    "post_gameplay_scope": "Raw recordings include the return to editor and black shutdown after native gameplay; these are excluded from character/camera findings."
+  },
+  "checks": {
+    "cpu": {
+      "path": "Verification/GraphicNovelRenderedPilot/CPUChecks.json",
+      "sha256": "b1a8eef7e30859240d6a8a7b383d3779bcdad2e81ffe0396c059e7b9e6214887",
+      "bytes": 1234
+    },
+    "code_review": {
+      "path": "Verification/GraphicNovelRenderedPilot/CodeReview.json",
+      "sha256": "635f79c4f1c151675d0bda05c4505b842e24da3521c933648f63b03179f7637f",
+      "bytes": 992
+    },
+    "initial_still_review": {
+      "path": "Verification/GraphicNovelRenderedPilot/InitialImageReview.json",
+      "sha256": "6e51e323b72468735c86d817484c22fe0090e689dead7350a496b572dc6943f8",
+      "bytes": 32673
+    },
+    "still_reports": [
+      {
+        "path": "Verification/GraphicNovelRenderedPilot/Standard1280.json",
+        "sha256": "fa28343a359004b3b67afa2da5a56d3726d3af42cdf58d9b5dc6eecfe43d1403",
+        "bytes": 514446
+      },
+      {
+        "path": "Verification/GraphicNovelRenderedPilot/Standard1920.json",
+        "sha256": "719b205c92e9bb269218b0b6a780abeaab6d96ee600acac1e5d546c4355a000e",
+        "bytes": 506791
+      },
+      {
+        "path": "Verification/GraphicNovelRenderedPilot/Comic1280.json",
+        "sha256": "60cf3e6b2dc6978d22f0a5c4b44f7bc9ead40a0cde2218ee20013b3153edc3d8",
+        "bytes": 508924
+      },
+      {
+        "path": "Verification/GraphicNovelRenderedPilot/Comic1920.json",
+        "sha256": "2ab329777f4c8c80d0ed40477257a101800da85c95d20fc2ad65a797be6b51c3",
+        "bytes": 504533
+      }
+    ],
+    "motion_reports": [
+      {
+        "path": "Verification/GraphicNovelRenderedPilot/StandardMotion1920.json",
+        "sha256": "baf9cd3c019d800775dc257aab0b2662874a87aa53f3657171e9eedd47c8df3c",
+        "bytes": 523916
+      },
+      {
+        "path": "Verification/GraphicNovelRenderedPilot/ComicMotion1920.json",
+        "sha256": "58fd7af7f136c9a235d49348eb13790c8f22b4189a8b4ecbaa20516f6740ee51",
+        "bytes": 533750
+      }
+    ],
+    "video_probes": [
+      {
+        "path": "Verification/GraphicNovelRenderedPilot/StandardVideoProbe.json",
+        "sha256": "f5eb7fab40b6febb468e2a1e4d3367d1b89ebf41398d1974aebf81e987df2951",
+        "bytes": 248
+      },
+      {
+        "path": "Verification/GraphicNovelRenderedPilot/ComicVideoProbe.json",
+        "sha256": "f5eb7fab40b6febb468e2a1e4d3367d1b89ebf41398d1974aebf81e987df2951",
+        "bytes": 248
+      }
+    ],
+    "browser_restoration": {
+      "path": "Verification/GraphicNovelRenderedPilot/BrowserRestoration.json",
+      "sha256": "f2532ae2a00db51282385c22fcf929d57ace3394911f1c4822ffb9978374502b",
+      "bytes": 3761
+    },
+    "restored_lifecycle": {
+      "path": "Verification/GraphicNovelRenderedPilot/RestoredLifecycle.json",
+      "sha256": "7c808b9a50e4fb3567a275339524b4afe0b2a5bc059ecf834162eb7fd09646c0",
+      "bytes": 1025
+    },
+    "motion_review_contact_sheets": [
+      {
+        "path": "Verification/GraphicNovelRenderedPilot/IndependentMotionFrames/Comic/full-1Hz-contact.png",
+        "sha256": "73ddb5226634d2f840077b7f759c19c5d1e6143a5e759b6e05198d0dfd9392b9",
+        "bytes": 716287
+      },
+      {
+        "path": "Verification/GraphicNovelRenderedPilot/IndependentMotionFrames/Comic/phase-crops-01.png",
+        "sha256": "6fde0285d16119c14b77da26b79779c45d8b8cd20557b745d47095dbe4448f49",
+        "bytes": 1144000
+      },
+      {
+        "path": "Verification/GraphicNovelRenderedPilot/IndependentMotionFrames/Comic/phase-crops-02.png",
+        "sha256": "194ab250d87c7f45a52c6beb7bf25a5b5a3505eb83626fb69492e8db2774daaa",
+        "bytes": 1249921
+      },
+      {
+        "path": "Verification/GraphicNovelRenderedPilot/IndependentMotionFrames/Comic/phase-crops-03.png",
+        "sha256": "b59f15c6d5a4b1704193dd6f3bf5b249513bf178763f153ef1781d56d5752859",
+        "bytes": 1211379
+      },
+      {
+        "path": "Verification/GraphicNovelRenderedPilot/IndependentMotionFrames/Comic/phase-crops-04.png",
+        "sha256": "72db94a7a0caf0fdf831fe4aca7877b64bc3018fc7cb100f65db5c914f23baab",
+        "bytes": 1198660
+      },
+      {
+        "path": "Verification/GraphicNovelRenderedPilot/IndependentMotionFrames/Standard/full-1Hz-contact.png",
+        "sha256": "9e8620e0c3a121cb5188b517d136a95a03a2670c9dd89a890b1c1abc5c2a35d6",
+        "bytes": 731530
+      },
+      {
+        "path": "Verification/GraphicNovelRenderedPilot/IndependentMotionFrames/Standard/phase-crops-01.png",
+        "sha256": "7a60fcfd4c9c2fc299b53d4b1ede1b7cc7b34121b6ac1d3b7241bb014b3e6d8f",
+        "bytes": 1069326
+      },
+      {
+        "path": "Verification/GraphicNovelRenderedPilot/IndependentMotionFrames/Standard/phase-crops-02.png",
+        "sha256": "6b674cdcf81434ecb1accace82e05b758a891047a552143de2926d7e9ea50a21",
+        "bytes": 1149589
+      },
+      {
+        "path": "Verification/GraphicNovelRenderedPilot/IndependentMotionFrames/Standard/phase-crops-03.png",
+        "sha256": "190ece4c64fe4e59434f9bb24c2833a41b4053ce19fe577ecf0d386f20f70aab",
+        "bytes": 1137194
+      },
+      {
+        "path": "Verification/GraphicNovelRenderedPilot/IndependentMotionFrames/Standard/phase-crops-04.png",
+        "sha256": "4998502fe7145b9b163d2051eac4700593ad2b2b516f034effa444995ed4a1b7",
+        "bytes": 1030473
+      },
+      {
+        "path": "Verification/GraphicNovelRenderedPilot/IndependentMotionFrames/Standard/phase-crops-05.png",
+        "sha256": "a47edaaadfa5f6988d226de5289e2161389cc0f3eb1dcaf5204f23c08675122a",
+        "bytes": 160440
+      }
+    ],
+    "motion_extraction_manifest": {
+      "path": "Verification/GraphicNovelRenderedPilot/IndependentMotionFrames/manifest.json",
+      "sha256": "b3008acb01721607554a2008687a2649c258a32068a2e94b5a6c6dfc174d0f9c",
+      "bytes": 33767
+    },
+    "independent_motion_review": {
+      "path": "Verification/GraphicNovelRenderedPilot/IndependentMotionReview.json",
+      "sha256": "b81b1f2bf24171d2f23b232adc76b8920a548da8b7fa6c2767dc07184b0cdf0b",
+      "bytes": 12529
+    }
+  },
+  "browser_scope": {
+    "target": "https://nord-montreal.vercel.app/",
+    "network": "ordinary public URL on host PC",
+    "passed_checks": 7,
+    "production_package_unchanged": true,
+    "source": "integrated live package; does not load opt-in candidate",
+    "input_images": [
+      {
+        "path": "Preview/GraphicNovelGenerated/RestoredBrowser/friend-after-input.png",
+        "sha256": "3a3b29da09fa51ac70d3212fba5a7afae68c00bf4016276b342640497ca5a153",
+        "bytes": 1271114
+      },
+      {
+        "path": "Preview/GraphicNovelGenerated/RestoredBrowser/friend-before-input.png",
+        "sha256": "281f29e2be66e59cc921051d6be6ce126db2031e942f3b26964bfd965a7a06e3",
+        "bytes": 1535329
+      },
+      {
+        "path": "Preview/GraphicNovelGenerated/RestoredBrowser/host-after-input.png",
+        "sha256": "673a425d909b59653fd9628e47b72cfacb5931e7c7a5c0394aaa315a1eb3e620",
+        "bytes": 1230147
+      },
+      {
+        "path": "Preview/GraphicNovelGenerated/RestoredBrowser/host-before-input.png",
+        "sha256": "7e83675b409cce6cc73ac325a35cc44ff472b4e06a50ed4e756e856838f3ad39",
+        "bytes": 1537546
+      }
+    ],
+    "image_review": "Root inspected all four retained before/after input images: both native views/HUD render, selected crew changes and framing advance. Native positions/story progress are not asserted.",
+    "observed_existing_limits": [
+      "Host before-input image shows Lumen surface-cache atlas oversubscription1.85%; absent from retained after-input images. This is a functional stream regression, not a graphics/performance pass.",
+      "Public player shell still labels GTA:NORTH / Toronto; streamed native HUD labels NORD/Montr\u00e9al. No frontend deployment was made."
+    ]
+  },
+  "budget": {
+    "additional_fal_jobs": 0,
+    "completed_fal_model_jobs_total": 1,
+    "published_configured_estimate_usd": 1.52,
+    "reserved_usd": 2,
+    "authorized_usd": 25,
+    "uncommitted_usd": 23,
+    "actual_settled_charge_usd": null,
+    "actual_balance_usd": null
+  },
+  "limits": [
+    "Static face and fingers:24-bone body rig, zero finger controls/morphs.",
+    "Jagged pale collar, authored angular neck planes, rope-like curls, coarse hands and pinched airborne shoulders remain.",
+    "Comic tree/ground detail is noisy and tee shifts indigo; final illustrated style is not accepted.",
+    "Clear fixture pitch hides cars/residents with collision disabled and physical input disabled; selected native callbacks and bones do not accept city/candidate co-op/physical controls.",
+    "Unpaused global dilation1 and valid recordings do not establish60nativeFPS, line stability or complete continuous foot planting.",
+    "No candidate cook/package rollout, full crew/ambient expansion, candidate co-op, current packaged performance, off-LAN NAT, audible sound or physical phone acceptance.",
+    "OpenSpec CLI unavailable; Markdown structure/scenario links inspected. Active city-quality work is not archived."
+  ],
+  "integration_scope": {
+    "graphics_source_head": "261c1cedf2f86c6cd9cfb0e4d1aefc16bda7859e",
+    "live_integrated_head_at_restoration": "24d5d74e95dd031febeb84d66cb8e78dae60a006",
+    "latest_main_changes_included_in_graphics_native_capture": false,
+    "note": "The captured graphics checkout predates the separate mobile UX merge. Browser restoration checks the unchanged newer integrated package; final merged candidate native/package behavior remains open."
+  }
+}

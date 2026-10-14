@@ -5,6 +5,7 @@ from pathlib import Path
 
 import bmesh
 import bpy
+from mathutils import Vector
 from mathutils.kdtree import KDTree
 
 
@@ -62,15 +63,30 @@ for v in bm.verts:v.co=trousers.matrix_world@v.co
 bmesh.ops.remove_doubles(bm,verts=list(bm.verts),dist=.00001)
 unintended=[e for e in bm.edges if e.is_boundary and not
             (all(v.co.z<.201 for v in e.verts) or all(v.co.z>1.0 for v in e.verts))]
-result={'passed':not unintended,'mode':'fresh FBX reimport in Blender CPU',
+nonmanifold=[e for e in bm.edges if len(e.link_faces)>2 or not e.link_faces]
+degenerate=[f for f in bm.faces if f.calc_area()<1e-12]
+rig.data.pose_position='REST';bpy.context.view_layer.update()
+depsgraph=bpy.context.evaluated_depsgraph_get()
+# These rays cover the actual outer-ankle notch visible in the retained side view.
+ankle_probes=[]
+for z in (.182,.187,.192,.197,.202,.207):
+    for y in (.085,.09,.095,.10,.105,.11):
+        hit,point,normal,index,obj,matrix=bpy.context.scene.ray_cast(depsgraph,Vector((3,y,z)),Vector((-1,0,0)))
+        ankle_probes.append({'y':y,'z':z,'object':obj.name if hit else None})
+assert all(p['object']=='GN_Trousers' for p in ankle_probes),('Ankle trim still protrudes through cloth',ankle_probes)
+result={'passed':not unintended and not nonmanifold and not degenerate,'mode':'fresh FBX reimport in Blender CPU',
         'bind_bones':len(bind),'meshes':len(meshes),'morphs':list(source_shapes),
         'original_body_rest_positions_preserved':True,'weight_sums_normalized':True,
         'max_original_body_morph_error_metres':largest_error,
         'unintended_trouser_boundary_edges':len(unintended),
+        'nonmanifold_trouser_edges':len(nonmanifold),'degenerate_trouser_faces':len(degenerate),
+        'outer_ankle_notch_sightlines_covered_by_trousers':len(ankle_probes),
         'boundary_edge_world_metres':[[list(v.co) for v in e.verts] for e in unintended],
         'body_fbx_sha256':hashlib.sha256((OUT/'body.fbx').read_bytes()).hexdigest()}
 (OUT/'roundtrip.json').write_text(json.dumps(result,indent=2)+'\n')
 assert not unintended,('Unintended cloth boundary edges',len(unintended),
                        [[list(v.co) for v in e.verts] for e in unintended])
+assert not nonmanifold,('Non-manifold cloth edges',len(nonmanifold))
+assert not degenerate,('Degenerate cloth faces',len(degenerate))
 bm.free()
 print('NORD_GRAPHIC_NOVEL_WARDROBE_ROUNDTRIP_OK',json.dumps(result))

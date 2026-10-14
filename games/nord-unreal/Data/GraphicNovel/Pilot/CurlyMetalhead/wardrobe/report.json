@@ -13,6 +13,12 @@
   "covered_body_faces_removed": 9269,
   "trouser_faces": 7900,
   "unintended_cloth_boundaries_filled": 2,
+  "dangling_source_seam_faces_removed": 8,
+  "ankle_trim_height_metres": [
+    0.182,
+    0.188
+  ],
+  "upper_canvas_collar_radial_scale": 0.9,
   "meshes": [
     {
       "name": "char1",
@@ -24,8 +30,8 @@
     },
     {
       "name": "GN_Trousers",
-      "vertices": 18139,
-      "triangles": 35492,
+      "vertices": 18133,
+      "triangles": 35484,
       "materials": [
         "Trousers"
       ]
@@ -380,17 +386,27 @@
   ],
   "method": "source lower-body topology and original weights; tapered trouser silhouette; source-foot convex footprint with authored canvas/sole/laces; nearest-face interpolated source weights on new detail surfaces; original body vertices/morphs retained and only covered faces removed",
   "export": {
-    "body.fbx": "84c558f01abb100982463d164cdfbd34d288f8ab2b3a645932bb6aa0fa56a883",
-    "pilot.blend": "7d8df754ec2293e28107219bffeaabc69982494f886bd3f5503e09af4fa17f76"
+    "body.fbx": "bcce8e49db5d86cb09b6d9fd53e74489044779b315ebc8bfb5662a48e3adc8fb",
+    "pilot.blend": "7ad7a77cf679867260ae517cd73e91a21bf07cc15574229fbe765e2353623cd6"
   },
   "cpu_rendered": true,
-  "visual_acceptance": "CPU front, side and bent-knee samples reviewed; large cuff/shorts-hem defects corrected; mature local pilot only. Independent review confirms improved bounded coverage.",
+  "visual_acceptance": "Current front, lower-front, lower-side and bent-knee CPU previews inspected after repair; thigh flaps and outer-ankle notch are absent in the sampled views. Native engine review remains pending.",
   "limits": [
     "local wardrobe derived from retained body, not a new generated character",
     "no cloth simulation",
-    "actual engine appearance and motion require fresh native review",
-    "Fresh FBX round-trip confirms body/rest/morph/bind/weight preservation, but topology check still detects eight tiny source-derived trouser boundary edges near front/back upper thigh; not a watertight cloth claim.",
-    "Small outer-ankle dark notch remains in side view; use fresh native fit review before visual acceptance."
+    "actual engine appearance and motion require fresh native review"
   ],
-  "roundtrip_report": "roundtrip.json"
+  "roundtrip_report": "roundtrip.json",
+  "cpu_preview_command": "blender -t 4 --background --factory-startup --python-exit-code 1 --python Scripts/prepare_graphic_novel_wardrobe.py -- --source Data/GraphicNovel/Pilot/CurlyMetalhead/rigged/body.fbx",
+  "cpu_preview_scope": {
+    "engine": "Cycles",
+    "device": "CPU",
+    "threads": 4,
+    "images": [
+      "front.png",
+      "lower-front.png",
+      "lower-side.png",
+      "bent-knee.png"
+    ]
+  }
 }

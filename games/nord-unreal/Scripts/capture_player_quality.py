@@ -10,7 +10,13 @@ ImageMagick verifies the imported atlas source pixels against the retained PNG.
 -NordNeutralCandidate tests only style 9 from CrewNeutral/CharactersNeutral by
 swapping the live pawn's mesh and clips in PIE, with separate output and reports.
 -NordGraphicNovelCandidate selects only the isolated style 9 body/clips/blended graph.
+Add -NordGraphicNovelGenerated to inspect the separately imported new body and its own clips.
+Add -NordGraphicNovelHighDetail with Candidate+Generated for the separate high-detail A/B.
+Add -NordGraphicNovelStandard to review the standard view in a separate output folder.
 Add -NordGraphicNovelHeadless for native state/bone checks without rendered evidence.
+Add -NordGraphicNovelMotion for separate unpaused 1x native transitions without stills.
+Rendered motion with -immersive restarts its single standalone startup PIE once,
+calibrates the viewport to the requested pixels, and logs its desktop recording rectangle.
 """
 import configparser
 import hashlib
@@ -29,13 +35,26 @@ ROOT = Path(u.Paths.project_dir()).resolve()
 COMMAND_LINE = u.SystemLibrary.get_command_line()
 NEUTRAL_CANDIDATE = '-NordNeutralCandidate' in COMMAND_LINE
 GRAPHIC_NOVEL_CANDIDATE = '-NordGraphicNovelCandidate' in COMMAND_LINE
+GRAPHIC_NOVEL_GENERATED = '-NordGraphicNovelGenerated' in COMMAND_LINE
+GRAPHIC_NOVEL_HIGH_DETAIL = '-NordGraphicNovelHighDetail' in COMMAND_LINE.split()
 HEADLESS = '-NordGraphicNovelHeadless' in COMMAND_LINE
+STANDARD = '-NordGraphicNovelStandard' in COMMAND_LINE
+MOTION = '-NordGraphicNovelMotion' in COMMAND_LINE
 assert not (NEUTRAL_CANDIDATE and GRAPHIC_NOVEL_CANDIDATE), 'Choose one candidate fixture'
+assert not GRAPHIC_NOVEL_GENERATED or GRAPHIC_NOVEL_CANDIDATE, 'Generated review requires the graphic-novel candidate'
+assert not GRAPHIC_NOVEL_HIGH_DETAIL or (GRAPHIC_NOVEL_CANDIDATE and GRAPHIC_NOVEL_GENERATED), 'High-detail review requires Candidate and Generated'
 assert not HEADLESS or GRAPHIC_NOVEL_CANDIDATE, 'Headless mode requires the graphic-novel candidate'
+assert not STANDARD or GRAPHIC_NOVEL_CANDIDATE, 'Standard review requires the graphic-novel candidate'
+assert not MOTION or GRAPHIC_NOVEL_CANDIDATE, 'Motion review requires the graphic-novel candidate'
 WIDTH, HEIGHT = (1920, 1080) if '-NordQuality1920' in COMMAND_LINE else (1280, 720)
 OUT = ROOT / 'Preview' / f'{"NeutralCandidate" if NEUTRAL_CANDIDATE else "PlayerQuality"}{WIDTH}'
 if GRAPHIC_NOVEL_CANDIDATE:
-    OUT = ROOT / 'Saved/Tests/GraphicNovel/PilotCapture' / str(WIDTH)
+    capture_root = ROOT / 'Saved/Tests/GraphicNovel' / ('HighDetailCapture' if GRAPHIC_NOVEL_HIGH_DETAIL else 'GeneratedCapture' if GRAPHIC_NOVEL_GENERATED else 'PilotCapture')
+    OUT = capture_root / str(WIDTH)
+    if STANDARD:
+        OUT = OUT.parent / 'Standard' / str(WIDTH)
+    if MOTION:
+        OUT = capture_root / 'Motion' / ('Standard' if STANDARD else 'Comic') / str(WIDTH)
 OUT.mkdir(parents=True, exist_ok=True)
 VERIFY = ROOT / 'Verification' / ('NeutralCandidate' if NEUTRAL_CANDIDATE else 'PlayerQuality')
 if GRAPHIC_NOVEL_CANDIDATE:
@@ -52,14 +71,22 @@ SOURCE = ROOT / 'Data' / 'CharactersNeutral'
 CREW_PATH = '/Game/ParkComic/' + ('CrewNeutral' if NEUTRAL_CANDIDATE else 'Crew')
 if GRAPHIC_NOVEL_CANDIDATE:
     CREW_PATH = '/Game/ParkComic/CrewGraphicNovel'
-COMIC_PATH = CREW_PATH + '/Resident9/M_ComicInk.M_ComicInk' if GRAPHIC_NOVEL_CANDIDATE else '/Game/Art/Comic/M_ComicInk.M_ComicInk'
+if GRAPHIC_NOVEL_GENERATED:
+    NAMES[9] = 'generated-v1'
+    SOURCE = ROOT / 'Data/GraphicNovel/Pilot/CurlyMetalhead'
+    CREW_PATH = '/Game/ParkComic/CrewGraphicNovelGenerated'
+if GRAPHIC_NOVEL_HIGH_DETAIL:
+    NAMES[9] = 'generated-v2-high-detail'
+    CREW_PATH = '/Game/ParkComic/CrewGraphicNovelHighDetail'
+COMIC_PATH = '/Game/ParkComic/CrewGraphicNovel/Resident9/M_ComicInk.M_ComicInk' if GRAPHIC_NOVEL_CANDIDATE else '/Game/Art/Comic/M_ComicInk.M_ComicInk'
 BONES = ('Hips', 'Head', 'headfront', 'LeftLeg', 'RightLeg', 'LeftFoot', 'RightFoot')
-if GRAPHIC_NOVEL_CANDIDATE:
+if GRAPHIC_NOVEL_CANDIDATE and not GRAPHIC_NOVEL_GENERATED:
     BONES += tuple(f'GN_{side}_{finger}{segment}' for side in ('Left', 'Right')
                    for finger in ('Pinky', 'Ring', 'Middle', 'Index', 'Thumb') for segment in (1, 2))
 BUILD_EXPECTED={'recompute_normals':False,'recompute_tangents':True,'use_mikk_t_space':True,
                 'compute_weighted_normals':False,'use_full_precision_u_vs':True,'use_high_precision_tangent_basis':True}
-MANIFEST = {row['file']: row['sha256'] for row in json.loads((SOURCE / 'files.json').read_text())}
+MANIFEST = {(NAMES[9] + '/' if GRAPHIC_NOVEL_HIGH_DETAIL else '') + row['file']: row['sha256']
+            for row in json.loads((SOURCE / (NAMES[9] if GRAPHIC_NOVEL_HIGH_DETAIL else '') / 'files.json').read_text())}
 LEVELS = u.get_editor_subsystem(u.LevelEditorSubsystem)
 SETTINGS = u.get_default_object(u.load_class(None, '/Script/UnrealEd.LevelEditorPlaySettings'))
 SCRIPT = u.get_default_object(u.load_class(None, '/Script/PythonScriptPlugin.EditorPythonScriptingLibrary'))
@@ -72,7 +99,7 @@ ORIGINAL_MODE = {'PIE_Standalone': 0, 'PIE_ListenServer': 1, 'PIE_Client': 2}[
     CONFIG.get('/Script/UnrealEd.LevelEditorPlaySettings', 'PlayNetMode', fallback='PIE_Standalone')]
 REPORT = {'passed': False, 'resolution': [WIDTH, HEIGHT],
           'mode': 'actual possessed pawn; native MoveForward, StartSprint/StopSprint and Jump/StopJumping callbacks',
-          'setup': 'PIE-only relocation to a clear soccer pitch; input disabled to prevent zero-axis overrides; Walk/Run and descent observation use 0.25 global time dilation; native jump liftoff/apex use original timing; landing camera prepared during descent and frozen on first observed recoil pose',
+          'setup': 'PIE-only clear soccer pitch; cars/residents hidden and collision-off with actor and owned component primary ticks disabled; state verified after warm-up and completion; input disabled to prevent zero-axis overrides; Walk/Run and descent observation use 0.25 global time dilation; native jump liftoff/apex use original timing; landing camera prepared during descent and frozen on first observed recoil pose',
           'captures': 'actual gameplay poses; world paused only for screenshot completion',
           'cadence_sampling': 'Walk/Run use 0.25 world-time dilation to resolve the former 12-Hz holds; clip phase must advance on every observed engine frame, with at least 24 observations per world second. These sample rates are not native render or browser decoded FPS.',
           'not_checked': ['physical keyboard delivery', 'native C-key crew selection (covered separately by smoke_test)', 'external networking', 'exact likeness to the supplied photographs',
@@ -80,10 +107,95 @@ REPORT = {'passed': False, 'resolution': [WIDTH, HEIGHT],
           'characters': [], 'screenshots': []}
 REPORT['asset_selection'] = {'candidate': NEUTRAL_CANDIDATE or GRAPHIC_NOVEL_CANDIDATE, 'styles': list(STYLES),
                             'graphic_novel': GRAPHIC_NOVEL_CANDIDATE,
+                            'generated_body': GRAPHIC_NOVEL_GENERATED,
+                            'high_detail': GRAPHIC_NOVEL_HIGH_DETAIL,
                             'source': str(SOURCE.relative_to(ROOT)), 'asset_folder': CREW_PATH,
                             'pie_mesh_and_clip_overrides': NEUTRAL_CANDIDATE or GRAPHIC_NOVEL_CANDIDATE}
 REPORT['headless'] = HEADLESS
-if GRAPHIC_NOVEL_CANDIDATE:
+REPORT['render_mode'] = 'standard' if STANDARD else 'comic'
+REPORT['motion_only'] = MOTION
+if MOTION:
+    REPORT.update(setup='PIE-only clear pitch; cars/residents hidden and collision-off with actor and owned component primary ticks disabled; state verified after warm-up and completion; physical input disabled; native directional turn uses MoveRight; actual controller camera and HUD retained',
+        captures='no stills; unpaused 1x native actions with selected timestamped graph/bone/camera observations',
+        cadence_sampling='Selected observations at most 30 per world second; not a render FPS or fluidity measurement',
+        transitions={'passed': False, 'samples': [], 'events': []})
+    REPORT['not_checked'] += ['rendered fluidity and real-time video acceptance', 'native or stream frame-rate performance', 'live city collision, crowds and co-op']
+    REPORT['asset_selection']['pie_mesh_and_clip_overrides'] = False
+def generated_body_status(imported):
+    body = SOURCE / 'refined-v1/body.fbx'
+    provenance_file = body.with_suffix('.json')
+    provenance = json.loads(provenance_file.read_text())
+    original = SOURCE / 'generated-v1/body.fbx'
+    original_sha = 'a9f1a81f16986a17a50571b7ed536b1e4137778a8024979576cd427365c3a62e'
+    mask_sha = 'bba92f3782f8056f08b0f41160940c561688f7c07d80de9565a7177aa7746ba8'
+    body_sha = hashlib.sha256(body.read_bytes()).hexdigest()
+    assert imported['passed'] and (ROOT / imported['body_source']).resolve() == body, 'Wrong generated native body source'
+    assert provenance['passed'] and (ROOT / provenance['output']).resolve() == body, 'Wrong refined body provenance'
+    assert provenance['output_sha256'] == body_sha, 'Refined body hash mismatch'
+    assert (ROOT / provenance['source']).resolve() == original, 'Wrong frozen generated source'
+    assert provenance['source_sha256'] == hashlib.sha256(original.read_bytes()).hexdigest() == original_sha, 'Frozen generated body changed'
+    assert hashlib.sha256((body.parent / 'collar-uv1.json').read_bytes()).hexdigest() == provenance['mask_sha256'] == mask_sha, 'Reviewed collar mask changed'
+    preservation = ('original_fbx_contents_identical_except_appended_uv1_layer',
+                    'fresh_reimport_geometry_normals_uv0_weights_binds_identical')
+    assert all(provenance[key] is True for key in preservation), 'Refined body preservation checks failed'
+    assert provenance['uv_layers'] == ['UVMap', 'UV1'] and provenance['changed_uv1_corners'] == 339 and len(provenance['faces']) == 113, 'Wrong refined UV1 scope'
+    return {'body_source': str(body.relative_to(ROOT)), 'body_sha256': body_sha,
+        'provenance_file': str(provenance_file.relative_to(ROOT)),
+        'provenance_sha256': hashlib.sha256(provenance_file.read_bytes()).hexdigest(),
+        'original_generated_body_sha256': original_sha, 'reviewed_mask_sha256': mask_sha,
+        **{key: provenance[key] for key in preservation},
+        'graphics_accepted': False, 'scope': 'refined UV1 collar color only; original generated maps and own clips; body-only rig with static face and fingers; no visual acceptance'}
+
+
+def high_detail_body_status(imported):
+    folder = SOURCE / 'generated-v2-high-detail'
+    body = folder / 'body.fbx'
+    generation = json.loads((folder / 'generation.json').read_text())
+    request = '01a13971-5e0a-73e0-8e68-730896d2cee3'
+    assert generation['status'] == 'completed_downloaded' and generation['request_id'] == request, 'Wrong high-detail generation provenance'
+    assert imported['passed'] and (ROOT / imported['body_source']).resolve() == body, 'Wrong high-detail native body source'
+    manifest_file = folder / 'files.json'
+    entries = json.loads(manifest_file.read_text())
+    hashes = {row['file']: row['sha256'] for row in entries}
+    required = {'body.fbx', 'body.glb', 'idle.fbx', 'walk.fbx', 'run.fbx', 'jump.fbx', 'jump.json',
+                'base_color.png', 'normal.png', 'roughness.png', 'metallic.png', 'reference.png'}
+    assert len(hashes) == len(entries) and required <= hashes.keys(), 'Incomplete high-detail source manifest'
+    for row in entries:
+        assert Path(row['file']).name == row['file'] and row['file'] not in ('.', '..'), 'High-detail manifest requires local filenames'
+        path = folder / row['file']
+        assert path.stat().st_size == row['bytes'] and hashlib.sha256(path.read_bytes()).hexdigest() == row['sha256'], ('Changed high-detail source file', row['file'])
+    assert generation['source_reference_sha256'] == hashes['reference.png'], 'Wrong high-detail identity reference'
+    review_file = folder / 'source-review.json'
+    review = json.loads(review_file.read_text())
+    assert review['passed'] and review['source_unchanged'] and review['generation_request_id'] == request, 'High-detail source review failed'
+    assert review['manifest_sha256'] == hashlib.sha256(manifest_file.read_bytes()).hexdigest(), 'High-detail manifest changed since source review'
+    assert review['body_sha256'] == hashes['body.fbx'] and review['body_glb_sha256'] == hashes['body.glb'], 'High-detail reviewed body changed'
+    assert review['weighted_body_bones'] == 24 and review['uv_channels'] == 1 and review['morph_targets'] == 0, 'Wrong raw high-detail rig or UV layout'
+    assert review['finger_controls'] is False and review['face_controls'] is False, 'Unexpected high-detail controls'
+    assert review['own_clip_bind_checks_passed'] and review['local_jump_round_trip_passed'], 'High-detail own-rig clip review failed'
+    for kind in ('idle', 'walk', 'run', 'jump'):
+        clip = review['clips'][kind]
+        assert clip['own_hierarchy_matches'] and clip['animation_curves'] > 0, ('Wrong high-detail source clip', kind)
+        if kind != 'jump':
+            assert 0 <= clip['max_weighted_bind_error'] <= .00001, ('High-detail source bind mismatch', kind)
+    jump = json.loads((folder / 'jump.json').read_text())
+    assert jump['body_sha256'] == hashes['body.fbx'] and jump['jump_sha256'] == hashes['jump.fbx'], 'High-detail jump belongs to another body'
+    assert jump['bones'] == 24 and jump['fbx_round_trip_passed'] and jump['head_and_neck_unchanged'] and jump['actor_root_motion'] is False, 'High-detail local jump checks failed'
+    return {'body_source': str(body.relative_to(ROOT)), 'body_sha256': hashes['body.fbx'],
+        'generation_request_id': request, 'manifest_sha256': review['manifest_sha256'],
+        'source_review': str(review_file.relative_to(ROOT)),
+        'source_review_sha256': hashlib.sha256(review_file.read_bytes()).hexdigest(),
+        'source_files_verified': len(entries), 'weighted_body_bones': 24, 'uv_channels': 1,
+        'graphics_accepted': False, 'scope': 'isolated high-detail native A/B; raw UV0 body and own clips; static face and fingers; no default promotion or art acceptance'}
+
+
+if GRAPHIC_NOVEL_HIGH_DETAIL:
+    imported = json.loads((ROOT / 'Saved/Tests/GraphicNovel/HighDetailImport.json').read_text())
+    REPORT['candidate_asset_status'] = high_detail_body_status(imported)
+elif GRAPHIC_NOVEL_GENERATED:
+    imported = json.loads((ROOT / 'Saved/Tests/GraphicNovel/GeneratedImport.json').read_text())
+    REPORT['candidate_asset_status'] = generated_body_status(imported)
+elif GRAPHIC_NOVEL_CANDIDATE:
     pilot = ROOT / 'Data/GraphicNovel/Pilot/CurlyMetalhead/wardrobe'
     topology = json.loads((pilot / 'roundtrip.json').read_text())
     imported = json.loads((ROOT / 'Saved/Tests/GraphicNovel/PilotImport.json').read_text())
@@ -96,7 +208,7 @@ if GRAPHIC_NOVEL_CANDIDATE:
         'wardrobe_body_sha256': hashlib.sha256((pilot / 'body.fbx').read_bytes()).hexdigest(),
         'round_trip_passed': topology['passed'],
         'unintended_trouser_boundary_edges': topology['unintended_trouser_boundary_edges'],
-        'graphics_accepted': False, 'scope': 'functional pilot checks only; known failed cloth watertightness remains open'}
+        'graphics_accepted': False, 'scope': 'functional pilot checks only; cloth topology does not establish visual acceptance'}
 if HEADLESS:
     REPORT['skipped_screenshots'] = []
     REPORT['captures'] = 'headless native state/bone observations only; no images or visual acceptance'
@@ -271,6 +383,31 @@ def rgb_hash(path):
     return hashlib.sha256(result.stdout).hexdigest()
 
 
+def expression_inputs(material, expression):
+    names = list(u.MaterialEditingLibrary.get_material_expression_input_names(expression))
+    inputs = list(u.MaterialEditingLibrary.get_inputs_for_material_expression(material, expression))
+    assert len(names) == len(inputs) and len(set(names)) == len(names), 'Ambiguous material inputs'
+    return dict(zip(names, inputs))
+
+
+def generated_material_uvs(material, base, normal):
+    # MaterialEditingLibrary exposes shortened graph pin names (UVs, not Coordinates).
+    nodes = {'base_color': base, 'normal': expression_inputs(material, normal)['A'],
+             'roughness': u.MaterialEditingLibrary.get_material_property_input_node(material, u.MaterialProperty.MP_ROUGHNESS),
+             'metallic': u.MaterialEditingLibrary.get_material_property_input_node(material, u.MaterialProperty.MP_METALLIC)}
+    observed = {}
+    for channel, sample in nodes.items():
+        assert isinstance(sample, u.MaterialExpressionTextureSample), ('Missing generated texture sample', channel)
+        uv = expression_inputs(material, sample)['UVs']
+        assert uv is None or isinstance(uv, u.MaterialExpressionTextureCoordinate), ('Unexpected generated UV expression', channel)
+        observed[channel] = int(uv.get_editor_property('coordinate_index') if uv else sample.get_editor_property('const_coordinate'))
+    expected = {'base_color': 0 if GRAPHIC_NOVEL_HIGH_DETAIL else 1, 'normal': 0, 'roughness': 0, 'metallic': 0}
+    assert observed == expected, ('Wrong generated material UV routing', observed)
+    if GRAPHIC_NOVEL_HIGH_DETAIL:
+        assert expression_inputs(material, normal)['Alpha'] is None and abs(normal.get_editor_property('const_alpha')) < .000001, 'High-detail review requires full mapped normals'
+    return observed
+
+
 def validate_assets(style):
     folder = f'{CREW_PATH}/Resident{style}'
     mesh = u.load_asset(folder + '/SK_Body')
@@ -324,14 +461,27 @@ def validate_assets(style):
         bones = set(map(str, u.AnimPoseExtensions.get_bone_names(pose)))
         expected = {f'GN_{side}_{finger}{segment}' for side in ('Left', 'Right')
                     for finger in ('Pinky', 'Ring', 'Middle', 'Index', 'Thumb') for segment in (1, 2)}
-        assert expected <= bones, ('Missing pilot finger bones', sorted(expected - bones))
         morphs = {morph.get_name() for morph in mesh.get_editor_property('morph_targets')}
-        assert {'GN_EyeNarrow_L', 'GN_EyeNarrow_R'} <= morphs, ('Missing pilot squint targets', morphs)
-        result['pilot_rig'] = {'finger_bones': sorted(expected), 'morphs': sorted(morphs), 'material_slots': len(slots),
-                               'scope': 'partial fingers and restrained squint controls; no full blink or jaw'}
+        if GRAPHIC_NOVEL_GENERATED:
+            assert expected.isdisjoint(bones) and not morphs, ('Unexpected generated rig controls', bones, morphs)
+            if GRAPHIC_NOVEL_HIGH_DETAIL:
+                assert set(BONES) | {'head_end', 'LeftHand', 'RightHand'} <= bones, 'High-detail body lacks required pose or face markers'
+            result['pilot_rig'] = {'finger_bones': [], 'morphs': [], 'material_slots': len(slots),
+                                   'scope': 'generated body-only rig; static face and fingers'}
+        else:
+            assert expected <= bones, ('Missing pilot finger bones', sorted(expected - bones))
+            assert {'GN_EyeNarrow_L', 'GN_EyeNarrow_R'} <= morphs, ('Missing pilot squint targets', morphs)
+            result['pilot_rig'] = {'finger_bones': sorted(expected), 'morphs': sorted(morphs), 'material_slots': len(slots),
+                                   'scope': 'partial fingers and restrained squint controls; no full blink or jaw'}
     else:
         material = slots[0].material_interface
     base = u.MaterialEditingLibrary.get_material_property_input_node(material, u.MaterialProperty.MP_BASE_COLOR)
+    if GRAPHIC_NOVEL_CANDIDATE:
+        normal = u.MaterialEditingLibrary.get_material_property_input_node(material, u.MaterialProperty.MP_NORMAL)
+        assert isinstance(normal, u.MaterialExpressionLinearInterpolate)
+        result['mapped_normal_strength'] = 1. - normal.get_editor_property('const_alpha')
+        if GRAPHIC_NOVEL_GENERATED:
+            result['material_uv_channels'] = generated_material_uvs(material, base, normal)
     texture = base.get_editor_property('texture')
     assert texture.get_path_name().startswith(folder + '/T_base_color'), (style, 'wrong atlas')
     assert texture.get_editor_property('compression_settings') == u.TextureCompressionSettings.TC_BC7
@@ -363,6 +513,20 @@ def stop_fixture_motion():
     STATE['movement'].stop_movement_immediately()
 
 
+def headless_pose_fixture():
+    if not HEADLESS:
+        return
+    mesh = STATE['mesh']
+    option = u.VisibilityBasedAnimTickOption.ALWAYS_TICK_POSE_AND_REFRESH_BONES
+    mesh.set_editor_property('visibility_based_anim_tick_option', option)
+    mesh.set_editor_property('enable_update_rate_optimizations', False)
+    assert mesh.get_editor_property('visibility_based_anim_tick_option') == option
+    assert not mesh.get_editor_property('enable_update_rate_optimizations')
+    REPORT['headless_animation_fixture'] = {'visibility_based_anim_tick_option': 'AlwaysTickPoseAndRefreshBones',
+        'enable_update_rate_optimizations': False,
+        'scope': 'PIE component only; forces actual bone evaluation without RHI visibility; all pose assertions retained'}
+
+
 def start_style(style):
     STATE['style'] = style
     STATE['character'] = validate_assets(style)
@@ -388,6 +552,24 @@ def start_style(style):
             assert instance.get_editor_property('jump_asset') == u.load_asset(folder + '/A_Jump')
             STATE['character']['pilot_rig']['native_flag_route'] = {'verified_before_fixture_overrides': True,
                 'body': body.get_path_name(), 'animation_class': instance.get_class().get_path_name()}
+            if MOTION:
+                slots = body.get_editor_property('materials')
+                live_slots = []
+                for index, slot in enumerate(slots):
+                    live = STATE['mesh'].get_material(index)
+                    live_slots.append({'index': index, 'imported': slot.material_interface.get_path_name(),
+                        'live': live.get_path_name() if live else None, 'matches': live == slot.material_interface})
+                overrides = STATE['mesh'].get_editor_property('override_materials')
+                STATE['character']['pilot_rig']['native_material_readback'] = {'slots': live_slots,
+                    'override_count': len(overrides), 'assigned_override_count': sum(material is not None for material in overrides),
+                    'scope': 'read only; native component materials were not repaired by this motion fixture'}
+                assert all(slot['matches'] for slot in live_slots), ('Native pilot material mismatch', live_slots)
+                headless_pose_fixture()
+                assert STATE['mesh'].get_editor_property('custom_depth_stencil_value') == 254
+                assert abs(STATE['original_time_dilation'] - 1.) < .001, 'Motion requires normal 1x world time'
+                native('StopSprint')
+                motion_phase('idle')
+                return
         STATE['mesh'].set_skinned_asset_and_update(body, True)
         for kind in ('Idle', 'Walk', 'Run', 'Jump'):
             SYSTEM.call_method('SetObjectPropertyByName', (pawn, 'Crew' + kind, u.load_asset(folder + '/A_' + kind)))
@@ -401,16 +583,7 @@ def start_style(style):
             SYSTEM.call_method('SetObjectPropertyByName', (pawn, 'CrewLocomotion', u.load_asset(folder + '/BS_Locomotion')))
             assert pawn.call_method('ConfigureCrewAnimation'), 'Pilot blended graph rejected its body/clips'
             STATE['mesh'].set_custom_depth_stencil_value(254)
-            if HEADLESS:
-                # NullRHI never marks the mesh rendered; evaluate real bones for this native-only fixture.
-                option = u.VisibilityBasedAnimTickOption.ALWAYS_TICK_POSE_AND_REFRESH_BONES
-                STATE['mesh'].set_editor_property('visibility_based_anim_tick_option', option)
-                STATE['mesh'].set_editor_property('enable_update_rate_optimizations', False)
-                assert STATE['mesh'].get_editor_property('visibility_based_anim_tick_option') == option
-                assert not STATE['mesh'].get_editor_property('enable_update_rate_optimizations')
-                REPORT['headless_animation_fixture'] = {'visibility_based_anim_tick_option': 'AlwaysTickPoseAndRefreshBones',
-                    'enable_update_rate_optimizations': False,
-                    'scope': 'PIE component only; forces actual bone evaluation without RHI visibility; all pose assertions retained'}
+            headless_pose_fixture()
         assert STATE['mesh'].get_skeletal_mesh_asset() == body
     assert STATE['mesh'].get_editor_property('custom_depth_stencil_value') == (254 if GRAPHIC_NOVEL_CANDIDATE else 255)
     native('StopSprint')
@@ -520,32 +693,232 @@ def validate_motion():
     assert row['observed_motion']['recovered_clip'] == 'A_Idle'
     if GRAPHIC_NOVEL_CANDIDATE:
         controls = [item['pilot_controls'] for item in states.values()]
-        assert all(item['finger_control_count'] == 20 for item in controls), ('Pilot finger graph is incomplete', controls)
+        assert all(item['finger_control_count'] == (0 if GRAPHIC_NOVEL_GENERATED else 20) for item in controls), ('Unexpected pilot finger controls', controls)
         assert all(math.isfinite(item['finger_flex_degrees']) and 0 <= item['finger_flex_degrees'] <= 18 for item in controls)
         assert all(math.isfinite(item['eye_narrow_weight']) and 0 <= item['eye_narrow_weight'] <= 1 for item in controls)
-        assert states['Run']['pilot_controls']['finger_flex_degrees'] > states['Idle']['pilot_controls']['finger_flex_degrees'] + 1
-        assert states['Run']['pilot_controls']['eye_narrow_weight'] > .1, 'Pilot squint morph was not driven during sprint'
+        if GRAPHIC_NOVEL_GENERATED:
+            assert all(item['finger_flex_degrees'] == item['eye_narrow_weight'] == 0 for item in controls), 'Body-only rig reported nonexistent controls'
+        else:
+            assert states['Run']['pilot_controls']['finger_flex_degrees'] > states['Idle']['pilot_controls']['finger_flex_degrees'] + 1
+            assert states['Run']['pilot_controls']['eye_narrow_weight'] > .1, 'Pilot squint morph was not driven during sprint'
         row['pilot_rig']['runtime_controls_observed'] = True
     REPORT['characters'].append(row)
     REPORT.pop('active_character', None)
     u.log(f'NORD_PLAYER_QUALITY_STYLE_OK {STATE["style"]} {WIDTH}')
 
 
+def motion_phase(name):
+    phase('motion_' + name)
+    REPORT['transitions']['events'].append({'phase': name, 'world_time': round(clock(), 5),
+        'wall_seconds': round(time.monotonic() - STATE['started'], 5)})
+    u.log('NORD_PLAYER_MOTION_PHASE ' + name)
+
+
+def transition_checks(samples, lengths):
+    names = ('idle', 'walk', 'sprint', 'turn', 'stop', 'jump', 'landing', 'recover')
+    groups = {name: [row for row in samples if row['phase'] == name] for name in names}
+    assert all(groups.values()), ('Missing native transition observations', {k: len(v) for k, v in groups.items()})
+    for row in samples:
+        assert not row['paused'] and abs(row['global_time_dilation'] - 1.) < .001, 'Motion was paused or slowed'
+        assert row['clip_path'].startswith(CREW_PATH + '/Resident9/'), ('Wrong native motion clip', row['clip_path'])
+        assert row['clip_weights'] and all(math.isfinite(w) and 0 <= w <= 1.001 for w in row['clip_weights'].values())
+        controls = row['pilot_controls']
+        assert controls['finger_control_count'] == (0 if GRAPHIC_NOVEL_GENERATED else 20)
+        assert math.isfinite(controls['finger_flex_degrees']) and 0 <= controls['finger_flex_degrees'] <= 18
+        assert math.isfinite(controls['eye_narrow_weight']) and 0 <= controls['eye_narrow_weight'] <= 1
+        if GRAPHIC_NOVEL_GENERATED:
+            assert controls['finger_flex_degrees'] == controls['eye_narrow_weight'] == 0, 'Body-only rig reported nonexistent controls'
+    for a, b in zip(samples, samples[1:]):
+        assert b['world_time'] > a['world_time'] and b['engine_frame'] > a['engine_frame'], 'Motion observations did not advance'
+        assert b['wall_seconds'] > a['wall_seconds'], 'Motion wall timestamps did not advance'
+    checks = {}
+    for phase_name, kind, speed in (('walk', 'Walk', 450), ('sprint', 'Run', 800)):
+        steady = [row for row in groups[phase_name] if row['clip_weights'][kind] > .99 and
+                  abs(math.hypot(*row['velocity_cm_s'][:2]) - speed) <= 5]
+        assert len(steady) >= 2, (phase_name, 'Native steady motion was not reached')
+        changes = 0
+        for a, b in zip(steady, steady[1:]):
+            elapsed = b['world_time'] - a['world_time']
+            advance = (b['clip_time'] - a['clip_time']) % lengths[kind]
+            expected = elapsed * min(2., max(.8, speed / (600 if kind == 'Run' else 180)))
+            assert advance > .00001 and abs(advance - expected) <= .003 + expected * .1, (kind, 'Native phase hold/jump', advance, expected)
+            changes += math.dist(a['bones']['LeftFoot']['translation_cm'], b['bones']['LeftFoot']['translation_cm']) > .002
+        assert changes >= .9 * (len(steady) - 1), (kind, 'Actual native foot pose did not advance')
+        checks[phase_name] = {'steady_samples': len(steady), 'foot_pose_change_pairs': changes}
+    run, turn = groups['sprint'][-1], groups['turn'][-1]
+    yaw = abs((turn['actor_yaw_degrees'] - run['actor_yaw_degrees'] + 180) % 360 - 180)
+    assert yaw > 45 and turn['velocity_cm_s'][1] > 400, ('Native directional turn missing', yaw)
+    assert math.hypot(*groups['stop'][-1]['velocity_cm_s'][:2]) < 1, 'Native braking did not stop the pawn'
+    origin = groups['stop'][-1]['location_cm']
+    airborne = [row for row in groups['jump'] if row['falling']]
+    assert airborne and any(row['clip_weights']['Jump'] > .99 for row in airborne), 'Actual jump graph never dominated'
+    peak = max(row['location_cm'][2] for row in airborne) - origin[2]
+    assert peak > 120, ('Native jump too short', peak)
+    drift = max(math.dist(origin[:2], row['location_cm'][:2]) for row in groups['jump'] + groups['landing'])
+    assert drift < .5, ('Vertical jump actor drift', drift)
+    idle = groups['idle'][-1]['bones']['LeftLeg']['rotation_xyzw']
+    knee = max(2 * math.acos(min(1., abs(sum(a * b for a, b in zip(idle, row['bones']['LeftLeg']['rotation_xyzw']))))) for row in airborne)
+    assert knee > .6, ('Actual jump knee pose missing', knee)
+    assert all(not row['falling'] for row in groups['landing']), 'Landing observations are airborne'
+    recovered = groups['recover'][-1]
+    assert recovered['clip'] == 'A_Idle' and recovered['clip_weights']['Idle'] > .99 and not recovered['falling'], 'Native idle did not recover'
+    if not GRAPHIC_NOVEL_GENERATED:
+        assert run['pilot_controls']['finger_flex_degrees'] > groups['idle'][-1]['pilot_controls']['finger_flex_degrees'] + 1
+        assert run['pilot_controls']['eye_narrow_weight'] > .1
+    return {'phase_counts': {key: len(value) for key, value in groups.items()}, 'steady_motion': checks,
+            'directional_turn_degrees': round(yaw, 3), 'jump_peak_cm': round(peak, 3),
+            'jump_horizontal_drift_cm': round(drift, 5), 'airborne_knee_degrees': round(math.degrees(knee), 3),
+            'scope': 'selected native state and pose observations at 1x; no rendered fluidity or FPS acceptance'}
+
+
+def motion_tick():
+    name = STATE['phase'][7:]
+    age = clock() - STATE['phase_started']
+    assert age < 5, (name, 'Native transition timed out')
+    assert not u.GameplayStatics.is_game_paused(STATE['world']), 'Motion must remain unpaused'
+    assert abs(u.GameplayStatics.get_global_time_dilation(STATE['world']) - 1.) < .001
+    assert STATE['pc'].get_view_target() == STATE['pawn'], 'Motion must retain the actual controller camera'
+    if name in ('walk', 'sprint', 'turn'):
+        STATE['pawn'].call_method('MoveRight' if name == 'turn' else 'MoveForward', (1.,))
+    rows = REPORT['transitions']['samples']
+    if not rows or rows[-1]['phase'] != name or clock() - rows[-1]['world_time'] >= 1 / 30:
+        row = sample()
+        manager = u.GameplayStatics.get_player_camera_manager(STATE['world'], 0)
+        row.update(phase=name, wall_seconds=round(time.monotonic() - STATE['started'], 5),
+            engine_frame=u.SystemLibrary.get_frame_count(), paused=False,
+            global_time_dilation=u.GameplayStatics.get_global_time_dilation(STATE['world']),
+            actor_yaw_degrees=STATE['pawn'].get_actor_rotation().yaw,
+            cached_camera={'position_cm': vec(manager.get_camera_location()),
+                           'horizontal_fov_degrees': manager.get_fov_angle()})
+        rows.append(row)
+        assert inside_pitch(STATE['pawn'].get_actor_location(), STATE['pitch_points']), 'Motion left the capture pitch'
+    if name == 'idle' and age > .7 and not STATE['movement'].is_falling():
+        motion_phase('walk')
+    elif name == 'walk' and age > 1.4:
+        native('StartSprint')
+        motion_phase('sprint')
+    elif name == 'sprint' and age > 1.4:
+        motion_phase('turn')
+    elif name == 'turn' and age > .8:
+        native('StopSprint')
+        motion_phase('stop')
+    elif name == 'stop' and age > .7 and math.dist(vec(STATE['pawn'].get_velocity()), [0, 0, 0]) < 1:
+        STATE.update(motion_seen_falling=False, jump_released=False)
+        native('Jump')
+        motion_phase('jump')
+    elif name == 'jump':
+        falling = STATE['movement'].is_falling()
+        STATE['motion_seen_falling'] |= falling
+        if age > .15 and not STATE['jump_released']:
+            native('StopJumping')
+            STATE['jump_released'] = True
+        if STATE['motion_seen_falling'] and not falling:
+            motion_phase('landing')
+    elif name == 'landing' and age > .22:
+        motion_phase('recover')
+    elif name == 'recover' and age > .6:
+        result = transition_checks(rows, {kind: value['seconds'] for kind, value in STATE['character']['clips'].items()})
+        REPORT['transitions'].update(passed=True, checks=result)
+        STATE['character']['unpaused_transitions'] = result
+        REPORT['characters'].append(STATE['character'])
+        REPORT.pop('active_character', None)
+        finish()
+
+
+def background_actors(world):
+    return {kind: {actor.get_path_name(): actor for actor in u.GameplayStatics.get_all_actors_of_class(
+                world, u.load_class(None, '/Script/Quebec.Quebec' + kind))}
+            for kind in ('ParkResident', 'Car')}
+
+
+def owned_components(actor):
+    return {component.get_path_name(): component for component in actor.get_components_by_class(u.ActorComponent)
+            if component.get_owner() == actor}
+
+
+def isolate_background_actors(world):
+    actors = background_actors(world)
+    expected = {}
+    component_counts = {}
+    for kind, entries in actors.items():
+        expected[kind] = {}
+        component_counts[kind] = 0
+        for path, actor in entries.items():
+            components = owned_components(actor)
+            expected[kind][path] = sorted(components)
+            component_counts[kind] += len(components)
+            # Residents restore visibility/collision in Tick. Component ticks are
+            # independent of the actor tick, so disable both before hiding.
+            actor.set_actor_tick_enabled(False)
+            for component in components.values():
+                component.set_component_tick_enabled(False)
+            actor.set_actor_hidden_in_game(True)
+            actor.set_actor_enable_collision(False)
+    STATE['isolated_background'] = expected
+    REPORT['fixture_isolation'] = {'requested_actor_counts': {kind: len(entries) for kind, entries in actors.items()},
+        'requested_owned_component_counts': component_counts, 'checkpoints': [],
+        'scope': 'disposable PIE residents/cars only; actor and owned component primary ticks, visibility and actor collision; no render/FPS acceptance'}
+
+
+def verify_background_isolation(stage):
+    expected = STATE['isolated_background']
+    actors = background_actors(STATE['world'])
+    checkpoint = {'stage': stage, 'passed': False, 'observed': {}, 'failures': []}
+    REPORT['fixture_isolation']['checkpoints'].append(checkpoint)
+    for kind, entries in actors.items():
+        counts = dict.fromkeys(('actors', 'hidden', 'collision_disabled', 'actor_ticks_disabled',
+                               'owned_components', 'component_ticks_disabled'), 0)
+        checkpoint['observed'][kind] = counts
+        if set(entries) != set(expected[kind]):
+            checkpoint['failures'].append({'kind': kind, 'actor_set_changed': True,
+                'added': sorted(set(entries) - set(expected[kind])), 'missing': sorted(set(expected[kind]) - set(entries))})
+        for path, actor in entries.items():
+            hidden = bool(actor.get_editor_property('hidden'))
+            collision = bool(actor.get_actor_enable_collision())
+            tick = bool(actor.is_actor_tick_enabled())
+            counts['actors'] += 1
+            counts['hidden'] += hidden
+            counts['collision_disabled'] += not collision
+            counts['actor_ticks_disabled'] += not tick
+            if not hidden or collision or tick:
+                checkpoint['failures'].append({'actor': path, 'hidden': hidden, 'collision_enabled': collision, 'actor_tick_enabled': tick})
+            components = owned_components(actor)
+            if sorted(components) != expected[kind].get(path):
+                checkpoint['failures'].append({'actor': path, 'owned_component_set_changed': True})
+            for component_path, component in components.items():
+                enabled = bool(component.is_component_tick_enabled())
+                counts['owned_components'] += 1
+                counts['component_ticks_disabled'] += not enabled
+                if enabled:
+                    checkpoint['failures'].append({'component': component_path, 'component_tick_enabled': True})
+    checkpoint['passed'] = not checkpoint['failures']
+    assert checkpoint['passed'], ('Background fixture isolation failed', checkpoint)
+
+
 def finish(error=None):
     if STATE['finished']:
         return
     STATE['finished'] = True
+    if 'isolated_background' in STATE:
+        try:
+            verify_background_isolation('completion')
+        except Exception:
+            isolation_error = traceback.format_exc()
+            REPORT['fixture_isolation']['completion_error'] = isolation_error
+            error = error or isolation_error
     if error:
         REPORT['error'] = error
     observations = len(REPORT['skipped_screenshots']) if HEADLESS else len(REPORT['screenshots'])
-    REPORT['passed'] = not error and len(REPORT['characters']) == len(STYLES) and observations == 7 * len(STYLES)
+    REPORT['passed'] = not error and len(REPORT['characters']) == len(STYLES) and (
+        REPORT['transitions']['passed'] if MOTION else observations == 7 * len(STYLES))
     REPORT['wall_seconds'] = round(time.monotonic() - STATE['started'], 2)
-    (VERIFY / f'PlayerQuality{WIDTH}{"Headless" if HEADLESS else ""}.json').write_text(json.dumps(REPORT, indent=2) + '\n')
+    (VERIFY / f'Player{"Motion" if MOTION else "Quality"}{WIDTH}{"Headless" if HEADLESS else ""}.json').write_text(json.dumps(REPORT, indent=2) + '\n')
     try:
         if STATE.get('world'):
             u.GameplayStatics.set_game_paused(STATE['world'], False)
             u.GameplayStatics.set_global_time_dilation(STATE['world'], STATE['original_time_dilation'])
-        LEVELS.editor_request_end_play()
+        if STATE.get('owns_pie'):
+            LEVELS.editor_request_end_play()
     finally:
         for key, value in ORIGINAL.items():
             SETTINGS.set_editor_property(key, value)
@@ -553,9 +926,94 @@ def finish(error=None):
         u.unregister_slate_post_tick_callback(STATE['callback'])
         SCRIPT.call_method('SetKeepPythonScriptAlive', (False,))
     if REPORT['passed']:
-        u.log(f'NORD_PLAYER_QUALITY_OK {len(STYLES)} characters {len(REPORT["screenshots"])} screenshots {WIDTH}x{HEIGHT}; headless={HEADLESS}')
+        if MOTION:
+            u.log(f'NORD_PLAYER_MOTION_OK 1 character 8 phases {len(REPORT["transitions"]["samples"])} observations {WIDTH}x{HEIGHT}; headless={HEADLESS}')
+        else:
+            u.log(f'NORD_PLAYER_QUALITY_OK {len(STYLES)} characters {len(REPORT["screenshots"])} screenshots {WIDTH}x{HEIGHT}; headless={HEADLESS}')
     else:
         u.log_error('NORD_PLAYER_QUALITY_FAILED ' + str(error))
+
+
+def restart_immersive_startup(worlds):
+    assert MOTION and not HEADLESS and '-immersive' in COMMAND_LINE.lower().split(), 'Begin this capture outside PIE'
+    assert len(worlds) == 1, 'Immersive bootstrap requires exactly one startup PIE world'
+    world = worlds[0]
+    assert u.SystemLibrary.is_standalone(world), 'Immersive bootstrap requires standalone PIE'
+    assert u.GameplayStatics.get_current_level_name(world, True) == 'LaFontaine', 'Unexpected immersive startup map'
+    assert u.GameplayStatics.get_num_player_controllers(world) == u.GameplayStatics.get_num_local_player_controllers(world) == 1, 'Immersive startup must have one local player'
+    assert not STATE.get('immersive_restart_requested'), 'Immersive startup may only restart once'
+    STATE.update(immersive_restart_requested=True, owns_pie=True)
+    REPORT['viewport_bootstrap'] = {'method': 'restart owned immersive startup PIE once before saved-build checks',
+        'startup_world': world.get_path_name(), 'standalone_local_players': 1,
+        'scope': 'rendered motion only; the existing immersive viewport is retained, assets are not changed'}
+    LEVELS.editor_request_end_play()
+    u.log('NORD_PLAYER_MOTION_IMMERSIVE_RESTART')
+
+
+def native_viewport_rectangle(calibration):
+    # SetMouseLocation reaches FSceneViewport::SetMouse, which maps native pixels
+    # through its CachedGeometry; the platform cursor readback is desktop space.
+    # UMG widget-host geometry can be empty for this native AHUD-only PIE viewport.
+    pc = STATE['pc']
+    previous = pc.get_mouse_position()
+    probes = calibration['native_viewport_cursor_probes'] = []
+    try:
+        for point in ([0, 0], [WIDTH - 1, 0], [0, HEIGHT - 1]):
+            pc.set_mouse_location(*point)
+            desktop = u.WidgetLayoutLibrary.get_mouse_position_on_platform()
+            probes.append({'viewport_pixels': point, 'desktop_pixels': [desktop.x, desktop.y]})
+        origin, horizontal, vertical = (probe['desktop_pixels'] for probe in probes)
+        assert all(math.isfinite(value) and abs(value - round(value)) < .01 for probe in probes for value in probe['desktop_pixels']), ('Native viewport probes are not finite integral screen pixels', probes)
+        assert horizontal == [origin[0] + WIDTH - 1, origin[1]] and vertical == [origin[0], origin[1] + HEIGHT - 1], ('Native viewport does not map one-to-one to desktop pixels', probes)
+        calibration['geometry_source'] = 'FSceneViewport cached geometry via three native-pixel cursor probes; platform desktop readback'
+        return [origin[0], origin[1], WIDTH, HEIGHT]
+    finally:
+        restore = [round(value) for value in previous] if previous is not None else [WIDTH // 2, HEIGHT // 2]
+        pc.set_mouse_location(*restore)
+        calibration['cursor_restored_viewport_pixels'] = restore
+
+
+def calibrate_motion_viewport():
+    assert MOTION and not HEADLESS and '-immersive' in COMMAND_LINE.lower().split() and STATE.get('owns_pie'), 'Viewport calibration requires owned rendered immersive PIE'
+    now, frame = time.monotonic(), u.SystemLibrary.get_frame_count()
+    calibration = REPORT.get('viewport_calibration')
+    if calibration is None:
+        desktop = u.GameUserSettings.get_game_user_settings().get_desktop_resolution()
+        display = [desktop.x, desktop.y]
+        assert display[0] >= WIDTH and display[1] >= HEIGHT, ('Capture display is too small', display)
+        calibration = REPORT['viewport_calibration'] = {
+            'passed': False, 'method': 'resize owned editor root, then compensate measured chrome at most once',
+            'display_pixels': display, 'target_viewport_pixels': [WIDTH, HEIGHT], 'attempts': []}
+        requested = [WIDTH, HEIGHT]
+    else:
+        assert now - STATE['viewport_resize_started'] < 10, 'Viewport calibration timed out'
+        # X11 size events and Slate layout require subsequent engine frames.
+        if now - STATE['viewport_resize_started'] < 1 or frame - STATE['viewport_resize_frame'] < 2:
+            return False
+        observed = list(STATE['pc'].get_viewport_size())
+        calibration['attempts'][-1]['observed_viewport_pixels'] = observed
+        if observed != [WIDTH, HEIGHT] and len(calibration['attempts']) == 1:
+            assert all(value > 0 for value in observed), ('Empty game viewport', observed)
+            requested = [2 * WIDTH - observed[0], 2 * HEIGHT - observed[1]]
+        else:
+            assert observed == [WIDTH, HEIGHT], ('Game viewport remains the wrong size after bounded calibration', observed)
+            values = native_viewport_rectangle(calibration)
+            assert all(math.isfinite(value) and abs(value - round(value)) < .01 for value in values), ('Viewport rectangle is not finite integral screen pixels', values)
+            x, y, width, height = map(round, values)
+            assert [width, height] == observed, ('Measured game rectangle does not match native viewport', values, observed)
+            display = calibration['display_pixels']
+            assert x >= 0 and y >= 0 and x + width <= display[0] and y + height <= display[1], ('Game recording rectangle extends outside the display', values, display)
+            rectangle = {'x': x, 'y': y, 'width': width, 'height': height, 'display_pixels': display}
+            calibration.update(passed=True, desktop_recording_rectangle=rectangle)
+            REPORT['viewport_pixels_observed'] = observed
+            u.log('NORD_PLAYER_MOTION_VIEWPORT ' + json.dumps(rectangle, separators=(',', ':')))
+            return True
+    display = calibration['display_pixels']
+    assert WIDTH <= requested[0] <= display[0] and HEIGHT <= requested[1] <= display[1], ('Measured chrome cannot fit capture display', requested, display)
+    calibration['attempts'].append({'requested_root_pixels': requested})
+    STATE.update(viewport_resize_started=now, viewport_resize_frame=frame)
+    u.SystemLibrary.execute_console_command(STATE['world'], f'Editor.ResizeMainFrame {requested[0]} {requested[1]}', STATE['pc'])
+    return False
 
 
 def tick(dt):
@@ -566,7 +1024,11 @@ def tick(dt):
             if time.monotonic() - STATE['started'] < 2:
                 return
             assert shutil.which('magick'), 'ImageMagick is required to compare imported texture source pixels'
-            assert not u.EditorLevelLibrary.get_pie_worlds(True), 'Begin this capture outside PIE'
+            worlds = u.EditorLevelLibrary.get_pie_worlds(True)
+            if worlds:
+                if not STATE.get('immersive_restart_requested'):
+                    restart_immersive_startup(worlds)
+                return
             STATE['mesh_build_flags']={}
             REPORT['pre_pie_mesh_build_flags']=STATE['mesh_build_flags']
             for style in STYLES:
@@ -580,6 +1042,7 @@ def tick(dt):
             SETTINGS.set_editor_property('PlayNumberOfClients', 1)
             SETTINGS.set_editor_property('RunUnderOneProcess', True)
             SYSTEM.call_method('SetBytePropertyByName', (SETTINGS, 'PlayNetMode', 0))
+            STATE['owns_pie'] = True
             LEVELS.editor_request_begin_play()
             STATE['phase'] = 'discover'
             return
@@ -594,13 +1057,15 @@ def tick(dt):
             pawn = pc.get_controlled_pawn()
             assert pawn.get_class() == u.load_class(None, '/Script/Quebec.QuebecCharacter')
             pawn.disable_input(pc)
-            transform = u.Transform(u.Vector(0, 0, 1000))
-            camera = GAMEPLAY.call_method('BeginDeferredActorSpawnFromClass', (world, u.CameraActor.static_class(), transform,
-                u.SpawnActorCollisionHandlingMethod.ALWAYS_SPAWN, None, u.SpawnActorScaleMethod.OVERRIDE_ROOT_SCALE))
-            GAMEPLAY.call_method('FinishSpawningActor', (camera, transform, u.SpawnActorScaleMethod.OVERRIDE_ROOT_SCALE))
-            camera.get_component_by_class(u.CameraComponent).set_editor_property('post_process_blend_weight', 1.)
-            pc.set_view_target_with_blend(camera, 0)
-            if GRAPHIC_NOVEL_CANDIDATE:
+            camera = pawn
+            if not MOTION:
+                transform = u.Transform(u.Vector(0, 0, 1000))
+                camera = GAMEPLAY.call_method('BeginDeferredActorSpawnFromClass', (world, u.CameraActor.static_class(), transform,
+                    u.SpawnActorCollisionHandlingMethod.ALWAYS_SPAWN, None, u.SpawnActorScaleMethod.OVERRIDE_ROOT_SCALE))
+                GAMEPLAY.call_method('FinishSpawningActor', (camera, transform, u.SpawnActorScaleMethod.OVERRIDE_ROOT_SCALE))
+                camera.get_component_by_class(u.CameraComponent).set_editor_property('post_process_blend_weight', 1.)
+                pc.set_view_target_with_blend(camera, 0)
+            if GRAPHIC_NOVEL_CANDIDATE and not MOTION:
                 material = u.load_asset(COMIC_PATH)
                 assert material, 'Missing isolated graphic-novel filter'
                 SYSTEM.call_method('SetObjectPropertyByName', (pc, 'ComicMaterial', material))
@@ -616,9 +1081,12 @@ def tick(dt):
                 blendables.set_editor_property('array', entries)
                 settings.set_editor_property('weighted_blendables', blendables)
                 camera_component.set_editor_property('post_process_settings', settings)
-            # Verify full-rate motion with the illustrated treatment enabled.
+            # Exercise the private native toggle; standard review switches back before checking the mode.
             pc.call_method('ToggleComicStyle')
-            u.SystemLibrary.execute_console_command(world, 'showhud', pc)
+            if STANDARD:
+                pc.call_method('ToggleComicStyle')
+            if not MOTION:
+                u.SystemLibrary.execute_console_command(world, 'showhud', pc)
             layout = json.loads((ROOT / 'Data/ParkComic/layout.json').read_text())
             pitch = max((p for p in layout['pitches'] if p['sport'] == 'soccer'),
                         key=lambda p: abs(sum(a[0] * b[1] - b[0] * a[1] for a, b in zip(p['points'], p['points'][1:]))))
@@ -629,15 +1097,24 @@ def tick(dt):
             assert inside_pitch(origin, points), 'Capture start is outside the selected soccer pitch'
             REPORT['pitch_fixture'] = {'osm': pitch['osm'], 'start_cm': vec(origin),
                                        'offset_from_vertex_average_cm': [-1000, 0, 0],
-                                       'clearance_rule': 'captured pawn and camera must remain inside the largest soccer polygon'}
-            for kind in ('ParkResident', 'Car'):
-                for actor in u.GameplayStatics.get_all_actors_of_class(world, u.load_class(None, '/Script/Quebec.Quebec' + kind)):
-                    actor.set_actor_hidden_in_game(True)
-                    actor.set_actor_enable_collision(False)
+                                       'clearance_rule': 'motion pawn must remain inside the largest soccer polygon; native camera is recorded' if MOTION else 'captured pawn and camera must remain inside the largest soccer polygon'}
             STATE.update(world=world, pc=pc, pawn=pawn, movement=pawn.get_component_by_class(u.CharacterMovementComponent), camera=camera, origin=origin, pitch_points=points,
                          original_time_dilation=u.GameplayStatics.get_global_time_dilation(world))
+            isolate_background_actors(world)
+            if not HEADLESS:
+                REPORT['renderer_settings'] = {
+                    **{key: u.SystemLibrary.get_console_variable_int_value(key) for key in (
+                        'sg.ViewDistanceQuality', 'sg.AntiAliasingQuality', 'sg.ShadowQuality',
+                        'sg.GlobalIlluminationQuality', 'sg.ReflectionQuality', 'sg.PostProcessQuality',
+                        'sg.TextureQuality', 'sg.EffectsQuality', 'sg.FoliageQuality',
+                        'r.Streaming.PoolSize', 'r.Shadow.Virtual.MaxPhysicalPages')},
+                    **{key: u.SystemLibrary.get_console_variable_float_value(key) for key in ('r.ScreenPercentage', 't.MaxFPS')}}
             pawn.set_actor_location(origin, False, True)
-            phase('warm')
+            phase('viewport_calibrate' if MOTION and not HEADLESS and '-immersive' in COMMAND_LINE.lower().split() else 'warm')
+            return
+        if current == 'viewport_calibrate':
+            if calibrate_motion_viewport():
+                phase('warm')
             return
         if current == 'shot':
             path = STATE['shot_path']
@@ -668,18 +1145,26 @@ def tick(dt):
             if STATE['prepare_frames'] >= 2:
                 freeze_and_capture()
             return
+        if current.startswith('motion_'):
+            motion_tick()
+            return
         age = clock() - STATE['phase_started']
         if current == 'warm':
             if age > 12:
+                verify_background_isolation('warm_up')
                 interval = STATE['pawn'].get_component_by_class(u.SkeletalMeshComponent).get_component_tick_interval()
-                assert abs(interval) < .001, ('Comic view must retain full-rate player poses', interval)
+                assert abs(interval) < .001, ('Look switching must retain full-rate player poses', interval)
                 camera = STATE['camera'].get_component_by_class(u.CameraComponent)
                 entries = camera.get_editor_property('post_process_settings').get_editor_property('weighted_blendables').get_editor_property('array')
                 comic = [entry for entry in entries if entry.get_editor_property('object') and
                          entry.get_editor_property('object').get_path_name() == COMIC_PATH]
-                assert len(comic) == 1 and abs(comic[0].get_editor_property('weight') - 1.) < .001, 'Comic treatment is not enabled'
-                REPORT['comic_view'] = True
+                assert len(comic) == 1 and abs(comic[0].get_editor_property('weight') - (0. if STANDARD else 1.)) < .001, 'Requested render mode is not active'
+                REPORT['comic_view'] = not STANDARD
                 REPORT['player_pose_tick_interval_seconds'] = interval
+                if MOTION and not HEADLESS:
+                    REPORT['viewport_pixels_observed'] = list(STATE['pc'].get_viewport_size())
+                    if '-immersive' in COMMAND_LINE.lower().split():
+                        assert REPORT['viewport_calibration']['passed'] and REPORT['viewport_pixels_observed'] == [WIDTH, HEIGHT], 'Calibrated viewport changed before motion'
                 start_style(STYLES[0])
             return
         aim(current in ('face', 'face_three_quarter'), grounded=current == 'descend',

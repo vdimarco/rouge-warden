@@ -1,0 +1,33 @@
+{
+  "status": "submitted",
+  "recipe": {
+    "endpoint_id": "meshy/v7.1/image-to-3d",
+    "input": {
+      "image_url": "https://v3b.fal.media/files/b/0aae4caf/nqKAvozGh4dshBniXzEOg_nord-graphic-novel-curly-reference.png",
+      "model_type": "standard",
+      "topology": "triangle",
+      "target_polycount": 100000,
+      "symmetry_mode": "auto",
+      "should_remesh": true,
+      "should_texture": true,
+      "enable_pbr": true,
+      "pose_mode": "a-pose",
+      "texture_prompt": "Preserve this adult man's mature face, curly dark hair, beard, black and red shirt, teal utility trousers and canvas high-top shoes. Restrained dimensional hand-painted graphic-novel materials, clean readable skin and natural adult proportions. Preserve the reference palette and clothing. No added symbols, text, drawn outer outlines, baked halftone dots or harsh painted lighting.",
+      "enable_rigging": true,
+      "rigging_height_meters": 1.82,
+      "enable_animation": true,
+      "animation_action_id": 0,
+      "enable_safety_checker": true,
+      "geometry_resolution": "4k"
+    },
+    "note": "These are the submitted inputs, not resolved server defaults. For a variation, copy them and change only requested fields; reuse returned_seed when supported by the schema. Source URLs may expire."
+  },
+  "request_id": "01a13971-5e0a-73e0-8e68-730896d2cee3",
+  "endpoint_id": "meshy/v7.1/image-to-3d",
+  "status_url": "https://queue.fal.run/meshy/v7.1/requests/01a13971-5e0a-73e0-8e68-730896d2cee3/status",
+  "response_url": "https://queue.fal.run/meshy/v7.1/requests/01a13971-5e0a-73e0-8e68-730896d2cee3",
+  "cancel_url": "https://queue.fal.run/meshy/v7.1/requests/01a13971-5e0a-73e0-8e68-730896d2cee3/cancel",
+  "poll_after_seconds": 20,
+  "polling_hint": "Wait poll_after_seconds before calling check_job with the same request_id and status_url. This interval is not an ETA. Report meaningful status changes rather than repeating unchanged progress. Do not submit another job to check progress.",
+  "hint": "Job submitted. Use check_job with status_url to check status, then get_job_result with response_url when it completes."
+}

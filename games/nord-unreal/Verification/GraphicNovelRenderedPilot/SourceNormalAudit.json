@@ -1,0 +1,186 @@
+{
+  "schema_version": 1,
+  "recorded_at_utc": "2026-10-14T05:16:36.606290+00:00",
+  "reviewer": "style_scope; independent CPU source audit",
+  "scope": "Read-only mesh, normal/tangent and collar UV/albedo analysis. Existing images inspected; no new rendering, engine process, asset mutation or paid generation.",
+  "identities": {
+    "body.glb": {
+      "path": "games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v1/body.glb",
+      "bytes": 16107312,
+      "sha256": "623b69b0f2ec6b6d060431737d7e469f9e61f5078bddefc453d99af2b87a8c14"
+    },
+    "body.fbx": {
+      "path": "games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v1/body.fbx",
+      "bytes": 6064652,
+      "sha256": "a9f1a81f16986a17a50571b7ed536b1e4137778a8024979576cd427365c3a62e"
+    },
+    "normal.png": {
+      "path": "games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v1/normal.png",
+      "bytes": 6397663,
+      "sha256": "8807b0460c45a9072ab266a50f8c7e07b90ac09dd465735412b5aeea08c759e9",
+      "dimensions": [
+        2048,
+        2048
+      ]
+    },
+    "base_color.png": {
+      "path": "games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v1/base_color.png",
+      "bytes": 5934157,
+      "sha256": "e12f54d2240e3c8255e3008aa0f089fad07236cbb0055e5db36e02d18c617dfb",
+      "dimensions": [
+        2048,
+        2048
+      ]
+    }
+  },
+  "tools": {
+    "blender": "5.2.2 LTS",
+    "execution": "--background --factory-startup -t 4 --python-expr; imported into disposable in-memory scenes only",
+    "other": "Python standard-library GLB parsing and SHA256; Blender NumPy for read-only atlas pixel sampling"
+  },
+  "mesh_normal_analysis": {
+    "body_object": "char1; auxiliary Icosphere helper excluded",
+    "body_vertices": 43807,
+    "body_triangles": 31026,
+    "body_corner_loops": 93078,
+    "custom_corner_normals_present": {
+      "glb": true,
+      "fbx": true
+    },
+    "method": "Import GLB/FBX separately, set armature REST, transform positions/normals to Blender world space; compare per-face corner-normal angles and smooth flags.",
+    "neck_region_m": {
+      "z_open_interval": [
+        1.35,
+        1.58
+      ],
+      "absolute_x_less_than": 0.2
+    },
+    "neck_glb": {
+      "polygons": 1403,
+      "flat_corner_normal_triangles": 55,
+      "smooth_polygons": 1354,
+      "median_corner_angle_degrees": 12.60438652894759
+    },
+    "neck_fbx": {
+      "polygons": 1403,
+      "flat_corner_normal_triangles": 55,
+      "smooth_polygons": 1403,
+      "median_corner_angle_degrees": 12.603669607845923
+    },
+    "torso_region_m": {
+      "z_open_interval": [
+        1.05,
+        1.35
+      ],
+      "absolute_x_less_than": 0.35
+    },
+    "torso_glb": {
+      "polygons": 2360,
+      "flat_corner_normal_triangles": 38,
+      "median_corner_angle_degrees": 13.815167238325094
+    },
+    "torso_fbx": {
+      "polygons": 2360,
+      "flat_corner_normal_triangles": 38,
+      "median_corner_angle_degrees": 13.81530265626637
+    },
+    "flat_test": "Every corner normal has dot product >0.999999 against the first corner normal.",
+    "conclusion": "FBX is not globally flat shaded; GLB and FBX retain very similar authored corner normals. Smooth polygon flags alone do not establish continuity across split vertices."
+  },
+  "tangent_analysis": {
+    "method": "Read GLB POSITION/NORMAL/TANGENT/TEXCOORD_0 streams. Convert glTF axes to Blender axes, match loops by world position and UV rounded to five decimals, then compare supplied normalized tangents/normals against Blender calc_tangents Mikk output.",
+    "glb_matched_loops": 90935,
+    "glb_unmatched_loops": 2143,
+    "glb_tangent_median_degrees": 0.0,
+    "glb_tangent_p95_degrees": 0.024851258426428897,
+    "fbx_matched_loops": 91112,
+    "fbx_unmatched_loops": 1966,
+    "fbx_tangent_median_degrees": 0.0,
+    "fbx_tangent_p95_degrees": 0.02319685107588672,
+    "fbx_normal_p95_degrees": 0.025217635811709393,
+    "limitations": "Rounded position/UV keys may collide at hard edges; unmatched loops and outliers are not resolved. This is CPU basis agreement, not a measurement of the saved Unreal render buffer.",
+    "conclusion": "No demonstrated widespread GLB-to-FBX tangent corruption; importing alternate tangents is not yet justified."
+  },
+  "normal_texture_analysis": {
+    "method": "Read GLB image bufferView referenced by material.normalTexture; compare embedded PNG bytes against retained normal.png.",
+    "embedded_and_retained_png_bytes_identical": true,
+    "embedded_sha256": "8807b0460c45a9072ab266a50f8c7e07b90ac09dd465735412b5aeea08c759e9",
+    "material_source_file": "games/nord-unreal/Scripts/import_meshy_crew.py",
+    "observed_import_setup": {
+      "normal_import_method": "FBXNIM_IMPORT_NORMALS",
+      "recompute_normals": false,
+      "recompute_tangents": true,
+      "use_mikk_t_space": true,
+      "flip_green_channel": true,
+      "mapped_normal_strength": 0.35
+    },
+    "cpu_review_setup": "Retained FBX CPU review uses full mapped normals. Different lighting prevents treating existing CPU/native images as a controlled A/B.",
+    "hypothesis": "Attenuating the new normal map may expose coarse surface or authored split-normal artifacts that the full map compensates. A controlled normal-strength A/B is required; this is not a proven final fix."
+  },
+  "central_skin_neck_split_normals": {
+    "method": "Group corner normals at world positions rounded to five decimals. Include faces whose sampled base-color centroid passes the stated skin-color heuristic; restrict sampled positions to the central front neck.",
+    "position_region_m": {
+      "z_open_interval": [
+        1.48,
+        1.59
+      ],
+      "absolute_x_less_than": 0.09,
+      "y_less_than": -0.02
+    },
+    "skin_color_heuristic": "R>0.25 and R>1.2*B and R>1.08*G; normalized RGB sampled from retained atlas.",
+    "position_groups": 83,
+    "multi_corner_groups": 74,
+    "groups_with_max_disagreement_over_10_degrees": 41,
+    "median_max_same_position_normal_angle_degrees": 18.663657851526352,
+    "maximum_degrees": 172.50219898141654,
+    "limitations": "Color heuristic is not semantic segmentation. Coincident geometry/intersections may contribute to large angular outliers; no global normal recomputation is warranted from this statistic alone.",
+    "conclusion": "Substantial authored split-normal disagreement is present in the selected skin region and can contribute to triangular shading."
+  },
+  "collar_analysis": {
+    "method": "Count geometric boundary edges after position welding at 1e-5m; sample retained base-color PNG at triangle centroids and geometric edge-midpoint UVs using nearest pixels.",
+    "boundary_region_m": {
+      "z_open_interval": [
+        1.35,
+        1.58
+      ],
+      "absolute_x_less_than": 0.2
+    },
+    "position_weld_precision_m": 1e-05,
+    "open_boundary_edges_in_region": 0,
+    "sample": {
+      "world_edge_midpoint_m": [
+        0.035585,
+        -0.04722,
+        1.491135
+      ],
+      "dark_triangle_centroid_rgb": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "edge_uv": [
+        0.4352570176124573,
+        0.41583749651908875
+      ],
+      "edge_rgb": [
+        0.9568628072738647,
+        0.7568628191947937,
+        0.6431372761726379
+      ]
+    },
+    "image_evidence": [
+      "games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v1/review/CPU-face-front.png",
+      "games/nord-unreal/Saved/Tests/GraphicNovel/Rendered-20261014T045140Z/Capture/Standard/1280/Resident9_Face.png",
+      "games/nord-unreal/Saved/Tests/GraphicNovel/Rendered-20261014T045140Z/Capture/1280/Resident9_Face.png"
+    ],
+    "conclusion": "A pale jagged collar rim predates the comic filter and has a source UV/albedo boundary contribution: dark garment faces sample pale skin at their edge. No open hole was found in the tested region.",
+    "limitations": "No full-model watertightness claim. Nearest-pixel sampling is not GPU bilinear sampling, and the source texture contribution does not exclude normal/lighting contributions."
+  },
+  "bounded_next_step": "Root-controlled same-mesh/same-light native closeup A/B of 35% versus full mapped normals, preserving old material/source evidence. If rim persists, diagnose a separate local collar UV/albedo or narrow trim correction. No blind green-channel flip or global normal recomputation.",
+  "acceptance": {
+    "source_audit_only": true,
+    "normal_strength_fix_proven": false,
+    "graphics_accepted": false,
+    "crew_rollout_established": false
+  }
+}

@@ -4,15 +4,17 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { OBJECTS, AU_LY } from '../../public/light-years-home/core/objects.js';
-import { legPoints, STOPS } from '../../public/light-years-home/core/route.js';
 import {
   ARMS, CLOUDS, GAS_SCALE_LY, armAt, armWeights, armsPassed, cloudAt, densityAt, sampleAt, galacticHeight, gcDistance,
   galactocentric, inAsteroidBelt, checkZones, medianDensity, pathLength, pointAlong, fromGalactic, N_HALO, N_IGM,
 } from '../../public/light-years-home/core/gas.js';
 
 const pos = (id) => OBJECTS[id].pos;
-const LEG_6 = STOPS.findIndex((s) => s.id === 'carina');      // entry → Carina
-const LEG_7 = STOPS.findIndex((s) => s.id === 'orions-belt'); // Carina → Orion's Belt
+// The two legs these checks fly, as v1's route had them (straight, no via points): into the Milky Way to Carina, and
+// Carina to Orion's Belt.
+const LEG_6 = ['mw-entry', 'carina'];
+const LEG_7 = ['carina', 'orions-belt'];
+const legPoints = (ids) => ids.map(pos);
 const near = (a, b, tol) => Math.abs(a - b) <= tol * Math.abs(b);
 
 test('the arm model puts the Sun in the Orion (Local) Arm and Carina on the Sagittarius–Carina Arm', () => {

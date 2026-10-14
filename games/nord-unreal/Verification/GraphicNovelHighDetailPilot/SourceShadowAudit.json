@@ -1,0 +1,5007 @@
+{
+  "scope": "CPU-only immutable source topology/skin and own-clip geometric screening, not native shadow diagnosis",
+  "created_utc": "2026-10-14T09:01:07.651385+00:00",
+  "blender": "5.2.2 LTS",
+  "threads": 4,
+  "render_performed": false,
+  "source": "Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail",
+  "source_before": {
+    "base_color.png": {
+      "bytes": 6140895,
+      "sha256": "f300cbf5d78c411cad36cfedee17a36c787d1a50c968c2adb2827ecf0e43d774"
+    },
+    "body.fbm/Material_0_baseColor.jpg": {
+      "bytes": 4213353,
+      "sha256": "adf54ff0228275f6557fa5afbacb9ab0e5651fe1ddec0c638afa2cd197dba5d7"
+    },
+    "body.fbx": {
+      "bytes": 10076108,
+      "sha256": "b7e7ca0d9c486412108cba85e1cd4a5512fecd4ad36b8cfdb4677259ff6f9244"
+    },
+    "body.glb": {
+      "bytes": 23337268,
+      "sha256": "25041be9666422c30ba39449cb283a83928bb3de596fe063389707c070335613"
+    },
+    "files.json": {
+      "bytes": 1926,
+      "sha256": "d942b4ec45c3b28ef54c0afeb991278528fd74252ec7208cd518519277fd18bc"
+    },
+    "generation.json": {
+      "bytes": 2519,
+      "sha256": "a23277ea16f38bf8123e4c5f8e4b64323c6b07843158a4b84a7f2bcf7d910632"
+    },
+    "idle.fbm/Material_0_baseColor.jpg": {
+      "bytes": 4213353,
+      "sha256": "adf54ff0228275f6557fa5afbacb9ab0e5651fe1ddec0c638afa2cd197dba5d7"
+    },
+    "idle.fbx": {
+      "bytes": 10197292,
+      "sha256": "b1a7bd95403aa7358f067a3a352d060ca2cd56d9c65d9f8d6fe497dbf4343641"
+    },
+    "jump.fbx": {
+      "bytes": 221356,
+      "sha256": "36d74356ca903188a9b3956db69e51367260866972cda9215fab6a66d5362aa3"
+    },
+    "jump.json": {
+      "bytes": 5070,
+      "sha256": "94deb47f51e5cbfd6e5694efb8dcb8052c2abf6c91df7ceee2a35def47838e3f"
+    },
+    "metallic.png": {
+      "bytes": 30269,
+      "sha256": "2e0e9b79402c506cdcf5fe11f4e81e7a376b0b81fa5982b6b6584f5e35402309"
+    },
+    "normal.png": {
+      "bytes": 6648844,
+      "sha256": "7845864ce13d1e3ce10e8149ef2ef98a048b8be249a60749dfc70c4897e9e7ab"
+    },
+    "preview.png": {
+      "bytes": 90796,
+      "sha256": "8b0e3ba80a30dd9f6d438be6f81728e9744dc057c9f1df50759379b2dc57a8d4"
+    },
+    "pricing.json": {
+      "bytes": 1012,
+      "sha256": "6ff6e0d5f7a22b9cf85119d4ad1cb6e8f30e6acb4804a61b563e27b347663d32"
+    },
+    "reference.png": {
+      "bytes": 1619959,
+      "sha256": "c00eb6f0ea1f5743b1a236295ecedfa27e15763d9ab5a717942ebf3713e778be"
+    },
+    "request.json": {
+      "bytes": 2129,
+      "sha256": "47209121445fc43283c50481d7fc6adece8274fdf049ddec31e52c58f4a352d1"
+    },
+    "result-receipt.json": {
+      "bytes": 21334,
+      "sha256": "192c42733e1ab51fd1b4d799bd4167b7c457ed2b5a3d48d3ccb910729b3c8ba7"
+    },
+    "result.json": {
+      "bytes": 4916,
+      "sha256": "da1d5ae7bc3856dde6e1b7f642182814eeb1ff22f2d69cc7aaf8a4ebde5dbdab"
+    },
+    "roughness.png": {
+      "bytes": 1475634,
+      "sha256": "cf28e5b2f2b3d1d85b3e3a6b8228b0bde61f82c60133b393a6159b5d3a7a9f89"
+    },
+    "run.fbm/Material_0_baseColor.jpg": {
+      "bytes": 4213353,
+      "sha256": "adf54ff0228275f6557fa5afbacb9ab0e5651fe1ddec0c638afa2cd197dba5d7"
+    },
+    "run.fbx": {
+      "bytes": 10096892,
+      "sha256": "b0f8e4c359d21ca3a51dde5c94b45b4d9f4a3d27dedb2d44f671b69e41f6e8ae"
+    },
+    "run.glb": {
+      "bytes": 79384,
+      "sha256": "b59e018d32513f3519f4f64a6a29de42cdc952cc53a5416b91ee60bc82229b30"
+    },
+    "schema.json": {
+      "bytes": 98501,
+      "sha256": "4779033055c3bed4def386892cc4844f22ed9bd718d6795318efa395dafc219b"
+    },
+    "source-review.json": {
+      "bytes": 2062,
+      "sha256": "a2ea79458aef0ad20ee1cb00b262269c509db230ca94b9c03cfc8bebeaacd3d8"
+    },
+    "submit-response.json": {
+      "bytes": 2129,
+      "sha256": "47209121445fc43283c50481d7fc6adece8274fdf049ddec31e52c58f4a352d1"
+    },
+    "walk.fbm/Material_0_baseColor.jpg": {
+      "bytes": 4213353,
+      "sha256": "adf54ff0228275f6557fa5afbacb9ab0e5651fe1ddec0c638afa2cd197dba5d7"
+    },
+    "walk.fbx": {
+      "bytes": 10114012,
+      "sha256": "0fe2b4d83846f826e3d448c870fcb77816c25fe6d106c873d755cd7a3d871d9e"
+    }
+  },
+  "assets": {
+    "body_fbx": {
+      "mesh": "char1",
+      "vertices": 130901,
+      "triangles": 103544,
+      "bounds_world_m": [
+        [
+          -0.3967656236993765,
+          -0.16401556029566863,
+          7.723199024459362e-08
+        ],
+        [
+          0.396765585675458,
+          0.16401568131843242,
+          1.81999992679991
+        ]
+      ],
+      "materials": [
+        "Material_0"
+      ],
+      "modifiers": [
+        {
+          "type": "ARMATURE",
+          "object": "Armature"
+        }
+      ],
+      "morphs": 0,
+      "uv_layers": [
+        "UVMap"
+      ],
+      "weights": {
+        "bone_count": 24,
+        "bone_names": [
+          "Hips",
+          "Spine02",
+          "Spine01",
+          "Spine",
+          "neck",
+          "Head",
+          "head_end",
+          "headfront",
+          "LeftShoulder",
+          "LeftArm",
+          "LeftForeArm",
+          "LeftHand",
+          "RightShoulder",
+          "RightArm",
+          "RightForeArm",
+          "RightHand",
+          "LeftUpLeg",
+          "LeftLeg",
+          "LeftFoot",
+          "LeftToeBase",
+          "RightUpLeg",
+          "RightLeg",
+          "RightFoot",
+          "RightToeBase"
+        ],
+        "weighted_bones": 24,
+        "weight_sum_min": 0.9999998770654202,
+        "weight_sum_max": 1.0000001266598701,
+        "unweighted_vertices": 0,
+        "weight_sums_outside_tolerance": 0,
+        "negative_weights": 0,
+        "nonfinite_weights": 0,
+        "max_influences": 4,
+        "nonbone_weight_assignments": [],
+        "nonbone_weight_assignment_count": 0
+      },
+      "raw_topology": {
+        "boundary_edges": 116332,
+        "nonmanifold_excluding_boundary": 0,
+        "loose_vertices": 0,
+        "wire_edges": 0,
+        "degenerate_faces": 0
+      },
+      "position_weld_copy_topology": {
+        "vertices": 51007,
+        "boundary_edges": 344,
+        "nonmanifold_excluding_boundary": 286,
+        "loose_vertices": 0,
+        "wire_edges": 0,
+        "degenerate_faces": 0,
+        "duplicate_face_vertex_sets": 0,
+        "edge_connected_face_components": 1
+      },
+      "components": [
+        {
+          "vertices": 51007,
+          "faces": 103544,
+          "area_m2": 2.514539587397699,
+          "bounds_world_m": [
+            [
+              -0.3967656195163727,
+              -0.16401556134223938,
+              7.72319879160932e-08
+            ],
+            [
+              0.3967655897140503,
+              0.16401568055152893,
+              1.8199999332427979
+            ]
+          ],
+          "boundary_edges": 344,
+          "dominant_weighted_bones": [
+            [
+              "Head",
+              0.5918956016280128
+            ],
+            [
+              "LeftUpLeg",
+              0.05236401399204073
+            ],
+            [
+              "RightLeg",
+              0.05127913389800472
+            ],
+            [
+              "LeftLeg",
+              0.049988542036669005
+            ],
+            [
+              "RightUpLeg",
+              0.04900151120494527
+            ],
+            [
+              "LeftFoot",
+              0.029341106541355886
+            ],
+            [
+              "RightFoot",
+              0.028343398341541072
+            ],
+            [
+              "Hips",
+              0.01913387704481764
+            ],
+            [
+              "LeftHand",
+              0.017744425544634845
+            ],
+            [
+              "LeftArm",
+              0.0167051033165249
+            ],
+            [
+              "RightArm",
+              0.016406382810186065
+            ],
+            [
+              "RightHand",
+              0.01599702736200075
+            ],
+            [
+              "LeftShoulder",
+              0.01203201453126297
+            ],
+            [
+              "RightShoulder",
+              0.010848322135997625
+            ]
+          ]
+        }
+      ],
+      "coincident_split_weight_max_L1_difference": 0.0,
+      "coincident_split_weight_difference_over_005_count": 0,
+      "max_rest_triangle_edge_m": 0.12377493083031697
+    },
+    "body_glb": {
+      "mesh": "char1",
+      "vertices": 130901,
+      "triangles": 103544,
+      "bounds_world_m": [
+        [
+          -0.39676570005493517,
+          -0.16401563277805664,
+          8.04111350806269e-08
+        ],
+        [
+          0.39676543302613254,
+          0.16401565185154254,
+          1.8200002644956044
+        ]
+      ],
+      "materials": [
+        "Material_0"
+      ],
+      "modifiers": [
+        {
+          "type": "ARMATURE",
+          "object": "Armature"
+        }
+      ],
+      "morphs": 0,
+      "uv_layers": [
+        "UVMap"
+      ],
+      "weights": {
+        "bone_count": 24,
+        "bone_names": [
+          "Hips",
+          "Spine02",
+          "Spine01",
+          "Spine",
+          "neck",
+          "Head",
+          "head_end",
+          "headfront",
+          "LeftShoulder",
+          "LeftArm",
+          "LeftForeArm",
+          "LeftHand",
+          "RightShoulder",
+          "RightArm",
+          "RightForeArm",
+          "RightHand",
+          "LeftUpLeg",
+          "LeftLeg",
+          "LeftFoot",
+          "LeftToeBase",
+          "RightUpLeg",
+          "RightLeg",
+          "RightFoot",
+          "RightToeBase"
+        ],
+        "weighted_bones": 24,
+        "weight_sum_min": 0.9999998770654202,
+        "weight_sum_max": 1.0000001266598701,
+        "unweighted_vertices": 0,
+        "weight_sums_outside_tolerance": 0,
+        "negative_weights": 0,
+        "nonfinite_weights": 0,
+        "max_influences": 4,
+        "nonbone_weight_assignments": [],
+        "nonbone_weight_assignment_count": 0
+      },
+      "raw_topology": {
+        "boundary_edges": 116332,
+        "nonmanifold_excluding_boundary": 0,
+        "loose_vertices": 0,
+        "wire_edges": 0,
+        "degenerate_faces": 0
+      },
+      "position_weld_copy_topology": {
+        "vertices": 51007,
+        "boundary_edges": 344,
+        "nonmanifold_excluding_boundary": 286,
+        "loose_vertices": 0,
+        "wire_edges": 0,
+        "degenerate_faces": 0,
+        "duplicate_face_vertex_sets": 0,
+        "edge_connected_face_components": 1
+      },
+      "components": [
+        {
+          "vertices": 51007,
+          "faces": 103544,
+          "area_m2": 2.5145401345917047,
+          "bounds_world_m": [
+            [
+              -0.39676570892333984,
+              -0.16401563584804535,
+              8.041113375156783e-08
+            ],
+            [
+              0.39676544070243835,
+              0.16401565074920654,
+              1.8200002908706665
+            ]
+          ],
+          "boundary_edges": 344,
+          "dominant_weighted_bones": [
+            [
+              "Head",
+              0.5918956016280128
+            ],
+            [
+              "LeftUpLeg",
+              0.05236401399204073
+            ],
+            [
+              "RightLeg",
+              0.05127913389800472
+            ],
+            [
+              "LeftLeg",
+              0.049988542036669005
+            ],
+            [
+              "RightUpLeg",
+              0.04900151120494527
+            ],
+            [
+              "LeftFoot",
+              0.029341106541355886
+            ],
+            [
+              "RightFoot",
+              0.028343398341541072
+            ],
+            [
+              "Hips",
+              0.01913387704481764
+            ],
+            [
+              "LeftHand",
+              0.017744425544634845
+            ],
+            [
+              "LeftArm",
+              0.0167051033165249
+            ],
+            [
+              "RightArm",
+              0.016406382810186065
+            ],
+            [
+              "RightHand",
+              0.01599702736200075
+            ],
+            [
+              "LeftShoulder",
+              0.01203201453126297
+            ],
+            [
+              "RightShoulder",
+              0.010848322135997625
+            ]
+          ]
+        }
+      ],
+      "coincident_split_weight_max_L1_difference": 0.0,
+      "coincident_split_weight_difference_over_005_count": 0,
+      "max_rest_triangle_edge_m": 0.12377492731945966
+    }
+  },
+  "clips": {
+    "idle": {
+      "frame_range": [
+        1.0,
+        121.0
+      ],
+      "sample_count": 121,
+      "sample_mode": "all imported integer frames, no render",
+      "bind_max_abs_error": 0.0,
+      "rest_max_position_error_m": 0.0,
+      "rest_triangle_indices_match_body": true,
+      "weights_match_body": true,
+      "max_coincident_split_separation_m": 0.0,
+      "max_edge_stretch_ratio": 11.346986898799704,
+      "extreme_edge_observations": 0,
+      "samples": [
+        {
+          "frame": 1,
+          "bounds_world_m": [
+            [
+              -0.34562491593827704,
+              -0.4668126150174444,
+              -0.01991382500031479
+            ],
+            [
+              0.37182334076575435,
+              0.3349092124888137,
+              1.7368149671031583
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.11617147471411522,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 9.045711151557578
+        },
+        {
+          "frame": 2,
+          "bounds_world_m": [
+            [
+              -0.3455039900376969,
+              -0.46680967770129966,
+              -0.01988590856941746
+            ],
+            [
+              0.3709240640525391,
+              0.3349606346067812,
+              1.7368296155635814
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.11617149485339072,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 9.044422507003137
+        },
+        {
+          "frame": 3,
+          "bounds_world_m": [
+            [
+              -0.3450590437587106,
+              -0.46677980862136165,
+              -0.01986299892823852
+            ],
+            [
+              0.3693617929694007,
+              0.33502815474569553,
+              1.7367995557838458
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.11617143918990279,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 9.042093469157047
+        },
+        {
+          "frame": 4,
+          "bounds_world_m": [
+            [
+              -0.3443066328870405,
+              -0.4667354055440644,
+              -0.019810766187216635
+            ],
+            [
+              0.3674062647539932,
+              0.33504715193910795,
+              1.7366346083135864
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.11617145029255649,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 9.04351236500306
+        },
+        {
+          "frame": 5,
+          "bounds_world_m": [
+            [
+              -0.3432290572277425,
+              -0.4666859670665317,
+              -0.019759680240126545
+            ],
+            [
+              0.36543997909256065,
+              0.3350633262575786,
+              1.7364229689499415
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.11617148186904006,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 9.046776657281992
+        },
+        {
+          "frame": 6,
+          "bounds_world_m": [
+            [
+              -0.34222422784372675,
+              -0.46666899166129333,
+              -0.019740308730071956
+            ],
+            [
+              0.36276076467511104,
+              0.33505375136937204,
+              1.736288996814154
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.1161710784821011,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 9.04873440961585
+        },
+        {
+          "frame": 7,
+          "bounds_world_m": [
+            [
+              -0.3411298293699289,
+              -0.46665140590378085,
+              -0.019747134652867163
+            ],
+            [
+              0.36023978389668543,
+              0.335077364346503,
+              1.736329890376318
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.11617033153610222,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 9.048577999281482
+        },
+        {
+          "frame": 8,
+          "bounds_world_m": [
+            [
+              -0.34025099943377446,
+              -0.4666432805943764,
+              -0.019770351850936476
+            ],
+            [
+              0.3570780102859124,
+              0.3350697349516701,
+              1.7368239699071855
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.11616984594444234,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 9.0464825541007
+        },
+        {
+          "frame": 9,
+          "bounds_world_m": [
+            [
+              -0.33956298065053253,
+              -0.46661947687942357,
+              -0.01976621528805678
+            ],
+            [
+              0.3545083921184237,
+              0.33510612716354415,
+              1.737518549877424
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.11616947181769482,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 9.045404367474797
+        },
+        {
+          "frame": 10,
+          "bounds_world_m": [
+            [
+              -0.3387013931455681,
+              -0.4666257329774243,
+              -0.01976242919908674
+            ],
+            [
+              0.3514785688830793,
+              0.3351462577769402,
+              1.7383582409082423
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.11616752863923087,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 9.043961577004795
+        },
+        {
+          "frame": 11,
+          "bounds_world_m": [
+            [
+              -0.33700610357179744,
+              -0.46659346063501966,
+              -0.01977994819517197
+            ],
+            [
+              0.3488329238007647,
+              0.3351343559219666,
+              1.739032374098924
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.11616668477052154,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 9.040761508452311
+        },
+        {
+          "frame": 12,
+          "bounds_world_m": [
+            [
+              -0.3353984757392128,
+              -0.46651415307711336,
+              -0.019792448481758228
+            ],
+            [
+              0.34702441401464235,
+              0.3351247047401277,
+              1.7395316415929623
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.11616702713167634,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 9.03848681676302
+        },
+        {
+          "frame": 13,
+          "bounds_world_m": [
+            [
+              -0.3339771577168775,
+              -0.4664274450065219,
+              -0.019790028533642638
+            ],
+            [
+              0.3459960098018418,
+              0.3351314567569214,
+              1.739912653480793
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.11616779848253662,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 9.037929428800249
+        },
+        {
+          "frame": 14,
+          "bounds_world_m": [
+            [
+              -0.33236571518701136,
+              -0.46631102044712325,
+              -0.01975073953617451
+            ],
+            [
+              0.3454500503414187,
+              0.3350421547020161,
+              1.7401326851429926
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.11616948243451128,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 9.357338471371282
+        },
+        {
+          "frame": 15,
+          "bounds_world_m": [
+            [
+              -0.33037196370567223,
+              -0.4660591359944073,
+              -0.019647263491568763
+            ],
+            [
+              0.34424750520236913,
+              0.3348529075850566,
+              1.7400847724819448
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.1161720842571044,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 9.730886444270284
+        },
+        {
+          "frame": 16,
+          "bounds_world_m": [
+            [
+              -0.32862555718949615,
+              -0.4657280202845181,
+              -0.019517633243246884
+            ],
+            [
+              0.3415198441285003,
+              0.3344938301588339,
+              1.7396717170083884
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.116173562399258,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 10.080246720944892
+        },
+        {
+          "frame": 17,
+          "bounds_world_m": [
+            [
+              -0.32872657037080627,
+              -0.4653708501910829,
+              -0.019457248978152947
+            ],
+            [
+              0.3365335008563815,
+              0.333968279352311,
+              1.7392832281801014
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.11635146222838462,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 10.470444037754227
+        },
+        {
+          "frame": 18,
+          "bounds_world_m": [
+            [
+              -0.3300222704149237,
+              -0.4650383993310235,
+              -0.01947689706270374
+            ],
+            [
+              0.3331373522506439,
+              0.33339954616901374,
+              1.7390946294846
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.11646173143437481,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 10.650097644114503
+        },
+        {
+          "frame": 19,
+          "bounds_world_m": [
+            [
+              -0.3328660127216138,
+              -0.4646941991986256,
+              -0.01956186707246495
+            ],
+            [
+              0.3315693972683645,
+              0.33267830139621385,
+              1.739018335477978
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.11644807105487044,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 10.794215969756523
+        },
+        {
+          "frame": 20,
+          "bounds_world_m": [
+            [
+              -0.3362411804922008,
+              -0.4642350240918141,
+              -0.01966248688223458
+            ],
+            [
+              0.33307318904331856,
+              0.3319629694044094,
+              1.738916711883121
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.11620408759613951,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 10.87077035018681
+        },
+        {
+          "frame": 21,
+          "bounds_world_m": [
+            [
+              -0.33988822173058464,
+              -0.46365366423788035,
+              -0.01974300054385082
+            ],
+            [
+              0.3375631257707772,
+              0.33446510563178855,
+              1.738777093897341
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.11617574703258733,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 10.877068052711591
+        },
+        {
+          "frame": 22,
+          "bounds_world_m": [
+            [
+              -0.34464121997521135,
+              -0.4629932638596154,
+              -0.01982502847671181
+            ],
+            [
+              0.3438391037178779,
+              0.34055980912508654,
+              1.7385433291829462
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.11617682842695282,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 10.883866510209794
+        },
+        {
+          "frame": 23,
+          "bounds_world_m": [
+            [
+              -0.3504401318924849,
+              -0.4623052832203154,
+              -0.019914142213761695
+            ],
+            [
+              0.351890479879915,
+              0.34748672708637535,
+              1.7382619570407063
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.11617908142565424,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 10.91629227486721
+        },
+        {
+          "frame": 24,
+          "bounds_world_m": [
+            [
+              -0.3575847545338875,
+              -0.4615314718928538,
+              -0.020039302462127203
+            ],
+            [
+              0.3620284953988595,
+              0.35451008060218336,
+              1.7378006837785052
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.11617478943480034,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 11.025928985404976
+        },
+        {
+          "frame": 25,
+          "bounds_world_m": [
+            [
+              -0.36592208039739216,
+              -0.4605662772066412,
+              -0.020152830279689893
+            ],
+            [
+              0.3732470620408932,
+              0.3615658590892527,
+              1.7371912476842393
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.11617177440005184,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 11.15681024250871
+        },
+        {
+          "frame": 26,
+          "bounds_world_m": [
+            [
+              -0.3756282721950245,
+              -0.45950746984776114,
+              -0.020228645052652917
+            ],
+            [
+              0.3851351461847048,
+              0.36795860502781536,
+              1.7364202210231854
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.11616721849656449,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 11.208702324261733
+        },
+        {
+          "frame": 27,
+          "bounds_world_m": [
+            [
+              -0.38415576071063434,
+              -0.4584042594077529,
+              -0.020297822253560516
+            ],
+            [
+              0.39807951998343877,
+              0.3742694111771494,
+              1.7355239196859182
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.11615720090699783,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 11.258031672828903
+        },
+        {
+          "frame": 28,
+          "bounds_world_m": [
+            [
+              -0.3933143527276287,
+              -0.4570282599662201,
+              -0.020327298004367184
+            ],
+            [
+              0.41037585302103197,
+              0.3804168721382453,
+              1.7343843932391543
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.11613975094223043,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 11.260289923679652
+        },
+        {
+          "frame": 29,
+          "bounds_world_m": [
+            [
+              -0.4022707276489189,
+              -0.4554973838199728,
+              -0.020353135493104146
+            ],
+            [
+              0.41790476825542405,
+              0.38674960658057406,
+              1.7331717771744912
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.11612877315487845,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 11.294461112231065
+        },
+        {
+          "frame": 30,
+          "bounds_world_m": [
+            [
+              -0.4108730223742262,
+              -0.4538560340416994,
+              -0.020424727894701136
+            ],
+            [
+              0.42289732948196296,
+              0.3921557955934502,
+              1.7317075436441187
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.11611778048508677,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 11.346986898799704
+        },
+        {
+          "frame": 31,
+          "bounds_world_m": [
+            [
+              -0.41571333903543706,
+              -0.45231241680056006,
+              -0.020575222536630335
+            ],
+            [
+              0.42951666832012914,
+              0.3967594867696876,
+              1.7302811518880392
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.11609790717575376,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 11.328961956983475
+        },
+        {
+          "frame": 32,
+          "bounds_world_m": [
+            [
+              -0.41604620950926857,
+              -0.451050095327037,
+              -0.02082967482046283
+            ],
+            [
+              0.4352433298708842,
+              0.40056815681694957,
+              1.7288626946916528
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.11607633685449653,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 11.27054630499773
+        },
+        {
+          "frame": 33,
+          "bounds_world_m": [
+            [
+              -0.4138630201631705,
+              -0.45001677012573615,
+              -0.021102993156635202
+            ],
+            [
+              0.4375179956491732,
+              0.4031885106180544,
+              1.7272664725834284
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.11605724379169977,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 11.17398032163891
+        },
+        {
+          "frame": 34,
+          "bounds_world_m": [
+            [
+              -0.4075607970955417,
+              -0.4493460700434863,
+              -0.021410696196411207
+            ],
+            [
+              0.4344997690903441,
+              0.40502647001882236,
+              1.7260241017546942
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.11604483563900395,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 11.134332811782697
+        },
+        {
+          "frame": 35,
+          "bounds_world_m": [
+            [
+              -0.39673796713433324,
+              -0.4491116568886074,
+              -0.021671514200803443
+            ],
+            [
+              0.4265139294226128,
+              0.4068485220879127,
+              1.7252011950613642
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.11604047134885025,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 11.027513566979096
+        },
+        {
+          "frame": 36,
+          "bounds_world_m": [
+            [
+              -0.38276320548079185,
+              -0.44913378213625704,
+              -0.021842894236143575
+            ],
+            [
+              0.41725035693478774,
+              0.4085774955008761,
+              1.7246650010286475
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.11604002871074978,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 10.949271452565815
+        },
+        {
+          "frame": 37,
+          "bounds_world_m": [
+            [
+              -0.3675161660247655,
+              -0.4491900489421754,
+              -0.021898202579044814
+            ],
+            [
+              0.4074186997436482,
+              0.4101844748574736,
+              1.7242507248026808
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.11604049774257093,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 10.853391198853286
+        },
+        {
+          "frame": 38,
+          "bounds_world_m": [
+            [
+              -0.35362921870181024,
+              -0.4493064735252132,
+              -0.02187242238102124
+            ],
+            [
+              0.40023573939323315,
+              0.41162200534212906,
+              1.7241045455749981
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.1160402976026681,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 10.877491465679629
+        },
+        {
+          "frame": 39,
+          "bounds_world_m": [
+            [
+              -0.34276847065256155,
+              -0.449635567462622,
+              -0.02182079282669038
+            ],
+            [
+              0.39639334751111743,
+              0.41288337311108186,
+              1.7242261581426426
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.11604268126563767,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 10.993723173528258
+        },
+        {
+          "frame": 40,
+          "bounds_world_m": [
+            [
+              -0.33730735016889546,
+              -0.4501705024488904,
+              -0.021746720919480336
+            ],
+            [
+              0.39716971468140455,
+              0.4140327413759123,
+              1.7244228439449223
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.11604951999980889,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 11.054176495556709
+        },
+        {
+          "frame": 41,
+          "bounds_world_m": [
+            [
+              -0.33804061129223456,
+              -0.4507444236473535,
+              -0.021600153082027635
+            ],
+            [
+              0.40063292566385833,
+              0.4149226720821607,
+              1.7242069320606244
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.11605531236773498,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 10.7332936958805
+        },
+        {
+          "frame": 42,
+          "bounds_world_m": [
+            [
+              -0.34061171716122185,
+              -0.45124781111268253,
+              -0.021373080845393255
+            ],
+            [
+              0.40514266067098287,
+              0.4155813558461608,
+              1.7232773664909957
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.11605598484478905,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 10.278663650888879
+        },
+        {
+          "frame": 43,
+          "bounds_world_m": [
+            [
+              -0.34887232946530217,
+              -0.4517622612072369,
+              -0.021134681344620623
+            ],
+            [
+              0.41028960269534837,
+              0.41598922327034943,
+              1.7215552593602719
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.11605526884806301,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 10.298131035233457
+        },
+        {
+          "frame": 44,
+          "bounds_world_m": [
+            [
+              -0.36090453287196816,
+              -0.4525746009892309,
+              -0.02097840748046535
+            ],
+            [
+              0.4155319502965801,
+              0.4162761647811345,
+              1.7192469097034384
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.11605780628098555,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 10.322148918863304
+        },
+        {
+          "frame": 45,
+          "bounds_world_m": [
+            [
+              -0.372257300564092,
+              -0.4536959312130588,
+              -0.020831958819024474
+            ],
+            [
+              0.4218939496672672,
+              0.4165344960484639,
+              1.7170462874933052
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.11606519222314625,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 10.35156381776144
+        },
+        {
+          "frame": 46,
+          "bounds_world_m": [
+            [
+              -0.3809806737838376,
+              -0.45510950536376177,
+              -0.02072988459987897
+            ],
+            [
+              0.4297424983823064,
+              0.4167107350139428,
+              1.7157233509093492
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.11607286670421793,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 10.382542802399584
+        },
+        {
+          "frame": 47,
+          "bounds_world_m": [
+            [
+              -0.38861212808228457,
+              -0.456593956582144,
+              -0.020663098710536218
+            ],
+            [
+              0.43898943878983027,
+              0.4168458133779573,
+              1.714656914672798
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.11608037332103503,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 10.419327808010076
+        },
+        {
+          "frame": 48,
+          "bounds_world_m": [
+            [
+              -0.3944209963624612,
+              -0.45792284447419274,
+              -0.02051513846325714
+            ],
+            [
+              0.4485124869792594,
+              0.41687728454882195,
+              1.7138630003812072
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.11609030481082554,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 10.450589342827133
+        },
+        {
+          "frame": 49,
+          "bounds_world_m": [
+            [
+              -0.39859458025552247,
+              -0.45913786367724296,
+              -0.020401858590880752
+            ],
+            [
+              0.4587710469319275,
+              0.4167254594961224,
+              1.7135465336066236
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.11610011129128676,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 10.472992751380266
+        },
+        {
+          "frame": 50,
+          "bounds_world_m": [
+            [
+              -0.40112563183671074,
+              -0.4601719899457762,
+              -0.020340589743106957
+            ],
+            [
+              0.4681910982972589,
+              0.4170640962734433,
+              1.7132633309685694
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.11610522545337294,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 10.462827138787423
+        },
+        {
+          "frame": 51,
+          "bounds_world_m": [
+            [
+              -0.40377692267301507,
+              -0.4610378117746801,
+              -0.02029948635287695
+            ],
+            [
+              0.4760348786412616,
+              0.4176632325020629,
+              1.7131360731124106
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.11610843552885936,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 10.46020799285837
+        },
+        {
+          "frame": 52,
+          "bounds_world_m": [
+            [
+              -0.40624762574314094,
+              -0.4617750783060714,
+              -0.020320603071406387
+            ],
+            [
+              0.4807979095427285,
+              0.4180376830697229,
+              1.7129685320404282
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.11610798515381593,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 10.461534791333214
+        },
+        {
+          "frame": 53,
+          "bounds_world_m": [
+            [
+              -0.4094621947647568,
+              -0.46246302079676904,
+              -0.0203700463038164
+            ],
+            [
+              0.48065558319348567,
+              0.41802654405613854,
+              1.7128530233947727
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.11610406808437472,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 10.449432322958955
+        },
+        {
+          "frame": 54,
+          "bounds_world_m": [
+            [
+              -0.4136110212665451,
+              -0.46327578017482274,
+              -0.020286530640462205
+            ],
+            [
+              0.47646876230606167,
+              0.41838501310693305,
+              1.7126525232601788
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.11610439504084578,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 10.435790339068536
+        },
+        {
+          "frame": 55,
+          "bounds_world_m": [
+            [
+              -0.4163751889928483,
+              -0.4643560642631512,
+              -0.02005750571897747
+            ],
+            [
+              0.46733023559693887,
+              0.41885025348685506,
+              1.7125064969489006
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.1161057945162197,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 10.418638820102824
+        },
+        {
+          "frame": 56,
+          "bounds_world_m": [
+            [
+              -0.4179121686366455,
+              -0.46573393288305664,
+              -0.019774660164926433
+            ],
+            [
+              0.4523751730682235,
+              0.4194281037180992,
+              1.712691738873727
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.11610962886162383,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 10.408715309439852
+        },
+        {
+          "frame": 57,
+          "bounds_world_m": [
+            [
+              -0.41505320569102755,
+              -0.46669924201188584,
+              -0.01942245389313228
+            ],
+            [
+              0.4306141948586619,
+              0.42015724481389244,
+              1.713104184068345
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.11612077209191149,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 10.40983993596624
+        },
+        {
+          "frame": 58,
+          "bounds_world_m": [
+            [
+              -0.4102152159955276,
+              -0.46711084785541657,
+              -0.019078306190111152
+            ],
+            [
+              0.40020686216039925,
+              0.4207067899603197,
+              1.7136359528898184
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.1163521601615513,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 10.39689280456327
+        },
+        {
+          "frame": 59,
+          "bounds_world_m": [
+            [
+              -0.4001339631731098,
+              -0.4674189228199089,
+              -0.01872682949871431
+            ],
+            [
+              0.3684198679401204,
+              0.419951327207071,
+              1.7144054534827042
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.11676827277659148,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 10.402302508737732
+        },
+        {
+          "frame": 60,
+          "bounds_world_m": [
+            [
+              -0.38702212417617393,
+              -0.4676508182879446,
+              -0.01842192342069616
+            ],
+            [
+              0.3311015246605256,
+              0.41801666546265287,
+              1.715704281291206
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.11700812847507411,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 10.466627377989877
+        },
+        {
+          "frame": 61,
+          "bounds_world_m": [
+            [
+              -0.367312346788479,
+              -0.4678649754161978,
+              -0.018175682307306387
+            ],
+            [
+              0.3163079763717513,
+              0.41500168128638637,
+              1.7175368613925828
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.1166091991463585,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 10.333131769919175
+        },
+        {
+          "frame": 62,
+          "bounds_world_m": [
+            [
+              -0.33789267734561096,
+              -0.4680755848733284,
+              -0.017947780351871653
+            ],
+            [
+              0.30277529997971436,
+              0.41050972266666297,
+              1.719472743400051
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.11617661994793371,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 10.133891042173133
+        },
+        {
+          "frame": 63,
+          "bounds_world_m": [
+            [
+              -0.3025577477199574,
+              -0.46818121386303074,
+              -0.017705935678862337
+            ],
+            [
+              0.2871984799557407,
+              0.4049610548952432,
+              1.7213875682206916
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.11618088972640478,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 9.957669386013423
+        },
+        {
+          "frame": 64,
+          "bounds_world_m": [
+            [
+              -0.2691040360281438,
+              -0.4791926473001326,
+              -0.01747902315081459
+            ],
+            [
+              0.27046056147796554,
+              0.4035935504949704,
+              1.723270654763107
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.11618718342749654,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 9.836872790483133
+        },
+        {
+          "frame": 65,
+          "bounds_world_m": [
+            [
+              -0.27507571558404126,
+              -0.49466853017266865,
+              -0.01709979215179249
+            ],
+            [
+              0.252818464401022,
+              0.4303403756575656,
+              1.725149774071764
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.11619132368163736,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 9.714269578598735
+        },
+        {
+          "frame": 66,
+          "bounds_world_m": [
+            [
+              -0.2790896543998948,
+              -0.5080856591167425,
+              -0.016743743787746422
+            ],
+            [
+              0.23369313676631132,
+              0.4545933804452103,
+              1.7268407525406544
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.11619585248518752,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 9.640235558910737
+        },
+        {
+          "frame": 67,
+          "bounds_world_m": [
+            [
+              -0.28158927287594315,
+              -0.5197810627041397,
+              -0.016425037740602
+            ],
+            [
+              0.2123455954337521,
+              0.47487925360424366,
+              1.7283698352695378
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.1161969083610325,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 9.70218268419214
+        },
+        {
+          "frame": 68,
+          "bounds_world_m": [
+            [
+              -0.28266002022893555,
+              -0.5290343734511316,
+              -0.016155802361032683
+            ],
+            [
+              0.19903741403200464,
+              0.48858156975794736,
+              1.729581382761649
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.11619887878055812,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 9.763797839617194
+        },
+        {
+          "frame": 69,
+          "bounds_world_m": [
+            [
+              -0.28299163185605564,
+              -0.5366551844671243,
+              -0.015939767705737552
+            ],
+            [
+              0.19749711560447158,
+              0.49776537714120994,
+              1.7307251811039495
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.11620031340177699,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 9.81507594770623
+        },
+        {
+          "frame": 70,
+          "bounds_world_m": [
+            [
+              -0.28279479348256314,
+              -0.541137911145263,
+              -0.015697069510100078
+            ],
+            [
+              0.21317435743059027,
+              0.5029140741738112,
+              1.7314528723213867
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.11619991582540277,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 9.855792057897176
+        },
+        {
+          "frame": 71,
+          "bounds_world_m": [
+            [
+              -0.2823123487309524,
+              -0.5436011752037967,
+              -0.0154647031849599
+            ],
+            [
+              0.22991528952072782,
+              0.5032331355640409,
+              1.7317160860817242
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.1162012558155847,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 9.879869231861932
+        },
+        {
+          "frame": 72,
+          "bounds_world_m": [
+            [
+              -0.2820437559031114,
+              -0.5433491761830537,
+              -0.015264340979203088
+            ],
+            [
+              0.24351804190284215,
+              0.5009990963264083,
+              1.7317679656703837
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.11620035200845268,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 9.894380086279238
+        },
+        {
+          "frame": 73,
+          "bounds_world_m": [
+            [
+              -0.2818077405890586,
+              -0.5408590941443213,
+              -0.015112196546087902
+            ],
+            [
+              0.25440457730452315,
+              0.49814379557587446,
+              1.7318872891545336
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.11619816553876229,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 9.904438041186125
+        },
+        {
+          "frame": 74,
+          "bounds_world_m": [
+            [
+              -0.2817850812875145,
+              -0.5363418820846099,
+              -0.014995693305853113
+            ],
+            [
+              0.26199384105133366,
+              0.4957317626372738,
+              1.7320633753805408
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.1161955612836986,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 9.965622600936921
+        },
+        {
+          "frame": 75,
+          "bounds_world_m": [
+            [
+              -0.2812742933353812,
+              -0.5310606242444329,
+              -0.014819146729138406
+            ],
+            [
+              0.26725682616357155,
+              0.49195742493054273,
+              1.7323346764930563
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.11619438229853106,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 10.044467755321703
+        },
+        {
+          "frame": 76,
+          "bounds_world_m": [
+            [
+              -0.2824716503977443,
+              -0.525502495689011,
+              -0.014623695941979082
+            ],
+            [
+              0.2698526513011514,
+              0.4879695403895165,
+              1.7327957969812247
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.11619287883121249,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 10.043431332574436
+        },
+        {
+          "frame": 77,
+          "bounds_world_m": [
+            [
+              -0.2956501321595204,
+              -0.520457482069762,
+              -0.014453928799975209
+            ],
+            [
+              0.26983670586711,
+              0.4855031859536026,
+              1.7334314780641493
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.11619185450355833,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 9.964234404551501
+        },
+        {
+          "frame": 78,
+          "bounds_world_m": [
+            [
+              -0.3049320533396134,
+              -0.5171554035825302,
+              -0.014352568724340943
+            ],
+            [
+              0.2677458703425644,
+              0.48307726724042976,
+              1.7342339377566172
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.11619157214733326,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 9.989011862832426
+        },
+        {
+          "frame": 79,
+          "bounds_world_m": [
+            [
+              -0.3099463964898715,
+              -0.516240715186737,
+              -0.014313844791458358
+            ],
+            [
+              0.26377683051421896,
+              0.4808042415294409,
+              1.7351308494030284
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.11619067022790834,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 10.016247884280144
+        },
+        {
+          "frame": 80,
+          "bounds_world_m": [
+            [
+              -0.3109272314293032,
+              -0.5168009413514649,
+              -0.014328130846334193
+            ],
+            [
+              0.25780278584785055,
+              0.4797750359896765,
+              1.7360962730487335
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.1161911183726771,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 10.037599093364157
+        },
+        {
+          "frame": 81,
+          "bounds_world_m": [
+            [
+              -0.30769561071295876,
+              -0.5184649120582828,
+              -0.014360547437456404
+            ],
+            [
+              0.24986546913053692,
+              0.4793165091479741,
+              1.7372361046708007
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.1161868258590699,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 10.048761014207068
+        },
+        {
+          "frame": 82,
+          "bounds_world_m": [
+            [
+              -0.30024604117730275,
+              -0.5216816553116407,
+              -0.014433999447715985
+            ],
+            [
+              0.24028066099490558,
+              0.47838457842585774,
+              1.738648305673064
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.11618367110464076,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 10.056973366303984
+        },
+        {
+          "frame": 83,
+          "bounds_world_m": [
+            [
+              -0.2878296596185483,
+              -0.5267357094186512,
+              -0.014533250734088966
+            ],
+            [
+              0.22685742826232902,
+              0.4776892733339163,
+              1.740358205713522
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.11617949898984455,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 10.059917026859331
+        },
+        {
+          "frame": 84,
+          "bounds_world_m": [
+            [
+              -0.2768200811536334,
+              -0.532309821265197,
+              -0.014663683597566701
+            ],
+            [
+              0.2111263037355265,
+              0.47644274448407503,
+              1.7421277676503877
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.11617424010932437,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 10.061694957297908
+        },
+        {
+          "frame": 85,
+          "bounds_world_m": [
+            [
+              -0.2776604398689584,
+              -0.5379929572182887,
+              -0.01486180349549288
+            ],
+            [
+              0.19537465624016664,
+              0.4715326185205629,
+              1.743611379912869
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.11616616861829601,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 10.042196032688084
+        },
+        {
+          "frame": 86,
+          "bounds_world_m": [
+            [
+              -0.2785464223625446,
+              -0.5418882591036593,
+              -0.015151025510631315
+            ],
+            [
+              0.19667756606217335,
+              0.46751738244007784,
+              1.7449724640792352
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.1161601744818532,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 9.998858682336772
+        },
+        {
+          "frame": 87,
+          "bounds_world_m": [
+            [
+              -0.27939442954568405,
+              -0.5439844735120601,
+              -0.01546731875438133
+            ],
+            [
+              0.19807437465527783,
+              0.4624690119429434,
+              1.7463744417252065
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.1161567969016561,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 9.936257620026723
+        },
+        {
+          "frame": 88,
+          "bounds_world_m": [
+            [
+              -0.2801603825924696,
+              -0.5451346812338689,
+              -0.015819107750928738
+            ],
+            [
+              0.1995533327521697,
+              0.45630930573900563,
+              1.7476311556304518
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.11615652603118248,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 9.855168402827143
+        },
+        {
+          "frame": 89,
+          "bounds_world_m": [
+            [
+              -0.2807657559614452,
+              -0.5447489393444995,
+              -0.01618714377760776
+            ],
+            [
+              0.20105098286524842,
+              0.4489478559454637,
+              1.7486737887410726
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.11615268932515666,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 9.760660418502892
+        },
+        {
+          "frame": 90,
+          "bounds_world_m": [
+            [
+              -0.28131366091740184,
+              -0.5418800583322754,
+              -0.01643786355499166
+            ],
+            [
+              0.20991984857155882,
+              0.43924288616136065,
+              1.7490624302306943
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.1161537305258019,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 9.682400409753086
+        },
+        {
+          "frame": 91,
+          "bounds_world_m": [
+            [
+              -0.2818135388358557,
+              -0.5355557484507408,
+              -0.01660828633941043
+            ],
+            [
+              0.2268679950113074,
+              0.4299343382121419,
+              1.748834006378966
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.11615585998962696,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 9.617187863248441
+        },
+        {
+          "frame": 92,
+          "bounds_world_m": [
+            [
+              -0.2822928173895313,
+              -0.5233793117769372,
+              -0.016765375569083737
+            ],
+            [
+              0.24216586530374123,
+              0.41723635630693556,
+              1.7482215188990888
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.11615857263972483,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 9.552024025546496
+        },
+        {
+          "frame": 93,
+          "bounds_world_m": [
+            [
+              -0.2828348477118163,
+              -0.5104366550161237,
+              -0.01694166584917808
+            ],
+            [
+              0.25510915190849714,
+              0.4021633431211121,
+              1.7471877363453576
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.11615912408510114,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 9.48683869912248
+        },
+        {
+          "frame": 94,
+          "bounds_world_m": [
+            [
+              -0.2941170244876767,
+              -0.494581171853903,
+              -0.017312924117658578
+            ],
+            [
+              0.2655024278887366,
+              0.3861314677037128,
+              1.7461606676736086
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.11615830942067952,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 9.37828584084989
+        },
+        {
+          "frame": 95,
+          "bounds_world_m": [
+            [
+              -0.3204607700821011,
+              -0.4767969014823562,
+              -0.017818907958246796
+            ],
+            [
+              0.2744349037327127,
+              0.36741183295617114,
+              1.745228050885672
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.11615117709849596,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 9.25132410195144
+        },
+        {
+          "frame": 96,
+          "bounds_world_m": [
+            [
+              -0.3425584334654433,
+              -0.4674661489553279,
+              -0.01841821121361486
+            ],
+            [
+              0.28183074325706925,
+              0.34672457739879736,
+              1.7444004145446106
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.11613948486207018,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 9.151681255444913
+        },
+        {
+          "frame": 97,
+          "bounds_world_m": [
+            [
+              -0.3619129862534522,
+              -0.46725481472545416,
+              -0.01876817632645925
+            ],
+            [
+              0.28897843673056095,
+              0.3337522148484214,
+              1.7437125486785785
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.11613703440012252,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 9.096862366048146
+        },
+        {
+          "frame": 98,
+          "bounds_world_m": [
+            [
+              -0.37761130438206447,
+              -0.4670181509084579,
+              -0.018945471247669366
+            ],
+            [
+              0.29498868287230756,
+              0.33325523609839103,
+              1.7429982850523664
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.11613288671085524,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 9.073431376615517
+        },
+        {
+          "frame": 99,
+          "bounds_world_m": [
+            [
+              -0.38928526957382603,
+              -0.4667449422957261,
+              -0.019072603209673793
+            ],
+            [
+              0.30034394550878896,
+              0.3329734825576665,
+              1.7423313236216214
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.1161294154931704,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 9.086440227017931
+        },
+        {
+          "frame": 100,
+          "bounds_world_m": [
+            [
+              -0.3980622774328664,
+              -0.46658522092164645,
+              -0.019203917021615776
+            ],
+            [
+              0.30404340068602104,
+              0.33270546192694483,
+              1.741685114104775
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.11612590226729859,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 9.0987245815105
+        },
+        {
+          "frame": 101,
+          "bounds_world_m": [
+            [
+              -0.40499327703275445,
+              -0.46650869808335127,
+              -0.019360984799286694
+            ],
+            [
+              0.3167270208899225,
+              0.33235183950385855,
+              1.7409922126664228
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.11612686878006397,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 9.106297166960646
+        },
+        {
+          "frame": 102,
+          "bounds_world_m": [
+            [
+              -0.4073341278102564,
+              -0.4664742132086819,
+              -0.019512943265927014
+            ],
+            [
+              0.32887427556359,
+              0.33206070182248626,
+              1.7402039437597112
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.11612987189024296,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 9.112567568025424
+        },
+        {
+          "frame": 103,
+          "bounds_world_m": [
+            [
+              -0.40738871612806976,
+              -0.4664115758770506,
+              -0.019657329559264747
+            ],
+            [
+              0.3376031037980121,
+              0.3318429589150384,
+              1.7394989878159999
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.11613302474697547,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 9.113285595365298
+        },
+        {
+          "frame": 104,
+          "bounds_world_m": [
+            [
+              -0.4057303528223348,
+              -0.4663666387513125,
+              -0.019807700156718316
+            ],
+            [
+              0.3443842620932938,
+              0.3316473412488933,
+              1.7388414867017288
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.11613582006667766,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 9.10735173481945
+        },
+        {
+          "frame": 105,
+          "bounds_world_m": [
+            [
+              -0.40302031565108287,
+              -0.4663670965294142,
+              -0.019938351151431354
+            ],
+            [
+              0.34937033833659004,
+              0.331525270942517,
+              1.7382978161256173
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.11613968889961115,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 9.101508587972273
+        },
+        {
+          "frame": 106,
+          "bounds_world_m": [
+            [
+              -0.3994928651702207,
+              -0.46637106383178684,
+              -0.02006801270985629
+            ],
+            [
+              0.35229338819792844,
+              0.3315164208466508,
+              1.737929926779969
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.11614404653078121,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 9.094186614798256
+        },
+        {
+          "frame": 107,
+          "bounds_world_m": [
+            [
+              -0.3945396716161325,
+              -0.46636957610525315,
+              -0.020086168286027568
+            ],
+            [
+              0.3552863996056052,
+              0.3315521645593366,
+              1.7376755628059997
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.11614651073084728,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 9.085685025095641
+        },
+        {
+          "frame": 108,
+          "bounds_world_m": [
+            [
+              -0.38876120647411644,
+              -0.4663738867155923,
+              -0.02008169555498592
+            ],
+            [
+              0.35822425049205653,
+              0.33159187555682434,
+              1.7374224195311772
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.11614848763497865,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 9.076783289996404
+        },
+        {
+          "frame": 109,
+          "bounds_world_m": [
+            [
+              -0.38288565728888463,
+              -0.4664002844216127,
+              -0.020050789354931188
+            ],
+            [
+              0.35997756161010913,
+              0.3316325402281452,
+              1.7371997938272103
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.11615078876028914,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 9.069075460594524
+        },
+        {
+          "frame": 110,
+          "bounds_world_m": [
+            [
+              -0.37689978706171834,
+              -0.4664238211050606,
+              -0.02001505517776869
+            ],
+            [
+              0.36217230948589285,
+              0.33174602746745135,
+              1.7371096143949416
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.11615396156768015,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 9.06341678264423
+        },
+        {
+          "frame": 111,
+          "bounds_world_m": [
+            [
+              -0.371293631791283,
+              -0.466462807312332,
+              -0.019965342517460585
+            ],
+            [
+              0.36360900073804403,
+              0.3319273018747114,
+              1.737014399557437
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.1161576460067666,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 9.059984864507998
+        },
+        {
+          "frame": 112,
+          "bounds_world_m": [
+            [
+              -0.3659812463507039,
+              -0.4665368887338267,
+              -0.019924801818956134
+            ],
+            [
+              0.36552619124705377,
+              0.3322107720187615,
+              1.7369666395533045
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.11615940746980592,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 9.057814687552556
+        },
+        {
+          "frame": 113,
+          "bounds_world_m": [
+            [
+              -0.3609777750878388,
+              -0.4666621633911603,
+              -0.019891027438546732
+            ],
+            [
+              0.36682253979002144,
+              0.3325862145114559,
+              1.7369214735416745
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.11616040386626703,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 9.057261094461527
+        },
+        {
+          "frame": 114,
+          "bounds_world_m": [
+            [
+              -0.3566010967187422,
+              -0.4667795034691977,
+              -0.019881292802623088
+            ],
+            [
+              0.3676915659548965,
+              0.3330189919022954,
+              1.7369110975644786
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.11616240472416181,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 9.05911471640276
+        },
+        {
+          "frame": 115,
+          "bounds_world_m": [
+            [
+              -0.35298995177987375,
+              -0.4668231054511558,
+              -0.019878219583879093
+            ],
+            [
+              0.36818831582194655,
+              0.33351200336235604,
+              1.7368734083555122
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.11616113494048458,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 9.060168636423876
+        },
+        {
+          "frame": 116,
+          "bounds_world_m": [
+            [
+              -0.3506278531429679,
+              -0.46684763395090945,
+              -0.019892810800705745
+            ],
+            [
+              0.3687649454479231,
+              0.3339359306580118,
+              1.736864710832514
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.11615989443906549,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 9.058643701101746
+        },
+        {
+          "frame": 117,
+          "bounds_world_m": [
+            [
+              -0.349010383391565,
+              -0.4667973562413615,
+              -0.01989050767633132
+            ],
+            [
+              0.36971335546102646,
+              0.33411033861775424,
+              1.7368879041689829
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.11616066380012272,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 9.054582890200656
+        },
+        {
+          "frame": 118,
+          "bounds_world_m": [
+            [
+              -0.34774024181846686,
+              -0.46672693692842054,
+              -0.019886874174073053
+            ],
+            [
+              0.37074977053804825,
+              0.3342203926328339,
+              1.736911250094557
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.11616003253854934,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 9.052177804552194
+        },
+        {
+          "frame": 119,
+          "bounds_world_m": [
+            [
+              -0.3467517011912123,
+              -0.466723999607209,
+              -0.019892791718212777
+            ],
+            [
+              0.3711141504128178,
+              0.33438637010486044,
+              1.736901179276969
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.11616584629865484,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 9.04985288357035
+        },
+        {
+          "frame": 120,
+          "bounds_world_m": [
+            [
+              -0.34606925186575005,
+              -0.46679712734763945,
+              -0.01990202328181526
+            ],
+            [
+              0.3715314019904891,
+              0.3346373390257701,
+              1.7368718823903588
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.11616918942632273,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 9.049065486591049
+        },
+        {
+          "frame": 121,
+          "bounds_world_m": [
+            [
+              -0.3456746595895058,
+              -0.46681177578416655,
+              -0.019913624728762458
+            ],
+            [
+              0.37177451264184924,
+              0.334906465906892,
+              1.7368380078709789
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.11617155153277979,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 9.046707049968168
+        }
+      ],
+      "maximum_triangle_edge_m": 0.11700812847507411,
+      "union_bounds_world_m": [
+        [
+          -0.4179121686366455,
+          -0.5451346812338689,
+          -0.021898202579044814
+        ],
+        [
+          0.4807979095427285,
+          0.5032331355640409,
+          1.7490624302306943
+        ]
+      ]
+    },
+    "walk": {
+      "frame_range": [
+        1.0,
+        32.0
+      ],
+      "sample_count": 32,
+      "sample_mode": "all imported integer frames, no render",
+      "bind_max_abs_error": 0.0,
+      "rest_max_position_error_m": 0.0,
+      "rest_triangle_indices_match_body": true,
+      "weights_match_body": true,
+      "max_coincident_split_separation_m": 0.0,
+      "max_edge_stretch_ratio": 12.910240318195271,
+      "extreme_edge_observations": 0,
+      "samples": [
+        {
+          "frame": 1,
+          "bounds_world_m": [
+            [
+              -0.30983222262465493,
+              -0.2423253098367156,
+              0.022210143747775968
+            ],
+            [
+              0.3424537201253233,
+              0.17866531838779365,
+              1.8418743184910435
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.1442489137000668,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 6.479610185911108
+        },
+        {
+          "frame": 2,
+          "bounds_world_m": [
+            [
+              -0.31045985475004817,
+              -0.25506480026791184,
+              0.022799629171351955
+            ],
+            [
+              0.3313869402765359,
+              0.17971373417336606,
+              1.8488213397459503
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.14440770793568544,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 6.030283871583212
+        },
+        {
+          "frame": 3,
+          "bounds_world_m": [
+            [
+              -0.31622443441946113,
+              -0.39478666714449817,
+              0.025283392975943828
+            ],
+            [
+              0.318664047794634,
+              0.22779808610210833,
+              1.8487229203765618
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.14513157401655016,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 5.689134573740013
+        },
+        {
+          "frame": 4,
+          "bounds_world_m": [
+            [
+              -0.32360118138418753,
+              -0.5165863599734476,
+              0.031269358961003926
+            ],
+            [
+              0.3039573983369515,
+              0.27364738983127945,
+              1.8399021195258871
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.14659426957949387,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 6.495546473036942
+        },
+        {
+          "frame": 5,
+          "bounds_world_m": [
+            [
+              -0.32672461728759955,
+              -0.6077931722547832,
+              0.03520491527728469
+            ],
+            [
+              0.2949846202145091,
+              0.31721380702653595,
+              1.8252045487290323
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.14856734683212244,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 7.6151310649634345
+        },
+        {
+          "frame": 6,
+          "bounds_world_m": [
+            [
+              -0.32598704558540653,
+              -0.6549647233696884,
+              0.036703447547324415
+            ],
+            [
+              0.29057475397842364,
+              0.3605692332110431,
+              1.8090555620100077
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.15022843083384538,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 8.548992746789985
+        },
+        {
+          "frame": 7,
+          "bounds_world_m": [
+            [
+              -0.32296252477651205,
+              -0.6601649955899541,
+              0.04114057219755962
+            ],
+            [
+              0.2892088444278053,
+              0.4024634963619588,
+              1.7962247515863563
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.15062173716861477,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 8.986462461702045
+        },
+        {
+          "frame": 8,
+          "bounds_world_m": [
+            [
+              -0.31960591550616185,
+              -0.6407334654948181,
+              0.03191957382302098
+            ],
+            [
+              0.29071818658849446,
+              0.44430838986901744,
+              1.7870529986677774
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.1501429439486643,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 8.542234698328315
+        },
+        {
+          "frame": 9,
+          "bounds_world_m": [
+            [
+              -0.3126336217745192,
+              -0.6058824715418055,
+              0.009567963935407714
+            ],
+            [
+              0.3002518777888909,
+              0.49267234249281744,
+              1.7836458636056036
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.14899509330014596,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 6.915280458653453
+        },
+        {
+          "frame": 10,
+          "bounds_world_m": [
+            [
+              -0.3106861616438087,
+              -0.5605950756854234,
+              0.005591439899741783
+            ],
+            [
+              0.3236401295282127,
+              0.5338331561124441,
+              1.7816133929348588
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.1473579424224114,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 6.320813098431505
+        },
+        {
+          "frame": 11,
+          "bounds_world_m": [
+            [
+              -0.31226569423316336,
+              -0.5135750418024562,
+              0.009480175556914466
+            ],
+            [
+              0.34475642392163236,
+              0.5482916250478399,
+              1.779209828609522
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.1460781362926227,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 5.6600991104234
+        },
+        {
+          "frame": 12,
+          "bounds_world_m": [
+            [
+              -0.31022729172367136,
+              -0.46545774856230354,
+              0.012998343670286676
+            ],
+            [
+              0.3645537104711307,
+              0.5204127532796036,
+              1.7807170917103632
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.1453472234739367,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 5.218884228807881
+        },
+        {
+          "frame": 13,
+          "bounds_world_m": [
+            [
+              -0.3108145071373365,
+              -0.41674170041555053,
+              0.01610570661733784
+            ],
+            [
+              0.3763247597122306,
+              0.4702233560849171,
+              1.7853705643637447
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.14453466875239182,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 6.38951821046079
+        },
+        {
+          "frame": 14,
+          "bounds_world_m": [
+            [
+              -0.31812182661962507,
+              -0.3674558891093502,
+              0.01867743846728972
+            ],
+            [
+              0.37564223409732767,
+              0.4083392780014305,
+              1.796153797706823
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.14271474773783477,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 7.224270199459331
+        },
+        {
+          "frame": 15,
+          "bounds_world_m": [
+            [
+              -0.32322577701152394,
+              -0.31789545776429695,
+              0.020675674127492393
+            ],
+            [
+              0.36376853136358267,
+              0.3364593192971907,
+              1.8095874827523195
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.14058436013888448,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 7.7191449979259685
+        },
+        {
+          "frame": 16,
+          "bounds_world_m": [
+            [
+              -0.3175830006537431,
+              -0.27348625609286364,
+              0.022405367664219904
+            ],
+            [
+              0.3447595519711335,
+              0.25033669194884883,
+              1.820733570237665
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.13942630297280414,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 8.15512937116718
+        },
+        {
+          "frame": 17,
+          "bounds_world_m": [
+            [
+              -0.305609581738079,
+              -0.3089363502326653,
+              0.02380678506307565
+            ],
+            [
+              0.33762805188613587,
+              0.14175511098607055,
+              1.8298439828403024
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.1393428108654367,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 8.463981236367319
+        },
+        {
+          "frame": 18,
+          "bounds_world_m": [
+            [
+              -0.2906976634357557,
+              -0.3399714592166782,
+              0.02496377334405361
+            ],
+            [
+              0.33570616929353836,
+              0.18767731396404905,
+              1.8342411082671306
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.14024946637838434,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 8.783057439567694
+        },
+        {
+          "frame": 19,
+          "bounds_world_m": [
+            [
+              -0.27420367577557864,
+              -0.42481435897588604,
+              0.026142076201551727
+            ],
+            [
+              0.33675921645175266,
+              0.2367922078725066,
+              1.833499073592768
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.14145920290318628,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 9.627886142039317
+        },
+        {
+          "frame": 20,
+          "bounds_world_m": [
+            [
+              -0.2603191126414497,
+              -0.5422854016661823,
+              0.029234152953512293
+            ],
+            [
+              0.33658507552760303,
+              0.28499798320755676,
+              1.8289928482624516
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.14279739378397802,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 10.63631620035026
+        },
+        {
+          "frame": 21,
+          "bounds_world_m": [
+            [
+              -0.250145868393939,
+              -0.6172319926562866,
+              0.03506270265517797
+            ],
+            [
+              0.3348281785963023,
+              0.3314206750384592,
+              1.8192728473313253
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.14407908829248658,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 12.05256894670333
+        },
+        {
+          "frame": 22,
+          "bounds_world_m": [
+            [
+              -0.24614282054127556,
+              -0.6507075239617462,
+              0.03822947866371851
+            ],
+            [
+              0.3308720705931606,
+              0.379581456036026,
+              1.809248433566529
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.1448528108646449,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 12.696633626354961
+        },
+        {
+          "frame": 23,
+          "bounds_world_m": [
+            [
+              -0.24608851832670142,
+              -0.6429829162179618,
+              0.024088811342242215
+            ],
+            [
+              0.32681098212332615,
+              0.4215181774306349,
+              1.796547170572623
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.14506923161856694,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 12.910240318195271
+        },
+        {
+          "frame": 24,
+          "bounds_world_m": [
+            [
+              -0.24959788714345799,
+              -0.6198512812135197,
+              0.009831652348831293
+            ],
+            [
+              0.32417086835247466,
+              0.46166156241843376,
+              1.7869022428086652
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.14451211055159077,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 11.63930458223985
+        },
+        {
+          "frame": 25,
+          "bounds_world_m": [
+            [
+              -0.26587577221413333,
+              -0.575483455802059,
+              0.00870375001388642
+            ],
+            [
+              0.3178312231087517,
+              0.5130392024037254,
+              1.7809711516353075
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.1433037127673359,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 10.378161184798934
+        },
+        {
+          "frame": 26,
+          "bounds_world_m": [
+            [
+              -0.2810132917089431,
+              -0.5439606710748509,
+              0.010043373158186514
+            ],
+            [
+              0.3135151221303392,
+              0.5437901666369316,
+              1.7777770294485533
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.14224849005854392,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 10.045525625163226
+        },
+        {
+          "frame": 27,
+          "bounds_world_m": [
+            [
+              -0.3002093056809994,
+              -0.5090869404811282,
+              0.013026596483022814
+            ],
+            [
+              0.30604699409174635,
+              0.5300604268084602,
+              1.781865011679391
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.14152686762839206,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 9.55506089534139
+        },
+        {
+          "frame": 28,
+          "bounds_world_m": [
+            [
+              -0.3157182622415179,
+              -0.44220873942659467,
+              0.01617425214577954
+            ],
+            [
+              0.29935027411632603,
+              0.48702419791888263,
+              1.78905998840399
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.1410396627675936,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 8.776331793051897
+        },
+        {
+          "frame": 29,
+          "bounds_world_m": [
+            [
+              -0.32397650942620243,
+              -0.37654017070087126,
+              0.01865462115391823
+            ],
+            [
+              0.2959167796246788,
+              0.4337561861145109,
+              1.7998905241258323
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.14124226001151682,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 7.7425615162569175
+        },
+        {
+          "frame": 30,
+          "bounds_world_m": [
+            [
+              -0.3259687731720708,
+              -0.32712340085411107,
+              0.02058717076095599
+            ],
+            [
+              0.315383961377463,
+              0.36729561470611594,
+              1.8144706020333476
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.14228670357304893,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 7.147497919989889
+        },
+        {
+          "frame": 31,
+          "bounds_world_m": [
+            [
+              -0.31913020368070893,
+              -0.278045070952872,
+              0.021801393881380474
+            ],
+            [
+              0.33427043174207166,
+              0.2849477251766566,
+              1.829333272654278
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.14340510930808006,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 6.7122553879354285
+        },
+        {
+          "frame": 32,
+          "bounds_world_m": [
+            [
+              -0.3098317839344792,
+              -0.24232532891020653,
+              0.022210444155163423
+            ],
+            [
+              0.3424529953328591,
+              0.1786652802408151,
+              1.8418743184910427
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.14424877886046963,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 6.479616989673986
+        }
+      ],
+      "maximum_triangle_edge_m": 0.15062173716861477,
+      "union_bounds_world_m": [
+        [
+          -0.32672461728759955,
+          -0.6601649955899541,
+          0.005591439899741783
+        ],
+        [
+          0.3763247597122306,
+          0.5482916250478399,
+          1.8488213397459503
+        ]
+      ]
+    },
+    "run": {
+      "frame_range": [
+        1.0,
+        20.0
+      ],
+      "sample_count": 20,
+      "sample_mode": "all imported integer frames, no render",
+      "bind_max_abs_error": 0.0,
+      "rest_max_position_error_m": 0.0,
+      "rest_triangle_indices_match_body": true,
+      "weights_match_body": true,
+      "max_coincident_split_separation_m": 0.0,
+      "max_edge_stretch_ratio": 17.747997548385577,
+      "extreme_edge_observations": 0,
+      "samples": [
+        {
+          "frame": 1,
+          "bounds_world_m": [
+            [
+              -0.32298121679270003,
+              -0.5858892172054765,
+              0.039974208458465416
+            ],
+            [
+              0.3749018394870995,
+              0.4707161673978316,
+              1.7628452395574996
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.14729762208551173,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 12.739564263006459
+        },
+        {
+          "frame": 2,
+          "bounds_world_m": [
+            [
+              -0.3386628265500576,
+              -0.5636341931584128,
+              0.05213837811543283
+            ],
+            [
+              0.3574210278024801,
+              0.5986229298079812,
+              1.7819008730805153
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.14871579175895994,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 14.312273417538565
+        },
+        {
+          "frame": 3,
+          "bounds_world_m": [
+            [
+              -0.3449777144114001,
+              -0.525809409053819,
+              0.12848973786034634
+            ],
+            [
+              0.3434100265262066,
+              0.6783217647276383,
+              1.8036394573805385
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.1466599615944564,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 14.369771504997205
+        },
+        {
+          "frame": 4,
+          "bounds_world_m": [
+            [
+              -0.33924716186970033,
+              -0.5083464136060766,
+              0.08489013930459915
+            ],
+            [
+              0.34334662626429835,
+              0.7205748074511824,
+              1.8151895984534607
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.14292570192583554,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 12.771835691025615
+        },
+        {
+          "frame": 5,
+          "bounds_world_m": [
+            [
+              -0.334575912588628,
+              -0.5496281978021546,
+              0.04852651937682778
+            ],
+            [
+              0.3462927169055665,
+              0.7243796614146351,
+              1.8125347211566303
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.13912491885200806,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 10.303112302925056
+        },
+        {
+          "frame": 6,
+          "bounds_world_m": [
+            [
+              -0.33186122149055314,
+              -0.5291757384792014,
+              0.024715357597345892
+            ],
+            [
+              0.3388179322355987,
+              0.6645382070728396,
+              1.7926284119841753
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.1372021212396666,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 7.840105074606567
+        },
+        {
+          "frame": 7,
+          "bounds_world_m": [
+            [
+              -0.3291834566632484,
+              -0.38257727256939467,
+              0.015272151097059188
+            ],
+            [
+              0.31681235561686233,
+              0.548354588150333,
+              1.770846490959659
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.13687423381593633,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 5.884335190356961
+        },
+        {
+          "frame": 8,
+          "bounds_world_m": [
+            [
+              -0.32409362062854485,
+              -0.3824686282428678,
+              0.026386468717414076
+            ],
+            [
+              0.3314534685780744,
+              0.44172014473845295,
+              1.7531675053087517
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.1355376399243682,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 10.293456815340809
+        },
+        {
+          "frame": 9,
+          "bounds_world_m": [
+            [
+              -0.371908408392488,
+              -0.4942379135254633,
+              0.0323249933122455
+            ],
+            [
+              0.32633422126500033,
+              0.32921499071102034,
+              1.7384362117288668
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.13535454178658027,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 13.967509967292868
+        },
+        {
+          "frame": 10,
+          "bounds_world_m": [
+            [
+              -0.3717713463275743,
+              -0.5570904217437755,
+              0.04593395691849751
+            ],
+            [
+              0.33054934721448465,
+              0.4705783799713701,
+              1.7445217227707956
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.1412809283324003,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 13.250998037267689
+        },
+        {
+          "frame": 11,
+          "bounds_world_m": [
+            [
+              -0.3454068678566847,
+              -0.5771205916714923,
+              0.060760662582424865
+            ],
+            [
+              0.34381274413535945,
+              0.6129861414290901,
+              1.7604383171335245
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.1478954182160392,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 16.46769546770001
+        },
+        {
+          "frame": 12,
+          "bounds_world_m": [
+            [
+              -0.329662468189007,
+              -0.5532128894162176,
+              0.1632148695070367
+            ],
+            [
+              0.35174033337323857,
+              0.7152694717449263,
+              1.787973259328472
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.14781440947232774,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 17.747997548385577
+        },
+        {
+          "frame": 13,
+          "bounds_world_m": [
+            [
+              -0.33168708057107904,
+              -0.5396947493362056,
+              0.1273468951191902
+            ],
+            [
+              0.3512800138628544,
+              0.7598869414997873,
+              1.807351005526217
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.1429608140897053,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 16.915679487043512
+        },
+        {
+          "frame": 14,
+          "bounds_world_m": [
+            [
+              -0.3438560027181852,
+              -0.5387590969685626,
+              0.062394783232899945
+            ],
+            [
+              0.3562682644792183,
+              0.7696766744647038,
+              1.8209914477704623
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.13660617392334995,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 14.86399272811439
+        },
+        {
+          "frame": 15,
+          "bounds_world_m": [
+            [
+              -0.36460272923228243,
+              -0.6210280383498089,
+              0.06050948320557868
+            ],
+            [
+              0.35725398222454774,
+              0.7289189299280442,
+              1.8160732360247027
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.13107783515697638,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 12.252446174643387
+        },
+        {
+          "frame": 16,
+          "bounds_world_m": [
+            [
+              -0.3636172784962098,
+              -0.5463089961343359,
+              0.035554658896674904
+            ],
+            [
+              0.3514710920296966,
+              0.6383146109640289,
+              1.7994637392992436
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.12790860443242558,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 8.927397900779837
+        },
+        {
+          "frame": 17,
+          "bounds_world_m": [
+            [
+              -0.32729449487797424,
+              -0.37963583588380057,
+              0.012595414648947846
+            ],
+            [
+              0.34055472569195455,
+              0.5190883484394758,
+              1.7769445130914163
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.12865854707170518,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 7.561520347103228
+        },
+        {
+          "frame": 18,
+          "bounds_world_m": [
+            [
+              -0.31565373664721685,
+              -0.4270221934231228,
+              0.03195712078708055
+            ],
+            [
+              0.337898437601296,
+              0.4301124030934579,
+              1.764243555352633
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.13443045879007415,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 8.330512848350475
+        },
+        {
+          "frame": 19,
+          "bounds_world_m": [
+            [
+              -0.31290290128721426,
+              -0.5271861441177386,
+              0.04420012130024432
+            ],
+            [
+              0.37026850829941965,
+              0.3560783192575389,
+              1.7580326170251084
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.14178995135255487,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 10.147451727703166
+        },
+        {
+          "frame": 20,
+          "bounds_world_m": [
+            [
+              -0.32298125493967184,
+              -0.5858891790585014,
+              0.039974022491961345
+            ],
+            [
+              0.37490168689921227,
+              0.47071651072056275,
+              1.762845086969613
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.14729766600761757,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 12.739666562422036
+        }
+      ],
+      "maximum_triangle_edge_m": 0.14871579175895994,
+      "union_bounds_world_m": [
+        [
+          -0.371908408392488,
+          -0.6210280383498089,
+          0.012595414648947846
+        ],
+        [
+          0.3749018394870995,
+          0.7696766744647038,
+          1.8209914477704623
+        ]
+      ]
+    },
+    "jump": {
+      "frame_range": [
+        2.0,
+        38.0
+      ],
+      "sample_count": 37,
+      "sample_mode": "all imported integer frames, no render",
+      "bind_max_abs_error": 0.0,
+      "rest_max_position_error_m": 0.0,
+      "rest_triangle_indices_match_body": true,
+      "weights_match_body": true,
+      "max_coincident_split_separation_m": 0.0,
+      "max_edge_stretch_ratio": 20.32424821156497,
+      "extreme_edge_observations": 0,
+      "samples": [
+        {
+          "frame": 2,
+          "bounds_world_m": [
+            [
+              -0.39676550925846116,
+              -0.16401536618821164,
+              1.861806027319806e-07
+            ],
+            [
+              0.3967655093815144,
+              0.16401572684516866,
+              1.8199999262279452
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.12377494036630383,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 1.000111958143049
+        },
+        {
+          "frame": 3,
+          "bounds_world_m": [
+            [
+              -0.3965606981779423,
+              -0.18323955743965098,
+              -0.009855997141240608
+            ],
+            [
+              0.3969583423132827,
+              0.17839700000804656,
+              1.7937436755672345
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.1237821951082035,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 2.5632841097304913
+        },
+        {
+          "frame": 4,
+          "bounds_world_m": [
+            [
+              -0.3946930606129495,
+              -0.21769610645741896,
+              0.00015264122665831304
+            ],
+            [
+              0.39876944606686965,
+              0.4500210403380919,
+              1.740716494571146
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.12381284234159598,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 5.665219908852085
+        },
+        {
+          "frame": 5,
+          "bounds_world_m": [
+            [
+              -0.39303542211564113,
+              -0.25154613870307785,
+              0.021023916816455688
+            ],
+            [
+              0.40038527548346925,
+              0.5581961792124683,
+              1.7098798606457684
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.12383822496088219,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 7.327294711088678
+        },
+        {
+          "frame": 6,
+          "bounds_world_m": [
+            [
+              -0.39502757140055395,
+              -0.2363385422096301,
+              0.015582118624889408
+            ],
+            [
+              0.398444967932683,
+              0.3859830238924796,
+              1.7306955907748034
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.12378493724066453,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 6.616489171180655
+        },
+        {
+          "frame": 7,
+          "bounds_world_m": [
+            [
+              -0.39605971397605483,
+              -0.22777173356880603,
+              0.011070801402967616
+            ],
+            [
+              0.3974563510508864,
+              0.16951428000833782,
+              1.7715705194492144
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.1238209790291851,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 7.444492412469375
+        },
+        {
+          "frame": 8,
+          "bounds_world_m": [
+            [
+              -0.3926554782105789,
+              -0.5871122985578913,
+              0.016229123368667928
+            ],
+            [
+              0.40079718654888,
+              0.1632902284225748,
+              1.8054640947482814
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.12402370809528794,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 15.364469292494837
+        },
+        {
+          "frame": 9,
+          "bounds_world_m": [
+            [
+              -0.3906275852008191,
+              -0.6305277923878446,
+              0.02024310498442644
+            ],
+            [
+              0.4027789980168488,
+              0.16030526653512875,
+              1.817168802846134
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.12562485706462767,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 17.900870389989667
+        },
+        {
+          "frame": 10,
+          "bounds_world_m": [
+            [
+              -0.390750342155322,
+              -0.6300298192842698,
+              0.0294723744881501
+            ],
+            [
+              0.4026588732033914,
+              0.15299049067403206,
+              1.8180139885961424
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.12807114125749877,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 18.061274441548452
+        },
+        {
+          "frame": 11,
+          "bounds_world_m": [
+            [
+              -0.3910294253994199,
+              -0.6280152063096215,
+              0.05396716837260673
+            ],
+            [
+              0.40238596976870944,
+              0.14286216945393124,
+              1.8194020839166691
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.13373911472672692,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 18.42400395609516
+        },
+        {
+          "frame": 12,
+          "bounds_world_m": [
+            [
+              -0.391394339329813,
+              -0.6218295285069457,
+              0.09895131867280302
+            ],
+            [
+              0.4020292192902692,
+              0.14624123563797645,
+              1.8200692025977518
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.14134988848928184,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 18.899579968861556
+        },
+        {
+          "frame": 13,
+          "bounds_world_m": [
+            [
+              -0.3917764193977416,
+              -0.6107272405833395,
+              0.1629182912473063
+            ],
+            [
+              0.40165545526219076,
+              0.14773465972350974,
+              1.8192507259820683
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.14944470540612262,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 19.402192218255284
+        },
+        {
+          "frame": 14,
+          "bounds_world_m": [
+            [
+              -0.3921111972211267,
+              -0.5965580116203978,
+              0.23391199925968045
+            ],
+            [
+              0.4013269716891606,
+              0.14699807762581069,
+              1.81707452196002
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.15659387423690865,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 19.853253001763754
+        },
+        {
+          "frame": 15,
+          "bounds_world_m": [
+            [
+              -0.3923492343245448,
+              -0.5836412982549051,
+              0.29384510668776875
+            ],
+            [
+              0.4010938936920888,
+              0.1449995469964342,
+              1.8145617079263507
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.16165092755158889,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 20.182634257030273
+        },
+        {
+          "frame": 16,
+          "bounds_world_m": [
+            [
+              -0.39244906494954007,
+              -0.5774671363615502,
+              0.32164110711867167
+            ],
+            [
+              0.4009957796808316,
+              0.14380152185129202,
+              1.8132271756976972
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.16376732201077804,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 20.32424821156497
+        },
+        {
+          "frame": 17,
+          "bounds_world_m": [
+            [
+              -0.39256899902833353,
+              -0.5744677944738434,
+              0.307234483912616
+            ],
+            [
+              0.4008777148036475,
+              0.1444211336498068,
+              1.8135433374743952
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.16175180346026377,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 20.06517231334272
+        },
+        {
+          "frame": 18,
+          "bounds_world_m": [
+            [
+              -0.39293154784680223,
+              -0.563730343210681,
+              0.26423046882396384
+            ],
+            [
+              0.4005227190855708,
+              0.14605770619894412,
+              1.8144957900339174
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.15537638843785542,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 19.2355659115488
+        },
+        {
+          "frame": 19,
+          "bounds_world_m": [
+            [
+              -0.393450995159993,
+              -0.5433848929531728,
+              0.20667683631492134
+            ],
+            [
+              0.40001368589565395,
+              0.14748942088506126,
+              1.8157434996868784
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.14568335774267133,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 17.937242844062943
+        },
+        {
+          "frame": 20,
+          "bounds_world_m": [
+            [
+              -0.3940330035072828,
+              -0.5130778193661628,
+              0.14789732873273478
+            ],
+            [
+              0.39944335052171603,
+              0.14763005158007447,
+              1.8169907513390804
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.13392956213522306,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 16.307291094246946
+        },
+        {
+          "frame": 21,
+          "bounds_world_m": [
+            [
+              -0.3945851809233474,
+              -0.4756301666512254,
+              0.09830504473009058
+            ],
+            [
+              0.39890173981683624,
+              0.14637800193597136,
+              1.818026363588042
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.12399069667673598,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 14.551259707348091
+        },
+        {
+          "frame": 22,
+          "bounds_world_m": [
+            [
+              -0.3950296694387314,
+              -0.43939099755081074,
+              0.063750723294426
+            ],
+            [
+              0.39846625398680663,
+              0.14420828003798472,
+              1.8187517648940221
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.12394149870536633,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 12.941083894561581
+        },
+        {
+          "frame": 23,
+          "bounds_world_m": [
+            [
+              -0.39531554284571885,
+              -0.41299940116626616,
+              0.043992756947346986
+            ],
+            [
+              0.3981854159801108,
+              0.1420394540773705,
+              1.8191600890382917
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.12391013008577689,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 11.788114754053765
+        },
+        {
+          "frame": 24,
+          "bounds_world_m": [
+            [
+              -0.3954064852266535,
+              -0.40364538370733444,
+              0.03778197200227768
+            ],
+            [
+              0.39809695315234933,
+              0.14121509833686802,
+              1.8191823665415503
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.1239003322247666,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 11.397804715104638
+        },
+        {
+          "frame": 25,
+          "bounds_world_m": [
+            [
+              -0.39555644097270926,
+              -0.37935343558799,
+              0.03497281840398802
+            ],
+            [
+              0.39795035433984016,
+              0.14174048522570543,
+              1.8089637098276028
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.12388810214209985,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 10.911138491573748
+        },
+        {
+          "frame": 26,
+          "bounds_world_m": [
+            [
+              -0.3958223635136407,
+              -0.3212461098678548,
+              0.030227296567070395
+            ],
+            [
+              0.39769141269482555,
+              0.142793394856817,
+              1.7858985281058735
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.1238630069737944,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 9.81326231509283
+        },
+        {
+          "frame": 27,
+          "bounds_world_m": [
+            [
+              -0.3960228258524369,
+              -0.24053353802800767,
+              0.02729223976630519
+            ],
+            [
+              0.3974967868428405,
+              0.15528284952060595,
+              1.7558039284330758
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.1238352235385267,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 8.386314393117448
+        },
+        {
+          "frame": 28,
+          "bounds_world_m": [
+            [
+              -0.39606329979280214,
+              -0.251180134898202,
+              0.028021391198079827
+            ],
+            [
+              0.3974574954587513,
+              0.17274308267570035,
+              1.725258278842178
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.12381245899193458,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 7.002519106350774
+        },
+        {
+          "frame": 29,
+          "bounds_world_m": [
+            [
+              -0.39599021019805314,
+              -0.26336603553314586,
+              0.030908967607006677
+            ],
+            [
+              0.3975282962353192,
+              0.18445264072944048,
+              1.7018441282782457
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.12379871705449771,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 7.812636930511468
+        },
+        {
+          "frame": 30,
+          "bounds_world_m": [
+            [
+              -0.3959444338331421,
+              -0.2674348684120572,
+              0.03229543548678248
+            ],
+            [
+              0.3975735003956994,
+              0.18821091899722303,
+              1.6937125681853458
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.12379463765534968,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 8.086931215816602
+        },
+        {
+          "frame": 31,
+          "bounds_world_m": [
+            [
+              -0.39599623742099227,
+              -0.2600789674633742,
+              0.026281775324063332
+            ],
+            [
+              0.3975229175109361,
+              0.18635048993329112,
+              1.7008875546842874
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.12379210401372005,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 7.732479423269178
+        },
+        {
+          "frame": 32,
+          "bounds_world_m": [
+            [
+              -0.3961128908611226,
+              -0.24256670354649804,
+              0.013927549840003382
+            ],
+            [
+              0.3974077136557095,
+              0.1815260202339582,
+              1.7172928861288794
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.1237867880264079,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 6.900639143791953
+        },
+        {
+          "frame": 33,
+          "bounds_world_m": [
+            [
+              -0.39626326622452357,
+              -0.22453936875233915,
+              0.0009382563211534321
+            ],
+            [
+              0.39726042819699126,
+              0.1737662168819378,
+              1.7390851793109137
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.12378101760461654,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 5.746884133676852
+        },
+        {
+          "frame": 34,
+          "bounds_world_m": [
+            [
+              -0.3964194017808318,
+              -0.2086999972746217,
+              -0.00788185595898459
+            ],
+            [
+              0.39710631443015226,
+              0.1683010221153187,
+              1.762636047369548
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.12377636265912513,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 4.432150393351173
+        },
+        {
+          "frame": 35,
+          "bounds_world_m": [
+            [
+              -0.39656001151971293,
+              -0.19251207752849148,
+              -0.010341477517678414
+            ],
+            [
+              0.3969687564489809,
+              0.16720368356326457,
+              1.7848215590171135
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.12377405969503757,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 3.125774495790188
+        },
+        {
+          "frame": 36,
+          "bounds_world_m": [
+            [
+              -0.39666930259472244,
+              -0.17820810347174795,
+              -0.007183095716214219
+            ],
+            [
+              0.39686072422401236,
+              0.16524043006805644,
+              1.8031057041060312
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.12377369168763151,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 2.0063146211401754
+        },
+        {
+          "frame": 37,
+          "bounds_world_m": [
+            [
+              -0.3967398744931678,
+              -0.1679395652953932,
+              -0.00220756395031591
+            ],
+            [
+              0.39679034306040695,
+              0.16418006414369596,
+              1.8154477727704006
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.12377442104181373,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 1.2561873301387914
+        },
+        {
+          "frame": 38,
+          "bounds_world_m": [
+            [
+              -0.39676550925846116,
+              -0.16401536618821164,
+              1.861806027319806e-07
+            ],
+            [
+              0.3967655093815144,
+              0.16401572684516866,
+              1.8199999262279452
+            ]
+          ],
+          "max_coincident_split_separation_m": 0.0,
+          "split_separations_over_1mm": 0,
+          "max_triangle_edge_m": 0.12377494036630383,
+          "extreme_edge_count": 0,
+          "max_edge_stretch_ratio": 1.000111958143049
+        }
+      ],
+      "maximum_triangle_edge_m": 0.16376732201077804,
+      "union_bounds_world_m": [
+        [
+          -0.39676550925846116,
+          -0.6305277923878446,
+          -0.010341477517678414
+        ],
+        [
+          0.4027789980168488,
+          0.5581961792124683,
+          1.8200692025977518
+        ]
+      ]
+    }
+  },
+  "thresholds": {
+    "position_weld_m": 1e-06,
+    "degenerate_triangle_area_m2": 1e-12,
+    "weight_sum_tolerance": 0.02,
+    "extreme_edge_min_length_m": 0.15,
+    "extreme_edge_stretch_ratio": 8,
+    "split_vertex_gap_screen_m": 0.001
+  },
+  "limitations": [
+    "Topology weld is performed only on a disposable in-memory BMesh; source geometry remains split at UV/normal seams.",
+    "Open boundaries and coincident/non-manifold faces are source-quality observations, not proof of native shadow artifacts.",
+    "Own clips are sampled at every imported integer frame; Unreal blends, actor motion, attached props, lighting, shadow maps and renderer are not reproduced.",
+    "No renderer setting or production asset is changed.",
+    "All skin weights are numerically valid; this does not prove every assignment is anatomically optimal. Some short edges stretch up to 20.325 times rest during jump, while all gross length-plus-stretch flags are zero; subtle cloth/facet deformation is not ruled out.",
+    "Blender bone-shape helper is an importer-only hidden collection object, not a retained source mesh or native imported FBX component.",
+    "The separate native plunger/prop, hidden-caster flags, native material sidedness, blended poses and shadow sampling are outside source-topology diagnosis; consult sibling NativeSidednessAudit.json for readback."
+  ],
+  "glb_object_inventory": [
+    {
+      "name": "Armature",
+      "type": "ARMATURE",
+      "hide_render": false,
+      "vertices": null,
+      "armature_modifier": false
+    },
+    {
+      "name": "char1",
+      "type": "MESH",
+      "hide_render": false,
+      "vertices": 130901,
+      "armature_modifier": true
+    },
+    {
+      "name": "Icosphere",
+      "type": "MESH",
+      "hide_render": false,
+      "vertices": 42,
+      "armature_modifier": false
+    }
+  ],
+  "source_after": {
+    "base_color.png": {
+      "bytes": 6140895,
+      "sha256": "f300cbf5d78c411cad36cfedee17a36c787d1a50c968c2adb2827ecf0e43d774"
+    },
+    "body.fbm/Material_0_baseColor.jpg": {
+      "bytes": 4213353,
+      "sha256": "adf54ff0228275f6557fa5afbacb9ab0e5651fe1ddec0c638afa2cd197dba5d7"
+    },
+    "body.fbx": {
+      "bytes": 10076108,
+      "sha256": "b7e7ca0d9c486412108cba85e1cd4a5512fecd4ad36b8cfdb4677259ff6f9244"
+    },
+    "body.glb": {
+      "bytes": 23337268,
+      "sha256": "25041be9666422c30ba39449cb283a83928bb3de596fe063389707c070335613"
+    },
+    "files.json": {
+      "bytes": 1926,
+      "sha256": "d942b4ec45c3b28ef54c0afeb991278528fd74252ec7208cd518519277fd18bc"
+    },
+    "generation.json": {
+      "bytes": 2519,
+      "sha256": "a23277ea16f38bf8123e4c5f8e4b64323c6b07843158a4b84a7f2bcf7d910632"
+    },
+    "idle.fbm/Material_0_baseColor.jpg": {
+      "bytes": 4213353,
+      "sha256": "adf54ff0228275f6557fa5afbacb9ab0e5651fe1ddec0c638afa2cd197dba5d7"
+    },
+    "idle.fbx": {
+      "bytes": 10197292,
+      "sha256": "b1a7bd95403aa7358f067a3a352d060ca2cd56d9c65d9f8d6fe497dbf4343641"
+    },
+    "jump.fbx": {
+      "bytes": 221356,
+      "sha256": "36d74356ca903188a9b3956db69e51367260866972cda9215fab6a66d5362aa3"
+    },
+    "jump.json": {
+      "bytes": 5070,
+      "sha256": "94deb47f51e5cbfd6e5694efb8dcb8052c2abf6c91df7ceee2a35def47838e3f"
+    },
+    "metallic.png": {
+      "bytes": 30269,
+      "sha256": "2e0e9b79402c506cdcf5fe11f4e81e7a376b0b81fa5982b6b6584f5e35402309"
+    },
+    "normal.png": {
+      "bytes": 6648844,
+      "sha256": "7845864ce13d1e3ce10e8149ef2ef98a048b8be249a60749dfc70c4897e9e7ab"
+    },
+    "preview.png": {
+      "bytes": 90796,
+      "sha256": "8b0e3ba80a30dd9f6d438be6f81728e9744dc057c9f1df50759379b2dc57a8d4"
+    },
+    "pricing.json": {
+      "bytes": 1012,
+      "sha256": "6ff6e0d5f7a22b9cf85119d4ad1cb6e8f30e6acb4804a61b563e27b347663d32"
+    },
+    "reference.png": {
+      "bytes": 1619959,
+      "sha256": "c00eb6f0ea1f5743b1a236295ecedfa27e15763d9ab5a717942ebf3713e778be"
+    },
+    "request.json": {
+      "bytes": 2129,
+      "sha256": "47209121445fc43283c50481d7fc6adece8274fdf049ddec31e52c58f4a352d1"
+    },
+    "result-receipt.json": {
+      "bytes": 21334,
+      "sha256": "192c42733e1ab51fd1b4d799bd4167b7c457ed2b5a3d48d3ccb910729b3c8ba7"
+    },
+    "result.json": {
+      "bytes": 4916,
+      "sha256": "da1d5ae7bc3856dde6e1b7f642182814eeb1ff22f2d69cc7aaf8a4ebde5dbdab"
+    },
+    "roughness.png": {
+      "bytes": 1475634,
+      "sha256": "cf28e5b2f2b3d1d85b3e3a6b8228b0bde61f82c60133b393a6159b5d3a7a9f89"
+    },
+    "run.fbm/Material_0_baseColor.jpg": {
+      "bytes": 4213353,
+      "sha256": "adf54ff0228275f6557fa5afbacb9ab0e5651fe1ddec0c638afa2cd197dba5d7"
+    },
+    "run.fbx": {
+      "bytes": 10096892,
+      "sha256": "b0f8e4c359d21ca3a51dde5c94b45b4d9f4a3d27dedb2d44f671b69e41f6e8ae"
+    },
+    "run.glb": {
+      "bytes": 79384,
+      "sha256": "b59e018d32513f3519f4f64a6a29de42cdc952cc53a5416b91ee60bc82229b30"
+    },
+    "schema.json": {
+      "bytes": 98501,
+      "sha256": "4779033055c3bed4def386892cc4844f22ed9bd718d6795318efa395dafc219b"
+    },
+    "source-review.json": {
+      "bytes": 2062,
+      "sha256": "a2ea79458aef0ad20ee1cb00b262269c509db230ca94b9c03cfc8bebeaacd3d8"
+    },
+    "submit-response.json": {
+      "bytes": 2129,
+      "sha256": "47209121445fc43283c50481d7fc6adece8274fdf049ddec31e52c58f4a352d1"
+    },
+    "walk.fbm/Material_0_baseColor.jpg": {
+      "bytes": 4213353,
+      "sha256": "adf54ff0228275f6557fa5afbacb9ab0e5651fe1ddec0c638afa2cd197dba5d7"
+    },
+    "walk.fbx": {
+      "bytes": 10114012,
+      "sha256": "0fe2b4d83846f826e3d448c870fcb77816c25fe6d106c873d755cd7a3d871d9e"
+    }
+  },
+  "source_unchanged": true,
+  "script_sha256": "d49c8f71ec68f8fb5c23a748d23bfe092067c2f162c8efaaff1ad443cb1faf60",
+  "status": "COMPLETED_CAUSE_UNRESOLVED",
+  "raw_glb_inventory": {
+    "meshes": 1,
+    "mesh_nodes": [
+      {
+        "index": 24,
+        "mesh": 0,
+        "name": "char1",
+        "skin": 0
+      }
+    ],
+    "skins": [
+      {
+        "name": "Armature",
+        "joints": 24
+      }
+    ],
+    "mesh_primitives": [
+      {
+        "mode": 4,
+        "material": 0,
+        "attributes": [
+          "POSITION",
+          "NORMAL",
+          "TEXCOORD_0",
+          "TANGENT",
+          "JOINTS_0",
+          "WEIGHTS_0"
+        ]
+      }
+    ],
+    "materials": [
+      {
+        "name": "Material_0",
+        "double_sided": true,
+        "alpha_mode": "OPAQUE"
+      }
+    ]
+  },
+  "blender_only_helper": {
+    "name": "Icosphere",
+    "source_mesh": false,
+    "reason": "Blender glTF importer creates a bone custom-shape icosphere in a collection hidden in viewport and render; raw GLB has only char1 mesh node. FBX import has only char1.",
+    "installed_importer_source": "/home/von/.local/opt/blender-5.2.2-linux-x64/5.2/scripts/addons_core/io_scene_gltf2/blender/imp/node.py",
+    "source_lines": [
+      153,
+      170
+    ],
+    "source_sha256": "95c53bbe042f644cd3cb7471a4afe3be4b294b937e1913f4069b44f14e943097"
+  },
+  "validation": {
+    "blender_exit_code": 0,
+    "source_files_hashed_before_after": 27,
+    "manifest_entries_verified": 14,
+    "manifest_sha256": "d942b4ec45c3b28ef54c0afeb991278528fd74252ec7208cd518519277fd18bc",
+    "cpu_render_performed": false,
+    "unreal_or_services_launched": false,
+    "integer_pose_samples": 210,
+    "topology_comparison": "FBX and GLB match vertex/triangle counts, weight stats, raw and copy-weld topology counts.",
+    "gross_skin_screen": "No evaluated edge simultaneously exceeds 0.15 m and 8 times its rest length; no coincident split pair separates by any measured amount. This is a bounded outlier screen, not full skin-quality acceptance."
+  },
+  "native_context": {
+    "concern": "Detached triangular/dotted ground-shadow fragments in native selected stop/jump/landing/recover frames around 4.2\u20136.4 s.",
+    "image_inspected": "Saved/Tests/GraphicNovel/HighDetailMotion-20261014T084528Z/IndependentMotionReview/Standard/phase-crops-04.png",
+    "image_sha256": "293ea0a1265e557607c89216440d209887d297f2b58d3fceec2b941ea9e72df5",
+    "image_scope": "Selected static contact sheet only; no continuous playback or reproduction.",
+    "peer_review": "merge_review read-only code/import audit: source GLB doubleSided true; native M_Crew sidedness not explicitly set by importer; separate RightHand CrewProp remains. Capture hidden-background checks do not read bCastHiddenShadow. None establishes cause.",
+    "native_sidedness_audit": "Saved/Tests/GraphicNovel/HighDetail-20261014T082624Z/NativeSidednessAudit.json"
+  },
+  "verdict": {
+    "obvious_detached_source_component_found": false,
+    "gross_invalid_skin_weights_or_exploding_vertices_found": false,
+    "source_topology_pristine": false,
+    "shadow_fragment_cause": "UNRESOLVED",
+    "conclusion": "No obvious stray source geometry or gross skin discontinuity was found that explains the native fragments. Open/non-manifold source topology remains a quality limit; renderer, prop, sidedness and shadow-sampling contributions remain untested by this CPU audit.",
+    "source_fix_recommended_from_this_evidence": false,
+    "native_shadow_acceptance": false
+  },
+  "log_sha256": "a6e1740fec9bf6c25fb4b4f2982daf1f3d8825ecd775130f86426351321d7421"
+}

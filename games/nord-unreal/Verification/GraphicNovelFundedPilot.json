@@ -1,0 +1,698 @@
+{
+  "recorded_utc": "2026-10-14T04:29:13.271732+00:00",
+  "scope": "Completed funded pilot source/import/native-headless verification; rendered graphics acceptance remains open.",
+  "baseline": {
+    "path": "Saved/Tests/GraphicNovel/FundedPilot/baseline.json",
+    "sha256": "935d4b57455244f8dc461bc2bb0a314c537b2a499e12320258289a253c9301ce"
+  },
+  "source_head_before_work": "8f0ee5cd57680c87e9ed077c844b5162788bd51a",
+  "selection": {
+    "required_flags": [
+      "-NordGraphicNovelCandidate",
+      "-NordGraphicNovelGenerated"
+    ],
+    "source": "Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v1",
+    "asset_folder": "/Game/ParkComic/CrewGraphicNovelGenerated/Resident9",
+    "existing_44_bone_pilot_preserved": true,
+    "production_default_preserved": true,
+    "reused_ink": "/Game/ParkComic/CrewGraphicNovel/Resident9/M_ComicInk.M_ComicInk",
+    "stencil": 254
+  },
+  "generation": {
+    "record": {
+      "path": "Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v1/generation.json",
+      "sha256": "8c6a55c8d8f85676c9f5194bf0fd4a229baf8918a92777df78ba36415cb5a1b0"
+    },
+    "endpoint_id": "meshy/v7.1/image-to-3d",
+    "request_id": "01a13897-127f-7c01-8e00-272ff4d5c998",
+    "status": "completed_downloaded",
+    "authorized_budget_usd": 25,
+    "published_estimate_usd": 1.52,
+    "actual_charge_usd": null,
+    "actual_charge_confirmed": false
+  },
+  "source_files_sha256": {
+    "Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v1/base_color.png": "e12f54d2240e3c8255e3008aa0f089fad07236cbb0055e5db36e02d18c617dfb",
+    "Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v1/body.fbx": "a9f1a81f16986a17a50571b7ed536b1e4137778a8024979576cd427365c3a62e",
+    "Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v1/body.glb": "623b69b0f2ec6b6d060431737d7e469f9e61f5078bddefc453d99af2b87a8c14",
+    "Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v1/generation.json": "8c6a55c8d8f85676c9f5194bf0fd4a229baf8918a92777df78ba36415cb5a1b0",
+    "Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v1/idle.fbx": "5099b135a70541e30cabf09b4a7f2da786da0647124e157b6d1802a16843145a",
+    "Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v1/jump-review.json": "2eba1907a6f84839c48319153e0b39d0bef957ab21e4d4488119160b052ac98c",
+    "Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v1/jump.fbx": "b59edaca2af646ff3fd749e3d4455429b8e1378d858ce53971404f233f41149e",
+    "Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v1/jump.json": "d7890d9f5f8b55ceb3cbaf766e22dc85261789422f47f933bf9eb8b109573f9a",
+    "Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v1/metallic.png": "93f88e479170e75108b87e20b4bbc8111265507f1743b7d8d07d0af69e22642a",
+    "Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v1/normal.png": "8807b0460c45a9072ab266a50f8c7e07b90ac09dd465735412b5aeea08c759e9",
+    "Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v1/preview.png": "f0f74dbc9886ed75650b042ac69fde0a91feb875388f913d4383c8385b7cd6be",
+    "Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v1/request.json": "0ebbbed746fbbcfd05ea749d402eb2e30b6dd37bbc61cd867af057a447006418",
+    "Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v1/result.json": "1bbb2358af64f853ebfe1f12c45dedd2ea7a787f4321ba5e275f0b56f4030b17",
+    "Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v1/review/CPU-body-back.png": "650d4868ed60e891288255c49cf21881c7bc689d1df3f40c188f1de353dcce44",
+    "Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v1/review/CPU-body-front.png": "56c5a69581777d067a807848e5444a5daf04d1a754a7c8959198347469819862",
+    "Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v1/review/CPU-body-three-quarter.png": "5808f7494f5f88391bbb2f2aba5a8a3474bb3236293bc5943e63af2d492dd943",
+    "Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v1/review/CPU-face-front.png": "1d01effdcdea5c3a4edd13d7829c869789227ce10d17ad43a710bad2afa53033",
+    "Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v1/review/CPU-hand-left-side.png": "3c8139487c27e04ab3c50b012c49e5a01b9c97302d93d21f9ae80a7ef294c2b8",
+    "Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v1/review/CPU-hand-left.png": "fd7bcc62c43174cb6c03c2fc89890ca82e37b07f47cac5e08585d6fad1694062",
+    "Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v1/review/CPU-hand-right-side.png": "18a95a86492a0edfb1ba1f4bc3769c1fa5cfed97db7f155ca0912b3e34b03267",
+    "Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v1/review/CPU-hand-right.png": "f130dad257c0e2c2a16fd6b7343f532d9593afcead8707ca13fabd5dc8e0b92a",
+    "Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v1/review/CPU-idle-mid-three-quarter.png": "b09eb211072e5cdad3eadc750fca0bd62704b9e36f563b4beeb5e6acc3758798",
+    "Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v1/review/CPU-run-mid-three-quarter.png": "f313172be935d1e8775f64584cdb053fec411cfa81061d18f3a1b9c3daa5410f",
+    "Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v1/review/CPU-walk-mid-three-quarter.png": "831552ca5c74423e4893bfc09c2a0140efcc420d9e85cd7e18d2afbc4101b7b7",
+    "Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v1/review/cpu-review.json": "c59ab4a9f6da0c08da06f5f4a8ff2317a6f40caa7ec656a365ee8ecb221508b8",
+    "Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v1/review/review-verdict.json": "e51c6638ed25e2c9fa4cae7e31a146897bd2519138ccff3cb4e2ab1221d519b6",
+    "Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v1/roughness.png": "ed5b015d1bd8cfc19c11fdf9b8419abf1c2affc5d1a0e1b45666c2a9d179ca75",
+    "Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v1/run.fbx": "fa0d46ca85c5fa357063ee0ee5fbe9618bb87b88460e0a33e691d3ffaacbaf40",
+    "Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v1/run.glb": "31393b4f875711ee607d876b30175f0c16e014ed83f223e08ab3f2c12ee73446",
+    "Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v1/source-review.json": "e90a56960deb8ae8a6128d7a1173db28b1431870b9602aa52fc12c16f9ecac9b",
+    "Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v1/walk.fbx": "92844ca9d860e1c18980edcbd2587c22e27a2a0890437f3abbbd4fa122df8279"
+  },
+  "assets_sha256": {
+    "Content/ParkComic/CrewGraphicNovelGenerated/Resident9/A_Idle.uasset": "3d9301217a4dadb34f4dc2094cc268c3a71e580a75e8f83be17a8b80e359046d",
+    "Content/ParkComic/CrewGraphicNovelGenerated/Resident9/A_Jump.uasset": "b8b0e8b2d60a4d7f8986e55f83b86414776197ac5adaa4eb396bfb9874621cbf",
+    "Content/ParkComic/CrewGraphicNovelGenerated/Resident9/A_Run.uasset": "0aeee0f293581175bab9998ad5ad86b4161b275c75256340263a6e1d52f10b27",
+    "Content/ParkComic/CrewGraphicNovelGenerated/Resident9/A_Walk.uasset": "ff7ce8804ae72eae355b4279f98f7a45e949736c038b6ede3686cb33c3697f2e",
+    "Content/ParkComic/CrewGraphicNovelGenerated/Resident9/BS_Locomotion.uasset": "60538f616154dd8b9bd4eafd10632caa57869a7db15647ee7abd82b4d3547c38",
+    "Content/ParkComic/CrewGraphicNovelGenerated/Resident9/M_Crew.uasset": "6c1335505da2dbb25905ba04773f306189ba1859a984430d945deb6b87955412",
+    "Content/ParkComic/CrewGraphicNovelGenerated/Resident9/SK_Body.uasset": "baba38bed9de13e1ce20bbb523fc3fbaea6e8a33cc82d11477d24b871ca89360",
+    "Content/ParkComic/CrewGraphicNovelGenerated/Resident9/SK_Body_Skeleton.uasset": "e3fb1649bd6d76b84cbe96489346c0b3138df71250280c68fd0af71fbf4246af",
+    "Content/ParkComic/CrewGraphicNovelGenerated/Resident9/T_base_color.uasset": "17f601631fc68f22155112796fe35d2c5110ccef44fe3ef2dc230ff8312f7033",
+    "Content/ParkComic/CrewGraphicNovelGenerated/Resident9/T_metallic.uasset": "9075cd56616b385fd7515d341f7ba0925fb80347ef22a0c1246f921ade061c09",
+    "Content/ParkComic/CrewGraphicNovelGenerated/Resident9/T_normal.uasset": "04168eb9151172b22f2a947c8fd4bce13406581a36ad1c742192be77bb395c50",
+    "Content/ParkComic/CrewGraphicNovelGenerated/Resident9/T_roughness.uasset": "628b02da39c008402a683765267cf7eec2930ede84e4fba781830a631baf4cd0"
+  },
+  "asset_count": 12,
+  "scripts_and_runtime_sha256": {
+    "Scripts/import_meshy_crew.py": "5b4b57374ac49a81f1d4bee5aa26790e9c026d5d0e7c59b83faeb99a275858b2",
+    "Scripts/test_graphic_novel_import.py": "cf3e2f237be4acabed06a88ac543ed337beb73653ac8295fa4fe0e7ee0af2aa8",
+    "Scripts/capture_player_quality.py": "d615297d3d8f11bc8c2746fd3b2fc682955f17b3a51437ebb826e3b41ed28629",
+    "Scripts/test_graphic_novel_capture.py": "51d9b9ba18f87789a2cc82d0aa55c9156387ec0c312ec01a3b7436807d3144f3",
+    "Scripts/test_player_quality_cadence.py": "89683f262f427f8becd3967210cc20c020c1076d0866e5a09ef257ce2e6d4a22",
+    "Scripts/prepare_meshy_jump.py": "ed50ad1d4a09a9d6b71ee45c108a4f0e404b222ebfe311df3302929a6602aebd",
+    "Scripts/download_meshy_crew.py": "b961ce7f57fa237aeef3f02fcc62bd0d16ff2cbc56bb9131084b511c2a72410d",
+    "Source/Quebec/QuebecGameplay.cpp": "94a79210e995837dea38ba1a990ce1b899c7f6e0d83429a66f602c629d346588",
+    "Source/Quebec/QuebecGameplay.h": "3491598926edb8564e15834717b0713d1bcaeb36e6bfc08c496764979bebd848",
+    "Source/Quebec/QuebecCrewAnimation.cpp": "e7cc2217f9ca1093118bb18d693ffc113fbf036f899f4b624c0ab9a91f9c6773",
+    "Source/Quebec/QuebecCrewAnimation.h": "99ef33e3fb2723474da58bc9cd0a822cca8812eb47028a82486a745077e07e5e",
+    "Source/Quebec/QuebecCrewAnimationTests.cpp": "518f59c361f5bb74081d9e8e6a4c76ad82c903556397bf976740d0e3ae1e1568",
+    "Source/Quebec/Quebec.Build.cs": "757ae2f9f29537c67111ffad15c3c5ca8a0cf45f100c669f47148d6f7aed882b"
+  },
+  "source_geometry": {
+    "body": {
+      "triangles": 31026,
+      "vertices": 43807,
+      "bones": 24,
+      "height_m": 1.82
+    },
+    "hierarchy": {
+      "head_end": "Head",
+      "headfront": "Head",
+      "Head": "neck",
+      "neck": "Spine",
+      "LeftHand": "LeftForeArm",
+      "LeftForeArm": "LeftArm",
+      "LeftArm": "LeftShoulder",
+      "LeftShoulder": "Spine",
+      "RightHand": "RightForeArm",
+      "RightForeArm": "RightArm",
+      "RightArm": "RightShoulder",
+      "RightShoulder": "Spine",
+      "Spine": "Spine01",
+      "Spine01": "Spine02",
+      "Spine02": "Hips",
+      "LeftToeBase": "LeftFoot",
+      "LeftFoot": "LeftLeg",
+      "LeftLeg": "LeftUpLeg",
+      "LeftUpLeg": "Hips",
+      "RightToeBase": "RightFoot",
+      "RightFoot": "RightLeg",
+      "RightLeg": "RightUpLeg",
+      "RightUpLeg": "Hips",
+      "Hips": null
+    },
+    "clips": {
+      "idle": {
+        "curves": 138,
+        "max_bind_error": 0.0
+      },
+      "walk": {
+        "curves": 138,
+        "max_bind_error": 0.0
+      },
+      "run": {
+        "curves": 138,
+        "max_bind_error": 0.0
+      }
+    },
+    "passed": true,
+    "scope": "Retained geometry and own clip bind/track validation; no visual or motion acceptance"
+  },
+  "local_jump": {
+    "report": {
+      "path": "Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v1/jump-review.json",
+      "sha256": "2eba1907a6f84839c48319153e0b39d0bef957ab21e4d4488119160b052ac98c"
+    },
+    "metrics": {
+      "passed": true,
+      "source_root": "Data/GraphicNovel/Pilot/CurlyMetalhead",
+      "characters": [
+        {
+          "name": "generated-v1",
+          "authoring": "original local skeletal keyframes; no paid generation",
+          "body_sha256": "a9f1a81f16986a17a50571b7ed536b1e4137778a8024979576cd427365c3a62e",
+          "jump_sha256": "b59edaca2af646ff3fd749e3d4455429b8e1378d858ce53971404f233f41149e",
+          "seconds": 1.2,
+          "fps": 30,
+          "bones": 24,
+          "head_and_neck_unchanged": true,
+          "actor_root_motion": false,
+          "fbx_round_trip_passed": true
+        }
+      ]
+    }
+  },
+  "cpu_review": {
+    "report": {
+      "path": "Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v1/review/cpu-review.json",
+      "sha256": "c59ab4a9f6da0c08da06f5f4a8ff2317a6f40caa7ec656a365ee8ecb221508b8"
+    },
+    "verdict_report": {
+      "path": "Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v1/review/review-verdict.json",
+      "sha256": "e51c6638ed25e2c9fa4cae7e31a146897bd2519138ccff3cb4e2ab1221d519b6"
+    },
+    "source_unchanged": true,
+    "review_reported_exit_code": 0,
+    "metrics": {
+      "body_triangles": 31026,
+      "body_vertices": 43807,
+      "height_m": 1.82000028214145,
+      "bones": 24,
+      "morph_count": 0,
+      "own_clip_bind_errors": {
+        "idle": 0.0,
+        "walk": 0.0,
+        "run": 0.0
+      }
+    },
+    "views": [
+      {
+        "file": "CPU-body-front.png",
+        "sha256": "56c5a69581777d067a807848e5444a5daf04d1a754a7c8959198347469819862"
+      },
+      {
+        "file": "CPU-body-three-quarter.png",
+        "sha256": "5808f7494f5f88391bbb2f2aba5a8a3474bb3236293bc5943e63af2d492dd943"
+      },
+      {
+        "file": "CPU-body-back.png",
+        "sha256": "650d4868ed60e891288255c49cf21881c7bc689d1df3f40c188f1de353dcce44"
+      },
+      {
+        "file": "CPU-face-front.png",
+        "sha256": "1d01effdcdea5c3a4edd13d7829c869789227ce10d17ad43a710bad2afa53033"
+      },
+      {
+        "file": "CPU-hand-left.png",
+        "sha256": "fd7bcc62c43174cb6c03c2fc89890ca82e37b07f47cac5e08585d6fad1694062"
+      },
+      {
+        "file": "CPU-hand-left-side.png",
+        "sha256": "3c8139487c27e04ab3c50b012c49e5a01b9c97302d93d21f9ae80a7ef294c2b8"
+      },
+      {
+        "file": "CPU-hand-right.png",
+        "sha256": "f130dad257c0e2c2a16fd6b7343f532d9593afcead8707ca13fabd5dc8e0b92a"
+      },
+      {
+        "file": "CPU-hand-right-side.png",
+        "sha256": "18a95a86492a0edfb1ba1f4bc3769c1fa5cfed97db7f155ca0912b3e34b03267"
+      },
+      {
+        "file": "CPU-idle-mid-three-quarter.png",
+        "sha256": "b09eb211072e5cdad3eadc750fca0bd62704b9e36f563b4beeb5e6acc3758798"
+      },
+      {
+        "file": "CPU-walk-mid-three-quarter.png",
+        "sha256": "831552ca5c74423e4893bfc09c2a0140efcc420d9e85cd7e18d2afbc4101b7b7"
+      },
+      {
+        "file": "CPU-run-mid-three-quarter.png",
+        "sha256": "f313172be935d1e8775f64584cdb053fec411cfa81061d18f3a1b9c3daa5410f"
+      }
+    ],
+    "visual_verdict": "Suitable initial third-person engine draft. Hold crew expansion/final hero acceptance until native appearance and continuous motion are reviewed.",
+    "improvements": [
+      "Recognizable curly-haired bearded adult, mature proportions and original wardrobe identity.",
+      "Integrated teal cargo trousers/pockets, clean continuous cuffs, detailed high-top canvas shoes.",
+      "Side hand views show five separated digits on each hand.",
+      "Sampled Idle/Walk/Run deform without gross exploding vertices, detached clothing or obvious major tears."
+    ],
+    "visible_defects": [
+      "Hands remain coarse and faceted at knuckles/tips; right hand has a planar crease/seam, whole-hand rig lacks individual finger controls.",
+      "Face looks smoother and paler than the reference under this studio setup; native lighting/material still needs review.",
+      "Jagged pale collar/neck rim and thick shiny rope-like curls are visible in close crops.",
+      "Armpit/crotch/knee folds pinch sharply during sampled motion; no cloth simulation."
+    ],
+    "limits": [
+      "Static views cannot establish fluid motion, planted feet, transition quality or runtime performance.",
+      "Fixed neutral floor: sampled lowest shoe vertices are approximately -1.1cm Idle, +3.4cm Walk, +4.5cm Run; flight/contact correctness needs continuous/native review.",
+      "Raw UV/normal-split boundary counts are not hole counts. Disposable 1-micrometre position-weld metric still has48boundary and91non-manifold edges; no watertightness claim or geometry repair.",
+      "These are supplied PBR textures in Cycles, not the final comic-book engine shading."
+    ],
+    "topology": {
+      "boundary_edges": 41468,
+      "nonmanifold_edges_excluding_boundary": 0,
+      "degenerate_faces": 0,
+      "after_position_weld_copy_only": {
+        "world_tolerance_m": 1e-06,
+        "vertices": 15291,
+        "boundary_edges": 48,
+        "nonmanifold_edges_excluding_boundary": 91
+      }
+    },
+    "scope": "Existing CPU studio still/sampled-pose reviewer verdict retained; no new image review or Unreal render performed by evidence collector."
+  },
+  "editor_build": {
+    "log": {
+      "path": "Saved/Tests/GraphicNovel/FundedPilot/Build/build.log",
+      "sha256": "7d28ffa655592f0e5a259233b34e2e3a7db4996da62cc666032f052fe0a51616"
+    },
+    "success_marker_present": true,
+    "process_exit_code": 0
+  },
+  "native_import": {
+    "report": {
+      "path": "Saved/Tests/GraphicNovel/GeneratedImport.json",
+      "sha256": "aee0ff5cd974fee6e79d275620286f9b0854f80969a8393d8a1b5569a62a1f88"
+    },
+    "reported_passed": true,
+    "characters": [
+      {
+        "style": 9,
+        "name": "generated-v1",
+        "materials": 1,
+        "material_slots": [
+          {
+            "slot": "Material_0",
+            "material": "/Game/ParkComic/CrewGraphicNovelGenerated/Resident9/M_Crew.M_Crew"
+          }
+        ],
+        "clips": [
+          {
+            "name": "Walk",
+            "seconds": 1.0
+          },
+          {
+            "name": "Idle",
+            "seconds": 4.0
+          },
+          {
+            "name": "Run",
+            "seconds": 0.6000000238418579
+          },
+          {
+            "name": "Jump",
+            "seconds": 1.2000000476837158
+          }
+        ]
+      }
+    ],
+    "log": {
+      "path": "Saved/Tests/GraphicNovel/FundedPilot/Import/native.log",
+      "sha256": "98caba7c074a137334f11508e97236fd862e12bf64927fb5b446615feeedb8fa"
+    },
+    "aggregate_marker_present": true,
+    "process_exit_code": 0,
+    "sdk_warnings": {
+      "count": 4,
+      "errors": 0,
+      "notes": "FBX SDK recreated the supplied bind pose; missing smoothing groups. Native own-clip checks pass; rendered deformation still requires review."
+    }
+  },
+  "native_automation": {
+    "report": {
+      "path": "Saved/Tests/GraphicNovel/FundedPilot/Animation/Report/index.json",
+      "sha256": "5cdcefbb1b2336f5e12ecb3b88df90278fc80718aca3951a6ae6ff1b9bdd5b69"
+    },
+    "log": {
+      "path": "Saved/Tests/GraphicNovel/FundedPilot/Animation/native.log",
+      "sha256": "de9d51439a674ce3165cfb475e8a44151e582609fa4d9bde9fa15499540a43a9"
+    },
+    "succeeded": 4,
+    "succeeded_with_warnings": 0,
+    "failed": 0,
+    "not_run": 0,
+    "tests": [
+      {
+        "name": "Quebec.Animation.BlendedLocomotion",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "name": "Quebec.Animation.GraphicNovelCandidateSelection",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "name": "Quebec.Animation.GraphicNovelHandsEyes",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      },
+      {
+        "name": "Quebec.Animation.ReapplyCrew",
+        "state": "Success",
+        "warnings": 0,
+        "errors": 0
+      }
+    ],
+    "generated_selection_skipped": false,
+    "process_exit_code": 0,
+    "scope": "Native regressions and actual generated selection. GraphicNovelHandsEyes intentionally checks the preserved old 44-bone pilot; it does not establish finger/face controls on the new generated body."
+  },
+  "headless_motion": [
+    {
+      "mode": "standard",
+      "report": {
+        "path": "Saved/Tests/GraphicNovel/GeneratedCapture/Motion/Standard/PlayerMotion1280Headless.json",
+        "sha256": "27fb487bdfdc906c9b163f9e483a4a34de1f83a3e3d3e7643872ddb75510031d"
+      },
+      "reported_passed": true,
+      "headless": true,
+      "wall_seconds": 21.88,
+      "observations": 182,
+      "checks": {
+        "phase_counts": {
+          "idle": 9,
+          "walk": 38,
+          "sprint": 37,
+          "turn": 22,
+          "stop": 19,
+          "jump": 34,
+          "landing": 6,
+          "recover": 17
+        },
+        "steady_motion": {
+          "walk": {
+            "steady_samples": 30,
+            "foot_pose_change_pairs": 29
+          },
+          "sprint": {
+            "steady_samples": 30,
+            "foot_pose_change_pairs": 29
+          }
+        },
+        "directional_turn_degrees": 90.0,
+        "jump_peak_cm": 183.673,
+        "jump_horizontal_drift_cm": 0.0,
+        "airborne_knee_degrees": 60.842,
+        "scope": "selected native state and pose observations at 1x; no rendered fluidity or FPS acceptance"
+      },
+      "screenshots": 0,
+      "native_material_readback": {
+        "slots": [
+          {
+            "index": 0,
+            "imported": "/Game/ParkComic/CrewGraphicNovelGenerated/Resident9/M_Crew.M_Crew",
+            "live": "/Game/ParkComic/CrewGraphicNovelGenerated/Resident9/M_Crew.M_Crew",
+            "matches": true
+          }
+        ],
+        "override_count": 0,
+        "assigned_override_count": 0,
+        "scope": "read only; native component materials were not repaired by this motion fixture"
+      },
+      "runtime_control_counts": [
+        0
+      ],
+      "log": {
+        "path": "Saved/Tests/GraphicNovel/FundedPilot/MotionStandard/native.log",
+        "sha256": "a99a841b29edc2ecdd6d71ef7bbf2496c3754dbee33a2e5048e02d3949cdb3b7"
+      },
+      "aggregate_marker_present": true,
+      "process_exit_code": 0
+    },
+    {
+      "mode": "comic",
+      "report": {
+        "path": "Saved/Tests/GraphicNovel/GeneratedCapture/Motion/Comic/PlayerMotion1280Headless.json",
+        "sha256": "c27486ce6a22f54b4acb174b8ac6fb7efc1828d902bf18fb992d01f81bba5d98"
+      },
+      "reported_passed": true,
+      "headless": true,
+      "wall_seconds": 21.85,
+      "observations": 180,
+      "checks": {
+        "phase_counts": {
+          "idle": 8,
+          "walk": 38,
+          "sprint": 38,
+          "turn": 22,
+          "stop": 19,
+          "jump": 33,
+          "landing": 6,
+          "recover": 16
+        },
+        "steady_motion": {
+          "walk": {
+            "steady_samples": 29,
+            "foot_pose_change_pairs": 28
+          },
+          "sprint": {
+            "steady_samples": 31,
+            "foot_pose_change_pairs": 30
+          }
+        },
+        "directional_turn_degrees": 90.0,
+        "jump_peak_cm": 183.666,
+        "jump_horizontal_drift_cm": 0.0,
+        "airborne_knee_degrees": 60.792,
+        "scope": "selected native state and pose observations at 1x; no rendered fluidity or FPS acceptance"
+      },
+      "screenshots": 0,
+      "native_material_readback": {
+        "slots": [
+          {
+            "index": 0,
+            "imported": "/Game/ParkComic/CrewGraphicNovelGenerated/Resident9/M_Crew.M_Crew",
+            "live": "/Game/ParkComic/CrewGraphicNovelGenerated/Resident9/M_Crew.M_Crew",
+            "matches": true
+          }
+        ],
+        "override_count": 0,
+        "assigned_override_count": 0,
+        "scope": "read only; native component materials were not repaired by this motion fixture"
+      },
+      "runtime_control_counts": [
+        0
+      ],
+      "log": {
+        "path": "Saved/Tests/GraphicNovel/FundedPilot/MotionComic/native.log",
+        "sha256": "e2c60ebfa34028e6c8cf053e6a1b1f12c47f0ff6659a38b1daa098279c296730"
+      },
+      "aggregate_marker_present": true,
+      "process_exit_code": 0
+    }
+  ],
+  "headless_seven_state": {
+    "report": {
+      "path": "Saved/Tests/GraphicNovel/GeneratedCapture/Standard/PlayerQuality1280Headless.json",
+      "sha256": "01cd0eace6096b2e313832d613590fc3e961bf247a3c493693038b772c826b8a"
+    },
+    "reported_passed": true,
+    "headless": true,
+    "wall_seconds": 29.45,
+    "states": [
+      "Idle",
+      "Face",
+      "FaceThreeQuarter",
+      "Walk",
+      "Run",
+      "Airborne",
+      "Landing"
+    ],
+    "screenshots": 0,
+    "observed_locomotion_cadence": {
+      "Walk": {
+        "observed_world_seconds": 0.8568,
+        "samples": 412,
+        "observed_sample_pairs_per_world_second": 479.695,
+        "observation_global_time_dilation": 0.25,
+        "largest_observed_engine_frame_gap": 1,
+        "phase_advance_pairs": 411,
+        "foot_pose_change_pairs": 411,
+        "clip_wraps": 2,
+        "largest_forward_phase_advance_seconds": 0.00469,
+        "largest_phase_rate_error_seconds": 3e-05
+      },
+      "Run": {
+        "observed_world_seconds": 0.9004,
+        "samples": 433,
+        "observed_sample_pairs_per_world_second": 479.808,
+        "observation_global_time_dilation": 0.25,
+        "largest_observed_engine_frame_gap": 1,
+        "phase_advance_pairs": 432,
+        "foot_pose_change_pairs": 432,
+        "clip_wraps": 2,
+        "largest_forward_phase_advance_seconds": 0.00306,
+        "largest_phase_rate_error_seconds": 0.0
+      }
+    },
+    "observed_motion": {
+      "jump_peak_cm": 183.67,
+      "actor_horizontal_drift_cm": 0.0,
+      "pelvis_horizontal_range_cm": 0.08523,
+      "pelvis_balance_tolerance_cm": 5.0,
+      "actor_drift_tolerance_cm": 0.5,
+      "airborne_vs_idle_knee_degrees": 58.717,
+      "mesh_relative_transform_stable": true,
+      "recovered_clip": "A_Idle"
+    },
+    "pilot_rig": {
+      "finger_bones": [],
+      "morphs": [],
+      "material_slots": 1,
+      "scope": "generated body-only rig; static face and fingers",
+      "native_flag_route": {
+        "verified_before_fixture_overrides": true,
+        "body": "/Game/ParkComic/CrewGraphicNovelGenerated/Resident9/SK_Body.SK_Body",
+        "animation_class": "/Script/Quebec.QuebecCrewAnimInstance"
+      },
+      "live_materials": [
+        "/Game/ParkComic/CrewGraphicNovelGenerated/Resident9/M_Crew.M_Crew"
+      ],
+      "runtime_controls_observed": true
+    },
+    "log": {
+      "path": "Saved/Tests/GraphicNovel/FundedPilot/StillStandard/native.log",
+      "sha256": "271aed972a0ef59238294f54468acc9c6c1c8a47b5dd284b2c1128209ba9c85a"
+    },
+    "aggregate_marker_present": true,
+    "process_exit_code": 0
+  },
+  "preservation": {
+    "report": {
+      "path": "Saved/Tests/GraphicNovel/FundedPilot/import-preservation.json",
+      "sha256": "bdc3d6c155db724ce555c154e26db7901782ed7f4bf9697bb23c8ac25e3dbbed"
+    },
+    "reported_passed": true,
+    "protected_count": 333,
+    "fresh_hash_changed": []
+  },
+  "fixture_scope": "Single-player PIE soccer pitch; physical input disabled; all cars/residents hidden with collision disabled. Motion retains native callbacks/controller camera/HUD/materials at unpaused1x. Headless-only forced bone evaluation. Seven-state still fixture uses paused observations and0.25x locomotion sampling. No city/crowd/co-op/physical-input acceptance.",
+  "rig_limits": {
+    "generated_body_bones": 24,
+    "generated_finger_controls": 0,
+    "generated_face_morphs": 0,
+    "scope": "Five visible digits per hand are static whole-hand skinned geometry; no individual finger, squint, blink, jaw or speech animation claimed."
+  },
+  "graphics_accepted": false,
+  "rendered_images": 0,
+  "rendered_video": false,
+  "fps_accepted": false,
+  "package_or_live_service_acceptance": false,
+  "service_actions_by_evidence_collector": false,
+  "pending": [
+    "Native Unreal rendered review at1280x720/1920x1080 in standard/comic modes and unpaused video",
+    "Face/collar/hair/hand refinement based on native appearance; static face/finger limitation remains",
+    "Crew model expansion only after rendered pilot review",
+    "Candidate co-op, current cook/package/performance/browser/physical-phone gates"
+  ],
+  "default_smoke": {
+    "passed": true,
+    "process_exit_code": 0,
+    "checks": 70,
+    "elapsed_seconds": 44.54,
+    "report": "Saved/Tests/GraphicNovel/FundedPilot/Smoke/Smoke.json",
+    "sha256": "0175bca51756f404fe489d4976827d80e6cd692815b2b32a8e537577faaf5e2e",
+    "scope": "Two in-process PIE peers, default production cast, legacy campaign disabled; no external/browser/physical-input acceptance"
+  },
+  "native_log_guard": {
+    "passed": true,
+    "scope": "Native headless log content scan; clean process exits separately confirmed by execution receipts.",
+    "logs": [
+      {
+        "path": "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/GraphicNovel/FundedPilot/Import/native.log",
+        "sha256": "98caba7c074a137334f11508e97236fd862e12bf64927fb5b446615feeedb8fa",
+        "passed": true,
+        "dependency_shader_and_fatal_errors": 0
+      },
+      {
+        "path": "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/GraphicNovel/FundedPilot/Animation/native.log",
+        "sha256": "de9d51439a674ce3165cfb475e8a44151e582609fa4d9bde9fa15499540a43a9",
+        "passed": true,
+        "dependency_shader_and_fatal_errors": 0
+      },
+      {
+        "path": "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/GraphicNovel/FundedPilot/MotionStandard/native.log",
+        "sha256": "a99a841b29edc2ecdd6d71ef7bbf2496c3754dbee33a2e5048e02d3949cdb3b7",
+        "passed": true,
+        "dependency_shader_and_fatal_errors": 0
+      },
+      {
+        "path": "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/GraphicNovel/FundedPilot/MotionComic/native.log",
+        "sha256": "e2c60ebfa34028e6c8cf053e6a1b1f12c47f0ff6659a38b1daa098279c296730",
+        "passed": true,
+        "dependency_shader_and_fatal_errors": 0
+      },
+      {
+        "path": "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/GraphicNovel/FundedPilot/StillStandard/native.log",
+        "sha256": "271aed972a0ef59238294f54468acc9c6c1c8a47b5dd284b2c1128209ba9c85a",
+        "passed": true,
+        "dependency_shader_and_fatal_errors": 0
+      },
+      {
+        "path": "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/GraphicNovel/FundedPilot/Smoke/native.log",
+        "sha256": "419e1291001c3d505e1413cf8063c5e63f11e83f2c47a13831c641340d682400",
+        "passed": true,
+        "dependency_shader_and_fatal_errors": 0
+      }
+    ]
+  },
+  "editor_binary_sha256": "71a02ca2c724639dc445fa7d696c0b8efe031b38dc90fbbdb064a603462c58cd",
+  "service_actions_by_root": [],
+  "rendered_processes_launched_by_root": 0,
+  "editor_settings_limit": "Capture restores its known play settings; a full editor INI byte-preservation claim is not made for this pass.",
+  "prepared_crew_references": [
+    {
+      "name": "BlackCap",
+      "review": "Data/GraphicNovel/Crew/BlackCap/source-review.json",
+      "sha256": "d9176a9966b90215568cba34e6e80d60905fc50afb3869faef92c5249fde6c83"
+    },
+    {
+      "name": "GreenCap51",
+      "review": "Data/GraphicNovel/Crew/GreenCap51/source-review.json",
+      "sha256": "8ac31eb3d9ccf23e0e55cf9efa9be2943a7b6df0a96380e50251ef4b81bf7d93"
+    },
+    {
+      "name": "LimeJacket",
+      "review": "Data/GraphicNovel/Crew/LimeJacket/source-review.json",
+      "sha256": "031c0c77448420f8983e59fef7e8c6400a06b3b44e69bbd3c96ef54a2fa58779"
+    },
+    {
+      "name": "Memphis33",
+      "review": "Data/GraphicNovel/Crew/Memphis33/source-review.json",
+      "sha256": "3419b2477e20e2e09b7cdfb17142239b619d8e4ab391f4a26e161f4f4d40684b"
+    },
+    {
+      "name": "RedJersey",
+      "review": "Data/GraphicNovel/Crew/RedJersey/source-review.json",
+      "sha256": "30fa7a9edd67cd96c4ecb09bd22da56602df61ab4ba4d82ae359c31c4be9c75a"
+    },
+    {
+      "name": "Topknot",
+      "review": "Data/GraphicNovel/Crew/Topknot/source-review.json",
+      "sha256": "33955a1524945fbedbc1b605bcb9da31f188977764d6265ced243df5c5a5f8b2"
+    },
+    {
+      "name": "WhiteCap",
+      "review": "Data/GraphicNovel/Crew/WhiteCap/source-review.json",
+      "sha256": "f13e7bcd90e07bf60de79c6a3bbe23f3e742e24dbd62e8b777cb8a99597a0ca6"
+    }
+  ],
+  "cook_scope": {
+    "always_cook_root": "/Game/ParkComic",
+    "new_asset_bytes": 25993028,
+    "cooked_size_delta_measured": false,
+    "note": "Review packages are included in future cooks even with selection off; no live package was replaced."
+  }
+}

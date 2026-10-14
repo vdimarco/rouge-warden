@@ -1,0 +1,24 @@
+{
+  "unit": "nord-graphic-novel-high-detail-motion-20261014T084528Z.service",
+  "command": [
+    "systemctl",
+    "--user",
+    "show",
+    "nord-graphic-novel-high-detail-motion-20261014T084528Z.service",
+    "-p",
+    "ActiveState",
+    "-p",
+    "Result",
+    "-p",
+    "ExecMainCode",
+    "-p",
+    "ExecMainStatus"
+  ],
+  "values": {
+    "ActiveState": "inactive",
+    "Result": "success",
+    "ExecMainCode": "0",
+    "ExecMainStatus": "0"
+  },
+  "passed": true
+}

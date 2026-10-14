@@ -213,6 +213,28 @@ while remaining:
         filled_boundaries+=1
 bmesh.ops.recalc_face_normals(bm,faces=list(bm.faces))
 bmesh.ops.triangulate(bm,faces=list(bm.faces))
+# The two source seam islands are dangling flaps, not holes: their eight tiny
+# faces attach to otherwise intact cloth along four three-face edges.
+seam_edges=[e for e in bm.edges if e.is_boundary and not
+            (all(v.co.z<.201 for v in e.verts) or all(v.co.z>1.0 for v in e.verts))]
+flaps={face for edge in seam_edges for face in edge.link_faces}
+if seam_edges:
+    frontier=list(flaps)
+    while frontier:
+        face=frontier.pop()
+        for edge in face.edges:
+            if len(edge.link_faces)!=2:continue
+            for neighbor in edge.link_faces:
+                if neighbor not in flaps:
+                    flaps.add(neighbor);frontier.append(neighbor)
+    assert len(seam_edges)==8 and len(flaps)==8,('Unexpected cloth defect',len(seam_edges),len(flaps))
+    assert all(face.calc_area()<.00002 for face in flaps),'Repair exceeds the tiny source seam islands'
+    assert len({e for face in flaps for e in face.edges if len(e.link_faces)>2})==4
+    bmesh.ops.delete(bm,geom=list(flaps),context='FACES_ONLY')
+    bmesh.ops.delete(bm,geom=[v for v in bm.verts if not v.link_faces],context='VERTS')
+assert not any(len(e.link_faces)>2 for e in bm.edges),'Cloth has a non-manifold edge'
+assert not any(e.is_boundary and not
+               (all(v.co.z<.201 for v in e.verts) or all(v.co.z>1.0 for v in e.verts)) for e in bm.edges)
 bm.to_mesh(trousers.data);bm.free();trousers.data.update()
 bpy.context.view_layer.objects.active=trousers
 transfer=trousers.modifiers.new('ClothSkin','DATA_TRANSFER');transfer.object=body
@@ -304,6 +326,8 @@ for side, label in ((-1, 'R'), (1, 'L')):
             angle = math.atan2(p.y-center.y, p.x-center.x)
             target = Vector((ankle.x+.055*math.cos(angle), ankle.y+.059*math.sin(angle)))
             q = p.lerp(target, blend)
+            if height>.175:
+                q=Vector((ankle.x,ankle.y))+(q-Vector((ankle.x,ankle.y)))*.90
             result.append(Vector((q.x, q.y, height)))
         return result
     canvas=loft('GN_Canvas_'+label, [upper_ring(.036, .03), upper_ring(.065, .07), upper_ring(.09, .35),
@@ -314,7 +338,8 @@ for side, label in ((-1, 'R'), (1, 'L')):
         hit,normal,index,distance=surface.ray_cast(Vector((x,-1,z)),Vector((0,1,0)))
         assert hit is not None,('Lace missed canvas',x,z)
         return (x,hit.y-.0018,z)
-    loft('GN_AnklePiping_'+label, [upper_ring(.193, 1.01), upper_ring(.199, 1.01)], 'RubberStripe')
+    # Keep collar trim below the cloth's visible rear cuff instead of poking through it.
+    loft('GN_AnklePiping_'+label, [upper_ring(.182, 1.01), upper_ring(.188, 1.01)], 'RubberStripe')
     # A raised tongue, crossed laces and eyelet tabs distinguish canvas sneakers
     # from boots without replacing the source ankle/foot proportions.
     tongue=[]
@@ -444,6 +469,9 @@ report={'passed':True,'source':str(source.relative_to(ROOT)),'source_sha256':sou
         'original_vertex_count_preserved':len(original_vertices),'source_shape_keys_preserved':list(shapes),
         'covered_body_faces_removed':removed,'trouser_faces':len(faces),
         'unintended_cloth_boundaries_filled':filled_boundaries,
+        'dangling_source_seam_faces_removed':len(flaps),
+        'ankle_trim_height_metres':[.182,.188],
+        'upper_canvas_collar_radial_scale':.90,
         'meshes':[{'name':o.name,'vertices':len(o.data.vertices),'triangles':sum(len(p.vertices)-2 for p in o.data.polygons),
                    'materials':[m.name for m in o.data.materials]} for o in meshes],
         'technique_sources':['https://docs.blender.org/manual/en/3.0/modeling/modifiers/modify/data_transfer.html'],

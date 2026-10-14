@@ -1,0 +1,44 @@
+﻿{
+	"devices": [
+		{
+			"deviceName": "omarchy",
+			"instance": "01A1398864F370D1A9B3E5099792D2F0",
+			"instanceName": "omarchy-3454318",
+			"platform": "LinuxEditor",
+			"oSVersion": "Omarchy 7.2.5-3-omarchy",
+			"model": "Default",
+			"gPU": "NVIDIA GeForce RTX 4090 (NVIDIA UNIX Open Kernel Module for x86_64  610.57.04  Release Build  (root@omarchy))",
+			"cPUModel": "Intel(R) Core(TM) i9-14900K",
+			"rAMInGB": 94,
+			"renderMode": "SM6",
+			"rHI": "",
+			"appInstanceLog": ""
+		}
+	],
+	"reportCreatedOn": "2026.10.14-08.30.17",
+	"succeeded": 1,
+	"succeededWithWarnings": 0,
+	"failed": 0,
+	"notRun": 0,
+	"inProcess": 0,
+	"totalDuration": 0.007411465048789978,
+	"comparisonExported": false,
+	"comparisonExportDirectory": "",
+	"tests": [
+		{
+			"testDisplayName": "RadarClip",
+			"fullTestPath": "Quebec.HUD.RadarClip",
+			"tags": [],
+			"state": "Success",
+			"deviceInstance": [
+				"01A1398864F370D1A9B3E5099792D2F0"
+			],
+			"duration": 0.007411465048789978,
+			"dateTime": "2026.10.14-08.30.17",
+			"entries": [],
+			"warnings": 0,
+			"errors": 0,
+			"artifacts": []
+		}
+	]
+}

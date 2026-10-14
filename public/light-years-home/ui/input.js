@@ -42,6 +42,17 @@ export function stickAxes(dx, dy, tune = TUNE, invert = false, out = { steer: 0,
   return out;
 }
 
+// In the light-speed corridor (punch and tunnel) Y steers up and down as X steers across (decisions.md 2): the same
+// dead zone, reach and expo on both axes, no climb scale, and no pitch delay.
+export function corridorAxes(dx, dy, tune = TUNE, invert = false, out = { steer: 0, climb: 0 }) {
+  const I = tune.INPUT;
+  out.steer = expo(deadScale(dx, I.STICK_DEAD, I.STICK_FULL), tune.SHIP.EXPO);
+  const c = -expo(deadScale(dy, I.STICK_DEAD, I.STICK_FULL), tune.SHIP.EXPO);
+  out.climb = nz(invert ? -c : c);
+  return out;
+}
+export const CORRIDOR = Object.freeze(['punch', 'tunnel']);
+
 // How far the anchor follows a thumb that runs past the stick, so turning back is quick: past FOLLOW × full the
 // anchor is dragged along. Returns the new anchor coordinate.
 export const FOLLOW = 1.25;
@@ -384,14 +395,16 @@ export function createInput({ el, layout = null, settings = {}, tune = TUNE, sou
       stick.ax = p.x0; stick.ay = p.y0;
     }
     if (p.role === 'stick' && p.id === stickId) {
+      const corridor = CORRIDOR.includes(mode);
       stick.x = x; stick.y = y;
       stick.ax = follow(stick.ax, x, T.INPUT.STICK_FULL);
-      stick.ay = follow(stick.ay, y, T.INPUT.CLIMB_FULL);
-      if (flick.move(t, y)) {
+      stick.ay = follow(stick.ay, y, corridor ? T.INPUT.STICK_FULL : T.INPUT.CLIMB_FULL);
+      // In the corridor a quick push up is a dodge, not a boost: no flick there (BOOST still boosts).
+      if (!corridor && flick.move(t, y)) {
         pending.boostBurst = true;
         climbHist.n = 0;
       }
-      if (!flick.armed) stick.ay = y;   // the flick re-centres the stick, so the swipe never pitches
+      if (!corridor && !flick.armed) stick.ay = y;   // the flick re-centres the stick, so the swipe never pitches
     } else if (p.role === 'pedal') {
       p.pedal = pedalAt(L, x, y, p.pedal);
     }
@@ -625,7 +638,13 @@ export function createInput({ el, layout = null, settings = {}, tune = TUNE, sou
   }
 
   function readTouch(r, t, inv) {
-    if (stick.on) {
+    if (stick.on && CORRIDOR.includes(mode)) {
+      corridorAxes(stick.x - stick.ax, stick.y - stick.ay, T, inv, axes);
+      stick.steer = axes.steer;
+      stick.climb = axes.climb;
+      r.steer = stick.steer;
+      r.climb = stick.climb;
+    } else if (stick.on) {
       stickAxes(stick.x - stick.ax, stick.y - stick.ay, T, inv, axes);
       stick.steer = axes.steer;
       stick.climb = delayedClimb(t, axes.climb);

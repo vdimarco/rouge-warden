@@ -1,0 +1,8 @@
+{
+  "passed": true,
+  "material": "/Game/ParkComic/CrewGraphicNovelGenerated/Resident9/M_Crew",
+  "previous_flat_blend": 0.6499999761581421,
+  "flat_blend": 0.0,
+  "mapped_normal_strength": 1.0,
+  "scope": "New generated body only; diagnostic full baked normal compensation, no geometry/tangent/texture changes"
+}

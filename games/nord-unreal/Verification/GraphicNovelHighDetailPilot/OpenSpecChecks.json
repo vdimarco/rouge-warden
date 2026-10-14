@@ -1,0 +1,14 @@
+{
+  "passed": true,
+  "method": "Manual structure/scenario validation; OpenSpec CLI unavailable",
+  "requirements": 13,
+  "scenarios": 29,
+  "source_sha256": {
+    "openspec/changes/nord-city-quality/proposal.md": "57e0e01d1d240dd387eaa0a54e67fc97ef324c4fbf38d1d304f994365609edab",
+    "openspec/changes/nord-city-quality/design.md": "acf2c6353d4474b701ce7e37aa4308517a8a3c55d2a95ad978f44df04125ed2d",
+    "openspec/changes/nord-city-quality/tasks.md": "903c985fd878cec6f72f4a2aeb06059abfebf40312de3cad5cc76aacb1fdc81b",
+    "openspec/changes/nord-city-quality/specs/nord-unreal/spec.md": "14171a1ac2e058d67949144c679ad2eb815f8b509c0d6124b50093131c73f83f"
+  },
+  "overall_change_complete": false,
+  "graphics_accepted": false
+}

@@ -1,0 +1,830 @@
+[
+  {
+    "source": "Saved/Tests/GraphicNovel/HighDetailAB-20261014T083606Z/Capture/Standard/PlayerQuality1920.json",
+    "curated": "Verification/GraphicNovelHighDetailPilot/Standard1920.json",
+    "source_sha256": "5fc8610097cf6d13e416498c35dc312659b4b14810b0edf6e25da3299aa8f355",
+    "sha256": "5fc8610097cf6d13e416498c35dc312659b4b14810b0edf6e25da3299aa8f355",
+    "bytes": 528278
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/HighDetailAB-20261014T083606Z/Capture/Standard/1920/Resident9_Airborne.png",
+    "curated": "Preview/GraphicNovelHighDetail/Standard/1920/Resident9_Airborne.png",
+    "source_sha256": "d8f737cd06eeed39eeac8e1e5fa3d271ad777cb3c8f5a2e98da7c3172e970784",
+    "sha256": "d8f737cd06eeed39eeac8e1e5fa3d271ad777cb3c8f5a2e98da7c3172e970784",
+    "bytes": 3095043
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/HighDetailAB-20261014T083606Z/Capture/Standard/1920/Resident9_Face.png",
+    "curated": "Preview/GraphicNovelHighDetail/Standard/1920/Resident9_Face.png",
+    "source_sha256": "c6579f57524f830af7c7321aa9ccffa4db762dca88de7c69c7b96e7dd9afe826",
+    "sha256": "c6579f57524f830af7c7321aa9ccffa4db762dca88de7c69c7b96e7dd9afe826",
+    "bytes": 3782729
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/HighDetailAB-20261014T083606Z/Capture/Standard/1920/Resident9_FaceThreeQuarter.png",
+    "curated": "Preview/GraphicNovelHighDetail/Standard/1920/Resident9_FaceThreeQuarter.png",
+    "source_sha256": "c67f837365f896252e4daf0d8776ace2c769f425460f7d70ed298e7a979bcd80",
+    "sha256": "c67f837365f896252e4daf0d8776ace2c769f425460f7d70ed298e7a979bcd80",
+    "bytes": 3806907
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/HighDetailAB-20261014T083606Z/Capture/Standard/1920/Resident9_Idle.png",
+    "curated": "Preview/GraphicNovelHighDetail/Standard/1920/Resident9_Idle.png",
+    "source_sha256": "f7a72478f1044bfd5ba4c83209eb7a6988df09910561118fde4240d63d7f5abc",
+    "sha256": "f7a72478f1044bfd5ba4c83209eb7a6988df09910561118fde4240d63d7f5abc",
+    "bytes": 3210850
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/HighDetailAB-20261014T083606Z/Capture/Standard/1920/Resident9_Landing.png",
+    "curated": "Preview/GraphicNovelHighDetail/Standard/1920/Resident9_Landing.png",
+    "source_sha256": "0e3c592ac214e773156a5fbbad1b8b654622a44d9e4690f73a5eb15184651ba1",
+    "sha256": "0e3c592ac214e773156a5fbbad1b8b654622a44d9e4690f73a5eb15184651ba1",
+    "bytes": 3094678
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/HighDetailAB-20261014T083606Z/Capture/Standard/1920/Resident9_Run.png",
+    "curated": "Preview/GraphicNovelHighDetail/Standard/1920/Resident9_Run.png",
+    "source_sha256": "5468be3cf049599d4e00a15d039737caa7a80114a09d1729ac479226d99c7a26",
+    "sha256": "5468be3cf049599d4e00a15d039737caa7a80114a09d1729ac479226d99c7a26",
+    "bytes": 3108377
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/HighDetailAB-20261014T083606Z/Capture/Standard/1920/Resident9_Walk.png",
+    "curated": "Preview/GraphicNovelHighDetail/Standard/1920/Resident9_Walk.png",
+    "source_sha256": "ebf04a9f22fca92c1b6ff346a5da55d1baf54fe2de30364dbef299cad9bd0934",
+    "sha256": "ebf04a9f22fca92c1b6ff346a5da55d1baf54fe2de30364dbef299cad9bd0934",
+    "bytes": 3183030
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/HighDetailAB-20261014T083606Z/Capture/PlayerQuality1920.json",
+    "curated": "Verification/GraphicNovelHighDetailPilot/Comic1920.json",
+    "source_sha256": "e7e5742182f1d6563f9fd6781471401c283427bb873a0b35421c06848919c78a",
+    "sha256": "e7e5742182f1d6563f9fd6781471401c283427bb873a0b35421c06848919c78a",
+    "bytes": 521379
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/HighDetailAB-20261014T083606Z/Capture/1920/Resident9_Airborne.png",
+    "curated": "Preview/GraphicNovelHighDetail/Comic/1920/Resident9_Airborne.png",
+    "source_sha256": "360dd69d9d34ab7bf152cf75c26526fb356b426c94d21d754c099b8d69821f2a",
+    "sha256": "360dd69d9d34ab7bf152cf75c26526fb356b426c94d21d754c099b8d69821f2a",
+    "bytes": 3173553
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/HighDetailAB-20261014T083606Z/Capture/1920/Resident9_Face.png",
+    "curated": "Preview/GraphicNovelHighDetail/Comic/1920/Resident9_Face.png",
+    "source_sha256": "f5e3b5ff709b82e3ea1aae008ea75c5b03778c6009568809f9a9d02f68bfc336",
+    "sha256": "f5e3b5ff709b82e3ea1aae008ea75c5b03778c6009568809f9a9d02f68bfc336",
+    "bytes": 3967270
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/HighDetailAB-20261014T083606Z/Capture/1920/Resident9_FaceThreeQuarter.png",
+    "curated": "Preview/GraphicNovelHighDetail/Comic/1920/Resident9_FaceThreeQuarter.png",
+    "source_sha256": "2f6c70523ab31093dd267880fd81d200e406adc4c4d61c623cf1f3e333149b6f",
+    "sha256": "2f6c70523ab31093dd267880fd81d200e406adc4c4d61c623cf1f3e333149b6f",
+    "bytes": 4168533
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/HighDetailAB-20261014T083606Z/Capture/1920/Resident9_Idle.png",
+    "curated": "Preview/GraphicNovelHighDetail/Comic/1920/Resident9_Idle.png",
+    "source_sha256": "9dcf4fca1bbf92ef8abc77714cc697378b9c0a913005d5b7e880816a63a9040a",
+    "sha256": "9dcf4fca1bbf92ef8abc77714cc697378b9c0a913005d5b7e880816a63a9040a",
+    "bytes": 3290628
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/HighDetailAB-20261014T083606Z/Capture/1920/Resident9_Landing.png",
+    "curated": "Preview/GraphicNovelHighDetail/Comic/1920/Resident9_Landing.png",
+    "source_sha256": "8d2e73d45cd89d46a6584c03f1604194ecb6aa2b91b8fbab24d00faea2fff4d2",
+    "sha256": "8d2e73d45cd89d46a6584c03f1604194ecb6aa2b91b8fbab24d00faea2fff4d2",
+    "bytes": 3159565
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/HighDetailAB-20261014T083606Z/Capture/1920/Resident9_Run.png",
+    "curated": "Preview/GraphicNovelHighDetail/Comic/1920/Resident9_Run.png",
+    "source_sha256": "b1be22463b9de036f1ae75d5f5e9da51a9cc62fc542c54e1acad737fcd0defb2",
+    "sha256": "b1be22463b9de036f1ae75d5f5e9da51a9cc62fc542c54e1acad737fcd0defb2",
+    "bytes": 3201979
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/HighDetailAB-20261014T083606Z/Capture/1920/Resident9_Walk.png",
+    "curated": "Preview/GraphicNovelHighDetail/Comic/1920/Resident9_Walk.png",
+    "source_sha256": "8c749901cf6881f1447af650035d2a327189c99b82d0f8049c9068c1c98aeafa",
+    "sha256": "8c749901cf6881f1447af650035d2a327189c99b82d0f8049c9068c1c98aeafa",
+    "bytes": 3269783
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/HighDetailRender-20261014T083947Z/Capture/Standard/PlayerQuality1280.json",
+    "curated": "Verification/GraphicNovelHighDetailPilot/Standard1280.json",
+    "source_sha256": "375912a5c91ad85f17acda0a2038e6fd621ac966a43e75172591496ec6477e0b",
+    "sha256": "375912a5c91ad85f17acda0a2038e6fd621ac966a43e75172591496ec6477e0b",
+    "bytes": 525188
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/HighDetailRender-20261014T083947Z/Capture/Standard/1280/Resident9_Airborne.png",
+    "curated": "Preview/GraphicNovelHighDetail/Standard/1280/Resident9_Airborne.png",
+    "source_sha256": "07ddad3b01ec9e5c750691616565e24bfc22415212c9e9839fae702932d90d86",
+    "sha256": "07ddad3b01ec9e5c750691616565e24bfc22415212c9e9839fae702932d90d86",
+    "bytes": 1411842
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/HighDetailRender-20261014T083947Z/Capture/Standard/1280/Resident9_Face.png",
+    "curated": "Preview/GraphicNovelHighDetail/Standard/1280/Resident9_Face.png",
+    "source_sha256": "196230e698d25665da6c6a2108273e4a8a21421ff913781bcbc0171f0e4e603a",
+    "sha256": "196230e698d25665da6c6a2108273e4a8a21421ff913781bcbc0171f0e4e603a",
+    "bytes": 1752423
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/HighDetailRender-20261014T083947Z/Capture/Standard/1280/Resident9_FaceThreeQuarter.png",
+    "curated": "Preview/GraphicNovelHighDetail/Standard/1280/Resident9_FaceThreeQuarter.png",
+    "source_sha256": "ce17e7bf30e3faf4da8fb13fb2985fb3a4221df99002c02909ac912e0d9ef231",
+    "sha256": "ce17e7bf30e3faf4da8fb13fb2985fb3a4221df99002c02909ac912e0d9ef231",
+    "bytes": 1769892
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/HighDetailRender-20261014T083947Z/Capture/Standard/1280/Resident9_Idle.png",
+    "curated": "Preview/GraphicNovelHighDetail/Standard/1280/Resident9_Idle.png",
+    "source_sha256": "b945a4a4477c14cec19ff9006866e84410da954be1382cc29cba6ca60b760c53",
+    "sha256": "b945a4a4477c14cec19ff9006866e84410da954be1382cc29cba6ca60b760c53",
+    "bytes": 1474081
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/HighDetailRender-20261014T083947Z/Capture/Standard/1280/Resident9_Landing.png",
+    "curated": "Preview/GraphicNovelHighDetail/Standard/1280/Resident9_Landing.png",
+    "source_sha256": "27ad8e6efb1554d8cb6a955e7901e552525dbf6bb7059816407f800a2e854607",
+    "sha256": "27ad8e6efb1554d8cb6a955e7901e552525dbf6bb7059816407f800a2e854607",
+    "bytes": 1426952
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/HighDetailRender-20261014T083947Z/Capture/Standard/1280/Resident9_Run.png",
+    "curated": "Preview/GraphicNovelHighDetail/Standard/1280/Resident9_Run.png",
+    "source_sha256": "eab7f5d040261984249947ff4730ff4198657b2a085fa69c79f7c0fc9e5babc0",
+    "sha256": "eab7f5d040261984249947ff4730ff4198657b2a085fa69c79f7c0fc9e5babc0",
+    "bytes": 1428983
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/HighDetailRender-20261014T083947Z/Capture/Standard/1280/Resident9_Walk.png",
+    "curated": "Preview/GraphicNovelHighDetail/Standard/1280/Resident9_Walk.png",
+    "source_sha256": "1e12299e46ee2a8598a82864a3502c026f72a6479cd0c3d9f4e2776090db9fea",
+    "sha256": "1e12299e46ee2a8598a82864a3502c026f72a6479cd0c3d9f4e2776090db9fea",
+    "bytes": 1461021
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/HighDetailRender-20261014T083947Z/Capture/PlayerQuality1280.json",
+    "curated": "Verification/GraphicNovelHighDetailPilot/Comic1280.json",
+    "source_sha256": "d20197d6104015c579ece1a725d10ac4bc027a65a4fee7ab7e4149dd0b7bc714",
+    "sha256": "d20197d6104015c579ece1a725d10ac4bc027a65a4fee7ab7e4149dd0b7bc714",
+    "bytes": 521724
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/HighDetailRender-20261014T083947Z/Capture/1280/Resident9_Airborne.png",
+    "curated": "Preview/GraphicNovelHighDetail/Comic/1280/Resident9_Airborne.png",
+    "source_sha256": "ddd73151e49fababda2c1cdc45b5c178e56258728a380a73c0cd505060e19df3",
+    "sha256": "ddd73151e49fababda2c1cdc45b5c178e56258728a380a73c0cd505060e19df3",
+    "bytes": 1474352
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/HighDetailRender-20261014T083947Z/Capture/1280/Resident9_Face.png",
+    "curated": "Preview/GraphicNovelHighDetail/Comic/1280/Resident9_Face.png",
+    "source_sha256": "e162599c43911d99d4a173388adf7aca89803f83dd06a709cef8932e39a92708",
+    "sha256": "e162599c43911d99d4a173388adf7aca89803f83dd06a709cef8932e39a92708",
+    "bytes": 1845509
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/HighDetailRender-20261014T083947Z/Capture/1280/Resident9_FaceThreeQuarter.png",
+    "curated": "Preview/GraphicNovelHighDetail/Comic/1280/Resident9_FaceThreeQuarter.png",
+    "source_sha256": "60d2e13307ca5166b8b182d17fba0379623a345ba2e00716c084fb0126cb5fce",
+    "sha256": "60d2e13307ca5166b8b182d17fba0379623a345ba2e00716c084fb0126cb5fce",
+    "bytes": 1946244
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/HighDetailRender-20261014T083947Z/Capture/1280/Resident9_Idle.png",
+    "curated": "Preview/GraphicNovelHighDetail/Comic/1280/Resident9_Idle.png",
+    "source_sha256": "f02e512cb37ed24e4c5fa6a76d29e2ed566c23acbaffd62dc192c575fb3dfabc",
+    "sha256": "f02e512cb37ed24e4c5fa6a76d29e2ed566c23acbaffd62dc192c575fb3dfabc",
+    "bytes": 1527545
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/HighDetailRender-20261014T083947Z/Capture/1280/Resident9_Landing.png",
+    "curated": "Preview/GraphicNovelHighDetail/Comic/1280/Resident9_Landing.png",
+    "source_sha256": "d0d0bda837b10c9256c68aff07cfc59088ea4c9ea1513d769a193c7b524ff738",
+    "sha256": "d0d0bda837b10c9256c68aff07cfc59088ea4c9ea1513d769a193c7b524ff738",
+    "bytes": 1471488
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/HighDetailRender-20261014T083947Z/Capture/1280/Resident9_Run.png",
+    "curated": "Preview/GraphicNovelHighDetail/Comic/1280/Resident9_Run.png",
+    "source_sha256": "c9939f5515f224731cdcf07ccf49d439b5e8e6843321b59c02e5cebe52fd6536",
+    "sha256": "c9939f5515f224731cdcf07ccf49d439b5e8e6843321b59c02e5cebe52fd6536",
+    "bytes": 1478765
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/HighDetailRender-20261014T083947Z/Capture/1280/Resident9_Walk.png",
+    "curated": "Preview/GraphicNovelHighDetail/Comic/1280/Resident9_Walk.png",
+    "source_sha256": "ad88270e06cd6f37c8c92b57f0c0d7708c3d993057ff87a1195f8a15dfa192a8",
+    "sha256": "ad88270e06cd6f37c8c92b57f0c0d7708c3d993057ff87a1195f8a15dfa192a8",
+    "bytes": 1506317
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/HighDetailMotion-20261014T084528Z/MotionProfile/Capture/Motion/Standard/PlayerMotion1920.json",
+    "curated": "Verification/GraphicNovelHighDetailPilot/MotionStandard1920.json",
+    "source_sha256": "38a8fca8a73026717afac0f015228e8b637cd6bb2fec1047346c4ca935f931a8",
+    "sha256": "fa93d65411b3cb57b6c19d2507ba09efa50f8eb2aee99e3856fbb0cdcb282ae8",
+    "bytes": 586273,
+    "curation_redactions": [
+      "/performance_diagnostic/csv_completed/metadata/[loginid]"
+    ]
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/HighDetailMotion-20261014T084528Z/Motion1920Standard/raw.mp4",
+    "curated": "Preview/GraphicNovelHighDetail/Motion/Standard1920.mp4",
+    "source_sha256": "16bfd27c616ac4200adf11b1f6c757512fc39809889673b60aeee0f2652ca591",
+    "sha256": "16bfd27c616ac4200adf11b1f6c757512fc39809889673b60aeee0f2652ca591",
+    "bytes": 9213185
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/HighDetailMotion-20261014T084528Z/MotionProfile/Capture/Motion/Comic/PlayerMotion1920.json",
+    "curated": "Verification/GraphicNovelHighDetailPilot/MotionComic1920.json",
+    "source_sha256": "ca3a34d1b9d21d49b3a4ab0e128ca8323b041013d8db56af845c76b1c8bc1a1b",
+    "sha256": "2a1b7f4bddb59ab527650b6529b31dfd1089cb065b026574f5460db3ab98923e",
+    "bytes": 576437,
+    "curation_redactions": [
+      "/performance_diagnostic/csv_completed/metadata/[loginid]"
+    ]
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/HighDetailMotion-20261014T084528Z/Motion1920Comic/raw.mp4",
+    "curated": "Preview/GraphicNovelHighDetail/Motion/Comic1920.mp4",
+    "source_sha256": "e5034bc98a1effa92efc62d3d09017773f07fc98912ce6ba5439ffbb36484e0c",
+    "sha256": "e5034bc98a1effa92efc62d3d09017773f07fc98912ce6ba5439ffbb36484e0c",
+    "bytes": 22719553
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/FundedPilot/cpu-review-hires-20261014T0814Z/CPU-body-back.png",
+    "curated": "Preview/GraphicNovelHighDetail/CPU/CPU-body-back.png",
+    "source_sha256": "2ded121b576c56fff69b2f165117b011476d90325044475e21d7479ff3ee7768",
+    "sha256": "2ded121b576c56fff69b2f165117b011476d90325044475e21d7479ff3ee7768",
+    "bytes": 1179914
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/FundedPilot/cpu-review-hires-20261014T0814Z/CPU-body-front.png",
+    "curated": "Preview/GraphicNovelHighDetail/CPU/CPU-body-front.png",
+    "source_sha256": "1390d82703af7c82e423f031e535e9826a9dfad9c9d0ccebb5f99adf57cb517a",
+    "sha256": "1390d82703af7c82e423f031e535e9826a9dfad9c9d0ccebb5f99adf57cb517a",
+    "bytes": 1201161
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/FundedPilot/cpu-review-hires-20261014T0814Z/CPU-body-three-quarter.png",
+    "curated": "Preview/GraphicNovelHighDetail/CPU/CPU-body-three-quarter.png",
+    "source_sha256": "19d2b994b43023d9ad3408f1ab28a533f3a521f0048831ee53b36a973f1cbce1",
+    "sha256": "19d2b994b43023d9ad3408f1ab28a533f3a521f0048831ee53b36a973f1cbce1",
+    "bytes": 1206263
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/FundedPilot/cpu-review-hires-20261014T0814Z/CPU-face-front.png",
+    "curated": "Preview/GraphicNovelHighDetail/CPU/CPU-face-front.png",
+    "source_sha256": "6820c50faa93e04feab54ed7c93ef66675394278a900bb78677d51c3389385f3",
+    "sha256": "6820c50faa93e04feab54ed7c93ef66675394278a900bb78677d51c3389385f3",
+    "bytes": 1124550
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/FundedPilot/cpu-review-hires-20261014T0814Z/CPU-hand-left-side.png",
+    "curated": "Preview/GraphicNovelHighDetail/CPU/CPU-hand-left-side.png",
+    "source_sha256": "36de15462b032ce99f1fe0703ecd373e7b461d8875a43350bc94f4c4755ee620",
+    "sha256": "36de15462b032ce99f1fe0703ecd373e7b461d8875a43350bc94f4c4755ee620",
+    "bytes": 967299
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/FundedPilot/cpu-review-hires-20261014T0814Z/CPU-hand-left.png",
+    "curated": "Preview/GraphicNovelHighDetail/CPU/CPU-hand-left.png",
+    "source_sha256": "674a8222056f28cedd77d1e5f1e92e0768847154b3fbdeb4dbc0dc6d33a91c2e",
+    "sha256": "674a8222056f28cedd77d1e5f1e92e0768847154b3fbdeb4dbc0dc6d33a91c2e",
+    "bytes": 800088
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/FundedPilot/cpu-review-hires-20261014T0814Z/CPU-hand-right-side.png",
+    "curated": "Preview/GraphicNovelHighDetail/CPU/CPU-hand-right-side.png",
+    "source_sha256": "bbef7e8a999a4cb4ff18fc85cc5f51dd80ea31ec9d2d70f81c414dadddab2e04",
+    "sha256": "bbef7e8a999a4cb4ff18fc85cc5f51dd80ea31ec9d2d70f81c414dadddab2e04",
+    "bytes": 958776
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/FundedPilot/cpu-review-hires-20261014T0814Z/CPU-hand-right.png",
+    "curated": "Preview/GraphicNovelHighDetail/CPU/CPU-hand-right.png",
+    "source_sha256": "29b08e18726086f8d41994a42cd528b02e3f97205983099e7ad125b36419e084",
+    "sha256": "29b08e18726086f8d41994a42cd528b02e3f97205983099e7ad125b36419e084",
+    "bytes": 824168
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/FundedPilot/cpu-review-hires-20261014T0814Z/CPU-idle-mid-three-quarter.png",
+    "curated": "Preview/GraphicNovelHighDetail/CPU/CPU-idle-mid-three-quarter.png",
+    "source_sha256": "3b70ff457bd609dc17feb66fb1c83a5f83a90a01b44127d312daef1bd7f50e89",
+    "sha256": "3b70ff457bd609dc17feb66fb1c83a5f83a90a01b44127d312daef1bd7f50e89",
+    "bytes": 1229510
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/FundedPilot/cpu-review-hires-20261014T0814Z/CPU-run-mid-three-quarter.png",
+    "curated": "Preview/GraphicNovelHighDetail/CPU/CPU-run-mid-three-quarter.png",
+    "source_sha256": "5456b0be50f632dceced5ad7c05229dc1888b86e21def97c5a7a97841e371cfa",
+    "sha256": "5456b0be50f632dceced5ad7c05229dc1888b86e21def97c5a7a97841e371cfa",
+    "bytes": 1220215
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/FundedPilot/cpu-review-hires-20261014T0814Z/CPU-walk-mid-three-quarter.png",
+    "curated": "Preview/GraphicNovelHighDetail/CPU/CPU-walk-mid-three-quarter.png",
+    "source_sha256": "af4b7408ef339edb274482b3cea87568949d661ce92c363b8fbfd544638d65ed",
+    "sha256": "af4b7408ef339edb274482b3cea87568949d661ce92c363b8fbfd544638d65ed",
+    "bytes": 1213755
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/HighDetailImport.json",
+    "curated": "Verification/GraphicNovelHighDetailPilot/NativeImport.json",
+    "source_sha256": "90374db5083e6115513032f74c6f8c7b31a45c5226bf1800bf91fae6ab3c88ca",
+    "sha256": "90374db5083e6115513032f74c6f8c7b31a45c5226bf1800bf91fae6ab3c88ca",
+    "bytes": 932
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/HighDetail-20261014T082624Z/import-preservation.json",
+    "curated": "Verification/GraphicNovelHighDetailPilot/ImportPreservation.json",
+    "source_sha256": "383ad9e5bc58a55e7340b12421e63b19574b82de6998f7d388b8d0d073bc2941",
+    "sha256": "383ad9e5bc58a55e7340b12421e63b19574b82de6998f7d388b8d0d073bc2941",
+    "bytes": 2721
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/HighDetail-20261014T082624Z/source-metadata-update.json",
+    "curated": "Verification/GraphicNovelHighDetailPilot/SourceMetadataUpdate.json",
+    "source_sha256": "9b007cdb255e768bf975970926a02fe30c54e3340d3da15a3e1135bcf48b2059",
+    "sha256": "9b007cdb255e768bf975970926a02fe30c54e3340d3da15a3e1135bcf48b2059",
+    "bytes": 698
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/HighDetail-20261014T082624Z/native-unit-checks.json",
+    "curated": "Verification/GraphicNovelHighDetailPilot/NativeChecks.json",
+    "source_sha256": "ed2756d329aab41bfbdda4c91882760e14bf652554c7ad8a33b6762aaf5efd3b",
+    "sha256": "ed2756d329aab41bfbdda4c91882760e14bf652554c7ad8a33b6762aaf5efd3b",
+    "bytes": 2687
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/HighDetail-20261014T082624Z/headless-checks.json",
+    "curated": "Verification/GraphicNovelHighDetailPilot/HeadlessChecks.json",
+    "source_sha256": "6f4bf6ee56284020b19742bca78c32045ebc60d4da6310c966db3b0723a07734",
+    "sha256": "6f4bf6ee56284020b19742bca78c32045ebc60d4da6310c966db3b0723a07734",
+    "bytes": 5575
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/HighDetail-20261014T082624Z/final-cpu-checks.json",
+    "curated": "Verification/GraphicNovelHighDetailPilot/FinalCPUChecks.json",
+    "source_sha256": "370507c3ccf6116dbb3f5ec553da110584a7cddfe65bb6e10718089b8048adb9",
+    "sha256": "370507c3ccf6116dbb3f5ec553da110584a7cddfe65bb6e10718089b8048adb9",
+    "bytes": 9885
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/FundedPilot/cpu-review-hires-20261014T0814Z/cpu-review.json",
+    "curated": "Verification/GraphicNovelHighDetailPilot/CPUReview.json",
+    "source_sha256": "528717e4e71da3e77680e6a40c8b6a3a10f6f0a9dfe8468416cd080f86ac6222",
+    "sha256": "528717e4e71da3e77680e6a40c8b6a3a10f6f0a9dfe8468416cd080f86ac6222",
+    "bytes": 197959
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/FundedPilot/cpu-review-hires-20261014T0814Z/IndependentVisualReview/cpu-visual-verdict.json",
+    "curated": "Verification/GraphicNovelHighDetailPilot/IndependentCPUReview.json",
+    "source_sha256": "6c896d9ab21d098ac5ffd70190fbcfb5eb84473d6e75e4b80331208a4df388f8",
+    "sha256": "6c896d9ab21d098ac5ffd70190fbcfb5eb84473d6e75e4b80331208a4df388f8",
+    "bytes": 27572
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/FundedPilot/cpu-review-hires-20261014T0814Z/IndependentVisualReview/cpu-visual-verdict.md",
+    "curated": "Verification/GraphicNovelHighDetailPilot/IndependentCPUReview.md",
+    "source_sha256": "718488cbab3f15a050b0c41cf754db2468964c2a90df7efba2ce48abe4d7ffa3",
+    "sha256": "718488cbab3f15a050b0c41cf754db2468964c2a90df7efba2ce48abe4d7ffa3",
+    "bytes": 1626
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/HighDetailAB-20261014T083606Z/window-status.json",
+    "curated": "Verification/GraphicNovelHighDetailPilot/StillWindow.json",
+    "source_sha256": "0e4a9be404fc34a188a5e51fbccd7e16a176227060366889ff06d7feb0c94ca7",
+    "sha256": "0e4a9be404fc34a188a5e51fbccd7e16a176227060366889ff06d7feb0c94ca7",
+    "bytes": 5641
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/HighDetailMotion-20261014T084528Z/window-status.json",
+    "curated": "Verification/GraphicNovelHighDetailPilot/MotionWindow.json",
+    "source_sha256": "2520862a36f123131050f0ec222f25c48acb077999ab42e6a58156c9293b8400",
+    "sha256": "2520862a36f123131050f0ec222f25c48acb077999ab42e6a58156c9293b8400",
+    "bytes": 7030
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/HighDetail-20261014T082624Z/Animation/Report/index.json",
+    "curated": "Verification/GraphicNovelHighDetailPilot/AnimationAutomation.json",
+    "source_sha256": "59b4aa9095cb45349e355b97ab6d93bd1704477d8f11d9e12c5fd4a8fa09821f",
+    "sha256": "59b4aa9095cb45349e355b97ab6d93bd1704477d8f11d9e12c5fd4a8fa09821f",
+    "bytes": 3533
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/HighDetail-20261014T082624Z/PondGeometry/Report/index.json",
+    "curated": "Verification/GraphicNovelHighDetailPilot/PondGeometryAutomation.json",
+    "source_sha256": "cb2275d241e35c0ba2918532e2d3e68458fcaae8506307316850234f648e316e",
+    "sha256": "cb2275d241e35c0ba2918532e2d3e68458fcaae8506307316850234f648e316e",
+    "bytes": 1098
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/HighDetail-20261014T082624Z/RadarClip/Report/index.json",
+    "curated": "Verification/GraphicNovelHighDetailPilot/RadarClipAutomation.json",
+    "source_sha256": "8fdac7779e5543e59741eec2da7035fdde9663a9ddf228683c97368314d0e920",
+    "sha256": "8fdac7779e5543e59741eec2da7035fdde9663a9ddf228683c97368314d0e920",
+    "bytes": 1085
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/HighDetail-20261014T082624Z/Headless/Standard/PlayerQuality1280Headless.json",
+    "curated": "Verification/GraphicNovelHighDetailPilot/HeadlessStandardStates.json",
+    "source_sha256": "84ca1d09ccff792773d00293de9368d0a1162d63136645393a5bd0ca7bc36367",
+    "sha256": "84ca1d09ccff792773d00293de9368d0a1162d63136645393a5bd0ca7bc36367",
+    "bytes": 536789
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/HighDetail-20261014T082624Z/Headless/Motion/Standard/PlayerMotion1280Headless.json",
+    "curated": "Verification/GraphicNovelHighDetailPilot/HeadlessStandardMotion.json",
+    "source_sha256": "e8df96010ab94fa6e20321446dd9e4839f280cbe3562b606750363f0ac2968a6",
+    "sha256": "e8df96010ab94fa6e20321446dd9e4839f280cbe3562b606750363f0ac2968a6",
+    "bytes": 587133
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/HighDetail-20261014T082624Z/Headless/PlayerQuality1280Headless.json",
+    "curated": "Verification/GraphicNovelHighDetailPilot/HeadlessComicStates.json",
+    "source_sha256": "c3de2b9af2e4a3035770bf0454fd203e7de9bef70c9d08c7aa33e47bae9508aa",
+    "sha256": "c3de2b9af2e4a3035770bf0454fd203e7de9bef70c9d08c7aa33e47bae9508aa",
+    "bytes": 536780
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/HighDetail-20261014T082624Z/Headless/Motion/Comic/PlayerMotion1280Headless.json",
+    "curated": "Verification/GraphicNovelHighDetailPilot/HeadlessComicMotion.json",
+    "source_sha256": "e5c11671a466e527d8adc239c85546749bcd2661241ead6f45e632e88a1fcf4c",
+    "sha256": "e5c11671a466e527d8adc239c85546749bcd2661241ead6f45e632e88a1fcf4c",
+    "bytes": 587098
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/HighDetailAB-20261014T083606Z/IndependentVisualReview/native-1080-verdict.json",
+    "curated": "Verification/GraphicNovelHighDetailPilot/Independent1080StillReview.json",
+    "source_sha256": "805878752016f6a9c0d64d2b4ab6136ccba4ff6965a6558e1198c2e936b28f73",
+    "sha256": "805878752016f6a9c0d64d2b4ab6136ccba4ff6965a6558e1198c2e936b28f73",
+    "bytes": 41583
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/HighDetailAB-20261014T083606Z/IndependentVisualReview/native-1080-verdict.md",
+    "curated": "Verification/GraphicNovelHighDetailPilot/Independent1080StillReview.md",
+    "source_sha256": "5cfb6fb74c9cc3ba2a5bc931d2c228f2fd004f3bea6bffcb9d4c5483a4fc372e",
+    "sha256": "5cfb6fb74c9cc3ba2a5bc931d2c228f2fd004f3bea6bffcb9d4c5483a4fc372e",
+    "bytes": 1374
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/HighDetailRender-20261014T083947Z/IndependentVisualReview/native-720-verdict.json",
+    "curated": "Verification/GraphicNovelHighDetailPilot/Independent720StillReview.json",
+    "source_sha256": "58cee5bbbae1e9d26ca5de0f7db042852e2a5210b4214d752cac1f7cb4de1c60",
+    "sha256": "58cee5bbbae1e9d26ca5de0f7db042852e2a5210b4214d752cac1f7cb4de1c60",
+    "bytes": 42340
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/HighDetailRender-20261014T083947Z/IndependentVisualReview/native-720-verdict.md",
+    "curated": "Verification/GraphicNovelHighDetailPilot/Independent720StillReview.md",
+    "source_sha256": "1ff500c9cb643a6cc17beaa8b6e30bc56457df919f2b65c6dc53c819a8596b50",
+    "sha256": "1ff500c9cb643a6cc17beaa8b6e30bc56457df919f2b65c6dc53c819a8596b50",
+    "bytes": 1039
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/HighDetailMotion-20261014T084528Z/IndependentMotionReview/motion-review.json",
+    "curated": "Verification/GraphicNovelHighDetailPilot/IndependentMotionReview.json",
+    "source_sha256": "f0bc2290e60ee1ae4d2e34eab58f8260832280b3fc756518dd266a2d35fc6314",
+    "sha256": "f0bc2290e60ee1ae4d2e34eab58f8260832280b3fc756518dd266a2d35fc6314",
+    "bytes": 26406
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/HighDetailMotion-20261014T084528Z/IndependentMotionReview/motion-review.md",
+    "curated": "Verification/GraphicNovelHighDetailPilot/IndependentMotionReview.md",
+    "source_sha256": "2706afb582ff4f71a1e60729124f73b1e71e247fe85cc05491128fd7b607943b",
+    "sha256": "2706afb582ff4f71a1e60729124f73b1e71e247fe85cc05491128fd7b607943b",
+    "bytes": 1429
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/HighDetailMotion-20261014T084528Z/Performance/HighDetailStandard.json",
+    "curated": "Verification/GraphicNovelHighDetailPilot/Performance/HighDetailStandard.json",
+    "source_sha256": "2ff8d6bc3d5b08444b324f2b3f8d155af6a9562b5195cd89663355d99b4db09e",
+    "sha256": "2ff8d6bc3d5b08444b324f2b3f8d155af6a9562b5195cd89663355d99b4db09e",
+    "bytes": 4980
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/HighDetailMotion-20261014T084528Z/Performance/HighDetailComic.json",
+    "curated": "Verification/GraphicNovelHighDetailPilot/Performance/HighDetailComic.json",
+    "source_sha256": "0b759a8c000db2715570b238b3dda7bd475920d2e809cc7c4643de01912643d8",
+    "sha256": "0b759a8c000db2715570b238b3dda7bd475920d2e809cc7c4643de01912643d8",
+    "bytes": 4973
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/HighDetailMotion-20261014T084528Z/Performance/analysis.json",
+    "curated": "Verification/GraphicNovelHighDetailPilot/Performance/analysis.json",
+    "source_sha256": "1e33190c40570ee4e9099442bc7ec1673aa9742db66ddad4e249ea8270d351d4",
+    "sha256": "1e33190c40570ee4e9099442bc7ec1673aa9742db66ddad4e249ea8270d351d4",
+    "bytes": 59865
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/HighDetailMotion-20261014T084528Z/Performance/analysis.md",
+    "curated": "Verification/GraphicNovelHighDetailPilot/Performance/analysis.md",
+    "source_sha256": "68bec3fbc98deec57d10f462bd245b8e8bacf452b40d430352718de06184e06b",
+    "sha256": "68bec3fbc98deec57d10f462bd245b8e8bacf452b40d430352718de06184e06b",
+    "bytes": 2774
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/HighDetailRender-20261014T083947Z/window-status.json",
+    "curated": "Verification/GraphicNovelHighDetailPilot/InterruptedMotionWindow.json",
+    "source_sha256": "7a3bce6d0695b31081ffc6906e93ba9d9deff7177d52e5bfc1a8ddee86557ed9",
+    "sha256": "7a3bce6d0695b31081ffc6906e93ba9d9deff7177d52e5bfc1a8ddee86557ed9",
+    "bytes": 7956
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/HighDetail-20261014T082624Z/managed-motion-exit.json",
+    "curated": "Verification/GraphicNovelHighDetailPilot/ManagedMotionExit.json",
+    "source_sha256": "441bde36e530bc327187fafbf5042faf8678ac92d81194e800e28d080101bb6d",
+    "sha256": "441bde36e530bc327187fafbf5042faf8678ac92d81194e800e28d080101bb6d",
+    "bytes": 470
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/HighDetail-20261014T082624Z/final-preservation.json",
+    "curated": "Verification/GraphicNovelHighDetailPilot/FinalPreservation.json",
+    "source_sha256": "67619dc169611bb63eab621e90554f54cbc790f3be7697136fb7638312b45492",
+    "sha256": "67619dc169611bb63eab621e90554f54cbc790f3be7697136fb7638312b45492",
+    "bytes": 819
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/HighDetail-20261014T082624Z/final-browser-path.txt",
+    "curated": "Verification/GraphicNovelHighDetailPilot/RestoredBrowserReceipt.json",
+    "source_sha256": "e833c3ba44b8629c1acf12f215967b08ec0747f4e264e970f1c43e8829dbb310",
+    "sha256": "e833c3ba44b8629c1acf12f215967b08ec0747f4e264e970f1c43e8829dbb310",
+    "bytes": 828
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/HighDetail-20261014T082624Z/SourceShadowAudit.json",
+    "curated": "Verification/GraphicNovelHighDetailPilot/SourceShadowAudit.json",
+    "source_sha256": "dc410567d67cffc7c678be1ca5cac524a8a7f71c2460d08d954a1acbb7ca6d11",
+    "sha256": "dc410567d67cffc7c678be1ca5cac524a8a7f71c2460d08d954a1acbb7ca6d11",
+    "bytes": 148420
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/HighDetail-20261014T082624Z/SourceShadowAudit.md",
+    "curated": "Verification/GraphicNovelHighDetailPilot/SourceShadowAudit.md",
+    "source_sha256": "d97ab71aaf65984f4cdae76760685a5ef14463e4b5d4227819a5a2b14b5e1519",
+    "sha256": "c44611fc8a8e4ba46d7e06adfea35b813b5d0273166e80953a4cfcada2a7345a",
+    "bytes": 3143,
+    "curation_link_rewrites": {
+      "../HighDetailMotion-20261014T084528Z/IndependentMotionReview/Standard/phase-crops-04.png": "SourceShadowAudit-phase-crops-04.png"
+    }
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/HighDetail-20261014T082624Z/NativeSidednessAudit.json",
+    "curated": "Verification/GraphicNovelHighDetailPilot/NativeSidednessAudit.json",
+    "source_sha256": "fa10b5d8a4149039418200296fde97d332a15a84c0d9519d44340da436d82ea3",
+    "sha256": "fa10b5d8a4149039418200296fde97d332a15a84c0d9519d44340da436d82ea3",
+    "bytes": 769
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/HighDetail-20261014T082624Z/final-openspec-checks.json",
+    "curated": "Verification/GraphicNovelHighDetailPilot/OpenSpecChecks.json",
+    "source_sha256": "b362dae3b74fb9c45fcd2009290b9c9f38d222bef9e2bd942a48583777e97a44",
+    "sha256": "b362dae3b74fb9c45fcd2009290b9c9f38d222bef9e2bd942a48583777e97a44",
+    "bytes": 728
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/HighDetail-20261014T082624Z/post-commandlet-settings-restoration.json",
+    "curated": "Verification/GraphicNovelHighDetailPilot/Sidedness/SettingsRestoration.json",
+    "source_sha256": "59987adb4a06a9311b12fc30b8f2aee969533e8aba884dc282e4e7dc6d01b206",
+    "sha256": "59987adb4a06a9311b12fc30b8f2aee969533e8aba884dc282e4e7dc6d01b206",
+    "bytes": 1447
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/HighDetailSidedness-20261014T090331Z/authoring.json",
+    "curated": "Verification/GraphicNovelHighDetailPilot/Sidedness/Authoring.json",
+    "source_sha256": "17933d575cf62bc1eea5fb8c128a48c999a424e42dd73fc5b25d2aae54fe0aeb",
+    "sha256": "17933d575cf62bc1eea5fb8c128a48c999a424e42dd73fc5b25d2aae54fe0aeb",
+    "bytes": 250
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/HighDetailSidedness-20261014T090331Z/authoring-preservation.json",
+    "curated": "Verification/GraphicNovelHighDetailPilot/Sidedness/AuthoringPreservation.json",
+    "source_sha256": "b7df4fdad27e699a6c9a8080069012a44a1fbf105ce61ee8123eb87b645b2a87",
+    "sha256": "b7df4fdad27e699a6c9a8080069012a44a1fbf105ce61ee8123eb87b645b2a87",
+    "bytes": 432
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/HighDetailSidedness-20261014T090331Z/restoration.json",
+    "curated": "Verification/GraphicNovelHighDetailPilot/Sidedness/Restoration.json",
+    "source_sha256": "5644a965fd405559360cef656fb11a360518990aa963f4c9207e3fa3c2b68824",
+    "sha256": "5644a965fd405559360cef656fb11a360518990aa963f4c9207e3fa3c2b68824",
+    "bytes": 789
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/HighDetailSideAB-20261014T090708Z/window-status.json",
+    "curated": "Verification/GraphicNovelHighDetailPilot/Sidedness/Window.json",
+    "source_sha256": "8a50fafdb83ee5248bd6a78f6c3f6f7e989742462e9217bf873425aece71c893",
+    "sha256": "8a50fafdb83ee5248bd6a78f6c3f6f7e989742462e9217bf873425aece71c893",
+    "bytes": 5665
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/HighDetailSideAB-20261014T090708Z/IndependentVisualReview/material-ab-review.json",
+    "curated": "Verification/GraphicNovelHighDetailPilot/Sidedness/Review.json",
+    "source_sha256": "c511e749012accd60504ae9ee520a7f46d324065959d08992baf2dab77bec181",
+    "sha256": "c511e749012accd60504ae9ee520a7f46d324065959d08992baf2dab77bec181",
+    "bytes": 39799
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/HighDetailSideAB-20261014T090708Z/IndependentVisualReview/material-ab-review.md",
+    "curated": "Verification/GraphicNovelHighDetailPilot/Sidedness/Review.md",
+    "source_sha256": "11a3db0e17f0214d963a2d0654e1dac32f4fe663ea56bfe7bc9fa71d4d520cc2",
+    "sha256": "11a3db0e17f0214d963a2d0654e1dac32f4fe663ea56bfe7bc9fa71d4d520cc2",
+    "bytes": 979
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/HighDetailSideAB-20261014T090708Z/Capture/Standard/PlayerQuality1920.json",
+    "curated": "Verification/GraphicNovelHighDetailPilot/Sidedness/Standard1920.json",
+    "source_sha256": "8cb977f94536bd9ee5c9b26a9886ae42f90bebfcd5295388cb95177c5ce8ff9c",
+    "sha256": "8cb977f94536bd9ee5c9b26a9886ae42f90bebfcd5295388cb95177c5ce8ff9c",
+    "bytes": 525213
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/HighDetailSideAB-20261014T090708Z/Capture/Standard/1920/Resident9_Airborne.png",
+    "curated": "Preview/GraphicNovelHighDetail/SidednessTrial/Standard/1920/Resident9_Airborne.png",
+    "source_sha256": "8e08e44fdef72c3256aa2b08117de53204fcd3e95e422d9943ada7d1876d1b78",
+    "sha256": "8e08e44fdef72c3256aa2b08117de53204fcd3e95e422d9943ada7d1876d1b78",
+    "bytes": 3095304
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/HighDetailSideAB-20261014T090708Z/Capture/Standard/1920/Resident9_Face.png",
+    "curated": "Preview/GraphicNovelHighDetail/SidednessTrial/Standard/1920/Resident9_Face.png",
+    "source_sha256": "fb0766d5ab3c2660eca6dd0c2972039efd63e1d290d4f9b7d82f0e21799f5b23",
+    "sha256": "fb0766d5ab3c2660eca6dd0c2972039efd63e1d290d4f9b7d82f0e21799f5b23",
+    "bytes": 3780549
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/HighDetailSideAB-20261014T090708Z/Capture/Standard/1920/Resident9_FaceThreeQuarter.png",
+    "curated": "Preview/GraphicNovelHighDetail/SidednessTrial/Standard/1920/Resident9_FaceThreeQuarter.png",
+    "source_sha256": "005641c64fcd05940e14057a74fb54dc304148814512fe1944220319cee92e31",
+    "sha256": "005641c64fcd05940e14057a74fb54dc304148814512fe1944220319cee92e31",
+    "bytes": 3808740
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/HighDetailSideAB-20261014T090708Z/Capture/Standard/1920/Resident9_Idle.png",
+    "curated": "Preview/GraphicNovelHighDetail/SidednessTrial/Standard/1920/Resident9_Idle.png",
+    "source_sha256": "815b2083cb209a168becfb5637d4abfd387b9bf9d78a6dd49e5f305717b084e3",
+    "sha256": "815b2083cb209a168becfb5637d4abfd387b9bf9d78a6dd49e5f305717b084e3",
+    "bytes": 3210302
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/HighDetailSideAB-20261014T090708Z/Capture/Standard/1920/Resident9_Landing.png",
+    "curated": "Preview/GraphicNovelHighDetail/SidednessTrial/Standard/1920/Resident9_Landing.png",
+    "source_sha256": "a6de900a1d4d96d48a4a2caa78cd21d5a04394566ed7728a1310773c86299224",
+    "sha256": "a6de900a1d4d96d48a4a2caa78cd21d5a04394566ed7728a1310773c86299224",
+    "bytes": 3095650
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/HighDetailSideAB-20261014T090708Z/Capture/Standard/1920/Resident9_Run.png",
+    "curated": "Preview/GraphicNovelHighDetail/SidednessTrial/Standard/1920/Resident9_Run.png",
+    "source_sha256": "6e577d7e5f68a5f25efd867ec4b93907a2802bd52b47789b731878b7911bc82c",
+    "sha256": "6e577d7e5f68a5f25efd867ec4b93907a2802bd52b47789b731878b7911bc82c",
+    "bytes": 3113312
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/HighDetailSideAB-20261014T090708Z/Capture/Standard/1920/Resident9_Walk.png",
+    "curated": "Preview/GraphicNovelHighDetail/SidednessTrial/Standard/1920/Resident9_Walk.png",
+    "source_sha256": "c418f140021c93c3b09507350771763486b241e42bc5d2beed051a2f6515b999",
+    "sha256": "c418f140021c93c3b09507350771763486b241e42bc5d2beed051a2f6515b999",
+    "bytes": 3182564
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/HighDetailSideAB-20261014T090708Z/Capture/PlayerQuality1920.json",
+    "curated": "Verification/GraphicNovelHighDetailPilot/Sidedness/Comic1920.json",
+    "source_sha256": "25ae2caf34ded4391a3763618196e9a6522bf2e5256d6ec50d7d5d5e266d2ada",
+    "sha256": "25ae2caf34ded4391a3763618196e9a6522bf2e5256d6ec50d7d5d5e266d2ada",
+    "bytes": 521862
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/HighDetailSideAB-20261014T090708Z/Capture/1920/Resident9_Airborne.png",
+    "curated": "Preview/GraphicNovelHighDetail/SidednessTrial/Comic/1920/Resident9_Airborne.png",
+    "source_sha256": "4857b7b4e543cb55a1b69f181a61beff3f90b5907883824a33bce23ef3a231a2",
+    "sha256": "4857b7b4e543cb55a1b69f181a61beff3f90b5907883824a33bce23ef3a231a2",
+    "bytes": 3173069
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/HighDetailSideAB-20261014T090708Z/Capture/1920/Resident9_Face.png",
+    "curated": "Preview/GraphicNovelHighDetail/SidednessTrial/Comic/1920/Resident9_Face.png",
+    "source_sha256": "a2a2426a22ee3d5fa71b47a9294157a51e1352af5f1b59f7602925c343863553",
+    "sha256": "a2a2426a22ee3d5fa71b47a9294157a51e1352af5f1b59f7602925c343863553",
+    "bytes": 3973729
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/HighDetailSideAB-20261014T090708Z/Capture/1920/Resident9_FaceThreeQuarter.png",
+    "curated": "Preview/GraphicNovelHighDetail/SidednessTrial/Comic/1920/Resident9_FaceThreeQuarter.png",
+    "source_sha256": "b2c03cb91b62eb0ac838b3b25cf29aad711409875c058632f7e8e893a291e49f",
+    "sha256": "b2c03cb91b62eb0ac838b3b25cf29aad711409875c058632f7e8e893a291e49f",
+    "bytes": 4191404
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/HighDetailSideAB-20261014T090708Z/Capture/1920/Resident9_Idle.png",
+    "curated": "Preview/GraphicNovelHighDetail/SidednessTrial/Comic/1920/Resident9_Idle.png",
+    "source_sha256": "2775b3cc1f139fa9ff694de5d03a677bc7fa728a9d94d6f9884491ad01e8b179",
+    "sha256": "2775b3cc1f139fa9ff694de5d03a677bc7fa728a9d94d6f9884491ad01e8b179",
+    "bytes": 3289639
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/HighDetailSideAB-20261014T090708Z/Capture/1920/Resident9_Landing.png",
+    "curated": "Preview/GraphicNovelHighDetail/SidednessTrial/Comic/1920/Resident9_Landing.png",
+    "source_sha256": "76baf839f869bc60aedd0ae1e06322e16901526e87fb7e6707c462cd5e5a2899",
+    "sha256": "76baf839f869bc60aedd0ae1e06322e16901526e87fb7e6707c462cd5e5a2899",
+    "bytes": 3159442
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/HighDetailSideAB-20261014T090708Z/Capture/1920/Resident9_Run.png",
+    "curated": "Preview/GraphicNovelHighDetail/SidednessTrial/Comic/1920/Resident9_Run.png",
+    "source_sha256": "af4160e7029e013a3dcfb4276f78c7454b843cb5264e0aedc8044b4d7cf86798",
+    "sha256": "af4160e7029e013a3dcfb4276f78c7454b843cb5264e0aedc8044b4d7cf86798",
+    "bytes": 3198312
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/HighDetailSideAB-20261014T090708Z/Capture/1920/Resident9_Walk.png",
+    "curated": "Preview/GraphicNovelHighDetail/SidednessTrial/Comic/1920/Resident9_Walk.png",
+    "source_sha256": "3acea6da3e6b0048e6ca8a0296e05e3418d9f282f7325ae5da773c1da9a530fc",
+    "sha256": "3acea6da3e6b0048e6ca8a0296e05e3418d9f282f7325ae5da773c1da9a530fc",
+    "bytes": 3270663
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/HighDetail-20261014T082624Z/SourceShadowAudit.cpu.py",
+    "curated": "Verification/GraphicNovelHighDetailPilot/SourceShadowAudit.cpu.py",
+    "source_sha256": "d49c8f71ec68f8fb5c23a748d23bfe092067c2f162c8efaaff1ad443cb1faf60",
+    "sha256": "d49c8f71ec68f8fb5c23a748d23bfe092067c2f162c8efaaff1ad443cb1faf60",
+    "bytes": 11401
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/HighDetail-20261014T082624Z/SourceShadowAudit.cpu.log",
+    "curated": "Verification/GraphicNovelHighDetailPilot/SourceShadowAudit.cpu.log",
+    "source_sha256": "a6e1740fec9bf6c25fb4b4f2982daf1f3d8825ecd775130f86426351321d7421",
+    "sha256": "a6e1740fec9bf6c25fb4b4f2982daf1f3d8825ecd775130f86426351321d7421",
+    "bytes": 506
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/HighDetailMotion-20261014T084528Z/IndependentMotionReview/Standard/phase-crops-04.png",
+    "curated": "Verification/GraphicNovelHighDetailPilot/SourceShadowAudit-phase-crops-04.png",
+    "source_sha256": "293ea0a1265e557607c89216440d209887d297f2b58d3fceec2b941ea9e72df5",
+    "sha256": "293ea0a1265e557607c89216440d209887d297f2b58d3fceec2b941ea9e72df5",
+    "bytes": 1064039
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/HighDetail-20261014T082624Z/FinalCPU-20261014T084038Z/graphic-novel-import.log",
+    "curated": "Verification/GraphicNovelHighDetailPilot/CPUChecks/graphic-novel-import.log",
+    "source_sha256": "a6505191684e7b3d7cf7129035898c8201ba90dfd9a22f3da466ee673335473a",
+    "sha256": "a6505191684e7b3d7cf7129035898c8201ba90dfd9a22f3da466ee673335473a",
+    "bytes": 128
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/HighDetail-20261014T082624Z/FinalCPU-20261014T084038Z/graphic-novel-capture.log",
+    "curated": "Verification/GraphicNovelHighDetailPilot/CPUChecks/graphic-novel-capture.log",
+    "source_sha256": "2e194c54a445d201934f33cbf3bbe9d88d7ff64c6c3ce79974085d2c93b966b5",
+    "sha256": "2e194c54a445d201934f33cbf3bbe9d88d7ff64c6c3ce79974085d2c93b966b5",
+    "bytes": 168
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/HighDetail-20261014T082624Z/FinalCPU-20261014T084038Z/refine-generated-pilot.log",
+    "curated": "Verification/GraphicNovelHighDetailPilot/CPUChecks/refine-generated-pilot.log",
+    "source_sha256": "9bf8e79af6c53e0054394cdc9e3a3bf777f7bcaf6f04102f5ea954831db14740",
+    "sha256": "9bf8e79af6c53e0054394cdc9e3a3bf777f7bcaf6f04102f5ea954831db14740",
+    "bytes": 108
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/HighDetail-20261014T082624Z/FinalCPU-20261014T084038Z/player-quality-cadence.log",
+    "curated": "Verification/GraphicNovelHighDetailPilot/CPUChecks/player-quality-cadence.log",
+    "source_sha256": "9126a78fcd4ab17a933f276c0dc0261ba3e447bb8cbd05ffdeabf95e4b890557",
+    "sha256": "9126a78fcd4ab17a933f276c0dc0261ba3e447bb8cbd05ffdeabf95e4b890557",
+    "bytes": 169
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/HighDetail-20261014T082624Z/FinalCPU-20261014T084038Z/browser-contracts.log",
+    "curated": "Verification/GraphicNovelHighDetailPilot/CPUChecks/browser-contracts.log",
+    "source_sha256": "1f42dc7e3cbcf9bf1f9607a0beb07a6053f8deb2696a0048e9036e672df0c3a6",
+    "sha256": "1f42dc7e3cbcf9bf1f9607a0beb07a6053f8deb2696a0048e9036e672df0c3a6",
+    "bytes": 4133
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/HighDetail-20261014T082624Z/FinalCPU-20261014T084038Z/python-compile.log",
+    "curated": "Verification/GraphicNovelHighDetailPilot/CPUChecks/python-compile.log",
+    "source_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "bytes": 0
+  },
+  {
+    "source": "Saved/Tests/GraphicNovel/HighDetail-20261014T082624Z/FinalCPU-20261014T084038Z/git-diff-check.log",
+    "curated": "Verification/GraphicNovelHighDetailPilot/CPUChecks/git-diff-check.log",
+    "source_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "bytes": 0
+  },
+  {
+    "source": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Browser/.qa/live-2026-10-14T09-16-23-208Z/summary.json",
+    "curated": "Verification/GraphicNovelHighDetailPilot/RestoredBrowser.json",
+    "source_sha256": "0741d7d5ce494ae294bd7f029ec796e9005043d409e724051dec8613b0a41fd3",
+    "sha256": "0741d7d5ce494ae294bd7f029ec796e9005043d409e724051dec8613b0a41fd3",
+    "bytes": 3764
+  }
+]

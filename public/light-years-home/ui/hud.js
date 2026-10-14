@@ -188,7 +188,8 @@ function onEvent(st, e, view, tune) {
       break;
     case 'missionDone': {
       const m = MEDAL_NAME[e.medal];
-      toast(st, fitToast(e.title && m && `${upper(e.title)} · ${m}`, m ? `JOB DONE · ${m}` : 'JOB DONE'), 'medal', 3);
+      toast(st, fitToast(e.title && m && `${upper(e.title)} · ${m}`, e.title && `${upper(e.title)} · DONE`,
+        m ? `JOB DONE · ${m}` : 'JOB DONE'), 'medal', 3);
       break;
     }
     case 'jumpMedal': {
@@ -245,9 +246,19 @@ function onEvent(st, e, view, tune) {
   }
 }
 
+// The core's chip (core/zone.js actionOf gives ids only) with its label and sub from CHIP.
+export function labelChip(chip, zone = null) {
+  if (!chip || chip.label) return chip || null;
+  const out = { ...chip, label: chip.id === 'jump' ? CHIP.jump + shortName(chip.to || zone?.exit?.to)
+    : CHIP[chip.id] || upper(chip.id) };
+  if (chip.id === 'restart') out.sub = CHIP.restartSub;
+  else if (chip.id === 'letgo') out.sub = CHIP.letgoSub;
+  return out;
+}
+
 // What the action chip offers, in final.md 13.4's priority. view.chip (from the core's action slot) wins.
 export function chipFor(st, view, tune = TUNE) {
-  if (view.chip !== undefined) return view.chip;
+  if (view.chip !== undefined) return labelChip(view.chip, view.zone);
   const g = view.game, zone = view.zone;
   if (!g) return null;
   if (g.mode === 'runup') return { id: 'cancel', label: CHIP.cancel };
@@ -287,13 +298,18 @@ function topFor(view, tune) {
     const clock = fmtTime(race.result?.time ?? race.t ?? g.eventT);
     return { text: clock, count: '', sub: parts.join(' · '), kind: 'timer' };
   }
+  // A stunt shows its value; during a mission it moves to the sub line, so the objective stays in view.
+  let stunt = null;
   if (g.stunt) {
     const ev = eventData(zone, g.stunt.id);
     const v = fin(g.stunt.value, NaN);
-    return { text: upper(ev?.title || 'STUNT'), count: Number.isFinite(v) ? v.toFixed(1) : '', sub: '', kind: 'stunt' };
+    stunt = { text: upper(ev?.title || 'STUNT'), count: Number.isFinite(v) ? v.toFixed(1) : '' };
   }
   const o = view.objective;
-  if (o && o.text) return { text: upper(o.text), count: o.count ? String(o.count) : '', sub: '', kind: 'mission' };
+  if (o && o.text) {
+    return { text: upper(o.text), count: o.count ? String(o.count) : '',
+      sub: stunt ? `${stunt.text} ${stunt.count}`.trim() : '', kind: 'mission' };
+  }
   const md = view.missionData || (g.mission?.id ? missionById(g.mission.id) : null);
   if (g.mission && md) {
     const beat = md.beats?.[fin(g.mission.beat)];
@@ -301,9 +317,11 @@ function topFor(view, tune) {
       // A counter like 'n/3' fills from the mission's count when the core keeps one.
       const n = fin(g.mission.count ?? g.mission.n, NaN);
       const count = beat.counter && Number.isFinite(n) ? beat.counter.replace('n', String(n)) : '';
-      return { text: upper(beat.objective), count, sub: '', kind: 'mission' };
+      return { text: upper(beat.objective), count, sub: stunt ? `${stunt.text} ${stunt.count}`.trim() : '',
+        kind: 'mission' };
     }
   }
+  if (stunt) return { ...stunt, sub: '', kind: 'stunt' };
   return { text: upper(zone?.name || ''), count: '', sub: '', kind: 'zone' };
 }
 
@@ -378,6 +396,13 @@ export function hudStep(st, view, tune = TUNE) {
   const shared = (view.layout?.shares || []).some((pair) => pair.includes('hint') && pair.includes('info'));
   if (st.info && st.t >= st.info.until) st.info = null;
   const infoUp = !!st.info || (g.zone?.scaleCardUntil > g.t);
+  // One slot for both (landscape): an info box that comes up sends the showing hint back to wait its turn.
+  if (shared && infoUp && st.hint) {
+    st.hintWait.unshift({ key: st.hint.key, at: st.t, until: st.t + 8 });
+    st.hintShown[st.hint.key] = false;
+    st.hintTimes.pop();
+    st.hint = null;
+  }
   const firstMin = st.playT !== null && st.t - st.playT < 60;
   const recent = st.hintTimes.filter((t) => st.playT !== null && t - st.playT < 60).length;
   const held = mode === 'paused' || mode === 'log' || mode === 'title';
@@ -409,7 +434,8 @@ export function hudStep(st, view, tune = TUNE) {
   const ship = g.ship || {};
   let speed;
   if (SKY_MODES.has(mode) || (mode === 'dropout' && fin(g.jump?.eta) > 1)) {
-    const b = betaText(g.jump?.eta ?? 2);
+    // The punch is LIGHT SPEED: the gauge shows the corridor's entry speed until η takes over.
+    const b = betaText(Math.max(fin(g.jump?.eta, 2), mode === 'punch' ? fin(tune.JUMP?.ETA_ENTRY, 2) : 0));
     speed = { bars: 5, glow: true, beta: b.text, nines: b.nines };
   } else {
     if (st.t - st.speedT >= 0.1) { st.speedBars = speedBars(ship.speed, ship.boosting, tune); st.speedT = st.t; }

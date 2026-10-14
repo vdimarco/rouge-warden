@@ -1,0 +1,18 @@
+{
+  "passed": true,
+  "source_root": "Data/GraphicNovel/Pilot/CurlyMetalhead",
+  "characters": [
+    {
+      "name": "generated-v1",
+      "authoring": "original local skeletal keyframes; no paid generation",
+      "body_sha256": "a9f1a81f16986a17a50571b7ed536b1e4137778a8024979576cd427365c3a62e",
+      "jump_sha256": "b59edaca2af646ff3fd749e3d4455429b8e1378d858ce53971404f233f41149e",
+      "seconds": 1.2,
+      "fps": 30,
+      "bones": 24,
+      "head_and_neck_unchanged": true,
+      "actor_root_motion": false,
+      "fbx_round_trip_passed": true
+    }
+  ]
+}

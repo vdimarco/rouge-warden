@@ -1,0 +1,562 @@
+{
+  "recorded_utc": "2026-10-14T09:21:46.513324+00:00",
+  "scope": "Second funded pilot comparison and rejected two-sided hypothesis, after collar refinement and merged-main QA",
+  "comparison_completed": true,
+  "native_qa_passed": true,
+  "graphics_accepted": false,
+  "production_promoted": false,
+  "source_head": "1b6455c31648f340a6d7748b3c473b26f7b30b9a",
+  "source_binary_sha256": "ccf4e229192cbf7360d93b155979a07c244caa5cb0fb2837fa94aeb79438b554",
+  "source_code_sha256": {
+    "Scripts/import_meshy_crew.py": "a08101d3a3e5e7355df9e90cfccf6f19c71de3ce2f1b0a0b4127aecf9e88ebcc",
+    "Scripts/capture_player_quality.py": "e6ad0ca59dab8919d374520ffb3579a60f3bb587fbf5b0e80d5a5c872cc1ac98",
+    "Scripts/refine_generated_pilot.py": "e0ecb0cf9ecd8f928e35dcd025cc4164c4fef2d3c561b24561866d9b2bd110d0",
+    "Scripts/test_graphic_novel_import.py": "ff6a0d59b80e897bb23b0b1828ce9e39f78d596f972bc1aaa648af234eef8c09",
+    "Scripts/test_graphic_novel_capture.py": "4680b9964e07819f093ca60f0d15c35461113684a9ff49d47789cb960d07ca49",
+    "Scripts/test_refine_generated_pilot.py": "449a188ead93695384770cc8ffa19c2a231310ef4db452d7221363012f2c3682",
+    "Scripts/test_player_quality_cadence.py": "89683f262f427f8becd3967210cc20c020c1076d0866e5a09ef257ce2e6d4a22",
+    "Source/Quebec/QuebecGameplay.cpp": "75905d8f87a26ef3970c2636ba123a832d689abef34fc124aaf5fbb105775221",
+    "Source/Quebec/QuebecCrewAnimationTests.cpp": "47579b61e6b42ee592593eb4629b59e9ef0e9688bdc33e1ddb8847ec1396f26b",
+    "Browser/package.json": "5041e0c854499e750e8f9107a8dd5e906a2867c6b311783ef1822dff7126bb13",
+    "Browser/config.test.mjs": "6536e109133a2914b0c900a39b0e449c7f0f702ce004badd2ad474cdc05c8a04",
+    "Browser/touch-controls.test.mjs": "71bac12462a9397ff081bb0a418a1362599faa34bd66ffd285a3a519ff08bd93",
+    "Browser/stream-sample.test.mjs": "d0f91cb0f396c06e1c29d9f6f8f6e17d9d4efcdec2fbe8dd8f0ceccddf8a875f",
+    "Browser/hero.test.mjs": "cb119b9d882caedeba6fb7e02ba37d014c6b4161b861663ca1ca96b9fadc326e"
+  },
+  "opt_in_flags": [
+    "-NordGraphicNovelCandidate",
+    "-NordGraphicNovelGenerated",
+    "-NordGraphicNovelHighDetail"
+  ],
+  "native_folder": "/Game/ParkComic/CrewGraphicNovelHighDetail/Resident9",
+  "model_source": "Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail",
+  "model_manifest_sha256": "d942b4ec45c3b28ef54c0afeb991278528fd74252ec7208cd518519277fd18bc",
+  "model_files_verified": 14,
+  "native_assets_sha256": {
+    "Content/ParkComic/CrewGraphicNovelHighDetail/Resident9/SK_Body.uasset": "6e8e6fec2881021b78d6081b67bf2e523dfdf7d3f49b1d3c7e3c9c51426d6061",
+    "Content/ParkComic/CrewGraphicNovelHighDetail/Resident9/SK_Body_Skeleton.uasset": "83caf265802bf8c509a5d9706817bbdfbbbc6f2bfc5b9def611f02f1774bbab9",
+    "Content/ParkComic/CrewGraphicNovelHighDetail/Resident9/M_Crew.uasset": "db14c297074e4ce14cdc3f90aed0070987550ca24c779862656dd068bea6188e",
+    "Content/ParkComic/CrewGraphicNovelHighDetail/Resident9/BS_Locomotion.uasset": "e176712b41db89be69651c5fa61797f304d45a9169ab6b716af6bb73514c97e5",
+    "Content/ParkComic/CrewGraphicNovelHighDetail/Resident9/A_Jump.uasset": "1e62a9debd7aec41beac0466ac6a5114741ce79de6bce102f6cdbe5d3cd52f26",
+    "Content/ParkComic/CrewGraphicNovelHighDetail/Resident9/T_base_color.uasset": "9389f532f66f21baaf1c7927287342c05cc26249010634a852dd3e2fdf8f39a9",
+    "Content/ParkComic/CrewGraphicNovelHighDetail/Resident9/A_Run.uasset": "4e7aae03bcbebc749d24f2dda07289c6c5741f24010e34416e610f334b8b98c1",
+    "Content/ParkComic/CrewGraphicNovelHighDetail/Resident9/T_normal.uasset": "92b58ea30aa6ed3f55c7cf9b00e5ee0d9f73e8522dfcbec17d902c0ecfe1814a",
+    "Content/ParkComic/CrewGraphicNovelHighDetail/Resident9/A_Idle.uasset": "a10308d82d815f98ebf717b7d6611dde3e4acf0281a73eb71374b76fb7119660",
+    "Content/ParkComic/CrewGraphicNovelHighDetail/Resident9/T_roughness.uasset": "8fbde1dc5d06915574c5b364f15692165fb38e88b94845247c49d64d3e1cab7f",
+    "Content/ParkComic/CrewGraphicNovelHighDetail/Resident9/A_Walk.uasset": "9406ad6c97b10745e531417de7af9d589fd9ec9260a35aaa33b72eb6ec0e59cf",
+    "Content/ParkComic/CrewGraphicNovelHighDetail/Resident9/T_metallic.uasset": "acf522c451ec9fe4989f5eb188593b8566b9c3c94cd3ea8be370494950bb51a2"
+  },
+  "source_review": {
+    "passed": true,
+    "scope": "Source/PBR/own-rig/clip hashes and CPU studio review only; no native import or final art/motion acceptance.",
+    "generation_request_id": "01a13971-5e0a-73e0-8e68-730896d2cee3",
+    "source_unchanged": true,
+    "body_sha256": "b7e7ca0d9c486412108cba85e1cd4a5512fecd4ad36b8cfdb4677259ff6f9244",
+    "body_glb_sha256": "25041be9666422c30ba39449cb283a83928bb3de596fe063389707c070335613",
+    "manifest_sha256": "d942b4ec45c3b28ef54c0afeb991278528fd74252ec7208cd518519277fd18bc",
+    "triangles": 103544,
+    "vertices": 130901,
+    "weighted_body_bones": 24,
+    "height_m": 1.82000019319905,
+    "morph_targets": 0,
+    "finger_controls": false,
+    "face_controls": false,
+    "own_clip_bind_checks_passed": true,
+    "clips": {
+      "idle": {
+        "own_hierarchy_matches": true,
+        "animation_curves": 138,
+        "max_weighted_bind_error": 0.0
+      },
+      "walk": {
+        "own_hierarchy_matches": true,
+        "animation_curves": 138,
+        "max_weighted_bind_error": 0.0
+      },
+      "run": {
+        "own_hierarchy_matches": true,
+        "animation_curves": 138,
+        "max_weighted_bind_error": 0.0
+      },
+      "jump": {
+        "own_hierarchy_matches": true,
+        "animation_curves": 225,
+        "max_weighted_bind_error": null
+      }
+    },
+    "run": {
+      "run_seconds": 0.667,
+      "run_tracks": 66
+    },
+    "local_jump_round_trip_passed": true,
+    "cpu_review_report": "Saved/Tests/GraphicNovel/FundedPilot/cpu-review-hires-20261014T0814Z/cpu-review.json",
+    "cpu_review_report_sha256": "528717e4e71da3e77680e6a40c8b6a3a10f6f0a9dfe8468416cd080f86ac6222",
+    "cpu_review_process_exit_code": 0,
+    "graphics_accepted": false,
+    "independent_visual_review": "approved_for_bounded_native_comparison",
+    "input_seed_supported": false,
+    "uv_channels": 1,
+    "independent_visual_review_report": "Saved/Tests/GraphicNovel/FundedPilot/cpu-review-hires-20261014T0814Z/IndependentVisualReview/cpu-visual-verdict.json",
+    "independent_visual_review_sha256": "6c896d9ab21d098ac5ffd70190fbcfb5eb84473d6e75e4b80331208a4df388f8",
+    "native_import_evidence_in_this_review": false
+  },
+  "materials": {
+    "retained_refined": {
+      "base_emission_uv": 1,
+      "normal_roughness_metallic_uv": 0,
+      "normal_strength": 1.0,
+      "two_sided": false
+    },
+    "high_detail": {
+      "all_pbr_uv": 0,
+      "normal_strength": 1.0,
+      "two_sided": false
+    }
+  },
+  "native_checks": {
+    "animation": 4,
+    "pond_geometry": 1,
+    "radar_clip": 1,
+    "headless_jobs": 4,
+    "browser_contracts": 36,
+    "main_native_still_views": 28,
+    "additional_two_sided_still_views": 14,
+    "motion": {
+      "Standard": {
+        "selected_observations": 172,
+        "checks": {
+          "phase_counts": {
+            "idle": 9,
+            "walk": 36,
+            "sprint": 35,
+            "turn": 21,
+            "stop": 18,
+            "jump": 32,
+            "landing": 6,
+            "recover": 15
+          },
+          "steady_motion": {
+            "walk": {
+              "steady_samples": 28,
+              "foot_pose_change_pairs": 27
+            },
+            "sprint": {
+              "steady_samples": 28,
+              "foot_pose_change_pairs": 27
+            }
+          },
+          "directional_turn_degrees": 90.0,
+          "jump_peak_cm": 183.67,
+          "jump_horizontal_drift_cm": 0.0,
+          "airborne_knee_degrees": 62.55,
+          "scope": "selected native state and pose observations at 1x; no rendered fluidity or FPS acceptance"
+        },
+        "csv_finalized": true,
+        "resolution": [
+          1920,
+          1080
+        ]
+      },
+      "Comic": {
+        "selected_observations": 169,
+        "checks": {
+          "phase_counts": {
+            "idle": 9,
+            "walk": 35,
+            "sprint": 35,
+            "turn": 19,
+            "stop": 18,
+            "jump": 32,
+            "landing": 6,
+            "recover": 15
+          },
+          "steady_motion": {
+            "walk": {
+              "steady_samples": 28,
+              "foot_pose_change_pairs": 27
+            },
+            "sprint": {
+              "steady_samples": 28,
+              "foot_pose_change_pairs": 27
+            }
+          },
+          "directional_turn_degrees": 90.0,
+          "jump_peak_cm": 183.576,
+          "jump_horizontal_drift_cm": 0.0,
+          "airborne_knee_degrees": 62.485,
+          "scope": "selected native state and pose observations at 1x; no rendered fluidity or FPS acceptance"
+        },
+        "csv_finalized": true,
+        "resolution": [
+          1920,
+          1080
+        ]
+      }
+    }
+  },
+  "independent_review": {
+    "main_stills": 28,
+    "motion_selected_frames": 82,
+    "motion_contact_sheets": 12,
+    "motion_full_resolution_frames": 3,
+    "two_sided_still_pairs": 14,
+    "continuous_playback_viewed": false,
+    "outcome": "Retain isolated high-detail candidate only; reject two-sided material trial and restore exact original package"
+  },
+  "performance": {
+    "file": "Verification/GraphicNovelHighDetailPilot/Performance/analysis.json",
+    "scope": "Single warmed Epic editor run per cell, stochastic model comparison; no equivalence/reproducible regression or packaged60FPS acceptance"
+  },
+  "preservation": {
+    "passed": true,
+    "recorded_utc": "2026-10-14T09:18:47.776463+00:00",
+    "scope": "Read-only after final A/B restoration/browser check; original6773Content/frozenmodels/settings/package/tunnels. Runtime guest-ID/connection state excluded.",
+    "source_head": "1b6455c31648f340a6d7748b3c473b26f7b30b9a",
+    "source_binary_sha256": "ccf4e229192cbf7360d93b155979a07c244caa5cb0fb2837fa94aeb79438b554",
+    "all_content_checked": 6773,
+    "all_content_changed": [],
+    "graphic_novel_sources_checked": 214,
+    "graphic_novel_sources_changed": [],
+    "live_package_checked": 48,
+    "live_package_changed": [],
+    "source_editor_ini_unchanged": true,
+    "global_editor_ini_unchanged": true,
+    "preserved_units_unchanged": true,
+    "turn_unchanged_running": true,
+    "demo": {
+      "ActiveState": "active",
+      "MainPID": "3609615"
+    }
+  },
+  "rejected_sidedness_trial": {
+    "passed": true,
+    "recorded_utc": "2026-10-14T09:16:23.009069+00:00",
+    "decision": "reject_two_sided_trial_restore_original",
+    "reason": "No clear native defect improvement; stronger diagonal neck streaks in review",
+    "restored_asset": "Content/ParkComic/CrewGraphicNovelHighDetail/Resident9/M_Crew.uasset",
+    "restored_sha256": "db14c297074e4ce14cdc3f90aed0070987550ca24c779862656dd068bea6188e",
+    "original_sha256": "db14c297074e4ce14cdc3f90aed0070987550ca24c779862656dd068bea6188e",
+    "all_content_checked": 6773,
+    "all_content_changed": [],
+    "source_models_mutated": false,
+    "managed_service": {
+      "Result": "success",
+      "ExecMainStatus": "0"
+    },
+    "review": "Saved/Tests/GraphicNovel/HighDetailSideAB-20261014T090708Z/IndependentVisualReview/material-ab-review.json"
+  },
+  "post_commandlet_settings_restoration": {
+    "passed": true,
+    "recorded_utc": "2026-10-14T09:18:47.749482+00:00",
+    "reason": "Strict final check detected editor INI changes between successful motion baseline and the later commandlets/A-B baseline. Restore original verified bytes, retaining changed snapshots. No assertion relaxed.",
+    "restored": [
+      {
+        "path": "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Config/LinuxEditor/EditorPerProjectUserSettings.ini",
+        "observed_sha256": "2f434bc0abd9ee959bff5ee6033418fc430e8cec19e0a5acfcfa90c626256710",
+        "expected_sha256": "7985cd32d2acae5b7eff6c308bbd3dd3f3fb828c1e67c29398bfd7efa94ea579",
+        "changed_snapshot": "Saved/Tests/GraphicNovel/HighDetail-20261014T082624Z/PostCommandletSettings/0-EditorPerProjectUserSettings.ini"
+      },
+      {
+        "path": "/home/von/.config/Epic/UnrealEngine/5.8/Saved/Config/LinuxEditor/EditorSettings.ini",
+        "observed_sha256": "3ecaee1adb16e3f7060acbfec821abf638dd4a35ca88bcf4e656a7b9279f4377",
+        "expected_sha256": "35c124b8406a24ef63df0fa88ec4b326e8349b4896a167e6a4afbf3e49206327",
+        "changed_snapshot": "Saved/Tests/GraphicNovel/HighDetail-20261014T082624Z/PostCommandletSettings/6-EditorSettings.ini"
+      }
+    ],
+    "all_seven_ini_files_match_original": true,
+    "art_package_sources_changed": false,
+    "strict_initial_check_exit_code": 1,
+    "initial_failed_checks": [
+      "source_editor_ini_unchanged",
+      "global_editor_ini_unchanged"
+    ]
+  },
+  "budget": {
+    "authorized_budget_usd": 25,
+    "authorization": "User: I added 25 do what you cab",
+    "provider": "fal.ai",
+    "currency": "USD",
+    "model_jobs": [
+      {
+        "endpoint_id": "meshy/v7.1/image-to-3d",
+        "request_id": "01a13897-127f-7c01-8e00-272ff4d5c998",
+        "status": "completed_downloaded",
+        "published_configured_estimate_usd": 1.52,
+        "reservation_usd": 2,
+        "actual_charge_usd": null,
+        "provenance": "Pilot/CurlyMetalhead/generated-v1/generation.json"
+      },
+      {
+        "endpoint_id": "meshy/v7.1/image-to-3d",
+        "request_id": "01a13971-5e0a-73e0-8e68-730896d2cee3",
+        "status": "completed_downloaded",
+        "published_configured_estimate_usd": 1.52,
+        "reservation_usd": 2,
+        "actual_charge_usd": null,
+        "provenance": "Pilot/CurlyMetalhead/generated-v2-high-detail/generation.json"
+      }
+    ],
+    "published_estimated_total_usd": 3.04,
+    "conservative_reserved_total_usd": 4,
+    "uncommitted_budget_usd": 21,
+    "estimated_unspent_budget_usd": 21.96,
+    "actual_account_balance_usd": null,
+    "pricing_source": "https://fal.ai/models/meshy/v7.1/image-to-3d",
+    "limit": "Published configured pricing; the connector exposes no settled charge or account balance. Built-in ImageGen reference edits do not submit fal model jobs.",
+    "next_spend_gate": "Review higher-detail pilot against retained native draft before promotion or further cast models."
+  },
+  "curation": {
+    "files": 117,
+    "manifest": "Verification/GraphicNovelHighDetailPilot/files.json",
+    "manifest_sha256": "9840bc41b6a88ed0629f79f45e4fbefef99f81504b5d934140f5081329893ac6",
+    "bytes": 169195324,
+    "redacted_reports": [
+      "Verification/GraphicNovelHighDetailPilot/MotionStandard1920.json",
+      "Verification/GraphicNovelHighDetailPilot/MotionComic1920.json"
+    ],
+    "link_rewritten_reports": [
+      "Verification/GraphicNovelHighDetailPilot/SourceShadowAudit.md"
+    ]
+  },
+  "failed_attempts": [
+    {
+      "attempt": "HighDetailRender-20261014T083947Z",
+      "status": "Overall failed on external SIGTERM; two720p still jobs individually passed, interrupted motion excluded, demo restored"
+    },
+    {
+      "attempt": "HighDetailSidedness-20261014T090331Z/FailedGuardImport",
+      "exit_code": 255,
+      "status": "Outdated helper import failed before mutation; fresh corrected NullRHI authoring passed"
+    },
+    {
+      "attempt": "FailedCurationExternalSource",
+      "status": "Outside-checkout source path normalization failed after copies; first attempt retained ignored and corrected curation passed"
+    },
+    {
+      "attempt": "Post-commandlet final preservation",
+      "exit_code": 1,
+      "status": "Two INI changes detected; originals restored and unchanged strict assertions pass"
+    }
+  ],
+  "limits": [
+    "Static face/fingers; chipped collar and shoulder deformation remain",
+    "Detached shadows, shiny hair and indigo/noisy comic treatment remain; cause unresolved",
+    "Full-cycle foot planting, continuous fluidity/line stability and physical controls unverified",
+    "Candidate co-op, current cook/packaged performance, physical phones, audio and off-LAN scope remain open",
+    "New higher-detail native folder43.7MiB before cooking, included by existing AlwaysCook rule; cooked impact unmeasured"
+  ],
+  "evidence": {
+    "Verification/GraphicNovelHighDetailPilot/AnimationAutomation.json": {
+      "sha256": "59b4aa9095cb45349e355b97ab6d93bd1704477d8f11d9e12c5fd4a8fa09821f",
+      "bytes": 3533
+    },
+    "Verification/GraphicNovelHighDetailPilot/CPUReview.json": {
+      "sha256": "528717e4e71da3e77680e6a40c8b6a3a10f6f0a9dfe8468416cd080f86ac6222",
+      "bytes": 197959
+    },
+    "Verification/GraphicNovelHighDetailPilot/Comic1280.json": {
+      "sha256": "d20197d6104015c579ece1a725d10ac4bc027a65a4fee7ab7e4149dd0b7bc714",
+      "bytes": 521724
+    },
+    "Verification/GraphicNovelHighDetailPilot/Comic1920.json": {
+      "sha256": "e7e5742182f1d6563f9fd6781471401c283427bb873a0b35421c06848919c78a",
+      "bytes": 521379
+    },
+    "Verification/GraphicNovelHighDetailPilot/FinalCPUChecks.json": {
+      "sha256": "370507c3ccf6116dbb3f5ec553da110584a7cddfe65bb6e10718089b8048adb9",
+      "bytes": 9885
+    },
+    "Verification/GraphicNovelHighDetailPilot/FinalPreservation.json": {
+      "sha256": "67619dc169611bb63eab621e90554f54cbc790f3be7697136fb7638312b45492",
+      "bytes": 819
+    },
+    "Verification/GraphicNovelHighDetailPilot/HeadlessChecks.json": {
+      "sha256": "6f4bf6ee56284020b19742bca78c32045ebc60d4da6310c966db3b0723a07734",
+      "bytes": 5575
+    },
+    "Verification/GraphicNovelHighDetailPilot/HeadlessComicMotion.json": {
+      "sha256": "e5c11671a466e527d8adc239c85546749bcd2661241ead6f45e632e88a1fcf4c",
+      "bytes": 587098
+    },
+    "Verification/GraphicNovelHighDetailPilot/HeadlessComicStates.json": {
+      "sha256": "c3de2b9af2e4a3035770bf0454fd203e7de9bef70c9d08c7aa33e47bae9508aa",
+      "bytes": 536780
+    },
+    "Verification/GraphicNovelHighDetailPilot/HeadlessStandardMotion.json": {
+      "sha256": "e8df96010ab94fa6e20321446dd9e4839f280cbe3562b606750363f0ac2968a6",
+      "bytes": 587133
+    },
+    "Verification/GraphicNovelHighDetailPilot/HeadlessStandardStates.json": {
+      "sha256": "84ca1d09ccff792773d00293de9368d0a1162d63136645393a5bd0ca7bc36367",
+      "bytes": 536789
+    },
+    "Verification/GraphicNovelHighDetailPilot/ImportPreservation.json": {
+      "sha256": "383ad9e5bc58a55e7340b12421e63b19574b82de6998f7d388b8d0d073bc2941",
+      "bytes": 2721
+    },
+    "Verification/GraphicNovelHighDetailPilot/Independent1080StillReview.json": {
+      "sha256": "805878752016f6a9c0d64d2b4ab6136ccba4ff6965a6558e1198c2e936b28f73",
+      "bytes": 41583
+    },
+    "Verification/GraphicNovelHighDetailPilot/Independent1080StillReview.md": {
+      "sha256": "5cfb6fb74c9cc3ba2a5bc931d2c228f2fd004f3bea6bffcb9d4c5483a4fc372e",
+      "bytes": 1374
+    },
+    "Verification/GraphicNovelHighDetailPilot/Independent720StillReview.json": {
+      "sha256": "58cee5bbbae1e9d26ca5de0f7db042852e2a5210b4214d752cac1f7cb4de1c60",
+      "bytes": 42340
+    },
+    "Verification/GraphicNovelHighDetailPilot/Independent720StillReview.md": {
+      "sha256": "1ff500c9cb643a6cc17beaa8b6e30bc56457df919f2b65c6dc53c819a8596b50",
+      "bytes": 1039
+    },
+    "Verification/GraphicNovelHighDetailPilot/IndependentCPUReview.json": {
+      "sha256": "6c896d9ab21d098ac5ffd70190fbcfb5eb84473d6e75e4b80331208a4df388f8",
+      "bytes": 27572
+    },
+    "Verification/GraphicNovelHighDetailPilot/IndependentCPUReview.md": {
+      "sha256": "718488cbab3f15a050b0c41cf754db2468964c2a90df7efba2ce48abe4d7ffa3",
+      "bytes": 1626
+    },
+    "Verification/GraphicNovelHighDetailPilot/IndependentMotionReview.json": {
+      "sha256": "f0bc2290e60ee1ae4d2e34eab58f8260832280b3fc756518dd266a2d35fc6314",
+      "bytes": 26406
+    },
+    "Verification/GraphicNovelHighDetailPilot/IndependentMotionReview.md": {
+      "sha256": "2706afb582ff4f71a1e60729124f73b1e71e247fe85cc05491128fd7b607943b",
+      "bytes": 1429
+    },
+    "Verification/GraphicNovelHighDetailPilot/InterruptedMotionWindow.json": {
+      "sha256": "7a3bce6d0695b31081ffc6906e93ba9d9deff7177d52e5bfc1a8ddee86557ed9",
+      "bytes": 7956
+    },
+    "Verification/GraphicNovelHighDetailPilot/ManagedMotionExit.json": {
+      "sha256": "441bde36e530bc327187fafbf5042faf8678ac92d81194e800e28d080101bb6d",
+      "bytes": 470
+    },
+    "Verification/GraphicNovelHighDetailPilot/MotionComic1920.json": {
+      "sha256": "2a1b7f4bddb59ab527650b6529b31dfd1089cb065b026574f5460db3ab98923e",
+      "bytes": 576437
+    },
+    "Verification/GraphicNovelHighDetailPilot/MotionStandard1920.json": {
+      "sha256": "fa93d65411b3cb57b6c19d2507ba09efa50f8eb2aee99e3856fbb0cdcb282ae8",
+      "bytes": 586273
+    },
+    "Verification/GraphicNovelHighDetailPilot/MotionWindow.json": {
+      "sha256": "2520862a36f123131050f0ec222f25c48acb077999ab42e6a58156c9293b8400",
+      "bytes": 7030
+    },
+    "Verification/GraphicNovelHighDetailPilot/NativeChecks.json": {
+      "sha256": "ed2756d329aab41bfbdda4c91882760e14bf652554c7ad8a33b6762aaf5efd3b",
+      "bytes": 2687
+    },
+    "Verification/GraphicNovelHighDetailPilot/NativeImport.json": {
+      "sha256": "90374db5083e6115513032f74c6f8c7b31a45c5226bf1800bf91fae6ab3c88ca",
+      "bytes": 932
+    },
+    "Verification/GraphicNovelHighDetailPilot/NativeSidednessAudit.json": {
+      "sha256": "fa10b5d8a4149039418200296fde97d332a15a84c0d9519d44340da436d82ea3",
+      "bytes": 769
+    },
+    "Verification/GraphicNovelHighDetailPilot/OpenSpecChecks.json": {
+      "sha256": "b362dae3b74fb9c45fcd2009290b9c9f38d222bef9e2bd942a48583777e97a44",
+      "bytes": 728
+    },
+    "Verification/GraphicNovelHighDetailPilot/Performance/HighDetailComic.json": {
+      "sha256": "0b759a8c000db2715570b238b3dda7bd475920d2e809cc7c4643de01912643d8",
+      "bytes": 4973
+    },
+    "Verification/GraphicNovelHighDetailPilot/Performance/HighDetailStandard.json": {
+      "sha256": "2ff8d6bc3d5b08444b324f2b3f8d155af6a9562b5195cd89663355d99b4db09e",
+      "bytes": 4980
+    },
+    "Verification/GraphicNovelHighDetailPilot/Performance/analysis.json": {
+      "sha256": "1e33190c40570ee4e9099442bc7ec1673aa9742db66ddad4e249ea8270d351d4",
+      "bytes": 59865
+    },
+    "Verification/GraphicNovelHighDetailPilot/Performance/analysis.md": {
+      "sha256": "68bec3fbc98deec57d10f462bd245b8e8bacf452b40d430352718de06184e06b",
+      "bytes": 2774
+    },
+    "Verification/GraphicNovelHighDetailPilot/PondGeometryAutomation.json": {
+      "sha256": "cb2275d241e35c0ba2918532e2d3e68458fcaae8506307316850234f648e316e",
+      "bytes": 1098
+    },
+    "Verification/GraphicNovelHighDetailPilot/RadarClipAutomation.json": {
+      "sha256": "8fdac7779e5543e59741eec2da7035fdde9663a9ddf228683c97368314d0e920",
+      "bytes": 1085
+    },
+    "Verification/GraphicNovelHighDetailPilot/RestoredBrowser.json": {
+      "sha256": "0741d7d5ce494ae294bd7f029ec796e9005043d409e724051dec8613b0a41fd3",
+      "bytes": 3764
+    },
+    "Verification/GraphicNovelHighDetailPilot/RestoredBrowserReceipt.json": {
+      "sha256": "e833c3ba44b8629c1acf12f215967b08ec0747f4e264e970f1c43e8829dbb310",
+      "bytes": 828
+    },
+    "Verification/GraphicNovelHighDetailPilot/Sidedness/Authoring.json": {
+      "sha256": "17933d575cf62bc1eea5fb8c128a48c999a424e42dd73fc5b25d2aae54fe0aeb",
+      "bytes": 250
+    },
+    "Verification/GraphicNovelHighDetailPilot/Sidedness/AuthoringPreservation.json": {
+      "sha256": "b7df4fdad27e699a6c9a8080069012a44a1fbf105ce61ee8123eb87b645b2a87",
+      "bytes": 432
+    },
+    "Verification/GraphicNovelHighDetailPilot/Sidedness/Comic1920.json": {
+      "sha256": "25ae2caf34ded4391a3763618196e9a6522bf2e5256d6ec50d7d5d5e266d2ada",
+      "bytes": 521862
+    },
+    "Verification/GraphicNovelHighDetailPilot/Sidedness/Restoration.json": {
+      "sha256": "5644a965fd405559360cef656fb11a360518990aa963f4c9207e3fa3c2b68824",
+      "bytes": 789
+    },
+    "Verification/GraphicNovelHighDetailPilot/Sidedness/Review.json": {
+      "sha256": "c511e749012accd60504ae9ee520a7f46d324065959d08992baf2dab77bec181",
+      "bytes": 39799
+    },
+    "Verification/GraphicNovelHighDetailPilot/Sidedness/Review.md": {
+      "sha256": "11a3db0e17f0214d963a2d0654e1dac32f4fe663ea56bfe7bc9fa71d4d520cc2",
+      "bytes": 979
+    },
+    "Verification/GraphicNovelHighDetailPilot/Sidedness/SettingsRestoration.json": {
+      "sha256": "59987adb4a06a9311b12fc30b8f2aee969533e8aba884dc282e4e7dc6d01b206",
+      "bytes": 1447
+    },
+    "Verification/GraphicNovelHighDetailPilot/Sidedness/Standard1920.json": {
+      "sha256": "8cb977f94536bd9ee5c9b26a9886ae42f90bebfcd5295388cb95177c5ce8ff9c",
+      "bytes": 525213
+    },
+    "Verification/GraphicNovelHighDetailPilot/Sidedness/Window.json": {
+      "sha256": "8a50fafdb83ee5248bd6a78f6c3f6f7e989742462e9217bf873425aece71c893",
+      "bytes": 5665
+    },
+    "Verification/GraphicNovelHighDetailPilot/SourceMetadataUpdate.json": {
+      "sha256": "9b007cdb255e768bf975970926a02fe30c54e3340d3da15a3e1135bcf48b2059",
+      "bytes": 698
+    },
+    "Verification/GraphicNovelHighDetailPilot/SourceShadowAudit.json": {
+      "sha256": "dc410567d67cffc7c678be1ca5cac524a8a7f71c2460d08d954a1acbb7ca6d11",
+      "bytes": 148420
+    },
+    "Verification/GraphicNovelHighDetailPilot/SourceShadowAudit.md": {
+      "sha256": "c44611fc8a8e4ba46d7e06adfea35b813b5d0273166e80953a4cfcada2a7345a",
+      "bytes": 3143
+    },
+    "Verification/GraphicNovelHighDetailPilot/Standard1280.json": {
+      "sha256": "375912a5c91ad85f17acda0a2038e6fd621ac966a43e75172591496ec6477e0b",
+      "bytes": 525188
+    },
+    "Verification/GraphicNovelHighDetailPilot/Standard1920.json": {
+      "sha256": "5fc8610097cf6d13e416498c35dc312659b4b14810b0edf6e25da3299aa8f355",
+      "bytes": 528278
+    },
+    "Verification/GraphicNovelHighDetailPilot/StillWindow.json": {
+      "sha256": "0e4a9be404fc34a188a5e51fbccd7e16a176227060366889ff06d7feb0c94ca7",
+      "bytes": 5641
+    },
+    "Verification/GraphicNovelHighDetailPilot/files.json": {
+      "sha256": "9840bc41b6a88ed0629f79f45e4fbefef99f81504b5d934140f5081329893ac6",
+      "bytes": 46580
+    }
+  }
+}

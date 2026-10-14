@@ -1,0 +1,7 @@
+{
+  "passed": true,
+  "scope": "Temporary single-material two-sided comparison; no production/source mutation",
+  "before_two_sided": false,
+  "after_two_sided": true,
+  "asset": "/Game/ParkComic/CrewGraphicNovelHighDetail/Resident9/M_Crew.M_Crew"
+}

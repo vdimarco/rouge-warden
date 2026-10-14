@@ -3,8 +3,8 @@
 // the zone's pentatonic scale with the chain, so a chain plays a tune); the drift's hop, tier chimes and boost
 // thump; scrapes, lab A's crash with its tape stop, takedowns; gate notes from the zone's tune, so a clean run plays
 // the melody; the punch's 120 ms of silence, the flash's crack and the deep boom; the medal chimes. Talk goes to the
-// radio. Events in one frame are spread over a few tens of milliseconds so a flurry stays readable. Android buzzes
-// for the big ones (HAPTICS).
+// radio. Events in one frame are spread over a few tens of milliseconds so a flurry stays readable. Haptics live in
+// ui/input.js (feedback), which knows whether the player is on touch or a pad.
 import { EV_LIST } from '../../core/events.js';
 import { keyOf, tuneOf, scaleNote, TUNES, ENDING_TUNE, ENDING_BPM } from './music.js';
 
@@ -12,11 +12,6 @@ const midi = (n) => 440 * 2 ** ((n - 69) / 12);
 const clamp = (v, lo, hi) => (v < lo ? lo : v > hi ? hi : v);
 const num = (v, d) => (typeof v === 'number' && Number.isFinite(v) ? v : d);
 
-// Android haptics in ms (final.md 14.3, plus the takedown, the punch and a corridor hit).
-export const HAPTICS = Object.freeze({
-  near: 12, hairline: 20, driftTier: 8, boostStart: 30, driftBoost: 30, scrape: 40, crash: 80, bigCrash: 80,
-  takedown: 40, punch: 60, jHit: 50,
-});
 // Events with no sound of their own: a mode change, pause and resume (the whole mix fades instead), a line that was
 // dropped before it ever showed.
 export const SILENT = Object.freeze(['mode', 'pause', 'resume', 'lineDrop']);
@@ -64,11 +59,11 @@ export function createSfx(mix) {
     const pan = clamp(num(e.side, 0) * 0.6, -1, 1);
     const D = scale * clamp(0.85 + (num(e.rel, 14) - 10) / 40, 0.8, 1.35);
     const close = 1 + 0.3 * clamp(1 - num(e.gap, 1.2) / 2, 0, 1);
-    let end = hiss(t, { ff: 2200 * D, ff2: 600, q: 3, dur: 0.18, peak: (hair ? 0.5 : 0.36) * close, att: 0.003, pan });
+    let end = hiss(t, { ff: 2200 * D, ff2: 600, q: 3, dur: 0.18, peak: (hair ? 0.85 : 0.6) * close, att: 0.003, pan });
     const k = Math.max(0, ct.chain - 1);
     const n = root() + 12 + c.key.scale[k % 5] + 12 * (Math.floor(k / 5) % 2);
-    end = max(end, tone(t, { wave: 'triangle', f: n2f(n), dur: 0.22, peak: 0.16, pan, send: 0.15 }));
-    if (hair) end = max(end, tone(t + 0.02, { f: n2f(n + 24), dur: 0.25, peak: 0.09, pan: -pan, send: 0.3 }));
+    end = max(end, tone(t, { wave: 'triangle', f: n2f(n), dur: 0.22, peak: 0.2, pan, send: 0.15 }));
+    if (hair) end = max(end, tone(t + 0.02, { f: n2f(n + 24), dur: 0.25, peak: 0.12, pan: -pan, send: 0.3 }));
     return end;
   }
 
@@ -91,7 +86,9 @@ export function createSfx(mix) {
     return max(hiss(t, { ff: 3500, ff2: 180, q: 3, dur, att: 0.02, peak: 0.3 }),
       tone(t, { wave: 'square', f: 700, f2: 90, glide: dur, type: 'lowpass', ff: 1500, dur, peak: 0.05 }));
   }
-  const thump = (t, peak = 0.8, dur = 0.25) => tone(t, { f: 80, f2: 40, dur, peak, att: 0.003 });
+  // a low thump with a knock on top, so a phone speaker (nothing under about 250 Hz) still hears it
+  const thump = (t, peak = 0.8, dur = 0.25) => max(tone(t, { f: 160, f2: 42, glide: dur * 0.8, dur, peak, att: 0.003 }),
+    hiss(t, { type: 'lowpass', ff: 1400, ff2: 300, dur: 0.06, peak: peak * 0.5, att: 0.001 }));
   const tick = (t, f = 1760, peak = 0.15) => tone(t, { f, dur: 0.04, peak, att: 0.001 });
   function run(t, steps, gap, o = {}) {
     let end = 0;
@@ -146,7 +143,7 @@ export function createSfx(mix) {
     },
     driftLost: (t) => max(hiss(t, { type: 'highpass', ff: 5000, ff2: 1200, dur: 0.25, peak: 0.15 }),
       tone(t, { wave: 'triangle', f: n2f(root() + 12), f2: n2f(root() + 5), glide: 0.2, dur: 0.25, peak: 0.07 })),
-    boostStart: (t) => max(thump(t, 0.8), hiss(t, { ff: 300, ff2: 1800, dur: 0.35, att: 0.03, peak: 0.25 })),
+    boostStart: (t) => max(thump(t, 0.6), hiss(t, { ff: 300, ff2: 1800, dur: 0.35, att: 0.03, peak: 0.25 })),
     boostEnd: (t) => hiss(t, { ff: 1800, ff2: 400, dur: 0.35, peak: 0.14 }),
     scrape: (t, e) => {
       const k = e.pebble ? 0.6 : 1, pan = clamp(num(e.side, 0) * 0.5, -1, 1);
@@ -156,7 +153,7 @@ export function createSfx(mix) {
     },
     crash: (t, e) => {
       const pan = clamp(num(e.side, 0) * 0.4, -1, 1);
-      let end = tone(t, { f: 120, f2: 40, dur: 0.35, peak: 1.0 });
+      let end = tone(t, { f: 220, f2: 45, glide: 0.25, dur: 0.35, peak: 1.0 });
       for (const [f, a, d] of [[2730, 0.12, 0.25], [4120, 0.08, 0.18], [5900, 0.06, 0.12]]) {
         end = max(end, tone(t, { f, dur: d, peak: a, att: 0.001, pan }));
       }
@@ -165,23 +162,23 @@ export function createSfx(mix) {
       return end;
     },
     // the crash, slowed: a deeper boom and a long crunch under the slow motion (the crash itself already played)
-    bigCrash: (t) => max(tone(t, { f: 90, f2: 25, dur: 0.9, peak: 0.9 }),
+    bigCrash: (t) => max(tone(t, { f: 160, f2: 28, glide: 0.7, dur: 0.9, peak: 0.9 }),
       hiss(t, { type: 'lowpass', ff: 900, ff2: 120, dur: 0.8, peak: 0.4 }), tone(t, { f: 1600, dur: 0.5, peak: 0.05 })),
     takedown: (t, e) => {
       const pan = clamp(num(e.side, 0) * 0.5, -1, 1);
       return max(hiss(t, { type: 'lowpass', ff: 2000, ff2: 300, dur: 0.25, peak: 0.55 }),
-        tone(t, { f: 160, f2: 50, dur: 0.3, peak: 0.7 }),
+        tone(t, { f: 260, f2: 55, glide: 0.25, dur: 0.3, peak: 0.7 }),
         tone(t + 0.04, { f: 1800, f2: 250, glide: 0.7, dur: 0.7, att: 0.02, peak: 0.12, pan }),
         tone(t + 0.1, { wave: 'triangle', f: n2f(root() + 24), dur: 0.3, peak: 0.1, send: 0.3 }));
     },
-    sling: (t) => max(hiss(t, { ff: 300, ff2: 3000, dur: 0.6, att: 0.15, peak: 0.32 }),
-      tone(t, { wave: 'sawtooth', f: 220, f2: 440, type: 'lowpass', ff: 1500, dur: 0.45, peak: 0.07 })),
-    perfectSling: (t) => max(bell(t + 0.05, n2f(root() + 24), { peak: 0.13 }),
-      bell(t + 0.17, n2f(root() + 31), { peak: 0.11 })),
+    sling: (t) => max(hiss(t, { ff: 300, ff2: 3000, dur: 0.6, att: 0.15, peak: 0.55 }),
+      tone(t, { wave: 'sawtooth', f: 220, f2: 440, type: 'lowpass', ff: 1500, dur: 0.45, peak: 0.12 })),
+    perfectSling: (t) => max(bell(t + 0.05, n2f(root() + 24), { peak: 0.2 }),
+      bell(t + 0.17, n2f(root() + 31), { peak: 0.16 })),
     edgeTurn: (t) => max(tone(t, { wave: 'square', f: 110, type: 'lowpass', ff: 500, dur: 0.15, peak: 0.22 }),
       tone(t + 0.22, { wave: 'square', f: 110, type: 'lowpass', ff: 500, dur: 0.15, peak: 0.22 })),
-    planeChange: (t) => max(tone(t, { f: 70, f2: 110, dur: 0.4, peak: 0.25 }),
-      hiss(t, { type: 'lowpass', ff: 200, ff2: 600, dur: 0.4, peak: 0.12 })),
+    planeChange: (t) => max(tone(t, { wave: 'triangle', f: 220, f2: 330, dur: 0.4, peak: 0.1 }),
+      hiss(t, { type: 'lowpass', ff: 300, ff2: 900, dur: 0.4, peak: 0.07 })),
     pad: (t, e) => padNote(t, e, false),
     padPerfect: (t, e) => padNote(t, e, true),
     spark: (t) => {
@@ -234,7 +231,8 @@ export function createSfx(mix) {
     zoomOut: (t) => max(hiss(t, { ff: 4000, ff2: 200, dur: 0.8, att: 0.1, peak: 0.3 }),
       tone(t, { f: 440, f2: 110, dur: 0.8, att: 0.1, peak: 0.15 })),
     scaleCard: (t) => max(tick(t, 1760, 0.05), tick(t + 0.05, 2349, 0.04)),
-    arrive: (t) => tone(t, { f: 98, f2: 73, dur: 0.6, peak: 0.25 }),
+    arrive: (t) => max(tone(t, { f: 196, f2: 147, dur: 0.6, peak: 0.18 }),
+      tone(t, { wave: 'triangle', f: n2f(root()), dur: 0.8, att: 0.1, peak: 0.08, send: 0.3 })),
 
     // events: races and stunts
     eventSeen: (t) => max(tone(t, { f: n2f(root() + 24), dur: 0.15, peak: 0.06, send: 0.5 }),
@@ -297,8 +295,8 @@ export function createSfx(mix) {
       });
       return end;
     },
-    hook: (t) => max(tone(t, { wave: 'square', f: 180, f2: 90, type: 'lowpass', ff: 500, dur: 0.12, peak: 0.35 }),
-      hiss(t, { type: 'highpass', ff: 3000, dur: 0.02, peak: 0.2 }), tone(t, { f: 70, dur: 0.15, peak: 0.4 })),
+    hook: (t) => max(tone(t, { wave: 'square', f: 180, f2: 90, type: 'lowpass', ff: 700, dur: 0.12, peak: 0.2 }),
+      hiss(t, { type: 'highpass', ff: 3000, dur: 0.02, peak: 0.2 }), tone(t, { f: 70, dur: 0.15, peak: 0.25 })),
     release: (t) => max(hiss(t, { type: 'highpass', ff: 3000, ff2: 1500, dur: 0.35, att: 0.01, peak: 0.25 }),
       tone(t, { wave: 'triangle', f: 330, f2: 220, dur: 0.2, peak: 0.08 })),
     fail: (t) => max(tone(t, { wave: 'sawtooth', f: n2f(root()), type: 'lowpass', ff: 900, dur: 0.3, peak: 0.16 }),
@@ -322,22 +320,23 @@ export function createSfx(mix) {
     // 120 ms of nothing, then the flash's crack, a deep boom and a hiss that rises with the sky
     punch: (t) => {
       const t1 = mix.silence(0.12, t);
-      return max(tone(t1, { f: 55, f2: 28, glide: 1.4, dur: 1.4, peak: 1.0, att: 0.004 }),
+      return max(tone(t1, { f: 110, f2: 28, glide: 1.2, dur: 1.4, peak: 1.0, att: 0.004 }),
+        hiss(t1, { type: 'lowpass', ff: 900, ff2: 150, dur: 0.7, peak: 0.6, att: 0.003 }),
         hiss(t1, { type: 'highpass', ff: 3000, q: 0.7, dur: 0.18, peak: 0.6, att: 0.001 }),
         hiss(t1, { ff: 400, ff2: 9000, fglide: 1.4, dur: 1.4, att: 0.35, peak: 0.3 }),
         tone(t1 + 0.05, { f: midi(root() + 24), dur: 1.2, att: 0.2, peak: 0.07, send: 0.5 }));
     },
-    jGraze: (t, e) => zzip(t, jSide(e), false, clamp(Math.cosh(c.phi), 1, 2.4)),
-    jHairline: (t, e) => zzip(t, jSide(e), true, clamp(Math.cosh(c.phi), 1, 2.4)),
+    jGraze: (t, e) => zzip(t, jSide(e), false, hazDoppler(e)),
+    jHairline: (t, e) => zzip(t, jSide(e), true, hazDoppler(e)),
     jThread: (t, e) => {
-      const s = clamp(Math.cosh(c.phi), 1, 2.4);
+      const s = hazDoppler(e);
       return max(zzip(t, { ...e, side: -1 }, false, s), zzip(t + 0.07, { ...e, side: 1 }, false, s),
         tone(t + 0.05, { wave: 'triangle', f: n2f(root() + 19), dur: 0.4, peak: 0.14, send: 0.3 }));
     },
     jPad: (t, e) => padNote(t, e, true),
     jSkim: (t) => hiss(t, { ff: 3200, q: 2.5, dur: 0.35, att: 0.05, peak: 0.15 }),
-    jHit: (t) => max(tone(t, { f: 90, f2: 40, type: 'lowpass', ff: 300, dur: 0.3, peak: 0.9 }),
-      hiss(t, { type: 'lowpass', ff: 600, dur: 0.2, peak: 0.35 })),
+    jHit: (t) => max(tone(t, { f: 180, f2: 45, glide: 0.2, type: 'lowpass', ff: 400, dur: 0.3, peak: 0.9 }),
+      hiss(t, { type: 'lowpass', ff: 700, dur: 0.2, peak: 0.4 })),
     nine: (t, e) => {
       const notes = num(e.n, 2) >= 3 ? [12, 19, 24] : [12, 19];
       let end = hiss(t, { type: 'highpass', ff: 6000, dur: 0.3, peak: 0.12 });
@@ -347,7 +346,7 @@ export function createSfx(mix) {
       }
       return end;
     },
-    headlight: (t) => max(tone(t, { f: 110, f2: 28, dur: 0.9, peak: 0.9 }),
+    headlight: (t) => max(tone(t, { f: 160, f2: 30, glide: 0.8, dur: 0.9, peak: 0.9 }),
       hiss(t, { ff: 300, ff2: 9000, dur: 0.6, peak: 0.3 }),
       tone(t + 0.1, { f: n2f(root() + 24), dur: 1.4, att: 0.3, hold: 1.0, peak: 0.1, send: 0.4 }),
       tone(t + 0.1, { f: n2f(root() + 31), dur: 1.4, att: 0.4, hold: 0.8, peak: 0.05, send: 0.4 })),
@@ -380,13 +379,16 @@ export function createSfx(mix) {
     },
   };
   const isMinorKey = () => c.key.scale[1] === 3;
+  // The corridor's zzip starts higher the faster you go: clamp(cosh φ, 1, 2.4) with the hazard's φ from the event,
+  // else one that grows with η (1.3 at entry, 1.7 at TWO NINES, 2.4 by THREE NINES).
+  const hazDoppler = (e) => clamp(Math.cosh(num(e.phi ?? e.phiHaz, 0.75 + 0.55 * (c.phi - 2))), 1, 2.4);
   const jSide = (e) => (Number.isFinite(e.side) ? e : { ...e, side: Math.sign(num(e.x, 0)) });
 
   function padNote(t, e, perfect) {
     const k = num(e.i ?? e.index, ct.pad - 1) | 0;
     const n = step(clamp(k, 0, 9)) + 12;
-    let end = max(tone(t, { wave: 'triangle', f: n2f(n), dur: 0.3, peak: 0.2, send: 0.25 }),
-      tone(t, { f: 120, f2: 60, dur: 0.1, peak: 0.35 }));
+    let end = max(tone(t, { wave: 'triangle', f: n2f(n), dur: 0.3, peak: 0.22, send: 0.25 }),
+      tone(t, { f: 240, f2: 80, dur: 0.1, peak: 0.18 }));
     if (perfect) end = max(end, bell(t + 0.03, n2f(n + 12), { peak: 0.08, dur: 0.6 }));
     return end;
   }
@@ -448,7 +450,6 @@ export function createSfx(mix) {
     if (!(end > 0)) return false;
     last[type] = t;
     mix.count(type);
-    if (HAPTICS[type]) mix.vibrate(HAPTICS[type]);
     return true;
   }
 
