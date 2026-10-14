@@ -13,6 +13,8 @@ WHERE timestamp >= now() - INTERVAL 30 DAY
 GROUP BY game_id LIMIT 100`;
 let cached = null, pending = null;
 const TTL = 5 * 60 * 1000;
+// Browser cache is short. The edge may keep a good aggregate and serve it while a refresh is in flight.
+const COUNT_CACHE = 'public, max-age=60, s-maxage=300, stale-while-revalidate=86400, stale-if-error=86400';
 async function load(key, project) {
   const response = await fetch(`https://us.posthog.com/api/projects/${project}/query/`, {
     method: 'POST', headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
@@ -41,11 +43,17 @@ async function handler(req, res) {
   if (!key || !/^\d+$/.test(project)) return res.status(503).json({ error: 'Analytics are not connected yet.' });
   try {
     if (!cached || Date.now() - cached.at >= TTL) {
-      if (!pending) pending = load(key, project).then(data => { cached = { at: Date.now(), data }; }).finally(() => { pending = null; });
+      if (!pending) pending = load(key, project).then(data => {
+        cached = { at: Date.now(), data, stale: false };
+      }).catch(err => {
+        // Keep the last good aggregate. A cold process with nothing stored still fails.
+        if (!cached) throw err;
+        cached = { at: Date.now(), data: cached.data, stale: true };
+      }).finally(() => { pending = null; });
       await pending;
     }
-    res.setHeader('Cache-Control', 'public, max-age=60, s-maxage=300');
-    return res.status(200).json(cached.data);
+    res.setHeader('Cache-Control', COUNT_CACHE);
+    return res.status(200).json(cached.stale ? { ...cached.data, stale: true } : cached.data);
   } catch { return res.status(503).json({ error: 'Analytics are temporarily unavailable.' }); }
 }
 module.exports = handler;

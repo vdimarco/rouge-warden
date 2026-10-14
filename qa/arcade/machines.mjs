@@ -23,6 +23,7 @@ const check = (ok, msg) => { console.log((ok ? "  ok   " : "  FAIL ") + msg); if
 const NOT_GAMES = {
   arcade: "the art on the machines, the game switcher, and the creature viewer (a tool)",
   icons: "the site's icons",
+  fonts: "self-hosted faces for the arcade home (Press Start 2P, Monoton, Bungee)",
   lib: "shared libraries",
   ".well-known": "files that app stores read",
 };

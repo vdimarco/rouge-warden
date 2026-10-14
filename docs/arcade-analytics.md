@@ -12,7 +12,7 @@ arcade, project **653362**, US Cloud: https://us.posthog.com/project/653362
 
 In Warden's Vercel project, add `POSTHOG_PERSONAL_API_KEY` as a **sensitive server environment variable**, restricted to the PostHog project and the read permissions needed for Query API. Set it for production and preview, then redeploy. Do not place it in source, a public variable, logs, browser code or chat. Lowercase `posthog_personal_api_key` is also supported. Optional `POSTHOG_PROJECT_ID` (or `posthog_project_id`) defaults to `653362`. The host is fixed to US Cloud.
 
-The public capture token cannot query private analytics. Until the read key is configured, `/api/arcade-leaderboard` returns 503 and the playable catalog shows activity unavailable. It never substitutes local launches or invented scores. A successful empty query displays zero activity and collecting status without ranked badges.
+The public capture token cannot query private analytics. Until the read key is configured, `/api/arcade-leaderboard` returns 503 and the playable catalog shows activity unavailable. It never substitutes local launches or invented scores. A successful empty query displays zero activity and collecting status without ranked badges. After one good read, a later PostHog failure or timeout serves that aggregate with `stale: true` and status 200.
 
 ## Measurement
 
@@ -23,7 +23,7 @@ The public capture token cannot query private analytics. Until the read key is c
 
 Events contain only namespaced app/environment markers, game ID, anonymous visitor ID, visit ID, event ID, timestamp and active seconds. There are no identity calls, replay, entered text, full URLs, email or names. Ingest uses keepalive without retries; blocking analytics or leaving offline can undercount. Client events measure popularity and are not tamper-proof competitive scores.
 
-`api/arcade-leaderboard.js` executes a fixed, bounded aggregate. It exposes only per-game counts, total active seconds and refresh time, caches for five minutes, coalesces concurrent refreshes and returns a generic error on auth/network failure. User-supplied SQL and date ranges are not supported. Private read credentials never reach the client.
+`api/arcade-leaderboard.js` executes a fixed, bounded aggregate. It exposes only per-game counts, total active seconds and refresh time, caches a good result for five minutes, and coalesces concurrent refreshes. Count responses send `Cache-Control` with `s-maxage` and `stale-while-revalidate` (and `stale-if-error`) so the edge can keep serving while it refreshes. A PostHog failure or the 8 second timeout returns that last good result, marked `stale`, instead of 503. 503 is reserved for a process that has never stored a good result, including a missing read key. User-supplied SQL and date ranges are not supported. Private read credentials never reach the client.
 
 ## Checks
 
