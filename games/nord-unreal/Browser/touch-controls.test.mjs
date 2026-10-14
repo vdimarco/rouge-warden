@@ -446,3 +446,19 @@ test('assistive activation can cancel a latched sprint and inert menus cannot se
   f.releaseAll(); const count=f.messages.length; f.root.inert=true; f.click(f.ui.brake);
   assert.equal(f.messages.length,count);
 });
+
+
+test('Sprint taps tolerate finger jitter but a look drag returning to its start is not a tap', () => {
+  for (const distance of [3, 30]) {
+    const f = fixture(); f.setEnabled(true); f.setDriving(false);
+    f.pointer('pointerdown', f.ui.move, 1, 50, 0, 50);
+    f.pointer('pointerdown', f.ui.gas, 2, 50, 50, 100);
+    f.pointer('pointermove', f.ui.gas, 2, 50 + distance, 50, 115);
+    f.pointer('pointermove', f.ui.gas, 2, 50, 50, 125);
+    f.pointer('pointerup', f.ui.gas, 2, 50, 50, 140);
+    f.pointer('pointerdown', f.ui.gas, 2, 50, 50, 250);
+    f.pointer('pointerup', f.ui.gas, 2, 50, 50, 280);
+    assert.equal(f.ui.gas.getAttribute('aria-pressed'), String(distance === 3));
+    f.releaseAll();
+  }
+});

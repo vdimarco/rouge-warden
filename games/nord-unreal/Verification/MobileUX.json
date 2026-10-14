@@ -86,7 +86,7 @@
     }
   },
   "checks": {
-    "browser_unit": 31,
+    "browser_unit": 32,
     "native_automation": 26,
     "native_automation_scope": "Final gameplay logic before final swimming mesh pose adjustment; final pose checked by fresh MP probe and packaged renders.",
     "swimming": [
@@ -141,7 +141,13 @@
         "Static native HUD captures; no stream encoding or human input acceptance."
       ]
     },
-    "runtime_saved_roots_preserved": 5
+    "runtime_saved_roots_preserved": 5,
+    "mobile_browser": {
+      "passed": true,
+      "checks": 17,
+      "report": "Browser/.qa/mobile-2026-10-14T03-58-05-765Z/summary.json",
+      "scope": "Final native package; local candidate frontend; trusted Chromium touch and emulated phone viewports. Before final small-motion tap tolerance correction; final rerun pending."
+    }
   },
   "saved_game_sha256": {
     "Quebec/Saved": {},
@@ -159,7 +165,9 @@
     "Saved/StreamClarity-20261014/traffic-baseline.json": "3c378ad02fb1f3fcde88ca3eb6350bca4e8432c4e62c001a104b0f1bd48c1728",
     "Saved/StreamClarity-20261014/traffic-local.json": "4e671406bb7f31e585261065c0197a1f398c28fe61798a1004aee19fba54a933",
     "Saved/StreamClarity-20261014/swim-release-render.json": "25207b9f7d94ba73827eb47a4e60f41d965c5b3e36475089f5faac840d00d86f",
-    "Saved/StreamClarity-20261014/ux-package.json": "94759bfec68a1b3918109556a2f72e70869dceb51286b18381b8e521739271b3"
+    "Saved/StreamClarity-20261014/ux-package.json": "94759bfec68a1b3918109556a2f72e70869dceb51286b18381b8e521739271b3",
+    "Browser/.qa/mobile-2026-10-14T03-58-05-765Z/summary.json": "7b986737f8a7af1d64c0090df1a0362cdf7f6ed071f3c92a9bd39e394e24beb0",
+    "Saved/StreamClarity-20261014/ux-unit-jitter.log": "4af7b07e0ef6bfa9b0cd4221e527d38476c9b44b6a827fdd2a00cbadc8f728e7"
   },
   "limits": [
     "Host-PC Chromium and emulated phone viewports; no physical phone/carrier acceptance.",

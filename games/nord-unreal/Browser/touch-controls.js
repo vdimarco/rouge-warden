@@ -124,6 +124,7 @@ export function setupTouchControls({ root, surface, stream }) {
   }
 
   function move(pointer, event) {
+    if (Math.hypot(event.clientX - pointer.startX, event.clientY - pointer.startY) > 12) pointer.tapMoved = true;
     if (pointer.stick === 'move') {
       const bounds = pointer.target.getBoundingClientRect();
       const radius = Math.max(1, Math.min(bounds.width, bounds.height) / 2);
@@ -151,7 +152,7 @@ export function setupTouchControls({ root, surface, stream }) {
     if (!pointer) return;
     pointers.delete(pointerId);
     if (!driving && (pointer.stick === 'move' || pointer.keys.includes(16))) {
-      if (event?.type === 'pointerup' && !pointer.looking && event.timeStamp - pointer.downTime <= 250
+      if (event?.type === 'pointerup' && !pointer.tapMoved && event.timeStamp - pointer.downTime <= 250
         && Math.hypot(event.clientX - pointer.startX, event.clientY - pointer.startY) <= 12) {
         lastTap = { target: pointer.target, time: event.timeStamp, x: event.clientX, y: event.clientY };
       } else lastTap = undefined;
