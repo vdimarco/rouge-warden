@@ -1,0 +1,377 @@
+{
+  "recorded_utc": "2026-10-14T02:49:45.064181+00:00",
+  "base_commit": "7d9da51b963c2a75a179edcedaa44abe6a5dc184",
+  "scope": "Bounded pilot cloth repair and isolated native QA; no Unreal images/video or final graphics acceptance.",
+  "wardrobe_roundtrip": {
+    "passed": true,
+    "mode": "fresh FBX reimport in Blender CPU",
+    "bind_bones": 44,
+    "meshes": 45,
+    "morphs": [
+      "Basis",
+      "GN_EyeNarrow_L",
+      "GN_EyeNarrow_R"
+    ],
+    "original_body_rest_positions_preserved": true,
+    "weight_sums_normalized": true,
+    "max_original_body_morph_error_metres": 1.5797921292655255e-10,
+    "unintended_trouser_boundary_edges": 0,
+    "nonmanifold_trouser_edges": 0,
+    "degenerate_trouser_faces": 0,
+    "outer_ankle_notch_sightlines_covered_by_trousers": 36,
+    "boundary_edge_world_metres": [],
+    "body_fbx_sha256": "bcce8e49db5d86cb09b6d9fd53e74489044779b315ebc8bfb5662a48e3adc8fb"
+  },
+  "defect_provenance": "Data/GraphicNovel/Pilot/CurlyMetalhead/wardrobe/defect-repair.json",
+  "cpu_visual_review": {
+    "passed": true,
+    "scope": "Independent read-only Cycles CPU still review of cuff coverage/silhouette; no Unreal or motion acceptance",
+    "reviewer": "rendering_audit",
+    "images_sha256": {
+      "front.png": "42b3515c07ceab7fb6ba4f72c5879818d72a8a6e91f4868fcc9fbbec5663c4e9",
+      "lower-front.png": "d9c65c30d10b7c9704a3b17ef224adc7f3c4bfd56d4c7ee87c20ca5ae772cfa5",
+      "lower-side.png": "6f0dee9ee48961cc4bb03954d4adf3aa082eb82927abcd0f2778f43ec9aeeb5c",
+      "bent-knee.png": "df70d9861777a811e21512e1562fa2f2b9cb687407d3350e7f76498acfaeade4"
+    },
+    "findings": "All four views retain cuff coverage without exposed skin, detached tiny flaps or obvious knee/ankle tearing. A dark lifted-ankle notch reads as recessed collar shadow without a broken silhouette.",
+    "limits": [
+      "Angular shoe/toe trim and stiff cargo-pocket flaps",
+      "Unpaused deformation, Unreal lighting/ink and full graphic-novel art acceptance remain open"
+    ]
+  },
+  "bind_pose_consolidation": {
+    "passed": true,
+    "source": "body.fbx",
+    "source_sha256": "bcce8e49db5d86cb09b6d9fd53e74489044779b315ebc8bfb5662a48e3adc8fb",
+    "output": "body-bind-pose.fbx",
+    "output_sha256": "ed1da668f343a09fc8876ebc0429604f187011136c87ea60d428eaace8a462a2",
+    "method": "union of identical shared-node matrices from partial BindPose entries; exactly one complete pose",
+    "source_pose_count": 46,
+    "output_pose_count": 1,
+    "union_pose_nodes": 90,
+    "all_other_fbx_object_contents_identical": true,
+    "connection_contents_identical": true,
+    "geometry_weights_morphs_contents_identical": true,
+    "blender_reimport_bind_mesh_positions_weights_and_morphs_identical": true,
+    "bind_bones": 44,
+    "meshes": 45,
+    "other_changes": [
+      "Pose definition counts updated",
+      "Blender binary writer normalizes file timestamp/header IDs"
+    ],
+    "limits": [
+      "Bind-pose consolidation does not change geometry; see roundtrip.json for current topology status.",
+      "Unreal SDK validation and native rendering still require fresh checks."
+    ]
+  },
+  "native_import": {
+    "passed": true,
+    "exit_code": 0,
+    "log": "Saved/Tests/GraphicNovel/Polish/Import/native.log",
+    "log_sha256": "0c6dce7e0a72ad95d05ceb13e9bab5462e2d33522ad8fa29ad67cf1cfcbacc87",
+    "warnings": 142,
+    "errors": 0,
+    "warning_scope": "Existing FBX SDK relative-bind warnings/recreated bind pose and smoothing/flat-cloth default-UV warnings; visual deformation remains unverified."
+  },
+  "native_animation": {
+    "passed": true,
+    "exit_code": 0,
+    "succeeded": 4,
+    "warnings": 0,
+    "errors": 0,
+    "tests": [
+      "Quebec.Animation.BlendedLocomotion",
+      "Quebec.Animation.GraphicNovelCandidateSelection",
+      "Quebec.Animation.GraphicNovelHandsEyes",
+      "Quebec.Animation.ReapplyCrew"
+    ],
+    "report_sha256": "8cc244682b2e26bc54cac082b4c1fa6675b79e9f1e1e6eddcc0e2a85ac82b3aa"
+  },
+  "native_motion": [
+    {
+      "mode": "standard",
+      "passed": true,
+      "exit_code": 0,
+      "wall_seconds": 21.92,
+      "observations": 180,
+      "rendered_images": 0,
+      "report": "Saved/Tests/GraphicNovel/Polish/Capture/Motion/Standard/PlayerMotion1280Headless.json",
+      "report_sha256": "4f9eae1045eb8f5407ca753fc7a22b330f33df0182daa391e2bccbf1cd21f426",
+      "checks": {
+        "phase_counts": {
+          "idle": 9,
+          "walk": 38,
+          "sprint": 37,
+          "turn": 22,
+          "stop": 19,
+          "jump": 33,
+          "landing": 6,
+          "recover": 16
+        },
+        "steady_motion": {
+          "walk": {
+            "steady_samples": 30,
+            "foot_pose_change_pairs": 29
+          },
+          "sprint": {
+            "steady_samples": 30,
+            "foot_pose_change_pairs": 29
+          }
+        },
+        "directional_turn_degrees": 90.0,
+        "jump_peak_cm": 183.565,
+        "jump_horizontal_drift_cm": 0.0,
+        "airborne_knee_degrees": 83.638,
+        "scope": "selected native state and pose observations at 1x; no rendered fluidity or FPS acceptance"
+      },
+      "native_material_readback": {
+        "slots": [
+          {
+            "index": 0,
+            "imported": "/Game/ParkComic/CrewGraphicNovel/Resident9/M_Crew.M_Crew",
+            "live": "/Game/ParkComic/CrewGraphicNovel/Resident9/M_Crew.M_Crew",
+            "matches": true
+          },
+          {
+            "index": 1,
+            "imported": "/Game/ParkComic/CrewGraphicNovel/Resident9/M_RubberStripe.M_RubberStripe",
+            "live": "/Game/ParkComic/CrewGraphicNovel/Resident9/M_RubberStripe.M_RubberStripe",
+            "matches": true
+          },
+          {
+            "index": 2,
+            "imported": "/Game/ParkComic/CrewGraphicNovel/Resident9/M_Sole.M_Sole",
+            "live": "/Game/ParkComic/CrewGraphicNovel/Resident9/M_Sole.M_Sole",
+            "matches": true
+          },
+          {
+            "index": 3,
+            "imported": "/Game/ParkComic/CrewGraphicNovel/Resident9/M_Canvas.M_Canvas",
+            "live": "/Game/ParkComic/CrewGraphicNovel/Resident9/M_Canvas.M_Canvas",
+            "matches": true
+          },
+          {
+            "index": 4,
+            "imported": "/Game/ParkComic/CrewGraphicNovel/Resident9/M_Trousers.M_Trousers",
+            "live": "/Game/ParkComic/CrewGraphicNovel/Resident9/M_Trousers.M_Trousers",
+            "matches": true
+          },
+          {
+            "index": 5,
+            "imported": "/Game/ParkComic/CrewGraphicNovel/Resident9/M_Laces.M_Laces",
+            "live": "/Game/ParkComic/CrewGraphicNovel/Resident9/M_Laces.M_Laces",
+            "matches": true
+          },
+          {
+            "index": 6,
+            "imported": "/Game/ParkComic/CrewGraphicNovel/Resident9/M_TrousersSeam.M_TrousersSeam",
+            "live": "/Game/ParkComic/CrewGraphicNovel/Resident9/M_TrousersSeam.M_TrousersSeam",
+            "matches": true
+          }
+        ],
+        "override_count": 0,
+        "assigned_override_count": 0,
+        "scope": "read only; native component materials were not repaired by this motion fixture"
+      }
+    },
+    {
+      "mode": "comic",
+      "passed": true,
+      "exit_code": 0,
+      "wall_seconds": 21.85,
+      "observations": 182,
+      "rendered_images": 0,
+      "report": "Saved/Tests/GraphicNovel/Polish/Capture/Motion/Comic/PlayerMotion1280Headless.json",
+      "report_sha256": "02929ca7fe809d92dccf904e028810425dd1befb9b04cad3815ba2c798c246bb",
+      "checks": {
+        "phase_counts": {
+          "idle": 9,
+          "walk": 38,
+          "sprint": 38,
+          "turn": 22,
+          "stop": 19,
+          "jump": 33,
+          "landing": 7,
+          "recover": 16
+        },
+        "steady_motion": {
+          "walk": {
+            "steady_samples": 30,
+            "foot_pose_change_pairs": 29
+          },
+          "sprint": {
+            "steady_samples": 31,
+            "foot_pose_change_pairs": 30
+          }
+        },
+        "directional_turn_degrees": 90.0,
+        "jump_peak_cm": 183.563,
+        "jump_horizontal_drift_cm": 0.0,
+        "airborne_knee_degrees": 84.506,
+        "scope": "selected native state and pose observations at 1x; no rendered fluidity or FPS acceptance"
+      },
+      "native_material_readback": {
+        "slots": [
+          {
+            "index": 0,
+            "imported": "/Game/ParkComic/CrewGraphicNovel/Resident9/M_Crew.M_Crew",
+            "live": "/Game/ParkComic/CrewGraphicNovel/Resident9/M_Crew.M_Crew",
+            "matches": true
+          },
+          {
+            "index": 1,
+            "imported": "/Game/ParkComic/CrewGraphicNovel/Resident9/M_RubberStripe.M_RubberStripe",
+            "live": "/Game/ParkComic/CrewGraphicNovel/Resident9/M_RubberStripe.M_RubberStripe",
+            "matches": true
+          },
+          {
+            "index": 2,
+            "imported": "/Game/ParkComic/CrewGraphicNovel/Resident9/M_Sole.M_Sole",
+            "live": "/Game/ParkComic/CrewGraphicNovel/Resident9/M_Sole.M_Sole",
+            "matches": true
+          },
+          {
+            "index": 3,
+            "imported": "/Game/ParkComic/CrewGraphicNovel/Resident9/M_Canvas.M_Canvas",
+            "live": "/Game/ParkComic/CrewGraphicNovel/Resident9/M_Canvas.M_Canvas",
+            "matches": true
+          },
+          {
+            "index": 4,
+            "imported": "/Game/ParkComic/CrewGraphicNovel/Resident9/M_Trousers.M_Trousers",
+            "live": "/Game/ParkComic/CrewGraphicNovel/Resident9/M_Trousers.M_Trousers",
+            "matches": true
+          },
+          {
+            "index": 5,
+            "imported": "/Game/ParkComic/CrewGraphicNovel/Resident9/M_Laces.M_Laces",
+            "live": "/Game/ParkComic/CrewGraphicNovel/Resident9/M_Laces.M_Laces",
+            "matches": true
+          },
+          {
+            "index": 6,
+            "imported": "/Game/ParkComic/CrewGraphicNovel/Resident9/M_TrousersSeam.M_TrousersSeam",
+            "live": "/Game/ParkComic/CrewGraphicNovel/Resident9/M_TrousersSeam.M_TrousersSeam",
+            "matches": true
+          }
+        ],
+        "override_count": 0,
+        "assigned_override_count": 0,
+        "scope": "read only; native component materials were not repaired by this motion fixture"
+      }
+    }
+  ],
+  "standard_seven_state_regression": {
+    "passed": true,
+    "exit_code": 0,
+    "states": 7,
+    "screenshots": 0,
+    "wall_seconds": 29.46,
+    "report": "Saved/Tests/GraphicNovel/Polish/Capture/Standard/PlayerQuality1280Headless.json",
+    "report_sha256": "3dfd26c57ff41c7f9885f7bf6a033d2200b5949dc6861898bace0f56176790d4"
+  },
+  "native_log_guard": {
+    "passed": true,
+    "scope": "Rendered log content scan; caller must require clean process exit separately. No processes launched.",
+    "logs": [
+      {
+        "path": "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/GraphicNovel/Polish/Animation/native.log",
+        "sha256": "b5acd8e2ac565a95f150969ab2778d8d65e48f5ecef60652ee08d3dfd240a12b",
+        "passed": true,
+        "dependency_shader_and_fatal_errors": 0
+      },
+      {
+        "path": "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/GraphicNovel/Polish/MotionStandard/native.log",
+        "sha256": "98d5f1f253b5b2cfd432345b5c9509e19ce741a29acb98bcadeadaf372799b72",
+        "passed": true,
+        "dependency_shader_and_fatal_errors": 0
+      },
+      {
+        "path": "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/GraphicNovel/Polish/MotionComic/native.log",
+        "sha256": "d4ffc229c173d3f77bb11976d925e64cd5c15f3fbebed71a85155ab349904142",
+        "passed": true,
+        "dependency_shader_and_fatal_errors": 0
+      },
+      {
+        "path": "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/GraphicNovel/Polish/StillStandard/native.log",
+        "sha256": "2c840898ef048f9402421411c6d326cf206c60b0aafa84cdcda94eae70e85fa8",
+        "passed": true,
+        "dependency_shader_and_fatal_errors": 0
+      }
+    ]
+  },
+  "cpu_checks": [
+    "capture routing and corrupted native-transition rejection",
+    "continuous cadence/held-pose rejection",
+    "five changed Python files compile",
+    "git diff --check"
+  ],
+  "protected_count": 283,
+  "protected_changed": [],
+  "candidate_changed": [
+    "Content/ParkComic/CrewGraphicNovel/Resident9/SK_Body.uasset"
+  ],
+  "candidate_sha256": {
+    "Content/ParkComic/CrewGraphicNovel/Resident9/SK_Body_Skeleton.uasset": "6d42adba1bc91a1e3fb2be1ef087c08bba99efd95aef479d0208917e7ef1e85c",
+    "Content/ParkComic/CrewGraphicNovel/Resident9/M_Canvas.uasset": "4fb9e4b1cc504cf407a88144c2ca62e67907ad62a14bbfe8998f155233320469",
+    "Content/ParkComic/CrewGraphicNovel/Resident9/M_Laces.uasset": "c98d3d7a3434241602869ed9239c2ffc6f99e76159964d703d11fde192019739",
+    "Content/ParkComic/CrewGraphicNovel/Resident9/M_RubberStripe.uasset": "df91682e0b143548d98c52726383815e8a6b91e2927a87fecdff35e6be72dcba",
+    "Content/ParkComic/CrewGraphicNovel/Resident9/M_Sole.uasset": "5cedb00a1f8f8ead6394c4a45ae67b2a3da2e636324193de9532f4c7ea31c2d5",
+    "Content/ParkComic/CrewGraphicNovel/Resident9/M_Trousers.uasset": "c5d38545649f4e2cdbc883eaed7977ef7f6eae883868e272483f33baa9d0c9be",
+    "Content/ParkComic/CrewGraphicNovel/Resident9/M_TrousersSeam.uasset": "b89f10ddd238afb33052b536a467ef5a635edd52475ed32108a13b22947ee4a6",
+    "Content/ParkComic/CrewGraphicNovel/Resident9/T_base_color.uasset": "f08a27acd6a0d480e6aa8f7d9ad78e17acb28914dee02ccf146a00a3c466a21d",
+    "Content/ParkComic/CrewGraphicNovel/Resident9/T_metallic.uasset": "2d70fbdc64b32eb29a13bbe5f160c1a19d1ead55f979db80f33ee51efbb119a3",
+    "Content/ParkComic/CrewGraphicNovel/Resident9/T_normal.uasset": "d79da9df5a68b0c1341c8ff5840045d246fbae6f4a33d184cad7315d6cf6970f",
+    "Content/ParkComic/CrewGraphicNovel/Resident9/T_roughness.uasset": "cb7f36a640a4d30a292b2461c7c2d6d9288aef29f132da06a12bfe5a961c1be9",
+    "Content/ParkComic/CrewGraphicNovel/Resident9/M_Crew.uasset": "cd2bb92a101135e4d4ca4f4aae1fcfe9c2b4f5c2f70c00dc8a6fccd150663cc1",
+    "Content/ParkComic/CrewGraphicNovel/Resident9/SK_Body.uasset": "cb5614c7026c56b2f1bfc90d52aca1e814e5140f1e79ca5ccbcaad8f9b4f20d2",
+    "Content/ParkComic/CrewGraphicNovel/Resident9/BS_Locomotion.uasset": "40b5e8ca24b1b220c9e164d13dde669bce1b1815e2c127f4718530819c2f4541",
+    "Content/ParkComic/CrewGraphicNovel/Resident9/A_Jump.uasset": "98aa0ad5b1eef5697a09066d1fb35e0ee48d86164de1ab06ffa33b6acca06bae",
+    "Content/ParkComic/CrewGraphicNovel/Resident9/A_Run.uasset": "c702044be8bc0d2792ea3570f468f9038f0593a2fd87d54ec6f454fed9b53050",
+    "Content/ParkComic/CrewGraphicNovel/Resident9/A_Idle.uasset": "798cdca71ff21fa1d7967fd4538a5bf376abbf9e604768890d1f25979718b3e5",
+    "Content/ParkComic/CrewGraphicNovel/Resident9/A_Walk.uasset": "bf5d040dc63ee2d7a7a557e7df2b1c46794488704e7b14cb1cd814bf545031b2",
+    "Content/ParkComic/CrewGraphicNovel/Resident9/M_ComicInk.uasset": "d0b11d883093bc9dc76418981f9fa0292a6b32e99b883073d2921e413047b7aa"
+  },
+  "source_sha256": {
+    "Scripts/capture_player_quality.py": "ce8c4ca66a3fa32b1fcd237ffb58dd4fb8b8aaba43fe7b4873c21ca86bb5509e",
+    "Scripts/test_graphic_novel_capture.py": "a26b4230517da245fc9913a8ef33f5fb893ab78a6167664b1d41113ccfcdfd54",
+    "Scripts/prepare_graphic_novel_wardrobe.py": "c5983d9cb46331b35261b9206fa854c19923225d79c03a56d4fceb6ece3ff21e",
+    "Scripts/test_graphic_novel_wardrobe.py": "616511e05ea3149b0ced9f8d3a18171a8fadb5e164ac556c992c5e138c5c6ddc",
+    "Scripts/consolidate_graphic_novel_bind_pose.py": "48d76b2dea36e84ca633b3e729c97929f20c66660382f61c188d837eb1118d45"
+  },
+  "motion_fixture_scope": "Standalone PIE clear pitch, cars/residents hidden and collision disabled, physical input disabled; native callbacks, controller camera/HUD and materials retained. Explicit headless-only bone refresh. Selected timestamps at most30/world-second; no FPS inference.",
+  "graphics_accepted": false,
+  "provider_generation_submitted": false,
+  "rendered_job_launched": false,
+  "live_demo_observation": {
+    "changed_by_this_pass": false,
+    "baseline_pid": 1631030,
+    "observed": {
+      "ActiveState": "active",
+      "ActiveEnterTimestamp": "Tue 2026-10-13 22:40:15 EDT",
+      "MainPID": "2072367"
+    },
+    "baseline_binary_sha256": "015b6763386fd9cf5fa7edda420832598859355a0d1aab2808aaed6e7087f6c4",
+    "observed_binary_sha256": "37cd2bf21c6fd167724c7b426bc2bf661f16b93d06e1895a1520b5f8ef0cd61a",
+    "baseline_binary_matches": false,
+    "baseline_pid_matches": false,
+    "scope": "A concurrent update changed the live demo PID and package during this pass. Preserve it; no stop/start/package copy performed here, no current package/browser acceptance claimed.",
+    "retained_campaign_save_sha256": {
+      "Builds/Browser/Linux/Quebec/Saved_BrowserSaveQA/SaveGames/NordCampaign_StorySliceQA_v1.sav": "cec872fd0b2c1b7ea7f18814c787448e00117c6acd8ac46a71f674a26470e88e"
+    }
+  },
+  "pending": [
+    "1280x720 and1920x1080 actual Unreal stills in both modes",
+    "Real-time unpaused video/line stability, face/cloth/hand/grounding review",
+    "Mature replacement anatomy/full facial performance; provider credit block retained",
+    "Candidate co-op, current cook/package, frame-time and browser/phone acceptance",
+    "Physical input, audio and subjective handling"
+  ],
+  "limits": [
+    "Dark lifted-ankle collar shadow, angular shoe/toe trim and stiff pocket flaps remain in CPU views",
+    "SDK bind-pose recreation requires actual rendered deformation inspection",
+    "Capture does not attach to auto-started immersive PIE; real-time video bootstrap remains open"
+  ],
+  "gpu_window": "Awaiting user choice on temporary pause of the shared-GPU browser demo; existing12000MiB preflight unchanged. Re-inspect current service configuration before any future authorized pause because it changed concurrently.",
+  "openspec_cli_validation": false
+}

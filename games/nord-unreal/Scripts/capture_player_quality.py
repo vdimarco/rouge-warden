@@ -10,7 +10,9 @@ ImageMagick verifies the imported atlas source pixels against the retained PNG.
 -NordNeutralCandidate tests only style 9 from CrewNeutral/CharactersNeutral by
 swapping the live pawn's mesh and clips in PIE, with separate output and reports.
 -NordGraphicNovelCandidate selects only the isolated style 9 body/clips/blended graph.
+Add -NordGraphicNovelStandard to review the standard view in a separate output folder.
 Add -NordGraphicNovelHeadless for native state/bone checks without rendered evidence.
+Add -NordGraphicNovelMotion for separate unpaused 1x native transitions without stills.
 """
 import configparser
 import hashlib
@@ -30,12 +32,20 @@ COMMAND_LINE = u.SystemLibrary.get_command_line()
 NEUTRAL_CANDIDATE = '-NordNeutralCandidate' in COMMAND_LINE
 GRAPHIC_NOVEL_CANDIDATE = '-NordGraphicNovelCandidate' in COMMAND_LINE
 HEADLESS = '-NordGraphicNovelHeadless' in COMMAND_LINE
+STANDARD = '-NordGraphicNovelStandard' in COMMAND_LINE
+MOTION = '-NordGraphicNovelMotion' in COMMAND_LINE
 assert not (NEUTRAL_CANDIDATE and GRAPHIC_NOVEL_CANDIDATE), 'Choose one candidate fixture'
 assert not HEADLESS or GRAPHIC_NOVEL_CANDIDATE, 'Headless mode requires the graphic-novel candidate'
+assert not STANDARD or GRAPHIC_NOVEL_CANDIDATE, 'Standard review requires the graphic-novel candidate'
+assert not MOTION or GRAPHIC_NOVEL_CANDIDATE, 'Motion review requires the graphic-novel candidate'
 WIDTH, HEIGHT = (1920, 1080) if '-NordQuality1920' in COMMAND_LINE else (1280, 720)
 OUT = ROOT / 'Preview' / f'{"NeutralCandidate" if NEUTRAL_CANDIDATE else "PlayerQuality"}{WIDTH}'
 if GRAPHIC_NOVEL_CANDIDATE:
     OUT = ROOT / 'Saved/Tests/GraphicNovel/PilotCapture' / str(WIDTH)
+    if STANDARD:
+        OUT = OUT.parent / 'Standard' / str(WIDTH)
+    if MOTION:
+        OUT = ROOT / 'Saved/Tests/GraphicNovel/PilotCapture/Motion' / ('Standard' if STANDARD else 'Comic') / str(WIDTH)
 OUT.mkdir(parents=True, exist_ok=True)
 VERIFY = ROOT / 'Verification' / ('NeutralCandidate' if NEUTRAL_CANDIDATE else 'PlayerQuality')
 if GRAPHIC_NOVEL_CANDIDATE:
@@ -72,7 +82,7 @@ ORIGINAL_MODE = {'PIE_Standalone': 0, 'PIE_ListenServer': 1, 'PIE_Client': 2}[
     CONFIG.get('/Script/UnrealEd.LevelEditorPlaySettings', 'PlayNetMode', fallback='PIE_Standalone')]
 REPORT = {'passed': False, 'resolution': [WIDTH, HEIGHT],
           'mode': 'actual possessed pawn; native MoveForward, StartSprint/StopSprint and Jump/StopJumping callbacks',
-          'setup': 'PIE-only relocation to a clear soccer pitch; input disabled to prevent zero-axis overrides; Walk/Run and descent observation use 0.25 global time dilation; native jump liftoff/apex use original timing; landing camera prepared during descent and frozen on first observed recoil pose',
+          'setup': 'PIE-only clear soccer pitch; cars/residents hidden with collision disabled; input disabled to prevent zero-axis overrides; Walk/Run and descent observation use 0.25 global time dilation; native jump liftoff/apex use original timing; landing camera prepared during descent and frozen on first observed recoil pose',
           'captures': 'actual gameplay poses; world paused only for screenshot completion',
           'cadence_sampling': 'Walk/Run use 0.25 world-time dilation to resolve the former 12-Hz holds; clip phase must advance on every observed engine frame, with at least 24 observations per world second. These sample rates are not native render or browser decoded FPS.',
           'not_checked': ['physical keyboard delivery', 'native C-key crew selection (covered separately by smoke_test)', 'external networking', 'exact likeness to the supplied photographs',
@@ -83,6 +93,15 @@ REPORT['asset_selection'] = {'candidate': NEUTRAL_CANDIDATE or GRAPHIC_NOVEL_CAN
                             'source': str(SOURCE.relative_to(ROOT)), 'asset_folder': CREW_PATH,
                             'pie_mesh_and_clip_overrides': NEUTRAL_CANDIDATE or GRAPHIC_NOVEL_CANDIDATE}
 REPORT['headless'] = HEADLESS
+REPORT['render_mode'] = 'standard' if STANDARD else 'comic'
+REPORT['motion_only'] = MOTION
+if MOTION:
+    REPORT.update(setup='PIE-only clear pitch; cars/residents hidden with collision disabled; physical input disabled; native directional turn uses MoveRight; actual controller camera and HUD retained',
+        captures='no stills; unpaused 1x native actions with selected timestamped graph/bone/camera observations',
+        cadence_sampling='Selected observations at most 30 per world second; not a render FPS or fluidity measurement',
+        transitions={'passed': False, 'samples': [], 'events': []})
+    REPORT['not_checked'] += ['rendered fluidity and real-time video acceptance', 'native or stream frame-rate performance', 'live city collision, crowds and co-op']
+    REPORT['asset_selection']['pie_mesh_and_clip_overrides'] = False
 if GRAPHIC_NOVEL_CANDIDATE:
     pilot = ROOT / 'Data/GraphicNovel/Pilot/CurlyMetalhead/wardrobe'
     topology = json.loads((pilot / 'roundtrip.json').read_text())
@@ -96,7 +115,7 @@ if GRAPHIC_NOVEL_CANDIDATE:
         'wardrobe_body_sha256': hashlib.sha256((pilot / 'body.fbx').read_bytes()).hexdigest(),
         'round_trip_passed': topology['passed'],
         'unintended_trouser_boundary_edges': topology['unintended_trouser_boundary_edges'],
-        'graphics_accepted': False, 'scope': 'functional pilot checks only; known failed cloth watertightness remains open'}
+        'graphics_accepted': False, 'scope': 'functional pilot checks only; cloth topology does not establish visual acceptance'}
 if HEADLESS:
     REPORT['skipped_screenshots'] = []
     REPORT['captures'] = 'headless native state/bone observations only; no images or visual acceptance'
@@ -363,6 +382,20 @@ def stop_fixture_motion():
     STATE['movement'].stop_movement_immediately()
 
 
+def headless_pose_fixture():
+    if not HEADLESS:
+        return
+    mesh = STATE['mesh']
+    option = u.VisibilityBasedAnimTickOption.ALWAYS_TICK_POSE_AND_REFRESH_BONES
+    mesh.set_editor_property('visibility_based_anim_tick_option', option)
+    mesh.set_editor_property('enable_update_rate_optimizations', False)
+    assert mesh.get_editor_property('visibility_based_anim_tick_option') == option
+    assert not mesh.get_editor_property('enable_update_rate_optimizations')
+    REPORT['headless_animation_fixture'] = {'visibility_based_anim_tick_option': 'AlwaysTickPoseAndRefreshBones',
+        'enable_update_rate_optimizations': False,
+        'scope': 'PIE component only; forces actual bone evaluation without RHI visibility; all pose assertions retained'}
+
+
 def start_style(style):
     STATE['style'] = style
     STATE['character'] = validate_assets(style)
@@ -388,6 +421,24 @@ def start_style(style):
             assert instance.get_editor_property('jump_asset') == u.load_asset(folder + '/A_Jump')
             STATE['character']['pilot_rig']['native_flag_route'] = {'verified_before_fixture_overrides': True,
                 'body': body.get_path_name(), 'animation_class': instance.get_class().get_path_name()}
+            if MOTION:
+                slots = body.get_editor_property('materials')
+                live_slots = []
+                for index, slot in enumerate(slots):
+                    live = STATE['mesh'].get_material(index)
+                    live_slots.append({'index': index, 'imported': slot.material_interface.get_path_name(),
+                        'live': live.get_path_name() if live else None, 'matches': live == slot.material_interface})
+                overrides = STATE['mesh'].get_editor_property('override_materials')
+                STATE['character']['pilot_rig']['native_material_readback'] = {'slots': live_slots,
+                    'override_count': len(overrides), 'assigned_override_count': sum(material is not None for material in overrides),
+                    'scope': 'read only; native component materials were not repaired by this motion fixture'}
+                assert all(slot['matches'] for slot in live_slots), ('Native pilot material mismatch', live_slots)
+                headless_pose_fixture()
+                assert STATE['mesh'].get_editor_property('custom_depth_stencil_value') == 254
+                assert abs(STATE['original_time_dilation'] - 1.) < .001, 'Motion requires normal 1x world time'
+                native('StopSprint')
+                motion_phase('idle')
+                return
         STATE['mesh'].set_skinned_asset_and_update(body, True)
         for kind in ('Idle', 'Walk', 'Run', 'Jump'):
             SYSTEM.call_method('SetObjectPropertyByName', (pawn, 'Crew' + kind, u.load_asset(folder + '/A_' + kind)))
@@ -401,16 +452,7 @@ def start_style(style):
             SYSTEM.call_method('SetObjectPropertyByName', (pawn, 'CrewLocomotion', u.load_asset(folder + '/BS_Locomotion')))
             assert pawn.call_method('ConfigureCrewAnimation'), 'Pilot blended graph rejected its body/clips'
             STATE['mesh'].set_custom_depth_stencil_value(254)
-            if HEADLESS:
-                # NullRHI never marks the mesh rendered; evaluate real bones for this native-only fixture.
-                option = u.VisibilityBasedAnimTickOption.ALWAYS_TICK_POSE_AND_REFRESH_BONES
-                STATE['mesh'].set_editor_property('visibility_based_anim_tick_option', option)
-                STATE['mesh'].set_editor_property('enable_update_rate_optimizations', False)
-                assert STATE['mesh'].get_editor_property('visibility_based_anim_tick_option') == option
-                assert not STATE['mesh'].get_editor_property('enable_update_rate_optimizations')
-                REPORT['headless_animation_fixture'] = {'visibility_based_anim_tick_option': 'AlwaysTickPoseAndRefreshBones',
-                    'enable_update_rate_optimizations': False,
-                    'scope': 'PIE component only; forces actual bone evaluation without RHI visibility; all pose assertions retained'}
+            headless_pose_fixture()
         assert STATE['mesh'].get_skeletal_mesh_asset() == body
     assert STATE['mesh'].get_editor_property('custom_depth_stencil_value') == (254 if GRAPHIC_NOVEL_CANDIDATE else 255)
     native('StopSprint')
@@ -531,6 +573,121 @@ def validate_motion():
     u.log(f'NORD_PLAYER_QUALITY_STYLE_OK {STATE["style"]} {WIDTH}')
 
 
+def motion_phase(name):
+    phase('motion_' + name)
+    REPORT['transitions']['events'].append({'phase': name, 'world_time': round(clock(), 5),
+        'wall_seconds': round(time.monotonic() - STATE['started'], 5)})
+    u.log('NORD_PLAYER_MOTION_PHASE ' + name)
+
+
+def transition_checks(samples, lengths):
+    names = ('idle', 'walk', 'sprint', 'turn', 'stop', 'jump', 'landing', 'recover')
+    groups = {name: [row for row in samples if row['phase'] == name] for name in names}
+    assert all(groups.values()), ('Missing native transition observations', {k: len(v) for k, v in groups.items()})
+    for row in samples:
+        assert not row['paused'] and abs(row['global_time_dilation'] - 1.) < .001, 'Motion was paused or slowed'
+        assert row['clip_path'].startswith(CREW_PATH + '/Resident9/'), ('Wrong native motion clip', row['clip_path'])
+        assert row['clip_weights'] and all(math.isfinite(w) and 0 <= w <= 1.001 for w in row['clip_weights'].values())
+        controls = row['pilot_controls']
+        assert controls['finger_control_count'] == 20
+        assert math.isfinite(controls['finger_flex_degrees']) and 0 <= controls['finger_flex_degrees'] <= 18
+        assert math.isfinite(controls['eye_narrow_weight']) and 0 <= controls['eye_narrow_weight'] <= 1
+    for a, b in zip(samples, samples[1:]):
+        assert b['world_time'] > a['world_time'] and b['engine_frame'] > a['engine_frame'], 'Motion observations did not advance'
+        assert b['wall_seconds'] > a['wall_seconds'], 'Motion wall timestamps did not advance'
+    checks = {}
+    for phase_name, kind, speed in (('walk', 'Walk', 450), ('sprint', 'Run', 800)):
+        steady = [row for row in groups[phase_name] if row['clip_weights'][kind] > .99 and
+                  abs(math.hypot(*row['velocity_cm_s'][:2]) - speed) <= 5]
+        assert len(steady) >= 2, (phase_name, 'Native steady motion was not reached')
+        changes = 0
+        for a, b in zip(steady, steady[1:]):
+            elapsed = b['world_time'] - a['world_time']
+            advance = (b['clip_time'] - a['clip_time']) % lengths[kind]
+            expected = elapsed * min(2., max(.8, speed / (600 if kind == 'Run' else 180)))
+            assert advance > .00001 and abs(advance - expected) <= .003 + expected * .1, (kind, 'Native phase hold/jump', advance, expected)
+            changes += math.dist(a['bones']['LeftFoot']['translation_cm'], b['bones']['LeftFoot']['translation_cm']) > .002
+        assert changes >= .9 * (len(steady) - 1), (kind, 'Actual native foot pose did not advance')
+        checks[phase_name] = {'steady_samples': len(steady), 'foot_pose_change_pairs': changes}
+    run, turn = groups['sprint'][-1], groups['turn'][-1]
+    yaw = abs((turn['actor_yaw_degrees'] - run['actor_yaw_degrees'] + 180) % 360 - 180)
+    assert yaw > 45 and turn['velocity_cm_s'][1] > 400, ('Native directional turn missing', yaw)
+    assert math.hypot(*groups['stop'][-1]['velocity_cm_s'][:2]) < 1, 'Native braking did not stop the pawn'
+    origin = groups['stop'][-1]['location_cm']
+    airborne = [row for row in groups['jump'] if row['falling']]
+    assert airborne and any(row['clip_weights']['Jump'] > .99 for row in airborne), 'Actual jump graph never dominated'
+    peak = max(row['location_cm'][2] for row in airborne) - origin[2]
+    assert peak > 120, ('Native jump too short', peak)
+    drift = max(math.dist(origin[:2], row['location_cm'][:2]) for row in groups['jump'] + groups['landing'])
+    assert drift < .5, ('Vertical jump actor drift', drift)
+    idle = groups['idle'][-1]['bones']['LeftLeg']['rotation_xyzw']
+    knee = max(2 * math.acos(min(1., abs(sum(a * b for a, b in zip(idle, row['bones']['LeftLeg']['rotation_xyzw']))))) for row in airborne)
+    assert knee > .6, ('Actual jump knee pose missing', knee)
+    assert all(not row['falling'] for row in groups['landing']), 'Landing observations are airborne'
+    recovered = groups['recover'][-1]
+    assert recovered['clip'] == 'A_Idle' and recovered['clip_weights']['Idle'] > .99 and not recovered['falling'], 'Native idle did not recover'
+    assert run['pilot_controls']['finger_flex_degrees'] > groups['idle'][-1]['pilot_controls']['finger_flex_degrees'] + 1
+    assert run['pilot_controls']['eye_narrow_weight'] > .1
+    return {'phase_counts': {key: len(value) for key, value in groups.items()}, 'steady_motion': checks,
+            'directional_turn_degrees': round(yaw, 3), 'jump_peak_cm': round(peak, 3),
+            'jump_horizontal_drift_cm': round(drift, 5), 'airborne_knee_degrees': round(math.degrees(knee), 3),
+            'scope': 'selected native state and pose observations at 1x; no rendered fluidity or FPS acceptance'}
+
+
+def motion_tick():
+    name = STATE['phase'][7:]
+    age = clock() - STATE['phase_started']
+    assert age < 5, (name, 'Native transition timed out')
+    assert not u.GameplayStatics.is_game_paused(STATE['world']), 'Motion must remain unpaused'
+    assert abs(u.GameplayStatics.get_global_time_dilation(STATE['world']) - 1.) < .001
+    assert STATE['pc'].get_view_target() == STATE['pawn'], 'Motion must retain the actual controller camera'
+    if name in ('walk', 'sprint', 'turn'):
+        STATE['pawn'].call_method('MoveRight' if name == 'turn' else 'MoveForward', (1.,))
+    rows = REPORT['transitions']['samples']
+    if not rows or rows[-1]['phase'] != name or clock() - rows[-1]['world_time'] >= 1 / 30:
+        row = sample()
+        manager = u.GameplayStatics.get_player_camera_manager(STATE['world'], 0)
+        row.update(phase=name, wall_seconds=round(time.monotonic() - STATE['started'], 5),
+            engine_frame=u.SystemLibrary.get_frame_count(), paused=False,
+            global_time_dilation=u.GameplayStatics.get_global_time_dilation(STATE['world']),
+            actor_yaw_degrees=STATE['pawn'].get_actor_rotation().yaw,
+            cached_camera={'position_cm': vec(manager.get_camera_location()),
+                           'horizontal_fov_degrees': manager.get_fov_angle()})
+        rows.append(row)
+        assert inside_pitch(STATE['pawn'].get_actor_location(), STATE['pitch_points']), 'Motion left the capture pitch'
+    if name == 'idle' and age > .7 and not STATE['movement'].is_falling():
+        motion_phase('walk')
+    elif name == 'walk' and age > 1.4:
+        native('StartSprint')
+        motion_phase('sprint')
+    elif name == 'sprint' and age > 1.4:
+        motion_phase('turn')
+    elif name == 'turn' and age > .8:
+        native('StopSprint')
+        motion_phase('stop')
+    elif name == 'stop' and age > .7 and math.dist(vec(STATE['pawn'].get_velocity()), [0, 0, 0]) < 1:
+        STATE.update(motion_seen_falling=False, jump_released=False)
+        native('Jump')
+        motion_phase('jump')
+    elif name == 'jump':
+        falling = STATE['movement'].is_falling()
+        STATE['motion_seen_falling'] |= falling
+        if age > .15 and not STATE['jump_released']:
+            native('StopJumping')
+            STATE['jump_released'] = True
+        if STATE['motion_seen_falling'] and not falling:
+            motion_phase('landing')
+    elif name == 'landing' and age > .22:
+        motion_phase('recover')
+    elif name == 'recover' and age > .6:
+        result = transition_checks(rows, {kind: value['seconds'] for kind, value in STATE['character']['clips'].items()})
+        REPORT['transitions'].update(passed=True, checks=result)
+        STATE['character']['unpaused_transitions'] = result
+        REPORT['characters'].append(STATE['character'])
+        REPORT.pop('active_character', None)
+        finish()
+
+
 def finish(error=None):
     if STATE['finished']:
         return
@@ -538,9 +695,10 @@ def finish(error=None):
     if error:
         REPORT['error'] = error
     observations = len(REPORT['skipped_screenshots']) if HEADLESS else len(REPORT['screenshots'])
-    REPORT['passed'] = not error and len(REPORT['characters']) == len(STYLES) and observations == 7 * len(STYLES)
+    REPORT['passed'] = not error and len(REPORT['characters']) == len(STYLES) and (
+        REPORT['transitions']['passed'] if MOTION else observations == 7 * len(STYLES))
     REPORT['wall_seconds'] = round(time.monotonic() - STATE['started'], 2)
-    (VERIFY / f'PlayerQuality{WIDTH}{"Headless" if HEADLESS else ""}.json').write_text(json.dumps(REPORT, indent=2) + '\n')
+    (VERIFY / f'Player{"Motion" if MOTION else "Quality"}{WIDTH}{"Headless" if HEADLESS else ""}.json').write_text(json.dumps(REPORT, indent=2) + '\n')
     try:
         if STATE.get('world'):
             u.GameplayStatics.set_game_paused(STATE['world'], False)
@@ -553,7 +711,10 @@ def finish(error=None):
         u.unregister_slate_post_tick_callback(STATE['callback'])
         SCRIPT.call_method('SetKeepPythonScriptAlive', (False,))
     if REPORT['passed']:
-        u.log(f'NORD_PLAYER_QUALITY_OK {len(STYLES)} characters {len(REPORT["screenshots"])} screenshots {WIDTH}x{HEIGHT}; headless={HEADLESS}')
+        if MOTION:
+            u.log(f'NORD_PLAYER_MOTION_OK 1 character 8 phases {len(REPORT["transitions"]["samples"])} observations {WIDTH}x{HEIGHT}; headless={HEADLESS}')
+        else:
+            u.log(f'NORD_PLAYER_QUALITY_OK {len(STYLES)} characters {len(REPORT["screenshots"])} screenshots {WIDTH}x{HEIGHT}; headless={HEADLESS}')
     else:
         u.log_error('NORD_PLAYER_QUALITY_FAILED ' + str(error))
 
@@ -594,13 +755,15 @@ def tick(dt):
             pawn = pc.get_controlled_pawn()
             assert pawn.get_class() == u.load_class(None, '/Script/Quebec.QuebecCharacter')
             pawn.disable_input(pc)
-            transform = u.Transform(u.Vector(0, 0, 1000))
-            camera = GAMEPLAY.call_method('BeginDeferredActorSpawnFromClass', (world, u.CameraActor.static_class(), transform,
-                u.SpawnActorCollisionHandlingMethod.ALWAYS_SPAWN, None, u.SpawnActorScaleMethod.OVERRIDE_ROOT_SCALE))
-            GAMEPLAY.call_method('FinishSpawningActor', (camera, transform, u.SpawnActorScaleMethod.OVERRIDE_ROOT_SCALE))
-            camera.get_component_by_class(u.CameraComponent).set_editor_property('post_process_blend_weight', 1.)
-            pc.set_view_target_with_blend(camera, 0)
-            if GRAPHIC_NOVEL_CANDIDATE:
+            camera = pawn
+            if not MOTION:
+                transform = u.Transform(u.Vector(0, 0, 1000))
+                camera = GAMEPLAY.call_method('BeginDeferredActorSpawnFromClass', (world, u.CameraActor.static_class(), transform,
+                    u.SpawnActorCollisionHandlingMethod.ALWAYS_SPAWN, None, u.SpawnActorScaleMethod.OVERRIDE_ROOT_SCALE))
+                GAMEPLAY.call_method('FinishSpawningActor', (camera, transform, u.SpawnActorScaleMethod.OVERRIDE_ROOT_SCALE))
+                camera.get_component_by_class(u.CameraComponent).set_editor_property('post_process_blend_weight', 1.)
+                pc.set_view_target_with_blend(camera, 0)
+            if GRAPHIC_NOVEL_CANDIDATE and not MOTION:
                 material = u.load_asset(COMIC_PATH)
                 assert material, 'Missing isolated graphic-novel filter'
                 SYSTEM.call_method('SetObjectPropertyByName', (pc, 'ComicMaterial', material))
@@ -616,9 +779,12 @@ def tick(dt):
                 blendables.set_editor_property('array', entries)
                 settings.set_editor_property('weighted_blendables', blendables)
                 camera_component.set_editor_property('post_process_settings', settings)
-            # Verify full-rate motion with the illustrated treatment enabled.
+            # Exercise the private native toggle; standard review switches back before checking the mode.
             pc.call_method('ToggleComicStyle')
-            u.SystemLibrary.execute_console_command(world, 'showhud', pc)
+            if STANDARD:
+                pc.call_method('ToggleComicStyle')
+            if not MOTION:
+                u.SystemLibrary.execute_console_command(world, 'showhud', pc)
             layout = json.loads((ROOT / 'Data/ParkComic/layout.json').read_text())
             pitch = max((p for p in layout['pitches'] if p['sport'] == 'soccer'),
                         key=lambda p: abs(sum(a[0] * b[1] - b[0] * a[1] for a, b in zip(p['points'], p['points'][1:]))))
@@ -629,7 +795,7 @@ def tick(dt):
             assert inside_pitch(origin, points), 'Capture start is outside the selected soccer pitch'
             REPORT['pitch_fixture'] = {'osm': pitch['osm'], 'start_cm': vec(origin),
                                        'offset_from_vertex_average_cm': [-1000, 0, 0],
-                                       'clearance_rule': 'captured pawn and camera must remain inside the largest soccer polygon'}
+                                       'clearance_rule': 'motion pawn must remain inside the largest soccer polygon; native camera is recorded' if MOTION else 'captured pawn and camera must remain inside the largest soccer polygon'}
             for kind in ('ParkResident', 'Car'):
                 for actor in u.GameplayStatics.get_all_actors_of_class(world, u.load_class(None, '/Script/Quebec.Quebec' + kind)):
                     actor.set_actor_hidden_in_game(True)
@@ -668,17 +834,20 @@ def tick(dt):
             if STATE['prepare_frames'] >= 2:
                 freeze_and_capture()
             return
+        if current.startswith('motion_'):
+            motion_tick()
+            return
         age = clock() - STATE['phase_started']
         if current == 'warm':
             if age > 12:
                 interval = STATE['pawn'].get_component_by_class(u.SkeletalMeshComponent).get_component_tick_interval()
-                assert abs(interval) < .001, ('Comic view must retain full-rate player poses', interval)
+                assert abs(interval) < .001, ('Look switching must retain full-rate player poses', interval)
                 camera = STATE['camera'].get_component_by_class(u.CameraComponent)
                 entries = camera.get_editor_property('post_process_settings').get_editor_property('weighted_blendables').get_editor_property('array')
                 comic = [entry for entry in entries if entry.get_editor_property('object') and
                          entry.get_editor_property('object').get_path_name() == COMIC_PATH]
-                assert len(comic) == 1 and abs(comic[0].get_editor_property('weight') - 1.) < .001, 'Comic treatment is not enabled'
-                REPORT['comic_view'] = True
+                assert len(comic) == 1 and abs(comic[0].get_editor_property('weight') - (0. if STANDARD else 1.)) < .001, 'Requested render mode is not active'
+                REPORT['comic_view'] = not STANDARD
                 REPORT['player_pose_tick_interval_seconds'] = interval
                 start_style(STYLES[0])
             return

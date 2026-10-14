@@ -128,6 +128,6 @@ report={'passed':True,'source':'body.fbx','source_sha256':source_hash,
         'blender_reimport_bind_mesh_positions_weights_and_morphs_identical':True,
         'bind_bones':44,'meshes':45,
         'other_changes':['Pose definition counts updated','Blender binary writer normalizes file timestamp/header IDs'],
-        'limits':['No geometry/topology correction: the eight tiny trouser boundary edges remain.','Unreal SDK validation and native rendering still require fresh checks.']}
+        'limits':['Bind-pose consolidation does not change geometry; see roundtrip.json for current topology status.','Unreal SDK validation and native rendering still require fresh checks.']}
 (OUT/'body-bind-pose.json').write_text(json.dumps(report,indent=2)+'\n')
 print('NORD_GRAPHIC_NOVEL_COMPLETE_BIND_POSE_OK',json.dumps(report))
