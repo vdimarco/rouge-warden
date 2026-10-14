@@ -7,3 +7,5 @@ The draw uses one shared cover rectangle, the same construction as CSS `object-f
 Sea level is a straight line from clear at 1.0° to full at 3.0°, with a small upward offset (48 CSS pixels across that span on a 390-wide map). Smog alpha is a straight line in emissions, clear at 42 and full at 87. Neither is stepped. The map view already eases between turns, and snaps when motion is off or reduced.
 
 The end screen keeps the map visible at 85% opacity with a light blur, and puts the ending copy on an opaque paper panel (`#F3E9D6`, ink `#2B2A33`). The play UI under it is `inert`. There is no dark scrim.
+
+The title paints the opening meters, so it fetches only those bands (world, sea, smog, and the thin forest, smog cities, and coal plants on each island). The other painted files start when play starts and the map repaints as they arrive. That keeps the title under the 500 KB first-load check without changing the art files.

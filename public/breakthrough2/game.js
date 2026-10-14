@@ -8,7 +8,17 @@ import {
   createRun,
   readIndicators,
 } from "./model.js";
-import { PREVIEW, artPlacement, paintWorld, seaState, smogAlpha } from "./map.js";
+import {
+  PREVIEW,
+  REGIONS,
+  artPlacement,
+  cityBand,
+  forestBand,
+  paintWorld,
+  powerBand,
+  seaState,
+  smogAlpha,
+} from "./map.js";
 
 const $ = (id) => document.getElementById(id);
 
@@ -47,15 +57,31 @@ for (const region of ["r1", "r2", "r3"]) {
 }
 
 const artImages = {};
+const fileSlot = new Map(Object.entries(ART_MANIFEST).map(([slot, file]) => [file, slot]));
 let artProbed = false;
+let artBoot = Promise.resolve(artImages);
+let artLaterFiles = [];
+let artLater = null;
+let artDone = false;
+
+function openingArtSlots() {
+  const slots = new Set(["world-base", "sea-level", "smog"]);
+  for (const region of REGIONS) {
+    slots.add(`${region.id}-forest-${forestBand(PREVIEW.ecology + region.eco)}`);
+    slots.add(`${region.id}-cities-${cityBand(PREVIEW.emissions + region.emis)}`);
+    slots.add(`${region.id}-power-${powerBand(PREVIEW.energy + region.energy)}`);
+  }
+  return slots;
+}
 
 function loadArtFile(file) {
-  const slot = Object.keys(ART_MANIFEST).find((key) => ART_MANIFEST[key] === file);
+  const slot = fileSlot.get(file);
   if (!slot || artImages[slot]) return Promise.resolve(false);
   return new Promise((resolve) => {
     const img = new Image();
     img.onload = () => {
       artImages[slot] = img;
+      paintShown();
       resolve(true);
     };
     img.onerror = () => resolve(false);
@@ -65,19 +91,40 @@ function loadArtFile(file) {
 
 // Painted files are optional. We do not request art/manifest.json unless a
 // <link rel="art-manifest"> names it. With no link, a missing manifest makes
-// no network call and no 404, and every slot stays procedural.
+// no network call and no 404, and every slot stays procedural. The title
+// fetches only the opening bands. The rest start when play starts.
 function probeArt() {
-  if (artProbed) return Promise.resolve(artImages);
+  if (artProbed) return artBoot;
   artProbed = true;
   const link = document.querySelector("link[rel='art-manifest']");
-  if (!link) return Promise.resolve(artImages);
-  return fetch(link.getAttribute("href"), { cache: "force-cache" })
+  if (!link) return artBoot;
+  const opening = openingArtSlots();
+  artBoot = fetch(link.getAttribute("href"), { cache: "force-cache" })
     .then((res) => (res.ok ? res.json() : null))
     .then((data) => {
       const files = data && Array.isArray(data.files) ? data.files : [];
-      return Promise.all(files.map(loadArtFile)).then(() => artImages);
+      const now = [];
+      const later = [];
+      for (const file of files) {
+        const slot = fileSlot.get(file);
+        if (slot && opening.has(slot)) now.push(file);
+        else later.push(file);
+      }
+      artLaterFiles = later;
+      return Promise.all(now.map(loadArtFile)).then(() => artImages);
     })
     .catch(() => artImages);
+  return artBoot;
+}
+
+function ensureRestArt() {
+  if (artLater) return artLater;
+  artLater = artBoot.then(() => Promise.all(artLaterFiles.map(loadArtFile))).then(() => {
+    paintShown();
+    artDone = true;
+    return true;
+  });
+  return artLater;
 }
 
 function normalizeSeed(n) {
@@ -1012,6 +1059,7 @@ function choose(id) {
 }
 
 function startGame(next) {
+  ensureRestArt();
   if (typeof next === "number" && Number.isInteger(next)) {
     seed = normalizeSeed(next);
     badSeed = false;
@@ -1187,6 +1235,12 @@ if (exposeTest) {
     artFrame() {
       const place = artPlacement(canvas.width, canvas.height);
       return { w: canvas.width, h: canvas.height, ...place };
+    },
+    artSlots() {
+      return Object.keys(artImages);
+    },
+    artReady() {
+      return artDone;
     },
   };
 }

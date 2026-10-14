@@ -236,6 +236,10 @@ function movedAir(prev, next) {
     || Math.abs(next.smogAlpha - prev.smogAlpha) >= SMOG_MOVE - 1e-6;
 }
 
+function waitArt(page) {
+  return page.waitForFunction(() => window.__test.artReady());
+}
+
 try {
   const wide = artPlacement(390, 130);
   check(Math.abs(wide.dw / wide.dh - 16 / 9) < 1e-6, "a short map frame stays 16:9");
@@ -287,6 +291,10 @@ try {
   check(boot.errors.length === 0, boot.errors.length ? boot.errors.join("; ") : "no console errors on load");
   check(boot.bytes() < 500 * 1024, `first load ${boot.bytes()} bytes is under 500 KB`);
   console.log(`  first-load transfer ${boot.bytes()} bytes`);
+  await boot.page.waitForFunction(() => window.__test.artSlots().includes("world-base"));
+  const titleArt = await boot.page.evaluate(() => window.__test.artSlots());
+  const laterArt = titleArt.filter((slot) => /lush|burnt|green|grey|clean|mixed/.test(slot));
+  check(titleArt.length === 12 && laterArt.length === 0, `title art is the opening bands (${titleArt.length}, later ${laterArt.length})`);
   globalThis.__bytes = boot.bytes();
   await shoot(boot.page, "breakthrough2-title");
   await boot.page.locator("#howto-open").tap();
@@ -472,6 +480,7 @@ try {
   const healthyYear = await maps.page.locator("#yearchip").innerText();
   check(/20/.test(healthyYear), `healthy map is mid-century (${healthyYear})`);
   const cleanAir = await maps.page.evaluate(() => window.__test.atmosphere());
+  await waitArt(maps.page);
   await shoot(maps.page, "breakthrough2-map-healthy");
   await maps.page.evaluate(() => window.__test.tweak({
     ecology: 22, emissions: 102, energy: 86, prosperity: 30, trust: 24, warming: 2.62,
@@ -537,6 +546,7 @@ try {
     const shot = await open(browser, base + "?seed=1&fast=1", vp, { desktop: !!vp.desktop });
     await shot.page.locator("#start").tap();
     await shot.page.waitForFunction(() => window.__test.state().ui === "play");
+    await shot.page.waitForFunction(() => window.__test.artSlots().includes("world-base"));
     await shoot(shot.page, vp.shot, vp.width, vp.height);
     check(shot.errors.length === 0 && shot.net404.length === 0, `${vp.shot} stayed clean`);
     await shot.close();
@@ -552,6 +562,7 @@ try {
       await late.page.evaluate((choice) => window.__test.choose(choice), decide(offers, state));
       guard += 1;
     }
+    await waitArt(late.page);
     await shoot(late.page, name);
     await late.close();
   }

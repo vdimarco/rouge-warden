@@ -2,4 +2,5 @@
 - [ ] Drive sea level from 1.0° to 3.0° and smog from pollution, eased with the existing map tween.
 - [ ] Put the ending on an opaque paper panel, dim the map to 85%, and make the play UI inert.
 - [ ] Check seed 123 turn motion, clean versus dirty alpha, and the 390 end screen in `qa/breakthrough2/play.mjs`.
+- [ ] Keep the title under 500 KB by fetching later art only after play starts.
 - [ ] Validate the spec with the OpenSpec CLI if it is installed.
