@@ -6,6 +6,8 @@ Each seventies body profile has a hidden simple-convex collider (4/4/8 hulls). O
 
 Traffic corridors now account for idle campaign cars, and cleared junction reservations cannot starve cars that tick before their former holder. The full two-player city run shows all sixteen cars advancing 18.3–52.2 m in the eight seconds after a temporary obstruction clears, plus native remote entry/exit, yielding and replicated profiles. No route coordinates were regenerated.
 
+Merged [PR #345](https://github.com/vdimarco/rouge-warden/pull/345). All twelve public frontend file hashes match the pre-merge player; installed native source hashes still match after merging.
+
 ## Acceptance
 
 | Check | Result | Evidence |

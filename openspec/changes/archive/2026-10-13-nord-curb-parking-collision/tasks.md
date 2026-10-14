@@ -9,4 +9,4 @@
 - [x] Inspect rendered parking/curb/car views.
 - [x] Cook/install native package preserving runtime saves; restore live service and test mobile browser.
 - [x] Record verification and manually validate spec structure.
-- [ ] Merge and archive the completed change.
+- [x] Merge PR #345 and archive the completed change.
