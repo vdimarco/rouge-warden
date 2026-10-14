@@ -1,0 +1,179 @@
+{
+  "passed": true,
+  "map": "/Game/Maps/CollegeBathurst",
+  "manifest_sha256": "cf97770148fe7f70f1dfa1970f98cf9453275c18e3cefdbab460495c32d01bc2",
+  "checks": [
+    {
+      "group": "Blue",
+      "triangles": 216,
+      "bounds_cm": [
+        [
+          1369.0240478515625,
+          -4235.4560546875,
+          335.0
+        ],
+        [
+          2261.821044921875,
+          -817.2319946289062,
+          704.0
+        ]
+      ],
+      "material": "/Game/Plateau/Materials/M_SignBlue.M_SignBlue",
+      "collision": "NoCollision",
+      "cast_shadow": false
+    },
+    {
+      "group": "Brick",
+      "triangles": 132,
+      "bounds_cm": [
+        [
+          1374.77294921875,
+          -4259.22607421875,
+          451.0
+        ],
+        [
+          2278.839111328125,
+          -822.9609985351562,
+          751.7999877929688
+        ]
+      ],
+      "material": "/Game/Plateau/Materials/M_BrickRed.M_BrickRed",
+      "collision": "NoCollision",
+      "cast_shadow": false
+    },
+    {
+      "group": "Cladding",
+      "triangles": 306,
+      "bounds_cm": [
+        [
+          1380.52294921875,
+          -4257.509765625,
+          330.0
+        ],
+        [
+          2284.589111328125,
+          -828.6909790039062,
+          751.7999877929688
+        ]
+      ],
+      "material": "/Game/Plateau/Materials/M_White.M_White",
+      "collision": "NoCollision",
+      "cast_shadow": false
+    },
+    {
+      "group": "Glazing",
+      "triangles": 108,
+      "bounds_cm": [
+        [
+          1379.333984375,
+          -4235.169921875,
+          22.0
+        ],
+        [
+          2262.779052734375,
+          -854.677978515625,
+          286.0
+        ]
+      ],
+      "material": "/Game/Plateau/Materials/M_CarGlass.M_CarGlass",
+      "collision": "NoCollision",
+      "cast_shadow": false
+    },
+    {
+      "group": "Gold",
+      "triangles": 216,
+      "bounds_cm": [
+        [
+          1369.0240478515625,
+          -4260.94189453125,
+          117.0
+        ],
+        [
+          2267.340087890625,
+          -817.2319946289062,
+          659.0
+        ]
+      ],
+      "material": "/Game/Plateau/Materials/M_Yellow.M_Yellow",
+      "collision": "NoCollision",
+      "cast_shadow": false
+    },
+    {
+      "group": "Ink",
+      "triangles": 588,
+      "bounds_cm": [
+        [
+          1370.93994140625,
+          -4260.3701171875,
+          2.0
+        ],
+        [
+          2278.839111328125,
+          -819.1420288085938,
+          751.7999877929688
+        ]
+      ],
+      "material": "/Game/Plateau/Materials/M_InteriorDark.M_InteriorDark",
+      "collision": "NoCollision",
+      "cast_shadow": false
+    },
+    {
+      "group": "Red",
+      "triangles": 108,
+      "bounds_cm": [
+        [
+          1426.2230224609375,
+          -3921.412109375,
+          335.0
+        ],
+        [
+          2166.00390625,
+          -876.6099853515625,
+          659.0
+        ]
+      ],
+      "material": "/Game/Plateau/Materials/M_SignRed.M_SignRed",
+      "collision": "NoCollision",
+      "cast_shadow": false
+    },
+    {
+      "group": "Stone",
+      "triangles": 516,
+      "bounds_cm": [
+        [
+          1373.9859619140625,
+          -4257.91015625,
+          0.0
+        ],
+        [
+          2284.589111328125,
+          -827.35400390625,
+          740.9000244140625
+        ]
+      ],
+      "material": "/Game/Plateau/Materials/M_Limestone.M_Limestone",
+      "collision": "NoCollision",
+      "cast_shadow": false
+    }
+  ],
+  "triangles": 2190,
+  "front_normals": [
+    {
+      "street": "College",
+      "outward_sign_triangles": 90,
+      "minimum_normal_dot": 0.9999999775333178
+    },
+    {
+      "street": "Bathurst",
+      "outward_sign_triangles": 180,
+      "minimum_normal_dot": 0.9999999889348586
+    }
+  ],
+  "base_static_mesh_states_unchanged": true,
+  "protected_package_sha256": {
+    "Content/CollegeBathurst/SM_Landmark.uasset": "08feac74892c71edcd6822794b1b7cb27ba58275104218ded89b7ad304d7303e",
+    "Content/CollegeBathurst/SM_Glass.uasset": "110ea97b7647b96f72831918ed329ad7dc8aba5d1f63ebca20cadec28c4f49cb"
+  },
+  "native_visual_acceptance": false,
+  "limits": "Fresh saved geometry/material/collision/state readback; appearance requires native rendering."
+}

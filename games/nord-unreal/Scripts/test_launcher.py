@@ -24,6 +24,10 @@ with tempfile.TemporaryDirectory() as directory:
         argv = json.loads(result.stdout)
         assert str(root / "Quebec.uproject") in argv
         assert ("/Game/Maps/LaFontaine?listen" if mode == "host" else "/Game/Maps/LaFontaine") in argv
+        for district, level in (("montreal", "LaFontaine"), ("toronto", "CollegeBathurst")):
+            result = run(mode, district)
+            assert result.returncode == 0, result.stderr
+            assert (f"/Game/Maps/{level}" + ("?listen" if mode == "host" else "")) in json.loads(result.stdout)
     for address in ("127.0.0.1", "192.168.1.2:7777", "localhost:65535", "game.example.com"):
         result = run("join", address)
         assert result.returncode == 0, result.stderr
@@ -32,4 +36,16 @@ with tempfile.TemporaryDirectory() as directory:
         assert run("join", address).returncode == 2, address
     assert run("join").returncode == 2
     assert run("host", "unexpected").returncode == 2
+    assert run("play", "toronto", "extra").returncode == 2
+    assert run("join", "127.0.0.1", "toronto").returncode == 2
+
+    # A packaged runner receives the same destination and listen-server arguments.
+    (root / "Builds/Linux").mkdir(parents=True)
+    (root / "Builds/Linux/Quebec.sh").write_text(f'#!/usr/bin/env bash\nexec "{fake}" "$@"\n')
+    for mode in ("play", "host"):
+        result = run(mode, "toronto")
+        assert result.returncode == 0, result.stderr
+        argv = json.loads(result.stdout)
+        assert str(root / "Quebec.uproject") not in argv
+        assert ("/Game/Maps/CollegeBathurst" + ("?listen" if mode == "host" else "")) in argv
 print("NORD_LAUNCHER_OK")

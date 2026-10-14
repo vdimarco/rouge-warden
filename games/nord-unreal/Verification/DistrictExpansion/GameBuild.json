@@ -1,0 +1,16 @@
+{
+  "passed": true,
+  "command": [
+    "/home/von/.local/share/Epic/UE_5.8.3/Engine/Build/BatchFiles/Linux/Build.sh",
+    "Quebec",
+    "Linux",
+    "Development",
+    "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Quebec.uproject",
+    "-NoHotReload",
+    "-Unattended"
+  ],
+  "started_utc": "2026-10-14T15:20:43.771405+00:00",
+  "exit_code": 0,
+  "binary_sha256": "9708ef45f57e0e7aa698c9417031e301dcb35ede307fa7bd2ade6064c85afb46",
+  "finished_utc": "2026-10-14T15:20:59.839354+00:00"
+}

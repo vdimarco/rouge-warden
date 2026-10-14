@@ -1,0 +1,52 @@
+[
+  {
+    "window": "RenderWindow-20261014T144734Z",
+    "passed": false,
+    "restored": true,
+    "error": "Traceback (most recent call last):\n  File \"/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/DistrictRuntime/RenderWindow-20261014T144734Z/run_window.py\", line 140, in <module>\n    assert report['passed'] and report['rendered'],report.get('error','Rendered fixture failed')\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: Traceback (most recent call last):\n  File \"/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Scripts/test_college_runtime.py\", line 760, in tick\n    queue_capture(capture)\n  File \"/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Scripts/test_college_runtime.py\", line 607, in queue_capture\n    actual = render_guard()\n             ^^^^^^^^^^^^^^\n  File \"/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Scripts/test_college_runtime.py\", line 587, in render_guard\n    assert actual == (WIDTH, HEIGHT), ('Actual client HUD viewport must match requested layout', actual, (WIDTH, HEIGHT))\n           ^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: ('Actual client HUD viewport must match requested layout', (1274, 682), (1280, 720))\n\n",
+    "all_content_changed": [],
+    "source_settings_restored": true,
+    "global_settings_restored": true,
+    "preserved_units_unchanged": true
+  },
+  {
+    "window": "RenderWindow-20261014T145430Z",
+    "passed": false,
+    "restored": true,
+    "error": "Traceback (most recent call last):\n  File \"/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/DistrictRuntime/RenderWindow-20261014T145430Z/run_window.py\", line 140, in <module>\n    assert report['passed'] and report['rendered'],report.get('error','Rendered fixture failed')\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: Traceback (most recent call last):\n  File \"/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Scripts/test_college_runtime.py\", line 828, in tick\n    if elapsed() < delay or not ready():\n                                ^^^^^^^\n  File \"/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Scripts/test_college_runtime.py\", line 308, in calibrate_viewport\n    assert display[0] >= WIDTH and display[1] >= HEIGHT, ('Capture display is too small', display)\n                                   ^^^^^^^^^^^^^^^^^^^^\nAssertionError: ('Capture display is too small', [1274, 714])\n\n",
+    "all_content_changed": [],
+    "source_settings_restored": true,
+    "global_settings_restored": true,
+    "preserved_units_unchanged": true
+  },
+  {
+    "window": "RenderWindow-20261014T145755Z",
+    "passed": false,
+    "restored": true,
+    "error": "Traceback (most recent call last):\n  File \"/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/DistrictRuntime/RenderWindow-20261014T145755Z/run_window.py\", line 140, in <module>\n    assert report['passed'] and report['rendered'],report.get('error','Rendered fixture failed')\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: Traceback (most recent call last):\n  File \"/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Scripts/test_college_runtime.py\", line 848, in tick\n    if elapsed() < delay or not ready():\n                                ^^^^^^^\n  File \"/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Scripts/test_college_runtime.py\", line 367, in calibrate_viewport\n    if not discover():\n           ^^^^^^^^^^\n  File \"/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Scripts/test_college_runtime.py\", line 267, in discover\n    assert all(re.search(r'(?:^|/)UEDPIE_\\d+_CollegeBathurst[.]', world.get_path_name()) for world in worlds), 'Unexpected PIE map'\nAssertionError: Unexpected PIE map\n\n",
+    "all_content_changed": [],
+    "source_settings_restored": true,
+    "global_settings_restored": true,
+    "preserved_units_unchanged": true
+  },
+  {
+    "window": "RenderWindow-20261014T151048Z",
+    "passed": false,
+    "restored": true,
+    "error": "Traceback (most recent call last):\n  File \"/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/DistrictRuntime/RenderWindow-20261014T151048Z/run_window.py\", line 140, in <module>\n    assert report['passed'] and report['rendered'],report.get('error','Rendered fixture failed')\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: Traceback (most recent call last):\n  File \"/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Scripts/test_college_runtime.py\", line 851, in tick\n    if elapsed() < delay or not ready():\n                                ^^^^^^^\n  File \"/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Scripts/test_college_runtime.py\", line 380, in calibrate_viewport\n    assert observed == [WIDTH, HEIGHT], ('Client viewport remains wrong after the one measured restart', observed)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: ('Client viewport remains wrong after the one measured restart', [1268, 676])\n\n",
+    "all_content_changed": [],
+    "source_settings_restored": true,
+    "global_settings_restored": true,
+    "preserved_units_unchanged": true
+  },
+  {
+    "window": "RenderWindow-20261014T151229Z",
+    "passed": false,
+    "restored": true,
+    "error": "Traceback (most recent call last):\n  File \"/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/DistrictRuntime/RenderWindow-20261014T151229Z/run_window.py\", line 134, in <module>\n    assert process.returncode == 0, 'Unreal process did not exit cleanly'\n           ^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: Unreal process did not exit cleanly\n",
+    "all_content_changed": [],
+    "source_settings_restored": true,
+    "global_settings_restored": true,
+    "preserved_units_unchanged": true
+  }
+]

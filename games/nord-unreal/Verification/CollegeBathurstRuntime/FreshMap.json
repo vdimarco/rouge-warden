@@ -1,0 +1,255 @@
+{
+  "passed": true,
+  "world": "/Game/Maps/CollegeBathurst.CollegeBathurst",
+  "checks": [
+    {
+      "group": "Brick",
+      "triangles": 10968,
+      "bounds_cm": [
+        [
+          -74868.359375,
+          -38587.96484375,
+          0.0
+        ],
+        [
+          49967.2734375,
+          33770.03515625,
+          6300.0
+        ]
+      ],
+      "collision": "BlockAll"
+    },
+    {
+      "group": "Cream",
+      "triangles": 12532,
+      "bounds_cm": [
+        [
+          -74868.359375,
+          -38587.96484375,
+          0.0
+        ],
+        [
+          49967.2734375,
+          33770.03515625,
+          4920.0
+        ]
+      ],
+      "collision": "BlockAll"
+    },
+    {
+      "group": "Glass",
+      "triangles": 128640,
+      "bounds_cm": [
+        [
+          -74871.359375,
+          -38590.96484375,
+          180.0
+        ],
+        [
+          49970.2734375,
+          33773.03515625,
+          6230.0
+        ]
+      ],
+      "collision": "NoCollision"
+    },
+    {
+      "group": "Grass",
+      "triangles": 336,
+      "bounds_cm": [
+        [
+          -57104.6484375,
+          -38587.96484375,
+          2.0
+        ],
+        [
+          49967.2734375,
+          33770.03515625,
+          2.0
+        ]
+      ],
+      "collision": "NoCollision"
+    },
+    {
+      "group": "Ground",
+      "triangles": 2,
+      "bounds_cm": [
+        [
+          -74868.359375,
+          -38587.96484375,
+          0.0
+        ],
+        [
+          49967.2734375,
+          33770.03515625,
+          0.0
+        ]
+      ],
+      "collision": "NoCollision"
+    },
+    {
+      "group": "Landmark",
+      "triangles": 19,
+      "bounds_cm": [
+        [
+          1390.10498046875,
+          -4254.64990234375,
+          0.0
+        ],
+        [
+          3066.929931640625,
+          -838.239990234375,
+          751.7999877929688
+        ]
+      ],
+      "collision": "BlockAll"
+    },
+    {
+      "group": "Marking",
+      "triangles": 1286,
+      "bounds_cm": [
+        [
+          -74869.359375,
+          -38589.3984375,
+          8.0
+        ],
+        [
+          49598.640625,
+          33771.43359375,
+          8.0
+        ]
+      ],
+      "collision": "NoCollision"
+    },
+    {
+      "group": "Path",
+      "triangles": 2586,
+      "bounds_cm": [
+        [
+          -74979.5078125,
+          -38698.97265625,
+          5.0
+        ],
+        [
+          50077.6484375,
+          33882.39453125,
+          5.0
+        ]
+      ],
+      "collision": "NoCollision"
+    },
+    {
+      "group": "Road",
+      "triangles": 1698,
+      "bounds_cm": [
+        [
+          -75060.7734375,
+          -38780.7421875,
+          6.0
+        ],
+        [
+          50255.234375,
+          34070.9609375,
+          6.0
+        ]
+      ],
+      "collision": "NoCollision"
+    },
+    {
+      "group": "Roof",
+      "triangles": 14347,
+      "bounds_cm": [
+        [
+          -74868.359375,
+          -38587.96484375,
+          250.0
+        ],
+        [
+          49967.2734375,
+          33770.03515625,
+          6300.0
+        ]
+      ],
+      "collision": "BlockAll"
+    },
+    {
+      "group": "Sage",
+      "triangles": 11022,
+      "bounds_cm": [
+        [
+          -74868.359375,
+          -38587.96484375,
+          0.0
+        ],
+        [
+          49967.2734375,
+          33770.03515625,
+          5280.0
+        ]
+      ],
+      "collision": "BlockAll"
+    },
+    {
+      "group": "Tram",
+      "triangles": 772,
+      "bounds_cm": [
+        [
+          -74884.5,
+          -38610.86328125,
+          7.0
+        ],
+        [
+          49989.8984375,
+          33792.734375,
+          7.0
+        ]
+      ],
+      "collision": "NoCollision"
+    },
+    {
+      "surveyed_tree_instances": 185,
+      "collision": "NoCollision",
+      "height": "illustrative"
+    },
+    {
+      "probe": "spawn",
+      "surface_z_cm": -1.0,
+      "actor": "Collision floor"
+    },
+    {
+      "probe": "car",
+      "surface_z_cm": -1.0,
+      "actor": "Collision floor"
+    },
+    {
+      "probe": "landmark roof",
+      "surface_z_cm": 751.7999877929688,
+      "actor": "Toronto Landmark"
+    }
+  ],
+  "counts": {
+    "roads": 208,
+    "road_segments": 849,
+    "paths": 369,
+    "tram_lines": 10,
+    "buildings": 1458,
+    "buildings_by_height_source": {
+      "fallback": 26,
+      "massing": 1423,
+      "osm_height": 3,
+      "osm_levels": 6
+    },
+    "massing_only": 57,
+    "massing_features": 1682,
+    "lamps": 40,
+    "trees": 185,
+    "places": 360
+  },
+  "attribution": [
+    "\u00a9 OpenStreetMap contributors, ODbL 1.0",
+    "Contains information licensed under the Open Government Licence \u2013 Toronto"
+  ],
+  "limits": [
+    "Map readback and collision traces; native walking/driving/rendering checked separately"
+  ]
+}

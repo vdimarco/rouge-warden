@@ -18,6 +18,17 @@ The Toronto district starts at College Street and Bathurst Street, around Sneaky
 
 No Google imagery, Street View or GTA material is used.
 
+## Façade and streetscape references
+
+Checked 2026-10-14. These references inform original architectural dressing; they do not replace the retained geographic snapshots.
+
+- [Sneaky Dee's official venue](https://www.sneakydees.com/) and [history](https://www.sneakydees.com/about) confirm 431 College Street. The venue-hosted exterior photograph shows stone ground-floor cladding, white horizontal upper cladding, brick divisions, dark window frames, coloured upper windows and painted fascia around the corner. Its date and authorship are unspecified; no photograph, comic excerpt, logo or mural is supplied as a reusable texture.
+- [City existing-site report, May 11, 2026, pages 2–3](https://www.toronto.ca/legdocs/mmis/2026/te/bgrd/backgroundfile-286881.pdf): 419–431 College comprises five two-storey mixed-use buildings, collectively about 57 m along College and 34 m along Bathurst, with a public laneway south. Those dimensions describe the whole assembly, not Sneaky Dee's alone. The northwest corner has an eight-storey building; the southwest corner is surface parking. The report's replacement tower is a proposal, not existing geometry: the [July 2026 City motion](https://www.toronto.ca/legdocs/mmis/2026/mm/bgrd/backgroundfile-289631.pdf) records withdrawal of that application; [Council commissioned a heritage study](https://secure.toronto.ca/council/agenda-item.do?item=2026.MM43.3), not a completed designation.
+- [City College Street upgrades](https://www.toronto.ca/services-payments/streets-parking-transportation/cycling-in-toronto/cycling-infrastructure-definitions/college-street-upgrades/) records elevated separated cycle tracks from Manning to Spadina, curb extensions including Markham, Palmerston and Euclid, and tactile crossings. The centre-island streetcar stops at Bathurst remain unchanged; the 30 m integrated platforms described elsewhere in the project must not replace those islands.
+- [City College Street urban design guidelines, 2017](https://www.toronto.ca/legdocs/mmis/2017/te/bgrd/backgroundfile-103303.pdf), pages 16–18, describe the fine-grained streetwall east of Bathurst. This is historical/context reference; the completed cycle-track upgrades above govern the newer street section.
+
+The OSM footprint and shared-block lidar height constrain the greybox. Individual façade bay widths, door position, floor heights, parapets, signs, surface finishes and street-furniture dimensions remain authored estimates, not measured elevations. Road widths and flat ground also remain estimates; first-block curb/cycle-track dressing requires native collision and car-clearance checks.
+
 ## Method
 
 `python3 Scripts/prepare_college_bathurst.py` writes `layout.json`, `Geometry/*.obj` (git-ignored; rebuild it from the snapshot) and `Source/Quebec/CollegeBathurstMap.h`. `python3 Scripts/preview_college_bathurst.py` draws `Preview/CollegeBathurst/plan.png` and `massing.png`, both of the whole district. `python3 Scripts/test_college_bathurst.py` rebuilds the layout, header and OBJ groups in memory, checks that the checked-in `layout.json` and header match that rebuild, and checks the result; it does not need the `Geometry` folder. The scripts need Python 3 with Shapely and Pillow.
@@ -33,10 +44,12 @@ No Google imagery, Street View or GTA material is used.
 
 ## Greybox map
 
-`Scripts/create_college_bathurst.py` builds the separate map `/Game/Maps/CollegeBathurst` in the Unreal editor. It refuses to run if that map exists or if La Fontaine has unsaved edits, imports each OBJ group as `/Game/CollegeBathurst/SM_<group>` with existing `/Game/Plateau/Materials` materials, and adds a hidden collision floor and edge walls, four player starts at the spawn, the first car, the sun, sky, fog, clouds and the Montréal exposure. Buildings block; roads, paths, markings, tracks, grass and window cards do not. Start the editor on an engine map so La Fontaine is not loaded:
+`Scripts/create_college_bathurst.py` builds the separate map `/Game/Maps/CollegeBathurst` in a fresh `-NullRHI` Unreal editor. Before creating a level or authoring assets, it checks every OBJ group, material, engine cube/cloud material, native car class and required editor class/subsystem. It refuses existing Toronto map/mesh assets, empty or unexpected OBJ groups, and any unsaved map edits. `python3 Scripts/test_create_college_bathurst.py` exercises missing prerequisites against a fake Unreal module and checks that none reach a mutation. Native import remains a separate check.
+
+The creator imports each OBJ group as `/Game/CollegeBathurst/SM_<group>` with existing `/Game/Plateau/Materials` materials, and adds a hidden collision floor and edge walls, four player starts at the spawn, the first car, the sun, sky, fog, clouds and the Montréal exposure. Buildings block; roads, paths, markings, tracks, grass and window cards do not. Start the editor on an engine map so La Fontaine is not loaded:
 
 ```bash
-"$ue_root/Engine/Binaries/Linux/UnrealEditor-Cmd" "$(pwd)/Quebec.uproject" /Engine/Maps/Entry -ExecutePythonScript="$(pwd)/Scripts/create_college_bathurst.py" -unattended -nop4
+"$ue_root/Engine/Binaries/Linux/UnrealEditor-Cmd" "$(pwd)/Quebec.uproject" /Engine/Maps/Entry -NullRHI -ExecutePythonScript="$(pwd)/Scripts/create_college_bathurst.py" -unattended -nop4
 ```
 
 Building the map, its collision and play need the Unreal host; none of it ran in the environment that prepared this data.

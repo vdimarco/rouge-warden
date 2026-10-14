@@ -1,0 +1,53 @@
+{
+  "passed": true,
+  "started_utc": "2026-10-14T14:32:03.124729+00:00",
+  "command": [
+    "/home/von/.local/share/Epic/UE_5.8.3/Engine/Binaries/Linux/UnrealEditor",
+    "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Quebec.uproject",
+    "/Engine/Maps/Entry",
+    "-NullRHI",
+    "-unattended",
+    "-nop4",
+    "-nosound",
+    "-NordNoCampaignSave",
+    "-UDPMESSAGING_TRANSPORT_ENABLE=0",
+    "-ExecCmds=Automation RunTests Quebec.;SoftQuit",
+    "-ReportExportPath=/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/DistrictRuntime/Automation/Report",
+    "-abslog=/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/DistrictRuntime/Automation/native.log"
+  ],
+  "exit_code": 0,
+  "settings_restored": true,
+  "protected_saves_unchanged": true,
+  "succeeded": 26,
+  "succeeded_with_warnings": 3,
+  "failed": 0,
+  "not_run": 0,
+  "warnings": [
+    {
+      "test": "Quebec.Camera.LookBounds",
+      "warnings": [
+        "LogSpawn: UWorld::DestroyActor: World has no context! World: Untitled, Actor: /Temp/Untitled_6.Untitled:PersistentLevel.Actor_0",
+        "LogSpawn: UWorld::DestroyActor: World has no context! World: Untitled, Actor: /Temp/Untitled_6.Untitled:PersistentLevel.Actor_1"
+      ]
+    },
+    {
+      "test": "Quebec.District.SpawnRecoveryAndWater",
+      "warnings": [
+        "LogSpawn: UWorld::DestroyActor: World has no context! World: CollegeBathurst, Actor: /Temp/NordDistrict_01A13AD409F375D497C0637937247D74/CollegeBathurst.CollegeBathurst:PersistentLevel.PlayerStart_0",
+        "LogSpawn: UWorld::DestroyActor: World has no context! World: UEDPIE_3_CollegeBathurst, Actor: /Temp/NordDistrict_01A13AD409FA75F9A8C0D53FF362C09B/UEDPIE_3_CollegeBathurst.UEDPIE_3_CollegeBathurst:PersistentLevel.PlayerStart_0"
+      ]
+    },
+    {
+      "test": "Quebec.Driving.FittedHullCurbsAndWalls",
+      "warnings": [
+        "LogSpawn: UWorld::DestroyActor: World has no context! World: Untitled, Actor: /Temp/Untitled_7.Untitled:PersistentLevel.Actor_1",
+        "LogSpawn: UWorld::DestroyActor: World has no context! World: Untitled, Actor: /Temp/Untitled_7.Untitled:PersistentLevel.Actor_2",
+        "LogSpawn: UWorld::DestroyActor: World has no context! World: Untitled, Actor: /Temp/Untitled_7.Untitled:PersistentLevel.Actor_3",
+        "LogSpawn: UWorld::DestroyActor: World has no context! World: Untitled, Actor: /Temp/Untitled_7.Untitled:PersistentLevel.Actor_4",
+        "LogSpawn: UWorld::DestroyActor: World has no context! World: Untitled, Actor: /Temp/Untitled_7.Untitled:PersistentLevel.QuebecCar_1"
+      ]
+    }
+  ],
+  "report_readback": "Corrected UTF-8 BOM parsing; native process and original29-test report retained without re-execution",
+  "postprocessed_utc": "2026-10-14T14:33:21.950277+00:00"
+}

@@ -3,6 +3,8 @@
 #include "QuebecSky.h"
 #include "QuebecCrewAnimation.h"
 #include "LaFontaineMap.h"
+#include "LaFontaineExtensionMap.h"
+#include "CollegeBathurstMap.h"
 
 #include "Animation/AnimInstance.h"
 #include "Animation/AnimSequence.h"
@@ -27,12 +29,14 @@
 #include "EngineUtils.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/PlayerState.h"
+#include "GameFramework/PlayerStart.h"
 #include "IPixelStreaming2Module.h"
 #include "PixelStreaming2Delegates.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Materials/MaterialInterface.h"
 #include "Misc/CommandLine.h"
 #include "Misc/Parse.h"
+#include "Misc/PackageName.h"
 #include "Net/UnrealNetwork.h"
 #include "Sound/SoundWaveProcedural.h"
 #include "UnrealClient.h"
@@ -47,6 +51,33 @@
 #include "Misc/ScopeExit.h"
 #endif
 
+namespace QuebecDistrict
+{
+    bool IsTorontoMapName(const FString& MapName)
+    {
+        return FPackageName::GetShortName(UWorld::RemovePIEPrefix(MapName)) == TEXT("CollegeBathurst");
+    }
+
+    bool IsToronto(const UWorld* World)
+    {
+        return World && IsTorontoMapName(World->GetMapName());
+    }
+
+    const FSettings& ForWorld(const UWorld* World)
+    {
+        static const FSettings Montreal{LaFontaine::Spawn, LaFontaine::CarSpawn, LaFontaine::RoadSegments,
+            UE_ARRAY_COUNT(LaFontaine::RoadSegments), TEXT("MONTRÉAL"), TEXT("© Ville de Montréal / CC BY 4.0")};
+        static const FSettings Toronto{CollegeBathurst::Spawn, CollegeBathurst::CarSpawn, CollegeBathurst::RoadSegments,
+            UE_ARRAY_COUNT(CollegeBathurst::RoadSegments), TEXT("TORONTO"), TEXT("City of Toronto / Open Government Licence")};
+        static const FSettings ExpandedMontreal{LaFontaine::Spawn, LaFontaine::CarSpawn, LaFontaineExtension::RadarRoadSegments,
+            UE_ARRAY_COUNT(LaFontaineExtension::RadarRoadSegments), TEXT("MONTRÉAL"), TEXT("© Ville de Montréal / CC BY 4.0")};
+        if (IsToronto(World)) return Toronto;
+        // Expand the saved Montréal radar; synthetic worlds and traffic keep their original arrays.
+        return World && FPackageName::GetShortName(UWorld::RemovePIEPrefix(World->GetMapName())) == TEXT("LaFontaine")
+            ? ExpandedMontreal : Montreal;
+    }
+}
+
 namespace
 {
     const FVector MansionSpawn = LaFontaine::Spawn;
@@ -54,6 +85,7 @@ namespace
     constexpr float CarEnterRadius = 450.f;
     AQuebecCampaign* CampaignFor(UWorld* World)
     {
+        if (QuebecDistrict::IsToronto(World)) return nullptr;
         TActorIterator<AQuebecCampaign> It(World);
         return It ? *It : nullptr;
     }
@@ -332,7 +364,7 @@ void AQuebecCharacter::Tick(float DeltaSeconds)
     if (HasAuthority() && !bInVehicle && GetActorLocation().Z < -1500.)
     {
         GetCharacterMovement()->StopMovementImmediately();
-        TeleportTo(MansionSpawn, FRotator::ZeroRotator);
+        TeleportTo(QuebecDistrict::ForWorld(GetWorld()).PlayerSpawn, FRotator::ZeroRotator);
     }
 }
 
@@ -1232,7 +1264,7 @@ void AQuebecCar::MoveWithCollision(float Step, const FVector& Travel)
     if (bGrounded) GroundedTransform = GetActorTransform();
     if (GetActorLocation().Z < -1500.)
     {
-        SetActorLocation(LaFontaine::CarSpawn);
+        SetActorLocation(QuebecDistrict::ForWorld(GetWorld()).CarSpawn);
         Speed = LateralSpeed = VerticalSpeed = 0.f;
         bGrounded = false;
     }
@@ -1299,7 +1331,7 @@ bool AQuebecGameState::CanAdvanceMission(int32 Index, const FVector& Position)
 
 bool AQuebecGameState::AdvanceMissionNear(const FVector& Position)
 {
-    if (!HasAuthority() || !CanAdvanceMission(MissionIndex, Position)) return false;
+    if (QuebecDistrict::IsToronto(GetWorld()) || !HasAuthority() || !CanAdvanceMission(MissionIndex, Position)) return false;
     ++MissionIndex;
     ForceNetUpdate();
     return true;
@@ -1768,9 +1800,11 @@ void AQuebecHUD::DrawHUD()
     const AQuebecCar* Car = Cast<AQuebecCar>(Pawn);
     const AQuebecGameState* State = GetWorld()->GetGameState<AQuebecGameState>();
     const AQuebecController* Controller = Cast<AQuebecController>(PlayerOwner);
+    const bool bToronto = QuebecDistrict::IsToronto(GetWorld());
+    const QuebecDistrict::FSettings& District = QuebecDistrict::ForWorld(GetWorld());
     const AQuebecCampaign* Campaign = CampaignFor(GetWorld());
     const AQuebecCar* NearbyCar = Controller && !Car ? Controller->FindInteractableCar() : nullptr;
-    const bool bCanComplete = !Campaign && State && AQuebecGameState::CanAdvanceMission(State->MissionIndex, Pawn->GetActorLocation());
+    const bool bCanComplete = !bToronto && !Campaign && State && AQuebecGameState::CanAdvanceMission(State->MissionIndex, Pawn->GetActorLocation());
     const bool bComic = Controller && Controller->IsComicStyle();
     const float Now = GetWorld()->GetTimeSeconds();
     if (FirstHUDTime < 0.f) FirstHUDTime = Now;
@@ -1836,7 +1870,7 @@ void AQuebecHUD::DrawHUD()
 
     const AQuebecCharacter* Avatar = Car ? Car->Occupant.Get() : Cast<AQuebecCharacter>(Pawn);
     const float Right = Canvas->SizeX - Margin;
-    RightText(FString::Printf(TEXT("NORD · MONTRÉAL  /  %d ONLINE"), State ? State->PlayerArray.Num() : 1), Paper, Right, Margin, .92f);
+    RightText(FString::Printf(TEXT("NORD · %s  /  %d ONLINE"), District.City, State ? State->PlayerArray.Num() : 1), Paper, Right, Margin, .92f);
     if (Avatar) RightText(AQuebecParkResident::NameForStyle(Avatar->CrewStyle), Paper, Right, Margin + 23.f * Scale, 1.f);
     // Phones have touch buttons for these keys.
     if (!bPortrait)
@@ -1846,7 +1880,13 @@ void AQuebecHUD::DrawHUD()
     FString Title, Action, Status;
     FVector Target = FVector::ZeroVector;
     bool bHasObjective = false;
-    if (Campaign)
+    if (bToronto)
+    {
+        Title = TEXT("TORONTO FREE ROAM");
+        Action = TEXT("Explore College Street and Sneaky Dee's.");
+        Status = TEXT("Head west through Euclid to Grace Street.");
+    }
+    else if (Campaign)
     {
         Title = Campaign->GetMissionTitle();
         Action = Campaign->GetObjectiveText();
@@ -1959,8 +1999,9 @@ void AQuebecHUD::DrawHUD()
         const FVector2D Offset = MapPoint(Position) - Center;
         return Center + Offset.GetClampedToMaxSize(MapRadius - 8.f * Scale);
     };
-    for (const auto& Segment : LaFontaine::RoadSegments)
+    for (int32 Index = 0; Index < District.RoadCount; ++Index)
     {
+        const auto& Segment = District.RoadSegments[Index];
         FVector2D A = MapPoint(Segment[0]), B = MapPoint(Segment[1]);
         // Clip the segment: clamping its endpoints invents roads along the radar border.
         if (ClipHUDRadarSegment(A, B, Center, MapRadius))
@@ -1976,7 +2017,7 @@ void AQuebecHUD::DrawHUD()
     const float CreditY = MapY + MapHeight + 4.f * Scale + SkyStep;
     RightText(TEXT("© OpenStreetMap contributors / ODbL"), Paper, CreditRight, CreditY, CreditSize);
     RightText(TEXT("openstreetmap.org/copyright"), Paper, CreditRight, CreditY + CreditStep, CreditSize);
-    RightText(TEXT("© Ville de Montréal / CC BY 4.0"), Paper, CreditRight, CreditY + 2.f * CreditStep, CreditSize);
+    RightText(District.SurveyCredit, Paper, CreditRight, CreditY + 2.f * CreditStep, CreditSize);
     TArray<AQuebecCar*> MapCars;
     for (TActorIterator<AQuebecCar> It(GetWorld()); It; ++It)
     {
@@ -1993,7 +2034,7 @@ void AQuebecHUD::DrawHUD()
         const FVector2D Vehicle = MapPoint(MapCars[I]->GetActorLocation());
         DrawRect(FLinearColor(.73f, .84f, .89f), Vehicle.X - 3.f * Scale, Vehicle.Y - 2.f * Scale, 6.f * Scale, 4.f * Scale);
     }
-    const FVector2D Home = MapMarker(MansionSpawn);
+    const FVector2D Home = MapMarker(District.PlayerSpawn);
     Text(TEXT("H"), Paper, Home.X - 4.f * Scale, Home.Y - 8.f * Scale, .85f);
     const FVector Facing = Pawn->GetActorForwardVector();
     const FVector2D Nose(Facing.X, -Facing.Y), Side(-Nose.Y, Nose.X);
@@ -2100,7 +2141,7 @@ void AQuebecHUD::DrawHUD()
             DrawText(SoundWord, Ink, X + Offset.X * Scale, Y + Offset.Y * Scale, Large, Size);
         DrawText(SoundWord, Paper, X, Y, Large, Size);
     }
-    if (State)
+    if (State && !bToronto)
     {
         const int32 Completed = Campaign ? Campaign->GetCompletedMissionCount() : State->MissionIndex;
         if (LastMissionIndex >= 0 && Completed > LastMissionIndex) CompletionTime = Now;
@@ -2138,12 +2179,23 @@ AQuebecGameMode::AQuebecGameMode()
     HUDClass = AQuebecHUD::StaticClass();
 }
 
+AActor* AQuebecGameMode::ChoosePlayerStart_Implementation(AController* Player)
+{
+    // Keep authored multiplayer starts and PIE's "Play from Here" behavior.
+    AActor* Start = Super::ChoosePlayerStart_Implementation(Player);
+    if (Start || !QuebecDistrict::IsToronto(GetWorld())) return Start;
+    FActorSpawnParameters Parameters;
+    Parameters.ObjectFlags |= RF_Transient;
+    return GetWorld()->SpawnActor<APlayerStart>(QuebecDistrict::ForWorld(GetWorld()).PlayerSpawn, FRotator::ZeroRotator, Parameters);
+}
+
 void AQuebecGameMode::BeginPlay()
 {
     Super::BeginPlay();
     // Any map can have a sky. QA runs keep the authored afternoon unless they ask for a time or weather.
     if (AQuebecSky::ShouldSpawn()) GetWorld()->SpawnActor<AQuebecSky>();
-    if (!GetWorld()->GetMapName().Contains(TEXT("LaFontaine"))) return;
+    const bool bToronto = QuebecDistrict::IsToronto(GetWorld());
+    if (!bToronto && !GetWorld()->GetMapName().Contains(TEXT("LaFontaine"))) return;
     TArray<AActor*> RoadSurfaces;
     for (TActorIterator<AStaticMeshActor> It(GetWorld()); It; ++It)
     {
@@ -2158,6 +2210,8 @@ void AQuebecGameMode::BeginPlay()
             Surface->SetCollisionResponseToChannel(ECC_Visibility,ECR_Block);
         }
     }
+    // Toronto has its own origin and starts as free roam, with only its authored starter car.
+    if (bToronto) return;
     if (!FParse::Param(FCommandLine::Get(), TEXT("NordNoCampaign")))
     {
         GetWorld()->SpawnActor<AQuebecCampaign>();

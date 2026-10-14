@@ -1,0 +1,702 @@
+{
+  "devices": [
+    {
+      "deviceName": "omarchy",
+      "instance": "01A13AF60F417E2D877012BCA5524B45",
+      "instanceName": "omarchy-780688",
+      "platform": "LinuxEditor",
+      "oSVersion": "Omarchy 7.2.5-3-omarchy",
+      "model": "Default",
+      "gPU": "NVIDIA GeForce RTX 4090 (NVIDIA UNIX Open Kernel Module for x86_64  610.57.04  Release Build  (root@omarchy))",
+      "cPUModel": "Intel(R) Core(TM) i9-14900K",
+      "rAMInGB": 94,
+      "renderMode": "SM6",
+      "rHI": "",
+      "appInstanceLog": ""
+    }
+  ],
+  "reportCreatedOn": "2026.10.14-15.09.41",
+  "succeeded": 27,
+  "succeededWithWarnings": 2,
+  "failed": 0,
+  "notRun": 0,
+  "inProcess": 0,
+  "totalDuration": 0.7150336503982544,
+  "comparisonExported": false,
+  "comparisonExportDirectory": "",
+  "tests": [
+    {
+      "testDisplayName": "BlendedLocomotion",
+      "fullTestPath": "Quebec.Animation.BlendedLocomotion",
+      "tags": [],
+      "state": "Success",
+      "deviceInstance": [
+        "01A13AF60F417E2D877012BCA5524B45"
+      ],
+      "duration": 0.1106155589222908,
+      "dateTime": "2026.10.14-15.09.40",
+      "entries": [],
+      "warnings": 0,
+      "errors": 0,
+      "artifacts": []
+    },
+    {
+      "testDisplayName": "GraphicNovelCandidateSelection",
+      "fullTestPath": "Quebec.Animation.GraphicNovelCandidateSelection",
+      "tags": [],
+      "state": "Success",
+      "deviceInstance": [
+        "01A13AF60F417E2D877012BCA5524B45"
+      ],
+      "duration": 0.2511734962463379,
+      "dateTime": "2026.10.14-15.09.40",
+      "entries": [
+        {
+          "event": {
+            "type": "Info",
+            "message": "NORD_GRAPHIC_NOVEL_SELECTION_CHECKED default=production pilot=native style8=production privateF2=1",
+            "context": "",
+            "artifact": "00000000000000000000000000000000"
+          },
+          "filename": "",
+          "lineNumber": -1,
+          "timestamp": "2026.10.14-15.09.41"
+        }
+      ],
+      "warnings": 0,
+      "errors": 0,
+      "artifacts": []
+    },
+    {
+      "testDisplayName": "GraphicNovelHandsEyes",
+      "fullTestPath": "Quebec.Animation.GraphicNovelHandsEyes",
+      "tags": [],
+      "state": "Success",
+      "deviceInstance": [
+        "01A13AF60F417E2D877012BCA5524B45"
+      ],
+      "duration": 0.010703171603381634,
+      "dateTime": "2026.10.14-15.09.41",
+      "entries": [
+        {
+          "event": {
+            "type": "Info",
+            "message": "NORD_PILOT_HIPS sourceIndex=0 root=Hips forceRootLock=1 rootLock=0 time=0.411594 rawTrack={1.603684,0.870115,102.953583|-9.537442,81.384080,3.162438|1.000000,1.000000,1.000000} fullSourcePose={-3.266998,-0.392615,103.014885|0.413151,-0.305498,0.305498|1.000000,1.000000,1.000000} graphObserved={-3.266998,-0.392615,103.014885|0.413151,-0.305498,0.305498|1.000000,1.000000,1.000000}",
+            "context": "",
+            "artifact": "00000000000000000000000000000000"
+          },
+          "filename": "",
+          "lineNumber": -1,
+          "timestamp": "2026.10.14-15.09.41"
+        },
+        {
+          "event": {
+            "type": "Info",
+            "message": "NORD_GRAPHIC_NOVEL_CONTROLS_CHECKED bones=20 idleFlex=4.000 runFlex=10.000 runSquint=.35 sourceBodyPreserved=1",
+            "context": "",
+            "artifact": "00000000000000000000000000000000"
+          },
+          "filename": "",
+          "lineNumber": -1,
+          "timestamp": "2026.10.14-15.09.41"
+        }
+      ],
+      "warnings": 0,
+      "errors": 0,
+      "artifacts": []
+    },
+    {
+      "testDisplayName": "ReapplyCrew",
+      "fullTestPath": "Quebec.Animation.ReapplyCrew",
+      "tags": [],
+      "state": "Success",
+      "deviceInstance": [
+        "01A13AF60F417E2D877012BCA5524B45"
+      ],
+      "duration": 0.00992636475712061,
+      "dateTime": "2026.10.14-15.09.41",
+      "entries": [],
+      "warnings": 0,
+      "errors": 0,
+      "artifacts": []
+    },
+    {
+      "testDisplayName": "InputRelease",
+      "fullTestPath": "Quebec.Browser.InputRelease",
+      "tags": [],
+      "state": "Success",
+      "deviceInstance": [
+        "01A13AF60F417E2D877012BCA5524B45"
+      ],
+      "duration": 0.00856600608676672,
+      "dateTime": "2026.10.14-15.09.41",
+      "entries": [],
+      "warnings": 0,
+      "errors": 0,
+      "artifacts": []
+    },
+    {
+      "testDisplayName": "LookBounds",
+      "fullTestPath": "Quebec.Camera.LookBounds",
+      "tags": [],
+      "state": "Success",
+      "deviceInstance": [
+        "01A13AF60F417E2D877012BCA5524B45"
+      ],
+      "duration": 0.00828896090388298,
+      "dateTime": "2026.10.14-15.09.41",
+      "entries": [
+        {
+          "event": {
+            "type": "Warning",
+            "message": "LogSpawn: UWorld::DestroyActor: World has no context! World: Untitled, Actor: /Temp/Untitled_6.Untitled:PersistentLevel.Actor_0",
+            "context": "log",
+            "artifact": "00000000000000000000000000000000"
+          },
+          "filename": "",
+          "lineNumber": -1,
+          "timestamp": "2026.10.14-15.09.41"
+        },
+        {
+          "event": {
+            "type": "Warning",
+            "message": "LogSpawn: UWorld::DestroyActor: World has no context! World: Untitled, Actor: /Temp/Untitled_6.Untitled:PersistentLevel.Actor_1",
+            "context": "log",
+            "artifact": "00000000000000000000000000000000"
+          },
+          "filename": "",
+          "lineNumber": -1,
+          "timestamp": "2026.10.14-15.09.41"
+        }
+      ],
+      "warnings": 2,
+      "errors": 0,
+      "artifacts": []
+    },
+    {
+      "testDisplayName": "SaveRoundTrip",
+      "fullTestPath": "Quebec.Campaign.SaveRoundTrip",
+      "tags": [],
+      "state": "Success",
+      "deviceInstance": [
+        "01A13AF60F417E2D877012BCA5524B45"
+      ],
+      "duration": 0.004594914149492979,
+      "dateTime": "2026.10.14-15.09.41",
+      "entries": [],
+      "warnings": 0,
+      "errors": 0,
+      "artifacts": []
+    },
+    {
+      "testDisplayName": "SaveValidation",
+      "fullTestPath": "Quebec.Campaign.SaveValidation",
+      "tags": [],
+      "state": "Success",
+      "deviceInstance": [
+        "01A13AF60F417E2D877012BCA5524B45"
+      ],
+      "duration": 0.007782539818435907,
+      "dateTime": "2026.10.14-15.09.41",
+      "entries": [],
+      "warnings": 0,
+      "errors": 0,
+      "artifacts": []
+    },
+    {
+      "testDisplayName": "Identity",
+      "fullTestPath": "Quebec.District.Identity",
+      "tags": [],
+      "state": "Success",
+      "deviceInstance": [
+        "01A13AF60F417E2D877012BCA5524B45"
+      ],
+      "duration": 0.013027465902268887,
+      "dateTime": "2026.10.14-15.09.41",
+      "entries": [],
+      "warnings": 0,
+      "errors": 0,
+      "artifacts": []
+    },
+    {
+      "testDisplayName": "SpawnRecoveryAndWater",
+      "fullTestPath": "Quebec.District.SpawnRecoveryAndWater",
+      "tags": [],
+      "state": "Success",
+      "deviceInstance": [
+        "01A13AF60F417E2D877012BCA5524B45"
+      ],
+      "duration": 0.020932920277118683,
+      "dateTime": "2026.10.14-15.09.41",
+      "entries": [],
+      "warnings": 0,
+      "errors": 0,
+      "artifacts": []
+    },
+    {
+      "testDisplayName": "TorontoFreeRoamIsolation",
+      "fullTestPath": "Quebec.District.TorontoFreeRoamIsolation",
+      "tags": [],
+      "state": "Success",
+      "deviceInstance": [
+        "01A13AF60F417E2D877012BCA5524B45"
+      ],
+      "duration": 0.010507752187550068,
+      "dateTime": "2026.10.14-15.09.41",
+      "entries": [],
+      "warnings": 0,
+      "errors": 0,
+      "artifacts": []
+    },
+    {
+      "testDisplayName": "FittedHullCurbsAndWalls",
+      "fullTestPath": "Quebec.Driving.FittedHullCurbsAndWalls",
+      "tags": [],
+      "state": "Success",
+      "deviceInstance": [
+        "01A13AF60F417E2D877012BCA5524B45"
+      ],
+      "duration": 0.06860417127609253,
+      "dateTime": "2026.10.14-15.09.41",
+      "entries": [
+        {
+          "event": {
+            "type": "Warning",
+            "message": "LogSpawn: UWorld::DestroyActor: World has no context! World: Untitled, Actor: /Temp/Untitled_7.Untitled:PersistentLevel.Actor_1",
+            "context": "log",
+            "artifact": "00000000000000000000000000000000"
+          },
+          "filename": "",
+          "lineNumber": -1,
+          "timestamp": "2026.10.14-15.09.41"
+        },
+        {
+          "event": {
+            "type": "Info",
+            "message": "Curb front wheels position=X=301.929 Y=0.000 Z=109.347 rotation=P=3.323120 Y=0.000000 R=-0.000000",
+            "context": "",
+            "artifact": "00000000000000000000000000000000"
+          },
+          "filename": "",
+          "lineNumber": -1,
+          "timestamp": "2026.10.14-15.09.41"
+        },
+        {
+          "event": {
+            "type": "Warning",
+            "message": "LogSpawn: UWorld::DestroyActor: World has no context! World: Untitled, Actor: /Temp/Untitled_7.Untitled:PersistentLevel.Actor_2",
+            "context": "log",
+            "artifact": "00000000000000000000000000000000"
+          },
+          "filename": "",
+          "lineNumber": -1,
+          "timestamp": "2026.10.14-15.09.41"
+        },
+        {
+          "event": {
+            "type": "Warning",
+            "message": "LogSpawn: UWorld::DestroyActor: World has no context! World: Untitled, Actor: /Temp/Untitled_7.Untitled:PersistentLevel.Actor_3",
+            "context": "log",
+            "artifact": "00000000000000000000000000000000"
+          },
+          "filename": "",
+          "lineNumber": -1,
+          "timestamp": "2026.10.14-15.09.41"
+        },
+        {
+          "event": {
+            "type": "Info",
+            "message": "Glancing wall position=X=169.921 Y=528.361 Z=100.500 speed=150.35 lateral=179.18",
+            "context": "",
+            "artifact": "00000000000000000000000000000000"
+          },
+          "filename": "",
+          "lineNumber": -1,
+          "timestamp": "2026.10.14-15.09.41"
+        },
+        {
+          "event": {
+            "type": "Warning",
+            "message": "LogSpawn: UWorld::DestroyActor: World has no context! World: Untitled, Actor: /Temp/Untitled_7.Untitled:PersistentLevel.Actor_4",
+            "context": "log",
+            "artifact": "00000000000000000000000000000000"
+          },
+          "filename": "",
+          "lineNumber": -1,
+          "timestamp": "2026.10.14-15.09.41"
+        },
+        {
+          "event": {
+            "type": "Warning",
+            "message": "LogSpawn: UWorld::DestroyActor: World has no context! World: Untitled, Actor: /Temp/Untitled_7.Untitled:PersistentLevel.QuebecCar_1",
+            "context": "log",
+            "artifact": "00000000000000000000000000000000"
+          },
+          "filename": "",
+          "lineNumber": -1,
+          "timestamp": "2026.10.14-15.09.41"
+        }
+      ],
+      "warnings": 5,
+      "errors": 0,
+      "artifacts": []
+    },
+    {
+      "testDisplayName": "FrameRateConsistency",
+      "fullTestPath": "Quebec.Driving.FrameRateConsistency",
+      "tags": [],
+      "state": "Success",
+      "deviceInstance": [
+        "01A13AF60F417E2D877012BCA5524B45"
+      ],
+      "duration": 0.01882929541170597,
+      "dateTime": "2026.10.14-15.09.41",
+      "entries": [
+        {
+          "event": {
+            "type": "Info",
+            "message": "30Hz speed=2431.383 position=X=2525.699 Y=615.386 Z=100.500 yaw=21.914; 120Hz speed=2426.494 position=X=2506.262 Y=601.474 Z=100.500 yaw=21.839",
+            "context": "",
+            "artifact": "00000000000000000000000000000000"
+          },
+          "filename": "",
+          "lineNumber": -1,
+          "timestamp": "2026.10.14-15.09.41"
+        }
+      ],
+      "warnings": 0,
+      "errors": 0,
+      "artifacts": []
+    },
+    {
+      "testDisplayName": "SteeringHandbrakeRecovery",
+      "fullTestPath": "Quebec.Driving.SteeringHandbrakeRecovery",
+      "tags": [],
+      "state": "Success",
+      "deviceInstance": [
+        "01A13AF60F417E2D877012BCA5524B45"
+      ],
+      "duration": 0.018008088693022728,
+      "dateTime": "2026.10.14-15.09.41",
+      "entries": [
+        {
+          "event": {
+            "type": "Info",
+            "message": "City yaw=17.296 fast yaw=9.143 fast speed=2446.505",
+            "context": "",
+            "artifact": "00000000000000000000000000000000"
+          },
+          "filename": "",
+          "lineNumber": -1,
+          "timestamp": "2026.10.14-15.09.41"
+        },
+        {
+          "event": {
+            "type": "Info",
+            "message": "Dry lateral=76.567 handbrake lateral=209.919 speed=1205.533",
+            "context": "",
+            "artifact": "00000000000000000000000000000000"
+          },
+          "filename": "",
+          "lineNumber": -1,
+          "timestamp": "2026.10.14-15.09.41"
+        },
+        {
+          "event": {
+            "type": "Info",
+            "message": "Recovered lateral=-0.718 speed=1036.566",
+            "context": "",
+            "artifact": "00000000000000000000000000000000"
+          },
+          "filename": "",
+          "lineNumber": -1,
+          "timestamp": "2026.10.14-15.09.41"
+        },
+        {
+          "event": {
+            "type": "Info",
+            "message": "Handbrake release speed=1499.736 lateral=0.000",
+            "context": "",
+            "artifact": "00000000000000000000000000000000"
+          },
+          "filename": "",
+          "lineNumber": -1,
+          "timestamp": "2026.10.14-15.09.41"
+        }
+      ],
+      "warnings": 0,
+      "errors": 0,
+      "artifacts": []
+    },
+    {
+      "testDisplayName": "ThrottleBrakeValidation",
+      "fullTestPath": "Quebec.Driving.ThrottleBrakeValidation",
+      "tags": [],
+      "state": "Success",
+      "deviceInstance": [
+        "01A13AF60F417E2D877012BCA5524B45"
+      ],
+      "duration": 0.03714627027511597,
+      "dateTime": "2026.10.14-15.09.41",
+      "entries": [
+        {
+          "event": {
+            "type": "Info",
+            "message": "Acceleration speed=1964.090 travel=X=1511.745 Y=0.000 Z=100.500 local=1 authority=1 initialized=1",
+            "context": "",
+            "artifact": "00000000000000000000000000000000"
+          },
+          "filename": "",
+          "lineNumber": -1,
+          "timestamp": "2026.10.14-15.09.41"
+        },
+        {
+          "event": {
+            "type": "Info",
+            "message": "Top speed=3000.000",
+            "context": "",
+            "artifact": "00000000000000000000000000000000"
+          },
+          "filename": "",
+          "lineNumber": -1,
+          "timestamp": "2026.10.14-15.09.41"
+        },
+        {
+          "event": {
+            "type": "Info",
+            "message": "Braking stopped=1 subsequent reverse speed=-950.000",
+            "context": "",
+            "artifact": "00000000000000000000000000000000"
+          },
+          "filename": "",
+          "lineNumber": -1,
+          "timestamp": "2026.10.14-15.09.41"
+        },
+        {
+          "event": {
+            "type": "Info",
+            "message": "Reverse response after 0.1s speed=-40.168 no_forward_twitch=1",
+            "context": "",
+            "artifact": "00000000000000000000000000000000"
+          },
+          "filename": "",
+          "lineNumber": -1,
+          "timestamp": "2026.10.14-15.09.41"
+        }
+      ],
+      "warnings": 0,
+      "errors": 0,
+      "artifacts": []
+    },
+    {
+      "testDisplayName": "ShutdownCleanup",
+      "fullTestPath": "Quebec.Editor.ShutdownCleanup",
+      "tags": [],
+      "state": "Success",
+      "deviceInstance": [
+        "01A13AF60F417E2D877012BCA5524B45"
+      ],
+      "duration": 0.007455520797520876,
+      "dateTime": "2026.10.14-15.09.41",
+      "entries": [],
+      "warnings": 0,
+      "errors": 0,
+      "artifacts": []
+    },
+    {
+      "testDisplayName": "RadarClip",
+      "fullTestPath": "Quebec.HUD.RadarClip",
+      "tags": [],
+      "state": "Success",
+      "deviceInstance": [
+        "01A13AF60F417E2D877012BCA5524B45"
+      ],
+      "duration": 0.009012718684971333,
+      "dateTime": "2026.10.14-15.09.41",
+      "entries": [],
+      "warnings": 0,
+      "errors": 0,
+      "artifacts": []
+    },
+    {
+      "testDisplayName": "Proximity",
+      "fullTestPath": "Quebec.Missions.Proximity",
+      "tags": [],
+      "state": "Success",
+      "deviceInstance": [
+        "01A13AF60F417E2D877012BCA5524B45"
+      ],
+      "duration": 0.008277883753180504,
+      "dateTime": "2026.10.14-15.09.41",
+      "entries": [],
+      "warnings": 0,
+      "errors": 0,
+      "artifacts": []
+    },
+    {
+      "testDisplayName": "Movement",
+      "fullTestPath": "Quebec.Residents.Movement",
+      "tags": [],
+      "state": "Success",
+      "deviceInstance": [
+        "01A13AF60F417E2D877012BCA5524B45"
+      ],
+      "duration": 0.00811260286718607,
+      "dateTime": "2026.10.14-15.09.41",
+      "entries": [],
+      "warnings": 0,
+      "errors": 0,
+      "artifacts": []
+    },
+    {
+      "testDisplayName": "RouteContinuity",
+      "fullTestPath": "Quebec.Residents.RouteContinuity",
+      "tags": [],
+      "state": "Success",
+      "deviceInstance": [
+        "01A13AF60F417E2D877012BCA5524B45"
+      ],
+      "duration": 0.008485094644129276,
+      "dateTime": "2026.10.14-15.09.41",
+      "entries": [],
+      "warnings": 0,
+      "errors": 0,
+      "artifacts": []
+    },
+    {
+      "testDisplayName": "AuthoredDay",
+      "fullTestPath": "Quebec.Sky.AuthoredDay",
+      "tags": [],
+      "state": "Success",
+      "deviceInstance": [
+        "01A13AF60F417E2D877012BCA5524B45"
+      ],
+      "duration": 0.007489082869142294,
+      "dateTime": "2026.10.14-15.09.41",
+      "entries": [],
+      "warnings": 0,
+      "errors": 0,
+      "artifacts": []
+    },
+    {
+      "testDisplayName": "Clock",
+      "fullTestPath": "Quebec.Sky.Clock",
+      "tags": [],
+      "state": "Success",
+      "deviceInstance": [
+        "01A13AF60F417E2D877012BCA5524B45"
+      ],
+      "duration": 0.008445721119642258,
+      "dateTime": "2026.10.14-15.09.41",
+      "entries": [],
+      "warnings": 0,
+      "errors": 0,
+      "artifacts": []
+    },
+    {
+      "testDisplayName": "LampData",
+      "fullTestPath": "Quebec.Sky.LampData",
+      "tags": [],
+      "state": "Success",
+      "deviceInstance": [
+        "01A13AF60F417E2D877012BCA5524B45"
+      ],
+      "duration": 0.008021597750484943,
+      "dateTime": "2026.10.14-15.09.41",
+      "entries": [],
+      "warnings": 0,
+      "errors": 0,
+      "artifacts": []
+    },
+    {
+      "testDisplayName": "Night",
+      "fullTestPath": "Quebec.Sky.Night",
+      "tags": [],
+      "state": "Success",
+      "deviceInstance": [
+        "01A13AF60F417E2D877012BCA5524B45"
+      ],
+      "duration": 0.007891680113971233,
+      "dateTime": "2026.10.14-15.09.41",
+      "entries": [],
+      "warnings": 0,
+      "errors": 0,
+      "artifacts": []
+    },
+    {
+      "testDisplayName": "WeatherChain",
+      "fullTestPath": "Quebec.Sky.WeatherChain",
+      "tags": [],
+      "state": "Success",
+      "deviceInstance": [
+        "01A13AF60F417E2D877012BCA5524B45"
+      ],
+      "duration": 0.008406282402575016,
+      "dateTime": "2026.10.14-15.09.41",
+      "entries": [],
+      "warnings": 0,
+      "errors": 0,
+      "artifacts": []
+    },
+    {
+      "testDisplayName": "Idle",
+      "fullTestPath": "Quebec.Stream.Idle",
+      "tags": [],
+      "state": "Success",
+      "deviceInstance": [
+        "01A13AF60F417E2D877012BCA5524B45"
+      ],
+      "duration": 0.007837825454771519,
+      "dateTime": "2026.10.14-15.09.41",
+      "entries": [],
+      "warnings": 0,
+      "errors": 0,
+      "artifacts": []
+    },
+    {
+      "testDisplayName": "PondGeometry",
+      "fullTestPath": "Quebec.Swimming.PondGeometry",
+      "tags": [],
+      "state": "Success",
+      "deviceInstance": [
+        "01A13AF60F417E2D877012BCA5524B45"
+      ],
+      "duration": 0.008172553032636642,
+      "dateTime": "2026.10.14-15.09.41",
+      "entries": [],
+      "warnings": 0,
+      "errors": 0,
+      "artifacts": []
+    },
+    {
+      "testDisplayName": "BlockedApproach",
+      "fullTestPath": "Quebec.Traffic.BlockedApproach",
+      "tags": [],
+      "state": "Success",
+      "deviceInstance": [
+        "01A13AF60F417E2D877012BCA5524B45"
+      ],
+      "duration": 0.01052265428006649,
+      "dateTime": "2026.10.14-15.09.41",
+      "entries": [],
+      "warnings": 0,
+      "errors": 0,
+      "artifacts": []
+    },
+    {
+      "testDisplayName": "ClosedRoadGraph",
+      "fullTestPath": "Quebec.Traffic.ClosedRoadGraph",
+      "tags": [],
+      "state": "Success",
+      "deviceInstance": [
+        "01A13AF60F417E2D877012BCA5524B45"
+      ],
+      "duration": 0.008195442147552967,
+      "dateTime": "2026.10.14-15.09.41",
+      "entries": [],
+      "warnings": 0,
+      "errors": 0,
+      "artifacts": []
+    }
+  ]
+}

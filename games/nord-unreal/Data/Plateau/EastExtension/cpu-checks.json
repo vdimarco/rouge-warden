@@ -1,0 +1,40 @@
+{
+  "passed": true,
+  "scope": "CPU source, geometry, metadata/header and fake native preflight/original-semantic guards only; no Unreal execution",
+  "checks": [
+    {
+      "command": "python3 Scripts/test_montreal_east_extension.py",
+      "exit_code": 0,
+      "log": "cpu-test.log"
+    },
+    {
+      "command": "python3 -m py_compile Scripts/montreal_east_extension.py Scripts/apply_montreal_east_extension.py Scripts/test_montreal_east_extension.py",
+      "exit_code": 0
+    }
+  ],
+  "independent_guard_review": "east_guard_review: no concrete blocker; installed UE 5.8.3 authoring APIs checked; CPU guard test independently passed",
+  "native_applied": false,
+  "native_verified": false,
+  "traversal_rendered_package_acceptance": false,
+  "files": {
+    "Scripts/montreal_east_extension.py": "f5f501a05034408fd1acd9f750d6a305daa1b0e42b709850fd86288c97c52127",
+    "Scripts/apply_montreal_east_extension.py": "de51204cf50898b16ce77e49748df0ccccb2a0d97af33cd3168c303688dfd7ba",
+    "Scripts/test_montreal_east_extension.py": "791f646485abb898db910a1ac4584ebdb668354368f401c510b85ebc24173df8",
+    "Source/Quebec/LaFontaineExtensionMap.h": "2764fee03b9c17bb63fd6b1c4a9d83a10457ffab8d9dbf7b3d0d7adb9a1f8046",
+    "Data/Plateau/EastExtension/extension.json": "5a957e813fb6ed0e44b543c0ad5231c207dd969f85ef1e3f390469f8e1d78c7e",
+    "Data/Plateau/EastExtension/README.md": "b26cfa70595256c5ad4c145e471061d27c2b64003b1232aa48c254c7daf11ee7",
+    "Data/Plateau/EastExtension/cpu-test.log": "0d8d2204cdb1f9ecc7d970de17440051c95cdf77365b2ca98e68d3d04895037b"
+  },
+  "backup_tampering_rejected": true,
+  "radar": {
+    "original_segments": 663,
+    "extension_segments": 143,
+    "combined_segments": 806,
+    "complete_original_prefix_byte_and_coordinate_equality": true,
+    "all_extension_suffix_byte_and_coordinate_equality": true,
+    "original_prefix_sha256": "f5ca557db7ef995916a8348a46d5f7c9eba5c81aa78937038f43db29b6b90bd3",
+    "original_five_sources_unchanged": true,
+    "native_radar_verified": false
+  },
+  "independent_radar_review": "east_guard_review independently verifies 663 exact original rows +143 suffix =806; original header SHA, prefix SHA and generator SHA match; updated CPU test passes; no builds or native execution."
+}

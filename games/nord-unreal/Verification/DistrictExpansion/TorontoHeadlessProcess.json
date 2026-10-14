@@ -1,0 +1,29 @@
+{
+  "passed": true,
+  "job": "RuntimeToronto",
+  "backup": "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Recovery/montreal-east-20261014T150229Z",
+  "command": [
+    "/home/von/.local/share/Epic/UE_5.8.3/Engine/Binaries/Linux/UnrealEditor-Cmd",
+    "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Quebec.uproject",
+    "/Game/Maps/CollegeBathurst",
+    "-NullRHI",
+    "-unattended",
+    "-nop4",
+    "-nosound",
+    "-UDPMESSAGING_TRANSPORT_ENABLE=0",
+    "-ExecutePythonScript=/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Scripts/test_college_runtime.py",
+    "-NordMontrealEastBackup=/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Recovery/montreal-east-20261014T150229Z",
+    "-abslog=/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/DistrictRuntime/RuntimeToronto-HeadlessOnly/native.log"
+  ],
+  "started_utc": "2026-10-14T15:26:35.822534+00:00",
+  "exit_code": 0,
+  "runtime_report": "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/DistrictRuntime/RuntimeHeadless-20261014T152644676984Z.json",
+  "runtime_checks": 32,
+  "native_passed": true,
+  "changed_existing_content": [],
+  "added_content": [],
+  "only_declared_content_changes": true,
+  "settings_restored": true,
+  "montreal_sources_unchanged": true,
+  "saves_unchanged": true
+}

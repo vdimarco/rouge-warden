@@ -1,0 +1,1030 @@
+{
+  "passed": true,
+  "map": "/Game/Maps/CollegeBathurst",
+  "native_visual_acceptance": false,
+  "new_collision": false,
+  "manifest_sha256": "cf97770148fe7f70f1dfa1970f98cf9453275c18e3cefdbab460495c32d01bc2",
+  "source_sha256": {
+    "Data/CollegeBathurst/layout.json": "199b3371798f174a19e619aacdbfc5e5f258747e3b517bca15bf8dd35f6f3730",
+    "Data/CollegeBathurst/osm.xml": "b4c2b519c1b229622c288a2027a8d4d00d6913787ddb201b5751455a6b2f72dd",
+    "Data/CollegeBathurst/massing.geojson": "07f2d29a7101ecf741ab3d5f28621725ea5f4b3a98dc1233a78d6fcaf7f1a5cb",
+    "Scripts/plateau_mesh.py": "0db445d502ffeb5a0d77c49fb1cb9d3a1bd49492b6956f37ce96bad505033217",
+    "Scripts/prepare_sneaky_dees.py": "86e557d49268d6ebffb701935e0b51fdf007192bc598f870455ed021fec808c2"
+  },
+  "geometry_sha256": {
+    "Blue": "50ae75cc679a0f37ffdca6fe5bc65547c03a4f0c74e91091319ae833476771fc",
+    "Brick": "eb63c025f85504b08dd56cca649ed48e0c7435eefb099dd46c49895394760869",
+    "Cladding": "3665b7100583fad1375dd26e05a959525336726f20f4b2b4557921ed872dead9",
+    "Glazing": "a47091cc54fd306b695e180350d328a617064c3bf01c3da25fddd58201c440f3",
+    "Gold": "96b7af5ac0c802abce2f6519d688a8bd84c0751032335c696eb0ee0ea15403ec",
+    "Ink": "9c6ff1a180841d246956f1e80eac96ab6789331ef2eb1407d4c261489d3631ab",
+    "Red": "516293a8a3c0291058a66bc9b84b6a449915792539a5af747b6ec3e3c31cbf0b",
+    "Stone": "e4c2cf32d9cf36d8f8155003a6ad07acc2246c8300500852598029c060ab4028"
+  },
+  "protected_package_sha256_before": {
+    "Content/CollegeBathurst/SM_Landmark.uasset": "08feac74892c71edcd6822794b1b7cb27ba58275104218ded89b7ad304d7303e",
+    "Content/CollegeBathurst/SM_Glass.uasset": "110ea97b7647b96f72831918ed329ad7dc8aba5d1f63ebca20cadec28c4f49cb"
+  },
+  "unowned_static_meshes_before": {
+    "/Game/Maps/CollegeBathurst.CollegeBathurst:PersistentLevel.StaticMeshActor_0": {
+      "label": "Toronto Brick",
+      "mesh": "/Game/CollegeBathurst/SM_Brick.SM_Brick",
+      "location": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "hidden": false,
+      "visible": true,
+      "collision_profile": "BlockAll",
+      "collision_enabled": "<CollisionEnabled.QUERY_AND_PHYSICS: 3>",
+      "cast_shadow": true,
+      "materials": [
+        "/Game/Plateau/Materials/M_BrickRed.M_BrickRed"
+      ]
+    },
+    "/Game/Maps/CollegeBathurst.CollegeBathurst:PersistentLevel.StaticMeshActor_1": {
+      "label": "Toronto Cream",
+      "mesh": "/Game/CollegeBathurst/SM_Cream.SM_Cream",
+      "location": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "hidden": false,
+      "visible": true,
+      "collision_profile": "BlockAll",
+      "collision_enabled": "<CollisionEnabled.QUERY_AND_PHYSICS: 3>",
+      "cast_shadow": true,
+      "materials": [
+        "/Game/Plateau/Materials/M_Limestone.M_Limestone"
+      ]
+    },
+    "/Game/Maps/CollegeBathurst.CollegeBathurst:PersistentLevel.StaticMeshActor_2": {
+      "label": "Toronto Glass",
+      "mesh": "/Game/CollegeBathurst/SM_Glass.SM_Glass",
+      "location": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "hidden": false,
+      "visible": true,
+      "collision_profile": "NoCollision",
+      "collision_enabled": "<CollisionEnabled.NO_COLLISION: 0>",
+      "cast_shadow": true,
+      "materials": [
+        "/Game/Plateau/Materials/M_Glass.M_Glass"
+      ]
+    },
+    "/Game/Maps/CollegeBathurst.CollegeBathurst:PersistentLevel.StaticMeshActor_3": {
+      "label": "Toronto Grass",
+      "mesh": "/Game/CollegeBathurst/SM_Grass.SM_Grass",
+      "location": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "hidden": false,
+      "visible": true,
+      "collision_profile": "NoCollision",
+      "collision_enabled": "<CollisionEnabled.NO_COLLISION: 0>",
+      "cast_shadow": true,
+      "materials": [
+        "/Game/Plateau/Materials/M_ParkGrass.M_ParkGrass"
+      ]
+    },
+    "/Game/Maps/CollegeBathurst.CollegeBathurst:PersistentLevel.StaticMeshActor_4": {
+      "label": "Toronto Ground",
+      "mesh": "/Game/CollegeBathurst/SM_Ground.SM_Ground",
+      "location": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "hidden": false,
+      "visible": true,
+      "collision_profile": "NoCollision",
+      "collision_enabled": "<CollisionEnabled.NO_COLLISION: 0>",
+      "cast_shadow": true,
+      "materials": [
+        "/Game/Plateau/Materials/M_Concrete.M_Concrete"
+      ]
+    },
+    "/Game/Maps/CollegeBathurst.CollegeBathurst:PersistentLevel.StaticMeshActor_5": {
+      "label": "Toronto Landmark",
+      "mesh": "/Game/CollegeBathurst/SM_Landmark.SM_Landmark",
+      "location": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "hidden": false,
+      "visible": true,
+      "collision_profile": "BlockAll",
+      "collision_enabled": "<CollisionEnabled.QUERY_AND_PHYSICS: 3>",
+      "cast_shadow": true,
+      "materials": [
+        "/Game/Plateau/Materials/M_BrickRed.M_BrickRed"
+      ]
+    },
+    "/Game/Maps/CollegeBathurst.CollegeBathurst:PersistentLevel.StaticMeshActor_6": {
+      "label": "Toronto Marking",
+      "mesh": "/Game/CollegeBathurst/SM_Marking.SM_Marking",
+      "location": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "hidden": false,
+      "visible": true,
+      "collision_profile": "NoCollision",
+      "collision_enabled": "<CollisionEnabled.NO_COLLISION: 0>",
+      "cast_shadow": true,
+      "materials": [
+        "/Game/Plateau/Materials/M_Yellow.M_Yellow"
+      ]
+    },
+    "/Game/Maps/CollegeBathurst.CollegeBathurst:PersistentLevel.StaticMeshActor_7": {
+      "label": "Toronto Path",
+      "mesh": "/Game/CollegeBathurst/SM_Path.SM_Path",
+      "location": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "hidden": false,
+      "visible": true,
+      "collision_profile": "NoCollision",
+      "collision_enabled": "<CollisionEnabled.NO_COLLISION: 0>",
+      "cast_shadow": true,
+      "materials": [
+        "/Game/Plateau/Materials/M_Concrete.M_Concrete"
+      ]
+    },
+    "/Game/Maps/CollegeBathurst.CollegeBathurst:PersistentLevel.StaticMeshActor_8": {
+      "label": "Toronto Road",
+      "mesh": "/Game/CollegeBathurst/SM_Road.SM_Road",
+      "location": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "hidden": false,
+      "visible": true,
+      "collision_profile": "NoCollision",
+      "collision_enabled": "<CollisionEnabled.NO_COLLISION: 0>",
+      "cast_shadow": true,
+      "materials": [
+        "/Game/Plateau/Materials/M_Asphalt.M_Asphalt"
+      ]
+    },
+    "/Game/Maps/CollegeBathurst.CollegeBathurst:PersistentLevel.StaticMeshActor_9": {
+      "label": "Toronto Roof",
+      "mesh": "/Game/CollegeBathurst/SM_Roof.SM_Roof",
+      "location": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "hidden": false,
+      "visible": true,
+      "collision_profile": "BlockAll",
+      "collision_enabled": "<CollisionEnabled.QUERY_AND_PHYSICS: 3>",
+      "cast_shadow": true,
+      "materials": [
+        "/Game/Plateau/Materials/M_Roof.M_Roof"
+      ]
+    },
+    "/Game/Maps/CollegeBathurst.CollegeBathurst:PersistentLevel.StaticMeshActor_10": {
+      "label": "Toronto Sage",
+      "mesh": "/Game/CollegeBathurst/SM_Sage.SM_Sage",
+      "location": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "hidden": false,
+      "visible": true,
+      "collision_profile": "BlockAll",
+      "collision_enabled": "<CollisionEnabled.QUERY_AND_PHYSICS: 3>",
+      "cast_shadow": true,
+      "materials": [
+        "/Game/Plateau/Materials/M_SageBackground.M_SageBackground"
+      ]
+    },
+    "/Game/Maps/CollegeBathurst.CollegeBathurst:PersistentLevel.StaticMeshActor_11": {
+      "label": "Toronto Tram",
+      "mesh": "/Game/CollegeBathurst/SM_Tram.SM_Tram",
+      "location": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "hidden": false,
+      "visible": true,
+      "collision_profile": "NoCollision",
+      "collision_enabled": "<CollisionEnabled.NO_COLLISION: 0>",
+      "cast_shadow": true,
+      "materials": [
+        "/Game/Plateau/Materials/M_Iron.M_Iron"
+      ]
+    },
+    "/Game/Maps/CollegeBathurst.CollegeBathurst:PersistentLevel.StaticMeshActor_12": {
+      "label": "Collision floor",
+      "mesh": "/Engine/BasicShapes/Cube.Cube",
+      "location": [
+        -12450.5415,
+        -2408.9649999999965,
+        -101.0
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1248.35629,
+        723.58,
+        2.0
+      ],
+      "hidden": true,
+      "visible": true,
+      "collision_profile": "BlockAll",
+      "collision_enabled": "<CollisionEnabled.QUERY_AND_PHYSICS: 3>",
+      "cast_shadow": true,
+      "materials": [
+        "/Game/Plateau/Materials/M_Concrete.M_Concrete"
+      ]
+    },
+    "/Game/Maps/CollegeBathurst.CollegeBathurst:PersistentLevel.StaticMeshActor_13": {
+      "label": "District edge",
+      "mesh": "/Engine/BasicShapes/Cube.Cube",
+      "location": [
+        -74868.356,
+        -2408.9649999999965,
+        150.0
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        0.7,
+        723.58,
+        3.0
+      ],
+      "hidden": true,
+      "visible": true,
+      "collision_profile": "BlockAll",
+      "collision_enabled": "<CollisionEnabled.QUERY_AND_PHYSICS: 3>",
+      "cast_shadow": true,
+      "materials": [
+        "/Game/Plateau/Materials/M_Concrete.M_Concrete"
+      ]
+    },
+    "/Game/Maps/CollegeBathurst.CollegeBathurst:PersistentLevel.StaticMeshActor_14": {
+      "label": "District edge",
+      "mesh": "/Engine/BasicShapes/Cube.Cube",
+      "location": [
+        49967.273,
+        -2408.9649999999965,
+        150.0
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        0.7,
+        723.58,
+        3.0
+      ],
+      "hidden": true,
+      "visible": true,
+      "collision_profile": "BlockAll",
+      "collision_enabled": "<CollisionEnabled.QUERY_AND_PHYSICS: 3>",
+      "cast_shadow": true,
+      "materials": [
+        "/Game/Plateau/Materials/M_Concrete.M_Concrete"
+      ]
+    },
+    "/Game/Maps/CollegeBathurst.CollegeBathurst:PersistentLevel.StaticMeshActor_15": {
+      "label": "District edge",
+      "mesh": "/Engine/BasicShapes/Cube.Cube",
+      "location": [
+        -12450.5415,
+        -38587.965,
+        150.0
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1248.35629,
+        0.7,
+        3.0
+      ],
+      "hidden": true,
+      "visible": true,
+      "collision_profile": "BlockAll",
+      "collision_enabled": "<CollisionEnabled.QUERY_AND_PHYSICS: 3>",
+      "cast_shadow": true,
+      "materials": [
+        "/Game/Plateau/Materials/M_Concrete.M_Concrete"
+      ]
+    },
+    "/Game/Maps/CollegeBathurst.CollegeBathurst:PersistentLevel.StaticMeshActor_16": {
+      "label": "District edge",
+      "mesh": "/Engine/BasicShapes/Cube.Cube",
+      "location": [
+        -12450.5415,
+        33770.035,
+        150.0
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1248.35629,
+        0.7,
+        3.0
+      ],
+      "hidden": true,
+      "visible": true,
+      "collision_profile": "BlockAll",
+      "collision_enabled": "<CollisionEnabled.QUERY_AND_PHYSICS: 3>",
+      "cast_shadow": true,
+      "materials": [
+        "/Game/Plateau/Materials/M_Concrete.M_Concrete"
+      ]
+    }
+  },
+  "created": [
+    {
+      "label": "Sneaky Dee's facade Blue",
+      "mesh": "/Game/CollegeBathurst/SneakyDees/SM_Blue.SM_Blue",
+      "triangles": 216,
+      "material": "/Game/Plateau/Materials/M_SignBlue.M_SignBlue",
+      "collision": "NoCollision",
+      "cast_shadow": false
+    },
+    {
+      "label": "Sneaky Dee's facade Brick",
+      "mesh": "/Game/CollegeBathurst/SneakyDees/SM_Brick.SM_Brick",
+      "triangles": 132,
+      "material": "/Game/Plateau/Materials/M_BrickRed.M_BrickRed",
+      "collision": "NoCollision",
+      "cast_shadow": false
+    },
+    {
+      "label": "Sneaky Dee's facade Cladding",
+      "mesh": "/Game/CollegeBathurst/SneakyDees/SM_Cladding.SM_Cladding",
+      "triangles": 306,
+      "material": "/Game/Plateau/Materials/M_White.M_White",
+      "collision": "NoCollision",
+      "cast_shadow": false
+    },
+    {
+      "label": "Sneaky Dee's facade Glazing",
+      "mesh": "/Game/CollegeBathurst/SneakyDees/SM_Glazing.SM_Glazing",
+      "triangles": 108,
+      "material": "/Game/Plateau/Materials/M_CarGlass.M_CarGlass",
+      "collision": "NoCollision",
+      "cast_shadow": false
+    },
+    {
+      "label": "Sneaky Dee's facade Gold",
+      "mesh": "/Game/CollegeBathurst/SneakyDees/SM_Gold.SM_Gold",
+      "triangles": 216,
+      "material": "/Game/Plateau/Materials/M_Yellow.M_Yellow",
+      "collision": "NoCollision",
+      "cast_shadow": false
+    },
+    {
+      "label": "Sneaky Dee's facade Ink",
+      "mesh": "/Game/CollegeBathurst/SneakyDees/SM_Ink.SM_Ink",
+      "triangles": 588,
+      "material": "/Game/Plateau/Materials/M_InteriorDark.M_InteriorDark",
+      "collision": "NoCollision",
+      "cast_shadow": false
+    },
+    {
+      "label": "Sneaky Dee's facade Red",
+      "mesh": "/Game/CollegeBathurst/SneakyDees/SM_Red.SM_Red",
+      "triangles": 108,
+      "material": "/Game/Plateau/Materials/M_SignRed.M_SignRed",
+      "collision": "NoCollision",
+      "cast_shadow": false
+    },
+    {
+      "label": "Sneaky Dee's facade Stone",
+      "mesh": "/Game/CollegeBathurst/SneakyDees/SM_Stone.SM_Stone",
+      "triangles": 516,
+      "material": "/Game/Plateau/Materials/M_Limestone.M_Limestone",
+      "collision": "NoCollision",
+      "cast_shadow": false
+    }
+  ],
+  "triangles": 2190,
+  "protected_package_sha256_after": {
+    "Content/CollegeBathurst/SM_Landmark.uasset": "08feac74892c71edcd6822794b1b7cb27ba58275104218ded89b7ad304d7303e",
+    "Content/CollegeBathurst/SM_Glass.uasset": "110ea97b7647b96f72831918ed329ad7dc8aba5d1f63ebca20cadec28c4f49cb"
+  },
+  "unowned_static_meshes_after": {
+    "/Game/Maps/CollegeBathurst.CollegeBathurst:PersistentLevel.StaticMeshActor_0": {
+      "label": "Toronto Brick",
+      "mesh": "/Game/CollegeBathurst/SM_Brick.SM_Brick",
+      "location": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "hidden": false,
+      "visible": true,
+      "collision_profile": "BlockAll",
+      "collision_enabled": "<CollisionEnabled.QUERY_AND_PHYSICS: 3>",
+      "cast_shadow": true,
+      "materials": [
+        "/Game/Plateau/Materials/M_BrickRed.M_BrickRed"
+      ]
+    },
+    "/Game/Maps/CollegeBathurst.CollegeBathurst:PersistentLevel.StaticMeshActor_1": {
+      "label": "Toronto Cream",
+      "mesh": "/Game/CollegeBathurst/SM_Cream.SM_Cream",
+      "location": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "hidden": false,
+      "visible": true,
+      "collision_profile": "BlockAll",
+      "collision_enabled": "<CollisionEnabled.QUERY_AND_PHYSICS: 3>",
+      "cast_shadow": true,
+      "materials": [
+        "/Game/Plateau/Materials/M_Limestone.M_Limestone"
+      ]
+    },
+    "/Game/Maps/CollegeBathurst.CollegeBathurst:PersistentLevel.StaticMeshActor_2": {
+      "label": "Toronto Glass",
+      "mesh": "/Game/CollegeBathurst/SM_Glass.SM_Glass",
+      "location": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "hidden": false,
+      "visible": true,
+      "collision_profile": "NoCollision",
+      "collision_enabled": "<CollisionEnabled.NO_COLLISION: 0>",
+      "cast_shadow": true,
+      "materials": [
+        "/Game/Plateau/Materials/M_Glass.M_Glass"
+      ]
+    },
+    "/Game/Maps/CollegeBathurst.CollegeBathurst:PersistentLevel.StaticMeshActor_3": {
+      "label": "Toronto Grass",
+      "mesh": "/Game/CollegeBathurst/SM_Grass.SM_Grass",
+      "location": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "hidden": false,
+      "visible": true,
+      "collision_profile": "NoCollision",
+      "collision_enabled": "<CollisionEnabled.NO_COLLISION: 0>",
+      "cast_shadow": true,
+      "materials": [
+        "/Game/Plateau/Materials/M_ParkGrass.M_ParkGrass"
+      ]
+    },
+    "/Game/Maps/CollegeBathurst.CollegeBathurst:PersistentLevel.StaticMeshActor_4": {
+      "label": "Toronto Ground",
+      "mesh": "/Game/CollegeBathurst/SM_Ground.SM_Ground",
+      "location": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "hidden": false,
+      "visible": true,
+      "collision_profile": "NoCollision",
+      "collision_enabled": "<CollisionEnabled.NO_COLLISION: 0>",
+      "cast_shadow": true,
+      "materials": [
+        "/Game/Plateau/Materials/M_Concrete.M_Concrete"
+      ]
+    },
+    "/Game/Maps/CollegeBathurst.CollegeBathurst:PersistentLevel.StaticMeshActor_5": {
+      "label": "Toronto Landmark",
+      "mesh": "/Game/CollegeBathurst/SM_Landmark.SM_Landmark",
+      "location": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "hidden": false,
+      "visible": true,
+      "collision_profile": "BlockAll",
+      "collision_enabled": "<CollisionEnabled.QUERY_AND_PHYSICS: 3>",
+      "cast_shadow": true,
+      "materials": [
+        "/Game/Plateau/Materials/M_BrickRed.M_BrickRed"
+      ]
+    },
+    "/Game/Maps/CollegeBathurst.CollegeBathurst:PersistentLevel.StaticMeshActor_6": {
+      "label": "Toronto Marking",
+      "mesh": "/Game/CollegeBathurst/SM_Marking.SM_Marking",
+      "location": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "hidden": false,
+      "visible": true,
+      "collision_profile": "NoCollision",
+      "collision_enabled": "<CollisionEnabled.NO_COLLISION: 0>",
+      "cast_shadow": true,
+      "materials": [
+        "/Game/Plateau/Materials/M_Yellow.M_Yellow"
+      ]
+    },
+    "/Game/Maps/CollegeBathurst.CollegeBathurst:PersistentLevel.StaticMeshActor_7": {
+      "label": "Toronto Path",
+      "mesh": "/Game/CollegeBathurst/SM_Path.SM_Path",
+      "location": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "hidden": false,
+      "visible": true,
+      "collision_profile": "NoCollision",
+      "collision_enabled": "<CollisionEnabled.NO_COLLISION: 0>",
+      "cast_shadow": true,
+      "materials": [
+        "/Game/Plateau/Materials/M_Concrete.M_Concrete"
+      ]
+    },
+    "/Game/Maps/CollegeBathurst.CollegeBathurst:PersistentLevel.StaticMeshActor_8": {
+      "label": "Toronto Road",
+      "mesh": "/Game/CollegeBathurst/SM_Road.SM_Road",
+      "location": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "hidden": false,
+      "visible": true,
+      "collision_profile": "NoCollision",
+      "collision_enabled": "<CollisionEnabled.NO_COLLISION: 0>",
+      "cast_shadow": true,
+      "materials": [
+        "/Game/Plateau/Materials/M_Asphalt.M_Asphalt"
+      ]
+    },
+    "/Game/Maps/CollegeBathurst.CollegeBathurst:PersistentLevel.StaticMeshActor_9": {
+      "label": "Toronto Roof",
+      "mesh": "/Game/CollegeBathurst/SM_Roof.SM_Roof",
+      "location": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "hidden": false,
+      "visible": true,
+      "collision_profile": "BlockAll",
+      "collision_enabled": "<CollisionEnabled.QUERY_AND_PHYSICS: 3>",
+      "cast_shadow": true,
+      "materials": [
+        "/Game/Plateau/Materials/M_Roof.M_Roof"
+      ]
+    },
+    "/Game/Maps/CollegeBathurst.CollegeBathurst:PersistentLevel.StaticMeshActor_10": {
+      "label": "Toronto Sage",
+      "mesh": "/Game/CollegeBathurst/SM_Sage.SM_Sage",
+      "location": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "hidden": false,
+      "visible": true,
+      "collision_profile": "BlockAll",
+      "collision_enabled": "<CollisionEnabled.QUERY_AND_PHYSICS: 3>",
+      "cast_shadow": true,
+      "materials": [
+        "/Game/Plateau/Materials/M_SageBackground.M_SageBackground"
+      ]
+    },
+    "/Game/Maps/CollegeBathurst.CollegeBathurst:PersistentLevel.StaticMeshActor_11": {
+      "label": "Toronto Tram",
+      "mesh": "/Game/CollegeBathurst/SM_Tram.SM_Tram",
+      "location": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "hidden": false,
+      "visible": true,
+      "collision_profile": "NoCollision",
+      "collision_enabled": "<CollisionEnabled.NO_COLLISION: 0>",
+      "cast_shadow": true,
+      "materials": [
+        "/Game/Plateau/Materials/M_Iron.M_Iron"
+      ]
+    },
+    "/Game/Maps/CollegeBathurst.CollegeBathurst:PersistentLevel.StaticMeshActor_12": {
+      "label": "Collision floor",
+      "mesh": "/Engine/BasicShapes/Cube.Cube",
+      "location": [
+        -12450.5415,
+        -2408.9649999999965,
+        -101.0
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1248.35629,
+        723.58,
+        2.0
+      ],
+      "hidden": true,
+      "visible": true,
+      "collision_profile": "BlockAll",
+      "collision_enabled": "<CollisionEnabled.QUERY_AND_PHYSICS: 3>",
+      "cast_shadow": true,
+      "materials": [
+        "/Game/Plateau/Materials/M_Concrete.M_Concrete"
+      ]
+    },
+    "/Game/Maps/CollegeBathurst.CollegeBathurst:PersistentLevel.StaticMeshActor_13": {
+      "label": "District edge",
+      "mesh": "/Engine/BasicShapes/Cube.Cube",
+      "location": [
+        -74868.356,
+        -2408.9649999999965,
+        150.0
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        0.7,
+        723.58,
+        3.0
+      ],
+      "hidden": true,
+      "visible": true,
+      "collision_profile": "BlockAll",
+      "collision_enabled": "<CollisionEnabled.QUERY_AND_PHYSICS: 3>",
+      "cast_shadow": true,
+      "materials": [
+        "/Game/Plateau/Materials/M_Concrete.M_Concrete"
+      ]
+    },
+    "/Game/Maps/CollegeBathurst.CollegeBathurst:PersistentLevel.StaticMeshActor_14": {
+      "label": "District edge",
+      "mesh": "/Engine/BasicShapes/Cube.Cube",
+      "location": [
+        49967.273,
+        -2408.9649999999965,
+        150.0
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        0.7,
+        723.58,
+        3.0
+      ],
+      "hidden": true,
+      "visible": true,
+      "collision_profile": "BlockAll",
+      "collision_enabled": "<CollisionEnabled.QUERY_AND_PHYSICS: 3>",
+      "cast_shadow": true,
+      "materials": [
+        "/Game/Plateau/Materials/M_Concrete.M_Concrete"
+      ]
+    },
+    "/Game/Maps/CollegeBathurst.CollegeBathurst:PersistentLevel.StaticMeshActor_15": {
+      "label": "District edge",
+      "mesh": "/Engine/BasicShapes/Cube.Cube",
+      "location": [
+        -12450.5415,
+        -38587.965,
+        150.0
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1248.35629,
+        0.7,
+        3.0
+      ],
+      "hidden": true,
+      "visible": true,
+      "collision_profile": "BlockAll",
+      "collision_enabled": "<CollisionEnabled.QUERY_AND_PHYSICS: 3>",
+      "cast_shadow": true,
+      "materials": [
+        "/Game/Plateau/Materials/M_Concrete.M_Concrete"
+      ]
+    },
+    "/Game/Maps/CollegeBathurst.CollegeBathurst:PersistentLevel.StaticMeshActor_16": {
+      "label": "District edge",
+      "mesh": "/Engine/BasicShapes/Cube.Cube",
+      "location": [
+        -12450.5415,
+        33770.035,
+        150.0
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1248.35629,
+        0.7,
+        3.0
+      ],
+      "hidden": true,
+      "visible": true,
+      "collision_profile": "BlockAll",
+      "collision_enabled": "<CollisionEnabled.QUERY_AND_PHYSICS: 3>",
+      "cast_shadow": true,
+      "materials": [
+        "/Game/Plateau/Materials/M_Concrete.M_Concrete"
+      ]
+    }
+  },
+  "clearances_cm": {
+    "maximum_footprint_projection": 25,
+    "spawn": 135.33184743939177,
+    "sidewalk_centerline": 103.21342074350866,
+    "starter_car_body": 1099.8881814543215,
+    "tram_centerline": 712.6633304731295
+  },
+  "generic_glass_unchanged": true,
+  "landmark_collision_unchanged": true
+}

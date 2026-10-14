@@ -74,15 +74,16 @@ void AQuebecCharacter::UpdateSwimming(float DeltaSeconds)
     UCapsuleComponent* Capsule = GetCapsuleComponent();
     const FVector Position = GetActorLocation();
     const float HalfHeight = Capsule->GetScaledCapsuleHalfHeight();
-    float Depth;
-    const bool bMappedWater = PondWaterAt(FVector2D(Position), Depth);
+    float Depth = 0.f;
+    const bool bToronto = QuebecDistrict::IsToronto(GetWorld());
+    const bool bMappedWater = !bToronto && PondWaterAt(FVector2D(Position), Depth);
     FHitResult Floor;
     FCollisionQueryParams Query(SCENE_QUERY_STAT(SwimFloor), true, this);
     const bool bFloor = (bMappedWater || bSwimPoseActive) &&
         GetWorld()->LineTraceSingleByChannel(Floor, Position + FVector(0., 0., 200.), Position - FVector(0., 0., 400.), ECC_Visibility, Query);
     bool bWet = !bInVehicle && bMappedWater && Position.Z - HalfHeight < LaFontaineWater::SurfaceZ + 50.f &&
         Position.Z > LaFontaineWater::SurfaceZ - 200.f && (!bFloor || Floor.ImpactPoint.Z <= LaFontaineWater::SurfaceZ + 30.f);
-    if (!bWet && bSwimPoseActive && !bInVehicle && bFloor && Floor.ImpactNormal.Z > .65f)
+    if (!bToronto && !bWet && bSwimPoseActive && !bInVehicle && bFloor && Floor.ImpactNormal.Z > .65f)
     {
         const FVector Exit(Position.X, Position.Y, FMath::Max(Position.Z, Floor.ImpactPoint.Z + HalfHeight + 2.f));
         if (GetWorld()->OverlapBlockingTestByChannel(Exit, GetActorQuat(), ECC_Pawn,

@@ -1,0 +1,1089 @@
+{
+  "passed": true,
+  "run": "20261014T152644676984Z",
+  "mode": "two-player in-process listen-server PIE",
+  "map": "/Game/Maps/CollegeBathurst",
+  "rendered": false,
+  "checks": [
+    "two Toronto peers spawn at authored sidewalk starts with only the manual starter",
+    "both peers start in standard view with full-rate animation",
+    "move host to a surveyed clear fixture before recovery tests",
+    "client C selection replicates while retaining host appearance",
+    "client F2 is private from the host",
+    "client returns to standard independently",
+    "College to Euclid to Grace has measured ground and vehicle corridor clearance",
+    "arrange clear mapped walking fixture at Corner",
+    "native client walking replicates at Corner",
+    "arrange clear mapped walking fixture at College",
+    "native client walking replicates at College",
+    "arrange clear mapped walking fixture at Euclid",
+    "native client walking replicates at Euclid",
+    "arrange clear mapped walking fixture at Grace",
+    "native client walking replicates at Grace",
+    "arrange a Toronto survey road inside the old Montréal objective radius",
+    "native E rejects Montréal progression inside its exact radius",
+    "arrange starter-car approach in native entry radius",
+    "client enters actual Toronto starter with replicated occupancy",
+    "car camera retains private standard view",
+    "native client handbrake stops before mapped lane setup",
+    "explicitly arrange a grounded westbound College driving fixture",
+    "native client throttle drives and replicates the authority car",
+    "native foot brake slows the authority car",
+    "native handbrake stops both peers",
+    "handbrake holds against native throttle",
+    "native handbrake release restores acceleration",
+    "release throttle and natively stop before fall fixture",
+    "occupied car falls and recovers to Toronto on both peers",
+    "native exit restores walking on both peers",
+    "fallen walker recovers to Toronto on both peers",
+    "final Toronto population and Montréal progression isolation"
+  ],
+  "trace": [
+    {
+      "kind": "fixture_relocation",
+      "step": "move host to a surveyed clear fixture before recovery tests",
+      "wall_seconds": 1.7104,
+      "actor": "QuebecCharacter_0",
+      "before_cm": [
+        1787.278,
+        -786.374,
+        97.15
+      ],
+      "target_cm": [
+        3330.4077,
+        -363.5846,
+        99.0
+      ],
+      "yaw": null
+    },
+    {
+      "kind": "native_input_callback",
+      "step": "client C selection replicates while retaining host appearance",
+      "wall_seconds": 2.0601,
+      "actor": "QuebecController_0",
+      "method": "NextCharacter"
+    },
+    {
+      "kind": "native_input_callback",
+      "step": "client F2 is private from the host",
+      "wall_seconds": 2.416,
+      "actor": "QuebecController_0",
+      "method": "ToggleComicStyle"
+    },
+    {
+      "kind": "native_input_callback",
+      "step": "client returns to standard independently",
+      "wall_seconds": 2.7661,
+      "actor": "QuebecController_0",
+      "method": "ToggleComicStyle"
+    },
+    {
+      "kind": "fixture_relocation",
+      "step": "arrange clear mapped walking fixture at Corner",
+      "wall_seconds": 3.4725,
+      "actor": "QuebecCharacter_1",
+      "before_cm": [
+        2095.9039,
+        -701.8161,
+        97.15
+      ],
+      "target_cm": [
+        1787.2788,
+        -786.3741,
+        99.0
+      ],
+      "yaw": -164.82277052546704
+    },
+    {
+      "kind": "mapped_walk_fixture",
+      "step": "arrange clear mapped walking fixture at Corner",
+      "wall_seconds": 3.4725,
+      "location": "Corner",
+      "source_anchor_cm": [
+        0.0,
+        0.0
+      ],
+      "standing_cm": [
+        1787.2788,
+        -786.3741,
+        99.0
+      ],
+      "capsule_sweep_clear_cm": 900
+    },
+    {
+      "kind": "fixture_relocation",
+      "step": "arrange clear mapped walking fixture at College",
+      "wall_seconds": 4.9177,
+      "actor": "QuebecCharacter_1",
+      "before_cm": [
+        1364.6179,
+        -901.0309,
+        97.15
+      ],
+      "target_cm": [
+        -14602.8518,
+        -4877.286,
+        99.0
+      ],
+      "yaw": -164.26504520801393
+    },
+    {
+      "kind": "mapped_walk_fixture",
+      "step": "arrange clear mapped walking fixture at College",
+      "wall_seconds": 4.9178,
+      "location": "College",
+      "source_anchor_cm": [
+        -14800.818822270827,
+        -4174.641725733112
+      ],
+      "standing_cm": [
+        -14602.8518,
+        -4877.286,
+        99.0
+      ],
+      "capsule_sweep_clear_cm": 900
+    },
+    {
+      "kind": "fixture_relocation",
+      "step": "arrange clear mapped walking fixture at Euclid",
+      "wall_seconds": 6.3673,
+      "actor": "QuebecCharacter_1",
+      "before_cm": [
+        -15045.7482,
+        -5001.8453,
+        97.15
+      ],
+      "target_cm": [
+        -29402.2878,
+        -9024.7509,
+        106.0
+      ],
+      "yaw": -163.5838014863292
+    },
+    {
+      "kind": "mapped_walk_fixture",
+      "step": "arrange clear mapped walking fixture at Euclid",
+      "wall_seconds": 6.3674,
+      "location": "Euclid",
+      "source_anchor_cm": [
+        -29608.595,
+        -8324.51
+      ],
+      "standing_cm": [
+        -29402.2878,
+        -9024.7509,
+        106.0
+      ],
+      "capsule_sweep_clear_cm": 900
+    },
+    {
+      "kind": "fixture_relocation",
+      "step": "arrange clear mapped walking fixture at Grace",
+      "wall_seconds": 7.8168,
+      "actor": "QuebecCharacter_1",
+      "before_cm": [
+        -29843.683,
+        -9154.5244,
+        97.15
+      ],
+      "target_cm": [
+        -63596.022,
+        -17658.0099,
+        99.0
+      ],
+      "yaw": 174.18093351563667
+    },
+    {
+      "kind": "mapped_walk_fixture",
+      "step": "arrange clear mapped walking fixture at Grace",
+      "wall_seconds": 7.8168,
+      "location": "Grace",
+      "source_anchor_cm": [
+        -63522.006,
+        -16931.772
+      ],
+      "standing_cm": [
+        -63596.022,
+        -17658.0099,
+        99.0
+      ],
+      "capsule_sweep_clear_cm": 900
+    },
+    {
+      "kind": "fixture_relocation",
+      "step": "arrange a Toronto survey road inside the old Montréal objective radius",
+      "wall_seconds": 9.2707,
+      "actor": "QuebecCharacter_1",
+      "before_cm": [
+        -64052.9338,
+        -17619.8758,
+        97.15
+      ],
+      "target_cm": [
+        10927.955,
+        -2170.8096,
+        106.0
+      ],
+      "yaw": null
+    },
+    {
+      "kind": "legacy_negative_fixture",
+      "step": "arrange a Toronto survey road inside the old Montréal objective radius",
+      "wall_seconds": 9.2707,
+      "toronto_road_point_cm": [
+        10927.955,
+        -2170.8096,
+        106.0
+      ],
+      "montreal_objective_cm": [
+        10998.9409,
+        -2417.7232,
+        110.0
+      ],
+      "distance_cm": 256.9461196670705,
+      "scope": "Native E must not advance a Montréal objective even inside its radius"
+    },
+    {
+      "kind": "native_input_callback",
+      "step": "native E rejects Montréal progression inside its exact radius",
+      "wall_seconds": 9.6164,
+      "actor": "QuebecController_0",
+      "method": "Interact"
+    },
+    {
+      "kind": "fixture_relocation",
+      "step": "arrange starter-car approach in native entry radius",
+      "wall_seconds": 9.967,
+      "actor": "QuebecCharacter_1",
+      "before_cm": [
+        10905.9256,
+        -2168.5649,
+        97.15
+      ],
+      "target_cm": [
+        2715.1615,
+        556.9545,
+        106.0
+      ],
+      "yaw": null
+    },
+    {
+      "kind": "native_input_callback",
+      "step": "client enters actual Toronto starter with replicated occupancy",
+      "wall_seconds": 10.3164,
+      "actor": "QuebecController_0",
+      "method": "Interact"
+    },
+    {
+      "kind": "native_input_callback",
+      "step": "native client handbrake stops before mapped lane setup",
+      "wall_seconds": 11.0165,
+      "actor": "QuebecCar_0",
+      "method": "ApplyHandbrake"
+    },
+    {
+      "kind": "fixture_relocation",
+      "step": "explicitly arrange a grounded westbound College driving fixture",
+      "wall_seconds": 11.3674,
+      "actor": "QuebecCar_0",
+      "before_cm": [
+        2770.615,
+        354.556,
+        102.9346
+      ],
+      "target_cm": [
+        -541.1106,
+        -297.0259,
+        108.0
+      ],
+      "yaw": -164.82277052546704
+    },
+    {
+      "kind": "mapped_drive_setup",
+      "step": "explicitly arrange a grounded westbound College driving fixture",
+      "wall_seconds": 11.3675,
+      "source": "First westbound College Street survey edge",
+      "ground_cm": [
+        -541.1106,
+        -297.0259,
+        108.0
+      ],
+      "forward_sweep_clear_cm": 6000,
+      "scope": "Occupied, natively stopped car relocated/oriented; subsequent motion uses owning-client callbacks, not a naturally driven approach"
+    },
+    {
+      "kind": "native_input_callback",
+      "step": "native client throttle drives and replicates the authority car",
+      "wall_seconds": 11.7164,
+      "actor": "QuebecCar_0",
+      "method": "ReleaseHandbrake"
+    },
+    {
+      "kind": "native_input_callback",
+      "step": "native handbrake stops both peers",
+      "wall_seconds": 14.4668,
+      "actor": "QuebecCar_0",
+      "method": "ApplyHandbrake"
+    },
+    {
+      "kind": "native_input_callback",
+      "step": "native handbrake release restores acceleration",
+      "wall_seconds": 15.6169,
+      "actor": "QuebecCar_0",
+      "method": "ReleaseHandbrake"
+    },
+    {
+      "kind": "native_input_callback",
+      "step": "release throttle and natively stop before fall fixture",
+      "wall_seconds": 15.9668,
+      "actor": "QuebecCar_0",
+      "method": "ApplyHandbrake"
+    },
+    {
+      "kind": "fixture_relocation",
+      "step": "occupied car falls and recovers to Toronto on both peers",
+      "wall_seconds": 16.3165,
+      "actor": "QuebecCar_0",
+      "before_cm": [
+        -4079.0854,
+        -1256.7628,
+        106.5
+      ],
+      "target_cm": [
+        -4079.0854,
+        -1256.7628,
+        -1700.0
+      ],
+      "yaw": null
+    },
+    {
+      "kind": "native_input_callback",
+      "step": "native exit restores walking on both peers",
+      "wall_seconds": 16.669,
+      "actor": "QuebecController_0",
+      "method": "Interact"
+    },
+    {
+      "kind": "fixture_relocation",
+      "step": "fallen walker recovers to Toronto on both peers",
+      "wall_seconds": 17.0168,
+      "actor": "QuebecCharacter_1",
+      "before_cm": [
+        2825.5569,
+        152.0181,
+        97.15
+      ],
+      "target_cm": [
+        1787.278,
+        -786.374,
+        -1700.0
+      ],
+      "yaw": null
+    }
+  ],
+  "save_inventory_before": {},
+  "fixture_scope": "Authority relocations arrange named surveyed locations; client callbacks drive actual native movement/RPCs. No mission, speed, occupancy, collision or appearance state writes.",
+  "limits": [
+    "rendered/HUD/likeness acceptance",
+    "physical keyboard/mouse/touch delivery",
+    "packaged build and external internet",
+    "handling enjoyment and audio",
+    "naturally navigated end-to-end College Street route",
+    "frame-rate acceptance",
+    "file-read interception (save isolation uses absent campaign actors, guarded source and unchanged files)"
+  ],
+  "source_sha256": {
+    "Scripts/test_college_runtime.py": "b5cca467a0c7a1cbad0b4924677bb08797f473d2fa9ec76bdf363c7cd9668d2e",
+    "Data/CollegeBathurst/layout.json": "199b3371798f174a19e619aacdbfc5e5f258747e3b517bca15bf8dd35f6f3730",
+    "Source/Quebec/CollegeBathurstMap.h": "5e011de207a3d4a2430c5cdd723c878f6ed10ee5b47424dbc68c2c1bcb6a997d",
+    "Source/Quebec/QuebecGameplay.cpp": "9a6031d37ee11e913e87530c8d1cae7a368b6b8c9306437436a4fded07ceb684",
+    "Source/Quebec/QuebecCampaign.cpp": "920249a296d281dbf50b73e0a187449de6b72dc29822228ccff12df1cf327b38",
+    "Source/Quebec/QuebecSwimming.cpp": "eadc6bfa1985b3cfb758f6dd8594ad3f308f01116c5d4573377fd5890cb5e65d",
+    "Content/Maps/CollegeBathurst.umap": "4ba71d0a2a30976904b624c21804595706f772ac9dfb6bc3062e78250b18bfd1"
+  },
+  "mapped_corridor": {
+    "road": "College Street",
+    "source_points_cm": [
+      [
+        0.0,
+        0.0
+      ],
+      [
+        -172.354,
+        -46.754
+      ],
+      [
+        -945.529,
+        -258.262
+      ],
+      [
+        -5094.099,
+        -1442.707
+      ],
+      [
+        -9916.781,
+        -2798.585
+      ],
+      [
+        -19059.582,
+        -5374.53
+      ],
+      [
+        -19783.628,
+        -5573.792
+      ],
+      [
+        -20570.495,
+        -5796.432
+      ],
+      [
+        -29081.869,
+        -8169.775
+      ],
+      [
+        -29608.595,
+        -8324.51
+      ],
+      [
+        -30220.692,
+        -8504.848
+      ],
+      [
+        -39523.765,
+        -11159.83
+      ],
+      [
+        -44595.314,
+        -12570.254
+      ],
+      [
+        -49016.106,
+        -13809.246
+      ],
+      [
+        -49588.739,
+        -13970.66
+      ],
+      [
+        -50212.111,
+        -14143.206
+      ],
+      [
+        -58967.519,
+        -16569.982
+      ],
+      [
+        -60013.722,
+        -16837.15
+      ],
+      [
+        -60467.962,
+        -16923.98
+      ],
+      [
+        -60915.76,
+        -16975.187
+      ],
+      [
+        -61925.72,
+        -17036.413
+      ],
+      [
+        -62822.926,
+        -17003.017
+      ],
+      [
+        -63522.006,
+        -16931.772
+      ]
+    ],
+    "length_cm": 65857.04,
+    "scope": "Static ground and vehicle/capsule clearance probes; not an observed end-to-end drive",
+    "probes": [
+      {
+        "from_cm": [
+          37.9618,
+          -139.9425,
+          108.0
+        ],
+        "to_cm": [
+          -134.3922,
+          -186.6965,
+          108.0
+        ],
+        "ground_midpoint_cm": [
+          -48.2152,
+          -163.3195,
+          108.0
+        ],
+        "box_sweep_clear": true
+      },
+      {
+        "from_cm": [
+          -134.0939,
+          -186.6152,
+          108.0
+        ],
+        "to_cm": [
+          -907.2689,
+          -398.1232,
+          108.0
+        ],
+        "ground_midpoint_cm": [
+          -520.6814,
+          -292.3692,
+          108.0
+        ],
+        "box_sweep_clear": true
+      },
+      {
+        "from_cm": [
+          -905.7212,
+          -397.6906,
+          108.0
+        ],
+        "to_cm": [
+          -5054.2912,
+          -1582.1356,
+          108.0
+        ],
+        "ground_midpoint_cm": [
+          -2980.0062,
+          -989.9131,
+          108.0
+        ],
+        "box_sweep_clear": true
+      },
+      {
+        "from_cm": [
+          -5054.8543,
+          -1582.2952,
+          108.0
+        ],
+        "to_cm": [
+          -9877.5363,
+          -2938.1732,
+          108.0
+        ],
+        "ground_midpoint_cm": [
+          -7466.1953,
+          -2260.2342,
+          108.0
+        ],
+        "box_sweep_clear": true
+      },
+      {
+        "from_cm": [
+          -9877.4588,
+          -2938.1513,
+          108.0
+        ],
+        "to_cm": [
+          -19020.2598,
+          -5514.0963,
+          108.0
+        ],
+        "ground_midpoint_cm": [
+          -14448.8593,
+          -4226.1238,
+          108.0
+        ],
+        "box_sweep_clear": true
+      },
+      {
+        "from_cm": [
+          -19021.1074,
+          -5514.3327,
+          101.0
+        ],
+        "to_cm": [
+          -19745.1535,
+          -5713.5944,
+          108.0
+        ],
+        "ground_midpoint_cm": [
+          -19383.1305,
+          -5613.9634,
+          108.0
+        ],
+        "box_sweep_clear": true
+      },
+      {
+        "from_cm": [
+          -19744.1508,
+          -5713.3146,
+          108.0
+        ],
+        "to_cm": [
+          -20531.0181,
+          -5935.9545,
+          101.0
+        ],
+        "ground_midpoint_cm": [
+          -20137.5843,
+          -5824.6346,
+          108.0
+        ],
+        "box_sweep_clear": true
+      },
+      {
+        "from_cm": [
+          -20531.5484,
+          -5936.1036,
+          108.0
+        ],
+        "to_cm": [
+          -29042.9224,
+          -8309.4466,
+          108.0
+        ],
+        "ground_midpoint_cm": [
+          -24787.2354,
+          -7122.7751,
+          108.0
+        ],
+        "box_sweep_clear": true
+      },
+      {
+        "from_cm": [
+          -29040.9997,
+          -8308.8962,
+          108.0
+        ],
+        "to_cm": [
+          -29567.7257,
+          -8463.6312,
+          108.0
+        ],
+        "ground_midpoint_cm": [
+          -29304.3627,
+          -8386.2637,
+          108.0
+        ],
+        "box_sweep_clear": true
+      },
+      {
+        "from_cm": [
+          -29567.6162,
+          -8463.5989,
+          108.0
+        ],
+        "to_cm": [
+          -30179.7132,
+          -8643.9369,
+          108.0
+        ],
+        "ground_midpoint_cm": [
+          -29873.6647,
+          -8553.7679,
+          108.0
+        ],
+        "box_sweep_clear": true
+      },
+      {
+        "from_cm": [
+          -30180.9009,
+          -8644.2809,
+          101.0
+        ],
+        "to_cm": [
+          -39483.9725,
+          -11299.263,
+          108.0
+        ],
+        "ground_midpoint_cm": [
+          -34832.436,
+          -9971.772,
+          108.0
+        ],
+        "box_sweep_clear": true
+      },
+      {
+        "from_cm": [
+          -39484.9142,
+          -11299.5283,
+          108.0
+        ],
+        "to_cm": [
+          -44556.4632,
+          -12709.9523,
+          108.0
+        ],
+        "ground_midpoint_cm": [
+          -42020.6887,
+          -12004.7403,
+          108.0
+        ],
+        "box_sweep_clear": true
+      },
+      {
+        "from_cm": [
+          -44556.1834,
+          -12709.8742,
+          108.0
+        ],
+        "to_cm": [
+          -48976.9754,
+          -13948.8662,
+          108.0
+        ],
+        "ground_midpoint_cm": [
+          -46766.5794,
+          -13329.3702,
+          108.0
+        ],
+        "box_sweep_clear": true
+      },
+      {
+        "from_cm": [
+          -48976.7664,
+          -13948.8074,
+          108.0
+        ],
+        "to_cm": [
+          -49549.3994,
+          -14110.2214,
+          108.0
+        ],
+        "ground_midpoint_cm": [
+          -49263.0829,
+          -14029.5144,
+          108.0
+        ],
+        "box_sweep_clear": true
+      },
+      {
+        "from_cm": [
+          -49550.0582,
+          -14110.4055,
+          108.0
+        ],
+        "to_cm": [
+          -50173.4302,
+          -14282.9515,
+          108.0
+        ],
+        "ground_midpoint_cm": [
+          -49861.7442,
+          -14196.6785,
+          108.0
+        ],
+        "box_sweep_clear": true
+      },
+      {
+        "from_cm": [
+          -50173.3809,
+          -14282.9378,
+          108.0
+        ],
+        "to_cm": [
+          -58928.7889,
+          -16709.7138,
+          108.0
+        ],
+        "ground_midpoint_cm": [
+          -54551.0849,
+          -15496.3258,
+          108.0
+        ],
+        "box_sweep_clear": true
+      },
+      {
+        "from_cm": [
+          -58931.6431,
+          -16710.4738,
+          101.0
+        ],
+        "to_cm": [
+          -59977.8448,
+          -16977.6414,
+          108.0
+        ],
+        "ground_midpoint_cm": [
+          -59454.7433,
+          -16844.0574,
+          108.0
+        ],
+        "box_sweep_clear": true
+      },
+      {
+        "from_cm": [
+          -59986.4975,
+          -16979.5713,
+          108.0
+        ],
+        "to_cm": [
+          -60440.7375,
+          -17066.4013,
+          108.0
+        ],
+        "ground_midpoint_cm": [
+          -60213.6175,
+          -17022.9863,
+          108.0
+        ],
+        "box_sweep_clear": true
+      },
+      {
+        "from_cm": [
+          -60451.4868,
+          -17068.0412,
+          101.0
+        ],
+        "to_cm": [
+          -60899.2915,
+          -17119.2492,
+          101.0
+        ],
+        "ground_midpoint_cm": [
+          -60675.3872,
+          -17093.6446,
+          108.0
+        ],
+        "box_sweep_clear": true
+      },
+      {
+        "from_cm": [
+          -60906.9859,
+          -17119.9213,
+          108.0
+        ],
+        "to_cm": [
+          -61916.9459,
+          -17181.1473,
+          108.0
+        ],
+        "ground_midpoint_cm": [
+          -61411.9659,
+          -17150.5343,
+          108.0
+        ],
+        "box_sweep_clear": true
+      },
+      {
+        "from_cm": [
+          -61931.1135,
+          -17181.3127,
+          108.0
+        ],
+        "to_cm": [
+          -62828.3227,
+          -17147.9162,
+          101.0
+        ],
+        "ground_midpoint_cm": [
+          -62379.7165,
+          -17164.6147,
+          108.0
+        ],
+        "box_sweep_clear": true
+      },
+      {
+        "from_cm": [
+          -62837.6272,
+          -17147.2698,
+          108.0
+        ],
+        "to_cm": [
+          -63536.7072,
+          -17076.0248,
+          108.0
+        ],
+        "ground_midpoint_cm": [
+          -63187.1672,
+          -17111.6473,
+          108.0
+        ],
+        "box_sweep_clear": true
+      }
+    ],
+    "hull_half_extent_cm": [
+      235,
+      110,
+      80
+    ],
+    "lane_offset_cm": 145
+  },
+  "initial_spawns": {
+    "host_char": [
+      1787.278,
+      -786.374,
+      97.15
+    ],
+    "server_char": [
+      2095.9039,
+      -701.8161,
+      97.15
+    ],
+    "client_char": [
+      2095.9,
+      -701.8,
+      97.2
+    ],
+    "server_car": [
+      2770.615,
+      354.556,
+      102.9346
+    ],
+    "client_car": [
+      2770.62,
+      354.56,
+      102.94
+    ]
+  },
+  "spawns_by_session": {
+    "1": {
+      "host_char": [
+        1787.278,
+        -786.374,
+        97.15
+      ],
+      "server_char": [
+        2095.9039,
+        -701.8161,
+        97.15
+      ],
+      "client_char": [
+        2095.9,
+        -701.8,
+        97.2
+      ],
+      "server_car": [
+        2770.615,
+        354.556,
+        102.9346
+      ],
+      "client_car": [
+        2770.62,
+        354.56,
+        102.94
+      ]
+    }
+  },
+  "latest_runtime_inventory": {
+    "server": {
+      "world": "/Game/Maps/UEDPIE_0_CollegeBathurst.CollegeBathurst",
+      "campaigns": 0,
+      "residents": 0,
+      "cars": 1,
+      "traffic": 0,
+      "mission_index": 0,
+      "players": 2
+    },
+    "client": {
+      "world": "/Game/Maps/UEDPIE_1_CollegeBathurst.CollegeBathurst",
+      "campaigns": 0,
+      "residents": 0,
+      "cars": 1,
+      "traffic": 0,
+      "mission_index": 0,
+      "players": 2
+    }
+  },
+  "selection": {
+    "before": 10,
+    "after": 3,
+    "host_unchanged": 9
+  },
+  "native_walks": {
+    "Corner": {
+      "start_cm": [
+        1787.2788,
+        -786.3741,
+        97.15
+      ],
+      "displacements_cm": [
+        437.93657197427405,
+        445.43678218218895
+      ],
+      "scope": "1.1-second native client walking window after the recorded authority relocation"
+    },
+    "College": {
+      "start_cm": [
+        -14624.2234,
+        -4883.0836,
+        97.15
+      ],
+      "displacements_cm": [
+        437.9354830869653,
+        445.43563531813334
+      ],
+      "scope": "1.1-second native client walking window after the recorded authority relocation"
+    },
+    "Euclid": {
+      "start_cm": [
+        -29423.6018,
+        -9030.756,
+        97.15
+      ],
+      "displacements_cm": [
+        437.9347482668266,
+        445.4351813041215
+      ],
+      "scope": "1.1-second native client walking window after the recorded authority relocation"
+    },
+    "Grace": {
+      "start_cm": [
+        -63617.2632,
+        -17664.2682,
+        97.15
+      ],
+      "displacements_cm": [
+        437.9263743344389,
+        445.4264013606475
+      ],
+      "scope": "1.1-second native client walking window after the recorded authority relocation"
+    }
+  },
+  "native_drive": {
+    "start_cm": [
+      -541.1106,
+      -297.0259,
+      106.5
+    ],
+    "end_cm": [
+      -2990.7832,
+      -961.542,
+      106.5
+    ],
+    "distance_cm": 2538.203688868649,
+    "replication_error_cm": 20.116362645028033,
+    "window_game_seconds": 2.000031159259379
+  },
+  "foot_brake": {
+    "before_cm_per_s": 2414.144287109375,
+    "after_cm_per_s": 81.74231719970703
+  },
+  "handbrake_hold_drift_cm": 0.0,
+  "car_recovery": {
+    "server": [
+      2770.615,
+      354.556,
+      102.9346
+    ],
+    "client": [
+      2770.61,
+      354.56,
+      102.94
+    ]
+  },
+  "walker_recovery": {
+    "server": [
+      1787.278,
+      -786.374,
+      97.15
+    ],
+    "client": [
+      1787.278,
+      -786.374,
+      97.14
+    ]
+  },
+  "native_controls_released_before_endplay": true,
+  "pie_worlds_stopped": true,
+  "save_inventory_after": {},
+  "all_save_hashes_unchanged": true,
+  "play_settings_restored": true,
+  "restored_play_net_mode": 0,
+  "elapsed_seconds": 17.76
+}

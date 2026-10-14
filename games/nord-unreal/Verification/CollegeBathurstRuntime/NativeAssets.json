@@ -1,0 +1,23 @@
+{
+  "Content/Maps/CollegeBathurst.umap": "4ba71d0a2a30976904b624c21804595706f772ac9dfb6bc3062e78250b18bfd1",
+  "Content/CollegeBathurst/SM_Brick.uasset": "6b974656b3cd87fb4fe1a84603f31e710388a16320a6daae7b5638384d513006",
+  "Content/CollegeBathurst/SM_Cream.uasset": "0c9a208e2f99fb367e1d3470735234d2985c8545a07cafcd813f3a3c5dabadc8",
+  "Content/CollegeBathurst/SM_Glass.uasset": "110ea97b7647b96f72831918ed329ad7dc8aba5d1f63ebca20cadec28c4f49cb",
+  "Content/CollegeBathurst/SM_Grass.uasset": "cb16e5bbcbb5f809da46e6a685c7589984cc480b8cd46f772309bf3152c52f34",
+  "Content/CollegeBathurst/SM_Ground.uasset": "977b302ea22deb93d9f36d88f88d1a029b9fac643274e6afe910deee40b3af44",
+  "Content/CollegeBathurst/SM_Landmark.uasset": "08feac74892c71edcd6822794b1b7cb27ba58275104218ded89b7ad304d7303e",
+  "Content/CollegeBathurst/SM_Marking.uasset": "1b782cf28dad17d96c842d49dbe952cdcc49630673cf37363f541422299db2bd",
+  "Content/CollegeBathurst/SM_Path.uasset": "5a747d7d21e8081faff5b3b72ce4a4aaa90cabf931787048651f9235caf88fe2",
+  "Content/CollegeBathurst/SM_Road.uasset": "7fb8bece46218a1b092a4cecbd01da7902947a3fbcaf912e03615094f36b2b60",
+  "Content/CollegeBathurst/SM_Roof.uasset": "f54be574e82ac981d3526c60fc8cfd17d98d2f0adb9f802178bbd692374e013b",
+  "Content/CollegeBathurst/SM_Sage.uasset": "ad4ebab568909699be30fa4b16050e915527e90a43366698c4fbcc2c6b4c5dd9",
+  "Content/CollegeBathurst/SM_Tram.uasset": "068480aa9e294dbf742301555e873c4b210ac24901e649ea42e64cb4b7e091b3",
+  "Content/CollegeBathurst/SneakyDees/SM_Blue.uasset": "f1cde3349975bae092f0498aaadde87ed4e95aab66b249eb5549c713c0932728",
+  "Content/CollegeBathurst/SneakyDees/SM_Brick.uasset": "2e7ac9d59ddbbc0b652589f3c2a06b5a309934ad34d9f95bc6a80ae9901dd229",
+  "Content/CollegeBathurst/SneakyDees/SM_Cladding.uasset": "d8c6bfb2442e844b1e91cf03dedbcf83094cf3cacb11f375870af3995f7c97d8",
+  "Content/CollegeBathurst/SneakyDees/SM_Glazing.uasset": "c2bf8afcb6d69b9e30a9b232fcb26bf07a696728149a6f501e4c24c610de0ee6",
+  "Content/CollegeBathurst/SneakyDees/SM_Gold.uasset": "40766f8025a884c8b4dd4bd0314671f9a6d485223559a478156b841b9a6aae81",
+  "Content/CollegeBathurst/SneakyDees/SM_Ink.uasset": "d47bcdbb295520ded74d6c584092de78aaa060ba3999d8e7cd39664865839a28",
+  "Content/CollegeBathurst/SneakyDees/SM_Red.uasset": "346acec656a030ca47f5cd9c416f701388cb91068285a42d16693e88b8ad5859",
+  "Content/CollegeBathurst/SneakyDees/SM_Stone.uasset": "a6680931358a1026cf5d6c666e9f69164323c78d41dfc250a8b089e1c450027f"
+}

@@ -117,6 +117,20 @@ def write_obj(path, name, faces):
     with path.open('w') as f:
         f.write('o ' + name + '\n'); index = 1
         for poly in faces:
+            # Clipped footprint slivers can collapse at OBJ precision; omit them before import.
+            poly = [tuple(round(v, 3) for v in point) for point in poly]
+            while len(poly) >= 3:
+                for i, point in enumerate(poly):
+                    before, after = poly[i - 1], poly[(i + 1) % len(poly)]
+                    a = [point[k] - before[k] for k in range(3)]
+                    b = [after[k] - point[k] for k in range(3)]
+                    if sum((a[(k + 1) % 3] * b[(k + 2) % 3] - a[(k + 2) % 3] * b[(k + 1) % 3]) ** 2 for k in range(3)) < 1e-12:
+                        poly.pop(i)
+                        break
+                else:
+                    break
+            if len(poly) < 3:
+                continue
             for x, y, z in poly: f.write(f'v {x:.3f} {-y:.3f} {z:.3f}\n')
             horizontal = max(p[2] for p in poly) - min(p[2] for p in poly) < 1
             edge = (poly[1][0] - poly[0][0], poly[1][1] - poly[0][1]); length = math.hypot(*edge) or 1
