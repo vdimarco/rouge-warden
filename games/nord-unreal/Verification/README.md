@@ -1,3 +1,5 @@
+[QAPlan.md](QAPlan.md) lists the browser-player checks by level, when to run each, and the acceptance items that stay open.
+
 [Latest mobile fullscreen delivery](MobileFill.md): complete game video reaches every edge at the two reviewed landscape fullscreen sizes, with floating controls clear of the HUD. [Preview and public checks](MobileFillDelivery.json) each pass seven live checks and six mobile-emulated checks. Different aspect ratios deliberately stretch the image; physical-phone and off-LAN checks remain open.
 
 [Compact HUD delivery](CompactHUD.md) records the current native presentation, matching local/browser package, [six Epic profiles](CompactHUDPerformance.json) and [save/settings preservation](CompactHUDPreservation.json). Its earlier [public delivery](CompactHUDDelivery.json) retains the original contained-video/side-rail layout scope. Earlier unified release reports below retain their original scope.
