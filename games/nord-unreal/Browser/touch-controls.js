@@ -8,6 +8,9 @@ export function setupTouchControls({ root, surface, stream }) {
   let heldKeys = new Set();
   let enabled = false;
   let driving = null;
+  let swimming = false;
+  let sprintLatched = false;
+  let lastTap;
   const gasButton = document.getElementById('touch-gas');
   const brakeButton = document.getElementById('touch-brake');
   const useButton = document.getElementById('touch-use');
@@ -106,10 +109,13 @@ export function setupTouchControls({ root, surface, stream }) {
 
   function syncKeys() {
     const next = new Set([...activations.keys(), ...[...pointers.values()].flatMap(pointer => pointer.keys)]);
+    if (!driving && sprintLatched && [65, 68, 87, 83].some(key => next.has(key))) next.add(16);
     if (driving && next.has(83)) next.delete(87);
     for (const key of heldKeys) if (!next.has(key)) send('KeyUp', [key]);
     for (const key of next) if (!heldKeys.has(key)) send('KeyDown', [key, 0]);
     heldKeys = next;
+    gasButton.dataset.pressed = String(next.has(Number(gasButton.dataset.key)));
+    gasButton.setAttribute('aria-pressed', String(!driving && sprintLatched));
   }
 
   function updatePressed(target) {
@@ -128,19 +134,31 @@ export function setupTouchControls({ root, surface, stream }) {
       pointer.target.style.setProperty('--stick-x', `${x * scale}px`);
       pointer.target.style.setProperty('--stick-y', `${y * scale}px`);
       syncKeys();
-    } else if (pointer.stick === 'look') {
-      look(event.clientX - pointer.x, event.clientY - pointer.y);
+    } else if (pointer.stick === 'look' || pointer.lookDrag) {
+      const otherLook = [...pointers.values()].some(other => other !== pointer && (other.stick === 'look' || (pointer.stick !== 'look' && other.looking)));
+      if (!otherLook) {
+        if (pointer.lookDrag && !pointer.looking) send('MouseEnter', []);
+        pointer.looking = true;
+        look(event.clientX - pointer.x, event.clientY - pointer.y);
+      }
       pointer.x = event.clientX;
       pointer.y = event.clientY;
     }
   }
 
-  function release(pointerId) {
+  function release(pointerId, event) {
     const pointer = pointers.get(pointerId);
     if (!pointer) return;
     pointers.delete(pointerId);
+    if (!driving && (pointer.stick === 'move' || pointer.keys.includes(16))) {
+      if (event?.type === 'pointerup' && !pointer.looking && event.timeStamp - pointer.downTime <= 250
+        && Math.hypot(event.clientX - pointer.startX, event.clientY - pointer.startY) <= 12) {
+        lastTap = { target: pointer.target, time: event.timeStamp, x: event.clientX, y: event.clientY };
+      } else lastTap = undefined;
+    }
     updatePressed(pointer.target);
     if (pointer.stick === 'move') {
+      sprintLatched = false;
       pointer.target.style.setProperty('--stick-x', '0px');
       pointer.target.style.setProperty('--stick-y', '0px');
     }
@@ -150,6 +168,8 @@ export function setupTouchControls({ root, surface, stream }) {
 
   function releaseAll() {
     motionTime = null;
+    sprintLatched = false;
+    lastTap = undefined;
     const active = [...activations.values()];
     for (const activation of active) clearTimeout(activation.timer);
     activations.clear();
@@ -169,11 +189,12 @@ export function setupTouchControls({ root, surface, stream }) {
     if (typeof value !== 'boolean' || value === driving) return;
     releaseAll();
     driving = value;
+    swimming = false;
     root.dataset.driving = String(driving);
     root.querySelector('[data-stick="move"]').hidden = driving;
     root.querySelector('.touch-steering').hidden = !driving;
     for (const [button, key, name, hint, label, icon] of [
-      [gasButton, driving ? 87 : 16, driving ? 'Gas' : 'Sprint', 'Hold', driving ? 'Hold to accelerate' : 'Hold to sprint',
+      [gasButton, driving ? 87 : 16, driving ? 'Gas' : 'Sprint', driving ? 'Hold' : 'Hold / ×2', driving ? 'Hold to accelerate' : 'Hold or double-tap to sprint while moving',
         driving ? '<path d="M10 28V9l12-5v24ZM10 12h12M10 19h12"/>' : null],
       [brakeButton, driving ? 83 : 32, driving ? 'Brake' : 'Jump', driving ? 'Reverse' : 'On foot',
         driving ? 'Hold to brake, then reverse when stopped' : 'Jump on foot',
@@ -191,6 +212,14 @@ export function setupTouchControls({ root, surface, stream }) {
     }
   }
 
+  function setSwimming(value) {
+    if (typeof value !== 'boolean' || value === swimming || driving) return;
+    swimming = value;
+    brakeButton.querySelector('b').textContent = value ? 'Stroke' : 'Jump';
+    brakeButton.querySelector('span').textContent = value ? 'Swim' : 'On foot';
+    brakeButton.setAttribute('aria-label', value ? 'Swim stroke' : 'Jump on foot');
+  }
+
   function pointerDown(event) {
     const control = event.target.closest('[data-stick], [data-key]');
     const target = control && root.contains(control) ? control : surface.contains(event.target) ? surface : null;
@@ -203,7 +232,14 @@ export function setupTouchControls({ root, surface, stream }) {
     const key = Number(target.dataset.key);
     if (!stick && (!Number.isInteger(key) || key < 1 || key > 255)) return;
     event.preventDefault();
-    const pointer = { target, stick, keys: stick ? [] : [key], x: event.clientX, y: event.clientY };
+    if (!driving && (stick === 'move' || key === 16) && lastTap?.target === target
+      && event.timeStamp >= lastTap.time && event.timeStamp - lastTap.time <= 300
+      && Math.hypot(event.clientX - lastTap.x, event.clientY - lastTap.y) <= 32) {
+      sprintLatched = stick === 'move' || !sprintLatched;
+      lastTap = undefined;
+    }
+    const pointer = { target, stick, keys: stick ? [] : [key], lookDrag: !stick && key !== 65 && key !== 68,
+      x: event.clientX, y: event.clientY, startX: event.clientX, startY: event.clientY, downTime: event.timeStamp };
     pointers.set(event.pointerId, pointer);
     target.dataset.pressed = 'true';
     target.setPointerCapture(event.pointerId);
@@ -220,13 +256,19 @@ export function setupTouchControls({ root, surface, stream }) {
   surface.addEventListener('pointerdown', pointerDown);
   surface.addEventListener('pointermove', pointerMove);
   for (const type of ['pointerup', 'pointercancel', 'lostpointercapture']) {
-    surface.addEventListener(type, event => release(event.pointerId));
+    surface.addEventListener(type, event => release(event.pointerId, event));
   }
   root.addEventListener('click', event => {
     const target = event.target.closest('button[data-key]');
-    if (!enabled || event.detail !== 0 || !target || !root.contains(target)) return;
+    if (!enabled || root.inert || surface.inert || event.detail !== 0 || !target || !root.contains(target)) return;
     const key = Number(target.dataset.key);
-    if (!Number.isInteger(key) || key < 1 || key > 255 || heldKeys.has(key)) return;
+    if (!Number.isInteger(key) || key < 1 || key > 255) return;
+    if (!driving && target === gasButton && sprintLatched) {
+      sprintLatched = false;
+      syncKeys();
+      return;
+    }
+    if (heldKeys.has(key)) return;
     // Keep a click held across Unreal ticks so jump is observed before its release.
     const timer = setTimeout(() => {
       activations.delete(key);
@@ -248,5 +290,5 @@ export function setupTouchControls({ root, surface, stream }) {
   window.addEventListener('pagehide', () => { releaseAll(); stopGyro(); });
   document.addEventListener('visibilitychange', () => { if (document.hidden) releaseAll(); });
   setEnabled(false);
-  return { setEnabled, releaseAll, setDriving };
+  return { setEnabled, releaseAll, setDriving, setSwimming };
 }

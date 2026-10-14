@@ -40,9 +40,10 @@ function fixture() {
     controls.push(target);
     return target;
   }
-  function pointer(type, target, pointerId = 1, clientX = 50, clientY = 50) {
+  function pointer(type, target, pointerId = 1, clientX = 50, clientY = 50, timeStamp) {
     const event = new Event(type, { cancelable: true });
     Object.defineProperties(event, Object.fromEntries(Object.entries({ target, pointerId, clientX, clientY, button: 0, pointerType: 'touch' }).map(([key, value]) => [key, { value }])));
+    if (timeStamp !== undefined) Object.defineProperty(event, 'timeStamp', { value: timeStamp });
     surface.dispatchEvent(event);
     return event;
   }
@@ -365,4 +366,83 @@ test('driving controls release on menu, rotation, blur, cancel and disconnect', 
     assert.equal(f.ui.gas.dataset.pressed, 'false');
     assert.equal(right.dataset.pressed, 'false');
   }
+});
+
+
+test('double-tapping Move sprints during the second hold and releases on stopping', () => {
+  const f = fixture(); f.setEnabled(true); f.setDriving(false);
+  f.pointer('pointerdown', f.ui.move, 1, 50, 50, 100);
+  f.pointer('pointerup', f.ui.move, 1, 50, 50, 140);
+  f.pointer('pointerdown', f.ui.move, 1, 50, 50, 300);
+  f.pointer('pointermove', f.ui.move, 1, 50, 0, 320);
+  assert.ok(f.messages.some(m => m[0] === 'KeyDown' && m[1] === 16));
+  assert.equal(f.ui.gas.getAttribute('aria-pressed'), 'true');
+  f.pointer('pointerup', f.ui.move, 1, 50, 0, 500);
+  assert.ok(f.messages.some(m => m[0] === 'KeyUp' && m[1] === 16));
+  assert.equal(f.ui.gas.getAttribute('aria-pressed'), 'false');
+});
+
+test('double-tapped Sprint stays active with Move and vehicle/menu transitions clear it', () => {
+  const f = fixture(); f.setEnabled(true); f.setDriving(false);
+  f.pointer('pointerdown', f.ui.move, 1, 50, 0, 50);
+  f.pointer('pointerdown', f.ui.gas, 2, 50, 50, 100);
+  f.pointer('pointerup', f.ui.gas, 2, 50, 50, 140);
+  f.pointer('pointerdown', f.ui.brake, 3, 50, 50, 160);
+  f.pointer('pointerup', f.ui.brake, 3, 50, 50, 200);
+  f.pointer('pointerdown', f.ui.gas, 2, 50, 50, 280);
+  f.pointer('pointerup', f.ui.gas, 2, 50, 50, 320);
+  assert.equal(f.ui.gas.getAttribute('aria-pressed'), 'true');
+  assert.notDeepEqual(f.messages.at(-1), ['KeyUp', 16]);
+  f.setDriving(true);
+  assert.ok(f.messages.some(m => m[0] === 'KeyUp' && m[1] === 16));
+  assert.equal(f.ui.gas.getAttribute('aria-pressed'), 'false');
+  f.releaseAll();
+});
+
+test('dragging a held action looks without releasing it or stealing an existing look finger', () => {
+  const f = fixture(); f.setEnabled(true); f.setDriving(false);
+  f.pointer('pointerdown', f.ui.move, 1, 50, 0);
+  f.pointer('pointerdown', f.ui.gas, 2, 40, 40);
+  f.pointer('pointermove', f.ui.gas, 2, 60, 45);
+  assert.deepEqual(f.deltas, [[20, 5]]);
+  assert.ok(!f.messages.some(m => m[0] === 'KeyUp'));
+  f.pointer('pointerdown', f.surface, 3, 40, 40);
+  f.pointer('pointermove', f.ui.gas, 2, 70, 45);
+  assert.equal(f.deltas.length, 1);
+  f.pointer('pointercancel', f.surface, 3);
+  f.pointer('pointermove', f.ui.gas, 2, 75, 45);
+  assert.deepEqual(f.deltas.at(-1), [5, 0]);
+  f.releaseAll();
+  assert.ok(f.messages.some(m => m[0] === 'KeyUp' && m[1] === 16));
+  assert.ok(f.messages.some(m => m[0] === 'KeyUp' && m[1] === 87));
+});
+
+
+test('swimming presents Stroke and restores Jump/Brake across movement states', () => {
+  const f = fixture(); f.setEnabled(true); f.setDriving(false);
+  f.setSwimming(true);
+  assert.equal(f.ui.brake.querySelector('b').textContent, 'Stroke');
+  assert.equal(f.ui.brake.dataset.key, '32');
+  f.setSwimming('false');
+  assert.equal(f.ui.brake.querySelector('b').textContent, 'Stroke');
+  f.setDriving(true); f.setSwimming(false);
+  assert.equal(f.ui.brake.querySelector('b').textContent, 'Brake');
+  f.setDriving(false); f.setSwimming(true);
+  assert.equal(f.ui.brake.querySelector('b').textContent, 'Stroke');
+  f.setSwimming(false);
+  assert.equal(f.ui.brake.querySelector('b').textContent, 'Jump');
+});
+
+
+test('assistive activation can cancel a latched sprint and inert menus cannot send keys', () => {
+  const f = fixture(); f.setEnabled(true); f.setDriving(false);
+  f.pointer('pointerdown', f.ui.move, 1, 50, 0, 50);
+  f.pointer('pointerdown', f.ui.gas, 2, 50, 50, 100); f.pointer('pointerup', f.ui.gas, 2, 50, 50, 130);
+  f.pointer('pointerdown', f.ui.gas, 2, 50, 50, 250); f.pointer('pointerup', f.ui.gas, 2, 50, 50, 280);
+  assert.equal(f.ui.gas.getAttribute('aria-pressed'), 'true');
+  f.click(f.ui.gas);
+  assert.equal(f.ui.gas.getAttribute('aria-pressed'), 'false');
+  assert.deepEqual(f.messages.at(-1), ['KeyUp', 16]);
+  f.releaseAll(); const count=f.messages.length; f.root.inert=true; f.click(f.ui.brake);
+  assert.equal(f.messages.length,count);
 });
