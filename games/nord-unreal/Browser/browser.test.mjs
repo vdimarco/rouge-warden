@@ -80,6 +80,7 @@ try {
     assert.equal(await page.locator('.hero-title').textContent(), 'GTA: NORTH', 'the title screen shows the game title');
     assert.equal(await page.locator('#watch-trailer').isVisible(), true);
     assert.equal(await page.locator('#hero-video').isVisible(), true, 'the trailer loop plays behind the start card');
+    assert.equal(await page.locator('#trailer-video').getAttribute('src'), null, 'full trailer is not loaded until opened');
     assert.equal(await page.locator('#hero-video').getAttribute('src'), width < height ? 'https://d2ol7oe51mr4n9.cloudfront.net/user_3JnxFRyLd68bfjwUMHz1De16TMw/4d0928ae-27d4-4c7e-92ec-f3927c66a4b0.mp4' : 'https://d2ol7oe51mr4n9.cloudfront.net/user_3JnxFRyLd68bfjwUMHz1De16TMw/a7a1e663-b152-4806-9a6c-6907f9738a44.mp4', 'the title screen loops a light 15 s clip, vertical in portrait');
     assert.equal(await page.locator('#hero-video').evaluate(video => video.loop && !video.hasAttribute('muted')), true);
     assert.equal(await page.locator('#connect').isVisible(), true, 'the start card stays reachable under the hero');
@@ -91,6 +92,7 @@ try {
   await page.locator('#watch-trailer').click();
   assert.equal(await page.locator('#trailer-dialog').evaluate(dialog => dialog.open), true, 'Watch the trailer opens the player');
   await trailerIsFullscreen();
+  assert.equal(await page.locator('#hero-video').getAttribute('src'), null, 'full trailer releases the title media');
   assert.equal(await page.locator('#trailer-video').getAttribute('src'), 'https://d2ol7oe51mr4n9.cloudfront.net/user_3JnxFRyLd68bfjwUMHz1De16TMw/850ec3d7-3375-4695-bcb6-0ad320dc8ad2.mp4');
   const trailerBox = await page.locator('#trailer-video').boundingBox();
   assert.deepEqual([trailerBox.x, trailerBox.y, trailerBox.width, trailerBox.height], [0, 0, 1280, 720], 'the trailer fills the screen');
@@ -98,6 +100,7 @@ try {
   await page.screenshot({ path: '.qa/trailer-1280.png' });
   await page.evaluate(() => document.exitFullscreen());
   await page.waitForFunction(() => !document.querySelector('#trailer-dialog').open && document.querySelector('#trailer-video').paused);
+  await page.waitForFunction(() => !document.querySelector('#trailer-video').hasAttribute('src')); // close is queued after fullscreen exit.
   // The video's own fullscreen (double-click, or its controls on another browser) keeps the trailer open,
   // and Close then leaves both levels of fullscreen.
   await page.locator('#watch-trailer').click();
@@ -162,6 +165,7 @@ try {
     assert.equal(await page.locator('body').getAttribute('data-intro'), 'open');
     assert.equal(await page.evaluate(() => document.fullscreenElement), null, 'a mouse-and-keyboard player stays in the window');
     assert.equal(await page.locator('#hero-video').isHidden(), true, 'the title trailer stops behind the start screen');
+    assert.equal(await page.locator('#hero-video').getAttribute('src'), null, 'Start releases the title download');
     for (const step of ['1 / 3', '2 / 3', '3 / 3']) {
       assert.equal(await page.locator('#intro-step').textContent(), step);
       await page.waitForFunction(() => document.querySelector('#intro-image').complete);
@@ -316,6 +320,23 @@ try {
   await phonePage.locator('#fullscreen').click();
   await phonePage.waitForFunction(() => !document.fullscreenElement);
   await phone.close();
+  // Still-only pages must not start MP4 downloads, even on rotation.
+  for (const saver of [false, true]) {
+    const still = await browser.newContext({ viewport: { width: 390, height: 844 }, reducedMotion: saver ? 'no-preference' : 'reduce' });
+    if (saver) await still.addInitScript(() => Object.defineProperty(navigator, 'connection', { value: { saveData: true } }));
+    const stillPage = await still.newPage();
+    const requests = [];
+    await stillPage.route('**/*.mp4', route => { requests.push(route.request().url()); return route.abort(); });
+    await stillPage.goto(url);
+    await stillPage.setViewportSize({ width: 844, height: 390 });
+    await stillPage.waitForTimeout(200);
+    assert.equal(await stillPage.locator('#hero-video').getAttribute('src'), null);
+    assert.deepEqual(requests, [], 'still-only title/rotation must not request MP4 media');
+    await stillPage.locator('#watch-trailer').click();
+    await stillPage.waitForFunction(() => document.querySelector('#trailer-video').hasAttribute('src'));
+    assert.ok((await stillPage.locator('#trailer-video').getAttribute('src')).endsWith('.mp4'), 'explicit trailer remains available');
+    await still.close();
+  }
   build('ws://127.0.0.1:40999');
   await page.setViewportSize({ width: 1280, height: 720 });
   await page.goto(`${url}/?ss=wss://untrusted.example&AutoConnect=true`);

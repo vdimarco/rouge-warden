@@ -11,15 +11,23 @@ let heroActive = true;
 // Phones in portrait get the vertical cut; the page swaps it when the screen rotates.
 const portrait = matchMedia('(orientation: portrait)');
 
-function pickSources() {
-  for (const video of [heroVideo, trailer]) {
-    const src = portrait.matches ? video.dataset.portraitSrc : video.dataset.landscapeSrc;
-    if (video.getAttribute('src') !== src) {
-      video.setAttribute('src', src);
-      video.load();
-    }
+function pickSource(video) {
+  const src = portrait.matches ? video.dataset.portraitSrc : video.dataset.landscapeSrc;
+  if (video.getAttribute('src') !== src) {
+    video.setAttribute('src', src);
+    video.load();
   }
 }
+
+function unload(video) {
+  video.pause();
+  if (video.hasAttribute('src')) {
+    video.removeAttribute('src');
+    video.load();
+  }
+}
+
+const canPlayHero = () => heroActive && !dialog.open && !document.hidden && !stillOnly();
 
 function setSound(on) {
   heroVideo.muted = !on;
@@ -30,9 +38,11 @@ async function playHero() {
   try {
     heroVideo.muted = false;
     await heroVideo.play();
-    setSound(true);
+    if (canPlayHero()) setSound(true);
+    else unload(heroVideo);
   } catch {
     // Browsers block sound before the first click, tap or key press: play muted until then.
+    if (!canPlayHero()) { unload(heroVideo); return; }
     setSound(false);
     heroVideo.play().catch(() => {});
   }
@@ -41,9 +51,9 @@ async function playHero() {
 function setHeroActive(active) {
   heroActive = active;
   heroVideo.hidden = !active;
-  if (active && !dialog.open && !stillOnly()) playHero();
+  if (canPlayHero()) { pickSource(heroVideo); playHero(); }
   else {
-    heroVideo.pause();
+    unload(heroVideo);
     soundButton.hidden = true;
   }
 }
@@ -57,16 +67,16 @@ soundButton.addEventListener('click', () => setSound(true));
 // The trailer fills the screen. Where the browser allows it, it also goes fullscreen; leaving fullscreen closes it.
 let trailerFullscreen = false;
 document.getElementById('watch-trailer').addEventListener('click', () => {
-  heroVideo.pause();
-  soundButton.hidden = true;
   dialog.showModal();
+  setHeroActive(heroActive);
+  pickSource(trailer);
   trailer.play().catch(() => {});
   // Inside a fullscreen game frame the dialog already covers the screen.
   if (!document.fullscreenElement && document.fullscreenEnabled) stage.requestFullscreen({ navigationUI: 'hide' }).catch(() => {});
 });
 document.getElementById('close-trailer').addEventListener('click', () => dialog.close());
 dialog.addEventListener('close', () => {
-  trailer.pause();
+  unload(trailer);
   // The video's own fullscreen sits inside the stage, so leave whichever of the two is showing.
   if (stage.contains(document.fullscreenElement)) document.exitFullscreen().catch(() => {});
   setHeroActive(heroActive);
@@ -84,16 +94,20 @@ document.addEventListener('fullscreenchange', () => {
 });
 reducedMotion.addEventListener('change', () => setHeroActive(heroActive));
 portrait.addEventListener('change', () => {
-  pickSources();
-  if (dialog.open) trailer.play().catch(() => {});
-  else setHeroActive(heroActive);
+  if (dialog.open && !document.hidden) { pickSource(trailer); trailer.play().catch(() => {}); }
+  setHeroActive(heroActive);
+});
+navigator.connection?.addEventListener?.('change', () => setHeroActive(heroActive));
+document.addEventListener('visibilitychange', () => {
+  setHeroActive(heroActive);
+  if (document.hidden) trailer.pause();
+  else if (dialog.open) pickSource(trailer);
 });
 // Follow the player's state without touching player.js: stop the trailer while the game plays or the start screen is open.
-const wantHero = () => document.body.dataset.state !== 'playing' && !document.body.dataset.intro;
+const wantHero = () => ['offline', 'idle', 'error', 'disconnected'].includes(document.body.dataset.state) && !document.body.dataset.intro;
 const syncHero = () => {
   const active = wantHero();
   if (active !== heroActive) setHeroActive(active);
 };
-pickSources();
 new MutationObserver(syncHero).observe(document.body, { attributes: true, attributeFilter: ['data-state', 'data-intro'] });
 setHeroActive(wantHero());
