@@ -303,8 +303,12 @@ const SPEC = {
     ETA_ENTRY: k(2.0, 1.8, 2.3),    // rapidity
     ETA_FLOOR: k(1.8, 1.6, 2.0),
     ETA_CAP: k(4.0, 3.8, 4.5),
-    DRIFT_BACK: k(0.03, 0.02, 0.05),// per s above entry
-    GAIN_X: k(1.4, 1, 2),           // every gain below × this (WP5 tunes it for the shorter jumps)
+    DRIFT_BACK: k(0.04, 0.02, 0.05),// per s above entry (WP5: 0.04 so a long run needs grazes to hold)
+    GAIN_X: k(1.65, 1, 2),          // every gain below × this (WP5's bots: 1.65)
+    GAIN_REF: k(11, 6, 30),         // s of run that earns the full gains; longer runs × (GAIN_REF / run)^GAIN_POW
+    GAIN_POW: k(1, 0.3, 1.2),
+    PIECE_S: k(2.5, 0, 6),          // s of run a cluster ring set piece counts as, for that scale
+    LOW_X: k(2, 1, 2.5),            // grazes count × this below 0.99c
     G_GRAZE: k(0.06, 0.03, 0.12),
     G_HAIRLINE: k(0.12, 0.06, 0.2),
     G_THREAD: k(0.25, 0.1, 0.4),
@@ -343,6 +347,43 @@ const SPEC = {
     MEDAL_BAR: k([0.5, 0.75, 1, 1], [0.25, 0.5, 0.75, 0.75], [0.75, 1, 1, 1]), // arrival bar: bronze, silver, gold, Tern
     CARD_GAP: k(3, 2, 5),           // s between On Earth cards
     DOT_LINES: k(3, 1, 5),          // most Dot lines per jump
+    // The corridor (WP5): sizes in u, times in s.
+    SOFT_L: k(18, 14, 24),          // s, the soft first jump's length
+    RUNUP_PASS: k(1.4, 1, 2),       // a launch ring counts within this × RING_R
+    RUNUP_WAIT: k(110, 90, 150),    // deg: a target further off than this holds the first ring back
+    ARRIVE_S: k(42, 30, 48),        // u/s at the drop-out
+    SHIP_R: k(0.6, 0.4, 0.9),       // the ship's hit radius in the corridor
+    RUN_S: k(60, 40, 90),           // u/s down the corridor at entry rapidity
+    RUN_K: k(0.25, 0, 0.5),         // forward speed × (1 + RUN_K · (η − entry))
+    LEAD: k(2.6, 1.8, 3.5),         // s from a hazard's first sight to its pass
+    AIM: k(0.55, 0.2, 0.9),         // share of knots put on your line
+    AIM_SD: k(1.2, 0.5, 3),         // u of spread round your line
+    KNOT_MIN: k(1.0, 0.6, 1.4),     // knot radius
+    KNOT_MAX: k(1.8, 1.2, 2.4),
+    HOLE_R: k(2.8, 2.2, 3.6),       // a wall's gap
+    GATE_RING: k(2.9, 2.2, 3.6),    // a cluster ring's radius
+    GATE_KNOT: k(0.5, 0.3, 0.8),    // its galaxies' radius
+    PAD_R: k(1.4, 1, 2),
+    PAD_BAR: k(0.1, 0, 0.2),        // bar a light pad gives
+    RAIL_R: k(0.35, 0.2, 0.6),
+    RAIL_T: k(2.4, 1.5, 3.5),       // s of rail
+    THREAD_GAP: k(2.2, 1.5, 3),     // u each side, two knots within THREAD_T
+    THREAD_T: k(0.3, 0.15, 0.5),
+    HIT_STOP: k(0.06, 0, 0.12),     // s
+    HIT_PUSH: k(9, 4, 14),          // u/s away from what you hit
+    CHAIN_GAP: k(3, 2, 5),          // s with no graze ends the chain
+    DANGER_T: k(0.9, 0.5, 1.5),     // s ahead the proximity whine looks
+    SKY_PUNCH_T: k(1.0, 0.5, 2),    // s the THREE NINES sky punch takes to ease back
+    VISTA_RISE: k(0.3, 0.1, 0.6),   // s to the vista's sky rapidity
+    FORK_SPAN: k(0.25, 0.15, 0.35), // share of L the fork's branch lasts
+    CALM_X: k(0.5, 0.2, 1),         // knot rate on the calm branch
+    DENSE_X: k(1.5, 1.2, 2),        // knot rate and score on the dense branch
+    PTS_GRAZE: k(10, 5, 20),        // × γ × the chain
+    PTS_THREAD: k(250, 100, 400),   // × γ
+    PTS_PAD: k(50, 20, 100),        // × γ
+    PTS_SKIM: k(30, 10, 60),        // × γ per s
+    HAIR_X: k(3, 2, 4),
+    HEADLIGHT_X: k(2, 1, 3),        // score while at 0.999c
   },
 
   // Events: starts, gates, medals and restarts (6.10).

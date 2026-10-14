@@ -175,7 +175,8 @@ test('the race clock, gate count and next medal in the top row; β at light spee
   game.progress.events['first-light'] = { medal: 'silver' };
   let m = run(0.1);
   assert.equal(m.top.text, '7.42');
-  assert.equal(m.top.sub, 'GATE 2/5 · GOLD 10.7');
+  const gold = WALL.events.find((e) => e.id === 'first-light').gold;
+  assert.equal(m.top.sub, `GATE 2/5 · GOLD ${gold.toFixed(1)}`);
   game.race = null;
   setMode(game, 'runup'); setMode(game, 'punch'); setMode(game, 'tunnel');
   game.jump = { to: 'coma', eta: 2.7 };

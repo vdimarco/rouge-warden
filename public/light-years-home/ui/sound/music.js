@@ -25,11 +25,19 @@ const clamp = (v, lo, hi) => (v < lo ? lo : v > hi ? hi : v);
 const mod = (a, n) => ((a % n) + n) % n;
 
 // The key of the zone the ship is in: its data's key ('chapter-1'), else the game's chapter.
+const KEY_OF = new Map();
 export function keyOf(game) {
   const z = game ? zoneOf(game) : null;
-  const m = typeof z?.key === 'string' ? /(\d+)/.exec(z.key) : null;
-  const i = m ? Number(m[1]) - 1 : (game?.chapter ?? 1) - 1;
-  return CHAPTER_KEYS[clamp(i | 0, 0, CHAPTER_KEYS.length - 1)];
+  if (typeof z?.key === 'string') {
+    let k = KEY_OF.get(z.key);
+    if (!k) {
+      const m = /(\d+)/.exec(z.key);
+      k = CHAPTER_KEYS[clamp((m ? Number(m[1]) : 1) - 1, 0, CHAPTER_KEYS.length - 1)];
+      KEY_OF.set(z.key, k);
+    }
+    return k;
+  }
+  return CHAPTER_KEYS[clamp(((game?.chapter ?? 1) - 1) | 0, 0, CHAPTER_KEYS.length - 1)];
 }
 export const isMinor = (key) => key.scale[1] === 3;
 
@@ -76,7 +84,8 @@ const TONES = { m: [0, 3, 7], M: [0, 4, 7] };
 
 const AHEAD = 0.12;                 // s of audio time scheduled ahead
 const SHEPARD = 6;                  // riser partials, an octave apart
-const LEVEL = { title: 0, drive: 1, zoom: 0.8, runup: 0.55, punch: 0, tunnel: 1, dropout: 0.25, ended: 0.6 };
+const RISER_PERIOD = [2.6, 1.9, 1.4, 1.0];   // s per octave, by launch rings done
+const LEVEL = { title: 0, drive: 1, zoom: 0.8, runup: 0.4, punch: 0, tunnel: 1, dropout: 0.25, ended: 0.6 };
 const TUNNEL = new Set(['punch', 'tunnel', 'dropout']);
 
 // The sky's rapidity: the jump's own value (game.jump.phiSky), else the shape final.md 11.1 gives it.
@@ -101,15 +110,16 @@ export function skyPhi(game) {
 export function createMusic(mix) {
   let M = null;
   let score = SCORES.wall, scoreId = null, key = CHAPTER_KEYS[0], tune = TUNES.default;
-  let next = 0, step = 0, level = 0, want = 0, lowSince = -1, drop = false, tapeUntil = 0, cents = 0;
-  let riserPhase = 0, riserOn = false, rings = 0, lastMode = null, nines = 0;
-  const music = { update, tapeStop, get cents() { return cents; }, get key() { return key; },
+  // numbers that change every frame live on one object, so writing them boxes nothing
+  const S = { next: 0, lowSince: -1, tapeUntil: 0, cents: 0, riserPhase: 0 };
+  let step = 0, level = 0, want = 0, drop = false, riserOn = false, rings = 0, lastMode = null, nines = 0;
+  const music = { update, tapeStop, get cents() { return S.cents; }, get key() { return key; },
     get level() { return level; }, get score() { return scoreId; }, get built() { return !!M; } };
   mix.music = music;
 
   mix.onStart(() => {
     const out = mix.gain(0);                            // the score's level by mode; plugged in while the music is on
-    // kick: a sine dropping from 150 to 42 Hz
+    // kick: a sine dropping from 200 to 45 Hz
     const kick = mix.osc('sine', 60), kickG = mix.gain(0, out);
     kick.connect(kickG);
     // hats and snare: the shared noise through a high-pass and a band-pass
@@ -159,9 +169,10 @@ export function createMusic(mix) {
     param.linearRampToValueAtTime(peak, t + att);
     param.setTargetAtTime(0, t + att, dur / 5);
   }
+  // the kick starts at 200 Hz so a phone speaker still hears its knock, then drops to 45
   function kickAt(t, peak = 0.9) {
-    M.kick.frequency.setValueAtTime(150, t);
-    M.kick.frequency.exponentialRampToValueAtTime(42, t + 0.22);
+    M.kick.frequency.setValueAtTime(200, t);
+    M.kick.frequency.exponentialRampToValueAtTime(45, t + 0.2);
     env(M.kickG.gain, t, peak, 0.003, 0.24);
   }
   function hatAt(t, accent) { env(M.hatG.gain, t, accent ? 0.22 : 0.1, 0.001, accent ? 0.05 : 0.025); }
@@ -186,7 +197,7 @@ export function createMusic(mix) {
     if (pos === 0) setChord(Math.floor(s / 16), t);
     if (pos % 4 === 0) applyLevel(t);
     if (level <= 0) return;
-    const drums = !drop && t >= tapeUntil;
+    const drums = !drop && t >= S.tapeUntil;
     if (drums && score.kick.includes(pos)) kickAt(t, level >= 2 ? 0.9 : 0.6);
     if (drop) {
       // slow motion: the drums drop out and one long bass note holds the floor
@@ -222,10 +233,10 @@ export function createMusic(mix) {
 
   // Layers go up on the next beat and come down one a bar after 2.5 s below.
   function applyLevel(t) {
-    if (want > level) { level = want; lowSince = -1; } else if (want < level) {
-      if (lowSince < 0) lowSince = t;
-      else if (t - lowSince > 2.5 && Math.floor((step % 16) / 4) === 0) { level--; lowSince = t; }
-    } else lowSince = -1;
+    if (want > level) { level = want; S.lowSince = -1; } else if (want < level) {
+      if (S.lowSince < 0) S.lowSince = t;
+      else if (t - S.lowSince > 2.5 && Math.floor((step % 16) / 4) === 0) { level--; S.lowSince = t; }
+    } else S.lowSince = -1;
     mix.steer(M.padG.gain, level >= 4 ? 0.07 : 0.1, 0.4);
   }
 
@@ -233,13 +244,13 @@ export function createMusic(mix) {
   function tapeStop(sec = 0.3, depth = 1200) {
     if (!M || !mix.live()) return;
     const t = mix.now();
-    tapeUntil = t + sec;
+    S.tapeUntil = t + sec;
     for (const o of M.tonal) {
       const p = o.detune, base = baseDetune(o);
       p.cancelScheduledValues(t);
-      p.setValueAtTime(base + cents, t);
-      p.linearRampToValueAtTime(base + cents - depth, t + sec * 0.4);
-      p.linearRampToValueAtTime(base + cents, t + sec);
+      p.setValueAtTime(base + S.cents, t);
+      p.linearRampToValueAtTime(base + S.cents - depth, t + sec * 0.4);
+      p.linearRampToValueAtTime(base + S.cents, t + sec);
       mix.unsteer(p);
     }
   }
@@ -300,13 +311,13 @@ export function createMusic(mix) {
       score = scoreFor(id);
       tune = id === 'tunnel' ? TUNES.jump : tuneOf(id);
       step = 0;
-      next = Math.max(next, now + 0.03);
+      S.next = Math.max(S.next, now + 0.03);
       level = Math.min(level, 1);
       mix.count('score');
     }
     key = keyOf(game);
     if (mode !== lastMode) {
-      if (mode === 'runup') { rings = 0; riserPhase = 0; riserOn = true; mix.count('riser'); }
+      if (mode === 'runup') { rings = 0; S.riserPhase = 0; riserOn = true; mix.count('riser'); }
       if (mode !== 'runup') riserOn = false;
       if (!TUNNEL.has(mode)) nines = 0;
       if (mode === 'punch') {
@@ -324,17 +335,17 @@ export function createMusic(mix) {
 
     // pitch: the sky's rapidity in the jump, nothing in a zone
     const phi = TUNNEL.has(mode) ? skyPhi(game) : 2;
-    cents = TUNNEL.has(mode) ? clamp(300 * (phi - 2), -900, 900) : 0;
-    if (now >= tapeUntil) for (const o of M.tonal) mix.steer(o.detune, baseDetune(o) + cents, 0.05);
+    S.cents = TUNNEL.has(mode) ? clamp(300 * (phi - 2), -900, 900) : 0;
+    if (now >= S.tapeUntil) for (const o of M.tonal) mix.steer(o.detune, baseDetune(o) + S.cents, 0.05);
 
     // the clock: after a stall, start again just ahead
     const spb = 15 / score.bpm;
-    if (next < now - 0.25) next = now + 0.03;
+    if (S.next < now - 0.25) S.next = now + 0.03;
     let guard = 0;
-    while (next < now + AHEAD && guard++ < 16) {
-      playStep(step, Math.max(next, now));
+    while (S.next < now + AHEAD && guard++ < 16) {
+      playStep(step, Math.max(S.next, now));
       step++;
-      next += spb;
+      S.next += spb;
     }
 
     updateRiser(now, dt, game);
@@ -347,12 +358,13 @@ export function createMusic(mix) {
     mix.plug(M.riserG, mix.bus.music, live || M.riserG.gain.value > 0.002);
     if (!live) { mix.steer(M.riserG.gain, 0, 0.03); return; }
     const done = Number.isFinite(game.jump?.runup?.done) ? game.jump.runup.done : rings;
-    const period = [2.6, 1.9, 1.4, 1.0][clamp(done | 0, 0, 3)];
-    riserPhase += clamp(dt, 0, 0.1) / period;
-    if (riserPhase >= 1) riserPhase -= 1;
-    mix.steer(M.riserG.gain, 0.16 + 0.05 * done, 0.15);
+    const period = RISER_PERIOD[clamp(done | 0, 0, 3)];
+    // the phase counts octaves climbed, 0 to 6: one partial wraps (silently) each octave, never all at once
+    S.riserPhase += clamp(dt, 0, 0.1) / period;
+    if (S.riserPhase >= SHEPARD) S.riserPhase -= SHEPARD;
+    mix.steer(M.riserG.gain, 0.4 + 0.12 * done, 0.15);
     for (let i = 0; i < SHEPARD; i++) {
-      const x = mod(i + riserPhase, SHEPARD) / SHEPARD;          // 0 to 1 over six octaves
+      const x = mod(i + S.riserPhase, SHEPARD) / SHEPARD;          // 0 to 1 over six octaves
       const f = 40 * 2 ** (6 * x), g = 0.5 - 0.5 * Math.cos(2 * Math.PI * x);
       const p = M.shep[i];
       if (x < 0.02) {
@@ -364,7 +376,7 @@ export function createMusic(mix) {
       mix.steer(p.g.gain, 0.22 * g, 0.03);
     }
     // the noise under it opens with the rings
-    mix.steer(M.riserN.frequency, 300 * 2 ** (done + riserPhase), 0.05);
+    mix.steer(M.riserN.frequency, 300 * 2 ** (done + (S.riserPhase % 1)), 0.05);
     mix.steer(M.riserNG.gain, 0.1 + 0.06 * done, 0.1);
   }
 

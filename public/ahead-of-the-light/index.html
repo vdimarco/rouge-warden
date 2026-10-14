@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<script src="/arcade/quiet.js"></script>
+<script src="/arcade/switch.js"></script>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#000000">
+<title>Ahead of the Light · Race Home Before the Burst</title>
+<meta name="description" content="Race home ahead of a gamma-ray burst. Every near miss holds the light back.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23000'/%3E%3Ccircle cx='16' cy='14' r='9' fill='none' stroke='%23fff' stroke-width='1.5'/%3E%3Ccircle cx='16' cy='14' r='14' fill='none' stroke='%23f08a2c' stroke-width='1'/%3E%3Cpath d='M16 20l-3 4h6z' fill='%23fff'/%3E%3C/svg%3E">
+<script type="importmap">{"imports":{"three":"/vr/lib/three.module.min.js"}}</script>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<!-- The world (WebGL) below, the ring and everything on it (2D) above. -->
+<canvas id="view" aria-label="Galaxies stream past a ship racing a ring of light"></canvas>
+<canvas id="overlay" aria-hidden="true"></canvas>
+<!-- The glare and the flood: composited layers whose opacity alone animates. -->
+<div id="fx" aria-hidden="true"><div id="fx-glare"></div><div id="fx-flash"></div><div id="fx-flood"></div></div>
+
+<!-- The HUD: speed top left, place top right, the pause button. -->
+<div id="hud" hidden>
+  <p id="speed" class="hud">0.762c</p>
+  <p id="place" class="hud"></p>
+  <button id="pause" type="button" aria-label="Pause"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="3" y="2" width="3.4" height="12" rx="0.8"/><rect x="9.6" y="2" width="3.4" height="12" rx="0.8"/></svg></button>
+</div>
+
+<!-- One caption at a time, the current word in orange. -->
+<div id="captions" aria-live="polite"></div>
+
+<!-- Title, break, chart, result, pause, settings, log and hangar screens. -->
+<div id="screens">
+  <section id="title" class="screen" aria-label="Title">
+    <a class="back" href="/">‹ Arcade</a>
+    <h1>AHEAD OF THE <span>LIGHT</span></h1>
+    <p class="line">Race home ahead of a gamma-ray burst. Every near miss holds the light back.</p>
+    <p id="go" class="go"><span class="touch">TAP TO FLY</span><span class="desk">CLICK OR PRESS SPACE</span></p>
+    <div class="row"><button type="button" class="btn quiet" data-switch>Switch game</button></div>
+  </section>
+</div>
+
+<script type="module" src="./main.js"></script>
+<script src="/arcade/analytics.js" data-game="ahead-of-the-light"></script>
+</body>
+</html>

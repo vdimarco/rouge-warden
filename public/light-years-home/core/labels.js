@@ -1,12 +1,16 @@
 // Light Years Home: where ring labels go. Greedy placement (Christensen, Marks and Shieber 1995): the most important
 // label first, each tried on the right and then the left of its ring, above and then below, with a diagonal leader
-// and a short flat run. A spot is rejected when the label leaves the free area or overlaps a placed label, a ring or
+// and a short flat run, then the same with a longer leader. A spot is rejected when the label leaves the free area or
+// overlaps a placed label, a ring or
 // a HUD rect. At most 6 labels. Pure: the caller measures text widths (or they are estimated from the font size).
 
 export const MAX_LABELS = 6;
 
 // Candidate spots in order of preference: side (+1 right, −1 left) and up (+1) or down (−1).
 const SPOTS = [[1, 1], [-1, 1], [1, -1], [-1, -1]];
+// When all four are taken (a crowded node, a phone in landscape), the same four with a longer leader.
+const FAR_X = 2.5;
+const SPOTS_ALL = [...SPOTS.map(([a, b]) => [a, b, false]), ...SPOTS.map(([a, b]) => [a, b, true])];
 const D45 = Math.SQRT1_2;
 
 const overlaps = (a, b) => a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
@@ -50,8 +54,8 @@ export function placeLabels(items, opts = {}) {
   const placed = [];
   for (const { it } of list) {
     if (placed.length >= Math.min(max, MAX_LABELS)) break;
-    for (const [side, up] of SPOTS) {
-      const s = labelSpot(it, side, up, opts);
+    for (const [side, up, far] of SPOTS_ALL) {
+      const s = labelSpot(it, side, up, far ? { ...opts, leader: (opts.leader ?? 14) * FAR_X } : opts);
       const lead = {
         x: Math.min(s.anchor[0], s.end[0]), y: Math.min(s.anchor[1], s.end[1]),
         w: Math.abs(s.end[0] - s.anchor[0]), h: Math.abs(s.end[1] - s.anchor[1]),

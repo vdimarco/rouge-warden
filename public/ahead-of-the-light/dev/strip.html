@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Course Strip</title>
+<!-- Ahead of the Light: the course strip (dev tool, final.md 18.1). Build any leg and lane for a seed, see it unrolled
+     (bearing across, beat down), the validator's report, a mid bot's line and hits, and open it in the game. -->
+<style>
+  :root { --bg: #000; --fg: #fff; --dim: #8a8a96; --line: #2a2a36; --accent: #f08a2c; --bad: #ff5050; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--fg); font: 13px/1.4 system-ui, sans-serif; }
+  header { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: end; padding: 12px 16px;
+    border-bottom: 1px solid var(--line); position: sticky; top: 0; background: var(--bg); z-index: 2; }
+  label { display: flex; flex-direction: column; gap: 3px; color: var(--dim); font-size: 11px; text-transform: uppercase; }
+  input, select, button { background: #0b0b14; color: var(--fg); border: 1px solid var(--line); border-radius: 4px;
+    padding: 6px 8px; font: inherit; min-height: 32px; }
+  input[type=number] { width: 90px; }
+  button { cursor: pointer; border-color: var(--accent); }
+  a { color: var(--accent); }
+  main { display: flex; flex-wrap: wrap; gap: 16px; padding: 16px; }
+  #strip { flex: 1 1 760px; overflow-x: auto; }
+  #strip svg { max-width: 100%; height: auto; }
+  aside { flex: 0 1 380px; min-width: 280px; }
+  h2 { font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--dim); margin: 18px 0 6px; }
+  table { border-collapse: collapse; width: 100%; }
+  td, th { text-align: left; padding: 3px 6px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  .bad { color: var(--bad); } .ok { color: #7fd17f; } .dim { color: var(--dim); }
+  @media (max-width: 600px) { header { padding: 10px 16px; position: static; } main { padding: 10px 16px; } }
+</style>
+</head>
+<body>
+<header>
+  <label>Seed <input id="seed" type="number" value="1" min="1"></label>
+  <label>Leg <select id="leg"></select></label>
+  <label>Lane <select id="lane"></select></label>
+  <label>Family <select id="fam"><option value="">none</option><option>SKIM</option><option>WELL</option>
+    <option>SHIP</option><option>RIVAL</option></select></label>
+  <label>Condition <select id="cond"><option value="">none</option></select></label>
+  <label>Player <select id="seen"><option value="first">first run</option><option value="later">later runs</option>
+  </select></label>
+  <label>Mods <select id="mods"><option value="">none</option><option value="gateWell">SLINGSHOT HOME</option></select></label>
+  <label>Bot <select id="bot"><option value="">none</option><option>mid</option><option>novice</option>
+    <option>expert</option><option>dodge</option><option>graze</option></select></label>
+  <button id="go">Build</button>
+  <a id="play" href="../">Play this leg</a>
+</header>
+<main>
+  <div id="strip"></div>
+  <aside>
+    <h2>Validator</h2><div id="report"></div>
+    <h2>Sections</h2><div id="sections"></div>
+    <h2>Bot</h2><div id="botout" class="dim">Pick a bot to fly the leg.</div>
+  </aside>
+</main>
+<script type="module">
+import { TUNE } from '../core/tune.js';
+import { LEG_TYPES, ROUTE, CONDITIONS } from '../core/course/legs.js';
+import { buildLeg } from '../core/course/gen.js';
+import { validateLeg } from '../core/course/validate.js';
+import { stripSvg } from '../core/course/strip.js';
+
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+for (const t of ROUTE) $('leg').add(new Option(`${ROUTE.indexOf(t) + 1} ${LEG_TYPES[t].name}`, t));
+for (const c of Object.values(CONDITIONS)) $('cond').add(new Option(c.name, c.id));
+const q = new URLSearchParams(location.search);
+const fillLanes = () => {
+  $('lane').innerHTML = '';
+  for (const [name, L] of Object.entries(LEG_TYPES[$('leg').value].lanes)) $('lane').add(new Option(`${name} (${L.kind})`, L.id));
+};
+if (q.get('leg') && LEG_TYPES[q.get('leg')]) $('leg').value = q.get('leg');
+fillLanes();
+for (const k of ['seed', 'lane', 'fam', 'cond', 'seen', 'mods', 'bot']) if (q.get(k) !== null) $(k).value = q.get(k);
+$('leg').addEventListener('change', () => { fillLanes(); build(); });
+for (const k of ['seed', 'lane', 'fam', 'cond', 'seen', 'mods', 'bot']) $(k).addEventListener('change', build);
+$('go').addEventListener('click', build);
+
+// A bot flies the leg alone (no rivals): its line and its hits for the strip, and its hits by piece.
+async function fly(leg, name) {
+  const [{ createRace, stepRace, STEP }, { driverFor }] = await Promise.all([import('../core/race.js'),
+    import('../core/bots.js')]);
+  const race = createRace({ leg, tune: TUNE });
+  race.ships.length = 1;
+  const you = race.ships[0], drive = driverFor(name, { seed: 1 });
+  const points = [], hits = [], byPiece = {};
+  let n = 0;
+  while (race.phase !== 'done' && race.real < 240) {
+    const ev = stepRace(race, { you: drive(race, you) }, STEP);
+    if (n++ % 6 === 0) points.push({ beat: you.dist, bearing: you.bearing });
+    for (const e of ev) {
+      if (e.ship !== 'you' || e.type !== 'hit') continue;
+      hits.push({ beat: you.dist, bearing: you.bearing });
+      const p = e.piece || 'unknown';
+      byPiece[p] = (byPiece[p] || 0) + 1;
+    }
+  }
+  return { points, hits, byPiece, end: race.phase, t: race.real, eta: you.eta };
+}
+
+async function build() {
+  const seed = Math.max(1, Math.round(+$('seed').value || 1));
+  const type = $('leg').value;
+  const lane = { id: $('lane').value, fam: $('fam').value || null, cond: $('cond').value || null };
+  const seen = $('seen').value === 'first' ? {} : { runs: 4, goodWhip: true };
+  const mods = $('mods').value ? { [$('mods').value]: true } : {};
+  const leg = buildLeg({ runSeed: seed, type, lane, seen, mods, tune: TUNE });
+  const rep = validateLeg(leg, { keep: true });
+  const traces = [];
+  if ($('bot').value) {
+    try {
+      const b = await fly(leg, $('bot').value);
+      traces.push({ name: $('bot').value, points: b.points, hits: b.hits });
+      $('botout').innerHTML = `${esc($('bot').value)}: ${b.end} after ${b.t.toFixed(1)} s, ${b.hits.length} hits`
+        + `<table>${Object.entries(b.byPiece).map(([p, k]) => `<tr><td>${esc(p)}</td><td>${k}</td></tr>`).join('')}</table>`;
+    } catch (e) {
+      $('botout').textContent = `The bots could not fly this leg: ${e.message}`;
+    }
+  } else $('botout').textContent = 'Pick a bot to fly the leg.';
+  $('strip').innerHTML = stripSvg({ ...leg, report: { ...leg.report, passes: rep.passes } }, traces,
+    { corridor: rep.corridor });
+  const rules = Object.entries(rep.rules).map(([r, v]) => `<tr><td>${r}</td><td class="${v.ok ? 'ok' : 'bad'}">`
+    + `${v.ok ? 'ok' : 'FAIL'}</td><td class="dim">${esc(Object.entries(v).filter(([k]) => k !== 'ok')
+      .map(([k, x]) => `${k} ${typeof x === 'number' ? Math.round(x * 100) / 100 : x}`).join(' · '))}</td></tr>`).join('');
+  $('report').innerHTML = `<div class="${rep.ok ? 'ok' : 'bad'}">${rep.ok ? 'Valid' : 'Fails'} · ${rep.passes} passes`
+    + ` · longest quiet ${rep.quiet.toFixed(1)} beats · attempts ${leg.report.attempts.join(' ')}</div>`
+    + `${rep.errors.map((e) => `<div class="bad">${e.rule} at beat ${e.beat}: ${esc(e.msg)}</div>`).join('')}`
+    + `<table>${rules}</table>`;
+  $('sections').innerHTML = `<table>${leg.sections.map((s) => `<tr><td>${s.role}</td><td>${s.b0}–${s.b1}</td>`
+    + `<td>${esc(s.ids.join(' + ') || '')}</td><td class="dim">${esc(s.params.map((p) => JSON.stringify(p)).join(' '))}`
+    + `</td></tr>`).join('')}</table><div class="dim">hash ${leg.hash} · fuel ${leg.pickups.filter((p) => p.type === 'fuel').length}`
+    + ` · patch ${leg.pickups.filter((p) => p.type === 'patch').length} · wells ${leg.wells.length}</div>`;
+  const laneName = Object.keys(LEG_TYPES[type].lanes).find((n) => LEG_TYPES[type].lanes[n].id === lane.id) || '';
+  $('play').href = `../?leg=${type}&lane=${encodeURIComponent(laneName)}&seed=${seed}`;
+  const u = new URLSearchParams({ seed, leg: type, lane: lane.id, fam: $('fam').value, cond: $('cond').value,
+    seen: $('seen').value, mods: $('mods').value, bot: $('bot').value });
+  history.replaceState(null, '', `?${u}`);
+}
+build();
+</script>
+</body>
+</html>

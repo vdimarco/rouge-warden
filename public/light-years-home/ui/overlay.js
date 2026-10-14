@@ -425,21 +425,36 @@ export function createOverlay(canvas, { tune = TUNE } = {}) {
     ctx.restore();
   }
 
-  // A chevron's label, inside the screen beside it; moved above or below when that spot covers a HUD box or a label
-  // already drawn. avoid: [x, y, w, h] boxes.
+  // A chevron's label, inside the screen beside it; moved above, below or aside when that spot covers a HUD box or a
+  // label already drawn. avoid: [x, y, w, h] boxes.
   function chevronLabel(c, text, colour, f, avoid = []) {
     const w = measure(text, f), hgt = 14;
     let align = 'center', x = c.x - Math.cos(c.angle) * 16, y = c.y - Math.sin(c.angle) * 16;
     if (c.edge === 'right') { align = 'right'; x -= 2; } else if (c.edge === 'left') { align = 'left'; x += 2; }
     else y += c.edge === 'top' ? 8 : -8;
     const left = (ax) => (align === 'right' ? ax - w : align === 'left' ? ax : ax - w / 2);
-    const fits = (ax, ay) => !avoid.some((r) => left(ax) < r[0] + r[2] && r[0] < left(ax) + w
-      && ay - hgt / 2 < r[1] + r[3] && r[1] < ay + hgt / 2);
-    const spots = [[x, y], [x, y - 18], [x, y + 18], [x, y - 34], [x, y + 34]];
-    const [sx, sy] = spots.find(([ax, ay]) => fits(ax, ay)) || spots[0];
-    let tx = clamp(sx, w / 2 + 4, W - w / 2 - 4);
-    if (align === 'right') tx = Math.max(sx, w + 4);
-    if (align === 'left') tx = Math.min(sx, W - w - 4);
+    // The spot's x kept inside the screen.
+    const inX = (ax) => (align === 'right' ? clamp(ax, w + 4, W - 4) : align === 'left' ? clamp(ax, 4, W - w - 4)
+      : clamp(ax, w / 2 + 4, W - w / 2 - 4));
+    // How much of the label a spot would cover (0 is clear); off the top or bottom of the screen counts as covered.
+    const cover = (ax, ay) => {
+      let a = (Math.max(0, 2 - (ay - hgt / 2)) + Math.max(0, ay + hgt / 2 - (H - 2))) * w * 4;
+      for (const r of avoid) {
+        const ox = Math.min(left(ax) + w, r[0] + r[2]) - Math.max(left(ax), r[0]);
+        const oy = Math.min(ay + hgt / 2, r[1] + r[3]) - Math.max(ay - hgt / 2, r[1]);
+        if (ox > 0 && oy > 0) a += ox * oy;
+      }
+      return a;
+    };
+    // Up or down first, then slid to one side (a chevron by a pedal); else the spot that covers least.
+    let tx = inX(x), sy = y, least = Infinity;
+    for (const dx of [0, -(w / 2 + 12), w / 2 + 12]) {
+      for (const dy of [0, -18, 18, -34, 34, -50, 50, -66, 66]) {
+        const ax = inX(x + dx), a = cover(ax, y + dy);
+        if (a < least - 0.5) { least = a; tx = ax; sy = y + dy; }
+      }
+      if (least === 0) break;
+    }
     ctx.font = f;
     ctx.fillStyle = colour;
     ctx.textBaseline = 'middle';
@@ -578,15 +593,22 @@ export function createOverlay(canvas, { tune = TUNE } = {}) {
     const x = pips[0] + pips[2] / 2;
     let y = big ? H * 0.38 : pips[1] - px * 0.9;
     if (big && L.rects.toast) y = Math.max(y, L.rects.toast[1] + L.rects.toast[3] + px * 2);
+    // Under the reading rows (toast, info box, a hint in its slot) that sit in the top half.
+    if (big) {
+      for (const n of ['info', 'hint']) {
+        const r = L.rects[n];
+        if (r && r[1] < H / 2) y = Math.max(y, r[1] + r[3] + px);
+      }
+    }
     const hr = L.rects.hint;
     if (!big && hr && y + px > hr[1] && y - px < hr[1] + hr[3]) y = hr[1] - px * 0.8;
     return { x, y, px };
   }
   // The box labels keep clear of: the callout's line, with room for its rise.
-  function calloutBox(L) {
+  function calloutBox(L, text = null) {
     if (!L?.rects?.pips && !L?.rects?.ship) return null;
     const { x, y, px } = calloutSpot(L, false);
-    const w = px * 9;
+    const w = text ? measure(text, font(px * 1.3, 800)) + 16 : px * 9;
     return { x: x - w / 2, y: y - px - 14, w, h: px * 2 + 14 };
   }
 
@@ -604,6 +626,7 @@ export function createOverlay(canvas, { tune = TUNE } = {}) {
     const { x, y: y0, px } = calloutSpot(L, big);
     const y = y0 - (big ? 0 : rise);
     const label = c.n > 1 ? `${c.text} ×${c.n}` : c.text;
+    drawn.callout = label;
     ctx.save();
     ctx.globalAlpha = alpha;
     ctx.translate(x, y);
@@ -627,7 +650,7 @@ export function createOverlay(canvas, { tune = TUNE } = {}) {
     ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
     const g = view.game, L = view.layout, cam = view.cam;
     const mode = g?.mode || 'title';
-    drawn = { rings: [], labels: [], chevrons: [] };
+    drawn = { rings: [], labels: [], chevrons: [], callout: null };
     const hidden = mode === 'title' || mode === 'paused' || mode === 'log';
     const inZone = !(mode === 'punch' || mode === 'tunnel');
     if (hidden) { callouts.clear(); return drawn; }
@@ -640,6 +663,10 @@ export function createOverlay(canvas, { tune = TUNE } = {}) {
         if (m.dir) projectPoint(cam, m.dir, 0, pt); else if (m.pos) projectPoint(cam, m.pos, 1, pt); else continue;
         let r = m.dir ? fin(m.rPx, 16) : ringPx(cam, fin(m.r, 2), pt.depth);
         if (m.kind === 'scanned' && m.pos && r > Math.min(W, H) * 0.3) continue;   // too close to need a label
+        // Inside an objective's area (a ring of tens of u round a place) the ring would fill the screen: the radar
+        // and the leader already say where it is.
+        if (m.kind === 'objective' && m.pos && m.ring !== false && fin(m.r) > 8 && g?.ship?.pos
+          && Math.hypot(m.pos[0] - g.ship.pos[0], m.pos[1] - g.ship.pos[1]) < fin(m.r) * 1.2) continue;
         r = clamp(r, MIN_RING_PX, Math.min(W, H) * 0.42);
         const on = pt.front && pt.x > -r && pt.x < W + r && pt.y > -r && pt.y < H + r;
         const entry = { id: m.id, kind: m.kind, x: pt.x, y: pt.y, r, front: pt.front, onScreen: on, mark: m,
@@ -667,7 +694,9 @@ export function createOverlay(canvas, { tune = TUNE } = {}) {
       // Labels with their leaders, clear of the HUD.
       const avoid = Object.entries(L?.rects || {}).filter(([n]) => n !== 'ship')
         .map(([, r]) => rectBox(r));
-      const cb = calloutBox(L);
+      // The callout's line is kept clear only while a callout shows (in landscape it covers the middle of the view).
+      const cur = callouts.current(clock);
+      const cb = cur ? calloutBox(L, cur.n > 1 ? `${cur.text} ×${cur.n}` : cur.text) : null;
       if (cb) avoid.push(cb);
       const fpx = L?.kind === 'desktop' ? 12 : 10.5;
       const placed = placeLabels(items, { width: W, height: H, avoid, max: MAX_LABELS, fontPx: fpx,
@@ -696,7 +725,9 @@ export function createOverlay(canvas, { tune = TUNE } = {}) {
             if (i < m.medals) { ctx.fillStyle = colour; ctx.fill(); }
           }
         }
-        drawn.labels.push({ id: p.id, text: p.text, rect: [p.rect.x, p.rect.y, p.rect.w, p.rect.h] });
+        // A start ring's label box takes in its medal pips.
+        const pipH = m?.medals !== undefined ? fpx + 4 : 0;
+        drawn.labels.push({ id: p.id, text: p.text, rect: [p.rect.x, p.rect.y, p.rect.w, p.rect.h + pipH] });
       }
       // Edge chevrons for what is off the screen: the objective first, at most 4. Their labels keep clear of the HUD
       // and of the labels placed above.
@@ -714,7 +745,10 @@ export function createOverlay(canvas, { tune = TUNE } = {}) {
         if (e.kind === 'objective' && e.mark.label) chevronLabel(c, e.mark.label, colour, font(fpx, 700), hudBoxes);
         drawn.chevrons.push({ id: e.id, x: c.x, y: c.y, angle: c.angle });
       }
-      // HOME: an orange chevron at the edge toward Earth, or a marker where it lies.
+      // HOME: an orange chevron at the edge toward Earth, or a marker where it lies. Its label also keeps off the
+      // small rings on screen.
+      const ringBoxes = drawn.rings.filter((e) => e.r < Math.min(W, H) * 0.15)
+        .map((e) => [e.x - e.r, e.y - e.r, e.r * 2, e.r * 2]);
       if (view.home?.dir) {
         projectPoint(cam, view.home.dir, 0, pt);
         const visible = pt.front && pt.x >= 8 && pt.x <= W - 8 && pt.y >= 8 && pt.y <= H - 8;
@@ -723,14 +757,27 @@ export function createOverlay(canvas, { tune = TUNE } = {}) {
         if (c) {
           clearOfHud(c, L);
           chevron(c, ORANGE, 10);
-          chevronLabel(c, label, ORANGE, font(fpx, 700), hudBoxes);
-          drawn.chevrons.push({ id: 'home', x: c.x, y: c.y, angle: c.angle });
-        } else {
+          const rect = chevronLabel(c, label, ORANGE, font(fpx, 700), hudBoxes.concat(ringBoxes));
+          drawn.chevrons.push({ id: 'home', x: c.x, y: c.y, angle: c.angle, label: rect });
+        } else if (!hudBoxes.some((r) => pt.x > r[0] - 6 && pt.x < r[0] + r[2] + 6 && pt.y > r[1] - 6
+          && pt.y < r[1] + r[3] + 6)) {
+          // On screen: a marker where Earth lies, its label above or below it, whichever is clear of the HUD and
+          // inside the screen (slid in from a side edge).
           ctx.beginPath();
           ctx.moveTo(pt.x, pt.y + 6); ctx.lineTo(pt.x - 6, pt.y - 4); ctx.lineTo(pt.x + 6, pt.y - 4); ctx.closePath();
           ctx.fillStyle = ORANGE; ctx.fill();
-          ctx.font = font(fpx, 700); ctx.textAlign = 'center'; ctx.fillText(label, pt.x, pt.y - 14);
-          drawn.chevrons.push({ id: 'home', x: pt.x, y: pt.y, angle: Math.PI / 2, onScreen: true });
+          ctx.font = font(fpx, 700); ctx.textAlign = 'center';
+          const lw = measure(label, font(fpx, 700));
+          const lx = clamp(pt.x, lw / 2 + 4, W - lw / 2 - 4);
+          const ok = (y) => y - fpx / 2 >= 2 && y + fpx / 2 <= H - 2 && !hudBoxes.some((r) => lx + lw / 2 > r[0]
+            && lx - lw / 2 < r[0] + r[2] && y + fpx / 2 + 2 > r[1] && y - fpx / 2 - 2 < r[1] + r[3]);
+          const ly = ok(pt.y - 14) ? pt.y - 14 : ok(pt.y + 18) ? pt.y + 18 : null;
+          let rect = null;
+          if (ly !== null) {
+            ctx.fillText(label, lx, ly);
+            rect = [lx - lw / 2, ly - 7, lw, 14];
+          }
+          drawn.chevrons.push({ id: 'home', x: pt.x, y: pt.y, angle: Math.PI / 2, onScreen: true, label: rect });
         }
       }
     }
@@ -747,5 +794,6 @@ export function createOverlay(canvas, { tune = TUNE } = {}) {
     get rings() { return drawn.rings; },
     get labels() { return drawn.labels; },
     get chevrons() { return drawn.chevrons; },
+    get callout() { return drawn.callout; },
   };
 }
