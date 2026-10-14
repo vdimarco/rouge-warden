@@ -1,6 +1,6 @@
 {
   "date": "2026-10-14",
-  "status": "local candidate verified; publication pending",
+  "status": "merged, published and public verified",
   "working_base": "ef586fc6",
   "checks": {
     "unit": 36,
@@ -85,7 +85,88 @@
         ]
       }
     },
-    "visual_review": "Primary agent inspected controlled UI held-stick captures in portrait/landscape; these are UI fixtures, not rendered-world acceptance."
+    "visual_review": "Primary agent inspected controlled UI held-stick captures in portrait/landscape; these are UI fixtures, not rendered-world acceptance.",
+    "public_live": {
+      "report": "Browser/.qa/live-2026-10-14T14-37-59-667Z/summary.json",
+      "checks": [
+        {
+          "name": "host real stream",
+          "passed": true,
+          "durationMs": 2293
+        },
+        {
+          "name": "friend independent real stream",
+          "passed": true,
+          "durationMs": 2179
+        },
+        {
+          "name": "control-channel failure closes its session and late media cannot hide Reconnect",
+          "passed": true,
+          "durationMs": 2250
+        },
+        {
+          "name": "host native input and Escape release",
+          "passed": true,
+          "durationMs": 2870
+        },
+        {
+          "name": "friend native input and Escape release",
+          "passed": true,
+          "durationMs": 2875
+        },
+        {
+          "name": "occupied host slot rejects a third browser",
+          "passed": true,
+          "durationMs": 557
+        },
+        {
+          "name": "occupied browser reconnects after host frees its slot",
+          "passed": true,
+          "durationMs": 4629
+        },
+        {
+          "name": "original host reconnects and retains Disconnect control",
+          "passed": true,
+          "durationMs": 6990
+        }
+      ],
+      "scope": "Ordinary public URL from host-PC Chromium; injected SDK control failure, not a physical carrier dropout."
+    },
+    "public_touch": {
+      "passed": true,
+      "playerUrl": "https://nord-montreal.vercel.app/",
+      "checks": [
+        "title source released while waiting for real game playback",
+        "portrait: advancing real video with both page videos unloaded",
+        "landscape: advancing real video with both page videos unloaded",
+        "no new MP4 requests during real play/rotation; no page errors",
+        "touch control failure sends KeyUp before closing, hides controls and retains Reconnect despite late media"
+      ],
+      "mp4Requests": [
+        "https://d2ol7oe51mr4n9.cloudfront.net/user_3JnxFRyLd68bfjwUMHz1De16TMw/4d0928ae-27d4-4c7e-92ec-f3927c66a4b0.mp4",
+        "https://d2ol7oe51mr4n9.cloudfront.net/user_3JnxFRyLd68bfjwUMHz1De16TMw/a7a1e663-b152-4806-9a6c-6907f9738a44.mp4"
+      ],
+      "errors": [],
+      "limits": [
+        "Host-PC Chromium emulated touch, not a physical phone/carrier.",
+        "MP4 requests are observed and aborted; trailer audio/playback and bandwidth/FPS gains are not measured."
+      ],
+      "touchFailure": {
+        "key": 16,
+        "packets": [
+          {
+            "type": 60,
+            "key": 16,
+            "channel": "open"
+          },
+          {
+            "type": 61,
+            "key": 16,
+            "channel": "open"
+          }
+        ]
+      }
+    }
   },
   "source_sha256": {
     "Browser/player.js": "5fe51c3d7e2c43522ff91ab625dfa96e695d6aa80816754d8674e1eb2a745103",
@@ -99,19 +180,59 @@
     "Browser/.qa/media-2026-10-14T14-28-14-414Z/summary.json": "e70261a8fd35ead243ed83dd36d75cc6d78161045831fa64be1ecdbf59a2e988",
     "Saved/BrowserRecovery-20261014/unit.log": "be5ac14d12a70a54a95a20dc131f66c4324c9cca38bd5851af0e4f2643d509e6",
     "Saved/BrowserRecovery-20261014/browser-ui-accepted.log": "114c9d7b0b9fcad26800baeca657deb1ac42f682cea8b75d6ba9a4ea1ce060a8",
-    "Saved/BrowserRecovery-20261014/baseline.json": "17243df08d9f9d89db1ce29fd4546b818cb83668c35249c1b89dc653db4a081b"
+    "Saved/BrowserRecovery-20261014/baseline.json": "17243df08d9f9d89db1ce29fd4546b818cb83668c35249c1b89dc653db4a081b",
+    "Browser/.qa/live-2026-10-14T14-37-59-667Z/summary.json": "22462164e59066f866ac79f84003747ba9c18a63da0df2733a2f7e35e8b4b083",
+    "Browser/.qa/media-2026-10-14T14-39-06-220Z/summary.json": "896037c26be1ddb8834b8c0384566c2735b0c1715849f3174613a557fab309b4"
   },
   "rejected_attempts": [
     "Original real-stream injected data-channel failure left peers open; preserved live-reproduction.log.",
     "First guarded candidate exposed old slot refusal poisoning the new connected Friend peer; recorded state trace and fixed pending selection.",
     "SDK reconnect old-socket disconnect also poisoned replacement readiness; fixed explicit reconnect handoff and late refusal guard.",
     "Two UI attempts failed in a new WebSocket fixture reading this before super, and one diagnostic init observed documentElement before it existed; fixtures fixed, attempts retained.",
-    "One CLI invocation used a mistyped runtime path and did not launch; retained separately."
+    "One CLI invocation used a mistyped runtime path and did not launch; retained separately.",
+    "First public request/test started immediately after alias assignment and saw the previous player.js; old failure reproduced. All 12 files subsequently matched, and a fresh public eight-check run passed."
   ],
   "limits": [
     "Host-PC Chromium with injected SDK errors and trusted emulated touch; no physical-phone/carrier dropout acceptance.",
     "No full campaign, audible playback, sustained FPS or bandwidth improvement claim.",
     "Native package is preserved; unrelated opt-in graphic-novel source/assets from main will be retained without recooking in this frontend release.",
     "OpenSpec CLI unavailable; artifacts and scenarios validated manually."
-  ]
+  ],
+  "release": {
+    "pr": "https://github.com/vdimarco/rouge-warden/pull/353",
+    "tested_head": "58bcfeb8c2650c0c06f1ed407ff898c2cb897ec4",
+    "merge": "64c8c31f6175b598ce0a53af384e7a2ca3d641d7",
+    "deployment": "dpl_5WNCgRGhXisNMewM2MAfh1FGR6yh",
+    "status": "READY",
+    "alias": "https://nord-montreal.vercel.app/",
+    "previous_deployment": "dpl_7MRfH2Dzxugi1SWsa4PYec3zepzF",
+    "preview": "Ignored-build cancellation after the integration merge changed only non-Browser files; not counted as a built/tested preview. Production build will be checked against the tested 12-file local manifest.",
+    "public_static": {
+      "passed": true,
+      "url": "https://nord-montreal.vercel.app/",
+      "sha256": {
+        "index.html": "a77149aaa85359b18463b276b7a444ce3502bff35c84b264f850586cd3c411a2",
+        "player.js": "88508c592a5ef7e2dd1ee7055295298093fd91ae7f862ad4b93e26baa4caf26a",
+        "styles.css": "479bb2d3faa53a144789c586519ce27c70e3a7f16eb14b82d3d641663a2ffb24",
+        "hero.css": "ded2c3e7a326723b06a491f32012c3ba04032baed81cb12535e3d5166c1139a2",
+        "intro.css": "1b84616d34254eb394c3cb8f188ac4082555d9a16045bf0bbb188ac9c867b7d7",
+        "menu.css": "ed827bead795c960a3218f8a0ff02ea3d98f972153aafa7ea725f576dfcaec54",
+        "hero.js": "5ddd80dfed7ee8f8377837534b71440a42c52559ef81f2946ee38e4bb6168d28",
+        "crew.js": "604264033819cb89d657e577f9e14aa944a44cc923299174e13823c0428d2f58",
+        "intro.js": "8c6e0d881cd20155254b0f57ff0cc812019ad9f6df003d0ee5bcf8858ac24db0",
+        "menu.js": "db2b53e4e107bbd1616d2382a6e6df2fbbc0080962f534c3e42993e4697937a4",
+        "crew-sprite.webp": "46a035ecd30bb4cc9c74896bfc85318bed8bc61157712dc4b16e4727f9ea0256",
+        "THIRD_PARTY_NOTICES.txt": "2c40b33c5c15250d80589740dece635104dcb398cf3cf58af6ed500e7b32f3f8"
+      }
+    }
+  },
+  "preservation": {
+    "native_package_files_unchanged": 48,
+    "campaign_save_inventory_unchanged": {
+      "Quebec/Saved_BrowserSaveQA/SaveGames/NordCampaign_StorySliceQA_v1.sav": "cec872fd0b2c1b7ea7f18814c787448e00117c6acd8ac46a71f674a26470e88e"
+    },
+    "service_active_since": "Wed 2026-10-14 05:08:57 EDT",
+    "no_game_restart": true,
+    "demo_three_tunnels_and_turn_running": true
+  }
 }
