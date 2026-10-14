@@ -59,9 +59,12 @@ export function rotateAbout(out, v, axis, ang) {
 export function basisFrom(up, heading, outF, outR) {
   let nx = -up[1] * up[0], ny = 1 - up[1] * up[1], nz = -up[1] * up[2];   // +y minus its part along up
   let nl = Math.sqrt(nx * nx + ny * ny + nz * nz);
-  if (nl < 1e-6) { nx = 1 - up[0] * up[0]; ny = -up[0] * up[1]; nz = -up[0] * up[2]; nl = Math.sqrt(nx * nx + ny * ny + nz * nz); }
+  if (nl < 1e-6) {                                                         // up is along y: use +x instead
+    nx = 1 - up[0] * up[0]; ny = -up[0] * up[1]; nz = -up[0] * up[2];
+    nl = Math.sqrt(nx * nx + ny * ny + nz * nz);
+  }
   nx /= nl; ny /= nl; nz /= nl;
-  const ex = ny * up[2] - nz * up[1], ey = nz * up[0] - nx * up[2], ez = nx * up[1] - ny * up[0];   // east = north × up
+  const ex = ny * up[2] - nz * up[1], ey = nz * up[0] - nx * up[2], ez = nx * up[1] - ny * up[0];   // north × up
   const c = Math.cos(heading), s = Math.sin(heading);
   const fx = c * nx + s * ex, fy = c * ny + s * ey, fz = c * nz + s * ez;
   outF[0] = fx; outF[1] = fy; outF[2] = fz;
