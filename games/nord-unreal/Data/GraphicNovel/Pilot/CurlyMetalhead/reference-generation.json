@@ -1,0 +1,67 @@
+{
+  "created_at_utc": "2026-10-14T00:42:38.891168+00:00",
+  "tool": "built-in image_gen.imagegen",
+  "mode": "builtin",
+  "output": {
+    "path": "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/reference.png",
+    "sha256": "c00eb6f0ea1f5743b1a236295ecedfa27e15763d9ab5a717942ebf3713e778be"
+  },
+  "dimensions": [
+    1024,
+    1536
+  ],
+  "concept_reference_not_gameplay": true,
+  "transparent_background": false,
+  "generation_count": 2,
+  "initial_references": [
+    {
+      "path": "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Data/GraphicNovel/style-study.png",
+      "sha256": "0e9ccb06f91af91fb5c3ee7d1c46f04ae9ef009b837f2e5b632dd6e2c6ca641a",
+      "role": "approved art direction and streetwear"
+    },
+    {
+      "path": "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Data/CharactersNeutral/CurlyMetalhead/reference.png",
+      "sha256": "6919135c8695bef6bdcb61c66ced507979bcdb09157d231f99be4b7eee70d0a0",
+      "role": "supporting adult identity"
+    }
+  ],
+  "steps": [
+    {
+      "order": 1,
+      "intent": "single-character front A-pose generation",
+      "original_generated_image": "/home/von/.codex/generated_images/01a137c3-2191-7db3-80a9-4f85e87d280b/exec-3601ce05-d665-485c-a612-75d0dd31751b.png",
+      "retained_image": {
+        "path": "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/reference-v1.png",
+        "sha256": "875fa0cf09e5bcc084c56e1b35f06e37ab90e41481333fa282ebd88c5e90a0a4"
+      },
+      "prompt": {
+        "path": "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/prompt-v1.txt",
+        "sha256": "cfbac2ab4b840998ad598df73195410b9db08477e2e501563f4166ccb8ebeacc"
+      },
+      "review": "Identity, adult anatomy and wardrobe retained; arms too close to sides and fingers stacked, superseded by targeted pose correction."
+    },
+    {
+      "order": 2,
+      "intent": "targeted edit to outward A-pose, clearer hands and clean geometry silhouette",
+      "original_generated_image": "/home/von/.codex/generated_images/01a137c3-2191-7db3-80a9-4f85e87d280b/exec-f858caf4-2bbc-406c-9586-e3109d3bbfd6.png",
+      "edit_reference": {
+        "path": "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/reference-v1.png",
+        "sha256": "875fa0cf09e5bcc084c56e1b35f06e37ab90e41481333fa282ebd88c5e90a0a4"
+      },
+      "prompt": {
+        "path": "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/prompt.txt",
+        "sha256": "62a096248188c9ef8526ad1ac958ca5df23db1f1708b9769a4c8428487ccd3b5"
+      },
+      "review": "Front A-pose with arms substantially separated from torso, complete body/sneakers, coherent recognizable adult identity, closed resting mouth, black/red small skull tee, dark teal utility trousers. No panels, text, scenery, halftone or props."
+    }
+  ],
+  "visual_verdict": "Suitable pilot image-to-3D source with the intended mature identity and refined streetwear. The palms-inward fingers remain close and partially overlap; inspect generated hand geometry instead of treating the image as proof of digit quality. Some thin hair/skin detail remains.",
+  "not_checked": [
+    "3D topology",
+    "backside reconstruction",
+    "finger and facial rig controls",
+    "skinning",
+    "Unreal rendering or animation",
+    "likeness outside the retained reference cues"
+  ]
+}

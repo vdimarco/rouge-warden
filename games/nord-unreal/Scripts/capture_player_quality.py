@@ -4,10 +4,13 @@ Run with -ExecutePythonScript=ABS_PATH [-NordQuality1920]. Default is 1280x720;
 1920 mode is 1920x1080. Native movement/sprint/jump functions drive the possessed
 pawn. Pausing preserves its observed apex/landing pose only while taking a shot.
 Seven views include frontal and 35-degree three-quarter face close-ups.
+Steady locomotion checks consecutive observed frames, not a fixed animation FPS.
 This checks native gameplay callbacks, not physical keyboard delivery or networking.
 ImageMagick verifies the imported atlas source pixels against the retained PNG.
 -NordNeutralCandidate tests only style 9 from CrewNeutral/CharactersNeutral by
 swapping the live pawn's mesh and clips in PIE, with separate output and reports.
+-NordGraphicNovelCandidate selects only the isolated style 9 body/clips/blended graph.
+Add -NordGraphicNovelHeadless for native state/bone checks without rendered evidence.
 """
 import configparser
 import hashlib
@@ -25,19 +28,35 @@ import unreal as u
 ROOT = Path(u.Paths.project_dir()).resolve()
 COMMAND_LINE = u.SystemLibrary.get_command_line()
 NEUTRAL_CANDIDATE = '-NordNeutralCandidate' in COMMAND_LINE
+GRAPHIC_NOVEL_CANDIDATE = '-NordGraphicNovelCandidate' in COMMAND_LINE
+HEADLESS = '-NordGraphicNovelHeadless' in COMMAND_LINE
+assert not (NEUTRAL_CANDIDATE and GRAPHIC_NOVEL_CANDIDATE), 'Choose one candidate fixture'
+assert not HEADLESS or GRAPHIC_NOVEL_CANDIDATE, 'Headless mode requires the graphic-novel candidate'
 WIDTH, HEIGHT = (1920, 1080) if '-NordQuality1920' in COMMAND_LINE else (1280, 720)
 OUT = ROOT / 'Preview' / f'{"NeutralCandidate" if NEUTRAL_CANDIDATE else "PlayerQuality"}{WIDTH}'
+if GRAPHIC_NOVEL_CANDIDATE:
+    OUT = ROOT / 'Saved/Tests/GraphicNovel/PilotCapture' / str(WIDTH)
 OUT.mkdir(parents=True, exist_ok=True)
 VERIFY = ROOT / 'Verification' / ('NeutralCandidate' if NEUTRAL_CANDIDATE else 'PlayerQuality')
+if GRAPHIC_NOVEL_CANDIDATE:
+    VERIFY = OUT.parent
 VERIFY.mkdir(parents=True, exist_ok=True)
 ATLASES = ROOT / 'Saved' / 'Tests' / ('ImportedAtlasesNeutral' if NEUTRAL_CANDIDATE else 'ImportedAtlases')
+if GRAPHIC_NOVEL_CANDIDATE:
+    ATLASES = VERIFY / 'ImportedAtlases'
 ATLASES.mkdir(parents=True, exist_ok=True)
 NAMES = {3: 'GreenCap51', 4: 'Memphis33', 5: 'BlackCap', 6: 'WhiteCap',
          7: 'RedJersey', 8: 'LimeJacket', 9: 'CurlyMetalhead', 10: 'Topknot'}
-STYLES = (9,) if NEUTRAL_CANDIDATE else tuple(NAMES)
+STYLES = (9,) if NEUTRAL_CANDIDATE or GRAPHIC_NOVEL_CANDIDATE else tuple(NAMES)
 SOURCE = ROOT / 'Data' / 'CharactersNeutral'
 CREW_PATH = '/Game/ParkComic/' + ('CrewNeutral' if NEUTRAL_CANDIDATE else 'Crew')
+if GRAPHIC_NOVEL_CANDIDATE:
+    CREW_PATH = '/Game/ParkComic/CrewGraphicNovel'
+COMIC_PATH = CREW_PATH + '/Resident9/M_ComicInk.M_ComicInk' if GRAPHIC_NOVEL_CANDIDATE else '/Game/Art/Comic/M_ComicInk.M_ComicInk'
 BONES = ('Hips', 'Head', 'headfront', 'LeftLeg', 'RightLeg', 'LeftFoot', 'RightFoot')
+if GRAPHIC_NOVEL_CANDIDATE:
+    BONES += tuple(f'GN_{side}_{finger}{segment}' for side in ('Left', 'Right')
+                   for finger in ('Pinky', 'Ring', 'Middle', 'Index', 'Thumb') for segment in (1, 2))
 BUILD_EXPECTED={'recompute_normals':False,'recompute_tangents':True,'use_mikk_t_space':True,
                 'compute_weighted_normals':False,'use_full_precision_u_vs':True,'use_high_precision_tangent_basis':True}
 MANIFEST = {row['file']: row['sha256'] for row in json.loads((SOURCE / 'files.json').read_text())}
@@ -55,12 +74,33 @@ REPORT = {'passed': False, 'resolution': [WIDTH, HEIGHT],
           'mode': 'actual possessed pawn; native MoveForward, StartSprint/StopSprint and Jump/StopJumping callbacks',
           'setup': 'PIE-only relocation to a clear soccer pitch; input disabled to prevent zero-axis overrides; Walk/Run and descent observation use 0.25 global time dilation; native jump liftoff/apex use original timing; landing camera prepared during descent and frozen on first observed recoil pose',
           'captures': 'actual gameplay poses; world paused only for screenshot completion',
+          'cadence_sampling': 'Walk/Run use 0.25 world-time dilation to resolve the former 12-Hz holds; clip phase must advance on every observed engine frame, with at least 24 observations per world second. These sample rates are not native render or browser decoded FPS.',
           'not_checked': ['physical keyboard delivery', 'native C-key crew selection (covered separately by smoke_test)', 'external networking', 'exact likeness to the supplied photographs',
                           'pixel identity after BC7 GPU compression, lighting and postprocessing'],
           'characters': [], 'screenshots': []}
-REPORT['asset_selection'] = {'candidate': NEUTRAL_CANDIDATE, 'styles': list(STYLES),
+REPORT['asset_selection'] = {'candidate': NEUTRAL_CANDIDATE or GRAPHIC_NOVEL_CANDIDATE, 'styles': list(STYLES),
+                            'graphic_novel': GRAPHIC_NOVEL_CANDIDATE,
                             'source': str(SOURCE.relative_to(ROOT)), 'asset_folder': CREW_PATH,
-                            'pie_mesh_and_clip_overrides': NEUTRAL_CANDIDATE}
+                            'pie_mesh_and_clip_overrides': NEUTRAL_CANDIDATE or GRAPHIC_NOVEL_CANDIDATE}
+REPORT['headless'] = HEADLESS
+if GRAPHIC_NOVEL_CANDIDATE:
+    pilot = ROOT / 'Data/GraphicNovel/Pilot/CurlyMetalhead/wardrobe'
+    topology = json.loads((pilot / 'roundtrip.json').read_text())
+    imported = json.loads((ROOT / 'Saved/Tests/GraphicNovel/PilotImport.json').read_text())
+    assert imported['passed'], 'Candidate native import report is not passing'
+    native_body = (ROOT / imported['body_source']).resolve()
+    assert native_body.is_relative_to(pilot) and native_body.is_file(), native_body
+    REPORT['candidate_asset_status'] = {'body_source': str(native_body.relative_to(ROOT)),
+        'body_sha256': hashlib.sha256(native_body.read_bytes()).hexdigest(),
+        'wardrobe_body_source': str((pilot / 'body.fbx').relative_to(ROOT)),
+        'wardrobe_body_sha256': hashlib.sha256((pilot / 'body.fbx').read_bytes()).hexdigest(),
+        'round_trip_passed': topology['passed'],
+        'unintended_trouser_boundary_edges': topology['unintended_trouser_boundary_edges'],
+        'graphics_accepted': False, 'scope': 'functional pilot checks only; known failed cloth watertightness remains open'}
+if HEADLESS:
+    REPORT['skipped_screenshots'] = []
+    REPORT['captures'] = 'headless native state/bone observations only; no images or visual acceptance'
+    REPORT['not_checked'] += ['rendered graphics and screenshot dimensions', 'visual motion quality', 'render or stream performance']
 STATE = {'phase': 'boot', 'started': time.monotonic(), 'finished': False}
 
 
@@ -88,8 +128,8 @@ def clock():
 
 def phase(name):
     if name in ('walk', 'descend'):
-        # A ~12 FPS editor cannot resolve 12 Hz holds. Slow world time while
-        # preserving native movement and animation rates per observed world second.
+        # Slow world time to distinguish continuous poses from the former 12-Hz
+        # holds even when the editor renders fewer frames per wall-clock second.
         u.GameplayStatics.set_global_time_dilation(STATE['world'], .25)
     elif name in ('settle', 'recover'):
         u.GameplayStatics.set_global_time_dilation(STATE['world'], STATE['original_time_dilation'])
@@ -136,18 +176,32 @@ def aim(face=False, grounded=False, three_quarter=False):
     STATE['camera'].get_component_by_class(u.CameraComponent).set_editor_property('field_of_view', 38. if face else 60.)
 
 
+def animation_state(mesh):
+    instance = mesh.get_anim_instance()
+    if instance.get_class().get_path_name() == '/Script/Quebec.QuebecCrewAnimInstance':
+        weights = {kind: float(instance.get_editor_property('observed_' + kind.lower() + '_weight'))
+                   for kind in ('Idle', 'Walk', 'Run', 'Jump')}
+        return instance.get_editor_property('observed_clip'), float(instance.get_editor_property('observed_clip_time')), weights
+    return instance.get_animation_asset(), mesh.get_position(), None
+
+
 def sample():
     pawn, mesh = STATE['pawn'], STATE['mesh']
-    asset = mesh.get_anim_instance().get_animation_asset()
+    asset, clip_time, weights = animation_state(mesh)
     bones = {}
     for name in BONES:
         transform = mesh.get_socket_transform(name, u.RelativeTransformSpace.RTS_COMPONENT)
         bones[name] = {'translation_cm': vec(transform.translation), 'rotation_xyzw': quat(transform.rotation)}
-    return {'world_time': round(clock(), 5), 'clip': asset.get_name() if asset else None,
+    result = {'world_time': round(clock(), 5), 'clip': asset.get_name() if asset else None,
             'clip_path': asset.get_path_name() if asset else None,
-            'clip_time': round(mesh.get_position(), 5), 'location_cm': vec(pawn.get_actor_location()),
+            'clip_time': round(clip_time, 5), 'clip_weights': weights, 'location_cm': vec(pawn.get_actor_location()),
             'velocity_cm_s': vec(pawn.get_velocity()), 'falling': STATE['movement'].is_falling(),
             'mesh_relative_cm': vec(mesh.get_editor_property('relative_location')), 'bones': bones}
+    if GRAPHIC_NOVEL_CANDIDATE:
+        instance = mesh.get_anim_instance()
+        result['pilot_controls'] = {key: instance.get_editor_property('observed_' + key)
+                                    for key in ('finger_control_count', 'finger_flex_degrees', 'eye_narrow_weight')}
+    return result
 
 
 def capture(label, next_phase):
@@ -171,6 +225,13 @@ def freeze_and_capture():
     expected = {'Idle': 'A_Idle', 'Face': 'A_Idle', 'FaceThreeQuarter': 'A_Idle', 'Walk': 'A_Walk', 'Run': 'A_Run',
                 'Airborne': 'A_Jump', 'Landing': 'A_Jump'}[label]
     assert record['clip'] == expected, (STATE['style'], label, record['clip'])
+    if record['clip_weights']:
+        assert record['clip_weights'][expected[2:]] > .99, (label, 'pose is still crossfading', record['clip_weights'])
+        if label in ('Airborne', 'Landing'):
+            idle = STATE['character']['states']['Idle']['bones']['LeftLeg']['rotation_xyzw']
+            observed = record['bones']['LeftLeg']['rotation_xyzw']
+            angle = 2 * math.acos(min(1., abs(sum(a * b for a, b in zip(idle, observed)))))
+            assert angle > (.6 if label == 'Airborne' else .1), (label, 'actual jump/recoil bone pose missing', angle)
     assert record['clip_path'].startswith(f'{CREW_PATH}/Resident{STATE["style"]}/'), (label, 'wrong source clip', record['clip_path'])
     manager = u.GameplayStatics.get_player_camera_manager(STATE['world'], 0)
     assert inside_pitch(STATE['pawn'].get_actor_location(), STATE['pitch_points']), (label, 'pawn left capture pitch')
@@ -188,6 +249,13 @@ def freeze_and_capture():
         record['cached_camera'].update(face_orbit_degrees=35. if label == 'FaceThreeQuarter' else 0.,
                                        face_horizontal_distance_cm=125.)
     STATE['character']['states'][label] = record
+    if HEADLESS:
+        REPORT['skipped_screenshots'].append({'style': STATE['style'], 'state': label, 'reason': 'NullRHI native-only fixture'})
+        phase(STATE['next_phase'])
+        if STATE['phase'] == 'settle':
+            stop_fixture_motion()
+            native('StopSprint')
+        return
     assert u.GameplayStatics.set_game_paused(STATE['world'], True), 'Cannot preserve observed pose for screenshot'
     path = OUT / f"Resident{STATE['style']}_{label}.png"
     path.unlink(missing_ok=True)
@@ -248,7 +316,21 @@ def validate_assets(style):
         differences.append(walk.rotation.angular_distance(run.rotation))
     assert max(differences) > .2, (style, 'run and walk knee tracks do not differ')
     result['walk_run_knee_difference_degrees'] = round(math.degrees(max(differences)), 3)
-    material = mesh.get_editor_property('materials')[0].material_interface
+    slots = mesh.get_editor_property('materials')
+    if GRAPHIC_NOVEL_CANDIDATE:
+        assert all(slot.material_interface for slot in slots), 'Pilot has an unassigned material slot'
+        material = next(slot.material_interface for slot in slots if slot.material_interface.get_name() == 'M_Crew')
+        pose = u.AnimPoseExtensions.get_anim_pose_at_time(clips['Idle'], 0., u.AnimPoseEvaluationOptions())
+        bones = set(map(str, u.AnimPoseExtensions.get_bone_names(pose)))
+        expected = {f'GN_{side}_{finger}{segment}' for side in ('Left', 'Right')
+                    for finger in ('Pinky', 'Ring', 'Middle', 'Index', 'Thumb') for segment in (1, 2)}
+        assert expected <= bones, ('Missing pilot finger bones', sorted(expected - bones))
+        morphs = {morph.get_name() for morph in mesh.get_editor_property('morph_targets')}
+        assert {'GN_EyeNarrow_L', 'GN_EyeNarrow_R'} <= morphs, ('Missing pilot squint targets', morphs)
+        result['pilot_rig'] = {'finger_bones': sorted(expected), 'morphs': sorted(morphs), 'material_slots': len(slots),
+                               'scope': 'partial fingers and restrained squint controls; no full blink or jaw'}
+    else:
+        material = slots[0].material_interface
     base = u.MaterialEditingLibrary.get_material_property_input_node(material, u.MaterialProperty.MP_BASE_COLOR)
     texture = base.get_editor_property('texture')
     assert texture.get_path_name().startswith(folder + '/T_base_color'), (style, 'wrong atlas')
@@ -293,17 +375,44 @@ def start_style(style):
     SYSTEM.call_method('SetIntPropertyByName', (pawn, 'CrewStyle', style))
     pawn.call_method('ApplyCrewAppearance')
     STATE['mesh'] = pawn.get_component_by_class(u.SkeletalMeshComponent)
-    if NEUTRAL_CANDIDATE:
+    if NEUTRAL_CANDIDATE or GRAPHIC_NOVEL_CANDIDATE:
         # Preserve the native pawn and Tick/callback behavior; override assets only
         # in this standalone PIE fixture until the pilot is accepted for promotion.
         folder = f'{CREW_PATH}/Resident{style}'
         body = u.load_asset(folder + '/SK_Body')
+        if GRAPHIC_NOVEL_CANDIDATE:
+            assert STATE['mesh'].get_skeletal_mesh_asset() == body, 'Native candidate flag did not select the pilot body before fixture overrides'
+            instance = STATE['mesh'].get_anim_instance()
+            assert instance.get_class().get_path_name() == '/Script/Quebec.QuebecCrewAnimInstance', 'Native pilot blended graph is absent'
+            assert instance.get_editor_property('locomotion_asset') == u.load_asset(folder + '/BS_Locomotion')
+            assert instance.get_editor_property('jump_asset') == u.load_asset(folder + '/A_Jump')
+            STATE['character']['pilot_rig']['native_flag_route'] = {'verified_before_fixture_overrides': True,
+                'body': body.get_path_name(), 'animation_class': instance.get_class().get_path_name()}
         STATE['mesh'].set_skinned_asset_and_update(body, True)
         for kind in ('Idle', 'Walk', 'Run', 'Jump'):
             SYSTEM.call_method('SetObjectPropertyByName', (pawn, 'Crew' + kind, u.load_asset(folder + '/A_' + kind)))
         SYSTEM.call_method('SetObjectPropertyByName', (pawn, 'CrewAnimation', None))
+        if GRAPHIC_NOVEL_CANDIDATE:
+            slots = body.get_editor_property('materials')
+            for index, slot in enumerate(slots):
+                STATE['mesh'].set_material(index, slot.material_interface)
+            assert all(STATE['mesh'].get_material(index) == slot.material_interface for index, slot in enumerate(slots)), 'Stale component material overrides'
+            STATE['character']['pilot_rig']['live_materials'] = [STATE['mesh'].get_material(index).get_path_name() for index in range(len(slots))]
+            SYSTEM.call_method('SetObjectPropertyByName', (pawn, 'CrewLocomotion', u.load_asset(folder + '/BS_Locomotion')))
+            assert pawn.call_method('ConfigureCrewAnimation'), 'Pilot blended graph rejected its body/clips'
+            STATE['mesh'].set_custom_depth_stencil_value(254)
+            if HEADLESS:
+                # NullRHI never marks the mesh rendered; evaluate real bones for this native-only fixture.
+                option = u.VisibilityBasedAnimTickOption.ALWAYS_TICK_POSE_AND_REFRESH_BONES
+                STATE['mesh'].set_editor_property('visibility_based_anim_tick_option', option)
+                STATE['mesh'].set_editor_property('enable_update_rate_optimizations', False)
+                assert STATE['mesh'].get_editor_property('visibility_based_anim_tick_option') == option
+                assert not STATE['mesh'].get_editor_property('enable_update_rate_optimizations')
+                REPORT['headless_animation_fixture'] = {'visibility_based_anim_tick_option': 'AlwaysTickPoseAndRefreshBones',
+                    'enable_update_rate_optimizations': False,
+                    'scope': 'PIE component only; forces actual bone evaluation without RHI visibility; all pose assertions retained'}
         assert STATE['mesh'].get_skeletal_mesh_asset() == body
-    assert STATE['mesh'].get_editor_property('custom_depth_stencil_value') == 255
+    assert STATE['mesh'].get_editor_property('custom_depth_stencil_value') == (254 if GRAPHIC_NOVEL_CANDIDATE else 255)
     native('StopSprint')
     phase('idle')
 
@@ -321,55 +430,62 @@ def record_locomotion(kind):
     # Observe real steady movement rather than inspecting the implementation's clock.
     pawn, mesh = STATE['pawn'], STATE['mesh']
     speed = math.hypot(pawn.get_velocity().x, pawn.get_velocity().y)
-    asset = mesh.get_anim_instance().get_animation_asset()
-    if not asset or asset.get_name() != 'A_' + kind or abs(speed - (450 if kind == 'Walk' else 800)) > 5:
+    asset, clip_time, weights = animation_state(mesh)
+    if not asset or asset.get_name() != 'A_' + kind or abs(speed - (450 if kind == 'Walk' else 800)) > 5 or (weights and weights[kind] <= .99):
         return
     samples = STATE['character']['locomotion_samples'][kind]
     now = clock()
     if samples and now - samples[-1]['world_time'] < .0001:
         return
-    samples.append({'world_time': now, 'clip_time': mesh.get_position(), 'speed_cm_s': speed,
+    samples.append({'world_time': now, 'engine_frame': u.SystemLibrary.get_frame_count(),
+                    'clip_time': clip_time, 'speed_cm_s': speed,
                     'actor_cm': vec(pawn.get_actor_location()),
                     'left_foot_component_cm': vec(mesh.get_socket_transform('LeftFoot', u.RelativeTransformSpace.RTS_COMPONENT).translation)})
 
 
+def locomotion_cadence(kind, samples, length):
+    assert len(samples) > 5, (kind, 'insufficient steady movement samples', len(samples))
+    duration = samples[-1]['world_time'] - samples[0]['world_time']
+    assert duration >= .5, (kind, 'steady movement observation too short', duration)
+    pairs = len(samples) - 1
+    sample_hz = pairs / duration
+    assert sample_hz >= 24, (kind, 'sampling too sparse to resolve 12-Hz holds', sample_hz)
+    assert math.isfinite(length) and length > 0, (kind, 'invalid clip length', length)
+    foot_changes = wraps = 0
+    largest_advance = largest_error = 0.
+    max_frame_gap = 0
+    for item in samples:
+        assert abs(item['speed_cm_s'] - (450 if kind == 'Walk' else 800)) <= 5, (kind, 'not steady movement', item)
+    for previous, item in zip(samples, samples[1:]):
+        elapsed = item['world_time'] - previous['world_time']
+        frame_gap = item['engine_frame'] - previous['engine_frame']
+        assert 0 < elapsed < 1 / 12 and frame_gap > 0, (kind, 'invalid or sparse frame observations', elapsed, frame_gap)
+        max_frame_gap = max(max_frame_gap, frame_gap)
+        advance = (item['clip_time'] - previous['clip_time']) % length
+        assert advance > .00001, (kind, 'held pose during steady movement', previous, item)
+        rate = min(2., max(.8, item['speed_cm_s'] / (600 if kind == 'Run' else 180)))
+        expected = elapsed * rate
+        error = abs(advance - expected)
+        # Both clocks are read after the same simulation frame; allow float and
+        # observation error, rather than excusing an animation-frame-sized jump.
+        assert error <= .003 + expected * .1, (kind, 'phase jumped forward/backward', advance, expected)
+        largest_advance, largest_error = max(largest_advance, advance), max(largest_error, error)
+        wraps += item['clip_time'] < previous['clip_time']
+        assert math.dist(item['actor_cm'], previous['actor_cm']) > .01, (kind, 'actor stopped during steady movement')
+        foot_changes += math.dist(item['left_foot_component_cm'], previous['left_foot_component_cm']) >= .002
+    assert foot_changes / pairs >= .95, (kind, 'bones held while animation phase advanced', foot_changes, pairs)
+    return {'observed_world_seconds': round(duration, 4), 'samples': len(samples),
+            'observed_sample_pairs_per_world_second': round(sample_hz, 3),
+            'observation_global_time_dilation': .25, 'largest_observed_engine_frame_gap': max_frame_gap,
+            'phase_advance_pairs': pairs, 'foot_pose_change_pairs': foot_changes, 'clip_wraps': wraps,
+            'largest_forward_phase_advance_seconds': round(largest_advance, 5),
+            'largest_phase_rate_error_seconds': round(largest_error, 5)}
+
+
 def validate_locomotion():
-    result = {}
-    for kind, samples in STATE['character']['locomotion_samples'].items():
-        assert len(samples) > 5, (kind, 'insufficient steady movement samples', len(samples))
-        duration = samples[-1]['world_time'] - samples[0]['world_time']
-        assert duration >= .5, (kind, 'steady movement observation too short', duration)
-        length = STATE['character']['clips'][kind]['seconds']
-        held = changes = moving_holds = 0
-        last_change = None
-        largest_advance = 0.
-        for previous, item in zip(samples, samples[1:]):
-            if abs(item['clip_time'] - previous['clip_time']) < .00001:
-                held += 1
-                foot_change = math.dist(item['left_foot_component_cm'], previous['left_foot_component_cm'])
-                assert foot_change < .002, (kind, 'bone moved during a held pose', foot_change)
-                if math.dist(item['actor_cm'], previous['actor_cm']) > .1:
-                    moving_holds += 1
-            else:
-                changes += 1
-                if last_change:
-                    advance = (item['clip_time'] - last_change['clip_time']) % length
-                    elapsed = item['world_time'] - last_change['world_time']
-                    # No wrap or acceleration can legitimately skip more than twice
-                    # elapsed world time; allow 30 ms for sampling/compression error.
-                    assert 0 < advance <= 2 * elapsed + .03, (kind, 'phase jumped forward/backward', advance, elapsed)
-                    largest_advance = max(largest_advance, advance)
-                last_change = item
-        update_hz = changes / duration
-        result[kind] = {'observed_world_seconds': round(duration, 4), 'samples': len(samples),
-                        'render_samples_per_world_second': round((len(samples) - 1) / duration, 3),
-                        'observation_global_time_dilation': .25,
-                        'held_pose_pairs': held, 'held_pairs_with_continuous_actor_motion': moving_holds,
-                        'pose_changes': changes, 'pose_changes_per_world_second': round(update_hz, 3),
-                        'largest_forward_phase_advance_seconds': round(largest_advance, 5)}
-        assert held > 0 and moving_holds > 0, (kind, 'no visible pose holds while the actor moves', result[kind])
-        assert 8.5 <= update_hz <= 15.5, (kind, 'pose cadence differs from approximately 12 Hz', result[kind])
-    STATE['character']['observed_locomotion_cadence'] = result
+    STATE['character']['observed_locomotion_cadence'] = {
+        kind: locomotion_cadence(kind, samples, STATE['character']['clips'][kind]['seconds'])
+        for kind, samples in STATE['character']['locomotion_samples'].items()}
 
 
 def validate_motion():
@@ -402,6 +518,14 @@ def validate_motion():
                                'airborne_vs_idle_knee_degrees': round(math.degrees(knee), 3),
                                'mesh_relative_transform_stable': True, 'recovered_clip': sample()['clip']}
     assert row['observed_motion']['recovered_clip'] == 'A_Idle'
+    if GRAPHIC_NOVEL_CANDIDATE:
+        controls = [item['pilot_controls'] for item in states.values()]
+        assert all(item['finger_control_count'] == 20 for item in controls), ('Pilot finger graph is incomplete', controls)
+        assert all(math.isfinite(item['finger_flex_degrees']) and 0 <= item['finger_flex_degrees'] <= 18 for item in controls)
+        assert all(math.isfinite(item['eye_narrow_weight']) and 0 <= item['eye_narrow_weight'] <= 1 for item in controls)
+        assert states['Run']['pilot_controls']['finger_flex_degrees'] > states['Idle']['pilot_controls']['finger_flex_degrees'] + 1
+        assert states['Run']['pilot_controls']['eye_narrow_weight'] > .1, 'Pilot squint morph was not driven during sprint'
+        row['pilot_rig']['runtime_controls_observed'] = True
     REPORT['characters'].append(row)
     REPORT.pop('active_character', None)
     u.log(f'NORD_PLAYER_QUALITY_STYLE_OK {STATE["style"]} {WIDTH}')
@@ -413,9 +537,10 @@ def finish(error=None):
     STATE['finished'] = True
     if error:
         REPORT['error'] = error
-    REPORT['passed'] = not error and len(REPORT['characters']) == len(STYLES) and len(REPORT['screenshots']) == 7 * len(STYLES)
+    observations = len(REPORT['skipped_screenshots']) if HEADLESS else len(REPORT['screenshots'])
+    REPORT['passed'] = not error and len(REPORT['characters']) == len(STYLES) and observations == 7 * len(STYLES)
     REPORT['wall_seconds'] = round(time.monotonic() - STATE['started'], 2)
-    (VERIFY / f'PlayerQuality{WIDTH}.json').write_text(json.dumps(REPORT, indent=2) + '\n')
+    (VERIFY / f'PlayerQuality{WIDTH}{"Headless" if HEADLESS else ""}.json').write_text(json.dumps(REPORT, indent=2) + '\n')
     try:
         if STATE.get('world'):
             u.GameplayStatics.set_game_paused(STATE['world'], False)
@@ -428,7 +553,7 @@ def finish(error=None):
         u.unregister_slate_post_tick_callback(STATE['callback'])
         SCRIPT.call_method('SetKeepPythonScriptAlive', (False,))
     if REPORT['passed']:
-        u.log(f'NORD_PLAYER_QUALITY_OK {len(STYLES)} characters {7 * len(STYLES)} screenshots {WIDTH}x{HEIGHT}')
+        u.log(f'NORD_PLAYER_QUALITY_OK {len(STYLES)} characters {len(REPORT["screenshots"])} screenshots {WIDTH}x{HEIGHT}; headless={HEADLESS}')
     else:
         u.log_error('NORD_PLAYER_QUALITY_FAILED ' + str(error))
 
@@ -475,7 +600,23 @@ def tick(dt):
             GAMEPLAY.call_method('FinishSpawningActor', (camera, transform, u.SpawnActorScaleMethod.OVERRIDE_ROOT_SCALE))
             camera.get_component_by_class(u.CameraComponent).set_editor_property('post_process_blend_weight', 1.)
             pc.set_view_target_with_blend(camera, 0)
-            # The game starts in the standard view; F2's comic view brings the animation on twos this capture measures.
+            if GRAPHIC_NOVEL_CANDIDATE:
+                material = u.load_asset(COMIC_PATH)
+                assert material, 'Missing isolated graphic-novel filter'
+                SYSTEM.call_method('SetObjectPropertyByName', (pc, 'ComicMaterial', material))
+                camera_component = camera.get_component_by_class(u.CameraComponent)
+                settings = camera_component.get_editor_property('post_process_settings')
+                blendables = settings.get_editor_property('weighted_blendables')
+                entries = blendables.get_editor_property('array')
+                for entry in entries:
+                    obj = entry.get_editor_property('object')
+                    if obj and obj.get_path_name() == '/Game/Art/Comic/M_ComicInk.M_ComicInk':
+                        entry.set_editor_property('object', material)
+                        entry.set_editor_property('weight', 1.)
+                blendables.set_editor_property('array', entries)
+                settings.set_editor_property('weighted_blendables', blendables)
+                camera_component.set_editor_property('post_process_settings', settings)
+            # Verify full-rate motion with the illustrated treatment enabled.
             pc.call_method('ToggleComicStyle')
             u.SystemLibrary.execute_console_command(world, 'showhud', pc)
             layout = json.loads((ROOT / 'Data/ParkComic/layout.json').read_text())
@@ -531,8 +672,14 @@ def tick(dt):
         if current == 'warm':
             if age > 12:
                 interval = STATE['pawn'].get_component_by_class(u.SkeletalMeshComponent).get_component_tick_interval()
-                assert abs(interval - 1 / 12) < .001, ('Comic view must be on for animation on twos', interval)
+                assert abs(interval) < .001, ('Comic view must retain full-rate player poses', interval)
+                camera = STATE['camera'].get_component_by_class(u.CameraComponent)
+                entries = camera.get_editor_property('post_process_settings').get_editor_property('weighted_blendables').get_editor_property('array')
+                comic = [entry for entry in entries if entry.get_editor_property('object') and
+                         entry.get_editor_property('object').get_path_name() == COMIC_PATH]
+                assert len(comic) == 1 and abs(comic[0].get_editor_property('weight') - 1.) < .001, 'Comic treatment is not enabled'
                 REPORT['comic_view'] = True
+                REPORT['player_pose_tick_interval_seconds'] = interval
                 start_style(STYLES[0])
             return
         aim(current in ('face', 'face_three_quarter'), grounded=current == 'descend',
@@ -572,7 +719,7 @@ def tick(dt):
                 STATE['jump_released'] = True
             if current == 'jump' and item['falling'] and abs(item['velocity_cm_s'][2]) < 140 and item['location_cm'][2] > STATE['jump_origin'].z + 120:
                 capture('Airborne', 'descend')
-            elif current == 'descend' and STATE['seen_falling'] and not item['falling'] and item['clip_time'] >= .9 and item['clip'] == 'A_Jump':
+            elif current == 'descend' and STATE['seen_falling'] and not item['falling'] and item['clip_time'] >= .9 and item['clip'] == 'A_Jump' and (not item['clip_weights'] or item['clip_weights']['Jump'] > .99):
                 # A held airborne pose can survive the first grounded frame. Wait
                 # for an observed landing-recoil pose; its camera is already prepared.
                 capture('Landing', 'recover')

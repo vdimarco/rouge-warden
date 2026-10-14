@@ -1,4 +1,10 @@
-# Verification status — 2026-10-10
+# Verification status — 2026-10-13
+
+## 2026-10-13: Graphic-novel follow-up status
+
+The user chose Spider-Verse's illustrated appearance with smooth motion and rejected the current goofy character presentation. Direction, source audit and primary-source technique research are recorded; the immediate phase is one concept study plus removal of deliberate pose holds and updated checks. Native motion review, mature models, facial/finger rigs, blended locomotion, authored line/material treatment, an in-game pilot, whole-crew integration and current co-op/package/performance acceptance remain open. No new graphics acceptance or deployment is claimed. The former canonical "Animation on twos" requirement is replaced by "Smooth character animation"; historical cadence captures below retain their original scope and do not verify the replacement. The OpenSpec CLI is unavailable here; Markdown structure was reviewed manually.
+
+## Prior acceptance and evidence — 2026-10-10
 
 **Active; overall acceptance remains open.** The new story/driving follow-up passes current-source 118-check lag/loss and both zero-lag rendered suites, bounded 36-image visual review, ten scoped native unit tests, thirteen collision checks and current Linux build/package-startup checks. All six current packaged reference-scene p95 checks pass; physical solo/co-op review and final art acceptance remain open. The preceding neighbourhood/crew source, native, both-size visual and package evidence passed its scoped checks; all six prior p95 budgets failed and documented Montréal art limits remain. Do not archive with these gates open. Reports are under `games/nord-unreal/Verification/`.
 
@@ -48,3 +54,14 @@ Neighbourhood implementation and its verification measurements are complete; ove
 The preceding environment visual review reported partial Montréal resemblance: opaque cloud-like crowns/repeated forks, flat banks/equal pond levels, simplified landmark/institutional facades, blank basement stretches and poorly demonstrated entrances. The fresh 42-image [neighbourhood review](../../../games/nord-unreal/Verification/NeighbourhoodVisualReview.md) accepts the bounded frontage/court/terrace improvements while disclosing comic thin-net aliasing, shadows and remaining foliage/landmark limits; flat terrain/equal pond levels remain outside this pass. Current court, source-date and geographic limits are explicit in [environment provenance](../../../games/nord-unreal/Data/EnvironmentRefresh/README.md). No exact reconstruction is claimed.
 
 OpenSpec CLI is unavailable; this is a manually reviewed evidence/status document, not a claimed CLI validation. Implementation completion is distinct from the final verification/acceptance task.
+
+
+### Graphic-novel foundation checkpoint (2026-10-13)
+
+The [bounded foundation report](../../../games/nord-unreal/Verification/GraphicNovelFoundation.md) records the retained concept/style, full-rate pose source change, same-style instance fix, passing editor/CPU/native reapply checks, 69-check two-player smoke and one possessed style-9/seven-view 720p rendered pilot. All 279 protected identities match. Sampled phase/foot motion advances every observed frame; slowed observation is not an FPS claim. Mature models, rigs, crossfades, material/light treatment, peer crowd smoothing, production integration and fresh package/performance/browser acceptance remain open. Historical on-twos evidence does not accept the new target.
+
+### Local pilot continuation (2026-10-13)
+
+The [local pilot report](../../../games/nord-unreal/Verification/GraphicNovelPilot.md) records opt-in native style-9 selection, derived clothing, twenty finger controls, two restrained squints, standard engine crossfades and candidate ink. Final editor/game builds and Python-commandlet authoring exit 0; all four native animation/selection tests pass. Seven possessed headless states pass, with Walk 411/411 and Run 432/432 consecutive phase/foot changes, actual knee bend and stable actor/mesh root behavior. These slowed observations are not FPS or image evidence. Fresh default-mode two-player smoke passes 69 checks in 45.06 seconds; all 283 protected identities remain unchanged. Rejected compile/import/native/headless attempts and a diagnosed Slate shutdown crash remain retained; source guards and assertions were corrected without lowering their tolerances.
+
+The cloth watertightness check remains failed at eight small boundary edges; native SDK bind warnings were automatically repaired and still need actual visual review. CPU views establish only a bounded local fit. Replacement-model upload was blocked by zero fal credits before any job submission. A serialized GPU maintenance window was requested for native images/video; no service was changed. Mature anatomy/full facial performance, rendered acceptance, candidate co-op, whole-crew rollout and current package/performance/browser/phone review remain unchecked. `PilotStatus.json` explicitly records `graphics_accepted=false` and final source/binary/asset hashes. OpenSpec structure was reviewed manually; no CLI validation is claimed.

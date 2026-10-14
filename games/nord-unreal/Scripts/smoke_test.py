@@ -339,8 +339,8 @@ def comic_weights(client_weight, host_weight):
         comic = [entry for entry in entries if entry.get_editor_property("object").get_path_name() == "/Game/Art/Comic/M_ComicInk.M_ComicInk"]
         if len(comic) != 1 or abs(comic[0].get_editor_property("weight") - expected) > .01:
             return False
-    for side, weight in (("client", client_weight), ("server", host_weight)):
-        assert abs(STATE[side + "_char"].get_component_by_class(u.SkeletalMeshComponent).get_component_tick_interval() - weight / 12) < .001
+    for side in ("client", "server"):
+        assert STATE[side + "_char"].get_component_by_class(u.SkeletalMeshComponent).get_component_tick_interval() == 0
     return True
 
 
@@ -558,6 +558,7 @@ def residents_ready():
     saved=[a for a in server if not a.actor_has_tag('CityCrowd')]
     ambient=[a for a in server if a.actor_has_tag('CityCrowd')]
     assert len(saved)==14 and len(ambient)==96, {'saved_residents':len(saved),'ambient_residents':len(ambient)}
+    assert all(a.get_actor_tick_interval() == 0 for a in server + client), 'Saved or ambient resident still throttles pose evaluation'
     saved_names={a.get_name() for a in saved}
     client_saved=[a for a in client if a.get_name() in saved_names]
     if len(client_saved)!=14:return False

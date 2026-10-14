@@ -1,0 +1,8 @@
+{
+  "game": "NORD — One More Tomorrow",
+  "about": "New target requested 2026-10-13: Spider-Verse-inspired illustrated comic/graphic novel visuals with smooth motion. Reference is a generated art-direction study, not gameplay or accepted engine output. See games/nord-unreal/Data/GraphicNovel/style-study-generation.json and openspec/changes/nord-city-quality/design.md.",
+  "prompt": "Premium original animated graphic-novel art grounded in Montreal. Sculptural adult human anatomy, expressive restrained faces, credible hands and clothing silhouettes. Tapered authored ink attached to facial/clothing forms, deliberate shadow planes, painterly textured surfaces, selective halftone in broad shadows, warm amber key light with cool indigo/teal fill, clear volumetric depth, restrained red accents. Preserve each subject identity and readable action. Apply print misregistration to backgrounds/effects selectively, with stable clean facial forms. Maintain smoothly evaluated character motion when implemented in the game. Keep composition-specific wardrobe, props, text and layout in the asset request rather than copying them from the study.",
+  "references": [
+    "games/nord-unreal/Data/GraphicNovel/style-study.png"
+  ]
+}

@@ -1,0 +1,10 @@
+Use case: identity-preserve.
+Edit target: the supplied single full-body gray-background character reference. Keep the exact adult man's identity, dark curly hair, beard, relaxed closed mouth, mature face/body proportions, black T-shirt with small red skull emblem, dark teal utility trousers, canvas high-top sneakers, front view, full-body framing, material colors, clean controlled sculptural planes and uniform neutral background/lighting.
+
+Change ONLY the A-pose and remove drawing/shadow artifacts:
+1. Raise BOTH arms outward symmetrically to a genuine 35-degree A-pose, measured 35 degrees away from straight-down vertical torso sides. Upper arms and forearms form a nearly straight downward/outward diagonal from each shoulder. The wrists must sit substantially farther out than in the current image, leaving a broad plainly visible gap between each hand/forearm and the hips. This is a rigging reference pose, NOT arms hanging beside the body.
+2. Each hand has EXACTLY FIVE anatomically credible clearly SEPARATED digits including the thumb, relaxed and individually readable in silhouette. Fingers extend loosely down with small gray-background gaps between each fingertip and its neighboring finger; do not stack or hide fingers. Palms face mostly inward but may rotate gently toward camera just enough to show the separated anatomy. No clenched or cupped hands and no cartoon starfish spread. Maintain credible natural wrists.
+3. Keep both feet on the same horizontal baseline, shoulder-width apart. No floor or cast shadow under the soles. Background remains perfectly plain uniform light gray.
+4. Remove black drawn outline strokes outside the physical silhouette and thin ink streaks on skin; create clear clean modeled-looking form boundaries. No new halftone, hatching, print texture, cinematic shading, rim lighting or environment.
+
+Output exactly ONE single front full-body adult character centered from head to sole, generous neutral margin, orthographic/long-lens view, no duplicate panels, labels, other characters, props or text. Preserve all other identity, outfit, color and anatomy details. This image will drive actual 3D generation.

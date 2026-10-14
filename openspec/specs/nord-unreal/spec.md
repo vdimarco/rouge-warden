@@ -61,13 +61,13 @@ The LaFontaine map SHALL start in the realistic render. Each player SHALL be abl
 - **WHEN** the player enters the car
 - **THEN** the car camera keeps the player's current look setting
 
-### Requirement: Animation on twos
-While comic view is enabled, the walking character SHALL update its pose 12 times a second while its movement and the camera update every frame. Standard view SHALL use full-rate animation.
+### Requirement: Smooth character animation
+Playable crew and visible ambient residents SHALL update their poses with their active animation updates in both standard and comic views, without deliberate 12 Hz holds or animation-clock quantization. Movement and camera SHALL remain continuous; enabling the comic filter SHALL NOT impose a lower pose cadence. This requirement does not promise a fixed render or stream frame rate.
 
 #### Scenario: Watch the character run
-- **WHEN** the comic look is on and the character runs
-- **THEN** the body pose changes in held steps while the character glides smoothly across the ground
-- **AND** turning the look off with F2 restores full-rate animation
+- **WHEN** the player runs or observes a moving resident in either render mode
+- **THEN** the animation clock advances without deliberate held steps while ground movement remains continuous
+- **AND** pressing F2 changes the local look without reducing the character's pose-update cadence or another player's rendering
 
 ### Requirement: Comic HUD
 The HUD SHALL use an original compact GTA-inspired presentation that keeps mission, road map and contextual control information readable while leaving ordinary movement and driving visible. It SHALL show brief sound-word bursts for local jump, hard acceleration and handbrake actions only while the local comic view is enabled.

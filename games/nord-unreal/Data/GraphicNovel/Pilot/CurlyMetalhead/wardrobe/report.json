@@ -1,0 +1,396 @@
+{
+  "passed": true,
+  "source": "Data/GraphicNovel/Pilot/CurlyMetalhead/rigged/body.fbx",
+  "source_sha256": "0150f48b3b74a0eb797ce4cc6a5bcb99c7fc4b4e9599e40e22e2ee7cb48bedd0",
+  "original_sources_unchanged": true,
+  "source_bind_bones_preserved": 44,
+  "original_vertex_count_preserved": 43414,
+  "source_shape_keys_preserved": [
+    "Basis",
+    "GN_EyeNarrow_L",
+    "GN_EyeNarrow_R"
+  ],
+  "covered_body_faces_removed": 9269,
+  "trouser_faces": 7900,
+  "unintended_cloth_boundaries_filled": 2,
+  "meshes": [
+    {
+      "name": "char1",
+      "vertices": 43414,
+      "triangles": 21926,
+      "materials": [
+        "Material_0"
+      ]
+    },
+    {
+      "name": "GN_Trousers",
+      "vertices": 18139,
+      "triangles": 35492,
+      "materials": [
+        "Trousers"
+      ]
+    },
+    {
+      "name": "GN_Waistband",
+      "vertices": 96,
+      "triangles": 96,
+      "materials": [
+        "Trousers"
+      ]
+    },
+    {
+      "name": "GN_Sole_R",
+      "vertices": 192,
+      "triangles": 380,
+      "materials": [
+        "Sole"
+      ]
+    },
+    {
+      "name": "GN_SoleStripe_R",
+      "vertices": 96,
+      "triangles": 96,
+      "materials": [
+        "RubberStripe"
+      ]
+    },
+    {
+      "name": "GN_Canvas_R",
+      "vertices": 240,
+      "triangles": 384,
+      "materials": [
+        "Canvas"
+      ]
+    },
+    {
+      "name": "GN_AnklePiping_R",
+      "vertices": 96,
+      "triangles": 96,
+      "materials": [
+        "RubberStripe"
+      ]
+    },
+    {
+      "name": "GN_Tongue_R",
+      "vertices": 12,
+      "triangles": 10,
+      "materials": [
+        "Canvas"
+      ]
+    },
+    {
+      "name": "GN_Lace_R0_Skin",
+      "vertices": 18,
+      "triangles": 24,
+      "materials": [
+        "Laces"
+      ]
+    },
+    {
+      "name": "GN_LaceCross_R0_Skin",
+      "vertices": 18,
+      "triangles": 24,
+      "materials": [
+        "Laces"
+      ]
+    },
+    {
+      "name": "GN_Lace_R1_Skin",
+      "vertices": 18,
+      "triangles": 24,
+      "materials": [
+        "Laces"
+      ]
+    },
+    {
+      "name": "GN_LaceCross_R1_Skin",
+      "vertices": 18,
+      "triangles": 24,
+      "materials": [
+        "Laces"
+      ]
+    },
+    {
+      "name": "GN_Lace_R2_Skin",
+      "vertices": 18,
+      "triangles": 24,
+      "materials": [
+        "Laces"
+      ]
+    },
+    {
+      "name": "GN_LaceCross_R2_Skin",
+      "vertices": 18,
+      "triangles": 24,
+      "materials": [
+        "Laces"
+      ]
+    },
+    {
+      "name": "GN_Lace_R3_Skin",
+      "vertices": 18,
+      "triangles": 24,
+      "materials": [
+        "Laces"
+      ]
+    },
+    {
+      "name": "GN_LaceCross_R3_Skin",
+      "vertices": 18,
+      "triangles": 24,
+      "materials": [
+        "Laces"
+      ]
+    },
+    {
+      "name": "GN_Lace_R4_Skin",
+      "vertices": 18,
+      "triangles": 24,
+      "materials": [
+        "Laces"
+      ]
+    },
+    {
+      "name": "GN_LaceCross_R4_Skin",
+      "vertices": 18,
+      "triangles": 24,
+      "materials": [
+        "Laces"
+      ]
+    },
+    {
+      "name": "GN_ToeCap_R",
+      "vertices": 34,
+      "triangles": 32,
+      "materials": [
+        "Sole"
+      ]
+    },
+    {
+      "name": "GN_CanvasSeam_R-1_Skin",
+      "vertices": 18,
+      "triangles": 24,
+      "materials": [
+        "Sole"
+      ]
+    },
+    {
+      "name": "GN_CanvasSeam_R1_Skin",
+      "vertices": 18,
+      "triangles": 24,
+      "materials": [
+        "Sole"
+      ]
+    },
+    {
+      "name": "GN_CargoPocket_R",
+      "vertices": 8,
+      "triangles": 6,
+      "materials": [
+        "Trousers"
+      ]
+    },
+    {
+      "name": "GN_PocketFlap_R_Skin",
+      "vertices": 30,
+      "triangles": 48,
+      "materials": [
+        "TrousersSeam"
+      ]
+    },
+    {
+      "name": "GN_TrouserSideSeam_R_Skin",
+      "vertices": 36,
+      "triangles": 60,
+      "materials": [
+        "TrousersSeam"
+      ]
+    },
+    {
+      "name": "GN_Sole_L",
+      "vertices": 192,
+      "triangles": 380,
+      "materials": [
+        "Sole"
+      ]
+    },
+    {
+      "name": "GN_SoleStripe_L",
+      "vertices": 96,
+      "triangles": 96,
+      "materials": [
+        "RubberStripe"
+      ]
+    },
+    {
+      "name": "GN_Canvas_L",
+      "vertices": 240,
+      "triangles": 384,
+      "materials": [
+        "Canvas"
+      ]
+    },
+    {
+      "name": "GN_AnklePiping_L",
+      "vertices": 96,
+      "triangles": 96,
+      "materials": [
+        "RubberStripe"
+      ]
+    },
+    {
+      "name": "GN_Tongue_L",
+      "vertices": 12,
+      "triangles": 10,
+      "materials": [
+        "Canvas"
+      ]
+    },
+    {
+      "name": "GN_Lace_L0_Skin",
+      "vertices": 18,
+      "triangles": 24,
+      "materials": [
+        "Laces"
+      ]
+    },
+    {
+      "name": "GN_LaceCross_L0_Skin",
+      "vertices": 18,
+      "triangles": 24,
+      "materials": [
+        "Laces"
+      ]
+    },
+    {
+      "name": "GN_Lace_L1_Skin",
+      "vertices": 18,
+      "triangles": 24,
+      "materials": [
+        "Laces"
+      ]
+    },
+    {
+      "name": "GN_LaceCross_L1_Skin",
+      "vertices": 18,
+      "triangles": 24,
+      "materials": [
+        "Laces"
+      ]
+    },
+    {
+      "name": "GN_Lace_L2_Skin",
+      "vertices": 18,
+      "triangles": 24,
+      "materials": [
+        "Laces"
+      ]
+    },
+    {
+      "name": "GN_LaceCross_L2_Skin",
+      "vertices": 18,
+      "triangles": 24,
+      "materials": [
+        "Laces"
+      ]
+    },
+    {
+      "name": "GN_Lace_L3_Skin",
+      "vertices": 18,
+      "triangles": 24,
+      "materials": [
+        "Laces"
+      ]
+    },
+    {
+      "name": "GN_LaceCross_L3_Skin",
+      "vertices": 18,
+      "triangles": 24,
+      "materials": [
+        "Laces"
+      ]
+    },
+    {
+      "name": "GN_Lace_L4_Skin",
+      "vertices": 18,
+      "triangles": 24,
+      "materials": [
+        "Laces"
+      ]
+    },
+    {
+      "name": "GN_LaceCross_L4_Skin",
+      "vertices": 18,
+      "triangles": 24,
+      "materials": [
+        "Laces"
+      ]
+    },
+    {
+      "name": "GN_ToeCap_L",
+      "vertices": 32,
+      "triangles": 30,
+      "materials": [
+        "Sole"
+      ]
+    },
+    {
+      "name": "GN_CanvasSeam_L-1_Skin",
+      "vertices": 18,
+      "triangles": 24,
+      "materials": [
+        "Sole"
+      ]
+    },
+    {
+      "name": "GN_CanvasSeam_L1_Skin",
+      "vertices": 18,
+      "triangles": 24,
+      "materials": [
+        "Sole"
+      ]
+    },
+    {
+      "name": "GN_CargoPocket_L",
+      "vertices": 8,
+      "triangles": 6,
+      "materials": [
+        "Trousers"
+      ]
+    },
+    {
+      "name": "GN_PocketFlap_L_Skin",
+      "vertices": 30,
+      "triangles": 48,
+      "materials": [
+        "TrousersSeam"
+      ]
+    },
+    {
+      "name": "GN_TrouserSideSeam_L_Skin",
+      "vertices": 36,
+      "triangles": 60,
+      "materials": [
+        "TrousersSeam"
+      ]
+    }
+  ],
+  "technique_sources": [
+    "https://docs.blender.org/manual/en/3.0/modeling/modifiers/modify/data_transfer.html"
+  ],
+  "method": "source lower-body topology and original weights; tapered trouser silhouette; source-foot convex footprint with authored canvas/sole/laces; nearest-face interpolated source weights on new detail surfaces; original body vertices/morphs retained and only covered faces removed",
+  "export": {
+    "body.fbx": "84c558f01abb100982463d164cdfbd34d288f8ab2b3a645932bb6aa0fa56a883",
+    "pilot.blend": "7d8df754ec2293e28107219bffeaabc69982494f886bd3f5503e09af4fa17f76"
+  },
+  "cpu_rendered": true,
+  "visual_acceptance": "CPU front, side and bent-knee samples reviewed; large cuff/shorts-hem defects corrected; mature local pilot only. Independent review confirms improved bounded coverage.",
+  "limits": [
+    "local wardrobe derived from retained body, not a new generated character",
+    "no cloth simulation",
+    "actual engine appearance and motion require fresh native review",
+    "Fresh FBX round-trip confirms body/rest/morph/bind/weight preservation, but topology check still detects eight tiny source-derived trouser boundary edges near front/back upper thigh; not a watertight cloth claim.",
+    "Small outer-ankle dark notch remains in side view; use fresh native fit review before visual acceptance."
+  ],
+  "roundtrip_report": "roundtrip.json"
+}

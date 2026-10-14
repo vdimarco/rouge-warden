@@ -1,0 +1,16 @@
+{
+  "recorded_at": "2026-10-14T00:55:51.986585+00:00",
+  "account": "Vaughn DiMarco",
+  "provider": "fal.ai",
+  "stage": "prepare_upload",
+  "status": "billing_block",
+  "code": "balance_exhausted",
+  "reference_uploaded": false,
+  "model_job_submitted": false,
+  "reference_sha256": "c00eb6f0ea1f5743b1a236295ecedfa27e15763d9ab5a717942ebf3713e778be",
+  "verified_existing_pipeline_endpoint": "meshy/v7.1/image-to-3d",
+  "base_price_usd_per_generation": 0.8,
+  "price_limit": "Base endpoint pricing; final configured job cost not established.",
+  "scope_limit": "Schema supports body rig/basic locomotion but does not promise facial/finger/eyelid/jaw controls.",
+  "retry_condition": "User indicates credits have been added; verify billing and retry preparation, never duplicate an ambiguous generation."
+}

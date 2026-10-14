@@ -1,0 +1,25 @@
+/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Scripts/prepare_graphic_novel_rig.py:42: DeprecationWarning: 'World.use_nodes' is expected to be removed in Blender 6.0
+  scene.world.use_nodes = True
+00:02.321  render           | Saved: '/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/rigged/pilot-face-open.png'
+00:03.695  render           | Saved: '/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/rigged/pilot-face-narrow.png'
+00:04.823  render           | Saved: '/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/rigged/pilot-hand-rest.png'
+00:06.030  render           | Saved: '/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/rigged/pilot-hand-flex.png'
+00:07.153  render           | Saved: '/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/rigged/pilot-hand-flex-side.png'
+FBX version: 7400
+NORD_RIG_SOURCE 43414 vertices; 24 body bones
+Info: Saved as "pilot.blend"
+
+FBX export starting... '/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/rigged/body.fbx'
+export finished in 0.1046 sec.
+INFO Draco is available, use library at /home/von/.local/opt/blender-5.2.2-linux-x64/lib/libbf_intern_draco_bridge.so
+INFO MeshOptimizer is available, use library at /home/von/.local/opt/blender-5.2.2-linux-x64/lib/libbf_intern_meshopt_bridge.so
+20:50:42 | INFO: Starting glTF 2.0 export
+20:50:42 | INFO: Extracting primitive: char1
+20:50:42 | INFO: Primitives created: 1
+20:50:42 | INFO: Finished glTF 2.0 export in 0.16808223724365234 s
+
+FBX version: 7400
+NORD_GRAPHIC_NOVEL_RIG_OK {"added_bones": 20, "morphs": {"GN_EyeNarrow_L": 35, "GN_EyeNarrow_R": 30}}
+Blender 5.2.2 LTS (hash d13f752e3b9c built 2026-09-15 01:34:58)
+
+Blender quit

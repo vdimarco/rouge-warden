@@ -1,0 +1,25 @@
+{
+  "passed": true,
+  "source": "body.fbx",
+  "source_sha256": "84c558f01abb100982463d164cdfbd34d288f8ab2b3a645932bb6aa0fa56a883",
+  "output": "body-bind-pose.fbx",
+  "output_sha256": "56ba509f1875ffcfd018aa7df95c3fe255d0446b3b56eaf1b708a81081095f23",
+  "method": "union of identical shared-node matrices from partial BindPose entries; exactly one complete pose",
+  "source_pose_count": 46,
+  "output_pose_count": 1,
+  "union_pose_nodes": 90,
+  "all_other_fbx_object_contents_identical": true,
+  "connection_contents_identical": true,
+  "geometry_weights_morphs_contents_identical": true,
+  "blender_reimport_bind_mesh_positions_weights_and_morphs_identical": true,
+  "bind_bones": 44,
+  "meshes": 45,
+  "other_changes": [
+    "Pose definition counts updated",
+    "Blender binary writer normalizes file timestamp/header IDs"
+  ],
+  "limits": [
+    "No geometry/topology correction: the eight tiny trouser boundary edges remain.",
+    "Unreal SDK validation and native rendering still require fresh checks."
+  ]
+}

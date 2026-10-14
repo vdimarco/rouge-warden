@@ -5,6 +5,9 @@ assets = u.EditorAssetLibrary
 tools = u.AssetToolsHelpers.get_asset_tools()
 M = u.MaterialEditingLibrary
 PATH = '/Game/Art/Comic/M_ComicInk'
+if '-NordGraphicNovelCandidate' in u.SystemLibrary.get_command_line():
+    assert '-nullrhi' in u.SystemLibrary.get_command_line().lower(), 'Author materials offline before rendering'
+    PATH = '/Game/ParkComic/CrewGraphicNovel/Resident9/M_ComicInk'
 
 # Scene texture ids follow MaterialSceneTextureId.h; foliage uses the visible GBuffer, not custom depth.
 HLSL = r'''
@@ -19,12 +22,14 @@ float2 StencilUV = GetDefaultSceneTextureUV(Parameters, 25);
 float Stencil = SceneTextureLookup(StencilUV, 25, false).r;
 float CrewDepth = SceneTextureLookup(GetDefaultSceneTextureUV(Parameters, 13), 13, false).r;
 float Crew = (Stencil > 254.0 && abs(CrewDepth - DepthC) < max(2.0, DepthC * 0.002)) ? 1.0 : 0.0;
+float NovelCrew = (Stencil > 253.0 && Stencil <= 254.0 && abs(CrewDepth - DepthC) < max(2.0, DepthC * 0.002)) ? 1.0 : 0.0;
+float PrintedCrew = max(Crew, NovelCrew);
 float ShadingModel = SceneTextureLookup(GetDefaultSceneTextureUV(Parameters, 23), 23, false).r;
 float Foliage = abs(ShadingModel - 6.0) < 0.5 ? 1.0 : 0.0;
 
 // Offset print plates: red and blue drift apart with distance instead of depth of field.
 float Far = saturate((DepthC - 1500.0) / 25000.0);
-float2 Shift = (1.0 - max(Crew, Foliage)) * Texel * Misregistration * (0.35 + 2.65 * Far) * float2(1.0, 0.3);
+float2 Shift = (1.0 - max(PrintedCrew, Foliage)) * Texel * Misregistration * (0.35 + 2.65 * Far) * float2(1.0, 0.3);
 float3 Color = float3(SceneTextureLookup(ColorUV + Shift, 14, false).r, SceneTextureLookup(ColorUV, 14, false).g, SceneTextureLookup(ColorUV - Shift, 14, false).b);
 
 // Ink: the depth second derivative finds silhouettes but ignores flat ground at grazing angles;
@@ -48,7 +53,7 @@ for (int i = 0; i < 2; i++)
     NormalEdge += (2.0 - saturate(dot(NA, NormalC)) - saturate(dot(NB, NormalC))) * (1.0 - LeafBoundary);
 }
 float Fade = 1.0 - saturate((DepthC - 12000.0) / 30000.0);
-float Ink = max(smoothstep(0.025, 0.09, DepthEdge), smoothstep(0.5, 1.2, NormalEdge) * Fade * (1.0 - Crew));
+float Ink = max(smoothstep(0.025, 0.09, DepthEdge), smoothstep(0.5, 1.2, NormalEdge) * Fade * (1.0 - Crew) * lerp(1.0, 0.18, NovelCrew));
 Ink *= lerp(0.45, 1.0, Fade);
 Ink *= lerp(1.0, 0.18, Foliage);
 
@@ -61,6 +66,7 @@ float GradientMask = Sky ? 1.0 : SmoothReflection;
 float Lum = dot(Color, float3(0.299, 0.587, 0.114));
 float Banded = (floor(Lum * Bands) + 0.5) / Bands;
 float BandMix = lerp(lerp(0.35, 0.12, Foliage), 0.0, Crew) * (1.0 - GradientMask);
+BandMix = lerp(BandMix, 0.22, NovelCrew);
 float Light = pow(lerp(Lum, Banded, BandMix), 0.82);
 float3 Chroma = Color / max(Lum, 1.0e-3);
 Color = saturate(Chroma * Light);
@@ -79,11 +85,11 @@ float Shade = Sky ? 0.0 : saturate((0.28 - L2) / 0.28);
 float Radius = sqrt(Shade) * 0.6;
 float Dot = 1.0 - smoothstep(Radius - 0.05, Radius + 0.05, Dist);
 float3 DotInk = Sky ? Color * float3(0.72, 0.62, 1.05) : Color * float3(0.45, 0.32, 0.62) + float3(0.05, 0.0, 0.1);
-Color = lerp(Color, saturate(DotInk), Dot * 0.18 * (1.0 - max(Crew, Foliage)));
+Color = lerp(Color, saturate(DotInk), Dot * 0.18 * (1.0 - max(PrintedCrew, Foliage)));
 
 // Hatching in the deepest shadow.
 float Hatch = step(frac((Pixel.x - Pixel.y) / (DotSize * 0.9)), 0.25) * (1.0 - smoothstep(0.1, 0.17, L2));
-Color = lerp(Color, float3(0.05, 0.02, 0.1), Hatch * (Sky ? 0.0 : 0.12) * (1.0 - max(Crew, Foliage)));
+Color = lerp(Color, float3(0.05, 0.02, 0.1), Hatch * (Sky ? 0.0 : 0.12) * (1.0 - max(PrintedCrew, Foliage)));
 
 Color = lerp(Color, float3(0.025, 0.015, 0.05), saturate(Ink) * (Sky ? 0.0 : 1.0));
 return Color;
@@ -101,8 +107,13 @@ def node(mat, cls, **properties):
     return n
 
 
-mat = assets.load_asset(PATH) if assets.does_asset_exist(PATH) else tools.create_asset('M_ComicInk', '/Game/Art/Comic', u.Material, u.MaterialFactoryNew())
-M.delete_all_material_expressions(mat)
+folder, name = PATH.rsplit('/', 1)
+assets.make_directory(folder)
+mat = assets.load_asset(PATH) if assets.does_asset_exist(PATH) else tools.create_asset(name, folder, u.Material, u.MaterialFactoryNew())
+assert mat and mat.get_path_name() == PATH + '.' + name, 'Wrong comic material destination'
+# UE 5.8's bulk delete mutates the array it iterates.
+for expression in M.get_material_expressions(mat):
+    M.delete_material_expression(mat, expression)
 mat.set_editor_property('material_domain', u.MaterialDomain.MD_POST_PROCESS)
 mat.set_editor_property('blendable_location', u.BlendableLocation.BL_SCENE_COLOR_AFTER_TONEMAPPING)
 
