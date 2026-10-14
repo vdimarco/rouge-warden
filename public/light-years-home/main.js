@@ -15,8 +15,8 @@ import {
 } from './core/save.js';
 import { STOPS, CHAPTERS } from './core/route.js';
 import { OBJECTS } from './core/objects.js';
-import { createHud } from './ui/hud.js';
-import { createInput } from './ui/input.js';
+import { createHud } from './ui/v1/hud.js';
+import { createInput } from './ui/v1/input.js';
 
 const MAX_STEPS = 5;
 const MAX_DT = 0.1;
@@ -490,7 +490,7 @@ async function boot() {
   if (!hasWebGL2()) { graphicsFailed(); return; }
   const [makeView, makeOverlay, makeAudio, makePerf] = await Promise.all([
     load('./render/view.js', 'createView', null),
-    load('./ui/overlay.js', 'createOverlay', noOverlay),
+    load('./ui/v1/overlay.js', 'createOverlay', noOverlay),
     load('./ui/audio.js', 'createAudio', noAudio),
     load('./ui/perf.js', 'createPerf', noPerf),
   ]);
