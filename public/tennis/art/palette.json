@@ -1,0 +1,21 @@
+{
+  "note": "Placeholder shapes use this palette. Painted WebP files are planned and not in this prototype.",
+  "palette": {
+    "paper": "#F3E9D6",
+    "ink": "#2B2A33",
+    "lawn": "#5E8C61",
+    "hedge": "#3F6B47",
+    "ochre": "#C98B3C",
+    "ember": "#B5472E",
+    "sea": "#3E7C8F",
+    "hopeGold": "#E8B94A"
+  },
+  "planned": [
+    { "file": "court.webp", "size": "1080x1920" },
+    { "file": "hedge.webp" },
+    { "file": "player.webp", "size": "64x64", "poses": ["ready", "swing", "reach"] },
+    { "file": "neighbour.webp", "size": "64x64", "poses": ["ready", "swing", "reach", "huff"] },
+    { "file": "flowers.webp", "size": "48x48", "kinds": ["daisy", "poppy", "lupin"] },
+    { "file": "props.webp" }
+  ]
+}
