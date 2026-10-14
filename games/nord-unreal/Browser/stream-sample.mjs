@@ -33,7 +33,7 @@ async function main() {
   const { values } = parseArgs({ options: {
     seconds: { type: 'string', default: '60' }, slot: { type: 'string', default: 'NordFriend1' },
     url: { type: 'string', default: 'http://127.0.0.1:8100/' }, relay: { type: 'boolean', default: false },
-    look: { type: 'boolean', default: false }
+    look: { type: 'boolean', default: false }, portrait: { type: 'boolean', default: false }
   } });
   const seconds = Number(values.seconds), url = new URL(values.url);
   assert.ok(Number.isInteger(seconds) && seconds >= 5 && seconds <= 3600, '--seconds must be 5–3600');
@@ -44,7 +44,7 @@ async function main() {
   const output = resolve('../Saved/BrowserStreaming/samples', new Date().toISOString().replace(/[:.]/g, '-') + '-' + values.slot);
   await mkdir(output, { recursive: true });
   const report = { startedAt: new Date().toISOString(), playerUrl: url.href, slot: values.slot,
-    mode: values.relay ? 'forced-relay-scoped-turn-dns' : 'ordinary', cameraSweep: values.look, passed: false, samples: [],
+    mode: values.relay ? 'forced-relay-scoped-turn-dns' : 'ordinary', cameraSweep: values.look, portrait: values.portrait, passed: false, samples: [],
     limits: ['Host-PC Chromium is not a physical phone or an off-LAN network.',
       'No walking, driving, campaign input or audible playback is checked.'] };
   const args = ['--disable-gpu'];
@@ -52,7 +52,7 @@ async function main() {
   if (values.relay) args.push('--host-resolver-rules=MAP omarchy.tail7b97f6.ts.net 199.38.181.54');
   const browser = await chromium.launch({ executablePath: process.env.NORD_CHROMIUM_PATH || '/usr/bin/chromium', headless: true, args });
   try {
-    const context = await browser.newContext({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true });
+    const context = await browser.newContext({ viewport: values.portrait ? { width: 390, height: 844 } : { width: 844, height: 390 }, isMobile: true, hasTouch: true });
     await context.addInitScript(relay => {
       const NativePeer = window.RTCPeerConnection;
       window.__samplePeers = [];

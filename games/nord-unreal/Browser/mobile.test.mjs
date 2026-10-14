@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
+import { streamDimensions } from './config.mjs';
 
 // This test attaches to an already running real stream. It never starts Unreal,
 // signalling, or a tunnel, and it never tries to replace an occupied subscriber.
@@ -82,7 +83,7 @@ async function advancingMedia(label) {
   const before = await media();
   await page.waitForTimeout(1200);
   const after = await media();
-  // The page asks for 1280x720, or for a tall frame on a phone held upright.
+  // The decoded frame must match the latest native size request.
   const wanted = await page.evaluate(() => document.body.dataset.streamSize || '1280x720');
   assert.equal(`${after.width}x${after.height}`, wanted, 'native stream size');
   assert.ok(after.readyState > 2 && after.currentTime > before.currentTime,
@@ -165,18 +166,20 @@ async function fullscreenClearance(name) {
       '#touch-menu', '#touch-gas', '#touch-brake', '#touch-use'];
     const video = document.querySelector('#video video');
     const image = bounds(video);
-    // Native DrawHUD regions at 1280×720; full-frame fill maps the axes separately.
+    // Native landscape HUD scales uniformly, anchoring its right/bottom regions.
+    const scale = Math.max(.4, Math.min(1.5, video.videoHeight / 720, video.videoWidth / 1280));
     const hud = [
       ['briefing', 0, 0, 480, 200], ['identity', 1040, 0, 240, 120],
       ['radar and credits', 1018, 96, 240, 240], ['objective', 620, 22, 460, 170],
       ['speed digits and units', 674, 624, 164, 74], ['prompt', 240, 620, 539, 100],
       ['completion', 490, 150, 310, 100]
     ].map(([name, x, y, width, height]) => ({ name,
-      x: image.x + x * image.width / 1280, y: image.y + y * image.height / 720,
-      width: width * image.width / 1280, height: height * image.height / 720 }));
+      x: image.x + (x >= 620 ? video.videoWidth - (1280 - x) * scale : x * scale) * image.width / video.videoWidth,
+      y: image.y + (y >= 620 ? video.videoHeight - (720 - y) * scale : y * scale) * image.height / video.videoHeight,
+      width: width * scale * image.width / video.videoWidth, height: height * scale * image.height / video.videoHeight }));
     return {
       viewport: { width: innerWidth, height: innerHeight },
-      video: bounds(document.querySelector('#video')), image, objectFit: getComputedStyle(video).objectFit, hud,
+      video: bounds(document.querySelector('#video')), image, native: { width: video.videoWidth, height: video.videoHeight }, objectFit: getComputedStyle(video).objectFit, hud,
       targets: selectors.map(selector => {
         const element = document.querySelector(selector);
         const target = bounds(element);
@@ -189,7 +192,8 @@ async function fullscreenClearance(name) {
   const overlap = (a, b) => Math.min(a.x + a.width, b.x + b.width) - Math.max(a.x, b.x) > 1 &&
     Math.min(a.y + a.height, b.y + b.height) - Math.max(a.y, b.y) > 1;
   assert.equal(await page.evaluate(() => Boolean(document.fullscreenElement)), true);
-  assert.equal(geometry.objectFit, 'fill', 'the complete frame must fill the display without letterboxing or cropping');
+  assert.equal(geometry.objectFit, 'contain', 'the complete frame preserves its aspect ratio');
+  assert.ok(Math.abs((geometry.native.width / geometry.native.height) / (geometry.image.width / geometry.image.height) - 1) < .01, 'native frame fills the play area without stretching or cropping');
   for (const image of [geometry.video, geometry.image]) {
     assert.ok(Math.abs(image.x) <= 1 && Math.abs(image.y) <= 1 &&
       Math.abs(image.width - geometry.viewport.width) <= 1 && Math.abs(image.height - geometry.viewport.height) <= 1,
@@ -263,8 +267,17 @@ async function connectFriend() {
   return true;
 }
 
-// The page asks the game for a frame shaped like the play area on a phone held upright, else 1280x720.
+async function waitForShape() {
+  await page.waitForFunction(() => {
+    const [width, height] = (document.body.dataset.streamSize || '').split('x').map(Number);
+    const area = document.querySelector('#frame').getBoundingClientRect();
+    return Math.abs((width / height) / (area.width / area.height) - 1) < .01;
+  });
+}
+
+// Wait for the requested and decoded frames to converge after layout changes.
 async function streamSettled() {
+  await waitForShape();
   try {
     await page.waitForFunction(() => {
       const video = document.querySelector('#video video');
@@ -314,7 +327,8 @@ try {
     const dispatch = EventTarget.prototype.dispatchEvent;
     EventTarget.prototype.dispatchEvent = function (event) {
       if (event.type === 'statsReceived') window.__nordQaStats.push({
-        fps: event.data?.aggregatedStats?.inboundVideoStats?.framesPerSecond,
+        at: performance.now(), hidden: document.hidden, fps: event.data?.aggregatedStats?.inboundVideoStats?.framesPerSecond,
+        freezeCount: event.data?.aggregatedStats?.inboundVideoStats?.freezeCount,
         state: document.body?.dataset.state, size: document.body?.dataset.streamSize });
       return dispatch.call(this, event);
     };
@@ -591,15 +605,17 @@ try {
       };
       await toggleFullscreen(false);
       await page.setViewportSize({ width: 800, height: 360 });
-      await page.waitForFunction(() => ['1280x720', '960x540', '800x450', '640x360'].includes(document.body.dataset.streamSize));
+      await waitForShape();
       await streamSettled();
       await layout('landscape');
       await toggleFullscreen(true);
+      await streamSettled();
       await fullscreenClearance('landscape');
       await toggleFullscreen(false);
       await page.setViewportSize({ width: 667, height: 375 });
       await layout('narrowLandscape');
       await toggleFullscreen(true);
+      await streamSettled();
       await advancingMedia('narrowLandscape');
       await fullscreenClearance('narrow-landscape');
       await toggleFullscreen(false);
@@ -629,6 +645,9 @@ try {
       report.input.comicActivation = { keyboard, touch: tapPackets };
     });
     await check('receiver pressure lowers the phone stream and healthy playback restores clarity', async () => {
+      const sizes = {};
+      const area = await page.locator('#frame').boundingBox();
+      for (const edge of [1280, 960, 800, 640]) sizes[edge] = streamDimensions(true, area.width, area.height, true, edge).join('x');
       // Hold a known clear profile before stepping through each injected pressure level.
       await page.evaluate(() => {
         window.__nordQaReceiverFps = 30;
@@ -643,40 +662,33 @@ try {
           };
         }
       });
-      await page.waitForFunction(() => document.body.dataset.streamSize === '1280x720', null, { timeout: 35000 });
+      await page.waitForFunction(size => document.body.dataset.streamSize === size, sizes[1280], { timeout: 35000 });
       await streamSettled();
       await page.evaluate(() => { window.__nordQaReceiverFps = 20; });
       report.input.adaptiveDebug = await page.evaluate(() => window.__nordQaStats.slice(-8));
-      await page.waitForFunction(() => document.body.dataset.streamSize === '960x540', null, { timeout: 30000 });
+      await page.waitForFunction(size => document.body.dataset.streamSize === size, sizes[960], { timeout: 30000 });
       await streamSettled();
       await advancingMedia('adaptiveLowFrame');
       const commands = (await sends()).filter(packet => packet.id === 51).map(packet =>
         new TextDecoder('utf-16le').decode(new Uint8Array(packet.bytes.slice(3))));
       assert.ok(commands.some(command => command.includes('"WebRTC.MaxBitrate":2000000')), 'adaptive native bandwidth cap');
-      report.input.adaptiveStream = { requested: '960x540', maxBitrate: 2000000, trigger: 'controlled receiver statistics; real resized video' };
-      await page.waitForFunction(() => document.body.dataset.streamSize === '800x450', null, { timeout: 30000 });
+      report.input.adaptiveStream = { requested: sizes[960], maxBitrate: 2000000, trigger: 'controlled receiver statistics; real resized video' };
+      await page.waitForFunction(size => document.body.dataset.streamSize === size, sizes[800], { timeout: 30000 });
       await streamSettled();
       await advancingMedia('adaptiveConstrainedFrame');
-      report.input.adaptiveStream.constrained = '800x450';
-      await page.waitForFunction(() => document.body.dataset.streamSize === '640x360', null, { timeout: 30000 });
+      report.input.adaptiveStream.constrained = sizes[800];
+      await page.waitForFunction(size => document.body.dataset.streamSize === size, sizes[640], { timeout: 30000 });
       await streamSettled();
       await advancingMedia('adaptiveEmergencyFrame');
-      report.input.adaptiveStream.emergency = '640x360';
-      await page.evaluate(() => {
-        for (const peer of window.__nordQaPeers) if (peer.__nordOriginalStats) {
-          const original = peer.__nordOriginalStats;
-          peer.getStats = async (...args) => new Map([...await original(...args)].map(([id, stat]) => [id,
-            stat.type === 'inbound-rtp' && (stat.kind || stat.mediaType) === 'video'
-              ? { ...stat, framesPerSecond: 30, jitterBufferDelay: 0, freezeCount: 0 } : stat]));
-        }
-      });
-      await page.waitForFunction(() => document.body.dataset.streamSize === '1280x720', null, { timeout: 100000 });
+      report.input.adaptiveStream.emergency = sizes[640];
+      await page.evaluate(() => { window.__nordQaReceiverFps = 30; });
+      await page.waitForFunction(size => document.body.dataset.streamSize === size, sizes[1280], { timeout: 100000 });
       await streamSettled();
       await advancingMedia('adaptiveRecoveredFrame');
       const recoveredCommands = (await sends()).filter(packet => packet.id === 51).map(packet =>
         new TextDecoder('utf-16le').decode(new Uint8Array(packet.bytes.slice(3))));
       assert.ok(recoveredCommands.some(command => command.includes('"WebRTC.MaxBitrate":4000000')), 'restored clarity bandwidth cap');
-      report.input.adaptiveStream.recovered = '1280x720';
+      report.input.adaptiveStream.recovered = sizes[1280];
       await page.evaluate(() => {
         for (const peer of window.__nordQaPeers) if (peer.__nordOriginalStats) peer.getStats = peer.__nordOriginalStats;
       });

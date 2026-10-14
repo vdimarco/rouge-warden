@@ -17,7 +17,7 @@ await build({
   define: {
     NORD_SIGNALLING_URL: JSON.stringify(endpoint),
     NORD_DEFAULT_STREAMER_ID: JSON.stringify(process.env.NORD_DEFAULT_STREAMER_ID || 'NordHost'),
-    // Tall phone frames need the game build with the tall HUD; NORD_PORTRAIT_STREAM=0 keeps 1280x720 for an older game build.
+    // Viewport-shaped phone frames need the tall HUD; NORD_PORTRAIT_STREAM=0 retains legacy adaptive 16:9 frames.
     NORD_PORTRAIT_STREAM: JSON.stringify(process.env.NORD_PORTRAIT_STREAM !== '0')
   }
 });

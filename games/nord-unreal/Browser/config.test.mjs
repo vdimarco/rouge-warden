@@ -44,16 +44,22 @@ test('invalid addresses and embedded credentials are rejected', () => {
 });
 
 
-test('phone frames reduce pixels in both orientations without changing desktop', async () => {
+test('phone frames match either orientation with the same bounded pixel budget', async () => {
   const { streamDimensions } = await import('./config.mjs');
-  assert.deepEqual(streamDimensions(false, 1280, 720, true), [1280, 720]);
-  assert.deepEqual(streamDimensions(true, 800, 360, true), [960, 540]);
-  assert.deepEqual(streamDimensions(true, 360, 800, true), [432, 960]);
-  assert.deepEqual(streamDimensions(true, 600, 800, true), [540, 720]);
+  assert.deepEqual(streamDimensions(false, 390, 844, true), [1280, 720]);
   assert.deepEqual(streamDimensions(true, 360, 800, false), [960, 540]);
   assert.deepEqual(streamDimensions(true, 0, 0, true), [960, 540]);
-  assert.deepEqual(streamDimensions(true, 800, 360, true, 960), [960, 540]);
-  assert.deepEqual(streamDimensions(true, 360, 800, true, 960), [432, 960]);
+  assert.deepEqual(streamDimensions(true, 1280, 720, true), [960, 540]);
+  for (const edge of [640, 800, 960, 1280]) {
+    const budget = edge * edge * 9 / 16;
+    for (const [width, height] of [[390, 844], [360, 800], [844, 390], [800, 360], [667, 375], [600, 800], [800, 600]]) {
+      const [w, h] = streamDimensions(true, width, height, true, edge);
+      assert.ok(w % 2 === 0 && h % 2 === 0, 'even encoder dimensions');
+      assert.ok(w * h <= budget && w * h >= budget * .99, 'retain pixel area in both orientations');
+      assert.ok(Math.abs((w / h) / (width / height) - 1) < .01, 'shape matches the play area');
+      assert.deepEqual(streamDimensions(true, width, height, false, edge), [edge, edge * 9 / 16]);
+    }
+  }
 });
 
 

@@ -20,10 +20,12 @@ export function signallingUrl(value, pageHostname) {
 
 export function streamDimensions(touch, width, height, portrait, edge = 960) {
   if (!touch) return [1280, 720];
+  if (!portrait || !width || !height) return [edge, edge * 9 / 16];
   const ratio = height / width;
-  if (!portrait || !width || !height || ratio < 1.15) return [edge, edge * 9 / 16];
-  return (ratio >= 16 / 9 ? [edge / ratio, edge] : [edge * 9 / 16, edge * 9 / 16 * ratio])
-    .map(value => Math.round(value / 2) * 2);
+  // Give both orientations the same pixel budget, without stretching a 16:9 frame.
+  const pixels = edge * edge * 9 / 16;
+  return [Math.sqrt(pixels / ratio), Math.sqrt(pixels * ratio)]
+    .map(value => Math.floor(value / 2) * 2);
 }
 
 export function receiverFps(stats, previous) {
