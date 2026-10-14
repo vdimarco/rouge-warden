@@ -124,9 +124,12 @@ public:
     void SetTrafficRoute(int32 Segment, bool bForward, const TArray<bool>& AllowedRoads);
     void StopInput();
     void ResetMotion();
+    bool CanFitAt(const FVector& Point, const FQuat& Rotation, const AActor* Ignore = nullptr) const;
 
 private:
-    UPROPERTY(VisibleAnywhere) TObjectPtr<UBoxComponent> Collision;
+    UPROPERTY(VisibleAnywhere) TObjectPtr<UBoxComponent> Collision; // Saved-map compatibility.
+    UPROPERTY(VisibleAnywhere) TObjectPtr<UStaticMeshComponent> Hull;
+    UPROPERTY() TArray<TObjectPtr<UStaticMesh>> CollisionMeshes;
     UPROPERTY(VisibleAnywhere) TObjectPtr<USpringArmComponent> CameraArm;
     UPROPERTY(VisibleAnywhere) TObjectPtr<UCameraComponent> Camera;
     UPROPERTY() TArray<TObjectPtr<UStaticMeshComponent>> Parts;
@@ -156,6 +159,9 @@ private:
     void UpdateTraffic();
     void SimulateDrive(float Step, bool bFailsafe);
     void MoveWithCollision(float Step, const FVector& Travel);
+    bool WheelSupport(const FVector& Point, FRotator& Rotation, double& Height, bool& bTooHigh) const;
+    bool bGrounded = false;
+    FTransform GroundedTransform;
     void UpdateDriveAudio(float DeltaSeconds);
     UFUNCTION() void ApplyPaint();
     UFUNCTION() void MoveForward(float Value);

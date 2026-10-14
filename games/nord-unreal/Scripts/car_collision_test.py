@@ -154,8 +154,8 @@ def blocked():
     if time.monotonic() - STATE["step_started"] < 3:
         return False
     location = STATE["car"].get_actor_location()
-    # Wall begins at x=0; the root collision box extends 220cm ahead of the car centre.
-    assert -235 < location.x < -215, "Tall wall was crossed, or car never reached it: " + str(location)
+    # Wall begins at x=0; the fitted front bumper extends 233cm.
+    assert -240 < location.x < -225, "Tall wall was crossed, or car never reached it: " + str(location)
     assert abs(location.z - 100) < 3, "Car climbed the tall wall"
     REPORT["cases"]["600cm_wall"] = {"x_cm": round(location.x, 2), "z_cm": round(location.z, 2)}
     STATE["car"].call_method("MoveForward", (0.0,))
@@ -199,7 +199,7 @@ def finish(error=None):
         REPORT["cleanup_error"] = traceback.format_exc()
     finally:
         try:
-            path = Path(u.Paths.project_saved_dir()) / "Tests/CarCollision.json"
+            path = Path(u.Paths.project_saved_dir()) / "Tests/CarCollisionCurbParking.json"
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text(json.dumps(REPORT, indent=2), encoding="utf-8")
         finally:

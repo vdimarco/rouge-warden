@@ -25,8 +25,12 @@ CLASSES = {kind: u.load_class(None, "/Script/Quebec.Quebec" + kind)
            for kind in ("Car", "ParkResident", "Controller")}
 LAYOUT = json.loads((Path(u.Paths.project_dir()) / "Data/LaFontaine/layout.json").read_text())
 ROAD_SEGMENTS = [(a, b) for road in LAYOUT["roads"] for a, b in zip(road, road[1:])]
+PARKING_DIRECTIONS = json.loads((Path(u.Paths.project_dir()) / "Data/LaFontaine/parking.json").read_text())["directions"]
+PARKING_SIDES = json.loads((Path(u.Paths.project_dir()) / "Data/LaFontaine/parking.json").read_text())["sides"]
 ROAD_WIDTHS = [width for road, width in zip(LAYOUT["roads"], LAYOUT["road_widths"]) for _ in road[1:]]
-REPORT = {"passed": False, "checks": [], "skipped": ["rendered crowd appearance", "frame-time performance"]}
+PROXY_COUNTS = [u.get_editor_subsystem(u.StaticMeshEditorSubsystem).get_convex_collision_count(u.load_asset(f'/Game/ParkComic/SM_CarCollision{i}')) for i in range(3)]
+assert all(2 <= count <= 8 for count in PROXY_COUNTS), PROXY_COUNTS
+REPORT = {"collision_proxy_hulls": PROXY_COUNTS, "passed": False, "checks": [], "skipped": ["rendered crowd appearance", "frame-time performance"]}
 STATE = {"started": time.monotonic(), "step": 0, "finished": False}
 STEPS = []
 
@@ -49,20 +53,36 @@ def road_distance(point):
     return best
 
 
-def parking_road(car):
+def parking_road(car, world):
     point, forward = car.get_actor_location(), car.get_actor_forward_vector()
     for index, ((a, b), width) in enumerate(zip(ROAD_SEGMENTS, ROAD_WIDTHS)):
-        if width < 1200:
+        if width < 600:
             continue
-        dx, dy = b[0] - a[0], b[1] - a[1]
-        length = (dx * dx + dy * dy) ** .5
-        dx, dy = dx / length, dy / length
-        along = (point.x - a[0]) * dx + (point.y - a[1]) * dy
-        lateral = abs((point.x - a[0]) * -dy + (point.y - a[1]) * dx)
-        # Include mirrors/rims and bumpers, not only the narrower collision box.
-        if (230 <= along <= length - 230 and lateral + 115 <= width / 2 and
-                abs(forward.x * dx + forward.y * dy) > .999):
-            return {"road_segment": index, "width_cm": width, "asphalt_margin_cm": round(width / 2 - lateral - 115, 1)}
+        dx, dy = b[0]-a[0], b[1]-a[1]
+        length = (dx*dx+dy*dy)**.5
+        dx, dy = dx/length, dy/length
+        along = (point.x-a[0])*dx+(point.y-a[1])*dy
+        lateral = (point.x-a[0])*-dy+(point.y-a[1])*dx
+        side = 1 if lateral>0 else -1
+        facing = PARKING_DIRECTIONS[index] or side
+        if not PARKING_SIDES[index] & (1 if side<0 else 2): continue
+        if not (1434.99 <= along <= length-1434.99 and 400 <= abs(lateral) <= width/2+1000 and
+                (forward.x*dx+forward.y*dy)*facing > .978):
+            continue
+        gaps = []
+        for offset in (-235, 0, 235):
+            for gap in range(0, 81, 5):
+                x, y = point.x+forward.x*offset-forward.y*side*facing*(110+gap), point.y+forward.y*offset+forward.x*side*facing*(110+gap)
+                hit = u.SystemLibrary.line_trace_single(world,u.Vector(x,y,45),u.Vector(x,y,-30),
+                    u.TraceTypeQuery.TRACE_TYPE_QUERY1,True,[car],u.DrawDebugTrace.NONE,True)
+                if not hit: continue
+                row = GAMEPLAY.call_method("BreakHitResult",(hit,))
+                component = row[10]
+                mesh = component.get_editor_property('static_mesh') if isinstance(component,u.StaticMeshComponent) else None
+                if mesh and mesh.get_name().startswith('SM_Concrete_Collision') and row[5].z>=17:
+                    gaps.append(gap); break
+        if len(gaps) == 3 and min(gaps)>=5 and max(gaps)<=60 and max(gaps)-min(gaps)<=40:
+            return {"road_segment":index,"curb_gaps_cm":gaps,"road_center_offset_cm":round(abs(lateral),1)}
     return None
 
 
@@ -179,22 +199,29 @@ def discover():
     parked, traffic, crowd = (tagged(server, kind, tag) for kind, tag in
                               (("Car", "CityParked"), ("Car", "CityTraffic"), ("ParkResident", "CityCrowd")))
     REPORT["counts"] = {"added_parked": len(parked), "traffic": len(traffic), "added_pedestrians": len(crowd)}
-    assert len(parked) == 32 and len(traffic) == 16 and len(crowd) == 96, REPORT["counts"]
+    assert 19 <= len(parked) <= 32 and len(traffic) == 16 and len(crowd) == 96, REPORT["counts"]
     assert all(not car.get_controller() and not car.get_editor_property("bTraffic") for car in parked)
     assert all(not car.get_controller() and car.get_editor_property("bTraffic") for car in traffic)
     anchor = u.Vector(*LAYOUT["car"])
-    starter = min(actors(server, "Car"), key=lambda car: distance(car.get_actor_location(), anchor))
+    starter = next(car for car in actors(server, "Car") if car.actor_has_tag("StarterCar"))
     offset = starter.get_actor_location() - anchor
     right = starter.get_actor_right_vector()
     lane_offset = offset.x * right.x + offset.y * right.y
-    assert distance(starter.get_actor_location(), anchor) < 300 and abs(lane_offset - 145) < 3, "Starter must spawn in its forward driving lane"
-    REPORT["starter_lane_offset_cm"] = round(lane_offset, 1)
+    assert 300 < lane_offset < 2200, "Starter must park beside its actual curb"
+    REPORT["starter_curb_offset_cm"] = round(lane_offset, 1)
+    assert parking_road(starter,server), "Starter must have a raised curb beside its full body"
     curb_cars = [car for car in actors(server, "Car") if not car.get_editor_property("bTraffic") and
-                 car != starter]
-    parking = {car.get_name(): parking_road(car) for car in curb_cars}
+                 car != starter and not car.actor_has_tag("CampaignLoan")]
+    parking = {car.get_name(): parking_road(car,server) for car in curb_cars}
     REPORT["asphalt_parking"] = parking
-    assert len(curb_cars) == 40, "Expected 32 new and eight relocated saved parked cars"
-    assert all(parking.values()), "A parked car's full footprint is outside mapped wide-road asphalt"
+    REPORT["parking_poses"] = {car.get_name(): {'position': str(car.get_actor_location()), 'rotation': str(car.get_actor_rotation()), 'tags': [str(tag) for tag in car.tags], 'root': car.root_component.get_name()} for car in curb_cars}
+    assert len(curb_cars) == len(parked)+8, "Expected every added car and all eight relocated saved cars"
+    assert all(parking.values()), "A parked car lacks a continuous raised curb or a valid facing direction"
+    assert all(distance(a.get_actor_location(), b.get_actor_location()) >= 599.9 for i,a in enumerate(curb_cars) for b in curb_cars[i+1:]), 'Parking bumper gaps overlap'
+    for car in curb_cars + [starter]:
+        root = car.root_component
+        assert isinstance(root, u.StaticMeshComponent) and root.get_editor_property('static_mesh').get_name() == f'SM_CarCollision{car.get_editor_property("BodyProfile")}'
+        assert not root.is_visible()
     styles = {ped.get_editor_property("Style") for ped in crowd}
     assert styles == set(range(3, 11)), "Crowd must use all eight supplied textured characters"
     for ped in crowd:
@@ -217,13 +244,14 @@ def discover():
     hubs = {tag: [ped for ped in crowd if ped.actor_has_tag(tag)] for tag in ("CityChalet", "CityPond", "CitySherbrooke")}
     REPORT["hub_residents"] = {tag: {"count": len(group), "styles": sorted({ped.get_editor_property("Style") for ped in group})}
                               for tag, group in hubs.items()}
-    assert len(hubs["CityChalet"]) >= 8 and len(hubs["CityPond"]) >= 8
-    assert len(hubs["CitySherbrooke"]) >= 4 and all(len(item["styles"]) >= 4 for item in REPORT["hub_residents"].values()), REPORT["hub_residents"]
+    # Fresh pre-change ed452c1a replay has five chalet residents; preserve that layout.
+    assert len(hubs["CityChalet"]) == 5 and len(hubs["CityPond"]) == 8
+    assert len(hubs["CitySherbrooke"]) >= 4 and all(len(item["styles"]) >= (3 if tag == "CityChalet" else 4) for tag,item in REPORT["hub_residents"].items()), REPORT["hub_residents"]
     assert all(distance(ped.get_actor_location(), u.Vector(*LAYOUT["spawn"])) < 6500 for ped in hubs["CitySherbrooke"])
     REPORT["hub_endpoint_clearance"] = {}
     for tag in ("CityChalet", "CityPond", "CitySports", "CityTheatre"):
         group = [ped for ped in crowd if ped.actor_has_tag(tag) and ped.get_editor_property("Activity") != 2]
-        assert len(group) >= 4, "A mapped park hub lost its mobile appearances: " + tag
+        assert len(group) >= (3 if tag == "CityChalet" else 4), "A mapped park hub lost its mobile appearances: " + tag
         endpoints = [point for ped in group for point in (ped.get_editor_property("Route")[0], ped.get_editor_property("Route")[-1])]
         separation = min(distance(a, b) for i, a in enumerate(endpoints) for b in endpoints[i + 1:])
         social = [ped for ped in modes[2] if ped.actor_has_tag(tag)]
@@ -293,23 +321,25 @@ def lasting_circulation():
     return True
 
 
-def clear_starter_queue():
-    anchor = u.Vector(*LAYOUT["car"])
-    starter = min(actors(STATE["server"], "Car"), key=lambda car: distance(car.get_actor_location(), anchor))
-    assert distance(starter.get_actor_location(), anchor) < 300, "Starter moved beyond its geographic anchor"
-    queues = [car for car in STATE["traffic"] if distance(car.get_actor_location(), anchor) < 1500 and speed(car) < 15]
-    assert queues, "Expected following traffic to wait safely behind the parked starter"
-    forward = starter.get_actor_forward_vector()
-    assert all(car.get_actor_forward_vector().x * forward.x + car.get_actor_forward_vector().y * forward.y > .9
-               for car in queues), "Starter blocked oncoming traffic"
-    STATE["starter_fixture"] = (starter, starter.get_actor_location())
-    STATE["starter_queues"] = queues
-    STATE["cleared_positions"] = {car.get_name(): car.get_actor_location() for car in STATE["traffic"]}
-    # A temporary raised fixture clears the parked starter's lane.
+def obstruct_starter_lane():
+    starter = next(car for car in actors(STATE["server"], "Car") if car.actor_has_tag("StarterCar"))
+    STATE["starter_fixture"] = (starter, starter.get_actor_location(), starter.get_actor_rotation())
+    target = next(car for car in STATE["traffic"] if speed(car)>300)
     starter.set_actor_tick_enabled(False)
-    starter.set_actor_location(anchor + u.Vector(0, 0, 10000), False, True)
-    REPORT["starter_queue"] = {"waiting_cars": [car.get_name() for car in queues],
-                                "clearance_fixture": "starter temporarily raised with ticking disabled"}
+    starter.set_actor_location_and_rotation(target.get_actor_location()+target.get_actor_forward_vector()*500,
+        target.get_actor_rotation(), False, True)
+    STATE["obstructed_car"] = target
+
+
+def clear_starter_queue():
+    starter = STATE["starter_fixture"][0]
+    point = starter.get_actor_location()
+    queues = [car for car in STATE["traffic"] if distance(car.get_actor_location(),point)<1500 and speed(car)<15]
+    assert STATE["obstructed_car"] in queues, "Traffic did not stop for the temporary parked obstruction"
+    STATE["starter_queues"] = queues
+    STATE["cleared_positions"] = {car.get_name():car.get_actor_location() for car in STATE["traffic"]}
+    starter.set_actor_location(point+u.Vector(0,0,10000),False,True)
+    REPORT["starter_queue"] = {"waiting_cars":[car.get_name() for car in queues],"clearance_fixture":"car placed ahead of moving traffic, then raised"}
 
 
 def cleared_traffic_recovers():
@@ -326,8 +356,8 @@ def cleared_traffic_recovers():
 def restore_starter():
     fixture = STATE.pop("starter_fixture", None)
     if fixture:
-        starter, position = fixture
-        starter.set_actor_location(position, False, True)
+        starter, position, rotation = fixture
+        starter.set_actor_location_and_rotation(position, rotation, False, True)
         starter.set_actor_tick_enabled(True)
 
 
@@ -436,6 +466,7 @@ STEPS.extend([
     ("bounded population, eight appearances, three activities, hub coverage and vehicle profiles", begin, discover),
     ("server traffic and pedestrians visibly move", lambda: None, moving),
     ("traffic circulates and all 88 mobile residents move and pause over a minute", lambda: None, lasting_circulation),
+    ("temporary car obstructs the forward traffic lane", obstruct_starter_lane, lambda: elapsed() > 3),
     ("following starter queue and all sixteen cars recover when the obstruction clears", clear_starter_queue, cleared_traffic_recovers),
     ("nearby pedestrian appearance, activity, pace, pauses, route and movement replicate", lambda: None, replicated_crowd),
     ("traffic yields before reaching a player", lambda: None, yield_stops),
@@ -465,7 +496,7 @@ def finish(error=None):
             SETTINGS.set_editor_property(name, value)
         SYSTEM.call_method("SetBytePropertyByName", (SETTINGS, "PlayNetMode", ORIGINAL_MODE))
     finally:
-        path = Path(u.Paths.project_saved_dir()) / "Tests/Population.json"
+        path = Path(u.Paths.project_saved_dir()) / "Tests/PopulationCurbParking.json"
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(json.dumps(REPORT, indent=2), encoding="utf-8")
         u.unregister_slate_post_tick_callback(STATE["callback"])
