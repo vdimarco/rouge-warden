@@ -1,0 +1,5 @@
+# Design
+
+Reuse the existing hero.js state observer, video elements and HTML media pause/remove-src/load lifecycle. Choose a source only for an eligible visible title or explicitly opened trailer; unload the title while connecting, selecting, ready, playing, in the intro, hidden, or still-only. Unload the full trailer on close; orientation changes load only visible media. Recheck eligibility after autoplay resolves/rejects so late results cannot restart hidden media. Returning to a visible title resumes the correct orientation. Pause an explicitly opened trailer while backgrounded; native controls allow resuming it. No new library, rendering technique, native build or service restart.
+
+Reach: hero.js, hero unit fixture/package test command, existing browser UI regression, focused Chromium media-request and lifecycle check, README, release verification and canonical media spec. Preserve existing story/crew/fullscreen UI and the active native source/package/save identities. Check observable requests and source removal rather than claiming an unmeasured FPS improvement. Physical-phone bandwidth/audio remain unverified.

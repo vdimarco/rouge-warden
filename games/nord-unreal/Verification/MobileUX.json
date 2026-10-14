@@ -1,0 +1,276 @@
+{
+  "date": "2026-10-14",
+  "status": "merged, native installed, production frontend published and verified",
+  "package": {
+    "installed": "Builds/Browser/Linux",
+    "rollback": "Builds/BrowserPrevious-mobile-ux-20261014",
+    "sha256": {
+      "Engine/Binaries/ThirdParty/MsQuic/v220/linux/libmsquic.so": "51aec15c714c5d96969f6a7608cdefc5c163e7fec0b2e0974ec1382380d11c5e",
+      "Engine/Binaries/ThirdParty/MsQuic/v220/linux/libmsquic.so.2": "ed3698c20005885c61a20f04ba772e329f67855713f5fecb26152a8f949ad280",
+      "Engine/Binaries/ThirdParty/Vulkan/Linux/VkLayer_api_dump.json": "4616e485e4dacaa8c1ef365fed23d2c117e8848148720a7acea70c96cb975179",
+      "Engine/Binaries/ThirdParty/Vulkan/Linux/VkLayer_crash_diagnostic.json": "77b6e62bc24994b056e316aa0bd5e056e8ff0dfa377ef1e0ec5b291a181b6a88",
+      "Engine/Binaries/ThirdParty/Vulkan/Linux/VkLayer_gfxreconstruct.json": "93065b7975a70a250569bfce2ee655bf6bc188a7844204d2c37700a770afb02e",
+      "Engine/Binaries/ThirdParty/Vulkan/Linux/VkLayer_khronos_profiles.json": "88deb508a3d16131cd747335063826a31f237e024f396542c05908b44760b895",
+      "Engine/Binaries/ThirdParty/Vulkan/Linux/VkLayer_khronos_shader_object.json": "1c6dd4b56db0e2dc4a7eb1e44e7ad933f399685436c644add05dadf4258e6b1d",
+      "Engine/Binaries/ThirdParty/Vulkan/Linux/VkLayer_khronos_synchronization2.json": "307c8b906289b7a3329fb44137dd3af595d91f26e5bde9cff1b4280801a45139",
+      "Engine/Binaries/ThirdParty/Vulkan/Linux/VkLayer_khronos_validation.json": "328861629130912c27f1db4f2be4fa3d64608ca7edf6f3d886c09cb5856834cc",
+      "Engine/Binaries/ThirdParty/Vulkan/Linux/libVkLayer_api_dump.so": "1b9871125c6f9afb2b0f09adbe3af3049a20837dca80ccea5d642be4dec31474",
+      "Engine/Binaries/ThirdParty/Vulkan/Linux/libVkLayer_crash_diagnostic.so": "99dda3ecafd809f0de42453536a2ea6299ac6216db9352e301065542e6685fbf",
+      "Engine/Binaries/ThirdParty/Vulkan/Linux/libVkLayer_gfxreconstruct.so": "2e8397383a72eb200e99a560a2b58947b8a0dc6cef3d1fe67245674df0d9e546",
+      "Engine/Binaries/ThirdParty/Vulkan/Linux/libVkLayer_khronos_profiles.so": "e2e9422a15730cd14904a0d27bbd7d463b5598fc7ffa1744d14fc47ce0dc87bf",
+      "Engine/Binaries/ThirdParty/Vulkan/Linux/libVkLayer_khronos_shader_object.so": "da3db6756cccaf502dab09a3de0cece49168654f7735612bb51f7555ef9f7cda",
+      "Engine/Binaries/ThirdParty/Vulkan/Linux/libVkLayer_khronos_synchronization2.so": "daa4bf2da5600deeff440b4c98fc3d68ba04121fdbb2f21d3463126c8d0a2c99",
+      "Engine/Binaries/ThirdParty/Vulkan/Linux/libVkLayer_khronos_validation.so": "cbecbd0d82217a789a3c3e1493cc60cb7cc036df8f22a0501af9b8ca23342e81",
+      "Engine/Binaries/ThirdParty/Vulkan/Linux/libvulkan.so": "d59b6a2b184887fb6eddea3dd754bd2f5b59abc647577c3cd71bb530213ebbb0",
+      "Engine/Config/StagedBuild_Quebec.ini": "f1945cd6c19e56b3c1c78943ef5ec18116907a4ca1efc40a57d48ab1db7adfc5",
+      "Engine/Content/Renderer/TessellationTable.bin": "edc4f3b628a139c5e185bbaeca661c95c1f427368d3b92892c5cff36c56dd941",
+      "Engine/Content/SlateDebug/Fonts/LastResort.tps": "1a89a055e643272d999b80b89e7ae84083bd2bbd5fdd5c131b386fb1056be0d9",
+      "Engine/Content/SlateDebug/Fonts/LastResort.ttf": "fff0f8de0b868b964950fe97c9b60f893e9bc85a4f90b3629c5693db058b97b9",
+      "Engine/Extras/GPUDumpViewer/GPUDumpViewer.html": "48c80e61730ae73eb59df3fb1c2fd9d0831f878925d5c52c4a8f984d9543e694",
+      "Engine/Extras/GPUDumpViewer/OpenGPUDumpViewer.bat": "6fdf0d7304b1b10e721da566d10b3f5a402ad85349a57abf1092af8abf713af3",
+      "Engine/Extras/GPUDumpViewer/OpenGPUDumpViewer.sh": "36c1b4731dc096b05bea7024259aa375479ba631c44b7f81f1f10d85fcd3d1f3",
+      "Engine/Plugins/NNE/NNERuntimeORT/Binaries/ThirdParty/Onnxruntime/Linux/libonnxruntime.so": "bc33abfd6154771fe4cb4268d8a8323ce86ab5ee3e110f87f36d26eb1126079c",
+      "Engine/Plugins/NNE/NNERuntimeORT/Binaries/ThirdParty/Onnxruntime/Linux/libonnxruntime.so.1.24": "bc33abfd6154771fe4cb4268d8a8323ce86ab5ee3e110f87f36d26eb1126079c",
+      "Manifest_DebugFiles_Linux.txt": "a38c1a4ce47bada04795ddcd7aaf1608710c51fcac0deb295fe9da112e96222d",
+      "Manifest_NonUFSFiles_Linux.txt": "b9186945c24d607ea7b604cd8323be0796ad00f5e37c03136ce568383912f22b",
+      "Manifest_UFSFiles_Linux.txt": "47586fe1bf67a7aa51bbec57efe30cfd63e397b704e7fa5187900c9597a4d824",
+      "NOTICES.txt": "ba49ae5586f817b36a2772269f71f899cb1f54b5f2720fad951319edd5e140b8",
+      "Quebec/Binaries/Linux/Quebec": "879de4709ebb18e465b94d8823ee64b15b2bdc4b4bf5291166c7b2c68320cff8",
+      "Quebec/Binaries/Linux/Quebec.debug": "abfbdcd8c2ee345314d469c1365291105ad5da2d4c5f220afdc22c6d9a6273ee",
+      "Quebec/Binaries/Linux/Quebec.sym": "98f9c1486adff435eb4eb9d8e9e79ce5e7c3c0db35b3ce61bc6fceb7dad789dc",
+      "Quebec/Binaries/Linux/libNvmlWrapper.so": "6f10ec281413bf770e613ade92df49a93be88eb4c644ec2b2df52ce8f7b228c8",
+      "Quebec/Binaries/Linux/libtbb.so": "748be7c496c9e9cc6a6c7a00733ef044fd98690b47ce16d4351a16b87ef72df1",
+      "Quebec/Binaries/Linux/libtbb.so.12": "748be7c496c9e9cc6a6c7a00733ef044fd98690b47ce16d4351a16b87ef72df1",
+      "Quebec/Binaries/Linux/libtbb.so.12.17": "748be7c496c9e9cc6a6c7a00733ef044fd98690b47ce16d4351a16b87ef72df1",
+      "Quebec/Binaries/Linux/libtbbmalloc.so": "249b0d63b446db091e8af272ebcd0d3ea7b09e9b326ec227d9c8abf313501ae2",
+      "Quebec/Binaries/Linux/libtbbmalloc.so.2": "249b0d63b446db091e8af272ebcd0d3ea7b09e9b326ec227d9c8abf313501ae2",
+      "Quebec/Binaries/Linux/libtbbmalloc.so.2.17": "249b0d63b446db091e8af272ebcd0d3ea7b09e9b326ec227d9c8abf313501ae2",
+      "Quebec/Content/Paks/Quebec-Linux.pak": "479d8f184530a005a6b71f619339d165ffc3d0d155a676b4797eba443cb2097f",
+      "Quebec/Content/Paks/Quebec-Linux.ucas": "57df832816ae7cac72397f000569f19944a0d64ea8eb8b80c8ea607effb88ce5",
+      "Quebec/Content/Paks/Quebec-Linux.utoc": "9783a155bce5702b90066667d51ab2affcbc408f11be93f4a7ff7dae2dfd6eaf",
+      "Quebec/Content/Paks/global.ucas": "605150539a3b57062fdcebcb4e24c4b08623f166295b724f9685247448937a12",
+      "Quebec/Content/Paks/global.utoc": "940e0bd5e8336ad0a356694e3c9e0dd1e3cb33e6e2673486839019e5907a0f61",
+      "Quebec/Samples/PixelStreaming2/WebServers/get_ps_servers.bat": "bc0832aa6df8a84149d1601817d5c52cf241b03f07cd2ffec1a57823f96cec76",
+      "Quebec/Samples/PixelStreaming2/WebServers/get_ps_servers.sh": "3c3586338bbfa5392ee9ca0aa476e6fa29a43189b21fe8ced375f1e40006c00f",
+      "Quebec.sh": "78808122cea23ff2d53b21341ff4538184e5d197ee403ee74ebfdfa2c0f8572e"
+    },
+    "source_sha256": {
+      "Quebec/CollegeBathurstMap.h": "5e011de207a3d4a2430c5cdd723c878f6ed10ee5b47424dbc68c2c1bcb6a997d",
+      "Quebec/LaFontaineLamps.h": "1ebba4641df8b7589ba2c81f89e6ff75587cbe0b5efe4f1b2fc87459cb1fac6f",
+      "Quebec/LaFontaineMap.h": "80a96e858c315584598acd8d87dfb758ba45f64a58ccd4b6f5222ddb56ff1700",
+      "Quebec/LaFontaineWater.h": "14613fcac45c02e42f3650a4acffeb4e0f7aa5f77d76db391200f2d13b90496a",
+      "Quebec/Quebec.Build.cs": "757ae2f9f29537c67111ffad15c3c5ca8a0cf45f100c669f47148d6f7aed882b",
+      "Quebec/Quebec.cpp": "bfa80510f164ae216ed79f7efa9e93c54ac6f3caa1c1a4e3fe634027a64badad",
+      "Quebec/QuebecCampaign.cpp": "924c87f8123e18391b52c26bb3b5363924544b31e8160f335abdb89855dd8d62",
+      "Quebec/QuebecCampaign.h": "59154cdfeddcf61bb5dd664bbbee6c202943a4bcbfa171379d51a465d9a7733b",
+      "Quebec/QuebecCampaignSaveTests.cpp": "dcbeb910e523e2b2193983a41713ce9e66a1c34b47c1375b7b92491c6a7a8b68",
+      "Quebec/QuebecCarHandlingTests.cpp": "4dd5c3a1f5e3d7cabdfc4b524c255a309073843ba4f86e1df3c63cb2deed5248",
+      "Quebec/QuebecCrewAnimation.cpp": "e7cc2217f9ca1093118bb18d693ffc113fbf036f899f4b624c0ab9a91f9c6773",
+      "Quebec/QuebecCrewAnimation.h": "99ef33e3fb2723474da58bc9cd0a822cca8812eb47028a82486a745077e07e5e",
+      "Quebec/QuebecCrewAnimationTests.cpp": "8b838d6b57ef7b1637d7f0c69fd1893720bb526e02fc1ac8a20fb2413c12a9e3",
+      "Quebec/QuebecGameplay.cpp": "301795d58a2c1ddb1fc4610d7bb2fdd37df579621cad8e816d2119818a884914",
+      "Quebec/QuebecGameplay.h": "76998160a234cd1004cd90d9e92faf228970ed04251d1e57b77ac92c2d24ab13",
+      "Quebec/QuebecPedestrian.cpp": "f25815f5ff6034550c65152dc409e68033c9a7f872517c762b28a22ed1e14634",
+      "Quebec/QuebecPedestrian.h": "37a4b88edff6a8dcc32e70e66c307b01f78eac5feec1db2a0d10e83654bcce9d",
+      "Quebec/QuebecSky.cpp": "b05e83c071a80b35f18c358022134196a271213cb60c047a242dd0855bcf12cc",
+      "Quebec/QuebecSky.h": "e617ab5f8d73567f307cdde7c5c79bf907903378953a74f442a2ab7d3f01bb66",
+      "Quebec/QuebecSkyModel.h": "faf3cd73241a83e0a7ba509c4a344741b6d42697de22964b4a7431e54fd2d034",
+      "Quebec/QuebecSkyTests.cpp": "86ab012c441d996e5d765601a7a8a35f9964a0539c15f791e10379fc941067c3",
+      "Quebec/QuebecStreamIdle.cpp": "36e7342b6e36c9ef386471822acccf64862b1fca357362d40195deea71dc5299",
+      "Quebec/QuebecStreamIdle.h": "18223123773b0fd9a460b903e7cb50a2a725e3de9980b1f6f3fb5c54f8fba800",
+      "Quebec/QuebecSwimming.cpp": "fcba5d43c415fbefcfc7c332409f2b8a49622fea4c3781811cb026d9ff8d6105",
+      "Quebec/QuebecVegetation.cpp": "f54866e7ecb8afa1730eafe4892f485ba339de885d23d724f5a038523c0b0a8a",
+      "Quebec/QuebecVegetation.h": "27a9966ded6bb9249e1e2d303f094e384d1fa50c90809a1ac70aa082dbab7a9e",
+      "Quebec.Target.cs": "66ade2a3374d3c4355ce63ba416ba56e28f8888ec1725b7cd190f86e427a4c0f",
+      "QuebecEditor.Target.cs": "2604b30dd335f7478471f674ce23cb0a779ced1288e4c9838df7c229774438a1"
+    }
+  },
+  "checks": {
+    "browser_unit": 32,
+    "native_automation": 26,
+    "native_automation_scope": "Final gameplay logic before final swimming mesh pose adjustment; final pose checked by fresh MP probe and packaged renders.",
+    "swimming": [
+      "dry bank walking",
+      "remote native movement enters swimming on both peers",
+      "buoyancy and idle treading pose",
+      "remote swimming travels ten metres at the waterline",
+      "remote native stroke rises on authority",
+      "native swimming exits to walking and restores pose/collision",
+      "mapped island stays dry",
+      "mapped bridge 0 stays dry",
+      "mapped bridge 1 stays dry",
+      "air stays falling until water entry"
+    ],
+    "traffic": {
+      "simulation_seconds": 600,
+      "cars": 16,
+      "local_cars": 8,
+      "baseline_median_near_150m_after_180s": 1,
+      "candidate_median_near_150m_after_180s": 6,
+      "local_bounded_and_moving": true,
+      "scope": "Accepted diagnostic probe plus identical circulation assertions; reusable script extracted and syntax checked."
+    },
+    "rendered_poses": {
+      "passed": true,
+      "views": [
+        {
+          "name": "swim-release-landscape",
+          "size": [
+            1280,
+            720
+          ],
+          "image": "Saved/StreamClarity-20261014/hud-swim-release-landscape.png",
+          "exit_code": 0,
+          "passed": true,
+          "dependency_shader_and_fatal_errors": 0
+        },
+        {
+          "name": "swim-release-portrait",
+          "size": [
+            576,
+            1280
+          ],
+          "image": "Saved/StreamClarity-20261014/hud-swim-release-portrait.png",
+          "exit_code": 0,
+          "passed": true,
+          "dependency_shader_and_fatal_errors": 0
+        }
+      ],
+      "settings": "sg.ViewDistanceQuality 2,sg.AntiAliasingQuality 2,sg.ShadowQuality 2,sg.GlobalIlluminationQuality 2,sg.ReflectionQuality 2,sg.PostProcessQuality 2,sg.TextureQuality 2,sg.EffectsQuality 2,sg.FoliageQuality 2,sg.GlobalIlluminationQuality 1,sg.ReflectionQuality 1,sg.ShadowQuality 1,r.Shadow.Virtual.Enable 0,r.ScreenPercentage 75,t.MaxFPS 30",
+      "limits": [
+        "Static native HUD captures; no stream encoding or human input acceptance."
+      ]
+    },
+    "runtime_saved_roots_preserved": 5,
+    "mobile_browser": {
+      "passed": true,
+      "checks": 17,
+      "report": "Browser/.qa/mobile-2026-10-14T04-06-11-629Z/summary.json",
+      "scope": "Final native package and final frontend including finger-jitter correction; trusted Chromium touch and emulated phone viewports."
+    },
+    "host_startup_log_scan": {
+      "passed": true,
+      "scope": "Rendered log content scan; caller must require clean process exit separately. No processes launched.",
+      "logs": [
+        {
+          "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/BrowserStreaming/host-20261014-040507-2408502.log",
+          "sha256": "60e886d016ea2573ab7332c5053af769de168c10041e6307876755ec24869822",
+          "passed": true,
+          "dependency_shader_and_fatal_errors": 0
+        },
+        {
+          "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/BrowserStreaming/friend-20261014-040507-2408502.log",
+          "sha256": "083524de1fa84f55f1139fe14b63308fc90e528ed59d491e9139d5c9d328e4f9",
+          "passed": true,
+          "dependency_shader_and_fatal_errors": 0
+        }
+      ]
+    },
+    "public_live_browser": {
+      "passed": true,
+      "checks": 7,
+      "scope": "Ordinary public URL on host-PC Chromium; two independent real native streams, input/releases, occupied slot refusal and reconnect.",
+      "report": "Browser/.qa/live-2026-10-14T04-11-36-503Z/summary.json"
+    },
+    "visual_review": "Primary agent inspected map and final treading poses in packaged portrait/landscape, plus real-media mobile screenshots; no independent review claimed.",
+    "public_camera_sweep": {
+      "passed": true,
+      "scope": "Final native package and public frontend; host-PC Chromium emulated touch; direct host UDP; 30 FPS native cap and existing production graphics.",
+      "report": "Saved/BrowserStreaming/samples/2026-10-14T04-12-15-796Z-NordHost/sample.json",
+      "summary": {
+        "seconds": 60.281,
+        "decodedFps": 29.92651084089514,
+        "receivedMbps": 2.390379323501601,
+        "framesDropped": 0,
+        "freezes": 0,
+        "freezeSeconds": 0,
+        "longestFrameGapMs": 116.70000000000027,
+        "width": 1280,
+        "height": 720,
+        "candidate": {
+          "type": "host",
+          "protocol": "udp"
+        },
+        "codec": "video/VP8",
+        "decodeMsPerFrame": 1.6369944567627495,
+        "jitterBufferMsPerFrame": 75.86680044345897,
+        "packetsLost": 0,
+        "framesReceived": 1805
+      }
+    },
+    "post_public_preservation": {
+      "package_files": 48,
+      "existing_saved_game_unchanged": true,
+      "owned_demo_and_three_tunnels_active": true,
+      "turn_container_running": true
+    }
+  },
+  "saved_game_sha256": {
+    "Quebec/Saved": {},
+    "Quebec/Saved_BrowserGuest": {},
+    "Quebec/Saved_BrowserSaveQA": {
+      "SaveGames/NordCampaign_StorySliceQA_v1.sav": "cec872fd0b2c1b7ea7f18814c787448e00117c6acd8ac46a71f674a26470e88e"
+    },
+    "Quebec/Saved_BrowserArgsQA": {},
+    "Engine/Saved": {}
+  },
+  "raw_sha256": {
+    "Saved/StreamClarity-20261014/ux-unit-final-release.log": "91f365b8ce07e2b3542abf5806330af6d2f369b6b244351b36eb39a92b03d3d9",
+    "Saved/StreamClarity-20261014/ux-native.log": "29949b321a97fc1814efe78e05d2bf4d794a93fe0df92f0f2da96ed90fa4f9d0",
+    "Saved_SwimmingUXRelease/Tests/swimming-probe.json": "b04387666056a00d38336564d249cb78514123907689b9b6710945040ac76666",
+    "Saved/StreamClarity-20261014/traffic-baseline.json": "3c378ad02fb1f3fcde88ca3eb6350bca4e8432c4e62c001a104b0f1bd48c1728",
+    "Saved/StreamClarity-20261014/traffic-local.json": "4e671406bb7f31e585261065c0197a1f398c28fe61798a1004aee19fba54a933",
+    "Saved/StreamClarity-20261014/swim-release-render.json": "25207b9f7d94ba73827eb47a4e60f41d965c5b3e36475089f5faac840d00d86f",
+    "Saved/StreamClarity-20261014/ux-package.json": "94759bfec68a1b3918109556a2f72e70869dceb51286b18381b8e521739271b3",
+    "Browser/.qa/mobile-2026-10-14T03-58-05-765Z/summary.json": "7b986737f8a7af1d64c0090df1a0362cdf7f6ed071f3c92a9bd39e394e24beb0",
+    "Saved/StreamClarity-20261014/ux-unit-jitter.log": "4af7b07e0ef6bfa9b0cd4221e527d38476c9b44b6a827fdd2a00cbadc8f728e7",
+    "Browser/.qa/mobile-2026-10-14T04-06-11-629Z/summary.json": "0763b1212fccf67e6fdd1d2ca067f8e525e64cb088952907b0ed358d7dcf3a35",
+    "Browser/.qa/live-2026-10-14T04-11-36-503Z/summary.json": "7039f38d1c5a756922745465e0f8f66864d8acb504c582c3063b22e583d9a6f9",
+    "Saved/StreamClarity-20261014/hud-ux-landscape.png": "0912ee368e795539688ea9659832514c5d4ec68c8d5cda7f01356f7d7f3c1d12",
+    "Saved/StreamClarity-20261014/hud-ux-portrait.png": "136960f8167f6e951dad9703a87dc40ba07d6d0d31a30dd193d999fc3c4643cb",
+    "Saved/StreamClarity-20261014/hud-swim-release-landscape.png": "318e8cabee6519cc5eb20cfe5ad7197a23ec8782bc8e85c94477f06c789774ce",
+    "Saved/StreamClarity-20261014/hud-swim-release-portrait.png": "37215fe3d9faa45a119d52c74e529ea1c884a67fa8b3115d17e0dbb2e8c3be38",
+    "Saved/BrowserStreaming/samples/2026-10-14T04-12-15-796Z-NordHost/sample.json": "e21956fbc5c8cc64595a7528c97574a0c771e08f51b5cd812c57e7d90c5f690f"
+  },
+  "limits": [
+    "Host-PC Chromium and emulated phone viewports; no physical phone/carrier acceptance.",
+    "Surface swimming reuses crew locomotion rather than dedicated swimming clips.",
+    "Constrained public relay can still require the grainier emergency profile; no relay speedup claimed.",
+    "No new full campaign/race replay, audible sound or subjective handling acceptance.",
+    "OpenSpec CLI unavailable; structure and scenarios checked manually."
+  ],
+  "rejected_attempts": [
+    "Earlier stream minimum-profile experiments retained in Saved/StreamClarity-20261014; 800-pixel forced minimum rejected for relay pacing.",
+    "mobile-2026-10-14T04-03-39-318Z: repeat inherited moved player away from starter car; eight checks passed, car-approach fixture timed out.",
+    "mobile-2026-10-14T04-05-06-587Z: fixture started during service restart before Friend slot registered; final fresh ready run passed all 17.",
+    "Earlier swimming getter/RPC fixture failures and rejected face-up/face-down-idle renders retained separately."
+  ],
+  "release": {
+    "pr": "https://github.com/vdimarco/rouge-warden/pull/351",
+    "tested_source": "8ece65794cfc4393229f76e2ca0027a808c59e48",
+    "merge": "38ad7494bac8ed583b87b8fc897c8d629a61d685",
+    "deployment": "dpl_Gi5bvxeg4CDNYCMN3Mnsm2RyAfox",
+    "target": "production",
+    "status": "READY",
+    "alias": "https://nord-montreal.vercel.app/",
+    "previous_alias_deployment": "dpl_83UYqQgykYwTYtzvBEThzKm6FCMk",
+    "public_static": {
+      "passed": true,
+      "url": "https://nord-montreal.vercel.app/",
+      "sha256": {
+        "index.html": "a77149aaa85359b18463b276b7a444ce3502bff35c84b264f850586cd3c411a2",
+        "player.js": "0c0518ae75c99e6f694253cc1107180f4772ca8e4dde87416400b9fc6170da70",
+        "styles.css": "2d644083e2b258e56dbc904ff7d96af8ed088c7a89e94a73c922f61340356827",
+        "hero.css": "ded2c3e7a326723b06a491f32012c3ba04032baed81cb12535e3d5166c1139a2",
+        "intro.css": "1b84616d34254eb394c3cb8f188ac4082555d9a16045bf0bbb188ac9c867b7d7",
+        "menu.css": "ed827bead795c960a3218f8a0ff02ea3d98f972153aafa7ea725f576dfcaec54",
+        "hero.js": "02aa62d057a9fad653478a188f859bd05b373a6ad230f6a061c2481fee533fcf",
+        "crew.js": "604264033819cb89d657e577f9e14aa944a44cc923299174e13823c0428d2f58",
+        "intro.js": "8c6e0d881cd20155254b0f57ff0cc812019ad9f6df003d0ee5bcf8858ac24db0",
+        "menu.js": "db2b53e4e107bbd1616d2382a6e6df2fbbc0080962f534c3e42993e4697937a4",
+        "crew-sprite.webp": "46a035ecd30bb4cc9c74896bfc85318bed8bc61157712dc4b16e4727f9ea0256",
+        "THIRD_PARTY_NOTICES.txt": "2c40b33c5c15250d80589740dece635104dcb398cf3cf58af6ed500e7b32f3f8"
+      }
+    }
+  }
+}

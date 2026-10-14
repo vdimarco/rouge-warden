@@ -386,7 +386,9 @@ const SINK = { t: 0, n: 0, push() { return null; } };   // used when a caller pa
 export function step(game, input, ev = null) {
   const e = ev || SINK;
   const inp = cleanInput(input, IN);
-  if (input && typeof input === 'object') for (const key of EDGES) if (input[key]) input[key] = false;
+  if (input && typeof input === 'object') {
+    for (let i = 0; i < EDGES.length; i++) if (input[EDGES[i]]) input[EDGES[i]] = false;   // indexed: no iterator a step
+  }
   e.t = game.t;
 
   if (HELD.has(game.mode)) {

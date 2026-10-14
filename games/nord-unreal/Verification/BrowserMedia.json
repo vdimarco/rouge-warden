@@ -1,0 +1,147 @@
+{
+  "date": "2026-10-14",
+  "status": "merged, published and public verified",
+  "baseline_source": "24d5d74e95dd031febeb84d66cb8e78dae60a006",
+  "changes": [
+    "Load eligible visible title only; data saver and reduced motion use poster without MP4 source.",
+    "Unload title during connection/intro/play/background; rotation does not reload unused page videos.",
+    "Full trailer loads on explicit open and releases media on close; pauses in background.",
+    "Late autoplay results cannot restart an inactive title."
+  ],
+  "checks": {
+    "unit": 36,
+    "previous_hero_reproduction_failures": 4,
+    "existing_browser_ui": "passed, with real Chromium preference/MP4-request checks and existing fullscreen/start/crew/reconnect scenarios",
+    "request_comparison": {
+      "passed": true,
+      "rows": [
+        {
+          "baseline": true,
+          "preference": "data saver",
+          "mp4Requests": 4
+        },
+        {
+          "baseline": true,
+          "preference": "reduced motion",
+          "mp4Requests": 4
+        },
+        {
+          "baseline": false,
+          "preference": "data saver",
+          "mp4Requests": 0
+        },
+        {
+          "baseline": false,
+          "preference": "reduced motion",
+          "mp4Requests": 0
+        }
+      ],
+      "scope": "Real Chromium request attempts; MP4 transfers aborted. No game or FPS assertion."
+    },
+    "local_real_media": {
+      "passed": true,
+      "playerUrl": "http://127.0.0.1:8100/",
+      "checks": [
+        "title source released while waiting for real game playback",
+        "portrait: advancing real video with both page videos unloaded",
+        "landscape: advancing real video with both page videos unloaded",
+        "no new MP4 requests during real play/rotation; no page errors"
+      ],
+      "mp4Requests": [
+        "https://d2ol7oe51mr4n9.cloudfront.net/user_3JnxFRyLd68bfjwUMHz1De16TMw/4d0928ae-27d4-4c7e-92ec-f3927c66a4b0.mp4"
+      ],
+      "errors": [],
+      "limits": [
+        "Host-PC Chromium emulated touch, not a physical phone/carrier.",
+        "MP4 requests are observed and aborted; trailer audio/playback and bandwidth/FPS gains are not measured."
+      ]
+    },
+    "visual_review": "Primary agent inspected still-only poster and actual portrait/landscape stream captures; no layout/art redesign acceptance claimed.",
+    "public_real_media": {
+      "passed": true,
+      "playerUrl": "https://nord-montreal.vercel.app/",
+      "checks": [
+        "title source released while waiting for real game playback",
+        "portrait: advancing real video with both page videos unloaded",
+        "landscape: advancing real video with both page videos unloaded",
+        "no new MP4 requests during real play/rotation; no page errors"
+      ],
+      "mp4Requests": [
+        "https://d2ol7oe51mr4n9.cloudfront.net/user_3JnxFRyLd68bfjwUMHz1De16TMw/4d0928ae-27d4-4c7e-92ec-f3927c66a4b0.mp4"
+      ],
+      "errors": [],
+      "limits": [
+        "Host-PC Chromium emulated touch, not a physical phone/carrier.",
+        "MP4 requests are observed and aborted; trailer audio/playback and bandwidth/FPS gains are not measured."
+      ]
+    },
+    "public_live": {
+      "passed": true,
+      "checks": 7,
+      "report": "Browser/.qa/live-2026-10-14T06-21-27-117Z/summary.json",
+      "scope": "Host-PC Chromium, two independent native streams, input/releases, slot refusal/recovery/reconnect."
+    }
+  },
+  "source_sha256": {
+    "Browser/hero.js": "5ddd80dfed7ee8f8377837534b71440a42c52559ef81f2946ee38e4bb6168d28",
+    "Browser/hero.test.mjs": "cb119b9d882caedeba6fb7e02ba37d014c6b4161b861663ca1ca96b9fadc326e",
+    "Browser/media.test.mjs": "1f35ee4e2890b7a75b15695121f7adfc4d7e8f5d067d26c6101baea1434f0f39",
+    "Browser/browser.test.mjs": "ec73ef07613241b961dc3d567e67bc7090c8e7fbbe5b990d4d88b795e1256070",
+    "Browser/package.json": "5041e0c854499e750e8f9107a8dd5e906a2867c6b311783ef1822dff7126bb13"
+  },
+  "raw_sha256": {
+    "Saved/BrowserMedia-20261014/reproduction.log": "5ee7e8a095cd610a54d2375565eb51eaf306f540caa76a807e717a448a16db2d",
+    "Saved/BrowserMedia-20261014/unit.log": "9d8b9deb242728c4612cb84c0dc6bdaabaf7f9d00c1df2eb6dbd63d200bab94e",
+    "Saved/BrowserMedia-20261014/browser-ui-accepted.log": "114c9d7b0b9fcad26800baeca657deb1ac42f682cea8b75d6ba9a4ea1ce060a8",
+    "Saved/BrowserMedia-20261014/request-comparison.json": "40b9851292569a13da3e0fde679151889073f098abaa95aed2216a94b203b8d6",
+    "Browser/.qa/media-2026-10-14T06-14-08-107Z/summary.json": "103d44486371d73071a2016125c79d9ccb52c54e40ee48091b52cad53d315e1a",
+    "Browser/.qa/media-2026-10-14T06-20-51-958Z/summary.json": "be8e17b9d4c0096fd017e27a727ceda93608e0088b165cc48e0617943dd2d231",
+    "Browser/.qa/live-2026-10-14T06-21-27-117Z/summary.json": "1ec3a65fbe3ab0f2eb5a7240496853657fe97fa706e4ed74516f5a339b94c300"
+  },
+  "native_preservation": {
+    "unchanged_package_files": 48,
+    "native_source_matches_MobileUX": true,
+    "campaign_saves_unchanged": {
+      "Quebec/Saved_BrowserSaveQA/SaveGames/NordCampaign_StorySliceQA_v1.sav": "cec872fd0b2c1b7ea7f18814c787448e00117c6acd8ac46a71f674a26470e88e"
+    },
+    "no_native_restart": true,
+    "service_active_since": "Wed 2026-10-14 01:24:44 EDT",
+    "demo_three_tunnels_and_turn_running": true
+  },
+  "rejected_attempts": [
+    "First browser source-close assertion ran before the queued dialog-close event; fixture now waits for source removal. Original log retained."
+  ],
+  "limits": [
+    "Host-PC Chromium emulation; physical phone/carrier and audible trailer playback unverified.",
+    "MP4 request transfers aborted during request-count tests; no transferred-byte or FPS speedup claim.",
+    "Native physics/camera/graphics unchanged; no full campaign replay needed or performed.",
+    "OpenSpec CLI unavailable; manual artifact/scenario validation."
+  ],
+  "release": {
+    "pr": "https://github.com/vdimarco/rouge-warden/pull/352",
+    "tested_source": "25639998414704abda320f4225e88cdabe54176d",
+    "merge": "e241cc561887c1e8ec2b37832bcb51a784ea4f34",
+    "alias": "https://nord-montreal.vercel.app/",
+    "production_status": "READY",
+    "deployment": "dpl_7MRfH2Dzxugi1SWsa4PYec3zepzF",
+    "previous_deployment": "dpl_Gi5bvxeg4CDNYCMN3Mnsm2RyAfox",
+    "public_static": {
+      "passed": true,
+      "url": "https://nord-montreal.vercel.app/",
+      "sha256": {
+        "index.html": "a77149aaa85359b18463b276b7a444ce3502bff35c84b264f850586cd3c411a2",
+        "player.js": "0c0518ae75c99e6f694253cc1107180f4772ca8e4dde87416400b9fc6170da70",
+        "styles.css": "2d644083e2b258e56dbc904ff7d96af8ed088c7a89e94a73c922f61340356827",
+        "hero.css": "ded2c3e7a326723b06a491f32012c3ba04032baed81cb12535e3d5166c1139a2",
+        "intro.css": "1b84616d34254eb394c3cb8f188ac4082555d9a16045bf0bbb188ac9c867b7d7",
+        "menu.css": "ed827bead795c960a3218f8a0ff02ea3d98f972153aafa7ea725f576dfcaec54",
+        "hero.js": "5ddd80dfed7ee8f8377837534b71440a42c52559ef81f2946ee38e4bb6168d28",
+        "crew.js": "604264033819cb89d657e577f9e14aa944a44cc923299174e13823c0428d2f58",
+        "intro.js": "8c6e0d881cd20155254b0f57ff0cc812019ad9f6df003d0ee5bcf8858ac24db0",
+        "menu.js": "db2b53e4e107bbd1616d2382a6e6df2fbbc0080962f534c3e42993e4697937a4",
+        "crew-sprite.webp": "46a035ecd30bb4cc9c74896bfc85318bed8bc61157712dc4b16e4727f9ea0256",
+        "THIRD_PARTY_NOTICES.txt": "2c40b33c5c15250d80589740dece635104dcb398cf3cf58af6ed500e7b32f3f8"
+      }
+    }
+  }
+}

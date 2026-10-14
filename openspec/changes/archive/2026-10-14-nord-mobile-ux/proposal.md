@@ -1,0 +1,7 @@
+# Mobile playability, clearer streaming and compact minimap
+
+The user reports grainy phone imagery and requests a smaller circular minimap showing more area. Current phones request an 800-pixel long edge at 1.5 Mbps, then permanently fall to 640/1 Mbps after one freeze or five poor samples. The upright fallback is only 288×640. Start at 960/2 Mbps, upgrade to 1280/4 Mbps after healthy playback, and retain 800/1.5 Mbps plus 640/1 Mbps emergency fallbacks. Ignore startup/resizing transients and recover after sustained healthy playback.
+
+Replace the rectangular radar with a compact circle spanning 500 metres, clip real road segments to its circumference and keep objective/home markers on its inner rim. Preserve attribution, mission UI, controls, camera and world geometry. Build and install a fresh native package for the HUD, preserving saves and the previously merged animation improvements. Deliver the tested frontend through the existing Git/Vercel route; keep the 30 FPS cap, native graphics settings, tunnels and relay intact.
+
+Restore expected game interactions: double-tap movement or Sprint to sprint while moving; holding and dragging an action also looks around; visible local traffic continues circulating; entering mapped water swims rather than walking on its surface, with safe shore exit. Audit walking/driving/water/menu/reconnect transitions and fix concrete related input or collision problems. Preserve saves, art, camera, supported layouts and public services.

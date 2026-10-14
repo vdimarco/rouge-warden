@@ -47,13 +47,13 @@ test('invalid addresses and embedded credentials are rejected', () => {
 test('phone frames reduce pixels in both orientations without changing desktop', async () => {
   const { streamDimensions } = await import('./config.mjs');
   assert.deepEqual(streamDimensions(false, 1280, 720, true), [1280, 720]);
-  assert.deepEqual(streamDimensions(true, 800, 360, true), [800, 450]);
-  assert.deepEqual(streamDimensions(true, 360, 800, true), [360, 800]);
-  assert.deepEqual(streamDimensions(true, 600, 800, true), [450, 600]);
-  assert.deepEqual(streamDimensions(true, 360, 800, false), [800, 450]);
-  assert.deepEqual(streamDimensions(true, 0, 0, true), [800, 450]);
-  assert.deepEqual(streamDimensions(true, 800, 360, true, 640), [640, 360]);
-  assert.deepEqual(streamDimensions(true, 360, 800, true, 640), [288, 640]);
+  assert.deepEqual(streamDimensions(true, 800, 360, true), [960, 540]);
+  assert.deepEqual(streamDimensions(true, 360, 800, true), [432, 960]);
+  assert.deepEqual(streamDimensions(true, 600, 800, true), [540, 720]);
+  assert.deepEqual(streamDimensions(true, 360, 800, false), [960, 540]);
+  assert.deepEqual(streamDimensions(true, 0, 0, true), [960, 540]);
+  assert.deepEqual(streamDimensions(true, 800, 360, true, 960), [960, 540]);
+  assert.deepEqual(streamDimensions(true, 360, 800, true, 960), [432, 960]);
 });
 
 
@@ -76,4 +76,43 @@ test('video-buffer delay triggers adaptation even when reported FPS remains high
   assert.equal(receiverLagging({ framesPerSecond: 15 }, previous), true);
   assert.equal(receiverLagging({ framesPerSecond: 30 }, undefined), false);
   assert.equal(receiverLagging({ framesPerSecond: 30, jitterBufferDelay: 16, jitterBufferEmittedCount: 100 }, previous), false);
+});
+
+
+test('phone quality ignores startup and isolated freezes, then lowers and recovers', async () => {
+  const { phoneStreamState, adaptPhoneStream } = await import('./config.mjs');
+  const state = phoneStreamState(0);
+  let now = 0, freezes = 0;
+  const sample = (fps = 30, freeze = false) => adaptPhoneStream(state,
+    { framesPerSecond: fps, freezeCount: freezes += Number(freeze) }, now += 1000);
+  for (let i = 0; i < 4; i++) assert.equal(sample(10, true), false);
+  assert.equal(state.edge, 960);
+  assert.equal(sample(30, true), false);
+  for (let i = 0; i < 4; i++) assert.equal(sample(), false);
+  assert.equal(state.edge, 960, 'one freeze does not lock the phone into a blurry stream');
+  for (let i = 0; i < 4; i++) assert.equal(sample(20), false);
+  assert.equal(sample(20), true);
+  assert.equal(state.edge, 800);
+  assert.equal(state.bitrate, 1500);
+  for (let i = 0; i < 4; i++) assert.equal(sample(), false, 'profile transition has a grace period');
+  for (let i = 0; i < 14; i++) assert.equal(sample(), false);
+  assert.equal(sample(), true);
+  assert.equal(state.edge, 960);
+  for (let i = 0; i < 20; i++) sample();
+  assert.equal(state.edge, 1280);
+  assert.equal(state.bitrate, 4000);
+  assert.deepEqual(phoneStreamState(now), { edge: 960, bitrate: 2000, level: 1, changedAt: now, poor: 0, healthy: 0, critical: 0 });
+});
+
+test('severe receiver pressure can use the emergency profile and then recover every step', async () => {
+  const { phoneStreamState, adaptPhoneStream } = await import('./config.mjs');
+  const state = phoneStreamState(0);
+  let now = 0;
+  for (; now <= 25000; now += 1000) adaptPhoneStream(state, { framesPerSecond: 10 }, now);
+  assert.equal(state.edge, 640);
+  assert.equal(state.bitrate, 1000);
+  for (const edge of [800, 960, 1280]) {
+    for (let i = 0; i < 20; i++) adaptPhoneStream(state, { framesPerSecond: 30 }, now += 1000);
+    assert.equal(state.edge, edge);
+  }
 });

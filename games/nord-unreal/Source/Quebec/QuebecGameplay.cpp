@@ -58,24 +58,17 @@ namespace
         return It ? *It : nullptr;
     }
 
-    bool ClipHUDRadarSegment(FVector2D& A, FVector2D& B, const FVector2D& Min, const FVector2D& Max)
+    bool ClipHUDRadarSegment(FVector2D& A, FVector2D& B, const FVector2D& Center, float Radius)
     {
-        const FVector2D Start = A, Direction = B - A;
-        double Enter = 0., Leave = 1.;
-        for (int32 Axis = 0; Axis < 2; ++Axis)
-        {
-            if (FMath::IsNearlyZero(Direction[Axis]))
-            {
-                if (Start[Axis] < Min[Axis] || Start[Axis] > Max[Axis]) return false;
-                continue;
-            }
-            double Near = (Min[Axis] - Start[Axis]) / Direction[Axis];
-            double Far = (Max[Axis] - Start[Axis]) / Direction[Axis];
-            if (Near > Far) Swap(Near, Far);
-            Enter = FMath::Max(Enter, Near);
-            Leave = FMath::Min(Leave, Far);
-            if (Enter > Leave) return false;
-        }
+        const FVector2D Start = A, Direction = B - A, Offset = A - Center;
+        const double LengthSquared = Direction.SizeSquared();
+        if (FMath::IsNearlyZero(LengthSquared)) return Offset.SizeSquared() <= FMath::Square(Radius);
+        const double Middle = -FVector2D::DotProduct(Offset, Direction) / LengthSquared;
+        const double Discriminant = FMath::Square(Middle) - (Offset.SizeSquared() - FMath::Square(Radius)) / LengthSquared;
+        if (Discriminant < 0.) return false;
+        const double Half = FMath::Sqrt(Discriminant);
+        const double Enter = FMath::Max(0., Middle - Half), Leave = FMath::Min(1., Middle + Half);
+        if (Enter > Leave) return false;
         A = Start + Direction * Enter;
         B = Start + Direction * Leave;
         return true;
@@ -95,6 +88,7 @@ namespace
         {
             Walker->StopJumping();
             Walker->GetCharacterMovement()->MaxWalkSpeed = 450.f;
+            Walker->GetCharacterMovement()->MaxSwimSpeed = 260.f;
             Walker->GetCharacterMovement()->StopMovementImmediately();
         }
         else if (AQuebecCar* Car = Cast<AQuebecCar>(Pawn)) Car->StopInput();
@@ -119,6 +113,10 @@ AQuebecCharacter::AQuebecCharacter()
     GetCharacterMovement()->MaxWalkSpeed = 450.f;
     GetCharacterMovement()->JumpZVelocity = 600.f;
     GetCharacterMovement()->AirControl = 0.35f;
+    GetCharacterMovement()->GetNavAgentPropertiesRef().bCanSwim = true;
+    GetCharacterMovement()->MaxSwimSpeed = 260.f;
+    GetCharacterMovement()->BrakingDecelerationSwimming = 400.f;
+    GetCharacterMovement()->Buoyancy = 1.f;
 
     CameraArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraArm"));
     CameraArm->SetupAttachment(RootComponent);
@@ -252,16 +250,19 @@ void AQuebecCharacter::MoveRight(float Value)
 void AQuebecCharacter::StartSprint()
 {
     GetCharacterMovement()->MaxWalkSpeed = 800.f;
+    GetCharacterMovement()->MaxSwimSpeed = 390.f;
     ServerSetSprint(true);
 }
 void AQuebecCharacter::StopSprint()
 {
     GetCharacterMovement()->MaxWalkSpeed = 450.f;
+    GetCharacterMovement()->MaxSwimSpeed = 260.f;
     ServerSetSprint(false);
 }
 void AQuebecCharacter::ServerSetSprint_Implementation(bool bSprint)
 {
     GetCharacterMovement()->MaxWalkSpeed = bSprint && !bInVehicle ? 800.f : 450.f;
+    GetCharacterMovement()->MaxSwimSpeed = bSprint && !bInVehicle ? 390.f : 260.f;
 }
 
 void AQuebecCharacter::SetInVehicle(bool bNewInVehicle)
@@ -278,10 +279,12 @@ void AQuebecCharacter::OnRep_InVehicle()
     GetCharacterMovement()->StopMovementImmediately();
     GetCharacterMovement()->SetMovementMode(bInVehicle ? MOVE_None : MOVE_Walking);
     GetCharacterMovement()->MaxWalkSpeed = 450.f;
+    GetCharacterMovement()->MaxSwimSpeed = 260.f;
 }
 
 void AQuebecCharacter::Tick(float DeltaSeconds)
 {
+    UpdateSwimming(DeltaSeconds);
     Super::Tick(DeltaSeconds);
     KeepCharacterInView(CameraArm, GetViewRotation());
     if (!bInVehicle && CrewIdle && !Cast<UQuebecCrewAnimInstance>(GetMesh()->GetAnimInstance()))
@@ -1447,8 +1450,12 @@ void AQuebecController::PlayerTick(float DeltaTime)
     {
         BrowserStateElapsed = 0.f;
         if (const TSharedPtr<IPixelStreaming2Streamer> Streamer = IPixelStreaming2Module::Get().FindStreamer(BrowserStreamerId))
-            Streamer->SendAllPlayersMessage(TEXT("Response"), Cast<AQuebecCar>(GetPawn())
-                ? TEXT("{\"nordDriving\":true}") : TEXT("{\"nordDriving\":false}"));
+        {
+            const AQuebecCharacter* Character = Cast<AQuebecCharacter>(GetPawn());
+            Streamer->SendAllPlayersMessage(TEXT("Response"), FString::Printf(TEXT("{\"nordDriving\":%s,\"nordSwimming\":%s}"),
+                Cast<AQuebecCar>(GetPawn()) ? TEXT("true") : TEXT("false"),
+                Character && Character->GetCharacterMovement()->IsSwimming() ? TEXT("true") : TEXT("false")));
+        }
     }
     ApplyComicStyle();
     ApplySkyGrading();
@@ -1612,7 +1619,7 @@ void AQuebecController::Interact() { ServerInteract(); }
 AQuebecCar* AQuebecController::FindInteractableCar() const
 {
     AQuebecCharacter* Character = Cast<AQuebecCharacter>(GetPawn());
-    if (!Character) return nullptr;
+    if (!Character || Character->GetCharacterMovement()->IsSwimming()) return nullptr;
     AQuebecCar* NearestCar = nullptr;
     double NearestDistance = FMath::Square(CarEnterRadius);
     for (TActorIterator<AQuebecCar> It(GetWorld()); It; ++It)
@@ -1862,8 +1869,8 @@ void AQuebecHUD::DrawHUD()
     const float Meters = bHasObjective ? FVector::Distance(Here, Target) / 100.f : 0.f;
 
     // Map: top right, under the name and player count, clear of the phone move stick in the lower left.
-    const float MapWidth = bPortrait ? Canvas->SizeX * .4f : 240.f * Scale;
-    const float MapHeight = bPortrait ? MapWidth * .55f : 150.f * Scale;
+    const float MapWidth = bPortrait ? Canvas->SizeX * .28f : 160.f * Scale;
+    const float MapHeight = MapWidth;
     const float MapX = Right - MapWidth, MapY = Margin + (bPortrait ? 50.f : 74.f) * Scale;
     const float CreditSize = bPortrait ? .62f : .85f, CreditStep = (bPortrait ? 15.f : 18.f) * Scale;
     // The shared sky's clock and weather sit under the map, above the credits, only while a sky runs.
@@ -1881,8 +1888,10 @@ void AQuebecHUD::DrawHUD()
     const float TopClear = bPortrait ? FMath::Max(MissionY + MissionHeight, MapY + MapBlock) + 12.f * Scale : Margin;
 
     FString Prompt;
+    const bool bSwimming = Avatar && Avatar->GetCharacterMovement()->IsSwimming();
     // On a tall screen the Use button already says car; an always-on exit prompt would only cover the view.
-    if (Car) Prompt = bPortrait ? FString() : TEXT("[ E ]  EXIT CAR");
+    if (bSwimming) Prompt = TEXT("SWIMMING · Move toward shore");
+    else if (Car) Prompt = bPortrait ? FString() : TEXT("[ E ]  EXIT CAR");
     else if (NearbyCar) Prompt = TEXT("[ E ]  ENTER CAR");
     else if (bCanComplete) Prompt = TEXT("[ E ]  COMPLETE OBJECTIVE");
     else if (Controller)
@@ -1931,42 +1940,46 @@ void AQuebecHUD::DrawHUD()
     const float PromptY = bPortrait ? CaptionBottom : Canvas->SizeY - Margin - PromptHeight;
     const float ViewTop = bPortrait ? PromptY + (Prompt.IsEmpty() ? 0.f : PromptHeight + 8.f * Scale) : 280.f * Scale;
 
-    DrawRect(Panel.CopyWithNewOpacity(.72f), MapX, MapY, MapWidth, MapBlock);
-    const FVector2D MapMin(MapX + 7.f * Scale, MapY + 7.f * Scale);
-    const FVector2D MapMax(MapX + MapWidth - 7.f * Scale, MapY + MapHeight - 7.f * Scale);
     const FVector2D Center(MapX + MapWidth * .5f, MapY + MapHeight * .5f);
-    const auto MapPoint = [Here, Center, Scale](const FVector& Position)
+    const float MapRadius = MapWidth * .5f - 6.f * Scale;
+    FCanvasNGonItem Border(Center, FVector2D(MapWidth * .5f), 64, Muted.CopyWithNewOpacity(.7f));
+    Border.BlendMode = SE_BLEND_Translucent;
+    Canvas->DrawItem(Border);
+    FCanvasNGonItem Disc(Center, FVector2D(MapWidth * .5f - 2.f * Scale), 64, Panel.CopyWithNewOpacity(.82f));
+    Disc.BlendMode = SE_BLEND_Translucent;
+    Canvas->DrawItem(Disc);
+    const auto MapPoint = [Here, Center, MapRadius](const FVector& Position)
     {
-        return Center + FVector2D(Position.X - Here.X, Here.Y - Position.Y) * (.01f * Scale);
+        return Center + FVector2D(Position.X - Here.X, Here.Y - Position.Y) * (MapRadius / 25000.f);
     };
-    const auto MapMarker = [&MapPoint, MapMin, MapMax](const FVector& Position)
+    const auto MapMarker = [&MapPoint, Center, MapRadius, Scale](const FVector& Position)
     {
-        const FVector2D Point = MapPoint(Position);
-        return FVector2D(FMath::Clamp(Point.X, MapMin.X, MapMax.X), FMath::Clamp(Point.Y, MapMin.Y, MapMax.Y));
+        const FVector2D Offset = MapPoint(Position) - Center;
+        return Center + Offset.GetClampedToMaxSize(MapRadius - 8.f * Scale);
     };
     for (const auto& Segment : LaFontaine::RoadSegments)
     {
         FVector2D A = MapPoint(Segment[0]), B = MapPoint(Segment[1]);
         // Clip the segment: clamping its endpoints invents roads along the radar border.
-        if (ClipHUDRadarSegment(A, B, MapMin, MapMax))
-            DrawLine(A.X, A.Y, B.X, B.Y, FLinearColor(.53f, .58f, .59f, .85f), 2.f * Scale);
+        if (ClipHUDRadarSegment(A, B, Center, MapRadius))
+            DrawLine(A.X, A.Y, B.X, B.Y, FLinearColor(.53f, .58f, .59f, .85f), 1.5f * Scale);
     }
-    DrawLine(MapX, MapY, MapX + MapWidth, MapY, Muted.CopyWithNewOpacity(.6f), Scale);
-    DrawLine(MapX, MapY + MapHeight, MapX + MapWidth, MapY + MapHeight, Muted.CopyWithNewOpacity(.6f), Scale);
+    const float CreditRight = Right - 7.f * Scale;
+    DrawRect(Panel, Right - 240.f * Scale, MapY + MapHeight + 4.f * Scale, 240.f * Scale, SkyStep + 3.f * CreditStep);
     if (Sky)
     {
         const int32 Minutes = FMath::Clamp(FMath::FloorToInt(Sky->GetHour() * 60.f), 0, 24 * 60 - 1);
-        Text(FString::Printf(TEXT("%02d:%02d · %s"), Minutes / 60, Minutes % 60, *Sky->GetWeatherName()), Paper, MapX + 7.f * Scale, MapY + MapHeight + 4.f * Scale, CreditSize * 1.15f);
+        RightText(FString::Printf(TEXT("%02d:%02d · %s"), Minutes / 60, Minutes % 60, *Sky->GetWeatherName()), Paper, CreditRight, MapY + MapHeight + 4.f * Scale, CreditSize * 1.15f);
     }
     const float CreditY = MapY + MapHeight + 4.f * Scale + SkyStep;
-    Text(TEXT("© OpenStreetMap contributors / ODbL"), Paper, MapX + 7.f * Scale, CreditY, CreditSize);
-    Text(TEXT("openstreetmap.org/copyright"), Paper, MapX + 7.f * Scale, CreditY + CreditStep, CreditSize);
-    Text(TEXT("© Ville de Montréal / CC BY 4.0"), Paper, MapX + 7.f * Scale, CreditY + 2.f * CreditStep, CreditSize);
+    RightText(TEXT("© OpenStreetMap contributors / ODbL"), Paper, CreditRight, CreditY, CreditSize);
+    RightText(TEXT("openstreetmap.org/copyright"), Paper, CreditRight, CreditY + CreditStep, CreditSize);
+    RightText(TEXT("© Ville de Montréal / CC BY 4.0"), Paper, CreditRight, CreditY + 2.f * CreditStep, CreditSize);
     TArray<AQuebecCar*> MapCars;
     for (TActorIterator<AQuebecCar> It(GetWorld()); It; ++It)
     {
         const FVector2D Point = MapPoint(It->GetActorLocation());
-        if (*It != Pawn && !It->bTraffic && Point.X >= MapMin.X && Point.X <= MapMax.X && Point.Y >= MapMin.Y && Point.Y <= MapMax.Y)
+        if (*It != Pawn && !It->bTraffic && FVector2D::DistSquared(Point, Center) <= FMath::Square(MapRadius - 5.f * Scale))
             MapCars.Add(*It);
     }
     MapCars.Sort([Here](const AQuebecCar& A, const AQuebecCar& B)
@@ -2361,6 +2374,15 @@ void AQuebecGameMode::BeginPlay()
     PruneTrafficBranches(TrafficRoads);
     for (bool bAllowed : TrafficRoads) if (bAllowed) ++CirculatingRoads;
     UE_LOG(LogTemp,Display,TEXT("NORD_POPULATION static_blocked_roads=%d circulating_roads=%d"),BlockedRoads,CirculatingRoads);
+    TArray<bool> LocalTrafficRoads = TrafficRoads;
+    for (int32 I = 0; I < LocalTrafficRoads.Num(); ++I)
+        LocalTrafficRoads[I] = LocalTrafficRoads[I] &&
+            FVector::DistSquared2D(LaFontaine::RoadSegments[I][0], MansionSpawn) <= FMath::Square(25000.f) &&
+            FVector::DistSquared2D(LaFontaine::RoadSegments[I][1], MansionSpawn) <= FMath::Square(25000.f);
+    PruneTrafficBranches(LocalTrafficRoads);
+    int32 LocalRoadCount = 0;
+    for (bool bAllowed : LocalTrafficRoads) if (bAllowed) ++LocalRoadCount;
+    UE_LOG(LogTemp,Display,TEXT("NORD_POPULATION local_circulating_roads=%d radius_m=250"),LocalRoadCount);
     const auto ClearCar = [this,&Ground](FVector& Point, const FQuat& Rotation, bool bParking = false)
     {
         if (FVector::DistSquared2D(Point,LaFontaine::CarSpawn) < FMath::Square(bParking ? 600.f : 3500.f) || !Ground(Point,true)) return false;
@@ -2371,7 +2393,7 @@ void AQuebecGameMode::BeginPlay()
             if (FVector::DistSquared2D(Point,It->GetActorLocation()) < FMath::Square(600.f)) return false;
         return true;
     };
-    const auto SpawnCar = [this,&TrafficRoads](const FVector& Point, const FRotator& Rotation, int32 Style, int32 Road, bool bForward)
+    const auto SpawnCar = [this,&TrafficRoads,&LocalTrafficRoads](const FVector& Point, const FRotator& Rotation, int32 Style, int32 Road, bool bForward, bool bLocal = false)
     {
         const FTransform Transform(Rotation,Point);
         AQuebecCar* Car = GetWorld()->SpawnActorDeferred<AQuebecCar>(AQuebecCar::StaticClass(),Transform,nullptr,nullptr,ESpawnActorCollisionHandlingMethod::AlwaysSpawn);
@@ -2379,7 +2401,11 @@ void AQuebecGameMode::BeginPlay()
         Car->PaintStyle = Style % 4;
         Car->BodyProfile = Style % 3;
         Car->Tags.Add(Road == INDEX_NONE ? TEXT("CityParked") : TEXT("CityTraffic"));
-        if (Road != INDEX_NONE) Car->SetTrafficRoute(Road,bForward,TrafficRoads);
+        if (Road != INDEX_NONE)
+        {
+            Car->SetTrafficRoute(Road,bForward,bLocal ? LocalTrafficRoads : TrafficRoads);
+            if (bLocal) Car->Tags.Add(TEXT("CityLocalTraffic"));
+        }
         Car->FinishSpawning(Transform);
         return true;
     };
@@ -2546,7 +2572,8 @@ void AQuebecGameMode::BeginPlay()
                         if (Parked < ParkedLimit && Ground(Parking,true) && Parking.Z<=12.f && ClearCar(Parking,ParkFacing.Quaternion(),true) && SpawnCar(Parking,ParkFacing,Parked,INDEX_NONE,true)) ++Parked;
                     }
                 FVector Moving = FMath::Lerp(Start,End,Side > 0 ? .65 : .35)+Right*(Side*145.);
-                if (Traffic < TrafficLimit && TrafficRoads[Road] && ClearCar(Moving,Facing.Quaternion()) && SpawnCar(Moving,Facing,Traffic+1,Road,Side > 0)) ++Traffic;
+                if (Traffic < TrafficLimit && (Pass ? TrafficRoads[Road] : LocalTrafficRoads[Road]) &&
+                    ClearCar(Moving,Facing.Quaternion()) && SpawnCar(Moving,Facing,Traffic+1,Road,Side > 0,!Pass)) ++Traffic;
 
             }
             if (Parked == ParkedLimit && Traffic == TrafficLimit) break;
@@ -2620,26 +2647,27 @@ bool FQuebecCrewReapplyTest::RunTest(const FString& Parameters)
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FQuebecHUDRadarClipTest, "Quebec.HUD.RadarClip", EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
 bool FQuebecHUDRadarClipTest::RunTest(const FString& Parameters)
 {
-    const FVector2D Min(0., 0.), Max(240., 150.);
-    const auto Check = [this, Min, Max](const TCHAR* Label, FVector2D A, FVector2D B, bool bVisible, FVector2D ExpectedA, FVector2D ExpectedB)
+    const FVector2D Center(80., 80.);
+    constexpr float Radius = 70.f;
+    const auto Check = [this, Center, Radius](const TCHAR* Label, FVector2D A, FVector2D B, bool bVisible, FVector2D ExpectedA, FVector2D ExpectedB)
     {
-        const bool bActual = ClipHUDRadarSegment(A, B, Min, Max);
+        const bool bActual = ClipHUDRadarSegment(A, B, Center, Radius);
         TestEqual(Label, bActual, bVisible);
         if (bActual)
         {
-            TestTrue(TEXT("Clipped start retains the real road intersection"), A.Equals(ExpectedA, .001));
-            TestTrue(TEXT("Clipped end retains the real road intersection"), B.Equals(ExpectedB, .001));
+            TestTrue(TEXT("Clipped start retains the real circle intersection"), A.Equals(ExpectedA, .001));
+            TestTrue(TEXT("Clipped end retains the real circle intersection"), B.Equals(ExpectedB, .001));
         }
     };
-    Check(TEXT("Interior unchanged"), FVector2D(10., 20.), FVector2D(120., 90.), true, FVector2D(10., 20.), FVector2D(120., 90.));
-    Check(TEXT("Horizontal crossing"), FVector2D(-30., 50.), FVector2D(300., 50.), true, FVector2D(0., 50.), FVector2D(240., 50.));
-    Check(TEXT("Vertical crossing"), FVector2D(80., -50.), FVector2D(80., 200.), true, FVector2D(80., 0.), FVector2D(80., 150.));
-    Check(TEXT("Reversed diagonal"), FVector2D(300., 200.), FVector2D(-100., -200.), true, FVector2D(240., 140.), FVector2D(100., 0.));
-    Check(TEXT("Outside parallel rejected"), FVector2D(-20., -20.), FVector2D(260., -20.), false, Min, Min);
-    Check(TEXT("Outside diagonal does not invent a border road"), FVector2D(-30., 140.), FVector2D(10., 180.), false, Min, Min);
-    Check(TEXT("Border segment retained"), FVector2D(0., -20.), FVector2D(0., 170.), true, FVector2D(0., 0.), FVector2D(0., 150.));
-    Check(TEXT("Interior point retained"), FVector2D(20., 30.), FVector2D(20., 30.), true, FVector2D(20., 30.), FVector2D(20., 30.));
-    Check(TEXT("Exterior point rejected"), FVector2D(-1., 30.), FVector2D(-1., 30.), false, Min, Min);
+    Check(TEXT("Interior unchanged"), {60., 70.}, {100., 90.}, true, {60., 70.}, {100., 90.});
+    Check(TEXT("Crossing both edges"), {-20., 80.}, {180., 80.}, true, {10., 80.}, {150., 80.});
+    Check(TEXT("Reverse crossing"), {180., 80.}, {-20., 80.}, true, {150., 80.}, {10., 80.});
+    Check(TEXT("Ray to outside"), {80., 80.}, {80., 200.}, true, {80., 80.}, {80., 150.});
+    Check(TEXT("Outside does not invent a rim road"), {0., 0.}, {160., 0.}, false, {}, {});
+    Check(TEXT("Outside short segment rejected"), {0., 80.}, {5., 80.}, false, {}, {});
+    Check(TEXT("Tangent touches one point"), {0., 10.}, {160., 10.}, true, {80., 10.}, {80., 10.});
+    Check(TEXT("Interior point retained"), {80., 80.}, {80., 80.}, true, {80., 80.}, {80., 80.});
+    Check(TEXT("Exterior point rejected"), {0., 0.}, {0., 0.}, false, {}, {});
     return true;
 }
 

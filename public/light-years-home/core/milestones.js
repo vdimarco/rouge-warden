@@ -1,7 +1,7 @@
 // Light Years Home: Earth's history, shown as "On Earth" cards when the Earth date passes each one. 30 beats, oldest
 // first. Deep-time beats give yearsAgo. Beats from the last 12,000 years give a calendar year (astronomical numbering:
 // 0 is 1 BC, −3199 is 3200 BC), and their yearsAgo is counted from 13 October 2026; timeline.js recounts it from the
-// real date. about: true where the date is uncertain. Each has a source.
+// real date. about: true where the date is uncertain. Each has a source. EARLIER holds older cards for Look Home.
 import { REF_FRAC } from './physics.js';
 
 const W = 'https://en.wikipedia.org/wiki/';
@@ -59,3 +59,18 @@ export const MILESTONES = Object.freeze([
   ...DEEP,
   ...DATED.map((m) => ({ ...m, yearsAgo: REF_FRAC - m.year })),
 ].map((m) => Object.freeze({ about: false, ...m })));
+
+// Older than the trip home (it starts 1.07 billion years ago), so no jump passes them and they are never "On Earth"
+// cards. Look Home shows them: the light that reaches the Wall left Earth about 2.07 billion years ago (final.md 7.7).
+export const EARLIER = Object.freeze([
+  { id: 'oxygen', yearsAgo: 2.3e9, about: true, text: 'Oxygen starts to build up in the air.',
+    source: W + 'Great_Oxidation_Event' },
+].map((m) => Object.freeze({ about: false, ...m })));
+
+// Every card, oldest first: the ones before the trip, then the trip's own.
+export const ALL_MILESTONES = Object.freeze([...EARLIER, ...MILESTONES]);
+
+// A card by id from either list, or null.
+export function milestoneById(id) {
+  return ALL_MILESTONES.find((m) => m.id === id) || null;
+}

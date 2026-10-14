@@ -1,709 +1,775 @@
-// Light Years Home: the HUD. Draws the engine state into the page's DOM each frame: the top row and clocks, the grey
-// info box and "On Earth" cards, the karaoke captions, chips A B C, the scan card, the fork, the chapter, lost and
-// score cards, the ending's date and clocks, and the flight strip. It writes only what changed, so a frame costs no
-// layout unless something moved. It also reports where its boxes are (layout()) for the QA hook.
-import { fmt, blackbodyRGB, srgbEncode, groupDigits } from '../core/physics.js';
-import { timings, wordAt, SLOW } from '../core/captions.js';
-import { STOPS, CHAPTERS, straightLineLy } from '../core/route.js';
-import { OBJECTS, AU_LY, distanceLy } from '../core/objects.js';
-import { scanOf, zoneAt, legOf, ROUTE_LY, HEAT_HIGH, ENDING_BEATS, CAPTION_TAIL } from '../core/engine.js';
-import { arrivalText, milestoneWhen } from '../core/timeline.js';
-import { MILESTONES } from '../core/milestones.js';
-import { layoutMode } from '../core/geo.js';
+// Light Years Home v3: the DOM HUD (final.md 13.1, 13.4 to 13.6; races §2.9). Every element sits in its core/layout.js
+// rectangle and is written only when its value changes. hudStep() is pure: it turns the game state, this frame's
+// core events and the talk line into a plain model (what each element shows), so node tests can check the rules:
+// one hint at a time for 3 s and at most four in the first minute, toasts within 26 characters, the action chip's
+// priority, the speed bars (three at cruise, four at top, five and a glow on boost) and the karaoke caption (bold
+// uppercase, the current word orange, a small grey speaker tag). createHud() draws that model.
+import { TUNE } from '../core/tune.js';
+import { chunk, timings, wordAt } from '../core/captions.js';
+import { earthDateText } from '../core/timeline.js';
+import { fromRapidity } from '../core/physics.js';
+import { factById, missionById, JUMPS } from '../core/world/index.js';
+import { milestoneById } from '../core/milestones.js';
 
-const EARTH_CARD_MS = 6000;     // an "On Earth" card stays this long
-const EARTH_CARD_MIN = 2500;    // ...or this long when another is waiting
-const INFO_FLASH_MS = 3000;     // landscape: the info box shows this long when it changes
-const LENS_PX = 192;            // telescope view render size
-const PLAY = new Set(['intro', 'clue', 'scan', 'fork', 'flight', 'reveal', 'chapter', 'ending', 'lost']);
-
-const finite = (v) => typeof v === 'number' && Number.isFinite(v);
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+const fin = (v, d = 0) => (typeof v === 'number' && Number.isFinite(v) ? v : d);
+const MINUS = '−';
+export const TOAST_MAX = 26;      // characters (story §3.3)
 
-// Three significant figures with digit groups: 323, 7,510, 2.45, 0.27.
-function sig3(v) {
-  if (!(v > 0)) return '0';
-  const p = 10 ** (Math.floor(Math.log10(v)) - 2);
-  const r = Math.round(v / p) * p;
-  return r >= 100 ? groupDigits(r) : String(Number(r.toPrecision(3)));
+// ---------------------------------------------------------------- copy
+
+export const MEDAL_NAME = Object.freeze({ tern: 'TERN', gold: 'GOLD', silver: 'SILVER', bronze: 'BRONZE' });
+export const MEDAL_ORDER = Object.freeze(['bronze', 'silver', 'gold', 'tern']);
+
+// Hints per control scheme (final.md 13.5). Each shows once a session.
+export const HINTS = Object.freeze({
+  steer: { touch: 'DRAG TO STEER', keys: 'A D TO STEER · W FOR GAS', mouse: 'MOVE THE MOUSE TO STEER',
+    pad: 'LEFT STICK TO STEER' },
+  drift: { touch: 'HOLD A HARD TURN', keys: 'SPACE + STEER TO DRIFT', mouse: 'RIGHT BUTTON TO DRIFT',
+    pad: 'B + STEER TO DRIFT' },
+  release: { touch: 'LET GO TO BOOST', keys: 'RELEASE SPACE TO BOOST', mouse: 'LET GO TO BOOST',
+    pad: 'RELEASE B TO BOOST' },
+  boost: { touch: 'FLICK UP TO BOOST', keys: 'SHIFT TO BOOST', mouse: 'SHIFT TO BOOST', pad: 'A TO BOOST' },
+  scan: { all: 'HOLD THE NOSE ON A RING' },
+  start: { all: 'DRIVE THROUGH TO START' },
+  tunnel: { all: 'GRAZE THE KNOTS FOR SPEED' },     // a jump's own tutorial (world/jumps.js) wins
+  lowgfx: { all: 'LOW GRAPHICS · CHANGE IN SETTINGS' },
+});
+export const HINT_S = 3;          // s a hint shows
+export const HINTS_FIRST_MIN = 4; // at most this many in the first minute of play
+
+export const CHIP = Object.freeze({
+  skip: 'SKIP THIS PART', restart: '↺ RESTART', restartSub: 'TAP · LAST GATE', again: 'AGAIN', retry: '↺ RETRY',
+  take: 'TAKE JOB', letgo: 'LET GO', letgoSub: 'HOLD', zoomout: 'ZOOM OUT', cancel: 'CANCEL', jump: 'JUMP → ',
+});
+
+export const FAIL_TEXT = Object.freeze({
+  time: 'OUT OF TIME', cargo: 'CARGO BROKE', lost: 'LOST IT', sunk: 'IT SANK', caught: 'CAUGHT', far: 'TOO FAR',
+  crash: 'CRASHED',
+});
+
+export const SPEAKERS = Object.freeze({ kit: 'KIT', dot: 'DOT', ferro: 'FERRO', vela: 'VELA', redshift: 'REDSHIFT',
+  red: 'REDSHIFT', magpie: 'MAGPIE', keeper: 'KEEPER' });
+
+// ---------------------------------------------------------------- formatting
+
+// Race clock: '9.87', '42.10', '1:02.3'.
+export function fmtTime(s) {
+  const v = Math.max(0, fin(s));
+  if (v < 60) return v.toFixed(2);
+  const m = Math.floor(v / 60);
+  return `${m}:${(v - m * 60).toFixed(1).padStart(4, '0')}`;
 }
 
-// A distance for a card or label: '718 Mly', '7,510 ly', '8.61 ly', '39.8 AU'.
-export function distanceText(ly) {
-  if (!(ly > 0)) return '0 ly';
-  if (ly >= 1e6) return `${sig3(ly / 1e6)} Mly`;
-  if (ly >= 0.01) return `${sig3(ly)} ly`;
-  return `${sig3(ly / AU_LY)} AU`;
+// Medal targets read easily: 'GOLD 45.5'.
+export const fmtTarget = (s) => (fin(s) >= 60 ? fmtTime(s) : fin(s).toFixed(1));
+
+// Split deltas carry their sign, so colour is never the only cue: '−0.42' ahead, '+0.42' behind.
+export const fmtDelta = (d) => `${fin(d) <= 0 ? MINUS : '+'}${Math.abs(fin(d)).toFixed(2)}`;
+
+// Distances for labels: '1.00 GLY', '737 MLY', '54 MLY', '2.5 MLY', '25,000 LY'.
+export function fmtLy(ly) {
+  const v = Math.max(0, fin(ly));
+  const two = (x) => (x >= 10 ? String(Math.round(x)) : x.toFixed(1).replace(/\.0$/, ''));
+  if (v >= 1e9) return `${(v / 1e9).toFixed(2)} GLY`;
+  if (v >= 1e6) return `${two(v / 1e6)} MLY`;
+  const r = v >= 1000 ? Math.round(v / 100) * 100 : Math.round(v);
+  return `${String(r).replace(/\B(?=(\d{3})+(?!\d))/g, ',')} LY`;
 }
 
-// The end card's top speed: 'LIGHT − 2.5 nm/s · 17 nines'.
-const UNIT_SHORT = [['KILOMETRE', 'km'], ['MILLIMETRE', 'mm'], ['CENTIMETRE', 'cm'], ['MICROMETRE', 'µm'],
-  ['NANOMETRE', 'nm'], ['METRE', 'm']];
-export function topSpeedText(eta) {
-  if (!(eta > 0)) return 'At rest';
-  let s = fmt.shortfall(eta).replace(' PER SECOND', '/s');
-  for (const [long, short] of UNIT_SHORT) s = s.replace(new RegExp(`${long}S?/s`), `${short}/s`);
-  return `${s} · ${fmt.nines(eta)} nines`;
+// β with its nines from rapidity: '0.9962c', '0.99913c'.
+export function betaText(eta) {
+  const omb = fromRapidity(Math.max(0, fin(eta))).oneMinusBeta;
+  const b = 1 - omb;
+  const n = b > 0 && omb > 0 ? Math.max(0, Math.floor(-Math.log10(omb) + 1e-9)) : 0;
+  const dec = Math.max(4, n + 1);
+  return { text: `${(Math.floor(b * 10 ** dec) / 10 ** dec).toFixed(dec)}c`, nines: n };
 }
 
-// A swatch colour for a temperature in kelvin, as CSS rgb().
-function swatchColour(T) {
-  const c = blackbodyRGB(T).map((v) => Math.round(255 * srgbEncode(v)));
-  return `rgb(${c[0]}, ${c[1]}, ${c[2]})`;
+// Five bars: three at cruise, four at top, five on boost (handling §2).
+export function speedBars(speed, boosting = false, tune = TUNE) {
+  const s = fin(speed), S = tune.SHIP;
+  if (boosting || s >= S.S_TOP * S.S_DB_X * 0.97) return 5;
+  if (s >= S.S_TOP * 0.95) return 4;
+  if (s >= S.S_CRUISE * 0.9) return 3;
+  if (s >= 10) return 2;
+  return s >= 1.5 ? 1 : 0;
 }
 
-const ROMAN = ['I', 'II', 'III', 'IV'];
+// The shortest toast that fits: each candidate in turn, the last one cut.
+export function fitToast(...texts) {
+  for (const t of texts) if (t && t.length <= TOAST_MAX) return t;
+  const last = texts.filter(Boolean).pop() || '';
+  return last.slice(0, TOAST_MAX);
+}
 
-export function createHud({ doc = document, on = {} } = {}) {
-  const $ = (id) => doc.getElementById(id);
-  const el = {
-    hud: $('hud'), top: $('top'), where: $('where'), chapterName: $('chapter-name'), count: $('stop-count'),
-    clock: $('clock'), clockYou: $('clock-you'), clockEarth: $('clock-earth'), pauseBtn: $('pause-btn'),
-    soundBtn: $('sound-btn'), info: $('info'), earth: $('earth'), earthText: $('earth-text'), earthWhen: $('earth-when'),
-    stamp: $('stamp'), caption: $('caption'), say: $('say'), hint: $('hint'), chips: $('chips'), panel: $('panel'),
-    card: $('card'), lens: $('lens'), cardTitle: $('card-title'), cardClose: $('card-close'), facts: $('facts'),
-    setCourse: $('set-course'), fork: $('fork'), forkTitle: $('fork-title'),
-    chapterCard: $('chapter-card'), chapterEyebrow: $('chapter-eyebrow'), chapterTitle: $('chapter-title'),
-    chapterLine: $('chapter-line'), chapterPanes: $('chapter-panes'), chapterScore: $('chapter-score'),
-    chapterGo: $('chapter-go'), lostCard: $('lost-card'), lostTitle: $('lost-title'), lostLine: $('lost-line'),
-    lostRetry: $('lost-retry'), lostNew: $('lost-new'), endCard: $('end-card'), endEyebrow: $('end-eyebrow'),
-    endScore: $('end-score'), endRank: $('end-rank'), endBest: $('end-best'), endStats: $('end-stats'),
-    endRoute: $('end-route'), endNew: $('end-new'), strip: $('strip'), shortfall: $('shortfall'), rate: $('rate'),
-    throttle: $('throttle'), hot: doc.querySelector('#throttle .hot'), nextWrap: doc.querySelector('#throttle .next-wrap'),
-    panes: $('panes'), route: $('route'), segs: doc.querySelector('#route .segs'),
-    title: $('title'), pause: $('pause'), how: $('how'), graphics: $('graphics-error'), best: $('best-line'),
-    play: $('play'), cont: $('continue'), howBtn: $('how-btn'), pauseHow: $('pause-how'), howClose: $('how-close'),
-    resume: $('resume'), restart: $('restart'),
-  };
-  const chipEls = [...el.chips.querySelectorAll('.chip')];
-  const factEls = [...el.facts.children];
-  const paneEls = [...el.panes.children];
+const upper = (s) => String(s ?? '').toUpperCase();
+const stars = (n) => '★'.repeat(clamp(fin(n), 0, 3)) + '☆'.repeat(3 - clamp(fin(n), 0, 3));
+const shortName = (id) => upper(String(id || '').split('-')[0]);
+const JUMP_MODES = new Set(['runup', 'punch', 'tunnel', 'dropout']);
+const SKY_MODES = new Set(['punch', 'tunnel']);
 
-  // ---------- write-only-on-change helpers ----------
-  const texts = new Map(), shown = new Map(), classes = new Map(), vars = new Map(), attrs = new Map();
-  function put(node, text) {
-    const t = String(text);
-    if (texts.get(node) === t) return;
-    texts.set(node, t);
-    node.textContent = t;
-  }
-  let changed = false;          // something was shown or hidden this frame (the layout moved)
-  function show(node, on) {
-    const v = Boolean(on);
-    if (shown.get(node) === v) return false;
-    shown.set(node, v);
-    node.hidden = !v;
-    changed = true;
-    return true;
-  }
-  function cls(node, name, on) {
-    const key = node;
-    let m = classes.get(key);
-    if (!m) { m = new Map(); classes.set(key, m); }
-    const v = Boolean(on);
-    if (m.get(name) === v) return;
-    m.set(name, v);
-    node.classList.toggle(name, v);
-  }
-  function setVar(node, name, value, step = 0.001) {
-    let m = vars.get(node);
-    if (!m) { m = new Map(); vars.set(node, m); }
-    const old = m.get(name);
-    if (old !== undefined && Math.abs(old - value) < step) return;
-    m.set(name, value);
-    node.style.setProperty(name, String(Math.round(value * 10000) / 10000));
-  }
-  function attr(node, name, value) {
-    let m = attrs.get(node);
-    if (!m) { m = new Map(); attrs.set(node, m); }
-    const v = String(value);
-    if (m.get(name) === v) return;
-    m.set(name, v);
-    node.setAttribute(name, v);
-  }
+function eventData(zone, id) {
+  return (zone?.events || []).find((e) => e && e.id === id) || null;
+}
 
-  // ---------- buttons ----------
-  const call = (name, ...args) => () => on[name] && on[name](...args);
-  el.play.addEventListener('click', call('play'));
-  el.cont.addEventListener('click', call('continue'));
-  el.howBtn.addEventListener('click', () => openHow('title'));
-  el.pauseHow.addEventListener('click', () => openHow('pause'));
-  el.howClose.addEventListener('click', () => closeHow());
-  el.resume.addEventListener('click', call('resume'));
-  el.restart.addEventListener('click', call('restart'));
-  el.pauseBtn.addEventListener('click', call('pause'));
-  el.soundBtn.addEventListener('click', call('sound'));
-  el.cardClose.addEventListener('click', call('act', { type: 'close' }));
-  el.setCourse.addEventListener('click', call('act', { type: 'lock' }));
-  el.chapterGo.addEventListener('click', call('act', { type: 'continue' }));
-  el.lostRetry.addEventListener('click', call('act', { type: 'retryChapter' }));
-  el.lostNew.addEventListener('click', call('newJourney'));
-  el.endNew.addEventListener('click', call('newJourney'));
-  for (const chip of chipEls) {
-    chip.addEventListener('click', (e) => on.select && on.select(chip.dataset.letter, e.detail > 0));
+// The next medal you lack and its time: 'GOLD 45.5'.
+export function medalTarget(evData, best) {
+  if (!evData) return '';
+  const have = MEDAL_ORDER.indexOf(best?.medal);
+  for (const m of MEDAL_ORDER) {
+    if (MEDAL_ORDER.indexOf(m) <= have) continue;
+    const time = evData[m];
+    if (Number.isFinite(time)) return `${MEDAL_NAME[m]} ${fmtTarget(time)}`;
   }
-  for (const b of doc.querySelectorAll('.fork-btn')) {
-    b.addEventListener('click', () => on.act && on.act({ type: 'fork', branch: b.dataset.branch }));
-  }
-  for (const b of doc.querySelectorAll('[data-set]')) {
-    b.addEventListener('click', () => on.setting && on.setting(b.dataset.set, b.dataset.value));
-  }
+  return '';
+}
 
-  // ---------- screens ----------
-  let howFrom = null;
-  function openHow(from) {
-    howFrom = from;
-    el.how.hidden = false;
-    if (from === 'pause') el.pause.hidden = true;
-    el.howClose.focus({ preventScroll: true });
-  }
-  function closeHow() {
-    if (el.how.hidden) return false;
-    el.how.hidden = true;
-    if (howFrom === 'pause' && pausedNow) {
-      el.pause.hidden = false;
-      el.resume.focus({ preventScroll: true });
-    } else if (howFrom === 'title' && !el.title.hidden) {
-      el.howBtn.focus({ preventScroll: true });
-    }
-    howFrom = null;
-    return true;
-  }
-  let pausedNow = false;
-  function setPaused(p) {
-    pausedNow = Boolean(p);
-    el.pause.hidden = !pausedNow || !el.how.hidden && howFrom === 'pause';
-    if (!pausedNow && howFrom === 'pause') { el.how.hidden = true; howFrom = null; }
-    if (pausedNow) el.resume.focus({ preventScroll: true });
-  }
-  function showTitle(on, { best = 'No journey home yet', resume = null } = {}) {
-    el.title.hidden = !on;
-    if (on) {
-      put(el.best, best);
-      el.cont.hidden = !resume;
-      if (resume) put(el.cont, `Continue (Chapter ${ROMAN[resume.chapter] || resume.chapter + 1})`);
-      show(el.hud, false);
-    }
-  }
-  function showGraphicsError(on) {
-    el.graphics.hidden = !on;
-    if (on) el.title.hidden = true;
-  }
-  // Which full-screen card is up: 'graphics' | 'how' | 'pause' | 'title' | null.
-  function modal() {
-    if (!el.graphics.hidden) return 'graphics';
-    if (!el.how.hidden) return 'how';
-    if (!el.pause.hidden) return 'pause';
-    if (!el.title.hidden) return 'title';
-    return null;
-  }
+// ---------------------------------------------------------------- the pure model
 
-  function setSound(onOff) {
-    attr(el.soundBtn, 'aria-pressed', onOff ? 'true' : 'false');
-    attr(el.soundBtn, 'aria-label', onOff ? 'Sound on. Turn it off' : 'Sound off. Turn it on');
-    markSetting('sound', onOff ? 'on' : 'off');
-  }
-  function markSetting(name, value) {
-    for (const b of doc.querySelectorAll(`[data-set="${name}"]`)) {
-      b.setAttribute('aria-pressed', b.dataset.value === value ? 'true' : 'false');
-    }
-  }
-  function setSettings(s) {
-    markSetting('captions', s.captions);
-    markSetting('thrust', s.thrust);
-    markSetting('hints', s.hints ? 'on' : 'off');
-  }
-
-  // ---------- per-journey memory ----------
-  let mode = 'desktop', touch = false;
-  let earthQueue = [], earthShownAt = 0, earthOn = false;
-  let infoText = '', infoFlashAt = -1e9;
-  let capId = null, capTiming = null, capChunk = -1, capWord = -1, capSpans = [];
-  let cardKey = null, lensKey = null, lensWantAt = -1, frameNo = 0;
-  const lensCache = new Map();
-  let legKey = null, legZones = [], legStarts = [], legTotal = 1;
-  let homeResult = null, newBest = false, lastLost = null, panesLeft = 3;
-  let stampKey = null, endKey = null;
-
-  function reset() {
-    earthQueue = []; earthOn = false; show(el.earth, false);
-    capId = null; capChunk = -1; capWord = -1; el.caption.textContent = ''; texts.delete(el.caption);
-    cardKey = null; lensKey = null; lensCache.clear();
-    legKey = null; homeResult = null; newBest = false; lastLost = null; stampKey = null; endKey = null;
-  }
-
-  // ---------- events ----------
-  function onEvent(ev, state) {
-    switch (ev.type) {
-      case 'say':
-        if (ev.item && ev.item.text) el.say.textContent = ev.item.text;
-        break;
-      case 'milestone': {
-        const m = MILESTONES.find((x) => x.id === ev.id);
-        earthQueue.push({ text: ev.text, when: m ? milestoneWhen(m, state.today) : '' });
-        if (earthQueue.length > 4) earthQueue.splice(0, earthQueue.length - 4);
-        break;
-      }
-      case 'home':
-        homeResult = ev.result;
-        break;
-      case 'lost':
-        lastLost = ev;
-        break;
-      case 'chapter':
-        if (ev.retry || ev.fresh || ev.resumed) { lastLost = null; homeResult = null; }
-        break;
-      default:
-        break;
-    }
-  }
-  // After the best save: whether this run set a new best (the score card shows NEW BEST).
-  function setResult({ isNew } = {}) {
-    newBest = Boolean(isNew);
-    endKey = null;
-  }
-
-  // ---------- captions ----------
-  function drawCaption(say) {
-    const item = say && say.current;
-    if (!item) {
-      if (capId !== null) {
-        capId = null; capChunk = -1; capWord = -1; capSpans = [];
-        el.caption.textContent = '';
-      }
-      return;
-    }
-    if (item.id !== capId) {
-      capId = item.id;
-      const fast = timings(item.chunks, false), slow = timings(item.chunks, true);
-      // the engine timed it with the setting of the moment it was said: pick the matching timing
-      const isSlow = Math.abs(slow.total + CAPTION_TAIL * SLOW - item.dur)
-        < Math.abs(fast.total + CAPTION_TAIL - item.dur);
-      capTiming = isSlow ? slow : fast;
-      capChunk = -1; capWord = -1;
-    }
-    const w = wordAt(capTiming, finite(say.t) ? say.t : 0);
-    if (w.chunk < 0) return;
-    if (w.chunk !== capChunk) {
-      capChunk = w.chunk; capWord = -1;
-      const words = String(item.chunks[w.chunk] || '').split(/\s+/u).filter(Boolean);
-      const frag = doc.createDocumentFragment();
-      capSpans = words.map((text, i) => {
-        if (i > 0) frag.appendChild(doc.createTextNode(' '));
-        const s = doc.createElement('span');
-        s.textContent = text;
-        frag.appendChild(s);
-        return s;
-      });
-      el.caption.replaceChildren(frag);
-    }
-    if (w.word !== capWord) {
-      if (capSpans[capWord]) capSpans[capWord].classList.remove('now');
-      capWord = w.word;
-      if (capSpans[capWord]) capSpans[capWord].classList.add('now');
-    }
-  }
-
-  // ---------- the top row, clocks and info ----------
-  function drawTop(state) {
-    const ph = state.phase;
-    if (ph === 'ending') {
-      put(el.chapterName, 'Home');
-      put(el.count, ' · 15/15');
-    } else {
-      const c = CHAPTERS[state.chapter] || CHAPTERS[0];
-      put(el.chapterName, c.title);
-      put(el.count, ` · ${Math.min(state.stop + 1, STOPS.length)}/${STOPS.length}`);
-    }
-    const short = mode !== 'desktop';
-    put(el.clockYou, `YOU ${fmt.shipClock(state.clocks.ship)}`);
-    const ahead = state.clocks.aheadLy;
-    let earth = `EARTH ${fmt.earthDate(ahead, state.today, { short })}`;
-    if (state.chapter === CHAPTERS.length - 1 && ph !== 'ending' && ph !== 'title') {
-      const radio = state.clocks.radio;
-      earth += radio === null || radio === undefined ? ' · RADIO SILENT' : ` · RADIO ${radio}`;
-    }
-    put(el.clockEarth, earth);
-  }
-
-  function infoFor(state) {
-    const ph = state.phase;
-    if (ph === 'ending' || ph === 'title' || ph === 'lost') return '';
-    if (ph === 'flight' && state.flight) {
-      const za = zoneAt(state);
-      if (za && za.zone.info) return za.zone.info;
-    }
-    if (ph === 'chapter') return CHAPTERS[state.chapter].info;
-    const stop = STOPS[state.stop];
-    return (stop && stop.info) || CHAPTERS[state.chapter].info;
-  }
-
-  function drawInfo(state, now) {
-    const text = infoFor(state);
-    if (text !== infoText) {
-      infoText = text;
-      infoFlashAt = now;
-    }
-    show(el.info, Boolean(text));
-    if (text) put(el.info, text);
-    cls(el.info, 'flash', now - infoFlashAt < INFO_FLASH_MS);
-    // On Earth cards, one at a time
-    if (earthOn) {
-      const age = now - earthShownAt;
-      if (age > EARTH_CARD_MS || (earthQueue.length && age > EARTH_CARD_MIN)) {
-        earthOn = false;
-        show(el.earth, false);
-      }
-    }
-    if (!earthOn && earthQueue.length && PLAY.has(state.phase)) {
-      const card = earthQueue.shift();
-      put(el.earthText, card.text);
-      put(el.earthWhen, card.when);
-      earthOn = true;
-      earthShownAt = now;
-      show(el.earth, true);
-    }
-    if (state.phase === 'ending' && earthOn) { earthOn = false; show(el.earth, false); earthQueue = []; }
-  }
-
-  // ---------- chips, card, fork ----------
-  function drawScan(state, ctx) {
-    const ph = state.phase;
-    const scanning = ph === 'clue' || ph === 'scan';
-    const sc = scanning ? scanOf(state) : null;
-    show(el.chips, scanning);
-    cls(el.hud, 'chips-on', scanning);
-    if (sc) {
-      const hintLetter = state.scan.hint ? sc.target : state.scan.teach ? 'A' : null;
-      for (const chip of chipEls) {
-        const L = chip.dataset.letter;
-        const grey = sc.tried.includes(L);
-        cls(chip, 'grey', grey);
-        cls(chip, 'open', sc.open === L);
-        cls(chip, 'pulse', !grey && hintLetter === L && sc.open !== L);
-        if (chip.disabled !== grey) chip.disabled = grey;
-        const c = sc.candidates.find((x) => x.letter === L);
-        const ship = ctx.cam && ctx.cam.ship;
-        const d = c && ship ? distanceText(distanceLy(ship, c.id)) : '';
-        attr(chip, 'aria-label', `Candidate ${L}${d ? `, ${d} away` : ''}${grey ? ', ruled out' : ''}`);
-        attr(chip, 'aria-pressed', sc.open === L ? 'true' : 'false');
-      }
-    }
-    show(el.hint, Boolean(sc && state.scan.teach && !sc.open));
-    // the card
-    const open = ph === 'scan' && sc && sc.open ? sc.candidates.find((c) => c.letter === sc.open) : null;
-    show(el.card, Boolean(open));
-    if (open) {
-      const key = `${sc.id}:${open.letter}:${open.id}`;
-      if (key !== cardKey) {
-        cardKey = key;
-        const ship = ctx.cam && ctx.cam.ship;
-        put(el.cardTitle, ship ? `${open.letter} · ${distanceText(distanceLy(ship, open.id))}` : open.letter);
-        fillFacts(open.facts || []);
-        attr(el.card, 'aria-label', `Candidate ${open.letter}`);
-        setLens(null);
-        lensKey = `${sc.id}:${open.id}`;
-        lensWantAt = frameNo + 1;   // render the telescope view on the next frame, after the card shows
-      }
-      if (lensWantAt >= 0 && frameNo >= lensWantAt) {
-        lensWantAt = -1;
-        let shot = lensCache.get(lensKey);
-        if (shot === undefined && on.lens) {
-          try { shot = on.lens(open.id, LENS_PX) || null; } catch { shot = null; }
-          lensCache.set(lensKey, shot);
-        }
-        setLens(shot || null);
-      }
-    } else {
-      cardKey = null;
-      lensWantAt = -1;
-    }
-    // the fork
-    const forking = ph === 'fork';
-    show(el.fork, forking);
-    if (forking) {
-      const f = STOPS[state.stop].fork;
-      if (f) {
-        put(el.forkTitle, f.prompt);
-        put($('fork-sheet'), f.sheet.label);
-        put($('fork-sheet-note'), f.sheet.note);
-        put($('fork-void'), f.void.label);
-        put($('fork-void-note'), f.void.note);
-      }
-    }
-  }
-
-  function fillFacts(facts) {
-    factEls.forEach((li, i) => {
-      const text = facts[i] || '';
-      li.replaceChildren();
-      li.hidden = !text;
-      if (!text) return;
-      for (const m of text.matchAll(/(\d{1,3}(?:,\d{3})+|\d+)\s?K\b/g)) {
-        const T = Number(m[1].replace(/,/g, ''));
-        if (!(T > 0)) continue;
-        const sw = doc.createElement('i');
-        sw.className = 'swatch';
-        sw.style.background = swatchColour(T);
-        sw.setAttribute('aria-hidden', 'true');
-        li.appendChild(sw);
-      }
-      const span = doc.createElement('span');
-      span.textContent = text;
-      li.appendChild(span);
-    });
-  }
-
-  // Put a canvas (or nothing) in the telescope slot.
-  function setLens(canvas) {
-    const slot = el.lens;
-    const current = slot.querySelector('canvas');
-    if (canvas && current === canvas) return;
-    if (current) current.remove();
-    const empty = slot.querySelector('.lens-empty');
-    if (canvas) {
-      canvas.setAttribute('aria-hidden', 'true');
-      slot.appendChild(canvas);
-      if (empty) empty.hidden = true;
-    } else if (empty) {
-      empty.hidden = false;
-    }
-  }
-
-  // ---------- chapter, lost and end cards; the ending's stamps ----------
-  function drawCards(state) {
-    const ph = state.phase;
-    const chapter = ph === 'chapter';
-    show(el.chapterCard, chapter);
-    if (chapter) {
-      const ended = CHAPTERS[state.chapter - 1] || CHAPTERS[0];
-      const next = CHAPTERS[state.chapter];
-      put(el.chapterEyebrow, `${ended.title} · done`);
-      put(el.chapterTitle, `Next: ${next.title}`);
-      put(el.chapterLine, ended.end || '');
-      put(el.chapterPanes, `Shield: ${state.panes} of 3 panes. Each chapter brings one back. Your place is saved.`);
-      put(el.chapterScore, `Score ${groupDigits(shownScore(state))}`);
-    }
-    const lostQuiet = ph === 'lost' && !state.say.current && state.say.queue.length === 0;
-    show(el.lostCard, lostQuiet);
-    if (lostQuiet) {
-      const stop = STOPS[state.stop];
-      const name = lastLost ? lastLost.name : (OBJECTS[stop.id] || {}).name || stop.id;
-      put(el.lostTitle, `Lost on the way to ${name}`);
-      put(el.lostLine, `Score ${groupDigits(shownScore(state))}. Try the chapter again with a whole shield, `
-        + 'or start a new journey.');
-    }
-    const done = ph === 'ending' && state.ending && state.ending.done;
-    show(el.endCard, done);
-    if (done) drawEndCard(state);
-    // the ending's big lines: the date at 'today', the two clocks at 'clocks'
-    const beat = ph === 'ending' && state.ending ? ENDING_BEATS[state.ending.beat] : null;
-    const stamp = beat === 'today' || beat === 'clocks' ? beat : null;
-    show(el.stamp, Boolean(stamp));
-    if (stamp !== stampKey) {
-      stampKey = stamp;
-      el.stamp.replaceChildren();
-      const add = (cl, text) => {
-        const p = doc.createElement('p');
-        p.className = cl;
-        p.textContent = text;
-        el.stamp.appendChild(p);
-      };
-      if (stamp === 'today') {
-        const a = arrivalText(state.today);
-        add('small', 'Earth · today');
-        add('big', a.weekday);
-        add('big', a.date);
-      } else if (stamp === 'clocks') {
-        add('small', 'For you');
-        add('big', shipWords(state.clocks.ship));
-        add('small', 'For Earth');
-        add('big', `${groupDigits(Math.floor(state.clocks.earth + 1e-9))} years`);
-      }
-    }
-  }
-
-  // Cracks take points, so a run can dip under 0; the cards (and the best save) never show less than 0.
-  function shownScore(state) {
-    return Math.max(0, Math.round(state.score.total));
-  }
-
-  function shipWords(years) {
-    const y = Math.max(0, years);
-    const whole = Math.floor(y), days = Math.floor((y - whole) * 365.25);
-    const part = (n, w) => `${groupDigits(n)} ${w}${n === 1 ? '' : 's'}`;
-    return whole ? `${part(whole, 'year')}, ${part(days, 'day')}` : part(days, 'day');
-  }
-
-  function drawEndCard(state) {
-    const key = `${state.score.total}:${newBest}`;
-    if (key === endKey) return;
-    endKey = key;
-    const r = homeResult || {};
-    put(el.endEyebrow, `Home · ${arrivalText(state.today).date}`);
-    put(el.endScore, groupDigits(shownScore(state)));
-    put(el.endRank, r.rank || '');
-    el.endBest.hidden = !newBest;
-    const s = state.stats;
-    const rows = [
-      ['First-try finds', `${s.firstTry} of 17`],
-      ['Cracks', String(s.cracks)],
-      ['Ship time', fmt.shipClock(state.clocks.ship)],
-      ['Top speed', topSpeedText(s.topEta)],
-      ['Retries', String(s.retries)],
-    ];
-    el.endStats.replaceChildren(...rows.flatMap(([k, v]) => {
-      const dt = doc.createElement('dt'); dt.textContent = k;
-      const dd = doc.createElement('dd'); dd.textContent = v;
-      return [dt, dd];
-    }));
-    const straight = Math.round(straightLineLy() / 1e6) * 1e6;
-    put(el.endRoute, `Straight home: ${groupDigits(straight)} ly. `
-      + `Your landmark route: ${groupDigits(Math.floor(ROUTE_LY))} ly.`);
-  }
-
-  // ---------- the flight strip ----------
-  function buildRoute(state) {
-    const leg = legOf(state);
-    const key = `${leg.stop}:${leg.branch}`;
-    if (key === legKey) return;
-    legKey = key;
-    legZones = leg.zones;
-    legStarts = [];
-    let t = 0;
-    for (const z of legZones) { legStarts.push(t); t += z.screen; }
-    legTotal = t || 1;
-    el.segs.replaceChildren(...legZones.map((z) => {
-      const i = doc.createElement('i');
-      i.style.flex = `${z.screen} 1 0`;
-      if (z.dropout) i.className = 'dropout';
-      else if (z.kind === 'waypoint' || z.n >= 0.1) i.className = 'hazard';
-      i.title = z.label;
-      return i;
-    }));
-  }
-
-  function drawStrip(state) {
-    const f = state.flight;
-    const flying = state.phase === 'flight' && f;
-    show(el.strip, Boolean(flying));
-    if (!flying) return;
-    buildRoute(state);
-    const za = zoneAt(state);
-    put(el.shortfall, fmt.shortfall(f.eta));
-    put(el.rate, fmt.timeRate(f.eta));
-    setVar(el.throttle, '--x', clamp(f.x, 0, 1));
-    setVar(el.throttle, '--heat', clamp(f.heat, 0, 1));
-    if (za) setVar(el.throttle, '--notch', clamp(za.notchX, 0, 1));
-    const next = za && f.soon && za.nextNotchX !== null && !za.dropout && !(legZones[za.index + 1] || {}).dropout;
-    show(el.nextWrap, next);
-    if (next) setVar(el.throttle, '--next', clamp(za.nextNotchX, 0, 1));
-    show(el.hot, f.heat > HEAT_HIGH);
-    attr(el.throttle, 'aria-valuenow', Math.round(f.x * 100));
-    const k = za ? za.index : 0;
-    const pos = za ? (legStarts[k] + clamp(f.p, 0, 1) * legZones[k].screen) / legTotal : 0;
-    setVar(el.route, '--route', clamp(pos, 0, 1), 0.0005);
-    drawPanes(state.panes);
-  }
-
-  function drawPanes(n) {
-    if (n === panesLeft) return;
-    panesLeft = n;
-    paneEls.forEach((p, i) => p.classList.toggle('cracked', i >= n));
-    attr(el.panes, 'aria-label', `${n} ${n === 1 ? 'pane' : 'panes'} left`);
-  }
-
-  // ---------- layout ----------
-  function updateMode() {
-    const W = doc.documentElement.clientWidth || innerWidth, H = doc.documentElement.clientHeight || innerHeight;
-    mode = layoutMode(W, H);
-    if (el.hud.dataset.layout !== mode) el.hud.dataset.layout = mode;
-    return mode;
-  }
-
-  // The panel's height for the caption rule on phones held upright (the caption sits above the open sheet).
-  let panelH = -1;
-  const ro = typeof ResizeObserver === 'function' ? new ResizeObserver(() => measurePanel()) : null;
-  if (ro) for (const c of el.panel.children) ro.observe(c);
-  function measurePanel() {
-    let h = 0;
-    for (const c of el.panel.children) if (!c.hidden) h = Math.max(h, c.offsetHeight);
-    if (h !== panelH) {
-      panelH = h;
-      el.hud.style.setProperty('--panel-h', `${h}px`);
-    }
-  }
-
-  const rectOf = (node) => {
-    if (!node || node.hidden || el.hud.hidden) return null;
-    const r = node.getBoundingClientRect();
-    if (!(r.width > 0 && r.height > 0)) return null;
-    return { x: r.left, y: r.top, w: r.width, h: r.height };
-  };
-  const union = (list) => {
-    const rs = list.filter(Boolean);
-    if (!rs.length) return null;
-    const x0 = Math.min(...rs.map((r) => r.x)), y0 = Math.min(...rs.map((r) => r.y));
-    const x1 = Math.max(...rs.map((r) => r.x + r.w)), y1 = Math.max(...rs.map((r) => r.y + r.h));
-    return { x: x0, y: y0, w: x1 - x0, h: y1 - y0 };
-  };
-  // { mode, rects: { top, clock, caption, card, chips, strip } } in CSS px; a hidden box is null. card is whichever
-  // card the panel shows (scan card, fork, chapter, lost or score card).
-  function layout() {
-    updateMode();
-    const panelCard = [...el.panel.children].find((c) => !c.hidden) || null;
-    const capRect = el.caption.textContent ? rectOf(el.caption) : null;
-    return {
-      mode,
-      rects: {
-        top: union([rectOf(el.top.querySelector('.back')), rectOf(el.where), rectOf(el.top.querySelector('.buttons'))]),
-        clock: rectOf(el.clock),
-        caption: capRect,
-        card: rectOf(panelCard),
-        chips: el.chips.hidden ? null : union(chipEls.map(rectOf)),
-        strip: rectOf(el.strip),
-      },
-    };
-  }
-
-  // ---------- the frame ----------
-  // ctx: { cam (geo.cameraFor result) }. The HUD's own timers (On Earth cards, the landscape info flash) run on
-  // game time, so they hold while paused.
-  let clockBase = 0, lastGameT = 0;
-  // Returns true when a box was shown or hidden, so the caller measures the layout again.
-  function frame(state, ctx = {}) {
-    frameNo++;
-    changed = false;
-    if (!state) return false;
-    const t = finite(state.t) ? state.t : 0;
-    if (t < lastGameT) { clockBase += lastGameT * 1000; }   // a new journey starts its clock at 0 again
-    lastGameT = t;
-    const now = clockBase + t * 1000;
-    const playing = state.phase !== 'title';
-    show(el.hud, playing);
-    if (!playing) return changed;
-    if (el.hud.dataset.phase !== state.phase) el.hud.dataset.phase = state.phase;
-    drawTop(state);
-    drawInfo(state, now);
-    drawCaption(state.say);
-    drawScan(state, ctx);
-    drawCards(state);
-    drawStrip(state);
-    if (!ro) measurePanel();
-    return changed;
-  }
-
-  function setTouch(t) {
-    touch = Boolean(t);
-    doc.body.classList.toggle('touch', touch);
-  }
-
-  updateMode();
+export function createHudState() {
   return {
-    el, frame, onEvent, reset, layout, updateMode, showTitle, showGraphicsError, setPaused, openHow, closeHow, modal,
-    setSound, setSettings, setResult, setTouch, setLens,
-    get mode() { return mode; },
-    // the card's SET COURSE button, so a keyboard Enter after picking lands on it
-    focusCard() { if (!el.card.hidden) el.setCourse.focus({ preventScroll: true }); },
+    t: 0, game: null, mode: null, playT: null,
+    toast: null, queue: [],
+    info: null,
+    hint: null, hintShown: {}, hintTimes: [], hintWait: [],
+    retry: null, offer: null,
+    drifted: false, boosted: false, dbT: null, tunnelSeen: false,
+    line: { id: null, text: '', tm: null, chunks: null, slow: false },
+    speedBars: 0, speedT: -1,
+  };
+}
+
+// Queue a hint by key ('steer', 'drift', ...): shown once a session, after delay s, if the rules allow it within
+// wait s.
+export function queueHint(st, key, wait = 8, delay = 0) {
+  if (!HINTS[key] || st.hintShown[key] || st.hintWait.some((h) => h.key === key)) return;
+  st.hintWait.push({ key, at: st.t + delay, until: st.t + delay + wait });
+}
+
+function toast(st, text, tone = 'plain', s = 3, now = false) {
+  if (!text) return;
+  const item = { text: text.slice(0, TOAST_MAX), tone, s };
+  if (now) { st.toast = { ...item, until: st.t + s }; return; }   // splits never wait
+  st.queue.push(item);
+}
+
+function info(st, text, sub = '', s = 3, kind = 'note') {
+  st.info = { text, sub, until: st.t + s, kind };
+}
+
+function onEvent(st, e, view, tune) {
+  const g = view.game, zone = view.zone;
+  const title = (id) => upper(eventData(zone, id)?.title || '');
+  switch (e.type) {
+    case 'finish': {
+      const t = fin(e.time ?? g?.race?.t ?? g?.eventT);
+      const m = MEDAL_NAME[e.medal] || '';
+      const head = title(e.id ?? g?.race?.id);
+      toast(st, fitToast(m && head && `${head} · ${m} · ${fmtTime(t)}`, m && `${m} · ${fmtTime(t)}`,
+        head && `${head} · ${fmtTime(t)}`, `FINISH · ${fmtTime(t)}`), 'medal', 3);
+      st.retry = { id: 'again', label: CHIP.again, until: st.t + tune.RACE.RETRY_SHOW };
+      break;
+    }
+    case 'stuntResult': {
+      const head = title(e.id ?? g?.stunt?.id);
+      toast(st, fitToast(head && `${head} · ${stars(e.stars)}`, stars(e.stars)), e.stars > 0 ? 'medal' : 'plain');
+      st.retry = { id: 'retry', label: CHIP.retry, until: st.t + tune.RACE.RETRY_SHOW };
+      break;
+    }
+    case 'split':
+      if (Number.isFinite(e.delta)) {
+        toast(st, `SPLIT ${fmtDelta(e.delta)}`, e.delta <= 0 ? 'ahead' : 'behind', tune.RACE.SPLIT_SHOW, true);
+      }
+      break;
+    case 'fail':      // the mission data's own toast ('IT GOT AWAY') wins
+      toast(st, fitToast(e.toast && upper(e.toast), `${FAIL_TEXT[e.reason] || 'FAILED'} · RETRY`, 'FAILED · RETRY'),
+        'fail', 2);
+      break;
+    case 'missionDone': {
+      const m = MEDAL_NAME[e.medal];
+      toast(st, fitToast(e.title && m && `${upper(e.title)} · ${m}`, m ? `JOB DONE · ${m}` : 'JOB DONE'), 'medal', 3);
+      break;
+    }
+    case 'jumpMedal': {
+      const m = MEDAL_NAME[e.medal] || 'BRONZE';
+      const eta = fin(e.eta ?? e.peakEta ?? g?.jump?.etaPeak, 2);
+      toast(st, `${m} · ${betaText(eta).text}`, 'medal', 3);
+      break;
+    }
+    case 'earthCard': {   // { text, ago } or a milestone id
+      const m = e.id ? milestoneById(e.id) : null;
+      const ago = e.ago || (Number.isFinite(m?.yearsAgo) ? earthDateText(m.yearsAgo, g?.today) : '');
+      info(st, upper(e.text || m?.text || 'ON EARTH'), ago ? upper(ago) : 'ON EARTH', 3, 'earth');
+      break;
+    }
+    case 'exitOpen': {
+      const to = zone?.exit?.to || e.to;
+      toast(st, fitToast(to && `EXIT OPEN · ${shortName(to)}`, 'EXIT OPEN'), 'good', 3);
+      break;
+    }
+    case 'rumour': toast(st, 'NEW RUMOUR · SEE LOG', 'good'); break;
+    case 'secret': toast(st, 'SECRET FOUND', 'medal'); break;
+    case 'setItem':
+      toast(st, fitToast(Number.isFinite(e.n) && Number.isFinite(e.of) && `${upper(e.set || 'FOUND')} ${e.n}/${e.of}`,
+        'FOUND ONE'), 'good', 2);
+      break;
+    case 'setDone': toast(st, 'SET DONE', 'medal'); break;
+    case 'lookHome': toast(st, 'POSTCARD · SEE LOG', 'good'); break;
+    case 'scan':
+    case 'farScan': {
+      // The card's number for 3 s in the info box (21 BILLION SUNS); the card's text waits in the log.
+      const def = (zone?.scans || []).find((x) => x.id === e.id);
+      const fact = factById(e.card || def?.card || e.id);
+      const far = (zone?.far || []).find((f) => f.scan === e.id);
+      const label = upper(e.label || def?.label || far?.label || fact?.title || '');
+      const number = upper(e.number || fact?.number || '');
+      info(st, number || label || 'SCANNED', number ? label : '', tune.ZONE.NUMBER_SHOW, 'scan');
+      break;
+    }
+    case 'scaleCard':
+      if (zone?.scaleCard) info(st, upper(zone.scaleCard), '', tune.ZONE.SCALE_CARD, 'scale');
+      break;
+    case 'longHaul': toast(st, 'LONG HAUL', 'plain', 2); break;
+    case 'missionOffer':
+      st.offer = { id: e.mission ?? e.id, until: st.t + tune.MISSION.TAKE_JOB };
+      break;
+    case 'missionStart': st.offer = null; break;
+    case 'eventArm': queueHint(st, 'start', 6); break;
+    case 'driftStart': st.drifted = true; break;
+    case 'driftTier': if (e.tier === 1 || e.tier == null) queueHint(st, 'release', 3); break;
+    case 'driftBoost': if (st.dbT === null) st.dbT = st.t; break;
+    case 'boostStart': st.boosted = true; break;
+    case 'restart': st.toast = null; st.queue.length = 0; break;
+    default: break;
+  }
+}
+
+// What the action chip offers, in final.md 13.4's priority. view.chip (from the core's action slot) wins.
+export function chipFor(st, view, tune = TUNE) {
+  if (view.chip !== undefined) return view.chip;
+  const g = view.game, zone = view.zone;
+  if (!g) return null;
+  if (g.mode === 'runup') return { id: 'cancel', label: CHIP.cancel };
+  if (g.mode !== 'drive' && g.mode !== 'ended') return null;
+  if (g.mission?.skipOffered) return { id: 'skip', label: CHIP.skip };
+  if (g.race && g.race.state === 'running') {
+    return { id: 'restart', label: CHIP.restart, sub: CHIP.restartSub, hold: tune.RACE.RESTART_HOLD };
+  }
+  if (st.retry && st.t < st.retry.until) return { id: st.retry.id, label: st.retry.label };
+  const offer = g.zone?.offer && fin(g.zone.offer.until, Infinity) > g.t ? g.zone.offer
+    : st.offer && st.t < st.offer.until ? st.offer : null;
+  if (offer && !g.mission) return { id: 'take', label: CHIP.take };
+  if (g.ship?.tow) return { id: 'letgo', label: CHIP.letgo, sub: CHIP.letgoSub, hold: 1 };
+  if (g.zone?.exitOpen && zone?.exit?.to) return { id: 'jump', label: CHIP.jump + shortName(zone.exit.to) };
+  if (g.pocketId) return { id: 'zoomout', label: CHIP.zoomout };
+  return null;
+}
+
+// The top row: the race clock, a stunt, the mission's objective, the jump's destination, or the zone's name.
+function topFor(view, tune) {
+  const g = view.game, zone = view.zone;
+  if (JUMP_MODES.has(g.mode)) {
+    const to = g.jump?.to || zone?.exit?.to;
+    const ahead = fin(g.jump?.earth?.ahead ?? g.earth?.aheadLy, NaN);
+    return { text: to ? `→ ${shortName(to)}` : 'LIGHT SPEED', count: '',
+      sub: Number.isFinite(ahead) ? `EARTH · ${earthDateText(ahead, g.today, { short: true })}` : '', kind: 'jump' };
+  }
+  const race = g.race;
+  if (race && (race.state === 'running' || race.state === 'finished')) {
+    const ev = eventData(zone, race.id);
+    const n = ev?.gates?.length || 0;
+    const parts = [];
+    if (n) parts.push(`GATE ${clamp(fin(race.gate), 0, n)}/${n}`);
+    if (ev?.laps > 1) parts.push(`LAP ${clamp(fin(race.lap, 1), 1, ev.laps)}/${ev.laps}`);
+    const target = medalTarget(ev, g.progress?.events?.[race.id]);
+    if (target) parts.push(target);
+    const clock = fmtTime(race.result?.time ?? race.t ?? g.eventT);
+    return { text: clock, count: '', sub: parts.join(' · '), kind: 'timer' };
+  }
+  if (g.stunt) {
+    const ev = eventData(zone, g.stunt.id);
+    const v = fin(g.stunt.value, NaN);
+    return { text: upper(ev?.title || 'STUNT'), count: Number.isFinite(v) ? v.toFixed(1) : '', sub: '', kind: 'stunt' };
+  }
+  const o = view.objective;
+  if (o && o.text) return { text: upper(o.text), count: o.count ? String(o.count) : '', sub: '', kind: 'mission' };
+  const md = view.missionData || (g.mission?.id ? missionById(g.mission.id) : null);
+  if (g.mission && md) {
+    const beat = md.beats?.[fin(g.mission.beat)];
+    if (beat?.objective) {
+      // A counter like 'n/3' fills from the mission's count when the core keeps one.
+      const n = fin(g.mission.count ?? g.mission.n, NaN);
+      const count = beat.counter && Number.isFinite(n) ? beat.counter.replace('n', String(n)) : '';
+      return { text: upper(beat.objective), count, sub: '', kind: 'mission' };
+    }
+  }
+  return { text: upper(zone?.name || ''), count: '', sub: '', kind: 'zone' };
+}
+
+function captionFor(st, view) {
+  const g = view.game;
+  const line = view.line !== undefined ? view.line
+    : g?.talk?.cur && typeof g.talk.cur === 'object' && g.talk.cur.text ? g.talk.cur : null;
+  if (!line || !line.text) { st.line.id = null; return null; }
+  const slow = !!g?.settings?.slowCaptions;
+  const id = line.id ?? line.text;
+  if (st.line.id !== id || st.line.slow !== slow) {
+    const chunks = Array.isArray(line.chunks) && line.chunks.length ? line.chunks : chunk(upper(line.text));
+    st.line = { id, text: upper(line.text), chunks, tm: timings(chunks, slow), slow, fresh: true };
+  } else {
+    st.line.fresh = false;
+  }
+  const w = wordAt(st.line.tm, fin(line.t));
+  const words = String(st.line.chunks[Math.max(0, w.chunk)] || '').split(/\s+/).filter(Boolean);
+  return {
+    id, speaker: SPEAKERS[String(line.speaker || '').toLowerCase()] || upper(line.speaker || ''),
+    chunk: w.chunk, words: words.map((text, i) => ({ text: upper(text), now: !w.done && i === w.word })),
+    full: st.line.text, fresh: st.line.fresh,
+  };
+}
+
+/**
+ * One HUD frame. view = { game, zone (zone data of the zone or pocket), layout, events (core events since the last
+ * call), line (talk current(): { id, speaker, text, chunks?, t }), input (input.state), source, dt (real s),
+ * objective? ({ text, count }), chip? ({ id, label, sub?, hold? } or null, from the core's action slot),
+ * missionData? (the running mission's data) }. Returns the model; st keeps the timers.
+ */
+export function hudStep(st, view, tune = TUNE) {
+  const g = view.game;
+  const dt = clamp(fin(view.dt, 1 / 60), 0, 0.25);
+  st.t += dt;
+  if (!g) return { mode: 'none' };
+  if (st.game !== g) {                                        // a new game: the session's hints stay shown
+    const keep = st.hintShown;
+    Object.assign(st, createHudState(), { hintShown: keep, t: st.t, game: g });
+  }
+  const mode = g.mode;
+  if (mode !== st.mode) {
+    if (mode === 'drive' && st.playT === null) { st.playT = st.t; queueHint(st, 'steer', 6, 0.5); }
+    if (mode === 'tunnel' && !st.tunnelSeen && JUMPS[g.jump?.id]?.tutorial) {
+      st.tunnelSeen = true;
+      queueHint(st, 'tunnel', 4);
+    }
+    st.mode = mode;
+  }
+  for (const e of view.events || []) if (e && e.type) onEvent(st, e, view, tune);
+
+  const top = topFor(view, tune);
+  st.topText = top.kind === 'mission' ? top.text : '';
+
+  // Hint triggers that read the state.
+  const zone = view.zone;
+  if (mode === 'drive' && st.playT !== null) {
+    const played = st.t - st.playT;
+    if (!st.drifted && !st.hintShown.drift && zone?.bodies) {
+      const p = g.ship.pos;
+      for (const b of zone.bodies) {
+        if (!b?.well || Math.hypot(b.pos[0] - p[0], b.pos[1] - p[1]) >= 60 + fin(b.r)) continue;
+        queueHint(st, 'drift', 4);
+        break;
+      }
+    }
+    if (!st.boosted && ((st.dbT !== null && st.t - st.dbT > 0.6) || played > 15)) queueHint(st, 'boost', 8);
+    if (/\bSCAN\b/.test(view.objective?.text || (st.topText || ''))) queueHint(st, 'scan', 8);
+  }
+  if (st.hint && st.t >= st.hint.until) st.hint = null;
+  st.hintWait = st.hintWait.filter((h) => st.t < h.until && !st.hintShown[h.key]);
+  const shared = (view.layout?.shares || []).some((pair) => pair.includes('hint') && pair.includes('info'));
+  if (st.info && st.t >= st.info.until) st.info = null;
+  const infoUp = !!st.info || (g.zone?.scaleCardUntil > g.t);
+  const firstMin = st.playT !== null && st.t - st.playT < 60;
+  const recent = st.hintTimes.filter((t) => st.playT !== null && t - st.playT < 60).length;
+  const held = mode === 'paused' || mode === 'log' || mode === 'title';
+  const ready = st.hintWait.findIndex((h) => st.t >= h.at);
+  if (!st.hint && ready >= 0 && !held && !(shared && infoUp) && !(firstMin && recent >= HINTS_FIRST_MIN)) {
+    const h = st.hintWait.splice(ready, 1)[0];
+    const src = view.source || 'keys';
+    const own = h.key === 'tunnel' ? JUMPS[g.jump?.id]?.tutorial : null;
+    const text = own || HINTS[h.key][src] || HINTS[h.key].all || HINTS[h.key].keys;
+    st.hint = { key: h.key, text, until: st.t + HINT_S };
+    st.hintShown[h.key] = true;
+    st.hintTimes.push(st.t);
+  }
+
+  // Toasts: one at a time.
+  if (st.toast && st.t >= st.toast.until) st.toast = null;
+  if (!st.toast && st.queue.length) {
+    const item = st.queue.shift();
+    st.toast = { ...item, until: st.t + item.s };
+  }
+
+  // The info box: a scan's number or an On Earth card, else the scale card while the core says so.
+  let infoBox = st.info ? { text: st.info.text, sub: st.info.sub, kind: st.info.kind } : null;
+  if (!infoBox && g.zone?.scaleCardUntil > g.t && zone?.scaleCard) {
+    infoBox = { text: upper(zone.scaleCard), sub: '', kind: 'scale' };
+  }
+
+  // Speed: bars in a zone (written at most 10 times a second), β with its nines at light speed.
+  const ship = g.ship || {};
+  let speed;
+  if (SKY_MODES.has(mode) || (mode === 'dropout' && fin(g.jump?.eta) > 1)) {
+    const b = betaText(g.jump?.eta ?? 2);
+    speed = { bars: 5, glow: true, beta: b.text, nines: b.nines };
+  } else {
+    if (st.t - st.speedT >= 0.1) { st.speedBars = speedBars(ship.speed, ship.boosting, tune); st.speedT = st.t; }
+    speed = { bars: st.speedBars, glow: !!ship.boosting || fin(ship.db?.t) > 0, beta: '', nines: 0 };
+  }
+
+  const drift = ship.drift || {};
+  const tiers = tune.DRIFT.TIERS;
+  const tier = clamp(fin(drift.tier), 0, 3);
+  const nextAt = tiers[tier] ?? tiers[2], prevAt = tier > 0 ? tiers[tier - 1] : 0;
+  const pips = {
+    on: !!drift.on, tier,
+    fill: drift.on && tier < 3 ? clamp((fin(drift.charge) - prevAt) / Math.max(1e-6, nextAt - prevAt), 0, 1) : 0,
+    chain: fin(ship.chain?.n), mult: fin(ship.chain?.mult, 1),
+  };
+
+  const bar = clamp(fin(ship.bar) / Math.max(1e-6, fin(ship.barMax, 1)), 0, 1);
+  const inp = view.input || {};
+  const touch = view.source === 'touch';
+  const driving = mode === 'drive' || mode === 'ended' || mode === 'zoom' || JUMP_MODES.has(mode);
+  const chip = chipFor(st, view, tune);
+  const hold = chip?.hold ? clamp(fin(inp.actionHeld) / chip.hold, 0, 1) : 0;
+
+  return {
+    mode, held, kind: view.layout?.kind || 'desktop', source: view.source || 'keys',
+    top, speed, pips,
+    caption: mode === 'title' ? null : captionFor(st, view),
+    toast: st.toast ? { text: st.toast.text, tone: st.toast.tone } : null,
+    info: infoBox,
+    hint: st.hint ? { key: st.hint.key, text: st.hint.text } : null,
+    chip: chip ? { ...chip, hold } : null,
+    boost: { bar, segs: tune.BAR.SEGMENTS, on: !!ship.boosting, ready: fin(ship.bar) >= tune.BAR.MIN },
+    pedals: { gas: !!inp.gas, brake: !!inp.brake, drift: !!inp.drift, boost: !!inp.boost },
+    stick: touch && inp.stick ? inp.stick : null,
+    controls: touch && driving,
+    radar: !(mode === 'title' || mode === 'punch' || mode === 'tunnel' || held),
+    showTop: mode !== 'title',
+  };
+}
+
+// ---------------------------------------------------------------- the DOM
+
+// The screen's safe area in CSS px, { t, b, l, r }, from env(safe-area-inset-*); min raises each side (a phone
+// emulator reports 0). Pass it to core/layout.js layoutFor.
+export function safeArea(min = null) {
+  const out = { t: 0, b: 0, l: 0, r: 0 };
+  if (typeof document !== 'undefined' && document.body) {
+    const p = document.createElement('div');
+    p.style.cssText = 'position:fixed;left:0;top:0;width:0;height:0;visibility:hidden;pointer-events:none;'
+      + 'padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) '
+      + 'env(safe-area-inset-left,0px)';
+    document.body.appendChild(p);
+    const cs = getComputedStyle(p);
+    out.t = parseFloat(cs.paddingTop) || 0; out.r = parseFloat(cs.paddingRight) || 0;
+    out.b = parseFloat(cs.paddingBottom) || 0; out.l = parseFloat(cs.paddingLeft) || 0;
+    p.remove();
+  }
+  if (min) for (const k of ['t', 'b', 'l', 'r']) out[k] = Math.max(out[k], fin(min[k]));
+  return out;
+}
+
+
+const SVG = 'http://www.w3.org/2000/svg';
+const RECT_NAMES = ['speed', 'mission', 'pause', 'captions', 'toast', 'info', 'radar', 'pips', 'hint', 'chip', 'boost',
+  'brake', 'gas'];
+
+function h(tag, cls, parent, text) {
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (text != null) e.textContent = text;
+  if (parent) parent.appendChild(e);
+  return e;
+}
+
+function svg(tag, attrs, parent) {
+  const e = document.createElementNS(SVG, tag);
+  for (const [k, v] of Object.entries(attrs || {})) e.setAttribute(k, v);
+  if (parent) parent.appendChild(e);
+  return e;
+}
+
+// An arc of the BOOST ring from a0 to a1 (radians, 0 up, clockwise) on a 100 × 100 box.
+function arcPath(a0, a1, r = 44) {
+  const p = (a) => [50 + r * Math.sin(a), 50 - r * Math.cos(a)];
+  const [x0, y0] = p(a0), [x1, y1] = p(a1);
+  const big = a1 - a0 > Math.PI ? 1 : 0;
+  return `M${x0.toFixed(2)} ${y0.toFixed(2)}A${r} ${r} 0 ${big} 1 ${x1.toFixed(2)} ${y1.toFixed(2)}`;
+}
+
+/**
+ * createHud(root, { tune }) → { el, apply(layout), update(view) → model, hint(key), toast(text, tone), dom(),
+ * state, reset() }. root is an empty element over the canvases; the HUD fills it. Nothing in the HUD takes pointer
+ * events: ui/input.js hit-tests the same rectangles on the game canvas.
+ */
+export function createHud(root, { tune = TUNE } = {}) {
+  const st = createHudState();
+  const el = h('div', 'lyh-hud', root);
+  el.setAttribute('aria-hidden', 'false');
+  const cache = new Map();
+  const put = (node, key, value, fn) => {
+    const k = node;
+    let c = cache.get(k);
+    if (!c) { c = {}; cache.set(k, c); }
+    if (c[key] === value) return;
+    c[key] = value;
+    fn(value);
+  };
+  const text = (node, value) => put(node, 'text', value, (v) => { node.textContent = v; });
+  const show = (node, on) => put(node, 'show', !!on, (v) => { node.hidden = !v; });
+  const cls = (node, name, on) => put(node, `c:${name}`, !!on, (v) => node.classList.toggle(name, v));
+  const data = (node, name, value) => put(node, `d:${name}`, value, (v) => { node.dataset[name] = v; });
+  const css = (node, name, value) => put(node, `s:${name}`, value, (v) => node.style.setProperty(name, v));
+
+  // Speed: five bars, the boost bar's segments, β in the jump.
+  const speed = h('div', 'h-speed', el);
+  speed.dataset.r = 'speed';
+  const barsBox = h('div', 'h-bars', speed);
+  const bars = Array.from({ length: 5 }, (_, i) => {
+    const b = h('i', '', barsBox);
+    b.style.setProperty('--i', i);
+    return b;
+  });
+  const beta = h('b', 'h-beta', speed);
+  const segBox = h('div', 'h-segs', speed);
+  const segs = Array.from({ length: tune.BAR.SEGMENTS }, () => h('i', '', segBox));
+
+  const top = h('div', 'h-top', el);
+  top.dataset.r = 'mission';
+  const topRow = h('div', 'h-top-row', top);
+  const topText = h('b', 'h-main', topRow);
+  const topCount = h('span', 'h-count', topRow);
+  const topSub = h('small', 'h-sub', top);
+
+  const pause = h('div', 'h-pause', el);
+  pause.dataset.r = 'pause';
+  const ps = svg('svg', { viewBox: '0 0 20 20', 'aria-hidden': 'true' }, pause);
+  svg('rect', { x: 5, y: 4, width: 3.2, height: 12, rx: 0.8 }, ps);
+  svg('rect', { x: 11.8, y: 4, width: 3.2, height: 12, rx: 0.8 }, ps);
+
+  const cap = h('div', 'h-cap', el);
+  cap.dataset.r = 'captions';
+  const capIn = h('p', 'h-cap-in', cap);
+  const who = h('span', 'h-who', capIn);
+  const words = h('span', 'h-words', capIn);
+  const say = h('p', 'sr-only', el);
+  say.setAttribute('aria-live', 'polite');
+
+  const toastEl = h('div', 'h-toast', el);
+  toastEl.dataset.r = 'toast';
+  const toastText = h('b', '', toastEl);
+
+  const infoEl = h('div', 'h-info', el);
+  infoEl.dataset.r = 'info';
+  const infoText = h('b', '', infoEl);
+  const infoSub = h('small', '', infoEl);
+
+  const radar = h('div', 'h-radar', el);
+  radar.dataset.r = 'radar';
+
+  const pipsEl = h('div', 'h-pips', el);
+  pipsEl.dataset.r = 'pips';
+  const pipBox = h('span', 'h-pip-box', pipsEl);
+  const pips = [1, 2, 3].map((n) => { const p = h('i', `t${n}`, pipBox); return p; });
+  const chain = h('span', 'h-chain', pipsEl);
+
+  const hint = h('div', 'h-hint', el);
+  hint.dataset.r = 'hint';
+  const hintText = h('b', '', hint);
+
+  const chip = h('div', 'h-chip', el);
+  chip.dataset.r = 'chip';
+  const chipRing = svg('svg', { class: 'h-ring', preserveAspectRatio: 'none', 'aria-hidden': 'true' }, chip);
+  const chipRect = svg('rect', { pathLength: 1, x: 1, y: 1, rx: 12 }, chipRing);
+  const chipLabel = h('b', '', chip);
+  const chipSub = h('small', '', chip);
+
+  const boost = h('div', 'h-boost', el);
+  boost.dataset.r = 'boost';
+  const bs = svg('svg', { viewBox: '0 0 100 100', 'aria-hidden': 'true' }, boost);
+  const nSeg = tune.BAR.SEGMENTS, gap = 0.16;
+  const tracks = [], fills = [];
+  for (let i = 0; i < nSeg; i++) {
+    const a0 = (i / nSeg) * 2 * Math.PI + gap / 2, a1 = ((i + 1) / nSeg) * 2 * Math.PI - gap / 2;
+    tracks.push(svg('path', { d: arcPath(a0, a1), class: 'track' }, bs));
+    fills.push(svg('path', { d: arcPath(a0, a1), class: 'fill', pathLength: 1, 'stroke-dasharray': '0 1' }, bs));
+  }
+  h('b', '', boost, 'BOOST');
+
+  const brake = h('div', 'h-pedal h-brake', el);
+  brake.dataset.r = 'brake';
+  h('b', '', brake, 'BRAKE');
+  h('small', '', brake, 'DRIFT');
+  const gas = h('div', 'h-pedal h-gas', el);
+  gas.dataset.r = 'gas';
+  h('b', '', gas, 'GAS');
+
+  const stick = h('div', 'h-stick', el);
+  const knob = h('i', 'h-knob', stick);
+  stick.hidden = true;
+
+  const byName = { speed, mission: top, pause, captions: cap, toast: toastEl, info: infoEl, radar, pips: pipsEl, hint,
+    chip, boost, brake, gas };
+  let layout = null;
+
+  // Place every element in its rectangle. Elements with no rectangle in this layout stay hidden.
+  function apply(l) {
+    layout = l;
+    el.dataset.kind = l.kind;
+    el.dataset.scheme = l.scheme || 'none';
+    el.dataset.hand = l.hand || 'right';
+    for (const name of RECT_NAMES) {
+      const node = byName[name], r = l.rects[name];
+      node.classList.toggle('no-rect', !r);
+      if (!r) continue;
+      const s = node.style;
+      s.left = `${r[0]}px`; s.top = `${r[1]}px`; s.width = `${r[2]}px`; s.height = `${r[3]}px`;
+    }
+    const c = l.rects.chip;
+    if (c) {
+      chipRing.setAttribute('viewBox', `0 0 ${c[2]} ${c[3]}`);
+      chipRect.setAttribute('width', c[2] - 2);
+      chipRect.setAttribute('height', c[3] - 2);
+      chipRect.setAttribute('rx', Math.min(14, (c[3] - 2) / 2));
+    }
+    const R = tune.INPUT.STICK_FULL;
+    stick.style.width = stick.style.height = `${2 * R}px`;
+    cache.clear();
+  }
+
+  function render(m) {
+    data(el, 'mode', m.mode);
+    data(el, 'source', m.source);
+    cls(el, 'held', m.held);
+    cls(el, 'controls', m.controls);
+    cls(el, 'jumping', JUMP_MODES.has(m.mode));
+    show(el, m.mode !== 'none' && m.mode !== 'title');
+
+    // speed
+    for (let i = 0; i < 5; i++) cls(bars[i], 'on', i < m.speed.bars);
+    cls(speed, 'glow', m.speed.glow);
+    cls(speed, 'beta', !!m.speed.beta);
+    text(beta, m.speed.beta);
+    const segN = segs.length;
+    for (let i = 0; i < segN; i++) {
+      const f = clamp(m.boost.bar * segN - i, 0, 1);
+      css(segs[i], '--f', f.toFixed(2));
+    }
+
+    // top row
+    text(topText, m.top.text);
+    text(topCount, m.top.count);
+    text(topSub, m.top.sub);
+    data(top, 'kind', m.top.kind);
+    cls(top, 'long', m.top.text.length + m.top.count.length > 19);
+    show(topSub, !!m.top.sub);
+
+    // captions, with every line also on the aria-live line
+    const c = m.caption;
+    show(cap, !!c);
+    if (c) {
+      text(who, c.speaker);
+      const key = `${c.id}|${c.chunk}|${c.words.map((w) => (w.now ? `*${w.text}` : w.text)).join(' ')}`;
+      put(words, 'words', key, () => {
+        words.textContent = '';
+        c.words.forEach((w, i) => {
+          if (i) words.appendChild(document.createTextNode(' '));
+          const s = h('span', w.now ? 'now' : '', words, w.text);
+          s.dataset.i = i;
+        });
+      });
+      if (c.fresh) say.textContent = `${c.speaker}: ${c.full}`;
+    }
+
+    show(toastEl, !!m.toast);
+    if (m.toast) { text(toastText, m.toast.text); data(toastEl, 'tone', m.toast.tone); }
+
+    show(infoEl, !!m.info);
+    if (m.info) {
+      text(infoText, m.info.text);
+      text(infoSub, m.info.sub);
+      show(infoSub, !!m.info.sub);
+      data(infoEl, 'kind', m.info.kind);
+    }
+    show(radar, m.radar);
+
+    // drift pips and chain
+    const p = m.pips;
+    cls(pipsEl, 'on', p.on || p.chain > 0);
+    for (let i = 0; i < 3; i++) {
+      cls(pips[i], 'lit', p.tier > i);
+      css(pips[i], '--f', p.tier === i ? p.fill.toFixed(2) : p.tier > i ? '1' : '0');
+    }
+    show(pipBox, p.on);
+    text(chain, p.chain > 0 ? `×${p.mult} · ${p.chain}` : '');
+
+    show(hint, !!m.hint);
+    if (m.hint) { text(hintText, m.hint.text); cls(hint, 'long', m.hint.text.length > 20); }
+
+    show(chip, !!m.chip);
+    if (m.chip) {
+      text(chipLabel, m.chip.label);
+      text(chipSub, m.chip.sub || '');
+      show(chipSub, !!m.chip.sub);
+      data(chip, 'id', m.chip.id);
+      css(chipRect, 'stroke-dasharray', `${m.chip.hold.toFixed(3)} 1`);
+      cls(chip, 'holding', m.chip.hold > 0);
+    }
+
+    // touch controls
+    show(boost, m.controls && !!layout?.rects.boost);
+    if (m.controls) {
+      for (let i = 0; i < fills.length; i++) {
+        const f = clamp(m.boost.bar * fills.length - i, 0, 1);
+        put(fills[i], 'f', f.toFixed(2), (v) => fills[i].setAttribute('stroke-dasharray', `${v} 1`));
+      }
+      cls(boost, 'on', m.boost.on || m.pedals.boost);
+      cls(boost, 'empty', !m.boost.ready);
+    }
+    show(gas, m.controls && !!layout?.rects.gas);
+    show(brake, m.controls && !!layout?.rects.brake);
+    cls(gas, 'on', m.pedals.gas);
+    cls(brake, 'on', m.pedals.brake || m.pedals.drift);
+    cls(brake, 'drift', m.pedals.drift);
+
+    const sk = m.stick;
+    show(stick, !!sk);
+    if (sk) {
+      const R = tune.INPUT.STICK_FULL;
+      const dx = clamp(sk.x - sk.ax, -R, R), dy = clamp(sk.y - sk.ay, -R, R);
+      put(stick, 'pos', `${sk.ax}|${sk.ay}`, () => {
+        stick.style.transform = `translate(${sk.ax - R}px, ${sk.ay - R}px)`;
+      });
+      put(knob, 'pos', `${dx}|${dy}`, () => { knob.style.transform = `translate(${dx}px, ${dy}px)`; });
+    }
+  }
+
+  return {
+    el,
+    apply,
+    update(view) {
+      const m = hudStep(st, view, tune);
+      if (!layout && view.layout) apply(view.layout);
+      else if (view.layout && view.layout !== layout) apply(view.layout);
+      render(m);
+      return m;
+    },
+    hint(key) { queueHint(st, key, 8); },
+    toast(t, tone = 'plain', s = 3) { toast(st, t, tone, s); },
+    // Measured boxes of the HUD's elements (for the hook's layout().dom), only those showing.
+    dom() {
+      const out = {};
+      for (const name of RECT_NAMES) {
+        const node = byName[name];
+        if (node.hidden || node.classList.contains('no-rect') || el.hidden) continue;
+        const b = node.getBoundingClientRect();
+        if (b.width > 0 && b.height > 0) out[name] = [b.left, b.top, b.width, b.height].map(Math.round);
+      }
+      return out;
+    },
+    get state() { return st; },
+    reset() { Object.assign(st, createHudState()); },
   };
 }

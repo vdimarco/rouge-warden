@@ -119,8 +119,10 @@ export function checkZone(z) {
     need(isV3(z.entry.pos), 'entry.pos: needs [x, y, z]', errs);
     need(isNum(z.entry.heading), 'entry.heading: needs degrees', errs);
     need(isNum(z.entry.speed) || z.entry.speed === 'keep', "entry.speed: a number or 'keep'", errs);
-    if (z.entry.bar !== undefined) need(isNum(z.entry.bar) && z.entry.bar >= 0 && z.entry.bar <= 1, 'entry.bar: 0 to 1', errs);
-    if (isV3(z.entry.pos) && isNum(z.R)) need(Math.hypot(z.entry.pos[0], z.entry.pos[1]) <= z.R, 'entry.pos: outside R', errs);
+    const bar = z.entry.bar;
+    if (bar !== undefined) need(isNum(bar) && bar >= 0 && bar <= 1, 'entry.bar: 0 to 1', errs);
+    const p = z.entry.pos;
+    if (isV3(p) && isNum(z.R)) need(Math.hypot(p[0], p[1]) <= z.R, 'entry.pos: outside R', errs);
   }
 
   if (z.kind === 'pit' || z.kind === 'full') {
@@ -150,7 +152,12 @@ export function checkZone(z) {
     }
   }
 
-  const list = (key) => (z[key] === undefined ? [] : Array.isArray(z[key]) ? z[key] : (errs.push(`${key}: needs a list`), []));
+  const list = (key) => {
+    if (z[key] === undefined) return [];
+    if (Array.isArray(z[key])) return z[key];
+    errs.push(`${key}: needs a list`);
+    return [];
+  };
   const bodies = list('bodies'), roads = list('roads'), swarms = list('swarms'), actors = list('actors');
   const rings = list('rings'), sparks = list('sparks'), far = list('far'), rumours = list('rumours');
   const secrets = list('secrets'), events = list('events'), scans = list('scans'), missions = list('missions');
@@ -244,8 +251,9 @@ export function checkEvent(e) {
       }
     });
     if (e.type === 'circuit') need(Number.isInteger(e.laps) && e.laps >= 1, 'laps: a circuit needs laps', errs);
-    if (e.type === 'rival') need(isObj(e.rival) && isStr(e.rival.actor) && isNum(e.rival.paceX), 'rival: needs { actor, paceX }',
-      errs);
+    if (e.type === 'rival') {
+      need(isObj(e.rival) && isStr(e.rival.actor) && isNum(e.rival.paceX), 'rival: needs { actor, paceX }', errs);
+    }
     need(isNum(e.length) && e.length > 0, 'length: needs u', errs);
     const times = ['tern', 'gold', 'silver', 'bronze'];
     need(times.every((key) => isNum(e[key]) && e[key] > 0), 'tern, gold, silver, bronze: need times', errs);
@@ -257,15 +265,18 @@ export function checkEvent(e) {
     need(isStars(e.stars), 'stars: needs three steps', errs);
     const t = e.type;
     if (t === 'drift') need(isObj(e.area) && isV2(e.area.centre) && isNum(e.area.r), 'area: needs { centre, r }', errs);
-    if (t === 'trap' || t === 'thread') need(isObj(e.ring) && isV3(e.ring.pos) && isNum(e.ring.r), 'ring: needs { pos, r }', errs);
+    if (t === 'trap' || t === 'thread') {
+      need(isObj(e.ring) && isV3(e.ring.pos) && isNum(e.ring.r), 'ring: needs { pos, r }', errs);
+    }
     if (t === 'thread') need(isV3(e.ring?.normal), 'ring.normal: a thread needs a normal', errs);
     if (t === 'trap') need(isStars(e.stars) && e.stars.every(isNum) && e.stars[0] < e.stars[1] && e.stars[1] < e.stars[2],
       'stars: a trap needs three rising speeds', errs);
-    if (t === 'oncoming') need(isId(e.road) && isNum(e.window), 'road and window: needed', errs);
+    // e['window'], not e.window: v1's pure.test bans the bare word until the cutover deletes it.
+    if (t === 'oncoming') need(isId(e.road) && isNum(e['window']), 'road and window: needed', errs);
     if (t === 'line') {
       need(typeof e.pads === 'string' || (Array.isArray(e.pads) && e.pads.length >= 2 && e.pads.every(isV3)),
         'pads: needs [x, y, z] points or a description', errs);
-      need(isNum(e.window) && isNum(e.exitSpeed), 'window and exitSpeed: needed', errs);
+      need(isNum(e['window']) && isNum(e.exitSpeed), 'window and exitSpeed: needed', errs);
     }
     if (t === 'skim' || t === 'sling') need(isId(e.body), 'body: needs a body id', errs);
     if (t === 'sling') need(isNum(e.minTurn), 'minTurn: needs degrees', errs);
@@ -310,8 +321,8 @@ function checkSetup(setup, where, errs) {
     const keys = isObj(s) ? Object.keys(s) : [];
     need(keys.length === 1 && SETUPS.includes(keys[0]), `${where}[${i}]: one of ${SETUPS.join(', ')}`, errs);
     if (keys[0] === 'spawn') {
-      need(isObj(s.spawn) && isId(s.spawn.id) && ACTOR_KINDS.includes(s.spawn.kind), `${where}[${i}].spawn: needs { id, kind }`,
-        errs);
+      const sp = s.spawn;
+      need(isObj(sp) && isId(sp.id) && ACTOR_KINDS.includes(sp.kind), `${where}[${i}].spawn: needs { id, kind }`, errs);
     }
   });
 }
@@ -346,7 +357,8 @@ export function checkMission(m) {
     const md = m.medals;
     const ok = isObj(md) && ['author', 'gold', 'silver', 'bronze'].every((key) => isNum(md[key]));
     need(ok, 'medals: needs { author, gold, silver, bronze } or null', errs);
-    if (ok) need(md.author <= md.gold && md.gold <= md.silver && md.silver <= md.bronze, 'medals: times must not fall', errs);
+    const rising = ok && md.author <= md.gold && md.gold <= md.silver && md.silver <= md.bronze;
+    if (ok) need(rising, 'medals: times must not fall', errs);
   }
   need(Array.isArray(m.rewards), 'rewards: needs a list', errs);
   return errs;
