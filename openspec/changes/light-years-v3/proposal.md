@@ -19,10 +19,10 @@ to fly round, people with jobs, races with ghosts and medals, and a light-speed 
 
 ## What Changes
 
-- **BREAKING:** v3 replaces v1 at `/light-years-home/`. v1's game, its `window.__lyh` hook and its saves go; git keeps
-  them. v3 saves under new keys.
+- **BREAKING:** v3 replaces v1 at `/light-years-home/`. v1's game, its version of the `window.__lyh` hook and its saves
+  go; git keeps them. v3 saves under new keys and its hook is version 3.
 - Chapter 1, "The Web": The Wall (a pit stop) → jump J1 → Coma City → J2 → Virgo with M87's jet as a pocket → J3 →
-  the Andromeda edge, where the chapter ends on a card. Earth's clock runs back from 1.07 billion years ago to 2.5
+  the Andromeda edge, where the chapter ends on a card. Earth's date moves on from 1.07 billion years ago to 2.5
   million years ago.
 - The Tern drives like a car on an invisible road in each place: auto-cruise, gas, brake, drift with three spark tiers
   and a drift-boost, a boost bar that only risk fills, near misses, skims, drafts, slingshots round giants, takedowns,
