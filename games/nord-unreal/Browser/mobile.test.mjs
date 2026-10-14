@@ -168,7 +168,7 @@ async function fullscreenClearance(name) {
     // Native DrawHUD regions at 1280×720; full-frame fill maps the axes separately.
     const hud = [
       ['briefing', 0, 0, 480, 200], ['identity', 1040, 0, 240, 120],
-      ['radar and credits', 1018, 96, 240, 230], ['objective', 540, 22, 460, 170],
+      ['radar and credits', 1018, 96, 240, 240], ['objective', 620, 22, 460, 170],
       ['speed digits and units', 674, 624, 164, 74], ['prompt', 240, 620, 539, 100],
       ['completion', 490, 150, 310, 100]
     ].map(([name, x, y, width, height]) => ({ name,
@@ -353,13 +353,13 @@ try {
     });
     await check('the game sends the frame the page asks for', streamSettled);
     await check('real mobile media', () => advancingMedia('initial'));
-    await check('phone video uses the smaller frame and 1.5 Mbps ceiling', async () => {
+    await check('phone video starts with a balanced frame and 2 Mbps ceiling', async () => {
       const video = await media();
-      assert.ok(video.width * video.height <= 800 * 450, 'phone decoder pixel budget');
+      assert.ok(video.width * video.height <= 1280 * 720, 'phone decoder pixel budget');
       const commands = (await sends()).filter(packet => packet.id === 51).map(packet =>
         new TextDecoder('utf-16le').decode(new Uint8Array(packet.bytes.slice(3))));
-      assert.ok(commands.some(command => command.includes('"WebRTC.MaxBitrate":1500000')), 'native 1.5 Mbps command');
-      report.input.phoneBudget = { width: video.width, height: video.height, maxBitrate: 1500000 };
+      assert.ok(commands.some(command => command.includes('"WebRTC.MaxBitrate":2000000')), 'native 2 Mbps command');
+      report.input.phoneBudget = { width: video.width, height: video.height, maxBitrate: 2000000 };
     });
     await check('portrait controls fit and meet target size', () => layout('portrait'));
     await check('a phone held upright gets a tall game frame with every control in its bottom 42%', async () => {
@@ -382,6 +382,32 @@ try {
       for (const control of geometry.controls) {
         assert.ok(control.top >= geometry.frame.top + geometry.frame.height * .58, `${control.selector} must sit under the game HUD`);
       }
+    });
+    await check('double-tap movement sprints and a held Sprint button can drag the real view', async () => {
+      const move = finger(21, await center('[data-stick="move"]'));
+      const forward = finger(21, await center('[data-stick="move"]', 0, -34));
+      let since = (await sends()).length;
+      await touch('touchStart', [move]); await touch('touchEnd', []);
+      await page.waitForTimeout(100);
+      await touch('touchStart', [move]); await touch('touchMove', [forward]);
+      await waitForPacket(60, 16, since); await waitForPacket(60, 87, since);
+      assert.equal(await page.locator('#touch-gas').getAttribute('aria-pressed'), 'true');
+      await releaseAllTouches(); await waitForPacket(61, 16, since);
+      since = (await sends()).length;
+      const sprint = finger(22, await center('#touch-gas'));
+      const drag = { ...sprint, x: sprint.x - 30, y: sprint.y - 8 };
+      await touch('touchStart', [move]); await touch('touchMove', [forward]);
+      await touch('touchStart', [forward, sprint]);
+      await waitForPacket(60, 16, since);
+      const before = await framePixels();
+      await touch('touchMove', [forward, drag]); await waitForPacket(74, null, since);
+      await page.waitForTimeout(250);
+      assert.equal(await page.locator('#touch-gas').getAttribute('data-pressed'), 'true');
+      assert.ok(!hasKey((await sends()).slice(since), 61, 16), 'look drag retains the action');
+      report.input.heldActionLook = { frameDifference: frameDifference(before, await framePixels()) };
+      assert.ok(report.input.heldActionLook.frameDifference > 1, 'native video changes during action-button dragging');
+      await touch('touchMove', [forward, sprint]);
+      await releaseAllTouches(); await waitForPacket(61, 16, since); await waitForPacket(61, 87, since);
     });
     await check('real car possession switches to separate steering and pedals, then restores walking', async () => {
       // Reach the authored starter car through real walking input if this slot is still on the sidewalk.
@@ -565,7 +591,7 @@ try {
       };
       await toggleFullscreen(false);
       await page.setViewportSize({ width: 800, height: 360 });
-      await page.waitForFunction(() => ['800x450', '640x360'].includes(document.body.dataset.streamSize));
+      await page.waitForFunction(() => ['1280x720', '960x540', '800x450', '640x360'].includes(document.body.dataset.streamSize));
       await streamSettled();
       await layout('landscape');
       await toggleFullscreen(true);
@@ -602,27 +628,58 @@ try {
       const tapPackets = await assertSinglePulse(touchStart, 'touch tap');
       report.input.comicActivation = { keyboard, touch: tapPackets };
     });
-    await check('sustained receiver pressure lowers the phone stream', async () => {
-      const alreadyReduced = await page.evaluate(() => document.body.dataset.streamSize === '640x360');
+    await check('receiver pressure lowers the phone stream and healthy playback restores clarity', async () => {
+      // Hold a known clear profile before stepping through each injected pressure level.
       await page.evaluate(() => {
+        window.__nordQaReceiverFps = 30;
         for (const peer of window.__nordQaPeers) {
           const original = peer.getStats.bind(peer);
+          peer.__nordOriginalStats = original;
           peer.getStats = async (...args) => {
             const stats = await original(...args);
             return new Map([...stats].map(([id, stat]) => [id,
               stat.type === 'inbound-rtp' && (stat.kind || stat.mediaType) === 'video'
-                ? { ...stat, framesPerSecond: 10 } : stat]));
+                ? { ...stat, framesPerSecond: window.__nordQaReceiverFps, jitterBufferDelay: 0, freezeCount: 0 } : stat]));
           };
         }
       });
+      await page.waitForFunction(() => document.body.dataset.streamSize === '1280x720', null, { timeout: 35000 });
+      await streamSettled();
+      await page.evaluate(() => { window.__nordQaReceiverFps = 20; });
       report.input.adaptiveDebug = await page.evaluate(() => window.__nordQaStats.slice(-8));
-      await page.waitForFunction(() => document.body.dataset.streamSize === '640x360', null, { timeout: 20000 });
+      await page.waitForFunction(() => document.body.dataset.streamSize === '960x540', null, { timeout: 30000 });
       await streamSettled();
       await advancingMedia('adaptiveLowFrame');
       const commands = (await sends()).filter(packet => packet.id === 51).map(packet =>
         new TextDecoder('utf-16le').decode(new Uint8Array(packet.bytes.slice(3))));
-      assert.ok(commands.some(command => command.includes('"WebRTC.MaxBitrate":1000000')), 'adaptive native bandwidth cap');
-      report.input.adaptiveStream = { requested: '640x360', maxBitrate: 1000000, trigger: alreadyReduced ? 'actual receiver pressure before injection' : 'injected low FPS; real resized video' };
+      assert.ok(commands.some(command => command.includes('"WebRTC.MaxBitrate":2000000')), 'adaptive native bandwidth cap');
+      report.input.adaptiveStream = { requested: '960x540', maxBitrate: 2000000, trigger: 'controlled receiver statistics; real resized video' };
+      await page.waitForFunction(() => document.body.dataset.streamSize === '800x450', null, { timeout: 30000 });
+      await streamSettled();
+      await advancingMedia('adaptiveConstrainedFrame');
+      report.input.adaptiveStream.constrained = '800x450';
+      await page.waitForFunction(() => document.body.dataset.streamSize === '640x360', null, { timeout: 30000 });
+      await streamSettled();
+      await advancingMedia('adaptiveEmergencyFrame');
+      report.input.adaptiveStream.emergency = '640x360';
+      await page.evaluate(() => {
+        for (const peer of window.__nordQaPeers) if (peer.__nordOriginalStats) {
+          const original = peer.__nordOriginalStats;
+          peer.getStats = async (...args) => new Map([...await original(...args)].map(([id, stat]) => [id,
+            stat.type === 'inbound-rtp' && (stat.kind || stat.mediaType) === 'video'
+              ? { ...stat, framesPerSecond: 30, jitterBufferDelay: 0, freezeCount: 0 } : stat]));
+        }
+      });
+      await page.waitForFunction(() => document.body.dataset.streamSize === '1280x720', null, { timeout: 100000 });
+      await streamSettled();
+      await advancingMedia('adaptiveRecoveredFrame');
+      const recoveredCommands = (await sends()).filter(packet => packet.id === 51).map(packet =>
+        new TextDecoder('utf-16le').decode(new Uint8Array(packet.bytes.slice(3))));
+      assert.ok(recoveredCommands.some(command => command.includes('"WebRTC.MaxBitrate":4000000')), 'restored clarity bandwidth cap');
+      report.input.adaptiveStream.recovered = '1280x720';
+      await page.evaluate(() => {
+        for (const peer of window.__nordQaPeers) if (peer.__nordOriginalStats) peer.getStats = peer.__nordOriginalStats;
+      });
     });
     await check('touch release on disconnect leaves no held native key', async () => {
       const moveStart = finger(4, await center('[data-stick="move"]'));

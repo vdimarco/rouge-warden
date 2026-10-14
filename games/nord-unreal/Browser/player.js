@@ -1,6 +1,6 @@
 import { Config, Flags, NumericParameters, OptionParameters, PixelStreaming, TextParameters } from '@epicgames-ps/lib-pixelstreamingfrontend-ue5.8';
 import { Logger, LogLevel } from '@epicgames-ps/lib-pixelstreamingcommon-ue5.8';
-import { signallingUrl, streamDimensions, receiverLagging } from './config.mjs';
+import { signallingUrl, streamDimensions, phoneStreamState, adaptPhoneStream } from './config.mjs';
 import { setupTouchControls } from './touch-controls.js';
 
 Logger.InitLogging(LogLevel.Warning, false);
@@ -25,10 +25,7 @@ let timeout;
 let muted = false;
 let streamSize = '';
 let resizeTimer;
-let mobileEdge = 800;
-let phoneBitrate = 1500;
-let poorFrames = 0;
-let previousVideo;
+let phoneStream = phoneStreamState(performance.now());
 
 function status(state, title, detail) {
   document.body.dataset.state = state;
@@ -66,9 +63,8 @@ function setMuted(value) {
   muteButton.setAttribute('aria-pressed', String(muted));
 }
 
-// Smaller phone frames leave more bandwidth and decoder time for smooth playback.
 function wantedSize() {
-  return streamDimensions(touchMode, frame.clientWidth, frame.clientHeight, NORD_PORTRAIT_STREAM, mobileEdge);
+  return streamDimensions(touchMode, frame.clientWidth, frame.clientHeight, NORD_PORTRAIT_STREAM, phoneStream.edge);
 }
 
 function requestStreamSize() {
@@ -78,6 +74,9 @@ function requestStreamSize() {
   if (size === streamSize || !stream.emitCommand({ 'Resolution.Width': width, 'Resolution.Height': height })) return;
   streamSize = size;
   document.body.dataset.streamSize = size;
+  phoneStream.changedAt = performance.now();
+  phoneStream.poor = phoneStream.healthy = phoneStream.critical = 0;
+  phoneStream.previous = undefined;
 }
 
 function stopTimeout() {
@@ -95,7 +94,7 @@ function waitForConnection() {
 function readyToPlay() {
   stopTimeout();
   status('ready', 'Your player is ready.', touchMode
-    ? 'Tap Play with sound. Use the touch sticks and buttons to play; turn your phone sideways for a wider view.'
+    ? 'Tap Play with sound. Drag to look; double-tap Move or Sprint to run. Turn your phone sideways for a wider view.'
     : 'Click Play with sound, then click the game to take control.');
 }
 
@@ -129,7 +128,7 @@ if (endpoint) {
         [Flags.TouchInput]: false,
         [Flags.GamepadInput]: false,
         [Flags.MatchViewportResolution]: false,
-        [NumericParameters.WebRTCMaxBitrate]: touchMode ? 1500 : 12000,
+        [NumericParameters.WebRTCMaxBitrate]: touchMode ? phoneStream.bitrate : 12000,
         [NumericParameters.MaxReconnectAttempts]: 0
       }
     });
@@ -139,6 +138,7 @@ if (endpoint) {
       let state;
       try { state = JSON.parse(response); } catch { return; }
       if (typeof state?.nordDriving === 'boolean') touchControls.setDriving(state.nordDriving);
+      if (typeof state?.nordSwimming === 'boolean') touchControls.setSwimming(state.nordSwimming);
     });
     connectButton.disabled = false;
     status('idle', 'The city is waiting.', 'Connect to a free player and help save Park La Fontaine.');
@@ -170,20 +170,13 @@ if (endpoint) {
     });
     stream.addEventListener('initialSettings', () => {
       // The SDK imports host defaults before this microtask reapplies the player budget.
-      queueMicrotask(() => config.setNumericSetting(NumericParameters.WebRTCMaxBitrate, touchMode ? phoneBitrate : 12000));
+      queueMicrotask(() => config.setNumericSetting(NumericParameters.WebRTCMaxBitrate, touchMode ? phoneStream.bitrate : 12000));
     });
     stream.addEventListener('statsReceived', event => {
-      if (!touchMode || document.hidden || document.body.dataset.state !== 'playing' || mobileEdge !== 800) return;
+      if (!touchMode || document.hidden || document.body.dataset.state !== 'playing') return;
       const video = event.data.aggregatedStats.inboundVideoStats;
-      poorFrames = video.freezeCount > previousVideo?.freezeCount ? 5
-        : receiverLagging(video, previousVideo) ? poorFrames + 1 : 0;
-      previousVideo = { framesDecoded: video.framesDecoded, timestamp: video.timestamp,
-        jitterBufferDelay: video.jitterBufferDelay, jitterBufferEmittedCount: video.jitterBufferEmittedCount,
-        freezeCount: video.freezeCount };
-      if (poorFrames < 5) return;
-      mobileEdge = 640;
-      phoneBitrate = 1000;
-      config.setNumericSetting(NumericParameters.WebRTCMaxBitrate, phoneBitrate);
+      if (!adaptPhoneStream(phoneStream, video, performance.now())) return;
+      config.setNumericSetting(NumericParameters.WebRTCMaxBitrate, phoneStream.bitrate);
       requestStreamSize();
     });
     stream.addEventListener('videoInitialized', readyToPlay);
@@ -201,7 +194,8 @@ if (endpoint) {
     video.addEventListener('playing', () => {
       stopTimeout();
       status('playing', 'You’re in Montréal.', '');
-      config.setNumericSetting(NumericParameters.WebRTCMaxBitrate, touchMode ? phoneBitrate : 12000);
+      phoneStream.changedAt = performance.now();
+      config.setNumericSetting(NumericParameters.WebRTCMaxBitrate, touchMode ? phoneStream.bitrate : 12000);
       setTimeout(requestStreamSize, 500);
     });
     // Lay the controls out for the frame the game actually sends: a tall frame puts them all under its HUD.
@@ -217,7 +211,7 @@ if (endpoint) {
       const reconnect = started;
       started = true;
       streamSize = '';
-      mobileEdge = 800; phoneBitrate = 1500; poorFrames = 0; previousVideo = undefined;
+      phoneStream = phoneStreamState(performance.now());
       disconnectButton.disabled = false;
       status('connecting', 'Connecting to Montréal…', 'Finding the game host and available players.');
       waitForConnection();
@@ -231,7 +225,7 @@ if (endpoint) {
     streamSelect.addEventListener('change', () => {
       if (streamSelect.disabled || !streamSelect.value) return;
       streamSize = '';
-      mobileEdge = 800; phoneBitrate = 1500; poorFrames = 0; previousVideo = undefined;
+      phoneStream = phoneStreamState(performance.now());
       status('connecting', 'Opening your player…', 'Connecting to the selected player.');
       waitForConnection();
       config.setOptionSettingValue(OptionParameters.StreamerId, streamSelect.value);

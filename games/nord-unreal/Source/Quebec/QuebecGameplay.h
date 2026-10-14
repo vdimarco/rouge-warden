@@ -19,6 +19,7 @@ class USpringArmComponent;
 class UStaticMeshComponent;
 class UTextRenderComponent;
 class UHierarchicalInstancedStaticMeshComponent;
+class APhysicsVolume;
 
 UCLASS()
 class QUEBEC_API AQuebecParkInstances : public AActor
@@ -78,6 +79,7 @@ public:
     static bool IsCrewTaken(const UWorld* World, int32 Style, const AQuebecCharacter* Except = nullptr);
     virtual void Tick(float DeltaSeconds) override;
     virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
+    virtual void Jump() override;
     virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
     void SetInVehicle(bool bNewInVehicle);
     UFUNCTION() bool ConfigureCrewAnimation();
@@ -97,6 +99,12 @@ private:
     float CrewAnimationTime = 0.f;
     float CrewPoseElapsed = 0.f;
     UPROPERTY() TObjectPtr<UAnimSequence> CrewAnimation;
+    UPROPERTY() TObjectPtr<APhysicsVolume> SwimVolume;
+    UPROPERTY() TArray<TObjectPtr<AActor>> SwimFloors;
+    bool bSwimPoseActive = false;
+    float SwimStrokeUntil = 0.f;
+    UFUNCTION(Server, Reliable) void ServerSwimStroke();
+    void UpdateSwimming(float DeltaSeconds);
     UFUNCTION() void ApplyCrewAppearance();
     UFUNCTION() void MoveForward(float Value);
     UFUNCTION() void MoveRight(float Value);
