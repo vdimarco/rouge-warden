@@ -54,4 +54,10 @@ for flags in ('-NordGraphicNovelGenerated -nullrhi', '-NordGraphicNovelCandidate
         pass
     else:
         raise AssertionError('Unsafe generated import flags accepted: ' + flags)
+normal_alpha = next(node.args[1] for node in ast.walk(TREE) if isinstance(node, ast.Call)
+                    and isinstance(node.func, ast.Attribute) and isinstance(node.func.value, ast.Name)
+                    and node.func.value.id == 'detail' and node.func.attr == 'set_editor_property'
+                    and isinstance(node.args[0], ast.Constant) and node.args[0].value == 'const_alpha')
+for generated, expected in ((False, .65), (True, 0.)):
+    assert eval(compile(ast.Expression(normal_alpha), str(SOURCE), 'eval'), {'generated': generated}) == expected
 print('NORD_GRAPHIC_NOVEL_IMPORT_CPU_OK original routes preserved; generated source/destination/report isolated; unsafe flags rejected')

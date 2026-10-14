@@ -1,0 +1,999 @@
+{
+  "method": "CPU ffmpeg software decoding; full1Hz plus phase-boundary/midphase samples. UTC phase-log to x11grab start alignment is approximate.",
+  "modes": {
+    "Standard": {
+      "video": "Motion1920Standard/raw.mp4",
+      "video_sha256": "3d9a427d3262cf7e064dca115f67c961d7e93ac799427683ccce6f9176b4cd5a",
+      "encoded_metadata": {
+        "width": 1920,
+        "height": 1080,
+        "seconds": 9.016667,
+        "frames": 541,
+        "encoded_avg_rate": "60/1",
+        "native_render_fps_proven": false
+      },
+      "ffmpeg_input_epoch_start": 1791955434.200931,
+      "phase_events_approx": [
+        {
+          "phase": "idle",
+          "video_seconds_approx": -0.182931
+        },
+        {
+          "phase": "walk",
+          "video_seconds_approx": 0.199069
+        },
+        {
+          "phase": "sprint",
+          "video_seconds_approx": 1.601069
+        },
+        {
+          "phase": "turn",
+          "video_seconds_approx": 3.032069
+        },
+        {
+          "phase": "stop",
+          "video_seconds_approx": 3.841069
+        },
+        {
+          "phase": "jump",
+          "video_seconds_approx": 4.561069
+        },
+        {
+          "phase": "landing",
+          "video_seconds_approx": 5.838069
+        },
+        {
+          "phase": "recover",
+          "video_seconds_approx": 6.059069
+        }
+      ],
+      "frames": [
+        {
+          "file": "IndependentMotionFrames/Standard/frame-001.png",
+          "frame_index": 0,
+          "video_seconds": 0.0,
+          "labels": [
+            "1Hz 0s",
+            "idle boundary-0.1s",
+            "idle boundary+0.0s",
+            "idle boundary+0.1s",
+            "idle midpoint"
+          ],
+          "sha256": "c26510960091b354b6952c272c1bdad57f723a712c21c59d46ee4a06dfa6de01"
+        },
+        {
+          "file": "IndependentMotionFrames/Standard/frame-002.png",
+          "frame_index": 6,
+          "video_seconds": 0.1,
+          "labels": [
+            "walk boundary-0.1s"
+          ],
+          "sha256": "6c2c56f6fec44a230ac7dcb4449bcd41d44f54e9a5db3d30a73a41624ca432b6"
+        },
+        {
+          "file": "IndependentMotionFrames/Standard/frame-003.png",
+          "frame_index": 12,
+          "video_seconds": 0.2,
+          "labels": [
+            "walk boundary+0.0s"
+          ],
+          "sha256": "9c1622f9beb77e401e2edf729bf800477ed346ad188393806f9e34e4c8aa18ea"
+        },
+        {
+          "file": "IndependentMotionFrames/Standard/frame-004.png",
+          "frame_index": 18,
+          "video_seconds": 0.3,
+          "labels": [
+            "walk boundary+0.1s"
+          ],
+          "sha256": "e6f9dbb0615046e50703f12cc0a601018f8b07ca2dee52c6de816275e94c7506"
+        },
+        {
+          "file": "IndependentMotionFrames/Standard/frame-005.png",
+          "frame_index": 54,
+          "video_seconds": 0.9,
+          "labels": [
+            "walk midpoint"
+          ],
+          "sha256": "29876a3508792ff2533c69d359ebb2ba5760c271921c086a44114e9015ac24e6"
+        },
+        {
+          "file": "IndependentMotionFrames/Standard/frame-006.png",
+          "frame_index": 60,
+          "video_seconds": 1.0,
+          "labels": [
+            "1Hz 1s"
+          ],
+          "sha256": "b9beffb6b19491bbb7797db1a86800eb767a98c5b8f9aa8fb829cb9267ad6bf8"
+        },
+        {
+          "file": "IndependentMotionFrames/Standard/frame-007.png",
+          "frame_index": 90,
+          "video_seconds": 1.5,
+          "labels": [
+            "sprint boundary-0.1s"
+          ],
+          "sha256": "ed69b3ab12e2265fa0769110e3419cba97e4d9fd6484d5102555984b6f472168"
+        },
+        {
+          "file": "IndependentMotionFrames/Standard/frame-008.png",
+          "frame_index": 96,
+          "video_seconds": 1.6,
+          "labels": [
+            "sprint boundary+0.0s"
+          ],
+          "sha256": "869a9999da700b14c73bd57fd7b04f0ecef268887616de42b459ccaea6bcbebb"
+        },
+        {
+          "file": "IndependentMotionFrames/Standard/frame-009.png",
+          "frame_index": 102,
+          "video_seconds": 1.7,
+          "labels": [
+            "sprint boundary+0.1s"
+          ],
+          "sha256": "99751cafce6383356c11972b6b13e4b7d883d239a8c60240a3dec653de61ca4e"
+        },
+        {
+          "file": "IndependentMotionFrames/Standard/frame-010.png",
+          "frame_index": 120,
+          "video_seconds": 2.0,
+          "labels": [
+            "1Hz 2s"
+          ],
+          "sha256": "14de14f0125ad05bf71d424f89921cadce7936a5558056cf22cf5feaf6b2e05d"
+        },
+        {
+          "file": "IndependentMotionFrames/Standard/frame-011.png",
+          "frame_index": 139,
+          "video_seconds": 2.316666666666667,
+          "labels": [
+            "sprint midpoint"
+          ],
+          "sha256": "b77ae9ffb39381528a944eb819e6d4a88c21e13849b4e70609733df5c68d5e00"
+        },
+        {
+          "file": "IndependentMotionFrames/Standard/frame-012.png",
+          "frame_index": 176,
+          "video_seconds": 2.933333333333333,
+          "labels": [
+            "turn boundary-0.1s"
+          ],
+          "sha256": "12954c7dbd965d8028bf388f3c461a58c3be6b6d631aafbfc3088639e98bc823"
+        },
+        {
+          "file": "IndependentMotionFrames/Standard/frame-013.png",
+          "frame_index": 180,
+          "video_seconds": 3.0,
+          "labels": [
+            "1Hz 3s"
+          ],
+          "sha256": "29d2d5c83c42996500762a9a10b4f3103581da32dacf39a962e2eaa81b64eec7"
+        },
+        {
+          "file": "IndependentMotionFrames/Standard/frame-014.png",
+          "frame_index": 182,
+          "video_seconds": 3.033333333333333,
+          "labels": [
+            "turn boundary+0.0s"
+          ],
+          "sha256": "ca003e09719838a32ba5c3640b38b25433026a80fe97eb94c088685253fcc34a"
+        },
+        {
+          "file": "IndependentMotionFrames/Standard/frame-015.png",
+          "frame_index": 188,
+          "video_seconds": 3.1333333333333333,
+          "labels": [
+            "turn boundary+0.1s"
+          ],
+          "sha256": "fb60957b26abcb5d38ff56dacdbd52c22bd8fabf0cb58e30a2b84c4283b518bd"
+        },
+        {
+          "file": "IndependentMotionFrames/Standard/frame-016.png",
+          "frame_index": 206,
+          "video_seconds": 3.433333333333333,
+          "labels": [
+            "turn midpoint"
+          ],
+          "sha256": "7174ba2e3f85b6aeaae126b63079571470a1bc3ab088c257bf57e2ad051a6114"
+        },
+        {
+          "file": "IndependentMotionFrames/Standard/frame-017.png",
+          "frame_index": 224,
+          "video_seconds": 3.7333333333333334,
+          "labels": [
+            "stop boundary-0.1s"
+          ],
+          "sha256": "d3253d1047a66b7d8c0c86316ea6ae891ed0379d3351867a62f58c381703877c"
+        },
+        {
+          "file": "IndependentMotionFrames/Standard/frame-018.png",
+          "frame_index": 230,
+          "video_seconds": 3.8333333333333335,
+          "labels": [
+            "stop boundary+0.0s"
+          ],
+          "sha256": "faff85eefd501fb885c4f9062ebc422038f03af4d2d5dfcc7e0b02671d86ca51"
+        },
+        {
+          "file": "IndependentMotionFrames/Standard/frame-019.png",
+          "frame_index": 236,
+          "video_seconds": 3.933333333333333,
+          "labels": [
+            "stop boundary+0.1s"
+          ],
+          "sha256": "f5a04a01a10591874276ca1c9f5a7b81f2c51c77a3c155d69531d5f1ec63c4a3"
+        },
+        {
+          "file": "IndependentMotionFrames/Standard/frame-020.png",
+          "frame_index": 240,
+          "video_seconds": 4.0,
+          "labels": [
+            "1Hz 4s"
+          ],
+          "sha256": "5bda81e63d63670bb8d2bdedb643e865f11623e67747a1bfcac01728310ffdd4"
+        },
+        {
+          "file": "IndependentMotionFrames/Standard/frame-021.png",
+          "frame_index": 252,
+          "video_seconds": 4.2,
+          "labels": [
+            "stop midpoint"
+          ],
+          "sha256": "7095050feaa2240b00a0d12cc9c3625d4eac7359e439584d4026f625815e1f9f"
+        },
+        {
+          "file": "IndependentMotionFrames/Standard/frame-022.png",
+          "frame_index": 268,
+          "video_seconds": 4.466666666666667,
+          "labels": [
+            "jump boundary-0.1s"
+          ],
+          "sha256": "57241fe6fa90e29b2e178708c48d075c99f70653df1479a3b22e2c8806bf38f9"
+        },
+        {
+          "file": "IndependentMotionFrames/Standard/frame-023.png",
+          "frame_index": 274,
+          "video_seconds": 4.566666666666666,
+          "labels": [
+            "jump boundary+0.0s"
+          ],
+          "sha256": "806cd89bb73067403585dc12300074a6a42737626ff8166dc400f12a594839aa"
+        },
+        {
+          "file": "IndependentMotionFrames/Standard/frame-024.png",
+          "frame_index": 280,
+          "video_seconds": 4.666666666666667,
+          "labels": [
+            "jump boundary+0.1s"
+          ],
+          "sha256": "81d0aaffe58fe6822000da54c13c3c7073570ac6fdd91c8f9b1830edbb56157e"
+        },
+        {
+          "file": "IndependentMotionFrames/Standard/frame-025.png",
+          "frame_index": 289,
+          "video_seconds": 4.816666666666666,
+          "labels": [
+            "jump +0.25s"
+          ],
+          "sha256": "22b579e25349ecbf4f74ecae5de3fe833cc948a9359710bb804ec1e002f2a7c9"
+        },
+        {
+          "file": "IndependentMotionFrames/Standard/frame-026.png",
+          "frame_index": 300,
+          "video_seconds": 5.0,
+          "labels": [
+            "1Hz 5s"
+          ],
+          "sha256": "b609d88d10fefe2df7f1249c22aab7cc60430d055735deebf857598613c2af88"
+        },
+        {
+          "file": "IndependentMotionFrames/Standard/frame-027.png",
+          "frame_index": 304,
+          "video_seconds": 5.066666666666666,
+          "labels": [
+            "jump +0.50s"
+          ],
+          "sha256": "e45bac8a01ffca42d0ecc456af8092b6a23b35b01ca56d8c066c3d5e302f47f8"
+        },
+        {
+          "file": "IndependentMotionFrames/Standard/frame-028.png",
+          "frame_index": 312,
+          "video_seconds": 5.2,
+          "labels": [
+            "jump midpoint"
+          ],
+          "sha256": "170417f6fa8dab8b6d33ebd26b0be07d1783d775b6f43be338eff08e8a62ab87"
+        },
+        {
+          "file": "IndependentMotionFrames/Standard/frame-029.png",
+          "frame_index": 319,
+          "video_seconds": 5.316666666666666,
+          "labels": [
+            "jump +0.75s"
+          ],
+          "sha256": "3f09733ac52e9b539e9486d7af8157a71169f2279b5f1e881dc58b8f67cb14cc"
+        },
+        {
+          "file": "IndependentMotionFrames/Standard/frame-030.png",
+          "frame_index": 334,
+          "video_seconds": 5.566666666666666,
+          "labels": [
+            "jump +1.00s"
+          ],
+          "sha256": "07a2a4f653c7faa8abeb7ef60d02a8dcfac5054e2027bd7b47458bcf01534833"
+        },
+        {
+          "file": "IndependentMotionFrames/Standard/frame-031.png",
+          "frame_index": 344,
+          "video_seconds": 5.733333333333333,
+          "labels": [
+            "landing boundary-0.1s"
+          ],
+          "sha256": "e9a1174b9b49f5f412844bfbc8218e8f99313281528ee7ea90df7d68b0ee223f"
+        },
+        {
+          "file": "IndependentMotionFrames/Standard/frame-032.png",
+          "frame_index": 350,
+          "video_seconds": 5.833333333333333,
+          "labels": [
+            "landing boundary+0.0s"
+          ],
+          "sha256": "c4b90ff516b53873c5084307c7162e20fa25469bc2a046969e0bdc3061f7be3e"
+        },
+        {
+          "file": "IndependentMotionFrames/Standard/frame-033.png",
+          "frame_index": 356,
+          "video_seconds": 5.933333333333334,
+          "labels": [
+            "landing boundary+0.1s"
+          ],
+          "sha256": "6c666de9c6f499ce33b87ba4e6029bde04aaa80c0dd3647d24e466fa0579ab9a"
+        },
+        {
+          "file": "IndependentMotionFrames/Standard/frame-034.png",
+          "frame_index": 357,
+          "video_seconds": 5.95,
+          "labels": [
+            "landing midpoint"
+          ],
+          "sha256": "377932d7309a92f5e833447ebce06f374a587dd012a8a405594b92937c21d3ab"
+        },
+        {
+          "file": "IndependentMotionFrames/Standard/frame-035.png",
+          "frame_index": 358,
+          "video_seconds": 5.966666666666667,
+          "labels": [
+            "recover boundary-0.1s"
+          ],
+          "sha256": "52c24cb58d744f768798fef890460da8520cf1cea7c4cb0b22cd130fc7a901c0"
+        },
+        {
+          "file": "IndependentMotionFrames/Standard/frame-036.png",
+          "frame_index": 360,
+          "video_seconds": 6.0,
+          "labels": [
+            "1Hz 6s"
+          ],
+          "sha256": "57b47e8f7469c2121e547af573ee6aa326e2d7e55f773ea21f7a984bea8ebb22"
+        },
+        {
+          "file": "IndependentMotionFrames/Standard/frame-037.png",
+          "frame_index": 364,
+          "video_seconds": 6.066666666666666,
+          "labels": [
+            "recover boundary+0.0s"
+          ],
+          "sha256": "af9dd31dd1ac6f760a633067f7b35811ed48a039680d062efaa8aa58cbdd6025"
+        },
+        {
+          "file": "IndependentMotionFrames/Standard/frame-038.png",
+          "frame_index": 370,
+          "video_seconds": 6.166666666666667,
+          "labels": [
+            "recover boundary+0.1s"
+          ],
+          "sha256": "ccd1df49f81b6e1cb226384db1027aacb819e48ac3b7131618a7a314ecc2a639"
+        },
+        {
+          "file": "IndependentMotionFrames/Standard/frame-039.png",
+          "frame_index": 382,
+          "video_seconds": 6.366666666666666,
+          "labels": [
+            "recover midpoint"
+          ],
+          "sha256": "8af0eb243862707f738fc5f4ee42030dab29aac4a1c6c330fdfb73c73c978e9b"
+        },
+        {
+          "file": "IndependentMotionFrames/Standard/frame-040.png",
+          "frame_index": 420,
+          "video_seconds": 7.0,
+          "labels": [
+            "1Hz 7s"
+          ],
+          "sha256": "96d828b81f0d05b150cdc3066c4be562d13e2015be439ecc5beae8bac0ca0931"
+        },
+        {
+          "file": "IndependentMotionFrames/Standard/frame-041.png",
+          "frame_index": 480,
+          "video_seconds": 8.0,
+          "labels": [
+            "1Hz 8s"
+          ],
+          "sha256": "d52da81d3291f5ce21f9f2864f51c1d7a1319446cd4e59bb3408b09ba70a77c3"
+        },
+        {
+          "file": "IndependentMotionFrames/Standard/frame-042.png",
+          "frame_index": 540,
+          "video_seconds": 9.0,
+          "labels": [
+            "1Hz 9s"
+          ],
+          "sha256": "df26bae2b0813498ed7b378e67577b0f1bca8c383c798283224d7e1291c76e7d"
+        }
+      ],
+      "contact_sheets": [
+        {
+          "file": "IndependentMotionFrames/Standard/full-1Hz-contact.png",
+          "sha256": "9e8620e0c3a121cb5188b517d136a95a03a2670c9dd89a890b1c1abc5c2a35d6",
+          "crop": null
+        },
+        {
+          "file": "IndependentMotionFrames/Standard/phase-crops-01.png",
+          "sha256": "7a60fcfd4c9c2fc299b53d4b1ede1b7cc7b34121b6ac1d3b7241bb014b3e6d8f",
+          "crop": [
+            660,
+            360,
+            1260,
+            1040
+          ]
+        },
+        {
+          "file": "IndependentMotionFrames/Standard/phase-crops-02.png",
+          "sha256": "6b674cdcf81434ecb1accace82e05b758a891047a552143de2926d7e9ea50a21",
+          "crop": [
+            660,
+            360,
+            1260,
+            1040
+          ]
+        },
+        {
+          "file": "IndependentMotionFrames/Standard/phase-crops-03.png",
+          "sha256": "190ece4c64fe4e59434f9bb24c2833a41b4053ce19fe577ecf0d386f20f70aab",
+          "crop": [
+            660,
+            360,
+            1260,
+            1040
+          ]
+        },
+        {
+          "file": "IndependentMotionFrames/Standard/phase-crops-04.png",
+          "sha256": "4998502fe7145b9b163d2051eac4700593ad2b2b516f034effa444995ed4a1b7",
+          "crop": [
+            660,
+            360,
+            1260,
+            1040
+          ]
+        },
+        {
+          "file": "IndependentMotionFrames/Standard/phase-crops-05.png",
+          "sha256": "a47edaaadfa5f6988d226de5289e2161389cc0f3eb1dcaf5204f23c08675122a",
+          "crop": [
+            660,
+            360,
+            1260,
+            1040
+          ]
+        }
+      ],
+      "extraction_command": [
+        "ffmpeg",
+        "-v",
+        "error",
+        "-hwaccel",
+        "none",
+        "-threads",
+        "2",
+        "-i",
+        "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/GraphicNovel/RenderedMotion-20261014T051948Z/Motion1920Standard/raw.mp4",
+        "-vf",
+        "select=eq(n\\,0)+eq(n\\,6)+eq(n\\,12)+eq(n\\,18)+eq(n\\,54)+eq(n\\,60)+eq(n\\,90)+eq(n\\,96)+eq(n\\,102)+eq(n\\,120)+eq(n\\,139)+eq(n\\,176)+eq(n\\,180)+eq(n\\,182)+eq(n\\,188)+eq(n\\,206)+eq(n\\,224)+eq(n\\,230)+eq(n\\,236)+eq(n\\,240)+eq(n\\,252)+eq(n\\,268)+eq(n\\,274)+eq(n\\,280)+eq(n\\,289)+eq(n\\,300)+eq(n\\,304)+eq(n\\,312)+eq(n\\,319)+eq(n\\,334)+eq(n\\,344)+eq(n\\,350)+eq(n\\,356)+eq(n\\,357)+eq(n\\,358)+eq(n\\,360)+eq(n\\,364)+eq(n\\,370)+eq(n\\,382)+eq(n\\,420)+eq(n\\,480)+eq(n\\,540)",
+        "-fps_mode",
+        "vfr",
+        "-threads",
+        "2",
+        "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/GraphicNovel/RenderedMotion-20261014T051948Z/IndependentMotionFrames/Standard/frame-%03d.png"
+      ]
+    },
+    "Comic": {
+      "video": "Motion1920Comic/raw.mp4",
+      "video_sha256": "7e0277bae574e69e3c6790fb4f2501cbfd2d2777b4e460b75261906f10a4a511",
+      "encoded_metadata": {
+        "width": 1920,
+        "height": 1080,
+        "seconds": 9.016667,
+        "frames": 541,
+        "encoded_avg_rate": "60/1",
+        "native_render_fps_proven": false
+      },
+      "ffmpeg_input_epoch_start": 1791955473.983022,
+      "phase_events_approx": [
+        {
+          "phase": "idle",
+          "video_seconds_approx": -0.194022
+        },
+        {
+          "phase": "walk",
+          "video_seconds_approx": 0.178978
+        },
+        {
+          "phase": "sprint",
+          "video_seconds_approx": 1.613978
+        },
+        {
+          "phase": "turn",
+          "video_seconds_approx": 3.024978
+        },
+        {
+          "phase": "stop",
+          "video_seconds_approx": 3.846978
+        },
+        {
+          "phase": "jump",
+          "video_seconds_approx": 4.562978
+        },
+        {
+          "phase": "landing",
+          "video_seconds_approx": 5.861978
+        },
+        {
+          "phase": "recover",
+          "video_seconds_approx": 6.084978
+        }
+      ],
+      "frames": [
+        {
+          "file": "IndependentMotionFrames/Comic/frame-001.png",
+          "frame_index": 0,
+          "video_seconds": 0.0,
+          "labels": [
+            "1Hz 0s",
+            "idle boundary-0.1s",
+            "idle boundary+0.0s",
+            "idle boundary+0.1s",
+            "idle midpoint"
+          ],
+          "sha256": "5bf3f64e40c93c461a94427eec99df7498f221139a87424e3c0f7ddcd7c4f383"
+        },
+        {
+          "file": "IndependentMotionFrames/Comic/frame-002.png",
+          "frame_index": 5,
+          "video_seconds": 0.08333333333333333,
+          "labels": [
+            "walk boundary-0.1s"
+          ],
+          "sha256": "f66b11edd5b7f64e4a8bfacfcfe597e6f197bf2439c81e54e54f9de92ca407fc"
+        },
+        {
+          "file": "IndependentMotionFrames/Comic/frame-003.png",
+          "frame_index": 11,
+          "video_seconds": 0.18333333333333332,
+          "labels": [
+            "walk boundary+0.0s"
+          ],
+          "sha256": "fb6e93ba7c788d00f78750fe5e807512174ec097c9902791541777bbf0aaa287"
+        },
+        {
+          "file": "IndependentMotionFrames/Comic/frame-004.png",
+          "frame_index": 17,
+          "video_seconds": 0.2833333333333333,
+          "labels": [
+            "walk boundary+0.1s"
+          ],
+          "sha256": "70624089dab4f7e01777ccbb3e74e54c2bcef12f6bc0314aed3f1be5971e7e34"
+        },
+        {
+          "file": "IndependentMotionFrames/Comic/frame-005.png",
+          "frame_index": 54,
+          "video_seconds": 0.9,
+          "labels": [
+            "walk midpoint"
+          ],
+          "sha256": "91baf7a203f1c00f0b9fec210b31e37bc8221300c99e7280aaa6b226296fd819"
+        },
+        {
+          "file": "IndependentMotionFrames/Comic/frame-006.png",
+          "frame_index": 60,
+          "video_seconds": 1.0,
+          "labels": [
+            "1Hz 1s"
+          ],
+          "sha256": "b6b7919f087f56f4eb195727ba7c4fc7e6fb3c65b6d20b93efe9f7eb861b82f6"
+        },
+        {
+          "file": "IndependentMotionFrames/Comic/frame-007.png",
+          "frame_index": 91,
+          "video_seconds": 1.5166666666666666,
+          "labels": [
+            "sprint boundary-0.1s"
+          ],
+          "sha256": "f09498430fb98ab1e17e1babeba3022a91a4b6c9ba09f08596069f0e73b1d04b"
+        },
+        {
+          "file": "IndependentMotionFrames/Comic/frame-008.png",
+          "frame_index": 97,
+          "video_seconds": 1.6166666666666667,
+          "labels": [
+            "sprint boundary+0.0s"
+          ],
+          "sha256": "10c0bbba8ff444bfe43ed035bae6b3ee68c112c520c09c4ccf2e3bb3cf1361c2"
+        },
+        {
+          "file": "IndependentMotionFrames/Comic/frame-009.png",
+          "frame_index": 103,
+          "video_seconds": 1.7166666666666666,
+          "labels": [
+            "sprint boundary+0.1s"
+          ],
+          "sha256": "fde06c451002606b793ae14a516e81de95fb092070fb52537312e95caf49fac4"
+        },
+        {
+          "file": "IndependentMotionFrames/Comic/frame-010.png",
+          "frame_index": 120,
+          "video_seconds": 2.0,
+          "labels": [
+            "1Hz 2s"
+          ],
+          "sha256": "80228c692bec79d13ec6ee408b1ece9f9821daa1012dfec3929387c6c80e0a07"
+        },
+        {
+          "file": "IndependentMotionFrames/Comic/frame-011.png",
+          "frame_index": 139,
+          "video_seconds": 2.316666666666667,
+          "labels": [
+            "sprint midpoint"
+          ],
+          "sha256": "ba2b8a562142253e0c0a75a1b537eb09a9b4995c03c7ac6b907f13c7372e6675"
+        },
+        {
+          "file": "IndependentMotionFrames/Comic/frame-012.png",
+          "frame_index": 175,
+          "video_seconds": 2.9166666666666665,
+          "labels": [
+            "turn boundary-0.1s"
+          ],
+          "sha256": "cbbe187b06d9ae0a71a20c4763bda7b6ebe5730afeff22d4782a3e4676dd0d0e"
+        },
+        {
+          "file": "IndependentMotionFrames/Comic/frame-013.png",
+          "frame_index": 180,
+          "video_seconds": 3.0,
+          "labels": [
+            "1Hz 3s"
+          ],
+          "sha256": "eb8ffdc11bfd24e90ac930259079cd1758de8e8d73027ebf1fdae8f502fb75f7"
+        },
+        {
+          "file": "IndependentMotionFrames/Comic/frame-014.png",
+          "frame_index": 181,
+          "video_seconds": 3.0166666666666666,
+          "labels": [
+            "turn boundary+0.0s"
+          ],
+          "sha256": "150a05465fc2db05c8ad70ae7d6ec7b238d5cc27c3e635245492ea6467d61749"
+        },
+        {
+          "file": "IndependentMotionFrames/Comic/frame-015.png",
+          "frame_index": 187,
+          "video_seconds": 3.1166666666666667,
+          "labels": [
+            "turn boundary+0.1s"
+          ],
+          "sha256": "17c5a093b68cd9a90c83e0f9f4bb3cd507d4107470bac908ad2ab0e8eaf1bb45"
+        },
+        {
+          "file": "IndependentMotionFrames/Comic/frame-016.png",
+          "frame_index": 206,
+          "video_seconds": 3.433333333333333,
+          "labels": [
+            "turn midpoint"
+          ],
+          "sha256": "1e361f232ade9bc34cd64b34c7e1ffa56fe558ad99cf89aff0ff37eb4c8417ab"
+        },
+        {
+          "file": "IndependentMotionFrames/Comic/frame-017.png",
+          "frame_index": 225,
+          "video_seconds": 3.75,
+          "labels": [
+            "stop boundary-0.1s"
+          ],
+          "sha256": "f4bc3097783fe8cadb6b69d861a8d34367350f0ada2bc7a0d8a978cabe4c54af"
+        },
+        {
+          "file": "IndependentMotionFrames/Comic/frame-018.png",
+          "frame_index": 231,
+          "video_seconds": 3.85,
+          "labels": [
+            "stop boundary+0.0s"
+          ],
+          "sha256": "009e5a09d30ab005603fa35e942dc88411b169497063798cd005170eaaa04c61"
+        },
+        {
+          "file": "IndependentMotionFrames/Comic/frame-019.png",
+          "frame_index": 237,
+          "video_seconds": 3.95,
+          "labels": [
+            "stop boundary+0.1s"
+          ],
+          "sha256": "98813f892f96d8c25cf12633161f7d9849f0991acc5e129799e4a95d5f742ed0"
+        },
+        {
+          "file": "IndependentMotionFrames/Comic/frame-020.png",
+          "frame_index": 240,
+          "video_seconds": 4.0,
+          "labels": [
+            "1Hz 4s"
+          ],
+          "sha256": "8e34cdcf7950f90672865313c83ebd14f8ec0c93482f3e368e038077324aee04"
+        },
+        {
+          "file": "IndependentMotionFrames/Comic/frame-021.png",
+          "frame_index": 252,
+          "video_seconds": 4.2,
+          "labels": [
+            "stop midpoint"
+          ],
+          "sha256": "65870378239aff66a0c6bb0d84b75e319b8153c6e12e67f71cb8f42be52a5002"
+        },
+        {
+          "file": "IndependentMotionFrames/Comic/frame-022.png",
+          "frame_index": 268,
+          "video_seconds": 4.466666666666667,
+          "labels": [
+            "jump boundary-0.1s"
+          ],
+          "sha256": "22b1304e727844a500190b9cd2cc3b0e2d1f73893f92012a9c4da9cda07585eb"
+        },
+        {
+          "file": "IndependentMotionFrames/Comic/frame-023.png",
+          "frame_index": 274,
+          "video_seconds": 4.566666666666666,
+          "labels": [
+            "jump boundary+0.0s"
+          ],
+          "sha256": "412a18bdb2f12c10e8e5aac0d750907ee12ebc6b3fe6379def5c1aa51b30fe6f"
+        },
+        {
+          "file": "IndependentMotionFrames/Comic/frame-024.png",
+          "frame_index": 280,
+          "video_seconds": 4.666666666666667,
+          "labels": [
+            "jump boundary+0.1s"
+          ],
+          "sha256": "18566c18d7fec55c9cdf75e7dc075ed50acd4bf85c4550f81c3424bb940a3af3"
+        },
+        {
+          "file": "IndependentMotionFrames/Comic/frame-025.png",
+          "frame_index": 289,
+          "video_seconds": 4.816666666666666,
+          "labels": [
+            "jump +0.25s"
+          ],
+          "sha256": "79912171ed44531447889a61eac29329a443571270ca707ff43885c3a817aff9"
+        },
+        {
+          "file": "IndependentMotionFrames/Comic/frame-026.png",
+          "frame_index": 300,
+          "video_seconds": 5.0,
+          "labels": [
+            "1Hz 5s"
+          ],
+          "sha256": "d96d9f384c790b6b59a79bd1bf09adcfbb2db4b66ee5cade03542f77fb60735d"
+        },
+        {
+          "file": "IndependentMotionFrames/Comic/frame-027.png",
+          "frame_index": 304,
+          "video_seconds": 5.066666666666666,
+          "labels": [
+            "jump +0.50s"
+          ],
+          "sha256": "aae0e5fe6ad4a0fc8ab30d53c03ae5355d9deadb43316abb0b9f8c60c8fc9451"
+        },
+        {
+          "file": "IndependentMotionFrames/Comic/frame-028.png",
+          "frame_index": 313,
+          "video_seconds": 5.216666666666667,
+          "labels": [
+            "jump midpoint"
+          ],
+          "sha256": "4716bc14429aed152e8c760edb6d9cada96baeeca2c8ad4fc0b434b80eab200a"
+        },
+        {
+          "file": "IndependentMotionFrames/Comic/frame-029.png",
+          "frame_index": 319,
+          "video_seconds": 5.316666666666666,
+          "labels": [
+            "jump +0.75s"
+          ],
+          "sha256": "ab6875e19855e57ac52615aacba9fd7182b748c1448c14d5134b5cee6403c12f"
+        },
+        {
+          "file": "IndependentMotionFrames/Comic/frame-030.png",
+          "frame_index": 334,
+          "video_seconds": 5.566666666666666,
+          "labels": [
+            "jump +1.00s"
+          ],
+          "sha256": "f150de5b9cdc088eef6a320207c1069c901575f8fdab37d8452490b0d9c23d4d"
+        },
+        {
+          "file": "IndependentMotionFrames/Comic/frame-031.png",
+          "frame_index": 346,
+          "video_seconds": 5.766666666666667,
+          "labels": [
+            "landing boundary-0.1s"
+          ],
+          "sha256": "580533d94726bb0d27ce31539b607d7953fa4b135e4629278f835be58fd874fa"
+        },
+        {
+          "file": "IndependentMotionFrames/Comic/frame-032.png",
+          "frame_index": 352,
+          "video_seconds": 5.866666666666666,
+          "labels": [
+            "landing boundary+0.0s"
+          ],
+          "sha256": "03634a49f448e0451744aa41b94b723a6eafdeaccb23ba952713452f2aef65c5"
+        },
+        {
+          "file": "IndependentMotionFrames/Comic/frame-033.png",
+          "frame_index": 358,
+          "video_seconds": 5.966666666666667,
+          "labels": [
+            "landing boundary+0.1s",
+            "landing midpoint"
+          ],
+          "sha256": "1ede0c93efed3982be5cc1b5253676adcf8b00bd8eedcbf429cc8038ca87b039"
+        },
+        {
+          "file": "IndependentMotionFrames/Comic/frame-034.png",
+          "frame_index": 359,
+          "video_seconds": 5.983333333333333,
+          "labels": [
+            "recover boundary-0.1s"
+          ],
+          "sha256": "f83c818fbf7efa45afb3a371e52cd69937f2fb801064e7c47fe3c42d120d8788"
+        },
+        {
+          "file": "IndependentMotionFrames/Comic/frame-035.png",
+          "frame_index": 360,
+          "video_seconds": 6.0,
+          "labels": [
+            "1Hz 6s"
+          ],
+          "sha256": "c87f3db7d2829363d6cacccd3dd9b536dfc6a5e4cb052ef6907e4d93c09bebf2"
+        },
+        {
+          "file": "IndependentMotionFrames/Comic/frame-036.png",
+          "frame_index": 365,
+          "video_seconds": 6.083333333333333,
+          "labels": [
+            "recover boundary+0.0s"
+          ],
+          "sha256": "e1ec9e43791b3f7bef0ddd06ea37e2d85028d7ec62816c27fdf8c192a190fee2"
+        },
+        {
+          "file": "IndependentMotionFrames/Comic/frame-037.png",
+          "frame_index": 371,
+          "video_seconds": 6.183333333333334,
+          "labels": [
+            "recover boundary+0.1s"
+          ],
+          "sha256": "95af26e2b884421dffa4cecc8d74cfefeec6ef91087cc85df534ca06144212a4"
+        },
+        {
+          "file": "IndependentMotionFrames/Comic/frame-038.png",
+          "frame_index": 383,
+          "video_seconds": 6.383333333333334,
+          "labels": [
+            "recover midpoint"
+          ],
+          "sha256": "6a3fa34cb215e0fe8a51815b2b1ea32346e869787bb51c2196b1d4f5b62e5599"
+        },
+        {
+          "file": "IndependentMotionFrames/Comic/frame-039.png",
+          "frame_index": 420,
+          "video_seconds": 7.0,
+          "labels": [
+            "1Hz 7s"
+          ],
+          "sha256": "38bc378902e32d1a79057e198a74fa8b1881eed48e217dc2ae0f1dbc8d139edf"
+        },
+        {
+          "file": "IndependentMotionFrames/Comic/frame-040.png",
+          "frame_index": 480,
+          "video_seconds": 8.0,
+          "labels": [
+            "1Hz 8s"
+          ],
+          "sha256": "9d75858b0e4649f37f2d06be0afa8f319fd143079a9a229c619c49b6959f08a9"
+        },
+        {
+          "file": "IndependentMotionFrames/Comic/frame-041.png",
+          "frame_index": 540,
+          "video_seconds": 9.0,
+          "labels": [
+            "1Hz 9s"
+          ],
+          "sha256": "df26bae2b0813498ed7b378e67577b0f1bca8c383c798283224d7e1291c76e7d"
+        }
+      ],
+      "contact_sheets": [
+        {
+          "file": "IndependentMotionFrames/Comic/full-1Hz-contact.png",
+          "sha256": "73ddb5226634d2f840077b7f759c19c5d1e6143a5e759b6e05198d0dfd9392b9",
+          "crop": null
+        },
+        {
+          "file": "IndependentMotionFrames/Comic/phase-crops-01.png",
+          "sha256": "6fde0285d16119c14b77da26b79779c45d8b8cd20557b745d47095dbe4448f49",
+          "crop": [
+            660,
+            360,
+            1260,
+            1040
+          ]
+        },
+        {
+          "file": "IndependentMotionFrames/Comic/phase-crops-02.png",
+          "sha256": "194ab250d87c7f45a52c6beb7bf25a5b5a3505eb83626fb69492e8db2774daaa",
+          "crop": [
+            660,
+            360,
+            1260,
+            1040
+          ]
+        },
+        {
+          "file": "IndependentMotionFrames/Comic/phase-crops-03.png",
+          "sha256": "b59f15c6d5a4b1704193dd6f3bf5b249513bf178763f153ef1781d56d5752859",
+          "crop": [
+            660,
+            360,
+            1260,
+            1040
+          ]
+        },
+        {
+          "file": "IndependentMotionFrames/Comic/phase-crops-04.png",
+          "sha256": "72db94a7a0caf0fdf831fe4aca7877b64bc3018fc7cb100f65db5c914f23baab",
+          "crop": [
+            660,
+            360,
+            1260,
+            1040
+          ]
+        }
+      ],
+      "extraction_command": [
+        "ffmpeg",
+        "-v",
+        "error",
+        "-hwaccel",
+        "none",
+        "-threads",
+        "2",
+        "-i",
+        "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/GraphicNovel/RenderedMotion-20261014T051948Z/Motion1920Comic/raw.mp4",
+        "-vf",
+        "select=eq(n\\,0)+eq(n\\,5)+eq(n\\,11)+eq(n\\,17)+eq(n\\,54)+eq(n\\,60)+eq(n\\,91)+eq(n\\,97)+eq(n\\,103)+eq(n\\,120)+eq(n\\,139)+eq(n\\,175)+eq(n\\,180)+eq(n\\,181)+eq(n\\,187)+eq(n\\,206)+eq(n\\,225)+eq(n\\,231)+eq(n\\,237)+eq(n\\,240)+eq(n\\,252)+eq(n\\,268)+eq(n\\,274)+eq(n\\,280)+eq(n\\,289)+eq(n\\,300)+eq(n\\,304)+eq(n\\,313)+eq(n\\,319)+eq(n\\,334)+eq(n\\,346)+eq(n\\,352)+eq(n\\,358)+eq(n\\,359)+eq(n\\,360)+eq(n\\,365)+eq(n\\,371)+eq(n\\,383)+eq(n\\,420)+eq(n\\,480)+eq(n\\,540)",
+        "-fps_mode",
+        "vfr",
+        "-threads",
+        "2",
+        "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/GraphicNovel/RenderedMotion-20261014T051948Z/IndependentMotionFrames/Comic/frame-%03d.png"
+      ]
+    }
+  }
+}

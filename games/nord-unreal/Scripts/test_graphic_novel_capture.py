@@ -1,6 +1,7 @@
 """Check isolated capture routing and real graph-diagnostic sampling without Unreal."""
 import ast
 import copy
+import json
 import math
 from pathlib import Path
 from types import SimpleNamespace
@@ -62,6 +63,125 @@ for flags in ('-NordNeutralCandidate -NordGraphicNovelCandidate', '-NordGraphicN
         pass
     else:
         raise AssertionError('Conflicting/unsafe fixture flags accepted')
+
+bootstrap = next(node for node in TREE.body if isinstance(node, ast.FunctionDef) and node.name == 'restart_immersive_startup')
+world = SimpleNamespace(get_path_name=lambda: '/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine')
+ended = []
+bootstrap_context = {'MOTION': True, 'HEADLESS': False, 'COMMAND_LINE': '-immersive', 'STATE': {}, 'REPORT': {},
+    'LEVELS': SimpleNamespace(editor_request_end_play=lambda: ended.append(True)),
+    'u': SimpleNamespace(SystemLibrary=SimpleNamespace(is_standalone=lambda _: True),
+        GameplayStatics=SimpleNamespace(get_current_level_name=lambda *_: 'LaFontaine',
+            get_num_player_controllers=lambda _: 1, get_num_local_player_controllers=lambda _: 1), log=lambda _: None)}
+exec(compile(ast.Module(body=[bootstrap], type_ignores=[]), str(SOURCE), 'exec'), bootstrap_context)
+bootstrap_context['restart_immersive_startup']([world])
+assert ended == [True] and bootstrap_context['STATE']['owns_pie']
+for defect in ('second_restart', 'still', 'headless', 'missing_flag', 'multiple_worlds', 'networked', 'wrong_map', 'remote_player'):
+    bootstrap_context.update(MOTION=True, HEADLESS=False, COMMAND_LINE='-immersive', STATE={})
+    bootstrap_context['u'].SystemLibrary.is_standalone = lambda _: True
+    gameplay = bootstrap_context['u'].GameplayStatics
+    gameplay.get_current_level_name = lambda *_: 'LaFontaine'
+    gameplay.get_num_player_controllers = lambda _: 1
+    worlds = [world]
+    if defect == 'second_restart': bootstrap_context['STATE']['immersive_restart_requested'] = True
+    elif defect == 'still': bootstrap_context['MOTION'] = False
+    elif defect == 'headless': bootstrap_context['HEADLESS'] = True
+    elif defect == 'missing_flag': bootstrap_context['COMMAND_LINE'] = '-immersiveOther'
+    elif defect == 'multiple_worlds': worlds *= 2
+    elif defect == 'networked': bootstrap_context['u'].SystemLibrary.is_standalone = lambda _: False
+    elif defect == 'wrong_map': gameplay.get_current_level_name = lambda *_: 'Other'
+    elif defect == 'remote_player': gameplay.get_num_player_controllers = lambda _: 2
+    try:
+        bootstrap_context['restart_immersive_startup'](worlds)
+    except AssertionError:
+        pass
+    else:
+        raise AssertionError('Unsafe immersive startup accepted: ' + defect)
+assert ended == [True], 'A rejected session must never be ended'
+
+calibrate = next(node for node in TREE.body if isinstance(node, ast.FunctionDef) and node.name == 'calibrate_motion_viewport')
+rectangle_probe = next(node for node in TREE.body if isinstance(node, ast.FunctionDef) and node.name == 'native_viewport_rectangle')
+
+
+def calibration_fixture():
+    sample = {'now': 0., 'frame': 10, 'viewport': [1852, 960], 'origin': [34, 86],
+              'extent': [1920, 1080], 'display': [2048, 1280]}
+    commands, logs, moves = [], [], []
+
+    def move_mouse(x, y):
+        moves.append([x, y])
+        sample['cursor'] = [sample['origin'][0] + x * sample['extent'][0] / 1920,
+                            sample['origin'][1] + y * sample['extent'][1] / 1080]
+
+    context = {'MOTION': True, 'HEADLESS': False, 'COMMAND_LINE': '-immersive',
+        'WIDTH': 1920, 'HEIGHT': 1080, 'REPORT': {}, 'math': math, 'json': json,
+        'STATE': {'owns_pie': True, 'world': world, 'pc': SimpleNamespace(get_viewport_size=lambda: sample['viewport'],
+            get_mouse_position=lambda: (120, 80), set_mouse_location=move_mouse)},
+        'time': SimpleNamespace(monotonic=lambda: sample['now']),
+        'u': SimpleNamespace(SystemLibrary=SimpleNamespace(get_frame_count=lambda: sample['frame'],
+                execute_console_command=lambda _, command, __: commands.append(command)),
+            GameUserSettings=SimpleNamespace(get_game_user_settings=lambda: SimpleNamespace(
+                get_desktop_resolution=lambda: SimpleNamespace(x=sample['display'][0], y=sample['display'][1]))),
+            WidgetLayoutLibrary=SimpleNamespace(get_mouse_position_on_platform=lambda: SimpleNamespace(x=sample['cursor'][0], y=sample['cursor'][1])),
+            log=logs.append)}
+    context['mouse_moves'] = moves
+    exec(compile(ast.Module(body=[rectangle_probe, calibrate], type_ignores=[]), str(SOURCE), 'exec'), context)
+    return context, sample, commands, logs
+
+
+context, sample, commands, logs = calibration_fixture()
+assert not context['calibrate_motion_viewport']()
+sample.update(now=.5, frame=12)
+assert not context['calibrate_motion_viewport']() and len(commands) == 1
+sample.update(now=1.1, frame=11)
+assert not context['calibrate_motion_viewport']() and len(commands) == 1
+sample['frame'] = 12
+assert not context['calibrate_motion_viewport']()
+assert commands == ['Editor.ResizeMainFrame 1920 1080', 'Editor.ResizeMainFrame 1988 1200']
+sample.update(now=2.2, frame=14, viewport=[1920, 1080])
+assert context['calibrate_motion_viewport']()
+rectangle = json.loads(logs[0].split(' ', 1)[1])
+assert rectangle == {'x': 34, 'y': 86, 'width': 1920, 'height': 1080, 'display_pixels': [2048, 1280]}
+assert context['REPORT']['viewport_calibration']['passed'] and len(commands) == 2
+assert context['mouse_moves'] == [[0, 0], [1919, 0], [0, 1079], [120, 80]]
+assert len(context['REPORT']['viewport_calibration']['native_viewport_cursor_probes']) == 3
+context, sample, commands, logs = calibration_fixture()
+sample['viewport'] = [1920, 1080]
+assert not context['calibrate_motion_viewport']()
+sample.update(now=1.1, frame=12)
+assert context['calibrate_motion_viewport']() and len(commands) == 1, 'Matching viewport needs no compensation'
+
+for defect in ('still', 'headless', 'missing_flag', 'unowned', 'small_display', 'empty_viewport',
+               'unfitting_chrome', 'wrong_final_size', 'negative_origin', 'offscreen', 'nan',
+               'fractional_origin', 'scaled_native_geometry', 'empty_native_geometry', 'timeout'):
+    context, sample, commands, logs = calibration_fixture()
+    if defect == 'still': context['MOTION'] = False
+    elif defect == 'headless': context['HEADLESS'] = True
+    elif defect == 'missing_flag': context['COMMAND_LINE'] = '-immersiveOther'
+    elif defect == 'unowned': context['STATE']['owns_pie'] = False
+    elif defect == 'small_display': sample['display'] = [1280, 720]
+    try:
+        context['calibrate_motion_viewport']()
+        sample.update(now=1.1, frame=12)
+        if defect == 'empty_viewport': sample['viewport'] = [0, 0]
+        elif defect == 'unfitting_chrome': sample['viewport'] = [1700, 800]
+        elif defect == 'timeout': sample['now'] = 11
+        context['calibrate_motion_viewport']()
+        sample.update(now=2.2, frame=14, viewport=[1920, 1080])
+        if defect == 'wrong_final_size': sample['viewport'] = [1852, 960]
+        elif defect == 'negative_origin': sample['origin'] = [-1, 86]
+        elif defect == 'offscreen': sample['origin'] = [129, 86]
+        elif defect == 'nan': sample['origin'][0] = math.nan
+        elif defect == 'fractional_origin': sample['origin'][0] = 34.5
+        elif defect == 'scaled_native_geometry': sample['extent'] = [960, 540]
+        elif defect == 'empty_native_geometry': sample['extent'] = [0, 0]
+        context['calibrate_motion_viewport']()
+    except AssertionError:
+        pass
+    else:
+        raise AssertionError('Unsafe recording geometry accepted: ' + defect)
+    assert len(commands) <= 2 and not logs, 'Rejected geometry must not signal recording readiness'
+    if context['mouse_moves']:
+        assert context['mouse_moves'][-1] == [120, 80], 'Rejected probe must restore the private capture cursor'
 
 functions = [node for node in TREE.body if isinstance(node, ast.FunctionDef)
              and node.name in ('animation_state', 'record_locomotion')]
@@ -148,4 +268,4 @@ for defect in ('paused', 'slow', 'held_foot', 'held_clip', 'missing_turn', 'shor
         pass
     else:
         raise AssertionError('Unsafe motion observations accepted: ' + defect)
-print('NORD_GRAPHIC_NOVEL_CAPTURE_CPU_OK isolated modes/motion, rejected flags, native transition failures, graph weights/times and legacy sampling')
+print('NORD_GRAPHIC_NOVEL_CAPTURE_CPU_OK isolated modes/motion, bounded viewport geometry, rejected flags, native transition failures, graph weights/times and legacy sampling')

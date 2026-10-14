@@ -106,11 +106,11 @@ for name,style in styles.items():
         if channel=='normal':node.sampler_type=u.MaterialSamplerType.SAMPLERTYPE_NORMAL
         elif channel!='base_color':node.sampler_type=u.MaterialSamplerType.SAMPLERTYPE_MASKS
         if channel=='normal':
-            # Dense generated skin normals overwhelm painted eyes/mouth; retain 35% of their strength.
+            # The new bake needs full detail; retain the older bodies' calibrated attenuation.
             flat=materials.create_material_expression(material,u.MaterialExpressionConstant3Vector,-400,250)
             flat.set_editor_property('constant',u.LinearColor(0,0,1,1))
             detail=materials.create_material_expression(material,u.MaterialExpressionLinearInterpolate,-150,250)
-            detail.set_editor_property('const_alpha',.65)
+            detail.set_editor_property('const_alpha',0. if generated else .65)
             assert materials.connect_material_expressions(node,'RGB',detail,'A')
             assert materials.connect_material_expressions(flat,'',detail,'B')
             assert materials.connect_material_property(detail,'',prop)

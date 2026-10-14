@@ -1,0 +1,163 @@
+{
+  "passed": true,
+  "phase": "complete",
+  "jobs": [
+    {
+      "name": "Motion1920Standard",
+      "command": [
+        "/home/von/.local/share/Epic/UE_5.8.3/Engine/Binaries/Linux/UnrealEditor",
+        "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Quebec.uproject",
+        "/Game/Maps/LaFontaine",
+        "-vulkan",
+        "-graphicsadapter=0",
+        "-windowed",
+        "-ForceRes",
+        "-ResX=1920",
+        "-ResY=1080",
+        "-WinX=0",
+        "-WinY=0",
+        "-unattended",
+        "-nop4",
+        "-nosound",
+        "-NoSplash",
+        "-NordNoCampaign",
+        "-NordNoCampaignSave",
+        "-ini:Engine:[ConsoleVariables]:Slate.bAllowNotifications=0",
+        "-NordGraphicNovelCandidate",
+        "-NordGraphicNovelGenerated",
+        "-UDPMESSAGING_TRANSPORT_ENABLE=0",
+        "-ExecutePythonScript=/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/GraphicNovel/RenderedMotion-20261014T051948Z/capture.py",
+        "-abslog=/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/GraphicNovel/RenderedMotion-20261014T051948Z/Motion1920Standard/native.log",
+        "-NordGraphicNovelStandard",
+        "-NordQuality1920",
+        "-immersive",
+        "-NordGraphicNovelMotion",
+        "-ExecCmds=t.MaxFPS 60"
+      ],
+      "process_exit_code": 0,
+      "report": "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/GraphicNovel/RenderedMotion-20261014T051948Z/Capture/Motion/Standard/PlayerMotion1920.json",
+      "video": "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/GraphicNovel/RenderedMotion-20261014T051948Z/Motion1920Standard/raw.mp4",
+      "recording_rectangle": {
+        "x": 34,
+        "y": 86,
+        "width": 1920,
+        "height": 1080,
+        "display_pixels": [
+          2048,
+          1280
+        ]
+      },
+      "recording_started_monotonic": 40582.383082227,
+      "recorder_exit_code": 0,
+      "log_guard": {
+        "passed": true,
+        "dependency_shader_and_fatal_errors": 0
+      },
+      "video_sha256": "3d9a427d3262cf7e064dca115f67c961d7e93ac799427683ccce6f9176b4cd5a",
+      "viewport_pixels_observed": [
+        1920,
+        1080
+      ],
+      "report_sha256": "baf9cd3c019d800775dc257aab0b2662874a87aa53f3657171e9eedd47c8df3c",
+      "passed": true
+    },
+    {
+      "name": "Motion1920Comic",
+      "command": [
+        "/home/von/.local/share/Epic/UE_5.8.3/Engine/Binaries/Linux/UnrealEditor",
+        "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Quebec.uproject",
+        "/Game/Maps/LaFontaine",
+        "-vulkan",
+        "-graphicsadapter=0",
+        "-windowed",
+        "-ForceRes",
+        "-ResX=1920",
+        "-ResY=1080",
+        "-WinX=0",
+        "-WinY=0",
+        "-unattended",
+        "-nop4",
+        "-nosound",
+        "-NoSplash",
+        "-NordNoCampaign",
+        "-NordNoCampaignSave",
+        "-ini:Engine:[ConsoleVariables]:Slate.bAllowNotifications=0",
+        "-NordGraphicNovelCandidate",
+        "-NordGraphicNovelGenerated",
+        "-UDPMESSAGING_TRANSPORT_ENABLE=0",
+        "-ExecutePythonScript=/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/GraphicNovel/RenderedMotion-20261014T051948Z/capture.py",
+        "-abslog=/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/GraphicNovel/RenderedMotion-20261014T051948Z/Motion1920Comic/native.log",
+        "-NordQuality1920",
+        "-immersive",
+        "-NordGraphicNovelMotion",
+        "-ExecCmds=t.MaxFPS 60"
+      ],
+      "process_exit_code": 0,
+      "report": "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/GraphicNovel/RenderedMotion-20261014T051948Z/Capture/Motion/Comic/PlayerMotion1920.json",
+      "video": "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/GraphicNovel/RenderedMotion-20261014T051948Z/Motion1920Comic/raw.mp4",
+      "recording_rectangle": {
+        "x": 34,
+        "y": 86,
+        "width": 1920,
+        "height": 1080,
+        "display_pixels": [
+          2048,
+          1280
+        ]
+      },
+      "recording_started_monotonic": 40622.164602031,
+      "recorder_exit_code": 0,
+      "log_guard": {
+        "passed": true,
+        "dependency_shader_and_fatal_errors": 0
+      },
+      "video_sha256": "7e0277bae574e69e3c6790fb4f2501cbfd2d2777b4e460b75261906f10a4a511",
+      "viewport_pixels_observed": [
+        1920,
+        1080
+      ],
+      "report_sha256": "58fd7af7f136c9a235d49348eb13790c8f22b4189a8b4ecbaa20516f6740ee51",
+      "passed": true
+    }
+  ],
+  "service_actions": [
+    "stop nord-browser-demo.service",
+    "restore nord-browser-demo.service"
+  ],
+  "restored": true,
+  "live_saves_before_render": {
+    "Builds/Browser/Linux/Quebec/Saved_BrowserSaveQA/SaveGames/NordCampaign_StorySliceQA_v1.sav": "cec872fd0b2c1b7ea7f18814c787448e00117c6acd8ac46a71f674a26470e88e"
+  },
+  "display": ":0",
+  "global_settings_restored": true,
+  "source_settings_restored": true,
+  "protected_changed": [],
+  "generated_assets_changed": [],
+  "stream_helper_unchanged": true,
+  "live_package_changed": [],
+  "live_saves_changed_before_restart": [],
+  "restored_main_pid": 2729591,
+  "restored_children": [
+    {
+      "name": "signalling",
+      "pid": 2729610,
+      "stdout": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/BrowserStreaming/signalling-20261014-052444-2729591.stdout.log"
+    },
+    {
+      "name": "host",
+      "pid": 2729657,
+      "stdout": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/BrowserStreaming/host-20261014-052444-2729591.stdout.log"
+    },
+    {
+      "name": "friend",
+      "pid": 2730064,
+      "stdout": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/BrowserStreaming/friend-20261014-052444-2729591.stdout.log"
+    }
+  ],
+  "preserved_units_after": {
+    "nord-browser-public.service": "ActiveState=active\nMainPID=109459",
+    "nord-browser-funnel.service": "ActiveState=active\nMainPID=109441",
+    "nord-browser-turn-funnel.service": "ActiveState=active\nMainPID=109422"
+  },
+  "preserved_units_unchanged": true
+}

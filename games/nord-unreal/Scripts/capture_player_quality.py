@@ -14,6 +14,8 @@ Add -NordGraphicNovelGenerated to inspect the separately imported new body and i
 Add -NordGraphicNovelStandard to review the standard view in a separate output folder.
 Add -NordGraphicNovelHeadless for native state/bone checks without rendered evidence.
 Add -NordGraphicNovelMotion for separate unpaused 1x native transitions without stills.
+Rendered motion with -immersive restarts its single standalone startup PIE once,
+calibrates the viewport to the requested pixels, and logs its desktop recording rectangle.
 """
 import configparser
 import hashlib
@@ -372,6 +374,10 @@ def validate_assets(style):
     else:
         material = slots[0].material_interface
     base = u.MaterialEditingLibrary.get_material_property_input_node(material, u.MaterialProperty.MP_BASE_COLOR)
+    if GRAPHIC_NOVEL_CANDIDATE:
+        normal = u.MaterialEditingLibrary.get_material_property_input_node(material, u.MaterialProperty.MP_NORMAL)
+        assert isinstance(normal, u.MaterialExpressionLinearInterpolate)
+        result['mapped_normal_strength'] = 1. - normal.get_editor_property('const_alpha')
     texture = base.get_editor_property('texture')
     assert texture.get_path_name().startswith(folder + '/T_base_color'), (style, 'wrong atlas')
     assert texture.get_editor_property('compression_settings') == u.TextureCompressionSettings.TC_BC7
@@ -730,7 +736,8 @@ def finish(error=None):
         if STATE.get('world'):
             u.GameplayStatics.set_game_paused(STATE['world'], False)
             u.GameplayStatics.set_global_time_dilation(STATE['world'], STATE['original_time_dilation'])
-        LEVELS.editor_request_end_play()
+        if STATE.get('owns_pie'):
+            LEVELS.editor_request_end_play()
     finally:
         for key, value in ORIGINAL.items():
             SETTINGS.set_editor_property(key, value)
@@ -746,6 +753,88 @@ def finish(error=None):
         u.log_error('NORD_PLAYER_QUALITY_FAILED ' + str(error))
 
 
+def restart_immersive_startup(worlds):
+    assert MOTION and not HEADLESS and '-immersive' in COMMAND_LINE.lower().split(), 'Begin this capture outside PIE'
+    assert len(worlds) == 1, 'Immersive bootstrap requires exactly one startup PIE world'
+    world = worlds[0]
+    assert u.SystemLibrary.is_standalone(world), 'Immersive bootstrap requires standalone PIE'
+    assert u.GameplayStatics.get_current_level_name(world, True) == 'LaFontaine', 'Unexpected immersive startup map'
+    assert u.GameplayStatics.get_num_player_controllers(world) == u.GameplayStatics.get_num_local_player_controllers(world) == 1, 'Immersive startup must have one local player'
+    assert not STATE.get('immersive_restart_requested'), 'Immersive startup may only restart once'
+    STATE.update(immersive_restart_requested=True, owns_pie=True)
+    REPORT['viewport_bootstrap'] = {'method': 'restart owned immersive startup PIE once before saved-build checks',
+        'startup_world': world.get_path_name(), 'standalone_local_players': 1,
+        'scope': 'rendered motion only; the existing immersive viewport is retained, assets are not changed'}
+    LEVELS.editor_request_end_play()
+    u.log('NORD_PLAYER_MOTION_IMMERSIVE_RESTART')
+
+
+def native_viewport_rectangle(calibration):
+    # SetMouseLocation reaches FSceneViewport::SetMouse, which maps native pixels
+    # through its CachedGeometry; the platform cursor readback is desktop space.
+    # UMG widget-host geometry can be empty for this native AHUD-only PIE viewport.
+    pc = STATE['pc']
+    previous = pc.get_mouse_position()
+    probes = calibration['native_viewport_cursor_probes'] = []
+    try:
+        for point in ([0, 0], [WIDTH - 1, 0], [0, HEIGHT - 1]):
+            pc.set_mouse_location(*point)
+            desktop = u.WidgetLayoutLibrary.get_mouse_position_on_platform()
+            probes.append({'viewport_pixels': point, 'desktop_pixels': [desktop.x, desktop.y]})
+        origin, horizontal, vertical = (probe['desktop_pixels'] for probe in probes)
+        assert all(math.isfinite(value) and abs(value - round(value)) < .01 for probe in probes for value in probe['desktop_pixels']), ('Native viewport probes are not finite integral screen pixels', probes)
+        assert horizontal == [origin[0] + WIDTH - 1, origin[1]] and vertical == [origin[0], origin[1] + HEIGHT - 1], ('Native viewport does not map one-to-one to desktop pixels', probes)
+        calibration['geometry_source'] = 'FSceneViewport cached geometry via three native-pixel cursor probes; platform desktop readback'
+        return [origin[0], origin[1], WIDTH, HEIGHT]
+    finally:
+        restore = [round(value) for value in previous] if previous is not None else [WIDTH // 2, HEIGHT // 2]
+        pc.set_mouse_location(*restore)
+        calibration['cursor_restored_viewport_pixels'] = restore
+
+
+def calibrate_motion_viewport():
+    assert MOTION and not HEADLESS and '-immersive' in COMMAND_LINE.lower().split() and STATE.get('owns_pie'), 'Viewport calibration requires owned rendered immersive PIE'
+    now, frame = time.monotonic(), u.SystemLibrary.get_frame_count()
+    calibration = REPORT.get('viewport_calibration')
+    if calibration is None:
+        desktop = u.GameUserSettings.get_game_user_settings().get_desktop_resolution()
+        display = [desktop.x, desktop.y]
+        assert display[0] >= WIDTH and display[1] >= HEIGHT, ('Capture display is too small', display)
+        calibration = REPORT['viewport_calibration'] = {
+            'passed': False, 'method': 'resize owned editor root, then compensate measured chrome at most once',
+            'display_pixels': display, 'target_viewport_pixels': [WIDTH, HEIGHT], 'attempts': []}
+        requested = [WIDTH, HEIGHT]
+    else:
+        assert now - STATE['viewport_resize_started'] < 10, 'Viewport calibration timed out'
+        # X11 size events and Slate layout require subsequent engine frames.
+        if now - STATE['viewport_resize_started'] < 1 or frame - STATE['viewport_resize_frame'] < 2:
+            return False
+        observed = list(STATE['pc'].get_viewport_size())
+        calibration['attempts'][-1]['observed_viewport_pixels'] = observed
+        if observed != [WIDTH, HEIGHT] and len(calibration['attempts']) == 1:
+            assert all(value > 0 for value in observed), ('Empty game viewport', observed)
+            requested = [2 * WIDTH - observed[0], 2 * HEIGHT - observed[1]]
+        else:
+            assert observed == [WIDTH, HEIGHT], ('Game viewport remains the wrong size after bounded calibration', observed)
+            values = native_viewport_rectangle(calibration)
+            assert all(math.isfinite(value) and abs(value - round(value)) < .01 for value in values), ('Viewport rectangle is not finite integral screen pixels', values)
+            x, y, width, height = map(round, values)
+            assert [width, height] == observed, ('Measured game rectangle does not match native viewport', values, observed)
+            display = calibration['display_pixels']
+            assert x >= 0 and y >= 0 and x + width <= display[0] and y + height <= display[1], ('Game recording rectangle extends outside the display', values, display)
+            rectangle = {'x': x, 'y': y, 'width': width, 'height': height, 'display_pixels': display}
+            calibration.update(passed=True, desktop_recording_rectangle=rectangle)
+            REPORT['viewport_pixels_observed'] = observed
+            u.log('NORD_PLAYER_MOTION_VIEWPORT ' + json.dumps(rectangle, separators=(',', ':')))
+            return True
+    display = calibration['display_pixels']
+    assert WIDTH <= requested[0] <= display[0] and HEIGHT <= requested[1] <= display[1], ('Measured chrome cannot fit capture display', requested, display)
+    calibration['attempts'].append({'requested_root_pixels': requested})
+    STATE.update(viewport_resize_started=now, viewport_resize_frame=frame)
+    u.SystemLibrary.execute_console_command(STATE['world'], f'Editor.ResizeMainFrame {requested[0]} {requested[1]}', STATE['pc'])
+    return False
+
+
 def tick(dt):
     try:
         assert time.monotonic() - STATE['started'] < 300, 'Capture watchdog expired'
@@ -754,7 +843,11 @@ def tick(dt):
             if time.monotonic() - STATE['started'] < 2:
                 return
             assert shutil.which('magick'), 'ImageMagick is required to compare imported texture source pixels'
-            assert not u.EditorLevelLibrary.get_pie_worlds(True), 'Begin this capture outside PIE'
+            worlds = u.EditorLevelLibrary.get_pie_worlds(True)
+            if worlds:
+                if not STATE.get('immersive_restart_requested'):
+                    restart_immersive_startup(worlds)
+                return
             STATE['mesh_build_flags']={}
             REPORT['pre_pie_mesh_build_flags']=STATE['mesh_build_flags']
             for style in STYLES:
@@ -768,6 +861,7 @@ def tick(dt):
             SETTINGS.set_editor_property('PlayNumberOfClients', 1)
             SETTINGS.set_editor_property('RunUnderOneProcess', True)
             SYSTEM.call_method('SetBytePropertyByName', (SETTINGS, 'PlayNetMode', 0))
+            STATE['owns_pie'] = True
             LEVELS.editor_request_begin_play()
             STATE['phase'] = 'discover'
             return
@@ -829,8 +923,20 @@ def tick(dt):
                     actor.set_actor_enable_collision(False)
             STATE.update(world=world, pc=pc, pawn=pawn, movement=pawn.get_component_by_class(u.CharacterMovementComponent), camera=camera, origin=origin, pitch_points=points,
                          original_time_dilation=u.GameplayStatics.get_global_time_dilation(world))
+            if not HEADLESS:
+                REPORT['renderer_settings'] = {
+                    **{key: u.SystemLibrary.get_console_variable_int_value(key) for key in (
+                        'sg.ViewDistanceQuality', 'sg.AntiAliasingQuality', 'sg.ShadowQuality',
+                        'sg.GlobalIlluminationQuality', 'sg.ReflectionQuality', 'sg.PostProcessQuality',
+                        'sg.TextureQuality', 'sg.EffectsQuality', 'sg.FoliageQuality',
+                        'r.Streaming.PoolSize', 'r.Shadow.Virtual.MaxPhysicalPages')},
+                    **{key: u.SystemLibrary.get_console_variable_float_value(key) for key in ('r.ScreenPercentage', 't.MaxFPS')}}
             pawn.set_actor_location(origin, False, True)
-            phase('warm')
+            phase('viewport_calibrate' if MOTION and not HEADLESS and '-immersive' in COMMAND_LINE.lower().split() else 'warm')
+            return
+        if current == 'viewport_calibrate':
+            if calibrate_motion_viewport():
+                phase('warm')
             return
         if current == 'shot':
             path = STATE['shot_path']
@@ -876,6 +982,10 @@ def tick(dt):
                 assert len(comic) == 1 and abs(comic[0].get_editor_property('weight') - (0. if STANDARD else 1.)) < .001, 'Requested render mode is not active'
                 REPORT['comic_view'] = not STANDARD
                 REPORT['player_pose_tick_interval_seconds'] = interval
+                if MOTION and not HEADLESS:
+                    REPORT['viewport_pixels_observed'] = list(STATE['pc'].get_viewport_size())
+                    if '-immersive' in COMMAND_LINE.lower().split():
+                        assert REPORT['viewport_calibration']['passed'] and REPORT['viewport_pixels_observed'] == [WIDTH, HEIGHT], 'Calibrated viewport changed before motion'
                 start_style(STYLES[0])
             return
         aim(current in ('face', 'face_three_quarter'), grounded=current == 'descend',
