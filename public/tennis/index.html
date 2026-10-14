@@ -74,6 +74,29 @@
         color: #F3E9D6;
         font: 600 16px/1 "DM Sans", "Gill Sans", sans-serif;
       }
+      .arcade-links {
+        position: absolute;
+        z-index: 2;
+        top: max(8px, env(safe-area-inset-top));
+        left: max(8px, env(safe-area-inset-left));
+        right: max(8px, env(safe-area-inset-right));
+        display: flex;
+        justify-content: space-between;
+        gap: 8px;
+        pointer-events: none;
+      }
+      .arcade-links a, .arcade-links button {
+        pointer-events: auto;
+        min-width: 48px;
+        min-height: 48px;
+        padding: 12px 14px;
+        border: 0;
+        border-radius: 999px;
+        background: #3E7C8F;
+        color: #F3E9D6;
+        font: 600 14px/1 "DM Sans", "Gill Sans", sans-serif;
+        text-decoration: none;
+      }
     </style>
   </head>
   <body>
@@ -81,6 +104,12 @@
     <canvas id="court" aria-label="Backyard tennis court. Tap anywhere to swing. The player moves under the ball."></canvas>
     <p id="banner" hidden></p>
     <button id="again" type="button" hidden>Play again</button>
+    <nav class="arcade-links" aria-label="Arcade">
+      <a href="/">Arcade</a>
+      <button type="button" data-switch>Switch game</button>
+    </nav>
     <script type="module" src="./game.js"></script>
+    <script src="/arcade/switch.js"></script>
+    <script src="/arcade/analytics.js" data-game="tennis"></script>
   </body>
 </html>

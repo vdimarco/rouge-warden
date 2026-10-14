@@ -53,3 +53,14 @@ The match SHALL be first to 7, win by 2. The opening SHALL show the court, a bal
 #### Scenario: Opening and second serve
 - **WHEN** a player returns every ball in the window from the opening
 - **THEN** the first hit is a few seconds in, point 1 ends before 30 seconds, and the next serve shows the coloured ring
+
+### Requirement: Cottage cabinet
+The Cottage Arcade SHALL show a Lawn Tennis machine in the Cottage group, after In Full Swing. The machine SHALL open `/tennis/`. The game switcher SHALL list Lawn Tennis with the same id and the same name as the machine. The Lab group SHALL stay at 17 machines.
+
+#### Scenario: Cottage row
+- **WHEN** the player opens the Cottage group
+- **THEN** Lawn Tennis is the last machine in that row, and choosing it opens `/tennis/`
+
+#### Scenario: Same name in the switcher
+- **WHEN** the arcade page and the game switcher are read
+- **THEN** both call the machine Lawn Tennis and both use the id tennis

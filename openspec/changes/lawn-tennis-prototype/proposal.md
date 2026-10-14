@@ -14,8 +14,9 @@ This is a clean-room prototype. The inspiration has no license, so this change u
 - A flower is added in the same step as the return that grew it.
 - Placeholder art uses the look-sheet palette. Planned file names live in `public/tennis/art/palette.json`.
 - One node QA script that plays a seeded rally through the test hook.
+- A Cottage Arcade machine in the Cottage group, after In Full Swing, with the same id and name in the game switcher.
 
 ## Out of scope
 
-- A Cottage Arcade cabinet, homepage link, or edits to other games.
+- The Lab group. Lawn Tennis is a cottage game, and the Lab stays at its nine toys and eight ASCII sketches.
 - Painted WebP art, audio, full tennis scoring, and multiplayer.

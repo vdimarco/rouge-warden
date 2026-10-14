@@ -16,6 +16,7 @@
     { id: "wild", name: "Breath of the Lake", sub: "Get Plunger'd", url: "/wild/", art: "/arcade/wild.webp", color: "#8fcf7a", probe: true },
     { id: "fish", name: "Reel It In", sub: "Loon Lake", url: "/fish/", art: "/arcade/fish.webp", color: "#ffb04a" },
     { id: "vr", name: "In Full Swing", sub: "Meta Quest VR", url: "/vr/", art: "/arcade/vr.webp", color: "#ff8a3a" },
+    { id: "tennis", name: "Lawn Tennis", sub: "At the Cottage", url: "/tennis/", art: "/arcade/key/tennis.svg", color: "#5E8C61" },
     { id: "olympus", name: "Olympus", sub: "Last Flame", url: "/olympus/", art: "/arcade/key/olympus.webp", color: "#edc06b" },
     { id: "moonwell", name: "Moonwell", sub: "Endless pinball islands", url: "/moonwell/", art: "/arcade/key/moonwell.webp", color: "#edc779" },
     { id: "primordia", name: "Primordia", sub: "A Lenia arcade", url: "/primordia/", art: "/arcade/key/primordia.webp", color: "#3ff0e0" },

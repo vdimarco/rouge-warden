@@ -21,6 +21,10 @@ Placeholder circles, rectangles, and dots. No painted technique is built here, s
 
 Portrait maps the player to the bottom. A wide viewport turns the court so the player sits beside a pad on the right. Screen type uses the Fraunces and DM Sans files already served with Breakthrough, with a local fallback stack if those files are missing.
 
+## Arcade
+
+The machine stands in the Cottage group, last, after In Full Swing. The title is Lawn Tennis at the Cottage, so that row is the match. The Lab stays at 17 machines. The switcher uses the same id (`tennis`) and the same name (`Lawn Tennis`). The screen art is a small SVG in the look-sheet palette. It is not a painted WebP.
+
 ## Checks
 
 `qa/tennis/rally.test.mjs` imports the module and drives `createTest`, the same object the page assigns to `window.__test`. It does not need the static server. Browser screenshots are a separate pass.
