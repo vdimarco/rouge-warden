@@ -12,8 +12,8 @@ const DEG = Math.PI / 180;
 // Framing (deg): a well's core comes EDGE_MARGIN onto the screen; the ship never goes nearer the side than
 // SHIP_MARGIN; the camera swings at most SWING_MAX round the ship to fit both.
 const EDGE_MARGIN = 11, SHIP_MARGIN = 9, SWING_MAX = 70;
-const LOOK_RATE = 4;
-const PULL_MAX = 1.8;             // × CAM DIST: the furthest a close pass round a core pulls the camera back              // rad/s: the fastest the drift look-in turns to keep a well's core on screen
+const LOOK_RATE = 4;              // rad/s: the fastest the drift look-in turns to keep a well's core on screen
+const PULL_MAX = 1.8;             // × CAM DIST: the furthest a close pass round a core pulls the camera back
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 const wrap = (a) => Math.atan2(Math.sin(a), Math.cos(a));
 const ease = (dt, tc) => (tc > 0 ? 1 - Math.exp(-dt / tc) : 1);

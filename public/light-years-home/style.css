@@ -168,6 +168,11 @@ button.primary:hover { background: var(--accent-hi); }
 .h-hint b { font: 800 12px/1.15 var(--font); letter-spacing: 0.07em; text-align: center; }
 .h-hint.long b { font-size: 11px; letter-spacing: 0.03em; }
 .lyh-hud[data-kind="desktop"] .h-hint b { font-size: 13px; }
+/* Landscape: the hint shares the info slot over the middle of the view, so its pill hugs the words. */
+.lyh-hud[data-kind="landscape"] .h-hint { background: none; border: 0; padding: 0; }
+.lyh-hud[data-kind="landscape"] .h-hint b {
+  padding: 5px 14px; border-radius: 999px; background: rgba(0, 0, 0, 0.55); border: 1px solid rgba(255, 255, 255, 0.32);
+}
 
 /* The action chip, with its hold ring. */
 .h-chip {

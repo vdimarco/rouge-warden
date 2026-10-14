@@ -55,7 +55,8 @@ async function scanCheck(page) {
     if (st === 'scanned') {
       // Back off to where the ring is small enough to keep its label (a scanned ring right round you is not drawn).
       await hook(page, 'teleport', [0, -300, 0], 0, 20);
-      for (let k = 0; k < 12; k++) await hook(page, 'step', null, 1 / 60);
+      await hook(page, 'step', { brake: 1 }, 1.2);          // the scan's callout has gone
+      for (let k = 0; k < 6; k++) await hook(page, 'step', { brake: 1 }, 1 / 60);
       after = await coverage(page, 'node0');
     }
   }

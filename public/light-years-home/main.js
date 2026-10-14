@@ -60,7 +60,12 @@ const OPEN_PHI = 3.2, OPEN_T = 1.3;                              // the opening 
 const LOAD_START = 1.5;                                          // s after the punch the next zone's upload begins
 
 function storageOf(name) {
-  try { const s = window[name]; s.setItem('lyh.probe', '1'); s.removeItem('lyh.probe'); return s; } catch { return null; }
+  try {
+    const s = window[name];
+    s.setItem('lyh.probe', '1');
+    s.removeItem('lyh.probe');
+    return s;
+  } catch { return null; }
 }
 const store = storageOf('localStorage');
 const session = storageOf('sessionStorage');
@@ -195,7 +200,9 @@ async function boot() {
   const carry = { boostBurst: false, action: false, map: false, pause: false };
   const opening = { t0: -99, on: false, kick: false };
   const PUNCH_KICK = [{ type: 'punch' }];
-  const timing = { playAt: null, playToControlMs: null, firstInputMs: null, lastRestartMs: null, restartAt: null };
+  // PLAY to control in wall ms and in game s (a slow software GPU runs fewer game seconds per wall second).
+  const timing = { playAt: null, playToControlMs: null, firstInputMs: null, lastRestartMs: null, restartAt: null,
+    playT: 0, playToControlS: null };
   const unread = new Set();
   const save = { dirty: false, lastWrite: 0, dirtyAt: 0, prev: saved };
   let friend = null;                                   // a ghost link: { id, ghost }
@@ -449,7 +456,9 @@ async function boot() {
     opening.kick = !cont;
     flash = reduced() ? 0.3 : 1;
     timing.playAt = performance.now();
+    timing.playT = game.t;
     timing.playToControlMs = null;
+    timing.playToControlS = null;
     timing.firstInputMs = null;
     if (crumb) hud.hint('lowgfx');
     setTimeout(() => breadcrumb.clear(session), 10000);
@@ -561,7 +570,8 @@ async function boot() {
   // ---------------------------------------------------------------- bots
 
   function makeBot(name, opts = {}) {
-    if (name.startsWith('jump-') && BOTS.jump[name.slice(5)]) return BOTS.jump[name.slice(5)]({ seed: game.seed, ...opts });
+    const jb = name.startsWith('jump-') ? BOTS.jump[name.slice(5)] : null;
+    if (jb) return jb({ seed: game.seed, ...opts });
     const b = BOTS[name];
     if (!b || typeof b.make !== 'function') throw new Error(`no bot ${name}`);
     return b.make({ seed: game.seed, ...opts });
@@ -600,7 +610,10 @@ async function boot() {
     route(list);
     syncMode();
     if (game.mode === 'drive' && timing.playAt !== null) {
-      if (timing.playToControlMs === null && game.t >= game.lockUntil) timing.playToControlMs = nowMs - timing.playAt;
+      if (timing.playToControlMs === null && game.t >= game.lockUntil) {
+        timing.playToControlMs = nowMs - timing.playAt;
+        timing.playToControlS = game.t - timing.playT;
+      }
       const busy = rec && (rec.steer || rec.climb || rec.gas || rec.brake || rec.drift || rec.boost || rec.boostBurst);
       if (timing.firstInputMs === null && busy && game.t >= game.lockUntil) timing.firstInputMs = nowMs - timing.playAt;
     }
@@ -720,7 +733,8 @@ async function boot() {
       game, zone: z, layout, dt, events: list, reduced: reduced(),
       cam: { view: ovCam.matrixWorldInverse.elements, proj: ovCam.projectionMatrix.elements, w: stage.size.w,
         h: stage.size.h },
-      marks: sky ? [] : scannedMarks(z, marksFrom(game, z, { dirOf: backdrop.dirOf, scan: (id) => scanState(game, id) })),
+      marks: sky ? [] : scannedMarks(z, marksFrom(game, z,
+        { dirOf: backdrop.dirOf, scan: (id) => scanState(game, id) })),
       home: sky || !dir ? null : { dir, label: homeLabel(ahead) },
     });
     if (game.mode !== 'paused' && game.mode !== 'log') {
@@ -778,7 +792,11 @@ async function boot() {
 
   const waitFor = (fn, ms = 20000) => new Promise((res, rej) => {
     const t0 = performance.now();
-    const poll = () => { if (fn()) res(); else if (performance.now() - t0 > ms) rej(new Error('timed out')); else setTimeout(poll, 30); };
+    const poll = () => {
+      if (fn()) res();
+      else if (performance.now() - t0 > ms) rej(new Error('timed out'));
+      else setTimeout(poll, 30);
+    };
     poll();
   });
 
@@ -871,8 +889,9 @@ async function boot() {
       bot = null; forced = null; frozen = false;
       if (opts.save) await Promise.all(ZONE_IDS.map((k) => zoneData(k).catch(() => null)));
       const sv = opts.save ? cleanSave(opts.save, registry()) : null;
-      newGame({ zone: z, at: opts.at || null, heading: opts.heading, speed: opts.speed, save: sv ? progressOf(sv) : null,
-        settings: opts.settings || null, today: opts.today || null, seed: Number.isFinite(opts.seed) ? opts.seed : seed0 });
+      newGame({ zone: z, at: opts.at || null, heading: opts.heading, speed: opts.speed,
+        save: sv ? progressOf(sv) : null, settings: opts.settings || null, today: opts.today || null,
+        seed: Number.isFinite(opts.seed) ? opts.seed : seed0 });
       save.prev = sv;
       if (opts.skipIntro) {
         sound.start();
@@ -881,6 +900,7 @@ async function boot() {
         if (game.story) game.story.openingI = 999;
         syncMode();
         timing.playAt = performance.now();
+        timing.playT = game.t;
       }
       await waitFor(() => art.ready);
     },
@@ -948,7 +968,8 @@ async function boot() {
     simulateSlowLoad(seconds) { next.delay = Math.max(0, +seconds || 0); },
     layout: () => ({ kind: layout.kind, rects: clone(layout.rects), dom: hud.dom() }),
     project,
-    overlay: () => ({ rings: clone(overlay.rings), labels: clone(overlay.labels), chevrons: clone(overlay.chevrons) }),
+    overlay: () => ({ rings: clone(overlay.rings), labels: clone(overlay.labels), chevrons: clone(overlay.chevrons),
+      callout: overlay.callout }),
     get perf() {
       const i = stage.info(), s = perf.stats();
       return { fps: s.frame.p50 ? Math.round(1000 / s.frame.p50) : 0, p95: s.frame.p95, cpuMs: s.cpu.p50,
@@ -968,8 +989,8 @@ async function boot() {
       ext.restoreContext();
       await back;
     },
-    timing: () => ({ playToControlMs: timing.playToControlMs, firstInputMs: timing.firstInputMs,
-      lastRestartMs: timing.lastRestartMs }),
+    timing: () => ({ playToControlMs: timing.playToControlMs, playToControlS: timing.playToControlS,
+      firstInputMs: timing.firstInputMs, lastRestartMs: timing.lastRestartMs }),
     bot: (name, opts = {}) => startBot(name, opts),
   };
   window.__lyh = hook;

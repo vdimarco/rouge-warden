@@ -29,8 +29,12 @@ async function playChecks(page, size, software) {
   }
   await wait(800);
   const tm = await hook(page, 'timing');
-  const lim = software ? 2000 : 500;
-  check(`PLAY to control in ${software ? '2 s on a software GPU (500 ms on hardware)' : 'under 500 ms'}`,
+  // The controls go live after INPUT.PLAY_LIVE of game time; at 60 fps that is the wall time too. A software GPU
+  // runs the game slower than the wall clock, so there the wall limit is wider and the game-time check carries it.
+  check('PLAY to control in under 0.5 s of game time', tm.playToControlS !== null && tm.playToControlS < 0.5,
+    `${tm.playToControlS?.toFixed(2)} s`);
+  const lim = software ? 3000 : 500;
+  check(`PLAY to control in ${software ? '3 s of wall time on a software GPU (500 ms on hardware)' : 'under 500 ms'}`,
     tm.playToControlMs !== null && tm.playToControlMs < lim, `${Math.round(tm.playToControlMs)} ms`);
   check('the first input is accepted within 3 s of PLAY', tm.firstInputMs !== null && tm.firstInputMs < 3000,
     `${Math.round(tm.firstInputMs)} ms`);
@@ -84,6 +88,8 @@ async function mouseChecks(page) {
   await page.mouse.move(W / 2 + W * 0.2, Hh / 2);
   const s0 = await ship(page);
   await page.mouse.down();
+  // The first click may take pointer lock, which centres the virtual pointer: move right again to steer.
+  await page.mouse.move(W / 2 + W * 0.35, Hh / 2, { steps: 6 });
   await waitGame(page, 0.8);
   const s1 = await ship(page);
   await page.mouse.up();
