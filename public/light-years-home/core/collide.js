@@ -136,8 +136,12 @@ export function rebuildTraffic(g, tr, t) {
 export function trafficAt(g, i, t, out, outVel = null) {
   const f = Math.min(1, Math.max(0, (t - g.builtAt) / TICK));
   const a = g.tpos, b = g.tpos1, k = i * 3;
-  out[0] = a[k] + (b[k] - a[k]) * f; out[1] = a[k + 1] + (b[k + 1] - a[k + 1]) * f; out[2] = a[k + 2] + (b[k + 2] - a[k + 2]) * f;
-  if (outVel) { outVel[0] = (b[k] - a[k]) / TICK; outVel[1] = (b[k + 1] - a[k + 1]) / TICK; outVel[2] = (b[k + 2] - a[k + 2]) / TICK; }
+  out[0] = a[k] + (b[k] - a[k]) * f;
+  out[1] = a[k + 1] + (b[k + 1] - a[k + 1]) * f;
+  out[2] = a[k + 2] + (b[k + 2] - a[k + 2]) * f;
+  if (outVel) {
+    outVel[0] = (b[k] - a[k]) / TICK; outVel[1] = (b[k + 1] - a[k + 1]) / TICK; outVel[2] = (b[k + 2] - a[k + 2]) / TICK;
+  }
   return out;
 }
 
@@ -210,7 +214,8 @@ export function sweepCapsule(p0, p1, rc, centre, r) {
   }
   const hx = mx + dx * t, hy = my + dy * t, hz = mz + dz * t;
   const l = Math.sqrt(hx * hx + hy * hy + hz * hz);
-  if (l > 1e-9) { HIT.n[0] = hx / l; HIT.n[1] = hy / l; HIT.n[2] = hz / l; } else { HIT.n[0] = 0; HIT.n[1] = 0; HIT.n[2] = 1; }
+  if (l > 1e-9) { HIT.n[0] = hx / l; HIT.n[1] = hy / l; HIT.n[2] = hz / l; }
+  else { HIT.n[0] = 0; HIT.n[1] = 0; HIT.n[2] = 1; }
   HIT.t = t;
   return HIT;
 }

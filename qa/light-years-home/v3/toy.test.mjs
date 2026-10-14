@@ -76,7 +76,9 @@ function run(seed, bot, seconds, onEvent = null) {
     const input = bot(game);
     step(game, input, ev);
     for (let k = 0; k < ev.n; k++) if (onEvent) onEvent(ev.list[k], ev.list[k].t - t0, game);
-    if (game.ship.speed < 6 && !(input.brake > 0.05)) { slow += 1 / 120; worstSlow = Math.max(worstSlow, slow); } else slow = 0;
+    if (game.ship.speed < 6 && !(input.brake > 0.05)) slow += 1 / 120;
+    else slow = 0;
+    worstSlow = Math.max(worstSlow, slow);
     minSpeed = Math.min(minSpeed, game.ship.speed);
   }
   return { game, worstSlow, minSpeed };
@@ -144,7 +146,8 @@ test('the drifter reaches tier 2 on its first drift round the Bend Giant and dri
     }
     assert.deepEqual(bad, [], `${source}`);
     times.sort((a, b) => a - b);
-    t.diagnostic(`${source}: drift-boost at ${times[0].toFixed(2)} to ${times[times.length - 1].toFixed(2)} s, median ${times[times.length >> 1].toFixed(2)} s`);
+    const f = (x) => x.toFixed(2);
+    t.diagnostic(`${source}: drift-boost at ${f(times[0])} to ${f(times[times.length - 1])} s, median ${f(times[times.length >> 1])} s`);
     assert.ok(times[times.length - 1] <= 10, `${source}: slowest ${times[times.length - 1].toFixed(2)} s`);
   }
 });

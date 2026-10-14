@@ -1,151 +1,345 @@
-// Light Years Home: the annotation layer. A 2D canvas over the WebGL view, redrawn each frame from core/project.js
-// (the same light-speed maths as the star shader), so rings stay on their objects at any throttle. It draws thin
-// rings with a diagonal leader and a short flat run to a small label, as in the video: candidate rings A B C (grey
-// after a wrong lock, pulsing for a hint), edge chevrons for candidates off screen, the Laniakea ring, the landmark
-// at its reveal, rings that pass during a flight, the gates of the zones ahead, crack lines when a pane breaks, the
-// address rings of the ending and its orange "Home" label. Labels are placed by core/labels.js, at most 6.
-import { project, edgeChevron } from '../core/project.js';
+// Light Years Home v3: the 2D annotation layer over the 3D view (final.md 13.6, tech §4.6, §6.3). It draws the
+// video's look: thin white rings with a diagonal leader line and a small label (scanned things), dotted rings at 40%
+// for things to scan (with a filling arc while you hold the nose on one), orange for the one current objective, grey
+// for done, 20% white for the rest of a course; edge chevrons for what is off screen and the orange HOME chevron; the
+// radar, heading up; and the callouts that answer every risky move (NEAR, HAIRLINE, the drift tiers, TAKEDOWN, the
+// nines), one at a time by priority. Labels are placed by core/labels.js (at most 6) clear of the HUD's rectangles.
+// Marks are projected with the camera's own matrices, passed in as plain arrays (three.js elements, column-major),
+// so this file never imports three. 3D gates and pads are drawn by render/gates.js; marks with ring: false get only
+// their leader and label here.
+import { TUNE } from '../core/tune.js';
 import { placeLabels, MAX_LABELS } from '../core/labels.js';
-import { HIT_MIN } from '../core/pick.js';
-import { OBJECTS, distanceLy } from '../core/objects.js';
-import { STOPS } from '../core/route.js';
-import { legPath } from '../core/geo.js';
-import { armsPassed } from '../core/gas.js';
-import { legOf, zoneAt, scanOf, PANES } from '../core/engine.js';
-import { groupDigits } from '../core/physics.js';
-import { mulberry32, hashSeed } from '../core/rng.js';
-import { distanceText } from './hud.js';
+import { blackbodyRGB } from '../core/physics.js';
+import { fmtLy, MEDAL_ORDER } from './hud.js';
 
-export const HOME_COLOUR = '#f08a2c';
-export const LABEL_COLOUR = '#ffffff';
-export const GREY_COLOUR = '#8c8c8c';
-const RING_ALPHA = 0.8;          // rings are 1 CSS px at 80 % white
-const TEXT_ALPHA = 0.92;
-const GATE_LEAD = 2.5;           // screen seconds before a zone: its gate starts to show
-const GATE_ANGLE = 0.03;         // a gate's angular radius when it first shows (radians)
-const PULSE_S = 1.2;             // a hint pulse every this many seconds
-const RING_DRAW = 0.6;           // seconds for a ring to draw on
-const CRACK_FLASH = 0.6;         // seconds: a fresh crack fades to its trace
-const CRACK_TRACE = 0.18;        // a cracked pane's lines stay this bright for the rest of the flight
-const PASS_BEFORE = 0.35, PASS_AFTER = 0.12;   // share of a leg's screen time a passing ring shows around its p
-const MAX_SHOWN = MAX_LABELS;     // at most 6 labels at once
-const BIG_RING = 40;             // px: a ring this big may hang its label from any side
-const FONT = 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif';
-
-// Disc planes for rings drawn as tilted ellipses: Laniakea lies near the supergalactic plane (pole at l 47.37°,
-// b 6.32°); the Milky Way and the Orion Arm lie in the galactic plane.
-const SUPERGALACTIC = [0.67306, 0.73135, 0.11008];
-const DISCS = { laniakea: SUPERGALACTIC, 'milky-way': [0, 0, 1], 'orion-arm': [0, 0, 1] };
-const ADDRESS_ORDER = ['earth', 'sun', 'orion-arm', 'milky-way', 'local-group', 'laniakea'];   // geo.ADDRESS
-const ADDRESS = new Set(ADDRESS_ORDER);
-const ARM_RING_LY = 1500;        // half the width of a spiral arm, for its ring
-
-const finite = (v) => typeof v === 'number' && Number.isFinite(v);
+export const ORANGE = '#f08a2c';
+export const MIN_RING_PX = 14;
+export const MAX_RINGS = 20;
+export const MAX_CHEVRONS = 4;
+export const CHEVRON_INSET = 22;
+const NEAR_Z = 0.05;
+const TAU = Math.PI * 2;
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
-const ease = (t) => { const u = clamp(t, 0, 1); return u * u * (3 - 2 * u); };
-const add = (a, b) => [a[0] + b[0], a[1] + b[1], a[2] + b[2]];
-const sub = (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
-const cross = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
-const unit = (a) => { const l = Math.hypot(a[0], a[1], a[2]); return l > 0 ? [a[0] / l, a[1] / l, a[2] / l] : [0, 0, 1]; };
-const nameOf = (id) => (OBJECTS[id] && OBJECTS[id].name) || id;
+const fin = (v, d = 0) => (typeof v === 'number' && Number.isFinite(v) ? v : d);
+const upper = (s) => String(s ?? '').toUpperCase();
 
-// Gas density in words: '1 atom per cm³', '0.3 atoms per cm³', '3,000 atoms per m³'.
-export function densityText(n) {
-  if (!(n > 0)) return '';
-  const per = n >= 0.01 ? [n, 'cm³'] : [n * 1e6, 'm³'];
-  const v = per[0] >= 100 ? groupDigits(Number(per[0].toPrecision(2))) : String(Number(per[0].toPrecision(2)));
-  return `${v} ${v === '1' ? 'atom' : 'atoms'} per ${per[1]}`;
+// Drift tier colours: the sparks' star temperatures (red 3,200 K, white 5,800 K, blue 20,000 K).
+const rgbCss = (T) => {
+  const c = blackbodyRGB(T);
+  const m = Math.max(c[0], c[1], c[2]) || 1;
+  return `rgb(${Math.round((255 * c[0]) / m)}, ${Math.round((255 * c[1]) / m)}, ${Math.round((255 * c[2]) / m)})`;
+};
+export const TIER_COLOUR = Object.freeze([rgbCss(3200), rgbCss(5800), rgbCss(20000)]);
+
+// ---------------------------------------------------------------- projection (pure)
+
+/**
+ * Where a point lands: cam = { view, proj (16 numbers each, column-major, three's matrixWorldInverse and
+ * projectionMatrix elements), w, h }. p is [x, y, z] in zone coordinates; w = 0 projects a direction (a far thing).
+ * Returns { x, y, depth, front, vx, vy } in CSS px (y down); vx, vy are view-space x and y (for chevrons behind you).
+ */
+export function projectPoint(cam, p, w = 1, out = {}) {
+  const V = cam.view, P = cam.proj;
+  const px = p[0], py = p[1], pz = p[2];
+  const x = V[0] * px + V[4] * py + V[8] * pz + V[12] * w;
+  const y = V[1] * px + V[5] * py + V[9] * pz + V[13] * w;
+  const z = V[2] * px + V[6] * py + V[10] * pz + V[14] * w;
+  const cx = P[0] * x + P[4] * y + P[8] * z + P[12];
+  const cy = P[1] * x + P[5] * y + P[9] * z + P[13];
+  const cw = P[3] * x + P[7] * y + P[11] * z + P[15];
+  out.depth = -z;
+  out.front = -z > (w ? NEAR_Z : 1e-6) && cw > 0;
+  out.vx = x; out.vy = y;
+  if (out.front) {
+    out.x = ((cx / cw + 1) / 2) * cam.w;
+    out.y = ((1 - cy / cw) / 2) * cam.h;
+  } else {
+    const s = Math.hypot(x, y) || 1;
+    out.x = cam.w / 2 + (x / s) * 1e6;
+    out.y = cam.h / 2 - (y / s) * 1e6;
+  }
+  return out;
 }
 
-// Two unit vectors spanning the plane with this normal.
-function planeAxes(normal) {
-  const n = unit(normal);
-  const helper = Math.abs(n[2]) < 0.9 ? [0, 0, 1] : [1, 0, 0];
-  const u = unit(cross(n, helper));
-  return [u, cross(n, u)];
+// A ring's radius on screen for a world radius r at that depth (P[5] is 1 / tan(fovY / 2)).
+export const ringPx = (cam, r, depth) => (fin(r) * cam.proj[5] * (cam.h / 2)) / Math.max(NEAR_Z, depth);
+
+// The edge chevron for a point outside the box: { x, y, angle (0 = right, y down), edge } or null when inside.
+export function chevronAt(pt, box, inset = CHEVRON_INSET) {
+  const x0 = box.x + inset, x1 = box.x + box.w - inset, y0 = box.y + inset, y1 = box.y + box.h - inset;
+  if (pt.front && pt.x >= x0 && pt.x <= x1 && pt.y >= y0 && pt.y <= y1) return null;
+  const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2;
+  let dx, dy;
+  if (pt.front) { dx = pt.x - cx; dy = pt.y - cy; } else {
+    dx = pt.vx; dy = -pt.vy;
+    if (Math.abs(dx) < 1e-9 && Math.abs(dy) < 1e-9) dy = 1;   // dead behind: point down
+    else if (pt.behind !== false && dy < 0 && Math.abs(dx) < Math.abs(dy) * 0.6) dy = -dy;   // behind: the bottom
+  }
+  let t = Infinity, edge = 'right';
+  if (dx > 0 && (x1 - cx) / dx < t) { t = (x1 - cx) / dx; edge = 'right'; }
+  if (dx < 0 && (x0 - cx) / dx < t) { t = (x0 - cx) / dx; edge = 'left'; }
+  if (dy > 0 && (y1 - cy) / dy < t) { t = (y1 - cy) / dy; edge = 'bottom'; }
+  if (dy < 0 && (y0 - cy) / dy < t) { t = (y0 - cy) / dy; edge = 'top'; }
+  if (!Number.isFinite(t)) t = 0;
+  return { x: cx + dx * t, y: cy + dy * t, angle: Math.atan2(dy, dx), edge };
 }
 
-// The crack lines of one pane, seeded: an impact point (shares of the screen) and polylines in units of the screen's
-// shorter side, as flat arrays [x0, y0, x1, y1, ...]: jagged radial cracks with side branches and two rough rings.
-const IMPACTS = [[0.24, 0.3], [0.76, 0.64], [0.66, 0.24]];
-export function crackPattern(seed, pane) {
-  const rnd = mulberry32(hashSeed(seed, 'crack', pane));
-  const [ix, iy] = IMPACTS[((pane % 3) + 3) % 3];
-  const fx = ix + (rnd() - 0.5) * 0.08, fy = iy + (rnd() - 0.5) * 0.08;
-  const lines = [], arms = 7 + Math.floor(rnd() * 3), spokes = [];
-  for (let a = 0; a < arms; a++) {
-    let ang = (2 * Math.PI * (a + 0.3 * rnd())) / arms, x = 0, y = 0, len = 0;
-    const reach = 0.22 + 0.32 * rnd(), line = [0, 0], marks = [];
-    while (len < reach) {
-      const step = 0.025 + 0.04 * rnd();
-      ang += (rnd() - 0.5) * 0.5;
-      x += Math.cos(ang) * step; y += Math.sin(ang) * step; len += step;
-      line.push(x, y);
-      marks.push([x, y, len]);
-      if (len > 0.08 && rnd() < 0.22) {
-        // a side branch
-        let bx = x, by = y, ba = ang + (rnd() < 0.5 ? -1 : 1) * (0.5 + 0.5 * rnd());
-        const b = [bx, by];
-        for (let k = 0, n = 2 + Math.floor(rnd() * 3); k < n; k++) {
-          ba += (rnd() - 0.5) * 0.6;
-          const s = 0.02 + 0.03 * rnd();
-          bx += Math.cos(ba) * s; by += Math.sin(ba) * s;
-          b.push(bx, by);
-        }
-        lines.push(b);
+// Where the radar puts a map point: heading up (heading in radians clockwise from +y), k px per u.
+export function radarXY(dx, dy, heading, k, out = [0, 0]) {
+  const c = Math.cos(heading), s = Math.sin(heading);
+  out[0] = (dx * c - dy * s) * k;
+  out[1] = -(dx * s + dy * c) * k;
+  return out;
+}
+
+// ---------------------------------------------------------------- callouts (pure)
+
+// Each risky move answers with a word by the ship. pri: a lower one never replaces a higher one in its first 0.6 s.
+export const CALLOUTS = Object.freeze({
+  near: { text: 'NEAR', pri: 1, tone: 'orange' },
+  hairline: { text: 'HAIRLINE', pri: 3, tone: 'orange' },
+  thread: { text: 'THREAD', pri: 5, tone: 'orange' },
+  skimStart: { text: 'SKIM', pri: 2, tone: 'white' },
+  draftStart: { text: 'DRAFT', pri: 2, tone: 'white' },
+  driftTier: { text: ['DRIFT', 'HOT DRIFT', 'BLUE DRIFT'], pri: 3, tone: 'tier' },
+  driftBoost: { text: 'BOOST', pri: 3, tone: 'tier' },
+  boostStart: { text: 'BOOST', pri: 0, tone: 'white' },
+  sling: { text: 'SLINGSHOT', pri: 4, tone: 'orange' },
+  perfectSling: { text: 'PERFECT SLING', pri: 6, tone: 'orange' },
+  takedown: { text: 'TAKEDOWN', pri: 6, tone: 'orange' },
+  scrape: { text: 'SCRAPE', pri: 1, tone: 'grey' },
+  crash: { text: 'CRASH', pri: 2, tone: 'grey' },
+  bigCrash: { text: 'CRASH', pri: 4, tone: 'grey' },
+  pad: { text: 'PAD', pri: 1, tone: 'white' },
+  padPerfect: { text: 'PERFECT', pri: 3, tone: 'orange' },
+  gate: { text: { bullseye: 'BULLSEYE', clip: 'CLIP' }, pri: 2, tone: 'white' },
+  gateMiss: { text: 'MISSED · +3 S', pri: 3, tone: 'grey' },
+  chainUp: { text: 'CHAIN', pri: 4, tone: 'orange' },
+  chainBank: { text: '+', pri: 2, tone: 'white' },
+  chainLost: { text: 'CHAIN LOST', pri: 2, tone: 'grey' },
+  hook: { text: 'HOOKED', pri: 4, tone: 'white' },
+  release: { text: 'LET GO', pri: 3, tone: 'white' },
+  cargoHit: { text: 'CAREFUL', pri: 3, tone: 'grey' },
+  jGraze: { text: 'GRAZE', pri: 1, tone: 'orange' },
+  jHairline: { text: 'HAIRLINE', pri: 3, tone: 'orange' },
+  jThread: { text: 'THREAD', pri: 5, tone: 'orange' },
+  jPad: { text: 'PAD', pri: 1, tone: 'white' },
+  jSkim: { text: 'SKIM', pri: 2, tone: 'white' },
+  jHit: { text: 'HIT', pri: 2, tone: 'grey' },
+  nine: { text: { 2: 'TWO NINES', 3: 'THREE NINES' }, pri: 8, tone: 'orange' },
+  punch: { text: 'LIGHT SPEED', pri: 10, tone: 'white' },
+});
+export const CALLOUT_HOLD = 0.6;   // s a higher callout is safe from a lower one
+export const CALLOUT_LIFE = 0.9;   // s on screen
+
+// The callout one event makes: { text, pri, tone, colour } or null.
+export function calloutOf(e) {
+  const c = CALLOUTS[e?.type];
+  if (!c) return null;
+  let text = c.text, pri = c.pri, colour = null;
+  switch (e.type) {
+    case 'driftTier': {
+      const k = clamp(fin(e.tier, 1), 1, 3) - 1;
+      text = c.text[k]; colour = TIER_COLOUR[k]; pri += k;
+      break;
+    }
+    case 'driftBoost': colour = TIER_COLOUR[clamp(fin(e.tier, 1), 1, 3) - 1]; break;
+    case 'gate': text = c.text[e.kind]; if (!text) return null; if (e.kind === 'bullseye') pri = 3; break;
+    case 'nine': text = c.text[e.n]; if (!text) return null; pri += e.n === 3 ? 2 : 0; break;
+    case 'chainUp': text = `CHAIN ×${fin(e.mult, 2)}`; break;
+    case 'chainBank':
+      if (!(fin(e.points) > 0)) return null;
+      text = `+${Math.round(e.points).toLocaleString('en-US')}`;
+      break;
+    case 'hairline': case 'jHairline': if (fin(e.rel) >= 40) pri += 1; break;
+    default: break;
+  }
+  return { text, pri, tone: c.tone, colour };
+}
+
+// The callout queue: push(e, t) and current(t). Repeats of the same word within the life count up (NEAR ×3).
+export function createCallouts() {
+  let cur = null;
+  return {
+    push(e, t) {
+      const c = calloutOf(e);
+      if (!c) return false;
+      if (cur && t - cur.t0 < CALLOUT_LIFE && cur.text === c.text) {
+        cur.n++; cur.t0 = t; cur.pop = t;
+        return true;
       }
-    }
-    lines.unshift(line);
-    spokes.push(marks);
-  }
-  // rough rings round the impact, joining neighbouring cracks
-  for (const at of [0.04, 0.09]) {
-    for (let a = 0; a < arms; a++) {
-      if (rnd() < 0.3) continue;
-      const p = spokes[a].find((m) => m[2] >= at), q = spokes[(a + 1) % arms].find((m) => m[2] >= at);
-      if (!p || !q) continue;
-      const mx = (p[0] + q[0]) / 2 * (0.9 + 0.2 * rnd()), my = (p[1] + q[1]) / 2 * (0.9 + 0.2 * rnd());
-      lines.push([p[0], p[1], mx, my, q[0], q[1]]);
-    }
-  }
-  return { fx, fy, lines };
+      if (cur && t - cur.t0 < CALLOUT_HOLD && c.pri < cur.pri) return false;
+      cur = { ...c, n: 1, t0: t, pop: t };
+      return true;
+    },
+    current(t) {
+      if (cur && t - cur.t0 > CALLOUT_LIFE + (cur.pri >= 8 ? 0.6 : 0)) cur = null;
+      return cur;
+    },
+    clear() { cur = null; },
+  };
 }
 
-export function createOverlay(canvas) {
-  const ctx = canvas.getContext('2d');
-  let W = 0, H = 0, ratio = 1, autoRatio = true;
-  let drawnRings = [], drawnLabels = [], drawnCracks = 0, blank = false;
-  const widths = new Map();
-  // cracks: pane index → { t0: engine time of the crack, or -Infinity for a trace with no flash }
-  const cracks = new Map();
-  const patterns = new Map();
-  let lastPanes = null, lastT = 0, lastSeed = null, lanSince = null;
-  const armCache = new Map();
+// ---------------------------------------------------------------- marks from the game state
 
-  function deviceRatio() {
-    const d = typeof devicePixelRatio === 'number' && devicePixelRatio > 0 ? devicePixelRatio : 1;
-    return Math.min(3, d);
+const dist2 = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1]);
+
+/**
+ * Build the overlay's marks from the game state and zone data, so main.js can pass them straight to draw() and add
+ * its own (a scanned traffic galaxy, say). Reads WP6's zone data: scans with target { body } or { at, r } (a list of
+ * points picks the nearest), far things (opts.dirOf(objectId, out) gives a far landmark's map direction, as
+ * render/backdrop.js dirOf does), bodies with labels, giver rings, start rings, the exit, the running race's next
+ * gate and actors. The objective is game.zone.waypoint: an id ('exit', a scan, ring, event or 'actor:<id>'), an
+ * object { id, pos, label }, or a list of them (a beat that turns three far rings orange). opts.scan(id) is the
+ * core's scan state ('unseen' | 'seen' | 'scanning' | 'scanned') when zone.js has it; opts.facts(id) a card.
+ * A mark: { id, pos | dir, r (u) or rPx, kind, label, ring, chevron, priority, progress, medals, radar }.
+ */
+export function marksFrom(game, zone, opts = {}) {
+  const out = [];
+  if (!game || !zone) return out;
+  const zr = game.zone || {};
+  const ship = game.ship?.pos || [0, 0, 0];
+  const T = game.tune || TUNE;
+  const scanned = (id) => !!zr.scanned?.[id];
+  const stateOf = (id) => opts.scan?.(id) || (scanned(id) ? 'scanned' : zr.scan?.id === id ? 'scanning'
+    : zr.seen?.[id] ? 'seen' : 'unseen');
+  const bodies = new Map((zone.bodies || []).map((b) => [b.id, b]));
+  const wp = zr.waypoint;
+  const goals = (Array.isArray(wp) ? wp : wp ? [wp] : []).map((w) => (typeof w === 'string' ? { id: w } : w));
+  const isObj = (id) => goals.some((w) => w && (w.id === id || w.id === `actor:${id}`));
+  const seenRange = T.RACE?.SEEN ?? 400;
+  const scanProgress = (far) => clamp(fin(zr.scan?.t) / (far ? T.ZONE.FAR_T : T.ZONE.SCAN_T), 0, 1);
+
+  // Scan targets with a place in the zone.
+  for (const s of zone.scans || []) {
+    const tg = s.target || {};
+    if (s.far || tg.far) continue;                                   // drawn with the far things below
+    const b = bodies.get(tg.body || s.body || s.id);
+    let pos = s.pos || b?.pos || null, r = fin(tg.r, fin(b?.r, 3) * 1.25);
+    const at = tg.at || s.at;
+    if (!pos && Array.isArray(at)) {
+      const list = Array.isArray(at[0]) ? at : [at];
+      pos = list.reduce((best, p) => (!best || dist2(ship, p) < dist2(ship, best) ? p : best), null);
+    }
+    if (!pos) continue;
+    const st = stateOf(s.id);
+    if (st === 'unseen' && !opts.showUnseen) continue;
+    const label = upper(s.label || b?.label || opts.facts?.(s.card || s.id)?.title || s.id);
+    const kind = isObj(s.id) ? 'objective' : st === 'scanned' ? 'scanned' : st === 'scanning' ? 'scanning' : 'scan';
+    out.push({ id: s.id, pos, r, kind, label, progress: st === 'scanning' ? scanProgress(false) : 0,
+      priority: kind === 'objective' ? 100 : 40, radar: st === 'scanned' ? null : 'scan',
+      chevron: kind === 'objective' });
   }
+  // Far things in their real directions. An objective far ring is orange but unlabelled until scanned.
+  if (opts.dirOf) {
+    for (const f of zone.far || []) {
+      const dir = opts.dirOf(f.object, [0, 0, 0]);
+      if (!dir) continue;
+      const id = f.scan || f.id;
+      const st = f.scan ? stateOf(f.scan) : 'scanned';
+      const obj = isObj(id) && st !== 'scanned';
+      const kind = obj ? 'objective' : st === 'scanned' ? 'scanned' : st === 'scanning' ? 'scanning' : 'scan';
+      out.push({ id, dir, rPx: 18, kind, label: obj ? '' : upper(f.label || f.object),
+        progress: st === 'scanning' ? scanProgress(true) : 0, priority: obj ? 90 : st === 'scanned' ? 30 : 20,
+        chevron: obj, scanning: st === 'scanning' });
+    }
+  }
+  // Labelled bodies nearby read like the video's frames.
+  for (const b of zone.bodies || []) {
+    if (!b.label || out.some((m) => m.id === b.id) || dist2(ship, b.pos) > 220) continue;
+    out.push({ id: b.id, pos: b.pos, r: fin(b.r, 3) * 1.2, kind: isObj(b.id) ? 'objective' : 'scanned',
+      label: upper(b.label), priority: 10 });
+  }
+  // Giver and drop rings (3D rings: label only).
+  for (const g of zone.rings || []) {
+    if (!g.pos || dist2(ship, g.pos) > seenRange) continue;
+    out.push({ id: g.id, pos: g.pos, r: fin(g.r, 6), kind: isObj(g.id) ? 'objective' : 'giver', ring: false,
+      label: upper(g.label || g.id), priority: 60, radar: 'giver', chevron: isObj(g.id) });
+  }
+  // Start rings you have seen, with their medal pips; hidden while a mission or another event runs.
+  const busy = !!(game.race || game.mission);
+  for (const e of zone.events || []) {
+    const p = e.start?.pos || e.ring?.pos || e.area?.centre;
+    if (!p || busy || !e.start) continue;
+    const seen = zr.seen?.[e.id] || dist2(ship, p) <= seenRange;
+    if (!seen) continue;
+    const best = game.progress?.events?.[e.id];
+    const medals = best?.medal ? MEDAL_ORDER.indexOf(best.medal) + 1 : 0;
+    out.push({ id: e.id, pos: p, r: fin(e.start?.r, 4.5), kind: isObj(e.id) ? 'objective' : 'start', ring: false,
+      label: upper(e.title || e.id), medals, priority: 50, radar: 'start' });
+  }
+  // The running race: the next gate is the objective.
+  const race = game.race;
+  if (race && race.state === 'running') {
+    const ev = (zone.events || []).find((e) => e.id === race.id);
+    const gate = ev?.gates?.[fin(race.gate)];
+    const pt = gate && ev.line?.[gate.at];
+    if (pt) {
+      out.push({ id: `${race.id}:gate`, pos: [pt[0], pt[1], pt[2] || 0], r: fin(gate.r, 4.5), kind: 'objective',
+        ring: false, label: upper(gate.name || `GATE ${fin(race.gate) + 1}`), priority: 100, chevron: true,
+        radar: 'objective' });
+    }
+  }
+  // The exit gate, once open.
+  if (zone.exit?.pos && zr.exitOpen) {
+    out.push({ id: 'exit', pos: zone.exit.pos, r: fin(zone.exit.r, 10), kind: isObj('exit') ? 'objective' : 'exit',
+      ring: false, label: upper(zone.exit.label || zone.exit.to), priority: 80, radar: 'exit',
+      chevron: isObj('exit') });
+  }
+  // Actors: the objective's ring, and the radar's shapes.
+  for (const a of game.actors || []) {
+    if (!a?.pos) continue;
+    const obj = isObj(a.id);
+    out.push({ id: a.id, pos: a.pos, r: fin(a.data?.r, 1.6), kind: obj ? 'objective' : 'actor', ring: obj,
+      label: obj ? upper(a.data?.label || a.label || a.id) : '', priority: obj ? 100 : 0, chevron: obj,
+      radar: a.id === 'vela' || a.kind === 'racer' ? 'vela' : 'actor' });
+  }
+  // Waypoints with their own place (a map tap, a mission's point) that matched nothing above.
+  for (const w of goals) {
+    if (!w?.pos || out.some((m) => m.id === w.id && m.kind === 'objective')) continue;
+    out.push({ id: w.id || 'waypoint', pos: w.pos, r: fin(w.r, 6), kind: 'objective', ring: w.ring !== false,
+      label: upper(w.label || ''), priority: 100, chevron: true, radar: 'objective' });
+  }
+  return out;
+}
 
-  // Size the canvas: width and height in CSS px, ratio device px per CSS px. With no arguments it reads the window.
-  function resize(width, height, r) {
-    const w = finite(width) && width > 0 ? width : canvas.clientWidth || globalThis.innerWidth || 300;
-    const h = finite(height) && height > 0 ? height : canvas.clientHeight || globalThis.innerHeight || 150;
-    autoRatio = !(finite(r) && r > 0);
-    const k = autoRatio ? deviceRatio() : r;
-    if (w === W && h === H && k === ratio && canvas.width === Math.round(w * k)) return;
+// The HOME chevron's label from Earth's distance: 'HOME · 1.00 GLY'.
+export const homeLabel = (aheadLy) => `HOME · ${fmtLy(aheadLy)}`;
+
+// ---------------------------------------------------------------- drawing
+
+/**
+ * createOverlay(canvas, { tune }) → { resize(w, h, dpr), draw(view), clear(), rings, labels, chevrons }.
+ * view = { game, zone, layout, cam ({ view, proj, w, h } or null), marks (marksFrom or your own), home ({ dir,
+ * label } or null), events (core events since the last draw), dt, t (real s), reduced }.
+ * rings, labels and chevrons are what the last draw put on screen (for picking and the hook).
+ */
+export function createOverlay(canvas, { tune = TUNE } = {}) {
+  const ctx = canvas.getContext('2d');
+  let W = 0, H = 0, ratio = 1;
+  const widths = new Map();
+  const callouts = createCallouts();
+  let drawn = { rings: [], labels: [], chevrons: [] };
+  let radarRange = tune.ZONE.RADAR, clock = 0;
+  const pt = {}, xy = [0, 0];
+
+  function resize(w, h, dpr) {
+    const k = clamp(fin(dpr, globalThis.devicePixelRatio || 1), 1, 3);
+    const cw = Math.max(1, Math.round(w * k)), ch = Math.max(1, Math.round(h * k));
+    if (w === W && h === H && k === ratio && canvas.width === cw) return;
     W = w; H = h; ratio = k;
-    canvas.width = Math.max(1, Math.round(W * ratio));
-    canvas.height = Math.max(1, Math.round(H * ratio));
+    canvas.width = cw; canvas.height = ch;
+    canvas.style.width = `${w}px`; canvas.style.height = `${h}px`;
     widths.clear();
   }
 
-  function measure(text, font) {
-    const key = `${font}|${text}`;
+  const font = (px, weight = 700) => `${weight} ${px}px system-ui, -apple-system, "Segoe UI", Roboto, sans-serif`;
+  function measure(text, f) {
+    const key = `${f}|${text}`;
     let w = widths.get(key);
     if (w === undefined) {
-      if (widths.size > 600) widths.clear();
-      ctx.font = font;
+      if (widths.size > 800) widths.clear();
+      ctx.font = f;
       w = ctx.measureText(text).width;
       widths.set(key, w);
     }
@@ -157,628 +351,401 @@ export function createOverlay(canvas) {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
   }
 
-  // ---------- what to draw ----------
+  const rectBox = (r) => (r ? { x: r[0], y: r[1], w: r[2], h: r[3] } : null);
 
-  // A ring on a catalogue object. kind: candidate | landmark | pass | laniakea | address | home | void | target.
-  function objRing(id, cam, kind, extra = {}) {
-    if (!OBJECTS[id]) return null;
-    const p = project(id, cam);
-    // a ring on a solid body (the Sun, a planet, the Moon) stands a little off its edge
-    const r = Number.isFinite(OBJECTS[id].radiusKm) ? Math.max(p.r, p.rawR * 1.12 + 3) : p.r;
-    const ring = { id, kind, letter: null, x: p.x, y: p.y, r, p, alpha: 1, progress: 1, grey: false,
-      strong: false, pulse: false, label: null, ...extra };
-    if (DISCS[id]) ring.poly = discPoly(OBJECTS[id].pos, OBJECTS[id].radiusLy, DISCS[id], cam, 72);
-    return ring;
-  }
-
-  // A circle in space (centre, radius in ly, plane normal) as screen points { x, y, ok } (ok: well in front).
-  function discPoly(centre, radius, normal, cam, n = 64) {
-    const [u, w] = planeAxes(normal);
-    const pts = [];
-    for (let i = 0; i <= n; i++) {
-      const a = (2 * Math.PI * i) / n, c = Math.cos(a) * radius, s = Math.sin(a) * radius;
-      const q = project([centre[0] + u[0] * c + w[0] * s, centre[1] + u[1] * c + w[1] * s,
-        centre[2] + u[2] * c + w[2] * s], cam);
-      pts.push({ x: q.x, y: q.y, ok: q.front && q.dir[2] > 0.02 });
+  // The area chevrons sit in: under the reading rows, above a control in the middle of the bottom edge (the chip).
+  function freeBox(layout) {
+    const s = layout?.safe || { t: 0, b: 0, l: 0, r: 0 }, R = layout?.rects || {};
+    const topY = Math.max(s.t, ...['info', 'toast', 'radar', 'captions'].filter((n) => R[n] && R[n][1] < H / 2)
+      .filter((n) => n !== 'radar' || layout.kind === 'portrait').map((n) => R[n][1] + R[n][3])) + 4;
+    let botY = H - s.b - 8;
+    for (const n of ['chip', 'boost', 'gas', 'brake']) {
+      const r = R[n];
+      if (r && r[1] > H / 2 && r[0] < W * 0.7 && r[0] + r[2] > W * 0.3) botY = Math.min(botY, r[1] - 6);
     }
-    return pts;
+    return { x: s.l + 4, y: topY, w: W - s.l - s.r - 8, h: Math.max(40, botY - topY) };
   }
 
-  const onCanvas = (x, y, m) => x >= -m && x <= W + m && y >= -m && y <= H + m;
+  // An off-screen point as a direction from the screen's centre (chevronAt then puts it on the box's edge).
+  const toward = (p) => ({ front: false, behind: !p.front, vx: p.front ? p.x - W / 2 : p.vx,
+    vy: p.front ? H / 2 - p.y : p.vy });
 
-  // The candidates of the scan (clue, scan and fork), with chevrons for those outside the free box.
-  function candidates(state, cam, out, chevrons, reduced) {
-    const sc = scanOf(state);
-    if (!sc) return;
-    const ph = state.phase;
-    const hintLetter = state.scan.hint ? sc.target : state.scan.teach ? 'A' : null;
-    const box = cam.box || { x: 0, y: 0, w: W, h: H };
-    sc.candidates.forEach((c, k) => {
-      const ring = objRing(c.id, cam, 'candidate', { letter: c.letter, grey: c.grey });
-      if (!ring) return;
-      ring.strong = sc.open === c.letter;
-      ring.pulse = !c.grey && hintLetter === c.letter && sc.open !== c.letter;
-      ring.progress = ph === 'clue' && !reduced ? ease((state.phaseT - 0.15 * k) / 0.5) : 1;
-      ring.alpha = ph === 'clue' && reduced ? ease(state.phaseT / 0.4) : 1;
-      if (ph === 'fork' && !c.grey && c.letter !== sc.target) ring.alpha *= 0.5;
-      const text = c.grey ? nameOf(c.id) : `${c.letter} · ${distanceText(distanceLy(cam.ship || cam.pos, c.id))}`;
-      ring.label = { text, colour: c.grey ? GREY_COLOUR : LABEL_COLOUR, priority: ring.strong ? 100 : c.grey ? 70 : 90,
-        fallback: c.letter };
-      out.push(ring);
-      const inBox = ring.p.front && ring.x >= box.x && ring.x <= box.x + box.w && ring.y >= box.y
-        && ring.y <= box.y + box.h;
-      if (!c.grey && !inBox) {
-        const ch = edgeChevron(ring.p, cam);
-        if (ch) chevrons.push({ ...ch, letter: c.letter, pulse: ring.pulse, alpha: ring.alpha });
-      }
-    });
-  }
-
-  // The gate of the zone ahead in a flight: a thin tilted ring on the camera's path at the zone's start, growing as
-  // the zone comes up, labelled with the zone and its gas.
-  function gate(state, cam, out) {
-    const za = zoneAt(state);
-    if (!za || za.dropout || !(za.nextIn <= GATE_LEAD)) return;
-    const leg = legOf(state), k = za.index, z = leg.zones[k], next = leg.zones[k + 1];
-    if (!next || next.dropout) return;
-    const hazard = next.kind === 'waypoint' || next.n >= 0.1 || next.notch < z.notch - 0.05;
-    if (!hazard) return;
-    // the gate's size: GATE_ANGLE seen from where it first shows (GATE_LEAD screen seconds out at the notch)
-    const p0 = clamp(1 - GATE_LEAD / z.screen, 0, 1), lam = z.lambda;
-    const left = lam > 1e-6 ? (Math.exp(-lam * p0) - Math.exp(-lam)) / (1 - Math.exp(-lam)) : 1 - p0;
-    const radius = Math.max(z.ly * left, 1e-9) * Math.tan(GATE_ANGLE);
-    const at = legPath(leg.stop, leg.branch, next.startLy);
-    const offset = sub(cam.pos, cam.ship || cam.pos);
-    const centre = add(at.pos, offset);
-    // tilt the gate 60° to 70° out of square with the path, about a seeded axis
-    const rnd = mulberry32(hashSeed(state.seed, 'gate', leg.stop, k + 1));
-    const fwd = unit(at.fwd), [u, w] = planeAxes(fwd);
-    const spin = 2 * Math.PI * rnd(), tilt = (60 + 10 * rnd()) * Math.PI / 180;
-    const axis = [0, 1, 2].map((i) => u[i] * Math.cos(spin) + w[i] * Math.sin(spin));
-    const side = cross(fwd, axis);
-    const normal = unit([0, 1, 2].map((i) => fwd[i] * Math.cos(tilt) + side[i] * Math.sin(tilt)));
-    const poly = discPoly(centre, radius, normal, cam, 96);
-    // it fades in as it shows, and out as it grows past the screen (the ship flies through it)
-    let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
-    for (const q of poly) {
-      if (!q.ok) continue;
-      x0 = Math.min(x0, q.x); x1 = Math.max(x1, q.x); y0 = Math.min(y0, q.y); y1 = Math.max(y1, q.y);
+  // Slide a chevron off any HUD box it lands on: inward from a side edge, up or down from the top or bottom.
+  function clearOfHud(c, layout) {
+    const rects = Object.entries(layout?.rects || {}).filter(([n]) => n !== 'ship' && n !== 'pips');
+    for (let k = 0; k < 4; k++) {
+      const hit = rects.find(([, r]) => c.x > r[0] - 8 && c.x < r[0] + r[2] + 8 && c.y > r[1] - 8
+        && c.y < r[1] + r[3] + 8);
+      if (!hit) break;
+      const r = hit[1];
+      if (c.edge === 'right') c.x = r[0] - 14;
+      else if (c.edge === 'left') c.x = r[0] + r[2] + 14;
+      else if (c.edge === 'bottom') c.y = r[1] - 14;
+      else c.y = r[1] + r[3] + 14;
     }
-    const extent = Math.max(x1 - x0, y1 - y0) / Math.max(1, Math.min(W, H));
-    const fade = clamp((GATE_LEAD - za.nextIn) / 0.5, 0, 1) * (1 - clamp((extent - 0.6) / 0.5, 0, 1));
-    if (!(fade > 0.01)) return;
-    const gas = densityText(next.n);
-    out.push({ id: null, kind: 'gate', letter: null, poly, alpha: fade, progress: 1, x: NaN, y: NaN, r: 0,
-      label: { text: gas ? `${next.label} · ${gas}` : next.label, colour: LABEL_COLOUR, priority: 75 } });
+    return c;
   }
 
-  // Share of the leg's screen time flown so far (passing rings are timed by it).
-  function screenShare(state) {
-    const f = state.flight, zones = legOf(state).zones;
-    let done = 0, total = 0;
-    zones.forEach((z, i) => {
-      total += z.screen;
-      if (i < f.zone) done += z.screen;
-      else if (i === f.zone) done += clamp(f.p, 0, 1) * z.screen;
-    });
-    return total > 0 ? done / total : 0;
+  function ring(x, y, r, style) {
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, TAU);
+    ctx.lineWidth = style.lw || 1;
+    ctx.strokeStyle = style.colour;
+    ctx.setLineDash(style.dash || []);
+    ctx.stroke();
+    ctx.setLineDash([]);
   }
 
-  function passes(stop, share, cam, out, minP = 0) {
-    for (const ps of stop.passes || []) {
-      if (ps.p < minP || share < ps.p - PASS_BEFORE || share > ps.p + PASS_AFTER) continue;
-      const ring = objRing(ps.id, cam, 'pass');
-      if (!ring || !ring.p.visible) continue;
-      const w = cam.layerWeights && OBJECTS[ps.id] ? cam.layerWeights[OBJECTS[ps.id].layer] : 1;
-      ring.alpha = clamp((finite(w) ? w : 1) * 2, 0, 1)
-        * clamp((share - (ps.p - PASS_BEFORE)) / 0.08, 0, 1) * clamp((ps.p + PASS_AFTER - share) / 0.05, 0, 1);
-      ring.label = { text: nameOf(ps.id), colour: LABEL_COLOUR, priority: 50 };
-      out.push(ring);
-    }
+  const STYLE = {
+    scan: { colour: 'rgba(255,255,255,0.4)', dash: [2, 4] },
+    scanning: { colour: 'rgba(255,255,255,0.55)', dash: [2, 4] },
+    scanned: { colour: 'rgba(255,255,255,0.85)' },
+    objective: { colour: ORANGE, lw: 1.5 },
+    done: { colour: 'rgba(150,150,150,0.55)' },
+    course: { colour: 'rgba(255,255,255,0.2)' },
+    start: { colour: 'rgba(255,255,255,0.85)' },
+    giver: { colour: 'rgba(255,255,255,0.85)' },
+    exit: { colour: 'rgba(255,255,255,0.85)' },
+    actor: { colour: 'rgba(255,255,255,0.5)' },
+  };
+  const LABELLED = new Set(['scanned', 'objective', 'start', 'giver', 'exit']);
+
+  function chevron(c, colour, size = 9) {
+    ctx.save();
+    ctx.translate(c.x, c.y);
+    ctx.rotate(c.angle);
+    ctx.beginPath();
+    ctx.moveTo(size, 0);
+    ctx.lineTo(-size * 0.7, -size * 0.75);
+    ctx.lineTo(-size * 0.3, 0);
+    ctx.lineTo(-size * 0.7, size * 0.75);
+    ctx.closePath();
+    ctx.fillStyle = colour;
+    ctx.fill();
+    ctx.restore();
   }
 
-  // Leg 6 passes under the spiral arms: a ring on each arm above the path, with its height.
-  function arms(state, cam, out) {
-    const leg = legOf(state), key = `${leg.stop}:${leg.branch}`;
-    if (!armCache.has(key)) armCache.set(key, armsPassed(leg.points));
-    const frac = state.flight.ly / leg.lengthLy;
-    for (const a of armCache.get(key)) {
-      if (frac < a.at - 0.25 || frac > a.at + 0.03 || a.at >= 0.999) continue;
-      const pos = [a.pos[0], a.pos[1], a.pos[2] + a.armAboveLy];
-      const p = project(pos, cam, undefined, { radiusLy: ARM_RING_LY });
-      if (!p.visible) continue;
-      const h = Math.abs(a.armAboveLy);
-      const where = a.armAboveLy > 0 ? 'above' : 'below';
-      const text = h < 400 ? a.name : `${a.name} · ${groupDigits(Math.round(h))} ly ${where}`;
-      out.push({ id: null, kind: 'arm', letter: null, x: p.x, y: p.y, r: p.r, p, alpha: 0.8, progress: 1,
-        label: { text, colour: LABEL_COLOUR, priority: 45 } });
-    }
+  // A chevron's label, inside the screen beside it; moved above or below when that spot covers a HUD box or a label
+  // already drawn. avoid: [x, y, w, h] boxes.
+  function chevronLabel(c, text, colour, f, avoid = []) {
+    const w = measure(text, f), hgt = 14;
+    let align = 'center', x = c.x - Math.cos(c.angle) * 16, y = c.y - Math.sin(c.angle) * 16;
+    if (c.edge === 'right') { align = 'right'; x -= 2; } else if (c.edge === 'left') { align = 'left'; x += 2; }
+    else y += c.edge === 'top' ? 8 : -8;
+    const left = (ax) => (align === 'right' ? ax - w : align === 'left' ? ax : ax - w / 2);
+    const fits = (ax, ay) => !avoid.some((r) => left(ax) < r[0] + r[2] && r[0] < left(ax) + w
+      && ay - hgt / 2 < r[1] + r[3] && r[1] < ay + hgt / 2);
+    const spots = [[x, y], [x, y - 18], [x, y + 18], [x, y - 34], [x, y + 34]];
+    const [sx, sy] = spots.find(([ax, ay]) => fits(ax, ay)) || spots[0];
+    let tx = clamp(sx, w / 2 + 4, W - w / 2 - 4);
+    if (align === 'right') tx = Math.max(sx, w + 4);
+    if (align === 'left') tx = Math.min(sx, W - w - 4);
+    ctx.font = f;
+    ctx.fillStyle = colour;
+    ctx.textBaseline = 'middle';
+    ctx.textAlign = align;
+    ctx.fillText(text, tx, sy);
+    const rect = [left(tx), sy - hgt / 2, w, hgt];
+    avoid.push(rect);
+    return rect;
   }
 
-  // Everything to draw for a state: rings (with labels) and chevrons.
-  function collect(state, cam, reduced) {
-    const out = [], chevrons = [];
-    const ph = state.phase, stop = STOPS[state.stop];
-    const say = state.say && state.say.current;
-    if (ph === 'title' || ph === 'chapter') return { out, chevrons };
-    if (ph === 'keyart') {
-      for (const id of ['earth', 'moon']) {
-        const ring = objRing(id, cam, 'landmark');
-        if (ring) { ring.label = { text: nameOf(id), colour: LABEL_COLOUR, priority: 80 }; out.push(ring); }
-      }
-      return { out, chevrons };
-    }
-    // Laniakea: drawn on with the intro's ring line, and kept through the first scan
-    if (say && say.ring === 'laniakea' && lanSince === null) lanSince = state.t;
-    const firstScan = state.stop === 0 && state.mode === 'stop' && (ph === 'clue' || ph === 'scan');
-    if ((ph === 'intro' && lanSince !== null) || firstScan) {
-      const ring = objRing('laniakea', cam, 'laniakea');
-      ring.progress = lanSince === null || reduced ? 1 : ease((state.t - lanSince) / 0.8);
-      ring.alpha = reduced && lanSince !== null ? ease((state.t - lanSince) / 0.4) : 1;
-      ring.label = { text: nameOf('laniakea'), colour: LABEL_COLOUR, priority: 40 };
-      out.push(ring);
-    }
-    if (ph === 'clue' || ph === 'scan' || ph === 'fork') {
-      candidates(state, cam, out, chevrons, reduced);
-      if (ph === 'fork') {
-        const v = objRing('local-void', cam, 'void');
-        if (v && v.p.visible) {
-          v.alpha = 0.7;
-          v.label = { text: nameOf('local-void'), colour: LABEL_COLOUR, priority: 60 };
-          out.push(v);
-        }
-      }
-    } else if (ph === 'flight' && state.flight) {
-      const sc = scanOf(state), za = zoneAt(state);
-      const target = sc && sc.entry.target.id;
-      if (target) {
-        const ring = objRing(target, cam, 'target', { letter: null });
-        if (ring) {
-          ring.alpha = 0.7 * (za && za.dropout ? 1 - clamp(state.flight.p, 0, 1) : 1);
-          const dist = distanceText(distanceLy(cam.ship || cam.pos, target));
-          const text = sc.target ? `${sc.target} · ${dist}` : dist;
-          ring.label = { text, colour: LABEL_COLOUR, priority: 60, fallback: sc.target || null };
-          out.push(ring);
-        }
-      }
-      gate(state, cam, out);
-      passes(stop, screenShare(state), cam, out);
-      if (stop.overlay === 'arms') arms(state, cam, out);
-    } else if (ph === 'reveal') {
-      const sc = scanOf(state);
-      const id = sc && sc.entry.target.id;
-      const ring = id && objRing(id, cam, 'landmark');
-      if (ring) {
-        const t = state.phaseT;
-        ring.progress = reduced ? 1 : ease(t / RING_DRAW);
-        ring.alpha = reduced ? ease(t / 0.4) : 1;
-        ring.label = { text: nameOf(id), colour: LABEL_COLOUR, priority: 80,
-          lead: reduced ? 1 : clamp((t - RING_DRAW * 0.75) / 0.3, 0, 1),
-          write: reduced ? 1 : clamp((t - RING_DRAW * 0.75 - 0.25) / 0.5, 0, 1) };
-        out.push(ring);
-      }
-      if (state.mode === 'stop') passes(stop, 1, cam, out, 0.9);
-    } else if (ph === 'ending' && state.ending) {
-      ending(state, cam, out, reduced);
-    }
-    return { out, chevrons };
-  }
+  // ---------- the radar
 
-  // The ending: Earth and the Moon on the approach; then Earth is "Home" in orange; then one address ring at a time.
-  function ending(state, cam, out, reduced) {
-    const beat = state.ending.beat, say = state.say && state.say.current;
-    const home = (alpha = 1) => {
-      const ring = objRing('earth', cam, 'home');
-      ring.alpha = alpha;
-      ring.label = { text: 'Home', colour: HOME_COLOUR, priority: 95 };
-      out.push(ring);
-    };
-    if (beat === 0) {
-      for (const id of ['earth', 'moon']) {
-        const ring = objRing(id, cam, id === 'earth' ? 'landmark' : 'pass');
-        if (!ring || (id === 'moon' && !ring.p.visible)) continue;
-        ring.label = { text: nameOf(id), colour: LABEL_COLOUR, priority: id === 'earth' ? 85 : 60 };
-        out.push(ring);
-      }
-    } else if (beat === 3) {
-      // the ring follows the caption, as the camera does (geo.endingPose): "Not the centre of anything." stays on
-      // Laniakea, "Home." rings Earth, and with no caption the stills go by every 2.5 s
-      const ring0 = say ? say.ring : undefined;
-      const id = ADDRESS.has(ring0) ? ring0 : ring0 === 'home' ? 'home' : say ? 'laniakea'
-        : ADDRESS_ORDER[clamp(Math.floor(state.ending.t / 2.5), 0, ADDRESS_ORDER.length - 1)];
-      if (id === 'home') { home(); return; }
-      const ring = objRing(id, cam, 'address');
-      ring.progress = reduced || !(say && say.ring) ? 1 : ease(state.say.t / RING_DRAW);
-      ring.label = { text: nameOf(id), colour: LABEL_COLOUR, priority: 85 };
-      out.push(ring);
-    } else {
-      home(reduced || beat !== 1 ? 1 : ease(state.ending.t / 0.5));
-    }
-  }
+  function drawRadar(view, rect) {
+    const g = view.game, zone = view.zone, ship = g?.ship;
+    if (!rect || !ship) return;
+    const [rx, ry, rw, rh] = rect;
+    const R = Math.min(rw, rh) / 2, cx = rx + rw / 2, cy = ry + rh / 2;
+    const Z = tune.ZONE;
+    // Range: 300 u at cruise, 420 on boost, 200 in a pocket or with the objective within 150 u.
+    const objMark = (view.marks || []).find((m) => m.kind === 'objective' && m.pos);
+    const near = g.pocketId || (objMark && dist2(objMark.pos, ship.pos) < 150);
+    const want = near ? Z.RADAR_NEAR : ship.boosting ? Z.RADAR_BOOST : Z.RADAR;
+    radarRange += (want - radarRange) * (1 - Math.exp(-fin(view.dt, 1 / 60) / 0.5));
+    const k = R / radarRange;
+    const v = ship.vel || [0, 0, 0];
+    const head = Math.hypot(v[0], v[1]) > 2 ? Math.atan2(v[0], v[1]) : fin(ship.yaw);
+    const sp = ship.pos;
 
-  // ---------- drawing ----------
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(cx, cy, R, 0, TAU);
+    ctx.fillStyle = 'rgba(0,0,0,0.45)';
+    ctx.fill();
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = 'rgba(255,255,255,0.6)';
+    ctx.stroke();
+    ctx.clip();
 
-  function strokeRing(ring, now, reduced) {
-    const a = ring.alpha * (ring.grey ? 0.55 : ring.strong ? 1 : RING_ALPHA);
-    if (!(a > 0.003)) return;
-    ctx.strokeStyle = ring.grey ? GREY_COLOUR : '#ffffff';
-    ctx.globalAlpha = a;
-    ctx.lineWidth = ring.strong || (ring.pulse && reduced) ? 1.5 : 1;
-    if (ring.poly) strokePoly(ring.poly, ring.progress);
-    else {
-      // a full ring from 0 to 2π: Chrome draws nothing for a sweep of 2π that starts elsewhere (rounding)
-      const k = clamp(ring.progress, 0, 1), a0 = -Math.PI / 4;
+    // Roads and orbits, faint.
+    ctx.strokeStyle = 'rgba(255,255,255,0.16)';
+    ctx.lineWidth = Math.max(1, Math.min(3, 6 * k));
+    for (const road of zone?.roads || []) {
       ctx.beginPath();
-      if (k >= 0.999) ctx.arc(ring.x, ring.y, ring.r, 0, 2 * Math.PI);
-      else if (k > 0) ctx.arc(ring.x, ring.y, ring.r, a0, a0 + 2 * Math.PI * k);
+      if (road.kind === 'orbit' && road.centre) {
+        const rr = Array.isArray(road.r) ? (road.r[0] + road.r[1]) / 2 : fin(road.r);
+        radarXY(road.centre[0] - sp[0], road.centre[1] - sp[1], head, k, xy);
+        ctx.arc(cx + xy[0], cy + xy[1], Math.max(1, rr * k), 0, TAU);
+      } else if (road.pts) {
+        road.pts.forEach((p, i) => {
+          radarXY(p[0] - sp[0], p[1] - sp[1], head, k, xy);
+          if (i) ctx.lineTo(cx + xy[0], cy + xy[1]); else ctx.moveTo(cx + xy[0], cy + xy[1]);
+        });
+      }
       ctx.stroke();
     }
-    if (ring.pulse) {
-      if (reduced) {
-        // a steady highlight instead of the pulse
-        ctx.globalAlpha = 0.6 * ring.alpha;
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.arc(ring.x, ring.y, ring.r + 5, 0, 2 * Math.PI);
-        ctx.stroke();
-      } else {
-        const u = ((now / PULSE_S) % 1 + 1) % 1;
-        ctx.globalAlpha = 0.85 * (1 - u) * ring.alpha;
-        ctx.lineWidth = 1.5;
-        ctx.beginPath();
-        ctx.arc(ring.x, ring.y, ring.r + 3 + 14 * ease(u), 0, 2 * Math.PI);
-        ctx.stroke();
-      }
-    }
-  }
-
-  function strokePoly(pts, progress = 1) {
-    const n = Math.round((pts.length - 1) * clamp(progress, 0, 1));
-    if (n < 1) return;
-    ctx.beginPath();
-    let pen = false;
-    for (let i = 0; i <= n && i < pts.length; i++) {
-      const q = pts[i];
-      if (!q.ok || Math.abs(q.x) > 1e5 || Math.abs(q.y) > 1e5) { pen = false; continue; }
-      if (pen) ctx.lineTo(q.x, q.y);
-      else ctx.moveTo(q.x, q.y);
-      pen = true;
-    }
-    ctx.stroke();
-  }
-
-  // Where an ellipse's label may hang from: its points furthest up-right, up-left, up, down-right, down-left, down,
-  // right and left that are on screen, in that order (the label sits on the point with no radius).
-  function polyAnchors(poly, area) {
-    let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
-    for (const q of poly) {
-      if (!q.ok) continue;
-      x0 = Math.min(x0, q.x); x1 = Math.max(x1, q.x); y0 = Math.min(y0, q.y); y1 = Math.max(y1, q.y);
-    }
-    const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2, out = [];
-    for (const [dx, dy] of [[1, -1], [-1, -1], [0, -1], [1, 1], [-1, 1], [0, 1], [1, 0], [-1, 0]]) {
-      let best = null, score = -Infinity;
-      for (const q of poly) {
-        if (!q.ok || q.x < area.x + 8 || q.x > area.x + area.w - 8 || q.y < area.y + 8
-          || q.y > area.y + area.h - 8) continue;
-        const v = dx * (q.x - cx) + dy * (q.y - cy);
-        if (v > score) { score = v; best = q; }
-      }
-      if (best && !out.includes(best)) out.push(best);
-    }
-    return out;
-  }
-
-  // Is a point inside a closed outline of screen points (even-odd rule over the points in front)?
-  function insideShape(pts, x, y) {
-    let inside = false;
-    const q = pts.filter((p) => p.ok);
-    for (let i = 0, j = q.length - 1; i < q.length; j = i++) {
-      const a = q[i], b = q[j];
-      if ((a.y > y) !== (b.y > y) && x < ((b.x - a.x) * (y - a.y)) / (b.y - a.y) + a.x) inside = !inside;
-    }
-    return inside;
-  }
-
-  // An ellipse's outline as small boxes, one per segment, so labels can keep off it.
-  function outlineBoxes(poly) {
-    const boxes = [];
-    for (let i = 1; i < poly.length; i++) {
-      const a = poly[i - 1], b = poly[i];
-      if (!a.ok || !b.ok || !onCanvas(a.x, a.y, 0) && !onCanvas(b.x, b.y, 0)) continue;
-      boxes.push({ x: Math.min(a.x, b.x), y: Math.min(a.y, b.y), w: Math.max(1, Math.abs(b.x - a.x)),
-        h: Math.max(1, Math.abs(b.y - a.y)), a, b });
-    }
-    return boxes;
-  }
-
-  // Labels in order of priority, at most 6, each placed by core/labels.placeLabels against the HUD, the labels and
-  // leaders already placed, the other rings and the ellipse outlines. A circle's label tries again over the outlines
-  // when it finds no room; an ellipse's label tries each of its anchor points.
-  function placeAll(rings, area, avoid, font, fontPx) {
-    const opts = { width: W, height: H, box: area, fontPx, leader: 14, run: 10, gap: 4, max: 1 };
-    const circles = [], polys = [];
-    rings.forEach((r, i) => {
-      if (!r.label || !(r.alpha > 0.05) || !(r.progress > 0.6)) return;
-      const entry = { ring: r, key: `${r.kind}:${r.id || 'x'}:${i}`, width: measure(r.label.text, font) };
-      if (r.poly) {
-        entry.shape = r.poly;
-        entry.outline = outlineBoxes(r.poly);
-        polys.push(entry);
-      } else if (r.p && r.p.visible) {
-        if (r.r > BIG_RING) {
-          // a big ring can hang its label from any side, as an ellipse does
-          entry.shape = Array.from({ length: 65 }, (_, k) => ({ x: r.x + r.r * Math.cos(k * Math.PI / 32),
-            y: r.y + r.r * Math.sin(k * Math.PI / 32), ok: true }));
-          entry.outline = outlineBoxes(entry.shape);
-        }
-        circles.push(entry);
-      }
-    });
-    const obstacles = circles.map((c) => ({ id: c.key, x: c.ring.x, y: c.ring.y, r: c.ring.r, text: 'x', priority: 0 }));
-    const placed = [], taken = [];
-    const all = [...circles, ...polys].sort((a, b) => b.ring.label.priority - a.ring.label.priority);
-    const tryAt = (entry, item, extra) => {
-      const others = obstacles.filter((o) => o.id !== entry.key);
-      const res = placeLabels([{ ...item, id: entry.key, text: entry.ring.label.text, width: entry.width, priority: 1 },
-        ...others], { ...opts, avoid: [...avoid, ...taken, ...extra] });
-      return res.length && res[0].id === entry.key ? res[0] : null;
-    };
-    // hang the label from a point of the shape's outline: clear of every outline (its own less the two segments
-    // that meet at the anchor) and outside the shape, then inside it, or over the outlines when loose
-    const fromOutline = (entry, strict) => {
-      const others = polys.filter((p) => p !== entry).flatMap((p) => p.outline);
-      const anchors = polyAnchors(entry.shape, area);
-      for (const outside of strict ? [true, false] : [false]) {
-        for (const q of anchors) {
-          const own = strict ? entry.outline.filter((b) => b.a !== q && b.b !== q) : [];
-          const extra = strict ? [...others, ...own] : [];
-          for (let tries = 0; tries < 4; tries++) {
-            const pl = tryAt(entry, { x: q.x, y: q.y, r: 0 }, extra);
-            if (!pl) break;
-            if (!outside || !insideShape(entry.shape, pl.rect.x + pl.rect.w / 2, pl.rect.y + pl.rect.h / 2)) return pl;
-            extra.push(pl.rect);   // that spot is inside the ring: rule it out and look again
-          }
-        }
-      }
-      return null;
-    };
-    for (const entry of all) {
-      if (placed.length >= MAX_SHOWN) break;
-      let pl = null;
-      if (!entry.ring.poly) {
-        const item = { x: entry.ring.x, y: entry.ring.y, r: entry.ring.r };
-        const big = Boolean(entry.shape);
-        pl = tryAt(entry, item, polys.flatMap((p) => p.outline)) || (big && fromOutline(entry, true))
-          || tryAt(entry, item, []) || (big && fromOutline(entry, false)) || null;
-      } else {
-        pl = fromOutline(entry, true) || fromOutline(entry, false);
-      }
-      if (!pl) continue;
-      placed.push({ pl, ring: entry.ring, key: entry.key });
-      taken.push(pl.rect, {
-        x: Math.min(pl.anchor[0], pl.end[0]), y: Math.min(pl.anchor[1], pl.end[1]),
-        w: Math.max(1, Math.abs(pl.end[0] - pl.anchor[0])), h: Math.max(1, Math.abs(pl.end[1] - pl.anchor[1])),
-      });
-    }
-    return { placed, circles };
-  }
-
-  function strokePath(points, progress) {
-    // points: [[x, y], ...]; draws the first `progress` share of the polyline's length
-    let total = 0;
-    for (let i = 1; i < points.length; i++) {
-      total += Math.hypot(points[i][0] - points[i - 1][0], points[i][1] - points[i - 1][1]);
-    }
-    let left = total * clamp(progress, 0, 1);
-    ctx.beginPath();
-    ctx.moveTo(points[0][0], points[0][1]);
-    for (let i = 1; i < points.length && left > 0; i++) {
-      const [ax, ay] = points[i - 1], [bx, by] = points[i];
-      const d = Math.hypot(bx - ax, by - ay);
-      const k = d > 0 ? Math.min(1, left / d) : 1;
-      ctx.lineTo(ax + (bx - ax) * k, ay + (by - ay) * k);
-      left -= d;
-    }
-    ctx.stroke();
-  }
-
-  function drawText(text, x, y, align, colour, alpha, font) {
-    ctx.font = font;
-    ctx.textAlign = align;
-    ctx.textBaseline = 'middle';
-    // a soft dark edge (instead of shadowBlur) keeps a label readable over the bright band of the Milky Way
-    ctx.globalAlpha = alpha * 0.45;
-    ctx.strokeStyle = '#000000';
-    ctx.lineWidth = 3;
-    ctx.lineJoin = 'round';
-    ctx.strokeText(text, x, y);
-    ctx.globalAlpha = alpha * 0.7;
-    ctx.fillStyle = '#000000';
-    ctx.fillText(text, x + 0.75, y + 0.75);
-    ctx.globalAlpha = alpha;
-    ctx.fillStyle = colour;
-    ctx.fillText(text, x, y);
-  }
-
-  function drawChevron(ch, now, reduced) {
-    const a = ch.alpha * (ch.pulse && !reduced ? 0.6 + 0.4 * Math.cos((2 * Math.PI * now) / PULSE_S) : 1);
-    ctx.save();
-    ctx.translate(ch.x, ch.y);
-    ctx.strokeStyle = '#ffffff';
-    ctx.lineWidth = ch.pulse ? 1.5 : 1;
-    ctx.globalAlpha = 0.45 * a;
-    ctx.beginPath();
-    ctx.arc(0, 0, 13, 0, 2 * Math.PI);
-    ctx.stroke();
-    ctx.globalAlpha = 0.9 * a;
-    ctx.rotate(ch.angle);
-    ctx.beginPath();
-    ctx.moveTo(15.5, -4.5);
-    ctx.lineTo(20, 0);
-    ctx.lineTo(15.5, 4.5);
-    ctx.stroke();
-    ctx.restore();
-    drawText(ch.letter, ch.x, ch.y + 0.5, 'center', LABEL_COLOUR, 0.95 * a, `700 12px ${FONT}`);
-  }
-
-  // ---------- cracks ----------
-
-  function trackCracks(state) {
-    const ph = state.phase;
-    if ((lastSeed !== null && state.seed !== lastSeed) || state.t < lastT - 1e-6 || ph === 'title') {
-      cracks.clear();
-      lanSince = null;
-    }
-    lastSeed = state.seed;
-    lastT = state.t;
-    const panes = finite(state.panes) ? state.panes : PANES;
-    const missing = clamp(PANES - panes, 0, PANES);
-    const fresh = state.flight && state.flight.lock > 0 && lastPanes !== null && panes < lastPanes;
-    for (let k = 0; k < PANES; k++) {
-      if (k >= missing) cracks.delete(k);
-      else if (!cracks.has(k)) cracks.set(k, { t0: fresh && k >= PANES - lastPanes ? state.t : -Infinity });
-    }
-    lastPanes = panes;
-  }
-
-  function drawCracks(state, fade) {
-    if (state.phase !== 'flight' && state.phase !== 'lost') return 0;
-    const S = Math.min(W, H);
-    let n = 0;
-    for (const [k, c] of cracks) {
-      const since = state.t - c.t0;
-      const a = fade * (CRACK_TRACE + (1 - CRACK_TRACE) * (since >= 0 ? Math.exp(-since / CRACK_FLASH) : 0));
-      if (!(a > 0.01)) continue;
-      const key = `${state.seed}:${k}`;
-      if (!patterns.has(key)) patterns.set(key, crackPattern(state.seed, k));
-      const pat = patterns.get(key);
-      const ox = pat.fx * W, oy = pat.fy * H;
-      ctx.strokeStyle = '#ffffff';
+    // The zone's rim when in range.
+    const zR = fin(zone?.R, 0);
+    if (zR && Math.hypot(sp[0], sp[1]) + radarRange > zR) {
+      radarXY(-sp[0], -sp[1], head, k, xy);
+      ctx.beginPath();
+      ctx.arc(cx + xy[0], cy + xy[1], zR * k, 0, TAU);
+      ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+      ctx.setLineDash([3, 3]);
       ctx.lineWidth = 1;
-      pat.lines.forEach((line, i) => {
-        ctx.globalAlpha = a * (i < 9 ? 0.9 : 0.6);
-        ctx.beginPath();
-        ctx.moveTo(ox + line[0] * S, oy + line[1] * S);
-        for (let j = 2; j < line.length; j += 2) ctx.lineTo(ox + line[j] * S, oy + line[j + 1] * S);
-        ctx.stroke();
-      });
-      n++;
+      ctx.stroke();
+      ctx.setLineDash([]);
     }
-    return n;
+    ctx.restore();
+
+    // Marks: the objective last, so it sits on top; out of range, things sit on the rim as ticks.
+    const marks = (view.marks || []).filter((m) => m.pos && (m.radar || m.kind === 'objective'));
+    marks.sort((a, b) => (a.kind === 'objective') - (b.kind === 'objective'));
+    for (const m of marks) {
+      radarXY(m.pos[0] - sp[0], m.pos[1] - sp[1], head, k, xy);
+      const d = Math.hypot(xy[0], xy[1]);
+      const out = d > R - 4;
+      const x = cx + (out ? (xy[0] / d) * (R - 3) : xy[0]), y = cy + (out ? (xy[1] / d) * (R - 3) : xy[1]);
+      const obj = m.kind === 'objective';
+      if (out && !obj && m.radar !== 'exit') continue;
+      ctx.beginPath();
+      if (obj) {
+        ctx.fillStyle = ORANGE;
+        ctx.arc(x, y, out ? 2.5 : 3.5, 0, TAU);
+        ctx.fill();
+      } else if (m.radar === 'start' || m.radar === 'giver') {
+        ctx.strokeStyle = 'rgba(255,255,255,0.9)'; ctx.lineWidth = 1;
+        ctx.arc(x, y, 3, 0, TAU); ctx.stroke();
+      } else if (m.radar === 'scan') {
+        ctx.strokeStyle = 'rgba(255,255,255,0.6)'; ctx.lineWidth = 1; ctx.setLineDash([1.5, 2]);
+        ctx.arc(x, y, 3, 0, TAU); ctx.stroke(); ctx.setLineDash([]);
+      } else if (m.radar === 'exit') {
+        ctx.strokeStyle = 'rgba(255,255,255,0.95)'; ctx.lineWidth = 1.2;
+        ctx.rect(x - 3, y - 3, 6, 6); ctx.stroke();
+      } else if (m.radar === 'vela') {
+        ctx.fillStyle = '#cfe0ff'; ctx.arc(x, y, 2.5, 0, TAU); ctx.fill();
+      } else {
+        ctx.fillStyle = 'rgba(190,190,190,0.85)';
+        ctx.moveTo(x, y - 3); ctx.lineTo(x + 2.6, y + 2); ctx.lineTo(x - 2.6, y + 2); ctx.closePath(); ctx.fill();
+      }
+      const dz = fin(m.pos[2]) - fin(sp[2]);
+      if (!out && Math.abs(dz) > 30) {          // above or below the plane
+        ctx.beginPath();
+        const s = dz > 0 ? -1 : 1;
+        ctx.moveTo(x - 2.5, y + s * 5); ctx.lineTo(x, y + s * 7.5); ctx.lineTo(x + 2.5, y + s * 5);
+        ctx.strokeStyle = obj ? ORANGE : 'rgba(255,255,255,0.7)'; ctx.lineWidth = 1; ctx.stroke();
+      }
+    }
+    // Home: an orange tick on the rim.
+    const hd = view.home?.dir;
+    if (hd && Math.hypot(hd[0], hd[1]) > 1e-6) {
+      radarXY(hd[0], hd[1], head, 1, xy);
+      const a = Math.atan2(xy[1], xy[0]);
+      ctx.beginPath();
+      ctx.moveTo(cx + Math.cos(a) * (R - 6), cy + Math.sin(a) * (R - 6));
+      ctx.lineTo(cx + Math.cos(a) * (R + 1), cy + Math.sin(a) * (R + 1));
+      ctx.strokeStyle = ORANGE; ctx.lineWidth = 2.5; ctx.stroke();
+    }
+    // The ship: a white chevron with an orange tip, pointing up.
+    const s = Math.max(5, R * 0.1);
+    ctx.beginPath();
+    ctx.moveTo(cx, cy - s); ctx.lineTo(cx + s * 0.75, cy + s * 0.8); ctx.lineTo(cx, cy + s * 0.35);
+    ctx.lineTo(cx - s * 0.75, cy + s * 0.8); ctx.closePath();
+    ctx.fillStyle = '#fff'; ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(cx, cy - s); ctx.lineTo(cx + s * 0.28, cy - s * 0.35); ctx.lineTo(cx - s * 0.28, cy - s * 0.35);
+    ctx.closePath(); ctx.fillStyle = ORANGE; ctx.fill();
   }
 
-  // ---------- the frame ----------
+  // ---------- callouts by the ship
 
-  // state: engine state (or { ...state, phase: 'keyart' }); cam: core/geo.cameraFor; view: unused here (the renderer
-  // draws its own heat glow); layout: { mode, rects, box, reduced, safe } from main.js.
-  function draw(state, cam, view, layout = {}) {
-    if (!state || !cam) { if (!blank) clear(); blank = true; drawnRings = []; drawnLabels = []; return; }
-    const w = finite(cam.width) && cam.width > 0 ? cam.width : W;
-    const h = finite(cam.height) && cam.height > 0 ? cam.height : H;
-    if (w !== W || h !== H || (autoRatio && deviceRatio() !== ratio)) resize(w, h);
-    trackCracks(state);
-    const reduced = Boolean(layout.reduced);
-    const now = finite(state.t) ? state.t : 0;
-    const { out, chevrons } = collect(state, cam, reduced);
-    const fade = finite(cam.fade) ? clamp(cam.fade, 0, 1) : 1;
-    const anyCrack = cracks.size > 0 && (state.phase === 'flight' || state.phase === 'lost');
-    if (!out.length && !chevrons.length && !anyCrack) {
-      if (!blank) clear();
-      blank = true;
-      drawnRings = [];
-      drawnLabels = [];
-      return;
-    }
-    blank = false;
+  // Where callouts go: just above the drift pips (above the hint when a short screen puts it there); the big ones
+  // (the nines, LIGHT SPEED) under the reading rows.
+  function calloutSpot(L, big) {
+    const pips = L.rects.pips || L.rects.ship;
+    const px = (L.kind === 'desktop' ? 22 : L.kind === 'landscape' ? 17 : 19) * (big ? 1.35 : 1);
+    const x = pips[0] + pips[2] / 2;
+    let y = big ? H * 0.38 : pips[1] - px * 0.9;
+    if (big && L.rects.toast) y = Math.max(y, L.rects.toast[1] + L.rects.toast[3] + px * 2);
+    const hr = L.rects.hint;
+    if (!big && hr && y + px > hr[1] && y - px < hr[1] + hr[3]) y = hr[1] - px * 0.8;
+    return { x, y, px };
+  }
+  // The box labels keep clear of: the callout's line, with room for its rise.
+  function calloutBox(L) {
+    if (!L?.rects?.pips && !L?.rects?.ship) return null;
+    const { x, y, px } = calloutSpot(L, false);
+    const w = px * 9;
+    return { x: x - w / 2, y: y - px - 14, w, h: px * 2 + 14 };
+  }
+
+  function drawCallout(view) {
+    const t = clock;
+    for (const e of view.events || []) callouts.push(e, t);
+    const c = callouts.current(t);
+    const L = view.layout;
+    if (!c || !L) return;
+    const big = c.pri >= 8;
+    const age = t - c.t0, life = CALLOUT_LIFE + (big ? 0.6 : 0);
+    const pop = view.reduced ? 1 : 1 + 0.3 * Math.max(0, 1 - (t - c.pop) / 0.12);
+    const alpha = clamp((life - age) / 0.3, 0, 1);
+    const rise = view.reduced ? 0 : Math.min(1, age / life) * 12;
+    const { x, y: y0, px } = calloutSpot(L, big);
+    const y = y0 - (big ? 0 : rise);
+    const label = c.n > 1 ? `${c.text} ×${c.n}` : c.text;
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.translate(x, y);
+    ctx.scale(pop, pop);
+    ctx.font = font(px, 800);
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = 'rgba(0,0,0,0.55)';
+    ctx.strokeText(label, 0, 0);
+    ctx.fillStyle = c.colour || (c.tone === 'orange' ? ORANGE : c.tone === 'grey' ? '#a6a6a6' : '#fff');
+    ctx.fillText(label, 0, 0);
+    ctx.restore();
+  }
+
+  // ---------- one frame
+
+  function draw(view) {
+    clock += clamp(fin(view.dt, 1 / 60), 0, 0.25);
     clear();
     ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
+    const g = view.game, L = view.layout, cam = view.cam;
+    const mode = g?.mode || 'title';
+    drawn = { rings: [], labels: [], chevrons: [] };
+    const hidden = mode === 'title' || mode === 'paused' || mode === 'log';
+    const inZone = !(mode === 'punch' || mode === 'tunnel');
+    if (hidden) { callouts.clear(); return drawn; }
 
-    const phone = layout.mode ? layout.mode !== 'desktop' : W <= 760 || H <= 500;
-    const fontPx = phone ? 12 : 11;
-    const font = `400 ${fontPx}px ${FONT}`;
-    const safe = layout.safe || {};
-    const sl = finite(safe.left) ? safe.left : 0, sr = finite(safe.right) ? safe.right : 0;
-    const st = finite(safe.top) ? safe.top : 0, sb = finite(safe.bottom) ? safe.bottom : 0;
-    const area = { x: sl + 4, y: st + 4, w: Math.max(0, W - sl - sr - 8), h: Math.max(0, H - st - sb - 8) };
-    const avoid = [];
-    for (const r of Object.values(layout.rects || {})) {
-      if (r && [r.x, r.y, r.w, r.h].every(finite) && r.w > 0 && r.h > 0) avoid.push(r);
-    }
-    // the band above the free box holds the top row, the clocks and the grey info box
-    const box = layout.box || cam.box;
-    if (box && finite(box.y) && box.y > 0 && state.phase !== 'keyart') avoid.push({ x: 0, y: 0, w: W, h: box.y });
-
-    // rings
-    const visible = out.filter((r) => (r.poly ? r.poly.some((q) => q.ok && onCanvas(q.x, q.y, 0))
-      : r.p && r.p.front && onCanvas(r.x, r.y, r.r)));
-    for (const r of visible) { r.alpha *= fade; strokeRing(r, now, reduced); }
-
-    // labels
-    const { placed, circles } = placeAll(visible, area, avoid, font, fontPx);
-    const labelsOut = [];
-    const placedRings = new Set();
-    for (const { pl, ring: r } of placed) {
-      placedRings.add(r);
-      const lead = r.label.lead ?? 1, write = r.label.write ?? 1;
-      // a label shows as its ring finishes drawing on
-      const a = r.alpha * (r.label.colour === GREY_COLOUR ? 0.8 : 1) * clamp((r.progress - 0.6) / 0.4, 0, 1);
-      ctx.strokeStyle = r.label.colour;
-      ctx.globalAlpha = a * RING_ALPHA;
-      ctx.lineWidth = 1;
-      if (lead > 0) strokePath([pl.anchor, pl.elbow, pl.end], lead);
-      if (write >= 1) drawText(r.label.text, pl.textX, pl.textY, pl.align, r.label.colour, a * TEXT_ALPHA, font);
-      else if (write > 0) {
-        // the label writes on from its left edge, in reading order
-        const shown = r.label.text.slice(0, Math.floor(r.label.text.length * write));
-        if (shown) drawText(shown, pl.rect.x, pl.textY, 'left', r.label.colour, a * TEXT_ALPHA, font);
+    if (cam && inZone) {
+      const box = freeBox(L);
+      const items = [], rings = [];
+      for (const m of view.marks || []) {
+        if (rings.length >= MAX_RINGS && m.kind !== 'objective') continue;
+        if (m.dir) projectPoint(cam, m.dir, 0, pt); else if (m.pos) projectPoint(cam, m.pos, 1, pt); else continue;
+        let r = m.dir ? fin(m.rPx, 16) : ringPx(cam, fin(m.r, 2), pt.depth);
+        if (m.kind === 'scanned' && m.pos && r > Math.min(W, H) * 0.3) continue;   // too close to need a label
+        r = clamp(r, MIN_RING_PX, Math.min(W, H) * 0.42);
+        const on = pt.front && pt.x > -r && pt.x < W + r && pt.y > -r && pt.y < H + r;
+        const entry = { id: m.id, kind: m.kind, x: pt.x, y: pt.y, r, front: pt.front, onScreen: on, mark: m,
+          vx: pt.vx, vy: pt.vy };
+        rings.push(entry);
+        if (on && m.label && LABELLED.has(m.kind)) {
+          items.push({ id: m.id, x: pt.x, y: pt.y, r: m.ring === false ? r * 0.9 : r, text: m.label,
+            width: measure(m.label, font(L?.kind === 'desktop' ? 12 : 10.5, 600)),
+            priority: fin(m.priority) + (m.kind === 'objective' ? 1000 : 0) });
+        }
       }
-      labelsOut.push({ text: r.label.text, x: pl.textX, y: pl.textY, colour: r.label.colour, align: pl.align,
-        kind: r.kind, id: r.id, rect: { ...pl.rect } });
-    }
-    // a lettered ring (a candidate, or the destination in flight) whose label found no room keeps its letter at the
-    // ring, on the side away from the screen edge
-    const bold = `700 ${fontPx}px ${FONT}`;
-    for (const { ring: r } of circles) {
-      const letter = r.label.fallback;
-      if (placedRings.has(r) || !letter) continue;
-      const lw = measure(letter, bold);
-      const right = r.x + r.r * Math.SQRT1_2 + 3 + lw <= area.x + area.w;
-      const x = right ? r.x + r.r * Math.SQRT1_2 + 3 : r.x - r.r * Math.SQRT1_2 - 3 - lw;
-      const y = Math.max(area.y + fontPx, r.y - r.r * Math.SQRT1_2 - 5);
-      const a = r.alpha * (r.label.colour === GREY_COLOUR ? 0.8 : 1) * clamp((r.progress - 0.6) / 0.4, 0, 1);
-      drawText(letter, x, y, 'left', r.label.colour, a * TEXT_ALPHA, bold);
-      labelsOut.push({ text: letter, x, y, colour: r.label.colour, align: 'left', kind: 'letter', id: r.id,
-        rect: { x, y: y - fontPx * 0.65, w: lw, h: Math.ceil(fontPx * 1.3) } });
+      // Rings.
+      for (const e of rings) {
+        if (!e.onScreen) continue;
+        const m = e.mark;
+        const st = STYLE[m.kind] || STYLE.scanned;
+        if (m.ring !== false) ring(e.x, e.y, e.r, st);
+        if (m.kind === 'scanning' && m.progress > 0) {
+          ctx.beginPath();
+          ctx.arc(e.x, e.y, e.r, -Math.PI / 2, -Math.PI / 2 + TAU * m.progress);
+          ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.stroke();
+        }
+        drawn.rings.push({ id: e.id, kind: m.kind, x: e.x, y: e.y, r: e.r });
+      }
+      // Labels with their leaders, clear of the HUD.
+      const avoid = Object.entries(L?.rects || {}).filter(([n]) => n !== 'ship')
+        .map(([, r]) => rectBox(r));
+      const cb = calloutBox(L);
+      if (cb) avoid.push(cb);
+      const fpx = L?.kind === 'desktop' ? 12 : 10.5;
+      const placed = placeLabels(items, { width: W, height: H, avoid, max: MAX_LABELS, fontPx: fpx,
+        box: { x: box.x, y: Math.max(0, box.y - 30), w: box.w, h: box.h + 30 }, leader: 16, run: 12 });
+      ctx.font = font(fpx, 600);
+      ctx.textBaseline = 'middle';
+      ctx.shadowColor = 'rgba(0,0,0,0.85)';
+      ctx.shadowBlur = 4;
+      for (const p of placed) {
+        const m = rings.find((e) => e.id === p.id)?.mark;
+        const colour = m?.kind === 'objective' ? ORANGE : 'rgba(255,255,255,0.92)';
+        ctx.beginPath();
+        ctx.moveTo(p.anchor[0], p.anchor[1]);
+        ctx.lineTo(p.elbow[0], p.elbow[1]);
+        ctx.lineTo(p.end[0], p.end[1]);
+        ctx.strokeStyle = colour; ctx.lineWidth = 1; ctx.stroke();
+        ctx.fillStyle = colour;
+        ctx.textAlign = p.align;
+        ctx.fillText(p.text, p.textX, p.textY);
+        if (m?.medals !== undefined) {                  // four medal pips under a start ring's label
+          const w = p.rect.w, x0 = p.align === 'left' ? p.textX : p.textX - w;
+          for (let i = 0; i < 4; i++) {
+            ctx.beginPath();
+            ctx.arc(x0 + 3 + i * 9, p.textY + fpx, 2.6, 0, TAU);
+            ctx.lineWidth = 1; ctx.strokeStyle = colour; ctx.stroke();
+            if (i < m.medals) { ctx.fillStyle = colour; ctx.fill(); }
+          }
+        }
+        drawn.labels.push({ id: p.id, text: p.text, rect: [p.rect.x, p.rect.y, p.rect.w, p.rect.h] });
+      }
+      // Edge chevrons for what is off the screen: the objective first, at most 4. Their labels keep clear of the HUD
+      // and of the labels placed above.
+      const hudBoxes = Object.entries(L?.rects || {}).filter(([n]) => n !== 'ship').map(([, r]) => r)
+        .concat(drawn.labels.map((l) => l.rect));
+      const onScreen = (e) => e.front && e.x >= 0 && e.x <= W && e.y >= 0 && e.y <= H;
+      const off = rings.filter((e) => e.mark.chevron && !onScreen(e));
+      off.sort((a, b) => (b.kind === 'objective') - (a.kind === 'objective'));
+      for (const e of off.slice(0, MAX_CHEVRONS)) {
+        const c = chevronAt(toward(e), box);
+        if (!c) continue;
+        clearOfHud(c, L);
+        const colour = e.kind === 'objective' ? ORANGE : 'rgba(255,255,255,0.75)';
+        chevron(c, colour);
+        if (e.kind === 'objective' && e.mark.label) chevronLabel(c, e.mark.label, colour, font(fpx, 700), hudBoxes);
+        drawn.chevrons.push({ id: e.id, x: c.x, y: c.y, angle: c.angle });
+      }
+      // HOME: an orange chevron at the edge toward Earth, or a marker where it lies.
+      if (view.home?.dir) {
+        projectPoint(cam, view.home.dir, 0, pt);
+        const visible = pt.front && pt.x >= 8 && pt.x <= W - 8 && pt.y >= 8 && pt.y <= H - 8;
+        const c = visible ? null : chevronAt(toward(pt), box);
+        const label = view.home.label || 'HOME';
+        if (c) {
+          clearOfHud(c, L);
+          chevron(c, ORANGE, 10);
+          chevronLabel(c, label, ORANGE, font(fpx, 700), hudBoxes);
+          drawn.chevrons.push({ id: 'home', x: c.x, y: c.y, angle: c.angle });
+        } else {
+          ctx.beginPath();
+          ctx.moveTo(pt.x, pt.y + 6); ctx.lineTo(pt.x - 6, pt.y - 4); ctx.lineTo(pt.x + 6, pt.y - 4); ctx.closePath();
+          ctx.fillStyle = ORANGE; ctx.fill();
+          ctx.font = font(fpx, 700); ctx.textAlign = 'center'; ctx.fillText(label, pt.x, pt.y - 14);
+          drawn.chevrons.push({ id: 'home', x: pt.x, y: pt.y, angle: Math.PI / 2, onScreen: true });
+        }
+      }
     }
 
-    for (const ch of chevrons) drawChevron({ ...ch, alpha: ch.alpha * fade }, now, reduced);
-    const crackCount = drawCracks(state, fade);
-    ctx.globalAlpha = 1;
-
-    // what was drawn, for picking and the QA hook: rings on catalogue objects (candidates carry their letter)
-    drawnRings = out.filter((r) => r.id && r.p).map((r) => ({
-      id: r.id, letter: r.letter, kind: r.kind, x: r.x, y: r.y, r: r.r, hitR: Math.max(r.r, HIT_MIN),
-      expectX: r.p.x, expectY: r.p.y, onScreen: r.p.visible, grey: Boolean(r.grey),
-    }));
-    drawnLabels = labelsOut;
-    drawnCracks = crackCount;
+    ctx.shadowBlur = 0;
+    ctx.shadowColor = 'transparent';
+    if (L?.rects?.radar && mode !== 'punch' && mode !== 'tunnel') drawRadar(view, L.rects.radar);
+    drawCallout(view);
+    return drawn;
   }
 
-  // Engine events: a crack flashes its lines at once (draw() also notices a pane going).
-  function onEvent(ev, state) {
-    if (!ev || ev.type !== 'crack' || !state) return;
-    const k = PANES - (finite(ev.panes) ? ev.panes : PANES) - 1;
-    if (k >= 0 && k < PANES) cracks.set(k, { t0: finite(state.t) ? state.t : 0 });
-  }
-
-  resize();
   return {
-    canvas, draw, resize, onEvent,
-    rings: () => drawnRings.map((r) => ({ ...r })),
-    labels: () => drawnLabels.map((l) => ({ ...l, rect: { ...l.rect } })),
-    cracks: () => drawnCracks,
+    resize, draw, clear,
+    get rings() { return drawn.rings; },
+    get labels() { return drawn.labels; },
+    get chevrons() { return drawn.chevrons; },
   };
 }

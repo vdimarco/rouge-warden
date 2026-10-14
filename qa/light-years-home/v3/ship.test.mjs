@@ -84,7 +84,9 @@ test('drift tiers at 0.88 / 1.68 / 2.48 ± 0.1 s with peak slip 45° to 60°', (
   }
   assert.ok(started, 'the drift starts');
   assert.equal(tiers.length, 3, `tiers ${tiers}`);
-  [0.88, 1.68, 2.48].forEach((want, i) => assert.ok(Math.abs(tiers[i] - want) <= 0.1, `tier ${i + 1} at ${tiers[i].toFixed(2)}`));
+  [0.88, 1.68, 2.48].forEach((want, i) => {
+    assert.ok(Math.abs(tiers[i] - want) <= 0.1, `tier ${i + 1} at ${tiers[i].toFixed(2)}`);
+  });
   assert.ok(peak >= 45 && peak <= 60, `peak slip ${peak.toFixed(1)}°`);
   // Steering against the drift only bends it: it never flips, and tier 1 still comes.
   const s2 = createShip({ speed: 30 });
@@ -131,7 +133,9 @@ function hitAt(angleDeg, speed) {
     step(game, { gas: speed > 24 ? 1 : 0, source: 'keys' }, ev);
     for (let k = 0; k < ev.n; k++) {
       const e = ev.list[k];
-      if ((e.type === 'scrape' || e.type === 'crash') && !out.kind) { out.kind = e.type; out.before = e.speed; out.after = game.ship.speed; out.t = game.t; }
+      if ((e.type === 'scrape' || e.type === 'crash') && !out.kind) {
+        out.kind = e.type; out.before = e.speed; out.after = game.ship.speed; out.t = game.t;
+      }
     }
     if (out.kind === 'crash' && out.back === null && game.ship.speed >= 0.95 * TUNE.SHIP.S_CRUISE) out.back = game.t - out.t;
   }
@@ -283,7 +287,8 @@ test('wells: a drift round a giant slings out; letting go toward the marked exit
       const t = game.t;
       const turned = Math.abs(wrap(Math.atan2(game.ship.vel[0], game.ship.vel[1])));
       if (!released && t > 0.6 && game.ship.drift.tier >= 2 && turned > 2.8) released = true;
-      step(game, released || t < 0.3 ? { source: 'touch', autoDrift: true } : { steer: -1, source: 'touch', autoDrift: true }, ev);
+      const hold = !released && t >= 0.3;
+      step(game, { steer: hold ? -1 : 0, source: 'touch', autoDrift: true }, ev);
       for (let k = 0; k < ev.n; k++) got[ev.list[k].type] = ev.list[k];
     }
     return { game, got };
@@ -310,4 +315,38 @@ test('wells: a drift round a giant slings out; letting go toward the marked exit
     sling += ev.count('sling');
   }
   assert.equal(sling, 0, 'no sling with the well off');
+});
+
+test('the zone frame points the real way (frame.js)', async () => {
+  const { zoneFrame, upAt, bandAt, rimTurn, NCP } = await import('../../../public/light-years-home/core/frame.js');
+  const { OBJECTS } = await import('../../../public/light-years-home/core/objects.js');
+  const { WALL, COMA } = await import('./fixtures.mjs');
+  const dir = (a, b) => {
+    const p = OBJECTS[a].pos, q = OBJECTS[b].pos, d = [q[0] - p[0], q[1] - p[1], q[2] - p[2]];
+    const l = Math.hypot(...d);
+    return d.map((x) => x / l);
+  };
+  // The Wall: Coma and Hercules lie in the plane, and Coma's direction points at the exit gate (335, 295).
+  const w = zoneFrame(WALL);
+  const coma = w.toMap(dir('start', 'coma')), herc = w.toMap(dir('start', 'hercules'));
+  assert.ok(Math.abs(coma[2]) < 1e-9 && Math.abs(herc[2]) < 1e-9, 'both in the plane');
+  assert.ok(Math.abs(Math.atan2(coma[1], coma[0]) - Math.atan2(295, 335)) < 1e-9, 'toward the exit gate');
+  // Coma, a sky plane: Earth straight up the normal, north up, east to the left (Leo, west of Coma, is at +x).
+  const k = zoneFrame(COMA);
+  const earth = k.toMap(dir('coma', 'sun'));
+  assert.ok(Math.abs(earth[2] - 1) < 1e-9);
+  const n = k.toMap(NCP);
+  assert.ok(Math.abs(n[0]) < 1e-9 && n[1] > 0, 'celestial north is +y');
+  assert.ok(k.toMap(dir('coma', 'leo'))[0] > 0, 'west is +x');
+  const r = k.rot;
+  const z = [r[1] * r[5] - r[2] * r[4], r[2] * r[3] - r[0] * r[5], r[0] * r[4] - r[1] * r[3]];
+  assert.ok(Math.abs(z[0] - r[6]) + Math.abs(z[1] - r[7]) + Math.abs(z[2] - r[8]) < 1e-9, 'right-handed');
+  const back = k.toMap(k.toGal([0.3, 0.4, 0.866]));
+  assert.ok(Math.abs(back[0] - 0.3) + Math.abs(back[1] - 0.4) + Math.abs(back[2] - 0.866) < 1e-12);
+  // Plane, band and rim.
+  assert.deepEqual(upAt(WALL, [10, 20, 30]), [0, 0, 1]);
+  assert.equal(bandAt(WALL, [0, 0, 0]), WALL.band);
+  assert.equal(rimTurn(WALL, [0, 400, 0], 0), 0, 'inside the rim: no turn');
+  assert.ok(rimTurn(WALL, [0, 480, 0], 0.1) > 0 && rimTurn(WALL, [0, 480, 0], -0.1) < 0, 'turns toward the centre');
+  assert.ok(Math.abs(rimTurn(WALL, [0, 520, 0], Math.PI / 2)) === TUNE.EDGE.YAW, 'full turn past R + BAND');
 });

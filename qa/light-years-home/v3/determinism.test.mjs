@@ -95,7 +95,8 @@ test('same seed and inputs give the same hash after 120 s', () => {
   const b = play(createGame({ seed: 5, zoneData: WALL, mode: 'drive' }), 0, 120, createEventBuffer());
   assert.equal(hashState(a), hashState(b));
   const st = a.stats;
-  assert.ok(st.near + st.hairline > 0 && st.drifts[0] + st.drifts[1] + st.drifts[2] > 0, `the run did things: ${JSON.stringify(st)}`);
+  const did = st.near + st.hairline > 0 && st.drifts[0] + st.drifts[1] + st.drifts[2] > 0;
+  assert.ok(did, `the run did things: ${JSON.stringify(st)}`);
   const c = play(createGame({ seed: 6, zoneData: WALL, mode: 'drive' }), 0, 120);
   assert.notEqual(hashState(a), hashState(c), 'another seed is another run');
 });

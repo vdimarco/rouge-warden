@@ -80,7 +80,9 @@ export function addBar(ship, x) {
 export function setSpeed(ship, s) {
   const v = ship.vel, l = len3(v[0], v[1], v[2]);
   const sp = Math.max(0, num(s));
-  if (l > 1e-9) { v[0] *= sp / l; v[1] *= sp / l; v[2] *= sp / l; } else shipForward(ship, v).forEach((c, i) => { v[i] = c * sp; });
+  if (l <= 1e-9) shipForward(ship, v);
+  const k = sp / (l > 1e-9 ? l : 1);
+  v[0] *= k; v[1] *= k; v[2] *= k;
   ship.speed = sp;
 }
 
@@ -123,8 +125,8 @@ function loseChain(ship, ev) {
 
 const F0 = [0, 1, 0], N0 = [0, 1, 0], E0 = [1, 0, 0], FW = [0, 1, 0], RT = [1, 0, 0], NOSE = [0, 1, 0];
 const P0 = [0, 0, 0], P1 = [0, 0, 0], Q0 = [0, 0, 0], Q1 = [0, 0, 0], BP = [0, 0, 0], BV = [0, 0, 0];
-const REL = [0, 0, 0], NRM = [0, 0, 0], TMP = [0, 0, 0], VEL = [0, 0, 0], UP = [0, 0, 1];
-const HIT_N = [0, 0, 0], HIT_BV = [0, 0, 0], HIT_BP = [0, 0, 0];
+const REL = [0, 0, 0], TMP = [0, 0, 0], VEL = [0, 0, 0], UP = [0, 0, 1];
+const HIT_N = [0, 0, 0], HIT_BV = [0, 0, 0];
 const CAND_CAP = 256;
 const IDS = new Int32Array(CAND_CAP);
 // Per candidate: position, velocity, collider radius, drawn size, flags (1 skim, 2 floor, 4 actor, 8 moving).
@@ -224,7 +226,7 @@ export function stepShip(ship, input, ctx, h, ev) {
 
   // Travel line: heading and climb angle of the velocity (the nose when standing still).
   const v = ship.vel;
-  let vlen = len3(v[0], v[1], v[2]);
+  const vlen = len3(v[0], v[1], v[2]);
   let vang, vpit;
   if (vlen > 1e-6) {
     const vu = v[0] * up[0] + v[1] * up[1] + v[2] * up[2];
@@ -300,7 +302,9 @@ export function stepShip(ship, input, ctx, h, ev) {
   const height = ship.pos[0] * up[0] + ship.pos[1] * up[1] + ship.pos[2] * up[2];
   const H = zone ? bandAt(zone, ship.pos) : 1e9;
   let auth = 1;
-  if (Math.abs(height) > H && climb * height > 0) auth = clamp(1 - (Math.abs(height) - H) / ((PL.BAND_FALL - 1) * H), 0, 1);
+  if (Math.abs(height) > H && climb * height > 0) {
+    auth = clamp(1 - (Math.abs(height) - H) / ((PL.BAND_FALL - 1) * H), 0, 1);   // none left at BAND_FALL × H
+  }
   if (Math.abs(inClimb) > 0.05) ship.assistOffT = PL.HA_OFF;
   let target = 0;
   const A = ctx.assistAt;
@@ -448,8 +452,7 @@ export function stepShip(ship, input, ctx, h, ev) {
   if (dr.on) {
     const wi = wellAt(ctx, p, W.CUT);
     if (wi >= 0) {
-      const v1 = ship.vel;
-      const a1 = Math.atan2(v1[0] * E0[0] + v1[1] * E0[1] + v1[2] * E0[2], v1[0] * N0[0] + v1[1] * N0[1] + v1[2] * N0[2]);
+      const a1 = headingOnPlane(ship.vel);
       dr.well = wi;
       dr.turn += Math.abs(wrap(a1 - vang0));                 // grip and gravity together
     }
@@ -485,6 +488,9 @@ function rotUp(vec, up, a) {
   const z = vec[2] * c + (up[0] * vec[1] - up[1] * vec[0]) * s + up[2] * d;
   vec[0] = x; vec[1] = y; vec[2] = z;
 }
+
+// A vector's heading on the plane (radians clockwise from north), with this step's north and east.
+const headingOnPlane = (v) => Math.atan2(v[0] * E0[0] + v[1] * E0[1] + v[2] * E0[2], v[0] * N0[0] + v[1] * N0[1] + v[2] * N0[2]);
 
 function scaleTo(vec, s) {
   const l = len3(vec[0], vec[1], vec[2]);
@@ -675,7 +681,9 @@ function sweepAll(n, nose, T, h) {
     for (let kk = -1; kk <= 1; kk++) {
       const o = kk * hl;
       // Start: the body was bv·h back along its path, so shift the start the other way (relative motion).
-      Q0[0] = P0[0] + nose[0] * o + CVX[c] * h; Q0[1] = P0[1] + nose[1] * o + CVY[c] * h; Q0[2] = P0[2] + nose[2] * o + CVZ[c] * h;
+      Q0[0] = P0[0] + nose[0] * o + CVX[c] * h;
+      Q0[1] = P0[1] + nose[1] * o + CVY[c] * h;
+      Q0[2] = P0[2] + nose[2] * o + CVZ[c] * h;
       Q1[0] = P1[0] + nose[0] * o; Q1[1] = P1[1] + nose[1] * o; Q1[2] = P1[2] + nose[2] * o;
       const hit = sweepCapsule(Q0, Q1, rc, BP, CR[c]);
       if (hit && hit.t < bestT) {
@@ -687,7 +695,6 @@ function sweepAll(n, nose, T, h) {
   if (best >= 0) {
     // Contact: the touching sphere sits on the body's surface (plus a small push), the centre follows.
     const c = best, R = CR[c] + rc + T.COLLIDE.SCRAPE_PUSH;
-    HIT_BP[0] = CX[c]; HIT_BP[1] = CY[c]; HIT_BP[2] = CZ[c];
     HIT_BV[0] = CVX[c]; HIT_BV[1] = CVY[c]; HIT_BV[2] = CVZ[c];
     P1[0] = CX[c] + HIT_N[0] * R - nose[0] * bestK;
     P1[1] = CY[c] + HIT_N[1] * R - nose[1] * bestK;
@@ -760,7 +767,7 @@ function respond(ship, c, ctx, t, ev, T, sBefore) {
       scaleTo(REL, C.SCRAPE_KEEP * relSpeed);
     }
     VEL[0] = REL[0] + HIT_BV[0]; VEL[1] = REL[1] + HIT_BV[1]; VEL[2] = REL[2] + HIT_BV[2];
-    const tang = Math.atan2(VEL[0] * E0[0] + VEL[1] * E0[1] + VEL[2] * E0[2], VEL[0] * N0[0] + VEL[1] * N0[1] + VEL[2] * N0[2]);
+    const tang = headingOnPlane(VEL);
     if (!pebble) ship.yaw = wrap(ship.yaw + C.SCRAPE_TURN * wrap(tang - ship.yaw));
     ship.lastHitT = t;
     if (ev) ev.push('scrape', PAY);
@@ -783,7 +790,7 @@ function respond(ship, c, ctx, t, ev, T, sBefore) {
   VEL[1] = (ref1 / rl) * (1 - bend) + (ty / tl) * bend;
   VEL[2] = (ref2 / rl) * (1 - bend) + (tz / tl) * bend;
   scaleTo(VEL, Math.max(C.HEAD_FLOOR, C.HEAD_KEEP * sBefore));
-  ship.yaw = Math.atan2(VEL[0] * E0[0] + VEL[1] * E0[1] + VEL[2] * E0[2], VEL[0] * N0[0] + VEL[1] * N0[1] + VEL[2] * N0[2]);
+  ship.yaw = headingOnPlane(VEL);
   ship.stunT = C.HEAD_STEER_T;
   ship.flickerT = C.FLICKER;
   ship.lastHitT = t;
@@ -980,7 +987,8 @@ export function buildFlight(zoneData, seed = 1, tune = TUNE) {
     const pos = [b.pos?.[0] || 0, b.pos?.[1] || 0, b.pos?.[2] || 0];
     if (b.rc > 0) {
       const k = statics.length;
-      statics.push({ id: b.id, pos, rc: b.rc, r: b.r ?? b.rc, skim: !!b.skim, floor: (b.r ?? 0) >= tune.PLANE.FLOOR_MIN_R });
+      const floor = (b.r ?? 0) >= tune.PLANE.FLOOR_MIN_R;
+      statics.push({ id: b.id, pos, rc: b.rc, r: b.r ?? b.rc, skim: !!b.skim, floor });
       addStatic(grid, k, pos, b.rc + 2);
     }
     if (b.well && b.well.rs > 0) {
@@ -1045,7 +1053,9 @@ export function stepDrive(game, input, dt, ev) {
 const LAST = { data: null, seed: 0, game: null, built: null };   // builtOf builds a key string; skip it each step
 let FALLBACK = null;
 function fallbackBuilt(data, seed, tune) {
-  if (!FALLBACK || FALLBACK.data !== data || FALLBACK.seed !== seed) FALLBACK = { data, seed, built: buildFlight(data, seed, tune) };
+  if (!FALLBACK || FALLBACK.data !== data || FALLBACK.seed !== seed) {
+    FALLBACK = { data, seed, built: buildFlight(data, seed, tune) };
+  }
   return FALLBACK.built;
 }
 

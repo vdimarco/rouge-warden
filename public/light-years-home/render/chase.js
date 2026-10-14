@@ -11,7 +11,7 @@ import { basisFrom } from '../core/vec.js';
 const DEG = Math.PI / 180;
 // Framing (deg): a well's core comes EDGE_MARGIN onto the screen; the ship never goes nearer the side than
 // SHIP_MARGIN; the camera swings at most SWING_MAX round the ship to fit both.
-const EDGE_MARGIN = 7, SHIP_MARGIN = 9, SWING_MAX = 70;
+const EDGE_MARGIN = 11, SHIP_MARGIN = 9, SWING_MAX = 70;
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 const wrap = (a) => Math.atan2(Math.sin(a), Math.cos(a));
 const ease = (dt, tc) => (tc > 0 ? 1 - Math.exp(-dt / tc) : 1);
@@ -87,6 +87,7 @@ export function createChase(camTune = TUNE.CAM, layoutKind = 'desktop', opts = {
   const st = {
     init: false, heading: 0, rel: [0, -6, 1.6], relV: [0, 0, 0], last: [0, 0, 0], fov: K.FOV, boost: 0, dbKick: 0,
     dbHold: 0, punch: 0, lookIn: 0, lean: 0, lookBack: 0, block: 1, bodies: [], wells: [], aspect: 16 / 9, swing: 0,
+    look: [0, 0, 0],
   };
   const N = [0, 1, 0], E = [1, 0, 0], F = [0, 1, 0], R = [1, 0, 0];
   const out = { pos: [0, 0, 0], quat: [0, 0, 0, 1], fov: 60, fovSet: K.FOV, up: [0, 0, 1], fwd: [0, 1, 0] };
@@ -175,7 +176,7 @@ export function createChase(camTune = TUNE.CAM, layoutKind = 'desktop', opts = {
       basisFrom(U, st.heading, F, R);
       const rx = well.pos[0] - p[0], ry = well.pos[1] - p[1], rz = (well.pos[2] || 0) - p[2];
       const fwd = rx * F[0] + ry * F[1] + rz * F[2], lat = (rx * R[0] + ry * R[1] + rz * R[2]) * drift;
-      if (lat > 0 && fwd > -K.DIST) {                     // not once the well is well behind you
+      if (lat > 0 && fwd > -1.5 * K.DIST) {               // not once the well is well behind you
         const D = K.DIST, usable = 2 * hHalf - (2 * EDGE_MARGIN + SHIP_MARGIN) * DEG;
         const sep = (b) => Math.atan2(lat + D * Math.sin(b), fwd + D * Math.cos(b)) - b;
         if (sep(0) > usable) {
@@ -220,9 +221,16 @@ export function createChase(camTune = TUNE.CAM, layoutKind = 'desktop', opts = {
     cp[0] = p[0] + st.rel[0]; cp[1] = p[1] + st.rel[1]; cp[2] = p[2] + st.rel[2];
 
     // Aim: the look-ahead point, then the drift look-in, the interest lean and half the ship's pitch.
-    let lx = v[0] * C.LOOK_AHEAD, ly = v[1] * C.LOOK_AHEAD, lz = v[2] * C.LOOK_AHEAD;
+    // The look-ahead lies in the plane (a bounce off a surface must not tip the view) and turns smoothly.
+    const vu = v[0] * U[0] + v[1] * U[1] + v[2] * U[2];
+    let lx = (v[0] - U[0] * vu) * C.LOOK_AHEAD, ly = (v[1] - U[1] * vu) * C.LOOK_AHEAD,
+      lz = (v[2] - U[2] * vu) * C.LOOK_AHEAD;
     const ll = Math.hypot(lx, ly, lz);
     if (ll > C.LOOK_MAX) { const s = C.LOOK_MAX / ll; lx *= s; ly *= s; lz *= s; }
+    if (snap) { st.look[0] = lx; st.look[1] = ly; st.look[2] = lz; }
+    const kl = ease(d, C.ROT_TC);
+    st.look[0] += (lx - st.look[0]) * kl; st.look[1] += (ly - st.look[1]) * kl; st.look[2] += (lz - st.look[2]) * kl;
+    lx = st.look[0]; ly = st.look[1]; lz = st.look[2];
     if (st.lookBack > 0.01) {
       const L = Math.max(ll, 4);
       lx = lx * (1 - st.lookBack) + F[0] * L * st.lookBack;
@@ -242,8 +250,12 @@ export function createChase(camTune = TUNE.CAM, layoutKind = 'desktop', opts = {
         vR.crossVectors(vD, vU).normalize();
         const ang = Math.atan2(vI.dot(vR), vI.dot(vD));
         if (Math.sign(ang) === Math.sign(drift)) {
+          // Angles toward the inside of the turn: the well must come within EDGE_MARGIN of that side, and the ship
+          // (where the aim leaves it) must stay SHIP_MARGIN inside the other side.
+          vS.set(p[0] - cp[0], p[1] - cp[1], p[2] - cp[2]);
+          const shipIn = Math.atan2(vS.dot(vR), vS.dot(vD)) * drift;
           const need = Math.abs(ang) - (hHalf - EDGE_MARGIN * DEG);
-          const most = hHalf - SHIP_MARGIN * DEG;
+          const most = Math.max(shipIn, 0) + hHalf - SHIP_MARGIN * DEG;
           look = drift * clamp(Math.max(K.DRIFT_LOOK_IN * DEG, need), 0, Math.max(0, most));
         }
       }
@@ -262,13 +274,6 @@ export function createChase(camTune = TUNE.CAM, layoutKind = 'desktop', opts = {
     vR.crossVectors(vD, vU);
     if (vR.lengthSq() < 1e-8) vR.set(R[0], R[1], R[2]);
     vR.normalize();
-    // However fast the turn, the ship stays inside the middle of the screen across.
-    vS.set(p[0] - cp[0], p[1] - cp[1], p[2] - cp[2]);
-    const sx = Math.atan2(vS.dot(vR), vS.dot(vD)), keep = hHalf - SHIP_MARGIN * DEG;
-    if (Math.abs(sx) > keep) {
-      vD.applyAxisAngle(vU, -(sx - Math.sign(sx) * keep));
-      vR.crossVectors(vD, vU).normalize();
-    }
     vD.applyAxisAngle(vR, (ship.pitch || 0) * C.PITCH_FOLLOW);
 
     // FOV: the base, a little more with speed, and the kicks (boost, drift-boost, punch); rate limited.
@@ -286,12 +291,24 @@ export function createChase(camTune = TUNE.CAM, layoutKind = 'desktop', opts = {
     st.fov += clamp(target - st.fov, -step, step);
     const vf = vertical(st.fov);
 
-    // Put the ship at its screen height: pitch the view about its right axis.
-    vUp.crossVectors(vR, vD).normalize();
-    vS.set(p[0] - cp[0], p[1] - cp[1], p[2] - cp[2]);
-    const e = Math.atan2(vS.dot(vUp), vS.dot(vD));
+    // Put the ship at its screen height (pitch about the view's right axis), and however fast the turn, keep it
+    // SHIP_MARGIN inside the screen's sides (yaw about U). Twice, as each nudges the other a little.
     const want = Math.atan((1 - 2 * K.SHIP_Y) * Math.tan(vf * DEG / 2));
-    vD.applyAxisAngle(vR, e - want);
+    const keepX = Math.tan(hHalf - SHIP_MARGIN * DEG) / Math.tan(hHalf);
+    vS.set(p[0] - cp[0], p[1] - cp[1], p[2] - cp[2]);
+    for (let k = 0; k < 2; k++) {
+      vUp.crossVectors(vR, vD).normalize();
+      const e = Math.atan2(vS.dot(vUp), vS.dot(vD));
+      vD.applyAxisAngle(vR, e - want);
+      vUp.crossVectors(vR, vD).normalize();
+      // The ship's place across the screen, −1 to 1.
+      const ax = Math.atan2(vS.dot(vR), vS.dot(vD));          // the ship's angle across, behind the camera too
+      const keepA = Math.atan(keepX * Math.tan(hHalf));
+      if (Math.abs(ax) <= keepA) break;
+      const turn = ax - Math.sign(ax) * keepA;
+      vD.applyAxisAngle(vU, -turn);
+      vR.crossVectors(vD, vU).normalize();
+    }
     vUp.crossVectors(vR, vD).normalize();
 
     m4.makeBasis(vR, vUp, vS.copy(vD).negate());

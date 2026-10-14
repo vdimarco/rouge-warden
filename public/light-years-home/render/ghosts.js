@@ -62,9 +62,12 @@ function edgeGeometry() {
   return edges;
 }
 
-// Sample a slot: its own sample(t, out), or core/ghost.js's sampleAt / pacerAt once loaded.
-let GHOST = null;
-const ghostReady = import('../core/ghost.js').then((m) => { GHOST = m; }).catch(() => { GHOST = null; });
+// Sample a slot: its own sample(t, out), or core/ghost.js's sampleAt / pacerAt, loaded the first time a slot needs it.
+let GHOST = null, ghostReady = null;
+function loadGhost() {
+  ghostReady ||= import('../core/ghost.js').then((m) => { GHOST = m; }).catch(() => { GHOST = null; });
+  return ghostReady;
+}
 
 function sampleSlot(slot, t, out) {
   if (typeof slot.sample === 'function') return slot.sample(t, out) !== false;
@@ -120,6 +123,7 @@ export function createGhosts(stage, { scene = null } = {}) {
 
   function set(slots) {
     const list = Array.isArray(slots) ? slots.slice(0, 3) : [];
+    if (list.some((x) => x && typeof x.sample !== 'function')) loadGhost();
     views.forEach((v, i) => {
       v.slot = list[i] || null;
       v.lines.visible = false;
@@ -171,5 +175,5 @@ export function createGhosts(stage, { scene = null } = {}) {
     markMat.dispose();
   }
 
-  return { set, update, dispose, ready: ghostReady, object: group };
+  return { set, update, dispose, object: group, get ready() { return ghostReady || Promise.resolve(); } };
 }

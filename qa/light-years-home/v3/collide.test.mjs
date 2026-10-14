@@ -184,11 +184,12 @@ test('takedown rules for ships and for a towed load', () => {
   assert.equal(classifyHit([-12, 4, 0], n, 26, [0, 22, 0]), 'takedown');
 
   // In the game: the ship side-swipes a Magpie.
-  const magpie = { id: 'magpie', kind: 'runner', pos: [0, 0, 0], vel: [0, 20, 0], yaw: 0, speed: 20, rc: 0.6, r: 1, hits: 0, spinT: 0 };
+  const magpie = { id: 'magpie', kind: 'runner', pos: [0, 0, 0], vel: [0, 20, 0], yaw: 0, speed: 20, rc: 0.6, r: 1, hits: 0,
+    spinT: 0 };
   const res = drive(zoneWith([]), { at: [-3, 0, 0], heading: 60, speed: 30, secs: 0.6, actors: [magpie],
     each: () => { magpie.pos[1] += 20 / 120; } });
   assert.equal(res.count.takedown, 1);
-  assert.ok(magpie.spinT > 0 && magpie.hits === 1, `the Magpie spins out (spinT ${magpie.spinT}, hits ${magpie.hits}, ${JSON.stringify(res.count)})`);
+  assert.ok(magpie.spinT > 0 && magpie.hits === 1, `the Magpie spins out (hits ${magpie.hits}, ${JSON.stringify(res.count)})`);
   assert.ok(Math.abs(res.game.ship.bar - (TUNE.BAR.START + TUNE.BAR.TAKEDOWN)) < 1e-6, 'a takedown pays +0.25');
   assert.ok(res.game.ship.speed >= 0.9 * 24, 'you keep your speed');
 });
@@ -206,7 +207,10 @@ test('the grid and the tracker on their own', () => {
   const tr = createNearTracker(8);
   const cands = createCands(4);
   const ev = createEventBuffer();
-  const feed = (gap) => { cands.n = 1; cands.ids[0] = 7; cands.gap[0] = gap; cands.rel[0] = 20; cands.side[0] = 1; trackNear(tr, null, cands, 1 / 120, ev); };
+  const feed = (gap) => {
+    cands.n = 1; cands.ids[0] = 7; cands.gap[0] = gap; cands.rel[0] = 20; cands.side[0] = 1;
+    trackNear(tr, null, cands, 1 / 120, ev);
+  };
   for (const gap of [5, 3, 1.5, 1.0, 1.2, 3, 6]) feed(gap);
   assert.equal(ev.count('near'), 1);
   for (const gap of [3, 1.0, 1.3]) feed(gap);

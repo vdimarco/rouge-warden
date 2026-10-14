@@ -17,10 +17,10 @@ const ROAD_SPREAD = 22;     // u either side of a road
 const ROAD_H = 1.5;         // u above or below the plane for those
 const OPENING_W = 3;        // the opening road's weight for road-side dwarfs
 const OPEN_LEN = 160;       // u of the entry line kept clear
-const OPEN_SPREAD = 40;
+const OPEN_SPREAD = 40;     // u either side of the opening road: its halo fills the space round the drop-out
 const OPEN_BIAS = 1.6;      // > 1 gathers the opening road's dwarfs toward its start
 const PART_X = 2;           // road traffic keeps outside this × a well's rs (its sling ring)
-const PART_BAND = 10;       // u: the band it flows round in     // u either side of the opening road: its halo fills the space round the drop-out
+const PART_BAND = 10;       // u: the band it flows round in
 const TAU = Math.PI * 2;
 
 const smooth = (a, b, x) => {
@@ -41,7 +41,8 @@ function buildRoad(road) {
     const n = Math.max(4, Math.ceil(seg / 0.25));
     for (let k = 0; k < n; k++) {
       const t = k / n, t2 = t * t, t3 = t2 * t;
-      const f = (a, b, c, d) => 0.5 * (2 * b + (-a + c) * t + (2 * a - 5 * b + 4 * c - d) * t2 + (-a + 3 * b - 3 * c + d) * t3);
+      const f = (a, b, c, d) => 0.5 * (2 * b + (-a + c) * t + (2 * a - 5 * b + 4 * c - d) * t2
+        + (-a + 3 * b - 3 * c + d) * t3);
       dense.push([f(p0[0], p1[0], p2[0], p3[0]), f(p0[1], p1[1], p2[1], p3[1]), f(p0[2], p1[2], p2[2], p3[2])]);
     }
   }
@@ -102,7 +103,8 @@ function buildRoad(road) {
  */
 export function buildTraffic(zoneData, seed = 1, tune = TUNE) {
   const rng = mulberry32(hashSeed('traffic', zoneData?.id ?? 'zone', seed));
-  const roadsIn = (zoneData?.roads || []).filter((r) => r && r.kind === 'road' && Array.isArray(r.pts) && r.pts.length >= 2);
+  const roadsIn = (zoneData?.roads || [])
+    .filter((r) => r && r.kind === 'road' && Array.isArray(r.pts) && r.pts.length >= 2);
   const orbits = (zoneData?.roads || []).filter((r) => r && r.kind === 'orbit');
   const swarms = zoneData?.swarms || [];
   const roads = roadsIn.map(buildRoad);

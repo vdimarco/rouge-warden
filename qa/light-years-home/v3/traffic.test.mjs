@@ -28,7 +28,8 @@ test('positions are pure functions of time', () => {
     const f0 = posAt(tr, i, 20, a), f1 = posAt(tr, i, 20.001, b);
     if (f0 === 1 && f1 === 1) {
       velAt(tr, i, 20, v);
-      for (let k = 0; k < 3; k++) assert.ok(Math.abs((b[k] - a[k]) / 0.001 - v[k]) < 0.05 + 0.03 * Math.hypot(...v), `body ${i} axis ${k}`);
+      const tol = 0.05 + 0.03 * Math.hypot(...v);
+      for (let k = 0; k < 3; k++) assert.ok(Math.abs((b[k] - a[k]) / 0.001 - v[k]) < tol, `body ${i} axis ${k}`);
     }
   }
   // The same zone and seed build the same traffic; another seed builds other traffic.
@@ -52,7 +53,9 @@ test('roads fade at their ends, and the Wall opening keeps its line clear', () =
   const tr = buildTraffic(WALL, 1);
   const p = [0, 0, 0];
   let faded = 0;
-  for (let t = 0; t < 60; t += 0.5) for (let i = 0; i < tr.n; i++) if (tr.kind[i] === KIND.road && posAt(tr, i, t, p) < 1) faded++;
+  for (let t = 0; t < 60; t += 0.5) {
+    for (let i = 0; i < tr.n; i++) if (tr.kind[i] === KIND.road && posAt(tr, i, t, p) < 1) faded++;
+  }
   assert.ok(faded > 0, 'some road bodies fade in or out');
   // The three seeded galaxies sit on the entry line: ahead along the heading, to its right by `lateral`.
   const sloan = WALL.roads.find((r) => r.seeded);
@@ -61,7 +64,8 @@ test('roads fade at their ends, and the Wall opening keeps its line clear', () =
   assert.equal(parked.length, sloan.seeded.length);
   sloan.seeded.forEach((s, k) => {
     posAt(tr, parked[k], 99, p);
-    assert.ok(Math.abs(p[0] - (WALL.entry.pos[0] + s.lateral)) < 1e-9 && Math.abs(p[1] - (WALL.entry.pos[1] + s.ahead)) < 1e-9);
+    assert.ok(Math.abs(p[0] - (WALL.entry.pos[0] + s.lateral)) < 1e-9);
+    assert.ok(Math.abs(p[1] - (WALL.entry.pos[1] + s.ahead)) < 1e-9);
     assert.ok(Math.abs(tr.rc[parked[k]] - 0.5 * s.r) < 1e-6, 'collider is CORE_X × the drawn radius');
   });
   // No dwarf of the swarm sits in the opening lane (toy.test checks the idle ship touches nothing in the opening).
