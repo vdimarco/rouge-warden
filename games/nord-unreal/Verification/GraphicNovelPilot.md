@@ -30,7 +30,7 @@ The wardrobe preserves all 44 binds, retained body vertex positions, both morph 
 
 `wardrobe/body-bind-pose.fbx` consolidates 46 partial bind poses into one 90-node union. Every non-Pose FBX object/connection and fresh Blender-imported geometry, weights, morphs, materials and 44 binds match the frozen original exactly. Unreal still emits relative bind-pose warnings and successfully recreates the pose; actual rendered cloth/hand deformation must be inspected before acceptance. This copy reduces ambiguity but is not a claimed complete SDK-warning fix.
 
-The connected fal account, Vaughn DiMarco, returned `balance_exhausted` during upload preparation. No reference was uploaded, no model job was submitted and no provider generation charge was incurred. The clean reference, exact prompts, generation provenance and provider status remain under `Data/GraphicNovel/Pilot/CurlyMetalhead/`. The verified Meshy schema supplies a body rig/basic clips, not a promised face/finger/jaw rig.
+At the first preparation attempt, the connected fal account returned `balance_exhausted`; no reference or job was submitted then. After the user's US$25 funding, the separate [funded mature-body pilot](GraphicNovelFundedPilot.md) completed one model job and native headless verification. That generated body remains separate from this older articulated pilot. The original billing-block record and clean-reference provenance remain retained. Meshy supplies a body rig/basic clips, without a promised face/finger/jaw rig.
 
 ## Rejected attempts and remaining verification
 

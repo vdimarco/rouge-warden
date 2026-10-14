@@ -1,0 +1,74 @@
+{
+  "schema_version": 1,
+  "reviewed_at_utc": "2026-10-14T04:22:26.231969+00:00",
+  "reviewer": "style_scope; independent image comparison, not the generation author",
+  "character": "GreenCap51",
+  "generation": {
+    "tool": "built-in image_gen.imagegen",
+    "mode": "builtin",
+    "operation": "identity-preserving A-pose cleanup followed by a targeted hand-only edit",
+    "reported_by": "parent agent; existing retained image and exact prompt reviewed"
+  },
+  "original_reference": {
+    "path": "games/nord-unreal/Data/CharactersNeutral/GreenCap51/reference.png",
+    "sha256": "29d562d8f65a356b0c56611e5a525074219ee63640fd0f3baca9fb7b432ca43a",
+    "dimensions": [
+      1024,
+      1536
+    ]
+  },
+  "clean_reference": {
+    "path": "games/nord-unreal/Data/GraphicNovel/Crew/GreenCap51/reference.png",
+    "sha256": "7998152ab482a55571f6ffa113ef901988ccf4cfd2bfd6c9fa79134cc37d8ed0",
+    "dimensions": [
+      1024,
+      1536
+    ]
+  },
+  "prompt": {
+    "path": "games/nord-unreal/Data/GraphicNovel/Crew/GreenCap51/prompt.txt",
+    "sha256": "eb0b6ce6f054406b86a0c6e512a179c89479a3f09a190b4ed26883284a592ded"
+  },
+  "acceptance": {
+    "edited_image_only": true,
+    "suitable_for_bounded_model_draft": true,
+    "3d_model_accepted": false,
+    "unreal_visual_accepted": false,
+    "crew_rollout_established": false
+  },
+  "checks": {
+    "identity": "Recognizable mature face, dark hair, moustache/goatee and backward green cap retained; closed-mouth expression remains calm.",
+    "outfit": "Navy jersey with red trim and white 51 chest/sleeve numbers, navy shorts and gray running shoes retained.",
+    "mature_adult_proportions_retained": true,
+    "arm_clearance": "Broad visible gaps from torso/hips; usable approximate front A-pose. Exact 35-degree joint angles are not measured.",
+    "visible_digits_per_hand": {
+      "image_left": 5,
+      "image_right": 5
+    },
+    "hands": "Separated digits and forward-facing open palms are readable for generation; this is a rigging reference pose, not a natural idle.",
+    "full_body_and_both_shoes_visible": true,
+    "surface": "Cleaner dimensional body/clothing surfaces retain coherent folds; jersey texture, skin/hair detail and soft material shading remain.",
+    "background_and_lighting": "Neutral gray with a soft gradient and balanced lighting; no scene, panels or added text."
+  },
+  "remaining_3d_risks": [
+    "Inspect cap/back-of-head reconstruction, jersey numbering and material boundaries in the generated model.",
+    "Visible digit count/gaps do not establish separate finger topology, skin weights or controls.",
+    "A single front view does not establish backside geometry, complete anatomy or topology.",
+    "No finger articulation, facial rig, blink, jaw or speech controls are guaranteed by this edited image.",
+    "Rigging, skinning, clips, materials, native motion and rendered appearance require actual model and engine review."
+  ],
+  "review_action": "Read-only comparison followed by this source-review record; no image edits, uploads, model submissions or budget changes.",
+  "superseded_reference": {
+    "path": "games/nord-unreal/Data/GraphicNovel/Crew/GreenCap51/reference-v1.png",
+    "sha256": "b091fb4c710409be3d78de0e0ad84b52188bc5f94986190003cc3473e5241ed8",
+    "dimensions": [
+      1024,
+      1536
+    ],
+    "review": "Identity and arm clearance usable; edge-on overlapping fingers prevented a reliable five-digit count. Current edit resolves that image-only issue."
+  },
+  "superseded_prompt": {
+    "path": "games/nord-unreal/Data/GraphicNovel/Crew/GreenCap51/prompt-v1.txt",
+    "sha256": "5a63ea29a761ffc3b97561997a428571f58fa8668e5418186aa17e7b65042f18"
+  }
+}

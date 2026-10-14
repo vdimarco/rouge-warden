@@ -1,0 +1,26 @@
+{
+  "status": "submitted",
+  "endpoint_id": "meshy/v7.1/image-to-3d",
+  "request_id": "01a13897-127f-7c01-8e00-272ff4d5c998",
+  "recipe": {
+    "endpoint_id": "meshy/v7.1/image-to-3d",
+    "input": {
+      "image_url": "https://v3b.fal.media/files/b/0aae4caf/nqKAvozGh4dshBniXzEOg_nord-graphic-novel-curly-reference.png",
+      "model_type": "standard",
+      "topology": "triangle",
+      "target_polycount": 30000,
+      "symmetry_mode": "auto",
+      "should_remesh": true,
+      "should_texture": true,
+      "enable_pbr": true,
+      "pose_mode": "a-pose",
+      "texture_prompt": "Preserve this adult man's mature face, curly dark hair, beard, black and red shirt, teal utility trousers and canvas high-top shoes. Restrained dimensional hand-painted graphic-novel materials, clean readable skin and natural adult proportions. Preserve the reference palette and clothing. No added symbols, text, drawn outer outlines, baked halftone dots or harsh painted lighting.",
+      "enable_rigging": true,
+      "rigging_height_meters": 1.82,
+      "enable_animation": true,
+      "animation_action_id": 0,
+      "enable_safety_checker": true,
+      "geometry_resolution": "standard"
+    }
+  }
+}

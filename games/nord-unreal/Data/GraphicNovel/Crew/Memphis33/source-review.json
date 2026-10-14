@@ -1,0 +1,61 @@
+{
+  "schema_version": 1,
+  "reviewed_at_utc": "2026-10-14T04:22:26.228681+00:00",
+  "reviewer": "style_scope; independent image comparison, not the generation author",
+  "character": "Memphis33",
+  "generation": {
+    "tool": "built-in image_gen.imagegen",
+    "mode": "builtin",
+    "operation": "identity-preserving image edit",
+    "reported_by": "parent agent; existing retained image and exact prompt reviewed"
+  },
+  "original_reference": {
+    "path": "games/nord-unreal/Data/CharactersNeutral/Memphis33/reference.png",
+    "sha256": "1445627cd6f7a8fe8530fdd32f995f4be2603545c3fe6bccff66506c8374e1b9",
+    "dimensions": [
+      1024,
+      1536
+    ]
+  },
+  "clean_reference": {
+    "path": "games/nord-unreal/Data/GraphicNovel/Crew/Memphis33/reference.png",
+    "sha256": "f47a69cc5330ab37e056235c3d2d8c2e84fe717b0d07e189c5a1aa1aacd6302d",
+    "dimensions": [
+      1024,
+      1536
+    ]
+  },
+  "prompt": {
+    "path": "games/nord-unreal/Data/GraphicNovel/Crew/Memphis33/prompt.txt",
+    "sha256": "04ab4e338af288f920b18c5cc80687cd3b39d00b453d7d315f8bf28939520b2d"
+  },
+  "acceptance": {
+    "edited_image_only": true,
+    "suitable_for_bounded_model_draft": true,
+    "3d_model_accepted": false,
+    "unreal_visual_accepted": false,
+    "crew_rollout_established": false
+  },
+  "checks": {
+    "identity": "Recognizable mature face, beard, navy forward cap and brown-tinted rectangular glasses retained; closed-mouth expression remains calm.",
+    "outfit": "Red sleeveless jersey with white trim, Memphis script and large 33, navy shorts, white calf socks and white high-top sneakers retained.",
+    "mature_adult_proportions_retained": true,
+    "arm_clearance": "Broad visible gaps from torso/hips; usable approximate front A-pose. Exact 35-degree joint angles are not measured.",
+    "visible_digits_per_hand": {
+      "image_left": 5,
+      "image_right": 5
+    },
+    "hands": "Separated digits and forward-facing open palms are readable for generation; this is a rigging reference pose, not a natural idle.",
+    "full_body_and_both_shoes_visible": true,
+    "surface": "Heavy exterior ink and directional painted shadows reduced into cleaner dimensional form; fine jersey mesh texture and arm/leg detail remain.",
+    "background_and_lighting": "Neutral gray with a soft gradient and balanced lighting; no scene, panels or added text."
+  },
+  "remaining_3d_risks": [
+    "Thin tinted glasses, face likeness and the Memphis/33 markings need actual generated-mesh and texture inspection.",
+    "Visible digit count/gaps do not establish separate finger topology, skin weights or controls.",
+    "A single front view does not establish backside geometry, complete anatomy or topology.",
+    "No finger articulation, facial rig, blink, jaw or speech controls are guaranteed by this edited image.",
+    "Rigging, skinning, clips, materials, native motion and rendered appearance require actual model and engine review."
+  ],
+  "review_action": "Read-only comparison followed by this source-review record; no image edits, uploads, model submissions or budget changes."
+}

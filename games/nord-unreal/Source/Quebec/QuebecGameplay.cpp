@@ -191,7 +191,9 @@ void AQuebecCharacter::ApplyCrewAppearance()
 {
     if (CrewStyle < 3 || CrewStyle > 10) return;
     const bool bGraphicNovelCandidate = CrewStyle == 9 && FParse::Param(FCommandLine::Get(), TEXT("NordGraphicNovelCandidate"));
-    const FString Folder = bGraphicNovelCandidate ? TEXT("/Game/ParkComic/CrewGraphicNovel/Resident9/")
+    const bool bGraphicNovelGenerated = bGraphicNovelCandidate && FParse::Param(FCommandLine::Get(), TEXT("NordGraphicNovelGenerated"));
+    const FString Folder = bGraphicNovelGenerated ? TEXT("/Game/ParkComic/CrewGraphicNovelGenerated/Resident9/")
+        : bGraphicNovelCandidate ? TEXT("/Game/ParkComic/CrewGraphicNovel/Resident9/")
         : FString::Printf(TEXT("/Game/ParkComic/Crew/Resident%d/"), CrewStyle);
     USkeletalMesh* Body = LoadObject<USkeletalMesh>(nullptr, *(Folder + TEXT("SK_Body.SK_Body")));
     if (!Body) return;
@@ -2586,7 +2588,8 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(FQuebecCrewReapplyTest, "Quebec.Animation.Reapp
 bool FQuebecCrewReapplyTest::RunTest(const FString& Parameters)
 {
     const FString OriginalCommandLine = FCommandLine::Get();
-    FCommandLine::Set(*OriginalCommandLine.Replace(TEXT("-NordGraphicNovelCandidate"), TEXT(""), ESearchCase::IgnoreCase));
+    FCommandLine::Set(*OriginalCommandLine.Replace(TEXT("-NordGraphicNovelCandidate"), TEXT(""), ESearchCase::IgnoreCase)
+        .Replace(TEXT("-NordGraphicNovelGenerated"), TEXT(""), ESearchCase::IgnoreCase));
     ON_SCOPE_EXIT { FCommandLine::Set(*OriginalCommandLine); };
     UWorld* World = UWorld::CreateWorld(EWorldType::Game, false);
     if (!TestNotNull(TEXT("Crew test world"), World)) return false;

@@ -10,6 +10,7 @@ ImageMagick verifies the imported atlas source pixels against the retained PNG.
 -NordNeutralCandidate tests only style 9 from CrewNeutral/CharactersNeutral by
 swapping the live pawn's mesh and clips in PIE, with separate output and reports.
 -NordGraphicNovelCandidate selects only the isolated style 9 body/clips/blended graph.
+Add -NordGraphicNovelGenerated to inspect the separately imported new body and its own clips.
 Add -NordGraphicNovelStandard to review the standard view in a separate output folder.
 Add -NordGraphicNovelHeadless for native state/bone checks without rendered evidence.
 Add -NordGraphicNovelMotion for separate unpaused 1x native transitions without stills.
@@ -31,21 +32,24 @@ ROOT = Path(u.Paths.project_dir()).resolve()
 COMMAND_LINE = u.SystemLibrary.get_command_line()
 NEUTRAL_CANDIDATE = '-NordNeutralCandidate' in COMMAND_LINE
 GRAPHIC_NOVEL_CANDIDATE = '-NordGraphicNovelCandidate' in COMMAND_LINE
+GRAPHIC_NOVEL_GENERATED = '-NordGraphicNovelGenerated' in COMMAND_LINE
 HEADLESS = '-NordGraphicNovelHeadless' in COMMAND_LINE
 STANDARD = '-NordGraphicNovelStandard' in COMMAND_LINE
 MOTION = '-NordGraphicNovelMotion' in COMMAND_LINE
 assert not (NEUTRAL_CANDIDATE and GRAPHIC_NOVEL_CANDIDATE), 'Choose one candidate fixture'
+assert not GRAPHIC_NOVEL_GENERATED or GRAPHIC_NOVEL_CANDIDATE, 'Generated review requires the graphic-novel candidate'
 assert not HEADLESS or GRAPHIC_NOVEL_CANDIDATE, 'Headless mode requires the graphic-novel candidate'
 assert not STANDARD or GRAPHIC_NOVEL_CANDIDATE, 'Standard review requires the graphic-novel candidate'
 assert not MOTION or GRAPHIC_NOVEL_CANDIDATE, 'Motion review requires the graphic-novel candidate'
 WIDTH, HEIGHT = (1920, 1080) if '-NordQuality1920' in COMMAND_LINE else (1280, 720)
 OUT = ROOT / 'Preview' / f'{"NeutralCandidate" if NEUTRAL_CANDIDATE else "PlayerQuality"}{WIDTH}'
 if GRAPHIC_NOVEL_CANDIDATE:
-    OUT = ROOT / 'Saved/Tests/GraphicNovel/PilotCapture' / str(WIDTH)
+    capture_root = ROOT / 'Saved/Tests/GraphicNovel' / ('GeneratedCapture' if GRAPHIC_NOVEL_GENERATED else 'PilotCapture')
+    OUT = capture_root / str(WIDTH)
     if STANDARD:
         OUT = OUT.parent / 'Standard' / str(WIDTH)
     if MOTION:
-        OUT = ROOT / 'Saved/Tests/GraphicNovel/PilotCapture/Motion' / ('Standard' if STANDARD else 'Comic') / str(WIDTH)
+        OUT = capture_root / 'Motion' / ('Standard' if STANDARD else 'Comic') / str(WIDTH)
 OUT.mkdir(parents=True, exist_ok=True)
 VERIFY = ROOT / 'Verification' / ('NeutralCandidate' if NEUTRAL_CANDIDATE else 'PlayerQuality')
 if GRAPHIC_NOVEL_CANDIDATE:
@@ -62,9 +66,13 @@ SOURCE = ROOT / 'Data' / 'CharactersNeutral'
 CREW_PATH = '/Game/ParkComic/' + ('CrewNeutral' if NEUTRAL_CANDIDATE else 'Crew')
 if GRAPHIC_NOVEL_CANDIDATE:
     CREW_PATH = '/Game/ParkComic/CrewGraphicNovel'
-COMIC_PATH = CREW_PATH + '/Resident9/M_ComicInk.M_ComicInk' if GRAPHIC_NOVEL_CANDIDATE else '/Game/Art/Comic/M_ComicInk.M_ComicInk'
+if GRAPHIC_NOVEL_GENERATED:
+    NAMES[9] = 'generated-v1'
+    SOURCE = ROOT / 'Data/GraphicNovel/Pilot/CurlyMetalhead'
+    CREW_PATH = '/Game/ParkComic/CrewGraphicNovelGenerated'
+COMIC_PATH = '/Game/ParkComic/CrewGraphicNovel/Resident9/M_ComicInk.M_ComicInk' if GRAPHIC_NOVEL_CANDIDATE else '/Game/Art/Comic/M_ComicInk.M_ComicInk'
 BONES = ('Hips', 'Head', 'headfront', 'LeftLeg', 'RightLeg', 'LeftFoot', 'RightFoot')
-if GRAPHIC_NOVEL_CANDIDATE:
+if GRAPHIC_NOVEL_CANDIDATE and not GRAPHIC_NOVEL_GENERATED:
     BONES += tuple(f'GN_{side}_{finger}{segment}' for side in ('Left', 'Right')
                    for finger in ('Pinky', 'Ring', 'Middle', 'Index', 'Thumb') for segment in (1, 2))
 BUILD_EXPECTED={'recompute_normals':False,'recompute_tangents':True,'use_mikk_t_space':True,
@@ -90,6 +98,7 @@ REPORT = {'passed': False, 'resolution': [WIDTH, HEIGHT],
           'characters': [], 'screenshots': []}
 REPORT['asset_selection'] = {'candidate': NEUTRAL_CANDIDATE or GRAPHIC_NOVEL_CANDIDATE, 'styles': list(STYLES),
                             'graphic_novel': GRAPHIC_NOVEL_CANDIDATE,
+                            'generated_body': GRAPHIC_NOVEL_GENERATED,
                             'source': str(SOURCE.relative_to(ROOT)), 'asset_folder': CREW_PATH,
                             'pie_mesh_and_clip_overrides': NEUTRAL_CANDIDATE or GRAPHIC_NOVEL_CANDIDATE}
 REPORT['headless'] = HEADLESS
@@ -102,7 +111,14 @@ if MOTION:
         transitions={'passed': False, 'samples': [], 'events': []})
     REPORT['not_checked'] += ['rendered fluidity and real-time video acceptance', 'native or stream frame-rate performance', 'live city collision, crowds and co-op']
     REPORT['asset_selection']['pie_mesh_and_clip_overrides'] = False
-if GRAPHIC_NOVEL_CANDIDATE:
+if GRAPHIC_NOVEL_GENERATED:
+    imported = json.loads((ROOT / 'Saved/Tests/GraphicNovel/GeneratedImport.json').read_text())
+    native_body = (ROOT / imported['body_source']).resolve()
+    assert imported['passed'] and native_body == SOURCE / 'generated-v1/body.fbx' and native_body.is_file(), native_body
+    REPORT['candidate_asset_status'] = {'body_source': str(native_body.relative_to(ROOT)),
+        'body_sha256': hashlib.sha256(native_body.read_bytes()).hexdigest(),
+        'graphics_accepted': False, 'scope': 'generated body-only rig and own clips; no finger, facial or visual acceptance'}
+elif GRAPHIC_NOVEL_CANDIDATE:
     pilot = ROOT / 'Data/GraphicNovel/Pilot/CurlyMetalhead/wardrobe'
     topology = json.loads((pilot / 'roundtrip.json').read_text())
     imported = json.loads((ROOT / 'Saved/Tests/GraphicNovel/PilotImport.json').read_text())
@@ -343,11 +359,16 @@ def validate_assets(style):
         bones = set(map(str, u.AnimPoseExtensions.get_bone_names(pose)))
         expected = {f'GN_{side}_{finger}{segment}' for side in ('Left', 'Right')
                     for finger in ('Pinky', 'Ring', 'Middle', 'Index', 'Thumb') for segment in (1, 2)}
-        assert expected <= bones, ('Missing pilot finger bones', sorted(expected - bones))
         morphs = {morph.get_name() for morph in mesh.get_editor_property('morph_targets')}
-        assert {'GN_EyeNarrow_L', 'GN_EyeNarrow_R'} <= morphs, ('Missing pilot squint targets', morphs)
-        result['pilot_rig'] = {'finger_bones': sorted(expected), 'morphs': sorted(morphs), 'material_slots': len(slots),
-                               'scope': 'partial fingers and restrained squint controls; no full blink or jaw'}
+        if GRAPHIC_NOVEL_GENERATED:
+            assert expected.isdisjoint(bones) and not morphs, ('Unexpected generated rig controls', bones, morphs)
+            result['pilot_rig'] = {'finger_bones': [], 'morphs': [], 'material_slots': len(slots),
+                                   'scope': 'generated body-only rig; static face and fingers'}
+        else:
+            assert expected <= bones, ('Missing pilot finger bones', sorted(expected - bones))
+            assert {'GN_EyeNarrow_L', 'GN_EyeNarrow_R'} <= morphs, ('Missing pilot squint targets', morphs)
+            result['pilot_rig'] = {'finger_bones': sorted(expected), 'morphs': sorted(morphs), 'material_slots': len(slots),
+                                   'scope': 'partial fingers and restrained squint controls; no full blink or jaw'}
     else:
         material = slots[0].material_interface
     base = u.MaterialEditingLibrary.get_material_property_input_node(material, u.MaterialProperty.MP_BASE_COLOR)
@@ -562,11 +583,14 @@ def validate_motion():
     assert row['observed_motion']['recovered_clip'] == 'A_Idle'
     if GRAPHIC_NOVEL_CANDIDATE:
         controls = [item['pilot_controls'] for item in states.values()]
-        assert all(item['finger_control_count'] == 20 for item in controls), ('Pilot finger graph is incomplete', controls)
+        assert all(item['finger_control_count'] == (0 if GRAPHIC_NOVEL_GENERATED else 20) for item in controls), ('Unexpected pilot finger controls', controls)
         assert all(math.isfinite(item['finger_flex_degrees']) and 0 <= item['finger_flex_degrees'] <= 18 for item in controls)
         assert all(math.isfinite(item['eye_narrow_weight']) and 0 <= item['eye_narrow_weight'] <= 1 for item in controls)
-        assert states['Run']['pilot_controls']['finger_flex_degrees'] > states['Idle']['pilot_controls']['finger_flex_degrees'] + 1
-        assert states['Run']['pilot_controls']['eye_narrow_weight'] > .1, 'Pilot squint morph was not driven during sprint'
+        if GRAPHIC_NOVEL_GENERATED:
+            assert all(item['finger_flex_degrees'] == item['eye_narrow_weight'] == 0 for item in controls), 'Body-only rig reported nonexistent controls'
+        else:
+            assert states['Run']['pilot_controls']['finger_flex_degrees'] > states['Idle']['pilot_controls']['finger_flex_degrees'] + 1
+            assert states['Run']['pilot_controls']['eye_narrow_weight'] > .1, 'Pilot squint morph was not driven during sprint'
         row['pilot_rig']['runtime_controls_observed'] = True
     REPORT['characters'].append(row)
     REPORT.pop('active_character', None)
@@ -589,9 +613,11 @@ def transition_checks(samples, lengths):
         assert row['clip_path'].startswith(CREW_PATH + '/Resident9/'), ('Wrong native motion clip', row['clip_path'])
         assert row['clip_weights'] and all(math.isfinite(w) and 0 <= w <= 1.001 for w in row['clip_weights'].values())
         controls = row['pilot_controls']
-        assert controls['finger_control_count'] == 20
+        assert controls['finger_control_count'] == (0 if GRAPHIC_NOVEL_GENERATED else 20)
         assert math.isfinite(controls['finger_flex_degrees']) and 0 <= controls['finger_flex_degrees'] <= 18
         assert math.isfinite(controls['eye_narrow_weight']) and 0 <= controls['eye_narrow_weight'] <= 1
+        if GRAPHIC_NOVEL_GENERATED:
+            assert controls['finger_flex_degrees'] == controls['eye_narrow_weight'] == 0, 'Body-only rig reported nonexistent controls'
     for a, b in zip(samples, samples[1:]):
         assert b['world_time'] > a['world_time'] and b['engine_frame'] > a['engine_frame'], 'Motion observations did not advance'
         assert b['wall_seconds'] > a['wall_seconds'], 'Motion wall timestamps did not advance'
@@ -626,8 +652,9 @@ def transition_checks(samples, lengths):
     assert all(not row['falling'] for row in groups['landing']), 'Landing observations are airborne'
     recovered = groups['recover'][-1]
     assert recovered['clip'] == 'A_Idle' and recovered['clip_weights']['Idle'] > .99 and not recovered['falling'], 'Native idle did not recover'
-    assert run['pilot_controls']['finger_flex_degrees'] > groups['idle'][-1]['pilot_controls']['finger_flex_degrees'] + 1
-    assert run['pilot_controls']['eye_narrow_weight'] > .1
+    if not GRAPHIC_NOVEL_GENERATED:
+        assert run['pilot_controls']['finger_flex_degrees'] > groups['idle'][-1]['pilot_controls']['finger_flex_degrees'] + 1
+        assert run['pilot_controls']['eye_narrow_weight'] > .1
     return {'phase_counts': {key: len(value) for key, value in groups.items()}, 'steady_motion': checks,
             'directional_turn_degrees': round(yaw, 3), 'jump_peak_cm': round(peak, 3),
             'jump_horizontal_drift_cm': round(drift, 5), 'airborne_knee_degrees': round(math.degrees(knee), 3),

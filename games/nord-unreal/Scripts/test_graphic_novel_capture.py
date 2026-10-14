@@ -46,7 +46,16 @@ for mode in ('', ' -NordGraphicNovelStandard'):
     result = selection('-NordGraphicNovelCandidate -NordGraphicNovelMotion -NordGraphicNovelHeadless' + mode)
     assert result['OUT'].parent == ROOT / 'Saved/Tests/GraphicNovel/PilotCapture/Motion' / ('Standard' if mode else 'Comic')
     assert result['VERIFY'] == result['OUT'].parent and result['MOTION'] and result['HEADLESS']
-for flags in ('-NordNeutralCandidate -NordGraphicNovelCandidate', '-NordGraphicNovelHeadless', '-NordGraphicNovelStandard', '-NordGraphicNovelMotion'):
+for mode in ('', ' -NordGraphicNovelStandard', ' -NordGraphicNovelMotion -NordGraphicNovelStandard'):
+    result = selection('-NordGraphicNovelCandidate -NordGraphicNovelGenerated -NordGraphicNovelHeadless' + mode)
+    expected = ROOT / 'Saved/Tests/GraphicNovel/GeneratedCapture'
+    expected = expected / 'Motion/Standard' if result['MOTION'] else expected / 'Standard' if result['STANDARD'] else expected
+    assert result['OUT'].parent == expected
+    assert result['CREW_PATH'] == '/Game/ParkComic/CrewGraphicNovelGenerated'
+    assert result['COMIC_PATH'] == '/Game/ParkComic/CrewGraphicNovel/Resident9/M_ComicInk.M_ComicInk'
+    assert result['SOURCE'] == ROOT / 'Data/GraphicNovel/Pilot/CurlyMetalhead'
+    assert result['NAMES'][9] == 'generated-v1' and len(result['BONES']) == 7
+for flags in ('-NordNeutralCandidate -NordGraphicNovelCandidate', '-NordGraphicNovelHeadless', '-NordGraphicNovelStandard', '-NordGraphicNovelMotion', '-NordGraphicNovelGenerated'):
     try:
         selection(flags)
     except AssertionError:
@@ -85,7 +94,7 @@ motion_calls = {node.func.attr if isinstance(node.func, ast.Attribute) else node
                 for node in ast.walk(motion) if isinstance(node, ast.Call) and isinstance(node.func, (ast.Name, ast.Attribute))}
 assert not motion_calls & {'freeze_and_capture', 'capture', 'aim', 'set_game_paused', 'set_global_time_dilation', 'execute_console_command'}
 checks = next(node for node in TREE.body if isinstance(node, ast.FunctionDef) and node.name == 'transition_checks')
-check_context = {'math': math, 'CREW_PATH': '/Game/ParkComic/CrewGraphicNovel'}
+check_context = {'math': math, 'CREW_PATH': '/Game/ParkComic/CrewGraphicNovel', 'GRAPHIC_NOVEL_GENERATED': False}
 exec(compile(ast.Module(body=[checks], type_ignores=[]), str(SOURCE), 'exec'), check_context)
 rows = []
 for index, name in enumerate(('idle', 'walk', 'sprint', 'turn', 'stop', 'jump', 'landing', 'recover')):
@@ -106,6 +115,22 @@ for index, name in enumerate(('idle', 'walk', 'sprint', 'turn', 'stop', 'jump', 
                       'LeftLeg': {'rotation_xyzw': [math.sin(.4), 0, 0, math.cos(.4)] if name == 'jump' else [0, 0, 0, 1]}}})
 lengths = {'Walk': 1., 'Run': 1.}
 assert len(check_context['transition_checks'](rows, lengths)['phase_counts']) == 8
+generated = copy.deepcopy(rows)
+for row in generated:
+    row['clip_path'] = row['clip_path'].replace('/CrewGraphicNovel/', '/CrewGraphicNovelGenerated/')
+    row['pilot_controls'] = dict.fromkeys(('finger_control_count', 'finger_flex_degrees', 'eye_narrow_weight'), 0)
+generated_context = {**check_context, 'CREW_PATH': '/Game/ParkComic/CrewGraphicNovelGenerated', 'GRAPHIC_NOVEL_GENERATED': True}
+exec(compile(ast.Module(body=[checks], type_ignores=[]), str(SOURCE), 'exec'), generated_context)
+assert len(generated_context['transition_checks'](generated, lengths)['phase_counts']) == 8
+for key in generated[0]['pilot_controls']:
+    bad = copy.deepcopy(generated)
+    bad[0]['pilot_controls'][key] = 1
+    try:
+        generated_context['transition_checks'](bad, lengths)
+    except AssertionError:
+        pass
+    else:
+        raise AssertionError('Body-only rig accepted nonexistent control: ' + key)
 for defect in ('paused', 'slow', 'held_foot', 'held_clip', 'missing_turn', 'short_jump', 'wrong_clip'):
     bad = copy.deepcopy(rows)
     if defect == 'paused': bad[0]['paused'] = True

@@ -1,6 +1,7 @@
 """Import retained relaxed crew bodies and their own clips; never submits generation.
 
 -NordNeutralCandidate imports only style 9 into a separate review folder.
+-NordGraphicNovelCandidate -NordGraphicNovelGenerated imports the fresh generated body and its own clips separately.
 Original source bodies remain in Data/CharactersMeshy for recovery.
 """
 import json
@@ -17,13 +18,19 @@ styles={'GreenCap51':3,'Memphis33':4,'BlackCap':5,'WhiteCap':6,'RedJersey':7,'Li
 command=u.SystemLibrary.get_command_line()
 candidate='-NordNeutralCandidate' in command
 graphic_novel='-NordGraphicNovelCandidate' in command
+generated='-NordGraphicNovelGenerated' in command
+assert not generated or graphic_novel, 'Generated import requires -NordGraphicNovelCandidate'
 assert not (candidate and graphic_novel), 'Choose one candidate route'
 if graphic_novel:
     assert '-nullrhi' in command.lower(), 'Author materials in a separate NullRHI process'
 source_root=root/'Data/CharactersNeutral'
 if candidate or graphic_novel:styles={'CurlyMetalhead':9}
-crew_folder='CrewGraphicNovel' if graphic_novel else 'CrewNeutral' if candidate else 'Crew'
+if generated:
+    source_root=root/'Data/GraphicNovel/Pilot/CurlyMetalhead'
+    styles={'generated-v1':9}
+crew_folder='CrewGraphicNovelGenerated' if generated else 'CrewGraphicNovel' if graphic_novel else 'CrewNeutral' if candidate else 'Crew'
 pilot_body=root/'Data/GraphicNovel/Pilot/CurlyMetalhead/wardrobe/body-bind-pose.fbx'
+if generated:pilot_body=source_root/'generated-v1/body.fbx'
 if graphic_novel:assert pilot_body.is_file(), pilot_body
 for name in styles:
     for filename in ('body.fbx','idle.fbx','walk.fbx','run.fbx','jump.fbx','base_color.png','normal.png','roughness.png','metallic.png'):
@@ -119,7 +126,7 @@ for name,style in styles.items():
     materials.set_base_material_usage(material,u.MaterialUsage.MATUSAGE_SKELETAL_MESH,True)
     materials.recompile_material(material);u.EditorAssetLibrary.save_loaded_asset(material)
     cloth={}
-    if graphic_novel:
+    if graphic_novel and not generated:
         # Source cloth meshes carry distinct slots; colours are linear, with the existing exposure-calibrated fill.
         palette={'Trousers':((.025,.095,.105),.9), 'TrousersSeam':((.009,.028,.033),.95),
                  'Canvas':((.018,.022,.028),.9), 'Sole':((.65,.62,.53),.7),
@@ -151,7 +158,7 @@ for name,style in styles.items():
         slot_name=str(slot.get_editor_property('imported_material_slot_name'))
         slot.material_interface=cloth.get(slot_name,material);slots[i]=slot
         assigned.append({'slot':slot_name,'material':slot.material_interface.get_path_name()})
-    if graphic_novel:
+    if graphic_novel and not generated:
         assert {'Trousers','TrousersSeam','Canvas','Sole','RubberStripe','Laces'}.issubset(cloth),assigned
         assert len(slots)>len(cloth),'Missing retained body material'
     mesh.set_editor_property('materials',slots);u.EditorAssetLibrary.save_loaded_asset(mesh)
@@ -182,6 +189,7 @@ for name,style in styles.items():
     reports.append({'style':style,'name':name,'materials':len(slots),'material_slots':assigned,'clips':clips})
 assert reports,'No downloaded models to import'
 report_path=root/('Saved/Tests/GraphicNovel/PilotImport.json' if graphic_novel else 'Verification/'+('NeutralCandidateImport.json' if candidate else 'NeutralCrewImport.json'))
+if generated:report_path=root/'Saved/Tests/GraphicNovel/GeneratedImport.json'
 report_path.parent.mkdir(parents=True,exist_ok=True)
 report_path.write_text(json.dumps({'passed':True,'source':str(source_root.relative_to(root)),'body_source':str(pilot_body.relative_to(root)) if graphic_novel else 'body.fbx','backup':str(backup),'characters':reports},indent=2)+'\n')
 u.log('NORD_MESHY_IMPORT_OK '+str(len(reports)))

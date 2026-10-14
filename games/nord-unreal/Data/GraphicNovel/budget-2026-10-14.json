@@ -1,0 +1,25 @@
+{
+  "authorized_budget_usd": 25,
+  "authorization": "User: I added 25 do what you cab",
+  "provider": "fal.ai",
+  "currency": "USD",
+  "model_jobs": [
+    {
+      "endpoint_id": "meshy/v7.1/image-to-3d",
+      "request_id": "01a13897-127f-7c01-8e00-272ff4d5c998",
+      "status": "completed_downloaded",
+      "published_configured_estimate_usd": 1.52,
+      "reservation_usd": 2,
+      "actual_charge_usd": null,
+      "provenance": "Pilot/CurlyMetalhead/generated-v1/generation.json"
+    }
+  ],
+  "published_estimated_total_usd": 1.52,
+  "conservative_reserved_total_usd": 2,
+  "uncommitted_budget_usd": 23,
+  "estimated_unspent_budget_usd": 23.48,
+  "actual_account_balance_usd": null,
+  "pricing_source": "https://fal.ai/models/meshy/v7.1/image-to-3d",
+  "limit": "Published configured pricing; the connector exposes no settled charge or account balance. Built-in ImageGen reference edits do not submit fal model jobs.",
+  "next_spend_gate": "Review native pilot appearance and unpaused motion before more crew model generations."
+}
