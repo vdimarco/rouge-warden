@@ -1,0 +1,85 @@
+{
+  "date": "2026-10-14",
+  "status": "local candidate verified; production publishing pending",
+  "baseline_source": "24d5d74e95dd031febeb84d66cb8e78dae60a006",
+  "changes": [
+    "Load eligible visible title only; data saver and reduced motion use poster without MP4 source.",
+    "Unload title during connection/intro/play/background; rotation does not reload unused page videos.",
+    "Full trailer loads on explicit open and releases media on close; pauses in background.",
+    "Late autoplay results cannot restart an inactive title."
+  ],
+  "checks": {
+    "unit": 36,
+    "previous_hero_reproduction_failures": 4,
+    "existing_browser_ui": "passed, with real Chromium preference/MP4-request checks and existing fullscreen/start/crew/reconnect scenarios",
+    "request_comparison": {
+      "passed": true,
+      "rows": [
+        {
+          "baseline": true,
+          "preference": "data saver",
+          "mp4Requests": 4
+        },
+        {
+          "baseline": true,
+          "preference": "reduced motion",
+          "mp4Requests": 4
+        },
+        {
+          "baseline": false,
+          "preference": "data saver",
+          "mp4Requests": 0
+        },
+        {
+          "baseline": false,
+          "preference": "reduced motion",
+          "mp4Requests": 0
+        }
+      ],
+      "scope": "Real Chromium request attempts; MP4 transfers aborted. No game or FPS assertion."
+    },
+    "local_real_media": {
+      "passed": true,
+      "playerUrl": "http://127.0.0.1:8100/",
+      "checks": [
+        "title source released while waiting for real game playback",
+        "portrait: advancing real video with both page videos unloaded",
+        "landscape: advancing real video with both page videos unloaded",
+        "no new MP4 requests during real play/rotation; no page errors"
+      ],
+      "mp4Requests": [
+        "https://d2ol7oe51mr4n9.cloudfront.net/user_3JnxFRyLd68bfjwUMHz1De16TMw/4d0928ae-27d4-4c7e-92ec-f3927c66a4b0.mp4"
+      ],
+      "errors": [],
+      "limits": [
+        "Host-PC Chromium emulated touch, not a physical phone/carrier.",
+        "MP4 requests are observed and aborted; trailer audio/playback and bandwidth/FPS gains are not measured."
+      ]
+    },
+    "visual_review": "Primary agent inspected still-only poster and actual portrait/landscape stream captures; no layout/art redesign acceptance claimed."
+  },
+  "source_sha256": {
+    "Browser/hero.js": "5ddd80dfed7ee8f8377837534b71440a42c52559ef81f2946ee38e4bb6168d28",
+    "Browser/hero.test.mjs": "cb119b9d882caedeba6fb7e02ba37d014c6b4161b861663ca1ca96b9fadc326e",
+    "Browser/media.test.mjs": "1f35ee4e2890b7a75b15695121f7adfc4d7e8f5d067d26c6101baea1434f0f39",
+    "Browser/browser.test.mjs": "ec73ef07613241b961dc3d567e67bc7090c8e7fbbe5b990d4d88b795e1256070",
+    "Browser/package.json": "5041e0c854499e750e8f9107a8dd5e906a2867c6b311783ef1822dff7126bb13"
+  },
+  "raw_sha256": {
+    "Saved/BrowserMedia-20261014/reproduction.log": "5ee7e8a095cd610a54d2375565eb51eaf306f540caa76a807e717a448a16db2d",
+    "Saved/BrowserMedia-20261014/unit.log": "9d8b9deb242728c4612cb84c0dc6bdaabaf7f9d00c1df2eb6dbd63d200bab94e",
+    "Saved/BrowserMedia-20261014/browser-ui-accepted.log": "114c9d7b0b9fcad26800baeca657deb1ac42f682cea8b75d6ba9a4ea1ce060a8",
+    "Saved/BrowserMedia-20261014/request-comparison.json": "40b9851292569a13da3e0fde679151889073f098abaa95aed2216a94b203b8d6",
+    "Browser/.qa/media-2026-10-14T06-14-08-107Z/summary.json": "103d44486371d73071a2016125c79d9ccb52c54e40ee48091b52cad53d315e1a"
+  },
+  "native_preservation": "Baseline native package verified against MobileUX; no native edits, cook, restart or save mutation. Recheck after public QA.",
+  "rejected_attempts": [
+    "First browser source-close assertion ran before the queued dialog-close event; fixture now waits for source removal. Original log retained."
+  ],
+  "limits": [
+    "Host-PC Chromium emulation; physical phone/carrier and audible trailer playback unverified.",
+    "MP4 request transfers aborted during request-count tests; no transferred-byte or FPS speedup claim.",
+    "Native physics/camera/graphics unchanged; no full campaign replay needed or performed.",
+    "OpenSpec CLI unavailable; manual artifact/scenario validation."
+  ]
+}
