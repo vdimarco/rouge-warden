@@ -1,0 +1,24 @@
+{
+  "passed": true,
+  "district": "toronto",
+  "command": [
+    "/home/von/.local/share/Epic/UE_5.8.3/Engine/Binaries/Linux/UnrealEditor-Cmd",
+    "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Quebec.uproject",
+    "/Game/Maps/CollegeBathurst",
+    "-NullRHI",
+    "-unattended",
+    "-nop4",
+    "-nosound",
+    "-UDPMESSAGING_TRANSPORT_ENABLE=0",
+    "-ExecutePythonScript=/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/DistrictRuntime/CurrentMapToronto-20261014T160505Z/verify.py",
+    "-abslog=/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/DistrictRuntime/CurrentMapToronto-20261014T160505Z/native.log"
+  ],
+  "source_sha256": "cd796fed987686825e1284aae20651909ce129ca691b9c05b2ead81db4f5626e",
+  "started_utc": "2026-10-14T16:05:06.212626+00:00",
+  "exit_code": 0,
+  "native_passed": true,
+  "native_report": "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/DistrictRuntime/CurrentMapToronto-20261014T160505Z/Native.json",
+  "all_current_content_unchanged": true,
+  "settings_restored": true,
+  "protected_saves_unchanged": true
+}

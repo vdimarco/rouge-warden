@@ -1,0 +1,111 @@
+{
+  "created_utc": "2026-10-14T16:16:30.367700+00:00",
+  "files": {
+    "ContentManifest.json": {
+      "sha256": "0a98831358309612d8a7c9075c019ce7d77d857bf6e3ba334cd51cf316b9ea61",
+      "bytes": 844217
+    },
+    "EastCapture.json": {
+      "sha256": "fe88d653cff56e679868c9a560376c25d429baa46b4dd87da55411ae7f2e8e88",
+      "bytes": 42042
+    },
+    "EastCaptureCPUTest.py": {
+      "sha256": "eb95e08865c5ea6374fd813155db44835c1c9e04208ab1d78a176d25d75eb008",
+      "bytes": 4818
+    },
+    "EastCaptureFactory.py": {
+      "sha256": "625b39933866caa7e1d57994f464db185ed3378dcf453d11474a88fcde3b769c",
+      "bytes": 8611
+    },
+    "EastCaptureFixture.py": {
+      "sha256": "0e1559209ab846be950e6107db58dc662294a468d8fc0fa7ff6a1323b6470390",
+      "bytes": 26065
+    },
+    "EastCapturePreparation.json": {
+      "sha256": "8959fdc614a6db27122a2eca8b3ffd544a44bd4c720a39c66296357c9ba3bd29",
+      "bytes": 3398
+    },
+    "EastCaptureSource.py": {
+      "sha256": "285bc8d2f9fa7af4eb97de325759ef43c9e2327b392d3cf859fa47d3f5db6fa8",
+      "bytes": 21911
+    },
+    "EastManagerGuardProof.json": {
+      "sha256": "8e3326c87951db43a6758cf0c38f89d5111fb9238a4302182095414c1a8fcddf",
+      "bytes": 1539
+    },
+    "EastViews/FormerEdgeComic.png": {
+      "sha256": "663c33757ac0f48e387264bfa4a8f5eddc4b5930108c2daaa5c8296ddc398e53",
+      "bytes": 4007373
+    },
+    "EastViews/FormerEdgeStandard.png": {
+      "sha256": "b4ccbad1f9f3a09529f91388f08be0a70e8704b7aab82c27c99bc11411ac9587",
+      "bytes": 3831899
+    },
+    "EastViews/PanetComic.png": {
+      "sha256": "8bcf0da862402d51d0eedd43da3a37142aef0f099d29859c4442f7e37909ed56",
+      "bytes": 3104931
+    },
+    "EastViews/PanetStandard.png": {
+      "sha256": "f8c901f0671e2b231d079f25c4fdef4e6b38aa450baf44b384468bbf32f206f5",
+      "bytes": 3062072
+    },
+    "EastViews/VisitationComic.png": {
+      "sha256": "a6fb7e07b9b593a74e1d8fbc56c76a132e3ebd0f04bec358b49616b9e375f43c",
+      "bytes": 3975636
+    },
+    "EastViews/VisitationStandard.png": {
+      "sha256": "51b30220f9cc0a462cab5d055779bf5901b76c85db74d62ae6804544326ada7e",
+      "bytes": 3784673
+    },
+    "FacadeFresh.json": {
+      "sha256": "64ff0dadf8720605c0977b621ef4e1ecb1bfd0d58eccbbb6bec33dbf507730c6",
+      "bytes": 4213
+    },
+    "FacadeFreshProcess.json": {
+      "sha256": "6f245bbef21e77c620fc9002094ec57f2877989bcf9c4356202ce43026bb6de2",
+      "bytes": 932
+    },
+    "MontrealMap.json": {
+      "sha256": "c39243b342c93ec8016b9cb0816325db00a05c02bfa6b7e4062b9e79e71084eb",
+      "bytes": 44852
+    },
+    "MontrealMapProcess.json": {
+      "sha256": "0cebc0f5f243ab911601dd256a215710ff012bc6bad091d511cc822d9853dc2f",
+      "bytes": 1287
+    },
+    "PathShadowTrial.json": {
+      "sha256": "e489c070543713c3f33a67179226f95b370be999555fd05a706d24960fb7a1ff",
+      "bytes": 652
+    },
+    "README.md": {
+      "sha256": "7274067f4dd503890c28d70f739286d65d678966133d91bc3c7b4add0c7c1f01",
+      "bytes": 1760
+    },
+    "SourceChecks.json": {
+      "sha256": "28728b531eb54b7cd1386bcb3360466ec9e187ae2d8850844663526212fe4dae",
+      "bytes": 3051
+    },
+    "TorontoMap.json": {
+      "sha256": "649ad65fc64e643248599534b94bdb286bf7ab17067abd3ffcf48d318f812036",
+      "bytes": 7247
+    },
+    "TorontoMapProcess.json": {
+      "sha256": "a79331728a79135d193971d6132b2c02eceaf23b750336eacbdb8cfa4ff23f4c",
+      "bytes": 1146
+    },
+    "TorontoRuntime.json": {
+      "sha256": "1761ab15eb981beba7da59bed061b4ba4d3f9a3ca54f68ff3c41497f6e1f6026",
+      "bytes": 26944
+    },
+    "TorontoRuntimeProcess.json": {
+      "sha256": "3f86a490fa9624bc4625c1281bf327f4bd2ab7483fba024e64c107ef5ddf5d8c",
+      "bytes": 1386
+    },
+    "summary.json": {
+      "sha256": "79461725b7d734ccae5d8c45fd586ed18e6b82c773004c05dd6bd449fef1917e",
+      "bytes": 7771
+    }
+  },
+  "count": 26,
+  "private_baseline_settings_environment_service_and_save_files_copied": false
+}

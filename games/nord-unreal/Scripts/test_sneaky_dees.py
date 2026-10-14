@@ -22,6 +22,53 @@ assert [edge['name'] for edge in built['edges']]==['College','Corner','Bathurst'
 assert built['edges'][0]['normal'][1]>.9 and built['edges'][2]['normal'][0]<-.9
 assert all(sign['text']=="SNEAKY DEE'S" and sign['original_vector_lettering'] for sign in built['signs'])
 assert len(built['signs'])==3 and built['counts']['upper_windows']==9
+
+
+def check_street_readability(facade,geometry):
+    """Project actual stroke faces from the street: string order and asymmetric E must read rightward."""
+    strokes_per_letter=[sum(len(stroke)-1 for stroke in art.GLYPHS.get(character,[])) for character in art.TEXT]
+    stroke_count=sum(strokes_per_letter)
+    first_e=sum(strokes_per_letter[:art.TEXT.index('E')])
+    for edge in (facade['edges'][0],facade['edges'][2]):
+        a,normal=edge['a'],edge['normal']
+        # Camera faces into the facade, with +Z up; derive screen-right independently of glyph coordinates.
+        forward=[-normal[0],-normal[1],0]
+        screen_right=[-forward[1],forward[0],0]
+        faces=[face for face in geometry.groups['Cladding']
+               if all(abs(sum((point[axis]-a[axis])*normal[axis] for axis in (0,1))-24)<1e-6 for point in face)]
+        signs=[sign for sign in facade['signs'] if sign['street']==edge['name']]
+        assert len(faces)==stroke_count*len(signs)
+        for index,sign in enumerate(signs):
+            letters=faces[index*stroke_count:(index+1)*stroke_count]
+            centers=[sum(sum(point[axis]*screen_right[axis] for axis in (0,1)) for point in face)/len(face) for face in letters]
+            assert sum(centers[:strokes_per_letter[0]])/strokes_per_letter[0]<sum(centers[-strokes_per_letter[-1]:])/strokes_per_letter[-1], \
+                edge['name']+' sign string reads backward from the street'
+            # E: the vertical spine must sit left of its top, bottom and middle arms.
+            top,spine,bottom,middle=centers[first_e:first_e+4]
+            assert all(arm>spine for arm in (top,bottom,middle)),edge['name']+' asymmetric E is mirrored'
+            for face in letters:
+                p,q,r=face[:3]
+                # Same outward convention as the native saved-mesh check, before OBJ reverses Y/winding.
+                x=[q[axis]-p[axis] for axis in range(3)];y=[r[axis]-p[axis] for axis in range(3)]
+                cross=[x[1]*y[2]-x[2]*y[1],x[2]*y[0]-x[0]*y[2],x[0]*y[1]-x[1]*y[0]]
+                assert sum(cross[axis]*normal[axis] for axis in (0,1))>0,'Changed outward stroke normal'
+
+
+check_street_readability(built,mesh)
+# The observed old failure must fail this geometric test even though its outward normals are valid.
+mirrored=copy.deepcopy(mesh)
+for edge in (built['edges'][0],built['edges'][2]):
+    for sign in [sign for sign in built['signs'] if sign['street']==edge['name']]:
+        center=sign['position_cm'];tangent=edge['tangent'];normal=edge['normal']
+        for index,face in enumerate(mirrored.groups['Cladding']):
+            if all(abs(sum((point[axis]-edge['a'][axis])*normal[axis] for axis in (0,1))-24)<1e-6 and
+                   abs(sum((point[axis]-center[axis])*tangent[axis] for axis in (0,1)))<sign['width_cm']/2+10 for point in face):
+                mirrored.groups['Cladding'][index]=[tuple(point[axis]-2*sum((point[j]-center[j])*tangent[j] for j in (0,1))*tangent[axis]
+                                                         for axis in (0,1))+(point[2],) for point in face[::-1]]
+try: check_street_readability(built,mirrored)
+except AssertionError: pass
+else: raise AssertionError('Mirrored but outward-facing sign regression accepted')
+
 footprint=Polygon(built['footprint_cm'])
 for faces in mesh.groups.values():
     for face in faces:

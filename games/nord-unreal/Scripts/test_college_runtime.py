@@ -65,7 +65,8 @@ REPORT = {'passed': False, 'run': RUN, 'mode': 'two-player in-process listen-ser
           'fixture_scope': 'Authority relocations arrange named surveyed locations; client callbacks drive actual native movement/RPCs. No mission, speed, occupancy, collision or appearance state writes.',
           'limits': ['rendered/HUD/likeness acceptance', 'physical keyboard/mouse/touch delivery', 'packaged build and external internet',
                      'handling enjoyment and audio', 'naturally navigated end-to-end College Street route',
-                     'frame-rate acceptance', 'file-read interception (save isolation uses absent campaign actors, guarded source and unchanged files)']}
+                     'frame-rate acceptance', 'file-read interception (save isolation uses absent campaign actors, guarded source and unchanged files)',
+                     'outer running jump checks one source-derived boundary with the authority host; no remote jump replication or all-edge jump acceptance']}
 REPORT['source_sha256'] = {str(path.relative_to(ROOT)): hashlib.sha256(path.read_bytes()).hexdigest()
     for path in (Path(__file__).resolve(), LAYOUT_PATH, ROOT/'Source/Quebec/CollegeBathurstMap.h',
                  ROOT/'Source/Quebec/QuebecGameplay.cpp', ROOT/'Source/Quebec/QuebecCampaign.cpp',
@@ -532,9 +533,88 @@ def walker_recovered():
     return exited()
 
 
+def boundary_candidates(layout):
+    bounds=layout['bounds_cm'];candidates=[]
+    for index,(road,name,width) in enumerate(zip(layout['roads'],layout['road_names'],layout['road_widths'])):
+        if width<900: continue
+        for point in (road[0],road[-1]):
+            for side,axis,limit,normal in [('west',0,bounds[0],[-1.,0.,0.]),('east',0,bounds[2],[1.,0.,0.]),
+                                           ('south',1,bounds[1],[0.,-1.,0.]),('north',1,bounds[3],[0.,1.,0.])]:
+                if abs(point[axis]-limit)<.01:
+                    candidates.append({'side':side,'point':point,'normal':normal,'road_index':index,'street':name})
+    assert candidates, 'No broad surveyed road endpoint reaches a Toronto boundary'
+    return sorted(candidates,key=lambda row:math.dist(row['point'],layout['spawn'][:2]))
+
+
+def boundary_fixture():
+    release_controls()
+    world=STATE['server'];character=STATE['host_char']
+    walls=[actor for actor in u.GameplayStatics.get_all_actors_of_class(world,u.StaticMeshActor) if actor.get_actor_label()=='District edge']
+    assert len(walls)==4
+    for source in boundary_candidates(LAYOUT):
+        normal=u.Vector(*source['normal']);right=u.Vector(-normal.y,normal.x,0.)
+        axis='x' if normal.x else 'y';outer=source['point'][0 if normal.x else 1]
+        wall=[actor for actor in walls if abs(getattr(actor.get_actor_location(),axis)-outer)<.1]
+        assert len(wall)==1
+        origin,extent=wall[0].get_actor_bounds(False,False)
+        assert abs(origin.z-extent.z)<.1 and abs(origin.z+extent.z-300.)<.1, 'Test the actual authored 300cm Toronto wall'
+        assert abs(getattr(extent,axis)-35.)<.1 and wall[0].get_actor_enable_collision()
+        for offset in (0.,145.,-145.):
+            point=ground(u.Vector(*source['point'],0.)-normal*650+right*offset,100,[character,STATE['server_car']])
+            if not point: continue
+            if u.SystemLibrary.capsule_trace_single_by_profile(world,point,point+normal*500,42,96,'Pawn',False,[character],u.DrawDebugTrace.NONE,True): continue
+            yaw=math.degrees(math.atan2(normal.y,normal.x))
+            relocate(character,point,yaw);STATE['host_pc'].set_control_rotation(u.Rotator(pitch=-12,yaw=yaw))
+            STATE.update(boundary_wall=wall[0],boundary_normal=normal,boundary_inner=origin-normal*35,boundary_fixture=point)
+            REPORT['boundary_fixture']={'street':source['street'],'source_road_index':source['road_index'],'source_endpoint_cm':source['point'],
+                'side':source['side'],'normal':vec(normal),'wall':wall[0].get_path_name(),'wall_height_cm':2*extent.z,'start_cm':vec(point),
+                'lateral_offset_cm':offset,'clear_native_runup_cm':500,
+                'scope':'Authority host relocated to a grounded surveyed boundary approach. Native run/jump follow with real collision; remote player stays at the original district spawn.'}
+            return
+    raise AssertionError('No clear source-derived Toronto boundary approach')
+
+
+def boundary_arrived():
+    character=STATE['host_char']
+    return distance(character.get_actor_location(),STATE['boundary_fixture'])<40 and not character.get_component_by_class(u.CharacterMovementComponent).is_falling()
+
+
+def boundary_run():
+    STATE['host_char'].disable_input(STATE['host_pc']);STATE['boundary_axis']=1.
+
+
+def boundary_run_ready():
+    character=STATE['host_char'];point=character.get_actor_location();normal=STATE['boundary_normal']
+    remaining=(STATE['boundary_inner']-point).dot(normal)+35
+    if remaining>350: return False
+    velocity=character.get_velocity();speed=math.hypot(velocity.x,velocity.y)
+    assert 300<=remaining<=350 and speed>=400, ('Native running-jump launch window missed',remaining,speed)
+    return True
+
+
+def boundary_jump():
+    character=STATE['host_char'];movement=character.get_component_by_class(u.CharacterMovementComponent)
+    assert abs(movement.get_editor_property('jump_z_velocity')-600.)<.01 and character.get_editor_property('JumpMaxHoldTime')==0.
+    assert STATE.get('boundary_axis')==1. and math.hypot(character.get_velocity().x,character.get_velocity().y)>=400
+    STATE['boundary_launch']=character.get_actor_location()
+    STATE['boundary_sample']={'max_outward_from_inner_cm':-1e9,'max_z_cm':STATE['boundary_launch'].z,'airborne':False,'airborne_wall_contact':False}
+    native(character,'Jump')
+
+
+def boundary_contained():
+    if elapsed()<2.5: return False
+    release_controls();sample=STATE['boundary_sample']
+    REPORT['native_boundary_jump']={'launch_cm':vec(STATE['boundary_launch']),'end_cm':vec(STATE['host_char'].get_actor_location()),
+        **sample,'capsule_radius_cm':42,'window_game_seconds':elapsed(),'jump_z_velocity':600,'jump_max_hold_time':0.}
+    assert sample['max_outward_from_inner_cm']<=-42+5, ('Native running jump crossed/climbed the Toronto boundary',sample)
+    assert sample['airborne'] and sample['max_z_cm']>STATE['boundary_launch'].z+50 and sample['airborne_wall_contact'], 'Jump must reach the actual Toronto wall while airborne'
+    return isolation()
+
+
 def release_controls():
     STATE.pop('foot_axis', None)
     STATE.pop('drive_axis', None)
+    STATE.pop('boundary_axis', None)
     errors = []
     for actor_key, pc_key in (('client_char', 'client_pc'), ('client_car', 'client_pc'),
                               ('server_char', 'server_pc'), ('server_car', 'server_pc'), ('host_char', 'host_pc')):
@@ -582,6 +662,9 @@ step('release throttle and natively stop before fall fixture', lambda: native(ST
 step('occupied car falls and recovers to Toronto on both peers', fall_car, car_recovered)
 step('native exit restores walking on both peers', lambda: native(STATE['client_pc'], 'Interact'), exited)
 step('fallen walker recovers to Toronto on both peers', fall_walker, walker_recovered)
+step('arrange a clear surveyed Toronto boundary approach for the authority host', boundary_fixture, boundary_arrived)
+step('native host run-up reaches the strict running-jump launch window', boundary_run, boundary_run_ready)
+step('actual 300cm Toronto wall contains native running JumpZ600 with airborne contact', boundary_jump, boundary_contained)
 step('final Toronto population and Montréal progression isolation', release_controls, isolation)
 
 
@@ -659,6 +742,17 @@ def tick(delta_seconds):
             STATE['client_char'].call_method('MoveForward', (STATE['foot_axis'],))
         if STATE.get('drive_axis') is not None:
             STATE['client_car'].call_method('MoveForward', (STATE['drive_axis'],))
+        if STATE.get('boundary_axis') is not None:
+            character=STATE['host_char'];character.call_method('MoveForward',(STATE['boundary_axis'],))
+            if STATE.get('boundary_sample'):
+                point=character.get_actor_location();sample=STATE['boundary_sample'];normal=STATE['boundary_normal']
+                sample['max_outward_from_inner_cm']=max(sample['max_outward_from_inner_cm'],(point-STATE['boundary_inner']).dot(normal))
+                sample['max_z_cm']=max(sample['max_z_cm'],point.z)
+                airborne=character.get_component_by_class(u.CharacterMovementComponent).is_falling();sample['airborne']|=airborne
+                if airborne and (point-STATE['boundary_inner']).dot(normal)>=-42-20 and point.z>STATE['boundary_launch'].z+50:
+                    hit=u.SystemLibrary.capsule_trace_single_by_profile(STATE['server'],point,point+normal*40,42,96,'Pawn',False,[character],u.DrawDebugTrace.NONE,True)
+                    if hit and GAMEPLAY.call_method('BreakHitResult',(hit,))[9]==STATE['boundary_wall']:
+                        sample['airborne_wall_contact']=True;sample.setdefault('first_airborne_wall_contact_cm',vec(point))
         if elapsed() < delay or not ready():
             return
         REPORT['checks'].append(name)

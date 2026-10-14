@@ -1,0 +1,169 @@
+{
+  "version": 1,
+  "reviewer": "independent style_review agent",
+  "decision": "accept only Toronto Path cast_shadow=False",
+  "candidate_report": {
+    "path": "Saved/Tests/DistrictRuntime/SingleRender1920-20261014T154705370184Z/capture.json",
+    "sha256": "5247c663f6abe076c1e49190f6bf8cd965f40c37bc9ab2a687675485c13cf064"
+  },
+  "baseline_report": {
+    "path": "Saved/Tests/DistrictRuntime/SingleRender1920-20261014T154445806657Z/capture.json",
+    "sha256": "42fc229281961e43f3bbcbf29ee5ec178810e89956684f3605930a2b52ebeacd"
+  },
+  "window": {
+    "path": "Saved/Tests/DistrictRuntime/SingleRenderWindow-20261014T154650Z/window-status.json",
+    "sha256": "8e5559a7470320dd648e37c44d56d124396c39a63602ffa59ec8a219fc8726cf",
+    "passed": true,
+    "restored": true,
+    "process_exit_code": 0
+  },
+  "native_trial_receipt": {
+    "path": "Saved/Tests/DistrictRuntime/PathShadowTrial.json",
+    "sha256": "e489c070543713c3f33a67179226f95b370be999555fd05a706d24960fb7a1ff",
+    "preservation": {
+      "passed": true,
+      "candidate_only": true,
+      "backup": "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Recovery/toronto-path-shadow-20261014T154624Z",
+      "changed_actor": "/Game/Maps/CollegeBathurst.CollegeBathurst:PersistentLevel.StaticMeshActor_7",
+      "changed_property": "Path.cast_shadow True→False",
+      "all_other_actor_semantics_preserved": true,
+      "all_other_content_preserved": true,
+      "map_before_sha256": "4ba71d0a2a30976904b624c21804595706f772ac9dfb6bc3062e78250b18bfd1",
+      "map_after_sha256": "4a01de008dc3d12d547ab0ec6a7023c7b588915030f0268c1147559dabd2ea64",
+      "geometry_material_collision_unchanged": true
+    }
+  },
+  "images_viewed": 12,
+  "resolution": [
+    1920,
+    1080
+  ],
+  "quality": {
+    "sg.ViewDistanceQuality": 3,
+    "sg.AntiAliasingQuality": 3,
+    "sg.ShadowQuality": 3,
+    "sg.GlobalIlluminationQuality": 3,
+    "sg.ReflectionQuality": 3,
+    "sg.PostProcessQuality": 3,
+    "sg.TextureQuality": 3,
+    "sg.EffectsQuality": 3,
+    "sg.FoliageQuality": 3,
+    "sg.ShadingQuality": 3,
+    "sg.LandscapeQuality": 3,
+    "r.ScreenPercentage": 100.0
+  },
+  "matched_images": [
+    {
+      "label": "CornerStandard",
+      "candidate_path": "Saved/Tests/DistrictRuntime/SingleRender1920-20261014T154705370184Z/CornerStandard.png",
+      "candidate_sha256": "f0385da173d6fc719aaa144df6d615b8d36a1e97c509bedabb2868ebc631e508",
+      "baseline_path": "Saved/Tests/DistrictRuntime/SingleRender1920-20261014T154445806657Z/CornerStandard.png",
+      "baseline_sha256": "b3bcc0627f4587f5fee93bf8279ab8db57df20fa13d93aeef8d3f129fe91e7fe",
+      "viewed": true
+    },
+    {
+      "label": "CornerComic",
+      "candidate_path": "Saved/Tests/DistrictRuntime/SingleRender1920-20261014T154705370184Z/CornerComic.png",
+      "candidate_sha256": "dd3b75eed5007f5fc899139878a7820df63506c22a351d453e711d79f8ecdca1",
+      "baseline_path": "Saved/Tests/DistrictRuntime/SingleRender1920-20261014T154445806657Z/CornerComic.png",
+      "baseline_sha256": "7db5576e7df54740ee2d1bfd9c098d72211b0abbd8e2161e03872eafc9c4cc2e",
+      "viewed": true
+    },
+    {
+      "label": "CollegeStandard",
+      "candidate_path": "Saved/Tests/DistrictRuntime/SingleRender1920-20261014T154705370184Z/CollegeStandard.png",
+      "candidate_sha256": "764d540ff876f9b07929d1837745dde3bff94f7378fb2e3fe45ac484b26a5803",
+      "baseline_path": "Saved/Tests/DistrictRuntime/SingleRender1920-20261014T154445806657Z/CollegeStandard.png",
+      "baseline_sha256": "b5a1ef6004c1e18a7b75455eb2033ff7aebdd6e6921bb8d427cd1bd26bfaa655",
+      "viewed": true
+    },
+    {
+      "label": "CollegeComic",
+      "candidate_path": "Saved/Tests/DistrictRuntime/SingleRender1920-20261014T154705370184Z/CollegeComic.png",
+      "candidate_sha256": "67e367eca7dd3a01602f24c386ca93053c7987e2cbecd049d7f7dcc9ad3ca575",
+      "baseline_path": "Saved/Tests/DistrictRuntime/SingleRender1920-20261014T154445806657Z/CollegeComic.png",
+      "baseline_sha256": "8f37f2eaabc59d0dfac512e3b141adbf6a76e59d84c3067de5c5620d3366d11c",
+      "viewed": true
+    },
+    {
+      "label": "EuclidStandard",
+      "candidate_path": "Saved/Tests/DistrictRuntime/SingleRender1920-20261014T154705370184Z/EuclidStandard.png",
+      "candidate_sha256": "17f42d3263f9e9d21dc744b8199b6b52ac65a4367e4417cf26a758c9d2f82b8d",
+      "baseline_path": "Saved/Tests/DistrictRuntime/SingleRender1920-20261014T154445806657Z/EuclidStandard.png",
+      "baseline_sha256": "9b83b7b7928314e3fe3bb7fd388fc12339b2c281eaabc8e2c7d042093a4773bb",
+      "viewed": true
+    },
+    {
+      "label": "EuclidComic",
+      "candidate_path": "Saved/Tests/DistrictRuntime/SingleRender1920-20261014T154705370184Z/EuclidComic.png",
+      "candidate_sha256": "315007d33da2dde2fa76888d8b848b050fff69c1e752e36a0ba60cb0446f9e3f",
+      "baseline_path": "Saved/Tests/DistrictRuntime/SingleRender1920-20261014T154445806657Z/EuclidComic.png",
+      "baseline_sha256": "395433990cae9a5b40708f21014bd3912e7b9a3fcf1fad74b0b4ce9f4f0419a8",
+      "viewed": true
+    },
+    {
+      "label": "GraceStandard",
+      "candidate_path": "Saved/Tests/DistrictRuntime/SingleRender1920-20261014T154705370184Z/GraceStandard.png",
+      "candidate_sha256": "2e4e23b22b12e965126e02286edf2c2f69778f5f41d77dca717fabb053eb7cdb",
+      "baseline_path": "Saved/Tests/DistrictRuntime/SingleRender1920-20261014T154445806657Z/GraceStandard.png",
+      "baseline_sha256": "108c3c6a23c89ee10dc459f9a90f0d53f332d6812c74d498b6273679f3856596",
+      "viewed": true
+    },
+    {
+      "label": "GraceComic",
+      "candidate_path": "Saved/Tests/DistrictRuntime/SingleRender1920-20261014T154705370184Z/GraceComic.png",
+      "candidate_sha256": "256f0504eeb6cc2bde557e5de093af08b5a4dda573f68e562852b2ad18311b16",
+      "baseline_path": "Saved/Tests/DistrictRuntime/SingleRender1920-20261014T154445806657Z/GraceComic.png",
+      "baseline_sha256": "52cdf8d70b5a4a835cac5f1bc413ecc5ae0fcb5e279d9ea20efae61a98180d84",
+      "viewed": true
+    },
+    {
+      "label": "NorthwestStandard",
+      "candidate_path": "Saved/Tests/DistrictRuntime/SingleRender1920-20261014T154705370184Z/NorthwestStandard.png",
+      "candidate_sha256": "835215a90731d9c0148141e2b9674e2cef6fa9284554955ed04f4e4817bcb4b3",
+      "baseline_path": "Saved/Tests/DistrictRuntime/SingleRender1920-20261014T154445806657Z/NorthwestStandard.png",
+      "baseline_sha256": "4b954a1c16c9bed996fae39388f582e82e018c8d01f472d45f27e893884975bf",
+      "viewed": true
+    },
+    {
+      "label": "NorthwestComic",
+      "candidate_path": "Saved/Tests/DistrictRuntime/SingleRender1920-20261014T154705370184Z/NorthwestComic.png",
+      "candidate_sha256": "3e4aecc259d744f0a5cb8a2ff737bcc9bfb9a5824d056f679819d9b1437d0030",
+      "baseline_path": "Saved/Tests/DistrictRuntime/SingleRender1920-20261014T154445806657Z/NorthwestComic.png",
+      "baseline_sha256": "f09370f0dcbef4e11cce9715d6ccafc839461e74a2fab18d6ed4c1d60f20d2ed",
+      "viewed": true
+    },
+    {
+      "label": "BathurstStandard",
+      "candidate_path": "Saved/Tests/DistrictRuntime/SingleRender1920-20261014T154705370184Z/BathurstStandard.png",
+      "candidate_sha256": "55c920ebdf5af948bb1b2055d971030781d5bfe11f5376cc38244da24a67a9af",
+      "baseline_path": "Saved/Tests/DistrictRuntime/SingleRender1920-20261014T154445806657Z/BathurstStandard.png",
+      "baseline_sha256": "5045e1e71cd7c00b97e701eebd65ca3a76ae20b10710dc0d59ff1c6d774345b7",
+      "viewed": true
+    },
+    {
+      "label": "BathurstComic",
+      "candidate_path": "Saved/Tests/DistrictRuntime/SingleRender1920-20261014T154705370184Z/BathurstComic.png",
+      "candidate_sha256": "c1454b2f80334b37b72bab5d2de0d23c43ef67081902710c109a13146e810868",
+      "baseline_path": "Saved/Tests/DistrictRuntime/SingleRender1920-20261014T154445806657Z/BathurstComic.png",
+      "baseline_sha256": "cf0f0c0ef73b5a0d70a5185f320bc62516629e55b3b7d34177761dd2a9afc377",
+      "viewed": true
+    }
+  ],
+  "observed_improvement": [
+    "Corner: large black triangular sidewalk wedges and long strip-end shadows disappear in both modes; the paving reads as continuous.",
+    "Euclid: dark angled strip ends across the background sidewalk disappear. Foreground road-edge band remains.",
+    "Grace: several long left-side sidewalk strip shadows disappear; larger road-edge outlines remain.",
+    "Northwest: right-hand intersection pavement is cleaner; surrounding building/player shadows remain."
+  ],
+  "regression_review": "All six locations in both modes viewed. Corrected signs, facade shape/materials, car/prop/player, building shadows and readable native HUD remain; no new obvious visual regression. Native idle poses vary, so this is not an exact character pixel comparison.",
+  "remaining_limits": [
+    "Broad roadway-edge black bands remain in College/Euclid/Grace/Bathurst; thin depth/overlap seams still occur.",
+    "No path topology, elevation, UV/material or collision repair is claimed.",
+    "Empty generic corridors, abrupt Grace horizon and Comic trim/halftone clutter remain.",
+    "Only1080 candidate reviewed; no new720 candidate or continuous motion was viewed.",
+    "Final street/district art, motion/FPS/audio/package acceptance remains false."
+  ],
+  "final_district_art_accepted": false,
+  "continuous_playback_viewed": false
+}

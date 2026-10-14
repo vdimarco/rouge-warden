@@ -130,9 +130,144 @@ bool FQuebecCrewAnimationTest::RunTest(const FString& Parameters)
     TestEqual(TEXT("Animation graph never moves the native capsule"), Character->GetActorLocation(), Origin);
     TestFalse(TEXT("Wrong-rig jump is rejected"), Animation->SetAssets(Space, OtherIdle));
     TestTrue(TEXT("Rejected jump preserves current assets"), Animation->JumpAsset == Character->CrewJump);
+    Character->CrewLocomotion = nullptr;
+    Mesh->SetAnimationMode(EAnimationMode::AnimationSingleNode);
+    TestFalse(TEXT("Missing locomotion graph safely preserves the SingleNode fallback"), Character->ConfigureCrewAnimation());
+    TestTrue(TEXT("Missing graph leaves the fallback animation instance intact"), Mesh->GetAnimInstance()->IsA<UAnimSingleNodeInstance>());
     TestTrue(TEXT("Crew selection still works after blended playback"), Character->ChooseCrew(8));
-    TestTrue(TEXT("Unmigrated production style retains SingleNode fallback"), Mesh->GetAnimInstance()->IsA<UAnimSingleNodeInstance>());
+    TestTrue(TEXT("Production selection loads its saved blended graph"), Mesh->GetAnimInstance()->IsA<UQuebecCrewAnimInstance>());
     TestNotNull(TEXT("Crew switching preserves its carried prop"), Character->CrewProp->GetStaticMesh().Get());
+    return !HasAnyErrors();
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FQuebecSavedCrewLocomotionTest, "Quebec.Animation.SavedProductionLocomotion",
+    EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+bool FQuebecSavedCrewLocomotionTest::RunTest(const FString& Parameters)
+{
+    const FString OriginalCommandLine = FCommandLine::Get();
+    const FString DefaultCommandLine = OriginalCommandLine.Replace(TEXT("-NordGraphicNovelCandidate"), TEXT(""), ESearchCase::IgnoreCase)
+        .Replace(TEXT("-NordGraphicNovelGenerated"), TEXT(""), ESearchCase::IgnoreCase)
+        .Replace(TEXT("-NordGraphicNovelHighDetail"), TEXT(""), ESearchCase::IgnoreCase);
+    FCommandLine::Set(*DefaultCommandLine);
+    ON_SCOPE_EXIT { FCommandLine::Set(*OriginalCommandLine); };
+    UWorld::InitializationValues Initialization;
+    Initialization.AllowAudioPlayback(false).CreateNavigation(false).CreateAISystem(false);
+    UWorld* World = UWorld::CreateWorld(EWorldType::Game, false, NAME_None, nullptr, true, ERHIFeatureLevel::Num, &Initialization);
+    if (!TestNotNull(TEXT("Isolated saved-crew animation world"), World)) return false;
+    ON_SCOPE_EXIT { World->DestroyWorld(false); };
+    AQuebecCharacter* Character = World->SpawnActor<AQuebecCharacter>();
+    if (!TestNotNull(TEXT("Native default crew character"), Character)) return false;
+    Character->SetActorEnableCollision(false);
+    World->InitializeActorsForPlay(FURL());
+    USkeletalMeshComponent* Mesh = Character->GetMesh();
+    Mesh->VisibilityBasedAnimTickOption = EVisibilityBasedAnimTickOption::AlwaysTickPoseAndRefreshBones;
+    Mesh->bEnableUpdateRateOptimizations = false;
+    UCharacterMovementComponent* Movement = Character->GetCharacterMovement();
+    const FVector Origin = Character->GetActorLocation();
+    for (int32 Style = 3; Style <= 10; ++Style)
+    {
+        AddInfo(FString::Printf(TEXT("NORD_SAVED_CREW_LOCOMOTION style=%d"), Style));
+        if (!TestTrue(TEXT("Native production crew selection succeeds"), Character->ChooseCrew(Style))) return false;
+        const FString Folder = FString::Printf(TEXT("/Game/ParkComic/Crew/Resident%d/"), Style);
+        UBlendSpace1D* Space = LoadObject<UBlendSpace1D>(nullptr, *(Folder + TEXT("BS_Locomotion.BS_Locomotion")));
+        USkeletalMesh* Body = Mesh->GetSkeletalMeshAsset();
+        if (!TestNotNull(TEXT("Saved production BlendSpace"), Space) || !TestNotNull(TEXT("Retained production body"), Body)) return false;
+        TestTrue(TEXT("Selection retains the original production body"), Body->GetPathName() == Folder + TEXT("SK_Body.SK_Body"));
+        TestEqual(TEXT("Selection uses this saved graph without transient overrides"), Character->CrewLocomotion.Get(), static_cast<UBlendSpace*>(Space));
+        TestTrue(TEXT("Saved graph uses the body's own skeleton"), Space->GetSkeleton() == Body->GetSkeleton());
+        TestEqual(TEXT("Saved graph has exactly Idle/Walk/Run"), Space->GetBlendSamples().Num(), 3);
+        if (Space->GetBlendSamples().Num() != 3) return false;
+        const FBlendParameter& Axis = Space->GetBlendParameter(0);
+        TestEqual(TEXT("Saved speed axis name"), Axis.DisplayName, FString(TEXT("Speed")));
+        TestEqual(TEXT("Saved speed axis minimum"), Axis.Min, 0.f);
+        TestEqual(TEXT("Saved speed axis maximum"), Axis.Max, 800.f);
+        TestEqual(TEXT("Saved speed grid divisions"), Axis.GridNum, 16);
+        TestFalse(TEXT("Saved speed axis does not wrap"), Axis.bWrapInput);
+        TestFalse(TEXT("Saved speed axis does not snap"), Axis.bSnapToGrid);
+        TestTrue(TEXT("Saved speed interpolation remains linear over .12 seconds"),
+            FMath::IsNearlyEqual(Space->InterpolationParam[0].InterpolationTime, .12f) && Space->InterpolationParam[0].InterpolationType == BSIT_Linear);
+        TestFalse(TEXT("Saved graph disables additional cadence scaling"), Space->bScaleAnimation);
+        TestEqual(TEXT("Saved graph does not add a second sample-weight filter"), Space->TargetWeightInterpolationSpeedPerSec, 0.f);
+        UAnimSequence* Clips[] = {Character->CrewIdle, Character->CrewWalk, Character->CrewRun, Character->CrewJump};
+        const TCHAR* Kinds[] = {TEXT("Idle"), TEXT("Walk"), TEXT("Run"), TEXT("Jump")};
+        const float Speeds[] = {0.f, 450.f, 800.f}, Rates[] = {1.f, 2.f, 800.f / 600.f};
+        for (int32 Index = 0; Index < 4; ++Index)
+        {
+            if (!TestNotNull(TEXT("Retained own production clip"), Clips[Index])) return false;
+            TestTrue(TEXT("Every clip belongs to the selected body and has no root motion"),
+                Clips[Index]->GetPathName() == Folder + FString::Printf(TEXT("A_%s.A_%s"), Kinds[Index], Kinds[Index]) &&
+                Clips[Index]->GetSkeleton() == Body->GetSkeleton() && !Clips[Index]->HasRootMotion());
+            if (Index < 3)
+            {
+                const FBlendSample& Sample = Space->GetBlendSample(Index);
+                TestTrue(TEXT("Saved sample points to its own clip at the correct speed/cadence"), Sample.Animation == Clips[Index] &&
+                    Sample.SampleValue.Equals(FVector(Speeds[Index], 0.f, 0.f), .0001f) && FMath::IsNearlyEqual(Sample.RateScale, Rates[Index]));
+                TestFalse(TEXT("Saved sample is unmirrored"), Sample.bMirror);
+                TestFalse(TEXT("Saved sample evaluates the full clip"), Sample.bUseSingleFrameForBlending);
+            }
+        }
+        UQuebecCrewAnimInstance* Animation = Cast<UQuebecCrewAnimInstance>(Mesh->GetAnimInstance());
+        if (!TestNotNull(TEXT("Default selection creates the native blended graph"), Animation)) return false;
+        TestEqual(TEXT("Native graph uses the saved asset"), Animation->LocomotionAsset.Get(), static_cast<UBlendSpace*>(Space));
+        TestEqual(TEXT("Native graph retains the own jump"), Animation->JumpAsset.Get(), Clips[3]);
+        Animation->bUseMultiThreadedAnimationUpdate = false;
+        const auto Advance = [Mesh, Movement](int32 Frames, float Speed, float Vertical = 0.f, bool bFalling = false)
+        {
+            Movement->SetMovementMode(bFalling ? MOVE_Falling : MOVE_Walking);
+            Movement->Velocity = FVector(Speed, 0.f, Vertical);
+            for (int32 Frame = 0; Frame < Frames; ++Frame)
+            {
+                Mesh->TickAnimation(1.f / 60.f, false);
+                Mesh->RefreshBoneTransforms();
+            }
+        };
+        Advance(30, 0.f);
+        TestTrue(TEXT("Saved default graph settles to its actual idle"), Animation->ObservedIdleWeight > .99f && Animation->ObservedClip == Clips[0]);
+        const FQuat IdleKnee = Mesh->GetSocketTransform(TEXT("LeftLeg"), RTS_Component).GetRotation();
+        Advance(1, 450.f);
+        TestTrue(TEXT("Default movement starts with an actual idle/walk crossfade"), Animation->ObservedIdleWeight > 0.f && Animation->ObservedWalkWeight > 0.f);
+        Advance(30, 450.f);
+        TestTrue(TEXT("Saved graph reaches its own walk"), Animation->ObservedWalkWeight > .99f && Animation->ObservedClip == Clips[1]);
+        const FVector Foot = Mesh->GetSocketTransform(TEXT("LeftFoot"), RTS_Component).GetTranslation();
+        const float WalkTime = Animation->ObservedClipTime;
+        Advance(1, 450.f);
+        TestTrue(TEXT("Saved walk advances time and actual foot pose every frame"), Animation->ObservedClipTime != WalkTime &&
+            !Mesh->GetSocketTransform(TEXT("LeftFoot"), RTS_Component).GetTranslation().Equals(Foot, .0001));
+        Advance(30, 625.f);
+        TestTrue(TEXT("Saved graph blends walk and run at intermediate speed"), Animation->ObservedWalkWeight > .4f && Animation->ObservedRunWeight > .4f);
+        Advance(30, 800.f);
+        TestTrue(TEXT("Saved graph reaches its own run"), Animation->ObservedRunWeight > .99f && Animation->ObservedClip == Clips[2]);
+        {
+            FMemMark Mark(FMemStack::Get());
+            const FBoneContainer& RequiredBones = Animation->GetRequiredBones();
+            FCompactPose SourcePose;
+            SourcePose.SetBoneContainer(&RequiredBones);
+            FBlendedCurve SourceCurve;
+            SourceCurve.InitFrom(RequiredBones);
+            UE::Anim::FStackAttributeContainer SourceAttributes;
+            FAnimationPoseData SourceData(SourcePose, SourceCurve, SourceAttributes);
+            Clips[2]->GetAnimationPose(SourceData, FAnimExtractContext(Animation->ObservedClipTime, false, {}, true));
+            for (const FName Bone : {FName(TEXT("Head")), FName(TEXT("LeftLeg"))})
+            {
+                const int32 Index = Clips[2]->GetSkeleton()->GetReferenceSkeleton().FindBoneIndex(Bone);
+                if (!TestTrue(TEXT("Own run output bone exists"), Index != INDEX_NONE)) continue;
+                const FCompactPoseBoneIndex Compact = RequiredBones.GetCompactPoseIndexFromSkeletonPoseIndex(FSkeletonPoseBoneIndex(Index));
+                if (!TestTrue(TEXT("Own run output bone is required"), Compact.GetInt() != INDEX_NONE)) continue;
+                const FTransform Actual = Mesh->GetSocketTransform(Bone, RTS_ParentBoneSpace), Expected = SourcePose[Compact];
+                TestTrue(FString::Printf(TEXT("Saved default style %d evaluates its own %s run pose; expected={%s} actual={%s}"),
+                    Style, *Bone.ToString(), *Expected.ToString(), *Actual.ToString()), Actual.Equals(Expected, .01f));
+            }
+        }
+        Advance(1, 0.f);
+        TestTrue(TEXT("Stopping preserves an intermediate blend"), Animation->ObservedIdleWeight < .99f && Animation->ObservedRunWeight > 0.f);
+        Advance(30, 0.f);
+        Advance(1, 0.f, 600.f, true);
+        TestTrue(TEXT("Own jump begins with a native crossfade"), Animation->ObservedJumpWeight > 0.f && Animation->ObservedJumpWeight < 1.f);
+        Advance(12, 0.f, 0.f, true);
+        TestTrue(TEXT("Own jump evaluates an actual bent knee"), Animation->ObservedJumpWeight > .99f && Animation->ObservedClip == Clips[3] &&
+            Mesh->GetSocketTransform(TEXT("LeftLeg"), RTS_Component).GetRotation().AngularDistance(IdleKnee) > .6f);
+        TestEqual(TEXT("Saved graph never displaces the native capsule"), Character->GetActorLocation(), Origin);
+    }
     return !HasAnyErrors();
 }
 
@@ -396,7 +531,7 @@ bool FQuebecGraphicNovelCandidateTest::RunTest(const FString& Parameters)
     TestTrue(TEXT("Other styles keep their production body under the candidate flag"),
         Character->GetMesh()->GetSkeletalMeshAsset()->GetPathName().Contains(TEXT("/ParkComic/Crew/Resident8/SK_Body")));
     TestEqual(TEXT("Other styles retain stencil 255 under the candidate flag"), Character->GetMesh()->CustomDepthStencilValue, 255);
-    TestTrue(TEXT("Other styles retain their single-node fallback"), Character->GetMesh()->GetAnimInstance()->IsA<UAnimSingleNodeInstance>());
+    TestTrue(TEXT("Other styles use their saved production blended graph"), Character->GetMesh()->GetAnimInstance()->IsA<UQuebecCrewAnimInstance>());
     if (!HasAnyErrors()) AddInfo(TEXT("NORD_GRAPHIC_NOVEL_SELECTION_CHECKED default=production pilot=native style8=production privateF2=1"));
     return !HasAnyErrors();
 }

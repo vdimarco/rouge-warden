@@ -84,6 +84,7 @@ class QUEBEC_API AQuebecCharacter : public ACharacter
 {
     GENERATED_BODY()
     friend class FQuebecCrewAnimationTest;
+    friend class FQuebecSavedCrewLocomotionTest;
     friend class FQuebecGraphicNovelControlsTest;
     friend class FQuebecDistrictRuntimeTest;
 public:

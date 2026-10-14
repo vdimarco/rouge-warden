@@ -2682,23 +2682,53 @@ bool FQuebecCrewReapplyTest::RunTest(const FString& Parameters)
     if (!TestNotNull(TEXT("Crew character"), Walker)) return false;
     World->InitializeActorsForPlay(FURL());
     Walker->ProcessEvent(Walker->FindFunctionChecked(TEXT("ApplyCrewAppearance")), nullptr);
-    if (!TestNotNull(TEXT("Initial single-node animation"), Walker->GetMesh()->GetAnimInstance())) return false;
-    USkeletalMesh* Body = Walker->GetMesh()->GetSkeletalMeshAsset();
+    USkeletalMeshComponent* Mesh = Walker->GetMesh();
+    UQuebecCrewAnimInstance* InitialAnimation = Cast<UQuebecCrewAnimInstance>(Mesh->GetAnimInstance());
+    if (!TestNotNull(TEXT("Initial saved production animation graph"), InitialAnimation)) return false;
+    UBlendSpace* SavedSpace = InitialAnimation->LocomotionAsset;
+    if (!TestNotNull(TEXT("Initial selected crew's saved locomotion asset"), SavedSpace)) return false;
+    TestEqual(TEXT("Initial graph uses the selected crew's saved asset"), SavedSpace->GetPathName(),
+        FString(TEXT("/Game/ParkComic/Crew/Resident9/BS_Locomotion.BS_Locomotion")));
+    USkeletalMesh* Body = Mesh->GetSkeletalMeshAsset();
     TestTrue(TEXT("Fixture wears the real selected crew body"), Body && Body->GetPathName().Contains(TEXT("/ParkComic/Crew/Resident9/SK_Body")));
     Walker->ProcessEvent(Walker->FindFunctionChecked(TEXT("ApplyCrewAppearance")), nullptr);
-    TestEqual(TEXT("Reapplying retains the selected body"), Walker->GetMesh()->GetSkeletalMeshAsset(), Body);
-    if (!TestNotNull(TEXT("Reapplying retains a live animation instance"), Walker->GetMesh()->GetAnimInstance())) return false;
+    TestEqual(TEXT("Reapplying retains the selected body"), Mesh->GetSkeletalMeshAsset(), Body);
+    UQuebecCrewAnimInstance* Animation = Cast<UQuebecCrewAnimInstance>(Mesh->GetAnimInstance());
+    if (!TestNotNull(TEXT("Reapplying retains the live native blended graph"), Animation)) return false;
+    TestEqual(TEXT("Reapplying keeps the same saved locomotion asset"), Animation->LocomotionAsset.Get(), SavedSpace);
     UAnimSequence* Idle = LoadObject<UAnimSequence>(nullptr, TEXT("/Game/ParkComic/Crew/Resident9/A_Idle.A_Idle"));
-    if (!TestNotNull(TEXT("Selected crew's idle clip"), Idle)) return false;
-    Walker->GetMesh()->SetAnimation(Idle);
-    Walker->GetMesh()->SetPosition(.25f, false);
-    TestEqual(TEXT("Reapplied crew accepts an animation pose"), Walker->GetMesh()->GetPosition(), .25f);
-    Walker->GetCharacterMovement()->SetMovementMode(MOVE_Walking);
-    Walker->Tick(1.f / 60.f);
-    const float First = Walker->GetMesh()->GetPosition();
-    Walker->Tick(1.f / 60.f);
-    TestTrue(TEXT("Grounded crew advances on successive simulation frames"), Walker->GetMesh()->GetPosition() > First);
-    return true;
+    UAnimSequence* Walk = LoadObject<UAnimSequence>(nullptr, TEXT("/Game/ParkComic/Crew/Resident9/A_Walk.A_Walk"));
+    if (!TestNotNull(TEXT("Selected crew's idle clip"), Idle) || !TestNotNull(TEXT("Selected crew's walk clip"), Walk)) return false;
+    if (!TestEqual(TEXT("Reapplied saved graph retains three own samples"), SavedSpace->GetBlendSamples().Num(), 3)) return false;
+    TestTrue(TEXT("Reapplied graph retains the selected own idle and walk"),
+        SavedSpace->GetBlendSample(0).Animation == Idle && SavedSpace->GetBlendSample(1).Animation == Walk);
+    Animation->bUseMultiThreadedAnimationUpdate = false;
+    Mesh->VisibilityBasedAnimTickOption = EVisibilityBasedAnimTickOption::AlwaysTickPoseAndRefreshBones;
+    Mesh->bEnableUpdateRateOptimizations = false;
+    UCharacterMovementComponent* Movement = Walker->GetCharacterMovement();
+    Movement->SetMovementMode(MOVE_Walking);
+    const auto Advance = [Mesh, Movement](int32 Frames, float Speed)
+    {
+        Movement->Velocity = FVector(Speed, 0.f, 0.f);
+        for (int32 Frame = 0; Frame < Frames; ++Frame)
+        {
+            Mesh->TickAnimation(1.f / 60.f, false);
+            Mesh->RefreshBoneTransforms();
+        }
+    };
+    Advance(30, 0.f);
+    TestTrue(TEXT("Reapplied crew evaluates its actual idle pose"), Animation->ObservedClip == Idle && Animation->ObservedIdleWeight > .99f);
+    Advance(30, 450.f);
+    TestTrue(TEXT("Reapplied crew reaches its own walking graph sample"), Animation->ObservedClip == Walk && Animation->ObservedWalkWeight > .99f);
+    const float First = Animation->ObservedClipTime;
+    const FVector Foot = Mesh->GetSocketTransform(TEXT("LeftFoot"), RTS_Component).GetTranslation();
+    Advance(1, 450.f);
+    const float Expected = FMath::Fmod(First + SavedSpace->GetBlendSample(1).RateScale * Walk->RateScale / 60.f, Walk->GetPlayLength());
+    TestTrue(TEXT("Reapplied grounded graph advances by its own authored cadence each frame"), FMath::IsNearlyEqual(Animation->ObservedClipTime, Expected, .002f));
+    TestTrue(TEXT("Reapplied grounded graph evaluates a new actual foot pose each frame"),
+        !Mesh->GetSocketTransform(TEXT("LeftFoot"), RTS_Component).GetTranslation().Equals(Foot, .0001));
+    TestTrue(TEXT("Reapplied character keeps the native blended instance during playback"), Mesh->GetAnimInstance() == Animation);
+    return !HasAnyErrors();
 }
 
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FQuebecHUDRadarClipTest, "Quebec.HUD.RadarClip", EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)

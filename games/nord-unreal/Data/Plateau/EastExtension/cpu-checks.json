@@ -36,5 +36,7 @@
     "original_five_sources_unchanged": true,
     "native_radar_verified": false
   },
-  "independent_radar_review": "east_guard_review independently verifies 663 exact original rows +143 suffix =806; original header SHA, prefix SHA and generator SHA match; updated CPU test passes; no builds or native execution."
+  "independent_radar_review": "east_guard_review independently verifies 663 exact original rows +143 suffix =806; original header SHA, prefix SHA and generator SHA match; updated CPU test passes; no builds or native execution.",
+  "revision_status": "Historical CPU checkpoint before native authoring and the running-jump boundary cap; hashes describe that earlier source epoch, not the current map.",
+  "current_native_evidence": "Verification/DistrictExpansion/README.md"
 }

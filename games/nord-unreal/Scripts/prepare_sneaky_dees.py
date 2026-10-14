@@ -145,8 +145,10 @@ def build(layout=None):
                     continue
                 for stroke in GLYPHS[character]:
                     for p,q in zip(stroke,stroke[1:]):
-                        start=(cursor+p[0]*unit,390+(p[1]-.5)*letter_height)
-                        end=(cursor+q[0]*unit,390+(q[1]-.5)*letter_height)
+                        # A street-facing observer's screen-right is opposite the CCW footprint tangent.
+                        # Rebuild each stroke in that reading basis; its outward quad winding stays unchanged.
+                        start=(2*position-cursor-p[0]*unit,390+(p[1]-.5)*letter_height)
+                        end=(2*position-cursor-q[0]*unit,390+(q[1]-.5)*letter_height)
                         dx,dz=end[0]-start[0],end[1]-start[1]
                         length=math.hypot(dx,dz)
                         half=letter_height*.042

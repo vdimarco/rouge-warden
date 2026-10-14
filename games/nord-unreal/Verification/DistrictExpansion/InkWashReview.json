@@ -1,0 +1,915 @@
+{
+  "version": 1,
+  "reviewer": "independent style_review agent",
+  "decision": "accept private NovelCrew wash attenuation for colour only",
+  "production_default_promotion_accepted": false,
+  "final_character_art_accepted": false,
+  "continuous_playback_viewed": false,
+  "stills_viewed": 14,
+  "selected_motion_frames_viewed": 22,
+  "full_motion_frames_additionally_viewed": [
+    "InkWashbefore/ReviewFrames/frame-03.png",
+    "InkWashafter/ReviewFrames/frame-03.png",
+    "InkWashafter/IndependentMotionReview/after/frame-08.png"
+  ],
+  "extraction_manifest": {
+    "path": "Saved/Tests/DistrictRuntime/InkWashafter-20261014T155919640009Z/IndependentMotionReview/manifest.json",
+    "sha256": "a24d48da7a5795b96ae715ed48195f85ae39f783cb2df470b3a7b06db3ae46fe"
+  },
+  "native_readback": {
+    "candidate": "/Game/ParkComic/CrewGraphicNovel/Resident9/M_ComicInk",
+    "author_receipt": {
+      "path": "Saved/Tests/DistrictRuntime/InkMaterialAuthor-20261014T155743Z/report.json",
+      "sha256": "10409f2da164778c6effb6471601f08006b7bb512d3c3c63bb7d5fe4215db711"
+    },
+    "fresh_verify_receipt": {
+      "path": "Saved/Tests/DistrictRuntime/InkMaterialVerify-20261014T155802Z/report.json",
+      "sha256": "6b2081d853b87c34d3e97aca76072b7c46b4abca063eb60107c3b6106cd265ba"
+    },
+    "only_changed_native_package": [
+      "Content/ParkComic/CrewGraphicNovel/Resident9/M_ComicInk.uasset"
+    ],
+    "private_material_before_sha256": "d0b11d883093bc9dc76418981f9fa0292a6b32e99b883073d2921e413047b7aa",
+    "private_material_after_sha256": "38007bc494fc223052fece47df10b84a3afd14d978c3b453b803d312dbbf5cb9",
+    "production_material_sha256_unchanged": "d648ff1756dd57eb277773669d57fa4d0f19e5563b558af9449097d397aa0895",
+    "graphic_sources_preserved": true,
+    "other_content_preserved": true,
+    "native_hlsl_sha256": "9b5e8c360ea060b6854c424e76d9d9868ed542d40093f6ee6185bcaba5410675",
+    "expression_count": 14,
+    "inputs_defaults": [
+      {
+        "name": "UV",
+        "class": "MaterialExpressionTextureCoordinate",
+        "output": "",
+        "coordinate_index": 0
+      },
+      {
+        "name": "Center",
+        "class": "MaterialExpressionSceneTexture",
+        "output": "Color",
+        "scene_texture_id": "PPI_POST_PROCESS_INPUT0"
+      },
+      {
+        "name": "Depth",
+        "class": "MaterialExpressionSceneTexture",
+        "output": "Color",
+        "scene_texture_id": "PPI_SCENE_DEPTH"
+      },
+      {
+        "name": "Normal",
+        "class": "MaterialExpressionSceneTexture",
+        "output": "Color",
+        "scene_texture_id": "PPI_WORLD_NORMAL"
+      },
+      {
+        "name": "StencilInput",
+        "class": "MaterialExpressionSceneTexture",
+        "output": "Color",
+        "scene_texture_id": "PPI_CUSTOM_STENCIL"
+      },
+      {
+        "name": "CrewDepthInput",
+        "class": "MaterialExpressionSceneTexture",
+        "output": "Color",
+        "scene_texture_id": "PPI_CUSTOM_DEPTH"
+      },
+      {
+        "name": "FoliageInput",
+        "class": "MaterialExpressionSceneTexture",
+        "output": "Color",
+        "scene_texture_id": "PPI_SHADING_MODEL_ID"
+      },
+      {
+        "name": "RoughnessInput",
+        "class": "MaterialExpressionSceneTexture",
+        "output": "Color",
+        "scene_texture_id": "PPI_ROUGHNESS"
+      },
+      {
+        "name": "InkWidth",
+        "class": "MaterialExpressionScalarParameter",
+        "output": "",
+        "default_value": 1.0
+      },
+      {
+        "name": "Misregistration",
+        "class": "MaterialExpressionScalarParameter",
+        "output": "",
+        "default_value": 0.10000000149011612
+      },
+      {
+        "name": "Bands",
+        "class": "MaterialExpressionScalarParameter",
+        "output": "",
+        "default_value": 5.0
+      },
+      {
+        "name": "Saturation",
+        "class": "MaterialExpressionScalarParameter",
+        "output": "",
+        "default_value": 1.0499999523162842
+      },
+      {
+        "name": "DotSize",
+        "class": "MaterialExpressionScalarParameter",
+        "output": "",
+        "default_value": 5.0
+      }
+    ],
+    "domain": "MD_POST_PROCESS",
+    "blendable_location": "BL_SCENE_COLOR_AFTER_TONEMAPPING",
+    "change": "Multiply only violet shadow addition by lerp(1.0,0.35,NovelCrew).",
+    "mask_scope": "NovelCrew is visible-depth-matched stencil254. At NovelCrew0 the multiplier is exactly1, retaining the environment/production-stencil255 expression.",
+    "production_regenerated": false
+  },
+  "runs": {
+    "before": {
+      "directory": "Saved/Tests/DistrictRuntime/InkWashbefore-20261014T155228053980Z",
+      "window": {
+        "path": "Saved/Tests/DistrictRuntime/InkWashbefore-20261014T155228053980Z/window-status.json",
+        "sha256": "efbc4eb1aa310e8d4812bb4e7a2dc5ab07bcebd7626a3325d698ce9a39fb2b15",
+        "passed": true,
+        "restored": true,
+        "process_exit_codes": [
+          0,
+          0
+        ],
+        "recorder_exit_code": 0,
+        "content_changed": [],
+        "frozen_source_changed": [],
+        "source_settings_restored": true,
+        "global_settings_restored": true,
+        "source_savegames_unchanged": true
+      },
+      "still_report": {
+        "path": "Saved/Tests/DistrictRuntime/InkWashbefore-20261014T155228053980Z/StillCapture/Capture/PlayerQuality1280.json",
+        "sha256": "032fe940ca09d4c207c4e9bfa7ad950c5d398852fb4520c6d440d7fff660920a",
+        "resolution": [
+          1280,
+          720
+        ],
+        "quality": {
+          "sg.ViewDistanceQuality": 3,
+          "sg.AntiAliasingQuality": 3,
+          "sg.ShadowQuality": 3,
+          "sg.GlobalIlluminationQuality": 3,
+          "sg.ReflectionQuality": 3,
+          "sg.PostProcessQuality": 3,
+          "sg.TextureQuality": 3,
+          "sg.EffectsQuality": 3,
+          "sg.FoliageQuality": 3,
+          "r.Streaming.PoolSize": 1000,
+          "r.Shadow.Virtual.MaxPhysicalPages": 4096,
+          "r.ScreenPercentage": 100.0,
+          "t.MaxFPS": 60.0
+        },
+        "fixture_isolation": {
+          "requested_actor_counts": {
+            "ParkResident": 110,
+            "Car": 44
+          },
+          "requested_owned_component_counts": {
+            "ParkResident": 1100,
+            "Car": 1382
+          },
+          "checkpoints": [
+            {
+              "stage": "warm_up",
+              "passed": true,
+              "observed": {
+                "ParkResident": {
+                  "actors": 110,
+                  "hidden": 110,
+                  "collision_disabled": 110,
+                  "actor_ticks_disabled": 110,
+                  "owned_components": 1100,
+                  "component_ticks_disabled": 1100
+                },
+                "Car": {
+                  "actors": 44,
+                  "hidden": 44,
+                  "collision_disabled": 44,
+                  "actor_ticks_disabled": 44,
+                  "owned_components": 1382,
+                  "component_ticks_disabled": 1382
+                }
+              },
+              "failures": []
+            },
+            {
+              "stage": "completion",
+              "passed": true,
+              "observed": {
+                "ParkResident": {
+                  "actors": 110,
+                  "hidden": 110,
+                  "collision_disabled": 110,
+                  "actor_ticks_disabled": 110,
+                  "owned_components": 1100,
+                  "component_ticks_disabled": 1100
+                },
+                "Car": {
+                  "actors": 44,
+                  "hidden": 44,
+                  "collision_disabled": 44,
+                  "actor_ticks_disabled": 44,
+                  "owned_components": 1382,
+                  "component_ticks_disabled": 1382
+                }
+              },
+              "failures": []
+            }
+          ],
+          "scope": "disposable PIE residents/cars only; actor and owned component primary ticks, visibility and actor collision; no render/FPS acceptance"
+        },
+        "candidate_asset_status": {
+          "body_source": "Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/body.fbx",
+          "body_sha256": "b7e7ca0d9c486412108cba85e1cd4a5512fecd4ad36b8cfdb4677259ff6f9244",
+          "generation_request_id": "01a13971-5e0a-73e0-8e68-730896d2cee3",
+          "manifest_sha256": "d942b4ec45c3b28ef54c0afeb991278528fd74252ec7208cd518519277fd18bc",
+          "source_review": "Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/source-review.json",
+          "source_review_sha256": "a2ea79458aef0ad20ee1cb00b262269c509db230ca94b9c03cfc8bebeaacd3d8",
+          "source_files_verified": 14,
+          "weighted_body_bones": 24,
+          "uv_channels": 1,
+          "graphics_accepted": false,
+          "scope": "isolated high-detail native A/B; raw UV0 body and own clips; static face and fingers; no default promotion or art acceptance"
+        }
+      },
+      "motion_report": {
+        "path": "Saved/Tests/DistrictRuntime/InkWashbefore-20261014T155228053980Z/MotionProfile/Capture/Motion/Comic/PlayerMotion1920.json",
+        "sha256": "1b7c7c5a640dc534e24e03a3911202f12453968e5558e62acbd488cc00e21f0b",
+        "resolution": [
+          1920,
+          1080
+        ],
+        "quality": {
+          "sg.ViewDistanceQuality": 3,
+          "sg.AntiAliasingQuality": 3,
+          "sg.ShadowQuality": 3,
+          "sg.GlobalIlluminationQuality": 3,
+          "sg.ReflectionQuality": 3,
+          "sg.PostProcessQuality": 3,
+          "sg.TextureQuality": 3,
+          "sg.EffectsQuality": 3,
+          "sg.FoliageQuality": 3,
+          "r.Streaming.PoolSize": 1000,
+          "r.Shadow.Virtual.MaxPhysicalPages": 4096,
+          "r.ScreenPercentage": 100.0,
+          "t.MaxFPS": 60.0
+        },
+        "phase_observations": {
+          "idle": 4,
+          "walk": 9,
+          "sprint": 12,
+          "turn": 7,
+          "stop": 6,
+          "jump": 12,
+          "landing": 2,
+          "recover": 6
+        },
+        "native_material_readback": {
+          "slots": [
+            {
+              "index": 0,
+              "imported": "/Game/ParkComic/CrewGraphicNovelHighDetail/Resident9/M_Crew.M_Crew",
+              "live": "/Game/ParkComic/CrewGraphicNovelHighDetail/Resident9/M_Crew.M_Crew",
+              "matches": true
+            }
+          ],
+          "override_count": 0,
+          "assigned_override_count": 0,
+          "scope": "read only; native component materials were not repaired by this motion fixture"
+        },
+        "time_dilation_one_unpaused": true,
+        "csv_flushed": true
+      },
+      "factory": {
+        "path": "Saved/Tests/DistrictRuntime/InkWashbefore-20261014T155228053980Z/factory-provenance.json",
+        "sha256": "49ec34c6dcc7a1ea0a52e8618bddfa99ce5355b48abb15dd2edacbe297754eff",
+        "factory_sha256": "50733c971e65e5880fbee33a0817817f14143dfcc632744db4a1d48bfc07ead0",
+        "fixture_sha256": "e6ad0ca59dab8919d374520ffb3579a60f3bb587fbf5b0e80d5a5c872cc1ac98"
+      },
+      "motion_extraction": {
+        "video": "Saved/Tests/DistrictRuntime/InkWashbefore-20261014T155228053980Z/Motion1920Comic/raw.mp4",
+        "video_sha256": "c7a5ebcdf046f4b0c01e1612796978cca72c1897d3a800fd521c16bcc3f2bcd7",
+        "encoded_seconds": 10.516667,
+        "encoded_frames": 631,
+        "encoded_fps": 60,
+        "encoded_rate_is_not_render_fps": true,
+        "report_path": "Saved/Tests/DistrictRuntime/InkWashbefore-20261014T155228053980Z/MotionProfile/Capture/Motion/Comic/PlayerMotion1920.json",
+        "report_sha256": "1b7c7c5a640dc534e24e03a3911202f12453968e5558e62acbd488cc00e21f0b",
+        "phase_events_approx": [
+          {
+            "phase": "idle",
+            "seconds": -0.12229204177856445
+          },
+          {
+            "phase": "walk",
+            "seconds": 0.37570786476135254
+          },
+          {
+            "phase": "sprint",
+            "seconds": 1.8617079257965088
+          },
+          {
+            "phase": "turn",
+            "seconds": 3.273707866668701
+          },
+          {
+            "phase": "stop",
+            "seconds": 4.078707933425903
+          },
+          {
+            "phase": "jump",
+            "seconds": 4.778707981109619
+          },
+          {
+            "phase": "landing",
+            "seconds": 6.160707950592041
+          },
+          {
+            "phase": "recover",
+            "seconds": 6.399707794189453
+          }
+        ],
+        "extracted_frames": [
+          {
+            "path": "Saved/Tests/DistrictRuntime/InkWashafter-20261014T155919640009Z/IndependentMotionReview/before/frame-01.png",
+            "frame": 8,
+            "seconds": 0.13333333333333333,
+            "labels": [
+              "idle representative"
+            ],
+            "sha256": "520e5f91d3e70445ae8b5846e14ef1b3f29ff7266a359595bb01ae0d0f9bdc17"
+          },
+          {
+            "path": "Saved/Tests/DistrictRuntime/InkWashafter-20261014T155919640009Z/IndependentMotionReview/before/frame-02.png",
+            "frame": 67,
+            "seconds": 1.1166666666666667,
+            "labels": [
+              "walk representative"
+            ],
+            "sha256": "4c5622e59d0bed1490049c5d899405a47e418d9fe67ec1a0d69b5fb18f426342"
+          },
+          {
+            "path": "Saved/Tests/DistrictRuntime/InkWashafter-20261014T155919640009Z/IndependentMotionReview/before/frame-03.png",
+            "frame": 154,
+            "seconds": 2.566666666666667,
+            "labels": [
+              "sprint representative"
+            ],
+            "sha256": "7e9fc2ce0c5b3ca5f3f3d4e8da52884a08a596498d05b35ee35986f0c74bae63"
+          },
+          {
+            "path": "Saved/Tests/DistrictRuntime/InkWashafter-20261014T155919640009Z/IndependentMotionReview/before/frame-04.png",
+            "frame": 221,
+            "seconds": 3.683333333333333,
+            "labels": [
+              "turn representative"
+            ],
+            "sha256": "469978578f49fc9e2ae8113517bac8b1773d7689b110ab97a9284291b3f08bcb"
+          },
+          {
+            "path": "Saved/Tests/DistrictRuntime/InkWashafter-20261014T155919640009Z/IndependentMotionReview/before/frame-05.png",
+            "frame": 266,
+            "seconds": 4.433333333333334,
+            "labels": [
+              "stop representative"
+            ],
+            "sha256": "5ab6937d01ab88e945c38db74450b998d13bac97ffb0ddeada23493433f6f7fc"
+          },
+          {
+            "path": "Saved/Tests/DistrictRuntime/InkWashafter-20261014T155919640009Z/IndependentMotionReview/before/frame-06.png",
+            "frame": 302,
+            "seconds": 5.033333333333333,
+            "labels": [
+              "jump +0.25"
+            ],
+            "sha256": "877b6a7bfe755783ed30da105d9565d0d8f2c54fb6415c09174fa374bdbd3dfe"
+          },
+          {
+            "path": "Saved/Tests/DistrictRuntime/InkWashafter-20261014T155919640009Z/IndependentMotionReview/before/frame-07.png",
+            "frame": 317,
+            "seconds": 5.283333333333333,
+            "labels": [
+              "jump +0.5"
+            ],
+            "sha256": "53037e6a2fff06dcaf3f6e83dd9d63419eaac33a49a182257dc4d73f7d625b2d"
+          },
+          {
+            "path": "Saved/Tests/DistrictRuntime/InkWashafter-20261014T155919640009Z/IndependentMotionReview/before/frame-08.png",
+            "frame": 328,
+            "seconds": 5.466666666666667,
+            "labels": [
+              "jump representative"
+            ],
+            "sha256": "0f06be5f021c3b1ce096bef21682bd64e7c3edd1c05b29f066ea9ebb845b9277"
+          },
+          {
+            "path": "Saved/Tests/DistrictRuntime/InkWashafter-20261014T155919640009Z/IndependentMotionReview/before/frame-09.png",
+            "frame": 332,
+            "seconds": 5.533333333333333,
+            "labels": [
+              "jump +0.75"
+            ],
+            "sha256": "7f6b494b07811eae1a1607e2b3948b880e0df037dff79cf56a4e3ffa5d8919d1"
+          },
+          {
+            "path": "Saved/Tests/DistrictRuntime/InkWashafter-20261014T155919640009Z/IndependentMotionReview/before/frame-10.png",
+            "frame": 377,
+            "seconds": 6.283333333333333,
+            "labels": [
+              "landing representative"
+            ],
+            "sha256": "3800c571d30c3e57da26ae4fafb23c8bdd878125491105d837860f7f8aaee207"
+          },
+          {
+            "path": "Saved/Tests/DistrictRuntime/InkWashafter-20261014T155919640009Z/IndependentMotionReview/before/frame-11.png",
+            "frame": 393,
+            "seconds": 6.55,
+            "labels": [
+              "recover representative"
+            ],
+            "sha256": "2a87808d4b933a0b28f1c979c21dce212e3df898def1b46509541438cfc251fb"
+          }
+        ],
+        "contact_sheet": "Saved/Tests/DistrictRuntime/InkWashafter-20261014T155919640009Z/IndependentMotionReview/before/phase-crops.png",
+        "contact_sheet_sha256": "a338859d4aae7b4364db427783162af2efa3a00938f742f8bf4c7f718cab452a",
+        "csv_path": "Saved/Tests/DistrictRuntime/InkWashbefore-20261014T155228053980Z/MotionProfile/Capture/Motion/Comic/InkWashbefore20261014T155228053980Z-Comic-1920.csv",
+        "csv_sha256": "25aae276352cf7b62d83a1dd0e1b98cacb4f7ee6e67bf5b3abdc1f3e9c3417a1",
+        "csv_rows": 59,
+        "csv_stats": {
+          "FrameTime": {
+            "units": "ms",
+            "p50": 115.806,
+            "p95_nearest_rank": 217.165,
+            "max": 728.474
+          },
+          "GameThreadTime": {
+            "units": "ms",
+            "p50": 6.754,
+            "p95_nearest_rank": 14.707,
+            "max": 619.505
+          },
+          "RenderThreadTime": {
+            "units": "ms",
+            "p50": 0.002,
+            "p95_nearest_rank": 0.004,
+            "max": 0.005
+          },
+          "GPUTime": {
+            "units": "ms",
+            "p50": 85.779,
+            "p95_nearest_rank": 126.697,
+            "max": 161.675
+          }
+        },
+        "phase_observations": {
+          "idle": 4,
+          "walk": 9,
+          "sprint": 12,
+          "turn": 7,
+          "stop": 6,
+          "jump": 12,
+          "landing": 2,
+          "recover": 6
+        },
+        "frame_budget_accepted": false
+      }
+    },
+    "after": {
+      "directory": "Saved/Tests/DistrictRuntime/InkWashafter-20261014T155919640009Z",
+      "window": {
+        "path": "Saved/Tests/DistrictRuntime/InkWashafter-20261014T155919640009Z/window-status.json",
+        "sha256": "a04f56d41224003be7a26d5b5d22701788543e7e70fa6a698a8d475d70b60766",
+        "passed": true,
+        "restored": true,
+        "process_exit_codes": [
+          0,
+          0
+        ],
+        "recorder_exit_code": 0,
+        "content_changed": [],
+        "frozen_source_changed": [],
+        "source_settings_restored": true,
+        "global_settings_restored": true,
+        "source_savegames_unchanged": true
+      },
+      "still_report": {
+        "path": "Saved/Tests/DistrictRuntime/InkWashafter-20261014T155919640009Z/StillCapture/Capture/PlayerQuality1280.json",
+        "sha256": "63eb60245b4b8950332cd210317dc53858fd036736ac340bcc92c43790180632",
+        "resolution": [
+          1280,
+          720
+        ],
+        "quality": {
+          "sg.ViewDistanceQuality": 3,
+          "sg.AntiAliasingQuality": 3,
+          "sg.ShadowQuality": 3,
+          "sg.GlobalIlluminationQuality": 3,
+          "sg.ReflectionQuality": 3,
+          "sg.PostProcessQuality": 3,
+          "sg.TextureQuality": 3,
+          "sg.EffectsQuality": 3,
+          "sg.FoliageQuality": 3,
+          "r.Streaming.PoolSize": 1000,
+          "r.Shadow.Virtual.MaxPhysicalPages": 4096,
+          "r.ScreenPercentage": 100.0,
+          "t.MaxFPS": 60.0
+        },
+        "fixture_isolation": {
+          "requested_actor_counts": {
+            "ParkResident": 110,
+            "Car": 44
+          },
+          "requested_owned_component_counts": {
+            "ParkResident": 1100,
+            "Car": 1382
+          },
+          "checkpoints": [
+            {
+              "stage": "warm_up",
+              "passed": true,
+              "observed": {
+                "ParkResident": {
+                  "actors": 110,
+                  "hidden": 110,
+                  "collision_disabled": 110,
+                  "actor_ticks_disabled": 110,
+                  "owned_components": 1100,
+                  "component_ticks_disabled": 1100
+                },
+                "Car": {
+                  "actors": 44,
+                  "hidden": 44,
+                  "collision_disabled": 44,
+                  "actor_ticks_disabled": 44,
+                  "owned_components": 1382,
+                  "component_ticks_disabled": 1382
+                }
+              },
+              "failures": []
+            },
+            {
+              "stage": "completion",
+              "passed": true,
+              "observed": {
+                "ParkResident": {
+                  "actors": 110,
+                  "hidden": 110,
+                  "collision_disabled": 110,
+                  "actor_ticks_disabled": 110,
+                  "owned_components": 1100,
+                  "component_ticks_disabled": 1100
+                },
+                "Car": {
+                  "actors": 44,
+                  "hidden": 44,
+                  "collision_disabled": 44,
+                  "actor_ticks_disabled": 44,
+                  "owned_components": 1382,
+                  "component_ticks_disabled": 1382
+                }
+              },
+              "failures": []
+            }
+          ],
+          "scope": "disposable PIE residents/cars only; actor and owned component primary ticks, visibility and actor collision; no render/FPS acceptance"
+        },
+        "candidate_asset_status": {
+          "body_source": "Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/body.fbx",
+          "body_sha256": "b7e7ca0d9c486412108cba85e1cd4a5512fecd4ad36b8cfdb4677259ff6f9244",
+          "generation_request_id": "01a13971-5e0a-73e0-8e68-730896d2cee3",
+          "manifest_sha256": "d942b4ec45c3b28ef54c0afeb991278528fd74252ec7208cd518519277fd18bc",
+          "source_review": "Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/source-review.json",
+          "source_review_sha256": "a2ea79458aef0ad20ee1cb00b262269c509db230ca94b9c03cfc8bebeaacd3d8",
+          "source_files_verified": 14,
+          "weighted_body_bones": 24,
+          "uv_channels": 1,
+          "graphics_accepted": false,
+          "scope": "isolated high-detail native A/B; raw UV0 body and own clips; static face and fingers; no default promotion or art acceptance"
+        }
+      },
+      "motion_report": {
+        "path": "Saved/Tests/DistrictRuntime/InkWashafter-20261014T155919640009Z/MotionProfile/Capture/Motion/Comic/PlayerMotion1920.json",
+        "sha256": "38c260acdb24523699917643cb2a1607fe5547c6371dae62a557881be85e4dbc",
+        "resolution": [
+          1920,
+          1080
+        ],
+        "quality": {
+          "sg.ViewDistanceQuality": 3,
+          "sg.AntiAliasingQuality": 3,
+          "sg.ShadowQuality": 3,
+          "sg.GlobalIlluminationQuality": 3,
+          "sg.ReflectionQuality": 3,
+          "sg.PostProcessQuality": 3,
+          "sg.TextureQuality": 3,
+          "sg.EffectsQuality": 3,
+          "sg.FoliageQuality": 3,
+          "r.Streaming.PoolSize": 1000,
+          "r.Shadow.Virtual.MaxPhysicalPages": 4096,
+          "r.ScreenPercentage": 100.0,
+          "t.MaxFPS": 60.0
+        },
+        "phase_observations": {
+          "idle": 4,
+          "walk": 13,
+          "sprint": 13,
+          "turn": 8,
+          "stop": 7,
+          "jump": 13,
+          "landing": 3,
+          "recover": 6
+        },
+        "native_material_readback": {
+          "slots": [
+            {
+              "index": 0,
+              "imported": "/Game/ParkComic/CrewGraphicNovelHighDetail/Resident9/M_Crew.M_Crew",
+              "live": "/Game/ParkComic/CrewGraphicNovelHighDetail/Resident9/M_Crew.M_Crew",
+              "matches": true
+            }
+          ],
+          "override_count": 0,
+          "assigned_override_count": 0,
+          "scope": "read only; native component materials were not repaired by this motion fixture"
+        },
+        "time_dilation_one_unpaused": true,
+        "csv_flushed": true
+      },
+      "factory": {
+        "path": "Saved/Tests/DistrictRuntime/InkWashafter-20261014T155919640009Z/factory-provenance.json",
+        "sha256": "ac1baa0752113b82f09baa0fd8921e53ad6c498609b6f969b40a8282cd0c2595",
+        "factory_sha256": "50733c971e65e5880fbee33a0817817f14143dfcc632744db4a1d48bfc07ead0",
+        "fixture_sha256": "e6ad0ca59dab8919d374520ffb3579a60f3bb587fbf5b0e80d5a5c872cc1ac98"
+      },
+      "motion_extraction": {
+        "video": "Saved/Tests/DistrictRuntime/InkWashafter-20261014T155919640009Z/Motion1920Comic/raw.mp4",
+        "video_sha256": "1f50484a72dc0fa9dfead5fe30be605ae7602e15404e185ab8423e5fc7c029eb",
+        "encoded_seconds": 10.516667,
+        "encoded_frames": 631,
+        "encoded_fps": 60,
+        "encoded_rate_is_not_render_fps": true,
+        "report_path": "Saved/Tests/DistrictRuntime/InkWashafter-20261014T155919640009Z/MotionProfile/Capture/Motion/Comic/PlayerMotion1920.json",
+        "report_sha256": "38c260acdb24523699917643cb2a1607fe5547c6371dae62a557881be85e4dbc",
+        "phase_events_approx": [
+          {
+            "phase": "idle",
+            "seconds": -0.1672837734222412
+          },
+          {
+            "phase": "walk",
+            "seconds": 0.31371617317199707
+          },
+          {
+            "phase": "sprint",
+            "seconds": 1.7647161483764648
+          },
+          {
+            "phase": "turn",
+            "seconds": 3.183716058731079
+          },
+          {
+            "phase": "stop",
+            "seconds": 4.051716089248657
+          },
+          {
+            "phase": "jump",
+            "seconds": 4.8447160720825195
+          },
+          {
+            "phase": "landing",
+            "seconds": 6.260716199874878
+          },
+          {
+            "phase": "recover",
+            "seconds": 6.590716123580933
+          }
+        ],
+        "extracted_frames": [
+          {
+            "path": "Saved/Tests/DistrictRuntime/InkWashafter-20261014T155919640009Z/IndependentMotionReview/after/frame-01.png",
+            "frame": 4,
+            "seconds": 0.06666666666666667,
+            "labels": [
+              "idle representative"
+            ],
+            "sha256": "0015739217207af1b5df4a3b4b670688b22f77f430dc4ec3b7e99f973dba44b6"
+          },
+          {
+            "path": "Saved/Tests/DistrictRuntime/InkWashafter-20261014T155919640009Z/IndependentMotionReview/after/frame-02.png",
+            "frame": 62,
+            "seconds": 1.0333333333333334,
+            "labels": [
+              "walk representative"
+            ],
+            "sha256": "b35b345630919eebf848617c0ac6231789ae6d5c64eff5d55f72a49e6f487e27"
+          },
+          {
+            "path": "Saved/Tests/DistrictRuntime/InkWashafter-20261014T155919640009Z/IndependentMotionReview/after/frame-03.png",
+            "frame": 148,
+            "seconds": 2.466666666666667,
+            "labels": [
+              "sprint representative"
+            ],
+            "sha256": "252cdbb8b25578543628d1aa77310f70fa0f275083dec38220cf87155cfe07c5"
+          },
+          {
+            "path": "Saved/Tests/DistrictRuntime/InkWashafter-20261014T155919640009Z/IndependentMotionReview/after/frame-04.png",
+            "frame": 217,
+            "seconds": 3.6166666666666667,
+            "labels": [
+              "turn representative"
+            ],
+            "sha256": "4ca6846f4882e9c9271f4bb727f5a8461e1634d49df554c3e9e60f89fe28e83a"
+          },
+          {
+            "path": "Saved/Tests/DistrictRuntime/InkWashafter-20261014T155919640009Z/IndependentMotionReview/after/frame-05.png",
+            "frame": 267,
+            "seconds": 4.45,
+            "labels": [
+              "stop representative"
+            ],
+            "sha256": "8e1c88723b0923972e70254a450f1a8e8f5a3c734d885c7cc8396eff7491ad5d"
+          },
+          {
+            "path": "Saved/Tests/DistrictRuntime/InkWashafter-20261014T155919640009Z/IndependentMotionReview/after/frame-06.png",
+            "frame": 306,
+            "seconds": 5.1,
+            "labels": [
+              "jump +0.25"
+            ],
+            "sha256": "01ba69985885cbd22d644912b552b5cc08cc0daf9bd772cd8b3d1c3353d0b832"
+          },
+          {
+            "path": "Saved/Tests/DistrictRuntime/InkWashafter-20261014T155919640009Z/IndependentMotionReview/after/frame-07.png",
+            "frame": 321,
+            "seconds": 5.35,
+            "labels": [
+              "jump +0.5"
+            ],
+            "sha256": "f83d03e9a70794db87deda5207221c8009bccd104386938a7d9b6105f73ec785"
+          },
+          {
+            "path": "Saved/Tests/DistrictRuntime/InkWashafter-20261014T155919640009Z/IndependentMotionReview/after/frame-08.png",
+            "frame": 333,
+            "seconds": 5.55,
+            "labels": [
+              "jump representative"
+            ],
+            "sha256": "1feabfc2b634a09f912929baf8d6f5e68b0aff891e7c87d11792f264e3ea8cdc"
+          },
+          {
+            "path": "Saved/Tests/DistrictRuntime/InkWashafter-20261014T155919640009Z/IndependentMotionReview/after/frame-09.png",
+            "frame": 336,
+            "seconds": 5.6,
+            "labels": [
+              "jump +0.75"
+            ],
+            "sha256": "670dfe2ff5c2ad676d2e51780ef592d0a9a87adf8babe3602dcac57d5f6c1df8"
+          },
+          {
+            "path": "Saved/Tests/DistrictRuntime/InkWashafter-20261014T155919640009Z/IndependentMotionReview/after/frame-10.png",
+            "frame": 386,
+            "seconds": 6.433333333333334,
+            "labels": [
+              "landing representative"
+            ],
+            "sha256": "d013c2fa71afcff4270f02f394909d8512ca155e87830f01ea866342b6780a53"
+          },
+          {
+            "path": "Saved/Tests/DistrictRuntime/InkWashafter-20261014T155919640009Z/IndependentMotionReview/after/frame-11.png",
+            "frame": 404,
+            "seconds": 6.733333333333333,
+            "labels": [
+              "recover representative"
+            ],
+            "sha256": "2c63e7419cf2eb8c429fe0b9621797a1cbdde4efcb05d209d5ec209dbc2c0e63"
+          }
+        ],
+        "contact_sheet": "Saved/Tests/DistrictRuntime/InkWashafter-20261014T155919640009Z/IndependentMotionReview/after/phase-crops.png",
+        "contact_sheet_sha256": "f7fa2a34e4af58f27300e7d21022ae490ee9720f9eef1ebb4919ca203be62059",
+        "csv_path": "Saved/Tests/DistrictRuntime/InkWashafter-20261014T155919640009Z/MotionProfile/Capture/Motion/Comic/InkWashafter20261014T155919640009Z-Comic-1920.csv",
+        "csv_sha256": "0709fa7ce105c8b55d9c04bac245dc5b40923968af94d2b313372ed7623ef7f7",
+        "csv_rows": 68,
+        "csv_stats": {
+          "FrameTime": {
+            "units": "ms",
+            "p50": 109.338,
+            "p95_nearest_rank": 121.508,
+            "max": 702.697
+          },
+          "GameThreadTime": {
+            "units": "ms",
+            "p50": 6.428,
+            "p95_nearest_rank": 8.43,
+            "max": 599.714
+          },
+          "RenderThreadTime": {
+            "units": "ms",
+            "p50": 0.002,
+            "p95_nearest_rank": 0.004,
+            "max": 0.004
+          },
+          "GPUTime": {
+            "units": "ms",
+            "p50": 80.501,
+            "p95_nearest_rank": 83.64,
+            "max": 102.853
+          }
+        },
+        "phase_observations": {
+          "idle": 4,
+          "walk": 13,
+          "sprint": 13,
+          "turn": 8,
+          "stop": 7,
+          "jump": 13,
+          "landing": 3,
+          "recover": 6
+        },
+        "frame_budget_accepted": false
+      }
+    }
+  },
+  "matched_stills": [
+    {
+      "state": "Face",
+      "before_path": "Saved/Tests/DistrictRuntime/InkWashbefore-20261014T155228053980Z/StillCapture/Capture/1280/Resident9_Face.png",
+      "before_sha256": "e8b95f55fa2a1573421c6d57519ec7c8aeea9f11f10580e163698f97fdc662c2",
+      "after_path": "Saved/Tests/DistrictRuntime/InkWashafter-20261014T155919640009Z/StillCapture/Capture/1280/Resident9_Face.png",
+      "after_sha256": "2d1f522849fed2a8d0101e4590b6d2dbd209fd9c5fcb68450315daee6d748aba",
+      "both_images_independently_viewed": true
+    },
+    {
+      "state": "FaceThreeQuarter",
+      "before_path": "Saved/Tests/DistrictRuntime/InkWashbefore-20261014T155228053980Z/StillCapture/Capture/1280/Resident9_FaceThreeQuarter.png",
+      "before_sha256": "6cad8f4c5d141cf9bfa1d83695a6a235031fdff53358f9d91c0669397e704dbd",
+      "after_path": "Saved/Tests/DistrictRuntime/InkWashafter-20261014T155919640009Z/StillCapture/Capture/1280/Resident9_FaceThreeQuarter.png",
+      "after_sha256": "330762ce0437cdd6508e8474fc10e071ba29499763c5765c2a9ec78ec0aeb26a",
+      "both_images_independently_viewed": true
+    },
+    {
+      "state": "Idle",
+      "before_path": "Saved/Tests/DistrictRuntime/InkWashbefore-20261014T155228053980Z/StillCapture/Capture/1280/Resident9_Idle.png",
+      "before_sha256": "e616f87fd7ceddf2fd44ce1e6f1348a52dcdae4f9a5e389c1d5c953ddbd0e515",
+      "after_path": "Saved/Tests/DistrictRuntime/InkWashafter-20261014T155919640009Z/StillCapture/Capture/1280/Resident9_Idle.png",
+      "after_sha256": "8aa96fd32f6a2ad7f6e2fae5c9baa8f081baddc4df0c0eb66fb5fc473739d826",
+      "both_images_independently_viewed": true
+    },
+    {
+      "state": "Walk",
+      "before_path": "Saved/Tests/DistrictRuntime/InkWashbefore-20261014T155228053980Z/StillCapture/Capture/1280/Resident9_Walk.png",
+      "before_sha256": "0b9fd3badfd806e68600f1e2efb1a6604f1fa50b73be49954e13fa7b88e738c1",
+      "after_path": "Saved/Tests/DistrictRuntime/InkWashafter-20261014T155919640009Z/StillCapture/Capture/1280/Resident9_Walk.png",
+      "after_sha256": "bf489309e378968065c0cdb119103aa328bb7d7d2db1825080893d17ecb8f1cc",
+      "both_images_independently_viewed": true
+    },
+    {
+      "state": "Run",
+      "before_path": "Saved/Tests/DistrictRuntime/InkWashbefore-20261014T155228053980Z/StillCapture/Capture/1280/Resident9_Run.png",
+      "before_sha256": "4dd0a9062a3d3936db0b31ac887f7265122826cd34c27e4211fcb1346beed789",
+      "after_path": "Saved/Tests/DistrictRuntime/InkWashafter-20261014T155919640009Z/StillCapture/Capture/1280/Resident9_Run.png",
+      "after_sha256": "2a25f1eeed82d388a2b035c8e8934678e4dbbf30c497e696e867959e146c59bf",
+      "both_images_independently_viewed": true
+    },
+    {
+      "state": "Airborne",
+      "before_path": "Saved/Tests/DistrictRuntime/InkWashbefore-20261014T155228053980Z/StillCapture/Capture/1280/Resident9_Airborne.png",
+      "before_sha256": "fae8fad110e80b28a50ee98804e4ea6a739de7ccdaac8136a5d359b7f28bd8ce",
+      "after_path": "Saved/Tests/DistrictRuntime/InkWashafter-20261014T155919640009Z/StillCapture/Capture/1280/Resident9_Airborne.png",
+      "after_sha256": "539a7a526616959e29984be7c2c54cdc375a30a1ffe696ade55e443b75ec91a0",
+      "both_images_independently_viewed": true
+    },
+    {
+      "state": "Landing",
+      "before_path": "Saved/Tests/DistrictRuntime/InkWashbefore-20261014T155228053980Z/StillCapture/Capture/1280/Resident9_Landing.png",
+      "before_sha256": "d5af059219a4d7fbc998613ebff305063b5bd159e4074905233f1c4f0add83e9",
+      "after_path": "Saved/Tests/DistrictRuntime/InkWashafter-20261014T155919640009Z/StillCapture/Capture/1280/Resident9_Landing.png",
+      "after_sha256": "905268d9313b3cfef5670edec286940eb6457221ac15696e7a66d675481d15a7",
+      "both_images_independently_viewed": true
+    }
+  ],
+  "findings": {
+    "colour_improvement": "Shirt shifts from strong indigo toward dark charcoal; jeans retain blue separation. Hair/beard appear darker brown/black, while skin, red emblem and prop remain legible. Both closeups and all five body poses support keeping this private material adjustment.",
+    "sampled_motion": "Eleven software-decoded samples per run cover eight phase representatives plus three jump offsets. Camera/HUD/prop remain present in inspected gameplay frames, with no obvious new body colour-mask break. Before/after phase poses and wind are not pixel-identical. This is selected-frame review only.",
+    "remaining_blockers": [
+      "Airborne sleeve/shoulder surfaces collapse into raised skin lobes in both still sets; raw jump still blocks default high-detail promotion.",
+      "Pale/chipped collar rim and neck-wall artifact remain; the separate26-face UV collar study remains unpromoted.",
+      "Small detached ground/shadow fragments remain visible in Run and motion samples.",
+      "Static face/fingers and original generated rig/clip limitations remain."
+    ],
+    "post_pie_frame": "After ReviewFrames/frame-05.png was inspected and is editor after PIE teardown. It is excluded from gameplay/HUD/motion evidence.",
+    "performance": "CSV before59/after68 numeric rows are short warmed editor diagnostics at1x. The videos encode60fps but native frame times are far above16.67ms. Different row counts, startup spikes and wind/timing make any shader performance improvement inference unsupported.",
+    "render_thread_metric": "RenderThreadTime is retained exactly as logged; its near-zero rollup is not a claim that rendering work is negligible."
+  },
+  "limits": [
+    "Private candidate colour/readability comparison only; production Art material hash unchanged.",
+    "720 stills and1080 selected motion frames; no full continuous playback or real-time fluidity acceptance.",
+    "No physical input, network/crowd, packaged performance, final likeness, geometry/rig repair or default promotion.",
+    "Both windows restored source/global settings, Content and live save protections.",
+    "No copied external texture or paid generation used by this review."
+  ]
+}

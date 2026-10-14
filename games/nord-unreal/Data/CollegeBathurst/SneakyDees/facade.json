@@ -277,8 +277,8 @@
   "generic_glass_action": "Unchanged; opaque thin skin covers only the three authored landmark faces",
   "clearances_cm": {
     "maximum_footprint_projection": 25,
-    "spawn": 135.33184743939177,
-    "sidewalk_centerline": 103.21342074350866,
+    "spawn": 135.33322656556288,
+    "sidewalk_centerline": 103.21490364634624,
     "starter_car_body": 1099.8881814543215,
     "tram_centerline": 712.6633304731295
   },
@@ -306,12 +306,12 @@
     "Data/CollegeBathurst/osm.xml": "b4c2b519c1b229622c288a2027a8d4d00d6913787ddb201b5751455a6b2f72dd",
     "Data/CollegeBathurst/massing.geojson": "07f2d29a7101ecf741ab3d5f28621725ea5f4b3a98dc1233a78d6fcaf7f1a5cb",
     "Scripts/plateau_mesh.py": "0db445d502ffeb5a0d77c49fb1cb9d3a1bd49492b6956f37ce96bad505033217",
-    "Scripts/prepare_sneaky_dees.py": "86e557d49268d6ebffb701935e0b51fdf007192bc598f870455ed021fec808c2"
+    "Scripts/prepare_sneaky_dees.py": "e84c1b93ba5e17d3f017bbd1c26d8e5f009e9bd57ac2b711113b7f251e6dbd7e"
   },
   "geometry_sha256": {
     "Blue": "50ae75cc679a0f37ffdca6fe5bc65547c03a4f0c74e91091319ae833476771fc",
     "Brick": "eb63c025f85504b08dd56cca649ed48e0c7435eefb099dd46c49895394760869",
-    "Cladding": "3665b7100583fad1375dd26e05a959525336726f20f4b2b4557921ed872dead9",
+    "Cladding": "981ac8470fc8fed6ed29d0e1c5332393964c799af0b11d7dbeaf9146d48f899a",
     "Glazing": "a47091cc54fd306b695e180350d328a617064c3bf01c3da25fddd58201c440f3",
     "Gold": "96b7af5ac0c802abce2f6519d688a8bd84c0751032335c696eb0ee0ea15403ec",
     "Ink": "9c6ff1a180841d246956f1e80eac96ab6789331ef2eb1407d4c261489d3631ab",

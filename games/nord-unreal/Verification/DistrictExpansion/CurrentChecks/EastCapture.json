@@ -1,0 +1,844 @@
+{
+  "passed": true,
+  "rendered": true,
+  "run": "20261014T161259996492Z",
+  "resolution": [
+    1920,
+    1080
+  ],
+  "display_pixels": [
+    2048,
+    1280
+  ],
+  "fixtures": [
+    {
+      "name": "Panet",
+      "point_cm": [
+        71674.55083309732,
+        -26098.562974604924
+      ],
+      "target_cm": [
+        75373.30293126713,
+        -28558.323949252477
+      ],
+      "source": "way/490998043",
+      "node_ids": [
+        "1497705451",
+        "10815396967"
+      ],
+      "derivation": "longest retained street segment midpoint",
+      "road_width_cm": 680,
+      "pitch": -12,
+      "yaw": -33.62488171113105,
+      "context_footprint_sample_clearance_cm": 8146.085232153709
+    },
+    {
+      "name": "Visitation",
+      "point_cm": [
+        60420.852460401,
+        -29134.670399994902
+      ],
+      "target_cm": [
+        63072.53175570845,
+        -30900.20560002219
+      ],
+      "source": "way/19938440",
+      "node_ids": [
+        "11547437024",
+        "2075285157"
+      ],
+      "derivation": "longest retained street segment midpoint",
+      "road_width_cm": 680,
+      "pitch": -12,
+      "yaw": -33.65638180733419,
+      "context_footprint_sample_clearance_cm": 620.8597428037924
+    },
+    {
+      "name": "FormerEdge",
+      "point_cm": [
+        54888.20160134625,
+        -14873.465199956201
+      ],
+      "target_cm": [
+        58710.539102254894,
+        -17399.19993901318
+      ],
+      "source": "way/490998043",
+      "former_exit_cm": [
+        55373.30293126712,
+        -15194.011797595113
+      ],
+      "derivation": "original Panet source node looking through former boundary",
+      "pitch": -12,
+      "yaw": -33.45604059137042,
+      "context_footprint_sample_clearance_cm": 882.9774136286053
+    }
+  ],
+  "captures": [
+    {
+      "label": "PanetStandard",
+      "path": "Saved/Tests/DistrictRuntime/MontrealEastRender1920-20261014T161259996492Z/PanetStandard.png",
+      "fixture": {
+        "name": "Panet",
+        "point_cm": [
+          71674.55083309732,
+          -26098.562974604924
+        ],
+        "target_cm": [
+          75373.30293126713,
+          -28558.323949252477
+        ],
+        "source": "way/490998043",
+        "node_ids": [
+          "1497705451",
+          "10815396967"
+        ],
+        "derivation": "longest retained street segment midpoint",
+        "road_width_cm": 680,
+        "pitch": -12,
+        "yaw": -33.62488171113105,
+        "context_footprint_sample_clearance_cm": 8146.085232153709
+      },
+      "actual_viewport": [
+        1920,
+        1080
+      ],
+      "hud_class": "QuebecHUD",
+      "comic_weight": 0.0,
+      "player_cm": [
+        71674.55083309732,
+        -26098.562974604924,
+        98.15000677108765
+      ],
+      "camera_cm": [
+        71341.98905518922,
+        -25877.401225315723,
+        239.27103497345823
+      ],
+      "camera_pitch": -12.000000000000002,
+      "camera_yaw": -33.62488174438475,
+      "horizontal_fov": 90.0,
+      "native_canvas_capture_requested": true,
+      "hud_pixel_review_pending": true,
+      "visual_review_pending": true,
+      "sha256": "f8c901f0671e2b231d079f25c4fdef4e6b38aa450baf44b384468bbf32f206f5",
+      "bytes": 3062072,
+      "png_dimensions": [
+        1920,
+        1080
+      ]
+    },
+    {
+      "label": "PanetComic",
+      "path": "Saved/Tests/DistrictRuntime/MontrealEastRender1920-20261014T161259996492Z/PanetComic.png",
+      "fixture": {
+        "name": "Panet",
+        "point_cm": [
+          71674.55083309732,
+          -26098.562974604924
+        ],
+        "target_cm": [
+          75373.30293126713,
+          -28558.323949252477
+        ],
+        "source": "way/490998043",
+        "node_ids": [
+          "1497705451",
+          "10815396967"
+        ],
+        "derivation": "longest retained street segment midpoint",
+        "road_width_cm": 680,
+        "pitch": -12,
+        "yaw": -33.62488171113105,
+        "context_footprint_sample_clearance_cm": 8146.085232153709
+      },
+      "actual_viewport": [
+        1920,
+        1080
+      ],
+      "hud_class": "QuebecHUD",
+      "comic_weight": 1.0,
+      "player_cm": [
+        71674.55083309732,
+        -26098.562974604924,
+        98.15000677108765
+      ],
+      "camera_cm": [
+        71341.98905518922,
+        -25877.401225315723,
+        239.27103497345823
+      ],
+      "camera_pitch": -12.000000000000002,
+      "camera_yaw": -33.62488174438475,
+      "horizontal_fov": 90.0,
+      "native_canvas_capture_requested": true,
+      "hud_pixel_review_pending": true,
+      "visual_review_pending": true,
+      "sha256": "8bcf0da862402d51d0eedd43da3a37142aef0f099d29859c4442f7e37909ed56",
+      "bytes": 3104931,
+      "png_dimensions": [
+        1920,
+        1080
+      ]
+    },
+    {
+      "label": "VisitationStandard",
+      "path": "Saved/Tests/DistrictRuntime/MontrealEastRender1920-20261014T161259996492Z/VisitationStandard.png",
+      "fixture": {
+        "name": "Visitation",
+        "point_cm": [
+          60420.852460401,
+          -29134.670399994902
+        ],
+        "target_cm": [
+          63072.53175570845,
+          -30900.20560002219
+        ],
+        "source": "way/19938440",
+        "node_ids": [
+          "11547437024",
+          "2075285157"
+        ],
+        "derivation": "longest retained street segment midpoint",
+        "road_width_cm": 680,
+        "pitch": -12,
+        "yaw": -33.65638180733419,
+        "context_footprint_sample_clearance_cm": 620.8597428037924
+      },
+      "actual_viewport": [
+        1920,
+        1080
+      ],
+      "hud_class": "QuebecHUD",
+      "comic_weight": 0.0,
+      "player_cm": [
+        60420.852460401,
+        -29134.670399994902,
+        98.15000677108765
+      ],
+      "camera_cm": [
+        60088.412329606384,
+        -28913.325838482044,
+        239.27103497345823
+      ],
+      "camera_pitch": -12.0,
+      "camera_yaw": -33.65638351440428,
+      "horizontal_fov": 90.0,
+      "native_canvas_capture_requested": true,
+      "hud_pixel_review_pending": true,
+      "visual_review_pending": true,
+      "sha256": "51b30220f9cc0a462cab5d055779bf5901b76c85db74d62ae6804544326ada7e",
+      "bytes": 3784673,
+      "png_dimensions": [
+        1920,
+        1080
+      ]
+    },
+    {
+      "label": "VisitationComic",
+      "path": "Saved/Tests/DistrictRuntime/MontrealEastRender1920-20261014T161259996492Z/VisitationComic.png",
+      "fixture": {
+        "name": "Visitation",
+        "point_cm": [
+          60420.852460401,
+          -29134.670399994902
+        ],
+        "target_cm": [
+          63072.53175570845,
+          -30900.20560002219
+        ],
+        "source": "way/19938440",
+        "node_ids": [
+          "11547437024",
+          "2075285157"
+        ],
+        "derivation": "longest retained street segment midpoint",
+        "road_width_cm": 680,
+        "pitch": -12,
+        "yaw": -33.65638180733419,
+        "context_footprint_sample_clearance_cm": 620.8597428037924
+      },
+      "actual_viewport": [
+        1920,
+        1080
+      ],
+      "hud_class": "QuebecHUD",
+      "comic_weight": 1.0,
+      "player_cm": [
+        60420.852460401,
+        -29134.670399994902,
+        98.15000677108765
+      ],
+      "camera_cm": [
+        60088.41232960642,
+        -28913.325838482004,
+        239.2710349734582
+      ],
+      "camera_pitch": -11.999999999999995,
+      "camera_yaw": -33.65638351440427,
+      "horizontal_fov": 90.0,
+      "native_canvas_capture_requested": true,
+      "hud_pixel_review_pending": true,
+      "visual_review_pending": true,
+      "sha256": "a6fb7e07b9b593a74e1d8fbc56c76a132e3ebd0f04bec358b49616b9e375f43c",
+      "bytes": 3975636,
+      "png_dimensions": [
+        1920,
+        1080
+      ]
+    },
+    {
+      "label": "FormerEdgeStandard",
+      "path": "Saved/Tests/DistrictRuntime/MontrealEastRender1920-20261014T161259996492Z/FormerEdgeStandard.png",
+      "fixture": {
+        "name": "FormerEdge",
+        "point_cm": [
+          54888.20160134625,
+          -14873.465199956201
+        ],
+        "target_cm": [
+          58710.539102254894,
+          -17399.19993901318
+        ],
+        "source": "way/490998043",
+        "former_exit_cm": [
+          55373.30293126712,
+          -15194.011797595113
+        ],
+        "derivation": "original Panet source node looking through former boundary",
+        "pitch": -12,
+        "yaw": -33.45604059137042,
+        "context_footprint_sample_clearance_cm": 882.9774136286053
+      },
+      "actual_viewport": [
+        1920,
+        1080
+      ],
+      "hud_class": "QuebecHUD",
+      "comic_weight": 0.0,
+      "player_cm": [
+        54888.20160134625,
+        -14873.465199956201,
+        98.15000677108765
+      ],
+      "camera_cm": [
+        54554.98953689793,
+        -14653.28442064033,
+        239.2710349734582
+      ],
+      "camera_pitch": -11.999999999999995,
+      "camera_yaw": -33.45603942871092,
+      "horizontal_fov": 90.0,
+      "native_canvas_capture_requested": true,
+      "hud_pixel_review_pending": true,
+      "visual_review_pending": true,
+      "sha256": "b4ccbad1f9f3a09529f91388f08be0a70e8704b7aab82c27c99bc11411ac9587",
+      "bytes": 3831899,
+      "png_dimensions": [
+        1920,
+        1080
+      ]
+    },
+    {
+      "label": "FormerEdgeComic",
+      "path": "Saved/Tests/DistrictRuntime/MontrealEastRender1920-20261014T161259996492Z/FormerEdgeComic.png",
+      "fixture": {
+        "name": "FormerEdge",
+        "point_cm": [
+          54888.20160134625,
+          -14873.465199956201
+        ],
+        "target_cm": [
+          58710.539102254894,
+          -17399.19993901318
+        ],
+        "source": "way/490998043",
+        "former_exit_cm": [
+          55373.30293126712,
+          -15194.011797595113
+        ],
+        "derivation": "original Panet source node looking through former boundary",
+        "pitch": -12,
+        "yaw": -33.45604059137042,
+        "context_footprint_sample_clearance_cm": 882.9774136286053
+      },
+      "actual_viewport": [
+        1920,
+        1080
+      ],
+      "hud_class": "QuebecHUD",
+      "comic_weight": 1.0,
+      "player_cm": [
+        54888.20160134625,
+        -14873.465199956201,
+        98.15000677108765
+      ],
+      "camera_cm": [
+        54554.98953689775,
+        -14653.284420640586,
+        239.2710349734582
+      ],
+      "camera_pitch": -11.999999999999995,
+      "camera_yaw": -33.45603942871093,
+      "horizontal_fov": 90.0,
+      "native_canvas_capture_requested": true,
+      "hud_pixel_review_pending": true,
+      "visual_review_pending": true,
+      "sha256": "663c33757ac0f48e387264bfa4a8f5eddc4b5930108c2daaa5c8296ddc398e53",
+      "bytes": 4007373,
+      "png_dimensions": [
+        1920,
+        1080
+      ]
+    }
+  ],
+  "save_inventory_before": {},
+  "mode": "one standalone immersive PIE player; native HUD/F2, source-derived authority camera fixtures",
+  "limits": [
+    "visual review pending",
+    "no multiplayer rendering acceptance",
+    "no naturally navigated corridor or physical input test",
+    "no motion/FPS/audio/package acceptance",
+    "NoCampaignSave suppresses disk loading and writing; no persistence acceptance",
+    "source road-center fixtures, not a naturally navigated sidewalk trip",
+    "CPU footprint samples do not prove native camera clearance"
+  ],
+  "source_sha256": {
+    "Saved/Tests/DistrictRuntime/EastCapturePrepared-20261014T161229778669Z/capture.py": "0e1559209ab846be950e6107db58dc662294a468d8fc0fa7ff6a1323b6470390",
+    "Data/LaFontaine/osm.xml": "fe4410d45007a627bf6d9b9ddeeae329fa9cdd7492dfb5fa6beff851e7cf8f86",
+    "Data/LaFontaine/layout.json": "4238d6ed45d5fb890e0f8dbcb672de0803c6dc7079b0b6a86b386d82ebbb4250",
+    "Data/Plateau/ContextGeometry/context.json": "74764fd01528c320439692fdc6eefd3394770e547f425b886ceabbd73fc9392a",
+    "Data/Plateau/EdgesGeometry/edges.json": "9b2adcc383903d64014e5a09851cea786aea5af4307242f5a37dc83362323a35",
+    "Source/Quebec/LaFontaineMap.h": "80a96e858c315584598acd8d87dfb758ba45f64a58ccd4b6f5222ddb56ff1700",
+    "Data/Plateau/EastExtension/extension.json": "c19300127f80c9ebd4483610544acab9162a05280ab5a2717376c88c6770dcbf",
+    "Scripts/capture_college_bathurst.py": "285bc8d2f9fa7af4eb97de325759ef43c9e2327b392d3cf859fa47d3f5db6fa8",
+    "Scripts/plateau_streets.py": "9e246e7c2d66e370be709117912df167be7edae5e6857adacc9d0641829c1179",
+    "Scripts/plateau_ground.py": "9ba1e57a062d94c6eb2c3ecef2ea191d63d5cf97ada05cccf9e9441a1ce7c445",
+    "Source/Quebec/QuebecCampaign.cpp": "920249a296d281dbf50b73e0a187449de6b72dc29822228ccff12df1cf327b38",
+    "Source/Quebec/QuebecGameplay.cpp": "eb48922e852eb14e6992770ad50826de59389c6324dbe7693c2e7ea7f3bb4b87",
+    "Content/Maps/LaFontaine.umap": "1d10804760ffdef9c620bc2840014ec2e5dbc204931d9b9854699f511e5d0c40"
+  },
+  "population_before": {
+    "campaign": "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecCampaign_0",
+    "phase": "<QuebecCampaignPhase.AIM_WORKLIGHT: 0>",
+    "completed": 0,
+    "mission_index": 0,
+    "residents": [
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_0",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_1",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_10",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_100",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_101",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_102",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_103",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_104",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_105",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_106",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_107",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_108",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_109",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_11",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_12",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_13",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_14",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_15",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_16",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_17",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_18",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_19",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_2",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_20",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_21",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_22",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_23",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_24",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_25",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_26",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_27",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_28",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_29",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_3",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_30",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_31",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_32",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_33",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_34",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_35",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_36",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_37",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_38",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_39",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_4",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_40",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_41",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_42",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_43",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_44",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_45",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_46",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_47",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_48",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_49",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_5",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_50",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_51",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_52",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_53",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_54",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_55",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_56",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_57",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_58",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_59",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_6",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_60",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_61",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_62",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_63",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_64",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_65",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_66",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_67",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_68",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_69",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_7",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_70",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_71",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_72",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_73",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_74",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_75",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_76",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_77",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_78",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_79",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_8",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_80",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_81",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_82",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_83",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_84",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_85",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_86",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_87",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_88",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_89",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_9",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_90",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_91",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_92",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_93",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_94",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_95",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_96",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_97",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_98",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_99"
+    ],
+    "cars": [
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecCar_0",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecCar_1",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecCar_10",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecCar_11",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecCar_12",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecCar_13",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecCar_14",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecCar_15",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecCar_16",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecCar_17",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecCar_18",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecCar_19",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecCar_2",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecCar_20",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecCar_21",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecCar_22",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecCar_23",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecCar_24",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecCar_25",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecCar_26",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecCar_27",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecCar_28",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecCar_29",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecCar_3",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecCar_30",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecCar_31",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecCar_32",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecCar_33",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecCar_34",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecCar_35",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecCar_36",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecCar_37",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecCar_38",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecCar_39",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecCar_4",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecCar_40",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecCar_41",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecCar_42",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecCar_43",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecCar_44",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecCar_45",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecCar_46",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecCar_5",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecCar_6",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecCar_7",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecCar_8",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecCar_9"
+    ]
+  },
+  "population_last_checked": {
+    "campaign": "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecCampaign_0",
+    "phase": "<QuebecCampaignPhase.AIM_WORKLIGHT: 0>",
+    "completed": 0,
+    "mission_index": 0,
+    "residents": [
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_0",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_1",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_10",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_100",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_101",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_102",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_103",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_104",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_105",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_106",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_107",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_108",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_109",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_11",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_12",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_13",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_14",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_15",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_16",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_17",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_18",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_19",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_2",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_20",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_21",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_22",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_23",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_24",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_25",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_26",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_27",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_28",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_29",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_3",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_30",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_31",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_32",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_33",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_34",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_35",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_36",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_37",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_38",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_39",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_4",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_40",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_41",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_42",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_43",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_44",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_45",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_46",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_47",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_48",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_49",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_5",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_50",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_51",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_52",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_53",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_54",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_55",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_56",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_57",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_58",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_59",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_6",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_60",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_61",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_62",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_63",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_64",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_65",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_66",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_67",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_68",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_69",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_7",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_70",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_71",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_72",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_73",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_74",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_75",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_76",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_77",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_78",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_79",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_8",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_80",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_81",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_82",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_83",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_84",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_85",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_86",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_87",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_88",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_89",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_9",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_90",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_91",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_92",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_93",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_94",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_95",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_96",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_97",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_98",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_99"
+    ],
+    "cars": [
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecCar_0",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecCar_1",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecCar_10",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecCar_11",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecCar_12",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecCar_13",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecCar_14",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecCar_15",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecCar_16",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecCar_17",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecCar_18",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecCar_19",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecCar_2",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecCar_20",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecCar_21",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecCar_22",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecCar_23",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecCar_24",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecCar_25",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecCar_26",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecCar_27",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecCar_28",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecCar_29",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecCar_3",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecCar_30",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecCar_31",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecCar_32",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecCar_33",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecCar_34",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecCar_35",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecCar_36",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecCar_37",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecCar_38",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecCar_39",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecCar_4",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecCar_40",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecCar_41",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecCar_42",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecCar_43",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecCar_44",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecCar_45",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecCar_46",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecCar_5",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecCar_6",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecCar_7",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecCar_8",
+      "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecCar_9"
+    ]
+  },
+  "viewport_calibration": {
+    "passed": true,
+    "display_pixels": [
+      2048,
+      1280
+    ],
+    "target_viewport_pixels": [
+      1920,
+      1080
+    ],
+    "method": "Editor.ResizeMainFrame then one measured chrome compensation",
+    "attempts": [
+      {
+        "requested_root_pixels": [
+          1920,
+          1080
+        ],
+        "observed_viewport_pixels": [
+          1920,
+          1080
+        ]
+      }
+    ],
+    "native_viewport_cursor_probes": [
+      {
+        "viewport_pixels": [
+          0,
+          0
+        ],
+        "desktop_pixels": [
+          34.0,
+          86.0
+        ]
+      },
+      {
+        "viewport_pixels": [
+          1919,
+          0
+        ],
+        "desktop_pixels": [
+          1953.0,
+          86.0
+        ]
+      },
+      {
+        "viewport_pixels": [
+          0,
+          1079
+        ],
+        "desktop_pixels": [
+          34.0,
+          1165.0
+        ]
+      }
+    ],
+    "cursor_restored_viewport_pixels": [
+      990,
+      554
+    ],
+    "desktop_rectangle": [
+      34.0,
+      86.0,
+      1920,
+      1080
+    ]
+  },
+  "actual_viewport_pixels": [
+    1920,
+    1080
+  ],
+  "renderer_settings": {
+    "sg.ViewDistanceQuality": 3,
+    "sg.AntiAliasingQuality": 3,
+    "sg.ShadowQuality": 3,
+    "sg.GlobalIlluminationQuality": 3,
+    "sg.ReflectionQuality": 3,
+    "sg.PostProcessQuality": 3,
+    "sg.TextureQuality": 3,
+    "sg.EffectsQuality": 3,
+    "sg.FoliageQuality": 3,
+    "sg.ShadingQuality": 3,
+    "sg.LandscapeQuality": 3,
+    "r.ScreenPercentage": 100.0
+  },
+  "save_inventory_after": {},
+  "all_save_hashes_unchanged": true,
+  "owned_pie_stopped": true,
+  "error": null,
+  "play_settings_restored": true
+}

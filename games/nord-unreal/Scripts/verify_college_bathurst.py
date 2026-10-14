@@ -4,6 +4,47 @@ import math
 from pathlib import Path
 import unreal as u
 
+
+def boundary_specs(layout):
+    x0,y0,x1,y1=layout['bounds_cm'];cx,cy=(x0+x1)/2,(y0+y1)/2
+    return [{'side':side,'location':[x,cy,150.],'size':[70.,y1-y0,300.],'normal':[normal,0.,0.]}
+            for side,x,normal in [('west',x0,-1.),('east',x1,1.)]]+[
+            {'side':side,'location':[cx,y,150.],'size':[x1-x0,70.,300.],'normal':[0.,normal,0.]}
+            for side,y,normal in [('south',y0,-1.),('north',y1,1.)]]
+
+
+def verify_boundaries(u,world,actors,layout,gameplay):
+    edges=[actor for actor in actors if actor.get_actor_label()=='District edge']
+    assert len(edges)==4, 'Exactly four authored Toronto boundaries are required'
+    rows=[];matched=set()
+    xyz=lambda point:[point.x,point.y,point.z]
+    for spec in boundary_specs(layout):
+        wall=[actor for actor in edges if math.dist(xyz(actor.get_actor_location()),spec['location'])<.1]
+        assert len(wall)==1 and wall[0].get_path_name() not in matched, ('Missing/duplicate/misplaced Toronto boundary',spec['side'])
+        actor=wall[0];matched.add(actor.get_path_name());component=actor.static_mesh_component
+        assert component.static_mesh.get_path_name()=='/Engine/BasicShapes/Cube.Cube'
+        assert math.dist(xyz(actor.get_actor_scale3d()),[v/100 for v in spec['size']])<.001
+        rotation=actor.get_actor_rotation();assert max(abs(rotation.pitch),abs(rotation.yaw),abs(rotation.roll))<.001
+        assert actor.get_actor_enable_collision() and str(component.get_collision_profile_name())=='BlockAll'
+        assert component.get_collision_enabled()==u.CollisionEnabled.QUERY_AND_PHYSICS
+        assert actor.get_editor_property('hidden') and component.is_visible(), 'Retain the creator hidden-actor/visible-component state'
+        origin,extent=actor.get_actor_bounds(False,False)
+        assert math.dist(xyz(origin),spec['location'])<.1 and math.dist(xyz(extent),[v/2 for v in spec['size']])<.1
+        point,normal=u.Vector(*spec['location']),u.Vector(*spec['normal'])
+        # Isolate this cube: an adjacent building must not masquerade as wall collision.
+        hit=u.SystemLibrary.line_trace_single(world,point-normal*500,point+normal*500,u.TraceTypeQuery.TRACE_TYPE_QUERY1,
+            True,[other for other in actors if other!=actor],u.DrawDebugTrace.NONE,True)
+        assert hit, ('Authored Toronto boundary has no native outward hit',spec['side'])
+        result=gameplay.call_method('BreakHitResult',(hit,))
+        expected=point-normal*35
+        assert result[0] and result[9]==actor and math.dist(xyz(result[5]),xyz(expected))<.1, ('Wrong actual inner boundary face',spec['side'])
+        assert sum(x*y for x,y in zip(xyz(result[7]),spec['normal']))<-.99, ('Wrong native inward hit normal',spec['side'])
+        rows.append({'boundary':spec['side'],'actor':actor.get_path_name(),'location_cm':xyz(origin),'size_cm':spec['size'],
+                     'profile':'BlockAll','native_outward_hit_cm':xyz(result[5]),'native_hit_normal':xyz(result[7]),
+                     'probe_scope':'Source-derived centre ray isolates the authored cube; native traversal/jump checked separately'})
+    return rows
+
+
 ROOT = Path(u.Paths.project_dir()).resolve()
 DATA = ROOT / 'Data/CollegeBathurst'
 layout = json.loads((DATA / 'layout.json').read_text())
@@ -42,6 +83,8 @@ for source in sorted((DATA / 'Geometry').glob('*.obj')):
     assert math.dist((scale.x, scale.y, scale.z), (1, 1, 1)) < .001
     profile = 'BlockAll' if source.stem in blocking else 'NoCollision'
     assert str(component.get_collision_profile_name()) == profile, source.name
+    if source.stem == 'Path':
+        assert not component.get_editor_property('cast_shadow'), 'Thin sidewalk overlays must not cast detached shadows'
     if source.stem in blocking:
         assert mesh.get_editor_property('body_setup').get_editor_property('collision_trace_flag') == u.CollisionTraceFlag.CTF_USE_COMPLEX_AS_SIMPLE
     assert component.get_material(0), source.name
@@ -70,6 +113,7 @@ assert (car.get_actor_location() - u.Vector(*layout['car'])).length() < .01
 assert abs(u.MathLibrary.normalized_delta_rotator(car.get_actor_rotation(), u.Rotator(yaw=layout['car_yaw'])).yaw) < .01
 
 gameplay = u.get_default_object(u.load_class(None, '/Script/Engine.GameplayStatics'))
+checks.extend(verify_boundaries(u,world,actors,layout,gameplay))
 landmark = layout['landmarks']['sneaky_dees']
 for name, point, height in [('spawn', layout['spawn'], -1.), ('car', layout['car'], -1.),
                             ('landmark roof', landmark['centroid'], landmark['height'])]:

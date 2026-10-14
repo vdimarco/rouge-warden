@@ -1,0 +1,304 @@
+{
+  "passed": true,
+  "mode": "verify",
+  "map": "/Engine/Maps/Entry",
+  "characters": [
+    {
+      "style": 3,
+      "asset": "/Game/ParkComic/Crew/Resident3/BS_Locomotion.BS_Locomotion",
+      "skeleton": "/Game/ParkComic/Crew/Resident3/SK_Body_Skeleton.SK_Body_Skeleton",
+      "axis": {
+        "display_name": "Speed",
+        "min": 0.0,
+        "max": 800.0,
+        "grid_num": 16,
+        "snap_to_grid": false,
+        "wrap_input": false
+      },
+      "smoothing_seconds": 0.11999999731779099,
+      "smoothing_type": "Linear",
+      "scale_animation": false,
+      "target_weight_interpolation_speed_per_sec": 0.0,
+      "samples": [
+        {
+          "clip": "/Game/ParkComic/Crew/Resident3/A_Idle.A_Idle",
+          "speed_cm_per_s": 0.0,
+          "rate_scale": 1.0
+        },
+        {
+          "clip": "/Game/ParkComic/Crew/Resident3/A_Walk.A_Walk",
+          "speed_cm_per_s": 450.0,
+          "rate_scale": 2.0
+        },
+        {
+          "clip": "/Game/ParkComic/Crew/Resident3/A_Run.A_Run",
+          "speed_cm_per_s": 800.0,
+          "rate_scale": 1.3333333333333333
+        }
+      ],
+      "own_jump": "/Game/ParkComic/Crew/Resident3/A_Jump.A_Jump"
+    },
+    {
+      "style": 4,
+      "asset": "/Game/ParkComic/Crew/Resident4/BS_Locomotion.BS_Locomotion",
+      "skeleton": "/Game/ParkComic/Crew/Resident4/SK_Body_Skeleton.SK_Body_Skeleton",
+      "axis": {
+        "display_name": "Speed",
+        "min": 0.0,
+        "max": 800.0,
+        "grid_num": 16,
+        "snap_to_grid": false,
+        "wrap_input": false
+      },
+      "smoothing_seconds": 0.11999999731779099,
+      "smoothing_type": "Linear",
+      "scale_animation": false,
+      "target_weight_interpolation_speed_per_sec": 0.0,
+      "samples": [
+        {
+          "clip": "/Game/ParkComic/Crew/Resident4/A_Idle.A_Idle",
+          "speed_cm_per_s": 0.0,
+          "rate_scale": 1.0
+        },
+        {
+          "clip": "/Game/ParkComic/Crew/Resident4/A_Walk.A_Walk",
+          "speed_cm_per_s": 450.0,
+          "rate_scale": 2.0
+        },
+        {
+          "clip": "/Game/ParkComic/Crew/Resident4/A_Run.A_Run",
+          "speed_cm_per_s": 800.0,
+          "rate_scale": 1.3333333333333333
+        }
+      ],
+      "own_jump": "/Game/ParkComic/Crew/Resident4/A_Jump.A_Jump"
+    },
+    {
+      "style": 5,
+      "asset": "/Game/ParkComic/Crew/Resident5/BS_Locomotion.BS_Locomotion",
+      "skeleton": "/Game/ParkComic/Crew/Resident5/SK_Body_Skeleton.SK_Body_Skeleton",
+      "axis": {
+        "display_name": "Speed",
+        "min": 0.0,
+        "max": 800.0,
+        "grid_num": 16,
+        "snap_to_grid": false,
+        "wrap_input": false
+      },
+      "smoothing_seconds": 0.11999999731779099,
+      "smoothing_type": "Linear",
+      "scale_animation": false,
+      "target_weight_interpolation_speed_per_sec": 0.0,
+      "samples": [
+        {
+          "clip": "/Game/ParkComic/Crew/Resident5/A_Idle.A_Idle",
+          "speed_cm_per_s": 0.0,
+          "rate_scale": 1.0
+        },
+        {
+          "clip": "/Game/ParkComic/Crew/Resident5/A_Walk.A_Walk",
+          "speed_cm_per_s": 450.0,
+          "rate_scale": 2.0
+        },
+        {
+          "clip": "/Game/ParkComic/Crew/Resident5/A_Run.A_Run",
+          "speed_cm_per_s": 800.0,
+          "rate_scale": 1.3333333333333333
+        }
+      ],
+      "own_jump": "/Game/ParkComic/Crew/Resident5/A_Jump.A_Jump"
+    },
+    {
+      "style": 6,
+      "asset": "/Game/ParkComic/Crew/Resident6/BS_Locomotion.BS_Locomotion",
+      "skeleton": "/Game/ParkComic/Crew/Resident6/SK_Body_Skeleton.SK_Body_Skeleton",
+      "axis": {
+        "display_name": "Speed",
+        "min": 0.0,
+        "max": 800.0,
+        "grid_num": 16,
+        "snap_to_grid": false,
+        "wrap_input": false
+      },
+      "smoothing_seconds": 0.11999999731779099,
+      "smoothing_type": "Linear",
+      "scale_animation": false,
+      "target_weight_interpolation_speed_per_sec": 0.0,
+      "samples": [
+        {
+          "clip": "/Game/ParkComic/Crew/Resident6/A_Idle.A_Idle",
+          "speed_cm_per_s": 0.0,
+          "rate_scale": 1.0
+        },
+        {
+          "clip": "/Game/ParkComic/Crew/Resident6/A_Walk.A_Walk",
+          "speed_cm_per_s": 450.0,
+          "rate_scale": 2.0
+        },
+        {
+          "clip": "/Game/ParkComic/Crew/Resident6/A_Run.A_Run",
+          "speed_cm_per_s": 800.0,
+          "rate_scale": 1.3333333333333333
+        }
+      ],
+      "own_jump": "/Game/ParkComic/Crew/Resident6/A_Jump.A_Jump"
+    },
+    {
+      "style": 7,
+      "asset": "/Game/ParkComic/Crew/Resident7/BS_Locomotion.BS_Locomotion",
+      "skeleton": "/Game/ParkComic/Crew/Resident7/SK_Body_Skeleton.SK_Body_Skeleton",
+      "axis": {
+        "display_name": "Speed",
+        "min": 0.0,
+        "max": 800.0,
+        "grid_num": 16,
+        "snap_to_grid": false,
+        "wrap_input": false
+      },
+      "smoothing_seconds": 0.11999999731779099,
+      "smoothing_type": "Linear",
+      "scale_animation": false,
+      "target_weight_interpolation_speed_per_sec": 0.0,
+      "samples": [
+        {
+          "clip": "/Game/ParkComic/Crew/Resident7/A_Idle.A_Idle",
+          "speed_cm_per_s": 0.0,
+          "rate_scale": 1.0
+        },
+        {
+          "clip": "/Game/ParkComic/Crew/Resident7/A_Walk.A_Walk",
+          "speed_cm_per_s": 450.0,
+          "rate_scale": 2.0
+        },
+        {
+          "clip": "/Game/ParkComic/Crew/Resident7/A_Run.A_Run",
+          "speed_cm_per_s": 800.0,
+          "rate_scale": 1.3333333333333333
+        }
+      ],
+      "own_jump": "/Game/ParkComic/Crew/Resident7/A_Jump.A_Jump"
+    },
+    {
+      "style": 8,
+      "asset": "/Game/ParkComic/Crew/Resident8/BS_Locomotion.BS_Locomotion",
+      "skeleton": "/Game/ParkComic/Crew/Resident8/SK_Body_Skeleton.SK_Body_Skeleton",
+      "axis": {
+        "display_name": "Speed",
+        "min": 0.0,
+        "max": 800.0,
+        "grid_num": 16,
+        "snap_to_grid": false,
+        "wrap_input": false
+      },
+      "smoothing_seconds": 0.11999999731779099,
+      "smoothing_type": "Linear",
+      "scale_animation": false,
+      "target_weight_interpolation_speed_per_sec": 0.0,
+      "samples": [
+        {
+          "clip": "/Game/ParkComic/Crew/Resident8/A_Idle.A_Idle",
+          "speed_cm_per_s": 0.0,
+          "rate_scale": 1.0
+        },
+        {
+          "clip": "/Game/ParkComic/Crew/Resident8/A_Walk.A_Walk",
+          "speed_cm_per_s": 450.0,
+          "rate_scale": 2.0
+        },
+        {
+          "clip": "/Game/ParkComic/Crew/Resident8/A_Run.A_Run",
+          "speed_cm_per_s": 800.0,
+          "rate_scale": 1.3333333333333333
+        }
+      ],
+      "own_jump": "/Game/ParkComic/Crew/Resident8/A_Jump.A_Jump"
+    },
+    {
+      "style": 9,
+      "asset": "/Game/ParkComic/Crew/Resident9/BS_Locomotion.BS_Locomotion",
+      "skeleton": "/Game/ParkComic/Crew/Resident9/SK_Body_Skeleton.SK_Body_Skeleton",
+      "axis": {
+        "display_name": "Speed",
+        "min": 0.0,
+        "max": 800.0,
+        "grid_num": 16,
+        "snap_to_grid": false,
+        "wrap_input": false
+      },
+      "smoothing_seconds": 0.11999999731779099,
+      "smoothing_type": "Linear",
+      "scale_animation": false,
+      "target_weight_interpolation_speed_per_sec": 0.0,
+      "samples": [
+        {
+          "clip": "/Game/ParkComic/Crew/Resident9/A_Idle.A_Idle",
+          "speed_cm_per_s": 0.0,
+          "rate_scale": 1.0
+        },
+        {
+          "clip": "/Game/ParkComic/Crew/Resident9/A_Walk.A_Walk",
+          "speed_cm_per_s": 450.0,
+          "rate_scale": 2.0
+        },
+        {
+          "clip": "/Game/ParkComic/Crew/Resident9/A_Run.A_Run",
+          "speed_cm_per_s": 800.0,
+          "rate_scale": 1.3333333333333333
+        }
+      ],
+      "own_jump": "/Game/ParkComic/Crew/Resident9/A_Jump.A_Jump"
+    },
+    {
+      "style": 10,
+      "asset": "/Game/ParkComic/Crew/Resident10/BS_Locomotion.BS_Locomotion",
+      "skeleton": "/Game/ParkComic/Crew/Resident10/SK_Body_Skeleton.SK_Body_Skeleton",
+      "axis": {
+        "display_name": "Speed",
+        "min": 0.0,
+        "max": 800.0,
+        "grid_num": 16,
+        "snap_to_grid": false,
+        "wrap_input": false
+      },
+      "smoothing_seconds": 0.11999999731779099,
+      "smoothing_type": "Linear",
+      "scale_animation": false,
+      "target_weight_interpolation_speed_per_sec": 0.0,
+      "samples": [
+        {
+          "clip": "/Game/ParkComic/Crew/Resident10/A_Idle.A_Idle",
+          "speed_cm_per_s": 0.0,
+          "rate_scale": 1.0
+        },
+        {
+          "clip": "/Game/ParkComic/Crew/Resident10/A_Walk.A_Walk",
+          "speed_cm_per_s": 450.0,
+          "rate_scale": 2.0
+        },
+        {
+          "clip": "/Game/ParkComic/Crew/Resident10/A_Run.A_Run",
+          "speed_cm_per_s": 800.0,
+          "rate_scale": 1.3333333333333333
+        }
+      ],
+      "own_jump": "/Game/ParkComic/Crew/Resident10/A_Jump.A_Jump"
+    }
+  ],
+  "limits": [
+    "Native playback/pose and rendered/FPS acceptance are separate checks; this readback proves saved assets only."
+  ],
+  "author_receipt": "Saved/Tests/CrewLocomotion/20261014T153356582798Z/Author.json",
+  "original_content_files_preserved": 6834,
+  "new_asset_count": 8,
+  "new_asset_sha256": {
+    "Content/ParkComic/Crew/Resident10/BS_Locomotion.uasset": "44eae2867d15df26c37018db83ed73c441cb8748e4fb6a378333092cbdca944f",
+    "Content/ParkComic/Crew/Resident3/BS_Locomotion.uasset": "9cd9f8a4424734e5e65e4d9859774e616cee40e094d703112c47b50d76a8a933",
+    "Content/ParkComic/Crew/Resident4/BS_Locomotion.uasset": "c68b2ccb71b94ec1de0bf32c26311e7db0979dbdde55677e600e633035c89c93",
+    "Content/ParkComic/Crew/Resident5/BS_Locomotion.uasset": "2291c891e328de9b091156ba35cd935640a73146e0d72e757128a19768d8c2ea",
+    "Content/ParkComic/Crew/Resident6/BS_Locomotion.uasset": "3d9e69a9728d9e153349f4145b6284734df14d6107037316c93d7d9775b01916",
+    "Content/ParkComic/Crew/Resident7/BS_Locomotion.uasset": "24b5f9a7de7404e181557528f3c9c76eb187583abe44b1add91e9da08077d5fa",
+    "Content/ParkComic/Crew/Resident8/BS_Locomotion.uasset": "29a320aeef9db8b95cf6ed9228a5fcd1e02632f83d5654626d10a3ebbb4eeb14",
+    "Content/ParkComic/Crew/Resident9/BS_Locomotion.uasset": "d7495584c777a1953ea24f074ff29967217017e2c1b499aff96bbd75d88e8b9c"
+  },
+  "fresh_process_readback": true
+}

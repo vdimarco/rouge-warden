@@ -82,6 +82,7 @@ for obj in objs:
     actor.static_mesh_component.set_static_mesh(mesh)
     actor.static_mesh_component.set_material(0,mats[name])
     actor.static_mesh_component.set_collision_profile_name('BlockAll' if collision else 'NoCollision')
+    if name=='Path':actor.static_mesh_component.set_cast_shadow(False)
     assets.save_loaded_asset(mesh)
     u.log('COLLEGE_BATHURST_IMPORTED '+name+' '+str(mesh.get_bounds()))
 # The visual Ground mesh has no collision; a hidden slab under it and edge walls hold players in.

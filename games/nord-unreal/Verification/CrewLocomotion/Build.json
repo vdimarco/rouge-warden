@@ -1,0 +1,15 @@
+{
+  "passed": true,
+  "exit_code": 0,
+  "command": [
+    "/home/von/.local/share/Epic/UE_5.8.3/Engine/Build/BatchFiles/Linux/Build.sh",
+    "QuebecEditor",
+    "Linux",
+    "Development",
+    "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Quebec.uproject",
+    "-WaitMutex",
+    "-NoUBA",
+    "-NoHotReloadFromIDE"
+  ],
+  "binary_sha256": "a86f7bf1e4945c9f0d475f5362e54c5eed0a0620a7de96df4c6242792ec0e4a7"
+}
