@@ -18,7 +18,9 @@ const ROAD_H = 1.5;         // u above or below the plane for those
 const OPENING_W = 3;        // the opening road's weight for road-side dwarfs
 const OPEN_LEN = 160;       // u of the entry line kept clear
 const OPEN_SPREAD = 40;
-const OPEN_BIAS = 1.6;      // > 1 gathers the opening road's dwarfs toward its start     // u either side of the opening road: its halo fills the space round the drop-out
+const OPEN_BIAS = 1.6;      // > 1 gathers the opening road's dwarfs toward its start
+const PART_X = 2;           // road traffic keeps outside this × a well's rs (its sling ring)
+const PART_BAND = 10;       // u: the band it flows round in     // u either side of the opening road: its halo fills the space round the drop-out
 const TAU = Math.PI * 2;
 
 const smooth = (a, b, x) => {
@@ -127,8 +129,11 @@ export function buildTraffic(zoneData, seed = 1, tune = TUNE) {
   for (const o of orbits) n += o.count | 0;
   for (const s of swarms) n += s.count | 0;
 
+  // Road traffic parts round every gravity well's sling ring (2 × rs), so a drift round a giant has clear space.
+  const parts = [];
+  for (const b of zoneData?.bodies || []) if (b.well?.rs > 0) parts.push(b.pos[0], b.pos[1], PART_X * b.well.rs);
   const t = {
-    zoneId: zoneData?.id ?? null, n, roads, maxSpeed: 0,
+    zoneId: zoneData?.id ?? null, n, roads, maxSpeed: 0, parts: Float64Array.from(parts),
     kind: new Uint8Array(n), road: new Int16Array(n), mix: new Uint8Array(n), variant: new Uint8Array(n),
     s0: new Float64Array(n), speed: new Float64Array(n), offset: new Float64Array(n), offZ: new Float64Array(n),
     bx: new Float64Array(n), by: new Float64Array(n), bz: new Float64Array(n), p2: new Float64Array(n),
@@ -292,8 +297,21 @@ function place(tr, i) {
         lat = o * tube;
       }
       const rx = road.rx[j] + (road.rx[j + 1] - road.rx[j]) * u, ry = road.ry[j] + (road.ry[j + 1] - road.ry[j]) * u;
-      PF[0] = road.x[j] + (road.x[j + 1] - road.x[j]) * u + rx * lat;
-      PF[1] = road.y[j] + (road.y[j + 1] - road.y[j]) * u + ry * lat;
+      let px = road.x[j] + (road.x[j + 1] - road.x[j]) * u + rx * lat;
+      let py = road.y[j] + (road.y[j + 1] - road.y[j]) * u + ry * lat;
+      // Part round wells: the disc out to R + PART_BAND is squeezed into the band from R to R + PART_BAND.
+      const pa = tr.parts;
+      for (let k = 0; k < pa.length; k += 3) {
+        const dx = px - pa[k], dy = py - pa[k + 1], R = pa[k + 2];
+        const d2 = dx * dx + dy * dy, out = R + PART_BAND;
+        if (d2 < out * out) {
+          const d = Math.sqrt(d2);
+          const f = d > 1e-6 ? (R + (d * PART_BAND) / out) / d : 0;
+          px = pa[k] + dx * f; py = pa[k + 1] + (d > 1e-6 ? dy * f : R);
+        }
+      }
+      PF[0] = px;
+      PF[1] = py;
       PF[2] = road.z[j] + (road.z[j + 1] - road.z[j]) * u + tr.offZ[i];
       // Fade: smoothstep in over the first FADE of the road, out over the last.
       const q = s / L;

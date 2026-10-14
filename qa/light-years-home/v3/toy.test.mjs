@@ -126,15 +126,17 @@ test('the drifter reaches tier 2 on its first drift round the Bend Giant and dri
     const bad = [];
     const times = [];
     for (let seed = 1; seed <= SEEDS; seed++) {
-      let firstTier = 0, boost = null, near = Infinity;
+      // The first drift only: where it starts, the tier it reaches, and how it ends (a drift-boost, not lost).
+      let firstTier = 0, boost = null, lost = false, near = Infinity, over = false;
       const res = run(seed, drifter({ source }), 11, (e, t, game) => {
-        if (boost) return;
-        if (e.type === 'driftStart' && near === Infinity) near = Math.hypot(game.ship.pos[0] - GIANT[0], game.ship.pos[1] - GIANT[1]);
+        if (over) return;
+        if (e.type === 'driftStart') near = Math.hypot(game.ship.pos[0] - GIANT[0], game.ship.pos[1] - GIANT[1]);
         if (e.type === 'driftTier') firstTier = Math.max(firstTier, e.tier);
-        if (e.type === 'driftBoost') boost = { t, tier: e.tier };
+        if (e.type === 'driftBoost') { boost = { t, tier: e.tier }; over = true; }
+        if (e.type === 'driftLost') { lost = true; over = true; }
       });
-      if (!boost || boost.tier < 2 || firstTier < 2 || boost.t > 10 || near > 42) {   // drift starts in the well (3 × rs)
-        bad.push(`seed ${seed}: ${JSON.stringify({ boost, firstTier, near: +near.toFixed(1) })}`);
+      if (lost || !boost || boost.tier < 2 || firstTier < 2 || boost.t > 10 || near > 42) {   // starts in the well (3 × rs)
+        bad.push(`seed ${seed}: ${JSON.stringify({ boost, lost, firstTier, near: +near.toFixed(1) })}`);
       } else {
         times.push(boost.t);
       }
