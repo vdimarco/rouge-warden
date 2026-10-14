@@ -1,0 +1,37 @@
+{
+  "passed": true,
+  "build_exit_code": 0,
+  "import_exit_code": 0,
+  "import_command": [
+    "/home/von/.local/share/Epic/UE_5.8.3/Engine/Binaries/Linux/UnrealEditor",
+    "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Quebec.uproject",
+    "-NullRHI",
+    "-unattended",
+    "-nop4",
+    "-nosound",
+    "-UDPMESSAGING_TRANSPORT_ENABLE=0",
+    "-run=pythonscript",
+    "-script=/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Scripts/import_meshy_crew.py",
+    "-NordGraphicNovelCandidate",
+    "-NordGraphicNovelGenerated",
+    "-NordGraphicNovelHighDetail",
+    "-abslog=/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Tests/GraphicNovel/HighDetail-20261014T082624Z/native-import.log"
+  ],
+  "existing_content_unchanged": 6761,
+  "retained_source_unchanged": 210,
+  "new_native_assets_sha256": {
+    "Content/ParkComic/CrewGraphicNovelHighDetail/Resident9/SK_Body.uasset": "6e8e6fec2881021b78d6081b67bf2e523dfdf7d3f49b1d3c7e3c9c51426d6061",
+    "Content/ParkComic/CrewGraphicNovelHighDetail/Resident9/SK_Body_Skeleton.uasset": "83caf265802bf8c509a5d9706817bbdfbbbc6f2bfc5b9def611f02f1774bbab9",
+    "Content/ParkComic/CrewGraphicNovelHighDetail/Resident9/M_Crew.uasset": "db14c297074e4ce14cdc3f90aed0070987550ca24c779862656dd068bea6188e",
+    "Content/ParkComic/CrewGraphicNovelHighDetail/Resident9/BS_Locomotion.uasset": "e176712b41db89be69651c5fa61797f304d45a9169ab6b716af6bb73514c97e5",
+    "Content/ParkComic/CrewGraphicNovelHighDetail/Resident9/A_Jump.uasset": "1e62a9debd7aec41beac0466ac6a5114741ce79de6bce102f6cdbe5d3cd52f26",
+    "Content/ParkComic/CrewGraphicNovelHighDetail/Resident9/T_base_color.uasset": "9389f532f66f21baaf1c7927287342c05cc26249010634a852dd3e2fdf8f39a9",
+    "Content/ParkComic/CrewGraphicNovelHighDetail/Resident9/A_Run.uasset": "4e7aae03bcbebc749d24f2dda07289c6c5741f24010e34416e610f334b8b98c1",
+    "Content/ParkComic/CrewGraphicNovelHighDetail/Resident9/T_normal.uasset": "92b58ea30aa6ed3f55c7cf9b00e5ee0d9f73e8522dfcbec17d902c0ecfe1814a",
+    "Content/ParkComic/CrewGraphicNovelHighDetail/Resident9/A_Idle.uasset": "a10308d82d815f98ebf717b7d6611dde3e4acf0281a73eb71374b76fb7119660",
+    "Content/ParkComic/CrewGraphicNovelHighDetail/Resident9/T_roughness.uasset": "8fbde1dc5d06915574c5b364f15692165fb38e88b94845247c49d64d3e1cab7f",
+    "Content/ParkComic/CrewGraphicNovelHighDetail/Resident9/A_Walk.uasset": "9406ad6c97b10745e531417de7af9d589fd9ec9260a35aaa33b72eb6ec0e59cf",
+    "Content/ParkComic/CrewGraphicNovelHighDetail/Resident9/T_metallic.uasset": "acf522c451ec9fe4989f5eb188593b8566b9c3c94cd3ea8be370494950bb51a2"
+  },
+  "source_binary_sha256": "ccf4e229192cbf7360d93b155979a07c244caa5cb0fb2837fa94aeb79438b554"
+}

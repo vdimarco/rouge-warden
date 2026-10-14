@@ -1,5 +1,7 @@
 # NORD generated pilot — native rendered review, 2026-10-14
 
+This is the initial rendered checkpoint. Subsequent [collar refinement](GraphicNovelCollarRefinement.md) corrects the capture-isolation assumption and records a measured editor diagnostic; the separate [higher-detail pilot](GraphicNovelHighDetailPilot.md) retains the second funded comparison. Historical hashes and one-job budget below remain specific to this run.
+
 The funded style-9 pilot now has **28 actual Vulkan views and two correctly framed unpaused native recordings**, plus a restored-demo browser regression. Full-strength normal mapping gives a modest shoulder-shading improvement while preserving the face. This is an accepted **initial engine draft**, with `graphics_accepted=false`: the collar, neck, hair, hands and illustrated treatment still need refinement.
 
 [Comic native motion](../Preview/GraphicNovelGenerated/Motion/Comic1920.mp4) · [Standard native motion](../Preview/GraphicNovelGenerated/Motion/Standard1920.mp4) · [Comic body](../Preview/GraphicNovelGenerated/Comic/1920/Resident9_Idle.png) · [Standard three-quarter face](../Preview/GraphicNovelGenerated/Standard/1920/Resident9_FaceThreeQuarter.png) · [Curated hashes/commands](GraphicNovelRenderedPilot.json)

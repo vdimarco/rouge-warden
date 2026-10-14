@@ -1,0 +1,127 @@
+﻿{
+	"devices": [
+		{
+			"deviceName": "omarchy",
+			"instance": "01A1395740827EE59A9F93A9C159B133",
+			"instanceName": "omarchy-3238008",
+			"platform": "LinuxEditor",
+			"oSVersion": "Omarchy 7.2.5-3-omarchy",
+			"model": "Default",
+			"gPU": "NVIDIA GeForce RTX 4090 (NVIDIA UNIX Open Kernel Module for x86_64  610.57.04  Release Build  (root@omarchy))",
+			"cPUModel": "Intel(R) Core(TM) i9-14900K",
+			"rAMInGB": 94,
+			"renderMode": "SM6",
+			"rHI": "",
+			"appInstanceLog": ""
+		}
+	],
+	"reportCreatedOn": "2026.10.14-07.36.36",
+	"succeeded": 4,
+	"succeededWithWarnings": 0,
+	"failed": 0,
+	"notRun": 0,
+	"inProcess": 0,
+	"totalDuration": 0.27335602045059204,
+	"comparisonExported": false,
+	"comparisonExportDirectory": "",
+	"tests": [
+		{
+			"testDisplayName": "BlendedLocomotion",
+			"fullTestPath": "Quebec.Animation.BlendedLocomotion",
+			"tags": [],
+			"state": "Success",
+			"deviceInstance": [
+				"01A1395740827EE59A9F93A9C159B133"
+			],
+			"duration": 0.11993738263845444,
+			"dateTime": "2026.10.14-07.36.36",
+			"entries": [],
+			"warnings": 0,
+			"errors": 0,
+			"artifacts": []
+		},
+		{
+			"testDisplayName": "GraphicNovelCandidateSelection",
+			"fullTestPath": "Quebec.Animation.GraphicNovelCandidateSelection",
+			"tags": [],
+			"state": "Success",
+			"deviceInstance": [
+				"01A1395740827EE59A9F93A9C159B133"
+			],
+			"duration": 0.13530687987804413,
+			"dateTime": "2026.10.14-07.36.36",
+			"entries": [
+				{
+					"event":
+					{
+						"type": "Info",
+						"message": "NORD_GRAPHIC_NOVEL_SELECTION_CHECKED default=production pilot=native style8=production privateF2=1",
+						"context": "",
+						"artifact": "00000000000000000000000000000000"
+					},
+					"filename": "",
+					"lineNumber": -1,
+					"timestamp": "2026.10.14-07.36.36"
+				}
+			],
+			"warnings": 0,
+			"errors": 0,
+			"artifacts": []
+		},
+		{
+			"testDisplayName": "GraphicNovelHandsEyes",
+			"fullTestPath": "Quebec.Animation.GraphicNovelHandsEyes",
+			"tags": [],
+			"state": "Success",
+			"deviceInstance": [
+				"01A1395740827EE59A9F93A9C159B133"
+			],
+			"duration": 0.0082729440182447433,
+			"dateTime": "2026.10.14-07.36.36",
+			"entries": [
+				{
+					"event":
+					{
+						"type": "Info",
+						"message": "NORD_PILOT_HIPS sourceIndex=0 root=Hips forceRootLock=1 rootLock=0 time=0.411594 rawTrack={1.603684,0.870115,102.953583|-9.537442,81.384080,3.162438|1.000000,1.000000,1.000000} fullSourcePose={-3.266998,-0.392615,103.014885|0.413151,-0.305498,0.305498|1.000000,1.000000,1.000000} graphObserved={-3.266998,-0.392615,103.014885|0.413151,-0.305498,0.305498|1.000000,1.000000,1.000000}",
+						"context": "",
+						"artifact": "00000000000000000000000000000000"
+					},
+					"filename": "",
+					"lineNumber": -1,
+					"timestamp": "2026.10.14-07.36.36"
+				},
+				{
+					"event":
+					{
+						"type": "Info",
+						"message": "NORD_GRAPHIC_NOVEL_CONTROLS_CHECKED bones=20 idleFlex=4.000 runFlex=10.000 runSquint=.35 sourceBodyPreserved=1",
+						"context": "",
+						"artifact": "00000000000000000000000000000000"
+					},
+					"filename": "",
+					"lineNumber": -1,
+					"timestamp": "2026.10.14-07.36.36"
+				}
+			],
+			"warnings": 0,
+			"errors": 0,
+			"artifacts": []
+		},
+		{
+			"testDisplayName": "ReapplyCrew",
+			"fullTestPath": "Quebec.Animation.ReapplyCrew",
+			"tags": [],
+			"state": "Success",
+			"deviceInstance": [
+				"01A1395740827EE59A9F93A9C159B133"
+			],
+			"duration": 0.0098388167098164558,
+			"dateTime": "2026.10.14-07.36.36",
+			"entries": [],
+			"warnings": 0,
+			"errors": 0,
+			"artifacts": []
+		}
+	]
+}

@@ -1,0 +1,24 @@
+{
+  "api_result": {
+    "endpoint_id": "meshy/v7.1/image-to-3d",
+    "advisory_only": true,
+    "estimated_cost_usd": 0.8,
+    "currency": "USD",
+    "pricing_source": "fal_platform_pricing",
+    "pricing_cache_max_age_seconds": 300,
+    "limitations": "This is a rate \u00d7 quantity estimate, not a configured quote or final charge. The pricing API does not expose configuration-specific rules, minimum charges, rounding, or input-media measurements. Audio, resolution, quality and provider rules may change the final cost. It does not check balance or permission and does not block generation.",
+    "status": "estimated",
+    "price": {
+      "endpoint_id": "meshy/v7.1/image-to-3d",
+      "unit_price": 0.8,
+      "unit": "generations",
+      "currency": "USD"
+    },
+    "quantity": 1,
+    "quantity_basis": "supplied_unit_quantity"
+  },
+  "configured_estimate_usd": 1.52,
+  "reservation_usd": 2,
+  "actual_charge_usd": null,
+  "configured_pricing_source": "https://fal.ai/models/meshy/v7.1/image-to-3d"
+}

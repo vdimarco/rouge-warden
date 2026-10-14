@@ -1,0 +1,16 @@
+{
+  "summary": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Browser/.qa/live-2026-10-14T09-16-23-208Z/summary.json",
+  "summary_sha256": "0741d7d5ce494ae294bd7f029ec796e9005043d409e724051dec8613b0a41fd3",
+  "command": [
+    "/home/von/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node",
+    "live.test.mjs"
+  ],
+  "environment_scope": {
+    "NORD_PLAYER_URL": "https://nord-montreal.vercel.app/",
+    "NORD_PLAYWRIGHT_PATH": "/home/von/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright/index.mjs"
+  },
+  "exit_code": 0,
+  "ordinary_network": true,
+  "dns_overrides": false,
+  "scope": "Final same-PC ordinary public-URL restoration after sidedness trial; unchanged production package. Not candidate delivery/off-LAN/physicalphone/audio acceptance."
+}

@@ -1,0 +1,15 @@
+# High-detail source shadow audit
+
+No obvious detached source component or gross skin outlier explains the triangular/dotted ground-shadow fragments. The cause remains unresolved. This CPU audit does not accept the native shadows or recommend a geometry fix.
+
+The retained high-detail FBX and raw GLB each contain one skinned body, `char1`, with 130,901 split vertices, 103,544 triangles, 24 weighted bones and a 1.82 m standing height. The GLB has one mesh node and one material. Its material declares `doubleSided: true`; the separate [native sidedness readback](NativeSidednessAudit.json) covers the Unreal asset. The 42-vertex `Icosphere` seen after Blender glTF import is the importer's bone custom shape in a hidden collection, absent from the raw GLB and the FBX body.
+
+Both body formats produce one edge-connected face component after a **copy-only 1 µm position weld**. Neither has loose vertices, wire edges, degenerate faces or duplicate welded face vertex sets. The source is nevertheless not pristine: 344 open boundary edges and 286 non-manifold edges remain after that temporary weld. Raw split boundaries number 116,332; UV/normal splits must not be interpreted directly as holes. These counts cannot establish the native shadow cause.
+
+All weights are finite and nonnegative, use at most four influences, and sum to 0.999999877–1.000000127. No vertices are unweighted or assigned non-bone weight groups. Coincident split vertices carry identical weights. Their evaluated separation stays exactly zero through all 210 imported integer-frame samples: 121 idle, 32 walk, 20 run and 37 jump. Clip rest positions, triangle indices, weights, hierarchy and bind matrices match the own body.
+
+No sampled triangle edge simultaneously exceeds 15 cm and eight times its rest length. Maximum triangle edge lengths are 11.70 cm idle, 15.06 cm walk, 14.87 cm run and 16.38 cm jump, versus 12.38 cm at rest. Some short edges stretch as much as 20.325 times rest in jump. This bounded screen excludes obvious exploding spikes under its stated threshold; it does not establish anatomically perfect weights, smooth cloth deformation or artifact-free blended native poses.
+
+The [selected native contact sheet](SourceShadowAudit-phase-crops-04.png) visibly retains the concern around landing and recovery. It was inspected as static evidence only. Native player body, separate RightHand plunger, hidden-caster flags, material sidedness, renderer and shadow sampling are outside the source test. No continuous playback, render, Unreal session, service operation or asset correction was performed.
+
+Validation: Blender 5.2.2, `-t 4 --background --factory-startup --python-exit-code 1`, exit 0. All 14 manifest entries verify, and bytes/SHA256 for all 27 files under the immutable source directory match before and after. The [JSON](SourceShadowAudit.json) contains each input hash, topology/weight measurements, every sampled pose and exact thresholds. The [CPU helper](SourceShadowAudit.cpu.py) and [log](SourceShadowAudit.cpu.log) retain reproducibility evidence. Run the helper only into a fresh audit output; it refuses to replace the JSON.

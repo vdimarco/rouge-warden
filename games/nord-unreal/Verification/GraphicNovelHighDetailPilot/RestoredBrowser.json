@@ -1,0 +1,149 @@
+{
+  "startedAt": "2026-10-14T09:16:23.209Z",
+  "playerUrl": "https://nord-montreal.vercel.app/",
+  "networkMode": "ordinary",
+  "dnsOverride": null,
+  "passed": true,
+  "checks": [
+    {
+      "name": "host real stream",
+      "passed": true,
+      "durationMs": 2580
+    },
+    {
+      "name": "friend independent real stream",
+      "passed": true,
+      "durationMs": 2373
+    },
+    {
+      "name": "host native input and Escape release",
+      "passed": true,
+      "durationMs": 2855
+    },
+    {
+      "name": "friend native input and Escape release",
+      "passed": true,
+      "durationMs": 2843
+    },
+    {
+      "name": "occupied host slot rejects a third browser",
+      "passed": true,
+      "durationMs": 615
+    },
+    {
+      "name": "occupied browser reconnects after host frees its slot",
+      "passed": true,
+      "durationMs": 4559
+    },
+    {
+      "name": "original host reconnects and retains Disconnect control",
+      "passed": true,
+      "durationMs": 4782
+    }
+  ],
+  "media": {
+    "host": {
+      "currentTime": 1.639,
+      "width": 1280,
+      "height": 720,
+      "readyState": 4,
+      "framesDecoded": 51,
+      "framesPerSecond": 30,
+      "videoBytes": 1945314,
+      "audioPackets": 290,
+      "codecs": [
+        "video/VP8"
+      ],
+      "sampleDurationMs": 1503,
+      "observedDecodedFps": 29.274783765801732
+    },
+    "friend": {
+      "currentTime": 1.635,
+      "width": 1280,
+      "height": 720,
+      "readyState": 4,
+      "framesDecoded": 51,
+      "framesPerSecond": 30,
+      "videoBytes": 2018847,
+      "audioPackets": 302,
+      "codecs": [
+        "video/VP8"
+      ],
+      "sampleDurationMs": 1504,
+      "observedDecodedFps": 29.25531914893617
+    },
+    "recovered-slot": {
+      "currentTime": 1.628,
+      "width": 1280,
+      "height": 720,
+      "readyState": 4,
+      "framesDecoded": 47,
+      "framesPerSecond": 29,
+      "videoBytes": 1327516,
+      "audioPackets": 176,
+      "codecs": [
+        "video/VP8"
+      ],
+      "sampleDurationMs": 1502,
+      "observedDecodedFps": 28.62849533954727
+    },
+    "host-reconnected": {
+      "currentTime": 1.627,
+      "width": 1280,
+      "height": 720,
+      "readyState": 4,
+      "framesDecoded": 44,
+      "framesPerSecond": 30,
+      "videoBytes": 1161235,
+      "audioPackets": 123,
+      "codecs": [
+        "video/VP8"
+      ],
+      "sampleDurationMs": 1503,
+      "observedDecodedFps": 27.278775781769795
+    },
+    "friend-still-connected": {
+      "currentTime": 17.499,
+      "width": 1280,
+      "height": 720,
+      "readyState": 4,
+      "framesDecoded": 527,
+      "framesPerSecond": 30,
+      "videoBytes": 19993138,
+      "audioPackets": 1109,
+      "codecs": [
+        "video/VP8"
+      ],
+      "sampleDurationMs": 1504,
+      "observedDecodedFps": 29.920212765957448
+    }
+  },
+  "diagnostics": [
+    {
+      "player": "host",
+      "type": "console",
+      "message": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "player": "host",
+      "type": "console",
+      "message": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "player": "friend",
+      "type": "console",
+      "message": "Failed to load resource: the server responded with a status of 404 ()"
+    },
+    {
+      "player": "occupied",
+      "type": "console",
+      "message": "Failed to load resource: the server responded with a status of 404 ()"
+    }
+  ],
+  "limits": [
+    "Input screenshots require visual review; native position/story progress are not asserted.",
+    "Headless playback does not verify audible sound or driving feel.",
+    "Testing from the host PC does not establish external NAT reachability."
+  ],
+  "finishedAt": "2026-10-14T09:16:45.031Z"
+}

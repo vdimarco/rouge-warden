@@ -1,0 +1,196 @@
+{
+  "scope": "Read-only CPU analysis of an already captured owned editor trace; no engine/GPU/service launches or source edits by this analysis.",
+  "status": "dominant enclosing wait owner resolved; triggering window/callsite and underlying render/RHI workload unresolved",
+  "conclusion": "The dominant captured game-thread wait is FlushRenderingCommands -> frame synchronization -> GameThreadWaitForTask inside Slate DrawPrePass. This is actual interval/depth ancestry, not correlation. It does not identify a shader, GPU bottleneck, notification window or a production FPS limit.",
+  "inputs": {
+    "Saved/Tests/GraphicNovel/RefinedRender-20261014T080041Z/game-events.csv": {
+      "bytes": 430363934,
+      "sha256": "965912a3146d25fb9a304a643cc2faeb5b7100b1b9d472812abda0db5f32374b"
+    },
+    "Saved/Tests/GraphicNovel/RefinedRender-20261014T080041Z/WaitTraceMotion1920Standard/qa-wait.utrace": {
+      "bytes": 57399651,
+      "sha256": "1d1863e955328e56e196cb591b8d11e97b25b576a9afea07af289a29be1efc96"
+    },
+    "Saved/Tests/GraphicNovel/RefinedRender-20261014T080041Z/insights-export.log": {
+      "bytes": 74675,
+      "sha256": "b122b765ebf461b9a4e4fcfe64db6d0bdc603a50c199c608d397d211200e3e52"
+    }
+  },
+  "export": {
+    "events": 5294604,
+    "thread": "GameThread",
+    "csv_columns": [
+      "ThreadId",
+      "ThreadName",
+      "TimerId",
+      "TimerName",
+      "StartTime",
+      "EndTime",
+      "Duration",
+      "Depth"
+    ],
+    "completed_export_log": true,
+    "export_transport_warning": "Transport buffers not empty at end of analysis:870bytes; final infinite/end-open scopes excluded from duration metrics."
+  },
+  "method": "Stream exported preordered events; pop same/deeper depths, retain containing ancestors, validate every selected wait interval against every ancestor. Count only CsvEventWait/CsvEventWait (Non-CP), not nested named wait labels, to prevent double counting.",
+  "metrics": {
+    "finite_event_wait_slices": 3908,
+    "all_event_wait_ms": 6023.5703,
+    "wait_interval_seconds": [
+      30.6089241,
+      37.5597633
+    ],
+    "prepass_flush_wait_slices": 3295,
+    "prepass_flush_wait_ms": 5999.8875,
+    "percent_all_event_wait": 99.6068311844887,
+    "invalid_wait_parent_intervals": 0,
+    "finite_draw_prepass_events": 171,
+    "draw_prepass_total_ms": 6218.7835,
+    "draw_prepass_median_ms": 35.7713,
+    "wait_per_prepass_median_ms": 34.547599999999996,
+    "wait_per_prepass_mean_ms": 35.08706140350877,
+    "prepass_without_wait_median_ms": 1.188200000000002
+  },
+  "dominant_ancestor_stack": [
+    "FEngineLoop::Tick",
+    "Frame",
+    "FrameTime",
+    "CSV_UI",
+    "Slate::Tick (Time and Widgets)",
+    "Total Slate Tick Time",
+    "Slate::DrawWindows",
+    "Slate::Prepass",
+    "CSV_DrawPrePass",
+    "FlushRenderingCommands",
+    "Sync_RenderingThread",
+    "Frame Sync Time",
+    "GameThreadWaitForTask",
+    "Game thread idle time",
+    "CsvEventWait (Non-CP)"
+  ],
+  "representative_wait_slice": {
+    "start": 36.0004738,
+    "end": 36.006464,
+    "duration_ms": 5.990200000000001,
+    "depth": 14,
+    "name": "CsvEventWait (Non-CP)",
+    "ancestors": [
+      "FEngineLoop::Tick",
+      "Frame",
+      "FrameTime",
+      "CSV_UI",
+      "Slate::Tick (Time and Widgets)",
+      "Total Slate Tick Time",
+      "Slate::DrawWindows",
+      "Slate::Prepass",
+      "CSV_DrawPrePass",
+      "FlushRenderingCommands",
+      "Sync_RenderingThread",
+      "Frame Sync Time",
+      "GameThreadWaitForTask",
+      "Game thread idle time"
+    ]
+  },
+  "representative_complete_prepass": {
+    "start": 35.8470381,
+    "end": 35.882793,
+    "prepass_ms": 35.7549,
+    "event_wait_ms": 34.547599999999996
+  },
+  "top_other_wait": {
+    "count": 186,
+    "sum_ms": 21.269400000000005,
+    "max_ms": 0.2577,
+    "example": {
+      "start": 36.1414453,
+      "end": 36.141703,
+      "duration_ms": 0.2577,
+      "depth": 15,
+      "name": "CsvEventWait",
+      "ancestors": [
+        "FEngineLoop::Tick",
+        "Frame",
+        "FrameTime",
+        "Tick_Engine",
+        "FrameTime",
+        "UWorld_Tick",
+        "CSV_WorldTickMisc",
+        "World Tick Time",
+        "Tick Time",
+        "CSV_TickActors",
+        "TG_EndPhysics",
+        "ReleaseTickGroup Block",
+        "TickCompletionEvents",
+        "ProcessUntilTasksComplete",
+        "WaitForTasks"
+      ]
+    }
+  },
+  "source_evidence": [
+    {
+      "path": "/home/von/.local/share/Epic/UE_5.8.3/Engine/Source/Runtime/Slate/Private/Framework/Application/SlateApplication.cpp",
+      "line": 1379,
+      "sha256": "caf51283207844c4ca850dfb76587fcefe113763f5686b082048f4a0395192c1",
+      "meaning": "DrawPrepass scope; PrepassWindowAndChildren at1345 covers window prepass, conditional autosize and children."
+    },
+    {
+      "path": "/home/von/.local/share/Epic/UE_5.8.3/Engine/Source/Runtime/RenderCore/Private/RenderingThread.cpp",
+      "line": 1274,
+      "sha256": "ef3986e6939dcaece048fc0f1514b8477fae3f6b48584d53ee1edd146a8b36ce",
+      "meaning": "FlushRenderingCommands explicitly ends with FFrameEndSync::Sync(EFlushMode::Threads)."
+    },
+    {
+      "path": "/home/von/.local/share/Epic/UE_5.8.3/Engine/Source/Runtime/RenderCore/Private/RenderingThread.cpp",
+      "line": 1158,
+      "sha256": "ef3986e6939dcaece048fc0f1514b8477fae3f6b48584d53ee1edd146a8b36ce",
+      "meaning": "GameThreadWaitForTask waits for a render completion event in a bounded polling loop."
+    },
+    {
+      "path": "/home/von/.local/share/Epic/UE_5.8.3/Engine/Source/Runtime/Core/Private/GenericPlatform/GenericPlatformProcess.cpp",
+      "line": 460,
+      "sha256": "474b08a0db28f5c5d0a18142a75afe1d93d23233556bef6c93695adbd333cd4c",
+      "meaning": "FPThreadEvent::Wait uses CSV_SCOPED_WAIT and pthread_cond_wait/timedwait."
+    },
+    {
+      "path": "/home/von/.local/share/Epic/UE_5.8.3/Engine/Source/Runtime/SlateCore/Private/Widgets/SWindow.cpp",
+      "line": 1002,
+      "sha256": "d55f58479006a6423cd2085bc02a2c54ccfc109e92c0866f1c60cc43810b8b29",
+      "meaning": "ResizeWindowSize reshapes native window only if integer size changes."
+    },
+    {
+      "path": "/home/von/.local/share/Epic/UE_5.8.3/Engine/Source/Runtime/ApplicationCore/Private/Linux/LinuxWindow.cpp",
+      "line": 851,
+      "sha256": "8b878b9bf818b13a17baec5ec26e9eb673c93eece700d2973d5b3a37140426b3",
+      "meaning": "ReshapeWindow calls application OnResizingWindow synchronously before SDL resizing."
+    },
+    {
+      "path": "/home/von/.local/share/Epic/UE_5.8.3/Engine/Source/Runtime/Slate/Private/Framework/Application/SlateApplication.cpp",
+      "line": 7022,
+      "sha256": "caf51283207844c4ca850dfb76587fcefe113763f5686b082048f4a0395192c1",
+      "meaning": "OnResizingWindow calls Renderer->FlushCommands."
+    },
+    {
+      "path": "/home/von/.local/share/Epic/UE_5.8.3/Engine/Source/Runtime/SlateRHIRenderer/Private/SlateRHIRenderer.cpp",
+      "line": 1837,
+      "sha256": "ef069237de5c30c5170983df25264c86d861efa7926de42cd6b12eb31f286d74",
+      "meaning": "FlushCommands implementation calls FlushRenderingCommands."
+    },
+    {
+      "path": "/home/von/.local/share/Epic/UE_5.8.3/Engine/Source/Runtime/Engine/Private/World.cpp",
+      "line": 10183,
+      "sha256": "a4a884840eb5f0354b5df7937eef3b03be8c09818a32e2b803f9c20f38e06f7f",
+      "meaning": "PurgeScene is guarded by !bPurgedScene; it is not evidence for a repeated per-frame purge."
+    }
+  ],
+  "unresolved_trigger": {
+    "source_supported_path": "An autosized SWindow can call ResizeWindowSize -> FLinuxWindow::ReshapeWindow -> FSlateApplication::OnResizingWindow -> FSlateRHIRenderer::FlushCommands -> FlushRenderingCommands during prepass.",
+    "active_callsite_proven": false,
+    "reason": "The long flush is a direct sibling after the short SlatePrepass widget scopes. GameThread export contains no native resize call stack or window identity, so this path must remain a candidate rather than a conclusion."
+  },
+  "limits": [
+    "Instrumented editor trace; not a frame-rate acceptance benchmark.",
+    "GameThread-only export does not reveal which pending render/RHI operation delayed completion.",
+    "Non-CP is the CSV idle-stat label and does not mean the long wait cannot limit observed editor cadence.",
+    "Actual native call stack and exact window/caller are not present in this export."
+  ]
+}

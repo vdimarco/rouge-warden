@@ -1,0 +1,37 @@
+{
+  "passed": true,
+  "source": "Data/GraphicNovel/Pilot/CurlyMetalhead",
+  "body_source": "Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/body.fbx",
+  "backup": "/home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Saved/Backups/CrewImport-20261014-042634-609236",
+  "characters": [
+    {
+      "style": 9,
+      "name": "generated-v2-high-detail",
+      "materials": 1,
+      "material_slots": [
+        {
+          "slot": "Material_0",
+          "material": "/Game/ParkComic/CrewGraphicNovelHighDetail/Resident9/M_Crew.M_Crew"
+        }
+      ],
+      "clips": [
+        {
+          "name": "Walk",
+          "seconds": 1.0
+        },
+        {
+          "name": "Idle",
+          "seconds": 4.0
+        },
+        {
+          "name": "Run",
+          "seconds": 0.6000000238418579
+        },
+        {
+          "name": "Jump",
+          "seconds": 1.2000000476837158
+        }
+      ]
+    }
+  ]
+}

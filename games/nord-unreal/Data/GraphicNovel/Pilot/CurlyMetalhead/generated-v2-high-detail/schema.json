@@ -1,0 +1,2979 @@
+{
+  "endpoint_id": "meshy/v7.1/image-to-3d",
+  "display_name": "Meshy 7.1 Image to 3D",
+  "category": "image-to-3d",
+  "description": "Meshy 7.1 generates 3D models from a single image, with standard, low-poly, and Smart Topology modes, optional textures and PBR maps, and geometry resolution up to 4K.",
+  "input_params": [
+    {
+      "name": "topology",
+      "type": "string",
+      "description": "Specify the topology of the generated model. Quad for smooth surfaces, Triangle for detailed geometry.",
+      "required": false,
+      "default": "triangle",
+      "enum": [
+        "quad",
+        "triangle"
+      ]
+    },
+    {
+      "name": "ultra_mode",
+      "type": "boolean",
+      "description": "Deprecated: use geometry_resolution='2k'. If both fields are provided, geometry_resolution takes precedence.",
+      "required": false,
+      "default": false
+    },
+    {
+      "name": "rigging_height_meters",
+      "type": "number",
+      "description": "Approximate height of the character in meters. Only used when enable_rigging is true.",
+      "required": false,
+      "default": 1.7
+    },
+    {
+      "name": "should_texture",
+      "type": "boolean",
+      "description": "Whether to generate textures",
+      "required": false,
+      "default": true
+    },
+    {
+      "name": "texture_prompt",
+      "type": "string | null",
+      "description": "Text prompt to guide the texturing process",
+      "required": false
+    },
+    {
+      "name": "is_a_t_pose",
+      "type": "boolean",
+      "description": "Deprecated: use pose_mode instead. When true, generates a T-pose model.",
+      "required": false,
+      "default": false
+    },
+    {
+      "name": "should_remesh",
+      "type": "boolean",
+      "description": "Whether to enable the remesh phase",
+      "required": false,
+      "default": true
+    },
+    {
+      "name": "geometry_resolution",
+      "type": "string | null",
+      "description": "Geometry resolution. 4k is only available with Meshy-7.1.",
+      "required": false
+    },
+    {
+      "name": "target_polycount",
+      "type": "integer",
+      "description": "Target number of polygons in the generated model. When model_type is 'smart-topology' and this is left unset, Meshy's lower smart-topology default (4,000) is used instead; smart topology accepts at most 15,000.",
+      "required": false,
+      "default": 30000
+    },
+    {
+      "name": "symmetry_mode",
+      "type": "string",
+      "description": "Controls symmetry behavior during model generation. Off disables symmetry, Auto determines it automatically, On enforces symmetry.",
+      "required": false,
+      "default": "auto",
+      "enum": [
+        "off",
+        "auto",
+        "on"
+      ]
+    },
+    {
+      "name": "enable_rigging",
+      "type": "boolean",
+      "description": "Automatically rig the generated model as a humanoid character. Includes basic walking and running animations. Best results with humanoid characters that have clearly defined limbs.",
+      "required": false,
+      "default": false
+    },
+    {
+      "name": "pose_mode",
+      "type": "string",
+      "description": "Pose mode for the generated model. 'a-pose' generates an A-pose, 't-pose' generates a T-pose, empty string for no specific pose.",
+      "required": false,
+      "default": "",
+      "enum": [
+        "a-pose",
+        "t-pose",
+        ""
+      ]
+    },
+    {
+      "name": "animation_action_id",
+      "type": "integer",
+      "description": "Animation preset ID from Meshy's library. Only used when enable_animation is true; in that case it must be in [0, 696] (``0`` is the \"Idle\" preset) and is otherwise rejected with a 422. See https://docs.meshy.ai/en/api/animation-library for available action IDs.",
+      "required": false,
+      "default": 92
+    },
+    {
+      "name": "model_type",
+      "type": "string",
+      "description": "Type of 3D mesh generation. 'standard' produces a regular high-detail mesh; 'lowpoly' produces a low-poly mesh optimized for cleaner polygons; 'smart-topology' uses Meshy-T2 for clean, natively separated parts. When set to 'lowpoly', the remesh controls (topology, target_polycount, should_remesh) are ignored by Meshy.",
+      "required": false,
+      "default": "standard",
+      "enum": [
+        "standard",
+        "lowpoly",
+        "smart-topology"
+      ]
+    },
+    {
+      "name": "image_url",
+      "type": "string",
+      "description": "Image URL or base64 data URI for 3D model creation. Supports .jpg, .jpeg, and .png formats. Also supports AVIF and HEIF formats which will be automatically converted.",
+      "required": true
+    },
+    {
+      "name": "enable_safety_checker",
+      "type": "boolean",
+      "description": "If set to true, input data will be checked for safety before processing.",
+      "required": false,
+      "default": true
+    },
+    {
+      "name": "texture_image_url",
+      "type": "string | null",
+      "description": "2D image to guide the texturing process",
+      "required": false
+    },
+    {
+      "name": "enable_pbr",
+      "type": "boolean",
+      "description": "Generate PBR Maps (metallic, roughness, normal) in addition to base color",
+      "required": false,
+      "default": false
+    },
+    {
+      "name": "enable_animation",
+      "type": "boolean",
+      "description": "Apply an animation preset to the rigged model. Requires enable_rigging to be true.",
+      "required": false,
+      "default": false
+    }
+  ],
+  "output_fields": [
+    {
+      "name": "texture_urls",
+      "type": "array<object>",
+      "description": "Array of texture file objects, matching Meshy API structure",
+      "required": false
+    },
+    {
+      "name": "basic_animations",
+      "type": "object | null",
+      "description": "Basic walking and running animations. Only present when enable_rigging is true.",
+      "required": false
+    },
+    {
+      "name": "rig_task_id",
+      "type": "string | null",
+      "description": "Rigging task ID. Only present when enable_rigging is true.",
+      "required": false
+    },
+    {
+      "name": "rigged_character_fbx",
+      "type": "object | null",
+      "description": "Rigged character in FBX format. Only present when enable_rigging is true.",
+      "required": false
+    },
+    {
+      "name": "rigged_character_glb",
+      "type": "object | null",
+      "description": "Rigged character in GLB format. Only present when enable_rigging is true.",
+      "required": false
+    },
+    {
+      "name": "seed",
+      "type": "integer | null",
+      "description": "The seed used for generation (if available)",
+      "required": false
+    },
+    {
+      "name": "animation_glb",
+      "type": "object | null",
+      "description": "Animated 3D model in GLB format. Only present when enable_animation is true.",
+      "required": false
+    },
+    {
+      "name": "thumbnail",
+      "type": "object | null",
+      "description": "Preview thumbnail of the generated model",
+      "required": false
+    },
+    {
+      "name": "model_glb",
+      "type": "object",
+      "description": "Generated 3D object in GLB format.",
+      "required": true
+    },
+    {
+      "name": "animation_fbx",
+      "type": "object | null",
+      "description": "Animated 3D model in FBX format. Only present when enable_animation is true.",
+      "required": false
+    },
+    {
+      "name": "model_urls",
+      "type": "object",
+      "description": "URLs for different 3D model formats",
+      "required": true
+    }
+  ],
+  "input_schema": {
+    "title": "ImageTo3DV71Input",
+    "type": "object",
+    "properties": {
+      "topology": {
+        "title": "Topology",
+        "type": "string",
+        "default": "triangle",
+        "description": "Specify the topology of the generated model. Quad for smooth surfaces, Triangle for detailed geometry.",
+        "enum": [
+          "quad",
+          "triangle"
+        ]
+      },
+      "ultra_mode": {
+        "title": "Ultra Mode",
+        "type": "boolean",
+        "default": false,
+        "deprecated": true,
+        "description": "Deprecated: use geometry_resolution='2k'. If both fields are provided, geometry_resolution takes precedence."
+      },
+      "rigging_height_meters": {
+        "title": "Rigging Height Meters",
+        "type": "number",
+        "default": 1.7,
+        "description": "Approximate height of the character in meters. Only used when enable_rigging is true.",
+        "exclusiveMinimum": 0
+      },
+      "should_texture": {
+        "title": "Should Texture",
+        "type": "boolean",
+        "default": true,
+        "description": "Whether to generate textures"
+      },
+      "texture_prompt": {
+        "title": "Texture Prompt",
+        "anyOf": [
+          {
+            "type": "string",
+            "maxLength": 600
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "description": "Text prompt to guide the texturing process"
+      },
+      "is_a_t_pose": {
+        "title": "Is A T Pose",
+        "type": "boolean",
+        "default": false,
+        "deprecated": true,
+        "description": "Deprecated: use pose_mode instead. When true, generates a T-pose model."
+      },
+      "should_remesh": {
+        "title": "Should Remesh",
+        "type": "boolean",
+        "default": true,
+        "description": "Whether to enable the remesh phase"
+      },
+      "geometry_resolution": {
+        "title": "Geometry Resolution",
+        "anyOf": [
+          {
+            "type": "string",
+            "enum": [
+              "standard",
+              "2k",
+              "4k"
+            ]
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "description": "Geometry resolution. 4k is only available with Meshy-7.1."
+      },
+      "target_polycount": {
+        "title": "Target Polycount",
+        "type": "integer",
+        "default": 30000,
+        "description": "Target number of polygons in the generated model. When model_type is 'smart-topology' and this is left unset, Meshy's lower smart-topology default (4,000) is used instead; smart topology accepts at most 15,000.",
+        "maximum": 300000,
+        "minimum": 100
+      },
+      "symmetry_mode": {
+        "title": "Symmetry Mode",
+        "type": "string",
+        "default": "auto",
+        "description": "Controls symmetry behavior during model generation. Off disables symmetry, Auto determines it automatically, On enforces symmetry.",
+        "enum": [
+          "off",
+          "auto",
+          "on"
+        ]
+      },
+      "enable_rigging": {
+        "title": "Enable Rigging",
+        "type": "boolean",
+        "default": false,
+        "description": "Automatically rig the generated model as a humanoid character. Includes basic walking and running animations. Best results with humanoid characters that have clearly defined limbs."
+      },
+      "pose_mode": {
+        "title": "Pose Mode",
+        "type": "string",
+        "default": "",
+        "description": "Pose mode for the generated model. 'a-pose' generates an A-pose, 't-pose' generates a T-pose, empty string for no specific pose.",
+        "enum": [
+          "a-pose",
+          "t-pose",
+          ""
+        ]
+      },
+      "animation_action_id": {
+        "title": "Animation Action Id",
+        "type": "integer",
+        "examples": [
+          92
+        ],
+        "default": 92,
+        "description": "Animation preset ID from Meshy's library. Only used when enable_animation is true; in that case it must be in [0, 696] (``0`` is the \"Idle\" preset) and is otherwise rejected with a 422. See https://docs.meshy.ai/en/api/animation-library for available action IDs."
+      },
+      "model_type": {
+        "title": "Model Type",
+        "type": "string",
+        "default": "standard",
+        "description": "Type of 3D mesh generation. 'standard' produces a regular high-detail mesh; 'lowpoly' produces a low-poly mesh optimized for cleaner polygons; 'smart-topology' uses Meshy-T2 for clean, natively separated parts. When set to 'lowpoly', the remesh controls (topology, target_polycount, should_remesh) are ignored by Meshy.",
+        "enum": [
+          "standard",
+          "lowpoly",
+          "smart-topology"
+        ]
+      },
+      "image_url": {
+        "title": "Image Url",
+        "type": "string",
+        "max_file_size": 20971520,
+        "examples": [
+          "https://v3b.fal.media/files/b/zebra/3osHJDI8IZ2wl6sGtEUeB_image.png"
+        ],
+        "description": "Image URL or base64 data URI for 3D model creation. Supports .jpg, .jpeg, and .png formats. Also supports AVIF and HEIF formats which will be automatically converted.",
+        "max_pixels": 178956970
+      },
+      "enable_safety_checker": {
+        "title": "Enable Safety Checker",
+        "type": "boolean",
+        "default": true,
+        "description": "If set to true, input data will be checked for safety before processing."
+      },
+      "texture_image_url": {
+        "title": "Texture Image Url",
+        "anyOf": [
+          {
+            "type": "string",
+            "ui": {
+              "field": "image"
+            }
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "max_file_size": 20971520,
+        "description": "2D image to guide the texturing process",
+        "max_pixels": 178956970
+      },
+      "enable_pbr": {
+        "title": "Enable Pbr",
+        "type": "boolean",
+        "default": false,
+        "description": "Generate PBR Maps (metallic, roughness, normal) in addition to base color"
+      },
+      "enable_animation": {
+        "title": "Enable Animation",
+        "type": "boolean",
+        "default": false,
+        "description": "Apply an animation preset to the rigged model. Requires enable_rigging to be true."
+      }
+    },
+    "required": [
+      "image_url"
+    ],
+    "description": "Input for Meshy-7.1 Image to 3D conversion.",
+    "x-fal-order-properties": [
+      "image_url",
+      "model_type",
+      "topology",
+      "target_polycount",
+      "symmetry_mode",
+      "should_remesh",
+      "should_texture",
+      "enable_pbr",
+      "is_a_t_pose",
+      "pose_mode",
+      "texture_prompt",
+      "texture_image_url",
+      "enable_rigging",
+      "rigging_height_meters",
+      "enable_animation",
+      "animation_action_id",
+      "enable_safety_checker",
+      "geometry_resolution",
+      "ultra_mode"
+    ]
+  },
+  "output_schema": {
+    "title": "ImageTo3DOutput",
+    "type": "object",
+    "properties": {
+      "texture_urls": {
+        "title": "Texture Urls",
+        "type": "array",
+        "examples": [
+          [
+            {
+              "base_color": {
+                "file_name": "texture_0.png",
+                "url": "https://v3b.fal.media/files/b/tiger/NkgxcEom_42V4_8UUXiRR_texture_0.png",
+                "file_size": 4328755,
+                "content_type": "image/png"
+              }
+            }
+          ]
+        ],
+        "items": {
+          "title": "TextureFiles",
+          "type": "object",
+          "properties": {
+            "normal": {
+              "anyOf": [
+                {
+                  "title": "File",
+                  "type": "object",
+                  "properties": {
+                    "file_name": {
+                      "title": "File Name",
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "examples": [
+                        "z9RV14K95DvU.png"
+                      ],
+                      "description": "The name of the file. It will be auto-generated if not provided."
+                    },
+                    "url": {
+                      "title": "Url",
+                      "type": "string",
+                      "description": "The URL where the file can be downloaded from."
+                    },
+                    "file_size": {
+                      "title": "File Size",
+                      "anyOf": [
+                        {
+                          "type": "integer"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "examples": [
+                        4404019
+                      ],
+                      "description": "The size of the file in bytes."
+                    },
+                    "content_type": {
+                      "title": "Content Type",
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "examples": [
+                        "image/png"
+                      ],
+                      "description": "The mime type of the file."
+                    }
+                  },
+                  "required": [
+                    "url"
+                  ],
+                  "x-fal-order-properties": [
+                    "url",
+                    "content_type",
+                    "file_name",
+                    "file_size"
+                  ]
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Normal texture (PBR)"
+            },
+            "roughness": {
+              "anyOf": [
+                {
+                  "title": "File",
+                  "type": "object",
+                  "properties": {
+                    "file_name": {
+                      "title": "File Name",
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "examples": [
+                        "z9RV14K95DvU.png"
+                      ],
+                      "description": "The name of the file. It will be auto-generated if not provided."
+                    },
+                    "url": {
+                      "title": "Url",
+                      "type": "string",
+                      "description": "The URL where the file can be downloaded from."
+                    },
+                    "file_size": {
+                      "title": "File Size",
+                      "anyOf": [
+                        {
+                          "type": "integer"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "examples": [
+                        4404019
+                      ],
+                      "description": "The size of the file in bytes."
+                    },
+                    "content_type": {
+                      "title": "Content Type",
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "examples": [
+                        "image/png"
+                      ],
+                      "description": "The mime type of the file."
+                    }
+                  },
+                  "required": [
+                    "url"
+                  ],
+                  "x-fal-order-properties": [
+                    "url",
+                    "content_type",
+                    "file_name",
+                    "file_size"
+                  ]
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Roughness texture (PBR)"
+            },
+            "base_color": {
+              "title": "File",
+              "type": "object",
+              "properties": {
+                "file_name": {
+                  "title": "File Name",
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "examples": [
+                    "z9RV14K95DvU.png"
+                  ],
+                  "description": "The name of the file. It will be auto-generated if not provided."
+                },
+                "url": {
+                  "title": "Url",
+                  "type": "string",
+                  "description": "The URL where the file can be downloaded from."
+                },
+                "file_size": {
+                  "title": "File Size",
+                  "anyOf": [
+                    {
+                      "type": "integer"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "examples": [
+                    4404019
+                  ],
+                  "description": "The size of the file in bytes."
+                },
+                "content_type": {
+                  "title": "Content Type",
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "examples": [
+                    "image/png"
+                  ],
+                  "description": "The mime type of the file."
+                }
+              },
+              "required": [
+                "url"
+              ],
+              "x-fal-order-properties": [
+                "url",
+                "content_type",
+                "file_name",
+                "file_size"
+              ],
+              "description": "Base color texture"
+            },
+            "metallic": {
+              "anyOf": [
+                {
+                  "title": "File",
+                  "type": "object",
+                  "properties": {
+                    "file_name": {
+                      "title": "File Name",
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "examples": [
+                        "z9RV14K95DvU.png"
+                      ],
+                      "description": "The name of the file. It will be auto-generated if not provided."
+                    },
+                    "url": {
+                      "title": "Url",
+                      "type": "string",
+                      "description": "The URL where the file can be downloaded from."
+                    },
+                    "file_size": {
+                      "title": "File Size",
+                      "anyOf": [
+                        {
+                          "type": "integer"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "examples": [
+                        4404019
+                      ],
+                      "description": "The size of the file in bytes."
+                    },
+                    "content_type": {
+                      "title": "Content Type",
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ],
+                      "examples": [
+                        "image/png"
+                      ],
+                      "description": "The mime type of the file."
+                    }
+                  },
+                  "required": [
+                    "url"
+                  ],
+                  "x-fal-order-properties": [
+                    "url",
+                    "content_type",
+                    "file_name",
+                    "file_size"
+                  ]
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Metallic texture (PBR)"
+            }
+          },
+          "required": [
+            "base_color"
+          ],
+          "description": "Texture files downloaded and uploaded to CDN",
+          "x-fal-order-properties": [
+            "base_color",
+            "metallic",
+            "normal",
+            "roughness"
+          ]
+        },
+        "description": "Array of texture file objects, matching Meshy API structure"
+      },
+      "basic_animations": {
+        "anyOf": [
+          {
+            "title": "BasicAnimations",
+            "type": "object",
+            "properties": {
+              "walking_armature_glb": {
+                "anyOf": [
+                  {
+                    "title": "File",
+                    "type": "object",
+                    "properties": {
+                      "file_name": {
+                        "title": "File Name",
+                        "anyOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ],
+                        "examples": [
+                          "z9RV14K95DvU.png"
+                        ],
+                        "description": "The name of the file. It will be auto-generated if not provided."
+                      },
+                      "url": {
+                        "title": "Url",
+                        "type": "string",
+                        "description": "The URL where the file can be downloaded from."
+                      },
+                      "file_size": {
+                        "title": "File Size",
+                        "anyOf": [
+                          {
+                            "type": "integer"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ],
+                        "examples": [
+                          4404019
+                        ],
+                        "description": "The size of the file in bytes."
+                      },
+                      "content_type": {
+                        "title": "Content Type",
+                        "anyOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ],
+                        "examples": [
+                          "image/png"
+                        ],
+                        "description": "The mime type of the file."
+                      }
+                    },
+                    "required": [
+                      "url"
+                    ],
+                    "x-fal-order-properties": [
+                      "url",
+                      "content_type",
+                      "file_name",
+                      "file_size"
+                    ]
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "description": "Walking armature only in GLB format"
+              },
+              "running_armature_glb": {
+                "anyOf": [
+                  {
+                    "title": "File",
+                    "type": "object",
+                    "properties": {
+                      "file_name": {
+                        "title": "File Name",
+                        "anyOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ],
+                        "examples": [
+                          "z9RV14K95DvU.png"
+                        ],
+                        "description": "The name of the file. It will be auto-generated if not provided."
+                      },
+                      "url": {
+                        "title": "Url",
+                        "type": "string",
+                        "description": "The URL where the file can be downloaded from."
+                      },
+                      "file_size": {
+                        "title": "File Size",
+                        "anyOf": [
+                          {
+                            "type": "integer"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ],
+                        "examples": [
+                          4404019
+                        ],
+                        "description": "The size of the file in bytes."
+                      },
+                      "content_type": {
+                        "title": "Content Type",
+                        "anyOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ],
+                        "examples": [
+                          "image/png"
+                        ],
+                        "description": "The mime type of the file."
+                      }
+                    },
+                    "required": [
+                      "url"
+                    ],
+                    "x-fal-order-properties": [
+                      "url",
+                      "content_type",
+                      "file_name",
+                      "file_size"
+                    ]
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "description": "Running armature only in GLB format"
+              },
+              "running_fbx": {
+                "anyOf": [
+                  {
+                    "title": "File",
+                    "type": "object",
+                    "properties": {
+                      "file_name": {
+                        "title": "File Name",
+                        "anyOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ],
+                        "examples": [
+                          "z9RV14K95DvU.png"
+                        ],
+                        "description": "The name of the file. It will be auto-generated if not provided."
+                      },
+                      "url": {
+                        "title": "Url",
+                        "type": "string",
+                        "description": "The URL where the file can be downloaded from."
+                      },
+                      "file_size": {
+                        "title": "File Size",
+                        "anyOf": [
+                          {
+                            "type": "integer"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ],
+                        "examples": [
+                          4404019
+                        ],
+                        "description": "The size of the file in bytes."
+                      },
+                      "content_type": {
+                        "title": "Content Type",
+                        "anyOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ],
+                        "examples": [
+                          "image/png"
+                        ],
+                        "description": "The mime type of the file."
+                      }
+                    },
+                    "required": [
+                      "url"
+                    ],
+                    "x-fal-order-properties": [
+                      "url",
+                      "content_type",
+                      "file_name",
+                      "file_size"
+                    ]
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "description": "Running animation in FBX format"
+              },
+              "walking_glb": {
+                "anyOf": [
+                  {
+                    "title": "File",
+                    "type": "object",
+                    "properties": {
+                      "file_name": {
+                        "title": "File Name",
+                        "anyOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ],
+                        "examples": [
+                          "z9RV14K95DvU.png"
+                        ],
+                        "description": "The name of the file. It will be auto-generated if not provided."
+                      },
+                      "url": {
+                        "title": "Url",
+                        "type": "string",
+                        "description": "The URL where the file can be downloaded from."
+                      },
+                      "file_size": {
+                        "title": "File Size",
+                        "anyOf": [
+                          {
+                            "type": "integer"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ],
+                        "examples": [
+                          4404019
+                        ],
+                        "description": "The size of the file in bytes."
+                      },
+                      "content_type": {
+                        "title": "Content Type",
+                        "anyOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ],
+                        "examples": [
+                          "image/png"
+                        ],
+                        "description": "The mime type of the file."
+                      }
+                    },
+                    "required": [
+                      "url"
+                    ],
+                    "x-fal-order-properties": [
+                      "url",
+                      "content_type",
+                      "file_name",
+                      "file_size"
+                    ]
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "description": "Walking animation in GLB format"
+              },
+              "running_glb": {
+                "anyOf": [
+                  {
+                    "title": "File",
+                    "type": "object",
+                    "properties": {
+                      "file_name": {
+                        "title": "File Name",
+                        "anyOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ],
+                        "examples": [
+                          "z9RV14K95DvU.png"
+                        ],
+                        "description": "The name of the file. It will be auto-generated if not provided."
+                      },
+                      "url": {
+                        "title": "Url",
+                        "type": "string",
+                        "description": "The URL where the file can be downloaded from."
+                      },
+                      "file_size": {
+                        "title": "File Size",
+                        "anyOf": [
+                          {
+                            "type": "integer"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ],
+                        "examples": [
+                          4404019
+                        ],
+                        "description": "The size of the file in bytes."
+                      },
+                      "content_type": {
+                        "title": "Content Type",
+                        "anyOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ],
+                        "examples": [
+                          "image/png"
+                        ],
+                        "description": "The mime type of the file."
+                      }
+                    },
+                    "required": [
+                      "url"
+                    ],
+                    "x-fal-order-properties": [
+                      "url",
+                      "content_type",
+                      "file_name",
+                      "file_size"
+                    ]
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "description": "Running animation in GLB format"
+              },
+              "walking_fbx": {
+                "anyOf": [
+                  {
+                    "title": "File",
+                    "type": "object",
+                    "properties": {
+                      "file_name": {
+                        "title": "File Name",
+                        "anyOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ],
+                        "examples": [
+                          "z9RV14K95DvU.png"
+                        ],
+                        "description": "The name of the file. It will be auto-generated if not provided."
+                      },
+                      "url": {
+                        "title": "Url",
+                        "type": "string",
+                        "description": "The URL where the file can be downloaded from."
+                      },
+                      "file_size": {
+                        "title": "File Size",
+                        "anyOf": [
+                          {
+                            "type": "integer"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ],
+                        "examples": [
+                          4404019
+                        ],
+                        "description": "The size of the file in bytes."
+                      },
+                      "content_type": {
+                        "title": "Content Type",
+                        "anyOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ],
+                        "examples": [
+                          "image/png"
+                        ],
+                        "description": "The mime type of the file."
+                      }
+                    },
+                    "required": [
+                      "url"
+                    ],
+                    "x-fal-order-properties": [
+                      "url",
+                      "content_type",
+                      "file_name",
+                      "file_size"
+                    ]
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "description": "Walking animation in FBX format"
+              }
+            },
+            "description": "Basic animation files included with the rigging result",
+            "x-fal-order-properties": [
+              "walking_glb",
+              "walking_fbx",
+              "walking_armature_glb",
+              "running_glb",
+              "running_fbx",
+              "running_armature_glb"
+            ]
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "description": "Basic walking and running animations. Only present when enable_rigging is true."
+      },
+      "rig_task_id": {
+        "title": "Rig Task Id",
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "description": "Rigging task ID. Only present when enable_rigging is true."
+      },
+      "rigged_character_fbx": {
+        "anyOf": [
+          {
+            "title": "File",
+            "type": "object",
+            "properties": {
+              "file_name": {
+                "title": "File Name",
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "examples": [
+                  "z9RV14K95DvU.png"
+                ],
+                "description": "The name of the file. It will be auto-generated if not provided."
+              },
+              "url": {
+                "title": "Url",
+                "type": "string",
+                "description": "The URL where the file can be downloaded from."
+              },
+              "file_size": {
+                "title": "File Size",
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "examples": [
+                  4404019
+                ],
+                "description": "The size of the file in bytes."
+              },
+              "content_type": {
+                "title": "Content Type",
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "examples": [
+                  "image/png"
+                ],
+                "description": "The mime type of the file."
+              }
+            },
+            "required": [
+              "url"
+            ],
+            "x-fal-order-properties": [
+              "url",
+              "content_type",
+              "file_name",
+              "file_size"
+            ]
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "description": "Rigged character in FBX format. Only present when enable_rigging is true."
+      },
+      "rigged_character_glb": {
+        "anyOf": [
+          {
+            "title": "File",
+            "type": "object",
+            "properties": {
+              "file_name": {
+                "title": "File Name",
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "examples": [
+                  "z9RV14K95DvU.png"
+                ],
+                "description": "The name of the file. It will be auto-generated if not provided."
+              },
+              "url": {
+                "title": "Url",
+                "type": "string",
+                "description": "The URL where the file can be downloaded from."
+              },
+              "file_size": {
+                "title": "File Size",
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "examples": [
+                  4404019
+                ],
+                "description": "The size of the file in bytes."
+              },
+              "content_type": {
+                "title": "Content Type",
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "examples": [
+                  "image/png"
+                ],
+                "description": "The mime type of the file."
+              }
+            },
+            "required": [
+              "url"
+            ],
+            "x-fal-order-properties": [
+              "url",
+              "content_type",
+              "file_name",
+              "file_size"
+            ]
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "description": "Rigged character in GLB format. Only present when enable_rigging is true."
+      },
+      "seed": {
+        "title": "Seed",
+        "anyOf": [
+          {
+            "type": "integer"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "examples": [
+          2009275957
+        ],
+        "description": "The seed used for generation (if available)"
+      },
+      "animation_glb": {
+        "anyOf": [
+          {
+            "title": "File",
+            "type": "object",
+            "properties": {
+              "file_name": {
+                "title": "File Name",
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "examples": [
+                  "z9RV14K95DvU.png"
+                ],
+                "description": "The name of the file. It will be auto-generated if not provided."
+              },
+              "url": {
+                "title": "Url",
+                "type": "string",
+                "description": "The URL where the file can be downloaded from."
+              },
+              "file_size": {
+                "title": "File Size",
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "examples": [
+                  4404019
+                ],
+                "description": "The size of the file in bytes."
+              },
+              "content_type": {
+                "title": "Content Type",
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "examples": [
+                  "image/png"
+                ],
+                "description": "The mime type of the file."
+              }
+            },
+            "required": [
+              "url"
+            ],
+            "x-fal-order-properties": [
+              "url",
+              "content_type",
+              "file_name",
+              "file_size"
+            ]
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "description": "Animated 3D model in GLB format. Only present when enable_animation is true."
+      },
+      "thumbnail": {
+        "examples": [
+          {
+            "file_name": "preview.png",
+            "url": "https://v3b.fal.media/files/b/penguin/rfnS6ClmeEWgDXp_oD5tN_preview.png",
+            "file_size": 54279,
+            "content_type": "image/png"
+          }
+        ],
+        "anyOf": [
+          {
+            "title": "File",
+            "type": "object",
+            "properties": {
+              "file_name": {
+                "title": "File Name",
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "examples": [
+                  "z9RV14K95DvU.png"
+                ],
+                "description": "The name of the file. It will be auto-generated if not provided."
+              },
+              "url": {
+                "title": "Url",
+                "type": "string",
+                "description": "The URL where the file can be downloaded from."
+              },
+              "file_size": {
+                "title": "File Size",
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "examples": [
+                  4404019
+                ],
+                "description": "The size of the file in bytes."
+              },
+              "content_type": {
+                "title": "Content Type",
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "examples": [
+                  "image/png"
+                ],
+                "description": "The mime type of the file."
+              }
+            },
+            "required": [
+              "url"
+            ],
+            "x-fal-order-properties": [
+              "url",
+              "content_type",
+              "file_name",
+              "file_size"
+            ]
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "description": "Preview thumbnail of the generated model"
+      },
+      "model_glb": {
+        "title": "File",
+        "type": "object",
+        "properties": {
+          "file_name": {
+            "title": "File Name",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "z9RV14K95DvU.png"
+            ],
+            "description": "The name of the file. It will be auto-generated if not provided."
+          },
+          "url": {
+            "title": "Url",
+            "type": "string",
+            "description": "The URL where the file can be downloaded from."
+          },
+          "file_size": {
+            "title": "File Size",
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              4404019
+            ],
+            "description": "The size of the file in bytes."
+          },
+          "content_type": {
+            "title": "Content Type",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "image/png"
+            ],
+            "description": "The mime type of the file."
+          }
+        },
+        "required": [
+          "url"
+        ],
+        "x-fal-order-properties": [
+          "url",
+          "content_type",
+          "file_name",
+          "file_size"
+        ],
+        "examples": [
+          {
+            "file_name": "model.glb",
+            "url": "https://v3b.fal.media/files/b/zebra/OXF1e1bO3JddPTaugv0eL_model.glb",
+            "file_size": 9242744,
+            "content_type": "model/gltf-binary"
+          }
+        ],
+        "description": "Generated 3D object in GLB format."
+      },
+      "animation_fbx": {
+        "anyOf": [
+          {
+            "title": "File",
+            "type": "object",
+            "properties": {
+              "file_name": {
+                "title": "File Name",
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "examples": [
+                  "z9RV14K95DvU.png"
+                ],
+                "description": "The name of the file. It will be auto-generated if not provided."
+              },
+              "url": {
+                "title": "Url",
+                "type": "string",
+                "description": "The URL where the file can be downloaded from."
+              },
+              "file_size": {
+                "title": "File Size",
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "examples": [
+                  4404019
+                ],
+                "description": "The size of the file in bytes."
+              },
+              "content_type": {
+                "title": "Content Type",
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "examples": [
+                  "image/png"
+                ],
+                "description": "The mime type of the file."
+              }
+            },
+            "required": [
+              "url"
+            ],
+            "x-fal-order-properties": [
+              "url",
+              "content_type",
+              "file_name",
+              "file_size"
+            ]
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "description": "Animated 3D model in FBX format. Only present when enable_animation is true."
+      },
+      "model_urls": {
+        "title": "ModelUrls",
+        "type": "object",
+        "properties": {
+          "fbx": {
+            "anyOf": [
+              {
+                "title": "File",
+                "type": "object",
+                "properties": {
+                  "file_name": {
+                    "title": "File Name",
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "examples": [
+                      "z9RV14K95DvU.png"
+                    ],
+                    "description": "The name of the file. It will be auto-generated if not provided."
+                  },
+                  "url": {
+                    "title": "Url",
+                    "type": "string",
+                    "description": "The URL where the file can be downloaded from."
+                  },
+                  "file_size": {
+                    "title": "File Size",
+                    "anyOf": [
+                      {
+                        "type": "integer"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "examples": [
+                      4404019
+                    ],
+                    "description": "The size of the file in bytes."
+                  },
+                  "content_type": {
+                    "title": "Content Type",
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "examples": [
+                      "image/png"
+                    ],
+                    "description": "The mime type of the file."
+                  }
+                },
+                "required": [
+                  "url"
+                ],
+                "x-fal-order-properties": [
+                  "url",
+                  "content_type",
+                  "file_name",
+                  "file_size"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "FBX format 3D model"
+          },
+          "obj": {
+            "anyOf": [
+              {
+                "title": "File",
+                "type": "object",
+                "properties": {
+                  "file_name": {
+                    "title": "File Name",
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "examples": [
+                      "z9RV14K95DvU.png"
+                    ],
+                    "description": "The name of the file. It will be auto-generated if not provided."
+                  },
+                  "url": {
+                    "title": "Url",
+                    "type": "string",
+                    "description": "The URL where the file can be downloaded from."
+                  },
+                  "file_size": {
+                    "title": "File Size",
+                    "anyOf": [
+                      {
+                        "type": "integer"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "examples": [
+                      4404019
+                    ],
+                    "description": "The size of the file in bytes."
+                  },
+                  "content_type": {
+                    "title": "Content Type",
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "examples": [
+                      "image/png"
+                    ],
+                    "description": "The mime type of the file."
+                  }
+                },
+                "required": [
+                  "url"
+                ],
+                "x-fal-order-properties": [
+                  "url",
+                  "content_type",
+                  "file_name",
+                  "file_size"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "OBJ format 3D model"
+          },
+          "usdz": {
+            "anyOf": [
+              {
+                "title": "File",
+                "type": "object",
+                "properties": {
+                  "file_name": {
+                    "title": "File Name",
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "examples": [
+                      "z9RV14K95DvU.png"
+                    ],
+                    "description": "The name of the file. It will be auto-generated if not provided."
+                  },
+                  "url": {
+                    "title": "Url",
+                    "type": "string",
+                    "description": "The URL where the file can be downloaded from."
+                  },
+                  "file_size": {
+                    "title": "File Size",
+                    "anyOf": [
+                      {
+                        "type": "integer"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "examples": [
+                      4404019
+                    ],
+                    "description": "The size of the file in bytes."
+                  },
+                  "content_type": {
+                    "title": "Content Type",
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "examples": [
+                      "image/png"
+                    ],
+                    "description": "The mime type of the file."
+                  }
+                },
+                "required": [
+                  "url"
+                ],
+                "x-fal-order-properties": [
+                  "url",
+                  "content_type",
+                  "file_name",
+                  "file_size"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "USDZ format 3D model"
+          },
+          "glb": {
+            "anyOf": [
+              {
+                "title": "File",
+                "type": "object",
+                "properties": {
+                  "file_name": {
+                    "title": "File Name",
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "examples": [
+                      "z9RV14K95DvU.png"
+                    ],
+                    "description": "The name of the file. It will be auto-generated if not provided."
+                  },
+                  "url": {
+                    "title": "Url",
+                    "type": "string",
+                    "description": "The URL where the file can be downloaded from."
+                  },
+                  "file_size": {
+                    "title": "File Size",
+                    "anyOf": [
+                      {
+                        "type": "integer"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "examples": [
+                      4404019
+                    ],
+                    "description": "The size of the file in bytes."
+                  },
+                  "content_type": {
+                    "title": "Content Type",
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "examples": [
+                      "image/png"
+                    ],
+                    "description": "The mime type of the file."
+                  }
+                },
+                "required": [
+                  "url"
+                ],
+                "x-fal-order-properties": [
+                  "url",
+                  "content_type",
+                  "file_name",
+                  "file_size"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "GLB format 3D model"
+          },
+          "stl": {
+            "anyOf": [
+              {
+                "title": "File",
+                "type": "object",
+                "properties": {
+                  "file_name": {
+                    "title": "File Name",
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "examples": [
+                      "z9RV14K95DvU.png"
+                    ],
+                    "description": "The name of the file. It will be auto-generated if not provided."
+                  },
+                  "url": {
+                    "title": "Url",
+                    "type": "string",
+                    "description": "The URL where the file can be downloaded from."
+                  },
+                  "file_size": {
+                    "title": "File Size",
+                    "anyOf": [
+                      {
+                        "type": "integer"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "examples": [
+                      4404019
+                    ],
+                    "description": "The size of the file in bytes."
+                  },
+                  "content_type": {
+                    "title": "Content Type",
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "examples": [
+                      "image/png"
+                    ],
+                    "description": "The mime type of the file."
+                  }
+                },
+                "required": [
+                  "url"
+                ],
+                "x-fal-order-properties": [
+                  "url",
+                  "content_type",
+                  "file_name",
+                  "file_size"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "STL format 3D model"
+          },
+          "blend": {
+            "anyOf": [
+              {
+                "title": "File",
+                "type": "object",
+                "properties": {
+                  "file_name": {
+                    "title": "File Name",
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "examples": [
+                      "z9RV14K95DvU.png"
+                    ],
+                    "description": "The name of the file. It will be auto-generated if not provided."
+                  },
+                  "url": {
+                    "title": "Url",
+                    "type": "string",
+                    "description": "The URL where the file can be downloaded from."
+                  },
+                  "file_size": {
+                    "title": "File Size",
+                    "anyOf": [
+                      {
+                        "type": "integer"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "examples": [
+                      4404019
+                    ],
+                    "description": "The size of the file in bytes."
+                  },
+                  "content_type": {
+                    "title": "Content Type",
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "examples": [
+                      "image/png"
+                    ],
+                    "description": "The mime type of the file."
+                  }
+                },
+                "required": [
+                  "url"
+                ],
+                "x-fal-order-properties": [
+                  "url",
+                  "content_type",
+                  "file_name",
+                  "file_size"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Blender format 3D model"
+          }
+        },
+        "description": "URLs for different 3D model formats",
+        "x-fal-order-properties": [
+          "glb",
+          "fbx",
+          "obj",
+          "usdz",
+          "blend",
+          "stl"
+        ],
+        "examples": [
+          {
+            "fbx": {
+              "file_name": "model.fbx",
+              "url": "https://v3b.fal.media/files/b/kangaroo/4Q2qdpTvfLVdzAKH1-72v_model.fbx",
+              "file_size": 5427052,
+              "content_type": "application/octet-stream"
+            },
+            "obj": {
+              "file_name": "model.obj",
+              "url": "https://v3b.fal.media/files/b/koala/_Vg0d084-hd3EdpIJDf7U_model.obj",
+              "file_size": 2744413,
+              "content_type": "text/plain"
+            },
+            "usdz": {
+              "file_name": "model.usdz",
+              "url": "https://v3b.fal.media/files/b/lion/RgJG9EBQ_GAHMVWV3wCis_model.usdz",
+              "file_size": 9991969,
+              "content_type": "model/vnd.usdz+zip"
+            },
+            "glb": {
+              "file_name": "model.glb",
+              "url": "https://v3b.fal.media/files/b/zebra/OXF1e1bO3JddPTaugv0eL_model.glb",
+              "file_size": 9242744,
+              "content_type": "model/gltf-binary"
+            }
+          }
+        ]
+      }
+    },
+    "required": [
+      "model_glb",
+      "model_urls"
+    ],
+    "description": "Output for Image to 3D conversion",
+    "x-fal-order-properties": [
+      "animation_glb",
+      "animation_fbx",
+      "model_glb",
+      "thumbnail",
+      "model_urls",
+      "texture_urls",
+      "seed",
+      "rigged_character_glb",
+      "rigged_character_fbx",
+      "basic_animations",
+      "rig_task_id"
+    ]
+  },
+  "exact_input_schema": {
+    "$ref": "#/components/schemas/MeshyV71ImageTo3dInput"
+  },
+  "exact_output_schema": {
+    "$ref": "#/components/schemas/MeshyV71ImageTo3dOutput"
+  },
+  "components": {
+    "securitySchemes": {
+      "apiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "Authorization",
+        "description": "Fal Key"
+      }
+    },
+    "schemas": {
+      "QueueStatus": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "IN_QUEUE",
+              "IN_PROGRESS",
+              "COMPLETED"
+            ]
+          },
+          "request_id": {
+            "type": "string",
+            "description": "The request id."
+          },
+          "response_url": {
+            "type": "string",
+            "description": "The response url."
+          },
+          "status_url": {
+            "type": "string",
+            "description": "The status url."
+          },
+          "cancel_url": {
+            "type": "string",
+            "description": "The cancel url."
+          },
+          "logs": {
+            "type": "object",
+            "description": "The logs.",
+            "additionalProperties": true
+          },
+          "metrics": {
+            "type": "object",
+            "description": "The metrics.",
+            "additionalProperties": true
+          },
+          "queue_position": {
+            "type": "integer",
+            "description": "The queue position."
+          }
+        },
+        "required": [
+          "status",
+          "request_id"
+        ]
+      },
+      "MeshyV71ImageTo3dInput": {
+        "title": "ImageTo3DV71Input",
+        "type": "object",
+        "properties": {
+          "topology": {
+            "title": "Topology",
+            "type": "string",
+            "default": "triangle",
+            "description": "Specify the topology of the generated model. Quad for smooth surfaces, Triangle for detailed geometry.",
+            "enum": [
+              "quad",
+              "triangle"
+            ]
+          },
+          "ultra_mode": {
+            "title": "Ultra Mode",
+            "type": "boolean",
+            "default": false,
+            "deprecated": true,
+            "description": "Deprecated: use geometry_resolution='2k'. If both fields are provided, geometry_resolution takes precedence."
+          },
+          "rigging_height_meters": {
+            "title": "Rigging Height Meters",
+            "type": "number",
+            "default": 1.7,
+            "description": "Approximate height of the character in meters. Only used when enable_rigging is true.",
+            "exclusiveMinimum": 0
+          },
+          "should_texture": {
+            "title": "Should Texture",
+            "type": "boolean",
+            "default": true,
+            "description": "Whether to generate textures"
+          },
+          "texture_prompt": {
+            "title": "Texture Prompt",
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 600
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Text prompt to guide the texturing process"
+          },
+          "is_a_t_pose": {
+            "title": "Is A T Pose",
+            "type": "boolean",
+            "default": false,
+            "deprecated": true,
+            "description": "Deprecated: use pose_mode instead. When true, generates a T-pose model."
+          },
+          "should_remesh": {
+            "title": "Should Remesh",
+            "type": "boolean",
+            "default": true,
+            "description": "Whether to enable the remesh phase"
+          },
+          "geometry_resolution": {
+            "title": "Geometry Resolution",
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "standard",
+                  "2k",
+                  "4k"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Geometry resolution. 4k is only available with Meshy-7.1."
+          },
+          "target_polycount": {
+            "title": "Target Polycount",
+            "type": "integer",
+            "default": 30000,
+            "description": "Target number of polygons in the generated model. When model_type is 'smart-topology' and this is left unset, Meshy's lower smart-topology default (4,000) is used instead; smart topology accepts at most 15,000.",
+            "maximum": 300000,
+            "minimum": 100
+          },
+          "symmetry_mode": {
+            "title": "Symmetry Mode",
+            "type": "string",
+            "default": "auto",
+            "description": "Controls symmetry behavior during model generation. Off disables symmetry, Auto determines it automatically, On enforces symmetry.",
+            "enum": [
+              "off",
+              "auto",
+              "on"
+            ]
+          },
+          "enable_rigging": {
+            "title": "Enable Rigging",
+            "type": "boolean",
+            "default": false,
+            "description": "Automatically rig the generated model as a humanoid character. Includes basic walking and running animations. Best results with humanoid characters that have clearly defined limbs."
+          },
+          "pose_mode": {
+            "title": "Pose Mode",
+            "type": "string",
+            "default": "",
+            "description": "Pose mode for the generated model. 'a-pose' generates an A-pose, 't-pose' generates a T-pose, empty string for no specific pose.",
+            "enum": [
+              "a-pose",
+              "t-pose",
+              ""
+            ]
+          },
+          "animation_action_id": {
+            "title": "Animation Action Id",
+            "type": "integer",
+            "examples": [
+              92
+            ],
+            "default": 92,
+            "description": "Animation preset ID from Meshy's library. Only used when enable_animation is true; in that case it must be in [0, 696] (``0`` is the \"Idle\" preset) and is otherwise rejected with a 422. See https://docs.meshy.ai/en/api/animation-library for available action IDs."
+          },
+          "model_type": {
+            "title": "Model Type",
+            "type": "string",
+            "default": "standard",
+            "description": "Type of 3D mesh generation. 'standard' produces a regular high-detail mesh; 'lowpoly' produces a low-poly mesh optimized for cleaner polygons; 'smart-topology' uses Meshy-T2 for clean, natively separated parts. When set to 'lowpoly', the remesh controls (topology, target_polycount, should_remesh) are ignored by Meshy.",
+            "enum": [
+              "standard",
+              "lowpoly",
+              "smart-topology"
+            ]
+          },
+          "image_url": {
+            "title": "Image Url",
+            "type": "string",
+            "max_file_size": 20971520,
+            "examples": [
+              "https://v3b.fal.media/files/b/zebra/3osHJDI8IZ2wl6sGtEUeB_image.png"
+            ],
+            "description": "Image URL or base64 data URI for 3D model creation. Supports .jpg, .jpeg, and .png formats. Also supports AVIF and HEIF formats which will be automatically converted.",
+            "max_pixels": 178956970
+          },
+          "enable_safety_checker": {
+            "title": "Enable Safety Checker",
+            "type": "boolean",
+            "default": true,
+            "description": "If set to true, input data will be checked for safety before processing."
+          },
+          "texture_image_url": {
+            "title": "Texture Image Url",
+            "anyOf": [
+              {
+                "type": "string",
+                "ui": {
+                  "field": "image"
+                }
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "max_file_size": 20971520,
+            "description": "2D image to guide the texturing process",
+            "max_pixels": 178956970
+          },
+          "enable_pbr": {
+            "title": "Enable Pbr",
+            "type": "boolean",
+            "default": false,
+            "description": "Generate PBR Maps (metallic, roughness, normal) in addition to base color"
+          },
+          "enable_animation": {
+            "title": "Enable Animation",
+            "type": "boolean",
+            "default": false,
+            "description": "Apply an animation preset to the rigged model. Requires enable_rigging to be true."
+          }
+        },
+        "required": [
+          "image_url"
+        ],
+        "description": "Input for Meshy-7.1 Image to 3D conversion.",
+        "x-fal-order-properties": [
+          "image_url",
+          "model_type",
+          "topology",
+          "target_polycount",
+          "symmetry_mode",
+          "should_remesh",
+          "should_texture",
+          "enable_pbr",
+          "is_a_t_pose",
+          "pose_mode",
+          "texture_prompt",
+          "texture_image_url",
+          "enable_rigging",
+          "rigging_height_meters",
+          "enable_animation",
+          "animation_action_id",
+          "enable_safety_checker",
+          "geometry_resolution",
+          "ultra_mode"
+        ]
+      },
+      "MeshyV71ImageTo3dOutput": {
+        "title": "ImageTo3DOutput",
+        "type": "object",
+        "properties": {
+          "texture_urls": {
+            "title": "Texture Urls",
+            "type": "array",
+            "examples": [
+              [
+                {
+                  "base_color": {
+                    "file_name": "texture_0.png",
+                    "url": "https://v3b.fal.media/files/b/tiger/NkgxcEom_42V4_8UUXiRR_texture_0.png",
+                    "file_size": 4328755,
+                    "content_type": "image/png"
+                  }
+                }
+              ]
+            ],
+            "items": {
+              "$ref": "#/components/schemas/TextureFiles"
+            },
+            "description": "Array of texture file objects, matching Meshy API structure"
+          },
+          "basic_animations": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BasicAnimations"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Basic walking and running animations. Only present when enable_rigging is true."
+          },
+          "rig_task_id": {
+            "title": "Rig Task Id",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Rigging task ID. Only present when enable_rigging is true."
+          },
+          "rigged_character_fbx": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/File"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Rigged character in FBX format. Only present when enable_rigging is true."
+          },
+          "rigged_character_glb": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/File"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Rigged character in GLB format. Only present when enable_rigging is true."
+          },
+          "seed": {
+            "title": "Seed",
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              2009275957
+            ],
+            "description": "The seed used for generation (if available)"
+          },
+          "animation_glb": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/File"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Animated 3D model in GLB format. Only present when enable_animation is true."
+          },
+          "thumbnail": {
+            "examples": [
+              {
+                "file_name": "preview.png",
+                "url": "https://v3b.fal.media/files/b/penguin/rfnS6ClmeEWgDXp_oD5tN_preview.png",
+                "file_size": 54279,
+                "content_type": "image/png"
+              }
+            ],
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/File"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Preview thumbnail of the generated model"
+          },
+          "model_glb": {
+            "examples": [
+              {
+                "file_name": "model.glb",
+                "url": "https://v3b.fal.media/files/b/zebra/OXF1e1bO3JddPTaugv0eL_model.glb",
+                "file_size": 9242744,
+                "content_type": "model/gltf-binary"
+              }
+            ],
+            "description": "Generated 3D object in GLB format.",
+            "$ref": "#/components/schemas/File"
+          },
+          "animation_fbx": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/File"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Animated 3D model in FBX format. Only present when enable_animation is true."
+          },
+          "model_urls": {
+            "examples": [
+              {
+                "fbx": {
+                  "file_name": "model.fbx",
+                  "url": "https://v3b.fal.media/files/b/kangaroo/4Q2qdpTvfLVdzAKH1-72v_model.fbx",
+                  "file_size": 5427052,
+                  "content_type": "application/octet-stream"
+                },
+                "obj": {
+                  "file_name": "model.obj",
+                  "url": "https://v3b.fal.media/files/b/koala/_Vg0d084-hd3EdpIJDf7U_model.obj",
+                  "file_size": 2744413,
+                  "content_type": "text/plain"
+                },
+                "usdz": {
+                  "file_name": "model.usdz",
+                  "url": "https://v3b.fal.media/files/b/lion/RgJG9EBQ_GAHMVWV3wCis_model.usdz",
+                  "file_size": 9991969,
+                  "content_type": "model/vnd.usdz+zip"
+                },
+                "glb": {
+                  "file_name": "model.glb",
+                  "url": "https://v3b.fal.media/files/b/zebra/OXF1e1bO3JddPTaugv0eL_model.glb",
+                  "file_size": 9242744,
+                  "content_type": "model/gltf-binary"
+                }
+              }
+            ],
+            "description": "URLs for different 3D model formats",
+            "$ref": "#/components/schemas/ModelUrls"
+          }
+        },
+        "required": [
+          "model_glb",
+          "model_urls"
+        ],
+        "description": "Output for Image to 3D conversion",
+        "x-fal-order-properties": [
+          "animation_glb",
+          "animation_fbx",
+          "model_glb",
+          "thumbnail",
+          "model_urls",
+          "texture_urls",
+          "seed",
+          "rigged_character_glb",
+          "rigged_character_fbx",
+          "basic_animations",
+          "rig_task_id"
+        ]
+      },
+      "TextureFiles": {
+        "title": "TextureFiles",
+        "type": "object",
+        "properties": {
+          "normal": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/File"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Normal texture (PBR)"
+          },
+          "roughness": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/File"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Roughness texture (PBR)"
+          },
+          "base_color": {
+            "description": "Base color texture",
+            "$ref": "#/components/schemas/File"
+          },
+          "metallic": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/File"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Metallic texture (PBR)"
+          }
+        },
+        "required": [
+          "base_color"
+        ],
+        "description": "Texture files downloaded and uploaded to CDN",
+        "x-fal-order-properties": [
+          "base_color",
+          "metallic",
+          "normal",
+          "roughness"
+        ]
+      },
+      "BasicAnimations": {
+        "title": "BasicAnimations",
+        "type": "object",
+        "properties": {
+          "walking_armature_glb": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/File"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Walking armature only in GLB format"
+          },
+          "running_armature_glb": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/File"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Running armature only in GLB format"
+          },
+          "running_fbx": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/File"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Running animation in FBX format"
+          },
+          "walking_glb": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/File"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Walking animation in GLB format"
+          },
+          "running_glb": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/File"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Running animation in GLB format"
+          },
+          "walking_fbx": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/File"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Walking animation in FBX format"
+          }
+        },
+        "description": "Basic animation files included with the rigging result",
+        "x-fal-order-properties": [
+          "walking_glb",
+          "walking_fbx",
+          "walking_armature_glb",
+          "running_glb",
+          "running_fbx",
+          "running_armature_glb"
+        ]
+      },
+      "File": {
+        "title": "File",
+        "type": "object",
+        "properties": {
+          "file_name": {
+            "title": "File Name",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "z9RV14K95DvU.png"
+            ],
+            "description": "The name of the file. It will be auto-generated if not provided."
+          },
+          "url": {
+            "title": "Url",
+            "type": "string",
+            "description": "The URL where the file can be downloaded from."
+          },
+          "file_size": {
+            "title": "File Size",
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              4404019
+            ],
+            "description": "The size of the file in bytes."
+          },
+          "content_type": {
+            "title": "Content Type",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "examples": [
+              "image/png"
+            ],
+            "description": "The mime type of the file."
+          }
+        },
+        "required": [
+          "url"
+        ],
+        "x-fal-order-properties": [
+          "url",
+          "content_type",
+          "file_name",
+          "file_size"
+        ]
+      },
+      "ModelUrls": {
+        "title": "ModelUrls",
+        "type": "object",
+        "properties": {
+          "fbx": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/File"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "FBX format 3D model"
+          },
+          "obj": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/File"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "OBJ format 3D model"
+          },
+          "usdz": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/File"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "USDZ format 3D model"
+          },
+          "glb": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/File"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "GLB format 3D model"
+          },
+          "stl": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/File"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "STL format 3D model"
+          },
+          "blend": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/File"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Blender format 3D model"
+          }
+        },
+        "description": "3D model files in various formats",
+        "x-fal-order-properties": [
+          "glb",
+          "fbx",
+          "obj",
+          "usdz",
+          "blend",
+          "stl"
+        ]
+      }
+    }
+  },
+  "openapi_version": "3.0.4",
+  "selection_guidance": "Before choosing a model for a new operation, call recommend_model with the user's task and constraints unless the user named a model or explicitly requested a model set/comparison. Reuse that recommendation for the operation; do not repeatedly request the same recommendation.\nFor an explicit set/comparison, use list_model_sets to resolve the requested operation and sets, then use its exact returned endpoint IDs within the user's requested scope. Read each selected model's live schema and applicable published guidance, build its input from the user's brief and references, and preserve required settings. Explain incompatible or unavailable members instead of silently replacing them, approximating settings, or running the rest of a large set. Set membership is discovery, never authorization or proof of task fit.\nHonor an explicitly requested model; verify its exact endpoint and do not silently substitute it.\nCopy endpoint_id exactly from the live catalog. Namespaces and versions vary by provider: never add or change a provider prefix, invent an endpoint from a model name, or reuse a guessed alias. When a named model is missing or unavailable, search_models can resolve current catalog matches; explain any mismatch with the requested endpoint before choosing a replacement. An unavailable endpoint alone does not establish that the user connected the wrong account.\nOtherwise use current applicable published guidance in recommended_model and model_knowledge after checking the user's real sources, required capabilities and scoped budget. Follow the next compatible published fallback and explain why. If published guidance is missing or outdated, use search_models and search_docs to evaluate current candidates. A new endpoint can qualify without adoption statistics, but recency alone does not establish quality. Do not submit a choice with decision_status needs_input, no_compatible_candidate or evidence_unavailable. A workflow_needed result needs a verified dependent plan before spend.\nWith draft_inspection_required, draft_candidate establishes technical/reference fit only. Generate a draft only within existing user authorization and the checked budget, then inspect it against original conditioning sources before dependent generation or approval. Preservation stays unverified; a draft candidate is not a final recommended_model or permission to spend.\nCatalog order, popularity and release recency are discovery signals, not quality or latency rankings. Fast subject motion describes movement in the scene, not generation latency. Only treat user-requested settings as hard constraints; do not invent an exact resolution or audio requirement to justify switching models.\nLive retrieval does not establish when guidance was authored. Without an update date, freshness is unknown; verify capabilities in current schemas/docs and do not claim the pick is the newest or fastest without evidence. Skills and workflow examples supply production advice, not competing model defaults. Prefer current published task/domain guidance over bundled family rankings. Use get_pricing for the actual settings before material spending. Cost estimates preserve units and cover only known quantities, not final billing guarantees. Pass the optional decision_id to run_model, submit_job or each applicable batch item; it links observations and is never authorization.",
+  "knowledge_status": "complete",
+  "knowledge_retrieval": {
+    "fetched_at": "2026-10-14T07:55:42.504Z",
+    "warnings": []
+  },
+  "model_knowledge": {
+    "models": [
+      {
+        "endpoint_id": "meshy/v7.1/image-to-3d",
+        "display_name": "Meshy 7.1 Image to 3D",
+        "category": "image-to-3d",
+        "relevance": null,
+        "insights": []
+      }
+    ],
+    "evidence": {
+      "version": 3,
+      "compiled_at": "2026-10-12T02:00:07.192Z",
+      "window_start": "2026-10-05T00:00:00.000Z",
+      "window_end": "2026-10-12T00:00:00.000Z",
+      "evaluated_at": "2026-10-14T07:55:42.804Z",
+      "latency_definition": "Successful execution observations in milliseconds; mixed workloads; excludes queue/startup; not runtime guarantees.",
+      "instructions": "Successful execution observations in milliseconds; mixed workloads; excludes queue/startup; not runtime guarantees. Report p50/p90 with their measurement window. Null means unknown, never zero. Trending is the analytics category rank at its source timestamp, not adoption or quality. New means registry publication within 30 days of the response evaluation time, not first usage. Lab recommendations are authored guidance, not measured latency, trending or newness. Use the existing pricing tool for current prices, preserving billing units and required configuration; these observations contain no prices.",
+      "models": [
+        {
+          "endpoint_id": "meshy/v7.1/image-to-3d",
+          "evidence": {
+            "endpoint_id": "meshy/v7.1/image-to-3d",
+            "title": "Meshy 7.1 Image to 3D",
+            "category": "image-to-3d",
+            "usage_tier": null,
+            "latency": {
+              "p50_ms": null,
+              "p90_ms": null,
+              "sufficient_evidence": false,
+              "latest_request_at": null
+            },
+            "trending": {
+              "category_rank": 7,
+              "computed_at": "2026-10-11T09:49:06.521Z"
+            },
+            "published_at": "2026-09-21T17:30:11.193Z",
+            "is_new": true
+          }
+        }
+      ]
+    },
+    "unavailable_endpoint_ids": [],
+    "stats_available": true,
+    "note": "Successful execution observations in milliseconds; mixed workloads; excludes queue/startup; not runtime guarantees. Report p50/p90 with their measurement window. Null means unknown, never zero. Trending is the analytics category rank at its source timestamp, not adoption or quality. New means registry publication within 30 days of the response evaluation time, not first usage. Lab recommendations are authored guidance, not measured latency, trending or newness. Use the existing pricing tool for current prices, preserving billing units and required configuration; these observations contain no prices."
+  }
+}

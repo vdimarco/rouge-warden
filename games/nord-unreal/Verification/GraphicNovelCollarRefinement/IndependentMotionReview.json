@@ -1,0 +1,716 @@
+{
+  "reviewer": "/root/style_review",
+  "recorded_utc": "2026-10-14T08:04:14.072155+00:00",
+  "scope": "Independent CPU-decoded representative-frame inspection of fixed-fixture Standard and Comic motion only; old-fixture performance-control video excluded.",
+  "method": {
+    "helper": {
+      "file": "Saved/Tests/GraphicNovel/RefinedRender-20261014T075500Z/extract_independent_motion_frames.py",
+      "sha256": "bb5cd01cb559d3aefc0a09de488170d47ad73b3c07d4004c7261d9a22cf379a5",
+      "bytes": 6029
+    },
+    "extraction_manifest": {
+      "file": "Saved/Tests/GraphicNovel/RefinedRender-20261014T075500Z/IndependentMotionReview/manifest.json",
+      "sha256": "beb9241cbd1776067ae1a5d76337b3ba3c4b936e783bde7cb5a4dfa3cd1a425f",
+      "bytes": 34985
+    },
+    "software_decode_only": true,
+    "selected_frames_inspected": 85,
+    "contact_sheets_inspected": 12,
+    "additional_full_resolution_frame_inspections": [
+      "IndependentMotionReview/Standard/frame-014.png",
+      "IndependentMotionReview/Comic/frame-027.png"
+    ],
+    "phase_alignment": "Approximate UTC native phase-log to X11 recorder epoch start; negative early idle events clamp to first recorded frame.",
+    "continuous_playback_viewed": false
+  },
+  "modes": [
+    {
+      "mode": "standard",
+      "video": {
+        "file": "Saved/Tests/GraphicNovel/RefinedRender-20261014T075500Z/FixedMotion1920Standard/raw.mp4",
+        "sha256": "e0662f4174110c0e844b46e502804982fe8190adc94d000d8a158b42b057847a",
+        "bytes": 9133775
+      },
+      "native_report": {
+        "file": "Saved/Tests/GraphicNovel/RefinedRender-20261014T075500Z/Fixed/Capture/Motion/Standard/PlayerMotion1920.json",
+        "sha256": "8de0bfcff46697f10b29589448c6a4a8a7e733cfaee862da90a77c670734267b",
+        "bytes": 582799
+      },
+      "native_log": {
+        "file": "Saved/Tests/GraphicNovel/RefinedRender-20261014T075500Z/FixedMotion1920Standard/native.log",
+        "sha256": "ecbb424619c21d35a6f78b7b8bea0644f3f5726b4a0375e1efa47b8a8d77c6fe",
+        "bytes": 426653
+      },
+      "recorder_log": {
+        "file": "Saved/Tests/GraphicNovel/RefinedRender-20261014T075500Z/FixedMotion1920Standard/ffmpeg.log",
+        "sha256": "30f5567ce79c3b55262edf80e1385d06c187ec86beebfec11ac7d8e71d5a4209",
+        "bytes": 5376
+      },
+      "job": {
+        "passed": true,
+        "process_exit_code": 0
+      },
+      "encoded_metadata": {
+        "width": 1920,
+        "height": 1080,
+        "seconds": 9.516667,
+        "frames": 571,
+        "encoded_avg_rate": "60/1",
+        "native_render_fps_proven": false,
+        "continuous_playback_reviewed": false
+      },
+      "decoded_frames_inspected": 43,
+      "contact_sheets_inspected": [
+        {
+          "file": "IndependentMotionReview/Standard/full-1Hz-contact.png",
+          "sha256": "2f60a36aa3e8f98e4a06305226fdca7ef5ce2721630d34695fe5cd39bfec8ae4",
+          "crop": null
+        },
+        {
+          "file": "IndependentMotionReview/Standard/phase-crops-01.png",
+          "sha256": "8e1039ffb9c43fd510052c349907071e5405adc486344a6da8168e4fd9ef7f10",
+          "crop": [
+            660,
+            360,
+            1260,
+            1040
+          ]
+        },
+        {
+          "file": "IndependentMotionReview/Standard/phase-crops-02.png",
+          "sha256": "40796bd4ae3265f49b9f8158764d0edee64739c0eff357b1359e30d410587b77",
+          "crop": [
+            660,
+            360,
+            1260,
+            1040
+          ]
+        },
+        {
+          "file": "IndependentMotionReview/Standard/phase-crops-03.png",
+          "sha256": "9ab4979a63eee67be4a3e695154f0dac29e1bd71ea204215643f93a3ee8baa6b",
+          "crop": [
+            660,
+            360,
+            1260,
+            1040
+          ]
+        },
+        {
+          "file": "IndependentMotionReview/Standard/phase-crops-04.png",
+          "sha256": "a5c58ee753513f24d247779727947b327945175d56912a5b0208d8318a297cb0",
+          "crop": [
+            660,
+            360,
+            1260,
+            1040
+          ]
+        },
+        {
+          "file": "IndependentMotionReview/Standard/phase-crops-05.png",
+          "sha256": "b37bd2144c61caa8236059a4daabbad086fe6442c22b573b229983948bddf52a",
+          "crop": [
+            660,
+            360,
+            1260,
+            1040
+          ]
+        }
+      ],
+      "phase_events_approx": [
+        {
+          "phase": "idle",
+          "video_seconds_approx": -0.078999
+        },
+        {
+          "phase": "walk",
+          "video_seconds_approx": 0.311001
+        },
+        {
+          "phase": "sprint",
+          "video_seconds_approx": 1.737001
+        },
+        {
+          "phase": "turn",
+          "video_seconds_approx": 3.177001
+        },
+        {
+          "phase": "stop",
+          "video_seconds_approx": 3.987001
+        },
+        {
+          "phase": "jump",
+          "video_seconds_approx": 4.688001
+        },
+        {
+          "phase": "landing",
+          "video_seconds_approx": 5.977001
+        },
+        {
+          "phase": "recover",
+          "video_seconds_approx": 6.200001
+        }
+      ],
+      "native_selected_observations": 171,
+      "native_checks": {
+        "phase_counts": {
+          "idle": 9,
+          "walk": 35,
+          "sprint": 36,
+          "turn": 20,
+          "stop": 18,
+          "jump": 32,
+          "landing": 5,
+          "recover": 16
+        },
+        "steady_motion": {
+          "walk": {
+            "steady_samples": 27,
+            "foot_pose_change_pairs": 26
+          },
+          "sprint": {
+            "steady_samples": 29,
+            "foot_pose_change_pairs": 28
+          }
+        },
+        "directional_turn_degrees": 90.0,
+        "jump_peak_cm": 183.475,
+        "jump_horizontal_drift_cm": 0.0,
+        "airborne_knee_degrees": 60.863,
+        "scope": "selected native state and pose observations at 1x; no rendered fluidity or FPS acceptance"
+      },
+      "renderer_settings": {
+        "sg.ViewDistanceQuality": 3,
+        "sg.AntiAliasingQuality": 3,
+        "sg.ShadowQuality": 3,
+        "sg.GlobalIlluminationQuality": 3,
+        "sg.ReflectionQuality": 3,
+        "sg.PostProcessQuality": 3,
+        "sg.TextureQuality": 3,
+        "sg.EffectsQuality": 3,
+        "sg.FoliageQuality": 3,
+        "r.Streaming.PoolSize": 1000,
+        "r.Shadow.Virtual.MaxPhysicalPages": 4096,
+        "r.ScreenPercentage": 0.0,
+        "t.MaxFPS": 60.0
+      },
+      "viewport_calibration": {
+        "passed": true,
+        "method": "resize owned editor root, then compensate measured chrome at most once",
+        "display_pixels": [
+          2048,
+          1280
+        ],
+        "target_viewport_pixels": [
+          1920,
+          1080
+        ],
+        "attempts": [
+          {
+            "requested_root_pixels": [
+              1920,
+              1080
+            ],
+            "observed_viewport_pixels": [
+              1920,
+              1080
+            ]
+          }
+        ],
+        "native_viewport_cursor_probes": [
+          {
+            "viewport_pixels": [
+              0,
+              0
+            ],
+            "desktop_pixels": [
+              34.0,
+              86.0
+            ]
+          },
+          {
+            "viewport_pixels": [
+              1919,
+              0
+            ],
+            "desktop_pixels": [
+              1953.0,
+              86.0
+            ]
+          },
+          {
+            "viewport_pixels": [
+              0,
+              1079
+            ],
+            "desktop_pixels": [
+              34.0,
+              1165.0
+            ]
+          }
+        ],
+        "geometry_source": "FSceneViewport cached geometry via three native-pixel cursor probes; platform desktop readback",
+        "cursor_restored_viewport_pixels": [
+          990,
+          554
+        ],
+        "desktop_recording_rectangle": {
+          "x": 34,
+          "y": 86,
+          "width": 1920,
+          "height": 1080,
+          "display_pixels": [
+            2048,
+            1280
+          ]
+        }
+      },
+      "fixture_isolation": {
+        "requested_actor_counts": {
+          "ParkResident": 110,
+          "Car": 44
+        },
+        "requested_owned_component_counts": {
+          "ParkResident": 1100,
+          "Car": 1382
+        },
+        "checkpoints": [
+          {
+            "stage": "warm_up",
+            "passed": true,
+            "observed": {
+              "ParkResident": {
+                "actors": 110,
+                "hidden": 110,
+                "collision_disabled": 110,
+                "actor_ticks_disabled": 110,
+                "owned_components": 1100,
+                "component_ticks_disabled": 1100
+              },
+              "Car": {
+                "actors": 44,
+                "hidden": 44,
+                "collision_disabled": 44,
+                "actor_ticks_disabled": 44,
+                "owned_components": 1382,
+                "component_ticks_disabled": 1382
+              }
+            },
+            "failures": []
+          },
+          {
+            "stage": "completion",
+            "passed": true,
+            "observed": {
+              "ParkResident": {
+                "actors": 110,
+                "hidden": 110,
+                "collision_disabled": 110,
+                "actor_ticks_disabled": 110,
+                "owned_components": 1100,
+                "component_ticks_disabled": 1100
+              },
+              "Car": {
+                "actors": 44,
+                "hidden": 44,
+                "collision_disabled": 44,
+                "actor_ticks_disabled": 44,
+                "owned_components": 1382,
+                "component_ticks_disabled": 1382
+              }
+            },
+            "failures": []
+          }
+        ],
+        "scope": "disposable PIE residents/cars only; actor and owned component primary ticks, visibility and actor collision; no render/FPS acceptance"
+      },
+      "body_provenance": {
+        "body_source": "Data/GraphicNovel/Pilot/CurlyMetalhead/refined-v1/body.fbx",
+        "body_sha256": "e231d727117e76ac2fe0f44921517a0c6256ce9abc2f97dd36c92e1add05930b",
+        "provenance_file": "Data/GraphicNovel/Pilot/CurlyMetalhead/refined-v1/body.json",
+        "provenance_sha256": "d0be37e3288dce9d9f701b799e882e25edbb2bdb3597ba97450ffd7114a6f5c4",
+        "original_generated_body_sha256": "a9f1a81f16986a17a50571b7ed536b1e4137778a8024979576cd427365c3a62e",
+        "reviewed_mask_sha256": "bba92f3782f8056f08b0f41160940c561688f7c07d80de9565a7177aa7746ba8",
+        "original_fbx_contents_identical_except_appended_uv1_layer": true,
+        "fresh_reimport_geometry_normals_uv0_weights_binds_identical": true,
+        "graphics_accepted": false,
+        "scope": "refined UV1 collar color only; original generated maps and own clips; body-only rig with static face and fingers; no visual acceptance"
+      },
+      "mapped_normal_strength": 1.0,
+      "material_uv_channels": {
+        "base_color": 1,
+        "normal": 0,
+        "roughness": 0,
+        "metallic": 0
+      },
+      "continuous_playback_viewed": false,
+      "full_video_clean_gameplay_only": false
+    },
+    {
+      "mode": "comic",
+      "video": {
+        "file": "Saved/Tests/GraphicNovel/RefinedRender-20261014T075500Z/FixedMotion1920Comic/raw.mp4",
+        "sha256": "a90781483fdf97e97b8bbb5c72842fbc2e862dfbb4b0a2788526493740bf7bce",
+        "bytes": 23250472
+      },
+      "native_report": {
+        "file": "Saved/Tests/GraphicNovel/RefinedRender-20261014T075500Z/Fixed/Capture/Motion/Comic/PlayerMotion1920.json",
+        "sha256": "04f538c96f98daa10f2d17e8f74ef1b235a327ae49b418acf0f1349f0bb1afaf",
+        "bytes": 586067
+      },
+      "native_log": {
+        "file": "Saved/Tests/GraphicNovel/RefinedRender-20261014T075500Z/FixedMotion1920Comic/native.log",
+        "sha256": "1ac25bec2480c3b46c8686c80a0c4ab44b42ef193d032f67a9a5cedf48c7d0d3",
+        "bytes": 426541
+      },
+      "recorder_log": {
+        "file": "Saved/Tests/GraphicNovel/RefinedRender-20261014T075500Z/FixedMotion1920Comic/ffmpeg.log",
+        "sha256": "50426dc98a7395d4345bc06579d1d63a9ca8b55aa65d6f41b3c3e0f2cd430993",
+        "bytes": 5385
+      },
+      "job": {
+        "passed": true,
+        "process_exit_code": 0
+      },
+      "encoded_metadata": {
+        "width": 1920,
+        "height": 1080,
+        "seconds": 9.516667,
+        "frames": 571,
+        "encoded_avg_rate": "60/1",
+        "native_render_fps_proven": false,
+        "continuous_playback_reviewed": false
+      },
+      "decoded_frames_inspected": 42,
+      "contact_sheets_inspected": [
+        {
+          "file": "IndependentMotionReview/Comic/full-1Hz-contact.png",
+          "sha256": "65c3019f6e4a408278e56c327f21fca7cd10f80358dcb62e8bdd0c557be14647",
+          "crop": null
+        },
+        {
+          "file": "IndependentMotionReview/Comic/phase-crops-01.png",
+          "sha256": "eb658ff77feae983d3c5430a52190d928effffa260bfeccf0bd37875dddcdf9e",
+          "crop": [
+            660,
+            360,
+            1260,
+            1040
+          ]
+        },
+        {
+          "file": "IndependentMotionReview/Comic/phase-crops-02.png",
+          "sha256": "8360e964d7d42e870c029cd58762788548b874e47f1e028b714515ebe3391c5c",
+          "crop": [
+            660,
+            360,
+            1260,
+            1040
+          ]
+        },
+        {
+          "file": "IndependentMotionReview/Comic/phase-crops-03.png",
+          "sha256": "c1327fa88ba4efba855e853dce89567fd346f7140c1cebb7e265eb0a30fcbf12",
+          "crop": [
+            660,
+            360,
+            1260,
+            1040
+          ]
+        },
+        {
+          "file": "IndependentMotionReview/Comic/phase-crops-04.png",
+          "sha256": "f4f557479b890a77074a09a63637f450a01cd663b0e925ae1188207c89b5f7eb",
+          "crop": [
+            660,
+            360,
+            1260,
+            1040
+          ]
+        },
+        {
+          "file": "IndependentMotionReview/Comic/phase-crops-05.png",
+          "sha256": "4adcd8aea270b1b1fd35194ed0e212bcbf00f70845ec12523882cb3e1cfff830",
+          "crop": [
+            660,
+            360,
+            1260,
+            1040
+          ]
+        }
+      ],
+      "phase_events_approx": [
+        {
+          "phase": "idle",
+          "video_seconds_approx": -0.15195
+        },
+        {
+          "phase": "walk",
+          "video_seconds_approx": 0.22005
+        },
+        {
+          "phase": "sprint",
+          "video_seconds_approx": 1.62605
+        },
+        {
+          "phase": "turn",
+          "video_seconds_approx": 3.03505
+        },
+        {
+          "phase": "stop",
+          "video_seconds_approx": 3.86505
+        },
+        {
+          "phase": "jump",
+          "video_seconds_approx": 4.57305
+        },
+        {
+          "phase": "landing",
+          "video_seconds_approx": 5.85405
+        },
+        {
+          "phase": "recover",
+          "video_seconds_approx": 6.09405
+        }
+      ],
+      "native_selected_observations": 172,
+      "native_checks": {
+        "phase_counts": {
+          "idle": 9,
+          "walk": 35,
+          "sprint": 36,
+          "turn": 21,
+          "stop": 18,
+          "jump": 32,
+          "landing": 6,
+          "recover": 15
+        },
+        "steady_motion": {
+          "walk": {
+            "steady_samples": 27,
+            "foot_pose_change_pairs": 26
+          },
+          "sprint": {
+            "steady_samples": 29,
+            "foot_pose_change_pairs": 28
+          }
+        },
+        "directional_turn_degrees": 90.0,
+        "jump_peak_cm": 183.633,
+        "jump_horizontal_drift_cm": 0.0,
+        "airborne_knee_degrees": 60.997,
+        "scope": "selected native state and pose observations at 1x; no rendered fluidity or FPS acceptance"
+      },
+      "renderer_settings": {
+        "sg.ViewDistanceQuality": 3,
+        "sg.AntiAliasingQuality": 3,
+        "sg.ShadowQuality": 3,
+        "sg.GlobalIlluminationQuality": 3,
+        "sg.ReflectionQuality": 3,
+        "sg.PostProcessQuality": 3,
+        "sg.TextureQuality": 3,
+        "sg.EffectsQuality": 3,
+        "sg.FoliageQuality": 3,
+        "r.Streaming.PoolSize": 1000,
+        "r.Shadow.Virtual.MaxPhysicalPages": 4096,
+        "r.ScreenPercentage": 0.0,
+        "t.MaxFPS": 60.0
+      },
+      "viewport_calibration": {
+        "passed": true,
+        "method": "resize owned editor root, then compensate measured chrome at most once",
+        "display_pixels": [
+          2048,
+          1280
+        ],
+        "target_viewport_pixels": [
+          1920,
+          1080
+        ],
+        "attempts": [
+          {
+            "requested_root_pixels": [
+              1920,
+              1080
+            ],
+            "observed_viewport_pixels": [
+              1920,
+              1080
+            ]
+          }
+        ],
+        "native_viewport_cursor_probes": [
+          {
+            "viewport_pixels": [
+              0,
+              0
+            ],
+            "desktop_pixels": [
+              34.0,
+              86.0
+            ]
+          },
+          {
+            "viewport_pixels": [
+              1919,
+              0
+            ],
+            "desktop_pixels": [
+              1953.0,
+              86.0
+            ]
+          },
+          {
+            "viewport_pixels": [
+              0,
+              1079
+            ],
+            "desktop_pixels": [
+              34.0,
+              1165.0
+            ]
+          }
+        ],
+        "geometry_source": "FSceneViewport cached geometry via three native-pixel cursor probes; platform desktop readback",
+        "cursor_restored_viewport_pixels": [
+          990,
+          554
+        ],
+        "desktop_recording_rectangle": {
+          "x": 34,
+          "y": 86,
+          "width": 1920,
+          "height": 1080,
+          "display_pixels": [
+            2048,
+            1280
+          ]
+        }
+      },
+      "fixture_isolation": {
+        "requested_actor_counts": {
+          "ParkResident": 110,
+          "Car": 45
+        },
+        "requested_owned_component_counts": {
+          "ParkResident": 1100,
+          "Car": 1413
+        },
+        "checkpoints": [
+          {
+            "stage": "warm_up",
+            "passed": true,
+            "observed": {
+              "ParkResident": {
+                "actors": 110,
+                "hidden": 110,
+                "collision_disabled": 110,
+                "actor_ticks_disabled": 110,
+                "owned_components": 1100,
+                "component_ticks_disabled": 1100
+              },
+              "Car": {
+                "actors": 45,
+                "hidden": 45,
+                "collision_disabled": 45,
+                "actor_ticks_disabled": 45,
+                "owned_components": 1413,
+                "component_ticks_disabled": 1413
+              }
+            },
+            "failures": []
+          },
+          {
+            "stage": "completion",
+            "passed": true,
+            "observed": {
+              "ParkResident": {
+                "actors": 110,
+                "hidden": 110,
+                "collision_disabled": 110,
+                "actor_ticks_disabled": 110,
+                "owned_components": 1100,
+                "component_ticks_disabled": 1100
+              },
+              "Car": {
+                "actors": 45,
+                "hidden": 45,
+                "collision_disabled": 45,
+                "actor_ticks_disabled": 45,
+                "owned_components": 1413,
+                "component_ticks_disabled": 1413
+              }
+            },
+            "failures": []
+          }
+        ],
+        "scope": "disposable PIE residents/cars only; actor and owned component primary ticks, visibility and actor collision; no render/FPS acceptance"
+      },
+      "body_provenance": {
+        "body_source": "Data/GraphicNovel/Pilot/CurlyMetalhead/refined-v1/body.fbx",
+        "body_sha256": "e231d727117e76ac2fe0f44921517a0c6256ce9abc2f97dd36c92e1add05930b",
+        "provenance_file": "Data/GraphicNovel/Pilot/CurlyMetalhead/refined-v1/body.json",
+        "provenance_sha256": "d0be37e3288dce9d9f701b799e882e25edbb2bdb3597ba97450ffd7114a6f5c4",
+        "original_generated_body_sha256": "a9f1a81f16986a17a50571b7ed536b1e4137778a8024979576cd427365c3a62e",
+        "reviewed_mask_sha256": "bba92f3782f8056f08b0f41160940c561688f7c07d80de9565a7177aa7746ba8",
+        "original_fbx_contents_identical_except_appended_uv1_layer": true,
+        "fresh_reimport_geometry_normals_uv0_weights_binds_identical": true,
+        "graphics_accepted": false,
+        "scope": "refined UV1 collar color only; original generated maps and own clips; body-only rig with static face and fingers; no visual acceptance"
+      },
+      "mapped_normal_strength": 1.0,
+      "material_uv_channels": {
+        "base_color": 1,
+        "normal": 0,
+        "roughness": 0,
+        "metallic": 0
+      },
+      "continuous_playback_viewed": false,
+      "full_video_clean_gameplay_only": false
+    }
+  ],
+  "draft_sampled_pose_coverage_accepted": true,
+  "continuous_motion_accepted": false,
+  "rendered_fluidity_accepted": false,
+  "native_60fps_proven": false,
+  "graphics_accepted": false,
+  "findings": [
+    {
+      "area": "camera and HUD",
+      "result": "Player stays in the native follow-camera frame across sampled walk, sprint, turn, jump and recovery. Minimap, NORD/Montr\u00e9al label and objective panel remain framed and readable in inspected full-resolution gameplay frames. No gross camera snap or crop failure appears in selected frames.",
+      "limits": "Sparse frames cannot establish continuous camera smoothness or subtle jitter."
+    },
+    {
+      "area": "locomotion and turn",
+      "result": "Walking and sprinting show distinct advancing legs/arms, with a readable direction change into side profile. Native reports separately verify a 90-degree turn and advancing selected foot poses.",
+      "limits": "Standard fast feet, hands and plunger show motion blur; full-cycle sliding/contact and transition timing are not certified."
+    },
+    {
+      "area": "clothing and props",
+      "result": "Shirt, trousers, cuffs and shoes stay present through all sampled phases with no gross tear or detached part. Plunger tracks the arm and remains visible through turn/jump/recovery.",
+      "limits": "Rigid hands do not visibly grip the prop convincingly; prop and fast limbs blur in Standard. Collar closeup improvement is established in the separate still review, not from these distant motion pixels."
+    },
+    {
+      "area": "jump, landing and recovery",
+      "result": "Selected frames show takeoff, raised/bent knees, separate moving shadow, descent, near-ground recoil and coherent recovered idle pose. Native reports separately measure 183.475/183.633 cm peaks and zero horizontal actor drift.",
+      "limits": "Sharp/pinched shoulders and stiff drooping hands persist. Selected frames do not prove exact sole contact, sink/float or smooth recovery rotation."
+    },
+    {
+      "area": "comic treatment",
+      "result": "Character/prop outlines remain identifiable in inspected frames, and the yellow HOP panel is readable near the jump. It overlaps part of the forward prop area without covering the retained HUD.",
+      "limits": "Indigo shirt/hair cast and busy tree/ground ink remain. Full temporal line stability is unverified."
+    },
+    {
+      "area": "raw recording scope",
+      "result": "Gameplay remains visible at the sampled 7-second point in both recordings. Both show the editor at 8 seconds; Comic is black at 9 seconds while Standard still shows the editor. CsvProfiler frame debug text appears at left during gameplay.",
+      "limits": "These 9.516667-second raw captures are diagnostic evidence, not clean gameplay trailers. Approximate phase timing misses about 0.079 s Standard/0.152 s Comic of the earliest idle event."
+    }
+  ],
+  "not_checked": [
+    "Normal-speed continuous playback was not viewed by this reviewer.",
+    "Full fluidity, continuous foot planting, subtle transition pop, temporal line stability and native 60 fps.",
+    "Audio, physical controls, gameplay story advancement, candidate co-op, cooked performance and public candidate deployment."
+  ],
+  "recommendation": "Retain sampled native motion evidence for the opt-in draft while keeping fluidity and final graphic-novel acceptance open. Preserve raw videos; disclose editor/debug/tail content when linking them. Use separate native frame-time diagnostics and actual normal-playback review for smoothness conclusions.",
+  "no_engine_gpu_service_provider_actions_by_reviewer": true
+}

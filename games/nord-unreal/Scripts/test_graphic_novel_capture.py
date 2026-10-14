@@ -3,6 +3,9 @@ import ast
 import copy
 import json
 import math
+import hashlib
+import tempfile
+import traceback
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -56,7 +59,18 @@ for mode in ('', ' -NordGraphicNovelStandard', ' -NordGraphicNovelMotion -NordGr
     assert result['COMIC_PATH'] == '/Game/ParkComic/CrewGraphicNovel/Resident9/M_ComicInk.M_ComicInk'
     assert result['SOURCE'] == ROOT / 'Data/GraphicNovel/Pilot/CurlyMetalhead'
     assert result['NAMES'][9] == 'generated-v1' and len(result['BONES']) == 7
-for flags in ('-NordNeutralCandidate -NordGraphicNovelCandidate', '-NordGraphicNovelHeadless', '-NordGraphicNovelStandard', '-NordGraphicNovelMotion', '-NordGraphicNovelGenerated'):
+for mode in ('', ' -NordGraphicNovelStandard', ' -NordGraphicNovelMotion -NordGraphicNovelStandard'):
+    result = selection('-NordGraphicNovelCandidate -NordGraphicNovelGenerated -NordGraphicNovelHighDetail -NordGraphicNovelHeadless' + mode)
+    expected = ROOT / 'Saved/Tests/GraphicNovel/HighDetailCapture'
+    expected = expected / 'Motion/Standard' if result['MOTION'] else expected / 'Standard' if result['STANDARD'] else expected
+    assert result['OUT'].parent == expected and result['GRAPHIC_NOVEL_HIGH_DETAIL']
+    assert result['SOURCE'] == ROOT / 'Data/GraphicNovel/Pilot/CurlyMetalhead'
+    assert result['NAMES'][9] == 'generated-v2-high-detail' and len(result['BONES']) == 7
+    assert result['CREW_PATH'] == '/Game/ParkComic/CrewGraphicNovelHighDetail'
+    assert result['COMIC_PATH'] == '/Game/ParkComic/CrewGraphicNovel/Resident9/M_ComicInk.M_ComicInk'
+assert not selection('-NordGraphicNovelHighDetailOther')['GRAPHIC_NOVEL_HIGH_DETAIL']
+for flags in ('-NordNeutralCandidate -NordGraphicNovelCandidate', '-NordGraphicNovelHeadless', '-NordGraphicNovelStandard', '-NordGraphicNovelMotion', '-NordGraphicNovelGenerated',
+              '-NordGraphicNovelHighDetail', '-NordGraphicNovelCandidate -NordGraphicNovelHighDetail', '-NordGraphicNovelGenerated -NordGraphicNovelHighDetail'):
     try:
         selection(flags)
     except AssertionError:
@@ -242,6 +256,12 @@ for row in generated:
 generated_context = {**check_context, 'CREW_PATH': '/Game/ParkComic/CrewGraphicNovelGenerated', 'GRAPHIC_NOVEL_GENERATED': True}
 exec(compile(ast.Module(body=[checks], type_ignores=[]), str(SOURCE), 'exec'), generated_context)
 assert len(generated_context['transition_checks'](generated, lengths)['phase_counts']) == 8
+high_detail = copy.deepcopy(generated)
+for row in high_detail:
+    row['clip_path'] = row['clip_path'].replace('/CrewGraphicNovelGenerated/', '/CrewGraphicNovelHighDetail/')
+high_context = {**generated_context, 'CREW_PATH': '/Game/ParkComic/CrewGraphicNovelHighDetail'}
+exec(compile(ast.Module(body=[checks], type_ignores=[]), str(SOURCE), 'exec'), high_context)
+assert len(high_context['transition_checks'](high_detail, lengths)['phase_counts']) == 8
 for key in generated[0]['pilot_controls']:
     bad = copy.deepcopy(generated)
     bad[0]['pilot_controls'][key] = 1
@@ -268,4 +288,260 @@ for defect in ('paused', 'slow', 'held_foot', 'held_clip', 'missing_turn', 'shor
         pass
     else:
         raise AssertionError('Unsafe motion observations accepted: ' + defect)
+# Refined routing must validate the frozen paid source and preservation receipt.
+provenance_node = next(node for node in TREE.body if isinstance(node, ast.FunctionDef) and node.name == 'generated_body_status')
+game_root = SOURCE.parent.parent.resolve()
+pilot_source = game_root / 'Data/GraphicNovel/Pilot/CurlyMetalhead'
+provenance = json.loads((pilot_source / 'refined-v1/body.json').read_text())
+provenance_context = {'ROOT': game_root, 'SOURCE': pilot_source, 'json': json, 'hashlib': hashlib}
+exec(compile(ast.Module(body=[provenance_node], type_ignores=[]), str(SOURCE), 'exec'), provenance_context)
+imported = {'passed': True, 'body_source': provenance['output']}
+status = provenance_context['generated_body_status'](imported)
+assert status['body_sha256'] == provenance['output_sha256'] and not status['graphics_accepted']
+for defect in ('native_failed', 'legacy_body', 'receipt_failed', 'body_hash', 'source_hash', 'source_path', 'mask_hash', 'preservation', 'fresh_reimport', 'uv_layers', 'corners'):
+    receipt, native_receipt = copy.deepcopy(provenance), dict(imported)
+    if defect == 'native_failed': native_receipt['passed'] = False
+    elif defect == 'legacy_body': native_receipt['body_source'] = provenance['source']
+    elif defect == 'receipt_failed': receipt['passed'] = False
+    elif defect == 'body_hash': receipt['output_sha256'] = '0' * 64
+    elif defect == 'source_hash': receipt['source_sha256'] = '0' * 64
+    elif defect == 'source_path': receipt['source'] = receipt['output']
+    elif defect == 'mask_hash': receipt['mask_sha256'] = '0' * 64
+    elif defect == 'preservation': receipt['original_fbx_contents_identical_except_appended_uv1_layer'] = False
+    elif defect == 'fresh_reimport': receipt['fresh_reimport_geometry_normals_uv0_weights_binds_identical'] = False
+    elif defect == 'uv_layers': receipt['uv_layers'] = ['UVMap']
+    elif defect == 'corners': receipt['changed_uv1_corners'] = 48
+    provenance_context['json'] = SimpleNamespace(loads=lambda _, receipt=receipt: receipt)
+    try:
+        provenance_context['generated_body_status'](native_receipt)
+    except AssertionError:
+        pass
+    else:
+        raise AssertionError('Unsafe refined provenance accepted: ' + defect)
+
+# Raw high-detail provenance is independent of the refined UV1 source receipt.
+high_node = next(node for node in TREE.body if isinstance(node, ast.FunctionDef) and node.name == 'high_detail_body_status')
+high_manifest_node = next(node for node in TREE.body if isinstance(node, ast.Assign)
+                          and any(isinstance(target, ast.Name) and target.id == 'MANIFEST' for target in node.targets))
+high_folder = pilot_source / 'generated-v2-high-detail'
+high_review = json.loads((high_folder / 'source-review.json').read_text())
+high_jump = json.loads((high_folder / 'jump.json').read_text())
+high_generation = json.loads((high_folder / 'generation.json').read_text())
+for defect in (None, 'native_failed', 'wrong_native_body', 'generation_status', 'request_id',
+               'source_changed', 'manifest_hash', 'body_hash', 'uv_channels', 'bones', 'controls',
+               'clip_hierarchy', 'clip_bind', 'empty_clip', 'jump_roundtrip', 'jump_body',
+               'jump_root_motion', 'source_file', 'missing_manifest_file', 'duplicate_manifest_file'):
+    with tempfile.TemporaryDirectory(prefix='nord-high-detail-capture-') as directory:
+        root = Path(directory)
+        source = root / 'Data/GraphicNovel/Pilot/CurlyMetalhead'
+        folder = source / 'generated-v2-high-detail'
+        folder.mkdir(parents=True)
+        names = ('body.fbx', 'body.glb', 'idle.fbx', 'walk.fbx', 'run.fbx', 'jump.fbx',
+                 'base_color.png', 'normal.png', 'roughness.png', 'metallic.png', 'reference.png')
+        for name in names:
+            (folder / name).write_bytes(('independent fixture: ' + name).encode())
+        hashes = {name: hashlib.sha256((folder / name).read_bytes()).hexdigest() for name in names}
+        jump, review, generation = copy.deepcopy(high_jump), copy.deepcopy(high_review), copy.deepcopy(high_generation)
+        jump.update(body_sha256=hashes['body.fbx'], jump_sha256=hashes['jump.fbx'])
+        review.update(body_sha256=hashes['body.fbx'], body_glb_sha256=hashes['body.glb'], uv_channels=1)
+        generation['source_reference_sha256'] = hashes['reference.png']
+        if defect == 'generation_status': generation['status'] = 'submitted'
+        elif defect == 'request_id': generation['request_id'] = 'another-generation'
+        elif defect == 'source_changed': review['source_unchanged'] = False
+        elif defect == 'body_hash': review['body_sha256'] = '0' * 64
+        elif defect == 'uv_channels': review['uv_channels'] = 2
+        elif defect == 'bones': review['weighted_body_bones'] = 44
+        elif defect == 'controls': review['finger_controls'] = True
+        elif defect == 'clip_hierarchy': review['clips']['walk']['own_hierarchy_matches'] = False
+        elif defect == 'clip_bind': review['clips']['run']['max_weighted_bind_error'] = .1
+        elif defect == 'empty_clip': review['clips']['idle']['animation_curves'] = 0
+        elif defect == 'jump_roundtrip': review['local_jump_round_trip_passed'] = False
+        elif defect == 'jump_body': jump['body_sha256'] = '0' * 64
+        elif defect == 'jump_root_motion': jump['actor_root_motion'] = True
+        (folder / 'jump.json').write_text(json.dumps(jump))
+        entries = [{'file': path.name, 'bytes': path.stat().st_size,
+                    'sha256': hashlib.sha256(path.read_bytes()).hexdigest()}
+                   for path in sorted(folder.iterdir())]
+        if defect == 'missing_manifest_file': entries = [row for row in entries if row['file'] != 'jump.fbx']
+        elif defect == 'duplicate_manifest_file': entries.append(dict(entries[0]))
+        (folder / 'files.json').write_text(json.dumps(entries))
+        review['manifest_sha256'] = hashlib.sha256((folder / 'files.json').read_bytes()).hexdigest()
+        if defect == 'manifest_hash': review['manifest_sha256'] = '0' * 64
+        (folder / 'source-review.json').write_text(json.dumps(review))
+        (folder / 'generation.json').write_text(json.dumps(generation))
+        if defect == 'source_file': (folder / 'normal.png').write_bytes(b'changed')
+        context = {'ROOT': root, 'SOURCE': source, 'Path': Path, 'json': json, 'hashlib': hashlib,
+                   'GRAPHIC_NOVEL_HIGH_DETAIL': True, 'NAMES': {9: 'generated-v2-high-detail'}}
+        exec(compile(ast.Module(body=[high_manifest_node, high_node], type_ignores=[]), str(SOURCE), 'exec'), context)
+        assert context['MANIFEST']['generated-v2-high-detail/base_color.png'] == hashes['base_color.png']
+        native = {'passed': defect != 'native_failed', 'body_source': str((folder / 'body.fbx').relative_to(root))}
+        if defect == 'wrong_native_body': native['body_source'] = 'Data/GraphicNovel/Pilot/CurlyMetalhead/refined-v1/body.fbx'
+        try:
+            status = context['high_detail_body_status'](native)
+        except AssertionError:
+            assert defect is not None, 'Valid high-detail provenance rejected'
+        else:
+            assert defect is None, 'Unsafe high-detail provenance accepted: ' + str(defect)
+            assert status['body_sha256'] == hashes['body.fbx'] and status['uv_channels'] == 1 and not status['graphics_accepted']
+
+# The native resident Tick reverses the old one-time hide/collision request.
+class FixtureComponent:
+    def __init__(self, owner, path):
+        self.owner, self.path, self.tick_enabled, self.ticks = owner, path, True, 0
+    def get_owner(self): return self.owner
+    def get_path_name(self): return self.path
+    def set_component_tick_enabled(self, enabled): self.tick_enabled = enabled
+    def is_component_tick_enabled(self): return self.tick_enabled
+    def step(self): self.ticks += self.tick_enabled
+
+
+class FixtureResident:
+    def __init__(self, path):
+        self.path, self.hidden, self.collision, self.tick_enabled = path, False, True, True
+        self.components = [FixtureComponent(self, path + '.Mesh')]
+    def get_path_name(self): return self.path
+    def get_components_by_class(self, _): return self.components
+    def get_editor_property(self, key):
+        assert key == 'hidden'
+        return self.hidden
+    def set_actor_hidden_in_game(self, hidden): self.hidden = hidden
+    def set_actor_enable_collision(self, enabled): self.collision = enabled
+    def get_actor_enable_collision(self): return self.collision
+    def set_actor_tick_enabled(self, enabled): self.tick_enabled = enabled
+    def is_actor_tick_enabled(self): return self.tick_enabled
+    def step(self):
+        if self.tick_enabled: self.hidden, self.collision = False, True
+        for component in self.components: component.step()
+
+
+resident, car, foreign = (FixtureResident(path) for path in ('Resident0', 'Car0', 'Unrelated'))
+resident.components.append(foreign.components[0])
+actors = {'ParkResident': [resident], 'Car': [car]}
+resident.set_actor_hidden_in_game(True)
+resident.set_actor_enable_collision(False)
+resident.step()
+assert not resident.hidden and resident.collision and resident.components[0].ticks == 1
+fixture_context = {'STATE': {'world': world}, 'REPORT': {}, 'u': SimpleNamespace(ActorComponent=object,
+    load_class=lambda _, name: name.removeprefix('/Script/Quebec.Quebec'),
+    GameplayStatics=SimpleNamespace(get_all_actors_of_class=lambda _, kind: actors[kind]))}
+fixture_functions = [node for node in TREE.body if isinstance(node, ast.FunctionDef)
+    and node.name in ('background_actors', 'owned_components', 'isolate_background_actors', 'verify_background_isolation')]
+exec(compile(ast.Module(body=fixture_functions, type_ignores=[]), str(SOURCE), 'exec'), fixture_context)
+fixture_context['isolate_background_actors'](world)
+resident.step()
+car.step()
+assert resident.hidden and not resident.collision and resident.components[0].ticks == 1
+assert not resident.tick_enabled and not resident.components[0].tick_enabled
+assert foreign.tick_enabled and foreign.components[0].tick_enabled, 'Never disable foreign component ticks'
+fixture_context['verify_background_isolation']('warm_up')
+observed = fixture_context['REPORT']['fixture_isolation']['checkpoints'][-1]['observed']
+assert observed['ParkResident'] == dict(actors=1, hidden=1, collision_disabled=1, actor_ticks_disabled=1, owned_components=1, component_ticks_disabled=1)
+for defect in ('actor_tick', 'component_tick', 'unhidden', 'collision', 'new_component', 'new_actor'):
+    fixture_context['isolate_background_actors'](world)
+    if defect == 'actor_tick': resident.tick_enabled = True
+    elif defect == 'component_tick': resident.components[0].tick_enabled = True
+    elif defect == 'unhidden': resident.hidden = False
+    elif defect == 'collision': resident.collision = True
+    elif defect == 'new_component':
+        component = FixtureComponent(resident, 'Resident0.New')
+        component.tick_enabled = False
+        resident.components.append(component)
+    elif defect == 'new_actor': actors['ParkResident'].append(FixtureResident('Resident1'))
+    try:
+        fixture_context['verify_background_isolation']('completion')
+    except AssertionError:
+        assert not fixture_context['REPORT']['fixture_isolation']['checkpoints'][-1]['passed']
+    else:
+        raise AssertionError('Unsafe background isolation accepted: ' + defect)
+    if defect == 'new_component': resident.components.pop()
+    elif defect == 'new_actor': actors['ParkResident'].pop()
+fixture_context['isolate_background_actors'](world)
+fixture_context['verify_background_isolation']('completion')
+
+# Completion isolation failures must fail the report and still end owned PIE/settings.
+finish_node = next(node for node in TREE.body if isinstance(node, ast.FunctionDef) and node.name == 'finish')
+cleanup = []
+fixture_context['STATE'].update(finished=False, started=0, owns_pie=True, original_time_dilation=1., callback=123)
+fixture_context['REPORT'].update(characters=[{}], screenshots=list(range(7)))
+fixture_context.update(HEADLESS=False, MOTION=False, STYLES=(9,), WIDTH=1280,
+    time=SimpleNamespace(monotonic=lambda: 1.), traceback=traceback, json=json,
+    LEVELS=SimpleNamespace(editor_request_end_play=lambda: cleanup.append('end_pie')),
+    ORIGINAL={'PlayNumberOfClients': 1}, ORIGINAL_MODE=0,
+    SETTINGS=SimpleNamespace(set_editor_property=lambda *_: cleanup.append('setting')),
+    SYSTEM=SimpleNamespace(call_method=lambda *_: cleanup.append('mode')),
+    SCRIPT=SimpleNamespace(call_method=lambda *_: cleanup.append('keepalive')))
+fixture_context['u'].GameplayStatics.set_game_paused = lambda *_: cleanup.append('unpause')
+fixture_context['u'].GameplayStatics.set_global_time_dilation = lambda *_: cleanup.append('dilation')
+fixture_context['u'].unregister_slate_post_tick_callback = lambda *_: cleanup.append('unregister')
+fixture_context['u'].log_error = lambda *_: None
+exec(compile(ast.Module(body=[finish_node], type_ignores=[]), str(SOURCE), 'exec'), fixture_context)
+resident.components[0].tick_enabled = True
+with tempfile.TemporaryDirectory() as directory:
+    fixture_context['VERIFY'] = Path(directory)
+    fixture_context['finish']()
+    saved = json.loads((Path(directory) / 'PlayerQuality1280.json').read_text())
+assert not saved['passed'] and saved['fixture_isolation']['completion_error']
+assert cleanup == ['unpause', 'dilation', 'end_pie', 'setting', 'mode', 'unregister', 'keepalive']
+
+# UV1 applies solely to the reviewed collar's base color; other maps retain UV0.
+class TextureSample:
+    def __init__(self, uv=None): self.uv, self.coordinate = uv, 0
+    def get_editor_property(self, name):
+        assert name == 'const_coordinate'
+        return self.coordinate
+
+
+class TextureCoordinate:
+    def __init__(self, index): self.index = index
+    def get_editor_property(self, name):
+        assert name == 'coordinate_index'
+        return self.index
+
+
+base, normal_sample, rough, metal = TextureSample(TextureCoordinate(1)), TextureSample(), TextureSample(), TextureSample()
+normal_values = {'const_alpha': 0.}
+normal = SimpleNamespace(get_editor_property=normal_values.__getitem__)
+normal_input = {'Alpha': None}
+uv_context = {'u': SimpleNamespace(MaterialExpressionTextureSample=TextureSample, MaterialExpressionTextureCoordinate=TextureCoordinate,
+    MaterialProperty=SimpleNamespace(MP_ROUGHNESS='rough', MP_METALLIC='metal'),
+    MaterialEditingLibrary=SimpleNamespace(get_material_expression_input_names=lambda node: ['A', 'B', 'Alpha'] if node is normal else ['UVs'],
+        get_inputs_for_material_expression=lambda _, node: [normal_sample, None, normal_input['Alpha']] if node is normal else [node.uv],
+        get_material_property_input_node=lambda _, prop: {'rough': rough, 'metal': metal}[prop])),
+    'GRAPHIC_NOVEL_HIGH_DETAIL': False}
+uv_functions = [node for node in TREE.body if isinstance(node, ast.FunctionDef) and node.name in ('expression_inputs', 'generated_material_uvs')]
+exec(compile(ast.Module(body=uv_functions, type_ignores=[]), str(SOURCE), 'exec'), uv_context)
+assert uv_context['generated_material_uvs'](None, base, normal) == {'base_color': 1, 'normal': 0, 'roughness': 0, 'metallic': 0}
+for sample in (base, normal_sample, rough, metal):
+    previous = sample.uv
+    sample.uv = None if sample is base else TextureCoordinate(1)
+    try:
+        uv_context['generated_material_uvs'](None, base, normal)
+    except AssertionError:
+        pass
+    else:
+        raise AssertionError('Wrong material UV channel accepted')
+    sample.uv = previous
+
+base.uv = None
+uv_context['GRAPHIC_NOVEL_HIGH_DETAIL'] = True
+assert uv_context['generated_material_uvs'](None, base, normal) == dict.fromkeys(('base_color', 'normal', 'roughness', 'metallic'), 0)
+for sample in (base, normal_sample, rough, metal):
+    sample.uv = TextureCoordinate(1)
+    try:
+        uv_context['generated_material_uvs'](None, base, normal)
+    except AssertionError:
+        pass
+    else:
+        raise AssertionError('High-detail accepted a UV1 texture map')
+    sample.uv = None
+for defect in ('attenuated_normal', 'connected_alpha'):
+    normal_values['const_alpha'] = .35 if defect == 'attenuated_normal' else 0.
+    normal_input['Alpha'] = object() if defect == 'connected_alpha' else None
+    try:
+        uv_context['generated_material_uvs'](None, base, normal)
+    except AssertionError:
+        pass
+    else:
+        raise AssertionError('High-detail accepted altered normal strength: ' + defect)
+
 print('NORD_GRAPHIC_NOVEL_CAPTURE_CPU_OK isolated modes/motion, bounded viewport geometry, rejected flags, native transition failures, graph weights/times and legacy sampling')

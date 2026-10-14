@@ -1,9 +1,11 @@
 """Import retained relaxed crew bodies and their own clips; never submits generation.
 
 -NordNeutralCandidate imports only style 9 into a separate review folder.
--NordGraphicNovelCandidate -NordGraphicNovelGenerated imports the fresh generated body and its own clips separately.
+-NordGraphicNovelCandidate -NordGraphicNovelGenerated imports the refined generated body and its own clips separately.
+Add -NordGraphicNovelHighDetail for the separate raw high-detail body and its own maps/clips.
 Original source bodies remain in Data/CharactersMeshy for recovery.
 """
+import hashlib
 import json
 import shutil
 import sys
@@ -19,6 +21,8 @@ command=u.SystemLibrary.get_command_line()
 candidate='-NordNeutralCandidate' in command
 graphic_novel='-NordGraphicNovelCandidate' in command
 generated='-NordGraphicNovelGenerated' in command
+high_detail='-NordGraphicNovelHighDetail' in command.split()
+assert not high_detail or (graphic_novel and generated), 'High-detail import requires Candidate and Generated flags'
 assert not generated or graphic_novel, 'Generated import requires -NordGraphicNovelCandidate'
 assert not (candidate and graphic_novel), 'Choose one candidate route'
 if graphic_novel:
@@ -27,14 +31,42 @@ source_root=root/'Data/CharactersNeutral'
 if candidate or graphic_novel:styles={'CurlyMetalhead':9}
 if generated:
     source_root=root/'Data/GraphicNovel/Pilot/CurlyMetalhead'
-    styles={'generated-v1':9}
-crew_folder='CrewGraphicNovelGenerated' if generated else 'CrewGraphicNovel' if graphic_novel else 'CrewNeutral' if candidate else 'Crew'
+    styles={'generated-v2-high-detail' if high_detail else 'generated-v1':9}
+crew_folder='CrewGraphicNovelHighDetail' if high_detail else 'CrewGraphicNovelGenerated' if generated else 'CrewGraphicNovel' if graphic_novel else 'CrewNeutral' if candidate else 'Crew'
 pilot_body=root/'Data/GraphicNovel/Pilot/CurlyMetalhead/wardrobe/body-bind-pose.fbx'
-if generated:pilot_body=source_root/'generated-v1/body.fbx'
+if generated:pilot_body=source_root/'refined-v1/body.fbx'
+if high_detail:pilot_body=source_root/'generated-v2-high-detail/body.fbx'
 if graphic_novel:assert pilot_body.is_file(), pilot_body
 for name in styles:
     for filename in ('body.fbx','idle.fbx','walk.fbx','run.fbx','jump.fbx','base_color.png','normal.png','roughness.png','metallic.png'):
         assert (source_root/name/filename).is_file(),(name,filename)
+if generated and not high_detail:
+    refinement=json.loads((source_root/'refined-v1/body.json').read_text())
+    assert refinement['passed'] and refinement['original_fbx_contents_identical_except_appended_uv1_layer']
+    assert refinement['fresh_reimport_geometry_normals_uv0_weights_binds_identical']
+    for key in ('source','output','mask'):
+        path=root/refinement[key] if key!='mask' else source_root/'refined-v1/collar-uv1.json'
+        assert hashlib.sha256(path.read_bytes()).hexdigest()==refinement[key+'_sha256'],path
+if high_detail:
+    high_source=source_root/'generated-v2-high-detail'
+    review=json.loads((high_source/'source-review.json').read_text())
+    generation=json.loads((high_source/'generation.json').read_text())
+    assert all(review[key] is True for key in ('passed','source_unchanged','own_clip_bind_checks_passed')), 'High-detail source review failed'
+    assert review['uv_channels']==1, 'High-detail body must retain its single UV channel'
+    assert generation['status']=='completed_downloaded' and review['generation_request_id']==generation['request_id'], 'High-detail generation receipt mismatch'
+    manifest=high_source/'files.json'
+    assert hashlib.sha256(manifest.read_bytes()).hexdigest()==review['manifest_sha256'], 'High-detail manifest changed'
+    files=json.loads(manifest.read_text())
+    expected={'body.fbx','body.glb','idle.fbx','walk.fbx','run.fbx','run.glb','jump.fbx','jump.json',
+              'base_color.png','normal.png','roughness.png','metallic.png','preview.png','reference.png'}
+    assert len(files)==len(expected) and {row['file'] for row in files}==expected, 'Incomplete high-detail source manifest'
+    for row in files:
+        path=high_source/row['file']
+        assert path.resolve().parent==high_source.resolve(), 'High-detail source escapes its folder'
+        assert path.stat().st_size==row['bytes'] and hashlib.sha256(path.read_bytes()).hexdigest()==row['sha256'], path
+    hashes={row['file']:row['sha256'] for row in files}
+    assert review['body_sha256']==hashes['body.fbx'] and review['body_glb_sha256']==hashes['body.glb'], 'High-detail reviewed body mismatch'
+    assert generation['source_reference_sha256']==hashes['reference.png'], 'High-detail generation reference mismatch'
 # Retain a recovery copy before touching any saved candidate or production asset.
 backup=root/'Saved/Backups'/('CrewImport-'+datetime.now().strftime('%Y%m%d-%H%M%S-%f'))
 for style in styles.values():
@@ -103,6 +135,11 @@ for name,style in styles.items():
         u.EditorAssetLibrary.save_loaded_asset(texture)
         node=materials.create_material_expression(material,u.MaterialExpressionTextureSample,-400,0)
         node.texture=texture
+        if generated and not high_detail and channel=='base_color':
+            # Albedo alone uses the repaired collar; the normal bake retains UV0.
+            uv=materials.create_material_expression(material,u.MaterialExpressionTextureCoordinate,-600,0)
+            uv.set_editor_property('coordinate_index',1)
+            assert materials.connect_material_expressions(uv,'',node,'UVs')
         if channel=='normal':node.sampler_type=u.MaterialSamplerType.SAMPLERTYPE_NORMAL
         elif channel!='base_color':node.sampler_type=u.MaterialSamplerType.SAMPLERTYPE_MASKS
         if channel=='normal':
@@ -190,6 +227,7 @@ for name,style in styles.items():
 assert reports,'No downloaded models to import'
 report_path=root/('Saved/Tests/GraphicNovel/PilotImport.json' if graphic_novel else 'Verification/'+('NeutralCandidateImport.json' if candidate else 'NeutralCrewImport.json'))
 if generated:report_path=root/'Saved/Tests/GraphicNovel/GeneratedImport.json'
+if high_detail:report_path=root/'Saved/Tests/GraphicNovel/HighDetailImport.json'
 report_path.parent.mkdir(parents=True,exist_ok=True)
 report_path.write_text(json.dumps({'passed':True,'source':str(source_root.relative_to(root)),'body_source':str(pilot_body.relative_to(root)) if graphic_novel else 'body.fbx','backup':str(backup),'characters':reports},indent=2)+'\n')
 u.log('NORD_MESHY_IMPORT_OK '+str(len(reports)))

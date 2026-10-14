@@ -1,0 +1,64 @@
+
+> nord-browser-player@0.1.0 test
+> node --test config.test.mjs touch-controls.test.mjs stream-sample.test.mjs hero.test.mjs
+
+node:internal/modules/package_json_reader:301
+  throw new ERR_MODULE_NOT_FOUND(packageName, fileURLToPath(base), null);
+        ^
+
+Error [ERR_MODULE_NOT_FOUND]: Cannot find package '@epicgames-ps/lib-pixelstreamingcommon-ue5.8' imported from /home/von/Work/rouge-warden-nord-graphic-novel/games/nord-unreal/Browser/config.test.mjs
+    at Object.getPackageJSONURL (node:internal/modules/package_json_reader:301:9)
+    at packageResolve (node:internal/modules/esm/resolve:784:25)
+    at moduleResolve (node:internal/modules/esm/resolve:873:18)
+    at defaultResolve (node:internal/modules/esm/resolve:1006:11)
+    at #cachedDefaultResolve (node:internal/modules/esm/loader:708:20)
+    at #resolveAndMaybeBlockOnLoaderThread (node:internal/modules/esm/loader:728:38)
+    at ModuleLoader.resolveSync (node:internal/modules/esm/loader:766:56)
+    at #resolve (node:internal/modules/esm/loader:690:17)
+    at ModuleLoader.getOrCreateModuleJob (node:internal/modules/esm/loader:610:35)
+    at ModuleJob.syncLink (node:internal/modules/esm/module_job:277:33) {
+  code: 'ERR_MODULE_NOT_FOUND'
+}
+
+Node.js v26.7.0
+✖ config.test.mjs (25.818064ms)
+✔ still-only title never loads a clip, including after rotation or preference changes (3.422489ms)
+✔ connecting, intro, play and background unload the loop; only visible media rotates (1.496502ms)
+✔ full trailer loads on explicit open and unloads on close without loading the title underneath (0.691936ms)
+✔ late autoplay success or rejection cannot restart or unmute an inactive title (0.929945ms)
+✔ stream summary uses measured time and counter differences, including freezes (1.208381ms)
+✔ touch input stays disabled until actual play and disabling releases held keys (1.560021ms)
+✔ movement deadzone, diagonals, direction changes and simultaneous actions use native keys (0.497887ms)
+✔ a second finger cannot steal a stick and duplicate action holds release only after both fingers leave (0.212573ms)
+✔ look drag uses Epic video-coordinate normalization and bounded signed protocol deltas (0.693047ms)
+✔ dragging the game image looks while another finger moves; a second look finger cannot steal it (0.226616ms)
+✔ gyro needs an explicit permission click and maps portrait, landscape and flat-phone rotation (2.460554ms)
+✔ gyro rejects unavailable/denied sensors, malformed rates, stale samples and background/menu input (2.993984ms)
+✔ a permission response cannot enable gyro after disconnect (1.343863ms)
+✔ blur, resize, pagehide, hidden document and explicit release all prevent stuck movement (0.382884ms)
+✔ keyboard and assistive clicks hold actions across ticks without repeating pointer clicks or releasing held keys (301.718654ms)
+✔ releaseAll cancels a pending assistive activation without delayed duplicate releases (150.046541ms)
+✔ a permitted sensor that sends no samples stays off with an explanation (2601.372029ms)
+✔ adaptive video sizes keep the same native drag gain in each orientation (0.449009ms)
+✔ actual driving mode separates steering and pedals, prioritizes brake and ignores repeated/invalid state (0.292777ms)
+✔ driving controls release on menu, rotation, blur, cancel and disconnect (0.829979ms)
+✔ double-tapping Move sprints during the second hold and releases on stopping (0.290001ms)
+✔ double-tapped Sprint stays active with Move and vehicle/menu transitions clear it (0.161252ms)
+✔ dragging a held action looks without releasing it or stealing an existing look finger (0.172278ms)
+✔ swimming presents Stroke and restores Jump/Brake across movement states (0.094433ms)
+✔ assistive activation can cancel a latched sprint and inert menus cannot send keys (0.143031ms)
+✔ Sprint taps tolerate finger jitter but a look drag returning to its start is not a tap (0.192455ms)
+ℹ tests 27
+ℹ suites 0
+ℹ pass 26
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 3111.680603
+
+✖ failing tests:
+
+test at config.test.mjs:1:1
+✖ config.test.mjs (25.818064ms)
+  'test failed'

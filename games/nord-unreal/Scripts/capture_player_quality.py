@@ -11,6 +11,7 @@ ImageMagick verifies the imported atlas source pixels against the retained PNG.
 swapping the live pawn's mesh and clips in PIE, with separate output and reports.
 -NordGraphicNovelCandidate selects only the isolated style 9 body/clips/blended graph.
 Add -NordGraphicNovelGenerated to inspect the separately imported new body and its own clips.
+Add -NordGraphicNovelHighDetail with Candidate+Generated for the separate high-detail A/B.
 Add -NordGraphicNovelStandard to review the standard view in a separate output folder.
 Add -NordGraphicNovelHeadless for native state/bone checks without rendered evidence.
 Add -NordGraphicNovelMotion for separate unpaused 1x native transitions without stills.
@@ -35,18 +36,20 @@ COMMAND_LINE = u.SystemLibrary.get_command_line()
 NEUTRAL_CANDIDATE = '-NordNeutralCandidate' in COMMAND_LINE
 GRAPHIC_NOVEL_CANDIDATE = '-NordGraphicNovelCandidate' in COMMAND_LINE
 GRAPHIC_NOVEL_GENERATED = '-NordGraphicNovelGenerated' in COMMAND_LINE
+GRAPHIC_NOVEL_HIGH_DETAIL = '-NordGraphicNovelHighDetail' in COMMAND_LINE.split()
 HEADLESS = '-NordGraphicNovelHeadless' in COMMAND_LINE
 STANDARD = '-NordGraphicNovelStandard' in COMMAND_LINE
 MOTION = '-NordGraphicNovelMotion' in COMMAND_LINE
 assert not (NEUTRAL_CANDIDATE and GRAPHIC_NOVEL_CANDIDATE), 'Choose one candidate fixture'
 assert not GRAPHIC_NOVEL_GENERATED or GRAPHIC_NOVEL_CANDIDATE, 'Generated review requires the graphic-novel candidate'
+assert not GRAPHIC_NOVEL_HIGH_DETAIL or (GRAPHIC_NOVEL_CANDIDATE and GRAPHIC_NOVEL_GENERATED), 'High-detail review requires Candidate and Generated'
 assert not HEADLESS or GRAPHIC_NOVEL_CANDIDATE, 'Headless mode requires the graphic-novel candidate'
 assert not STANDARD or GRAPHIC_NOVEL_CANDIDATE, 'Standard review requires the graphic-novel candidate'
 assert not MOTION or GRAPHIC_NOVEL_CANDIDATE, 'Motion review requires the graphic-novel candidate'
 WIDTH, HEIGHT = (1920, 1080) if '-NordQuality1920' in COMMAND_LINE else (1280, 720)
 OUT = ROOT / 'Preview' / f'{"NeutralCandidate" if NEUTRAL_CANDIDATE else "PlayerQuality"}{WIDTH}'
 if GRAPHIC_NOVEL_CANDIDATE:
-    capture_root = ROOT / 'Saved/Tests/GraphicNovel' / ('GeneratedCapture' if GRAPHIC_NOVEL_GENERATED else 'PilotCapture')
+    capture_root = ROOT / 'Saved/Tests/GraphicNovel' / ('HighDetailCapture' if GRAPHIC_NOVEL_HIGH_DETAIL else 'GeneratedCapture' if GRAPHIC_NOVEL_GENERATED else 'PilotCapture')
     OUT = capture_root / str(WIDTH)
     if STANDARD:
         OUT = OUT.parent / 'Standard' / str(WIDTH)
@@ -72,6 +75,9 @@ if GRAPHIC_NOVEL_GENERATED:
     NAMES[9] = 'generated-v1'
     SOURCE = ROOT / 'Data/GraphicNovel/Pilot/CurlyMetalhead'
     CREW_PATH = '/Game/ParkComic/CrewGraphicNovelGenerated'
+if GRAPHIC_NOVEL_HIGH_DETAIL:
+    NAMES[9] = 'generated-v2-high-detail'
+    CREW_PATH = '/Game/ParkComic/CrewGraphicNovelHighDetail'
 COMIC_PATH = '/Game/ParkComic/CrewGraphicNovel/Resident9/M_ComicInk.M_ComicInk' if GRAPHIC_NOVEL_CANDIDATE else '/Game/Art/Comic/M_ComicInk.M_ComicInk'
 BONES = ('Hips', 'Head', 'headfront', 'LeftLeg', 'RightLeg', 'LeftFoot', 'RightFoot')
 if GRAPHIC_NOVEL_CANDIDATE and not GRAPHIC_NOVEL_GENERATED:
@@ -79,7 +85,8 @@ if GRAPHIC_NOVEL_CANDIDATE and not GRAPHIC_NOVEL_GENERATED:
                    for finger in ('Pinky', 'Ring', 'Middle', 'Index', 'Thumb') for segment in (1, 2))
 BUILD_EXPECTED={'recompute_normals':False,'recompute_tangents':True,'use_mikk_t_space':True,
                 'compute_weighted_normals':False,'use_full_precision_u_vs':True,'use_high_precision_tangent_basis':True}
-MANIFEST = {row['file']: row['sha256'] for row in json.loads((SOURCE / 'files.json').read_text())}
+MANIFEST = {(NAMES[9] + '/' if GRAPHIC_NOVEL_HIGH_DETAIL else '') + row['file']: row['sha256']
+            for row in json.loads((SOURCE / (NAMES[9] if GRAPHIC_NOVEL_HIGH_DETAIL else '') / 'files.json').read_text())}
 LEVELS = u.get_editor_subsystem(u.LevelEditorSubsystem)
 SETTINGS = u.get_default_object(u.load_class(None, '/Script/UnrealEd.LevelEditorPlaySettings'))
 SCRIPT = u.get_default_object(u.load_class(None, '/Script/PythonScriptPlugin.EditorPythonScriptingLibrary'))
@@ -92,7 +99,7 @@ ORIGINAL_MODE = {'PIE_Standalone': 0, 'PIE_ListenServer': 1, 'PIE_Client': 2}[
     CONFIG.get('/Script/UnrealEd.LevelEditorPlaySettings', 'PlayNetMode', fallback='PIE_Standalone')]
 REPORT = {'passed': False, 'resolution': [WIDTH, HEIGHT],
           'mode': 'actual possessed pawn; native MoveForward, StartSprint/StopSprint and Jump/StopJumping callbacks',
-          'setup': 'PIE-only clear soccer pitch; cars/residents hidden with collision disabled; input disabled to prevent zero-axis overrides; Walk/Run and descent observation use 0.25 global time dilation; native jump liftoff/apex use original timing; landing camera prepared during descent and frozen on first observed recoil pose',
+          'setup': 'PIE-only clear soccer pitch; cars/residents hidden and collision-off with actor and owned component primary ticks disabled; state verified after warm-up and completion; input disabled to prevent zero-axis overrides; Walk/Run and descent observation use 0.25 global time dilation; native jump liftoff/apex use original timing; landing camera prepared during descent and frozen on first observed recoil pose',
           'captures': 'actual gameplay poses; world paused only for screenshot completion',
           'cadence_sampling': 'Walk/Run use 0.25 world-time dilation to resolve the former 12-Hz holds; clip phase must advance on every observed engine frame, with at least 24 observations per world second. These sample rates are not native render or browser decoded FPS.',
           'not_checked': ['physical keyboard delivery', 'native C-key crew selection (covered separately by smoke_test)', 'external networking', 'exact likeness to the supplied photographs',
@@ -101,25 +108,93 @@ REPORT = {'passed': False, 'resolution': [WIDTH, HEIGHT],
 REPORT['asset_selection'] = {'candidate': NEUTRAL_CANDIDATE or GRAPHIC_NOVEL_CANDIDATE, 'styles': list(STYLES),
                             'graphic_novel': GRAPHIC_NOVEL_CANDIDATE,
                             'generated_body': GRAPHIC_NOVEL_GENERATED,
+                            'high_detail': GRAPHIC_NOVEL_HIGH_DETAIL,
                             'source': str(SOURCE.relative_to(ROOT)), 'asset_folder': CREW_PATH,
                             'pie_mesh_and_clip_overrides': NEUTRAL_CANDIDATE or GRAPHIC_NOVEL_CANDIDATE}
 REPORT['headless'] = HEADLESS
 REPORT['render_mode'] = 'standard' if STANDARD else 'comic'
 REPORT['motion_only'] = MOTION
 if MOTION:
-    REPORT.update(setup='PIE-only clear pitch; cars/residents hidden with collision disabled; physical input disabled; native directional turn uses MoveRight; actual controller camera and HUD retained',
+    REPORT.update(setup='PIE-only clear pitch; cars/residents hidden and collision-off with actor and owned component primary ticks disabled; state verified after warm-up and completion; physical input disabled; native directional turn uses MoveRight; actual controller camera and HUD retained',
         captures='no stills; unpaused 1x native actions with selected timestamped graph/bone/camera observations',
         cadence_sampling='Selected observations at most 30 per world second; not a render FPS or fluidity measurement',
         transitions={'passed': False, 'samples': [], 'events': []})
     REPORT['not_checked'] += ['rendered fluidity and real-time video acceptance', 'native or stream frame-rate performance', 'live city collision, crowds and co-op']
     REPORT['asset_selection']['pie_mesh_and_clip_overrides'] = False
-if GRAPHIC_NOVEL_GENERATED:
+def generated_body_status(imported):
+    body = SOURCE / 'refined-v1/body.fbx'
+    provenance_file = body.with_suffix('.json')
+    provenance = json.loads(provenance_file.read_text())
+    original = SOURCE / 'generated-v1/body.fbx'
+    original_sha = 'a9f1a81f16986a17a50571b7ed536b1e4137778a8024979576cd427365c3a62e'
+    mask_sha = 'bba92f3782f8056f08b0f41160940c561688f7c07d80de9565a7177aa7746ba8'
+    body_sha = hashlib.sha256(body.read_bytes()).hexdigest()
+    assert imported['passed'] and (ROOT / imported['body_source']).resolve() == body, 'Wrong generated native body source'
+    assert provenance['passed'] and (ROOT / provenance['output']).resolve() == body, 'Wrong refined body provenance'
+    assert provenance['output_sha256'] == body_sha, 'Refined body hash mismatch'
+    assert (ROOT / provenance['source']).resolve() == original, 'Wrong frozen generated source'
+    assert provenance['source_sha256'] == hashlib.sha256(original.read_bytes()).hexdigest() == original_sha, 'Frozen generated body changed'
+    assert hashlib.sha256((body.parent / 'collar-uv1.json').read_bytes()).hexdigest() == provenance['mask_sha256'] == mask_sha, 'Reviewed collar mask changed'
+    preservation = ('original_fbx_contents_identical_except_appended_uv1_layer',
+                    'fresh_reimport_geometry_normals_uv0_weights_binds_identical')
+    assert all(provenance[key] is True for key in preservation), 'Refined body preservation checks failed'
+    assert provenance['uv_layers'] == ['UVMap', 'UV1'] and provenance['changed_uv1_corners'] == 339 and len(provenance['faces']) == 113, 'Wrong refined UV1 scope'
+    return {'body_source': str(body.relative_to(ROOT)), 'body_sha256': body_sha,
+        'provenance_file': str(provenance_file.relative_to(ROOT)),
+        'provenance_sha256': hashlib.sha256(provenance_file.read_bytes()).hexdigest(),
+        'original_generated_body_sha256': original_sha, 'reviewed_mask_sha256': mask_sha,
+        **{key: provenance[key] for key in preservation},
+        'graphics_accepted': False, 'scope': 'refined UV1 collar color only; original generated maps and own clips; body-only rig with static face and fingers; no visual acceptance'}
+
+
+def high_detail_body_status(imported):
+    folder = SOURCE / 'generated-v2-high-detail'
+    body = folder / 'body.fbx'
+    generation = json.loads((folder / 'generation.json').read_text())
+    request = '01a13971-5e0a-73e0-8e68-730896d2cee3'
+    assert generation['status'] == 'completed_downloaded' and generation['request_id'] == request, 'Wrong high-detail generation provenance'
+    assert imported['passed'] and (ROOT / imported['body_source']).resolve() == body, 'Wrong high-detail native body source'
+    manifest_file = folder / 'files.json'
+    entries = json.loads(manifest_file.read_text())
+    hashes = {row['file']: row['sha256'] for row in entries}
+    required = {'body.fbx', 'body.glb', 'idle.fbx', 'walk.fbx', 'run.fbx', 'jump.fbx', 'jump.json',
+                'base_color.png', 'normal.png', 'roughness.png', 'metallic.png', 'reference.png'}
+    assert len(hashes) == len(entries) and required <= hashes.keys(), 'Incomplete high-detail source manifest'
+    for row in entries:
+        assert Path(row['file']).name == row['file'] and row['file'] not in ('.', '..'), 'High-detail manifest requires local filenames'
+        path = folder / row['file']
+        assert path.stat().st_size == row['bytes'] and hashlib.sha256(path.read_bytes()).hexdigest() == row['sha256'], ('Changed high-detail source file', row['file'])
+    assert generation['source_reference_sha256'] == hashes['reference.png'], 'Wrong high-detail identity reference'
+    review_file = folder / 'source-review.json'
+    review = json.loads(review_file.read_text())
+    assert review['passed'] and review['source_unchanged'] and review['generation_request_id'] == request, 'High-detail source review failed'
+    assert review['manifest_sha256'] == hashlib.sha256(manifest_file.read_bytes()).hexdigest(), 'High-detail manifest changed since source review'
+    assert review['body_sha256'] == hashes['body.fbx'] and review['body_glb_sha256'] == hashes['body.glb'], 'High-detail reviewed body changed'
+    assert review['weighted_body_bones'] == 24 and review['uv_channels'] == 1 and review['morph_targets'] == 0, 'Wrong raw high-detail rig or UV layout'
+    assert review['finger_controls'] is False and review['face_controls'] is False, 'Unexpected high-detail controls'
+    assert review['own_clip_bind_checks_passed'] and review['local_jump_round_trip_passed'], 'High-detail own-rig clip review failed'
+    for kind in ('idle', 'walk', 'run', 'jump'):
+        clip = review['clips'][kind]
+        assert clip['own_hierarchy_matches'] and clip['animation_curves'] > 0, ('Wrong high-detail source clip', kind)
+        if kind != 'jump':
+            assert 0 <= clip['max_weighted_bind_error'] <= .00001, ('High-detail source bind mismatch', kind)
+    jump = json.loads((folder / 'jump.json').read_text())
+    assert jump['body_sha256'] == hashes['body.fbx'] and jump['jump_sha256'] == hashes['jump.fbx'], 'High-detail jump belongs to another body'
+    assert jump['bones'] == 24 and jump['fbx_round_trip_passed'] and jump['head_and_neck_unchanged'] and jump['actor_root_motion'] is False, 'High-detail local jump checks failed'
+    return {'body_source': str(body.relative_to(ROOT)), 'body_sha256': hashes['body.fbx'],
+        'generation_request_id': request, 'manifest_sha256': review['manifest_sha256'],
+        'source_review': str(review_file.relative_to(ROOT)),
+        'source_review_sha256': hashlib.sha256(review_file.read_bytes()).hexdigest(),
+        'source_files_verified': len(entries), 'weighted_body_bones': 24, 'uv_channels': 1,
+        'graphics_accepted': False, 'scope': 'isolated high-detail native A/B; raw UV0 body and own clips; static face and fingers; no default promotion or art acceptance'}
+
+
+if GRAPHIC_NOVEL_HIGH_DETAIL:
+    imported = json.loads((ROOT / 'Saved/Tests/GraphicNovel/HighDetailImport.json').read_text())
+    REPORT['candidate_asset_status'] = high_detail_body_status(imported)
+elif GRAPHIC_NOVEL_GENERATED:
     imported = json.loads((ROOT / 'Saved/Tests/GraphicNovel/GeneratedImport.json').read_text())
-    native_body = (ROOT / imported['body_source']).resolve()
-    assert imported['passed'] and native_body == SOURCE / 'generated-v1/body.fbx' and native_body.is_file(), native_body
-    REPORT['candidate_asset_status'] = {'body_source': str(native_body.relative_to(ROOT)),
-        'body_sha256': hashlib.sha256(native_body.read_bytes()).hexdigest(),
-        'graphics_accepted': False, 'scope': 'generated body-only rig and own clips; no finger, facial or visual acceptance'}
+    REPORT['candidate_asset_status'] = generated_body_status(imported)
 elif GRAPHIC_NOVEL_CANDIDATE:
     pilot = ROOT / 'Data/GraphicNovel/Pilot/CurlyMetalhead/wardrobe'
     topology = json.loads((pilot / 'roundtrip.json').read_text())
@@ -308,6 +383,31 @@ def rgb_hash(path):
     return hashlib.sha256(result.stdout).hexdigest()
 
 
+def expression_inputs(material, expression):
+    names = list(u.MaterialEditingLibrary.get_material_expression_input_names(expression))
+    inputs = list(u.MaterialEditingLibrary.get_inputs_for_material_expression(material, expression))
+    assert len(names) == len(inputs) and len(set(names)) == len(names), 'Ambiguous material inputs'
+    return dict(zip(names, inputs))
+
+
+def generated_material_uvs(material, base, normal):
+    # MaterialEditingLibrary exposes shortened graph pin names (UVs, not Coordinates).
+    nodes = {'base_color': base, 'normal': expression_inputs(material, normal)['A'],
+             'roughness': u.MaterialEditingLibrary.get_material_property_input_node(material, u.MaterialProperty.MP_ROUGHNESS),
+             'metallic': u.MaterialEditingLibrary.get_material_property_input_node(material, u.MaterialProperty.MP_METALLIC)}
+    observed = {}
+    for channel, sample in nodes.items():
+        assert isinstance(sample, u.MaterialExpressionTextureSample), ('Missing generated texture sample', channel)
+        uv = expression_inputs(material, sample)['UVs']
+        assert uv is None or isinstance(uv, u.MaterialExpressionTextureCoordinate), ('Unexpected generated UV expression', channel)
+        observed[channel] = int(uv.get_editor_property('coordinate_index') if uv else sample.get_editor_property('const_coordinate'))
+    expected = {'base_color': 0 if GRAPHIC_NOVEL_HIGH_DETAIL else 1, 'normal': 0, 'roughness': 0, 'metallic': 0}
+    assert observed == expected, ('Wrong generated material UV routing', observed)
+    if GRAPHIC_NOVEL_HIGH_DETAIL:
+        assert expression_inputs(material, normal)['Alpha'] is None and abs(normal.get_editor_property('const_alpha')) < .000001, 'High-detail review requires full mapped normals'
+    return observed
+
+
 def validate_assets(style):
     folder = f'{CREW_PATH}/Resident{style}'
     mesh = u.load_asset(folder + '/SK_Body')
@@ -364,6 +464,8 @@ def validate_assets(style):
         morphs = {morph.get_name() for morph in mesh.get_editor_property('morph_targets')}
         if GRAPHIC_NOVEL_GENERATED:
             assert expected.isdisjoint(bones) and not morphs, ('Unexpected generated rig controls', bones, morphs)
+            if GRAPHIC_NOVEL_HIGH_DETAIL:
+                assert set(BONES) | {'head_end', 'LeftHand', 'RightHand'} <= bones, 'High-detail body lacks required pose or face markers'
             result['pilot_rig'] = {'finger_bones': [], 'morphs': [], 'material_slots': len(slots),
                                    'scope': 'generated body-only rig; static face and fingers'}
         else:
@@ -378,6 +480,8 @@ def validate_assets(style):
         normal = u.MaterialEditingLibrary.get_material_property_input_node(material, u.MaterialProperty.MP_NORMAL)
         assert isinstance(normal, u.MaterialExpressionLinearInterpolate)
         result['mapped_normal_strength'] = 1. - normal.get_editor_property('const_alpha')
+        if GRAPHIC_NOVEL_GENERATED:
+            result['material_uv_channels'] = generated_material_uvs(material, base, normal)
     texture = base.get_editor_property('texture')
     assert texture.get_path_name().startswith(folder + '/T_base_color'), (style, 'wrong atlas')
     assert texture.get_editor_property('compression_settings') == u.TextureCompressionSettings.TC_BC7
@@ -721,10 +825,87 @@ def motion_tick():
         finish()
 
 
+def background_actors(world):
+    return {kind: {actor.get_path_name(): actor for actor in u.GameplayStatics.get_all_actors_of_class(
+                world, u.load_class(None, '/Script/Quebec.Quebec' + kind))}
+            for kind in ('ParkResident', 'Car')}
+
+
+def owned_components(actor):
+    return {component.get_path_name(): component for component in actor.get_components_by_class(u.ActorComponent)
+            if component.get_owner() == actor}
+
+
+def isolate_background_actors(world):
+    actors = background_actors(world)
+    expected = {}
+    component_counts = {}
+    for kind, entries in actors.items():
+        expected[kind] = {}
+        component_counts[kind] = 0
+        for path, actor in entries.items():
+            components = owned_components(actor)
+            expected[kind][path] = sorted(components)
+            component_counts[kind] += len(components)
+            # Residents restore visibility/collision in Tick. Component ticks are
+            # independent of the actor tick, so disable both before hiding.
+            actor.set_actor_tick_enabled(False)
+            for component in components.values():
+                component.set_component_tick_enabled(False)
+            actor.set_actor_hidden_in_game(True)
+            actor.set_actor_enable_collision(False)
+    STATE['isolated_background'] = expected
+    REPORT['fixture_isolation'] = {'requested_actor_counts': {kind: len(entries) for kind, entries in actors.items()},
+        'requested_owned_component_counts': component_counts, 'checkpoints': [],
+        'scope': 'disposable PIE residents/cars only; actor and owned component primary ticks, visibility and actor collision; no render/FPS acceptance'}
+
+
+def verify_background_isolation(stage):
+    expected = STATE['isolated_background']
+    actors = background_actors(STATE['world'])
+    checkpoint = {'stage': stage, 'passed': False, 'observed': {}, 'failures': []}
+    REPORT['fixture_isolation']['checkpoints'].append(checkpoint)
+    for kind, entries in actors.items():
+        counts = dict.fromkeys(('actors', 'hidden', 'collision_disabled', 'actor_ticks_disabled',
+                               'owned_components', 'component_ticks_disabled'), 0)
+        checkpoint['observed'][kind] = counts
+        if set(entries) != set(expected[kind]):
+            checkpoint['failures'].append({'kind': kind, 'actor_set_changed': True,
+                'added': sorted(set(entries) - set(expected[kind])), 'missing': sorted(set(expected[kind]) - set(entries))})
+        for path, actor in entries.items():
+            hidden = bool(actor.get_editor_property('hidden'))
+            collision = bool(actor.get_actor_enable_collision())
+            tick = bool(actor.is_actor_tick_enabled())
+            counts['actors'] += 1
+            counts['hidden'] += hidden
+            counts['collision_disabled'] += not collision
+            counts['actor_ticks_disabled'] += not tick
+            if not hidden or collision or tick:
+                checkpoint['failures'].append({'actor': path, 'hidden': hidden, 'collision_enabled': collision, 'actor_tick_enabled': tick})
+            components = owned_components(actor)
+            if sorted(components) != expected[kind].get(path):
+                checkpoint['failures'].append({'actor': path, 'owned_component_set_changed': True})
+            for component_path, component in components.items():
+                enabled = bool(component.is_component_tick_enabled())
+                counts['owned_components'] += 1
+                counts['component_ticks_disabled'] += not enabled
+                if enabled:
+                    checkpoint['failures'].append({'component': component_path, 'component_tick_enabled': True})
+    checkpoint['passed'] = not checkpoint['failures']
+    assert checkpoint['passed'], ('Background fixture isolation failed', checkpoint)
+
+
 def finish(error=None):
     if STATE['finished']:
         return
     STATE['finished'] = True
+    if 'isolated_background' in STATE:
+        try:
+            verify_background_isolation('completion')
+        except Exception:
+            isolation_error = traceback.format_exc()
+            REPORT['fixture_isolation']['completion_error'] = isolation_error
+            error = error or isolation_error
     if error:
         REPORT['error'] = error
     observations = len(REPORT['skipped_screenshots']) if HEADLESS else len(REPORT['screenshots'])
@@ -917,12 +1098,9 @@ def tick(dt):
             REPORT['pitch_fixture'] = {'osm': pitch['osm'], 'start_cm': vec(origin),
                                        'offset_from_vertex_average_cm': [-1000, 0, 0],
                                        'clearance_rule': 'motion pawn must remain inside the largest soccer polygon; native camera is recorded' if MOTION else 'captured pawn and camera must remain inside the largest soccer polygon'}
-            for kind in ('ParkResident', 'Car'):
-                for actor in u.GameplayStatics.get_all_actors_of_class(world, u.load_class(None, '/Script/Quebec.Quebec' + kind)):
-                    actor.set_actor_hidden_in_game(True)
-                    actor.set_actor_enable_collision(False)
             STATE.update(world=world, pc=pc, pawn=pawn, movement=pawn.get_component_by_class(u.CharacterMovementComponent), camera=camera, origin=origin, pitch_points=points,
                          original_time_dilation=u.GameplayStatics.get_global_time_dilation(world))
+            isolate_background_actors(world)
             if not HEADLESS:
                 REPORT['renderer_settings'] = {
                     **{key: u.SystemLibrary.get_console_variable_int_value(key) for key in (
@@ -973,6 +1151,7 @@ def tick(dt):
         age = clock() - STATE['phase_started']
         if current == 'warm':
             if age > 12:
+                verify_background_isolation('warm_up')
                 interval = STATE['pawn'].get_component_by_class(u.SkeletalMeshComponent).get_component_tick_interval()
                 assert abs(interval) < .001, ('Look switching must retain full-rate player poses', interval)
                 camera = STATE['camera'].get_component_by_class(u.CameraComponent)

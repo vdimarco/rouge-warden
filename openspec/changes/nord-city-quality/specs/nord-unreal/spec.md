@@ -24,8 +24,21 @@ The local pilot SHALL be available only through the explicit `-NordGraphicNovelC
 
 #### Scenario: Observe native motion without a renderer
 - **WHEN** the candidate runs the explicit headless verification fixture
-- **THEN** actual bone refresh is enabled for observation and real evaluated foot/knee poses and hand/eye controls must change with movement
+- **THEN** actual bone refresh is enabled for observation and real evaluated foot/knee poses must change with movement; hand/eye controls must change where supplied by that rig, while body-only variants explicitly report zero controls
 - **AND** the report identifies fixture overrides, skipped images, failed topology and unverified visual/performance acceptance instead of treating graph clocks as graphics evidence
+
+#### Scenario: Refine a funded pilot without replacing provenance
+- **WHEN** a local collar or neck shading repair is made after the funded pilot review
+- **THEN** the original funded model/maps remain immutable and the local derivative records its exact source and affected surface region
+- **AND** native close-ups in both modes/sizes improve the demonstrated defect while preserving face colours, rig, matching clips and movement
+- **AND** shaded-normal changes are labelled intentional refinement rather than unchanged bake output, with remaining art/performance limits retained
+
+#### Scenario: Compare a higher-detail body independently
+- **WHEN** Candidate, Generated and HighDetail review flags are supplied together
+- **THEN** style 9 selects the separately imported higher-detail body, its own skeleton/four clips and UV0 PBR maps
+- **AND** incomplete flag combinations, ordinary launches and the earlier pilot routes retain their existing selection
+- **AND** missing or mismatched generation receipts, bounded source-file hashes or own-rig evidence reject import before asset mutation
+- **AND** native appearance, deformation and workload are compared with the retained draft before promotion or wider cast spending; static face/fingers and unverified packaged performance remain disclosed
 
 ### Requirement: Detailed animated playable crew
 The supplied playable characters SHALL retain readable facial details and distinct locomotion in the comic view.

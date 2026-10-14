@@ -1,0 +1,15 @@
+{
+  "scope": "Workflow receipt update only after successful preserved native import; model/texture/clip bytes untouched.",
+  "changes": [
+    {
+      "file": "Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/generation.json",
+      "before": "d81972c0e7d2b1e0dadb77b4af47d24290c2cc7af74bbddab4a44d73f581a4e2",
+      "after": "a23277ea16f38bf8123e4c5f8e4b64323c6b07843158a4b84a7f2bcf7d910632"
+    },
+    {
+      "file": "Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/source-review.json",
+      "before": "00c478ed950861da72faa02a27f6da67e4074a344363cc3a003205b1c5a691ee",
+      "after": "a2ea79458aef0ad20ee1cb00b262269c509db230ca94b9c03cfc8bebeaacd3d8"
+    }
+  ]
+}

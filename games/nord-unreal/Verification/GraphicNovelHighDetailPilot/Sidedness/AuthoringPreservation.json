@@ -1,0 +1,12 @@
+{
+  "passed": true,
+  "changed": [
+    "Content/ParkComic/CrewGraphicNovelHighDetail/Resident9/M_Crew.uasset"
+  ],
+  "before_sha256": "db14c297074e4ce14cdc3f90aed0070987550ca24c779862656dd068bea6188e",
+  "after_sha256": "f5876cf963abec2a0f021046676fd9d359af2204d587515ba551a614f11f7ae0",
+  "other_content_unchanged": 6772,
+  "authoring_exit_code": 0,
+  "failed_attempt_exit_code": 255,
+  "failed_attempt_material_unchanged": true
+}

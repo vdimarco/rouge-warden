@@ -1,0 +1,54 @@
+{
+  "passed": true,
+  "scope": "Source/PBR/own-rig/clip hashes and CPU studio review only; no native import or final art/motion acceptance.",
+  "generation_request_id": "01a13971-5e0a-73e0-8e68-730896d2cee3",
+  "source_unchanged": true,
+  "body_sha256": "b7e7ca0d9c486412108cba85e1cd4a5512fecd4ad36b8cfdb4677259ff6f9244",
+  "body_glb_sha256": "25041be9666422c30ba39449cb283a83928bb3de596fe063389707c070335613",
+  "manifest_sha256": "d942b4ec45c3b28ef54c0afeb991278528fd74252ec7208cd518519277fd18bc",
+  "triangles": 103544,
+  "vertices": 130901,
+  "weighted_body_bones": 24,
+  "height_m": 1.82000019319905,
+  "morph_targets": 0,
+  "finger_controls": false,
+  "face_controls": false,
+  "own_clip_bind_checks_passed": true,
+  "clips": {
+    "idle": {
+      "own_hierarchy_matches": true,
+      "animation_curves": 138,
+      "max_weighted_bind_error": 0.0
+    },
+    "walk": {
+      "own_hierarchy_matches": true,
+      "animation_curves": 138,
+      "max_weighted_bind_error": 0.0
+    },
+    "run": {
+      "own_hierarchy_matches": true,
+      "animation_curves": 138,
+      "max_weighted_bind_error": 0.0
+    },
+    "jump": {
+      "own_hierarchy_matches": true,
+      "animation_curves": 225,
+      "max_weighted_bind_error": null
+    }
+  },
+  "run": {
+    "run_seconds": 0.667,
+    "run_tracks": 66
+  },
+  "local_jump_round_trip_passed": true,
+  "cpu_review_report": "Saved/Tests/GraphicNovel/FundedPilot/cpu-review-hires-20261014T0814Z/cpu-review.json",
+  "cpu_review_report_sha256": "528717e4e71da3e77680e6a40c8b6a3a10f6f0a9dfe8468416cd080f86ac6222",
+  "cpu_review_process_exit_code": 0,
+  "graphics_accepted": false,
+  "independent_visual_review": "approved_for_bounded_native_comparison",
+  "input_seed_supported": false,
+  "uv_channels": 1,
+  "independent_visual_review_report": "Saved/Tests/GraphicNovel/FundedPilot/cpu-review-hires-20261014T0814Z/IndependentVisualReview/cpu-visual-verdict.json",
+  "independent_visual_review_sha256": "6c896d9ab21d098ac5ffd70190fbcfb5eb84473d6e75e4b80331208a4df388f8",
+  "native_import_evidence_in_this_review": false
+}

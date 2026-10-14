@@ -1,0 +1,2077 @@
+{
+  "reviewer": "/root/style_review",
+  "recorded_utc": "2026-10-14T07:52:46.230238+00:00",
+  "scope": "Independent visual A/B of all 28 refined native stills against 28 retained full-normal baseline views.",
+  "input_window": "Saved/Tests/GraphicNovel/RefinedRender-20261014T074547Z",
+  "review_method": {
+    "tool": "view_image",
+    "fresh_images_inspected": 28,
+    "baseline_images_inspected": 28,
+    "matched_full_frame_sheets": 16,
+    "native_scale_collar_pair_crops": 8,
+    "native_scale_1080p_body_pair_sheets": 4,
+    "fresh_full_resolution_closeups": [
+      "Capture/Standard/1920/Resident9_Face.png",
+      "Capture/1920/Resident9_FaceThreeQuarter.png"
+    ],
+    "crop_purpose": "Inspection only; no input image bytes edited."
+  },
+  "collar_albedo_refinement_accepted_for_draft": true,
+  "complete_collar_fix": false,
+  "graphics_accepted": false,
+  "motion_accepted": false,
+  "summary": "Retain the 113-face UV1 albedo repair in the opt-in pilot. The broad pale garment flange is visibly cleaned in Standard/Comic at 720p/1080p while adult identity and inspected body-pose coverage remain coherent. Actual neck shape, hair, hands, airborne deformation and complete illustrated style remain unfinished.",
+  "cells": [
+    {
+      "mode": "standard",
+      "resolution": [
+        1280,
+        720
+      ],
+      "native_report": {
+        "file": "Saved/Tests/GraphicNovel/RefinedRender-20261014T074547Z/Capture/Standard/PlayerQuality1280.json",
+        "sha256": "25d041f27773495c153990eafcc4cfda0662a1c8cf3fefe80627af156b0e8d5a",
+        "bytes": 521646
+      },
+      "baseline_report": {
+        "file": "Verification/GraphicNovelRenderedPilot/Standard1280.json",
+        "sha256": "fa28343a359004b3b67afa2da5a56d3726d3af42cdf58d9b5dc6eecfe43d1403",
+        "bytes": 514446
+      },
+      "job": {
+        "name": "Stills1280Standard",
+        "passed": true,
+        "process_exit_code": 0
+      },
+      "renderer_settings_equal_to_baseline": true,
+      "renderer_settings": {
+        "sg.ViewDistanceQuality": 3,
+        "sg.AntiAliasingQuality": 3,
+        "sg.ShadowQuality": 3,
+        "sg.GlobalIlluminationQuality": 3,
+        "sg.ReflectionQuality": 3,
+        "sg.PostProcessQuality": 3,
+        "sg.TextureQuality": 3,
+        "sg.EffectsQuality": 3,
+        "sg.FoliageQuality": 3,
+        "r.Streaming.PoolSize": 1000,
+        "r.Shadow.Virtual.MaxPhysicalPages": 4096,
+        "r.ScreenPercentage": 0.0,
+        "t.MaxFPS": 0.0
+      },
+      "mapped_normal_strength": 1.0,
+      "material_uv_channels": {
+        "base_color": 1,
+        "normal": 0,
+        "roughness": 0,
+        "metallic": 0
+      },
+      "source_atlas_pixels_identical": true,
+      "candidate_asset_status": {
+        "body_source": "Data/GraphicNovel/Pilot/CurlyMetalhead/refined-v1/body.fbx",
+        "body_sha256": "e231d727117e76ac2fe0f44921517a0c6256ce9abc2f97dd36c92e1add05930b",
+        "provenance_file": "Data/GraphicNovel/Pilot/CurlyMetalhead/refined-v1/body.json",
+        "provenance_sha256": "d0be37e3288dce9d9f701b799e882e25edbb2bdb3597ba97450ffd7114a6f5c4",
+        "original_generated_body_sha256": "a9f1a81f16986a17a50571b7ed536b1e4137778a8024979576cd427365c3a62e",
+        "reviewed_mask_sha256": "bba92f3782f8056f08b0f41160940c561688f7c07d80de9565a7177aa7746ba8",
+        "original_fbx_contents_identical_except_appended_uv1_layer": true,
+        "fresh_reimport_geometry_normals_uv0_weights_binds_identical": true,
+        "graphics_accepted": false,
+        "scope": "refined UV1 collar color only; original generated maps and own clips; body-only rig with static face and fingers; no visual acceptance"
+      },
+      "fixture_isolation": {
+        "requested_actor_counts": {
+          "ParkResident": 110,
+          "Car": 45
+        },
+        "requested_owned_component_counts": {
+          "ParkResident": 1100,
+          "Car": 1413
+        },
+        "checkpoints": [
+          {
+            "stage": "warm_up",
+            "passed": true,
+            "observed": {
+              "ParkResident": {
+                "actors": 110,
+                "hidden": 110,
+                "collision_disabled": 110,
+                "actor_ticks_disabled": 110,
+                "owned_components": 1100,
+                "component_ticks_disabled": 1100
+              },
+              "Car": {
+                "actors": 45,
+                "hidden": 45,
+                "collision_disabled": 45,
+                "actor_ticks_disabled": 45,
+                "owned_components": 1413,
+                "component_ticks_disabled": 1413
+              }
+            },
+            "failures": []
+          },
+          {
+            "stage": "completion",
+            "passed": true,
+            "observed": {
+              "ParkResident": {
+                "actors": 110,
+                "hidden": 110,
+                "collision_disabled": 110,
+                "actor_ticks_disabled": 110,
+                "owned_components": 1100,
+                "component_ticks_disabled": 1100
+              },
+              "Car": {
+                "actors": 45,
+                "hidden": 45,
+                "collision_disabled": 45,
+                "actor_ticks_disabled": 45,
+                "owned_components": 1413,
+                "component_ticks_disabled": 1413
+              }
+            },
+            "failures": []
+          }
+        ],
+        "scope": "disposable PIE residents/cars only; actor and owned component primary ticks, visibility and actor collision; no render/FPS acceptance"
+      },
+      "images": [
+        {
+          "file": "Saved/Tests/GraphicNovel/RefinedRender-20261014T074547Z/Capture/Standard/1280/Resident9_Idle.png",
+          "sha256": "7366b863c277f0e56d43928faff68f5361c677c5bb51d887aa920dd0bba8c880",
+          "bytes": 1479006,
+          "baseline": {
+            "file": "Preview/GraphicNovelGenerated/Standard/1280/Resident9_Idle.png",
+            "sha256": "5d18e293d9024be936b02e854a1c91197747ea6e71e710d202832e61eee5c43a",
+            "bytes": 1478822
+          },
+          "state": "Idle",
+          "dimensions": [
+            1280,
+            720
+          ],
+          "clip": "A_Idle",
+          "prior_clip_time": 0.72512,
+          "refined_clip_time": 0.72326,
+          "prior_cached_camera": {
+            "position_cm": [
+              5238.54596,
+              40867.49067,
+              132.15001
+            ],
+            "rotation_degrees": [
+              -3.4050464630126953,
+              -172.59309387207034,
+              4.9784055644766625e-17
+            ],
+            "horizontal_fov_degrees": 60.0,
+            "unpaused_prepare_frames": 2
+          },
+          "refined_cached_camera": {
+            "position_cm": [
+              5238.54596,
+              40867.49067,
+              132.15001
+            ],
+            "rotation_degrees": [
+              -3.4050464630126953,
+              -172.59309387207034,
+              4.9784055644766625e-17
+            ],
+            "horizontal_fov_degrees": 60.0,
+            "unpaused_prepare_frames": 2
+          },
+          "camera_yaw_delta_degrees": 0.0,
+          "visual_result": "Reviewed: no gross new artifact seen; state-specific limits below."
+        },
+        {
+          "file": "Saved/Tests/GraphicNovel/RefinedRender-20261014T074547Z/Capture/Standard/1280/Resident9_Face.png",
+          "sha256": "50661a05a97b21d12bc74769a476000beac5ac8e5d9c23c95cfa9d942c6f5fe0",
+          "bytes": 1728384,
+          "baseline": {
+            "file": "Preview/GraphicNovelGenerated/Standard/1280/Resident9_Face.png",
+            "sha256": "304ef1fa21cacc9de592dffdbb28dc221b0038b9205de2a48caff3508ed34762",
+            "bytes": 1765268
+          },
+          "state": "Face",
+          "dimensions": [
+            1280,
+            720
+          ],
+          "clip": "A_Idle",
+          "prior_clip_time": 1.15417,
+          "refined_clip_time": 1.15043,
+          "prior_cached_camera": {
+            "position_cm": [
+              4707.55588,
+              40667.74921,
+              162.23919
+            ],
+            "rotation_degrees": [
+              -1.3748347759246826,
+              76.6999740600586,
+              -0.0
+            ],
+            "horizontal_fov_degrees": 38.0,
+            "unpaused_prepare_frames": 2,
+            "face_orbit_degrees": 0.0,
+            "face_horizontal_distance_cm": 125.0
+          },
+          "refined_cached_camera": {
+            "position_cm": [
+              4708.24094,
+              40667.63737,
+              162.25569
+            ],
+            "rotation_degrees": [
+              -1.3748347759246824,
+              76.98049926757811,
+              3.9768381866744993e-16
+            ],
+            "horizontal_fov_degrees": 38.0,
+            "unpaused_prepare_frames": 2,
+            "face_orbit_degrees": 0.0,
+            "face_horizontal_distance_cm": 125.0
+          },
+          "camera_yaw_delta_degrees": 0.28052520751951704,
+          "visual_result": "Reviewed: no gross new artifact seen; state-specific limits below."
+        },
+        {
+          "file": "Saved/Tests/GraphicNovel/RefinedRender-20261014T074547Z/Capture/Standard/1280/Resident9_FaceThreeQuarter.png",
+          "sha256": "660978ae6070652f40efadcbe8cc2e2cb6b6765814de5f911fdc5e7dd5bed067",
+          "bytes": 1779691,
+          "baseline": {
+            "file": "Preview/GraphicNovelGenerated/Standard/1280/Resident9_FaceThreeQuarter.png",
+            "sha256": "cecbd77c2d97fed44aa3b2fc5fd1d42de2fb57f10f3cb1792a84b7f9e28a9052",
+            "bytes": 1800235
+          },
+          "state": "FaceThreeQuarter",
+          "dimensions": [
+            1280,
+            720
+          ],
+          "clip": "A_Idle",
+          "prior_clip_time": 1.37189,
+          "refined_clip_time": 1.36873,
+          "prior_cached_camera": {
+            "position_cm": [
+              4804.91155,
+              40683.35066,
+              161.41214
+            ],
+            "rotation_degrees": [
+              -1.3748347759246824,
+              122.77478027343751,
+              -0.0
+            ],
+            "horizontal_fov_degrees": 38.0,
+            "unpaused_prepare_frames": 2,
+            "face_orbit_degrees": 35.0,
+            "face_horizontal_distance_cm": 125.0
+          },
+          "refined_cached_camera": {
+            "position_cm": [
+              4802.87937,
+              40682.19516,
+              161.45182
+            ],
+            "rotation_degrees": [
+              -1.3748347759246826,
+              121.75169372558595,
+              -0.0
+            ],
+            "horizontal_fov_degrees": 38.0,
+            "unpaused_prepare_frames": 2,
+            "face_orbit_degrees": 35.0,
+            "face_horizontal_distance_cm": 125.0
+          },
+          "camera_yaw_delta_degrees": -1.0230865478515625,
+          "visual_result": "Reviewed: no gross new artifact seen; state-specific limits below."
+        },
+        {
+          "file": "Saved/Tests/GraphicNovel/RefinedRender-20261014T074547Z/Capture/Standard/1280/Resident9_Walk.png",
+          "sha256": "5d1888de5cacfc6a7f21b989d097abbc89ef836eefb91ef925514814b2522c2c",
+          "bytes": 1459035,
+          "baseline": {
+            "file": "Preview/GraphicNovelGenerated/Standard/1280/Resident9_Walk.png",
+            "sha256": "bcf1bb4907b3a4ec3afda385363d8b3babe7c394a7acd975a5a2567e097b2926",
+            "bytes": 1459181
+          },
+          "state": "Walk",
+          "dimensions": [
+            1280,
+            720
+          ],
+          "clip": "A_Walk",
+          "prior_clip_time": 0.39554,
+          "refined_clip_time": 0.39154,
+          "prior_cached_camera": {
+            "position_cm": [
+              5707.36002,
+              40867.49067,
+              132.15001
+            ],
+            "rotation_degrees": [
+              -3.4050464630126953,
+              -172.59309387207034,
+              4.9784055644766625e-17
+            ],
+            "horizontal_fov_degrees": 60.0,
+            "unpaused_prepare_frames": 2
+          },
+          "refined_cached_camera": {
+            "position_cm": [
+              5707.25455,
+              40867.49067,
+              132.15001
+            ],
+            "rotation_degrees": [
+              -3.4050464630126953,
+              -172.59309387207034,
+              4.9784055644766625e-17
+            ],
+            "horizontal_fov_degrees": 60.0,
+            "unpaused_prepare_frames": 2
+          },
+          "camera_yaw_delta_degrees": 0.0,
+          "visual_result": "Reviewed: no gross new artifact seen; state-specific limits below."
+        },
+        {
+          "file": "Saved/Tests/GraphicNovel/RefinedRender-20261014T074547Z/Capture/Standard/1280/Resident9_Run.png",
+          "sha256": "490a37485c611615b8c16a6ee9bfad33faee0f04a96903a0d8064d07884fb2ea",
+          "bytes": 1424787,
+          "baseline": {
+            "file": "Preview/GraphicNovelGenerated/Standard/1280/Resident9_Run.png",
+            "sha256": "302aa01cce6f2740f0b2566d4e591ae3fae8a070f7a53306881032912b319a3e",
+            "bytes": 1411126
+          },
+          "state": "Run",
+          "dimensions": [
+            1280,
+            720
+          ],
+          "clip": "A_Run",
+          "prior_clip_time": 0.56042,
+          "refined_clip_time": 0.55793,
+          "prior_cached_camera": {
+            "position_cm": [
+              6600.34425,
+              40867.49067,
+              132.15001
+            ],
+            "rotation_degrees": [
+              -3.4050464630126953,
+              -172.59309387207034,
+              4.9784055644766625e-17
+            ],
+            "horizontal_fov_degrees": 60.0,
+            "unpaused_prepare_frames": 2
+          },
+          "refined_cached_camera": {
+            "position_cm": [
+              6599.41099,
+              40867.49067,
+              132.15001
+            ],
+            "rotation_degrees": [
+              -3.4050464630126953,
+              -172.59309387207034,
+              4.9784055644766625e-17
+            ],
+            "horizontal_fov_degrees": 60.0,
+            "unpaused_prepare_frames": 2
+          },
+          "camera_yaw_delta_degrees": 0.0,
+          "visual_result": "Reviewed: no gross new artifact seen; state-specific limits below."
+        },
+        {
+          "file": "Saved/Tests/GraphicNovel/RefinedRender-20261014T074547Z/Capture/Standard/1280/Resident9_Airborne.png",
+          "sha256": "1fd9f000c0626b8fafb610aea0b0917a1f479e5eabab5f4981a7276f0fe77637",
+          "bytes": 1421478,
+          "baseline": {
+            "file": "Preview/GraphicNovelGenerated/Standard/1280/Resident9_Airborne.png",
+            "sha256": "1ba3436fa1ce57538a74d1426babd51c194a7f0410a4981a2ea2e4f59545d1a7",
+            "bytes": 1417673
+          },
+          "state": "Airborne",
+          "dimensions": [
+            1280,
+            720
+          ],
+          "clip": "A_Jump",
+          "prior_clip_time": 0.42095,
+          "refined_clip_time": 0.42174,
+          "prior_cached_camera": {
+            "position_cm": [
+              6602.01094,
+              40867.49067,
+              306.96407
+            ],
+            "rotation_degrees": [
+              -3.4050464630126953,
+              -172.59309387207034,
+              4.9784055644766625e-17
+            ],
+            "horizontal_fov_degrees": 60.0,
+            "unpaused_prepare_frames": 2
+          },
+          "refined_cached_camera": {
+            "position_cm": [
+              6601.30207,
+              40867.49067,
+              307.3557
+            ],
+            "rotation_degrees": [
+              -3.4050464630126953,
+              -172.59309387207034,
+              4.9784055644766625e-17
+            ],
+            "horizontal_fov_degrees": 60.0,
+            "unpaused_prepare_frames": 2
+          },
+          "camera_yaw_delta_degrees": 0.0,
+          "visual_result": "Reviewed: no gross new artifact seen; state-specific limits below."
+        },
+        {
+          "file": "Saved/Tests/GraphicNovel/RefinedRender-20261014T074547Z/Capture/Standard/1280/Resident9_Landing.png",
+          "sha256": "4486634f7afe047f0fb0cd6a2f27f9a4e79bcbb2bec193a3b7a49bf2a71b25f4",
+          "bytes": 1427885,
+          "baseline": {
+            "file": "Preview/GraphicNovelGenerated/Standard/1280/Resident9_Landing.png",
+            "sha256": "bbcc99f11723e2ec519fb008fed4fef692dbf22ff708a1e61b1a15d36a1dfacf",
+            "bytes": 1428668
+          },
+          "state": "Landing",
+          "dimensions": [
+            1280,
+            720
+          ],
+          "clip": "A_Jump",
+          "prior_clip_time": 0.93208,
+          "refined_clip_time": 0.93208,
+          "prior_cached_camera": {
+            "position_cm": [
+              6602.01094,
+              40867.49067,
+              132.15001
+            ],
+            "rotation_degrees": [
+              -3.4050464630126953,
+              -172.59309387207034,
+              4.9784055644766625e-17
+            ],
+            "horizontal_fov_degrees": 60.0,
+            "unpaused_prepare_frames": 339
+          },
+          "refined_cached_camera": {
+            "position_cm": [
+              6601.30207,
+              40867.49067,
+              132.15001
+            ],
+            "rotation_degrees": [
+              -3.4050464630126953,
+              -172.59309387207034,
+              4.9784055644766625e-17
+            ],
+            "horizontal_fov_degrees": 60.0,
+            "unpaused_prepare_frames": 352
+          },
+          "camera_yaw_delta_degrees": 0.0,
+          "visual_result": "Reviewed: no gross new artifact seen; state-specific limits below."
+        }
+      ]
+    },
+    {
+      "mode": "standard",
+      "resolution": [
+        1920,
+        1080
+      ],
+      "native_report": {
+        "file": "Saved/Tests/GraphicNovel/RefinedRender-20261014T074547Z/Capture/Standard/PlayerQuality1920.json",
+        "sha256": "40b6a8c19edf4790d864c421ceb9a4564346578f03ff34fbee84e2a19ce976af",
+        "bytes": 523972
+      },
+      "baseline_report": {
+        "file": "Verification/GraphicNovelRenderedPilot/Standard1920.json",
+        "sha256": "719b205c92e9bb269218b0b6a780abeaab6d96ee600acac1e5d546c4355a000e",
+        "bytes": 506791
+      },
+      "job": {
+        "name": "Stills1920Standard",
+        "passed": true,
+        "process_exit_code": 0
+      },
+      "renderer_settings_equal_to_baseline": true,
+      "renderer_settings": {
+        "sg.ViewDistanceQuality": 3,
+        "sg.AntiAliasingQuality": 3,
+        "sg.ShadowQuality": 3,
+        "sg.GlobalIlluminationQuality": 3,
+        "sg.ReflectionQuality": 3,
+        "sg.PostProcessQuality": 3,
+        "sg.TextureQuality": 3,
+        "sg.EffectsQuality": 3,
+        "sg.FoliageQuality": 3,
+        "r.Streaming.PoolSize": 1000,
+        "r.Shadow.Virtual.MaxPhysicalPages": 4096,
+        "r.ScreenPercentage": 0.0,
+        "t.MaxFPS": 0.0
+      },
+      "mapped_normal_strength": 1.0,
+      "material_uv_channels": {
+        "base_color": 1,
+        "normal": 0,
+        "roughness": 0,
+        "metallic": 0
+      },
+      "source_atlas_pixels_identical": true,
+      "candidate_asset_status": {
+        "body_source": "Data/GraphicNovel/Pilot/CurlyMetalhead/refined-v1/body.fbx",
+        "body_sha256": "e231d727117e76ac2fe0f44921517a0c6256ce9abc2f97dd36c92e1add05930b",
+        "provenance_file": "Data/GraphicNovel/Pilot/CurlyMetalhead/refined-v1/body.json",
+        "provenance_sha256": "d0be37e3288dce9d9f701b799e882e25edbb2bdb3597ba97450ffd7114a6f5c4",
+        "original_generated_body_sha256": "a9f1a81f16986a17a50571b7ed536b1e4137778a8024979576cd427365c3a62e",
+        "reviewed_mask_sha256": "bba92f3782f8056f08b0f41160940c561688f7c07d80de9565a7177aa7746ba8",
+        "original_fbx_contents_identical_except_appended_uv1_layer": true,
+        "fresh_reimport_geometry_normals_uv0_weights_binds_identical": true,
+        "graphics_accepted": false,
+        "scope": "refined UV1 collar color only; original generated maps and own clips; body-only rig with static face and fingers; no visual acceptance"
+      },
+      "fixture_isolation": {
+        "requested_actor_counts": {
+          "ParkResident": 110,
+          "Car": 44
+        },
+        "requested_owned_component_counts": {
+          "ParkResident": 1100,
+          "Car": 1382
+        },
+        "checkpoints": [
+          {
+            "stage": "warm_up",
+            "passed": true,
+            "observed": {
+              "ParkResident": {
+                "actors": 110,
+                "hidden": 110,
+                "collision_disabled": 110,
+                "actor_ticks_disabled": 110,
+                "owned_components": 1100,
+                "component_ticks_disabled": 1100
+              },
+              "Car": {
+                "actors": 44,
+                "hidden": 44,
+                "collision_disabled": 44,
+                "actor_ticks_disabled": 44,
+                "owned_components": 1382,
+                "component_ticks_disabled": 1382
+              }
+            },
+            "failures": []
+          },
+          {
+            "stage": "completion",
+            "passed": true,
+            "observed": {
+              "ParkResident": {
+                "actors": 110,
+                "hidden": 110,
+                "collision_disabled": 110,
+                "actor_ticks_disabled": 110,
+                "owned_components": 1100,
+                "component_ticks_disabled": 1100
+              },
+              "Car": {
+                "actors": 44,
+                "hidden": 44,
+                "collision_disabled": 44,
+                "actor_ticks_disabled": 44,
+                "owned_components": 1382,
+                "component_ticks_disabled": 1382
+              }
+            },
+            "failures": []
+          }
+        ],
+        "scope": "disposable PIE residents/cars only; actor and owned component primary ticks, visibility and actor collision; no render/FPS acceptance"
+      },
+      "images": [
+        {
+          "file": "Saved/Tests/GraphicNovel/RefinedRender-20261014T074547Z/Capture/Standard/1920/Resident9_Idle.png",
+          "sha256": "93b2732c01ef6886176931651916440d97dc8743733e756ddd67a1a016b47ad9",
+          "bytes": 3207240,
+          "baseline": {
+            "file": "Preview/GraphicNovelGenerated/Standard/1920/Resident9_Idle.png",
+            "sha256": "926d4852cd702a3c8c5f8548eb9df6bb23b3e8a4d0feedf8326fb3e2e17a2c4f",
+            "bytes": 3205346
+          },
+          "state": "Idle",
+          "dimensions": [
+            1920,
+            1080
+          ],
+          "clip": "A_Idle",
+          "prior_clip_time": 0.71735,
+          "refined_clip_time": 0.72372,
+          "prior_cached_camera": {
+            "position_cm": [
+              5238.54596,
+              40867.49067,
+              132.15001
+            ],
+            "rotation_degrees": [
+              -3.4050464630126953,
+              -172.59309387207034,
+              4.9784055644766625e-17
+            ],
+            "horizontal_fov_degrees": 60.0,
+            "unpaused_prepare_frames": 2
+          },
+          "refined_cached_camera": {
+            "position_cm": [
+              5238.54596,
+              40867.49067,
+              132.15001
+            ],
+            "rotation_degrees": [
+              -3.4050464630126953,
+              -172.59309387207034,
+              4.9784055644766625e-17
+            ],
+            "horizontal_fov_degrees": 60.0,
+            "unpaused_prepare_frames": 2
+          },
+          "camera_yaw_delta_degrees": 0.0,
+          "visual_result": "Reviewed: no gross new artifact seen; state-specific limits below."
+        },
+        {
+          "file": "Saved/Tests/GraphicNovel/RefinedRender-20261014T074547Z/Capture/Standard/1920/Resident9_Face.png",
+          "sha256": "acf189e0f6fe58fe5823f0d078e3e2460941377dfca6947a1db97ce3c049105f",
+          "bytes": 3756725,
+          "baseline": {
+            "file": "Preview/GraphicNovelGenerated/Standard/1920/Resident9_Face.png",
+            "sha256": "4865dfa5f06089afcd18eae6dda58b6b8324ad74009c3694533ad33e559c225e",
+            "bytes": 3772667
+          },
+          "state": "Face",
+          "dimensions": [
+            1920,
+            1080
+          ],
+          "clip": "A_Idle",
+          "prior_clip_time": 1.14554,
+          "refined_clip_time": 1.15159,
+          "prior_cached_camera": {
+            "position_cm": [
+              4709.32467,
+              40667.46731,
+              162.28159
+            ],
+            "rotation_degrees": [
+              -1.3748347759246828,
+              77.42390441894533,
+              9.942095466686248e-17
+            ],
+            "horizontal_fov_degrees": 38.0,
+            "unpaused_prepare_frames": 2,
+            "face_orbit_degrees": 0.0,
+            "face_horizontal_distance_cm": 125.0
+          },
+          "refined_cached_camera": {
+            "position_cm": [
+              4708.02618,
+              40667.67207,
+              162.25053
+            ],
+            "rotation_degrees": [
+              -1.3748347759246828,
+              76.892578125,
+              -0.0
+            ],
+            "horizontal_fov_degrees": 38.0,
+            "unpaused_prepare_frames": 2,
+            "face_orbit_degrees": 0.0,
+            "face_horizontal_distance_cm": 125.0
+          },
+          "camera_yaw_delta_degrees": -0.5313262939453267,
+          "visual_result": "Reviewed: no gross new artifact seen; state-specific limits below."
+        },
+        {
+          "file": "Saved/Tests/GraphicNovel/RefinedRender-20261014T074547Z/Capture/Standard/1920/Resident9_FaceThreeQuarter.png",
+          "sha256": "9e8a064dc026719f943c554dd49f4dab7d60981b1f4cffb09ab3460c02520d2c",
+          "bytes": 3800363,
+          "baseline": {
+            "file": "Preview/GraphicNovelGenerated/Standard/1920/Resident9_FaceThreeQuarter.png",
+            "sha256": "9235d0ffc308e67e2baa90719b93b1909d744afd5b34db2ce33334238fbd4d46",
+            "bytes": 3808460
+          },
+          "state": "FaceThreeQuarter",
+          "dimensions": [
+            1920,
+            1080
+          ],
+          "clip": "A_Idle",
+          "prior_clip_time": 1.36755,
+          "refined_clip_time": 1.36947,
+          "prior_cached_camera": {
+            "position_cm": [
+              4802.56154,
+              40682.01876,
+              161.45802
+            ],
+            "rotation_degrees": [
+              -1.3748347759246824,
+              121.59261322021489,
+              -0.0
+            ],
+            "horizontal_fov_degrees": 38.0,
+            "unpaused_prepare_frames": 2,
+            "face_orbit_degrees": 35.0,
+            "face_horizontal_distance_cm": 125.0
+          },
+          "refined_cached_camera": {
+            "position_cm": [
+              4803.15407,
+              40682.34856,
+              161.44647
+            ],
+            "rotation_degrees": [
+              -1.3748347759246824,
+              121.88939666748044,
+              1.9884190933372497e-16
+            ],
+            "horizontal_fov_degrees": 38.0,
+            "unpaused_prepare_frames": 2,
+            "face_orbit_degrees": 35.0,
+            "face_horizontal_distance_cm": 125.0
+          },
+          "camera_yaw_delta_degrees": 0.29678344726555395,
+          "visual_result": "Reviewed: no gross new artifact seen; state-specific limits below."
+        },
+        {
+          "file": "Saved/Tests/GraphicNovel/RefinedRender-20261014T074547Z/Capture/Standard/1920/Resident9_Walk.png",
+          "sha256": "e05fed7001d3c798071732421b551397afc94e96c1195be89ae94c33ad34044b",
+          "bytes": 3179381,
+          "baseline": {
+            "file": "Preview/GraphicNovelGenerated/Standard/1920/Resident9_Walk.png",
+            "sha256": "45452e73d0902710765e8bd94951139ea8896980b804bca0a5c24b1707350f50",
+            "bytes": 3181925
+          },
+          "state": "Walk",
+          "dimensions": [
+            1920,
+            1080
+          ],
+          "clip": "A_Walk",
+          "prior_clip_time": 0.39226,
+          "refined_clip_time": 0.39338,
+          "prior_cached_camera": {
+            "position_cm": [
+              5707.51382,
+              40867.49067,
+              132.15001
+            ],
+            "rotation_degrees": [
+              -3.4050464630126953,
+              -172.59309387207034,
+              4.9784055644766625e-17
+            ],
+            "horizontal_fov_degrees": 60.0,
+            "unpaused_prepare_frames": 2
+          },
+          "refined_cached_camera": {
+            "position_cm": [
+              5707.65215,
+              40867.49067,
+              132.15001
+            ],
+            "rotation_degrees": [
+              -3.4050464630126953,
+              -172.59309387207034,
+              4.9784055644766625e-17
+            ],
+            "horizontal_fov_degrees": 60.0,
+            "unpaused_prepare_frames": 2
+          },
+          "camera_yaw_delta_degrees": 0.0,
+          "visual_result": "Reviewed: no gross new artifact seen; state-specific limits below."
+        },
+        {
+          "file": "Saved/Tests/GraphicNovel/RefinedRender-20261014T074547Z/Capture/Standard/1920/Resident9_Run.png",
+          "sha256": "ac9b9a2b3b94bfbf0bdd64f6858133623c85759cccdbae032990f9c214d90ace",
+          "bytes": 3102823,
+          "baseline": {
+            "file": "Preview/GraphicNovelGenerated/Standard/1920/Resident9_Run.png",
+            "sha256": "b308c6acd163c9f7132b84a4676c2cfc0ee772409eec4bebc52b485fdf2cb251",
+            "bytes": 3098204
+          },
+          "state": "Run",
+          "dimensions": [
+            1920,
+            1080
+          ],
+          "clip": "A_Run",
+          "prior_clip_time": 0.55784,
+          "refined_clip_time": 0.56006,
+          "prior_cached_camera": {
+            "position_cm": [
+              6599.60687,
+              40867.49067,
+              132.15001
+            ],
+            "rotation_degrees": [
+              -3.4050464630126953,
+              -172.59309387207034,
+              4.9784055644766625e-17
+            ],
+            "horizontal_fov_degrees": 60.0,
+            "unpaused_prepare_frames": 2
+          },
+          "refined_cached_camera": {
+            "position_cm": [
+              6600.51842,
+              40867.49067,
+              132.15001
+            ],
+            "rotation_degrees": [
+              -3.4050464630126953,
+              -172.59309387207034,
+              4.9784055644766625e-17
+            ],
+            "horizontal_fov_degrees": 60.0,
+            "unpaused_prepare_frames": 2
+          },
+          "camera_yaw_delta_degrees": 0.0,
+          "visual_result": "Reviewed: no gross new artifact seen; state-specific limits below."
+        },
+        {
+          "file": "Saved/Tests/GraphicNovel/RefinedRender-20261014T074547Z/Capture/Standard/1920/Resident9_Airborne.png",
+          "sha256": "7ee12a5b829faa0c193259d52dad3e35b2a5c6d6df2af5c50c98374ada0a1aa1",
+          "bytes": 3092496,
+          "baseline": {
+            "file": "Preview/GraphicNovelGenerated/Standard/1920/Resident9_Airborne.png",
+            "sha256": "d2cf2ba462bf07b76a971bd55469a2f81606b85130f44e3d58d64f294f2bdaaf",
+            "bytes": 3091838
+          },
+          "state": "Airborne",
+          "dimensions": [
+            1920,
+            1080
+          ],
+          "clip": "A_Jump",
+          "prior_clip_time": 0.42682,
+          "refined_clip_time": 0.42206,
+          "prior_cached_camera": {
+            "position_cm": [
+              6601.27354,
+              40867.49067,
+              308.69155
+            ],
+            "rotation_degrees": [
+              -3.4050464630126953,
+              -172.59309387207034,
+              4.9784055644766625e-17
+            ],
+            "horizontal_fov_degrees": 60.0,
+            "unpaused_prepare_frames": 2
+          },
+          "refined_cached_camera": {
+            "position_cm": [
+              6602.28702,
+              40867.49067,
+              307.46089
+            ],
+            "rotation_degrees": [
+              -3.4050464630126953,
+              -172.59309387207034,
+              4.9784055644766625e-17
+            ],
+            "horizontal_fov_degrees": 60.0,
+            "unpaused_prepare_frames": 2
+          },
+          "camera_yaw_delta_degrees": 0.0,
+          "visual_result": "Reviewed: no gross new artifact seen; state-specific limits below."
+        },
+        {
+          "file": "Saved/Tests/GraphicNovel/RefinedRender-20261014T074547Z/Capture/Standard/1920/Resident9_Landing.png",
+          "sha256": "1b5fd4212e39b62aad191a90457e806fb9c177c7347ccb0abfcb9f62d051b9bc",
+          "bytes": 3092940,
+          "baseline": {
+            "file": "Preview/GraphicNovelGenerated/Standard/1920/Resident9_Landing.png",
+            "sha256": "f0732e52958c6b4499e9a76665f4c1bc232b556e3ca3817fb87470ca5ca36a6f",
+            "bytes": 3095589
+          },
+          "state": "Landing",
+          "dimensions": [
+            1920,
+            1080
+          ],
+          "clip": "A_Jump",
+          "prior_clip_time": 0.93299,
+          "refined_clip_time": 0.93227,
+          "prior_cached_camera": {
+            "position_cm": [
+              6601.27354,
+              40867.49067,
+              132.15001
+            ],
+            "rotation_degrees": [
+              -3.4050464630126953,
+              -172.59309387207034,
+              4.9784055644766625e-17
+            ],
+            "horizontal_fov_degrees": 60.0,
+            "unpaused_prepare_frames": 320
+          },
+          "refined_cached_camera": {
+            "position_cm": [
+              6602.28702,
+              40867.49067,
+              132.15001
+            ],
+            "rotation_degrees": [
+              -3.4050464630126953,
+              -172.59309387207034,
+              4.9784055644766625e-17
+            ],
+            "horizontal_fov_degrees": 60.0,
+            "unpaused_prepare_frames": 350
+          },
+          "camera_yaw_delta_degrees": 0.0,
+          "visual_result": "Reviewed: no gross new artifact seen; state-specific limits below."
+        }
+      ]
+    },
+    {
+      "mode": "comic",
+      "resolution": [
+        1280,
+        720
+      ],
+      "native_report": {
+        "file": "Saved/Tests/GraphicNovel/RefinedRender-20261014T074547Z/Capture/PlayerQuality1280.json",
+        "sha256": "4dbc50e89dce91634699c31ed4cce2eec44d33531b99ca861fac03a0871739cd",
+        "bytes": 520020
+      },
+      "baseline_report": {
+        "file": "Verification/GraphicNovelRenderedPilot/Comic1280.json",
+        "sha256": "60cf3e6b2dc6978d22f0a5c4b44f7bc9ead40a0cde2218ee20013b3153edc3d8",
+        "bytes": 508924
+      },
+      "job": {
+        "name": "Stills1280Comic",
+        "passed": true,
+        "process_exit_code": 0
+      },
+      "renderer_settings_equal_to_baseline": true,
+      "renderer_settings": {
+        "sg.ViewDistanceQuality": 3,
+        "sg.AntiAliasingQuality": 3,
+        "sg.ShadowQuality": 3,
+        "sg.GlobalIlluminationQuality": 3,
+        "sg.ReflectionQuality": 3,
+        "sg.PostProcessQuality": 3,
+        "sg.TextureQuality": 3,
+        "sg.EffectsQuality": 3,
+        "sg.FoliageQuality": 3,
+        "r.Streaming.PoolSize": 1000,
+        "r.Shadow.Virtual.MaxPhysicalPages": 4096,
+        "r.ScreenPercentage": 0.0,
+        "t.MaxFPS": 0.0
+      },
+      "mapped_normal_strength": 1.0,
+      "material_uv_channels": {
+        "base_color": 1,
+        "normal": 0,
+        "roughness": 0,
+        "metallic": 0
+      },
+      "source_atlas_pixels_identical": true,
+      "candidate_asset_status": {
+        "body_source": "Data/GraphicNovel/Pilot/CurlyMetalhead/refined-v1/body.fbx",
+        "body_sha256": "e231d727117e76ac2fe0f44921517a0c6256ce9abc2f97dd36c92e1add05930b",
+        "provenance_file": "Data/GraphicNovel/Pilot/CurlyMetalhead/refined-v1/body.json",
+        "provenance_sha256": "d0be37e3288dce9d9f701b799e882e25edbb2bdb3597ba97450ffd7114a6f5c4",
+        "original_generated_body_sha256": "a9f1a81f16986a17a50571b7ed536b1e4137778a8024979576cd427365c3a62e",
+        "reviewed_mask_sha256": "bba92f3782f8056f08b0f41160940c561688f7c07d80de9565a7177aa7746ba8",
+        "original_fbx_contents_identical_except_appended_uv1_layer": true,
+        "fresh_reimport_geometry_normals_uv0_weights_binds_identical": true,
+        "graphics_accepted": false,
+        "scope": "refined UV1 collar color only; original generated maps and own clips; body-only rig with static face and fingers; no visual acceptance"
+      },
+      "fixture_isolation": {
+        "requested_actor_counts": {
+          "ParkResident": 110,
+          "Car": 45
+        },
+        "requested_owned_component_counts": {
+          "ParkResident": 1100,
+          "Car": 1413
+        },
+        "checkpoints": [
+          {
+            "stage": "warm_up",
+            "passed": true,
+            "observed": {
+              "ParkResident": {
+                "actors": 110,
+                "hidden": 110,
+                "collision_disabled": 110,
+                "actor_ticks_disabled": 110,
+                "owned_components": 1100,
+                "component_ticks_disabled": 1100
+              },
+              "Car": {
+                "actors": 45,
+                "hidden": 45,
+                "collision_disabled": 45,
+                "actor_ticks_disabled": 45,
+                "owned_components": 1413,
+                "component_ticks_disabled": 1413
+              }
+            },
+            "failures": []
+          },
+          {
+            "stage": "completion",
+            "passed": true,
+            "observed": {
+              "ParkResident": {
+                "actors": 110,
+                "hidden": 110,
+                "collision_disabled": 110,
+                "actor_ticks_disabled": 110,
+                "owned_components": 1100,
+                "component_ticks_disabled": 1100
+              },
+              "Car": {
+                "actors": 45,
+                "hidden": 45,
+                "collision_disabled": 45,
+                "actor_ticks_disabled": 45,
+                "owned_components": 1413,
+                "component_ticks_disabled": 1413
+              }
+            },
+            "failures": []
+          }
+        ],
+        "scope": "disposable PIE residents/cars only; actor and owned component primary ticks, visibility and actor collision; no render/FPS acceptance"
+      },
+      "images": [
+        {
+          "file": "Saved/Tests/GraphicNovel/RefinedRender-20261014T074547Z/Capture/1280/Resident9_Idle.png",
+          "sha256": "2e13fd7c0cee92d1c0ab47fddd063633aca87adb79e79dc036f1208c7114ab41",
+          "bytes": 1530113,
+          "baseline": {
+            "file": "Preview/GraphicNovelGenerated/Comic/1280/Resident9_Idle.png",
+            "sha256": "a13934a607a104d55c903bebc6aaa777ca3dea003568d2661cb66d1fbbf60f42",
+            "bytes": 1529408
+          },
+          "state": "Idle",
+          "dimensions": [
+            1280,
+            720
+          ],
+          "clip": "A_Idle",
+          "prior_clip_time": 0.7186,
+          "refined_clip_time": 0.72026,
+          "prior_cached_camera": {
+            "position_cm": [
+              5238.54596,
+              40867.49067,
+              132.15001
+            ],
+            "rotation_degrees": [
+              -3.4050464630126953,
+              -172.59309387207034,
+              4.9784055644766625e-17
+            ],
+            "horizontal_fov_degrees": 60.0,
+            "unpaused_prepare_frames": 2
+          },
+          "refined_cached_camera": {
+            "position_cm": [
+              5238.54596,
+              40867.49067,
+              132.15001
+            ],
+            "rotation_degrees": [
+              -3.4050464630126953,
+              -172.59309387207034,
+              4.9784055644766625e-17
+            ],
+            "horizontal_fov_degrees": 60.0,
+            "unpaused_prepare_frames": 2
+          },
+          "camera_yaw_delta_degrees": 0.0,
+          "visual_result": "Reviewed: no gross new artifact seen; state-specific limits below."
+        },
+        {
+          "file": "Saved/Tests/GraphicNovel/RefinedRender-20261014T074547Z/Capture/1280/Resident9_Face.png",
+          "sha256": "5a6bff058ddb30f1fb039c7223f824121f12b9939c5e264b7092ebdb19f90226",
+          "bytes": 1848604,
+          "baseline": {
+            "file": "Preview/GraphicNovelGenerated/Comic/1280/Resident9_Face.png",
+            "sha256": "efd3ded1365d7055a20754beae25292eb24a2ac2da42d9de1ab6eb76cfcb4e65",
+            "bytes": 1859014
+          },
+          "state": "Face",
+          "dimensions": [
+            1280,
+            720
+          ],
+          "clip": "A_Idle",
+          "prior_clip_time": 1.14962,
+          "refined_clip_time": 1.14784,
+          "prior_cached_camera": {
+            "position_cm": [
+              4708.56736,
+              40667.58527,
+              162.26352
+            ],
+            "rotation_degrees": [
+              -1.3748347759246824,
+              77.11410522460939,
+              1.9884190933372497e-16
+            ],
+            "horizontal_fov_degrees": 38.0,
+            "unpaused_prepare_frames": 2,
+            "face_orbit_degrees": 0.0,
+            "face_horizontal_distance_cm": 125.0
+          },
+          "refined_cached_camera": {
+            "position_cm": [
+              4708.71941,
+              40667.56126,
+              162.26715
+            ],
+            "rotation_degrees": [
+              -1.3748347759246824,
+              77.17631530761719,
+              -0.0
+            ],
+            "horizontal_fov_degrees": 38.0,
+            "unpaused_prepare_frames": 2,
+            "face_orbit_degrees": 0.0,
+            "face_horizontal_distance_cm": 125.0
+          },
+          "camera_yaw_delta_degrees": 0.06221008300779829,
+          "visual_result": "Reviewed: no gross new artifact seen; state-specific limits below."
+        },
+        {
+          "file": "Saved/Tests/GraphicNovel/RefinedRender-20261014T074547Z/Capture/1280/Resident9_FaceThreeQuarter.png",
+          "sha256": "1a88a13791052a080def0a90892cf33039696373437883710b81ee68f9dbd080",
+          "bytes": 1957641,
+          "baseline": {
+            "file": "Preview/GraphicNovelGenerated/Comic/1280/Resident9_FaceThreeQuarter.png",
+            "sha256": "b8897143c689738ca45068223a1c640a9490c56f788be9df8a60320bebd29827",
+            "bytes": 1982150
+          },
+          "state": "FaceThreeQuarter",
+          "dimensions": [
+            1280,
+            720
+          ],
+          "clip": "A_Idle",
+          "prior_clip_time": 1.37415,
+          "refined_clip_time": 1.36577,
+          "prior_cached_camera": {
+            "position_cm": [
+              4806.1233,
+              40684.06274,
+              161.3884
+            ],
+            "rotation_degrees": [
+              -1.3748347759246826,
+              123.38983154296875,
+              -0.0
+            ],
+            "horizontal_fov_degrees": 38.0,
+            "unpaused_prepare_frames": 2,
+            "face_orbit_degrees": 35.0,
+            "face_horizontal_distance_cm": 125.0
+          },
+          "refined_cached_camera": {
+            "position_cm": [
+              4801.1432,
+              40681.24549,
+              161.48561
+            ],
+            "rotation_degrees": [
+              -1.3748347759246824,
+              120.88558197021484,
+              -9.942095466686248e-17
+            ],
+            "horizontal_fov_degrees": 38.0,
+            "unpaused_prepare_frames": 2,
+            "face_orbit_degrees": 35.0,
+            "face_horizontal_distance_cm": 125.0
+          },
+          "camera_yaw_delta_degrees": -2.5042495727539062,
+          "visual_result": "Reviewed: no gross new artifact seen; state-specific limits below."
+        },
+        {
+          "file": "Saved/Tests/GraphicNovel/RefinedRender-20261014T074547Z/Capture/1280/Resident9_Walk.png",
+          "sha256": "227b018864a8d9ca4e85316d0d128051f4724be96b8df014d6c2c5e70d880edf",
+          "bytes": 1512149,
+          "baseline": {
+            "file": "Preview/GraphicNovelGenerated/Comic/1280/Resident9_Walk.png",
+            "sha256": "a905ee8e8f24e77e89d271c3087c4592b5259d32f83926bf98e61c621cbe8bb2",
+            "bytes": 1509208
+          },
+          "state": "Walk",
+          "dimensions": [
+            1280,
+            720
+          ],
+          "clip": "A_Walk",
+          "prior_clip_time": 0.39716,
+          "refined_clip_time": 0.39072,
+          "prior_cached_camera": {
+            "position_cm": [
+              5708.1804,
+              40867.49067,
+              132.15001
+            ],
+            "rotation_degrees": [
+              -3.4050464630126953,
+              -172.59309387207034,
+              4.9784055644766625e-17
+            ],
+            "horizontal_fov_degrees": 60.0,
+            "unpaused_prepare_frames": 2
+          },
+          "refined_cached_camera": {
+            "position_cm": [
+              5707.27949,
+              40867.49067,
+              132.15001
+            ],
+            "rotation_degrees": [
+              -3.4050464630126953,
+              -172.59309387207034,
+              4.9784055644766625e-17
+            ],
+            "horizontal_fov_degrees": 60.0,
+            "unpaused_prepare_frames": 2
+          },
+          "camera_yaw_delta_degrees": 0.0,
+          "visual_result": "Reviewed: no gross new artifact seen; state-specific limits below."
+        },
+        {
+          "file": "Saved/Tests/GraphicNovel/RefinedRender-20261014T074547Z/Capture/1280/Resident9_Run.png",
+          "sha256": "831bd71fed201e784108d50221a7cbbdce50fd81946c7cb4b4b331edead42b03",
+          "bytes": 1480710,
+          "baseline": {
+            "file": "Preview/GraphicNovelGenerated/Comic/1280/Resident9_Run.png",
+            "sha256": "cfa7478c2a539f7b584d55cea8d0e699f9ea3b643c1744a570c672b5a9683265",
+            "bytes": 1481170
+          },
+          "state": "Run",
+          "dimensions": [
+            1280,
+            720
+          ],
+          "clip": "A_Run",
+          "prior_clip_time": 0.56281,
+          "refined_clip_time": 0.55875,
+          "prior_cached_camera": {
+            "position_cm": [
+              6601.1745,
+              40867.49067,
+              132.15001
+            ],
+            "rotation_degrees": [
+              -3.4050464630126953,
+              -172.59309387207034,
+              4.9784055644766625e-17
+            ],
+            "horizontal_fov_degrees": 60.0,
+            "unpaused_prepare_frames": 2
+          },
+          "refined_cached_camera": {
+            "position_cm": [
+              6600.34889,
+              40867.49067,
+              132.15001
+            ],
+            "rotation_degrees": [
+              -3.4050464630126953,
+              -172.59309387207034,
+              4.9784055644766625e-17
+            ],
+            "horizontal_fov_degrees": 60.0,
+            "unpaused_prepare_frames": 2
+          },
+          "camera_yaw_delta_degrees": 0.0,
+          "visual_result": "Reviewed: no gross new artifact seen; state-specific limits below."
+        },
+        {
+          "file": "Saved/Tests/GraphicNovel/RefinedRender-20261014T074547Z/Capture/1280/Resident9_Airborne.png",
+          "sha256": "ff695e43543179427399c28e17e1c51fb60259d67db1ea11e67f8c49e4d2bfba",
+          "bytes": 1472380,
+          "baseline": {
+            "file": "Preview/GraphicNovelGenerated/Comic/1280/Resident9_Airborne.png",
+            "sha256": "60aa8514776ff8ffc929b44cd968820655f56e050a00b2228c53191336062616",
+            "bytes": 1470861
+          },
+          "state": "Airborne",
+          "dimensions": [
+            1280,
+            720
+          ],
+          "clip": "A_Jump",
+          "prior_clip_time": 0.42145,
+          "refined_clip_time": 0.42291,
+          "prior_cached_camera": {
+            "position_cm": [
+              6603.08145,
+              40867.49067,
+              307.2416
+            ],
+            "rotation_degrees": [
+              -3.4050464630126953,
+              -172.59309387207034,
+              4.9784055644766625e-17
+            ],
+            "horizontal_fov_degrees": 60.0,
+            "unpaused_prepare_frames": 2
+          },
+          "refined_cached_camera": {
+            "position_cm": [
+              6602.05373,
+              40867.49067,
+              307.73585
+            ],
+            "rotation_degrees": [
+              -3.4050464630126953,
+              -172.59309387207034,
+              4.9784055644766625e-17
+            ],
+            "horizontal_fov_degrees": 60.0,
+            "unpaused_prepare_frames": 2
+          },
+          "camera_yaw_delta_degrees": 0.0,
+          "visual_result": "Reviewed: no gross new artifact seen; state-specific limits below."
+        },
+        {
+          "file": "Saved/Tests/GraphicNovel/RefinedRender-20261014T074547Z/Capture/1280/Resident9_Landing.png",
+          "sha256": "46070d19628950086467948233f0780835c9fc1cd7c36592015a3249531c45a5",
+          "bytes": 1470956,
+          "baseline": {
+            "file": "Preview/GraphicNovelGenerated/Comic/1280/Resident9_Landing.png",
+            "sha256": "061c73b6cdc915aee85f0f8de36e018ee1009827b6ca6952c1e6d6463fe09410",
+            "bytes": 1471434
+          },
+          "state": "Landing",
+          "dimensions": [
+            1280,
+            720
+          ],
+          "clip": "A_Jump",
+          "prior_clip_time": 0.93208,
+          "refined_clip_time": 0.93208,
+          "prior_cached_camera": {
+            "position_cm": [
+              6603.08145,
+              40867.49067,
+              132.15001
+            ],
+            "rotation_degrees": [
+              -3.4050464630126953,
+              -172.59309387207034,
+              4.9784055644766625e-17
+            ],
+            "horizontal_fov_degrees": 60.0,
+            "unpaused_prepare_frames": 325
+          },
+          "refined_cached_camera": {
+            "position_cm": [
+              6602.05373,
+              40867.49067,
+              132.15001
+            ],
+            "rotation_degrees": [
+              -3.4050464630126953,
+              -172.59309387207034,
+              4.9784055644766625e-17
+            ],
+            "horizontal_fov_degrees": 60.0,
+            "unpaused_prepare_frames": 346
+          },
+          "camera_yaw_delta_degrees": 0.0,
+          "visual_result": "Reviewed: no gross new artifact seen; state-specific limits below."
+        }
+      ]
+    },
+    {
+      "mode": "comic",
+      "resolution": [
+        1920,
+        1080
+      ],
+      "native_report": {
+        "file": "Saved/Tests/GraphicNovel/RefinedRender-20261014T074547Z/Capture/PlayerQuality1920.json",
+        "sha256": "570facbc6002fcd7386bd121f479a2e6f1afc838bc9976df70f0f3e87974d2a8",
+        "bytes": 522860
+      },
+      "baseline_report": {
+        "file": "Verification/GraphicNovelRenderedPilot/Comic1920.json",
+        "sha256": "2ab329777f4c8c80d0ed40477257a101800da85c95d20fc2ad65a797be6b51c3",
+        "bytes": 504533
+      },
+      "job": {
+        "name": "Stills1920Comic",
+        "passed": true,
+        "process_exit_code": 0
+      },
+      "renderer_settings_equal_to_baseline": true,
+      "renderer_settings": {
+        "sg.ViewDistanceQuality": 3,
+        "sg.AntiAliasingQuality": 3,
+        "sg.ShadowQuality": 3,
+        "sg.GlobalIlluminationQuality": 3,
+        "sg.ReflectionQuality": 3,
+        "sg.PostProcessQuality": 3,
+        "sg.TextureQuality": 3,
+        "sg.EffectsQuality": 3,
+        "sg.FoliageQuality": 3,
+        "r.Streaming.PoolSize": 1000,
+        "r.Shadow.Virtual.MaxPhysicalPages": 4096,
+        "r.ScreenPercentage": 0.0,
+        "t.MaxFPS": 0.0
+      },
+      "mapped_normal_strength": 1.0,
+      "material_uv_channels": {
+        "base_color": 1,
+        "normal": 0,
+        "roughness": 0,
+        "metallic": 0
+      },
+      "source_atlas_pixels_identical": true,
+      "candidate_asset_status": {
+        "body_source": "Data/GraphicNovel/Pilot/CurlyMetalhead/refined-v1/body.fbx",
+        "body_sha256": "e231d727117e76ac2fe0f44921517a0c6256ce9abc2f97dd36c92e1add05930b",
+        "provenance_file": "Data/GraphicNovel/Pilot/CurlyMetalhead/refined-v1/body.json",
+        "provenance_sha256": "d0be37e3288dce9d9f701b799e882e25edbb2bdb3597ba97450ffd7114a6f5c4",
+        "original_generated_body_sha256": "a9f1a81f16986a17a50571b7ed536b1e4137778a8024979576cd427365c3a62e",
+        "reviewed_mask_sha256": "bba92f3782f8056f08b0f41160940c561688f7c07d80de9565a7177aa7746ba8",
+        "original_fbx_contents_identical_except_appended_uv1_layer": true,
+        "fresh_reimport_geometry_normals_uv0_weights_binds_identical": true,
+        "graphics_accepted": false,
+        "scope": "refined UV1 collar color only; original generated maps and own clips; body-only rig with static face and fingers; no visual acceptance"
+      },
+      "fixture_isolation": {
+        "requested_actor_counts": {
+          "ParkResident": 110,
+          "Car": 44
+        },
+        "requested_owned_component_counts": {
+          "ParkResident": 1100,
+          "Car": 1382
+        },
+        "checkpoints": [
+          {
+            "stage": "warm_up",
+            "passed": true,
+            "observed": {
+              "ParkResident": {
+                "actors": 110,
+                "hidden": 110,
+                "collision_disabled": 110,
+                "actor_ticks_disabled": 110,
+                "owned_components": 1100,
+                "component_ticks_disabled": 1100
+              },
+              "Car": {
+                "actors": 44,
+                "hidden": 44,
+                "collision_disabled": 44,
+                "actor_ticks_disabled": 44,
+                "owned_components": 1382,
+                "component_ticks_disabled": 1382
+              }
+            },
+            "failures": []
+          },
+          {
+            "stage": "completion",
+            "passed": true,
+            "observed": {
+              "ParkResident": {
+                "actors": 110,
+                "hidden": 110,
+                "collision_disabled": 110,
+                "actor_ticks_disabled": 110,
+                "owned_components": 1100,
+                "component_ticks_disabled": 1100
+              },
+              "Car": {
+                "actors": 44,
+                "hidden": 44,
+                "collision_disabled": 44,
+                "actor_ticks_disabled": 44,
+                "owned_components": 1382,
+                "component_ticks_disabled": 1382
+              }
+            },
+            "failures": []
+          }
+        ],
+        "scope": "disposable PIE residents/cars only; actor and owned component primary ticks, visibility and actor collision; no render/FPS acceptance"
+      },
+      "images": [
+        {
+          "file": "Saved/Tests/GraphicNovel/RefinedRender-20261014T074547Z/Capture/1920/Resident9_Idle.png",
+          "sha256": "24c12e929061962a9bbd8e4ae93ce26d30ea75b2f6f917e5aa74a9f703c45b39",
+          "bytes": 3281515,
+          "baseline": {
+            "file": "Preview/GraphicNovelGenerated/Comic/1920/Resident9_Idle.png",
+            "sha256": "c788a27b3116c4e19fc07278e375b7ac864eb3bc7319b617c0903e3f659d06b2",
+            "bytes": 3284261
+          },
+          "state": "Idle",
+          "dimensions": [
+            1920,
+            1080
+          ],
+          "clip": "A_Idle",
+          "prior_clip_time": 0.72419,
+          "refined_clip_time": 0.71745,
+          "prior_cached_camera": {
+            "position_cm": [
+              5238.54596,
+              40867.49067,
+              132.15001
+            ],
+            "rotation_degrees": [
+              -3.4050464630126953,
+              -172.59309387207034,
+              4.9784055644766625e-17
+            ],
+            "horizontal_fov_degrees": 60.0,
+            "unpaused_prepare_frames": 2
+          },
+          "refined_cached_camera": {
+            "position_cm": [
+              5238.54596,
+              40867.49067,
+              132.15001
+            ],
+            "rotation_degrees": [
+              -3.4050464630126953,
+              -172.59309387207034,
+              4.9784055644766625e-17
+            ],
+            "horizontal_fov_degrees": 60.0,
+            "unpaused_prepare_frames": 2
+          },
+          "camera_yaw_delta_degrees": 0.0,
+          "visual_result": "Reviewed: no gross new artifact seen; state-specific limits below."
+        },
+        {
+          "file": "Saved/Tests/GraphicNovel/RefinedRender-20261014T074547Z/Capture/1920/Resident9_Face.png",
+          "sha256": "59c9623be2733931311ae18c1350c3dbf78562e94408822a098e49bf54aeafdb",
+          "bytes": 3943311,
+          "baseline": {
+            "file": "Preview/GraphicNovelGenerated/Comic/1920/Resident9_Face.png",
+            "sha256": "68bcef5f82fa668c9f06ec5dbdf25566aa4e042d0b6bd26c491912f1cdf9cc7c",
+            "bytes": 3955384
+          },
+          "state": "Face",
+          "dimensions": [
+            1920,
+            1080
+          ],
+          "clip": "A_Idle",
+          "prior_clip_time": 1.15729,
+          "refined_clip_time": 1.14577,
+          "prior_cached_camera": {
+            "position_cm": [
+              4707.92797,
+              40667.68805,
+              162.24817
+            ],
+            "rotation_degrees": [
+              -1.3748347759246826,
+              76.85237121582033,
+              9.942095466686248e-17
+            ],
+            "horizontal_fov_degrees": 38.0,
+            "unpaused_prepare_frames": 2,
+            "face_orbit_degrees": 0.0,
+            "face_horizontal_distance_cm": 125.0
+          },
+          "refined_cached_camera": {
+            "position_cm": [
+              4709.10206,
+              40667.50156,
+              162.27629
+            ],
+            "rotation_degrees": [
+              -1.3748347759246826,
+              77.33286285400393,
+              9.942095466686248e-17
+            ],
+            "horizontal_fov_degrees": 38.0,
+            "unpaused_prepare_frames": 2,
+            "face_orbit_degrees": 0.0,
+            "face_horizontal_distance_cm": 125.0
+          },
+          "camera_yaw_delta_degrees": 0.48049163818360796,
+          "visual_result": "Reviewed: no gross new artifact seen; state-specific limits below."
+        },
+        {
+          "file": "Saved/Tests/GraphicNovel/RefinedRender-20261014T074547Z/Capture/1920/Resident9_FaceThreeQuarter.png",
+          "sha256": "1527fee94b7a2aa467bc28722f3ff5ddddb4a71c1818b8c03a39cb54527d451f",
+          "bytes": 4161038,
+          "baseline": {
+            "file": "Preview/GraphicNovelGenerated/Comic/1920/Resident9_FaceThreeQuarter.png",
+            "sha256": "fbb7593f2507286a9ba15c572143a9662a5afdcd0b91b536fee050e9231d8344",
+            "bytes": 4211689
+          },
+          "state": "FaceThreeQuarter",
+          "dimensions": [
+            1920,
+            1080
+          ],
+          "clip": "A_Idle",
+          "prior_clip_time": 1.38116,
+          "refined_clip_time": 1.36786,
+          "prior_cached_camera": {
+            "position_cm": [
+              4811.90209,
+              40687.69407,
+              161.29728
+            ],
+            "rotation_degrees": [
+              -1.3748347759246826,
+              126.38217163085936,
+              9.942095466686248e-17
+            ],
+            "horizontal_fov_degrees": 38.0,
+            "unpaused_prepare_frames": 2,
+            "face_orbit_degrees": 35.0,
+            "face_horizontal_distance_cm": 125.0
+          },
+          "refined_cached_camera": {
+            "position_cm": [
+              4802.26134,
+              40681.8532,
+              161.46387
+            ],
+            "rotation_degrees": [
+              -1.3748347759246828,
+              121.44256591796878,
+              9.942095466686248e-17
+            ],
+            "horizontal_fov_degrees": 38.0,
+            "unpaused_prepare_frames": 2,
+            "face_orbit_degrees": 35.0,
+            "face_horizontal_distance_cm": 125.0
+          },
+          "camera_yaw_delta_degrees": -4.939605712890582,
+          "visual_result": "Reviewed: no gross new artifact seen; state-specific limits below."
+        },
+        {
+          "file": "Saved/Tests/GraphicNovel/RefinedRender-20261014T074547Z/Capture/1920/Resident9_Walk.png",
+          "sha256": "5a5c98667c54366631c40bce7cd81b9be66c0fb2d54e2989af93f9652ce8c2b0",
+          "bytes": 3267692,
+          "baseline": {
+            "file": "Preview/GraphicNovelGenerated/Comic/1920/Resident9_Walk.png",
+            "sha256": "2b75f12638c6c94e31c4ab1ca43b0ae06c58e44b7082526c8900b7d2c355dcad",
+            "bytes": 3259527
+          },
+          "state": "Walk",
+          "dimensions": [
+            1920,
+            1080
+          ],
+          "clip": "A_Walk",
+          "prior_clip_time": 0.3973,
+          "refined_clip_time": 0.39439,
+          "prior_cached_camera": {
+            "position_cm": [
+              5707.92364,
+              40867.49067,
+              132.15001
+            ],
+            "rotation_degrees": [
+              -3.4050464630126953,
+              -172.59309387207034,
+              4.9784055644766625e-17
+            ],
+            "horizontal_fov_degrees": 60.0,
+            "unpaused_prepare_frames": 2
+          },
+          "refined_cached_camera": {
+            "position_cm": [
+              5707.94683,
+              40867.49067,
+              132.15001
+            ],
+            "rotation_degrees": [
+              -3.4050464630126953,
+              -172.59309387207034,
+              4.9784055644766625e-17
+            ],
+            "horizontal_fov_degrees": 60.0,
+            "unpaused_prepare_frames": 2
+          },
+          "camera_yaw_delta_degrees": 0.0,
+          "visual_result": "Reviewed: no gross new artifact seen; state-specific limits below."
+        },
+        {
+          "file": "Saved/Tests/GraphicNovel/RefinedRender-20261014T074547Z/Capture/1920/Resident9_Run.png",
+          "sha256": "fe5cb8635383141ef311e189cc432b6e1bffb824a5647499ea5471c3b57e1e60",
+          "bytes": 3193244,
+          "baseline": {
+            "file": "Preview/GraphicNovelGenerated/Comic/1920/Resident9_Run.png",
+            "sha256": "8f89e9c4529873271ca8879f9000225127d4c895089e4e5b5ac06fb782bd62a6",
+            "bytes": 3191345
+          },
+          "state": "Run",
+          "dimensions": [
+            1920,
+            1080
+          ],
+          "clip": "A_Run",
+          "prior_clip_time": 0.5621,
+          "refined_clip_time": 0.56065,
+          "prior_cached_camera": {
+            "position_cm": [
+              6600.70613,
+              40867.49067,
+              132.15001
+            ],
+            "rotation_degrees": [
+              -3.4050464630126953,
+              -172.59309387207034,
+              4.9784055644766625e-17
+            ],
+            "horizontal_fov_degrees": 60.0,
+            "unpaused_prepare_frames": 2
+          },
+          "refined_cached_camera": {
+            "position_cm": [
+              6600.86057,
+              40867.49067,
+              132.15001
+            ],
+            "rotation_degrees": [
+              -3.4050464630126953,
+              -172.59309387207034,
+              4.9784055644766625e-17
+            ],
+            "horizontal_fov_degrees": 60.0,
+            "unpaused_prepare_frames": 2
+          },
+          "camera_yaw_delta_degrees": 0.0,
+          "visual_result": "Reviewed: no gross new artifact seen; state-specific limits below."
+        },
+        {
+          "file": "Saved/Tests/GraphicNovel/RefinedRender-20261014T074547Z/Capture/1920/Resident9_Airborne.png",
+          "sha256": "90b9fec2d3f358daff0548cd1d8eb4bd4eb1eb1cb4ba7ac58cfd37f366d5c25c",
+          "bytes": 3172591,
+          "baseline": {
+            "file": "Preview/GraphicNovelGenerated/Comic/1920/Resident9_Airborne.png",
+            "sha256": "dc6cb1bde03cb5b75a0d88a5ed0a4687c1f44df3e14289048914634a18eae46d",
+            "bytes": 3170379
+          },
+          "state": "Airborne",
+          "dimensions": [
+            1920,
+            1080
+          ],
+          "clip": "A_Jump",
+          "prior_clip_time": 0.4222,
+          "refined_clip_time": 0.42113,
+          "prior_cached_camera": {
+            "position_cm": [
+              6602.37283,
+              40867.49067,
+              307.4639
+            ],
+            "rotation_degrees": [
+              -3.4050464630126953,
+              -172.59309387207034,
+              4.9784055644766625e-17
+            ],
+            "horizontal_fov_degrees": 60.0,
+            "unpaused_prepare_frames": 2
+          },
+          "refined_cached_camera": {
+            "position_cm": [
+              6602.58541,
+              40867.49067,
+              307.15402
+            ],
+            "rotation_degrees": [
+              -3.4050464630126953,
+              -172.59309387207034,
+              4.9784055644766625e-17
+            ],
+            "horizontal_fov_degrees": 60.0,
+            "unpaused_prepare_frames": 2
+          },
+          "camera_yaw_delta_degrees": 0.0,
+          "visual_result": "Reviewed: no gross new artifact seen; state-specific limits below."
+        },
+        {
+          "file": "Saved/Tests/GraphicNovel/RefinedRender-20261014T074547Z/Capture/1920/Resident9_Landing.png",
+          "sha256": "621d6c16bf6051886fe9746b2837149e79a734968b30f9aaae8f08ac71e498f3",
+          "bytes": 3158961,
+          "baseline": {
+            "file": "Preview/GraphicNovelGenerated/Comic/1920/Resident9_Landing.png",
+            "sha256": "4b4bb50a660a566d5088a090194e48588557f7638d32d83bbdd948a7c13000cd",
+            "bytes": 3155476
+          },
+          "state": "Landing",
+          "dimensions": [
+            1920,
+            1080
+          ],
+          "clip": "A_Jump",
+          "prior_clip_time": 0.93208,
+          "refined_clip_time": 0.93208,
+          "prior_cached_camera": {
+            "position_cm": [
+              6602.37283,
+              40867.49067,
+              132.15001
+            ],
+            "rotation_degrees": [
+              -3.4050464630126953,
+              -172.59309387207034,
+              4.9784055644766625e-17
+            ],
+            "horizontal_fov_degrees": 60.0,
+            "unpaused_prepare_frames": 332
+          },
+          "refined_cached_camera": {
+            "position_cm": [
+              6602.58541,
+              40867.49067,
+              132.15001
+            ],
+            "rotation_degrees": [
+              -3.4050464630126953,
+              -172.59309387207034,
+              4.9784055644766625e-17
+            ],
+            "horizontal_fov_degrees": 60.0,
+            "unpaused_prepare_frames": 348
+          },
+          "camera_yaw_delta_degrees": 0.0,
+          "visual_result": "Reviewed: no gross new artifact seen; state-specific limits below."
+        }
+      ]
+    }
+  ],
+  "state_findings": {
+    "Face/FaceThreeQuarter": [
+      "Broad skin-painted garment flange is visibly reduced to dark shirt; improvement is clearest along screen-right neckline.",
+      "Face identity, eyes, brows, beard and hair silhouette remain readable with no gross new UV/material artifact.",
+      "Actual skin neck wall remains angular with a thin jagged bottom edge and small residual bright rim; complete collar shape is not repaired."
+    ],
+    "Idle/Walk/Run/Landing": [
+      "Adult silhouette, torso art, cargo trousers, cuffs and canvas shoes remain coherent with no gross new missing or detached part.",
+      "Static coarse hands remain; stills do not certify exact continuous foot contact."
+    ],
+    "Airborne": [
+      "Clear airborne silhouette and continuous clothing/shoe coverage retained.",
+      "Existing sharp shoulder/sleeve/biceps lobes and stiff drooping hands persist; neither is repaired by this material change."
+    ],
+    "Comic-all": [
+      "Existing indigo shirt/hair shift, broad posterized shading and busy tree/ground ink persist; this change does not complete the illustrated treatment."
+    ]
+  },
+  "comparison_scope": {
+    "pixel_locked": false,
+    "largest_absolute_camera_yaw_delta_degrees": 4.939605712890582,
+    "largest_absolute_clip_time_delta_seconds": 0.013299999999999867,
+    "source_code_and_fixture_changed": true,
+    "old_fixture_erratum": "Historical fixture requested hiding/collision disabled but resident Tick could restore visibility/collision and owned component ticks remained active. Former all-residents-hidden claim was not verified. Fresh 720p reports verify 110 residents/45 cars/2513 components; fresh 1080p reports verify 110 residents/44 cars/2482 components isolated at warm-up and completion.",
+    "interpretation": "Camera and observed clip phases vary slightly, including about 4.94 degrees in Comic 1080 FaceThreeQuarter. Fresh isolation changes scene workload/background context. This is qualitative visual A/B with matching quality settings, no pixel difference proof or performance comparison."
+  },
+  "remaining_visual_limits": [
+    "Thin jagged actual neck-wall bottom and broad triangular skin planes remain obvious at 1080p.",
+    "Shiny thick rope-like curls have a chunky modelled silhouette; current face is smoother than the illustrated reference.",
+    "Coarse fingers remain static; no facial/finger acting follows from this 24-bone body-only rig.",
+    "Airborne upper arms/sleeves pinch into sharp lobes; hands hang stiffly.",
+    "Comic mode shifts black shirt strongly indigo and applies noisy scene-wide outlines/stipple.",
+    "Large red plunger remains prominent behind head and beside body."
+  ],
+  "higher_detail_pilot_recommendation": {
+    "single_controlled_experiment_justified": true,
+    "cast_expansion_justified": false,
+    "provider_submission_performed": false,
+    "evidence": [
+      "Fresh 1080p front/35-degree closeups show irregular actual-neck topology after albedo cleanup.",
+      "Native closeups show chunky shiny hair tubes.",
+      "Airborne crops show weight/pose-driven angular shoulders and rigid fingers, requiring separate checks."
+    ],
+    "proposed_comparison": "Preserve original and refined 30k pilot. A separate same-reference/same-prompt 4k geometry/100k-target candidate can test actual-neck/hair surface improvement, followed by matched native closeups/body poses. Seed is output-only in the latest input schema, so this is a stochastic candidate comparison rather than a controlled same-seed ablation.",
+    "success_gate": [
+      "Clearly smoother actual-neck edge/planes and more deliberate hair silhouette, beyond merely raising triangle count.",
+      "Adult face identity/palette/clothing remain consistent; no collar leaks, missing parts or worse airborne deformation.",
+      "Record actual triangle/vertex counts, native package/memory/timing impact, rig controls and own-clip compatibility."
+    ],
+    "limits": "Higher geometry is a hypothesis, not a guarantee of better topology, weights, illustrated hair, performance or facial/finger controls. Seed cannot be held fixed through the latest input schema; do not attribute every candidate difference to geometry settings. Do not spend on wider cast until one pilot meets visual and motion gates.",
+    "seed_control_exposed_by_latest_input_schema": false
+  },
+  "unverified": [
+    "Fresh continuous motion and normal-playback fluidity; no video reviewed in this still verdict.",
+    "Cooked/package performance, candidate co-op, physical input/phone/audio and public deployment."
+  ],
+  "review_artifacts": [
+    {
+      "file": "Saved/Tests/GraphicNovel/RefinedRender-20261014T074547Z/IndependentVisualReview/Comic1280-Face-collar-pair.png",
+      "sha256": "d65d8d4266edadfba1e12e227ae7d56940f6fe194c3d3ac05a86da4e9ec198d9",
+      "bytes": 305318
+    },
+    {
+      "file": "Saved/Tests/GraphicNovel/RefinedRender-20261014T074547Z/IndependentVisualReview/Comic1280-FaceThreeQuarter-collar-pair.png",
+      "sha256": "8b0a21c04aff499a187889b58cd0d559c4fcf0a3b7ba1eb0a6cace0eb28111e2",
+      "bytes": 342788
+    },
+    {
+      "file": "Saved/Tests/GraphicNovel/RefinedRender-20261014T074547Z/IndependentVisualReview/Comic1280-pairs-1.png",
+      "sha256": "0af50b60a4f10c64320db4042ab7f3b037f9a3e7b97b4c4bcadcf95b8d7ae639",
+      "bytes": 1333844
+    },
+    {
+      "file": "Saved/Tests/GraphicNovel/RefinedRender-20261014T074547Z/IndependentVisualReview/Comic1280-pairs-2.png",
+      "sha256": "921867f5a1c01100a8349f86d55ad6e48079de6c3f90a12439055c6ce030bec2",
+      "bytes": 1383946
+    },
+    {
+      "file": "Saved/Tests/GraphicNovel/RefinedRender-20261014T074547Z/IndependentVisualReview/Comic1280-pairs-3.png",
+      "sha256": "2d07a7fa554f2629551d052a627d33d94be36131f05e588792912b68f36df04b",
+      "bytes": 1123754
+    },
+    {
+      "file": "Saved/Tests/GraphicNovel/RefinedRender-20261014T074547Z/IndependentVisualReview/Comic1280-pairs-4.png",
+      "sha256": "d778b2b72d6e0433ce98c2f478e73f7b12e6d391a928228bad8375fca996aeb6",
+      "bytes": 564177
+    },
+    {
+      "file": "Saved/Tests/GraphicNovel/RefinedRender-20261014T074547Z/IndependentVisualReview/Comic1920-Face-collar-pair.png",
+      "sha256": "0cf536553b512b2c469904fcb9e5082ef90d4be59342bd69d0ace3d1f44afab7",
+      "bytes": 636025
+    },
+    {
+      "file": "Saved/Tests/GraphicNovel/RefinedRender-20261014T074547Z/IndependentVisualReview/Comic1920-FaceThreeQuarter-collar-pair.png",
+      "sha256": "aaa8fcf21c57b99190917c78a47e82ef27e35775a28334aad25b43dd7cdf4cb5",
+      "bytes": 735265
+    },
+    {
+      "file": "Saved/Tests/GraphicNovel/RefinedRender-20261014T074547Z/IndependentVisualReview/Comic1920-body-crops-1.png",
+      "sha256": "f0afe8df71f9e2c36d70c591c31c39a1ee84f8f91cf90e13d48c91479158204b",
+      "bytes": 2439874
+    },
+    {
+      "file": "Saved/Tests/GraphicNovel/RefinedRender-20261014T074547Z/IndependentVisualReview/Comic1920-body-crops-2.png",
+      "sha256": "3dc5c869e0396c576a5e3a4bc24f3ed030e01d149a39590b1e251e2713420065",
+      "bytes": 1687130
+    },
+    {
+      "file": "Saved/Tests/GraphicNovel/RefinedRender-20261014T074547Z/IndependentVisualReview/Comic1920-pairs-1.png",
+      "sha256": "e88eb1e4e9a41fa48d3435f19492a4ee63eac664528082b51db58f2301fffd73",
+      "bytes": 1310526
+    },
+    {
+      "file": "Saved/Tests/GraphicNovel/RefinedRender-20261014T074547Z/IndependentVisualReview/Comic1920-pairs-2.png",
+      "sha256": "f763239857f3780b40d20ed8a2e9c1912a7160340ef939afb001b299582dd242",
+      "bytes": 1359154
+    },
+    {
+      "file": "Saved/Tests/GraphicNovel/RefinedRender-20261014T074547Z/IndependentVisualReview/Comic1920-pairs-3.png",
+      "sha256": "1ade11e58f4ad595df5d0d007d537475bb54e982f9064e315ea6edf6e019b67a",
+      "bytes": 1092154
+    },
+    {
+      "file": "Saved/Tests/GraphicNovel/RefinedRender-20261014T074547Z/IndependentVisualReview/Comic1920-pairs-4.png",
+      "sha256": "e66015e1e353ddf86f9b1149a96a445fb8c9c34c61d7d0b91b526a9d56e8cf7d",
+      "bytes": 548607
+    },
+    {
+      "file": "Saved/Tests/GraphicNovel/RefinedRender-20261014T074547Z/IndependentVisualReview/Standard1280-Face-collar-pair.png",
+      "sha256": "1eac23797c10f162890d01d0ff27847fe432a2df309dc02cab4aee050b6a7d47",
+      "bytes": 294300
+    },
+    {
+      "file": "Saved/Tests/GraphicNovel/RefinedRender-20261014T074547Z/IndependentVisualReview/Standard1280-FaceThreeQuarter-collar-pair.png",
+      "sha256": "3fa005627579d8a363a6288eb3eb97cdd7dc8fad14c4ed774fdb284268381b69",
+      "bytes": 320998
+    },
+    {
+      "file": "Saved/Tests/GraphicNovel/RefinedRender-20261014T074547Z/IndependentVisualReview/Standard1280-pairs-1.png",
+      "sha256": "685d8d23054567b8e6d7c6b6169506893b7eea46d81b30680e52f059b9275f30",
+      "bytes": 1294489
+    },
+    {
+      "file": "Saved/Tests/GraphicNovel/RefinedRender-20261014T074547Z/IndependentVisualReview/Standard1280-pairs-2.png",
+      "sha256": "b50c283854944d2618348710b8d1c8c07817585cf7f113c1d3a577ed4f3ea893",
+      "bytes": 1305891
+    },
+    {
+      "file": "Saved/Tests/GraphicNovel/RefinedRender-20261014T074547Z/IndependentVisualReview/Standard1280-pairs-3.png",
+      "sha256": "51407858cbc31261c3ca866f786d59e51f43e27f9b3ad15a869d2511c63b6797",
+      "bytes": 1081280
+    },
+    {
+      "file": "Saved/Tests/GraphicNovel/RefinedRender-20261014T074547Z/IndependentVisualReview/Standard1280-pairs-4.png",
+      "sha256": "8df145442b193522a24385a9832f2790df99047e079d922fa412b674e7a3d7e0",
+      "bytes": 542356
+    },
+    {
+      "file": "Saved/Tests/GraphicNovel/RefinedRender-20261014T074547Z/IndependentVisualReview/Standard1920-Face-collar-pair.png",
+      "sha256": "c1e0d48b183fd6eb0a8550b15455c5637ef747e14a0802963a6b6a3ca1f5792d",
+      "bytes": 618816
+    },
+    {
+      "file": "Saved/Tests/GraphicNovel/RefinedRender-20261014T074547Z/IndependentVisualReview/Standard1920-FaceThreeQuarter-collar-pair.png",
+      "sha256": "63aed51283dc66e57bce4b7a1eeb49f3cbd45a7fe06444f4a58cfdf7c4cb9098",
+      "bytes": 670213
+    },
+    {
+      "file": "Saved/Tests/GraphicNovel/RefinedRender-20261014T074547Z/IndependentVisualReview/Standard1920-body-crops-1.png",
+      "sha256": "62a38885ec86f67431bdbef135be4dac96a41686306e06bf98c77ece7699f615",
+      "bytes": 2492674
+    },
+    {
+      "file": "Saved/Tests/GraphicNovel/RefinedRender-20261014T074547Z/IndependentVisualReview/Standard1920-body-crops-2.png",
+      "sha256": "5cb1143a8db768282aa9bb07c1e7a6eb2637131f0b97b7befd0271c433830228",
+      "bytes": 1720169
+    },
+    {
+      "file": "Saved/Tests/GraphicNovel/RefinedRender-20261014T074547Z/IndependentVisualReview/Standard1920-pairs-1.png",
+      "sha256": "b8d1d83f900107b155a22f58546962c9ef3c6650dc8d9afd0df554b7c4088d90",
+      "bytes": 1279381
+    },
+    {
+      "file": "Saved/Tests/GraphicNovel/RefinedRender-20261014T074547Z/IndependentVisualReview/Standard1920-pairs-2.png",
+      "sha256": "85a88b33665d77b495ed60b2075e6830484d91b2e9161cd3aeb38c82f17fbe6f",
+      "bytes": 1287039
+    },
+    {
+      "file": "Saved/Tests/GraphicNovel/RefinedRender-20261014T074547Z/IndependentVisualReview/Standard1920-pairs-3.png",
+      "sha256": "ecfff61ee7b3765b6ccb0dccfca06d4a7dbeeafee4b6ecbae0a94c1baa7a3dc5",
+      "bytes": 1055284
+    },
+    {
+      "file": "Saved/Tests/GraphicNovel/RefinedRender-20261014T074547Z/IndependentVisualReview/Standard1920-pairs-4.png",
+      "sha256": "799185eded370132bbbb549f4e271c99bb0304054d3bbd6bb8096fad9817440e",
+      "bytes": 527735
+    }
+  ],
+  "no_engine_gpu_service_provider_actions_by_reviewer": true
+}
