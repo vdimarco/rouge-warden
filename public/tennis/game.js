@@ -1,6 +1,12 @@
 // Lawn Tennis at the Cottage. Clean-room canvas prototype.
 // Numbers follow the cottage spec. No code or art from the unlicensed inspiration.
 
+import { TILT, axisAmount, lowPass, magnetPull, flickKind, releaseSwing, planFrame, mapAxes, accelToPeak } from './motion.js';
+import { unlockCourt } from './gate.js';
+import { createSoundKit } from './audio.js';
+
+export { releaseSwing, planFrame, unlockCourt, mapAxes, accelToPeak };
+
 export const RULES = Object.freeze({
   gravity: 8,
   bounce: 0.75,
@@ -39,10 +45,13 @@ export function readOptions(search) {
   const q = new URLSearchParams(search.startsWith('?') ? search : `?${search}`);
   const seedRaw = Number(q.get('seed'));
   const ai = q.get('ai') === 'pro' ? 'pro' : 'casual';
+  const inputRaw = q.get('input');
   return {
     seed: Number.isFinite(seedRaw) ? seedRaw | 0 : 1,
     ai,
     fast: q.get('fast') === '1',
+    input: inputRaw === 'tilt' ? 'tilt' : 'touch',
+    inputAsked: inputRaw === 'tilt' || inputRaw === 'touch',
   };
 }
 
@@ -104,6 +113,8 @@ export function createMatch(options = {}) {
   const ai = options.ai === 'pro' ? 'pro' : 'casual';
   const fast = !!options.fast;
   const rng = mulberry32(seed);
+  let inputMode = options.input === 'tilt' ? 'tilt' : 'touch';
+  let permission = inputMode === 'tilt' ? 'granted' : 'idle';
 
   const ball = createBall({});
   const flowers = { you: [], neighbour: [] };
@@ -131,8 +142,24 @@ export function createMatch(options = {}) {
   let lastMiss = null;
   let lastServePace = 0;
   let steer = null;
+  let moveX = 0;
+  let moveY = 0;
   let nbVisit = false;
   let aiLetPass = false;
+  let smoothB = 0;
+  let smoothG = 0;
+  let neutral = { beta: 0, gamma: 0 };
+  let fullDeg = 25;
+  let cooldown = 0;
+  let freezeT = 0;
+  let heldVx = 0;
+  let heldVy = 0;
+  let velX = 0;
+  let velY = 0;
+  let lastShot = null;
+  let thumb = false;
+  let idleTilt = 0;
+  let offerRecal = false;
 
   const youSlot = blankSlot();
   const nbSlot = blankSlot();
@@ -230,7 +257,7 @@ export function createMatch(options = {}) {
 
   function aimTarget(side, kind, dir, timing) {
     const sign = side === 'you' ? -1 : 1;
-    const depth = kind === 'lob' ? 7.05 : kind === 'smash' ? 5.7 : 6.35;
+    const depth = kind === 'lob' ? 7.05 : kind === 'smash' ? 5.7 : kind === 'drop' ? 4.6 : 6.35;
     const hitter = side === 'you' ? you : neighbour;
     let x = 0;
     if (dir === -1 || dir === 1) {
@@ -250,6 +277,7 @@ export function createMatch(options = {}) {
     let speed = point === 1 ? 5.05 : 11;
     if (point > 1 && kind === 'lob') speed = 8.3;
     if (point > 1 && kind === 'smash') speed = 13.6;
+    if (kind === 'drop') speed = point === 1 ? 4.4 : 7.4;
     if (point === 1 && kind === 'smash') speed = 8.2;
     return Math.max(0.55, dist / speed);
   }
@@ -412,14 +440,53 @@ export function createMatch(options = {}) {
     slot.timing = slot.open ? clamp(elapsed / windowSec, 0, 1) : null;
   }
 
+  function tiltVelocity(landX) {
+    const lateral = axisAmount(smoothG - neutral.gamma, fullDeg, TILT.dead);
+    const depth = axisAmount(smoothB - neutral.beta, fullDeg, TILT.dead);
+    let vx = lateral * RUN;
+    const vy = depth * RUN * TILT.depth;
+    const pull = magnetPull(ai, point, yourHits);
+    const want = clamp(landX, -3.2, 3.2) - you.x;
+    const same = Math.abs(lateral) < 0.02 || want === 0 || Math.sign(lateral) === Math.sign(want);
+    if (pull > 0 && same) {
+      const assist = clamp(want / 0.35, -1, 1) * RUN;
+      vx = vx * (1 - pull) + assist * pull;
+    }
+    return { x: vx, y: vy };
+  }
+
   function movePlayers() {
     const landYou = predictLanding('you');
     const landNb = predictLanding('neighbour');
     youSlot.landX = landYou.x;
     youSlot.landY = landYou.y;
-    const youTarget = steer == null ? landYou.x : steer;
-    const youSpeed = steer == null ? assistSpeed() : RUN;
-    stepToward(you, youTarget, youSpeed);
+    const frozen = freezeT > 0;
+    if (frozen) {
+      velX = heldVx;
+      velY = heldVy;
+      stepVelocity(you, heldVx, heldVy);
+    } else if (steer != null) {
+      stepToward(you, steer, RUN);
+      velX = 0;
+      velY = 0;
+    } else if (moveX !== 0 || moveY !== 0) {
+      velX = moveX * RUN;
+      velY = moveY * RUN * TILT.depth;
+      heldVx = velX;
+      heldVy = velY;
+      stepVelocity(you, velX, velY);
+    } else if (inputMode === 'tilt') {
+      const v = tiltVelocity(landYou.x);
+      velX = v.x;
+      velY = v.y;
+      heldVx = v.x;
+      heldVy = v.y;
+      stepVelocity(you, v.x, v.y);
+    } else {
+      stepToward(you, landYou.x, assistSpeed());
+      velX = 0;
+      velY = 0;
+    }
     const nbSpeed = time + 0.0001 >= (nbSlot.readyAt || 0) ? RUN * 0.95 : RUN * 0.35;
     stepToward(neighbour, landNb.x, nbSpeed);
     if (youSlot.open) you.pose = you.poseT > 0 ? you.pose : 'reach';
@@ -430,6 +497,11 @@ export function createMatch(options = {}) {
     const dx = clamp(target, -3.2, 3.2) - body.x;
     const max = speed * DT;
     body.x += clamp(dx, -max, max);
+  }
+
+  function stepVelocity(body, vx, vy) {
+    body.x = clamp(body.x + vx * DT, -3.2, 3.2);
+    body.y = clamp(body.y + vy * DT, 5.35, 7.4);
   }
 
   function noteVisits() {
@@ -484,6 +556,7 @@ export function createMatch(options = {}) {
       else if (past) endPoint(other(lastHitter));
       return;
     }
+    events.push({ type: 'bounce', frame });
     const inside = Math.abs(ball.x) <= HALF_W && Math.abs(ball.y) <= BASE;
     if (!inside) {
       endPoint(bounceRun >= 1 ? lastHitter : other(lastHitter));
@@ -550,6 +623,15 @@ export function createMatch(options = {}) {
     frame += 1;
     time += DT;
     events = [];
+    if (cooldown > 0) cooldown = Math.max(0, cooldown - DT);
+    if (inputMode === 'tilt' && phase === 'award') {
+      const rel = Math.hypot(smoothG - neutral.gamma, smoothB - neutral.beta);
+      idleTilt = rel > 20 ? idleTilt + DT : 0;
+      offerRecal = idleTilt >= 3;
+    } else if (phase === 'rally') {
+      idleTilt = 0;
+      offerRecal = false;
+    }
     if (phase === 'match') return state();
     if (phase === 'award') {
       updateFlowers(DT);
@@ -559,9 +641,11 @@ export function createMatch(options = {}) {
         if (matchOver()) phase = 'match';
         else startNextPoint();
       }
+      if (freezeT > 0) freezeT = Math.max(0, freezeT - DT);
       return state();
     }
     movePlayers();
+    if (freezeT > 0) freezeT = Math.max(0, freezeT - DT);
     const info = integrate(ball, DT);
     handleContact(info);
     if (phase === 'rally' && ball.z <= BALL_R + 0.001 && ball.vz === 0 && pace(ball) < 1.5) restT += DT;
@@ -578,16 +662,45 @@ export function createMatch(options = {}) {
     return state();
   }
 
-  function swing(kind, dir) {
+  function noteShot(kind, peak) {
+    lastShot = kind === 'flat' ? 'drive' : kind;
+    events.push({ type: 'whoosh', peak: peak == null ? 600 : peak, kind: lastShot, frame });
+  }
+
+  function swing(kind, dir, peak) {
     events = [];
-    const shot = kind === 'lob' || kind === 'smash' ? kind : 'flat';
+    const shot = kind === 'lob' || kind === 'smash' || kind === 'drop' ? kind : 'flat';
     const sideDir = dir === -1 || dir === 1 ? dir : 0;
+    noteShot(shot, peak);
     if (phase !== 'rally' || !youSlot.open) {
       events.push({ type: 'whiff', frame });
       return state();
     }
     resolveHit('you', shot, sideDir, youSlot.timing == null ? 0.5 : youSlot.timing);
     return state();
+  }
+
+  function flick(peak) {
+    events = [];
+    if (cooldown > 0) {
+      events.push({ type: 'flick-ignored', frame, peak });
+      return state();
+    }
+    const opening = point === 1 && yourHits === 0;
+    const band = flickKind(peak, ball, opening);
+    if (!band) {
+      events.push({ type: 'flick-ignored', frame, peak });
+      return state();
+    }
+    const shot = thumb ? 'lob' : band;
+    cooldown = TILT.cooldown;
+    freezeT = TILT.freeze;
+    if (inputMode === 'tilt') {
+      const v = tiltVelocity(youSlot.landX);
+      heldVx = v.x;
+      heldVy = v.y;
+    }
+    return swing(shot, 0, peak);
   }
 
   function forcePoint(side) {
@@ -644,14 +757,67 @@ export function createMatch(options = {}) {
       },
       errorRate: errorRate(),
       reaction: reaction(),
+      input: inputMode,
+      permission,
+      neutral: { beta: neutral.beta, gamma: neutral.gamma },
+      smoothTilt: { beta: smoothB, gamma: smoothG },
+      playerX: you.x,
+      playerY: you.y,
+      lastShot,
+      magnet: magnetPull(ai, point, yourHits),
+      cooldownLeft: Math.max(0, cooldown),
+      freezeLeft: Math.max(0, freezeT),
+      offerRecal,
+      sensitivity: fullDeg,
+      tiltTarget: inputMode === 'tilt' ? { x: you.x + velX * 0.4, y: you.y + velY * 0.4 } : null,
     };
   }
 
   refreshSlots();
 
   return {
-    step, swing, state, forcePoint,
+    step, swing, state, forcePoint, flick,
     setSteer(x) { steer = x == null ? null : clamp(x, -3.2, 3.2); },
+    setMove(x, y) {
+      moveX = clamp(Number(x) || 0, -1, 1);
+      moveY = clamp(Number(y) || 0, -1, 1);
+      if (moveX !== 0 || moveY !== 0) steer = null;
+      return state();
+    },
+    setTilt(beta, gamma) {
+      if (!Number.isFinite(beta) || !Number.isFinite(gamma)) return state();
+      if (freezeT > 0) return state();
+      smoothB = lowPass(smoothB, beta);
+      smoothG = lowPass(smoothG, gamma);
+      return state();
+    },
+    calibrate(pose) {
+      if (pose && Number.isFinite(pose.beta) && Number.isFinite(pose.gamma)) {
+        neutral = { beta: pose.beta, gamma: pose.gamma };
+        smoothB = pose.beta;
+        smoothG = pose.gamma;
+      } else {
+        neutral = { beta: smoothB, gamma: smoothG };
+      }
+      return state();
+    },
+    setInput(mode) {
+      inputMode = mode === 'tilt' ? 'tilt' : 'touch';
+      permission = inputMode === 'tilt' ? 'granted' : 'touch';
+      if (inputMode !== 'tilt') steer = null;
+      return state();
+    },
+    setPermission(value) {
+      permission = value;
+      return state();
+    },
+    setSensitivity(deg) {
+      fullDeg = deg === 15 || deg === 35 ? deg : 25;
+      return state();
+    },
+    setThumb(down) {
+      thumb = !!down;
+    },
   };
 }
 
@@ -671,6 +837,11 @@ export function createTest(match) {
       return snapshot;
     },
     swing(kind, dir) { return match.swing(kind, dir); },
+    tilt(beta, gamma) { return match.setTilt(beta, gamma); },
+    flick(peak) { return match.flick(peak); },
+    calibrate(pose) { return match.calibrate(pose); },
+    setMove(x, y) { return match.setMove(x, y); },
+    setInput(mode) { return match.setInput(mode); },
     score() { return match.state().score; },
     ballPos() {
       const b = match.state().ball;
@@ -948,6 +1119,17 @@ function boot() {
       }
     }
 
+    if (s.input === 'tilt' && s.tiltTarget && s.phase === 'rally') {
+      const [mx, my] = box.project(s.tiltTarget.x, s.tiltTarget.y);
+      ctx.save();
+      ctx.filter = 'blur(4px)';
+      ctx.fillStyle = 'rgba(232, 185, 74, 0.4)';
+      ctx.beginPath();
+      ctx.arc(mx, my, 9, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
     const py = s.players.you;
     const ny = s.players.neighbour;
     const [px, pyx] = box.project(py.x, py.y);
@@ -1064,17 +1246,42 @@ function boot() {
     ctx.stroke();
   }
 
+  const kit = createSoundKit();
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   let acc = 0;
   let last = performance.now();
+  let chirpAt = 0;
+  let simHold = true;
+  let uprightHold = false;
+  let sensorsOn = false;
+
+  function playEvents(snapshot) {
+    if (!snapshot || !snapshot.events) return snapshot;
+    for (const ev of snapshot.events) {
+      if (ev.type === 'whoosh') kit.whoosh(ev.peak);
+      if (ev.type === 'bounce' || (ev.type === 'hit' && ev.side === 'you')) kit.tok();
+      if (ev.type === 'bloom') kit.chime();
+      if (ev.type === 'hit' && ev.side === 'you' && !reduceMotion) {
+        try { if (navigator.vibrate) navigator.vibrate(20); } catch (err) { /* this browser has no vibration */ }
+      }
+    }
+    const offer = document.getElementById('recal-offer');
+    if (offer) offer.hidden = !snapshot.offerRecal;
+    return snapshot;
+  }
+
   function frame(now) {
-    const scale = opts.fast ? 4 : 1;
-    acc += Math.min(0.1, (now - last) / 1000) * scale;
+    const elapsed = Math.max(0, (now - last) / 1000);
     last = now;
-    let guard = 0;
-    while (acc >= DT && guard < 8) {
-      match.step();
-      acc -= DT;
-      guard += 1;
+    syncKeys();
+    if (!simHold && !uprightHold) {
+      const planned = planFrame(acc, elapsed, opts.fast);
+      acc = planned.acc;
+      for (let i = 0; i < planned.steps; i++) playEvents(match.step());
+      if (now > chirpAt) {
+        chirpAt = now + 7000;
+        kit.chirp();
+      }
     }
     draw();
     requestAnimationFrame(frame);
@@ -1082,6 +1289,7 @@ function boot() {
   requestAnimationFrame(frame);
 
   const pointers = new Map();
+  const keys = { left: false, right: false, space: 0 };
   function aimFromEvent(e, box) {
     if (box.landscape) {
       const localY = e.clientY - canvas.getBoundingClientRect().top;
@@ -1090,10 +1298,27 @@ function boot() {
     const localX = e.clientX - canvas.getBoundingClientRect().left;
     return localX < box.w / 2 ? -1 : 1;
   }
+  function aimFromKeys() {
+    return keys.left ? -1 : keys.right ? 1 : 0;
+  }
+  function syncKeys() {
+    if (simHold || uprightHold) return;
+    if (keys.left === keys.right) match.setMove(0, 0);
+    else match.setMove(keys.left ? -1 : 1, 0);
+  }
 
   canvas.addEventListener('pointerdown', (e) => {
+    if (!kit.context()) {
+      const unlocked = unlockCourt({
+        AudioContext: window.AudioContext || window.webkitAudioContext,
+        audio: kit.context(),
+      });
+      kit.attach(unlocked.audio);
+    }
+    if (simHold || uprightHold) return;
     try { canvas.setPointerCapture(e.pointerId); } catch (err) { /* a synthetic pointer has nothing to capture */ }
     pointers.set(e.pointerId, { x: e.clientX, y: e.clientY, t: performance.now(), steered: false });
+    match.setThumb(true);
   });
   canvas.addEventListener('pointermove', (e) => {
     const p = pointers.get(e.pointerId);
@@ -1111,37 +1336,39 @@ function boot() {
   function release(e) {
     const p = pointers.get(e.pointerId);
     pointers.delete(e.pointerId);
-    if (!p) return;
+    match.setThumb(pointers.size > 0);
+    if (!p || simHold || uprightHold) return;
     const dx = e.clientX - p.x;
     const dy = e.clientY - p.y;
     const held = performance.now() - p.t;
     const box = layout();
+    const kind = releaseSwing({ steered: p.steered, dx, dy, held });
     match.setSteer(null);
-    if (p.steered && Math.abs(dx) > 36 && Math.abs(dy) < 48) return;
-    let kind = 'flat';
-    if (dy < -48 && Math.abs(dy) > Math.abs(dx) && held < 450) kind = 'smash';
-    else if (held >= 180) kind = 'lob';
-    match.swing(kind, aimFromEvent(e, box));
+    if (!kind) return;
+    playEvents(match.swing(kind, aimFromEvent(e, box)));
   }
   canvas.addEventListener('pointerup', release);
   canvas.addEventListener('pointercancel', (e) => {
     pointers.delete(e.pointerId);
+    match.setThumb(pointers.size > 0);
     match.setSteer(null);
   });
 
-  const keys = { left: false, right: false };
   window.addEventListener('keydown', (e) => {
-    if (e.repeat) return;
+    if (e.repeat || simHold || uprightHold) return;
     if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') keys.left = true;
     if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') keys.right = true;
     if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') {
-      match.swing('smash', keys.left ? -1 : keys.right ? 1 : 0);
+      playEvents(match.swing('smash', aimFromKeys()));
     }
     if (e.key === ' ' || e.key === 'Enter') {
-      keys.space = performance.now();
+      if (e.shiftKey) {
+        playEvents(match.swing('smash', aimFromKeys()));
+        keys.space = 0;
+      } else keys.space = performance.now();
       e.preventDefault();
     }
-    match.setSteer(keys.left ? -2.4 : keys.right ? 2.4 : null);
+    syncKeys();
   });
   window.addEventListener('keyup', (e) => {
     if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') keys.left = false;
@@ -1149,13 +1376,244 @@ function boot() {
     if ((e.key === ' ' || e.key === 'Enter') && keys.space) {
       const held = performance.now() - keys.space;
       keys.space = 0;
-      match.swing(held >= 180 ? 'lob' : 'flat', keys.left ? -1 : keys.right ? 1 : 0);
+      if (!simHold && !uprightHold) playEvents(match.swing(held >= 250 ? 'lob' : 'flat', aimFromKeys()));
     }
-    if (!keys.left && !keys.right) match.setSteer(null);
-    else match.setSteer(keys.left ? -2.4 : 2.4);
+    syncKeys();
   });
 
+  const gate = document.getElementById('gate');
+  const gateTitle = document.getElementById('gate-title');
+  const gateSub = document.getElementById('gate-sub');
+  const upright = document.getElementById('upright');
+  const recal = document.getElementById('recal');
+  const cog = document.getElementById('cog');
+  const settings = document.getElementById('settings');
+  let gateStage = 'closed';
+
+  function showCopy(title, sub) {
+    if (gateTitle) gateTitle.textContent = title;
+    if (gateSub) gateSub.textContent = sub;
+    if (gate) gate.hidden = false;
+    document.body.classList.add('gate-up');
+  }
+  function remember(mode) {
+    try { localStorage.setItem('tennisInput', mode); } catch (err) { /* private mode */ }
+  }
+  function beginCourt() {
+    if (gate) gate.hidden = true;
+    document.body.classList.remove('gate-up');
+    simHold = false;
+    uprightHold = false;
+    if (upright) upright.hidden = true;
+    if (recal) recal.hidden = match.state().input !== 'tilt';
+    if (cog) cog.hidden = false;
+    kit.chirp();
+    attachSensors();
+  }
+  function startTouch() {
+    match.setInput('touch');
+    match.setPermission('touch');
+    remember('touch');
+    beginCourt();
+  }
+  function startTilt() {
+    match.setInput('tilt');
+    match.setPermission('granted');
+    remember('tilt');
+    beginCourt();
+  }
+  function captureNeutral() {
+    const samples = [];
+    const onOrient = (e) => {
+      const angle = (screen.orientation && screen.orientation.angle) || window.orientation || 0;
+      samples.push(mapAxes(e.beta, e.gamma, angle));
+    };
+    window.addEventListener('deviceorientation', onOrient);
+    window.setTimeout(() => {
+      window.removeEventListener('deviceorientation', onOrient);
+      if (!samples.length) match.calibrate();
+      else {
+        const beta = samples.reduce((sum, v) => sum + (Number(v.beta) || 0), 0) / samples.length;
+        const gamma = samples.reduce((sum, v) => sum + (Number(v.gamma) || 0), 0) / samples.length;
+        match.calibrate({ beta, gamma });
+      }
+      startTilt();
+    }, 300);
+  }
+  function waitSensor(ms) {
+    return new Promise((resolve) => {
+      let done = false;
+      const finish = (ok) => {
+        if (done) return;
+        done = true;
+        window.removeEventListener('devicemotion', onSample);
+        window.removeEventListener('deviceorientation', onSample);
+        resolve(ok);
+      };
+      const onSample = () => finish(true);
+      window.addEventListener('devicemotion', onSample);
+      window.addEventListener('deviceorientation', onSample);
+      window.setTimeout(() => finish(false), ms);
+    });
+  }
+  function attachSensors() {
+    if (sensorsOn) return;
+    sensorsOn = true;
+    window.addEventListener('deviceorientation', (e) => {
+      if (match.state().input !== 'tilt' || simHold || uprightHold) return;
+      const angle = (screen.orientation && screen.orientation.angle) || window.orientation || 0;
+      const mapped = mapAxes(e.beta, e.gamma, angle);
+      if (!Number.isFinite(mapped.beta) || !Number.isFinite(mapped.gamma)) return;
+      match.setTilt(mapped.beta, mapped.gamma);
+    });
+    const recent = [];
+    window.addEventListener('devicemotion', (e) => {
+      if (match.state().input !== 'tilt' || simHold || uprightHold) return;
+      let peak = 0;
+      const rate = e.rotationRate;
+      if (rate && (rate.alpha != null || rate.beta != null || rate.gamma != null)) {
+        peak = Math.hypot(rate.alpha || 0, rate.beta || 0, rate.gamma || 0);
+      } else if (e.acceleration) {
+        peak = accelToPeak(Math.hypot(e.acceleration.x || 0, e.acceleration.y || 0, e.acceleration.z || 0));
+      }
+      const now = performance.now();
+      recent.push({ t: now, peak });
+      while (recent.length && now - recent[0].t > 120) recent.shift();
+      const best = recent.reduce((max, sample) => Math.max(max, sample.peak), 0);
+      const opening = match.state().point === 1 && match.state().yourHits === 0;
+      if (best >= (opening ? 150 : 250)) {
+        match.setThumb(pointers.size > 0);
+        playEvents(match.flick(best));
+        recent.length = 0;
+      }
+    });
+  }
+  async function settleGate(unlocked) {
+    simHold = true;
+    let motion = 'granted';
+    let orient = 'granted';
+    try {
+      if (unlocked.asked.motion) motion = await unlocked.asked.motion;
+      if (unlocked.asked.orient) orient = await unlocked.asked.orient;
+    } catch (err) {
+      motion = 'denied';
+    }
+    if (motion === 'denied' || orient === 'denied') {
+      match.setPermission('denied');
+      showCopy('Motion is off for this site. Playing with touch. You can turn it on in Settings, Safari, Motion and Orientation Access.', '');
+      window.setTimeout(startTouch, 2000);
+      return;
+    }
+    const secure = location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+    const hasSensor = typeof DeviceMotionEvent === 'function' || typeof DeviceOrientationEvent === 'function';
+    if (!secure || !hasSensor) {
+      showCopy('This device has no motion sensor here. Playing with touch.', '');
+      window.setTimeout(startTouch, 1200);
+      return;
+    }
+    const heard = await waitSensor(1000);
+    if (!heard) {
+      showCopy('This device has no motion sensor here. Playing with touch.', '');
+      window.setTimeout(startTouch, 1200);
+      return;
+    }
+    match.setPermission('granted');
+    gateStage = 'pose';
+    showCopy('Hold the phone the way you like to play, then tap.', 'Tilt to move. Flick to swing.');
+    remember('tilt');
+  }
+  function onGateTap() {
+    const unlocked = unlockCourt({
+      DeviceMotionEvent: typeof DeviceMotionEvent === 'function' ? DeviceMotionEvent : undefined,
+      DeviceOrientationEvent: typeof DeviceOrientationEvent === 'function' ? DeviceOrientationEvent : undefined,
+      AudioContext: window.AudioContext || window.webkitAudioContext,
+      audio: kit.context(),
+    });
+    kit.attach(unlocked.audio);
+    if (gateStage === 'pose') {
+      captureNeutral();
+      return;
+    }
+    void settleGate(unlocked);
+  }
+  function onTouchChoice() {
+    const unlocked = unlockCourt({
+      AudioContext: window.AudioContext || window.webkitAudioContext,
+      audio: kit.context(),
+    });
+    kit.attach(unlocked.audio);
+    startTouch();
+  }
+  function phoneLandscape() {
+    const phone = navigator.maxTouchPoints > 0 && window.matchMedia('(pointer: coarse)').matches;
+    if (!phone) return false;
+    const angle = (screen.orientation && screen.orientation.angle) || window.orientation || 0;
+    if (angle === 90 || angle === -90 || angle === 270) return true;
+    return window.innerWidth > window.innerHeight * 1.05;
+  }
+  function watchOrientation() {
+    const landscape = phoneLandscape();
+    if (landscape && !simHold) {
+      uprightHold = true;
+      if (upright) upright.hidden = false;
+      return;
+    }
+    if (!landscape && uprightHold) {
+      uprightHold = false;
+      if (upright) upright.hidden = true;
+      if (match.state().input === 'tilt') {
+        simHold = true;
+        gateStage = 'pose';
+        showCopy('Hold the phone the way you like to play, then tap.', 'Tilt to move. Flick to swing.');
+      }
+    }
+  }
+
+  const gateBtn = document.getElementById('gate-btn');
+  const touchChoice = document.getElementById('touch-choice');
+  if (gateBtn) gateBtn.addEventListener('click', onGateTap);
+  if (touchChoice) touchChoice.addEventListener('click', onTouchChoice);
+  if (recal) {
+    recal.addEventListener('click', () => {
+      const unlocked = unlockCourt({
+        DeviceMotionEvent: typeof DeviceMotionEvent === 'function' ? DeviceMotionEvent : undefined,
+        DeviceOrientationEvent: typeof DeviceOrientationEvent === 'function' ? DeviceOrientationEvent : undefined,
+        AudioContext: window.AudioContext || window.webkitAudioContext,
+        audio: kit.context(),
+      });
+      kit.attach(unlocked.audio);
+      simHold = true;
+      showCopy('Hold the phone the way you like to play, then tap.', 'Tilt to move. Flick to swing.');
+      captureNeutral();
+    });
+  }
+  if (cog) {
+    cog.addEventListener('click', () => {
+      if (settings) settings.hidden = !settings.hidden;
+    });
+  }
+  if (settings) {
+    settings.addEventListener('click', (e) => {
+      const sens = e.target && e.target.dataset ? e.target.dataset.sens : '';
+      if (sens) match.setSensitivity(Number(sens));
+      if (e.target && e.target.id === 'use-touch') startTouch();
+      if (e.target && e.target.id === 'use-tilt') onGateTap();
+      if (settings && (sens || (e.target && e.target.id))) settings.hidden = true;
+    });
+  }
   again.addEventListener('click', () => {
     location.reload();
   });
+
+  try { screen.orientation && screen.orientation.lock && screen.orientation.lock('portrait').catch(() => {}); } catch (err) { /* iOS keeps the lock to itself */ }
+  window.addEventListener('resize', watchOrientation);
+  window.addEventListener('orientationchange', watchOrientation);
+
+  const desktop = window.matchMedia('(pointer: fine)').matches && navigator.maxTouchPoints === 0;
+  if (opts.inputAsked && opts.input === 'tilt') startTilt();
+  else if (opts.inputAsked || desktop) startTouch();
+  else {
+    showCopy('Tap to step onto the court', 'Tilt to move. Flick to swing.');
+    simHold = true;
+  }
 }
