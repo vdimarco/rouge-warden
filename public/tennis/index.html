@@ -29,6 +29,8 @@
         touch-action: none;
       }
       body {
+        display: flex;
+        flex-direction: column;
         font-family: "DM Sans", "Gill Sans", "Trebuchet MS", sans-serif;
       }
       h1 {
@@ -44,7 +46,9 @@
       #court {
         display: block;
         width: 100%;
-        height: 100%;
+        flex: 1 1 auto;
+        min-height: 0;
+        height: auto;
         touch-action: none;
       }
       #banner {
@@ -63,7 +67,7 @@
       #again {
         position: absolute;
         left: 50%;
-        bottom: 24px;
+        bottom: 72px;
         transform: translateX(-50%);
         min-width: 160px;
         min-height: 48px;
@@ -73,19 +77,155 @@
         background: #3E7C8F;
         color: #F3E9D6;
         font: 600 16px/1 "DM Sans", "Gill Sans", sans-serif;
+        z-index: 3;
       }
       .arcade-links {
-        position: absolute;
-        z-index: 2;
-        top: max(8px, env(safe-area-inset-top));
-        left: max(8px, env(safe-area-inset-left));
-        right: max(8px, env(safe-area-inset-right));
+        position: relative;
+        z-index: 6;
+        flex: 0 0 auto;
         display: flex;
+        align-items: center;
         justify-content: space-between;
+        gap: 8px;
+        box-sizing: border-box;
+        min-height: 56px;
+        padding: 4px max(8px, env(safe-area-inset-right)) 4px max(8px, env(safe-area-inset-left));
+        background: #F3E9D6;
+        pointer-events: none;
+      }
+      .hud-mid {
+        display: flex;
         gap: 8px;
         pointer-events: none;
       }
+      #gate {
+        position: absolute;
+        inset: 0;
+        z-index: 5;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        padding: 16px 16px 20px;
+        background: #F3E9D6;
+        color: #2B2A33;
+        overflow: auto;
+      }
+      #gate[hidden] { display: none; }
+      #gate-btn {
+        width: min(420px, 100%);
+        min-height: 0;
+        height: min(280px, 52vh);
+        border: 0;
+        background: transparent;
+        color: #2B2A33;
+        display: grid;
+        grid-template-columns: 54px 1fr 54px;
+        align-items: end;
+        gap: 8px;
+        padding: 0;
+        cursor: pointer;
+      }
+      #gate .hedge {
+        display: block;
+        height: min(180px, 36vh);
+        border-radius: 8px 8px 0 0;
+        background:
+          repeating-linear-gradient(#3F6B47 0 14px, #356344 14px 18px);
+        box-shadow: inset 0 -12px 0 #2B4A38;
+      }
+      #gate .door {
+        position: relative;
+        display: flex;
+        align-items: stretch;
+        height: min(160px, 32vh);
+        background: #8C5A32;
+        border: 6px solid #6d4424;
+        border-bottom: 0;
+        box-shadow: inset 0 0 0 3px #C98B3C;
+      }
+      #gate .door span {
+        flex: 1;
+        margin: 10px 4px;
+        background: repeating-linear-gradient(#A56B3C 0 18px, #8C5A32 18px 22px);
+      }
+      #gate .latch {
+        position: absolute;
+        left: 50%;
+        top: 46%;
+        width: 18px;
+        height: 18px;
+        margin-left: -9px;
+        border-radius: 50%;
+        background: #E8B94A;
+        box-shadow: 0 0 0 3px #2B2A33;
+      }
+      #gate .words {
+        grid-column: 1 / -1;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        padding: 16px 8px 0;
+      }
+      #gate-title {
+        font-family: "Fraunces", Palatino, "Palatino Linotype", serif;
+        font-size: 28px;
+        font-weight: 600;
+        line-height: 1.2;
+      }
+      #gate-sub {
+        font-size: 16px;
+        line-height: 1.3;
+      }
+      #touch-choice, #recal, #cog, #settings button {
+        min-width: 48px;
+        min-height: 48px;
+        border: 0;
+        border-radius: 999px;
+        background: #3E7C8F;
+        color: #F3E9D6;
+        font: 600 16px/1 "DM Sans", "Gill Sans", sans-serif;
+        padding: 12px 18px;
+      }
+      #touch-choice { width: min(280px, 100%); }
+      #recal, #cog {
+        position: static;
+        width: 48px;
+        height: 48px;
+        padding: 0;
+        pointer-events: auto;
+      }
+      #upright, #recal-offer {
+        position: absolute;
+        z-index: 7;
+        left: 16px;
+        right: 16px;
+        top: 28%;
+        margin: 0;
+        padding: 20px;
+        text-align: center;
+        background: #F3E9D6;
+        color: #2B2A33;
+        font-family: "Fraunces", Palatino, serif;
+        font-size: 28px;
+        line-height: 1.25;
+      }
+      #settings {
+        position: absolute;
+        z-index: 6;
+        left: 12px;
+        top: 64px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        padding: 12px;
+        background: #F3E9D6;
+        border: 2px solid #2B2A33;
+      }
+      #settings[hidden], #upright[hidden], #recal-offer[hidden], #recal[hidden], #cog[hidden] { display: none; }
       .arcade-links a, .arcade-links button {
+        box-sizing: border-box;
         pointer-events: auto;
         min-width: 48px;
         min-height: 48px;
@@ -101,13 +241,42 @@
   </head>
   <body>
     <h1>Lawn Tennis at the Cottage</h1>
+    <nav class="arcade-links" aria-label="Arcade">
+      <a href="/">Arcade</a>
+      <span class="hud-mid">
+        <button id="cog" type="button" hidden aria-label="Input settings">
+          <svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true"><circle cx="11" cy="11" r="3" fill="none" stroke="#F3E9D6" stroke-width="2"/><path d="M11 2 v3 M11 17 v3 M2 11 h3 M17 11 h3 M4.5 4.5 l2 2 M15.5 15.5 l2 2 M17.5 4.5 l-2 2 M6.5 15.5 l-2 2" fill="none" stroke="#F3E9D6" stroke-width="2"/></svg>
+        </button>
+        <button id="recal" type="button" hidden aria-label="Recalibrate">
+          <svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true"><path d="M3 14 h16 M11 14 v-7" fill="none" stroke="#F3E9D6" stroke-width="2"/><circle cx="11" cy="6" r="2" fill="#E8B94A"/></svg>
+        </button>
+      </span>
+      <button type="button" data-switch>Switch game</button>
+    </nav>
     <canvas id="court" aria-label="Backyard tennis court. Tap anywhere to swing. The player moves under the ball."></canvas>
     <p id="banner" hidden></p>
     <button id="again" type="button" hidden>Play again</button>
-    <nav class="arcade-links" aria-label="Arcade">
-      <a href="/">Arcade</a>
-      <button type="button" data-switch>Switch game</button>
-    </nav>
+    <div id="gate">
+      <button id="gate-btn" type="button">
+        <span class="hedge" aria-hidden="true"></span>
+        <span class="door" aria-hidden="true"><span></span><span></span><span></span><span></span><i class="latch"></i></span>
+        <span class="hedge" aria-hidden="true"></span>
+        <span class="words">
+          <strong id="gate-title">Tap to step onto the court</strong>
+          <small id="gate-sub">Tilt to move. Flick to swing.</small>
+        </span>
+      </button>
+      <button id="touch-choice" type="button">Play with touch</button>
+    </div>
+    <p id="upright" hidden>Turn the phone upright</p>
+    <p id="recal-offer" hidden>Hold still and tap the level to set your grip.</p>
+    <div id="settings" hidden>
+      <button type="button" data-sens="15">Tilt 15</button>
+      <button type="button" data-sens="25">Tilt 25</button>
+      <button type="button" data-sens="35">Tilt 35</button>
+      <button type="button" id="use-touch">Play with touch</button>
+      <button type="button" id="use-tilt">Play with tilt</button>
+    </div>
     <script type="module" src="./game.js"></script>
     <script src="/arcade/switch.js"></script>
     <script src="/arcade/analytics.js" data-game="tennis"></script>

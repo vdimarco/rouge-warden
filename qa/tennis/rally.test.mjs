@@ -1,6 +1,6 @@
 // Lawn Tennis: a seeded rally through the same hook the page puts on window.__test.
 // node qa/tennis/rally.test.mjs
-import { createMatch, createTest, readOptions, RULES } from '../../public/tennis/game.js';
+import { createMatch, createTest, readOptions, RULES, REACH, landingMarker, courtHud, soundsFor, planFrame, releaseSwing } from '../../public/tennis/game.js';
 
 const results = [];
 function test(name, fn) {
@@ -200,6 +200,142 @@ test('point 2 flat returns stay inside the rally pace', () => {
   }
   assert(pace != null, 'no hit');
   assert(pace >= RULES.rallyMin - 0.05 && pace <= RULES.rallyMax + 0.05, `pace ${pace}`);
+});
+
+function finishPointOne(api) {
+  let guard = 0;
+  while (guard < 60 * 40) {
+    const s = api.state();
+    if (s.point !== 1 || s.phase === 'award') break;
+    if (s.window) api.swing('flat', 0);
+    api.step();
+    guard += 1;
+  }
+  api.advance(3.1);
+}
+
+test('arrow keys reach the sideline and letting go returns to auto', () => {
+  const api = createTest(createMatch({ seed: 1 }));
+  api.setMove(-1, 0);
+  api.step(90);
+  const wide = api.state().playerX;
+  assert(wide < -3.2, `keys stopped short of the sideline at ${wide}`);
+  assert(wide >= -3.5 - 1e-6, `keys left the court at ${wide}`);
+  api.setMove(0, 0);
+  api.step(20);
+  assert(api.state().playerX > wide + 0.2, 'releasing the key did not hand movement back to auto');
+});
+
+test('a steer drag, a diagonal drag, and a downward drag do not swing', () => {
+  assert(releaseSwing({ steered: true, dx: 0, dy: -80, held: 120 }) === null, 'a steer drag swung');
+  assert(releaseSwing({ steered: false, dx: 90, dy: 0, held: 120 }) === null, 'a horizontal drag swung');
+  assert(releaseSwing({ steered: false, dx: 40, dy: -40, held: 120 }) === null, 'a diagonal drag swung');
+  assert(releaseSwing({ steered: false, dx: 0, dy: 70, held: 120 }) === null, 'a downward drag swung');
+  assert(releaseSwing({ steered: false, dx: 0, dy: -70, held: 200 }) === 'smash', 'a swipe up should smash');
+  assert(releaseSwing({ steered: false, dx: 4, dy: 2, held: 200 }) === 'lob', 'a hold in place should lob');
+  assert(releaseSwing({ steered: false, dx: 3, dy: 2, held: 40 }) === 'flat', 'a tap should still swing');
+});
+
+test('fast mode at 20 fps plays four times the clock', () => {
+  let acc = 0;
+  let sim = 0;
+  for (let i = 0; i < 20; i++) {
+    const planned = planFrame(acc, 1 / 20, true);
+    acc = planned.acc;
+    sim += planned.steps / 60;
+  }
+  near(sim, 4, 0.02, 'four seconds of ?fast=1');
+  assert(acc < 1 / 60, `leftover time piled up (${acc})`);
+});
+
+test('point 1 still returns from outside the reach', () => {
+  const api = createTest(createMatch({ seed: 1 }));
+  let hit = null;
+  for (let i = 0; i < 60 * 12 && !hit; i++) {
+    const s = api.state();
+    if (s.point !== 1 || s.phase !== 'rally') break;
+    api.setSteer(3.4, 1);
+    const next = api.step();
+    if (next.window && Math.abs(next.players.you.x - next.ball.x) > REACH) {
+      hit = api.swing('flat', 0);
+    }
+  }
+  assert(hit, 'the opening window was not played from outside reach');
+  assert(hit.flowerCount.you === 1, 'point 1 should still bloom outside reach');
+  assert(!hit.events.some((e) => e.type === 'whiff' && e.reach), 'point 1 was treated as a reach miss');
+});
+
+test('a reach miss whooshes, puffs, and does not tok', () => {
+  const api = createTest(createMatch({ seed: 6 }));
+  finishPointOne(api);
+  let swung = null;
+  for (let i = 0; i < 60 * 20 && !swung; i++) {
+    const s = api.state();
+    if (s.point !== 2 || s.phase !== 'rally') break;
+    const away = (s.landing.x >= 0 ? -1 : 1) * 3.4;
+    api.setSteer(away, 1);
+    const next = api.step();
+    if (next.window && Math.abs(next.players.you.x - next.ball.x) > REACH) {
+      swung = api.swing('flat', 0);
+    }
+  }
+  assert(swung, 'no out-of-reach swing on point 2');
+  assert(swung.players.you.pose === 'swing', 'the reach miss should play the swing pose');
+  assert(swung.puff && swung.puff.life > 0, 'the grass puff should be on the court');
+  assert(Math.abs(swung.puff.x - swung.ball.x) < 0.05, 'the puff should sit where the ball passed');
+  assert(swung.events.some((e) => e.type === 'whoosh'), 'missing the ball should still whoosh');
+  assert(swung.events.some((e) => e.type === 'whiff' && e.reach), 'the miss should be marked as reach');
+  assert(!swung.events.some((e) => e.type === 'hit'), 'a reach miss must not count as a hit');
+  assert(swung.flowerCount.you === 7, 'a reach miss grew a flower');
+  const heard = [];
+  const kit = {
+    whoosh() { heard.push('whoosh'); },
+    tok() { heard.push('tok'); },
+    bounce() { heard.push('bounce'); },
+    point() { heard.push('point'); },
+    win() { heard.push('win'); },
+    chime() { heard.push('chime'); },
+  };
+  soundsFor(swung.events, kit);
+  assert(heard.includes('whoosh') && !heard.includes('tok'), `heard ${heard.join(',')}`);
+});
+
+test('the landing marker is one metre across', () => {
+  const project = (x, y) => [x * 40, y * 28];
+  const mark = landingMarker(project, -0.4, 6.2);
+  assert(mark.metres === REACH && REACH === 1, 'reach should be 1.0 m');
+  near(mark.px, 40, 1e-9, 'marker width');
+  near(mark.py, 28, 1e-9, 'marker depth');
+  near(mark.cx, -16, 1e-9, 'marker centre x');
+});
+
+test('the HUD bar sits above the court in portrait and landscape', () => {
+  for (const [w, h] of [[390, 844], [568, 320]]) {
+    const hud = courtHud(w, h);
+    assert(hud.pad === null, `${w}x${h} still draws a side pad`);
+    assert(hud.bar.y === 0 && hud.bar.h === 56 && hud.bar.w === w, `${w}x${h} bar`);
+    assert(hud.court.x === 0 && hud.court.y === 56 && hud.court.w === w, `${w}x${h} court origin`);
+    assert(hud.court.h === h - 56, `${w}x${h} court height`);
+  }
+});
+
+test('casual is the default Neighbour and the approved tables are intact', () => {
+  const casual = RULES.aiCasual;
+  const pro = RULES.aiPro;
+  assert(casual.react === 0.32 && casual.speed === 0.80 && casual.err === 0.18, 'casual base');
+  assert(casual.errPace === 0.010 && casual.errRally === 0.008 && casual.errMax === 0.40, 'casual error growth');
+  assert(casual.scatter === 0.20 && casual.centre === 0.5 && casual.aggr === 0.05 && casual.wideX === 1.9, 'casual placement');
+  assert(casual.smash === 0.15 && casual.smashZ === 1.35 && casual.pace === 9.5 && casual.attackPace === 11, 'casual shots');
+  assert(pro.react === 0.18 && pro.speed === 0.95 && pro.err === 0.09, 'pro base');
+  assert(pro.errPace === 0.010 && pro.errRally === 0.008 && pro.errMax === 0.25, 'pro error growth');
+  assert(pro.scatter === 0.30 && pro.centre === 1.0 && pro.aggr === 0.15 && pro.wideX === 2.4, 'pro placement');
+  assert(pro.smash === 0.40 && pro.smashZ === 1.25 && pro.pace === 11 && pro.attackPace === 12, 'pro shots');
+  const api = createTest(createMatch({ seed: 4 }));
+  const card = api.ai();
+  assert(card.difficulty === 'casual' && card.reach === 1 && card.err === 0.18 && card.pace === 9.5, 'default card');
+  const edited = api.setAi({ err: 0.01, pace: 10 });
+  assert(edited.err === 0.01 && edited.pace === 10 && edited.wideX === 1.9, 'setAi should override only the given keys');
+  assert(RULES.aiCasual.err === 0.18, 'setAi changed the shared casual table');
 });
 
 const bad = results.filter((r) => !r.ok).length;
