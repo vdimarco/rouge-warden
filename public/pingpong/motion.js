@@ -1,6 +1,6 @@
 // Swing speed from rotationRate, and the bat pose from orientation. No sensor objects here.
 
-import { RULES, clamp } from './rules.js';
+import { BAT, RULES, clamp } from './rules.js';
 
 export function sampleSpeed(sample) {
   return Math.hypot(Number(sample.alpha) || 0, Number(sample.beta) || 0);
@@ -101,16 +101,58 @@ export function axisPastDead(deg, full, dead = RULES.batDead) {
   return Math.sign(v) * Math.min(1, (mag - dead) / span);
 }
 
-// gamma (side tilt / roll) sets x. beta (forward positive) sets depth.
+// Gentle near the middle, faster toward the edges. ±1 stays ±1, so full tilt still reaches the side.
+function shapeUnit(unit) {
+  const a = Math.abs(unit);
+  if (!(a > 0)) return 0;
+  return Math.sign(unit) * Math.pow(Math.min(1, a), BAT.curve);
+}
+
+// gamma (side tilt / roll) sets x. beta (a lean) nudges depth a short way.
 // Aim is a separate map: the same angles at the swing still pick the landing spot.
 export function batFromTilt(tiltX, tiltY) {
-  const side = axisPastDead(tiltX, RULES.batFullSide);
-  const fore = axisPastDead(tiltY, RULES.batFullDepth);
-  const x = side * RULES.batReachX;
-  const depth = fore >= 0
-    ? RULES.batHomeZ + fore * (RULES.batInZ - RULES.batHomeZ)
-    : RULES.batHomeZ + fore * (RULES.batHomeZ - RULES.batBackZ);
-  return { x, depth, side, fore };
+  const side = shapeUnit(axisPastDead(tiltX, BAT.fullSide, BAT.dead));
+  const fore = shapeUnit(axisPastDead(tiltY, BAT.fullLean, BAT.dead));
+  return {
+    x: side * BAT.sideReach,
+    depth: BAT.homeZ + fore * BAT.lean,
+    side,
+    fore,
+  };
+}
+
+// Lean is a small offset. The bounce depth does most of the forward and back, softly.
+export function depthWithBounce(leanDepth, bounceZ) {
+  const home = BAT.homeZ;
+  const lean = (Number(leanDepth) || home) - home;
+  const bounce = Number(bounceZ);
+  const at = Number.isFinite(bounce) ? bounce : home;
+  const base = home + BAT.bounceBlend * (at - home);
+  return clamp(base + lean, BAT.depthMin, BAT.depthMax);
+}
+
+// Where the incoming ball will meet the table on the player's half.
+export function predictBounceZ(ball) {
+  if (!ball || !(ball.vz < -0.05)) return null;
+  let y = ball.y;
+  let z = ball.z;
+  let vy = ball.vy;
+  const vz = ball.vz;
+  const g = ball.g || RULES.gravity;
+  const dt = 1 / 30;
+  for (let i = 0; i < 90; i++) {
+    const y0 = y;
+    const z0 = z;
+    y += vy * dt - 0.5 * g * dt * dt;
+    vy -= g * dt;
+    z += vz * dt;
+    if (y0 >= RULES.ballR && y < RULES.ballR && z < RULES.netZ && z > -0.05) {
+      const u = (RULES.ballR - y0) / (y - y0 || 1);
+      return z0 + (z - z0) * u;
+    }
+    if (z < -0.2) break;
+  }
+  return null;
 }
 
 // Casual assist: a light pull of x toward the ball's line. Depth stays with the player.
@@ -121,19 +163,41 @@ export function assistX(x, ballX, amount = RULES.assist) {
   return cmd + a * (line - cmd);
 }
 
-// One-pole with a fixed time constant. alpha = 1 - exp(-dt/tau), from the
-// exponential form in Casiez, Roussel and Vogel, 1€ Filter, CHI 2012.
-// tau is 16 ms, so a moving phone is not dragged by a slow spring.
-export function poseFilter(prev, raw, dt) {
-  const step = clamp(Number(dt) || 1 / 60, 1 / 240, 0.08);
-  const alpha = 1 - Math.exp(-step / RULES.batTau);
-  const from = Number(prev) || 0;
-  const target = Number(raw) || 0;
-  return from + alpha * (target - from);
+// Critically damped step. From rest, y = (1 + w t) e^(-w t) never crosses the target.
+// w is about 69 rad/s, so a held angle settles in roughly 70 ms with no overshoot.
+export function springStep(state, target, dt, w = BAT.springW) {
+  const step = clamp(Number(dt) || 0, 0, 0.05);
+  const x = Number(state && state.x) || 0;
+  const v = Number(state && state.v) || 0;
+  const dest = Number(target) || 0;
+  if (!(step > 0)) return { x, v };
+  const y0 = x - dest;
+  const e = Math.exp(-w * step);
+  const b = v + w * y0;
+  const y = (y0 + b * step) * e;
+  const vn = (b - w * y0 - w * b * step) * e;
+  return { x: dest + y, v: vn };
 }
 
-export function poseLag() {
-  return RULES.batTau;
+// A still phone, with the bat already near the middle, lets the neutral pose
+// follow a slow grip shift. Tau is 2 s. A swing or a bat at the side does not drift.
+export function driftNeutral(neutral, angle, rate, batX, dt) {
+  const base = Number(neutral) || 0;
+  const at = Number(angle) || 0;
+  const offset = at - base;
+  const still = Math.abs(Number(rate) || 0) <= BAT.driftStill;
+  const nearAngle = Math.abs(offset) <= BAT.driftNear;
+  const nearBat = Math.abs(Number(batX) || 0) <= BAT.driftCentre;
+  if (!still || !nearAngle || !nearBat) return base;
+  const step = Math.max(0, Number(dt) || 0);
+  const k = 1 - Math.exp(-step / BAT.driftTau);
+  return base + offset * k;
+}
+
+// Slightly higher at the sides, like a forehand and a backhand clearing the table.
+export function batHover(x) {
+  const along = Math.min(1, Math.abs(Number(x) || 0) / BAT.sideReach);
+  return BAT.hover + BAT.hoverArc * along * along;
 }
 
 // Gyro rate shoves the bat toward the net, then eases back when the rate drops.
@@ -149,14 +213,17 @@ export function swingPush(prev, gyroDegPerSec, dt) {
 
 // Face roll follows the phone's side tilt. Pitch foreshortens the face.
 // pushZ is added to the bat's depth for the drawing only.
-export function batPresentation({ roll, tiltY, push }) {
+export function batPresentation({ roll, tiltY, push, x }) {
   const rollDeg = clamp(Number(roll) || 0, -50, 50);
-  const pitch = clamp((Number(tiltY) || 0) / RULES.batFullDepth, -1.35, 1.35);
+  const pitch = clamp((Number(tiltY) || 0) / BAT.fullLean, -1.35, 1.35);
   const jab = clamp(Number(push) || 0, 0, 1);
+  const along = Math.min(1, Math.abs(Number(x) || 0) / BAT.sideReach);
+  const open = 1 + along * along * BAT.openSide;
   return {
     rollDeg,
     // A light squash and a shear, so the pitch reads and the paddle stays a paddle.
-    scaleY: Math.max(0.86, 1 - pitch * 0.12),
+    // The face opens a little at the sides.
+    scaleY: Math.max(0.86, 1 - pitch * 0.12) * open,
     shear: -pitch * 0.32,
     pushZ: jab * RULES.swingPush,
   };

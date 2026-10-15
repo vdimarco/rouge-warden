@@ -2,15 +2,15 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createMatch } from '../../public/pingpong/sim.js';
-import { RULES } from '../../public/pingpong/rules.js';
+import { BAT, RULES } from '../../public/pingpong/rules.js';
 import {
   assistX,
   axisPastDead,
   batFromTilt,
   batPresentation,
+  driftNeutral,
   mapAxes,
-  poseFilter,
-  poseLag,
+  springStep,
   swingPush,
 } from '../../public/pingpong/motion.js';
 import { project } from '../../public/pingpong/render.js';
@@ -52,44 +52,62 @@ test('a 2 degree tilt stays put and 3 degrees starts to move', () => {
   assert.equal(batFromTilt(2, 2).x, 0);
   assert.equal(batFromTilt(-2, -2).depth, RULES.batHomeZ);
   const nudge = batFromTilt(3, 0);
+  const linear = axisPastDead(3, RULES.batFullSide) * RULES.batReachX;
   assert.ok(nudge.x > 0 && nudge.x < 0.05, nudge.x);
+  assert.ok(nudge.x < linear * 0.5, nudge.x);
   const back = batFromTilt(0, -3);
   assert.ok(back.depth < RULES.batHomeZ);
   assert.ok(back.depth > RULES.batHomeZ - 0.08);
 });
 
-test('forward tilt steps in and back tilt backs off', () => {
+test('a lean moves depth a short way, and the ends still read on screen', () => {
   const inn = batFromTilt(0, RULES.batFullDepth);
   const out = batFromTilt(0, -RULES.batFullDepth);
   const home = batFromTilt(0, 0);
   assert.equal(home.depth, RULES.hitZ);
-  assert.ok(inn.depth >= 1, inn.depth);
-  assert.ok(inn.depth < RULES.netZ, inn.depth);
-  assert.ok(out.depth < 0.05, out.depth);
+  assert.ok(Math.abs(inn.depth - (BAT.homeZ + BAT.lean)) < 1e-9, inn.depth);
+  assert.ok(Math.abs(out.depth - (BAT.homeZ - BAT.lean)) < 1e-9, out.depth);
+  assert.ok(inn.depth < 0.55, inn.depth);
+  assert.ok(out.depth > 0.08, out.depth);
   assert.equal(inn.x, 0);
   const w = 390;
   const h = 844;
   const near = project(0, 0, out.depth, w, h);
   const far = project(0, 0, inn.depth, w, h);
-  assert.ok(far.s < near.s * 0.85, far.s / near.s);
-  assert.ok(near.y - far.y > 80, near.y - far.y);
+  assert.ok(far.s < near.s, far.s / near.s);
+  assert.ok(near.y - far.y > 20, near.y - far.y);
 });
 
-test('the pose filter is smooth and under 50 ms', () => {
-  assert.ok(poseLag() < 0.05, poseLag());
-  let v = 0;
-  let t = 0;
+test('the spring settles in 60 to 80 ms with no overshoot', () => {
+  const target = 20;
   const dt = 1 / 60;
-  while (v < 20 * 0.63 && t < 0.2) {
-    v = poseFilter(v, 20, dt);
+  let s = { x: 0, v: 0 };
+  let t = 0;
+  let at80 = null;
+  while (t < 0.2 - 1e-9) {
+    s = springStep(s, target, dt);
     t += dt;
+    assert.ok(s.x <= target + 1e-6, s.x);
+    assert.ok(s.x >= -1e-9, s.x);
+    if (t <= 0.034) assert.ok(s.x < target * 0.8, s.x);
+    if (at80 == null && t >= 0.08 - 1e-9) at80 = s.x;
   }
-  assert.ok(t < 0.05, t);
-  const one = poseFilter(0, 20, dt);
-  assert.ok(one > 8 && one < 18, one);
-  let slow = 0;
-  slow = poseFilter(slow, 20, 1 / 30);
-  assert.ok(slow > 12, slow);
+  assert.ok(at80 >= target * 0.9, at80);
+  assert.ok(at80 <= target, at80);
+  const one = springStep({ x: 0, v: 0 }, target, dt);
+  assert.ok(one.x > 1 && one.x < target * 0.5, one.x);
+});
+
+test('a still phone near the middle re-centres over about 2 seconds', () => {
+  let neutral = 0;
+  const angle = 2;
+  for (let i = 0; i < 120; i++) neutral = driftNeutral(neutral, angle, 0, 0, 1 / 60);
+  const left = angle - neutral;
+  assert.ok(left < angle * 0.5, left);
+  assert.ok(left > angle * 0.2, left);
+  assert.equal(driftNeutral(0, angle, 40, 0, 1 / 60), 0);
+  assert.equal(driftNeutral(0, angle, 0, 0.5, 1 / 60), 0);
+  assert.equal(driftNeutral(0, 8, 0, 0, 2), 0);
 });
 
 test('assist is a light pull and the player still owns the bat', () => {

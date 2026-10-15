@@ -8,6 +8,7 @@ export const VOICES = Object.freeze({
   floor: { freq: 90, dur: 0.16, gain: 0.12 },
   whoosh: { dur: 0.12 },
   ooh: { freq: 330, dur: 0.28, gain: 0.08 },
+  tick: { freq: 880, dur: 0.04, gain: 0.05 },
 });
 
 function clamp01(v) {
@@ -158,6 +159,10 @@ export function createSoundKit() {
       tone(VOICES.ooh.freq, VOICES.ooh.dur, 'sine', VOICES.ooh.gain, 0);
       tone(520, 0.22, 'triangle', 0.04, 0);
       note('ooh', { freq: VOICES.ooh.freq });
+    },
+    tick() {
+      tone(VOICES.tick.freq, VOICES.tick.dur, 'sine', VOICES.tick.gain, 0);
+      note('tick', { freq: VOICES.tick.freq, dur: VOICES.tick.dur });
     },
   };
 }

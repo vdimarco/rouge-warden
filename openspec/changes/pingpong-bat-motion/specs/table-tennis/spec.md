@@ -1,33 +1,50 @@
 ## ADDED Requirements
 
 ### Requirement: The bat follows the phone across the table
-Side tilt (gamma relative to the neutral pose) SHALL move the bat's x. A dead zone of 2.5 degrees SHALL leave x at 0. At 20 degrees the bat centre SHALL reach at least 90% of the table half-width, and on a 390-wide screen the left and right ends of that travel SHALL span more than 80% of the width. The pose filter SHALL be a one-pole with a time constant under 50 ms, and one 16 ms sample SHALL not jump the whole way to a new angle.
+Side tilt (gamma relative to the neutral pose) SHALL move the bat's x. A dead zone of 2.5 degrees SHALL leave x at 0. At 20 degrees the bat centre SHALL reach at least 90% of the table half-width, and on a 390-wide screen the left and right ends of that travel SHALL span more than 80% of the width. The response SHALL be gentler near the middle than a straight map. The pose SHALL be a critically damped spring that settles in about 60 to 80 ms and does not overshoot from rest. One 16 ms sample SHALL not jump the whole way to a new angle.
 
 #### Scenario: Full width and the dead zone
 - WHEN side tilt is 2 degrees, 2.5 degrees, 3 degrees, and 20 degrees
 - THEN 2 and 2.5 degrees keep the bat at x 0
-- AND 3 degrees moves it a short step off centre
+- AND 3 degrees moves it a short step off centre, shorter than a straight map
 - AND 20 degrees places it at least 0.68 m from centre
 - AND the matching point on the other side is the mirror
 
-#### Scenario: Filter lag
-- WHEN the held angle steps by 20 degrees
-- THEN the filtered angle reaches 63% of that step in under 50 ms
-- AND the first 16 ms sample is short of the new angle
+#### Scenario: Spring settle
+- WHEN the held angle steps by 20 degrees from rest
+- THEN the filtered angle never passes the target
+- AND it is still short of the target after one 16 ms sample
+- AND it has covered at least 90% of the step by about 80 ms
+
+#### Scenario: Drift
+- WHEN the phone sits 2 degrees off neutral, still, with the bat near the middle
+- THEN about 2 seconds later more than half of that offset has been absorbed into the neutral pose
+- AND a fast phone, or a bat out at the side, leaves the neutral pose where it was
 
 ### Requirement: Forward and back tilt moves the bat in depth
-Beta relative to the neutral pose SHALL move the bat toward the net and back toward the player. Positive beta SHALL increase depth. At +16 degrees the bat SHALL be at least 1.0 m down the table and still short of the net. At -16 degrees it SHALL sit at the near baseline. The drawn bat SHALL use the table projection, so the farther bat is smaller and higher on screen. Shot aim SHALL stay on the swing's beta and gamma: +20 degrees of beta still lands 0.3 m past the net, and ±30 degrees of gamma still land at ±0.7 m.
+Beta relative to the neutral pose SHALL lean the bat a short way toward the net and back toward the player. Positive beta SHALL increase depth. At +16 degrees the depth SHALL be 0.48 m. At -16 degrees it SHALL be 0.12 m. A gentle blend toward the ball's bounce MAY add a little more, and the result SHALL stay between 0.08 m and 0.95 m. The drawn bat SHALL use the table projection, and SHALL sit a little higher and more open at the sides. Shot aim SHALL stay on the swing's beta and gamma: +20 degrees of beta still lands 0.3 m past the net, and ±30 degrees of gamma still land at ±0.7 m.
 
 #### Scenario: Near and far
 - WHEN forward tilt is 0, +16 degrees, and -16 degrees
-- THEN depth is the hit plane, at least 1.0 m toward the net, and at the near baseline
+- THEN depth is the hit plane, 0.48 m, and 0.12 m
 - AND side position stays centred
-- AND the far projection is higher and smaller than the near one
+- AND the farther projection is higher and smaller than the nearer one
 
 #### Scenario: Aim is the angle at the swing
 - WHEN the bat is on a ball at x 0.35 and the swing's gamma is 30 degrees and beta is 20 degrees
 - THEN the shot still aims at x 0.7 and 0.3 m past the net
 - AND the recorded bat x is 0.35
+
+### Requirement: A count-in holds every serve
+Before every serve, including the first after the gate, the point SHALL count 3, then 2, then 1, and the ball SHALL NOT move until that count ends. Each beat SHALL emit a tick. The serve SHALL leave at about 3.5 m/s and ease in over a short moment. A Neighbour return SHALL be between 6 and 7 m/s. Player shot speeds SHALL stay 6, 11, and 17. A good swing on 0-0 SHALL still win the point, and that point SHALL finish within about 7 seconds.
+
+#### Scenario: The ball waits
+- WHEN a point begins
+- THEN the phase is the count
+- AND a swing during the count does not move the ball
+- AND the ticks are 3, then 2, then 1
+- AND the ball's position is unchanged on every count step
+- AND once the serve is moving, the launch speed is about 3.5 m/s and the first moments are slower than the settled pace
 
 ### Requirement: The face matches the phone and the swing pushes forward
 The bat face SHALL roll with side tilt and pitch with forward tilt while the phone is held there. A gyro rate over the swing range SHALL add a drawn push toward the net, and that push SHALL ease back after the rate drops. The push SHALL NOT move the contact position.

@@ -28,18 +28,56 @@ function untilLanding(match, after) {
   return snap;
 }
 
-test('the opening feed is won inside five seconds', () => {
+function throughCount(match) {
+  let snap = match.state();
+  assert.equal(snap.phase, 'count');
+  const ticks = [];
+  const held = { x: snap.ball.x, y: snap.ball.y, z: snap.ball.z };
+  for (let i = 0; i < 60 * 4 && snap.phase === 'count'; i++) {
+    const before = snap.ball;
+    snap = match.step();
+    if (snap.phase === 'count') {
+      assert.equal(snap.ball.x, before.x);
+      assert.equal(snap.ball.y, before.y);
+      assert.equal(snap.ball.z, before.z);
+      assert.equal(snap.ball.vx, 0);
+      assert.equal(snap.ball.vy, 0);
+      assert.equal(snap.ball.vz, 0);
+    }
+    for (const event of snap.events) if (event.type === 'tick') ticks.push(event.beat);
+  }
+  assert.equal(snap.phase, 'incoming');
+  assert.deepEqual(ticks, [3, 2, 1]);
+  assert.equal(held.x, snap.ball.x);
+  return snap;
+}
+
+test('the count-in holds the ball, then the serve settles near 3.5 m/s', () => {
   const match = createMatch({ seed: 1, input: 'swing' });
-  const serve = match.state().ball;
-  const speed = Math.hypot(serve.vx, serve.vy, serve.vz);
-  assert.ok(Math.abs(speed - 5) < 1e-9, speed);
-  assert.equal(serve.spinLevel, 0);
+  const earlySwing = match.swing({ degPerSec: 400, dir: 'forehand', tiltX: 0, tiltY: 0, rollDegPerSec: 0 });
+  assert.equal(earlySwing.reason, 'away');
+  const launched = throughCount(match);
+  assert.equal(launched.ball.spinLevel, 0);
+  const earlyH = Math.hypot(launched.ball.vx, launched.ball.vz);
+  const rebuilt = Math.hypot(launched.ball.vx * 2, launched.ball.vy, launched.ball.vz * 2);
+  assert.ok(earlyH < RULES.serveSpeed * 0.5, earlyH);
+  assert.ok(Math.abs(rebuilt - RULES.serveSpeed) < 0.35, rebuilt);
+  let snap = launched;
+  for (let i = 0; i < 23; i++) snap = match.step();
+  const laterH = Math.hypot(snap.ball.vx, snap.ball.vz);
+  assert.ok(Math.abs(laterH - RULES.serveSpeed * 0.7) < 0.25, laterH);
+  assert.ok(snap.ball.y > 0.45, snap.ball.y);
+});
+
+test('the opening feed is won by about seven seconds', () => {
+  const match = createMatch({ seed: 1, input: 'swing' });
+  throughCount(match);
   match.swing({ degPerSec: 320, dir: 'backhand', tiltX: 4, tiltY: 0, rollDegPerSec: 0, offsetMs: 40 });
   let snap = match.state();
-  for (let i = 0; i < 60 * 5 && !snap.pointsPlayed; i++) snap = match.step();
+  for (let i = 0; i < 60 * 8 && !snap.pointsPlayed; i++) snap = match.step();
   assert.equal(snap.score.you, 1);
   assert.equal(snap.score.neighbour, 0);
-  assert.ok(snap.time < 5, snap.time);
+  assert.ok(snap.time < 7.5, snap.time);
   assert.equal(snap.lastShot.kind, 'drive');
   assert.equal(snap.lastShot.band, 'perfect');
   assert.ok(Math.abs(snap.lastShot.speed - 11 * 1.15) < 1e-9);
@@ -47,9 +85,10 @@ test('the opening feed is won inside five seconds', () => {
 
 test('a hook swing outside 200 ms does not win the feed', () => {
   const match = createMatch({ seed: 1, input: 'swing' });
+  throughCount(match);
   match.swing({ degPerSec: 800, dir: 'forehand', tiltX: 0, tiltY: 0, rollDegPerSec: 0, offsetMs: 210 });
   let snap = match.state();
-  for (let i = 0; i < 360 && !snap.pointsPlayed; i++) snap = match.step();
+  for (let i = 0; i < 60 * 8 && !snap.pointsPlayed; i++) snap = match.step();
   assert.equal(snap.lastShot.band, 'miss');
   assert.equal(snap.score.you, 0);
 });

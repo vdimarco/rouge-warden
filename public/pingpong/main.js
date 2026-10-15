@@ -1,7 +1,7 @@
 // Boots the table, the gate, motion, swipe, mouse and the test hooks.
 
 import { unlockCourt } from './gate.js';
-import { assistX, batFromTilt, createSwingDetector, mapAxes, poseFilter, swipeToSwing, swingPush } from './motion.js';
+import { assistX, batFromTilt, createSwingDetector, depthWithBounce, driftNeutral, mapAxes, predictBounceZ, springStep, swipeToSwing, swingPush } from './motion.js';
 import { RULES, planFrame, readOptions } from './rules.js';
 import { createMatch } from './sim.js';
 import { createSoundKit } from './audio.js';
@@ -16,6 +16,8 @@ const pose = { tiltX: 0, tiltY: 0, roll: 0, swingAt: 0, swingDir: 'forehand', pu
 let inputMode = opts.input === 'touch' || opts.input === 'swing' ? 'swipe' : 'motion';
 let neutral = { beta: 0, gamma: 0 };
 let filtered = { tiltX: 0, tiltY: 0 };
+let springX = { x: 0, v: 0 };
+let springY = { x: 0, v: 0 };
 let orientAt = 0;
 let gyroAt = 0;
 let pushAt = 0;
@@ -42,6 +44,7 @@ function play(snapshot) {
     if (event.type === 'floor') kit.floor(event.x);
     if (event.type === 'ooh') kit.ooh();
     if (event.type === 'clap') kit.clap(event.big);
+    if (event.type === 'tick') kit.tick();
   }
   return snapshot;
 }
@@ -72,7 +75,19 @@ function commitPose(assist) {
   const live = match.state();
   const pull = assist && live.phase === 'incoming';
   const x = pull ? assistX(mapped.x, live.ball.x, RULES.assist) : mapped.x;
-  match.setBat({ x, depth: mapped.depth, roll: pose.roll });
+  let depth = mapped.depth;
+  if (pull) {
+    const bounce = predictBounceZ(live.ball);
+    if (bounce != null) depth = depthWithBounce(mapped.depth, bounce);
+  }
+  match.setBat({ x, depth, roll: pose.roll });
+}
+
+function followAngle(targetX, targetY, dt) {
+  springX = springStep(springX, targetX, dt);
+  springY = springStep(springY, targetY, dt);
+  filtered.tiltX = springX.x;
+  filtered.tiltY = springY.x;
 }
 
 function followSwipe() {
@@ -89,10 +104,7 @@ function holdTilt(beta, gamma) {
   const mapped = mapAxes(beta, gamma, screenAngle());
   const targetX = mapped.gamma - neutral.gamma;
   const targetY = mapped.beta - neutral.beta;
-  for (let i = 0; i < 24; i++) {
-    filtered.tiltX = poseFilter(filtered.tiltX, targetX, 1 / 60);
-    filtered.tiltY = poseFilter(filtered.tiltY, targetY, 1 / 60);
-  }
+  for (let i = 0; i < 30; i++) followAngle(targetX, targetY, 1 / 60);
   poseHold = true;
   commitPose(false);
 }
@@ -120,7 +132,10 @@ function loop(now) {
     fpsStamp = now;
     if (fps > 0 && fps < 60) lowFps += 1;
     else lowFps = 0;
-    if (lowFps >= 3) view.setTrailCap(2);
+    if (lowFps >= 3) {
+      view.setTrailCap(2);
+      view.setDprCap(1.5);
+    }
   }
   requestAnimationFrame(loop);
 }
@@ -224,8 +239,13 @@ function attachSensors() {
     const dt = orientAt ? Math.max(1 / 120, Math.min(0.08, (now - orientAt) / 1000)) : 1 / 60;
     orientAt = now;
     const axes = mapAxes(e.beta, e.gamma, screenAngle());
-    filtered.tiltX = poseFilter(filtered.tiltX, axes.gamma - neutral.gamma, dt);
-    filtered.tiltY = poseFilter(filtered.tiltY, axes.beta - neutral.beta, dt);
+    const rate = now - gyroAt < 90 ? pose.gyro : 0;
+    const held = match.state().bat;
+    neutral = {
+      beta: driftNeutral(neutral.beta, axes.beta, rate, held.x, dt),
+      gamma: driftNeutral(neutral.gamma, axes.gamma, rate, held.x, dt),
+    };
+    followAngle(axes.gamma - neutral.gamma, axes.beta - neutral.beta, dt);
     poseHold = false;
     commitPose(true);
   });
@@ -276,6 +296,8 @@ if (recenter) {
     neutral = { beta: neutral.beta + filtered.tiltY, gamma: neutral.gamma + filtered.tiltX };
     filtered.tiltX = 0;
     filtered.tiltY = 0;
+    springX = { x: 0, v: 0 };
+    springY = { x: 0, v: 0 };
     pose.push = 0;
     commitPose(false);
   });
@@ -338,6 +360,8 @@ window.__test = {
   setTilt(tiltX, tiltY, roll) {
     filtered.tiltX = Number(tiltX) || 0;
     filtered.tiltY = Number(tiltY) || 0;
+    springX = { x: filtered.tiltX, v: 0 };
+    springY = { x: filtered.tiltY, v: 0 };
     poseHold = true;
     commitPose(false);
     if (roll != null) {
