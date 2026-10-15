@@ -124,6 +124,7 @@ function loop(now) {
   const gyro = now - gyroAt > 90 ? 0 : pose.gyro;
   pose.push = swingPush(pose.push, gyro, dt);
   view.frame(match.state(), pose);
+  paintScore();
   fpsFrames += 1;
   if (!fpsStamp) fpsStamp = now;
   if (now - fpsStamp >= 500) {
@@ -355,6 +356,7 @@ window.__test = {
     let lastSnap = null;
     for (let i = 0; i < n; i++) lastSnap = play(match.step());
     view.frame(match.state(), pose);
+    paintScore();
     return lastSnap;
   },
   setTilt(tiltX, tiltY, roll) {
@@ -382,13 +384,24 @@ window.__test = {
   freeze() {
     frozen = true;
     view.frame(match.state(), pose);
+    paintScore();
     return match.state();
   },
   sounds() { return kit.heard(); },
   options: opts,
 };
 
+const scoreYou = document.getElementById('score-you');
+const scoreThem = document.getElementById('score-them');
+
+function paintScore() {
+  const score = match.state().score;
+  if (scoreYou) scoreYou.textContent = 'You ' + score.you;
+  if (scoreThem) scoreThem.textContent = score.neighbour + ' Neighbour';
+}
+
 const scoreWatch = setInterval(() => {
+  paintScore();
   if (again) again.hidden = !match.state().gameOver;
 }, 300);
 scoreWatch.unref?.();

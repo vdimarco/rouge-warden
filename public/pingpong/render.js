@@ -554,11 +554,6 @@ export function createView(canvas) {
 
   function drawHud(ctx, w, h, state) {
     ctx.fillStyle = INK;
-    ctx.font = '12px "DM Sans", "Gill Sans", sans-serif';
-    ctx.textAlign = 'left';
-    ctx.fillText('You ' + state.score.you, 12, 28);
-    ctx.textAlign = 'right';
-    ctx.fillText(state.score.neighbour + ' Neighbour', w - 64, 28);
     if (state.phase === 'count' && state.count) {
       ctx.textAlign = 'center';
       ctx.fillStyle = INK;
