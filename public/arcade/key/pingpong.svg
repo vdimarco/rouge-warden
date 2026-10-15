@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 99">
+  <rect width="120" height="99" fill="#8A8378"/>
+  <rect y="62" width="120" height="37" fill="#C98B3C"/>
+  <rect y="70" width="120" height="4" fill="#B67932"/>
+  <rect y="82" width="120" height="4" fill="#B67932"/>
+  <polygon points="18,78 102,78 88,46 32,46" fill="#3E7C8F"/>
+  <polygon points="18,78 102,78 100,84 20,84" fill="#2C6274"/>
+  <polyline points="18,78 102,78 88,46 32,46 18,78" fill="none" stroke="#F3E9D6" stroke-width="1.5"/>
+  <line x1="60" y1="78" x2="60" y2="46" stroke="#F3E9D6" stroke-width="1"/>
+  <line x1="28" y1="62" x2="92" y2="62" stroke="#F3E9D6" stroke-width="1.5"/>
+  <line x1="26" y1="62" x2="26" y2="56" stroke="#2B2A33" stroke-width="1.5"/>
+  <line x1="94" y1="62" x2="94" y2="56" stroke="#2B2A33" stroke-width="1.5"/>
+  <line x1="26" y1="56" x2="94" y2="56" stroke="#F3E9D6" stroke-width="2"/>
+  <circle cx="86" cy="18" r="10" fill="#E8B94A" opacity="0.85"/>
+  <circle cx="48" cy="68" r="3.2" fill="#F3E9D6" stroke="#2B2A33" stroke-width="0.6"/>
+  <ellipse cx="48" cy="74" rx="4" ry="1.4" fill="#2B2A33" opacity="0.35"/>
+  <rect x="70" y="80" width="16" height="12" rx="2" fill="#B5472E"/>
+  <rect x="76" y="90" width="4" height="7" fill="#8C5A32"/>
+  <circle cx="40" cy="40" r="4" fill="#B5472E"/>
+  <rect x="36" y="36" width="10" height="3" fill="#2B2A33"/>
+</svg>
