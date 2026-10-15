@@ -25,6 +25,30 @@ for(const game of api.GAMES)assert.ok(fs.readFileSync('public'+game.url+'index.h
 const sample={source:'posthog',days:30,updatedAt:new Date().toISOString(),games:{fish:{plays:12,views:90,likes:2,active_seconds:100},brawl:{plays:14,views:80,likes:5,active_seconds:90}}};assert.equal(api.validateMetrics(sample),sample);
 assert.equal(api.rankGames(api.GAMES,sample.games,'featured').slice(0,6).map(g=>g.id).join(','),'fish,tidebreak,wild,vr,crimson,river-rush');
 assert.equal(api.rankGames(api.GAMES,sample.games,'plays')[0].id,'brawl');assert.equal(api.rankGames(api.GAMES,sample.games,'views')[0].id,'fish');assert.equal(api.rankGames(api.GAMES,sample.games,'likes')[0].id,'brawl');assert.equal(api.rankGames(api.GAMES,sample.games,'active_seconds')[0].id,'fish');assert.deepEqual(api.rankGames(api.GAMES,{},'plays').map(g=>g.id),api.GAMES.map(g=>g.id));
+function legacyRank(games, data, key) {
+  const FEATURED = ['fish','tidebreak','wild','vr','crimson','river-rush'];
+  return [...games].sort((a,b) => {
+    if (key === 'featured') {
+      const priority = g => FEATURED.includes(g.id) ? FEATURED.indexOf(g.id) : FEATURED.length;
+      const pinned = priority(a) - priority(b);
+      if (pinned) return pinned;
+    }
+    const by = key === 'featured' ? 'plays' : key;
+    return (data?.[b.id]?.[by] || 0) - (data?.[a.id]?.[by] || 0);
+  });
+}
+const ids = (list) => Array.from(list, (g) => g.id);
+for (const key of ['featured','plays','views','likes','active_seconds']) assert.deepEqual(ids(api.rankGames(api.GAMES,sample.games,key)), ids(legacyRank(api.GAMES,sample.games,key)), key);
+const dated = [{id:'a'},{id:'b'},{id:'c'}];
+const dates = {a:{added:'2026-01-02T00:00:00Z',updated:'2026-05-01T00:00:00Z'},b:{added:'2026-01-02T00:00:00Z',updated:'2026-06-01T00:00:00Z'},c:{added:'2026-03-01T00:00:00Z',updated:'2026-04-01T00:00:00Z'}};
+assert.deepEqual(ids(api.rankGames(dated,{},'added',dates)),['c','a','b']);
+assert.deepEqual(ids(api.rankGames(dated,{},'updated',dates)),['b','a','c']);
+assert.deepEqual(ids(api.rankGames(dated,{},'added',{c:dates.c})),['c','a','b']);
+assert.equal(api.dateLabel(dates.a,'added'),'Added Jan 2');
+assert.equal(api.dateLabel(dates.b,'updated'),'Updated Jun 1');
+assert.equal(api.dateLabel({added:'2026-09-12T15:00:00-04:00'},'added'),'Added Sep 12');
+assert.equal(api.dateLabel({updated:'2026-10-10T22:00:00-04:00'},'updated'),'Updated Oct 10');
+assert.equal(api.dateLabel({},'added'),'');
 assert.throws(()=>api.validateMetrics({...sample,source:'local'}));assert.throws(()=>api.validateMetrics({...sample,games:{fish:{plays:-1}}}));assert.equal(api.duration(90),'1m');assert.equal(api.duration(7200),'2.0h');
 console.log('PASS catalog coverage, four metric sorts, stable ties, malformed data and duration labels');
 async function server(){
