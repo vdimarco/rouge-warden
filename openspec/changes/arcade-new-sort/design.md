@@ -28,3 +28,5 @@ The Lab's route is `/lab/`, so its folder is `public/lab`, including the toys in
 The home page reads `cottage-catalog-sort` before the first paint. The value must be one of the seven sort keys. Anything else, or an empty store, leaves Featured. Choosing a sort writes the key. Date labels use Added for every sort except Updated, which uses Updated, so the words match the order the visitor just asked for.
 
 Activity counts still come from PostHog. A date sort does not wait on them, and a missing leaderboard does not drop the date order.
+
+A failed read of the date file does not stick for the session. Selecting New or Updated while the dates are missing starts another read. Clicks during that read share one promise. When it finishes, the list renders again only if New or Updated is still selected. The unavailable line appears only when that read failed too. The failed promise is dropped, so a later click can try again.

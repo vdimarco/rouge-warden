@@ -138,6 +138,73 @@ for (const id of catalog) {
   const row = dates.games[id];
   console.log(id + "\t" + row.path + "\tadded " + row.added + "\tupdated " + row.updated);
 }
+// A failed date read must be retried from New/Updated. Concurrent clicks share one request.
+async function datesPage(mode) {
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  const page = await ctx.newPage();
+  const errors = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  page.on("console", (msg) => { if (msg.type() === "error") errors.push(msg.text()); });
+  await page.route("**/api/arcade-leaderboard", (route) => route.fulfill({
+    status: 200,
+    contentType: "application/json",
+    body: JSON.stringify({ source: "posthog", days: 30, updatedAt: "2026-10-15T00:00:00.000Z", games: {} }),
+  }));
+  await page.addInitScript((first) => {
+    const real = window.fetch.bind(window);
+    const state = { n: 0, mode: first, release: null };
+    window.__dates = state;
+    window.fetch = (input, init) => {
+      const url = typeof input === "string" ? input : (input && input.url) || "";
+      if (!url.includes("/arcade/game-dates.json")) return real(input, init);
+      state.n += 1;
+      if (state.mode === "fail") return Promise.resolve(new Response("no", { status: 503 }));
+      if (state.mode === "fail-once") {
+        state.mode = "pass";
+        return Promise.resolve(new Response("no", { status: 503 }));
+      }
+      if (state.mode === "hold") {
+        return new Promise((resolve) => {
+          state.release = (ok) => resolve(ok ? real(input, init) : new Response("no", { status: 503 }));
+        });
+      }
+      return real(input, init);
+    };
+  }, mode);
+  await page.goto(BASE, { waitUntil: "domcontentloaded" });
+  await page.waitForSelector(".scoreboard .board-sort");
+  await page.waitForFunction(() => window.__dates.n >= 1 && !(document.querySelector(".board-status")?.textContent || "").startsWith("Loading"));
+  return { ctx, page, errors };
+}
+const retry = await datesPage("fail-once");
+await retry.page.locator(".board-sort button[data-metric='added']").click();
+await retry.page.waitForFunction(() => document.querySelector(".board-when")?.textContent.startsWith("Added "));
+const retryBoard = await readBoard(retry.page);
+const retryCatalog = retryBoard.catalog.filter((id) => retryBoard.cards.some((c) => c.id === id));
+check(retryBoard.cards.map((c) => c.id).join(",") === byDate(retryCatalog, dates.games, "added").join(","), "a failed date read retries and then sorts by New");
+check(await retry.page.evaluate(() => window.__dates.n) === 2, "the retry is a second read, after the failed one");
+check(retry.errors.length === 0, "no console errors when a failed date read is retried: " + (retry.errors.join(" | ") || "none"));
+await retry.ctx.close();
+
+const raced = await datesPage("fail");
+await raced.page.evaluate(() => { window.__dates.mode = "hold"; });
+await raced.page.locator(".board-sort button[data-metric='added']").click();
+await raced.page.waitForFunction(() => window.__dates.n === 2 && typeof window.__dates.release === "function");
+await raced.page.locator(".board-sort button[data-metric='updated']").click();
+check(await raced.page.evaluate(() => window.__dates.n) === 2, "two date clicks share the in-flight read");
+check(!(await raced.page.locator(".board-status").textContent()).includes("Release dates"), "the unavailable line waits until the read finishes");
+await raced.page.evaluate(() => window.__dates.release(false));
+await raced.page.waitForFunction(() => (document.querySelector(".board-status")?.textContent || "").includes("Release dates"));
+await raced.page.evaluate(() => { window.__dates.mode = "pass"; });
+await raced.page.locator(".board-sort button[data-metric='added']").click();
+await raced.page.waitForFunction(() => document.querySelector(".board-when")?.textContent.startsWith("Added "));
+const racedBoard = await readBoard(raced.page);
+const racedCatalog = racedBoard.catalog.filter((id) => racedBoard.cards.some((c) => c.id === id));
+check(racedBoard.cards.map((c) => c.id).join(",") === byDate(racedCatalog, dates.games, "added").join(","), "the next New click reads the dates and sorts");
+check(await raced.page.evaluate(() => window.__dates.n) === 3, "the later click starts a new read");
+check(raced.errors.length === 0, "no console errors around the deduped retry: " + (raced.errors.join(" | ") || "none"));
+await raced.ctx.close();
+
 console.log(failures ? "FAIL " + failures + " checks" : "PASS all catalog sort checks");
 await browser.close();
 process.exit(failures ? 1 : 0);

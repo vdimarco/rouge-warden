@@ -190,11 +190,17 @@
     if (metric === 'featured' || metric === 'added' || metric === 'updated') return 'Shared activity is unavailable. All games are ready to play.';
     return 'Ranking by ' + metricNames[metric].toLowerCase() + ' is not available now. Games still play.';
   };
-  // New and Updated read /arcade/game-dates.json, written from git by qa/arcade/game-dates.mjs
+  // New and Updated read /arcade/game-dates.json, written from git by qa/arcade/game-dates.mjs.
+  // One in-flight read is shared. A failure drops it so the next New or Updated click can try again.
   let datesPromise = null;
   function loadDates() {
-    if (!datesPromise) datesPromise = fetchDates();
-    return datesPromise;
+    if (datesPromise) return datesPromise;
+    const pending = fetchDates().then((ok) => {
+      if (!ok && datesPromise === pending) datesPromise = null;
+      return ok;
+    });
+    datesPromise = pending;
+    return pending;
   }
   async function fetchDates() {
     try {
@@ -208,8 +214,8 @@
         }
       }
       gameDates = Object.keys(games).length ? games : null;
-      if (!gameDates) datesPromise = null;
-    } catch { gameDates = null; datesPromise = null; }
+      return !!gameDates;
+    } catch { gameDates = null; return false; }
   }
   // A like reaches the shared count only after PostHog stores it and the five-minute cache expires.
   // Until then this visitor's own like is added once, so the count moves when they press the button.
@@ -305,7 +311,14 @@
         try { localStorage.setItem(SORT_KEY, metric); } catch {}
         render();
         box.querySelector(`[data-metric="${metric}"]`).focus();
-        if (metric === 'added' || metric === 'updated') { if (!gameDates) box.querySelector('.board-status').textContent = unavailable(); return; }
+        if (metric === 'added' || metric === 'updated') {
+          if (!gameDates) loadDates().then((ok) => {
+            if (metric !== 'added' && metric !== 'updated') return;
+            if (ok) render();
+            else box.querySelector('.board-status').textContent = unavailable();
+          });
+          return;
+        }
         if (!metrics) { if (loading) return; box.querySelector('.board-status').textContent = unavailable(); refresh(); }
       };
     }
