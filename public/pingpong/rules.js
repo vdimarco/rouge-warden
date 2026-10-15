@@ -1,5 +1,28 @@
 // Numbers from the table-tennis spec and the look sheet. Pure helpers, no sensors.
 
+// Bat feel. One place for the pose curve, the spring, the drift, and the hover.
+export const BAT = Object.freeze({
+  dead: 2.5,
+  fullSide: 20,
+  fullLean: 16,
+  sideReach: 0.74,
+  homeZ: 0.3,
+  lean: 0.18,
+  depthMin: 0.08,
+  depthMax: 0.95,
+  curve: 1.5,
+  // Critically damped. About 95% of a step by 70 ms, inside a 60 to 80 ms settle.
+  springW: 68.6,
+  driftTau: 2,
+  driftNear: 3.5,
+  driftStill: 6,
+  driftCentre: 0.12,
+  bounceBlend: 0.45,
+  hover: 0.05,
+  hoverArc: 0.05,
+  openSide: 0.14,
+});
+
 export const RULES = Object.freeze({
   tableLength: 2.74,
   halfWidth: 0.76,
@@ -39,15 +62,32 @@ export const RULES = Object.freeze({
   nudgePx: 4,
   smashShake: 3,
   calibrate: 0.3,
-  hookServe: 5,
+  serveSpeed: 3.5,
+  serveEase: 0.4,
+  countBeat: 0.75,
+  pointCap: 12,
   neighbourDelay: 0.26,
   neighbourError: 0.18,
   neighbourSpeedMin: 6,
-  neighbourSpeedMax: 9,
+  neighbourSpeedMax: 7,
   neighbourSpread: 0.3,
   gamePoints: 11,
   winBy: 2,
-  assist: 1,
+  // Light pull toward the ball's line. The held pose keeps the other 85%.
+  assist: 0.15,
+  // Side tilt (gamma) and forward tilt (beta), degrees from the neutral pose.
+  // The metres and the filter live on BAT. These names stay for the older checks.
+  batDead: BAT.dead,
+  batFullSide: BAT.fullSide,
+  batFullDepth: BAT.fullLean,
+  batReachX: BAT.sideReach,
+  batBackZ: BAT.depthMin,
+  batHomeZ: BAT.homeZ,
+  batInZ: BAT.depthMax,
+  reachX: 0.22,
+  reachZ: 0.5,
+  swingPush: 0.42,
+  swipeFollow: 0.85,
   vibrateHit: 15,
   vibrateSmash: 30,
   trailDrive: 4,

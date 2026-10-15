@@ -1,5 +1,7 @@
 // The room is painted once. Each frame copies it, then draws the ball, shadow, trail, bat, Neighbour and sparks.
+// Painted sheets in ./art/ replace the hall, the Neighbour and the bat when they load. A miss falls back to the code drawing.
 
+import { batHover, batPresentation } from './motion.js';
 import { RULES } from './rules.js';
 
 const INK = '#2B2A33';
@@ -11,6 +13,67 @@ const SMOG = '#8A8378';
 const GOLD = '#E8B94A';
 const EMBER = '#B5472E';
 const WOOD = '#8C5A32';
+
+const ART_FILES = {
+  hall: 'hall-backdrop.webp',
+  table: 'table-texture.webp',
+  ready: 'neighbour-ready.webp',
+  forehand: 'neighbour-forehand.webp',
+  backhand: 'neighbour-backhand.webp',
+  bat: 'player-bat.webp',
+};
+
+// The hall sheet is 780 by 1398 with a thin paper frame. Crop past that frame.
+const HALL_CROP = { left: 12 / 780, top: 24 / 1398, right: 12 / 780, bottom: 26 / 1398 };
+// Zoom and bias the sheet upward so the pendant lamp clears the Neighbour.
+// The wall behind the far end of the table stays plain.
+const HALL_ZOOM = 1.28;
+const HALL_LIFT = 0.9;
+
+// The forehand sheet holds the bat on the right, so a ball on the right uses it.
+export function neighbourPose(swing, time) {
+  if (!swing || !Number.isFinite(time) || !Number.isFinite(swing.t)) return 'ready';
+  const age = time - swing.t;
+  if (!(age >= 0 && age < 0.25)) return 'ready';
+  return swing.x < 0 ? 'backhand' : 'forehand';
+}
+
+function imageReady(img) {
+  return !!(img && img.complete && img.naturalWidth);
+}
+
+function drawCover(ctx, img, w, h, crop) {
+  const sx = Math.round(img.naturalWidth * crop.left);
+  const sy = Math.round(img.naturalHeight * crop.top);
+  const sw = Math.max(1, Math.round(img.naturalWidth * (1 - crop.left - crop.right)));
+  const sh = Math.max(1, Math.round(img.naturalHeight * (1 - crop.top - crop.bottom)));
+  const scale = Math.max(w / sw, h / sh) * HALL_ZOOM;
+  const dw = sw * scale;
+  const dh = sh * scale;
+  const dx = (w - dw) / 2;
+  const dy = -(dh - h) * HALL_LIFT;
+  ctx.drawImage(img, sx, sy, sw, sh, dx, dy, dw, dh);
+}
+
+function paintTableWash(ctx, img, pts) {
+  if (!imageReady(img)) return;
+  let minX = Infinity;
+  let minY = Infinity;
+  let maxX = -Infinity;
+  let maxY = -Infinity;
+  for (const p of pts) {
+    if (p.x < minX) minX = p.x;
+    if (p.y < minY) minY = p.y;
+    if (p.x > maxX) maxX = p.x;
+    if (p.y > maxY) maxY = p.y;
+  }
+  ctx.save();
+  poly(ctx, pts);
+  ctx.clip();
+  ctx.globalAlpha = 0.35;
+  ctx.drawImage(img, minX, minY, Math.max(1, maxX - minX), Math.max(1, maxY - minY));
+  ctx.restore();
+}
 
 export function project(x, y, z, w, h) {
   const depth = Math.max(-0.05, Math.min(1.2, z / RULES.tableLength));
@@ -32,27 +95,31 @@ function poly(ctx, pts) {
   ctx.closePath();
 }
 
-function drawStatic(ctx, w, h) {
+function drawStatic(ctx, w, h, art) {
+  const hall = imageReady(art && art.hall);
   ctx.fillStyle = SMOG;
   ctx.fillRect(0, 0, w, h);
 
-  const lamp = ctx.createRadialGradient(w * 0.5, h * 0.16, 10, w * 0.5, h * 0.22, w * 0.55);
-  lamp.addColorStop(0, 'rgba(232, 185, 74, 0.55)');
-  lamp.addColorStop(1, 'rgba(232, 185, 74, 0)');
-  ctx.fillStyle = lamp;
-  ctx.fillRect(0, 0, w, h);
-
   const p = (x, y, z) => project(x, y, z, w, h);
-  for (let i = -6; i <= 8; i++) {
-    const z = -0.35 + i * 0.42;
-    const a = p(-1.7, -0.02, z);
-    const b = p(1.7, -0.02, z);
-    ctx.strokeStyle = i % 2 === 0 ? '#B67932' : '#D39A4A';
-    ctx.lineWidth = Math.max(1, 3 * a.s);
-    ctx.beginPath();
-    ctx.moveTo(a.x, a.y);
-    ctx.lineTo(b.x, b.y);
-    ctx.stroke();
+  if (hall) {
+    drawCover(ctx, art.hall, w, h, HALL_CROP);
+  } else {
+    const lamp = ctx.createRadialGradient(w * 0.5, h * 0.16, 10, w * 0.5, h * 0.22, w * 0.55);
+    lamp.addColorStop(0, 'rgba(232, 185, 74, 0.55)');
+    lamp.addColorStop(1, 'rgba(232, 185, 74, 0)');
+    ctx.fillStyle = lamp;
+    ctx.fillRect(0, 0, w, h);
+    for (let i = -6; i <= 8; i++) {
+      const z = -0.35 + i * 0.42;
+      const a = p(-1.7, -0.02, z);
+      const b = p(1.7, -0.02, z);
+      ctx.strokeStyle = i % 2 === 0 ? '#B67932' : '#D39A4A';
+      ctx.lineWidth = Math.max(1, 3 * a.s);
+      ctx.beginPath();
+      ctx.moveTo(a.x, a.y);
+      ctx.lineTo(b.x, b.y);
+      ctx.stroke();
+    }
   }
 
   const nearL = p(-RULES.halfWidth, 0, 0);
@@ -73,6 +140,7 @@ function drawStatic(ctx, w, h) {
   ctx.fillStyle = sheen;
   poly(ctx, [nearL, nearR, farR, farL]);
   ctx.fill();
+  paintTableWash(ctx, art && art.table, [nearL, nearR, farR, farL]);
 
   ctx.strokeStyle = PAPER;
   ctx.lineWidth = 2;
@@ -81,6 +149,11 @@ function drawStatic(ctx, w, h) {
   ctx.moveTo(edge[0].x, edge[0].y);
   for (let i = 1; i < edge.length; i++) ctx.lineTo(edge[i].x, edge[i].y);
   ctx.stroke();
+  ctx.strokeStyle = INK;
+  ctx.lineWidth = 2.5;
+  ctx.stroke();
+  ctx.strokeStyle = PAPER;
+  ctx.lineWidth = 2;
   const midL = p(-RULES.halfWidth, 0, RULES.netZ);
   const midR = p(RULES.halfWidth, 0, RULES.netZ);
   ctx.beginPath();
@@ -137,27 +210,90 @@ function drawStatic(ctx, w, h) {
   ctx.moveTo(netBotR.x, netBotR.y);
   ctx.lineTo(netTopR.x, netTopR.y);
   ctx.stroke();
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(netTopL.x, netTopL.y);
+  ctx.lineTo(netTopR.x, netTopR.y);
+  ctx.lineTo(netBotR.x, netBotR.y);
+  ctx.lineTo(netBotL.x, netBotL.y);
+  ctx.closePath();
+  ctx.stroke();
 
-  const vignette = ctx.createRadialGradient(w * 0.5, h * 0.55, w * 0.2, w * 0.5, h * 0.55, w * 0.75);
-  vignette.addColorStop(0, 'rgba(0, 0, 0, 0)');
-  vignette.addColorStop(1, 'rgba(0, 0, 0, 0.25)');
-  ctx.fillStyle = vignette;
+  if (!hall) {
+    const vignette = ctx.createRadialGradient(w * 0.5, h * 0.55, w * 0.2, w * 0.5, h * 0.55, w * 0.75);
+    vignette.addColorStop(0, 'rgba(0, 0, 0, 0)');
+    vignette.addColorStop(1, 'rgba(0, 0, 0, 0.25)');
+    ctx.fillStyle = vignette;
+    ctx.fillRect(0, 0, w, h);
+    paintGrain(ctx, w, h);
+  }
+}
+
+function paintGrain(ctx, w, h) {
+  ctx.save();
+  ctx.fillStyle = 'rgba(243, 233, 214, 0.05)';
   ctx.fillRect(0, 0, w, h);
+  for (let i = 0; i < 1600; i++) {
+    const x = ((i * 97) % 1000) / 1000 * w;
+    const y = ((i * 57 + (i % 11) * 13) % 1000) / 1000 * h;
+    ctx.globalAlpha = 0.05 + (i % 5) * 0.012;
+    ctx.fillStyle = i % 3 === 0 ? PAPER : INK;
+    ctx.fillRect(x, y, 1.15, 1.15);
+  }
+  ctx.restore();
 }
 
 export function createView(canvas) {
   const ctx = canvas.getContext('2d', { alpha: false });
   let layer = null;
   let key = '';
+  let dprLimit = RULES.dprCap;
   let trailCap = 0;
   const trail = [];
   const sparks = [];
   let ring = 0;
   let ringAt = null;
   let ghostSeen = 4;
+  let splat = null;
+  let splatKey = '';
+  let splatFade = 0;
+  let splatSeen = -1;
+  let splatFading = false;
+  let slash = null;
+  const art = {};
+  let neighbourSwing = null;
+
+  function preloadArt() {
+    for (const name of Object.keys(ART_FILES)) {
+      const img = new Image();
+      img.decoding = 'async';
+      img.onload = () => {
+        art[name] = img;
+        key = '';
+      };
+      img.onerror = () => {
+        art[name] = null;
+      };
+      img.src = new URL('./art/' + ART_FILES[name], import.meta.url).href;
+    }
+  }
+  preloadArt();
+
+  function noteNeighbour(state) {
+    const list = state.events || [];
+    for (let i = 0; i < list.length; i++) {
+      const ev = list[i];
+      if (ev.type === 'pock' && ev.who === 'neighbour') neighbourSwing = { t: ev.t, x: ev.x };
+    }
+  }
 
   function pixelRatio() {
-    return Math.min(RULES.dprCap, window.devicePixelRatio || 1);
+    return Math.min(RULES.dprCap, window.devicePixelRatio || 1, dprLimit);
+  }
+
+  function setDprCap(n) {
+    dprLimit = n;
+    key = '';
   }
 
   function resize() {
@@ -178,8 +314,17 @@ export function createView(canvas) {
     layer.height = Math.round(h * dpr);
     const g = layer.getContext('2d', { alpha: false });
     g.setTransform(dpr, 0, 0, dpr, 0, 0);
-    drawStatic(g, w, h);
+    drawStatic(g, w, h, art);
     key = next;
+    if (!splat || splatKey !== next) {
+      splat = document.createElement('canvas');
+      splat.width = layer.width;
+      splat.height = layer.height;
+      splatKey = next;
+      splatFade = 0;
+      splatSeen = -1;
+      splatFading = false;
+    }
   }
 
   function setTrailCap(n) {
@@ -203,6 +348,7 @@ export function createView(canvas) {
     const nudge = state.nudge || 0;
     ctx.setTransform(dpr, 0, 0, dpr, nudge + shake, shake * 0.3);
     ctx.drawImage(layer, 0, 0, w, h);
+    blitSplats(ctx, state, w, h, dpr);
     const ball = state.ball;
     const shadow = project(ball.x, 0, ball.z, w, h);
     const lift = Math.max(0, ball.y);
@@ -248,6 +394,9 @@ export function createView(canvas) {
     const spinAngle = state.time * (2 + spin * 6);
     const squash = state.squashed ? { x: 1.2, y: 0.8 } : { x: 1, y: 1 };
     const r = Math.max(4, 8 * body.s);
+    const glow = ballGlow();
+    const gr = r * 2.6;
+    ctx.drawImage(glow, body.x - gr, body.y - gr, gr * 2, gr * 2);
     ctx.save();
     ctx.translate(body.x, body.y);
     ctx.scale(squash.x, squash.y);
@@ -279,37 +428,144 @@ export function createView(canvas) {
       ctx.globalAlpha = 1;
     }
 
+    drawSlash(ctx, state, w, h);
     drawNeighbour(ctx, w, h, state);
     drawBat(ctx, w, h, state, pose);
     drawSparks(ctx, state, w, h);
     drawHud(ctx, w, h, state);
   }
 
+  function stampSplat(state, w, h, dpr) {
+    const land = state.lastLanding;
+    if (!splat || !land || land.t === splatSeen) return;
+    if (state.phase === 'pause' || state.phase === 'gameover') return;
+    splatSeen = land.t;
+    const g = splat.getContext('2d');
+    g.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const at = project(land.x, 0, land.z, w, h);
+    const kind = state.lastShot && state.lastShot.kind;
+    g.fillStyle = kind === 'smash' ? EMBER : kind === 'push' ? SEA : kind === 'drive' ? OCHRE : INK;
+    g.globalAlpha = 0.22;
+    g.beginPath();
+    g.ellipse(at.x, at.y, Math.max(4, 8 * at.s), Math.max(2, 3.4 * at.s), 0.3, 0, Math.PI * 2);
+    g.fill();
+    g.globalAlpha = 1;
+    splatFade = 1;
+    splatFading = false;
+  }
+
+  function blitSplats(ctx, state, w, h, dpr) {
+    stampSplat(state, w, h, dpr);
+    const ending = state.phase === 'pause' || state.phase === 'gameover';
+    if (ending && splatFade > 0) splatFading = true;
+    if (splatFading) {
+      splatFade = Math.max(0, splatFade - (1 / 60) / 0.6);
+      if (splatFade === 0 && splat) {
+        const g = splat.getContext('2d');
+        g.setTransform(1, 0, 0, 1, 0, 0);
+        g.clearRect(0, 0, splat.width, splat.height);
+        splatFading = false;
+        splatSeen = -1;
+      }
+    }
+    if (!(splatFade > 0) || !splat) return;
+    ctx.save();
+    ctx.globalAlpha = splatFade;
+    ctx.drawImage(splat, 0, 0, w, h);
+    ctx.restore();
+  }
+
+  function drawSlash(ctx, state, w, h) {
+    const shot = state.lastShot;
+    if (shot && shot.struckAt != null && shot.band !== 'miss' && state.lastContact) {
+      if (!slash || slash.id !== shot.struckAt) {
+        const kind = shot.kind;
+        slash = {
+          id: shot.struckAt,
+          t: shot.struckAt,
+          perfect: shot.band === 'perfect',
+          color: kind === 'push' ? SEA : kind === 'smash' ? EMBER : OCHRE,
+          len: 26 + Math.min(36, (shot.speed || 8) * 1.4),
+          dir: shot.pullDeg < 0 ? -1 : 1,
+        };
+      }
+    }
+    if (!slash || !state.lastContact) return;
+    const age = state.time - slash.t;
+    if (age < 0 || age > 0.25) return;
+    const at = project(state.lastContact.x, state.lastContact.y, state.lastContact.z, w, h);
+    const alpha = 1 - age / 0.25;
+    ctx.save();
+    ctx.translate(at.x, at.y);
+    ctx.rotate(slash.dir * 0.5);
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    if (slash.perfect) {
+      ctx.globalAlpha = alpha * 0.95;
+      ctx.strokeStyle = GOLD;
+      ctx.lineWidth = 7;
+      brush(ctx, slash.len + 4);
+    }
+    ctx.globalAlpha = alpha;
+    ctx.strokeStyle = slash.color;
+    ctx.lineWidth = 3.2;
+    brush(ctx, slash.len);
+    ctx.restore();
+  }
+
   function drawNeighbour(ctx, w, h, state) {
+    noteNeighbour(state);
     const ball = state.ball;
     const lean = Math.max(-0.35, Math.min(0.35, ball.x / RULES.halfWidth));
     const base = project(lean * 0.45, 0, RULES.tableLength + 0.05, w, h);
     const tall = 60;
     const huff = state.lastPointWinner === 'neighbour' && state.phase === 'pause' ? -6 : 0;
     const swinging = state.phase === 'outgoing' && ball.z > RULES.netZ;
+    const poseName = neighbourPose(neighbourSwing, state.time);
+    const sprite = imageReady(art[poseName]) ? art[poseName] : null;
     ctx.save();
     ctx.translate(base.x, base.y);
     ctx.fillStyle = 'rgba(43,42,51,0.25)';
     ctx.beginPath();
     ctx.ellipse(0, 2, 16, 5, 0, 0, Math.PI * 2);
     ctx.fill();
+    if (sprite) {
+      const ih = tall;
+      const iw = ih * (sprite.naturalWidth / sprite.naturalHeight);
+      ctx.drawImage(sprite, -iw * 0.5, -ih + huff, iw, ih);
+      ctx.restore();
+      return;
+    }
     ctx.fillStyle = '#3E4C59';
     ctx.fillRect(-11, -tall + 28 + huff, 22, 26);
+    ctx.strokeStyle = INK;
+    ctx.lineWidth = 1.25;
+    ctx.strokeRect(-11, -tall + 28 + huff, 22, 26);
     ctx.fillStyle = OCHRE;
     ctx.fillRect(-12, -tall + 24 + huff, 24, 10);
     ctx.fillStyle = PAPER;
     ctx.beginPath();
     ctx.arc(0, -tall + 16 + huff, 8, 0, Math.PI * 2);
     ctx.fill();
+    ctx.strokeStyle = INK;
+    ctx.lineWidth = 1.25;
+    ctx.stroke();
+    ctx.fillStyle = INK;
+    ctx.beginPath();
+    ctx.arc(-3, -tall + 16 + huff, 1.05, 0, Math.PI * 2);
+    ctx.arc(3.1, -tall + 15.4 + huff, 1.05, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(0.4, -tall + 19.2 + huff, 2.4, 0.25, Math.PI - 0.15);
+    ctx.stroke();
     ctx.fillStyle = EMBER;
     ctx.beginPath();
     ctx.ellipse(0, -tall + 12 + huff, 10, 4, 0, 0, Math.PI * 2);
     ctx.fill();
+    ctx.strokeStyle = INK;
+    ctx.stroke();
+    ctx.fillStyle = GOLD;
+    ctx.fillRect(-1.2, -tall + 34 + huff, 2.4, 2.4);
     ctx.strokeStyle = WOOD;
     ctx.lineWidth = 3;
     ctx.beginPath();
@@ -325,24 +581,41 @@ export function createView(canvas) {
   }
 
   function drawBat(ctx, w, h, state, pose) {
-    const tracked = state.phase === 'incoming' ? state.ball.x : 0;
-    const anchor = project(tracked * 0.85, 0.02, 0.05, w, h);
-    const width = Math.min(w, h) * (w > h * 1.15 ? 0.28 : 0.4);
-    const tilt = ((pose && pose.tiltX) || 0) / RULES.aimGamma;
-    const roll = ((pose && pose.roll) || 0) / 400;
-    const age = pose && pose.swingAt ? (performance.now() - pose.swingAt) / 120 : 2;
+    const held = state.bat || { x: 0, depth: RULES.batHomeZ, roll: 0 };
+    const face = batPresentation({
+      roll: pose && Number.isFinite(pose.roll) ? pose.roll : held.roll,
+      tiltY: pose && pose.tiltY,
+      push: pose && pose.push,
+      x: held.x,
+    });
+    const z = Math.max(RULES.batBackZ - 0.02, Math.min(RULES.batInZ + RULES.swingPush, held.depth + face.pushZ));
+    const anchor = project(held.x, batHover(held.x), z, w, h);
+    const width = Math.min(w, h) * (w > h * 1.15 ? 0.22 : 0.32) * (0.62 + 0.38 * anchor.s);
+    const age = pose && pose.swingAt ? (performance.now() - pose.swingAt) / 140 : 2;
     const sweep = age >= 0 && age <= 1 ? Math.sin(age * Math.PI) : 0;
     const dir = pose && pose.swingDir === 'backhand' ? -1 : 1;
+    const shadow = project(held.x, 0, z, w, h);
     ctx.save();
-    ctx.translate(anchor.x, Math.min(h - RULES.safePx - 10, anchor.y - 8));
-    ctx.rotate(tilt * 0.45 + dir * sweep * 0.9);
-    ctx.transform(1, roll * 0.6, 0, 1, 0, 0);
-    if (sweep > 0) {
-      ctx.strokeStyle = 'rgba(181, 71, 46, 0.35)';
-      ctx.lineWidth = 18;
-      ctx.beginPath();
-      ctx.arc(0, 10, width * 0.28, Math.PI, Math.PI * 1.6);
-      ctx.stroke();
+    ctx.fillStyle = 'rgba(20, 16, 12, 0.10)';
+    ctx.beginPath();
+    ctx.ellipse(shadow.x, shadow.y + 3, Math.max(14, width * 0.5), Math.max(5, width * 0.14), 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(20, 16, 12, 0.16)';
+    ctx.beginPath();
+    ctx.ellipse(shadow.x, shadow.y + 1, Math.max(8, width * 0.32), Math.max(3, width * 0.08), 0, 0, Math.PI * 2);
+    ctx.fill();
+    const hang = width * 0.62;
+    const y = Math.min(anchor.y, h - RULES.safePx - hang);
+    ctx.translate(anchor.x, y);
+    ctx.rotate((face.rollDeg * Math.PI) / 180 + dir * sweep * 0.22);
+    ctx.transform(1, 0, face.shear, face.scaleY, 0, 0);
+    const batSprite = imageReady(art.bat) ? art.bat : null;
+    if (batSprite) {
+      const bh = width * 1.15;
+      const bw = bh * (batSprite.naturalWidth / batSprite.naturalHeight);
+      ctx.drawImage(batSprite, -bw * 0.5, -bh * 0.58, bw, bh);
+      ctx.restore();
+      return;
     }
     ctx.fillStyle = '#6B3A22';
     ctx.fillRect(-7, 8, 14, width * 0.38);
@@ -354,6 +627,10 @@ export function createView(canvas) {
     ctx.fillStyle = EMBER;
     roundRect(ctx, -width * 0.44, -width * 0.36, width * 0.88, width * 0.5, 8);
     ctx.fill();
+    ctx.strokeStyle = INK;
+    ctx.lineWidth = 2;
+    roundRect(ctx, -width * 0.5, -width * 0.42, width, width * 0.62, 10);
+    ctx.stroke();
     ctx.fillStyle = 'rgba(255,255,255,0.18)';
     ctx.beginPath();
     ctx.ellipse(-width * 0.12, -width * 0.16, width * 0.12, width * 0.08, -0.4, 0, Math.PI * 2);
@@ -390,11 +667,14 @@ export function createView(canvas) {
 
   function drawHud(ctx, w, h, state) {
     ctx.fillStyle = INK;
-    ctx.font = '12px "DM Sans", "Gill Sans", sans-serif';
-    ctx.textAlign = 'left';
-    ctx.fillText('You ' + state.score.you, 12, 28);
-    ctx.textAlign = 'right';
-    ctx.fillText(state.score.neighbour + ' Neighbour', w - 64, 28);
+    if (state.phase === 'count' && state.count) {
+      ctx.textAlign = 'center';
+      ctx.fillStyle = INK;
+      ctx.font = '600 140px "Fraunces", Palatino, serif';
+      ctx.fillText(String(state.count), w * 0.5, h * 0.40);
+      ctx.font = '600 28px "Fraunces", Palatino, serif';
+      ctx.fillText('Ready', w * 0.5, h * 0.40 + 44);
+    }
     if (state.feedback && state.feedback.length) {
       ctx.textAlign = 'center';
       ctx.font = '600 16px "Fraunces", Palatino, serif';
@@ -413,7 +693,37 @@ export function createView(canvas) {
     }
   }
 
-  return { frame, resize, setTrailCap, pixelRatio, ghostCount: () => ghostSeen };
+  return { frame, resize, setTrailCap, setDprCap, pixelRatio, ghostCount: () => ghostSeen };
+}
+
+let glowSprite = null;
+function ballGlow() {
+  if (glowSprite) return glowSprite;
+  glowSprite = document.createElement('canvas');
+  glowSprite.width = 64;
+  glowSprite.height = 64;
+  const g = glowSprite.getContext('2d');
+  const grad = g.createRadialGradient(32, 32, 4, 32, 32, 32);
+  grad.addColorStop(0, 'rgba(243, 233, 214, 0.55)');
+  grad.addColorStop(1, 'rgba(243, 233, 214, 0)');
+  g.fillStyle = grad;
+  g.fillRect(0, 0, 64, 64);
+  return glowSprite;
+}
+
+function brush(ctx, len) {
+  ctx.beginPath();
+  for (let i = 0; i < 6; i++) {
+    const t0 = i / 6;
+    const t1 = (i + 1) / 6;
+    const y0 = -len * 0.5 + len * t0;
+    const y1 = -len * 0.5 + len * t1;
+    const bow0 = Math.sin(t0 * Math.PI) * len * 0.16;
+    const bow1 = Math.sin(t1 * Math.PI) * len * 0.16;
+    ctx.moveTo(bow0 * 0.35, y0);
+    ctx.quadraticCurveTo(len * 0.2, (y0 + y1) * 0.5, bow1, y1);
+  }
+  ctx.stroke();
 }
 
 function roundRect(ctx, x, y, w, h, r) {

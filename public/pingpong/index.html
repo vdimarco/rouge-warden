@@ -50,14 +50,42 @@
         min-width: 48px;
         min-height: 48px;
       }
-      #recenter {
+      .topbar {
         position: absolute;
         z-index: 4;
-        top: max(8px, env(safe-area-inset-top));
-        right: max(8px, env(safe-area-inset-right));
-        min-width: 44px;
-        min-height: 44px;
-        padding: 10px 12px;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 56px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 4px max(8px, env(safe-area-inset-right)) 4px max(8px, env(safe-area-inset-left));
+        box-sizing: border-box;
+        pointer-events: none;
+      }
+      .topbar p {
+        margin: 0;
+        display: flex;
+        align-items: center;
+        box-sizing: border-box;
+        height: 48px;
+        padding: 0 14px;
+        border-radius: 999px;
+        background: #2B2A33;
+        color: #F3E9D6;
+        font: 600 12px/1 "DM Sans", "Gill Sans", sans-serif;
+        white-space: nowrap;
+      }
+      #score-them { margin-left: auto; }
+      #recenter {
+        position: static;
+        flex: none;
+        pointer-events: auto;
+        min-width: 48px;
+        min-height: 48px;
+        height: 48px;
+        padding: 0 14px;
         border: 0;
         border-radius: 999px;
         background: #2B2A33;
@@ -156,7 +184,11 @@
   <body>
     <h1>Table Tennis</h1>
     <canvas id="table" aria-label="Table tennis. The phone is the bat."></canvas>
-    <button id="recenter" type="button">Center</button>
+    <header class="topbar">
+      <p id="score-you">You 0</p>
+      <p id="score-them">0 Neighbour</p>
+      <button id="recenter" type="button">Center</button>
+    </header>
     <button id="again" type="button" hidden>Play again</button>
     <div id="gate">
       <h2>Table Tennis</h2>

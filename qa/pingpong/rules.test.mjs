@@ -127,15 +127,15 @@ test('feel numbers', () => {
   assert.equal(RULES.accelBoostMul, 1.1);
   assert.equal(RULES.dropAccel, 40);
   assert.equal(RULES.calibrate, 0.3);
-  assert.equal(RULES.hookServe, 5);
+  assert.equal(RULES.serveSpeed, 3.5);
   assert.equal(RULES.neighbourDelay, 0.26);
   assert.equal(RULES.neighbourError, 0.18);
   assert.equal(RULES.neighbourSpeedMin, 6);
-  assert.equal(RULES.neighbourSpeedMax, 9);
+  assert.equal(RULES.neighbourSpeedMax, 7);
   assert.equal(RULES.neighbourSpread, 0.3);
   assert.equal(RULES.vibrateHit, 15);
   assert.equal(RULES.vibrateSmash, 30);
-  assert.equal(RULES.assist, 1);
+  assert.equal(RULES.assist, 0.15);
   assert.equal(RULES.dprCap, 2);
   assert.equal(RULES.trailDrive, 4);
   assert.equal(RULES.trailSmash, 8);
