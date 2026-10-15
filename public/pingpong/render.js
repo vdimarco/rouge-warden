@@ -1,4 +1,5 @@
 // The room is painted once. Each frame copies it, then draws the ball, shadow, trail, bat, Neighbour and sparks.
+// Painted sheets in ./art/ replace the hall, the Neighbour and the bat when they load. A miss falls back to the code drawing.
 
 import { batHover, batPresentation } from './motion.js';
 import { RULES } from './rules.js';
@@ -12,6 +13,61 @@ const SMOG = '#8A8378';
 const GOLD = '#E8B94A';
 const EMBER = '#B5472E';
 const WOOD = '#8C5A32';
+
+const ART_FILES = {
+  hall: 'hall-backdrop.webp',
+  table: 'table-texture.webp',
+  ready: 'neighbour-ready.webp',
+  forehand: 'neighbour-forehand.webp',
+  backhand: 'neighbour-backhand.webp',
+  bat: 'player-bat.webp',
+};
+
+// The hall sheet is 780 by 1398 with a thin paper frame. Crop past that frame.
+const HALL_CROP = { left: 12 / 780, top: 24 / 1398, right: 12 / 780, bottom: 26 / 1398 };
+
+// The forehand sheet holds the bat on the right, so a ball on the right uses it.
+export function neighbourPose(swing, time) {
+  if (!swing || !Number.isFinite(time) || !Number.isFinite(swing.t)) return 'ready';
+  const age = time - swing.t;
+  if (!(age >= 0 && age < 0.25)) return 'ready';
+  return swing.x < 0 ? 'backhand' : 'forehand';
+}
+
+function imageReady(img) {
+  return !!(img && img.complete && img.naturalWidth);
+}
+
+function drawCover(ctx, img, w, h, crop) {
+  const sx = Math.round(img.naturalWidth * crop.left);
+  const sy = Math.round(img.naturalHeight * crop.top);
+  const sw = Math.max(1, Math.round(img.naturalWidth * (1 - crop.left - crop.right)));
+  const sh = Math.max(1, Math.round(img.naturalHeight * (1 - crop.top - crop.bottom)));
+  const scale = Math.max(w / sw, h / sh);
+  const dw = sw * scale;
+  const dh = sh * scale;
+  ctx.drawImage(img, sx, sy, sw, sh, (w - dw) / 2, (h - dh) / 2, dw, dh);
+}
+
+function paintTableWash(ctx, img, pts) {
+  if (!imageReady(img)) return;
+  let minX = Infinity;
+  let minY = Infinity;
+  let maxX = -Infinity;
+  let maxY = -Infinity;
+  for (const p of pts) {
+    if (p.x < minX) minX = p.x;
+    if (p.y < minY) minY = p.y;
+    if (p.x > maxX) maxX = p.x;
+    if (p.y > maxY) maxY = p.y;
+  }
+  ctx.save();
+  poly(ctx, pts);
+  ctx.clip();
+  ctx.globalAlpha = 0.35;
+  ctx.drawImage(img, minX, minY, Math.max(1, maxX - minX), Math.max(1, maxY - minY));
+  ctx.restore();
+}
 
 export function project(x, y, z, w, h) {
   const depth = Math.max(-0.05, Math.min(1.2, z / RULES.tableLength));
@@ -33,27 +89,31 @@ function poly(ctx, pts) {
   ctx.closePath();
 }
 
-function drawStatic(ctx, w, h) {
+function drawStatic(ctx, w, h, art) {
+  const hall = imageReady(art && art.hall);
   ctx.fillStyle = SMOG;
   ctx.fillRect(0, 0, w, h);
 
-  const lamp = ctx.createRadialGradient(w * 0.5, h * 0.16, 10, w * 0.5, h * 0.22, w * 0.55);
-  lamp.addColorStop(0, 'rgba(232, 185, 74, 0.55)');
-  lamp.addColorStop(1, 'rgba(232, 185, 74, 0)');
-  ctx.fillStyle = lamp;
-  ctx.fillRect(0, 0, w, h);
-
   const p = (x, y, z) => project(x, y, z, w, h);
-  for (let i = -6; i <= 8; i++) {
-    const z = -0.35 + i * 0.42;
-    const a = p(-1.7, -0.02, z);
-    const b = p(1.7, -0.02, z);
-    ctx.strokeStyle = i % 2 === 0 ? '#B67932' : '#D39A4A';
-    ctx.lineWidth = Math.max(1, 3 * a.s);
-    ctx.beginPath();
-    ctx.moveTo(a.x, a.y);
-    ctx.lineTo(b.x, b.y);
-    ctx.stroke();
+  if (hall) {
+    drawCover(ctx, art.hall, w, h, HALL_CROP);
+  } else {
+    const lamp = ctx.createRadialGradient(w * 0.5, h * 0.16, 10, w * 0.5, h * 0.22, w * 0.55);
+    lamp.addColorStop(0, 'rgba(232, 185, 74, 0.55)');
+    lamp.addColorStop(1, 'rgba(232, 185, 74, 0)');
+    ctx.fillStyle = lamp;
+    ctx.fillRect(0, 0, w, h);
+    for (let i = -6; i <= 8; i++) {
+      const z = -0.35 + i * 0.42;
+      const a = p(-1.7, -0.02, z);
+      const b = p(1.7, -0.02, z);
+      ctx.strokeStyle = i % 2 === 0 ? '#B67932' : '#D39A4A';
+      ctx.lineWidth = Math.max(1, 3 * a.s);
+      ctx.beginPath();
+      ctx.moveTo(a.x, a.y);
+      ctx.lineTo(b.x, b.y);
+      ctx.stroke();
+    }
   }
 
   const nearL = p(-RULES.halfWidth, 0, 0);
@@ -74,6 +134,7 @@ function drawStatic(ctx, w, h) {
   ctx.fillStyle = sheen;
   poly(ctx, [nearL, nearR, farR, farL]);
   ctx.fill();
+  paintTableWash(ctx, art && art.table, [nearL, nearR, farR, farL]);
 
   ctx.strokeStyle = PAPER;
   ctx.lineWidth = 2;
@@ -152,12 +213,14 @@ function drawStatic(ctx, w, h) {
   ctx.closePath();
   ctx.stroke();
 
-  const vignette = ctx.createRadialGradient(w * 0.5, h * 0.55, w * 0.2, w * 0.5, h * 0.55, w * 0.75);
-  vignette.addColorStop(0, 'rgba(0, 0, 0, 0)');
-  vignette.addColorStop(1, 'rgba(0, 0, 0, 0.25)');
-  ctx.fillStyle = vignette;
-  ctx.fillRect(0, 0, w, h);
-  paintGrain(ctx, w, h);
+  if (!hall) {
+    const vignette = ctx.createRadialGradient(w * 0.5, h * 0.55, w * 0.2, w * 0.5, h * 0.55, w * 0.75);
+    vignette.addColorStop(0, 'rgba(0, 0, 0, 0)');
+    vignette.addColorStop(1, 'rgba(0, 0, 0, 0.25)');
+    ctx.fillStyle = vignette;
+    ctx.fillRect(0, 0, w, h);
+    paintGrain(ctx, w, h);
+  }
 }
 
 function paintGrain(ctx, w, h) {
@@ -191,6 +254,32 @@ export function createView(canvas) {
   let splatSeen = -1;
   let splatFading = false;
   let slash = null;
+  const art = {};
+  let neighbourSwing = null;
+
+  function preloadArt() {
+    for (const name of Object.keys(ART_FILES)) {
+      const img = new Image();
+      img.decoding = 'async';
+      img.onload = () => {
+        art[name] = img;
+        key = '';
+      };
+      img.onerror = () => {
+        art[name] = null;
+      };
+      img.src = new URL('./art/' + ART_FILES[name], import.meta.url).href;
+    }
+  }
+  preloadArt();
+
+  function noteNeighbour(state) {
+    const list = state.events || [];
+    for (let i = 0; i < list.length; i++) {
+      const ev = list[i];
+      if (ev.type === 'pock' && ev.who === 'neighbour') neighbourSwing = { t: ev.t, x: ev.x };
+    }
+  }
 
   function pixelRatio() {
     return Math.min(RULES.dprCap, window.devicePixelRatio || 1, dprLimit);
@@ -219,7 +308,7 @@ export function createView(canvas) {
     layer.height = Math.round(h * dpr);
     const g = layer.getContext('2d', { alpha: false });
     g.setTransform(dpr, 0, 0, dpr, 0, 0);
-    drawStatic(g, w, h);
+    drawStatic(g, w, h, art);
     key = next;
     if (!splat || splatKey !== next) {
       splat = document.createElement('canvas');
@@ -419,18 +508,28 @@ export function createView(canvas) {
   }
 
   function drawNeighbour(ctx, w, h, state) {
+    noteNeighbour(state);
     const ball = state.ball;
     const lean = Math.max(-0.35, Math.min(0.35, ball.x / RULES.halfWidth));
     const base = project(lean * 0.45, 0, RULES.tableLength + 0.05, w, h);
     const tall = 60;
     const huff = state.lastPointWinner === 'neighbour' && state.phase === 'pause' ? -6 : 0;
     const swinging = state.phase === 'outgoing' && ball.z > RULES.netZ;
+    const poseName = neighbourPose(neighbourSwing, state.time);
+    const sprite = imageReady(art[poseName]) ? art[poseName] : null;
     ctx.save();
     ctx.translate(base.x, base.y);
     ctx.fillStyle = 'rgba(43,42,51,0.25)';
     ctx.beginPath();
     ctx.ellipse(0, 2, 16, 5, 0, 0, Math.PI * 2);
     ctx.fill();
+    if (sprite) {
+      const ih = tall;
+      const iw = ih * (sprite.naturalWidth / sprite.naturalHeight);
+      ctx.drawImage(sprite, -iw * 0.5, -ih + huff, iw, ih);
+      ctx.restore();
+      return;
+    }
     ctx.fillStyle = '#3E4C59';
     ctx.fillRect(-11, -tall + 28 + huff, 22, 26);
     ctx.strokeStyle = INK;
@@ -504,6 +603,14 @@ export function createView(canvas) {
     ctx.translate(anchor.x, y);
     ctx.rotate((face.rollDeg * Math.PI) / 180 + dir * sweep * 0.22);
     ctx.transform(1, 0, face.shear, face.scaleY, 0, 0);
+    const batSprite = imageReady(art.bat) ? art.bat : null;
+    if (batSprite) {
+      const bh = width * 1.15;
+      const bw = bh * (batSprite.naturalWidth / batSprite.naturalHeight);
+      ctx.drawImage(batSprite, -bw * 0.5, -bh * 0.58, bw, bh);
+      ctx.restore();
+      return;
+    }
     ctx.fillStyle = '#6B3A22';
     ctx.fillRect(-7, 8, 14, width * 0.38);
     ctx.fillStyle = INK;

@@ -69,3 +69,12 @@ Casual motion SHALL pull the bat's x 15% of the way toward the incoming ball's x
 - WHEN the pose is at x 0.74 and the ball is at x 0
 - THEN the assisted x stays closer to 0.74 than to 0
 - AND it is still past 0.6 m
+
+### Requirement: Painted sheets sit behind the code table
+When the hall sheet loads, it SHALL be the room behind the table, cover-fit to the portrait canvas with its paper frame cropped away. The table, net, ball, shadow and slash SHALL stay drawn in code on top of that room. The Neighbour SHALL use the ready sheet, and a forehand or backhand sheet for about 250 ms after he hits that side. A lost point SHALL nudge him up. The player bat SHALL use its sheet with the same tilt, rotation and shadow. A table texture MAY wash the table top at about 35% opacity. Any sheet that fails to load SHALL leave that part on the code drawing.
+
+#### Scenario: The swing pose
+- WHEN the Neighbour hits a ball on the right, and 250 ms pass
+- THEN the pose is the forehand sheet during that hold
+- AND a ball on the left uses the backhand sheet
+- AND once the hold ends he is ready again

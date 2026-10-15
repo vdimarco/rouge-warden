@@ -9,3 +9,4 @@
 - [x] Replace the 16 ms pole with a power curve, a critically damped spring, and a 2 s drift. Shrink depth to a lean plus a bounce step. Hover the bat. Put the new constants on `BAT`.
 - [x] Ink, grain, glow, a faced Neighbour, and the hit slash, drawn so the static layer stays one blit. Drop to 1.5x if the frame rate needs it.
 - [x] Tests for the count-in, the serve speed, the spring, and the drift. Screenshots of the count, the slash, and the bat at the sides.
+- [x] Paint the hall, Neighbour and bat from the sheets, with a code fallback, and keep the tests green.

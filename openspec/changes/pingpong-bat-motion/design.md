@@ -63,6 +63,12 @@ The room was already the look-sheet palette: deep sea-blue table, ochre floor, e
 
 The device pixel cap stays 2. If the frame rate sits under 60 for three samples, the trail shortens and the cap drops to 1.5.
 
+## Painted sheets
+
+The hall, Neighbour and bat sheets were supplied with this change. No published shader or engine writeup fit a request to drop those exact paintings in, so the room stays a single static blit. The hall is cover-fit to the portrait canvas after a crop past its paper frame (about 12 px on the sides and 24 px on the top and bottom of the 780 by 1398 sheet). The code table, net, ball, shadow and slash stay on top, so the ball path is the flat sea table and not the painting. A table texture washes that top at 35% opacity. The ball shadow is still drawn after the blit, darker than the wash.
+
+The Neighbour is the ready sheet, swapped for the forehand or backhand sheet for 250 ms after his strike. The forehand sheet holds the bat on the right, so a ball with x >= 0 uses it, and x < 0 uses the backhand sheet. He is 60 px tall at the far end. A point he wins still nudges the sprite up by 6 px. The player bat uses the same translate, roll, shear and pitch as the code bat, with the neck of the sheet on that origin, and the same soft shadow. Each image is preloaded. If one fails, that part falls back to the code drawing and the others stay.
+
 ## Checks
 
 `qa/pingpong/bat.test.mjs` covers the width, the short lean, the dead zone, the spring (no overshoot, settled by about 80 ms), the drift, the assist weight, the face, and a hit that uses the bat. `qa/pingpong/rally.test.mjs` covers the count-in (the ball stays put, three ticks) and the 3.5 m/s serve. The older rules, gate, and win-rate tests stay. Screenshots at 390x844 show the count, a slash in a rally, and the bat at both sides. This machine cannot tilt a real iPhone; the mapping is what `__test.tilt` drives.
