@@ -4,4 +4,5 @@
 - [x] Keep Featured, Plays, Views, Likes, and Time on their current ranking
 - [x] Wrap the rank row on narrow screens so the 44px controls stay on screen
 - [x] Check both orders, the default order, reload persistence, console errors, and 390 and 1280 layouts
+- [x] Retry a failed date read when New or Updated is selected, without overlapping reads
 - [ ] The OpenSpec CLI is not installed, so `openspec validate` could not run

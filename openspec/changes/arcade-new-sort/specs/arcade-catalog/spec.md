@@ -19,6 +19,10 @@ The All Games catalog on `/` SHALL offer New and Updated in the existing rank ro
 - **WHEN** a visitor selects Updated and reloads the page
 - **THEN** Updated is still selected and the card order is the same
 
+#### Scenario: A failed date read can be tried again
+- **WHEN** the date file fails to load, and the visitor selects New or Updated
+- **THEN** the page reads the file again, sharing one read while that request is in flight, and a failure leaves the next selection free to try once more
+
 #### Scenario: Phone width
 - **WHEN** All Games is open at 390×844
 - **THEN** New and Updated are on screen, each at least 44px on the shorter side, and the page does not scroll sideways
