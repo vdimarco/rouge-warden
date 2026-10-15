@@ -25,6 +25,16 @@ Portrait maps the player to the bottom. A wide viewport turns the court so the p
 
 The machine stands in the Cottage group, last, after In Full Swing. The title is Lawn Tennis at the Cottage, so that row is the match. The Lab stays at 17 machines. The switcher uses the same id (`tennis`) and the same name (`Lawn Tennis`). The screen art is a small SVG in the look-sheet palette. It is not a painted WebP.
 
+## Phone controls
+
+Tilt uses a new velocity, not the old absolute steer. Gamma moves sideways. Beta moves toward the net or the baseline at 40 percent of that speed. A 3 degree dead zone and full speed at 25 degrees (15 or 35 from the settings cog) sit on a low pass. The casual magnet is 0.6 for the first three hits, then 0.35, 0.2, and 0.1, and it is 0 on pro. It only helps when the tilt is quiet or already aimed at the ball.
+
+A flick over 250 degrees per second swings at once. The opening lob also accepts 150. Strength picks drop, drive, or smash. Timing still picks the angle. The swing freezes tilt input for 250 ms and then ignores another flick for 350 ms. Over 900 on a low ball is a hard drive.
+
+The gate is flat CSS in the same palette. No outside painting article was adapted. The tap handler calls `DeviceMotionEvent.requestPermission`, `DeviceOrientationEvent.requestPermission`, and `AudioContext.resume` before any await. Sounds are oscillators and a noise buffer.
+
+`?fast=1` may run many steps in one slow frame so the clock does not fall behind. Arrow keys and A/D use the full run speed out to the sideline. A drag that steered does not also swing.
+
 ## Checks
 
 `qa/tennis/rally.test.mjs` imports the module and drives `createTest`, the same object the page assigns to `window.__test`. It does not need the static server. Browser screenshots are a separate pass.

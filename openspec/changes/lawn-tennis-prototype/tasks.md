@@ -5,3 +5,4 @@
 - [x] Capture phone and desktop screenshots for the pull request. Chromium at 390x844, 360x640, 320x568, and 1280x800. A real phone was not used.
 - [x] OpenSpec CLI is not installed here, so the change was not validated with `openspec validate`.
 - [x] Add the Lawn Tennis cabinet to the Cottage group, after In Full Swing, with a matching switcher entry and `data-game="tennis"` on the game page.
+- [ ] Add tilt, flick, the garden gate, synthesized sound, and the phone bug fixes. Cover them in `qa/tennis/tilt.test.mjs`. Screenshot the gate at 390, 360, and 320.

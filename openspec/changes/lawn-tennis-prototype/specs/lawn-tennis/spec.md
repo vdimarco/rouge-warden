@@ -64,3 +64,28 @@ The Cottage Arcade SHALL show a Lawn Tennis machine in the Cottage group, after 
 #### Scenario: Same name in the switcher
 - **WHEN** the arcade page and the game switcher are read
 - **THEN** both call the machine Lawn Tennis and both use the id tennis
+
+### Requirement: Tilt and flick
+On a phone the player SHALL move by tilting. Gamma moves sideways, with a 3 degree dead zone and full speed at 25 degrees. Beta moves forward and back at 40 percent of that speed. A flick at or above 250 degrees per second SHALL swing. Peaks from 250 to 450 are a drop, 450 to 900 a drive, and above 900 a smash when the ball is high or in the front half. Above 900 on a low ball SHALL be a hard drive. Timing SHALL still set the angle. A second flick within 350 ms SHALL be ignored, and tilt input SHALL stay frozen for 250 ms after a swing.
+
+#### Scenario: Dead zone and full speed
+- **WHEN** tilt is 2 degrees
+- **THEN** the player stays still, and at 25 degrees the player runs at full speed
+
+#### Scenario: Flick bands
+- **WHEN** flicks of 300, 600, and 1000 degrees per second are injected
+- **THEN** the shots are drop, drive, and smash
+
+### Requirement: Gate, sound, and fallback
+The first phone screen SHALL be a garden gate reading "Tap to step onto the court". That tap SHALL call the motion and orientation permission requests and resume the AudioContext in the same call, before any wait. Denied or missing motion SHALL fall back to touch. Desktop SHALL skip the gate and use the keyboard and mouse. `?input=tilt` SHALL skip the gate and accept injected tilt. Sounds SHALL be synthesized. A flick SHALL whoosh even on a miss.
+
+#### Scenario: Same call stack
+- **WHEN** the gate handler runs
+- **THEN** permission is requested and the audio context is created and resumed before the handler returns
+
+### Requirement: Phone bug fixes
+Arrow keys SHALL be able to reach a wide ball. A drag used to steer SHALL NOT also swing. `?fast=1` SHALL catch up on a slow frame instead of staying behind.
+
+#### Scenario: Wide ball
+- **WHEN** the player holds a sideline direction
+- **THEN** the player reaches the edge of the court, past the old short steer target
