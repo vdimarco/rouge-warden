@@ -46,6 +46,7 @@
         touch-action: none;
       }
       #recenter, #again, .arcade-links a, .arcade-links button, #gate-btn {
+        box-sizing: border-box;
         min-width: 48px;
         min-height: 48px;
       }
@@ -116,6 +117,18 @@
         max-width: 34em;
         font-size: 14px;
         line-height: 1.4;
+      }
+      @media (max-height: 420px) {
+        #gate {
+          justify-content: flex-start;
+          padding: 8px 16px 8px;
+          gap: 4px;
+          overflow: auto;
+        }
+        #gate h2 { font-size: 20px; }
+        #paddle { width: 36px; height: 46px; }
+        #gate p { font-size: 12px; line-height: 1.2; }
+        #gate-btn { padding: 10px 16px; }
       }
       .arcade-links {
         position: absolute;

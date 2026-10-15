@@ -36,4 +36,4 @@ Every voice is an oscillator or a noise buffer. The bat is a 1.2 kHz blip plus n
 
 ## Checks
 
-`qa/pingpong/` imports the modules in Node. No browser is required for the numbers, the 8 cm line, the hook, or the 1,000-point win rate. Screenshots and the throttled frame rate need the static server and Chromium.
+`qa/pingpong/` imports the modules in Node. No browser is required for the numbers, the 8 cm line, the hook, or the 1,000-point win rate. Screenshots and the throttled frame rate need the static server and Chromium. On this machine, a 390-wide view at devicePixelRatio 2 with 4x CPU throttling stays around 50 fps. The frame's own script stays under 2 ms, and cutting the trail to 2 ghosts does not raise it. The same rally at devicePixelRatio 1 holds 60. If the frame meter stays under 60, the view still drops the trail to 2 ghosts.

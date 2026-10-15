@@ -50,7 +50,12 @@ if (opts.skipGate && gate) gate.hidden = true;
 
 let acc = 0;
 let last = performance.now();
+let frozen = false;
 function loop(now) {
+  if (frozen) {
+    requestAnimationFrame(loop);
+    return;
+  }
   const planned = planFrame(acc, (now - last) / 1000, opts.fast);
   acc = planned.acc;
   last = now;
@@ -269,7 +274,13 @@ window.__test = {
     pose.tiltY = tiltY || 0;
     if (roll != null) pose.roll = roll;
   },
-  fps() { return fps; },
+  fps() { return { fps, ghosts: view.ghostCount(), dpr: view.pixelRatio() }; },
+  trail(n) { view.setTrailCap(n); },
+  freeze() {
+    frozen = true;
+    view.frame(match.state(), pose);
+    return match.state();
+  },
   sounds() { return kit.heard(); },
   options: opts,
 };
