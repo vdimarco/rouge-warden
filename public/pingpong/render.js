@@ -25,6 +25,10 @@ const ART_FILES = {
 
 // The hall sheet is 780 by 1398 with a thin paper frame. Crop past that frame.
 const HALL_CROP = { left: 12 / 780, top: 24 / 1398, right: 12 / 780, bottom: 26 / 1398 };
+// Zoom and bias the sheet upward so the pendant lamp clears the Neighbour.
+// The wall behind the far end of the table stays plain.
+const HALL_ZOOM = 1.28;
+const HALL_LIFT = 0.9;
 
 // The forehand sheet holds the bat on the right, so a ball on the right uses it.
 export function neighbourPose(swing, time) {
@@ -43,10 +47,12 @@ function drawCover(ctx, img, w, h, crop) {
   const sy = Math.round(img.naturalHeight * crop.top);
   const sw = Math.max(1, Math.round(img.naturalWidth * (1 - crop.left - crop.right)));
   const sh = Math.max(1, Math.round(img.naturalHeight * (1 - crop.top - crop.bottom)));
-  const scale = Math.max(w / sw, h / sh);
+  const scale = Math.max(w / sw, h / sh) * HALL_ZOOM;
   const dw = sw * scale;
   const dh = sh * scale;
-  ctx.drawImage(img, sx, sy, sw, sh, (w - dw) / 2, (h - dh) / 2, dw, dh);
+  const dx = (w - dw) / 2;
+  const dy = -(dh - h) * HALL_LIFT;
+  ctx.drawImage(img, sx, sy, sw, sh, dx, dy, dw, dh);
 }
 
 function paintTableWash(ctx, img, pts) {
