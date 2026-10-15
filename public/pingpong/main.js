@@ -1,7 +1,7 @@
 // Boots the table, the gate, motion, swipe, mouse and the test hooks.
 
 import { unlockCourt } from './gate.js';
-import { createSwingDetector, swipeToSwing } from './motion.js';
+import { assistX, batFromTilt, createSwingDetector, mapAxes, poseFilter, swipeToSwing, swingPush } from './motion.js';
 import { RULES, planFrame, readOptions } from './rules.js';
 import { createMatch } from './sim.js';
 import { createSoundKit } from './audio.js';
@@ -12,9 +12,14 @@ const match = createMatch({ seed: opts.seed, input: opts.input });
 const kit = createSoundKit();
 const canvas = document.getElementById('table');
 const view = createView(canvas);
-const pose = { tiltX: 0, tiltY: 0, roll: 0, swingAt: 0, swingDir: 'forehand' };
+const pose = { tiltX: 0, tiltY: 0, roll: 0, swingAt: 0, swingDir: 'forehand', push: 0, gyro: 0 };
 let inputMode = opts.input === 'touch' || opts.input === 'swing' ? 'swipe' : 'motion';
 let neutral = { beta: 0, gamma: 0 };
+let filtered = { tiltX: 0, tiltY: 0 };
+let orientAt = 0;
+let gyroAt = 0;
+let pushAt = 0;
+let poseHold = false;
 let sensorsOn = false;
 let fps = 0;
 let fpsFrames = 0;
@@ -51,15 +56,61 @@ if (opts.skipGate && gate) gate.hidden = true;
 let acc = 0;
 let last = performance.now();
 let frozen = false;
+
+function screenAngle() {
+  const o = window.screen && window.screen.orientation;
+  if (o && Number.isFinite(o.angle)) return o.angle;
+  const legacy = window.orientation;
+  return Number.isFinite(legacy) ? legacy : 0;
+}
+
+function commitPose(assist) {
+  pose.tiltX = filtered.tiltX;
+  pose.tiltY = filtered.tiltY;
+  pose.roll = Math.max(-50, Math.min(50, filtered.tiltX));
+  const mapped = batFromTilt(filtered.tiltX, filtered.tiltY);
+  const live = match.state();
+  const pull = assist && live.phase === 'incoming';
+  const x = pull ? assistX(mapped.x, live.ball.x, RULES.assist) : mapped.x;
+  match.setBat({ x, depth: mapped.depth, roll: pose.roll });
+}
+
+function followSwipe() {
+  const live = match.state();
+  const line = live.phase === 'incoming' ? live.ball.x : 0;
+  const x = line * RULES.swipeFollow;
+  match.setBat({ x, depth: RULES.hitZ, roll: 0 });
+  pose.roll = 0;
+  pose.tiltX = 0;
+  pose.tiltY = 0;
+}
+
+function holdTilt(beta, gamma) {
+  const mapped = mapAxes(beta, gamma, screenAngle());
+  const targetX = mapped.gamma - neutral.gamma;
+  const targetY = mapped.beta - neutral.beta;
+  for (let i = 0; i < 24; i++) {
+    filtered.tiltX = poseFilter(filtered.tiltX, targetX, 1 / 60);
+    filtered.tiltY = poseFilter(filtered.tiltY, targetY, 1 / 60);
+  }
+  poseHold = true;
+  commitPose(false);
+}
+
 function loop(now) {
   if (frozen) {
     requestAnimationFrame(loop);
     return;
   }
+  if (inputMode === 'swipe' && !poseHold) followSwipe();
   const planned = planFrame(acc, (now - last) / 1000, opts.fast);
   acc = planned.acc;
   last = now;
   for (let i = 0; i < planned.steps; i++) play(match.step());
+  const dt = pushAt ? Math.max(1 / 120, Math.min(0.05, (now - pushAt) / 1000)) : 1 / 60;
+  pushAt = now;
+  const gyro = now - gyroAt > 90 ? 0 : pose.gyro;
+  pose.push = swingPush(pose.push, gyro, dt);
   view.frame(match.state(), pose);
   fpsFrames += 1;
   if (!fpsStamp) fpsStamp = now;
@@ -96,7 +147,10 @@ function beginPlay() {
 
 function calibrateThenStart() {
   const samples = [];
-  const onOrient = (e) => samples.push({ beta: e.beta, gamma: e.gamma });
+  const onOrient = (e) => {
+    if (!Number.isFinite(e.beta) || !Number.isFinite(e.gamma)) return;
+    samples.push(mapAxes(e.beta, e.gamma, screenAngle()));
+  };
   window.addEventListener('deviceorientation', onOrient);
   window.setTimeout(() => {
     window.removeEventListener('deviceorientation', onOrient);
@@ -166,14 +220,22 @@ function attachSensors() {
   sensorsOn = true;
   window.addEventListener('deviceorientation', (e) => {
     if (!Number.isFinite(e.beta) || !Number.isFinite(e.gamma)) return;
-    pose.tiltY = e.beta - neutral.beta;
-    pose.tiltX = e.gamma - neutral.gamma;
+    const now = performance.now();
+    const dt = orientAt ? Math.max(1 / 120, Math.min(0.08, (now - orientAt) / 1000)) : 1 / 60;
+    orientAt = now;
+    const axes = mapAxes(e.beta, e.gamma, screenAngle());
+    filtered.tiltX = poseFilter(filtered.tiltX, axes.gamma - neutral.gamma, dt);
+    filtered.tiltY = poseFilter(filtered.tiltY, axes.beta - neutral.beta, dt);
+    poseHold = false;
+    commitPose(true);
   });
   const detector = createSwingDetector();
   window.addEventListener('devicemotion', (e) => {
     const rate = e.rotationRate || {};
     const accel = e.accelerationIncludingGravity || {};
     const mag = Math.hypot(accel.x || 0, accel.y || 0, accel.z || 0);
+    pose.gyro = Math.hypot(rate.alpha || 0, rate.beta || 0, rate.gamma || 0);
+    gyroAt = performance.now();
     if (match.shock(mag)) return;
     const swing = detector.push({
       alpha: rate.alpha || 0,
@@ -183,7 +245,6 @@ function attachSensors() {
     }, performance.now() / 1000);
     if (!swing) return;
     pose.swingDir = swing.dir;
-    pose.roll = swing.rollDegPerSec;
     const cross = match.state().crossIn;
     const age = performance.now() / 1000 - swing.at;
     const offsetMs = cross == null ? 0 : -(cross + age) * 1000;
@@ -212,10 +273,11 @@ if (again) {
 const recenter = document.getElementById('recenter');
 if (recenter) {
   recenter.addEventListener('click', () => {
-    neutral = { beta: neutral.beta + pose.tiltY, gamma: neutral.gamma + pose.tiltX };
-    pose.tiltX = 0;
-    pose.tiltY = 0;
-    pose.roll = 0;
+    neutral = { beta: neutral.beta + filtered.tiltY, gamma: neutral.gamma + filtered.tiltX };
+    filtered.tiltX = 0;
+    filtered.tiltY = 0;
+    pose.push = 0;
+    commitPose(false);
   });
 }
 
@@ -253,12 +315,16 @@ function releaseDrag(e) {
 canvas.addEventListener('pointerup', releaseDrag);
 canvas.addEventListener('pointercancel', () => { drag = null; });
 
+function batNow() {
+  const b = match.state().bat;
+  return { x: b.x, depth: b.depth, roll: b.roll };
+}
+
 window.__test = {
   swing(cmd) {
     if (cmd.dir) pose.swingDir = cmd.dir;
     if (cmd.tiltX != null) pose.tiltX = cmd.tiltX;
     if (cmd.tiltY != null) pose.tiltY = cmd.tiltY;
-    if (cmd.rollDegPerSec != null) pose.roll = cmd.rollDegPerSec;
     match.swing(cmd);
     return play(match.state());
   },
@@ -270,10 +336,23 @@ window.__test = {
     return lastSnap;
   },
   setTilt(tiltX, tiltY, roll) {
-    pose.tiltX = tiltX || 0;
-    pose.tiltY = tiltY || 0;
-    if (roll != null) pose.roll = roll;
+    filtered.tiltX = Number(tiltX) || 0;
+    filtered.tiltY = Number(tiltY) || 0;
+    poseHold = true;
+    commitPose(false);
+    if (roll != null) {
+      pose.roll = Number(roll) || 0;
+      const b = match.state().bat;
+      match.setBat({ x: b.x, depth: b.depth, roll: pose.roll });
+    }
+    view.frame(match.state(), pose);
   },
+  tilt(beta, gamma) {
+    holdTilt(beta, gamma);
+    view.frame(match.state(), pose);
+    return batNow();
+  },
+  get bat() { return batNow(); },
   fps() { return { fps, ghosts: view.ghostCount(), dpr: view.pixelRatio() }; },
   trail(n) { view.setTrailCap(n); },
   freeze() {

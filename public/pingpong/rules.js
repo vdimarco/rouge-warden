@@ -47,7 +47,23 @@ export const RULES = Object.freeze({
   neighbourSpread: 0.3,
   gamePoints: 11,
   winBy: 2,
-  assist: 1,
+  // Light pull toward the ball's line. The held pose keeps the other 85%.
+  assist: 0.15,
+  // Side tilt (gamma) and forward tilt (beta), degrees from the neutral pose.
+  batDead: 2.5,
+  batFullSide: 20,
+  batFullDepth: 16,
+  // Centre of the bat travels most of the 0.76 m half-width.
+  batReachX: 0.74,
+  batBackZ: 0.02,
+  batHomeZ: 0.3,
+  batInZ: 1.05,
+  // One-pole time constant. Perceived lag is about this, under 50 ms.
+  batTau: 0.016,
+  reachX: 0.22,
+  reachZ: 0.5,
+  swingPush: 0.42,
+  swipeFollow: 0.85,
   vibrateHit: 15,
   vibrateSmash: 30,
   trailDrive: 4,

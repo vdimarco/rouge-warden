@@ -135,7 +135,7 @@ test('feel numbers', () => {
   assert.equal(RULES.neighbourSpread, 0.3);
   assert.equal(RULES.vibrateHit, 15);
   assert.equal(RULES.vibrateSmash, 30);
-  assert.equal(RULES.assist, 1);
+  assert.equal(RULES.assist, 0.15);
   assert.equal(RULES.dprCap, 2);
   assert.equal(RULES.trailDrive, 4);
   assert.equal(RULES.trailSmash, 8);

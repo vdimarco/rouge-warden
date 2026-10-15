@@ -1,5 +1,6 @@
 // The room is painted once. Each frame copies it, then draws the ball, shadow, trail, bat, Neighbour and sparks.
 
+import { batPresentation } from './motion.js';
 import { RULES } from './rules.js';
 
 const INK = '#2B2A33';
@@ -325,25 +326,29 @@ export function createView(canvas) {
   }
 
   function drawBat(ctx, w, h, state, pose) {
-    const tracked = state.phase === 'incoming' ? state.ball.x : 0;
-    const anchor = project(tracked * 0.85, 0.02, 0.05, w, h);
-    const width = Math.min(w, h) * (w > h * 1.15 ? 0.28 : 0.4);
-    const tilt = ((pose && pose.tiltX) || 0) / RULES.aimGamma;
-    const roll = ((pose && pose.roll) || 0) / 400;
-    const age = pose && pose.swingAt ? (performance.now() - pose.swingAt) / 120 : 2;
+    const held = state.bat || { x: 0, depth: RULES.batHomeZ, roll: 0 };
+    const face = batPresentation({
+      roll: pose && Number.isFinite(pose.roll) ? pose.roll : held.roll,
+      tiltY: pose && pose.tiltY,
+      push: pose && pose.push,
+    });
+    const z = Math.max(RULES.batBackZ - 0.02, Math.min(RULES.batInZ + RULES.swingPush, held.depth + face.pushZ));
+    const anchor = project(held.x, 0.03, z, w, h);
+    const width = Math.min(w, h) * (w > h * 1.15 ? 0.22 : 0.32) * (0.62 + 0.38 * anchor.s);
+    const age = pose && pose.swingAt ? (performance.now() - pose.swingAt) / 140 : 2;
     const sweep = age >= 0 && age <= 1 ? Math.sin(age * Math.PI) : 0;
     const dir = pose && pose.swingDir === 'backhand' ? -1 : 1;
+    const shadow = project(held.x, 0, z, w, h);
     ctx.save();
-    ctx.translate(anchor.x, Math.min(h - RULES.safePx - 10, anchor.y - 8));
-    ctx.rotate(tilt * 0.45 + dir * sweep * 0.9);
-    ctx.transform(1, roll * 0.6, 0, 1, 0, 0);
-    if (sweep > 0) {
-      ctx.strokeStyle = 'rgba(181, 71, 46, 0.35)';
-      ctx.lineWidth = 18;
-      ctx.beginPath();
-      ctx.arc(0, 10, width * 0.28, Math.PI, Math.PI * 1.6);
-      ctx.stroke();
-    }
+    ctx.fillStyle = 'rgba(20, 16, 12, 0.28)';
+    ctx.beginPath();
+    ctx.ellipse(shadow.x, shadow.y, Math.max(8, width * 0.34), Math.max(3, width * 0.09), 0, 0, Math.PI * 2);
+    ctx.fill();
+    const hang = width * 0.62;
+    const y = Math.min(anchor.y, h - RULES.safePx - hang);
+    ctx.translate(anchor.x, y);
+    ctx.rotate((face.rollDeg * Math.PI) / 180 + dir * sweep * 0.22);
+    ctx.transform(1, 0, face.shear, face.scaleY, 0, 0);
     ctx.fillStyle = '#6B3A22';
     ctx.fillRect(-7, 8, 14, width * 0.38);
     ctx.fillStyle = INK;

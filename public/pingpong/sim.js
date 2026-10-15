@@ -130,6 +130,7 @@ export function createMatch(opts = {}) {
   let neighbourGames = 0;
   let lastContact = null;
   let lastLanding = null;
+  let bat = { x: 0, depth: RULES.batHomeZ, roll: 0 };
   let shake = 0;
   let nudge = 0;
   let bounceRing = 0;
@@ -140,11 +141,13 @@ export function createMatch(opts = {}) {
   }
 
   function crossTime() {
-    if (!(ball.vz < -0.05) || ball.z <= RULES.hitZ) {
-      if (ball.z <= RULES.hitZ && ball.hitter === 'neighbour') return time;
+    // The bat's depth is the contact plane. Side reach is checked when the swing fires.
+    const plane = bat.depth;
+    if (!(ball.vz < -0.05) || ball.z <= plane) {
+      if (ball.z <= plane && ball.hitter === 'neighbour') return time;
       return null;
     }
-    return time + (RULES.hitZ - ball.z) / ball.vz;
+    return time + (plane - ball.z) / ball.vz;
   }
 
   function take(type, extra) {
@@ -259,6 +262,23 @@ export function createMatch(opts = {}) {
       pullDeg = 0;
     }
     if ((Number(cmd.accel) || 0) > RULES.accelBoost) speed *= RULES.accelBoostMul;
+    const dxBat = Math.abs(ball.x - bat.x);
+    const dzBat = Math.abs(ball.z - bat.depth);
+    if (dxBat > RULES.reachX || dzBat > RULES.reachZ) {
+      whiffed = true;
+      take('whoosh', { peak: cmd.degPerSec });
+      lastShot = {
+        band: 'miss',
+        speed: 0,
+        kind: null,
+        offsetMs,
+        pullDeg: 0,
+        reason: 'reach',
+        batX: bat.x,
+        batDepth: bat.depth,
+      };
+      return;
+    }
     const spin = hook ? { type: 'none', level: 0 } : spinFromRoll(cmd.rollDegPerSec);
     const aim = aimTarget(cmd.tiltX, cmd.tiltY);
     const dx = aim.x - ball.x;
@@ -318,6 +338,8 @@ export function createMatch(opts = {}) {
       yNet: flown.yNet,
       accel: Number(cmd.accel) || 0,
       struckAt: time,
+      batX: bat.x,
+      batDepth: bat.depth,
     };
     lastContact = { x: ball.x, y: ball.y, z: ball.z, kind };
     lastLanding = null;
@@ -617,7 +639,20 @@ export function createMatch(opts = {}) {
         const cross = crossTime();
         return cross == null ? null : cross - time;
       })(),
+      bat: { x: bat.x, depth: bat.depth, roll: bat.roll },
     };
+  }
+
+  function setBat(next = {}) {
+    const xIn = Number(next.x);
+    const depthIn = Number(next.depth);
+    const rollIn = Number(next.roll);
+    bat = {
+      x: clamp(Number.isFinite(xIn) ? xIn : bat.x, -RULES.halfWidth, RULES.halfWidth),
+      depth: clamp(Number.isFinite(depthIn) ? depthIn : bat.depth, RULES.batBackZ, RULES.batInZ),
+      roll: clamp(Number.isFinite(rollIn) ? rollIn : bat.roll, -50, 50),
+    };
+    return { x: bat.x, depth: bat.depth, roll: bat.roll };
   }
 
   function state() {
@@ -631,6 +666,7 @@ export function createMatch(opts = {}) {
     step,
     swing,
     state,
+    setBat,
     shock(accel) {
       if (accel > RULES.dropAccel) {
         paused = true;
@@ -701,7 +737,10 @@ export function createAverageBot(seed) {
           };
         }
       }
-      if (!plan || plan.skip || plan.sent) return null;
+      if (!plan || plan.skip) return null;
+      // The bot puts the bat on the ball. Depth stays on the old hit plane so timing matches.
+      match.setBat({ x: s.ball.x, depth: RULES.hitZ, roll: 0 });
+      if (plan.sent) return null;
       const bounced = s.ball.bounces >= 1 || s.ball.z <= 0.55;
       if (!bounced || s.crossIn == null) return null;
       const due = -plan.offsetMs / 1000;
