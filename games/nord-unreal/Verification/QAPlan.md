@@ -29,6 +29,9 @@ npm test
 | `config.test.mjs` | Endpoint validation rejects credentials, query strings and insecure public hosts. Offline page when the endpoint is empty. Phone frame sizes and receiver adaptation behave as recorded. |
 | `touch-controls.test.mjs` | Stick ownership, deadzones, look drag, gyro permission and rejection, driving mode, and release on blur, rotation, cancel and disconnect. |
 | `stream-sample.test.mjs` | The sampler reports measured time, counter differences and freezes. |
+| `hero.test.mjs` | The title loop loads only while visible, the trailer loads only on open and unloads on close, and a late autoplay result cannot restart or unmute an inactive title. |
+
+The `NORD browser player QA` GitHub workflow runs L0 and L1 on each pull request and push to `main` that changes `games/nord-unreal/Browser/`.
 
 Also run the launcher self-check from the repository root when `Scripts/browser_streaming.py` changes:
 
@@ -58,7 +61,7 @@ Run after Vercel reports the build READY. The project settings are in [HOSTING.m
 
 | Check | How | Pass condition |
 | --- | --- | --- |
-| Correct build | `git diff --quiet HEAD^ HEAD -- .` logic: the deployment list shows a build for the merge commit, and CANCELED for pushes that did not touch `Browser/`. | The READY deployment names the expected commit. |
+| Correct build | The deployment list shows a build for each push that changed a served file, and CANCELED for the rest. The build log shows the `vercel-ignore.sh` decision and the changed files. | The READY deployment names the expected commit. |
 | Files match | Build locally with the production variables, then compare every served file with `dist/` by SHA-256. | All twelve files match. |
 | Endpoint | Fetch `player.js` from the deployment and search for `wss://`. | Exactly the configured `NORD_SIGNALLING_URL`, with no credentials. |
 | Headers | `curl -I` on the page. | `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy` and `Cache-Control` match `vercel.json`. |
