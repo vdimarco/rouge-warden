@@ -259,14 +259,14 @@ export function createScreens({ root, onAction }) {
   // ---------- pause (16) ----------
   function pause(m) {
     const build = m.build.length ? m.build.map((c) => cardHtml(c, -1, { compact: true })).join('') : '<p class="none">NO CARDS YET</p>';
-    mount('pause', '<div class="panel pausep">'
+    mount('pause', '<div class="panel pausep"><div class="pcol">'
       + `<h2>PAUSED</h2><p class="where">${esc(m.where)}</p><p class="years">${esc(m.years)}</p>`
       + `<button type="button" class="btn main wide" data-act="resume">${m.regrip ? 'RESUME · THEN HOLD TO GO ON' : 'RESUME'}</button>`
       + `<div class="row"><button type="button" class="btn" data-act="mute" aria-pressed="${!m.sound}">SOUND: ${m.sound ? 'ON' : 'OFF'}</button>`
       + '<button type="button" class="btn" data-act="settings">SETTINGS</button></div>'
-      + `<div class="pbuild">${build}</div>`
       + `<div class="row">${m.canQuit ? '<button type="button" class="btn quiet" data-act="quit">QUIT RUN</button>' : ''}`
-      + '<button type="button" class="btn quiet" data-switch>Switch game</button></div>'
+      + '<button type="button" class="btn quiet" data-switch>Switch game</button></div></div>'
+      + `<div class="pbuild">${build}</div>`
       + '</div>', { unlock: 0.25, label: 'Paused' });
   }
 
@@ -274,14 +274,14 @@ export function createScreens({ root, onAction }) {
   function settings(m) {
     const row = (key, label, on, note = '') => `<button type="button" class="toggle" role="switch" aria-checked="${Boolean(on)}" data-act="set" data-key="${key}">`
       + `<span>${esc(label)}${note ? `<small>${esc(note)}</small>` : ''}</span><b>${on ? 'ON' : 'OFF'}</b></button>`;
-    mount('settings', '<div class="panel setp"><h2>SETTINGS</h2>'
+    mount('settings', '<div class="panel setp"><h2>SETTINGS</h2><div class="toggles">'
       + row('sound', 'SOUND', m.sound)
       + row('slowCaptions', 'SLOW CAPTIONS', m.slowCaptions)
       + row('fixedCam', 'FIXED CAMERA', m.fixedCam, 'The world never rolls')
       + row('button', 'ACTION BUTTON', m.button, 'A button for grabs, bottom right')
       + row('reduced', 'REDUCED MOTION', m.reduced, 'No shake, softer flashes')
       + row('barks', 'RIVAL BARKS', m.barks)
-      + '<button type="button" class="btn main wide" data-act="back">BACK</button></div>', { unlock: 0.2, label: 'Settings' });
+      + '</div><button type="button" class="btn main wide" data-act="back">BACK</button></div>', { unlock: 0.2, label: 'Settings' });
   }
 
   // ---------- the ship's log (14.2) ----------

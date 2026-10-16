@@ -1047,6 +1047,10 @@ function frame(now) {
       break;
     }
     default:
+      // the title flies the first leg's sky once it is built
+      if (G.mode === 'title' && !scene.fallback && G.built[ROUTE[0]] && (scene.backdrop() || {}).type !== ROUTE[0]) {
+        useBackdrop(ROUTE[0]);
+      }
       drawSky(dt, G.mode === 'break' && G.run ? G.run.you.launchEta : 1.2);
   }
   perfS.render.push(performance.now() - r0);
