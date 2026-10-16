@@ -2,6 +2,10 @@
 // edges. No post-processing add-ons ship with the game, so this is a small pass of its own: the scene renders to a
 // half-float target, a bright pass keeps what is over a threshold at half size, a chain of blurs at 1/2, 1/4, 1/8 and 1/16
 // spreads it, and one full-screen draw adds it over the scene on the canvas. A headset always renders straight.
+// The Verse pass rides on the same last draw (flat play, never the headset): it takes the comic look from the film
+// "Spider-Man: Into the Spider-Verse". Out of focus, the colour plates slip off register (the red plate one way, the blue the
+// other), as on a badly printed page, in place of a blur. A heavy blow flashes an impact frame for a moment: two inks and a red
+// hold. While a goon winds up near the hero, wavy spider-sense lines shake over the hero's head. See verse in createBloom.
 import * as THREE from "three";
 
 // level → strength (how much glow is added) and threshold (the brightness where glow starts, with a soft knee)
@@ -45,15 +49,46 @@ void main() {
 }
 `;
 const COMPOSITE_FS = /* glsl */ `
-uniform sampler2D uScene, uB0, uB1, uB2, uB3;
+uniform sampler2D uScene, uB0, uB1, uB2, uB3, uDepth;
 uniform float uStrength;
+uniform float uVerse, uNear, uFar, uFocus, uPlate, uImpact, uSense, uTime, uAspect;
+uniform vec2 uTexel, uHead;
+uniform vec3 uInk, uHold;
 varying vec2 vUv;
+vec3 lit(vec2 uv) {
+  vec3 b = texture2D(uB0, uv).rgb * 1.0 + texture2D(uB1, uv).rgb * 0.8 + texture2D(uB2, uv).rgb * 0.6 + texture2D(uB3, uv).rgb * 0.45;
+  return texture2D(uScene, uv).rgb + b * uStrength;
+}
+float viewZ(float z) { float n = z * 2.0 - 1.0; return 2.0 * uNear * uFar / (uFar + uNear - n * (uFar - uNear)); }
 void main() {
-  vec3 s = texture2D(uScene, vUv).rgb;
-  vec3 b = texture2D(uB0, vUv).rgb * 1.0 + texture2D(uB1, vUv).rgb * 0.8 + texture2D(uB2, vUv).rgb * 0.6 + texture2D(uB3, vUv).rgb * 0.45;
+  vec3 c;
+  if (uVerse > 0.5) {
+    // the plates slip: none at the focus (the hero), more toward the far city and the sky, some very close to the lens
+    float d = viewZ(texture2D(uDepth, vUv).r);
+    float oof = smoothstep(uFocus * 1.6, uFocus * 14.0, d) + 0.6 * (1.0 - smoothstep(uFocus * 0.25, uFocus * 0.6, d));
+    vec2 off = vec2(1.0, 0.4) * uTexel * uPlate * oof;
+    c = vec3(lit(vUv + off).r, lit(vUv).g, lit(vUv - off).b);
+  } else c = lit(vUv);
   // added light, then a gentle shoulder so a bloomed highlight rolls off instead of clipping flat
-  vec3 c = s + b * uStrength;
   c = mix(c, 1.0 - exp(-c), smoothstep(0.85, 1.6, c));
+  if (uVerse > 0.5) {
+    // spider-sense: seven wavy lines fan out over the head, boiling at 12 steps a second
+    if (uSense > 0.01) {
+      vec2 p = (vUv - uHead) * vec2(uAspect, 1.0);
+      float r = length(p), a = atan(p.y, p.x);
+      float k = clamp(floor((a - 0.35) / 0.35 + 0.5), 0.0, 6.0), ac = 0.35 + k * 0.35;
+      float w = sin(r * 140.0 - uTime * 18.0 + k * 1.7) * 0.007;
+      float line = 1.0 - smoothstep(0.0022, 0.0042, abs(r * sin(a - ac) - w));
+      line *= step(0.0, cos(a - ac)) * smoothstep(0.045, 0.055, r) * (1.0 - smoothstep(0.1, 0.12, r)) * step(0.15, a) * step(a, 3.0);
+      c = mix(c, uHold, line * uSense);
+    }
+    // the impact frame: two inks, the lit half held in red
+    if (uImpact > 0.01) {
+      float l = dot(c, vec3(0.299, 0.587, 0.114));
+      vec3 two = mix(uInk, uHold, smoothstep(0.32, 0.36, l));
+      c = mix(c, two, uImpact);
+    }
+  }
   gl_FragColor = vec4(c, 1.0);
 }
 `;
@@ -62,6 +97,9 @@ export function createBloom(renderer) {
   const rtOpts = { type: THREE.HalfFloatType, format: THREE.RGBAFormat, depthBuffer: false, minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, generateMipmaps: false };
   const gl2 = renderer.capabilities.isWebGL2 !== false;
   const sceneRT = new THREE.WebGLRenderTarget(1, 1, { ...rtOpts, depthBuffer: true, stencilBuffer: true, samples: gl2 ? 4 : 0 });
+  // the depth, for the Verse pass's plates (a depth with stencil, as the scene asks for a stencil buffer)
+  sceneRT.depthTexture = new THREE.DepthTexture(1, 1, THREE.UnsignedInt248Type);
+  sceneRT.depthTexture.format = THREE.DepthStencilFormat;
   const A = [], Bt = []; // per level: the blurred result, and the scratch for the first blur direction
   for (let i = 0; i < LEVELS; i++) { A.push(new THREE.WebGLRenderTarget(1, 1, rtOpts)); Bt.push(new THREE.WebGLRenderTarget(1, 1, rtOpts)); }
   const tri = new THREE.BufferGeometry();
@@ -72,18 +110,27 @@ export function createBloom(renderer) {
   const mk = (fs, u) => new THREE.ShaderMaterial({ vertexShader: VS, fragmentShader: fs, uniforms: u, depthTest: false, depthWrite: false, fog: false });
   const bright = mk(BRIGHT_FS, { uTex: { value: null }, uTexel: { value: new THREE.Vector2() }, uThreshold: { value: 0.8 }, uKnee: { value: 0.25 } });
   const blur = mk(BLUR_FS, { uTex: { value: null }, uDir: { value: new THREE.Vector2() } });
-  const comp = mk(COMPOSITE_FS, { uScene: { value: sceneRT.texture }, uB0: { value: A[0].texture }, uB1: { value: A[1].texture }, uB2: { value: A[2].texture }, uB3: { value: A[3].texture }, uStrength: { value: 0.5 } });
+  const comp = mk(COMPOSITE_FS, { uScene: { value: sceneRT.texture }, uB0: { value: A[0].texture }, uB1: { value: A[1].texture }, uB2: { value: A[2].texture }, uB3: { value: A[3].texture }, uStrength: { value: 0.5 },
+    uDepth: { value: sceneRT.depthTexture }, uVerse: { value: 0 }, uNear: { value: 0.1 }, uFar: { value: 1000 }, uFocus: { value: 5 }, uPlate: { value: 0 },
+    uImpact: { value: 0 }, uSense: { value: 0 }, uTime: { value: 0 }, uAspect: { value: 1 }, uTexel: { value: new THREE.Vector2() }, uHead: { value: new THREE.Vector2(0.5, 0.6) },
+    uInk: { value: new THREE.Color(0x140a18) }, uHold: { value: new THREE.Color(0xe8203a) } });
+  const black = new THREE.DataTexture(new Uint8Array([0, 0, 0, 255]), 1, 1); // the glow levels when only the Verse pass runs
+  black.needsUpdate = true;
   const size = new THREE.Vector2();
   let w = 0, h = 0;
   const pass = (mat, target) => { quad.material = mat; renderer.setRenderTarget(target); renderer.render(quad, cam); };
 
   const B = {
     level: "off", frames: 0, last: { calls: 0, triangles: 0 }, // last: the scene's own draw counts (the passes after it would reset them)
-    // render scene through camera with the glow of `level` ("off" | "low" | "high"); "off" draws straight to the canvas
-    render(scene, camera, level) {
+    verse: false, // the Verse pass ran on the last frame
+    // render scene through camera with the glow of `level` ("off" | "low" | "high"). verse (or null): { focus (m, where the
+    // plates are on register), plate (px, the slip far from the focus), impact 0..1, sense 0..1, head ({ x, y } in 0..1 uv),
+    // time (s) }. With no glow and no verse the scene draws straight to the canvas.
+    render(scene, camera, level, verse = null) {
       const L = BLOOM[level];
       B.level = L ? level : "off";
-      if (!L) { renderer.render(scene, camera); B.last.calls = renderer.info.render.calls; B.last.triangles = renderer.info.render.triangles; return; }
+      B.verse = !!verse;
+      if (!L && !verse) { renderer.render(scene, camera); B.last.calls = renderer.info.render.calls; B.last.triangles = renderer.info.render.triangles; return; }
       renderer.getDrawingBufferSize(size);
       if (size.x !== w || size.y !== h) {
         w = size.x; h = size.y;
@@ -94,6 +141,23 @@ export function createBloom(renderer) {
       renderer.setRenderTarget(sceneRT);
       renderer.render(scene, camera);
       B.last.calls = renderer.info.render.calls; B.last.triangles = renderer.info.render.triangles;
+      const u = comp.uniforms;
+      u.uVerse.value = verse ? 1 : 0;
+      if (verse) {
+        u.uNear.value = camera.near; u.uFar.value = camera.far; u.uFocus.value = Math.max(0.5, verse.focus || 5);
+        u.uPlate.value = verse.plate || 0; u.uImpact.value = verse.impact || 0; u.uSense.value = verse.sense || 0;
+        u.uTime.value = Math.floor((verse.time || 0) * 12) / 12; u.uAspect.value = w / h; u.uTexel.value.set(1 / w, 1 / h);
+        if (verse.head) u.uHead.value.set(verse.head.x, verse.head.y);
+      }
+      if (!L) {
+        // the Verse pass alone: no glow
+        u.uStrength.value = 0;
+        for (const k of ["uB0", "uB1", "uB2", "uB3"]) u[k].value = black;
+        pass(comp, prev);
+        B.frames++;
+        return;
+      }
+      for (let i = 0; i < LEVELS; i++) u["uB" + i].value = A[i].texture;
       // the bright pass, to 1/2
       bright.uniforms.uTex.value = sceneRT.texture;
       bright.uniforms.uTexel.value.set(1 / w, 1 / h);
@@ -110,8 +174,8 @@ export function createBloom(renderer) {
       pass(comp, prev);
       B.frames++;
     },
-    info: () => ({ level: B.level, size: [w, h], frames: B.frames }),
-    dispose() { sceneRT.dispose(); for (const t of [...A, ...Bt]) t.dispose(); tri.dispose(); bright.dispose(); blur.dispose(); comp.dispose(); },
+    info: () => ({ level: B.level, verse: B.verse, size: [w, h], frames: B.frames }),
+    dispose() { sceneRT.dispose(); black.dispose(); for (const t of [...A, ...Bt]) t.dispose(); tri.dispose(); bright.dispose(); blur.dispose(); comp.dispose(); },
   };
   return B;
 }
