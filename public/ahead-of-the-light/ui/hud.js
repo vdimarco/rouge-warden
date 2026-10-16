@@ -82,7 +82,13 @@ export function createHud({ speed, place, land, captions, tune, slow = false } =
     if (!text) return false;
     const item = { text: String(text).toUpperCase(), pri, tag, until: H.time + wait, type, hold };
     const cur = H.cur;
-    if (!cur || pri > cur.pri || (pri >= cur.pri && H.time - cur.t0 >= GUARD)) { show(item); return true; }
+    // a higher caption replaces the current one at once; any other waits until the current one's words are done (and
+    // never cuts it in its first GUARD s), then shows as it lingers
+    const age = cur ? H.time - cur.t0 : 0;
+    if (!cur || pri > cur.pri || (age >= Math.max(GUARD, cur.tm.total))) {
+      show(item);
+      return true;
+    }
     if (H.queue.some((q) => q.text === item.text)) return false;
     H.queue.push(item);
     if (H.queue.length > 6) H.queue.sort((a, b) => b.pri - a.pri).length = 6;
@@ -121,9 +127,10 @@ export function createHud({ speed, place, land, captions, tune, slow = false } =
   function frame(dt) {
     H.time += Math.max(0, dt || 0);
     const c = H.cur;
-    if (c && H.time - c.t0 >= c.end) {
+    if (c) H.queue = H.queue.filter((q) => q.until >= H.time);
+    const age = c ? H.time - c.t0 : 0;
+    if (c && (age >= c.end || (H.queue.length && age >= Math.max(GUARD, c.tm.total)))) {
       H.cur = null;
-      H.queue = H.queue.filter((q) => q.until >= H.time);
       if (H.queue.length) {
         let k = 0;
         for (let i = 1; i < H.queue.length; i++) if (H.queue[i].pri > H.queue[k].pri) k = i;
@@ -271,7 +278,11 @@ export function captionsFor(events, ctx) {
         }
         break;
       case 'grab': if (mine && first && !ctx.toy && once('run', 'hold')) add('HOLD', PRI.teach, e.type); break;
-      case 'wake': if (mine && first && !ctx.toy && once('run', 'tuck')) add('TUCK IN BEHIND', PRI.teach, e.type); break;
+      case 'wake':
+        if (mine && first && !ctx.toy && race.phase !== 'launch' && race.t > 8 && once('run', 'tuck')) {
+          add('TUCK IN BEHIND', PRI.teach, e.type);
+        }
+        break;
       case 'draftFull': if (mine && first && !ctx.toy && once('run', 'pull')) add('PULL OUT', PRI.teach, e.type); break;
       case 'slingshot': if (mine && teach && !ctx.toy && once('run', 'sling')) add('SLINGSHOT', PRI.teach, e.type); break;
       case 'drafted':

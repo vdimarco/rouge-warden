@@ -59,15 +59,16 @@ function drawShip(cv, m) {
   cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr);
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.clearRect(0, 0, w, h);
-  const R = Math.max(60, Math.min(w * 0.9, 340)), cx = w / 2, cy = h * 0.72 - R;
+  const R = Math.max(60, Math.min(w * 0.9, 340)), cx = w / 2, cy = h * 0.42 - R;
   const sy = cy + R;
+  // the light's ring at launch sits below yours by its time to catch (the burst ring's own scale, squeezed to fit)
   const k = m.light ? Math.max(0, Math.min(1, Math.log(1 + m.light.ttc / 2) / Math.log(1 + 300 / 2))) : 1;
-  const Rb = R * (1 + 1.4 * k);
-  // the play ring and the light's ring
+  const Rb = R + 12 + k * Math.max(10, h - sy - 18);
   ctx.strokeStyle = 'rgba(255,255,255,0.8)'; ctx.lineWidth = 1.5;
   ctx.beginPath(); ctx.arc(cx, cy, R, Math.PI * 0.3, Math.PI * 0.7); ctx.stroke();
-  ctx.strokeStyle = 'rgba(190,215,255,0.75)'; ctx.lineWidth = 1.5;
-  ctx.beginPath(); ctx.arc(cx, cy, Rb, Math.PI * 0.38, Math.PI * 0.62); ctx.stroke();
+  const hot = m.light && m.light.ttc < 10;
+  ctx.strokeStyle = hot ? 'rgba(255,255,255,0.95)' : 'rgba(190,215,255,0.8)'; ctx.lineWidth = hot ? 2.5 : 1.5;
+  ctx.beginPath(); ctx.arc(cx, cy, Rb, Math.PI * 0.34, Math.PI * 0.66); ctx.stroke();
   // the ship: a chevron at 2 ×, the shield bubble round it
   const half = m.ship.boat ? 5 : 10;
   ctx.fillStyle = '#fff';
