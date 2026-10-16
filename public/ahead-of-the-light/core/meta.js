@@ -187,6 +187,21 @@ export function nextUnlock(pages) {
   return u ? { id: u.id, name: u.name, at: u.at, left: u.at - n } : null;
 }
 
+// The result card's log line (13, 14.2) from applyRun's answer: "LOG +9 PAGES · REROLL +1 UNLOCKED", or the next
+// unlock when none opened: "LOG +7 PAGES · 2 TO BANISH". A full log reads "LOG +n PAGES · LOG FULL". null for a
+// practice run (it earns no pages).
+export function logLine(applied, practice = false) {
+  if (!applied || practice) return null;
+  const n = (applied.pages || []).length;
+  const head = `LOG +${n} ${n === 1 ? 'PAGE' : 'PAGES'}`;
+  const opened = (applied.unlocks || []).map((id) => UNLOCKS.find((u) => u.id === id)).filter(Boolean);
+  if (opened.length) return `${head} · ${opened.map((u) => u.short).join(' · ')} UNLOCKED`;
+  const next = applied.next;
+  if (!next) return `${head} · LOG FULL`;
+  const u = UNLOCKS.find((x) => x.id === next.id);
+  return `${head} · ${next.left} TO ${u ? u.short : next.name}`;
+}
+
 // The ships a run's feats unlock that the meta does not have yet.
 export function shipUnlocks(meta, runLog) {
   if (!runLog || runLog.practice) return [];

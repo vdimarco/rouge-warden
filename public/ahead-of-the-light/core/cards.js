@@ -790,6 +790,27 @@ export function legendsReady(build = [], tune = TUNE) {
   return out;
 }
 
+// TUNE at a dock (9.2): one card up a rarity, C → R → E. Fusions and legendaries have one rarity and trophies are
+// always Rare, so only starters below Epic can be tuned. → the ids in the build that can go up.
+export function tunable(build = []) {
+  return (build || []).filter((b) => b && CARD[b.id] && CARD[b.id].pack === 'starter' && rarityOf(b.id, b.r) < 2)
+    .map((b) => b.id);
+}
+// Raise card id one rarity in the build (in place). → the new rarity, or null if it cannot go up.
+export function tuneUp(build, id) {
+  const b = (build || []).find((x) => x && x.id === id);
+  if (!b || !tunable(build).includes(id)) return null;
+  b.r = rarityOf(id, rarityOf(id, b.r) + 1);
+  return b.r;
+}
+// Undo a tune (a refund before launch): back to `to` if given, else one rarity down. → the rarity after, or null.
+export function tuneDown(build, id, to = null) {
+  const b = (build || []).find((x) => x && x.id === id);
+  if (!b || !CARD[id] || CARD[id].pack !== 'starter') return null;
+  b.r = rarityOf(id, to === null ? rarityOf(id, b.r) - 1 : to);
+  return b.r;
+}
+
 // ---------------------------------------------------------------- applyBuild
 
 const cloneTune = (T) => {

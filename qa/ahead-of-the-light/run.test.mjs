@@ -4,13 +4,14 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as mod from '../../public/ahead-of-the-light/core/run.js';
 import { createRun, startLeg, endLeg, follow, openBreak, breakOf, pick, skip, reroll, banish, chooseLane, resultOf,
-  snapshot, restore, RUN_PHASES } from '../../public/ahead-of-the-light/core/run.js';
+  snapshot, restore, RUN_PHASES, RESULT_UNLOCK } from '../../public/ahead-of-the-light/core/run.js';
 import { makeChart, chartView, NODES } from '../../public/ahead-of-the-light/core/chart.js';
 import { makeOffer, rarityChances, rollRarity, rowFor, baseRow, placeShift, riskRule, poolOf, FIRST_OFFER }
   from '../../public/ahead-of-the-light/core/offer.js';
 import { CARDS, CARD, STARTERS, FUSIONS, LEGENDS, TROPHIES, FAMS, CAPS, applyBuild, faceOf, cardState, amountOf,
-  fusionFor, legendsReady } from '../../public/ahead-of-the-light/core/cards.js';
+  fusionFor, legendsReady, tunable, tuneUp, tuneDown } from '../../public/ahead-of-the-light/core/cards.js';
 import { causeOf, GOALS, RIVAL_GOALS } from '../../public/ahead-of-the-light/core/log.js';
+import { createMeta, applyRun } from '../../public/ahead-of-the-light/core/meta.js';
 import { ROUTE, LEG_TYPES, CONDITIONS } from '../../public/ahead-of-the-light/core/course/legs.js';
 import { TUNE } from '../../public/ahead-of-the-light/core/tune.js';
 import { createShip } from '../../public/ahead-of-the-light/core/handle.js';
@@ -648,6 +649,17 @@ test('the arrival: dock, free repair, clean leg, a beaten boss, the VOID and SKI
   endLeg(g, gr);
   assert.equal(g.dock, null);
   assert.equal(g.legs[0].gate, 'past');
+  // TUNE at a dock (9.2): one starter up a rarity, C → R → E; a refund puts it back; one-rarity cards never tune
+  const build = [{ id: 'hair-trigger', r: 0 }, { id: 'twin-deflector', r: 0 }, { id: 'spark-gap', r: 0 },
+    { id: 'hounds-bite', r: 1 }, { id: 'afterburner', r: 2 }];
+  assert.deepEqual(tunable(build), ['hair-trigger', 'twin-deflector']);
+  assert.equal(tuneUp(build, 'hair-trigger'), 1);
+  assert.equal(amountOf('hair-trigger', build[0].r), 4);
+  assert.equal(tuneUp(build, 'twin-deflector'), 2, 'a Rare-only card that rolled Common tunes from Rare to Epic');
+  for (const id of ['spark-gap', 'hounds-bite', 'afterburner', 'far-sight']) assert.equal(tuneUp(build, id), null, id);
+  assert.equal(tuneDown(build, 'hair-trigger', 0), 0);
+  assert.equal(tuneDown(build, 'twin-deflector'), 1);
+  assert.equal(faceOf('hair-trigger', build[0].r).num, '3.5');
 });
 
 test('the result card: one cause, one goal (13)', () => {
@@ -679,6 +691,17 @@ test('the result card: one cause, one goal (13)', () => {
   assert.equal(r.cause, 'Hit in the glare with no fuel left');
   assert.equal(r.goal, 'NEXT TIME: FUEL SITS AT THE GAP EDGES');
   assert.equal(r.best, 'BEST: THE LOCAL GROUP');
+  assert.equal(r.unlock, RESULT_UNLOCK);
+  assert.equal(RESULT_UNLOCK, 0.9, '16: the result card takes input at 0.9 s');
+  // the log line previews applyRun on the meta from before the run, and leaves that meta alone
+  const meta = createMeta();
+  const was = JSON.stringify(meta);
+  const withLog = resultOf(run, meta);
+  assert.match(withLog.log, /^LOG \+\d+ PAGES? · /);
+  assert.equal(JSON.stringify(meta), was);
+  const applied = applyRun(meta, withLog.summary);
+  assert.equal(resultOf(run, applied.meta, TUNE, applied).log, withLog.log, 'the same line once the page applied it');
+  assert.equal(resultOf(run).log, null, 'no meta, no log line');
 });
 
 test('every card\'s face fits 14 and 68 characters; there are 36 cards', () => {

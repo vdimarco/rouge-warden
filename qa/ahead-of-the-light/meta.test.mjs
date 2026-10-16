@@ -5,7 +5,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as mod from '../../public/ahead-of-the-light/core/meta.js';
 import { pagesFor, unlocksAt, nextUnlock, shipUnlocks, applyRun, createMeta, runOptions, dailyFor, dayNumber, medalFor,
-  shipTune, PAGES, ALL_PAGES, UNLOCKS, SHIPS, REDSHIFT_MAX, MEDAL_YEARS } from '../../public/ahead-of-the-light/core/meta.js';
+  shipTune, logLine, PAGES, ALL_PAGES, UNLOCKS, SHIPS, REDSHIFT_MAX, MEDAL_YEARS }
+  from '../../public/ahead-of-the-light/core/meta.js';
 import { createRun, openBreak, pick, skip, chooseLane, practiceRun } from '../../public/ahead-of-the-light/core/run.js';
 import { CARDS } from '../../public/ahead-of-the-light/core/cards.js';
 import { ROUTE } from '../../public/ahead-of-the-light/core/course/legs.js';
@@ -48,6 +49,16 @@ test('pages count once; unlocks fire at their thresholds', () => {
   assert.deepEqual(out.pages, []);
   assert.equal(out.meta.pages.length, 7);
   assert.deepEqual(out.next, { id: 'banish-1', name: 'BANISH', at: 15, left: 8 });
+  // the result card's log line (13, 14.2): what opened, or how far the next unlock is
+  assert.equal(logLine(applyRun(createMeta(), run1)), 'LOG +7 PAGES · REROLL +1 UNLOCKED');
+  assert.equal(logLine(out), 'LOG +0 PAGES · 8 TO BANISH');
+  assert.equal(logLine({ pages: ['p'], unlocks: [], next: { id: 'lucky-star', name: 'LUCKY STAR', left: 2 } }),
+    'LOG +1 PAGE · 2 TO LUCKY STAR');
+  assert.equal(logLine({ pages: ['p'], unlocks: [], next: null }), 'LOG +1 PAGE · LOG FULL');
+  assert.equal(logLine(out, true), null, 'a practice run has no log line');
+  const before = JSON.stringify(meta);
+  applyRun(meta, log([leg('virgo', 'caught', { lane: 'm87' })], { home: false }));
+  assert.equal(JSON.stringify(meta), before, 'applyRun never changes the meta it is given');
   for (const u of UNLOCKS) {
     assert.ok(!unlocksAt(u.at - 1).includes(u.id), `${u.id} not at ${u.at - 1}`);
     assert.ok(unlocksAt(u.at).includes(u.id), `${u.id} at ${u.at}`);

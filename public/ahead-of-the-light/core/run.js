@@ -16,7 +16,7 @@ import * as SV from './survival.js';
 import { CARD, LEGENDS, TROPHY_OF, applyBuild, amountOf, cardState, shipHooks, mergeHooks, faceOf, fusionsReady,
   legendsReady, replacesOf, completes } from './cards.js';
 import { makeOffer, refill } from './offer.js';
-import { shipOf, shipTune, runOptions, dailyFor } from './meta.js';
+import { shipOf, shipTune, runOptions, dailyFor, applyRun, logLine } from './meta.js';
 import { trackHooks, legLog, causeOf, percentHome, rankOf, legName, ordinal, rivalName, runSummary } from './log.js';
 import { hashSeed } from '../../light-years-home/core/rng.js';
 
@@ -539,10 +539,14 @@ export const chartOf = (run, tune = TUNE) => chartView(run, tune);
 
 // ---------------------------------------------------------------- the result (13)
 
-// The result card's model: one cause, one goal. meta (optional): the stored meta, for BEST and the pages this run
-// earns. → { home, firstHome, title, where, percent, cause, goal, line, years, earth, yearsLine, rank, place, build,
-// best, legs, practice }
-export function resultOf(run, meta = null, tune = TUNE) {
+// Seconds before the result card takes input (16).
+export const RESULT_UNLOCK = 0.9;
+
+// The result card's model: one cause, one goal. meta (optional): the stored meta from before this run, for BEST and
+// the log line. applied (optional): applyRun's answer if the page has already folded the run in; without it the
+// card previews applyRun(meta, runSummary(run)) and changes nothing. → { home, firstHome, title, where, percent,
+// cause, goal, line, years, earth, yearsLine, rank, place, build, best, log, easy, unlock, legs, practice }
+export function resultOf(run, meta = null, tune = TUNE, applied = null) {
   const rec = lastOf(run), prev = run.legs.length > 1 ? run.legs[run.legs.length - 2] : null;
   const home = run.phase === 'home';
   const type = rec ? rec.type : ROUTE[run.leg];
@@ -573,6 +577,7 @@ export function resultOf(run, meta = null, tune = TUNE) {
       : `BEST: ${legName(ROUTE[b.legNo || 0])}`;
   }
   const summary = runSummary(run);
+  const done = applied || (meta ? applyRun(meta, summary, tune) : null);
   return {
     home, practice, firstHome: Boolean(rec && rec.firstHome), title, where, percent: pct, leg: n, type,
     cause: cause ? cause.line : null, causeId: cause ? cause.id : null, goal: cause ? `NEXT TIME: ${cause.goal}` : null,
@@ -580,6 +585,7 @@ export function resultOf(run, meta = null, tune = TUNE) {
     yearsLine: home && !practice ? `HOME IN ${r1(y)} YEARS · EARTH WAITED ${r1(e)}` : `YOU AGED ${r1(y)} YEARS`,
     rank: home && !practice ? rankOf(y, tune) : null, place: rec ? rec.place : null,
     build: run.build.map((b) => faceOf(b.id, b.r, run.build)), best, legs: summary.legs, summary,
+    log: logLine(done, practice), easy: Boolean(done && done.easy), unlock: RESULT_UNLOCK,
     chart: chartView(run, tune),
   };
 }
