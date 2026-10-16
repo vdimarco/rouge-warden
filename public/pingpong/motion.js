@@ -85,6 +85,51 @@ export function swipeToSwing(gesture) {
   return { degPerSec, dir, tiltX, tiltY: 0, rollDegPerSec };
 }
 
+// Desktop pointer. The position maps into the same tilt angles the spring already follows.
+// A flick is pointer speed over about 60 ms. 1600 px/s is the phone's 300 deg/s line,
+// so a calm move only places the bat and a fast flick lands on the same shot bands.
+export const POINTER = Object.freeze({
+  window: 0.06,
+  pxAtStart: 1600,
+  medium: 850,
+  clickPx: 12,
+});
+
+export function tiltFromCanvas(u, v) {
+  const x = clamp(Number(u) || 0, 0, 1);
+  const y = clamp(Number(v) || 0, 0, 1);
+  return {
+    tiltX: (x - 0.5) * 2 * BAT.fullSide,
+    tiltY: (0.5 - y) * 2 * BAT.fullLean,
+  };
+}
+
+export function flickFromSamples(samples, now, windowSec = POINTER.window) {
+  const t = Number(now) || 0;
+  let oldest = null;
+  let newest = null;
+  const list = samples || [];
+  for (let i = 0; i < list.length; i++) {
+    const sample = list[i];
+    if (!sample || t - sample.t > windowSec + 1e-6) continue;
+    if (!oldest || sample.t < oldest.t) oldest = sample;
+    if (!newest || sample.t >= newest.t) newest = sample;
+  }
+  if (!oldest || !newest || oldest === newest) return null;
+  const dt = Math.max(1 / 120, newest.t - oldest.t);
+  const dx = newest.x - oldest.x;
+  const dy = newest.y - oldest.y;
+  const pxPerSec = Math.hypot(dx, dy) / dt;
+  const degPerSec = pxPerSec * (RULES.swingStart / POINTER.pxAtStart);
+  if (!(degPerSec > RULES.swingStart)) return null;
+  const dir = dx >= 0 ? 'forehand' : 'backhand';
+  const vy = dy / dt;
+  let rollDegPerSec = 0;
+  if (vy < -400) rollDegPerSec = 650;
+  else if (vy > 280) rollDegPerSec = -650;
+  return { degPerSec, dir, rollDegPerSec, at: newest.t, pxPerSec };
+}
+
 // Portrait gamma is side tilt. In landscape the axes swap, same as Lawn Tennis.
 export function mapAxes(beta, gamma, angle) {
   const turn = ((Number(angle) || 0) % 360 + 360) % 360;

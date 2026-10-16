@@ -1,8 +1,8 @@
 // Boots the table, the gate, motion, swipe, mouse and the test hooks.
 
-import { unlockCourt } from './gate.js';
-import { assistX, batFromTilt, createSwingDetector, depthWithBounce, driftNeutral, mapAxes, predictBounceZ, springStep, swipeToSwing, swingPush } from './motion.js';
-import { RULES, planFrame, readOptions } from './rules.js';
+import { desktopCourt, unlockCourt } from './gate.js';
+import { assistX, batFromTilt, createSwingDetector, depthWithBounce, driftNeutral, flickFromSamples, mapAxes, predictBounceZ, POINTER, springStep, swipeToSwing, swingPush, tiltFromCanvas } from './motion.js';
+import { BAT, RULES, planFrame, readOptions } from './rules.js';
 import { createMatch } from './sim.js';
 import { createSoundKit } from './audio.js';
 import { createView } from './render.js';
@@ -14,6 +14,12 @@ const canvas = document.getElementById('table');
 const view = createView(canvas);
 const pose = { tiltX: 0, tiltY: 0, roll: 0, swingAt: 0, swingDir: 'forehand', push: 0, gyro: 0 };
 let inputMode = opts.input === 'touch' || opts.input === 'swing' ? 'swipe' : 'motion';
+let pointerAim = null;
+let flickSamples = [];
+let flickCool = -Infinity;
+let press = null;
+let flung = false;
+const held = new Set();
 let neutral = { beta: 0, gamma: 0 };
 let filtered = { tiltX: 0, tiltY: 0 };
 let springX = { x: 0, v: 0 };
@@ -29,6 +35,21 @@ let fpsStamp = 0;
 let lowFps = 0;
 const gate = document.getElementById('gate');
 const gateBtn = document.getElementById('gate-btn');
+
+function gateOpen() {
+  return !!(gate && !gate.hidden);
+}
+
+function armPointerCourt() {
+  inputMode = 'pointer';
+  if (gateBtn) gateBtn.textContent = 'Click to pick up your bat';
+  const hint = document.getElementById('desk-hint');
+  if (hint) hint.hidden = false;
+  document.querySelectorAll('[data-phone]').forEach((el) => { el.hidden = true; });
+  if (canvas) canvas.setAttribute('aria-label', 'Table tennis. The mouse is the bat.');
+}
+
+if (opts.input === 'pointer' || (inputMode === 'motion' && desktopCourt(window))) armPointerCourt();
 
 function play(snapshot) {
   const events = snapshot && snapshot.events ? snapshot.events : [];
@@ -90,6 +111,25 @@ function followAngle(targetX, targetY, dt) {
   filtered.tiltY = springY.x;
 }
 
+function aimFromKeys(base) {
+  const aim = base || { tiltX: 0, tiltY: 0 };
+  let tiltX = aim.tiltX;
+  let tiltY = aim.tiltY;
+  const left = held.has('left');
+  const right = held.has('right');
+  const up = held.has('up');
+  const down = held.has('down');
+  if (left !== right) tiltX = (right ? 1 : -1) * BAT.fullSide;
+  if (up !== down) tiltY = (up ? 1 : -1) * BAT.fullLean;
+  return { tiltX, tiltY };
+}
+
+function followPointer(dt) {
+  const aim = aimFromKeys(pointerAim);
+  followAngle(aim.tiltX, aim.tiltY, dt);
+  commitPose(false);
+}
+
 function followSwipe() {
   const live = match.state();
   const line = live.phase === 'incoming' ? live.ball.x : 0;
@@ -114,7 +154,10 @@ function loop(now) {
     requestAnimationFrame(loop);
     return;
   }
-  if (inputMode === 'swipe' && !poseHold) followSwipe();
+  if (inputMode === 'pointer' && !poseHold) {
+    const pointerDt = pushAt ? Math.max(1 / 120, Math.min(0.05, (now - pushAt) / 1000)) : 1 / 60;
+    followPointer(pointerDt);
+  } else if (inputMode === 'swipe' && !poseHold) followSwipe();
   const planned = planFrame(acc, (now - last) / 1000, opts.fast);
   acc = planned.acc;
   last = now;
@@ -142,6 +185,16 @@ function loop(now) {
 }
 requestAnimationFrame(loop);
 window.addEventListener('resize', () => view.resize());
+
+function unlockAudio() {
+  const unlocked = unlockCourt({
+    AudioContext: window.AudioContext || window.webkitAudioContext,
+    audio: kit.context(),
+  });
+  kit.attach(unlocked.audio);
+  kit.murmur();
+  return unlocked;
+}
 
 function unlockFromTap() {
   const unlocked = unlockCourt({
@@ -181,6 +234,11 @@ function calibrateThenStart() {
 }
 
 function onGateTap() {
+  if (inputMode === 'pointer') {
+    unlockAudio();
+    beginPlay();
+    return;
+  }
   const unlocked = unlockFromTap();
   if (inputMode === 'swipe') {
     beginPlay();
@@ -303,6 +361,134 @@ if (recenter) {
     commitPose(false);
   });
 }
+
+function onHud(e) {
+  const target = e.target;
+  return !!(target && target.closest && target.closest('button, a'));
+}
+
+function canvasPoint(e) {
+  const box = canvas.getBoundingClientRect();
+  if (e.clientX < box.left || e.clientX > box.right || e.clientY < box.top || e.clientY > box.bottom) return null;
+  const u = box.width > 0 ? (e.clientX - box.left) / box.width : 0.5;
+  const v = box.height > 0 ? (e.clientY - box.top) / box.height : 0.5;
+  return { u, v, x: e.clientX, y: e.clientY };
+}
+
+function firePointerSwing(swing) {
+  pose.swingDir = swing.dir || 'forehand';
+  pose.gyro = swing.degPerSec;
+  gyroAt = performance.now();
+  const at = swing.at == null ? performance.now() / 1000 : swing.at;
+  const cross = match.state().crossIn;
+  const age = performance.now() / 1000 - at;
+  const offsetMs = cross == null ? 0 : -(cross + age) * 1000;
+  play(match.swing({
+    degPerSec: swing.degPerSec,
+    dir: pose.swingDir,
+    tiltX: pose.tiltX,
+    tiltY: pose.tiltY,
+    rollDegPerSec: swing.rollDegPerSec || 0,
+    offsetMs,
+  }));
+}
+
+function notePointer(e) {
+  if (gateOpen() || onHud(e)) return;
+  const point = canvasPoint(e);
+  if (!point) return;
+  pointerAim = tiltFromCanvas(point.u, point.v);
+  const t = performance.now() / 1000;
+  flickSamples.push({ x: point.x, y: point.y, t });
+  const keep = t - 0.09;
+  while (flickSamples.length && flickSamples[0].t < keep) flickSamples.shift();
+  if (t < flickCool) return;
+  const flick = flickFromSamples(flickSamples, t);
+  if (!flick) return;
+  flickCool = t + RULES.cooldown;
+  flung = true;
+  firePointerSwing(flick);
+}
+
+function pointerDown(e) {
+  if (gateOpen() || onHud(e)) return;
+  const point = canvasPoint(e);
+  if (!point) return;
+  press = { x: point.x, y: point.y };
+  flung = false;
+  notePointer(e);
+}
+
+function pointerUp(e) {
+  if (!press) return;
+  const point = canvasPoint(e);
+  const x = point ? point.x : press.x;
+  const y = point ? point.y : press.y;
+  const dist = Math.hypot(x - press.x, y - press.y);
+  const wasFlung = flung;
+  press = null;
+  if (wasFlung || dist > POINTER.clickPx || gateOpen() || onHud(e)) return;
+  firePointerSwing({
+    degPerSec: POINTER.medium,
+    dir: 'forehand',
+    rollDegPerSec: 0,
+    at: performance.now() / 1000,
+  });
+}
+
+function editableTarget(target) {
+  if (!target || target.nodeType !== 1) return false;
+  const tag = target.tagName;
+  return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || target.isContentEditable;
+}
+
+function moveCode(code) {
+  if (code === 'ArrowLeft' || code === 'KeyA') return 'left';
+  if (code === 'ArrowRight' || code === 'KeyD') return 'right';
+  if (code === 'ArrowUp' || code === 'KeyW') return 'up';
+  if (code === 'ArrowDown' || code === 'KeyS') return 'down';
+  return '';
+}
+
+window.addEventListener('pointermove', (e) => {
+  if (inputMode !== 'pointer') return;
+  notePointer(e);
+});
+window.addEventListener('pointerdown', (e) => {
+  if (inputMode !== 'pointer') return;
+  pointerDown(e);
+});
+window.addEventListener('pointerup', (e) => {
+  if (inputMode !== 'pointer') return;
+  pointerUp(e);
+});
+window.addEventListener('pointercancel', () => { press = null; });
+window.addEventListener('keydown', (e) => {
+  if (inputMode !== 'pointer') return;
+  if (editableTarget(e.target)) return;
+  const move = moveCode(e.code);
+  if (move) {
+    e.preventDefault();
+    if (!gateOpen()) held.add(move);
+    return;
+  }
+  if (e.code === 'Space') {
+    e.preventDefault();
+    if (!e.repeat && !gateOpen()) {
+      firePointerSwing({
+        degPerSec: POINTER.medium,
+        dir: 'forehand',
+        rollDegPerSec: 0,
+        at: performance.now() / 1000,
+      });
+    }
+  }
+}, true);
+window.addEventListener('keyup', (e) => {
+  if (editableTarget(e.target)) return;
+  const move = moveCode(e.code);
+  if (move) held.delete(move);
+}, true);
 
 let drag = null;
 canvas.addEventListener('pointerdown', (e) => {
