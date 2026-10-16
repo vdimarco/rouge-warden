@@ -464,6 +464,7 @@ function finishRun() {
 function toyEnd() {
   const s = G.toy.sum || toySummary(G.toy);
   G.mode = 'toycard';
+  clearWorld();
   $('hud').hidden = true;
   hud.clearCaptions();
   screens.toyCard({ rows: [['TOP SPEED', ['LAUNCH', '0.9C', '0.99C', '0.999C', '0.9999C'][s.topGear] || 'LAUNCH'],
@@ -472,9 +473,19 @@ function toyEnd() {
 }
 
 // ---------------------------------------------------------------- the screens
+// Leaving play for a screen: both layers drop the race in the same task as the DOM change, so no frame shows the
+// screen over a stale race.
+function clearWorld() {
+  try {
+    octx.setTransform(1, 0, 0, 1, 0, 0);
+    octx.clearRect(0, 0, overCanvas.width, overCanvas.height);
+    scene.render(null, 0, { title: true, skyEta: G.run ? G.run.you.launchEta : 1.2 });
+  } catch (e) { /* the next frame draws it */ }
+}
 function showBreak() {
   G.mode = 'break';
   if (vista) vista.end();
+  clearWorld();
   hint('');
   $('hud').hidden = true;
   hud.clearCaptions();
@@ -486,6 +497,7 @@ function showBreak() {
 }
 function showChart() {
   G.mode = 'chart';
+  clearWorld();
   G.chartModel = chartOf(G.run, tune);
   G.chartT = 0;
   G.chartRects = null;
@@ -493,6 +505,7 @@ function showChart() {
 }
 function showResult() {
   G.mode = 'result';
+  clearWorld();
   $('hud').hidden = true;
   hud.clearCaptions();
   overlay.reset();
@@ -504,6 +517,7 @@ function showResult() {
 function showTitle() {
   G.mode = 'title';
   G.race = null; G.toy = null; G.piece = null;
+  clearWorld();
   G.paused = false; G.modal = null;
   $('hud').hidden = true;
   hud.clearCaptions();
@@ -974,9 +988,10 @@ function drawSky(dt, skyEta = 1.2) {
 }
 
 // ---------------------------------------------------------------- the loop
-let last = null, fpsAvg = 60;
+let last = null, fpsAvg = 60, frames = 0, drew = '';
 function frame(now) {
   requestAnimationFrame(frame);
+  frames++;
   const f0 = performance.now();
   const dt = last === null ? 0 : clamp((now - last) / 1000, 0, 0.25);
   last = now;
@@ -1003,6 +1018,7 @@ function frame(now) {
     feed(events, race);
     captionFrame(events, race);
   }
+  drew = G.mode;
   switch (G.mode) {
     case 'play': case 'toy': case 'ending':
       if (race) drawPlay(dt, alpha);
@@ -1076,7 +1092,7 @@ window.__race = {
     const v = scene.view && scene.view() || ringView({ w: W, h: H, tune });
     const run = G.run, race = G.race;
     return plain({
-      mode: G.mode, paused: G.paused, regrip: G.regrip, modal: G.modal, screen: screens.name, ranked: G.ranked,
+      mode: G.mode, paused: G.paused, regrip: G.regrip, modal: G.modal, screen: screens.name, ranked: G.ranked, frames, drew,
       seed: run ? run.seed : G.toy ? G.toy.seed : null, leg: run ? run.leg : race ? race.legNo : null,
       type: race ? race.leg.type : run ? ROUTE[run.leg] : null, runPhase: run ? run.phase : null,
       phase: race ? race.phase : null, t: race ? race.t : 0, real: race ? race.real : 0,
