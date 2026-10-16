@@ -230,7 +230,9 @@ export function captionsFor(events, ctx) {
       } else if (n === 'ram' && first && once('run', 'ram')) add('RAM IT INTO THE KNOT', PRI.teach, 'cue');
       else if (n === 'gateCall' && teach) add('THREAD OR DOCK', PRI.gate, 'cue');
       else if (CUES[n] && (!CUES[n].first || once('run', `cue:${n}`))) add(CUES[n].text, CUES[n].pri || PRI.teach, 'cue');
-      else if (n === 'fact' && FACT[d.fact] && once('run', `fact:${d.fact}`)) add(FACT[d.fact].text, PRI.fact, 'cue', { wait: 1.0 });
+      else if (n === 'fact' && FACT[d.fact] && once('run', `fact:${d.fact}`)) {
+        add(FACT[d.fact].text, PRI.fact, 'cue', { wait: 1.0 });
+      }
     }
   }
 

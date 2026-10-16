@@ -193,8 +193,8 @@ export function createSound({ on = true, onToggle = null } = {}) {
   }
   function crackle(t, k, span, peak) {
     for (let i = 0; i < k; i++) {
-      hiss(t + (i / k) * span, { f: 2500 + 3000 * ((i * 0.618) % 1), type: 'highpass', q: 0.7, dur: 0.02 + 0.02 * ((i * 0.37) % 1),
-        peak: peak * (0.5 + 0.5 * ((i * 0.73) % 1)) });
+      hiss(t + (i / k) * span, { f: 2500 + 3000 * ((i * 0.618) % 1), type: 'highpass', q: 0.7,
+        dur: 0.02 + 0.02 * ((i * 0.37) % 1), peak: peak * (0.5 + 0.5 * ((i * 0.73) % 1)) });
     }
   }
   // A rival's motif in the current key; at most two at once.
@@ -421,7 +421,11 @@ export function createSound({ on = true, onToggle = null } = {}) {
           if (mine) { crackle(t, 12, 0.6, 0.16); count(e.type); }
           break;
         case 'scorch':
-          if (mine) { hiss(t, { f: 6000, to: 400, q: 0.8, dur: 0.4, peak: 0.5 }); tone(t, 80, { to: 35, dur: 0.4, peak: 0.6 }); count(e.type); }
+          if (mine) {
+            hiss(t, { f: 6000, to: 400, q: 0.8, dur: 0.4, peak: 0.5 });
+            tone(t, 80, { to: 35, dur: 0.4, peak: 0.6 });
+            count(e.type);
+          }
           break;
         case 'release': {
           if (!mine) break;
@@ -444,7 +448,11 @@ export function createSound({ on = true, onToggle = null } = {}) {
           if (mine) { tone(t, midi(note(4, 1)), { type: 'sine', dur: 0.2, peak: 0.08 }); count(e.type); }
           break;
         case 'slingshot':
-          if (mine) { hiss(t, { f: 700, to: 7000, q: 1, dur: 0.5, peak: 0.45 }); tone(t, midi(note(0, 1)), { to: midi(note(5, 1)), dur: 0.35, peak: 0.12 }); count(e.type); }
+          if (mine) {
+            hiss(t, { f: 700, to: 7000, q: 1, dur: 0.5, peak: 0.45 });
+            tone(t, midi(note(0, 1)), { to: midi(note(5, 1)), dur: 0.35, peak: 0.12 });
+            count(e.type);
+          }
           break;
         case 'contact':
           if (e.victim === you || e.by === you) {
@@ -483,13 +491,25 @@ export function createSound({ on = true, onToggle = null } = {}) {
           if (mine) { tone(t, 220, { type: 'sine', to: 330, dur: 0.12, peak: 0.25 }); count(e.type); }
           break;
         case 'shieldPop':
-          if (mine) { hiss(t, { f: 6500, type: 'highpass', q: 1, dur: 0.1, peak: 0.35 }); tone(t, 3200, { type: 'sine', to: 1200, dur: 0.15, peak: 0.1 }); count(e.type); }
+          if (mine) {
+            hiss(t, { f: 6500, type: 'highpass', q: 1, dur: 0.1, peak: 0.35 });
+            tone(t, 3200, { type: 'sine', to: 1200, dur: 0.15, peak: 0.1 });
+            count(e.type);
+          }
           break;
         case 'shieldBack':
-          if (mine) { tone(t, midi(note(0, 1)), { type: 'sine', dur: 0.2, peak: 0.08 }); tone(t + 0.08, midi(note(2, 1)), { type: 'sine', dur: 0.3, peak: 0.08 }); count(e.type); }
+          if (mine) {
+            tone(t, midi(note(0, 1)), { type: 'sine', dur: 0.2, peak: 0.08 });
+            tone(t + 0.08, midi(note(2, 1)), { type: 'sine', dur: 0.3, peak: 0.08 });
+            count(e.type);
+          }
           break;
         case 'lastHull':
-          if (mine) { tone(t, 880, { type: 'square', dur: 0.12, peak: 0.08 }); tone(t + 0.18, 660, { type: 'square', dur: 0.16, peak: 0.08 }); count(e.type); }
+          if (mine) {
+            tone(t, 880, { type: 'square', dur: 0.12, peak: 0.08 });
+            tone(t + 0.18, 660, { type: 'square', dur: 0.16, peak: 0.08 });
+            count(e.type);
+          }
           break;
         case 'gearUp':
           if (!mine) break;
@@ -504,10 +524,18 @@ export function createSound({ on = true, onToggle = null } = {}) {
           count(e.type);
           break;
         case 'gearDown':
-          if (mine) { tapeStop(t); tone(t, midi(note(2, 1)), { to: midi(note(0, 1)), dur: 0.25, peak: 0.1 }); count(e.type); }
+          if (mine) {
+            tapeStop(t);
+            tone(t, midi(note(2, 1)), { to: midi(note(0, 1)), dur: 0.25, peak: 0.1 });
+            count(e.type);
+          }
           break;
         case 'headlight':
-          if (mine) { tone(t, 110, { type: 'sine', to: 28, dur: 0.9, peak: 0.9 }); hiss(t, { f: 300, to: 9000, q: 0.8, dur: 0.6, peak: 0.25 }); count(e.type); }
+          if (mine) {
+            tone(t, 110, { type: 'sine', to: 28, dur: 0.9, peak: 0.9 });
+            hiss(t, { f: 300, to: 9000, q: 0.8, dur: 0.6, peak: 0.25 });
+            count(e.type);
+          }
           break;
         case 'lightspeed':
           if (mine) {
@@ -534,7 +562,10 @@ export function createSound({ on = true, onToggle = null } = {}) {
           if (mine) count(e.type);
           break;
         case 'warn':
-          if (mine) { hiss(t, { f: 160, to: 1400, q: 0.7, dur: 0.9, peak: 0.3, attack: 0.25, type: 'lowpass' }); count(e.type); }
+          if (mine) {
+            hiss(t, { f: 160, to: 1400, q: 0.7, dur: 0.9, peak: 0.3, attack: 0.25, type: 'lowpass' });
+            count(e.type);
+          }
           break;
         case 'glareIn':
           if (mine) { tone(t, 2800, { type: 'sine', dur: 0.4, peak: 0.06, attack: 0.1 }); count(e.type); }
@@ -576,7 +607,10 @@ export function createSound({ on = true, onToggle = null } = {}) {
             S.ending = true;
             const beat = 60 / ENDING_BPM;
             let at = t + 1.6;
-            for (const [nn, b] of ENDING_TUNE) { tone(at, midi(nn + 12), { type: 'sine', dur: b * beat * 0.9, peak: 0.1 }); at += b * beat; }
+            for (const [nn, b] of ENDING_TUNE) {
+              tone(at, midi(nn + 12), { type: 'sine', dur: b * beat * 0.9, peak: 0.1 });
+              at += b * beat;
+            }
           }
           count(e.type);
           break;
@@ -630,7 +664,10 @@ export function createSound({ on = true, onToggle = null } = {}) {
     ui(kind = 'tap') {
       if (!ctx || !E || paused) return;
       const t = ctx.currentTime + 0.005;
-      if (kind === 'pick') { tone(t, midi(note(4, 1)), { type: 'sine', dur: 0.2, peak: 0.12 }); tone(t + 0.06, midi(note(7, 1)), { type: 'sine', dur: 0.3, peak: 0.1 }); }
+      if (kind === 'pick') {
+        tone(t, midi(note(4, 1)), { type: 'sine', dur: 0.2, peak: 0.12 });
+        tone(t + 0.06, midi(note(7, 1)), { type: 'sine', dur: 0.3, peak: 0.1 });
+      }
       else tone(t, midi(note(2, 1)), { type: 'sine', dur: 0.06, peak: 0.06 });
       count(`ui:${kind}`);
     },

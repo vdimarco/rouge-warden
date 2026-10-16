@@ -209,7 +209,10 @@ function useBackdrop(type) {
 const LETTERS = 'BCDFGHJKLMNPRSTVZ', VOWELS = 'AEIOU';
 function newSeed() {
   let s = '';
-  for (let i = 0; i < 6; i++) { const set = i % 2 ? VOWELS : LETTERS; s += set[Math.floor(Math.random() * set.length)]; }
+  for (let i = 0; i < 6; i++) {
+    const set = i % 2 ? VOWELS : LETTERS;
+    s += set[Math.floor(Math.random() * set.length)];
+  }
   return s;
 }
 
@@ -349,7 +352,9 @@ function pieceLeg(id) {
     for (const [k] of Object.entries(pc.params)) p[k] = pc.safe[k];
     const built = pc.build({ len, p, rnd, density: 1, opts: {}, legNo: 1, type: pc.leg || 'coma', skin: pc.leg || 'coma',
       T: tune, mods: {}, first: false, lane: null, gate: 'gate-virgo' });
-    for (const x of built.items) if (x.beat < len + 1e-9 || x.kind === 'cue') items.push({ ...place(x, b0, anchor, 1), piece: id });
+    for (const x of built.items) {
+      if (x.beat < len + 1e-9 || x.kind === 'cue') items.push({ ...place(x, b0, anchor, 1), piece: id });
+    }
     anchor = wrap(anchor + (built.exit || 0));
     b0 += len + 6;
   }
@@ -394,7 +399,10 @@ function stepOnce(stepMs) {
   hook.action = null;
   hook.burn = false;
   if (timing.firstSteerMs === null && (want.target !== null || want.turn)) timing.firstSteerMs = performance.now() - playAt;
-  if (retryAt !== null && timing.lastRetryMs === null) { timing.lastRetryMs = performance.now() - retryAt; retryAt = null; }
+  if (retryAt !== null && timing.lastRetryMs === null) {
+    timing.lastRetryMs = performance.now() - retryAt;
+    retryAt = null;
+  }
   // the previous step, for drawing between steps
   for (let i = 0; i < race.ships.length; i++) {
     const s = race.ships[i];
@@ -475,7 +483,8 @@ function toyEnd() {
   clearWorld();
   $('hud').hidden = true;
   hud.clearCaptions();
-  screens.toyCard({ title: caught ? 'THE LIGHT CAUGHT YOU' : 'THE TOY', rows: [['TOP SPEED', ['LAUNCH', '0.9C', '0.99C', '0.999C', '0.9999C'][s.topGear] || 'LAUNCH'],
+  const top = ['LAUNCH', '0.9C', '0.99C', '0.999C', '0.9999C'][s.topGear] || 'LAUNCH';
+  screens.toyCard({ title: caught ? 'THE LIGHT CAUGHT YOU' : 'THE TOY', rows: [['TOP SPEED', top],
     ['GRAZES', String(s.grazes)], ['WHIP', s.grade || 'NONE'], ['SLINGSHOT', s.slingshot ? 'YES' : 'NO'],
     ['TAKEDOWN', s.takedown ? 'YES' : 'NO']] });
 }
@@ -522,7 +531,8 @@ function showResult() {
   fx('flood', true);
   const r = G.result;
   const medals = (G.applied && G.applied.medals || []).map((x) => ({ medal: x.medal, name: legName(x.type) }));
-  screens.result({ ...r, medals, easyOffer: Boolean(meta.easy && meta.easy.offered), easyOn: Boolean(meta.easy && meta.easy.on) });
+  screens.result({ ...r, medals, easyOffer: Boolean(meta.easy && meta.easy.offered),
+    easyOn: Boolean(meta.easy && meta.easy.on) });
 }
 function showTitle() {
   G.mode = 'title';
@@ -541,7 +551,7 @@ function showTitle() {
   titleTop = null;
   screens.title({
     ship: SHIPS[shipChoice()].name,
-    goOn: env && env.run ? `GO ON · LEG ${env.run.leg + (env.at === 'break' ? 2 : 1)} · ${legName(ROUTE[Math.min(7, env.run.leg + (env.at === 'break' ? 1 : 0))])}` : null,
+    goOn: goOnLine(env),
     daily: d ? `DAILY · ${d.borrowed ? `BORROWED: ${SHIPS[d.ship].name}` : SHIPS[d.ship].name}` : null,
     practice: meta.runs >= 1,
     log: meta.runs >= 1, pages: meta.pages.length,
@@ -551,6 +561,12 @@ function showTitle() {
     best: best ? (best.home ? `BEST: HOME IN ${best.years.toFixed(1)} YR` : `BEST: ${legName(ROUTE[best.legNo || 0])}`) : null,
   });
   startBuilder(ROUTE[0]);
+}
+// The title's GO ON chip for a saved run: the leg it goes on with.
+function goOnLine(env) {
+  if (!env || !env.run) return null;
+  const k = Math.min(ROUTE.length - 1, env.run.leg + (env.at === 'break' ? 1 : 0));
+  return `GO ON · LEG ${k + 1} · ${legName(ROUTE[k])}`;
 }
 function showPause() {
   const run = G.run, race = G.race;
@@ -597,7 +613,8 @@ function showLog(back) {
   G.back = back;
   G.modal = 'log';
   const have = new Set(meta.pages);
-  const tabs = Object.entries(PAGES).map(([t, list]) => ({ id: t, total: list.length, found: list.filter((p) => have.has(p)).length }));
+  const tabs = Object.entries(PAGES).map(([t, list]) => ({ id: t, total: list.length,
+    found: list.filter((p) => have.has(p)).length }));
   const list = PAGES[G.logTab] || PAGES.PLACES;
   const nx = nextUnlock(meta.pages);
   screens.log({ tab: G.logTab, tabs, found: have.size, total: Object.values(PAGES).flat().length,
@@ -829,7 +846,11 @@ window.addEventListener('keydown', (e) => {
   if (e.repeat) return;
   const code = e.code;
   if (G.paused) {
-    if (code === 'Escape' || code === 'KeyP') { e.preventDefault(); if (!G.modal || G.modal === 'pause') resumeGame(); else closeModal(); }
+    if (code === 'Escape' || code === 'KeyP') {
+      e.preventDefault();
+      if (!G.modal || G.modal === 'pause') resumeGame();
+      else closeModal();
+    }
     return;
   }
   if (G.modal && code === 'Escape') { e.preventDefault(); closeModal(); return; }
@@ -839,7 +860,11 @@ window.addEventListener('keydown', (e) => {
     start();
     return;
   }
-  if (G.mode === 'vista' && G.vistaSkippable && vista && (code === 'Space' || code === 'Enter')) { e.preventDefault(); vista.skip(); return; }
+  if (G.mode === 'vista' && G.vistaSkippable && vista && (code === 'Space' || code === 'Enter')) {
+    e.preventDefault();
+    vista.skip();
+    return;
+  }
   if (['break', 'chart', 'result', 'toycard'].includes(G.mode) && screens.key(code)) { e.preventDefault(); return; }
   if (code === 'KeyM' && G.mode !== 'play') sound.toggle();
 });
@@ -974,7 +999,8 @@ function drawPlay(dt, alpha) {
   interp(race, a, false);
   if (live) scene.adapt(dt);
   const you = race.ships[0];
-  hud.update(race, { landText: race.leg.type === 'earth' && race.phase !== 'done' ? landNeed(you, race.tune || tune).text : null });
+  const landText = race.leg.type === 'earth' && race.phase !== 'done' ? landNeed(you, race.tune || tune).text : null;
+  hud.update(race, { landText });
   return view;
 }
 
