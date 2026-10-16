@@ -39,6 +39,18 @@ export function createSoundKit() {
       const voice = osc(180, 0.06, 'sine', 0.22);
       if (voice && ctx) voice.frequency.exponentialRampToValueAtTime(90, (ctx.currentTime || 0) + 0.05);
     },
+    bounce() {
+      osc(120, 0.07, 'triangle', 0.16);
+    },
+    point() {
+      osc(520, 0.16, 'sine', 0.14);
+      osc(780, 0.2, 'triangle', 0.08);
+    },
+    win() {
+      osc(523, 0.28, 'sine', 0.14);
+      osc(659, 0.32, 'triangle', 0.1);
+      osc(784, 0.4, 'sine', 0.08);
+    },
     whoosh(peak) {
       if (!ctx) return;
       const amount = whooshAmount(peak);

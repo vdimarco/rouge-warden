@@ -25,7 +25,41 @@ export const RULES = Object.freeze({
   assistPro: 0.9,
   pointsToWin: 7,
   winBy: 2,
+  aiCasual: Object.freeze({
+    react: 0.32,
+    speed: 0.80,
+    err: 0.18,
+    errPace: 0.010,
+    errRally: 0.008,
+    errMax: 0.40,
+    scatter: 0.20,
+    centre: 0.5,
+    aggr: 0.05,
+    wideX: 1.9,
+    smash: 0.15,
+    smashZ: 1.35,
+    pace: 9.5,
+    attackPace: 11,
+  }),
+  aiPro: Object.freeze({
+    react: 0.18,
+    speed: 0.95,
+    err: 0.09,
+    errPace: 0.010,
+    errRally: 0.008,
+    errMax: 0.25,
+    scatter: 0.30,
+    centre: 1.0,
+    aggr: 0.15,
+    wideX: 2.4,
+    smash: 0.40,
+    smashZ: 1.25,
+    pace: 11,
+    attackPace: 12,
+  }),
 });
+
+export const REACH = 1;
 
 const DT = 1 / 60;
 const G = RULES.gravity;
@@ -40,6 +74,37 @@ const AWARD = 3;
 const FLOWER_POP = 0.2;
 const FLOWER_WILT = 0.3;
 const KINDS = ['daisy', 'poppy', 'lupin'];
+const SIDELINE = HALF_W;
+
+export function landingMarker(project, x, y) {
+  const [cx, cy] = project(x, y);
+  const [ex] = project(x + REACH, y);
+  const [, ey] = project(x, y + REACH);
+  return { metres: REACH, cx, cy, px: Math.abs(ex - cx), py: Math.abs(ey - cy) };
+}
+
+export function courtHud(w, h) {
+  const bar = 56;
+  return {
+    bar: { x: 0, y: 0, w, h: bar },
+    court: { x: 0, y: bar, w, h: Math.max(0, h - bar) },
+    pad: null,
+  };
+}
+
+export function soundsFor(events, kit) {
+  const played = [];
+  if (!events || !kit) return played;
+  for (const ev of events) {
+    if (ev.type === 'whoosh') { kit.whoosh(ev.peak); played.push('whoosh'); }
+    if (ev.type === 'hit') { kit.tok(); played.push('tok'); }
+    if (ev.type === 'bounce') { kit.bounce(); played.push('bounce'); }
+    if (ev.type === 'point') { kit.point(); played.push('point'); }
+    if (ev.type === 'win') { kit.win(); played.push('win'); }
+    if (ev.type === 'bloom') { kit.chime(); played.push('chime'); }
+  }
+  return played;
+}
 
 export function readOptions(search) {
   const q = new URLSearchParams(search.startsWith('?') ? search : `?${search}`);
@@ -115,6 +180,7 @@ export function createMatch(options = {}) {
   const rng = mulberry32(seed);
   let inputMode = options.input === 'tilt' ? 'tilt' : 'touch';
   let permission = inputMode === 'tilt' ? 'granted' : 'idle';
+  let P = { ...(ai === 'pro' ? RULES.aiPro : RULES.aiCasual) };
 
   const ball = createBall({});
   const flowers = { you: [], neighbour: [] };
@@ -142,6 +208,7 @@ export function createMatch(options = {}) {
   let lastMiss = null;
   let lastServePace = 0;
   let steer = null;
+  let steerScale = 1;
   let moveX = 0;
   let moveY = 0;
   let nbVisit = false;
@@ -160,6 +227,11 @@ export function createMatch(options = {}) {
   let thumb = false;
   let idleTilt = 0;
   let offerRecal = false;
+  let puff = null;
+  let playerReached = false;
+  let nbShot = 'safe';
+  let endReason = '';
+  let lastPoint = null;
 
   const youSlot = blankSlot();
   const nbSlot = blankSlot();
@@ -183,13 +255,12 @@ export function createMatch(options = {}) {
   ball.vy = 3;
   ball.vz = 6.56;
 
-  function errorRate() {
-    const base = ai === 'pro' ? RULES.errorPro : RULES.errorCasual;
-    return Math.max(0.08, base * (1 - 0.05 * score.you));
+  function shotError(incoming) {
+    const over = Math.max(0, incoming - 9);
+    return Math.min(P.errMax, P.err + P.errPace * over + P.errRally * rally);
   }
-  function reaction() {
-    const base = ai === 'pro' ? RULES.reactPro : RULES.reactCasual;
-    return Math.max(RULES.reactPro, base - 0.02 * score.you);
+  function aimNoise() {
+    return ((rng() + rng() + rng()) - 1.5) / 1.5 * P.scatter;
   }
   function playerWindow() {
     if (yourHits < 3) return RULES.windowIntro;
@@ -325,6 +396,7 @@ export function createMatch(options = {}) {
       winner,
     };
     events.push({ type: 'point', winner, frame, point, scripted: lastMiss.scripted, rally });
+    lastPoint = { winner, rally, cause: pointCause(winner) };
     if (winner === 'you') {
       neighbour.pose = 'huff';
       neighbour.poseT = 0.8;
@@ -335,6 +407,18 @@ export function createMatch(options = {}) {
     nbSlot.open = false;
   }
 
+  function pointCause(winner) {
+    if (winner === 'you') {
+      if (point === 1 && aiLetPass) return 'nbError';
+      if (nbShot === 'error') return 'nbError';
+      if (lastHitter === 'neighbour' && (endReason === 'out' || endReason === 'net')) return 'nbError';
+      return 'playerWinner';
+    }
+    if (!playerReached) return 'nbWinner';
+    if (nbShot === 'attack' || nbShot === 'smash') return 'forced';
+    return 'playerError';
+  }
+
   function startNextPoint() {
     point += 1;
     rally = 0;
@@ -343,6 +427,9 @@ export function createMatch(options = {}) {
     aiChances = 0;
     aiLetPass = false;
     nbVisit = false;
+    playerReached = false;
+    nbShot = 'safe';
+    endReason = '';
     phase = 'rally';
     resetSlot(youSlot);
     resetSlot(nbSlot);
@@ -446,7 +533,7 @@ export function createMatch(options = {}) {
     let vx = lateral * RUN;
     const vy = depth * RUN * TILT.depth;
     const pull = magnetPull(ai, point, yourHits);
-    const want = clamp(landX, -3.2, 3.2) - you.x;
+    const want = clamp(landX, -SIDELINE, SIDELINE) - you.x;
     const same = Math.abs(lateral) < 0.02 || want === 0 || Math.sign(lateral) === Math.sign(want);
     if (pull > 0 && same) {
       const assist = clamp(want / 0.35, -1, 1) * RUN;
@@ -458,15 +545,19 @@ export function createMatch(options = {}) {
   function movePlayers() {
     const landYou = predictLanding('you');
     const landNb = predictLanding('neighbour');
-    youSlot.landX = landYou.x;
-    youSlot.landY = landYou.y;
+    const meet = predictContact('you');
+    const standX = meet ? meet.x : landYou.x;
+    youSlot.landX = standX;
+    youSlot.landY = meet ? meet.y : landYou.y;
+    youSlot.bounceX = landYou.x;
+    youSlot.bounceY = landYou.y;
     const frozen = freezeT > 0;
     if (frozen) {
       velX = heldVx;
       velY = heldVy;
       stepVelocity(you, heldVx, heldVy);
     } else if (steer != null) {
-      stepToward(you, steer, RUN);
+      stepToward(you, steer, RUN * steerScale);
       velX = 0;
       velY = 0;
     } else if (moveX !== 0 || moveY !== 0) {
@@ -476,31 +567,33 @@ export function createMatch(options = {}) {
       heldVy = velY;
       stepVelocity(you, velX, velY);
     } else if (inputMode === 'tilt') {
-      const v = tiltVelocity(landYou.x);
+      const v = tiltVelocity(standX);
       velX = v.x;
       velY = v.y;
       heldVx = v.x;
       heldVy = v.y;
       stepVelocity(you, v.x, v.y);
     } else {
-      stepToward(you, landYou.x, assistSpeed());
+      stepToward(you, standX, assistSpeed());
       velX = 0;
       velY = 0;
     }
-    const nbSpeed = time + 0.0001 >= (nbSlot.readyAt || 0) ? RUN * 0.95 : RUN * 0.35;
+    const nbReady = time + 0.0001 >= (nbSlot.readyAt || 0);
+    const nbSpeed = nbReady ? RUN * (point === 1 ? 0.95 : P.speed) : RUN * 0.35;
     stepToward(neighbour, landNb.x, nbSpeed);
+    if (point > 1 && ball.y > 5.15 && ball.y < 7.8 && Math.abs(you.x - ball.x) <= REACH) playerReached = true;
     if (youSlot.open) you.pose = you.poseT > 0 ? you.pose : 'reach';
     if (nbSlot.open && neighbour.poseT <= 0) neighbour.pose = 'reach';
   }
 
   function stepToward(body, target, speed) {
-    const dx = clamp(target, -3.2, 3.2) - body.x;
+    const dx = clamp(target, -SIDELINE, SIDELINE) - body.x;
     const max = speed * DT;
     body.x += clamp(dx, -max, max);
   }
 
   function stepVelocity(body, vx, vy) {
-    body.x = clamp(body.x + vx * DT, -3.2, 3.2);
+    body.x = clamp(body.x + vx * DT, -SIDELINE, SIDELINE);
     body.y = clamp(body.y + vy * DT, 5.35, 7.4);
   }
 
@@ -508,7 +601,7 @@ export function createMatch(options = {}) {
     if (ball.vy < -0.15 && ball.y < 0.4 && !nbVisit) {
       nbVisit = true;
       aiChances += 1;
-      nbSlot.readyAt = time + (point === 1 ? 0 : reaction());
+      nbSlot.readyAt = time + (point === 1 ? 0 : P.react);
       aiLetPass = false;
     }
     if (ball.vy > 0.15 && ball.y > 0) nbVisit = false;
@@ -530,16 +623,38 @@ export function createMatch(options = {}) {
       resolveHit('neighbour', 'flat', 0, 0.5, { x: 0.05, y: 6.4 });
       return;
     }
-    const miss = rng() < errorRate();
-    if (miss) {
+    if (Math.abs(neighbour.x - ball.x) > REACH) return;
+    const incoming = pace(ball);
+    if (rng() < shotError(incoming)) {
+      nbShot = 'error';
       const wide = rng() < 0.5;
       resolveHit('neighbour', 'flat', 0, 0.5, wide ? { x: 5.1, y: 5.2, flight: 1.2 } : { x: 0.2, y: 10.2, flight: 1.15 });
       events.push({ type: 'miss', side: 'neighbour', frame, scripted: false, aiChances });
       return;
     }
-    const spread = 0.35 + Math.min(1.3, score.you * 0.15);
-    const x = (rng() * 2 - 1) * spread;
-    resolveHit('neighbour', 'flat', 0, 0.5, { x, y: 6.35, flight: 1.2 });
+    const away = you.x >= 0 ? -1 : 1;
+    let x;
+    let y;
+    let flight;
+    let kind = 'flat';
+    if (ball.z > P.smashZ && ball.y > -6.2 && rng() < P.smash) {
+      nbShot = 'smash';
+      kind = 'smash';
+      x = away * P.wideX + aimNoise();
+      y = 5.7;
+      flight = Math.max(0.55, Math.hypot(x - ball.x, y - ball.y) / 13.6);
+    } else if (rng() < P.aggr) {
+      nbShot = 'attack';
+      x = away * P.wideX + aimNoise();
+      y = 6.35;
+      flight = Math.max(0.55, Math.hypot(x - ball.x, y - ball.y) / P.attackPace);
+    } else {
+      nbShot = 'safe';
+      x = (rng() * 2 - 1) * P.centre + aimNoise();
+      y = 6.35;
+      flight = Math.max(0.55, Math.hypot(x - ball.x, y - ball.y) / P.pace);
+    }
+    resolveHit('neighbour', kind, 0, 0.5, { x, y, flight });
   }
 
   function handleContact(info) {
@@ -547,18 +662,25 @@ export function createMatch(options = {}) {
     if (info.net) {
       ball.vy *= -0.15;
       ball.vz = Math.min(ball.vz, 0);
+      endReason = 'net';
       endPoint(other(lastHitter));
       return;
     }
     if (!info.bounced) {
       const past = Math.abs(ball.y) > BASE + 0.35 || Math.abs(ball.x) > HALF_W + 0.45;
-      if (past && bounceRun >= 1) endPoint(lastHitter);
-      else if (past) endPoint(other(lastHitter));
+      if (past && bounceRun >= 1) {
+        endReason = 'past';
+        endPoint(lastHitter);
+      } else if (past) {
+        endReason = 'out';
+        endPoint(other(lastHitter));
+      }
       return;
     }
     events.push({ type: 'bounce', frame });
     const inside = Math.abs(ball.x) <= HALF_W && Math.abs(ball.y) <= BASE;
     if (!inside) {
+      endReason = 'out';
       endPoint(bounceRun >= 1 ? lastHitter : other(lastHitter));
       return;
     }
@@ -568,7 +690,10 @@ export function createMatch(options = {}) {
       lastBounceSide = side;
       bounceRun = 1;
     }
-    if (bounceRun >= 2) endPoint(other(side));
+    if (bounceRun >= 2) {
+      endReason = 'double';
+      endPoint(other(side));
+    }
   }
 
   function updateFlowers(dt) {
@@ -632,17 +757,19 @@ export function createMatch(options = {}) {
       idleTilt = 0;
       offerRecal = false;
     }
-    if (phase === 'match') return state();
+    if (phase === 'match') return finishStep();
     if (phase === 'award') {
       updateFlowers(DT);
       updatePoses(DT);
       awardT += DT;
       if (awardT >= AWARD) {
-        if (matchOver()) phase = 'match';
-        else startNextPoint();
+        if (matchOver()) {
+          phase = 'match';
+          events.push({ type: 'win', frame, winner: score.you > score.neighbour ? 'you' : 'neighbour' });
+        } else startNextPoint();
       }
       if (freezeT > 0) freezeT = Math.max(0, freezeT - DT);
-      return state();
+      return finishStep();
     }
     movePlayers();
     if (freezeT > 0) freezeT = Math.max(0, freezeT - DT);
@@ -650,7 +777,10 @@ export function createMatch(options = {}) {
     handleContact(info);
     if (phase === 'rally' && ball.z <= BALL_R + 0.001 && ball.vz === 0 && pace(ball) < 1.5) restT += DT;
     else restT = 0;
-    if (phase === 'rally' && restT > 0.5) endPoint(other(ball.y >= 0 ? 'you' : 'neighbour'));
+    if (phase === 'rally' && restT > 0.5) {
+      endReason = 'rest';
+      endPoint(other(ball.y >= 0 ? 'you' : 'neighbour'));
+    }
     if (phase === 'rally') {
       noteVisits();
       refreshSlots();
@@ -659,6 +789,14 @@ export function createMatch(options = {}) {
     if (phase === 'rally') refreshSlots();
     updateFlowers(DT);
     updatePoses(DT);
+    return finishStep();
+  }
+
+  function finishStep() {
+    if (puff) {
+      puff.life -= DT;
+      if (puff.life <= 0) puff = null;
+    }
     return state();
   }
 
@@ -676,6 +814,16 @@ export function createMatch(options = {}) {
       events.push({ type: 'whiff', frame });
       return state();
     }
+    if (point > 1 && Math.abs(you.x - ball.x) > REACH) {
+      you.pose = 'swing';
+      you.poseT = 0.22;
+      youSlot.hit = true;
+      youSlot.open = false;
+      puff = { x: ball.x, y: ball.y, life: 0.35, max: 0.35 };
+      events.push({ type: 'whiff', frame, reach: true });
+      return state();
+    }
+    playerReached = true;
     resolveHit('you', shot, sideDir, youSlot.timing == null ? 0.5 : youSlot.timing);
     return state();
   }
@@ -744,6 +892,7 @@ export function createMatch(options = {}) {
       timing: youSlot.timing,
       contactIn: youSlot.locked ? youSlot.contactAt - time : null,
       landing: { x: youSlot.landX, y: youSlot.landY },
+      bounce: { x: youSlot.bounceX ?? 0, y: youSlot.bounceY ?? 0 },
       lastBloom: lastBloom ? { ...lastBloom } : null,
       lastHit: lastHit ? { ...lastHit } : null,
       lastMiss: lastMiss ? { ...lastMiss } : null,
@@ -755,8 +904,8 @@ export function createMatch(options = {}) {
         you: { x: you.x, y: you.y, pose: you.pose },
         neighbour: { x: neighbour.x, y: neighbour.y, pose: neighbour.pose },
       },
-      errorRate: errorRate(),
-      reaction: reaction(),
+      errorRate: shotError(pace(ball)),
+      reaction: P.react,
       input: inputMode,
       permission,
       neutral: { beta: neutral.beta, gamma: neutral.gamma },
@@ -770,6 +919,9 @@ export function createMatch(options = {}) {
       offerRecal,
       sensitivity: fullDeg,
       tiltTarget: inputMode === 'tilt' ? { x: you.x + velX * 0.4, y: you.y + velY * 0.4 } : null,
+      puff: puff ? { x: puff.x, y: puff.y, life: puff.life, max: puff.max } : null,
+      lastPoint: lastPoint ? { ...lastPoint } : null,
+      reach: REACH,
     };
   }
 
@@ -777,7 +929,11 @@ export function createMatch(options = {}) {
 
   return {
     step, swing, state, forcePoint, flick,
-    setSteer(x) { steer = x == null ? null : clamp(x, -3.2, 3.2); },
+    setSteer(x, speedScale) {
+      steer = x == null ? null : clamp(x, -SIDELINE, SIDELINE);
+      steerScale = speedScale == null ? 1 : clamp(Number(speedScale) || 0, 0, 1.2);
+      return state();
+    },
     setMove(x, y) {
       moveX = clamp(Number(x) || 0, -1, 1);
       moveY = clamp(Number(y) || 0, -1, 1);
@@ -818,6 +974,17 @@ export function createMatch(options = {}) {
     setThumb(down) {
       thumb = !!down;
     },
+    ai() {
+      return { difficulty: ai, ...P, reach: REACH };
+    },
+    setAi(partial) {
+      if (partial && typeof partial === 'object') {
+        for (const key of Object.keys(P)) {
+          if (typeof partial[key] === 'number') P[key] = partial[key];
+        }
+      }
+      return { difficulty: ai, ...P, reach: REACH };
+    },
   };
 }
 
@@ -841,6 +1008,9 @@ export function createTest(match) {
     flick(peak) { return match.flick(peak); },
     calibrate(pose) { return match.calibrate(pose); },
     setMove(x, y) { return match.setMove(x, y); },
+    setSteer(x, speed) { return match.setSteer(x, speed); },
+    ai() { return match.ai(); },
+    setAi(partial) { return match.setAi(partial); },
     setInput(mode) { return match.setInput(mode); },
     score() { return match.state().score; },
     ballPos() {
@@ -909,16 +1079,14 @@ function boot() {
         h * 0.5 + (y / 9.4) * (h * 0.46),
       ];
       const unproject = (sx) => (sx - w * 0.5) / (w * 0.46) * 4.6;
-      return { landscape, w, h, pad: { x: 0, y: h * 0.45, w, h: h * 0.55 }, project, unproject };
+      return { landscape, w, h, pad: null, project, unproject, fieldW: w };
     }
-    const padW = Math.max(160, w * 0.34);
-    const fieldW = w - padW;
     const project = (x, y) => [
-      fieldW * 0.5 - (y / 9.4) * (fieldW * 0.44),
+      w * 0.5 - (y / 9.4) * (w * 0.46),
       h * 0.5 + (x / 4.6) * (h * 0.42),
     ];
     const unproject = (sx, sy) => (sy - h * 0.5) / (h * 0.42) * 4.6;
-    return { landscape, w, h, pad: { x: fieldW, y: 0, w: padW, h }, project, unproject, fieldW };
+    return { landscape, w, h, pad: null, project, unproject, fieldW: w };
   }
 
   function drawFlower(x, y, flower, scale) {
@@ -1099,24 +1267,40 @@ function boot() {
     });
 
     if (s.phase === 'rally' && s.contactIn != null && s.contactIn < 1.55 && s.contactIn > -0.15) {
-      const [lx, ly] = box.project(s.landing.x, s.landing.y);
-      const pulse = 16 + Math.sin(s.time * 9) * 4;
+      const mark = landingMarker(box.project, s.landing.x, s.landing.y);
+      ctx.save();
+      ctx.fillStyle = 'rgba(232, 185, 74, 0.28)';
+      ctx.strokeStyle = PALETTE.gold;
       ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.ellipse(mark.cx, mark.cy, Math.max(2, mark.px / 2), Math.max(2, mark.py / 2), 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
       if (s.aimHint) {
         ctx.strokeStyle = PALETTE.sea;
         ctx.beginPath();
-        ctx.arc(lx, ly, pulse, Math.PI * 0.5, Math.PI * 1.5);
+        ctx.ellipse(mark.cx, mark.cy, Math.max(2, mark.px / 2), Math.max(2, mark.py / 2), 0, Math.PI * 0.5, Math.PI * 1.5);
         ctx.stroke();
         ctx.strokeStyle = PALETTE.ember;
         ctx.beginPath();
-        ctx.arc(lx, ly, pulse, Math.PI * -0.5, Math.PI * 0.5);
-        ctx.stroke();
-      } else {
-        ctx.strokeStyle = PALETTE.gold;
-        ctx.beginPath();
-        ctx.arc(lx, ly, pulse, 0, Math.PI * 2);
+        ctx.ellipse(mark.cx, mark.cy, Math.max(2, mark.px / 2), Math.max(2, mark.py / 2), 0, Math.PI * -0.5, Math.PI * 0.5);
         ctx.stroke();
       }
+      ctx.restore();
+    }
+
+    if (s.puff && s.puff.life > 0) {
+      const [fx, fy] = box.project(s.puff.x, s.puff.y);
+      const k = s.puff.life / (s.puff.max || 0.35);
+      ctx.save();
+      ctx.globalAlpha = Math.max(0, k);
+      ctx.fillStyle = PALETTE.lawn;
+      for (let i = 0; i < 5; i++) {
+        ctx.beginPath();
+        ctx.ellipse(fx + (i - 2) * 7, fy - (1 - k) * 12, 5, 3, 0, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
     }
 
     if (s.input === 'tilt' && s.tiltTarget && s.phase === 'rally') {
@@ -1191,14 +1375,6 @@ function boot() {
       }
     }
 
-    if (box.landscape) {
-      ctx.fillStyle = PALETTE.paper;
-      ctx.fillRect(box.pad.x, 0, box.pad.w, box.pad.h);
-      ctx.strokeStyle = PALETTE.ochre;
-      ctx.lineWidth = 4;
-      ctx.strokeRect(box.pad.x + 18, box.h * 0.5 - 28, Math.max(48, box.pad.w - 36), 56);
-    }
-
     if (s.phase === 'match') {
       banner.hidden = false;
       banner.textContent = s.winner === 'you' ? 'Your garden wins' : "The neighbour's garden wins";
@@ -1257,10 +1433,8 @@ function boot() {
 
   function playEvents(snapshot) {
     if (!snapshot || !snapshot.events) return snapshot;
+    soundsFor(snapshot.events, kit);
     for (const ev of snapshot.events) {
-      if (ev.type === 'whoosh') kit.whoosh(ev.peak);
-      if (ev.type === 'bounce' || (ev.type === 'hit' && ev.side === 'you')) kit.tok();
-      if (ev.type === 'bloom') kit.chime();
       if (ev.type === 'hit' && ev.side === 'you' && !reduceMotion) {
         try { if (navigator.vibrate) navigator.vibrate(20); } catch (err) { /* this browser has no vibration */ }
       }

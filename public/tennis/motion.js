@@ -59,12 +59,13 @@ export function mapAxes(beta, gamma, angle) {
   return { beta, gamma };
 }
 
-// A steer drag must not also swing. A tap, a hold, or a swipe up still does.
+// A steer drag must not also swing. Vertical and diagonal drags are the same.
+// A tap, a hold in place, or a swipe up still swings.
 export function releaseSwing({ steered, dx, dy, held }) {
   if (steered) return null;
   if (dy < -48 && Math.abs(dy) > Math.abs(dx) && held < 450) return 'smash';
-  if (held >= 180) return 'lob';
   if (Math.hypot(dx, dy) > 28) return null;
+  if (held >= 180) return 'lob';
   return 'flat';
 }
 

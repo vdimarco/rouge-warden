@@ -29,6 +29,8 @@
         touch-action: none;
       }
       body {
+        display: flex;
+        flex-direction: column;
         font-family: "DM Sans", "Gill Sans", "Trebuchet MS", sans-serif;
       }
       h1 {
@@ -44,7 +46,9 @@
       #court {
         display: block;
         width: 100%;
-        height: 100%;
+        flex: 1 1 auto;
+        min-height: 0;
+        height: auto;
         touch-action: none;
       }
       #banner {
@@ -76,14 +80,21 @@
         z-index: 3;
       }
       .arcade-links {
-        position: absolute;
+        position: relative;
         z-index: 6;
-        top: auto;
-        bottom: max(8px, env(safe-area-inset-bottom));
-        left: max(8px, env(safe-area-inset-left));
-        right: max(8px, env(safe-area-inset-right));
+        flex: 0 0 auto;
         display: flex;
+        align-items: center;
         justify-content: space-between;
+        gap: 8px;
+        box-sizing: border-box;
+        min-height: 56px;
+        padding: 4px max(8px, env(safe-area-inset-right)) 4px max(8px, env(safe-area-inset-left));
+        background: #F3E9D6;
+        pointer-events: none;
+      }
+      .hud-mid {
+        display: flex;
         gap: 8px;
         pointer-events: none;
       }
@@ -95,15 +106,17 @@
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        gap: 18px;
-        padding: 24px 20px 88px;
+        gap: 12px;
+        padding: 16px 16px 20px;
         background: #F3E9D6;
         color: #2B2A33;
+        overflow: auto;
       }
       #gate[hidden] { display: none; }
       #gate-btn {
         width: min(420px, 100%);
-        min-height: 280px;
+        min-height: 0;
+        height: min(280px, 52vh);
         border: 0;
         background: transparent;
         color: #2B2A33;
@@ -116,7 +129,7 @@
       }
       #gate .hedge {
         display: block;
-        height: 220px;
+        height: min(180px, 36vh);
         border-radius: 8px 8px 0 0;
         background:
           repeating-linear-gradient(#3F6B47 0 14px, #356344 14px 18px);
@@ -126,7 +139,7 @@
         position: relative;
         display: flex;
         align-items: stretch;
-        height: 200px;
+        height: min(160px, 32vh);
         background: #8C5A32;
         border: 6px solid #6d4424;
         border-bottom: 0;
@@ -177,14 +190,12 @@
       }
       #touch-choice { width: min(280px, 100%); }
       #recal, #cog {
-        position: absolute;
-        z-index: 4;
-        top: max(8px, env(safe-area-inset-top));
+        position: static;
         width: 48px;
+        height: 48px;
         padding: 0;
+        pointer-events: auto;
       }
-      #recal { right: max(8px, env(safe-area-inset-right)); }
-      #cog { left: max(8px, env(safe-area-inset-left)); }
       #upright, #recal-offer {
         position: absolute;
         z-index: 7;
@@ -214,6 +225,7 @@
       }
       #settings[hidden], #upright[hidden], #recal-offer[hidden], #recal[hidden], #cog[hidden] { display: none; }
       .arcade-links a, .arcade-links button {
+        box-sizing: border-box;
         pointer-events: auto;
         min-width: 48px;
         min-height: 48px;
@@ -229,6 +241,18 @@
   </head>
   <body>
     <h1>Lawn Tennis at the Cottage</h1>
+    <nav class="arcade-links" aria-label="Arcade">
+      <a href="/">Arcade</a>
+      <span class="hud-mid">
+        <button id="cog" type="button" hidden aria-label="Input settings">
+          <svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true"><circle cx="11" cy="11" r="3" fill="none" stroke="#F3E9D6" stroke-width="2"/><path d="M11 2 v3 M11 17 v3 M2 11 h3 M17 11 h3 M4.5 4.5 l2 2 M15.5 15.5 l2 2 M17.5 4.5 l-2 2 M6.5 15.5 l-2 2" fill="none" stroke="#F3E9D6" stroke-width="2"/></svg>
+        </button>
+        <button id="recal" type="button" hidden aria-label="Recalibrate">
+          <svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true"><path d="M3 14 h16 M11 14 v-7" fill="none" stroke="#F3E9D6" stroke-width="2"/><circle cx="11" cy="6" r="2" fill="#E8B94A"/></svg>
+        </button>
+      </span>
+      <button type="button" data-switch>Switch game</button>
+    </nav>
     <canvas id="court" aria-label="Backyard tennis court. Tap anywhere to swing. The player moves under the ball."></canvas>
     <p id="banner" hidden></p>
     <button id="again" type="button" hidden>Play again</button>
@@ -246,12 +270,6 @@
     </div>
     <p id="upright" hidden>Turn the phone upright</p>
     <p id="recal-offer" hidden>Hold still and tap the level to set your grip.</p>
-    <button id="cog" type="button" hidden aria-label="Input settings">
-      <svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true"><circle cx="11" cy="11" r="3" fill="none" stroke="#F3E9D6" stroke-width="2"/><path d="M11 2 v3 M11 17 v3 M2 11 h3 M17 11 h3 M4.5 4.5 l2 2 M15.5 15.5 l2 2 M17.5 4.5 l-2 2 M6.5 15.5 l-2 2" fill="none" stroke="#F3E9D6" stroke-width="2"/></svg>
-    </button>
-    <button id="recal" type="button" hidden aria-label="Recalibrate">
-      <svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true"><path d="M3 14 h16 M11 14 v-7" fill="none" stroke="#F3E9D6" stroke-width="2"/><circle cx="11" cy="6" r="2" fill="#E8B94A"/></svg>
-    </button>
     <div id="settings" hidden>
       <button type="button" data-sens="15">Tilt 15</button>
       <button type="button" data-sens="25">Tilt 25</button>
@@ -259,10 +277,6 @@
       <button type="button" id="use-touch">Play with touch</button>
       <button type="button" id="use-tilt">Play with tilt</button>
     </div>
-    <nav class="arcade-links" aria-label="Arcade">
-      <a href="/">Arcade</a>
-      <button type="button" data-switch>Switch game</button>
-    </nav>
     <script type="module" src="./game.js"></script>
     <script src="/arcade/switch.js"></script>
     <script src="/arcade/analytics.js" data-game="tennis"></script>

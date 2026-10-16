@@ -16,7 +16,10 @@ This is a clean-room prototype. The inspiration has no license, so this change u
 - One node QA script that plays a seeded rally through the test hook.
 - A Cottage Arcade machine in the Cottage group, after In Full Swing, with the same id and name in the game switcher.
 - Phone tilt and flick, with touch kept as a fallback, and a garden-gate start that asks for motion permission.
-- Synthesized Web Audio: a ball tok, a flick whoosh, a bloom chime, and a bird chirp. No audio files.
+- Synthesized Web Audio: a ball tok, a bounce, a point, a win, a flick whoosh, a bloom chime, and a bird chirp. No audio files.
+- The Arcade and Switch controls sit in a bar above the court, in portrait and landscape, and the old empty side pad is gone.
+- From point 2 a swing returns the ball only when the player is within 1.0 m. A miss still plays the swing and a whoosh, with a short grass puff and no tok. The gold marker is 1.0 m across and marks where to stand.
+- The Neighbour uses the approved casual and pro tables. Casual is the default. A simulated match reports the Neighbour point-win rate for casual against an average bot and pro against a skilled bot.
 
 ## Out of scope
 
