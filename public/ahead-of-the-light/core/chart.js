@@ -92,13 +92,30 @@ export function makeChart(seed, tune = TUNE) {
   });
 }
 
+// A lane's name on its chip, 14 characters at most (11.3): the name if it fits; else a set short name; else without
+// its leading THE; else its first whole words that fit. Never a cut word.
+const CHIP_NAMES = Object.freeze({ 'THE GALACTIC CENTRE': 'THE CENTRE', 'ALDEBARAN AND THE HYADES': 'THE HYADES' });
+export function chipName(name, max = 14) {
+  const s = String(name || '');
+  if (s.length <= max) return s;
+  if (CHIP_NAMES[s]) return CHIP_NAMES[s];
+  const bare = s.replace(/^THE /, '');
+  if (bare.length <= max) return bare;
+  let out = '';
+  for (const w of bare.split(' ')) {
+    if ((out ? out.length + 1 : 0) + w.length > max) break;
+    out = out ? `${out} ${w}` : w;
+  }
+  return out || bare.slice(0, max);
+}
+
 // A lane's chip: icon, name (up to 14 characters on the chip), tags (its kind's tag, then its condition), colour.
 export function chipOf(lane, tune = TUNE) {
   if (!lane) return null;
   const tags = [laneTag(lane, tune)].filter(Boolean);
   if (lane.cond && CONDITIONS[lane.cond]) tags.push(CONDITIONS[lane.cond].name);
   return {
-    id: lane.id, name: lane.name, short: lane.name.length > 14 ? `${lane.name.slice(0, 13)}.` : lane.name,
+    id: lane.id, name: lane.name, short: chipName(lane.name),
     kind: lane.kind, fam: lane.fam, cond: lane.cond, icon: lane.icon || LANE_ICON[lane.kind] || 'line', tags,
     colour: lane.fam ? FAMILIES[lane.fam].colour : '#ffffff', bulge: lane.kind === 'risk' ? 1 : lane.kind === 'void'
       ? 0.1 : 0.5,

@@ -705,10 +705,15 @@ export function amountOf(id, r = 0) {
   const k = rarityOf(id, r);
   return pickR(c.amounts || c.values, k);
 }
-// The value the face shows at a rarity.
+// The value the face shows at a rarity, as text. In a row with a fraction a whole number keeps one decimal, as 12.3
+// writes them ("× 0.85 / × 0.9 / × 1.0", "1.0 / 1.5 / 2.0 s").
 export function valueOf(id, r = 0) {
   const c = CARD[id];
-  return c ? pickR(c.values, rarityOf(id, r)) : '';
+  if (!c) return '';
+  const x = pickR(c.values, rarityOf(id, r));
+  if (typeof x !== 'number') return String(x);
+  const frac = c.values.some((v) => typeof v === 'number' && !Number.isInteger(v));
+  return frac && Number.isInteger(x) ? x.toFixed(1) : String(x);
 }
 
 // The card face (12.7): { id, title, text, num, before, after, tag, kind, fam, fams, colour, band, glyph, frame, r,
@@ -736,7 +741,8 @@ export function faceOf(id, r = 0, build = []) {
   const F = FAMILIES[c.fam];
   return {
     id, title: c.name, text: before + (at < 0 ? '' : v) + after, num: at < 0 ? null : v, before, after, tag,
-    kind: c.kind, fam: c.fam, fams: c.fams, colour: F.colour, band: F.band, glyph: F.glyph, r: k, rarity: RARITY[k],
+    kind: c.kind, fam: c.fam, fams: c.fams, colour: F.colour, band: F.band, glyph: F.glyph, r: k,
+    rarity: c.kind === 'fusion' ? 'FUSION' : c.kind === 'legend' ? 'LEGENDARY' : RARITY[k],
     frame: c.kind === 'fusion' ? 'fusion' : c.kind === 'legend' ? 'legend' : RARITY[k].toLowerCase(),
     owned: owned.has(id), orange: Boolean(tag && tag.startsWith('COMPLETES')),
   };

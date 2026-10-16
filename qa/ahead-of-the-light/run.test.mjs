@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import * as mod from '../../public/ahead-of-the-light/core/run.js';
 import { createRun, startLeg, endLeg, follow, openBreak, breakOf, pick, skip, reroll, banish, chooseLane, resultOf,
   snapshot, restore, RUN_PHASES, RESULT_UNLOCK } from '../../public/ahead-of-the-light/core/run.js';
-import { makeChart, chartView, NODES } from '../../public/ahead-of-the-light/core/chart.js';
+import { makeChart, chartView, chipOf, chipName, NODES } from '../../public/ahead-of-the-light/core/chart.js';
 import { makeOffer, rarityChances, rollRarity, rowFor, baseRow, placeShift, riskRule, poolOf, FIRST_OFFER }
   from '../../public/ahead-of-the-light/core/offer.js';
 import { CARDS, CARD, STARTERS, FUSIONS, LEGENDS, TROPHIES, FAMS, CAPS, applyBuild, faceOf, cardState, amountOf,
@@ -190,6 +190,18 @@ test('chart rules (11.3)', () => {
   assert.deepEqual(v.nodes.map((n) => n.name), [...NODES]);
   assert.match(v.launch.line, /^THE LIGHT AT LAUNCH: \d+ S$/);
   assert.equal(makeChart(3)[2].find((l) => l.kind === 'risk').tag, 'PICK 1 OF 4 · RARE+');
+  // chip names: 14 characters at most, whole words only
+  for (const lanes of makeChart(3)) {
+    for (const l of lanes) {
+      const c = chipOf(l);
+      assert.ok(c.short.length <= 14 && c.short.length > 0, `${l.name} → ${c.short}`);
+      assert.ok(!/[ .]$/.test(c.short), `${l.name} → ${c.short} ends on a whole word`);
+      for (const w of c.short.split(' ')) assert.ok(l.name.split(' ').includes(w), `${l.name} → ${c.short}`);
+    }
+  }
+  assert.deepEqual(['THE GREAT WALL', 'THE GALACTIC CENTRE', 'ALDEBARAN AND THE HYADES', 'THE ORION NEBULA',
+    'THE ASTEROID BELT', 'MARKARIAN\'S CHAIN'].map((n) => chipName(n)),
+  ['THE GREAT WALL', 'THE CENTRE', 'THE HYADES', 'ORION NEBULA', 'ASTEROID BELT', 'MARKARIAN\'S']);
 });
 
 test('offers never show an owned or banished card; a form for a filled slot says REPLACES', () => {
@@ -725,6 +737,13 @@ test('every card\'s face fits 14 and 68 characters; there are 36 cards', () => {
     assert.ok(c.rule && c.tell, c.id);
     assert.ok(c.patch || c.hooks || c.mods, `${c.id} changes a rule`);
   }
+  // values read as 12.3 writes them: a whole number in a row with fractions keeps one decimal
+  assert.equal(faceOf('slow-orbit', 2).text, 'Whips sweep 30 % slower: wider windows, gains × 1.0.');
+  assert.equal(faceOf('afterburner', 0).num, '1.0');
+  assert.equal(faceOf('steady-hand', 0).num, '3');
+  assert.equal(faceOf('bussard-scoop', 1).num, '⅙');
+  assert.deepEqual(['cherenkov', 'wrecker', 'hounds-bite', 'twin-deflector'].map((id) => faceOf(id, 0).rarity),
+    ['LEGENDARY', 'FUSION', 'RARE', 'RARE']);
 });
 
 test('a build\'s hooks run inside real legs: HAIR TRIGGER\'s hairlines add 2 to the chain', () => {
