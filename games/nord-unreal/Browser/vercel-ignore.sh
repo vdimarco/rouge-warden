@@ -13,8 +13,13 @@ head=${VERCEL_GIT_COMMIT_SHA:-HEAD}
 base=${VERCEL_GIT_PREVIOUS_SHA:-$head^}
 
 if ! git cat-file -e "$base^{commit}" 2>/dev/null; then
-  echo "Base $base is not in the clone; building."
-  exit 1
+  # Vercel's clone is shallow. The diff needs only the base commit's tree, not the history between.
+  echo "Base $base is not in the clone; fetching it."
+  git fetch --quiet --no-tags --depth=1 origin "$base" 2>&1
+  if ! git cat-file -e "$base^{commit}" 2>/dev/null; then
+    echo "Could not fetch $base; building."
+    exit 1
+  fi
 fi
 
 git diff --quiet "$base" "$head" -- "${paths[@]}"
