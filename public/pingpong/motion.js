@@ -85,27 +85,42 @@ export function swipeToSwing(gesture) {
   return { degPerSec, dir, tiltX, tiltY: 0, rollDegPerSec };
 }
 
-// Desktop pointer. The position maps into the same tilt angles the spring already follows.
-// A flick is pointer speed over about 60 ms. 1600 px/s is the phone's 300 deg/s line,
-// so a calm move only places the bat and a fast flick lands on the same shot bands.
+// Desktop pointer. The bat tracks the ball sideways. Cursor x is the aim,
+// cursor y is the lean. A flick is pointer speed over about 60 ms, in
+// court-widths per second scaled to a 1280-wide court, so a wider window
+// has to move proportionally faster to read the same shot.
 export const POINTER = Object.freeze({
   window: 0.06,
-  pxAtStart: 1600,
-  medium: 850,
-  clickPx: 12,
+  baseline: 1280,
+  push: 1500,
+  drive: 3000,
+  smash: 5500,
+  bend: 20,
 });
 
-export function tiltFromCanvas(u, v) {
+// 0 is the left edge, 1 is the right edge. Centre aims straight. The ends are ±30 deg.
+export function aimFromCanvas(u) {
   const x = clamp(Number(u) || 0, 0, 1);
-  const y = clamp(Number(v) || 0, 0, 1);
-  return {
-    tiltX: (x - 0.5) * 2 * BAT.fullSide,
-    tiltY: (0.5 - y) * 2 * BAT.fullLean,
-  };
+  return (x - 0.5) * 2 * RULES.aimGamma;
 }
 
-export function flickFromSamples(samples, now, windowSec = POINTER.window) {
+// 0 is the top of the court (toward the net), 1 is the near edge.
+export function leanFromCanvas(v) {
+  const y = clamp(Number(v) || 0, 0, 1);
+  return (0.5 - y) * 2 * BAT.fullLean;
+}
+
+// While the ball is coming in, the bat's sideways target is the ball.
+// Any other phase rests at the middle.
+export function sideTarget(phase, ballX) {
+  if (phase !== 'incoming') return 0;
+  const line = Number(ballX);
+  return Number.isFinite(line) ? line : 0;
+}
+
+export function flickFromSamples(samples, now, viewWidth, windowSec = POINTER.window) {
   const t = Number(now) || 0;
+  const width = Math.max(1, Number(viewWidth) || POINTER.baseline);
   let oldest = null;
   let newest = null;
   const list = samples || [];
@@ -119,15 +134,15 @@ export function flickFromSamples(samples, now, windowSec = POINTER.window) {
   const dt = Math.max(1 / 120, newest.t - oldest.t);
   const dx = newest.x - oldest.x;
   const dy = newest.y - oldest.y;
-  const pxPerSec = Math.hypot(dx, dy) / dt;
-  const degPerSec = pxPerSec * (RULES.swingStart / POINTER.pxAtStart);
-  if (!(degPerSec > RULES.swingStart)) return null;
-  const dir = dx >= 0 ? 'forehand' : 'backhand';
-  const vy = dy / dt;
+  const pxPerSec = (Math.hypot(dx, dy) / dt) * (POINTER.baseline / width);
+  if (!(pxPerSec >= POINTER.push)) return null;
+  const degPerSec = (pxPerSec * RULES.swingStart) / POINTER.push;
+  const bend = Math.atan2(-dy, Math.abs(dx)) * (180 / Math.PI);
   let rollDegPerSec = 0;
-  if (vy < -400) rollDegPerSec = 650;
-  else if (vy > 280) rollDegPerSec = -650;
-  return { degPerSec, dir, rollDegPerSec, at: newest.t, pxPerSec };
+  if (bend + 1e-4 >= POINTER.bend) rollDegPerSec = 360;
+  else if (bend - 1e-4 <= -POINTER.bend) rollDegPerSec = -360;
+  const dir = dx >= 0 ? 'forehand' : 'backhand';
+  return { degPerSec, dir, rollDegPerSec, at: newest.t, pxPerSec, bend };
 }
 
 // Portrait gamma is side tilt. In landscape the axes swap, same as Lawn Tennis.
