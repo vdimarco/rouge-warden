@@ -375,3 +375,5 @@ html[data-layout="desktop"] .panel { max-width: 560px; }
   #speed.big { animation: none; }
 }
 html[data-motion="reduced"] #title .go, html[data-motion="reduced"] #hint { animation: none; }
+html[data-layout="landscape"] .offer.n4 .ctitle { white-space: normal; font-size: 13px; line-height: 1.15; }
+html[data-layout="landscape"] .offer.n4 .cfx { font-size: 12px; }
