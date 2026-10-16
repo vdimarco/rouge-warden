@@ -1,5 +1,5 @@
-// Procedural gouache world. Coordinates are 0 to 1 so every canvas size lines up.
-// Painted layers, when present, are drawn full-frame and replace that slot.
+// Procedural gouache world. Painted layers share one 16:9 cover crop so they
+// stay registered. Coordinates below are 0 to 1 inside that art frame.
 
 const PAPER = "#F3E9D6";
 const INK = "#2B2A33";
@@ -15,6 +15,59 @@ export const REGIONS = [
   { id: "r2", cx: 0.5, cy: 0.46, rx: 0.15, ry: 0.22, eco: 0, emis: 0, energy: 0, phase: 1.7 },
   { id: "r3", cx: 0.77, cy: 0.52, rx: 0.17, ry: 0.25, eco: -4, emis: 4, energy: 5, phase: 2.8 },
 ];
+
+// CSS Images 3 object-fit: cover, with object-position on the island centers.
+export const ART_ASPECT = 16 / 9;
+const WARM_LO = 1;
+const WARM_HI = 3;
+// Full sea rise, in CSS pixels, on a map that is 390 CSS pixels wide.
+const SEA_RISE_AT_390 = 48;
+// Emissions meter. 0 at a clean world, 1 once pollution is heavy. Linear.
+const SMOG_CLEAN = 42;
+const SMOG_SPAN = 45;
+
+export function artFocus() {
+  const y = REGIONS.reduce((sum, region) => sum + region.cy, 0) / REGIONS.length;
+  return { x: 0.5, y };
+}
+
+export function artPlacement(w, h) {
+  const focus = artFocus();
+  if (!(w > 1) || !(h > 1)) return { dx: 0, dy: 0, dw: w, dh: h, focus };
+  let dw;
+  let dh;
+  if (w / h >= ART_ASPECT) {
+    dw = w;
+    dh = w / ART_ASPECT;
+  } else {
+    dh = h;
+    dw = h * ART_ASPECT;
+  }
+  return {
+    dx: (w - dw) * focus.x,
+    dy: (h - dh) * focus.y,
+    dw,
+    dh,
+    focus,
+  };
+}
+
+export function seaState(warming) {
+  const value = Number(warming);
+  if (!Number.isFinite(value)) return { alpha: 0, offset: 0 };
+  const t = clamp((value - WARM_LO) / (WARM_HI - WARM_LO), 0, 1);
+  return { alpha: t, offset: t * SEA_RISE_AT_390 };
+}
+
+export function smogAlpha(view) {
+  const emissions = Number(view && view.emissions);
+  if (!Number.isFinite(emissions)) return 0;
+  return clamp((emissions - SMOG_CLEAN) / SMOG_SPAN, 0, 1);
+}
+
+function seaLiftPx(offset, frameW) {
+  return offset * (frameW / 390);
+}
 
 function clamp(n, a, b) {
   return Math.max(a, Math.min(b, n));
@@ -237,18 +290,20 @@ function grainLayer(w, h) {
 }
 
 function paintSeaLevel(ctx, w, h, warming) {
-  const rise = clamp((warming - 1.2) / 1.7, 0, 1);
-  const y = h * (0.78 - rise * 0.2);
+  const sea = seaState(warming);
+  if (sea.alpha <= 0.004) return;
+  const lift = seaLiftPx(sea.offset, w);
+  const y = h * 0.78 - lift;
   const wash = ctx.createLinearGradient(0, y - h * 0.04, 0, h);
   wash.addColorStop(0, "rgba(62, 124, 143, 0)");
-  wash.addColorStop(0.12, `rgba(62, 124, 143, ${0.25 + rise * 0.35})`);
-  wash.addColorStop(1, `rgba(36, 86, 102, ${0.45 + rise * 0.4})`);
+  wash.addColorStop(0.12, `rgba(62, 124, 143, ${0.25 + sea.alpha * 0.35})`);
+  wash.addColorStop(1, `rgba(36, 86, 102, ${0.45 + sea.alpha * 0.4})`);
   ctx.fillStyle = wash;
-  ctx.fillRect(0, y - h * 0.03, w, h);
+  ctx.fillRect(0, y - h * 0.03, w, h - y + h * 0.03);
 }
 
 function paintSmog(ctx, view, w, h, t) {
-  const alpha = clamp((view.emissions - 42) / 90, 0, 0.62);
+  const alpha = smogAlpha(view);
   if (alpha <= 0.02) return;
   const time = t || 0;
   for (const region of REGIONS) {
@@ -268,9 +323,9 @@ function paintSmog(ctx, view, w, h, t) {
 
 function paintShimmer(ctx, w, h, warming, t) {
   if (!t) return;
-  const rise = clamp((warming - 1.2) / 1.7, 0, 1);
-  const y = h * (0.78 - rise * 0.2) + Math.sin(t * 1.35) * h * 0.008;
-  ctx.fillStyle = `rgba(232, 244, 246, ${0.08 + rise * 0.06})`;
+  const sea = seaState(warming);
+  const y = h * 0.78 - seaLiftPx(sea.offset, w) + Math.sin(t * 1.35) * h * 0.008;
+  ctx.fillStyle = `rgba(232, 244, 246, ${0.08 + sea.alpha * 0.1})`;
   ctx.fillRect(0, y, w, Math.max(1.5, h * 0.012));
 }
 
@@ -303,31 +358,68 @@ function baseLayer(world, w, h, images) {
   canvas.width = w;
   canvas.height = h;
   const ctx = canvas.getContext("2d");
-  drawSlot(ctx, images, "world-base", w, h, () => {
-    paintPaper(ctx, w, h);
-    for (const region of REGIONS) paintLand(ctx, region, w, h, world.ecology + region.eco);
-    paintRivers(ctx, w, h);
+  const place = artPlacement(w, h);
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(0, 0, w, h);
+  ctx.clip();
+  ctx.translate(place.dx, place.dy);
+  ctx.imageSmoothingEnabled = true;
+  drawSlot(ctx, images, "world-base", place.dw, place.dh, () => {
+    paintPaper(ctx, place.dw, place.dh);
+    for (const region of REGIONS) paintLand(ctx, region, place.dw, place.dh, world.ecology + region.eco);
+    paintRivers(ctx, place.dw, place.dh);
   });
   for (const region of REGIONS) {
     const local = localOf(world, region);
     const forest = forestBand(local.ecology);
     const cities = cityBand(local.emissions);
     const power = powerBand(local.energy);
-    drawSlot(ctx, images, `${region.id}-forest-${forest}`, w, h, () => paintForest(ctx, region, w, h, forest));
-    drawSlot(ctx, images, `${region.id}-cities-${cities}`, w, h, () => paintCities(ctx, region, w, h, cities));
-    drawSlot(ctx, images, `${region.id}-power-${power}`, w, h, () => paintPower(ctx, region, w, h, power));
+    drawSlot(ctx, images, `${region.id}-forest-${forest}`, place.dw, place.dh, () => paintForest(ctx, region, place.dw, place.dh, forest));
+    drawSlot(ctx, images, `${region.id}-cities-${cities}`, place.dw, place.dh, () => paintCities(ctx, region, place.dw, place.dh, cities));
+    drawSlot(ctx, images, `${region.id}-power-${power}`, place.dw, place.dh, () => paintPower(ctx, region, place.dw, place.dh, power));
   }
-  drawSlot(ctx, images, "sea-level", w, h, () => paintSeaLevel(ctx, w, h, world.warming));
+  drawSea(ctx, images, place.dw, place.dh, world.warming);
+  ctx.restore();
   if (!images || !images["world-base"]) ctx.drawImage(grainLayer(w, h), 0, 0);
   baseCanvas = canvas;
   baseKey = key;
   return canvas;
 }
 
-function drawSlot(ctx, images, slot, w, h, paint) {
+function drawSlot(ctx, images, slot, dw, dh, paint) {
   const img = images && images[slot];
-  if (img) ctx.drawImage(img, 0, 0, w, h);
+  if (img) ctx.drawImage(img, 0, 0, dw, dh);
   else paint();
+}
+
+function drawSea(ctx, images, dw, dh, warming) {
+  const sea = seaState(warming);
+  if (sea.alpha <= 0.004) return;
+  const lift = seaLiftPx(sea.offset, dw);
+  const img = images && images["sea-level"];
+  if (img) {
+    ctx.save();
+    ctx.globalAlpha = sea.alpha;
+    ctx.drawImage(img, 0, -lift, dw, dh);
+    ctx.restore();
+    return;
+  }
+  paintSeaLevel(ctx, dw, dh, warming);
+}
+
+function drawSmog(ctx, images, dw, dh, view, time) {
+  const alpha = smogAlpha(view);
+  if (alpha <= 0.004) return;
+  const img = images && images.smog;
+  if (img) {
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.drawImage(img, 0, 0, dw, dh);
+    ctx.restore();
+    return;
+  }
+  paintSmog(ctx, view, dw, dh, time);
 }
 
 export function paintWorld(canvas, view, images, frame) {
@@ -346,10 +438,18 @@ export function paintWorld(canvas, view, images, frame) {
   const time = frame && frame.t ? frame.t : 0;
   const pulse = frame && frame.pulse ? frame.pulse : 0;
   ctx.clearRect(0, 0, w, h);
+  ctx.imageSmoothingEnabled = true;
   ctx.drawImage(baseLayer(world, w, h, images), 0, 0);
-  drawSlot(ctx, images, "smog", w, h, () => paintSmog(ctx, world, w, h, time));
-  paintShimmer(ctx, w, h, world.warming, time);
-  paintPulse(ctx, w, h, pulse);
+  const place = artPlacement(w, h);
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(0, 0, w, h);
+  ctx.clip();
+  ctx.translate(place.dx, place.dy);
+  drawSmog(ctx, images, place.dw, place.dh, world, time);
+  paintShimmer(ctx, place.dw, place.dh, world.warming, time);
+  paintPulse(ctx, place.dw, place.dh, pulse);
+  ctx.restore();
 }
 
 export const PREVIEW = {
