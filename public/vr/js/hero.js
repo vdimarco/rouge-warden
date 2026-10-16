@@ -261,7 +261,7 @@ export function createHero(scene, renderer) {
     roll: -1, rollDur: 0.62, atk: null, atkT: 0, hitT: 9, hitX: 0, hitZ: 0, carry: 0, carryOn: false, hidden: false,
     reach: [0, 0], yank: [0, 0], prevYank: [0, 0], prevGround: true, prevVy: 0, cling: 0, prevWall: false,
     tiltQ: new THREE.Quaternion(), headYaw: 0, headPitch: 0,
-    twos: 0, stepAcc: 0, posed: false, // the pose rate (0 = every frame), the time since the last pose, a pose exists to hold
+    twos: 0, stepAcc: 0, posed: false, poseNow: false, // the pose rate (0 = every frame), the time since the last pose, a pose exists to hold
   };
   const mesh = { body: null, hull: null };
   // the motion capture: the loops, each limb's fix for a rig whose rest limbs point elsewhere (the built-in figure), the blend
@@ -634,10 +634,12 @@ export function createHero(scene, renderer) {
     chestH = P.chest || 1.25;
     const pos = P.pos, vel = P.vel;
     // On twos (the film's 12 poses a second): between poses the body slides with the player, but the pose and the facing hold.
-    // The hands, the head and the feet move with the body, so the ropes still start at the hands.
+    // The hands, the head and the feet move with the body, so the ropes still start at the hands. A wall climb stays on ones (its
+    // hands and feet stay on holds in the world), and a new yank poses at once.
+    const yanked = P.yankCool && (P.yankCool[0] > S.prevYank[0] + 0.05 || P.yankCool[1] > S.prevYank[1] + 0.05);
     if (S.twos > 0 && rig && visible && S.posed) {
       S.stepAcc += dt;
-      if (S.stepAcc < 1 / S.twos - 1e-4) {
+      if (S.stepAcc < 1 / S.twos - 1e-4 && !P.wall && !S.prevWall && !yanked && !S.poseNow) {
         V.c.set(pos.x + CL.off.x, pos.y + CL.off.y, pos.z + CL.off.z).sub(root.position);
         root.position.add(V.c);
         root.updateMatrixWorld(true);
@@ -647,7 +649,7 @@ export function createHero(scene, renderer) {
       }
       dt = Math.min(S.stepAcc, 0.1);
     }
-    S.stepAcc = 0;
+    S.stepAcc = 0; S.poseNow = false;
     handPos[0].set(pos.x - 0.3, pos.y + chestH, pos.z); handPos[1].set(pos.x + 0.3, pos.y + chestH, pos.z); // until the model shows
     headPos.set(pos.x, pos.y + 1.65, pos.z);
     if (!rig || !visible) return;
@@ -1058,13 +1060,13 @@ export function createHero(scene, renderer) {
   H.setOpacity = (a) => { opacity = clamp(a, 0, 1); OPA.value = opacity; applyVisible(); };
   H.setYaw = (y) => { S.yaw = y; S.inited = true; };
   // the landing roll (main calls it on the physics roll event), a punch or kick, a blow taken from (dx, dz), carrying someone
-  H.roll = (dur) => { S.roll = 0; S.rollDur = dur || S.rollDur; S.land = 0; S.crouch = 0; S.flip = false; };
+  H.roll = (dur) => { S.poseNow = true; S.roll = 0; S.rollDur = dur || S.rollDur; S.land = 0; S.crouch = 0; S.flip = false; };
   // a tucked flip in the air (a release boost): the same turn as the roll, with no ground under it
   H.flip = (dur) => { H.roll(dur); S.flip = true; };
   // the glide (main passes the physics' gliding flag every frame)
   H.setGlide = (on) => { S.glideOn = !!on; };
-  H.attack = (kind, side) => { S.atk = { kind, side: side ? 1 : 0, dur: kind === "kick" ? 0.42 : 0.26 }; S.atkT = 0; };
-  H.hit = (dx, dz) => { S.hitT = 0; S.hitX = dx; S.hitZ = dz; };
+  H.attack = (kind, side) => { S.poseNow = true; S.atk = { kind, side: side ? 1 : 0, dur: kind === "kick" ? 0.42 : 0.26 }; S.atkT = 0; };
+  H.hit = (dx, dz) => { S.poseNow = true; S.hitT = 0; S.hitX = dx; S.hitZ = dz; };
   H.setCarry = (on) => { S.carryOn = !!on; };
   H.diving = false;
   // in a car: no hero to draw (the pose keeps running underneath)

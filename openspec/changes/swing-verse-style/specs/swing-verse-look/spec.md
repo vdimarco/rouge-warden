@@ -2,8 +2,9 @@
 
 ### Requirement: The hero moves on twos
 In flat play with Comic motion on Full or Calm, the hero SHALL take a new pose 12 times a second. Between poses the body SHALL move
-with the player, and the hands, the head and the feet SHALL move with it, so a rope still starts at the hand. With a full focus
-meter, or with Comic motion Off, the hero SHALL take a new pose every frame. The headset SHALL not change.
+with the player, and the hands, the head and the feet SHALL move with it, so a rope still starts at the hand. A yank, an attack,
+a hit or a roll SHALL take a new pose at once. While the hero holds a wall, and with a full focus meter or with Comic motion Off,
+the hero SHALL take a new pose every frame. The headset SHALL not change.
 
 #### Scenario: Walk on twos
 - **WHEN** the hero walks for one second at 60 frames a second with an empty focus meter
