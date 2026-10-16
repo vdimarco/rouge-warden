@@ -6,6 +6,7 @@ import http from "http";
 import fs from "fs";
 import path from "path";
 import { createRun, clampEffect, IDEAS, IDEA_CLAMP, lagAlpha, CARDS, SYNERGIES, EVENTS, YEARS, ENDINGS, judge, readIndicators, PATHWAYS, PATH_NEED } from "../../public/breakthrough2/model.js";
+import { artPlacement, seaState, smogAlpha } from "../../public/breakthrough2/map.js";
 import { scripted, randomPolicy, greedyClean } from "./policies.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
@@ -75,7 +76,7 @@ async function open(browser, url, size, options) {
   const height = size?.height || 844;
   const ctx = await browser.newContext({
     viewport: { width, height },
-    isMobile: true,
+    isMobile: !options?.desktop,
     hasTouch: true,
     deviceScaleFactor: 1,
     reducedMotion: options?.reduce ? "reduce" : "no-preference",
@@ -227,7 +228,32 @@ const base = `http://127.0.0.1:${port}/breakthrough2/`;
 console.log("serving", base);
 const browser = await chromium.launch({ args: ["--disable-dev-shm-usage"] });
 
+const SEA_MOVE_PX = 4;
+const SMOG_MOVE = SEA_MOVE_PX / (390 * 9 / 16);
+
+function movedAir(prev, next) {
+  return Math.abs(next.seaOffset - prev.seaOffset) >= SEA_MOVE_PX - 1e-6
+    || Math.abs(next.smogAlpha - prev.smogAlpha) >= SMOG_MOVE - 1e-6;
+}
+
+function waitArt(page) {
+  return page.waitForFunction(() => window.__test.artReady());
+}
+
 try {
+  const wide = artPlacement(390, 130);
+  check(Math.abs(wide.dw / wide.dh - 16 / 9) < 1e-6, "a short map frame stays 16:9");
+  check(wide.dw >= 389 && wide.dh >= 129, "a short map frame covers the canvas");
+  const focusY = (0.46 + 0.5 + 0.52) / 3;
+  const y0 = -wide.dy / wide.dh;
+  const y1 = (130 - wide.dy) / wide.dh;
+  check(y0 <= focusY && focusY <= y1, "the crop keeps the island vertical center");
+  check(Math.abs(wide.dx) < 1e-6, "a wide crop keeps the three island centers");
+  check(seaState(1).alpha === 0 && seaState(1).offset === 0, "sea is clear at 1.0°");
+  check(seaState(3).alpha === 1 && seaState(2).offset * 2 === seaState(3).offset, "sea rises continuously from 1° to 3°");
+  check(seaState(2.01).offset !== seaState(2).offset, "a hundredth of a degree moves the sea");
+  check(smogAlpha({ emissions: 32 }) < 0.05 && smogAlpha({ emissions: 102 }) > 0.95, "smog is clear in a clean world and full in a dirty one");
+  check(smogAlpha({ emissions: 60 }) > smogAlpha({ emissions: 59 }), "smog rises continuously with pollution");
   check(lagAlpha(10) > lagAlpha(6), `10 year lag ${lagAlpha(10).toFixed(3)} beats 6 year lag ${lagAlpha(6).toFixed(3)}`);
   check(CARDS.length >= 20, `${CARDS.length} breakthroughs`);
   check(SYNERGIES.length >= 8, `${SYNERGIES.length} synergies`);
@@ -265,6 +291,10 @@ try {
   check(boot.errors.length === 0, boot.errors.length ? boot.errors.join("; ") : "no console errors on load");
   check(boot.bytes() < 500 * 1024, `first load ${boot.bytes()} bytes is under 500 KB`);
   console.log(`  first-load transfer ${boot.bytes()} bytes`);
+  await boot.page.waitForFunction(() => window.__test.artSlots().includes("world-base"));
+  const titleArt = await boot.page.evaluate(() => window.__test.artSlots());
+  const laterArt = titleArt.filter((slot) => /lush|burnt|green|grey|clean|mixed/.test(slot));
+  check(titleArt.length === 12 && laterArt.length === 0, `title art is the opening bands (${titleArt.length}, later ${laterArt.length})`);
   globalThis.__bytes = boot.bytes();
   await shoot(boot.page, "breakthrough2-title");
   await boot.page.locator("#howto-open").tap();
@@ -307,6 +337,30 @@ try {
   const endText = await runA.page.locator("#ending").innerText();
   check(endText.includes(`Seed ${played.state.seed}`) && endText.includes(played.state.endingName), "end screen shows the ending and the seed");
   check(!/[\u2014\u2013]/.test(endText), "end screen has no em or en dashes");
+  const endLook = await runA.page.evaluate(() => {
+    const panel = document.getElementById("end-panel");
+    const panelCs = getComputedStyle(panel);
+    const nameCs = getComputedStyle(document.getElementById("end-name"));
+    const mapCs = getComputedStyle(document.getElementById("mapwrap"));
+    const box = panel.getBoundingClientRect();
+    const hit = document.elementFromPoint(box.left + box.width * 0.5, box.top + Math.min(48, box.height * 0.2));
+    const sheet = document.getElementById("sheet");
+    const pass = document.getElementById("pass").getBoundingClientRect();
+    const under = document.elementFromPoint(pass.left + pass.width * 0.5, pass.top + Math.min(20, pass.height * 0.5));
+    return {
+      bg: panelCs.backgroundColor,
+      color: nameCs.color,
+      mapOpacity: mapCs.opacity,
+      onPanel: !!(hit && hit.closest("#end-panel")),
+      sheetInert: sheet.hasAttribute("inert"),
+      passHidden: !under || !under.closest("#pass"),
+    };
+  });
+  check(endLook.bg === "rgb(243, 233, 214)", `end panel is paper (${endLook.bg})`);
+  check(endLook.color === "rgb(43, 42, 51)", `end title is ink (${endLook.color})`);
+  check(endLook.mapOpacity === "0.85", `map behind the ending is ${endLook.mapOpacity}`);
+  check(endLook.onPanel, "ending text sits on the paper panel");
+  check(endLook.sheetInert && endLook.passHidden, "play controls are inert under the ending");
   check(played.minTap && played.minTap.w >= 44 && played.minTap.h >= 44, `first choice target ${played.minTap ? Math.round(played.minTap.w) + "x" + Math.round(played.minTap.h) : "missing"}`);
   await shoot(runA.page, "breakthrough2-ending");
   const endName = await runA.page.locator("#end-name").innerText();
@@ -425,10 +479,15 @@ try {
   }));
   const healthyYear = await maps.page.locator("#yearchip").innerText();
   check(/20/.test(healthyYear), `healthy map is mid-century (${healthyYear})`);
+  const cleanAir = await maps.page.evaluate(() => window.__test.atmosphere());
+  await waitArt(maps.page);
   await shoot(maps.page, "breakthrough2-map-healthy");
   await maps.page.evaluate(() => window.__test.tweak({
     ecology: 22, emissions: 102, energy: 86, prosperity: 30, trust: 24, warming: 2.62,
   }));
+  const dirtyAir = await maps.page.evaluate(() => window.__test.atmosphere());
+  check(dirtyAir.seaOffset > cleanAir.seaOffset + 4, `sea offset clean ${cleanAir.seaOffset.toFixed(1)} dirty ${dirtyAir.seaOffset.toFixed(1)}`);
+  check(dirtyAir.smogAlpha > cleanAir.smogAlpha + 0.4, `smog alpha clean ${cleanAir.smogAlpha.toFixed(2)} dirty ${dirtyAir.smogAlpha.toFixed(2)}`);
   await shoot(maps.page, "breakthrough2-map-degraded");
   const nanDrop = await maps.page.evaluate(() => {
     const before = window.__test.state();
@@ -438,7 +497,96 @@ try {
   });
   check(nanDrop, "tweak drops NaN and Infinity");
   check(maps.errors.length === 0 && maps.net404.length === 0 && maps.off.length === 0, "map probe added no errors, 404s, or off-origin calls");
+  const frame = await maps.page.evaluate(() => window.__test.artFrame());
+  check(Math.abs(frame.dw / frame.dh - 16 / 9) < 0.002, `live art frame ${Math.round(frame.dw)}x${Math.round(frame.dh)} is 16:9`);
+  check(frame.dw + 0.5 >= frame.w && frame.dh + 0.5 >= frame.h, "live art frame covers the map canvas");
   await maps.close();
+
+  console.log("\nsea and smog each turn");
+  const air = await open(browser, base + "?seed=123&fast=1");
+  await air.page.evaluate(() => window.__test.start());
+  let prevAir = await air.page.evaluate(() => window.__test.atmosphere());
+  const seaSeries = [prevAir.seaOffset];
+  const smogSeries = [prevAir.smogAlpha];
+  let airGuard = 0;
+  let airTurns = 0;
+  while (airGuard < 40) {
+    const before = await air.page.evaluate(() => window.__test.state());
+    if (before.phase === "end") break;
+    const offers = await air.page.evaluate(() => window.__test.offers());
+    await air.page.evaluate((choice) => window.__test.choose(choice), scripted(offers));
+    const after = await air.page.evaluate(() => window.__test.state());
+    if (after.year !== before.year || after.phase === "end") {
+      const now = await air.page.evaluate(() => window.__test.atmosphere());
+      const dSea = Math.abs(now.seaOffset - prevAir.seaOffset);
+      const dSmog = Math.abs(now.smogAlpha - prevAir.smogAlpha);
+      airTurns += 1;
+      check(movedAir(prevAir, now), `${before.year} moves sea ${dSea.toFixed(2)}px or smog ${dSmog.toFixed(3)}`);
+      seaSeries.push(now.seaOffset);
+      smogSeries.push(now.smogAlpha);
+      prevAir = now;
+    }
+    airGuard += 1;
+  }
+  check(airTurns === 12, `seed 123 sampled ${airTurns} turns`);
+  check(seaSeries.some((n) => Math.abs(n - seaSeries[0]) > 0.5), "sea offset does not stay flat across seed 123");
+  check(smogSeries.some((n) => Math.abs(n - smogSeries[0]) > 0.02), "smog alpha does not stay flat across seed 123");
+  check(air.errors.length === 0, "atmosphere run stayed clean");
+  await air.close();
+
+  console.log("\nart frames");
+  const artViews = [
+    { width: 390, height: 844, shot: "breakthrough2-art-start-390" },
+    { width: 360, height: 740, shot: "breakthrough2-art-start-360" },
+    { width: 320, height: 568, shot: "breakthrough2-art-start-320" },
+    { width: 844, height: 390, shot: "breakthrough2-art-start-landscape" },
+    { width: 1280, height: 800, shot: "breakthrough2-art-start-1280", desktop: true },
+  ];
+  for (const vp of artViews) {
+    const shot = await open(browser, base + "?seed=1&fast=1", vp, { desktop: !!vp.desktop });
+    await shot.page.locator("#start").tap();
+    await shot.page.waitForFunction(() => window.__test.state().ui === "play");
+    await shot.page.waitForFunction(() => window.__test.artSlots().includes("world-base"));
+    await shoot(shot.page, vp.shot, vp.width, vp.height);
+    check(shot.errors.length === 0 && shot.net404.length === 0, `${vp.shot} stayed clean`);
+    await shot.close();
+  }
+  async function shootLate(name, decide) {
+    const late = await open(browser, base + "?seed=1&fast=1");
+    await late.page.evaluate(() => window.__test.start());
+    let guard = 0;
+    while (guard < 40) {
+      const state = await late.page.evaluate(() => window.__test.state());
+      if (state.phase === "end" || state.year >= 2080) break;
+      const offers = await late.page.evaluate(() => window.__test.offers());
+      await late.page.evaluate((choice) => window.__test.choose(choice), decide(offers, state));
+      guard += 1;
+    }
+    await waitArt(late.page);
+    await shoot(late.page, name);
+    await late.close();
+  }
+  function dirtyPick(offers) {
+    if (offers.event && offers.event.options) {
+      let best = offers.event.options[0];
+      let score = -Infinity;
+      for (const option of offers.event.options) {
+        const fx = option.effect || {};
+        const next = (fx.emissions || 0) * 2 + (fx.energy || 0) - (fx.ecology || 0);
+        if (next > score) {
+          score = next;
+          best = option;
+        }
+      }
+      return best.id;
+    }
+    const cards = (offers.cards || []).filter((card) => card.affordable);
+    if (!cards.length) return "pass";
+    cards.sort((a, b) => ((b.effect.emissions || 0) + (b.effect.energy || 0)) - ((a.effect.emissions || 0) + (a.effect.energy || 0)));
+    return cards[0].id;
+  }
+  await shootLate("breakthrough2-art-clean-390", greedyClean);
+  await shootLate("breakthrough2-art-dirty-390", dirtyPick);
 
   console.log("\nlayout");
   const viewports = [

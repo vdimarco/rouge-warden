@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#3E7C8F" />
+    <title>Table Tennis</title>
+    <style>
+      @font-face {
+        font-family: "Fraunces";
+        font-style: normal;
+        font-weight: 600;
+        font-display: swap;
+        src: url("/breakthrough/fonts/fraunces-latin-600-normal.woff2") format("woff2");
+      }
+      @font-face {
+        font-family: "DM Sans";
+        font-style: normal;
+        font-weight: 600;
+        font-display: swap;
+        src: url("/breakthrough/fonts/dm-sans-latin-600-normal.woff2") format("woff2");
+      }
+      html, body {
+        margin: 0;
+        height: 100%;
+        background: #8A8378;
+        color: #2B2A33;
+        overflow: hidden;
+        touch-action: none;
+      }
+      body { font-family: "DM Sans", "Gill Sans", "Trebuchet MS", sans-serif; }
+      h1 {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        border: 0;
+      }
+      #table {
+        display: block;
+        width: 100%;
+        height: 100%;
+        touch-action: none;
+      }
+      #recenter, #again, .arcade-links a, .arcade-links button, #gate-btn {
+        box-sizing: border-box;
+        min-width: 48px;
+        min-height: 48px;
+      }
+      .topbar {
+        position: absolute;
+        z-index: 4;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 56px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 4px max(8px, env(safe-area-inset-right)) 4px max(8px, env(safe-area-inset-left));
+        box-sizing: border-box;
+        pointer-events: none;
+      }
+      .topbar p {
+        margin: 0;
+        display: flex;
+        align-items: center;
+        box-sizing: border-box;
+        height: 48px;
+        padding: 0 14px;
+        border-radius: 999px;
+        background: #2B2A33;
+        color: #F3E9D6;
+        font: 600 12px/1 "DM Sans", "Gill Sans", sans-serif;
+        white-space: nowrap;
+      }
+      #score-them { margin-left: auto; }
+      #recenter {
+        position: static;
+        flex: none;
+        pointer-events: auto;
+        min-width: 48px;
+        min-height: 48px;
+        height: 48px;
+        padding: 0 14px;
+        border: 0;
+        border-radius: 999px;
+        background: #2B2A33;
+        color: #F3E9D6;
+        font: 600 12px/1 "DM Sans", sans-serif;
+      }
+      #again {
+        position: absolute;
+        z-index: 4;
+        left: 50%;
+        bottom: max(64px, calc(env(safe-area-inset-bottom) + 64px));
+        transform: translateX(-50%);
+        padding: 12px 18px;
+        border: 0;
+        border-radius: 999px;
+        background: #B5472E;
+        color: #F3E9D6;
+        font: 600 16px/1 "DM Sans", sans-serif;
+      }
+      #again[hidden] { display: none; }
+      #gate {
+        position: absolute;
+        inset: 0;
+        z-index: 5;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 14px;
+        padding: 72px 20px 80px;
+        background: rgba(243, 233, 214, 0.94);
+        color: #2B2A33;
+        text-align: center;
+      }
+      #gate[hidden] { display: none; }
+      #gate h2 {
+        margin: 0;
+        font-family: "Fraunces", Palatino, serif;
+        font-size: 32px;
+        font-weight: 600;
+      }
+      #paddle {
+        width: 92px;
+        height: 118px;
+      }
+      #gate-btn {
+        border: 0;
+        border-radius: 999px;
+        padding: 14px 22px;
+        background: #B5472E;
+        color: #F3E9D6;
+        font: 600 16px/1.2 "DM Sans", sans-serif;
+        cursor: pointer;
+      }
+      #gate p {
+        margin: 0;
+        max-width: 34em;
+        font-size: 14px;
+        line-height: 1.4;
+      }
+      @media (max-height: 420px) {
+        #gate {
+          justify-content: flex-start;
+          padding: 8px 16px 8px;
+          gap: 4px;
+          overflow: auto;
+        }
+        #gate h2 { font-size: 20px; }
+        #paddle { width: 36px; height: 46px; }
+        #gate p { font-size: 12px; line-height: 1.2; }
+        #gate-btn { padding: 10px 16px; }
+      }
+      .arcade-links {
+        position: absolute;
+        z-index: 4;
+        left: max(8px, env(safe-area-inset-left));
+        right: max(8px, env(safe-area-inset-right));
+        bottom: max(8px, env(safe-area-inset-bottom));
+        display: flex;
+        justify-content: space-between;
+        gap: 8px;
+        pointer-events: none;
+      }
+      .arcade-links a, .arcade-links button {
+        pointer-events: auto;
+        padding: 12px 14px;
+        border: 0;
+        border-radius: 999px;
+        background: #3E7C8F;
+        color: #F3E9D6;
+        font: 600 14px/1 "DM Sans", sans-serif;
+        text-decoration: none;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Table Tennis</h1>
+    <canvas id="table" aria-label="Table tennis. The phone is the bat."></canvas>
+    <header class="topbar">
+      <p id="score-you">You 0</p>
+      <p id="score-them">0 Neighbour</p>
+      <button id="recenter" type="button">Center</button>
+    </header>
+    <button id="again" type="button" hidden>Play again</button>
+    <div id="gate">
+      <h2>Table Tennis</h2>
+      <svg id="paddle" viewBox="0 0 92 118" aria-hidden="true">
+        <rect x="36" y="70" width="20" height="40" rx="4" fill="#8C5A32" />
+        <rect x="38" y="86" width="16" height="16" fill="#2B2A33" />
+        <rect x="8" y="8" width="76" height="78" rx="16" fill="#C98B3C" />
+        <rect x="14" y="14" width="64" height="66" rx="12" fill="#B5472E" />
+        <ellipse cx="36" cy="36" rx="10" ry="6" fill="#F3E9D6" opacity="0.35" />
+      </svg>
+      <button id="gate-btn" type="button">Tap to pick up your bat</button>
+      <p>Hold your phone like a bat and swing.</p>
+      <p>Hold firmly, use a wrist strap if you have one. Small wrist flicks work, no big arm swings.</p>
+      <p id="gate-note">The iPhone silent switch mutes the game.</p>
+    </div>
+    <nav class="arcade-links" aria-label="Arcade">
+      <a href="/">Arcade</a>
+      <button type="button" data-switch>Switch game</button>
+    </nav>
+    <script type="module" src="./main.js"></script>
+    <script src="/arcade/switch.js"></script>
+    <script src="/arcade/analytics.js" data-game="pingpong"></script>
+  </body>
+</html>

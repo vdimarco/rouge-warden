@@ -30,6 +30,7 @@ const NOT_GAMES = {
 // Games that have no machine of their own, each with the reason. "coveredBy" names the machine that stands in for it.
 const ALLOW = {
   breakthrough: { reason: "the older build of BREAKTHROUGH; its machine opens /breakthrough2/ and this page stays only as a copy (openspec/changes/breakthrough-cabinet-current)", coveredBy: "/breakthrough2/" },
+  tennis: { reason: "Lawn Tennis stays on disk, but its Cottage cabinet and switcher entry are now Table Tennis at /pingpong/", coveredBy: "/pingpong/" },
 };
 // The lab keeps its toys in sub-folders, and each toy with a page is a game. Sub-folders that are not:
 const LAB_NOT_GAMES = {

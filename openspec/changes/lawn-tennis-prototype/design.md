@@ -34,7 +34,7 @@ Tilt uses a new velocity, not the old absolute steer. Gamma moves sideways. Beta
 
 A flick over 250 degrees per second swings at once. The opening lob also accepts 150. Strength picks drop, drive, or smash. Timing still picks the angle. The swing freezes tilt input for 250 ms and then ignores another flick for 350 ms. Over 900 on a low ball is a hard drive.
 
-The gate is flat CSS in the same palette. No outside painting article was adapted. The tap handler calls `DeviceMotionEvent.requestPermission`, `DeviceOrientationEvent.requestPermission`, and `AudioContext.resume` before any await. Sounds are oscillators and a noise buffer.
+The gate is flat CSS in the same palette. No outside painting article was adapted. The tap handler calls `DeviceMotionEvent.requestPermission`, `DeviceOrientationEvent.requestPermission`, and `AudioContext.resume` before any await. `settleGate` sets `simHold` before it waits, so a match already in progress pauses while the pose gate is up. Sounds are oscillators and a noise buffer.
 
 `?fast=1` scales a frame by 4, caps the added time at 0.5 s, and can spend up to 180 steps, so a 20 fps frame plays 0.2 s of simulation and leftover time does not pile up. Arrow keys and A/D use the full run speed out to the sideline. Releasing them clears the key velocity and assisted movement resumes. A drag that steered, a diagonal drag, and a downward drag do not swing. A tap, a hold in place, and a swipe up still do.
 

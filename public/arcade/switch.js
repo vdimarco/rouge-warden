@@ -16,7 +16,7 @@
     { id: "wild", name: "Breath of the Lake", sub: "Get Plunger'd", url: "/wild/", art: "/arcade/wild.webp", color: "#8fcf7a", probe: true },
     { id: "fish", name: "Reel It In", sub: "Loon Lake", url: "/fish/", art: "/arcade/fish.webp", color: "#ffb04a" },
     { id: "vr", name: "In Full Swing", sub: "Meta Quest VR", url: "/vr/", art: "/arcade/vr.webp", color: "#ff8a3a" },
-    { id: "tennis", name: "Lawn Tennis", sub: "At the Cottage", url: "/tennis/", art: "/arcade/key/tennis.svg", color: "#5E8C61" },
+    { id: "pingpong", name: "Table Tennis", sub: "At the Cottage", url: "/pingpong/", art: "/arcade/key/pingpong.svg", color: "#3E7C8F" },
     { id: "olympus", name: "Olympus", sub: "Last Flame", url: "/olympus/", art: "/arcade/key/olympus.webp", color: "#edc06b" },
     { id: "moonwell", name: "Moonwell", sub: "Endless pinball islands", url: "/moonwell/", art: "/arcade/key/moonwell.webp", color: "#edc779" },
     { id: "primordia", name: "Primordia", sub: "A Lenia arcade", url: "/primordia/", art: "/arcade/key/primordia.webp", color: "#3ff0e0" },
@@ -121,20 +121,44 @@
 @media(max-width:900px){.scoreboard .board-head{grid-template-columns:1fr auto;gap:4px 12px;}.board-controls{grid-row:2;grid-column:1/-1;justify-content:space-between;}.board-nav{grid-row:1;grid-column:2;}.scoreboard .board-head h2{font-size:14px;}}
 @media(max-width:560px){.gsw.scoreboard{padding:8px 10px 20px;}.scoreboard .board-head{padding:6px 8px;border-radius:9px;}.board-controls{gap:5px;}.scoreboard .board-sort button{font-size:10px;padding:5px 6px;}.board-controls input{width:110px;font-size:11px;}.board-nav{gap:8px;}.scoreboard .room-link,.board-menu{font-size:10px;}.scoreboard .board-live{margin:5px 2px 9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}.scoreboard .gsw-list{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;}.scoreboard .gsw-game{display:flex;flex-direction:column;align-items:stretch;gap:0;padding:5px;}.scoreboard .gsw-scr{width:100%;}.scoreboard .gsw-game b{font-size:13px;}.scoreboard .gsw-txt{padding:8px 3px 3px;}.scoreboard .board-rank{font-size:8px;top:10px;left:10px;padding:4px;}.scoreboard .board-detail{font-size:9px;}.scoreboard .board-stats{flex-wrap:wrap;gap:10px;}}
 @media(max-width:360px){.board-controls{flex-wrap:wrap;}.board-controls input{width:100%;}}
+.board-when{display:block;margin-top:4px;color:#ffcf4a;font:12px/1.35 system-ui;}
+.scoreboard .board-when{margin-top:2px;}
 `;
-  let box = null, here = null, boardGames = [], metric = 'featured', metrics = null, loading = false;
+  let box = null, here = null, boardGames = [], metrics = null, loading = false, gameDates = null;
+  const SORT_KEY = 'cottage-catalog-sort';
+  const SORTS = ['featured', 'plays', 'views', 'likes', 'active_seconds', 'added', 'updated'];
+  // the home catalog remembers the rank row; a game page keeps the cabinet order
+  const storedSort = () => { try { const v = localStorage.getItem(SORT_KEY); if (SORTS.includes(v)) return v; } catch {} return 'featured'; };
+  let metric = home ? storedSort() : 'featured';
   const metricNames = { plays: 'Plays', views: 'Views', likes: 'Likes', active_seconds: 'Active time' };
   const duration = seconds => seconds < 60 ? Math.floor(seconds) + 's' : seconds < 3600 ? Math.floor(seconds / 60) + 'm' : (seconds / 3600).toFixed(1) + 'h';
   const FEATURED = ['fish','tidebreak','wild','vr','crimson','river-rush'];
-  const rankGames = (games, data, key) => [...games].sort((a,b) => {
-    if (key === 'featured') {
-      const priority = g => FEATURED.includes(g.id) ? FEATURED.indexOf(g.id) : FEATURED.length;
-      const pinned = priority(a) - priority(b);
-      if (pinned) return pinned;
+  const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  // the day is the calendar date in the committer timestamp, not a shift into UTC
+  function dateLabel(row, kind) {
+    const iso = row?.[kind === 'updated' ? 'updated' : 'added'];
+    const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso || '');
+    if (!match) return '';
+    const month = MONTHS[Number(match[2]) - 1];
+    if (!month) return '';
+    return (kind === 'updated' ? 'Updated ' : 'Added ') + month + ' ' + Number(match[3]);
+  }
+  const rankGames = (games, data, key, dates) => {
+    if (key === 'added' || key === 'updated') {
+      const table = dates === undefined ? gameDates : dates;
+      const stamp = (g) => { const t = Date.parse(table?.[g.id]?.[key]); return Number.isFinite(t) ? t : Number.NEGATIVE_INFINITY; };
+      return [...games].sort((a, b) => stamp(b) - stamp(a));
     }
-    const by = key === 'featured' ? 'plays' : key;
-    return (data?.[b.id]?.[by] || 0) - (data?.[a.id]?.[by] || 0);
-  });
+    return [...games].sort((a,b) => {
+      if (key === 'featured') {
+        const priority = g => FEATURED.includes(g.id) ? FEATURED.indexOf(g.id) : FEATURED.length;
+        const pinned = priority(a) - priority(b);
+        if (pinned) return pinned;
+      }
+      const by = key === 'featured' ? 'plays' : key;
+      return (data?.[b.id]?.[by] || 0) - (data?.[a.id]?.[by] || 0);
+    });
+  };
   function validateMetrics(data) {
     if (data?.source !== 'posthog' || data.days !== 30 || !Number.isFinite(Date.parse(data.updatedAt)) || !data.games || typeof data.games !== 'object' || Array.isArray(data.games)) throw Error('Invalid analytics');
     for (const row of Object.values(data.games)) for (const key of Object.keys(metricNames)) if (!Number.isFinite(row?.[key]) || row[key] < 0) throw Error('Invalid metric');
@@ -161,7 +185,38 @@
     finally { loading = false; render(); }
   }
   // a sort that cannot rank says so, so the button does not seem dead
-  const unavailable = () => metric === 'featured' ? 'Shared activity is unavailable. All games are ready to play.' : 'Ranking by ' + metricNames[metric].toLowerCase() + ' is not available now. Games still play.';
+  const unavailable = () => {
+    if ((metric === 'added' || metric === 'updated') && !gameDates) return 'Release dates are not available now. Games still play.';
+    if (metric === 'featured' || metric === 'added' || metric === 'updated') return 'Shared activity is unavailable. All games are ready to play.';
+    return 'Ranking by ' + metricNames[metric].toLowerCase() + ' is not available now. Games still play.';
+  };
+  // New and Updated read /arcade/game-dates.json, written from git by qa/arcade/game-dates.mjs.
+  // One in-flight read is shared. A failure drops it so the next New or Updated click can try again.
+  let datesPromise = null;
+  function loadDates() {
+    if (datesPromise) return datesPromise;
+    const pending = fetchDates().then((ok) => {
+      if (!ok && datesPromise === pending) datesPromise = null;
+      return ok;
+    });
+    datesPromise = pending;
+    return pending;
+  }
+  async function fetchDates() {
+    try {
+      const response = await fetch('/arcade/game-dates.json');
+      if (!response.ok) throw Error('dates');
+      const data = await response.json();
+      const games = {};
+      if (data && typeof data.games === 'object' && !Array.isArray(data.games)) {
+        for (const [id, row] of Object.entries(data.games)) {
+          if (Number.isFinite(Date.parse(row?.added)) && Number.isFinite(Date.parse(row?.updated))) games[id] = { added: row.added, updated: row.updated };
+        }
+      }
+      gameDates = Object.keys(games).length ? games : null;
+      return !!gameDates;
+    } catch { gameDates = null; return false; }
+  }
   // A like reaches the shared count only after PostHog stores it and the five-minute cache expires.
   // Until then this visitor's own like is added once, so the count moves when they press the button.
   // A like sent more than a minute before the counts were read is assumed to be in them already.
@@ -190,8 +245,10 @@
       const img = a.querySelector('img'); img.loading = 'lazy'; img.src = g.art;
       a.querySelector('b').textContent = g.name; a.querySelector('small').textContent = g.sub;
       if (home) {
-        const ranked = metric === 'featured' ? FEATURED.includes(g.id) : metrics && value(g.id,metric) > 0;
-        const displayMetric = metric === 'featured' ? 'plays' : metric;
+        const when = dateLabel(gameDates?.[g.id], metric === 'updated' ? 'updated' : 'added');
+        if (when) { const stamp = document.createElement('span'); stamp.className = 'board-when'; stamp.textContent = when; a.querySelector('.gsw-txt').append(stamp); }
+        const ranked = metric === 'featured' ? FEATURED.includes(g.id) : (metric === 'added' || metric === 'updated') ? Number.isFinite(Date.parse(gameDates?.[g.id]?.[metric])) : metrics && value(g.id,metric) > 0;
+        const displayMetric = (metric === 'featured' || metric === 'added' || metric === 'updated') ? 'plays' : metric;
         tile.dataset.rank = ranked ? rank + 1 : '';
         const badge = document.createElement('span'); badge.className = 'board-rank'; badge.textContent = ranked ? (metric === 'featured' ? 'PICK ' : '') + String(rank + 1).padStart(2,'0') : '—'; a.prepend(badge);
         const stat = document.createElement('span'); stat.className = 'board-plays';
@@ -239,7 +296,7 @@
     // on the arcade page itself the list is the ALL GAMES view: no run ends, and there is no arcade to go back to
     box.setAttribute("aria-label", home ? "All games" : "Switch game");
     box.innerHTML = home
-      ? "<div class='gsw-card'><header class='board-head'><h2>COTTAGE ARCADE</h2><div class='board-controls'><div class='board-sort' aria-label='Rank games by'><button type='button' data-metric='featured' aria-pressed='true'>Featured</button><button type='button' data-metric='plays' aria-pressed='false'>Plays</button><button type='button' data-metric='views' aria-pressed='false'>Views</button><button type='button' data-metric='likes' aria-pressed='false'>Likes</button><button type='button' data-metric='active_seconds' aria-pressed='false'>Time</button></div><input type='search' placeholder='Find a game' aria-label='Find a game'></div><nav class='board-nav' aria-label='Arcade menu'><button type='button' class='room-link machines-link gsw-close'>\u25c0 Old arcade</button><a class='room-link' href='/arcade/room/'>3D arcade \u2197</a><details class='board-menu'><summary>Menu</summary><div><button type='button' class='board-refresh'>Refresh activity</button><a href='#board-info'>About the counts</a></div></details></nav></header><div class='board-live'><span class='board-status' role='status'>Loading shared activity\u2026</span></div><div class='gsw-list'></div><p class='board-empty' hidden>No games found. Try another name.</p><details class='board-definitions' id='board-info'><summary>Activity / last 30 days</summary><div class='board-stats'></div><div>Featured games are selected picks. Views: game page visits. Plays: visits with a first player interaction. Likes: one per anonymous visitor per game in the last 30 days. Active time: focused game time within 30 seconds of input, excluding the game switcher. It is an engagement estimate. Rankings use production PostHog events and refresh every few minutes.</div></details></div>"
+      ? "<div class='gsw-card'><header class='board-head'><h2>COTTAGE ARCADE</h2><div class='board-controls'><div class='board-sort' aria-label='Rank games by'><button type='button' data-metric='featured' aria-pressed='true'>Featured</button><button type='button' data-metric='plays' aria-pressed='false'>Plays</button><button type='button' data-metric='views' aria-pressed='false'>Views</button><button type='button' data-metric='likes' aria-pressed='false'>Likes</button><button type='button' data-metric='active_seconds' aria-pressed='false'>Time</button><button type='button' data-metric='added' aria-pressed='false'>New</button><button type='button' data-metric='updated' aria-pressed='false'>Updated</button></div><input type='search' placeholder='Find a game' aria-label='Find a game'></div><nav class='board-nav' aria-label='Arcade menu'><button type='button' class='room-link machines-link gsw-close'>\u25c0 Old arcade</button><a class='room-link' href='/arcade/room/'>3D arcade \u2197</a><details class='board-menu'><summary>Menu</summary><div><button type='button' class='board-refresh'>Refresh activity</button><a href='#board-info'>About the counts</a></div></details></nav></header><div class='board-live'><span class='board-status' role='status'>Loading shared activity\u2026</span></div><div class='gsw-list'></div><p class='board-empty' hidden>No games found. Try another name.</p><details class='board-definitions' id='board-info'><summary>Activity / last 30 days</summary><div class='board-stats'></div><div>Featured games are selected picks. New lists the newest games first, by the day each game was first added. Updated lists the games that changed most recently. The day on each card follows that choice. Views: game page visits. Plays: visits with a first player interaction. Likes: one per anonymous visitor per game in the last 30 days. Active time: focused game time within 30 seconds of input, excluding the game switcher. It is an engagement estimate. Rankings use production PostHog events and refresh every few minutes.</div></details></div>"
       : "<div class='gsw-card'><h2>SWITCH GAME</h2><p>Pick a cabinet. Your current run ends.</p><div class='gsw-list'></div><div class='gsw-row'><a href='/'>◀ Back to the arcade</a><button type='button' class='gsw-close'>Keep playing</button></div></div>";
     // keep the game from seeing clicks and keys meant for the switcher
     for (const ev of ["pointerdown", "mousedown", "click", "touchstart", "keydown", "keyup"]) box.addEventListener(ev, (e) => e.stopPropagation());
@@ -249,7 +306,21 @@
     if (home) {
       box.querySelector('input').addEventListener('input',filter);
       box.querySelector('.board-refresh').onclick = refresh;
-      for (const button of box.querySelectorAll('[data-metric]')) button.onclick = () => { metric = button.dataset.metric; render(); box.querySelector(`[data-metric="${metric}"]`).focus(); if (!metrics) { if (loading) return; box.querySelector('.board-status').textContent = unavailable(); refresh(); } };
+      for (const button of box.querySelectorAll('[data-metric]')) button.onclick = () => {
+        metric = button.dataset.metric;
+        try { localStorage.setItem(SORT_KEY, metric); } catch {}
+        render();
+        box.querySelector(`[data-metric="${metric}"]`).focus();
+        if (metric === 'added' || metric === 'updated') {
+          if (!gameDates) loadDates().then((ok) => {
+            if (metric !== 'added' && metric !== 'updated') return;
+            if (ok) render();
+            else box.querySelector('.board-status').textContent = unavailable();
+          });
+          return;
+        }
+        if (!metrics) { if (loading) return; box.querySelector('.board-status').textContent = unavailable(); refresh(); }
+      };
     }
     // a game that turns its own frame (Reel It In keeps itself upright on the phone) marks a host, so the list turns with it
     (document.querySelector("[data-switch-host]") || document.body).appendChild(box);
@@ -260,6 +331,7 @@
     const shown = [];
     for (const g of GAMES) if ((!g.labOnly || !home) && (!g.probe || g.id === here || (await live[g.id]))) shown.push(g);
     boardGames = shown;
+    if (home) await loadDates();
     render();
     if (home) refresh();
     box.hidden = false;
@@ -280,5 +352,5 @@
   // the arcade page opens on All Games, except for ?machines (Old arcade) or a page that asks for its machines (a group in its address)
   function init() { wire(); if (home && !new URLSearchParams(location.search).has("machines") && !document.documentElement.hasAttribute("data-machines")) open(); }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init); else init();
-  window.GameSwitch = { open, close, wire, record, count, get isOpen() { return !!box && !box.hidden; }, GAMES, rankGames, validateMetrics, duration };
+  window.GameSwitch = { open, close, wire, record, count, get isOpen() { return !!box && !box.hidden; }, GAMES, rankGames, validateMetrics, duration, dateLabel };
 })();

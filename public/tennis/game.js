@@ -1663,6 +1663,7 @@ function boot() {
     });
   }
   async function settleGate(unlocked) {
+    simHold = true;
     let motion = 'granted';
     let orient = 'granted';
     try {

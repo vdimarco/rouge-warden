@@ -211,6 +211,12 @@ test('the gate tap unlocks audio and motion in the same call', () => {
   const unlockAt = body.indexOf('unlockCourt(');
   const later = body.indexOf('settleGate(');
   assert(unlockAt > 0 && later > unlockAt, 'permission and audio run before the gate continues');
+
+  const settleAt = gameSrc.indexOf('async function settleGate(unlocked)');
+  const settleBody = gameSrc.slice(settleAt, gameSrc.indexOf('function onGateTap()'));
+  const pauseAt = settleBody.indexOf('simHold = true');
+  const waitAt = settleBody.indexOf('await');
+  assert(pauseAt > 0 && pauseAt < waitAt, 'the pose gate should pause the match before it waits');
 });
 
 test('sounds are synthesized, with no audio files', () => {
