@@ -447,6 +447,18 @@ function notePointer(e) {
   firePointerSwing(flick);
 }
 
+function realMouseMove(e) {
+  if (!e || e.isTrusted === false) return false;
+  if (e.pointerType && e.pointerType !== 'mouse') return false;
+  const caps = e.sourceCapabilities;
+  if (caps && caps.firesTouchEvents) return false;
+  return true;
+}
+
+window.addEventListener('mousemove', (e) => {
+  if (inputMode !== 'motion' || !gateOpen() || !realMouseMove(e)) return;
+  armPointerCourt();
+});
 window.addEventListener('pointermove', (e) => {
   if (inputMode !== 'pointer') return;
   notePointer(e);

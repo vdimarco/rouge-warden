@@ -7,3 +7,6 @@
 - [x] Start on one click, hide the cursor for a small aim dot, and update the hint.
 - [x] Cover the bands at 1280 and 2560, a slow move, and an opening point in `qa/pingpong/desktop.test.mjs`. Screenshot 1280 and 390.
 - [x] The OpenSpec CLI is not installed here, so the change docs were checked by reading them.
+- [x] Treat a browser without a coarse pointer and without touch as desktop, including pointer none with DeviceMotionEvent.
+- [x] Switch the phone gate to the mouse on the first real mousemove.
+- [x] Check that path in plain headless Chrome at 1280, not only the Playwright fine-pointer context.

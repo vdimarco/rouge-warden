@@ -25,6 +25,12 @@ That number maps onto the phone bands by degrees per second = speed * 300 / 1500
 
 The bend is the flick's angle from horizontal. Screen y points down, so an upward flick has a negative dy. At least 20 degrees up is topspin and 20 degrees down is backspin, as a level-1 roll (±360 deg/s, past the 200 deg/s spin line).
 
+## Which machine is a desktop
+
+A coarse pointer, or any touch points, stays on the phone gate. Everything else is a desktop, including a browser whose pointer is `none` and which still exposes `DeviceMotionEvent`. Headless Chrome at 1280 reports that pair, so a missing fine pointer is not treated as a phone.
+
+If that first check still shows the phone gate, the first trusted `mousemove` that is not a touch compatibility event switches the gate to the mouse copy before the click. A swipe URL stays on swipe.
+
 ## Start
 
 The gate click still resumes audio and starts the count without asking for motion permission. After that click the canvas cursor is hidden and the frame draws a 4 px dot at the pointer. The hint reads "The bat follows the ball. Move the mouse to aim. Flick to swing."

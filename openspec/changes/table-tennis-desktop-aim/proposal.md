@@ -15,5 +15,6 @@ A desktop player was steering the bat by hand and swinging with the keyboard. Th
 - A flick that bends at least 20 degrees upward is topspin. The same bend downward is backspin.
 - One click on the gate starts play and audio. The cursor becomes a small aim dot.
 - The hint line matches these controls.
+- A browser without a coarse pointer and without touch is a desktop, even when the pointer is none and DeviceMotionEvent exists. If the phone gate is already up, the first real mouse move switches it to the mouse copy.
 
 Out of scope: the phone tilt path, the swipe fallback, the count-in, and the landscape hall framing.

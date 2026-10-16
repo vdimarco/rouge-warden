@@ -4,7 +4,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
+import { spawn } from 'node:child_process';
 import { createRequire } from 'node:module';
 import { desktopCourt } from '../../public/pingpong/gate.js';
 import { BAT, RULES, shotFromPeak, spinFromRoll } from '../../public/pingpong/rules.js';
@@ -26,12 +28,22 @@ test('a fine pointer is the desktop court, and a coarse phone stays on tilt', ()
   motion.requestPermission = () => Promise.resolve('granted');
   assert.equal(desktopCourt({ ...media({ '(pointer: fine)': true }), DeviceMotionEvent: motion }), true);
   assert.equal(desktopCourt({
+    ...media({ '(pointer: none)': true }),
+    DeviceMotionEvent: motion,
+    navigator: { maxTouchPoints: 0 },
+  }), true);
+  assert.equal(desktopCourt({
     ...media({ '(pointer: coarse)': true, '(any-pointer: coarse)': true }),
     DeviceMotionEvent: motion,
     navigator: { maxTouchPoints: 5 },
   }), false);
   assert.equal(desktopCourt({
     ...media({ '(pointer: coarse)': true }),
+    navigator: { maxTouchPoints: 0 },
+  }), false);
+  assert.equal(desktopCourt({
+    ...media({ '(pointer: none)': true }),
+    DeviceMotionEvent: motion,
     navigator: { maxTouchPoints: 1 },
   }), false);
   assert.equal(desktopCourt({ ...media({}), navigator: { maxTouchPoints: 0 } }), true);
@@ -130,6 +142,8 @@ test('the desktop gate skips motion permission and the phone tap still asks', ()
   assert.equal(main.includes('tiltFromCanvas'), false);
   assert.match(main, /getCoalescedEvents/);
   assert.match(main, /flickCool = t \+ RULES\.cooldown/);
+  assert.match(main, /addEventListener\('mousemove'/);
+  assert.match(main, /realMouseMove\(e\)/);
 });
 
 function playwright() {
@@ -231,58 +245,6 @@ test('a desktop mouse flick wins the opening point', { timeout: 90000 }, async (
     assert.ok(room.r - room.b < 70, JSON.stringify(room));
     assert.ok(room.aimR > 200 && room.aimG > 190, JSON.stringify(room));
 
-    const placed = await page.evaluate(async () => {
-      const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-      const canvas = document.getElementById('table');
-      const fire = (type, x, y) => {
-        canvas.dispatchEvent(new PointerEvent(type, {
-          bubbles: true,
-          cancelable: true,
-          pointerId: 1,
-          pointerType: 'mouse',
-          isPrimary: true,
-          clientX: x,
-          clientY: y,
-          button: 0,
-          buttons: type === 'pointerup' ? 0 : 1,
-          view: window,
-        }));
-      };
-      const key = (type, code) => window.dispatchEvent(new KeyboardEvent(type, { code, bubbles: true, cancelable: true }));
-      await wait(80);
-      const box0 = canvas.getBoundingClientRect();
-      const y = box0.top + box0.height * 0.5;
-      const x0 = box0.left + box0.width * 0.5;
-      const endX = x0 + 12 * 28;
-      for (let i = 1; i <= 12; i++) {
-        fire('pointermove', x0 + i * 28, y);
-        await wait(40);
-      }
-      key('keydown', 'ArrowRight');
-      key('keyup', 'ArrowRight');
-      key('keydown', 'KeyD');
-      key('keyup', 'KeyD');
-      key('keydown', 'Space');
-      key('keyup', 'Space');
-      fire('pointerdown', endX, y);
-      fire('pointerup', endX + 2, y);
-      canvas.dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: endX, clientY: y }));
-      await wait(40);
-      const live = window.__test.state();
-      return {
-        phase: live.phase,
-        shot: live.lastShot,
-        batX: live.bat.x,
-        ballX: live.ball.x,
-        aim: window.__test.aim().tiltX,
-        cross: live.crossIn,
-      };
-    });
-    assert.equal(placed.phase, 'incoming', JSON.stringify(placed));
-    assert.equal(placed.shot, null, JSON.stringify(placed));
-    assert.ok(Math.abs(placed.batX - placed.ballX) < 0.08, JSON.stringify(placed));
-    assert.ok(placed.aim > 15, JSON.stringify(placed));
-
     const won = await page.evaluate(async () => {
       const waitFrame = () => new Promise((resolve) => requestAnimationFrame(resolve));
       const canvas = document.getElementById('table');
@@ -348,6 +310,72 @@ test('a desktop mouse flick wins the opening point', { timeout: 90000 }, async (
     assert.equal(won.neighbour, 0);
     assert.match(won.label, /You 1/);
     assert.equal(won.hint, false);
+    const placed = await page.evaluate(async () => {
+      const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+      const canvas = document.getElementById('table');
+      const fire = (x, y) => {
+        canvas.dispatchEvent(new PointerEvent('pointermove', {
+          bubbles: true,
+          cancelable: true,
+          pointerId: 1,
+          pointerType: 'mouse',
+          isPrimary: true,
+          clientX: x,
+          clientY: y,
+          button: 0,
+          buttons: 0,
+          view: window,
+        }));
+      };
+      const key = (code) => {
+        window.dispatchEvent(new KeyboardEvent('keydown', { code, bubbles: true, cancelable: true }));
+        window.dispatchEvent(new KeyboardEvent('keyup', { code, bubbles: true, cancelable: true }));
+      };
+      const begun = performance.now();
+      while (performance.now() - begun < 8000) {
+        const live = window.__test.state();
+        if (live.phase === 'incoming' && live.crossIn > 0.55 && live.score.you === 1) break;
+        await wait(20);
+      }
+      const before = window.__test.state();
+      const box0 = canvas.getBoundingClientRect();
+      const y = box0.top + box0.height * 0.5;
+      const x0 = box0.left + box0.width * 0.5;
+      const endX = x0 + 12 * 28;
+      for (let i = 1; i <= 12; i++) {
+        fire(x0 + i * 28, y);
+        await wait(40);
+      }
+      key('ArrowRight');
+      key('KeyD');
+      key('Space');
+      canvas.dispatchEvent(new PointerEvent('pointerdown', {
+        bubbles: true, pointerId: 1, pointerType: 'mouse', clientX: endX, clientY: y, button: 0, buttons: 1,
+      }));
+      canvas.dispatchEvent(new PointerEvent('pointerup', {
+        bubbles: true, pointerId: 1, pointerType: 'mouse', clientX: endX, clientY: y, button: 0, buttons: 0,
+      }));
+      canvas.dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: endX, clientY: y }));
+      await wait(40);
+      const live = window.__test.state();
+      return {
+        phase: live.phase,
+        you: live.score.you,
+        neighbour: live.score.neighbour,
+        struck: live.lastShot && live.lastShot.struckAt,
+        beforeStruck: before.lastShot && before.lastShot.struckAt,
+        batX: live.bat.x,
+        ballX: live.ball.x,
+        aim: window.__test.aim().tiltX,
+        cross: live.crossIn,
+      };
+    });
+    assert.equal(placed.phase, 'incoming', JSON.stringify(placed));
+    assert.equal(placed.you, 1, JSON.stringify(placed));
+    assert.equal(placed.neighbour, 0, JSON.stringify(placed));
+    assert.equal(placed.struck, placed.beforeStruck, JSON.stringify(placed));
+    assert.ok(Math.abs(placed.batX - placed.ballX) < 0.08, JSON.stringify(placed));
+    assert.ok(placed.aim > 15, JSON.stringify(placed));
     assert.deepEqual(errors, []);
     await context.close();
 
@@ -388,8 +416,104 @@ test('a desktop mouse flick wins the opening point', { timeout: 90000 }, async (
     assert.equal(phoneGate.hintHidden, true);
     assert.equal(phoneGate.lines.every((line) => !line.hidden), true);
     assert.match(phoneGate.lines[0].text, /Hold your phone like a bat/);
-    await phone.close();
+
+    const switched = await phone.newPage();
+    switched.on('pageerror', (err) => errors.push(String(err)));
+    await switched.goto('http://127.0.0.1:8765/pingpong/', { waitUntil: 'domcontentloaded' });
+    await switched.waitForFunction(() => window.__test && document.getElementById('gate-btn').textContent === 'Tap to pick up your bat');
+    await switched.mouse.move(40, 80);
+    await switched.mouse.move(180, 240);
+    await switched.waitForFunction(() => document.getElementById('gate-btn').textContent === 'Click to pick up your bat');
+    const afterMouse = await switched.evaluate(() => ({
+      button: document.getElementById('gate-btn').textContent,
+      hintHidden: document.getElementById('desk-hint').hidden,
+      phoneHidden: [...document.querySelectorAll('[data-phone]')].every((el) => el.hidden),
+      hold: document.querySelector('[data-phone]').textContent,
+    }));
+    assert.equal(afterMouse.button, 'Click to pick up your bat');
+    assert.equal(afterMouse.hintHidden, false);
+    assert.equal(afterMouse.phoneHidden, true);
+    assert.match(afterMouse.hold, /Hold your phone/);
   } finally {
     await browser.close();
+  }
+});
+
+function waitForDebugPort(port) {
+  const started = Date.now();
+  return new Promise((resolve, reject) => {
+    const tick = () => {
+      fetch(`http://127.0.0.1:${port}/json/version`).then((res) => {
+        if (res.ok) resolve();
+        else if (Date.now() - started > 8000) reject(new Error('chrome debug port failed'));
+        else setTimeout(tick, 100);
+      }).catch(() => {
+        if (Date.now() - started > 8000) reject(new Error('chrome debug port did not open'));
+        else setTimeout(tick, 100);
+      });
+    };
+    tick();
+  });
+}
+
+test('plain headless Chrome at 1280 shows the desktop gate', { timeout: 60000 }, async () => {
+  const { chromium } = playwright();
+  const port = 9333;
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'pingpong-chrome-'));
+  const proc = spawn('google-chrome', [
+    '--headless=new',
+    '--no-sandbox',
+    '--disable-gpu',
+    '--disable-dev-shm-usage',
+    `--user-data-dir=${dir}`,
+    `--remote-debugging-port=${port}`,
+    '--window-size=1280,800',
+    'about:blank',
+  ], { stdio: 'ignore' });
+  let browser = null;
+  try {
+    await waitForDebugPort(port);
+    browser = await chromium.connectOverCDP(`http://127.0.0.1:${port}`);
+    const context = browser.contexts()[0];
+    const page = context.pages()[0] || await context.newPage();
+    const client = await context.newCDPSession(page);
+    await client.send('Emulation.setDeviceMetricsOverride', {
+      width: 1280,
+      height: 800,
+      deviceScaleFactor: 1,
+      mobile: false,
+    });
+    await page.goto('http://127.0.0.1:8765/pingpong/', { waitUntil: 'domcontentloaded' });
+    await page.waitForFunction(() => window.__test && document.getElementById('gate-btn').textContent.length > 0);
+    const gate = await page.evaluate(() => ({
+      button: document.getElementById('gate-btn').textContent,
+      hint: document.getElementById('desk-hint').textContent,
+      hintHidden: document.getElementById('desk-hint').hidden,
+      phoneHidden: [...document.querySelectorAll('[data-phone]')].every((el) => el.hidden),
+      phone: document.querySelector('[data-phone]').textContent,
+      fine: matchMedia('(pointer: fine)').matches,
+      coarse: matchMedia('(pointer: coarse)').matches,
+      none: matchMedia('(pointer: none)').matches,
+      touch: navigator.maxTouchPoints,
+      motion: typeof DeviceMotionEvent,
+      w: window.innerWidth,
+      h: window.innerHeight,
+    }));
+    assert.equal(gate.none, true, JSON.stringify(gate));
+    assert.equal(gate.fine, false, JSON.stringify(gate));
+    assert.equal(gate.coarse, false, JSON.stringify(gate));
+    assert.equal(gate.touch, 0, JSON.stringify(gate));
+    assert.equal(gate.motion, 'function', JSON.stringify(gate));
+    assert.equal(gate.w, 1280, JSON.stringify(gate));
+    assert.equal(gate.h, 800, JSON.stringify(gate));
+    assert.equal(gate.button, 'Click to pick up your bat', JSON.stringify(gate));
+    assert.equal(gate.hintHidden, false);
+    assert.equal(gate.hint, 'The bat follows the ball. Move the mouse to aim. Flick to swing.');
+    assert.equal(gate.phoneHidden, true);
+    assert.match(gate.phone, /Hold your phone/);
+  } finally {
+    if (browser) await browser.close().catch(() => {});
+    proc.kill('SIGKILL');
+    fs.rmSync(dir, { recursive: true, force: true });
   }
 });

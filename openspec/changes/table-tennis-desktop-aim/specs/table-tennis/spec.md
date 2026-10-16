@@ -48,6 +48,21 @@ A flick that bends at least 20 degrees upward SHALL be topspin. A flick that ben
 - WHEN a flick bends 20 degrees up, 10 degrees up, or 20 degrees down
 - THEN the spin is topspin, none, or backspin
 
+### Requirement: A browser without coarse touch is a desktop
+A page with no coarse pointer and no touch points SHALL show the desktop gate, including when the pointer is none and DeviceMotionEvent exists. A coarse pointer or any touch points SHALL keep the phone gate. A trusted mouse move while that phone gate is still up SHALL switch it to the desktop copy. A touch-generated move SHALL NOT switch it.
+
+#### Scenario: Headless pointer none
+- WHEN the page loads at 1280 wide with pointer none, no touch points, and DeviceMotionEvent
+- THEN the gate button reads "Click to pick up your bat"
+- AND the phone lines are hidden
+- AND the desktop hint is visible
+
+#### Scenario: A mouse move after the phone gate
+- WHEN the phone gate is showing and a real mouse moves
+- THEN the gate button reads "Click to pick up your bat"
+- AND the desktop hint is visible
+- AND the phone lines are hidden
+
 ### Requirement: The phone gate stays
 A coarse phone SHALL keep the tilt gate and the phone instructions. The desktop hint SHALL stay hidden there.
 
