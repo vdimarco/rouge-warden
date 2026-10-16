@@ -130,28 +130,25 @@ export const ASTEROIDS = piece({
 });
 
 // ---------- inner (open) ----------
-// The inner planets: an open road between two rails 60° apart, a few rocks inside them, Mars as a label, and the Moon
-// and Earth drawing on ahead. Room to draft MANTA and to get between it and the light; the rocks leave a lane along
-// each rail. A fuel slot a hairline from one rock.
+// The inner planets: an open road between two straight rails 60° apart, a few rocks just inside them, Mars as a label,
+// and the Moon and Earth drawing on ahead. Room to draft MANTA and to get between it and the light. A fuel slot a
+// hairline inside one rock.
 export const INNER = piece({
   id: 'inner', leg: 'earth', roles: ['open'], beats: [12, 20], fixed: true, diff: 1,
-  params: { drift: [-3, 3] },
-  safe: { drift: 0 },
   build(ctx) {
-    const { rnd, len, p } = ctx;
-    const w = p.drift;
+    const { rnd, len } = ctx;
     const items = [cue(0.5, 'open'), cue(1, 'label', { label: 'MARS', psi: coin(rnd) * (60 + rnd() * 40) }),
-      rail(1, len - 1, -30, 1.5, { omega: w, tag: 'road' }), rail(1, len - 1, 30, 1.5, { omega: w, tag: 'road' }),
+      rail(1, len - 1, -30, 1.5, { tag: 'road' }), rail(1, len - 1, 30, 1.5, { tag: 'road' }),
       cue(len - 2, 'label', { label: 'THE MOON' })];
     let s = coin(rnd);
     const n = Math.min(4, Math.floor((len - 3) / 3));
     for (let k = 0; k < n; k++) {
-      const b = 3.5 + 3 * k, at = w * (b - 1);
-      items.push(knot(b, at + s * 15, 2.5, { opt: k !== 1, tag: 'rock' }));
-      if (k === 1) items.push(fuel(b, at + s * 8));
+      const b = 3.5 + 3 * k;
+      items.push(knot(b, s * 18, 2.5, { opt: k !== 1, tag: 'rock' }));
+      if (k === 1) items.push(fuel(b, s * 11));
       s = -s;
     }
-    return { items, exit: w * (len - 1) };
+    return { items, exit: 0 };
   },
 });
 

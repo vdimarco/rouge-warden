@@ -15,7 +15,8 @@ import { stepRace, STEP, NO_INTENT } from '../../public/ahead-of-the-light/core/
 import { driverFor } from '../../public/ahead-of-the-light/core/bots.js';
 import { TUNE, SLUG } from '../../public/ahead-of-the-light/core/tune.js';
 
-const RUN_TUNE = Object.freeze({ ...TUNE, STUMBLE: 0 });     // see run.test.mjs: every leg ends
+// see run.test.mjs: every leg ends, and the run reaches Earth
+const RUN_TUNE = Object.freeze({ ...TUNE, STUMBLE: 0, BLEED: 0, HULL0: 99, HULL_MAX: 99, HULL_CAP: 99 });
 const fly = (run) => {
   const race = startLeg(run, RUN_TUNE);
   const d = driverFor('dodge', { seed: run.leg + 1 });

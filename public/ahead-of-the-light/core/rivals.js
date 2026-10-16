@@ -455,7 +455,8 @@ function bestLine(race, r, A, T, o) {
 }
 const LINE_HOLD = 1.5;                     // cost a new line must win by
 const BLIND_EXTRA = 0.15;                  // s: REMORA in a wake sees its leader's swerve this much after its reaction
-const DRIFT_FELT = 6;                      // °: ... but it feels a gentle drift (this much in BLIND_EXTRA) at its reaction
+const DRIFT_FELT = 6;                      // °: ... but feels its leader drift this far off its late view at once
+const CLOSE_FROM = 3;                      // s: HOUND burns to close on you from this far behind
 const REMORA_SLING = 0.12;                 // s: REMORA rides a wake to its leader's tail before it slingshots
 const RAIL_M = 3;                          // ° a rival keeps off a rail's edge (a bump is 6°), plus its wobble
 
@@ -501,7 +502,9 @@ export function rivalIntents(race, dt, tune = race.tune || TUNE) {
 }
 
 function initLeg(race, S, T) {
-  for (const it of race.leg.items) if (it.kind === 'cue' && (it.name === 'landmark' || it.name === 'gate')) S.cueLandmarks.push(it.beat);
+  for (const it of race.leg.items) {
+    if (it.kind === 'cue' && (it.name === 'landmark' || it.name === 'gate')) S.cueLandmarks.push(it.beat);
+  }
   const you = race.ships[0];
   for (const s of race.ships) if (s !== you) S.ahead[s.id] = s.dist > you.dist;
   // stagger the ticks so the field does not think on the same step
@@ -554,7 +557,9 @@ function readEvents(race, S, T, you) {
         bark(race, S, T, e.ship, 'eaten', true);
         break;
       }
-      case E.glareIn: if (e.ship !== you.id) bark(race, S, T, e.ship, byId(race, e.ship)?.type === 'moth' ? 'warm' : 'glare'); break;
+      case E.glareIn:
+        if (e.ship !== you.id) bark(race, S, T, e.ship, byId(race, e.ship)?.type === 'moth' ? 'warm' : 'glare');
+        break;
       case E.wake: {
         const lead = byId(race, e.lead), r = byId(race, e.ship);
         if (e.lead === you.id && r) bark(race, S, T, r.id, 'tuck');
@@ -592,7 +597,9 @@ function readEvents(race, S, T, you) {
       case E.bowWave: if (e.ship === you.id) bark(race, S, T, e.by, 'bow'); break;
       case E.fin: {
         const t = byId(race, e.target);
-        if (t === you) bark(race, S, T, e.ship, 'finYou', false, { N: NUM[Math.max(0, Math.min(6, Math.floor(you.fuel + 1e-9)))] });
+        if (t === you) {
+          bark(race, S, T, e.ship, 'finYou', false, { N: NUM[Math.max(0, Math.min(6, Math.floor(you.fuel + 1e-9)))] });
+        }
         else if (t && t.name) bark(race, S, T, e.ship, 'finRival', false, { NAME: t.name });
         break;
       }
@@ -828,9 +835,9 @@ function think(race, r, idx, A, T, S, you) {
   if (j && lineHits(race, r, L.b + j, 0.6, T, BIG)) j = lineHits(race, r, L.b + j / 2, 0.6, T, BIG) ? 0 : j / 2;
   let goal = L.b + j;
 
-  // REMORA is blind in a wake: it follows its leader's trail, where the leader was its seconds-behind plus its
-  // reaction plus 0.15 s ago, so it dodges only after its leader swerves
-  // (and for its reaction plus 0.15 s after it drops out of the wake, it still sees only the trail)
+  // REMORA is blind in a wake: it feels its leader drift up to DRIFT_FELT (about the wake's width) at once, but a
+  // swerve past that it sees only its reaction plus BLIND_EXTRA late, so it dodges only after its leader swerves (and
+  // for its reaction after it drops out of the wake it still steers by that view)
   if (r.type === 'remora') {
     if (r.draft.lead) { A.trail = r.draft.lead; A.blindUntil = now + k.reactMs / 1000; }
     else if (now >= (A.blindUntil ?? -1)) A.trail = null;
@@ -838,7 +845,6 @@ function think(race, r, idx, A, T, S, you) {
   if (r.type === 'remora' && A.trail && !flee) {
     const li = shipIdx(race, A.trail);
     if (li >= 0) {
-      const lead = race.ships[li];
       const react = k.reactMs / 1000, late = perceived(race, li, react + BLIND_EXTRA);
       const drift = clamp(wrap(race.ships[li].bearing - late), -DRIFT_FELT, DRIFT_FELT);
       goal = r.bearing + wrap(late + drift - r.bearing);
@@ -919,7 +925,7 @@ function burnThink(race, r, A, T, you, m) {
   let want = false;
   if (m.flee) want = true;
   else if (m.gamble && r.fuel >= 2 - 1e-9) want = true;
-  else if (P.burn === 'close') want = (m.prey === you && m.zYou < -0.3 && m.zYou > -1.0) || r.ttc < 8;
+  else if (P.burn === 'close') want = (m.zYou < -0.3 && m.zYou > -CLOSE_FROM && race.legNo > 0) || r.ttc < 8;
   else if (P.burn === 'climb') want = r.gear === 0;
   else if (P.burn === 'sling') want = A.slingBurn > 0 && now - A.slingBurn < 0.5 && r.surge.until > now;
   else if (P.burn === 'glare') want = r.light === 'glare';
@@ -937,7 +943,7 @@ function burnThink(race, r, A, T, you, m) {
 // The lean (5.5): a rival abreast of a ship and in range may SLAM it, and always says so 0.3 s ahead. From leg 4 a
 // hunter only slams when the shove would carry its prey into a hazard (slamAim); in legs 2 and 3 only when nothing
 // lies within 30° past you (it spills your fuel but aims no takedown); never in leg 1. Others take the chance by
-// ramBias, once a 2.5 s window per ship.
+// ramBias, once a 2.0 s window per ship.
 function leanThink(race, r, A, T, S, you, prey) {
   const k = A.knobs;
   if (!(k.ramBias > 0)) return;
@@ -959,13 +965,13 @@ function leanThink(race, r, A, T, S, you, prey) {
       aimed = Boolean(slamAim(race, r, v, T, r.turnMax || T.TURN_MAX, delay, false,
         (v.ai ? v.ai.knobs.reactMs : 200) / 1000));
     }
-    // a hunter takes an aimed takedown whenever it sees one; any SLAM otherwise is a chance, by ramBias, once a
-    // 2.5 s window per ship (it spills fuel)
+    // a hunter takes an aimed takedown whenever it sees one; any SLAM otherwise is a chance, by ramBias (× 0.35 for a
+    // ship it is not hunting), once a 2.0 s window per ship (it spills fuel)
     const key = `ram:${v.id}`;
     const roll = A.rolls || (A.rolls = {});
-    if (!roll[key] || race.t > roll[key].until) roll[key] = { u: rndOf(r)(), until: race.t + 2.5, used: false };
+    if (!roll[key] || race.t > roll[key].until) roll[key] = { u: rndOf(r)(), until: race.t + 2.0, used: false };
     const R = roll[key];
-    const chance = prey && aimed ? 1 : prey ? k.ramBias * 0.8 : k.ramBias * 0.35;
+    const chance = prey && aimed ? 1 : prey ? k.ramBias : k.ramBias * 0.35;
     if (R.used || R.u >= chance) continue;
     R.used = true;
     A.lean = { victim: v.id, side, until: race.t + T.LEAN_S, flick: false };

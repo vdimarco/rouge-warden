@@ -14,6 +14,14 @@ import { skimOf } from './handle.js';
 const finite = (v) => typeof v === 'number' && Number.isFinite(v);
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 const isOut = (s) => s.caught || s.wrecked;
+const ENCKE_X = 1.6;                         // Saturn's ENCKE GAP: 0.8 s for a pair's 0.5 (11.5)
+// An item's tag by id (items are in id order; else searched).
+function tagOf(race, id) {
+  const items = race.leg && race.leg.items;
+  if (!items || !finite(id)) return null;
+  const it = items[id] && items[id].id === id ? items[id] : items.find((x) => x.id === id);
+  return it ? it.tag ?? null : null;
+}
 const PRESS_HYST = 0.5;          // s: 'pressed' ends only this far above TTC_LABEL, so the label does not flap
 
 // The light's states (7.5), from far to close.
@@ -212,7 +220,8 @@ export function stepLight(race, ship, events, dt, tune = race.tune || TUNE) {
         break;
       }
       case E.thread:
-        if (e.pair) pushBack(race, ship, 'pair', T.PB_PAIR * M, T);
+        // Saturn's ENCKE GAP (a pair tagged 'encke') pays 0.8 s, not the pair's 0.5 (11.5)
+        if (e.pair) pushBack(race, ship, 'pair', T.PB_PAIR * M * (tagOf(race, e.gate) === 'encke' ? ENCKE_X : 1), T);
         else if (e.miss) pushBack(race, ship, 'past', T.PB_PAST * M, T);
         else pushBack(race, ship, 'thread', T.PB_THREAD * M, T);
         break;

@@ -106,27 +106,24 @@ export const MARKARIAN = piece({
 });
 
 // ---------- whale-road (open, the WHALE's leg) ----------
-// The WHALE's open road: two rails 70° apart drifting a little, a few knots just inside them: room to draft the
-// WHALE, to ride its breach and to slingshot past, and room for its bow wave beside it. A fuel slot a hairline from
-// one knot. The RIVAL family's +6 beats lengthen it.
+// The WHALE's open road: two straight rails 70° apart, a few knots just inside them: room to draft the WHALE, to ride
+// its breach and to slingshot past, and room for its bow wave beside it. A fuel slot a hairline from one knot. The
+// RIVAL family's +6 beats lengthen it. The rails stay straight: the open road's game is the field, not the line.
 export const WHALE_ROAD = piece({
   id: 'whale-road', leg: 'virgo', roles: ['open'], beats: [16, 26], diff: 1,
-  params: { drift: [-2, 2] },
-  safe: { drift: 0 },
   build(ctx) {
-    const { rnd, len, p } = ctx;
-    const w = p.drift;
-    const items = [cue(0.5, 'open'), cue(0.5, 'whale'), rail(1, len - 1, -35, 1.5, { omega: w, tag: 'road' }),
-      rail(1, len - 1, 35, 1.5, { omega: w, tag: 'road' })];
+    const { rnd, len } = ctx;
+    const items = [cue(0.5, 'open'), cue(0.5, 'whale'), rail(1, len - 1, -35, 1.5, { tag: 'road' }),
+      rail(1, len - 1, 35, 1.5, { tag: 'road' })];
     let s = coin(rnd);
     const n = Math.min(5, Math.floor((len - 4) / 3.5));
     for (let k = 0; k < n; k++) {
-      const b = 3.5 + 3.5 * k, at = w * (b - 1), K = at + s * (21 + jit(rnd, 2));
+      const b = 3.5 + 3.5 * k, K = s * (21 + jit(rnd, 2));
       items.push(knot(b, K, 2.5, { opt: k !== 1 }));
       if (k === 1) items.push(fuel(b, K - s * 7));
       s = -s;
     }
-    return { items, exit: w * (len - 1) };
+    return { items, exit: 0 };
   },
 });
 

@@ -159,7 +159,9 @@ test('honesty: every change in a rival\'s η matches its events; every gap chang
           else if (mine && e.type === 'dirtyAir') lo -= e.loss;
           else if (mine && e.type === 'thread') { if (e.pair) hi += T.PAIR_ETA; else wild = true; }
           else if (e.type === 'contact' && e.kind === 'rear' && e.by === s.id) lo -= T.REAR_ETA;
-          else if (mine && (e.type === 'burn' || e.type === 'oberth')) burnNow = (e.type === 'oberth' ? T.OBERTH_ETA : T.BURN_ETA) / T.BURN_S;
+          else if (mine && (e.type === 'burn' || e.type === 'oberth')) {
+            burnNow = (e.type === 'oberth' ? T.OBERTH_ETA : T.BURN_ETA) / T.BURN_S;
+          }
         }
         const gear = Math.max(p.gear, s.gear);
         const drag = T.DRAG * (1 + T.DRAG_GEAR * gear) * 1.5 + T.MANTA.sailDrag;
@@ -169,8 +171,9 @@ test('honesty: every change in a rival\'s η matches its events; every gap chang
         const d = s.eta - p.eta;
         const capped = s.eta >= T.RIVAL_ETA_MAX - 1e-9 || s.eta <= T.ETA_MIN + 1e-9;
         if (!wild) {
-          assert.ok(d <= hi + up * sdt + 1e-9 || capped && d <= 0, `seed ${seed} leg ${legNo} ${s.id} at ${race.t.toFixed(3)}: +${d} unexplained (events ${hi}, steady ${up * sdt})`);
-          assert.ok(d >= lo - drag * sdt - 1e-9 || capped, `seed ${seed} leg ${legNo} ${s.id} at ${race.t.toFixed(3)}: ${d} lost (events ${lo})`);
+          const at = `seed ${seed} leg ${legNo} ${s.id} at ${race.t.toFixed(3)}`;
+          assert.ok(d <= hi + up * sdt + 1e-9 || capped && d <= 0, `${at}: +${d} unexplained (events ${hi}, steady ${up * sdt})`);
+          assert.ok(d >= lo - drag * sdt - 1e-9 || capped, `${at}: ${d} lost (events ${lo})`);
         }
         // the course: course speed × surge × tow × dt, less the stumble's glide (MAKO's back-off is logged)
         if (p.back || s.ai.backOff) continue;
@@ -180,7 +183,8 @@ test('honesty: every change in a rival\'s η matches its events; every gap chang
         const want = (b) => (b * x * sdt - (T.STUMBLE / T.STUMBLE_S) * b * g) / T.BEAT_R;
         const moved = s.dist - p.dist;
         const a = want(base0), b = want(base1);
-        assert.ok(moved >= Math.min(a, b) - 1e-4 && moved <= Math.max(a, b) + 1e-4, `seed ${seed} leg ${legNo} ${s.id} at ${race.t.toFixed(3)}: moved ${moved}, course says ${a} to ${b}`);
+        assert.ok(moved >= Math.min(a, b) - 1e-4 && moved <= Math.max(a, b) + 1e-4,
+          `seed ${seed} leg ${legNo} ${s.id} at ${race.t.toFixed(3)}: moved ${moved}, course says ${a} to ${b}`);
       }
       snap();
     }
@@ -232,7 +236,8 @@ function pikeTrial(seed, legNo, plan) {
   while (race.t - t0 < 1.6) {
     const tgt = plan(race.t - t0);
     for (const e of stepRace(race, { you: { target: tgt } }, STEP)) {
-      if (e.type === 'contact' && ((e.by === 'you' && e.victim === 'pike') || (e.by === 'pike' && e.victim === 'you'))) contact = true;
+      const pair = (e.by === 'you' && e.victim === 'pike') || (e.by === 'pike' && e.victim === 'you');
+      if (e.type === 'contact' && pair) contact = true;
     }
   }
   return { blocked: contact, ahead: you.dist > pike.dist, slung: you.stats.slings > 0 };
@@ -286,7 +291,9 @@ function trapTrial(seed, who, legNo) {
   let hit = false;
   while (race.t < 3) {
     const t = (K - you.dist) / beatsPerS(you.eta);                     // seconds until you pass the knot
-    for (const e of stepRace(race, { you: { target: t > 0.3 ? 0 : 12 } }, STEP)) if (e.type === 'hit' && e.ship === r.id) hit = true;
+    for (const e of stepRace(race, { you: { target: t > 0.3 ? 0 : 12 } }, STEP)) {
+      if (e.type === 'hit' && e.ship === r.id) hit = true;
+    }
   }
   return { hit, drafted: r.stats.slings >= 0 };
 }
@@ -311,7 +318,9 @@ function slamsOf(seeds, legs, name = 'mid') {
       const leans = [];
       fly(race, drive, 90, (ev) => {
         for (const e of ev) {
-          if (e.type === 'lean') leans.push({ ...e, past: e.target === 'you' ? hazardPast(race, race.ships[0], e.side, race.tune) : null });
+          if (e.type === 'lean') {
+            leans.push({ ...e, past: e.target === 'you' ? hazardPast(race, race.ships[0], e.side, race.tune) : null });
+          }
           if (e.type !== 'contact' || e.kind !== 'slam' || e.by === 'you') continue;
           const r = race.ships.find((s) => s.id === e.by), v = race.ships.find((s) => s.id === e.victim);
           if (r.type === 'whale') continue;                                   // contact with the WHALE is always its SLAM
@@ -369,6 +378,9 @@ test('DIRTY AIR\'s speed loss shows as a dirtyAir event', () => {
   assert.ok(before.get(v.id) - v.eta >= ev.loss - 0.02, 'the η it lost is the event\'s');
 });
 
+// Personalities are judged over whole legs: you (mid) are kept in the race to the gate, hull and gap topped up, so a
+// leg is not cut short by your wreck. REMORA's share counts the time a ship is in front of it: 0.08 to 0.8 s ahead
+// (a wake's reach) and within 45° (not round the far side of the ring).
 test('personalities from leg 4: HOUND rams 1 to 3 a leg; REMORA in a wake 50 % of a leg; MOTH at least twice HOUND\'s hits', () => {
   let legs = 0, rams = 0, mothHits = 0, houndHits = 0, wake = 0, ahead = 0;
   for (let s = 1; s <= 12; s++) {
@@ -376,12 +388,17 @@ test('personalities from leg 4: HOUND rams 1 to 3 a leg; REMORA in a wake 50 % o
       const { race } = legRace(s, legNo, { tune: NOLIGHT, racing: ['hound', 'remora', 'moth'] });
       const drive = driverFor('mid', { seed: s });
       legs++;
+      const you = race.ships[0];
       const rem = race.ships.find((x) => x.id === 'remora');
       fly(race, drive, 90, (ev) => {
+        you.hull = you.hullMax;
+        you.gap = Math.max(you.gap, 20);
         for (const e of ev) if (e.type === 'contact' && e.kind === 'slam' && e.by === 'hound') rams++;
         if (rem && !rem.caught && !rem.wrecked) {
+          const bps = beatsPerS(rem.eta);
           const lead = race.ships.some((o) => o !== rem && !o.caught && !o.wrecked
-            && (o.dist - rem.dist) / beatsPerS(rem.eta) >= TUNE.WAKE_NEAR && (o.dist - rem.dist) / beatsPerS(rem.eta) <= TUNE.WAKE_FAR);
+            && (o.dist - rem.dist) / bps >= TUNE.WAKE_NEAR && (o.dist - rem.dist) / bps <= TUNE.WAKE_FAR
+            && Math.abs(wrap(o.bearing - rem.bearing)) <= 45);
           if (lead) { ahead++; if (rem.draft.lead) wake++; }
         }
       });
@@ -396,7 +413,8 @@ test('personalities from leg 4: HOUND rams 1 to 3 a leg; REMORA in a wake 50 % o
 });
 
 test('bosses: the WHALE cannot be taken down; its bow wave moves a ship 40°/s; a breach gives × 1.3 in its wake', () => {
-  const { race, you, T } = fieldRace({ legNo: 2, regulars: [], boss: 'whale', items: [{ kind: 'knot', beat: 200, psi: 0, half: 3 }] });
+  const knot = { kind: 'knot', beat: 200, psi: 0, half: 3 };
+  const { race, you, T } = fieldRace({ legNo: 2, regulars: [], boss: 'whale', items: [knot] });
   const w = race.ships.find((s) => s.id === 'whale');
   assert.equal(w.half, T.WHALE.half);
   assert.equal(w.turnMax, T.WHALE.turn);
@@ -452,7 +470,9 @@ test('MAKO\'s fin moves to a ship with fewer fuel cells within 1.0 s; it backs o
   you.fuel = 3;
   rem.fuel = 3;
   const fins = [];
-  const step = (s) => { for (let i = 0; i < s * 120; i++) for (const e of stepRace(race, { you: { target: 0 } }, STEP)) if (e.type === 'fin') fins.push(e); };
+  const step = (s) => {
+    for (let i = 0; i < s * 120; i++) for (const e of stepRace(race, { you: { target: 0 } }, STEP)) if (e.type === 'fin') fins.push(e);
+  };
   step(1.1);
   assert.equal(m.ai.target, 'you', 'a tie goes to the nearest ship (lead item 8): here you are as near, and first');
   rem.fuel = 1;
@@ -518,7 +538,9 @@ test('MANTA\'s push is zero while shadowed; its lane shows 1.0 s before it passe
   rivalIntents(r3.race, STEP, r3.race.tune);
   assert.ok(m3.ai.tornUntil > r3.race.t, 'the sail is torn');
   let eaten = null;
-  fly(r3.race, () => ({ target: 90 }), 10, (ev) => { for (const e of ev) if (e.type === 'eaten' && e.id === 'manta') eaten = e; });
+  fly(r3.race, () => ({ target: 90 }), 10, (ev) => {
+    for (const e of ev) if (e.type === 'eaten' && e.id === 'manta') eaten = e;
+  });
   assert.ok(eaten, 'THE LIGHT TOOK MANTA');
   assert.equal(legResult(r3.race).boss.beaten, true, 'a boss the light takes counts as beaten');
 });
@@ -531,7 +553,8 @@ test('barks: one per 8 s at most, none in quiet windows, none over 24 characters
     const barks = [], quiet = [], lines = new Set();
     fly(race, drive, 90, (ev) => {
       for (const e of ev) {
-        if (e.ship === 'you' && ['hit', 'release', 'thread', 'dock', 'past', 'gateLine', 'caught'].includes(e.type)) quiet.push(e.t);
+        const QUIET = ['hit', 'release', 'thread', 'dock', 'past', 'gateLine', 'caught'];
+        if (e.ship === 'you' && QUIET.includes(e.type)) quiet.push(e.t);
         if (e.type === 'bark') barks.push(e);
       }
     });
@@ -561,7 +584,9 @@ test('the light takes a drifter before 30 s of leg 1 on every seed; the Nemesis 
     let first = null;
     const you = race.ships[0];
     fly(race, (rc, y) => { y.gap = Math.max(y.gap, 6); y.hull = 3; return mid(rc, y); }, 32, (ev) => {
-      for (const e of ev) if (e.type === 'eaten' && race.ships.find((x) => x.id === e.id).kind === 'drifter' && first === null) first = e.t;
+      for (const e of ev) {
+        if (e.type === 'eaten' && race.ships.find((x) => x.id === e.id).kind === 'drifter' && first === null) first = e.t;
+      }
     });
     void you;
     assert.ok(first !== null && first < 30, `seed ${s}: first drifter eaten at ${first}`);
@@ -569,7 +594,12 @@ test('the light takes a drifter before 30 s of leg 1 on every seed; the Nemesis 
   // you take a regular down: it becomes your Nemesis; take it down again: SETTLED
   const { race } = legRace('NEM', 3, { tune: NOLIGHT });
   const r = race.ships.find((s) => s.kind === 'regular');
-  const down = () => { race.events = []; emit(race, 'takedown', r, { by: 'you', victim: r.id }); rivalIntents(race, STEP, race.tune); return race.events; };
+  const down = () => {
+    race.events = [];
+    emit(race, 'takedown', r, { by: 'you', victim: r.id });
+    rivalIntents(race, STEP, race.tune);
+    return race.events;
+  };
   assert.ok(down().some((e) => e.type === 'nemesis' && e.id === r.id));
   assert.ok(r.ai.nemesis);
   assert.equal(legResult(race).nemesis, r.id);

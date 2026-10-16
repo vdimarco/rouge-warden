@@ -165,10 +165,16 @@ function remoraStep(game, dt) {
       bearing = KP + A.side * SLAM_OFF;
       if (R.stats.hits > 0 || t > 27) {
         A.phase = 'fall';
-        if (!game.script.clipped) { game.script.clipped = true; R.gap = Math.min(R.gap, 0.6); }
+        // its gap runs out: TTC 1.2 s, so the light takes it at about 26 s (TTC = gap ÷ (1 − β))
+        if (!game.script.clipped) { game.script.clipped = true; R.gap = Math.min(R.gap, 1.2 * (1 - Math.tanh(R.eta))); }
       }
     }
-    if (A.phase === 'fall') { want = null; cruise = true; }
+    if (A.phase === 'fall') {
+      want = null;
+      cruise = true;
+      R.gap = Math.min(R.gap, A.runOut ?? R.gap);   // its gap only runs out from here (no tow or graze buys it back)
+      A.runOut = R.gap;
+    }
   }
   if (!cruise) R.eta = Math.max(T.ETA_MIN, Math.min(T.RIVAL_ETA_MAX, you.eta));
   // (it glides up to 0.6 s of lead a second; to come abreast for the slam it may close 1.5 s a second)

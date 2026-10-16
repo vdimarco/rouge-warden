@@ -27,8 +27,9 @@ const SEEN = { pages: [], seen: { runs: 5, offered: true } };       // a player 
 // Play a whole run with a bot driver and fixed choices: pick(choice) at each break, lane(choice) on each chart.
 // Returns the run and the phases it went through.
 // The run machine is under test here, not the handling: STUMBLE 0 keeps a bot that sits on a rail from gliding back
-// for ever (contract.md, WP2's rail request), so every leg ends.
-const RUN_TUNE = Object.freeze({ ...TUNE, STUMBLE: 0 });
+// for ever (contract.md, WP2's rail request), so every leg ends; BLEED 0 and a 99 hull keep the live light and a
+// rail's hits from ending the run before Earth.
+const RUN_TUNE = Object.freeze({ ...TUNE, STUMBLE: 0, BLEED: 0, HULL0: 99, HULL_MAX: 99, HULL_CAP: 99 });
 function playRun(seed, { driver = 'dodge', choose = () => 0, lane = () => 0, maxLegS = 240, meta = null } = {}) {
   const run = createRun({ seed, meta, tune: RUN_TUNE });
   const phases = [run.phase];

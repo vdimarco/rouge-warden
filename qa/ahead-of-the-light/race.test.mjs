@@ -207,11 +207,18 @@ test('the course window: items join 12 beats ahead of the leader and leave 4 beh
   }
 });
 
+// The leg machine is under test here, not the handling or the light: the ship steers clear of testLeg's knots (on
+// psi 0) and its rail (psi 90), the light holds still (BLEED 0), and only the leg group's events are compared.
+const STILL = Object.freeze({ ...TUNE, BLEED: 0 });
+const CLEAR = { you: { target: -90 } };
+const legGroup = (ev, more = []) => ev.filter((e) => EVENTS.leg.includes(e.type) || more.includes(e.type)).map((e) => e.type);
+
 test('a leg walks launch → race → gate → runout → done, with the gate line, run-out, vista and end', () => {
-  const race = createRace({ leg: testLeg() });
-  const { ev, phases } = flyLeg(race);
+  const race = createRace({ leg: testLeg(), tune: STILL });
+  const { ev: all, phases } = flyLeg(race, CLEAR);
+  const ev = all.filter((e) => EVENTS.leg.includes(e.type));
   assert.deepEqual(phases, ['launch', 'race', 'gate', 'runout', 'done']);
-  assert.deepEqual(ev.map((e) => e.type), ['gateLine', 'runout', 'vista', 'legEnd']);
+  assert.deepEqual(legGroup(all), ['gateLine', 'runout', 'vista', 'legEnd']);
   assert.equal(ev[0].place, 1);
   assert.deepEqual(race.order, ['you']);
   assert.equal(ev.at(-1).why, 'gate');
@@ -219,10 +226,10 @@ test('a leg walks launch → race → gate → runout → done, with the gate li
   assert.ok(Math.abs(race.real - 96 / beatsPerS(1)) < 0.05, `the leg took ${race.real.toFixed(2)} s`);
   assert.deepEqual(stepRace(race, null, STEP), [], 'a finished race does nothing');
   // Earth ends at the door with the landing
-  const earth = createRace({ leg: testLeg('earth', 128) });
-  const e2 = flyLeg(earth);
+  const earth = createRace({ leg: testLeg('earth', 128), tune: STILL });
+  const e2 = flyLeg(earth, CLEAR);
   assert.deepEqual(e2.phases, ['launch', 'race', 'gate', 'done']);
-  assert.deepEqual(e2.ev.map((e) => e.type), ['gateLine', 'door', 'land', 'legEnd']);
+  assert.deepEqual(legGroup(e2.ev, ['door', 'land']), ['gateLine', 'door', 'land', 'legEnd']);
   assert.equal(e2.ev.at(-1).why, 'home');
   // caught ends the leg at once
   const c = createRace({ leg: testLeg() });
@@ -294,11 +301,12 @@ test('10,000 steps of random intents and dt: no NaN, no throw', () => {
   }
 });
 
+// With live handling an idle ship meets knots and rails, and the light and hits are live: run.test's tune (no stumble,
+// no bleed, a 99 hull) lets it reach Earth. The exact event count and time hold only for an empty leg (above).
 test('a whole stub run plays headless from leg 1 to Earth', () => {
-  const s = playRun({ seed: 'KOMAZI', driver: 'idle' });
+  const RUN_TUNE = Object.freeze({ ...TUNE, STUMBLE: 0, BLEED: 0, HULL0: 99, HULL_MAX: 99, HULL_CAP: 99 });
+  const s = playRun({ seed: 'KOMAZI', driver: 'idle', tune: RUN_TUNE });
   assert.equal(s.legs, 8);
   assert.equal(s.phase, 'home');
-  assert.equal(s.events, 7 * 4 + 4);
-  const total = (TUNE.LEG_BEATS.reduce((a, b) => a + b, 0) - 4) / beatsPerS(1);   // Earth ends at the door, L − 4
-  assert.ok(Math.abs(s.t - total) < 0.2, `${s.t.toFixed(1)} s of driving at η 1, want ${total.toFixed(1)}`);
+  assert.ok(s.events >= 7 * 4 + 4, `${s.events} events`);
 });

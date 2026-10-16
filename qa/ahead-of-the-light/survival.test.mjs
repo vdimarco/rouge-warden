@@ -116,7 +116,9 @@ test('warn fires once under 6 s and re-arms only above 9 s (TTC frozen at 5.5 s 
   const T = { ...STILL, BLEED: 0 };
   const { race, you } = bare({ tune: T, eta: 1.0, gap: gapFor(5.5, 1.0) });
   const warns = [];
-  const run = (s) => { for (let i = 0; i < s * 120; i++) for (const e of stepRace(race, null, STEP)) if (e.type === 'warn') warns.push(e); };
+  const run = (s) => {
+    for (let i = 0; i < s * 120; i++) for (const e of stepRace(race, null, STEP)) if (e.type === 'warn') warns.push(e);
+  };
   run(20);
   assert.ok(near(you.ttc, 5.5, 1e-9), `TTC frozen at ${you.ttc}`);
   assert.equal(warns.length, 1);
@@ -175,6 +177,12 @@ test('push-backs never pass the cap except a red release (≤ +1.5, fading 0.1 s
   assert.ok(near(pay({ type: 'release', grade: 'GOOD', mass: 1, d: 0.5, red: false }), T.PB_WHIP * 1 * 1.0 * M));
   assert.ok(near(pay({ type: 'release', grade: 'WIDE', mass: 2, d: 0, red: false }), T.PB_WHIP * 2 * 0.5 * 0.5 * M));
   assert.equal(pay({ type: 'release', grade: 'PERFECT', mass: 1, d: 1, scorched: true }), 0, 'a scorch pays nothing');
+  // Saturn's ENCKE GAP (a pair tagged 'encke') pays 0.8 s × M (11.5), WP8's request
+  const encke = { kind: 'gate', beat: 500, psi: 120, gap: 14, halves: [2, 2], pair: true, tag: 'encke' };
+  const enc = bare({ tune: T, gap: 2, items: [encke] });
+  const g0 = enc.you.gap;
+  light(enc.race, enc.you, [{ type: 'thread', pair: true, gate: 0 }], STEP, T);
+  assert.ok(near(enc.you.gap - g0, T.PB_PAIR * 1.6 * M), `ENCKE GAP paid ${enc.you.gap - g0}`);
   // a gate: thread 2.0, dock 1.5, past 0.5 (× M), each through the cap
   const q = bare({ tune: T, gap: 1 });
   light(q.race, q.you, [{ type: 'thread', gate: 'coma' }], STEP, T);
@@ -283,7 +291,9 @@ test('landing spends fuel first, then hull, and fails only when gap + fuel (up t
   const { race, you } = bare({ tune: { ...TUNE, BLEED: 0 }, type: 'earth', gap: 2 });
   you.fuel = 2;
   let landEv = null;
-  while (race.phase !== 'done' && race.real < 100) for (const e of stepRace(race, { you: { target: 90 } }, STEP)) if (e.type === 'land') landEv = e;
+  while (race.phase !== 'done' && race.real < 100) {
+    for (const e of stepRace(race, { you: { target: 90 } }, STEP)) if (e.type === 'land') landEv = e;
+  }
   assert.ok(landEv && landEv.ok && landEv.cellsSpent >= 1, JSON.stringify(landEv));
 });
 
@@ -362,7 +372,9 @@ test('a rival at gap 0 emits eaten with its id; at most one eaten caption a leg'
   emit(r2, 'takedown', v, { by: 'you', victim: v.id });
   stepLight(r2, v, r2.events, STEP, r2.tune);
   let fed = null;
-  for (let i = 0; i < 600 && !fed; i++) for (const e of stepRace(r2, null, STEP)) if (e.type === 'eaten' && e.id === v.id) fed = e;
+  for (let i = 0; i < 600 && !fed; i++) {
+    for (const e of stepRace(r2, null, STEP)) if (e.type === 'eaten' && e.id === v.id) fed = e;
+  }
   assert.equal(fed.fedBy, 'you');
   assert.equal(fed.line, 'FED TO THE LIGHT');
 });
@@ -443,7 +455,9 @@ test('years: you age YEARS_PER_S × dt ÷ cosh η, Earth YEARS_PER_S × dt', () 
 test('no light catch comes without a glareIn first: a gap that bleeds out goes through the glare', () => {
   const { race, you } = bare({ tune: TUNE, eta: 0.8, gap: 1.5 });
   const seen = [];
-  while (!you.caught && race.t < 30 && race.phase !== 'done') for (const e of stepRace(race, null, STEP)) if (e.ship === 'you') seen.push(e.type);
+  while (!you.caught && race.t < 30 && race.phase !== 'done') {
+    for (const e of stepRace(race, null, STEP)) if (e.ship === 'you') seen.push(e.type);
+  }
   const g = seen.indexOf('glareIn'), c = seen.indexOf('caught');
   assert.ok(g >= 0 && c > g, seen.join(','));
   assert.ok(seen.indexOf('warn') < g && seen.indexOf('breather') < 0 || true);
