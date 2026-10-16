@@ -1,7 +1,7 @@
 // Boots the table, the gate, motion, swipe, mouse and the test hooks.
 
 import { desktopCourt, unlockCourt } from './gate.js';
-import { aimFromCanvas, assistX, batFromTilt, createSwingDetector, depthWithBounce, driftNeutral, flickFromSamples, leanFromCanvas, mapAxes, POINTER, predictBounceZ, sideTarget, springStep, swipeToSwing, swingPush } from './motion.js';
+import { aimFromCanvas, assistX, batFromTilt, createSwingDetector, depthWithBounce, driftNeutral, flickFromSamples, leanFromCanvas, mapAxes, predictBounceZ, sideTarget, springStep, swipeToSwing, swingPush } from './motion.js';
 import { RULES, planFrame, readOptions } from './rules.js';
 import { createMatch } from './sim.js';
 import { createSoundKit } from './audio.js';
@@ -367,7 +367,7 @@ function onHud(e) {
 
 function pointerSample(e) {
   const box = canvas.getBoundingClientRect();
-  const width = box.width > 0 ? box.width : POINTER.baseline;
+  const width = box.width > 0 ? box.width : Math.max(1, window.innerWidth || 1);
   const height = box.height;
   const stamp = Number(e.timeStamp);
   const t = Number.isFinite(stamp) && stamp > 0 ? stamp / 1000 : performance.now() / 1000;

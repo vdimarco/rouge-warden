@@ -49,9 +49,9 @@ test('a fine pointer is the desktop court, and a coarse phone stays on tilt', ()
   assert.equal(desktopCourt({ ...media({}), navigator: { maxTouchPoints: 0 } }), true);
 });
 
-function rawFlick(rawPxPerSec, width, bendDeg = 0) {
+function widthsFlick(widthsPerSec, width, bendDeg = 0) {
   const dt = POINTER.window;
-  const dist = rawPxPerSec * dt;
+  const dist = widthsPerSec * width * dt;
   const ang = (bendDeg * Math.PI) / 180;
   const dx = Math.cos(ang) * dist;
   const dy = -Math.sin(ang) * dist;
@@ -60,10 +60,6 @@ function rawFlick(rawPxPerSec, width, bendDeg = 0) {
     dt,
     width,
   );
-}
-
-function normFlick(normPxPerSec, width, bendDeg = 0) {
-  return rawFlick(normPxPerSec * (width / POINTER.baseline), width, bendDeg);
 }
 
 test('a slow move never swings, and the bands match at 1280 and 2560', () => {
@@ -84,38 +80,48 @@ test('a slow move never swings, and the bands match at 1280 and 2560', () => {
   const first = springStep(sprung, 0.42, dt);
   assert.ok(first.x > 0 && first.x < 0.21, first.x);
 
+  const bands = [1.1, 1.2, 2.3, 2.4, 4.3, 4.4];
+  const seen = {};
   for (const width of [1280, 2560]) {
-    assert.equal(normFlick(1499, width), null, width);
-    const push = normFlick(1500, width);
-    const pushTop = normFlick(3000, width);
-    const drive = normFlick(3001, width);
-    const driveTop = normFlick(5500, width);
-    const smash = normFlick(5501, width);
+    assert.equal(widthsFlick(1.1, width), null, width);
+    const push = widthsFlick(1.2, width);
+    const pushTop = widthsFlick(2.3, width);
+    const drive = widthsFlick(2.4, width);
+    const driveTop = widthsFlick(4.3, width);
+    const smash = widthsFlick(4.4, width);
     assert.equal(shotFromPeak(push.degPerSec, 1).speed, 6, width);
     assert.equal(shotFromPeak(pushTop.degPerSec, 1).speed, 6, width);
     assert.equal(shotFromPeak(drive.degPerSec, 1).speed, 11, width);
     assert.equal(shotFromPeak(driveTop.degPerSec, 1).speed, 11, width);
     assert.equal(shotFromPeak(smash.degPerSec, 1).speed, 17, width);
     assert.equal(shotFromPeak(smash.degPerSec, 0.05).speed, 11, width);
-    assert.ok(Math.abs(push.pxPerSec - 1500) < 1e-6, push.pxPerSec);
-    assert.ok(Math.abs(driveTop.pxPerSec - 5500) < 1e-6, driveTop.pxPerSec);
+    assert.ok(Math.abs(push.widthsPerSec - 1.2) < 1e-6, push.widthsPerSec);
+    assert.ok(Math.abs(driveTop.widthsPerSec - 4.3) < 1e-6, driveTop.widthsPerSec);
+    seen[width] = bands.map((speed) => {
+      const flick = widthsFlick(speed, width);
+      return flick ? shotFromPeak(flick.degPerSec, 1).speed : 0;
+    });
   }
+  assert.deepEqual(seen[1280], seen[2560]);
+  assert.deepEqual(seen[1280], [0, 6, 6, 11, 11, 17]);
 
-  const atNarrow = normFlick(4200, 1280);
-  const atWide = normFlick(4200, 2560);
+  const atNarrow = widthsFlick(3.2, 1280);
+  const atWide = widthsFlick(3.2, 2560);
+  assert.ok(Math.abs(atNarrow.widthsPerSec - atWide.widthsPerSec) < 1e-6);
   assert.ok(Math.abs(atNarrow.degPerSec - atWide.degPerSec) < 1e-6);
   assert.equal(shotFromPeak(atNarrow.degPerSec, 1).speed, 11);
-  assert.equal(rawFlick(1500, 2560), null);
-  assert.equal(shotFromPeak(rawFlick(3000, 2560).degPerSec, 1).speed, 6);
+  const linePx = 1.2 * 1280;
+  assert.equal(shotFromPeak(widthsFlick(linePx / 1280, 1280).degPerSec, 1).speed, 6);
+  assert.equal(widthsFlick(linePx / 2560, 2560), null);
 
-  const top = normFlick(2000, 1280, 20);
-  const flat = normFlick(2000, 1280, 10);
-  const back = normFlick(2000, 1280, -20);
+  const top = widthsFlick(1.6, 1280, 20);
+  const flat = widthsFlick(1.6, 1280, 10);
+  const back = widthsFlick(1.6, 1280, -20);
   assert.equal(spinFromRoll(top.rollDegPerSec).type, 'top');
   assert.equal(flat.rollDegPerSec, 0);
   assert.equal(spinFromRoll(back.rollDegPerSec).type, 'back');
-  assert.equal(normFlick(2000, 1280, 0).dir, 'forehand');
-  assert.equal(rawFlick(2000, 1280, 180).dir, 'backhand');
+  assert.equal(widthsFlick(1.6, 1280, 0).dir, 'forehand');
+  assert.equal(widthsFlick(1.6, 1280, 180).dir, 'backhand');
 
   const stale = flickFromSamples([
     { x: 0, y: 0, t: 0 },

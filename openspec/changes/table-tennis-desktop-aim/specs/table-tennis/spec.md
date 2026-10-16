@@ -22,18 +22,18 @@ While the ball is coming in, the bat SHALL ease sideways onto the ball on its ow
 - THEN the bat stays near the ball
 - AND the aim is past 15 degrees toward that side
 
-### Requirement: A normalised flick picks the shot
-A flick SHALL be pointer speed over 60 ms, using coalesced pointermove samples, in court-widths per second scaled to a 1280-wide court. Under 1500 SHALL NOT swing. 1500 through 3000 SHALL push at 6 m/s. Above 3000 through 5500 SHALL drive at 11 m/s. Above 5500 SHALL smash at 17 m/s when the ball is high enough, and drive otherwise. The same normalised speed SHALL pick the same shot at 1280 and at 2560. A swing SHALL cool down for 350 ms. Contact inside ±40 ms SHALL be perfect, and contact out to ±120 ms SHALL still hit. A flick within ±200 ms of the opening ball SHALL win the point.
+### Requirement: A flick is window widths per second
+A flick SHALL be pointer speed over 60 ms, using coalesced pointermove samples, in window widths per second. Under 1.2 SHALL NOT swing. 1.2 through 2.3 SHALL push at 6 m/s. Above 2.3 through 4.3 SHALL drive at 11 m/s. Above 4.3 SHALL smash at 17 m/s when the ball is high enough, and drive otherwise. The same speed in window widths per second SHALL pick the same shot at 1280 and at 2560. A swing SHALL cool down for 350 ms. Contact inside ±40 ms SHALL be perfect, and contact out to ±120 ms SHALL still hit. A flick within ±200 ms of the opening ball SHALL win the point.
 
 #### Scenario: A slow move never swings
-- WHEN the pointer moves at under 1500 on a 1280 court or the matching slower court-speed on a 2560 court
-- THEN there is no swing
+- WHEN the pointer moves at under 1.2 window widths per second
+- THEN there is no swing at 1280 or at 2560
 
 #### Scenario: The bands match at both widths
-- WHEN the normalised speed is 1500, 3000, 3001, 5500, or 5501
+- WHEN the speed is 1.2, 2.3, 2.4, 4.3, or 4.4 window widths per second
 - THEN the shot is a push, a push, a drive, a drive, or a smash on a high ball
-- AND 5501 on a low ball stays a drive
-- AND each of those speeds picks the same shot at 2560
+- AND 4.4 on a low ball stays a drive
+- AND each of those speeds picks the same shot at 1280 and at 2560
 
 #### Scenario: The opening flick wins
 - WHEN a desktop player flicks as the opening ball arrives

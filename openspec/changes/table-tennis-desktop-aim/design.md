@@ -12,16 +12,16 @@ Cursor x, from the left edge to the right edge, maps to ±30 degrees and is the 
 
 ## Flick
 
-Speed is the straight-line distance over the samples that fall inside 60 ms. Dividing by the court width and multiplying by 1280 converts that to a 1280-wide court. A 2560 window has to cover twice as many pixels to read the same number. pointermove reads getCoalescedEvents so a fast flick is not dropped between frames.
+Speed is the straight-line distance over the samples that fall inside 60 ms, divided by the window width and by the time. The unit is window widths per second, not pixels. A 2560 window has to cover twice as many pixels to read the same number. pointermove reads getCoalescedEvents so a fast flick is not dropped between frames.
 
-That number maps onto the phone bands by degrees per second = speed * 300 / 1500, then the existing shot picker:
+That number picks the phone shot:
 
-- under 1500: no swing
-- 1500 through 3000: push, 6 m/s (300 through 600 deg/s)
-- above 3000 through 5500: drive, 11 m/s
-- above 5500: smash, 17 m/s, when the ball is high enough for a smash, otherwise a drive
+- under 1.2: no swing
+- 1.2 through 2.3: push, 6 m/s
+- above 2.3 through 4.3: drive, 11 m/s
+- above 4.3: smash, 17 m/s, when the ball is high enough for a smash, otherwise a drive
 
-3000 and 5500 stay on the lower band, matching the phone picker's inclusive top edges. The swing time becomes offsetMs from crossIn the same way a gyro peak does, so ±40 ms is perfect, ±120 ms is the window, and the opening ±200 ms hook still wins point 1. The swing cools down for the existing 350 ms.
+2.3 and 4.3 stay on the lower band, matching the phone picker's inclusive top edges. The same widths per second pick the same shot at 1280 and at 2560. The swing time becomes offsetMs from crossIn the same way a gyro peak does, so ±40 ms is perfect, ±120 ms is the window, and the opening ±200 ms hook still wins point 1. The swing cools down for the existing 350 ms.
 
 The bend is the flick's angle from horizontal. Screen y points down, so an upward flick has a negative dy. At least 20 degrees up is topspin and 20 degrees down is backspin, as a level-1 roll (±360 deg/s, past the 200 deg/s spin line).
 
