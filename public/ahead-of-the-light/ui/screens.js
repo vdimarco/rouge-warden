@@ -124,6 +124,7 @@ export function createScreens({ root, onAction }) {
   function mount(name, html, { unlock = 0, cls = '', act = null, label = '' } = {}) {
     const fresh = S.name !== name;
     S.name = name;
+    document.documentElement.dataset.screen = name;
     if (fresh) { S.shownAt = now(); S.unlock = unlock; S.focus = 0; }
     const title = document.getElementById('title');
     if (title) title.hidden = name !== 'title';
@@ -135,6 +136,7 @@ export function createScreens({ root, onAction }) {
   }
   function hide() {
     S.name = null;
+    document.documentElement.dataset.screen = '';
     layer.innerHTML = '';
     layer.hidden = true;
     const title = document.getElementById('title');
@@ -170,7 +172,7 @@ export function createScreens({ root, onAction }) {
   // ---------- the toy's card (24.2) ----------
   function toyCard(m) {
     const rows = m.rows.map(([a, b]) => `<p><span>${esc(a)}</span><b>${esc(b)}</b></p>`).join('');
-    mount('toy', `<div class="panel toy"><h2>THE TOY</h2>${rows}<button type="button" class="btn main wide" data-act="toy-again">AGAIN</button>`
+    mount('toy', `<div class="panel toy"><h2>${esc(m.title || 'THE TOY')}</h2>${rows}<button type="button" class="btn main wide" data-act="toy-again">AGAIN</button>`
       + '<button type="button" class="btn quiet wide" data-act="title">THE FULL RUN</button></div>', { unlock: 0.6, label: 'The toy' });
   }
 

@@ -95,7 +95,8 @@ export function createHud({ speed, place, land, captions, tune, slow = false } =
     return true;
   }
   function show(item) {
-    const chunks = chunk(item.text);
+    // " · " joins two thoughts in one caption: each is chunked on its own, so no chunk ends on the dot
+    const chunks = item.text.split(/\s+·\s+/).flatMap((part) => chunk(part));
     item.tm = timings(chunks, H.slow);
     item.chunks = chunks;
     item.t0 = H.time;

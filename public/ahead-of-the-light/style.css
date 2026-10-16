@@ -73,6 +73,7 @@ html[data-layout="desktop"] #land { font-size: 13px; top: calc(var(--st) + 48px)
 #captions .now { color: var(--accent); }
 #captions .tag { font-size: 11px; font-weight: 600; color: var(--muted); margin-right: 6px; letter-spacing: 0.06em;
   vertical-align: middle; }
+html[data-screen]:not([data-screen=""]) #captions { visibility: hidden; }
 html[data-layout="landscape"] #captions { font-size: 22px; }
 html[data-layout="desktop"] #captions { font-size: 32px; }
 html[data-layout="desktop"] #captions .tag { font-size: 13px; }
@@ -307,6 +308,7 @@ html[data-layout="desktop"] .chead { font-size: 15px; top: calc(var(--st) + 22px
 .tapnote { font-size: 11px; color: var(--faint); letter-spacing: 0.1em; font-weight: 700; }
 
 /* ---------- pause, settings, the log, the hangar, practice ---------- */
+.pausep { background: rgba(0, 0, 0, 0.82); }
 .pausep .pbuild { display: flex; flex-direction: column; gap: 6px; max-height: 40vh; overflow-y: auto; }
 .pausep .pbuild .cardw { min-height: 70px; max-height: 92px; flex: 0 0 auto; }
 .pausep .pbuild .card { min-height: 70px; cursor: default; }

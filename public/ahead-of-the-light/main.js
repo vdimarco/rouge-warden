@@ -375,6 +375,10 @@ function startPiece(id) {
 // ---------------------------------------------------------------- one fixed step
 function stepOnce(stepMs) {
   const race = G.race;
+  if (G.toy && G.mode === 'toy' && race && (race.phase === 'done' || race.ships[0].caught || race.ships[0].wrecked)) {
+    toyEnd();
+    return [];
+  }
   if (!race || race.phase === 'done') return [];
   const you = race.ships[0];
   let want;
@@ -463,11 +467,13 @@ function finishRun() {
 
 function toyEnd() {
   const s = G.toy.sum || toySummary(G.toy);
+  const you = G.toy.race.ships[0];
+  const caught = you.caught || you.wrecked;
   G.mode = 'toycard';
   clearWorld();
   $('hud').hidden = true;
   hud.clearCaptions();
-  screens.toyCard({ rows: [['TOP SPEED', ['LAUNCH', '0.9C', '0.99C', '0.999C', '0.9999C'][s.topGear] || 'LAUNCH'],
+  screens.toyCard({ title: caught ? 'THE LIGHT CAUGHT YOU' : 'THE TOY', rows: [['TOP SPEED', ['LAUNCH', '0.9C', '0.99C', '0.999C', '0.9999C'][s.topGear] || 'LAUNCH'],
     ['GRAZES', String(s.grazes)], ['WHIP', s.grade || 'NONE'], ['SLINGSHOT', s.slingshot ? 'YES' : 'NO'],
     ['TAKEDOWN', s.takedown ? 'YES' : 'NO']] });
 }
@@ -477,8 +483,10 @@ function toyEnd() {
 // screen over a stale race.
 function clearWorld() {
   try {
-    octx.setTransform(1, 0, 0, 1, 0, 0);
-    octx.clearRect(0, 0, overCanvas.width, overCanvas.height);
+    // a fresh backing store (a resize) drops the race for certain; the cleared-only canvas could keep showing its
+    // last race frame in Chromium (seen after a vista in SwiftShader)
+    overCanvas.width = overCanvas.width;
+    overlay.resize(W, H, DPR());
     scene.render(null, 0, { title: true, skyEta: G.run ? G.run.you.launchEta : 1.2 });
   } catch (e) { /* the next frame draws it */ }
 }
@@ -988,7 +996,7 @@ function drawSky(dt, skyEta = 1.2) {
 }
 
 // ---------------------------------------------------------------- the loop
-let last = null, fpsAvg = 60, frames = 0, drew = '';
+let last = null, fpsAvg = 60, frames = 0, drew = '', overShown = true;
 function frame(now) {
   requestAnimationFrame(frame);
   frames++;
@@ -1019,6 +1027,8 @@ function frame(now) {
     captionFrame(events, race);
   }
   drew = G.mode;
+  const wantOverlay = !(G.mode === 'break' || G.mode === 'result' || G.mode === 'toycard');
+  if (overShown !== wantOverlay) { overShown = wantOverlay; overCanvas.style.visibility = wantOverlay ? '' : 'hidden'; }
   switch (G.mode) {
     case 'play': case 'toy': case 'ending':
       if (race) drawPlay(dt, alpha);
@@ -1099,7 +1109,7 @@ window.__race = {
       layout: { kind: v.kind, w: v.w, h: v.h, cx: v.cx, cy: v.cy, R: v.R, R0: v.R0 },
       you: s && { bearing: s.bearing, target: s.target, dist: s.dist, eta: s.eta, gear: s.gear, light: s.light,
         ttc: s.ttc, gap: s.gap, hull: s.hull, shield: s.shield, fuel: s.fuel, whip: Boolean(s.whip), caught: s.caught,
-        wrecked: s.wrecked },
+        wrecked: s.wrecked, inWindow: Boolean(race && windowOpen(race, s, race.tune || tune)) },
       ships: race ? race.ships.length : 0, caption: hud.caption, set: url.set, options: opt, driver: driverName,
       input: { scheme: input.scheme, holding: input.holding, waiting: input.waiting, pointers: input.pointers,
         counts: { ...input.counts } }, tier, fallback: Boolean(scene.fallback), sound: sound.isOn(),
