@@ -221,12 +221,15 @@ function shipChoice() {
   const want = opt.ship || settings().ship || 'lantern';
   return SHIPS[want] && (meta.ships.includes(want) || opt.ship) ? want : 'lantern';
 }
-function freshRun({ seed = null, daily = null, ship = null } = {}) {
+// A new run with the player's ship, REDSHIFT level and EASY LIGHT. ranked: only seed and daily keep a run ranked
+// (url.ranked), and EASY LIGHT never is.
+function freshRun({ seed = null, daily = null, ship = null, ranked = url.ranked } = {}) {
   sound.start();
   const s = settings();
   const run = createRun({ seed: seed ?? (opt.seed || newSeed()), ship: ship || (daily ? null : shipChoice()), daily,
     redshift: s.redshift || 0, easy: Boolean(meta.easy && meta.easy.on), meta, tune });
-  if (!G.ranked) run.ranked = false;
+  run.ranked = Boolean(ranked && run.ranked);
+  G.ranked = run.ranked;
   return run;
 }
 function beginRun(run) {
@@ -255,6 +258,7 @@ function afterLaunch() {
   newLegMemory(G.mem);
   sound.setLeg(race.legNo, race.ships[0].dist);
   G.prev = [];
+  G.prevDist = race.ships[0].dist;
   G.sweep = { a: null, v: 0 };
   G.tunePick = null;
   fx('flood', false);
@@ -301,9 +305,7 @@ function legIndex(leg) {
 // Straight into a leg, unranked: ?leg=virgo&lane=M87, or __race.goto.
 function gotoLeg({ leg, lane, seed, beat, build, ship } = {}) {
   sound.start();
-  const run = freshRun({ seed: seed || opt.seed || newSeed(), ship: ship || null });
-  run.ranked = false;
-  G.ranked = false;
+  const run = freshRun({ seed: seed || opt.seed || newSeed(), ship: ship || null, ranked: false });
   run.leg = legIndex(leg);
   const lanes = run.chart[run.leg] || [];
   const want = lane ? String(lane).toUpperCase() : null;
@@ -320,6 +322,7 @@ function gotoLeg({ leg, lane, seed, beat, build, ship } = {}) {
 function startPractice(i) {
   sound.start();
   const run = practiceRun({ seed: newSeed(), leg: i, lane: 0, tune });
+  G.ranked = false;
   beginRun(run);
 }
 
@@ -537,6 +540,7 @@ function showResult() {
 function showTitle() {
   G.mode = 'title';
   G.race = null; G.toy = null; G.piece = null;
+  sound.setPaused(false);
   clearWorld();
   G.paused = false; G.modal = null;
   $('hud').hidden = true;
@@ -1145,7 +1149,8 @@ window.__race = {
       ships: race ? race.ships.length : 0, caption: hud.caption, set: url.set, options: opt, driver: driverName,
       input: { scheme: input.scheme, holding: input.holding, waiting: input.waiting, pointers: input.pointers,
         counts: { ...input.counts } }, tier, fallback: Boolean(scene.fallback), sound: sound.isOn(),
-      voices: sound.voices(), toy: G.toy ? { t: G.toy.race.t, sum: G.toy.sum } : null,
+      voices: sound.voices(), audio: sound.context() ? sound.context().state : null,
+      toy: G.toy ? { t: G.toy.race.t, sum: G.toy.sum } : null,
     });
   },
   run: () => (G.run ? snapshot(G.run) : null),
