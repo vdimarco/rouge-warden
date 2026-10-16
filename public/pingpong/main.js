@@ -436,6 +436,12 @@ function pointerUp(e) {
   });
 }
 
+function editableTarget(target) {
+  if (!target || target.nodeType !== 1) return false;
+  const tag = target.tagName;
+  return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || target.isContentEditable;
+}
+
 function moveCode(code) {
   if (code === 'ArrowLeft' || code === 'KeyA') return 'left';
   if (code === 'ArrowRight' || code === 'KeyD') return 'right';
@@ -459,6 +465,7 @@ window.addEventListener('pointerup', (e) => {
 window.addEventListener('pointercancel', () => { press = null; });
 window.addEventListener('keydown', (e) => {
   if (inputMode !== 'pointer') return;
+  if (editableTarget(e.target)) return;
   const move = moveCode(e.code);
   if (move) {
     e.preventDefault();
@@ -478,6 +485,7 @@ window.addEventListener('keydown', (e) => {
   }
 }, true);
 window.addEventListener('keyup', (e) => {
+  if (editableTarget(e.target)) return;
   const move = moveCode(e.code);
   if (move) held.delete(move);
 }, true);
