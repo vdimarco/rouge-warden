@@ -6,31 +6,49 @@
 // steering thumb cannot pick by accident. Keys: ← → move the highlight, Enter or Space picks, 1 to 4 pick a card.
 import { FAMILIES } from '../core/cards.js';
 
-const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+const ESC = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' };
+const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ESC[c]);
 const now = () => (typeof performance !== 'undefined' ? performance.now() : 0);
+
+// A button: act, its inner HTML, and { cls, data: { key: value }, attrs (raw), off }.
+function button(act, inner, { cls = 'btn', data = {}, attrs = '', off = false } = {}) {
+  const d = Object.entries(data).map(([k, v]) => ` data-${k}="${esc(v)}"`).join('');
+  return `<button type="button" class="${cls}"${act ? ` data-act="${act}"` : ''}${d}${attrs}${off ? ' disabled' : ''}>`
+    + `${inner}</button>`;
+}
+const back = () => button('back', 'BACK', { cls: 'btn main wide' });
+const SWITCH = '<button type="button" class="btn quiet" data-switch>Switch game</button>';
 
 // ---------------------------------------------------------------- line art
 
-// A family glyph (12.7) as thin white line art in its colour.
+const SVG_GLYPHS = {
+  'ring-dot': (s, c) => `<circle cx="12" cy="12" r="7" ${s}/><circle cx="12" cy="12" r="2" fill="${c}"/>`,
+  'two-chevrons': (s) => `<path d="M4 16l4-8 4 8M12 16l4-8 4 8" ${s}/>`,
+  'chevron-flame': (s, c) => `<path d="M6 14l6-9 6 9" ${s}/><path d="M10 15l2 5 2-5z" fill="${c}"/>`,
+  'cracked-ring': (s) => `<path d="M18.6 8.7A7 7 0 1 0 18.6 15.3" ${s}/><path d="M19 8.5l-3.5 3.5 3.5 3.5" ${s}/>`,
+  'dashed-ring': (s) => `<circle cx="12" cy="12" r="7" ${s} stroke-dasharray="2.5 2.5"/>`,
+  'well-ring': (s, c) => `<circle cx="12" cy="12" r="7" ${s}/><circle cx="12" cy="12" r="1.6" fill="${c}"/>`,
+  'belt-dots': (s, c) => [4, 8, 12, 16, 20].map((x, i) => `<circle cx="${x}" cy="${12 + (i % 2) * 2}" r="1.3"`
+    + ` fill="${c}"/>`).join(''),
+  line: (s) => `<path d="M4 12h16" ${s}/>`,
+  'dot-chevron': (s, c) => `<path d="M6 16l6-8 6 8" ${s}/><circle cx="12" cy="4.5" r="1.6" fill="${c}"/>`,
+};
+
+// A family glyph (12.7), or a lane icon (11.3), as thin line art in its colour.
 export function glyphSvg(glyph, colour = '#fff', size = 24) {
   const s = `stroke="${colour}" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round"`;
-  let body;
-  if (glyph === 'ring-dot') body = `<circle cx="12" cy="12" r="7" ${s}/><circle cx="12" cy="12" r="2" fill="${colour}"/>`;
-  else if (glyph === 'two-chevrons') body = `<path d="M4 16l4-8 4 8M12 16l4-8 4 8" ${s}/>`;
-  else if (glyph === 'chevron-flame') body = `<path d="M6 14l6-9 6 9" ${s}/><path d="M10 15l2 5 2-5z" fill="${colour}"/>`;
-  else if (glyph === 'cracked-ring') body = `<path d="M18.6 8.7A7 7 0 1 0 18.6 15.3" ${s}/><path d="M19 8.5l-3.5 3.5 3.5 3.5" ${s}/>`;
-  else if (glyph === 'dashed-ring') body = `<circle cx="12" cy="12" r="7" ${s} stroke-dasharray="2.5 2.5"/>`;
-  else if (glyph === 'well-ring') body = `<circle cx="12" cy="12" r="7" ${s}/><circle cx="12" cy="12" r="1.6" fill="${colour}"/>`;
-  else if (glyph === 'belt-dots') body = [4, 8, 12, 16, 20].map((x, i) => `<circle cx="${x}" cy="${12 + (i % 2) * 2}" r="1.3" fill="${colour}"/>`).join('');
-  else if (glyph === 'line') body = `<path d="M4 12h16" ${s}/>`;
-  else body = `<path d="M6 16l6-8 6 8" ${s}/><circle cx="12" cy="4.5" r="1.6" fill="${colour}"/>`;
+  const body = (SVG_GLYPHS[glyph] || SVG_GLYPHS['dot-chevron'])(s, colour);
   return `<svg viewBox="0 0 24 24" width="${size}" height="${size}" aria-hidden="true">${body}</svg>`;
 }
-const famGlyph = (fam, size) => (FAMILIES[fam] ? glyphSvg(FAMILIES[fam].glyph, FAMILIES[fam].colour, size) : glyphSvg('line', '#fff', size));
+const famGlyph = (fam, size) => (FAMILIES[fam] ? glyphSvg(FAMILIES[fam].glyph, FAMILIES[fam].colour, size)
+  : glyphSvg('line', '#fff', size));
 const shipSvg = (half = 3.5, colour = '#fff', size = 40) => {
   const w = 4 + half * 2.2;
-  return `<svg viewBox="0 0 40 40" width="${size}" height="${size}" aria-hidden="true"><path d="M${20 - w} 30L20 8L${20 + w} 30L20 24Z" fill="${colour}"/></svg>`;
+  return `<svg viewBox="0 0 40 40" width="${size}" height="${size}" aria-hidden="true">`
+    + `<path d="M${20 - w} 30L20 8L${20 + w} 30L20 24Z" fill="${colour}"/></svg>`;
 };
+const mini = (c, label = true) => `<span class="mini" title="${esc(c.title)}" style="--fc:${c.colour}">`
+  + `${famGlyph(c.fam, 16)}${label ? `<span>${esc(c.title)}</span>` : ''}</span>`;
 
 // A card face (12.7): the family band, the glyph in its ring, the title, the rarity, the effect line with its number
 // orange, the tag line. i: its slot; banish: show the × (only starters can go).
@@ -39,15 +57,19 @@ function cardHtml(c, i, { banish = false, focus = false, taken = false, compact 
   const fx = c.num !== null && c.num !== undefined
     ? `${esc(c.before)}<b>${esc(c.num)}</b>${esc(c.after)}` : esc(c.text);
   const tag = c.tag ? `<span class="ctag${c.orange ? ' hot' : ''}">${esc(c.tag)}</span>` : '';
+  const face = '<span class="band"></span>'
+    + `<span class="glyph">${famGlyph(c.fam, 22)}</span>`
+    + '<span class="cbody">'
+    + `<span class="ctop"><span class="ctitle">${esc(c.title)}</span><span class="crar">${esc(c.rarity)}</span></span>`
+    + `<span class="cfx">${fx}</span>${tag}</span>`
+    + `<span class="ckey" aria-hidden="true">${i + 1}</span>`;
+  const cls = `card frame-${esc(c.frame)} band-${esc(c.band)}${compact ? ' compact' : ''}`;
+  const x = banish && !taken ? button('banish', '×', { cls: 'banish', data: { i },
+    attrs: ` aria-label="Banish ${esc(c.title)}"` }) : '';
   return `<div class="cardw${focus ? ' focus' : ''}${taken ? ' taken' : ''}" style="--fc:${c.colour}">`
-    + `<button type="button" class="card frame-${esc(c.frame)} band-${esc(c.band)}${compact ? ' compact' : ''}" data-act="pick" data-i="${i}"`
-    + ` aria-label="${esc(c.title)}: ${esc(c.text)}"${taken ? ' disabled' : ''}>`
-    + `<span class="band"></span><span class="glyph">${famGlyph(c.fam, 22)}</span>`
-    + `<span class="cbody"><span class="ctop"><span class="ctitle">${esc(c.title)}</span>`
-    + `<span class="crar">${esc(c.rarity)}</span></span><span class="cfx">${fx}</span>${tag}</span>`
-    + `<span class="ckey" aria-hidden="true">${i + 1}</span></button>`
-    + (banish && !taken ? `<button type="button" class="banish" data-act="banish" data-i="${i}" aria-label="Banish ${esc(c.title)}">×</button>` : '')
-    + '</div>';
+    + button(i >= 0 ? 'pick' : null, face, { cls, data: i >= 0 ? { i } : {}, off: taken,
+      attrs: ` aria-label="${esc(c.title)}: ${esc(c.text)}"` })
+    + `${x}</div>`;
 }
 
 // The small ship at 2 × with its wings and the light's ring at launch, drawn into a canvas on the break.
@@ -72,7 +94,8 @@ function drawShip(cv, m) {
   // the ship: a chevron at 2 ×, the shield bubble round it
   const half = m.ship.boat ? 5 : 10;
   ctx.fillStyle = '#fff';
-  ctx.beginPath(); ctx.moveTo(cx, sy - 14); ctx.lineTo(cx + half, sy + 8); ctx.lineTo(cx, sy + 3); ctx.lineTo(cx - half, sy + 8);
+  ctx.beginPath();
+  ctx.moveTo(cx, sy - 14); ctx.lineTo(cx + half, sy + 8); ctx.lineTo(cx, sy + 3); ctx.lineTo(cx - half, sy + 8);
   ctx.closePath(); ctx.fill();
   if (m.ship.shieldMax > 0) {
     ctx.strokeStyle = 'rgba(255,255,255,0.7)'; ctx.lineWidth = 1.25;
@@ -111,12 +134,11 @@ export function createScreens({ root, onAction }) {
   layer.id = 'layer';
   layer.dataset.ui = '1';
   root.appendChild(layer);
+  const locked = () => now() - S.shownAt < S.unlock * 1000;
 
   root.addEventListener('click', (e) => {
     const b = e.target.closest('[data-act]');
-    if (!b || !root.contains(b)) return;
-    if (b.hasAttribute('data-switch')) return;
-    if (now() - S.shownAt < S.unlock * 1000) return;
+    if (!b || !root.contains(b) || b.hasAttribute('data-switch') || locked()) return;
     e.preventDefault();
     onAction(b.dataset.act, { ...b.dataset });
   });
@@ -130,7 +152,8 @@ export function createScreens({ root, onAction }) {
     if (title) title.hidden = name !== 'title';
     if (name === 'title') { layer.innerHTML = ''; layer.hidden = true; return null; }
     layer.hidden = false;
-    layer.innerHTML = `<section class="screen s-${name} ${cls}"${act ? ` data-act="${act}"` : ''} aria-label="${esc(label || name)}" data-ui="1">${html}</section>`;
+    layer.innerHTML = `<section class="screen s-${name} ${cls}"${act ? ` data-act="${act}"` : ''}`
+      + ` aria-label="${esc(label || name)}" data-ui="1">${html}</section>`;
     S.el = layer.firstElementChild;
     return S.el;
   }
@@ -147,22 +170,22 @@ export function createScreens({ root, onAction }) {
   function title(m) {
     const t = document.getElementById('title');
     if (!t) return;
-    const chips = [];
-    chips.push(`<button type="button" class="chip" data-act="hangar">SHIP: ${esc(m.ship)} ›</button>`);
-    if (m.goOn) chips.push(`<button type="button" class="chip hot" data-act="resume-save">${esc(m.goOn)}</button>`);
-    if (m.daily) chips.push(`<button type="button" class="chip" data-act="daily">${esc(m.daily)}</button>`);
-    if (m.practice) chips.push('<button type="button" class="chip" data-act="practice">PRACTICE</button>');
-    if (m.log) chips.push(`<button type="button" class="chip" data-act="log">LOG · ${m.pages} PAGES</button>`);
-    if (m.redshift) chips.push(`<button type="button" class="chip" data-act="redshift">${esc(m.redshift)}</button>`);
-    if (m.easy) chips.push(`<button type="button" class="chip" data-act="easy" aria-pressed="${m.easyOn}">${esc(m.easy)}</button>`);
-    chips.push('<button type="button" class="chip" data-act="settings">SETTINGS</button>');
+    const chips = [button('hangar', `SHIP: ${esc(m.ship)} ›`, { cls: 'chip' })];
+    if (m.goOn) chips.push(button('resume-save', esc(m.goOn), { cls: 'chip hot' }));
+    if (m.daily) chips.push(button('daily', esc(m.daily), { cls: 'chip' }));
+    if (m.practice) chips.push(button('practice', 'PRACTICE', { cls: 'chip' }));
+    if (m.log) chips.push(button('log', `LOG · ${m.pages} PAGES`, { cls: 'chip' }));
+    if (m.redshift) chips.push(button('redshift', esc(m.redshift), { cls: 'chip' }));
+    if (m.easy) chips.push(button('easy', esc(m.easy), { cls: 'chip', attrs: ` aria-pressed="${m.easyOn}"` }));
+    chips.push(button('settings', 'SETTINGS', { cls: 'chip' }));
     t.innerHTML = '<a class="back" href="/">‹ Arcade</a>'
       + '<h1>AHEAD OF THE <span>LIGHT</span></h1>'
       + '<p class="sub">RACE HOME BEFORE THE BURST</p>'
       + `${m.best ? `<p class="best">${esc(m.best)}</p>` : ''}`
-      + `<button type="button" id="go" class="go" data-act="fly"><span class="touch">TAP TO FLY</span><span class="desk">CLICK OR PRESS SPACE</span></button>`
+      + button('fly', '<span class="touch">TAP TO FLY</span><span class="desk">CLICK OR PRESS SPACE</span>',
+        { cls: 'go', attrs: ' id="go"' })
       + `<div class="row chips">${chips.join('')}</div>`
-      + '<div class="row"><button type="button" class="btn quiet" data-switch>Switch game</button></div>';
+      + `<div class="row">${SWITCH}</div>`;
     t.dataset.act = 'fly';
     t.dataset.ui = '1';
     mount('title', '');
@@ -172,46 +195,51 @@ export function createScreens({ root, onAction }) {
   // ---------- the toy's card (24.2) ----------
   function toyCard(m) {
     const rows = m.rows.map(([a, b]) => `<p><span>${esc(a)}</span><b>${esc(b)}</b></p>`).join('');
-    mount('toy', `<div class="panel toy"><h2>${esc(m.title || 'THE TOY')}</h2>${rows}<button type="button" class="btn main wide" data-act="toy-again">AGAIN</button>`
-      + '<button type="button" class="btn quiet wide" data-act="title">THE FULL RUN</button></div>', { unlock: 0.6, label: 'The toy' });
+    mount('toy', `<div class="panel toy"><h2>${esc(m.title || 'THE TOY')}</h2>${rows}`
+      + button('toy-again', 'AGAIN', { cls: 'btn main wide' })
+      + button('title', 'THE FULL RUN', { cls: 'btn quiet wide' }) + '</div>', { unlock: 0.6, label: 'The toy' });
   }
 
   // ---------- the break (9.2, 16) ----------
+  function dockHtml(m) {
+    if (!m.dock) return '';
+    const chips = m.dock.chips.map((c) => {
+      if (c.auto) return `<div class="dchip auto">${esc(c.label)}</div>`;
+      const state = c.bought ? ' bought' : c.ok ? '' : ' off';
+      const sub = c.bought ? 'BOUGHT · TAP TO REFUND' : c.ok ? `${esc(c.text)} LEAD`
+        : c.why === 'full' ? 'FULL' : esc(c.why || '');
+      return button(c.bought ? 'refund' : 'buy', `<b>${esc(c.label)}</b><span>${sub}</span>`,
+        { cls: `dchip${state}`, data: { chip: c.id }, off: !c.ok && !c.bought });
+    }).join('');
+    const pickTune = m.tunePick ? '<div class="tunepick"><span>WHICH CARD?</span>'
+      + m.tunePick.map((c) => button('tune', esc(c.title), { cls: 'chip', data: { card: c.id } })).join('')
+      + '</div>' : '';
+    return `<div class="dock" aria-label="Dock">${chips}</div>${pickTune}`;
+  }
   function brk(m) {
     S.model = m;
     const o = m.offer;
     const cards = o ? o.cards : [];
     S.n = cards.length;
-    const build = m.build.length
-      ? m.build.map((c) => `<span class="mini" title="${esc(c.title)}" style="--fc:${c.colour}">${famGlyph(c.fam, 16)}<span>${esc(c.title)}</span></span>`).join('')
-      : '<span class="none">NO CARDS YET</span>';
-    const reroll = m.canReroll ? `<button type="button" class="btn small" data-act="reroll">REROLL · ${m.rerolls}</button>` : '';
-    let dock = '';
-    if (m.dock) {
-      const chips = m.dock.chips.map((c) => {
-        if (c.auto) return `<div class="dchip auto">${esc(c.label)}</div>`;
-        const state = c.bought ? ' bought' : c.ok ? '' : ' off';
-        const sub = c.bought ? 'BOUGHT · TAP TO REFUND' : c.ok ? `${esc(c.text)} LEAD` : c.why === 'full' ? 'FULL' : esc(c.why || '');
-        return `<button type="button" class="dchip${state}" data-act="${c.bought ? 'refund' : 'buy'}" data-chip="${esc(c.id)}"${!c.ok && !c.bought ? ' disabled' : ''}>`
-          + `<b>${esc(c.label)}</b><span>${sub}</span></button>`;
-      }).join('');
-      const tunePick = m.tunePick ? `<div class="tunepick"><span>WHICH CARD?</span>${m.tunePick.map((c) => `<button type="button" class="chip" data-act="tune" data-card="${esc(c.id)}">${esc(c.title)}</button>`).join('')}</div>` : '';
-      dock = `<div class="dock" aria-label="Dock">${chips}</div>${tunePick}`;
-    }
+    const build = m.build.length ? m.build.map((c) => mini(c)).join('') : '<span class="none">NO CARDS YET</span>';
+    const reroll = m.canReroll ? button('reroll', `REROLL · ${m.rerolls}`, { cls: 'btn small' }) : '';
     const lines = m.lines.length ? `<p class="news">${m.lines.map(esc).join(' · ')}</p>` : '';
     const offerHead = o ? `<p class="ohead">${esc(o.caption || (o.left > 1 ? `PICK ${o.left}` : 'PICK ONE'))}`
-      + `${o.tag ? ` <span>${esc(o.tag)}</span>` : ''}${o.bonus ? ` <span class="hot">${esc(o.bonus)}</span>` : ''}</p>` : '';
-    const cardsHtml = o ? cards.map((c, i) => cardHtml(c, i, { banish: m.banishes > 0 && c.kind !== 'fusion'
-      && c.kind !== 'legend' && c.kind !== 'trophy', focus: S.focus === i, taken: c.taken, compact: cards.length > 3 })).join('')
+      + `${o.tag ? ` <span>${esc(o.tag)}</span>` : ''}${o.bonus ? ` <span class="hot">${esc(o.bonus)}</span>` : ''}`
+      + '</p>' : '';
+    const banishable = (c) => m.banishes > 0 && c.kind !== 'fusion' && c.kind !== 'legend' && c.kind !== 'trophy';
+    const cardsHtml = o ? cards.map((c, i) => cardHtml(c, i, { banish: banishable(c), focus: S.focus === i,
+      taken: c.taken, compact: cards.length > 3 })).join('')
       : `<p class="nocard">${esc(m.noCard ? 'NO CARD FROM THE VOID' : '')}</p>`;
-    const skip = o ? `<button type="button" class="btn skip" data-act="skip">${esc(m.skip)}</button>`
-      : `<button type="button" class="btn main skip" data-act="skip">${esc(m.skip || 'GO ON')}</button>`;
+    const skip = button('skip', esc(o ? m.skip : m.skip || 'GO ON'), { cls: o ? 'btn skip' : 'btn main skip' });
     const el = mount('break', `<header class="arrive"><p class="type">${esc(m.header)}</p>${lines}</header>`
       + '<div class="status">'
-      + `<div class="shipbox"><canvas class="shipcv" aria-hidden="true"></canvas><p class="lead">${esc(m.light.line)}</p></div>`
-      + `<div class="buildrow"><div class="minis">${build}</div>${reroll}</div>${dock}</div>`
+      + '<div class="shipbox"><canvas class="shipcv" aria-hidden="true"></canvas>'
+      + `<p class="lead">${esc(m.light.line)}</p></div>`
+      + `<div class="buildrow"><div class="minis">${build}</div>${reroll}</div>${dockHtml(m)}</div>`
       + `<div class="offer n${cards.length}">${offerHead}<div class="cards">${cardsHtml}</div></div>`
-      + `<footer class="foot">${skip}</footer>`, { unlock: m.unlock ?? 0.4, label: 'The break', cls: m.dock ? 'docked' : '' });
+      + `<footer class="foot">${skip}</footer>`, { unlock: m.unlock ?? 0.4, label: 'The break',
+      cls: m.dock ? 'docked' : '' });
     const cv = el.querySelector('.shipcv');
     if (cv) requestAnimationFrame(() => drawShip(cv, m));
   }
@@ -221,13 +249,16 @@ export function createScreens({ root, onAction }) {
     S.model = m;
     S.n = m.lanes.length;
     S.chips = rects || [];
+    const px = (v) => `${Math.round(v)}px`;
     const chips = m.lanes.map((l, i) => {
       const r = S.chips.find((c) => c.i === i) || null;
-      const style = r ? `left:${Math.round(r.x)}px;top:${Math.round(r.y)}px;width:${Math.round(r.w)}px;height:${Math.round(r.h)}px` : '';
+      const style = (r ? `left:${px(r.x)};top:${px(r.y)};width:${px(r.w)};height:${px(r.h)};` : '')
+        + `--fc:${l.colour}`;
       const ic = l.icon === 'family' ? famGlyph(l.fam, 20) : glyphSvg(l.icon, '#fff', 20);
-      return `<button type="button" class="lane${S.focus === i ? ' focus' : ''} k-${esc(l.kind)}" data-act="lane" data-i="${i}" style="${style};--fc:${l.colour}"`
-        + ` aria-label="${esc(l.line)}: ${esc(l.tags.join(', '))}">${ic}<b>${esc(l.short)}</b>`
-        + `${l.tags.map((t, k) => `<span class="${k ? 'cond' : ''}">${esc(t)}</span>`).join('')}</button>`;
+      const tags = l.tags.map((t, k) => `<span class="${k ? 'cond' : ''}">${esc(t)}</span>`).join('');
+      return button('lane', `${ic}<b>${esc(l.short)}</b>${tags}`, {
+        cls: `lane${S.focus === i ? ' focus' : ''} k-${esc(l.kind)}`, data: { i },
+        attrs: ` style="${style}" aria-label="${esc(l.line)}: ${esc(l.tags.join(', '))}"` });
     }).join('');
     mount('chart', `<p class="chead">PICK THE NEXT LANE</p>${chips}`, { unlock: 0.4, label: 'The chart' });
   }
@@ -235,45 +266,48 @@ export function createScreens({ root, onAction }) {
   // ---------- the result card (13, 16) ----------
   function result(m) {
     S.model = m;
-    const build = m.build.length ? m.build.map((c) => `<span class="mini" title="${esc(c.title)}" style="--fc:${c.colour}">${famGlyph(c.fam, 16)}</span>`).join('') : '';
-    const medals = (m.medals || []).map((x) => `<span class="medal ${esc(x.medal)}">${esc(x.medal.toUpperCase())} · ${esc(x.name)}</span>`).join('');
-    const easy = m.easyOffer ? `<button type="button" class="chip" data-act="easy" aria-pressed="${m.easyOn}">EASY LIGHT: ${m.easyOn ? 'ON' : 'OFF'}</button>` : '';
+    const build = m.build.map((c) => mini(c, false)).join('');
+    const medals = (m.medals || []).map((x) => `<span class="medal ${esc(x.medal)}">`
+      + `${esc(x.medal.toUpperCase())} · ${esc(x.name)}</span>`).join('');
+    const easy = m.easyOffer ? button('easy', `EASY LIGHT: ${m.easyOn ? 'ON' : 'OFF'}`, { cls: 'chip',
+      attrs: ` aria-pressed="${m.easyOn}"` }) : '';
+    const p = (cls, text) => (text ? `<p class="${cls}">${esc(text)}</p>` : '');
     mount('result', '<div class="panel res">'
       + `<h2 class="${m.home ? 'home' : ''}">${esc(m.title)}</h2>`
-      + `${m.firstHome ? '<p class="first">FIRST HOME</p>' : ''}`
+      + (m.firstHome ? '<p class="first">FIRST HOME</p>' : '')
       + `<p class="where">${esc(m.where)}${m.best ? `<span class="rbest">${esc(m.best)}</span>` : ''}</p>`
-      + `${m.line ? `<p class="rline">${esc(m.line)}</p>` : ''}`
-      + `${m.cause ? `<p class="cause">${esc(m.cause)}</p>` : ''}`
-      + `${m.goal ? `<p class="goal">${esc(m.goal)}</p>` : ''}`
+      + p('rline', m.line) + p('cause', m.cause) + p('goal', m.goal)
       + `<p class="years">${esc(m.yearsLine)}${m.rank ? ` · <b>${esc(m.rank)}</b>` : ''}</p>`
-      + `${medals ? `<p class="medals">${medals}</p>` : ''}`
-      + `<div class="rrow"><button type="button" class="btn main again" data-act="again">AGAIN</button>`
-      + `<span class="rbuild">${build}</span></div>`
+      + (medals ? `<p class="medals">${medals}</p>` : '')
+      + `<div class="rrow">${button('again', 'AGAIN', { cls: 'btn main again' })}<span class="rbuild">${build}</span></div>`
       + `<div class="rrow small">${m.log ? `<span class="logline">${esc(m.log)}</span>` : ''}${easy}`
-      + '<button type="button" class="chip" data-act="copylog">COPY LOG</button>'
-      + '<button type="button" class="chip" data-act="title">TITLE</button></div>'
-      + `<p class="tapnote"><span class="touch">TAP ANYWHERE TO GO AGAIN</span><span class="desk">SPACE OR ENTER TO GO AGAIN</span></p>`
+      + button('copylog', 'COPY LOG', { cls: 'chip' }) + button('title', 'TITLE', { cls: 'chip' }) + '</div>'
+      + '<p class="tapnote"><span class="touch">TAP ANYWHERE TO GO AGAIN</span>'
+      + '<span class="desk">SPACE OR ENTER TO GO AGAIN</span></p>'
       + '</div>', { unlock: m.unlock ?? 0.9, act: 'again', label: 'The result' });
   }
 
   // ---------- pause (16) ----------
   function pause(m) {
-    const build = m.build.length ? m.build.map((c) => cardHtml(c, -1, { compact: true })).join('') : '<p class="none">NO CARDS YET</p>';
+    const build = m.build.length ? m.build.map((c) => cardHtml(c, -1, { compact: true })).join('')
+      : '<p class="none">NO CARDS YET</p>';
+    const quit = m.canQuit ? button('quit', 'QUIT RUN', { cls: 'btn quiet' }) : '';
     mount('pause', '<div class="panel pausep"><div class="pcol">'
       + `<h2>PAUSED</h2><p class="where">${esc(m.where)}</p><p class="years">${esc(m.years)}</p>`
-      + `<button type="button" class="btn main wide" data-act="resume">${m.regrip ? 'RESUME · THEN HOLD TO GO ON' : 'RESUME'}</button>`
-      + `<div class="row"><button type="button" class="btn" data-act="mute" aria-pressed="${!m.sound}">SOUND: ${m.sound ? 'ON' : 'OFF'}</button>`
-      + '<button type="button" class="btn" data-act="settings">SETTINGS</button></div>'
-      + `<div class="row">${m.canQuit ? '<button type="button" class="btn quiet" data-act="quit">QUIT RUN</button>' : ''}`
-      + '<button type="button" class="btn quiet" data-switch>Switch game</button></div></div>'
+      + button('resume', m.regrip ? 'RESUME · THEN HOLD TO GO ON' : 'RESUME', { cls: 'btn main wide' })
+      + '<div class="row">'
+      + button('mute', `SOUND: ${m.sound ? 'ON' : 'OFF'}`, { attrs: ` aria-pressed="${!m.sound}"` })
+      + button('settings', 'SETTINGS') + '</div>'
+      + `<div class="row">${quit}${SWITCH}</div></div>`
       + `<div class="pbuild">${build}</div>`
       + '</div>', { unlock: 0.25, label: 'Paused' });
   }
 
   // ---------- settings (16) ----------
   function settings(m) {
-    const row = (key, label, on, note = '') => `<button type="button" class="toggle" role="switch" aria-checked="${Boolean(on)}" data-act="set" data-key="${key}">`
-      + `<span>${esc(label)}${note ? `<small>${esc(note)}</small>` : ''}</span><b>${on ? 'ON' : 'OFF'}</b></button>`;
+    const row = (key, label, on, note = '') => button('set',
+      `<span>${esc(label)}${note ? `<small>${esc(note)}</small>` : ''}</span><b>${on ? 'ON' : 'OFF'}</b>`,
+      { cls: 'toggle', data: { key }, attrs: ` role="switch" aria-checked="${Boolean(on)}"` });
     mount('settings', '<div class="panel setp"><h2>SETTINGS</h2><div class="toggles">'
       + row('sound', 'SOUND', m.sound)
       + row('slowCaptions', 'SLOW CAPTIONS', m.slowCaptions)
@@ -281,52 +315,59 @@ export function createScreens({ root, onAction }) {
       + row('button', 'ACTION BUTTON', m.button, 'A button for grabs, bottom right')
       + row('reduced', 'REDUCED MOTION', m.reduced, 'No shake, softer flashes')
       + row('barks', 'RIVAL BARKS', m.barks)
-      + '</div><button type="button" class="btn main wide" data-act="back">BACK</button></div>', { unlock: 0.2, label: 'Settings' });
+      + `</div>${back()}</div>`, { unlock: 0.2, label: 'Settings' });
   }
 
   // ---------- the ship's log (14.2) ----------
   function log(m) {
-    const tabs = m.tabs.map((t) => `<button type="button" class="tab${t.id === m.tab ? ' on' : ''}" data-act="logtab" data-tab="${esc(t.id)}">${esc(t.id)} <small>${t.found}/${t.total}</small></button>`).join('');
-    const pages = m.pages.map((p) => `<li class="${p.found ? 'found' : ''}"><span class="ring"></span>${esc(p.found ? p.label : p.hint || '?')}</li>`).join('');
+    const tabs = m.tabs.map((t) => button('logtab', `${esc(t.id)} <small>${t.found}/${t.total}</small>`,
+      { cls: `tab${t.id === m.tab ? ' on' : ''}`, data: { tab: t.id } })).join('');
+    const pages = m.pages.map((pg) => `<li class="${pg.found ? 'found' : ''}"><span class="ring"></span>`
+      + `${esc(pg.found ? pg.label : pg.hint || '?')}</li>`).join('');
     mount('log', `<div class="panel logp"><h2>THE SHIP'S LOG <small>${m.found} OF ${m.total} PAGES</small></h2>`
       + `<p class="next">${esc(m.next || '')}</p><div class="tabs">${tabs}</div><ul class="pages">${pages}</ul>`
-      + '<button type="button" class="btn main wide" data-act="back">BACK</button></div>', { unlock: 0.2, label: 'The log' });
+      + `${back()}</div>`, { unlock: 0.2, label: 'The log' });
   }
 
   // ---------- the hangar (14.3) ----------
   function hangar(m) {
-    const ships = m.ships.map((s) => `<button type="button" class="ship${s.selected ? ' on' : ''}${s.unlocked ? '' : ' locked'}" data-act="ship" data-id="${esc(s.id)}"${s.unlocked ? '' : ' aria-disabled="true"'}>`
-      + `${shipSvg(s.half, s.unlocked ? '#fff' : 'rgba(255,255,255,0.25)', 36)}<b>${esc(s.name)}</b>`
-      + `<span>${esc(s.unlocked ? s.stats : `LOCKED · ${s.feat}`)}</span><small>${esc(s.unlocked ? s.quirk : '')}</small></button>`).join('');
-    mount('hangar', `<div class="panel hangp"><h2>THE HANGAR</h2><div class="ships">${ships}</div>`
-      + '<button type="button" class="btn main wide" data-act="back">BACK</button></div>', { unlock: 0.2, label: 'The hangar' });
+    const ships = m.ships.map((s) => button('ship',
+      `${shipSvg(s.half, s.unlocked ? '#fff' : 'rgba(255,255,255,0.25)', 36)}<b>${esc(s.name)}</b>`
+      + `<span>${esc(s.unlocked ? s.stats : `LOCKED · ${s.feat}`)}</span><small>${esc(s.unlocked ? s.quirk : '')}</small>`,
+      { cls: `ship${s.selected ? ' on' : ''}${s.unlocked ? '' : ' locked'}`, data: { id: s.id },
+        attrs: s.unlocked ? '' : ' aria-disabled="true"' })).join('');
+    mount('hangar', `<div class="panel hangp"><h2>THE HANGAR</h2><div class="ships">${ships}</div>${back()}</div>`,
+      { unlock: 0.2, label: 'The hangar' });
   }
 
   // ---------- practice (14.4): a leg once reached ----------
   function practice(m) {
-    const legs = m.legs.map((l) => `<button type="button" class="chip${l.open ? '' : ' off'}" data-act="practice-leg" data-i="${l.i}"${l.open ? '' : ' disabled'}>`
-      + `${l.i + 1} · ${esc(l.name)}${l.medal ? ` · ${esc(l.medal.toUpperCase())}` : ''}</button>`).join('');
-    mount('practice', `<div class="panel pracp"><h2>PRACTICE</h2><p class="where">ONE LEG · LANTERN · NO CARDS</p><div class="legs">${legs}</div>`
-      + '<button type="button" class="btn main wide" data-act="back">BACK</button></div>', { unlock: 0.2, label: 'Practice' });
+    const legs = m.legs.map((l) => button('practice-leg',
+      `${l.i + 1} · ${esc(l.name)}${l.medal ? ` · ${esc(l.medal.toUpperCase())}` : ''}`,
+      { cls: `chip${l.open ? '' : ' off'}`, data: { i: l.i }, off: !l.open })).join('');
+    mount('practice', '<div class="panel pracp"><h2>PRACTICE</h2>'
+      + `<p class="where">ONE LEG · LANTERN · NO CARDS</p><div class="legs">${legs}</div>${back()}</div>`,
+    { unlock: 0.2, label: 'Practice' });
   }
 
   // ---------- keys on the cards and the chart ----------
+  function move(d) { S.focus = (S.focus + d + S.n) % S.n; refocus(); return true; }
   function key(code) {
     const n = S.n;
     if (S.name === 'break' || S.name === 'chart') {
-      if (now() - S.shownAt < S.unlock * 1000) return true;
+      if (locked()) return true;
       const act = S.name === 'break' ? 'pick' : 'lane';
-      if ((code === 'ArrowLeft' || code === 'ArrowUp') && n) { S.focus = (S.focus - 1 + n) % n; refocus(); return true; }
-      if ((code === 'ArrowRight' || code === 'ArrowDown') && n) { S.focus = (S.focus + 1) % n; refocus(); return true; }
+      if ((code === 'ArrowLeft' || code === 'ArrowUp') && n) return move(-1);
+      if ((code === 'ArrowRight' || code === 'ArrowDown') && n) return move(1);
       if ((code === 'Enter' || code === 'Space') && n) { onAction(act, { i: String(S.focus) }); return true; }
-      const d = /^Digit([1-4])$/.exec(code) || /^Numpad([1-4])$/.exec(code);
+      const d = /^(?:Digit|Numpad)([1-4])$/.exec(code);
       if (d && Number(d[1]) <= n) { onAction(act, { i: String(Number(d[1]) - 1) }); return true; }
       if (code === 'KeyR' && S.name === 'break') { onAction('reroll', {}); return true; }
       if (code === 'KeyS' && S.name === 'break') { onAction('skip', {}); return true; }
       return false;
     }
     if (S.name === 'result') {
-      if (now() - S.shownAt < S.unlock * 1000) return true;
+      if (locked()) return true;
       if (code === 'Space' || code === 'Enter') { onAction('again', {}); return true; }
       return false;
     }
@@ -345,7 +386,7 @@ export function createScreens({ root, onAction }) {
     title, toyCard, brk, chart, result, pause, settings, log, hangar, practice, hide, key,
     get name() { return S.name; },
     get open() { return S.name !== null; },
-    unlocked: () => now() - S.shownAt >= S.unlock * 1000,
+    unlocked: () => !locked(),
     layer,
   };
 }
