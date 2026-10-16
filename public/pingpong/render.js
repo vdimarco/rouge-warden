@@ -30,6 +30,35 @@ const HALL_CROP = { left: 12 / 780, top: 24 / 1398, right: 12 / 780, bottom: 26 
 const HALL_ZOOM = 1.28;
 const HALL_LIFT = 0.9;
 
+// Where the sheet is drawn. Portrait cover-fits. A wider canvas fits the same
+// vertical slice by height, so the windows, lamp and wall stay in frame.
+export function hallFrame(viewW, viewH, imgW = 780, imgH = 1398) {
+  const sx = Math.round(imgW * HALL_CROP.left);
+  const sy = Math.round(imgH * HALL_CROP.top);
+  const sw = Math.max(1, Math.round(imgW * (1 - HALL_CROP.left - HALL_CROP.right)));
+  const sh = Math.max(1, Math.round(imgH * (1 - HALL_CROP.top - HALL_CROP.bottom)));
+  const widthDriven = viewW / sw > viewH / sh;
+  const scale = (widthDriven ? viewH / sh : Math.max(viewW / sw, viewH / sh)) * HALL_ZOOM;
+  const dw = sw * scale;
+  const dh = sh * scale;
+  return {
+    widthDriven,
+    sx,
+    sy,
+    sw,
+    sh,
+    dx: (viewW - dw) / 2,
+    dy: -(dh - viewH) * HALL_LIFT,
+    dw,
+    dh,
+  };
+}
+
+// Cropped-sheet fraction at a screen y. 0 is the top of the crop, 1 is the bottom.
+export function hallSourceV(frame, screenY) {
+  return (-frame.dy + screenY) / frame.dh;
+}
+
 // The forehand sheet holds the bat on the right, so a ball on the right uses it.
 export function neighbourPose(swing, time) {
   if (!swing || !Number.isFinite(time) || !Number.isFinite(swing.t)) return 'ready';
@@ -42,17 +71,71 @@ function imageReady(img) {
   return !!(img && img.complete && img.naturalWidth);
 }
 
-function drawCover(ctx, img, w, h, crop) {
-  const sx = Math.round(img.naturalWidth * crop.left);
-  const sy = Math.round(img.naturalHeight * crop.top);
-  const sw = Math.max(1, Math.round(img.naturalWidth * (1 - crop.left - crop.right)));
-  const sh = Math.max(1, Math.round(img.naturalHeight * (1 - crop.top - crop.bottom)));
-  const scale = Math.max(w / sw, h / sh) * HALL_ZOOM;
-  const dw = sw * scale;
-  const dh = sh * scale;
-  const dx = (w - dw) / 2;
-  const dy = -(dh - h) * HALL_LIFT;
-  ctx.drawImage(img, sx, sy, sw, sh, dx, dy, dw, dh);
+function rgb(color) {
+  return 'rgb(' + color[0] + ', ' + color[1] + ', ' + color[2] + ')';
+}
+
+function sampleBand(img, frame, v) {
+  const probe = document.createElement('canvas');
+  probe.width = 4;
+  probe.height = 4;
+  const g = probe.getContext('2d', { willReadFrequently: true });
+  const y = frame.sy + frame.sh * v;
+  const band = Math.max(1, frame.sh * 0.05);
+  const slice = Math.max(1, frame.sw * 0.06);
+  g.drawImage(img, frame.sx, y, slice, band, 0, 0, 2, 4);
+  g.drawImage(img, frame.sx + frame.sw - slice, y, slice, band, 2, 0, 2, 4);
+  const data = g.getImageData(0, 0, 4, 4).data;
+  let r = 0;
+  let gc = 0;
+  let b = 0;
+  let n = 0;
+  for (let i = 0; i < data.length; i += 4) {
+    r += data[i];
+    gc += data[i + 1];
+    b += data[i + 2];
+    n += 1;
+  }
+  return [Math.round(r / n), Math.round(gc / n), Math.round(b / n)];
+}
+
+function paintHallWings(ctx, img, frame, w, h) {
+  const top = sampleBand(img, frame, 0.24);
+  const bottom = sampleBand(img, frame, 0.9);
+  const field = ctx.createLinearGradient(0, 0, 0, h);
+  field.addColorStop(0, rgb(top));
+  field.addColorStop(0.46, rgb(top));
+  field.addColorStop(1, rgb(bottom));
+  ctx.fillStyle = field;
+  ctx.fillRect(0, 0, w, h);
+
+  const seam = Math.min(88, frame.dx);
+  ctx.save();
+  ctx.filter = 'blur(16px)';
+  ctx.globalAlpha = 0.9;
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(frame.dx - seam, 0, seam + 10, h);
+  ctx.clip();
+  ctx.translate(frame.dx, 0);
+  ctx.scale(-1, 1);
+  ctx.drawImage(img, frame.sx, frame.sy, frame.sw, frame.sh, 0, frame.dy, frame.dw, frame.dh);
+  ctx.restore();
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(frame.dx + frame.dw - 10, 0, seam + 10, h);
+  ctx.clip();
+  ctx.translate(frame.dx + frame.dw, 0);
+  ctx.scale(-1, 1);
+  ctx.drawImage(img, frame.sx, frame.sy, frame.sw, frame.sh, -frame.dw, frame.dy, frame.dw, frame.dh);
+  ctx.restore();
+  ctx.restore();
+}
+
+function drawHall(ctx, img, w, h) {
+  const frame = hallFrame(w, h, img.naturalWidth, img.naturalHeight);
+  if (frame.widthDriven && frame.dx > 1) paintHallWings(ctx, img, frame, w, h);
+  ctx.drawImage(img, frame.sx, frame.sy, frame.sw, frame.sh, frame.dx, frame.dy, frame.dw, frame.dh);
 }
 
 function paintTableWash(ctx, img, pts) {
@@ -102,7 +185,7 @@ function drawStatic(ctx, w, h, art) {
 
   const p = (x, y, z) => project(x, y, z, w, h);
   if (hall) {
-    drawCover(ctx, art.hall, w, h, HALL_CROP);
+    drawHall(ctx, art.hall, w, h);
   } else {
     const lamp = ctx.createRadialGradient(w * 0.5, h * 0.16, 10, w * 0.5, h * 0.22, w * 0.55);
     lamp.addColorStop(0, 'rgba(232, 185, 74, 0.55)');

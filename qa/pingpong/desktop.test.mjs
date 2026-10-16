@@ -219,6 +219,12 @@ test('a desktop mouse flick wins the opening point', { timeout: 90000 }, async (
       return live.phase === 'incoming' && live.ball.y > 0.25 && live.ball.z < 2.35 && live.ball.z > 1.05;
     });
     await page.screenshot({ path: path.join(shots, 'pingpong-desktop-rally.png') });
+    const room = await page.evaluate(() => {
+      const c = document.getElementById('table');
+      const p = c.getContext('2d').getImageData(Math.floor(c.width * 0.38), Math.floor(c.height * 0.2), 1, 1).data;
+      return { r: p[0], g: p[1], b: p[2] };
+    });
+    assert.ok(room.r - room.b < 70, JSON.stringify(room));
     const won = await page.evaluate(async () => {
       const waitFrame = () => new Promise((resolve) => requestAnimationFrame(resolve));
       const canvas = document.getElementById('table');
@@ -305,6 +311,17 @@ test('a desktop mouse flick wins the opening point', { timeout: 90000 }, async (
       coarse: matchMedia('(pointer: coarse)').matches,
     }));
     await mobile.screenshot({ path: path.join(shots, 'pingpong-mobile-gate.png') });
+    const portrait = await phone.newPage();
+    await portrait.goto('http://127.0.0.1:8765/pingpong/?input=swing&seed=1', { waitUntil: 'domcontentloaded' });
+    await portrait.waitForFunction(() => {
+      const live = window.__test && window.__test.state();
+      if (!live || live.phase !== 'incoming') return false;
+      if (!(live.ball.y > 0.25 && live.ball.z < 2.3 && live.ball.z > 1.05)) return false;
+      const c = document.getElementById('table');
+      const p = c.getContext('2d').getImageData(Math.floor(c.width * 0.5), Math.floor(c.height * 0.1), 1, 1).data;
+      return Math.abs(p[0] - 138) > 18 || Math.abs(p[1] - 131) > 18 || Math.abs(p[2] - 120) > 18;
+    });
+    await portrait.screenshot({ path: path.join(shots, 'pingpong-mobile-rally.png') });
     assert.equal(phoneGate.button, 'Tap to pick up your bat', JSON.stringify(phoneGate));
     assert.equal(phoneGate.hintHidden, true);
     assert.equal(phoneGate.lines.every((line) => !line.hidden), true);

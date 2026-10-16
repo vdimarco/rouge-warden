@@ -27,3 +27,12 @@ The pointer on the canvas SHALL drive bat x and depth through the same bat sprin
 - WHEN a desktop player flicks the mouse as the opening ball arrives
 - THEN the score becomes 1 to 0
 - AND the count 3, 2, 1 happened before the serve
+
+### Requirement: Landscape shows the room
+On a canvas wider than the hall sheet, the backdrop SHALL fit by height using the same vertical window as the portrait cover, so the windows, lamp and wall sit behind the Neighbour and the far ball path is on the wall rather than the floor. The side gaps SHALL be filled from colours sampled at the sheet's edges, with a soft mirrored edge at the seam. A portrait canvas SHALL keep the cover fit.
+
+#### Scenario: Wide court
+- WHEN the view is 1280 by 800
+- THEN the sheet is fit by height and does not cover the width
+- AND the source behind the far end of the table is above the floor of the sheet
+- AND a 390 by 844 view still cover-fits
