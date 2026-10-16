@@ -11,9 +11,21 @@ When a place's exit opens, its exit gate SHALL light with the next place's name 
 - **WHEN** the player taps JUMP while facing away from Coma
 - **THEN** the first ring waits and the hint reads `TURN TOWARD COMA` until the nose comes round
 
+### Requirement: A run-up that cannot go wrong
+The rim SHALL not turn the ship back in the run-up, so rings past the rim are reachable. In Cruise the steering SHALL lean toward the next ring when the stick is near the centre, and on touch a ring SHALL count within 2 ring radii. Only a tap of the action chip SHALL call the run-up off; braking never does. When WHICH WAY HOME earns the fix while the ship faces Coma (within 60°), the run-up SHALL start there and then.
+
+#### Scenario: Through the exit gate
+- **WHEN** a player drives through the Wall's exit gate at the rim (or Coma's) from any side, on touch or keys, and steers at each ring
+- **THEN** the ship is never turned back, misses at most one ring, and LIGHT SPEED comes within 8 s of the gate
+
+#### Scenario: The fix earned facing Coma
+- **WHEN** the third far scan lands while the nose points within 60° of Coma
+- **THEN** the exit opens and the three launch rings rise ahead at once, with no drive to the gate
+
 #### Scenario: Calling it off
-- **WHEN** the player brakes for 1 s or taps the chip again during the run-up
+- **WHEN** the player taps the small `JUMPING · TAP TO CANCEL` chip during the run-up
 - **THEN** the rings go away and free drive goes on
+- **AND** holding the brake to line up a ring never calls it off
 
 ### Requirement: The punch
 Passing the third ring SHALL punch to light speed: 120 ms of stillness, a white flash (0.8 alpha, 0.3 under reduced motion), the caption LIGHT SPEED with the current word in orange, shake, lines rushing in toward the point ahead, the stars swinging forward with the real aberration, and the radio of the place left groaning down by the real Doppler factor. Input SHALL lock for 0.4 s and the old place SHALL be freed from the GPU.
@@ -21,6 +33,13 @@ Passing the third ring SHALL punch to light speed: 120 ms of stillness, a white 
 #### Scenario: Punching out of the Wall
 - **WHEN** the ship passes the third launch ring at the Wall
 - **THEN** sound stops for 120 ms, then a deep boom and a rising hiss play under a white flash and `LIGHT SPEED`, the stars gather forward, and steering returns 0.4 s later
+
+### Requirement: Words over the white
+The flash SHALL sit under the HUD, and the HUD's words SHALL get a dark outline while the screen is white. Toasts and On Earth cards SHALL wait until the white has gone.
+
+#### Scenario: Reading through the flash
+- **WHEN** the punch whites out the screen
+- **THEN** `→ COMA` and Earth's date stay readable over the white, and `EXIT OPEN` or the first On Earth card shows only once the white has gone
 
 ### Requirement: The free corridor
 In the run the ship SHALL fly down a tube of light, and the player SHALL steer it across and up or down with the same stick, keys or gamepad and the same rate steering as in the places, never by position mapping. Knots, rails, walls with gaps, gates and light pads from real structure SHALL come at the ship: grazes, hairlines, threads and pads raise its speed and a hit lowers it. The tube's edge SHALL hold the ship in without a hit. Gas SHALL do nothing; boost SHALL spend the bar for speed.
@@ -40,6 +59,13 @@ In the run the ship SHALL fly down a tube of light, and the player SHALL steer i
 #### Scenario: The wall of the tube
 - **WHEN** the player holds full steer to one side for 3 s
 - **THEN** the ship slides along the tube's edge and stays inside the tube, with no hit
+
+### Requirement: A clear view down the tube
+As gas does nothing in the corridor, the GAS pedal SHALL leave the screen there. Callouts (GRAZE, TWO NINES) and the corridor hint SHALL sit above the ship, clear of the low vanishing point the hazards come from.
+
+#### Scenario: Looking down the tube
+- **WHEN** a player at 390×844 grazes a knot in the corridor
+- **THEN** GRAZE shows above the ship, no GAS pedal shows, and nothing covers the point the hazards come from
 
 ### Requirement: Speed in the run and the nines
 The run SHALL enter at rapidity 2.0 (0.964c), never fall below 1.8 (0.947c) and never pass 4.0 (0.9993c). The HUD's top band SHALL show the jump, the speed as a fraction of light speed with its nines, Earth's date running and the player's own time. Crossing 0.99c SHALL call TWO NINES; crossing 0.999c SHALL call THREE NINES and light the Headlight: 0.4 s at 0.35 speed with the sky punched brighter and score doubled while above it.

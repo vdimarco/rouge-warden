@@ -1,7 +1,8 @@
 // Light Years Home v3: stunt stars on scripted runs (final.md 18.1, 9.3). VOID RUN's trap at 39, 41, 45 and 48 u/s;
 // SLOAN BEND's drift tiers 1 to 3 with the drift bot; HALO SKIM held 2.9 and 8.1 s; GIANT WHIP's sling and its exit
 // speed; THE EYES threaded clean, fast and scraped; SLOAN PADS with every pad and with one missed. The skim and the
-// thread run on stand-in places (a wide skim surface; the Eyes are Virgo's, Round 2) with the real stunt data.
+// thread run on stand-in places (a wide skim surface; the Eyes are Virgo's, Round 2) with the real stunt data, and
+// GIANT WHIP on Coma without its swarms.
 // node qa/light-years-home/v3/stunt.test.mjs
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -82,8 +83,12 @@ test('a sling round NGC 4874: GIANT WHIP scores the exit speed (37 none, 47 thre
   assert.equal(starsOf(whip, 47), 3);
   // A real sling (a tier 2 drift released inside the well after turning 90° or more): the value is the speed leaving
   // the 3 × rs circle. Then the same sling with the speed set just before the exit.
+  // Coma's downtown traffic thins the scoring out with crashes on the way in: a quiet copy (its giants, wells and
+  // stunts, no swarms) checks the scoring alone.
+  const CALM = { ...COMA, id: 'coma-calm', swarms: [] };
+  registerZone(CALM);
   for (const exit of [null, 37, 47]) {
-    const g = newGame({ zone: COMA, settings: PILOT });
+    const g = newGame({ zone: CALM, settings: PILOT });
     place(g, [b.pos[0] - 20, b.pos[1] - 110, 0], 0, 34);
     g.ship.bar = 1;
     const bot = BOTS.drifter.make({ body: 'ngc4874', tier: 2 });

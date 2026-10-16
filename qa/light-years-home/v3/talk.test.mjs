@@ -123,7 +123,8 @@ test('a skip sends the line to the log; the action control skips when no chip is
 
 test('the opening plays in order from the PLAY tap, and what is left goes to the log when the chase starts', () => {
   const game = newGame({ seed: 1, fresh: true, done: [] });
-  const { events } = run(game, () => ({ source: 'keys' }), 50);
+  // Circle near the drop-out, away from Node 0's ring (driving into it starts the chase from 12 s).
+  const { events } = run(game, (g) => ({ steer: g.t - g.story.playAt > 1 ? 0.3 : 0, source: 'keys' }), 50);
   const ids = of(events, 'line').map((l) => l.id);
   const want = OPENING.lines.map((o) => o.line);
   assert.deepEqual(ids.filter((id) => want.includes(id)), want.slice(0, ids.filter((id) => want.includes(id)).length));
@@ -160,6 +161,8 @@ test("through the jump only the jump's lines play; the Wall's chatter goes to th
     assert.ok(armJump(game, 'coma'));
     say(game, 'dot.void');
     say(game, 'dot.node0');
+    // A Wall story line queued just before the jump (red.woke comes 8 s after the far scans): it never plays in Coma.
+    say(game, 'red.woke', { mission: true, story: true, at: game.t + 8 });
     const bot = JUMP_BOTS.mid({ seed: 4 });
     const { events } = run(game, (g) => { setZoneReady(g, true); return g.mode === 'drive' ? {} : bot.next(g); }, 60,
       { until: (g) => g.mode === 'drive' && g.zoneId === 'coma' && g.t - g.arrivalT > 4 });
@@ -171,6 +174,10 @@ test("through the jump only the jump's lines play; the Wall's chatter goes to th
     assert.ok(inTunnel.length >= 1, 'Dot talks in the tunnel');
     for (const l of inTunnel) assert.ok(jumpIds.has(l.id), `${l.id} in the tunnel`);
     assert.ok(!of(events, 'line').some((l) => l.id === 'dot.void' || l.id === 'dot.node0'), 'no Wall chatter');
+    run(game, () => ({}), 6);
+    assert.ok(!game.talk.queue.some((q) => q.id === 'red.woke') && game.talk.cur?.id !== 'red.woke',
+      "the Wall's story line went to the log at the arrival");
+    assert.ok(game.talk.log.includes('red.woke'));
     assert.ok(game.talk.log.includes('dot.void') || game.talk.log.includes('dot.node0'));
     checkRules(events, game.tune.TALK, 'jump');
   } finally {

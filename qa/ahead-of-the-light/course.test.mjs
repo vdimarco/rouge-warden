@@ -1,13 +1,17 @@
 // Ahead of the Light: the course: kinds, pieces, the generator, the validator, the director and the strip (final.md
-// 11, 21.3). Legs 1 and 2 and every gate are WP2's; legs 3 to 8 build from their pools as WP8 writes their pieces,
-// and until then from the common fallbacks, so here they run on fewer seeds (AOTL_FULL=1 runs them on 1 to 500).
+// 11, 21.3), on all 8 legs. Legs 1 and 2 and every gate are WP2's; legs 3 to 8, their bosses' sections, the VOID and
+// the landing are WP8's. The two big sweeps (every leg × lane × family on seeds 1 to 500, and every condition on every
+// lane it can land on, seeds 1 to 500) run on worker threads beside the other tests; AOTL_SEEDS=50 runs them on fewer
+// seeds.
 // node qa/ahead-of-the-light/course.test.mjs
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
+import { availableParallelism } from 'node:os';
+import { Worker, isMainThread, parentPort, workerData } from 'node:worker_threads';
 import { TUNE } from '../../public/ahead-of-the-light/core/tune.js';
-import { buildLeg, legSeed, PIECES, piecesOf, passCount, teaching, hashItems } from
+import { buildLeg, legSeed, PIECES, piecesOf, teaching, hashItems } from
   '../../public/ahead-of-the-light/core/course/gen.js';
 import { validateLeg } from '../../public/ahead-of-the-light/core/course/validate.js';
 import { LEG_TYPES, ROUTE, CONDITIONS, COMMON_FLOW, FAMILY_EDITS, laneOf } from
@@ -20,24 +24,135 @@ import { makeChart } from '../../public/ahead-of-the-light/core/chart.js';
 import { buildStage } from '../../public/light-years-home/lab/a/stage1.js';
 import { mulberry32, hashSeed } from '../../public/light-years-home/core/rng.js';
 
-const FULL = process.env.AOTL_FULL === '1';
+const SEEDS = Math.max(1, +(process.env.AOTL_SEEDS || 500));
 const COURSE = fileURLToPath(new URL('../../public/ahead-of-the-light/core/course/', import.meta.url));
 const FIRST = Object.freeze({});                               // a player's first run: every teaching piece
 const LATER = Object.freeze({ runs: 4, goodWhip: true });     // nothing left to teach
 const FAMS = ['SKIM', 'WELL', 'SHIP', 'RIVAL'];
-const OURS = ['web', 'coma'];                                  // the legs WP2 owns
 const lanesOf = (type) => Object.keys(LEG_TYPES[type].lanes);
+const kindOf = (type, name) => LEG_TYPES[type].lanes[name].kind;
+const idOf = (e) => (Array.isArray(e) ? e[0] : e);
 
 // The lane variants a leg can fly: each lane, and a FAMILY lane once per family.
 function variants(type) {
   const out = [];
   for (const name of lanesOf(type)) {
-    const L = LEG_TYPES[type].lanes[name];
-    if (L.kind === 'family') for (const fam of [null, ...FAMS]) out.push({ name, fam });
+    if (kindOf(type, name) === 'family') for (const fam of [null, ...FAMS]) out.push({ name, fam });
     else out.push({ name, fam: null });
   }
   return out;
 }
+
+// ---------- the two sweeps, shared out over worker threads ----------
+// 'rules': every leg × lane variant × seed builds valid (R1 to R13); 1 in 10 is validated again to check the report.
+// 'conds': every condition on every lane it can land on (never the VOID), each seed against the same lane without it.
+function cases(job) {
+  const out = [];
+  if (job === 'rules') {
+    for (const type of ROUTE) for (const v of variants(type)) for (let s = 1; s <= SEEDS; s++) out.push([type, v, s]);
+  } else {
+    for (const type of ROUTE.slice(2)) {
+      for (const name of lanesOf(type)) {
+        if (kindOf(type, name) === 'void') continue;
+        for (let s = 1; s <= SEEDS; s++) out.push([type, { name }, s]);
+      }
+    }
+  }
+  return out;
+}
+
+function runCase(job, [type, v, s]) {
+  const bad = [];
+  if (job === 'rules') {
+    const L = buildLeg({ runSeed: s, type, lane: v, seen: s % 2 ? FIRST : LATER });
+    if (!L.report.ok) bad.push(`${type} ${v.name} ${v.fam || ''} seed ${s}: ${JSON.stringify(L.report.errors)}`);
+    if (s % 10 === 0) {
+      const again = validateLeg(L);
+      if (!again.ok) bad.push(`${type} ${v.name} seed ${s}: validateLeg disagrees with the build`);
+      for (const r of ['R1', 'R2', 'R3', 'R4', 'R5', 'R6', 'R7', 'R8', 'R9', 'R10', 'R11', 'R12', 'R13']) {
+        if (!again.rules[r]) bad.push(`${type} ${v.name} seed ${s}: ${r} did not run`);
+      }
+    }
+    return bad;
+  }
+  const base = buildLeg({ runSeed: s, type, lane: { name: v.name }, validate: false });
+  for (const cid of Object.keys(CONDITIONS)) {
+    const at = `${cid} on ${type} ${v.name} seed ${s}`;
+    const L = buildLeg({ runSeed: s, type, lane: { name: v.name, cond: cid } });
+    if (!L.report.ok) bad.push(`${at}: ${JSON.stringify(L.report.errors)}`);
+    if (L.lane.cond !== cid) bad.push(`${at}: the lane lost its condition`);
+    if (L.beats !== base.beats) bad.push(`${at}: a condition changed the length`);
+    for (const k of ['noDrag', 'burnCap']) if (L.rules[k] !== base.rules[k]) bad.push(`${at}: ${k} changed`);
+    const fuelN = (x) => x.pickups.filter((p) => p.type === 'fuel').length;
+    if (cid === 'dust' && !L.items.some((it) => it.kind === 'fog')) bad.push(`${at}: no dust`);
+    if (cid === 'flares' && !L.items.some((it) => it.kind === 'pulse')) bad.push(`${at}: no pulses`);
+    if (cid === 'rich' && !(fuelN(L) > fuelN(base))) bad.push(`${at}: no more fuel`);
+    if (cid === 'tides') {
+      const ids = L.sections.find((x) => x.role === 'build').ids;
+      if (type === 'earth' ? !ids.includes('saturn') : !ids.includes('hub-hop')) bad.push(`${at}: build ${ids}`);
+    }
+  }
+  return bad;
+}
+
+if (!isMainThread) {
+  const { job, lo, hi } = workerData;
+  const all = cases(job), bad = [];
+  for (let i = lo; i < hi; i++) bad.push(...runCase(job, all[i]));
+  parentPort.postMessage({ n: hi - lo, bad });
+}
+
+// Run a sweep over up to 3 workers, leaving the main thread a core for the other tests. → { n, bad }
+async function sweep(job) {
+  const n = cases(job).length;
+  const k = Math.max(1, Math.min(3, (availableParallelism ? availableParallelism() : 2) - 1));
+  const step = Math.ceil(n / k);
+  const parts = [];
+  for (let lo = 0; lo < n; lo += step) {
+    parts.push(new Promise((ok, fail) => {
+      const w = new Worker(new URL(import.meta.url), { workerData: { job, lo, hi: Math.min(n, lo + step) },
+        env: { ...process.env } });
+      w.once('message', ok);
+      w.once('error', fail);
+    }));
+  }
+  const res = await Promise.all(parts);
+  return { n: res.reduce((a, r) => a + r.n, 0), bad: res.flatMap((r) => r.bad) };
+}
+
+const it = isMainThread ? test : () => {};
+
+// The sweeps start after the timing test (the first), one after the other, while the main thread runs the other
+// tests; their tests come last.
+const SWEEPS = {};
+function startSweeps() {
+  if (SWEEPS.rules) return;
+  SWEEPS.rules = sweep('rules');
+  SWEEPS.conds = SWEEPS.rules.then(() => sweep('conds'), () => sweep('conds'));
+  for (const p of Object.values(SWEEPS)) p.catch(() => {});
+}
+
+it('buildLeg plus validateLeg under 40 ms a leg', () => {
+  try {
+    for (const type of ROUTE) {
+      for (const name of lanesOf(type)) {
+        const times = [];
+        for (let s = 1; s <= 60; s++) {
+          const t0 = performance.now();
+          const L = buildLeg({ runSeed: s, type, lane: name, seen: s % 2 ? FIRST : LATER });
+          validateLeg(L);
+          times.push(performance.now() - t0);
+        }
+        times.sort((a, b) => a - b);
+        const mean = times.reduce((a, b) => a + b, 0) / times.length;
+        assert.ok(mean < 40, `${type} ${name}: ${mean.toFixed(1)} ms a leg`);
+        assert.ok(times[Math.floor(times.length * 0.9)] < 40, `${type} ${name}: p90 ${times[54].toFixed(1)} ms`);
+      }
+    }
+  } finally {
+    startSweeps();
+  }
+});
 
 // ---------- golden hashes (seeds 1 to 3, first run and later runs) ----------
 const GOLDEN = {
@@ -47,11 +162,37 @@ const GOLDEN = {
   "coma|COMA'S HEART|later": ['1ofg68o', '86z80d', '6lwrb8'],
   'coma|THE GREAT WALL|first': ['y67jl0', 'fjznc6', '1lvsl89'],
   'coma|THE GREAT WALL|later': ['dqrjor', '1y6ry2r', 'rp6uc1'],
+  'virgo|M87|first': ['v9grlx', 'attp2n', '3xltja'],
+  'virgo|M87|later': ['v9grlx', 'attp2n', '3xltja'],
+  "virgo|MARKARIAN'S CHAIN|first": ['5fb78k', '1p9jku8', '1h5en1l'],
+  "virgo|MARKARIAN'S CHAIN|later": ['5fb78k', '1p9jku8', '1h5en1l'],
+  'local|THE LOCAL VOID|first': ['11qgxev', '12w4ruh', '19q4o63'],
+  'local|THE LOCAL VOID|later': ['11qgxev', '12w4ruh', '19q4o63'],
+  'local|ANDROMEDA|first': ['26xwbm', '11km15e', 'pu3e3p'],
+  'local|ANDROMEDA|later': ['htbsez', '8ttmhj', '1dexvj3'],
+  'local|TRIANGULUM|first': ['15s1cdz', '1n8fv9o', '13tykq3'],
+  'local|TRIANGULUM|later': ['r6tvb9', 'ygzbkv', '1vtcefv'],
+  'milkyway|THE GALACTIC CENTRE|first': ['196s10', '15vc3jw', 'bz9bs5'],
+  'milkyway|THE GALACTIC CENTRE|later': ['196s10', '15vc3jw', 'bz9bs5'],
+  'milkyway|THE OUTER DISC|first': ['6tdy26', '1dd8l1j', '10jtg6q'],
+  'milkyway|THE OUTER DISC|later': ['6tdy26', '1dd8l1j', '10jtg6q'],
+  'orion|THE ORION NEBULA|first': ['1lwoih', '16hzpup', '82beg3'],
+  'orion|THE ORION NEBULA|later': ['1lwoih', '16hzpup', '82beg3'],
+  "orion|ORION'S BELT|first": ['lhj9q6', '1x4xxd7', '1ytpkyt'],
+  "orion|ORION'S BELT|later": ['lhj9q6', '1x4xxd7', '1ytpkyt'],
+  'neighbours|ALDEBARAN AND THE HYADES|first': ['1lrczr3', '1h889iw', '14irvnk'],
+  'neighbours|ALDEBARAN AND THE HYADES|later': ['1lrczr3', '1h889iw', '14irvnk'],
+  'neighbours|ALPHA CENTAURI|first': ['18d79mg', '1x3w9u5', 'dtik5r'],
+  'neighbours|ALPHA CENTAURI|later': ['18d79mg', '1x3w9u5', 'dtik5r'],
+  'earth|JUPITER|first': ['13hp8h3', '1duf2a', '19g50o2'],
+  'earth|JUPITER|later': ['13hp8h3', '1duf2a', '19g50o2'],
+  'earth|THE ASTEROID BELT|first': ['1r1wfrg', 'mg9e1', '1686jtn'],
+  'earth|THE ASTEROID BELT|later': ['1r1wfrg', 'mg9e1', '1686jtn'],
 };
 
-test('same seed, type, lane and mods give the same hash; golden hashes for seeds 1 to 3 of every leg and lane', () => {
+it('same seed, type, lane and mods give the same hash; golden hashes for seeds 1 to 3 of every leg and lane', () => {
   const now = {};
-  for (const type of OURS) {
+  for (const type of ROUTE) {
     for (const name of lanesOf(type)) {
       for (const [tag, seen] of [['first', FIRST], ['later', LATER]]) {
         const key = `${type}|${name}|${tag}`;
@@ -76,40 +217,25 @@ test('same seed, type, lane and mods give the same hash; golden hashes for seeds
     type: 'web' }).hash);
 });
 
-test('every leg type × every lane × seeds 1 to 500 passes R1 to R13 (legs 1 and 2; legs 3 to 8 on fewer seeds)', () => {
-  for (const type of ROUTE) {
-    const n = OURS.includes(type) || FULL ? 500 : 12;
-    for (const v of variants(type)) {
-      for (let s = 1; s <= n; s++) {
-        const seen = s % 2 ? FIRST : LATER;
-        const L = buildLeg({ runSeed: s, type, lane: v, seen });
-        assert.ok(L.report.ok, `${type} ${v.name} ${v.fam || ''} seed ${s}: ${JSON.stringify(L.report.errors)}`);
-        const again = validateLeg(L);
-        assert.ok(again.ok, 'validateLeg agrees with the build');
-        for (const r of ['R1', 'R2', 'R3', 'R4', 'R5', 'R6', 'R7', 'R8', 'R9', 'R10', 'R11', 'R12', 'R13']) {
-          assert.ok(again.rules[r], `${r} ran`);
-        }
-      }
-    }
-  }
-});
-
-test('legs 1 and 2 are never empty and bring a set piece every 5 to 10 s', () => {
+it('every leg is never empty and brings a line choice every 5 to 10 s', () => {
   const SET = new Set(['wall', 'gate', 'well', 'rail', 'pickup']);
-  for (const type of OURS) {
+  for (const type of ROUTE) {
+    // legs 1 and 2: 5 beats of nothing at most and a line choice every 18 beats (9.6 s at cruise, 8.5 s at 0.9c);
+    // the later legs run faster, so 6 and 20 beats are the same seconds or fewer
+    const early = ROUTE.indexOf(type) < 2, quietMax = early ? 5 : 6, gapMax = early ? 18 : 20;
     for (const v of variants(type)) {
       for (let s = 1; s <= 100; s++) {
         const L = buildLeg({ runSeed: s, type, lane: v, seen: s % 2 ? FIRST : LATER });
-        assert.ok(L.report.quiet <= 5, `${type} seed ${s}: ${L.report.quiet} beats with nothing at ${L.report.quietAt}`);
-        // a line choice (a wall, a gate or pair, a well, a rail, a pickup, or THREAD OR DOCK) at least every 18 beats:
-        // 9.6 s at cruise, 8.5 s at 0.9c
+        assert.ok(L.report.quiet <= quietMax, `${type} ${v.name} seed ${s}: ${L.report.quiet} beats with nothing at `
+          + `${L.report.quietAt}`);
+        // a line choice: a wall, a gate or pair, a well, a rail, a pickup, or THREAD OR DOCK (Earth: the door)
         const launch = L.sections[0].b1;
-        const at = L.items.filter((it) => SET.has(it.kind) || (it.kind === 'cue' && it.name === 'gateCall'))
-          .flatMap((it) => (it.end !== undefined ? [it.beat, it.end] : [it.beat])).filter((b) => b >= launch)
-          .sort((a, b) => a - b);
+        const at = L.items.filter((x) => SET.has(x.kind) || (x.kind === 'cue' && (x.name === 'gateCall'
+          || x.name === 'door'))).flatMap((x) => (x.end !== undefined ? [x.beat, x.end] : [x.beat]))
+          .filter((b) => b >= launch).sort((a, b) => a - b);
         let prev = launch;
         for (const b of at) {
-          assert.ok(b - prev <= 18, `${type} seed ${s}: ${b - prev} beats from ${prev} with no set piece`);
+          assert.ok(b - prev <= gapMax, `${type} ${v.name} seed ${s}: ${b - prev} beats from ${prev} with no set piece`);
           prev = Math.max(prev, b);
         }
       }
@@ -117,13 +243,13 @@ test('legs 1 and 2 are never empty and bring a set piece every 5 to 10 s', () =>
   }
 });
 
-test('the trap check fails a fixture of lab A\'s old P1-4 layout and passes today\'s', () => {
-  const conv = (it) => {
-    if (it.kind === 'knot') return knot(it.beat, it.psi, it.half);
-    if (it.kind === 'rail') return rail(it.beat, it.end, it.psi, it.half);
-    if (it.kind === 'wall') return wall(it.beat, [{ psi: it.psi, w: 2 * it.gap }]);
-    if (it.kind === 'gate') return { kind: 'gate', beat: it.beat, psi: it.psi, gap: 2 * it.gap,
-      halves: [it.half, it.half], pair: !!it.pair };
+it('the trap check fails a fixture of lab A\'s old P1-4 layout and passes today\'s', () => {
+  const conv = (x) => {
+    if (x.kind === 'knot') return knot(x.beat, x.psi, x.half);
+    if (x.kind === 'rail') return rail(x.beat, x.end, x.psi, x.half);
+    if (x.kind === 'wall') return wall(x.beat, [{ psi: x.psi, w: 2 * x.gap }]);
+    if (x.kind === 'gate') return { kind: 'gate', beat: x.beat, psi: x.psi, gap: 2 * x.gap,
+      halves: [x.half, x.half], pair: !!x.pair };
     return null;
   };
   for (let seed = 1; seed <= 8; seed++) {
@@ -139,7 +265,7 @@ test('the trap check fails a fixture of lab A\'s old P1-4 layout and passes toda
   }
 });
 
-test('the validator catches unfair layouts', () => {
+it('the validator catches unfair layouts', () => {
   const R = (items, beats, rules) => validateLeg({ beats, items }, { rules });
   // a knot inside a highway: whoever rides it is doomed
   const hw = [rail(4, 14, -10, 1.5), rail(4, 14, 10, 1.5), knot(10, 0, 3)];
@@ -156,30 +282,58 @@ test('the validator catches unfair layouts', () => {
   assert.ok(!R([well(4, 50, 'medium', [-60, -120])], 16, ['R7']).ok, 'bands at nothing');
   assert.ok(R([well(4, 50, 'medium', [-60, -120]), wall(10, [{ psi: -60, w: 60 }]),
     fuel(9, -120, { band: true })], 16, ['R7']).ok, 'bands on a gap and a fuel line');
+  // R7's later-leg targets: a rail's riding line (M87's jet), a target knot (Titan), Earth's door within 16 beats
+  const jet = rail(6, 20, -130, 2, { skimBand: 9 });
+  assert.ok(R([well(4, 50, 'medium', [-120, -60]), jet, fuel(9, -60, { band: true })], 22, ['R7']).ok, 'on the jet');
+  assert.ok(!R([well(4, 50, 'medium', [-100, -60]), jet, fuel(9, -60, { band: true })], 22, ['R7']).ok, 'off it');
+  assert.ok(R([well(4, 50, 'medium', [-60, -120]), knot(8, -71, 3.5, { target: true }),
+    fuel(9, -120, { band: true })], 16, ['R7']).ok, 'a target knot');
+  assert.ok(!R([well(4, 50, 'medium', [-60, -120]), knot(8, -71, 3.5), fuel(9, -120, { band: true })], 16,
+    ['R7']).ok, 'a plain knot is no target');
+  const door = { kind: 'cue', beat: 19, name: 'door', data: { psi: -60, w: 60 } };
+  assert.ok(R([well(4, 50, 'medium', [-60, -120]), door, fuel(9, -120, { band: true })], 22, ['R7']).ok, 'the door');
+  assert.ok(!R([well(2, 50, 'medium', [-60, -120]), { ...door, beat: 21 }, fuel(7, -120, { band: true })], 24,
+    ['R7']).ok, 'a door 19 beats on is too far');
   assert.ok(!R([fuel(6, 0)], 10, ['R10']).ok, 'a fuel cell on the safe line');
   assert.ok(R([knot(6, 7.5, 3), fuel(6, 0)], 10, ['R10']).ok, 'a fuel cell a hairline from a knot');
   assert.ok(!R([knot(6, 2, 3), fuel(6, 0)], 10, ['R10']).ok, 'a fuel cell inside a knot');
+  // Saturn's Keeler cell: a secret in a gap you hairline, not inside the wall
+  const rings = wall(6, [{ psi: 0, w: 40 }, { psi: 120, w: 10 }]);
+  assert.ok(R([rings, fuel(6, 120, { secret: true })], 10, ['R10']).ok, 'the Keeler cell');
+  assert.ok(!R([rings, fuel(6, 120)], 10, ['R10']).ok, 'the same cell, not secret');
+  assert.ok(!R([rings, fuel(6, 90, { secret: true })], 10, ['R10']).ok, 'a secret inside the wall');
   // R1: eight knots inside the ring at once
   assert.ok(!R([0, 1, 2, 3, 4, 5, 6, 7].map((k) => knot(6 + k * 0.25, -150 + k * 40, 2)), 12, ['R1']).ok);
 });
 
-// A piece alone in a leg: 6 empty beats, the piece placed at `angle` (mirrored or not), 6 beats after.
+// A piece alone in a leg: 6 empty beats, the piece placed at `angle` (mirrored or not), 6 beats after. A piece whose
+// bands aim into the next piece (the Moon at the landing's door: pc.after) is tested with that piece after it.
 function pieceLeg(pc, { angle = 0, m = 1, seed = 1, safe = true } = {}) {
-  const len = pc.beats === 'rest' ? 24 : pc.beats[1];
-  const rnd = mulberry32(hashSeed('piece', pc.id, seed));
-  const p = {};
-  for (const [k, [lo, hi]] of Object.entries(pc.params)) p[k] = safe ? pc.safe[k] : lo + Math.floor(rnd() * (hi - lo + 1));
-  const ctx = { len, p, rnd, density: 1, opts: {}, legNo: 1, type: 'coma', skin: 'coma', T: TUNE, mods: {}, first: false,
-    lane: null, gate: 'gate-virgo' };
-  const built = pc.build(ctx);
-  const items = built.items.filter((it) => it.beat < len + 1e-9 || it.kind === 'cue')
-    .map((it) => ({ ...place(it, 6, angle, m), piece: pc.id }));
+  const chain = [pc, ...(pc.after ? [PIECES[pc.after]] : [])];
+  const items = [], sections = [{ role: 'launch', b0: 0, b1: 6, ids: [] }];
+  let b0 = 6, anchor = angle;
+  chain.forEach((q, i) => {
+    const len = q.beats === 'rest' ? 24 : q.beats[1];
+    const rnd = mulberry32(hashSeed('piece', q.id, seed));
+    const p = {};
+    for (const [k, [lo, hi]] of Object.entries(q.params)) {
+      p[k] = safe || i > 0 ? q.safe[k] : lo + Math.floor(rnd() * (hi - lo + 1));
+    }
+    const ctx = { len, p, rnd, density: 1, opts: {}, legNo: 1, type: 'coma', skin: 'coma', T: TUNE, mods: {},
+      first: false, lane: null, gate: 'gate-virgo' };
+    const built = q.build(ctx);
+    for (const x of built.items) {
+      if (x.beat < len + 1e-9 || x.kind === 'cue') items.push({ ...place(x, b0, anchor, m), piece: q.id });
+    }
+    sections.push({ role: q.roles[0], id: q.id, ids: [q.id], b0, b1: b0 + len });
+    anchor = wrap(anchor + m * (built.exit || 0));
+    b0 += len;
+  });
   items.sort((a, b) => a.beat - b.beat);
-  return { beats: len + 12, items, sections: [{ role: 'launch', b0: 0, b1: 6, ids: [] },
-    { role: pc.roles[0], id: pc.id, ids: [pc.id], b0: 6, b1: 6 + len }] };
+  return { beats: b0 + 6, items, sections };
 }
 
-test('every piece\'s safe params pass alone, mirrored and at every angle', () => {
+it('every piece\'s safe params pass alone, mirrored and at every angle', () => {
   const rules = ['R1', 'R2', 'R3', 'R4', 'R5', 'R6', 'R7', 'R8', 'R10'];
   for (const pc of Object.values(PIECES)) {
     assert.ok(Object.keys(pc.params).length <= 3, `${pc.id}: at most three params`);
@@ -188,6 +342,7 @@ test('every piece\'s safe params pass alone, mirrored and at every angle', () =>
       assert.ok(Number.isInteger(lo) && Number.isInteger(hi) && lo <= hi, `${pc.id}.${k} is an integer range`);
       assert.ok(pc.safe[k] >= lo && pc.safe[k] <= hi, `${pc.id}.${k}: its safe value is in range`);
     }
+    if (pc.after) assert.ok(PIECES[pc.after], `${pc.id}: ${pc.after} is written`);
     for (let angle = 0; angle < 360; angle += 15) {
       for (const m of [1, -1]) {
         const L = pieceLeg(pc, { angle, m });
@@ -198,16 +353,25 @@ test('every piece\'s safe params pass alone, mirrored and at every angle', () =>
   }
 });
 
-test('no piece repeats in a run; teaching pieces appear only while unseen', () => {
+it('no piece repeats in a run unless its pool is spent; teaching pieces appear only while unseen', () => {
   for (let s = 1; s <= 100; s++) {
     const used = new Set();
     for (const type of ROUTE) {
       const lane = lanesOf(type)[s % lanesOf(type).length];
       const L = buildLeg({ runSeed: s, type, lane, seen: LATER, used });
-      for (const id of piecesOf(L)) {
-        assert.ok(!used.has(id) || !OURS.includes(type), `seed ${s}: ${id} repeats on ${type}`);
-        used.add(id);
+      const here = piecesOf(L);
+      for (const id of here) {
+        if (used.has(id)) {
+          // a pool `used` empties may repeat a common piece (11.9): every piece it could have drawn was flown
+          const sec = L.sections.find((x) => x.ids.includes(id));
+          const pool = LEG_TYPES[type].sections.find((x) => x[0] === sec.role)[2];
+          const able = (Array.isArray(pool) ? pool : []).map(idOf).filter((p) => PIECES[p] && !PIECES[p].teach);
+          assert.ok(COMMON_FLOW.includes(id), `seed ${s}: ${id} repeats on ${type}`);
+          assert.ok(able.every((p) => used.has(p) || here.includes(p)), `seed ${s}: ${id} repeats on ${type} with `
+            + `${able.filter((p) => !used.has(p))} unflown`);
+        }
       }
+      for (const id of here) used.add(id);
     }
   }
   const ids = (L) => L.sections.flatMap((x) => x.ids);
@@ -231,28 +395,31 @@ test('no piece repeats in a run; teaching pieces appear only while unseen', () =
   assert.ok(teaching(PIECES['web-first-knots'], {}) && !teaching(PIECES['web-first-knots'], { runs: 3 }));
 });
 
-test('fuel count and spacing per leg; no pickup within 6° of the safe line', () => {
-  for (const type of OURS) {
+it('fuel count and spacing per leg; no pickup within 6° of the safe line', () => {
+  for (const type of ROUTE) {
     for (const v of variants(type)) {
-      for (let s = 1; s <= 200; s++) {
+      const L0 = laneOf(type, v.name);
+      for (let s = 1; s <= 120; s++) {
         const L = buildLeg({ runSeed: s, type, lane: v, seen: LATER });
+        const at = `${type} ${v.name} ${v.fam || ''} seed ${s}`;
+        if (L0.kind === 'void') { assert.equal(L.pickups.length, 0, `${at}: the VOID has no pickups`); continue; }
         const groups = new Map();
         for (const p of L.pickups) if (p.type === 'fuel') groups.set(p.group || `id${p.id}`, p.beat);
         let want = TUNE.FUEL_PER_LEG[ROUTE.indexOf(type)];
         if (v.fam && FAMILY_EDITS[v.fam].fuel) want += FAMILY_EDITS[v.fam].fuel;
         const must = L.pickups.filter((p) => p.type === 'fuel' && p.must);
         const mustGroups = new Set(must.map((p) => p.group || `id${p.id}`)).size;
-        assert.equal(groups.size, Math.max(want, mustGroups), `${type} ${v.name} ${v.fam} seed ${s}: fuel groups`);
+        assert.equal(groups.size, Math.max(want, mustGroups), `${at}: fuel groups`);
         // one per third where the third has a slot, so cells are spread, never bunched
         if (want >= 3) {
           const beats = [...groups.values()].sort((a, b) => a - b);
-          for (let i = 1; i < beats.length; i++) assert.ok(beats[i] - beats[i - 1] >= 3, `${type} seed ${s}: cells ${beats}`);
+          for (let i = 1; i < beats.length; i++) assert.ok(beats[i] - beats[i - 1] >= 3, `${at}: cells ${beats}`);
         }
         const patches = L.pickups.filter((p) => p.type === 'patch');
-        assert.equal(patches.length, LEG_TYPES[type].patch ? 1 : 0, `${type} seed ${s}: the patch`);
+        assert.equal(patches.length, LEG_TYPES[type].patch ? 1 : 0, `${at}: the patch`);
         if (patches.length) assert.ok(Math.abs(patches[0].beat - L.beats * TUNE.PATCH_AT) <= L.beats * 0.3);
         const r = validateLeg(L, { rules: ['R10'] });
-        assert.ok(r.ok, `${type} seed ${s}: ${JSON.stringify(r.errors)}`);
+        assert.ok(r.ok, `${at}: ${JSON.stringify(r.errors)}`);
       }
     }
   }
@@ -260,17 +427,23 @@ test('fuel count and spacing per leg; no pickup within 6° of the safe line', ()
   const first = buildLeg({ runSeed: 7, type: 'web', seen: FIRST });
   const cell = first.pickups.find((p) => p.piece === 'web-first-knots');
   assert.ok(cell && cell.must, 'the intro\'s cell always spawns');
-  const burn = first.items.find((it) => it.kind === 'cue' && it.name === 'burn');
+  const burn = first.items.find((x) => x.kind === 'cue' && x.name === 'burn');
   assert.ok(burn && burn.beat > cell.beat, 'FLICK UP TO BURN comes right after it');
 });
 
-test('RISK adds exactly 16 beats; VOID has no pickups, wells or rivals, is × 0.6, and sets no drag and no burn cap; '
+it('RISK adds exactly 16 beats; VOID has no pickups, wells or rivals, is × 0.6, and sets no drag and no burn cap; '
   + 'FAMILY edits touch only the build', () => {
   for (let s = 1; s <= 30; s++) {
+    for (const type of ROUTE.slice(1)) {
+      const names = lanesOf(type);
+      const risk = names.find((n) => kindOf(type, n) === 'risk'), plain = names.find((n) => kindOf(type, n) === 'family');
+      if (!risk || !plain) continue;
+      const R = buildLeg({ runSeed: s, type, lane: risk }), F = buildLeg({ runSeed: s, type, lane: plain });
+      assert.equal(R.beats - F.beats, TUNE.RISK_BEATS, `${type}: RISK is 16 beats longer`);
+      assert.equal(F.beats, LEG_TYPES[type].beats, `${type}: FAMILY keeps the leg's length`);
+    }
     const risk = buildLeg({ runSeed: s, type: 'coma', lane: "COMA'S HEART" });
     const fam = buildLeg({ runSeed: s, type: 'coma', lane: 'THE GREAT WALL' });
-    assert.equal(risk.beats - fam.beats, TUNE.RISK_BEATS);
-    assert.equal(fam.beats, LEG_TYPES.coma.beats);
     // the 16 beats go to the crescendo, at density × 1.25: the crescendo takes what the other sections leave
     const cr = (L) => L.sections.find((x) => x.role === 'crescendo');
     const rest = (L) => L.sections.filter((x) => x.role !== 'crescendo').reduce((a, x) => a + x.b1 - x.b0, 0);
@@ -285,69 +458,162 @@ test('RISK adds exactly 16 beats; VOID has no pickups, wells or rivals, is × 0.
     assert.equal(v.rules.noDrag, true);
     assert.equal(v.rules.burnCap, null);
     assert.ok(v.report.ok, JSON.stringify(v.report.errors));
-    for (const f of FAMS) {
-      const e = buildLeg({ runSeed: s, type: 'coma', lane: { name: 'THE GREAT WALL', fam: f } });
-      const same = (a, b) => a.role === b.role && a.ids.join() === b.ids.join() && JSON.stringify(a.params)
-        === JSON.stringify(b.params) && a.b1 - a.b0 === b.b1 - b.b0;
-      e.sections.forEach((sec, i) => {
-        const base = fam.sections[i];
+    assert.equal(v.items.filter((x) => x.kind === 'wall' && x.piece === 'local-void').length, 3, 'three far sheets');
+    assert.ok(v.items.some((x) => x.kind === 'cue' && x.name === 'void'), 'NO GAS · NO DRAG · BURN IT ALL');
+    for (const [type, plain] of [['coma', 'THE GREAT WALL'], ['virgo', "MARKARIAN'S CHAIN"], ['local', 'TRIANGULUM'],
+      ['milkyway', 'THE OUTER DISC'], ['orion', "ORION'S BELT"], ['neighbours', 'ALPHA CENTAURI']]) {
+      const base = buildLeg({ runSeed: s, type, lane: plain });
+      for (const f of FAMS) {
+        const e = buildLeg({ runSeed: s, type, lane: { name: plain, fam: f } });
+        const same = (a, b) => a.role === b.role && a.ids.join() === b.ids.join() && JSON.stringify(a.params)
+          === JSON.stringify(b.params) && a.b1 - a.b0 === b.b1 - b.b0;
+        e.sections.forEach((sec, i) => {
+          const b = base.sections[i];
+          if (f === 'RIVAL') {
+            if (sec.role === 'open') assert.equal((sec.b1 - sec.b0) - (b.b1 - b.b0), FAMILY_EDITS.RIVAL.open);
+            else assert.ok(same(sec, b), `${type}: RIVAL touches only the open road (${sec.role})`);
+          } else if (sec.role === 'build') {
+            assert.equal(sec.ids[0], FAMILY_EDITS[f].piece, `${type}: ${f} puts its piece in the build`);
+          } else assert.ok(same(sec, b), `${type}: ${f} touches only the build (${sec.role}: ${sec.ids} vs ${b.ids})`);
+        });
         if (f === 'RIVAL') {
-          if (sec.role === 'open') assert.equal((sec.b1 - sec.b0) - (base.b1 - base.b0), FAMILY_EDITS.RIVAL.open);
-          else assert.ok(same(sec, base), `RIVAL touches only the open road (${sec.role})`);
-        } else if (sec.role === 'build') {
-          assert.equal(sec.ids[0], FAMILY_EDITS[f].piece, `${f} puts its piece in the build`);
-        } else assert.ok(same(sec, base), `${f} touches only the build (${sec.role}: ${sec.ids} vs ${base.ids})`);
-      });
-      if (f === 'RIVAL') assert.equal(e.field.drifters, fam.field.drifters + FAMILY_EDITS.RIVAL.drifters);
-      if (f === 'SHIP') assert.equal(e.rules.patchAlways, true);
-    }
-  }
-});
-
-test('every leg\'s opener and build pools hold at least 3 pieces (Earth excepted)', () => {
-  for (const type of ROUTE) {
-    const def = LEG_TYPES[type];
-    for (const role of ['opener', 'build']) {
-      const sec = def.sections.find((x) => x[0] === role);
-      const ids = new Set(sec[2].map((e) => (Array.isArray(e) ? e[0] : e)));
-      if (type !== 'earth') assert.ok(ids.size >= 3, `${type} ${role}: ${[...ids]}`);
-      if (OURS.includes(type)) for (const id of ids) assert.ok(PIECES[id], `${type} ${role}: ${id} is written`);
-    }
-    for (const name of lanesOf(type)) assert.equal(laneOf(type, name).name, name);
-  }
-  for (const id of COMMON_FLOW) assert.ok(PIECES[id], `common ${id}`);
-  for (const id of ['gate-coma', 'gate-virgo', 'gate-local', 'gate-milky-way', 'gate-orion-arm', 'gate-bubble',
-    'gate-sun']) assert.ok(PIECES[id], id);
-  for (const type of ROUTE) if (type !== 'earth') assert.ok(PIECES[LEG_TYPES[type].gate], `${type}'s gate`);
-});
-
-test('each condition builds, validates on every lane it can land on, and never touches the light', () => {
-  const LIGHT = ['GAP', 'BLEED', 'TTC', 'GLARE', 'CAP', 'gap', 'bleed', 'ttc', 'cap', 'light'];
-  const n = FULL ? 500 : 6;
-  for (const [cid, C] of Object.entries(CONDITIONS)) {
-    for (const r of Object.keys(C.rules || {})) assert.ok(!LIGHT.some((w) => r.includes(w)), `${cid}: ${r}`);
-    for (const type of ROUTE.slice(2)) {
-      for (const name of lanesOf(type)) {
-        if (LEG_TYPES[type].lanes[name].kind === 'void') continue;
-        for (let s = 1; s <= n; s++) {
-          const L = buildLeg({ runSeed: s, type, lane: { name, cond: cid } });
-          assert.ok(L.report.ok, `${cid} on ${type} ${name} seed ${s}: ${JSON.stringify(L.report.errors)}`);
-          assert.equal(L.lane.cond, cid);
-          const base = buildLeg({ runSeed: s, type, lane: { name } });
-          assert.equal(L.beats, base.beats, 'a condition never changes the length');
-          for (const k of ['noDrag', 'burnCap']) assert.equal(L.rules[k], base.rules[k]);
-          if (cid === 'dust') assert.ok(L.items.some((it) => it.kind === 'fog'));
-          if (cid === 'flares') assert.ok(L.items.some((it) => it.kind === 'pulse'));
-          if (cid === 'rich') assert.ok(L.pickups.filter((p) => p.type === 'fuel').length
-            > base.pickups.filter((p) => p.type === 'fuel').length);
-          if (cid === 'tides') assert.ok(L.sections.find((x) => x.role === 'build').ids.includes('hub-hop'));
+          const add = LEG_TYPES[type].field.boss ? 0 : FAMILY_EDITS.RIVAL.drifters;
+          assert.equal(e.field.drifters, base.field.drifters + add, `${type}: RIVAL's drifters (none on boss legs)`);
         }
+        if (f === 'SHIP') assert.equal(e.rules.patchAlways, true);
       }
     }
   }
 });
 
-test('makeChart never puts a condition on the VOID or the same one on two legs in a row', () => {
+it('every leg\'s opener and build pools hold at least 3 pieces (Earth excepted), every one of them written', () => {
+  for (const type of ROUTE) {
+    const def = LEG_TYPES[type];
+    for (const role of ['opener', 'build']) {
+      const sec = def.sections.find((x) => x[0] === role);
+      const ids = new Set(sec[2].map(idOf));
+      if (type !== 'earth') assert.ok(ids.size >= 3, `${type} ${role}: ${[...ids]}`);
+      for (const id of ids) assert.ok(PIECES[id], `${type} ${role}: ${id} is written`);
+    }
+    for (const [role, , pool] of def.sections) {
+      if (Array.isArray(pool)) for (const e of pool) assert.ok(PIECES[idOf(e)], `${type} ${role}: ${idOf(e)} is written`);
+    }
+    for (const name of lanesOf(type)) {
+      assert.equal(laneOf(type, name).name, name);
+      const L = def.lanes[name];
+      for (const id of [...(Array.isArray(L.piece) ? L.piece : [L.piece]), ...(L.seq || [])].filter(Boolean)) {
+        assert.ok(PIECES[id], `${type} ${name}: its signature ${id} is written`);
+      }
+    }
+  }
+  for (const id of COMMON_FLOW) assert.ok(PIECES[id], `common ${id}`);
+  for (const id of ['gate-coma', 'gate-virgo', 'gate-local', 'gate-milky-way', 'gate-orion-arm', 'gate-bubble',
+    'gate-sun', 'landing']) assert.ok(PIECES[id], id);
+  for (const type of ROUTE) assert.ok(PIECES[LEG_TYPES[type].gate], `${type}'s gate`);
+});
+
+it('every lane flies its signature, its leg\'s boss section and its gate', () => {
+  const sig = (L) => L.sections.find((x) => x.role === 'signature');
+  const ids = (L, role) => L.sections.filter((x) => x.role === role).flatMap((x) => x.ids);
+  for (let s = 1; s <= 40; s++) {
+    for (const type of ROUTE) {
+      for (const name of lanesOf(type)) {
+        const def = LEG_TYPES[type], ln = def.lanes[name];
+        const L = buildLeg({ runSeed: s, type, lane: name, seen: s % 2 ? FIRST : LATER });
+        const at = `${type} ${name} seed ${s}`;
+        if (ln.kind === 'void') { assert.deepEqual(ids(L, 'void'), ['local-void'], at); continue; }
+        if (ln.seq) assert.deepEqual(sig(L).ids, ln.seq, at);
+        else assert.ok((Array.isArray(ln.piece) ? ln.piece : [ln.piece]).includes(sig(L).id), `${at}: ${sig(L).id}`);
+        assert.deepEqual(ids(L, 'gate'), [def.gate], at);
+        if (type === 'virgo') assert.deepEqual(ids(L, 'open'), ['whale-road'], `${at}: the WHALE's road`);
+        if (type === 'orion') assert.ok(ids(L, 'crescendo').includes('mako-field'), `${at}: MAKO's field`);
+        if (type === 'earth') {
+          const zone = ln.kind === 'short' ? 'belt-dense' : 'asteroids';
+          assert.ok(L.sections.flatMap((x) => x.ids).includes(zone), `${at}: MANTA's push zone`);
+          assert.ok(L.items.some((x) => x.kind === 'cue' && x.name === 'manta'), at);
+        }
+        if (def.field.boss) assert.equal(L.field.boss, def.field.boss, at);
+      }
+    }
+  }
+});
+
+it('Earth runs the planets in order and lands at the door on the Moon\'s band line', () => {
+  const order = ['launch', 'opener', 'build', 'breather', 'signature', 'crescendo', 'open', 'moon', 'gate'];
+  for (let s = 1; s <= 60; s++) {
+    for (const name of lanesOf('earth')) {
+      const L = buildLeg({ runSeed: s, type: 'earth', lane: name, seen: LATER });
+      const at = `${name} seed ${s}`;
+      const short = kindOf('earth', name) === 'short';
+      assert.deepEqual(L.sections.map((x) => x.role), short ? order.filter((r) => r !== 'crescendo' && r !== 'open')
+        : order, at);
+      assert.deepEqual(L.sections.map((x) => x.ids[0]).slice(1, 3), ['kuiper', 'saturn'], at);
+      if (short) assert.equal(L.beats, Math.round(LEG_TYPES.earth.beats * TUNE.BELT_X), at);
+      assert.equal(L.items.some((x) => x.name === 'JUPITER'), !short, `${at}: Jupiter only the long way`);
+      // the door: a cue (no THREAD pay, no hazard), the leg's gate at L − 4, DOOR_DEG wide
+      const g = L.gate;
+      assert.ok(g.door && g.id === 'landing' && Number.isFinite(g.psi), `${at}: ${JSON.stringify(g)}`);
+      assert.equal(g.beat, L.beats - 4, at);
+      assert.equal(g.gap, TUNE.DOOR_DEG, at);
+      assert.ok(!L.items.some((x) => x.kind === 'gate' && !x.pair), `${at}: no gate item on Earth`);
+      const moon = L.wells.find((w) => w.name === 'THE MOON');
+      assert.ok(moon && Math.abs(wrap(moon.exits[0] - g.psi)) <= 10, `${at}: the Moon's band A is on the door`);
+      assert.ok(L.gate.beat - moon.beat <= 16, at);
+      // Saturn's rings: three gaps, the Encke pair, the secret Keeler cell
+      const rings = L.items.find((x) => x.kind === 'wall' && x.piece === 'saturn');
+      assert.deepEqual(rings.gaps.map((x) => x.tag), ['cassini', 'encke', 'keeler'], at);
+      assert.ok(Math.abs(wrap(rings.gaps[0].psi - L.sections[2].anchor)) <= 25, `${at}: Cassini near your line`);
+      assert.ok(L.items.some((x) => x.kind === 'gate' && x.pair && x.tag === 'encke'), `${at}: Encke's thread`);
+      const keeler = L.pickups.find((p) => p.secret);
+      assert.ok(keeler && keeler.type === 'fuel' && Math.abs(wrap(keeler.psi - rings.gaps[2].psi)) < 1e-6, at);
+    }
+  }
+  // TIDES never takes Saturn's place
+  const t = buildLeg({ runSeed: 3, type: 'earth', lane: { name: 'JUPITER', cond: 'tides' } });
+  assert.deepEqual(t.sections[2].ids, ['saturn']);
+  assert.equal(t.rules.redSpan, CONDITIONS.tides.rules.redSpan);
+});
+
+it('the signature set pieces keep their shape', () => {
+  for (let s = 1; s <= 40; s++) {
+    const m = buildLeg({ runSeed: s, type: 'virgo', lane: 'M87', seen: LATER });
+    const jet = m.items.find((x) => x.kind === 'rail' && x.tag === 'jet');
+    const knots = m.items.filter((x) => x.kind === 'pulse' && x.tag === 'jet');
+    assert.deepEqual(knots.map((x) => x.name), ['HST-1', 'D', 'E', 'F', 'I', 'A', 'B', 'C'], `M87 seed ${s}`);
+    assert.ok(knots.every((x) => Math.abs(wrap(x.psi - jet.psi)) < 1e-6 && x.half1 === 12), 'the knots bulge the jet');
+    assert.equal(jet.skimX, 2);
+    const m87 = m.wells.find((w) => w.name === 'M87');
+    assert.equal(m87.size, 'landmark');
+    assert.ok(Math.abs(Math.abs(wrap(m87.exits[0] - jet.psi)) - 10) < 0.02, 'band A on the jet\'s riding line');
+    assert.equal(m.pickups.filter((p) => p.piece === 'm87-jet' && p.band).length, 3, 'band B: three cells');
+    const a = buildLeg({ runSeed: s, type: 'local', lane: 'ANDROMEDA', seen: LATER });
+    const [m31, m33] = ['ANDROMEDA', 'TRIANGULUM'].map((n) => a.wells.find((w) => w.name === n));
+    assert.ok(m31 && m33 && m33.beat - m31.beat === 12, `ANDROMEDA seed ${s}`);
+    assert.ok(Math.abs(wrap(m31.exits[0] - m33.psi)) <= 40, 'band A on Triangulum\'s reach');
+    assert.ok(['M32', 'M110'].every((n) => a.items.some((x) => x.name === n)));
+    const b = buildLeg({ runSeed: s, type: 'orion', lane: "ORION'S BELT", seen: LATER });
+    const belt = ['ALNITAK', 'ALNILAM', 'MINTAKA'].map((n) => b.wells.find((w) => w.name === n));
+    assert.ok(belt.every(Boolean), `ORION'S BELT seed ${s}`);
+    for (let i = 0; i < 2; i++) {
+      assert.ok(Math.abs(wrap(belt[i].exits[0] - belt[i + 1].psi)) <= 40, 'each band A on the next well\'s reach');
+    }
+    const n = buildLeg({ runSeed: s, type: 'orion', lane: 'THE ORION NEBULA', seen: LATER });
+    assert.ok(n.items.some((x) => x.kind === 'gate' && x.tag === 'trapezium' && x.gap === 10), 'the Trapezium');
+    assert.ok(n.items.filter((x) => x.kind === 'pulse' && x.piece === 'nursery').length >= 20, 'the nursery flares');
+    const c = buildLeg({ runSeed: s, type: 'milkyway', lane: 'THE GALACTIC CENTRE', seen: LATER });
+    assert.ok(c.items.some((x) => x.kind === 'rail' && x.tag === 'bar' && x.half === 50), 'the bar');
+    const h = buildLeg({ runSeed: s, type: 'neighbours', lane: 'ALDEBARAN AND THE HYADES', seen: LATER });
+    assert.equal(h.items.filter((x) => x.tag === 'hyades' && x.kind === 'knot').length, 10, 'the V');
+    assert.ok(h.items.some((x) => x.name === 'ALDEBARAN' && x.half === 8));
+    const p = buildLeg({ runSeed: s, type: 'neighbours', lane: 'ALPHA CENTAURI', seen: LATER });
+    const prox = p.wells.find((w) => w.name === 'PROXIMA'), ab = p.items.find((x) => x.name === 'ALPHA CENTAURI');
+    assert.ok(Math.abs(wrap(prox.exits[0] - ab.psi)) <= 10, 'Proxima flings you onto Alpha Centauri\'s line');
+    const w = buildLeg({ runSeed: s, type: 'virgo', lane: "MARKARIAN'S CHAIN", seen: LATER });
+    assert.ok(w.items.filter((x) => x.piece === 'whale-road' && x.kind === 'rail').length === 2, 'the WHALE\'s road');
+  }
+});
+
+it('makeChart never puts a condition on the VOID or the same one on two legs in a row', () => {
   for (let s = 1; s <= 200; s++) {
     const chart = makeChart(s, TUNE);
     let prev = null;
@@ -361,20 +627,20 @@ test('makeChart never puts a condition on the VOID or the same one on two legs i
   }
 });
 
-test('gateWell changes only the gate', () => {
-  for (const type of OURS) {
+it('gateWell changes only the gate', () => {
+  for (const type of ROUTE.filter((t) => t !== 'earth')) {
     for (let s = 1; s <= 30; s++) {
       const a = buildLeg({ runSeed: s, type });
       const b = buildLeg({ runSeed: s, type, mods: { gateWell: true } });
       const g = b.sections.findIndex((x) => x.role === 'gate');
-      const before = (L) => L.items.filter((it) => it.sec !== g).map(({ id, ...rest }) => rest);
-      assert.deepEqual(before(b), before(a), 'everything before the gate is the same');
-      const wa = a.items.filter((it) => it.sec === g), wb = b.items.filter((it) => it.sec === g);
+      const before = (L) => L.items.filter((x) => x.sec !== g).map(({ id, ...rest }) => rest);
+      assert.deepEqual(before(b), before(a), `${type}: everything before the gate is the same`);
+      const wa = a.items.filter((x) => x.sec === g), wb = b.items.filter((x) => x.sec === g);
       assert.equal(wb.length, wa.length + 1);
       const W = b.wells.find((w) => w.gateWell);
       assert.ok(W && W.size === 'landmark', 'the larger giant is a landmark well');
       assert.ok(Math.abs(wrap(W.exits[0] - b.gate.psi)) < 1e-6, 'its first band is the THREAD line');
-      assert.ok(b.report.ok, JSON.stringify(b.report.errors));
+      assert.ok(b.report.ok, `${type} seed ${s}: ${JSON.stringify(b.report.errors)}`);
     }
   }
 });
@@ -382,7 +648,7 @@ test('gateWell changes only the gate', () => {
 // A point strictly inside an arc list, or strictly outside, more than eps from any end.
 const nearEdge = (arcs, b, eps = 1e-6) => arcs.some(([f, t]) => Math.abs(wrap(b - f)) < eps || Math.abs(wrap(b - t)) < eps);
 
-test('resolve and blocked agree on 10,000 random samples', () => {
+it('resolve and blocked agree on 10,000 random samples', () => {
   const rnd = mulberry32(42);
   const r = (lo, hi) => lo + rnd() * (hi - lo);
   const make = () => {
@@ -403,13 +669,13 @@ test('resolve and blocked agree on 10,000 random samples', () => {
   };
   let checked = 0;
   for (let i = 0; i < 10000; i++) {
-    const it = make();
-    const beat = it.kind === 'rail' ? r(1, 10) : it.beat;
+    const x = make();
+    const beat = x.kind === 'rail' ? r(1, 10) : x.beat;
     const b = r(-180, 180);
-    const arcs = blocked(it, beat, [], TUNE.SHIP_HALF, TUNE);
+    const arcs = blocked(x, beat, [], TUNE.SHIP_HALF, TUNE);
     if (nearEdge(arcs, b)) continue;
-    const res = resolve(it, b, beat, TUNE);
-    assert.equal(res.hit, inArcs(arcs, b), `${JSON.stringify(it)} at ${b} (beat ${beat})`);
+    const res = resolve(x, b, beat, TUNE);
+    assert.equal(res.hit, inArcs(arcs, b), `${JSON.stringify(x)} at ${b} (beat ${beat})`);
     checked++;
   }
   assert.ok(checked > 9900);
@@ -422,7 +688,7 @@ test('resolve and blocked agree on 10,000 random samples', () => {
   assert.equal(resolve(fuel(3, 10), 30, 3).take, false);
 });
 
-test('no Math.sin, cos, tan, exp, pow or random in gen.js and the pieces', () => {
+it('no Math.sin, cos, tan, exp, pow or random in gen.js and the pieces', () => {
   const files = ['gen.js', ...readdirSync(COURSE + 'pieces').map((f) => 'pieces/' + f)];
   for (const f of files) {
     const src = readFileSync(COURSE + f, 'utf8').replace(/\/\/.*$/gm, '');
@@ -433,25 +699,7 @@ test('no Math.sin, cos, tan, exp, pow or random in gen.js and the pieces', () =>
   }
 });
 
-test('buildLeg plus validateLeg under 40 ms a leg', () => {
-  for (const type of OURS) {
-    for (const name of lanesOf(type)) {
-      const times = [];
-      for (let s = 1; s <= 60; s++) {
-        const t0 = performance.now();
-        const L = buildLeg({ runSeed: s, type, lane: name, seen: s % 2 ? FIRST : LATER });
-        validateLeg(L);
-        times.push(performance.now() - t0);
-      }
-      times.sort((a, b) => a - b);
-      const mean = times.reduce((a, b) => a + b, 0) / times.length;
-      assert.ok(mean < 40, `${type} ${name}: ${mean.toFixed(1)} ms a leg`);
-      assert.ok(times[Math.floor(times.length * 0.9)] < 40, `${type} ${name}: p90 ${times[54].toFixed(1)} ms`);
-    }
-  }
-});
-
-test('stripSvg writes every leg and lane without throwing', () => {
+it('stripSvg writes every leg and lane without throwing', () => {
   for (const type of ROUTE) {
     for (const name of lanesOf(type)) {
       const L = buildLeg({ runSeed: 3, type, lane: name });
@@ -466,7 +714,7 @@ test('stripSvg writes every leg and lane without throwing', () => {
   assert.ok(stripSvg(null).startsWith('<svg'));
 });
 
-test('the director drops optional items 1.3 to 5 s ahead after your breather, and nothing else', () => {
+it('the director drops optional items 1.3 to 5 s ahead after your breather, and nothing else', () => {
   const L = buildLeg({ runSeed: 5, type: 'coma', lane: "COMA'S HEART", seen: LATER });
   const you = { id: 'you', dist: 80, eta: 1, lightspeed: false };
   const race = { t: 10, leg: L, ships: [you], win: { lo: 0, hi: L.items.length }, director: { breatherUntil: 0 } };
@@ -477,14 +725,14 @@ test('the director drops optional items 1.3 to 5 s ahead after your breather, an
   const bps = 1.605 / 0.86;
   const lo = you.dist + 1.3 * bps, hi = you.dist + 5 * bps;
   let dropped = 0;
-  for (const it of L.items) {
-    if (it.beat > lo && it.beat < hi && it.opt) { assert.ok(isDropped(race, it), `${it.id} dropped`); dropped++; }
-    if (it.beat <= lo || it.beat >= hi) assert.ok(!isDropped(race, it), `${it.id} kept outside the window`);
-    if (!it.opt && it.kind !== 'knot' && it.kind !== 'pulse') assert.ok(!isDropped(race, it), 'structure stays');
+  for (const x of L.items) {
+    if (x.beat > lo && x.beat < hi && x.opt) { assert.ok(isDropped(race, x), `${x.id} dropped`); dropped++; }
+    if (x.beat <= lo || x.beat >= hi) assert.ok(!isDropped(race, x), `${x.id} kept outside the window`);
+    if (!x.opt && x.kind !== 'knot' && x.kind !== 'pulse') assert.ok(!isDropped(race, x), 'structure stays');
   }
   assert.ok(dropped > 3);
-  const kept = L.items.filter((it) => it.beat > lo && it.beat < hi && (it.kind === 'knot' || it.kind === 'pulse')
-    && !isDropped(race, it));
+  const kept = L.items.filter((x) => x.beat > lo && x.beat < hi && (x.kind === 'knot' || x.kind === 'pulse')
+    && !isDropped(race, x));
   for (const a of kept) for (const b of kept) {
     if (a !== b && Math.abs(a.beat - b.beat) <= 2) assert.ok(Math.abs(wrap(a.psi - b.psi)) >= 30, 'knots 30° apart');
   }
@@ -498,3 +746,22 @@ test('the director drops optional items 1.3 to 5 s ahead after your breather, an
   stepDirector(race, [], TUNE);
   assert.equal(Object.keys(race.director.dropped).length, before);
 });
+
+it(`every leg type × every lane × seeds 1 to ${SEEDS} passes R1 to R13`, async () => {
+  startSweeps();
+  const { n, bad } = await SWEEPS.rules;
+  assert.equal(n, cases('rules').length);
+  assert.deepEqual(bad.slice(0, 10), [], `${bad.length} of ${n} legs fail`);
+});
+
+it(`each condition builds, validates on seeds 1 to ${SEEDS} on every lane it can land on, and never touches the light`,
+  async () => {
+    const LIGHT = ['GAP', 'BLEED', 'TTC', 'GLARE', 'CAP', 'gap', 'bleed', 'ttc', 'cap', 'light'];
+    for (const [cid, C] of Object.entries(CONDITIONS)) {
+      for (const r of Object.keys(C.rules || {})) assert.ok(!LIGHT.some((w) => r.includes(w)), `${cid}: ${r}`);
+    }
+    startSweeps();
+    const { n, bad } = await SWEEPS.conds;
+    assert.equal(n, cases('conds').length);
+    assert.deepEqual(bad.slice(0, 10), [], `${bad.length} failures over ${n} lane seeds`);
+  });

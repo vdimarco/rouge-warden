@@ -77,7 +77,7 @@ export function say(game, lineId, opts = {}) {
   if (key) k.once[key] = true;
   const at = Number.isFinite(opts.at) ? opts.at : game.t;
   k.queue.push({ id: lineId, pri, at, q: game.t, vars: opts.vars ? { ...opts.vars } : null, preroll: !!opts.preroll,
-    quiet: !!opts.quiet, mission, jump: !!opts.jump, story: !!opts.story });
+    quiet: !!opts.quiet, mission, jump: !!opts.jump, story: !!opts.story, zone: game.zoneId });
   if (line.speaker === 'REDSHIFT' && !mission) k.redshiftT = game.t;
   return true;
 }
@@ -283,10 +283,11 @@ function react(game, k, e, T) {
     k.quietUntil = Math.max(k.quietUntil, game.t + T.QUIET);
   }
   if (type === 'arrive') {
-    // A new place: what the last one was waiting to say goes to the log (story beats and the jump's lines stay).
+    // A new place: what the last one was waiting to say goes to the log. The jump's lines stay, and so do story
+    // beats queued for this place (a story line about the zone you just left never plays in the next one).
     for (let j = k.queue.length - 1; j >= 0; j--) {
       const q = k.queue[j];
-      if (q.jump || q.story) continue;
+      if (q.jump || (q.story && (!q.zone || q.zone === e.zone || e.pocket))) continue;
       k.queue.splice(j, 1);
       toLog(k, q.id);
       k.heard[q.id] = game.t;

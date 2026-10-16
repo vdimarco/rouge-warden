@@ -21,7 +21,9 @@ async function openingCheck(page, size) {
   await hook(page, 'freeze', true);
   // The lines between the PLAY tap and the freeze are in the hook's history; the rest come from the steps.
   const pre = (await hook(page, 'events', 400)).filter((e) => e.type === 'line');
-  const ev = await run(page, 50, 0.25);
+  // Circle near the drop-out, away from Node 0's ring (driving into it from 12 s starts the chase, and the premise
+  // lines left go to the log).
+  const ev = await run(page, 50, 0.25, { steer: 0.3, source: 'keys' });
   const lines = pre.concat(ev.filter((e) => e.type === 'line' && !pre.some((p) => p.t === e.t))).map((e) => e.id);
   const want = OPENING.lines.map((o) => o.line);
   const played = lines.filter((id) => want.includes(id));

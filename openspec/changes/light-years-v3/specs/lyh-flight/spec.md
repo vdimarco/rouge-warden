@@ -7,6 +7,10 @@ The Tern SHALL drive like a car on an invisible road in each place's plane, wher
 - **WHEN** the player lets go of every control in free drive
 - **THEN** the ship eases to 24 u/s and keeps flying, and the horizon stays level while the hull banks through turns
 
+#### Scenario: An arrival keeps its speed
+- **WHEN** the ship drops out at 38 u/s at the Wall (or 42 u/s in Coma) and the player holds the stick still
+- **THEN** it keeps that speed for 2 s before easing toward cruise, and the first steer, the brake or a hit ends the hold at once
+
 #### Scenario: Gas and brake
 - **WHEN** the player holds the gas from cruise
 - **THEN** the speed passes 28.5 u/s within 2.5 s
@@ -32,7 +36,7 @@ Holding drift (Space, B, or BRAKE with a steer of 0.35 or more) at 12 u/s or mor
 - **THEN** the drift pips over the ship light one by one and the boost bar gains 0.08, 0.15 and 0.25
 
 ### Requirement: The boost bar pays for risk
-The boost bar SHALL fill only from risk and discovery: near misses, hairlines, threads, skims, drafts, slingshots, takedowns, scans, sparks, pads and drift tiers. Boost SHALL work whenever the bar holds fuel, and a full bar SHALL last 3 s. A crash SHALL cost 0.25 of the bar. Risky events less than 3 s apart SHALL build a chain whose points multiply by 2, 3, 4 and 5 at 3, 6, 10 and 15 events and bank after 3 s.
+The boost bar SHALL fill only from risk and discovery: near misses, hairlines, threads, skims, drafts, slingshots, takedowns, scans, sparks, pads, drift tiers and banked chains. Boost SHALL work whenever the bar holds fuel, and a full bar SHALL last 3 s. A crash SHALL cost 0.25 of the bar.
 
 #### Scenario: A near miss
 - **WHEN** a traffic galaxy's core passes within 2.0 u of the ship at a closing speed of 10 u/s or more
@@ -44,9 +48,16 @@ The boost bar SHALL fill only from risk and discovery: near misses, hairlines, t
 - **THEN** the speed reaches 95% of 42 u/s within 0.4 s, the view widens, the dust stretches into lines and the engines glow blue-white
 - **AND** a flick gives a 1.0 s burst and does not pitch the ship
 
+### Requirement: Chains
+Risky events less than 3 s apart SHALL build a chain whose multiplier steps to 2, 3, 4 and 5 at 3, 6, 10 and 15 events. 3 s after the last event the chain SHALL bank, paying 0.03 of the bar per multiplier step (a ×4 chain is +12%) with a callout beside the ship that says so. A head-on SHALL lose the chain without banking.
+
 #### Scenario: A head-on loses the chain
 - **WHEN** the chain stands at ×3 and the ship hits a galaxy head-on
 - **THEN** the chain is lost without banking and the bar drops by 0.25
+
+#### Scenario: A chain banks into the bar
+- **WHEN** ten near misses come less than 3 s apart and then nothing for 3 s
+- **THEN** the callout reads `×4 · BOOST +12%` beside the ship and the bar gains 0.12 on top of what each near miss paid
 
 ### Requirement: Crashes keep the flow
 A hit SHALL never end a run or stop the ship. A scrape, meeting a surface at under 35°, SHALL keep 90% of the speed and turn the ship along it. A head-on SHALL bounce the ship off at 40% of its speed, never under 6 u/s, with steering halved for 0.4 s. A head-on above 32 u/s SHALL be a big crash: 0.5 s at 0.3 speed in which steering bends the rebound by up to 40°. The ship SHALL never pass through a collider, even at 48 u/s.
@@ -89,27 +100,45 @@ The ship SHALL tow a load on a 6 u tether that swings wide on turns and never sn
 - **WHEN** the ship carries fragile cargo and brushes traffic at 5 u/s
 - **THEN** the contact count stays the same
 
+### Requirement: Takedowns land hard
+A takedown SHALL land harder than a crash: 0.1 s of hit-stop on a side hit and on a ram, 0.5 trauma of shake and a 6° kick of the view. A towed load SHALL never be taken down; a hard bump on it SHALL be a scrape.
+
+#### Scenario: The hit you feel
+- **WHEN** the ship takes a Magpie down
+- **THEN** the picture holds still for 0.1 s, then shakes and widens by 6°
+
+#### Scenario: Bumping your own tow
+- **WHEN** the ship runs into the load it tows at 10 u/s
+- **THEN** it is a scrape, and the load stays on the tether
+
 ### Requirement: Zone edges turn the ship round
-Past a place's rim the ship SHALL turn back by itself over a 60 u band at up to 1.2 rad/s, with no crash and no loss of the run. Dot SHALL say "Turning back. Edge of the map." at most once every 20 s.
+Past a place's rim the ship SHALL turn back by itself over a 60 u band at up to 1.2 rad/s, with no crash and no loss of the run, except in a jump's run-up, whose launch rings may lie past the rim. Dot SHALL say "Turning back. Edge of the map." at most once every 20 s.
 
 #### Scenario: Flying out
 - **WHEN** the player boosts straight out past the rim and holds no steer
 - **THEN** the ship heads back inward within 5 s, never goes more than 120 u past the rim, and a low warning tone plays
 
 ### Requirement: Chase camera and the feel of speed
-The camera SHALL follow on a critically damped spring and widen with speed, from 90° vertical in portrait, 86° across in landscape and 82° across on desktop, with a kick of 10° to 12° on boost. Speed dust SHALL stretch into lines with speed, shake SHALL be trauma squared, and the aim SHALL lean into a drift (14° in portrait, 6° elsewhere) so the body the ship drifts round stays in view. There SHALL be no motion blur, and the target SHALL be 60 fps.
+The camera SHALL follow on a critically damped spring and widen with speed, from 90° vertical in portrait, 86° across in landscape and 82° across on desktop, with a kick of 10° to 12° on boost. Speed dust SHALL stretch into lines with speed, and shake SHALL be the larger of trauma squared and half the trauma, so a near miss or a hairline can be seen. There SHALL be no motion blur, and the target SHALL be 60 fps.
+
+#### Scenario: A boost kick
+- **WHEN** a player at 1440×900 starts a boost from cruise
+- **THEN** the view widens by up to 12° within 0.15 s, eases back over 0.6 s when the boost ends, and the shake fades within a second
+
+### Requirement: The ship stays in frame
+The aim SHALL lean into a drift (14° in portrait, 6° elsewhere) so the body the ship drifts round stays in view. The ship SHALL always stay inside the middle 60% of the screen's width; to fit a giant's core beside it in a drift, the camera SHALL pull back first and swing round second, and the core SHALL leave the screen before the ship does.
 
 #### Scenario: The giant stays in view in portrait
 - **WHEN** a player at 390×844 drifts a full lap round the Bend Giant
 - **THEN** the giant's core is on screen for at least 80% of the lap
 
+#### Scenario: A tight drift on desktop
+- **WHEN** the drifter bot laps the Bend Giant at 8 to 12 u from its core at 1440×900 and 844×390
+- **THEN** the ship never goes further than 60% of the half-width from the centre, no wing leaves the screen, and the core is on screen for at least 90% of the lap
+
 #### Scenario: The ship sits low on every screen
 - **WHEN** the ship cruises at 390×844, 844×390 and 1440×900
 - **THEN** it sits at 0.60 of the screen height from the top in portrait and 0.66 in landscape and on desktop, clear of every HUD element
-
-#### Scenario: A boost kick
-- **WHEN** a player at 1440×900 starts a boost from cruise
-- **THEN** the view widens by up to 12° within 0.15 s, eases back over 0.6 s when the boost ends, and the shake fades within a second
 
 ### Requirement: Controls on every device
 Phones SHALL default to a floating stick and pedals with auto-cruise in portrait and landscape: the stick steers and climbs, GAS, BRAKE/DRIFT and BOOST sit under the right thumb, and nothing but the stick needs pressing. One thumb SHALL be a setting. Desktop SHALL steer with A and D or the arrows, gas with W, brake with S, drift with Space, boost with Shift and act with E or Enter, with mouse steer as a setting. A standard gamepad SHALL work too.

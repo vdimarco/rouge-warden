@@ -350,3 +350,74 @@ test('the zone frame points the real way (frame.js)', async () => {
   assert.ok(rimTurn(WALL, [0, 480, 0], 0.1) > 0 && rimTurn(WALL, [0, 480, 0], -0.1) < 0, 'turns toward the centre');
   assert.ok(Math.abs(rimTurn(WALL, [0, 520, 0], Math.PI / 2)) === TUNE.EDGE.YAW, 'full turn past R + BAND');
 });
+
+// ---------------------------------------------------------------- Round 1 playtest fixes
+
+test('an arrival keeps its drop-out speed for 2 s on the straight, then eases; a steer, the brake or a hit ends it', async () => {
+  const { enterFlight, chainEvent } = await import('../../../public/light-years-home/core/ship.js');
+  const QUIET = { id: 'quiet-hold', R: 2000, band: 100, entry: { pos: [0, 0, 0], heading: 0, speed: 38 }, bodies: [] };
+  const game = createGame({ zoneData: QUIET, mode: 'drive' });
+  enterFlight(game, QUIET);
+  const ship = game.ship, c = ctxOf();
+  assert.equal(ship.coastT, TUNE.SHIP.ENTRY_HOLD);
+  run(ship, c, { source: 'touch' }, 1.9);
+  assert.ok(ship.speed > 37.5, `still ${ship.speed.toFixed(1)} u/s at 1.9 s`);
+  run(ship, c, { source: 'touch' }, 1.0);
+  assert.ok(ship.speed < 36 && ship.speed > 30, `easing: ${ship.speed.toFixed(1)} u/s at 2.9 s`);
+  // The first steer ends the hold at once.
+  const s2 = createShip({ heading: 0, speed: 38 });
+  s2.coastT = 2; s2.coastS = 38;
+  run(s2, ctxOf(), { steer: 0.6, source: 'touch' }, 0.3);
+  assert.equal(s2.coastT, 0);
+  // Braking ends it too.
+  const s3 = createShip({ heading: 0, speed: 38 });
+  s3.coastT = 2; s3.coastS = 38;
+  run(s3, ctxOf(), { brake: 1, source: 'keys' }, 0.1);
+  assert.equal(s3.coastT, 0);
+  // A chain that ends clean pays into the boost bar: CHAIN_BAR × its multiplier.
+  const s4 = createShip({ heading: 0, speed: 24, bar: 0.2 });
+  const ev = createEventBuffer(256);
+  for (let i = 0; i < 10; i++) chainEvent(s4, i * 0.5, 100, ev);   // ten near misses: ×4
+  chainEvent(s4, 20, 100, ev);                                      // after the gap: the first banks
+  const bank = ev.list.slice(0, ev.n).find((e) => e.type === 'chainBank');
+  assert.equal(bank.mult, 4);
+  assert.ok(Math.abs(bank.bar - 4 * TUNE.PROX.CHAIN_BAR) < 1e-9);
+  assert.ok(Math.abs(s4.bar - (0.2 + 4 * TUNE.PROX.CHAIN_BAR)) < 1e-9, `bar ${s4.bar}`);
+});
+
+test('a takedown lands harder than a crash: a 0.1 s hit-stop on a side hit and on a ram', async () => {
+  const { playSlots } = await import('../../../public/light-years-home/core/zone.js');
+  const { startMission } = await import('../../../public/light-years-home/core/mission.js');
+  const { actorById } = await import('../../../public/light-years-home/core/actors.js');
+  const { registerZone } = await import('../../../public/light-years-home/core/game.js');
+  const WALL = (await import('../../../public/light-years-home/core/world/zones/wall.js')).default;
+  unwire();
+  wire(playSlots());
+  registerZone(WALL);
+  assert.ok(TUNE.FX.TRAUMA.takedown > TUNE.FX.TRAUMA.crash * 0.8, 'takedown trauma');
+  assert.ok(TUNE.COLLIDE.TAKEDOWN_STOP >= TUNE.COLLIDE.HITSTOP * 2, 'takedown hit-stop');
+  for (const how of ['ram', 'side']) {
+    const game = createGame({ zoneData: WALL, mode: 'drive', at: [-300, -300, 0], heading: 0, speed: 24 });
+    game.story.openingI = 99;
+    startMission(game, 'which-way-home');
+    const ev = createEventBuffer(4096);
+    for (let i = 0; i < 3 / h; i++) step(game, {}, ev);           // the thief bolts and runs its loop
+    const a = actorById(game, 'chart-thief');
+    const yaw = a.yaw, f = [Math.sin(yaw), Math.cos(yaw)], r = [Math.cos(yaw), -Math.sin(yaw)];
+    // From behind on its line (a ram), or from its side (a side hit).
+    const at = how === 'ram' ? [a.pos[0] - f[0] * 6, a.pos[1] - f[1] * 6, a.pos[2]]
+      : [a.pos[0] - r[0] * 5 + f[0] * 1, a.pos[1] - r[1] * 5 + f[1] * 1, a.pos[2]];
+    const heading = how === 'ram' ? (yaw * 180) / Math.PI : ((yaw + Math.PI / 2) * 180) / Math.PI;
+    const { placeShip } = await import('../../../public/light-years-home/core/race.js');
+    placeShip(game, at, (heading * Math.PI) / 180, 40);
+    let td = null;
+    for (let i = 0; i < 1 / h && !td; i++) {
+      ev.clear();
+      step(game, { gas: 1 }, ev);
+      td = ev.list.slice(0, ev.n).find((e) => e.type === 'takedown');
+      if (td) assert.ok(game.stopUntil - game.t >= TUNE.COLLIDE.TAKEDOWN_STOP - 2 * h, `${how}: hit-stop`);
+    }
+    assert.ok(td, `${how}: a takedown`);
+  }
+  unwire();
+});

@@ -121,7 +121,8 @@ const TUBE_VS = /* glsl */ `
     vec3 d = p - uOrigin;
     float D = lyhDoppler(d.y / max(1e-3, length(d)), uPhi);
     vC = lyhBB(6500.0 * D) * min(2.2, 0.35 + 0.65 * D);
-    float fade = smoothstep(uFar, uFar * 0.45, y) * smoothstep(-30.0, -8.0, y);
+    // Far streaks fade early: the middle of the view, where hazards come from, stays dark enough to read them.
+    float fade = smoothstep(uFar * 0.75, uFar * 0.3, y) * smoothstep(-30.0, -8.0, y);
     vA = fade * aW * mix(uAlpha * mix(1.0, 0.1, aY), uRibAlpha, aK);
     gl_Position = projectionMatrix * modelViewMatrix * vec4(p, 1.0);
   }`;
@@ -774,7 +775,8 @@ export function createTunnel(stage, { backdrop = null, tune = TUNE, kind = 'desk
         // A galaxy group: a big one and a few small ones round it.
         const r = Hz.r[i];
         const tile = hash(id * 1.7) < 0.3 ? 4 : Math.floor(hash(id * 2.3) * 3.99);
-        imp.put(x, d, z, r * 1.15, tile, hash(id) * 6.28, KNOT_T + 1500 * hash(id * 3.1), hot ? 0.3 : flash);
+        // Drawn half again as big as before, so a knot reads over the streaks well before it arrives.
+        imp.put(x, d, z, r * 1.5, tile, hash(id) * 6.28, KNOT_T + 1500 * hash(id * 3.1), hot ? 0.3 : flash);
         const nk = 2 + Math.floor(hash(id * 5.3) * 3);
         for (let k = 0; k < nk; k++) {
           const a = hash(id * 3 + k) * 6.283, m = r * (0.85 + 0.6 * hash(id * 5 + k));
@@ -1054,7 +1056,7 @@ export function createTunnel(stage, { backdrop = null, tune = TUNE, kind = 'desk
   return {
     scene, camera, pass, update, setKind, setReduced, dispose, runupRings,
     get state() {
-      return { fov: st.fov, roll: st.roll, flash: st.flash, fade: st.fade, base, galaxies: imp.count,
+      return { fov: st.fov, roll: st.roll, flash: st.flash, white: st.white, fade: st.fade, base, galaxies: imp.count,
         points: haz.count, rings: items.length };
     },
   };

@@ -26,7 +26,7 @@ import {
 import { BOTS } from './core/bots.js';
 import { layoutFor } from './core/layout.js';
 import { checkZone } from './core/world/schema.js';
-import { loadZone, hasZone, ZONE_IDS, MISSIONS, JUMPS, factById } from './core/world/index.js';
+import { loadZone, hasZone, ZONE_IDS, MISSIONS, JUMPS, factById, ROUND, missionsIn } from './core/world/index.js';
 import { earthDateText } from './core/timeline.js';
 import { createStage } from './render/stage.js';
 import { createBackdrop } from './render/backdrop.js';
@@ -103,6 +103,8 @@ async function boot() {
   breadcrumb.set(session, tier, 0);
   let tune = withOverrides(TUNE, location.search);
   const seed0 = Number.isFinite(+q.get('seed')) && q.get('seed') ? +q.get('seed') : 1;
+  // Round 1 plays; ?round=2 turns on the next round's work in progress (core/world/round.js).
+  const round = q.get('round') === '2' ? 2 : ROUND;
 
   // ---------------------------------------------------------------- zones and the flight build
 
@@ -111,7 +113,7 @@ async function boot() {
   function zoneData(id) {
     if (zones.has(id)) return Promise.resolve(zones.get(id));
     if (!loading.has(id)) {
-      loading.set(id, loadZone(id).then((z) => {
+      loading.set(id, loadZone(id, round).then((z) => {
         registerZone(z);
         zones.set(id, z);
         if (q.has('debug')) debugZone(z);
@@ -420,7 +422,7 @@ async function boot() {
     const known = {};
     for (const [id, d] of zones) known[id] = d;
     log.render(sv, z, {
-      game, missions: Object.values(MISSIONS), zones: known,
+      game, missions: missionsIn(Object.values(MISSIONS), round), zones: known,
       objective: { text: hud.state.topText || '' }, unread: [...unread],
       homeDir: backdrop.dirOf('earth', [0, 0, 0]), aheadLy: game.earth.aheadLy, canJumpBack: false, photos: {},
     });
@@ -718,11 +720,31 @@ async function boot() {
     ui2d(dt, list, mode, ovCam);
   }
 
+  // How white the screen is right now (the PLAY fold's flash, the punch's, the drop-out's), for the HUD's holds.
+  function washNow(mode) {
+    let w = flash > 0 ? Math.min(reduced() ? 0.3 : 1, flash) : 0;
+    if (SKY.has(mode) || mode === 'dropout') {
+      const ts = tunnel.state || {};
+      w = Math.max(w, Number(ts.flash) || 0, Number(ts.white) || 0);
+    }
+    return w;
+  }
+  // The ship's place on screen through the zone camera ([x, y] CSS px), or null at light speed.
+  const shipV = new THREE.Vector3(), shipAt = [0, 0];
+  function shipScreen(mode) {
+    if (SKY.has(mode) || !game?.ship) return null;
+    const cam = stage.cameras.zone, p = game.ship.pos;
+    shipV.set(p[0], p[1], p[2]).project(cam);
+    if (shipV.z > 1) return null;
+    shipAt[0] = (shipV.x + 1) / 2 * stage.size.w; shipAt[1] = (1 - shipV.y) / 2 * stage.size.h;
+    return shipAt;
+  }
+
   function ui2d(dt, list, mode, ovCam) {
     const z = zoneOf(game);
     const chip = labelChip(actionOf(game, z), z);
     const m = hud.update({ game, zone: z, layout, events: list, line: talkLine(game), input: input.state,
-      source: input.source, dt, chip });
+      source: input.source, dt, chip, wash: washNow(mode), shipAt: shipScreen(mode) });
     input.show({ chip: !!m.chip, radar: m.radar });
     if (mode === 'title') { overlay.clear(); return; }
     ovCam.updateMatrixWorld();
@@ -868,7 +890,9 @@ async function boot() {
         if (ev.n > 1500) out.push(...afterQuiet());
       }
     } finally { syncing = false; }
-    out.push(...afterSteps(Math.min(0.1, n * H), performance.now(), rec));
+    // The frame drawn after the steps runs the HUD's and the flash's clocks for the time stepped (at most 0.5 s), so
+    // a stepped screenshot shows what a player would see, not a flash or a hint that should have gone.
+    out.push(...afterSteps(Math.min(0.5, n * H), performance.now(), rec));
     return out.map((e) => clone(e));
   }
   // Route a long run's events now and then without drawing (so punch and arrive land in order).

@@ -184,6 +184,31 @@ function freeAt(leg, beat, win, half, tune) {
   return free;
 }
 
+// R2's test on one beat's free bins: is a run of 30 or more free bins within 60° of every bearing? The good bins are
+// the free bins in a circular run of 30 or more; every bin is within 60 of one exactly when no two neighbouring good
+// bins are more than 121 apart. good: a 360-bin scratch row.
+function wideNear(free, good) {
+  let start = -1;
+  for (let i = 0; i < 360; i++) if (!free[i]) { start = i; break; }
+  if (start < 0) return true;
+  good.fill(0);
+  let run = 0;
+  for (let k = 1; k <= 360; k++) {
+    const i = (start + k) % 360;
+    if (free[i]) { run++; continue; }
+    if (run >= 30) for (let d = 1; d <= run; d++) good[(i - d + 360) % 360] = 1;
+    run = 0;
+  }
+  let first = -1, prev = -1, gap = 0;
+  for (let i = 0; i < 360; i++) {
+    if (!good[i]) continue;
+    if (first < 0) first = i; else if (i - prev > gap) gap = i - prev;
+    prev = i;
+  }
+  if (first < 0) return false;
+  return Math.max(gap, first + 360 - prev) <= 121;
+}
+
 // The shortest way round from bearing b to a free bin (degrees), or Infinity.
 function toFree(free, b) {
   const i0 = binOf(b);
@@ -239,24 +264,14 @@ export function validateLeg(leg, opts = {}) {
   if (run.has('R2')) {
     let ok = true, at = null;
     const seen = new Set();
+    const pool = { items: items.filter((x) => x.kind === 'knot' || x.kind === 'pulse' || x.kind === 'rail') };
+    const good = new Uint8Array(360);
     for (const it of items) {
       if (it.piece !== 'swarm' || (it.kind !== 'knot' && it.kind !== 'pulse') || seen.has(it.beat)) continue;
       seen.add(it.beat);
-      const free = freeAt({ items: items.filter((x) => x.kind === 'knot' || x.kind === 'pulse' || x.kind === 'rail') },
-        it.beat, 0.5, 0, T);
-      const good = new Uint8Array(360);
-      let run30 = 0;
-      for (let i = 0; i < 720; i++) {
-        if (free[i % 360]) run30++; else run30 = 0;
-        if (run30 >= 30) for (let d = 0; d < 30; d++) good[(i - d + 720) % 360] = 1;
+      if (!wideNear(freeAt(pool, it.beat, 0.5, 0, T), good)) {
+        ok = false; at = it.beat; fail('R2', it.beat, 'no 30° gap within 60° of every bearing'); break;
       }
-      let covered = true;
-      for (let i = 0; i < 360 && covered; i++) {
-        let near = false;
-        for (let d = 0; d <= 60 && !near; d++) near = good[(i + d) % 360] || good[(i - d + 360) % 360];
-        covered = near;
-      }
-      if (!covered) { ok = false; at = it.beat; fail('R2', it.beat, 'no 30° gap within 60° of every bearing'); break; }
     }
     rules.R2 = { ok, beat: at };
   }
@@ -308,9 +323,13 @@ export function validateLeg(leg, opts = {}) {
     rules.R6 = { ok, beat: at };
   }
 
-  // R7: every exit band's centre lies within 10° of a real target
+  // R7: every exit band's centre lies within 10° of a real target: a wall gap or a gate's line 1 to 10 beats on, a
+  // pickup within 10, the next well's reach within 16, a rail's riding line (the middle of its skim band, either side)
+  // 1 to 10 beats on (M87's jet), a knot marked target to graze (Titan), Earth's door within 16, or any band in an
+  // open section (a wake lane)
   if (run.has('R7')) {
     let ok = true, at = null;
+    const S = T.SHIP_HALF;
     for (const w of wells) {
       const sec = sectionAt(leg, w.beat);
       const open = sec && sec.role === 'open';
@@ -325,6 +344,13 @@ export function validateLeg(leg, opts = {}) {
           } else if (it.kind === 'pickup' && db >= 0 && db <= 10) hit = Math.abs(wrap(it.psi - e)) <= 10;
           else if (it.kind === 'well' && it !== w && db > 0 && db <= 16) {
             hit = Math.abs(wrap(it.psi - e)) <= wellReach(it, T);
+          } else if (it.kind === 'rail' && it.end > w.beat + 1 && db <= 10) {
+            const b = Math.max(it.beat, w.beat + 1), off = it.half + S + (it.skimBand ?? T.SKIM_BAND) / 2;
+            if (railOn(it, b)) hit = [-1, 1].some((sd) => Math.abs(wrap(psiAt(it, b) + sd * off - e)) <= 10);
+          } else if (it.kind === 'knot' && it.target && db >= 1 && db <= 10) {
+            hit = Math.abs(wrap(it.psi - e)) <= 10 + it.half + S + T.GRAZE;
+          } else if (it.kind === 'cue' && it.name === 'door' && db >= 1 && db <= 16) {
+            hit = Math.abs(wrap(it.data.psi - e)) <= 10;
           }
         }
         if (!hit) { ok = false; at = w.beat; fail('R7', w.beat, `an exit band at ${e.toFixed(0)}° points at nothing`); }
@@ -374,14 +400,15 @@ export function validateLeg(leg, opts = {}) {
   }
 
   // R10: pickups 6 to 14° off the safe line (the nearest bearing that grazes nothing), never on it, never inside a
-  // hazard; a pickup on a well's exit band may sit in the open (R7 anchors it)
+  // hazard; a pickup on a well's exit band may sit in the open (R7 anchors it), and a secret one (Saturn's Keeler
+  // gap) may sit in a gap whose edges you hairline
   if (run.has('R10')) {
     let ok = true, at = null;
     for (const it of items) {
       if (it.kind !== 'pickup') continue;
       const body = freeAt(leg, it.beat, 0.25, T.SHIP_HALF, T);
       if (!body[binOf(it.psi)]) { ok = false; at = it.beat; fail('R10', it.beat, `a ${it.type} inside a hazard`); continue; }
-      if (it.band) continue;
+      if (it.band || it.secret) continue;
       const clean = freeAt(leg, it.beat, 0.25, T.SHIP_HALF + T.GRAZE, T);
       const d = toFree(clean, it.psi);
       if (d < 5.5 || d > 14) { ok = false; at = it.beat; fail('R10', it.beat, `a ${it.type} ${d}° off the safe line`); }

@@ -34,13 +34,24 @@ export const HINTS = Object.freeze({
   start: { all: 'DRIVE THROUGH TO START' },
   tunnel: { all: 'GRAZE THE KNOTS FOR SPEED' },     // a jump's own tutorial (world/jumps.js) wins
   lowgfx: { all: 'LOW GRAPHICS · CHANGE IN SETTINGS' },
+  catch: { touch: 'HOLD GAS TO CATCH IT', keys: 'HOLD W TO CATCH IT', mouse: 'HOLD W TO CATCH IT',
+    pad: 'HOLD RT TO CATCH IT' },
+  catchBoost: { touch: 'BOOST TO CATCH IT', keys: 'SHIFT TO BOOST · CATCH IT', mouse: 'SHIFT TO BOOST · CATCH IT',
+    pad: 'A TO BOOST · CATCH IT' },
 });
+// Hints that teach the thing in front of you now: they skip the first minute's limit of four.
+const URGENT = new Set(['catch', 'catchBoost']);
+// A hint is done when its action happens: it leaves the screen and never comes back.
+const DONE_BY = Object.freeze({ driftStart: ['drift'], driftBoost: ['release'], driftLost: ['release'],
+  boostStart: ['boost', 'catchBoost'], eventStart: ['start'], missionStart: ['start'], scanStart: ['scan'],
+  takedown: ['catch', 'catchBoost'] });
 export const HINT_S = 3;          // s a hint shows
 export const HINTS_FIRST_MIN = 4; // at most this many in the first minute of play
 
 export const CHIP = Object.freeze({
   skip: 'SKIP THIS PART', restart: '↺ RESTART', restartSub: 'TAP · LAST GATE', again: 'AGAIN', retry: '↺ RETRY',
-  take: 'TAKE JOB', letgo: 'LET GO', letgoSub: 'HOLD', zoomout: 'ZOOM OUT', cancel: 'CANCEL', jump: 'JUMP → ',
+  take: 'TAKE JOB', letgo: 'LET GO', letgoSub: 'HOLD', zoomout: 'ZOOM OUT', cancel: 'JUMPING', cancelSub: 'TAP TO CANCEL',
+  jump: 'JUMP → ',
 });
 
 export const FAIL_TEXT = Object.freeze({
@@ -147,6 +158,45 @@ export function queueHint(st, key, wait = 8, delay = 0) {
   st.hintWait.push({ key, at: st.t + delay, until: st.t + delay + wait });
 }
 
+// Show a hint now, because it teaches what you are doing this moment (LET GO TO BOOST at the first drift tier): it
+// takes the place of the hints in replace that are showing (the drift hint it follows), and skips the queue.
+export function hintNow(st, key, replace = []) {
+  if (!HINTS[key] || st.hintShown[key]) return;
+  if (st.hint && replace.includes(st.hint.key)) st.hint = null;
+  st.hintWait = st.hintWait.filter((h) => h.key !== key);
+  st.hintWait.unshift({ key, at: st.t, until: st.t + 3, now: true });
+}
+
+// A hint whose action has happened is done: off the screen, out of the queue, never shown again this session.
+function hintDone(st, key) {
+  st.hintShown[key] = true;
+  st.hintWait = st.hintWait.filter((h) => h.key !== key);
+  if (st.hint?.key === key) st.hint = null;
+}
+
+// Held while a white wash is up (the PLAY fold, the punch): toasts, info cards and On Earth cards wait for it.
+export const WASH_HOLD = 0.2;
+export const WASH_OUTLINE = 0.3;
+
+// A stunt's value as it reads on the HUD, by its kind: { now, goal }, as 'TIER 2' and '★★★ AT TIER 3', '41 U/S' and
+// '★★ AT 44 U/S', 'NEARS 3' and '★ AT 5 NEARS', 'PADS 2/4'. goal is '' at three stars or for a kind with no numbers.
+export function stuntValue(ev, stunt) {
+  const v = fin(stunt?.value, NaN), type = ev?.type;
+  if (type === 'line') {
+    const n = Array.isArray(ev.pads) ? ev.pads.length : 0;
+    const got = clamp(fin(stunt?.next, Number.isFinite(v) ? v : 0), 0, n || 99);
+    return { now: n ? `PADS ${got}/${n}` : '', goal: '' };
+  }
+  if (!Number.isFinite(v)) return { now: '', goal: '' };
+  const unit = { drift: (x) => `TIER ${x}`, trap: (x) => `${x} U/S`, sling: (x) => `${x} U/S`,
+    oncoming: (x) => `${x} NEARS`, skim: (x) => `${x} S` }[type];
+  if (!unit) return { now: '', goal: '' };
+  const now = type === 'oncoming' ? `NEARS ${Math.round(v)}` : type === 'skim' ? `${v.toFixed(1)} S` : unit(Math.round(v));
+  const th = Array.isArray(ev?.stars) && ev.stars.every((x) => typeof x === 'number') ? ev.stars : null;
+  const next = th ? th.findIndex((x) => v < x) : -1;
+  return { now, goal: next >= 0 ? `${'★'.repeat(next + 1)} AT ${unit(th[next])}` : '' };
+}
+
 function toast(st, text, tone = 'plain', s = 3, now = false) {
   if (!text) return;
   const item = { text: text.slice(0, TOAST_MAX), tone, s };
@@ -155,7 +205,7 @@ function toast(st, text, tone = 'plain', s = 3, now = false) {
 }
 
 function info(st, text, sub = '', s = 3, kind = 'note') {
-  st.info = { text, sub, until: st.t + s, kind };
+  st.info = { text, sub, until: st.t + s, kind, s };
 }
 
 function onEvent(st, e, view, tune) {
@@ -235,15 +285,22 @@ function onEvent(st, e, view, tune) {
     case 'missionOffer':
       st.offer = { id: e.mission ?? e.id, until: st.t + tune.MISSION.TAKE_JOB };
       break;
-    case 'missionStart': st.offer = null; break;
-    case 'eventArm': queueHint(st, 'start', 6); break;
+    case 'missionStart':
+      // A job takes over: what was waiting to be taught (DRIVE THROUGH TO START, say) is out of date.
+      st.offer = null;
+      st.hintWait = st.hintWait.filter((h) => URGENT.has(h.key));
+      if (st.hint && !URGENT.has(st.hint.key) && st.hint.key !== 'release') st.hint = null;
+      break;
+    case 'eventArm': if (!g?.mission) queueHint(st, 'start', 6); break;
     case 'driftStart': st.drifted = true; break;
-    case 'driftTier': if (e.tier === 1 || e.tier == null) queueHint(st, 'release', 3); break;
+    case 'driftTier': if (e.tier === 1 || e.tier == null) hintNow(st, 'release', ['drift']); break;
     case 'driftBoost': if (st.dbT === null) st.dbT = st.t; break;
     case 'boostStart': st.boosted = true; break;
     case 'restart': st.toast = null; st.queue.length = 0; break;
     default: break;
   }
+  const done = DONE_BY[e.type];
+  if (done) for (const key of done) hintDone(st, key);
 }
 
 // The core's chip (core/zone.js actionOf gives ids only) with its label and sub from CHIP.
@@ -253,6 +310,7 @@ export function labelChip(chip, zone = null) {
     : CHIP[chip.id] || upper(chip.id) };
   if (chip.id === 'restart') out.sub = CHIP.restartSub;
   else if (chip.id === 'letgo') out.sub = CHIP.letgoSub;
+  else if (chip.id === 'cancel') out.sub = CHIP.cancelSub;
   return out;
 }
 
@@ -261,7 +319,7 @@ export function chipFor(st, view, tune = TUNE) {
   if (view.chip !== undefined) return labelChip(view.chip, view.zone);
   const g = view.game, zone = view.zone;
   if (!g) return null;
-  if (g.mode === 'runup') return { id: 'cancel', label: CHIP.cancel };
+  if (g.mode === 'runup') return { id: 'cancel', label: CHIP.cancel, sub: CHIP.cancelSub };
   if (g.mode !== 'drive' && g.mode !== 'ended') return null;
   if (g.mission?.skipOffered) return { id: 'skip', label: CHIP.skip };
   if (g.race && g.race.state === 'running') {
@@ -302,8 +360,8 @@ function topFor(view, tune) {
   let stunt = null;
   if (g.stunt) {
     const ev = eventData(zone, g.stunt.id);
-    const v = fin(g.stunt.value, NaN);
-    stunt = { text: upper(ev?.title || 'STUNT'), count: Number.isFinite(v) ? v.toFixed(1) : '' };
+    const sv = stuntValue(ev, g.stunt);
+    stunt = { text: upper(ev?.title || 'STUNT'), count: sv.now, goal: sv.goal };
   }
   const o = view.objective;
   if (o && o.text) {
@@ -321,7 +379,7 @@ function topFor(view, tune) {
         kind: 'mission' };
     }
   }
-  if (stunt) return { ...stunt, sub: '', kind: 'stunt' };
+  if (stunt) return { text: stunt.text, count: stunt.count, sub: stunt.goal, kind: 'stunt' };
   return { text: upper(zone?.name || ''), count: '', sub: '', kind: 'zone' };
 }
 
@@ -355,7 +413,7 @@ function captionFor(st, view) {
  */
 export function hudStep(st, view, tune = TUNE) {
   const g = view.game;
-  const dt = clamp(fin(view.dt, 1 / 60), 0, 0.25);
+  const dt = clamp(fin(view.dt, 1 / 60), 0, 0.5);     // up to 0.5 s: the hook's stepped frames follow game time
   st.t += dt;
   if (!g) return { mode: 'none' };
   if (st.game !== g) {                                        // a new game: the session's hints stay shown
@@ -390,6 +448,20 @@ export function hudStep(st, view, tune = TUNE) {
     }
     if (!st.boosted && ((st.dbT !== null && st.t - st.dbT > 0.6) || played > 15)) queueHint(st, 'boost', 8);
     if (/\bSCAN\b/.test(view.objective?.text || (st.topText || ''))) queueHint(st, 'scan', 8);
+    // Steering is the steer hint's action: once you turn, it goes.
+    if (Math.abs(fin(g.ship?.steerS)) > 0.3) hintDone(st, 'steer');
+    // A chase on auto-cruise: 4 s within 60 u of the runner without the gas, and it tells you to hold GAS (or to
+    // boost, with the bar full).
+    const runner = g.mission && (g.actors || []).find((a) => a?.kind === 'runner' && a.state !== 'beaten'
+      && a.state !== 'fleeing' && a.state !== 'gone');
+    const ship = g.ship;
+    if (runner && ship && Math.hypot(runner.pos[0] - ship.pos[0], runner.pos[1] - ship.pos[1]) < 60
+      && !(view.input?.gas) && !ship.boosting) {
+      st.catchT = fin(st.catchT) + dt;
+      if (st.catchT >= 4) hintNow(st, fin(ship.bar) >= 0.95 ? 'catchBoost' : 'catch');
+    } else {
+      st.catchT = 0;
+    }
   }
   if (st.hint && st.t >= st.hint.until) st.hint = null;
   st.hintWait = st.hintWait.filter((h) => st.t < h.until && !st.hintShown[h.key]);
@@ -406,8 +478,11 @@ export function hudStep(st, view, tune = TUNE) {
   const firstMin = st.playT !== null && st.t - st.playT < 60;
   const recent = st.hintTimes.filter((t) => st.playT !== null && t - st.playT < 60).length;
   const held = mode === 'paused' || mode === 'log' || mode === 'title';
-  const ready = st.hintWait.findIndex((h) => st.t >= h.at);
-  if (!st.hint && ready >= 0 && !held && !(shared && infoUp) && !(firstMin && recent >= HINTS_FIRST_MIN)) {
+  // A hint for this moment (hintNow) or an urgent one goes first and skips the first minute's limit.
+  let ready = st.hintWait.findIndex((h) => st.t >= h.at && (h.now || URGENT.has(h.key)));
+  const capped = firstMin && recent >= HINTS_FIRST_MIN;
+  if (ready < 0 && !capped) ready = st.hintWait.findIndex((h) => st.t >= h.at);
+  if (!st.hint && ready >= 0 && !held && !(shared && infoUp)) {
     const h = st.hintWait.splice(ready, 1)[0];
     const src = view.source || 'keys';
     const own = h.key === 'tunnel' ? JUMPS[g.jump?.id]?.tutorial : null;
@@ -417,12 +492,15 @@ export function hudStep(st, view, tune = TUNE) {
     st.hintTimes.push(st.t);
   }
 
-  // Toasts: one at a time.
+  // Toasts: one at a time, and none starts under a white wash (the PLAY fold, the punch's flash): it waits.
+  const wash = clamp(fin(view.wash), 0, 1);
   if (st.toast && st.t >= st.toast.until) st.toast = null;
-  if (!st.toast && st.queue.length) {
+  if (!st.toast && st.queue.length && wash < WASH_HOLD) {
     const item = st.queue.shift();
     st.toast = { ...item, until: st.t + item.s };
   }
+  // An info card that came up under the wash starts its time when the wash is gone.
+  if (st.info && wash >= WASH_HOLD) st.info.until = Math.max(st.info.until, st.t + (st.info.s ?? 3));
 
   // The info box: a scan's number or an On Earth card, else the scale card while the core says so.
   let infoBox = st.info ? { text: st.info.text, sub: st.info.sub, kind: st.info.kind } : null;
@@ -461,14 +539,18 @@ export function hudStep(st, view, tune = TUNE) {
 
   return {
     mode, held, kind: view.layout?.kind || 'desktop', source: view.source || 'keys',
-    top, speed, pips,
+    top, speed, pips, washed: wash >= WASH_OUTLINE,
+    // The ship's place on screen ([x, y] CSS px, from the camera), so the drift pips sit over the ship.
+    shipAt: Array.isArray(view.shipAt) ? view.shipAt : null,
     caption: mode === 'title' ? null : captionFor(st, view),
     toast: st.toast ? { text: st.toast.text, tone: st.toast.tone } : null,
-    info: infoBox,
+    info: wash >= WASH_HOLD && infoBox?.kind !== 'scale' ? null : infoBox,
     hint: st.hint ? { key: st.hint.key, text: st.hint.text } : null,
     chip: chip ? { ...chip, hold } : null,
     boost: { bar, segs: tune.BAR.SEGMENTS, on: !!ship.boosting, ready: fin(ship.bar) >= tune.BAR.MIN },
     pedals: { gas: !!inp.gas, brake: !!inp.brake, drift: !!inp.drift, boost: !!inp.boost },
+    // GAS does nothing at light speed (the corridor's speed is the rapidity's): it leaves the screen there.
+    gasPedal: !SKY_MODES.has(mode),
     stick: touch && inp.stick ? inp.stick : null,
     controls: touch && driving,
     radar: !(mode === 'title' || mode === 'punch' || mode === 'tunnel' || held),
@@ -671,6 +753,8 @@ export function createHud(root, { tune = TUNE } = {}) {
     cls(el, 'held', m.held);
     cls(el, 'controls', m.controls);
     cls(el, 'jumping', JUMP_MODES.has(m.mode));
+    cls(el, 'sky', SKY_MODES.has(m.mode));             // at light speed the hint moves up, off the vanishing point
+    cls(el, 'washed', !!m.washed);                     // a dark outline on every word while a white wash is up
     show(el, m.mode !== 'none' && m.mode !== 'title');
 
     // speed
@@ -714,16 +798,27 @@ export function createHud(root, { tune = TUNE } = {}) {
 
     show(infoEl, !!m.info);
     if (m.info) {
-      text(infoText, m.info.text);
-      text(infoSub, m.info.sub);
-      show(infoSub, !!m.info.sub);
+      // A number keeps its word on one line (1 SHIP, 21 BILLION), and LIGHT-YEARS never breaks at its hyphen. A
+      // one-part card with a dot in it (the scale card) breaks at the dot when it must.
+      const keep = (t) => String(t || '').replace(/(\d) (?=[A-Z])/g, '$1\u00a0').replace(/-/g, '\u2011');
+      const at = m.info.sub ? -1 : m.info.text.indexOf(' · ');
+      text(infoText, keep(at < 0 ? m.info.text : m.info.text.slice(0, at)));
+      text(infoSub, keep(at < 0 ? m.info.sub : m.info.text.slice(at + 3)));
+      show(infoSub, at >= 0 || !!m.info.sub);
       data(infoEl, 'kind', m.info.kind);
+      data(infoEl, 'split', at >= 0 ? '1' : '');
     }
     show(radar, m.radar);
 
-    // drift pips and chain
+    // drift pips and chain, over the ship wherever the camera has it (inside the middle of the screen); the box
+    // stays on its layout rectangle and its contents slide
     const p = m.pips;
     cls(pipsEl, 'on', p.on || p.chain > 0);
+    const pr = layout?.rects.pips;
+    const dx = pr && m.shipAt ? clamp(m.shipAt[0] - (pr[0] + pr[2] / 2), -0.22 * layout.w, 0.22 * layout.w) : 0;
+    const slide = dx ? `translateX(${Math.round(dx)}px)` : 'none';
+    css(pipBox, 'transform', slide);
+    css(chain, 'transform', slide);
     for (let i = 0; i < 3; i++) {
       cls(pips[i], 'lit', p.tier > i);
       css(pips[i], '--f', p.tier === i ? p.fill.toFixed(2) : p.tier > i ? '1' : '0');
@@ -754,7 +849,7 @@ export function createHud(root, { tune = TUNE } = {}) {
       cls(boost, 'on', m.boost.on || m.pedals.boost);
       cls(boost, 'empty', !m.boost.ready);
     }
-    show(gas, m.controls && !!layout?.rects.gas);
+    show(gas, m.controls && !!layout?.rects.gas && m.gasPedal !== false);
     show(brake, m.controls && !!layout?.rects.brake);
     cls(gas, 'on', m.pedals.gas);
     cls(brake, 'on', m.pedals.brake || m.pedals.drift);

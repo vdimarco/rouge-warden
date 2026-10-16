@@ -355,7 +355,8 @@ function missionStep(game, r, st, opts = {}) {
     const lead = clamp(d / Math.max(4, closing), 0, 1.2) * clamp((d - 12) / 15, 0, 1);
     const tx = a.pos[0] + a.vel[0] * lead, ty = a.pos[1] + a.vel[1] * lead;
     r.steer = avoid(game, steerTo(game, aimAt(game, tx, ty), d < 20 ? 3.2 : 2.6, beginner ? 0.8 : 1), d < 10 ? 0 : 1, st.mem);
-    r.boost = beginner ? (s.boosting ? s.bar > 0.1 : s.bar > 0.99)
+    // A beginner boosts on a full bar and lets go once close (at 42 u/s a near tail is overshot, not rammed).
+    r.boost = beginner ? (s.boosting ? s.bar > 0.1 && d > 18 : s.bar > 0.99 && d > 25)
       : (s.boosting ? s.bar > 0.05 : s.bar > 0.3 && (d > 25 || closing < 7));
     return r;
   }

@@ -152,6 +152,7 @@ export function createMenus(root, handlers = {}) {
   const copyB = button(copyRow, 'Copy log', 'copy');
   const copyNote = h('small', 'm-note', sBody, 'Copies your last runs to paste in a bug report. Nothing is sent.');
   copyNote.setAttribute('aria-live', 'polite');
+  button(sCard, 'DONE', 'back', 'primary m-done');
 
   // ---------- end card
   const end = h('section', 'm-screen m-end', el);

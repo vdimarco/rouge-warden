@@ -149,13 +149,14 @@ test('near, hairline, thread, skim and draft counts on scripted passes', () => {
   c = drive(thread, { at: [0, -30, 0], speed: 30, secs: 2.5 }).count;
   assert.equal(c.thread, 1);
 
-  // Bar and chain: three NEARs in a row start a ×2 chain, which banks 3 s later.
+  // Bar and chain: three NEARs in a row start a ×2 chain, which banks 3 s later and pays the bar 2 × CHAIN_BAR.
   const row = zoneWith([0, 1, 2].map((i) => ({ pos: [(i % 2 ? -1 : 1) * (1.5 + 1 + CAP), i * 25, 0], rc: 1 })));
   const r = drive(row, { at: [0, -30, 0], speed: 30, secs: 8 });
   assert.equal(r.count.near, 3);
   assert.equal(r.count.chainUp, 1);
   assert.equal(r.count.chainBank, 1);
-  assert.ok(Math.abs(r.game.ship.bar - (TUNE.BAR.START + 3 * TUNE.BAR.NEAR)) < 1e-9, 'each NEAR pays the bar');
+  assert.ok(Math.abs(r.game.ship.bar - (TUNE.BAR.START + 3 * TUNE.BAR.NEAR + 2 * TUNE.PROX.CHAIN_BAR)) < 1e-9,
+    'each NEAR pays the bar, and so does the banked chain');
 
   // A skim: along a skim surface within 3 u for 0.4 s or more, then away.
   const skim = zoneWith([{ id: 'giant', pos: [30 + 2 + CAP, 0, 0], rc: 30, r: 30, skim: true }]);

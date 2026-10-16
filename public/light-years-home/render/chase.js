@@ -9,11 +9,17 @@ import { TUNE } from '../core/tune.js';
 import { basisFrom } from '../core/vec.js';
 
 const DEG = Math.PI / 180;
-// Framing (deg): a well's core comes EDGE_MARGIN onto the screen; the ship never goes nearer the side than
-// SHIP_MARGIN; the camera swings at most SWING_MAX round the ship to fit both.
-const EDGE_MARGIN = 11, SHIP_MARGIN = 9, SWING_MAX = 70;
+// Framing: a well's core comes EDGE_MARGIN (deg) onto the screen; the ship stays inside the middle SHIP_KEEP of the
+// screen's width (0.6: never nearer a side than a fifth of the width), whatever the turn; to fit both the camera
+// first pulls back (up to PULL_MAX), then swings at most SWING_MAX (deg) round the ship. When even that cannot fit
+// them, the core leaves the screen, never the ship.
+const EDGE_MARGIN = 11, SHIP_KEEP = 0.6, SWING_MAX = 70;
 const LOOK_RATE = 4;              // rad/s: the fastest the drift look-in turns to keep a well's core on screen
 const PULL_MAX = 1.8;             // × CAM DIST: the furthest a close pass round a core pulls the camera back
+const PULL_MAX_PORTRAIT = 2.3;    // the same in portrait, whose view is only about 50° across
+const PULL_IN = 0.06;             // s: the pull-back eases in this fast (a close pass swings the core across quickly)
+const FB_RATE = 14, FB_OUT = 0.6;  // the extra swing per rad of core still off screen a second; s to let it go
+const HIT_FOV = 6, HIT_T = 0.35;  // a takedown's FOV punch (deg) and how long it lasts (s)
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 const wrap = (a) => Math.atan2(Math.sin(a), Math.cos(a));
 const ease = (dt, tc) => (tc > 0 ? 1 - Math.exp(-dt / tc) : 1);
@@ -89,7 +95,7 @@ export function createChase(camTune = TUNE.CAM, layoutKind = 'desktop', opts = {
   const st = {
     init: false, heading: 0, rel: [0, -6, 1.6], relV: [0, 0, 0], last: [0, 0, 0], fov: K.FOV, boost: 0, dbKick: 0,
     dbHold: 0, punch: 0, lookIn: 0, lean: 0, lookBack: 0, block: 1, bodies: [], wells: [], aspect: 16 / 9, swing: 0,
-    look: [0, 0, 0], pull: 1,
+    look: [0, 0, 0], pull: 1, short: 0, swingFb: 0, hit: 0,
   };
   const N = [0, 1, 0], E = [1, 0, 0], F = [0, 1, 0], R = [1, 0, 0];
   const out = { pos: [0, 0, 0], quat: [0, 0, 0, 1], fov: 60, fovSet: K.FOV, up: [0, 0, 1], fwd: [0, 1, 0] };
@@ -106,6 +112,7 @@ export function createChase(camTune = TUNE.CAM, layoutKind = 'desktop', opts = {
     return best;
   }
 
+  const pullMax = () => (kind === 'portrait' ? PULL_MAX_PORTRAIT : PULL_MAX);
   const headingOfVec = (v) => Math.atan2(v[0] * E[0] + v[1] * E[1] + v[2] * E[2],
     v[0] * N[0] + v[1] * N[1] + v[2] * N[2]);
 
@@ -150,6 +157,7 @@ export function createChase(camTune = TUNE.CAM, layoutKind = 'desktop', opts = {
       st.lookIn = 0;
       st.lean = 0;
       st.pull = 1;
+      st.swingFb = 0;
     }
     st.last[0] = p[0]; st.last[1] = p[1]; st.last[2] = p[2];
 
@@ -160,6 +168,7 @@ export function createChase(camTune = TUNE.CAM, layoutKind = 'desktop', opts = {
         st.dbKick = Math.max(st.dbKick, C.DB_KICK[tier - 1]);
         st.dbHold = Math.max(st.dbHold, TUNE.DRIFT.DB_DUR[tier - 1]);
       } else if (e.type === 'punch') st.punch = 1;
+      else if (e.type === 'takedown') st.hit = 1;
     });
 
     // Heading: smoothed, at most YAW_MAX.
@@ -173,6 +182,7 @@ export function createChase(camTune = TUNE.CAM, layoutKind = 'desktop', opts = {
     // well's core and the ship fit on the screen together (a portrait view is only about 50° across).
     const drift = ship.drift && ship.drift.on ? ship.drift.dir || 0 : 0;
     const hHalf = Math.atan(Math.tan(vertical(st.fov) * DEG / 2) * st.aspect);
+    const keepA = Math.atan(SHIP_KEEP * Math.tan(hHalf));     // the furthest the ship sits off the view's centre
     const well = drift ? wellNear(p) : null;
     let swingT = 0, pullT = 1;
     if (well) {
@@ -180,24 +190,35 @@ export function createChase(camTune = TUNE.CAM, layoutKind = 'desktop', opts = {
       const rx = well.pos[0] - p[0], ry = well.pos[1] - p[1], rz = (well.pos[2] || 0) - p[2];
       const fwd = rx * F[0] + ry * F[1] + rz * F[2], lat = (rx * R[0] + ry * R[1] + rz * R[2]) * drift;
       if (lat > 0 && fwd > -1.5 * K.DIST) {               // not once the well is well behind you
-        const D = K.DIST, usable = 2 * hHalf - (2 * EDGE_MARGIN + SHIP_MARGIN) * DEG;
+        const D = K.DIST, usable = keepA + hHalf - EDGE_MARGIN * DEG, PM = pullMax();
         const sep = (b, dd = D) => Math.atan2(lat + dd * Math.sin(b), fwd + dd * Math.cos(b)) - b;
         if (sep(0) > usable) {
-          let lo = 0, hi = SWING_MAX * DEG;
-          for (let i = 0; i < 12; i++) { const m = (lo + hi) / 2; if (sep(m) > usable) lo = m; else hi = m; }
-          swingT = hi;
-          // Still too wide at the full swing (a pass close to the core): pull the camera back until both fit.
-          const b = SWING_MAX * DEG;
-          if (sep(b) > usable) {
-            let a = 1, z = PULL_MAX;
-            for (let i = 0; i < 12; i++) { const m = (a + z) / 2; if (sep(b, D * m) > usable) a = m; else z = m; }
+          // Pull back first: a wider shot keeps the ship in the middle and the core beside it.
+          let a = 1, z = PM;
+          if (sep(0, D * z) > usable) {
+            // Not enough at the full pull: swing round the ship as well.
+            pullT = PM;
+            let lo = 0, hi = SWING_MAX * DEG;
+            for (let i = 0; i < 12; i++) { const m = (lo + hi) / 2; if (sep(m, D * z) > usable) lo = m; else hi = m; }
+            swingT = hi;
+          } else {
+            for (let i = 0; i < 12; i++) { const m = (a + z) / 2; if (sep(0, D * m) > usable) a = m; else z = m; }
             pullT = z;
           }
         }
       }
     }
+    // What the framing above misses (the sprung camera lags a tight orbit): the core was still off the screen last
+    // frame with the look-in at its most, so pull right back and swing a little further until it is on.
+    if (well && st.short > 0) {
+      pullT = pullMax();
+      st.swingFb = Math.min(SWING_MAX * DEG, st.swingFb + st.short * FB_RATE * d);
+    } else {
+      st.swingFb *= 1 - ease(d, FB_OUT);
+    }
+    swingT = Math.min(SWING_MAX * DEG, swingT + st.swingFb);
     st.swing += (swingT - st.swing) * ease(d, C.DRIFT_LOOK_T * (swingT > st.swing ? 0.6 : 1.5));
-    st.pull += (pullT - st.pull) * ease(d, C.DRIFT_LOOK_T * (pullT > st.pull ? 0.6 : 2));
+    st.pull += (pullT - st.pull) * ease(d, pullT > st.pull ? PULL_IN : C.DRIFT_LOOK_T * 2);
     if (st.swingDir === undefined || drift) st.swingDir = drift || st.swingDir || 1;
     const h = st.heading + Math.PI * st.lookBack + st.swingDir * st.swing;
     basisFrom(U, h, F, R);
@@ -253,6 +274,7 @@ export function createChase(camTune = TUNE.CAM, layoutKind = 'desktop', opts = {
     // Drift look-in: toward the inside of the drift; inside a well's sling ring, toward the well, far enough that
     // its core comes onto the screen while the ship stays on it (final.md 6.8, CAM.DRIFT_LOOK_IN).
     let look = drift * K.DRIFT_LOOK_IN * DEG, floor = 0;
+    st.short = 0;
     if (drift) {
       const w = well;
       if (w) {
@@ -262,13 +284,14 @@ export function createChase(camTune = TUNE.CAM, layoutKind = 'desktop', opts = {
         const ang = Math.atan2(vI.dot(vR), vI.dot(vD));
         if (Math.sign(ang) === Math.sign(drift)) {
           // Angles toward the inside of the turn: the well must come within EDGE_MARGIN of that side, and the ship
-          // (where the aim leaves it) must stay SHIP_MARGIN inside the other side.
+          // (where the aim leaves it) must stay inside the middle SHIP_KEEP of the width.
           vS.set(p[0] - cp[0], p[1] - cp[1], p[2] - cp[2]);
           const shipIn = Math.atan2(vS.dot(vR), vS.dot(vD)) * drift;
           const need = Math.abs(ang) - (hHalf - EDGE_MARGIN * DEG);
-          const most = Math.max(shipIn, 0) + hHalf - SHIP_MARGIN * DEG;
+          const most = Math.max(shipIn, 0) + keepA;
           look = drift * clamp(Math.max(K.DRIFT_LOOK_IN * DEG, need), 0, Math.max(0, most));
           floor = clamp(need, 0, Math.max(0, most));
+          st.short = Math.max(0, need - Math.max(0, most));
         }
       }
     }
@@ -301,17 +324,19 @@ export function createChase(camTune = TUNE.CAM, layoutKind = 'desktop', opts = {
     if (dbT < st.dbKick) st.dbKick = Math.max(dbT, st.dbKick - d * st.dbKick / C.KICK_OUT);
     else st.dbKick = dbT;
     st.punch = Math.max(0, st.punch - d / 0.35);
-    let kick = K.FOV_KICK * st.boost + st.dbKick + TUNE.JUMP.PUNCH_FOV * Math.min(1, st.punch * 1.6);
+    st.hit = Math.max(0, st.hit - d / HIT_T);
+    let kick = K.FOV_KICK * st.boost + st.dbKick + TUNE.JUMP.PUNCH_FOV * Math.min(1, st.punch * 1.6)
+      + HIT_FOV * Math.min(1, st.hit * 1.6);
     if (reduced) kick = Math.min(kick, FX.REDUCED_KICK);
     const target = Math.min(K.FOV_MAX, K.FOV + K.FOV_TOP * fTop + kick);
-    const step = C.FOV_RATE * d * (st.punch > 0 ? 4 : 1);
+    const step = C.FOV_RATE * d * (st.punch > 0 || st.hit > 0 ? 4 : 1);
     st.fov += clamp(target - st.fov, -step, step);
     const vf = vertical(st.fov);
 
     // Put the ship at its screen height (pitch about the view's right axis), and however fast the turn, keep it
-    // SHIP_MARGIN inside the screen's sides (yaw about U). Twice, as each nudges the other a little.
+    // inside the middle SHIP_KEEP of the width (yaw about U). Twice, as each nudges the other a little.
     const want = Math.atan((1 - 2 * K.SHIP_Y) * Math.tan(vf * DEG / 2));
-    const keepX = Math.tan(hHalf - SHIP_MARGIN * DEG) / Math.tan(hHalf);
+    const keepX = SHIP_KEEP;
     vS.set(p[0] - cp[0], p[1] - cp[1], p[2] - cp[2]);
     for (let k = 0; k < 2; k++) {
       vUp.crossVectors(vR, vD).normalize();
@@ -354,7 +379,8 @@ export function createChase(camTune = TUNE.CAM, layoutKind = 'desktop', opts = {
     setReduced(v) { reduced = !!v; },
     get kind() { return kind; },
     get state() {
-      return { heading: st.heading, fov: st.fov, boost: st.boost, lookIn: st.lookIn, lean: st.lean, swing: st.swing };
+      return { heading: st.heading, fov: st.fov, boost: st.boost, lookIn: st.lookIn, lean: st.lean, swing: st.swing,
+        pull: st.pull, short: st.short };
     },
   };
 }

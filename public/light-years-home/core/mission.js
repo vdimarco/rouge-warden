@@ -496,8 +496,11 @@ function stepStarts(game, ev, i0) {
       let go = false;
       if (Number.isFinite(a.afterArrival)) go = ta >= a.afterArrival;
       if (Number.isFinite(a.afterPlay)) {
-        const near = !a.near || dist2(game.ship.pos, a.near.pos) <= a.near.within;
-        go = (tp >= a.afterPlay && near) || (Number.isFinite(a.orAfterPlay) && tp >= a.orAfterPlay);
+        const d = a.near ? dist2(game.ship.pos, a.near.pos) : 0;
+        const near = !a.near || d <= a.near.within;
+        // enter: driving into the place's own ring starts it at once (after its own few seconds).
+        const inside = !!(a.enter && a.near) && d <= a.enter.within && tp >= num(a.enter.afterPlay, 0);
+        go = inside || (tp >= a.afterPlay && near) || (Number.isFinite(a.orAfterPlay) && tp >= a.orAfterPlay);
       }
       if (go) { startMission(game, id, 0, ev); return; }
     }

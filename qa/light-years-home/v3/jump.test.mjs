@@ -108,7 +108,7 @@ test('the run-up: three rings bend toward the target, then the punch', () => {
   assert.ok(game.stopUntil > game.t - H && game.lockUntil > game.t);
 });
 
-test('the run-up: a target behind holds the rings; a missed ring re-forms; brake 1 s calls it off', () => {
+test('the run-up: a target behind holds the rings; a missed ring re-forms; only a tap calls it off', () => {
   setup();
   let { game, to } = startGame('J1', 1, { off: 170 });
   const ev = createEventBuffer(1024);
@@ -123,10 +123,12 @@ test('the run-up: a target behind holds the rings; a missed ring re-forms; brake
   ev.clear();
   for (let i = 0; i < 6 / H && game.mode === 'runup'; i++) step(game, makeInput({ steer: -1 }), ev);
   assert.ok(ev.count('runupMiss') >= 1);
-  // Brake for a second: back to driving.
+  // Braking to line up a ring never calls it off; a tap of the action control does.
   ({ game } = startGame('J1', 1));
   armJump(game, to, ev);
-  for (let i = 0; i < 1.2 / H; i++) step(game, makeInput({ brake: 1 }), ev);
+  for (let i = 0; i < 1.5 / H; i++) step(game, makeInput({ brake: 1 }), ev);
+  assert.equal(game.mode, 'runup');
+  step(game, makeInput({ action: true }), ev);
   assert.equal(game.mode, 'drive');
   assert.equal(game.jump, null);
 });
@@ -379,4 +381,106 @@ test('the same seed and inputs fly the same jump', () => {
   const a = fly('J2', 'expert', 7), b = fly('J2', 'expert', 7);
   assert.equal(hashState(a.game), hashState(b.game));
   assert.equal(a.events.length, b.events.length);
+});
+
+// ---------------------------------------------------------------- Round 1 playtest fixes
+
+test('through the exit gate from five directions, in both zones: no rim turn-back, LIGHT SPEED within 8 s', async () => {
+  const { playSlots, openExit } = await import('../../../public/light-years-home/core/zone.js');
+  const { createEventBuffer: buf } = await import('../../../public/light-years-home/core/events.js');
+  unwire();
+  wire(playSlots({ jump: stepJump, arm: armJump }));
+  for (const z of [wall, coma, virgo]) registerZone(z);
+  const wrap = (a) => Math.atan2(Math.sin(a), Math.cos(a));
+  const clamp = (x) => Math.max(-1, Math.min(1, x));
+  // A plain driver: steer the travel line at the exit gate, then at each launch ring, with the gas held; touch.
+  const drive = (zone) => (g) => {
+    const s = g.ship, v = Math.atan2(s.vel[0], s.vel[1]);
+    let at = zone.exit.pos;
+    if (g.mode === 'runup') {
+      const R = g.jump.runup;
+      if (R.wait || !R.placed) return makeInput({ steer: clamp(2 * wrap(Math.atan2(R.dir[0], R.dir[1]) - s.yaw)), source: 'touch' });
+      at = R.rings[R.done];
+    }
+    return makeInput({ steer: clamp(4 * wrap(Math.atan2(at[0] - s.pos[0], at[1] - s.pos[1]) - v)), gas: 1, source: 'touch' });
+  };
+  for (const zone of [wall, coma]) {
+    const e = zone.exit.pos, R = zone.R;
+    // Five approaches, each about 120 u from the gate, from the rim side to the centre side.
+    for (const k of [-2, -1, 0, 1, 2]) {
+      const a = Math.atan2(-e[0], -e[1]) + k * 0.5;
+      const at = [e[0] + Math.sin(a) * 120, e[1] + Math.cos(a) * 120, 0];
+      if (Math.hypot(at[0], at[1]) > R - 10) continue;
+      const heading = (Math.atan2(e[0] - at[0], e[1] - at[1]) * 180) / Math.PI;
+      const game = createGame({ seed: 1, zoneData: zone, mode: 'drive', at, heading, speed: 24, today: TODAY });
+      game.story.openingI = 99;
+      openExit(game);
+      const ev = buf(4096);
+      let gateT = null, punchT = null, misses = 0, turns = 0;
+      for (let i = 0; i < 40 / H && punchT === null; i++) {
+        ev.clear();
+        step(game, drive(zone)(game), ev);
+        for (let j = 0; j < ev.n; j++) {
+          const t = ev.list[j].type;
+          if (t === 'mode' && ev.list[j].to === 'runup') gateT = game.t;
+          if (t === 'runupMiss') misses++;
+          if (t === 'edgeTurn' && game.mode === 'runup') turns++;
+          if (t === 'punch') punchT = game.t;
+        }
+      }
+      const where = `${zone.id} approach ${k}`;
+      assert.ok(gateT !== null, `${where}: through the gate`);
+      assert.ok(punchT !== null && punchT - gateT <= 8, `${where}: punch ${(punchT - gateT).toFixed(1)} s after the gate`);
+      assert.equal(turns, 0, `${where}: no turn-back in the run-up`);
+      assert.ok(misses <= 1, `${where}: ${misses} missed rings`);
+    }
+  }
+  setup();
+});
+
+test('the jump bots: made mid-corridor they never throw, and in the run-up they fly the travel line through rings', () => {
+  setup();
+  for (const name of ['mid', 'expert', 'thumb']) {
+    for (let seed = 1; seed <= 12; seed++) {
+      const { game, to } = startGame('J1', seed);
+      const ev = createEventBuffer(8192);
+      armJump(game, to, ev);
+      const first = JUMP_BOTS.mid({ seed });
+      let made = null, missed = 0;
+      for (let i = 0; i < 40 / H && game.jump; i++) {
+        // A second bot made at a random moment of the run takes over (the hook's bot() does this).
+        if (!made && game.mode === 'tunnel' && game.jump.t > 3 + (seed % 5)) made = JUMP_BOTS[name]({ seed });
+        if (game.jump && game.mode !== 'runup') setZoneReady(game, true);
+        ev.clear();
+        step(game, (made || first).next(game), ev);
+        missed += ev.count('runupMiss');
+      }
+      assert.ok(made, `${name} ${seed}: made in the corridor`);
+      assert.equal(game.zoneId, 'coma', `${name} ${seed}: arrived`);
+      assert.equal(missed, 0, `${name} ${seed}: run-up rings missed ${missed}`);
+    }
+  }
+});
+
+test('the fix earned facing Coma starts the run-up there; facing away, the exit gate is the objective', async () => {
+  const { playSlots } = await import('../../../public/light-years-home/core/zone.js');
+  const { startMission } = await import('../../../public/light-years-home/core/mission.js');
+  const { createEventBuffer: buf } = await import('../../../public/light-years-home/core/events.js');
+  unwire();
+  wire(playSlots({ jump: stepJump, arm: armJump }));
+  for (const z of [wall, coma]) registerZone(z);
+  const toComa = (Math.atan2(...targetDir(wall, 'coma').slice(0, 2)) * 180) / Math.PI;
+  for (const [off, want] of [[20, 'runup'], [120, 'drive']]) {
+    const game = createGame({ seed: 1, zoneData: wall, mode: 'drive', at: [0, -100, 0], heading: toComa + off, speed: 24,
+      today: TODAY });
+    game.story.openingI = 99;
+    startMission(game, 'which-way-home', 2);
+    for (const id of ['far-coma', 'far-leo', 'far-hercules']) game.zone.scanned[id] = true;
+    const ev = buf(2048);
+    for (let i = 0; i < 0.5 / H; i++) { ev.clear(); step(game, makeInput({}), ev); }
+    assert.equal(game.zone.exitOpen, true);
+    assert.equal(game.mode, want, `${off}° off Coma`);
+    if (want === 'drive') assert.equal(game.zone.waypoint, 'exit');
+  }
+  setup();
 });

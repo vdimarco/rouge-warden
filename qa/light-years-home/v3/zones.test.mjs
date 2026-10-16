@@ -18,9 +18,13 @@ import { mulberry32 } from '../../../public/light-years-home/core/rng.js';
 import { TUNE } from '../../../public/light-years-home/core/tune.js';
 import { createGame } from '../../../public/light-years-home/core/game.js';
 
-const zones = await Promise.all(ZONE_IDS.map(loadZone));
+// The data checks cover every round's data (Round 2's work in progress included); what a driver meets is the zone
+// as this round plays it (core/world/round.js), so the density and arrival checks use those.
+const zones = await Promise.all(ZONE_IDS.map((id) => loadZone(id, 2)));
 const zoneOf = Object.fromEntries(zones.map((z) => [z.id, z]));
-const driven = zones.filter((z) => z.kind === 'pit' || z.kind === 'full');
+const live = await Promise.all(ZONE_IDS.map((id) => loadZone(id)));
+const liveOf = Object.fromEntries(live.map((z) => [z.id, z]));
+const driven = live.filter((z) => z.kind === 'pit' || z.kind === 'full');
 
 const d2 = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1]);
 const d3 = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1], (a[2] || 0) - (b[2] || 0));
@@ -141,7 +145,7 @@ function things(z) {
     if (s.when.at) big.push({ id: `secret:${s.id}`, dist: at(s.when.at), notice: SECRET });
     else if (s.when.ride) big.push({ id: `secret:${s.id}`, dist: along(g.lineOf(s.when.ride)), notice: SECRET });
   }
-  for (const m of MISSIONS.filter((x) => x.zone === z.id)) {
+  for (const m of MISSIONS.filter((x) => x.zone === z.id && z.missions.includes(x.id))) {
     if (m.start.ring) big.push({ id: `mission:${m.id}`, dist: at(g.rings[m.start.ring].pos), notice: SEEN });
     else if (m.start.auto?.near) big.push({ id: `mission:${m.id}`, dist: at(m.start.auto.near.pos), notice: SMALL });
   }
@@ -346,10 +350,17 @@ test('density: 1,000 points each have a small thing within 280 u and a big thing
 function wander(z, seed, seconds = 120) {
   const { small, big } = things(z);
   const list = [...small, ...big];
-  for (const m of MISSIONS.filter((x) => x.zone === z.id && x.start.auto?.orAfterPlay)) {
+  for (const m of MISSIONS.filter((x) => x.zone === z.id && z.missions.includes(x.id) && x.start.auto?.orAfterPlay)) {
     const a = m.start.auto;
-    list.push({ id: `starts:${m.id}`, dist: (q, t) => (t >= a.orAfterPlay
-      || (t >= a.afterPlay && d2(q, a.near.pos) <= a.near.within) ? 0 : Infinity) });
+    let at = Infinity;
+    const starts = (q, t) => {
+      if (at === Infinity && (t >= a.orAfterPlay || (t >= a.afterPlay && d2(q, a.near.pos) <= a.near.within)
+        || (a.enter && t >= a.enter.afterPlay && d2(q, a.near.pos) <= a.enter.within))) at = t;
+      return at <= t ? 0 : Infinity;
+    };
+    list.push({ id: `starts:${m.id}`, dist: starts });
+    // Its next beats are new things too: a chase in Cruise lands in about 25 s, then the far rings turn orange.
+    if (m.beats.length > 2) list.push({ id: `beats:${m.id}`, dist: (q, t) => (starts(q, t) === 0 && t >= at + 25 ? 0 : Infinity) });
   }
   const rng = mulberry32(seed);
   const S = TUNE.SHIP.S_CRUISE, TURN = Math.PI / 2.1, h = 0.1;
@@ -610,4 +621,98 @@ test('jumps: J1 to J3 follow the route, keep their set pieces inside the run, an
   }
   const j1 = milestonesBetween(JUMP_LIST[0].earth.aheadFrom, JUMP_LIST[0].earth.aheadTo).map((m) => m.id);
   assert.deepEqual(j1, ['seaweed', 'snowball', 'cambrian', 'land-plants', 'tetrapods']);
+});
+
+// ---------------------------------------------------------------- Round 1 (core/world/round.js) and Coma's flow
+
+test("Round 1 keeps Coma's Round 2 work out of play: no jobs, start rings, stunts, Vela or calls", async () => {
+  const { roundView, liveIn, ROUND } = await import('../../../public/light-years-home/core/world/round.js');
+  assert.equal(ROUND, 1);
+  const c1 = liveOf.coma, c2 = zoneOf.coma;
+  assert.deepEqual(c1.missions, [], 'no Coma mission in Round 1');
+  assert.deepEqual(c1.events, [], 'no Coma race or stunt in Round 1');
+  assert.deepEqual(c1.rings, [], 'no giver rings');
+  assert.ok(!c1.actors.some((a) => a.id === 'vela'), 'Vela waits for her race');
+  assert.ok(c1.actors.some((a) => a.id === 'd100'), 'D100 still falls through downtown (a scan)');
+  for (const k of ['scans', 'sparks', 'sets', 'secrets', 'bodies', 'roads', 'swarms']) assert.equal(c1[k], c2[k], k);
+  // The Wall plays whole in Round 1; Round 2 shows Coma's work in progress.
+  assert.equal(roundView(liveOf.wall), liveOf.wall);
+  assert.equal(c2.missions.length, 2);
+  assert.ok(c2.events.length >= 7);
+  assert.ok(MISSIONS.filter((m) => m.zone === 'coma').every((m) => !liveIn(m)));
+  // Round 1's Coma has no objective, no TAKE JOB and no Round 2 call when you arrive.
+  const { playSlots, actionOf } = await import('../../../public/light-years-home/core/zone.js');
+  const { wire, unwire, registerZone, step, setMode } = await import('../../../public/light-years-home/core/game.js');
+  const { createEventBuffer } = await import('../../../public/light-years-home/core/events.js');
+  unwire();
+  wire(playSlots());
+  registerZone(c1);
+  const game = createGame({ seed: 1, zoneData: c1, mode: 'title' });
+  setMode(game, 'drive');
+  const ev = createEventBuffer(4096), seen = new Set();
+  for (let i = 0; i < 30 * 120; i++) {
+    ev.clear();
+    step(game, {}, ev);
+    for (let k = 0; k < ev.n; k++) seen.add(ev.list[k].type === 'line' ? ev.list[k].id : ev.list[k].type);
+    assert.notEqual(actionOf(game)?.id, 'take');
+  }
+  for (const t of ['missionOffer', 'missionStart', 'eventSeen', 'stuntStart', 'ferro.tug']) assert.ok(!seen.has(t), t);
+  assert.equal(game.zone.waypoint, null, 'nothing orange to chase that does not exist yet');
+  unwire();
+});
+
+test("Coma's swarms are a ball: thin round the rim roads, denser downtown, half in the driving layer", () => {
+  const tr = buildTraffic(liveOf.coma, 1);
+  const p = [0, 0, 0];
+  let n = 0, flat = 0, downtown = 0, rim = 0, high = 0, giants = 0;
+  const giantsAt = liveOf.coma.bodies.filter((b) => b.well).map((b) => [b.pos, b.well.rs]);
+  for (let i = 0; i < tr.n; i++) {
+    if (tr.kind[i] !== 2) continue;                       // swarm bodies
+    posAt(tr, i, 0, p);
+    n++;
+    const r = Math.hypot(p[0] + 9, p[1] + 10);
+    if (Math.abs(p[2]) <= 3) flat++;
+    if (Math.abs(p[2]) > 40) high++;
+    if (r < 250) downtown++;
+    if (r > 450) rim++;
+    for (const [c, rs] of giantsAt) if (Math.hypot(tr.bx[i] - c[0], tr.by[i] - c[1]) < 1.4 * rs) giants++;
+  }
+  console.log(`# coma swarms: ${n} bodies, ${downtown} downtown, ${rim} past r 450, ${flat} within 3 u of the plane,`
+    + ` ${high} beyond 40 u`);
+  assert.ok(downtown >= 0.3 * n, `downtown ${downtown} of ${n}`);
+  assert.ok(rim <= 0.4 * n, `rim ${rim} of ${n}`);
+  assert.ok(flat >= 0.45 * n, `driving layer ${flat} of ${n}`);
+  assert.ok(high >= 0.2 * n, `above and below ±40 u ${high} of ${n}`);
+  assert.equal(giants, 0, 'the giants keep their sling rings clear');
+});
+
+test('near misses for a wandering driver: at least 6 a minute in every zone, Coma from its real arrival', async () => {
+  const { playSlots } = await import('../../../public/light-years-home/core/zone.js');
+  const { wire, unwire, registerZone, step, setMode } = await import('../../../public/light-years-home/core/game.js');
+  const { createEventBuffer } = await import('../../../public/light-years-home/core/events.js');
+  const { BOTS } = await import('../../../public/light-years-home/core/bots.js');
+  unwire();
+  wire(playSlots());
+  for (const z of driven) registerZone(z);
+  for (const z of driven) {
+    let near = 0, secs = 0;
+    for (const seed of [1, 2, 3]) {
+      const game = createGame({ seed, zoneData: z, mode: 'title' });
+      setMode(game, 'drive');
+      game.story.openingI = 99;
+      for (const id of z.missions) game.progress.missions[id] = { done: true };
+      const bot = BOTS.wander.make({ seed, source: 'touch' });
+      const ev = createEventBuffer(4096);
+      for (let i = 0; i < 60 * 120; i++) {
+        ev.clear();
+        step(game, bot.next(game), ev);
+        near += ev.count('near') + ev.count('hairline');
+      }
+      secs += 60;
+    }
+    const perMin = (near * 60) / secs;
+    console.log(`# ${z.id}: the wander bot meets ${perMin.toFixed(1)} near misses a minute`);
+    assert.ok(perMin >= 6, `${z.id}: ${perMin.toFixed(1)} a minute`);
+  }
+  unwire();
 });

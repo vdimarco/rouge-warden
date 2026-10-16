@@ -116,7 +116,7 @@ export function armJump(game, toZoneId, ev = null) {
     id: data?.id || `${from}>${toZoneId}`, from, to: toZoneId, distanceLy: ly, L, Lr: L, soft, gx,
     part: 'runup', t: 0, partT: 0,
     runup: { rings: [[0, 0, 0], [0, 0, 0], [0, 0, 0]], normals: [[0, 1, 0], [0, 1, 0], [0, 1, 0]], done: 0,
-      wait: false, placed: false, brakeT: 0, misses: 0, dir, aim: 0, assist: [0, 0, 0] },
+      wait: false, placed: false, misses: 0, dir, aim: 0, assist: [0, 0, 0] },
     eta: 0, etaPeak: 0, phiSky: 0, skyPunch: 0,
     // the corridor: the ship across it (u), its sideways velocity, forward speed (u/s) and distance flown
     pos: [0, 0], prev: [0, 0], vel: [0, 0], speed: 0, s: 0,
@@ -195,9 +195,8 @@ function cancelJump(game, ev) {
 
 function runupStep(game, J, inp, ev, T) {
   const JT = T.JUMP, R = J.runup, ship = game.ship;
+  // Only a tap of the action control calls it off: braking to line up a ring never does.
   if (inp.action) { cancelJump(game, ev); return; }
-  R.brakeT = inp.brake > 0.5 ? R.brakeT + H : 0;
-  if (R.brakeT >= JT.RUNUP_CANCEL) { cancelJump(game, ev); return; }
   if (R.wait || !R.placed) {
     placeRings(game, J, T);
     if (R.wait) { if (game.zone) game.zone.assistAt = null; return; }
@@ -216,7 +215,8 @@ function runupStep(game, J, inp, ev, T) {
     const f = a / (a - b);
     const qx = pr[0] + (p[0] - pr[0]) * f - c[0], qy = pr[1] + (p[1] - pr[1]) * f - c[1],
       qz = pr[2] + (p[2] - pr[2]) * f - c[2];
-    if (Math.hypot(qx, qy, qz) <= JT.RING_R * JT.RUNUP_PASS) {
+    const pass = inp.source === 'touch' ? JT.RUNUP_PASS_TOUCH : JT.RUNUP_PASS;
+    if (Math.hypot(qx, qy, qz) <= JT.RING_R * pass) {
       R.done++;
       if (ev) ev.push(EV.runupRing, { n: R.done, id: J.id });
       if (R.done >= 3) punch(game, J, ev, T);
@@ -1254,6 +1254,16 @@ function plannerBot(cfg) {
       actionHeld: 0, lookBack: false, map: false, pause: false, autoDrift: false, source: cfg.source || 'pad' };
     let target = null, key = -1, nextPlan = 0, err = [0, 0], boosting = false, lapse = new Set();
     const decided = new Map();
+    // A hazard's choices are made once, the first time the bot looks at it (a rail it rides can be new).
+    const decide = (id) => {
+      let d = decided.get(id);
+      if (!d) {
+        d = { greedy: rng() < cfg.greed, hair: rng() < cfg.hair, e: [gauss(), gauss()] };
+        decided.set(id, d);
+        if (rng() < cfg.lapse) lapse.add(id);
+      }
+      return d;
+    };
     const next = (game) => {
       rec.steer = 0; rec.climb = 0; rec.gas = 0; rec.brake = 0; rec.drift = false; rec.boost = false;
       rec.boostBurst = false; rec.action = false;
@@ -1267,20 +1277,14 @@ function plannerBot(cfg) {
       if (J.t >= nextPlan || target === null) {
         nextPlan = J.t + cfg.react;
         const list = upcoming(J, cfg.horizon).filter((x) => !lapse.has(J.haz.id[x.i]));
-        for (const x of list) {
-          const id = J.haz.id[x.i];
-          if (!decided.has(id)) {
-            decided.set(id, { greedy: rng() < cfg.greed, hair: rng() < cfg.hair, e: [gauss(), gauss()] });
-            if (rng() < cfg.lapse) lapse.add(id);
-          }
-        }
+        for (const x of list) decide(J.haz.id[x.i]);
         const sl = slices(list.filter((x) => !lapse.has(J.haz.id[x.i])));
         // Riding beside a rail with nothing else close: follow it.
         const beside = ridingRail(J);
         if (beside >= 0 && (!sl.length || sl[0].ttp > 0.5)) sl.unshift({ ttp: 0.2, items: [beside], ride: true });
         if (sl.length) {
           const s0 = sl[0], s1 = sl[1];
-          const d0 = decided.get(J.haz.id[s0.items[0]]);
+          const d0 = decide(J.haz.id[s0.items[0]]);
           const gaps0 = d0.greedy ? (d0.hair ? [cfg.hairGap, 0.9] : [0.9]) : [cfg.safe];
           const c0 = candidates(J, s0.items, gaps0, T);
           let best = -Infinity, bestP = c0[0];
@@ -1291,7 +1295,7 @@ function plannerBot(cfg) {
               + crossTerm(J, list, s0.ttp, p[0], p[1], T, cfg.val);
             if (dist > reach(s0.ttp)) v += cfg.val.late;
             if (s1) {
-              const d1 = decided.get(J.haz.id[s1.items[0]]);
+              const d1 = decide(J.haz.id[s1.items[0]]);
               const gaps1 = d1.greedy ? [0.9] : [cfg.safe];
               let b1 = -Infinity;
               for (const q of candidates(J, s1.items, gaps1, T)) {
@@ -1336,18 +1340,20 @@ function plannerBot(cfg) {
   };
 }
 
-// The run-up: pure pursuit at the next launch ring, at its height.
+// The run-up: pure pursuit at the next launch ring, at its height, steering the travel line (the nose leads it in
+// a slide, so aiming the nose misses).
 function runupBot(game, J, rec) {
   const R = J.runup, ship = game.ship;
+  const v = ship.vel, travel = Math.hypot(v[0], v[1]) > 1 ? Math.atan2(v[0], v[1]) : ship.yaw;
   if (R.wait || !R.placed) {
-    const off = wrap(Math.atan2(R.dir[0], R.dir[1]) - ship.yaw);
+    const off = wrap(Math.atan2(R.dir[0], R.dir[1]) - travel);
     rec.steer = clamp(off * 2, -1, 1);
     return rec;
   }
   const c = R.rings[Math.min(2, R.done)];
   const dx = c[0] - ship.pos[0], dy = c[1] - ship.pos[1], dz = c[2] - ship.pos[2];
   const want = Math.atan2(dx, dy);
-  rec.steer = clamp(wrap(want - ship.yaw) * 3, -1, 1);
+  rec.steer = clamp(wrap(want - travel) * 3, -1, 1);
   rec.climb = clamp(dz * 0.3 - (ship.pitch || 0) * 2, -1, 1);
   return rec;
 }
