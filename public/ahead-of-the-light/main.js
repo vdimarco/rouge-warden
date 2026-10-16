@@ -66,17 +66,18 @@ const octx = overCanvas.getContext('2d');
 let W = window.innerWidth, H = window.innerHeight;
 const DPR = () => Math.min(window.devicePixelRatio || 1, 2);
 
+// The GPU's name, or null when WebGL will not start (then the page plays on the thin stand-in below).
 function gpuName() {
   try {
     const c = document.createElement('canvas');
-    const gl = c.getContext('webgl');
-    if (!gl) return '';
+    const gl = c.getContext('webgl2') || c.getContext('webgl');
+    if (!gl) return null;
     const ext = gl.getExtension('WEBGL_debug_renderer_info');
     const name = ext ? gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER);
     const lose = gl.getExtension('WEBGL_lose_context');
     if (lose) lose.loseContext();
     return String(name || '');
-  } catch (e) { return ''; }
+  } catch (e) { return null; }
 }
 
 // A thin stand-in when WebGL will not start: the overlay still draws the ring, so the page still plays.
@@ -99,9 +100,10 @@ function fallbackScene() {
   };
 }
 
-const tier = pickTier({ want: opt.tier || null, w: W, h: H, coarse, gpu: gpuName() });
+const gpu = gpuName();
+const tier = pickTier({ want: opt.tier || null, w: W, h: H, coarse, gpu: gpu || '' });
 let scene;
-try { scene = createScene({ canvas: glCanvas, tune, tier, reduced: reducedNow(), seed: 1 }); }
+try { scene = gpu === null ? fallbackScene() : createScene({ canvas: glCanvas, tune, tier, reduced: reducedNow(), seed: 1 }); }
 catch (e) { scene = fallbackScene(); }
 let overlay = makeOverlay();
 let vista = null;
