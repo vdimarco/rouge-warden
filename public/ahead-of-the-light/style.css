@@ -49,7 +49,11 @@ button { -webkit-appearance: none; appearance: none; }
 #speed b { color: var(--accent); font-weight: 700; }
 #speed i { color: rgba(255, 255, 255, 0.4); font-style: normal; }
 #speed.big { animation: big 0.9s ease-out; }
-@keyframes big { 0% { transform: scale(1); } 18% { transform: scale(1.9); color: var(--accent); } 100% { transform: scale(1); } }
+@keyframes big {
+  0% { transform: scale(1); }
+  18% { transform: scale(1.9); color: var(--accent); }
+  100% { transform: scale(1); }
+}
 #land { left: calc(var(--sl) + 14px); top: calc(var(--st) + 40px); font-size: 11px; font-weight: 700;
   color: var(--muted); letter-spacing: 0.05em; max-width: calc(100vw - 150px); }
 #place { right: calc(var(--sr) + 64px); font-size: 22px; text-align: right; }
@@ -224,7 +228,8 @@ html[data-input="desk"] .cardw.focus .card { border-color: var(--accent); box-sh
   border: 1px solid rgba(255, 255, 255, 0.5); background: rgba(0, 0, 0, 0.5); z-index: -1; }
 
 /* the break in landscape: the status column left, three cards side by side */
-html[data-layout="landscape"] .s-break { grid-template-columns: 260px minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr) auto;
+html[data-layout="landscape"] .s-break { grid-template-columns: 260px minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr) auto;
   gap: 6px 16px; padding-top: calc(var(--st) + 8px); padding-bottom: calc(var(--sb) + 8px); }
 html[data-layout="landscape"] .s-break .arrive { grid-column: 1 / 3; min-height: 0; }
 html[data-layout="landscape"] .s-break .status { grid-column: 1; grid-row: 2; overflow-y: auto; }
@@ -242,7 +247,8 @@ html[data-layout="landscape"] .card .band, html[data-layout="desktop"] .card .ba
 html[data-layout="landscape"] .card .glyph, html[data-layout="desktop"] .card .glyph { grid-column: 2; margin: 12px 0 0 12px; }
 html[data-layout="landscape"] .card .glyph::after, html[data-layout="desktop"] .card .glyph::after { left: 20px; top: 40px;
   width: 1px; height: 10px; transform: none; }
-html[data-layout="landscape"] .card .cbody, html[data-layout="desktop"] .card .cbody { grid-column: 2; padding: 10px 0 10px 12px; }
+html[data-layout="landscape"] .card .cbody, html[data-layout="desktop"] .card .cbody { grid-column: 2;
+  padding: 10px 0 10px 12px; }
 html[data-layout="landscape"] .ctop, html[data-layout="desktop"] .ctop { flex-direction: column; gap: 0; }
 html[data-layout="landscape"] .ctitle { font-size: 15px; }
 html[data-layout="landscape"] .cfx { font-size: 13px; }
@@ -256,7 +262,8 @@ html[data-layout="desktop"] .s-break .arrive { grid-column: 1 / 3; }
 html[data-layout="desktop"] .s-break .arrive .type { font-size: 16px; }
 html[data-layout="desktop"] .s-break .status { grid-column: 1 / 3; flex-direction: row; align-items: stretch; gap: 20px; }
 html[data-layout="desktop"] .shipbox { flex: 0 0 360px; height: 160px; }
-html[data-layout="desktop"] .status .buildrow { flex: 1; flex-direction: column; align-items: flex-start; justify-content: center; }
+html[data-layout="desktop"] .status .buildrow { flex: 1; flex-direction: column; align-items: flex-start;
+  justify-content: center; }
 html[data-layout="desktop"] .status .dock { flex: 1.4; align-content: center; }
 html[data-layout="desktop"] .s-break .offer { grid-column: 1 / 3; }
 html[data-layout="desktop"] .cardw { max-width: 296px; max-height: 380px; }

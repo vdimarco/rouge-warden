@@ -62,7 +62,7 @@ function cardHtml(c, i, { banish = false, focus = false, taken = false, compact 
     + '<span class="cbody">'
     + `<span class="ctop"><span class="ctitle">${esc(c.title)}</span><span class="crar">${esc(c.rarity)}</span></span>`
     + `<span class="cfx">${fx}</span>${tag}</span>`
-    + `<span class="ckey" aria-hidden="true">${i + 1}</span>`;
+    + (i >= 0 ? `<span class="ckey" aria-hidden="true">${i + 1}</span>` : '');
   const cls = `card frame-${esc(c.frame)} band-${esc(c.band)}${compact ? ' compact' : ''}`;
   const x = banish && !taken ? button('banish', '×', { cls: 'banish', data: { i },
     attrs: ` aria-label="Banish ${esc(c.title)}"` }) : '';
