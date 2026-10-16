@@ -639,15 +639,16 @@ export function createHero(scene, renderer) {
     const yanked = P.yankCool && (P.yankCool[0] > S.prevYank[0] + 0.05 || P.yankCool[1] > S.prevYank[1] + 0.05);
     if (S.twos > 0 && rig && visible && S.posed) {
       S.stepAcc += dt;
-      if (S.stepAcc < 1 / S.twos - 1e-4 && !P.wall && !S.prevWall && !yanked && !S.poseNow) {
-        V.c.set(pos.x + CL.off.x, pos.y + CL.off.y, pos.z + CL.off.z).sub(root.position);
+      V.c.set(pos.x + CL.off.x, pos.y + CL.off.y, pos.z + CL.off.z).sub(root.position);
+      // (a jump of over 2 m in a frame is a teleport or a respawn: pose there at once)
+      if (S.stepAcc < 1 / S.twos - 1e-4 && !P.wall && !S.prevWall && S.cling < 0.01 && !CL.on && !(CL.mantle > 0) && !yanked && !S.poseNow && V.c.lengthSq() < 4) {
         root.position.add(V.c);
         root.updateMatrixWorld(true);
         for (let sd = 0; sd < 2; sd++) { handPos[sd].add(V.c); footPos[sd].add(V.c); CL.palm[sd].add(V.c); }
         headPos.add(V.c);
         return;
       }
-      dt = Math.min(S.stepAcc, 0.1);
+      if (V.c.lengthSq() < 4) dt = Math.min(S.stepAcc, 0.1); // (after a teleport, the time before it does not count)
     }
     S.stepAcc = 0; S.poseNow = false;
     handPos[0].set(pos.x - 0.3, pos.y + chestH, pos.z); handPos[1].set(pos.x + 0.3, pos.y + chestH, pos.z); // until the model shows

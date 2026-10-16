@@ -24,7 +24,7 @@ A flash is a photosensitivity risk. The frame is 0.07 s long, and two flashes ar
 
 ## Twos hold the pose, not the body
 
-`H.update` runs a full pose only when 1/12 s has gathered. Between poses it moves `root` by the player's motion and moves the hand, head, foot and palm points by the same amount, so ropes, words and the climb keep their places. The facing is part of the pose and steps too. The full update gets the gathered time as its `dt`, so springs and timers keep the same speed. A yank, an attack, a hit or a roll poses at once, so a press never waits up to 83 ms for its pose. A wall climb stays on ones: its hands and feet are planted on holds in the world, and a held pose would slide them over the wall.
+`H.update` runs a full pose only when 1/12 s has gathered. Between poses it moves `root` by the player's motion and moves the hand, head, foot and palm points by the same amount, so ropes, words and the climb keep their places. The facing is part of the pose and steps too. The full update gets the gathered time as its `dt`, so springs and timers keep the same speed. A yank, an attack, a hit or a roll poses at once, so a press never waits up to 83 ms for its pose. A wall climb stays on ones: its hands and feet are planted on holds in the world, and a held pose would slide them over the wall. A jump of over 2 m in one frame (a teleport or a respawn) poses at once, and the time gathered before it does not count.
 
 ## Hit-stop and shake run in real time
 

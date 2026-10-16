@@ -29,6 +29,7 @@ A box is ticked only when the code and a test show the work done.
 - [x] Version 1.22.0 in `config.js`, `sw.js` and `quest/twa-manifest.json` (APK code 29); `pwa.mjs` passes.
 - [x] Unit suites pass: action, physics, target, city, street, mobile, mobile panel. `ui.mjs` passes.
 - [x] `verse.e2e.mjs` and `fight-moves.e2e.mjs` pass in headless Chromium.
-- [ ] Other browser suites: hero, perf, action, spider-world, phone-swing, mobile, climb, layout, comfort, training, flat.
+- [x] Other browser suites pass: hero (97), perf, action, spider-world, phone-swing, mobile, climb (26), layout, comfort, training, flat (219 checks; this run of flat included its headset part).
+- [x] Fixes found by `hero.mjs` and `climb.e2e.mjs` (both pass on main): a yank, an attack, a hit or a roll poses at once; the wall climb and the mantle stay on ones; a teleport poses at once and drops the time before it.
 - [ ] Hardware checks: a real phone and a pad. A Quest headset must show no change.
 - [ ] Archive this change after the hardware checks.
