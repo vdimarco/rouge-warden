@@ -29,6 +29,18 @@ const SETUP = () => {
       const x = c.getContext("2d"); x.drawImage(G.renderer.domElement, 0, 0, w, h);
       return Array.from(x.getImageData(0, 0, w, h).data);
     },
+    // the whole canvas after one real draw, as RGBA bytes, read through one canvas kept in main memory (a new canvas for each
+    // full-size read held hundreds of MB each, and the page ran out of memory later in the run)
+    grabFull() {
+      G.test.render();
+      const W = G.renderer.domElement.width, H = G.renderer.domElement.height;
+      if (!QA.full || QA.full.width !== W || QA.full.height !== H) {
+        QA.full = document.createElement("canvas"); QA.full.width = W; QA.full.height = H;
+        QA.fullX = QA.full.getContext("2d", { willReadFrequently: true });
+      }
+      QA.fullX.drawImage(G.renderer.domElement, 0, 0);
+      return QA.fullX.getImageData(0, 0, W, H).data;
+    },
   };
 };
 
@@ -283,19 +295,17 @@ try {
     QA.clear(); QA.street(); QA.step(5);
     // the share of pixels that turn darker (by over `by`, the three channels summed) when the lines (or the hatching) come on;
     // the hatching works on pixels that are dark already, so it moves them by less
-    const W = G.renderer.domElement.width, H = G.renderer.domElement.height;
     const darker = (a, b, by) => { let n = 0; for (let i = 0; i < a.length; i += 4) if ((b[i] + b[i + 1] + b[i + 2]) - (a[i] + a[i + 1] + a[i + 2]) > by) n++; return n / (a.length / 4); };
     const tune = G.test.verse();
-    G.test.verse({ lines: 0, hatch: 0 }); const none = QA.grab(W, H);
-    G.test.verse({ lines: tune.lines, hatch: 0 }); const lines = QA.grab(W, H);
-    G.test.verse({ lines: 0, hatch: tune.hatch }); const hatch = QA.grab(W, H);
+    G.test.verse({ lines: 0, hatch: 0 }); const none = QA.grabFull();
+    G.test.verse({ lines: tune.lines, hatch: 0 }); const lines = QA.grabFull();
+    G.test.verse({ lines: 0, hatch: tune.hatch }); const hatch = QA.grabFull();
     G.test.verse({ lines: tune.lines, hatch: tune.hatch });
     return { lines: darker(lines, none, 60), hatch: darker(hatch, none, 12) };
   });
-  console.log("INFO ink", JSON.stringify(ink), new Date().toISOString());
+  console.log("INFO ink", JSON.stringify(ink));
   check(ink.lines > 0.001 && ink.lines < 0.2, "ink lines darken the edges of the street (" + (ink.lines * 100).toFixed(2) + "% of pixels)", ink);
   check(ink.hatch > 0.002 && ink.hatch < 0.3, "hatching darkens the deepest shadows (" + (ink.hatch * 100).toFixed(2) + "% of pixels)", ink);
-  console.log("INFO mood start", new Date().toISOString());
   const mood = await page.evaluate(() => {
     QA.clear(); QA.street(); QA.draw(30, 0.1);
     const calm = G.test.action().verse.mood;
