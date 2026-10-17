@@ -7,7 +7,7 @@
 import { TUNE } from './tune.js';
 import { emit, E } from './events.js';
 import { createShip, bpsOf, windowOf, slamAim, sweepTime } from './handle.js';
-import { resolve, wrap, psiAt, railOn } from './course/kinds.js';
+import { resolve, wrap, psiAt, railOn, halfAt, wellCore } from './course/kinds.js';
 import { beatsPerS } from './ringmath.js';
 import { mulberry32, hashSeed } from '../../light-years-home/core/rng.js';
 import { bossInit, bossThink, bossFast, BOSSES } from './bosses.js';
@@ -351,10 +351,39 @@ function gather(race, r, T, look) {
     if (it.end !== undefined) {
       const tEnd = (it.end - d) / bps;
       if (tEnd <= 0 || t > look) continue;
-      out.push({ it, t: Math.max(0, t), tEnd, bps });
-    } else if (t > 0 && t <= look) out.push({ it, t, tEnd: t, bps });
+      const x = { it, t: Math.max(0, t), tEnd, bps, ss: null, ps: null, near: Infinity };
+      if (it.kind === 'rail') railSamples(x, r, look);
+      out.push(x);
+    } else if (t > 0 && t <= look) out.push({ it, t, tEnd: t, bps, ss: null, ps: null, near: nearOf(it, r, T) });
   }
   return out;
+}
+
+// A rail's samples for lineCost, the same for every bearing tried this think: the times it is judged at and its
+// bearing then (NaN while it is off). Speed only: lineCost reads these instead of calling railOn and psiAt per try.
+function railSamples(x, r, look) {
+  const it = x.it, ss = [], ps = [];
+  for (let j = -1; j < SAMPLES.length; j++) {
+    const s = j < 0 ? x.t : SAMPLES[j];
+    if (j < 0 && !(x.t > 0)) continue;
+    if (s < x.t || s > x.tEnd || s > look) continue;
+    const beat = r.dist + x.bps * s;
+    ss.push(s);
+    ps.push(railOn(it, beat) ? psiAt(it, beat) : NaN);
+  }
+  x.ss = ss;
+  x.ps = ps;
+}
+
+// For an instant item, the edge gap past which it adds nothing to a line's cost (no hit, graze, hairline or margin
+// term), measured as resolve does: |bearing − psi| − ship half − the mass's half. Infinity: always judge it (walls,
+// gates). Speed only: lineCost skips resolve for an item it passes further off than this.
+function nearOf(it, r, T) {
+  if (it.kind === 'knot') return { half: it.half || 0 };
+  if (it.kind === 'pulse') return { half: halfAt(it, it.beat) };
+  if (it.kind === 'well') return { half: wellCore(it, T) };
+  if (it.kind === 'pickup') return { half: 0, pick: true };
+  return Infinity;
 }
 
 const pathAt = (cur, delta, t, rate) => cur + (delta >= 0 ? 1 : -1) * Math.min(Math.abs(delta), rate * t);
@@ -367,14 +396,12 @@ function lineCost(race, r, A, T, list, delta, o) {
     if (it.end !== undefined) {
       if (it.kind !== 'rail') continue;
       let prev = NaN, soft = 0;
-      for (let j = -1; j < SAMPLES.length; j++) {
-        const s = j < 0 ? x.t : SAMPLES[j];
-        if (j < 0 && !(x.t > 0)) continue;
-        if (s < x.t || s > x.tEnd || s > look) continue;
-        const beat = r.dist + x.bps * s;
+      const ss = x.ss, ps = x.ps;
+      for (let j = 0; j < ss.length; j++) {
+        const s = ss[j], psi = ps[j];
         const b = pathAt(cur, delta, s, rate);
-        if (!railOn(it, beat)) { prev = NaN; continue; }
-        const dd = wrap(b - psiAt(it, beat));
+        if (psi !== psi) { prev = NaN; continue; }    // NaN: the rail is off then
+        const dd = wrap(b - psi);
         if (s === 0) { prev = dd; continue; }          // now is not a choice: judge from the first step on
         const g = Math.abs(dd) - r.half - it.half;
         if (g < 0 || (finite(prev) && (prev < 0) !== (dd < 0) && Math.abs(dd) < 90)) {
@@ -391,6 +418,12 @@ function lineCost(race, r, A, T, list, delta, o) {
       continue;
     }
     const b = pathAt(cur, delta, x.t, rate);
+    const nr = x.near;
+    if (nr !== Infinity) {
+      // too far off to count: skip resolve (the same answer, no allocation)
+      const g = Math.abs(wrap(b - it.psi)) - r.half - nr.half;
+      if (nr.pick ? g > (T.PICK_DEG ?? TUNE.PICK_DEG) : g >= Math.max(T.GRAZE, T.HAIR, o.margin)) continue;
+    }
     const res = resolve(it, b, it.beat, T, r.half);
     if (it.kind === 'pickup') {
       if (res.take && it.type === 'fuel' && r.fuelCap > 0) c -= 3 * (1 - r.fuel / r.fuelCap);
@@ -410,12 +443,13 @@ function lineCost(race, r, A, T, list, delta, o) {
   }
   const b = cur + delta;
   let waked = false;
-  for (const s of race.ships) {
-    if (s === r || isOut(s) || s.whip) continue;
-    const z = aheadS(r, s, T);
+  // the other ships, as bestLine found them this think (o.others: bearing, room, wake, half)
+  const others = o.others;
+  for (let i = 0; i < others.length; i++) {
+    const s = others[i];
     // room: a ship abreast is a bump waiting to happen (unless it is the prey)
-    if (Math.abs(z) <= T.CONTACT_Z * 1.5 && s.id !== o.prey && Math.abs(wrap(b - s.bearing)) < r.half + s.half + 3) c += 12;
-    if (!waked && o.wakeW > 0 && z >= T.WAKE_NEAR && z <= T.WAKE_FAR && Math.abs(wrap(b - s.bearing)) <= 5) {
+    if (s.room && Math.abs(wrap(b - s.bearing)) < r.half + s.half + 3) c += 12;
+    if (!waked && s.wake && Math.abs(wrap(b - s.bearing)) <= 5) {
       c -= o.wakeW;
       waked = true;
     }
@@ -429,6 +463,16 @@ function lineCost(race, r, A, T, list, delta, o) {
 // wantW, prev, rate }.
 function bestLine(race, r, A, T, o) {
   const list = gather(race, r, T, T.LOOK);
+  // the other ships' place in seconds does not change while the bearings are tried: find it once
+  const others = [];
+  for (const s of race.ships) {
+    if (s === r || isOut(s) || s.whip) continue;
+    const z = aheadS(r, s, T);
+    const room = Math.abs(z) <= T.CONTACT_Z * 1.5 && s.id !== o.prey;
+    const wake = o.wakeW > 0 && z >= T.WAKE_NEAR && z <= T.WAKE_FAR;
+    if (room || wake) others.push({ bearing: s.bearing, half: s.half, room, wake });
+  }
+  o.others = others;
   o.rateR = guarded(race, r, T, 1) ? GUARD_RATE : o.rate;
   o.rateL = guarded(race, r, T, -1) ? GUARD_RATE : o.rate;
   let best = 0, bc = Infinity;
