@@ -1,0 +1,26 @@
+{
+  "passed": true,
+  "command": [
+    "blender",
+    "-b",
+    "-t",
+    "4",
+    "--python-exit-code",
+    "1",
+    "--python",
+    "Scripts/test_tripo_motion_frames.py"
+  ],
+  "process_exit_code": 0,
+  "recipe_sha256": "cca7cdc012bde7585a57f9f8744d2bc5b8a95521a495bd2d264c2e599448733d",
+  "test_sha256": "43729cda14e5586e8617a253e358a5d5131248ad5f416cf1ae54578446d305ca",
+  "log_sha256": "6d298277379af82a385b94209a1ba7f612d279d01e6f4f990150d4a8c0095c12",
+  "cases": [
+    "Proper heading and unchanged gravity",
+    "Component-delta conjugation identity",
+    "Untransported delta negative",
+    "Mirrored labels rejected",
+    "Opposed facing rejected",
+    "Upside-down reference rejected"
+  ],
+  "synthetic_math_only": true
+}

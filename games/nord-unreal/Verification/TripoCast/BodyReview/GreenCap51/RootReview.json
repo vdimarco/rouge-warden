@@ -1,0 +1,15 @@
+{
+  "reviewer": "root",
+  "source_body_sha256": "729b56b0ed6d74be020f73ea87513d3963f6fb77a630d9f978ce66f0570599f6",
+  "inspected_actual_cpu_views": ["front.png", "hand-right.png", "face-threequarter.png"],
+  "reference_inspected": true,
+  "body_identity_and_adult_proportions_suitable_for_bounded_rig_trial": true,
+  "observations": [
+    "Backward green cap, moustache/goatee and navy/red 51 jersey remain recognizable; face and adult leg proportions are substantially less mascot-like than the older model.",
+    "Hand has a distinct thumb but the four fingers form a coarse closely joined slab with shallow valleys. A rig cannot create missing finger separation; weighted finger motion and deformation still require inspection.",
+    "Sleeve numbering/distorted wrapping and inferred backside remain source limitations recorded by the independent review."
+  ],
+  "free_biped_check_passed": true,
+  "paid_trial_scope": "One existing-source Tripo v3 Unreal rig within the available 75 credits; judge actual returned skinning before final acceptance or wider promotion.",
+  "final_art_or_native_acceptance": false
+}

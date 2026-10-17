@@ -1,0 +1,206 @@
+{
+  "passed": true,
+  "scope": "Actual Tripo H3.1 BlackCap static source contract and source-side adapter only",
+  "source": {
+    "path": "Data/GraphicNovel/Crew/BlackCap/tripo-h31-body-20261017/body.glb",
+    "sha256": "ff4d393b98d5fba212295305b714ab7fce04229e34b14196c7e2f4c210467d70"
+  },
+  "recipes": {
+    "prepare_tripo_cast_surface.py": {
+      "path": "Scripts/prepare_tripo_cast_surface.py",
+      "sha256": "ae7593cf4bf3096cae4e3462ed8e0458b5a317cceb1e83e4b9e6ce2c5747233a"
+    },
+    "test_tripo_static_source.py": {
+      "path": "Scripts/test_tripo_static_source.py",
+      "sha256": "11c56a16490204ac0caa6dd345709b351617f58fa761af041f6dc5b5f0423b1f"
+    }
+  },
+  "execution": {
+    "command": [
+      "blender",
+      "-b",
+      "-t",
+      "4",
+      "--python-exit-code",
+      "1",
+      "--python",
+      "Scripts/test_tripo_static_source.py",
+      "--",
+      "--output",
+      "Saved/Tests/TripoStaticSource/BlackCap-v3"
+    ],
+    "process_exit_code": 0,
+    "test_receipt": {
+      "path": "Saved/Tests/TripoStaticSource/BlackCap-v3/Test.json",
+      "sha256": "e383b1032b43c048d9d4af3a6a7a0efce369a400ab093c00c1c277dad3970cf7"
+    },
+    "log": {
+      "path": "Saved/Tests/TripoStaticSource/BlackCap-v3.log",
+      "sha256": "29665b7809cd8916f5a06ca272297f66141c388a8314e10dc4da9a62b4fce3e4"
+    },
+    "initial_inventory": {
+      "path": "Saved/Tests/TripoStaticSource/BlackCap-v1/Inventory.json",
+      "sha256": "7be7cbcb3e74f88ecd23cd5735d034331de622825f5a1f75061c378e699b04e2"
+    },
+    "inventory_recipe": {
+      "path": "Saved/Tests/TripoStaticSource/BlackCap-v1/inventory.py",
+      "sha256": "9fc27f24924d64773e47df6bd3861780f7232b05feeb972e0749cc113f626af9"
+    },
+    "inventory_log": {
+      "path": "Saved/Tests/TripoStaticSource/BlackCap-v1/inventory.log",
+      "sha256": "0d7da2373692b7825137958717bc42da35e182ca08db82637acddc6232e8b9be"
+    }
+  },
+  "static_source_contract": {
+    "bones": 0,
+    "skins": 0,
+    "animations": 0,
+    "mesh_count": 1,
+    "material_count": 1,
+    "vertices": 53249,
+    "triangles": 96140,
+    "uv_layers": 1,
+    "unique_uv_triangle_keys": 96140,
+    "height_m": 0.9794251918792725,
+    "mesh_matrix_world": [
+      [
+        0.9998900890350342,
+        0.014820639044046402,
+        0.0,
+        0.0
+      ],
+      [
+        -0.014820639044046402,
+        0.9998900890350342,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        1.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ]
+    ],
+    "normal_sha256": "193be451678e0f69245b33436d692377ad680c9a51601d4d7ad5c746e7292609",
+    "normal_texture_index": 2,
+    "normal_colorspace": "Non-Color",
+    "normal_size": [
+      4096,
+      4096
+    ],
+    "external_normal_receipt_available": false
+  },
+  "world_bounds_m": {
+    "min": [
+      -0.10215301066637039,
+      -0.3140053451061249,
+      -0.48968902230262756
+    ],
+    "max": [
+      0.10347381234169006,
+      0.31221646070480347,
+      0.4897361695766449
+    ],
+    "size": [
+      0.20562682300806046,
+      0.6262218058109283,
+      0.9794251918792725
+    ]
+  },
+  "embedded_images": [
+    {
+      "index": 0,
+      "name": "Color_7ea82881-e750-48a7-95aa-a55da483d18f",
+      "mime": "image/jpeg",
+      "bytes": 2948912,
+      "sha256": "8ce8eff69e6f9d71e063dacb34f628e5a21fbd1b3c2cf9dda648eb47a7581156"
+    },
+    {
+      "index": 1,
+      "name": "ORM_7ea82881-e750-48a7-95aa-a55da483d18f",
+      "mime": "image/jpeg",
+      "bytes": 1571515,
+      "sha256": "e311d9760701b30e416273e7144cd815fdeef6731c7e96f3b41cebf84095f23e"
+    },
+    {
+      "index": 2,
+      "name": "NormalGL_7ea82881-e750-48a7-95aa-a55da483d18f",
+      "mime": "image/png",
+      "bytes": 4059453,
+      "sha256": "193be451678e0f69245b33436d692377ad680c9a51601d4d7ad5c746e7292609"
+    }
+  ],
+  "original_material": {
+    "name": "tripo_material_7ea82881-e750-48a7-95aa-a55da483d18f",
+    "pbrMetallicRoughness": {
+      "baseColorFactor": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "baseColorTexture": {
+        "index": 0
+      },
+      "metallicFactor": 1.0,
+      "roughnessFactor": 1.0,
+      "metallicRoughnessTexture": {
+        "index": 1
+      }
+    },
+    "normalTexture": {
+      "index": 2,
+      "scale": 1.0
+    },
+    "doubleSided": false
+  },
+  "source_axes_note": "Blender world up is +Z; object matrix has approximately-0.849deg Z yaw and zero translation. Separate body-review views visually identify original local+X as front. Motion-source frame compatibility is not established.",
+  "negative_controls": [
+    "Unexpected skin groups on static source rejected",
+    "Animation data on static source rejected",
+    "Zero-bone source rejected in strict target mode",
+    "Tampered SHA rejected before outputs"
+  ],
+  "optional_external_normal_manifest_parser_only": true,
+  "parser_fixture_note": "A tiny ignored Saved FBX-shaped byte fixture tests path/SHA parsing only. It is never imported or accepted as model geometry or a rig.",
+  "source_hash_unchanged": true,
+  "target_rig_supplied_or_accepted": false,
+  "surface_transfer_or_full_roundtrip_verified": false,
+  "motion_verified": false,
+  "native_verified": false,
+  "rendered_by_this_task": false,
+  "provider_gate_policy": {
+    "required_bones": 61,
+    "real_weighted_finger_bones": 30,
+    "normalized_finite_weights": true,
+    "positive_influences_max": 4,
+    "unique_UV_geometry_bijection_required": true,
+    "source_provider_geometry_bound_m": 1e-05,
+    "provider_export_geometry_bound_m": 2e-06,
+    "normal_mean_p99_max_degrees": [
+      0.02,
+      0.1,
+      1.0
+    ]
+  },
+  "preservation": {
+    "pre_adapter_archive": "Saved/Recovery/tripo-static-source-adaptation-20261017",
+    "motion_helper_unchanged_sha256": "659d041dad7470f12b5b1c2427dda8f70ff6d691f9ac215e021ca644815a8afa",
+    "frozen_pilot_surface_helper_unchanged_sha256": "934a10e3d471fb66f468a0c2c2b07b7fbb154ecb8c0d3652b99facb6bf85a277",
+    "no_further_Meshy_CPU_preparation": true,
+    "no_api_native_gpu_service_operations": true
+  },
+  "remaining": [
+    "Inspect the actual own Tripo FBX and verify its geometry/UV/skin/reference/material result against this original static GLB before any surface acceptance.",
+    "Current motion helper is a retained comparison recipe and must not be applied unchanged to unrelated Tripo geometry. Future motion requires a pinned own-body surface proof, measured height ratios and inspected anatomical frame/retarget pose.",
+    "Original generated height0.979425m and centered origin are source properties; restoring original scale is a different policy from selecting the intended native actor height.",
+    "No target-rig deformation, continuous motion, socket/grip, native/package performance or final graphics acceptance follows."
+  ]
+}

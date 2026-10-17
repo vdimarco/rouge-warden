@@ -1,0 +1,30 @@
+{
+  "endpoint_id": "meshy/v7.1/image-to-3d",
+  "checked_at": "2026-10-17T21:57:57.438Z",
+  "account_status": "ready",
+  "canonical_endpoint_confirmed": true,
+  "base_pricing": {
+    "prices": [
+      {
+        "endpoint_id": "meshy/v7.1/image-to-3d",
+        "unit_price": 0.8,
+        "unit": "generations",
+        "currency": "USD"
+      }
+    ],
+    "next_cursor": null,
+    "has_more": false
+  },
+  "published_configured_usd": 1.52,
+  "configured_price_source": "https://fal.ai/models/meshy/v7.1/image-to-3d",
+  "per_job_reservation_usd": 2,
+  "remaining_prior_fal_usd": 21,
+  "planned_jobs": 7,
+  "paid_jobs_submitted": 0,
+  "tripo_balance_credits": 75,
+  "tripo_frozen_credits": 0,
+  "rig_price_credits": 25,
+  "seven_rigs_credits": 175,
+  "additional_rig_credits_needed": 100,
+  "credential_value_retained": false
+}

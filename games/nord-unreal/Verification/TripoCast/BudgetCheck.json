@@ -1,0 +1,13 @@
+{
+  "passed": true,
+  "actual_this_cast_tripo_credits": 245,
+  "comparison_rig_credits": 75,
+  "new_body_and_rig_credits": 170,
+  "latest_available": 30,
+  "latest_frozen": 0,
+  "remaining_five_cost": 425,
+  "shortfall": 395,
+  "requested_topup": 400,
+  "automatic_paid_retries": 0,
+  "agent_credit_purchases": 0
+}

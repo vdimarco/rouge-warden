@@ -1,0 +1,348 @@
+{
+  "at_utc": "2026-10-17T23:00:48.691236+00:00",
+  "authorization": "User explicitly selected Tripo for both bodies and rigs; top-up freshly confirmed200available/0frozen",
+  "generation_endpoint": "/v3/generation/image-to-model",
+  "body_model": "v3.1-20260211",
+  "rig_model": "v3.0-20260909",
+  "texture_model": "v3.5-20260815",
+  "docs": "https://developers.tripo3d.ai/en/docs/generation-image-to-model/standard",
+  "pricing": "https://developers.tripo3d.ai/en/pricing",
+  "body_base_textured_credits": 30,
+  "detailed_geometry_addon_credits": 20,
+  "detailed_texture_addon_credits": 10,
+  "body_total_credits": 60,
+  "rig_credits": 25,
+  "each_body_and_rig_credits": 85,
+  "seven_total_credits": 595,
+  "balance_before_pilot_credits": 200,
+  "remaining_not_committed_credits": 30,
+  "additional_credits_requested": 400,
+  "automatic_paid_retries": false,
+  "pilot": "BlackCap: useful comparison against the measured Meshy glasses defect",
+  "references_pinned": true,
+  "network_jobs_submitted_by_this_plan_writer": 0,
+  "characters": [
+    {
+      "character": "GreenCap51",
+      "style": 3,
+      "reference": {
+        "path": "games/nord-unreal/Data/GraphicNovel/Crew/GreenCap51/reference.png",
+        "sha256": "7998152ab482a55571f6ffa113ef901988ccf4cfd2bfd6c9fa79134cc37d8ed0",
+        "dimensions": [
+          1024,
+          1536
+        ],
+        "url": "https://raw.githubusercontent.com/vdimarco/rouge-warden/d33f5a4e8b2a7b096ebb8bf6a584394416df77d9/games/nord-unreal/Data/GraphicNovel/Crew/GreenCap51/reference.png"
+      },
+      "review": {
+        "path": "games/nord-unreal/Data/GraphicNovel/Crew/GreenCap51/source-review.json",
+        "sha256": "8ac31eb3d9ccf23e0e55cf9efa9be2943a7b6df0a96380e50251ef4b81bf7d93"
+      },
+      "identity_constraints": {
+        "identity": "Recognizable mature face, dark hair, moustache/goatee and backward green cap retained; closed-mouth expression remains calm.",
+        "outfit": "Navy jersey with red trim and white 51 chest/sleeve numbers, navy shorts and gray running shoes retained.",
+        "mature_adult_proportions": true,
+        "preserve_reference_palette_markings_accessories": true,
+        "new_wardrobe": false
+      },
+      "request": {
+        "input": "https://raw.githubusercontent.com/vdimarco/rouge-warden/d33f5a4e8b2a7b096ebb8bf6a584394416df77d9/games/nord-unreal/Data/GraphicNovel/Crew/GreenCap51/reference.png",
+        "model": "v3.1-20260211",
+        "texture": true,
+        "pbr": true,
+        "geometry_quality": "detailed",
+        "texture_quality": "detailed",
+        "texture_version": "v3.5-20260815",
+        "delight": true,
+        "face_limit": 100000,
+        "texture_alignment": "original_image",
+        "orientation": "align_image",
+        "enable_image_autofix": false,
+        "auto_size": false,
+        "export_uv": true
+      },
+      "job_status": "not_submitted",
+      "task_id": null
+    },
+    {
+      "character": "Memphis33",
+      "style": 4,
+      "reference": {
+        "path": "games/nord-unreal/Data/GraphicNovel/Crew/Memphis33/reference.png",
+        "sha256": "f47a69cc5330ab37e056235c3d2d8c2e84fe717b0d07e189c5a1aa1aacd6302d",
+        "dimensions": [
+          1024,
+          1536
+        ],
+        "url": "https://raw.githubusercontent.com/vdimarco/rouge-warden/d33f5a4e8b2a7b096ebb8bf6a584394416df77d9/games/nord-unreal/Data/GraphicNovel/Crew/Memphis33/reference.png"
+      },
+      "review": {
+        "path": "games/nord-unreal/Data/GraphicNovel/Crew/Memphis33/source-review.json",
+        "sha256": "3419b2477e20e2e09b7cdfb17142239b619d8e4ab391f4a26e161f4f4d40684b"
+      },
+      "identity_constraints": {
+        "identity": "Recognizable mature face, beard, navy forward cap and brown-tinted rectangular glasses retained; closed-mouth expression remains calm.",
+        "outfit": "Red sleeveless jersey with white trim, Memphis script and large 33, navy shorts, white calf socks and white high-top sneakers retained.",
+        "mature_adult_proportions": true,
+        "preserve_reference_palette_markings_accessories": true,
+        "new_wardrobe": false
+      },
+      "request": {
+        "input": "https://raw.githubusercontent.com/vdimarco/rouge-warden/d33f5a4e8b2a7b096ebb8bf6a584394416df77d9/games/nord-unreal/Data/GraphicNovel/Crew/Memphis33/reference.png",
+        "model": "v3.1-20260211",
+        "texture": true,
+        "pbr": true,
+        "geometry_quality": "detailed",
+        "texture_quality": "detailed",
+        "texture_version": "v3.5-20260815",
+        "delight": true,
+        "face_limit": 100000,
+        "texture_alignment": "original_image",
+        "orientation": "align_image",
+        "enable_image_autofix": false,
+        "auto_size": false,
+        "export_uv": true
+      },
+      "job_status": "not_submitted",
+      "task_id": null
+    },
+    {
+      "character": "BlackCap",
+      "style": 5,
+      "reference": {
+        "path": "games/nord-unreal/Data/GraphicNovel/Crew/BlackCap/reference.png",
+        "sha256": "baed5a933fd2c7bcd6e2979836caeb92f7233beb4125ceb6eac2c920822cc3a9",
+        "dimensions": [
+          1024,
+          1536
+        ],
+        "url": "https://raw.githubusercontent.com/vdimarco/rouge-warden/d33f5a4e8b2a7b096ebb8bf6a584394416df77d9/games/nord-unreal/Data/GraphicNovel/Crew/BlackCap/reference.png"
+      },
+      "review": {
+        "path": "games/nord-unreal/Data/GraphicNovel/Crew/BlackCap/source-review.json",
+        "sha256": "d9176a9966b90215568cba34e6e80d60905fc50afb3869faef92c5249fde6c83"
+      },
+      "identity_constraints": {
+        "identity": "Recognizable face, complexion, full beard, black cap and rectangular glasses with visible eyes retained.",
+        "outfit": "Black T-shirt, charcoal cargo shorts and black sneakers retained with cleaner dimensional material boundaries.",
+        "mature_adult_proportions": true,
+        "preserve_reference_palette_markings_accessories": true,
+        "new_wardrobe": false
+      },
+      "request": {
+        "input": "https://raw.githubusercontent.com/vdimarco/rouge-warden/d33f5a4e8b2a7b096ebb8bf6a584394416df77d9/games/nord-unreal/Data/GraphicNovel/Crew/BlackCap/reference.png",
+        "model": "v3.1-20260211",
+        "texture": true,
+        "pbr": true,
+        "geometry_quality": "detailed",
+        "texture_quality": "detailed",
+        "texture_version": "v3.5-20260815",
+        "delight": true,
+        "face_limit": 100000,
+        "texture_alignment": "original_image",
+        "orientation": "align_image",
+        "enable_image_autofix": false,
+        "auto_size": false,
+        "export_uv": true
+      },
+      "job_status": "completed_downloaded",
+      "task_id": "7ea82881-e750-48a7-95aa-a55da483d18f",
+      "body_path": "Data/GraphicNovel/Crew/BlackCap/tripo-h31-body-20261017/body.glb",
+      "body_sha256": "ff4d393b98d5fba212295305b714ab7fce04229e34b14196c7e2f4c210467d70",
+      "credits_consumed": 60,
+      "compatibility": "Free biped check passed; actual eight-view body review allowed bounded rig trial",
+      "rig_status": "completed_downloaded",
+      "rig_task_id": "2fd12b3e-1a82-45da-b3a4-93e9f2649c13",
+      "rig_path": "Data/GraphicNovel/Crew/BlackCap/tripo-h31-rig-20261017/rig.fbx",
+      "rig_sha256": "54db95e20649c34c1d6dd2f28e1a1ec44a91250b0f73f6041774ac722764848b",
+      "actual_body_and_rig_credits": 85,
+      "body_review": "BodyReview/BlackCap/VisualReview.md",
+      "native_or_art_accepted": false
+    },
+    {
+      "character": "WhiteCap",
+      "style": 6,
+      "reference": {
+        "path": "games/nord-unreal/Data/GraphicNovel/Crew/WhiteCap/reference.png",
+        "sha256": "61bbfd6c38e51506f59f8f1293b44f89bef39d148d9d3c948906d8be8e24fb33",
+        "dimensions": [
+          1024,
+          1536
+        ],
+        "url": "https://raw.githubusercontent.com/vdimarco/rouge-warden/d33f5a4e8b2a7b096ebb8bf6a584394416df77d9/games/nord-unreal/Data/GraphicNovel/Crew/WhiteCap/reference.png"
+      },
+      "review": {
+        "path": "games/nord-unreal/Data/GraphicNovel/Crew/WhiteCap/source-review.json",
+        "sha256": "f13e7bcd90e07bf60de79c6a3bbe23f3e742e24dbd62e8b777cb8a99597a0ca6"
+      },
+      "identity_constraints": {
+        "identity": "Recognizable mature face, full dark beard, rectangular glasses and backward white mesh cap retained; calm closed-mouth expression.",
+        "outfit": "Plain black T-shirt, plain gray shorts and gray-and-white running shoes retained with broad adult body frame.",
+        "mature_adult_proportions": true,
+        "preserve_reference_palette_markings_accessories": true,
+        "new_wardrobe": false
+      },
+      "request": {
+        "input": "https://raw.githubusercontent.com/vdimarco/rouge-warden/d33f5a4e8b2a7b096ebb8bf6a584394416df77d9/games/nord-unreal/Data/GraphicNovel/Crew/WhiteCap/reference.png",
+        "model": "v3.1-20260211",
+        "texture": true,
+        "pbr": true,
+        "geometry_quality": "detailed",
+        "texture_quality": "detailed",
+        "texture_version": "v3.5-20260815",
+        "delight": true,
+        "face_limit": 100000,
+        "texture_alignment": "original_image",
+        "orientation": "align_image",
+        "enable_image_autofix": false,
+        "auto_size": false,
+        "export_uv": true
+      },
+      "job_status": "not_submitted",
+      "task_id": null
+    },
+    {
+      "character": "RedJersey",
+      "style": 7,
+      "reference": {
+        "path": "games/nord-unreal/Data/GraphicNovel/Crew/RedJersey/reference.png",
+        "sha256": "3270ff8a8a29209ae1b1e7cb454a7883375b955adc651b12feb71332a2086bac",
+        "dimensions": [
+          1024,
+          1536
+        ],
+        "url": "https://raw.githubusercontent.com/vdimarco/rouge-warden/d33f5a4e8b2a7b096ebb8bf6a584394416df77d9/games/nord-unreal/Data/GraphicNovel/Crew/RedJersey/reference.png"
+      },
+      "review": {
+        "path": "games/nord-unreal/Data/GraphicNovel/Crew/RedJersey/source-review.json",
+        "sha256": "30fa7a9edd67cd96c4ecb09bd22da56602df61ab4ba4d82ae359c31c4be9c75a"
+      },
+      "identity_constraints": {
+        "identity": "Recognizable mature lean face, moustache/small goatee, backward navy cap and blue mirrored sunglasses retained; calm closed-mouth expression.",
+        "outfit": "Red button-front baseball jersey with navy/white piping and outlined white W chest emblem, black shorts and white/gray running shoes retained.",
+        "mature_adult_proportions": true,
+        "preserve_reference_palette_markings_accessories": true,
+        "new_wardrobe": false
+      },
+      "request": {
+        "input": "https://raw.githubusercontent.com/vdimarco/rouge-warden/d33f5a4e8b2a7b096ebb8bf6a584394416df77d9/games/nord-unreal/Data/GraphicNovel/Crew/RedJersey/reference.png",
+        "model": "v3.1-20260211",
+        "texture": true,
+        "pbr": true,
+        "geometry_quality": "detailed",
+        "texture_quality": "detailed",
+        "texture_version": "v3.5-20260815",
+        "delight": true,
+        "face_limit": 100000,
+        "texture_alignment": "original_image",
+        "orientation": "align_image",
+        "enable_image_autofix": false,
+        "auto_size": false,
+        "export_uv": true
+      },
+      "job_status": "not_submitted",
+      "task_id": null
+    },
+    {
+      "character": "LimeJacket",
+      "style": 8,
+      "reference": {
+        "path": "games/nord-unreal/Data/GraphicNovel/Crew/LimeJacket/reference.png",
+        "sha256": "29b9afda5d1e68c64d0b67e8faa843f7b4aee676a5c218b530eedba3969f14dd",
+        "dimensions": [
+          1024,
+          1536
+        ],
+        "url": "https://raw.githubusercontent.com/vdimarco/rouge-warden/d33f5a4e8b2a7b096ebb8bf6a584394416df77d9/games/nord-unreal/Data/GraphicNovel/Crew/LimeJacket/reference.png"
+      },
+      "review": {
+        "path": "games/nord-unreal/Data/GraphicNovel/Crew/LimeJacket/source-review.json",
+        "sha256": "031c0c77448420f8983e59fef7e8c6400a06b3b44e69bbd3c96ef54a2fa58779"
+      },
+      "identity_constraints": {
+        "identity": "Recognizable older face, gray wavy hair and beard, black beanie, calm brow and gentle closed-mouth expression retained.",
+        "outfit": "Lime-and-black zip jacket, red-and-black neck gaiter, black trousers with white side piping and gray sneakers retained.",
+        "mature_adult_proportions": true,
+        "preserve_reference_palette_markings_accessories": true,
+        "new_wardrobe": false
+      },
+      "request": {
+        "input": "https://raw.githubusercontent.com/vdimarco/rouge-warden/d33f5a4e8b2a7b096ebb8bf6a584394416df77d9/games/nord-unreal/Data/GraphicNovel/Crew/LimeJacket/reference.png",
+        "model": "v3.1-20260211",
+        "texture": true,
+        "pbr": true,
+        "geometry_quality": "detailed",
+        "texture_quality": "detailed",
+        "texture_version": "v3.5-20260815",
+        "delight": true,
+        "face_limit": 100000,
+        "texture_alignment": "original_image",
+        "orientation": "align_image",
+        "enable_image_autofix": false,
+        "auto_size": false,
+        "export_uv": true
+      },
+      "job_status": "not_submitted",
+      "task_id": null
+    },
+    {
+      "character": "Topknot",
+      "style": 10,
+      "reference": {
+        "path": "games/nord-unreal/Data/GraphicNovel/Crew/Topknot/reference.png",
+        "sha256": "ea303ba5b08813fb7ff5c3da1eae5d842094a0687f78a06e0d4abed158ab7b3b",
+        "dimensions": [
+          1024,
+          1536
+        ],
+        "url": "https://raw.githubusercontent.com/vdimarco/rouge-warden/d33f5a4e8b2a7b096ebb8bf6a584394416df77d9/games/nord-unreal/Data/GraphicNovel/Crew/Topknot/reference.png"
+      },
+      "review": {
+        "path": "games/nord-unreal/Data/GraphicNovel/Crew/Topknot/source-review.json",
+        "sha256": "33955a1524945fbedbc1b605bcb9da31f188977764d6265ced243df5c5a5f8b2"
+      },
+      "identity_constraints": {
+        "identity": "Recognizable mature lean face, moustache/goatee, dark sunglasses, high bun and loose dark curls retained; calm closed-mouth expression.",
+        "outfit": "Open-collar white short-sleeve button shirt, navy shorts, white/navy running shoes and black crossbody strap/bag with visible white/pale-blue contents retained.",
+        "mature_adult_proportions": true,
+        "preserve_reference_palette_markings_accessories": true,
+        "new_wardrobe": false
+      },
+      "request": {
+        "input": "https://raw.githubusercontent.com/vdimarco/rouge-warden/d33f5a4e8b2a7b096ebb8bf6a584394416df77d9/games/nord-unreal/Data/GraphicNovel/Crew/Topknot/reference.png",
+        "model": "v3.1-20260211",
+        "texture": true,
+        "pbr": true,
+        "geometry_quality": "detailed",
+        "texture_quality": "detailed",
+        "texture_version": "v3.5-20260815",
+        "delight": true,
+        "face_limit": 100000,
+        "texture_alignment": "original_image",
+        "orientation": "align_image",
+        "enable_image_autofix": false,
+        "auto_size": false,
+        "export_uv": true
+      },
+      "job_status": "completed_downloaded",
+      "task_id": "7c59f469-ad8a-4825-913f-14a69d0ba61b",
+      "body_path": "Data/GraphicNovel/Crew/Topknot/tripo-h31-body-20261017/body.glb",
+      "body_sha256": "621c65ce305a29d27b7ee974ee928011c3a0d78a979bf9cc3b73ecb13d54fae2",
+      "credits_consumed": 60,
+      "compatibility": "Free biped check passed; actual eight-view body review allowed bounded rig trial",
+      "rig_status": "completed_downloaded",
+      "rig_task_id": "38b3289d-c680-40df-b1dc-2506e8fe6fb7",
+      "rig_path": "Data/GraphicNovel/Crew/Topknot/tripo-h31-rig-20261017/rig.fbx",
+      "rig_sha256": "9cfeefead9c03472bb8f718fe96e403e79f5eab07ea3f10a2ee07488fa41fb21",
+      "actual_body_and_rig_credits": 85,
+      "body_review": "BodyReview/Topknot/VisualReview.md",
+      "native_or_art_accepted": false
+    }
+  ],
+  "limits": [
+    "No Tripo body output, rig, hands, native motion or final art accepted yet.",
+    "Actual output bone/mesh/material/coordinate contracts must be inspected before adapting old helpers.",
+    "No more fal jobs; completed Meshy bodies/derivedrigs remain comparison evidence only."
+  ],
+  "pilots_reserved_credits": 170
+}

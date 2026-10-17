@@ -1,0 +1,315 @@
+{
+  "max": {
+    "scale_vs_provider": 1.245737075805664e-05,
+    "scale_vs_fresh_bind": 2.980232238769531e-07,
+    "keyed_scale_vs_one": 1.1920928955078125e-07
+  },
+  "per_bone": {
+    "root": {
+      "scale_vs_provider": 0.0,
+      "scale_vs_fresh_bind": 0.0,
+      "keyed_scale_vs_one": 0.0
+    },
+    "pelvis": {
+      "scale_vs_provider": 2.384185791015625e-07,
+      "scale_vs_fresh_bind": 0.0,
+      "keyed_scale_vs_one": 0.0
+    },
+    "spine_01": {
+      "scale_vs_provider": 5.960464477539063e-08,
+      "scale_vs_fresh_bind": 0.0,
+      "keyed_scale_vs_one": 0.0
+    },
+    "spine_02": {
+      "scale_vs_provider": 5.960464477539063e-08,
+      "scale_vs_fresh_bind": 0.0,
+      "keyed_scale_vs_one": 0.0
+    },
+    "spine_03": {
+      "scale_vs_provider": 5.960464477539063e-08,
+      "scale_vs_fresh_bind": 5.960464477539063e-08,
+      "keyed_scale_vs_one": 5.960464477539063e-08
+    },
+    "clavicle_l": {
+      "scale_vs_provider": 1.1920928955078125e-07,
+      "scale_vs_fresh_bind": 1.1920928955078125e-07,
+      "keyed_scale_vs_one": 5.960464477539063e-08
+    },
+    "upperarm_l": {
+      "scale_vs_provider": 1.1920928955078125e-07,
+      "scale_vs_fresh_bind": 1.1920928955078125e-07,
+      "keyed_scale_vs_one": 0.0
+    },
+    "lowerarm_l": {
+      "scale_vs_provider": 5.960464477539063e-08,
+      "scale_vs_fresh_bind": 1.1920928955078125e-07,
+      "keyed_scale_vs_one": 0.0
+    },
+    "hand_l": {
+      "scale_vs_provider": 1.7881393432617188e-07,
+      "scale_vs_fresh_bind": 0.0,
+      "keyed_scale_vs_one": 5.960464477539063e-08
+    },
+    "index_01_l": {
+      "scale_vs_provider": 5.960464477539063e-08,
+      "scale_vs_fresh_bind": 5.960464477539063e-08,
+      "keyed_scale_vs_one": 5.960464477539063e-08
+    },
+    "index_02_l": {
+      "scale_vs_provider": 1.1920928955078125e-07,
+      "scale_vs_fresh_bind": 5.960464477539063e-08,
+      "keyed_scale_vs_one": 0.0
+    },
+    "index_03_l": {
+      "scale_vs_provider": 5.960464477539063e-08,
+      "scale_vs_fresh_bind": 1.1920928955078125e-07,
+      "keyed_scale_vs_one": 0.0
+    },
+    "middle_01_l": {
+      "scale_vs_provider": 1.1920928955078125e-07,
+      "scale_vs_fresh_bind": 1.1920928955078125e-07,
+      "keyed_scale_vs_one": 5.960464477539063e-08
+    },
+    "middle_02_l": {
+      "scale_vs_provider": 5.960464477539063e-08,
+      "scale_vs_fresh_bind": 0.0,
+      "keyed_scale_vs_one": 0.0
+    },
+    "middle_03_l": {
+      "scale_vs_provider": 0.0,
+      "scale_vs_fresh_bind": 5.960464477539063e-08,
+      "keyed_scale_vs_one": 0.0
+    },
+    "pinky_01_l": {
+      "scale_vs_provider": 1.1920928955078125e-07,
+      "scale_vs_fresh_bind": 1.1920928955078125e-07,
+      "keyed_scale_vs_one": 5.960464477539063e-08
+    },
+    "pinky_02_l": {
+      "scale_vs_provider": 5.960464477539063e-08,
+      "scale_vs_fresh_bind": 1.1920928955078125e-07,
+      "keyed_scale_vs_one": 1.1920928955078125e-07
+    },
+    "pinky_03_l": {
+      "scale_vs_provider": 1.1920928955078125e-07,
+      "scale_vs_fresh_bind": 1.1920928955078125e-07,
+      "keyed_scale_vs_one": 0.0
+    },
+    "ring_01_l": {
+      "scale_vs_provider": 2.384185791015625e-07,
+      "scale_vs_fresh_bind": 1.1920928955078125e-07,
+      "keyed_scale_vs_one": 0.0
+    },
+    "ring_02_l": {
+      "scale_vs_provider": 1.7881393432617188e-07,
+      "scale_vs_fresh_bind": 5.960464477539063e-08,
+      "keyed_scale_vs_one": 0.0
+    },
+    "ring_03_l": {
+      "scale_vs_provider": 1.1920928955078125e-07,
+      "scale_vs_fresh_bind": 5.960464477539063e-08,
+      "keyed_scale_vs_one": 0.0
+    },
+    "thumb_01_l": {
+      "scale_vs_provider": 1.1920928955078125e-07,
+      "scale_vs_fresh_bind": 1.1920928955078125e-07,
+      "keyed_scale_vs_one": 5.960464477539063e-08
+    },
+    "thumb_02_l": {
+      "scale_vs_provider": 5.960464477539063e-08,
+      "scale_vs_fresh_bind": 1.1920928955078125e-07,
+      "keyed_scale_vs_one": 1.1920928955078125e-07
+    },
+    "thumb_03_l": {
+      "scale_vs_provider": 1.7881393432617188e-07,
+      "scale_vs_fresh_bind": 1.1920928955078125e-07,
+      "keyed_scale_vs_one": 0.0
+    },
+    "lowerarm_twist_01_l": {
+      "scale_vs_provider": 5.960464477539063e-08,
+      "scale_vs_fresh_bind": 5.960464477539063e-08,
+      "keyed_scale_vs_one": 0.0
+    },
+    "upperarm_twist_01_l": {
+      "scale_vs_provider": 0.0,
+      "scale_vs_fresh_bind": 0.0,
+      "keyed_scale_vs_one": 0.0
+    },
+    "clavicle_r": {
+      "scale_vs_provider": 1.7881393432617188e-07,
+      "scale_vs_fresh_bind": 1.1920928955078125e-07,
+      "keyed_scale_vs_one": 5.960464477539063e-08
+    },
+    "upperarm_r": {
+      "scale_vs_provider": 1.1920928955078125e-07,
+      "scale_vs_fresh_bind": 1.1920928955078125e-07,
+      "keyed_scale_vs_one": 0.0
+    },
+    "lowerarm_r": {
+      "scale_vs_provider": 5.960464477539063e-08,
+      "scale_vs_fresh_bind": 1.1920928955078125e-07,
+      "keyed_scale_vs_one": 5.960464477539063e-08
+    },
+    "hand_r": {
+      "scale_vs_provider": 1.1920928955078125e-07,
+      "scale_vs_fresh_bind": 5.960464477539063e-08,
+      "keyed_scale_vs_one": 5.960464477539063e-08
+    },
+    "index_01_r": {
+      "scale_vs_provider": 5.960464477539063e-08,
+      "scale_vs_fresh_bind": 5.960464477539063e-08,
+      "keyed_scale_vs_one": 5.960464477539063e-08
+    },
+    "index_02_r": {
+      "scale_vs_provider": 1.1920928955078125e-07,
+      "scale_vs_fresh_bind": 2.980232238769531e-07,
+      "keyed_scale_vs_one": 5.960464477539063e-08
+    },
+    "index_03_r": {
+      "scale_vs_provider": 1.7881393432617188e-07,
+      "scale_vs_fresh_bind": 0.0,
+      "keyed_scale_vs_one": 0.0
+    },
+    "middle_01_r": {
+      "scale_vs_provider": 0.0,
+      "scale_vs_fresh_bind": 5.960464477539063e-08,
+      "keyed_scale_vs_one": 5.960464477539063e-08
+    },
+    "middle_02_r": {
+      "scale_vs_provider": 3.5762786865234375e-07,
+      "scale_vs_fresh_bind": 2.980232238769531e-07,
+      "keyed_scale_vs_one": 1.1920928955078125e-07
+    },
+    "middle_03_r": {
+      "scale_vs_provider": 1.7881393432617188e-07,
+      "scale_vs_fresh_bind": 0.0,
+      "keyed_scale_vs_one": 0.0
+    },
+    "pinky_01_r": {
+      "scale_vs_provider": 1.1920928955078125e-07,
+      "scale_vs_fresh_bind": 1.7881393432617188e-07,
+      "keyed_scale_vs_one": 5.960464477539063e-08
+    },
+    "pinky_02_r": {
+      "scale_vs_provider": 1.7881393432617188e-07,
+      "scale_vs_fresh_bind": 5.960464477539063e-08,
+      "keyed_scale_vs_one": 0.0
+    },
+    "pinky_03_r": {
+      "scale_vs_provider": 5.960464477539063e-08,
+      "scale_vs_fresh_bind": 5.960464477539063e-08,
+      "keyed_scale_vs_one": 0.0
+    },
+    "ring_01_r": {
+      "scale_vs_provider": 1.7881393432617188e-07,
+      "scale_vs_fresh_bind": 2.384185791015625e-07,
+      "keyed_scale_vs_one": 0.0
+    },
+    "ring_02_r": {
+      "scale_vs_provider": 1.1920928955078125e-07,
+      "scale_vs_fresh_bind": 5.960464477539063e-08,
+      "keyed_scale_vs_one": 0.0
+    },
+    "ring_03_r": {
+      "scale_vs_provider": 5.960464477539063e-08,
+      "scale_vs_fresh_bind": 1.1920928955078125e-07,
+      "keyed_scale_vs_one": 0.0
+    },
+    "thumb_01_r": {
+      "scale_vs_provider": 5.960464477539063e-08,
+      "scale_vs_fresh_bind": 1.7881393432617188e-07,
+      "keyed_scale_vs_one": 0.0
+    },
+    "thumb_02_r": {
+      "scale_vs_provider": 5.960464477539063e-08,
+      "scale_vs_fresh_bind": 2.384185791015625e-07,
+      "keyed_scale_vs_one": 5.960464477539063e-08
+    },
+    "thumb_03_r": {
+      "scale_vs_provider": 0.0,
+      "scale_vs_fresh_bind": 5.960464477539063e-08,
+      "keyed_scale_vs_one": 0.0
+    },
+    "lowerarm_twist_01_r": {
+      "scale_vs_provider": 5.960464477539063e-08,
+      "scale_vs_fresh_bind": 5.960464477539063e-08,
+      "keyed_scale_vs_one": 0.0
+    },
+    "upperarm_twist_01_r": {
+      "scale_vs_provider": 0.0,
+      "scale_vs_fresh_bind": 1.1920928955078125e-07,
+      "keyed_scale_vs_one": 0.0
+    },
+    "neck_01": {
+      "scale_vs_provider": 1.1920928955078125e-07,
+      "scale_vs_fresh_bind": 5.960464477539063e-08,
+      "keyed_scale_vs_one": 5.960464477539063e-08
+    },
+    "head": {
+      "scale_vs_provider": 1.7881393432617188e-07,
+      "scale_vs_fresh_bind": 1.7881393432617188e-07,
+      "keyed_scale_vs_one": 0.0
+    },
+    "thigh_l": {
+      "scale_vs_provider": 1.245737075805664e-05,
+      "scale_vs_fresh_bind": 1.1920928955078125e-07,
+      "keyed_scale_vs_one": 1.1920928955078125e-07
+    },
+    "calf_l": {
+      "scale_vs_provider": 1.1920928955078125e-07,
+      "scale_vs_fresh_bind": 1.1920928955078125e-07,
+      "keyed_scale_vs_one": 5.960464477539063e-08
+    },
+    "calf_twist_01_l": {
+      "scale_vs_provider": 1.7881393432617188e-07,
+      "scale_vs_fresh_bind": 0.0,
+      "keyed_scale_vs_one": 0.0
+    },
+    "foot_l": {
+      "scale_vs_provider": 2.980232238769531e-07,
+      "scale_vs_fresh_bind": 1.1920928955078125e-07,
+      "keyed_scale_vs_one": 0.0
+    },
+    "ball_l": {
+      "scale_vs_provider": 2.384185791015625e-07,
+      "scale_vs_fresh_bind": 5.960464477539063e-08,
+      "keyed_scale_vs_one": 0.0
+    },
+    "thigh_twist_01_l": {
+      "scale_vs_provider": 5.960464477539063e-08,
+      "scale_vs_fresh_bind": 5.960464477539063e-08,
+      "keyed_scale_vs_one": 0.0
+    },
+    "thigh_r": {
+      "scale_vs_provider": 6.4373016357421875e-06,
+      "scale_vs_fresh_bind": 0.0,
+      "keyed_scale_vs_one": 0.0
+    },
+    "calf_r": {
+      "scale_vs_provider": 2.384185791015625e-07,
+      "scale_vs_fresh_bind": 0.0,
+      "keyed_scale_vs_one": 0.0
+    },
+    "calf_twist_01_r": {
+      "scale_vs_provider": 1.7881393432617188e-07,
+      "scale_vs_fresh_bind": 0.0,
+      "keyed_scale_vs_one": 0.0
+    },
+    "foot_r": {
+      "scale_vs_provider": 1.7881393432617188e-07,
+      "scale_vs_fresh_bind": 5.960464477539063e-08,
+      "keyed_scale_vs_one": 0.0
+    },
+    "ball_r": {
+      "scale_vs_provider": 1.1920928955078125e-07,
+      "scale_vs_fresh_bind": 0.0,
+      "keyed_scale_vs_one": 0.0
+    },
+    "thigh_twist_01_r": {
+      "scale_vs_provider": 1.7881393432617188e-07,
+      "scale_vs_fresh_bind": 0.0,
+      "keyed_scale_vs_one": 0.0
+    }
+  },
+  "neutral_all_identity_input_keys": true
+}

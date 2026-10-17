@@ -1,0 +1,12 @@
+{
+  "character": "WhiteCap",
+  "task_id": "455fa2aa-4bfb-4770-8e50-ef88d2f86a9e",
+  "status": "success",
+  "output": {
+    "riggable": true,
+    "rig_type": "biped"
+  },
+  "credits_consumed": 0.0,
+  "body_sha256": "3d492478c8c46998049520448d290880b839178237f8e4745da91a915f15e35c",
+  "paid_rig_allowed_by_check": true
+}

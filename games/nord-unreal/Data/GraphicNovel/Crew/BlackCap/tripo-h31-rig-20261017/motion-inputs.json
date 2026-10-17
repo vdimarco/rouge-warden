@@ -1,0 +1,22 @@
+{
+  "provider_fbx": {
+    "path": "Data/GraphicNovel/Crew/BlackCap/tripo-h31-rig-20261017/rig.fbx",
+    "sha256": "54db95e20649c34c1d6dd2f28e1a1ec44a91250b0f73f6041774ac722764848b"
+  },
+  "source_body_fbx": {
+    "path": "Data/GraphicNovel/Crew/BlackCap/generated-v1-high-detail/body.fbx",
+    "sha256": "54b9a95853e8a069a607bf2fd32733d3333ce82015e88e78b9621ee1341b631e"
+  },
+  "walk_fbx": {
+    "path": "Data/GraphicNovel/Crew/BlackCap/generated-v1-high-detail/walk.fbx",
+    "sha256": "bb72d020d690b65be4cd4135ee718b622d296d5605697508fd1d9ffecb411510"
+  },
+  "run_fbx": {
+    "path": "Data/GraphicNovel/Crew/BlackCap/generated-v1-high-detail/run.fbx",
+    "sha256": "07e3ffede13b8fea3b216a04495573ba2d979c2e1ac34267fbd37a97468ee1e1"
+  },
+  "surface_receipt": {
+    "path": "Saved/Tests/TripoH31Surface/BlackCap-root-v3/Surface.json",
+    "sha256": "5cf61ac33441e63b1245a877ddaaf6869e4def340ceccb1ff278daa27f3e9f7c"
+  }
+}

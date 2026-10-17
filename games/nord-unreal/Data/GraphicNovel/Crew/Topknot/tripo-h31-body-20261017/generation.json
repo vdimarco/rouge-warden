@@ -1,0 +1,21 @@
+{
+  "character": "Topknot",
+  "style": 10,
+  "provider": "Tripo API",
+  "endpoint": "/v3/generation/image-to-model",
+  "source_reference_sha256": "ea303ba5b08813fb7ff5c3da1eae5d842094a0687f78a06e0d4abed158ab7b3b",
+  "status": "completed_downloaded",
+  "body_published_credits": 60,
+  "paired_rig_reserved_credits": 25,
+  "configured_pilot_reserved_credits": 85,
+  "native_or_art_accepted": false,
+  "user_provider_choice": "Tripo for both bodies and rigs",
+  "pricing_source": "https://developers.tripo3d.ai/en/pricing",
+  "docs_source": "https://developers.tripo3d.ai/en/docs/generation-image-to-model/standard",
+  "prepared_utc": "2026-10-17T22:43:18.494969+00:00",
+  "task_id": "7c59f469-ad8a-4825-913f-14a69d0ba61b",
+  "progress": 100,
+  "reported_consumed_credits": 60.0,
+  "completed_at_utc": "2026-10-17T22:44:32.874602Z",
+  "credits_consumed": 60
+}

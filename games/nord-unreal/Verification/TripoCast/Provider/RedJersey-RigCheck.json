@@ -1,0 +1,12 @@
+{
+  "character": "RedJersey",
+  "task_id": "ed89d221-be09-4cf7-a2d7-436934a5432c",
+  "status": "success",
+  "output": {
+    "riggable": true,
+    "rig_type": "biped"
+  },
+  "credits_consumed": 0.0,
+  "body_sha256": "36cb56d15c07cac1d4533c1964eb42028a3c0d11da52a797859ab2f93c37175c",
+  "paid_rig_allowed_by_check": true
+}

@@ -1,0 +1,26 @@
+{
+  "passed": true,
+  "comparison": "Visually reviewed v4 vs final v7, perbone/property/axis all curve payload bytes; FBX object UUIDs differ",
+  "clips": {
+    "idle": {
+      "bone_property_axis_curve_payloads_identical": true,
+      "curve_count": 558,
+      "canonical_curves_sha256": "561ddb864f7537b5a6803d75d5d1ba598359a48dfea4e64102b4e15c422c6bf7"
+    },
+    "jump": {
+      "bone_property_axis_curve_payloads_identical": true,
+      "curve_count": 558,
+      "canonical_curves_sha256": "f75d0a4ad3e07a85eed90e20431603bcb12e8c7319cc1f992a3c8c58325eebff"
+    },
+    "walk": {
+      "bone_property_axis_curve_payloads_identical": true,
+      "curve_count": 558,
+      "canonical_curves_sha256": "5f68875ee68e35a24b7f730802d5d82cd548814bdffc2ea98d6a0bc76b993c69"
+    },
+    "run": {
+      "bone_property_axis_curve_payloads_identical": true,
+      "curve_count": 558,
+      "canonical_curves_sha256": "ee39239e0de24a73bf09194c0f0980cc9e3c8c1064f8fe6f4bb1787e9b409489"
+    }
+  }
+}

@@ -56,6 +56,13 @@ The local pilot SHALL be available only through the explicit `-NordGraphicNovelC
 - **AND** the held tool follows an own reference-derived `hand_r` socket, while selecting another crew or removing review flags restores the standard attachment and body
 - **AND** incomplete flags preserve their prior non-Tripo route; source inputs, ordinary crew/district assets, live package and saves remain protected until separately verified promotion
 
+#### Scenario: Review the full mature cast
+- **WHEN** all four review flags are enabled and a player cycles C through the eight crew
+- **THEN** each completed candidate uses that person's preserved design, separate own skeleton, compatible four clips, relaxed forward elbows and loosely articulated fingers
+- **AND** each held prop follows its own measured hand grip, including the style8 PVC tube; stopping, jumping, landing and leaving/reselecting a crew preserve compatible animation and attachment state
+- **AND** ordinary launches and incomplete flag combinations retain their prior routes until separately checked promotion; missing or unreviewed bodies are not reported as completed candidates
+- **AND** actual continuous motion and head/hand/sleeve/prop clearance are reviewed in both F2 modes at1280×720 and1920×1080 before live rollout; headless counters alone do not accept natural graphics
+
 ### Requirement: Detailed animated playable crew
 The supplied playable characters SHALL retain readable facial details and distinct locomotion in the comic view.
 
@@ -234,3 +241,9 @@ Each player SHALL be able to play as any of the eight supplied cottage crew desi
 - **THEN** all connected peers see the new choice for that player without changing another player's selection
 - **AND** car occupancy stays valid and exiting restores the selected visible body
 - **AND** an ongoing-session join receives the current appearance
+
+#### Scenario: Respect the selected body provider
+- **WHEN** preparing the remaining seven characters after the user's explicit Tripo-body selection
+- **THEN** each new production candidate uses a reviewed Tripo-generated body and its own Tripo rig, preserving the mature identity and outfit references
+- **AND** completed Meshy comparisons remain recoverable with their original costs and are not reported as the selected final cast
+- **AND** missing funds, incompatible geometry or unfinished native/visual checks keep that character pending rather than silently substituting a different source or repeating paid jobs

@@ -1,0 +1,5014 @@
+{
+  "passed": true,
+  "started_utc": "2026-10-17T22:19:13.620774+00:00",
+  "blender": "5.2.2 LTS",
+  "threads": 4,
+  "rendered": false,
+  "recipe_sha256": "dbc43a512dd018701232cd5ac4e49892b3756d20e2c2322cfcb4fd5087cea361",
+  "manifest": {
+    "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Crew/GreenCap51/tripo-v3-rig-20261017/surface-inputs.json",
+    "sha256": "0f94c877f0c7b8d11634def587204cc2996aaad27fe52a1f403bf8587be2e341"
+  },
+  "inputs": {
+    "source_glb": {
+      "path": "Data/GraphicNovel/Crew/GreenCap51/generated-v1-high-detail/body.glb",
+      "sha256": "729b56b0ed6d74be020f73ea87513d3963f6fb77a630d9f978ce66f0570599f6"
+    },
+    "provider_fbx": {
+      "path": "Data/GraphicNovel/Crew/GreenCap51/tripo-v3-rig-20261017/rig.fbx",
+      "sha256": "5ccc52f3d10544adc7788a06fd64aed4d9191a6d1171b7fed8b9b606cfc83958"
+    },
+    "normal_png": {
+      "path": "Data/GraphicNovel/Crew/GreenCap51/generated-v1-high-detail/normal.png",
+      "sha256": "366b7e5c510d5d3e61c2e1bbd597c5e3f4851e5be13058f44b76d5704374c016"
+    }
+  },
+  "working_input_copies": {
+    "source_glb": "Saved/Tests/TripoCastSurface-e68exnje/source_glb.glb",
+    "provider_fbx": "Saved/Tests/TripoCastSurface-e68exnje/provider_fbx.fbx"
+  },
+  "rescale_applied": false,
+  "errors": [],
+  "correspondence": {
+    "triangles": 102957,
+    "corners": 308871,
+    "provider_to_source_uniform_scale": 1.8200005429819974,
+    "source_residual_max_m": 5.8904810125016865e-06,
+    "source_residual_mean_m": 7.083967835567709e-07,
+    "corners_over_2micron": 15642,
+    "source_residual_p99_m": 3.97539454300183e-06,
+    "source_residual_abs_axis_m": {
+      "x": {
+        "max": 5.359341561428366e-06,
+        "p99": 3.6105849190032346e-06,
+        "mean": 6.050835726449528e-07
+      },
+      "y": {
+        "max": 2.3367617815461816e-06,
+        "p99": 1.5860832772933277e-06,
+        "mean": 2.348930723849917e-07
+      },
+      "z": {
+        "max": 8.204673532206941e-07,
+        "p99": 6.794008379919202e-07,
+        "mean": 1.9041674332700874e-07
+      }
+    },
+    "residual_limit_m": 1e-05,
+    "exact_source_positions_claimed": false,
+    "translation_or_rotation_fit": false,
+    "uv_quantization": 1e-06,
+    "scale_fit_unambiguous_triangles": 102951,
+    "uv_duplicate_triangle_groups": 1,
+    "uv_duplicate_triangles": 2,
+    "uv_corner_tie_triangles": 6,
+    "geometry_resolved_groups": [
+      {
+        "target_sorted_triangle_range": [
+          0,
+          2
+        ],
+        "triangles": 2,
+        "unique_geometry_bijection": true,
+        "mapping": [
+          {
+            "target_triangle": 0,
+            "source_triangle": 0,
+            "source_corner_order": [
+              0,
+              1,
+              2
+            ],
+            "candidate_count": 1,
+            "geometry_residual_max_m": 4.440871740686297e-07
+          },
+          {
+            "target_triangle": 1,
+            "source_triangle": 1,
+            "source_corner_order": [
+              0,
+              1,
+              2
+            ],
+            "candidate_count": 1,
+            "geometry_residual_max_m": 4.440871740686297e-07
+          }
+        ]
+      },
+      {
+        "target_sorted_triangle_range": [
+          5280,
+          5281
+        ],
+        "triangles": 1,
+        "unique_geometry_bijection": true,
+        "mapping": [
+          {
+            "target_triangle": 5280,
+            "source_triangle": 5280,
+            "source_corner_order": [
+              0,
+              1,
+              2
+            ],
+            "candidate_count": 1,
+            "geometry_residual_max_m": 4.604848652808033e-07
+          }
+        ]
+      },
+      {
+        "target_sorted_triangle_range": [
+          15640,
+          15641
+        ],
+        "triangles": 1,
+        "unique_geometry_bijection": true,
+        "mapping": [
+          {
+            "target_triangle": 15640,
+            "source_triangle": 15640,
+            "source_corner_order": [
+              0,
+              1,
+              2
+            ],
+            "candidate_count": 1,
+            "geometry_residual_max_m": 6.718437834144462e-07
+          }
+        ]
+      },
+      {
+        "target_sorted_triangle_range": [
+          45614,
+          45615
+        ],
+        "triangles": 1,
+        "unique_geometry_bijection": true,
+        "mapping": [
+          {
+            "target_triangle": 45614,
+            "source_triangle": 45614,
+            "source_corner_order": [
+              0,
+              1,
+              2
+            ],
+            "candidate_count": 1,
+            "geometry_residual_max_m": 4.604848652808033e-07
+          }
+        ]
+      },
+      {
+        "target_sorted_triangle_range": [
+          50131,
+          50132
+        ],
+        "triangles": 1,
+        "unique_geometry_bijection": true,
+        "mapping": [
+          {
+            "target_triangle": 50131,
+            "source_triangle": 50131,
+            "source_corner_order": [
+              0,
+              1,
+              2
+            ],
+            "candidate_count": 1,
+            "geometry_residual_max_m": 6.718437834144462e-07
+          }
+        ]
+      }
+    ],
+    "geometry_mapping_unique": true
+  },
+  "original_corner_normals": {
+    "provider_before": {
+      "mean_deg": 13.888703775475806,
+      "p99_deg": 86.84831310826738,
+      "max_deg": 178.63392757846802,
+      "corners_over_0_1deg": 187563
+    },
+    "after_blender_store": {
+      "mean_deg": 0.001845707994853266,
+      "p99_deg": 0.015908109995704717,
+      "max_deg": 0.6556293695655303,
+      "corners_over_0_1deg": 141
+    },
+    "explicit_limits": {
+      "mean_deg": 0.02,
+      "p99_deg": 0.1,
+      "max_deg": 1.0
+    },
+    "after_store_corners_over_0_1deg": [
+      {
+        "uv_triangle_order": 1450,
+        "corner_order": 1,
+        "degrees": 0.18143415293197418,
+        "provider_vertex": 37422,
+        "original_normal": [
+          -0.04458111551755111,
+          0.37448349823326077,
+          0.926161235255606
+        ],
+        "restored_normal": [
+          -0.04774220274774684,
+          0.3743202965501397,
+          0.9260696505487093
+        ]
+      },
+      {
+        "uv_triangle_order": 1471,
+        "corner_order": 0,
+        "degrees": 0.5218347765567929,
+        "provider_vertex": 42263,
+        "original_normal": [
+          -0.8717660347206823,
+          -0.20624700361626291,
+          -0.4443941428582193
+        ],
+        "restored_normal": [
+          -0.870691091137652,
+          -0.19898234289100175,
+          -0.44978111457811665
+        ]
+      },
+      {
+        "uv_triangle_order": 1471,
+        "corner_order": 2,
+        "degrees": 0.14791064265527154,
+        "provider_vertex": 42328,
+        "original_normal": [
+          -0.8717660347206823,
+          -0.20624700361626291,
+          -0.4443941428582193
+        ],
+        "restored_normal": [
+          -0.8714639046896742,
+          -0.20419531671427796,
+          -0.44593153673516095
+        ]
+      },
+      {
+        "uv_triangle_order": 1868,
+        "corner_order": 2,
+        "degrees": 0.2714984993299777,
+        "provider_vertex": 33345,
+        "original_normal": [
+          0.09441763489965727,
+          0.9927182354436985,
+          0.0748051818893897
+        ],
+        "restored_normal": [
+          0.09742769804129531,
+          0.9921482327531791,
+          0.07842020083573902
+        ]
+      },
+      {
+        "uv_triangle_order": 2757,
+        "corner_order": 1,
+        "degrees": 0.2219929397439901,
+        "provider_vertex": 28945,
+        "original_normal": [
+          0.0054040991957422764,
+          0.31720890405058605,
+          0.948340290667284
+        ],
+        "restored_normal": [
+          0.0016218593235254907,
+          0.3164160025029982,
+          0.9486191453541074
+        ]
+      },
+      {
+        "uv_triangle_order": 2759,
+        "corner_order": 2,
+        "degrees": 0.1682755356491322,
+        "provider_vertex": 28413,
+        "original_normal": [
+          0.0020807535350245675,
+          0.3153783218463857,
+          0.9489637424970904
+        ],
+        "restored_normal": [
+          -0.0008289694265404953,
+          0.31500017582061635,
+          0.9490912506406699
+        ]
+      },
+      {
+        "uv_triangle_order": 2760,
+        "corner_order": 1,
+        "degrees": 0.1682755356491322,
+        "provider_vertex": 28413,
+        "original_normal": [
+          0.0020807535350245675,
+          0.3153783218463857,
+          0.9489637424970904
+        ],
+        "restored_normal": [
+          -0.0008289694265404953,
+          0.31500017582061635,
+          0.9490912506406699
+        ]
+      },
+      {
+        "uv_triangle_order": 2760,
+        "corner_order": 2,
+        "degrees": 0.2219929397439901,
+        "provider_vertex": 28945,
+        "original_normal": [
+          0.0054040991957422764,
+          0.31720890405058605,
+          0.948340290667284
+        ],
+        "restored_normal": [
+          0.0016218593235254907,
+          0.3164160025029982,
+          0.9486191453541074
+        ]
+      },
+      {
+        "uv_triangle_order": 5815,
+        "corner_order": 0,
+        "degrees": 0.28684921121990314,
+        "provider_vertex": 34229,
+        "original_normal": [
+          -0.01560044871101739,
+          -0.3929934497870606,
+          -0.919408926661298
+        ],
+        "restored_normal": [
+          -0.010800152563009882,
+          -0.3917117589930832,
+          -0.9200245945468852
+        ]
+      },
+      {
+        "uv_triangle_order": 5816,
+        "corner_order": 0,
+        "degrees": 0.28684921121990314,
+        "provider_vertex": 34229,
+        "original_normal": [
+          -0.01560044871101739,
+          -0.3929934497870606,
+          -0.919408926661298
+        ],
+        "restored_normal": [
+          -0.010800152563009882,
+          -0.3917117589930832,
+          -0.9200245945468852
+        ]
+      },
+      {
+        "uv_triangle_order": 5817,
+        "corner_order": 0,
+        "degrees": 0.28684921121990314,
+        "provider_vertex": 34229,
+        "original_normal": [
+          -0.01560044871101739,
+          -0.3929934497870606,
+          -0.919408926661298
+        ],
+        "restored_normal": [
+          -0.010800152563009882,
+          -0.3917117589930832,
+          -0.9200245945468852
+        ]
+      },
+      {
+        "uv_triangle_order": 5819,
+        "corner_order": 0,
+        "degrees": 0.28684921121990314,
+        "provider_vertex": 34229,
+        "original_normal": [
+          -0.01560044871101739,
+          -0.3929934497870606,
+          -0.919408926661298
+        ],
+        "restored_normal": [
+          -0.010800152563009882,
+          -0.3917117589930832,
+          -0.9200245945468852
+        ]
+      },
+      {
+        "uv_triangle_order": 6079,
+        "corner_order": 1,
+        "degrees": 0.24159722206489917,
+        "provider_vertex": 37840,
+        "original_normal": [
+          -0.1737242098395608,
+          0.37167997145078063,
+          0.9119615659324504
+        ],
+        "restored_normal": [
+          -0.17424872586138548,
+          0.3677683011324123,
+          0.9134461441255651
+        ]
+      },
+      {
+        "uv_triangle_order": 7277,
+        "corner_order": 1,
+        "degrees": 0.22949920237628768,
+        "provider_vertex": 28225,
+        "original_normal": [
+          0.92179488591238,
+          -0.23833936312078552,
+          -0.3057589512883645
+        ],
+        "restored_normal": [
+          0.9232685989816078,
+          -0.23712148095228555,
+          -0.3022391394335517
+        ]
+      },
+      {
+        "uv_triangle_order": 7447,
+        "corner_order": 2,
+        "degrees": 0.13377171247330394,
+        "provider_vertex": 4625,
+        "original_normal": [
+          -0.0004985422416423495,
+          -0.35017015569957366,
+          -0.9366859737996346
+        ],
+        "restored_normal": [
+          0.000994128436082278,
+          -0.3518510722947245,
+          -0.9360554655754674
+        ]
+      },
+      {
+        "uv_triangle_order": 7583,
+        "corner_order": 1,
+        "degrees": 0.24005514294419242,
+        "provider_vertex": 34229,
+        "original_normal": [
+          -0.007318367560031938,
+          -0.3895789847764211,
+          -0.9209639819867167
+        ],
+        "restored_normal": [
+          -0.010800152563009882,
+          -0.3917117589930832,
+          -0.9200245945468852
+        ]
+      },
+      {
+        "uv_triangle_order": 7584,
+        "corner_order": 2,
+        "degrees": 0.24005514294419242,
+        "provider_vertex": 34229,
+        "original_normal": [
+          -0.007318367560031938,
+          -0.3895789847764211,
+          -0.9209639819867167
+        ],
+        "restored_normal": [
+          -0.010800152563009882,
+          -0.3917117589930832,
+          -0.9200245945468852
+        ]
+      },
+      {
+        "uv_triangle_order": 10700,
+        "corner_order": 2,
+        "degrees": 0.4554824018670595,
+        "provider_vertex": 38153,
+        "original_normal": [
+          0.8595980594982966,
+          -0.2015173041804375,
+          -0.4695550577116722
+        ],
+        "restored_normal": [
+          0.8594538034891814,
+          -0.19428641419756,
+          -0.47285510352139976
+        ]
+      },
+      {
+        "uv_triangle_order": 11654,
+        "corner_order": 0,
+        "degrees": 0.24005514294419242,
+        "provider_vertex": 34229,
+        "original_normal": [
+          -0.007318367560031938,
+          -0.3895789847764211,
+          -0.9209639819867167
+        ],
+        "restored_normal": [
+          -0.010800152563009882,
+          -0.3917117589930832,
+          -0.9200245945468852
+        ]
+      },
+      {
+        "uv_triangle_order": 11655,
+        "corner_order": 0,
+        "degrees": 0.24005514294419242,
+        "provider_vertex": 34229,
+        "original_normal": [
+          -0.007318367560031938,
+          -0.3895789847764211,
+          -0.9209639819867167
+        ],
+        "restored_normal": [
+          -0.010800152563009882,
+          -0.3917117589930832,
+          -0.9200245945468852
+        ]
+      },
+      {
+        "uv_triangle_order": 11655,
+        "corner_order": 2,
+        "degrees": 0.356412115831439,
+        "provider_vertex": 37259,
+        "original_normal": [
+          -0.004525697681793073,
+          -0.392187913808506,
+          -0.9198739904590327
+        ],
+        "restored_normal": [
+          -0.010192965958617179,
+          -0.3945290723290664,
+          -0.9188269230557694
+        ]
+      },
+      {
+        "uv_triangle_order": 12716,
+        "corner_order": 1,
+        "degrees": 0.1330141845512042,
+        "provider_vertex": 4625,
+        "original_normal": [
+          0.001800524761818388,
+          -0.3538876161075538,
+          -0.9352862199756259
+        ],
+        "restored_normal": [
+          0.000994128436082278,
+          -0.3518510722947245,
+          -0.9360554655754674
+        ]
+      },
+      {
+        "uv_triangle_order": 14831,
+        "corner_order": 2,
+        "degrees": 0.24726514899447305,
+        "provider_vertex": 9599,
+        "original_normal": [
+          0.1285813699013776,
+          0.9915479633456796,
+          0.017305135056388903
+        ],
+        "restored_normal": [
+          0.13239570627996264,
+          0.9910099811264312,
+          0.01925082508414498
+        ]
+      },
+      {
+        "uv_triangle_order": 14832,
+        "corner_order": 2,
+        "degrees": 0.24726514899447305,
+        "provider_vertex": 9599,
+        "original_normal": [
+          0.1285813699013776,
+          0.9915479633456796,
+          0.017305135056388903
+        ],
+        "restored_normal": [
+          0.13239570627996264,
+          0.9910099811264312,
+          0.01925082508414498
+        ]
+      },
+      {
+        "uv_triangle_order": 15781,
+        "corner_order": 2,
+        "degrees": 0.1330141845512042,
+        "provider_vertex": 4625,
+        "original_normal": [
+          0.001800524761818388,
+          -0.3538876161075538,
+          -0.9352862199756259
+        ],
+        "restored_normal": [
+          0.000994128436082278,
+          -0.3518510722947245,
+          -0.9360554655754674
+        ]
+      },
+      {
+        "uv_triangle_order": 15826,
+        "corner_order": 1,
+        "degrees": 0.28684921121990314,
+        "provider_vertex": 34229,
+        "original_normal": [
+          -0.01560044871101739,
+          -0.3929934497870606,
+          -0.919408926661298
+        ],
+        "restored_normal": [
+          -0.010800152563009882,
+          -0.3917117589930832,
+          -0.9200245945468852
+        ]
+      },
+      {
+        "uv_triangle_order": 16445,
+        "corner_order": 1,
+        "degrees": 0.11717535691263727,
+        "provider_vertex": 36219,
+        "original_normal": [
+          -0.0014026924064612725,
+          -0.3495064086780448,
+          -0.9369329232911973
+        ],
+        "restored_normal": [
+          -0.0007671500329672641,
+          -0.35132723542438987,
+          -0.9362524152865414
+        ]
+      },
+      {
+        "uv_triangle_order": 18183,
+        "corner_order": 0,
+        "degrees": 0.27197972968051937,
+        "provider_vertex": 37840,
+        "original_normal": [
+          -0.17606888334263357,
+          0.3635886531663363,
+          0.9147693914901
+        ],
+        "restored_normal": [
+          -0.17424872586138548,
+          0.3677683011324123,
+          0.9134461441255651
+        ]
+      },
+      {
+        "uv_triangle_order": 18184,
+        "corner_order": 0,
+        "degrees": 0.27197972968051937,
+        "provider_vertex": 37840,
+        "original_normal": [
+          -0.17606888334263357,
+          0.3635886531663363,
+          0.9147693914901
+        ],
+        "restored_normal": [
+          -0.17424872586138548,
+          0.3677683011324123,
+          0.9134461441255651
+        ]
+      },
+      {
+        "uv_triangle_order": 18184,
+        "corner_order": 1,
+        "degrees": 0.18143415293197418,
+        "provider_vertex": 37422,
+        "original_normal": [
+          -0.04458111551755111,
+          0.37448349823326077,
+          0.926161235255606
+        ],
+        "restored_normal": [
+          -0.04774220274774684,
+          0.3743202965501397,
+          0.9260696505487093
+        ]
+      },
+      {
+        "uv_triangle_order": 18698,
+        "corner_order": 2,
+        "degrees": 0.24005514294419242,
+        "provider_vertex": 34229,
+        "original_normal": [
+          -0.007318367560031938,
+          -0.3895789847764211,
+          -0.9209639819867167
+        ],
+        "restored_normal": [
+          -0.010800152563009882,
+          -0.3917117589930832,
+          -0.9200245945468852
+        ]
+      },
+      {
+        "uv_triangle_order": 19160,
+        "corner_order": 0,
+        "degrees": 0.2219929397439901,
+        "provider_vertex": 28945,
+        "original_normal": [
+          0.0054040991957422764,
+          0.31720890405058605,
+          0.948340290667284
+        ],
+        "restored_normal": [
+          0.0016218593235254907,
+          0.3164160025029982,
+          0.9486191453541074
+        ]
+      },
+      {
+        "uv_triangle_order": 19161,
+        "corner_order": 0,
+        "degrees": 0.2219929397439901,
+        "provider_vertex": 28945,
+        "original_normal": [
+          0.0054040991957422764,
+          0.31720890405058605,
+          0.948340290667284
+        ],
+        "restored_normal": [
+          0.0016218593235254907,
+          0.3164160025029982,
+          0.9486191453541074
+        ]
+      },
+      {
+        "uv_triangle_order": 21227,
+        "corner_order": 2,
+        "degrees": 0.30658179158057064,
+        "provider_vertex": 33604,
+        "original_normal": [
+          0.005014482249794654,
+          0.9977398772257322,
+          0.06700740527245792
+        ],
+        "restored_normal": [
+          0.009648938860886861,
+          0.9978816082669247,
+          0.06433656706317584
+        ]
+      },
+      {
+        "uv_triangle_order": 21228,
+        "corner_order": 1,
+        "degrees": 0.30658179158057064,
+        "provider_vertex": 33604,
+        "original_normal": [
+          0.005014482249794654,
+          0.9977398772257322,
+          0.06700740527245792
+        ],
+        "restored_normal": [
+          0.009648938860886861,
+          0.9978816082669247,
+          0.06433656706317584
+        ]
+      },
+      {
+        "uv_triangle_order": 24166,
+        "corner_order": 0,
+        "degrees": 0.2239508621559654,
+        "provider_vertex": 28206,
+        "original_normal": [
+          0.9237590637361326,
+          -0.23670571078142646,
+          -0.301064110529308
+        ],
+        "restored_normal": [
+          0.9223255526006424,
+          -0.23789886506894933,
+          -0.3044991051199093
+        ]
+      },
+      {
+        "uv_triangle_order": 28854,
+        "corner_order": 2,
+        "degrees": 0.4841525387351814,
+        "provider_vertex": 9599,
+        "original_normal": [
+          0.1405106050506217,
+          0.9898499935580963,
+          0.02130164597736249
+        ],
+        "restored_normal": [
+          0.13239570627996264,
+          0.9910099811264312,
+          0.01925082508414498
+        ]
+      },
+      {
+        "uv_triangle_order": 28855,
+        "corner_order": 1,
+        "degrees": 0.3411773673555978,
+        "provider_vertex": 8219,
+        "original_normal": [
+          0.024601206330795374,
+          0.9990914523842716,
+          0.034800149708823794
+        ],
+        "restored_normal": [
+          0.021678593278842917,
+          0.9989650155592258,
+          0.039986701316889556
+        ]
+      },
+      {
+        "uv_triangle_order": 28855,
+        "corner_order": 2,
+        "degrees": 0.4841525387351814,
+        "provider_vertex": 9599,
+        "original_normal": [
+          0.1405106050506217,
+          0.9898499935580963,
+          0.02130164597736249
+        ],
+        "restored_normal": [
+          0.13239570627996264,
+          0.9910099811264312,
+          0.01925082508414498
+        ]
+      },
+      {
+        "uv_triangle_order": 28856,
+        "corner_order": 2,
+        "degrees": 0.3411773673555978,
+        "provider_vertex": 8219,
+        "original_normal": [
+          0.024601206330795374,
+          0.9990914523842716,
+          0.034800149708823794
+        ],
+        "restored_normal": [
+          0.021678593278842917,
+          0.9989650155592258,
+          0.039986701316889556
+        ]
+      },
+      {
+        "uv_triangle_order": 32384,
+        "corner_order": 2,
+        "degrees": 0.24005514294419242,
+        "provider_vertex": 34229,
+        "original_normal": [
+          -0.007318367560031938,
+          -0.3895789847764211,
+          -0.9209639819867167
+        ],
+        "restored_normal": [
+          -0.010800152563009882,
+          -0.3917117589930832,
+          -0.9200245945468852
+        ]
+      },
+      {
+        "uv_triangle_order": 33608,
+        "corner_order": 0,
+        "degrees": 0.22636171311659894,
+        "provider_vertex": 34196,
+        "original_normal": [
+          0.9656449422295906,
+          0.2559758389223292,
+          -0.044790796313754065
+        ],
+        "restored_normal": [
+          0.9648578977607865,
+          0.25927025625737515,
+          -0.04275712044643524
+        ]
+      },
+      {
+        "uv_triangle_order": 33608,
+        "corner_order": 2,
+        "degrees": 0.32692164985003835,
+        "provider_vertex": 34249,
+        "original_normal": [
+          0.9656449422295906,
+          0.2559758389223292,
+          -0.044790796313754065
+        ],
+        "restored_normal": [
+          0.9645470460684512,
+          0.2592604929530587,
+          -0.04932537596777174
+        ]
+      },
+      {
+        "uv_triangle_order": 34928,
+        "corner_order": 2,
+        "degrees": 0.31008861867564597,
+        "provider_vertex": 11623,
+        "original_normal": [
+          0.2515987970038786,
+          0.9677985591747416,
+          0.007999637835246173
+        ],
+        "restored_normal": [
+          0.24983246639771306,
+          0.9682004652553914,
+          0.013099534834460112
+        ]
+      },
+      {
+        "uv_triangle_order": 34929,
+        "corner_order": 1,
+        "degrees": 0.4841525387351814,
+        "provider_vertex": 9599,
+        "original_normal": [
+          0.1405106050506217,
+          0.9898499935580963,
+          0.02130164597736249
+        ],
+        "restored_normal": [
+          0.13239570627996264,
+          0.9910099811264312,
+          0.01925082508414498
+        ]
+      },
+      {
+        "uv_triangle_order": 34929,
+        "corner_order": 2,
+        "degrees": 0.31008861867564597,
+        "provider_vertex": 11623,
+        "original_normal": [
+          0.2515987970038786,
+          0.9677985591747416,
+          0.007999637835246173
+        ],
+        "restored_normal": [
+          0.24983246639771306,
+          0.9682004652553914,
+          0.013099534834460112
+        ]
+      },
+      {
+        "uv_triangle_order": 35752,
+        "corner_order": 1,
+        "degrees": 0.4211728025419472,
+        "provider_vertex": 33345,
+        "original_normal": [
+          0.10079297303897482,
+          0.9912785770226534,
+          0.08489734578835627
+        ],
+        "restored_normal": [
+          0.09742769804129531,
+          0.9921482327531791,
+          0.07842020083573902
+        ]
+      },
+      {
+        "uv_triangle_order": 35752,
+        "corner_order": 2,
+        "degrees": 0.30658179158057064,
+        "provider_vertex": 33604,
+        "original_normal": [
+          0.005014482249794654,
+          0.9977398772257322,
+          0.06700740527245792
+        ],
+        "restored_normal": [
+          0.009648938860886861,
+          0.9978816082669247,
+          0.06433656706317584
+        ]
+      },
+      {
+        "uv_triangle_order": 38448,
+        "corner_order": 0,
+        "degrees": 0.10042112307968158,
+        "provider_vertex": 33339,
+        "original_normal": [
+          -0.21931891955997704,
+          0.6620329863767119,
+          0.7166669634301394
+        ],
+        "restored_normal": [
+          -0.2177941839750888,
+          0.6628478307140152,
+          0.7163787034413778
+        ]
+      },
+      {
+        "uv_triangle_order": 38561,
+        "corner_order": 1,
+        "degrees": 0.3278872086018766,
+        "provider_vertex": 27657,
+        "original_normal": [
+          0.03199067648402789,
+          0.9971518318836992,
+          0.0682994933295805
+        ],
+        "restored_normal": [
+          0.027828721913674546,
+          0.9970001035338016,
+          0.07222434347392874
+        ]
+      },
+      {
+        "uv_triangle_order": 41022,
+        "corner_order": 2,
+        "degrees": 0.4211728025419472,
+        "provider_vertex": 33345,
+        "original_normal": [
+          0.10079297303897482,
+          0.9912785770226534,
+          0.08489734578835627
+        ],
+        "restored_normal": [
+          0.09742769804129531,
+          0.9921482327531791,
+          0.07842020083573902
+        ]
+      },
+      {
+        "uv_triangle_order": 41987,
+        "corner_order": 0,
+        "degrees": 0.4813538213904796,
+        "provider_vertex": 37422,
+        "original_normal": [
+          -0.05613183373961641,
+          0.3741010871080673,
+          0.9256876329872784
+        ],
+        "restored_normal": [
+          -0.04774220274774684,
+          0.3743202965501397,
+          0.9260696505487093
+        ]
+      },
+      {
+        "uv_triangle_order": 41987,
+        "corner_order": 1,
+        "degrees": 0.24159722206489917,
+        "provider_vertex": 37840,
+        "original_normal": [
+          -0.1737242098395608,
+          0.37167997145078063,
+          0.9119615659324504
+        ],
+        "restored_normal": [
+          -0.17424872586138548,
+          0.3677683011324123,
+          0.9134461441255651
+        ]
+      },
+      {
+        "uv_triangle_order": 41988,
+        "corner_order": 0,
+        "degrees": 0.4813538213904796,
+        "provider_vertex": 37422,
+        "original_normal": [
+          -0.05613183373961641,
+          0.3741010871080673,
+          0.9256876329872784
+        ],
+        "restored_normal": [
+          -0.04774220274774684,
+          0.3743202965501397,
+          0.9260696505487093
+        ]
+      },
+      {
+        "uv_triangle_order": 45174,
+        "corner_order": 2,
+        "degrees": 0.30562317615753304,
+        "provider_vertex": 8219,
+        "original_normal": [
+          0.01993377660445133,
+          0.9987869954447272,
+          0.0450242410350056
+        ],
+        "restored_normal": [
+          0.021678593278842917,
+          0.9989650155592258,
+          0.039986701316889556
+        ]
+      },
+      {
+        "uv_triangle_order": 45175,
+        "corner_order": 1,
+        "degrees": 0.24726514899447305,
+        "provider_vertex": 9599,
+        "original_normal": [
+          0.1285813699013776,
+          0.9915479633456796,
+          0.017305135056388903
+        ],
+        "restored_normal": [
+          0.13239570627996264,
+          0.9910099811264312,
+          0.01925082508414498
+        ]
+      },
+      {
+        "uv_triangle_order": 45175,
+        "corner_order": 2,
+        "degrees": 0.30562317615753304,
+        "provider_vertex": 8219,
+        "original_normal": [
+          0.01993377660445133,
+          0.9987869954447272,
+          0.0450242410350056
+        ],
+        "restored_normal": [
+          0.021678593278842917,
+          0.9989650155592258,
+          0.039986701316889556
+        ]
+      },
+      {
+        "uv_triangle_order": 46500,
+        "corner_order": 2,
+        "degrees": 0.13377171247330394,
+        "provider_vertex": 4625,
+        "original_normal": [
+          -0.0004985422416423495,
+          -0.35017015569957366,
+          -0.9366859737996346
+        ],
+        "restored_normal": [
+          0.000994128436082278,
+          -0.3518510722947245,
+          -0.9360554655754674
+        ]
+      },
+      {
+        "uv_triangle_order": 48841,
+        "corner_order": 1,
+        "degrees": 0.3278872086018766,
+        "provider_vertex": 27657,
+        "original_normal": [
+          0.03199067648402789,
+          0.9971518318836992,
+          0.0682994933295805
+        ],
+        "restored_normal": [
+          0.027828721913674546,
+          0.9970001035338016,
+          0.07222434347392874
+        ]
+      },
+      {
+        "uv_triangle_order": 49651,
+        "corner_order": 2,
+        "degrees": 0.31008861867564597,
+        "provider_vertex": 11623,
+        "original_normal": [
+          0.2515987970038786,
+          0.9677985591747416,
+          0.007999637835246173
+        ],
+        "restored_normal": [
+          0.24983246639771306,
+          0.9682004652553914,
+          0.013099534834460112
+        ]
+      },
+      {
+        "uv_triangle_order": 53482,
+        "corner_order": 2,
+        "degrees": 0.2297870579534901,
+        "provider_vertex": 4996,
+        "original_normal": [
+          0.1502826538590313,
+          0.9740484530131877,
+          -0.16924755576286094
+        ],
+        "restored_normal": [
+          0.14646385320792046,
+          0.9747978168285633,
+          -0.16827821014544847
+        ]
+      },
+      {
+        "uv_triangle_order": 54849,
+        "corner_order": 0,
+        "degrees": 0.27016667004457745,
+        "provider_vertex": 36511,
+        "original_normal": [
+          -0.9806076395568388,
+          -0.008996550476718686,
+          -0.19577466465884832
+        ],
+        "restored_normal": [
+          -0.9810638616592244,
+          -0.012953374297010002,
+          -0.19325089764503459
+        ]
+      },
+      {
+        "uv_triangle_order": 54849,
+        "corner_order": 2,
+        "degrees": 0.2735554240822687,
+        "provider_vertex": 36422,
+        "original_normal": [
+          -0.9806076395568388,
+          -0.008996550476718686,
+          -0.19577466465884832
+        ],
+        "restored_normal": [
+          -0.9810697613366035,
+          -0.013001988247892591,
+          -0.1932176795547998
+        ]
+      },
+      {
+        "uv_triangle_order": 55332,
+        "corner_order": 0,
+        "degrees": 0.30658179158057064,
+        "provider_vertex": 33604,
+        "original_normal": [
+          0.005014482249794654,
+          0.9977398772257322,
+          0.06700740527245792
+        ],
+        "restored_normal": [
+          0.009648938860886861,
+          0.9978816082669247,
+          0.06433656706317584
+        ]
+      },
+      {
+        "uv_triangle_order": 55801,
+        "corner_order": 2,
+        "degrees": 0.3084655619882927,
+        "provider_vertex": 48540,
+        "original_normal": [
+          0.0017717061290726023,
+          -0.00400903235783354,
+          -0.9999903943123384
+        ],
+        "restored_normal": [
+          0.0031681815121110814,
+          0.0011904315046002516,
+          -0.9999942727329688
+        ]
+      },
+      {
+        "uv_triangle_order": 56634,
+        "corner_order": 0,
+        "degrees": 0.4162305606456583,
+        "provider_vertex": 43845,
+        "original_normal": [
+          0.022017173499337593,
+          0.0004950761801850649,
+          -0.9997574700749556
+        ],
+        "restored_normal": [
+          0.014825325509961672,
+          0.0015119950679501355,
+          -0.9998889556317933
+        ]
+      },
+      {
+        "uv_triangle_order": 56635,
+        "corner_order": 0,
+        "degrees": 0.4162305606456583,
+        "provider_vertex": 43845,
+        "original_normal": [
+          0.022017173499337593,
+          0.0004950761801850649,
+          -0.9997574700749556
+        ],
+        "restored_normal": [
+          0.014825325509961672,
+          0.0015119950679501355,
+          -0.9998889556317933
+        ]
+      },
+      {
+        "uv_triangle_order": 56636,
+        "corner_order": 0,
+        "degrees": 0.4162305606456583,
+        "provider_vertex": 43845,
+        "original_normal": [
+          0.022017173499337593,
+          0.0004950761801850649,
+          -0.9997574700749556
+        ],
+        "restored_normal": [
+          0.014825325509961672,
+          0.0015119950679501355,
+          -0.9998889556317933
+        ]
+      },
+      {
+        "uv_triangle_order": 56637,
+        "corner_order": 0,
+        "degrees": 0.4162305606456583,
+        "provider_vertex": 43845,
+        "original_normal": [
+          0.022017173499337593,
+          0.0004950761801850649,
+          -0.9997574700749556
+        ],
+        "restored_normal": [
+          0.014825325509961672,
+          0.0015119950679501355,
+          -0.9998889556317933
+        ]
+      },
+      {
+        "uv_triangle_order": 56637,
+        "corner_order": 1,
+        "degrees": 0.4315957488467523,
+        "provider_vertex": 48540,
+        "original_normal": [
+          0.0025958961071669727,
+          0.008701326084194994,
+          -0.9999587732740671
+        ],
+        "restored_normal": [
+          0.0031681815121110814,
+          0.0011904315046002516,
+          -0.9999942727329688
+        ]
+      },
+      {
+        "uv_triangle_order": 58048,
+        "corner_order": 0,
+        "degrees": 0.11717535691263727,
+        "provider_vertex": 36219,
+        "original_normal": [
+          -0.0014026924064612725,
+          -0.3495064086780448,
+          -0.9369329232911973
+        ],
+        "restored_normal": [
+          -0.0007671500329672641,
+          -0.35132723542438987,
+          -0.9362524152865414
+        ]
+      },
+      {
+        "uv_triangle_order": 58048,
+        "corner_order": 2,
+        "degrees": 0.19835307195084242,
+        "provider_vertex": 32554,
+        "original_normal": [
+          0.003225492682474323,
+          -0.3590171488659267,
+          -0.9333253896777566
+        ],
+        "restored_normal": [
+          5.534048737079803e-05,
+          -0.3603169557596134,
+          -0.9328299353738361
+        ]
+      },
+      {
+        "uv_triangle_order": 58049,
+        "corner_order": 0,
+        "degrees": 0.11717535691263727,
+        "provider_vertex": 36219,
+        "original_normal": [
+          -0.0014026924064612725,
+          -0.3495064086780448,
+          -0.9369329232911973
+        ],
+        "restored_normal": [
+          -0.0007671500329672641,
+          -0.35132723542438987,
+          -0.9362524152865414
+        ]
+      },
+      {
+        "uv_triangle_order": 58995,
+        "corner_order": 0,
+        "degrees": 0.18527189188420012,
+        "provider_vertex": 26611,
+        "original_normal": [
+          0.01425829292404167,
+          0.9969666949321501,
+          0.07651215771991872
+        ],
+        "restored_normal": [
+          0.017469804131756788,
+          0.9968872118025878,
+          0.07688103074270512
+        ]
+      },
+      {
+        "uv_triangle_order": 58995,
+        "corner_order": 2,
+        "degrees": 0.3278872086018766,
+        "provider_vertex": 27657,
+        "original_normal": [
+          0.03199067648402789,
+          0.9971518318836992,
+          0.0682994933295805
+        ],
+        "restored_normal": [
+          0.027828721913674546,
+          0.9970001035338016,
+          0.07222434347392874
+        ]
+      },
+      {
+        "uv_triangle_order": 59325,
+        "corner_order": 0,
+        "degrees": 0.3218238936123279,
+        "provider_vertex": 33604,
+        "original_normal": [
+          0.012822923558140346,
+          0.9981334448911494,
+          0.05970928588711244
+        ],
+        "restored_normal": [
+          0.009648938860886861,
+          0.9978816082669247,
+          0.06433656706317584
+        ]
+      },
+      {
+        "uv_triangle_order": 59642,
+        "corner_order": 1,
+        "degrees": 0.2714984993299777,
+        "provider_vertex": 33345,
+        "original_normal": [
+          0.09441763489965727,
+          0.9927182354436985,
+          0.0748051818893897
+        ],
+        "restored_normal": [
+          0.09742769804129531,
+          0.9921482327531791,
+          0.07842020083573902
+        ]
+      },
+      {
+        "uv_triangle_order": 60142,
+        "corner_order": 0,
+        "degrees": 0.15590363958819695,
+        "provider_vertex": 42263,
+        "original_normal": [
+          -0.8703519894621017,
+          -0.19681342239524885,
+          -0.45138884700935084
+        ],
+        "restored_normal": [
+          -0.870691091137652,
+          -0.19898234289100175,
+          -0.44978111457811665
+        ]
+      },
+      {
+        "uv_triangle_order": 60142,
+        "corner_order": 1,
+        "degrees": 0.5298281846651884,
+        "provider_vertex": 42328,
+        "original_normal": [
+          -0.8703519894621017,
+          -0.19681342239524885,
+          -0.45138884700935084
+        ],
+        "restored_normal": [
+          -0.8714639046896742,
+          -0.20419531671427796,
+          -0.44593153673516095
+        ]
+      },
+      {
+        "uv_triangle_order": 60374,
+        "corner_order": 1,
+        "degrees": 0.410772941787134,
+        "provider_vertex": 27657,
+        "original_normal": [
+          0.023598482235773443,
+          0.996673756667215,
+          0.07800342561085997
+        ],
+        "restored_normal": [
+          0.027828721913674546,
+          0.9970001035338016,
+          0.07222434347392874
+        ]
+      },
+      {
+        "uv_triangle_order": 60374,
+        "corner_order": 2,
+        "degrees": 0.5006059122988274,
+        "provider_vertex": 26611,
+        "original_normal": [
+          0.02614671647474791,
+          0.9966205727410423,
+          0.07787029733413003
+        ],
+        "restored_normal": [
+          0.017469804131756788,
+          0.9968872118025878,
+          0.07688103074270512
+        ]
+      },
+      {
+        "uv_triangle_order": 60668,
+        "corner_order": 2,
+        "degrees": 0.11494267387388836,
+        "provider_vertex": 29768,
+        "original_normal": [
+          -0.7812120232946254,
+          0.11390724032527419,
+          -0.6137857242241774
+        ],
+        "restored_normal": [
+          -0.7799581046458413,
+          0.11420072284628165,
+          -0.615323938993644
+        ]
+      },
+      {
+        "uv_triangle_order": 63190,
+        "corner_order": 1,
+        "degrees": 0.2699002414370489,
+        "provider_vertex": 28716,
+        "original_normal": [
+          -0.0015986369590368687,
+          -0.3147021443608061,
+          -0.9491891300971496
+        ],
+        "restored_normal": [
+          0.001851034567963551,
+          -0.31165558777061664,
+          -0.9501933320553136
+        ]
+      },
+      {
+        "uv_triangle_order": 63190,
+        "corner_order": 2,
+        "degrees": 0.45644340174119297,
+        "provider_vertex": 34964,
+        "original_normal": [
+          -0.0022012286938551963,
+          -0.3197270676555025,
+          -0.9475071275724797
+        ],
+        "restored_normal": [
+          -0.0009280287404960568,
+          -0.32716899987516657,
+          -0.9449653878758417
+        ]
+      },
+      {
+        "uv_triangle_order": 63191,
+        "corner_order": 1,
+        "degrees": 0.37381113815336764,
+        "provider_vertex": 27705,
+        "original_normal": [
+          -0.0034505925604040293,
+          -0.33086231794624327,
+          -0.9436727292733541
+        ],
+        "restored_normal": [
+          -0.0075640179632024285,
+          -0.3356293550116588,
+          -0.9419637581598933
+        ]
+      },
+      {
+        "uv_triangle_order": 63191,
+        "corner_order": 2,
+        "degrees": 0.45644340174119297,
+        "provider_vertex": 34964,
+        "original_normal": [
+          -0.0022012286938551963,
+          -0.3197270676555025,
+          -0.9475071275724797
+        ],
+        "restored_normal": [
+          -0.0009280287404960568,
+          -0.32716899987516657,
+          -0.9449653878758417
+        ]
+      },
+      {
+        "uv_triangle_order": 63254,
+        "corner_order": 0,
+        "degrees": 0.18143415293197418,
+        "provider_vertex": 37422,
+        "original_normal": [
+          -0.04458111551755111,
+          0.37448349823326077,
+          0.926161235255606
+        ],
+        "restored_normal": [
+          -0.04774220274774684,
+          0.3743202965501397,
+          0.9260696505487093
+        ]
+      },
+      {
+        "uv_triangle_order": 63255,
+        "corner_order": 0,
+        "degrees": 0.18143415293197418,
+        "provider_vertex": 37422,
+        "original_normal": [
+          -0.04458111551755111,
+          0.37448349823326077,
+          0.926161235255606
+        ],
+        "restored_normal": [
+          -0.04774220274774684,
+          0.3743202965501397,
+          0.9260696505487093
+        ]
+      },
+      {
+        "uv_triangle_order": 63729,
+        "corner_order": 2,
+        "degrees": 0.10042112307968158,
+        "provider_vertex": 33339,
+        "original_normal": [
+          -0.21931891955997704,
+          0.6620329863767119,
+          0.7166669634301394
+        ],
+        "restored_normal": [
+          -0.2177941839750888,
+          0.6628478307140152,
+          0.7163787034413778
+        ]
+      },
+      {
+        "uv_triangle_order": 68789,
+        "corner_order": 0,
+        "degrees": 0.3610720305134696,
+        "provider_vertex": 28945,
+        "original_normal": [
+          -0.0039897595801452685,
+          0.3191329038848956,
+          0.9477015730051769
+        ],
+        "restored_normal": [
+          0.0016218593235254907,
+          0.3164160025029982,
+          0.9486191453541074
+        ]
+      },
+      {
+        "uv_triangle_order": 68789,
+        "corner_order": 2,
+        "degrees": 0.6556293695655303,
+        "provider_vertex": 29393,
+        "original_normal": [
+          0.0009102712361612146,
+          0.3314285525311611,
+          0.9434798810644434
+        ],
+        "restored_normal": [
+          -0.010171758857094333,
+          0.32872105172119,
+          0.9443722811884452
+        ]
+      },
+      {
+        "uv_triangle_order": 69643,
+        "corner_order": 2,
+        "degrees": 0.21833392642001712,
+        "provider_vertex": 34249,
+        "original_normal": [
+          0.9637196440509036,
+          0.26261610818718906,
+          -0.04772030376070857
+        ],
+        "restored_normal": [
+          0.9645470460684512,
+          0.2592604929530587,
+          -0.04932537596777174
+        ]
+      },
+      {
+        "uv_triangle_order": 69644,
+        "corner_order": 2,
+        "degrees": 0.21833392642001712,
+        "provider_vertex": 34249,
+        "original_normal": [
+          0.9637196440509036,
+          0.26261610818718906,
+          -0.04772030376070857
+        ],
+        "restored_normal": [
+          0.9645470460684512,
+          0.2592604929530587,
+          -0.04932537596777174
+        ]
+      },
+      {
+        "uv_triangle_order": 72172,
+        "corner_order": 1,
+        "degrees": 0.30562317615753304,
+        "provider_vertex": 8219,
+        "original_normal": [
+          0.01993377660445133,
+          0.9987869954447272,
+          0.0450242410350056
+        ],
+        "restored_normal": [
+          0.021678593278842917,
+          0.9989650155592258,
+          0.039986701316889556
+        ]
+      },
+      {
+        "uv_triangle_order": 72849,
+        "corner_order": 1,
+        "degrees": 0.16257936551756516,
+        "provider_vertex": 32554,
+        "original_normal": [
+          -0.0027126001353215833,
+          -0.3608982224208609,
+          -0.9326012625200379
+        ],
+        "restored_normal": [
+          5.534048737079803e-05,
+          -0.3603169557596134,
+          -0.9328299353738361
+        ]
+      },
+      {
+        "uv_triangle_order": 73270,
+        "corner_order": 2,
+        "degrees": 0.3084655619882927,
+        "provider_vertex": 48540,
+        "original_normal": [
+          0.0017717061290726023,
+          -0.00400903235783354,
+          -0.9999903943123384
+        ],
+        "restored_normal": [
+          0.0031681815121110814,
+          0.0011904315046002516,
+          -0.9999942727329688
+        ]
+      },
+      {
+        "uv_triangle_order": 74402,
+        "corner_order": 2,
+        "degrees": 0.11717535691263727,
+        "provider_vertex": 36219,
+        "original_normal": [
+          -0.0014026924064612725,
+          -0.3495064086780448,
+          -0.9369329232911973
+        ],
+        "restored_normal": [
+          -0.0007671500329672641,
+          -0.35132723542438987,
+          -0.9362524152865414
+        ]
+      },
+      {
+        "uv_triangle_order": 77037,
+        "corner_order": 1,
+        "degrees": 0.13447102242616113,
+        "provider_vertex": 29206,
+        "original_normal": [
+          2.365370024108963e-05,
+          0.3125627095546422,
+          0.9498971270808028
+        ],
+        "restored_normal": [
+          -0.0018827780063641183,
+          0.3138621256853959,
+          0.94946670358008
+        ]
+      },
+      {
+        "uv_triangle_order": 77037,
+        "corner_order": 2,
+        "degrees": 0.19891239655281448,
+        "provider_vertex": 28413,
+        "original_normal": [
+          -0.004300631718360994,
+          0.31499514977090104,
+          0.9490835369911493
+        ],
+        "restored_normal": [
+          -0.0008289694265404953,
+          0.31500017582061635,
+          0.9490912506406699
+        ]
+      },
+      {
+        "uv_triangle_order": 77038,
+        "corner_order": 1,
+        "degrees": 0.19891239655281448,
+        "provider_vertex": 28413,
+        "original_normal": [
+          -0.004300631718360994,
+          0.31499514977090104,
+          0.9490835369911493
+        ],
+        "restored_normal": [
+          -0.0008289694265404953,
+          0.31500017582061635,
+          0.9490912506406699
+        ]
+      },
+      {
+        "uv_triangle_order": 77038,
+        "corner_order": 2,
+        "degrees": 0.3610720305134696,
+        "provider_vertex": 28945,
+        "original_normal": [
+          -0.0039897595801452685,
+          0.3191329038848956,
+          0.9477015730051769
+        ],
+        "restored_normal": [
+          0.0016218593235254907,
+          0.3164160025029982,
+          0.9486191453541074
+        ]
+      },
+      {
+        "uv_triangle_order": 77039,
+        "corner_order": 1,
+        "degrees": 0.3610720305134696,
+        "provider_vertex": 28945,
+        "original_normal": [
+          -0.0039897595801452685,
+          0.3191329038848956,
+          0.9477015730051769
+        ],
+        "restored_normal": [
+          0.0016218593235254907,
+          0.3164160025029982,
+          0.9486191453541074
+        ]
+      },
+      {
+        "uv_triangle_order": 77819,
+        "corner_order": 0,
+        "degrees": 0.13264700166147983,
+        "provider_vertex": 38153,
+        "original_normal": [
+          0.8593924492484325,
+          -0.19218487861284864,
+          -0.4738244301503932
+        ],
+        "restored_normal": [
+          0.8594538034891814,
+          -0.19428641419756,
+          -0.47285510352139976
+        ]
+      },
+      {
+        "uv_triangle_order": 77819,
+        "corner_order": 1,
+        "degrees": 0.5019684114008571,
+        "provider_vertex": 38531,
+        "original_normal": [
+          0.8593924492484325,
+          -0.19218487861284864,
+          -0.4738244301503932
+        ],
+        "restored_normal": [
+          0.8595577765237866,
+          -0.20016276669150346,
+          -0.47020771542785955
+        ]
+      },
+      {
+        "uv_triangle_order": 80555,
+        "corner_order": 2,
+        "degrees": 0.16697526288240921,
+        "provider_vertex": 27705,
+        "original_normal": [
+          -0.006101258982917757,
+          -0.338005991164355,
+          -0.9411241812724958
+        ],
+        "restored_normal": [
+          -0.0075640179632024285,
+          -0.3356293550116588,
+          -0.9419637581598933
+        ]
+      },
+      {
+        "uv_triangle_order": 80821,
+        "corner_order": 2,
+        "degrees": 0.3411773673555978,
+        "provider_vertex": 8219,
+        "original_normal": [
+          0.024601206330795374,
+          0.9990914523842716,
+          0.034800149708823794
+        ],
+        "restored_normal": [
+          0.021678593278842917,
+          0.9989650155592258,
+          0.039986701316889556
+        ]
+      },
+      {
+        "uv_triangle_order": 82709,
+        "corner_order": 0,
+        "degrees": 0.28394401602135527,
+        "provider_vertex": 34964,
+        "original_normal": [
+          0.0022007243369284476,
+          -0.3307976391857656,
+          -0.9436991462969101
+        ],
+        "restored_normal": [
+          -0.0009280287404960568,
+          -0.32716899987516657,
+          -0.9449653878758417
+        ]
+      },
+      {
+        "uv_triangle_order": 82710,
+        "corner_order": 0,
+        "degrees": 0.28394401602135527,
+        "provider_vertex": 34964,
+        "original_normal": [
+          0.0022007243369284476,
+          -0.3307976391857656,
+          -0.9436991462969101
+        ],
+        "restored_normal": [
+          -0.0009280287404960568,
+          -0.32716899987516657,
+          -0.9449653878758417
+        ]
+      },
+      {
+        "uv_triangle_order": 82710,
+        "corner_order": 2,
+        "degrees": 0.16697526288240921,
+        "provider_vertex": 27705,
+        "original_normal": [
+          -0.006101258982917757,
+          -0.338005991164355,
+          -0.9411241812724958
+        ],
+        "restored_normal": [
+          -0.0075640179632024285,
+          -0.3356293550116588,
+          -0.9419637581598933
+        ]
+      },
+      {
+        "uv_triangle_order": 82711,
+        "corner_order": 0,
+        "degrees": 0.28394401602135527,
+        "provider_vertex": 34964,
+        "original_normal": [
+          0.0022007243369284476,
+          -0.3307976391857656,
+          -0.9436991462969101
+        ],
+        "restored_normal": [
+          -0.0009280287404960568,
+          -0.32716899987516657,
+          -0.9449653878758417
+        ]
+      },
+      {
+        "uv_triangle_order": 83910,
+        "corner_order": 2,
+        "degrees": 0.13377171247330394,
+        "provider_vertex": 4625,
+        "original_normal": [
+          -0.0004985422416423495,
+          -0.35017015569957366,
+          -0.9366859737996346
+        ],
+        "restored_normal": [
+          0.000994128436082278,
+          -0.3518510722947245,
+          -0.9360554655754674
+        ]
+      },
+      {
+        "uv_triangle_order": 84172,
+        "corner_order": 0,
+        "degrees": 0.18163362408557293,
+        "provider_vertex": 30727,
+        "original_normal": [
+          -0.001562966415224869,
+          0.3140280311354992,
+          0.9494124250277889
+        ],
+        "restored_normal": [
+          -0.0008926224040377023,
+          0.3169684600439782,
+          0.9484356586308809
+        ]
+      },
+      {
+        "uv_triangle_order": 84220,
+        "corner_order": 2,
+        "degrees": 0.39368016955941804,
+        "provider_vertex": 43845,
+        "original_normal": [
+          0.00802274775326723,
+          0.002476284690337829,
+          -0.999964751145069
+        ],
+        "restored_normal": [
+          0.014825325509961672,
+          0.0015119950679501355,
+          -0.9998889556317933
+        ]
+      },
+      {
+        "uv_triangle_order": 84221,
+        "corner_order": 1,
+        "degrees": 0.3084655619882927,
+        "provider_vertex": 48540,
+        "original_normal": [
+          0.0017717061290726023,
+          -0.00400903235783354,
+          -0.9999903943123384
+        ],
+        "restored_normal": [
+          0.0031681815121110814,
+          0.0011904315046002516,
+          -0.9999942727329688
+        ]
+      },
+      {
+        "uv_triangle_order": 84221,
+        "corner_order": 2,
+        "degrees": 0.39368016955941804,
+        "provider_vertex": 43845,
+        "original_normal": [
+          0.00802274775326723,
+          0.002476284690337829,
+          -0.999964751145069
+        ],
+        "restored_normal": [
+          0.014825325509961672,
+          0.0015119950679501355,
+          -0.9998889556317933
+        ]
+      },
+      {
+        "uv_triangle_order": 84816,
+        "corner_order": 1,
+        "degrees": 0.10042112307968158,
+        "provider_vertex": 33339,
+        "original_normal": [
+          -0.21931891955997704,
+          0.6620329863767119,
+          0.7166669634301394
+        ],
+        "restored_normal": [
+          -0.2177941839750888,
+          0.6628478307140152,
+          0.7163787034413778
+        ]
+      },
+      {
+        "uv_triangle_order": 85321,
+        "corner_order": 2,
+        "degrees": 0.21790329540355133,
+        "provider_vertex": 5046,
+        "original_normal": [
+          0.1460557852824429,
+          0.9748774598766492,
+          -0.16817147739727162
+        ],
+        "restored_normal": [
+          0.1496742023056481,
+          0.974167346359463,
+          -0.16910237860872937
+        ]
+      },
+      {
+        "uv_triangle_order": 87131,
+        "corner_order": 0,
+        "degrees": 0.4315957488467523,
+        "provider_vertex": 48540,
+        "original_normal": [
+          0.0025958961071669727,
+          0.008701326084194994,
+          -0.9999587732740671
+        ],
+        "restored_normal": [
+          0.0031681815121110814,
+          0.0011904315046002516,
+          -0.9999942727329688
+        ]
+      },
+      {
+        "uv_triangle_order": 88325,
+        "corner_order": 2,
+        "degrees": 0.1330141845512042,
+        "provider_vertex": 4625,
+        "original_normal": [
+          0.001800524761818388,
+          -0.3538876161075538,
+          -0.9352862199756259
+        ],
+        "restored_normal": [
+          0.000994128436082278,
+          -0.3518510722947245,
+          -0.9360554655754674
+        ]
+      },
+      {
+        "uv_triangle_order": 88360,
+        "corner_order": 0,
+        "degrees": 0.1330141845512042,
+        "provider_vertex": 4625,
+        "original_normal": [
+          0.001800524761818388,
+          -0.3538876161075538,
+          -0.9352862199756259
+        ],
+        "restored_normal": [
+          0.000994128436082278,
+          -0.3518510722947245,
+          -0.9360554655754674
+        ]
+      },
+      {
+        "uv_triangle_order": 88361,
+        "corner_order": 0,
+        "degrees": 0.1330141845512042,
+        "provider_vertex": 4625,
+        "original_normal": [
+          0.001800524761818388,
+          -0.3538876161075538,
+          -0.9352862199756259
+        ],
+        "restored_normal": [
+          0.000994128436082278,
+          -0.3518510722947245,
+          -0.9360554655754674
+        ]
+      },
+      {
+        "uv_triangle_order": 88362,
+        "corner_order": 0,
+        "degrees": 0.1330141845512042,
+        "provider_vertex": 4625,
+        "original_normal": [
+          0.001800524761818388,
+          -0.3538876161075538,
+          -0.9352862199756259
+        ],
+        "restored_normal": [
+          0.000994128436082278,
+          -0.3518510722947245,
+          -0.9360554655754674
+        ]
+      },
+      {
+        "uv_triangle_order": 89336,
+        "corner_order": 1,
+        "degrees": 0.42579221407341655,
+        "provider_vertex": 11623,
+        "original_normal": [
+          0.24530673500642944,
+          0.9692613073560422,
+          0.018897720046114053
+        ],
+        "restored_normal": [
+          0.24983246639771306,
+          0.9682004652553914,
+          0.013099534834460112
+        ]
+      },
+      {
+        "uv_triangle_order": 89337,
+        "corner_order": 2,
+        "degrees": 0.42579221407341655,
+        "provider_vertex": 11623,
+        "original_normal": [
+          0.24530673500642944,
+          0.9692613073560422,
+          0.018897720046114053
+        ],
+        "restored_normal": [
+          0.24983246639771306,
+          0.9682004652553914,
+          0.013099534834460112
+        ]
+      },
+      {
+        "uv_triangle_order": 89591,
+        "corner_order": 0,
+        "degrees": 0.2714984993299777,
+        "provider_vertex": 33345,
+        "original_normal": [
+          0.09441763489965727,
+          0.9927182354436985,
+          0.0748051818893897
+        ],
+        "restored_normal": [
+          0.09742769804129531,
+          0.9921482327531791,
+          0.07842020083573902
+        ]
+      },
+      {
+        "uv_triangle_order": 89591,
+        "corner_order": 1,
+        "degrees": 0.3218238936123279,
+        "provider_vertex": 33604,
+        "original_normal": [
+          0.012822923558140346,
+          0.9981334448911494,
+          0.05970928588711244
+        ],
+        "restored_normal": [
+          0.009648938860886861,
+          0.9978816082669247,
+          0.06433656706317584
+        ]
+      },
+      {
+        "uv_triangle_order": 89592,
+        "corner_order": 0,
+        "degrees": 0.2714984993299777,
+        "provider_vertex": 33345,
+        "original_normal": [
+          0.09441763489965727,
+          0.9927182354436985,
+          0.0748051818893897
+        ],
+        "restored_normal": [
+          0.09742769804129531,
+          0.9921482327531791,
+          0.07842020083573902
+        ]
+      },
+      {
+        "uv_triangle_order": 90408,
+        "corner_order": 2,
+        "degrees": 0.15003156393892456,
+        "provider_vertex": 33339,
+        "original_normal": [
+          -0.21550972800702267,
+          0.6640544546356373,
+          0.7159519805216725
+        ],
+        "restored_normal": [
+          -0.2177941839750888,
+          0.6628478307140152,
+          0.7163787034413778
+        ]
+      },
+      {
+        "uv_triangle_order": 90409,
+        "corner_order": 2,
+        "degrees": 0.15003156393892456,
+        "provider_vertex": 33339,
+        "original_normal": [
+          -0.21550972800702267,
+          0.6640544546356373,
+          0.7159519805216725
+        ],
+        "restored_normal": [
+          -0.2177941839750888,
+          0.6628478307140152,
+          0.7163787034413778
+        ]
+      },
+      {
+        "uv_triangle_order": 90977,
+        "corner_order": 1,
+        "degrees": 0.2699002414370489,
+        "provider_vertex": 28716,
+        "original_normal": [
+          -0.0015986369590368687,
+          -0.3147021443608061,
+          -0.9491891300971496
+        ],
+        "restored_normal": [
+          0.001851034567963551,
+          -0.31165558777061664,
+          -0.9501933320553136
+        ]
+      },
+      {
+        "uv_triangle_order": 90977,
+        "corner_order": 2,
+        "degrees": 0.45644340174119297,
+        "provider_vertex": 34964,
+        "original_normal": [
+          -0.0022012286938551963,
+          -0.3197270676555025,
+          -0.9475071275724797
+        ],
+        "restored_normal": [
+          -0.0009280287404960568,
+          -0.32716899987516657,
+          -0.9449653878758417
+        ]
+      },
+      {
+        "uv_triangle_order": 91512,
+        "corner_order": 2,
+        "degrees": 0.1330141845512042,
+        "provider_vertex": 4625,
+        "original_normal": [
+          0.001800524761818388,
+          -0.3538876161075538,
+          -0.9352862199756259
+        ],
+        "restored_normal": [
+          0.000994128436082278,
+          -0.3518510722947245,
+          -0.9360554655754674
+        ]
+      },
+      {
+        "uv_triangle_order": 92030,
+        "corner_order": 0,
+        "degrees": 0.1957967254977053,
+        "provider_vertex": 36219,
+        "original_normal": [
+          0.0002222519020297003,
+          -0.3543878657062137,
+          -0.9350984928039862
+        ],
+        "restored_normal": [
+          -0.0007671500329672641,
+          -0.35132723542438987,
+          -0.9362524152865414
+        ]
+      },
+      {
+        "uv_triangle_order": 92031,
+        "corner_order": 0,
+        "degrees": 0.1957967254977053,
+        "provider_vertex": 36219,
+        "original_normal": [
+          0.0002222519020297003,
+          -0.3543878657062137,
+          -0.9350984928039862
+        ],
+        "restored_normal": [
+          -0.0007671500329672641,
+          -0.35132723542438987,
+          -0.9362524152865414
+        ]
+      },
+      {
+        "uv_triangle_order": 92031,
+        "corner_order": 2,
+        "degrees": 0.16257936551756516,
+        "provider_vertex": 32554,
+        "original_normal": [
+          -0.0027126001353215833,
+          -0.3608982224208609,
+          -0.9326012625200379
+        ],
+        "restored_normal": [
+          5.534048737079803e-05,
+          -0.3603169557596134,
+          -0.9328299353738361
+        ]
+      },
+      {
+        "uv_triangle_order": 92622,
+        "corner_order": 0,
+        "degrees": 0.3278872086018766,
+        "provider_vertex": 27657,
+        "original_normal": [
+          0.03199067648402789,
+          0.9971518318836992,
+          0.0682994933295805
+        ],
+        "restored_normal": [
+          0.027828721913674546,
+          0.9970001035338016,
+          0.07222434347392874
+        ]
+      },
+      {
+        "uv_triangle_order": 97904,
+        "corner_order": 1,
+        "degrees": 0.13377171247330394,
+        "provider_vertex": 4625,
+        "original_normal": [
+          -0.0004985422416423495,
+          -0.35017015569957366,
+          -0.9366859737996346
+        ],
+        "restored_normal": [
+          0.000994128436082278,
+          -0.3518510722947245,
+          -0.9360554655754674
+        ]
+      },
+      {
+        "uv_triangle_order": 97904,
+        "corner_order": 2,
+        "degrees": 0.26277511726822145,
+        "provider_vertex": 5532,
+        "original_normal": [
+          -0.001282575872387191,
+          -0.36285799257868073,
+          -0.9318435663891776
+        ],
+        "restored_normal": [
+          0.002688971213925391,
+          -0.36071870359043523,
+          -0.9326707813123806
+        ]
+      },
+      {
+        "uv_triangle_order": 98613,
+        "corner_order": 2,
+        "degrees": 0.410772941787134,
+        "provider_vertex": 27657,
+        "original_normal": [
+          0.023598482235773443,
+          0.996673756667215,
+          0.07800342561085997
+        ],
+        "restored_normal": [
+          0.027828721913674546,
+          0.9970001035338016,
+          0.07222434347392874
+        ]
+      },
+      {
+        "uv_triangle_order": 98945,
+        "corner_order": 1,
+        "degrees": 0.42579221407341655,
+        "provider_vertex": 11623,
+        "original_normal": [
+          0.24530673500642944,
+          0.9692613073560422,
+          0.018897720046114053
+        ],
+        "restored_normal": [
+          0.24983246639771306,
+          0.9682004652553914,
+          0.013099534834460112
+        ]
+      },
+      {
+        "uv_triangle_order": 98945,
+        "corner_order": 2,
+        "degrees": 0.24726514899447305,
+        "provider_vertex": 9599,
+        "original_normal": [
+          0.1285813699013776,
+          0.9915479633456796,
+          0.017305135056388903
+        ],
+        "restored_normal": [
+          0.13239570627996264,
+          0.9910099811264312,
+          0.01925082508414498
+        ]
+      }
+    ],
+    "exact_preservation_claimed": false,
+    "fresh_fbx_reimport": {
+      "mean_deg": 0.002467343078010751,
+      "p99_deg": 0.019038454764717733,
+      "max_deg": 0.6556280546267269,
+      "corners_over_0_1deg": 141
+    },
+    "fresh_corners_over_0_1deg": [
+      {
+        "uv_triangle_order": 1450,
+        "corner_order": 1,
+        "degrees": 0.18143444154037675,
+        "provider_vertex": 37422,
+        "original_normal": [
+          -0.04458111551755111,
+          0.37448349823326077,
+          0.926161235255606
+        ],
+        "restored_normal": [
+          -0.04774221227576583,
+          0.3743204092484018,
+          0.9260696045045019
+        ]
+      },
+      {
+        "uv_triangle_order": 1471,
+        "corner_order": 0,
+        "degrees": 0.5218318969323539,
+        "provider_vertex": 42263,
+        "original_normal": [
+          -0.8717660347206823,
+          -0.20624700361626291,
+          -0.4443941428582193
+        ],
+        "restored_normal": [
+          -0.8706908587381128,
+          -0.19898266743779477,
+          -0.4497814208804403
+        ]
+      },
+      {
+        "uv_triangle_order": 1471,
+        "corner_order": 2,
+        "degrees": 0.14790766240704672,
+        "provider_vertex": 42328,
+        "original_normal": [
+          -0.8717660347206823,
+          -0.20624700361626291,
+          -0.4443941428582193
+        ],
+        "restored_normal": [
+          -0.8714639216754939,
+          -0.20419534506075568,
+          -0.44593149056047543
+        ]
+      },
+      {
+        "uv_triangle_order": 1868,
+        "corner_order": 2,
+        "degrees": 0.2714934123440247,
+        "provider_vertex": 33345,
+        "original_normal": [
+          0.09441763489965727,
+          0.9927182354436985,
+          0.0748051818893897
+        ],
+        "restored_normal": [
+          0.09742770352150264,
+          0.9921482416633227,
+          0.07842008129875412
+        ]
+      },
+      {
+        "uv_triangle_order": 2757,
+        "corner_order": 1,
+        "degrees": 0.22199181717264868,
+        "provider_vertex": 28945,
+        "original_normal": [
+          0.0054040991957422764,
+          0.31720890405058605,
+          0.948340290667284
+        ],
+        "restored_normal": [
+          0.0016218524918409723,
+          0.31641611736821706,
+          0.9486191070519913
+        ]
+      },
+      {
+        "uv_triangle_order": 2759,
+        "corner_order": 2,
+        "degrees": 0.1682749890463354,
+        "provider_vertex": 28413,
+        "original_normal": [
+          0.0020807535350245675,
+          0.3153783218463857,
+          0.9489637424970904
+        ],
+        "restored_normal": [
+          -0.0008289764070392364,
+          0.31500029078045105,
+          0.9490912124797847
+        ]
+      },
+      {
+        "uv_triangle_order": 2760,
+        "corner_order": 1,
+        "degrees": 0.1682749890463354,
+        "provider_vertex": 28413,
+        "original_normal": [
+          0.0020807535350245675,
+          0.3153783218463857,
+          0.9489637424970904
+        ],
+        "restored_normal": [
+          -0.0008289764070392364,
+          0.31500029078045105,
+          0.9490912124797847
+        ]
+      },
+      {
+        "uv_triangle_order": 2760,
+        "corner_order": 2,
+        "degrees": 0.22199181717264868,
+        "provider_vertex": 28945,
+        "original_normal": [
+          0.0054040991957422764,
+          0.31720890405058605,
+          0.948340290667284
+        ],
+        "restored_normal": [
+          0.0016218524918409723,
+          0.31641611736821706,
+          0.9486191070519913
+        ]
+      },
+      {
+        "uv_triangle_order": 5815,
+        "corner_order": 0,
+        "degrees": 0.286847580098242,
+        "provider_vertex": 34229,
+        "original_normal": [
+          -0.01560044871101739,
+          -0.3929934497870606,
+          -0.919408926661298
+        ],
+        "restored_normal": [
+          -0.010800146494342081,
+          -0.3917118702158787,
+          -0.9200245472636474
+        ]
+      },
+      {
+        "uv_triangle_order": 5816,
+        "corner_order": 0,
+        "degrees": 0.286847580098242,
+        "provider_vertex": 34229,
+        "original_normal": [
+          -0.01560044871101739,
+          -0.3929934497870606,
+          -0.919408926661298
+        ],
+        "restored_normal": [
+          -0.010800146494342081,
+          -0.3917118702158787,
+          -0.9200245472636474
+        ]
+      },
+      {
+        "uv_triangle_order": 5817,
+        "corner_order": 0,
+        "degrees": 0.286847580098242,
+        "provider_vertex": 34229,
+        "original_normal": [
+          -0.01560044871101739,
+          -0.3929934497870606,
+          -0.919408926661298
+        ],
+        "restored_normal": [
+          -0.010800146494342081,
+          -0.3917118702158787,
+          -0.9200245472636474
+        ]
+      },
+      {
+        "uv_triangle_order": 5819,
+        "corner_order": 0,
+        "degrees": 0.286847580098242,
+        "provider_vertex": 34229,
+        "original_normal": [
+          -0.01560044871101739,
+          -0.3929934497870606,
+          -0.919408926661298
+        ],
+        "restored_normal": [
+          -0.010800146494342081,
+          -0.3917118702158787,
+          -0.9200245472636474
+        ]
+      },
+      {
+        "uv_triangle_order": 6079,
+        "corner_order": 1,
+        "degrees": 0.24159039415567285,
+        "provider_vertex": 37840,
+        "original_normal": [
+          -0.1737242098395608,
+          0.37167997145078063,
+          0.9119615659324504
+        ],
+        "restored_normal": [
+          -0.17424874191274073,
+          0.36776841342497263,
+          0.9134460958527905
+        ]
+      },
+      {
+        "uv_triangle_order": 7277,
+        "corner_order": 1,
+        "degrees": 0.22950056775280633,
+        "provider_vertex": 28225,
+        "original_normal": [
+          0.92179488591238,
+          -0.23833936312078552,
+          -0.3057589512883645
+        ],
+        "restored_normal": [
+          0.9232686014905435,
+          -0.23712152291775507,
+          -0.3022390988453693
+        ]
+      },
+      {
+        "uv_triangle_order": 7447,
+        "corner_order": 2,
+        "degrees": 0.13378388822542642,
+        "provider_vertex": 4625,
+        "original_normal": [
+          -0.0004985422416423495,
+          -0.35017015569957366,
+          -0.9366859737996346
+        ],
+        "restored_normal": [
+          0.0009943487262018865,
+          -0.35185115946097734,
+          -0.9360554325768194
+        ]
+      },
+      {
+        "uv_triangle_order": 7583,
+        "corner_order": 1,
+        "degrees": 0.24005870543261945,
+        "provider_vertex": 34229,
+        "original_normal": [
+          -0.007318367560031938,
+          -0.3895789847764211,
+          -0.9209639819867167
+        ],
+        "restored_normal": [
+          -0.010800146494342081,
+          -0.3917118702158787,
+          -0.9200245472636474
+        ]
+      },
+      {
+        "uv_triangle_order": 7584,
+        "corner_order": 2,
+        "degrees": 0.24005870543261945,
+        "provider_vertex": 34229,
+        "original_normal": [
+          -0.007318367560031938,
+          -0.3895789847764211,
+          -0.9209639819867167
+        ],
+        "restored_normal": [
+          -0.010800146494342081,
+          -0.3917118702158787,
+          -0.9200245472636474
+        ]
+      },
+      {
+        "uv_triangle_order": 10700,
+        "corner_order": 2,
+        "degrees": 0.4554779786579021,
+        "provider_vertex": 38153,
+        "original_normal": [
+          0.8595980594982966,
+          -0.2015173041804375,
+          -0.4695550577116722
+        ],
+        "restored_normal": [
+          0.8594538124834368,
+          -0.1942864792343413,
+          -0.47285506045130715
+        ]
+      },
+      {
+        "uv_triangle_order": 11654,
+        "corner_order": 0,
+        "degrees": 0.24005870543261945,
+        "provider_vertex": 34229,
+        "original_normal": [
+          -0.007318367560031938,
+          -0.3895789847764211,
+          -0.9209639819867167
+        ],
+        "restored_normal": [
+          -0.010800146494342081,
+          -0.3917118702158787,
+          -0.9200245472636474
+        ]
+      },
+      {
+        "uv_triangle_order": 11655,
+        "corner_order": 0,
+        "degrees": 0.24005870543261945,
+        "provider_vertex": 34229,
+        "original_normal": [
+          -0.007318367560031938,
+          -0.3895789847764211,
+          -0.9209639819867167
+        ],
+        "restored_normal": [
+          -0.010800146494342081,
+          -0.3917118702158787,
+          -0.9200245472636474
+        ]
+      },
+      {
+        "uv_triangle_order": 11655,
+        "corner_order": 2,
+        "degrees": 0.35641465245153037,
+        "provider_vertex": 37259,
+        "original_normal": [
+          -0.004525697681793073,
+          -0.392187913808506,
+          -0.9198739904590327
+        ],
+        "restored_normal": [
+          -0.010192959862849961,
+          -0.394529183413206,
+          -0.9188268754256937
+        ]
+      },
+      {
+        "uv_triangle_order": 12716,
+        "corner_order": 1,
+        "degrees": 0.13300479306658983,
+        "provider_vertex": 4625,
+        "original_normal": [
+          0.001800524761818388,
+          -0.3538876161075538,
+          -0.9352862199756259
+        ],
+        "restored_normal": [
+          0.0009943487262018865,
+          -0.35185115946097734,
+          -0.9360554325768194
+        ]
+      },
+      {
+        "uv_triangle_order": 14831,
+        "corner_order": 2,
+        "degrees": 0.24726245737021973,
+        "provider_vertex": 9599,
+        "original_normal": [
+          0.1285813699013776,
+          0.9915479633456796,
+          0.017305135056388903
+        ],
+        "restored_normal": [
+          0.13239571436219028,
+          0.991009982371905,
+          0.01925070538348705
+        ]
+      },
+      {
+        "uv_triangle_order": 14832,
+        "corner_order": 2,
+        "degrees": 0.24726245737021973,
+        "provider_vertex": 9599,
+        "original_normal": [
+          0.1285813699013776,
+          0.9915479633456796,
+          0.017305135056388903
+        ],
+        "restored_normal": [
+          0.13239571436219028,
+          0.991009982371905,
+          0.01925070538348705
+        ]
+      },
+      {
+        "uv_triangle_order": 15781,
+        "corner_order": 2,
+        "degrees": 0.13300479306658983,
+        "provider_vertex": 4625,
+        "original_normal": [
+          0.001800524761818388,
+          -0.3538876161075538,
+          -0.9352862199756259
+        ],
+        "restored_normal": [
+          0.0009943487262018865,
+          -0.35185115946097734,
+          -0.9360554325768194
+        ]
+      },
+      {
+        "uv_triangle_order": 15826,
+        "corner_order": 1,
+        "degrees": 0.286847580098242,
+        "provider_vertex": 34229,
+        "original_normal": [
+          -0.01560044871101739,
+          -0.3929934497870606,
+          -0.919408926661298
+        ],
+        "restored_normal": [
+          -0.010800146494342081,
+          -0.3917118702158787,
+          -0.9200245472636474
+        ]
+      },
+      {
+        "uv_triangle_order": 16445,
+        "corner_order": 1,
+        "degrees": 0.11718207109798413,
+        "provider_vertex": 36219,
+        "original_normal": [
+          -0.0014026924064612725,
+          -0.3495064086780448,
+          -0.9369329232911973
+        ],
+        "restored_normal": [
+          -0.0007671432450959708,
+          -0.3513273487778625,
+          -0.9362523727563843
+        ]
+      },
+      {
+        "uv_triangle_order": 18183,
+        "corner_order": 0,
+        "degrees": 0.27198581307721625,
+        "provider_vertex": 37840,
+        "original_normal": [
+          -0.17606888334263357,
+          0.3635886531663363,
+          0.9147693914901
+        ],
+        "restored_normal": [
+          -0.17424874191274073,
+          0.36776841342497263,
+          0.9134460958527905
+        ]
+      },
+      {
+        "uv_triangle_order": 18184,
+        "corner_order": 0,
+        "degrees": 0.27198581307721625,
+        "provider_vertex": 37840,
+        "original_normal": [
+          -0.17606888334263357,
+          0.3635886531663363,
+          0.9147693914901
+        ],
+        "restored_normal": [
+          -0.17424874191274073,
+          0.36776841342497263,
+          0.9134460958527905
+        ]
+      },
+      {
+        "uv_triangle_order": 18184,
+        "corner_order": 1,
+        "degrees": 0.18143444154037675,
+        "provider_vertex": 37422,
+        "original_normal": [
+          -0.04458111551755111,
+          0.37448349823326077,
+          0.926161235255606
+        ],
+        "restored_normal": [
+          -0.04774221227576583,
+          0.3743204092484018,
+          0.9260696045045019
+        ]
+      },
+      {
+        "uv_triangle_order": 18698,
+        "corner_order": 2,
+        "degrees": 0.24005870543261945,
+        "provider_vertex": 34229,
+        "original_normal": [
+          -0.007318367560031938,
+          -0.3895789847764211,
+          -0.9209639819867167
+        ],
+        "restored_normal": [
+          -0.010800146494342081,
+          -0.3917118702158787,
+          -0.9200245472636474
+        ]
+      },
+      {
+        "uv_triangle_order": 19160,
+        "corner_order": 0,
+        "degrees": 0.22199181717264868,
+        "provider_vertex": 28945,
+        "original_normal": [
+          0.0054040991957422764,
+          0.31720890405058605,
+          0.948340290667284
+        ],
+        "restored_normal": [
+          0.0016218524918409723,
+          0.31641611736821706,
+          0.9486191070519913
+        ]
+      },
+      {
+        "uv_triangle_order": 19161,
+        "corner_order": 0,
+        "degrees": 0.22199181717264868,
+        "provider_vertex": 28945,
+        "original_normal": [
+          0.0054040991957422764,
+          0.31720890405058605,
+          0.948340290667284
+        ],
+        "restored_normal": [
+          0.0016218524918409723,
+          0.31641611736821706,
+          0.9486191070519913
+        ]
+      },
+      {
+        "uv_triangle_order": 21227,
+        "corner_order": 2,
+        "degrees": 0.30405749766858464,
+        "provider_vertex": 33604,
+        "original_normal": [
+          0.005014482249794654,
+          0.9977398772257322,
+          0.06700740527245792
+        ],
+        "restored_normal": [
+          0.009601202638761342,
+          0.9978817135828704,
+          0.06434207491838968
+        ]
+      },
+      {
+        "uv_triangle_order": 21228,
+        "corner_order": 1,
+        "degrees": 0.30405749766858464,
+        "provider_vertex": 33604,
+        "original_normal": [
+          0.005014482249794654,
+          0.9977398772257322,
+          0.06700740527245792
+        ],
+        "restored_normal": [
+          0.009601202638761342,
+          0.9978817135828704,
+          0.06434207491838968
+        ]
+      },
+      {
+        "uv_triangle_order": 24166,
+        "corner_order": 0,
+        "degrees": 0.22394949129588165,
+        "provider_vertex": 28206,
+        "original_normal": [
+          0.9237590637361326,
+          -0.23670571078142646,
+          -0.301064110529308
+        ],
+        "restored_normal": [
+          0.9223255551884867,
+          -0.2378989072587324,
+          -0.3044990643193349
+        ]
+      },
+      {
+        "uv_triangle_order": 28854,
+        "corner_order": 2,
+        "degrees": 0.48415376839676233,
+        "provider_vertex": 9599,
+        "original_normal": [
+          0.1405106050506217,
+          0.9898499935580963,
+          0.02130164597736249
+        ],
+        "restored_normal": [
+          0.13239571436219028,
+          0.991009982371905,
+          0.01925070538348705
+        ]
+      },
+      {
+        "uv_triangle_order": 28855,
+        "corner_order": 1,
+        "degrees": 0.3411713425836726,
+        "provider_vertex": 8219,
+        "original_normal": [
+          0.024601206330795374,
+          0.9990914523842716,
+          0.034800149708823794
+        ],
+        "restored_normal": [
+          0.021678594393087367,
+          0.9989650203376186,
+          0.039986581336760155
+        ]
+      },
+      {
+        "uv_triangle_order": 28855,
+        "corner_order": 2,
+        "degrees": 0.48415376839676233,
+        "provider_vertex": 9599,
+        "original_normal": [
+          0.1405106050506217,
+          0.9898499935580963,
+          0.02130164597736249
+        ],
+        "restored_normal": [
+          0.13239571436219028,
+          0.991009982371905,
+          0.01925070538348705
+        ]
+      },
+      {
+        "uv_triangle_order": 28856,
+        "corner_order": 2,
+        "degrees": 0.3411713425836726,
+        "provider_vertex": 8219,
+        "original_normal": [
+          0.024601206330795374,
+          0.9990914523842716,
+          0.034800149708823794
+        ],
+        "restored_normal": [
+          0.021678594393087367,
+          0.9989650203376186,
+          0.039986581336760155
+        ]
+      },
+      {
+        "uv_triangle_order": 32384,
+        "corner_order": 2,
+        "degrees": 0.24005870543261945,
+        "provider_vertex": 34229,
+        "original_normal": [
+          -0.007318367560031938,
+          -0.3895789847764211,
+          -0.9209639819867167
+        ],
+        "restored_normal": [
+          -0.010800146494342081,
+          -0.3917118702158787,
+          -0.9200245472636474
+        ]
+      },
+      {
+        "uv_triangle_order": 33608,
+        "corner_order": 0,
+        "degrees": 0.22361550101759178,
+        "provider_vertex": 34196,
+        "original_normal": [
+          0.9656449422295906,
+          0.2559758389223292,
+          -0.044790796313754065
+        ],
+        "restored_normal": [
+          0.9648675242276946,
+          0.2592303478617047,
+          -0.04278185875133215
+        ]
+      },
+      {
+        "uv_triangle_order": 33608,
+        "corner_order": 2,
+        "degrees": 0.32692182968327316,
+        "provider_vertex": 34249,
+        "original_normal": [
+          0.9656449422295906,
+          0.2559758389223292,
+          -0.044790796313754065
+        ],
+        "restored_normal": [
+          0.9645470548900114,
+          0.25926045354493343,
+          -0.04932541059819714
+        ]
+      },
+      {
+        "uv_triangle_order": 34928,
+        "corner_order": 2,
+        "degrees": 0.3100819682899415,
+        "provider_vertex": 11623,
+        "original_normal": [
+          0.2515987970038786,
+          0.9677985591747416,
+          0.007999637835246173
+        ],
+        "restored_normal": [
+          0.2498324816360242,
+          0.9682004629159565,
+          0.013099417121120976
+        ]
+      },
+      {
+        "uv_triangle_order": 34929,
+        "corner_order": 1,
+        "degrees": 0.48415376839676233,
+        "provider_vertex": 9599,
+        "original_normal": [
+          0.1405106050506217,
+          0.9898499935580963,
+          0.02130164597736249
+        ],
+        "restored_normal": [
+          0.13239571436219028,
+          0.991009982371905,
+          0.01925070538348705
+        ]
+      },
+      {
+        "uv_triangle_order": 34929,
+        "corner_order": 2,
+        "degrees": 0.3100819682899415,
+        "provider_vertex": 11623,
+        "original_normal": [
+          0.2515987970038786,
+          0.9677985591747416,
+          0.007999637835246173
+        ],
+        "restored_normal": [
+          0.2498324816360242,
+          0.9682004629159565,
+          0.013099417121120976
+        ]
+      },
+      {
+        "uv_triangle_order": 35752,
+        "corner_order": 1,
+        "degrees": 0.4211787541681583,
+        "provider_vertex": 33345,
+        "original_normal": [
+          0.10079297303897482,
+          0.9912785770226534,
+          0.08489734578835627
+        ],
+        "restored_normal": [
+          0.09742770352150264,
+          0.9921482416633227,
+          0.07842008129875412
+        ]
+      },
+      {
+        "uv_triangle_order": 35752,
+        "corner_order": 2,
+        "degrees": 0.30405749766858464,
+        "provider_vertex": 33604,
+        "original_normal": [
+          0.005014482249794654,
+          0.9977398772257322,
+          0.06700740527245792
+        ],
+        "restored_normal": [
+          0.009601202638761342,
+          0.9978817135828704,
+          0.06434207491838968
+        ]
+      },
+      {
+        "uv_triangle_order": 38448,
+        "corner_order": 0,
+        "degrees": 0.10042338919330508,
+        "provider_vertex": 33339,
+        "original_normal": [
+          -0.21931891955997704,
+          0.6620329863767119,
+          0.7166669634301394
+        ],
+        "restored_normal": [
+          -0.21779420027915702,
+          0.6628479164643386,
+          0.7163786191418946
+        ]
+      },
+      {
+        "uv_triangle_order": 38561,
+        "corner_order": 1,
+        "degrees": 0.3278824372417134,
+        "provider_vertex": 27657,
+        "original_normal": [
+          0.03199067648402789,
+          0.9971518318836992,
+          0.0682994933295805
+        ],
+        "restored_normal": [
+          0.027828723162417895,
+          0.9970001121748642,
+          0.07222422370962449
+        ]
+      },
+      {
+        "uv_triangle_order": 41022,
+        "corner_order": 2,
+        "degrees": 0.4211787541681583,
+        "provider_vertex": 33345,
+        "original_normal": [
+          0.10079297303897482,
+          0.9912785770226534,
+          0.08489734578835627
+        ],
+        "restored_normal": [
+          0.09742770352150264,
+          0.9921482416633227,
+          0.07842008129875412
+        ]
+      },
+      {
+        "uv_triangle_order": 41987,
+        "corner_order": 0,
+        "degrees": 0.4813533247955847,
+        "provider_vertex": 37422,
+        "original_normal": [
+          -0.05613183373961641,
+          0.3741010871080673,
+          0.9256876329872784
+        ],
+        "restored_normal": [
+          -0.04774221227576583,
+          0.3743204092484018,
+          0.9260696045045019
+        ]
+      },
+      {
+        "uv_triangle_order": 41987,
+        "corner_order": 1,
+        "degrees": 0.24159039415567285,
+        "provider_vertex": 37840,
+        "original_normal": [
+          -0.1737242098395608,
+          0.37167997145078063,
+          0.9119615659324504
+        ],
+        "restored_normal": [
+          -0.17424874191274073,
+          0.36776841342497263,
+          0.9134460958527905
+        ]
+      },
+      {
+        "uv_triangle_order": 41988,
+        "corner_order": 0,
+        "degrees": 0.4813533247955847,
+        "provider_vertex": 37422,
+        "original_normal": [
+          -0.05613183373961641,
+          0.3741010871080673,
+          0.9256876329872784
+        ],
+        "restored_normal": [
+          -0.04774221227576583,
+          0.3743204092484018,
+          0.9260696045045019
+        ]
+      },
+      {
+        "uv_triangle_order": 45174,
+        "corner_order": 2,
+        "degrees": 0.30562969833936166,
+        "provider_vertex": 8219,
+        "original_normal": [
+          0.01993377660445133,
+          0.9987869954447272,
+          0.0450242410350056
+        ],
+        "restored_normal": [
+          0.021678594393087367,
+          0.9989650203376186,
+          0.039986581336760155
+        ]
+      },
+      {
+        "uv_triangle_order": 45175,
+        "corner_order": 1,
+        "degrees": 0.24726245737021973,
+        "provider_vertex": 9599,
+        "original_normal": [
+          0.1285813699013776,
+          0.9915479633456796,
+          0.017305135056388903
+        ],
+        "restored_normal": [
+          0.13239571436219028,
+          0.991009982371905,
+          0.01925070538348705
+        ]
+      },
+      {
+        "uv_triangle_order": 45175,
+        "corner_order": 2,
+        "degrees": 0.30562969833936166,
+        "provider_vertex": 8219,
+        "original_normal": [
+          0.01993377660445133,
+          0.9987869954447272,
+          0.0450242410350056
+        ],
+        "restored_normal": [
+          0.021678594393087367,
+          0.9989650203376186,
+          0.039986581336760155
+        ]
+      },
+      {
+        "uv_triangle_order": 46500,
+        "corner_order": 2,
+        "degrees": 0.13378388822542642,
+        "provider_vertex": 4625,
+        "original_normal": [
+          -0.0004985422416423495,
+          -0.35017015569957366,
+          -0.9366859737996346
+        ],
+        "restored_normal": [
+          0.0009943487262018865,
+          -0.35185115946097734,
+          -0.9360554325768194
+        ]
+      },
+      {
+        "uv_triangle_order": 48841,
+        "corner_order": 1,
+        "degrees": 0.3278824372417134,
+        "provider_vertex": 27657,
+        "original_normal": [
+          0.03199067648402789,
+          0.9971518318836992,
+          0.0682994933295805
+        ],
+        "restored_normal": [
+          0.027828723162417895,
+          0.9970001121748642,
+          0.07222422370962449
+        ]
+      },
+      {
+        "uv_triangle_order": 49651,
+        "corner_order": 2,
+        "degrees": 0.3100819682899415,
+        "provider_vertex": 11623,
+        "original_normal": [
+          0.2515987970038786,
+          0.9677985591747416,
+          0.007999637835246173
+        ],
+        "restored_normal": [
+          0.2498324816360242,
+          0.9682004629159565,
+          0.013099417121120976
+        ]
+      },
+      {
+        "uv_triangle_order": 53482,
+        "corner_order": 2,
+        "degrees": 0.22703932742222055,
+        "provider_vertex": 4996,
+        "original_normal": [
+          0.1502826538590313,
+          0.9740484530131877,
+          -0.16924755576286094
+        ],
+        "restored_normal": [
+          0.14650950947485009,
+          0.9747889384829858,
+          -0.16828989584836251
+        ]
+      },
+      {
+        "uv_triangle_order": 54849,
+        "corner_order": 0,
+        "degrees": 0.2701673514203351,
+        "provider_vertex": 36511,
+        "original_normal": [
+          -0.9806076395568388,
+          -0.008996550476718686,
+          -0.19577466465884832
+        ],
+        "restored_normal": [
+          -0.9810638652214985,
+          -0.012953376432076925,
+          -0.19325087941756536
+        ]
+      },
+      {
+        "uv_triangle_order": 54849,
+        "corner_order": 2,
+        "degrees": 0.27355610558021703,
+        "provider_vertex": 36422,
+        "original_normal": [
+          -0.9806076395568388,
+          -0.008996550476718686,
+          -0.19577466465884832
+        ],
+        "restored_normal": [
+          -0.9810697648990276,
+          -0.013001990376155827,
+          -0.19321766132324675
+        ]
+      },
+      {
+        "uv_triangle_order": 55332,
+        "corner_order": 0,
+        "degrees": 0.30405749766858464,
+        "provider_vertex": 33604,
+        "original_normal": [
+          0.005014482249794654,
+          0.9977398772257322,
+          0.06700740527245792
+        ],
+        "restored_normal": [
+          0.009601202638761342,
+          0.9978817135828704,
+          0.06434207491838968
+        ]
+      },
+      {
+        "uv_triangle_order": 55801,
+        "corner_order": 2,
+        "degrees": 0.3084589615565333,
+        "provider_vertex": 48540,
+        "original_normal": [
+          0.0017717061290726023,
+          -0.00400903235783354,
+          -0.9999903943123384
+        ],
+        "restored_normal": [
+          0.0031681890397243073,
+          0.001190310201118551,
+          -0.9999942728535168
+        ]
+      },
+      {
+        "uv_triangle_order": 56634,
+        "corner_order": 0,
+        "degrees": 0.41622911980549127,
+        "provider_vertex": 43845,
+        "original_normal": [
+          0.022017173499337593,
+          0.0004950761801850649,
+          -0.9997574700749556
+        ],
+        "restored_normal": [
+          0.01482533372864372,
+          0.0015118735323379248,
+          -0.9998889556937093
+        ]
+      },
+      {
+        "uv_triangle_order": 56635,
+        "corner_order": 0,
+        "degrees": 0.41622911980549127,
+        "provider_vertex": 43845,
+        "original_normal": [
+          0.022017173499337593,
+          0.0004950761801850649,
+          -0.9997574700749556
+        ],
+        "restored_normal": [
+          0.01482533372864372,
+          0.0015118735323379248,
+          -0.9998889556937093
+        ]
+      },
+      {
+        "uv_triangle_order": 56636,
+        "corner_order": 0,
+        "degrees": 0.41622911980549127,
+        "provider_vertex": 43845,
+        "original_normal": [
+          0.022017173499337593,
+          0.0004950761801850649,
+          -0.9997574700749556
+        ],
+        "restored_normal": [
+          0.01482533372864372,
+          0.0015118735323379248,
+          -0.9998889556937093
+        ]
+      },
+      {
+        "uv_triangle_order": 56637,
+        "corner_order": 0,
+        "degrees": 0.41622911980549127,
+        "provider_vertex": 43845,
+        "original_normal": [
+          0.022017173499337593,
+          0.0004950761801850649,
+          -0.9997574700749556
+        ],
+        "restored_normal": [
+          0.01482533372864372,
+          0.0015118735323379248,
+          -0.9998889556937093
+        ]
+      },
+      {
+        "uv_triangle_order": 56637,
+        "corner_order": 1,
+        "degrees": 0.43160271170935005,
+        "provider_vertex": 48540,
+        "original_normal": [
+          0.0025958961071669727,
+          0.008701326084194994,
+          -0.9999587732740671
+        ],
+        "restored_normal": [
+          0.0031681890397243073,
+          0.001190310201118551,
+          -0.9999942728535168
+        ]
+      },
+      {
+        "uv_triangle_order": 58048,
+        "corner_order": 0,
+        "degrees": 0.11718207109798413,
+        "provider_vertex": 36219,
+        "original_normal": [
+          -0.0014026924064612725,
+          -0.3495064086780448,
+          -0.9369329232911973
+        ],
+        "restored_normal": [
+          -0.0007671432450959708,
+          -0.3513273487778625,
+          -0.9362523727563843
+        ]
+      },
+      {
+        "uv_triangle_order": 58048,
+        "corner_order": 2,
+        "degrees": 0.1983555021212149,
+        "provider_vertex": 32554,
+        "original_normal": [
+          0.003225492682474323,
+          -0.3590171488659267,
+          -0.9333253896777566
+        ],
+        "restored_normal": [
+          5.534729785689247e-05,
+          -0.36031706870266433,
+          -0.9328298917477914
+        ]
+      },
+      {
+        "uv_triangle_order": 58049,
+        "corner_order": 0,
+        "degrees": 0.11718207109798413,
+        "provider_vertex": 36219,
+        "original_normal": [
+          -0.0014026924064612725,
+          -0.3495064086780448,
+          -0.9369329232911973
+        ],
+        "restored_normal": [
+          -0.0007671432450959708,
+          -0.3513273487778625,
+          -0.9362523727563843
+        ]
+      },
+      {
+        "uv_triangle_order": 58995,
+        "corner_order": 0,
+        "degrees": 0.18527123939305712,
+        "provider_vertex": 26611,
+        "original_normal": [
+          0.01425829292404167,
+          0.9969666949321501,
+          0.07651215771991872
+        ],
+        "restored_normal": [
+          0.017469859331103486,
+          0.9968872549152704,
+          0.07688045917167861
+        ]
+      },
+      {
+        "uv_triangle_order": 58995,
+        "corner_order": 2,
+        "degrees": 0.3278824372417134,
+        "provider_vertex": 27657,
+        "original_normal": [
+          0.03199067648402789,
+          0.9971518318836992,
+          0.0682994933295805
+        ],
+        "restored_normal": [
+          0.027828723162417895,
+          0.9970001121748642,
+          0.07222422370962449
+        ]
+      },
+      {
+        "uv_triangle_order": 59325,
+        "corner_order": 0,
+        "degrees": 0.323635824887899,
+        "provider_vertex": 33604,
+        "original_normal": [
+          0.012822923558140346,
+          0.9981334448911494,
+          0.05970928588711244
+        ],
+        "restored_normal": [
+          0.009601202638761342,
+          0.9978817135828704,
+          0.06434207491838968
+        ]
+      },
+      {
+        "uv_triangle_order": 59642,
+        "corner_order": 1,
+        "degrees": 0.2714934123440247,
+        "provider_vertex": 33345,
+        "original_normal": [
+          0.09441763489965727,
+          0.9927182354436985,
+          0.0748051818893897
+        ],
+        "restored_normal": [
+          0.09742770352150264,
+          0.9921482416633227,
+          0.07842008129875412
+        ]
+      },
+      {
+        "uv_triangle_order": 60142,
+        "corner_order": 0,
+        "degrees": 0.155906435539505,
+        "provider_vertex": 42263,
+        "original_normal": [
+          -0.8703519894621017,
+          -0.19681342239524885,
+          -0.45138884700935084
+        ],
+        "restored_normal": [
+          -0.8706908587381128,
+          -0.19898266743779477,
+          -0.4497814208804403
+        ]
+      },
+      {
+        "uv_triangle_order": 60142,
+        "corner_order": 1,
+        "degrees": 0.5298311595685201,
+        "provider_vertex": 42328,
+        "original_normal": [
+          -0.8703519894621017,
+          -0.19681342239524885,
+          -0.45138884700935084
+        ],
+        "restored_normal": [
+          -0.8714639216754939,
+          -0.20419534506075568,
+          -0.44593149056047543
+        ]
+      },
+      {
+        "uv_triangle_order": 60374,
+        "corner_order": 1,
+        "degrees": 0.41077853793931723,
+        "provider_vertex": 27657,
+        "original_normal": [
+          0.023598482235773443,
+          0.996673756667215,
+          0.07800342561085997
+        ],
+        "restored_normal": [
+          0.027828723162417895,
+          0.9970001121748642,
+          0.07222422370962449
+        ]
+      },
+      {
+        "uv_triangle_order": 60374,
+        "corner_order": 2,
+        "degrees": 0.5006065558617169,
+        "provider_vertex": 26611,
+        "original_normal": [
+          0.02614671647474791,
+          0.9966205727410423,
+          0.07787029733413003
+        ],
+        "restored_normal": [
+          0.017469859331103486,
+          0.9968872549152704,
+          0.07688045917167861
+        ]
+      },
+      {
+        "uv_triangle_order": 60668,
+        "corner_order": 2,
+        "degrees": 0.11224498685300076,
+        "provider_vertex": 29768,
+        "original_normal": [
+          -0.7812120232946254,
+          0.11390724032527419,
+          -0.6137857242241774
+        ],
+        "restored_normal": [
+          -0.7799875607425394,
+          0.11418499285276083,
+          -0.6152895192461174
+        ]
+      },
+      {
+        "uv_triangle_order": 63190,
+        "corner_order": 1,
+        "degrees": 0.26787646719951086,
+        "provider_vertex": 28716,
+        "original_normal": [
+          -0.0015986369590368687,
+          -0.3147021443608061,
+          -0.9491891300971496
+        ],
+        "restored_normal": [
+          0.001802997838865418,
+          -0.31165597240599907,
+          -0.9501932982622348
+        ]
+      },
+      {
+        "uv_triangle_order": 63190,
+        "corner_order": 2,
+        "degrees": 0.4564503130080544,
+        "provider_vertex": 34964,
+        "original_normal": [
+          -0.0022012286938551963,
+          -0.3197270676555025,
+          -0.9475071275724797
+        ],
+        "restored_normal": [
+          -0.0009280218956405071,
+          -0.32716911430023327,
+          -0.9449653482659361
+        ]
+      },
+      {
+        "uv_triangle_order": 63191,
+        "corner_order": 1,
+        "degrees": 0.37381628542171874,
+        "provider_vertex": 27705,
+        "original_normal": [
+          -0.0034505925604040293,
+          -0.33086231794624327,
+          -0.9436727292733541
+        ],
+        "restored_normal": [
+          -0.007564011535271977,
+          -0.33562946897053164,
+          -0.9419637176070282
+        ]
+      },
+      {
+        "uv_triangle_order": 63191,
+        "corner_order": 2,
+        "degrees": 0.4564503130080544,
+        "provider_vertex": 34964,
+        "original_normal": [
+          -0.0022012286938551963,
+          -0.3197270676555025,
+          -0.9475071275724797
+        ],
+        "restored_normal": [
+          -0.0009280218956405071,
+          -0.32716911430023327,
+          -0.9449653482659361
+        ]
+      },
+      {
+        "uv_triangle_order": 63254,
+        "corner_order": 0,
+        "degrees": 0.18143444154037675,
+        "provider_vertex": 37422,
+        "original_normal": [
+          -0.04458111551755111,
+          0.37448349823326077,
+          0.926161235255606
+        ],
+        "restored_normal": [
+          -0.04774221227576583,
+          0.3743204092484018,
+          0.9260696045045019
+        ]
+      },
+      {
+        "uv_triangle_order": 63255,
+        "corner_order": 0,
+        "degrees": 0.18143444154037675,
+        "provider_vertex": 37422,
+        "original_normal": [
+          -0.04458111551755111,
+          0.37448349823326077,
+          0.926161235255606
+        ],
+        "restored_normal": [
+          -0.04774221227576583,
+          0.3743204092484018,
+          0.9260696045045019
+        ]
+      },
+      {
+        "uv_triangle_order": 63729,
+        "corner_order": 2,
+        "degrees": 0.10042338919330508,
+        "provider_vertex": 33339,
+        "original_normal": [
+          -0.21931891955997704,
+          0.6620329863767119,
+          0.7166669634301394
+        ],
+        "restored_normal": [
+          -0.21779420027915702,
+          0.6628479164643386,
+          0.7163786191418946
+        ]
+      },
+      {
+        "uv_triangle_order": 68789,
+        "corner_order": 0,
+        "degrees": 0.361068525099818,
+        "provider_vertex": 28945,
+        "original_normal": [
+          -0.0039897595801452685,
+          0.3191329038848956,
+          0.9477015730051769
+        ],
+        "restored_normal": [
+          0.0016218524918409723,
+          0.31641611736821706,
+          0.9486191070519913
+        ]
+      },
+      {
+        "uv_triangle_order": 68789,
+        "corner_order": 2,
+        "degrees": 0.6556280546267269,
+        "provider_vertex": 29393,
+        "original_normal": [
+          0.0009102712361612146,
+          0.3314285525311611,
+          0.9434798810644434
+        ],
+        "restored_normal": [
+          -0.010171766352628111,
+          0.3287211662323032,
+          0.9443722412481965
+        ]
+      },
+      {
+        "uv_triangle_order": 69643,
+        "corner_order": 2,
+        "degrees": 0.21833686022635992,
+        "provider_vertex": 34249,
+        "original_normal": [
+          0.9637196440509036,
+          0.26261610818718906,
+          -0.04772030376070857
+        ],
+        "restored_normal": [
+          0.9645470548900114,
+          0.25926045354493343,
+          -0.04932541059819714
+        ]
+      },
+      {
+        "uv_triangle_order": 69644,
+        "corner_order": 2,
+        "degrees": 0.21833686022635992,
+        "provider_vertex": 34249,
+        "original_normal": [
+          0.9637196440509036,
+          0.26261610818718906,
+          -0.04772030376070857
+        ],
+        "restored_normal": [
+          0.9645470548900114,
+          0.25926045354493343,
+          -0.04932541059819714
+        ]
+      },
+      {
+        "uv_triangle_order": 72172,
+        "corner_order": 1,
+        "degrees": 0.30562969833936166,
+        "provider_vertex": 8219,
+        "original_normal": [
+          0.01993377660445133,
+          0.9987869954447272,
+          0.0450242410350056
+        ],
+        "restored_normal": [
+          0.021678594393087367,
+          0.9989650203376186,
+          0.039986581336760155
+        ]
+      },
+      {
+        "uv_triangle_order": 72849,
+        "corner_order": 1,
+        "degrees": 0.1625782192527435,
+        "provider_vertex": 32554,
+        "original_normal": [
+          -0.0027126001353215833,
+          -0.3608982224208609,
+          -0.9326012625200379
+        ],
+        "restored_normal": [
+          5.534729785689247e-05,
+          -0.36031706870266433,
+          -0.9328298917477914
+        ]
+      },
+      {
+        "uv_triangle_order": 73270,
+        "corner_order": 2,
+        "degrees": 0.3084589615565333,
+        "provider_vertex": 48540,
+        "original_normal": [
+          0.0017717061290726023,
+          -0.00400903235783354,
+          -0.9999903943123384
+        ],
+        "restored_normal": [
+          0.0031681890397243073,
+          0.001190310201118551,
+          -0.9999942728535168
+        ]
+      },
+      {
+        "uv_triangle_order": 74402,
+        "corner_order": 2,
+        "degrees": 0.11718207109798413,
+        "provider_vertex": 36219,
+        "original_normal": [
+          -0.0014026924064612725,
+          -0.3495064086780448,
+          -0.9369329232911973
+        ],
+        "restored_normal": [
+          -0.0007671432450959708,
+          -0.3513273487778625,
+          -0.9362523727563843
+        ]
+      },
+      {
+        "uv_triangle_order": 77037,
+        "corner_order": 1,
+        "degrees": 0.13447539889728813,
+        "provider_vertex": 29206,
+        "original_normal": [
+          2.365370024108963e-05,
+          0.3125627095546422,
+          0.9498971270808028
+        ],
+        "restored_normal": [
+          -0.0018827850521036772,
+          0.3138622407072031,
+          0.9494666655437152
+        ]
+      },
+      {
+        "uv_triangle_order": 77037,
+        "corner_order": 2,
+        "degrees": 0.19891200140231471,
+        "provider_vertex": 28413,
+        "original_normal": [
+          -0.004300631718360994,
+          0.31499514977090104,
+          0.9490835369911493
+        ],
+        "restored_normal": [
+          -0.0008289764070392364,
+          0.31500029078045105,
+          0.9490912124797847
+        ]
+      },
+      {
+        "uv_triangle_order": 77038,
+        "corner_order": 1,
+        "degrees": 0.19891200140231471,
+        "provider_vertex": 28413,
+        "original_normal": [
+          -0.004300631718360994,
+          0.31499514977090104,
+          0.9490835369911493
+        ],
+        "restored_normal": [
+          -0.0008289764070392364,
+          0.31500029078045105,
+          0.9490912124797847
+        ]
+      },
+      {
+        "uv_triangle_order": 77038,
+        "corner_order": 2,
+        "degrees": 0.361068525099818,
+        "provider_vertex": 28945,
+        "original_normal": [
+          -0.0039897595801452685,
+          0.3191329038848956,
+          0.9477015730051769
+        ],
+        "restored_normal": [
+          0.0016218524918409723,
+          0.31641611736821706,
+          0.9486191070519913
+        ]
+      },
+      {
+        "uv_triangle_order": 77039,
+        "corner_order": 1,
+        "degrees": 0.361068525099818,
+        "provider_vertex": 28945,
+        "original_normal": [
+          -0.0039897595801452685,
+          0.3191329038848956,
+          0.9477015730051769
+        ],
+        "restored_normal": [
+          0.0016218524918409723,
+          0.31641611736821706,
+          0.9486191070519913
+        ]
+      },
+      {
+        "uv_triangle_order": 77819,
+        "corner_order": 0,
+        "degrees": 0.1326514310932973,
+        "provider_vertex": 38153,
+        "original_normal": [
+          0.8593924492484325,
+          -0.19218487861284864,
+          -0.4738244301503932
+        ],
+        "restored_normal": [
+          0.8594538124834368,
+          -0.1942864792343413,
+          -0.47285506045130715
+        ]
+      },
+      {
+        "uv_triangle_order": 77819,
+        "corner_order": 1,
+        "degrees": 0.5019728135237281,
+        "provider_vertex": 38531,
+        "original_normal": [
+          0.8593924492484325,
+          -0.19218487861284864,
+          -0.4738244301503932
+        ],
+        "restored_normal": [
+          0.8595577854220784,
+          -0.20016283107932586,
+          -0.4702076717521754
+        ]
+      },
+      {
+        "uv_triangle_order": 80555,
+        "corner_order": 2,
+        "degrees": 0.16696908385062667,
+        "provider_vertex": 27705,
+        "original_normal": [
+          -0.006101258982917757,
+          -0.338005991164355,
+          -0.9411241812724958
+        ],
+        "restored_normal": [
+          -0.007564011535271977,
+          -0.33562946897053164,
+          -0.9419637176070282
+        ]
+      },
+      {
+        "uv_triangle_order": 80821,
+        "corner_order": 2,
+        "degrees": 0.3411713425836726,
+        "provider_vertex": 8219,
+        "original_normal": [
+          0.024601206330795374,
+          0.9990914523842716,
+          0.034800149708823794
+        ],
+        "restored_normal": [
+          0.021678594393087367,
+          0.9989650203376186,
+          0.039986581336760155
+        ]
+      },
+      {
+        "uv_triangle_order": 82709,
+        "corner_order": 0,
+        "degrees": 0.28393838815623684,
+        "provider_vertex": 34964,
+        "original_normal": [
+          0.0022007243369284476,
+          -0.3307976391857656,
+          -0.9436991462969101
+        ],
+        "restored_normal": [
+          -0.0009280218956405071,
+          -0.32716911430023327,
+          -0.9449653482659361
+        ]
+      },
+      {
+        "uv_triangle_order": 82710,
+        "corner_order": 0,
+        "degrees": 0.28393838815623684,
+        "provider_vertex": 34964,
+        "original_normal": [
+          0.0022007243369284476,
+          -0.3307976391857656,
+          -0.9436991462969101
+        ],
+        "restored_normal": [
+          -0.0009280218956405071,
+          -0.32716911430023327,
+          -0.9449653482659361
+        ]
+      },
+      {
+        "uv_triangle_order": 82710,
+        "corner_order": 2,
+        "degrees": 0.16696908385062667,
+        "provider_vertex": 27705,
+        "original_normal": [
+          -0.006101258982917757,
+          -0.338005991164355,
+          -0.9411241812724958
+        ],
+        "restored_normal": [
+          -0.007564011535271977,
+          -0.33562946897053164,
+          -0.9419637176070282
+        ]
+      },
+      {
+        "uv_triangle_order": 82711,
+        "corner_order": 0,
+        "degrees": 0.28393838815623684,
+        "provider_vertex": 34964,
+        "original_normal": [
+          0.0022007243369284476,
+          -0.3307976391857656,
+          -0.9436991462969101
+        ],
+        "restored_normal": [
+          -0.0009280218956405071,
+          -0.32716911430023327,
+          -0.9449653482659361
+        ]
+      },
+      {
+        "uv_triangle_order": 83910,
+        "corner_order": 2,
+        "degrees": 0.13378388822542642,
+        "provider_vertex": 4625,
+        "original_normal": [
+          -0.0004985422416423495,
+          -0.35017015569957366,
+          -0.9366859737996346
+        ],
+        "restored_normal": [
+          0.0009943487262018865,
+          -0.35185115946097734,
+          -0.9360554325768194
+        ]
+      },
+      {
+        "uv_triangle_order": 84172,
+        "corner_order": 0,
+        "degrees": 0.17405747214684086,
+        "provider_vertex": 30727,
+        "original_normal": [
+          -0.001562966415224869,
+          0.3140280311354992,
+          0.9494124250277889
+        ],
+        "restored_normal": [
+          -0.0009747665545532896,
+          0.3168564881469851,
+          0.9484729915761037
+        ]
+      },
+      {
+        "uv_triangle_order": 84220,
+        "corner_order": 2,
+        "degrees": 0.39368161306276567,
+        "provider_vertex": 43845,
+        "original_normal": [
+          0.00802274775326723,
+          0.002476284690337829,
+          -0.999964751145069
+        ],
+        "restored_normal": [
+          0.01482533372864372,
+          0.0015118735323379248,
+          -0.9998889556937093
+        ]
+      },
+      {
+        "uv_triangle_order": 84221,
+        "corner_order": 1,
+        "degrees": 0.3084589615565333,
+        "provider_vertex": 48540,
+        "original_normal": [
+          0.0017717061290726023,
+          -0.00400903235783354,
+          -0.9999903943123384
+        ],
+        "restored_normal": [
+          0.0031681890397243073,
+          0.001190310201118551,
+          -0.9999942728535168
+        ]
+      },
+      {
+        "uv_triangle_order": 84221,
+        "corner_order": 2,
+        "degrees": 0.39368161306276567,
+        "provider_vertex": 43845,
+        "original_normal": [
+          0.00802274775326723,
+          0.002476284690337829,
+          -0.999964751145069
+        ],
+        "restored_normal": [
+          0.01482533372864372,
+          0.0015118735323379248,
+          -0.9998889556937093
+        ]
+      },
+      {
+        "uv_triangle_order": 84816,
+        "corner_order": 1,
+        "degrees": 0.10042338919330508,
+        "provider_vertex": 33339,
+        "original_normal": [
+          -0.21931891955997704,
+          0.6620329863767119,
+          0.7166669634301394
+        ],
+        "restored_normal": [
+          -0.21779420027915702,
+          0.6628479164643386,
+          0.7163786191418946
+        ]
+      },
+      {
+        "uv_triangle_order": 85321,
+        "corner_order": 2,
+        "degrees": 0.21790576065182155,
+        "provider_vertex": 5046,
+        "original_normal": [
+          0.1460557852824429,
+          0.9748774598766492,
+          -0.16817147739727162
+        ],
+        "restored_normal": [
+          0.14967421280766008,
+          0.9741673242476768,
+          -0.16910249669513736
+        ]
+      },
+      {
+        "uv_triangle_order": 87131,
+        "corner_order": 0,
+        "degrees": 0.43160271170935005,
+        "provider_vertex": 48540,
+        "original_normal": [
+          0.0025958961071669727,
+          0.008701326084194994,
+          -0.9999587732740671
+        ],
+        "restored_normal": [
+          0.0031681890397243073,
+          0.001190310201118551,
+          -0.9999942728535168
+        ]
+      },
+      {
+        "uv_triangle_order": 88325,
+        "corner_order": 2,
+        "degrees": 0.13300479306658983,
+        "provider_vertex": 4625,
+        "original_normal": [
+          0.001800524761818388,
+          -0.3538876161075538,
+          -0.9352862199756259
+        ],
+        "restored_normal": [
+          0.0009943487262018865,
+          -0.35185115946097734,
+          -0.9360554325768194
+        ]
+      },
+      {
+        "uv_triangle_order": 88360,
+        "corner_order": 0,
+        "degrees": 0.13300479306658983,
+        "provider_vertex": 4625,
+        "original_normal": [
+          0.001800524761818388,
+          -0.3538876161075538,
+          -0.9352862199756259
+        ],
+        "restored_normal": [
+          0.0009943487262018865,
+          -0.35185115946097734,
+          -0.9360554325768194
+        ]
+      },
+      {
+        "uv_triangle_order": 88361,
+        "corner_order": 0,
+        "degrees": 0.13300479306658983,
+        "provider_vertex": 4625,
+        "original_normal": [
+          0.001800524761818388,
+          -0.3538876161075538,
+          -0.9352862199756259
+        ],
+        "restored_normal": [
+          0.0009943487262018865,
+          -0.35185115946097734,
+          -0.9360554325768194
+        ]
+      },
+      {
+        "uv_triangle_order": 88362,
+        "corner_order": 0,
+        "degrees": 0.13300479306658983,
+        "provider_vertex": 4625,
+        "original_normal": [
+          0.001800524761818388,
+          -0.3538876161075538,
+          -0.9352862199756259
+        ],
+        "restored_normal": [
+          0.0009943487262018865,
+          -0.35185115946097734,
+          -0.9360554325768194
+        ]
+      },
+      {
+        "uv_triangle_order": 89336,
+        "corner_order": 1,
+        "degrees": 0.42579802715844295,
+        "provider_vertex": 11623,
+        "original_normal": [
+          0.24530673500642944,
+          0.9692613073560422,
+          0.018897720046114053
+        ],
+        "restored_normal": [
+          0.2498324816360242,
+          0.9682004629159565,
+          0.013099417121120976
+        ]
+      },
+      {
+        "uv_triangle_order": 89337,
+        "corner_order": 2,
+        "degrees": 0.42579802715844295,
+        "provider_vertex": 11623,
+        "original_normal": [
+          0.24530673500642944,
+          0.9692613073560422,
+          0.018897720046114053
+        ],
+        "restored_normal": [
+          0.2498324816360242,
+          0.9682004629159565,
+          0.013099417121120976
+        ]
+      },
+      {
+        "uv_triangle_order": 89591,
+        "corner_order": 0,
+        "degrees": 0.2714934123440247,
+        "provider_vertex": 33345,
+        "original_normal": [
+          0.09441763489965727,
+          0.9927182354436985,
+          0.0748051818893897
+        ],
+        "restored_normal": [
+          0.09742770352150264,
+          0.9921482416633227,
+          0.07842008129875412
+        ]
+      },
+      {
+        "uv_triangle_order": 89591,
+        "corner_order": 1,
+        "degrees": 0.323635824887899,
+        "provider_vertex": 33604,
+        "original_normal": [
+          0.012822923558140346,
+          0.9981334448911494,
+          0.05970928588711244
+        ],
+        "restored_normal": [
+          0.009601202638761342,
+          0.9978817135828704,
+          0.06434207491838968
+        ]
+      },
+      {
+        "uv_triangle_order": 89592,
+        "corner_order": 0,
+        "degrees": 0.2714934123440247,
+        "provider_vertex": 33345,
+        "original_normal": [
+          0.09441763489965727,
+          0.9927182354436985,
+          0.0748051818893897
+        ],
+        "restored_normal": [
+          0.09742770352150264,
+          0.9921482416633227,
+          0.07842008129875412
+        ]
+      },
+      {
+        "uv_triangle_order": 90408,
+        "corner_order": 2,
+        "degrees": 0.15002932797637564,
+        "provider_vertex": 33339,
+        "original_normal": [
+          -0.21550972800702267,
+          0.6640544546356373,
+          0.7159519805216725
+        ],
+        "restored_normal": [
+          -0.21779420027915702,
+          0.6628479164643386,
+          0.7163786191418946
+        ]
+      },
+      {
+        "uv_triangle_order": 90409,
+        "corner_order": 2,
+        "degrees": 0.15002932797637564,
+        "provider_vertex": 33339,
+        "original_normal": [
+          -0.21550972800702267,
+          0.6640544546356373,
+          0.7159519805216725
+        ],
+        "restored_normal": [
+          -0.21779420027915702,
+          0.6628479164643386,
+          0.7163786191418946
+        ]
+      },
+      {
+        "uv_triangle_order": 90977,
+        "corner_order": 1,
+        "degrees": 0.26787646719951086,
+        "provider_vertex": 28716,
+        "original_normal": [
+          -0.0015986369590368687,
+          -0.3147021443608061,
+          -0.9491891300971496
+        ],
+        "restored_normal": [
+          0.001802997838865418,
+          -0.31165597240599907,
+          -0.9501932982622348
+        ]
+      },
+      {
+        "uv_triangle_order": 90977,
+        "corner_order": 2,
+        "degrees": 0.4564503130080544,
+        "provider_vertex": 34964,
+        "original_normal": [
+          -0.0022012286938551963,
+          -0.3197270676555025,
+          -0.9475071275724797
+        ],
+        "restored_normal": [
+          -0.0009280218956405071,
+          -0.32716911430023327,
+          -0.9449653482659361
+        ]
+      },
+      {
+        "uv_triangle_order": 91512,
+        "corner_order": 2,
+        "degrees": 0.13300479306658983,
+        "provider_vertex": 4625,
+        "original_normal": [
+          0.001800524761818388,
+          -0.3538876161075538,
+          -0.9352862199756259
+        ],
+        "restored_normal": [
+          0.0009943487262018865,
+          -0.35185115946097734,
+          -0.9360554325768194
+        ]
+      },
+      {
+        "uv_triangle_order": 92030,
+        "corner_order": 0,
+        "degrees": 0.1957899732354286,
+        "provider_vertex": 36219,
+        "original_normal": [
+          0.0002222519020297003,
+          -0.3543878657062137,
+          -0.9350984928039862
+        ],
+        "restored_normal": [
+          -0.0007671432450959708,
+          -0.3513273487778625,
+          -0.9362523727563843
+        ]
+      },
+      {
+        "uv_triangle_order": 92031,
+        "corner_order": 0,
+        "degrees": 0.1957899732354286,
+        "provider_vertex": 36219,
+        "original_normal": [
+          0.0002222519020297003,
+          -0.3543878657062137,
+          -0.9350984928039862
+        ],
+        "restored_normal": [
+          -0.0007671432450959708,
+          -0.3513273487778625,
+          -0.9362523727563843
+        ]
+      },
+      {
+        "uv_triangle_order": 92031,
+        "corner_order": 2,
+        "degrees": 0.1625782192527435,
+        "provider_vertex": 32554,
+        "original_normal": [
+          -0.0027126001353215833,
+          -0.3608982224208609,
+          -0.9326012625200379
+        ],
+        "restored_normal": [
+          5.534729785689247e-05,
+          -0.36031706870266433,
+          -0.9328298917477914
+        ]
+      },
+      {
+        "uv_triangle_order": 92622,
+        "corner_order": 0,
+        "degrees": 0.3278824372417134,
+        "provider_vertex": 27657,
+        "original_normal": [
+          0.03199067648402789,
+          0.9971518318836992,
+          0.0682994933295805
+        ],
+        "restored_normal": [
+          0.027828723162417895,
+          0.9970001121748642,
+          0.07222422370962449
+        ]
+      },
+      {
+        "uv_triangle_order": 97904,
+        "corner_order": 1,
+        "degrees": 0.13378388822542642,
+        "provider_vertex": 4625,
+        "original_normal": [
+          -0.0004985422416423495,
+          -0.35017015569957366,
+          -0.9366859737996346
+        ],
+        "restored_normal": [
+          0.0009943487262018865,
+          -0.35185115946097734,
+          -0.9360554325768194
+        ]
+      },
+      {
+        "uv_triangle_order": 97904,
+        "corner_order": 2,
+        "degrees": 0.2627719922846918,
+        "provider_vertex": 5532,
+        "original_normal": [
+          -0.001282575872387191,
+          -0.36285799257868073,
+          -0.9318435663891776
+        ],
+        "restored_normal": [
+          0.0026889781789192083,
+          -0.3607188165497912,
+          -0.9326707376042584
+        ]
+      },
+      {
+        "uv_triangle_order": 98613,
+        "corner_order": 2,
+        "degrees": 0.41077853793931723,
+        "provider_vertex": 27657,
+        "original_normal": [
+          0.023598482235773443,
+          0.996673756667215,
+          0.07800342561085997
+        ],
+        "restored_normal": [
+          0.027828723162417895,
+          0.9970001121748642,
+          0.07222422370962449
+        ]
+      },
+      {
+        "uv_triangle_order": 98945,
+        "corner_order": 1,
+        "degrees": 0.42579802715844295,
+        "provider_vertex": 11623,
+        "original_normal": [
+          0.24530673500642944,
+          0.9692613073560422,
+          0.018897720046114053
+        ],
+        "restored_normal": [
+          0.2498324816360242,
+          0.9682004629159565,
+          0.013099417121120976
+        ]
+      },
+      {
+        "uv_triangle_order": 98945,
+        "corner_order": 2,
+        "degrees": 0.24726245737021973,
+        "provider_vertex": 9599,
+        "original_normal": [
+          0.1285813699013776,
+          0.9915479633456796,
+          0.017305135056388903
+        ],
+        "restored_normal": [
+          0.13239571436219028,
+          0.991009982371905,
+          0.01925070538348705
+        ]
+      }
+    ]
+  },
+  "fresh_correspondence": {
+    "triangles": 102957,
+    "corners": 308871,
+    "provider_to_source_uniform_scale": 1.0,
+    "source_residual_max_m": 1.2400822467618632e-07,
+    "source_residual_mean_m": 8.686866012952582e-08,
+    "corners_over_2micron": 0,
+    "source_residual_p99_m": 1.2288191514391464e-07,
+    "source_residual_abs_axis_m": {
+      "x": {
+        "max": 1.7961922421649845e-08,
+        "p99": 1.649894632027582e-08,
+        "mean": 4.497310685544295e-09
+      },
+      "y": {
+        "max": 1.2015050535919836e-07,
+        "p99": 1.1889552087307464e-07,
+        "mean": 7.880830466425637e-08
+      },
+      "z": {
+        "max": 4.251517649045411e-08,
+        "p99": 3.934485814927058e-08,
+        "mean": 3.022147802384022e-08
+      }
+    },
+    "residual_limit_m": 2e-06,
+    "exact_source_positions_claimed": false,
+    "translation_or_rotation_fit": false,
+    "uv_quantization": 1e-06,
+    "scale_fit_unambiguous_triangles": 102951,
+    "uv_duplicate_triangle_groups": 1,
+    "uv_duplicate_triangles": 2,
+    "uv_corner_tie_triangles": 6,
+    "geometry_resolved_groups": [
+      {
+        "target_sorted_triangle_range": [
+          0,
+          2
+        ],
+        "triangles": 2,
+        "unique_geometry_bijection": true,
+        "mapping": [
+          {
+            "target_triangle": 0,
+            "source_triangle": 0,
+            "source_corner_order": [
+              0,
+              1,
+              2
+            ],
+            "candidate_count": 1,
+            "geometry_residual_max_m": 1.0250073332478611e-07
+          },
+          {
+            "target_triangle": 1,
+            "source_triangle": 1,
+            "source_corner_order": [
+              0,
+              1,
+              2
+            ],
+            "candidate_count": 1,
+            "geometry_residual_max_m": 1.0252645118611083e-07
+          }
+        ]
+      },
+      {
+        "target_sorted_triangle_range": [
+          5280,
+          5281
+        ],
+        "triangles": 1,
+        "unique_geometry_bijection": true,
+        "mapping": [
+          {
+            "target_triangle": 5280,
+            "source_triangle": 5280,
+            "source_corner_order": [
+              0,
+              1,
+              2
+            ],
+            "candidate_count": 1,
+            "geometry_residual_max_m": 1.2073144264479058e-07
+          }
+        ]
+      },
+      {
+        "target_sorted_triangle_range": [
+          15640,
+          15641
+        ],
+        "triangles": 1,
+        "unique_geometry_bijection": true,
+        "mapping": [
+          {
+            "target_triangle": 15640,
+            "source_triangle": 15640,
+            "source_corner_order": [
+              0,
+              1,
+              2
+            ],
+            "candidate_count": 1,
+            "geometry_residual_max_m": 2.870585290448966e-08
+          }
+        ]
+      },
+      {
+        "target_sorted_triangle_range": [
+          45614,
+          45615
+        ],
+        "triangles": 1,
+        "unique_geometry_bijection": true,
+        "mapping": [
+          {
+            "target_triangle": 45614,
+            "source_triangle": 45614,
+            "source_corner_order": [
+              0,
+              1,
+              2
+            ],
+            "candidate_count": 1,
+            "geometry_residual_max_m": 1.208097730660606e-07
+          }
+        ]
+      },
+      {
+        "target_sorted_triangle_range": [
+          50131,
+          50132
+        ],
+        "triangles": 1,
+        "unique_geometry_bijection": true,
+        "mapping": [
+          {
+            "target_triangle": 50131,
+            "source_triangle": 50131,
+            "source_corner_order": [
+              0,
+              1,
+              2
+            ],
+            "candidate_count": 1,
+            "geometry_residual_max_m": 2.8698857442860293e-08
+          }
+        ]
+      }
+    ],
+    "geometry_mapping_unique": true
+  },
+  "output": {
+    "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Crew/GreenCap51/tripo-v3-rig-20261017/derived/native-ready/body.fbx",
+    "sha256": "f92f90ef4b3a1c024f010e752c05c65e97008b09e12fa381a5d4672756c25eb3",
+    "bytes": 10115180
+  },
+  "geometry": {
+    "triangles": 102957,
+    "height_m": 0.9999997556016388,
+    "residual_max_m": 1.2400822467618632e-07,
+    "provider_size_preserved": true,
+    "uv_quantization": 1e-06
+  },
+  "rig": {
+    "bones": 61,
+    "armature_object": "Armature",
+    "weighted_finger_bones": [
+      "index_01_l",
+      "index_01_r",
+      "index_02_l",
+      "index_02_r",
+      "index_03_l",
+      "index_03_r",
+      "middle_01_l",
+      "middle_01_r",
+      "middle_02_l",
+      "middle_02_r",
+      "middle_03_l",
+      "middle_03_r",
+      "pinky_01_l",
+      "pinky_01_r",
+      "pinky_02_l",
+      "pinky_02_r",
+      "pinky_03_l",
+      "pinky_03_r",
+      "ring_01_l",
+      "ring_01_r",
+      "ring_02_l",
+      "ring_02_r",
+      "ring_03_l",
+      "ring_03_r",
+      "thumb_01_l",
+      "thumb_01_r",
+      "thumb_02_l",
+      "thumb_02_r",
+      "thumb_03_l",
+      "thumb_03_r"
+    ],
+    "fresh_finger_weight_sums": {
+      "pinky_01_r": 104.39151763916016,
+      "thumb_02_l": 94.79762268066406,
+      "middle_01_l": 107.21427154541016,
+      "ring_03_r": 102.33861541748047,
+      "middle_01_r": 90.94568634033203,
+      "middle_02_l": 71.28678131103516,
+      "thumb_02_r": 61.58771514892578,
+      "index_01_r": 89.09944915771484,
+      "index_01_l": 111.65293884277344,
+      "pinky_02_l": 46.70194625854492,
+      "middle_03_r": 116.58145904541016,
+      "thumb_03_r": 131.704345703125,
+      "ring_01_r": 97.91905212402344,
+      "ring_01_l": 118.07894897460938,
+      "pinky_02_r": 42.652748107910156,
+      "index_02_l": 76.67586517333984,
+      "index_02_r": 52.94540023803711,
+      "ring_03_l": 106.56339263916016,
+      "pinky_03_l": 78.312744140625,
+      "thumb_01_r": 121.73542785644531,
+      "ring_02_l": 58.493080139160156,
+      "thumb_03_l": 133.7083740234375,
+      "middle_03_l": 101.38826751708984,
+      "middle_02_r": 55.44026184082031,
+      "pinky_01_l": 124.34567260742188,
+      "index_03_r": 103.4393539428711,
+      "ring_02_r": 51.843292236328125,
+      "pinky_03_r": 88.00202941894531,
+      "index_03_l": 104.46675109863281,
+      "thumb_01_l": 139.43948364257812
+    },
+    "bind_max_abs_error": 8.672475814819336e-06,
+    "corner_weight_max_abs_error": 0.0,
+    "hierarchy_preserved": true
+  },
+  "textures": {
+    "base_color": {
+      "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Crew/GreenCap51/tripo-v3-rig-20261017/derived/native-ready/base_color.jpg",
+      "bytes": 3968490,
+      "sha256": "379cf5613b880b43cbff9fdccd385b7b35fdea0b4c44720565b64423164d7b66",
+      "colorspace": "sRGB",
+      "source": "Unmodified original GLB embedded payload",
+      "channels": "base_color"
+    },
+    "metallic_roughness": {
+      "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Crew/GreenCap51/tripo-v3-rig-20261017/derived/native-ready/metallic_roughness.jpg",
+      "bytes": 1829039,
+      "sha256": "a6fd3e3127ff4cd0f8d3e6c523c673d4d645e9fcea90d6b36f214f1e1e0a9cfd",
+      "colorspace": "Non-Color",
+      "source": "Unmodified original GLB embedded payload",
+      "channels": "G=Roughness, B=Metallic"
+    },
+    "normal": {
+      "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Crew/GreenCap51/tripo-v3-rig-20261017/derived/native-ready/normal.png",
+      "bytes": 5857476,
+      "sha256": "366b7e5c510d5d3e61c2e1bbd597c5e3f4851e5be13058f44b76d5704374c016",
+      "colorspace": "Non-Color",
+      "source": "Unmodified original GLB embedded payload",
+      "channels": "normal"
+    }
+  },
+  "fresh_import_images": {
+    "base_color": {
+      "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Crew/GreenCap51/tripo-v3-rig-20261017/derived/native-ready/base_color.jpg",
+      "sha256": "379cf5613b880b43cbff9fdccd385b7b35fdea0b4c44720565b64423164d7b66"
+    },
+    "normal": {
+      "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Crew/GreenCap51/tripo-v3-rig-20261017/derived/native-ready/normal.png",
+      "sha256": "366b7e5c510d5d3e61c2e1bbd597c5e3f4851e5be13058f44b76d5704374c016"
+    }
+  },
+  "native_import_scale_required": 1.8200005429819974,
+  "material": {
+    "source": "Exact original GLB graph; provider material discarded",
+    "base_color_and_normal_distinct": true,
+    "packed_MR_native_wiring_required": true,
+    "MR_channels": "G=Roughness, B=Metallic",
+    "normal_convention": "Original tangent payload unchanged; native convention must be explicit"
+  },
+  "limitations": [
+    "No source/provider geometry, rig, weight, animation or transform redesign.",
+    "Source/provider geometry uses the separately calibrated 10micron bound; exact source positions are not claimed. Provider-before/after export retains the strict 2micron bound.",
+    "Native packed MR wiring, normal/tangent convention and rendered shading still require acceptance."
+  ],
+  "retained_inputs_unchanged": true,
+  "finished_utc": "2026-10-17T22:19:16.322410+00:00"
+}

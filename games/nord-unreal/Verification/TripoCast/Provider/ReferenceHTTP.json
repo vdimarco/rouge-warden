@@ -1,0 +1,55 @@
+{
+  "recorded_utc": "2026-10-17T21:59:44.526030+00:00",
+  "passed": true,
+  "sources": {
+    "GreenCap51": {
+      "url": "https://raw.githubusercontent.com/vdimarco/rouge-warden/d33f5a4e8b2a7b096ebb8bf6a584394416df77d9/games/nord-unreal/Data/GraphicNovel/Crew/GreenCap51/reference.png",
+      "sha256": "7998152ab482a55571f6ffa113ef901988ccf4cfd2bfd6c9fa79134cc37d8ed0",
+      "bytes": 1834346,
+      "http_status": 200,
+      "content_type": "image/png"
+    },
+    "Memphis33": {
+      "url": "https://raw.githubusercontent.com/vdimarco/rouge-warden/d33f5a4e8b2a7b096ebb8bf6a584394416df77d9/games/nord-unreal/Data/GraphicNovel/Crew/Memphis33/reference.png",
+      "sha256": "f47a69cc5330ab37e056235c3d2d8c2e84fe717b0d07e189c5a1aa1aacd6302d",
+      "bytes": 1862868,
+      "http_status": 200,
+      "content_type": "image/png"
+    },
+    "BlackCap": {
+      "url": "https://raw.githubusercontent.com/vdimarco/rouge-warden/d33f5a4e8b2a7b096ebb8bf6a584394416df77d9/games/nord-unreal/Data/GraphicNovel/Crew/BlackCap/reference.png",
+      "sha256": "baed5a933fd2c7bcd6e2979836caeb92f7233beb4125ceb6eac2c920822cc3a9",
+      "bytes": 1655186,
+      "http_status": 200,
+      "content_type": "image/png"
+    },
+    "WhiteCap": {
+      "url": "https://raw.githubusercontent.com/vdimarco/rouge-warden/d33f5a4e8b2a7b096ebb8bf6a584394416df77d9/games/nord-unreal/Data/GraphicNovel/Crew/WhiteCap/reference.png",
+      "sha256": "61bbfd6c38e51506f59f8f1293b44f89bef39d148d9d3c948906d8be8e24fb33",
+      "bytes": 1788712,
+      "http_status": 200,
+      "content_type": "image/png"
+    },
+    "RedJersey": {
+      "url": "https://raw.githubusercontent.com/vdimarco/rouge-warden/d33f5a4e8b2a7b096ebb8bf6a584394416df77d9/games/nord-unreal/Data/GraphicNovel/Crew/RedJersey/reference.png",
+      "sha256": "3270ff8a8a29209ae1b1e7cb454a7883375b955adc651b12feb71332a2086bac",
+      "bytes": 1792724,
+      "http_status": 200,
+      "content_type": "image/png"
+    },
+    "LimeJacket": {
+      "url": "https://raw.githubusercontent.com/vdimarco/rouge-warden/d33f5a4e8b2a7b096ebb8bf6a584394416df77d9/games/nord-unreal/Data/GraphicNovel/Crew/LimeJacket/reference.png",
+      "sha256": "29b9afda5d1e68c64d0b67e8faa843f7b4aee676a5c218b530eedba3969f14dd",
+      "bytes": 1780603,
+      "http_status": 200,
+      "content_type": "image/png"
+    },
+    "Topknot": {
+      "url": "https://raw.githubusercontent.com/vdimarco/rouge-warden/d33f5a4e8b2a7b096ebb8bf6a584394416df77d9/games/nord-unreal/Data/GraphicNovel/Crew/Topknot/reference.png",
+      "sha256": "ea303ba5b08813fb7ff5c3da1eae5d842094a0687f78a06e0d4abed158ab7b3b",
+      "bytes": 1724359,
+      "http_status": 200,
+      "content_type": "image/png"
+    }
+  }
+}

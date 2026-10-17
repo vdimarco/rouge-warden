@@ -1,0 +1,12 @@
+{
+  "character": "Memphis33",
+  "task_id": "8cad42d9-80ec-45ff-b86f-8527495a86a4",
+  "status": "success",
+  "output": {
+    "riggable": true,
+    "rig_type": "biped"
+  },
+  "credits_consumed": 0.0,
+  "body_sha256": "e3bb935c87891489a9c967eeb8e46d3af3156dd8469bcbb17fa0c78715fbf1a8",
+  "paid_rig_allowed_by_check": true
+}

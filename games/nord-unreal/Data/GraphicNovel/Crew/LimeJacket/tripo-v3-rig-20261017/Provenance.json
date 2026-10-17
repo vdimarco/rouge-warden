@@ -1,0 +1,28 @@
+{
+  "recorded_utc": "2026-10-17T22:25:47.910483+00:00",
+  "character": "LimeJacket",
+  "rig_task_id": "4eff77e2-a0bd-4d52-b216-405b073c06f5",
+  "status": "success",
+  "credits_consumed": 25.0,
+  "model": "v3.0-20260909",
+  "rig_type": "biped",
+  "spec": "unreal",
+  "out_format": "fbx",
+  "source": {
+    "path": "Data/GraphicNovel/Crew/LimeJacket/generated-v1-high-detail/body.glb",
+    "sha256": "3eda089ac9baea41e1cc1c5c15ca027e218e41a39f9d3ac814bbd89f671139ff"
+  },
+  "outputs": {
+    "rig.fbx": {
+      "bytes": 8573084,
+      "sha256": "fdde159419847dc343fa5efb6f13569872dd54fbe730dcb025b6d1623ffa5802"
+    },
+    "provider-preview.png": {
+      "bytes": 88027,
+      "sha256": "348738956b7817fc0d6482e80eb0f6ebb86820c876042bc7f8010d8b468134a4"
+    }
+  },
+  "signed_urls_retained_only_in_private_receipts": true,
+  "raw_provider_files_unchanged": true,
+  "geometry_motion_native_accepted": false
+}

@@ -1,0 +1,12 @@
+{
+  "recorded_utc": "2026-10-17T22:09:09.893322+00:00",
+  "character": "GreenCap51",
+  "task_id": "40d155bf-fc60-4687-8c7a-bb286cbd2f90",
+  "status": "success",
+  "output": {
+    "riggable": true,
+    "rig_type": "biped"
+  },
+  "credits_consumed": 0.0,
+  "paid_rig_submitted": false
+}

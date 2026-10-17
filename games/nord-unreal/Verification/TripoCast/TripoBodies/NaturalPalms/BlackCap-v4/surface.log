@@ -1,0 +1,18 @@
+18:49:29 | INFO: Data are loaded, start creating Blender stuff
+18:49:29 | INFO: Blender create Mesh node tripo_mesh_7ea82881-e750-48a7-95aa-a55da483d18f
+18:49:29 | INFO: glTF import finished in 0.10s
+FBX version: 7400
+
+FBX export starting... '/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoH31Surface/BlackCap-v2/body/body.fbx'
+export finished in 0.2100 sec.
+FBX version: 7400
+TRIPO_CAST_SURFACE_PASS /home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoH31Surface/BlackCap-v2/report/Surface.json
+Blender 5.2.2 LTS (hash d13f752e3b9c built 2026-09-15 01:34:58)
+Color_7ea82881-e750-48a7-95aa-a55da483d18f
+Color_7ea82881-e750-48a7-95aa-a55da483d18f.jpg
+ORM_7ea82881-e750-48a7-95aa-a55da483d18f
+ORM_7ea82881-e750-48a7-95aa-a55da483d18f.jpg
+NormalGL_7ea82881-e750-48a7-95aa-a55da483d18f
+NormalGL_7ea82881-e750-48a7-95aa-a55da483d18f.png
+
+Blender quit

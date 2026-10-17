@@ -21,14 +21,84 @@
       "reservation_usd": 2,
       "actual_charge_usd": null,
       "provenance": "Pilot/CurlyMetalhead/generated-v2-high-detail/generation.json"
+    },
+    {
+      "endpoint_id": "meshy/v7.1/image-to-3d",
+      "character": "GreenCap51",
+      "request_id": "01a14be2-2c6e-7630-9f95-2f1d7f3f8d41",
+      "status": "completed_downloaded",
+      "published_configured_estimate_usd": 1.52,
+      "reservation_usd": 2,
+      "actual_charge_usd": null,
+      "provenance": "Crew/GreenCap51/generated-v1-high-detail/generation.json"
+    },
+    {
+      "endpoint_id": "meshy/v7.1/image-to-3d",
+      "character": "Memphis33",
+      "request_id": "01a14be3-9f85-74e1-815f-3a5f606c6d1c",
+      "status": "completed_downloaded",
+      "published_configured_estimate_usd": 1.52,
+      "reservation_usd": 2,
+      "actual_charge_usd": null,
+      "provenance": "Crew/Memphis33/generated-v1-high-detail/generation.json"
+    },
+    {
+      "endpoint_id": "meshy/v7.1/image-to-3d",
+      "character": "BlackCap",
+      "request_id": "01a14be3-a65c-7411-adf5-cc3175327dd9",
+      "status": "completed_downloaded",
+      "published_configured_estimate_usd": 1.52,
+      "reservation_usd": 2,
+      "actual_charge_usd": null,
+      "provenance": "Crew/BlackCap/generated-v1-high-detail/generation.json"
+    },
+    {
+      "endpoint_id": "meshy/v7.1/image-to-3d",
+      "character": "WhiteCap",
+      "request_id": "01a14be3-b1b5-7640-8a19-1eda5e09e5e5",
+      "status": "completed_downloaded",
+      "published_configured_estimate_usd": 1.52,
+      "reservation_usd": 2,
+      "actual_charge_usd": null,
+      "provenance": "Crew/WhiteCap/generated-v1-high-detail/generation.json"
+    },
+    {
+      "endpoint_id": "meshy/v7.1/image-to-3d",
+      "character": "RedJersey",
+      "request_id": "01a14be3-b7bc-7422-914c-0670bcf17a6c",
+      "status": "completed_downloaded",
+      "published_configured_estimate_usd": 1.52,
+      "reservation_usd": 2,
+      "actual_charge_usd": null,
+      "provenance": "Crew/RedJersey/generated-v1-high-detail/generation.json"
+    },
+    {
+      "endpoint_id": "meshy/v7.1/image-to-3d",
+      "character": "LimeJacket",
+      "request_id": "01a14be3-bdea-7df3-97fa-15e6d8129e30",
+      "status": "completed_downloaded",
+      "published_configured_estimate_usd": 1.52,
+      "reservation_usd": 2,
+      "actual_charge_usd": null,
+      "provenance": "Crew/LimeJacket/generated-v1-high-detail/generation.json"
+    },
+    {
+      "endpoint_id": "meshy/v7.1/image-to-3d",
+      "character": "Topknot",
+      "request_id": "01a14be3-c3e6-7bd3-8f69-1721117e2b46",
+      "status": "completed_downloaded",
+      "published_configured_estimate_usd": 1.52,
+      "reservation_usd": 2,
+      "actual_charge_usd": null,
+      "provenance": "Crew/Topknot/generated-v1-high-detail/generation.json"
     }
   ],
-  "published_estimated_total_usd": 3.04,
-  "conservative_reserved_total_usd": 4,
-  "uncommitted_budget_usd": 21,
-  "estimated_unspent_budget_usd": 21.96,
+  "published_estimated_total_usd": 13.68,
+  "conservative_reserved_total_usd": 18,
+  "uncommitted_budget_usd": 7,
+  "estimated_unspent_budget_usd": 11.32,
   "actual_account_balance_usd": null,
   "pricing_source": "https://fal.ai/models/meshy/v7.1/image-to-3d",
   "limit": "Published configured pricing; the connector exposes no settled charge or account balance. Built-in ImageGen reference edits do not submit fal model jobs.",
-  "next_spend_gate": "Review higher-detail pilot against retained native draft before promotion or further cast models."
+  "next_spend_gate": "User authorized all characters after PR385. One bounded body per remaining character; reserve before submit, retain actual receipts; no automatic paid retry. Tripo funding/ledger remains separate."
 }

@@ -1,0 +1,12 @@
+{
+  "character": "BlackCap",
+  "body_task_id": "7ea82881-e750-48a7-95aa-a55da483d18f",
+  "body_sha256": "ff4d393b98d5fba212295305b714ab7fce04229e34b14196c7e2f4c210467d70",
+  "task_id": "9a9b37eb-cdb7-461b-ab1c-b76feef686c5",
+  "status": "success",
+  "output": {
+    "riggable": true,
+    "rig_type": "biped"
+  },
+  "credits_consumed": 0.0
+}

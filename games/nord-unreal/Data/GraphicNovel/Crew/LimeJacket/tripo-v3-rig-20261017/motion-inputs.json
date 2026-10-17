@@ -1,0 +1,18 @@
+{
+  "provider_fbx": {
+    "path": "Data/GraphicNovel/Crew/LimeJacket/tripo-v3-rig-20261017/rig.fbx",
+    "sha256": "fdde159419847dc343fa5efb6f13569872dd54fbe730dcb025b6d1623ffa5802"
+  },
+  "source_body_fbx": {
+    "path": "Data/GraphicNovel/Crew/LimeJacket/generated-v1-high-detail/body.fbx",
+    "sha256": "819273a3948234a0118c43722e4958ecff655ba460bffbb661862a9ac1cd56d6"
+  },
+  "walk_fbx": {
+    "path": "Data/GraphicNovel/Crew/LimeJacket/generated-v1-high-detail/walk.fbx",
+    "sha256": "eac8fca7fa43c72ea6b0e62acf614ce837bc2835274c04c636e398d35810e1c1"
+  },
+  "run_fbx": {
+    "path": "Data/GraphicNovel/Crew/LimeJacket/generated-v1-high-detail/run.fbx",
+    "sha256": "93da2f0b136e74402be318864047b2f1e0aa3e0b2de55d9d5b543caddb2423c7"
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "at_utc": "2026-10-17T22:01:13.730957+00:00",
+  "endpoint_id": "meshy/v7.1/image-to-3d",
+  "input_sha256": "778acb70e3f72d5d4ea99e2d64798944adcf4fe4ed67651a3ba13a09ff2e1be6",
+  "reservation_usd": 2,
+  "tool": "fal.submit_job",
+  "ambiguous_retry_forbidden": true
+}

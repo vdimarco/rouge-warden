@@ -1,0 +1,83 @@
+{
+  "recorded_utc": "2026-10-17T23:00:48.691236+00:00",
+  "status": "Two completed Tripo HD body+rig pilots;832 own-rig CPU pose checks pass. Black natural palms reviewed in8 stills+210frames; Top9 stills reject bag deformation. Five further pairs need funding.",
+  "jobs": [
+    {
+      "character": "BlackCap",
+      "style": 5,
+      "request_id": "01a14be3-a65c-7411-adf5-cc3175327dd9",
+      "status": "completed_downloaded",
+      "provenance": "Data/GraphicNovel/Crew/BlackCap/generated-v1-high-detail/generation.json"
+    },
+    {
+      "character": "GreenCap51",
+      "style": 3,
+      "request_id": "01a14be2-2c6e-7630-9f95-2f1d7f3f8d41",
+      "status": "completed_downloaded",
+      "provenance": "Data/GraphicNovel/Crew/GreenCap51/generated-v1-high-detail/generation.json"
+    },
+    {
+      "character": "LimeJacket",
+      "style": 8,
+      "request_id": "01a14be3-bdea-7df3-97fa-15e6d8129e30",
+      "status": "completed_downloaded",
+      "provenance": "Data/GraphicNovel/Crew/LimeJacket/generated-v1-high-detail/generation.json"
+    },
+    {
+      "character": "Memphis33",
+      "style": 4,
+      "request_id": "01a14be3-9f85-74e1-815f-3a5f606c6d1c",
+      "status": "completed_downloaded",
+      "provenance": "Data/GraphicNovel/Crew/Memphis33/generated-v1-high-detail/generation.json"
+    },
+    {
+      "character": "RedJersey",
+      "style": 7,
+      "request_id": "01a14be3-b7bc-7422-914c-0670bcf17a6c",
+      "status": "completed_downloaded",
+      "provenance": "Data/GraphicNovel/Crew/RedJersey/generated-v1-high-detail/generation.json"
+    },
+    {
+      "character": "Topknot",
+      "style": 10,
+      "request_id": "01a14be3-c3e6-7bd3-8f69-1721117e2b46",
+      "status": "completed_downloaded",
+      "provenance": "Data/GraphicNovel/Crew/Topknot/generated-v1-high-detail/generation.json"
+    },
+    {
+      "character": "WhiteCap",
+      "style": 6,
+      "request_id": "01a14be3-b1b5-7640-8a19-1eda5e09e5e5",
+      "status": "completed_downloaded",
+      "provenance": "Data/GraphicNovel/Crew/WhiteCap/generated-v1-high-detail/generation.json"
+    }
+  ],
+  "fal_authorized_usd": 25,
+  "fal_reserved_total_usd": 18,
+  "fal_uncommitted_usd": 7,
+  "fal_published_estimate_all9_usd": 13.68,
+  "settled_charges_known": false,
+  "tripo_last_observed_credits": 30,
+  "tripo_paid_jobs_this_cast": 7,
+  "native_or_package_changes": false,
+  "limits": [
+    "Five remaining detailed Tripo body+rig pairs cost425credits, current30available/0frozen;400-credit top-up requested.",
+    "BlackCap natural palms pass bounded CPU frame review; broad inherited gait sway/contact and native transitions remain unaccepted.",
+    "Topknot bag deforms visibly during Jump; CPU diagnosis pending, no native adoption.",
+    "No Unreal/GPU/service/package operations; native/package/browser/device acceptance remains open."
+  ],
+  "tripo_reserved_credits": 245,
+  "tripo_last_balance_snapshot_scope": "After two completed60-credit bodies and two completed25-credit rigs",
+  "prior_jobs_scope": "Seven completedMeshy comparisons andthreeMeshy-derivedTripo rigs; preservehistory,costs,inputs; no furtheradoption",
+  "tripo_paid_comparison_rigs": 3,
+  "tripo_paid_body_jobs": 2,
+  "tripo_body_task_id": "7ea82881-e750-48a7-95aa-a55da483d18f",
+  "tripo_new_cast_plan": "TripoBodies/Plan.json",
+  "tripo_target_seven_body_and_rig_credits": 595,
+  "tripo_additional_credits_requested": 400,
+  "tripo_paid_h31_rigs": 2,
+  "tripo_reserved_new_pipeline_credits": 170,
+  "tripo_uncommitted_new_pipeline_credits": 30,
+  "tripo_actual_h31_completed_credits": 170,
+  "topknot_h31_body_task_id": "7c59f469-ad8a-4825-913f-14a69d0ba61b"
+}

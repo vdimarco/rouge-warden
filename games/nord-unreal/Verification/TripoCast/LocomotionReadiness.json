@@ -1,0 +1,2466 @@
+{
+  "passed": true,
+  "started_utc": "2026-10-17T22:01:21.288398+00:00",
+  "recipe_sha256": "0411ab95b187a3a824df59b39f875a9ab9ffd2fa2900196c6d07aaee2e2c38db",
+  "scope": "Read-only accepted neutral reference inventory, not new-body/rig, animation or visual acceptance",
+  "source_sha256": {
+    "Data/CharactersNeutral/GreenCap51/body.glb": "e3d51790a0a236f907d62db524964226b0020248b214e7b3a46a51f73e02fcbc",
+    "Data/CharactersNeutral/GreenCap51/body.fbx": "3a65c20c923852a0bf16baf7130792ad951a9e72069e079339b4aa71349fcee3",
+    "Data/CharactersNeutral/GreenCap51/idle.fbx": "5d6e820fa4f9b652a2ec813f1577734d3da4d97006f16d5689eb987ee9e5125b",
+    "Data/CharactersNeutral/GreenCap51/walk.fbx": "739a555e6ea88e8b8a95b8585a6c390612cca4d2168f26ab77466e1bb9a04d76",
+    "Data/CharactersNeutral/GreenCap51/run.fbx": "d23ef3e92f09fe3eee4dfc6b9f3b1d71d3dc05a6648cf98818e724e486884710",
+    "Data/CharactersNeutral/GreenCap51/jump.fbx": "88bf3bf0f523c3cff7ba5b07a573dfd034a1addea8ea5ff8acd77b1a0ae6cd19",
+    "Data/CharactersNeutral/GreenCap51/jump.json": "dbbf0f030274d2895a281f87b78d36d7bc0fac9ad2c2cd59eba68baf95ddc1b4",
+    "Data/CharactersNeutral/GreenCap51/reference.png": "29d562d8f65a356b0c56611e5a525074219ee63640fd0f3baca9fb7b432ca43a",
+    "Data/CharactersNeutral/GreenCap51/base_color.png": "cd5caf43649ebe507c1fc449c951c7bc17903fbee93ba459f08ff352d3aaca42",
+    "Data/CharactersNeutral/GreenCap51/normal.png": "d0ce72da567b378451fc74c3abfe548e4306a9ceab4d4427993867eaf3b08f08",
+    "Data/CharactersNeutral/GreenCap51/roughness.png": "2fbbb1a237a4555d1bd3c3c79fd041e398265d2143ecf344be23da56e815e85d",
+    "Data/CharactersNeutral/GreenCap51/metallic.png": "113237b39a2c443fe24c476f773f0d983a92933f259c497b71b3d9dc1cb13028",
+    "Data/CharactersNeutral/GreenCap51/request.json": "a03c3454d7a05c95dd6cef7580808761d4326510c3e671f10c0cd46c9e26374e",
+    "Data/CharactersNeutral/GreenCap51/result.json": "9a0a129f2bfdfb5059826b7b737c9c570703e1f1aab70cb89147c1e13251dbd4",
+    "Data/CharactersNeutral/Memphis33/body.glb": "fec6c35a974efac9bd0e600ee99be5e8ee3feaf0e617b118d4a9a724eaf62a37",
+    "Data/CharactersNeutral/Memphis33/body.fbx": "c246f2b61487ad8bc5a411f5300b27648ed9b73aa001e6c4f5c76a8cd480f055",
+    "Data/CharactersNeutral/Memphis33/idle.fbx": "5e351f16116da1b2aa33f2fc1664d733de549f600abe47f3853cb9c19a57135a",
+    "Data/CharactersNeutral/Memphis33/walk.fbx": "4362f3c3caad46e6899289c24d9a5bc6b2124aac2d894def4da8dcda3a60e06f",
+    "Data/CharactersNeutral/Memphis33/run.fbx": "c7b962895148afc5bca13102ee71ae6555ce4c2d9c578bd6e3c3aa56feb39233",
+    "Data/CharactersNeutral/Memphis33/jump.fbx": "59f917e31ab4330d92045990285c8d13159cd949fc479d783dee378301ae5a7c",
+    "Data/CharactersNeutral/Memphis33/jump.json": "b2d594195a28280189e41e6edfdb4c6d2ca9411ca5e642b2d3c82d3948c186c6",
+    "Data/CharactersNeutral/Memphis33/reference.png": "1445627cd6f7a8fe8530fdd32f995f4be2603545c3fe6bccff66506c8374e1b9",
+    "Data/CharactersNeutral/Memphis33/base_color.png": "e970b97b56c82fa511b87fa945b15fccb72c095354917620639e29ed95de4b8d",
+    "Data/CharactersNeutral/Memphis33/normal.png": "3cc116cfd74574e63dd0cc80cd745400ae06a2e9f898e3ab23edf863014d12b1",
+    "Data/CharactersNeutral/Memphis33/roughness.png": "d8a13495f0314fcf7a36474f6f5dbdb1f429602a2b6fbac80a97778f62e26b57",
+    "Data/CharactersNeutral/Memphis33/metallic.png": "27f39f5212f778b391c6b95bb92dcf6fe670d12549908706492b18619fec5f7c",
+    "Data/CharactersNeutral/Memphis33/request.json": "88be4894e236b469d5ab52280051a9547552d6911ad91193a3f5a0852138fef1",
+    "Data/CharactersNeutral/Memphis33/result.json": "f681d402b32291f8848f63ba5c4f73921e824df27f3bbe4629d9568b3e814380",
+    "Data/CharactersNeutral/BlackCap/body.glb": "1539d56fc1d9842ce0a0e4a8276381a85d2826a1ea34506c87604aa1b845bb78",
+    "Data/CharactersNeutral/BlackCap/body.fbx": "bbadf9714665fb71f7981307261926de682c615eb33503d2ccbfa6e7aca71a37",
+    "Data/CharactersNeutral/BlackCap/idle.fbx": "ae5d4840d9e08427c153cc0d48c7a17059cfbc47f677def455b5bafd16ba8b4d",
+    "Data/CharactersNeutral/BlackCap/walk.fbx": "22c0b2794cbe1ef088b1f1f645217a5c7d652d9c4a1a516d076e0da024e015fb",
+    "Data/CharactersNeutral/BlackCap/run.fbx": "7af8c9a855da5b72487234af75dac0921713c188c22eb65903e0c61ee6c5c62c",
+    "Data/CharactersNeutral/BlackCap/jump.fbx": "7b04c5b9289b19960f24f46825bf7898b9069b47bd6456a4a693c75313e67059",
+    "Data/CharactersNeutral/BlackCap/jump.json": "1ac3538a8d369bb910d9cb7743ae6a7058b78a72243a52313fa14bbe9b6e9f2e",
+    "Data/CharactersNeutral/BlackCap/reference.png": "6b2adba3d5f3fbef09bec9dc9bf4be27d799c0bf2e4349106bbde3ec2b3f5048",
+    "Data/CharactersNeutral/BlackCap/base_color.png": "4532f1b81eecea3d848a711661b41174f613aa8e8dadc61ad2c10751ca026a5d",
+    "Data/CharactersNeutral/BlackCap/normal.png": "de3594d3340f949930f396798d48a9fe289f1de4845d0225e9c167195f4f16f0",
+    "Data/CharactersNeutral/BlackCap/roughness.png": "8b36ddf095d560333d2722d4f5f4125385957c3eceae10afd13cfa40d9919777",
+    "Data/CharactersNeutral/BlackCap/metallic.png": "eca5b049d03110d51e49ad46c8834b3fe203d660f8ef0752f2c877e0458a08f3",
+    "Data/CharactersNeutral/BlackCap/request.json": "db90c8891489ee95ab121678087af390d9e0da2cfd9e0dcf2ef5287331ab79c3",
+    "Data/CharactersNeutral/BlackCap/result.json": "9684bb49e8bad7e44512985d260b7cceb186a33193e6567d5d3518cef3d6bfc4",
+    "Data/CharactersNeutral/WhiteCap/body.glb": "47f562f973879f79418966c77a2a81a06ada9c42966c1f6934417618caffeeee",
+    "Data/CharactersNeutral/WhiteCap/body.fbx": "7b687a80ca150b3b011bfb3ba33f880da391a835ecdb2236f04627ad40950b44",
+    "Data/CharactersNeutral/WhiteCap/idle.fbx": "d8b855ee066aaf808ddfda19923bdf8974b2887da5861b57e011a7ff6bb6f6f5",
+    "Data/CharactersNeutral/WhiteCap/walk.fbx": "b6c1cd7afba9010bcc0d43b2da82c6ba6acc88120938b49e7c8685274b7b919e",
+    "Data/CharactersNeutral/WhiteCap/run.fbx": "c404e1d9ddeca84d2fc23604454e2ddd4252155ea353f9dbfd019bbc155af422",
+    "Data/CharactersNeutral/WhiteCap/jump.fbx": "58ddd18878713598901943082d6bab210e846474a9556f5e69eac606f9c5312c",
+    "Data/CharactersNeutral/WhiteCap/jump.json": "a5c7b9b4d433f7776c22e59a90dfd201c2c172ca318dc84ae4f32257a471a02e",
+    "Data/CharactersNeutral/WhiteCap/reference.png": "5f247969b9589235a5aedd20ea7f5c2ac921cc5b5a2c4600a89eb30939ace79a",
+    "Data/CharactersNeutral/WhiteCap/base_color.png": "84f8cd5c9ef6be21ea2850ec4e6689c62320df7bde0c9ce6821258007e3f5afe",
+    "Data/CharactersNeutral/WhiteCap/normal.png": "73612a514fa9933796540b48b19fc084ea8181affbf6a30bd8b066d116b69d1d",
+    "Data/CharactersNeutral/WhiteCap/roughness.png": "28c5685a3c445ec55b6bddb3a9300f7ea3e4df4e700e1e4ce40764bd196932fc",
+    "Data/CharactersNeutral/WhiteCap/metallic.png": "455ed7260eea9eba46fd16a28e630561e3876b823dc0ce350637c86453074f3c",
+    "Data/CharactersNeutral/WhiteCap/request.json": "e57d9434b3e8af45842c5ee2c1be2e3a0fca23ccf22f417b05e3b1a8d55babbf",
+    "Data/CharactersNeutral/WhiteCap/result.json": "4c2d71dbae7595fbad059b478dd4231621e4939cb5f6d02acd1cb9af99172223",
+    "Data/CharactersNeutral/RedJersey/body.glb": "47665d2802a2154c4296b55c1d1ed01d6fdbc1867d33c1a44d55e7927f7f7f02",
+    "Data/CharactersNeutral/RedJersey/body.fbx": "a019dd99a3a783d14bed1c60672d977688dd9955fcddc25f73127e2d541e5295",
+    "Data/CharactersNeutral/RedJersey/idle.fbx": "4e30c9b44f7f5d52cb976fee0dcc098e0b18119c484d91787fef3be70c67c56b",
+    "Data/CharactersNeutral/RedJersey/walk.fbx": "e384488866bcf2e963a9a2fd4ccae76632d4462f93f0d887d40258815ac4d668",
+    "Data/CharactersNeutral/RedJersey/run.fbx": "a9225af857a434da7e7827edb2a51e77c0aeb0c53214e800f740244b429eeabb",
+    "Data/CharactersNeutral/RedJersey/jump.fbx": "92d3ce2cd48cfe34b6c406d9b8e930630f523d1dc9ec0712e2a05f7a96696a0b",
+    "Data/CharactersNeutral/RedJersey/jump.json": "081c75aa835fea2b77b0c8cb3b6c5b7f635fc62e4d81861018bf6d0f24dd10e0",
+    "Data/CharactersNeutral/RedJersey/reference.png": "2ee33cfa0e62806cfedef7a81628885b35fe3974baca1518ea9283092717515a",
+    "Data/CharactersNeutral/RedJersey/base_color.png": "11780568780e912d255022dce8dada4e92ee87f83105a1fb8abdfeb8fbde7fd4",
+    "Data/CharactersNeutral/RedJersey/normal.png": "859796c3ae4a06467d4171202642093a6a36f4f755d29f2f6a68af58ae8530d3",
+    "Data/CharactersNeutral/RedJersey/roughness.png": "6a80f24dcc8dba442cb6c2d462b65713673aa5442d6b7adde946623090d1daf7",
+    "Data/CharactersNeutral/RedJersey/metallic.png": "8f5591feb66ef47af3ea408bc7129f8ac983e155278de651285515b72887bee4",
+    "Data/CharactersNeutral/RedJersey/request.json": "a026dc03c75e6dae7fc9852a53e64f06c26c0cc49dd2f112eb8efc9bec6a0374",
+    "Data/CharactersNeutral/RedJersey/result.json": "29ab5bb6cc230e972a6a6f876564bbe26ee03d83781c0e4ba33e149cf363c2b1",
+    "Data/CharactersNeutral/LimeJacket/body.glb": "ee8179a0eef36145a8cdd635eb33ef9b5540c7759bfdcd17a4b9298c6f0c9a8f",
+    "Data/CharactersNeutral/LimeJacket/body.fbx": "e3bccdf06bac149803a86cd86a98d085e6f5bccc40997b933e8fd0ed4097d24b",
+    "Data/CharactersNeutral/LimeJacket/idle.fbx": "519b4763069274602880cd9de4f9106ec3895c1ffc1c5369f34fcb1c76b5abcf",
+    "Data/CharactersNeutral/LimeJacket/walk.fbx": "a91105b299958b2a52a8f63936d3943642cfbc1818c2a6457f4216a45f14d9dc",
+    "Data/CharactersNeutral/LimeJacket/run.fbx": "a1b45476d41e8c50f5f240148610e41a2bf514d5457f358fad5c0485b2b5d248",
+    "Data/CharactersNeutral/LimeJacket/jump.fbx": "1bf34250260b671e4a71612993d966b84f51c665173b2170f6aa9a8fe96256da",
+    "Data/CharactersNeutral/LimeJacket/jump.json": "f625b18cee14946b5d8e1f7200e1eee52606d220468e31320576dad15420dc25",
+    "Data/CharactersNeutral/LimeJacket/reference.png": "ca23a0037f043fa6a66caa516bbd216c1ee6cd042e36b8aadbc4783c0579aa91",
+    "Data/CharactersNeutral/LimeJacket/base_color.png": "7da41cb1d4ac748db19dd922f1d04d6c6b6afddbe6d064d1a482ae47648be7ac",
+    "Data/CharactersNeutral/LimeJacket/normal.png": "35abf7f9ba9712d7c4541f8e41ee44da109962be272ede9926a82038cb35afd5",
+    "Data/CharactersNeutral/LimeJacket/roughness.png": "ddb5f269f96d2d58aa392f883a133b4d3428441beb565425896a402d1a48f4f6",
+    "Data/CharactersNeutral/LimeJacket/metallic.png": "a2296c83dfa44df957009cd2709be417542960f589e46d7ccb912b198b2f8605",
+    "Data/CharactersNeutral/LimeJacket/request.json": "090741f7578b099824367e2fdd70ebc572b33ccdc1377cde3664d54755c147d4",
+    "Data/CharactersNeutral/LimeJacket/result.json": "83658c2d682f70547658b8ca55823879e074d1d8bc18159fcd215fe414995753",
+    "Data/CharactersNeutral/Topknot/body.glb": "d6432134e3f2b70a1b9cf2b2c1d8e74e9d2fa2bea46121e2f8ec0eef5b852f01",
+    "Data/CharactersNeutral/Topknot/body.fbx": "5adc8300b149cc8cae9d1b483c649f05f4265aa47cda65e4d3068e737cb39176",
+    "Data/CharactersNeutral/Topknot/idle.fbx": "8e3d9f685a72a4c4c95761a9d11852baf2f737cfeb8c194ff4eac917df650ec8",
+    "Data/CharactersNeutral/Topknot/walk.fbx": "5df55560593ff167c202fc6b7e1b8650a2e38b788a286044772fe8f7204b4bd5",
+    "Data/CharactersNeutral/Topknot/run.fbx": "24ec14cd8e3d613074a8a0fed2d409f74a751b2968bc051ccdb0ee1dd41a4917",
+    "Data/CharactersNeutral/Topknot/jump.fbx": "781e957841c7ad080fe37e37dbe0d3926aeccd4ba49a6e4929d03a5705639494",
+    "Data/CharactersNeutral/Topknot/jump.json": "17c1f81883467aa2c8a3998ec9c4fb02d8b58da21c6f87b2a81a8c30716763cb",
+    "Data/CharactersNeutral/Topknot/reference.png": "20c388f288b0195bedd900c172f95dfae1a462a1b1afe216a1d2db4f178d1ce3",
+    "Data/CharactersNeutral/Topknot/base_color.png": "2a3abd3a1d0279c9edde4563ee1ba16e3e3866a0bd01d4a0fe5f23d96e79745d",
+    "Data/CharactersNeutral/Topknot/normal.png": "1fc1b42b19334226f232dd22b769cddbae8fec116e212cc51070683db277ab43",
+    "Data/CharactersNeutral/Topknot/roughness.png": "8c3ca986af972a4b6a902cd0be8f9feb8372e2feac0724a7bec19f84c6988170",
+    "Data/CharactersNeutral/Topknot/metallic.png": "f2c81f6310608bc48c626d14a9554646cf746b27a447b85bc6606cdb98a44286",
+    "Data/CharactersNeutral/Topknot/request.json": "624e826db8056322cdfc0217dfb0c70a01a2b960c32032a66c498c9dfdf8689d",
+    "Data/CharactersNeutral/Topknot/result.json": "551c1350e83135c3fd9a510e32b9c0d4092240e56f0e241a469e88e93b5ba90e"
+  },
+  "blender_version": "5.2.2 LTS",
+  "threads": 4,
+  "imports_use_only_ignored_input_copies": true,
+  "characters": [
+    {
+      "style": 3,
+      "name": "GreenCap51",
+      "source_root": "Data/CharactersNeutral/GreenCap51",
+      "intended_prop": "Plunger",
+      "body_bones": 24,
+      "body_glb_bounds": {
+        "world_metres_min_xyz": [
+          -0.5355459451675415,
+          -0.16339346766471863,
+          2.7290053594697383e-07
+        ],
+        "world_metres_max_xyz": [
+          0.5334758162498474,
+          0.17077337205410004,
+          1.820000410079956
+        ],
+        "world_metres_size_xyz": [
+          1.069021761417389,
+          0.33416683971881866,
+          1.82000013717942
+        ],
+        "vertices": 29109,
+        "triangles": 31065,
+        "material_slots": 1,
+        "uv_triangle_keys": 31065,
+        "unique_uv_triangle_keys_1e_6": 31065
+      },
+      "body_fbx_bounds": {
+        "world_metres_min_xyz": [
+          -0.5355461239814758,
+          -0.16339343786239624,
+          2.9642934773477236e-09
+        ],
+        "world_metres_max_xyz": [
+          0.533475935459137,
+          0.17077335715293884,
+          1.8199998140335083
+        ],
+        "world_metres_size_xyz": [
+          1.0690220594406128,
+          0.3341667950153351,
+          1.8199998110692148
+        ],
+        "vertices": 29109,
+        "triangles": 31065,
+        "material_slots": 1,
+        "uv_triangle_keys": 31065,
+        "unique_uv_triangle_keys_1e_6": 31065
+      },
+      "body_fbx_reference_parents": {
+        "Hips": null,
+        "Spine02": "Hips",
+        "Spine01": "Spine02",
+        "Spine": "Spine01",
+        "neck": "Spine",
+        "Head": "neck",
+        "head_end": "Head",
+        "headfront": "Head",
+        "LeftShoulder": "Spine",
+        "LeftArm": "LeftShoulder",
+        "LeftForeArm": "LeftArm",
+        "LeftHand": "LeftForeArm",
+        "RightShoulder": "Spine",
+        "RightArm": "RightShoulder",
+        "RightForeArm": "RightArm",
+        "RightHand": "RightForeArm",
+        "LeftUpLeg": "Hips",
+        "LeftLeg": "LeftUpLeg",
+        "LeftFoot": "LeftLeg",
+        "LeftToeBase": "LeftFoot",
+        "RightUpLeg": "Hips",
+        "RightLeg": "RightUpLeg",
+        "RightFoot": "RightLeg",
+        "RightToeBase": "RightFoot"
+      },
+      "saved_native_height_cm_historical": 182.0,
+      "saved_native_body_source_hash_matches": true,
+      "own_clips": {
+        "idle": {
+          "source_path": "Data/CharactersNeutral/GreenCap51/idle.fbx",
+          "sha256": "5d6e820fa4f9b652a2ec813f1577734d3da4d97006f16d5689eb987ee9e5125b",
+          "binary_fbx": {
+            "version": 7400,
+            "time_mode": 6,
+            "custom_frame_rate": 30.0,
+            "stacks": [
+              {
+                "name": "Armature|Armature|Idle|baselayer\u0000\u0001AnimStack",
+                "local_start_ktime": 0,
+                "local_stop_ktime": 184744632000,
+                "seconds": 4.0
+              }
+            ]
+          },
+          "blender_action_frame_range": [
+            1.0,
+            121.0
+          ],
+          "frame_intervals": 120,
+          "integer_samples": 121,
+          "half_frame_samples_checked": 241,
+          "scene_fps": 30,
+          "fps_base": 1.0,
+          "reference_max_matrix_error_source_units": 0.0,
+          "reference_max_rotation_error_rad": 6.006850114687195e-08,
+          "reference_max_head_translation_error_metres": 0.0,
+          "reference_max_scale_error": 0.0,
+          "source_reference_semantic_comparison_only": {
+            "rotation_under_1e_4_rad": true,
+            "heads_under_1e_5_m": true,
+            "scales_under_1e_5": true
+          },
+          "object_matrix_max_motion": 0.0,
+          "component_rotation_seam_max_rad": 0.0002009775281777817,
+          "hip_world_metres_min_xyz": [
+            -0.011641992256045341,
+            0.038847289979457855,
+            0.9383276104927063
+          ],
+          "hip_world_metres_max_xyz": [
+            0.009063285775482655,
+            0.054910995066165924,
+            0.9690356254577637
+          ]
+        },
+        "walk": {
+          "source_path": "Data/CharactersNeutral/GreenCap51/walk.fbx",
+          "sha256": "739a555e6ea88e8b8a95b8585a6c390612cca4d2168f26ab77466e1bb9a04d76",
+          "binary_fbx": {
+            "version": 7400,
+            "time_mode": 6,
+            "custom_frame_rate": 30.0,
+            "stacks": [
+              {
+                "name": "Armature|Armature|walking_man|baselayer\u0000\u0001AnimStack",
+                "local_start_ktime": 0,
+                "local_stop_ktime": 47725695132,
+                "seconds": 1.0333333015489186
+              }
+            ]
+          },
+          "blender_action_frame_range": [
+            1.0,
+            32.0
+          ],
+          "frame_intervals": 31,
+          "integer_samples": 32,
+          "half_frame_samples_checked": 63,
+          "scene_fps": 30,
+          "fps_base": 1.0,
+          "reference_max_matrix_error_source_units": 0.0,
+          "reference_max_rotation_error_rad": 6.006850114687195e-08,
+          "reference_max_head_translation_error_metres": 0.0,
+          "reference_max_scale_error": 0.0,
+          "source_reference_semantic_comparison_only": {
+            "rotation_under_1e_4_rad": true,
+            "heads_under_1e_5_m": true,
+            "scales_under_1e_5": true
+          },
+          "object_matrix_max_motion": 0.0,
+          "component_rotation_seam_max_rad": 2.625990919520859e-06,
+          "hip_world_metres_min_xyz": [
+            -0.0017638963181525469,
+            0.0007193661876954138,
+            0.9821224808692932
+          ],
+          "hip_world_metres_max_xyz": [
+            0.05574897676706314,
+            0.04856085032224655,
+            1.0518940687179565
+          ]
+        },
+        "run": {
+          "source_path": "Data/CharactersNeutral/GreenCap51/run.fbx",
+          "sha256": "d23ef3e92f09fe3eee4dfc6b9f3b1d71d3dc05a6648cf98818e724e486884710",
+          "binary_fbx": {
+            "version": 7400,
+            "time_mode": 6,
+            "custom_frame_rate": 30.0,
+            "stacks": [
+              {
+                "name": "Armature|Armature|running|baselayer\u0000\u0001AnimStack",
+                "local_start_ktime": 0,
+                "local_stop_ktime": 29251233033,
+                "seconds": 0.6333333253872296
+              }
+            ]
+          },
+          "blender_action_frame_range": [
+            1.0,
+            20.0
+          ],
+          "frame_intervals": 19,
+          "integer_samples": 20,
+          "half_frame_samples_checked": 39,
+          "scene_fps": 30,
+          "fps_base": 1.0,
+          "reference_max_matrix_error_source_units": 0.0,
+          "reference_max_rotation_error_rad": 6.006850114687195e-08,
+          "reference_max_head_translation_error_metres": 0.0,
+          "reference_max_scale_error": 0.0,
+          "source_reference_semantic_comparison_only": {
+            "rotation_under_1e_4_rad": true,
+            "heads_under_1e_5_m": true,
+            "scales_under_1e_5": true
+          },
+          "object_matrix_max_motion": 0.0,
+          "component_rotation_seam_max_rad": 2.272191185656516e-06,
+          "hip_world_metres_min_xyz": [
+            0.0017402928788214922,
+            0.00844633299857378,
+            0.9600964188575745
+          ],
+          "hip_world_metres_max_xyz": [
+            0.020003994926810265,
+            0.08248166739940643,
+            1.0307384729385376
+          ]
+        },
+        "jump": {
+          "source_path": "Data/CharactersNeutral/GreenCap51/jump.fbx",
+          "sha256": "88bf3bf0f523c3cff7ba5b07a573dfd034a1addea8ea5ff8acd77b1a0ae6cd19",
+          "binary_fbx": {
+            "version": 7400,
+            "time_mode": 6,
+            "custom_frame_rate": 30.0,
+            "stacks": [
+              {
+                "name": "Scene\u0000\u0001AnimStack",
+                "local_start_ktime": 1539538600,
+                "local_stop_ktime": 56962928200,
+                "seconds": 1.2
+              }
+            ]
+          },
+          "blender_action_frame_range": [
+            2.0,
+            38.0
+          ],
+          "frame_intervals": 36,
+          "integer_samples": 37,
+          "half_frame_samples_checked": 73,
+          "scene_fps": 30,
+          "fps_base": 1.0,
+          "reference_max_matrix_error_source_units": 7.62939453125e-05,
+          "reference_max_rotation_error_rad": 2.2904414867082356e-06,
+          "reference_max_head_translation_error_metres": 1.0100484221639398e-06,
+          "reference_max_scale_error": 4.887580871582031e-06,
+          "source_reference_semantic_comparison_only": {
+            "rotation_under_1e_4_rad": true,
+            "heads_under_1e_5_m": true,
+            "scales_under_1e_5": true
+          },
+          "object_matrix_max_motion": 0.0,
+          "component_rotation_seam_max_rad": 6.664001874625054e-08,
+          "hip_world_metres_min_xyz": [
+            0.007852302864193916,
+            0.047427862882614136,
+            0.9124731421470642
+          ],
+          "hip_world_metres_max_xyz": [
+            0.009467299096286297,
+            0.052497267723083496,
+            1.0222944021224976
+          ],
+          "per_forearm_anatomical_check": {
+            "neutral_signed_deg": {
+              "Left": 6.074436042756851,
+              "Right": 5.047297835443882
+            },
+            "minimum_forward_flex_from_bind_deg": {
+              "Left": -59.15231008897406,
+              "Right": -59.72915855254245
+            },
+            "maximum_forward_flex_from_bind_deg": {
+              "Left": 3.769390835017816e-07,
+              "Right": 1.0562681618253578e-06
+            },
+            "backward_control_threshold_deg": -0.5,
+            "backward_bend_observed_sides": [
+              "Left",
+              "Right"
+            ],
+            "warning": "Retained source jump predates the per-forearm hinge correction. Its global-side-axis recipe is not a verified natural target jump; author a fresh derivative using each own rig and preserve this source.",
+            "minimum_sample_by_side": {
+              "Left": {
+                "source_frame": 16.0,
+                "source_seconds_from_start": 0.4666666666666667,
+                "forward_flex_from_bind_deg": {
+                  "Left": -59.15231008897406,
+                  "Right": -59.72915855254245
+                }
+              },
+              "Right": {
+                "source_frame": 16.0,
+                "source_seconds_from_start": 0.4666666666666667,
+                "forward_flex_from_bind_deg": {
+                  "Left": -59.15231008897406,
+                  "Right": -59.72915855254245
+                }
+              }
+            },
+            "complete_samples_retained_in_hashed_saved_inventory": true
+          }
+        }
+      },
+      "jump_provenance": {
+        "name": "GreenCap51",
+        "authoring": "original local skeletal keyframes; no paid generation",
+        "body_sha256": "3a65c20c923852a0bf16baf7130792ad951a9e72069e079339b4aa71349fcee3",
+        "jump_sha256": "88bf3bf0f523c3cff7ba5b07a573dfd034a1addea8ea5ff8acd77b1a0ae6cd19",
+        "seconds": 1.2,
+        "fps": 30,
+        "bones": 24,
+        "head_and_neck_unchanged": true,
+        "actor_root_motion": false,
+        "fbx_round_trip_passed": true
+      }
+    },
+    {
+      "style": 4,
+      "name": "Memphis33",
+      "source_root": "Data/CharactersNeutral/Memphis33",
+      "intended_prop": "Plunger",
+      "body_bones": 24,
+      "body_glb_bounds": {
+        "world_metres_min_xyz": [
+          -0.4311539828777313,
+          -0.19437289237976074,
+          -2.921820225765259e-07
+        ],
+        "world_metres_max_xyz": [
+          0.43013694882392883,
+          0.20605532824993134,
+          1.8200000524520874
+        ],
+        "world_metres_size_xyz": [
+          0.8612909317016602,
+          0.4004282206296921,
+          1.82000034463411
+        ],
+        "vertices": 32988,
+        "triangles": 31028,
+        "material_slots": 1,
+        "uv_triangle_keys": 31028,
+        "unique_uv_triangle_keys_1e_6": 31028
+      },
+      "body_fbx_bounds": {
+        "world_metres_min_xyz": [
+          -0.4311540424823761,
+          -0.1943724900484085,
+          -6.583964307083079e-08
+        ],
+        "world_metres_max_xyz": [
+          0.43013709783554077,
+          0.20605537295341492,
+          1.8199998140335083
+        ],
+        "world_metres_size_xyz": [
+          0.8612911403179169,
+          0.4004278630018234,
+          1.8199998798731514
+        ],
+        "vertices": 32988,
+        "triangles": 31028,
+        "material_slots": 1,
+        "uv_triangle_keys": 31028,
+        "unique_uv_triangle_keys_1e_6": 31028
+      },
+      "body_fbx_reference_parents": {
+        "Hips": null,
+        "Spine02": "Hips",
+        "Spine01": "Spine02",
+        "Spine": "Spine01",
+        "neck": "Spine",
+        "Head": "neck",
+        "head_end": "Head",
+        "headfront": "Head",
+        "LeftShoulder": "Spine",
+        "LeftArm": "LeftShoulder",
+        "LeftForeArm": "LeftArm",
+        "LeftHand": "LeftForeArm",
+        "RightShoulder": "Spine",
+        "RightArm": "RightShoulder",
+        "RightForeArm": "RightArm",
+        "RightHand": "RightForeArm",
+        "LeftUpLeg": "Hips",
+        "LeftLeg": "LeftUpLeg",
+        "LeftFoot": "LeftLeg",
+        "LeftToeBase": "LeftFoot",
+        "RightUpLeg": "Hips",
+        "RightLeg": "RightUpLeg",
+        "RightFoot": "RightLeg",
+        "RightToeBase": "RightFoot"
+      },
+      "saved_native_height_cm_historical": 182.0,
+      "saved_native_body_source_hash_matches": true,
+      "own_clips": {
+        "idle": {
+          "source_path": "Data/CharactersNeutral/Memphis33/idle.fbx",
+          "sha256": "5e351f16116da1b2aa33f2fc1664d733de549f600abe47f3853cb9c19a57135a",
+          "binary_fbx": {
+            "version": 7400,
+            "time_mode": 6,
+            "custom_frame_rate": 30.0,
+            "stacks": [
+              {
+                "name": "Armature|Armature|Idle|baselayer\u0000\u0001AnimStack",
+                "local_start_ktime": 0,
+                "local_stop_ktime": 184744632000,
+                "seconds": 4.0
+              }
+            ]
+          },
+          "blender_action_frame_range": [
+            1.0,
+            121.0
+          ],
+          "frame_intervals": 120,
+          "integer_samples": 121,
+          "half_frame_samples_checked": 241,
+          "scene_fps": 30,
+          "fps_base": 1.0,
+          "reference_max_matrix_error_source_units": 0.0,
+          "reference_max_rotation_error_rad": 7.450580596923824e-08,
+          "reference_max_head_translation_error_metres": 0.0,
+          "reference_max_scale_error": 0.0,
+          "source_reference_semantic_comparison_only": {
+            "rotation_under_1e_4_rad": true,
+            "heads_under_1e_5_m": true,
+            "scales_under_1e_5": true
+          },
+          "object_matrix_max_motion": 0.0,
+          "component_rotation_seam_max_rad": 0.00020085585235081046,
+          "hip_world_metres_min_xyz": [
+            -0.011906607076525688,
+            0.007380090653896332,
+            0.952894389629364
+          ],
+          "hip_world_metres_max_xyz": [
+            0.009079724550247192,
+            0.023661844432353973,
+            0.9840192198753357
+          ]
+        },
+        "walk": {
+          "source_path": "Data/CharactersNeutral/Memphis33/walk.fbx",
+          "sha256": "4362f3c3caad46e6899289c24d9a5bc6b2124aac2d894def4da8dcda3a60e06f",
+          "binary_fbx": {
+            "version": 7400,
+            "time_mode": 6,
+            "custom_frame_rate": 30.0,
+            "stacks": [
+              {
+                "name": "Armature|Armature|walking_man|baselayer\u0000\u0001AnimStack",
+                "local_start_ktime": 0,
+                "local_stop_ktime": 47725695132,
+                "seconds": 1.0333333015489186
+              }
+            ]
+          },
+          "blender_action_frame_range": [
+            1.0,
+            32.0
+          ],
+          "frame_intervals": 31,
+          "integer_samples": 32,
+          "half_frame_samples_checked": 63,
+          "scene_fps": 30,
+          "fps_base": 1.0,
+          "reference_max_matrix_error_source_units": 0.0,
+          "reference_max_rotation_error_rad": 7.450580596923824e-08,
+          "reference_max_head_translation_error_metres": 0.0,
+          "reference_max_scale_error": 0.0,
+          "source_reference_semantic_comparison_only": {
+            "rotation_under_1e_4_rad": true,
+            "heads_under_1e_5_m": true,
+            "scales_under_1e_5": true
+          },
+          "object_matrix_max_motion": 0.0,
+          "component_rotation_seam_max_rad": 2.6260002744794912e-06,
+          "hip_world_metres_min_xyz": [
+            -0.0018944257171824574,
+            -0.031265389174222946,
+            0.9972838163375854
+          ],
+          "hip_world_metres_max_xyz": [
+            0.0563991405069828,
+            0.01722549833357334,
+            1.0680023431777954
+          ]
+        },
+        "run": {
+          "source_path": "Data/CharactersNeutral/Memphis33/run.fbx",
+          "sha256": "c7b962895148afc5bca13102ee71ae6555ce4c2d9c578bd6e3c3aa56feb39233",
+          "binary_fbx": {
+            "version": 7400,
+            "time_mode": 6,
+            "custom_frame_rate": 30.0,
+            "stacks": [
+              {
+                "name": "Armature|Armature|running|baselayer\u0000\u0001AnimStack",
+                "local_start_ktime": 0,
+                "local_stop_ktime": 29251233033,
+                "seconds": 0.6333333253872296
+              }
+            ]
+          },
+          "blender_action_frame_range": [
+            1.0,
+            20.0
+          ],
+          "frame_intervals": 19,
+          "integer_samples": 20,
+          "half_frame_samples_checked": 39,
+          "scene_fps": 30,
+          "fps_base": 1.0,
+          "reference_max_matrix_error_source_units": 0.0,
+          "reference_max_rotation_error_rad": 7.450580596923824e-08,
+          "reference_max_head_translation_error_metres": 0.0,
+          "reference_max_scale_error": 0.0,
+          "source_reference_semantic_comparison_only": {
+            "rotation_under_1e_4_rad": true,
+            "heads_under_1e_5_m": true,
+            "scales_under_1e_5": true
+          },
+          "object_matrix_max_motion": 0.0,
+          "component_rotation_seam_max_rad": 1.9911058174918493e-06,
+          "hip_world_metres_min_xyz": [
+            0.0016573303146287799,
+            -0.023433541879057884,
+            0.974958598613739
+          ],
+          "hip_world_metres_max_xyz": [
+            0.02016894705593586,
+            0.05160675197839737,
+            1.0465596914291382
+          ]
+        },
+        "jump": {
+          "source_path": "Data/CharactersNeutral/Memphis33/jump.fbx",
+          "sha256": "59f917e31ab4330d92045990285c8d13159cd949fc479d783dee378301ae5a7c",
+          "binary_fbx": {
+            "version": 7400,
+            "time_mode": 6,
+            "custom_frame_rate": 30.0,
+            "stacks": [
+              {
+                "name": "Scene\u0000\u0001AnimStack",
+                "local_start_ktime": 1539538600,
+                "local_stop_ktime": 56962928200,
+                "seconds": 1.2
+              }
+            ]
+          },
+          "blender_action_frame_range": [
+            2.0,
+            38.0
+          ],
+          "frame_intervals": 36,
+          "integer_samples": 37,
+          "half_frame_samples_checked": 73,
+          "scene_fps": 30,
+          "fps_base": 1.0,
+          "reference_max_matrix_error_source_units": 4.9591064453125e-05,
+          "reference_max_rotation_error_rad": 7.176182271764667e-06,
+          "reference_max_head_translation_error_metres": 5.40411108904737e-07,
+          "reference_max_scale_error": 8.821487426757812e-06,
+          "source_reference_semantic_comparison_only": {
+            "rotation_under_1e_4_rad": true,
+            "heads_under_1e_5_m": true,
+            "scales_under_1e_5": true
+          },
+          "object_matrix_max_motion": 0.0,
+          "component_rotation_seam_max_rad": 6.052880629538826e-08,
+          "hip_world_metres_min_xyz": [
+            0.00785230752080679,
+            0.021215345710515976,
+            0.9281355142593384
+          ],
+          "hip_world_metres_max_xyz": [
+            0.010275776498019695,
+            0.024791710078716278,
+            1.0380008220672607
+          ],
+          "per_forearm_anatomical_check": {
+            "neutral_signed_deg": {
+              "Left": 17.629005103498315,
+              "Right": 16.62860926692372
+            },
+            "minimum_forward_flex_from_bind_deg": {
+              "Left": -60.694761993180016,
+              "Right": -61.79885512905028
+            },
+            "maximum_forward_flex_from_bind_deg": {
+              "Left": 1.7831673069679255e-05,
+              "Right": -2.585282260980648e-05
+            },
+            "backward_control_threshold_deg": -0.5,
+            "backward_bend_observed_sides": [
+              "Left",
+              "Right"
+            ],
+            "warning": "Retained source jump predates the per-forearm hinge correction. Its global-side-axis recipe is not a verified natural target jump; author a fresh derivative using each own rig and preserve this source.",
+            "minimum_sample_by_side": {
+              "Left": {
+                "source_frame": 16.0,
+                "source_seconds_from_start": 0.4666666666666667,
+                "forward_flex_from_bind_deg": {
+                  "Left": -60.694761993180016,
+                  "Right": -61.79885512905028
+                }
+              },
+              "Right": {
+                "source_frame": 16.0,
+                "source_seconds_from_start": 0.4666666666666667,
+                "forward_flex_from_bind_deg": {
+                  "Left": -60.694761993180016,
+                  "Right": -61.79885512905028
+                }
+              }
+            },
+            "complete_samples_retained_in_hashed_saved_inventory": true
+          }
+        }
+      },
+      "jump_provenance": {
+        "name": "Memphis33",
+        "authoring": "original local skeletal keyframes; no paid generation",
+        "body_sha256": "c246f2b61487ad8bc5a411f5300b27648ed9b73aa001e6c4f5c76a8cd480f055",
+        "jump_sha256": "59f917e31ab4330d92045990285c8d13159cd949fc479d783dee378301ae5a7c",
+        "seconds": 1.2,
+        "fps": 30,
+        "bones": 24,
+        "head_and_neck_unchanged": true,
+        "actor_root_motion": false,
+        "fbx_round_trip_passed": true
+      }
+    },
+    {
+      "style": 5,
+      "name": "BlackCap",
+      "source_root": "Data/CharactersNeutral/BlackCap",
+      "intended_prop": "Plunger",
+      "body_bones": 24,
+      "body_glb_bounds": {
+        "world_metres_min_xyz": [
+          -0.5989603400230408,
+          -0.20220869779586792,
+          -1.0740173905787742e-07
+        ],
+        "world_metres_max_xyz": [
+          0.5976308584213257,
+          0.20362740755081177,
+          1.8199999332427979
+        ],
+        "world_metres_size_xyz": [
+          1.1965911984443665,
+          0.4058361053466797,
+          1.820000040644537
+        ],
+        "vertices": 27739,
+        "triangles": 31110,
+        "material_slots": 1,
+        "uv_triangle_keys": 31110,
+        "unique_uv_triangle_keys_1e_6": 31110
+      },
+      "body_fbx_bounds": {
+        "world_metres_min_xyz": [
+          -0.598960280418396,
+          -0.20220860838890076,
+          1.433831187114265e-08
+        ],
+        "world_metres_max_xyz": [
+          0.5976303815841675,
+          0.20362743735313416,
+          1.8200000524520874
+        ],
+        "world_metres_size_xyz": [
+          1.1965906620025635,
+          0.4058360457420349,
+          1.8200000381137755
+        ],
+        "vertices": 27739,
+        "triangles": 31110,
+        "material_slots": 1,
+        "uv_triangle_keys": 31110,
+        "unique_uv_triangle_keys_1e_6": 31110
+      },
+      "body_fbx_reference_parents": {
+        "Hips": null,
+        "Spine02": "Hips",
+        "Spine01": "Spine02",
+        "Spine": "Spine01",
+        "neck": "Spine",
+        "Head": "neck",
+        "head_end": "Head",
+        "headfront": "Head",
+        "LeftShoulder": "Spine",
+        "LeftArm": "LeftShoulder",
+        "LeftForeArm": "LeftArm",
+        "LeftHand": "LeftForeArm",
+        "RightShoulder": "Spine",
+        "RightArm": "RightShoulder",
+        "RightForeArm": "RightArm",
+        "RightHand": "RightForeArm",
+        "LeftUpLeg": "Hips",
+        "LeftLeg": "LeftUpLeg",
+        "LeftFoot": "LeftLeg",
+        "LeftToeBase": "LeftFoot",
+        "RightUpLeg": "Hips",
+        "RightLeg": "RightUpLeg",
+        "RightFoot": "RightLeg",
+        "RightToeBase": "RightFoot"
+      },
+      "saved_native_height_cm_historical": 182.0,
+      "saved_native_body_source_hash_matches": true,
+      "own_clips": {
+        "idle": {
+          "source_path": "Data/CharactersNeutral/BlackCap/idle.fbx",
+          "sha256": "ae5d4840d9e08427c153cc0d48c7a17059cfbc47f677def455b5bafd16ba8b4d",
+          "binary_fbx": {
+            "version": 7400,
+            "time_mode": 6,
+            "custom_frame_rate": 30.0,
+            "stacks": [
+              {
+                "name": "Armature|Armature|Idle|baselayer\u0000\u0001AnimStack",
+                "local_start_ktime": 0,
+                "local_stop_ktime": 184744632000,
+                "seconds": 4.0
+              }
+            ]
+          },
+          "blender_action_frame_range": [
+            1.0,
+            121.0
+          ],
+          "frame_intervals": 120,
+          "integer_samples": 121,
+          "half_frame_samples_checked": 241,
+          "scene_fps": 30,
+          "fps_base": 1.0,
+          "reference_max_matrix_error_source_units": 0.0,
+          "reference_max_rotation_error_rad": 6.018389946043015e-08,
+          "reference_max_head_translation_error_metres": 0.0,
+          "reference_max_scale_error": 0.0,
+          "source_reference_semantic_comparison_only": {
+            "rotation_under_1e_4_rad": true,
+            "heads_under_1e_5_m": true,
+            "scales_under_1e_5": true
+          },
+          "object_matrix_max_motion": 0.0,
+          "component_rotation_seam_max_rad": 0.00020110223379282507,
+          "hip_world_metres_min_xyz": [
+            -0.015821803361177444,
+            -0.018076816573739052,
+            0.9097521901130676
+          ],
+          "hip_world_metres_max_xyz": [
+            0.005152890458703041,
+            -0.0018040946451947093,
+            0.9408595561981201
+          ]
+        },
+        "walk": {
+          "source_path": "Data/CharactersNeutral/BlackCap/walk.fbx",
+          "sha256": "22c0b2794cbe1ef088b1f1f645217a5c7d652d9c4a1a516d076e0da024e015fb",
+          "binary_fbx": {
+            "version": 7400,
+            "time_mode": 6,
+            "custom_frame_rate": 30.0,
+            "stacks": [
+              {
+                "name": "Armature|Armature|walking_man|baselayer\u0000\u0001AnimStack",
+                "local_start_ktime": 0,
+                "local_stop_ktime": 47725695132,
+                "seconds": 1.0333333015489186
+              }
+            ]
+          },
+          "blender_action_frame_range": [
+            1.0,
+            32.0
+          ],
+          "frame_intervals": 31,
+          "integer_samples": 32,
+          "half_frame_samples_checked": 63,
+          "scene_fps": 30,
+          "fps_base": 1.0,
+          "reference_max_matrix_error_source_units": 0.0,
+          "reference_max_rotation_error_rad": 6.018389946043015e-08,
+          "reference_max_head_translation_error_metres": 0.0,
+          "reference_max_scale_error": 0.0,
+          "source_reference_semantic_comparison_only": {
+            "rotation_under_1e_4_rad": true,
+            "heads_under_1e_5_m": true,
+            "scales_under_1e_5": true
+          },
+          "object_matrix_max_motion": 0.0,
+          "component_rotation_seam_max_rad": 2.5106602130543663e-06,
+          "hip_world_metres_min_xyz": [
+            -0.0058151730336248875,
+            -0.05670085921883583,
+            0.9541168212890625
+          ],
+          "hip_world_metres_max_xyz": [
+            0.05244605243206024,
+            -0.008236868306994438,
+            1.0247961282730103
+          ]
+        },
+        "run": {
+          "source_path": "Data/CharactersNeutral/BlackCap/run.fbx",
+          "sha256": "7af8c9a855da5b72487234af75dac0921713c188c22eb65903e0c61ee6c5c62c",
+          "binary_fbx": {
+            "version": 7400,
+            "time_mode": 6,
+            "custom_frame_rate": 30.0,
+            "stacks": [
+              {
+                "name": "Armature|Armature|running|baselayer\u0000\u0001AnimStack",
+                "local_start_ktime": 0,
+                "local_stop_ktime": 29251233033,
+                "seconds": 0.6333333253872296
+              }
+            ]
+          },
+          "blender_action_frame_range": [
+            1.0,
+            20.0
+          ],
+          "frame_intervals": 19,
+          "integer_samples": 20,
+          "half_frame_samples_checked": 39,
+          "scene_fps": 30,
+          "fps_base": 1.0,
+          "reference_max_matrix_error_source_units": 0.0,
+          "reference_max_rotation_error_rad": 6.018389946043015e-08,
+          "reference_max_head_translation_error_metres": 0.0,
+          "reference_max_scale_error": 0.0,
+          "source_reference_semantic_comparison_only": {
+            "rotation_under_1e_4_rad": true,
+            "heads_under_1e_5_m": true,
+            "scales_under_1e_5": true
+          },
+          "object_matrix_max_motion": 0.0,
+          "component_rotation_seam_max_rad": 2.266695284946957e-06,
+          "hip_world_metres_min_xyz": [
+            -0.002265387447550893,
+            -0.04887336120009422,
+            0.9318041205406189
+          ],
+          "hip_world_metres_max_xyz": [
+            0.016235964372754097,
+            0.026125315576791763,
+            1.0033652782440186
+          ]
+        },
+        "jump": {
+          "source_path": "Data/CharactersNeutral/BlackCap/jump.fbx",
+          "sha256": "7b04c5b9289b19960f24f46825bf7898b9069b47bd6456a4a693c75313e67059",
+          "binary_fbx": {
+            "version": 7400,
+            "time_mode": 6,
+            "custom_frame_rate": 30.0,
+            "stacks": [
+              {
+                "name": "Scene\u0000\u0001AnimStack",
+                "local_start_ktime": 1539538600,
+                "local_stop_ktime": 56962928200,
+                "seconds": 1.2
+              }
+            ]
+          },
+          "blender_action_frame_range": [
+            2.0,
+            38.0
+          ],
+          "frame_intervals": 36,
+          "integer_samples": 37,
+          "half_frame_samples_checked": 73,
+          "scene_fps": 30,
+          "fps_base": 1.0,
+          "reference_max_matrix_error_source_units": 4.9591064453125e-05,
+          "reference_max_rotation_error_rad": 3.2371180446649303e-06,
+          "reference_max_head_translation_error_metres": 6.549336874912461e-07,
+          "reference_max_scale_error": 6.318092346191406e-06,
+          "source_reference_semantic_comparison_only": {
+            "rotation_under_1e_4_rad": true,
+            "heads_under_1e_5_m": true,
+            "scales_under_1e_5": true
+          },
+          "object_matrix_max_motion": 0.0,
+          "component_rotation_seam_max_rad": 6.006850114687237e-08,
+          "hip_world_metres_min_xyz": [
+            0.003926153760403395,
+            -0.008896646089851856,
+            0.8849619030952454
+          ],
+          "hip_world_metres_max_xyz": [
+            0.004668367560952902,
+            -0.004249243531376123,
+            0.9948112368583679
+          ],
+          "per_forearm_anatomical_check": {
+            "neutral_signed_deg": {
+              "Left": 16.237979591422413,
+              "Right": 11.866033900710283
+            },
+            "minimum_forward_flex_from_bind_deg": {
+              "Left": -56.41785680864744,
+              "Right": -56.42969950397263
+            },
+            "maximum_forward_flex_from_bind_deg": {
+              "Left": -1.5520835194848814e-05,
+              "Right": 1.5781775363876704e-05
+            },
+            "backward_control_threshold_deg": -0.5,
+            "backward_bend_observed_sides": [
+              "Left",
+              "Right"
+            ],
+            "warning": "Retained source jump predates the per-forearm hinge correction. Its global-side-axis recipe is not a verified natural target jump; author a fresh derivative using each own rig and preserve this source.",
+            "minimum_sample_by_side": {
+              "Left": {
+                "source_frame": 16.0,
+                "source_seconds_from_start": 0.4666666666666667,
+                "forward_flex_from_bind_deg": {
+                  "Left": -56.41785680864744,
+                  "Right": -56.42969950397263
+                }
+              },
+              "Right": {
+                "source_frame": 16.0,
+                "source_seconds_from_start": 0.4666666666666667,
+                "forward_flex_from_bind_deg": {
+                  "Left": -56.41785680864744,
+                  "Right": -56.42969950397263
+                }
+              }
+            },
+            "complete_samples_retained_in_hashed_saved_inventory": true
+          }
+        }
+      },
+      "jump_provenance": {
+        "name": "BlackCap",
+        "authoring": "original local skeletal keyframes; no paid generation",
+        "body_sha256": "bbadf9714665fb71f7981307261926de682c615eb33503d2ccbfa6e7aca71a37",
+        "jump_sha256": "7b04c5b9289b19960f24f46825bf7898b9069b47bd6456a4a693c75313e67059",
+        "seconds": 1.2,
+        "fps": 30,
+        "bones": 24,
+        "head_and_neck_unchanged": true,
+        "actor_root_motion": false,
+        "fbx_round_trip_passed": true
+      }
+    },
+    {
+      "style": 6,
+      "name": "WhiteCap",
+      "source_root": "Data/CharactersNeutral/WhiteCap",
+      "intended_prop": "Plunger",
+      "body_bones": 24,
+      "body_glb_bounds": {
+        "world_metres_min_xyz": [
+          -0.4549432396888733,
+          -0.1785440593957901,
+          -2.2895157769653451e-07
+        ],
+        "world_metres_max_xyz": [
+          0.4539620876312256,
+          0.18108394742012024,
+          1.8199998140335083
+        ],
+        "world_metres_size_xyz": [
+          0.9089053273200989,
+          0.35962800681591034,
+          1.820000042985086
+        ],
+        "vertices": 27906,
+        "triangles": 31075,
+        "material_slots": 1,
+        "uv_triangle_keys": 31075,
+        "unique_uv_triangle_keys_1e_6": 31075
+      },
+      "body_fbx_bounds": {
+        "world_metres_min_xyz": [
+          -0.4549435079097748,
+          -0.17854399979114532,
+          -3.3034628366124252e-09
+        ],
+        "world_metres_max_xyz": [
+          0.4539620578289032,
+          0.18108396232128143,
+          1.8199999332427979
+        ],
+        "world_metres_size_xyz": [
+          0.908905565738678,
+          0.35962796211242676,
+          1.8199999365462607
+        ],
+        "vertices": 27906,
+        "triangles": 31075,
+        "material_slots": 1,
+        "uv_triangle_keys": 31075,
+        "unique_uv_triangle_keys_1e_6": 31075
+      },
+      "body_fbx_reference_parents": {
+        "Hips": null,
+        "Spine02": "Hips",
+        "Spine01": "Spine02",
+        "Spine": "Spine01",
+        "neck": "Spine",
+        "Head": "neck",
+        "head_end": "Head",
+        "headfront": "Head",
+        "LeftShoulder": "Spine",
+        "LeftArm": "LeftShoulder",
+        "LeftForeArm": "LeftArm",
+        "LeftHand": "LeftForeArm",
+        "RightShoulder": "Spine",
+        "RightArm": "RightShoulder",
+        "RightForeArm": "RightArm",
+        "RightHand": "RightForeArm",
+        "LeftUpLeg": "Hips",
+        "LeftLeg": "LeftUpLeg",
+        "LeftFoot": "LeftLeg",
+        "LeftToeBase": "LeftFoot",
+        "RightUpLeg": "Hips",
+        "RightLeg": "RightUpLeg",
+        "RightFoot": "RightLeg",
+        "RightToeBase": "RightFoot"
+      },
+      "saved_native_height_cm_historical": 182.0,
+      "saved_native_body_source_hash_matches": true,
+      "own_clips": {
+        "idle": {
+          "source_path": "Data/CharactersNeutral/WhiteCap/idle.fbx",
+          "sha256": "d8b855ee066aaf808ddfda19923bdf8974b2887da5861b57e011a7ff6bb6f6f5",
+          "binary_fbx": {
+            "version": 7400,
+            "time_mode": 6,
+            "custom_frame_rate": 30.0,
+            "stacks": [
+              {
+                "name": "Armature|Armature|Idle|baselayer\u0000\u0001AnimStack",
+                "local_start_ktime": 0,
+                "local_stop_ktime": 184744632000,
+                "seconds": 4.0
+              }
+            ]
+          },
+          "blender_action_frame_range": [
+            1.0,
+            121.0
+          ],
+          "frame_intervals": 120,
+          "integer_samples": 121,
+          "half_frame_samples_checked": 241,
+          "scene_fps": 30,
+          "fps_base": 1.0,
+          "reference_max_matrix_error_source_units": 0.0,
+          "reference_max_rotation_error_rad": 6.705522537231443e-08,
+          "reference_max_head_translation_error_metres": 0.0,
+          "reference_max_scale_error": 0.0,
+          "source_reference_semantic_comparison_only": {
+            "rotation_under_1e_4_rad": true,
+            "heads_under_1e_5_m": true,
+            "scales_under_1e_5": true
+          },
+          "object_matrix_max_motion": 0.0,
+          "component_rotation_seam_max_rad": 0.00020100579920410115,
+          "hip_world_metres_min_xyz": [
+            -0.011857451871037483,
+            -0.007506480906158686,
+            0.9216952323913574
+          ],
+          "hip_world_metres_max_xyz": [
+            0.009076669812202454,
+            0.008734765462577343,
+            0.952742338180542
+          ]
+        },
+        "walk": {
+          "source_path": "Data/CharactersNeutral/WhiteCap/walk.fbx",
+          "sha256": "b6c1cd7afba9010bcc0d43b2da82c6ba6acc88120938b49e7c8685274b7b919e",
+          "binary_fbx": {
+            "version": 7400,
+            "time_mode": 6,
+            "custom_frame_rate": 30.0,
+            "stacks": [
+              {
+                "name": "Armature|Armature|walking_man|baselayer\u0000\u0001AnimStack",
+                "local_start_ktime": 0,
+                "local_stop_ktime": 47725695132,
+                "seconds": 1.0333333015489186
+              }
+            ]
+          },
+          "blender_action_frame_range": [
+            1.0,
+            32.0
+          ],
+          "frame_intervals": 31,
+          "integer_samples": 32,
+          "half_frame_samples_checked": 63,
+          "scene_fps": 30,
+          "fps_base": 1.0,
+          "reference_max_matrix_error_source_units": 0.0,
+          "reference_max_rotation_error_rad": 6.705522537231443e-08,
+          "reference_max_head_translation_error_metres": 0.0,
+          "reference_max_scale_error": 0.0,
+          "source_reference_semantic_comparison_only": {
+            "rotation_under_1e_4_rad": true,
+            "heads_under_1e_5_m": true,
+            "scales_under_1e_5": true
+          },
+          "object_matrix_max_motion": 0.0,
+          "component_rotation_seam_max_rad": 2.565338418654916e-06,
+          "hip_world_metres_min_xyz": [
+            -0.001870179083198309,
+            -0.046055812388658524,
+            0.9659740924835205
+          ],
+          "hip_world_metres_max_xyz": [
+            0.05627836287021637,
+            0.0023144332226365805,
+            1.036516547203064
+          ]
+        },
+        "run": {
+          "source_path": "Data/CharactersNeutral/WhiteCap/run.fbx",
+          "sha256": "c404e1d9ddeca84d2fc23604454e2ddd4252155ea353f9dbfd019bbc155af422",
+          "binary_fbx": {
+            "version": 7400,
+            "time_mode": 6,
+            "custom_frame_rate": 30.0,
+            "stacks": [
+              {
+                "name": "Armature|Armature|running|baselayer\u0000\u0001AnimStack",
+                "local_start_ktime": 0,
+                "local_stop_ktime": 29251233033,
+                "seconds": 0.6333333253872296
+              }
+            ]
+          },
+          "blender_action_frame_range": [
+            1.0,
+            20.0
+          ],
+          "frame_intervals": 19,
+          "integer_samples": 20,
+          "half_frame_samples_checked": 39,
+          "scene_fps": 30,
+          "fps_base": 1.0,
+          "reference_max_matrix_error_source_units": 0.0,
+          "reference_max_rotation_error_rad": 6.705522537231443e-08,
+          "reference_max_head_translation_error_metres": 0.0,
+          "reference_max_scale_error": 0.0,
+          "source_reference_semantic_comparison_only": {
+            "rotation_under_1e_4_rad": true,
+            "heads_under_1e_5_m": true,
+            "scales_under_1e_5": true
+          },
+          "object_matrix_max_motion": 0.0,
+          "component_rotation_seam_max_rad": 1.9702810872119964e-06,
+          "hip_world_metres_min_xyz": [
+            0.0016727411421015859,
+            -0.038243453949689865,
+            0.9437044858932495
+          ],
+          "hip_world_metres_max_xyz": [
+            0.020138300955295563,
+            0.03661014884710312,
+            1.015127420425415
+          ]
+        },
+        "jump": {
+          "source_path": "Data/CharactersNeutral/WhiteCap/jump.fbx",
+          "sha256": "58ddd18878713598901943082d6bab210e846474a9556f5e69eac606f9c5312c",
+          "binary_fbx": {
+            "version": 7400,
+            "time_mode": 6,
+            "custom_frame_rate": 30.0,
+            "stacks": [
+              {
+                "name": "Scene\u0000\u0001AnimStack",
+                "local_start_ktime": 1539538600,
+                "local_stop_ktime": 56962928200,
+                "seconds": 1.2
+              }
+            ]
+          },
+          "blender_action_frame_range": [
+            2.0,
+            38.0
+          ],
+          "frame_intervals": 36,
+          "integer_samples": 37,
+          "half_frame_samples_checked": 73,
+          "scene_fps": 30,
+          "fps_base": 1.0,
+          "reference_max_matrix_error_source_units": 0.0001373291015625,
+          "reference_max_rotation_error_rad": 4.422221688430226e-06,
+          "reference_max_head_translation_error_metres": 1.5262055617821636e-06,
+          "reference_max_scale_error": 2.4616718292236328e-05,
+          "source_reference_semantic_comparison_only": {
+            "rotation_under_1e_4_rad": true,
+            "heads_under_1e_5_m": true,
+            "scales_under_1e_5": false
+          },
+          "object_matrix_max_motion": 0.0,
+          "component_rotation_seam_max_rad": 6.006850830759615e-08,
+          "hip_world_metres_min_xyz": [
+            0.007852304726839066,
+            0.0062943496741354465,
+            0.8966991901397705
+          ],
+          "hip_world_metres_max_xyz": [
+            0.009389213286340237,
+            0.00956717599183321,
+            1.0065897703170776
+          ],
+          "per_forearm_anatomical_check": {
+            "neutral_signed_deg": {
+              "Left": 4.570726183043128,
+              "Right": 5.478973260733109
+            },
+            "minimum_forward_flex_from_bind_deg": {
+              "Left": -60.58647776343741,
+              "Right": -61.22911108839016
+            },
+            "maximum_forward_flex_from_bind_deg": {
+              "Left": 2.217064877552133e-05,
+              "Right": -1.7297243871894352e-05
+            },
+            "backward_control_threshold_deg": -0.5,
+            "backward_bend_observed_sides": [
+              "Left",
+              "Right"
+            ],
+            "warning": "Retained source jump predates the per-forearm hinge correction. Its global-side-axis recipe is not a verified natural target jump; author a fresh derivative using each own rig and preserve this source.",
+            "minimum_sample_by_side": {
+              "Left": {
+                "source_frame": 16.0,
+                "source_seconds_from_start": 0.4666666666666667,
+                "forward_flex_from_bind_deg": {
+                  "Left": -60.58647776343741,
+                  "Right": -61.22911108839016
+                }
+              },
+              "Right": {
+                "source_frame": 16.0,
+                "source_seconds_from_start": 0.4666666666666667,
+                "forward_flex_from_bind_deg": {
+                  "Left": -60.58647776343741,
+                  "Right": -61.22911108839016
+                }
+              }
+            },
+            "complete_samples_retained_in_hashed_saved_inventory": true
+          }
+        }
+      },
+      "jump_provenance": {
+        "name": "WhiteCap",
+        "authoring": "original local skeletal keyframes; no paid generation",
+        "body_sha256": "7b687a80ca150b3b011bfb3ba33f880da391a835ecdb2236f04627ad40950b44",
+        "jump_sha256": "58ddd18878713598901943082d6bab210e846474a9556f5e69eac606f9c5312c",
+        "seconds": 1.2,
+        "fps": 30,
+        "bones": 24,
+        "head_and_neck_unchanged": true,
+        "actor_root_motion": false,
+        "fbx_round_trip_passed": true
+      }
+    },
+    {
+      "style": 7,
+      "name": "RedJersey",
+      "source_root": "Data/CharactersNeutral/RedJersey",
+      "intended_prop": "Plunger",
+      "body_bones": 24,
+      "body_glb_bounds": {
+        "world_metres_min_xyz": [
+          -0.4815441071987152,
+          -0.17893654108047485,
+          -2.6692993060351e-07
+        ],
+        "world_metres_max_xyz": [
+          0.4804425835609436,
+          0.180843785405159,
+          1.8200000524520874
+        ],
+        "world_metres_size_xyz": [
+          0.9619866907596588,
+          0.35978032648563385,
+          1.820000319382018
+        ],
+        "vertices": 29568,
+        "triangles": 31025,
+        "material_slots": 1,
+        "uv_triangle_keys": 31025,
+        "unique_uv_triangle_keys_1e_6": 31025
+      },
+      "body_fbx_bounds": {
+        "world_metres_min_xyz": [
+          -0.48154401779174805,
+          -0.17893628776073456,
+          6.990504886061899e-08
+        ],
+        "world_metres_max_xyz": [
+          0.4804425835609436,
+          0.1808435022830963,
+          1.8199999332427979
+        ],
+        "world_metres_size_xyz": [
+          0.9619866013526917,
+          0.35977979004383087,
+          1.819999863337749
+        ],
+        "vertices": 29568,
+        "triangles": 31025,
+        "material_slots": 1,
+        "uv_triangle_keys": 31025,
+        "unique_uv_triangle_keys_1e_6": 31025
+      },
+      "body_fbx_reference_parents": {
+        "Hips": null,
+        "Spine02": "Hips",
+        "Spine01": "Spine02",
+        "Spine": "Spine01",
+        "neck": "Spine",
+        "Head": "neck",
+        "head_end": "Head",
+        "headfront": "Head",
+        "LeftShoulder": "Spine",
+        "LeftArm": "LeftShoulder",
+        "LeftForeArm": "LeftArm",
+        "LeftHand": "LeftForeArm",
+        "RightShoulder": "Spine",
+        "RightArm": "RightShoulder",
+        "RightForeArm": "RightArm",
+        "RightHand": "RightForeArm",
+        "LeftUpLeg": "Hips",
+        "LeftLeg": "LeftUpLeg",
+        "LeftFoot": "LeftLeg",
+        "LeftToeBase": "LeftFoot",
+        "RightUpLeg": "Hips",
+        "RightLeg": "RightUpLeg",
+        "RightFoot": "RightLeg",
+        "RightToeBase": "RightFoot"
+      },
+      "saved_native_height_cm_historical": 182.0,
+      "saved_native_body_source_hash_matches": true,
+      "own_clips": {
+        "idle": {
+          "source_path": "Data/CharactersNeutral/RedJersey/idle.fbx",
+          "sha256": "4e30c9b44f7f5d52cb976fee0dcc098e0b18119c484d91787fef3be70c67c56b",
+          "binary_fbx": {
+            "version": 7400,
+            "time_mode": 6,
+            "custom_frame_rate": 30.0,
+            "stacks": [
+              {
+                "name": "Armature|Armature|Idle|baselayer\u0000\u0001AnimStack",
+                "local_start_ktime": 0,
+                "local_stop_ktime": 184744632000,
+                "seconds": 4.0
+              }
+            ]
+          },
+          "blender_action_frame_range": [
+            1.0,
+            121.0
+          ],
+          "frame_intervals": 120,
+          "integer_samples": 121,
+          "half_frame_samples_checked": 241,
+          "scene_fps": 30,
+          "fps_base": 1.0,
+          "reference_max_matrix_error_source_units": 0.0,
+          "reference_max_rotation_error_rad": 6.006850114687195e-08,
+          "reference_max_head_translation_error_metres": 0.0,
+          "reference_max_scale_error": 0.0,
+          "source_reference_semantic_comparison_only": {
+            "rotation_under_1e_4_rad": true,
+            "heads_under_1e_5_m": true,
+            "scales_under_1e_5": true
+          },
+          "object_matrix_max_motion": 0.0,
+          "component_rotation_seam_max_rad": 0.00020098962990681656,
+          "hip_world_metres_min_xyz": [
+            -0.011992976069450378,
+            0.028229672461748123,
+            0.917185366153717
+          ],
+          "hip_world_metres_max_xyz": [
+            0.009085086174309254,
+            0.04458259418606758,
+            0.9484460949897766
+          ]
+        },
+        "walk": {
+          "source_path": "Data/CharactersNeutral/RedJersey/walk.fbx",
+          "sha256": "e384488866bcf2e963a9a2fd4ccae76632d4462f93f0d887d40258815ac4d668",
+          "binary_fbx": {
+            "version": 7400,
+            "time_mode": 6,
+            "custom_frame_rate": 30.0,
+            "stacks": [
+              {
+                "name": "Armature|Armature|walking_man|baselayer\u0000\u0001AnimStack",
+                "local_start_ktime": 0,
+                "local_stop_ktime": 47725695132,
+                "seconds": 1.0333333015489186
+              }
+            ]
+          },
+          "blender_action_frame_range": [
+            1.0,
+            32.0
+          ],
+          "frame_intervals": 31,
+          "integer_samples": 32,
+          "half_frame_samples_checked": 63,
+          "scene_fps": 30,
+          "fps_base": 1.0,
+          "reference_max_matrix_error_source_units": 0.0,
+          "reference_max_rotation_error_rad": 6.006850114687195e-08,
+          "reference_max_head_translation_error_metres": 0.0,
+          "reference_max_scale_error": 0.0,
+          "source_reference_semantic_comparison_only": {
+            "rotation_under_1e_4_rad": true,
+            "heads_under_1e_5_m": true,
+            "scales_under_1e_5": true
+          },
+          "object_matrix_max_motion": 0.0,
+          "component_rotation_seam_max_rad": 2.5095611833230567e-06,
+          "hip_world_metres_min_xyz": [
+            -0.0019370329100638628,
+            -0.010584731586277485,
+            0.9617688059806824
+          ],
+          "hip_world_metres_max_xyz": [
+            0.05661134421825409,
+            0.038118116557598114,
+            1.0327962636947632
+          ]
+        },
+        "run": {
+          "source_path": "Data/CharactersNeutral/RedJersey/run.fbx",
+          "sha256": "a9225af857a434da7e7827edb2a51e77c0aeb0c53214e800f740244b429eeabb",
+          "binary_fbx": {
+            "version": 7400,
+            "time_mode": 6,
+            "custom_frame_rate": 30.0,
+            "stacks": [
+              {
+                "name": "Armature|Armature|running|baselayer\u0000\u0001AnimStack",
+                "local_start_ktime": 0,
+                "local_stop_ktime": 29251233033,
+                "seconds": 0.6333333253872296
+              }
+            ]
+          },
+          "blender_action_frame_range": [
+            1.0,
+            20.0
+          ],
+          "frame_intervals": 19,
+          "integer_samples": 20,
+          "half_frame_samples_checked": 39,
+          "scene_fps": 30,
+          "fps_base": 1.0,
+          "reference_max_matrix_error_source_units": 0.0,
+          "reference_max_rotation_error_rad": 6.006850114687195e-08,
+          "reference_max_head_translation_error_metres": 0.0,
+          "reference_max_scale_error": 0.0,
+          "source_reference_semantic_comparison_only": {
+            "rotation_under_1e_4_rad": true,
+            "heads_under_1e_5_m": true,
+            "scales_under_1e_5": true
+          },
+          "object_matrix_max_motion": 0.0,
+          "component_rotation_seam_max_rad": 1.9275210762681664e-06,
+          "hip_world_metres_min_xyz": [
+            0.0016302472213283181,
+            -0.0027186530642211437,
+            0.9393460154533386
+          ],
+          "hip_world_metres_max_xyz": [
+            0.020222783088684082,
+            0.07264965772628784,
+            1.0112601518630981
+          ]
+        },
+        "jump": {
+          "source_path": "Data/CharactersNeutral/RedJersey/jump.fbx",
+          "sha256": "92d3ce2cd48cfe34b6c406d9b8e930630f523d1dc9ec0712e2a05f7a96696a0b",
+          "binary_fbx": {
+            "version": 7400,
+            "time_mode": 6,
+            "custom_frame_rate": 30.0,
+            "stacks": [
+              {
+                "name": "Scene\u0000\u0001AnimStack",
+                "local_start_ktime": 1539538600,
+                "local_stop_ktime": 56962928200,
+                "seconds": 1.2
+              }
+            ]
+          },
+          "blender_action_frame_range": [
+            2.0,
+            38.0
+          ],
+          "frame_intervals": 36,
+          "integer_samples": 37,
+          "half_frame_samples_checked": 73,
+          "scene_fps": 30,
+          "fps_base": 1.0,
+          "reference_max_matrix_error_source_units": 7.62939453125e-05,
+          "reference_max_rotation_error_rad": 4.468956890574915e-06,
+          "reference_max_head_translation_error_metres": 9.338839148637499e-07,
+          "reference_max_scale_error": 1.0013580322265625e-05,
+          "source_reference_semantic_comparison_only": {
+            "rotation_under_1e_4_rad": true,
+            "heads_under_1e_5_m": true,
+            "scales_under_1e_5": false
+          },
+          "object_matrix_max_motion": 0.0,
+          "component_rotation_seam_max_rad": 1.1944190038305956e-07,
+          "hip_world_metres_min_xyz": [
+            0.007852301932871342,
+            0.040358323603868484,
+            0.892730712890625
+          ],
+          "hip_world_metres_max_xyz": [
+            0.00863195862621069,
+            0.042125403881073,
+            1.0026638507843018
+          ],
+          "per_forearm_anatomical_check": {
+            "neutral_signed_deg": {
+              "Left": 12.98103558369229,
+              "Right": 11.418003517642422
+            },
+            "minimum_forward_flex_from_bind_deg": {
+              "Left": -61.865738441465396,
+              "Right": -63.33461136549019
+            },
+            "maximum_forward_flex_from_bind_deg": {
+              "Left": 2.255290033303936e-05,
+              "Right": -5.8290503783808845e-06
+            },
+            "backward_control_threshold_deg": -0.5,
+            "backward_bend_observed_sides": [
+              "Left",
+              "Right"
+            ],
+            "warning": "Retained source jump predates the per-forearm hinge correction. Its global-side-axis recipe is not a verified natural target jump; author a fresh derivative using each own rig and preserve this source.",
+            "minimum_sample_by_side": {
+              "Left": {
+                "source_frame": 16.0,
+                "source_seconds_from_start": 0.4666666666666667,
+                "forward_flex_from_bind_deg": {
+                  "Left": -61.865738441465396,
+                  "Right": -63.33461136549019
+                }
+              },
+              "Right": {
+                "source_frame": 16.0,
+                "source_seconds_from_start": 0.4666666666666667,
+                "forward_flex_from_bind_deg": {
+                  "Left": -61.865738441465396,
+                  "Right": -63.33461136549019
+                }
+              }
+            },
+            "complete_samples_retained_in_hashed_saved_inventory": true
+          }
+        }
+      },
+      "jump_provenance": {
+        "name": "RedJersey",
+        "authoring": "original local skeletal keyframes; no paid generation",
+        "body_sha256": "a019dd99a3a783d14bed1c60672d977688dd9955fcddc25f73127e2d541e5295",
+        "jump_sha256": "92d3ce2cd48cfe34b6c406d9b8e930630f523d1dc9ec0712e2a05f7a96696a0b",
+        "seconds": 1.2,
+        "fps": 30,
+        "bones": 24,
+        "head_and_neck_unchanged": true,
+        "actor_root_motion": false,
+        "fbx_round_trip_passed": true
+      }
+    },
+    {
+      "style": 8,
+      "name": "LimeJacket",
+      "source_root": "Data/CharactersNeutral/LimeJacket",
+      "intended_prop": "PVCTube",
+      "body_bones": 24,
+      "body_glb_bounds": {
+        "world_metres_min_xyz": [
+          -0.459380179643631,
+          -0.19927741587162018,
+          1.644656890675833e-07
+        ],
+        "world_metres_max_xyz": [
+          0.45868605375289917,
+          0.2026582509279251,
+          1.8199999332427979
+        ],
+        "world_metres_size_xyz": [
+          0.9180662333965302,
+          0.4019356667995453,
+          1.8199997687771088
+        ],
+        "vertices": 33791,
+        "triangles": 31132,
+        "material_slots": 1,
+        "uv_triangle_keys": 31132,
+        "unique_uv_triangle_keys_1e_6": 31132
+      },
+      "body_fbx_bounds": {
+        "world_metres_min_xyz": [
+          -0.4593801498413086,
+          -0.1992773562669754,
+          -2.2094098994784872e-08
+        ],
+        "world_metres_max_xyz": [
+          0.458685964345932,
+          0.2026582956314087,
+          1.8200000524520874
+        ],
+        "world_metres_size_xyz": [
+          0.9180661141872406,
+          0.4019356518983841,
+          1.8200000745461864
+        ],
+        "vertices": 33791,
+        "triangles": 31132,
+        "material_slots": 1,
+        "uv_triangle_keys": 31132,
+        "unique_uv_triangle_keys_1e_6": 31132
+      },
+      "body_fbx_reference_parents": {
+        "Hips": null,
+        "Spine02": "Hips",
+        "Spine01": "Spine02",
+        "Spine": "Spine01",
+        "neck": "Spine",
+        "Head": "neck",
+        "head_end": "Head",
+        "headfront": "Head",
+        "LeftShoulder": "Spine",
+        "LeftArm": "LeftShoulder",
+        "LeftForeArm": "LeftArm",
+        "LeftHand": "LeftForeArm",
+        "RightShoulder": "Spine",
+        "RightArm": "RightShoulder",
+        "RightForeArm": "RightArm",
+        "RightHand": "RightForeArm",
+        "LeftUpLeg": "Hips",
+        "LeftLeg": "LeftUpLeg",
+        "LeftFoot": "LeftLeg",
+        "LeftToeBase": "LeftFoot",
+        "RightUpLeg": "Hips",
+        "RightLeg": "RightUpLeg",
+        "RightFoot": "RightLeg",
+        "RightToeBase": "RightFoot"
+      },
+      "saved_native_height_cm_historical": 182.0,
+      "saved_native_body_source_hash_matches": true,
+      "own_clips": {
+        "idle": {
+          "source_path": "Data/CharactersNeutral/LimeJacket/idle.fbx",
+          "sha256": "519b4763069274602880cd9de4f9106ec3895c1ffc1c5369f34fcb1c76b5abcf",
+          "binary_fbx": {
+            "version": 7400,
+            "time_mode": 6,
+            "custom_frame_rate": 30.0,
+            "stacks": [
+              {
+                "name": "Armature|Armature|Idle|baselayer\u0000\u0001AnimStack",
+                "local_start_ktime": 0,
+                "local_stop_ktime": 184744632000,
+                "seconds": 4.0
+              }
+            ]
+          },
+          "blender_action_frame_range": [
+            1.0,
+            121.0
+          ],
+          "frame_intervals": 120,
+          "integer_samples": 121,
+          "half_frame_samples_checked": 241,
+          "scene_fps": 30,
+          "fps_base": 1.0,
+          "reference_max_matrix_error_source_units": 0.0,
+          "reference_max_rotation_error_rad": 6.143906154658883e-08,
+          "reference_max_head_translation_error_metres": 0.0,
+          "reference_max_scale_error": 0.0,
+          "source_reference_semantic_comparison_only": {
+            "rotation_under_1e_4_rad": true,
+            "heads_under_1e_5_m": true,
+            "scales_under_1e_5": true
+          },
+          "object_matrix_max_motion": 0.0,
+          "component_rotation_seam_max_rad": 0.0002008185013355385,
+          "hip_world_metres_min_xyz": [
+            -0.019541433081030846,
+            0.016517166048288345,
+            0.9381248354911804
+          ],
+          "hip_world_metres_max_xyz": [
+            0.0012139086611568928,
+            0.03261970728635788,
+            0.9689069390296936
+          ]
+        },
+        "walk": {
+          "source_path": "Data/CharactersNeutral/LimeJacket/walk.fbx",
+          "sha256": "a91105b299958b2a52a8f63936d3943642cfbc1818c2a6457f4216a45f14d9dc",
+          "binary_fbx": {
+            "version": 7400,
+            "time_mode": 6,
+            "custom_frame_rate": 30.0,
+            "stacks": [
+              {
+                "name": "Armature|Armature|walking_man|baselayer\u0000\u0001AnimStack",
+                "local_start_ktime": 0,
+                "local_stop_ktime": 47725695132,
+                "seconds": 1.0333333015489186
+              }
+            ]
+          },
+          "blender_action_frame_range": [
+            1.0,
+            32.0
+          ],
+          "frame_intervals": 31,
+          "integer_samples": 32,
+          "half_frame_samples_checked": 63,
+          "scene_fps": 30,
+          "fps_base": 1.0,
+          "reference_max_matrix_error_source_units": 0.0,
+          "reference_max_rotation_error_rad": 6.143906154658883e-08,
+          "reference_max_head_translation_error_metres": 0.0,
+          "reference_max_scale_error": 0.0,
+          "source_reference_semantic_comparison_only": {
+            "rotation_under_1e_4_rad": true,
+            "heads_under_1e_5_m": true,
+            "scales_under_1e_5": true
+          },
+          "object_matrix_max_motion": 0.0,
+          "component_rotation_seam_max_rad": 2.451997422349418e-06,
+          "hip_world_metres_min_xyz": [
+            -0.009639452211558819,
+            -0.021702954545617104,
+            0.9820255637168884
+          ],
+          "hip_world_metres_max_xyz": [
+            0.048012495040893555,
+            0.026254212483763695,
+            1.0519657135009766
+          ]
+        },
+        "run": {
+          "source_path": "Data/CharactersNeutral/LimeJacket/run.fbx",
+          "sha256": "a1b45476d41e8c50f5f240148610e41a2bf514d5457f358fad5c0485b2b5d248",
+          "binary_fbx": {
+            "version": 7400,
+            "time_mode": 6,
+            "custom_frame_rate": 30.0,
+            "stacks": [
+              {
+                "name": "Armature|Armature|running|baselayer\u0000\u0001AnimStack",
+                "local_start_ktime": 0,
+                "local_stop_ktime": 29251233033,
+                "seconds": 0.6333333253872296
+              }
+            ]
+          },
+          "blender_action_frame_range": [
+            1.0,
+            20.0
+          ],
+          "frame_intervals": 19,
+          "integer_samples": 20,
+          "half_frame_samples_checked": 39,
+          "scene_fps": 30,
+          "fps_base": 1.0,
+          "reference_max_matrix_error_source_units": 0.0,
+          "reference_max_rotation_error_rad": 6.143906154658883e-08,
+          "reference_max_head_translation_error_metres": 0.0,
+          "reference_max_scale_error": 0.0,
+          "source_reference_semantic_comparison_only": {
+            "rotation_under_1e_4_rad": true,
+            "heads_under_1e_5_m": true,
+            "scales_under_1e_5": true
+          },
+          "object_matrix_max_motion": 0.0,
+          "component_rotation_seam_max_rad": 2.116655377968066e-06,
+          "hip_world_metres_min_xyz": [
+            -0.006126789841800928,
+            -0.01395730022341013,
+            0.9599462151527405
+          ],
+          "hip_world_metres_max_xyz": [
+            0.01218107808381319,
+            0.06025703623890877,
+            1.0307590961456299
+          ]
+        },
+        "jump": {
+          "source_path": "Data/CharactersNeutral/LimeJacket/jump.fbx",
+          "sha256": "1bf34250260b671e4a71612993d966b84f51c665173b2170f6aa9a8fe96256da",
+          "binary_fbx": {
+            "version": 7400,
+            "time_mode": 6,
+            "custom_frame_rate": 30.0,
+            "stacks": [
+              {
+                "name": "Scene\u0000\u0001AnimStack",
+                "local_start_ktime": 1539538600,
+                "local_stop_ktime": 56962928200,
+                "seconds": 1.2
+              }
+            ]
+          },
+          "blender_action_frame_range": [
+            2.0,
+            38.0
+          ],
+          "frame_intervals": 36,
+          "integer_samples": 37,
+          "half_frame_samples_checked": 73,
+          "scene_fps": 30,
+          "fps_base": 1.0,
+          "reference_max_matrix_error_source_units": 0.000102996826171875,
+          "reference_max_rotation_error_rad": 6.538424400003401e-06,
+          "reference_max_head_translation_error_metres": 1.4184504490382948e-06,
+          "reference_max_scale_error": 8.702278137207031e-06,
+          "source_reference_semantic_comparison_only": {
+            "rotation_under_1e_4_rad": true,
+            "heads_under_1e_5_m": true,
+            "scales_under_1e_5": true
+          },
+          "object_matrix_max_motion": 0.0,
+          "component_rotation_seam_max_rad": 6.052880651404269e-08,
+          "hip_world_metres_min_xyz": [
+            -0.0008174711838364601,
+            0.020778080448508263,
+            0.9127519130706787
+          ],
+          "hip_world_metres_max_xyz": [
+            1.063065080408876e-09,
+            0.030200153589248657,
+            1.0222946405410767
+          ],
+          "per_forearm_anatomical_check": {
+            "neutral_signed_deg": {
+              "Left": 14.041028885570682,
+              "Right": 16.007613034881548
+            },
+            "minimum_forward_flex_from_bind_deg": {
+              "Left": -59.34093817275981,
+              "Right": -59.82943901875083
+            },
+            "maximum_forward_flex_from_bind_deg": {
+              "Left": -1.55699063260073e-05,
+              "Right": 4.553435754672819e-06
+            },
+            "backward_control_threshold_deg": -0.5,
+            "backward_bend_observed_sides": [
+              "Left",
+              "Right"
+            ],
+            "warning": "Retained source jump predates the per-forearm hinge correction. Its global-side-axis recipe is not a verified natural target jump; author a fresh derivative using each own rig and preserve this source.",
+            "minimum_sample_by_side": {
+              "Left": {
+                "source_frame": 16.0,
+                "source_seconds_from_start": 0.4666666666666667,
+                "forward_flex_from_bind_deg": {
+                  "Left": -59.34093817275981,
+                  "Right": -59.82943901875083
+                }
+              },
+              "Right": {
+                "source_frame": 16.0,
+                "source_seconds_from_start": 0.4666666666666667,
+                "forward_flex_from_bind_deg": {
+                  "Left": -59.34093817275981,
+                  "Right": -59.82943901875083
+                }
+              }
+            },
+            "complete_samples_retained_in_hashed_saved_inventory": true
+          }
+        }
+      },
+      "jump_provenance": {
+        "name": "LimeJacket",
+        "authoring": "original local skeletal keyframes; no paid generation",
+        "body_sha256": "e3bccdf06bac149803a86cd86a98d085e6f5bccc40997b933e8fd0ed4097d24b",
+        "jump_sha256": "1bf34250260b671e4a71612993d966b84f51c665173b2170f6aa9a8fe96256da",
+        "seconds": 1.2,
+        "fps": 30,
+        "bones": 24,
+        "head_and_neck_unchanged": true,
+        "actor_root_motion": false,
+        "fbx_round_trip_passed": true
+      }
+    },
+    {
+      "style": 10,
+      "name": "Topknot",
+      "source_root": "Data/CharactersNeutral/Topknot",
+      "intended_prop": "Plunger",
+      "body_bones": 24,
+      "body_glb_bounds": {
+        "world_metres_min_xyz": [
+          -0.4913223087787628,
+          -0.18748950958251953,
+          1.7248832762106758e-07
+        ],
+        "world_metres_max_xyz": [
+          0.49018150568008423,
+          0.20017489790916443,
+          1.8199999332427979
+        ],
+        "world_metres_size_xyz": [
+          0.981503814458847,
+          0.38766440749168396,
+          1.8199997607544702
+        ],
+        "vertices": 36156,
+        "triangles": 31100,
+        "material_slots": 1,
+        "uv_triangle_keys": 31100,
+        "unique_uv_triangle_keys_1e_6": 31100
+      },
+      "body_fbx_bounds": {
+        "world_metres_min_xyz": [
+          -0.4913223087787628,
+          -0.18748986721038818,
+          -1.4836694539610562e-08
+        ],
+        "world_metres_max_xyz": [
+          0.4901815950870514,
+          0.20017489790916443,
+          1.8199999332427979
+        ],
+        "world_metres_size_xyz": [
+          0.9815039038658142,
+          0.3876647651195526,
+          1.8199999480794924
+        ],
+        "vertices": 36156,
+        "triangles": 31100,
+        "material_slots": 1,
+        "uv_triangle_keys": 31100,
+        "unique_uv_triangle_keys_1e_6": 31100
+      },
+      "body_fbx_reference_parents": {
+        "Hips": null,
+        "Spine02": "Hips",
+        "Spine01": "Spine02",
+        "Spine": "Spine01",
+        "neck": "Spine",
+        "Head": "neck",
+        "head_end": "Head",
+        "headfront": "Head",
+        "LeftShoulder": "Spine",
+        "LeftArm": "LeftShoulder",
+        "LeftForeArm": "LeftArm",
+        "LeftHand": "LeftForeArm",
+        "RightShoulder": "Spine",
+        "RightArm": "RightShoulder",
+        "RightForeArm": "RightArm",
+        "RightHand": "RightForeArm",
+        "LeftUpLeg": "Hips",
+        "LeftLeg": "LeftUpLeg",
+        "LeftFoot": "LeftLeg",
+        "LeftToeBase": "LeftFoot",
+        "RightUpLeg": "Hips",
+        "RightLeg": "RightUpLeg",
+        "RightFoot": "RightLeg",
+        "RightToeBase": "RightFoot"
+      },
+      "saved_native_height_cm_historical": 182.0,
+      "saved_native_body_source_hash_matches": true,
+      "own_clips": {
+        "idle": {
+          "source_path": "Data/CharactersNeutral/Topknot/idle.fbx",
+          "sha256": "8e3d9f685a72a4c4c95761a9d11852baf2f737cfeb8c194ff4eac917df650ec8",
+          "binary_fbx": {
+            "version": 7400,
+            "time_mode": 6,
+            "custom_frame_rate": 30.0,
+            "stacks": [
+              {
+                "name": "Armature|Armature|Idle|baselayer\u0000\u0001AnimStack",
+                "local_start_ktime": 0,
+                "local_stop_ktime": 184744632000,
+                "seconds": 4.0
+              }
+            ]
+          },
+          "blender_action_frame_range": [
+            1.0,
+            121.0
+          ],
+          "frame_intervals": 120,
+          "integer_samples": 121,
+          "half_frame_samples_checked": 241,
+          "scene_fps": 30,
+          "fps_base": 1.0,
+          "reference_max_matrix_error_source_units": 0.0,
+          "reference_max_rotation_error_rad": 6.66660449213284e-08,
+          "reference_max_head_translation_error_metres": 0.0,
+          "reference_max_scale_error": 0.0,
+          "source_reference_semantic_comparison_only": {
+            "rotation_under_1e_4_rad": true,
+            "heads_under_1e_5_m": true,
+            "scales_under_1e_5": true
+          },
+          "object_matrix_max_motion": 0.0,
+          "component_rotation_seam_max_rad": 0.00020084638612367713,
+          "hip_world_metres_min_xyz": [
+            -0.015296447090804577,
+            0.015075262635946274,
+            0.943426251411438
+          ],
+          "hip_world_metres_max_xyz": [
+            0.005120254587382078,
+            0.03091508336365223,
+            0.9737061262130737
+          ]
+        },
+        "walk": {
+          "source_path": "Data/CharactersNeutral/Topknot/walk.fbx",
+          "sha256": "5df55560593ff167c202fc6b7e1b8650a2e38b788a286044772fe8f7204b4bd5",
+          "binary_fbx": {
+            "version": 7400,
+            "time_mode": 6,
+            "custom_frame_rate": 30.0,
+            "stacks": [
+              {
+                "name": "Armature|Armature|walking_man|baselayer\u0000\u0001AnimStack",
+                "local_start_ktime": 0,
+                "local_stop_ktime": 47725695132,
+                "seconds": 1.0333333015489186
+              }
+            ]
+          },
+          "blender_action_frame_range": [
+            1.0,
+            32.0
+          ],
+          "frame_intervals": 31,
+          "integer_samples": 32,
+          "half_frame_samples_checked": 63,
+          "scene_fps": 30,
+          "fps_base": 1.0,
+          "reference_max_matrix_error_source_units": 0.0,
+          "reference_max_rotation_error_rad": 6.66660449213284e-08,
+          "reference_max_head_translation_error_metres": 0.0,
+          "reference_max_scale_error": 0.0,
+          "source_reference_semantic_comparison_only": {
+            "rotation_under_1e_4_rad": true,
+            "heads_under_1e_5_m": true,
+            "scales_under_1e_5": true
+          },
+          "object_matrix_max_motion": 0.0,
+          "component_rotation_seam_max_rad": 2.3876574300829325e-06,
+          "hip_world_metres_min_xyz": [
+            -0.005556025542318821,
+            -0.02252126857638359,
+            0.9866107702255249
+          ],
+          "hip_world_metres_max_xyz": [
+            0.05115528404712677,
+            0.024653440341353416,
+            1.0554097890853882
+          ]
+        },
+        "run": {
+          "source_path": "Data/CharactersNeutral/Topknot/run.fbx",
+          "sha256": "24ec14cd8e3d613074a8a0fed2d409f74a751b2968bc051ccdb0ee1dd41a4917",
+          "binary_fbx": {
+            "version": 7400,
+            "time_mode": 6,
+            "custom_frame_rate": 30.0,
+            "stacks": [
+              {
+                "name": "Armature|Armature|running|baselayer\u0000\u0001AnimStack",
+                "local_start_ktime": 0,
+                "local_stop_ktime": 29251233033,
+                "seconds": 0.6333333253872296
+              }
+            ]
+          },
+          "blender_action_frame_range": [
+            1.0,
+            20.0
+          ],
+          "frame_intervals": 19,
+          "integer_samples": 20,
+          "half_frame_samples_checked": 39,
+          "scene_fps": 30,
+          "fps_base": 1.0,
+          "reference_max_matrix_error_source_units": 0.0,
+          "reference_max_rotation_error_rad": 6.66660449213284e-08,
+          "reference_max_head_translation_error_metres": 0.0,
+          "reference_max_scale_error": 0.0,
+          "source_reference_semantic_comparison_only": {
+            "rotation_under_1e_4_rad": true,
+            "heads_under_1e_5_m": true,
+            "scales_under_1e_5": true
+          },
+          "object_matrix_max_motion": 0.0,
+          "component_rotation_seam_max_rad": 1.977826042574008e-06,
+          "hip_world_metres_min_xyz": [
+            -0.002100674668326974,
+            -0.014902000315487385,
+            0.9648916125297546
+          ],
+          "hip_world_metres_max_xyz": [
+            0.015908485278487206,
+            0.058101482689380646,
+            1.0345491170883179
+          ]
+        },
+        "jump": {
+          "source_path": "Data/CharactersNeutral/Topknot/jump.fbx",
+          "sha256": "781e957841c7ad080fe37e37dbe0d3926aeccd4ba49a6e4929d03a5705639494",
+          "binary_fbx": {
+            "version": 7400,
+            "time_mode": 6,
+            "custom_frame_rate": 30.0,
+            "stacks": [
+              {
+                "name": "Scene\u0000\u0001AnimStack",
+                "local_start_ktime": 1539538600,
+                "local_stop_ktime": 56962928200,
+                "seconds": 1.2
+              }
+            ]
+          },
+          "blender_action_frame_range": [
+            2.0,
+            38.0
+          ],
+          "frame_intervals": 36,
+          "integer_samples": 37,
+          "half_frame_samples_checked": 73,
+          "scene_fps": 30,
+          "fps_base": 1.0,
+          "reference_max_matrix_error_source_units": 8.106231689453125e-05,
+          "reference_max_rotation_error_rad": 7.3888574898769035e-06,
+          "reference_max_head_translation_error_metres": 1.1735610507490927e-06,
+          "reference_max_scale_error": 5.960464477539062e-07,
+          "source_reference_semantic_comparison_only": {
+            "rotation_under_1e_4_rad": true,
+            "heads_under_1e_5_m": true,
+            "scales_under_1e_5": true
+          },
+          "object_matrix_max_motion": 0.0,
+          "component_rotation_seam_max_rad": 6.582810374748813e-08,
+          "hip_world_metres_min_xyz": [
+            0.003926152363419533,
+            0.027893703430891037,
+            0.91627436876297
+          ],
+          "hip_world_metres_max_xyz": [
+            0.003926152363419533,
+            0.028534991666674614,
+            1.026222586631775
+          ],
+          "per_forearm_anatomical_check": {
+            "neutral_signed_deg": {
+              "Left": 6.484267730298091,
+              "Right": 10.66954315894225
+            },
+            "minimum_forward_flex_from_bind_deg": {
+              "Left": -57.700015803039264,
+              "Right": -59.319295780364385
+            },
+            "maximum_forward_flex_from_bind_deg": {
+              "Left": 2.42997250499144e-06,
+              "Right": -2.7515401269440076e-05
+            },
+            "backward_control_threshold_deg": -0.5,
+            "backward_bend_observed_sides": [
+              "Left",
+              "Right"
+            ],
+            "warning": "Retained source jump predates the per-forearm hinge correction. Its global-side-axis recipe is not a verified natural target jump; author a fresh derivative using each own rig and preserve this source.",
+            "minimum_sample_by_side": {
+              "Left": {
+                "source_frame": 16.0,
+                "source_seconds_from_start": 0.4666666666666667,
+                "forward_flex_from_bind_deg": {
+                  "Left": -57.700015803039264,
+                  "Right": -59.319295780364385
+                }
+              },
+              "Right": {
+                "source_frame": 16.0,
+                "source_seconds_from_start": 0.4666666666666667,
+                "forward_flex_from_bind_deg": {
+                  "Left": -57.700015803039264,
+                  "Right": -59.319295780364385
+                }
+              }
+            },
+            "complete_samples_retained_in_hashed_saved_inventory": true
+          }
+        }
+      },
+      "jump_provenance": {
+        "name": "Topknot",
+        "authoring": "original local skeletal keyframes; no paid generation",
+        "body_sha256": "5adc8300b149cc8cae9d1b483c649f05f4265aa47cda65e4d3068e737cb39176",
+        "jump_sha256": "781e957841c7ad080fe37e37dbe0d3926aeccd4ba49a6e4929d03a5705639494",
+        "seconds": 1.2,
+        "fps": 30,
+        "bones": 24,
+        "head_and_neck_unchanged": true,
+        "actor_root_motion": false,
+        "fbx_round_trip_passed": true
+      }
+    }
+  ],
+  "errors": [],
+  "source_bytes_unchanged": true,
+  "finished_utc": "2026-10-17T22:01:29.839704+00:00",
+  "passed_meaning": "Inventory completed normally and pinned accepted reference files remain unchanged. This is not a natural-motion, new-rig, new-body or native acceptance pass.",
+  "execution": {
+    "command": "blender -b -t 4 --python-exit-code 1 --python games/nord-unreal/Saved/Tests/TripoCast/LocomotionReadiness-20261017-v2/inventory.py",
+    "cwd": "/home/von/Work/rouge-warden-codex-nord-unreal",
+    "process_exit_code": 0,
+    "success_marker": "NORD_TRIPO_CAST_LOCOMOTION_READINESS_OK",
+    "recipe": {
+      "path": "Saved/Tests/TripoCast/LocomotionReadiness-20261017-v2/inventory.py",
+      "sha256": "0411ab95b187a3a824df59b39f875a9ab9ffd2fa2900196c6d07aaee2e2c38db"
+    },
+    "full_receipt": {
+      "path": "Saved/Tests/TripoCast/LocomotionReadiness-20261017-v2/Inventory.json",
+      "sha256": "4914f49e0a54bfe6afe8433fcfd9cf13e8a3dab18c877e0e09e7825a13d343a7"
+    },
+    "log": {
+      "path": "Saved/Tests/TripoCast/LocomotionReadiness-20261017-v2/inventory.log",
+      "sha256": "e3592e925c7789587a0df666518b384518cd591d04d039b95b544b7fb9e2f678"
+    },
+    "recipe_and_receipt_retained_in_ignored_saved_directory": true,
+    "renders_api_native_gpu_service_operations": false
+  },
+  "rejected_inventory_attempts": [
+    {
+      "process_exit_code": 1,
+      "scope": "Initial raw source-unit reference matrix inventory gate, not target acceptance",
+      "reason": "WhiteCap retained Jump raw reference matrix drift exceeds1e-4 source centimetre units. Final inventory reports raw and semantic differences, including scale violations, without claiming they meet target gates. No target threshold was loosened.",
+      "files": {
+        "Saved/Tests/TripoCast/LocomotionReadiness-20261017-v1/inventory.py": "44bdd195403632e0e1e4c078f852c39f8d36ce8803d59633254afb76e5de50f0",
+        "Saved/Tests/TripoCast/LocomotionReadiness-20261017-v1/Inventory.json": "29ce82ae1d92de334d8d6f1d5472f7f6c073d915554570173212259fa9f4a3e3",
+        "Saved/Tests/TripoCast/LocomotionReadiness-20261017-v1/inventory.log": "ab7535c577dff74b341e8e5811cd91c5e9f9c213426c1d9a977aa253d0dc0032"
+      },
+      "source_bytes_unchanged": true
+    }
+  ],
+  "historical_native_reference": {
+    "path": "Verification/MeshyAssets.json",
+    "sha256": "5e6c49aed3d80c1735479799da6182f484c35b9edd84beb0097fb2fd2f823994",
+    "scope": "Saved original neutral body source hashes/heights match; no fresh native query performed"
+  },
+  "preserved_pilot": {
+    "style": 9,
+    "scope": "All merged pilot sources, recipes, assets and receipts remain unchanged; these seven rows do not overwrite or reauthor it."
+  },
+  "baseline_skeleton_facts": {
+    "joints": 24,
+    "body_names": "Hips/Spine02/Spine01/Spine/neck/Head; Left/Right limbs; no real finger or facial controls",
+    "new_tripo_target_controls": "Unknown until each actual returned rig is inspected; do not infer new controls or bind compatibility from matching names."
+  },
+  "props": {
+    "Plunger": {
+      "native_asset": "/Game/ParkComic/Crew/SM_Plunger.SM_Plunger",
+      "reference_obj": "Data/CharactersMeshy/Geometry/Plunger.obj",
+      "reference_obj_sha256": "83a25a183ff03c3c3a552d85cae56c78f40a50e2d2dd7e7e900d4844789dc522",
+      "obj_source_units": "centimetres",
+      "obj_bounds_min_xyz": [
+        -14.3933,
+        -14.3933,
+        -35.0
+      ],
+      "obj_bounds_max_xyz": [
+        14.3933,
+        14.3933,
+        58.5
+      ],
+      "obj_size_xyz": [
+        28.7866,
+        28.7866,
+        93.5
+      ],
+      "scope": "Read-only source OBJ dimensions only; obtain actual native bounds later before calibration. Preserve the shared prop asset.",
+      "calibration_policy": "Pilot16x55cm plunger target is an authored candidate, not a proven universal grip/clearance value; recalibrate on each own hand."
+    },
+    "PVCTube": {
+      "native_asset": "/Game/ParkComic/Crew/SM_PVCTube.SM_PVCTube",
+      "reference_obj": "Data/CharactersMeshy/Geometry/PVCTube.obj",
+      "reference_obj_sha256": "3ac9b09c6eb777c34f03511388eeb6ccaf2761169893d362ecc77aa4433904bb",
+      "obj_source_units": "centimetres",
+      "obj_bounds_min_xyz": [
+        -3.3,
+        -3.3,
+        -35.0
+      ],
+      "obj_bounds_max_xyz": [
+        3.3,
+        3.3,
+        55.0
+      ],
+      "obj_size_xyz": [
+        6.6,
+        6.6,
+        90.0
+      ],
+      "scope": "Read-only source OBJ dimensions only; obtain actual native bounds later before calibration. Preserve the shared prop asset.",
+      "calibration_policy": "Use this prop and each own palm/hand reference. PVCTube must not inherit the pilot16x55cm plunger dimensions or plunger grip point."
+    }
+  },
+  "minimum_generalized_authoring_decisions": [
+    "Keep a separate pinned input/output row per character. Existing accepted neutral sources are identity/gait baselines; if new high-detail models arrive, use their own matching source clips/binds and new source hashes, never assume old neutral clips share the new bind.",
+    "Use each actual source/returned geometry correspondence to measure scale, triangle count, UV correspondence and corner-normal preservation. Do not copy the pilot103544-triangle or1.82000084619 scale constants. These baseline sources have unique1e-6 UV triangle keys but do not establish future returned topology.",
+    "Reuse the22-major-bone component-delta mapping only after matching each own source reference. Derive shoulder, forward, elbow and finger axes from each new target; author relaxed finger/idle motion there, not by copying pilot quaternions.",
+    "All seven retained jumps expose backward elbows on both sides; keep them frozen and author fresh corrected own-rig jump derivatives. Their idle seam and some jump scale/reference drift are baseline limitations, not new-target passes.",
+    "Retain own gait timing/hip motion, canonical Armature object and unexported neutral reference. Set fps30/fps_base1 after every import and verify actual FBX time mode, duration and curve KTime with the established one-tick precision bound.",
+    "Import only each new Resident3-8/10 private folder. Replace the whole-parent absence guard with per-resident absence, never delete or overwrite the preserved Resident9 pilot. Body plus all four clips must use the same measured import scale.",
+    "Select the intended per-style prop, especially style8PVCTube. Calibrate using actual native prop bounds and own hand/palm, retain hand-relative following and explicitly restore production RightHand/absolute rotation when flags are removed.",
+    "Generalize complete four-flag routing to all intended styles while keeping default/incomplete-flag routes and installed packages unchanged. Strip pilot flags explicitly in legacy24-bone fixtures; require mandatory own-rig/finger/graph/prop/crew-cycle checks for every new style before adoption."
+  ],
+  "readiness_limits": [
+    "This artifact inventories existing accepted neutral sources only; no new provider output, new high-detail model or new-target scale/UV/weights is accepted.",
+    "Both elbows bend backward in every retained Jump; existing idle loops have a small seam and WhiteCap/RedJersey Jump reference-scale comparisons exceed1e-5. No acceptance gate was waived.",
+    "No edited source scripts, native code, models, images, saved assets, packages, saves, settings or services. Only new ignored inventory copies and the two declared readiness documents were written.",
+    "No render, native motion/clearance/grasp, package/performance, browser/device or off-LAN result follows."
+  ]
+}

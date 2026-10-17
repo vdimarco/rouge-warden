@@ -1,0 +1,21 @@
+{
+  "character": "BlackCap",
+  "style": 5,
+  "provider": "Tripo API",
+  "endpoint": "/v3/generation/image-to-model",
+  "source_reference_sha256": "baed5a933fd2c7bcd6e2979836caeb92f7233beb4125ceb6eac2c920822cc3a9",
+  "status": "completed_downloaded",
+  "body_published_credits": 60,
+  "paired_rig_reserved_credits": 25,
+  "configured_pilot_reserved_credits": 85,
+  "native_or_art_accepted": false,
+  "user_provider_choice": "Tripo for both bodies and rigs",
+  "pricing_source": "https://developers.tripo3d.ai/en/pricing",
+  "docs_source": "https://developers.tripo3d.ai/en/docs/generation-image-to-model/standard",
+  "prepared_utc": "2026-10-17T22:32:04.179744+00:00",
+  "task_id": "7ea82881-e750-48a7-95aa-a55da483d18f",
+  "progress": 100,
+  "reported_consumed_credits": 60.0,
+  "completed_at_utc": "2026-10-17T22:33:24.200360Z",
+  "credits_consumed": 60
+}

@@ -1,0 +1,79 @@
+{
+  "character": "BlackCap",
+  "source_body_provider": "Tripo H3.1",
+  "rig_provider": "Tripo v3",
+  "byte_identical_copies_of_passed_CPU_outputs": true,
+  "outputs": {
+    "body": {
+      "path": "Data/GraphicNovel/Crew/BlackCap/tripo-h31-rig-20261017/derived/natural-v1/body.fbx",
+      "sha256": "1a81ac6d9485899203c1a37d8c52ab3ece40320536292bb382babf37fa3bd168",
+      "source_proof_output_sha256": "1a81ac6d9485899203c1a37d8c52ab3ece40320536292bb382babf37fa3bd168"
+    },
+    "base_color": {
+      "path": "Data/GraphicNovel/Crew/BlackCap/tripo-h31-rig-20261017/derived/natural-v1/base_color.jpg",
+      "sha256": "8ce8eff69e6f9d71e063dacb34f628e5a21fbd1b3c2cf9dda648eb47a7581156",
+      "source_proof_output_sha256": "8ce8eff69e6f9d71e063dacb34f628e5a21fbd1b3c2cf9dda648eb47a7581156"
+    },
+    "metallic_roughness": {
+      "path": "Data/GraphicNovel/Crew/BlackCap/tripo-h31-rig-20261017/derived/natural-v1/metallic_roughness.jpg",
+      "sha256": "e311d9760701b30e416273e7144cd815fdeef6731c7e96f3b41cebf84095f23e",
+      "source_proof_output_sha256": "e311d9760701b30e416273e7144cd815fdeef6731c7e96f3b41cebf84095f23e"
+    },
+    "normal": {
+      "path": "Data/GraphicNovel/Crew/BlackCap/tripo-h31-rig-20261017/derived/natural-v1/normal.png",
+      "sha256": "193be451678e0f69245b33436d692377ad680c9a51601d4d7ad5c746e7292609",
+      "source_proof_output_sha256": "193be451678e0f69245b33436d692377ad680c9a51601d4d7ad5c746e7292609"
+    },
+    "idle": {
+      "path": "Data/GraphicNovel/Crew/BlackCap/tripo-h31-rig-20261017/derived/natural-v1/idle.fbx",
+      "sha256": "ae2ec76c910647b13c528957a7389f526535ccf9292a1e739d2e2d0e1cbbde77",
+      "source_proof_output_sha256": "ae2ec76c910647b13c528957a7389f526535ccf9292a1e739d2e2d0e1cbbde77"
+    },
+    "jump": {
+      "path": "Data/GraphicNovel/Crew/BlackCap/tripo-h31-rig-20261017/derived/natural-v1/jump.fbx",
+      "sha256": "d1ba8858f136da357a07bdb62bad2f698e36eb17389865ad9f6ecc77cbbccd99",
+      "source_proof_output_sha256": "d1ba8858f136da357a07bdb62bad2f698e36eb17389865ad9f6ecc77cbbccd99"
+    },
+    "walk": {
+      "path": "Data/GraphicNovel/Crew/BlackCap/tripo-h31-rig-20261017/derived/natural-v1/walk.fbx",
+      "sha256": "628304f7d0d9f84ed044600fc4532fbf426bb8840d817a8f7ff511a58e5f9f9b",
+      "source_proof_output_sha256": "628304f7d0d9f84ed044600fc4532fbf426bb8840d817a8f7ff511a58e5f9f9b"
+    },
+    "run": {
+      "path": "Data/GraphicNovel/Crew/BlackCap/tripo-h31-rig-20261017/derived/natural-v1/run.fbx",
+      "sha256": "4ed3b9c0c80b6ef98640449f58e3549ff3607393cc2b69369c7e0bd4d03687cb",
+      "source_proof_output_sha256": "4ed3b9c0c80b6ef98640449f58e3549ff3607393cc2b69369c7e0bd4d03687cb"
+    }
+  },
+  "proofs": {
+    "Surface.json": {
+      "path": "Verification/TripoCast/TripoBodies/NaturalPalms/BlackCap-v4/Surface.json",
+      "sha256": "fd290fd7eaccd6010a99fe1ed48b3456d105ba36ca14a487b18e2a1f57a9287c"
+    },
+    "Motion.json": {
+      "path": "Verification/TripoCast/TripoBodies/NaturalPalms/BlackCap-v4/Motion.json",
+      "sha256": "d294608ca5145435f55327509e4fbcf151874b703fc7e71d07085d3ba57e2100"
+    },
+    "MotionTest.json": {
+      "path": "Verification/TripoCast/TripoBodies/NaturalPalms/BlackCap-v4/MotionTest.json",
+      "sha256": "93c2cae20253b6fa0601f40ea7f7ce8bad333e96ced28e959d893bbd946bbb85"
+    }
+  },
+  "raw_provider_fbx": {
+    "path": "Data/GraphicNovel/Crew/BlackCap/tripo-h31-rig-20261017/rig.fbx",
+    "sha256": "54db95e20649c34c1d6dd2f28e1a1ec44a91250b0f73f6041774ac722764848b"
+  },
+  "original_glb": {
+    "path": "Data/GraphicNovel/Crew/BlackCap/tripo-h31-body-20261017/body.glb",
+    "sha256": "ff4d393b98d5fba212295305b714ab7fce04229e34b14196c7e2f4c210467d70"
+  },
+  "preview_height_m": 1.82,
+  "native_import_scale_proposal_only": 1.8582327234241658,
+  "rendered_continuous_review_pending": true,
+  "native_or_final_art_accepted": false,
+  "limits": [
+    "Original-source-unit body height is retained; no native import performed.",
+    "Original GLB PBR payloads are exact copies; no native shader acceptance.",
+    "Earlier forward-palm derivative remains explicitly rejected."
+  ]
+}

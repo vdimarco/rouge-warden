@@ -1,0 +1,24 @@
+{
+  "at_utc": "2026-10-17T22:20:15.407907+00:00",
+  "source_sha256": "3d492478c8c46998049520448d290880b839178237f8e4745da91a915f15e35c",
+  "viewed": [
+    {
+      "file": "front.png",
+      "sha256": "773f96937e69cb3880eadf9ac8f08ddff086289049cf678b024afc9418adb0de"
+    },
+    {
+      "file": "face-threequarter.png",
+      "sha256": "4a86284b2c036d3ba0045a53edc9699a2ba550464a89c4ef2f70356f84382983"
+    },
+    {
+      "file": "hand-right.png",
+      "sha256": "fc228270fc9c9dd3ef5957ecbb8ccd10044a7678160a91d562fd74b6950759fe"
+    }
+  ],
+  "bounded_rig_trial_allowed": true,
+  "final_art_accepted": false,
+  "observations": [
+    "Stockyadult and rectangularglasses retained withoutBlackCap cheekloops.",
+    "Facetedcap and paddlelike longfingers remain; no finalart/motion/grip acceptance."
+  ]
+}
