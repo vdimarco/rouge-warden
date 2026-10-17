@@ -261,7 +261,8 @@ export function createHero(scene, renderer) {
     roll: -1, rollDur: 0.62, atk: null, atkT: 0, hitT: 9, hitX: 0, hitZ: 0, carry: 0, carryOn: false, hidden: false,
     reach: [0, 0], yank: [0, 0], prevYank: [0, 0], prevGround: true, prevVy: 0, cling: 0, prevWall: false,
     tiltQ: new THREE.Quaternion(), headYaw: 0, headPitch: 0,
-    twos: 0, stepAcc: 0, posed: false, poseNow: false, // the pose rate (0 = every frame), the time since the last pose, a pose exists to hold
+    twos: 0, stepAcc: 0, posed: false, poseNow: false,
+    sq: 0, sqV: 0, // squash (−) and stretch (+) of the body, and its rate: a spring after a landing or a launch // the pose rate (0 = every frame), the time since the last pose, a pose exists to hold
   };
   const mesh = { body: null, hull: null };
   // the motion capture: the loops, each limb's fix for a rig whose rest limbs point elsewhere (the built-in figure), the blend
@@ -301,6 +302,26 @@ export function createHero(scene, renderer) {
     H.model = label;
     fitClips();
     applyVisible();
+    import("three/addons/utils/SkeletonUtils.js").then((m) => { SU = m; }).catch(() => {});
+  }
+  /* ---- multiples: see-through copies of the body left behind on a fast move (two at most: two draws while they show) ---- */
+  let SU = null;
+  const GHOST = { life: 0.16, alpha: 0.45, colors: [0xd8457a, 0x2fc8ff] };
+  const ghosts = [];
+  let ghostNext = 0;
+  function makeGhost(k) {
+    const g = SU.clone(holder);
+    const kill = [];
+    let sk = null;
+    g.traverse((o) => { if (o.name === "hero:outline") kill.push(o); else if (o.isSkinnedMesh && !sk) sk = o; });
+    for (const o of kill) o.parent.remove(o);
+    if (!sk) return null;
+    sk.material = new THREE.MeshBasicMaterial({ color: GHOST.colors[k % 2], transparent: true, opacity: 0, depthWrite: false });
+    sk.frustumCulled = false; sk.name = "hero:ghost";
+    g.matrixAutoUpdate = false;
+    g.visible = false;
+    scene.add(g);
+    return { g, sk, bones: sk.skeleton.bones, t: 9 };
   }
   function useFigure() {
     const { group, mesh: sk } = buildFigure();
@@ -636,6 +657,11 @@ export function createHero(scene, renderer) {
     // On twos (the film's 12 poses a second): between poses the body slides with the player, but the pose and the facing hold.
     // The hands, the head and the feet move with the body, so the ropes still start at the hands. A wall climb stays on ones (its
     // hands and feet stay on holds in the world), and a new yank poses at once.
+    for (const q of ghosts) if (q && q.g.visible) {
+      q.t += dt;
+      q.sk.material.opacity = GHOST.alpha * (1 - clamp(q.t / GHOST.life, 0, 1));
+      if (q.t >= GHOST.life) q.g.visible = false;
+    }
     const yanked = P.yankCool && (P.yankCool[0] > S.prevYank[0] + 0.05 || P.yankCool[1] > S.prevYank[1] + 0.05);
     if (S.twos > 0 && rig && visible && S.posed) {
       S.stepAcc += dt;
@@ -661,6 +687,8 @@ export function createHero(scene, renderer) {
 
     /* -- events read from the state: a hard landing, a yank -- */
     if (ground && !S.prevGround && !S.prevWall && S.prevVy < -3 && S.roll < 0) S.land = clamp(-S.prevVy / 13, 0.3, 1);
+    if (S.land > 0 && S.prevGround === false && ground) S.sqV = Math.min(S.sqV, -6 * S.land); // the landing squashes
+    if (!ground && (S.prevGround || S.prevWall) && !cling && vel.y > 3) S.sqV = Math.max(S.sqV, 5); // a launch stretches
     S.land = Math.max(0, S.land - dt * 3.2);
     S.crouch += (S.land - S.crouch) * ease(dt, S.land > S.crouch ? 30 : 12);
     for (let i = 0; i < 2; i++) {
@@ -795,6 +823,16 @@ export function createHero(scene, renderer) {
     tilt.position.set(0, chestH - (chestH - ROLL_PIVOT) * tuck, 0);
     tilt.quaternion.copy(S.tiltQ);
     holder.position.set(0, -chestH, 0);
+    // squash and stretch about the feet, keeping the volume: a spring (in small steps, so a pose on twos stays steady)
+    for (let left = dt; left > 1e-6; left -= 1 / 120) {
+      const h = Math.min(left, 1 / 120);
+      S.sqV += (-300 * S.sq - 16 * S.sqV) * h;
+      S.sq += S.sqV * h;
+    }
+    if (cling || S.roll >= 0) { S.sq = 0; S.sqV = 0; }
+    S.sq = clamp(S.sq, -0.25, 0.25);
+    const sy = 1 + 0.8 * S.sq, sxz = 1 / Math.sqrt(sy);
+    holder.scale.set(sxz, sy, sxz);
     root.updateMatrixWorld(true);
     holder.getWorldQuaternion(HQ);
     QB.copy(HQ).invert(); // world → model frame
@@ -1066,14 +1104,29 @@ export function createHero(scene, renderer) {
   H.flip = (dur) => { H.roll(dur); S.flip = true; };
   // the glide (main passes the physics' gliding flag every frame)
   H.setGlide = (on) => { S.glideOn = !!on; };
-  H.attack = (kind, side) => { S.poseNow = true; S.atk = { kind, side: side ? 1 : 0, dur: kind === "kick" ? 0.42 : 0.26 }; S.atkT = 0; };
+  // apex: start at the strike's full reach (the key pose a hit-stop holds), and the rest of the move follows through
+  H.attack = (kind, side, apex = false) => { S.poseNow = true; S.atk = { kind, side: side ? 1 : 0, dur: kind === "kick" ? 0.42 : 0.26 }; S.atkT = apex ? S.atk.dur * 0.5 : 0; };
+  // a multiple: a see-through copy of the body as it is now, that fades in GHOST.life s. False before the rig and its tools load.
+  H.ghost = () => {
+    if (!rig || !SU || !root.visible) return false;
+    const k = ghostNext++ % 2;
+    if (!ghosts[k]) ghosts[k] = makeGhost(k);
+    const q = ghosts[k];
+    if (!q) return false;
+    const src = mesh.body.skeleton.bones;
+    for (let i = 0; i < src.length && i < q.bones.length; i++) { q.bones[i].position.copy(src[i].position); q.bones[i].quaternion.copy(src[i].quaternion); q.bones[i].scale.copy(src[i].scale); }
+    q.g.matrix.copy(holder.matrixWorld);
+    q.g.matrixWorldNeedsUpdate = true;
+    q.t = 0; q.sk.material.opacity = GHOST.alpha; q.g.visible = true;
+    return true;
+  };
   H.hit = (dx, dz) => { S.poseNow = true; S.hitT = 0; S.hitX = dx; S.hitZ = dz; };
   H.setCarry = (on) => { S.carryOn = !!on; };
   H.diving = false;
   // in a car: no hero to draw (the pose keeps running underneath)
   H.setHidden = (b) => { S.hidden = !!b; applyVisible(); };
   H.info = () => ({
-    model: H.model, visible: root.visible, opacity, pose: H.pose, yaw: S.yaw, tris: H.tris, twos: S.twos,
+    model: H.model, visible: root.visible, opacity, pose: H.pose, yaw: S.yaw, tris: H.tris, twos: S.twos, squash: S.sq, ghosts: ghosts.filter((q) => q && q.g.visible).length,
     weights: { run: S.run, air: S.air, swing: S.swing, dive: S.dive, roll: S.roll >= 0 ? S.roll / S.rollDur : -1, carry: S.carry, crouch: S.crouch, cling: S.cling, reach: S.reach.slice(), yank: S.yank.slice() },
     // the motion capture: how much it shows, the loop weights (idle, walk, jog, run) and the moving loops' phase
     clips: { loaded: !!MC.data, on: MC.on, w: MC.w.slice(), phase: MC.phase },

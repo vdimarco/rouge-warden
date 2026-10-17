@@ -306,6 +306,7 @@ export function createCombat(city) {
     for (const g of goons) {
       if (!g.on) continue;
       g.poseT += dt; g.cool = Math.max(0, g.cool - dt);
+      if (g.stride > 0) g.phase = (g.phase + dt * g.stride * 2.2) % (Math.PI * 200); // the walk cycle, as street.js steps people
       const dx = h ? h.x - g.x : 0, dz = h ? h.z - g.z : 0, dy = h ? h.y - g.y : 99, d = Math.hypot(dx, dz);
       if (h && d > FIGHT.keep && !g.aggro && !g.path) { g.on = false; continue; }
       switch (g.state) {

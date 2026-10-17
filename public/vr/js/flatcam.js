@@ -38,7 +38,7 @@ export function createFlatCam(camera, city) {
   const HIT = { t: 0, x: 0, y: 0, z: 0, nx: 0, ny: 0, nz: 0, collider: null }, SPH = { x: 0, y: 0, z: 0, nx: 0, ny: 0, nz: 0 };
   const T = new THREE.Vector3(), EYE = new THREE.Vector3(), DIR = new THREE.Vector3(), BACK = new THREE.Vector3(), POS = new THREE.Vector3();
   const S = { yaw: 0, pitch: PITCH0, dist: ARM, room: ARM, el: PITCH0, blend: 1, fp: false, hold: 9, fov: FOV_TP[0], keyEdge: false, settle: false, turn: null };
-  const VX = { bank: 0, lat: 0, pvx: 0, pvz: 0, trauma: 0, t: 0, ox: 0, oy: 0, rx: 0, ry: 0, rz: 0 }; // the Verse camera
+  const VX = { zoom: 0, fov: 0, bank: 0, lat: 0, pvx: 0, pvz: 0, trauma: 0, t: 0, ox: 0, oy: 0, rx: 0, ry: 0, rz: 0 }; // the Verse camera
 
   const FC = {
     active: false,
@@ -62,6 +62,8 @@ export function createFlatCam(camera, city) {
     bankOn: true, shakeOn: true,
     // a blow: add trauma (0..1); the shake is its square, so small knocks stay small
     shake(amount) { if (FC.shakeOn) VX.trauma = Math.min(1, VX.trauma + amount); },
+    // a snap zoom on a strong blow: the view narrows by part (0.12 is 12 %) at once and eases back over about six frames
+    snap(part) { if (FC.shakeOn) VX.zoom = Math.max(VX.zoom, part); },
     // Before the draw: lean and shake the camera (real time, so a hit-stop still shakes). True when it moved the camera: then
     // call restore() after the draw.
     post(dt) {
@@ -74,7 +76,10 @@ export function createFlatCam(camera, city) {
       VX.ox = n(47, 71, 113) * SHAKE.move * k; VX.oy = n(53, 79, 101) * SHAKE.move * k;
       VX.rx = n(37, 61, 97) * SHAKE.turn * k; VX.ry = n(41, 67, 89) * SHAKE.turn * k; VX.rz = n(43, 59, 107) * SHAKE.roll * k;
       const roll = (FC.bankOn ? VX.bank : 0) + VX.rz;
-      if (Math.abs(roll) + k < 1e-5) return false;
+      VX.zoom *= Math.exp(-dt * 30);
+      if (VX.zoom < 1e-3) VX.zoom = 0;
+      if (Math.abs(roll) + k < 1e-5 && !VX.zoom) return false;
+      if (VX.zoom) { VX.fov = camera.fov; camera.fov = VX.fov * (1 - VX.zoom); camera.updateProjectionMatrix(); }
       E.set(S.pitch + VX.rx, S.yaw + VX.ry, roll);
       camera.quaternion.setFromEuler(E);
       camera.position.copy(POS);
@@ -196,11 +201,12 @@ export function createFlatCam(camera, city) {
     // The input module writes the camera every frame (it is the head there). This puts back the pose of the last update, so
     // whatever reads the camera before the next update (the reticles, the opening) sees the view you see.
     restore() {
+      if (VX.fov) { camera.fov = VX.fov; VX.fov = 0; camera.updateProjectionMatrix(); }
       camera.position.copy(POS);
       camera.quaternion.setFromEuler(E.set(S.pitch, S.yaw, 0));
     },
     // the state, for tests
-    info: () => ({ bank: VX.bank, trauma: VX.trauma, yaw: S.yaw, pitch: S.pitch, el: S.el, room: S.room, dist: S.dist, blend: S.blend, firstPerson: S.fp, following: FC.following, lifting: FC.lifting, turning: !!S.turn, blocked: FC.blocked, opacity: FC.opacity, fov: camera.fov, hold: S.hold }),
+    info: () => ({ zoom: VX.zoom, bank: VX.bank, trauma: VX.trauma, yaw: S.yaw, pitch: S.pitch, el: S.el, room: S.room, dist: S.dist, blend: S.blend, firstPerson: S.fp, following: FC.following, lifting: FC.lifting, turning: !!S.turn, blocked: FC.blocked, opacity: FC.opacity, fov: camera.fov, hold: S.hold }),
   };
 
   // The V key. It is not read while a menu, a text field or a modifier key is in play.

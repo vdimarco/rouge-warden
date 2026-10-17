@@ -51,7 +51,7 @@ void main() {
 const COMPOSITE_FS = /* glsl */ `
 uniform sampler2D uScene, uB0, uB1, uB2, uB3, uDepth;
 uniform float uStrength;
-uniform float uVerse, uNear, uFar, uFocus, uPlate, uImpact, uSense, uTime, uAspect;
+uniform float uVerse, uNear, uFar, uFocus, uPlate, uImpact, uSense, uTime, uAspect, uEdge, uGrain;
 uniform vec2 uTexel, uHead;
 uniform vec3 uInk, uHold;
 varying vec2 vUv;
@@ -65,6 +65,7 @@ void main() {
     // the plates slip: none at the focus (the hero), more toward the far city and the sky, some very close to the lens
     float d = viewZ(texture2D(uDepth, vUv).r);
     float oof = smoothstep(uFocus * 1.6, uFocus * 14.0, d) + 0.6 * (1.0 - smoothstep(uFocus * 0.25, uFocus * 0.6, d));
+    oof += uEdge * smoothstep(0.3, 0.75, length((vUv - 0.5) * vec2(uAspect, 1.0)) / max(uAspect, 1.0) * 2.0); // more toward the frame edge
     vec2 off = vec2(1.0, 0.4) * uTexel * uPlate * oof;
     // the plates move the scene only; the glow is soft already, so it is read once, in place
     c = vec3(texture2D(uScene, vUv + off).r, texture2D(uScene, vUv).g, texture2D(uScene, vUv - off).b) + glow(vUv);
@@ -81,6 +82,16 @@ void main() {
       float line = 1.0 - smoothstep(0.0022, 0.0042, abs(r * sin(a - ac) - w));
       line *= step(0.0, cos(a - ac)) * smoothstep(0.045, 0.055, r) * (1.0 - smoothstep(0.1, 0.12, r)) * step(0.15, a) * step(a, 3.0);
       c = mix(c, uHold, line * uSense);
+    }
+    // paper: a fine grain and soft blotches, fixed to the page, seen in the mid-tones only (none on black, none on white)
+    if (uGrain > 0.0) {
+      vec2 px = gl_FragCoord.xy;
+      float f = fract(sin(dot(floor(px), vec2(12.9898, 78.233))) * 43758.5453);
+      vec2 q = floor(px / 9.0);
+      float b = fract(sin(dot(q, vec2(39.346, 11.135))) * 24634.6345);
+      float l = dot(c, vec3(0.299, 0.587, 0.114));
+      float mid = smoothstep(0.04, 0.22, l) * (1.0 - smoothstep(0.7, 0.95, l));
+      c *= 1.0 - uGrain * mid * (0.65 * f + 0.35 * b);
     }
     // the impact frame: two inks, the lit half held in red
     if (uImpact > 0.01) {
@@ -112,7 +123,7 @@ export function createBloom(renderer) {
   const blur = mk(BLUR_FS, { uTex: { value: null }, uDir: { value: new THREE.Vector2() } });
   const comp = mk(COMPOSITE_FS, { uScene: { value: sceneRT.texture }, uB0: { value: A[0].texture }, uB1: { value: A[1].texture }, uB2: { value: A[2].texture }, uB3: { value: A[3].texture }, uStrength: { value: 0.5 },
     uDepth: { value: sceneRT.depthTexture }, uVerse: { value: 0 }, uNear: { value: 0.1 }, uFar: { value: 1000 }, uFocus: { value: 5 }, uPlate: { value: 0 },
-    uImpact: { value: 0 }, uSense: { value: 0 }, uTime: { value: 0 }, uAspect: { value: 1 }, uTexel: { value: new THREE.Vector2() }, uHead: { value: new THREE.Vector2(0.5, 0.6) },
+    uImpact: { value: 0 }, uSense: { value: 0 }, uEdge: { value: 0 }, uGrain: { value: 0 }, uTime: { value: 0 }, uAspect: { value: 1 }, uTexel: { value: new THREE.Vector2() }, uHead: { value: new THREE.Vector2(0.5, 0.6) },
     uInk: { value: new THREE.Color(0x140a18) }, uHold: { value: new THREE.Color(0xe8203a) } });
   const black = new THREE.DataTexture(new Uint8Array([0, 0, 0, 255]), 1, 1); // the glow levels when only the Verse pass runs
   black.needsUpdate = true;
@@ -145,6 +156,7 @@ export function createBloom(renderer) {
       u.uVerse.value = verse ? 1 : 0;
       if (verse) {
         u.uNear.value = camera.near; u.uFar.value = camera.far; u.uFocus.value = Math.max(0.5, verse.focus || 5);
+        u.uEdge.value = verse.edge || 0; u.uGrain.value = verse.grain || 0;
         u.uPlate.value = verse.plate || 0; u.uImpact.value = verse.impact || 0; u.uSense.value = verse.sense || 0;
         u.uTime.value = Math.floor((verse.time || 0) * 12) / 12; u.uAspect.value = w / h; u.uTexel.value.set(1 / w, 1 / h);
         if (verse.head) u.uHead.value.set(verse.head.x, verse.head.y);
