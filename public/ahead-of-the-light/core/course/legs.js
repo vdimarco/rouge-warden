@@ -1,6 +1,7 @@
-// Ahead of the Light: the route and its leg types as data (final.md 11.1, 11.2, 11.3, 11.9), the lane kinds' edits
-// and the lane conditions. gen.js reads this; later pieces plug in by id, and a pool entry whose piece is not written
-// yet is skipped (a section whose whole pool is missing falls back to a common piece). Pure.
+// Ahead of the Light: the route and its leg types as data (final.md 11.1, 11.2, 11.3, 11.9), the lane kinds' edits and
+// the lane conditions. Orion's opener and build are its skins of easy-knots and hub-hop (young-stars, betelgeuse); the
+// neighbours' are the Pleiades and Sirius. gen.js reads this; later pieces plug in by id, and a pool entry whose piece
+// is not written yet is skipped (a section whose whole pool is missing falls back to a common piece). Pure.
 //
 // A section is [role, beats, pool, opts]: beats is a number or 'rest' (it takes what the others leave); pool is a
 // list of piece ids, or [id, weight] (a leg's own piece has weight 2), or 'lane' (the lane's signature). A section
@@ -81,7 +82,7 @@ export const LEG_TYPES = deep({
   orion: {
     name: 'ORION', gate: 'gate-bubble', beats: 152, key: 2, act: 2, cap: 5, mass: 0.73, fuel: 3, patch: true,
     field: { regulars: 3, drifters: 0, boss: 'mako' }, passes: 135, skin: 'orion',
-    sections: [['launch', 6], ['opener', 14, flow([['easy-knots', 2]])], ['build', 16, flow([['hub-hop', 2]])],
+    sections: [['launch', 6], ['opener', 14, flow([['young-stars', 2]])], ['build', 16, flow([['betelgeuse', 2]])],
       ['signature', 28, 'lane'], ['breather', 4, ['breather']], ['open', 14, ['open-road']],
       ['crescendo', 'rest', ['mako-field'], { density: 1.15 }], ['gate', 14, ['gate-bubble']]],
     lanes: { 'THE ORION NEBULA': lane('orion-nebula', 'risk', null, { seq: ['nursery', 'trapezium'] }),
@@ -90,7 +91,7 @@ export const LEG_TYPES = deep({
   neighbours: {
     name: "THE SUN'S NEIGHBOURS", gate: 'gate-sun', beats: 160, key: 3, act: 3, cap: 4.5, mass: 0.69, fuel: 3,
     patch: true, field: { regulars: 3, drifters: 2, boss: null }, passes: 140, skin: 'neighbours',
-    sections: [['launch', 6], ['opener', 16, flow([['easy-knots', 2]])], ['build', 16, flow([['hub-hop', 2]])],
+    sections: [['launch', 6], ['opener', 16, flow([['pleiades', 2]])], ['build', 16, flow([['sirius', 2]])],
       ['signature', 20, 'lane'], ['breather', 4, ['breather']], ['open', 14, ['open-road']],
       ['crescendo', 'rest', ['swarm'], { density: 1.2 }], ['crescendo', 10, ['oort-comets'], { density: 1.2 }],
       ['gate', 24, ['gate-sun']]],

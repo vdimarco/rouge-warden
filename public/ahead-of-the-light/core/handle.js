@@ -645,7 +645,7 @@ function grab(race, ship, it, tA, d, w, T, S) {
   W.x = W.teach ? T.TEACH_SWEEP : 1;
   W.cost = pressCost(tA, T, w) || 0;
   W.scorchAt = 360 - Math.abs(d) - W.core - ship.half;
-  W.redAt = W.scorchAt - T.RED_SPAN;
+  W.redAt = W.scorchAt - (race.leg.redSpan ?? T.RED_SPAN);       // TIDES widens it (11.3)
   const ex = it.exits || [];
   W.n = Math.min(2, ex.length);
   for (let k = 0; k < 2; k++) {
@@ -746,7 +746,8 @@ function release(race, ship, aJ, T, scorched) {
   const red = W.red && !scorched;
   let gain = 0;
   if (!scorched) {
-    gain = (T.GAIN_BASE + T.GAIN_DEPTH * d * d) * W.mass * T.AIM[g] * (red ? T.RED_X : 1) * T.WHIP_GAIN_X;
+    const redX = race.leg.redX ?? T.RED_X;                         // TIDES pays × 1.5 (11.3)
+    gain = (T.GAIN_BASE + T.GAIN_DEPTH * d * d) * W.mass * T.AIM[g] * (red ? redX : 1) * T.WHIP_GAIN_X;
     ship.eta = Math.min(etaTop(ship, T), ship.eta + gain);
   }
   ship.stats.whips++;

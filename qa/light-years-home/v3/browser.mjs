@@ -120,9 +120,13 @@ export async function touches(page) {
   return {
     async start(id, x, y) { live.set(id, { x, y }); await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: points() }); },
     async move(id, x, y) { live.set(id, { x, y }); await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: points() }); },
+    // touchEnd lifts the points it is given: send only the finger that lifts (sending the ones still down lifted
+    // them instead).
     async end(id) {
+      const p = live.get(id);
       live.delete(id);
-      await cdp.send('Input.dispatchTouchEvent', { type: live.size ? 'touchEnd' : 'touchEnd', touchPoints: points() });
+      if (!p) return;
+      await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [{ x: p.x, y: p.y, id }] });
     },
     // A quick swipe with its own event times (a slow software GPU delivers touches late, which would hide the
     // speed): the moves are stamped dt s apart.
@@ -141,7 +145,7 @@ export async function touches(page) {
       live.set(id, { x, y });
       await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: points(), timestamp: t0 });
       live.delete(id);
-      await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: points(), timestamp: t0 + 0.05 });
+      await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [{ x, y, id }], timestamp: t0 + 0.05 });
     },
     async drag(id, x0, y0, x1, y1, ms = 120, steps = 6) {
       await this.start(id, x0, y0);

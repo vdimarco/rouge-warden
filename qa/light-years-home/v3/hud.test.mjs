@@ -199,6 +199,10 @@ test('callouts: a lower one never replaces a higher one in its first 0.6 s; repe
   assert.equal(calloutOf({ type: 'driftTier', tier: 3 }).text, 'BLUE DRIFT');
   assert.equal(calloutOf({ type: 'gate', kind: 'pass' }), null, 'a plain pass is quiet');
   assert.equal(calloutOf({ type: 'spark' }), null);
+  // A drive chain pays into boost; a jump chain has no bar and keeps its points as score.
+  assert.equal(calloutOf({ type: 'chainBank', n: 4, mult: 2, points: 300, bar: 0.06 }).text, '×2 · BOOST +6%');
+  assert.equal(calloutOf({ type: 'chainBank', n: 4, mult: 2, points: 1200 }).text, '+1,200');
+  assert.equal(calloutOf({ type: 'chainBank', n: 4, mult: 2, points: 300, bar: 0 }), null, 'a drive chain that paid nothing is quiet');
 });
 
 test('overlay maths: projection, edge chevrons and the radar', () => {
@@ -225,4 +229,71 @@ test('overlay maths: projection, edge chevrons and the radar', () => {
 test('end card: your speed, for real', () => {
   assert.equal(realNines(1.0645e9, 41 * 60), 26);
   assert.equal(playText(41 * 60 + 30), '0 H 41 MIN');
+});
+
+// ---------------------------------------------------------------- Round 1 playtest fixes
+
+test('hints teach the moment: LET GO TO BOOST at the first drift tier, at once; done hints go; a job clears the queue', async () => {
+  const { stuntValue } = await import('../../../public/light-years-home/ui/hud.js');
+  const { game, st, run } = rig(portrait, 'touch');
+  setMode(game, 'drive');
+  run(4);                                                  // the steer hint has come and gone
+  game.ship.pos = [-48, -270, 0];
+  let m = run(0.2);
+  assert.equal(m.hint?.key, 'drift');
+  // The first tier: the release hint replaces the drift hint on the same frame.
+  m = run(1 / 60, { events: [{ type: 'driftStart' }, { type: 'driftTier', tier: 1 }] });
+  assert.equal(m.hint?.key, 'release');
+  // Letting go is the release hint's action: it goes at once.
+  m = run(1 / 60, { events: [{ type: 'driftBoost', tier: 1 }] });
+  assert.equal(m.hint, null);
+  assert.ok(st.hintShown.release);
+  // DRIVE THROUGH TO START queued by a start ring, then a job starts: it never shows.
+  m = run(4);
+  run(1 / 60, { events: [{ type: 'eventArm', id: 'first-light' }] });
+  run(1 / 60, { events: [{ type: 'missionStart', id: 'which-way-home' }] });
+  let start = false;
+  for (let i = 0; i < 10; i++) { m = run(0.5); if (m.hint?.key === 'start') start = true; }
+  assert.ok(!start, 'no DRIVE THROUGH TO START in a chase');
+  // Stunt values read by kind.
+  const ev = (id) => WALL.events.find((e) => e.id === id);
+  assert.deepEqual(stuntValue(ev('sloan-bend'), { value: 1 }), { now: 'TIER 1', goal: '★★ AT TIER 2' });
+  assert.deepEqual(stuntValue(ev('void-run'), { value: 41.4 }), { now: '41 U/S', goal: '★★ AT 44 U/S' });
+  assert.deepEqual(stuntValue(ev('outbound'), { value: 0 }), { now: 'NEARS 0', goal: '★ AT 5 NEARS' });
+  assert.deepEqual(stuntValue(ev('sloan-pads'), { value: 0, next: 2 }), { now: 'PADS 2/4', goal: '' });
+});
+
+test('a white wash holds toasts and cards, outlines the words, and GAS leaves the screen at light speed', () => {
+  const { game, run } = rig(portrait, 'touch');
+  setMode(game, 'drive');
+  run(1);
+  let m = run(1 / 60, { events: [{ type: 'exitOpen', to: 'coma' }, { type: 'earthCard', id: 'seaweed' }], wash: 0.8 });
+  assert.equal(m.toast, null, 'the toast waits under the wash');
+  assert.equal(m.info, null, 'the card waits too');
+  assert.ok(m.washed, 'the words get a dark outline');
+  m = run(0.4, { wash: 0.5 });
+  assert.equal(m.toast, null);
+  m = run(1 / 60, { wash: 0.1 });
+  assert.ok(m.toast?.text.startsWith('EXIT OPEN'), 'it shows when the wash is gone');
+  assert.ok(m.info, 'and the card, for its full time');
+  m = run(2.5, { wash: 0 });
+  assert.ok(m.info, 'still up 2.5 s later');
+  assert.equal(m.gasPedal, true);
+  game.mode = 'tunnel';
+  m = run(1 / 60);
+  assert.equal(m.gasPedal, false, 'no GAS pedal in the corridor');
+});
+
+test('a chase on auto-cruise: HOLD GAS TO CATCH IT after 4 s within 60 u, even in the first minute', () => {
+  const { game, run } = rig(portrait, 'touch');
+  setMode(game, 'drive');
+  game.mission = { id: 'which-way-home', beat: 0, state: 'running' };
+  game.actors = [{ id: 'chart-thief', kind: 'runner', pos: [0, -370, 0], state: 'idle' }];
+  game.ship.pos = [0, -400, 0];
+  game.ship.bar = 0.5;
+  let m = run(3.5, { input: { gas: false } });
+  assert.notEqual(m.hint?.key, 'catch');
+  m = run(1, { input: { gas: false } });
+  assert.equal(m.hint?.key, 'catch');
+  assert.equal(m.hint.text, HINTS.catch.touch);
 });

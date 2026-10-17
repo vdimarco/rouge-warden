@@ -1,8 +1,8 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
 <script src="/arcade/quiet.js"></script>
+<meta charset="utf-8">
 <script src="/arcade/switch.js"></script>
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex">
@@ -17,29 +17,35 @@
 <!-- The world (WebGL) below, the ring and everything on it (2D) above. -->
 <canvas id="view" aria-label="Galaxies stream past a ship racing a ring of light"></canvas>
 <canvas id="overlay" aria-hidden="true"></canvas>
-<!-- The glare and the flood: composited layers whose opacity alone animates. -->
+<!-- The glare, the flash and the flood: composited layers whose opacity alone animates. -->
 <div id="fx" aria-hidden="true"><div id="fx-glare"></div><div id="fx-flash"></div><div id="fx-flood"></div></div>
 
-<!-- The HUD: speed top left, place top right, the pause button. -->
+<!-- The HUD: speed top left (and the landing's need on leg 8), place top right, the pause button. -->
 <div id="hud" hidden>
-  <p id="speed" class="hud">0.762c</p>
+  <p id="speed" class="hud">0.7616c</p>
+  <p id="land" class="hud" hidden></p>
   <p id="place" class="hud"></p>
-  <button id="pause" type="button" aria-label="Pause"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="3" y="2" width="3.4" height="12" rx="0.8"/><rect x="9.6" y="2" width="3.4" height="12" rx="0.8"/></svg></button>
+  <button id="pause" type="button" aria-label="Pause"><svg viewBox="0 0 16 16" aria-hidden="true">
+    <rect x="3" y="2" width="3.4" height="12" rx="0.8"/><rect x="9.6" y="2" width="3.4" height="12" rx="0.8"/></svg></button>
+  <div id="act" hidden aria-hidden="true"><span>GRAB</span></div>
 </div>
 
-<!-- One caption at a time, the current word in orange. -->
+<!-- One caption at a time, the current word in orange; and the one-line hints (HOLD TO GO ON, TAP TO SKIP). -->
 <div id="captions" aria-live="polite"></div>
+<p id="hint" hidden></p>
 
-<!-- Title, break, chart, result, pause, settings, log and hangar screens. -->
+<!-- Title, break, chart, result, pause, settings, log, hangar and practice. -->
 <div id="screens">
-  <section id="title" class="screen" aria-label="Title">
+  <section id="title" class="screen" aria-label="Title" data-act="fly" data-ui="1">
     <a class="back" href="/">‹ Arcade</a>
     <h1>AHEAD OF THE <span>LIGHT</span></h1>
-    <p class="line">Race home ahead of a gamma-ray burst. Every near miss holds the light back.</p>
-    <p id="go" class="go"><span class="touch">TAP TO FLY</span><span class="desk">CLICK OR PRESS SPACE</span></p>
+    <p class="sub">RACE HOME BEFORE THE BURST</p>
+    <button type="button" id="go" class="go" data-act="fly"><span class="touch">TAP TO FLY</span><span
+      class="desk">CLICK OR PRESS SPACE</span></button>
     <div class="row"><button type="button" class="btn quiet" data-switch>Switch game</button></div>
   </section>
 </div>
+<p id="debug" hidden></p>
 
 <script type="module" src="./main.js"></script>
 <script src="/arcade/analytics.js" data-game="ahead-of-the-light"></script>

@@ -49,14 +49,16 @@ export const WEB_STRANDS = piece({
 
 // ---------- web-junction (build) ----------
 // A short highway ends; the next one's mouth lies 90 to 140° round a few beats later, with a preview tick 3 s ahead
-// and three knots beside the direct path to graze on the way. Follow the filament, or let it go.
+// and three knots beside the direct path to graze on the way. Follow the filament, or let it go. In a later leg's
+// 14 or 16-beat section the first highway is longer, so the junction fills it (no slack for the crescendo).
 export const WEB_JUNCTION = piece({
-  id: 'web-junction', leg: 'web', roles: ['build'], beats: [8, 10], diff: 2,
+  id: 'web-junction', leg: 'web', roles: ['build'], beats: [8, 16], diff: 2,
   params: { turn: [90, 140] },
   safe: { turn: 110 },
   build(ctx) {
     const { rnd, len, p } = ctx;
-    const aEnd = len >= 10 ? 3.5 : 2.5, mouth = len - 2.5, T = p.turn;
+    // longer than 10 beats (a whole section of a later leg), the first highway runs on to 6.5 beats before the end
+    const aEnd = len > 10 ? len - 6.5 : len >= 10 ? 3.5 : 2.5, mouth = len - 2.5, T = p.turn;
     const items = [
       cue(0.5, 'junction'),
       rail(1, aEnd, -10, 1.5, { tag: 'highway' }), rail(1, aEnd, 10, 1.5, { tag: 'highway' }),

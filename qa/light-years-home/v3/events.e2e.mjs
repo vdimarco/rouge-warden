@@ -41,23 +41,30 @@ async function raceChecks(page, size, software) {
     const r = await hook(page, 'race');
     ok = !!r && r.state === 'running' && r.t > 0;
   }
-  check('driving through First Light\'s start ring starts the clock', ok && armed === 'armed', `armed before: ${armed}`);
-  // Hold the action control 0.45 s: a restart; the clock runs again within 2 s of wall time.
-  const t0 = Date.now();
+  check('driving through First Light\'s start ring starts the clock', ok && armed === 'armed',
+    `armed before: ${armed}`);
+  // Hold the action control 0.45 s: a restart; the clock runs again within 2 s. A software GPU runs the game slower
+  // than the wall clock (more so on a busy machine), so there the 2 s is game time and the wall time is a note.
+  const t0 = Date.now(), g0 = (await hook(page, 'state')).t;
   await action(page, size, 450);
-  let back = null, restarted = false;
+  let back = null, backG = null, restarted = false;
   const seen = [];
-  for (let i = 0; i < 200; i++) {
+  for (let i = 0; i < 300; i++) {
     await wait(50);
     const r = await hook(page, 'race');
     if (seen[seen.length - 1] !== r?.state) seen.push(r?.state);
     if (r && (r.state === 'restart' || r.state === 'armed')) restarted = true;
-    if (restarted && r && r.state === 'running') { back = Date.now() - t0; break; }
+    if (restarted && r && r.state === 'running') {
+      back = Date.now() - t0;
+      backG = (await hook(page, 'state')).t - g0;
+      break;
+    }
   }
-  const lim = software ? 4000 : 2000;
-  const tm = await hook(page, 'timing');
-  check(`a 0.35 s hold restarts and the clock runs again within ${software ? '4 s on a software GPU (2 s on hardware)' : '2 s'}`,
-    restarted && back !== null && back < lim, `${back} ms wall from the press; ${seen.join(' → ')}`);
+  const took = software ? backG : back / 1000;
+  check(`a 0.35 s hold restarts and the clock runs again within 2 s${software ? ' of game time' : ''}`,
+    restarted && took !== null && took < 2,
+    `${backG?.toFixed(2)} s game, ${back} ms wall from the press; ${seen.join(' → ')}`);
+  if (software) note(`restart on a software GPU: ${back} ms of wall time`);
   await hudChecks(page, 'race HUD');
   // A tap after the first gate goes back to the last gate.
   await page.evaluate(() => { window.__b = window.__lyh.bot('mid', { event: 'first-light' }); });
@@ -70,7 +77,8 @@ async function raceChecks(page, size, software) {
   await action(page, size, 80);
   await wait(500);
   const ev = await hook(page, 'events', 60);
-  check('a tap goes back to the last gate', ev.some((e) => e.type === 'toGate'), ev.filter((e) => /gate|toGate/.test(e.type)).map((e) => e.type).join(' '));
+  check('a tap goes back to the last gate', ev.some((e) => e.type === 'toGate'),
+    ev.filter((e) => /gate|toGate|restart/.test(e.type)).map((e) => e.type).join(' '));
   await hook(page, 'input', null);
 }
 
@@ -88,7 +96,8 @@ async function ghostChecks(page) {
   await hook(page, 'raceRestart');
   await hook(page, 'step', null, 1.5);
   const slots = await hook(page, 'ghostSlots');
-  check('the next try draws your ghost and the pacer', slots.includes('best') && slots.includes('pacer'), slots.join(', '));
+  check('the next try draws your ghost and the pacer', slots.includes('best') && slots.includes('pacer'),
+    slots.join(', '));
   const link = await hook(page, 'ghostLink', 'first-light');
   check('a ghost link is short', !!link && link.length < 1400, link ? `${link.length} characters` : 'none');
   await hook(page, 'live');
@@ -101,7 +110,8 @@ async function linkChecks(browser, size, link) {
   await wait(1200);
   const r = await hook(page, 'race');
   const slots = await hook(page, 'ghostSlots');
-  check('a ghost link opens the game at First Light with the friend\'s ghost', r?.id === 'first-light' && slots.includes('friend'),
+  check('a ghost link opens the game at First Light with the friend\'s ghost',
+    r?.id === 'first-light' && slots.includes('friend'),
     `${r?.id} ${r?.state} · ${slots.join(', ')}`);
   errorCheck(errors, `${size} ghost link`);
   await ctx.close();

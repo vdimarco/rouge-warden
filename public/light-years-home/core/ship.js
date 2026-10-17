@@ -43,12 +43,14 @@ export const POINTS = Object.freeze({ near: 100, hairline: 250, thread: 300, ski
 
 /**
  * flightFields(ship) → ship: adds the few fields the flight model keeps beyond final.md 5.1 (contract.md): yawRate
- * (show only), drift.manual / exitT / counterT / turn / well, padT, afterT / afterBend (Aftertouch) and assistOffT.
+ * (show only), drift.manual / exitT / counterT / turn / well, padT, afterT / afterBend (Aftertouch), assistOffT and
+ * coastT / coastS (an arrival holds its drop-out speed for SHIP.ENTRY_HOLD s).
  * The enter slot and createShip add them; stepShip adds them to any ship that lacks them.
  */
 export function flightFields(ship) {
   if (ship.padT !== undefined) return ship;
   ship.yawRate = 0; ship.padT = 0; ship.afterT = 0; ship.afterBend = 0; ship.assistOffT = 0;
+  ship.coastT = 0; ship.coastS = 0;
   const d = ship.drift;
   d.manual = false; d.exitT = 0; d.counterT = 0; d.turn = 0; d.well = -1;
   return ship;
@@ -99,7 +101,7 @@ export function padKick(ship, perfect = false, tune = TUNE) {
  */
 export function chainEvent(ship, t, points, ev, tune = TUNE) {
   const P = tune.PROX, ch = ship.chain;
-  if (ch.n > 0 && t - ch.lastT > P.CHAIN_GAP) bankChain(ship, ev);
+  if (ch.n > 0 && t - ch.lastT > P.CHAIN_GAP) bankChain(ship, ev, tune);
   ch.n++;
   ch.lastT = t;
   let mult = 1;
@@ -109,9 +111,12 @@ export function chainEvent(ship, t, points, ev, tune = TUNE) {
   ch.points += points * mult;
 }
 
-function bankChain(ship, ev) {
+// A chain that ends clean pays into the boost bar: CHAIN_BAR × its multiplier (a ×4 chain is +12%).
+function bankChain(ship, ev, tune = TUNE) {
   const ch = ship.chain;
-  if (ch.n > 0 && ev) ev.push('chainBank', { n: ch.n, mult: ch.mult, points: ch.points });
+  const bar = ch.mult > 1 ? num(tune.PROX.CHAIN_BAR, 0.03) * ch.mult : 0;
+  if (bar > 0) addBar(ship, bar);
+  if (ch.n > 0 && ev) ev.push('chainBank', { n: ch.n, mult: ch.mult, points: ch.points, bar });
   ch.n = 0; ch.mult = 1; ch.points = 0;
 }
 
@@ -196,6 +201,7 @@ export function stepShip(ship, input, ctx, h, ev) {
   ship.burstT = Math.max(0, ship.burstT - h);
   ship.padT = Math.max(0, ship.padT - h);
   ship.assistOffT = Math.max(0, ship.assistOffT - h);
+  if (ship.coastT > 0) ship.coastT = Math.max(0, ship.coastT - h);
   if (ship.db.t > 0) { ship.db.t = Math.max(0, ship.db.t - h); if (ship.db.t === 0) ship.db.tier = 0; }
 
   // 2. The plane: turn the ship's up toward U, never faster than U_TURN_MAX.
@@ -281,7 +287,8 @@ export function stepShip(ship, input, ctx, h, ev) {
   if (ship.stunT > 0) yawRate *= C.HEAD_STEER;
   const playerYaw = yawRate;
   const zone = ctx.zone;
-  if (zone) {
+  // No turn-back in the jump's run-up: the exit gates sit at the rim and the launch rings lie beyond it.
+  if (zone && !ctx.freeBoost) {
     const rim = rimTurn(zone, ship.pos, ship.yaw, T);
     if (rim !== 0) {
       const R = zone.R ?? 700;
@@ -369,6 +376,11 @@ export function stepShip(ship, input, ctx, h, ev) {
   let k = (s < S.S_CRUISE ? S.K_LOW : S.K_GAS) * (tow ? T.TOW.ACC_X : 1);
   if (ship.db.t > 0) { tgt = Math.max(tgt, S.S_TOP * S.S_DB_X); k = Math.max(k, S.K_BOOST); }
   if (ship.padT > 0) { tgt = Math.max(tgt, S.S_BOOST); k = Math.max(k, S.K_BOOST); }
+  // An arrival keeps its drop-out speed for a moment (a free boost), so the first feeling is speed, not braking.
+  // It is a straight run out of the drop-out: the first steer ends it, and so does anything that took the speed away
+  // (a hit, a teleport, a race start).
+  if (ship.coastT > 0 && (s < num(ship.coastS) - 4 || dr.on || Math.abs(steer) > 0.05)) ship.coastT = 0;
+  if (ship.coastT > 0) tgt = Math.max(tgt, num(ship.coastS));
   if (burst && ship.bar >= B.MIN) ship.burstT = B.FLICK_BURST;
   const wants = !ctx.freeBoost && (boostHeld || ship.burstT > 0 || (ship.boosting && ship.boostT < B.MIN_BURST));
   if (!ship.boosting && wants && ship.bar >= B.MIN) {
@@ -385,6 +397,7 @@ export function stepShip(ship, input, ctx, h, ev) {
   }
   if (ctx.freeBoost) { tgt = Math.max(tgt, S.S_BOOST); k = Math.max(k, S.K_BOOST); }
   const braking = brake > 0.05;
+  if (braking) ship.coastT = 0;
   if (braking) {
     s = Math.max(0, s - S.BRAKE_A * brake * h);
   } else if (s < tgt) {
@@ -459,7 +472,7 @@ export function stepShip(ship, input, ctx, h, ev) {
   }
 
   // 14. The chain banks after CHAIN_GAP s with nothing new.
-  if (ship.chain.n > 0 && t - ship.chain.lastT > X.CHAIN_GAP) bankChain(ship, ev);
+  if (ship.chain.n > 0 && t - ship.chain.lastT > X.CHAIN_GAP) bankChain(ship, ev, T);
 
   // 15. Show only: bank and hop.
   const bankTgt = dr.on ? dr.dir * (PL.BANK_DRIFT * DEG + Math.abs(slip) * PL.BANK_SLIP)
@@ -732,6 +745,8 @@ function respond(ship, c, ctx, t, ev, T, sBefore) {
     if (ev) ev.push('cargoHit', { contacts: ship.cargo.contacts, speed: relSpeed });
   }
 
+  // A towed load is never taken down (a tug you are rescuing only bumps).
+  if (kind === 'takedown' && target && target.kind === 'towable') kind = 'scrape';
   if (kind === 'takedown') {
     if (target) {
       target.spinT = C.TAKEDOWN_SPIN;
@@ -744,6 +759,7 @@ function respond(ship, c, ctx, t, ev, T, sBefore) {
     scaleTo(VEL, Math.max(C.TAKEDOWN_KEEP * sBefore, C.HEAD_FLOOR));
     addBar(ship, T.BAR.TAKEDOWN);
     ship.lastHitT = t;
+    ctx.hitStop = Math.max(ctx.hitStop, C.TAKEDOWN_STOP ?? 0.1);     // the same beat as a ram (actors.js)
     if (ctx.stats) ctx.stats.takedowns++;
     if (ev) ev.push('takedown', PAY);
     chainEvent(ship, t, POINTS.takedown, ev, T);
@@ -794,7 +810,7 @@ function respond(ship, c, ctx, t, ev, T, sBefore) {
   ship.stunT = C.HEAD_STEER_T;
   ship.flickerT = C.FLICKER;
   ship.lastHitT = t;
-  ship.boosting = false; ship.burstT = 0; ship.db.t = 0; ship.db.tier = 0; ship.padT = 0;
+  ship.boosting = false; ship.burstT = 0; ship.db.t = 0; ship.db.tier = 0; ship.padT = 0; ship.coastT = 0;
   addBar(ship, T.BAR.CRASH);
   loseChain(ship, ev);
   if (ctx.stats) ctx.stats.crashes++;
@@ -1002,7 +1018,9 @@ export function buildFlight(zoneData, seed = 1, tune = TUNE) {
 /** enterFlight(game, zoneData, ev): game.js's enter slot. A fresh near tracker and the plane's up at the entry. */
 export function enterFlight(game, zoneData) {
   game.near = createNearTracker(NEAR_CAP);
-  flightFields(game.ship);
+  const ship = flightFields(game.ship), T = game.tune || TUNE;
+  // Arriving faster than top speed (the opening's drop-out, a jump's): hold it for ENTRY_HOLD s, then ease to cruise.
+  if (ship.speed > T.SHIP.S_TOP) { ship.coastT = T.SHIP.ENTRY_HOLD; ship.coastS = ship.speed; }
   upAt(zoneData, game.ship.pos, game.ship.up);
 }
 

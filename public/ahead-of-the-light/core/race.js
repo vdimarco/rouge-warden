@@ -70,7 +70,7 @@ export function createRace({ run = null, leg = null, tune = TUNE } = {}) {
     log: [],
     tune: T,
   };
-  const field = createField({ run, legNo, rng: (stream = 'ai') => rand(race, stream), tune: T }) || [];
+  const field = createField({ run, legNo, rng: (stream = 'ai') => rand(race, stream), tune: T, leg: L, you }) || [];
   for (const s of field) race.ships.push(s);
   for (const it of L.items) if (it.kind === 'well') race.wells[it.id] = { holder: null };
   return race;
@@ -237,7 +237,7 @@ function legStep(race, T) {
       race.phase = 'land';
       emit(race, E.door, you, {});
       const r = land(you, T);
-      emit(race, E.land, you, { ok: r.ok, margin: r.margin });
+      emit(race, E.land, you, { ok: r.ok, margin: r.margin, cellsSpent: r.cellsSpent, hullSpent: r.hullSpent });
       race.phase = 'done';
       emit(race, E.legEnd, you, { why: r.ok ? 'home' : 'doorstep', place: place() });
       return;

@@ -1,7 +1,9 @@
 // Ahead of the Light: THE TOY's bot pass (final.md 24.2, ?toy=30), seeds 1 to 20. The handling half: novice grazes
 // by 3.5 s on every seed, whips GOOD or better on 40 % and slingshots on 30 %; mid whips GOOD or better on 75 %,
-// slingshots on 70 % and takes REMORA down on 30 %. The light's half (dodge ends under TTC 4 s, idle is caught
-// before 30 s, the light takes REMORA) needs survival.js and skips while it is a stub. Also: the stretch is
+// slingshots on 70 % and takes REMORA down on 30 %. It is judged with the light held after the 9 s drop (BLEED 0), as
+// it was tuned, so a seed the light catches early still shows its handling (contract.md). The light's half runs on
+// the live light: it presses to TTC 4 s at 9 s, dodge ends under TTC 4 s, idle is caught before 30 s, and the light
+// takes REMORA when you reach 30 s without taking it down (THE LIGHT TOOK REMORA). Also: the stretch is
 // well-formed, captions show once each, the toy replays exactly, and accidental grabs (a grab then a latch cancel or
 // a WIDE release within 0.6 s) are counted.
 // node qa/ahead-of-the-light/toy.test.mjs
@@ -17,17 +19,20 @@ import {
 import { KINDS } from '../../public/ahead-of-the-light/core/course/kinds.js';
 
 const SEEDS = Array.from({ length: 20 }, (_, i) => i + 1);
+const HELD = Object.freeze({ ...TUNE, BLEED: 0 });          // the handling half: the light holds after the drop
 const pct = (rows, f) => Math.round((100 * rows.filter(f).length) / rows.length);
 const good = (g) => g === 'GOOD' || g === 'PERFECT';
 
-// Play the toy once with a driver. → { game, ev, firstGraze, accidental, grabs }.
-function play(name, seed, opts = {}) {
-  const game = createToy({ seed });
+// Play the toy once with a driver (on the live light unless a tune is given). → { game, ev, firstGraze, accidental,
+// grabs, ttc9 (TTC just after the 9 s drop) }.
+function play(name, seed, { tune = TUNE, ...opts } = {}) {
+  const game = createToy({ seed, tune });
   const race = game.race, you = race.ships[0];
   const drive = bots.driverFor(name, { seed, ...opts });
   const ev = [];
-  let firstGraze = null, grabT = null, accidental = 0, grabs = 0;
+  let firstGraze = null, grabT = null, accidental = 0, grabs = 0, ttc9 = null, light9 = null;
   while (race.t < TOY_S && race.real < 90 && race.phase !== 'done' && !you.caught && !you.wrecked) {
+    const before = race.t;
     for (const e of stepToy(game, { you: drive(race, you) }, STEP)) {
       ev.push(e);
       if (e.ship !== 'you') continue;
@@ -36,14 +41,17 @@ function play(name, seed, opts = {}) {
       if ((e.type === 'latchCancel' || (e.type === 'release' && e.grade === 'WIDE')) && grabT !== null
         && race.real - grabT <= 0.6) accidental++;
     }
+    if (ttc9 === null && before >= 9) { ttc9 = you.ttc; light9 = you.light; }
   }
-  return { game, ev, firstGraze, accidental, grabs, sum: game.sum || toySummary(game) };
+  return { game, ev, firstGraze, accidental, grabs, ttc9, light9, sum: game.sum || toySummary(game) };
 }
 const passes = new Map();
-const pass = (name) => {
-  if (!passes.has(name)) passes.set(name, SEEDS.map((seed) => ({ seed, ...play(name, seed) })));
-  return passes.get(name);
+const pass = (name, tune = HELD) => {
+  const key = `${name}:${tune === HELD ? 'held' : 'live'}`;
+  if (!passes.has(key)) passes.set(key, SEEDS.map((seed) => ({ seed, ...play(name, seed, { tune }) })));
+  return passes.get(key);
 };
+const live = (name) => pass(name, TUNE);
 
 // Is survival.js still a stub? (Its light never moves: a second at launch speed leaves the gap where it was.)
 const survivalStub = (() => {
@@ -147,17 +155,39 @@ test('accidental grabs are counted (critic risk 8): a grab then a latch cancel o
   assert.ok(accidental / grabs <= 0.1, `${accidental} of ${grabs} grabs were accidental`);
 });
 
+test('the light presses to TTC 4 s at 9 s and warns you', { skip: LIGHT }, () => {
+  for (const name of ['novice', 'mid', 'dodge']) {
+    for (const r of live(name)) {
+      if (r.ttc9 === null) continue;                                   // caught before 9 s
+      assert.ok(r.ttc9 <= 4 + 1e-6, `${name} seed ${r.seed}: TTC ${r.ttc9.toFixed(2)} at 9 s`);
+      // warned (under 6 s): the warning plays at 9 s, unless it already played and has not re-armed
+      assert.ok(['warned', 'glare'].includes(r.light9), `${name} seed ${r.seed}: the light is ${r.light9} at 9 s`);
+      const warned = r.ev.some((e) => e.type === 'warn' && e.ship === 'you' && e.t <= 9.05);
+      assert.ok(warned, `${name} seed ${r.seed}: no warning by 9 s`);
+    }
+  }
+});
+
 test('dodge ends under TTC 4 s', { skip: LIGHT }, () => {
-  for (const r of pass('dodge')) assert.ok(r.game.race.ships[0].ttc < 4, `seed ${r.seed}: TTC ${r.game.race.ships[0].ttc}`);
+  for (const r of live('dodge')) assert.ok(r.game.race.ships[0].ttc < 4, `seed ${r.seed}: TTC ${r.game.race.ships[0].ttc}`);
 });
 
 test('idle is caught before 30 s', { skip: LIGHT }, () => {
-  for (const r of pass('idle')) assert.ok(r.game.race.ships[0].caught, `seed ${r.seed}`);
+  for (const r of live('idle')) assert.ok(r.game.race.ships[0].caught, `seed ${r.seed}`);
 });
 
-test('the light takes REMORA if you leave it be', { skip: LIGHT }, () => {
-  const rows = pass('dodge');
-  assert.ok(rows.every((r) => r.ev.some((e) => e.type === 'eaten' && e.id === 'remora')));
+test('the light takes REMORA if you leave it be: THE LIGHT TOOK REMORA', { skip: LIGHT }, () => {
+  const left = [...live('novice'), ...live('mid')].filter((r) => {
+    const you = r.game.race.ships[0];
+    return r.game.race.t >= TOY_S - 1e-6 && !you.caught && !r.sum.takedown;
+  });
+  assert.ok(left.length >= 10, `${left.length} plays reach 30 s without a takedown`);
+  for (const r of left) {
+    const e = r.ev.find((x) => x.type === 'eaten' && x.id === 'remora');
+    assert.ok(e && e.t >= 24 && e.t < TOY_S, `seed ${r.seed}: REMORA ${e ? `eaten at ${e.t.toFixed(1)} s` : 'not eaten'}`);
+    assert.equal(e.line, e.fedBy === 'you' ? 'FED TO THE LIGHT' : 'THE LIGHT TOOK REMORA');   // a slam of yours feeds it
+    assert.ok(r.game.captions.some((c) => c.id === 'took' && c.text === 'THE LIGHT TOOK REMORA'), `seed ${r.seed}`);
+  }
 });
 
 test('the toy\'s constants are the tuning table\'s', () => {

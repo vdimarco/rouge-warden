@@ -630,8 +630,21 @@ function stepRings(game, zoneData, ev) {
       if (segNear(ship, r.pos, num(r.r, 8))) { startMission(game, r.mission, 0, ev); break; }
     }
   }
-  // The exit: opens by the zone's rule, and driving through it starts the run-up.
-  if (!zr.exitOpen && exitRule(game, zoneData)) openExit(game, ev);
+  // The exit: opens by the zone's rule, and driving through it starts the run-up. With exit.autoRunup, a fix earned
+  // while you already face the next place (within autoRunup.within degrees) starts the run-up there and then: no
+  // empty drive to the gate.
+  if (!zr.exitOpen && exitRule(game, zoneData)) {
+    openExit(game, ev);
+    // Only when the fix is earned now, in the mission that opens the exit (not a save that opens it on arrival).
+    const au = zoneData.exit?.autoRunup;
+    const earned = !!game.mission && String(zoneData.exit.opensWhen || '').split(':')[1] === game.mission.id;
+    const d = au && earned && !game.race ? farDir(zoneData, au.object, TMP) : null;
+    if (d && Math.hypot(d[0], d[1]) > 1e-6) {
+      const v = ship.vel, h = Math.hypot(v[0], v[1]) > 1 ? Math.atan2(v[0], v[1]) : ship.yaw;
+      const off = Math.atan2(Math.sin(Math.atan2(d[0], d[1]) - h), Math.cos(Math.atan2(d[0], d[1]) - h));
+      if (Math.abs(off) <= num(au.within, 60) * DEG) startJump(game, ev);
+    }
+  }
   if (zr.exitOpen && zoneData.exit && segNear(ship, zoneData.exit.pos, num(zoneData.exit.r, 10))) startJump(game, ev);
   // The zoom ring into a pocket.
   const pk = zoneData.pocket;
@@ -659,8 +672,11 @@ function objective(game, zoneData) {
     const data = missionById(id);
     if (!data?.story || game.progress.missions?.[id]?.done || data.zone !== zoneData.id) continue;
     if (data.start?.ring) return data.start.ring;
-    const near = data.start?.auto?.near;
-    if (near) return { id: `story:${id}`, pos: [near.pos[0], near.pos[1], 0], r: Math.min(40, near.within), label: '' };
+    const auto = data.start?.auto, near = auto?.near;
+    if (near) {
+      return { id: `story:${id}`, pos: [near.pos[0], near.pos[1], 0], r: Math.min(40, auto.enter?.within ?? near.within),
+        label: near.label || '' };
+    }
   }
   return null;
 }
@@ -697,11 +713,35 @@ function stepObjective(game, zoneData) {
     p = g ? g.pos : null;
   } else {
     p = placeOf(game, zoneData, zr.waypoint);
+    // With nothing else to aim at, a spark line ahead that climbs or dives (Coma's dive road) leads the way.
+    if (!p) p = sparkAhead(game, zoneData);
   }
   if (p) {
     const a = zr.assistAt || (zr.assistAt = [0, 0, 0]);
     a[0] = p[0]; a[1] = p[1]; a[2] = p[2] || 0;
   } else zr.assistAt = null;
+}
+
+// The nearest spark not yet taken that lies ahead (inside the height assist's range and cone) and off the ship's
+// height, or null. Its place is written into SPARK_AT.
+const SPARK_AT = [0, 0, 0];
+function sparkAhead(game, zoneData) {
+  const zr = game.zone, n = zr.sparks.length;
+  if (!n || game.mode !== 'drive') return null;
+  const pos = sparkPositions(zoneData, builtOf(game)?.traffic);
+  const s = game.ship, PL = game.tune.PLANE;
+  const fx = Math.sin(s.yaw), fy = Math.cos(s.yaw), cone = Math.cos(PL.HA_CONE * DEG);
+  let best = -1, bestD = PL.HA_RANGE;
+  for (let i = 0; i < n; i++) {
+    if (zr.sparks[i]) continue;
+    const dx = pos[i * 3] - s.pos[0], dy = pos[i * 3 + 1] - s.pos[1], dz = pos[i * 3 + 2] - s.pos[2];
+    const d = Math.hypot(dx, dy);
+    if (d >= bestD || d < 1 || Math.abs(dz) < 0.5 || (dx * fx + dy * fy) / d < cone) continue;
+    best = i; bestD = d;
+  }
+  if (best < 0) return null;
+  SPARK_AT[0] = pos[best * 3]; SPARK_AT[1] = pos[best * 3 + 1]; SPARK_AT[2] = pos[best * 3 + 2];
+  return SPARK_AT;
 }
 
 /**
@@ -899,13 +939,25 @@ export function stepZone(game, dt, ev) {
  * moves. A player who steers hard is never overruled. Runs on the cleaned input just before the flight model.
  */
 const STG_CENTRE = 0.3, STG_MAX = 0.35, STG_RANGE = 150, STG_CONE = 70 * DEG;
+const STG_RING = { pos: [0, 0, 0], n: [0, 1, 0] };
 export function steerToGate(game, input) {
-  const race = game.race;
-  if (!race || race.state !== 'running' || game.settings?.assists === 'pilot' || !input) return;
+  if (game.settings?.assists === 'pilot' || !input) return;
   const a = Math.abs(input.steer);
   if (a >= STG_CENTRE) return;
-  const data = eventById(game, race.id);
-  const g = data ? course(data).gates[race.gate] : null;
+  let g = null;
+  const R = game.mode === 'runup' ? game.jump?.runup : null;
+  if (R) {
+    // The jump's run-up: the next launch ring, the same way.
+    if (R.wait || !R.placed || R.done > 2) return;
+    const c = R.rings[R.done], n = R.normals[R.done];
+    STG_RING.pos[0] = c[0]; STG_RING.pos[1] = c[1]; STG_RING.n[0] = n[0]; STG_RING.n[1] = n[1];
+    g = STG_RING;
+  } else {
+    const race = game.race;
+    if (!race || race.state !== 'running') return;
+    const data = eventById(game, race.id);
+    g = data ? course(data).gates[race.gate] : null;
+  }
   if (!g) return;
   const s = game.ship;
   const dx = g.pos[0] + g.n[0] * 3 - s.pos[0], dy = g.pos[1] + g.n[1] * 3 - s.pos[1];

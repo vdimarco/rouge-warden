@@ -26,6 +26,13 @@ The HUD SHALL come from one pure layout table, and the page SHALL match it withi
 - **WHEN** the game plays at 1440×900 with keys
 - **THEN** the mission line sits top centre, captions and toast under it, the radar lower left, the hint pill and action chip under the ship, and no touch controls show
 
+### Requirement: A HUD that follows the ship and stays readable
+The drift pips SHALL slide inside their box to sit over the ship wherever the camera has it, and callouts (NEAR, takedowns, GRAZE) SHALL follow the ship too. Labels and chevrons SHALL slide along the screen edge past the controls rather than sit on them. The HUD SHALL draw over the 3D overlay, which draws over the jump flash. On a phone the info box, labels and small text SHALL be at least 12 px, the smallest words at least 10.5 px, and the info box SHALL hug its words on one line.
+
+#### Scenario: Readable on a phone
+- **WHEN** the game plays at 390×844 and 844×390
+- **THEN** the info box and the place labels are at least 12 px, no label or chevron sits on BOOST, GAS, BRAKE or the action chip, and in a drift the pips sit over the ship
+
 ### Requirement: Hints
 Hints SHALL use their own pill, never the caption band: at most one at a time, for 3 s, and at most four in the first minute, in the words of the device in use. The first SHALL come 0.5 s after PLAY (DRAG TO STEER on touch, A D TO STEER · W FOR GAS on keys, LEFT STICK TO STEER on a gamepad), and the drift hint SHALL come near the Bend Giant before the boost hint.
 
@@ -37,6 +44,17 @@ Hints SHALL use their own pill, never the caption band: at most one at a time, f
 - **WHEN** a new player at 1440×900 drifts for the first time
 - **THEN** SPACE + STEER TO DRIFT has already shown, and RELEASE SPACE TO BOOST shows at the first tier
 
+### Requirement: Hints teach the moment
+The release hint SHALL show at the drift's first tier, in place of the drift hint. A hint SHALL leave and never return once its action is done. The catch hint (HOLD GAS TO CATCH IT, or BOOST TO CATCH IT with a full bar) SHALL skip the queue and the first minute's limit. A starting mission SHALL clear hints that no longer fit, and DRIVE THROUGH TO START SHALL not show while a mission runs. Over the jump's white the HUD SHALL stay readable.
+
+#### Scenario: A hint for the chase
+- **WHEN** a phone player follows the Magpie within 60 u for 4 s without holding GAS
+- **THEN** HOLD GAS TO CATCH IT shows at once, even in the first minute, and leaves at the takedown
+
+#### Scenario: White screen
+- **WHEN** the jump's punch turns the screen white
+- **THEN** the HUD stays readable over it (white words get a dark outline, pills go dark) and the GAS pedal leaves the screen until the corridor ends
+
 ### Requirement: Menus and settings
 Pause SHALL offer RESUME, LOG, SETTINGS, SWITCH GAME (the arcade's game switcher) and QUIT TO ARCADE. Settings SHALL offer stick and pedals or one thumb, left hand, tilt steering in landscape, invert climb, mouse steer, the Cruise or Pilot assists, auto-drift, reduced motion, slow captions, sound and music through the arcade's shared setting, quality (auto, high, mid, low) and Copy log.
 
@@ -47,6 +65,13 @@ Pause SHALL offer RESUME, LOG, SETTINGS, SWITCH GAME (the arcade's game switcher
 #### Scenario: Switching scheme
 - **WHEN** the player picks one thumb in settings and resumes in portrait
 - **THEN** the GAS and BRAKE pedals leave the screen, BOOST moves to its one-thumb place, and nothing overlaps
+
+### Requirement: A settings card that fits
+The settings card SHALL keep its title and a DONE button in a solid header while it scrolls, and on a short landscape screen it SHALL lay its choices in two columns.
+
+#### Scenario: Settings in landscape
+- **WHEN** a player opens settings at 844×390
+- **THEN** the choices sit in two columns, and DONE stays on screen in the header while the list scrolls
 
 ### Requirement: Saves
 Progress, settings and ghosts SHALL be saved in local storage under `light-years-home.v3.*` 1 s after a change, at most every 2 s, and when the page is hidden. Missing, blocked, throwing or junk storage SHALL never stop the game. At most 48 ghosts SHALL be kept. A mission left half done SHALL start again from its first beat, and a save made inside the jet pocket SHALL continue in Virgo at M87. Nothing SHALL be sent anywhere.
@@ -98,6 +123,17 @@ The page SHALL expose `window.__lyh` with version 3 for tests: start anywhere wi
 #### Scenario: Stepping through the hook
 - **WHEN** a test calls `__lyh.start({ zone: 'wall', seed: 1 })` and then `__lyh.step({ steer: 0 }, 4)`
 - **THEN** the call returns at least three `near` events and `__lyh.played()` counts at least three near-miss sounds
+
+### Requirement: Rounds and stepped frames
+`?round=2` SHALL play the Round 2 data that Round 1 holds back. The frame drawn after a hook step SHALL show the stepped game time, so the camera and effects keep up with the ship.
+
+#### Scenario: Round 2 on request
+- **WHEN** the page opens with `?zone=coma&round=2`
+- **THEN** Coma's jobs, stunts, races and Vela are live, and without the switch they are not
+
+#### Scenario: A stepped frame
+- **WHEN** a test steps the core 2 s through the hook and takes a screenshot
+- **THEN** the camera sits behind the ship where the core put it, not where it was before the step
 
 ### Requirement: The arcade machine
 In Round 2, Light Years Home SHALL stand as a machine in the arcade's Action group and in the game switcher, with a cabinet screen taken from a real frame of the drop-out into Coma, and a cabinet line read from the save, such as `COMA CITY · GOLDS 3` or `CHAPTER I DONE · GOLDS 9`. The pause menu's SWITCH GAME SHALL open the arcade's switcher.

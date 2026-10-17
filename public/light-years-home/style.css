@@ -36,9 +36,10 @@ html, body {
   -webkit-tap-highlight-color: transparent;
 }
 
+/* From the back: the 3D view, the white flash (PLAY, the punch), the 2D overlay, the HUD. A wash never hides text. */
 #view, #overlay { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
 #view { touch-action: none; background: var(--bg); z-index: 0; }
-#overlay { pointer-events: none; z-index: 1; }
+#overlay { pointer-events: none; z-index: 2; }
 
 h1, h2, h3, p, dl, dd { margin: 0; }
 .sr-only {
@@ -63,12 +64,21 @@ button.primary:hover { background: var(--accent-hi); }
 /* ---------------------------------------------------------------- the HUD */
 
 .lyh-hud {
-  position: fixed; inset: 0; z-index: 2; pointer-events: none; overflow: hidden;
+  position: fixed; inset: 0; z-index: 3; pointer-events: none; overflow: hidden;
   font-family: var(--font); text-shadow: var(--shadow);
-  --cap: 21px; --top: 15px; --small: 10px;
+  --cap: 21px; --top: 15px; --small: 11.5px; --infopx: 12.5px;
 }
-.lyh-hud[data-kind="landscape"] { --cap: 17px; --top: 14px; --small: 9.5px; }
-.lyh-hud[data-kind="desktop"] { --cap: 27px; --top: 17px; --small: 11px; }
+.lyh-hud[data-kind="landscape"] { --cap: 17px; --top: 14px; --small: 11px; --infopx: 12px; }
+.lyh-hud[data-kind="desktop"] { --cap: 27px; --top: 17px; --small: 12px; --infopx: 13px; }
+/* Under a white wash every word gets a dark outline, so the big moments stay readable. */
+.lyh-hud.washed {
+  --shadow: 0 0 1px #000, 0 0 2px #000, 0 0 4px #000, 0 0 10px rgba(0, 0, 0, 0.95);
+}
+.lyh-hud.washed .h-top, .lyh-hud.washed .h-toast b, .lyh-hud.washed .h-cap-in, .lyh-hud.sky .h-top {
+  background: rgba(0, 0, 0, 0.42); border-radius: 8px; padding: 2px 8px;
+}
+/* At light speed the streaks are bright too: the top row keeps its dark pill and white words. */
+.lyh-hud.washed .h-top .h-main, .lyh-hud.washed .h-sub, .lyh-hud.sky .h-sub { color: #fff; }
 .lyh-hud > * { position: absolute; margin: 0; }
 .lyh-hud > .no-rect { display: none !important; }
 .lyh-hud.held > :not(.sr-only) { opacity: 0.22; transition: opacity 0.2s; }
@@ -135,21 +145,30 @@ button.primary:hover { background: var(--accent-hi); }
 .h-toast[data-tone="fail"] b, .h-toast[data-tone="behind"] b { color: #b8b8b8; }
 .h-toast b { animation: lyh-pop 0.22s ease-out; }
 
-/* The video's small grey info box. */
+/* The video's small grey info box: one line (21 BILLION SUNS · NGC 4889), wrapping only when it must. */
 .h-info {
-  display: flex; flex-direction: column; justify-content: center; padding: 3px 9px; border-radius: 3px;
-  background: var(--info); text-shadow: none; overflow: hidden;
+  display: flex; flex-flow: row wrap; align-items: center; align-content: center; column-gap: 0.45em;
+  padding: 3px 9px; border-radius: 3px; background: var(--info); text-shadow: none; overflow: hidden;
 }
-.h-info b { font: 600 var(--small)/1.25 var(--font); letter-spacing: 0.05em; color: #efefef; }
-.h-info small { font: 500 calc(var(--small) - 1px)/1.2 var(--font); color: #bdbdbd; letter-spacing: 0.06em; }
-.lyh-hud[data-kind="landscape"] .h-info { align-items: center; text-align: center; }
+.h-info b { font: 700 var(--infopx)/1.2 var(--font); letter-spacing: 0.04em; color: #f2f2f2; }
+.h-info small { font: 600 calc(var(--infopx) - 0.5px)/1.2 var(--font); color: #c8c8c8; letter-spacing: 0.04em; }
+.h-info small::before { content: "· "; }
+.h-info[data-split="1"] small { font: 700 var(--infopx)/1.2 var(--font); color: #f2f2f2; }
+/* Landscape: the box shares the slot over the middle of the view, so it hugs its words (one or two grey pills). */
+.lyh-hud[data-kind="landscape"] .h-info {
+  justify-content: center; text-align: center; background: none; padding: 0; column-gap: 4px;
+}
+.lyh-hud[data-kind="landscape"] .h-info b, .lyh-hud[data-kind="landscape"] .h-info small {
+  background: var(--info); padding: 3px 8px; border-radius: 3px; line-height: 1.3;
+}
+.lyh-hud[data-kind="landscape"] .h-info small::before { content: none; }
 
 /* Drift pips heat through star colours; the chain beside them. */
 .h-pips {
   display: flex; align-items: center; justify-content: center; gap: 6px; opacity: 0; transition: opacity 0.15s;
 }
 .h-pips.on { opacity: 1; }
-.h-pip-box { display: flex; gap: 4px; }
+.h-pip-box { display: flex; gap: 4px; will-change: transform; }
 .h-pip-box i {
   width: 10px; height: 10px; border-radius: 50%; border: 1px solid rgba(255, 255, 255, 0.6);
   --c: #fff; background: conic-gradient(var(--c) calc(var(--f, 0) * 360deg), rgba(0, 0, 0, 0.35) 0);
@@ -158,7 +177,10 @@ button.primary:hover { background: var(--accent-hi); }
 .h-pip-box i.t2 { --c: rgb(255, 238, 225); }
 .h-pip-box i.t3 { --c: rgb(130, 160, 255); }
 .h-pip-box i.lit { box-shadow: 0 0 6px var(--c); border-color: var(--c); }
-.h-chain { font: 800 var(--small)/1 var(--font); color: var(--accent); letter-spacing: 0.06em; white-space: nowrap; }
+.h-chain {
+  font: 800 var(--small)/1 var(--font); color: var(--accent); letter-spacing: 0.06em; white-space: nowrap;
+  will-change: transform;
+}
 
 .h-hint {
   display: flex; align-items: center; justify-content: center; padding: 0 12px; border-radius: 999px;
@@ -174,6 +196,9 @@ button.primary:hover { background: var(--accent-hi); }
   padding: 5px 14px; border-radius: 999px; background: rgba(0, 0, 0, 0.55); border: 1px solid rgba(255, 255, 255, 0.32);
 }
 
+/* At light speed the corridor's vanishing point is low, under the ship: the hint moves up out of its way. */
+.lyh-hud.sky[data-kind="portrait"] .h-hint, .lyh-hud.sky[data-kind="desktop"] .h-hint { top: 30% !important; }
+
 /* The action chip, with its hold ring. */
 .h-chip {
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;
@@ -181,7 +206,12 @@ button.primary:hover { background: var(--accent-hi); }
   text-shadow: none; animation: lyh-fade 0.2s ease-out;
 }
 .h-chip b { font: 800 15px/1.1 var(--font); letter-spacing: 0.06em; white-space: nowrap; }
-.h-chip small { font: 700 9px/1.1 var(--font); letter-spacing: 0.1em; color: var(--muted); }
+.h-chip small { font: 700 10.5px/1.1 var(--font); letter-spacing: 0.08em; color: var(--muted); }
+/* In the run-up the chip is small and quiet: JUMPING, TAP TO CANCEL. */
+.h-chip[data-id="cancel"] {
+  transform: scale(0.78); border-color: rgba(255, 255, 255, 0.4); background: rgba(0, 0, 0, 0.35);
+}
+.h-chip[data-id="cancel"] b { color: var(--muted); font-size: 13px; }
 .h-chip[data-id="jump"], .h-chip[data-id="take"] { border-color: var(--accent); }
 .h-chip[data-id="jump"] b, .h-chip[data-id="take"] b { color: var(--accent); }
 .h-chip .h-ring {
@@ -190,6 +220,7 @@ button.primary:hover { background: var(--accent-hi); }
 .h-chip .h-ring rect { fill: none; stroke: var(--accent); stroke-width: 3px; stroke-dasharray: 0 1; }
 .lyh-hud[data-kind="landscape"] .h-chip b { font-size: 13px; }
 .lyh-hud[data-kind="landscape"] .h-chip small { display: none; }
+.lyh-hud[data-kind="landscape"] .h-chip[data-id="cancel"] small { display: block; }
 
 /* Touch controls: BOOST with the bar as a four-segment ring, BRAKE / DRIFT and GAS pedals, the floating stick. */
 .h-boost { display: flex; align-items: center; justify-content: center; border-radius: 50%; text-shadow: none; }
@@ -212,7 +243,7 @@ button.primary:hover { background: var(--accent-hi); }
   background: rgba(255, 255, 255, 0.06); text-shadow: none; transition: background 0.08s, border-color 0.08s;
 }
 .h-pedal b { font: 800 13px/1 var(--font); letter-spacing: 0.08em; }
-.h-pedal small { font: 700 9px/1 var(--font); letter-spacing: 0.12em; color: var(--muted); }
+.h-pedal small { font: 700 10.5px/1 var(--font); letter-spacing: 0.1em; color: var(--muted); }
 .h-pedal.on { background: rgba(255, 255, 255, 0.24); border-color: #fff; }
 .h-brake.drift { border-color: var(--accent); background: rgba(240, 138, 44, 0.22); }
 .h-brake.drift small { color: var(--accent); }
@@ -273,6 +304,13 @@ button.primary:hover { background: var(--accent-hi); }
 .m-card h2 { font: 800 20px/1.2 var(--font); letter-spacing: 0.06em; text-transform: uppercase; }
 .m-where { font: 600 12px/1.4 var(--font); letter-spacing: 0.08em; color: var(--muted); text-transform: uppercase; }
 .m-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+/* Settings: the head (and its ×) stays at the top while the rows scroll; DONE closes it at the bottom. */
+.m-settings .m-card { padding-top: 0; }
+.m-settings .m-head {
+  position: sticky; top: 0; z-index: 1; margin: 0 -20px; padding: 14px 20px 10px; background: #0a0a0c;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+.m-done { align-self: stretch; }
 .m-close { min-width: 44px; min-height: 44px; padding: 0; font-size: 24px; border-radius: 50%; }
 .m-wide { width: min(560px, 100%); }
 .m-body { display: flex; flex-direction: column; gap: 10px; }
@@ -392,6 +430,12 @@ button.primary:hover { background: var(--accent-hi); }
   .m-title .m-actions { flex-direction: row; width: min(640px, 100%); margin-top: 4px; }
   .m-title .m-actions > * { flex: 1; }
   .m-card { padding: 16px; gap: 10px; }
+  .m-settings .m-card { width: min(760px, 100%); padding-top: 0; }
+  .m-settings .m-head { margin: 0 -16px; padding: 8px 16px 6px; }
+  .m-settings .m-body { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 18px; align-items: center; }
+  .m-settings .m-body h3 { grid-column: 1 / -1; margin-top: 2px; }
+  .m-settings .m-row { flex-wrap: nowrap; }
+  .m-settings .m-label small { display: none; }
   .m-pause .m-card { width: min(560px, 100%); }
   .m-pause .m-actions { display: grid; grid-template-columns: 1fr 1fr; width: 100%; }
   .m-pause .m-actions > :first-child { grid-column: 1 / -1; }
@@ -414,9 +458,9 @@ button.primary:hover { background: var(--accent-hi); }
 
 /* ---------------------------------------------------------------- the page around the game */
 
-/* The fold's white flash on PLAY, the punch's on a jump: opacity only. */
+/* The fold's white flash on PLAY, the punch's on a jump: opacity only, under the overlay and the HUD. */
 .lyh-flash {
-  position: fixed; inset: 0; z-index: 3; pointer-events: none; background: #fff; opacity: 0; will-change: opacity;
+  position: fixed; inset: 0; z-index: 1; pointer-events: none; background: #fff; opacity: 0; will-change: opacity;
 }
 /* The name while the first frame loads. */
 .lyh-boot {

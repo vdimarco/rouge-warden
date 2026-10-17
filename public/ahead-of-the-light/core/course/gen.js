@@ -80,7 +80,8 @@ function planSections(def, L, legNo, T, mods) {
   }
   const build = out.find((s) => s.role === 'build');
   if (fam && fam.piece && build) build.force = fam.piece;
-  if (cond && cond.piece && build && !build.force) build.force = cond.piece;
+  // TIDES' extra hub-hop takes the build, but never Earth's (it runs the planets in order: Saturn stays)
+  if (cond && cond.piece && build && !build.force && !def.fixedRoute) build.force = cond.piece;
   if (fam && fam.open) {
     const open = out.find((s) => s.role === 'open');
     if (open && typeof open.beats === 'number') open.beats += fam.open;
@@ -233,7 +234,8 @@ function assemble(G, attempts) {
   return { items, sections, beats: b0 };
 }
 
-// Lane conditions that edit the built items (DUST, FLARES).
+// Lane conditions that edit the built items (DUST, FLARES). FLARES turns every third optional knot of the crescendo's
+// field into a pulse: the swarm's, or any piece's knots marked field (Orion's MAKO field, the asteroid belt).
 function applyCondition(G, draft) {
   const cond = G.L.cond ? CONDITIONS[G.L.cond] : null;
   if (!cond) return;
@@ -254,10 +256,11 @@ function applyCondition(G, draft) {
     let k = 0;
     for (let i = 0; i < items.length; i++) {
       const it = items[i];
-      if (it.kind !== 'knot' || it.piece !== 'swarm' || !it.opt) continue;
+      if (it.kind !== 'knot' || !(it.piece === 'swarm' || it.field) || !it.opt) continue;
       if (k++ % cond.pulse.every !== 0) continue;
       items[i] = { kind: 'pulse', beat: it.beat, psi: it.psi, half0: cond.pulse.half0, half1: cond.pulse.half1,
-        period: cond.pulse.period, phase: 0.25 + rnd() * 0.5, opt: it.opt, piece: it.piece, sec: it.sec };
+        period: cond.pulse.period, phase: 0.25 + rnd() * 0.5, opt: it.opt, piece: it.piece, sec: it.sec,
+        ...(it.field ? { field: true } : {}) };
     }
   }
 }
@@ -310,7 +313,13 @@ function choosePickups(G, draft) {
     if (fuelSlots.some((g) => keep.has(g.key) && third(g.beat) === t)) continue;
     const cands = fuelSlots.filter((g) => !keep.has(g.key) && third(g.beat) === t);
     if (!cands.length) continue;
-    keep.set(pickIn(cands).key, 'fuel');
+    let pick = pickIn(cands);
+    // a pick at a third's edge, under 3 beats from a kept cell, moves to a slot 4 beats clear of them if one exists
+    if (fuelSlots.some((h) => keep.has(h.key) && Math.abs(h.beat - pick.beat) < 3)) {
+      const far = cands.filter((g) => fuelSlots.every((h) => !keep.has(h.key) || Math.abs(h.beat - g.beat) >= 4));
+      if (far.length) pick = far[Math.floor(rnd() * far.length)];
+    }
+    keep.set(pick.key, 'fuel');
     have++;
   }
   // more than one per third (RICH, FLARES, SHIP): spread the rest at least 4 beats from any kept slot
@@ -432,9 +441,14 @@ export function buildLeg({ runSeed = 1, type = 'web', lane = null, mods = {}, se
   report.attempts = [...attempts];
   const gateIt = items.find((it) => it.kind === 'gate' && !it.pair && it.piece && it.piece === (draft.sections
     .find((s) => s.role === 'gate') || {}).id);
+  // Earth's gate is the landing's DOOR, a cue (not a hazard, and no THREAD pay): { door: true, psi, gap: its width }
+  const gateSec = draft.sections.find((s) => s.role === 'gate') || {};
+  const doorIt = gateIt ? null : items.find((it) => it.kind === 'cue' && it.name === 'door' && it.piece === gateSec.id);
   const gate = gateIt ? { id: gateIt.gateId || gateIt.piece, beat: gateIt.beat, psi: gateIt.psi, gap: gateIt.gap,
     halves: gateIt.halves, names: gateIt.names, dock: gateIt.dock, label: gateIt.label || null, item: gateIt.id }
-    : { id: def.gate, beat: draft.beats - 4 };
+    : doorIt ? { id: def.gate, beat: doorIt.beat, psi: doorIt.data.psi, gap: doorIt.data.w, door: true,
+      names: ['EARTH'], label: doorIt.data.label || 'EARTH', item: doorIt.id }
+      : { id: def.gate, beat: draft.beats - 4 };
   const labels = [];
   for (const it of items) {
     if (it.name && it.kind !== 'cue') labels.push({ id: it.id, beat: it.beat, psi: it.psi, text: it.name });

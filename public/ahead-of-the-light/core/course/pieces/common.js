@@ -32,6 +32,10 @@ function swarmBuild(ctx) {
         const hop = hubHop(rnd, line, 'small', { off: int(rnd, 40, 60), bandA: int(rnd, 100, 140), bandB: 200 },
           false);
         for (const it of hop.items) items.push({ ...it, beat: it.beat + wellAt });
+        // the way round to band A's gap for a ship that does not whip (as hub-hop), so the window is never empty
+        const A = hop.exit;
+        items.push(knot(wellAt + 5.5, line + (A - line) * 0.35 + 12, 3, { opt: true }),
+          knot(wellAt + 7, line + (A - line) * 0.7 - 12, 3, { opt: true }));
       }
       continue;
     }
@@ -104,13 +108,25 @@ function hubHop(rnd, line, size, p, extra = true) {
   return { items, exit: A };
 }
 
+// The well's name in a later leg's skin (11.9: common pieces take the leg's names), picked from the rolled offset so
+// the stream of random numbers is the same in every skin: Virgo's ellipticals, the Local Group's dwarfs, the Milky
+// Way's globular clusters, Orion's bright stars, the Sun's neighbours.
+const HUB_NAMES = Object.freeze({
+  virgo: ['M49', 'M60', 'M89', 'M58'], local: ['NGC 6822', 'IC 10', 'NGC 147', 'IC 1613'],
+  milkyway: ['OMEGA CENTAURI', '47 TUCANAE', 'M13', 'M22'], orion: ['RIGEL', 'BELLATRIX', 'SAIPH'],
+  neighbours: ['VEGA', 'ALTAIR', 'ARCTURUS', 'FOMALHAUT'],
+});
+
 export const HUB_HOP = piece({
   id: 'hub-hop', roles: ['build', 'opener'], beats: [14, 16], diff: 2,
   params: { off: [40, 70], bandA: [100, 150], bandB: [190, 230] },
   safe: { off: 55, bandA: 120, bandB: 210 },
   build(ctx) {
     const h = hubHop(ctx.rnd, 0, 'medium', ctx.p, true);
-    return { items: h.items.filter((it) => it.beat < ctx.len), exit: h.exit };
+    const names = HUB_NAMES[ctx.skin];
+    const name = names ? names[ctx.p.off % names.length] : null;
+    const items = h.items.filter((it) => it.beat < ctx.len);
+    return { items: name ? items.map((it) => (it.kind === 'well' ? { ...it, name } : it)) : items, exit: h.exit };
   },
 });
 
@@ -201,7 +217,7 @@ export const HIGHWAY = piece({
 // ---------- open-road (open) ----------
 // Two rails 60° apart drifting a little: room to draft, pass and slam. At most four knots, each just inside a rail.
 export const OPEN_ROAD = piece({
-  id: 'open-road', roles: ['open'], beats: [12, 20], repeat: true, diff: 1,
+  id: 'open-road', roles: ['open'], beats: [12, 22], repeat: true, diff: 1,
   params: { drift: [-3, 3] },
   safe: { drift: 0 },
   build(ctx) {
@@ -224,7 +240,7 @@ export const OPEN_ROAD = piece({
 // A channel of two rails 40° apart with knots poking in from its walls every 3 beats: a ship slammed into one is a
 // takedown. RAM IT INTO THE KNOT the first time.
 export const RUMBLE = piece({
-  id: 'rumble', roles: ['open'], beats: [14, 20], diff: 2, teach: { runs: 3 },
+  id: 'rumble', roles: ['open'], beats: [14, 22], diff: 2, teach: { runs: 3 },
   params: { drift: [-2, 2] },
   safe: { drift: 0 },
   build(ctx) {

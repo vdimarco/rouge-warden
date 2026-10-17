@@ -6,50 +6,50 @@ Tick a task only when its work is done and its checks pass. Each milestone ends 
 
 ### 1. M1 · The toy
 
-- [ ] 1.1 Land the contracts: `core/tune.js` (every feel number with a range and `?tune` overrides; `S_CRUISE` 24), `core/events.js`, `core/vec.js`, the `core/game.js` state shape and mode machine, `core/layout.js`, `core/world/schema.js`, the input record and the hook's signature.
-- [ ] 1.2 Write the flight core: `core/ship.js` (speed, grip, drift and drift-boost, the bar, pitch and the plane, wells, edges), `core/frame.js`, `core/collide.js` (sweeps, scrape and head-on, near misses, hairlines, threads, skims, drafts, takedowns), `core/traffic.js` and `core/hash.js`.
-- [ ] 1.3 Write `core/world/zones/wall.js` with the Wall's roads, traffic, the three seeded galaxies, Node 0, the Bend Giant, the swarm and the empty voids (no events yet).
-- [ ] 1.4 Write the look: `render/stage.js` (tiers, step-down, byte counts, worker generator), `backdrop.js`, `zoneview.js`, `traffic.js`, `bodies.js`, `roads.js`, `tern.js`, `chase.js` and `fx.js` (dust, trails, sparks, shake), reusing `points.js`, `galaxy.js` and `nebula.js`.
-- [ ] 1.5 Write `ui/input.js` for stick and pedals (portrait and landscape), one thumb, keys, mouse steer and gamepad, and the HUD's speed gauge, pedals and BOOST arc in `ui/hud.js` and `style.css`.
-- [ ] 1.6 Write `ui/sound/mix.js`, `engine.js` and the zzip, drift and boost sounds in `sfx.js`.
-- [ ] 1.7 Write `index.html` and `main.js`: boot, tier pick, the 120 Hz loop, the opening drop-out at 38 u/s with control from 0.3 s, the event-to-sound table and `window.__lyh` version 3.
-- [ ] 1.8 Write `core/bots.js` (idle, random, wander, drifter) and pass `purity`, `tune`, `ship` (cruise checks retuned for 24 u/s), `toy`, `collide`, `traffic`, `layout` and `determinism` in `qa/light-years-home/v3/`.
-- [ ] 1.9 Pass `drive.e2e` at 390×844, 844×390 and 1440×900, and review its screenshots.
-- [ ] 1.10 Give the toy to the crew for 2 minutes of driving with no goal, or say plainly that this did not run.
+- [x] 1.1 Land the contracts: `core/tune.js` (every feel number with a range and `?tune` overrides; `S_CRUISE` 24), `core/events.js`, `core/vec.js`, the `core/game.js` state shape and mode machine, `core/layout.js`, `core/world/schema.js`, the input record and the hook's signature.
+- [x] 1.2 Write the flight core: `core/ship.js` (speed, grip, drift and drift-boost, the bar, pitch and the plane, wells, edges), `core/frame.js`, `core/collide.js` (sweeps, scrape and head-on, near misses, hairlines, threads, skims, drafts, takedowns), `core/traffic.js` and `core/hash.js`.
+- [x] 1.3 Write `core/world/zones/wall.js` with the Wall's roads, traffic, the three seeded galaxies, Node 0, the Bend Giant, the swarm and the empty voids (no events yet).
+- [x] 1.4 Write the look: `render/stage.js` (tiers, step-down, byte counts, worker generator), `backdrop.js`, `zoneview.js`, `traffic.js`, `bodies.js`, `roads.js`, `tern.js`, `chase.js` and `fx.js` (dust, trails, sparks, shake), reusing `points.js`, `galaxy.js` and `nebula.js`.
+- [x] 1.5 Write `ui/input.js` for stick and pedals (portrait and landscape), one thumb, keys, mouse steer and gamepad, and the HUD's speed gauge, pedals and BOOST arc in `ui/hud.js` and `style.css`.
+- [x] 1.6 Write `ui/sound/mix.js`, `engine.js` and the zzip, drift and boost sounds in `sfx.js`.
+- [x] 1.7 Write `index.html` and `main.js`: boot, tier pick, the 120 Hz loop, the opening drop-out at 38 u/s with control from 0.3 s, the event-to-sound table and `window.__lyh` version 3.
+- [x] 1.8 Write `core/bots.js` (idle, random, wander, drifter) and pass `purity`, `tune`, `ship` (cruise checks retuned for 24 u/s), `toy`, `collide`, `traffic`, `layout` and `determinism` in `qa/light-years-home/v3/`.
+- [x] 1.9 Pass `drive.e2e` at 390×844, 844×390 and 1440×900, and review its screenshots.
+- [ ] 1.10 Give the toy to the crew for 2 minutes of driving with no goal, or say plainly that this did not run. (Not run yet: Round 1 had an agent playtest in SwiftShader only, no crew on real phones.)
 
 ### 2. M2 · The Wall
 
-- [ ] 2.1 Write `core/zone.js`: dotted and solid rings, near and far scans, Cruise auto-scan, sparks, rumours, secrets, Look Home, the scale card, the one-objective rule and the exit gate.
-- [ ] 2.2 Write `core/race.js` (start rings, arming, gates, splits, medals, stunts, chains, points, restart and back to the last gate) and `core/ghost.js` (record, encode, links, pacer).
-- [ ] 2.3 Write `core/talk.js`, `core/world/lines/ch1.js` and `core/world/facts.js` with the Wall's cards and sources.
-- [ ] 2.4 Write `core/save.js` for the v3 keys, settings, ghosts and the boot breadcrumb, with the safety rules for missing, throwing and junk storage.
-- [ ] 2.5 Write `render/gates.js` and `render/ghosts.js`, `ui/overlay.js` (rings, leaders, labels, chevrons, the home chevron, the radar), the HUD rows (mission line, captions, toast, info box, hint pill, action chip) and `ui/menu.js` (title, pause, settings).
-- [ ] 2.6 Add the Wall's events: First Light, Sloan Bend, Void Run, Outbound and Sloan Pads, with ghosts and medals.
-- [ ] 2.7 Add the Wall's scans, The Overlook, the 24 sparks and Look Home.
-- [ ] 2.8 Pull `core/mission.js` and the `runner` actor forward and add WHICH WAY HOME (the Magpie chase, the chart, the far scans, the fix) and FIRST SHOUT.
-- [ ] 2.9 Write the log's MAP and LOG tabs in `ui/log.js`, so the radar tap and scan cards have a home.
-- [ ] 2.10 Add the Wall's hints and the cue sounds for scans, gates, stunts, missions and talk.
-- [ ] 2.11 Pass `zones`, `race`, `ghost`, `stunt`, `talk`, `save`, `text` and `discovery`, and `events.e2e`, `discovery.e2e` and the Wall part of `story.e2e`.
+- [x] 2.1 Write `core/zone.js`: dotted and solid rings, near and far scans, Cruise auto-scan, sparks, rumours, secrets, Look Home, the scale card, the one-objective rule and the exit gate.
+- [x] 2.2 Write `core/race.js` (start rings, arming, gates, splits, medals, stunts, chains, points, restart and back to the last gate) and `core/ghost.js` (record, encode, links, pacer).
+- [x] 2.3 Write `core/talk.js`, `core/world/lines/ch1.js` and `core/world/facts.js` with the Wall's cards and sources.
+- [x] 2.4 Write `core/save.js` for the v3 keys, settings, ghosts and the boot breadcrumb, with the safety rules for missing, throwing and junk storage.
+- [x] 2.5 Write `render/gates.js` and `render/ghosts.js`, `ui/overlay.js` (rings, leaders, labels, chevrons, the home chevron, the radar), the HUD rows (mission line, captions, toast, info box, hint pill, action chip) and `ui/menu.js` (title, pause, settings).
+- [x] 2.6 Add the Wall's events: First Light, Sloan Bend, Void Run, Outbound and Sloan Pads, with ghosts and medals.
+- [x] 2.7 Add the Wall's scans, The Overlook, the 24 sparks and Look Home.
+- [x] 2.8 Pull `core/mission.js` and the `runner` actor forward and add WHICH WAY HOME (the Magpie chase, the chart, the far scans, the fix) and FIRST SHOUT.
+- [x] 2.9 Write the log's MAP and LOG tabs in `ui/log.js`, so the radar tap and scan cards have a home.
+- [x] 2.10 Add the Wall's hints and the cue sounds for scans, gates, stunts, missions and talk.
+- [x] 2.11 Pass `zones`, `race`, `ghost`, `stunt`, `talk`, `save`, `text` and `discovery`, and `events.e2e`, `discovery.e2e` and the Wall part of `story.e2e`.
 
 ### 3. M3 · The jump into Coma
 
-- [ ] 3.1 Write `core/jump.js` as the free corridor: run-up rings, the punch, two-axis rate steering in a tube, hazards from real structure, grazes, hairlines, threads, pads, the slide, TWO NINES, THREE NINES and the Headlight, the vista, the drop-out, the medal and the arrival bar, and the long haul.
-- [ ] 3.2 Write `render/tunnel.js` with the real aberration and Doppler from `render/points.js`, the rush lines, the vignette and the brightness floor.
-- [ ] 3.3 Build the load pipeline in `main.js`: `import()` at the exit gate, the worker build, 6 ms GPU slices in the run, `compileAsync`, `zoneReady`, and freeing the old place at the punch.
-- [ ] 3.4 Write `core/world/jumps.js` (J1), `core/world/legs.js`, Earth's clock and the On Earth cards in the top band.
-- [ ] 3.5 Write `core/world/zones/coma.js` as a drivable place: roads, the Inner and outer rings, swarms, both giants with their wells and near stars, scans and Look Home (its missions and events wait for Round 2), and the new Coma members in `core/objects.js`.
-- [ ] 3.6 Add the jump sounds: the riser, the punch, the corridor zzip, the nines chords, the radios at the Doppler factor, the vista and the drop.
-- [ ] 3.7 Add the jump bots (still, mid, expert) and pass `jump.test`.
-- [ ] 3.8 Pass `jump.e2e` from the Wall to Coma, with screenshots of the punch, mid-corridor and the drop-out at all three sizes reviewed by eye.
-- [ ] 3.9 Try desktop climb on R and F against W and S in the corridor, and give the jump to the crew; record what they say in `design.md`, or say plainly that this did not run.
+- [x] 3.1 Write `core/jump.js` as the free corridor: run-up rings, the punch, two-axis rate steering in a tube, hazards from real structure, grazes, hairlines, threads, pads, the slide, TWO NINES, THREE NINES and the Headlight, the vista, the drop-out, the medal and the arrival bar, and the long haul.
+- [x] 3.2 Write `render/tunnel.js` with the real aberration and Doppler from `render/points.js`, the rush lines, the vignette and the brightness floor.
+- [x] 3.3 Build the load pipeline in `main.js`: `import()` at the exit gate, the worker build, 6 ms GPU slices in the run, `compileAsync`, `zoneReady`, and freeing the old place at the punch.
+- [x] 3.4 Write `core/world/jumps.js` (J1), `core/world/legs.js`, Earth's clock and the On Earth cards in the top band.
+- [x] 3.5 Write `core/world/zones/coma.js` as a drivable place: roads, the Inner and outer rings, swarms, both giants with their wells and near stars, scans and Look Home (its missions and events wait for Round 2), and the new Coma members in `core/objects.js`.
+- [x] 3.6 Add the jump sounds: the riser, the punch, the corridor zzip, the nines chords, the radios at the Doppler factor, the vista and the drop.
+- [x] 3.7 Add the jump bots (still, mid, expert) and pass `jump.test`.
+- [x] 3.8 Pass `jump.e2e` from the Wall to Coma, with screenshots of the punch, mid-corridor and the drop-out at all three sizes reviewed by eye.
+- [ ] 3.9 Try desktop climb on R and F against W and S in the corridor, and give the jump to the crew; record what they say in `design.md`, or say plainly that this did not run. (Not run yet: R and F stay the climb keys.)
 
 ### 4. Cutover from v1
 
-- [ ] 4.1 Move what `render/stage.js` needs out of `render/view.js` (tiers, `adapt`, `createGenerator`, `interleave`, `textureBytes`) and what `render/photo.js` needs out of `render/lens.js`, or add a stand-in.
-- [ ] 4.2 Delete v1-only files: `core/engine.js`, `core/route.js`, `core/geo.js`, `core/bot.js`, `render/view.js`, `render/lens.js`, and v1's tests `engine`, `route`, `geo`, `pure`, `save` and `bot.mjs`.
-- [ ] 4.3 Replace v1's `index.html`, `style.css`, `main.js`, `ui/hud.js`, `ui/input.js`, `ui/overlay.js` and `core/save.js`, keeping `CHAPTER_KEYS` reachable from `ui/audio.js` for the labs.
-- [ ] 4.4 Pass the kept tests (`captions`, `gas`, `gen`, `gen-clusters`, `physics`, `timeline`, `lab-a`, `lab-b`) and load both labs in the browser.
-- [ ] 4.5 Pass `openspec validate light-years-v3 --strict` with the specs brought up to date with Round 1's code.
+- [x] 4.1 Move what `render/stage.js` needs out of `render/view.js` (tiers, `adapt`, `createGenerator`, `interleave`, `textureBytes`) and what `render/photo.js` needs out of `render/lens.js`, or add a stand-in.
+- [x] 4.2 Delete v1-only files: `core/engine.js`, `core/route.js`, `core/geo.js`, `core/bot.js`, `render/view.js`, `render/lens.js`, and v1's tests `engine`, `route`, `geo`, `pure`, `save` and `bot.mjs`.
+- [x] 4.3 Replace v1's `index.html`, `style.css`, `main.js`, `ui/hud.js`, `ui/input.js`, `ui/overlay.js` and `core/save.js`, keeping `CHAPTER_KEYS` reachable from `ui/audio.js` for the labs.
+- [x] 4.4 Pass the kept tests (`captions`, `gas`, `gen`, `gen-clusters`, `physics`, `timeline`, `lab-a`, `lab-b`) and load both labs in the browser.
+- [x] 4.5 Pass `openspec validate light-years-v3 --strict` with the specs brought up to date with Round 1's code.
 
 ## Round 2
 

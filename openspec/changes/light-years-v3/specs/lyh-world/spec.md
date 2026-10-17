@@ -9,11 +9,19 @@ Chapter 1, "The Web", SHALL take the player from The Wall (a pit stop 450 u in r
 
 #### Scenario: Arriving in Coma City
 - **WHEN** the player drops out of J1
-- **THEN** the Tern enters above Coma City at 42 u/s facing downtown, with two warm giant galaxies at the centre, galaxies orbiting them on the Inner Ring at 24 u/s, and a line of sparks leading down
+- **THEN** the Tern enters 18 u above Coma City's plane at 42 u/s on the dive road facing downtown, with two warm giant galaxies at the centre and galaxies orbiting them on the Inner Ring at 28 u/s
+- **AND** three galaxies pass within 2 ship lengths by about 3 s with no input, and in Cruise the height assist follows the dive's spark line down to the plane, where most of the city's galaxies are
 
 #### Scenario: Zooming into the jet
 - **WHEN** the player drives through the M87'S JET ring in Virgo
 - **THEN** the view zooms into the pocket over 1.5 s (a 0.2 s dip under reduced motion), and the ZOOM OUT ring or chip brings the player back to Virgo beside M87 at once
+
+### Requirement: Round 1 holds back later work
+Data for a later build round (marked `round: 2`) SHALL stay out of play until that round. In Round 1 Coma City SHALL be a free-drive place with traffic, giants, sparks, scans, the Ghosts set, its secrets and Look Home, and none of its jobs, races, stunts, start or giver rings, radio calls or Vela; PELICAN DOWN and FRAGILE wait for Round 2.
+
+#### Scenario: Round 1's Coma
+- **WHEN** the player drives Coma City for 30 s in Round 1
+- **THEN** no radio call, TAKE JOB chip, giver ring, start ring, stunt or Vela appears, and no orange objective points at a job that is not there yet
 
 ### Requirement: Scale said plainly
 Every arrival SHALL show the place's scale card in the grey info box for 4 s, starting 1 s after the drop-out: `EACH POINT HERE IS A GALAXY · 1 SHIP = 50,000 LIGHT-YEARS` at the Wall, the same with 7,000 light-years at Coma and Virgo, `M87'S JET · 1 SHIP = 5 LIGHT-YEARS` in the pocket and `THE LOCAL GROUP · NOT TO SCALE` at the end. The map SHALL show the same line.
@@ -29,6 +37,10 @@ Each place SHALL offer a small new thing about every 10 to 15 s of cruising and 
 #### Scenario: Wandering finds things
 - **WHEN** 20 wander bots drive each place for 120 s
 - **THEN** they meet a new thing every 40 s on average and never wait more than 75 s
+
+#### Scenario: Traffic to skim everywhere
+- **WHEN** the game's wander bot drives the Wall and Coma City for a minute each on 3 seeds
+- **THEN** it meets at least 6 near misses a minute in each, because Coma's galaxies gather downtown and half of them sit within 2.5 u of the plane
 
 #### Scenario: The first giant comes fast
 - **WHEN** a new player drives the Sloan Road from the opening drop-out with no input
@@ -94,7 +106,7 @@ In the Wall, Coma and Virgo, aiming within 10° of the orange home chevron for 1
 - **THEN** a postcard of Earth with oxygen building up goes to the log and Dot says "Earth's light here: two billion years old."
 
 ### Requirement: One objective, the radar and home
-There SHALL always be exactly one orange objective with a leader line and a radar mark; with nothing running it SHALL be the story giver's ring, or the exit gate once the fix is earned. The radar SHALL turn with the ship, reach 300 u (420 on boost, 200 near an objective) and show home, the objective, seen start and scan rings, the exit gate, named ships and near set items, never traffic, sparks, unseen events or secrets.
+There SHALL always be exactly one orange objective with a leader line and a radar mark; with nothing running it SHALL be the story giver's ring, the labelled place where the story starts (`NODE 0` at the Wall), or the exit gate once the fix is earned. The radar SHALL turn with the ship, reach 300 u (420 on boost, 200 near an objective) and show home, the objective, seen start and scan rings, the exit gate, named ships and near set items, never traffic, sparks, unseen events or secrets.
 
 #### Scenario: The radar on each screen
 - **WHEN** the player drives at 390×844, 844×390 and 1440×900
@@ -107,6 +119,17 @@ There SHALL always be exactly one orange objective with a leader line and a rada
 #### Scenario: Never zero, never two
 - **WHEN** WHICH WAY HOME's chase is running at the Wall
 - **THEN** the Magpie is the only orange objective on screen and on the radar
+
+### Requirement: One label per place, home where it can be shown
+Once the exit is open, the next place's ring in the sky SHALL carry the exit's label, so one place never has two labels. Where Earth lies straight out of a place's plane, the home marker SHALL show only while the nose pitches toward it, and the radar SHALL draw no home tick without a bearing.
+
+#### Scenario: One label for Coma
+- **WHEN** the exit opens at the Wall
+- **THEN** Coma's ring in the sky reads `COMA CLUSTER · 737 MLY`, and no second Coma label shows
+
+#### Scenario: Home straight out of the plane
+- **WHEN** the player drives Coma City, where Earth lies along the sky plane's normal
+- **THEN** no home marker sits under the ship; it shows while the nose pitches toward Earth, and the radar draws no home tick without a bearing
 
 ### Requirement: The ship log
 Opening the log SHALL pause the game and show four tabs: MAP (the place in the video's style, home, the exit gate, visited places, and a tap to set a waypoint), JOBS (the objective and open and finished missions), LOG (place cards, scans with sources, rumours and postcards, with an orange dot while something is unread) and RECORDS (medals, best times, stars, jump medals and Vela's tally). Events not yet seen SHALL show only as a count.

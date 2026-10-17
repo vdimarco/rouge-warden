@@ -279,6 +279,7 @@ export function calmShip(ship, bar = null) {
   ship.boosting = false; ship.burstT = 0; ship.kickT = 0; ship.boostT = 0;
   ship.db.t = 0; ship.db.tier = 0; ship.snapT = 0;
   if ('padT' in ship) ship.padT = 0;
+  if ('coastT' in ship) ship.coastT = 0;
   ship.stunT = 0;
   if (bar !== null) ship.bar = bar;
 }
@@ -293,6 +294,7 @@ export function placeShip(game, pos, yaw, speed) {
   s.prev.pos[0] = s.pos[0]; s.prev.pos[1] = s.pos[1]; s.prev.pos[2] = s.pos[2];
   s.prev.yaw = yaw; s.prev.pitch = 0; s.prev.bank = 0;
   s.steerS = 0; s.climbS = 0;
+  if ('coastT' in s) s.coastT = 0;
   if (s.skim) { s.skim.on = false; s.skim.t = 0; s.skim.body = null; }
   if (s.draft) { s.draft.on = false; s.draft.t = 0; s.draft.target = null; }
   if (game.near && game.near.ids) {
@@ -824,7 +826,8 @@ function stepStunts(game, dt, ev) {
         break;
       }
       case 'oncoming': {
-        if ((game.steps & 3) !== 0) break;
+        // Not during a mission: a chase down a road would start a 10 s count nobody asked for.
+        if ((game.steps & 3) !== 0 || game.mission) break;
         const rt = roadTrackOf(game, data.road);
         if (!rt) break;
         const s = nearestOn(rt.tr, ship.pos);

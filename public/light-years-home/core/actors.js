@@ -25,8 +25,8 @@ const BOLT_KICK = 30;         // u/s over the Tern's speed when it bursts out
 const JOIN_R = 6;             // u: a runner joins its path this close to it
 const FLEE_T = 4;             // s a beaten runner flees before it goes
 const SPIN_RATE = 9;          // rad/s while spinning out
-const KNOCK = 0.06;           // s of hit-stop on a takedown ram
-const RAM_CRUISE = 1.2;       // u a ram reaches past the colliders in Cruise
+const KNOCK = 0.1;            // s of hit-stop on a takedown ram (COLLIDE.TAKEDOWN_STOP when set)
+const RAM_CRUISE = 1.8;       // u a ram reaches past the colliders in Cruise (a chase's aim assist)
 const RAM_PILOT = 0.15;
 
 const clone = (v) => (Array.isArray(v) ? v.map(clone) : v && typeof v === 'object' ? Object.fromEntries(Object.entries(v)
@@ -306,8 +306,18 @@ function stepRunner(game, a, dt, ev) {
   const band = spec.cruiseBand;
   if (cruise && band) {
     const behind = (a.pos[0] - ship.pos[0]) * Math.sin(a.yaw) + (a.pos[1] - ship.pos[1]) * Math.cos(a.yaw) > 0;
+    // Within band.near u it runs band.lead u/s slower than you (never under band.min), so auto-cruise on a phone
+    // closes in too; the gas or a boost closes faster.
+    if (behind && Number.isFinite(band.near) && gap < band.near) {
+      speed = Math.min(speed, Math.max(num(band.min, 18), num(ship.speed) - num(band.lead, 3)));
+    }
     // It also waits a moment when you have just crashed, so one mistake never loses the chase.
-    if (gap >= band.far || (behind && gap < SOFT_TAIL) || game.t - num(ship.lastHitT, -99) < 3) speed = band.speed;
+    if (gap >= band.far || game.t - num(ship.lastHitT, -99) < 3) speed = Math.min(speed, band.speed);
+    // Right on its tail it tires: about 8 u/s slower than you, so a ram closes at its takedown speed even on
+    // auto-cruise, and a boosting Tern does not overshoot it (it keeps its own speed then).
+    if (behind && gap < SOFT_TAIL) {
+      speed = Math.min(speed, Math.max(10, num(ship.speed) - num(spec.takedownAny, 6) - 2));
+    }
   }
   if (a.spinT > 0) speed *= 0.4;
   if (a.mode === 'bolt') {
@@ -559,7 +569,7 @@ export function takedown(game, a, closing, nx, ny, nz, ev) {
       pebble: false, ram: true });
   }
   chainEvent(ship, game.t, POINTS.takedown, ev, T);
-  hitStop(game, KNOCK);
+  hitStop(game, T.COLLIDE.TAKEDOWN_STOP ?? KNOCK);
   beat(game, a, side, ev);
 }
 

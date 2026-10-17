@@ -1,7 +1,7 @@
 // Light Years Home v3: the feel. Speed dust (motes in a box round the camera that stretch into lines with speed, one
 // draw, the CPU touches nothing per mote), the wingtip trails (two ribbons of the last wingtip positions), sparks
 // (drift sparks in star colours, scrapes, takedowns, pickups and near-miss streaks, one draw) and screen shake
-// (trauma squared, smooth noise, off under reduced motion).
+// (trauma squared with a linear floor for small events, smooth noise, off under reduced motion).
 // Sources: Elite's stardust (1984) via the research (the dust); Eiserloh, "Math for Game Programmers: Juicing Your
 // Cameras With Math", GDC 2016 (trauma shake); none fit better than a plain ribbon for the trails.
 import * as THREE from 'three';
@@ -315,7 +315,7 @@ function createShake(F) {
     apply(cam, dt, reduced = false) {
       st.t += dt;
       st.trauma = Math.max(0, st.trauma - F.SHAKE_DECAY * dt);
-      const s = reduced ? 0 : st.trauma * st.trauma;
+      const s = reduced ? 0 : Math.max(st.trauma * st.trauma, (F.SHAKE_LIN ?? 0) * st.trauma);
       if (s <= 1e-5 || !cam) return 0;
       const A = F.SHAKE_MAX * DEG * s;
       e.set(noise1(st.t, 1) * A, noise1(st.t, 2) * A, noise1(st.t, 3) * A * 0.75);
