@@ -128,6 +128,7 @@ button { font: inherit; color: inherit; }
 .cab.ascii-front { --c1: #263d2c; --c2: #d2f584; --glow: #d2f58466; }
 .cab.last-light { --c1: #552a74; --c2: #ffcd62; --glow: rgba(255, 205, 98, 0.45); }
 .cab.river-rush { --c1: #083d31; --c2: #f9c65b; --glow: rgba(249, 198, 91, 0.45); }
+.cab.ahead-of-the-light { --c1: #0b0b14; --c2: #f08a2c; --glow: rgba(240, 138, 44, 0.45); }
 .cab.gta { --c1: #174b4a; --c2: #ffc65b; --glow: rgba(255, 198, 91, 0.45); }
 /* the VR machine wears a headset badge on its screen */
 .screen .vrtag { position: absolute; z-index: 2; right: 6%; top: 6%; padding: 2px 5px; border-radius: 3px; background: #ff8a3a; color: #2a0f00; font-family: var(--pixel); font-size: 12px; line-height: 1.4; box-shadow: 0 0 8px rgba(255, 138, 58, 0.8); }
@@ -659,6 +660,16 @@ button { font: inherit; color: inherit; }
       <div class="door"><button class="slot" type="button" aria-label="Drop a token into Last Light"><i></i><span>25¢</span></button><button class="slot" type="button" aria-label="Drop a token into Last Light"><i></i><span>25¢</span></button></div>
       <div class="kick"></div>
       </article>
+      <article class="cab ahead-of-the-light" data-game="ahead-of-the-light" data-url="/ahead-of-the-light/" aria-label="Ahead of the Light: race home before a gamma-ray burst">
+      <div class="marquee"><div><b>AHEAD OF THE LIGHT</b><small>RACE HOME BEFORE THE BURST</small></div></div>
+      <div class="bezel"><div class="screen">
+      <img src="arcade/key/ahead-of-the-light.webp" alt="A ship skims galaxies on a thin white ring while a ring of light closes from behind" loading="lazy" decoding="async">
+      <div class="osd"><p class="hi">SKIM · BURN · WHIP</p><p class="press">INSERT COIN</p><p class="credit">CREDIT 0</p></div>
+      </div></div>
+      <div class="panel"><span class="stick"></span><span class="pbtn a"></span><span class="pbtn b"></span><button class="start" type="button">START</button></div>
+      <div class="door"><button class="slot" type="button" aria-label="Drop a token into Ahead of the Light"><i></i><span>25¢</span></button><button class="slot" type="button" aria-label="Drop a token into Ahead of the Light"><i></i><span>25¢</span></button></div>
+      <div class="kick"></div>
+      </article>
     </div>
     <button class="nav next" id="nextBtn" type="button" aria-label="Next machine">▶</button>
   </main>
@@ -759,7 +770,7 @@ $("#changeBtn").onclick = () => {
 // Every game cabinet stays in the page (hidden while its group is closed), so its attract screen and high score keep working.
 const GROUPS = [
   { id: "cottage", label: "Cottage", games: ["plungerd", "drain", "brawl", "wild", "fish", "vr", "pingpong"], c1: "#d2332a", c2: "#ffcf4a", glow: "rgba(255, 90, 60, 0.55)", art: "arcade/plungerd.webp", art2: "arcade/plungerd-bosses.webp" },
-  { id: "action", label: "Action", games: ["olympus", "crimson", "tidebreak", "moonwell", "primordia", "river-rush"], c1: "#7a0a10", c2: "#ff2a2a", glow: "rgba(255, 30, 30, 0.45)", art: "crimson/art/keyart2.webp", art2: "olympus/art/asphodel.webp" },
+  { id: "action", label: "Action", games: ["olympus", "crimson", "tidebreak", "moonwell", "primordia", "river-rush", "ahead-of-the-light"], c1: "#7a0a10", c2: "#ff2a2a", glow: "rgba(255, 30, 30, 0.45)", art: "crimson/art/keyart2.webp", art2: "olympus/art/asphodel.webp" },
   { id: "ascii", label: "ASCII Scenes", games: ["ascii-front", "battle-tanks"], c1: "#344238", c2: "#d2f584", glow: "rgba(210, 245, 132, 0.45)", art: "ascii-front/key.svg", art2: "battle-tanks/key.svg" },
   { id: "strategy", label: "Strategy", games: ["breakthrough", "follow-suit"], c1: "#3e5c44", c2: "#f0c56a", glow: "rgba(232, 176, 84, 0.62)", art: "arcade/follow-suit.webp", art2: "arcade/breakthrough.webp" },
   { id: "gta", label: "GTA", games: ["gta"], c1: "#5a3410", c2: "#f2c14e", glow: "rgba(242, 193, 78, 0.5)", art: "arcade/gta.webp" },
@@ -1427,6 +1438,17 @@ try {
 try {
   const best = store.get("river-rush-adventure-best", null);
   if (best?.version === 3 && Number.isSafeInteger(best.score) && best.score > 0) $(".hi", $('.cab[data-game="river-rush"]')).textContent = "BEST " + Math.round(best.score).toLocaleString() + " PTS";
+} catch (e) { /* a broken save leaves the plain line */ }
+// Ahead of the Light keeps its best run in its meta save: home (and whether you came home first) or the furthest leg
+try {
+  const m = store.get("ahead-of-the-light.meta.v1", null), best = m && m.records && m.records.best;
+  const LEGS = ["THE WEB", "COMA", "VIRGO", "THE LOCAL GROUP", "THE MILKY WAY", "ORION", "THE SUN'S NEIGHBOURS", "EARTH"];
+  let line = null;
+  if (best && best.home === true && Number.isFinite(best.years) && best.years > 0) {
+    const yr = best.years.toFixed(1) + " YR";
+    line = Array.isArray(m.pages) && m.pages.includes("first-home") ? "FIRST HOME · " + yr : "HOME IN " + yr;
+  } else if (best && Number.isInteger(best.legNo) && best.legNo >= 0 && best.legNo < LEGS.length) line = "BEST: " + LEGS[best.legNo];
+  if (line) $(".hi", $('.cab[data-game="ahead-of-the-light"]')).textContent = line;
 } catch (e) { /* a broken save leaves the plain line */ }
 drawTokens();
 games.forEach(showCredit);
