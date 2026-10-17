@@ -122,6 +122,8 @@ export function report(runs) {
     x: rate ? ((hits[p] || 0) / passes[p]) / rate : 0 })).sort((a, b) => b.x - a.x);
   // hits not tied to a course piece (takedowns, scorches) sit outside the per-pass table
   const offCourse = Object.keys(hits).filter((p) => !passes[p]).reduce((m, p) => m + hits[p], 0);
+  const hitCauses = {};
+  for (const l of legs) for (const [k, n] of Object.entries(l.causes)) hitCauses[k] = (hitCauses[k] || 0) + n;
   const runS = (r) => sum(r.legStats, (l) => l.t) + 12.5 * Math.max(0, r.legStats.length - 1);
   const minutes = sum(legs, (l) => l.t) / 60;
   const finished = legs.filter((l) => l.why === 'gate' || l.why === 'home');
@@ -171,6 +173,7 @@ export function report(runs) {
     scorchesLeg: sum(legs, (l) => l.scorches) / Math.max(1, legs.length),
     hitsLeg: sum(legs, (l) => l.hits) / Math.max(1, legs.length),
     hitRate: rate,
+    hitCauses,
     offCourse,
     pieces,
     perMin: {
@@ -222,7 +225,8 @@ export function printReport(name, R) {
   const v = R.starters;
   lines.push(`  variety: offered ${pct(v.offered)} of starters; top starter ${v.top[0]} in ${pct(v.top[1])}; a legendary `
     + `in ${pct(v.legend)}; two in ${v.two}`);
-  lines.push(`  hits per pass ${(R.hitRate * 100).toFixed(2)} %; off-course hits ${R.offCourse}; pieces over 2 × their share:`);
+  lines.push(`  hits per pass ${(R.hitRate * 100).toFixed(2)} %; by cause ${JSON.stringify(R.hitCauses)}`);
+  lines.push(`  pieces over 2 × their share:`);
   for (const p of R.pieces.filter((x) => x.x > 2 && x.passes >= 30).slice(0, 12)) {
     lines.push(`    ${p.p} ${p.x.toFixed(2)} × (${p.hits} / ${p.passes})`);
   }
