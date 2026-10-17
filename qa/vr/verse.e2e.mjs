@@ -29,8 +29,7 @@ const SETUP = () => {
       const x = c.getContext("2d"); x.drawImage(G.renderer.domElement, 0, 0, w, h);
       return Array.from(x.getImageData(0, 0, w, h).data);
     },
-    // the whole canvas after one real draw, as RGBA bytes, read through one canvas kept in main memory (a new canvas for each
-    // full-size read held hundreds of MB each, and the page ran out of memory later in the run)
+    // the whole canvas after one real draw, as RGBA bytes, read through one canvas kept in main memory
     grabFull() {
       G.test.render();
       const W = G.renderer.domElement.width, H = G.renderer.domElement.height;
@@ -306,6 +305,10 @@ try {
   console.log("INFO ink", JSON.stringify(ink));
   check(ink.lines > 0.001 && ink.lines < 0.2, "ink lines darken the edges of the street (" + (ink.lines * 100).toFixed(2) + "% of pixels)", ink);
   check(ink.hatch > 0.002 && ink.hatch < 0.3, "hatching darkens the deepest shadows (" + (ink.hatch * 100).toFixed(2) + "% of pixels)", ink);
+  // the rest reads no pixels: a small canvas keeps it fast. On SwiftShader a 960 x 540 frame takes about 2 s, and a long run of
+  // draws in one task holds the memory of each frame until the task ends; at full size the 120 draws below ran the page out of memory
+  await page.setViewportSize({ width: 320, height: 180 });
+  await page.waitForFunction(() => G.renderer.domElement.width === 320);
   const mood = await page.evaluate(() => {
     QA.clear(); QA.street(); QA.draw(30, 0.1);
     const calm = G.test.action().verse.mood;
@@ -317,7 +320,7 @@ try {
     G.combat.heal(); QA.draw(30, 0.1);
     return { calm, fight: fight.mood, fightK: fight.moodFight, hurt: hurt.mood, hurtK: hurt.moodHurt, after: G.test.action().verse.mood };
   });
-  console.log("INFO mood", JSON.stringify(mood), new Date().toISOString());
+  console.log("INFO mood", JSON.stringify(mood));
   check(mood.calm < 0.02 && mood.fightK > 0.8 && mood.fight > 0.3, "a fight tints the shadows red", mood);
   check(mood.hurtK > 0.8 && mood.hurt > 0.3 && mood.after < 0.05, "one heart left tints them blue, and healing clears it", mood);
   const smear = await page.evaluate(() => {
