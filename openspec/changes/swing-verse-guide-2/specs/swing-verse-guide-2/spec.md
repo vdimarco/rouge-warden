@@ -8,8 +8,8 @@ over 12 % of the distance, and none where the depth is past a quarter of the cam
 - **WHEN** one frame of the street draws with Comic motion Full and then Off
 - **THEN** the share of near-black pixels is higher with Full
 
-### Requirement: Hatching in the darkest shadows
-In flat play with Comic motion on Full or Calm, pixels darker than a luminance of 0.16 SHALL get diagonal ink lines, denser where
+### Requirement: Hatching in the shadows
+In flat play with Comic motion on Full or Calm, pixels darker than a luminance of 0.26 SHALL get diagonal ink lines, denser where
 it is darker.
 
 #### Scenario: The street
