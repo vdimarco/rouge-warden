@@ -56,6 +56,8 @@ button { -webkit-appearance: none; appearance: none; }
 }
 #land { left: calc(var(--sl) + 14px); top: calc(var(--st) + 40px); font-size: 11px; font-weight: 700;
   color: var(--muted); letter-spacing: 0.05em; max-width: calc(100vw - var(--sl) - var(--sr) - 200px); }
+/* the big digits grow over the landing line for 0.9 s: it steps aside */
+#speed.big ~ #land { visibility: hidden; }
 #place { right: calc(var(--sr) + 64px); font-size: 22px; text-align: right; }
 #place small { display: block; font-size: 11px; font-weight: 600; color: var(--muted); letter-spacing: 0.06em; }
 #pause { position: fixed; top: calc(var(--st) + 8px); right: calc(var(--sr) + 10px); width: 44px; height: 44px;

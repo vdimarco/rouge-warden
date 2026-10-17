@@ -1004,16 +1004,42 @@ function drawPlay(dt, alpha) {
   const a = live ? alpha : 1;
   interp(race, a, true);
   const view = scene.render(race, live ? dt : 0, { fixed, shake: overlay.shake() });
-  overlay.render(race, view, live || G.mode === 'ending' ? dt : 0, {
+  const drawn = overlay.render(race, view, live || G.mode === 'ending' ? dt : 0, {
     backdrop: scene.backdrop(), first: (meta.seen.runs || 0) < tune.TEACH_RUNS && !G.toy,
     runT: G.runT + race.t, tells: run ? tellsOf(run.build) : null,
   });
   interp(race, a, false);
+  captionClear(drawn);
   if (live) scene.adapt(dt);
   const you = race.ships[0];
   const landText = race.leg.type === 'earth' && race.phase !== 'done' ? landNeed(you, race.tune || tune).text : null;
   hud.update(race, { landText });
   return view;
+}
+
+// The caption line keeps clear of the gate's lines, the exit bands and LET GO (22.1): when the caption's words would
+// sit on one, the line moves down (toward the centre, where the ring is wider) or up by the least that clears it,
+// and back once nothing is in the way. The words' box is read only while something is there to avoid.
+const capEl = $('captions');
+let capDy = 0;
+const CAP_STEPS = [0, 26, 52, 78, -26];
+function captionClear(drawn) {
+  const keep = drawn && drawn.keep;
+  let want = 0;
+  if (keep && keep.length && capEl && capEl.textContent) {
+    const rg = document.createRange();
+    rg.selectNodeContents(capEl);
+    const r = rg.getBoundingClientRect();
+    if (r.width > 0) {
+      const y0 = r.top - capDy, y1 = r.bottom - capDy, m = 4;
+      const hit = (dy) => keep.some((k) => k.x0 < r.right + m && k.x1 > r.left - m && k.y0 < y1 + dy + m && k.y1 > y0 + dy - m);
+      want = CAP_STEPS.find((dy) => !hit(dy)) ?? 0;
+    }
+  }
+  if (want !== capDy) {
+    capDy = want;
+    root.style.setProperty('--cap-dy', `${capDy}px`);
+  }
 }
 
 // The title's faint ring, kept clear of the name: its bottom stays above the title block.

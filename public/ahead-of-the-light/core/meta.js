@@ -199,7 +199,7 @@ export function logLine(applied, practice = false) {
   const next = applied.next;
   if (!next) return `${head} · LOG FULL`;
   const u = UNLOCKS.find((x) => x.id === next.id);
-  return `${head} · ${next.left} TO ${u ? u.short : next.name}`;
+  return `${head} · ${next.left} ${next.left === 1 ? 'PAGE' : 'PAGES'} TO ${u ? u.short : next.name}`;
 }
 
 // The ships a run's feats unlock that the meta does not have yet.
