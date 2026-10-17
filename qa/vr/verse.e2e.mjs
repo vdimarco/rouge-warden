@@ -2,7 +2,8 @@
 // focus meter; the Verse pass draws (the colour plates slip off register away from the hero); a landed blow stops the world for a
 // moment and shakes the camera; the third blow flashes an impact frame, at most two a second, and never with Comic motion on
 // Calm; a wind-up near the hero shows the spider-sense; the zip strike carries a combo to the next goon; the camera banks in a
-// swing. Run from the repo root (the server starts itself): NODE_PATH=/opt/node22/lib/node_modules node qa/vr/verse.e2e.mjs
+// swing. From the build guide: the gang on threes, squash and stretch, multiples, a kick that doubles the plates and snaps the
+// view in, a finisher word a third of the view wide, and wall words that stay. Run from the repo root (the server starts itself): NODE_PATH=/opt/node22/lib/node_modules node qa/vr/verse.e2e.mjs
 import { mkdir } from "node:fs/promises";
 import { newPage, open, close, checker, watchdog, SHOTS } from "./lib.mjs";
 
@@ -196,6 +197,86 @@ try {
   });
   check(bank.max > 3 * Math.PI / 180 && bank.max <= 7 * Math.PI / 180 + 1e-6, "the camera leans into a swing, at most 7 degrees (" + (bank.max * 180 / Math.PI).toFixed(1) + ")", bank);
   check(Math.abs(bank.rest) < 0.005, "on the ground the lean goes back to level", bank);
+
+  /* ---- the build guide: goons on threes, squash and stretch, multiples, key pose, words, zoom, plates ---- */
+  const threes = await page.evaluate(() => {
+    QA.clear(); QA.street();
+    const id = G.test.spawnGoon(-140, 0, 2, true); // 10 m off: he walks at the hero
+    let n = 0, last = null, moved = 0, lastX = null;
+    for (let i = 0; i < 60; i++) {
+      QA.step(1);
+      const v = G.test.goonView(id);
+      const k = v.phase.toFixed(4) + v.pose;
+      if (k !== last) { n++; last = k; }
+      if (lastX !== null && v.x !== lastX) moved++;
+      lastX = v.x;
+    }
+    return { n, moved };
+  });
+  check(threes.n >= 5 && threes.n <= 11, "a walking goon takes about 8 poses a second (" + threes.n + " in 1 s), the hero 12", threes);
+  check(threes.moved >= 50, "and his place still moves every frame", threes);
+  const squash = await page.evaluate(() => {
+    QA.clear(); QA.street(); QA.step(30);
+    QA.key("Space", true); QA.step(1); QA.key("Space", false);
+    let up = 0, down = 0;
+    for (let i = 0; i < 6; i++) { QA.step(1); up = Math.max(up, G.hero.info().squash); }
+    for (let i = 0; i < 120 && !G.P.onGround; i++) QA.step(1);
+    for (let i = 0; i < 8; i++) { QA.step(1); down = Math.min(down, G.hero.info().squash); }
+    QA.step(90);
+    return { up, down, rest: G.hero.info().squash };
+  });
+  check(squash.up > 0.03, "a jump stretches the hero (" + squash.up.toFixed(3) + ")", squash);
+  check(squash.down < -0.03, "the landing squashes him (" + squash.down.toFixed(3) + ")", squash);
+  check(Math.abs(squash.rest) < 0.01, "and he settles back to his shape", squash);
+  const multi = await page.evaluate(() => {
+    QA.clear(); QA.street();
+    G.test.spawnGoon(-151.4, 0, 2, true);
+    for (const g of G.combat.goons) { g.hp = 20; g.cool = 9; }
+    QA.step(40); QA.draw(12, 0.1);
+    QA.punch();
+    const a = G.hero.info();
+    QA.step(30);
+    return { ghosts: a.ghosts, pose: a.pose, later: G.hero.info().ghosts };
+  });
+  check(multi.ghosts >= 1 && multi.pose === "punch", "a punch leaves a see-through multiple of the wind-up", multi);
+  check(multi.later === 0, "the multiple is gone within half a second", multi);
+  const heavy = await page.evaluate(() => {
+    QA.clear(); QA.street();
+    G.test.spawnGoon(-151.4, 0, 2, true);
+    for (const g of G.combat.goons) { g.hp = 20; g.cool = 9; }
+    QA.step(40); QA.draw(12, 0.1);
+    const base = G.test.action().verse.plate;
+    for (let i = 0; i < 2; i++) { QA.punch(); QA.step(16); for (const g of G.combat.goons) if (g.on) { g.x = -151.4; g.z = 2; } }
+    QA.draw(12, 0.1);
+    QA.punch(); // the kick
+    QA.draw(1, 0);
+    const hit = G.test.action().verse;
+    QA.draw(8, 1 / 60);
+    const after = G.test.action().verse.cam.zoom;
+    return { base, plate: hit.plate, zoom: hit.cam.zoom, after };
+  });
+  check(heavy.plate > heavy.base * 1.8, "a kick doubles the plate slip (" + heavy.base.toFixed(2) + " to " + heavy.plate.toFixed(2) + " px)", heavy);
+  check(heavy.zoom >= 0.1 && heavy.zoom <= 0.15 && heavy.after < 0.02, "a kick snaps the view in by 10 to 15 %, back within 8 frames", heavy);
+  const words = await page.evaluate(() => {
+    QA.clear(); QA.street();
+    const ids = [G.test.spawnGoon(-151.4, 0, 2, true), G.test.spawnGoon(-151.4, 0, 3.2, true)];
+    QA.step(2);
+    G.combat.focus = 1;
+    G.combat.goons.forEach((g, k) => { g.x = -151.4; g.z = k ? 3.2 : 2; g.y = 0; g.state = "idle"; g.cool = 9; });
+    QA.step(1);
+    QA.tap("KeyF");
+    const w = G.fx.info().words.find((q) => q.name === "KASPLASH");
+    const cam = G.camera, d = Math.hypot(w.x - cam.position.x, w.y - cam.position.y, w.z - cam.position.z);
+    const view = 2 * d * Math.tan(Math.atan(Math.tan((cam.fov * Math.PI) / 360) * cam.aspect));
+    // a wall word stays 20 s; a seventh pushes out the oldest
+    for (let i = 0; i < 7; i++) G.fx.word("BONK", { x: -150 + i * 2, y: 3, z: -6 }, { life: 20 });
+    QA.step(600);
+    const stay = G.fx.info().words.filter((q) => q.life > 1).length;
+    QA.step(660);
+    return { part: w ? w.w / view : 0, stay, gone: G.fx.info().words.filter((q) => q.life > 1).length };
+  });
+  check(words.part > 0.28 && words.part < 0.4, "the finisher word fills a third of the view (" + (words.part * 100).toFixed(0) + "%)", words);
+  check(words.stay === 6 && words.gone === 0, "wall words stay 20 s, six at most", words);
 
   check(page.errors.length === 0, "no page errors", page.errors);
   await page.context().close();

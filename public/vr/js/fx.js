@@ -13,6 +13,7 @@ const ANG = [8, 12]; // degrees across, at the word's own distance, when the cal
 const TILT = (8 * Math.PI) / 180;
 const W_MIN = 0.2, W_MAX = 10; // metres across: never a speck, and a far word never fills the sky
 const DRIFT = 0.5; // m/s along the word's dir
+const STAY_MAX = 6, STAY_FADE = 1.5; // words that stay (o.life over LIFE): at most this many, and they fade over their last s
 const ART = new URL("../art/", import.meta.url).href;
 const smooth = (a, b, x) => { const t = x <= a ? 0 : x >= b ? 1 : (x - a) / (b - a); return t * t * (3 - 2 * t); };
 
@@ -75,7 +76,7 @@ export function createFX(scene, renderer, opts = {}) {
 
   /* ---------------- the words ---------------- */
   // A pool of MAX slots. The live ones sit in slots 0 .. n − 1 (a dead one is swapped out by the last).
-  const S = Array.from({ length: MAX }, () => ({ name: "", age: 0, x: 0, y: 0, z: 0, dx: 0, dy: 0, dz: 0, w: 1, h: 1, tilt: 0, r: 1, g: 1, b: 1, pop: 0, alpha: 0, yaw: 0 }));
+  const S = Array.from({ length: MAX }, () => ({ name: "", age: 0, life: LIFE, x: 0, y: 0, z: 0, dx: 0, dy: 0, dz: 0, w: 1, h: 1, tilt: 0, r: 1, g: 1, b: 1, pop: 0, alpha: 0, yaw: 0 }));
   let n = 0, spawned = 0, skipped = 0, dropped = 0, seed = 20240611, worldOn = true;
   const made = {}; // words made so far, by name (for the tests)
   const head = new THREE.Vector3();
@@ -106,7 +107,7 @@ export function createFX(scene, renderer, opts = {}) {
     m[o + 8] = nx; m[o + 9] = 0; m[o + 10] = nz; m[o + 11] = 0;
     m[o + 12] = px; m[o + 13] = py; m[o + 14] = pz; m[o + 15] = 1;
     // it fades from FADE_FROM to LIFE, and also as the head flies into it (the last 0.6 m before NEAR)
-    let a = 1 - smooth(FADE_FROM, LIFE, s.age);
+    let a = s.life > LIFE ? 1 - smooth(s.life - STAY_FADE, s.life, s.age) : 1 - smooth(FADE_FROM, LIFE, s.age);
     if (hasHead) {
       const dx = px - head.x, dy = py - head.y, dz = pz - head.z;
       a *= smooth(NEAR - FADE_NEAR, NEAR, Math.sqrt(dx * dx + dy * dy + dz * dz));
@@ -121,6 +122,8 @@ export function createFX(scene, renderer, opts = {}) {
     //   dir: a unit vector. The word starts a little way out along it (so a word on a wall does not sink into it) and drifts.
     //   vel: {x,y,z} in m/s, added to its drift. Pass the player's velocity for a word that must keep pace with you.
     //   tint: a hex number, {r,g,b} (0..1) or [r,g,b], multiplied into the art.
+    //   life: seconds it shows (LIFE by default). A longer one stays where it landed with no drift, and fades over its last
+    //   STAY_FADE s; at most STAY_MAX stay at once (the oldest gives way).
     // Returns true when a word was added. Nothing is added before the art loads, when the name is unknown, or when the
     // centre is closer than 1.2 m to the head.
     word(name, pos, o = {}) {
@@ -143,18 +146,25 @@ export function createFX(scene, renderer, opts = {}) {
       const off = dl > 1e-6 ? 0.3 * w : 0;
       const x = pos.x + ux * off, y = pos.y + uy * off, z = pos.z + uz * off;
       if (hasHead && Math.hypot(x - head.x, y - head.y, z - head.z) < NEAR) { skipped++; return false; }
-      // a full pool gives up its oldest word
+      const life = o.life > LIFE ? o.life : LIFE;
+      // a full pool gives up its oldest word; a word that stays first ends the oldest one that stays, past STAY_MAX
       let i = n;
+      if (life > LIFE) {
+        let stay = 0, old = -1;
+        for (let k = 0; k < n; k++) if (S[k].life > LIFE) { stay++; if (old < 0 || S[k].age > S[old].age) old = k; }
+        if (stay >= STAY_MAX) S[old].age = Math.max(S[old].age, S[old].life - 0.01);
+      }
       if (n >= MAX) {
         i = 0;
         for (let k = 1; k < n; k++) if (S[k].age > S[i].age) i = k;
         dropped++;
       } else n++;
       const s = S[i];
-      s.name = name; s.age = 0;
+      s.name = name; s.age = 0; s.life = life;
       s.x = x; s.y = y; s.z = z;
       const v = o.vel;
-      s.dx = ux * DRIFT + (v ? v.x : 0); s.dy = uy * DRIFT + (v ? v.y : 0); s.dz = uz * DRIFT + (v ? v.z : 0);
+      const dr = life > LIFE ? 0 : DRIFT;
+      s.dx = ux * dr + (v ? v.x : 0); s.dy = uy * dr + (v ? v.y : 0); s.dz = uz * dr + (v ? v.z : 0);
       s.w = w; s.h = w / aspect;
       s.tilt = (rnd() * 2 - 1) * TILT;
       const t = o.tint;
@@ -181,7 +191,7 @@ export function createFX(scene, renderer, opts = {}) {
       for (let i = 0; i < n;) {
         const s = S[i];
         s.age += dt > 0 ? dt : 0;
-        if (s.age >= LIFE) {
+        if (s.age >= s.life) {
           // swap the last live word into this slot (matrix, rect, tint and state)
           const last = n - 1;
           if (i !== last) {
@@ -218,7 +228,7 @@ export function createFX(scene, renderer, opts = {}) {
       const words = [];
       for (let i = 0; i < n; i++) {
         const s = S[i];
-        words.push({ name: s.name, x: s.x + s.dx * s.age, y: s.y + s.dy * s.age, z: s.z + s.dz * s.age, w: s.w, h: s.h, age: s.age, alpha: s.alpha, scale: s.pop, tilt: s.tilt, yaw: s.yaw });
+        words.push({ name: s.name, life: s.life, x: s.x + s.dx * s.age, y: s.y + s.dy * s.age, z: s.z + s.dz * s.age, w: s.w, h: s.h, age: s.age, alpha: s.alpha, scale: s.pop, tilt: s.tilt, yaw: s.yaw });
       }
       return { live: n, max: MAX, ready, failed, spawned, skipped, dropped, made: { ...made }, words, calls: mesh.visible && n > 0 ? 1 : 0 };
     },
