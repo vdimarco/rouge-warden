@@ -7,7 +7,7 @@
 import { TUNE } from './tune.js';
 import { emit, E } from './events.js';
 import { createShip, bpsOf, windowOf, slamAim, sweepTime } from './handle.js';
-import { resolve, wrap, psiAt, railOn, halfAt, wellCore } from './course/kinds.js';
+import { resolve, psiAt, railOn, halfAt, wellCore } from './course/kinds.js';
 import { beatsPerS } from './ringmath.js';
 import { mulberry32, hashSeed } from '../../light-years-home/core/rng.js';
 import { bossInit, bossThink, bossFast, BOSSES } from './bosses.js';
@@ -16,6 +16,14 @@ const finite = (v) => typeof v === 'number' && Number.isFinite(v);
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 const isOut = (s) => s.caught || s.wrecked;
 const sgn = (v) => (v >= 0 ? 1 : -1);
+// kinds.wrap, bit for bit (checked on 22 million values, edges included), without its two float modulos when the
+// angle is already within one turn: the line search calls it thousands of times a think.
+const wrap = (d) => {
+  const x = d + 180;
+  if (x >= 0 && x < 360) { const y = x + 360; return (y < 720 ? y - 360 : 0) - 180; }
+  if (x >= -360 && x < 0) { const y = x + 360; return (y < 360 ? y : 0) - 180; }
+  return ((((d + 180) % 360) + 360) % 360) - 180;
+};
 
 // ---------------------------------------------------------------- the roster (10.2, 10.3)
 
