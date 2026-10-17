@@ -1,0 +1,87 @@
+{
+  "status": "pending_Studio_login_then_free_rig_check",
+  "scope": "Read-only existing-body readiness audit; no upload, spend, export, T-pose baking, generation, UE/GPU or native writes",
+  "primary_input": {
+    "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/body.glb",
+    "bytes": 23337268,
+    "sha256": "25041be9666422c30ba39449cb283a83928bb3de596fe063389707c070335613"
+  },
+  "other_inputs": {
+    "body.fbx": {
+      "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/body.fbx",
+      "bytes": 10076108,
+      "sha256": "b7e7ca0d9c486412108cba85e1cd4a5512fecd4ad36b8cfdb4677259ff6f9244"
+    },
+    "reference.png": {
+      "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/reference.png",
+      "bytes": 1619959,
+      "sha256": "c00eb6f0ea1f5743b1a236295ecedfa27e15763d9ab5a717942ebf3713e778be"
+    },
+    "base_color.png": {
+      "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/base_color.png",
+      "bytes": 6140895,
+      "sha256": "f300cbf5d78c411cad36cfedee17a36c787d1a50c968c2adb2827ecf0e43d774"
+    }
+  },
+  "geometry": {
+    "triangles": 103544,
+    "vertices": 130901,
+    "height_m": 1.82000019319905,
+    "meshes": 1,
+    "primitives": 1,
+    "materials": 1,
+    "uv_channels": 1,
+    "rig_joints": 24,
+    "animations_in_glb": 1,
+    "animation_curves_in_fbx": 150,
+    "morph_targets": 0,
+    "finger_controls": false,
+    "face_controls": false
+  },
+  "glb_packaging": {
+    "self_contained": true,
+    "external_resources": false,
+    "embedded_textures": [
+      "normal PNG",
+      "base color JPEG",
+      "packed metallic/roughness JPEG"
+    ],
+    "material_double_sided": true,
+    "includes_existing_skin_and_animation": true
+  },
+  "pose": {
+    "description": "Relaxed standing bind, not T-pose; source reference is a wider A-pose",
+    "upper_arm_degrees_from_straight_down": {
+      "Left": 15.613565113913475,
+      "Right": 16.21524831216535
+    },
+    "angle_source": "Retained CPU FBX bind audit of the byte-identical own body; no new export",
+    "T_pose_copy_now": false
+  },
+  "next_step": "AfterrootconfirmsStudio/APIaccess,uploadonlyoriginalself-containedbody.glbforfreecompatibilitycheck;retainriggable/rig_type/posefeedbackbeforeanypaidrig.",
+  "conditional_next_step": "Ifcheckrejectspose,proposeavisuallyreviewedmesh-onlyT-posecopyofsamebody/mapsinanewfolder;donotbakeoruploaditnow.Badcurrentshoulderweightscouldbakeincorrectshirtcaps.",
+  "no_generation_substitution": true,
+  "rig_check_run": false,
+  "paid_rig_run": false,
+  "comparison_checklist": [
+    "Compare returned mesh/UV/material/texture/identity to exact uploaded input; no unrequested remesh/retexture/generation.",
+    "Check units/height1.82m,orientation,pivot and finite positive transforms; inventory actual skeleton/binds and normalized weights.",
+    "Compare per-arm elbowforwardflex, shoulder/clavicle sweep and sleeve silhouette acrossidle/walk/run/jump/landing; rigging alone does not fix previously authored reversed elbows.",
+    "Verify actual finger chains and per-finger weights before claiming grasp; rawsourcehasno finger/facecontrols and geometry may retain webbing/facets.",
+    "Returned new skeleton needs matching own/retargeted clips; never assign existing24-bone clips/BlendSpace blindly.",
+    "Fresh isolated CPU then native FBX readback/render review before adoption; preserve accepted crew,Content/maps/saves."
+  ],
+  "sources": {
+    "rig_check": "https://developers.tripo3d.ai/en/docs/animations-rig-check",
+    "rigging": "https://developers.tripo3d.ai/en/docs/animations-rig",
+    "studio_upload_pose_limit": "https://www.tripo3d.ai/help/features/is-it-possible-to-upload-my-existing-model-for-animation"
+  },
+  "provider_limit_MB": 150,
+  "raw_23_sources_unchanged": true,
+  "caveats": [
+    "Rig-checksupportsGLB/FBXandclassifiesriggability;itdoesnotproveanatomicalmotionquality.",
+    "StudiohelpstatesT-posehumanoids;legacyAPIguidancesaysA/T.Verifythisrelaxedposeincheckbeforebakingorspending.",
+    "Re-riggingcannotrepairbakedcollar/shouldergeometry,shirtfacets,staticfaceorafusedfingerweb.",
+    "No returnedrigexistsorhasbeenvalidated;Studioquote andspecificavailableversion/spec remainroot-owned."
+  ]
+}

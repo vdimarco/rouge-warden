@@ -1,0 +1,60 @@
+{
+  "checked_at_utc": "2026-10-17 19:52:19 UTC",
+  "source": "Connected fal live catalog search: query tripo; has_more=false",
+  "models": [
+    {
+      "endpoint_id": "tripo3d/tripo/v2.5/image-to-3d",
+      "category": "image-to-3d"
+    },
+    {
+      "endpoint_id": "tripo3d/tripo/v2.5/multiview-to-3d",
+      "category": "image-to-3d"
+    },
+    {
+      "endpoint_id": "tripo3d/tripo/remesh",
+      "category": "3d-to-3d"
+    },
+    {
+      "endpoint_id": "tripo3d/tripo/segment",
+      "category": "3d-to-3d"
+    },
+    {
+      "endpoint_id": "tripo3d/h3.1/image-to-3d",
+      "category": "image-to-3d"
+    },
+    {
+      "endpoint_id": "tripo3d/h3.1/multiview-to-3d",
+      "category": "image-to-3d"
+    },
+    {
+      "endpoint_id": "tripo3d/p2/image-to-3d",
+      "category": "image-to-3d"
+    },
+    {
+      "endpoint_id": "tripo3d/h3.1/text-to-3d",
+      "category": "text-to-3d"
+    },
+    {
+      "endpoint_id": "tripo3d/triposplat",
+      "category": "image-to-3d"
+    },
+    {
+      "endpoint_id": "tripo3d/p1/image-to-3d",
+      "category": "image-to-3d"
+    },
+    {
+      "endpoint_id": "tripo3d/p2/text-to-3d",
+      "category": "text-to-3d"
+    },
+    {
+      "endpoint_id": "tripo3d/p1/text-to-3d",
+      "category": "text-to-3d"
+    },
+    {
+      "endpoint_id": "fal-ai/triposr",
+      "category": "image-to-3d"
+    }
+  ],
+  "rigging_endpoint_listed": false,
+  "geometry_generation_submitted": false
+}

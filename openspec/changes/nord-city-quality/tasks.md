@@ -65,3 +65,9 @@
 - [x] Diagnose the user's backward-arm report and correct the shared jump author's per-arm hinge; verify all eight original crew rigs plus the detailed pilot through copied-body export/re-import and an old-axis negative control. Preserve all retained inputs and keep installed clips unchanged.
 - [x] Retain one compact, asymmetric twelve-track private jump derivative with explicit neck rotation, fresh 37×24 CPU comparison, all-frame CPU motion review and truthful precision/failed-attempt receipts. This supersedes the user-rejected four-track pose for the next private comparison, without native or final-art acceptance. See `Verification/GraphicNovelNaturalMotion/README.md`.
 - [ ] Import/reload and visually review the compact derivative and actual hand-relative prop in a fresh guarded native window; check matched supported modes/sizes, continuous 1× motion, physical clearance, blending, landing/contact and preserved gameplay before adoption.
+
+## Tripo one-character pilot
+
+- [x] Record the user's authorization to use Tripo for the existing-character comparison; inspect current upload/rigging docs, route availability, pricing and retained body pose. Direct Tripo sign-in is pending; no upload/job/spending has occurred. See `Verification/TripoPilot/README.md`.
+- [ ] Run the existing body's free Tripo compatibility check, then one bounded humanoid rigging job if compatible; retain request/result/cost and FBX provenance. Verify access and the actual route's quote before submitting; preserve original sources and inspect a copied T-pose fallback only if necessary.
+- [ ] Inspect returned bind/weights, shoulders, elbows, hands and own compatible motion, then perform the guarded native comparison before any replacement or wider cast rollout. Tripo bone naming alone is not native integration or final-art acceptance.
