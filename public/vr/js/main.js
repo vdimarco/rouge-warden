@@ -783,9 +783,13 @@ const VERSE_HIT = {
 // doubled for a moment after a burst or a heavy blow; edge: more slip toward the frame edge; grain: the paper's darkening;
 // zoom: the snap zoom of a heavy blow; stay: s a wall word stays; frame: s of an impact frame and the shortest gap between
 // two (at most two a second, under the three-flash limit)
-const VERSE = { stay: 20, goons: 8, zoom: 0.12, edge: 0.6, grain: 0.07, twos: 12, plate: 2.6, plateFast: 2.2, speed: [14, 34], frame: 0.07, frameGap: 0.5 };
+// lines: the depth step (a share of the distance) that inks a line; hatch: the darkest shadows' hatching; mood: how far a
+// fight (red) or a beaten hero (blue) tints the shadows, and its ease (1/s)
+const MOOD = { fight: new THREE.Color(1.1, 0.62, 0.66), hurt: new THREE.Color(0.66, 0.8, 1.15), most: 0.45, rate: 1.2 };
+const VERSE = { lines: 0.12, hatch: 0.55, stay: 20, goons: 8, zoom: 0.12, edge: 0.6, grain: 0.07, twos: 12, plate: 2.6, plateFast: 2.2, speed: [14, 34], frame: 0.07, frameGap: 0.5 };
 let hitStopT = 0, camLeaned = false, plateKick = 0, impactT = 0, impactAt = -9, senseAmt = 0;
-const VS = { focus: 5, plate: 0, edge: 0, grain: 0, impact: 0, sense: 0, head: { x: 0.5, y: 0.6 }, time: 0 }, HEAD_UV = new THREE.Vector3();
+let moodFight = 0, moodHurt = 0;
+const VS = { lines: 0, hatch: 0, mood: 0, moodTint: new THREE.Color(1, 1, 1), focus: 5, plate: 0, edge: 0, grain: 0, impact: 0, sense: 0, head: { x: 0.5, y: 0.6 }, time: 0 }, HEAD_UV = new THREE.Vector3();
 // "full": everything; "calm": no impact frames, no shake and no bank (the plates, the twos and the spider-sense stay); "off"
 function verseMode() { return settings.verse === "calm" || settings.verse === "off" ? settings.verse : "full"; }
 // a blow: the hit-stop (the moves stay, at any setting), the shake, and an impact frame
@@ -808,7 +812,13 @@ function verseFrame(rdt) {
   const sp = Math.hypot(P.vel.x, P.vel.y, P.vel.z), h = renderer.getContext().drawingBufferHeight / 1080;
   plateKick = Math.max(0, plateKick - rdt * 3);
   VS.plate = h * (VERSE.plate + VERSE.plateFast * clamp((sp - VERSE.speed[0]) / (VERSE.speed[1] - VERSE.speed[0]), 0, 1)) * (1 + plateKick);
-  VS.edge = VERSE.edge; VS.grain = VERSE.grain;
+  VS.edge = VERSE.edge; VS.grain = VERSE.grain; VS.lines = VERSE.lines; VS.hatch = VERSE.hatch;
+  // the mood eases in real time: red while goons fight the hero, blue as his hearts run low; the stronger one wins the tint
+  const k = 1 - Math.exp(-rdt * MOOD.rate), act = actionOn() && G.state === "play";
+  moodFight += ((act && combat.fighting > 0 ? 1 : 0) - moodFight) * k;
+  moodHurt += ((act ? clamp(1 - (combat.hp - 1) / (FIGHT.hp - 2), 0, 1) : 0) - moodHurt) * k;
+  VS.mood = MOOD.most * Math.max(moodFight, moodHurt);
+  VS.moodTint.copy(moodHurt >= moodFight ? MOOD.hurt : MOOD.fight);
   VS.focus = flatcam.opacity < 0.5 ? 6 : flatcam.dist + 0.4;
   impactT = Math.max(0, impactT - rdt);
   VS.impact = mode === "full" && impactT > 0 ? Math.min(1, impactT / (VERSE.frame * 0.5)) : 0;
@@ -1132,6 +1142,7 @@ function flatFrame(dt, inp, yawDelta) {
   hero.setGlide(P.gliding);
   // on twos, as the film; a full focus meter puts the hero on ones ("in the zone")
   hero.setTwos(verseMode() !== "off" && combat.focus < 1 ? VERSE.twos : 0);
+  hero.setSmear(verseMode() !== "off");
   flatcam.bankOn = flatcam.shakeOn = verseMode() === "full";
   hero.update(dt, P, ropes, inp);
   flatcam.update(dt, P, hero, FLAT_LOOK, FLAT_FLAGS);
@@ -2230,7 +2241,7 @@ G.test = {
   settings(o) { if (o) Object.assign(settings, o); return { ...settings }; },
   // the city action (flat play): fights, cars, jobs, the moves, and the screen bits
   action: () => ({ on: actionOn(), driving, sprinting, energy, roll: P.roll || 0, combat: combat.info(), cars: cars.info(), jobs: jobs.info(), hud: actHud.info(), view: actionView.info(), figures: figures.info(), save: JSON.parse(JSON.stringify(save.jobs)), ropeTargets: [...ropeIds], cueAir: cueAir.slice(), slowT, hero: G.hero.info().pose, zip: zip ? { ...zip } : null, hitStop: hitStopT,
-    verse: { mode: verseMode(), impact: impactT, sense: senseAmt, twos: G.hero.info().twos, plate: VS.plate, cam: flatcam.info() } }),
+    verse: { mode: verseMode(), impact: impactT, sense: senseAmt, twos: G.hero.info().twos, plate: VS.plate, mood: VS.mood, moodHurt, moodFight, smear: G.hero.info().smear, cam: flatcam.info() } }),
   // the goon as the figures draw him (on threes in flat play)
   goonView(id) { const g = combat.goons.find((q) => q.id === id); if (!g) return null; const v = goonOnThrees(g); return { phase: v.phase, poseT: v.poseT, pose: v.pose, x: v.x, z: v.z }; },
   // start a job (type: sludge, catch, washer, pizza, balloon, brawl, taxi, thief) at the nearest offer of that type, or at the hero

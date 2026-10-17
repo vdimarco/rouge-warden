@@ -8,7 +8,7 @@ import { mkdir } from "node:fs/promises";
 import { newPage, open, close, checker, watchdog, SHOTS } from "./lib.mjs";
 
 const { check, done } = checker("verse");
-watchdog(900000, "verse");
+watchdog(1500000, "verse");
 const out = SHOTS || "/tmp/swing-qa";
 await mkdir(out, { recursive: true });
 const quiet = () => { window.AudioContext = window.webkitAudioContext = undefined; Object.defineProperty(navigator, "getGamepads", { value: () => [] }); };
@@ -277,6 +277,43 @@ try {
   });
   check(words.part > 0.28 && words.part < 0.4, "the finisher word fills a third of the view (" + (words.part * 100).toFixed(0) + "%)", words);
   check(words.stay === 6 && words.gone === 0, "wall words stay 20 s, six at most", words);
+
+  /* ---- the build guide, part two: ink lines, hatching, mood, the smear ---- */
+  const ink = await page.evaluate(() => {
+    QA.clear(); QA.street(); QA.step(5);
+    // dark ink pixels (all channels under 40) with Comic motion Full and Off
+    const dark = (px) => { let n = 0; for (let i = 0; i < px.length; i += 4) if (px[i] < 40 && px[i + 1] < 40 && px[i + 2] < 40) n++; return n / (px.length / 4); };
+    const W = G.renderer.domElement.width, H = G.renderer.domElement.height;
+    const on = dark(QA.grab(W, H));
+    G.test.settings({ verse: "off" });
+    const off = dark(QA.grab(W, H));
+    G.test.settings({ verse: "full" });
+    return { on, off };
+  });
+  check(ink.on > ink.off + 0.004, "ink lines and hatching add dark ink to the street (" + (ink.off * 100).toFixed(1) + "% to " + (ink.on * 100).toFixed(1) + "%)", ink);
+  const mood = await page.evaluate(() => {
+    QA.clear(); QA.street(); QA.draw(30, 0.1);
+    const calm = G.test.action().verse.mood;
+    G.test.spawnGoon(-151.6, 0, 2, true);
+    for (let i = 0; i < 30; i++) { QA.step(2); QA.draw(1, 0.1); }
+    const fight = G.test.action().verse;
+    QA.clear(); G.combat.hp = 1; QA.draw(30, 0.1);
+    const hurt = G.test.action().verse;
+    G.combat.heal(); QA.draw(30, 0.1);
+    return { calm, fight: fight.mood, fightK: fight.moodFight, hurt: hurt.mood, hurtK: hurt.moodHurt, after: G.test.action().verse.mood };
+  });
+  check(mood.calm < 0.02 && mood.fightK > 0.8 && mood.fight > 0.3, "a fight tints the shadows red", mood);
+  check(mood.hurtK > 0.8 && mood.hurt > 0.3 && mood.after < 0.05, "one heart left tints them blue, and healing clears it", mood);
+  const smear = await page.evaluate(() => {
+    QA.clear();
+    const S = G.city.start;
+    G.test.teleport(S.x, S.y + 60, S.z); G.P.onGround = false;
+    let fast = 0;
+    for (let i = 0; i < 20; i++) { G.P.vel.x = 32; G.P.vel.y = -4; G.P.vel.z = 0; QA.step(1); fast = Math.max(fast, G.hero.info().smear); }
+    QA.street(); QA.step(30);
+    return { fast, rest: G.hero.info().smear };
+  });
+  check(smear.fast > 0.15 && smear.fast <= 0.3 && smear.rest === 0, "at 32 m/s the hero smears along his flight (" + smear.fast.toFixed(2) + "), at rest not at all", smear);
 
   check(page.errors.length === 0, "no page errors", page.errors);
   await page.context().close();

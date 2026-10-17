@@ -51,7 +51,8 @@ void main() {
 const COMPOSITE_FS = /* glsl */ `
 uniform sampler2D uScene, uB0, uB1, uB2, uB3, uDepth;
 uniform float uStrength;
-uniform float uVerse, uNear, uFar, uFocus, uPlate, uImpact, uSense, uTime, uAspect, uEdge, uGrain;
+uniform float uVerse, uNear, uFar, uFocus, uPlate, uImpact, uSense, uTime, uAspect, uEdge, uGrain, uLines, uHatch, uMood;
+uniform vec3 uMoodTint;
 uniform vec2 uTexel, uHead;
 uniform vec3 uInk, uHold;
 varying vec2 vUv;
@@ -82,6 +83,30 @@ void main() {
       float line = 1.0 - smoothstep(0.0022, 0.0042, abs(r * sin(a - ac) - w));
       line *= step(0.0, cos(a - ac)) * smoothstep(0.045, 0.055, r) * (1.0 - smoothstep(0.1, 0.12, r)) * step(0.15, a) * step(a, 3.0);
       c = mix(c, uHold, line * uSense);
+    }
+    // ink lines where the depth breaks (the edge of a roof, a body against the street): a step of over uLines of the
+    // distance between the pixels either side; none toward the sky and the far haze
+    if (uLines > 0.0) {
+      float z0 = viewZ(texture2D(uDepth, vUv).r);
+      float zl = viewZ(texture2D(uDepth, vUv - vec2(uTexel.x, 0.0)).r), zr = viewZ(texture2D(uDepth, vUv + vec2(uTexel.x, 0.0)).r);
+      float zd = viewZ(texture2D(uDepth, vUv - vec2(0.0, uTexel.y)).r), zu = viewZ(texture2D(uDepth, vUv + vec2(0.0, uTexel.y)).r);
+      float jump = (abs(zr - zl) + abs(zu - zd)) / max(z0, 0.1);
+      float near = 1.0 - smoothstep(uFar * 0.25, uFar * 0.45, z0);
+      c = mix(c, uInk, smoothstep(uLines, uLines * 2.0, jump) * near * 0.85);
+    }
+    // hatching in the deepest shadows: diagonal ink lines 6 px apart, more of them the darker it is
+    if (uHatch > 0.0) {
+      float l = dot(c, vec3(0.299, 0.587, 0.114));
+      float dark = 1.0 - smoothstep(0.04, 0.16, l);
+      float t = fract((gl_FragCoord.x + gl_FragCoord.y) / 6.0);
+      float line = 1.0 - smoothstep(0.12, 0.28, abs(t - 0.5) * 2.0 * (1.0 - 0.5 * dark));
+      c = mix(c, uInk, line * dark * uHatch);
+    }
+    // the mood: the mid-tones and shadows lean to the tint (a fight's red, a beaten hero's blue), the light stays
+    if (uMood > 0.0) {
+      float l = dot(c, vec3(0.299, 0.587, 0.114));
+      vec3 toned = mix(vec3(l), c, 0.75) * uMoodTint * 1.25;
+      c = mix(c, toned, uMood * (1.0 - smoothstep(0.45, 0.9, l)));
     }
     // paper: a fine grain and soft blotches, fixed to the page, seen in the mid-tones only (none on black, none on white)
     if (uGrain > 0.0) {
@@ -123,7 +148,7 @@ export function createBloom(renderer) {
   const blur = mk(BLUR_FS, { uTex: { value: null }, uDir: { value: new THREE.Vector2() } });
   const comp = mk(COMPOSITE_FS, { uScene: { value: sceneRT.texture }, uB0: { value: A[0].texture }, uB1: { value: A[1].texture }, uB2: { value: A[2].texture }, uB3: { value: A[3].texture }, uStrength: { value: 0.5 },
     uDepth: { value: sceneRT.depthTexture }, uVerse: { value: 0 }, uNear: { value: 0.1 }, uFar: { value: 1000 }, uFocus: { value: 5 }, uPlate: { value: 0 },
-    uImpact: { value: 0 }, uSense: { value: 0 }, uEdge: { value: 0 }, uGrain: { value: 0 }, uTime: { value: 0 }, uAspect: { value: 1 }, uTexel: { value: new THREE.Vector2() }, uHead: { value: new THREE.Vector2(0.5, 0.6) },
+    uImpact: { value: 0 }, uSense: { value: 0 }, uEdge: { value: 0 }, uGrain: { value: 0 }, uLines: { value: 0 }, uHatch: { value: 0 }, uMood: { value: 0 }, uMoodTint: { value: new THREE.Color(1, 1, 1) }, uTime: { value: 0 }, uAspect: { value: 1 }, uTexel: { value: new THREE.Vector2() }, uHead: { value: new THREE.Vector2(0.5, 0.6) },
     uInk: { value: new THREE.Color(0x140a18) }, uHold: { value: new THREE.Color(0xe8203a) } });
   const black = new THREE.DataTexture(new Uint8Array([0, 0, 0, 255]), 1, 1); // the glow levels when only the Verse pass runs
   black.needsUpdate = true;
@@ -136,7 +161,8 @@ export function createBloom(renderer) {
     verse: false, // the Verse pass ran on the last frame
     // render scene through camera with the glow of `level` ("off" | "low" | "high"). verse (or null): { focus (m, where the
     // plates are on register), plate (px, the slip far from the focus), impact 0..1, sense 0..1, head ({ x, y } in 0..1 uv),
-    // time (s) }. With no glow and no verse the scene draws straight to the canvas.
+    // time (s), edge (more slip toward the frame edge), grain (the paper), lines (the depth step that inks a line, 0 none),
+    // hatch 0..1, mood 0..1 and moodTint (a Color) }. With no glow and no verse the scene draws straight to the canvas.
     render(scene, camera, level, verse = null) {
       const L = BLOOM[level];
       B.level = L ? level : "off";
@@ -157,6 +183,8 @@ export function createBloom(renderer) {
       if (verse) {
         u.uNear.value = camera.near; u.uFar.value = camera.far; u.uFocus.value = Math.max(0.5, verse.focus || 5);
         u.uEdge.value = verse.edge || 0; u.uGrain.value = verse.grain || 0;
+        u.uLines.value = verse.lines || 0; u.uHatch.value = verse.hatch || 0; u.uMood.value = verse.mood || 0;
+        if (verse.moodTint) u.uMoodTint.value.copy(verse.moodTint);
         u.uPlate.value = verse.plate || 0; u.uImpact.value = verse.impact || 0; u.uSense.value = verse.sense || 0;
         u.uTime.value = Math.floor((verse.time || 0) * 12) / 12; u.uAspect.value = w / h; u.uTexel.value.set(1 / w, 1 / h);
         if (verse.head) u.uHead.value.set(verse.head.x, verse.head.y);
