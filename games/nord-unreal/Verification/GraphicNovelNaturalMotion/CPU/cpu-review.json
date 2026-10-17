@@ -1,0 +1,115 @@
+{
+  "scope": "Single wholebodycandidate CPUstills+48frameposepreview only; pendingrootchoice, no FBX export/native/adoption",
+  "blender_exit_code": 0,
+  "ffmpeg_exit_code": 0,
+  "device": "CPU",
+  "threads": 4,
+  "still_samples": 16,
+  "motion_samples": 8,
+  "raw_source_23_files_unchanged": true,
+  "motion": {
+    "file": "cpu-proof-motion.mp4",
+    "sha256": "9d028ed48d4b84ba73a69baa7018c5538534b089463e7dfc010dbac7b97f2042",
+    "dimensions": [
+      640,
+      360
+    ],
+    "encoded_fps": 24,
+    "encoded_frames": 48,
+    "duration_seconds": 2.0,
+    "native_fps_claimed": false
+  },
+  "motion_frames_independently_inspected": [
+    8,
+    20,
+    35
+  ],
+  "limitations": [
+    "Selected actualmotionframes reviewed; no continuousplayback/fluidity claim.",
+    "Currentvelocitybandsmapped; nativeIdle/Walk/Runblendweights notsimulated.",
+    "Reference-derivedwristpropgeometryproxy haswhiteplaceholdermaterial andstaticopenfingers; noclosedgrasp.",
+    "Bodyasset/maps/weights/binds/rootphysics unchanged;12localrotationtracks authored in scratchactiononly.",
+    "Preview ballistictranslation/camerafollow livesonnonanimatedparent, noauthorableobjectkeys changed."
+  ],
+  "rejected_harness_attempts": [
+    "rejected-ballistic-override-order",
+    "rejected-render-reevaluated-rig-location"
+  ],
+  "files": [
+    {
+      "file": "apex-front.png",
+      "sha256": "335b39ec59211dc67a932ee83a5f871bec353b6fb98f6c644f228f353c5294a4",
+      "bytes": 616778
+    },
+    {
+      "file": "apex-side.png",
+      "sha256": "0b21999802e3c5e87fd3800c4434486ece3fe337a6be0da7b51697bd85385586",
+      "bytes": 589152
+    },
+    {
+      "file": "apex-threequarter.png",
+      "sha256": "96b3fb0bd60b8ecc2b5ae7b2885c2da2796008ed2ab8ad6a0250f869ec35ec89",
+      "bytes": 616235
+    },
+    {
+      "file": "base_color.png",
+      "sha256": "f300cbf5d78c411cad36cfedee17a36c787d1a50c968c2adb2827ecf0e43d774",
+      "bytes": 6140895
+    },
+    {
+      "file": "descent-side.png",
+      "sha256": "6432eebc78ad0a7ac0b2faab03413b5b8a421e5b7c49a4add23281f1b2f93db2",
+      "bytes": 574998
+    },
+    {
+      "file": "landing-side.png",
+      "sha256": "db34c593410bb27266d3111b072a56e3109bf5d936b9aaa17f79fcc69fa8f2b7",
+      "bytes": 573645
+    },
+    {
+      "file": "liftoff-side.png",
+      "sha256": "c4a0abd9811fe77f86ac3b526a1ca5b702ab3588ecffc2406b5b46a164d84c57",
+      "bytes": 569310
+    },
+    {
+      "file": "metallic.png",
+      "sha256": "2e0e9b79402c506cdcf5fe11f4e81e7a376b0b81fa5982b6b6584f5e35402309",
+      "bytes": 30269
+    },
+    {
+      "file": "motion-render.log",
+      "sha256": "5a10a2f674922c4b4c01c53fd0b55187b1db48818ba41e7935fcec90f33cc289",
+      "bytes": 6627
+    },
+    {
+      "file": "motion.json",
+      "sha256": "55b71f2cdb12c476e21825756205ff705f5310a2eb54d1ea72ba67c59c2e84e5",
+      "bytes": 28726
+    },
+    {
+      "file": "natural_jump.py",
+      "sha256": "adfa0d3337b4db3dbd48b50de5520b5938948ed74d22d4d5b1c0fa56acc66759",
+      "bytes": 7359
+    },
+    {
+      "file": "normal.png",
+      "sha256": "7845864ce13d1e3ce10e8149ef2ef98a048b8be249a60749dfc70c4897e9e7ab",
+      "bytes": 6648844
+    },
+    {
+      "file": "render_motion.py",
+      "sha256": "a9a625e581150def5fc37b73c46333a085ff16ca8fac8daf03a1ca6f0e0ba62c",
+      "bytes": 3847
+    },
+    {
+      "file": "roughness.png",
+      "sha256": "cf28e5b2f2b3d1d85b3e3a6b8228b0bde61f82c60133b393a6159b5d3a7a9f89",
+      "bytes": 1475634
+    },
+    {
+      "file": "stills.json",
+      "sha256": "074be8016665f53e97cf4e716acca60e194266fef5bae17e48685410ea2a5ae0",
+      "bytes": 3412
+    }
+  ]
+}

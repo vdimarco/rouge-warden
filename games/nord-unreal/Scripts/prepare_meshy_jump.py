@@ -45,6 +45,26 @@ def interpolate(seconds):
     return [a + (b - a) * smooth for a, b in zip(before[1:], after[1:])]
 
 
+def elbow_axis(armature, prefix):
+    bones = armature.data.bones
+    forward = (bones['headfront'].head_local - bones['Head'].head_local).normalized()
+    lower = (bones[prefix + 'Hand'].head_local - bones[prefix + 'ForeArm'].head_local).normalized()
+    axis = lower.cross(forward)
+    assert axis.length > .01, 'Cannot resolve the elbow flexion plane'
+    return axis.normalized()
+
+
+def elbow_bend(armature, prefix):
+    bones = armature.pose.bones
+    upper = (bones[prefix + 'ForeArm'].head - bones[prefix + 'Arm'].head).normalized()
+    lower = (bones[prefix + 'Hand'].head - bones[prefix + 'ForeArm'].head).normalized()
+    forearm = bones[prefix + 'ForeArm']
+    # Follow the hinge plane as the shoulder swings, including rigs with T-pose arms.
+    local = forearm.bone.matrix_local.to_3x3().inverted() @ elbow_axis(armature, prefix)
+    axis = (forearm.matrix.to_3x3() @ local).normalized()
+    return math.atan2(axis.dot(upper.cross(lower)), upper.dot(lower))
+
+
 reports = []
 for folder in folders:
     body = folder / "body.fbx"
@@ -57,13 +77,17 @@ for folder in folders:
     armature = next(obj for obj in bpy.context.scene.objects if obj.type == "ARMATURE")
     bones = armature.pose.bones
     required = ("Hips", "Head", "neck", "LeftUpLeg", "RightUpLeg", "LeftLeg", "RightLeg",
-                "LeftFoot", "RightFoot", "LeftArm", "RightArm", "LeftForeArm", "RightForeArm", "Spine01")
+                "LeftFoot", "RightFoot", "LeftArm", "RightArm", "LeftForeArm", "RightForeArm", "Spine01", "headfront")
     assert all(name in bones for name in required), folder.name
     rest = {bone.name: bone.matrix_basis.copy() for bone in bones}
     reference = {bone.name: bone.bone.matrix_local.copy() for bone in bones}
     side = (bones["LeftUpLeg"].head - bones["RightUpLeg"].head).normalized()
     up = (bones["Head"].head - bones["Hips"].head).normalized()
     local_axes = {bone.name: (bone.bone.matrix_local.to_3x3().inverted() @ side).normalized() for bone in bones}
+    # Elbows flex toward the face; a hip-side knee axis reverses or twists resting arms.
+    for prefix in ('Left', 'Right'):
+        forearm = bones[prefix + 'ForeArm']
+        local_axes[forearm.name] = (forearm.bone.matrix_local.to_3x3().inverted() @ elbow_axis(armature, prefix)).normalized()
     hip_up = (bones["Hips"].bone.matrix_local.to_3x3().inverted() @ up).normalized()
     unit_scale = armature.matrix_world.to_scale().z
     assert 0.001 < unit_scale < 2, unit_scale
@@ -120,8 +144,14 @@ for folder in folders:
     assert abs(last_frame - first_frame - 36) < 0.001
     bpy.context.scene.frame_set(int(first_frame))
     neutral_knee = restored.pose.bones["LeftLeg"].rotation_quaternion.copy()
+    bpy.context.view_layer.update()
+    neutral_elbows = {prefix: elbow_bend(restored, prefix) for prefix in ('Left', 'Right')}
     bpy.context.scene.frame_set(int(first_frame + 14))
     assert neutral_knee.rotation_difference(restored.pose.bones["LeftLeg"].rotation_quaternion).angle > math.radians(70)
+    bpy.context.view_layer.update()
+    # The knee bends back, while both elbows must flex forward from their bind pose.
+    assert all(elbow_bend(restored, prefix) > neutral_elbows[prefix] + math.radians(20)
+               for prefix in neutral_elbows), 'Exported elbows bend backward'
     bpy.context.scene.frame_set(int(last_frame))
     assert neutral_knee.rotation_difference(restored.pose.bones["LeftLeg"].rotation_quaternion).angle < 0.001
     report = {"name": folder.name, "authoring": "original local skeletal keyframes; no paid generation",
@@ -129,6 +159,7 @@ for folder in folders:
               "jump_sha256": hashlib.sha256(output.read_bytes()).hexdigest(),
               "seconds": 1.2, "fps": 30, "bones": len(bones), "head_and_neck_unchanged": True,
               "actor_root_motion": False, "fbx_round_trip_passed": True, "samples": samples}
+    report['exported_forward_elbow_flex_passed'] = True
     (folder / "jump.json").write_text(json.dumps(report, indent=2) + "\n")
     reports.append({key: value for key, value in report.items() if key != "samples"})
 assert len(reports) == (len(args.names) if args.names else 8), len(reports)

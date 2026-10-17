@@ -1,5 +1,7 @@
 # Work log and handoff — 17 October 2026
 
+Superseded pose: the user rejected this four-track candidate for awkward/backward arms. Continue from the [forward-elbow fix and compact candidate handoff](../GraphicNovelNaturalMotion/Handoff.md). Preserve the receipts below as historical evidence; their native/headless results do not validate the newer twelve-track candidate.
+
 Status: private repair checkpoint; waiting for a rendered comparison with sufficient GPU headroom. No persistent adoption, normal-cast replacement or package deployment. Root asked about GPU availability; no reply was received by this checkpoint. Do not interrupt the user's Dota 2 or desktop sessions.
 
 ## Completed

@@ -1,5 +1,7 @@
 # Rejected character silhouette repair — 17 October 2026
 
+Follow-up: the user rejected this four-track pose as awkward and identified backward arms. Its artifacts below remain historical evidence. The [forward-elbow fix and compact twelve-track CPU candidate](../GraphicNovelNaturalMotion/README.md) supersede it for the next visual comparison; neither candidate is adopted or accepted as final art.
+
 The rejected frame has visibly raised shoulder lobes, a rigid symmetric jump and an oversized upright plunger. This checkpoint prepares a compound correction to the private high-detail Resident9 pilot. It is **not installed or accepted as final art**. The original clip, all 6,850 Content files, source art, native module, live packages, saves and services are preserved.
 
 ## Concrete correction

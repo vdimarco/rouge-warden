@@ -1,0 +1,41 @@
+{
+  "recorded_at_utc": "2026-10-17T19:47:01.764307+00:00",
+  "mode": "Read-only comparison; no restore operation or Unreal/service job in this follow-up.",
+  "original_content_count": 6850,
+  "current_content_count": 6850,
+  "changed_content": [],
+  "all_content_matches_previous_restored_baseline": true,
+  "native_module_sha256": "2742ca45629a6e97db771a2c3f56b3a8076b8c4b228f8a4d9b86a8633c0623c3",
+  "native_module_matches_previous_baseline": true,
+  "services": {
+    "nord-browser-demo.service": {
+      "ActiveState": "active",
+      "MainPID": "3956730"
+    },
+    "nord-browser-funnel.service": {
+      "ActiveState": "active",
+      "MainPID": "109441"
+    },
+    "nord-browser-public.service": {
+      "ActiveState": "active",
+      "MainPID": "109459"
+    },
+    "nord-browser-turn-funnel.service": {
+      "ActiveState": "active",
+      "MainPID": "109422"
+    }
+  },
+  "gpu_inventory": "18050 MiB, 6015 MiB, 49 %",
+  "paid_jobs_submitted": 0,
+  "new_spend_usd": 0,
+  "budget_usd": {
+    "authorized_fal": 25,
+    "prior_reserved": 4,
+    "prior_estimate": 3.04,
+    "uncommitted": 21
+  },
+  "limits": [
+    "No fresh package, save/settings, browser, physical-device or off-LAN tests.",
+    "Existing services were observed, not restarted; no claim of a new TURN functional test."
+  ]
+}
