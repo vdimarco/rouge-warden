@@ -2239,6 +2239,8 @@ G.test = {
   bloom: () => ({ ...bloom.info(), want: bloomLevel() }),
   // change saved settings for a test (not saved): settings({ verse: "calm" }); returns a copy of them all
   settings(o) { if (o) Object.assign(settings, o); return { ...settings }; },
+  // tune the Verse numbers for a test (VERSE in main.js): verse({ lines: 0 }); returns a copy of them all
+  verse(o) { if (o) Object.assign(VERSE, o); return { ...VERSE }; },
   // the city action (flat play): fights, cars, jobs, the moves, and the screen bits
   action: () => ({ on: actionOn(), driving, sprinting, energy, roll: P.roll || 0, combat: combat.info(), cars: cars.info(), jobs: jobs.info(), hud: actHud.info(), view: actionView.info(), figures: figures.info(), save: JSON.parse(JSON.stringify(save.jobs)), ropeTargets: [...ropeIds], cueAir: cueAir.slice(), slowT, hero: G.hero.info().pose, zip: zip ? { ...zip } : null, hitStop: hitStopT,
     verse: { mode: verseMode(), impact: impactT, sense: senseAmt, twos: G.hero.info().twos, plate: VS.plate, mood: VS.mood, moodHurt, moodFight, smear: G.hero.info().smear, cam: flatcam.info() } }),

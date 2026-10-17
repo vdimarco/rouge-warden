@@ -281,16 +281,19 @@ try {
   /* ---- the build guide, part two: ink lines, hatching, mood, the smear ---- */
   const ink = await page.evaluate(() => {
     QA.clear(); QA.street(); QA.step(5);
-    // dark ink pixels (all channels under 40) with Comic motion Full and Off
-    const dark = (px) => { let n = 0; for (let i = 0; i < px.length; i += 4) if (px[i] < 40 && px[i + 1] < 40 && px[i + 2] < 40) n++; return n / (px.length / 4); };
+    // the share of pixels that turn darker by over 30 when the lines (or the hatching) come on
     const W = G.renderer.domElement.width, H = G.renderer.domElement.height;
-    const on = dark(QA.grab(W, H));
-    G.test.settings({ verse: "off" });
-    const off = dark(QA.grab(W, H));
-    G.test.settings({ verse: "full" });
-    return { on, off };
+    const darker = (a, b) => { let n = 0; for (let i = 0; i < a.length; i += 4) if ((b[i] + b[i + 1] + b[i + 2]) - (a[i] + a[i + 1] + a[i + 2]) > 90) n++; return n / (a.length / 4); };
+    const tune = G.test.verse();
+    G.test.verse({ lines: 0, hatch: 0 }); const none = QA.grab(W, H);
+    G.test.verse({ lines: tune.lines, hatch: 0 }); const lines = QA.grab(W, H);
+    G.test.verse({ lines: 0, hatch: tune.hatch }); const hatch = QA.grab(W, H);
+    G.test.verse({ lines: tune.lines, hatch: tune.hatch });
+    return { lines: darker(lines, none), hatch: darker(hatch, none) };
   });
-  check(ink.on > ink.off + 0.004, "ink lines and hatching add dark ink to the street (" + (ink.off * 100).toFixed(1) + "% to " + (ink.on * 100).toFixed(1) + "%)", ink);
+  console.log("INFO ink", JSON.stringify(ink), new Date().toISOString());
+  check(ink.lines > 0.003 && ink.lines < 0.2, "ink lines darken the edges of the street (" + (ink.lines * 100).toFixed(2) + "% of pixels)", ink);
+  check(ink.hatch > 0.002 && ink.hatch < 0.3, "hatching darkens the deepest shadows (" + (ink.hatch * 100).toFixed(2) + "% of pixels)", ink);
   const mood = await page.evaluate(() => {
     QA.clear(); QA.street(); QA.draw(30, 0.1);
     const calm = G.test.action().verse.mood;
@@ -302,6 +305,7 @@ try {
     G.combat.heal(); QA.draw(30, 0.1);
     return { calm, fight: fight.mood, fightK: fight.moodFight, hurt: hurt.mood, hurtK: hurt.moodHurt, after: G.test.action().verse.mood };
   });
+  console.log("INFO mood", JSON.stringify(mood), new Date().toISOString());
   check(mood.calm < 0.02 && mood.fightK > 0.8 && mood.fight > 0.3, "a fight tints the shadows red", mood);
   check(mood.hurtK > 0.8 && mood.hurt > 0.3 && mood.after < 0.05, "one heart left tints them blue, and healing clears it", mood);
   const smear = await page.evaluate(() => {
