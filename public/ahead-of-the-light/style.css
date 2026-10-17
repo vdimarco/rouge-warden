@@ -386,3 +386,7 @@ html[data-motion="reduced"] #title .go, html[data-motion="reduced"] #hint { anim
 html[data-layout="landscape"] .offer.n4 .ctitle { white-space: normal; font-size: 13px; line-height: 1.15; }
 html[data-layout="landscape"] .offer.n4 .cfx { font-size: 12px; }
 html[data-layout="landscape"] .s-break.docked .shipbox { height: 62px; }
+/* every tap shows on its own frame */
+.btn:active, .chip:active, .card:active, .lane:active, .dchip:active, .toggle:active, .ship:active, .tab:active,
+#pause:active, #title .go:active { transform: scale(0.97); border-color: var(--accent); }
+.card:disabled, .card[disabled] { cursor: default; }
