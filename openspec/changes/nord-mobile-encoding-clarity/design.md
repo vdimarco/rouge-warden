@@ -1,0 +1,9 @@
+# Design
+
+Use a sparse clean worktree based on current origin/main (936d2c18), because the service checkout contains unrelated uncommitted native/audio work. The installed 48-file package is a newer resident-feedback build; baseline its actual hashes and 18 save files instead of assuming Git identity. No physical phone is attached over adb. Browser plugin absent; use existing Playwright fixtures. No native build/restart or render-scale change is needed for the bounded encoder test.
+
+Baseline: upright 390×844, existing scripted camera sweep, ordinary direct UDP media through the production WSS route. 60.613 s: 29.94 decoded FPS, zero drops/freezes/loss, final 652×1412 VP8, 2.389 Mbps average and mean quantizer 57.27. Extend the existing sampler to record QP sum, received FPS and requested profile. Read quantizer only within the same codec; it is an encoding diagnostic, not a perceptual score.
+
+Primary reference: [W3C RTC inbound RTP stats](https://www.w3.org/TR/webrtc-stats/#dom-rtcinboundrtpstreamstats-qpsum) defines qpSum and decoded frame counters. Use counter differences over measured elapsed time, handle absent/reset optional QP counters without producing misleading values, and cover the added calculation with an assertion. Existing native logs/launcher confirm 75% internal screen percentage; this change does not claim to remove native render softness.
+
+Trial: raise only clear profile from 4 to 6 Mbps, keep 1280×720 area and 30 FPS cap. Startup stays 960×540 area/2 Mbps; constrained 800/1.5 and emergency 640/1 stay. Compare same slot, scripted motion, viewport and running package. Accept only with lower same-codec quantization, advancing video, no new frame drops/freezes and decoded pacing near baseline. Otherwise revert the trial and pursue the demonstrated bottleneck. Verify input, rotation, adaptive recovery and closed-session release; merge/publish only accepted source with matching public static files.

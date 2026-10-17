@@ -723,7 +723,7 @@ try {
       await advancingMedia('adaptiveRecoveredFrame');
       const recoveredCommands = (await sends()).filter(packet => packet.id === 51).map(packet =>
         new TextDecoder('utf-16le').decode(new Uint8Array(packet.bytes.slice(3))));
-      assert.ok(recoveredCommands.some(command => command.includes('"WebRTC.MaxBitrate":4000000')), 'restored clarity bandwidth cap');
+      assert.ok(recoveredCommands.some(command => command.includes('"WebRTC.MaxBitrate":6000000')), 'restored clarity bandwidth cap');
       report.input.adaptiveStream.recovered = sizes[1280];
       await page.evaluate(() => {
         for (const peer of window.__nordQaPeers) if (peer.__nordOriginalStats) peer.getStats = peer.__nordOriginalStats;

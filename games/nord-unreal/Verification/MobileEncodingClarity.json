@@ -1,0 +1,93 @@
+{
+  "date": "2026-10-17",
+  "status": "candidate; final live validation pending a stable service window",
+  "source_base": "936d2c18",
+  "runtime_change": "Only clear phone profile ceiling 4000\u21926000 kbps. Pixel budgets, startup/constrained/emergency ceilings, adaptation thresholds, desktop and native settings unchanged.",
+  "checks": {
+    "unit": 38,
+    "browser_ui": "passed"
+  },
+  "experiments": {
+    "runs": [
+      {
+        "report": "Saved/BrowserStreaming/samples/2026-10-17T13-26-44-773Z-NordFriend1/sample.json",
+        "passed": true,
+        "summary": {
+          "seconds": 60.613,
+          "decodedFps": 29.944071403824264,
+          "receivedMbps": 2.3893931664824377,
+          "framesDropped": 0,
+          "freezes": 0,
+          "freezeSeconds": 0,
+          "longestFrameGapMs": 166.59999999999854,
+          "width": 652,
+          "height": 1412,
+          "candidate": {
+            "type": "host",
+            "protocol": "udp"
+          },
+          "codec": "video/VP8",
+          "decodeMsPerFrame": 1.8755449035812672,
+          "jitterBufferMsPerFrame": 77.01237190082645,
+          "meanQuantizer": 57.2732782369146,
+          "packetsLost": 0,
+          "framesReceived": 1815
+        },
+        "error": null
+      },
+      {
+        "report": "Saved/BrowserStreaming/samples/2026-10-17T13-29-02-562Z-NordFriend1/sample.json",
+        "passed": false,
+        "summary": null,
+        "error": "AssertionError"
+      },
+      {
+        "report": "Saved/BrowserStreaming/samples/2026-10-17T13-31-26-130Z-NordFriend1/sample.json",
+        "passed": true,
+        "summary": {
+          "seconds": 60.08,
+          "decodedFps": 29.94340878828229,
+          "receivedMbps": 3.5657218375499338,
+          "framesDropped": 0,
+          "freezes": 0,
+          "freezeSeconds": 0,
+          "longestFrameGapMs": 116.60000000000218,
+          "width": 652,
+          "height": 1412,
+          "candidate": {
+            "type": "host",
+            "protocol": "udp"
+          },
+          "codec": "video/VP8",
+          "decodeMsPerFrame": 1.9543190661478598,
+          "jitterBufferMsPerFrame": 79.9387570872707,
+          "meanQuantizer": 48.615341856586994,
+          "packetsLost": 0,
+          "framesReceived": 1800
+        },
+        "error": null
+      },
+      {
+        "report": "Saved/BrowserStreaming/samples/2026-10-17T13-33-12-827Z-NordFriend1/sample.json",
+        "passed": false,
+        "summary": null,
+        "error": "AssertionError"
+      }
+    ],
+    "limits": [
+      "The interrupted 6 Mbps public run did not complete and is excluded.",
+      "A warmed 4 Mbps control was interrupted by external native service maintenance; it is excluded.",
+      "The two successful initial samples used the same package and dimensions, but camera motion was not recentered between them; no controlled perceptual score or FPS gain is claimed.",
+      "Further native tests wait for the combined-package task to release the service."
+    ]
+  },
+  "limits": [
+    "Initial successful samples were not a centered/warmed A/B pair; no controlled perceptual score or FPS gain is claimed.",
+    "Rejected public 6 Mbps sample lost its data channel; cause unconfirmed.",
+    "Warmed 4 Mbps control overlapped external native maintenance; it failed and is excluded.",
+    "No physical phone attached; host-PC emulation/direct media is not cellular acceptance.",
+    "Native configured 75% render scale still contributes softness.",
+    "Unrelated dirty integrated/native checkout is preserved; work isolated in a clean sparse worktree.",
+    "OpenSpec CLI not installed; manual validation."
+  ]
+}

@@ -106,7 +106,7 @@ test('phone quality ignores startup and isolated freezes, then lowers and recove
   assert.equal(state.edge, 960);
   for (let i = 0; i < 20; i++) sample();
   assert.equal(state.edge, 1280);
-  assert.equal(state.bitrate, 4000);
+  assert.equal(state.bitrate, 6000);
   assert.deepEqual(phoneStreamState(now), { edge: 960, bitrate: 2000, level: 1, changedAt: now, poor: 0, healthy: 0, critical: 0 });
 });
 
