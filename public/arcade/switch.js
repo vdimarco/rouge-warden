@@ -23,6 +23,7 @@
     { id: "breakthrough", name: "Breakthrough", sub: "Climate strategy", url: "/breakthrough2/", art: "/arcade/key/breakthrough.webp", color: "#f0c56a" },
     { id: "follow-suit", name: "Follow Suit", sub: "A card roguelike", url: "/follow-suit/", art: "/arcade/key/follow-suit.webp", color: "#e9c46a" },
     { id: "river-rush", name: "River Rush", sub: "Three wild rivers", url: "/river-rush/", art: "/arcade/key/river-rush.webp", color: "#f9c65b" },
+    { id: "light-years-home", name: "Light Years Home", sub: "Drive home", url: "/light-years-home/", art: "/arcade/key/light-years-home.webp", color: "#cfe0ff" },
     { id: "ahead-of-the-light", name: "Ahead of the Light", sub: "Race home before the burst", url: "/ahead-of-the-light/", art: "/arcade/key/ahead-of-the-light.webp", color: "#f08a2c" },
     // credits: false keeps a game off the end card of Crimson Rogue (the Lab tile covers the four toys)
   // The Lab and the games it lists. A game inside the Lab has a longer address than the Lab, and the longest match wins.

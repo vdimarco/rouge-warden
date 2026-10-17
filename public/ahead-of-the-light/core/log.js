@@ -142,14 +142,14 @@ export function rankOf(years, tune = TUNE) {
 
 // ---------------------------------------------------------------- the run's summary (for meta.js and the log key)
 
-// → { v, seed, ship, daily, redshift, easy, ranked, practice, home, firstHome, why, legNo, type, years, earth, legs:
-//   [{ legNo, type, lane, gate, why, place, years, clean, hits, takedowns, beat, eaten, hash }], cards, trophies,
-//   takedowns, goodWhip, offered, vistas }
+// → { v, seed, ship, daily, redshift, easy, ranked, tuned, practice, home, firstHome, why, legNo, type, years, earth,
+//   legs: [{ legNo, type, lane, gate, why, place, years, clean, hits, takedowns, beat, eaten, hash, firstHome }],
+//   cards, trophies, takedowns, goodWhip, offered, vistas }. tuned: the run flew with URL tuning (run.tuned).
 export function runSummary(run) {
   const legs = (run.legs || []).map((l) => ({
     legNo: l.legNo, type: l.type, lane: l.lane, gate: l.gate, why: l.why, place: l.place, years: l.years,
     clean: !!l.clean, hits: l.hits || 0, takedowns: l.takedowns || 0, beat: [...(l.beat || [])],
-    eaten: [...(l.eaten || [])], hash: l.hash,
+    eaten: [...(l.eaten || [])], hash: l.hash, firstHome: !!l.firstHome,
   }));
   const last = legs[legs.length - 1] || null;
   const cards = [];
@@ -158,7 +158,7 @@ export function runSummary(run) {
   for (const l of run.legs || []) for (const id of l.trophies || []) if (!trophies.includes(id)) trophies.push(id);
   return {
     v: 1, seed: run.seed, ship: run.ship, daily: run.daily, redshift: run.redshift, easy: run.easy,
-    ranked: run.ranked, practice: !!(run.seen && run.seen.practice),
+    ranked: run.ranked, tuned: !!run.tuned, practice: !!(run.seen && run.seen.practice),
     home: run.phase === 'home', firstHome: !!(last && last.why === 'home' && last.firstHome),
     why: last ? last.why : null, legNo: last ? last.legNo : 0, type: last ? last.type : ROUTE[0],
     years: run.you.years, earth: run.you.earth, legs, cards, trophies,

@@ -429,8 +429,11 @@ export function createScene({ canvas, tune = TUNE, tier = 'low', reduced = false
   function info() {
     const r = renderer.info.render;
     return { calls: r.calls, points: r.points, glScale: V.glScale, tier: tierDef.name, ratio: pixelRatio(),
-      hazards: hazards.count(), backdrop: backdrop ? backdrop.type : null, backdropPoints: backdrop ? backdrop.points : 0 };
+      hazards: hazards.count(), backdrop: backdrop ? backdrop.type : null, backdropPoints: backdrop ? backdrop.points : 0,
+      reduced };
   }
+  // REDUCED MOTION from Settings takes effect at once: render() reads the flag every frame (no punch, the sky capped)
+  function setReduced(on) { reduced = Boolean(on); }
 
   function dispose() {
     setBackdrop(null);
@@ -443,7 +446,7 @@ export function createScene({ canvas, tune = TUNE, tier = 'low', reduced = false
 
   return {
     renderer, scene, camera, rel, lut, roll, tier: tierDef, hazards,
-    resize, render, adapt, info, dispose, setBackdrop,
+    resize, render, adapt, info, dispose, setBackdrop, setReduced,
     backdrop: () => backdrop,
     view: () => V.view,
     layout: () => V.L,

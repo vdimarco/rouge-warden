@@ -299,7 +299,8 @@ function human(opts = {}) {
   let aim = null, goal = 0, line = 0, key = null, lastReal = 0, alarmAt = -1, sent = null, stunUntil = 0, railAt = 0;
   let took = false, tookPrev = false;
   let burnAt = -1, lastBurn = -9, hitsSeen = 0, lastHitT = -9, launchBurned = false, oberthDone = null;
-  let ramUntil = 0, ramAim = 0, pullUntil = 0, pullAim = 0, lastLeg = null, alarmOn = false;
+  let ramUntil = 0, ramAim = 0, pullUntil = 0, pullAim = 0, lastLeg = null, lastRace = null, alarmOn = false;
+  let doorErr = NaN;
 
   const decide = (it) => {
     let m = mind.get(it.id);
@@ -412,9 +413,12 @@ function human(opts = {}) {
     if (race.phase === 'done' || isOut(ship)) { aim = null; key = null; return intent; }
     const T = race.tune || TUNE;
     const now = race.real;
-    if (lastLeg !== race.leg) {
-      lastLeg = race.leg; aim = null; mind.clear(); wells.clear(); rams.clear(); drafts.clear();
+    if (lastLeg !== race.leg || lastRace !== race) {
+      // a new leg (or the same leg flown again): race.real starts at 0, so every timer kept in it starts again too
+      lastLeg = race.leg; lastRace = race; aim = null; mind.clear(); wells.clear(); rams.clear(); drafts.clear();
       launchBurned = false; hitsSeen = ship.stats.hits; lastHitT = -9; lastBurn = -9; burnAt = -1;
+      stunUntil = 0; railAt = 0; ramUntil = 0; pullUntil = 0; alarmAt = -1; alarmOn = false; oberthDone = null;
+      key = null; took = false; tookPrev = false; doorErr = NaN;
     }
     if (aim === null) { aim = ship.bearing; goal = line = aim; lastReal = now; sent = ship.target; }
     const dt = Math.max(0, now - lastReal);
@@ -627,6 +631,18 @@ function human(opts = {}) {
       }
     }
 
+    // ---- the DOOR (leg 8): onto its arc for the landing once it is near and the way there is clear (a miss loops
+    // round and costs DOOR_MISS_S of the landing's margin)
+    const G = race.leg.gate;
+    if (G && G.door && finite(G.psi)) {
+      const tD = (G.beat - ship.dist) / bps, half = (finite(G.gap) ? G.gap : T.DOOR_DEG) / 2;
+      if (tD > 0 && tD <= DOOR_LOOK) {
+        if (!finite(doorErr)) doorErr = o.whipper ? 0 : clamp(gauss() * o.jitterDeg, -half + DOOR_IN, half - DOOR_IN);
+        const to = ship.bearing + wrap(G.psi + doorErr - ship.bearing);
+        if (clear(to)) { goal = to; mark('door'); }
+      }
+    }
+
     // the thumb moves toward the goal at a human pace (not during a stun)
     if (now >= stunUntil) {
       const dd = goal - aim, stepMax = thumb * dt;
@@ -671,6 +687,8 @@ function keepOff(race, ship, items, rails, target, err, bps, T) {
 }
 
 const OFF_LOOK = 0.8;              // s a move off the line (a ram's setup, a tuck, a pull-out) must stay clear for
+const DOOR_LOOK = 2.0;             // s before Earth's DOOR the hand steers onto its arc
+const DOOR_IN = 6;                 // °: how far inside the DOOR's edge it aims at most
 
 // Is a move from one bearing to another clear: nothing in `items` hit at its end within `look` s, and no rail beside
 // the ship crossed on the way (or ended inside)?

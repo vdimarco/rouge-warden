@@ -89,9 +89,12 @@ const TABLE = {
   RIVAL_GAP0: 8,                // s: each rival's gap at a run's start
   // WP9: legs 2 to 8 hold the light closer and push it back less (start 8, 7, 6, 5, 5, 5, 4.5, 4.5 and 1.00, 0.94,
   // 0.88, 0.83, 0.78, 0.73, 0.69, 0.65); leg 1 is unchanged, so a first leg stays gentle. Playtest P0-1: the caps of
-  // legs 2 to 8 (WP9: 5, 4, 3.4, 3.4, 3.4, 3, 3) are a buffer of 2 or 3 hits, and each leg's cap holds from its launch
+  // legs 2 to 8 (WP9: 5, 4, 3.4, 3.4, 3.4, 3, 3) are a buffer of 2 or 3 hits, and each leg's cap holds from its launch.
+  // The masses rose 0.08 (WP9: 0.70, 0.66, 0.63, 0.61, 0.58, 0.55, 0.51) once an item is judged once: a stumble no
+  // longer pays a second THREAD or graze for what it glides back over (the mid home rate fell from 33 to 23 %; with
+  // these 38 %, the novice's median run 3.1 min)
   GAP_CAP: [8, 3.5, 3, 3, 3, 3, 2.8, 2.8],
-  MASS_K: [1.00, 0.70, 0.66, 0.63, 0.61, 0.58, 0.55, 0.51],
+  MASS_K: [1.00, 0.78, 0.74, 0.71, 0.69, 0.66, 0.63, 0.59],
   BLEED: 1.0,                   // the gap falls by BLEED × (1 − tanh η) a second
   PB_GRAZE: 0.12, PB_HAIR: 0.30,
   PB_SKIM: 0.20,                // s/s

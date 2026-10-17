@@ -235,19 +235,33 @@ function finish(run, offer) {
   return offer;
 }
 
-// A fresh card for slot i of an open offer (after a banish): the slot's own rule, a new rarity roll. → the card or null.
+// A fresh card for slot i of an open offer (after a banish): the slot's own rule, a new rarity roll that keeps the
+// offer's promises (RISK's Rare or better, BOUNTY's raised starter, one legendary at most). → the card or null.
 export function refill(run, offer, i, rng, tune = TUNE) {
   const old = offer.cards[i];
   if (!old) return null;
-  const pool = poolOf(run, offer.break, tune);
+  const others = offer.cards.filter((c, k) => k !== i);
+  const legend = others.some((c) => CARD[c.id] && CARD[c.id].kind === 'legend');
+  const pool = poolOf(run, offer.break, tune).filter((x) => !legend || CARD[x].kind !== 'legend');
   const shown = new Set(offer.cards.map((c) => c.id));
   let id = null;
   if (old.why === 'family' && offer.family) id = draw(pool.filter((x) => CARD[x].fams.includes(offer.family)), shown, rng);
   if (!id) id = draw(pool, shown, rng);
   if (!id) return null;
   const card = CARD[id];
+  let floor = card.minR || 0;
+  if (card.pack === 'starter') {
+    // RISK: every starter Rare or better (pick 1 of 4), or one card of the URL's pick-n rule
+    if (offer.risk && (riskRule(tune).four || !others.some((c) => c.r >= 1))) floor = Math.max(floor, 1);
+    // BOUNTY: one starter at the bounty's rarity
+    const L = lastLeg(run);
+    if (L.bounty !== undefined && L.bounty !== null && L.bounty !== false) {
+      const min = Math.max(0, Math.min(2, Number(L.bounty) || 0));
+      if (!others.some((c) => CARD[c.id] && CARD[c.id].pack === 'starter' && c.r >= min)) floor = Math.max(floor, min);
+    }
+  }
   const out = card.kind === 'trophy' ? { r: 1, pity: run.pity || 0 } : rollRarity(offer.row, run.pity || 0, rng, tune,
-    card.minR || 0);
+    floor);
   const c = { id, r: rarityOf(id, out.r), slot: old.slot, why: old.why, replaces: replacesOf(id, run.build),
     completes: completes(id, run.build) };
   return { card: c, pity: out.pity };

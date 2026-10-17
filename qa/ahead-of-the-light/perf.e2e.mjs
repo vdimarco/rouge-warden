@@ -3,13 +3,17 @@
 // whole frame, the drawing and the simulation's steps), draw calls (20 or fewer) and points (22,000 or fewer), the
 // pixel ratio stepping down; and the glare on against off: the drawing and a step must stay within 10 % of each other.
 // SwiftShader draws and composites on the CPU, so its times count only against each other; the draw calls and points
-// are the real budget. Not checkable here: a real phone's frame rate (the user's playtest covers it).
+// are the real budget. And the game's own JS as loaded (uncompressed bytes of every .js under /ahead-of-the-light/;
+// three.js and the shared modules are extra). Not checkable here: a real phone's frame rate (the user's playtest).
 //   NODE_PATH=qa/browser/node_modules node qa/ahead-of-the-light/perf.e2e.mjs      (the site served on 8765)
-import { launch, open, reporter, R, wait, waitMode } from './e2e-lib.mjs';
+import { launch, open, reporter, R, wait, waitMode, BASE } from './e2e-lib.mjs';
 
 const rep = reporter('Ahead of the Light: perf');
 const { check } = rep;
 const SECONDS = Number(process.env.PERF_S || 14);
+// final.md 22.2 names 350 KB of game JS; the finished game loads about 870 KB, so until the lead logs a revised budget
+// this guards against growth (JS_BUDGET overrides it)
+const JS_BUDGET = Number(process.env.JS_BUDGET || 950000);
 
 // One leg stretch in real time: rAF intervals collected by the page, then perf(). → numbers
 async function measure(browser, query, bot, label, hideGlare = false) {
@@ -47,6 +51,27 @@ async function measure(browser, query, bot, label, hideGlare = false) {
 }
 
 const browser = await launch();
+{
+  // the game's JS as a fresh page loads it
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true,
+    userAgent: 'ahead-of-the-light-qa/1.0' });
+  const page = await ctx.newPage();
+  await page.route(/\/api\//, (r) => r.fulfill({ status: 204, body: '' }));
+  const sizes = new Map();
+  page.on('response', async (r) => {
+    const u = new URL(r.url());
+    if (!/^\/ahead-of-the-light\/.*\.js$/.test(u.pathname)) return;
+    try { sizes.set(u.pathname, (await r.body()).length); } catch (e) { /* gone */ }
+  });
+  await page.goto(BASE);
+  await page.waitForFunction(() => window.__race && window.__race.state().frames > 2, null, { timeout: 60000 });
+  await wait(300);
+  const total = [...sizes.values()].reduce((a, b) => a + b, 0);
+  const top = [...sizes.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5).map(([k, v]) => `${k.replace('/ahead-of-the-light/', '')} ${Math.round(v / 1024)} KB`);
+  check(`the game's own JS is ${Math.round(JS_BUDGET / 1000)} KB or less uncompressed (${sizes.size} files)`, total > 0 && total <= JS_BUDGET,
+    `${total} bytes; largest ${top.join(', ')}`);
+  await ctx.close();
+}
 const base = await measure(browser, '', 'mid', 'leg 1, mid bot');
 check('draw calls a frame are 20 or fewer (phone budget)', base.perf.drawCalls > 0 && base.perf.drawCalls <= 20, `${base.perf.drawCalls}`);
 check('points drawn are 22,000 or fewer (phone budget)', base.perf.points > 0 && base.perf.points <= 22000, `${base.perf.points}`);

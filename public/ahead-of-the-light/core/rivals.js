@@ -175,7 +175,7 @@ function rivalShip({ id, roster, bearing, eta, meters, knobs, legNo, T, extra = 
   s.half = R.half;
   s.turnMax = R.turn || T.TURN_MAX;
   s.ai = { id: roster, knobs, act: actOf(legNo), mode: 'cruise', nextTick: 0, target: null, nemesis: false,
-    intent: { target: bearing, turn: 0, action: null, burn: false }, goal: bearing,
+    settled: false, intent: { target: bearing, turn: 0, action: null, burn: false }, goal: bearing,
     lean: null, flickUntil: -1, cool: -1, block: null, blockCd: -1, scatterUntil: -1, warmUntil: -1, lastBurn: -9,
     whip: null, holdUntil: -1, slingBurn: -1, hard: null, breachUntil: -1, ...extra };
   return s;
@@ -257,6 +257,7 @@ export function createField({ run = null, legNo = 0, rng = null, tune = TUNE, le
           fuelCap: T.FUEL_CAP, gap: Math.max(0.5, gap) } });
       s.dist = secToBeats(grid.get(id) ?? 0, youEta, T);
       s.ai.nemesis = id === nemId;
+      s.ai.settled = Boolean(recs[id] && recs[id].settled);       // settled in an earlier leg: never your Nemesis again
       ships.push(s);
       return;
     }
@@ -576,6 +577,7 @@ function initLeg(race, S, T) {
   let k = 0;
   for (const s of race.ships) if (s.ai && DRIVE.has(s)) { s.ai.nextTick = (k++ % 6) * T.TICK / 6; }
   S.nemesis = race.ships.find((s) => s.ai && s.ai.nemesis) ? race.ships.find((s) => s.ai && s.ai.nemesis).id : null;
+  for (const s of race.ships) if (s.ai && s.ai.settled) S.settledIds.add(s.id);
 }
 
 const shipIdx = (race, id) => { for (let i = 0; i < race.ships.length; i++) if (race.ships[i].id === id) return i; return -1; };
@@ -687,10 +689,11 @@ function nemCount(race, S, T, id, key) {
 }
 
 // The first regular to SLAM you twice in a leg, take you down, be taken down by you, or be slammed by you three
-// times in a leg becomes your Nemesis: one at a time, never a boss, never one that was settled this run.
+// times in a leg becomes your Nemesis: one at a time, never a boss, never one that was settled this run (in this leg:
+// S.settledIds; in an earlier one: its ai.settled from the run's record).
 function makeNemesis(race, S, T, id) {
   const r = byId(race, id);
-  if (!r || r.kind !== 'regular' || isOut(r) || S.nemesis || S.settledIds.has(id)) return;
+  if (!r || r.kind !== 'regular' || isOut(r) || S.nemesis || S.settledIds.has(id) || (r.ai && r.ai.settled)) return;
   if (race.legNo === 0) return;
   S.nemesis = id;
   S.newNemesis = id;
@@ -705,7 +708,7 @@ function settle(race, S, id) {
   S.settledIds.add(id);
   S.nemesis = null;
   if (S.newNemesis === id) S.newNemesis = null;
-  if (r && r.ai) r.ai.nemesis = false;
+  if (r && r.ai) { r.ai.nemesis = false; r.ai.settled = true; }
   emit(race, E.settled, r || id, { id });
 }
 
@@ -1078,8 +1081,13 @@ function fast(race, r, idx, A, T, S, you, dt) {
     A.lean = null;
     return;
   }
-  // the whip: plan, hook, press, hold and lift (its approach still never turns into a ship fast)
-  if (whipFast(race, r, A, T, S)) { if (!r.whip) guard(race, r, A, T); return; }
+  // the whip: plan, hook, press, hold and lift (its approach still never turns into a ship fast). A grab ends a lean:
+  // after the release a ram starts again with a lean of its own, never a stale one's flick
+  if (whipFast(race, r, A, T, S)) {
+    if (!r.whip) guard(race, r, A, T);
+    else if (A.lean) { A.lean = null; A.cool = now + 0.8; }
+    return;
+  }
   // the lean, then the flick
   if (A.lean) {
     const v = byId(race, A.lean.victim);

@@ -5,7 +5,7 @@
 // Math.random; every random number comes from a named stream in race.rng.
 import { TUNE } from './tune.js';
 import { EVENTS, EVENT_TYPES, E, HOOKS, isEvent, emit, logEntry, runHooks } from './events.js';
-import { courseSpeed } from './ringmath.js';
+import { courseSpeed, wrap } from './ringmath.js';
 import { createShip, steerShip, passCheck, stepWell, stepContact, burn, stepHandle } from './handle.js';
 import { stepLight, yearsStep, land } from './survival.js';
 import { createField, rivalIntents } from './rivals.js';
@@ -42,9 +42,12 @@ export function rand(race, stream) {
 }
 
 // A race for one leg. run: the run (core/run.js), or null for a bare leg; leg: a Leg from buildLeg (built here if
-// missing); tune: the live TUNE (URL overrides applied). The build's patches and hooks come from applyBuild, and the
-// patched tuning rides along as race.tune because stepRace takes no tune.
-export function createRace({ run = null, leg = null, tune = TUNE } = {}) {
+// missing); tune: the live TUNE (URL overrides applied; startLeg adds your ship's numbers, REDSHIFT and EASY LIGHT);
+// base: the tuning the rivals fly with (the run's URL tune: none of your ship's, REDSHIFT's, EASY LIGHT's or your
+// cards' patches; tune by default). The build's patches and hooks come from applyBuild, and the patched tuning rides
+// along as race.tune (yours) and race.baseTune (every other ship's) because stepRace takes no tune.
+// teachWhip: no whip yet this run, so your first whip is the teaching one in any leg (5.3).
+export function createRace({ run = null, leg = null, tune = TUNE, base = tune } = {}) {
   const legNo = run ? run.leg : 0;
   const seed = run ? run.seed : 1;
   const L = leg || buildLeg({ runSeed: seed, type: ROUTE[legNo] || ROUTE[0], tune });
@@ -69,8 +72,11 @@ export function createRace({ run = null, leg = null, tune = TUNE } = {}) {
     events: [],
     log: [],
     tune: T,
+    baseTune: base || T,
+    teachWhip: Boolean(run && !(run.legs || []).some((l) => l && l.whips > 0)),
   };
-  const field = createField({ run, legNo, rng: (stream = 'ai') => rand(race, stream), tune: T, leg: L, you }) || [];
+  const field = createField({ run, legNo, rng: (stream = 'ai') => rand(race, stream), tune: race.baseTune, leg: L,
+    you }) || [];
   for (const s of field) race.ships.push(s);
   for (const it of L.items) if (it.kind === 'well') race.wells[it.id] = { holder: null };
   return race;
@@ -92,6 +98,7 @@ export function stepRace(race, intents, dt) {
   const ev = race.events;
   if (race.phase === 'done') return ev;
   const T = race.tune || TUNE;
+  const B = race.baseTune || T;           // the rivals' tuning: your ship's and cards' patches are yours alone
   const ships = race.ships;
   const real = finite(dt) ? clamp(dt, 0, 0.25) : 0;
   race.real += real;
@@ -112,10 +119,10 @@ export function stepRace(race, intents, dt) {
   // 1. steering, burns, and each ship's own upkeep (burn ramps, drag and the engine, the chain, gears)
   for (const s of ships) {
     if (out(s)) continue;
-    const intent = intentOf(s, intents);
-    steerShip(s, intent, rdt, T);
-    if (intent.burn) burn(race, s, T);
-    stepHandle(race, s, intent, rdt, sdt, T);
+    const intent = intentOf(s, intents), Ts = s.kind === 'you' ? T : B;
+    steerShip(s, intent, rdt, Ts);
+    if (intent.burn) burn(race, s, Ts);
+    stepHandle(race, s, intent, rdt, sdt, Ts);
   }
 
   // 2. the course advance: course speed × dt ÷ BEAT_R, with surges, the tow and the stumble's glide (ship.stumble
@@ -124,17 +131,18 @@ export function stepRace(race, intents, dt) {
     const s = ships[i];
     PREV[i] = s.dist;
     if (out(s) || !(sdt > 0)) continue;
-    const base = courseSpeed(s.eta, T, s.lightspeed);
+    const Ts = s.kind === 'you' ? T : B;
+    const base = courseSpeed(s.eta, Ts, s.lightspeed);
     let v = base;
     if (s.surge.until > race.t) v *= s.surge.x;
-    if (s.draft.lead) v *= s.draft.tow || T.TOW;
+    if (s.draft.lead) v *= s.draft.tow || Ts.TOW;
     let back = 0;
     if (s.stumble > 0) {
       const g = Math.min(s.stumble, sdt);
       s.stumble -= g;
-      back = (T.STUMBLE / Math.max(1e-6, T.STUMBLE_S)) * base * g;
+      back = (Ts.STUMBLE / Math.max(1e-6, Ts.STUMBLE_S)) * base * g;
     }
-    s.dist += (v * sdt - back) / T.BEAT_R;
+    s.dist += (v * sdt - back) / Ts.BEAT_R;
   }
   PREV.length = ships.length;
 
@@ -142,21 +150,25 @@ export function stepRace(race, intents, dt) {
   windowStep(race, T);
 
   // 4. per ship: items whose beat it crossed (with the share of the step where), lasting items beside it (rails,
-  // fog), then wells
+  // fog), then wells. An instant item is judged once: a stumble's glide back (or MAKO's back-off) takes the ship
+  // behind items it already passed, and coming forward again over them (ship.far, the furthest dist so far) is not a
+  // second crossing
   const items = race.leg.items;
   for (let i = 0; i < ships.length; i++) {
     const s = ships[i];
     if (out(s)) continue;
-    const p = PREV[i], d = s.dist;
+    const p = PREV[i], d = s.dist, Ts = s.kind === 'you' ? T : B;
+    const q = finite(s.far) && s.far > p ? s.far : p;
     for (let k = race.win.lo; k < race.win.hi; k++) {
       const it = items[k];
-      if (it.beat > p && it.beat <= d) passCheck(race, s, it, T, d > p ? (it.beat - p) / (d - p) : 1);
-      else if (it.end !== undefined && it.beat <= p && d < it.end) passCheck(race, s, it, T, null);
+      if (it.beat > q && it.beat <= d) passCheck(race, s, it, Ts, d > p ? (it.beat - p) / (d - p) : 1);
+      else if (it.end !== undefined && it.beat <= p && d < it.end) passCheck(race, s, it, Ts, null);
     }
-    stepWell(race, s, intentOf(s, intents), rdt, T);
+    if (!finite(s.far) || d > s.far) s.far = d;
+    stepWell(race, s, intentOf(s, intents), rdt, Ts);
   }
 
-  // 5. ship against ship
+  // 5. ship against ship (each ship's own numbers: race.baseTune for every ship but yours)
   stepContact(race, sdt, T);
 
   // 6. card hooks on this step's events, then the step hook
@@ -165,15 +177,16 @@ export function stepRace(race, intents, dt) {
   // 7. survival for every ship: the light, shield and hull, fuel, states, catches; and the clocks
   for (const s of ships) {
     if (out(s)) continue;
-    stepLight(race, s, ev, sdt, T);
-    s.years += yearsStep(s, sdt, T);
-    s.earth += T.YEARS_PER_S * sdt;
+    const Ts = s.kind === 'you' ? T : B;
+    stepLight(race, s, ev, sdt, Ts);
+    s.years += yearsStep(s, sdt, Ts);
+    s.earth += Ts.YEARS_PER_S * sdt;
   }
 
   // 8. rival AI (each rival keeps its own 50 ms tick in ship.ai.nextTick), then the bosses' rules
-  const wants = rivalIntents(race, sdt, T);
+  const wants = rivalIntents(race, sdt, B);
   if (wants) for (const s of ships) if (s.ai && wants[s.id]) s.ai.intent = wants[s.id];
-  for (const s of ships) if (s.kind === 'boss' && !out(s)) bossStep(race, s, sdt, T);
+  for (const s of ships) if (s.kind === 'boss' && !out(s)) bossStep(race, s, sdt, B);
 
   // 9. the director
   stepDirector(race, ev, T);
@@ -183,15 +196,16 @@ export function stepRace(race, intents, dt) {
   return ev;
 }
 
-// Part 6: the build's hooks for each event so far this step that is yours (its ship, or its `by`, is you: the build
-// is yours), in order, then the 'step' hook once. Events a hook emits do not run hooks themselves.
+// Part 6: the build's hooks for each event so far this step that is yours (its ship is you, or it is a takedown whose
+// `by` is you: the build is yours), in order, then the 'step' hook once. A rival's own `hit` from your takedown is
+// not yours. Events a hook emits do not run hooks themselves.
 export function cardHooks(race, dt) {
   const hooks = race.hooks;
   if (!hooks) return;
   const you = race.ships[0], T = race.tune || TUNE, ev = race.events, n = ev.length;
   for (let k = 0; k < n; k++) {
     const e = ev[k];
-    if (!hooks[e.type] || (e.ship !== you.id && e.by !== you.id)) continue;
+    if (!hooks[e.type] || !(e.ship === you.id || (e.type === E.takedown && e.by === you.id))) continue;
     runHooks(race, e.type, { race, ship: you, event: e, tune: T });
   }
   if (hooks.step) runHooks(race, 'step', { race, ship: you, event: null, tune: T, dt });
@@ -213,7 +227,8 @@ function windowStep(race, T) {
 
 // The leg's phases. launch → race once you pass the launch section; race → gate at L − GATE_CALL (THREAD OR DOCK);
 // every ship crossing the gate line gets its place; gate → runout at the gate line, or at Earth gate → land → done
-// at the door; runout → done at L, with the vista. Caught or wrecked ends the leg at once.
+// at the door (a bearing outside the DOOR's arc misses it and loops round: the landing needs DOOR_MISS_S more);
+// runout → done at L, with the vista. Caught or wrecked ends the leg at once.
 function legStep(race, T) {
   const ships = race.ships, you = ships[0], L = race.leg, beats = L.beats;
   const gateBeat = L.gate && finite(L.gate.beat) ? L.gate.beat : beats - 4;
@@ -235,8 +250,11 @@ function legStep(race, T) {
   if (race.phase === 'gate' && you.dist >= gateBeat) {
     if (L.type === 'earth') {
       race.phase = 'land';
-      emit(race, E.door, you, {});
-      const r = land(you, T);
+      const G = L.gate;
+      const miss = Boolean(G && G.door && finite(G.psi))
+        && Math.abs(wrap(you.bearing - G.psi)) > (finite(G.gap) ? G.gap : T.DOOR_DEG) / 2;
+      emit(race, E.door, you, { miss });
+      const r = land(you, T, miss ? T.DOOR_MISS_S : 0);
       emit(race, E.land, you, { ok: r.ok, margin: r.margin, cellsSpent: r.cellsSpent, hullSpent: r.hullSpent });
       race.phase = 'done';
       emit(race, E.legEnd, you, { why: r.ok ? 'home' : 'doorstep', place: place() });

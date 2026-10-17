@@ -438,6 +438,145 @@ test('a SLAM moves exactly one fuel cell', () => {
   assert.deepEqual([y.fuel, r.fuel], [2, 2]);
 });
 
+test('a takedown counts for the whole TAKEDOWN_S after a SLAM, and a card\'s SLAM (MASS SHADOW) counts the same', () => {
+  // knotIn: seconds after the flick that the knot passes PIKE (contact comes about 0.02 s after the flick)
+  for (const knotIn of [0.3, 0.36, 0.41]) {
+    const a = slam({ you: 0, at: 20, knotAt: 48, knotIn });
+    const c = a.ev.find((e) => e.type === 'contact' && e.kind === 'slam');
+    const td = a.ev.find((e) => e.type === 'takedown');
+    assert.ok(td && td.by === 'you', `a knot ${knotIn} s after the flick: ${a.ev.map((e) => e.type).join(',')}`);
+    assert.ok(td.t - c.t <= TUNE.TAKEDOWN_S + EPS);
+    assert.ok(a.ev.some((e) => e.type === 'hit' && e.ship === 'pike' && e.cause === 'takedown'));
+  }
+  const late = slam({ you: 0, at: 20, knotAt: 48, knotIn: 0.5 });
+  assert.ok(!late.ev.some((e) => e.type === 'takedown'), 'past TAKEDOWN_S it is PIKE\'s own hit');
+  // a shove a card sets through shoveShip is a SLAM by you for the same window
+  for (const knotIn of [0.2, 0.35]) {
+    const race = raceOf([{ kind: 'knot', beat: 2 + 1.866 * knotIn, psi: 36, half: 3.5 }], { tune: still });
+    for (const s of race.ships) s.dist = 2;
+    race.win.hi = race.leg.items.length;
+    const r = rival(race, { id: 'pike', bearing: 60 });
+    r.ai.intent.target = null;
+    race.ships[0].bearing = race.ships[0].target = -60;
+    H.shoveShip(race, r, -1, 25, 'you', still, true);
+    const ev = fly(race, 120, () => intentOf(-60));
+    const td = ev.find((e) => e.type === 'takedown');
+    assert.ok(td && td.by === 'you' && td.victim === 'pike', `card shove, knot at +${knotIn} s: ${types(ev, 'pike')}`);
+  }
+});
+
+test('a rival rams with the rivals\' SLAM_V, you with yours (BATTERING PROW\'s 0 is yours alone)', () => {
+  const prow = Object.freeze({ ...still, SLAM_V: 0 });
+  const meet = (rammerId) => {
+    const race = createRace({ leg: legOf([]), tune: prow, base: still });
+    race.legNo = 1;
+    const ram = rammerId === 'you' ? race.ships[0] : rival(race, { id: rammerId, bearing: 0 });
+    if (rammerId !== 'you') race.ships[0].bearing = race.ships[0].target = 180;    // you are out of it
+    const other = rival(race, { id: 'hound', bearing: 5 });
+    for (const s of race.ships) { s.soft = false; s.dist = 2; s.turnRate = 0; }
+    ram.turnRate = 150;                                    // closing at 150 °/s: under the base 200
+    race.events = [];
+    H.stepContact(race, STEP, race.tune);
+    return race.events.find((e) => e.type === 'contact');
+  };
+  assert.equal(meet('pike').kind, 'bump', 'PIKE on HOUND at 150 °/s is a bump');
+  assert.equal(meet('you').kind, 'slam', 'you on HOUND at 150 °/s is a SLAM with BATTERING PROW');
+});
+
+test('a knot crossed mid-whip pays a plain graze, not a hairline', () => {
+  const items = [{ kind: 'well', beat: 20, psi: 0, size: 'landmark', exits: [150] }];
+  const go = (extra) => {
+    const race = raceOf([...items, ...extra], { tune: still });
+    const you = race.ships[0], well = race.leg.items[0];
+    you.dist = 18;
+    let grabbed = false, at21 = null;
+    const ev = fly(race, 600, () => {
+      if (you.dist >= 21 && at21 === null) at21 = you.bearing;
+      if (grabbed || you.whip) { grabbed = true; return NO_INTENT; }
+      you.bearing = you.target = 20;
+      return intentOf(20, tTo(race, well) <= 0.01 ? 'down' : null);
+    });
+    return { ev, at21 };
+  };
+  const { at21 } = go([]);
+  assert.ok(Number.isFinite(at21), 'the sweep reaches beat 21');
+  const { ev } = go([{ kind: 'knot', beat: 21, psi: at21, half: 3 }]);
+  const k = ev.find((e) => (e.type === 'graze' || e.type === 'hair') && e.kind === 'knot');
+  assert.ok(k, `the knot: ${types(ev).join(',')}`);
+  assert.equal(k.type, 'graze');
+  assert.equal(k.gap, still.HAIR);
+});
+
+test('a gate the whip carries you across is judged at the release (SLINGSHOT HOME): a thread in its gap', () => {
+  // a landmark well 1 beat before a gate; a lift as the bearing passes liftAt
+  const go = (gatePsi, liftAt) => {
+    const race = raceOf([{ kind: 'well', beat: 20, psi: 0, size: 'landmark', exits: [105] },
+      { kind: 'gate', beat: 21, psi: gatePsi, gap: 26, halves: [12, 12], names: ['A', 'B'],
+        dock: { psi: gatePsi + 90, w: 20 } }], { tune: still });
+    const you = race.ships[0], well = race.leg.items[0];
+    you.dist = 18;
+    let grabbed = false;
+    const ev = fly(race, 600, () => {
+      if (you.whip) grabbed = true;
+      if (grabbed) return you.whip && you.bearing >= liftAt ? intentOf(null, 'up') : NO_INTENT;
+      you.bearing = you.target = 20;
+      return intentOf(20, tTo(race, well) <= 0.01 ? 'down' : null);
+    });
+    return { you, ev };
+  };
+  const a = go(105, 120);                                  // let go on the line: PERFECT, and through the gap
+  const rel = a.ev.find((e) => e.type === 'release');
+  assert.equal(rel.grade, 'PERFECT');
+  const th = a.ev.find((e) => e.type === 'thread' && !e.pair);
+  assert.ok(th && !th.miss, types(a.ev).join(','));
+  assert.equal(a.you.gate, 'thread');
+  assert.ok(a.ev.indexOf(th) > a.ev.indexOf(rel), 'judged at the release');
+  const b = go(95, 120);                                   // the release bearing sits on a giant: a fly past, no hit
+  assert.ok(b.ev.some((e) => e.type === 'past'), types(b.ev).join(','));
+  assert.ok(!b.ev.some((e) => e.type === 'hit'));
+  assert.equal(b.you.gate, 'past');
+});
+
+test('forceRelease (KICK OUT) is a PERFECT release that pays the race\'s RED_X in the red zone', () => {
+  const run = (redX) => {
+    const T = Object.freeze({ ...still, RED_X: redX });
+    const race = raceOf([{ kind: 'well', beat: 20, psi: 0, size: 'landmark', exits: [] }], { tune: T });
+    const you = race.ships[0], well = race.leg.items[0];
+    you.dist = 18;
+    let rel = null;
+    fly(race, 1200, () => {
+      if (rel) return NO_INTENT;
+      if (you.whip) {
+        if (you.whip.red) { race.events = []; rel = H.forceRelease(race, you, 'PERFECT', T); }
+        return NO_INTENT;
+      }
+      you.bearing = you.target = 20;
+      return intentOf(20, tTo(race, well) <= 0.01 ? 'down' : null);
+    });
+    return rel;
+  };
+  const a = run(1.3), b = run(2.0);
+  assert.ok(a && b && a.red && b.red && a.kick && a.grade === 'PERFECT', JSON.stringify(a));
+  assert.ok(Math.abs(b.gain / a.gain - 2.0 / 1.3) < 1e-9, `${a.gain} and ${b.gain}`);
+});
+
+test('the first whip of a run teaches in any leg until the run has whipped (race.teachWhip)', () => {
+  const grabTeach = (teachWhip) => {
+    const race = raceOf([{ kind: 'well', beat: 20, psi: 0, size: 'medium', exits: [150] }], { tune: still });
+    race.teachWhip = teachWhip;
+    const you = race.ships[0], well = race.leg.items[0];
+    you.dist = 18;
+    const ev = fly(race, 400, () => {
+      if (you.whip) return NO_INTENT;
+      you.bearing = you.target = 20;
+      return intentOf(20, tTo(race, well) <= 0.01 ? 'down' : null);
+    });
+    return ev.find((e) => e.type === 'grab');
+  };
+  assert.equal(grabTeach(true).teach, true, 'leg 2, no whip yet this run');
+  assert.equal(grabTeach(false).teach, false, 'leg 2 after a whip');
+});
+
 test('gearUp { best: true } fires once per gear per leg', () => {
   const race = raceOf([], { tune: still });
   const you = race.ships[0];
