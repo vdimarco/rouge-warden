@@ -227,7 +227,7 @@ export function setupTouchControls({ root, surface, stream }) {
     if (!enabled || event.button !== 0 || !target) return;
     if (root.inert || surface.inert) return;
     if (target === surface && (event.pointerType !== 'touch'
-      || event.target.closest('button, select, a, input, textarea, #menu, #intro, #overlay, #crew-picker'))) return;
+      || event.target.closest('button, select, a, input, textarea, #menu, #intro, #overlay, #crew-picker, #install-nudge'))) return;
     const stick = target === surface ? 'look' : target.dataset.stick;
     if (stick && [...pointers.values()].some(pointer => pointer.stick === stick)) return;
     const key = Number(target.dataset.key);
