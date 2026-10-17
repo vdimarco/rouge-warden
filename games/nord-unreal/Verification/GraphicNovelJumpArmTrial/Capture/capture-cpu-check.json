@@ -1,0 +1,26 @@
+{
+  "passed": true,
+  "fixture_function_AST_identical": true,
+  "only_fixture_literal_delta": [
+    [
+      "HighDetailCapture",
+      "/tmp/nord-private-capture-test/Capture"
+    ],
+    [
+      "Saved/Tests/GraphicNovel/HighDetailImport.json",
+      "Verification/GraphicNovelHighDetailPilot/NativeImport.json"
+    ]
+  ],
+  "negative_fixture_drift_rejections": 3,
+  "manager_function_AST_identical": true,
+  "original_12GB_guard_called": true,
+  "motion_flags_recording_and_flushed_CSV_guard_retained": true,
+  "all_11_quality_categories_strict": true,
+  "post_render_content_and_pin_drift_checked_after_restoration": true,
+  "restoration_order_models": 4,
+  "standalone_one_client_before_immersive_or_stills": true,
+  "engine_launched": false,
+  "service_actions": false,
+  "source_writes": false,
+  "factory_sha256": "c35672300abaeeb178f3348d46d836c1f53f8e55ee15a75e25ace83808ef56ea"
+}

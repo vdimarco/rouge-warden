@@ -1,0 +1,51 @@
+{
+  "passed": true,
+  "scope": "28 baseline stills and two native1x motion recordings assembled from exact-input individual passes; earlier full window failed and is retained. No visual/fluidity acceptance.",
+  "content_files": 6850,
+  "original_private_clip_sha256": "1e62a9debd7aec41beac0466ac6a5114741ce79de6bce102f6cdbe5d3cd52f26",
+  "before_window": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T144012Z",
+  "partial_standard_window": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T142404Z",
+  "jobs": [
+    {
+      "name": "Standard1280",
+      "report": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T142404Z/PrivateCapture/Capture/Standard/PlayerQuality1280.json",
+      "sha256": "3568ebacd59e99a542862e27a882308ff7cc2fab9f019f98b6ab643d998a47bd",
+      "video": null
+    },
+    {
+      "name": "Standard1920",
+      "report": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T142404Z/PrivateCapture/Capture/Standard/PlayerQuality1920.json",
+      "sha256": "83ff90a3f750e2c98b213ae46ca7daddcf5394f8d875da3e0c90638f3a2afb2c",
+      "video": null
+    },
+    {
+      "name": "Comic1280",
+      "report": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T144012Z/PrivateCapture/Capture/PlayerQuality1280.json",
+      "sha256": "79883820aebb1ac4bb5803c30165af4f6c7d34fb6bc96325398944fbb78caacf",
+      "video": null
+    },
+    {
+      "name": "Comic1920",
+      "report": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T144012Z/PrivateCapture/Capture/PlayerQuality1920.json",
+      "sha256": "8d0558e2c8a58d6df9108f9446580607c4629cd10d5a3c31ecaf1bd738ff9cb9",
+      "video": null
+    },
+    {
+      "name": "Motion1920Standard",
+      "report": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T144012Z/PrivateCapture/Capture/Motion/Standard/PlayerMotion1920.json",
+      "sha256": "7ec3be8623688e4e7d46d91a67c49043a56bcf2c691178ca87a594a1740c10c3",
+      "video": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T144012Z/Motion1920Standard/raw.mp4"
+    },
+    {
+      "name": "Motion1920Comic",
+      "report": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T144012Z/PrivateCapture/Capture/Motion/Comic/PlayerMotion1920.json",
+      "sha256": "b37a0de302ffbd89bfd3a24bb63e447cb1cbbbf5cffcaae57f00f7f66a7295c4",
+      "video": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T144012Z/Motion1920Comic/raw.mp4"
+    }
+  ],
+  "stills": 28,
+  "motion_recordings": 2,
+  "quality": "11sg3/r.ScreenPercentage100",
+  "all_native_exit_codes": 0,
+  "both_windows_restored": true
+}

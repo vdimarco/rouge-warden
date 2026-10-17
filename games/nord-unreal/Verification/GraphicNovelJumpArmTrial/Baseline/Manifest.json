@@ -1,0 +1,101 @@
+{
+  "scope": "Baseline curation only: aggregate, six sanitized pass-job summaries, source checks, two independent review receipts and8critical original Airborne/Landing PNGs.",
+  "created_utc": "2026-10-17T14:54:44.511289+00:00",
+  "files": [
+    {
+      "file": "Aggregate.json",
+      "bytes": 3201,
+      "sha256": "b9088b2c5524cb686bab6222dd3b6d350cd3e0b953f21a5ba06d4bddb234e154",
+      "source": "Saved/Tests/GraphicNovel/PrivateJumpArmPlan-20261017/BaselineAggregate.json",
+      "source_sha256": "b9088b2c5524cb686bab6222dd3b6d350cd3e0b953f21a5ba06d4bddb234e154"
+    },
+    {
+      "file": "IndependentStandardReview.json",
+      "bytes": 15971,
+      "sha256": "ec86bdcfd6bfe9bb37ac1ccf7aacffb38043ab14da7cf9e393ba6534ddb8f281",
+      "source": "Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T142404Z/independent-baseline-review.json",
+      "source_sha256": "ec86bdcfd6bfe9bb37ac1ccf7aacffb38043ab14da7cf9e393ba6534ddb8f281"
+    },
+    {
+      "file": "IndependentComicReview.json",
+      "bytes": 10274,
+      "sha256": "968eeb6303c021286c4fbf30d96f5a7242d840029b0ea5d814131e51c9f66f04",
+      "source": "Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T144012Z/independent-comic-baseline-review.json",
+      "source_sha256": "968eeb6303c021286c4fbf30d96f5a7242d840029b0ea5d814131e51c9f66f04"
+    },
+    {
+      "file": "PassJobs.json",
+      "bytes": 23301,
+      "sha256": "aace3b91c7ac5ed2125297eb109827dc4c72d48ef4129e1390ba2696e142de8c",
+      "generated": "sanitized whitelisted summary"
+    },
+    {
+      "file": "SourceChecks.json",
+      "bytes": 6669,
+      "sha256": "36a66964b70121ac26cb46f40dfdf6aa38fdfb837e788c08226c26e15bb2dad9",
+      "generated": "sanitized whitelisted summary"
+    },
+    {
+      "file": "Images/Standard/1280/Resident9_Airborne.png",
+      "bytes": 1406545,
+      "sha256": "6c229b00be5792b60d4cb6c7971191311659cca89ad9e4570bce3cb9ba262b97",
+      "source": "Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T142404Z/PrivateCapture/Capture/Standard/1280/Resident9_Airborne.png",
+      "source_sha256": "6c229b00be5792b60d4cb6c7971191311659cca89ad9e4570bce3cb9ba262b97"
+    },
+    {
+      "file": "Images/Standard/1280/Resident9_Landing.png",
+      "bytes": 1422262,
+      "sha256": "389ac85130ad75952b7ffebe189584f3318a0c038989bfd69756e2184cb9011f",
+      "source": "Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T142404Z/PrivateCapture/Capture/Standard/1280/Resident9_Landing.png",
+      "source_sha256": "389ac85130ad75952b7ffebe189584f3318a0c038989bfd69756e2184cb9011f"
+    },
+    {
+      "file": "Images/Standard/1920/Resident9_Airborne.png",
+      "bytes": 3069772,
+      "sha256": "0a2a3e66b947d876267385ed18e0f29da8f21df2de3c9c80af4aea84a95c7ca1",
+      "source": "Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T142404Z/PrivateCapture/Capture/Standard/1920/Resident9_Airborne.png",
+      "source_sha256": "0a2a3e66b947d876267385ed18e0f29da8f21df2de3c9c80af4aea84a95c7ca1"
+    },
+    {
+      "file": "Images/Standard/1920/Resident9_Landing.png",
+      "bytes": 3096441,
+      "sha256": "9c2688e6bf3544686d872364098a42c84c50bf2af96e405a685df225ddb28842",
+      "source": "Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T142404Z/PrivateCapture/Capture/Standard/1920/Resident9_Landing.png",
+      "source_sha256": "9c2688e6bf3544686d872364098a42c84c50bf2af96e405a685df225ddb28842"
+    },
+    {
+      "file": "Images/Comic/1280/Resident9_Airborne.png",
+      "bytes": 1456784,
+      "sha256": "ca246910b8287c0b5f8e336e81effb5a8abf513ec222d5a54c63df3ba435c302",
+      "source": "Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T144012Z/PrivateCapture/Capture/1280/Resident9_Airborne.png",
+      "source_sha256": "ca246910b8287c0b5f8e336e81effb5a8abf513ec222d5a54c63df3ba435c302"
+    },
+    {
+      "file": "Images/Comic/1280/Resident9_Landing.png",
+      "bytes": 1468623,
+      "sha256": "ca7e7edad49da0d14947b51565e4f51ff4233f29c0b4d3f6a8757ffc97f2352d",
+      "source": "Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T144012Z/PrivateCapture/Capture/1280/Resident9_Landing.png",
+      "source_sha256": "ca7e7edad49da0d14947b51565e4f51ff4233f29c0b4d3f6a8757ffc97f2352d"
+    },
+    {
+      "file": "Images/Comic/1920/Resident9_Airborne.png",
+      "bytes": 3185829,
+      "sha256": "44939aeef83e7b811d5befa13896fef280d7c27e467ec97cb629013cf40945eb",
+      "source": "Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T144012Z/PrivateCapture/Capture/1920/Resident9_Airborne.png",
+      "source_sha256": "44939aeef83e7b811d5befa13896fef280d7c27e467ec97cb629013cf40945eb"
+    },
+    {
+      "file": "Images/Comic/1920/Resident9_Landing.png",
+      "bytes": 3224447,
+      "sha256": "0d6a70d8d1d268e4ee85544a901127161604bd67ae5cd6699493424e36483254",
+      "source": "Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T144012Z/PrivateCapture/Capture/1920/Resident9_Landing.png",
+      "source_sha256": "0d6a70d8d1d268e4ee85544a901127161604bd67ae5cd6699493424e36483254"
+    }
+  ],
+  "curated_file_count_excluding_this_manifest": 13,
+  "curated_image_count": 8,
+  "review_scope": "The two receipts document12selected stills (8Standard including face views+4Comic). Only the8critical Airborne/Landing images are copied here; no claim that all28still images or continuous recordings were visually reviewed.",
+  "excluded": "No baseline environment, INI contents, service identities, save files, raw CSV metadata or raw recordings copied. Raw source evidence remains versioned in Saved.",
+  "graphics_accepted": false,
+  "adopted": false
+}

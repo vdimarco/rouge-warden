@@ -1,0 +1,73 @@
+{
+  "scope": "Owns only Trial top-level summaries/review and8original trial stills; Temporal has a separate manifest.",
+  "files": [
+    {
+      "file": "PassJobs.json",
+      "sha256": "7e43143b80abce940e873cf6e713eaeb69c4f2d4ffaa78676f437b8e52e568fd",
+      "bytes": 23242
+    },
+    {
+      "file": "Images/Standard/1280/Resident9_Airborne.png",
+      "sha256": "73648a944569df7333a93d7cd59b6229f8a6d1b37118451d280ba313333d041d",
+      "bytes": 1404474,
+      "source": "Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T145346Z/PrivateCapture/Capture/Standard/1280/Resident9_Airborne.png"
+    },
+    {
+      "file": "Images/Standard/1280/Resident9_Landing.png",
+      "sha256": "710d2835fde151f3989de20c58df0ab401e459362581085d918d68eb905e63e5",
+      "bytes": 1433469,
+      "source": "Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T145346Z/PrivateCapture/Capture/Standard/1280/Resident9_Landing.png"
+    },
+    {
+      "file": "Images/Standard/1920/Resident9_Airborne.png",
+      "sha256": "d975eb7853050401242be855576e6c61709a8e2cd4b93dd9d0f0d0d06c3fd339",
+      "bytes": 3067728,
+      "source": "Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T145346Z/PrivateCapture/Capture/Standard/1920/Resident9_Airborne.png"
+    },
+    {
+      "file": "Images/Standard/1920/Resident9_Landing.png",
+      "sha256": "02640df449ec7c1608357325881ebeae9658e9efa0c0cf7d61b50bbbc59b6620",
+      "bytes": 3126537,
+      "source": "Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T145346Z/PrivateCapture/Capture/Standard/1920/Resident9_Landing.png"
+    },
+    {
+      "file": "Images/Comic/1280/Resident9_Airborne.png",
+      "sha256": "abb4c5fa24126be8cb1440aa63684ac9bd81d9e5e2928f6076f49ae797b6760b",
+      "bytes": 1457428,
+      "source": "Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T145346Z/PrivateCapture/Capture/1280/Resident9_Airborne.png"
+    },
+    {
+      "file": "Images/Comic/1280/Resident9_Landing.png",
+      "sha256": "c78afb9c675991d9c755a3f6a74356bcd0757ef582827d38f08b3fb84d35265d",
+      "bytes": 1468631,
+      "source": "Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T145346Z/PrivateCapture/Capture/1280/Resident9_Landing.png"
+    },
+    {
+      "file": "Images/Comic/1920/Resident9_Airborne.png",
+      "sha256": "070e4ffaf13614223e4886dde59658438858d3108a963a5fdda6f3dd85e5fb76",
+      "bytes": 3184782,
+      "source": "Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T145346Z/PrivateCapture/Capture/1920/Resident9_Airborne.png"
+    },
+    {
+      "file": "Images/Comic/1920/Resident9_Landing.png",
+      "sha256": "c201256c59f7ea11819a0e91496c4e78724e4228f2b4c5b3690bd1086669c5f7",
+      "bytes": 3238088,
+      "source": "Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T145346Z/PrivateCapture/Capture/1920/Resident9_Landing.png"
+    },
+    {
+      "file": "SourceCrossPins.json",
+      "sha256": "ca8431d89f8c79186856d0cdbf13a9db5bc481f3f5f399f7df0214cd1aaa02d1",
+      "bytes": 1726
+    },
+    {
+      "file": "Review.json",
+      "sha256": "cc3a923da7dcacf191452a3b0f544cd1328c83bfb49d6ef7db83d87cd2e9927c",
+      "bytes": 10608
+    }
+  ],
+  "owned_file_count_excluding_manifest": 11,
+  "images": 8,
+  "diagnostic_outcome": "reject_adoption",
+  "graphics_accepted": false,
+  "adopted": false
+}

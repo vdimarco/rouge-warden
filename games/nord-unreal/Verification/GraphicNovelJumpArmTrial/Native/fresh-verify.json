@@ -1,0 +1,54 @@
+{
+  "passed": true,
+  "trial_receipt_sha256": "9c804f72c907cd15fd8cff304ec29821fbf4992b32b627e20cee460939d96405",
+  "changed_content": [
+    "Content/ParkComic/CrewGraphicNovelHighDetail/Resident9/A_Jump.uasset"
+  ],
+  "metadata": {
+    "asset": "/Game/ParkComic/CrewGraphicNovelHighDetail/Resident9/A_Jump.A_Jump",
+    "class": "/Script/Engine.AnimSequence",
+    "skeleton": "/Game/ParkComic/CrewGraphicNovelHighDetail/Resident9/SK_Body_Skeleton.SK_Body_Skeleton",
+    "seconds": 1.2000000476837158,
+    "frames": 36,
+    "keys": 37,
+    "sample_rate": [
+      30,
+      1
+    ],
+    "flags": {
+      "enable_root_motion": false,
+      "force_root_lock": false,
+      "root_motion_root_lock": "<RootMotionRootLock.REF_POSE: 0>",
+      "use_normalized_root_motion_scale": true,
+      "rate_scale": 1.0,
+      "interpolation": "<AnimInterpolationType.LINEAR: 0>"
+    },
+    "source": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/GraphicNovel/PrivateJumpArmPlan-20261017/CPUAuthoring-20261017T142247Z/trial/CurlyMetalhead/jump.fbx",
+    "source_sha256": "e35071099841d099eea5dda9de96a31b10cd07c4dfe73543bfee42f395c4833e"
+  },
+  "native_pose_gate": {
+    "passed": true,
+    "sample_frames": 37,
+    "bones": 25,
+    "tolerances": {
+      "translation_cm": 0.001,
+      "scale": 1e-05,
+      "rotation_radians": 0.0001
+    },
+    "deformation_bones": 24,
+    "static_import_root": "Armature",
+    "unchanged_field_maxima": {
+      "translation_cm": 0.0,
+      "scale": 0.0,
+      "rotation_radians": 8.82678836756059e-07
+    },
+    "allowed_arm_rotation_max_radians": {
+      "LeftArm": 0.6980815681578443,
+      "RightArm": 0.6980814880491368
+    }
+  },
+  "cpu_gate_sha256": "15bf5c7fb878fcd2b792482ff24535cd684d718bb79d09ce4e35cc50d8333c8f",
+  "graphics_accepted": false,
+  "adopted": false,
+  "restore_required": true
+}

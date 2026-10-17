@@ -1,0 +1,50 @@
+{
+  "NativeScopeAudit.json": {
+    "bytes": 6629,
+    "sha256": "32c9b390081c218c8083ae8134f02d59552bd3e2cecc4cafed588ca68407798b"
+  },
+  "OpenSpecStructure.json": {
+    "bytes": 5999,
+    "sha256": "7f9fc6926512fa3ac031e62d694b0f81d79eedc8f028bff51d49ec10bd4cef8a"
+  },
+  "RecordedSemanticReplay.json": {
+    "bytes": 1232,
+    "sha256": "7090c2fc4bdc07441b135df4b902687d0d9fa5992080aca0e47542cf62bd6fd3"
+  },
+  "Results.json": {
+    "bytes": 8111,
+    "sha256": "2f61304cebbd7b31c29e4340f95e46252d53028e9d7329d45d694ae743f57c9e"
+  },
+  "RunnerExecution.json": {
+    "bytes": 377,
+    "sha256": "ea4b6b19312d7dc11b22abc9810838e1841d7b5c7094633234244f42ce9c5104"
+  },
+  "native-negative.stderr.log": {
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "native-negative.stdout.log": {
+    "bytes": 170,
+    "sha256": "a7b45aa979f2eb1bc2d55fd651c64a7c560d01ff0f29c70340e4fcbc3a49b0ea"
+  },
+  "prepare-check.stderr.log": {
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "prepare-check.stdout.log": {
+    "bytes": 1227,
+    "sha256": "7a7dfeadf2a7f92007a329c3e91450e3802046e4fc85d12e2e453a26c7b1d7d8"
+  },
+  "run_checks.py": {
+    "bytes": 13791,
+    "sha256": "f56e561e624baf18dcd9bbb8ca047a5da9dc89444a1d503671822c7065d2b5b5"
+  },
+  "runner.stderr.log": {
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "runner.stdout.log": {
+    "bytes": 144,
+    "sha256": "fc1d494f255b1cabcb4fb0e981aa58eaf1feb98cb537979bcdeb7209fe72746a"
+  }
+}

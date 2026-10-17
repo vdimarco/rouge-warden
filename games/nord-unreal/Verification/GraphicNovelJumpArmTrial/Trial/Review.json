@@ -1,0 +1,209 @@
+{
+  "scope": "Independent eight critical before/after still pairs, two modes/two sizes; selected temporal evidence is separate.",
+  "created_utc": "2026-10-17T15:04:07.454230+00:00",
+  "reviewed_trial_stills": 8,
+  "reviewed_pairs": [
+    {
+      "mode": "Standard",
+      "resolution": [
+        1280,
+        720
+      ],
+      "pose": "Airborne",
+      "baseline_file": "Verification/GraphicNovelJumpArmTrial/Baseline/Images/Standard/1280/Resident9_Airborne.png",
+      "baseline_sha256": "6c229b00be5792b60d4cb6c7971191311659cca89ad9e4570bce3cb9ba262b97",
+      "trial_file": "Verification/GraphicNovelJumpArmTrial/Trial/Images/Standard/1280/Resident9_Airborne.png",
+      "trial_sha256": "73648a944569df7333a93d7cd59b6229f8a6d1b37118451d280ba313333d041d",
+      "baseline_clip_time": 0.43253,
+      "trial_clip_time": 0.43254,
+      "clip_time_delta_seconds": 9.99999999995449e-06,
+      "camera_max_position_delta_cm": 0.002840000000105647,
+      "camera_max_rotation_delta_degrees": 0.0,
+      "camera_fov_degrees": 60.0,
+      "actual_images_inspected": true,
+      "finding": "Raised shoulder lobes visibly reduced; sleeve roots remain angular/compressed. No obvious new hand/head or arm/torso intersection from this front view; prop lowers with parent arm."
+    },
+    {
+      "mode": "Standard",
+      "resolution": [
+        1280,
+        720
+      ],
+      "pose": "Landing",
+      "baseline_file": "Verification/GraphicNovelJumpArmTrial/Baseline/Images/Standard/1280/Resident9_Landing.png",
+      "baseline_sha256": "389ac85130ad75952b7ffebe189584f3318a0c038989bfd69756e2184cb9011f",
+      "trial_file": "Verification/GraphicNovelJumpArmTrial/Trial/Images/Standard/1280/Resident9_Landing.png",
+      "trial_sha256": "710d2835fde151f3989de20c58df0ab401e459362581085d918d68eb905e63e5",
+      "baseline_clip_time": 0.93417,
+      "trial_clip_time": 0.93417,
+      "clip_time_delta_seconds": 0.0,
+      "camera_max_position_delta_cm": 0.002840000000105647,
+      "camera_max_rotation_delta_degrees": 0.0,
+      "camera_fov_degrees": 60.0,
+      "actual_images_inspected": true,
+      "finding": "Landing silhouette appears essentially unchanged; hands remain separated from torso; unchanged arm-key control region."
+    },
+    {
+      "mode": "Standard",
+      "resolution": [
+        1920,
+        1080
+      ],
+      "pose": "Airborne",
+      "baseline_file": "Verification/GraphicNovelJumpArmTrial/Baseline/Images/Standard/1920/Resident9_Airborne.png",
+      "baseline_sha256": "0a2a3e66b947d876267385ed18e0f29da8f21df2de3c9c80af4aea84a95c7ca1",
+      "trial_file": "Verification/GraphicNovelJumpArmTrial/Trial/Images/Standard/1920/Resident9_Airborne.png",
+      "trial_sha256": "d975eb7853050401242be855576e6c61709a8e2cd4b93dd9d0f0d0d06c3fd339",
+      "baseline_clip_time": 0.43254,
+      "trial_clip_time": 0.43254,
+      "clip_time_delta_seconds": 0.0,
+      "camera_max_position_delta_cm": 0.001269999999749416,
+      "camera_max_rotation_delta_degrees": 0.0,
+      "camera_fov_degrees": 60.0,
+      "actual_images_inspected": true,
+      "finding": "Raised shoulder lobes visibly reduced; sleeve roots remain angular/compressed. No obvious new hand/head or arm/torso intersection from this front view; prop lowers with parent arm."
+    },
+    {
+      "mode": "Standard",
+      "resolution": [
+        1920,
+        1080
+      ],
+      "pose": "Landing",
+      "baseline_file": "Verification/GraphicNovelJumpArmTrial/Baseline/Images/Standard/1920/Resident9_Landing.png",
+      "baseline_sha256": "9c2688e6bf3544686d872364098a42c84c50bf2af96e405a685df225ddb28842",
+      "trial_file": "Verification/GraphicNovelJumpArmTrial/Trial/Images/Standard/1920/Resident9_Landing.png",
+      "trial_sha256": "02640df449ec7c1608357325881ebeae9658e9efa0c0cf7d61b50bbbc59b6620",
+      "baseline_clip_time": 0.93417,
+      "trial_clip_time": 0.93417,
+      "clip_time_delta_seconds": 0.0,
+      "camera_max_position_delta_cm": 0.001269999999749416,
+      "camera_max_rotation_delta_degrees": 0.0,
+      "camera_fov_degrees": 60.0,
+      "actual_images_inspected": true,
+      "finding": "Landing silhouette appears essentially unchanged; hands remain separated from torso; unchanged arm-key control region."
+    },
+    {
+      "mode": "Comic",
+      "resolution": [
+        1280,
+        720
+      ],
+      "pose": "Airborne",
+      "baseline_file": "Verification/GraphicNovelJumpArmTrial/Baseline/Images/Comic/1280/Resident9_Airborne.png",
+      "baseline_sha256": "ca246910b8287c0b5f8e336e81effb5a8abf513ec222d5a54c63df3ba435c302",
+      "trial_file": "Verification/GraphicNovelJumpArmTrial/Trial/Images/Comic/1280/Resident9_Airborne.png",
+      "trial_sha256": "abb4c5fa24126be8cb1440aa63684ac9bd81d9e5e2928f6076f49ae797b6760b",
+      "baseline_clip_time": 0.43254,
+      "trial_clip_time": 0.43253,
+      "clip_time_delta_seconds": 9.99999999995449e-06,
+      "camera_max_position_delta_cm": 0.0034800000003087916,
+      "camera_max_rotation_delta_degrees": 0.0,
+      "camera_fov_degrees": 60.0,
+      "actual_images_inspected": true,
+      "finding": "Raised shoulder lobes visibly reduced; sleeve roots remain angular/compressed. No obvious new hand/head or arm/torso intersection from this front view; prop lowers with parent arm."
+    },
+    {
+      "mode": "Comic",
+      "resolution": [
+        1280,
+        720
+      ],
+      "pose": "Landing",
+      "baseline_file": "Verification/GraphicNovelJumpArmTrial/Baseline/Images/Comic/1280/Resident9_Landing.png",
+      "baseline_sha256": "ca7e7edad49da0d14947b51565e4f51ff4233f29c0b4d3f6a8757ffc97f2352d",
+      "trial_file": "Verification/GraphicNovelJumpArmTrial/Trial/Images/Comic/1280/Resident9_Landing.png",
+      "trial_sha256": "c78afb9c675991d9c755a3f6a74356bcd0757ef582827d38f08b3fb84d35265d",
+      "baseline_clip_time": 0.93417,
+      "trial_clip_time": 0.93417,
+      "clip_time_delta_seconds": 0.0,
+      "camera_max_position_delta_cm": 0.0034800000003087916,
+      "camera_max_rotation_delta_degrees": 0.0,
+      "camera_fov_degrees": 60.0,
+      "actual_images_inspected": true,
+      "finding": "Landing silhouette appears essentially unchanged; hands remain separated from torso; unchanged arm-key control region."
+    },
+    {
+      "mode": "Comic",
+      "resolution": [
+        1920,
+        1080
+      ],
+      "pose": "Airborne",
+      "baseline_file": "Verification/GraphicNovelJumpArmTrial/Baseline/Images/Comic/1920/Resident9_Airborne.png",
+      "baseline_sha256": "44939aeef83e7b811d5befa13896fef280d7c27e467ec97cb629013cf40945eb",
+      "trial_file": "Verification/GraphicNovelJumpArmTrial/Trial/Images/Comic/1920/Resident9_Airborne.png",
+      "trial_sha256": "070e4ffaf13614223e4886dde59658438858d3108a963a5fdda6f3dd85e5fb76",
+      "baseline_clip_time": 0.43254,
+      "trial_clip_time": 0.43254,
+      "clip_time_delta_seconds": 0.0,
+      "camera_max_position_delta_cm": 0.0005199999995966209,
+      "camera_max_rotation_delta_degrees": 0.0,
+      "camera_fov_degrees": 60.0,
+      "actual_images_inspected": true,
+      "finding": "Raised shoulder lobes visibly reduced; sleeve roots remain angular/compressed. No obvious new hand/head or arm/torso intersection from this front view; prop lowers with parent arm."
+    },
+    {
+      "mode": "Comic",
+      "resolution": [
+        1920,
+        1080
+      ],
+      "pose": "Landing",
+      "baseline_file": "Verification/GraphicNovelJumpArmTrial/Baseline/Images/Comic/1920/Resident9_Landing.png",
+      "baseline_sha256": "0d6a70d8d1d268e4ee85544a901127161604bd67ae5cd6699493424e36483254",
+      "trial_file": "Verification/GraphicNovelJumpArmTrial/Trial/Images/Comic/1920/Resident9_Landing.png",
+      "trial_sha256": "c201256c59f7ea11819a0e91496c4e78724e4228f2b4c5b3690bd1086669c5f7",
+      "baseline_clip_time": 0.93417,
+      "trial_clip_time": 0.93417,
+      "clip_time_delta_seconds": 0.0,
+      "camera_max_position_delta_cm": 0.0005199999995966209,
+      "camera_max_rotation_delta_degrees": 0.0,
+      "camera_fov_degrees": 60.0,
+      "actual_images_inspected": true,
+      "finding": "Landing silhouette appears essentially unchanged; hands remain separated from torso; unchanged arm-key control region."
+    }
+  ],
+  "bounded_still_pose_improvement_supported": true,
+  "conclusion": "All four Airborne still cells reduce the conspicuous raised shoulder lobes. Angular sleeve-cap compression remains; Landing is consistent with its unchanged control region. The acting/prop tradeoff prevents adoption.",
+  "diagnostic_outcome": "reject_adoption",
+  "original_clip_restored": true,
+  "restoration_receipts": [
+    {
+      "source": "Saved/Tests/GraphicNovel/PrivateJumpArmPlan-20261017/Restore-20261017T150010Z/result.json",
+      "sha256": "0530d507a0f7df08cce19609b7889e63b5c9e4a9135986f7d7a2e31d7cc4e8d9",
+      "passed": true,
+      "complete_original_content_restored": true
+    }
+  ],
+  "adoption_blocker": "Root and independent selected temporal review find the lowered arm brings the plunger head across the side-view mouth/face projection around nominal video5.0\u20135.6s; this is a visible occlusion tradeoff, not proof of3Dpenetration.",
+  "remaining_defects": [
+    "Sleeve roots remain pinched/angular; anatomical weighting and cloth topology are not repaired.",
+    "Collar defects, static fingers/face, coarse hair and ground-shadow fragments remain outside this jump-only change.",
+    "Front stills do not clear side/back surfaces; motion sampling covers only a bounded interval."
+  ],
+  "temporal_review": "Completed actual review of four contact sheets in Temporal/Review.md:52selected source-video frames,13per video, nominal4.4\u20136.8s at5samples/s. No continuous playback, fluidity or native-FPS acceptance; video/native phase alignment remains approximate.",
+  "graphics_accepted": false,
+  "adopted": false,
+  "default_promotion": false,
+  "temporal_selection_sha256": "1bc0e583878d5eeccd58a2dd50df0c40f0f0dda37a0199479c00653bb17efd13",
+  "temporal_review_sha256": "db6ca4fa0aab91693ad816536131390b861f0e724ef6c7b4d715845ffdd294d9",
+  "reviewed_contact_sheets": [
+    {
+      "file": "Temporal/BaselineStandard.png",
+      "sha256": "4c244f3137952aa231b4c35ca9d53c038d590a1b0289c91dc351f89ebc1101cc"
+    },
+    {
+      "file": "Temporal/TrialStandard.png",
+      "sha256": "3c305024b2e4675e05a4dbd30574d026c9791a58efaf7d892d7f37bfb7a2cfcf"
+    },
+    {
+      "file": "Temporal/BaselineComic.png",
+      "sha256": "2197e4c38a978d60380aec8e1a9d45f0f3e5f4c5d3f872b2539911cb990b0826"
+    },
+    {
+      "file": "Temporal/TrialComic.png",
+      "sha256": "258ee39a03e5518ec705d9ca2493d207310b72278254849daf2f2d22efe05d5b"
+    }
+  ]
+}

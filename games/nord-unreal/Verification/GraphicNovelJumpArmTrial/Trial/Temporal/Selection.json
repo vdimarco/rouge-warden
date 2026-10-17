@@ -1,0 +1,980 @@
+{
+  "scope": "CPU software-decode sampled temporal review; no continuous-playback/native-FPS acceptance",
+  "created_utc": "2026-10-17T15:01:16.802620+00:00",
+  "nominal_seconds": [
+    4.4,
+    4.6,
+    4.8,
+    5.0,
+    5.2,
+    5.4,
+    5.6,
+    5.8,
+    6.0,
+    6.2,
+    6.4,
+    6.6,
+    6.8
+  ],
+  "software_decode": {
+    "hardware_acceleration": "none",
+    "decoder_threads": 2,
+    "filter_threads": 1,
+    "PNG_encoder_threads": 1
+  },
+  "frame_index_definition": "Zero-based decoded presentation-frame ordinal from ffprobe; ffmpeg select uses matching n. PTS is best_effort_timestamp_time in the source video stream.",
+  "native_clock_limit": "Native phase offsets are relative to first idle event. No verified mapping from native wall_seconds to video PTS; equal nominal video timestamps are approximate phase matching.",
+  "ignored_work_directory": "Saved/Tests/GraphicNovel/JumpArmTemporal-20261017T150042221066Z",
+  "videos": [
+    {
+      "label": "Baseline",
+      "mode": "Standard",
+      "source_video": "Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T144012Z/Motion1920Standard/raw.mp4",
+      "video_sha256_before": "4dca101f2952b61b3fe74fcd17e5b1801cc4bd774c67995f140d07c055050995",
+      "video_sha256_after_decode": "4dca101f2952b61b3fe74fcd17e5b1801cc4bd774c67995f140d07c055050995",
+      "bytes": 10305781,
+      "source_report": "Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T144012Z/PrivateCapture/Capture/Motion/Standard/PlayerMotion1920.json",
+      "source_report_sha256": "7ec3be8623688e4e7d46d91a67c49043a56bcf2c691178ca87a594a1740c10c3",
+      "source_window": "Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T144012Z",
+      "window_status_sha256_at_preflight": "95bdef1d641d31b074221dfcd372c789148609ee01ee74da4c789b36c15b3356",
+      "job_passed": true,
+      "report_passed": true,
+      "native_process_exit_code": 0,
+      "recorder_exit_code": 0,
+      "stream": {
+        "codec_name": "h264",
+        "width": 1920,
+        "height": 1080,
+        "r_frame_rate": "60/1",
+        "avg_frame_rate": "60/1",
+        "time_base": "1/15360",
+        "start_time": "0.000000",
+        "duration": "10.016667",
+        "nb_frames": "601"
+      },
+      "format_duration_seconds": 10.016667,
+      "decoded_frame_count": 601,
+      "selected_frames": [
+        {
+          "nominal_seconds": 4.4,
+          "source_frame_index": 264,
+          "pts": 67584,
+          "pts_seconds": 4.4,
+          "coded_picture_number": null,
+          "ignored_frame": "Saved/Tests/GraphicNovel/JumpArmTemporal-20261017T150042221066Z/Baseline-Standard/frame_00.png",
+          "frame_sha256": "c3d6340bb6591d6f1c95b243fce5339982239f88de92a7a04772e4809fa750ff"
+        },
+        {
+          "nominal_seconds": 4.6,
+          "source_frame_index": 276,
+          "pts": 70656,
+          "pts_seconds": 4.6,
+          "coded_picture_number": null,
+          "ignored_frame": "Saved/Tests/GraphicNovel/JumpArmTemporal-20261017T150042221066Z/Baseline-Standard/frame_01.png",
+          "frame_sha256": "9002ab26d66c56cfbf7074904f5b071d168676a75a5b97552b540d56fd5eda14"
+        },
+        {
+          "nominal_seconds": 4.8,
+          "source_frame_index": 288,
+          "pts": 73728,
+          "pts_seconds": 4.8,
+          "coded_picture_number": null,
+          "ignored_frame": "Saved/Tests/GraphicNovel/JumpArmTemporal-20261017T150042221066Z/Baseline-Standard/frame_02.png",
+          "frame_sha256": "f892e6c0e685d5ac74c1a729729902a5f3e1afb2c6b00800f04902a2140a7203"
+        },
+        {
+          "nominal_seconds": 5.0,
+          "source_frame_index": 300,
+          "pts": 76800,
+          "pts_seconds": 5.0,
+          "coded_picture_number": null,
+          "ignored_frame": "Saved/Tests/GraphicNovel/JumpArmTemporal-20261017T150042221066Z/Baseline-Standard/frame_03.png",
+          "frame_sha256": "9485b37c226d48dec3e7c641a3577f5364217554dcf2f1e53bca1a77878ccf88"
+        },
+        {
+          "nominal_seconds": 5.2,
+          "source_frame_index": 312,
+          "pts": 79872,
+          "pts_seconds": 5.2,
+          "coded_picture_number": null,
+          "ignored_frame": "Saved/Tests/GraphicNovel/JumpArmTemporal-20261017T150042221066Z/Baseline-Standard/frame_04.png",
+          "frame_sha256": "2d8e6d64efa3ee8a2c19644ed67729dd9bd51795f740f9a2c4c6ae71f7853514"
+        },
+        {
+          "nominal_seconds": 5.4,
+          "source_frame_index": 324,
+          "pts": 82944,
+          "pts_seconds": 5.4,
+          "coded_picture_number": null,
+          "ignored_frame": "Saved/Tests/GraphicNovel/JumpArmTemporal-20261017T150042221066Z/Baseline-Standard/frame_05.png",
+          "frame_sha256": "08ed9335d826ecdece8415ed4cc085d50ff4d958e1aeb2d5c995430463e47eb0"
+        },
+        {
+          "nominal_seconds": 5.6,
+          "source_frame_index": 336,
+          "pts": 86016,
+          "pts_seconds": 5.6,
+          "coded_picture_number": null,
+          "ignored_frame": "Saved/Tests/GraphicNovel/JumpArmTemporal-20261017T150042221066Z/Baseline-Standard/frame_06.png",
+          "frame_sha256": "fc3258629530925a59922901c35f3e84850edb0893d3f25eb85c04a41343a258"
+        },
+        {
+          "nominal_seconds": 5.8,
+          "source_frame_index": 348,
+          "pts": 89088,
+          "pts_seconds": 5.8,
+          "coded_picture_number": null,
+          "ignored_frame": "Saved/Tests/GraphicNovel/JumpArmTemporal-20261017T150042221066Z/Baseline-Standard/frame_07.png",
+          "frame_sha256": "417e022fee5c2c685dc7898a58b17b12ae109a531c300a13317ed5f295527f6a"
+        },
+        {
+          "nominal_seconds": 6.0,
+          "source_frame_index": 360,
+          "pts": 92160,
+          "pts_seconds": 6.0,
+          "coded_picture_number": null,
+          "ignored_frame": "Saved/Tests/GraphicNovel/JumpArmTemporal-20261017T150042221066Z/Baseline-Standard/frame_08.png",
+          "frame_sha256": "abfced0c9d30dcb3fa80fe4deae69a4020b06888b96243f346f8bf8a78127d5f"
+        },
+        {
+          "nominal_seconds": 6.2,
+          "source_frame_index": 372,
+          "pts": 95232,
+          "pts_seconds": 6.2,
+          "coded_picture_number": null,
+          "ignored_frame": "Saved/Tests/GraphicNovel/JumpArmTemporal-20261017T150042221066Z/Baseline-Standard/frame_09.png",
+          "frame_sha256": "fab4832562d54bee675c5587daa85fe0be4c635b7d0c1bd6b355f843b7c2d76b"
+        },
+        {
+          "nominal_seconds": 6.4,
+          "source_frame_index": 384,
+          "pts": 98304,
+          "pts_seconds": 6.4,
+          "coded_picture_number": null,
+          "ignored_frame": "Saved/Tests/GraphicNovel/JumpArmTemporal-20261017T150042221066Z/Baseline-Standard/frame_10.png",
+          "frame_sha256": "88545dbc7e50b174e9a7275545d898be7bf4f33a3cad9cafe4ad6d467d9e427d"
+        },
+        {
+          "nominal_seconds": 6.6,
+          "source_frame_index": 396,
+          "pts": 101376,
+          "pts_seconds": 6.6,
+          "coded_picture_number": null,
+          "ignored_frame": "Saved/Tests/GraphicNovel/JumpArmTemporal-20261017T150042221066Z/Baseline-Standard/frame_11.png",
+          "frame_sha256": "76a0a6351574f59931c77cb491f0d7ab025c5e7b59974b229e460d7f956a2c7a"
+        },
+        {
+          "nominal_seconds": 6.8,
+          "source_frame_index": 408,
+          "pts": 104448,
+          "pts_seconds": 6.8,
+          "coded_picture_number": null,
+          "ignored_frame": "Saved/Tests/GraphicNovel/JumpArmTemporal-20261017T150042221066Z/Baseline-Standard/frame_12.png",
+          "frame_sha256": "05518dcfe3ef8e6739c3e5c070149df735c6391200eab1258ed44ebad280195b"
+        }
+      ],
+      "native_phase_offsets": [
+        {
+          "phase": "idle",
+          "native_seconds_since_idle": 0.0
+        },
+        {
+          "phase": "walk",
+          "native_seconds_since_idle": 0.36972
+        },
+        {
+          "phase": "sprint",
+          "native_seconds_since_idle": 1.77784
+        },
+        {
+          "phase": "turn",
+          "native_seconds_since_idle": 3.22281
+        },
+        {
+          "phase": "stop",
+          "native_seconds_since_idle": 4.05164
+        },
+        {
+          "phase": "jump",
+          "native_seconds_since_idle": 4.78501
+        },
+        {
+          "phase": "landing",
+          "native_seconds_since_idle": 6.07582
+        },
+        {
+          "phase": "recover",
+          "native_seconds_since_idle": 6.31028
+        }
+      ],
+      "decode_argv": [
+        "/usr/bin/ffmpeg",
+        "-nostdin",
+        "-hide_banner",
+        "-loglevel",
+        "error",
+        "-hwaccel",
+        "none",
+        "-threads",
+        "2",
+        "-i",
+        "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T144012Z/Motion1920Standard/raw.mp4",
+        "-an",
+        "-sn",
+        "-dn",
+        "-filter_threads",
+        "1",
+        "-vf",
+        "select='eq(n,264)+eq(n,276)+eq(n,288)+eq(n,300)+eq(n,312)+eq(n,324)+eq(n,336)+eq(n,348)+eq(n,360)+eq(n,372)+eq(n,384)+eq(n,396)+eq(n,408)'",
+        "-fps_mode",
+        "passthrough",
+        "-threads",
+        "1",
+        "-c:v",
+        "png",
+        "-compression_level",
+        "3",
+        "-start_number",
+        "0",
+        "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/GraphicNovel/JumpArmTemporal-20261017T150042221066Z/Baseline-Standard/frame_%02d.png"
+      ],
+      "encoded_fps_limit": "Encoded stream fps is not native/game FPS.",
+      "video_sha256_after_contact_sheets": "4dca101f2952b61b3fe74fcd17e5b1801cc4bd774c67995f140d07c055050995",
+      "video_sha256_after_review": "4dca101f2952b61b3fe74fcd17e5b1801cc4bd774c67995f140d07c055050995"
+    },
+    {
+      "label": "Baseline",
+      "mode": "Comic",
+      "source_video": "Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T144012Z/Motion1920Comic/raw.mp4",
+      "video_sha256_before": "4c0c5e56363563927eda9d6fac90493956c3f1e47c1b1b78f8042ae4b005f70b",
+      "video_sha256_after_decode": "4c0c5e56363563927eda9d6fac90493956c3f1e47c1b1b78f8042ae4b005f70b",
+      "bytes": 23631708,
+      "source_report": "Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T144012Z/PrivateCapture/Capture/Motion/Comic/PlayerMotion1920.json",
+      "source_report_sha256": "b37a0de302ffbd89bfd3a24bb63e447cb1cbbbf5cffcaae57f00f7f66a7295c4",
+      "source_window": "Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T144012Z",
+      "window_status_sha256_at_preflight": "95bdef1d641d31b074221dfcd372c789148609ee01ee74da4c789b36c15b3356",
+      "job_passed": true,
+      "report_passed": true,
+      "native_process_exit_code": 0,
+      "recorder_exit_code": 0,
+      "stream": {
+        "codec_name": "h264",
+        "width": 1920,
+        "height": 1080,
+        "r_frame_rate": "60/1",
+        "avg_frame_rate": "60/1",
+        "time_base": "1/15360",
+        "start_time": "0.000000",
+        "duration": "9.516667",
+        "nb_frames": "571"
+      },
+      "format_duration_seconds": 9.516667,
+      "decoded_frame_count": 571,
+      "selected_frames": [
+        {
+          "nominal_seconds": 4.4,
+          "source_frame_index": 264,
+          "pts": 67584,
+          "pts_seconds": 4.4,
+          "coded_picture_number": null,
+          "ignored_frame": "Saved/Tests/GraphicNovel/JumpArmTemporal-20261017T150042221066Z/Baseline-Comic/frame_00.png",
+          "frame_sha256": "74cdc4060d05e7124a2a7347a0b5df882b0ca6d2a17a40703daadd452de16342"
+        },
+        {
+          "nominal_seconds": 4.6,
+          "source_frame_index": 276,
+          "pts": 70656,
+          "pts_seconds": 4.6,
+          "coded_picture_number": null,
+          "ignored_frame": "Saved/Tests/GraphicNovel/JumpArmTemporal-20261017T150042221066Z/Baseline-Comic/frame_01.png",
+          "frame_sha256": "00cbfc76e04532632d777444b6d1a309c7009f63e2ea43d488d636bf101412af"
+        },
+        {
+          "nominal_seconds": 4.8,
+          "source_frame_index": 288,
+          "pts": 73728,
+          "pts_seconds": 4.8,
+          "coded_picture_number": null,
+          "ignored_frame": "Saved/Tests/GraphicNovel/JumpArmTemporal-20261017T150042221066Z/Baseline-Comic/frame_02.png",
+          "frame_sha256": "fbe4a566ad1bb34771d5dc13cc6125edee21e028ba52aba921d96a9631324a56"
+        },
+        {
+          "nominal_seconds": 5.0,
+          "source_frame_index": 300,
+          "pts": 76800,
+          "pts_seconds": 5.0,
+          "coded_picture_number": null,
+          "ignored_frame": "Saved/Tests/GraphicNovel/JumpArmTemporal-20261017T150042221066Z/Baseline-Comic/frame_03.png",
+          "frame_sha256": "bafb3ea3c80d2f52f4ac83e2dc3c290ffb5ae53924ea2dd16bff0faf47ea0a9e"
+        },
+        {
+          "nominal_seconds": 5.2,
+          "source_frame_index": 312,
+          "pts": 79872,
+          "pts_seconds": 5.2,
+          "coded_picture_number": null,
+          "ignored_frame": "Saved/Tests/GraphicNovel/JumpArmTemporal-20261017T150042221066Z/Baseline-Comic/frame_04.png",
+          "frame_sha256": "079ad59d65948ceac6524855497ab36a1621e78abed8d7099fcfdc7eefc8f1de"
+        },
+        {
+          "nominal_seconds": 5.4,
+          "source_frame_index": 324,
+          "pts": 82944,
+          "pts_seconds": 5.4,
+          "coded_picture_number": null,
+          "ignored_frame": "Saved/Tests/GraphicNovel/JumpArmTemporal-20261017T150042221066Z/Baseline-Comic/frame_05.png",
+          "frame_sha256": "1edc4f30f4e23f23566c6ae505d7d886721f061049ec42308e841a68320f7f6b"
+        },
+        {
+          "nominal_seconds": 5.6,
+          "source_frame_index": 336,
+          "pts": 86016,
+          "pts_seconds": 5.6,
+          "coded_picture_number": null,
+          "ignored_frame": "Saved/Tests/GraphicNovel/JumpArmTemporal-20261017T150042221066Z/Baseline-Comic/frame_06.png",
+          "frame_sha256": "cb5005cf559cf39e3ac4c5a831b76627c411d0b73c25705148565cd7f4c9011c"
+        },
+        {
+          "nominal_seconds": 5.8,
+          "source_frame_index": 348,
+          "pts": 89088,
+          "pts_seconds": 5.8,
+          "coded_picture_number": null,
+          "ignored_frame": "Saved/Tests/GraphicNovel/JumpArmTemporal-20261017T150042221066Z/Baseline-Comic/frame_07.png",
+          "frame_sha256": "e39aac10e32214198d33155b8b82762026d3a602d94ff2b60376a03d44ff7a99"
+        },
+        {
+          "nominal_seconds": 6.0,
+          "source_frame_index": 360,
+          "pts": 92160,
+          "pts_seconds": 6.0,
+          "coded_picture_number": null,
+          "ignored_frame": "Saved/Tests/GraphicNovel/JumpArmTemporal-20261017T150042221066Z/Baseline-Comic/frame_08.png",
+          "frame_sha256": "72535ca688aa36a341f68fd99887fe7db59f482b59f4a2a9ba7a70dd9f1da5e7"
+        },
+        {
+          "nominal_seconds": 6.2,
+          "source_frame_index": 372,
+          "pts": 95232,
+          "pts_seconds": 6.2,
+          "coded_picture_number": null,
+          "ignored_frame": "Saved/Tests/GraphicNovel/JumpArmTemporal-20261017T150042221066Z/Baseline-Comic/frame_09.png",
+          "frame_sha256": "4c527cc3a09d3b078a5d46716e2a5b171fa4231efa7170c6f2c89ca5df39a173"
+        },
+        {
+          "nominal_seconds": 6.4,
+          "source_frame_index": 384,
+          "pts": 98304,
+          "pts_seconds": 6.4,
+          "coded_picture_number": null,
+          "ignored_frame": "Saved/Tests/GraphicNovel/JumpArmTemporal-20261017T150042221066Z/Baseline-Comic/frame_10.png",
+          "frame_sha256": "2209c4de720a60a75afce939a2bc4eb73f8e2a09cf0bc48c7f149e69bb4b837f"
+        },
+        {
+          "nominal_seconds": 6.6,
+          "source_frame_index": 396,
+          "pts": 101376,
+          "pts_seconds": 6.6,
+          "coded_picture_number": null,
+          "ignored_frame": "Saved/Tests/GraphicNovel/JumpArmTemporal-20261017T150042221066Z/Baseline-Comic/frame_11.png",
+          "frame_sha256": "8d519b101ea1a008ca4438a7b62d71a9fc7aa9f359be3d69b996d18a0eec6f46"
+        },
+        {
+          "nominal_seconds": 6.8,
+          "source_frame_index": 408,
+          "pts": 104448,
+          "pts_seconds": 6.8,
+          "coded_picture_number": null,
+          "ignored_frame": "Saved/Tests/GraphicNovel/JumpArmTemporal-20261017T150042221066Z/Baseline-Comic/frame_12.png",
+          "frame_sha256": "46bf2c3dff69d9df54075fbcd8dd099374d217850b131706c3380d2168ddf0f6"
+        }
+      ],
+      "native_phase_offsets": [
+        {
+          "phase": "idle",
+          "native_seconds_since_idle": 0.0
+        },
+        {
+          "phase": "walk",
+          "native_seconds_since_idle": 0.37014
+        },
+        {
+          "phase": "sprint",
+          "native_seconds_since_idle": 1.80132
+        },
+        {
+          "phase": "turn",
+          "native_seconds_since_idle": 3.19914
+        },
+        {
+          "phase": "stop",
+          "native_seconds_since_idle": 4.02618
+        },
+        {
+          "phase": "jump",
+          "native_seconds_since_idle": 4.74311
+        },
+        {
+          "phase": "landing",
+          "native_seconds_since_idle": 6.06616
+        },
+        {
+          "phase": "recover",
+          "native_seconds_since_idle": 6.29498
+        }
+      ],
+      "decode_argv": [
+        "/usr/bin/ffmpeg",
+        "-nostdin",
+        "-hide_banner",
+        "-loglevel",
+        "error",
+        "-hwaccel",
+        "none",
+        "-threads",
+        "2",
+        "-i",
+        "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T144012Z/Motion1920Comic/raw.mp4",
+        "-an",
+        "-sn",
+        "-dn",
+        "-filter_threads",
+        "1",
+        "-vf",
+        "select='eq(n,264)+eq(n,276)+eq(n,288)+eq(n,300)+eq(n,312)+eq(n,324)+eq(n,336)+eq(n,348)+eq(n,360)+eq(n,372)+eq(n,384)+eq(n,396)+eq(n,408)'",
+        "-fps_mode",
+        "passthrough",
+        "-threads",
+        "1",
+        "-c:v",
+        "png",
+        "-compression_level",
+        "3",
+        "-start_number",
+        "0",
+        "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/GraphicNovel/JumpArmTemporal-20261017T150042221066Z/Baseline-Comic/frame_%02d.png"
+      ],
+      "encoded_fps_limit": "Encoded stream fps is not native/game FPS.",
+      "video_sha256_after_contact_sheets": "4c0c5e56363563927eda9d6fac90493956c3f1e47c1b1b78f8042ae4b005f70b",
+      "video_sha256_after_review": "4c0c5e56363563927eda9d6fac90493956c3f1e47c1b1b78f8042ae4b005f70b"
+    },
+    {
+      "label": "Trial",
+      "mode": "Standard",
+      "source_video": "Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T145346Z/Motion1920Standard/raw.mp4",
+      "video_sha256_before": "bf95b2020381df0fdfa1bfe3e39cc9dd87b5a4abd4f9cd30231991f1a330d138",
+      "video_sha256_after_decode": "bf95b2020381df0fdfa1bfe3e39cc9dd87b5a4abd4f9cd30231991f1a330d138",
+      "bytes": 10531693,
+      "source_report": "Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T145346Z/PrivateCapture/Capture/Motion/Standard/PlayerMotion1920.json",
+      "source_report_sha256": "768bbbc541464baea2cf7725ab52d47eed6e4651936dcf3e5bafc2a955c3ca9b",
+      "source_window": "Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T145346Z",
+      "window_status_sha256_at_preflight": "c911ab803add1547b087dd5f34b93a20057615c51689a00818fbc2fff837810e",
+      "job_passed": true,
+      "report_passed": true,
+      "native_process_exit_code": 0,
+      "recorder_exit_code": 0,
+      "stream": {
+        "codec_name": "h264",
+        "width": 1920,
+        "height": 1080,
+        "r_frame_rate": "60/1",
+        "avg_frame_rate": "60/1",
+        "time_base": "1/15360",
+        "start_time": "0.000000",
+        "duration": "9.516667",
+        "nb_frames": "571"
+      },
+      "format_duration_seconds": 9.516667,
+      "decoded_frame_count": 571,
+      "selected_frames": [
+        {
+          "nominal_seconds": 4.4,
+          "source_frame_index": 264,
+          "pts": 67584,
+          "pts_seconds": 4.4,
+          "coded_picture_number": null,
+          "ignored_frame": "Saved/Tests/GraphicNovel/JumpArmTemporal-20261017T150042221066Z/Trial-Standard/frame_00.png",
+          "frame_sha256": "50574b32b09f4b7bfad811f20c8457afb04776be1d5978a76ec1c1026f4892ae"
+        },
+        {
+          "nominal_seconds": 4.6,
+          "source_frame_index": 276,
+          "pts": 70656,
+          "pts_seconds": 4.6,
+          "coded_picture_number": null,
+          "ignored_frame": "Saved/Tests/GraphicNovel/JumpArmTemporal-20261017T150042221066Z/Trial-Standard/frame_01.png",
+          "frame_sha256": "f9819c9482cffaed69798736195341f8ef135685d8a5829191506b73bbd77a81"
+        },
+        {
+          "nominal_seconds": 4.8,
+          "source_frame_index": 288,
+          "pts": 73728,
+          "pts_seconds": 4.8,
+          "coded_picture_number": null,
+          "ignored_frame": "Saved/Tests/GraphicNovel/JumpArmTemporal-20261017T150042221066Z/Trial-Standard/frame_02.png",
+          "frame_sha256": "6a612072548d75ca321d339bbadd5eaa1d9e0ad3628470bbd46523ce3bf1c778"
+        },
+        {
+          "nominal_seconds": 5.0,
+          "source_frame_index": 300,
+          "pts": 76800,
+          "pts_seconds": 5.0,
+          "coded_picture_number": null,
+          "ignored_frame": "Saved/Tests/GraphicNovel/JumpArmTemporal-20261017T150042221066Z/Trial-Standard/frame_03.png",
+          "frame_sha256": "f98bc436a4c63836a3e7ab517b65c0591e73ab9bd336ad48c4db313ff4c362a3"
+        },
+        {
+          "nominal_seconds": 5.2,
+          "source_frame_index": 312,
+          "pts": 79872,
+          "pts_seconds": 5.2,
+          "coded_picture_number": null,
+          "ignored_frame": "Saved/Tests/GraphicNovel/JumpArmTemporal-20261017T150042221066Z/Trial-Standard/frame_04.png",
+          "frame_sha256": "1c0d42a124e9d1c06f869287731921a2117eb33cb63603ec1caf6d0c21cb4418"
+        },
+        {
+          "nominal_seconds": 5.4,
+          "source_frame_index": 324,
+          "pts": 82944,
+          "pts_seconds": 5.4,
+          "coded_picture_number": null,
+          "ignored_frame": "Saved/Tests/GraphicNovel/JumpArmTemporal-20261017T150042221066Z/Trial-Standard/frame_05.png",
+          "frame_sha256": "138bd22932f5b28b42bebe7cd5086d2f90998e60313561a34ffc85115d5e95a5"
+        },
+        {
+          "nominal_seconds": 5.6,
+          "source_frame_index": 336,
+          "pts": 86016,
+          "pts_seconds": 5.6,
+          "coded_picture_number": null,
+          "ignored_frame": "Saved/Tests/GraphicNovel/JumpArmTemporal-20261017T150042221066Z/Trial-Standard/frame_06.png",
+          "frame_sha256": "e51cfe274882610e33375ac575380a5e8623e5ad171dc8384b2c4003ddb1a698"
+        },
+        {
+          "nominal_seconds": 5.8,
+          "source_frame_index": 348,
+          "pts": 89088,
+          "pts_seconds": 5.8,
+          "coded_picture_number": null,
+          "ignored_frame": "Saved/Tests/GraphicNovel/JumpArmTemporal-20261017T150042221066Z/Trial-Standard/frame_07.png",
+          "frame_sha256": "fc50239c9637d07eb9e56d334830110267982d6f0a1c691c1e9ca9ec4fad78e2"
+        },
+        {
+          "nominal_seconds": 6.0,
+          "source_frame_index": 360,
+          "pts": 92160,
+          "pts_seconds": 6.0,
+          "coded_picture_number": null,
+          "ignored_frame": "Saved/Tests/GraphicNovel/JumpArmTemporal-20261017T150042221066Z/Trial-Standard/frame_08.png",
+          "frame_sha256": "1d0f21d8de39646b1f68c7c4b38fd0d659969cabf407371d27c1164dc1e5f1a2"
+        },
+        {
+          "nominal_seconds": 6.2,
+          "source_frame_index": 372,
+          "pts": 95232,
+          "pts_seconds": 6.2,
+          "coded_picture_number": null,
+          "ignored_frame": "Saved/Tests/GraphicNovel/JumpArmTemporal-20261017T150042221066Z/Trial-Standard/frame_09.png",
+          "frame_sha256": "51b486c47f8a964b55a5efc07d654793cb964364a49fde2853123ccae28a49da"
+        },
+        {
+          "nominal_seconds": 6.4,
+          "source_frame_index": 384,
+          "pts": 98304,
+          "pts_seconds": 6.4,
+          "coded_picture_number": null,
+          "ignored_frame": "Saved/Tests/GraphicNovel/JumpArmTemporal-20261017T150042221066Z/Trial-Standard/frame_10.png",
+          "frame_sha256": "64a9e6cd891176f4b346dd504c8804c7fc098e646052b5e76ed6c4d6afa37e84"
+        },
+        {
+          "nominal_seconds": 6.6,
+          "source_frame_index": 396,
+          "pts": 101376,
+          "pts_seconds": 6.6,
+          "coded_picture_number": null,
+          "ignored_frame": "Saved/Tests/GraphicNovel/JumpArmTemporal-20261017T150042221066Z/Trial-Standard/frame_11.png",
+          "frame_sha256": "8c3aec2bf66be2db17e9053ac46c6e21c9dfc70b5ca1b1f992aad4a2ab4c9887"
+        },
+        {
+          "nominal_seconds": 6.8,
+          "source_frame_index": 408,
+          "pts": 104448,
+          "pts_seconds": 6.8,
+          "coded_picture_number": null,
+          "ignored_frame": "Saved/Tests/GraphicNovel/JumpArmTemporal-20261017T150042221066Z/Trial-Standard/frame_12.png",
+          "frame_sha256": "b023d8909d99123dbb832b12051bc6ee1004bb47f6da4ee52b97d8a5bde73e0f"
+        }
+      ],
+      "native_phase_offsets": [
+        {
+          "phase": "idle",
+          "native_seconds_since_idle": 0.0
+        },
+        {
+          "phase": "walk",
+          "native_seconds_since_idle": 0.35631
+        },
+        {
+          "phase": "sprint",
+          "native_seconds_since_idle": 1.77707
+        },
+        {
+          "phase": "turn",
+          "native_seconds_since_idle": 3.20466
+        },
+        {
+          "phase": "stop",
+          "native_seconds_since_idle": 4.01519
+        },
+        {
+          "phase": "jump",
+          "native_seconds_since_idle": 4.74082
+        },
+        {
+          "phase": "landing",
+          "native_seconds_since_idle": 6.02471
+        },
+        {
+          "phase": "recover",
+          "native_seconds_since_idle": 6.25357
+        }
+      ],
+      "decode_argv": [
+        "/usr/bin/ffmpeg",
+        "-nostdin",
+        "-hide_banner",
+        "-loglevel",
+        "error",
+        "-hwaccel",
+        "none",
+        "-threads",
+        "2",
+        "-i",
+        "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T145346Z/Motion1920Standard/raw.mp4",
+        "-an",
+        "-sn",
+        "-dn",
+        "-filter_threads",
+        "1",
+        "-vf",
+        "select='eq(n,264)+eq(n,276)+eq(n,288)+eq(n,300)+eq(n,312)+eq(n,324)+eq(n,336)+eq(n,348)+eq(n,360)+eq(n,372)+eq(n,384)+eq(n,396)+eq(n,408)'",
+        "-fps_mode",
+        "passthrough",
+        "-threads",
+        "1",
+        "-c:v",
+        "png",
+        "-compression_level",
+        "3",
+        "-start_number",
+        "0",
+        "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/GraphicNovel/JumpArmTemporal-20261017T150042221066Z/Trial-Standard/frame_%02d.png"
+      ],
+      "encoded_fps_limit": "Encoded stream fps is not native/game FPS.",
+      "video_sha256_after_contact_sheets": "bf95b2020381df0fdfa1bfe3e39cc9dd87b5a4abd4f9cd30231991f1a330d138",
+      "video_sha256_after_review": "bf95b2020381df0fdfa1bfe3e39cc9dd87b5a4abd4f9cd30231991f1a330d138"
+    },
+    {
+      "label": "Trial",
+      "mode": "Comic",
+      "source_video": "Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T145346Z/Motion1920Comic/raw.mp4",
+      "video_sha256_before": "3cc28e44c9984821520fa3c58c92b676705a47d2a8b3e6eb3c15c7662fce2c74",
+      "video_sha256_after_decode": "3cc28e44c9984821520fa3c58c92b676705a47d2a8b3e6eb3c15c7662fce2c74",
+      "bytes": 23358866,
+      "source_report": "Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T145346Z/PrivateCapture/Capture/Motion/Comic/PlayerMotion1920.json",
+      "source_report_sha256": "7f81c11f10d579ee9713b2e5afcb058d82fe09dd87eba2022a3861f6149316b5",
+      "source_window": "Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T145346Z",
+      "window_status_sha256_at_preflight": "c911ab803add1547b087dd5f34b93a20057615c51689a00818fbc2fff837810e",
+      "job_passed": true,
+      "report_passed": true,
+      "native_process_exit_code": 0,
+      "recorder_exit_code": 0,
+      "stream": {
+        "codec_name": "h264",
+        "width": 1920,
+        "height": 1080,
+        "r_frame_rate": "60/1",
+        "avg_frame_rate": "60/1",
+        "time_base": "1/15360",
+        "start_time": "0.000000",
+        "duration": "9.516667",
+        "nb_frames": "571"
+      },
+      "format_duration_seconds": 9.516667,
+      "decoded_frame_count": 571,
+      "selected_frames": [
+        {
+          "nominal_seconds": 4.4,
+          "source_frame_index": 264,
+          "pts": 67584,
+          "pts_seconds": 4.4,
+          "coded_picture_number": null,
+          "ignored_frame": "Saved/Tests/GraphicNovel/JumpArmTemporal-20261017T150042221066Z/Trial-Comic/frame_00.png",
+          "frame_sha256": "41bb0c1ac310708ca7caa84ab40956c66a1b54ecefb9ebb2cd87c62930ac755c"
+        },
+        {
+          "nominal_seconds": 4.6,
+          "source_frame_index": 276,
+          "pts": 70656,
+          "pts_seconds": 4.6,
+          "coded_picture_number": null,
+          "ignored_frame": "Saved/Tests/GraphicNovel/JumpArmTemporal-20261017T150042221066Z/Trial-Comic/frame_01.png",
+          "frame_sha256": "9282f5093550df940d854c23e4dd3cf8dac049b5b2482d49196d254acbc4b94e"
+        },
+        {
+          "nominal_seconds": 4.8,
+          "source_frame_index": 288,
+          "pts": 73728,
+          "pts_seconds": 4.8,
+          "coded_picture_number": null,
+          "ignored_frame": "Saved/Tests/GraphicNovel/JumpArmTemporal-20261017T150042221066Z/Trial-Comic/frame_02.png",
+          "frame_sha256": "5c24e8f2d95d2cff95391144b40b29859b4e548cc6177d09873796238639b9d6"
+        },
+        {
+          "nominal_seconds": 5.0,
+          "source_frame_index": 300,
+          "pts": 76800,
+          "pts_seconds": 5.0,
+          "coded_picture_number": null,
+          "ignored_frame": "Saved/Tests/GraphicNovel/JumpArmTemporal-20261017T150042221066Z/Trial-Comic/frame_03.png",
+          "frame_sha256": "e408e4d8ae896d081fbc7dd2c40f5af21f058b7dd375e9300c3b32df35387667"
+        },
+        {
+          "nominal_seconds": 5.2,
+          "source_frame_index": 312,
+          "pts": 79872,
+          "pts_seconds": 5.2,
+          "coded_picture_number": null,
+          "ignored_frame": "Saved/Tests/GraphicNovel/JumpArmTemporal-20261017T150042221066Z/Trial-Comic/frame_04.png",
+          "frame_sha256": "d0249450ed1af8f60628cc35b601b3ba08cf1dbcd68d33b5a60eb9bf06ebaa57"
+        },
+        {
+          "nominal_seconds": 5.4,
+          "source_frame_index": 324,
+          "pts": 82944,
+          "pts_seconds": 5.4,
+          "coded_picture_number": null,
+          "ignored_frame": "Saved/Tests/GraphicNovel/JumpArmTemporal-20261017T150042221066Z/Trial-Comic/frame_05.png",
+          "frame_sha256": "553816cc686a107d37ebdcbdad85ba0038d62791877c3c69020b0fb3ecc9f2e1"
+        },
+        {
+          "nominal_seconds": 5.6,
+          "source_frame_index": 336,
+          "pts": 86016,
+          "pts_seconds": 5.6,
+          "coded_picture_number": null,
+          "ignored_frame": "Saved/Tests/GraphicNovel/JumpArmTemporal-20261017T150042221066Z/Trial-Comic/frame_06.png",
+          "frame_sha256": "945baca563e967a05cc307314342cb0bf5399995b56dde05648b8ecfe7f09205"
+        },
+        {
+          "nominal_seconds": 5.8,
+          "source_frame_index": 348,
+          "pts": 89088,
+          "pts_seconds": 5.8,
+          "coded_picture_number": null,
+          "ignored_frame": "Saved/Tests/GraphicNovel/JumpArmTemporal-20261017T150042221066Z/Trial-Comic/frame_07.png",
+          "frame_sha256": "c4a7677e5b0a54002d95ac70d2f6fbd538c5b21f32ae395b4ee461bd2614b277"
+        },
+        {
+          "nominal_seconds": 6.0,
+          "source_frame_index": 360,
+          "pts": 92160,
+          "pts_seconds": 6.0,
+          "coded_picture_number": null,
+          "ignored_frame": "Saved/Tests/GraphicNovel/JumpArmTemporal-20261017T150042221066Z/Trial-Comic/frame_08.png",
+          "frame_sha256": "15425686664f6b1c8b6f82ae977c64c798112aca396da86da4162920310afd2c"
+        },
+        {
+          "nominal_seconds": 6.2,
+          "source_frame_index": 372,
+          "pts": 95232,
+          "pts_seconds": 6.2,
+          "coded_picture_number": null,
+          "ignored_frame": "Saved/Tests/GraphicNovel/JumpArmTemporal-20261017T150042221066Z/Trial-Comic/frame_09.png",
+          "frame_sha256": "aef7312f2a342812ea4daf93e7eace1b1e2e76b7254c93dfe1aa57970f7cc374"
+        },
+        {
+          "nominal_seconds": 6.4,
+          "source_frame_index": 384,
+          "pts": 98304,
+          "pts_seconds": 6.4,
+          "coded_picture_number": null,
+          "ignored_frame": "Saved/Tests/GraphicNovel/JumpArmTemporal-20261017T150042221066Z/Trial-Comic/frame_10.png",
+          "frame_sha256": "b755085284eecb8f3651541f88b7fcaae815428ba04a6541bcb8c7142a07a24c"
+        },
+        {
+          "nominal_seconds": 6.6,
+          "source_frame_index": 396,
+          "pts": 101376,
+          "pts_seconds": 6.6,
+          "coded_picture_number": null,
+          "ignored_frame": "Saved/Tests/GraphicNovel/JumpArmTemporal-20261017T150042221066Z/Trial-Comic/frame_11.png",
+          "frame_sha256": "f51e8fca84d2fb0048f374f20782ee5048161509b75a656125b30260f0e9bf26"
+        },
+        {
+          "nominal_seconds": 6.8,
+          "source_frame_index": 408,
+          "pts": 104448,
+          "pts_seconds": 6.8,
+          "coded_picture_number": null,
+          "ignored_frame": "Saved/Tests/GraphicNovel/JumpArmTemporal-20261017T150042221066Z/Trial-Comic/frame_12.png",
+          "frame_sha256": "e3c3d8f6b149115a5831bd1b15ffb531f5c1152fa766c5494ea1fec749474616"
+        }
+      ],
+      "native_phase_offsets": [
+        {
+          "phase": "idle",
+          "native_seconds_since_idle": 0.0
+        },
+        {
+          "phase": "walk",
+          "native_seconds_since_idle": 0.37014
+        },
+        {
+          "phase": "sprint",
+          "native_seconds_since_idle": 1.79501
+        },
+        {
+          "phase": "turn",
+          "native_seconds_since_idle": 3.21926
+        },
+        {
+          "phase": "stop",
+          "native_seconds_since_idle": 4.02538
+        },
+        {
+          "phase": "jump",
+          "native_seconds_since_idle": 4.74979
+        },
+        {
+          "phase": "landing",
+          "native_seconds_since_idle": 6.02231
+        },
+        {
+          "phase": "recover",
+          "native_seconds_since_idle": 6.23845
+        }
+      ],
+      "decode_argv": [
+        "/usr/bin/ffmpeg",
+        "-nostdin",
+        "-hide_banner",
+        "-loglevel",
+        "error",
+        "-hwaccel",
+        "none",
+        "-threads",
+        "2",
+        "-i",
+        "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T145346Z/Motion1920Comic/raw.mp4",
+        "-an",
+        "-sn",
+        "-dn",
+        "-filter_threads",
+        "1",
+        "-vf",
+        "select='eq(n,264)+eq(n,276)+eq(n,288)+eq(n,300)+eq(n,312)+eq(n,324)+eq(n,336)+eq(n,348)+eq(n,360)+eq(n,372)+eq(n,384)+eq(n,396)+eq(n,408)'",
+        "-fps_mode",
+        "passthrough",
+        "-threads",
+        "1",
+        "-c:v",
+        "png",
+        "-compression_level",
+        "3",
+        "-start_number",
+        "0",
+        "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/GraphicNovel/JumpArmTemporal-20261017T150042221066Z/Trial-Comic/frame_%02d.png"
+      ],
+      "encoded_fps_limit": "Encoded stream fps is not native/game FPS.",
+      "video_sha256_after_contact_sheets": "3cc28e44c9984821520fa3c58c92b676705a47d2a8b3e6eb3c15c7662fce2c74",
+      "video_sha256_after_review": "3cc28e44c9984821520fa3c58c92b676705a47d2a8b3e6eb3c15c7662fce2c74"
+    }
+  ],
+  "contact_sheet_crop_pixels": [
+    740,
+    280,
+    1240,
+    1060
+  ],
+  "contact_sheet_crop_scope": "Same fixed pixel crop on every source frame for readable body/prop review. No frame rescaling; original1920x1080 selected frames remain in ignored Saved. Full viewport/HUD/camera context cannot be established from crops alone.",
+  "outputs": {
+    "BaselineStandard.png": {
+      "sha256": "4c244f3137952aa231b4c35ca9d53c038d590a1b0289c91dc351f89ebc1101cc",
+      "bytes": 4125696,
+      "dimensions": [
+        2548,
+        2747
+      ],
+      "selected_frames": 13
+    },
+    "BaselineComic.png": {
+      "sha256": "2197e4c38a978d60380aec8e1a9d45f0f3e5f4c5d3f872b2539911cb990b0826",
+      "bytes": 4444023,
+      "dimensions": [
+        2548,
+        2747
+      ],
+      "selected_frames": 13
+    },
+    "TrialStandard.png": {
+      "sha256": "3c305024b2e4675e05a4dbd30574d026c9791a58efaf7d892d7f37bfb7a2cfcf",
+      "bytes": 4111692,
+      "dimensions": [
+        2548,
+        2747
+      ],
+      "selected_frames": 13
+    },
+    "TrialComic.png": {
+      "sha256": "258ee39a03e5518ec705d9ca2493d207310b72278254849daf2f2d22efe05d5b",
+      "bytes": 4427388,
+      "dimensions": [
+        2548,
+        2747
+      ],
+      "selected_frames": 13
+    }
+  },
+  "all_four_jobs_passed_before_decode": true,
+  "all_source_videos_unchanged": true,
+  "total_selected_frames": 52,
+  "continuous_playback_reviewed": false,
+  "native_fps_measured": false,
+  "graphics_accepted": false,
+  "adopted": false,
+  "reviewed_contact_sheets": [
+    "BaselineStandard.png",
+    "BaselineComic.png",
+    "TrialStandard.png",
+    "TrialComic.png"
+  ],
+  "review_completed_utc": "2026-10-17T15:03:45.925799+00:00",
+  "additional_full_resolution_frames_inspected": [
+    {
+      "label": "Baseline",
+      "mode": "Standard",
+      "source_frame_index": 312,
+      "pts_seconds": 5.2,
+      "ignored_frame": "Saved/Tests/GraphicNovel/JumpArmTemporal-20261017T150042221066Z/Baseline-Standard/frame_04.png"
+    },
+    {
+      "label": "Trial",
+      "mode": "Standard",
+      "source_frame_index": 312,
+      "pts_seconds": 5.2,
+      "ignored_frame": "Saved/Tests/GraphicNovel/JumpArmTemporal-20261017T150042221066Z/Trial-Standard/frame_04.png"
+    }
+  ],
+  "tool_versions": {
+    "ffmpeg": "ffmpeg version n9.0.1 Copyright (c) 2000-2026 the FFmpeg developers",
+    "ffprobe": "ffprobe version n9.0.1 Copyright (c) 2007-2026 the FFmpeg developers"
+  },
+  "review": {
+    "file": "Review.md",
+    "sha256": "db6ca4fa0aab91693ad816536131390b861f0e724ef6c7b4d715845ffdd294d9",
+    "bytes": 4342,
+    "reviewer": "/root/character_audit/east_guard_review",
+    "scope": "52sampledframes/fouractualsheets; no continuous playback/adoption"
+  }
+}
