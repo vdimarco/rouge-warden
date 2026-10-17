@@ -1,0 +1,118 @@
+{
+  "utc": "2026-10-14T16:34:45.804585+00:00",
+  "outcome": "Five skills installed, three music auditions generated, VibeUE rejected for active-game adoption after compatibility trial.",
+  "skills": {
+    "source": "quodsoler/unreal-engine-skills",
+    "commit": "f3742d7b688690810df369802b90430324e380b9",
+    "installed": [
+      "ue-project-context",
+      "ue-materials-rendering",
+      "ue-animation-system",
+      "ue-networking-replication",
+      "ue-testing-debugging"
+    ],
+    "validated_upstream_files": 14,
+    "availability": "next user turn"
+  },
+  "vibeue": {
+    "upstreamCommit": "dc051be7c49b08e613ca7a2196fe9f39c9b52119",
+    "sourceUnmodified": true,
+    "license": "MIT",
+    "engine": "5.8.3-58210709+++UE5+Release-5.8",
+    "buildId": "55116800",
+    "build": {
+      "passed": true,
+      "actions": 110,
+      "seconds": 86.38,
+      "maxParallelActions": 3,
+      "log": "/home/von/.local/share/nord-tools/vibeue-pilot/evidence/build-20261014-copy.log"
+    },
+    "binarySha256": "4d06a23c51305577a142f2d1a2fa7523a130ea25e21f296839591b4ab4b5c89f",
+    "externalLoader": {
+      "loaded": true,
+      "pluginProjectReference": false,
+      "flags": [
+        "-PLUGIN=/home/von/.local/share/nord-tools/vibeue-pilot/built/VibeUE/VibeUE.uplugin",
+        "-EnablePlugins=VibeUE"
+      ]
+    },
+    "traceTrial": {
+      "accepted": false,
+      "processExitCode": 1,
+      "apiChecksPassed": true,
+      "errors": [
+        "[MemAlloc] Invalid Tag on Thread 2 (Tracker=0)!",
+        "[MemAlloc] TagTracker errors: 25235"
+      ],
+      "log": "/home/von/.local/share/nord-tools/vibeue-pilot/evidence/smoke-20261014-attempt3-external.log",
+      "report": "/home/von/.local/share/nord-tools/vibeue-pilot/HostProject/Saved/Tests/VibeUE/smoke-20261014T162453588188Z.json"
+    },
+    "promotion": "rejected pending trace analysis compatibility",
+    "untested": [
+      "NORD project load",
+      "MCP endpoint",
+      "rendered performance",
+      "Linux standalone lifecycle"
+    ]
+  },
+  "ace_step": {
+    "source_commit": "ca1e85fe9430179831e6bc6be790c332190a3866",
+    "model_revision": "19671f406d603126926c1b7e2adc169acbcade22",
+    "model_files_verified": 28,
+    "device": "cpu",
+    "language_model_loaded": false,
+    "gpu_allocated_bytes": 0,
+    "disk_bytes": 18319732736,
+    "setup_provenance": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/ToolTrials/ACE-Step/setup-provenance.json",
+    "audition_page": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/ToolTrials/ACE-Step/index.html",
+    "tracks": [
+      {
+        "name": "neighborhood",
+        "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/ToolTrials/ACE-Step/run-20261014T162946Z/neighborhood.wav",
+        "seconds": 25.0,
+        "sample_rate": 48000,
+        "channels": 2,
+        "peak": 0.8912353515625,
+        "rms": 0.1478453129529953,
+        "sha256": "39b36f0d731871928fcee948848c47f68f0baab1066dbee3e2e90adb757a580a",
+        "generation_seconds": 65.42295861244202
+      },
+      {
+        "name": "street-race",
+        "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/ToolTrials/ACE-Step/run-20261014T163117Z/street-race.wav",
+        "seconds": 25.0,
+        "sample_rate": 48000,
+        "channels": 2,
+        "peak": 0.891265869140625,
+        "rms": 0.150544673204422,
+        "sha256": "c30ccc5626b23a68e408aa7635b51966415b81aae5caa439856fec4c86364810",
+        "generation_seconds": 48.31853914260864
+      },
+      {
+        "name": "garage",
+        "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/ToolTrials/ACE-Step/run-20261014T163225Z/garage.wav",
+        "seconds": 25.0,
+        "sample_rate": 48000,
+        "channels": 2,
+        "peak": 0.8912353515625,
+        "rms": 0.11845891177654266,
+        "sha256": "e71a1d956f25cb57eeca086cbe90aa107161ab521fdb007a1bc35305bb30f75d",
+        "generation_seconds": 47.17208218574524
+      }
+    ],
+    "listening_reviewed": false,
+    "production_imported": false
+  },
+  "preservation": {
+    "protected_baseline_files": 4,
+    "changed": [],
+    "service_actions_by_this_trial": [],
+    "concurrent_work": "Separate NORD gameplay/audio and graphics tasks remained active."
+  },
+  "spec_validation": {
+    "manual_structure_passed": true,
+    "requirements": 4,
+    "scenarios": 4,
+    "cli_available": false
+  }
+}

@@ -202,6 +202,16 @@ def scalar(text, actor, prop):
     return float(values[-1]) if values else None
 
 
+def driving_sample(text, map_name, car, start_position):
+    speed = scalar(text, car, 'Speed')
+    if speed is None or speed <= 100:
+        return None
+    position = hull_transforms(text, map_name)[car][0]
+    if math.dist(position[:2], start_position[:2]) <= 10:
+        return None
+    return {'speed_cm_s': speed, 'position_cm': position}
+
+
 def occupant(text, car):
     values = re.findall(r'\.'+re.escape(car)+r'\.Occupant = ([^\r\n]+)', text)
     return values[-1] if values else None
@@ -535,8 +545,7 @@ def run_district(args, district, runner, output, macros, peers):
     client.until('getall QuebecController Pawn', lambda text: controller_pawn(text, map_name) == client_car)
     client.snapshot('ke '+client_car+' DisableInput None\nke '+client_car+' ReleaseHandbrake\nke '+client_car+' MoveForward 1.0')
     driving = host.until('getall QuebecCar Speed\n'+TRANSFORMS,
-        lambda text: {'speed_cm_s': scalar(text, car, 'Speed'), 'position_cm': hull_transforms(text, map_name)[car][0]}
-        if scalar(text, car, 'Speed') is not None and scalar(text, car, 'Speed') > 100 else None, timeout=12)
+        lambda text: driving_sample(text, map_name, car, position), timeout=12)
     assert math.dist(driving['position_cm'][:2], position[:2]) > 10, 'Speed changed without actual hull movement'
     result['native_drive'] = driving
     client.snapshot('ke '+client_car+' ApplyHandbrake')

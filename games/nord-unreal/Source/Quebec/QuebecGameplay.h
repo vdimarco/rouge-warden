@@ -240,6 +240,8 @@ class QUEBEC_API AQuebecController : public APlayerController
 {
     GENERATED_BODY()
     friend class FQuebecFeedbackAssetsTest;
+    friend class FQuebecMusicAssetsTest;
+    friend class FQuebecMusicSelectionTest;
     friend class FQuebecBrowserInputReleaseTest;
     friend class FQuebecGraphicNovelCandidateTest;
 public:
@@ -264,6 +266,10 @@ public:
 
 private:
     UPROPERTY() TArray<TObjectPtr<USoundBase>> FeedbackSounds;
+    UPROPERTY() TObjectPtr<class UAudioComponent> MusicAudio;
+    UPROPERTY() TObjectPtr<USoundBase> NeighborhoodMusic;
+    UPROPERTY() TObjectPtr<USoundBase> RaceMusic;
+    void UpdateMusic(bool bRacing);
     UPROPERTY() TObjectPtr<AQuebecCharacter> WalkingCharacter;
     UPROPERTY() TObjectPtr<UMaterialInterface> ComicMaterial;
     bool bComicStyle = false;
