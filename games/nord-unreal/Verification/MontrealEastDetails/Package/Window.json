@@ -1,0 +1,45 @@
+{
+  "raw_report_sha256": "f5aa0269563ab7585d9178ebcda1f789db2c96e001988292a9a123b1452204ec",
+  "passed": true,
+  "phase": "complete",
+  "jobs": [
+    {
+      "name": "PackageBoth",
+      "command": [
+        "/usr/bin/python3",
+        "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Scripts/verify_district_package.py",
+        "--runner",
+        "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Builds/District-20261017T141305Z/Archive/Linux/Quebec.sh",
+        "--output",
+        "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T141409Z/Package",
+        "--district",
+        "both",
+        "--rendered-startup"
+      ],
+      "process_exit_code": 0,
+      "report": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T141409Z/Package/report.json",
+      "video": null,
+      "report_sha256": "253ad8aed2563cc6840801272a399010dde9afa047dc876f2a4a5d638fc30cf6",
+      "passed": true
+    }
+  ],
+  "service_actions": [
+    "stop nord-browser-demo.service",
+    "restore nord-browser-demo.service"
+  ],
+  "restored": true,
+  "global_settings_restored": true,
+  "source_settings_restored": true,
+  "protected_changed": [],
+  "generated_assets_changed": [],
+  "all_content_changed": [],
+  "frozen_source_changed": [],
+  "derivative_changed": [],
+  "stream_helper_unchanged": true,
+  "live_package_changed": [],
+  "live_saves_changed_before_restart": false,
+  "source_savegames_unchanged": true,
+  "preserved_units_unchanged": true,
+  "turn_running_after": true,
+  "curation": "Private baselines, environment/settings/save inventories and runtime service identities omitted."
+}

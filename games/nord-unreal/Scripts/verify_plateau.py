@@ -419,8 +419,14 @@ def run():
         backups = [argument.split('=', 1)[1] for argument in shlex.split(u.SystemLibrary.get_command_line())
                    if argument.startswith('-NordMontrealEastBackup=')]
         assert len(backups) == 1, 'Pass the preserved -NordMontrealEastBackup path for expanded-map verification'
+        details = [argument.split('=', 1)[1] for argument in shlex.split(u.SystemLibrary.get_command_line())
+                   if argument.startswith('-NordMontrealEastDetailsBackup=')]
+        assert len(details) <= 1, 'Pass at most one later Details backup'
+        if any(label.startswith('Plateau east details ') for label in labels):
+            assert len(details) == 1, 'Pass the preserved -NordMontrealEastDetailsBackup path for decorative-layer verification'
         # Full Content preservation is sealed by author/fresh receipts; later art additions use their own receipts.
-        REPORT['edges'] = verify_east(u, ROOT, Path(backups[0]), compare_content=False)
+        REPORT['edges'] = verify_east(u, ROOT, Path(backups[0]), compare_content=False,
+                                    details_backup=Path(details[0]) if details else None)
     else:
         REPORT['edges'] = verify_edges(u, labels, ROOT)
     REPORT['checks'].append('saved theatre envelope, upright French cartography with solid frames, and readable closures at preserved map boundaries')

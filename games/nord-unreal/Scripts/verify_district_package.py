@@ -82,6 +82,13 @@ def verify_inventory(text, district, root=ROOT, *, dependencies=True, authoritat
             extension = json.loads((root/'Data/Plateau/EastExtension/extension.json').read_text())
             assert extension['road_segments'] == 143 and len(extension['materials']) == 40
             result['east_extension_meshes'] = mesh_inventory(text, map_name, '/Game/Plateau/EastExtension', extension['materials'])
+            details_path = root/'Data/Plateau/EastDetails/details.json'
+            if details_path.is_file():
+                details = json.loads(details_path.read_text())
+                names = ('Glass', 'Iron', 'Trim')
+                packages = details['native_contract']['new_packages']
+                assert len(packages) == 3 and set(packages) == {f'Content/Plateau/EastDetails/SM_{name}.uasset' for name in names}, 'East Details source contract changed'
+                result['east_details_meshes'] = mesh_inventory(text, map_name, '/Game/Plateau/EastDetails', names)
             parts = set(re.findall(r'SM_Resident(\d+)(Body|Head|LeftArm|RightArm|LeftLeg|RightLeg)', text))
             assert len(parts) == 66, ('Cooked resident parts', len(parts))
     else:

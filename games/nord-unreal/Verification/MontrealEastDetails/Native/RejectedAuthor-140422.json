@@ -1,0 +1,27 @@
+{
+  "passed": false,
+  "mode": "author",
+  "command": [
+    "/home/von/.local/share/Epic/UE_5.8.3/Engine/Binaries/Linux/UnrealEditor-Cmd",
+    "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Quebec.uproject",
+    "/Game/Maps/LaFontaine",
+    "-NullRHI",
+    "-unattended",
+    "-nop4",
+    "-nosound",
+    "-UDPMESSAGING_TRANSPORT_ENABLE=0",
+    "-ExecutePythonScript=/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Scripts/apply_montreal_east_details.py",
+    "-NordMontrealEastDetailsBackup=/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Recovery/montreal-east-details-20261017T140422Z",
+    "-NordMontrealEastBackup=/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Recovery/montreal-east-20261014T150229Z",
+    "-abslog=/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/DistrictRuntime/EastDetailsAuthor-20261017T140422Z/native.log"
+  ],
+  "backup": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Recovery/montreal-east-details-20261017T140422Z",
+  "started_utc": "2026-10-17T14:04:22.795820+00:00",
+  "exit_code": 0,
+  "error": "Traceback (most recent call last):\n  File \"/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/DistrictRuntime/run_east_details_native.py\", line 15, in <module>\n    report['exit_code']=r.returncode;text=(out/'native.log').read_text(errors='replace');marker='PLATEAU_VERIFY_OK' if mode=='canonical' else 'MONTREAL_EAST_DETAILS_OK';assert r.returncode==0 and marker in text and 'LogPython: Error:' not in text\n                                                                                                                                                                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError\n",
+  "changed_existing_content": [],
+  "added_content": [],
+  "only_declared_content_changes": true,
+  "settings_restored": true,
+  "protected_saves_unchanged": true
+}

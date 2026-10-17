@@ -265,7 +265,7 @@ def apply(u, root, backup):
     return receipt
 
 
-def verify(u, root, backup, compare_content=True):
+def verify(u, root, backup, compare_content=True, details_backup=None):
     """Read-only fresh-load check; root must separately prove actual traversal."""
     root, backup = Path(root).resolve(), Path(backup).resolve(); report = plan.load(root)
     assert (root/'Saved/Recovery').resolve() in backup.parents and backup.is_dir(), 'Use the preserved original extension backup'
@@ -286,7 +286,12 @@ def verify(u, root, backup, compare_content=True):
     labels = {a.get_actor_label(): a for a in actors}
     wanted = {plan.PREFIX+n for n in report['materials']} | {plan.PREFIX+'sign '+c['source'] for c in report['closures']}
     wanted |= {v['label'] for v in [report['hidden_collision']['floor'], *report['hidden_collision']['bounds']]}
-    added = [a for a in actors if a.get_path_name() not in before]
+    details = None
+    if details_backup is not None:
+        from apply_montreal_east_details import verify as verify_details
+        details = verify_details(u, root, details_backup, compare_content=compare_content)
+    details_paths = set(details['new_actors'].values()) if details else set()
+    added = [a for a in actors if a.get_path_name() not in before and a.get_path_name() not in details_paths]
     assert len(added) == len(wanted) and {a.get_actor_label() for a in added} == wanted, 'Unexpected extension actor inventory'
     for v in [report['hidden_collision']['floor'], *report['hidden_collision']['bounds']]:
         a = labels[v['label']]; c = a.static_mesh_component
@@ -324,12 +329,13 @@ def verify(u, root, backup, compare_content=True):
     if compare_content:
         actual = content_hashes(root)
         assert all(actual.get(p) == h for p, h in original_content.items() if p not in [str(MAP_FILE.with_suffix(s)) for s in ('.umap', '.uexp', '.ubulk')]), 'Protected original Content changed'
-        assert all(p.startswith('Content/Plateau/EastExtension/') for p in set(actual)-set(original_content)), 'Unexpected Content addition'
+        details_files = set(details['new_content_files']) if details else set()
+        assert all(p.startswith('Content/Plateau/EastExtension/') or p in details_files for p in set(actual)-set(original_content)), 'Unexpected Content addition'
     return {'passed': True, 'original_content_epoch_compared': compare_content, 'original_actor_semantics_preserved_except_declared_changes': True,
             'original_boundary_actors_retained': 4, 'moved_original_east_actor': east,
             'hidden_old_closure_actors': len(old_primary), 'new_actor_count': len(added),
             'new_collision_cubes': 1+len(report['hidden_collision']['bounds']), 'road_segments': report['road_segments'], 'closure_sites': len(report['closures']),
-            'traversal_jump_containment_rendered_acceptance': False}
+            'later_details': details, 'traversal_jump_containment_rendered_acceptance': False}
 
 
 def main():
@@ -338,7 +344,9 @@ def main():
     args = shlex.split(u.SystemLibrary.get_command_line())
     value = [a.split('=', 1)[1] for a in args if a.startswith('-NordMontrealEastBackup=')]
     assert len(value) == 1, 'Pass one fresh -NordMontrealEastBackup=absolute-path'
-    result = verify(u, root, value[0]) if '-NordMontrealEastVerify' in args else apply(u, root, value[0])
+    details = [a.split('=', 1)[1] for a in args if a.startswith('-NordMontrealEastDetailsBackup=')]
+    assert len(details) <= 1, 'Pass at most one later Details backup'
+    result = verify(u, root, value[0], details_backup=details[0] if details else None) if '-NordMontrealEastVerify' in args else apply(u, root, value[0])
     u.log('MONTREAL_EAST_EXTENSION_OK '+json.dumps(result))
 
 
