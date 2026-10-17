@@ -1,0 +1,626 @@
+{
+  "scope": "Whitelisted six passing native trial capture jobs; no environment/INI/service identities/raw CSV metadata.",
+  "jobs": [
+    {
+      "name": "Standard1280",
+      "native_exit_code": 0,
+      "passed": true,
+      "resolution": [
+        1280,
+        720
+      ],
+      "render_mode": "standard",
+      "source_report": "Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T145346Z/PrivateCapture/Capture/Standard/PlayerQuality1280.json",
+      "source_report_sha256": "6d46134052f368920e28eb74424f228129aa0df19801c00050c506fab7691282",
+      "renderer_settings": {
+        "sg.ViewDistanceQuality": 3,
+        "sg.AntiAliasingQuality": 3,
+        "sg.ShadowQuality": 3,
+        "sg.GlobalIlluminationQuality": 3,
+        "sg.ReflectionQuality": 3,
+        "sg.PostProcessQuality": 3,
+        "sg.TextureQuality": 3,
+        "sg.EffectsQuality": 3,
+        "sg.FoliageQuality": 3,
+        "r.Streaming.PoolSize": 1000,
+        "r.Shadow.Virtual.MaxPhysicalPages": 4096,
+        "r.ScreenPercentage": 100.0,
+        "t.MaxFPS": 60.0
+      },
+      "mapped_normal_strength": 1.0,
+      "material_uv_channels": {
+        "base_color": 0,
+        "normal": 0,
+        "roughness": 0,
+        "metallic": 0
+      },
+      "native_clip_sha256": "90f03ece6f027126037e21ef5dd725444f94b82f130098c524ccb82be98692e9",
+      "fresh_native_readback": {
+        "passed": true,
+        "trial_receipt_sha256": "9c804f72c907cd15fd8cff304ec29821fbf4992b32b627e20cee460939d96405",
+        "changed_content": [
+          "Content/ParkComic/CrewGraphicNovelHighDetail/Resident9/A_Jump.uasset"
+        ],
+        "metadata": {
+          "asset": "/Game/ParkComic/CrewGraphicNovelHighDetail/Resident9/A_Jump.A_Jump",
+          "class": "/Script/Engine.AnimSequence",
+          "skeleton": "/Game/ParkComic/CrewGraphicNovelHighDetail/Resident9/SK_Body_Skeleton.SK_Body_Skeleton",
+          "seconds": 1.2000000476837158,
+          "frames": 36,
+          "keys": 37,
+          "sample_rate": [
+            30,
+            1
+          ],
+          "flags": {
+            "enable_root_motion": false,
+            "force_root_lock": false,
+            "root_motion_root_lock": "<RootMotionRootLock.REF_POSE: 0>",
+            "use_normalized_root_motion_scale": true,
+            "rate_scale": 1.0,
+            "interpolation": "<AnimInterpolationType.LINEAR: 0>"
+          },
+          "source": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/GraphicNovel/PrivateJumpArmPlan-20261017/CPUAuthoring-20261017T142247Z/trial/CurlyMetalhead/jump.fbx",
+          "source_sha256": "e35071099841d099eea5dda9de96a31b10cd07c4dfe73543bfee42f395c4833e"
+        },
+        "native_pose_gate": {
+          "passed": true,
+          "sample_frames": 37,
+          "bones": 25,
+          "tolerances": {
+            "translation_cm": 0.001,
+            "scale": 1e-05,
+            "rotation_radians": 0.0001
+          },
+          "deformation_bones": 24,
+          "static_import_root": "Armature",
+          "unchanged_field_maxima": {
+            "translation_cm": 0.0,
+            "scale": 0.0,
+            "rotation_radians": 8.82678836756059e-07
+          },
+          "allowed_arm_rotation_max_radians": {
+            "LeftArm": 0.6980815681578443,
+            "RightArm": 0.6980814880491368
+          }
+        },
+        "cpu_gate_sha256": "15bf5c7fb878fcd2b792482ff24535cd684d718bb79d09ce4e35cc50d8333c8f",
+        "graphics_accepted": false,
+        "adopted": false,
+        "restore_required": true
+      },
+      "motion_only": false,
+      "image_count": 7
+    },
+    {
+      "name": "Standard1920",
+      "native_exit_code": 0,
+      "passed": true,
+      "resolution": [
+        1920,
+        1080
+      ],
+      "render_mode": "standard",
+      "source_report": "Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T145346Z/PrivateCapture/Capture/Standard/PlayerQuality1920.json",
+      "source_report_sha256": "d49c58ce28a1cf6ccd10141531bd63754a8d2ff50a626f0b83476f7c0faae32d",
+      "renderer_settings": {
+        "sg.ViewDistanceQuality": 3,
+        "sg.AntiAliasingQuality": 3,
+        "sg.ShadowQuality": 3,
+        "sg.GlobalIlluminationQuality": 3,
+        "sg.ReflectionQuality": 3,
+        "sg.PostProcessQuality": 3,
+        "sg.TextureQuality": 3,
+        "sg.EffectsQuality": 3,
+        "sg.FoliageQuality": 3,
+        "r.Streaming.PoolSize": 1000,
+        "r.Shadow.Virtual.MaxPhysicalPages": 4096,
+        "r.ScreenPercentage": 100.0,
+        "t.MaxFPS": 60.0
+      },
+      "mapped_normal_strength": 1.0,
+      "material_uv_channels": {
+        "base_color": 0,
+        "normal": 0,
+        "roughness": 0,
+        "metallic": 0
+      },
+      "native_clip_sha256": "90f03ece6f027126037e21ef5dd725444f94b82f130098c524ccb82be98692e9",
+      "fresh_native_readback": {
+        "passed": true,
+        "trial_receipt_sha256": "9c804f72c907cd15fd8cff304ec29821fbf4992b32b627e20cee460939d96405",
+        "changed_content": [
+          "Content/ParkComic/CrewGraphicNovelHighDetail/Resident9/A_Jump.uasset"
+        ],
+        "metadata": {
+          "asset": "/Game/ParkComic/CrewGraphicNovelHighDetail/Resident9/A_Jump.A_Jump",
+          "class": "/Script/Engine.AnimSequence",
+          "skeleton": "/Game/ParkComic/CrewGraphicNovelHighDetail/Resident9/SK_Body_Skeleton.SK_Body_Skeleton",
+          "seconds": 1.2000000476837158,
+          "frames": 36,
+          "keys": 37,
+          "sample_rate": [
+            30,
+            1
+          ],
+          "flags": {
+            "enable_root_motion": false,
+            "force_root_lock": false,
+            "root_motion_root_lock": "<RootMotionRootLock.REF_POSE: 0>",
+            "use_normalized_root_motion_scale": true,
+            "rate_scale": 1.0,
+            "interpolation": "<AnimInterpolationType.LINEAR: 0>"
+          },
+          "source": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/GraphicNovel/PrivateJumpArmPlan-20261017/CPUAuthoring-20261017T142247Z/trial/CurlyMetalhead/jump.fbx",
+          "source_sha256": "e35071099841d099eea5dda9de96a31b10cd07c4dfe73543bfee42f395c4833e"
+        },
+        "native_pose_gate": {
+          "passed": true,
+          "sample_frames": 37,
+          "bones": 25,
+          "tolerances": {
+            "translation_cm": 0.001,
+            "scale": 1e-05,
+            "rotation_radians": 0.0001
+          },
+          "deformation_bones": 24,
+          "static_import_root": "Armature",
+          "unchanged_field_maxima": {
+            "translation_cm": 0.0,
+            "scale": 0.0,
+            "rotation_radians": 8.82678836756059e-07
+          },
+          "allowed_arm_rotation_max_radians": {
+            "LeftArm": 0.6980815681578443,
+            "RightArm": 0.6980814880491368
+          }
+        },
+        "cpu_gate_sha256": "15bf5c7fb878fcd2b792482ff24535cd684d718bb79d09ce4e35cc50d8333c8f",
+        "graphics_accepted": false,
+        "adopted": false,
+        "restore_required": true
+      },
+      "motion_only": false,
+      "image_count": 7
+    },
+    {
+      "name": "Motion1920Standard",
+      "native_exit_code": 0,
+      "passed": true,
+      "resolution": [
+        1920,
+        1080
+      ],
+      "render_mode": "standard",
+      "source_report": "Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T145346Z/PrivateCapture/Capture/Motion/Standard/PlayerMotion1920.json",
+      "source_report_sha256": "768bbbc541464baea2cf7725ab52d47eed6e4651936dcf3e5bafc2a955c3ca9b",
+      "renderer_settings": {
+        "sg.ViewDistanceQuality": 3,
+        "sg.AntiAliasingQuality": 3,
+        "sg.ShadowQuality": 3,
+        "sg.GlobalIlluminationQuality": 3,
+        "sg.ReflectionQuality": 3,
+        "sg.PostProcessQuality": 3,
+        "sg.TextureQuality": 3,
+        "sg.EffectsQuality": 3,
+        "sg.FoliageQuality": 3,
+        "r.Streaming.PoolSize": 1000,
+        "r.Shadow.Virtual.MaxPhysicalPages": 4096,
+        "r.ScreenPercentage": 100.0,
+        "t.MaxFPS": 60.0
+      },
+      "mapped_normal_strength": 1.0,
+      "material_uv_channels": {
+        "base_color": 0,
+        "normal": 0,
+        "roughness": 0,
+        "metallic": 0
+      },
+      "native_clip_sha256": "90f03ece6f027126037e21ef5dd725444f94b82f130098c524ccb82be98692e9",
+      "fresh_native_readback": {
+        "passed": true,
+        "trial_receipt_sha256": "9c804f72c907cd15fd8cff304ec29821fbf4992b32b627e20cee460939d96405",
+        "changed_content": [
+          "Content/ParkComic/CrewGraphicNovelHighDetail/Resident9/A_Jump.uasset"
+        ],
+        "metadata": {
+          "asset": "/Game/ParkComic/CrewGraphicNovelHighDetail/Resident9/A_Jump.A_Jump",
+          "class": "/Script/Engine.AnimSequence",
+          "skeleton": "/Game/ParkComic/CrewGraphicNovelHighDetail/Resident9/SK_Body_Skeleton.SK_Body_Skeleton",
+          "seconds": 1.2000000476837158,
+          "frames": 36,
+          "keys": 37,
+          "sample_rate": [
+            30,
+            1
+          ],
+          "flags": {
+            "enable_root_motion": false,
+            "force_root_lock": false,
+            "root_motion_root_lock": "<RootMotionRootLock.REF_POSE: 0>",
+            "use_normalized_root_motion_scale": true,
+            "rate_scale": 1.0,
+            "interpolation": "<AnimInterpolationType.LINEAR: 0>"
+          },
+          "source": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/GraphicNovel/PrivateJumpArmPlan-20261017/CPUAuthoring-20261017T142247Z/trial/CurlyMetalhead/jump.fbx",
+          "source_sha256": "e35071099841d099eea5dda9de96a31b10cd07c4dfe73543bfee42f395c4833e"
+        },
+        "native_pose_gate": {
+          "passed": true,
+          "sample_frames": 37,
+          "bones": 25,
+          "tolerances": {
+            "translation_cm": 0.001,
+            "scale": 1e-05,
+            "rotation_radians": 0.0001
+          },
+          "deformation_bones": 24,
+          "static_import_root": "Armature",
+          "unchanged_field_maxima": {
+            "translation_cm": 0.0,
+            "scale": 0.0,
+            "rotation_radians": 8.82678836756059e-07
+          },
+          "allowed_arm_rotation_max_radians": {
+            "RightArm": 0.6980814880491368,
+            "LeftArm": 0.6980815681578443
+          }
+        },
+        "cpu_gate_sha256": "15bf5c7fb878fcd2b792482ff24535cd684d718bb79d09ce4e35cc50d8333c8f",
+        "graphics_accepted": false,
+        "adopted": false,
+        "restore_required": true
+      },
+      "motion_only": true,
+      "recorder_exit_code": 0,
+      "source_video": "Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T145346Z/Motion1920Standard/raw.mp4",
+      "video_sha256": "bf95b2020381df0fdfa1bfe3e39cc9dd87b5a4abd4f9cd30231991f1a330d138",
+      "viewport_pixels_observed": [
+        1920,
+        1080
+      ],
+      "csv_flushed": true,
+      "transitions_passed": true,
+      "native_transition_checks": {
+        "phase_counts": {
+          "idle": 9,
+          "walk": 38,
+          "sprint": 38,
+          "turn": 21,
+          "stop": 19,
+          "jump": 34,
+          "landing": 6,
+          "recover": 15
+        },
+        "steady_motion": {
+          "walk": {
+            "steady_samples": 30,
+            "foot_pose_change_pairs": 29
+          },
+          "sprint": {
+            "steady_samples": 31,
+            "foot_pose_change_pairs": 30
+          }
+        },
+        "directional_turn_degrees": 90.0,
+        "jump_peak_cm": 183.654,
+        "jump_horizontal_drift_cm": 0.0,
+        "airborne_knee_degrees": 62.405,
+        "scope": "selected native state and pose observations at 1x; no rendered fluidity or FPS acceptance"
+      },
+      "frame_budget_accepted": false
+    },
+    {
+      "name": "Comic1280",
+      "native_exit_code": 0,
+      "passed": true,
+      "resolution": [
+        1280,
+        720
+      ],
+      "render_mode": "comic",
+      "source_report": "Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T145346Z/PrivateCapture/Capture/PlayerQuality1280.json",
+      "source_report_sha256": "ed93e838666f371782ff735a1519c1fc969a53312865ce5434f5dd3d082e087d",
+      "renderer_settings": {
+        "sg.ViewDistanceQuality": 3,
+        "sg.AntiAliasingQuality": 3,
+        "sg.ShadowQuality": 3,
+        "sg.GlobalIlluminationQuality": 3,
+        "sg.ReflectionQuality": 3,
+        "sg.PostProcessQuality": 3,
+        "sg.TextureQuality": 3,
+        "sg.EffectsQuality": 3,
+        "sg.FoliageQuality": 3,
+        "r.Streaming.PoolSize": 1000,
+        "r.Shadow.Virtual.MaxPhysicalPages": 4096,
+        "r.ScreenPercentage": 100.0,
+        "t.MaxFPS": 60.0
+      },
+      "mapped_normal_strength": 1.0,
+      "material_uv_channels": {
+        "base_color": 0,
+        "normal": 0,
+        "roughness": 0,
+        "metallic": 0
+      },
+      "native_clip_sha256": "90f03ece6f027126037e21ef5dd725444f94b82f130098c524ccb82be98692e9",
+      "fresh_native_readback": {
+        "passed": true,
+        "trial_receipt_sha256": "9c804f72c907cd15fd8cff304ec29821fbf4992b32b627e20cee460939d96405",
+        "changed_content": [
+          "Content/ParkComic/CrewGraphicNovelHighDetail/Resident9/A_Jump.uasset"
+        ],
+        "metadata": {
+          "asset": "/Game/ParkComic/CrewGraphicNovelHighDetail/Resident9/A_Jump.A_Jump",
+          "class": "/Script/Engine.AnimSequence",
+          "skeleton": "/Game/ParkComic/CrewGraphicNovelHighDetail/Resident9/SK_Body_Skeleton.SK_Body_Skeleton",
+          "seconds": 1.2000000476837158,
+          "frames": 36,
+          "keys": 37,
+          "sample_rate": [
+            30,
+            1
+          ],
+          "flags": {
+            "enable_root_motion": false,
+            "force_root_lock": false,
+            "root_motion_root_lock": "<RootMotionRootLock.REF_POSE: 0>",
+            "use_normalized_root_motion_scale": true,
+            "rate_scale": 1.0,
+            "interpolation": "<AnimInterpolationType.LINEAR: 0>"
+          },
+          "source": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/GraphicNovel/PrivateJumpArmPlan-20261017/CPUAuthoring-20261017T142247Z/trial/CurlyMetalhead/jump.fbx",
+          "source_sha256": "e35071099841d099eea5dda9de96a31b10cd07c4dfe73543bfee42f395c4833e"
+        },
+        "native_pose_gate": {
+          "passed": true,
+          "sample_frames": 37,
+          "bones": 25,
+          "tolerances": {
+            "translation_cm": 0.001,
+            "scale": 1e-05,
+            "rotation_radians": 0.0001
+          },
+          "deformation_bones": 24,
+          "static_import_root": "Armature",
+          "unchanged_field_maxima": {
+            "translation_cm": 0.0,
+            "scale": 0.0,
+            "rotation_radians": 8.82678836756059e-07
+          },
+          "allowed_arm_rotation_max_radians": {
+            "RightArm": 0.6980814880491368,
+            "LeftArm": 0.6980815681578443
+          }
+        },
+        "cpu_gate_sha256": "15bf5c7fb878fcd2b792482ff24535cd684d718bb79d09ce4e35cc50d8333c8f",
+        "graphics_accepted": false,
+        "adopted": false,
+        "restore_required": true
+      },
+      "motion_only": false,
+      "image_count": 7
+    },
+    {
+      "name": "Comic1920",
+      "native_exit_code": 0,
+      "passed": true,
+      "resolution": [
+        1920,
+        1080
+      ],
+      "render_mode": "comic",
+      "source_report": "Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T145346Z/PrivateCapture/Capture/PlayerQuality1920.json",
+      "source_report_sha256": "5b861e73c9c687be35b1a7208e3b6252c071dd78bbd94c8c9eee4620a815b9b1",
+      "renderer_settings": {
+        "sg.ViewDistanceQuality": 3,
+        "sg.AntiAliasingQuality": 3,
+        "sg.ShadowQuality": 3,
+        "sg.GlobalIlluminationQuality": 3,
+        "sg.ReflectionQuality": 3,
+        "sg.PostProcessQuality": 3,
+        "sg.TextureQuality": 3,
+        "sg.EffectsQuality": 3,
+        "sg.FoliageQuality": 3,
+        "r.Streaming.PoolSize": 1000,
+        "r.Shadow.Virtual.MaxPhysicalPages": 4096,
+        "r.ScreenPercentage": 100.0,
+        "t.MaxFPS": 60.0
+      },
+      "mapped_normal_strength": 1.0,
+      "material_uv_channels": {
+        "base_color": 0,
+        "normal": 0,
+        "roughness": 0,
+        "metallic": 0
+      },
+      "native_clip_sha256": "90f03ece6f027126037e21ef5dd725444f94b82f130098c524ccb82be98692e9",
+      "fresh_native_readback": {
+        "passed": true,
+        "trial_receipt_sha256": "9c804f72c907cd15fd8cff304ec29821fbf4992b32b627e20cee460939d96405",
+        "changed_content": [
+          "Content/ParkComic/CrewGraphicNovelHighDetail/Resident9/A_Jump.uasset"
+        ],
+        "metadata": {
+          "asset": "/Game/ParkComic/CrewGraphicNovelHighDetail/Resident9/A_Jump.A_Jump",
+          "class": "/Script/Engine.AnimSequence",
+          "skeleton": "/Game/ParkComic/CrewGraphicNovelHighDetail/Resident9/SK_Body_Skeleton.SK_Body_Skeleton",
+          "seconds": 1.2000000476837158,
+          "frames": 36,
+          "keys": 37,
+          "sample_rate": [
+            30,
+            1
+          ],
+          "flags": {
+            "enable_root_motion": false,
+            "force_root_lock": false,
+            "root_motion_root_lock": "<RootMotionRootLock.REF_POSE: 0>",
+            "use_normalized_root_motion_scale": true,
+            "rate_scale": 1.0,
+            "interpolation": "<AnimInterpolationType.LINEAR: 0>"
+          },
+          "source": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/GraphicNovel/PrivateJumpArmPlan-20261017/CPUAuthoring-20261017T142247Z/trial/CurlyMetalhead/jump.fbx",
+          "source_sha256": "e35071099841d099eea5dda9de96a31b10cd07c4dfe73543bfee42f395c4833e"
+        },
+        "native_pose_gate": {
+          "passed": true,
+          "sample_frames": 37,
+          "bones": 25,
+          "tolerances": {
+            "translation_cm": 0.001,
+            "scale": 1e-05,
+            "rotation_radians": 0.0001
+          },
+          "deformation_bones": 24,
+          "static_import_root": "Armature",
+          "unchanged_field_maxima": {
+            "translation_cm": 0.0,
+            "scale": 0.0,
+            "rotation_radians": 8.82678836756059e-07
+          },
+          "allowed_arm_rotation_max_radians": {
+            "RightArm": 0.6980814880491368,
+            "LeftArm": 0.6980815681578443
+          }
+        },
+        "cpu_gate_sha256": "15bf5c7fb878fcd2b792482ff24535cd684d718bb79d09ce4e35cc50d8333c8f",
+        "graphics_accepted": false,
+        "adopted": false,
+        "restore_required": true
+      },
+      "motion_only": false,
+      "image_count": 7
+    },
+    {
+      "name": "Motion1920Comic",
+      "native_exit_code": 0,
+      "passed": true,
+      "resolution": [
+        1920,
+        1080
+      ],
+      "render_mode": "comic",
+      "source_report": "Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T145346Z/PrivateCapture/Capture/Motion/Comic/PlayerMotion1920.json",
+      "source_report_sha256": "7f81c11f10d579ee9713b2e5afcb058d82fe09dd87eba2022a3861f6149316b5",
+      "renderer_settings": {
+        "sg.ViewDistanceQuality": 3,
+        "sg.AntiAliasingQuality": 3,
+        "sg.ShadowQuality": 3,
+        "sg.GlobalIlluminationQuality": 3,
+        "sg.ReflectionQuality": 3,
+        "sg.PostProcessQuality": 3,
+        "sg.TextureQuality": 3,
+        "sg.EffectsQuality": 3,
+        "sg.FoliageQuality": 3,
+        "r.Streaming.PoolSize": 1000,
+        "r.Shadow.Virtual.MaxPhysicalPages": 4096,
+        "r.ScreenPercentage": 100.0,
+        "t.MaxFPS": 60.0
+      },
+      "mapped_normal_strength": 1.0,
+      "material_uv_channels": {
+        "base_color": 0,
+        "normal": 0,
+        "roughness": 0,
+        "metallic": 0
+      },
+      "native_clip_sha256": "90f03ece6f027126037e21ef5dd725444f94b82f130098c524ccb82be98692e9",
+      "fresh_native_readback": {
+        "passed": true,
+        "trial_receipt_sha256": "9c804f72c907cd15fd8cff304ec29821fbf4992b32b627e20cee460939d96405",
+        "changed_content": [
+          "Content/ParkComic/CrewGraphicNovelHighDetail/Resident9/A_Jump.uasset"
+        ],
+        "metadata": {
+          "asset": "/Game/ParkComic/CrewGraphicNovelHighDetail/Resident9/A_Jump.A_Jump",
+          "class": "/Script/Engine.AnimSequence",
+          "skeleton": "/Game/ParkComic/CrewGraphicNovelHighDetail/Resident9/SK_Body_Skeleton.SK_Body_Skeleton",
+          "seconds": 1.2000000476837158,
+          "frames": 36,
+          "keys": 37,
+          "sample_rate": [
+            30,
+            1
+          ],
+          "flags": {
+            "enable_root_motion": false,
+            "force_root_lock": false,
+            "root_motion_root_lock": "<RootMotionRootLock.REF_POSE: 0>",
+            "use_normalized_root_motion_scale": true,
+            "rate_scale": 1.0,
+            "interpolation": "<AnimInterpolationType.LINEAR: 0>"
+          },
+          "source": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/GraphicNovel/PrivateJumpArmPlan-20261017/CPUAuthoring-20261017T142247Z/trial/CurlyMetalhead/jump.fbx",
+          "source_sha256": "e35071099841d099eea5dda9de96a31b10cd07c4dfe73543bfee42f395c4833e"
+        },
+        "native_pose_gate": {
+          "passed": true,
+          "sample_frames": 37,
+          "bones": 25,
+          "tolerances": {
+            "translation_cm": 0.001,
+            "scale": 1e-05,
+            "rotation_radians": 0.0001
+          },
+          "deformation_bones": 24,
+          "static_import_root": "Armature",
+          "unchanged_field_maxima": {
+            "translation_cm": 0.0,
+            "scale": 0.0,
+            "rotation_radians": 8.82678836756059e-07
+          },
+          "allowed_arm_rotation_max_radians": {
+            "RightArm": 0.6980814880491368,
+            "LeftArm": 0.6980815681578443
+          }
+        },
+        "cpu_gate_sha256": "15bf5c7fb878fcd2b792482ff24535cd684d718bb79d09ce4e35cc50d8333c8f",
+        "graphics_accepted": false,
+        "adopted": false,
+        "restore_required": true
+      },
+      "motion_only": true,
+      "recorder_exit_code": 0,
+      "source_video": "Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T145346Z/Motion1920Comic/raw.mp4",
+      "video_sha256": "3cc28e44c9984821520fa3c58c92b676705a47d2a8b3e6eb3c15c7662fce2c74",
+      "viewport_pixels_observed": [
+        1920,
+        1080
+      ],
+      "csv_flushed": true,
+      "transitions_passed": true,
+      "native_transition_checks": {
+        "phase_counts": {
+          "idle": 9,
+          "walk": 36,
+          "sprint": 38,
+          "turn": 21,
+          "stop": 18,
+          "jump": 34,
+          "landing": 6,
+          "recover": 16
+        },
+        "steady_motion": {
+          "walk": {
+            "steady_samples": 28,
+            "foot_pose_change_pairs": 27
+          },
+          "sprint": {
+            "steady_samples": 31,
+            "foot_pose_change_pairs": 30
+          }
+        },
+        "directional_turn_degrees": 90.0,
+        "jump_peak_cm": 183.673,
+        "jump_horizontal_drift_cm": 0.0,
+        "airborne_knee_degrees": 62.498,
+        "scope": "selected native state and pose observations at 1x; no rendered fluidity or FPS acceptance"
+      },
+      "frame_budget_accepted": false
+    }
+  ],
+  "window_passed": true,
+  "window_restored": true,
+  "graphics_accepted": false
+}

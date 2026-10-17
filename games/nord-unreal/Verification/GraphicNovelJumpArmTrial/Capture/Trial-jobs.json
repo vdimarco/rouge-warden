@@ -1,0 +1,68 @@
+[
+  {
+    "name": "Standard1280",
+    "width": 1280,
+    "height": 720,
+    "standard": true,
+    "motion": false,
+    "script": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T145346Z/PrivateCapture/capture.py",
+    "report": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T145346Z/PrivateCapture/Capture/Standard/PlayerQuality1280.json",
+    "log": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T145346Z/Standard1280/native.log",
+    "stdout": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T145346Z/Standard1280/stdout.log"
+  },
+  {
+    "name": "Standard1920",
+    "width": 1920,
+    "height": 1080,
+    "standard": true,
+    "motion": false,
+    "script": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T145346Z/PrivateCapture/capture.py",
+    "report": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T145346Z/PrivateCapture/Capture/Standard/PlayerQuality1920.json",
+    "log": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T145346Z/Standard1920/native.log",
+    "stdout": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T145346Z/Standard1920/stdout.log"
+  },
+  {
+    "name": "Motion1920Standard",
+    "width": 1920,
+    "height": 1080,
+    "standard": true,
+    "motion": true,
+    "script": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T145346Z/PrivateCapture/capture.py",
+    "report": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T145346Z/PrivateCapture/Capture/Motion/Standard/PlayerMotion1920.json",
+    "log": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T145346Z/Motion1920Standard/native.log",
+    "stdout": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T145346Z/Motion1920Standard/stdout.log"
+  },
+  {
+    "name": "Comic1280",
+    "width": 1280,
+    "height": 720,
+    "standard": false,
+    "motion": false,
+    "script": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T145346Z/PrivateCapture/capture.py",
+    "report": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T145346Z/PrivateCapture/Capture/PlayerQuality1280.json",
+    "log": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T145346Z/Comic1280/native.log",
+    "stdout": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T145346Z/Comic1280/stdout.log"
+  },
+  {
+    "name": "Comic1920",
+    "width": 1920,
+    "height": 1080,
+    "standard": false,
+    "motion": false,
+    "script": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T145346Z/PrivateCapture/capture.py",
+    "report": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T145346Z/PrivateCapture/Capture/PlayerQuality1920.json",
+    "log": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T145346Z/Comic1920/native.log",
+    "stdout": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T145346Z/Comic1920/stdout.log"
+  },
+  {
+    "name": "Motion1920Comic",
+    "width": 1920,
+    "height": 1080,
+    "standard": false,
+    "motion": true,
+    "script": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T145346Z/PrivateCapture/capture.py",
+    "report": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T145346Z/PrivateCapture/Capture/Motion/Comic/PlayerMotion1920.json",
+    "log": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T145346Z/Motion1920Comic/native.log",
+    "stdout": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T145346Z/Motion1920Comic/stdout.log"
+  }
+]

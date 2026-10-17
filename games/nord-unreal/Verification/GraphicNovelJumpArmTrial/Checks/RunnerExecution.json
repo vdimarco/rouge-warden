@@ -1,0 +1,13 @@
+{
+  "argv": [
+    "python3",
+    "-B",
+    "games/nord-unreal/Verification/GraphicNovelJumpArmTrial/Checks/run_checks.py"
+  ],
+  "cwd": "/home/von/Work/rouge-warden-codex-nord-unreal",
+  "exit_code": 0,
+  "started_utc": "2026-10-17T14:59:26.338479+00:00",
+  "finished_utc": "2026-10-17T14:59:26.583450+00:00",
+  "stdout": "runner.stdout.log",
+  "stderr": "runner.stderr.log"
+}

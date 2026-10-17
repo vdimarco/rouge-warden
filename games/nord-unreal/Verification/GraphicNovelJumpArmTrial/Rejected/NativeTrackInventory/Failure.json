@@ -1,0 +1,23 @@
+{
+  "scope": "Rejected preflight before backup or Content mutation; observed read-only inventory informed strict correction.",
+  "native_log_sha256": "11cb665e8439d87793c2aaa22392bdb7ab0b8a5533e8118c985a426b74c50194",
+  "errors": [
+    "[2026.10.17-14.48.38:903][  2]LogPython: Error: Traceback (most recent call last):",
+    "[2026.10.17-14.48.38:903][  2]LogPython: Error:   File \"/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/GraphicNovel/PrivateJumpArmPlan-20261017/native_trial.py\", line 296, in <module>",
+    "[2026.10.17-14.48.38:903][  2]LogPython: Error:     if __name__ == '__main__': main()",
+    "[2026.10.17-14.48.38:903][  2]LogPython: Error:                                ^^^^^^",
+    "[2026.10.17-14.48.38:903][  2]LogPython: Error:   File \"/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/GraphicNovel/PrivateJumpArmPlan-20261017/native_trial.py\", line 291, in main",
+    "[2026.10.17-14.48.38:903][  2]LogPython: Error:     result = author(u, root, backup)",
+    "[2026.10.17-14.48.38:903][  2]LogPython: Error:              ^^^^^^^^^^^^^^^^^^^^^^^",
+    "[2026.10.17-14.48.38:903][  2]LogPython: Error:   File \"/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/GraphicNovel/PrivateJumpArmPlan-20261017/native_trial.py\", line 232, in author",
+    "[2026.10.17-14.48.38:903][  2]LogPython: Error:     body, clip, meta, flags, poses, baseline, sources = preflight(u, root, backup)",
+    "[2026.10.17-14.48.38:903][  2]LogPython: Error:                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^",
+    "[2026.10.17-14.48.38:903][  2]LogPython: Error:   File \"/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/GraphicNovel/PrivateJumpArmPlan-20261017/native_trial.py\", line 192, in preflight",
+    "[2026.10.17-14.48.38:903][  2]LogPython: Error:     poses = pose_snapshot(u, clip, body, names)",
+    "[2026.10.17-14.48.38:903][  2]LogPython: Error:             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
+    "[2026.10.17-14.48.38:903][  2]LogPython: Error:   File \"/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/GraphicNovel/PrivateJumpArmPlan-20261017/native_trial.py\", line 108, in pose_snapshot",
+    "[2026.10.17-14.48.38:903][  2]LogPython: Error:     assert sorted(map(str, u.AnimationLibrary.get_animation_track_names(clip))) == sorted(names), 'Native clip tracks changed'",
+    "[2026.10.17-14.48.38:903][  2]LogPython: Error:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
+    "[2026.10.17-14.48.38:903][  2]LogPython: Error: AssertionError: Native clip tracks changed"
+  ]
+}

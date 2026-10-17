@@ -1,0 +1,522 @@
+{
+  "scope": "Sanitized selected successful baseline jobs only. No environment, INI bytes, service identities or private CSV metadata retained.",
+  "jobs": [
+    {
+      "name": "Standard1280",
+      "render_mode": "Standard",
+      "resolution": [
+        1280,
+        720
+      ],
+      "native_process_exit_code": 0,
+      "job_passed": true,
+      "report_passed": true,
+      "source_report": "Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T142404Z/PrivateCapture/Capture/Standard/PlayerQuality1280.json",
+      "source_report_sha256": "3568ebacd59e99a542862e27a882308ff7cc2fab9f019f98b6ab643d998a47bd",
+      "source_window": "SingleRenderWindow-20261017T142404Z",
+      "source_window_passed": false,
+      "source_window_restored": true,
+      "three_private_opt_in_flags_confirmed": true,
+      "headless": false,
+      "motion_only": false,
+      "renderer_settings": {
+        "sg.ViewDistanceQuality": 3,
+        "sg.AntiAliasingQuality": 3,
+        "sg.ShadowQuality": 3,
+        "sg.GlobalIlluminationQuality": 3,
+        "sg.ReflectionQuality": 3,
+        "sg.PostProcessQuality": 3,
+        "sg.TextureQuality": 3,
+        "sg.EffectsQuality": 3,
+        "sg.FoliageQuality": 3,
+        "r.Streaming.PoolSize": 1000,
+        "r.Shadow.Virtual.MaxPhysicalPages": 4096,
+        "r.ScreenPercentage": 100.0,
+        "t.MaxFPS": 60.0
+      },
+      "candidate_asset_status": {
+        "body_source": "Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/body.fbx",
+        "body_sha256": "b7e7ca0d9c486412108cba85e1cd4a5512fecd4ad36b8cfdb4677259ff6f9244",
+        "generation_request_id": "01a13971-5e0a-73e0-8e68-730896d2cee3",
+        "manifest_sha256": "d942b4ec45c3b28ef54c0afeb991278528fd74252ec7208cd518519277fd18bc",
+        "source_review": "Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/source-review.json",
+        "source_review_sha256": "a2ea79458aef0ad20ee1cb00b262269c509db230ca94b9c03cfc8bebeaacd3d8",
+        "source_files_verified": 14,
+        "weighted_body_bones": 24,
+        "uv_channels": 1,
+        "graphics_accepted": false,
+        "scope": "isolated high-detail native A/B; raw UV0 body and own clips; static face and fingers; no default promotion or art acceptance",
+        "native_jump_matches_retained_raw_source_claimed": false
+      },
+      "image_count": 7,
+      "player_pose_tick_interval_seconds": 0.0,
+      "mapped_normal_strength": 1.0,
+      "material_uv_channels": {
+        "base_color": 0,
+        "normal": 0,
+        "roughness": 0,
+        "metallic": 0
+      },
+      "pre_pie_mesh_build_flags": {
+        "9": {
+          "recompute_normals": false,
+          "recompute_tangents": true,
+          "use_mikk_t_space": true,
+          "compute_weighted_normals": false,
+          "use_full_precision_u_vs": true,
+          "use_high_precision_tangent_basis": true
+        }
+      }
+    },
+    {
+      "name": "Standard1920",
+      "render_mode": "Standard",
+      "resolution": [
+        1920,
+        1080
+      ],
+      "native_process_exit_code": 0,
+      "job_passed": true,
+      "report_passed": true,
+      "source_report": "Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T142404Z/PrivateCapture/Capture/Standard/PlayerQuality1920.json",
+      "source_report_sha256": "83ff90a3f750e2c98b213ae46ca7daddcf5394f8d875da3e0c90638f3a2afb2c",
+      "source_window": "SingleRenderWindow-20261017T142404Z",
+      "source_window_passed": false,
+      "source_window_restored": true,
+      "three_private_opt_in_flags_confirmed": true,
+      "headless": false,
+      "motion_only": false,
+      "renderer_settings": {
+        "sg.ViewDistanceQuality": 3,
+        "sg.AntiAliasingQuality": 3,
+        "sg.ShadowQuality": 3,
+        "sg.GlobalIlluminationQuality": 3,
+        "sg.ReflectionQuality": 3,
+        "sg.PostProcessQuality": 3,
+        "sg.TextureQuality": 3,
+        "sg.EffectsQuality": 3,
+        "sg.FoliageQuality": 3,
+        "r.Streaming.PoolSize": 1000,
+        "r.Shadow.Virtual.MaxPhysicalPages": 4096,
+        "r.ScreenPercentage": 100.0,
+        "t.MaxFPS": 60.0
+      },
+      "candidate_asset_status": {
+        "body_source": "Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/body.fbx",
+        "body_sha256": "b7e7ca0d9c486412108cba85e1cd4a5512fecd4ad36b8cfdb4677259ff6f9244",
+        "generation_request_id": "01a13971-5e0a-73e0-8e68-730896d2cee3",
+        "manifest_sha256": "d942b4ec45c3b28ef54c0afeb991278528fd74252ec7208cd518519277fd18bc",
+        "source_review": "Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/source-review.json",
+        "source_review_sha256": "a2ea79458aef0ad20ee1cb00b262269c509db230ca94b9c03cfc8bebeaacd3d8",
+        "source_files_verified": 14,
+        "weighted_body_bones": 24,
+        "uv_channels": 1,
+        "graphics_accepted": false,
+        "scope": "isolated high-detail native A/B; raw UV0 body and own clips; static face and fingers; no default promotion or art acceptance",
+        "native_jump_matches_retained_raw_source_claimed": false
+      },
+      "image_count": 7,
+      "player_pose_tick_interval_seconds": 0.0,
+      "mapped_normal_strength": 1.0,
+      "material_uv_channels": {
+        "base_color": 0,
+        "normal": 0,
+        "roughness": 0,
+        "metallic": 0
+      },
+      "pre_pie_mesh_build_flags": {
+        "9": {
+          "recompute_normals": false,
+          "recompute_tangents": true,
+          "use_mikk_t_space": true,
+          "compute_weighted_normals": false,
+          "use_full_precision_u_vs": true,
+          "use_high_precision_tangent_basis": true
+        }
+      }
+    },
+    {
+      "name": "Comic1280",
+      "render_mode": "Comic",
+      "resolution": [
+        1280,
+        720
+      ],
+      "native_process_exit_code": 0,
+      "job_passed": true,
+      "report_passed": true,
+      "source_report": "Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T144012Z/PrivateCapture/Capture/PlayerQuality1280.json",
+      "source_report_sha256": "79883820aebb1ac4bb5803c30165af4f6c7d34fb6bc96325398944fbb78caacf",
+      "source_window": "SingleRenderWindow-20261017T144012Z",
+      "source_window_passed": true,
+      "source_window_restored": true,
+      "three_private_opt_in_flags_confirmed": true,
+      "headless": false,
+      "motion_only": false,
+      "renderer_settings": {
+        "sg.ViewDistanceQuality": 3,
+        "sg.AntiAliasingQuality": 3,
+        "sg.ShadowQuality": 3,
+        "sg.GlobalIlluminationQuality": 3,
+        "sg.ReflectionQuality": 3,
+        "sg.PostProcessQuality": 3,
+        "sg.TextureQuality": 3,
+        "sg.EffectsQuality": 3,
+        "sg.FoliageQuality": 3,
+        "r.Streaming.PoolSize": 1000,
+        "r.Shadow.Virtual.MaxPhysicalPages": 4096,
+        "r.ScreenPercentage": 100.0,
+        "t.MaxFPS": 60.0
+      },
+      "candidate_asset_status": {
+        "body_source": "Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/body.fbx",
+        "body_sha256": "b7e7ca0d9c486412108cba85e1cd4a5512fecd4ad36b8cfdb4677259ff6f9244",
+        "generation_request_id": "01a13971-5e0a-73e0-8e68-730896d2cee3",
+        "manifest_sha256": "d942b4ec45c3b28ef54c0afeb991278528fd74252ec7208cd518519277fd18bc",
+        "source_review": "Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/source-review.json",
+        "source_review_sha256": "a2ea79458aef0ad20ee1cb00b262269c509db230ca94b9c03cfc8bebeaacd3d8",
+        "source_files_verified": 14,
+        "weighted_body_bones": 24,
+        "uv_channels": 1,
+        "graphics_accepted": false,
+        "scope": "isolated high-detail native A/B; raw UV0 body and own clips; static face and fingers; no default promotion or art acceptance",
+        "native_jump_matches_retained_raw_source_claimed": false
+      },
+      "image_count": 7,
+      "player_pose_tick_interval_seconds": 0.0,
+      "mapped_normal_strength": 1.0,
+      "material_uv_channels": {
+        "base_color": 0,
+        "normal": 0,
+        "roughness": 0,
+        "metallic": 0
+      },
+      "pre_pie_mesh_build_flags": {
+        "9": {
+          "recompute_normals": false,
+          "recompute_tangents": true,
+          "use_mikk_t_space": true,
+          "compute_weighted_normals": false,
+          "use_full_precision_u_vs": true,
+          "use_high_precision_tangent_basis": true
+        }
+      }
+    },
+    {
+      "name": "Comic1920",
+      "render_mode": "Comic",
+      "resolution": [
+        1920,
+        1080
+      ],
+      "native_process_exit_code": 0,
+      "job_passed": true,
+      "report_passed": true,
+      "source_report": "Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T144012Z/PrivateCapture/Capture/PlayerQuality1920.json",
+      "source_report_sha256": "8d0558e2c8a58d6df9108f9446580607c4629cd10d5a3c31ecaf1bd738ff9cb9",
+      "source_window": "SingleRenderWindow-20261017T144012Z",
+      "source_window_passed": true,
+      "source_window_restored": true,
+      "three_private_opt_in_flags_confirmed": true,
+      "headless": false,
+      "motion_only": false,
+      "renderer_settings": {
+        "sg.ViewDistanceQuality": 3,
+        "sg.AntiAliasingQuality": 3,
+        "sg.ShadowQuality": 3,
+        "sg.GlobalIlluminationQuality": 3,
+        "sg.ReflectionQuality": 3,
+        "sg.PostProcessQuality": 3,
+        "sg.TextureQuality": 3,
+        "sg.EffectsQuality": 3,
+        "sg.FoliageQuality": 3,
+        "r.Streaming.PoolSize": 1000,
+        "r.Shadow.Virtual.MaxPhysicalPages": 4096,
+        "r.ScreenPercentage": 100.0,
+        "t.MaxFPS": 60.0
+      },
+      "candidate_asset_status": {
+        "body_source": "Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/body.fbx",
+        "body_sha256": "b7e7ca0d9c486412108cba85e1cd4a5512fecd4ad36b8cfdb4677259ff6f9244",
+        "generation_request_id": "01a13971-5e0a-73e0-8e68-730896d2cee3",
+        "manifest_sha256": "d942b4ec45c3b28ef54c0afeb991278528fd74252ec7208cd518519277fd18bc",
+        "source_review": "Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/source-review.json",
+        "source_review_sha256": "a2ea79458aef0ad20ee1cb00b262269c509db230ca94b9c03cfc8bebeaacd3d8",
+        "source_files_verified": 14,
+        "weighted_body_bones": 24,
+        "uv_channels": 1,
+        "graphics_accepted": false,
+        "scope": "isolated high-detail native A/B; raw UV0 body and own clips; static face and fingers; no default promotion or art acceptance",
+        "native_jump_matches_retained_raw_source_claimed": false
+      },
+      "image_count": 7,
+      "player_pose_tick_interval_seconds": 0.0,
+      "mapped_normal_strength": 1.0,
+      "material_uv_channels": {
+        "base_color": 0,
+        "normal": 0,
+        "roughness": 0,
+        "metallic": 0
+      },
+      "pre_pie_mesh_build_flags": {
+        "9": {
+          "recompute_normals": false,
+          "recompute_tangents": true,
+          "use_mikk_t_space": true,
+          "compute_weighted_normals": false,
+          "use_full_precision_u_vs": true,
+          "use_high_precision_tangent_basis": true
+        }
+      }
+    },
+    {
+      "name": "Motion1920Standard",
+      "render_mode": "Standard",
+      "resolution": [
+        1920,
+        1080
+      ],
+      "native_process_exit_code": 0,
+      "job_passed": true,
+      "report_passed": true,
+      "source_report": "Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T144012Z/PrivateCapture/Capture/Motion/Standard/PlayerMotion1920.json",
+      "source_report_sha256": "7ec3be8623688e4e7d46d91a67c49043a56bcf2c691178ca87a594a1740c10c3",
+      "source_window": "SingleRenderWindow-20261017T144012Z",
+      "source_window_passed": true,
+      "source_window_restored": true,
+      "three_private_opt_in_flags_confirmed": true,
+      "headless": false,
+      "motion_only": true,
+      "renderer_settings": {
+        "sg.ViewDistanceQuality": 3,
+        "sg.AntiAliasingQuality": 3,
+        "sg.ShadowQuality": 3,
+        "sg.GlobalIlluminationQuality": 3,
+        "sg.ReflectionQuality": 3,
+        "sg.PostProcessQuality": 3,
+        "sg.TextureQuality": 3,
+        "sg.EffectsQuality": 3,
+        "sg.FoliageQuality": 3,
+        "r.Streaming.PoolSize": 1000,
+        "r.Shadow.Virtual.MaxPhysicalPages": 4096,
+        "r.ScreenPercentage": 100.0,
+        "t.MaxFPS": 60.0
+      },
+      "candidate_asset_status": {
+        "body_source": "Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/body.fbx",
+        "body_sha256": "b7e7ca0d9c486412108cba85e1cd4a5512fecd4ad36b8cfdb4677259ff6f9244",
+        "generation_request_id": "01a13971-5e0a-73e0-8e68-730896d2cee3",
+        "manifest_sha256": "d942b4ec45c3b28ef54c0afeb991278528fd74252ec7208cd518519277fd18bc",
+        "source_review": "Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/source-review.json",
+        "source_review_sha256": "a2ea79458aef0ad20ee1cb00b262269c509db230ca94b9c03cfc8bebeaacd3d8",
+        "source_files_verified": 14,
+        "weighted_body_bones": 24,
+        "uv_channels": 1,
+        "graphics_accepted": false,
+        "scope": "isolated high-detail native A/B; raw UV0 body and own clips; static face and fingers; no default promotion or art acceptance",
+        "native_jump_matches_retained_raw_source_claimed": false
+      },
+      "image_count": 0,
+      "player_pose_tick_interval_seconds": 0.0,
+      "mapped_normal_strength": 1.0,
+      "material_uv_channels": {
+        "base_color": 0,
+        "normal": 0,
+        "roughness": 0,
+        "metallic": 0
+      },
+      "recorder_exit_code": 0,
+      "video_sha256": "4dca101f2952b61b3fe74fcd17e5b1801cc4bd774c67995f140d07c055050995",
+      "source_video": "Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T144012Z/Motion1920Standard/raw.mp4",
+      "viewport_pixels_observed": [
+        1920,
+        1080
+      ],
+      "csv_flushed": true,
+      "csv_sha256": "720d365e4605c4659fd5b9a326d512581c7ae204815b80f633b2477b9443a1a6",
+      "csv_numeric_frame_rows": 185,
+      "transitions_passed": true,
+      "native_transition_checks": {
+        "phase_counts": {
+          "idle": 10,
+          "walk": 38,
+          "sprint": 37,
+          "turn": 22,
+          "stop": 19,
+          "jump": 34,
+          "landing": 6,
+          "recover": 17
+        },
+        "steady_motion": {
+          "walk": {
+            "steady_samples": 30,
+            "foot_pose_change_pairs": 29
+          },
+          "sprint": {
+            "steady_samples": 32,
+            "foot_pose_change_pairs": 31
+          }
+        },
+        "directional_turn_degrees": 90.0,
+        "jump_peak_cm": 183.673,
+        "jump_horizontal_drift_cm": 0.0,
+        "airborne_knee_degrees": 62.51,
+        "scope": "selected native state and pose observations at 1x; no rendered fluidity or FPS acceptance"
+      },
+      "viewport_bootstrap": {
+        "method": "adopt already-owned standalone immersive startup PIE; no end/restart",
+        "startup_world": "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine",
+        "standalone_local_players": 1,
+        "saved_build_flags": "reused earlier passed pre-PIE readback of byte-identical body/module/source; not a fresh query in this process",
+        "assets_changed": false
+      },
+      "saved_mesh_build_flag_reuse": {
+        "scope": "Earlier individual Standard1920 passed fresh pre-PIE saved build flags; overall old window later failed motion OOM and is not relabelled passed. Reused flags apply to byte-identical current body/module/source.",
+        "report": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T142404Z/PrivateCapture/Capture/Standard/PlayerQuality1920.json",
+        "flags": {
+          "recompute_normals": false,
+          "recompute_tangents": true,
+          "use_mikk_t_space": true,
+          "compute_weighted_normals": false,
+          "use_full_precision_u_vs": true,
+          "use_high_precision_tangent_basis": true
+        },
+        "files": {
+          "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T142404Z/PrivateCapture/Capture/Standard/PlayerQuality1920.json": "83ff90a3f750e2c98b213ae46ca7daddcf5394f8d875da3e0c90638f3a2afb2c",
+          "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T142404Z/window-status.json": "1bf1fc8bb695d2475d6cea2c8de17e234ab870cd9c470915847967600ec5f1c1",
+          "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T142404Z/baseline.json": "a016ed747cbc14d19688d38c2bbdee97e20b5caf9e0015353cb13efc1aa205bf",
+          "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Content/ParkComic/CrewGraphicNovelHighDetail/Resident9/SK_Body.uasset": "6e8e6fec2881021b78d6081b67bf2e523dfdf7d3f49b1d3c7e3c9c51426d6061",
+          "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Binaries/Linux/libUnrealEditor-Quebec.so": "2742ca45629a6e97db771a2c3f56b3a8076b8c4b228f8a4d9b86a8633c0623c3"
+        }
+      },
+      "frame_budget_accepted": false
+    },
+    {
+      "name": "Motion1920Comic",
+      "render_mode": "Comic",
+      "resolution": [
+        1920,
+        1080
+      ],
+      "native_process_exit_code": 0,
+      "job_passed": true,
+      "report_passed": true,
+      "source_report": "Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T144012Z/PrivateCapture/Capture/Motion/Comic/PlayerMotion1920.json",
+      "source_report_sha256": "b37a0de302ffbd89bfd3a24bb63e447cb1cbbbf5cffcaae57f00f7f66a7295c4",
+      "source_window": "SingleRenderWindow-20261017T144012Z",
+      "source_window_passed": true,
+      "source_window_restored": true,
+      "three_private_opt_in_flags_confirmed": true,
+      "headless": false,
+      "motion_only": true,
+      "renderer_settings": {
+        "sg.ViewDistanceQuality": 3,
+        "sg.AntiAliasingQuality": 3,
+        "sg.ShadowQuality": 3,
+        "sg.GlobalIlluminationQuality": 3,
+        "sg.ReflectionQuality": 3,
+        "sg.PostProcessQuality": 3,
+        "sg.TextureQuality": 3,
+        "sg.EffectsQuality": 3,
+        "sg.FoliageQuality": 3,
+        "r.Streaming.PoolSize": 1000,
+        "r.Shadow.Virtual.MaxPhysicalPages": 4096,
+        "r.ScreenPercentage": 100.0,
+        "t.MaxFPS": 60.0
+      },
+      "candidate_asset_status": {
+        "body_source": "Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/body.fbx",
+        "body_sha256": "b7e7ca0d9c486412108cba85e1cd4a5512fecd4ad36b8cfdb4677259ff6f9244",
+        "generation_request_id": "01a13971-5e0a-73e0-8e68-730896d2cee3",
+        "manifest_sha256": "d942b4ec45c3b28ef54c0afeb991278528fd74252ec7208cd518519277fd18bc",
+        "source_review": "Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/source-review.json",
+        "source_review_sha256": "a2ea79458aef0ad20ee1cb00b262269c509db230ca94b9c03cfc8bebeaacd3d8",
+        "source_files_verified": 14,
+        "weighted_body_bones": 24,
+        "uv_channels": 1,
+        "graphics_accepted": false,
+        "scope": "isolated high-detail native A/B; raw UV0 body and own clips; static face and fingers; no default promotion or art acceptance",
+        "native_jump_matches_retained_raw_source_claimed": false
+      },
+      "image_count": 0,
+      "player_pose_tick_interval_seconds": 0.0,
+      "mapped_normal_strength": 1.0,
+      "material_uv_channels": {
+        "base_color": 0,
+        "normal": 0,
+        "roughness": 0,
+        "metallic": 0
+      },
+      "recorder_exit_code": 0,
+      "video_sha256": "4c0c5e56363563927eda9d6fac90493956c3f1e47c1b1b78f8042ae4b005f70b",
+      "source_video": "Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T144012Z/Motion1920Comic/raw.mp4",
+      "viewport_pixels_observed": [
+        1920,
+        1080
+      ],
+      "csv_flushed": true,
+      "csv_sha256": "b8913eb44b2d5ec6682204ebb0d98e32a9df61eb23d9121247a94aa8f576ee98",
+      "csv_numeric_frame_rows": 180,
+      "transitions_passed": true,
+      "native_transition_checks": {
+        "phase_counts": {
+          "idle": 10,
+          "walk": 37,
+          "sprint": 36,
+          "turn": 21,
+          "stop": 19,
+          "jump": 34,
+          "landing": 6,
+          "recover": 15
+        },
+        "steady_motion": {
+          "walk": {
+            "steady_samples": 29,
+            "foot_pose_change_pairs": 28
+          },
+          "sprint": {
+            "steady_samples": 30,
+            "foot_pose_change_pairs": 29
+          }
+        },
+        "directional_turn_degrees": 90.0,
+        "jump_peak_cm": 183.658,
+        "jump_horizontal_drift_cm": 0.0,
+        "airborne_knee_degrees": 62.568,
+        "scope": "selected native state and pose observations at 1x; no rendered fluidity or FPS acceptance"
+      },
+      "viewport_bootstrap": {
+        "method": "adopt already-owned standalone immersive startup PIE; no end/restart",
+        "startup_world": "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine",
+        "standalone_local_players": 1,
+        "saved_build_flags": "reused earlier passed pre-PIE readback of byte-identical body/module/source; not a fresh query in this process",
+        "assets_changed": false
+      },
+      "saved_mesh_build_flag_reuse": {
+        "scope": "Earlier individual Standard1920 passed fresh pre-PIE saved build flags; overall old window later failed motion OOM and is not relabelled passed. Reused flags apply to byte-identical current body/module/source.",
+        "report": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T142404Z/PrivateCapture/Capture/Standard/PlayerQuality1920.json",
+        "flags": {
+          "recompute_normals": false,
+          "recompute_tangents": true,
+          "use_mikk_t_space": true,
+          "compute_weighted_normals": false,
+          "use_full_precision_u_vs": true,
+          "use_high_precision_tangent_basis": true
+        },
+        "files": {
+          "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T142404Z/PrivateCapture/Capture/Standard/PlayerQuality1920.json": "83ff90a3f750e2c98b213ae46ca7daddcf5394f8d875da3e0c90638f3a2afb2c",
+          "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T142404Z/window-status.json": "1bf1fc8bb695d2475d6cea2c8de17e234ab870cd9c470915847967600ec5f1c1",
+          "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T142404Z/baseline.json": "a016ed747cbc14d19688d38c2bbdee97e20b5caf9e0015353cb13efc1aa205bf",
+          "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Content/ParkComic/CrewGraphicNovelHighDetail/Resident9/SK_Body.uasset": "6e8e6fec2881021b78d6081b67bf2e523dfdf7d3f49b1d3c7e3c9c51426d6061",
+          "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Binaries/Linux/libUnrealEditor-Quebec.so": "2742ca45629a6e97db771a2c3f56b3a8076b8c4b228f8a4d9b86a8633c0623c3"
+        }
+      },
+      "frame_budget_accepted": false
+    }
+  ],
+  "native_jobs": 6,
+  "stills": 28,
+  "motion_recordings": 2,
+  "graphics_accepted": false,
+  "continuous_playback_reviewed": false
+}

@@ -1,0 +1,256 @@
+{
+  "scope": "Independent Comic baseline still review; original private jump; no trial or full-motion acceptance",
+  "created_utc": "2026-10-17T14:50:38.048543+00:00",
+  "baseline_aggregate": "Saved/Tests/GraphicNovel/PrivateJumpArmPlan-20261017/BaselineAggregate.json",
+  "baseline_aggregate_sha256": "b9088b2c5524cb686bab6222dd3b6d350cd3e0b953f21a5ba06d4bddb234e154",
+  "original_private_clip_sha256": "1e62a9debd7aec41beac0466ac6a5114741ce79de6bce102f6cdbe5d3cd52f26",
+  "window_status": {
+    "path": "Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T144012Z/window-status.json",
+    "sha256": "95bdef1d641d31b074221dfcd372c789148609ee01ee74da4c789b36c15b3356",
+    "passed": true,
+    "restored": true
+  },
+  "reviewed_images": [
+    {
+      "file": "Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T144012Z/PrivateCapture/Capture/1280/Resident9_Airborne.png",
+      "sha256": "ca246910b8287c0b5f8e336e81effb5a8abf513ec222d5a54c63df3ba435c302",
+      "actual_image_inspected": true,
+      "mode": "Comic",
+      "resolution": [
+        1280,
+        720
+      ],
+      "report": "Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T144012Z/PrivateCapture/Capture/PlayerQuality1280.json",
+      "report_sha256": "79883820aebb1ac4bb5803c30165af4f6c7d34fb6bc96325398944fbb78caacf",
+      "report_passed": true,
+      "native_process_exit_code": 0,
+      "native_state": {
+        "clip_time": 0.43254,
+        "clip_path": "/Game/ParkComic/CrewGraphicNovelHighDetail/Resident9/A_Jump.A_Jump",
+        "clip_weights": {
+          "Idle": 0.0,
+          "Walk": 0.0,
+          "Run": 0.0,
+          "Jump": 1.0
+        },
+        "cached_camera": {
+          "position_cm": [
+            6604.00493,
+            40867.49067,
+            309.65061
+          ],
+          "rotation_degrees": [
+            -3.4050464630126953,
+            -172.59309387207034,
+            4.9784055644766625e-17
+          ],
+          "horizontal_fov_degrees": 60.0,
+          "unpaused_prepare_frames": 2
+        }
+      },
+      "renderer_settings": {
+        "sg.ViewDistanceQuality": 3,
+        "sg.AntiAliasingQuality": 3,
+        "sg.ShadowQuality": 3,
+        "sg.GlobalIlluminationQuality": 3,
+        "sg.ReflectionQuality": 3,
+        "sg.PostProcessQuality": 3,
+        "sg.TextureQuality": 3,
+        "sg.EffectsQuality": 3,
+        "sg.FoliageQuality": 3,
+        "r.Streaming.PoolSize": 1000,
+        "r.Shadow.Virtual.MaxPhysicalPages": 4096,
+        "r.ScreenPercentage": 100.0,
+        "t.MaxFPS": 60.0
+      },
+      "findings": [
+        "Raised skin-toned shoulder/upper-arm lobes and collapsed short-sleeve caps are conspicuous in the Comic silhouette; black contour accentuates their angular pinches.",
+        "No obvious hand/head or forearm/torso intersection is visible from this front view; armpit/back geometry and temporal transitions remain unchecked."
+      ]
+    },
+    {
+      "file": "Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T144012Z/PrivateCapture/Capture/1280/Resident9_Landing.png",
+      "sha256": "ca7e7edad49da0d14947b51565e4f51ff4233f29c0b4d3f6a8757ffc97f2352d",
+      "actual_image_inspected": true,
+      "mode": "Comic",
+      "resolution": [
+        1280,
+        720
+      ],
+      "report": "Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T144012Z/PrivateCapture/Capture/PlayerQuality1280.json",
+      "report_sha256": "79883820aebb1ac4bb5803c30165af4f6c7d34fb6bc96325398944fbb78caacf",
+      "report_passed": true,
+      "native_process_exit_code": 0,
+      "native_state": {
+        "clip_time": 0.93417,
+        "clip_path": "/Game/ParkComic/CrewGraphicNovelHighDetail/Resident9/A_Jump.A_Jump",
+        "clip_weights": {
+          "Idle": 0.0,
+          "Walk": 0.0,
+          "Run": 0.0,
+          "Jump": 1.0
+        },
+        "cached_camera": {
+          "position_cm": [
+            6604.00493,
+            40867.49067,
+            132.15001
+          ],
+          "rotation_degrees": [
+            -3.4050464630126953,
+            -172.59309387207034,
+            4.9784055644766625e-17
+          ],
+          "horizontal_fov_degrees": 60.0,
+          "unpaused_prepare_frames": 171
+        }
+      },
+      "renderer_settings": {
+        "sg.ViewDistanceQuality": 3,
+        "sg.AntiAliasingQuality": 3,
+        "sg.ShadowQuality": 3,
+        "sg.GlobalIlluminationQuality": 3,
+        "sg.ReflectionQuality": 3,
+        "sg.PostProcessQuality": 3,
+        "sg.TextureQuality": 3,
+        "sg.EffectsQuality": 3,
+        "sg.FoliageQuality": 3,
+        "r.Streaming.PoolSize": 1000,
+        "r.Shadow.Virtual.MaxPhysicalPages": 4096,
+        "r.ScreenPercentage": 100.0,
+        "t.MaxFPS": 60.0
+      },
+      "findings": [
+        "Lowered shoulders and normal short-sleeve outline return; arms/hands remain separated from the torso in this still.",
+        "This0.93417s pose lies after the changed arm-key interval and remains the landing control region for trial comparison."
+      ]
+    },
+    {
+      "file": "Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T144012Z/PrivateCapture/Capture/1920/Resident9_Airborne.png",
+      "sha256": "44939aeef83e7b811d5befa13896fef280d7c27e467ec97cb629013cf40945eb",
+      "actual_image_inspected": true,
+      "mode": "Comic",
+      "resolution": [
+        1920,
+        1080
+      ],
+      "report": "Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T144012Z/PrivateCapture/Capture/PlayerQuality1920.json",
+      "report_sha256": "8d0558e2c8a58d6df9108f9446580607c4629cd10d5a3c31ecaf1bd738ff9cb9",
+      "report_passed": true,
+      "native_process_exit_code": 0,
+      "native_state": {
+        "clip_time": 0.43254,
+        "clip_path": "/Game/ParkComic/CrewGraphicNovelHighDetail/Resident9/A_Jump.A_Jump",
+        "clip_weights": {
+          "Idle": 0.0,
+          "Walk": 0.0,
+          "Run": 0.0,
+          "Jump": 1.0
+        },
+        "cached_camera": {
+          "position_cm": [
+            6604.00204,
+            40867.49067,
+            309.65074
+          ],
+          "rotation_degrees": [
+            -3.4050464630126953,
+            -172.59309387207034,
+            4.9784055644766625e-17
+          ],
+          "horizontal_fov_degrees": 60.0,
+          "unpaused_prepare_frames": 2
+        }
+      },
+      "renderer_settings": {
+        "sg.ViewDistanceQuality": 3,
+        "sg.AntiAliasingQuality": 3,
+        "sg.ShadowQuality": 3,
+        "sg.GlobalIlluminationQuality": 3,
+        "sg.ReflectionQuality": 3,
+        "sg.PostProcessQuality": 3,
+        "sg.TextureQuality": 3,
+        "sg.EffectsQuality": 3,
+        "sg.FoliageQuality": 3,
+        "r.Streaming.PoolSize": 1000,
+        "r.Shadow.Virtual.MaxPhysicalPages": 4096,
+        "r.ScreenPercentage": 100.0,
+        "t.MaxFPS": 60.0
+      },
+      "findings": [
+        "Raised skin-toned shoulder/upper-arm lobes and collapsed short-sleeve caps are conspicuous in the Comic silhouette; black contour accentuates their angular pinches.",
+        "No obvious hand/head or forearm/torso intersection is visible from this front view; armpit/back geometry and temporal transitions remain unchecked."
+      ]
+    },
+    {
+      "file": "Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T144012Z/PrivateCapture/Capture/1920/Resident9_Landing.png",
+      "sha256": "0d6a70d8d1d268e4ee85544a901127161604bd67ae5cd6699493424e36483254",
+      "actual_image_inspected": true,
+      "mode": "Comic",
+      "resolution": [
+        1920,
+        1080
+      ],
+      "report": "Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T144012Z/PrivateCapture/Capture/PlayerQuality1920.json",
+      "report_sha256": "8d0558e2c8a58d6df9108f9446580607c4629cd10d5a3c31ecaf1bd738ff9cb9",
+      "report_passed": true,
+      "native_process_exit_code": 0,
+      "native_state": {
+        "clip_time": 0.93417,
+        "clip_path": "/Game/ParkComic/CrewGraphicNovelHighDetail/Resident9/A_Jump.A_Jump",
+        "clip_weights": {
+          "Idle": 0.0,
+          "Walk": 0.0,
+          "Run": 0.0,
+          "Jump": 1.0
+        },
+        "cached_camera": {
+          "position_cm": [
+            6604.00204,
+            40867.49067,
+            132.15001
+          ],
+          "rotation_degrees": [
+            -3.4050464630126953,
+            -172.59309387207034,
+            4.9784055644766625e-17
+          ],
+          "horizontal_fov_degrees": 60.0,
+          "unpaused_prepare_frames": 171
+        }
+      },
+      "renderer_settings": {
+        "sg.ViewDistanceQuality": 3,
+        "sg.AntiAliasingQuality": 3,
+        "sg.ShadowQuality": 3,
+        "sg.GlobalIlluminationQuality": 3,
+        "sg.ReflectionQuality": 3,
+        "sg.PostProcessQuality": 3,
+        "sg.TextureQuality": 3,
+        "sg.EffectsQuality": 3,
+        "sg.FoliageQuality": 3,
+        "r.Streaming.PoolSize": 1000,
+        "r.Shadow.Virtual.MaxPhysicalPages": 4096,
+        "r.ScreenPercentage": 100.0,
+        "t.MaxFPS": 60.0
+      },
+      "findings": [
+        "Lowered shoulders and normal short-sleeve outline return; arms/hands remain separated from the torso in this still.",
+        "This0.93417s pose lies after the changed arm-key interval and remains the landing control region for trial comparison."
+      ]
+    }
+  ],
+  "reviewed_image_count": 4,
+  "additional_observations": [
+    "Comic outlines do not conceal the baseline airborne sleeve/shoulder defect.",
+    "The tiny detached ground shadow fragment remains visible in the1080 Airborne image; cause is unresolved and outside the arm-only trial.",
+    "Collar microgeometry cannot be cleared from these full-body frames; the earlier Standard face/three-quarter baseline documents the existing pale rim/notch."
+  ],
+  "related_standard_review": "Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T142404Z/independent-baseline-review.json",
+  "standard_review_sha256": "ec86bdcfd6bfe9bb37ac1ccf7aacffb38043ab14da7cf9e393ba6534ddb8f281",
+  "scope_boundary": "BaselineAggregate independently validates28still files/two motion recordings assembled from exact-input passes; this reviewer has now visually inspected12selectedstills total (8Standard+4Comic), not all28 and not continuous video.",
+  "continuous_playback_reviewed": false,
+  "trial_comparison_pending": true,
+  "graphics_accepted": false,
+  "adopted": false
+}

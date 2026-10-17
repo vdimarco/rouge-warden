@@ -1,0 +1,19 @@
+{
+  "passed": true,
+  "mode": "restore",
+  "started_utc": "2026-10-17T15:00:11.030461+00:00",
+  "backup": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Recovery/private-jump-arm-20261017T145315Z",
+  "native_passed": true,
+  "restored_files": [
+    "Content/ParkComic/CrewGraphicNovelHighDetail/Resident9/A_Jump.uasset"
+  ],
+  "complete_original_content_restored": true,
+  "changed_content": [
+    "Content/ParkComic/CrewGraphicNovelHighDetail/Resident9/A_Jump.uasset"
+  ],
+  "only_declared_content_changes": true,
+  "settings_restored": true,
+  "saves_unchanged": true,
+  "sources_binary_unchanged": true,
+  "finished_utc": "2026-10-17T15:00:13.702789+00:00"
+}

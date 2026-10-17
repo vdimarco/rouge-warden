@@ -1,0 +1,79 @@
+{
+  "scope": "preparation only; no Blender/UE run or art acceptance",
+  "source_pins": {
+    "Scripts/prepare_meshy_jump.py": "ed50ad1d4a09a9d6b71ee45c108a4f0e404b222ebfe311df3302929a6602aebd",
+    "Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/body.fbx": "b7e7ca0d9c486412108cba85e1cd4a5512fecd4ad36b8cfdb4677259ff6f9244",
+    "Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/jump.fbx": "36d74356ca903188a9b3956db69e51367260866972cda9215fab6a66d5362aa3",
+    "Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/jump.json": "94deb47f51e5cbfd6e5694efb8dcb8052c2abf6c91df7ceee2a35def47838e3f"
+  },
+  "only_changed_pose_fields": [
+    [
+      2,
+      5
+    ],
+    [
+      3,
+      5
+    ]
+  ],
+  "arm_key_degrees": [
+    {
+      "seconds": 0.23,
+      "before": -95,
+      "trial": -60
+    },
+    {
+      "seconds": 0.47,
+      "before": -110,
+      "trial": -70
+    }
+  ],
+  "at_native_airborne_clip_time_0_42189": {
+    "before_arm_degrees": -108.43339433101346,
+    "trial_arm_degrees": -68.95559622067563,
+    "unchanged_elbow_degrees": 61.866788662026906
+  },
+  "static_checks_passed": true,
+  "authored_fbx": false,
+  "native_validated": false,
+  "graphics_accepted": false,
+  "commands_not_executed": {
+    "control": [
+      "/home/von/.local/opt/blender-5.2.2-linux-x64/blender",
+      "-t",
+      "4",
+      "--background",
+      "--factory-startup",
+      "--python-exit-code",
+      "1",
+      "--python",
+      "/tmp/nord-jump-arm-ab-20261017T1359/Scripts/control_jump.py",
+      "--",
+      "--source-root",
+      "/tmp/nord-jump-arm-ab-20261017T1359/control",
+      "--names",
+      "CurlyMetalhead",
+      "--report",
+      "/tmp/nord-jump-arm-ab-20261017T1359/control-authoring.json"
+    ],
+    "trial": [
+      "/home/von/.local/opt/blender-5.2.2-linux-x64/blender",
+      "-t",
+      "4",
+      "--background",
+      "--factory-startup",
+      "--python-exit-code",
+      "1",
+      "--python",
+      "/tmp/nord-jump-arm-ab-20261017T1359/Scripts/trial_jump.py",
+      "--",
+      "--source-root",
+      "/tmp/nord-jump-arm-ab-20261017T1359/trial",
+      "--names",
+      "CurlyMetalhead",
+      "--report",
+      "/tmp/nord-jump-arm-ab-20261017T1359/trial-authoring.json"
+    ]
+  },
+  "trial_helper_sha256": "ae574ab5af000a38f6075926d8e1c3fb183d2fa287ed6813c422e38dc6e8165c"
+}

@@ -1,0 +1,18 @@
+{
+  "passed": true,
+  "source_root": "trial",
+  "characters": [
+    {
+      "name": "CurlyMetalhead",
+      "authoring": "original local skeletal keyframes; no paid generation",
+      "body_sha256": "b7e7ca0d9c486412108cba85e1cd4a5512fecd4ad36b8cfdb4677259ff6f9244",
+      "jump_sha256": "e35071099841d099eea5dda9de96a31b10cd07c4dfe73543bfee42f395c4833e",
+      "seconds": 1.2,
+      "fps": 30,
+      "bones": 24,
+      "head_and_neck_unchanged": true,
+      "actor_root_motion": false,
+      "fbx_round_trip_passed": true
+    }
+  ]
+}

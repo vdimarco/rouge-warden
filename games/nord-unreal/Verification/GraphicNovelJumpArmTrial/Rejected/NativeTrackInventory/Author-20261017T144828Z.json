@@ -1,0 +1,31 @@
+{
+  "passed": false,
+  "mode": "author",
+  "started_utc": "2026-10-17T14:48:29.222685+00:00",
+  "backup": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Recovery/private-jump-arm-20261017T144828Z",
+  "command": [
+    "/home/von/.local/share/Epic/UE_5.8.3/Engine/Binaries/Linux/UnrealEditor-Cmd",
+    "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Quebec.uproject",
+    "/Engine/Maps/Entry",
+    "-NullRHI",
+    "-unattended",
+    "-nop4",
+    "-nosound",
+    "-UDPMESSAGING_TRANSPORT_ENABLE=0",
+    "-NordGraphicNovelCandidate",
+    "-NordGraphicNovelGenerated",
+    "-NordGraphicNovelHighDetail",
+    "-ExecutePythonScript=/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/GraphicNovel/PrivateJumpArmPlan-20261017/native_trial.py",
+    "-NordPrivateJumpTrialBackup=/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Recovery/private-jump-arm-20261017T144828Z",
+    "-abslog=/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/GraphicNovel/PrivateJumpArmPlan-20261017/Author-20261017T144828Z/native.log"
+  ],
+  "owned_process_group": 2340109,
+  "exit_code": 0,
+  "error": "Traceback (most recent call last):\n  File \"/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/GraphicNovel/PrivateJumpArmPlan-20261017/run_native_trial.py\", line 54, in <module>\n    assert p.returncode==0 and 'NORD_PRIVATE_JUMP_NATIVE_OK' in text and 'LogPython: Error:' not in text\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError\n",
+  "changed_content": [],
+  "only_declared_content_changes": true,
+  "settings_restored": true,
+  "saves_unchanged": true,
+  "sources_binary_unchanged": true,
+  "finished_utc": "2026-10-17T14:48:40.823738+00:00"
+}

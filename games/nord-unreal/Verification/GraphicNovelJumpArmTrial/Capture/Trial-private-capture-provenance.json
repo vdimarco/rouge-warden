@@ -1,0 +1,24 @@
+{
+  "passed": true,
+  "phase": "trial",
+  "window": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T145346Z",
+  "factory": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/GraphicNovel/PrivateJumpArmPlan-20261017/prepare_capture.py",
+  "factory_sha256": "c35672300abaeeb178f3348d46d836c1f53f8e55ee15a75e25ace83808ef56ea",
+  "fixture_source_sha256": "e6ad0ca59dab8919d374520ffb3579a60f3bb587fbf5b0e80d5a5c872cc1ac98",
+  "fixture_sha256": "a93d63f1ad8dd20f599aa60ebe7609f5880335b625ad032434944bc4eaae9cc2",
+  "only_fixture_changes": [
+    "high-detail output root",
+    "curated historical NativeImport receipt path"
+  ],
+  "jobs": 6,
+  "stills": 28,
+  "review_states": [
+    "Airborne",
+    "Landing"
+  ],
+  "motion_videos": 2,
+  "native_clip_sha256": "90f03ece6f027126037e21ef5dd725444f94b82f130098c524ccb82be98692e9",
+  "engine_jobs_launched": false,
+  "service_actions": false,
+  "manager_template_sha256": "8c4712fc8415ec4a5cd15abf4509a243a47084abe0c8b19bdfa1ed38a34bac5b"
+}
