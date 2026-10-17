@@ -1,5 +1,7 @@
 # Visitation façade detail checkpoint — 2026-10-17
 
+Delivery: [PR379](https://github.com/vdimarco/rouge-warden/pull/379); see the PR for current merge state.
+
 Three previously plain building shells along the Montréal east extension now have blue panes, dark frames and light sills. The layer uses the existing materials and retained OSM footprints: 50 source emissions minus eight wholly hidden cards leave 42 candidate panes across three groups / 2,604 triangles. Window rhythm and 9.6 m building heights remain illustrative estimates; these are decorative surfaces on solid walls.
 
 Fresh NullRHI authoring, independent fresh readback and canonical map verification pass. The exact Content change is the LaFontaine map plus three new Glass/Iron/Trim meshes; all other 6,847 pre-author files and all 3,102 pre-author actor semantics are preserved. Native geometry, outward pane winding, materials, identity transforms, NoCollision and disabled decorative shadows match the declared source. Canonical extension checks retain the original 54 actors and independently verify the three later additions. See [author](Native/Author.json), [fresh verification](Native/VerifyProcess.json), [canonical](Native/Canonical.json) and [source checks](SourceChecks.json).
