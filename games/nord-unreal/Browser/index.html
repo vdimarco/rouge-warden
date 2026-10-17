@@ -5,6 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#0b0a16">
     <title>GTA: NORTH — Play</title>
+    <link rel="icon" href="./favicon-32.png" type="image/png" sizes="32x32">
+    <link rel="icon" href="./favicon.svg" type="image/svg+xml" sizes="any">
+    <link rel="apple-touch-icon" href="./apple-touch-icon.png" sizes="180x180">
+    <link rel="manifest" href="./manifest.webmanifest">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="NORTH">
     <link rel="stylesheet" href="./styles.css">
     <link rel="stylesheet" href="./hero.css">
     <link rel="stylesheet" href="./intro.css">
@@ -14,6 +20,7 @@
     <script type="module" src="./crew.js"></script>
     <script type="module" src="./intro.js"></script>
     <script type="module" src="./menu.js"></script>
+    <script type="module" src="./install.js"></script>
   </head>
   <body data-state="offline">
     <header>
@@ -147,6 +154,11 @@
               <button id="gyro-look" type="button" aria-pressed="false" aria-describedby="gyro-status" disabled>Gyro look</button>
             </div>
             <p id="gyro-status" class="small" role="status">Drag anywhere on the game to look.</p>
+          </div>
+          <div class="menu-install">
+            <button id="install-app" type="button" aria-describedby="install-help">Install GTA: NORTH</button>
+            <p id="install-help" class="small" role="status" hidden>In your browser menu, choose Install app or Add to Home Screen. On iPhone or iPad, open in Safari, then Share → Add to Home Screen. In Safari on Mac, choose File → Add to Dock.</p>
+            <p class="small">Play from your home screen. Internet and the game host are required.</p>
           </div>
           <button id="menu-close" class="menu-close" type="button">Close</button>
         </div>
