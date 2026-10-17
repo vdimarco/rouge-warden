@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "build": "node build.mjs",
-    "test": "node --test config.test.mjs touch-controls.test.mjs stream-sample.test.mjs hero.test.mjs",
+    "test": "node --test config.test.mjs touch-controls.test.mjs stream-sample.test.mjs hero.test.mjs install.test.mjs manifest.test.mjs",
     "test:browser": "node browser.test.mjs",
     "test:live": "node live.test.mjs",
     "test:mobile": "node mobile.test.mjs",
