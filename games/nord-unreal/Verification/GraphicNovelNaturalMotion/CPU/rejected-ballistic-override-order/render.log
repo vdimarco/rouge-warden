@@ -1,0 +1,115 @@
+00:00.254  blend            | Read blend: "/tmp/nord-natural-jump-20261017T193357Z/study.blend"
+00:04.347  render           | Saved: '/tmp/nord-natural-jump-20261017T193357Z/liftoff-side.png'
+NATURAL_STILL_READY liftoff side
+00:08.483  render           | Saved: '/tmp/nord-natural-jump-20261017T193357Z/apex-front.png'
+NATURAL_STILL_READY apex front
+00:12.366  render           | Saved: '/tmp/nord-natural-jump-20261017T193357Z/apex-side.png'
+NATURAL_STILL_READY apex side
+00:16.622  render           | Saved: '/tmp/nord-natural-jump-20261017T193357Z/apex-threequarter.png'
+NATURAL_STILL_READY apex threequarter
+00:20.475  render           | Saved: '/tmp/nord-natural-jump-20261017T193357Z/descent-side.png'
+NATURAL_STILL_READY descent side
+00:24.328  render           | Saved: '/tmp/nord-natural-jump-20261017T193357Z/landing-side.png'
+NATURAL_STILL_READY landing side
+Info: Saved as "natural-study.blend"
+NATURAL_STILLS_COMPLETE
+00:25.626  render           | Saved: '/tmp/nord-natural-jump-20261017T193357Z/MotionFrames/000.png'
+NATURAL_MOTION_FRAME 0 neutral-hold
+00:26.903  render           | Saved: '/tmp/nord-natural-jump-20261017T193357Z/MotionFrames/001.png'
+NATURAL_MOTION_FRAME 1 neutral-hold
+00:28.147  render           | Saved: '/tmp/nord-natural-jump-20261017T193357Z/MotionFrames/002.png'
+NATURAL_MOTION_FRAME 2 neutral-hold
+00:29.390  render           | Saved: '/tmp/nord-natural-jump-20261017T193357Z/MotionFrames/003.png'
+NATURAL_MOTION_FRAME 3 neutral-hold
+00:30.634  render           | Saved: '/tmp/nord-natural-jump-20261017T193357Z/MotionFrames/004.png'
+NATURAL_MOTION_FRAME 4 neutral-hold
+00:31.855  render           | Saved: '/tmp/nord-natural-jump-20261017T193357Z/MotionFrames/005.png'
+NATURAL_MOTION_FRAME 5 ascent
+00:33.052  render           | Saved: '/tmp/nord-natural-jump-20261017T193357Z/MotionFrames/006.png'
+NATURAL_MOTION_FRAME 6 ascent
+00:34.179  render           | Saved: '/tmp/nord-natural-jump-20261017T193357Z/MotionFrames/007.png'
+NATURAL_MOTION_FRAME 7 ascent
+00:35.287  render           | Saved: '/tmp/nord-natural-jump-20261017T193357Z/MotionFrames/008.png'
+NATURAL_MOTION_FRAME 8 ascent
+00:36.386  render           | Saved: '/tmp/nord-natural-jump-20261017T193357Z/MotionFrames/009.png'
+NATURAL_MOTION_FRAME 9 ascent
+00:37.498  render           | Saved: '/tmp/nord-natural-jump-20261017T193357Z/MotionFrames/010.png'
+NATURAL_MOTION_FRAME 10 ascent
+00:38.586  render           | Saved: '/tmp/nord-natural-jump-20261017T193357Z/MotionFrames/011.png'
+NATURAL_MOTION_FRAME 11 ascent
+00:39.715  render           | Saved: '/tmp/nord-natural-jump-20261017T193357Z/MotionFrames/012.png'
+NATURAL_MOTION_FRAME 12 ascent
+00:40.770  render           | Saved: '/tmp/nord-natural-jump-20261017T193357Z/MotionFrames/013.png'
+NATURAL_MOTION_FRAME 13 ascent
+00:41.845  render           | Saved: '/tmp/nord-natural-jump-20261017T193357Z/MotionFrames/014.png'
+NATURAL_MOTION_FRAME 14 ascent
+00:42.952  render           | Saved: '/tmp/nord-natural-jump-20261017T193357Z/MotionFrames/015.png'
+NATURAL_MOTION_FRAME 15 ascent
+00:44.003  render           | Saved: '/tmp/nord-natural-jump-20261017T193357Z/MotionFrames/016.png'
+NATURAL_MOTION_FRAME 16 ascent
+00:45.082  render           | Saved: '/tmp/nord-natural-jump-20261017T193357Z/MotionFrames/017.png'
+NATURAL_MOTION_FRAME 17 ascent
+00:46.151  render           | Saved: '/tmp/nord-natural-jump-20261017T193357Z/MotionFrames/018.png'
+NATURAL_MOTION_FRAME 18 ascent
+00:47.213  render           | Saved: '/tmp/nord-natural-jump-20261017T193357Z/MotionFrames/019.png'
+NATURAL_MOTION_FRAME 19 ascent
+00:48.267  render           | Saved: '/tmp/nord-natural-jump-20261017T193357Z/MotionFrames/020.png'
+NATURAL_MOTION_FRAME 20 descent
+00:49.345  render           | Saved: '/tmp/nord-natural-jump-20261017T193357Z/MotionFrames/021.png'
+NATURAL_MOTION_FRAME 21 descent
+00:50.377  render           | Saved: '/tmp/nord-natural-jump-20261017T193357Z/MotionFrames/022.png'
+NATURAL_MOTION_FRAME 22 descent
+00:51.457  render           | Saved: '/tmp/nord-natural-jump-20261017T193357Z/MotionFrames/023.png'
+NATURAL_MOTION_FRAME 23 descent
+00:52.519  render           | Saved: '/tmp/nord-natural-jump-20261017T193357Z/MotionFrames/024.png'
+NATURAL_MOTION_FRAME 24 descent
+00:53.616  render           | Saved: '/tmp/nord-natural-jump-20261017T193357Z/MotionFrames/025.png'
+NATURAL_MOTION_FRAME 25 descent
+00:54.723  render           | Saved: '/tmp/nord-natural-jump-20261017T193357Z/MotionFrames/026.png'
+NATURAL_MOTION_FRAME 26 descent
+00:55.813  render           | Saved: '/tmp/nord-natural-jump-20261017T193357Z/MotionFrames/027.png'
+NATURAL_MOTION_FRAME 27 descent
+00:56.888  render           | Saved: '/tmp/nord-natural-jump-20261017T193357Z/MotionFrames/028.png'
+NATURAL_MOTION_FRAME 28 descent
+00:57.995  render           | Saved: '/tmp/nord-natural-jump-20261017T193357Z/MotionFrames/029.png'
+NATURAL_MOTION_FRAME 29 descent
+00:59.102  render           | Saved: '/tmp/nord-natural-jump-20261017T193357Z/MotionFrames/030.png'
+NATURAL_MOTION_FRAME 30 descent
+01:00.222  render           | Saved: '/tmp/nord-natural-jump-20261017T193357Z/MotionFrames/031.png'
+NATURAL_MOTION_FRAME 31 descent
+01:01.346  render           | Saved: '/tmp/nord-natural-jump-20261017T193357Z/MotionFrames/032.png'
+NATURAL_MOTION_FRAME 32 descent
+01:02.497  render           | Saved: '/tmp/nord-natural-jump-20261017T193357Z/MotionFrames/033.png'
+NATURAL_MOTION_FRAME 33 descent
+01:03.755  render           | Saved: '/tmp/nord-natural-jump-20261017T193357Z/MotionFrames/034.png'
+NATURAL_MOTION_FRAME 34 descent
+01:04.998  render           | Saved: '/tmp/nord-natural-jump-20261017T193357Z/MotionFrames/035.png'
+NATURAL_MOTION_FRAME 35 landing-recovery
+01:06.226  render           | Saved: '/tmp/nord-natural-jump-20261017T193357Z/MotionFrames/036.png'
+NATURAL_MOTION_FRAME 36 landing-recovery
+01:07.494  render           | Saved: '/tmp/nord-natural-jump-20261017T193357Z/MotionFrames/037.png'
+NATURAL_MOTION_FRAME 37 landing-recovery
+01:08.738  render           | Saved: '/tmp/nord-natural-jump-20261017T193357Z/MotionFrames/038.png'
+NATURAL_MOTION_FRAME 38 landing-recovery
+01:09.998  render           | Saved: '/tmp/nord-natural-jump-20261017T193357Z/MotionFrames/039.png'
+NATURAL_MOTION_FRAME 39 landing-recovery
+01:11.217  render           | Saved: '/tmp/nord-natural-jump-20261017T193357Z/MotionFrames/040.png'
+NATURAL_MOTION_FRAME 40 landing-recovery
+01:12.446  render           | Saved: '/tmp/nord-natural-jump-20261017T193357Z/MotionFrames/041.png'
+NATURAL_MOTION_FRAME 41 neutral-hold
+01:13.674  render           | Saved: '/tmp/nord-natural-jump-20261017T193357Z/MotionFrames/042.png'
+NATURAL_MOTION_FRAME 42 neutral-hold
+01:14.910  render           | Saved: '/tmp/nord-natural-jump-20261017T193357Z/MotionFrames/043.png'
+NATURAL_MOTION_FRAME 43 neutral-hold
+01:16.144  render           | Saved: '/tmp/nord-natural-jump-20261017T193357Z/MotionFrames/044.png'
+NATURAL_MOTION_FRAME 44 neutral-hold
+01:17.364  render           | Saved: '/tmp/nord-natural-jump-20261017T193357Z/MotionFrames/045.png'
+NATURAL_MOTION_FRAME 45 neutral-hold
+01:18.589  render           | Saved: '/tmp/nord-natural-jump-20261017T193357Z/MotionFrames/046.png'
+NATURAL_MOTION_FRAME 46 neutral-hold
+01:19.826  render           | Saved: '/tmp/nord-natural-jump-20261017T193357Z/MotionFrames/047.png'
+NATURAL_MOTION_FRAME 47 neutral-hold
+NATURAL_MOTION_COMPLETE
+Blender 5.2.2 LTS (hash d13f752e3b9c built 2026-09-15 01:34:58)
+
+Blender quit

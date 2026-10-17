@@ -1,0 +1,391 @@
+{
+  "passed": true,
+  "scope": "Private CPU compound jump/prop study, viable for bounded native test only; no art/default adoption",
+  "comparison_process_exit_code": 0,
+  "authoring_process_exit_codes": {
+    "control": 0,
+    "trial": 0
+  },
+  "all_retained_source_files_unchanged": true,
+  "neutral_endpoints_passed": true,
+  "object_root_static": true,
+  "sample_count_per_clip": 37,
+  "bone_count_per_clip": 24,
+  "fps": 30,
+  "seconds": 1.2,
+  "trial_fbx": "trial/CurlyMetalhead/jump.fbx",
+  "trial_sha256": "7bc042e812872fc0d1709a861d9623512d3d93a3c9969c8c9e99c7223d2f69ab",
+  "allowed_rotation_bones": [
+    "LeftArm",
+    "LeftForeArm",
+    "RightArm",
+    "RightForeArm"
+  ],
+  "maximum_changed_rotation_radians": {
+    "LeftForeArm": 0.4361822572985361,
+    "RightForeArm": 0.5233990247078297,
+    "LeftArm": 1.1342637052207247,
+    "RightArm": 1.5356596862474388
+  },
+  "maximum_changed_rotation_degrees": {
+    "LeftForeArm": 24.991402441695467,
+    "RightForeArm": 29.988555117022138,
+    "LeftArm": 64.98852316401845,
+    "RightArm": 87.98681879036243
+  },
+  "pose_keys": {
+    "RightArm": [
+      [
+        0,
+        0
+      ],
+      [
+        0.1,
+        10
+      ],
+      [
+        0.23,
+        -30
+      ],
+      [
+        0.47,
+        -22
+      ],
+      [
+        0.73,
+        -15
+      ],
+      [
+        0.93,
+        -8
+      ],
+      [
+        1.2,
+        0
+      ]
+    ],
+    "RightForeArm": [
+      [
+        0,
+        0
+      ],
+      [
+        0.1,
+        20
+      ],
+      [
+        0.23,
+        25
+      ],
+      [
+        0.47,
+        35
+      ],
+      [
+        0.73,
+        25
+      ],
+      [
+        0.93,
+        18
+      ],
+      [
+        1.2,
+        0
+      ]
+    ],
+    "LeftArm": [
+      [
+        0,
+        0
+      ],
+      [
+        0.1,
+        20
+      ],
+      [
+        0.23,
+        -50
+      ],
+      [
+        0.47,
+        -45
+      ],
+      [
+        0.73,
+        -30
+      ],
+      [
+        0.93,
+        -15
+      ],
+      [
+        1.2,
+        0
+      ]
+    ],
+    "LeftForeArm": [
+      [
+        0,
+        0
+      ],
+      [
+        0.1,
+        35
+      ],
+      [
+        0.23,
+        60
+      ],
+      [
+        0.47,
+        75
+      ],
+      [
+        0.73,
+        40
+      ],
+      [
+        0.93,
+        30
+      ],
+      [
+        1.2,
+        0
+      ]
+    ]
+  },
+  "weights_geometry_uv_materials_binds_modified": false,
+  "source_body_binary_sha256": "b7e7ca0d9c486412108cba85e1cd4a5512fecd4ad36b8cfdb4677259ff6f9244",
+  "body_copies_binary_identical": true,
+  "native_equivalent_grip": {
+    "scope": "CPU geometry proxy, no native material/closed-grasp or full-motion acceptance",
+    "scale": 0.6,
+    "calibration_frame": 2,
+    "shaft_grip_local_z_m": -0.2,
+    "attach": "RightHand matrix translation wrist, no palm offset",
+    "neutral_cup_axis_source_world": [
+      -0.5548766255378723,
+      0.20177331566810608,
+      -0.8070932626724243
+    ],
+    "hand_relative_matrix": [
+      [
+        53.41071701049805,
+        0.022609233856201172,
+        27.33673858642578,
+        5.467347621917725
+      ],
+      [
+        -27.266250610351562,
+        -4.261953830718994,
+        53.276527404785156,
+        10.655294418334961
+      ],
+      [
+        1.9618597030639648,
+        -59.848453521728516,
+        -3.783620834350586,
+        -0.7567269802093506
+      ],
+      [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ]
+    ],
+    "clip_time_s": 0.43254,
+    "scene": "same cached raw-map studio and pose as initial trial",
+    "device": "CPU",
+    "threads": 4,
+    "samples": 16
+  },
+  "sampled_proxy_clearance": {
+    "sample_count": 37,
+    "minimum_vertical_head_gap_m": 0.38315141201019287,
+    "minimum_static_root_floor_z_m": 0.4938217103481293,
+    "outside_10cm_wrist_body_overlap_frames": [],
+    "near_10cm_wrist_contact_frame_count": 37
+  },
+  "cpu_view_verdict": "Shoulder lobes reduced; short-sleeve silhouette improved. Matching wrist/z\u221220cm calibration clears face in three inspected apex views. Shirt faceting, restrained/stiff air pose, open fingers and imperfect supported-tool grip remain.",
+  "rejected_attempts": [
+    {
+      "directory": "rejected-world-missing",
+      "cause": "Empty factory scene had no World; failed before render; source/log retained."
+    },
+    {
+      "directory": "rejected-clip-reexport",
+      "cause": "Re-exporting already-imported clip accumulated1.55e\u22126 scale drift above1e\u22126 tolerance. Rejected; final exports use original body-based source authoring. Tolerances unchanged."
+    }
+  ],
+  "limitations": [
+    "No continuous motion, native compression/blending, native prop mesh bounds or camera projection acceptance.",
+    "The white prop is actual retained OBJ geometry rendered as a proxy; no native materials or closed grasp claim.",
+    "37sample triangle overlaps found no contacts outside10cm wrist region; intersection-only, no signed distance or swept containment proof.",
+    "World/capsule trajectory, player controls, gameplay collision and replication are untouched but untested in this CPU study.",
+    "No shoulder weight changes; original mesh, maps, UVs, binds and all23retained source files stay byte-identical."
+  ],
+  "artifact_manifest": [
+    {
+      "file": "cpu-preflight.json",
+      "bytes": 4189,
+      "sha256": "71cbbc0960c312c700730a76275e9f4a2cb5ca6db7071401ef51da05f5af8f5c"
+    },
+    {
+      "file": "semantic-comparison.json",
+      "bytes": 1487811,
+      "sha256": "94e329b3b677808e1872ca10d3c1e59cbf1fcae50c9b3ee3481e79d6ef8867c3"
+    },
+    {
+      "file": "semantic-comparison.log",
+      "bytes": 225,
+      "sha256": "b7746eb7afe29bc76324e7bd92d1428d080bc7b08a84d2fc2fa35a2b050269d8"
+    },
+    {
+      "file": "control-authoring.json",
+      "bytes": 579,
+      "sha256": "9941d9d54538b8315dfa37302878c6b2b0139753f52a53ff5a7e8bb2f7886714"
+    },
+    {
+      "file": "trial-authoring.json",
+      "bytes": 577,
+      "sha256": "890d4e7478e3aa69cdf54c35d5f1ccf9980b2f15f1cd26debc27b87bb9497712"
+    },
+    {
+      "file": "control-authoring.log",
+      "bytes": 279,
+      "sha256": "2be8405b989ba2d6f85d22815a327e06a0a7112a610654a06c6b99e4570ce83e"
+    },
+    {
+      "file": "trial-authoring.log",
+      "bytes": 277,
+      "sha256": "f817c75149f8a67ab2819bcdee90ecfa3d94991ebe14b4b8b36fea91a1af7eb5"
+    },
+    {
+      "file": "control_jump.py",
+      "bytes": 8369,
+      "sha256": "ed50ad1d4a09a9d6b71ee45c108a4f0e404b222ebfe311df3302929a6602aebd"
+    },
+    {
+      "file": "trial_jump.py",
+      "bytes": 9033,
+      "sha256": "b6163ed777d01fa9a30de707d2ffcb6b08aac0f2297d77dddae8c8328ad51876"
+    },
+    {
+      "file": "verify_candidate.py",
+      "bytes": 9793,
+      "sha256": "b870d80176a91227800ac8831ddc8e419ef886387a9ac7cc525df2e6e15d4317"
+    },
+    {
+      "file": "render.py",
+      "bytes": 10810,
+      "sha256": "a47a4e98c4314219cd69553e2405f8fee00bba8f2b87be48ae023f22a8633b56"
+    },
+    {
+      "file": "render.log",
+      "bytes": 1345,
+      "sha256": "2add48370a80c4d9bede8a69449ea9f331e74110e821818071c9b1e6b7435afb"
+    },
+    {
+      "file": "preview.json",
+      "bytes": 3361,
+      "sha256": "1ca0fd55f46d46a4165026f0f7fbad299246b68a29c2fb995164f22c4fd0ee49"
+    },
+    {
+      "file": "native_calibration_preview.py",
+      "bytes": 2081,
+      "sha256": "bbeac0cae12d1cb39252aac858a521f5a18f1e1c5fbe02a76e9f3da1627012c1"
+    },
+    {
+      "file": "native-calibration-preview.log",
+      "bytes": 640,
+      "sha256": "d2ad21cccf135d1bd9e6c0a0071abe72e90b15eabe1853b25ced7c377008b721"
+    },
+    {
+      "file": "native-grip-preview.json",
+      "bytes": 934,
+      "sha256": "5f52d56ebf450279e19e5ec67fb55152ef629d4b6bf09a21e89324a3ab8ff770"
+    },
+    {
+      "file": "check_clearance.py",
+      "bytes": 3827,
+      "sha256": "cfc12fdeed05f4ece3d3e6ea0884dab573c5fbe8c86dc64716e7d666792d17a1"
+    },
+    {
+      "file": "prop-clearance.json",
+      "bytes": 17385,
+      "sha256": "2fef35d56796e672fdd4bbce6daffd7189333d3a4b1e489808a7dad83a36931b"
+    },
+    {
+      "file": "prop-clearance.log",
+      "bytes": 1067,
+      "sha256": "53ff1f83f930496f45f2ef42dc4d0c3f2f962e1340b514f180a17573842fed2d"
+    },
+    {
+      "file": "control/CurlyMetalhead/jump.fbx",
+      "bytes": 221356,
+      "sha256": "63a845ea031836c7face12a11170196b9a63bba3cff684156c64a2543bf9fc6d"
+    },
+    {
+      "file": "control/CurlyMetalhead/jump.json",
+      "bytes": 5070,
+      "sha256": "e5317c95bb0fe1ec892d7f94a129d4e0fbb47e07904a19e643a8a9feba1a923e"
+    },
+    {
+      "file": "trial/CurlyMetalhead/jump.fbx",
+      "bytes": 221308,
+      "sha256": "7bc042e812872fc0d1709a861d9623512d3d93a3c9969c8c9e99c7223d2f69ab"
+    },
+    {
+      "file": "trial/CurlyMetalhead/jump.json",
+      "bytes": 5070,
+      "sha256": "fb4e64b6f27852d89e010cd9a7961e11613a91c7b7de24dc0398158e7600690f"
+    },
+    {
+      "file": "baseline-front.png",
+      "bytes": 598967,
+      "sha256": "822915d8ea0b5e029a0fc5c90adfceaa7760101b4e57be2aa6836b256a943b3c"
+    },
+    {
+      "file": "baseline-side.png",
+      "bytes": 583717,
+      "sha256": "88a22b15559fad601699edc17adbce0afbcfc17047fb210ba4ca52daba9e5fec"
+    },
+    {
+      "file": "baseline-threequarter.png",
+      "bytes": 598353,
+      "sha256": "131e30dde90e9e8f4e1c3558fdcc3ea97286da18dacb402161cd8d19d52c27c0"
+    },
+    {
+      "file": "trial-front.png",
+      "bytes": 603907,
+      "sha256": "e6b40ff9f51adad15821605aa801c4d187c4152a849e776a6d3732ef2f466317"
+    },
+    {
+      "file": "trial-side.png",
+      "bytes": 570974,
+      "sha256": "2fcff62a4ff741f5a40dc9729eb716ffa97dac26436f50f24b27578fa69287a8"
+    },
+    {
+      "file": "trial-threequarter.png",
+      "bytes": 607930,
+      "sha256": "f6ec7a49f2515378572d5d96c58156703cb6e938316a32888acff213810770f3"
+    },
+    {
+      "file": "trial-native-grip-front.png",
+      "bytes": 604345,
+      "sha256": "8f8d738a2bdb57330e6230bc6e901a520097f05a3eadec2b1e32e9e0aa1bdef4"
+    },
+    {
+      "file": "trial-native-grip-side.png",
+      "bytes": 571018,
+      "sha256": "0db1b39ebcbf7099896d0f711f09b49c879f6dd9260b0b25135a3b4f84030050"
+    },
+    {
+      "file": "trial-native-grip-threequarter.png",
+      "bytes": 607656,
+      "sha256": "f8403ccfac52e92f0dd7bb9ff2f19531df0511492e30a45bbe8066cb0e4df842"
+    }
+  ]
+}

@@ -1,0 +1,1382 @@
+{
+  "passed": true,
+  "started_utc": "2026-10-17T21:06:34.360313+00:00",
+  "recipe_sha256": "a91c7960601fdaf4f82ce71d469e0224d81c45fc1a7ef2ae4b0c1bfc88d9aaac",
+  "scope": "CPU animation-only 61-bone gait derivatives; no mesh, rendering, Unreal, provider or service writes",
+  "input_sha256": {
+    "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/base_color.png": "f300cbf5d78c411cad36cfedee17a36c787d1a50c968c2adb2827ecf0e43d774",
+    "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/body.fbx": "b7e7ca0d9c486412108cba85e1cd4a5512fecd4ad36b8cfdb4677259ff6f9244",
+    "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/body.glb": "25041be9666422c30ba39449cb283a83928bb3de596fe063389707c070335613",
+    "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/files.json": "d942b4ec45c3b28ef54c0afeb991278528fd74252ec7208cd518519277fd18bc",
+    "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/generation.json": "a23277ea16f38bf8123e4c5f8e4b64323c6b07843158a4b84a7f2bcf7d910632",
+    "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/idle.fbx": "b1a7bd95403aa7358f067a3a352d060ca2cd56d9c65d9f8d6fe497dbf4343641",
+    "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/jump.fbx": "36d74356ca903188a9b3956db69e51367260866972cda9215fab6a66d5362aa3",
+    "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/jump.json": "94deb47f51e5cbfd6e5694efb8dcb8052c2abf6c91df7ceee2a35def47838e3f",
+    "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/metallic.png": "2e0e9b79402c506cdcf5fe11f4e81e7a376b0b81fa5982b6b6584f5e35402309",
+    "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/normal.png": "7845864ce13d1e3ce10e8149ef2ef98a048b8be249a60749dfc70c4897e9e7ab",
+    "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/preview.png": "8b0e3ba80a30dd9f6d438be6f81728e9744dc057c9f1df50759379b2dc57a8d4",
+    "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/pricing.json": "6ff6e0d5f7a22b9cf85119d4ad1cb6e8f30e6acb4804a61b563e27b347663d32",
+    "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/reference.png": "c00eb6f0ea1f5743b1a236295ecedfa27e15763d9ab5a717942ebf3713e778be",
+    "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/request.json": "47209121445fc43283c50481d7fc6adece8274fdf049ddec31e52c58f4a352d1",
+    "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/result-receipt.json": "192c42733e1ab51fd1b4d799bd4167b7c457ed2b5a3d48d3ccb910729b3c8ba7",
+    "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/result.json": "da1d5ae7bc3856dde6e1b7f642182814eeb1ff22f2d69cc7aaf8a4ebde5dbdab",
+    "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/roughness.png": "cf28e5b2f2b3d1d85b3e3a6b8228b0bde61f82c60133b393a6159b5d3a7a9f89",
+    "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/run.fbx": "b0f8e4c359d21ca3a51dde5c94b45b4d9f4a3d27dedb2d44f671b69e41f6e8ae",
+    "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/run.glb": "b59e018d32513f3519f4f64a6a29de42cdc952cc53a5416b91ee60bc82229b30",
+    "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/schema.json": "4779033055c3bed4def386892cc4844f22ed9bd718d6795318efa395dafc219b",
+    "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/source-review.json": "a2ea79458aef0ad20ee1cb00b262269c509db230ca94b9c03cfc8bebeaacd3d8",
+    "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/submit-response.json": "47209121445fc43283c50481d7fc6adece8274fdf049ddec31e52c58f4a352d1",
+    "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/walk.fbx": "0fe2b4d83846f826e3d448c870fcb77816c25fe6d106c873d755cd7a3d871d9e",
+    "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/tripo-v3-rig-20261017/rig.fbx": "baaeb99a7e86fadadd4f64f6de6ea7e648777b33bcadd2ecb72347c4afe3dcc2",
+    "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/tripo-v3-rig-20261017/derived/natural-pose-20261017/relaxed-idle.fbx": "f5cf127b897cd54b52676932ff89461033becf1a19e8cf109a33d30c8958dfbc"
+  },
+  "source_to_target": {
+    "Hips": "pelvis",
+    "Spine02": "spine_01",
+    "Spine01": "spine_02",
+    "Spine": "spine_03",
+    "neck": "neck_01",
+    "Head": "head",
+    "LeftShoulder": "clavicle_l",
+    "LeftArm": "upperarm_l",
+    "LeftForeArm": "lowerarm_l",
+    "LeftHand": "hand_l",
+    "LeftUpLeg": "thigh_l",
+    "LeftLeg": "calf_l",
+    "LeftFoot": "foot_l",
+    "LeftToeBase": "ball_l",
+    "RightShoulder": "clavicle_r",
+    "RightArm": "upperarm_r",
+    "RightForeArm": "lowerarm_r",
+    "RightHand": "hand_r",
+    "RightUpLeg": "thigh_r",
+    "RightLeg": "calf_r",
+    "RightFoot": "foot_r",
+    "RightToeBase": "ball_r"
+  },
+  "policy": "Preserve mapped component rotation deltas, all source hip XYZ bob/sway and source gait timing; static actor/root; all 30 finger locals from relaxed idle entry; remaining locals at bind. No new arm acting is added to the source gait.",
+  "limits": {
+    "reference_matrix": 2e-05,
+    "reference_head_and_scale": 1e-05,
+    "angle_rad": 0.0001,
+    "translation_and_scale": 1e-05,
+    "static_object": 1e-07
+  },
+  "clips": {
+    "walk": {
+      "output": {
+        "file": "/tmp/nord-tripo-locomotion-20261017-fps-v3/walk.fbx",
+        "sha256": "c70f0830452bf468eebb6ae8d970931391c89fb5c3e8eb81c0eed54e1068dd0c",
+        "bytes": 541692
+      },
+      "fresh_armature_object": "Armature",
+      "bones": 61,
+      "samples": 32,
+      "half_frame_samples": 63,
+      "fps": 30,
+      "seconds": 1.0333333333333334,
+      "source_range": [
+        1.0,
+        32.0
+      ],
+      "fresh_range": [
+        2.0,
+        33.0
+      ],
+      "source_xyz_to_target_factor": 0.005494502817082002,
+      "metrics": {
+        "reference": {
+          "matrix": 1.0818243026733398e-05,
+          "angle_rad": 7.19307642695806e-06,
+          "head": 6.07130893599856e-07,
+          "scale": 8.225440979003906e-06
+        },
+        "component_matrix_error": 1.1593103408813477e-05,
+        "component_angle_error_rad": 7.757633119994962e-06,
+        "hip_xyz_error_target_units": 8.73260808716047e-08,
+        "local_translation_error": 3.3597074632707904e-07,
+        "local_scale_error": 8.344650268554688e-06,
+        "finger_baseline_rotation_error_rad": 4.221187118032983e-06,
+        "root_matrix_error": 3.552713678800501e-15,
+        "object_matrix_error": 0.0,
+        "key_quaternion_norm_error": 1.1920928955078125e-07,
+        "loop_matrix_error": 2.5033950805664062e-06,
+        "loop_angle_error_rad": 2.506798781020944e-06,
+        "minimum_elbow_signed_deg": 3.091598690757804
+      },
+      "samples_readback": [
+        {
+          "time_s": 0.0,
+          "elbow_signed_deg": {
+            "l": 9.987835486486892,
+            "r": 22.632008539776045
+          },
+          "hip_delta_target_units": [
+            0.0004624433349817991,
+            -0.008051084354519844,
+            0.012725770473480225
+          ]
+        },
+        {
+          "time_s": 0.016666666666666666,
+          "elbow_signed_deg": {
+            "l": 9.978044697704428,
+            "r": 24.031686996589325
+          },
+          "hip_delta_target_units": [
+            0.0007931799627840519,
+            -0.007074424996972084,
+            0.014617383480072021
+          ]
+        },
+        {
+          "time_s": 0.03333333333333333,
+          "elbow_signed_deg": {
+            "l": 9.968265097042288,
+            "r": 25.43141476511955
+          },
+          "hip_delta_target_units": [
+            0.001123916357755661,
+            -0.006097767502069473,
+            0.016509056091308594
+          ]
+        },
+        {
+          "time_s": 0.05,
+          "elbow_signed_deg": {
+            "l": 9.915357135437578,
+            "r": 27.588958785134086
+          },
+          "hip_delta_target_units": [
+            0.0016221948899328709,
+            -0.004995380528271198,
+            0.016493141651153564
+          ]
+        },
+        {
+          "time_s": 0.06666666666666667,
+          "elbow_signed_deg": {
+            "l": 9.862435456112403,
+            "r": 29.746622555291957
+          },
+          "hip_delta_target_units": [
+            0.0021204734221100807,
+            -0.0038929926231503487,
+            0.016477227210998535
+          ]
+        },
+        {
+          "time_s": 0.08333333333333333,
+          "elbow_signed_deg": {
+            "l": 9.619208160629082,
+            "r": 31.193340296641132
+          },
+          "hip_delta_target_units": [
+            0.0028477925807237625,
+            -0.0031006543431431055,
+            0.014082789421081543
+          ]
+        },
+        {
+          "time_s": 0.1,
+          "elbow_signed_deg": {
+            "l": 9.375980724411914,
+            "r": 32.640096777177014
+          },
+          "hip_delta_target_units": [
+            0.0035751108080148697,
+            -0.002308315597474575,
+            0.011688411235809326
+          ]
+        },
+        {
+          "time_s": 0.11666666666666667,
+          "elbow_signed_deg": {
+            "l": 8.971135823787758,
+            "r": 33.261655688198125
+          },
+          "hip_delta_target_units": [
+            0.0042261043563485146,
+            -0.002251875586807728,
+            0.007682979106903076
+          ]
+        },
+        {
+          "time_s": 0.13333333333333333,
+          "elbow_signed_deg": {
+            "l": 8.56631009522095,
+            "r": 33.883239746038846
+          },
+          "hip_delta_target_units": [
+            0.004877098370343447,
+            -0.0021954348776489496,
+            0.0036776065826416016
+          ]
+        },
+        {
+          "time_s": 0.15,
+          "elbow_signed_deg": {
+            "l": 7.747366544471257,
+            "r": 33.991745465114555
+          },
+          "hip_delta_target_units": [
+            0.005558331497013569,
+            -0.002455446170642972,
+            -0.0007246136665344238
+          ]
+        },
+        {
+          "time_s": 0.16666666666666666,
+          "elbow_signed_deg": {
+            "l": 6.928472975552981,
+            "r": 34.10025726758922
+          },
+          "hip_delta_target_units": [
+            0.006239565089344978,
+            -0.0027154572308063507,
+            -0.005126833915710449
+          ]
+        },
+        {
+          "time_s": 0.18333333333333332,
+          "elbow_signed_deg": {
+            "l": 5.747488380103751,
+            "r": 33.50924084536811
+          },
+          "hip_delta_target_units": [
+            0.007069643586874008,
+            -0.00281860725954175,
+            -0.008581399917602539
+          ]
+        },
+        {
+          "time_s": 0.2,
+          "elbow_signed_deg": {
+            "l": 4.56660996232995,
+            "r": 32.91824183702644
+          },
+          "hip_delta_target_units": [
+            0.007899722084403038,
+            -0.002921757288277149,
+            -0.012035965919494629
+          ]
+        },
+        {
+          "time_s": 0.21666666666666667,
+          "elbow_signed_deg": {
+            "l": 3.829073127915952,
+            "r": 31.986099598947384
+          },
+          "hip_delta_target_units": [
+            0.00897402036935091,
+            -0.004447227343916893,
+            -0.014515161514282227
+          ]
+        },
+        {
+          "time_s": 0.23333333333333334,
+          "elbow_signed_deg": {
+            "l": 3.091598690757804,
+            "r": 31.053964348935157
+          },
+          "hip_delta_target_units": [
+            0.010048318654298782,
+            -0.005972697399556637,
+            -0.016994357109069824
+          ]
+        },
+        {
+          "time_s": 0.25,
+          "elbow_signed_deg": {
+            "l": 3.15412832228899,
+            "r": 29.754514550646036
+          },
+          "hip_delta_target_units": [
+            0.011680221185088158,
+            -0.00908435508608818,
+            -0.017942726612091064
+          ]
+        },
+        {
+          "time_s": 0.26666666666666666,
+          "elbow_signed_deg": {
+            "l": 3.2166414525471017,
+            "r": 28.45510227995366
+          },
+          "hip_delta_target_units": [
+            0.013312123715877533,
+            -0.012196013703942299,
+            -0.018891096115112305
+          ]
+        },
+        {
+          "time_s": 0.2833333333333333,
+          "elbow_signed_deg": {
+            "l": 3.7208804113480625,
+            "r": 26.91559468287287
+          },
+          "hip_delta_target_units": [
+            0.015142799355089664,
+            -0.014830261468887329,
+            -0.019482135772705078
+          ]
+        },
+        {
+          "time_s": 0.3,
+          "elbow_signed_deg": {
+            "l": 4.225150338894541,
+            "r": 25.376117593023615
+          },
+          "hip_delta_target_units": [
+            0.016973476856946945,
+            -0.01746451109647751,
+            -0.02007317543029785
+          ]
+        },
+        {
+          "time_s": 0.31666666666666665,
+          "elbow_signed_deg": {
+            "l": 5.014792415536678,
+            "r": 24.22626042325507
+          },
+          "hip_delta_target_units": [
+            0.018728457391262054,
+            -0.019380727782845497,
+            -0.02073848247528076
+          ]
+        },
+        {
+          "time_s": 0.3333333333333333,
+          "elbow_signed_deg": {
+            "l": 5.804501282832627,
+            "r": 23.07643048238365
+          },
+          "hip_delta_target_units": [
+            0.020483441650867462,
+            -0.021296944469213486,
+            -0.021403789520263672
+          ]
+        },
+        {
+          "time_s": 0.35,
+          "elbow_signed_deg": {
+            "l": 6.926403395144212,
+            "r": 22.056364439725808
+          },
+          "hip_delta_target_units": [
+            0.022117435932159424,
+            -0.021997155621647835,
+            -0.020961761474609375
+          ]
+        },
+        {
+          "time_s": 0.36666666666666664,
+          "elbow_signed_deg": {
+            "l": 8.04840781880481,
+            "r": 21.03631342970451
+          },
+          "hip_delta_target_units": [
+            0.023751433938741684,
+            -0.022697366774082184,
+            -0.020519793033599854
+          ]
+        },
+        {
+          "time_s": 0.38333333333333336,
+          "elbow_signed_deg": {
+            "l": 9.355795563377214,
+            "r": 19.385890881089296
+          },
+          "hip_delta_target_units": [
+            0.024878107011318207,
+            -0.021998826414346695,
+            -0.01922774314880371
+          ]
+        },
+        {
+          "time_s": 0.4,
+          "elbow_signed_deg": {
+            "l": 10.663315589897218,
+            "r": 17.73553063428238
+          },
+          "hip_delta_target_units": [
+            0.026004783809185028,
+            -0.021300286054611206,
+            -0.01793569326400757
+          ]
+        },
+        {
+          "time_s": 0.4166666666666667,
+          "elbow_signed_deg": {
+            "l": 12.086752158706405,
+            "r": 15.897189281653477
+          },
+          "hip_delta_target_units": [
+            0.02635945752263069,
+            -0.020053401589393616,
+            -0.015016257762908936
+          ]
+        },
+        {
+          "time_s": 0.43333333333333335,
+          "elbow_signed_deg": {
+            "l": 13.510358096811,
+            "r": 14.058930028145328
+          },
+          "hip_delta_target_units": [
+            0.026714131236076355,
+            -0.018806517124176025,
+            -0.012096762657165527
+          ]
+        },
+        {
+          "time_s": 0.45,
+          "elbow_signed_deg": {
+            "l": 15.299858140308743,
+            "r": 12.797770936190398
+          },
+          "hip_delta_target_units": [
+            0.026417173445224762,
+            -0.017513791099190712,
+            -0.008522331714630127
+          ]
+        },
+        {
+          "time_s": 0.4666666666666667,
+          "elbow_signed_deg": {
+            "l": 17.089581481557154,
+            "r": 11.53663841158031
+          },
+          "hip_delta_target_units": [
+            0.02612021565437317,
+            -0.016221066936850548,
+            -0.0049479007720947266
+          ]
+        },
+        {
+          "time_s": 0.48333333333333334,
+          "elbow_signed_deg": {
+            "l": 19.20479486028848,
+            "r": 10.754485185096657
+          },
+          "hip_delta_target_units": [
+            0.025299180299043655,
+            -0.015490282326936722,
+            -0.002018153667449951
+          ]
+        },
+        {
+          "time_s": 0.5,
+          "elbow_signed_deg": {
+            "l": 21.32034022214995,
+            "r": 9.972343123338508
+          },
+          "hip_delta_target_units": [
+            0.02447814866900444,
+            -0.014759497717022896,
+            0.0009116530418395996
+          ]
+        },
+        {
+          "time_s": 0.5166666666666667,
+          "elbow_signed_deg": {
+            "l": 23.851878010368207,
+            "r": 9.444653461556427
+          },
+          "hip_delta_target_units": [
+            0.023683693259954453,
+            -0.01460639014840126,
+            0.003307521343231201
+          ]
+        },
+        {
+          "time_s": 0.5333333333333333,
+          "elbow_signed_deg": {
+            "l": 26.383845557309282,
+            "r": 8.916976452592433
+          },
+          "hip_delta_target_units": [
+            0.022889241576194763,
+            -0.014453286305069923,
+            0.005703449249267578
+          ]
+        },
+        {
+          "time_s": 0.55,
+          "elbow_signed_deg": {
+            "l": 29.87151943364007,
+            "r": 8.95775219228221
+          },
+          "hip_delta_target_units": [
+            0.02218775451183319,
+            -0.01435779593884945,
+            0.006858348846435547
+          ]
+        },
+        {
+          "time_s": 0.5666666666666667,
+          "elbow_signed_deg": {
+            "l": 33.35996994018427,
+            "r": 8.998537557782521
+          },
+          "hip_delta_target_units": [
+            0.021486271172761917,
+            -0.014262307435274124,
+            0.008013308048248291
+          ]
+        },
+        {
+          "time_s": 0.5833333333333334,
+          "elbow_signed_deg": {
+            "l": 37.02093285114974,
+            "r": 9.343028483751308
+          },
+          "hip_delta_target_units": [
+            0.020745590329170227,
+            -0.01410999707877636,
+            0.0078046321868896484
+          ]
+        },
+        {
+          "time_s": 0.6,
+          "elbow_signed_deg": {
+            "l": 40.682561133510795,
+            "r": 9.687541635627452
+          },
+          "hip_delta_target_units": [
+            0.020004909485578537,
+            -0.013957686722278595,
+            0.007596015930175781
+          ]
+        },
+        {
+          "time_s": 0.6166666666666667,
+          "elbow_signed_deg": {
+            "l": 43.76673860435364,
+            "r": 9.97213307472635
+          },
+          "hip_delta_target_units": [
+            0.01901063695549965,
+            -0.014147667214274406,
+            0.006416440010070801
+          ]
+        },
+        {
+          "time_s": 0.6333333333333333,
+          "elbow_signed_deg": {
+            "l": 46.85129695024656,
+            "r": 10.25671438013843
+          },
+          "hip_delta_target_units": [
+            0.01801636815071106,
+            -0.014337647706270218,
+            0.005236923694610596
+          ]
+        },
+        {
+          "time_s": 0.65,
+          "elbow_signed_deg": {
+            "l": 49.59310907686369,
+            "r": 10.375030291898625
+          },
+          "hip_delta_target_units": [
+            0.01703038066625595,
+            -0.014783648774027824,
+            0.002638697624206543
+          ]
+        },
+        {
+          "time_s": 0.6666666666666666,
+          "elbow_signed_deg": {
+            "l": 52.3350736596179,
+            "r": 10.493352047421185
+          },
+          "hip_delta_target_units": [
+            0.01604439690709114,
+            -0.015229649841785431,
+            4.0471553802490234e-05
+          ]
+        },
+        {
+          "time_s": 0.6833333333333333,
+          "elbow_signed_deg": {
+            "l": 54.31085631032729,
+            "r": 10.418721010496247
+          },
+          "hip_delta_target_units": [
+            0.015079048462212086,
+            -0.015160413458943367,
+            -0.0026723146438598633
+          ]
+        },
+        {
+          "time_s": 0.7,
+          "elbow_signed_deg": {
+            "l": 56.28670986712655,
+            "r": 10.344105006195726
+          },
+          "hip_delta_target_units": [
+            0.014113699086010456,
+            -0.015091177076101303,
+            -0.005385041236877441
+          ]
+        },
+        {
+          "time_s": 0.7166666666666667,
+          "elbow_signed_deg": {
+            "l": 56.98638427896132,
+            "r": 10.102371946711557
+          },
+          "hip_delta_target_units": [
+            0.012760650366544724,
+            -0.015967633575201035,
+            -0.00883859395980835
+          ]
+        },
+        {
+          "time_s": 0.7333333333333333,
+          "elbow_signed_deg": {
+            "l": 57.686050953287534,
+            "r": 9.860654671689817
+          },
+          "hip_delta_target_units": [
+            0.011407600715756416,
+            -0.016844090074300766,
+            -0.012292146682739258
+          ]
+        },
+        {
+          "time_s": 0.75,
+          "elbow_signed_deg": {
+            "l": 57.4394175190722,
+            "r": 9.41693518684904
+          },
+          "hip_delta_target_units": [
+            0.009825021028518677,
+            -0.01890946365892887,
+            -0.014897823333740234
+          ]
+        },
+        {
+          "time_s": 0.7666666666666667,
+          "elbow_signed_deg": {
+            "l": 57.192745870287375,
+            "r": 8.973210580274058
+          },
+          "hip_delta_target_units": [
+            0.008242442272603512,
+            -0.020974837243556976,
+            -0.017503440380096436
+          ]
+        },
+        {
+          "time_s": 0.7833333333333333,
+          "elbow_signed_deg": {
+            "l": 56.099329592141544,
+            "r": 8.692739840566214
+          },
+          "hip_delta_target_units": [
+            0.0065233707427978516,
+            -0.023231368511915207,
+            -0.019082725048065186
+          ]
+        },
+        {
+          "time_s": 0.8,
+          "elbow_signed_deg": {
+            "l": 55.005964752163365,
+            "r": 8.412268972613372
+          },
+          "hip_delta_target_units": [
+            0.004804299678653479,
+            -0.025487901642918587,
+            -0.020662009716033936
+          ]
+        },
+        {
+          "time_s": 0.8166666666666667,
+          "elbow_signed_deg": {
+            "l": 52.9404783185801,
+            "r": 8.659807151011966
+          },
+          "hip_delta_target_units": [
+            0.003118705004453659,
+            -0.02666591852903366,
+            -0.021533846855163574
+          ]
+        },
+        {
+          "time_s": 0.8333333333333334,
+          "elbow_signed_deg": {
+            "l": 50.87504372939795,
+            "r": 8.907346104135982
+          },
+          "hip_delta_target_units": [
+            0.0014331103302538395,
+            -0.027843935415148735,
+            -0.022405683994293213
+          ]
+        },
+        {
+          "time_s": 0.85,
+          "elbow_signed_deg": {
+            "l": 47.50045285867974,
+            "r": 9.64407272289824
+          },
+          "hip_delta_target_units": [
+            -0.0004040870117023587,
+            -0.02836134098470211,
+            -0.021326303482055664
+          ]
+        },
+        {
+          "time_s": 0.8666666666666667,
+          "elbow_signed_deg": {
+            "l": 44.126236631564936,
+            "r": 10.38081131126445
+          },
+          "hip_delta_target_units": [
+            -0.002241284353658557,
+            -0.028878748416900635,
+            -0.020246922969818115
+          ]
+        },
+        {
+          "time_s": 0.8833333333333333,
+          "elbow_signed_deg": {
+            "l": 39.42919203316716,
+            "r": 11.402719803778123
+          },
+          "hip_delta_target_units": [
+            -0.0035788491368293762,
+            -0.0273115336894989,
+            -0.018297314643859863
+          ]
+        },
+        {
+          "time_s": 0.9,
+          "elbow_signed_deg": {
+            "l": 34.733172961351826,
+            "r": 12.424653337570133
+          },
+          "hip_delta_target_units": [
+            -0.0049164132215082645,
+            -0.025744318962097168,
+            -0.01634770631790161
+          ]
+        },
+        {
+          "time_s": 0.9166666666666666,
+          "elbow_signed_deg": {
+            "l": 29.730738807574784,
+            "r": 13.534285379605032
+          },
+          "hip_delta_target_units": [
+            -0.005139899905771017,
+            -0.02327686734497547,
+            -0.013376414775848389
+          ]
+        },
+        {
+          "time_s": 0.9333333333333333,
+          "elbow_signed_deg": {
+            "l": 24.729863288227424,
+            "r": 14.643949891643611
+          },
+          "hip_delta_target_units": [
+            -0.00536338659003377,
+            -0.020809421315789223,
+            -0.010405123233795166
+          ]
+        },
+        {
+          "time_s": 0.95,
+          "elbow_signed_deg": {
+            "l": 21.202873561651376,
+            "r": 15.765597679574077
+          },
+          "hip_delta_target_units": [
+            -0.00465374207124114,
+            -0.018784262239933014,
+            -0.006411910057067871
+          ]
+        },
+        {
+          "time_s": 0.9666666666666667,
+          "elbow_signed_deg": {
+            "l": 17.676783198740104,
+            "r": 16.88727962417592
+          },
+          "hip_delta_target_units": [
+            -0.003944097552448511,
+            -0.016759105026721954,
+            -0.0024187564849853516
+          ]
+        },
+        {
+          "time_s": 0.9833333333333333,
+          "elbow_signed_deg": {
+            "l": 15.194374414821686,
+            "r": 18.20153663962738
+          },
+          "hip_delta_target_units": [
+            -0.0028108416590839624,
+            -0.014649895951151848,
+            0.0016654133796691895
+          ]
+        },
+        {
+          "time_s": 1.0,
+          "elbow_signed_deg": {
+            "l": 12.712431728896691,
+            "r": 19.51582335032091
+          },
+          "hip_delta_target_units": [
+            -0.001677585649304092,
+            -0.012540685012936592,
+            0.0057495832443237305
+          ]
+        },
+        {
+          "time_s": 1.0166666666666666,
+          "elbow_signed_deg": {
+            "l": 11.350056748917513,
+            "r": 21.07388585184173
+          },
+          "hip_delta_target_units": [
+            -0.0006075669080018997,
+            -0.010295886546373367,
+            0.00923764705657959
+          ]
+        },
+        {
+          "time_s": 1.0333333333333334,
+          "elbow_signed_deg": {
+            "l": 9.987820290848932,
+            "r": 22.632010892622972
+          },
+          "hip_delta_target_units": [
+            0.0004624519497156143,
+            -0.008051089011132717,
+            0.01272571086883545
+          ]
+        }
+      ]
+    },
+    "run": {
+      "output": {
+        "file": "/tmp/nord-tripo-locomotion-20261017-fps-v3/run.fbx",
+        "sha256": "d9d45afae9d93edfba105a338ce9f847385d04b9db5108201ba685e035ae2b58",
+        "bytes": 473628
+      },
+      "fresh_armature_object": "Armature",
+      "bones": 61,
+      "samples": 20,
+      "half_frame_samples": 39,
+      "fps": 30,
+      "seconds": 0.6333333333333333,
+      "source_range": [
+        1.0,
+        20.0
+      ],
+      "fresh_range": [
+        2.0,
+        21.0
+      ],
+      "source_xyz_to_target_factor": 0.005494502817082002,
+      "metrics": {
+        "reference": {
+          "matrix": 1.0818243026733398e-05,
+          "angle_rad": 7.19307642695806e-06,
+          "head": 6.07130893599856e-07,
+          "scale": 8.225440979003906e-06
+        },
+        "component_matrix_error": 1.1861324310302734e-05,
+        "component_angle_error_rad": 7.82286122454559e-06,
+        "hip_xyz_error_target_units": 8.857974442431856e-08,
+        "local_translation_error": 3.721821871920754e-07,
+        "local_scale_error": 8.344650268554688e-06,
+        "finger_baseline_rotation_error_rad": 4.34484012067317e-06,
+        "root_matrix_error": 3.552713678800501e-15,
+        "object_matrix_error": 0.0,
+        "key_quaternion_norm_error": 5.960464477539063e-08,
+        "loop_matrix_error": 2.115964889526367e-06,
+        "loop_angle_error_rad": 2.149860217626787e-06,
+        "minimum_elbow_signed_deg": 62.510126430846505
+      },
+      "samples_readback": [
+        {
+          "time_s": 0.0,
+          "elbow_signed_deg": {
+            "l": 71.54645382528794,
+            "r": 91.90927469520032
+          },
+          "hip_delta_target_units": [
+            0.0017762533389031887,
+            -0.00940932147204876,
+            -0.024642109870910645
+          ]
+        },
+        {
+          "time_s": 0.016666666666666666,
+          "elbow_signed_deg": {
+            "l": 76.12723335095964,
+            "r": 101.74493466606215
+          },
+          "hip_delta_target_units": [
+            0.0011756885796785355,
+            -0.013969356194138527,
+            -0.020317554473876953
+          ]
+        },
+        {
+          "time_s": 0.03333333333333333,
+          "elbow_signed_deg": {
+            "l": 80.70738582864995,
+            "r": 111.58162846442524
+          },
+          "hip_delta_target_units": [
+            0.0005751238204538822,
+            -0.018529390916228294,
+            -0.015993058681488037
+          ]
+        },
+        {
+          "time_s": 0.05,
+          "elbow_signed_deg": {
+            "l": 81.15576573676769,
+            "r": 116.40257598519143
+          },
+          "hip_delta_target_units": [
+            -0.0003155096201226115,
+            -0.019276125356554985,
+            -0.010438740253448486
+          ]
+        },
+        {
+          "time_s": 0.06666666666666667,
+          "elbow_signed_deg": {
+            "l": 81.60409000988294,
+            "r": 121.22357742426144
+          },
+          "hip_delta_target_units": [
+            -0.0012061430606991053,
+            -0.020022859796881676,
+            -0.00488436222076416
+          ]
+        },
+        {
+          "time_s": 0.08333333333333333,
+          "elbow_signed_deg": {
+            "l": 79.22155645879029,
+            "r": 120.20583770022743
+          },
+          "hip_delta_target_units": [
+            -0.0019062603823840618,
+            -0.019512047991156578,
+            -0.0016649365425109863
+          ]
+        },
+        {
+          "time_s": 0.1,
+          "elbow_signed_deg": {
+            "l": 76.83882569938126,
+            "r": 119.18810588081094
+          },
+          "hip_delta_target_units": [
+            -0.002606377936899662,
+            -0.01900123618543148,
+            0.0015544891357421875
+          ]
+        },
+        {
+          "time_s": 0.11666666666666667,
+          "elbow_signed_deg": {
+            "l": 76.12719667672174,
+            "r": 116.11419025559688
+          },
+          "hip_delta_target_units": [
+            -0.0030076608527451754,
+            -0.016235489398241043,
+            0.001063525676727295
+          ]
+        },
+        {
+          "time_s": 0.13333333333333333,
+          "elbow_signed_deg": {
+            "l": 75.41554385529695,
+            "r": 113.04029021327815
+          },
+          "hip_delta_target_units": [
+            -0.003408943535760045,
+            -0.013469744473695755,
+            0.0005726218223571777
+          ]
+        },
+        {
+          "time_s": 0.15,
+          "elbow_signed_deg": {
+            "l": 78.23470265608394,
+            "r": 107.92018790008665
+          },
+          "hip_delta_target_units": [
+            -0.002967609092593193,
+            -0.010957414284348488,
+            -0.004523038864135742
+          ]
+        },
+        {
+          "time_s": 0.16666666666666666,
+          "elbow_signed_deg": {
+            "l": 81.05359706125527,
+            "r": 102.80030281921742
+          },
+          "hip_delta_target_units": [
+            -0.002526274649426341,
+            -0.008445085026323795,
+            -0.009618759155273438
+          ]
+        },
+        {
+          "time_s": 0.18333333333333332,
+          "elbow_signed_deg": {
+            "l": 86.81530509277961,
+            "r": 96.08241242370508
+          },
+          "hip_delta_target_units": [
+            -0.002073257463052869,
+            -0.006755600217729807,
+            -0.015015840530395508
+          ]
+        },
+        {
+          "time_s": 0.2,
+          "elbow_signed_deg": {
+            "l": 92.57538558651359,
+            "r": 89.36511057440853
+          },
+          "hip_delta_target_units": [
+            -0.0016202399274334311,
+            -0.0050661154091358185,
+            -0.020412981510162354
+          ]
+        },
+        {
+          "time_s": 0.21666666666666667,
+          "elbow_signed_deg": {
+            "l": 97.45049835136348,
+            "r": 84.3733758276061
+          },
+          "hip_delta_target_units": [
+            -0.00025476422160863876,
+            0.002902673091739416,
+            -0.02404487133026123
+          ]
+        },
+        {
+          "time_s": 0.23333333333333334,
+          "elbow_signed_deg": {
+            "l": 102.32406330050924,
+            "r": 79.38203585569048
+          },
+          "hip_delta_target_units": [
+            0.0011107116006314754,
+            0.010871460661292076,
+            -0.027676761150360107
+          ]
+        },
+        {
+          "time_s": 0.25,
+          "elbow_signed_deg": {
+            "l": 102.67815884389321,
+            "r": 79.04523140710624
+          },
+          "hip_delta_target_units": [
+            0.000986072700470686,
+            0.013797610998153687,
+            -0.03118366003036499
+          ]
+        },
+        {
+          "time_s": 0.26666666666666666,
+          "elbow_signed_deg": {
+            "l": 103.03225958716696,
+            "r": 78.70836844202304
+          },
+          "hip_delta_target_units": [
+            0.0008614340331405401,
+            0.016723765060305595,
+            -0.03469055891036987
+          ]
+        },
+        {
+          "time_s": 0.2833333333333333,
+          "elbow_signed_deg": {
+            "l": 101.27625134267532,
+            "r": 82.1872499760577
+          },
+          "hip_delta_target_units": [
+            0.001201762817800045,
+            0.010647961869835854,
+            -0.03392446041107178
+          ]
+        },
+        {
+          "time_s": 0.3,
+          "elbow_signed_deg": {
+            "l": 99.52001114399434,
+            "r": 85.66636549268469
+          },
+          "hip_delta_target_units": [
+            0.0015420913696289062,
+            0.004572157748043537,
+            -0.03315836191177368
+          ]
+        },
+        {
+          "time_s": 0.31666666666666665,
+          "elbow_signed_deg": {
+            "l": 101.10271377790278,
+            "r": 89.6151170288141
+          },
+          "hip_delta_target_units": [
+            0.0028756996616721153,
+            -0.005790008697658777,
+            -0.03023219108581543
+          ]
+        },
+        {
+          "time_s": 0.3333333333333333,
+          "elbow_signed_deg": {
+            "l": 102.68526770895078,
+            "r": 93.56417086272727
+          },
+          "hip_delta_target_units": [
+            0.004209307488054037,
+            -0.01615217514336109,
+            -0.027306020259857178
+          ]
+        },
+        {
+          "time_s": 0.35,
+          "elbow_signed_deg": {
+            "l": 107.12294476541527,
+            "r": 95.33504701516122
+          },
+          "hip_delta_target_units": [
+            0.0054934266954660416,
+            -0.01962357386946678,
+            -0.020497143268585205
+          ]
+        },
+        {
+          "time_s": 0.36666666666666664,
+          "elbow_signed_deg": {
+            "l": 111.55916048332985,
+            "r": 97.10596260729712
+          },
+          "hip_delta_target_units": [
+            0.006777544505894184,
+            -0.023094968870282173,
+            -0.013688206672668457
+          ]
+        },
+        {
+          "time_s": 0.38333333333333336,
+          "elbow_signed_deg": {
+            "l": 114.243877107901,
+            "r": 96.81130995086778
+          },
+          "hip_delta_target_units": [
+            0.006688558496534824,
+            -0.023832034319639206,
+            -0.008360087871551514
+          ]
+        },
+        {
+          "time_s": 0.4,
+          "elbow_signed_deg": {
+            "l": 116.92800961777758,
+            "r": 96.5166339833752
+          },
+          "hip_delta_target_units": [
+            0.006599572487175465,
+            -0.024569101631641388,
+            -0.003031909465789795
+          ]
+        },
+        {
+          "time_s": 0.4166666666666667,
+          "elbow_signed_deg": {
+            "l": 116.00460107005664,
+            "r": 95.45901286040197
+          },
+          "hip_delta_target_units": [
+            0.00667717307806015,
+            -0.021912023425102234,
+            0.0008388161659240723
+          ]
+        },
+        {
+          "time_s": 0.43333333333333335,
+          "elbow_signed_deg": {
+            "l": 115.08110824480956,
+            "r": 94.40145684203232
+          },
+          "hip_delta_target_units": [
+            0.006754773668944836,
+            -0.01925494335591793,
+            0.004709601402282715
+          ]
+        },
+        {
+          "time_s": 0.45,
+          "elbow_signed_deg": {
+            "l": 111.25285654938334,
+            "r": 93.19536530748219
+          },
+          "hip_delta_target_units": [
+            0.006701827049255371,
+            -0.018499018624424934,
+            0.0035323500633239746
+          ]
+        },
+        {
+          "time_s": 0.4666666666666667,
+          "elbow_signed_deg": {
+            "l": 107.42346893318924,
+            "r": 91.98925386777425
+          },
+          "hip_delta_target_units": [
+            0.0066488804295659065,
+            -0.017743093892931938,
+            0.0023551583290100098
+          ]
+        },
+        {
+          "time_s": 0.48333333333333334,
+          "elbow_signed_deg": {
+            "l": 100.98705648560701,
+            "r": 90.29319151976297
+          },
+          "hip_delta_target_units": [
+            0.0066736601293087006,
+            -0.014303144067525864,
+            -0.001614689826965332
+          ]
+        },
+        {
+          "time_s": 0.5,
+          "elbow_signed_deg": {
+            "l": 94.5477337784687,
+            "r": 88.59709330975097
+          },
+          "hip_delta_target_units": [
+            0.006698439829051495,
+            -0.01086319237947464,
+            -0.0055844783782958984
+          ]
+        },
+        {
+          "time_s": 0.5166666666666667,
+          "elbow_signed_deg": {
+            "l": 86.461906081599,
+            "r": 85.84611217496456
+          },
+          "hip_delta_target_units": [
+            0.005933033302426338,
+            -0.009620185941457748,
+            -0.010363280773162842
+          ]
+        },
+        {
+          "time_s": 0.5333333333333333,
+          "elbow_signed_deg": {
+            "l": 78.37282291758986,
+            "r": 83.0952595723245
+          },
+          "hip_delta_target_units": [
+            0.0051676263101398945,
+            -0.008377180434763432,
+            -0.01514202356338501
+          ]
+        },
+        {
+          "time_s": 0.55,
+          "elbow_signed_deg": {
+            "l": 71.50446482629685,
+            "r": 79.63539740950237
+          },
+          "hip_delta_target_units": [
+            0.00391122093424201,
+            -0.006543660536408424,
+            -0.0179598331451416
+          ]
+        },
+        {
+          "time_s": 0.5666666666666667,
+          "elbow_signed_deg": {
+            "l": 64.63513203367283,
+            "r": 76.17580009757452
+          },
+          "hip_delta_target_units": [
+            0.0026548150926828384,
+            -0.004710139706730843,
+            -0.020777642726898193
+          ]
+        },
+        {
+          "time_s": 0.5833333333333334,
+          "elbow_signed_deg": {
+            "l": 63.57263660859706,
+            "r": 76.23838639044389
+          },
+          "hip_delta_target_units": [
+            0.0024806074798107147,
+            -0.0016390495002269745,
+            -0.0230255126953125
+          ]
+        },
+        {
+          "time_s": 0.6,
+          "elbow_signed_deg": {
+            "l": 62.510126430846505,
+            "r": 76.30099128835852
+          },
+          "hip_delta_target_units": [
+            0.002306399866938591,
+            0.00143204047344625,
+            -0.025273382663726807
+          ]
+        },
+        {
+          "time_s": 0.6166666666666667,
+          "elbow_signed_deg": {
+            "l": 67.02840534428464,
+            "r": 84.10457598058211
+          },
+          "hip_delta_target_units": [
+            0.002041332423686981,
+            -0.003988644108176231,
+            -0.024957716464996338
+          ]
+        },
+        {
+          "time_s": 0.6333333333333333,
+          "elbow_signed_deg": {
+            "l": 71.54647656252035,
+            "r": 91.90933473455124
+          },
+          "hip_delta_target_units": [
+            0.001776264514774084,
+            -0.009409329853951931,
+            -0.02464205026626587
+          ]
+        }
+      ]
+    }
+  },
+  "errors": [],
+  "retained_inputs_unchanged": true,
+  "finished_utc": "2026-10-17T21:06:36.460899+00:00"
+}

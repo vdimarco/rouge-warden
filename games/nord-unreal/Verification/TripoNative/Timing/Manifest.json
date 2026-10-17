@@ -1,0 +1,15 @@
+{
+  "scope": "New native timing derivatives only; frozen NaturalPose clips and receipts preserved",
+  "output": {
+    "games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/tripo-v3-rig-20261017/derived/native-ready/idle.fbx": {
+      "bytes": 843324,
+      "sha256": "622a2e1aa047c5106163145a26dac15df0ed79191e73453544a9e6dba1dd508a"
+    },
+    "games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/tripo-v3-rig-20261017/derived/native-ready/jump.fbx": {
+      "bytes": 534604,
+      "sha256": "38fa865f8163a7a50a82029187a23baa27ef8eb7bb136123e1ee5971cdfe3929"
+    }
+  },
+  "command": "blender -b -t 4 --python-exit-code 1 --python games/nord-unreal/Scripts/prepare_tripo_native_timing.py -- --output /tmp/nord-tripo-native-timing-20261017-v1",
+  "process_exit": 0
+}

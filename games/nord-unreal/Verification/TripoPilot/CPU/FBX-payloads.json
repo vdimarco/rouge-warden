@@ -1,0 +1,2670 @@
+{
+  "scope": "binary FBX embedded payload names/hashes, no extraction or mutation",
+  "objects": [
+    {
+      "name": "Material",
+      "props": [
+        9919896,
+        "Material_0\u0000\u0001Material",
+        ""
+      ],
+      "children": [
+        {
+          "name": "Version",
+          "props": [
+            102
+          ],
+          "children": []
+        },
+        {
+          "name": "ShadingModel",
+          "props": [
+            "Phong"
+          ],
+          "children": []
+        },
+        {
+          "name": "MultiLayer",
+          "props": [
+            0
+          ],
+          "children": []
+        },
+        {
+          "name": "Properties70",
+          "props": [],
+          "children": [
+            {
+              "name": "P",
+              "props": [
+                "DiffuseColor",
+                "Color",
+                "",
+                "A",
+                0.800000011920929,
+                0.800000011920929,
+                0.800000011920929
+              ],
+              "children": []
+            },
+            {
+              "name": "P",
+              "props": [
+                "EmissiveColor",
+                "Color",
+                "",
+                "A",
+                1.0,
+                1.0,
+                1.0
+              ],
+              "children": []
+            },
+            {
+              "name": "P",
+              "props": [
+                "EmissiveFactor",
+                "Number",
+                "",
+                "A",
+                0.0
+              ],
+              "children": []
+            },
+            {
+              "name": "P",
+              "props": [
+                "AmbientColor",
+                "Color",
+                "",
+                "A",
+                0.0,
+                0.0,
+                0.0
+              ],
+              "children": []
+            },
+            {
+              "name": "P",
+              "props": [
+                "AmbientFactor",
+                "Number",
+                "",
+                "A",
+                0.0
+              ],
+              "children": []
+            },
+            {
+              "name": "P",
+              "props": [
+                "SpecularColor",
+                "Color",
+                "",
+                "A",
+                0.800000011920929,
+                0.800000011920929,
+                0.800000011920929
+              ],
+              "children": []
+            },
+            {
+              "name": "P",
+              "props": [
+                "SpecularFactor",
+                "Number",
+                "",
+                "A",
+                0.25
+              ],
+              "children": []
+            },
+            {
+              "name": "P",
+              "props": [
+                "Shininess",
+                "Number",
+                "",
+                "A",
+                25.0
+              ],
+              "children": []
+            },
+            {
+              "name": "P",
+              "props": [
+                "ShininessExponent",
+                "Number",
+                "",
+                "A",
+                25.0
+              ],
+              "children": []
+            },
+            {
+              "name": "P",
+              "props": [
+                "ReflectionColor",
+                "Color",
+                "",
+                "A",
+                0.800000011920929,
+                0.800000011920929,
+                0.800000011920929
+              ],
+              "children": []
+            },
+            {
+              "name": "P",
+              "props": [
+                "ReflectionFactor",
+                "Number",
+                "",
+                "A",
+                0.0
+              ],
+              "children": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Texture",
+      "props": [
+        768137683,
+        "base_color_texture\u0000\u0001Texture",
+        ""
+      ],
+      "children": [
+        {
+          "name": "Type",
+          "props": [
+            "TextureVideoClip"
+          ],
+          "children": []
+        },
+        {
+          "name": "Version",
+          "props": [
+            202
+          ],
+          "children": []
+        },
+        {
+          "name": "TextureName",
+          "props": [
+            "base_color_texture\u0000\u0001Texture"
+          ],
+          "children": []
+        },
+        {
+          "name": "Media",
+          "props": [
+            "tripo_rigging_64103a99-91c2-499d-8866-0304e0beceb1.fbm\u0000\u0001Video"
+          ],
+          "children": []
+        },
+        {
+          "name": "FileName",
+          "props": [
+            "/mnt/pfs/server/tcli_650164a4126f4eb1a95f16810883f4b1/20261017/64103a99-91c2-499d-8866-0304e0beceb1/tripo_rigging_64103a99-91c2-499d-8866-0304e0beceb1.fbm/tripo_rigging_64103a99-91c2-499d-8866-0304e0beceb1.fbm"
+          ],
+          "children": []
+        },
+        {
+          "name": "RelativeFilename",
+          "props": [
+            "tripo_rigging_64103a99-91c2-499d-8866-0304e0beceb1.fbm/tripo_rigging_64103a99-91c2-499d-8866-0304e0beceb1.fbm"
+          ],
+          "children": []
+        },
+        {
+          "name": "Properties70",
+          "props": [],
+          "children": [
+            {
+              "name": "P",
+              "props": [
+                "UseMaterial",
+                "bool",
+                "",
+                "",
+                1
+              ],
+              "children": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Texture",
+      "props": [
+        812719420,
+        "normalmap_texture\u0000\u0001Texture",
+        ""
+      ],
+      "children": [
+        {
+          "name": "Type",
+          "props": [
+            "TextureVideoClip"
+          ],
+          "children": []
+        },
+        {
+          "name": "Version",
+          "props": [
+            202
+          ],
+          "children": []
+        },
+        {
+          "name": "TextureName",
+          "props": [
+            "normalmap_texture\u0000\u0001Texture"
+          ],
+          "children": []
+        },
+        {
+          "name": "Media",
+          "props": [
+            "tripo_rigging_64103a99-91c2-499d-8866-0304e0beceb1.fbm\u0000\u0001Video"
+          ],
+          "children": []
+        },
+        {
+          "name": "FileName",
+          "props": [
+            "/mnt/pfs/server/tcli_650164a4126f4eb1a95f16810883f4b1/20261017/64103a99-91c2-499d-8866-0304e0beceb1/tripo_rigging_64103a99-91c2-499d-8866-0304e0beceb1.fbm/tripo_rigging_64103a99-91c2-499d-8866-0304e0beceb1.fbm"
+          ],
+          "children": []
+        },
+        {
+          "name": "RelativeFilename",
+          "props": [
+            "tripo_rigging_64103a99-91c2-499d-8866-0304e0beceb1.fbm/tripo_rigging_64103a99-91c2-499d-8866-0304e0beceb1.fbm"
+          ],
+          "children": []
+        },
+        {
+          "name": "Properties70",
+          "props": [],
+          "children": [
+            {
+              "name": "P",
+              "props": [
+                "UseMaterial",
+                "bool",
+                "",
+                "",
+                1
+              ],
+              "children": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Video",
+      "props": [
+        358240231,
+        "tripo_rigging_64103a99-91c2-499d-8866-0304e0beceb1.fbm\u0000\u0001Video",
+        "Clip"
+      ],
+      "children": [
+        {
+          "name": "Type",
+          "props": [
+            "Clip"
+          ],
+          "children": []
+        },
+        {
+          "name": "Properties70",
+          "props": [],
+          "children": [
+            {
+              "name": "P",
+              "props": [
+                "Path",
+                "KString",
+                "Url",
+                "",
+                "/mnt/pfs/server/tcli_650164a4126f4eb1a95f16810883f4b1/20261017/64103a99-91c2-499d-8866-0304e0beceb1/tripo_rigging_64103a99-91c2-499d-8866-0304e0beceb1.fbm/tripo_rigging_64103a99-91c2-499d-8866-0304e0beceb1.fbm"
+              ],
+              "children": []
+            }
+          ]
+        },
+        {
+          "name": "UseMipMap",
+          "props": [
+            0
+          ],
+          "children": []
+        },
+        {
+          "name": "Filename",
+          "props": [
+            "/mnt/pfs/server/tcli_650164a4126f4eb1a95f16810883f4b1/20261017/64103a99-91c2-499d-8866-0304e0beceb1/tripo_rigging_64103a99-91c2-499d-8866-0304e0beceb1.fbm/tripo_rigging_64103a99-91c2-499d-8866-0304e0beceb1.fbm"
+          ],
+          "children": []
+        },
+        {
+          "name": "RelativeFilename",
+          "props": [
+            "tripo_rigging_64103a99-91c2-499d-8866-0304e0beceb1.fbm/tripo_rigging_64103a99-91c2-499d-8866-0304e0beceb1.fbm"
+          ],
+          "children": []
+        },
+        {
+          "name": "Content",
+          "props": [
+            {
+              "bytes": 4213353,
+              "sha256": "adf54ff0228275f6557fa5afbacb9ab0e5651fe1ddec0c638afa2cd197dba5d7",
+              "head": "ffd8ffe000104a464946000101000001"
+            }
+          ],
+          "children": []
+        }
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        450386495,
+        0
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        90395993,
+        0
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        119809203,
+        450386495
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        692297688,
+        119809203
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        495896001,
+        692297688
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        576212144,
+        495896001
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        622716890,
+        576212144
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        719332210,
+        622716890
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        606922243,
+        719332210
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        174248729,
+        606922243
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        105911673,
+        174248729
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        567703471,
+        105911673
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        455626206,
+        567703471
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        789162018,
+        455626206
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        249621862,
+        105911673
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        136395747,
+        249621862
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        370954589,
+        136395747
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        28570515,
+        105911673
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        274891361,
+        28570515
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        935148245,
+        274891361
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        264114568,
+        105911673
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        800706448,
+        264114568
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        469162875,
+        800706448
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        260096053,
+        105911673
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        511089516,
+        260096053
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        304219047,
+        511089516
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        898074073,
+        174248729
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        536015646,
+        606922243
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        527996031,
+        622716890
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        493772404,
+        527996031
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        422750115,
+        493772404
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        348736068,
+        422750115
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        192583355,
+        348736068
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        296245319,
+        192583355
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        692160602,
+        296245319
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        400822292,
+        348736068
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        537583312,
+        400822292
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        679350064,
+        537583312
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        8040004,
+        348736068
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        11805365,
+        8040004
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        50643166,
+        11805365
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        775433446,
+        348736068
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        893291775,
+        775433446
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        933142092,
+        893291775
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        436605168,
+        348736068
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        920538280,
+        436605168
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        790685479,
+        920538280
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        545162517,
+        422750115
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        463045783,
+        493772404
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        310332406,
+        622716890
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        785934980,
+        310332406
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        135510663,
+        692297688
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        154126108,
+        135510663
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        281114748,
+        154126108
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        697066792,
+        154126108
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        569528723,
+        697066792
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        417214210,
+        135510663
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        570749479,
+        692297688
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        943645131,
+        570749479
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        803989681,
+        943645131
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        989588652,
+        943645131
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        65476199,
+        989588652
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        67305858,
+        570749479
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        968822734,
+        450386495
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        865490474,
+        90395993
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        813191665,
+        119809203
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        583919635,
+        692297688
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        372714375,
+        495896001
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        331353893,
+        576212144
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        433096711,
+        622716890
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        603023215,
+        719332210
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        706489923,
+        606922243
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        337760171,
+        174248729
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        544449189,
+        105911673
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        166950993,
+        567703471
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        679842411,
+        455626206
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        271445953,
+        789162018
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        718717531,
+        249621862
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        9482044,
+        136395747
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        51833652,
+        370954589
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        950559536,
+        28570515
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        916735826,
+        274891361
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        282390011,
+        935148245
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        731997959,
+        264114568
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        549184939,
+        800706448
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        130014396,
+        469162875
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        747974229,
+        260096053
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        789329901,
+        511089516
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        107229503,
+        304219047
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        127906432,
+        898074073
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        109377464,
+        536015646
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        736700980,
+        527996031
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        606583763,
+        493772404
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        955682700,
+        422750115
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        243000836,
+        348736068
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        647409806,
+        192583355
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        100513968,
+        296245319
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        891795589,
+        692160602
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        966353064,
+        400822292
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        620369486,
+        537583312
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        167615741,
+        679350064
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        393988317,
+        8040004
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        946057008,
+        11805365
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        742550985,
+        50643166
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        487556750,
+        775433446
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        657356783,
+        893291775
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        7011660,
+        933142092
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        371791518,
+        436605168
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        560520144,
+        920538280
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        936806161,
+        790685479
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        346106727,
+        545162517
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        998767377,
+        463045783
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        829332727,
+        310332406
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        220400897,
+        785934980
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        696743594,
+        135510663
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        624743396,
+        154126108
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        145614772,
+        281114748
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        806345690,
+        697066792
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        578813795,
+        569528723
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        642055625,
+        417214210
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        512461746,
+        570749479
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        700943928,
+        943645131
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        734035508,
+        803989681
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        543540306,
+        989588652
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        313723254,
+        65476199
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        29037144,
+        67305858
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        227107773,
+        865490474
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        751135321,
+        227107773
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        119809203,
+        751135321
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        156739011,
+        227107773
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        692297688,
+        156739011
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        184286706,
+        227107773
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        495896001,
+        184286706
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        947215758,
+        227107773
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        576212144,
+        947215758
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        640745983,
+        227107773
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        622716890,
+        640745983
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        497739078,
+        227107773
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        719332210,
+        497739078
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        375538414,
+        227107773
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        606922243,
+        375538414
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        872788109,
+        227107773
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        174248729,
+        872788109
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        876572683,
+        227107773
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        105911673,
+        876572683
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        409303305,
+        227107773
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        567703471,
+        409303305
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        90879198,
+        227107773
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        455626206,
+        90879198
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        42944556,
+        227107773
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        789162018,
+        42944556
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        586105332,
+        227107773
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        249621862,
+        586105332
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        892222363,
+        227107773
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        136395747,
+        892222363
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        324348441,
+        227107773
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        370954589,
+        324348441
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        442108798,
+        227107773
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        28570515,
+        442108798
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        54848555,
+        227107773
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        274891361,
+        54848555
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        600424007,
+        227107773
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        935148245,
+        600424007
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        49354631,
+        227107773
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        264114568,
+        49354631
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        305811143,
+        227107773
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        800706448,
+        305811143
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        334129605,
+        227107773
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        469162875,
+        334129605
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        225749636,
+        227107773
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        260096053,
+        225749636
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        186212137,
+        227107773
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        511089516,
+        186212137
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        892473327,
+        227107773
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        304219047,
+        892473327
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        563683302,
+        227107773
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        898074073,
+        563683302
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        343803451,
+        227107773
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        536015646,
+        343803451
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        504585595,
+        227107773
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        527996031,
+        504585595
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        300576248,
+        227107773
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        493772404,
+        300576248
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        53085972,
+        227107773
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        422750115,
+        53085972
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        794606295,
+        227107773
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        348736068,
+        794606295
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        26234253,
+        227107773
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        192583355,
+        26234253
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        515596514,
+        227107773
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        296245319,
+        515596514
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        767208115,
+        227107773
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        692160602,
+        767208115
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        547219758,
+        227107773
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        400822292,
+        547219758
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        845878734,
+        227107773
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        537583312,
+        845878734
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        593102420,
+        227107773
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        679350064,
+        593102420
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        870188687,
+        227107773
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        8040004,
+        870188687
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        318806193,
+        227107773
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        11805365,
+        318806193
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        928752695,
+        227107773
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        50643166,
+        928752695
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        578173123,
+        227107773
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        775433446,
+        578173123
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        666115876,
+        227107773
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        893291775,
+        666115876
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        872380401,
+        227107773
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        933142092,
+        872380401
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        595156423,
+        227107773
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        436605168,
+        595156423
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        991494377,
+        227107773
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        920538280,
+        991494377
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        791360392,
+        227107773
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        790685479,
+        791360392
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        378800172,
+        227107773
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        545162517,
+        378800172
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        260077991,
+        227107773
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        463045783,
+        260077991
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        578900874,
+        227107773
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        310332406,
+        578900874
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        192260914,
+        227107773
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        785934980,
+        192260914
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        717370883,
+        227107773
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        135510663,
+        717370883
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        643471755,
+        227107773
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        154126108,
+        643471755
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        8781522,
+        227107773
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        281114748,
+        8781522
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        457025590,
+        227107773
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        697066792,
+        457025590
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        861363880,
+        227107773
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        569528723,
+        861363880
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        537521616,
+        227107773
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        417214210,
+        537521616
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        931887868,
+        227107773
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        570749479,
+        931887868
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        838667451,
+        227107773
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        943645131,
+        838667451
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        180772684,
+        227107773
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        803989681,
+        180772684
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        102178961,
+        227107773
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        989588652,
+        102178961
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        434437515,
+        227107773
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        65476199,
+        434437515
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        352388433,
+        227107773
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        67305858,
+        352388433
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        9919896,
+        90395993
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OP",
+        768137683,
+        9919896,
+        "DiffuseColor"
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OP",
+        812719420,
+        9919896,
+        "NormalMap"
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        358240231,
+        768137683
+      ],
+      "children": []
+    },
+    {
+      "name": "C",
+      "props": [
+        "OO",
+        358240231,
+        812719420
+      ],
+      "children": []
+    }
+  ],
+  "geometry_objects": 1,
+  "animation_curves": 0,
+  "animation_stacks": []
+}

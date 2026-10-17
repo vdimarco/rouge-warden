@@ -1,0 +1,18 @@
+{
+  "passed": true,
+  "source_root": "nord-natural-jump-export-20261017T194039Z/control",
+  "characters": [
+    {
+      "name": "CurlyMetalhead",
+      "authoring": "original local skeletal keyframes; no paid generation",
+      "body_sha256": "b7e7ca0d9c486412108cba85e1cd4a5512fecd4ad36b8cfdb4677259ff6f9244",
+      "jump_sha256": "ad8454b8d7de3d4fd0355d0c52f8c6c553f468a8f92735351da4f2030817f368",
+      "seconds": 1.2,
+      "fps": 30,
+      "bones": 24,
+      "head_and_neck_unchanged": true,
+      "actor_root_motion": false,
+      "fbx_round_trip_passed": true
+    }
+  ]
+}

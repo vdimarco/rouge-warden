@@ -1,0 +1,97 @@
+{
+  "recorded_at_utc": "2026-10-17T19:53:19.524405+00:00",
+  "status": "Awaiting authenticated Tripo access; no provider submission",
+  "authorized_scope": "One-character Tripo pilot on the existing body, followed by comparison; no cast-wide replacement.",
+  "sources": {
+    "games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/body.glb": {
+      "bytes": 23337268,
+      "sha256": "25041be9666422c30ba39449cb283a83928bb3de596fe063389707c070335613"
+    },
+    "games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/body.fbx": {
+      "bytes": 10076108,
+      "sha256": "b7e7ca0d9c486412108cba85e1cd4a5512fecd4ad36b8cfdb4677259ff6f9244"
+    },
+    "games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/reference.png": {
+      "bytes": 1619959,
+      "sha256": "c00eb6f0ea1f5743b1a236295ecedfa27e15763d9ab5a717942ebf3713e778be"
+    }
+  },
+  "recommended_first_input": "games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/body.glb",
+  "glb": {
+    "valid_v2_header_and_length": true,
+    "embedded_model_buffers_and_images": true,
+    "mesh_count": 1,
+    "skin_count": 1,
+    "animation_count": 1,
+    "joint_names": [
+      "Hips",
+      "Spine02",
+      "Spine01",
+      "Spine",
+      "neck",
+      "Head",
+      "head_end",
+      "headfront",
+      "LeftShoulder",
+      "LeftArm",
+      "LeftForeArm",
+      "LeftHand",
+      "RightShoulder",
+      "RightArm",
+      "RightForeArm",
+      "RightHand",
+      "LeftUpLeg",
+      "LeftLeg",
+      "LeftFoot",
+      "LeftToeBase",
+      "RightUpLeg",
+      "RightLeg",
+      "RightFoot",
+      "RightToeBase"
+    ],
+    "is_unrigged_static_input": false
+  },
+  "rest_pose": "Relaxed arms-down; upper arms about 16 degrees away from down. Not a T-pose.",
+  "execution_plan": [
+    "Upload existing self-contained GLB to Tripo after sign-in/access is available.",
+    "Run free rig-check before paid rigging; do not claim compatibility before its result.",
+    "If rejected for pose, inspect an isolated T-pose derivative of the same geometry/maps before another free check; preserve raw files.",
+    "If compatible, submit one humanoid rig; direct API parameters below are planned, not an executed request. Retain request ID and do not repeat ambiguous submissions.",
+    "Inspect returned geometry/UVs/maps/bind/weights and shoulders/elbows/hands; obtain compatible own motion before native import/comparison."
+  ],
+  "planned_direct_api_parameters": {
+    "model": "v3.0-20260909",
+    "rig_type": "biped",
+    "spec": "unreal",
+    "out_format": "fbx"
+  },
+  "planned_direct_api_input": "Set only after actual Tripo upload returns a file token; no fake token/request recorded.",
+  "access": {
+    "tripo_studio": "Sign-in panel open in task browser",
+    "local_tripo_key_configured": false,
+    "connected_fal_catalog_rigging_endpoint_listed": false,
+    "user_sign_in_requested": true
+  },
+  "published_api_pricing": {
+    "source": "https://developers.tripo3d.ai/en/pricing",
+    "usd_per_credit": 0.01,
+    "rig_check_credits": 0,
+    "auto_rig_credits": 25,
+    "auto_rig_listed_usd": 0.25,
+    "is_studio_quote_or_settled_charge": false
+  },
+  "provider_uploads": 0,
+  "provider_jobs": [],
+  "spend_this_pilot_usd": 0,
+  "fal_ledger_unchanged": {
+    "authorized_total_usd": 25,
+    "reserved_prior_usd": 4,
+    "prior_estimate_usd": 3.04,
+    "uncommitted_usd": 21
+  },
+  "limits": [
+    "Tripo access missing; no upload, rig-check or paid job performed.",
+    "Already-skinned relaxed body may need pose preparation; current geometry/finger limits cannot be assumed fixed by new rigging.",
+    "No Unreal, service, package or source asset changes; all prior native/GPU guards remain."
+  ]
+}

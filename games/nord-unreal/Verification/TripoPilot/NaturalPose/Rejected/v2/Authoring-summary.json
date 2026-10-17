@@ -1,0 +1,37 @@
+{
+  "started_utc": "2026-10-17T20:37:58.829503+00:00",
+  "finished_utc": "2026-10-17T20:38:00.142984+00:00",
+  "author_sha256": "4aaac1f98659c1636c8b73b329aa3024ff6c90a0d1662addd6ebfcbed9db2512",
+  "scope": "Animation-only relaxed idle and jump acting; no mesh/material/native/provider operations",
+  "source_receipt": {
+    "private_filename": "Authoring.json",
+    "bytes": 3885460,
+    "sha256": "500e9bd8d702bc50a307654b6b4512eb623424a579e68d5477ea838f29fdb73b"
+  },
+  "clips": {
+    "relaxed-idle": {
+      "sha256": "99f34224c4481912962efef899e093464c481de37c30881592be2e5526acb5e3",
+      "bytes": 844556,
+      "samples": 121,
+      "fps": 30,
+      "seconds": 4.0,
+      "bind_reference_frame_not_exported": 0,
+      "exported_scene_frame_range": [
+        1,
+        121
+      ]
+    },
+    "natural-jump": {
+      "sha256": "8d640e52ea3e5b2af996ef56042d6e9e180b0e7fbeb10296d5cbfb6192293ebc",
+      "bytes": 534844,
+      "samples": 37,
+      "fps": 30,
+      "seconds": 1.2,
+      "bind_reference_frame_not_exported": 0,
+      "exported_scene_frame_range": [
+        1,
+        37
+      ]
+    }
+  }
+}

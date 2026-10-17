@@ -1,0 +1,53 @@
+{
+  "recorded_at_utc": "2026-10-17T19:44:56.550336+00:00",
+  "source": "Root observed completed tool command, session 92029; full stdout remained in task tool history, not duplicated here. Temporary exports cleaned automatically.",
+  "command": "/home/von/.local/opt/blender-5.2.2-linux-x64/blender -t 4 --background --factory-startup --python-exit-code 1 --python Scripts/test_prepare_meshy_jump.py",
+  "cwd": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal",
+  "exit_code": 0,
+  "marker": "NORD_JUMP_ELBOWS_CPU_OK 9 own-body exports; backward-sign negative control rejected; retained inputs unchanged",
+  "tested_bodies": 9,
+  "negative_control": "Disable only per-forearm anatomical axis override; old hip-side axis must trigger Exported elbows bend backward.",
+  "retained_inputs_unchanged": true,
+  "sources": {
+    "games/nord-unreal/Scripts/prepare_meshy_jump.py": "51cbc1072264c31eeafdd65cf1dfef76b36ac154e84d6a93b97f425a3e73a857",
+    "games/nord-unreal/Scripts/test_prepare_meshy_jump.py": "f6ed398e101114cd743f7d35d60dd1c2fcc8a86cc11200ea0cd56dd19dd3335a"
+  },
+  "retained_inputs": {
+    "games/nord-unreal/Data/CharactersMeshy/GreenCap51/body.fbx": "e60a0381c97b5299fcf031f66c41e46dd28ffee2132c6e4462521c5f02469c2b",
+    "games/nord-unreal/Data/CharactersMeshy/Memphis33/body.fbx": "013f474db0f1c2bbe0ba57bc48f53f7593eb0eaa56a9f14f3bf09b6cdfcda7f4",
+    "games/nord-unreal/Data/CharactersMeshy/BlackCap/body.fbx": "72d2c30ab37fc75f11538e88c2115176495b156bb93ef74a1f40cbb4745e6696",
+    "games/nord-unreal/Data/CharactersMeshy/WhiteCap/body.fbx": "9a8d30abe9ad1ce20aaa190946ef1495b15b93a607f640af3abb5ef58db3b3da",
+    "games/nord-unreal/Data/CharactersMeshy/RedJersey/body.fbx": "d56e560531f9c5f590c214a696667b0810449dd4ea5e3429578e1c2d5429d52d",
+    "games/nord-unreal/Data/CharactersMeshy/LimeJacket/body.fbx": "d3405dc0ee5cc3b539c6d46cd3d440b3a36d5b75ff6f269a6be13fd0e7537789",
+    "games/nord-unreal/Data/CharactersMeshy/CurlyMetalhead/body.fbx": "05b54691fb653b5890657b9542082ba6f40f883a7c24185ed0263c663bd2628c",
+    "games/nord-unreal/Data/CharactersMeshy/Topknot/body.fbx": "1e9f90fdedc2683927f5ae1b5459a84f9c92e70ec15b40e4131c2345fdfdf798",
+    "games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/base_color.png": "f300cbf5d78c411cad36cfedee17a36c787d1a50c968c2adb2827ecf0e43d774",
+    "games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/body.fbx": "b7e7ca0d9c486412108cba85e1cd4a5512fecd4ad36b8cfdb4677259ff6f9244",
+    "games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/body.glb": "25041be9666422c30ba39449cb283a83928bb3de596fe063389707c070335613",
+    "games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/files.json": "d942b4ec45c3b28ef54c0afeb991278528fd74252ec7208cd518519277fd18bc",
+    "games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/generation.json": "a23277ea16f38bf8123e4c5f8e4b64323c6b07843158a4b84a7f2bcf7d910632",
+    "games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/idle.fbx": "b1a7bd95403aa7358f067a3a352d060ca2cd56d9c65d9f8d6fe497dbf4343641",
+    "games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/jump.fbx": "36d74356ca903188a9b3956db69e51367260866972cda9215fab6a66d5362aa3",
+    "games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/jump.json": "94deb47f51e5cbfd6e5694efb8dcb8052c2abf6c91df7ceee2a35def47838e3f",
+    "games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/metallic.png": "2e0e9b79402c506cdcf5fe11f4e81e7a376b0b81fa5982b6b6584f5e35402309",
+    "games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/normal.png": "7845864ce13d1e3ce10e8149ef2ef98a048b8be249a60749dfc70c4897e9e7ab",
+    "games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/preview.png": "8b0e3ba80a30dd9f6d438be6f81728e9744dc057c9f1df50759379b2dc57a8d4",
+    "games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/pricing.json": "6ff6e0d5f7a22b9cf85119d4ad1cb6e8f30e6acb4804a61b563e27b347663d32",
+    "games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/reference.png": "c00eb6f0ea1f5743b1a236295ecedfa27e15763d9ab5a717942ebf3713e778be",
+    "games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/request.json": "47209121445fc43283c50481d7fc6adece8274fdf049ddec31e52c58f4a352d1",
+    "games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/result-receipt.json": "192c42733e1ab51fd1b4d799bd4167b7c457ed2b5a3d48d3ccb910729b3c8ba7",
+    "games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/result.json": "da1d5ae7bc3856dde6e1b7f642182814eeb1ff22f2d69cc7aaf8a4ebde5dbdab",
+    "games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/roughness.png": "cf28e5b2f2b3d1d85b3e3a6b8228b0bde61f82c60133b393a6159b5d3a7a9f89",
+    "games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/run.fbx": "b0f8e4c359d21ca3a51dde5c94b45b4d9f4a3d27dedb2d44f671b69e41f6e8ae",
+    "games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/run.glb": "b59e018d32513f3519f4f64a6a29de42cdc952cc53a5416b91ee60bc82229b30",
+    "games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/schema.json": "4779033055c3bed4def386892cc4844f22ed9bd718d6795318efa395dafc219b",
+    "games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/source-review.json": "a2ea79458aef0ad20ee1cb00b262269c509db230ca94b9c03cfc8bebeaacd3d8",
+    "games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/submit-response.json": "47209121445fc43283c50481d7fc6adece8274fdf049ddec31e52c58f4a352d1",
+    "games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/walk.fbx": "0fe2b4d83846f826e3d448c870fcb77816c25fe6d106c873d755cd7a3d871d9e"
+  },
+  "limits": [
+    "CPU author/export/re-import only; no native import or installed clip update.",
+    "Shared generator retains its original deeper knee and symmetric upper-arm recipe. Compact private twelve-bone candidate is a separate checked derivative.",
+    "Naive hip-axis sign flip failed on BlackCap T-pose. Static-axis projection also failed after shoulder motion; anatomical hinge and transported-plane check solve both without lowering the 20-degree guard."
+  ]
+}

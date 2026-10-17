@@ -1,0 +1,30 @@
+{
+  "scope": "Only these new audit files; referenced existing evidence remains unmodified.",
+  "checks": [
+    "Actual stdlib script PASS",
+    "Deterministic rerun PASS",
+    "Tampered input hash rejected in-memory"
+  ],
+  "files": [
+    {
+      "file": "Provenance.json",
+      "bytes": 2647,
+      "sha256": "15736910154fac7f2f1376211060947ac6d0a3315dfaec57e58dacd5f10cd53a"
+    },
+    {
+      "file": "README.md",
+      "bytes": 3711,
+      "sha256": "a0d8b3c62a118dbd0b268c2d65e2dacf9448fc889a2396cd58131244a25b9a0b"
+    },
+    {
+      "file": "Results.json",
+      "bytes": 1066,
+      "sha256": "d497bf7adca2d905751c0be562b6ca1c391320e51f42cfa1df15df24e1cbddd3"
+    },
+    {
+      "file": "check.py",
+      "bytes": 5679,
+      "sha256": "caf304140d9404cb72bdff49ee3623c80ebd13d7fc1996404615e9ffee681cda"
+    }
+  ]
+}

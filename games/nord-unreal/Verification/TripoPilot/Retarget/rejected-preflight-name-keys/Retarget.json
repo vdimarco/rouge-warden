@@ -1,0 +1,61 @@
+{
+  "passed": false,
+  "started_utc": "2026-10-17T20:21:55.684613+00:00",
+  "scope": "One animation-only component-delta retarget proof; no material, mesh, native, rendering, motion or adoption acceptance",
+  "inputs": {
+    "source_body": {
+      "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/body.fbx",
+      "sha256": "b7e7ca0d9c486412108cba85e1cd4a5512fecd4ad36b8cfdb4677259ff6f9244"
+    },
+    "source_glb": {
+      "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/body.glb",
+      "sha256": "25041be9666422c30ba39449cb283a83928bb3de596fe063389707c070335613"
+    },
+    "compact_jump": {
+      "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Verification/GraphicNovelNaturalMotion/Export/trial/CurlyMetalhead/jump.fbx",
+      "sha256": "71277e693654e02d365d22d7d34cf534045a4aa9ed77b4c19d4744a0839680ac"
+    },
+    "compact_receipt": {
+      "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Verification/GraphicNovelNaturalMotion/Export/trial/CurlyMetalhead/jump.json",
+      "sha256": "d9f5ecb420112ac8868303f7f07f3e45b99ac4bc11a3082b35e3c960bec77c76"
+    },
+    "target": {
+      "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/tripo-v3-rig-20261017/rig.fbx",
+      "sha256": "baaeb99a7e86fadadd4f64f6de6ea7e648777b33bcadd2ecb72347c4afe3dcc2"
+    },
+    "audit": {
+      "path": "/tmp/nord-tripo-rig-audit-20261017T201543Z/Audit.json",
+      "sha256": "d16cbb7cca3177d0921315fef0ee8a6abda66b021dcfb1d3031c6d1c57c07324"
+    }
+  },
+  "source_to_target_bones": {
+    "Hips": "pelvis",
+    "Spine02": "spine_01",
+    "Spine01": "spine_02",
+    "Spine": "spine_03",
+    "neck": "neck_01",
+    "Head": "head",
+    "LeftShoulder": "clavicle_l",
+    "LeftArm": "upperarm_l",
+    "LeftForeArm": "lowerarm_l",
+    "LeftHand": "hand_l",
+    "LeftUpLeg": "thigh_l",
+    "LeftLeg": "calf_l",
+    "LeftFoot": "foot_l",
+    "LeftToeBase": "ball_l",
+    "RightShoulder": "clavicle_r",
+    "RightArm": "upperarm_r",
+    "RightForeArm": "lowerarm_r",
+    "RightHand": "hand_r",
+    "RightUpLeg": "thigh_r",
+    "RightLeg": "calf_r",
+    "RightFoot": "foot_r",
+    "RightToeBase": "ball_r"
+  },
+  "unmapped_policy": "Target bind local rotation/translation/scale; parent follow only",
+  "errors": [
+    "Traceback (most recent call last):\n  File \"/tmp/nord-tripo-compact-retarget-20261017T2040Z/retarget_jump.py\", line 38, in <module>\n    assert set(M)<=set(source.data.bones) and set(INV)<=set(target.data.bones)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError\n"
+  ],
+  "retained_inputs_unchanged": true,
+  "finished_utc": "2026-10-17T20:21:56.266906+00:00"
+}

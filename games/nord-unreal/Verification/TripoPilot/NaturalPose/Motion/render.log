@@ -1,0 +1,268 @@
+16:45:25 | INFO: Data are loaded, start creating Blender stuff
+16:45:25 | INFO: Blender create Mesh node Mesh_0
+16:45:25 | INFO: glTF import finished in 0.46s
+/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Verification/TripoPilot/NaturalPose/render.py:77: DeprecationWarning: 'World.use_nodes' is expected to be removed in Blender 6.0
+  scene.world.use_nodes = True
+/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Verification/TripoPilot/NaturalPose/render.py:100: DeprecationWarning: 'Material.use_nodes' is expected to be removed in Blender 6.0
+  lm.use_nodes = True
+00:03.272  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Motion/000.png'
+FBX version: 7400
+FBX version: 7400
+FBX version: 7400
+RELAXED_POSE_VIEW 000
+00:05.284  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Motion/001.png'
+RELAXED_POSE_VIEW 001
+00:07.259  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Motion/002.png'
+RELAXED_POSE_VIEW 002
+00:09.308  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Motion/003.png'
+RELAXED_POSE_VIEW 003
+00:11.312  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Motion/004.png'
+RELAXED_POSE_VIEW 004
+00:13.316  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Motion/005.png'
+RELAXED_POSE_VIEW 005
+00:15.383  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Motion/006.png'
+RELAXED_POSE_VIEW 006
+00:17.438  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Motion/007.png'
+RELAXED_POSE_VIEW 007
+00:19.500  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Motion/008.png'
+RELAXED_POSE_VIEW 008
+00:21.549  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Motion/009.png'
+RELAXED_POSE_VIEW 009
+00:23.557  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Motion/010.png'
+RELAXED_POSE_VIEW 010
+00:25.523  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Motion/011.png'
+RELAXED_POSE_VIEW 011
+00:27.546  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Motion/012.png'
+RELAXED_POSE_VIEW 012
+00:29.554  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Motion/013.png'
+RELAXED_POSE_VIEW 013
+00:31.542  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Motion/014.png'
+RELAXED_POSE_VIEW 014
+00:33.535  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Motion/015.png'
+RELAXED_POSE_VIEW 015
+00:35.505  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Motion/016.png'
+RELAXED_POSE_VIEW 016
+00:37.505  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Motion/017.png'
+RELAXED_POSE_VIEW 017
+00:39.447  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Motion/018.png'
+RELAXED_POSE_VIEW 018
+00:41.465  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Motion/019.png'
+RELAXED_POSE_VIEW 019
+00:43.463  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Motion/020.png'
+RELAXED_POSE_VIEW 020
+00:45.487  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Motion/021.png'
+RELAXED_POSE_VIEW 021
+00:47.457  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Motion/022.png'
+RELAXED_POSE_VIEW 022
+00:49.391  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Motion/023.png'
+RELAXED_POSE_VIEW 023
+00:51.379  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Motion/024.png'
+RELAXED_POSE_VIEW 024
+00:53.381  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Motion/025.png'
+RELAXED_POSE_VIEW 025
+00:55.359  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Motion/026.png'
+RELAXED_POSE_VIEW 026
+00:57.360  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Motion/027.png'
+RELAXED_POSE_VIEW 027
+00:59.368  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Motion/028.png'
+RELAXED_POSE_VIEW 028
+01:01.378  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Motion/029.png'
+RELAXED_POSE_VIEW 029
+01:03.360  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Motion/030.png'
+RELAXED_POSE_VIEW 030
+01:05.338  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Motion/031.png'
+RELAXED_POSE_VIEW 031
+01:07.301  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Motion/032.png'
+RELAXED_POSE_VIEW 032
+01:09.380  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Motion/033.png'
+RELAXED_POSE_VIEW 033
+01:11.423  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Motion/034.png'
+RELAXED_POSE_VIEW 034
+01:13.428  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Motion/035.png'
+RELAXED_POSE_VIEW 035
+01:15.446  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Motion/036.png'
+RELAXED_POSE_VIEW 036
+01:17.529  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Motion/037.png'
+RELAXED_POSE_VIEW 037
+01:19.597  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Motion/038.png'
+RELAXED_POSE_VIEW 038
+01:21.660  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Motion/039.png'
+RELAXED_POSE_VIEW 039
+01:23.736  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Motion/040.png'
+RELAXED_POSE_VIEW 040
+01:25.759  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Motion/041.png'
+RELAXED_POSE_VIEW 041
+01:27.775  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Motion/042.png'
+RELAXED_POSE_VIEW 042
+01:29.772  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Motion/043.png'
+RELAXED_POSE_VIEW 043
+01:31.806  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Motion/044.png'
+RELAXED_POSE_VIEW 044
+01:33.818  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Motion/045.png'
+RELAXED_POSE_VIEW 045
+01:35.804  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Motion/046.png'
+RELAXED_POSE_VIEW 046
+01:37.780  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Motion/047.png'
+RELAXED_POSE_VIEW 047
+01:39.777  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Motion/048.png'
+RELAXED_POSE_VIEW 048
+01:41.792  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Motion/049.png'
+RELAXED_POSE_VIEW 049
+01:43.795  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Motion/050.png'
+RELAXED_POSE_VIEW 050
+01:45.917  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Motion/051.png'
+RELAXED_POSE_VIEW 051
+01:48.018  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Motion/052.png'
+RELAXED_POSE_VIEW 052
+01:50.123  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Motion/053.png'
+RELAXED_POSE_VIEW 053
+01:52.204  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Motion/054.png'
+RELAXED_POSE_VIEW 054
+01:54.260  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Motion/055.png'
+RELAXED_POSE_VIEW 055
+01:56.312  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Motion/056.png'
+RELAXED_POSE_VIEW 056
+01:58.315  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Motion/057.png'
+RELAXED_POSE_VIEW 057
+02:00.276  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Motion/058.png'
+RELAXED_POSE_VIEW 058
+02:02.271  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Motion/059.png'
+RELAXED_POSE_VIEW 059
+02:04.241  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Motion/060.png'
+RELAXED_POSE_VIEW 060
+02:06.233  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Motion/061.png'
+RELAXED_POSE_VIEW 061
+02:08.182  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Motion/062.png'
+RELAXED_POSE_VIEW 062
+02:10.147  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Motion/063.png'
+RELAXED_POSE_VIEW 063
+02:12.150  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Motion/064.png'
+RELAXED_POSE_VIEW 064
+02:14.179  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Motion/065.png'
+RELAXED_POSE_VIEW 065
+02:16.200  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Motion/066.png'
+RELAXED_POSE_VIEW 066
+02:18.191  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Motion/067.png'
+RELAXED_POSE_VIEW 067
+02:20.195  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Motion/068.png'
+RELAXED_POSE_VIEW 068
+02:22.164  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Motion/069.png'
+RELAXED_POSE_VIEW 069
+02:24.139  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Motion/070.png'
+RELAXED_POSE_VIEW 070
+02:26.123  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Motion/071.png'
+RELAXED_POSE_VIEW 071
+02:28.125  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Motion/072.png'
+RELAXED_POSE_VIEW 072
+02:30.112  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Motion/073.png'
+RELAXED_POSE_VIEW 073
+02:32.121  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Motion/074.png'
+RELAXED_POSE_VIEW 074
+02:34.071  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Motion/075.png'
+RELAXED_POSE_VIEW 075
+02:36.026  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Motion/076.png'
+RELAXED_POSE_VIEW 076
+02:37.993  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Motion/077.png'
+RELAXED_POSE_VIEW 077
+02:39.978  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Motion/078.png'
+RELAXED_POSE_VIEW 078
+02:41.929  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Motion/079.png'
+RELAXED_POSE_VIEW 079
+02:43.916  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Motion/080.png'
+RELAXED_POSE_VIEW 080
+02:45.896  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Motion/081.png'
+RELAXED_POSE_VIEW 081
+02:47.905  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Motion/082.png'
+RELAXED_POSE_VIEW 082
+02:49.916  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Motion/083.png'
+RELAXED_POSE_VIEW 083
+02:51.894  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Motion/084.png'
+RELAXED_POSE_VIEW 084
+02:53.878  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Motion/085.png'
+RELAXED_POSE_VIEW 085
+02:55.846  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Motion/086.png'
+RELAXED_POSE_VIEW 086
+02:57.840  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Motion/087.png'
+RELAXED_POSE_VIEW 087
+02:59.834  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Motion/088.png'
+RELAXED_POSE_VIEW 088
+03:01.811  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Motion/089.png'
+RELAXED_POSE_VIEW 089
+03:03.843  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Motion/090.png'
+RELAXED_POSE_VIEW 090
+03:05.822  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Motion/091.png'
+RELAXED_POSE_VIEW 091
+03:07.867  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Motion/092.png'
+RELAXED_POSE_VIEW 092
+03:09.854  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Motion/093.png'
+RELAXED_POSE_VIEW 093
+03:11.875  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Motion/094.png'
+RELAXED_POSE_VIEW 094
+03:13.970  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Motion/095.png'
+RELAXED_POSE_VIEW 095
+03:16.059  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Motion/096.png'
+RELAXED_POSE_VIEW 096
+03:18.119  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Motion/097.png'
+RELAXED_POSE_VIEW 097
+03:20.149  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Motion/098.png'
+RELAXED_POSE_VIEW 098
+03:22.155  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Motion/099.png'
+RELAXED_POSE_VIEW 099
+03:24.155  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Motion/100.png'
+RELAXED_POSE_VIEW 100
+03:26.638  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Motion/101.png'
+RELAXED_POSE_VIEW 101
+03:28.744  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Motion/102.png'
+RELAXED_POSE_VIEW 102
+03:31.024  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Motion/103.png'
+RELAXED_POSE_VIEW 103
+03:33.192  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Motion/104.png'
+RELAXED_POSE_VIEW 104
+03:35.255  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Motion/105.png'
+RELAXED_POSE_VIEW 105
+03:37.246  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Motion/106.png'
+RELAXED_POSE_VIEW 106
+03:39.266  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Motion/107.png'
+RELAXED_POSE_VIEW 107
+03:41.192  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Motion/108.png'
+RELAXED_POSE_VIEW 108
+03:43.259  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Motion/109.png'
+RELAXED_POSE_VIEW 109
+03:45.270  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Motion/110.png'
+RELAXED_POSE_VIEW 110
+03:47.288  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Motion/111.png'
+RELAXED_POSE_VIEW 111
+03:49.372  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Motion/112.png'
+RELAXED_POSE_VIEW 112
+03:51.387  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Motion/113.png'
+RELAXED_POSE_VIEW 113
+03:53.491  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Motion/114.png'
+RELAXED_POSE_VIEW 114
+03:55.617  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Motion/115.png'
+RELAXED_POSE_VIEW 115
+03:57.754  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Motion/116.png'
+RELAXED_POSE_VIEW 116
+03:59.852  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Motion/117.png'
+RELAXED_POSE_VIEW 117
+04:01.953  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Motion/118.png'
+RELAXED_POSE_VIEW 118
+04:04.002  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Motion/119.png'
+RELAXED_POSE_VIEW 119
+04:06.009  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Motion/120.png'
+RELAXED_POSE_VIEW 120
+04:08.022  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Motion/121.png'
+RELAXED_POSE_VIEW 121
+04:10.005  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Motion/122.png'
+RELAXED_POSE_VIEW 122
+04:12.115  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Motion/123.png'
+RELAXED_POSE_VIEW 123
+04:14.120  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Motion/124.png'
+RELAXED_POSE_VIEW 124
+04:16.133  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Motion/125.png'
+RELAXED_POSE_VIEW 125
+04:18.167  render           | Saved: '/tmp/nord-tripo-natural-pose-20261017-v4/Motion/126.png'
+RELAXED_POSE_VIEW 126
+NATURAL_POSE_RENDER_COMPLETE /tmp/nord-tripo-natural-pose-20261017-v4/Motion
+Blender 5.2.2 LTS (hash d13f752e3b9c built 2026-09-15 01:34:58)
+
+Blender quit

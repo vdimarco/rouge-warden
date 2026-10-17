@@ -1,0 +1,43 @@
+{
+  "scope": "CPU geometry proxy, no native material/closed-grasp or full-motion acceptance",
+  "scale": 0.6,
+  "calibration_frame": 2,
+  "shaft_grip_local_z_m": -0.2,
+  "attach": "RightHand matrix translation wrist, no palm offset",
+  "neutral_cup_axis_source_world": [
+    -0.5548766255378723,
+    0.20177331566810608,
+    -0.8070932626724243
+  ],
+  "hand_relative_matrix": [
+    [
+      53.41071701049805,
+      0.022609233856201172,
+      27.33673858642578,
+      5.467347621917725
+    ],
+    [
+      -27.266250610351562,
+      -4.261953830718994,
+      53.276527404785156,
+      10.655294418334961
+    ],
+    [
+      1.9618597030639648,
+      -59.848453521728516,
+      -3.783620834350586,
+      -0.7567269802093506
+    ],
+    [
+      0.0,
+      0.0,
+      0.0,
+      1.0
+    ]
+  ],
+  "clip_time_s": 0.43254,
+  "scene": "same cached raw-map studio and pose as initial trial",
+  "device": "CPU",
+  "threads": 4,
+  "samples": 16
+}

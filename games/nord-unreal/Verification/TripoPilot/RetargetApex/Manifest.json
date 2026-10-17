@@ -1,0 +1,25 @@
+{
+  "scope": "one CPU retarget apex; no duplicated inputs",
+  "files": {
+    "apex-threequarter.png": {
+      "bytes": 753650,
+      "sha256": "7f3e287ef7db79ea1b03bce0a2566ad25e509b2c69583d93b519871d748505bb"
+    },
+    "Readback.json": {
+      "bytes": 71744,
+      "sha256": "375c4ac205f6bc353bbd6323fbdd5ddaf3d38d08c74fecba170cff16c48cc016"
+    },
+    "render_apex.py": {
+      "bytes": 10750,
+      "sha256": "fa85ee3109e07eea498f95d74f08976534bece83c5bf10ebc5f2b2e10e4c72a0"
+    },
+    "render.log": {
+      "bytes": 1570,
+      "sha256": "118890d5ff6196b70e511a187c254aeca8f5f83cddd54679aedd46daf3f975f0"
+    },
+    "Review.md": {
+      "bytes": 1644,
+      "sha256": "3f75243de2be1bbeb93187bdb32a4e30fe2a5e0a4354ffaa2bc32e821bdb4755"
+    }
+  }
+}

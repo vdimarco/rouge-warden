@@ -1,0 +1,86 @@
+{
+  "created_utc": "2026-10-17T20:20:53.710200+00:00",
+  "provider_task_id": "64103a99-91c2-499d-8866-0304e0beceb1",
+  "provider_fbx_sha256": "baaeb99a7e86fadadd4f64f6de6ea7e648777b33bcadd2ecb72347c4afe3dcc2",
+  "source_files_checked": 23,
+  "source_and_returned_files_unchanged": true,
+  "read_only_CPU_audit_passed": true,
+  "adopted": false,
+  "native_imported": false,
+  "geometry": {
+    "unique_corresponding_triangles": 103544,
+    "corner_samples": 310632,
+    "returned_to_source_scale": 1.8200008461895905,
+    "rotation_row_vector": [
+      [
+        0.9999999999999969,
+        6.753042417102784e-08,
+        3.154308433288664e-08
+      ],
+      [
+        -6.753041850021679e-08,
+        0.9999999999999815,
+        -1.8089556238571258e-07
+      ],
+      [
+        -3.154309648329549e-08,
+        1.808955606702879e-07,
+        0.9999999999999826
+      ]
+    ],
+    "offset_m": [
+      -8.940833029231349e-08,
+      -2.017990975815287e-07,
+      3.4656851255476795e-07
+    ],
+    "residual_max_m": 1.042384372707828e-06,
+    "residual_mean_m": 1.5191668165607713e-07,
+    "residual_p99_m": 6.962685753328467e-07,
+    "residual_over_1mm": 0,
+    "scale_normalized_rig_changes_are_not_topology_changes": true
+  },
+  "rig": {
+    "bones": 61,
+    "weighted_bones": 60,
+    "weighted_finger_bones": 30,
+    "finger_chains": 10,
+    "max_influences": 4,
+    "unweighted_vertices": 0,
+    "new_bind_hierarchy_requires_retarget": true,
+    "body_height_original_m": 1.8200001840844693,
+    "body_height_returned_m": 0.9999995249043925
+  },
+  "critical_return_issues": [
+    "Returned asset normalized body height to1m; preview-only parent restores1.82m.",
+    "Raw FBX contains only the unchanged GLB albedo payload, connected to both base color and normal-map textures. Correct original normal/MR maps are not present.",
+    "Imported corner normals differ substantially despite matching UV/surface; they are not proven preserved."
+  ],
+  "normal_comparison": {
+    "matched_corner_samples": 310632,
+    "max_angle_deg": 177.7258533327671,
+    "mean_angle_deg": 21.033028008203654,
+    "p99_angle_deg": 99.33967352962024,
+    "over_1deg": 223466,
+    "over_10deg": 182004,
+    "method": "Normals in world/rest space, corresponding sorted quantized UV triangle corners at1e-6. Similarity orientation differs <1e-5deg; no geometry normal recompute performed."
+  },
+  "visual_review": {
+    "all_six_actual_images_inspected": true,
+    "neutral": "Original and normalized returned body closely match; recognizable head/clothing preserved. Corner-normal shading differences remain possible.",
+    "elbows": "Each isolated +65deg anatomical-axis flex goes visibly forward. Neutral shoulders remain plausible; no raised-arm/whole-jump shoulder acceptance.",
+    "fingers": "Left hand visibly changes from straight fingers to curled silhouette. Existing finger separation/webbing and approximate pose remain; no grasp/prop/art acceptance.",
+    "diagnostic_labels": "Use file names and Visual.json as authoritative labels; not every camera view places the in-scene label fully in frame.",
+    "render_exit_code": 0,
+    "engine": "Cycles CPU",
+    "threads": 4,
+    "samples": 16,
+    "render_count": 6,
+    "video_count": 0
+  },
+  "limits": [
+    "Rig binding/skin quality during retargeted locomotion and extreme shoulder poses has not been visually tested here.",
+    "Current24-bone clips/BlendSpaces are not directly compatible with61-bone returned hierarchy.",
+    "No face controls/morphs were returned.",
+    "No production source, Content, UE process, GPU job, provider call or service was used/changed."
+  ]
+}

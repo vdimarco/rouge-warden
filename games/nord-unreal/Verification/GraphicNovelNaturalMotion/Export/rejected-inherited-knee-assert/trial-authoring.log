@@ -1,0 +1,15 @@
+Traceback (most recent call last):
+  File "/tmp/nord-natural-jump-export-20261017T194039Z/trial_jump.py", line 132, in <module>
+    assert neutral_knee.rotation_difference(restored.pose.bones["LeftLeg"].rotation_quaternion).angle > math.radians(70)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError
+FBX version: 7400
+
+FBX export starting... '/tmp/nord-natural-jump-export-20261017T194039Z/trial/CurlyMetalhead/jump.fbx'
+export finished in 0.0612 sec.
+FBX version: 7400
+
+Error: script failed, file: '/tmp/nord-natural-jump-export-20261017T194039Z/trial_jump.py', exiting.
+Blender 5.2.2 LTS (hash d13f752e3b9c built 2026-09-15 01:34:58)
+
+Blender quit

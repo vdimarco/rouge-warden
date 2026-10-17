@@ -53,3 +53,37 @@
 - [x] Compare one higher-detail funded pilot against the retained draft for actual neck/hair/hand surface improvement; retain its own provenance/rig/clips and remaining limits before native promotion or wider cast spending. Independent 28-view and 82-selected-frame reviews retain the separate candidate only: neck/hair improve, while collar/shoulder/hand/shadow and final illustrated/motion quality remain open. See `Verification/GraphicNovelHighDetailPilot.md`; no production or cast promotion.
 
 - [x] Evaluate the private higher-detail jump’s two upper-arm keys through retained/control/trial CPU semantics, fresh animation-only native author/readback, matched both-mode/two-size stills and 1× motion; preserve raw sources/all other Content and restore the original private clip. Front-view shoulder bulging decreases, but selected side-view motion shows the plunger obscuring the face. Reject adoption and retain the original clip; final art/fluidity remain open. See `Verification/GraphicNovelJumpArmTrial/README.md`.
+
+## Rejected airborne silhouette correction
+
+- [x] Diagnose and prepare a bounded shoulder/sleeve, jump-pose and prop-clearance correction on a copied private pilot; preserve raw inputs and existing production assets. Four arm/forearm rotation tracks pass 37×24 CPU semantics and fresh native animation-only author/readback; all original Content is restored. Both initial and corrected reference-derived attachment checks pass the seven native headless states, with the initial timing-dependent bake explicitly rejected. See `Verification/GraphicNovelSilhouetteRepair/README.md`; this does not accept graphics or deployment.
+- [ ] Compare the actual corrected pilot at matched airborne/landing views and continuous motion in standard/comic at both supported sizes; reject residual sleeve collapse or face/hand/prop intersections.
+- [ ] Deliver only the visually improved, checked private checkpoint with native behavior/preservation receipts and restored services; retain limits on environment, facial/finger articulation and final performance.
+
+## Natural motion and forward elbows follow-up
+
+- [x] Diagnose the user's backward-arm report and correct the shared jump author's per-arm hinge; verify all eight original crew rigs plus the detailed pilot through copied-body export/re-import and an old-axis negative control. Preserve all retained inputs and keep installed clips unchanged.
+- [x] Retain one compact, asymmetric twelve-track private jump derivative with explicit neck rotation, fresh 37×24 CPU comparison, all-frame CPU motion review and truthful precision/failed-attempt receipts. This supersedes the user-rejected four-track pose for the next private comparison, without native or final-art acceptance. See `Verification/GraphicNovelNaturalMotion/README.md`.
+- [ ] Import/reload and visually review the compact derivative and actual hand-relative prop in a fresh guarded native window; check matched supported modes/sizes, continuous 1× motion, physical clearance, blending, landing/contact and preserved gameplay before adoption.
+
+## Tripo one-character pilot
+
+- [x] Record the user's authorization to use Tripo for the existing-character comparison; inspect current upload/rigging docs, route availability, pricing and retained body pose. Direct API authentication now passes through the user's private key file. See `Verification/TripoPilot/README.md`.
+- [x] Upload the original self-contained GLB once and complete the free compatibility check: riggable biped, 0 credits consumed, all 23 retained source files unchanged. No T-pose conversion or substitute generation needed for the check.
+- [x] After user funding, run one explicit v3.0 humanoid/Unreal/FBX rig using the existing upload; retain task/result/output provenance. Task succeeds for 25 credits/US$0.25; API balance is 75 credits, none frozen. No credit purchase was performed by the agent.
+- [x] CPU-audit the actual returned geometry/UVs, weights, finger chains and forward elbows; retain six actual stills with preview-only scale/original-material restoration. Record changed corner normals and broken raw FBX normal/PBR texture export as unresolved import defects, not acceptance.
+- [x] Retarget only the corrected compact jump onto the new own hierarchy and verify fresh animation-only export/reimport: all 61 bones, neutral endpoints, static root, forward elbows and 37 samples/1.2s. Inspect one actual imported-action apex still with 61-bone pose readback. Preserve the rejected pre-export name-key guard attempt and explicit float bounds; no native or continuous-motion acceptance.
+- [ ] Prepare the isolated source-scale/PBR/corner-normal correction and remaining own Idle/Walk/Run/grip, BlendSpace and mapped hand/face sockets. Preserve the original provider output and existing generic animation graph; do not assign old 24-bone clips or count unmapped procedural finger names as working grasp.
+- [ ] Perform the guarded native comparison and preserved behavior checks before any replacement or wider cast rollout: matched modes/sizes, continuous jump/landing/locomotion, sleeves/hands/prop clearance, C/E/F2/co-op and package/performance scope. Tripo bone naming and CPU proofs do not establish final-art acceptance.
+
+## Relax the Tripo pose after user feedback
+
+- [x] Author a separate own-rig relaxed idle and matching jump endpoints: soft forward elbows, shoulders closer to the torso, inward palms, staggered loose fingers and subtle asymmetric upper-body motion. Preserve all provider/source files and installed assets. Actual fresh61-bone imports pass314 half-frame samples; retained jump legs and all6,850 Content files remain unchanged. See `Verification/TripoPilot/NaturalPose/README.md`.
+- [x] Verify actual fresh-imported clips and review front/side/three-quarter standing and airborne views plus a short CPU motion preview; retain remaining deformation/acting limits and keep native adoption separate. Root/independent art reviewer inspect all six stills and all127 preview frames via contact sheets; no subjective native fluidity, flight or contact claim.
+
+## Isolated Tripo native integration
+
+- [x] Prepare a separate body with original UV-matched corner normals/PBR maps, matching own Walk/Run and consistent FBX armature roots; preserve provider files and verified relaxed Idle/Jump. Correct actual24Hz export metadata in new30Hz derivatives; retain frozen originals and rejected timing receipts.
+- [x] Import all five sources at the same1.82 scale in a fresh NullRHI commandlet into `CrewGraphicNovelTripo/Resident9`, save/reload its own skeleton, clips, BlendSpace, material and reference-derived hand socket; add the explicit opt-in route without changing ordinary crew. Clean commandlet import/reload exit0 supersede rejected editor attempts; ordinary editor stability remains open.
+- [x] Build and run the mandatory own-rig selection/evaluated-motion/prop/reset native checks; verify protected Content, packages, saves/settings and normal services remain preserved outside declared additions. All six native tests pass with clean queued SoftQuit; process-only TEDS workaround is disclosed in `Verification/TripoNative/README.md`.
+- [ ] Inspect actual rendered both-mode/two-size motion and tool clearance in a guarded GPU window before live promotion. Retain remaining hand geometry, grip/contact and performance limits.

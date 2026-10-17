@@ -97,6 +97,7 @@ class QUEBEC_API AQuebecCharacter : public ACharacter
     friend class FQuebecCrewAnimationTest;
     friend class FQuebecSavedCrewLocomotionTest;
     friend class FQuebecGraphicNovelControlsTest;
+    friend class FQuebecTripoPilotTest;
     friend class FQuebecDistrictRuntimeTest;
 public:
     AQuebecCharacter();

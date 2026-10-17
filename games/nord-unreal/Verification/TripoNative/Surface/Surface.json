@@ -1,0 +1,306 @@
+{
+  "passed": true,
+  "created_utc": "2026-10-17T21:00:10.207495+00:00",
+  "blender": "5.2.2 LTS",
+  "threads": 4,
+  "rendered": false,
+  "inputs": {
+    "Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/body.glb": "25041be9666422c30ba39449cb283a83928bb3de596fe063389707c070335613",
+    "Data/GraphicNovel/Pilot/CurlyMetalhead/tripo-v3-rig-20261017/rig.fbx": "baaeb99a7e86fadadd4f64f6de6ea7e648777b33bcadd2ecb72347c4afe3dcc2",
+    "Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/normal.png": "7845864ce13d1e3ce10e8149ef2ef98a048b8be249a60749dfc70c4897e9e7ab"
+  },
+  "output": {
+    "path": "Data/GraphicNovel/Pilot/CurlyMetalhead/tripo-v3-rig-20261017/derived/native-ready/body.fbx",
+    "sha256": "2266ab807ec8e5ff02e5020db65e64ca91163647e5af731e304170a3711990c4",
+    "bytes": 11474764
+  },
+  "geometry": {
+    "triangles": 103544,
+    "corners": 310632,
+    "height_m": 0.9999995266235263,
+    "residual_max_m": 1.3270637559427345e-07,
+    "uv_quantization": 1e-06,
+    "provider_size_preserved": true
+  },
+  "rig": {
+    "bones": 61,
+    "armature_object": "Armature",
+    "bind_max_abs_error": 3.993511199951172e-06,
+    "corner_weight_max_abs_error": 0.0,
+    "hierarchy_preserved": true
+  },
+  "original_corner_normals": {
+    "provider_before": {
+      "mean_deg": 21.033028008210977,
+      "p99_deg": 99.33967352962017,
+      "max_deg": 177.72585333276757,
+      "corners_over_0_1deg": 226342
+    },
+    "after_blender_store": {
+      "mean_deg": 0.0015758404358213905,
+      "p99_deg": 0.013434918369693714,
+      "max_deg": 0.6608881288789538,
+      "corners_over_0_1deg": 12
+    },
+    "fresh_fbx_reimport": {
+      "mean_deg": 0.002222331824882702,
+      "p99_deg": 0.016882332833643567,
+      "max_deg": 0.6608947940084335,
+      "corners_over_0_1deg": 12
+    },
+    "explicit_limits": {
+      "mean_deg": 0.02,
+      "p99_deg": 0.1,
+      "max_deg": 1.0
+    },
+    "after_store_corners_over_0_1deg": [
+      {
+        "uv_triangle_order": 1524,
+        "corner_order": 1,
+        "degrees": 0.1538814908293175,
+        "provider_vertex": 37189,
+        "original_normal": [
+          0.83709718047309,
+          0.3603687340207898,
+          -0.4115855755298722
+        ],
+        "restored_normal": [
+          0.8384720836454124,
+          0.3582772051822097,
+          -0.4106117499465223
+        ]
+      },
+      {
+        "uv_triangle_order": 1524,
+        "corner_order": 2,
+        "degrees": 0.1511809273228365,
+        "provider_vertex": 37080,
+        "original_normal": [
+          0.83709718047309,
+          0.3603687340207898,
+          -0.4115855755298722
+        ],
+        "restored_normal": [
+          0.8384507811231267,
+          0.3583215365923945,
+          -0.4106165657253539
+        ]
+      },
+      {
+        "uv_triangle_order": 16663,
+        "corner_order": 0,
+        "degrees": 0.104811470886275,
+        "provider_vertex": 2688,
+        "original_normal": [
+          0.04405248265703355,
+          0.5177875437563279,
+          -0.8543742963728138
+        ],
+        "restored_normal": [
+          0.04439693515559548,
+          0.5162424256225503,
+          -0.8552909856511615
+        ]
+      },
+      {
+        "uv_triangle_order": 16663,
+        "corner_order": 1,
+        "degrees": 0.6608881288789538,
+        "provider_vertex": 1749,
+        "original_normal": [
+          0.04405248265703355,
+          0.5177875437563279,
+          -0.8543742963728138
+        ],
+        "restored_normal": [
+          0.04398066010649522,
+          0.5078905630363831,
+          -0.8602981329255475
+        ]
+      },
+      {
+        "uv_triangle_order": 20631,
+        "corner_order": 1,
+        "degrees": 0.4138191542997126,
+        "provider_vertex": 18970,
+        "original_normal": [
+          -0.6224637919664124,
+          0.0195757178461481,
+          0.782403744214969
+        ],
+        "restored_normal": [
+          -0.628025155555927,
+          0.01829170918905353,
+          0.777978031414703
+        ]
+      },
+      {
+        "uv_triangle_order": 51241,
+        "corner_order": 0,
+        "degrees": 0.33926380050889,
+        "provider_vertex": 591,
+        "original_normal": [
+          -0.6696898565605388,
+          0.730139101178172,
+          -0.13569225825615897
+        ],
+        "restored_normal": [
+          -0.6662432970456194,
+          0.732496037034352,
+          -0.1398907604910047
+        ]
+      },
+      {
+        "uv_triangle_order": 51241,
+        "corner_order": 1,
+        "degrees": 0.21211858041236284,
+        "provider_vertex": 268,
+        "original_normal": [
+          -0.6696898565605388,
+          0.730139101178172,
+          -0.13569225825615897
+        ],
+        "restored_normal": [
+          -0.6675333632876531,
+          0.7316209211519022,
+          -0.13831137563742324
+        ]
+      },
+      {
+        "uv_triangle_order": 58157,
+        "corner_order": 1,
+        "degrees": 0.4332008518561023,
+        "provider_vertex": 18997,
+        "original_normal": [
+          -0.6290154906757873,
+          0.018043092810517334,
+          0.7771833498549294
+        ],
+        "restored_normal": [
+          -0.6231987704788776,
+          0.01938581174473867,
+          0.7818231787153748
+        ]
+      },
+      {
+        "uv_triangle_order": 73027,
+        "corner_order": 2,
+        "degrees": 0.5969428225351748,
+        "provider_vertex": 2688,
+        "original_normal": [
+          0.04593428324820573,
+          0.5073576084510847,
+          -0.8605104873092886
+        ],
+        "restored_normal": [
+          0.04439693515559548,
+          0.5162424256225503,
+          -0.8552909856511615
+        ]
+      },
+      {
+        "uv_triangle_order": 89160,
+        "corner_order": 0,
+        "degrees": 0.21725363561655994,
+        "provider_vertex": 268,
+        "original_normal": [
+          -0.6653173783811288,
+          0.7331255914521732,
+          -0.1409952239686263
+        ],
+        "restored_normal": [
+          -0.6675333632876531,
+          0.7316209211519022,
+          -0.13831137563742324
+        ]
+      },
+      {
+        "uv_triangle_order": 90456,
+        "corner_order": 2,
+        "degrees": 0.2654361920181827,
+        "provider_vertex": 40945,
+        "original_normal": [
+          -0.7165798772950432,
+          0.35712955548262254,
+          0.5991425206548149
+        ],
+        "restored_normal": [
+          -0.7196753972981338,
+          0.35438389674147214,
+          0.5970589386769974
+        ]
+      },
+      {
+        "uv_triangle_order": 101288,
+        "corner_order": 1,
+        "degrees": 0.24779633001486984,
+        "provider_vertex": 41065,
+        "original_normal": [
+          -0.7199436832819947,
+          0.35413568280366403,
+          0.596882744823083
+        ],
+        "restored_normal": [
+          -0.7170520837982906,
+          0.3566864872779146,
+          0.5988414305255368
+        ]
+      }
+    ],
+    "exact_preservation_claimed": false
+  },
+  "textures": {
+    "base_color": {
+      "path": "Data/GraphicNovel/Pilot/CurlyMetalhead/tripo-v3-rig-20261017/derived/native-ready/base_color.jpg",
+      "bytes": 4213353,
+      "sha256": "adf54ff0228275f6557fa5afbacb9ab0e5651fe1ddec0c638afa2cd197dba5d7",
+      "colorspace": "sRGB",
+      "channels": "base_color"
+    },
+    "metallic_roughness": {
+      "path": "Data/GraphicNovel/Pilot/CurlyMetalhead/tripo-v3-rig-20261017/derived/native-ready/metallic_roughness.jpg",
+      "bytes": 2249463,
+      "sha256": "b10a5ce423ce8922dce64f90edec8a750e0f3aad64588daa2cd4fbb710d86bcf",
+      "colorspace": "Non-Color",
+      "channels": "G=Roughness, B=Metallic"
+    },
+    "normal": {
+      "path": "Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/normal.png",
+      "bytes": 6648844,
+      "sha256": "7845864ce13d1e3ce10e8149ef2ef98a048b8be249a60749dfc70c4897e9e7ab",
+      "colorspace": "Non-Color",
+      "channels": "normal"
+    }
+  },
+  "fresh_import_images": [
+    {
+      "image": "Image_0",
+      "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/tripo-v3-rig-20261017/derived/native-ready/base_color.jpg",
+      "sha256": "adf54ff0228275f6557fa5afbacb9ab0e5651fe1ddec0c638afa2cd197dba5d7"
+    },
+    {
+      "image": "normal",
+      "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/tripo-v3-rig-20261017/derived/native-ready/../../../generated-v2-high-detail/normal.png",
+      "sha256": "7845864ce13d1e3ce10e8149ef2ef98a048b8be249a60749dfc70c4897e9e7ab"
+    }
+  ],
+  "material": {
+    "source": "Exact original GLB material graph before FBX export",
+    "packed_MR_native_wiring_required": true,
+    "MR_channels": "G=Roughness, B=Metallic",
+    "normal_convention": "Original GLB tangent normal unchanged; native convention must be explicit"
+  },
+  "native_import_scale_required": 1.82,
+  "rescale_applied": false,
+  "limitations": [
+    "FBX does not preserve the packed metallic/roughness node graph; native material must wire G/B explicitly.",
+    "Native normal/tangent import and visual shading acceptance remain untested.",
+    "No rig, animation, skin weights, geometry, provider/source file, Content, service or API changed."
+  ],
+  "research": [
+    "https://docs.blender.org/api/5.0/bpy.types.Mesh.html#bpy.types.Mesh.normals_split_custom_set",
+    "https://docs.blender.org/api/5.0/bpy.ops.export_scene.html",
+    "https://docs.blender.org/manual/en/5.2/modeling/meshes/structure.html"
+  ],
+  "recipe_sha256": "934a10e3d471fb66f468a0c2c2b07b7fbb154ecb8c0d3652b99facb6bf85a277"
+}

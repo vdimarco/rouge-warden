@@ -1,0 +1,63 @@
+{
+  "scope": "Native import/readback and failed rendered attempt/restoration records; no successful pixel or motion proof",
+  "files": [
+    {
+      "file": "Author.json",
+      "source": "Saved/Tests/GraphicNovel/CompoundJumpRepair-20261017T1846/Author-20261017T185459Z/result.json",
+      "sha256": "d9f50e049feb3ae11a1ccb4d89732cafce11d651a09bdf6532d5833d540f32d7",
+      "bytes": 1505
+    },
+    {
+      "file": "FreshVerify.json",
+      "source": "Saved/Tests/GraphicNovel/CompoundJumpRepair-20261017T1846/Verify-20261017T185517Z/result.json",
+      "sha256": "f9e9a59019d6162b424043dd055e23834118d4996bf7f633e4969be2cb5e176d",
+      "bytes": 1462
+    },
+    {
+      "file": "RestoredOriginal.json",
+      "source": "Saved/Tests/GraphicNovel/CompoundJumpRepair-20261017T1846/Restore-20261017T185613Z/result.json",
+      "sha256": "dab3477885a424e50f49cbab50c2bd8923a85a33a02adc43b9f1f640b2507f39",
+      "bytes": 690
+    },
+    {
+      "file": "TrialReceipt.json",
+      "source": "Saved/Recovery/compound-jump-repair-20261017T185459Z/trial-receipt.json",
+      "sha256": "6ad9d969b8d48f73b4475aee8be5a1a9f169ed7db853c2585dd334655d9bb2ba",
+      "bytes": 470525
+    },
+    {
+      "file": "FreshReadback.json",
+      "source": "Saved/Recovery/compound-jump-repair-20261017T185459Z/fresh-verify.json",
+      "sha256": "c4ff0c711f43d3ada052b1d177c4ffeab3b6ec8312c2c2517be83a2c64dcdb82",
+      "bytes": 1831
+    },
+    {
+      "file": "CompoundWindow.json",
+      "source": "Saved/Tests/GraphicNovel/CompoundJumpRepair-20261017T1846/compound-window-status.json",
+      "sha256": "07a49587dd8f4eabf8a911f566ad0c03a6a8eeaa34a095ed7d5185a82ad1491d",
+      "bytes": 929
+    },
+    {
+      "file": "FailedVulkanWindow.json",
+      "source": "Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T185533Z/window-status.json",
+      "sha256": "eeaf53df1f17ee4a89adc6f5f6c7c03c9f8f97cbca79fec6ee875c362a4b7a5c",
+      "bytes": 4458
+    },
+    {
+      "file": "VulkanFailure.txt",
+      "bytes": 703,
+      "sha256": "53e521fe287bd84179aad022842efce35421c8437c33775101d94b65ae48931e",
+      "source": "Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T185533Z/Standard1280/native.log",
+      "source_sha256": "cd15db766f544345315c95c87ccf2ad0c8fe646dc8d6f8d8ceb3c4b3628828b6",
+      "extracted_source_lines": [
+        1425,
+        2829,
+        2831,
+        2846,
+        12210,
+        12211
+      ],
+      "excerpt_format": "source line numbers; trailing whitespace removed"
+    }
+  ]
+}

@@ -1,0 +1,62 @@
+{
+  "recorded_utc": "2026-10-17T20:50:52.840250+00:00",
+  "render_process_exit_code": 0,
+  "encode_process_exit_code": 0,
+  "render_recipe_sha256": "18cb724fc7b2c6825e28f46a8383ecae27981491a7febdae3a16bfccbf95fe10",
+  "command": [
+    "blender",
+    "--background",
+    "--factory-startup",
+    "--threads",
+    "4",
+    "--python",
+    "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Verification/TripoPilot/NaturalPose/render.py",
+    "--",
+    "--output",
+    "/tmp/nord-tripo-natural-pose-20261017-v4",
+    "--motion"
+  ],
+  "encoded_movie": {
+    "file": "natural-pose.mp4",
+    "sha256": "58a745b39d521e5badbabfae0e840e209c69e3dd140944e59264226cccb31b82",
+    "bytes": 152251,
+    "ffprobe": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "width": 512,
+          "height": 640,
+          "avg_frame_rate": "24/1",
+          "duration": "5.291667",
+          "nb_read_frames": "127"
+        }
+      ]
+    }
+  },
+  "raw_frames_durable_ignored_path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoNaturalPose-20261017-v4/Motion",
+  "raw_frame_hashes": "Readback.json",
+  "contactsheets_cover_all_frames": [
+    [
+      0,
+      48
+    ],
+    [
+      49,
+      97
+    ],
+    [
+      98,
+      126
+    ]
+  ],
+  "review": "Root and independent art reviewer inspected all three contact sheets; six detailed stills separately inspected.",
+  "all127_actual_body_clip_pose_readbacks_match": true,
+  "maximum_pose_matrix_error": 1.1056661605834961e-05,
+  "limits": [
+    "Contact-sheet review does not accept subjective real-time playback or fluid native motion.",
+    "CPU timeline: complete4s idle, then complete1.2s authored jump, no actorballistics/nativeblends.",
+    "Inherited fast legcrouch unchanged; contact/weight transfer unverified.",
+    "Preview height/originalmaps restored; rawprovider cornernormals unchanged."
+  ]
+}

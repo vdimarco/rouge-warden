@@ -1,0 +1,29 @@
+{
+  "provider": "Tripo direct API v3",
+  "http_status": 200,
+  "api_code": 0,
+  "source_glb_sha256": "25041be9666422c30ba39449cb283a83928bb3de596fe063389707c070335613",
+  "parameters": {
+    "model": "v3.0-20260909",
+    "rig_type": "biped",
+    "spec": "unreal",
+    "out_format": "fbx"
+  },
+  "result": {
+    "type": "animate_rig",
+    "status": "success",
+    "progress": 100,
+    "task_id": "64103a99-91c2-499d-8866-0304e0beceb1",
+    "created_at": "2026-10-17T20:13:48.261116Z",
+    "completed_at": "2026-10-17T20:13:58.645326Z",
+    "credits_consumed": 25.0
+  },
+  "retained_fbx": "Data/GraphicNovel/Pilot/CurlyMetalhead/tripo-v3-rig-20261017/rig.fbx",
+  "retained_fbx_sha256": "baaeb99a7e86fadadd4f64f6de6ea7e648777b33bcadd2ecb72347c4afe3dcc2",
+  "output_host": "tripo-data.rg1.data.tripo3d.com",
+  "redactions": [
+    "Uploaded file token, private model id and signed download URLs omitted; original responses remain under ignored Saved/Tests/TripoPilot-20261017T2010."
+  ],
+  "balance_after_credits": 75,
+  "frozen_after_credits": 0
+}

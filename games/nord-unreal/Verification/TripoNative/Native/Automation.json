@@ -1,0 +1,267 @@
+﻿{
+	"devices": [
+		{
+			"deviceName": "omarchy",
+			"instance": "01A14BB8437A7D56B5B71FAB0EAC0957",
+			"instanceName": "omarchy-295687",
+			"platform": "LinuxEditor",
+			"oSVersion": "Omarchy 7.2.5-3-omarchy",
+			"model": "Default",
+			"gPU": "NVIDIA GeForce RTX 4090 (NVIDIA UNIX Open Kernel Module for x86_64  610.57.04  Release Build  (root@omarchy))",
+			"cPUModel": "Intel(R) Core(TM) i9-14900K",
+			"rAMInGB": 94,
+			"renderMode": "SM6",
+			"rHI": "",
+			"appInstanceLog": ""
+		}
+	],
+	"reportCreatedOn": "2026.10.17-21.15.44",
+	"succeeded": 6,
+	"succeededWithWarnings": 0,
+	"failed": 0,
+	"notRun": 0,
+	"inProcess": 0,
+	"totalDuration": 0.99734377861022949,
+	"comparisonExported": false,
+	"comparisonExportDirectory": "",
+	"tests": [
+		{
+			"testDisplayName": "BlendedLocomotion",
+			"fullTestPath": "Quebec.Animation.BlendedLocomotion",
+			"tags": [],
+			"state": "Success",
+			"deviceInstance": [
+				"01A14BB8437A7D56B5B71FAB0EAC0957"
+			],
+			"duration": 0.10617267340421677,
+			"dateTime": "2026.10.17-21.15.43",
+			"entries": [],
+			"warnings": 0,
+			"errors": 0,
+			"artifacts": []
+		},
+		{
+			"testDisplayName": "GraphicNovelCandidateSelection",
+			"fullTestPath": "Quebec.Animation.GraphicNovelCandidateSelection",
+			"tags": [],
+			"state": "Success",
+			"deviceInstance": [
+				"01A14BB8437A7D56B5B71FAB0EAC0957"
+			],
+			"duration": 0.37870785593986511,
+			"dateTime": "2026.10.17-21.15.43",
+			"entries": [
+				{
+					"event":
+					{
+						"type": "Info",
+						"message": "NORD_GRAPHIC_NOVEL_SELECTION_CHECKED default=production pilot=native style8=production privateF2=1",
+						"context": "",
+						"artifact": "00000000000000000000000000000000"
+					},
+					"filename": "",
+					"lineNumber": -1,
+					"timestamp": "2026.10.17-21.15.44"
+				}
+			],
+			"warnings": 0,
+			"errors": 0,
+			"artifacts": []
+		},
+		{
+			"testDisplayName": "GraphicNovelHandsEyes",
+			"fullTestPath": "Quebec.Animation.GraphicNovelHandsEyes",
+			"tags": [],
+			"state": "Success",
+			"deviceInstance": [
+				"01A14BB8437A7D56B5B71FAB0EAC0957"
+			],
+			"duration": 0.0077418107539415359,
+			"dateTime": "2026.10.17-21.15.44",
+			"entries": [
+				{
+					"event":
+					{
+						"type": "Info",
+						"message": "NORD_PILOT_HIPS sourceIndex=0 root=Hips forceRootLock=1 rootLock=0 time=0.411594 rawTrack={1.603684,0.870115,102.953583|-9.537442,81.384080,3.162438|1.000000,1.000000,1.000000} fullSourcePose={-3.266998,-0.392615,103.014885|0.413151,-0.305498,0.305498|1.000000,1.000000,1.000000} graphObserved={-3.266998,-0.392615,103.014885|0.413151,-0.305498,0.305498|1.000000,1.000000,1.000000}",
+						"context": "",
+						"artifact": "00000000000000000000000000000000"
+					},
+					"filename": "",
+					"lineNumber": -1,
+					"timestamp": "2026.10.17-21.15.44"
+				},
+				{
+					"event":
+					{
+						"type": "Info",
+						"message": "NORD_GRAPHIC_NOVEL_CONTROLS_CHECKED bones=20 idleFlex=4.000 runFlex=10.000 runSquint=.35 sourceBodyPreserved=1",
+						"context": "",
+						"artifact": "00000000000000000000000000000000"
+					},
+					"filename": "",
+					"lineNumber": -1,
+					"timestamp": "2026.10.17-21.15.44"
+				}
+			],
+			"warnings": 0,
+			"errors": 0,
+			"artifacts": []
+		},
+		{
+			"testDisplayName": "ReapplyCrew",
+			"fullTestPath": "Quebec.Animation.ReapplyCrew",
+			"tags": [],
+			"state": "Success",
+			"deviceInstance": [
+				"01A14BB8437A7D56B5B71FAB0EAC0957"
+			],
+			"duration": 0.0078921467065811157,
+			"dateTime": "2026.10.17-21.15.44",
+			"entries": [],
+			"warnings": 0,
+			"errors": 0,
+			"artifacts": []
+		},
+		{
+			"testDisplayName": "SavedProductionLocomotion",
+			"fullTestPath": "Quebec.Animation.SavedProductionLocomotion",
+			"tags": [],
+			"state": "Success",
+			"deviceInstance": [
+				"01A14BB8437A7D56B5B71FAB0EAC0957"
+			],
+			"duration": 0.24940177798271179,
+			"dateTime": "2026.10.17-21.15.44",
+			"entries": [
+				{
+					"event":
+					{
+						"type": "Info",
+						"message": "NORD_SAVED_CREW_LOCOMOTION style=3",
+						"context": "",
+						"artifact": "00000000000000000000000000000000"
+					},
+					"filename": "",
+					"lineNumber": -1,
+					"timestamp": "2026.10.17-21.15.44"
+				},
+				{
+					"event":
+					{
+						"type": "Info",
+						"message": "NORD_SAVED_CREW_LOCOMOTION style=4",
+						"context": "",
+						"artifact": "00000000000000000000000000000000"
+					},
+					"filename": "",
+					"lineNumber": -1,
+					"timestamp": "2026.10.17-21.15.44"
+				},
+				{
+					"event":
+					{
+						"type": "Info",
+						"message": "NORD_SAVED_CREW_LOCOMOTION style=5",
+						"context": "",
+						"artifact": "00000000000000000000000000000000"
+					},
+					"filename": "",
+					"lineNumber": -1,
+					"timestamp": "2026.10.17-21.15.44"
+				},
+				{
+					"event":
+					{
+						"type": "Info",
+						"message": "NORD_SAVED_CREW_LOCOMOTION style=6",
+						"context": "",
+						"artifact": "00000000000000000000000000000000"
+					},
+					"filename": "",
+					"lineNumber": -1,
+					"timestamp": "2026.10.17-21.15.44"
+				},
+				{
+					"event":
+					{
+						"type": "Info",
+						"message": "NORD_SAVED_CREW_LOCOMOTION style=7",
+						"context": "",
+						"artifact": "00000000000000000000000000000000"
+					},
+					"filename": "",
+					"lineNumber": -1,
+					"timestamp": "2026.10.17-21.15.44"
+				},
+				{
+					"event":
+					{
+						"type": "Info",
+						"message": "NORD_SAVED_CREW_LOCOMOTION style=8",
+						"context": "",
+						"artifact": "00000000000000000000000000000000"
+					},
+					"filename": "",
+					"lineNumber": -1,
+					"timestamp": "2026.10.17-21.15.44"
+				},
+				{
+					"event":
+					{
+						"type": "Info",
+						"message": "NORD_SAVED_CREW_LOCOMOTION style=9",
+						"context": "",
+						"artifact": "00000000000000000000000000000000"
+					},
+					"filename": "",
+					"lineNumber": -1,
+					"timestamp": "2026.10.17-21.15.44"
+				},
+				{
+					"event":
+					{
+						"type": "Info",
+						"message": "NORD_SAVED_CREW_LOCOMOTION style=10",
+						"context": "",
+						"artifact": "00000000000000000000000000000000"
+					},
+					"filename": "",
+					"lineNumber": -1,
+					"timestamp": "2026.10.17-21.15.44"
+				}
+			],
+			"warnings": 0,
+			"errors": 0,
+			"artifacts": []
+		},
+		{
+			"testDisplayName": "TripoPilot",
+			"fullTestPath": "Quebec.Animation.TripoPilot",
+			"tags": [],
+			"state": "Success",
+			"deviceInstance": [
+				"01A14BB8437A7D56B5B71FAB0EAC0957"
+			],
+			"duration": 0.24742744863033295,
+			"dateTime": "2026.10.17-21.15.44",
+			"entries": [
+				{
+					"event":
+					{
+						"type": "Info",
+						"message": "NORD_TRIPO_NATIVE_CHECKED flags=16 providerBones=61 ownClips=4 authoredFingers=30 proceduralFingers=0 locomotionJumpLanding=1 socketHandFollow=1 crewRestore=1",
+						"context": "",
+						"artifact": "00000000000000000000000000000000"
+					},
+					"filename": "",
+					"lineNumber": -1,
+					"timestamp": "2026.10.17-21.15.44"
+				}
+			],
+			"warnings": 0,
+			"errors": 0,
+			"artifacts": []
+		}
+	]
+}

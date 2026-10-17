@@ -40,6 +40,22 @@ The local pilot SHALL be available only through the explicit `-NordGraphicNovelC
 - **AND** missing or mismatched generation receipts, bounded source-file hashes or own-rig evidence reject import before asset mutation
 - **AND** native appearance, deformation and workload are compared with the retained draft before promotion or wider cast spending; static face/fingers and unverified packaged performance remain disclosed
 
+#### Scenario: Correct the rejected airborne silhouette
+- **WHEN** the private higher-detail pilot is revised after the rejected airborne frame
+- **THEN** matching front, side and three-quarter airborne/landing views and actual continuous motion show a natural shoulder/sleeve silhouette and plausible held-prop scale/grip without face occlusion
+- **AND** original sources, ordinary crew/district packages, gameplay/input, collision and saved state remain preserved; passing import or pose counters alone do not accept art quality
+
+#### Scenario: Relax the Tripo pilot's stiff arms
+- **WHEN** the own-rig pilot is standing or recovering from a jump
+- **THEN** the authored idle keeps soft forward elbows, relaxed shoulders, inward palms and loosely curled fingers instead of returning to the rigid bind pose
+- **AND** actual exported clips preserve their own hierarchy/reference pose and matching relaxed endpoints, with front/side/three-quarter and motion review distinguishing CPU authoring evidence from native acceptance
+
+#### Scenario: Select the isolated own-rig Tripo pilot
+- **WHEN** Candidate, Generated, HighDetail and Tripo review flags are all present and crew style9 is selected
+- **THEN** the native character uses the separate Tripo mesh, own skeleton/four clips and saved three-sample BlendSpace with its baked relaxed finger poses
+- **AND** the held tool follows an own reference-derived `hand_r` socket, while selecting another crew or removing review flags restores the standard attachment and body
+- **AND** incomplete flags preserve their prior non-Tripo route; source inputs, ordinary crew/district assets, live package and saves remain protected until separately verified promotion
+
 ### Requirement: Detailed animated playable crew
 The supplied playable characters SHALL retain readable facial details and distinct locomotion in the comic view.
 

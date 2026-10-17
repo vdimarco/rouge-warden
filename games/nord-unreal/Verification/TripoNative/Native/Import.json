@@ -1,0 +1,131 @@
+{
+  "passed": true,
+  "folder": "/Game/ParkComic/CrewGraphicNovelTripo/Resident9",
+  "import_scale": 1.82,
+  "height_cm": 181.99992093672427,
+  "bones": [
+    "ball_l",
+    "ball_r",
+    "calf_l",
+    "calf_r",
+    "calf_twist_01_l",
+    "calf_twist_01_r",
+    "clavicle_l",
+    "clavicle_r",
+    "foot_l",
+    "foot_r",
+    "hand_l",
+    "hand_r",
+    "head",
+    "index_01_l",
+    "index_01_r",
+    "index_02_l",
+    "index_02_r",
+    "index_03_l",
+    "index_03_r",
+    "lowerarm_l",
+    "lowerarm_r",
+    "lowerarm_twist_01_l",
+    "lowerarm_twist_01_r",
+    "middle_01_l",
+    "middle_01_r",
+    "middle_02_l",
+    "middle_02_r",
+    "middle_03_l",
+    "middle_03_r",
+    "neck_01",
+    "pelvis",
+    "pinky_01_l",
+    "pinky_01_r",
+    "pinky_02_l",
+    "pinky_02_r",
+    "pinky_03_l",
+    "pinky_03_r",
+    "ring_01_l",
+    "ring_01_r",
+    "ring_02_l",
+    "ring_02_r",
+    "ring_03_l",
+    "ring_03_r",
+    "root",
+    "spine_01",
+    "spine_02",
+    "spine_03",
+    "thigh_l",
+    "thigh_r",
+    "thigh_twist_01_l",
+    "thigh_twist_01_r",
+    "thumb_01_l",
+    "thumb_01_r",
+    "thumb_02_l",
+    "thumb_02_r",
+    "thumb_03_l",
+    "thumb_03_r",
+    "upperarm_l",
+    "upperarm_r",
+    "upperarm_twist_01_l",
+    "upperarm_twist_01_r"
+  ],
+  "sources": {
+    "Body": {
+      "path": "Data/GraphicNovel/Pilot/CurlyMetalhead/tripo-v3-rig-20261017/derived/native-ready/body.fbx",
+      "sha256": "2266ab807ec8e5ff02e5020db65e64ca91163647e5af731e304170a3711990c4"
+    },
+    "Idle": {
+      "path": "Data/GraphicNovel/Pilot/CurlyMetalhead/tripo-v3-rig-20261017/derived/native-ready/idle.fbx",
+      "sha256": "622a2e1aa047c5106163145a26dac15df0ed79191e73453544a9e6dba1dd508a"
+    },
+    "Jump": {
+      "path": "Data/GraphicNovel/Pilot/CurlyMetalhead/tripo-v3-rig-20261017/derived/native-ready/jump.fbx",
+      "sha256": "38fa865f8163a7a50a82029187a23baa27ef8eb7bb136123e1ee5971cdfe3929"
+    },
+    "Walk": {
+      "path": "Data/GraphicNovel/Pilot/CurlyMetalhead/tripo-v3-rig-20261017/derived/native-ready/walk.fbx",
+      "sha256": "c70f0830452bf468eebb6ae8d970931391c89fb5c3e8eb81c0eed54e1068dd0c"
+    },
+    "Run": {
+      "path": "Data/GraphicNovel/Pilot/CurlyMetalhead/tripo-v3-rig-20261017/derived/native-ready/run.fbx",
+      "sha256": "d9d45afae9d93edfba105a338ce9f847385d04b9db5108201ba685e035ae2b58"
+    },
+    "base_color": {
+      "path": "Data/GraphicNovel/Pilot/CurlyMetalhead/tripo-v3-rig-20261017/derived/native-ready/base_color.jpg",
+      "sha256": "adf54ff0228275f6557fa5afbacb9ab0e5651fe1ddec0c638afa2cd197dba5d7"
+    },
+    "metallic_roughness": {
+      "path": "Data/GraphicNovel/Pilot/CurlyMetalhead/tripo-v3-rig-20261017/derived/native-ready/metallic_roughness.jpg",
+      "sha256": "b10a5ce423ce8922dce64f90edec8a750e0f3aad64588daa2cd4fbb710d86bcf"
+    },
+    "normal": {
+      "path": "Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/normal.png",
+      "sha256": "7845864ce13d1e3ce10e8149ef2ef98a048b8be249a60749dfc70c4897e9e7ab"
+    }
+  },
+  "mesh": "/Game/ParkComic/CrewGraphicNovelTripo/Resident9/SK_Body.SK_Body",
+  "skeleton": "/Game/ParkComic/CrewGraphicNovelTripo/Resident9/SK_Body_Skeleton.SK_Body_Skeleton",
+  "clips": {
+    "Idle": {
+      "path": "/Game/ParkComic/CrewGraphicNovelTripo/Resident9/A_Idle.A_Idle",
+      "seconds": 4.0
+    },
+    "Walk": {
+      "path": "/Game/ParkComic/CrewGraphicNovelTripo/Resident9/A_Walk.A_Walk",
+      "seconds": 1.0333333015441895
+    },
+    "Run": {
+      "path": "/Game/ParkComic/CrewGraphicNovelTripo/Resident9/A_Run.A_Run",
+      "seconds": 0.6333333253860474
+    },
+    "Jump": {
+      "path": "/Game/ParkComic/CrewGraphicNovelTripo/Resident9/A_Jump.A_Jump",
+      "seconds": 1.2000000476837158
+    }
+  },
+  "material": "/Game/ParkComic/CrewGraphicNovelTripo/Resident9/M_Crew.M_Crew",
+  "textures": {
+    "base_color": "/Game/ParkComic/CrewGraphicNovelTripo/Resident9/T_base_color.T_base_color",
+    "normal": "/Game/ParkComic/CrewGraphicNovelTripo/Resident9/T_normal.T_normal",
+    "metallic_roughness": "/Game/ParkComic/CrewGraphicNovelTripo/Resident9/T_metallic_roughness.T_metallic_roughness"
+  },
+  "socket": "TripoGrip / hand_r; own native reference and existing measured prop bounds",
+  "scope": "Fresh saved native authoring only; reload, motion, shading and grip appearance require separate checks"
+}

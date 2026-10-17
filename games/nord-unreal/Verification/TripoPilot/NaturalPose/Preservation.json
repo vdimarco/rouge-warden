@@ -1,0 +1,33 @@
+{
+  "recorded_utc": "2026-10-17T20:44:58.901383+00:00",
+  "content_files_checked": 6850,
+  "content_exactly_matches_prior_baseline": true,
+  "baseline_sha256": "08827131968ce583c44284642db394452134aaa04d4c3d97b38dc3ad498d7f40",
+  "changed_content": [],
+  "native_module_sha256": "2742ca45629a6e97db771a2c3f56b3a8076b8c4b228f8a4d9b86a8633c0623c3",
+  "services": {
+    "nord-browser-demo.service": {
+      "ActiveState": "active",
+      "MainPID": "3956730"
+    },
+    "nord-browser-public.service": {
+      "ActiveState": "active",
+      "MainPID": "109459"
+    },
+    "nord-browser-funnel.service": {
+      "ActiveState": "active",
+      "MainPID": "109441"
+    },
+    "nord-browser-turn-funnel.service": {
+      "ActiveState": "active",
+      "MainPID": "109422"
+    }
+  },
+  "no_UE_GPU_service_provider_job_or_production_save_write": true,
+  "gpu_snapshot": "24564 MiB, 5845 MiB, 18221 MiB",
+  "limits": [
+    "No current native/package/browser/device/offLAN test.",
+    "Active gameplay may legitimately update saves; this work writes none.",
+    "CPU Cycles jobs are explicitly separate from GPU."
+  ]
+}

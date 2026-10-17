@@ -1,0 +1,26 @@
+{
+  "recorded_at_utc": "2026-10-17T20:13:02.490851+00:00",
+  "provider": "Tripo direct API v3",
+  "endpoint": "/animations/rig-check",
+  "source_glb_sha256": "25041be9666422c30ba39449cb283a83928bb3de596fe063389707c070335613",
+  "http_status": 200,
+  "api_code": 0,
+  "result": {
+    "type": "animate_prerigcheck",
+    "status": "success",
+    "progress": 100,
+    "output": {
+      "riggable": true,
+      "rig_type": "biped"
+    },
+    "task_id": "135d424c-cccc-4aec-909b-57fae1ce2d05",
+    "created_at": "2026-10-17T20:11:26.343356Z",
+    "completed_at": "2026-10-17T20:11:28.268742Z",
+    "credits_consumed": 0.0
+  },
+  "redactions": [
+    "Provider input original_model_id omitted; uploaded file token and API credentials retained only in ignored private files."
+  ],
+  "all_23_retained_sources_unchanged": true,
+  "paid_rig_submitted": false
+}

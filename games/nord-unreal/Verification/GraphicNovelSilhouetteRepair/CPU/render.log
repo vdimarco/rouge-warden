@@ -1,0 +1,21 @@
+/tmp/nord-shoulder-pose-trial-20261017T184651Z/render.py:61: DeprecationWarning: 'Material.use_nodes' is expected to be removed in Blender 6.0
+  mat=bpy.data.materials.new('RawPilotPBR');mat.use_nodes=True;n=mat.node_tree.nodes;links=mat.node_tree.links;bsdf=n.get('Principled BSDF')
+00:06.923  render           | Saved: '/tmp/nord-shoulder-pose-trial-20261017T184651Z/baseline-front.png'
+FBX version: 7400
+FBX version: 7400
+NORD_POSE_VIEW_READY baseline front
+00:10.957  render           | Saved: '/tmp/nord-shoulder-pose-trial-20261017T184651Z/baseline-side.png'
+NORD_POSE_VIEW_READY baseline side
+00:15.230  render           | Saved: '/tmp/nord-shoulder-pose-trial-20261017T184651Z/baseline-threequarter.png'
+NORD_POSE_VIEW_READY baseline threequarter
+00:19.725  render           | Saved: '/tmp/nord-shoulder-pose-trial-20261017T184651Z/trial-front.png'
+NORD_POSE_VIEW_READY trial front
+00:23.702  render           | Saved: '/tmp/nord-shoulder-pose-trial-20261017T184651Z/trial-side.png'
+NORD_POSE_VIEW_READY trial side
+00:28.092  render           | Saved: '/tmp/nord-shoulder-pose-trial-20261017T184651Z/trial-threequarter.png'
+NORD_POSE_VIEW_READY trial threequarter
+Info: Saved as "study.blend"
+NORD_POSE_STUDY_OK /tmp/nord-shoulder-pose-trial-20261017T184651Z
+Blender 5.2.2 LTS (hash d13f752e3b9c built 2026-09-15 01:34:58)
+
+Blender quit

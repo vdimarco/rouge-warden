@@ -1,0 +1,25 @@
+{
+  "reason": "FBX Null model Armature.001 differs from accepted body/idle/jump Armature; CPU skeleton/pose checks pass but this must not be fed to UE with the divergent wrapper name",
+  "files": {
+    "prepare_tripo_locomotion.py": "c9ffc240e6eac676af07ecd49dfeb1c6eac2051d82bb8aef5b42127ee33b2ca5",
+    "walk.fbx": "c464a301eac9ed3f61a9f5684025a68c05b6983a3d4df5a7a6df82c0d152a159",
+    "run.fbx": "7a068955ddb41f686572b9af8f2d22e980d2460e88b1f0f014ff9da3b791d8f5",
+    "Locomotion/verify.py": "4c3f16186f54f87e4e6da55015529f009317d1b0b28b82342d1f9b173cfff037",
+    "Locomotion/Locomotion.json": "6627046778eae2dd6ead3cfd2fac82fb36d0e011fa51590d89feca095189729a",
+    "Locomotion/Independent.json": "b7bb5412a5c20ec06a3eccb942b653a335e2bee10df11c1bfb5b462a7ab05b35",
+    "Locomotion/author.log": "d1f716607983e7cbf5fe8a6f46e505c17b1c92c2c805fb449c9e44d7009dccb0",
+    "Locomotion/independent.log": "2c1e7012b6be59515c2bf1991d5404a69621ce293fbdb160196491c038d5f3c5",
+    "Locomotion/inventory.py": "0bbd498688e03a2231544bc29b612f0f77f1514214418c49221ab273ed772a8b",
+    "Locomotion/Inventory.json": "8cbf046919acd88db043211982ee6afc5cf1d7a9ebb1bf9bd0cf13bdf40a6dc5",
+    "Locomotion/inventory.log": "1523122b7c08c3f25037fdceba2dbdd54d0343ca4af2aebac1dce81473a2cd8a",
+    "Locomotion/Manifest.json": "fac82f65dcf344a99169b7a5cd4ddd3359bf3271e67922d48849c4f283a58d1d",
+    "Locomotion/README.md": "911f019a3de5f55f834d6298788da1b2683aa1fcd1bd41ae1550ac03204f337d",
+    "Locomotion/SHA256SUMS": "17aeff254470a60b02a014b4dc6f59e33bdacf8baf7fdb324b5110ed768ff8cc"
+  },
+  "preserved_ignored_directory": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoNative/rejected-root-name",
+  "current_transform_metrics_exactly_equal_previous": {
+    "walk": true,
+    "run": true
+  },
+  "corrected_binary_null_model": "Armature\u0000\u0001Model"
+}

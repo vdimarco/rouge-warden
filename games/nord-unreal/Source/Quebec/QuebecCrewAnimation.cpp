@@ -1,6 +1,7 @@
 #include "QuebecCrewAnimation.h"
 
 #include "Animation/AnimInstanceProxy.h"
+#include "Animation/Skeleton.h"
 #include "Animation/AnimSequence.h"
 #include "Animation/AnimNodeSpaceConversions.h"
 #include "AnimNodes/AnimNode_BlendSpacePlayer.h"
@@ -9,6 +10,8 @@
 #include "BoneControllers/AnimNode_ModifyBone.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Engine/SkeletalMesh.h"
+#include "Engine/SkeletalMeshSocket.h"
+#include "Engine/StaticMesh.h"
 #include "GameFramework/Character.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "UObject/UnrealType.h"
@@ -45,6 +48,48 @@ bool UQuebecCrewAnimInstance::ConfigureCrewBlendSpace(UBlendSpace1D* Space, UAni
     Space->ResampleData();
     Space->MarkPackageDirty();
     return Space->GetNumberOfBlendSamples() == 3;
+#else
+    return false;
+#endif
+}
+
+bool UQuebecCrewAnimInstance::ConfigureTripoGrip(USkeletalMesh* Mesh, UStaticMesh* Prop)
+{
+#if WITH_EDITOR
+    if (!Mesh || !Prop || !Mesh->GetSkeleton() ||
+        !Mesh->GetPathName().StartsWith(TEXT("/Game/ParkComic/CrewGraphicNovelTripo/Resident9/"))) return false;
+    const FReferenceSkeleton& Reference = Mesh->GetRefSkeleton();
+    const int32 HandIndex = Reference.FindBoneIndex(TEXT("hand_r"));
+    const int32 PalmIndex = Reference.FindBoneIndex(TEXT("middle_01_r"));
+    const FVector Size = Prop->GetBoundingBox().GetSize();
+    if (HandIndex == INDEX_NONE || PalmIndex == INDEX_NONE || Size.Z < 1.f || FMath::Max(Size.X, Size.Y) < 1.f) return false;
+    TArray<FTransform> Bind = Reference.GetRefBonePose();
+    for (int32 Index = 0; Index < Bind.Num(); ++Index)
+        if (const int32 Parent = Reference.GetParentIndex(Index); Parent != INDEX_NONE) Bind[Index] *= Bind[Parent];
+    const FTransform& Hand = Bind[HandIndex];
+    const FVector HandScale = Hand.GetScale3D();
+    if (HandScale.GetMin() <= 0.f || !FMath::IsNearlyEqual(HandScale.GetMax(), HandScale.GetMin(), .0001f)) return false;
+    const FVector FinalScale(16.f / FMath::Max(Size.X, Size.Y), 16.f / FMath::Max(Size.X, Size.Y), 55.f / Size.Z);
+    const FQuat Desired = FRotationMatrix::MakeFromZ(FVector(-.2, .55, -.8).GetSafeNormal()).ToQuat();
+    const FQuat Relative = Hand.GetRotation().Inverse() * Desired;
+    const FVector LocalScale = FinalScale / HandScale;
+    const FVector Palm = FMath::Lerp(Hand.GetTranslation(), Bind[PalmIndex].GetTranslation(), .55f);
+    const FVector Offset = Hand.InverseTransformPosition(Palm) - Relative.RotateVector(FVector(0., 0., -20.) * LocalScale);
+    USkeleton* Skeleton = Mesh->GetSkeleton();
+    Skeleton->Modify();
+    USkeletalMeshSocket* Socket = Skeleton->FindSocket(TEXT("TripoGrip"));
+    if (!Socket)
+    {
+        Socket = NewObject<USkeletalMeshSocket>(Skeleton, TEXT("TripoGrip"));
+        Skeleton->Sockets.Add(Socket);
+    }
+    Socket->SocketName = TEXT("TripoGrip");
+    Socket->BoneName = TEXT("hand_r");
+    Socket->RelativeLocation = Offset;
+    Socket->RelativeRotation = Relative.Rotator();
+    Socket->RelativeScale = LocalScale;
+    Skeleton->MarkPackageDirty();
+    return true;
 #else
     return false;
 #endif

@@ -224,7 +224,9 @@ void AQuebecCharacter::ApplyCrewAppearance()
     const bool bGraphicNovelCandidate = CrewStyle == 9 && FParse::Param(FCommandLine::Get(), TEXT("NordGraphicNovelCandidate"));
     const bool bGraphicNovelGenerated = bGraphicNovelCandidate && FParse::Param(FCommandLine::Get(), TEXT("NordGraphicNovelGenerated"));
     const bool bGraphicNovelHighDetail = bGraphicNovelGenerated && FParse::Param(FCommandLine::Get(), TEXT("NordGraphicNovelHighDetail"));
-    const FString Folder = bGraphicNovelHighDetail ? TEXT("/Game/ParkComic/CrewGraphicNovelHighDetail/Resident9/")
+    const bool bGraphicNovelTripo = bGraphicNovelHighDetail && FParse::Param(FCommandLine::Get(), TEXT("NordGraphicNovelTripo"));
+    const FString Folder = bGraphicNovelTripo ? TEXT("/Game/ParkComic/CrewGraphicNovelTripo/Resident9/")
+        : bGraphicNovelHighDetail ? TEXT("/Game/ParkComic/CrewGraphicNovelHighDetail/Resident9/")
         : bGraphicNovelGenerated ? TEXT("/Game/ParkComic/CrewGraphicNovelGenerated/Resident9/")
         : bGraphicNovelCandidate ? TEXT("/Game/ParkComic/CrewGraphicNovel/Resident9/")
         : FString::Printf(TEXT("/Game/ParkComic/Crew/Resident%d/"), CrewStyle);
@@ -243,6 +245,10 @@ void AQuebecCharacter::ApplyCrewAppearance()
     CrewAnimation = nullptr;
     CrewProp->SetStaticMesh(LoadObject<UStaticMesh>(nullptr, CrewStyle == 8
         ? TEXT("/Game/ParkComic/Crew/SM_PVCTube.SM_PVCTube") : TEXT("/Game/ParkComic/Crew/SM_Plunger.SM_Plunger")));
+    CrewProp->AttachToComponent(GetMesh(), FAttachmentTransformRules::KeepRelativeTransform,
+        bGraphicNovelTripo ? TEXT("TripoGrip") : TEXT("RightHand"));
+    CrewProp->SetUsingAbsoluteRotation(!bGraphicNovelTripo);
+    CrewProp->SetRelativeTransform(FTransform::Identity);
     ConfigureCrewAnimation();
 }
 
@@ -2720,7 +2726,8 @@ bool FQuebecCrewReapplyTest::RunTest(const FString& Parameters)
     const FString OriginalCommandLine = FCommandLine::Get();
     FCommandLine::Set(*OriginalCommandLine.Replace(TEXT("-NordGraphicNovelCandidate"), TEXT(""), ESearchCase::IgnoreCase)
         .Replace(TEXT("-NordGraphicNovelGenerated"), TEXT(""), ESearchCase::IgnoreCase)
-        .Replace(TEXT("-NordGraphicNovelHighDetail"), TEXT(""), ESearchCase::IgnoreCase));
+        .Replace(TEXT("-NordGraphicNovelHighDetail"), TEXT(""), ESearchCase::IgnoreCase)
+        .Replace(TEXT("-NordGraphicNovelTripo"), TEXT(""), ESearchCase::IgnoreCase));
     ON_SCOPE_EXIT { FCommandLine::Set(*OriginalCommandLine); };
     UWorld* World = UWorld::CreateWorld(EWorldType::Game, false);
     if (!TestNotNull(TEXT("Crew test world"), World)) return false;

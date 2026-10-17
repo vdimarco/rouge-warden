@@ -1,0 +1,24 @@
+16:19:05 | INFO: Data are loaded, start creating Blender stuff
+16:19:05 | INFO: Blender create Mesh node Mesh_0
+16:19:05 | INFO: glTF import finished in 0.48s
+/tmp/nord-tripo-rig-audit-20261017T201543Z/Visual/preview.py:33: DeprecationWarning: 'World.use_nodes' is expected to be removed in Blender 6.0
+  scene.world=bpy.data.worlds.new('CPUStudioWorld');scene.world.use_nodes=True;scene.world.node_tree.nodes['Background'].inputs['Color'].default_value=(.12,.14,.18,1);scene.world.node_tree.nodes['Background'].inputs['Strength'].default_value=.4
+/tmp/nord-tripo-rig-audit-20261017T201543Z/Visual/preview.py:38: DeprecationWarning: 'Material.use_nodes' is expected to be removed in Blender 6.0
+  text=bpy.data.curves.new('DiagnosticLabel','FONT');label=bpy.data.objects.new('DiagnosticLabel',text);scene.collection.objects.link(label);tm=bpy.data.materials.new('Label');tm.use_nodes=True;nt=tm.node_tree;nt.nodes.clear();emit=nt.nodes.new('ShaderNodeEmission');emit.inputs['Color'].default_value=(.85,.9,.95,1);out=nt.nodes.new('ShaderNodeOutputMaterial');nt.links.new(emit.outputs[0],out.inputs[0]);text.materials.append(tm)
+00:08.472  render           | Saved: '/tmp/nord-tripo-rig-audit-20261017T201543Z/Visual/01-original-neutral-threequarter.png'
+FBX version: 7400
+CPU_STILL_READY 01-original-neutral-threequarter
+00:16.183  render           | Saved: '/tmp/nord-tripo-rig-audit-20261017T201543Z/Visual/02-tripo-neutral-threequarter.png'
+CPU_STILL_READY 02-tripo-neutral-threequarter
+00:21.856  render           | Saved: '/tmp/nord-tripo-rig-audit-20261017T201543Z/Visual/03-elbow-l-forward.png'
+CPU_STILL_READY 03-elbow-l-forward
+00:27.338  render           | Saved: '/tmp/nord-tripo-rig-audit-20261017T201543Z/Visual/04-elbow-r-forward.png'
+CPU_STILL_READY 04-elbow-r-forward
+00:33.529  render           | Saved: '/tmp/nord-tripo-rig-audit-20261017T201543Z/Visual/05-hand-left-neutral.png'
+CPU_STILL_READY 05-hand-left-neutral
+00:39.826  render           | Saved: '/tmp/nord-tripo-rig-audit-20261017T201543Z/Visual/06-hand-left-flex.png'
+CPU_STILL_READY 06-hand-left-flex
+SIX_CPU_VIEWS_COMPLETE
+Blender 5.2.2 LTS (hash d13f752e3b9c built 2026-09-15 01:34:58)
+
+Blender quit

@@ -1,0 +1,13 @@
+# Continuation — 17 October 2026
+
+Current branch: `codex/nord-character-silhouette`; draft PR [385](https://github.com/vdimarco/rouge-warden/pull/385). The shared authoring fix is tested on nine own-body exports, with an old-axis negative control. The separate compact twelve-track pilot is the next visual candidate, not an installed or accepted change. Its FBX SHA256 is `71277e693654e02d365d22d7d34cf534045a4aa9ed77b4c19d4744a0839680ac`.
+
+The earlier four-track candidate was rejected by the user for awkward/backward arms. Preserve its evidence and the corrected native reference-pose prop calibration, but do not adopt that clip or reuse its seven-state results as evidence for this candidate. The shared generator now changes elbow axes only; the compact recipe is a separate derivative on the detailed pilot's own rig.
+
+Next engine work needs a fresh owned bounded maintenance window, adequate VRAM, fresh source/module pins and exact restoration. Use fresh NullRHI animation-only authoring, then independent fresh reload with the explicit twelve-rotation allowlist and own skeleton. Keep all other packages and all raw generation files unchanged. Reuse the verified reference-derived hand-relative calibration, not a sampled idle-hand orientation. The prop currently remains a PIE prototype; persistent import/runtime behavior requires its own implementation and checks. The old prepared four-track wrapper/deadline/source pins are stale and must not be run unchanged.
+
+Then compare actual matched Standard/Comic 720p/1080p original camera/phase plus side/three-quarter views and continuous 1× jump/landing/recovery. Inspect elbows, sleeves, free hand, prop grip/face/leg clearance, anticipation and contact continuity; CPU velocity mapping omits real blending. Check C/E/F2, recoil/recovery and preserved behavior before adoption. No package, browser, physical-device, off-LAN or final-art acceptance follows from this checkpoint.
+
+GPU remains externally occupied; do not stop Dota or desktop processes. The last read-only service check retained demo PID 3956730, host/friend 3956763/3957237, funnel 109441, public tunnel 109459 and TURN funnel 109422. No Unreal/GPU/service job was started during this follow-up; CPU agent jobs completed. Recheck fresh ownership before any later operation.
+
+The Tripo question received a researched recommendation only. No model upload, API job or spending was authorized by that question or performed. A useful later pilot is the existing body's rig-check and explicit v3 humanoid/Unreal FBX comparison, after verifying actual cost/account access. Preserve the fal US$25 ledger: US$4 reserved, US$21 uncommitted.

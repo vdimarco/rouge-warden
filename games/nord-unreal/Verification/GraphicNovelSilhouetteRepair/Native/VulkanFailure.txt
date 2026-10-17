@@ -1,0 +1,6 @@
+1425: [2026.10.17-18.55.43:870][  0]LogVulkanRHI: Display: 	 HEAP 00 |   0.07% /         16.38 MB |      12208.75 MB |      24564.00 MB |
+2829: [2026.10.17-18.55.58:408][ 20]LogVulkanRHI: Warning: Out of memory on Vulkan; MemoryTypeIndex=1, AllocSize=128.000MB
+2831: [2026.10.17-18.55.58:408][ 20]LogVulkanRHI: Warning: Out of memory on Vulkan; MemoryTypeIndex=4, AllocSize=128.000MB
+2846: [2026.10.17-18.55.58:408][ 20]LogVulkanRHI: Display: 	 HEAP 00 |  46.43% /      11403.94 MB |      11453.56 MB |      24564.00 MB |
+12210: [2026.10.17-18.55.59:588][ 20]LogCore: Fatal error: [File:./Runtime/VulkanRHI/Private/VulkanMemory.cpp] [Line: 3114]
+12211: Out Of Memory, trying to allocate 134217728 bytes

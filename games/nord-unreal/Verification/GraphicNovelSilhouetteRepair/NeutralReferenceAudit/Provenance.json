@@ -1,0 +1,34 @@
+{
+  "scope": "CPU read-only quaternion/retained native pose audit; no UE/Blender/GPU/file mutation outside this new audit folder",
+  "curated_inputs": {
+    "Native/TrialReceipt.json": "6ad9d969b8d48f73b4475aee8be5a1a9f169ed7db853c2585dd334655d9bb2ba",
+    "Headless/Gameplay.json": "68f1aacc1869bc91ce576527604b385df4e2c157a95b8d2c71fbe0c1657d4094",
+    "CPU/semantic-comparison.json": "94e329b3b677808e1872ca10d3c1e59cbf1fcae50c9b3ee3481e79d6ef8867c3"
+  },
+  "original_native_dump_sha256": "12d14f6d74c5362ac1a74e322ae718548e37c4e4a5a6a33c49b5abb1bd7dc3c5",
+  "original_dump_not_duplicated": "TrialReceipt already retains actual reference/poses and passed native unchanged-reference comparison.",
+  "source_hashes": {
+    "Source/Quebec/QuebecGameplay.cpp": "391aa4fbfe5b4f9c948b6cc435f2e40f473149d8d6bb4c16a157f75fefe4fe46",
+    "Scripts/capture_player_quality.py": "e6ad0ca59dab8919d374520ffb3579a60f3bb587fbf5b0e80d5a5c872cc1ac98",
+    "Saved/Tests/GraphicNovel/CompoundJumpRepair-20261017T1846/crew_prop_trial.py": "9c4f895fa0995f0e746e27a7e511a2f13ca19f6ac8a31ea7a8369cc9e82228a8"
+  },
+  "installed_primary_api_source_hashes": {
+    "Engine/Source/Editor/AnimationBlueprintLibrary/Public/AnimPose.h": "46bbb94bbb390a60d538075589bd21d8a99d0a4bd468cd183910b68264116a28",
+    "Engine/Source/Editor/AnimationBlueprintLibrary/Private/AnimPose.cpp": "ab5872cb31db4a25b1c1b448eb395753d26a8dd288318506e3fd0e787cf1c39f"
+  },
+  "identity_evidence": {
+    "actor": "capture_player_quality.py:start_style calls pawn.set_actor_location_and_rotation(origin,Rotator()).",
+    "mesh": "QuebecGameplay.cpp:ApplyCrewAppearance sets GetMesh()->SetRelativeRotation(ZeroRotator).",
+    "observed_support": "42pure-jump local-to-world quaternion predictions match recorded live hand within0.003degrees.",
+    "limit": "Initial actor/mesh full transform was not recorded; calibration-instant identity additionally relies on inspected setter ordering."
+  },
+  "composition": "xyzw Hamilton product, parentQ*localQ in validated own hierarchy; static Armature included; unit/uniform positive scale.",
+  "sampling_limits": [
+    "Native RAW poses at30Hz, runtime reported clip times rounded5decimals; local slerp; compressed runtime may differ slightly.",
+    "42selected observations with Jump weight exactly1; blended endpoints are excluded.",
+    "Reference and jump endpoints compare exactly in retained data; socket initialphase is unrecorded.",
+    "No rendered/collision/grasp/swept/continuousfluidity or art acceptance claim."
+  ],
+  "check_exit_code": 0,
+  "check_run": "python3 -B Verification/GraphicNovelSilhouetteRepair/NeutralReferenceAudit/check.py"
+}

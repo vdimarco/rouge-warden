@@ -32,6 +32,7 @@ bool FQuebecCrewAnimationTest::RunTest(const FString& Parameters)
     ON_SCOPE_EXIT { World->DestroyWorld(false); };
     AQuebecCharacter* Character = World->SpawnActor<AQuebecCharacter>();
     if (!TestNotNull(TEXT("Native crew character"), Character)) return false;
+    if (!TestTrue(TEXT("Production graph fixture selects a retained 24-bone crew"), Character->ChooseCrew(3))) return false;
     Character->SetActorEnableCollision(false);
     World->InitializeActorsForPlay(FURL());
     Character->ApplyCrewAppearance();
@@ -147,7 +148,8 @@ bool FQuebecSavedCrewLocomotionTest::RunTest(const FString& Parameters)
     const FString OriginalCommandLine = FCommandLine::Get();
     const FString DefaultCommandLine = OriginalCommandLine.Replace(TEXT("-NordGraphicNovelCandidate"), TEXT(""), ESearchCase::IgnoreCase)
         .Replace(TEXT("-NordGraphicNovelGenerated"), TEXT(""), ESearchCase::IgnoreCase)
-        .Replace(TEXT("-NordGraphicNovelHighDetail"), TEXT(""), ESearchCase::IgnoreCase);
+        .Replace(TEXT("-NordGraphicNovelHighDetail"), TEXT(""), ESearchCase::IgnoreCase)
+        .Replace(TEXT("-NordGraphicNovelTripo"), TEXT(""), ESearchCase::IgnoreCase);
     FCommandLine::Set(*DefaultCommandLine);
     ON_SCOPE_EXIT { FCommandLine::Set(*OriginalCommandLine); };
     UWorld::InitializationValues Initialization;
@@ -385,7 +387,8 @@ bool FQuebecGraphicNovelCandidateTest::RunTest(const FString& Parameters)
     const FString OriginalCommandLine = FCommandLine::Get();
     const FString DefaultCommandLine = OriginalCommandLine.Replace(TEXT("-NordGraphicNovelCandidate"), TEXT(""), ESearchCase::IgnoreCase)
         .Replace(TEXT("-NordGraphicNovelGenerated"), TEXT(""), ESearchCase::IgnoreCase)
-        .Replace(TEXT("-NordGraphicNovelHighDetail"), TEXT(""), ESearchCase::IgnoreCase);
+        .Replace(TEXT("-NordGraphicNovelHighDetail"), TEXT(""), ESearchCase::IgnoreCase)
+        .Replace(TEXT("-NordGraphicNovelTripo"), TEXT(""), ESearchCase::IgnoreCase);
     FCommandLine::Set(*DefaultCommandLine);
     ON_SCOPE_EXIT { FCommandLine::Set(*OriginalCommandLine); };
     UWorld::InitializationValues Initialization;

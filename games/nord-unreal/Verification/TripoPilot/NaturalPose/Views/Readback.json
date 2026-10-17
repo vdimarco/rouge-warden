@@ -1,0 +1,74 @@
+{
+  "clips_sha256": {
+    "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/tripo-v3-rig-20261017/rig.fbx": "baaeb99a7e86fadadd4f64f6de6ea7e648777b33bcadd2ecb72347c4afe3dcc2",
+    "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/body.glb": "25041be9666422c30ba39449cb283a83928bb3de596fe063389707c070335613",
+    "/tmp/nord-tripo-natural-pose-20261017-v4/relaxed-idle.fbx": "f5cf127b897cd54b52676932ff89461033becf1a19e8cf109a33d30c8958dfbc",
+    "/tmp/nord-tripo-natural-pose-20261017-v4/natural-jump.fbx": "11b1f85e5d84f38ab6aa4e17ff951116a43cd16b08bfa02938ad0e781010ace1"
+  },
+  "device": "CPU",
+  "threads": 4,
+  "gpu_denoising": false,
+  "samples": 16,
+  "dimensions": [
+    720,
+    900
+  ],
+  "scene_import_fps": 30,
+  "preview_fps": 30,
+  "frames": [
+    {
+      "file": "idle-threequarter.png",
+      "clip": "relaxed-idle",
+      "clip_seconds": 0,
+      "actual_frame": 2.0,
+      "pose_error": 1.0833144187927246e-05,
+      "sha256": "2c915432a2182c0bcc5a6e1e107b4ce411967afef32342e7c4065e097136c79b"
+    },
+    {
+      "file": "idle-front.png",
+      "clip": "relaxed-idle",
+      "clip_seconds": 0,
+      "actual_frame": 2.0,
+      "pose_error": 1.0833144187927246e-05,
+      "sha256": "4cf6d4c94a2b6234ef84ff845f305df78c757e244ce308320ff78188436ca6e3"
+    },
+    {
+      "file": "idle-side.png",
+      "clip": "relaxed-idle",
+      "clip_seconds": 0,
+      "actual_frame": 2.0,
+      "pose_error": 1.0833144187927246e-05,
+      "sha256": "55aaa08c955ed9a0b7ae77948922364f44d0977d3cb63d933d0675900f9e5ded"
+    },
+    {
+      "file": "jump-threequarter.png",
+      "clip": "natural-jump",
+      "clip_seconds": 0.4666666666666667,
+      "actual_frame": 16.0,
+      "pose_error": 1.1026859283447266e-05,
+      "sha256": "b5c5bb4c9b917053c9827b929a7421976295d00120b009334fb85f4b982ffd9e"
+    },
+    {
+      "file": "jump-side.png",
+      "clip": "natural-jump",
+      "clip_seconds": 0.4666666666666667,
+      "actual_frame": 16.0,
+      "pose_error": 1.1026859283447266e-05,
+      "sha256": "e43388e383d295b264987c773a4fff690f6ba2773cb804a1e0b53ad8d92b7ecd"
+    },
+    {
+      "file": "hand-left.png",
+      "clip": "relaxed-idle",
+      "clip_seconds": 0,
+      "actual_frame": 2.0,
+      "pose_error": 1.0833144187927246e-05,
+      "sha256": "35c429e4271cd3a802cb9b2b4e29e042d823d3f3561a00ffca42c6a0a8f07da1"
+    }
+  ],
+  "preview_only_height_and_original_GLB_material": true,
+  "independent_verification_passed_at_render": true,
+  "corner_normals_unchanged_from_provider": true,
+  "native_or_final_art_acceptance": false,
+  "no_prop_or_grip": true,
+  "no_actor_flight_or_native_blends": true
+}

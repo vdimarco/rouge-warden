@@ -1,0 +1,21 @@
+{
+  "passed": false,
+  "started_utc": "2026-10-17T21:07:03.709457+00:00",
+  "recipe_sha256": "038732c80f8700c1a3e75813f5588fe1140be198482cd0be26ff41cbda53cbde",
+  "input_sha256": {
+    "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/tripo-v3-rig-20261017/rig.fbx": "baaeb99a7e86fadadd4f64f6de6ea7e648777b33bcadd2ecb72347c4afe3dcc2",
+    "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/tripo-v3-rig-20261017/derived/natural-pose-20261017/relaxed-idle.fbx": "f5cf127b897cd54b52676932ff89461033becf1a19e8cf109a33d30c8958dfbc",
+    "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/walk.fbx": "0fe2b4d83846f826e3d448c870fcb77816c25fe6d106c873d755cd7a3d871d9e",
+    "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/run.fbx": "b0f8e4c359d21ca3a51dde5c94b45b4d9f4a3d27dedb2d44f671b69e41f6e8ae"
+  },
+  "scope": "Independent CPU gait retarget checks; no art/contact/native acceptance",
+  "clips": {},
+  "errors": [
+    "Traceback (most recent call last):\n  File \"/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Verification/TripoNative/Locomotion/verify.py\", line 92, in <module>\n    assert settings['TimeMode'] == 6 and settings['CustomFrameRate'] == 30.0, settings\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: {'UpAxis': 1, 'UpAxisSign': 1, 'FrontAxis': 2, 'FrontAxisSign': 1, 'CoordAxis': 0, 'CoordAxisSign': 1, 'OriginalUpAxis': -1, 'OriginalUpAxisSign': 1, 'UnitScaleFactor': 1.0, 'OriginalUnitScaleFactor': 1.0, 'AmbientColor': 0.0, 'DefaultCamera': b'Producer Perspective', 'TimeMode': 11, 'TimeSpanStart': 0, 'TimeSpanStop': 46186158000, 'CustomFrameRate': 24.0}\n"
+  ],
+  "negative_controls": {
+    "bind_straight_fingers_rejected_max_error_rad": 0.5899214368107604
+  },
+  "retained_inputs_unchanged": true,
+  "finished_utc": "2026-10-17T21:07:04.499685+00:00"
+}

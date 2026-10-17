@@ -1,0 +1,23 @@
+{
+  "scope": "Headless native rig/physics/attachment observations; no graphics/native performance acceptance",
+  "files": [
+    {
+      "file": "Gameplay.json",
+      "source": "Saved/Tests/GraphicNovel/HeadlessCompoundPlan-20261017/Capture/PlayerQuality1280Headless.json",
+      "sha256": "68f1aacc1869bc91ce576527604b385df4e2c157a95b8d2c71fbe0c1657d4094",
+      "bytes": 650692
+    },
+    {
+      "file": "Restoration.json",
+      "source": "Saved/Tests/GraphicNovel/HeadlessCompoundPlan-20261017/Run-20261017T190225Z/result.json",
+      "sha256": "801612697bf95fb5e90432309bf667c71dee30916c90d6154328c614b64b6cf4",
+      "bytes": 1643
+    },
+    {
+      "file": "CPUHooksCheck.json",
+      "source": "Saved/Tests/GraphicNovel/HeadlessCompoundPlan-20261017/cpu-check.json",
+      "sha256": "7854db21eb9623fce5ebb9aaae07697fd2a1384f9677f90415f0aca64dd58455",
+      "bytes": 1166
+    }
+  ]
+}
