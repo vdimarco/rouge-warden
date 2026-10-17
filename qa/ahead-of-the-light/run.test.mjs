@@ -599,7 +599,28 @@ test('card hooks do what their faces say', () => {
   f.you.burn.left = TUNE.BURN_ETA;
   f.run('burn', { event: { type: 'burn' } });
   assert.equal(f.you.whip, null);
-  assert.ok(f.race.events.some((e) => e.type === E.release && e.grade === 'PERFECT'));
+  assert.ok(f.race.events.some((e) => e.type === E.release && e.grade === 'PERFECT' && e.kick));
+  // the kick's release runs the release hooks: with STAR LIFTER (KICK OUT is one of its halves) a kick past 180° scoops
+  // the cell back
+  f = fakeRace([{ id: 'kick-out', r: 0 }, { id: 'star-lifter', r: 0 }]);
+  f.race.wells.w1 = { holder: 'you' };
+  f.you.whip = { well: 'w1', angle: 200, latched: false, red: false, mass: 1, b0: 0, dir: 1 };
+  f.you.fuel = 1;
+  f.you.burn.left = TUNE.BURN_ETA;
+  f.run('burn', { event: { type: 'burn' } });
+  assert.equal(f.you.fuel, 2, 'STAR LIFTER scooped a cell on the kick');
+  assert.deepEqual(cardState(f.race).fires.map((x) => x.id), ['kick-out', 'star-lifter']);
+  // a red kick pays TIDAL FRAME's RED_X, as a red lift does
+  const kick = (build) => {
+    const k = fakeRace(build);
+    k.race.wells.w1 = { holder: 'you' };
+    k.you.whip = { well: 'w1', angle: 250, latched: false, red: true, mass: 1, b0: 0, dir: 1 };
+    k.you.burn.left = TUNE.BURN_ETA;
+    k.run('burn', { event: { type: 'burn' } });
+    return k.race.events.find((e) => e.type === E.release).gain;
+  };
+  const plain = kick([{ id: 'kick-out', r: 2 }]), tidal = kick([{ id: 'kick-out', r: 2 }, { id: 'tidal-frame', r: 2 }]);
+  assert.ok(Math.abs(tidal / plain - 2.0 / TUNE.RED_X) < 1e-9, `${plain} and ${tidal}`);
   // BOUNTY: the nearest named rival wears it; taking it down pays a pick
   f = fakeRace([{ id: 'bounty', r: 1 }]);
   f.run('step', { dt: STEP });
@@ -673,6 +694,102 @@ test('the arrival: dock, free repair, clean leg, a beaten boss, the VOID and SKI
   assert.equal(tuneDown(build, 'hair-trigger', 0), 0);
   assert.equal(tuneDown(build, 'twin-deflector'), 1);
   assert.equal(faceOf('hair-trigger', build[0].r).num, '3.5');
+});
+
+test('the VOID break names the SKIP reward it paid: +1 fuel, or +1 reroll at full tanks', () => {
+  for (const full of [false, true]) {
+    const run = createRun({ seed: 'VOID', meta: SEEN });
+    run.leg = 3;
+    run.legs.push({ legNo: 3, type: ROUTE[3], kind: 'void', place: null, offered: [], took: [], lines: [],
+      trophies: [], beat: [], eaten: [] });
+    run.you.fuel = full ? run.you.fuelCap : 1;
+    const rr = run.rerolls, fuel = run.you.fuel;
+    openBreak(run);
+    const b = breakOf(run);
+    assert.equal(b.offer, null);
+    assert.equal(b.noCard, true);
+    if (full) {
+      assert.deepEqual([run.rerolls, run.you.fuel], [rr + 1, fuel]);
+      assert.equal(b.skip, 'NO CARD · +1 REROLL');
+    } else {
+      assert.deepEqual([run.rerolls, run.you.fuel], [rr, fuel + TUNE.SKIP_FUEL]);
+      assert.equal(b.skip, `NO CARD · +${TUNE.SKIP_FUEL} FUEL`);
+    }
+  }
+});
+
+test('a banish keeps the offer\'s promises: RISK\'s Rare or better and one legendary at most', () => {
+  const rec = (legNo, kind) => ({ legNo, type: ROUTE[legNo], kind, place: 2, offered: [], took: [], lines: [],
+    trophies: [], beat: [], eaten: [] });
+  let starters = 0;
+  for (let s = 1; s <= 80; s++) {
+    for (const tune of [TUNE, Object.freeze({ ...TUNE, RISK_PICKS: 3 })]) {
+      const run = createRun({ seed: s, tune, meta: SEEN });
+      run.legs.push(rec(0, 'family'));
+      openBreak(run, tune);
+      skip(run, tune);
+      chooseLane(run, 0);
+      run.legs.push(rec(1, 'risk'));
+      openBreak(run, tune);
+      run.banishes = 1;
+      const i = run.offer.cards.findIndex((c) => CARD[c.id].pack === 'starter');
+      assert.ok(banish(run, i, tune), `seed ${s}: a starter to banish`);
+      const cards = run.offer.cards;
+      if (riskRule(tune).four) {
+        for (const c of cards) if (CARD[c.id].pack === 'starter') { starters++; assert.ok(c.r >= 1, `seed ${s}: ${c.id}`); }
+        assert.equal(breakOf(run, tune).offer.tag, 'PICK 1 OF 4 · RARE+');
+      } else assert.ok(cards.some((c) => c.r >= 1), `seed ${s}: n of 3 keeps one Rare or better`);
+      assert.ok(cards.filter((c) => CARD[c.id].kind === 'legend').length <= 1);
+    }
+  }
+  assert.ok(starters > 200);
+});
+
+test('the first whip of a run teaches in any leg until a leg has a whip (race.teachWhip)', () => {
+  const run = createRun({ seed: 'TEACH', meta: SEEN });
+  const r1 = startLeg(run);
+  assert.equal(r1.teachWhip, true, 'no whip yet this run');
+  r1.phase = 'done';
+  r1.order.push('you');
+  r1.ships[0].stats.whips = 0;
+  r1.events = [{ t: r1.t, type: 'legEnd', ship: 'you', why: 'gate', place: 1 }];
+  endLeg(run, r1);
+  assert.equal(run.legs[0].whips, 0);
+  skip(run);
+  chooseLane(run, 0);
+  const r2 = startLeg(run);
+  assert.equal(r2.teachWhip, true, 'leg 2 with no whip in leg 1: the run\'s first whip still teaches');
+  r2.phase = 'done';
+  r2.order.push('you');
+  r2.ships[0].stats.whips = 2;
+  r2.events = [{ t: r2.t, type: 'legEnd', ship: 'you', why: 'gate', place: 1 }];
+  endLeg(run, r2);
+  assert.equal(run.legs[1].whips, 2);
+  skip(run);
+  chooseLane(run, 0);
+  assert.equal(startLeg(run).teachWhip, false, 'the run has whipped');
+});
+
+test('one bot driver can fly a whole run (the page\'s ?bot=): it keeps steering on every leg', () => {
+  // race.real starts at 0 each leg, so a driver kept from leg 1 must not hold leg 1's timers (a stun, a ram, a pull)
+  for (const seed of [1, 2, 3]) {
+    const run = createRun({ seed, tune: RUN_TUNE, meta: { pages: [], seen: { runs: 5, offered: true, goodWhip: true } } });
+    const d = driverFor('mid', { seed });
+    for (let leg = 0; leg < 3 && run.phase !== 'caught' && run.phase !== 'home'; leg++) {
+      const race = startLeg(run, RUN_TUNE);
+      let last = null, since = 0, worst = 0;
+      while (race.phase !== 'done' && race.real < 200) {
+        const you = race.ships[0];
+        const it = d(race, you) || NO_INTENT;
+        if (!you.whip && it.target === last) { since += STEP; worst = Math.max(worst, since); } else { since = 0; last = it.target; }
+        stepRace(race, { you: it }, STEP);
+      }
+      assert.ok(worst < 9, `seed ${seed}, leg ${leg + 1}: the thumb stood still for ${worst.toFixed(1)} s`);
+      endLeg(run, race);
+      if (run.phase === 'break') skip(run, RUN_TUNE);
+      if (run.phase === 'chart') chooseLane(run, 0);
+    }
+  }
 });
 
 test('the result card: one cause, one goal (13)', () => {

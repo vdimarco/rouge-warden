@@ -87,7 +87,10 @@ every check on it passes (the machine, the switcher entry, the Action group, the
 `quiet.mjs --only=ahead-of-the-light` 34 of 34), but the box stays open: `machines.mjs` and `quiet.mjs` still fail on
 other games, the same way on the tree from before this game's cabinet (light-years-home has no machine, the switcher
 part counts Lab-only games, focus and tellme checks, a hang in the 360 × 740 Lab swipes, and pingpong and tennis
-loading `/arcade/quiet.js` late).
+loading `/arcade/quiet.js` late). The review fixes then gave Light Years Home its machine (AGENTS.md's New games rule,
+in the Action row between River Rush and this game), so the light-years-home lines of `machines.mjs` pass; and on this
+machine leg 7 reads THE SUN'S STARS so the line fits a 320 × 700 or 375 × 667 screen, and a full log of 84 pages puts
+on the gold frame (both checked in `machines.mjs`).
 
 ## 11. Playtest pass
 

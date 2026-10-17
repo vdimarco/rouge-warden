@@ -93,6 +93,8 @@ export function createRun({ seed, ship = null, daily = null, redshift = 0, easy 
 export function practiceRun({ seed = 1, leg = 0, lane = 0, tune = TUNE } = {}) {
   const run = createRun({ seed, ship: 'lantern', tune });
   run.ranked = false;
+  // a practice leg on URL tuning earns no medal (the page may also set run.tuned for its other URL options)
+  run.tuned = Object.keys(TUNE).some((k) => JSON.stringify(tune[k]) !== JSON.stringify(TUNE[k]));
   run.build = [];
   run.leg = clamp(leg | 0, 0, ROUTE.length - 1);
   const lanes = run.chart[run.leg] || [];
@@ -127,7 +129,8 @@ export function startLeg(run, tune = TUNE) {
   you.fuel = clamp(you.fuel, 0, you.fuelCap);
   you.shield = you.shieldMax;
   const leg = buildLeg({ runSeed: run.seed, type, lane, mods: B.mods, seen: run.seen, used: new Set(run.used), tune });
-  const race = createRace({ run, leg, tune: ST });
+  // the rivals fly with the run's tune (base): your ship's, REDSHIFT's, EASY LIGHT's and your cards' numbers are yours
+  const race = createRace({ run, leg, tune: ST, base: tune });
   const me = race.ships[0];
   me.half = boat ? S.half / 2 : S.half;
   me.turnMax = S.turn;
@@ -201,7 +204,7 @@ export function endLeg(run, race, tune = null) {
   const rec = {
     legNo: run.leg, type: race.leg.type, lane: lane.id || null, laneName: lane.name || null, kind: lane.kind || null,
     fam: lane.fam || null, cond: lane.cond || null, hash: race.leg.hash, beats: race.leg.beats, dist: you.dist, why,
-    place, gate: null, years: you.years, earth: you.earth, hits: you.stats.hits, clean: false,
+    place, gate: null, years: you.years, earth: you.earth, hits: you.stats.hits, whips: you.stats.whips, clean: false,
     topGear: you.stats.topGear, bestGear: you.bestGear, takedowns: you.stats.takedowns, beat: [], eaten: [], fed: [],
     nemesis: null, settled: null, boss: null, bossBeaten: false, bounty: null, trophies: [], offered: [], took: [],
     bought: 0, joins: null, hullOut: you.hull, lines: [], vista: null, firstHome: false, noCard: false,
@@ -364,7 +367,7 @@ export function openBreak(run, tune = TUNE) {
   if (rec && rec.kind === 'void') {
     rec.noCard = true;
     run.offer = null;
-    skipReward(run, tune);
+    rec.voidReward = skipReward(run, tune);             // 'fuel', or 'reroll' when the tanks were full
   } else run.offer = newOffer(run, tune);
   return run;
 }
@@ -457,7 +460,8 @@ export function breakOf(run, tune = TUNE) {
     } : null,
     noCard: Boolean(rec && rec.noCard),
     skip: o ? (o.skip === 'reroll' || Y.fuel >= Y.fuelCap - 1e-9 ? 'SKIP · +1 REROLL' : `SKIP · +${T.SKIP_FUEL} FUEL`)
-      : rec && rec.noCard ? `NO CARD · +${T.SKIP_FUEL} FUEL` : null,
+      : rec && rec.noCard ? (rec.voidReward === 'reroll' ? 'NO CARD · +1 REROLL' : `NO CARD · +${T.SKIP_FUEL} FUEL`)
+        : null,
     rerolls: run.rerolls, banishes: run.banishes,
     canReroll: Boolean(o && run.rerolls > 0 && !o.taken.length && !o.first),
     dock: run.dock ? { free: run.dock.free, bought: [...run.dock.bought], chips } : null,
@@ -625,8 +629,18 @@ export function resume(obj, tune = TUNE) {
   const run = restore(env.run);
   if (!run || run.v !== RUN_VERSION) return null;
   if (env.at === 'leg' || env.at === 'pagehide') {
-    if (env.at === 'leg') run.you.gap = Math.max(0, run.you.gap - tune.QUIT_GAP);
+    if (env.at === 'leg') run.you.gap = quitGap(run.you, tune);
     run.phase = 'launch';
   }
   return run;
+}
+
+// The gap a quit leaves (9.2: never free): QUIT_GAP less, but never under the gap of a TTC_FLOOR launch (the dock's
+// TOO CLOSE line) nor under QUIT_KEEP of what it was, so a leg that launched close still gives you a leg to play.
+const QUIT_KEEP = 0.75;
+function quitGap(you, tune = TUNE) {
+  const g = finite(you.gap) ? Math.max(0, you.gap) : 0;
+  const eta = finite(you.launchEta) ? you.launchEta : tune.ETA0;   // createShip's launch speed
+  const floor = Math.min(SV.gapFor(tune.TTC_FLOOR, eta), g * QUIT_KEEP);
+  return Math.max(g - tune.QUIT_GAP, floor);
 }

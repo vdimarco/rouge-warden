@@ -476,10 +476,11 @@ export function landNeed(ship, tune = TUNE) {
 
 // Land at Earth: your gap covers the margin in full, then each whole fuel cell 1 s (retro-burns, up to
 // LAND_FUEL_MAX), then each hull pip 1 s (aerobraking). Cells first, then hull; what it spends comes off the ship.
+// extra: seconds more the landing needs (DOOR_MISS_S when you miss the DOOR and loop round, 8.2).
 // → { ok, cellsSpent, hullSpent, margin (seconds ahead of the light after landing; under 0 if short), need }.
-export function land(ship, tune = TUNE) {
+export function land(ship, tune = TUNE, extra = 0) {
   const T = tune;
-  const { need } = landNeed(ship, T);
+  const need = landNeed(ship, T).need + (extra > 0 ? extra : 0);
   const gap = Math.max(0, ship.gap);
   let short = need - gap, cells = 0, hull = 0;
   if (short > 1e-9) {

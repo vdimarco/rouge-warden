@@ -27,6 +27,9 @@ const isYou = (s) => s.kind === 'you';
 // (returns a value the table already holds, so it never boxes a new double)
 const etaTop = (s, T) => (isYou(s) || T.ETA_MAX < T.RIVAL_ETA_MAX ? T.ETA_MAX : T.RIVAL_ETA_MAX);
 const WHALE = (s) => s.kind === 'boss' && s.type === 'whale';
+// The tuning a ship flies with in a race: yours is race.tune (your ship's and cards' patches), every other ship's is
+// race.baseTune.
+const tuneOf = (race, s) => (isYou(s) ? race.tune : race.baseTune || race.tune) || TUNE;
 const MAKO = (s) => s.kind === 'boss' && s.type === 'mako';
 
 // Course beats a second for a ship (its tow and surges aside): seconds to an item are beats ÷ this.
@@ -44,7 +47,7 @@ function scratch(ship) {
       n: new Float64Array(7), winWell: null,
       whip: { well: null, psi: 0, size: 'medium', mass: 1, core: 5, reach: 40, side: 1, dir: 1, b0: 0, angle: 0, t: 0,
         latched: true, red: false, cost: 0, scorchAt: 300, redAt: 225, teach: false, x: 1, n: 0,
-        exits: [0, 0], exitA: [NaN, NaN], letgo: [false, false], warned: false },
+        exits: [0, 0], exitA: [NaN, NaN], letgo: [false, false], warned: false, gate: null },
       shove: { v: 0, left: 0, until: -1, by: null, t0: -1e9, slam: false },
       recId: new Array(RECENT).fill(null), recT: new Float64Array(RECENT), recGap: new Float64Array(RECENT), recK: 0,
       ctx: { race: null, ship, event: null, tune: null, item: null, res: null, bearing: 0, other: null, gap: 0 },
@@ -68,7 +71,7 @@ export function createShip({ id, kind = 'you', type = 'lantern', name = null, be
     id, kind, name: name ?? (kind === 'you' ? 'YOU' : String(id).toUpperCase()), type,
     half: T.SHIP_HALF, turnMax: T.TURN_MAX,
     bearing, target: bearing, turnRate: 0,
-    dist: 0,
+    dist: 0, far: null,
     eta, gear: gearOf(eta, T), bestGear: m.bestGear ?? 0, headlight: false, lightspeed: false, punch: 0,
     hull: m.hull ?? T.HULL0, hullMax: m.hullMax ?? T.HULL_MAX, shield: m.shield ?? T.SHIELD_MAX,
     shieldMax: m.shieldMax ?? T.SHIELD_MAX, shieldT: 99,
@@ -331,6 +334,9 @@ export function passCheck(race, ship, item, tune = TUNE, at = null) {
     }
     default:
   }
+  // a gate crossed mid-whip is judged at the release, at the bearing you let go (SLINGSHOT HOME's well sits just
+  // before its gate: a fling through the gap is a thread)
+  if (ship.whip && item.kind === 'gate' && !item.pair) { ship.whip.gate = item; return race.events; }
   if (ship.whip && (item.kind !== 'knot' && item.kind !== 'pulse')) return race.events;   // walls, rails: no touch
   if (item.kind === 'well' && ship.whip && ship.whip.well === item.id) return race.events;
   const r = resolve(item, b, item.beat, T, ship.half);
@@ -341,7 +347,8 @@ export function passCheck(race, ship, item, tune = TUNE, at = null) {
   }
   remember(S, item.id, t, r.overlap);
   if (r.hit) {
-    if (ship.whip) { graze(race, ship, item, 0, 1, t, T); return race.events; }   // knots crossed mid-whip graze
+    // a knot crossed mid-whip is a plain graze (5.3; LENSED LANE's pass hook makes it a hairline)
+    if (ship.whip) { graze(race, ship, item, T.HAIR, 1, t, T); return race.events; }
     hit(race, ship, item.kind, T, item);
     if (item.kind === 'gate' && !item.pair) {
       ship.gate = 'past';
@@ -366,6 +373,7 @@ function remember(S, id, t, gap) {
 }
 
 function graze(race, ship, item, g, side, t, T) {
+  if (WHALE(ship)) return;                       // 10.3: the WHALE cannot graze (too big)
   const hair = g < T.HAIR;
   const top = etaTop(ship, T);
   ship.eta = Math.min(top, ship.eta + (hair ? T.KICK_HAIR : T.KICK));
@@ -461,7 +469,9 @@ export function hit(race, ship, cause, tune = TUNE, item = null, force = false) 
   }
   let by = null, why = cause;
   if (item && cause !== 'scorch') {
-    const sh = ship.shove;
+    // the shove's record outlives the live shove (stepHandle clears ship.shove after SHOVE_S + CONTACT_CD), so a
+    // SLAM's takedown window is the whole TAKEDOWN_S
+    const sh = ship.shove || scratch(ship).shove;
     if (sh && sh.slam && sh.by && race.t - sh.t0 <= T.TAKEDOWN_S && !WHALE(ship)) {
       by = sh.by;
       why = 'takedown';
@@ -579,8 +589,10 @@ export function pressCost(t, tune = TUNE, wide = 1) {
   return tune.GRAB_COST * u * u;
 }
 
-// The first whip of a run (leg 1) sweeps at TEACH_SWEEP with TEACH_WIN windows.
-const teaching = (race, ship) => isYou(ship) && race.legNo === 0 && ship.stats.whips === 0;
+// The first whip of a run sweeps at TEACH_SWEEP with TEACH_WIN windows: leg 1's, or a later leg's while the run has
+// made no whip yet (race.teachWhip; a returning player's leg 1 has no well).
+const teaching = (race, ship) => isYou(ship) && ship.stats.whips === 0
+  && (race.legNo === 0 || race.teachWhip === true);
 
 // The next well coming up for this ship within APPROACH_S (or still inside its late window): its item index, or −1.
 function nextWell(race, ship, T) {
@@ -653,6 +665,7 @@ function grab(race, ship, it, tA, d, w, T, S) {
   W.latched = true;
   W.red = false;
   W.warned = false;
+  W.gate = null;
   W.teach = w > 1;
   W.x = W.teach ? T.TEACH_SWEEP : 1;
   W.cost = pressCost(tA, T, w) || 0;
@@ -692,7 +705,10 @@ function whipStep(race, ship, action, dt, T, S) {
     if (W.latched) {
       ship.eta += W.cost;                        // a re-grip: the grab cost nothing
       emit(race, E.latchCancel, ship, { well: W.well });
+      const G = W.gate;
+      W.gate = null;
       dropWhip(race, ship);
+      if (G) settleGate(race, ship, G, T, ship.bearing);
       return;
     }
     const aJ = angleAt(W.t - T.LATCH_S - T.LIFT_COMP, T, W.x);
@@ -750,15 +766,18 @@ function gradeAt(W, aJ, T) {
   return g;
 }
 
-function release(race, ship, aJ, T, scorched) {
+// A release at angle aJ. force: a grade index (0 PERFECT) a card sets (KICK OUT), else −1 and the angle grades it.
+// A gate crossed during the whip is judged now. → the release event.
+function release(race, ship, aJ, T, scorched, force = -1) {
   const W = ship.whip;
   const a = Math.max(0, aJ);
-  const g = scorched ? 2 : gradeAt(W, a, T);
+  const g = scorched ? 2 : force >= 0 ? force : gradeAt(W, a, T);
   const d = Math.min(a, T.SWEEP_A) / T.SWEEP_A;
   const red = W.red && !scorched;
   let gain = 0;
   if (!scorched) {
-    const redX = race.leg.redX ?? T.RED_X;                         // TIDES pays × 1.5 (11.3)
+    // the red zone pays RED_X (TIDAL FRAME raises it); TIDES lifts it to its own × 1.5 (11.3)
+    const redX = Math.max(T.RED_X, race.leg.redX || 0);
     gain = (T.GAIN_BASE + T.GAIN_DEPTH * d * d) * W.mass * T.AIM[g] * (red ? redX : 1) * T.WHIP_GAIN_X;
     ship.eta = Math.min(etaTop(ship, T), ship.eta + gain);
   }
@@ -766,15 +785,41 @@ function release(race, ship, aJ, T, scorched) {
   if (g === 0) ship.stats.perfect++;
   ship.flicker = Math.max(ship.flicker, T.LAND_GRACE);
   scratch(ship).n[REL_T] = race.t;
-  const well = W.well, mass = W.mass;
+  const well = W.well, mass = W.mass, G = W.gate, b = W.b0 + W.dir * a;     // b: the bearing the grade judged
+  W.gate = null;
   dropWhip(race, ship);
   if (g === 2) endLightspeed(race, ship, T, 'wide');
-  emit(race, E.release, ship, { well, grade: GRADES[g], angle: a, gain, red, mass, d, scorched });
+  const e = emit(race, E.release, ship, { well, grade: GRADES[g], angle: a, gain, red, mass, d, scorched,
+    kick: force >= 0 });
+  if (G) settleGate(race, ship, G, T, scorched ? null : b);
+  return e;
+}
+
+// A gate the whip carried the ship across, judged at the bearing it let go (the release's own, as its grade): a
+// thread, a DOCK or a fly past. A giant there (or a scorch: bearing null) is a fly past with no damage, as nothing
+// touches a whipping ship.
+function settleGate(race, ship, item, T, bearing) {
+  const r = bearing === null ? null : resolve(item, bearing, item.beat, T, ship.half);
+  if (!r || r.hit) {
+    ship.gate = 'past';
+    emit(race, E.past, ship, { t: race.t, gate: item.id });
+    return;
+  }
+  gatePass(race, ship, item, r, race.t, T);
+}
+
+// A release now at the whip's angle with a set grade (KICK OUT: 'PERFECT'), paid as a lift there would be, red zone
+// and gate included. → the release event (kick: true), or null with no whip.
+export function forceRelease(race, ship, grade = 'PERFECT', tune = TUNE) {
+  const W = ship && ship.whip;
+  if (!W || isOut(ship)) return null;
+  const g = GRADES.indexOf(grade);
+  return release(race, ship, W.angle, tune, false, g < 0 ? 0 : g);
 }
 
 // Is a grab window open for this ship now (a well within its window, the ship in reach and the well free)? For the
 // input's tap rule (?burn=tap) and the bots; allocation-free.
-export function windowOpen(race, ship, tune = race.tune || TUNE) {
+export function windowOpen(race, ship, tune = tuneOf(race, ship)) {
   if (!ship || ship.whip || isOut(ship)) return false;
   const k = nextWell(race, ship, tune);
   if (k < 0) return false;
@@ -793,7 +838,7 @@ export function windowOpen(race, ship, tune = race.tune || TUNE) {
 export function windowOf(race, shipId) {
   const ship = typeof shipId === 'object' ? shipId : shipById(race, shipId);
   if (!ship || ship.whip || isOut(ship)) return null;
-  const T = race.tune || TUNE;
+  const T = tuneOf(race, ship);
   const k = nextWell(race, ship, T);
   if (k < 0) return null;
   const it = race.leg.items[k];
@@ -813,7 +858,7 @@ export function windowOf(race, shipId) {
 export function exitsOf(race, shipId) {
   const ship = typeof shipId === 'object' ? shipId : shipById(race, shipId);
   if (!ship) return [];
-  const T = race.tune || TUNE;
+  const T = tuneOf(race, ship);
   const W = ship.whip;
   if (W) {
     const out = [];
@@ -834,7 +879,7 @@ export function exitsOf(race, shipId) {
   for (const e of it.exits || []) {
     const a = ((dir * wrap(e - ship.bearing)) % 360 + 360) % 360;
     out.push({ psi: e, w: T.EXIT_W * w, perfect: T.PERFECT * w, angle: a < scorchAt ? a : null, reach: a < scorchAt,
-      t: null, letgo: false, redAt: scorchAt - T.RED_SPAN, scorchAt });
+      t: null, letgo: false, redAt: scorchAt - (race.leg.redSpan ?? T.RED_SPAN), scorchAt });
   }
   return out;
 }
@@ -842,13 +887,14 @@ export function exitsOf(race, shipId) {
 // ---------------------------------------------------------------- ship against ship (5.4, 5.5)
 
 // Wakes, draft and the tow, the slingshot, rival grazes and contact, for every pair of ships. dt: sim seconds. Ends
-// with every ship's gears, so a speed change here or in the passes shows on its own step.
+// with every ship's gears, so a speed change here or in the passes shows on its own step. tune: yours; every other
+// ship drafts, grazes, rams and shifts gear with race.baseTune (your cards' SLIPSTREAM, SLAM_V and the rest are yours).
 export function stepContact(race, dt, tune = TUNE) {
-  const T = tune, ships = race.ships, n = ships.length;
+  const T = tune, B = race.baseTune || T, ships = race.ships, n = ships.length;
   for (let i = 0; i < n; i++) {
     const a = ships[i];
     if (isOut(a)) continue;
-    draftStep(race, a, dt, T);
+    draftStep(race, a, dt, isYou(a) ? T : B);
   }
   for (let i = 0; i < n; i++) {
     const a = ships[i];
@@ -859,7 +905,7 @@ export function stepContact(race, dt, tune = TUNE) {
       pairStep(race, a, b, T);
     }
   }
-  for (let i = 0; i < n; i++) if (!isOut(ships[i])) gearStep(race, ships[i], T);
+  for (let i = 0; i < n; i++) if (!isOut(ships[i])) gearStep(race, ships[i], isYou(ships[i]) ? T : B);
 }
 
 // Seconds ship b is ahead of ship a (negative: behind), at a's course speed.
@@ -951,7 +997,7 @@ function pairStep(race, a, b, T) {
   const g = ad - a.half - b.half;
   if ((before < 0) !== (now < 0) && before !== 0 && !a.whip && !b.whip) {
     const passer = now > 0 ? a : b, other = passer === a ? b : a;
-    if (g >= 0 && g < T.GRAZE) rivalGraze(race, passer, other, g, T);
+    if (g >= 0 && g < T.GRAZE) rivalGraze(race, passer, other, g, isYou(passer) ? T : race.baseTune || T);
     if (isYou(a) || isYou(b)) {
       const you = isYou(a) ? a : b, S = scratch(you);
       if (race.hooks && race.hooks.rivalPass) {
@@ -971,6 +1017,7 @@ function pairStep(race, a, b, T) {
 const cooling = (race, s, other) => s.shove && s.shove.by === other.id && race.t <= s.shove.until + CONTACT_CD;
 
 function rivalGraze(race, ship, other, g, T) {
+  if (WHALE(ship)) return;
   ship.eta = Math.min(etaTop(ship, T), ship.eta + T.KICK_RIVAL);
   ship.chain++;
   ship.chainT = Math.min(ship.chainT, 0);
@@ -978,16 +1025,23 @@ function rivalGraze(race, ship, other, g, T) {
   emit(race, E.rivalGraze, ship, { other: other.id, gap: g });
 }
 
-// Set a shove on a ship: dist degrees in direction dir over SHOVE_S, by `by`. Reuses the ship's shove object.
-function shove(race, ship, dir, dist, by, T, slam = false) {
+// Set a shove on a ship: dist degrees in direction dir over s seconds (SHOVE_S), by `by`. Reuses the ship's shove
+// object, which stays as the record of the last shove (for takedowns) after ship.shove clears.
+function shove(race, ship, dir, dist, by, T, slam = false, s = T.SHOVE_S) {
   const sh = scratch(ship).shove;
-  sh.v = (dir * dist) / Math.max(1e-3, T.SHOVE_S);
+  sh.v = (dir * dist) / Math.max(1e-3, s);
   sh.left = dist;
-  sh.until = race.t + T.SHOVE_S;
+  sh.until = race.t + s;
   sh.by = by;
   sh.t0 = race.t;
   sh.slam = slam;
   ship.shove = sh;
+}
+
+// A shove from outside handle (cards: MASS SHADOW's pull, SIDESTEP's hop): deg degrees in direction dir over s
+// seconds, by `by`. It goes through the same record as handle's own, so a card's SLAM counts for takedowns.
+export function shoveShip(race, ship, dir, deg, by, tune = TUNE, slam = false, s = tune.SHOVE_S) {
+  shove(race, ship, dir, deg, by, tune, Boolean(slam), s);
 }
 
 // How hard a ship shoves: MAKO × 1.5, your cards' SHOVE_X; the WHALE barely moves (× 0.25).
@@ -1011,7 +1065,9 @@ function contact(race, a, b, dpsi, T) {
   const closing = Math.max(0, va) + Math.max(0, vb);
   let rammer = va >= vb ? a : b, victim = rammer === a ? b : a;
   if (WHALE(a) || WHALE(b)) { rammer = WHALE(a) ? a : b; victim = rammer === a ? b : a; }
-  const slam = !soft && (closing >= T.SLAM_V || WHALE(rammer));
+  // SLAM_V is the rammer's: your ship's and cards' (TUG, BATTERING PROW, HOUND'S BITE) when you ram, else the base
+  const slamV = isYou(rammer) ? T.SLAM_V : (race.baseTune || T).SLAM_V;
+  const slam = !soft && (closing >= slamV || WHALE(rammer));
   const away = victim === b ? dirAB : -dirAB;
   if (!slam) {
     shove(race, a, -dirAB, T.BUMP_SHOVE * shoveIn(a), b.id, T);

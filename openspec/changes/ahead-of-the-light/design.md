@@ -190,7 +190,11 @@ The team's `contract.md` logs every change with its reason; these are the ones a
   it when shown, so the pause card keeps a low-passed drone. A pause on a visible page still suspends the sound.
 - **The result card's log line** names the pages left: LOG +5 PAGES · 1 PAGE TO REROLL +1.
 - **The cabinet line**: FIRST HOME · 14.2 YR once you have come home first (the record keeps the best years, not the
-  place), else HOME IN 14.2 YR, else BEST: and the furthest leg's name; the plain line is SKIM · BURN · WHIP.
+  place), else HOME IN 14.2 YR, else BEST: and the furthest leg's name; the plain line is SKIM · BURN · WHIP. Leg 7
+  reads THE SUN'S STARS on the machine: the line is Press Start 2P at 12 px, a word cannot wrap, and NEIGHBOURS (130 px
+  with the padding) is wider than the 97 px screen at 320 × 700 and 375 × 667. A smaller font would break the arcade's
+  12 px floor. With `gold-frame` in the save's unlocks the machine gets the class `gold`: a 3 px gold ring and a soft
+  glow as a box-shadow on the bezel, so no size changes.
 - **The key art** is cut from a 2 × portrait screenshot of leg 1 at 0.9931c with PIKE 0.1 s in your wake, staged with
   `?gap0=0.3&gapcap=0.3&bleed=0` so the light's ring sits at 1.6 × the play ring (LIGHT · 44 S); at a real HEADLIGHT
   gap the ring sits off the bottom edge.

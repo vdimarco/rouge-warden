@@ -261,9 +261,11 @@ export function applyRun(meta, runLog, tune = TUNE) {
   m.unlocks = unlocksAt(m.pages);
   const ships = shipUnlocks(m, runLog);
   m.ships = [...m.ships, ...ships];
-  // medals: your years for each leg finished, best kept
+  // medals: your years for each leg finished, best kept; from a ranked run or a practice leg (14.4: practice earns
+  // medals only), never from EASY LIGHT or URL tuning
   const medals = [];
-  for (const l of runLog.legs || []) {
+  const medalsOk = runLog.practice ? !runLog.tuned : runLog.ranked !== false && !runLog.easy;
+  if (medalsOk) for (const l of runLog.legs || []) {
     if (!(l.why === 'gate' || l.why === 'home')) continue;
     const md = medalFor(l.type, l.years);
     if (md && medalRank(md) > medalRank(m.medals[l.type])) { m.medals[l.type] = md; medals.push({ type: l.type, medal: md }); }

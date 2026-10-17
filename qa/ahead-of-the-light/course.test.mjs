@@ -374,6 +374,18 @@ it('no piece repeats in a run unless its pool is spent; teaching pieces appear o
       for (const id of here) used.add(id);
     }
   }
+  // on a first run too: a teaching piece is taught once a run (COMA's RUMBLE does not come back on THE LOCAL GROUP)
+  for (let s = 1; s <= 30; s++) {
+    const used = new Set();
+    for (const type of ROUTE) {
+      const lane = lanesOf(type).find((n) => LEG_TYPES[type].lanes[n].kind !== 'void');
+      const here = piecesOf(buildLeg({ runSeed: s, type, lane, seen: FIRST, used }));
+      for (const id of here) {
+        assert.ok(!used.has(id) || COMMON_FLOW.includes(id), `first run, seed ${s}: ${id} repeats on ${type}`);
+      }
+      for (const id of here) used.add(id);
+    }
+  }
   const ids = (L) => L.sections.flatMap((x) => x.ids);
   for (let s = 1; s <= 50; s++) {
     const first = buildLeg({ runSeed: s, type: 'web', seen: FIRST });
@@ -572,6 +584,12 @@ it('Earth runs the planets in order and lands at the door on the Moon\'s band li
   const t = buildLeg({ runSeed: 3, type: 'earth', lane: { name: 'JUPITER', cond: 'tides' } });
   assert.deepEqual(t.sections[2].ids, ['saturn']);
   assert.equal(t.rules.redSpan, CONDITIONS.tides.rules.redSpan);
+  // handle.js reads the condition's knobs at the leg's top level (HEADWIND's drag, TIDES' red zone and pay)
+  assert.deepEqual([t.redSpan, t.redX], [CONDITIONS.tides.rules.redSpan, CONDITIONS.tides.rules.redX]);
+  const hw = buildLeg({ runSeed: 3, type: 'earth', lane: { name: 'JUPITER', cond: 'headwind' } });
+  assert.equal(hw.dragX, CONDITIONS.headwind.rules.dragX);
+  const plain = buildLeg({ runSeed: 3, type: 'earth', lane: { name: 'JUPITER' } });
+  assert.deepEqual([plain.dragX, plain.redSpan, plain.redX], [1, TUNE.RED_SPAN, null], 'a plain lane: the race\'s own');
 });
 
 it('the signature set pieces keep their shape', () => {

@@ -110,11 +110,12 @@ for (const f of fs.readdirSync(path.join(PUB, "arcade")).filter((n) => /^(lab|wo
   const b = fs.readFileSync(path.join(PUB, "arcade", f));
   check(b.length < 60 * 1024 && b.toString("latin1", 0, 4) === "RIFF" && b.toString("latin1", 8, 12) === "WEBP", `arcade/${f} is a WebP under 60 KB (${(b.length / 1024).toFixed(1)} KB)`);
 }
-// Ahead of the Light's screen is cut from a real portrait screenshot: a WebP 480 px wide and under 60 KB
-{
-  const b = fs.readFileSync(path.join(PUB, "arcade/key/ahead-of-the-light.webp"));
+// Ahead of the Light's and Light Years Home's screens are cut from real screenshots of the game in play: WebPs 480 px wide and under 60 KB
+for (const id of ["ahead-of-the-light", "light-years-home"]) {
+  const f = path.join(PUB, "arcade/key", id + ".webp");
+  const b = fs.existsSync(f) ? fs.readFileSync(f) : Buffer.alloc(32);
   const vp8x = b.toString("latin1", 12, 16) === "VP8X", w = vp8x ? 1 + b.readUIntLE(24, 3) : b.toString("latin1", 12, 16) === "VP8 " ? b.readUInt16LE(26) & 0x3fff : 1 + (b.readUInt32LE(21) & 0x3fff);
-  check(b.length < 60 * 1024 && b.toString("latin1", 8, 12) === "WEBP" && w === 480, `arcade/key/ahead-of-the-light.webp is a WebP 480 px wide under 60 KB (${w} px, ${(b.length / 1024).toFixed(1)} KB)`);
+  check(b.length < 60 * 1024 && b.toString("latin1", 8, 12) === "WEBP" && w === 480, `arcade/key/${id}.webp is a WebP 480 px wide under 60 KB (${w} px, ${(b.length / 1024).toFixed(1)} KB)`);
 }
 // the painted art from Higgsfield (higgsfield/arcade-key-art.json): one WebP for each entry, each under 100 KB
 for (const { id } of JSON.parse(read("higgsfield/arcade-key-art.json")).art) {
@@ -366,7 +367,7 @@ if (chromium) {
     const tag = `${width}x${height}`;
     const { ctx, page, errors } = await open(browser, { width, height });
     // the page answers to a game's address, so the switcher can work out where it is
-    const here = { "/gta/": "GTA Montréal", "/lab/": "The Lab", "/lab/worlds/": "Small Worlds", "/lab/plunge/": "Take the Plunge", "/lab/rules/": "House Rules", "/fall/": "Down the Drain", "/breakthrough2/": "Breakthrough", "/echo/": "Loon Echo", "/olympus/x": "Olympus" };
+    const here = { "/gta/": "GTA Montréal", "/lab/": "The Lab", "/lab/worlds/": "Small Worlds", "/lab/plunge/": "Take the Plunge", "/lab/rules/": "House Rules", "/fall/": "Down the Drain", "/breakthrough2/": "Breakthrough", "/echo/": "Loon Echo", "/olympus/x": "Olympus", "/light-years-home/": "Light Years Home", "/ahead-of-the-light/": "Ahead of the Light" };
     for (const [p, name] of Object.entries(here)) {
       await page.evaluate(async (p) => { history.replaceState({}, "", p); GameSwitch.close(); await GameSwitch.open(); }, p);
       await page.waitForSelector(".gsw-game");
@@ -395,18 +396,22 @@ if (chromium) {
   await relaunch();
   /* ----- the high-score lines: a game's own save shows, and junk never throws ----- */
   const JUNK = ["not json", "null", "[]", "{}", "[1,2]", "-5", "0", "1e999", "\"x\"", "{\"best\":\"x\",\"ms\":[],\"runs\":{}}", "true"];
-  const KEYS = ["primordia.best", "neon-best", "loon-echo-rescue-best", "tilt.voyage.best", "lab.stats.plunge", "lab.stats.creek", "lab.stats.rules", "lab.rules.clears", "small-worlds-best-threadwake", "small-worlds-best-heartship", "follow-suit:best-chain", "moonwell.best.v1", "ahead-of-the-light.meta.v1"];
+  const KEYS = ["primordia.best", "neon-best", "loon-echo-rescue-best", "tilt.voyage.best", "lab.stats.plunge", "lab.stats.creek", "lab.stats.rules", "lab.rules.clears", "small-worlds-best-threadwake", "small-worlds-best-heartship", "follow-suit:best-chain", "moonwell.best.v1", "ahead-of-the-light.meta.v1", "light-years-home.v3.save"];
   const lines = (page) => page.$$eval(".cab[data-game]", (cs) => Object.fromEntries(cs.map((c) => [c.dataset.game, c.querySelector(".hi").textContent])));
+  // the machines that wear a gold frame (Ahead of the Light's last log unlock)
+  const framed = (page) => page.$$eval(".cab.gold", (cs) => cs.map((c) => c.dataset.game));
+  // an Ahead of the Light meta save with this best run
+  const aotl = (best, pages, more = {}) => ({ "ahead-of-the-light.meta.v1": JSON.stringify({ v: 1, pages, records: { best }, ...more }) });
   if (PARTS.includes("saves")) {
     const clean = await open(browser, { width: 390, height: 844 });
     const plain = await lines(clean.page);
     await clean.ctx.close();
     for (const junk of JUNK) {
       const { ctx, page, errors } = await open(browser, { width: 390, height: 844, store: Object.fromEntries(KEYS.map((k) => [k, junk])) });
-      const got = await lines(page);
+      const got = await lines(page), gold = await framed(page);
       const same = Object.keys(plain).filter((g) => got[g] !== plain[g]);
-      // "0", "-5" and the like are not scores; "1e999" is not a finite number; none may change a line
-      check(errors.length === 0 && same.length === 0, `junk save ${JSON.stringify(junk)}: no error, and the lines stay plain${same.length ? " (changed: " + same.map((g) => g + " -> " + got[g]).join("; ") + ")" : ""}${errors.length ? " " + errors.join("; ") : ""}`);
+      // "0", "-5" and the like are not scores; "1e999" is not a finite number; none may change a line or put on a frame
+      check(errors.length === 0 && same.length === 0 && gold.length === 0, `junk save ${JSON.stringify(junk)}: no error, and the lines stay plain${same.length ? " (changed: " + same.map((g) => g + " -> " + got[g]).join("; ") + ")" : ""}${gold.length ? " (framed: " + gold.join(", ") + ")" : ""}${errors.length ? " " + errors.join("; ") : ""}`);
       await ctx.close();
     }
     const good = {
@@ -416,10 +421,12 @@ if (chromium) {
       "small-worlds-best-threadwake": "120", "small-worlds-best-heartship": "80", "follow-suit:best-chain": "5432",
       "moonwell.best.v1": JSON.stringify({ score: 12345, island: 17 }),
       "ahead-of-the-light.meta.v1": JSON.stringify({ v: 1, pages: ["home", "first-home"], records: { best: { home: true, legNo: 7, years: 14.23, ship: "lantern" } } }),
+      // Light Years Home: where the save is and its golds (a tern medal counts as a gold), from races and jumps
+      "light-years-home.v3.save": JSON.stringify({ v: 1, zoneId: "coma", events: { "wall-sprint": { medal: "gold" }, "wall-loop": { medal: "silver" }, "coma-dash": { medal: "tern" } }, jumps: { "wall-coma": { medal: "gold" } } }),
     };
     const { ctx, page, errors } = await open(browser, { width: 390, height: 844, store: good });
     const got = await lines(page);
-    const want = { primordia: "BEST 4,200", neon: "BEST 12,345", echo: "BEST 210", tilt: "BEST 9,800", plunge: "BEST 1,234 M", creek: "RUNS 3", rules: "CLEARS 2", worlds: "WORLDS DONE 2/6", lab: "TOYS TRIED 4/4", "follow-suit": "BEST CHAIN 5,432", moonwell: "BEST 12,345 · ISLAND 17", "ahead-of-the-light": "FIRST HOME · 14.2 YR" };
+    const want = { primordia: "BEST 4,200", neon: "BEST 12,345", echo: "BEST 210", tilt: "BEST 9,800", plunge: "BEST 1,234 M", creek: "RUNS 3", rules: "CLEARS 2", worlds: "WORLDS DONE 2/6", lab: "TOYS TRIED 4/4", "follow-suit": "BEST CHAIN 5,432", moonwell: "BEST 12,345 · ISLAND 17", "ahead-of-the-light": "FIRST HOME · 14.2 YR", "light-years-home": "COMA CITY · GOLDS 3" };
     for (const [g, t] of Object.entries(want)) check(got[g] === t, `a real save shows on the ${g} machine: "${got[g]}" (want "${t}")`);
     // a save must change only its own machine's line
     const moved = Object.keys(plain).filter((g) => !(g in want) && got[g] !== plain[g]);
@@ -428,9 +435,53 @@ if (chromium) {
     await ctx.close();
     // Ahead of the Light's other two lines: home but not first, and the furthest leg of a run that never got home
     for (const [best, pages, t] of [[{ home: true, legNo: 7, years: 31.04 }, ["home"], "HOME IN 31.0 YR"], [{ home: false, legNo: 2, years: 9.5 }, [], "BEST: VIRGO"]]) {
-      const o = await open(browser, { width: 390, height: 844, store: { "ahead-of-the-light.meta.v1": JSON.stringify({ v: 1, pages, records: { best } }) } });
+      const o = await open(browser, { width: 390, height: 844, store: aotl(best, pages) });
       const line = (await lines(o.page))["ahead-of-the-light"];
       check(line === t && o.errors.length === 0, `Ahead of the Light's machine reads "${line}" (want "${t}")`);
+      await o.ctx.close();
+    }
+    // Ahead of the Light's line fits its screen on a small phone, whichever line it is: a word wider than the screen is cut
+    // on both sides. The machine's size follows the window's height, so 375 x 667 is as narrow a screen as 320 x 700.
+    const AOTL_LINES = [...Array(8).keys()].map((legNo) => aotl({ home: false, legNo, years: 9.5 }, []))
+      .concat([aotl({ home: true, legNo: 7, years: 31.04 }, ["home"]), aotl({ home: true, legNo: 7, years: 14.23 }, ["home", "first-home"])]);
+    for (const [width, height] of [[320, 700], [375, 667]]) {
+      const cut = [];
+      for (const store of AOTL_LINES) {
+        const o = await open(browser, { width, height, store });
+        await o.page.selectOption("#machinePicker", "ahead-of-the-light");
+        await o.page.waitForFunction(() => document.querySelector(".cab.on")?.dataset.game === "ahead-of-the-light");
+        await settle(o.page);
+        const f = await o.page.evaluate(() => {
+          const c = document.querySelector('.cab[data-game="ahead-of-the-light"]'), hi = c.querySelector(".hi");
+          const s = c.querySelector(".screen").getBoundingClientRect(), h = hi.getBoundingClientRect();
+          return { text: hi.textContent, by: Math.max(0, s.left - h.left, h.right - s.right) };
+        });
+        if (f.by > 0.5 || o.errors.length) cut.push(`"${f.text}" by ${f.by.toFixed(1)} px${o.errors.length ? " " + o.errors.join("; ") : ""}`);
+        await o.ctx.close();
+      }
+      check(cut.length === 0, `${width}x${height}: each of Ahead of the Light's ${AOTL_LINES.length} lines fits inside its screen${cut.length ? " (cut: " + cut.join("; ") + ")" : ""}`);
+    }
+    // the log's last unlock, at 84 pages, puts a gold frame round the screen; without it, or with unlocks that are not a list, there is none
+    const UNLOCKED = ["reroll-2", "banish-1", "lucky-star", "reroll-3", "banish-2"];
+    for (const [more, gold, what] of [[{ unlocks: [...UNLOCKED, "gold-frame"] }, true, "84 pages"], [{ unlocks: UNLOCKED }, false, "83 pages"], [{ unlocks: "gold-frame" }, false, "unlocks that are not a list"]]) {
+      const o = await open(browser, { width: 390, height: 844, store: aotl({ home: false, legNo: 2, years: 9.5 }, [], more) });
+      const f = await o.page.evaluate(() => { const c = document.querySelector('.cab[data-game="ahead-of-the-light"]'); return { gold: c.classList.contains("gold"), shadow: getComputedStyle(c.querySelector(".bezel")).boxShadow }; });
+      const on = f.gold && /rgb\(255, 207, 74\)/.test(f.shadow), others = (await framed(o.page)).filter((g) => g !== "ahead-of-the-light");
+      check(on === gold && others.length === 0 && o.errors.length === 0, `Ahead of the Light with ${what}: ${gold ? "a" : "no"} gold frame round its screen (class ${f.gold}, bezel ${f.shadow})`);
+      await o.ctx.close();
+    }
+    // Light Years Home's other lines: the chapter done; a save in a zone the machine does not know, or of another version, leaves the plain line
+    const LYH = "light-years-home.v3.save";
+    for (const [save, t] of [
+      [{ v: 1, zoneId: "virgo", chapterDone: true, events: { a: { medal: "gold" }, b: { medal: "gold" } }, jumps: { c: { medal: "tern" }, d: { medal: "bronze" } } }, "CHAPTER I DONE · GOLDS 3"],
+      [{ v: 1, zoneId: "wall", events: [{ medal: "gold" }], jumps: { a: "gold", b: null, c: { medal: ["gold"] } } }, "THE WALL · GOLDS 0"],
+      [{ v: 1, zoneId: "nowhere", events: { a: { medal: "gold" } } }, plain["light-years-home"]],
+      [{ v: 2, zoneId: "coma", events: { a: { medal: "gold" } } }, plain["light-years-home"]],
+      [{ v: 1, zoneId: "toString" }, plain["light-years-home"]],
+    ]) {
+      const o = await open(browser, { width: 390, height: 844, store: { [LYH]: JSON.stringify(save) } });
+      const line = (await lines(o.page))["light-years-home"];
+      check(line === t && o.errors.length === 0, `Light Years Home's machine reads "${line}" for ${JSON.stringify(save)} (want "${t}")${o.errors.length ? " " + o.errors.join("; ") : ""}`);
       await o.ctx.close();
     }
   }

@@ -236,10 +236,12 @@ export function createVista({ scene: host, tune = TUNE } = {}) {
     V.rivals.forEach((r, i) => {
       const q = project(r.x, 0.2, shipP.z + r.z);
       if (!q.on) return;
-      // the first way round that is clear of the labels already drawn
+      // the first way round that stays on screen and is clear of the labels already drawn
       let pick = null;
       for (const [dx, dy] of [[i % 2 ? -1 : 1, -1], [i % 2 ? 1 : -1, -1], [1, 1], [-1, 1]]) {
-        if (!hits(boxOf(q, r.name, dx, dy))) { pick = [dx, dy]; break; }
+        const b = boxOf(q, r.name, dx, dy);
+        if (b.x < 4 || b.x + b.w > V.w - 4 || b.y < 4 || b.y + b.h > V.h - 4) continue;
+        if (!hits(b)) { pick = [dx, dy]; break; }
       }
       if (pick) label(q, r.name, r.nemesis ? '#f08a2c' : '#fff', pick[0], pick[1]);
     });
