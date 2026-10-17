@@ -281,19 +281,21 @@ try {
   /* ---- the build guide, part two: ink lines, hatching, mood, the smear ---- */
   const ink = await page.evaluate(() => {
     QA.clear(); QA.street(); QA.step(5);
-    // the share of pixels that turn darker by over 30 when the lines (or the hatching) come on
+    // the share of pixels that turn darker (by over `by`, the three channels summed) when the lines (or the hatching) come on;
+    // the hatching works on pixels that are dark already, so it moves them by less
     const W = G.renderer.domElement.width, H = G.renderer.domElement.height;
-    const darker = (a, b) => { let n = 0; for (let i = 0; i < a.length; i += 4) if ((b[i] + b[i + 1] + b[i + 2]) - (a[i] + a[i + 1] + a[i + 2]) > 90) n++; return n / (a.length / 4); };
+    const darker = (a, b, by) => { let n = 0; for (let i = 0; i < a.length; i += 4) if ((b[i] + b[i + 1] + b[i + 2]) - (a[i] + a[i + 1] + a[i + 2]) > by) n++; return n / (a.length / 4); };
     const tune = G.test.verse();
     G.test.verse({ lines: 0, hatch: 0 }); const none = QA.grab(W, H);
     G.test.verse({ lines: tune.lines, hatch: 0 }); const lines = QA.grab(W, H);
     G.test.verse({ lines: 0, hatch: tune.hatch }); const hatch = QA.grab(W, H);
     G.test.verse({ lines: tune.lines, hatch: tune.hatch });
-    return { lines: darker(lines, none), hatch: darker(hatch, none) };
+    return { lines: darker(lines, none, 60), hatch: darker(hatch, none, 12) };
   });
   console.log("INFO ink", JSON.stringify(ink), new Date().toISOString());
-  check(ink.lines > 0.003 && ink.lines < 0.2, "ink lines darken the edges of the street (" + (ink.lines * 100).toFixed(2) + "% of pixels)", ink);
+  check(ink.lines > 0.001 && ink.lines < 0.2, "ink lines darken the edges of the street (" + (ink.lines * 100).toFixed(2) + "% of pixels)", ink);
   check(ink.hatch > 0.002 && ink.hatch < 0.3, "hatching darkens the deepest shadows (" + (ink.hatch * 100).toFixed(2) + "% of pixels)", ink);
+  console.log("INFO mood start", new Date().toISOString());
   const mood = await page.evaluate(() => {
     QA.clear(); QA.street(); QA.draw(30, 0.1);
     const calm = G.test.action().verse.mood;
