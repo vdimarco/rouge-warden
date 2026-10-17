@@ -94,10 +94,10 @@ void main() {
       float near = 1.0 - smoothstep(uFar * 0.25, uFar * 0.45, z0);
       c = mix(c, uInk, smoothstep(uLines, uLines * 2.0, jump) * near * 0.85);
     }
-    // hatching in the deepest shadows: diagonal ink lines 6 px apart, more of them the darker it is
+    // hatching in the shadows: diagonal ink lines 6 px apart, more of them the darker it is
     if (uHatch > 0.0) {
       float l = dot(c, vec3(0.299, 0.587, 0.114));
-      float dark = 1.0 - smoothstep(0.04, 0.16, l);
+      float dark = 1.0 - smoothstep(0.06, 0.26, l);
       float t = fract((gl_FragCoord.x + gl_FragCoord.y) / 6.0);
       float line = 1.0 - smoothstep(0.12, 0.28, abs(t - 0.5) * 2.0 * (1.0 - 0.5 * dark));
       c = mix(c, uInk, line * dark * uHatch);

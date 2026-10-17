@@ -14,7 +14,7 @@ The user asked to continue with the "Spider-Verse Style Game Build Guide" after 
 Flat play only, with Comic motion Full or Calm. The headset does not change.
 
 - **Ink lines.** The Verse pass inks a line where the depth jumps by over 12 % of the distance between neighbouring pixels: roof edges, corners, curbs, a body against the street. None toward the sky and the far haze.
-- **Hatching.** The darkest shadows (luminance under 0.16) get diagonal ink lines 6 px apart, denser where it is darker.
+- **Hatching.** The shadows (luminance under 0.26) get diagonal ink lines 6 px apart, denser where it is darker.
 - **Mood.** While goons fight the hero, the shadows and mid-tones lean red. As his hearts run low (two or fewer), they lean blue. The stronger mood wins, at most 45 %, and it eases over about a second. The light stays as it is.
 - **Smear.** Faster than 16 m/s, the hero's body stretches along its flight, up to 30 % longer at 40 m/s, thinner across, about the chest. None on a wall or in a roll. The smear steps with the pose (on twos).
 - The version goes to 1.24.0 (Quest APK code 31).

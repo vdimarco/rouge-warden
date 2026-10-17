@@ -29,10 +29,22 @@ const SETUP = () => {
       const x = c.getContext("2d"); x.drawImage(G.renderer.domElement, 0, 0, w, h);
       return Array.from(x.getImageData(0, 0, w, h).data);
     },
+    // the whole canvas after one real draw, as RGBA bytes, read through one canvas kept in main memory
+    grabFull() {
+      G.test.render();
+      const W = G.renderer.domElement.width, H = G.renderer.domElement.height;
+      if (!QA.full || QA.full.width !== W || QA.full.height !== H) {
+        QA.full = document.createElement("canvas"); QA.full.width = W; QA.full.height = H;
+        QA.fullX = QA.full.getContext("2d", { willReadFrequently: true });
+      }
+      QA.fullX.drawImage(G.renderer.domElement, 0, 0);
+      return QA.fullX.getImageData(0, 0, W, H).data;
+    },
   };
 };
 
-try {
+// a desktop page in flat play, with the loop stopped so the test steps and draws the game itself
+const play = async () => {
   const page = await newPage({ width: 960, height: 540 });
   await page.addInitScript(quiet);
   await open(page, "?nosw&skipintro");
@@ -41,6 +53,11 @@ try {
   await page.waitForFunction(() => G.state === "play", null, { timeout: 120000 });
   await page.evaluate(() => { G.renderer.setAnimationLoop(null); G.test.hold(true); });
   await page.evaluate(SETUP);
+  return page;
+};
+
+try {
+  const page = await play();
 
   /* ---- the hero on twos, and on ones with a full meter ---- */
   const twos = await page.evaluate(() => {
@@ -278,24 +295,33 @@ try {
   check(words.part > 0.28 && words.part < 0.4, "the finisher word fills a third of the view (" + (words.part * 100).toFixed(0) + "%)", words);
   check(words.stay === 6 && words.gone === 0, "wall words stay 20 s, six at most", words);
 
-  /* ---- the build guide, part two: ink lines, hatching, mood, the smear ---- */
+  check(page.errors.length === 0, "no page errors", page.errors);
+  await page.context().close();
+} catch (e) { check(false, "the verse check threw", e.stack || String(e)); }
+
+/* ---- the build guide, part two: ink lines, hatching, mood, the smear ----
+   On a new page: on SwiftShader the browser's memory grows over a long run of draws, and the page above ends near the limit */
+try {
+  const page = await play();
   const ink = await page.evaluate(() => {
     QA.clear(); QA.street(); QA.step(5);
     // the share of pixels that turn darker (by over `by`, the three channels summed) when the lines (or the hatching) come on;
     // the hatching works on pixels that are dark already, so it moves them by less
-    const W = G.renderer.domElement.width, H = G.renderer.domElement.height;
     const darker = (a, b, by) => { let n = 0; for (let i = 0; i < a.length; i += 4) if ((b[i] + b[i + 1] + b[i + 2]) - (a[i] + a[i + 1] + a[i + 2]) > by) n++; return n / (a.length / 4); };
     const tune = G.test.verse();
-    G.test.verse({ lines: 0, hatch: 0 }); const none = QA.grab(W, H);
-    G.test.verse({ lines: tune.lines, hatch: 0 }); const lines = QA.grab(W, H);
-    G.test.verse({ lines: 0, hatch: tune.hatch }); const hatch = QA.grab(W, H);
+    G.test.verse({ lines: 0, hatch: 0 }); const none = QA.grabFull();
+    G.test.verse({ lines: tune.lines, hatch: 0 }); const lines = QA.grabFull();
+    G.test.verse({ lines: 0, hatch: tune.hatch }); const hatch = QA.grabFull();
     G.test.verse({ lines: tune.lines, hatch: tune.hatch });
     return { lines: darker(lines, none, 60), hatch: darker(hatch, none, 12) };
   });
-  console.log("INFO ink", JSON.stringify(ink), new Date().toISOString());
+  console.log("INFO ink", JSON.stringify(ink));
   check(ink.lines > 0.001 && ink.lines < 0.2, "ink lines darken the edges of the street (" + (ink.lines * 100).toFixed(2) + "% of pixels)", ink);
   check(ink.hatch > 0.002 && ink.hatch < 0.3, "hatching darkens the deepest shadows (" + (ink.hatch * 100).toFixed(2) + "% of pixels)", ink);
-  console.log("INFO mood start", new Date().toISOString());
+  // the rest reads no pixels: a small canvas keeps it fast. On SwiftShader a 960 x 540 frame takes about 2 s, and a long run of
+  // draws in one task holds the memory of each frame until the task ends; at full size the 120 draws below ran the page out of memory
+  await page.setViewportSize({ width: 320, height: 180 });
+  await page.waitForFunction(() => G.renderer.domElement.width === 320);
   const mood = await page.evaluate(() => {
     QA.clear(); QA.street(); QA.draw(30, 0.1);
     const calm = G.test.action().verse.mood;
@@ -307,7 +333,7 @@ try {
     G.combat.heal(); QA.draw(30, 0.1);
     return { calm, fight: fight.mood, fightK: fight.moodFight, hurt: hurt.mood, hurtK: hurt.moodHurt, after: G.test.action().verse.mood };
   });
-  console.log("INFO mood", JSON.stringify(mood), new Date().toISOString());
+  console.log("INFO mood", JSON.stringify(mood));
   check(mood.calm < 0.02 && mood.fightK > 0.8 && mood.fight > 0.3, "a fight tints the shadows red", mood);
   check(mood.hurtK > 0.8 && mood.hurt > 0.3 && mood.after < 0.05, "one heart left tints them blue, and healing clears it", mood);
   const smear = await page.evaluate(() => {
@@ -321,9 +347,9 @@ try {
   });
   check(smear.fast > 0.15 && smear.fast <= 0.3 && smear.rest === 0, "at 32 m/s the hero smears along his flight (" + smear.fast.toFixed(2) + "), at rest not at all", smear);
 
-  check(page.errors.length === 0, "no page errors", page.errors);
+  check(page.errors.length === 0, "no page errors in part two", page.errors);
   await page.context().close();
-} catch (e) { check(false, "the verse check threw", e.stack || String(e)); }
+} catch (e) { check(false, "the part two verse check threw", e.stack || String(e)); }
 
 /* ---- a phone: the pass runs, and the screen draws ---- */
 try {
