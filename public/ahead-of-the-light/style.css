@@ -173,6 +173,7 @@ html[data-layout="landscape"] #title .go { min-height: 44px; margin: 2px 0; }
   font-size: 11px; font-weight: 700; letter-spacing: 0.06em; cursor: default; }
 .tunepick { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; font-size: 11px; font-weight: 700; }
 .offer { display: flex; flex-direction: column; min-height: 0; gap: 6px; animation: slidein 0.35s 0.4s both; }
+.again .offer, .again .arrive .type, .again .arrive .news, .again .lane { animation: none; }
 @keyframes slidein { from { opacity: 0; transform: translateY(24px); } }
 @keyframes fadein { from { opacity: 0; } }
 .ohead { margin: 0; font-size: 12px; font-weight: 800; letter-spacing: 0.08em; }
@@ -260,11 +261,11 @@ html[data-layout="desktop"] .s-break { width: min(960px, 100%); left: 50%; trans
   padding-top: calc(var(--st) + 28px); padding-bottom: calc(var(--sb) + 28px); }
 html[data-layout="desktop"] .s-break .arrive { grid-column: 1 / 3; }
 html[data-layout="desktop"] .s-break .arrive .type { font-size: 16px; }
-html[data-layout="desktop"] .s-break .status { grid-column: 1 / 3; flex-direction: row; align-items: stretch; gap: 20px; }
-html[data-layout="desktop"] .shipbox { flex: 0 0 360px; height: 160px; }
-html[data-layout="desktop"] .status .buildrow { flex: 1; flex-direction: column; align-items: flex-start;
-  justify-content: center; }
-html[data-layout="desktop"] .status .dock { flex: 1.4; align-content: center; }
+html[data-layout="desktop"] .s-break .status { grid-column: 1 / 3; display: grid; grid-template-columns: 360px minmax(0, 1fr);
+  grid-auto-rows: min-content; gap: 8px 24px; align-content: center; }
+html[data-layout="desktop"] .shipbox { grid-row: 1 / 4; height: 160px; }
+html[data-layout="desktop"] .status .buildrow { grid-column: 2; }
+html[data-layout="desktop"] .status .dock, html[data-layout="desktop"] .status .tunepick { grid-column: 2; }
 html[data-layout="desktop"] .s-break .offer { grid-column: 1 / 3; }
 html[data-layout="desktop"] .cardw { max-width: 296px; max-height: 380px; }
 html[data-layout="desktop"] .cards { justify-content: center; }
@@ -384,3 +385,4 @@ html[data-layout="desktop"] .panel { max-width: 560px; }
 html[data-motion="reduced"] #title .go, html[data-motion="reduced"] #hint { animation: none; }
 html[data-layout="landscape"] .offer.n4 .ctitle { white-space: normal; font-size: 13px; line-height: 1.15; }
 html[data-layout="landscape"] .offer.n4 .cfx { font-size: 12px; }
+html[data-layout="landscape"] .s-break.docked .shipbox { height: 62px; }

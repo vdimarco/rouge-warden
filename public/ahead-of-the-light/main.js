@@ -700,6 +700,10 @@ function action(act, d = {}) {
       G.tunePick = null;
       showBreak();
       break;
+    case 'tune-cancel':
+      G.tunePick = null;
+      if (G.mode === 'break') showBreak();
+      break;
     case 'refund':
       if (G.mode === 'break' && refund(run, d.chip, tune)) sound.ui();
       showBreak();
@@ -882,7 +886,11 @@ function padScreens() {
   const b = (k) => Boolean(g.buttons[k] && g.buttons[k].pressed);
   const now = { l: b(14) || g.axes[0] < -0.6, r: b(15) || g.axes[0] > 0.6, a: b(0), y: b(3), start: b(9) };
   const edge = (k) => now[k] && !padWas[k];
-  if (edge('start')) { if (G.paused) resumeGame(); else if (G.mode === 'title') start(); }
+  if (edge('start')) {
+    if (G.paused) resumeGame();
+    else if (G.mode === 'play' || G.mode === 'toy') pauseGame(true);
+    else if (G.mode === 'title') start();
+  }
   if (['break', 'chart', 'result', 'toycard'].includes(G.mode)) {
     if (edge('l')) screens.key('ArrowLeft');
     if (edge('r')) screens.key('ArrowRight');

@@ -152,7 +152,7 @@ export function createScreens({ root, onAction }) {
     if (title) title.hidden = name !== 'title';
     if (name === 'title') { layer.innerHTML = ''; layer.hidden = true; return null; }
     layer.hidden = false;
-    layer.innerHTML = `<section class="screen s-${name} ${cls}"${act ? ` data-act="${act}"` : ''}`
+    layer.innerHTML = `<section class="screen s-${name} ${cls}${fresh ? '' : ' again'}"${act ? ` data-act="${act}"` : ''}`
       + ` aria-label="${esc(label || name)}" data-ui="1">${html}</section>`;
     S.el = layer.firstElementChild;
     return S.el;
@@ -203,6 +203,12 @@ export function createScreens({ root, onAction }) {
   // ---------- the break (9.2, 16) ----------
   function dockHtml(m) {
     if (!m.dock) return '';
+    // TUNE asks which card: its choices take the strip's place until one is picked or the ask is dropped
+    if (m.tunePick) {
+      return '<div class="tunepick"><span>TUNE WHICH CARD?</span>'
+        + m.tunePick.map((c) => button('tune', esc(c.title), { cls: 'chip', data: { card: c.id } })).join('')
+        + button('tune-cancel', 'CANCEL', { cls: 'chip quiet' }) + '</div>';
+    }
     const chips = m.dock.chips.map((c) => {
       if (c.auto) return `<div class="dchip auto">${esc(c.label)}</div>`;
       const state = c.bought ? ' bought' : c.ok ? '' : ' off';
@@ -211,10 +217,7 @@ export function createScreens({ root, onAction }) {
       return button(c.bought ? 'refund' : 'buy', `<b>${esc(c.label)}</b><span>${sub}</span>`,
         { cls: `dchip${state}`, data: { chip: c.id }, off: !c.ok && !c.bought });
     }).join('');
-    const pickTune = m.tunePick ? '<div class="tunepick"><span>WHICH CARD?</span>'
-      + m.tunePick.map((c) => button('tune', esc(c.title), { cls: 'chip', data: { card: c.id } })).join('')
-      + '</div>' : '';
-    return `<div class="dock" aria-label="Dock">${chips}</div>${pickTune}`;
+    return `<div class="dock" aria-label="Dock">${chips}</div>`;
   }
   function brk(m) {
     S.model = m;

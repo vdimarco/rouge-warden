@@ -218,8 +218,9 @@ export function captionsFor(events, ctx) {
 
   // the cues you crossed this frame
   if (!ctx.toy) {
-    for (const it of race.leg.items) {
-      if (it.kind !== 'cue' || mem.cuesSeen.has(it.id)) continue;
+    if (mem.cueLeg !== race.leg) { mem.cueLeg = race.leg; mem.cues = race.leg.items.filter((it) => it.kind === 'cue'); }
+    for (const it of mem.cues) {
+      if (mem.cuesSeen.has(it.id)) continue;
       if (it.beat > you.dist) continue;
       mem.cuesSeen.add(it.id);
       if (it.beat < (ctx.prevDist ?? 0) - 2) continue;              // a leg resumed past it
@@ -306,7 +307,10 @@ export function captionsFor(events, ctx) {
     if (c && (c.kind === 'fusion' || c.kind === 'legend') && once('run', `fire:${c.id}`)) add(c.name, PRI.act, 'cardFire');
   }
   mem.fires = fires.length;
-  // the first run: the light, named early in leg 1
+  // the first run: steering as the ring draws (25: 0:00.3), then the light, named early in leg 1
+  if (first && !ctx.toy && race.legNo === 0 && race.t > 0.25 && once('run', 'steer')) {
+    add(ctx.desk ? '← → TO STEER' : 'DRAG TO STEER', PRI.teach, 'cue');
+  }
   if (first && !ctx.toy && race.legNo === 0 && race.t > 2.5 && once('run', 'burst')) {
     add('A GAMMA-RAY BURST IS BEHIND YOU', PRI.teach, 'light');
   }
