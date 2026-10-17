@@ -27,7 +27,7 @@ test('install icons are actual 192/512 PNGs, with a separate maskable icon', asy
     ['./icon-maskable-512.png', 512, 'maskable']
   ];
   for (const [src, size, purpose] of required) {
-    const icon = manifest.icons.find(item => item.src === src);
+    const icon = manifest.icons.find(item => item.src === `${src}?v=comic-badge-20261017`);
     assert.ok(icon, `${src} is in the manifest`);
     assert.equal(icon.type, 'image/png');
     assert.equal(icon.sizes, `${size}x${size}`);
@@ -44,7 +44,7 @@ test('browser and arcade use the same game favicon and Apple icon', async () => 
   for (const page of [html, arcade]) {
     assert.match(page, /<link\b[^>]*rel="icon"[^>]*href="\.\/favicon\.svg"[^>]*type="image\/svg\+xml"/);
     assert.match(page, /<link\b[^>]*rel="icon"[^>]*href="\.\/favicon-32\.png"[^>]*type="image\/png"[^>]*sizes="32x32"/);
-    assert.match(page, /<link\b[^>]*rel="apple-touch-icon"[^>]*href="\.\/apple-touch-icon\.png"[^>]*sizes="180x180"/);
+    assert.match(page, /<link\b[^>]*rel="apple-touch-icon"[^>]*href="\.\/apple-touch-icon\.png\?v=comic-badge-20261017"[^>]*sizes="180x180"/);
   }
   for (const name of ['favicon.svg', 'favicon-32.png', 'apple-touch-icon.png']) {
     assert.deepEqual(await file(`./${name}`), await file(`../../../public/gta/${name}`), `${name} matches across both entry pages`);
