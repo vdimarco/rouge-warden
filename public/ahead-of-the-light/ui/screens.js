@@ -152,7 +152,7 @@ export function createScreens({ root, onAction }) {
     if (title) title.hidden = name !== 'title';
     if (name === 'title') { layer.innerHTML = ''; layer.hidden = true; return null; }
     layer.hidden = false;
-    layer.innerHTML = `<section class="screen s-${name} ${cls}${fresh ? '' : ' again'}"${act ? ` data-act="${act}"` : ''}`
+    layer.innerHTML = `<section class="screen s-${name} ${cls}${fresh ? '' : ' redraw'}"${act ? ` data-act="${act}"` : ''}`
       + ` aria-label="${esc(label || name)}" data-ui="1">${html}</section>`;
     S.el = layer.firstElementChild;
     return S.el;

@@ -130,9 +130,9 @@ const G = {
   run: null, race: null, toy: null, piece: null, toyCaps: 0,
   ranked: url.ranked, mem: createCaptionMemory(), races: [], runT: 0,
   acc: 0, endAt: 0, endHold: 1.2, chartT: 0, chartModel: null, chartRects: null, tunePick: null,
-  result: null, applied: null, metaBefore: null, logTab: 'PLACES', practiceOpen: false,
+  result: null, applied: null, metaBefore: null, logTab: 'PLACES',
   builder: null, builderType: null, built: {},
-  prev: [], sweep: { a: null, v: 0 }, whipA: null, copied: false,
+  prev: [], prevDist: 0, sweep: { a: null, v: 0 }, copied: false,
 };
 const recent = [];
 let frameEvents = [];

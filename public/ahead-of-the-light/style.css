@@ -173,7 +173,7 @@ html[data-layout="landscape"] #title .go { min-height: 44px; margin: 2px 0; }
   font-size: 11px; font-weight: 700; letter-spacing: 0.06em; cursor: default; }
 .tunepick { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; font-size: 11px; font-weight: 700; }
 .offer { display: flex; flex-direction: column; min-height: 0; gap: 6px; animation: slidein 0.35s 0.4s both; }
-.again .offer, .again .arrive .type, .again .arrive .news, .again .lane { animation: none; }
+.redraw .offer, .redraw .arrive .type, .redraw .arrive .news, .redraw .lane { animation: none; }
 @keyframes slidein { from { opacity: 0; transform: translateY(24px); } }
 @keyframes fadein { from { opacity: 0; } }
 .ohead { margin: 0; font-size: 12px; font-weight: 800; letter-spacing: 0.08em; }
