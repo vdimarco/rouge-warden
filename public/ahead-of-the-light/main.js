@@ -130,9 +130,10 @@ const G = {
   run: null, race: null, toy: null, piece: null, toyCaps: 0,
   ranked: url.ranked, mem: createCaptionMemory(), races: [], runT: 0,
   acc: 0, endAt: 0, endHold: 1.2, chartT: 0, chartModel: null, chartRects: null, tunePick: null,
-  result: null, applied: null, metaBefore: null, logTab: 'PLACES', practiceOpen: false,
+  result: null, applied: null, metaBefore: null, logTab: 'PLACES',
   builder: null, builderType: null, built: {},
-  prev: [], sweep: { a: null, v: 0 }, whipA: null, copied: false,
+  prev: [], prevDist: 0, sweep: { a: null, v: 0 }, copied: false,
+  manual: false,            // __race.realtime(false): only advance moves the race (tests)
 };
 const recent = [];
 let frameEvents = [];
@@ -779,7 +780,7 @@ function pauseGame(trust = true) {
   G.paused = true;
   G.regrip = false;
   input.pause(trust);
-  sound.setPaused(true);
+  sound.setPaused(true, { keep: document.hidden });
   G.modal = 'pause';
   hint('');
   showPause();
@@ -1004,16 +1005,48 @@ function drawPlay(dt, alpha) {
   const a = live ? alpha : 1;
   interp(race, a, true);
   const view = scene.render(race, live ? dt : 0, { fixed, shake: overlay.shake() });
-  overlay.render(race, view, live || G.mode === 'ending' ? dt : 0, {
+  const drawn = overlay.render(race, view, live || G.mode === 'ending' ? dt : 0, {
     backdrop: scene.backdrop(), first: (meta.seen.runs || 0) < tune.TEACH_RUNS && !G.toy,
     runT: G.runT + race.t, tells: run ? tellsOf(run.build) : null,
   });
   interp(race, a, false);
+  G.drawn = drawn;
   if (live) scene.adapt(dt);
   const you = race.ships[0];
   const landText = race.leg.type === 'earth' && race.phase !== 'done' ? landNeed(you, race.tune || tune).text : null;
   hud.update(race, { landText });
   return view;
+}
+
+// The caption line keeps clear of the gate's lines, the exit bands and LET GO (22.1): when the caption's words would
+// sit on one, the line moves down (toward the centre, where the ring is wider) or up, or its words shrink, by the
+// least that clears it, and comes back once nothing is in the way. The words' box is read only while something is
+// there to avoid. [shift px, scale] in the order they are tried:
+const capEl = $('captions');
+let capDy = 0, capK = 1;
+const CAP_TRY = [[0, 1], [26, 1], [52, 1], [0, 0.8], [26, 0.8], [52, 0.8], [78, 1], [78, 0.8], [-26, 1], [-26, 0.8],
+  [0, 0.66], [52, 0.66], [78, 0.66], [104, 0.8]];
+function captionClear(drawn) {
+  const keep = drawn && drawn.keep;
+  let want = CAP_TRY[0];
+  if (keep && keep.length && capEl && capEl.textContent) {
+    const rg = document.createRange();
+    rg.selectNodeContents(capEl);
+    const r = rg.getBoundingClientRect();
+    if (r.width > 0) {
+      // the words' box as it would be unmoved and full size
+      const mx = (r.left + r.right) / 2, my = (r.top + r.bottom) / 2 - capDy;
+      const hw = r.width / 2 / capK, hh = r.height / 2 / capK, m = 4;
+      const hit = ([dy, k]) => keep.some((b) => b.x0 < mx + hw * k + m && b.x1 > mx - hw * k - m
+        && b.y0 < my + dy + hh * k + m && b.y1 > my + dy - hh * k - m);
+      want = CAP_TRY.find((c) => !hit(c)) || CAP_TRY[0];
+    }
+  }
+  if (want[0] !== capDy || want[1] !== capK) {
+    [capDy, capK] = want;
+    root.style.setProperty('--cap-dy', `${capDy}px`);
+    root.style.setProperty('--cap-k', String(capK));
+  }
 }
 
 // The title's faint ring, kept clear of the name: its bottom stays above the title block.
@@ -1045,7 +1078,7 @@ function frame(now) {
   last = now;
   if (dt > 0) fpsAvg += (1 / dt - fpsAvg) * 0.05;
   timing.fps = Math.round(fpsAvg);
-  const stepping = (G.mode === 'play' || G.mode === 'toy') && !G.paused && !G.regrip;
+  const stepping = (G.mode === 'play' || G.mode === 'toy') && !G.paused && !G.regrip && !G.manual;
   if (G.mode === 'play' || G.mode === 'toy') pollPad(input, performance.now());
   padScreens();
   if (G.regrip && !input.waiting) goOn();
@@ -1062,7 +1095,9 @@ function frame(now) {
   const race = G.race;
   const events = frameEvents;
   frameEvents = [];
-  if ((G.mode === 'play' || G.mode === 'toy' || G.mode === 'ending' || G.mode === 'vista') && race) {
+  // the steps' events start their effects on this frame, even when the last step already opened a screen (the fast
+  // path through advance skips the end hold and the vista, so a catch's sound would otherwise never start)
+  if (race && (events.length || G.mode === 'play' || G.mode === 'toy' || G.mode === 'ending' || G.mode === 'vista')) {
     feed(events, race);
     captionFrame(events, race);
   }
@@ -1096,6 +1131,8 @@ function frame(now) {
   perfS.render.push(performance.now() - r0);
   sound.frame(soundState(G.mode === 'vista' || G.mode === 'break' ? null : race, dt), dt);
   hud.frame(G.paused ? 0 : dt);
+  // after the caption's words for this frame are set
+  captionClear(G.mode === 'play' || G.mode === 'toy' || G.mode === 'ending' ? G.drawn : null);
   if (opt.debug || opt.perf) debugLine(race);
   perfS.frame.push(performance.now() - f0);
   for (const k of Object.keys(perfS)) if (perfS[k].length > 240) perfS[k].splice(0, perfS[k].length - 240);
@@ -1182,6 +1219,10 @@ window.__race = {
       bearing: r.bearing })));
   },
   events: (n = 50) => plain(recent.slice(-Math.max(0, n))),
+  // what the ring layer drew last frame (overlay.render's answer: the burst ring, wings, rivals, labels, landmark
+  // marks, exit bands, gate lines and the caption's keep-out boxes) and the caption's shift, for the layout checks
+  drawn: () => (G.drawn && (G.mode === 'play' || G.mode === 'toy' || G.mode === 'ending')
+    ? plain({ ...G.drawn, capDy, capK }) : null),
   timing: () => ({ ...timing }),
   perf() {
     const i = scene.info();
@@ -1196,6 +1237,9 @@ window.__race = {
     haptics: haptics.fired(), captions: hud.counts() }),
   restart,
   advance,
+  // realtime(false) stops the frame loop's own steps, so only advance moves the race and a test's timeline is the
+  // same every run; the page still draws, sounds and feeds each frame's events
+  realtime(on = true) { G.manual = !on; G.acc = 0; return !G.manual; },
   input(intent = {}) {
     if ('target' in intent) hook.target = finite(intent.target) ? intent.target : null;
     if ('turn' in intent) hook.turn = clamp(Number(intent.turn) || 0, -1, 1);

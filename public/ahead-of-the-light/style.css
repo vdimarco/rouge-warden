@@ -56,6 +56,8 @@ button { -webkit-appearance: none; appearance: none; }
 }
 #land { left: calc(var(--sl) + 14px); top: calc(var(--st) + 40px); font-size: 11px; font-weight: 700;
   color: var(--muted); letter-spacing: 0.05em; max-width: calc(100vw - var(--sl) - var(--sr) - 200px); }
+/* the big digits grow over the landing line for 0.9 s: it steps aside */
+#speed.big ~ #land { visibility: hidden; }
 #place { right: calc(var(--sr) + 64px); font-size: 22px; text-align: right; }
 #place small { display: block; font-size: 11px; font-weight: 600; color: var(--muted); letter-spacing: 0.06em; }
 #pause { position: fixed; top: calc(var(--st) + 8px); right: calc(var(--sr) + 10px); width: 44px; height: 44px;
@@ -71,7 +73,7 @@ html[data-layout="desktop"] #place small { font-size: 13px; }
 html[data-layout="desktop"] #land { font-size: 13px; top: calc(var(--st) + 48px); }
 
 /* ---------- captions: one line, bold capitals in karaoke chunks, the current word orange ---------- */
-#captions { position: fixed; left: 0; right: 0; top: var(--cap-y); transform: translateY(-50%); text-align: center;
+#captions { position: fixed; left: 0; right: 0; top: calc(var(--cap-y) + var(--cap-dy, 0px)); transform: translateY(-50%) scale(var(--cap-k, 1)); text-align: center;
   pointer-events: none; font-weight: 800; font-size: 26px; letter-spacing: 0.04em; text-shadow: var(--shade);
   padding: 0 calc(var(--sr) + 16px) 0 calc(var(--sl) + 16px); line-height: 1.1; white-space: nowrap; }
 #captions .now { color: var(--accent); }
@@ -173,7 +175,7 @@ html[data-layout="landscape"] #title .go { min-height: 44px; margin: 2px 0; }
   font-size: 11px; font-weight: 700; letter-spacing: 0.06em; cursor: default; }
 .tunepick { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; font-size: 11px; font-weight: 700; }
 .offer { display: flex; flex-direction: column; min-height: 0; gap: 6px; animation: slidein 0.35s 0.4s both; }
-.again .offer, .again .arrive .type, .again .arrive .news, .again .lane { animation: none; }
+.redraw .offer, .redraw .arrive .type, .redraw .arrive .news, .redraw .lane { animation: none; }
 @keyframes slidein { from { opacity: 0; transform: translateY(24px); } }
 @keyframes fadein { from { opacity: 0; } }
 .ohead { margin: 0; font-size: 12px; font-weight: 800; letter-spacing: 0.08em; }
@@ -285,16 +287,20 @@ html[data-layout="desktop"] .dchip { min-height: 72px; flex: 0 1 170px; }
   touch-action: manipulation; text-shadow: none; animation: fadein 0.4s 0.2s both; }
 .lane svg { position: absolute; top: 8px; right: 8px; }
 .lane b { font-size: 12px; font-weight: 800; letter-spacing: 0.04em; padding-right: 24px; }
+.lane b.long { font-size: 10.5px; letter-spacing: 0; }
 .lane span { font-size: 10.5px; font-weight: 800; letter-spacing: 0.04em; color: var(--accent); }
 .lane.k-family span:first-of-type { color: var(--fc); }
 .lane span.cond { color: #fff; }
 html[data-input="desk"] .lane.focus { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
 html[data-layout="desktop"] .lane b { font-size: 16px; }
+html[data-layout="desktop"] .lane b.long { font-size: 14px; }
 html[data-layout="desktop"] .lane span { font-size: 14px; }
 html[data-layout="desktop"] .chead { font-size: 15px; top: calc(var(--st) + 22px); }
 
 /* ---------- the result card (13) ---------- */
 .s-result { cursor: pointer; }
+/* over the light's white flood the result card needs a solid back to read */
+.s-result .panel.res { background: rgba(8, 8, 14, 0.94); }
 .res { max-width: 520px; text-align: left; }
 .res h2 { font-size: 26px; }
 .res h2.home { color: var(--accent); }

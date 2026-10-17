@@ -16,7 +16,7 @@ import { ROUTE, LEG_TYPES, CONDITIONS } from '../../public/ahead-of-the-light/co
 import { TUNE } from '../../public/ahead-of-the-light/core/tune.js';
 import { createShip } from '../../public/ahead-of-the-light/core/handle.js';
 import { stepRace, STEP, NO_INTENT, E } from '../../public/ahead-of-the-light/core/race.js';
-import { driverFor } from '../../public/ahead-of-the-light/core/bots.js';
+import { driverFor, playRun as botRun } from '../../public/ahead-of-the-light/core/bots.js';
 import { mulberry32 } from '../../public/light-years-home/core/rng.js';
 
 const RUN_KEYS = ['v', 'seed', 'daily', 'ship', 'redshift', 'easy', 'ranked', 'leg', 'phase', 'chart', 'lanes', 'you',
@@ -189,7 +189,7 @@ test('chart rules (11.3)', () => {
   const v = chartView(run);
   assert.equal(v.nodes.length, 9);
   assert.deepEqual(v.nodes.map((n) => n.name), [...NODES]);
-  assert.match(v.launch.line, /^THE LIGHT AT LAUNCH: \d+ S$/);
+  assert.match(v.launch.line, /^THE LIGHT AT LAUNCH: (\d+ S|\d+ MIN|HOURS)$/);
   assert.equal(makeChart(3)[2].find((l) => l.kind === 'risk').tag, 'PICK 1 OF 4 · RARE+');
   // chip names: 14 characters at most, whole words only
   for (const lanes of makeChart(3)) {
@@ -514,7 +514,7 @@ test('card hooks do what their faces say', () => {
   f.you.burn.t = 0.5;
   f.you.eta = 1.5;
   f.run('hit', { event: { type: 'hit', cause: 'knot' } });
-  assert.ok(Math.abs(f.you.eta - 2.0) < 1e-9);
+  assert.ok(Math.abs(f.you.eta - (1.5 + f.T.HIT_ETA)) < 1e-9);
   const c0 = f.you.chain;
   f.run('graze', { event: { type: 'graze' } });
   assert.equal(f.you.chain, c0 + 1);
@@ -635,7 +635,7 @@ test('the arrival: dock, free repair, clean leg, a beaten boss, the VOID and SKI
   assert.equal(run.you.fuel, 2, 'CLEAN LEG +1 fuel at full hull');
   const b = breakOf(run);
   assert.match(b.header, /^COMA · LEG 1 OF 8 · YOU AGED \+\d+\.\d YR · 1ST$/);
-  assert.match(b.light.line, /^LEAD AT LAUNCH \d+ S$/);
+  assert.match(b.light.line, /^LEAD AT LAUNCH (\d+ S|\d+ MIN|HOURS)$/);
   assert.ok(b.lines.includes('CLEAN LEG +1'));
   // SKIP: +1 fuel, or +1 reroll with full tanks
   const fuel = run.you.fuel, rr = run.rerolls;
@@ -765,4 +765,18 @@ test('a build\'s hooks run inside real legs: HAIR TRIGGER\'s hairlines add 2 to 
   assert.ok(hairs > 5, `${hairs} hairlines`);
   assert.equal(ok, hairs);
   assert.equal(race.tune.HAIR, 4.5);
+});
+
+test('each leg\'s cap holds from its launch: the gap a gate leaves you, and every rival, is at most the next cap', () => {
+  for (const seed of [1, 2, 3]) {
+    const r = botRun({ seed, driver: 'mid', legs: 1, keep: true });
+    assert.equal(r.run.phase, 'break', `seed ${seed} reached the first break`);
+    const cap = TUNE.GAP_CAP[1];
+    assert.ok(r.run.you.gap <= cap + 1e-9, `seed ${seed}: your gap ${r.run.you.gap} over leg 2's cap ${cap}`);
+    for (const [id, f] of Object.entries(r.run.field.rivals)) {
+      assert.ok(f.gap <= cap + 1e-9, `seed ${seed}: ${id}'s gap ${f.gap} over the cap`);
+    }
+    const b = breakOf(r.run, TUNE);
+    assert.match(b.light.line, /^LEAD AT LAUNCH (\d+ S|\d+ MIN|HOURS)$/);
+  }
 });

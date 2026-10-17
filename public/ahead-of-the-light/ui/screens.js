@@ -18,6 +18,8 @@ function button(act, inner, { cls = 'btn', data = {}, attrs = '', off = false } 
 }
 const back = () => button('back', 'BACK', { cls: 'btn main wide' });
 const SWITCH = '<button type="button" class="btn quiet" data-switch>Switch game</button>';
+// /arcade/switch.js wires the [data-switch] buttons it finds when the page loads; a screen drawn later asks it again
+const wireSwitch = () => { try { if (typeof window !== 'undefined' && window.GameSwitch) window.GameSwitch.wire(); } catch (e) { /* no switcher */ } };
 
 // ---------------------------------------------------------------- line art
 
@@ -137,8 +139,11 @@ export function createScreens({ root, onAction }) {
   const locked = () => now() - S.shownAt < S.unlock * 1000;
 
   root.addEventListener('click', (e) => {
+    // the game switcher's button belongs to /arcade/switch.js: a tap on it never reaches the screen under it (on the
+    // title that screen is TAP TO FLY, so it started a run behind the switcher)
+    if (e.target.closest('[data-switch], a[href]')) return;
     const b = e.target.closest('[data-act]');
-    if (!b || !root.contains(b) || b.hasAttribute('data-switch') || locked()) return;
+    if (!b || !root.contains(b) || locked()) return;
     e.preventDefault();
     onAction(b.dataset.act, { ...b.dataset });
   });
@@ -152,9 +157,10 @@ export function createScreens({ root, onAction }) {
     if (title) title.hidden = name !== 'title';
     if (name === 'title') { layer.innerHTML = ''; layer.hidden = true; return null; }
     layer.hidden = false;
-    layer.innerHTML = `<section class="screen s-${name} ${cls}${fresh ? '' : ' again'}"${act ? ` data-act="${act}"` : ''}`
+    layer.innerHTML = `<section class="screen s-${name} ${cls}${fresh ? '' : ' redraw'}"${act ? ` data-act="${act}"` : ''}`
       + ` aria-label="${esc(label || name)}" data-ui="1">${html}</section>`;
     S.el = layer.firstElementChild;
+    wireSwitch();
     return S.el;
   }
   function hide() {
@@ -190,6 +196,7 @@ export function createScreens({ root, onAction }) {
     t.dataset.ui = '1';
     mount('title', '');
     t.hidden = false;
+    wireSwitch();
   }
 
   // ---------- the toy's card (24.2) ----------
@@ -227,8 +234,11 @@ export function createScreens({ root, onAction }) {
     const build = m.build.length ? m.build.map((c) => mini(c)).join('') : '<span class="none">NO CARDS YET</span>';
     const reroll = m.canReroll ? button('reroll', `REROLL · ${m.rerolls}`, { cls: 'btn small' }) : '';
     const lines = m.lines.length ? `<p class="news">${m.lines.map(esc).join(' · ')}</p>` : '';
-    const offerHead = o ? `<p class="ohead">${esc(o.caption || (o.left > 1 ? `PICK ${o.left}` : 'PICK ONE'))}`
-      + `${o.tag ? ` <span>${esc(o.tag)}</span>` : ''}${o.bonus ? ` <span class="hot">${esc(o.bonus)}</span>` : ''}`
+    // a RISK tag already says how many to pick ("PICK 1 OF 4 · RARE+"), so it stands alone
+    const own = o && o.tag && /^PICK /.test(o.tag) && !o.caption;
+    const offerHead = o ? `<p class="ohead">${own ? `<span>${esc(o.tag)}</span>`
+      : `${esc(o.caption || (o.left > 1 ? `PICK ${o.left}` : 'PICK ONE'))}${o.tag ? ` <span>${esc(o.tag)}</span>` : ''}`}`
+      + `${o.bonus ? ` <span class="hot">${esc(o.bonus)}</span>` : ''}`
       + '</p>' : '';
     const banishable = (c) => m.banishes > 0 && c.kind !== 'fusion' && c.kind !== 'legend' && c.kind !== 'trophy';
     const cardsHtml = o ? cards.map((c, i) => cardHtml(c, i, { banish: banishable(c), focus: S.focus === i,
@@ -259,7 +269,9 @@ export function createScreens({ root, onAction }) {
         + `--fc:${l.colour}`;
       const ic = l.icon === 'family' ? famGlyph(l.fam, 20) : glyphSvg(l.icon, '#fff', 20);
       const tags = l.tags.map((t, k) => `<span class="${k ? 'cond' : ''}">${esc(t)}</span>`).join('');
-      return button('lane', `${ic}<b>${esc(l.short)}</b>${tags}`, {
+      // a long name (MARKARIAN'S) runs smaller so it clears the chip's icon
+      const nm = String(l.short || '').length > 9 ? '<b class="long">' : '<b>';
+      return button('lane', `${ic}${nm}${esc(l.short)}</b>${tags}`, {
         cls: `lane${S.focus === i ? ' focus' : ''} k-${esc(l.kind)}`, data: { i },
         attrs: ` style="${style}" aria-label="${esc(l.line)}: ${esc(l.tags.join(', '))}"` });
     }).join('');

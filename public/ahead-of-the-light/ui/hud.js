@@ -190,6 +190,16 @@ export function createHud({ speed, place, land, captions, tune, slow = false } =
 export function createCaptionMemory() { return { run: {}, leg: {}, cuesSeen: new Set(), fires: 0 }; }
 export function newLegMemory(mem) { mem.leg = {}; mem.cuesSeen = new Set(); mem.fires = 0; }
 
+// The burn lesson's words: "the light is gaining" only while it is (a fast first leg can reach the cue with the light
+// minutes away). It outranks the other teaching lines and waits up to 6 s, so the whip's PRESS AS IT PASSES, HOLD and
+// TUCK IN BEHIND, which come at the same moment, can no longer drop it (playtest P0-2).
+const BURN_TTC = 12;
+function burnLesson(you, ctx, add) {
+  const near = Number.isFinite(you.ttc) && you.ttc < 60;
+  add(near ? (ctx.desk ? 'THE LIGHT IS GAINING · ↑ TO BURN' : 'THE LIGHT IS GAINING · FLICK UP TO BURN')
+    : (ctx.desk ? '↑ TO BURN FOR SPEED' : 'FLICK UP TO BURN FOR SPEED'), PRI.light, 'cue', { wait: 6 });
+}
+
 // Words for the leg's cues (11.5; WP8's list). first: only the first time in a run.
 const CUES = {
   highway: { text: 'HIGHWAY' }, wallRide: { text: 'WALL RIDE' }, jet: { text: 'RIDE THE JET' },
@@ -226,9 +236,8 @@ export function captionsFor(events, ctx) {
       if (it.beat < (ctx.prevDist ?? 0) - 2) continue;              // a leg resumed past it
       const n = it.name, d = it.data || {};
       if (n === 'steer' && first && once('run', 'steer')) add(ctx.desk ? '← → TO STEER' : 'DRAG TO STEER', PRI.teach, 'cue');
-      else if (n === 'burn' && first && once('run', 'burn')) {
-        add(ctx.desk ? 'THE LIGHT IS GAINING · ↑ TO BURN' : 'THE LIGHT IS GAINING · FLICK UP TO BURN', PRI.teach, 'cue');
-      } else if (n === 'ram' && first && once('run', 'ram')) add('RAM IT INTO THE KNOT', PRI.teach, 'cue');
+      else if (n === 'burn' && first && once('run', 'burn')) burnLesson(you, ctx, add);
+      else if (n === 'ram' && first && once('run', 'ram')) add('RAM IT INTO THE KNOT', PRI.teach, 'cue');
       else if (n === 'gateCall' && teach) add('THREAD OR DOCK', PRI.gate, 'cue');
       else if (CUES[n] && (!CUES[n].first || once('run', `cue:${n}`))) add(CUES[n].text, CUES[n].pri || PRI.teach, 'cue');
       else if (n === 'fact' && FACT[d.fact] && once('run', `fact:${d.fact}`)) {
@@ -298,6 +307,14 @@ export function captionsFor(events, ctx) {
         }
         break;
       default:
+    }
+  }
+  // the burn lesson (playtest P0-2): on a first run it also fires as the light comes inside BURN_TTC with a whole cell
+  // to burn, and a burn of your own before it retires it
+  if (first && !ctx.toy && !mem.run.burn) {
+    if (events.some((e) => e.type === 'burn' && e.ship === you.id)) mem.run.burn = true;
+    else if (race.legNo === 0 && race.t > 3 && you.ttc < BURN_TTC && you.fuel >= 1 && once('run', 'burn')) {
+      burnLesson(you, ctx, add);
     }
   }
   // a fusion's or legendary's first trigger this run takes the caption slot

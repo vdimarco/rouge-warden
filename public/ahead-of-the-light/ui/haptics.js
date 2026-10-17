@@ -9,10 +9,11 @@ export function createHaptics({ enabled = true } = {}) {
   const can = typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function';
   let on = enabled;
   const fired = {};
-  function buzz(type, pattern = PATTERN[type]) {
+  // as: the event type it answers, so feedback() counts per event type (a SLAM is a `contact`, home is a `land`)
+  function buzz(type, pattern = PATTERN[type], as = type) {
     if (!on || !can || pattern === undefined) return false;
     try { navigator.vibrate(pattern); } catch (e) { return false; }
-    fired[type] = (fired[type] || 0) + 1;
+    fired[as] = (fired[as] || 0) + 1;
     return true;
   }
   // One frame's events. you: your ship's id. near(ship id): true when that rival is within a second of you.
@@ -25,7 +26,7 @@ export function createHaptics({ enabled = true } = {}) {
           if (mine) buzz(e.type);
           break;
         case 'contact':
-          if (e.victim === you && e.kind === 'slam') buzz('slam');
+          if (e.victim === you && e.kind === 'slam') buzz('slam', PATTERN.slam, 'contact');
           break;
         case 'takedown':
           if (e.by === you) buzz('takedown');
@@ -34,7 +35,7 @@ export function createHaptics({ enabled = true } = {}) {
           if (near(e.id || e.ship)) buzz('eaten');
           break;
         case 'land':
-          if (mine && e.ok) buzz('home');
+          if (mine && e.ok) buzz('home', PATTERN.home, 'land');
           break;
         default:
       }

@@ -14,15 +14,15 @@ export const META_VERSION = 1;
 // Each ship changes how it drives, not how strong it is. half and turn go on your ship at launch; patch goes into
 // the leg's tuning (yours); starts: the card it begins with; feat: how it unlocks.
 export const SHIPS = Object.freeze({
-  lantern: Object.freeze({ id: 'lantern', name: 'LANTERN', half: 3.5, turn: 600, hull: 3, shield: 1, shieldT: 8,
+  lantern: Object.freeze({ id: 'lantern', name: 'LANTERN', half: 3.5, turn: 600, hull: 3, shield: 1, shieldT: 5,
     fuel: 2, fuelCap: 4, burn: 0.4, quirk: 'The reference ship.', starts: null, feat: null }),
-  needle: Object.freeze({ id: 'needle', name: 'NEEDLE', half: 2.5, turn: 700, hull: 2, shield: 1, shieldT: 6,
+  needle: Object.freeze({ id: 'needle', name: 'NEEDLE', half: 2.5, turn: 700, hull: 2, shield: 1, shieldT: 4,
     fuel: 1, fuelCap: 3, burn: 0.4, hitEta: 0.8, quirk: 'A hit costs more speed.', starts: 'hair-trigger',
     feat: 'A CLEAN LEG ON LEG 3 OR LATER' }),
-  tug: Object.freeze({ id: 'tug', name: 'TUG', half: 4.5, turn: 480, hull: 5, shield: 1, shieldT: 10, fuel: 3,
+  tug: Object.freeze({ id: 'tug', name: 'TUG', half: 4.5, turn: 480, hull: 5, shield: 1, shieldT: 7, fuel: 3,
     fuelCap: 5, burn: 0.35, slamV: 140, quirk: 'Rams on you shove half as far and spill nothing.', starts: null,
     feat: 'TAKE DOWN 3 RIVALS IN ONE RUN' }),
-  ghost: Object.freeze({ id: 'ghost', name: 'GHOST', half: 3, turn: 650, hull: 1, shield: 2, shieldT: 5, fuel: 2,
+  ghost: Object.freeze({ id: 'ghost', name: 'GHOST', half: 3, turn: 650, hull: 1, shield: 2, shieldT: 4, fuel: 2,
     fuelCap: 4, burn: 0.4, noDock: true, rowUp: 1, quirk: 'Cannot dock. Every offer rolls one row up.', starts: null,
     feat: 'GET HOME' }),
 });
@@ -188,7 +188,7 @@ export function nextUnlock(pages) {
 }
 
 // The result card's log line (13, 14.2) from applyRun's answer: "LOG +9 PAGES · REROLL +1 UNLOCKED", or the next
-// unlock when none opened: "LOG +7 PAGES · 2 TO BANISH". A full log reads "LOG +n PAGES · LOG FULL". null for a
+// unlock when none opened: "LOG +7 PAGES · 2 PAGES TO BANISH". A full log reads "LOG +n PAGES · LOG FULL". null for a
 // practice run (it earns no pages).
 export function logLine(applied, practice = false) {
   if (!applied || practice) return null;
@@ -199,7 +199,7 @@ export function logLine(applied, practice = false) {
   const next = applied.next;
   if (!next) return `${head} · LOG FULL`;
   const u = UNLOCKS.find((x) => x.id === next.id);
-  return `${head} · ${next.left} TO ${u ? u.short : next.name}`;
+  return `${head} · ${next.left} ${next.left === 1 ? 'PAGE' : 'PAGES'} TO ${u ? u.short : next.name}`;
 }
 
 // The ships a run's feats unlock that the meta does not have yet.

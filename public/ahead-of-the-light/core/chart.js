@@ -3,6 +3,7 @@
 // leg's lanes as chips). makeChart draws from the run's 'chart' stream only, so a seed always gives the same chart.
 // Pure.
 import { TUNE } from './tune.js';
+import { ttcText } from './ringmath.js';
 import { ROUTE, LEG_TYPES, CONDITIONS } from './course/legs.js';
 import { mulberry32, hashSeed } from '../../light-years-home/core/rng.js';
 import { FAMS, FAMILIES } from './cards.js';
@@ -147,7 +148,7 @@ export function chartView(run, tune = TUNE) {
   const boss = bossAt[next] || null;
   return {
     leg, next, type: ROUTE[next] || null, nodes, lanes, boss,
-    launch: ttc === null ? null : { ttc, line: `THE LIGHT AT LAUNCH: ${Math.max(0, Math.round(ttc))} S` },
+    launch: ttc === null ? null : { ttc, line: `THE LIGHT AT LAUNCH: ${ttcText(Math.max(0, ttc))}` },
     joins: joins ? `${joins} JOINS` : null,
   };
 }

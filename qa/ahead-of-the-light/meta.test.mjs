@@ -51,9 +51,9 @@ test('pages count once; unlocks fire at their thresholds', () => {
   assert.deepEqual(out.next, { id: 'banish-1', name: 'BANISH', at: 15, left: 8 });
   // the result card's log line (13, 14.2): what opened, or how far the next unlock is
   assert.equal(logLine(applyRun(createMeta(), run1)), 'LOG +7 PAGES · REROLL +1 UNLOCKED');
-  assert.equal(logLine(out), 'LOG +0 PAGES · 8 TO BANISH');
+  assert.equal(logLine(out), 'LOG +0 PAGES · 8 PAGES TO BANISH');
   assert.equal(logLine({ pages: ['p'], unlocks: [], next: { id: 'lucky-star', name: 'LUCKY STAR', left: 2 } }),
-    'LOG +1 PAGE · 2 TO LUCKY STAR');
+    'LOG +1 PAGE · 2 PAGES TO LUCKY STAR');
   assert.equal(logLine({ pages: ['p'], unlocks: [], next: null }), 'LOG +1 PAGE · LOG FULL');
   assert.equal(logLine(out, true), null, 'a practice run has no log line');
   const before = JSON.stringify(meta);
@@ -101,8 +101,8 @@ test('ship feats unlock once', () => {
   assert.equal(shipTune('tug', TUNE).HULL_MAX, 5);
   assert.equal(shipTune('tug', TUNE).SLAM_V, 140);
   assert.equal(shipTune('needle', TUNE).HIT_ETA, 0.8);
-  assert.equal(shipTune('ghost', TUNE).SHIELD_T, 5);
-  assert.equal(shipTune('needle', { ...TUNE, HIT_ETA: 0.7 }).HIT_ETA, 0.7, 'a URL override wins');
+  assert.equal(shipTune('ghost', TUNE).SHIELD_T, 4);
+  assert.equal(shipTune('needle', { ...TUNE, HIT_ETA: 0.6 }).HIT_ETA, 0.6, 'a URL override wins');
   assert.deepEqual(Object.keys(SHIPS), ['lantern', 'needle', 'tug', 'ghost']);
 });
 

@@ -373,6 +373,9 @@ const PAGES = [
   { id: "lab/worlds", path: "/lab/worlds/", start: click("#start-button"), sound: "ctx" },
   { id: "moonwell", path: "/moonwell/", start: click("#launch"), sound: "ctx" },
   { id: "river-rush", path: "/river-rush/", boot: () => !!document.querySelector('button[aria-label="Enable sound"]'), start: click('button[aria-label="Enable sound"]'), sound: "ctx" },
+  // Ahead of the Light makes its context on the first tap (TAP TO FLY); a hidden page pauses the race, and the pause card
+  // keeps a low-passed drone once the page is shown again
+  { id: "ahead-of-the-light", path: "/ahead-of-the-light/", boot: () => !!window.__race && !document.querySelector("#title").hidden, start: click("#go"), sound: "ctx", music: true },
   { id: "neon", path: "/neon/", boot: () => !!document.querySelector("#start"), start: click("#start"), sound: "ctx" },
   { id: "primordia", path: "/primordia/", start: click("#playBtn"), sound: "ctx" },
   { id: "olympus", path: "/olympus/", start: click('button[aria-label="Enable audio"]'), sound: "ctx" },

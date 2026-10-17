@@ -8,6 +8,7 @@
 // is plain JSON-safe data: save.js stores it at each break. Pure.
 import { TUNE } from './tune.js';
 import { createRace } from './race.js';
+import { ttcText } from './ringmath.js';
 import { buildLeg, piecesOf } from './course/gen.js';
 import { ROUTE } from './course/legs.js';
 import { makeChart, chartView, launchTtc, GATE_NAMES } from './chart.js';
@@ -66,8 +67,8 @@ export function createRun({ seed, ship = null, daily = null, redshift = 0, easy 
   const rivals = {};
   for (const id of [...regs.racing, regs.reserve]) {
     if (!id) continue;
-    rivals[id] = { hull: tune.HULL0, fuel: tune.RIVAL_FUEL_MIN, gap: tune.GAP0, alive: true, nemesis: false,
-      settled: false };
+    rivals[id] = { hull: tune.HULL0, fuel: tune.RIVAL_FUEL_MIN, gap: tune.RIVAL_GAP0 ?? tune.GAP0, alive: true,
+      nemesis: false, settled: false };
   }
   const starts = shipOf(ship).starts;
   return {
@@ -314,6 +315,14 @@ export function endLeg(run, race, tune = null) {
   run.you.launchEta = ls && finite(ls.eta) ? ls.eta
     : gate === 'thread' ? T.LAUNCH_THREAD : gate === 'dock' ? T.LAUNCH_DOCK : T.LAUNCH_PAST;
   const Y = run.you;
+  // the next leg's cap holds from its launch, for every ship: the light held back by this leg's masses comes round
+  // them, so a surplus earned here does not carry past the gate (7.3; playtest P0-1)
+  const capNext = shipTune(run.ship, T, run.redshift, run.easy).GAP_CAP[run.leg + 1];
+  if (finite(capNext)) {
+    Y.gap = Math.min(Y.gap, capNext);
+    const capRival = T.GAP_CAP[run.leg + 1] ?? capNext;
+    for (const r of Object.values(f.rivals)) if (finite(r.gap)) r.gap = Math.min(r.gap, capRival);
+  }
   if (gate === 'dock') {
     const free = run.redshift >= 5 ? 0 : T.FREE_REPAIR;
     run.dock = { free, bought: [] };
@@ -437,7 +446,7 @@ export function breakOf(run, tune = TUNE) {
     leg: run.leg, phase: run.phase, header, lines: rec ? [...rec.lines] : [], vista: rec ? rec.vista : null,
     ship: { type: run.ship, hull: Y.hull, hullMax: Y.hullMax, shield: Y.shieldMax, shieldMax: Y.shieldMax,
       fuel: Y.fuel, fuelCap: Y.fuelCap, boat: Boolean(boatOf(run)) },
-    light: { gap: Y.gap, eta: Y.launchEta, ttc, line: `LEAD AT LAUNCH ${Math.max(0, Math.round(ttc))} S` },
+    light: { gap: Y.gap, eta: Y.launchEta, ttc, line: `LEAD AT LAUNCH ${ttcText(Math.max(0, ttc))}` },
     build: [...run.build].sort((a, b) => forms(a) - forms(b)).map((b) => faceOf(b.id, b.r, run.build)),
     offer: o ? {
       cards: o.cards.map((c, i) => ({ ...faceOf(c.id, c.r, run.build), slot: c.slot, why: c.why, taken: o.taken.includes(i),
