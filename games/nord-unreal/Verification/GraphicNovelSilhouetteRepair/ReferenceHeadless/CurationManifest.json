@@ -1,0 +1,41 @@
+{
+  "scope": "Reference-derived headless native observations and executed prototype source; no persistent/graphics acceptance",
+  "files": [
+    {
+      "file": "Gameplay.json",
+      "source": "Saved/Tests/GraphicNovel/HeadlessCompoundReferencePlan-20261017/Capture/PlayerQuality1280Headless.json",
+      "sha256": "9ae8a1f1a73f3718f7f13bf0c45244a203b0c3e368b8982c8483eefd54e01e1a",
+      "bytes": 652219
+    },
+    {
+      "file": "Restoration.json",
+      "source": "Saved/Tests/GraphicNovel/HeadlessCompoundReferencePlan-20261017/Run-20261017T190825Z/result.json",
+      "sha256": "416a10bb48b004d015b04b2739af63e8baedb4175b77e05ad28c2934e9c31997",
+      "bytes": 1679
+    },
+    {
+      "file": "CPUHooksCheck.json",
+      "source": "Saved/Tests/GraphicNovel/HeadlessCompoundReferencePlan-20261017/cpu-check.json",
+      "sha256": "41d5412d6e703ecf675d4e84fbb4d09f02986545c997f05b78874c9bb85a6e2a",
+      "bytes": 2176
+    },
+    {
+      "file": "crew_prop_trial.py",
+      "source": "Saved/Tests/GraphicNovel/HeadlessCompoundReferencePlan-20261017/crew_prop_trial.py",
+      "sha256": "9edc5f36934c86e2dfb80cb9620b78f973cb645e4f2dc27c947f6f1339120da3",
+      "bytes": 9162
+    },
+    {
+      "file": "headless_hooks.py",
+      "source": "Saved/Tests/GraphicNovel/HeadlessCompoundReferencePlan-20261017/headless_hooks.py",
+      "sha256": "6a78f7b671f3007c1295638b696329fadbbc2ed18beefe77a963d34102fe8331",
+      "bytes": 6802
+    },
+    {
+      "file": "SourcePins.json",
+      "source": "Saved/Tests/GraphicNovel/HeadlessCompoundReferencePlan-20261017/source-pins.json",
+      "sha256": "fe8324037659b21c537710b4b9d20428a6a0b04bc509e1438faf863ddea0122a",
+      "bytes": 3058
+    }
+  ]
+}

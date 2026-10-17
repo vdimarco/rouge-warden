@@ -1,0 +1,18 @@
+{
+  "passed": true,
+  "source_root": "nord-shoulder-pose-trial-20261017T184651Z/control",
+  "characters": [
+    {
+      "name": "CurlyMetalhead",
+      "authoring": "original local skeletal keyframes; no paid generation",
+      "body_sha256": "b7e7ca0d9c486412108cba85e1cd4a5512fecd4ad36b8cfdb4677259ff6f9244",
+      "jump_sha256": "63a845ea031836c7face12a11170196b9a63bba3cff684156c64a2543bf9fc6d",
+      "seconds": 1.2,
+      "fps": 30,
+      "bones": 24,
+      "head_and_neck_unchanged": true,
+      "actor_root_motion": false,
+      "fbx_round_trip_passed": true
+    }
+  ]
+}

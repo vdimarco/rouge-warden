@@ -1,0 +1,29 @@
+{
+  "created_utc": "2026-10-17T19:11:21.434316+00:00",
+  "scope": "checkpoint verification only; no successful rendered comparison, game persistence or art acceptance",
+  "checks": [
+    {
+      "name": "checkpoint",
+      "exit_code": 0,
+      "output_sha256": "644471f4ae3c7a40270a32f59dbee328d84a5d03abc3cc151f0bc1f981d3efeb"
+    },
+    {
+      "name": "neutral_math",
+      "exit_code": 0,
+      "output_sha256": "d497bf7adca2d905751c0be562b6ca1c391320e51f42cfa1df15df24e1cbddd3"
+    },
+    {
+      "name": "diff_whitespace",
+      "exit_code": 0,
+      "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "manual_added_scenario_structure_passed": true,
+  "openspec_cli_available": false,
+  "openspec_cli_validation": "not run: CLI unavailable",
+  "native_author_and_reload": "passed; receipts retained",
+  "headless_compound": "initial and corrected reference-derived runs passed; graphics untested",
+  "vulkan_rendered": "failed before PIE; exact restoration passed",
+  "generation_spent_this_task_usd": 0,
+  "remaining_uncommitted_authorized_generation_usd": 21
+}

@@ -1,0 +1,282 @@
+{
+  "schema": 1,
+  "scope": "Durable private CPU checkpoint; no graphics/native/motion acceptance or promotion",
+  "source_directory": "/tmp/nord-shoulder-pose-trial-20261017T184651Z",
+  "source_results_sha256": "d63ae0bc2cdd3f3c73050cd51a11306ba011f90f4a19ae19a1dc179fd17e805c",
+  "source_artifact_manifest_count": 32,
+  "source_files_copied": 33,
+  "source_bytes_copied": 7372522,
+  "source_copy_hashes_verified": true,
+  "manifest_self_excluded": true,
+  "files": [
+    {
+      "file": "CPUReview.md",
+      "bytes": 3172,
+      "sha256": "22bdee33e684213a3f54e436f288bcd6ebde26a8315df25daacbaa5a223ee85a"
+    },
+    {
+      "file": "baseline-front.png",
+      "bytes": 598967,
+      "sha256": "822915d8ea0b5e029a0fc5c90adfceaa7760101b4e57be2aa6836b256a943b3c",
+      "source_file": "baseline-front.png",
+      "source_sha256": "822915d8ea0b5e029a0fc5c90adfceaa7760101b4e57be2aa6836b256a943b3c",
+      "source_copy_verified": true
+    },
+    {
+      "file": "baseline-side.png",
+      "bytes": 583717,
+      "sha256": "88a22b15559fad601699edc17adbce0afbcfc17047fb210ba4ca52daba9e5fec",
+      "source_file": "baseline-side.png",
+      "source_sha256": "88a22b15559fad601699edc17adbce0afbcfc17047fb210ba4ca52daba9e5fec",
+      "source_copy_verified": true
+    },
+    {
+      "file": "baseline-threequarter.png",
+      "bytes": 598353,
+      "sha256": "131e30dde90e9e8f4e1c3558fdcc3ea97286da18dacb402161cd8d19d52c27c0",
+      "source_file": "baseline-threequarter.png",
+      "source_sha256": "131e30dde90e9e8f4e1c3558fdcc3ea97286da18dacb402161cd8d19d52c27c0",
+      "source_copy_verified": true
+    },
+    {
+      "file": "check_clearance.py",
+      "bytes": 3827,
+      "sha256": "cfc12fdeed05f4ece3d3e6ea0884dab573c5fbe8c86dc64716e7d666792d17a1",
+      "source_file": "check_clearance.py",
+      "source_sha256": "cfc12fdeed05f4ece3d3e6ea0884dab573c5fbe8c86dc64716e7d666792d17a1",
+      "source_copy_verified": true
+    },
+    {
+      "file": "control/CurlyMetalhead/jump.fbx",
+      "bytes": 221356,
+      "sha256": "63a845ea031836c7face12a11170196b9a63bba3cff684156c64a2543bf9fc6d",
+      "source_file": "control/CurlyMetalhead/jump.fbx",
+      "source_sha256": "63a845ea031836c7face12a11170196b9a63bba3cff684156c64a2543bf9fc6d",
+      "source_copy_verified": true
+    },
+    {
+      "file": "control/CurlyMetalhead/jump.json",
+      "bytes": 5070,
+      "sha256": "e5317c95bb0fe1ec892d7f94a129d4e0fbb47e07904a19e643a8a9feba1a923e",
+      "source_file": "control/CurlyMetalhead/jump.json",
+      "source_sha256": "e5317c95bb0fe1ec892d7f94a129d4e0fbb47e07904a19e643a8a9feba1a923e",
+      "source_copy_verified": true
+    },
+    {
+      "file": "control-authoring.json",
+      "bytes": 579,
+      "sha256": "9941d9d54538b8315dfa37302878c6b2b0139753f52a53ff5a7e8bb2f7886714",
+      "source_file": "control-authoring.json",
+      "source_sha256": "9941d9d54538b8315dfa37302878c6b2b0139753f52a53ff5a7e8bb2f7886714",
+      "source_copy_verified": true
+    },
+    {
+      "file": "control-authoring.log",
+      "bytes": 279,
+      "sha256": "2be8405b989ba2d6f85d22815a327e06a0a7112a610654a06c6b99e4570ce83e",
+      "source_file": "control-authoring.log",
+      "source_sha256": "2be8405b989ba2d6f85d22815a327e06a0a7112a610654a06c6b99e4570ce83e",
+      "source_copy_verified": true
+    },
+    {
+      "file": "control_jump.py",
+      "bytes": 8369,
+      "sha256": "ed50ad1d4a09a9d6b71ee45c108a4f0e404b222ebfe311df3302929a6602aebd",
+      "source_file": "control_jump.py",
+      "source_sha256": "ed50ad1d4a09a9d6b71ee45c108a4f0e404b222ebfe311df3302929a6602aebd",
+      "source_copy_verified": true
+    },
+    {
+      "file": "cpu-preflight.json",
+      "bytes": 4189,
+      "sha256": "71cbbc0960c312c700730a76275e9f4a2cb5ca6db7071401ef51da05f5af8f5c",
+      "source_file": "cpu-preflight.json",
+      "source_sha256": "71cbbc0960c312c700730a76275e9f4a2cb5ca6db7071401ef51da05f5af8f5c",
+      "source_copy_verified": true
+    },
+    {
+      "file": "native-calibration-preview.log",
+      "bytes": 640,
+      "sha256": "d2ad21cccf135d1bd9e6c0a0071abe72e90b15eabe1853b25ced7c377008b721",
+      "source_file": "native-calibration-preview.log",
+      "source_sha256": "d2ad21cccf135d1bd9e6c0a0071abe72e90b15eabe1853b25ced7c377008b721",
+      "source_copy_verified": true
+    },
+    {
+      "file": "native-grip-preview.json",
+      "bytes": 934,
+      "sha256": "5f52d56ebf450279e19e5ec67fb55152ef629d4b6bf09a21e89324a3ab8ff770",
+      "source_file": "native-grip-preview.json",
+      "source_sha256": "5f52d56ebf450279e19e5ec67fb55152ef629d4b6bf09a21e89324a3ab8ff770",
+      "source_copy_verified": true
+    },
+    {
+      "file": "native_calibration_preview.py",
+      "bytes": 2081,
+      "sha256": "bbeac0cae12d1cb39252aac858a521f5a18f1e1c5fbe02a76e9f3da1627012c1",
+      "source_file": "native_calibration_preview.py",
+      "source_sha256": "bbeac0cae12d1cb39252aac858a521f5a18f1e1c5fbe02a76e9f3da1627012c1",
+      "source_copy_verified": true
+    },
+    {
+      "file": "preview.json",
+      "bytes": 3361,
+      "sha256": "1ca0fd55f46d46a4165026f0f7fbad299246b68a29c2fb995164f22c4fd0ee49",
+      "source_file": "preview.json",
+      "source_sha256": "1ca0fd55f46d46a4165026f0f7fbad299246b68a29c2fb995164f22c4fd0ee49",
+      "source_copy_verified": true
+    },
+    {
+      "file": "prop-clearance.json",
+      "bytes": 17385,
+      "sha256": "2fef35d56796e672fdd4bbce6daffd7189333d3a4b1e489808a7dad83a36931b",
+      "source_file": "prop-clearance.json",
+      "source_sha256": "2fef35d56796e672fdd4bbce6daffd7189333d3a4b1e489808a7dad83a36931b",
+      "source_copy_verified": true
+    },
+    {
+      "file": "prop-clearance.log",
+      "bytes": 1067,
+      "sha256": "53ff1f83f930496f45f2ef42dc4d0c3f2f962e1340b514f180a17573842fed2d",
+      "source_file": "prop-clearance.log",
+      "source_sha256": "53ff1f83f930496f45f2ef42dc4d0c3f2f962e1340b514f180a17573842fed2d",
+      "source_copy_verified": true
+    },
+    {
+      "file": "render.log",
+      "bytes": 1345,
+      "sha256": "2add48370a80c4d9bede8a69449ea9f331e74110e821818071c9b1e6b7435afb",
+      "source_file": "render.log",
+      "source_sha256": "2add48370a80c4d9bede8a69449ea9f331e74110e821818071c9b1e6b7435afb",
+      "source_copy_verified": true
+    },
+    {
+      "file": "render.py",
+      "bytes": 10810,
+      "sha256": "a47a4e98c4314219cd69553e2405f8fee00bba8f2b87be48ae023f22a8633b56",
+      "source_file": "render.py",
+      "source_sha256": "a47a4e98c4314219cd69553e2405f8fee00bba8f2b87be48ae023f22a8633b56",
+      "source_copy_verified": true
+    },
+    {
+      "file": "results.json",
+      "bytes": 10269,
+      "sha256": "d63ae0bc2cdd3f3c73050cd51a11306ba011f90f4a19ae19a1dc179fd17e805c",
+      "source_file": "results.json",
+      "source_sha256": "d63ae0bc2cdd3f3c73050cd51a11306ba011f90f4a19ae19a1dc179fd17e805c",
+      "source_copy_verified": true
+    },
+    {
+      "file": "semantic-comparison.json",
+      "bytes": 1487811,
+      "sha256": "94e329b3b677808e1872ca10d3c1e59cbf1fcae50c9b3ee3481e79d6ef8867c3",
+      "source_file": "semantic-comparison.json",
+      "source_sha256": "94e329b3b677808e1872ca10d3c1e59cbf1fcae50c9b3ee3481e79d6ef8867c3",
+      "source_copy_verified": true
+    },
+    {
+      "file": "semantic-comparison.log",
+      "bytes": 225,
+      "sha256": "b7746eb7afe29bc76324e7bd92d1428d080bc7b08a84d2fc2fa35a2b050269d8",
+      "source_file": "semantic-comparison.log",
+      "source_sha256": "b7746eb7afe29bc76324e7bd92d1428d080bc7b08a84d2fc2fa35a2b050269d8",
+      "source_copy_verified": true
+    },
+    {
+      "file": "trial/CurlyMetalhead/jump.fbx",
+      "bytes": 221308,
+      "sha256": "7bc042e812872fc0d1709a861d9623512d3d93a3c9969c8c9e99c7223d2f69ab",
+      "source_file": "trial/CurlyMetalhead/jump.fbx",
+      "source_sha256": "7bc042e812872fc0d1709a861d9623512d3d93a3c9969c8c9e99c7223d2f69ab",
+      "source_copy_verified": true
+    },
+    {
+      "file": "trial/CurlyMetalhead/jump.json",
+      "bytes": 5070,
+      "sha256": "fb4e64b6f27852d89e010cd9a7961e11613a91c7b7de24dc0398158e7600690f",
+      "source_file": "trial/CurlyMetalhead/jump.json",
+      "source_sha256": "fb4e64b6f27852d89e010cd9a7961e11613a91c7b7de24dc0398158e7600690f",
+      "source_copy_verified": true
+    },
+    {
+      "file": "trial-authoring.json",
+      "bytes": 577,
+      "sha256": "890d4e7478e3aa69cdf54c35d5f1ccf9980b2f15f1cd26debc27b87bb9497712",
+      "source_file": "trial-authoring.json",
+      "source_sha256": "890d4e7478e3aa69cdf54c35d5f1ccf9980b2f15f1cd26debc27b87bb9497712",
+      "source_copy_verified": true
+    },
+    {
+      "file": "trial-authoring.log",
+      "bytes": 277,
+      "sha256": "f817c75149f8a67ab2819bcdee90ecfa3d94991ebe14b4b8b36fea91a1af7eb5",
+      "source_file": "trial-authoring.log",
+      "source_sha256": "f817c75149f8a67ab2819bcdee90ecfa3d94991ebe14b4b8b36fea91a1af7eb5",
+      "source_copy_verified": true
+    },
+    {
+      "file": "trial-front.png",
+      "bytes": 603907,
+      "sha256": "e6b40ff9f51adad15821605aa801c4d187c4152a849e776a6d3732ef2f466317",
+      "source_file": "trial-front.png",
+      "source_sha256": "e6b40ff9f51adad15821605aa801c4d187c4152a849e776a6d3732ef2f466317",
+      "source_copy_verified": true
+    },
+    {
+      "file": "trial-native-grip-front.png",
+      "bytes": 604345,
+      "sha256": "8f8d738a2bdb57330e6230bc6e901a520097f05a3eadec2b1e32e9e0aa1bdef4",
+      "source_file": "trial-native-grip-front.png",
+      "source_sha256": "8f8d738a2bdb57330e6230bc6e901a520097f05a3eadec2b1e32e9e0aa1bdef4",
+      "source_copy_verified": true
+    },
+    {
+      "file": "trial-native-grip-side.png",
+      "bytes": 571018,
+      "sha256": "0db1b39ebcbf7099896d0f711f09b49c879f6dd9260b0b25135a3b4f84030050",
+      "source_file": "trial-native-grip-side.png",
+      "source_sha256": "0db1b39ebcbf7099896d0f711f09b49c879f6dd9260b0b25135a3b4f84030050",
+      "source_copy_verified": true
+    },
+    {
+      "file": "trial-native-grip-threequarter.png",
+      "bytes": 607656,
+      "sha256": "f8403ccfac52e92f0dd7bb9ff2f19531df0511492e30a45bbe8066cb0e4df842",
+      "source_file": "trial-native-grip-threequarter.png",
+      "source_sha256": "f8403ccfac52e92f0dd7bb9ff2f19531df0511492e30a45bbe8066cb0e4df842",
+      "source_copy_verified": true
+    },
+    {
+      "file": "trial-side.png",
+      "bytes": 570974,
+      "sha256": "2fcff62a4ff741f5a40dc9729eb716ffa97dac26436f50f24b27578fa69287a8",
+      "source_file": "trial-side.png",
+      "source_sha256": "2fcff62a4ff741f5a40dc9729eb716ffa97dac26436f50f24b27578fa69287a8",
+      "source_copy_verified": true
+    },
+    {
+      "file": "trial-threequarter.png",
+      "bytes": 607930,
+      "sha256": "f6ec7a49f2515378572d5d96c58156703cb6e938316a32888acff213810770f3",
+      "source_file": "trial-threequarter.png",
+      "source_sha256": "f6ec7a49f2515378572d5d96c58156703cb6e938316a32888acff213810770f3",
+      "source_copy_verified": true
+    },
+    {
+      "file": "trial_jump.py",
+      "bytes": 9033,
+      "sha256": "b6163ed777d01fa9a30de707d2ffcb6b08aac0f2297d77dddae8c8328ad51876",
+      "source_file": "trial_jump.py",
+      "source_sha256": "b6163ed777d01fa9a30de707d2ffcb6b08aac0f2297d77dddae8c8328ad51876",
+      "source_copy_verified": true
+    },
+    {
+      "file": "verify_candidate.py",
+      "bytes": 9793,
+      "sha256": "b870d80176a91227800ac8831ddc8e419ef886387a9ac7cc525df2e6e15d4317",
+      "source_file": "verify_candidate.py",
+      "source_sha256": "b870d80176a91227800ac8831ddc8e419ef886387a9ac7cc525df2e6e15d4317",
+      "source_copy_verified": true
+    }
+  ]
+}

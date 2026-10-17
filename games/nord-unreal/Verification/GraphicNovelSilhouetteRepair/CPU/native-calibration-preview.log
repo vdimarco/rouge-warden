@@ -1,0 +1,11 @@
+00:00.256  blend            | Read blend: "/tmp/nord-shoulder-pose-trial-20261017T184651Z/study.blend"
+00:04.964  render           | Saved: '/tmp/nord-shoulder-pose-trial-20261017T184651Z/trial-native-grip-front.png'
+NATIVE_GRIP_CPU_READY front
+00:09.149  render           | Saved: '/tmp/nord-shoulder-pose-trial-20261017T184651Z/trial-native-grip-side.png'
+NATIVE_GRIP_CPU_READY side
+00:13.681  render           | Saved: '/tmp/nord-shoulder-pose-trial-20261017T184651Z/trial-native-grip-threequarter.png'
+NATIVE_GRIP_CPU_READY threequarter
+NATIVE_GRIP_CPU_DONE
+Blender 5.2.2 LTS (hash d13f752e3b9c built 2026-09-15 01:34:58)
+
+Blender quit

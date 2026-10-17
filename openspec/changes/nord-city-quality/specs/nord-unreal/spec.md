@@ -40,6 +40,11 @@ The local pilot SHALL be available only through the explicit `-NordGraphicNovelC
 - **AND** missing or mismatched generation receipts, bounded source-file hashes or own-rig evidence reject import before asset mutation
 - **AND** native appearance, deformation and workload are compared with the retained draft before promotion or wider cast spending; static face/fingers and unverified packaged performance remain disclosed
 
+#### Scenario: Correct the rejected airborne silhouette
+- **WHEN** the private higher-detail pilot is revised after the rejected airborne frame
+- **THEN** matching front, side and three-quarter airborne/landing views and actual continuous motion show a natural shoulder/sleeve silhouette and plausible held-prop scale/grip without face occlusion
+- **AND** original sources, ordinary crew/district packages, gameplay/input, collision and saved state remain preserved; passing import or pose counters alone do not accept art quality
+
 ### Requirement: Detailed animated playable crew
 The supplied playable characters SHALL retain readable facial details and distinct locomotion in the comic view.
 
