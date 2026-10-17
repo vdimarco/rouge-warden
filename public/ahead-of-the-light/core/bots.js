@@ -519,14 +519,16 @@ function human(opts = {}) {
         }
         if (d.go) {
           const D = ship.draft;
-          if (D.lead === lead.id && D.charge >= d.pullAt) {
+          // the tow closes the gap: pull out at the charge it wanted, or before it closes to contact range
+          const close = bestZ < T.CONTACT_Z + 0.05;
+          if (D.lead === lead.id && (D.charge >= d.pullAt || close)) {
             const side = pullSide(race, ship, lead, T);
             pullAim = ship.bearing + wrap(lead.bearing + side * 22 - ship.bearing);
             pullUntil = now + 0.6;
             d.go = false;
             goal = pullAim;
-          } else {
-            // tuck in, unless the wake's line would put it into something now
+          } else if (D.lead === lead.id || bestZ >= T.CONTACT_Z + 0.06) {
+            // tuck in (not onto its tail), unless the wake's line would put it into something now
             const tuck = ship.bearing + wrap(lead.bearing - ship.bearing);
             if (!lineHit(race, ship, items, tuck, 0.5, bps, T)) goal = tuck;
           }
