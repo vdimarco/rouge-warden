@@ -149,9 +149,10 @@ export function calloutOf(e) {
     case 'nine': text = c.text[e.n]; if (!text) return null; pri += e.n === 3 ? 2 : 0; break;
     case 'chainUp': text = `CHAIN ×${fin(e.mult, 2)}`; break;
     case 'chainBank':
-      // What the chain paid: boost, not points nobody keeps.
-      if (!(fin(e.bar) > 0)) return null;
-      text = `×${fin(e.mult, 2)} · BOOST +${Math.round(fin(e.bar) * 100)}%`;
+      // A drive chain pays into boost; a jump chain has no bar and keeps its points as score.
+      if (fin(e.bar) > 0) text = `×${fin(e.mult, 2)} · BOOST +${Math.round(fin(e.bar) * 100)}%`;
+      else if (e.bar == null && fin(e.points) > 0) text = `+${Math.round(e.points).toLocaleString('en-US')}`;
+      else return null;
       break;
     case 'hairline': case 'jHairline': if (fin(e.rel) >= 40) pri += 1; break;
     default: break;

@@ -199,6 +199,10 @@ test('callouts: a lower one never replaces a higher one in its first 0.6 s; repe
   assert.equal(calloutOf({ type: 'driftTier', tier: 3 }).text, 'BLUE DRIFT');
   assert.equal(calloutOf({ type: 'gate', kind: 'pass' }), null, 'a plain pass is quiet');
   assert.equal(calloutOf({ type: 'spark' }), null);
+  // A drive chain pays into boost; a jump chain has no bar and keeps its points as score.
+  assert.equal(calloutOf({ type: 'chainBank', n: 4, mult: 2, points: 300, bar: 0.06 }).text, '×2 · BOOST +6%');
+  assert.equal(calloutOf({ type: 'chainBank', n: 4, mult: 2, points: 1200 }).text, '+1,200');
+  assert.equal(calloutOf({ type: 'chainBank', n: 4, mult: 2, points: 300, bar: 0 }), null, 'a drive chain that paid nothing is quiet');
 });
 
 test('overlay maths: projection, edge chevrons and the radar', () => {
