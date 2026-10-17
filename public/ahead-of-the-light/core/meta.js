@@ -188,7 +188,7 @@ export function nextUnlock(pages) {
 }
 
 // The result card's log line (13, 14.2) from applyRun's answer: "LOG +9 PAGES · REROLL +1 UNLOCKED", or the next
-// unlock when none opened: "LOG +7 PAGES · 2 TO BANISH". A full log reads "LOG +n PAGES · LOG FULL". null for a
+// unlock when none opened: "LOG +7 PAGES · 2 PAGES TO BANISH". A full log reads "LOG +n PAGES · LOG FULL". null for a
 // practice run (it earns no pages).
 export function logLine(applied, practice = false) {
   if (!applied || practice) return null;
