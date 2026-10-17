@@ -31,5 +31,6 @@ A box is ticked only when the code and a test show the work done.
 - [x] `verse.e2e.mjs` and `fight-moves.e2e.mjs` pass in headless Chromium.
 - [x] Other browser suites pass: hero (97), perf, action, spider-world, phone-swing, mobile, climb (26), layout, comfort, training, flat (219 checks; this run of flat included its headset part).
 - [x] Fixes found by `hero.mjs` and `climb.e2e.mjs` (both pass on main): a yank, an attack, a hit or a roll poses at once; the wall climb and the mantle stay on ones; a teleport poses at once and drops the time before it.
+- [x] CI fix: `mouse-look.e2e.mjs` paused on a slow runner. The game takes the lock back only when its own unlock answers within `RELOCK_MS`, and a slow first frame of play can hold that answer back past 3 s (on main too). `RELOCK_MS` is now 15 s, a limit for an answer that never comes. A copy of the test with a 3.5 s frame after full screen paused on the old code (`exit, exit`) and plays on with the fix (`exit, lock`). `mouse-look.e2e.mjs` passes.
 - [ ] Hardware checks: a real phone and a pad. A Quest headset must show no change.
 - [ ] Archive this change after the hardware checks.

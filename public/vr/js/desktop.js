@@ -17,7 +17,9 @@ const EDGE_YAW = 2.2, EDGE_PITCH = 1.2; // rad/s of turn with the free cursor at
 const ESC_GAP = 250; // ms: an Esc that comes with the browser's own unlock is the same press
 const RETRY_MS = 1300; // Chrome refuses a new lock for about a second after the user's own Esc
 const PENDING_MS = 2000; // a lock request with no answer by then is over
-const RELOCK_MS = 3000; // our own let-go (see relock) answers within this, even on a slow machine
+// Our own let-go (see relock) is the next unlock that comes, however late: a slow first frame of play (shaders compiling) can hold
+// it back for seconds. This is only the limit for an answer that never comes.
+const RELOCK_MS = 15000;
 const RAW = { unadjustedMovement: true };
 const PITCH_MAX = (85 * Math.PI) / 180;
 const YANK_F = 3.5; // m/s of synthetic pull for F (and the pad's X and right bumper)
