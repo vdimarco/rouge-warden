@@ -1,0 +1,9 @@
+# Tripo v3 rig — retained provider output
+
+`rig.fbx` is the original downloaded output of the user-authorized one-character Tripo pilot. It rerigs the existing `generated-v2-high-detail/body.glb`; no new geometry generation was requested. `Provenance.json` records the exact source/output hashes, explicit v3.0 humanoid/Unreal/FBX parameters, completed task and actual 25-credit charge (US$0.25 at the published rate). The API reports 75 credits remaining and none frozen. `provider-preview.png` is the actual static provider preview, not gameplay or motion evidence.
+
+Preserve these files unchanged. CPU inspection finds 61 bones with genuinely weighted finger chains, but the output needs explicit preparation before adoption: its height is normalized to approximately 1m rather than the source's 1.82m; its FBX incorrectly connects the embedded albedo to Normal Map and omits the original normal/packed metallic-roughness images. Proven matching UVs allow reuse of the retained original material/maps on a separate derivative. Existing 24-bone clips and the `RightHand` attachment are not automatically compatible with the new skeleton.
+
+See [verification and continuation](../../../../../Verification/TripoPilot/README.md) for the compatibility result, CPU audit, preview corrections, budget ledger and remaining native/animation checks. No installed character, accepted crew, map or package is replaced by retaining this output.
+
+`derived/compact-jump.fbx` is a separate local animation-only retarget of the corrected compact jump onto this own 61-bone reference. It passes 37-sample fresh export/reimport checks; it does not alter `rig.fbx` or animate a prop grasp. See [retarget recipe and measurements](../../../../../Verification/TripoPilot/Retarget/README.md).

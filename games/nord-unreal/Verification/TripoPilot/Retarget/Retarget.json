@@ -1,0 +1,791 @@
+{
+  "passed": true,
+  "started_utc": "2026-10-17T20:22:32.514953+00:00",
+  "scope": "One animation-only component-delta retarget proof; no material, mesh, native, rendering, motion or adoption acceptance",
+  "inputs": {
+    "source_body": {
+      "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/body.fbx",
+      "sha256": "b7e7ca0d9c486412108cba85e1cd4a5512fecd4ad36b8cfdb4677259ff6f9244"
+    },
+    "source_glb": {
+      "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/body.glb",
+      "sha256": "25041be9666422c30ba39449cb283a83928bb3de596fe063389707c070335613"
+    },
+    "compact_jump": {
+      "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Verification/GraphicNovelNaturalMotion/Export/trial/CurlyMetalhead/jump.fbx",
+      "sha256": "71277e693654e02d365d22d7d34cf534045a4aa9ed77b4c19d4744a0839680ac"
+    },
+    "compact_receipt": {
+      "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Verification/GraphicNovelNaturalMotion/Export/trial/CurlyMetalhead/jump.json",
+      "sha256": "d9f5ecb420112ac8868303f7f07f3e45b99ac4bc11a3082b35e3c960bec77c76"
+    },
+    "target": {
+      "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/tripo-v3-rig-20261017/rig.fbx",
+      "sha256": "baaeb99a7e86fadadd4f64f6de6ea7e648777b33bcadd2ecb72347c4afe3dcc2"
+    },
+    "audit": {
+      "path": "/tmp/nord-tripo-rig-audit-20261017T201543Z/Audit.json",
+      "sha256": "d16cbb7cca3177d0921315fef0ee8a6abda66b021dcfb1d3031c6d1c57c07324"
+    }
+  },
+  "source_to_target_bones": {
+    "Hips": "pelvis",
+    "Spine02": "spine_01",
+    "Spine01": "spine_02",
+    "Spine": "spine_03",
+    "neck": "neck_01",
+    "Head": "head",
+    "LeftShoulder": "clavicle_l",
+    "LeftArm": "upperarm_l",
+    "LeftForeArm": "lowerarm_l",
+    "LeftHand": "hand_l",
+    "LeftUpLeg": "thigh_l",
+    "LeftLeg": "calf_l",
+    "LeftFoot": "foot_l",
+    "LeftToeBase": "ball_l",
+    "RightShoulder": "clavicle_r",
+    "RightArm": "upperarm_r",
+    "RightForeArm": "lowerarm_r",
+    "RightHand": "hand_r",
+    "RightUpLeg": "thigh_r",
+    "RightLeg": "calf_r",
+    "RightFoot": "foot_r",
+    "RightToeBase": "ball_r"
+  },
+  "unmapped_policy": "Target bind local rotation/translation/scale; parent follow only",
+  "errors": [],
+  "mapped_bones": 22,
+  "target_bones": 61,
+  "samples": 37,
+  "seconds": 1.2,
+  "fps": 30,
+  "source_height_over_target_height": 1.8200008461895905,
+  "source_vertical_to_target_units_factor": 0.005494502817083238,
+  "unmapped_bones": [
+    "calf_twist_01_l",
+    "calf_twist_01_r",
+    "index_01_l",
+    "index_01_r",
+    "index_02_l",
+    "index_02_r",
+    "index_03_l",
+    "index_03_r",
+    "lowerarm_twist_01_l",
+    "lowerarm_twist_01_r",
+    "middle_01_l",
+    "middle_01_r",
+    "middle_02_l",
+    "middle_02_r",
+    "middle_03_l",
+    "middle_03_r",
+    "pinky_01_l",
+    "pinky_01_r",
+    "pinky_02_l",
+    "pinky_02_r",
+    "pinky_03_l",
+    "pinky_03_r",
+    "ring_01_l",
+    "ring_01_r",
+    "ring_02_l",
+    "ring_02_r",
+    "ring_03_l",
+    "ring_03_r",
+    "root",
+    "thigh_twist_01_l",
+    "thigh_twist_01_r",
+    "thumb_01_l",
+    "thumb_01_r",
+    "thumb_02_l",
+    "thumb_02_r",
+    "thumb_03_l",
+    "thumb_03_r",
+    "upperarm_twist_01_l",
+    "upperarm_twist_01_r"
+  ],
+  "fresh_reimport_maxima": {
+    "component_rotation_error_rad": 4.260546541621239e-06,
+    "mapped_component_delta_error_rad": 1.8889660433918453e-06,
+    "local_translation_error_target_units": 2.9474014534927144e-07,
+    "local_scale_error": 5.841255187988281e-06,
+    "unmapped_local_rotation_error_rad": 5.107838161650786e-06,
+    "root_matrix_error": 3.552713678800501e-15,
+    "object_matrix_error": 0.0,
+    "pelvis_horizontal_drift_target_units": 6.239861249923706e-08,
+    "hip_vertical_error_target_units": 8.844874042597208e-08,
+    "neutral_endpoint_rotation_error_rad": 3.511576751402677e-06
+  },
+  "in_memory_maxima": {
+    "component_rotation_error_rad": 3.71432154615274e-06,
+    "local_translation_error_target_units": 0.0,
+    "local_scale_error": 0.0,
+    "unmapped_local_rotation_error_rad": 0.0
+  },
+  "samples_readback": [
+    {
+      "time_s": 0.0,
+      "elbow_signed_degrees": {
+        "l": 14.35884580925825,
+        "r": 13.711207618851288
+      },
+      "elbow_flex_from_bind_degrees": {
+        "l": 6.394248557666817e-06,
+        "r": -3.0170817198828285e-05
+      },
+      "pelvis_component_delta": [
+        0.0,
+        -5.587935447692871e-09,
+        -5.960464477539063e-08
+      ]
+    },
+    {
+      "time_s": 0.03333333333333333,
+      "elbow_signed_degrees": {
+        "l": 21.639305744655605,
+        "r": 19.829739052923156
+      },
+      "elbow_flex_from_bind_degrees": {
+        "l": 7.280466329645912,
+        "r": 6.118501263254669
+      },
+      "pelvis_component_delta": [
+        0.0,
+        1.257285475730896e-08,
+        -0.014244258403778076
+      ]
+    },
+    {
+      "time_s": 0.06666666666666667,
+      "elbow_signed_degrees": {
+        "l": 35.11373016247984,
+        "r": 31.167219254294096
+      },
+      "elbow_flex_from_bind_degrees": {
+        "l": 20.754890747470146,
+        "r": 17.45598146462561
+      },
+      "pelvis_component_delta": [
+        0.0,
+        4.284083843231201e-08,
+        -0.04069763422012329
+      ]
+    },
+    {
+      "time_s": 0.1,
+      "elbow_signed_degrees": {
+        "l": 42.31480238752045,
+        "r": 37.239225812596125
+      },
+      "elbow_flex_from_bind_degrees": {
+        "l": 27.955962972510758,
+        "r": 23.527988022927637
+      },
+      "pelvis_component_delta": [
+        0.0,
+        5.634501576423645e-08,
+        -0.054941773414611816
+      ]
+    },
+    {
+      "time_s": 0.13333333333333333,
+      "elbow_signed_degrees": {
+        "l": 43.06887060486402,
+        "r": 37.239208304890845
+      },
+      "elbow_flex_from_bind_degrees": {
+        "l": 28.710031189854323,
+        "r": 23.527970515222357
+      },
+      "pelvis_component_delta": [
+        0.0,
+        4.6100467443466187e-08,
+        -0.04595756530761719
+      ]
+    },
+    {
+      "time_s": 0.16666666666666666,
+      "elbow_signed_degrees": {
+        "l": 44.707160159736304,
+        "r": 37.23922042740922
+      },
+      "elbow_flex_from_bind_degrees": {
+        "l": 30.348320744726617,
+        "r": 23.527982637740735
+      },
+      "pelvis_component_delta": [
+        0.0,
+        2.3283064365386963e-08,
+        -0.026414573192596436
+      ]
+    },
+    {
+      "time_s": 0.2,
+      "elbow_signed_degrees": {
+        "l": 46.29611503621617,
+        "r": 37.239221043730694
+      },
+      "elbow_flex_from_bind_degrees": {
+        "l": 31.937275621206474,
+        "r": 23.52798325406221
+      },
+      "pelvis_component_delta": [
+        0.0,
+        3.4924596548080444e-09,
+        -0.007427334785461426
+      ]
+    },
+    {
+      "time_s": 0.23333333333333334,
+      "elbow_signed_degrees": {
+        "l": 46.92476066386034,
+        "r": 37.2445538325628
+      },
+      "elbow_flex_from_bind_degrees": {
+        "l": 32.56592124885064,
+        "r": 23.533316042894313
+      },
+      "pelvis_component_delta": [
+        0.0,
+        -5.587935447692871e-09,
+        -5.960464477539063e-08
+      ]
+    },
+    {
+      "time_s": 0.26666666666666666,
+      "elbow_signed_degrees": {
+        "l": 47.78265955262084,
+        "r": 37.8267362411247
+      },
+      "elbow_flex_from_bind_degrees": {
+        "l": 33.42382013761115,
+        "r": 24.115498451456215
+      },
+      "pelvis_component_delta": [
+        0.0,
+        -5.587935447692871e-09,
+        -5.960464477539063e-08
+      ]
+    },
+    {
+      "time_s": 0.3,
+      "elbow_signed_degrees": {
+        "l": 49.74375452976911,
+        "r": 39.15852271150192
+      },
+      "elbow_flex_from_bind_degrees": {
+        "l": 35.38491511475942,
+        "r": 25.44728492183343
+      },
+      "pelvis_component_delta": [
+        0.0,
+        -5.587935447692871e-09,
+        -5.960464477539063e-08
+      ]
+    },
+    {
+      "time_s": 0.3333333333333333,
+      "elbow_signed_degrees": {
+        "l": 52.360984612201506,
+        "r": 40.937602886493266
+      },
+      "elbow_flex_from_bind_degrees": {
+        "l": 38.002145197191815,
+        "r": 27.22636509682478
+      },
+      "pelvis_component_delta": [
+        0.0,
+        -5.587935447692871e-09,
+        -5.960464477539063e-08
+      ]
+    },
+    {
+      "time_s": 0.36666666666666664,
+      "elbow_signed_degrees": {
+        "l": 55.1898927652303,
+        "r": 42.862814293144375
+      },
+      "elbow_flex_from_bind_degrees": {
+        "l": 40.83105335022061,
+        "r": 29.15157650347588
+      },
+      "pelvis_component_delta": [
+        0.0,
+        -5.587935447692871e-09,
+        -5.960464477539063e-08
+      ]
+    },
+    {
+      "time_s": 0.4,
+      "elbow_signed_degrees": {
+        "l": 57.791365493184884,
+        "r": 44.63505844895912
+      },
+      "elbow_flex_from_bind_degrees": {
+        "l": 43.432526078175194,
+        "r": 30.92382065929063
+      },
+      "pelvis_component_delta": [
+        0.0,
+        -5.587935447692871e-09,
+        -5.960464477539063e-08
+      ]
+    },
+    {
+      "time_s": 0.43333333333333335,
+      "elbow_signed_degrees": {
+        "l": 59.730971379790844,
+        "r": 45.95740830361759
+      },
+      "elbow_flex_from_bind_degrees": {
+        "l": 45.372131964781154,
+        "r": 32.2461705139491
+      },
+      "pelvis_component_delta": [
+        0.0,
+        -5.587935447692871e-09,
+        -5.960464477539063e-08
+      ]
+    },
+    {
+      "time_s": 0.4666666666666667,
+      "elbow_signed_degrees": {
+        "l": 60.5768159119342,
+        "r": 46.534274897563776
+      },
+      "elbow_flex_from_bind_degrees": {
+        "l": 46.21797649692451,
+        "r": 32.82303710789528
+      },
+      "pelvis_component_delta": [
+        0.0,
+        -5.587935447692871e-09,
+        -5.960464477539063e-08
+      ]
+    },
+    {
+      "time_s": 0.5,
+      "elbow_signed_degrees": {
+        "l": 60.251005826789395,
+        "r": 46.19831976882897
+      },
+      "elbow_flex_from_bind_degrees": {
+        "l": 45.892166411779705,
+        "r": 32.487081979160486
+      },
+      "pelvis_component_delta": [
+        0.0,
+        -5.587935447692871e-09,
+        -5.960464477539063e-08
+      ]
+    },
+    {
+      "time_s": 0.5333333333333333,
+      "elbow_signed_degrees": {
+        "l": 59.235048321059644,
+        "r": 45.1587335302632
+      },
+      "elbow_flex_from_bind_degrees": {
+        "l": 44.87620890604995,
+        "r": 31.44749574059471
+      },
+      "pelvis_component_delta": [
+        0.0,
+        -5.587935447692871e-09,
+        -5.960464477539063e-08
+      ]
+    },
+    {
+      "time_s": 0.5666666666666667,
+      "elbow_signed_degrees": {
+        "l": 57.75936015416489,
+        "r": 43.648545689577105
+      },
+      "elbow_flex_from_bind_degrees": {
+        "l": 43.4005207391552,
+        "r": 29.937307899908618
+      },
+      "pelvis_component_delta": [
+        0.0,
+        -5.587935447692871e-09,
+        -5.960464477539063e-08
+      ]
+    },
+    {
+      "time_s": 0.6,
+      "elbow_signed_degrees": {
+        "l": 56.0514788743812,
+        "r": 41.900716010107914
+      },
+      "elbow_flex_from_bind_degrees": {
+        "l": 41.69263945937151,
+        "r": 28.189478220439426
+      },
+      "pelvis_component_delta": [
+        0.0,
+        -5.587935447692871e-09,
+        -5.960464477539063e-08
+      ]
+    },
+    {
+      "time_s": 0.6333333333333333,
+      "elbow_signed_degrees": {
+        "l": 54.3404417813609,
+        "r": 40.14967143960178
+      },
+      "elbow_flex_from_bind_degrees": {
+        "l": 39.981602366351204,
+        "r": 26.438433649933295
+      },
+      "pelvis_component_delta": [
+        0.0,
+        -5.587935447692871e-09,
+        -5.960464477539063e-08
+      ]
+    },
+    {
+      "time_s": 0.6666666666666666,
+      "elbow_signed_degrees": {
+        "l": 52.85675833275733,
+        "r": 38.63149753606611
+      },
+      "elbow_flex_from_bind_degrees": {
+        "l": 38.49791891774764,
+        "r": 24.920259746397615
+      },
+      "pelvis_component_delta": [
+        0.0,
+        -5.587935447692871e-09,
+        -5.960464477539063e-08
+      ]
+    },
+    {
+      "time_s": 0.7,
+      "elbow_signed_degrees": {
+        "l": 51.83255526095339,
+        "r": 37.5836744657851
+      },
+      "elbow_flex_from_bind_degrees": {
+        "l": 37.4737158459437,
+        "r": 23.872436676116617
+      },
+      "pelvis_component_delta": [
+        0.0,
+        -5.587935447692871e-09,
+        -5.960464477539063e-08
+      ]
+    },
+    {
+      "time_s": 0.7333333333333333,
+      "elbow_signed_degrees": {
+        "l": 51.49960391443768,
+        "r": 37.243047625272176
+      },
+      "elbow_flex_from_bind_degrees": {
+        "l": 37.14076449942798,
+        "r": 23.53180983560369
+      },
+      "pelvis_component_delta": [
+        0.0,
+        -5.3551048040390015e-09,
+        -4.988908767700195e-05
+      ]
+    },
+    {
+      "time_s": 0.7666666666666667,
+      "elbow_signed_degrees": {
+        "l": 51.899948397721374,
+        "r": 37.652647602082205
+      },
+      "elbow_flex_from_bind_degrees": {
+        "l": 37.54110898271168,
+        "r": 23.941409812413713
+      },
+      "pelvis_component_delta": [
+        0.0,
+        -2.7939677238464355e-09,
+        -0.005349159240722656
+      ]
+    },
+    {
+      "time_s": 0.8,
+      "elbow_signed_degrees": {
+        "l": 52.7817572812991,
+        "r": 38.55472256204544
+      },
+      "elbow_flex_from_bind_degrees": {
+        "l": 38.4229178662894,
+        "r": 24.843484772376957
+      },
+      "pelvis_component_delta": [
+        0.0,
+        1.862645149230957e-08,
+        -0.017027854919433594
+      ]
+    },
+    {
+      "time_s": 0.8333333333333334,
+      "elbow_signed_degrees": {
+        "l": 53.890398045244524,
+        "r": 39.68914329707532
+      },
+      "elbow_flex_from_bind_degrees": {
+        "l": 39.531558630234834,
+        "r": 25.977905507406827
+      },
+      "pelvis_component_delta": [
+        0.0,
+        3.306195139884949e-08,
+        -0.031728267669677734
+      ]
+    },
+    {
+      "time_s": 0.8666666666666667,
+      "elbow_signed_degrees": {
+        "l": 54.97242426775159,
+        "r": 40.79642182681946
+      },
+      "elbow_flex_from_bind_degrees": {
+        "l": 40.6135848527419,
+        "r": 27.08518403715097
+      },
+      "pelvis_component_delta": [
+        0.0,
+        4.7031790018081665e-08,
+        -0.046093106269836426
+      ]
+    },
+    {
+      "time_s": 0.9,
+      "elbow_signed_degrees": {
+        "l": 55.775351371845524,
+        "r": 41.618154898378556
+      },
+      "elbow_flex_from_bind_degrees": {
+        "l": 41.41651195683583,
+        "r": 27.90691710871007
+      },
+      "pelvis_component_delta": [
+        0.0,
+        5.960464477539063e-08,
+        -0.056764453649520874
+      ]
+    },
+    {
+      "time_s": 0.9333333333333333,
+      "elbow_signed_degrees": {
+        "l": 56.032906055016355,
+        "r": 41.88805424752591
+      },
+      "elbow_flex_from_bind_degrees": {
+        "l": 41.67406664000666,
+        "r": 28.176816457857424
+      },
+      "pelvis_component_delta": [
+        0.0,
+        6.239861249923706e-08,
+        -0.06040853261947632
+      ]
+    },
+    {
+      "time_s": 0.9666666666666667,
+      "elbow_signed_degrees": {
+        "l": 53.99127523461054,
+        "r": 40.4956902946254
+      },
+      "elbow_flex_from_bind_degrees": {
+        "l": 39.63243581960085,
+        "r": 26.78445250495691
+      },
+      "pelvis_component_delta": [
+        0.0,
+        6.146728992462158e-08,
+        -0.05739492177963257
+      ]
+    },
+    {
+      "time_s": 1.0,
+      "elbow_signed_degrees": {
+        "l": 49.20407490810097,
+        "r": 37.23565826244333
+      },
+      "elbow_flex_from_bind_degrees": {
+        "l": 34.84523549309127,
+        "r": 23.524420472774842
+      },
+      "pelvis_component_delta": [
+        0.0,
+        4.842877388000488e-08,
+        -0.050355613231658936
+      ]
+    },
+    {
+      "time_s": 1.0333333333333334,
+      "elbow_signed_degrees": {
+        "l": 42.56520974524188,
+        "r": 32.72744304701373
+      },
+      "elbow_flex_from_bind_degrees": {
+        "l": 28.206370330232186,
+        "r": 19.01620525734524
+      },
+      "pelvis_component_delta": [
+        0.0,
+        4.353933036327362e-08,
+        -0.04065519571304321
+      ]
+    },
+    {
+      "time_s": 1.0666666666666667,
+      "elbow_signed_degrees": {
+        "l": 34.984751554097514,
+        "r": 27.59824254014527
+      },
+      "elbow_flex_from_bind_degrees": {
+        "l": 20.625912139087824,
+        "r": 13.887004750476784
+      },
+      "pelvis_component_delta": [
+        0.0,
+        3.073364496231079e-08,
+        -0.02965843677520752
+      ]
+    },
+    {
+      "time_s": 1.1,
+      "elbow_signed_degrees": {
+        "l": 27.40519101252526,
+        "r": 22.486624287107436
+      },
+      "elbow_flex_from_bind_degrees": {
+        "l": 13.046351597515567,
+        "r": 8.775386497438946
+      },
+      "pelvis_component_delta": [
+        0.0,
+        1.7462298274040222e-08,
+        -0.018729865550994873
+      ]
+    },
+    {
+      "time_s": 1.1333333333333333,
+      "elbow_signed_degrees": {
+        "l": 20.795111283665612,
+        "r": 18.03847832097364
+      },
+      "elbow_flex_from_bind_degrees": {
+        "l": 6.43627186865592,
+        "r": 4.3272405313051525
+      },
+      "pelvis_component_delta": [
+        0.0,
+        7.916241884231567e-09,
+        -0.009234130382537842
+      ]
+    },
+    {
+      "time_s": 1.1666666666666667,
+      "elbow_signed_degrees": {
+        "l": 16.126486539153092,
+        "r": 14.899516749103134
+      },
+      "elbow_flex_from_bind_degrees": {
+        "l": 1.7676471241433982,
+        "r": 1.1882789594346466
+      },
+      "pelvis_component_delta": [
+        0.0,
+        6.984919309616089e-10,
+        -0.002535998821258545
+      ]
+    },
+    {
+      "time_s": 1.2,
+      "elbow_signed_degrees": {
+        "l": 14.35884580925825,
+        "r": 13.711207618851288
+      },
+      "elbow_flex_from_bind_degrees": {
+        "l": 6.394248557666817e-06,
+        "r": -3.0170817198828285e-05
+      },
+      "pelvis_component_delta": [
+        0.0,
+        -5.587935447692871e-09,
+        -5.960464477539063e-08
+      ]
+    }
+  ],
+  "output": {
+    "file": "retargeted-jump.fbx",
+    "bytes": 535676,
+    "sha256": "402d2c768e405badf5c1efab6a8841e5ff7523720e45d0e27babbc27cf6319b6"
+  },
+  "target_hierarchy": {
+    "root": null,
+    "pelvis": "root",
+    "spine_01": "pelvis",
+    "spine_02": "spine_01",
+    "spine_03": "spine_02",
+    "clavicle_l": "spine_03",
+    "upperarm_l": "clavicle_l",
+    "lowerarm_l": "upperarm_l",
+    "hand_l": "lowerarm_l",
+    "index_01_l": "hand_l",
+    "index_02_l": "index_01_l",
+    "index_03_l": "index_02_l",
+    "middle_01_l": "hand_l",
+    "middle_02_l": "middle_01_l",
+    "middle_03_l": "middle_02_l",
+    "pinky_01_l": "hand_l",
+    "pinky_02_l": "pinky_01_l",
+    "pinky_03_l": "pinky_02_l",
+    "ring_01_l": "hand_l",
+    "ring_02_l": "ring_01_l",
+    "ring_03_l": "ring_02_l",
+    "thumb_01_l": "hand_l",
+    "thumb_02_l": "thumb_01_l",
+    "thumb_03_l": "thumb_02_l",
+    "lowerarm_twist_01_l": "lowerarm_l",
+    "upperarm_twist_01_l": "upperarm_l",
+    "clavicle_r": "spine_03",
+    "upperarm_r": "clavicle_r",
+    "lowerarm_r": "upperarm_r",
+    "hand_r": "lowerarm_r",
+    "index_01_r": "hand_r",
+    "index_02_r": "index_01_r",
+    "index_03_r": "index_02_r",
+    "middle_01_r": "hand_r",
+    "middle_02_r": "middle_01_r",
+    "middle_03_r": "middle_02_r",
+    "pinky_01_r": "hand_r",
+    "pinky_02_r": "pinky_01_r",
+    "pinky_03_r": "pinky_02_r",
+    "ring_01_r": "hand_r",
+    "ring_02_r": "ring_01_r",
+    "ring_03_r": "ring_02_r",
+    "thumb_01_r": "hand_r",
+    "thumb_02_r": "thumb_01_r",
+    "thumb_03_r": "thumb_02_r",
+    "lowerarm_twist_01_r": "lowerarm_r",
+    "upperarm_twist_01_r": "upperarm_r",
+    "neck_01": "spine_03",
+    "head": "neck_01",
+    "thigh_l": "pelvis",
+    "calf_l": "thigh_l",
+    "calf_twist_01_l": "calf_l",
+    "foot_l": "calf_l",
+    "ball_l": "foot_l",
+    "thigh_twist_01_l": "thigh_l",
+    "thigh_r": "pelvis",
+    "calf_r": "thigh_r",
+    "calf_twist_01_r": "calf_r",
+    "foot_r": "calf_r",
+    "ball_r": "foot_r",
+    "thigh_twist_01_r": "thigh_r"
+  },
+  "fresh_action_frame_range": [
+    2.0,
+    38.0
+  ],
+  "retained_inputs_unchanged": true,
+  "finished_utc": "2026-10-17T20:22:33.440122+00:00"
+}

@@ -1,0 +1,11 @@
+FBX version: 7400
+FBX version: 7400
+FBX version: 7400
+
+FBX export starting... '/tmp/nord-tripo-compact-retarget-20261017T2040Z/retargeted-jump.fbx'
+export finished in 0.0819 sec.
+FBX version: 7400
+NORD_TRIPO_COMPACT_RETARGET_OK {"component_rotation_error_rad": 4.260546541621239e-06, "mapped_component_delta_error_rad": 1.8889660433918453e-06, "local_translation_error_target_units": 2.9474014534927144e-07, "local_scale_error": 5.841255187988281e-06, "unmapped_local_rotation_error_rad": 5.107838161650786e-06, "root_matrix_error": 3.552713678800501e-15, "object_matrix_error": 0.0, "pelvis_horizontal_drift_target_units": 6.239861249923706e-08, "hip_vertical_error_target_units": 8.844874042597208e-08, "neutral_endpoint_rotation_error_rad": 3.511576751402677e-06}
+Blender 5.2.2 LTS (hash d13f752e3b9c built 2026-09-15 01:34:58)
+
+Blender quit
