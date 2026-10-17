@@ -68,6 +68,120 @@ async function installationHelp(target, width, height, label) {
   assert.equal(await target.locator('#overlay').evaluate(overlay => overlay.inert), false);
   assert.equal(await target.evaluate(() => document.activeElement.id), 'menu-toggle', 'installation help preserves Escape and menu focus return');
 }
+async function installNudgeChecks(browser, errors) {
+  // Isolated accelerated UI states assert reminders, not decoded game media or live play.
+  for (const [width, height, mobile] of [[1280, 720, false], [320, 740, true], [390, 844, true], [667, 375, true]]) {
+    const context = await browser.newContext({ viewport: { width, height }, isMobile: mobile, hasTouch: mobile, reducedMotion: 'reduce' });
+    try {
+      const target = await context.newPage();
+      target.on('pageerror', error => errors.push(error.message));
+      await target.clock.install();
+      await target.goto(url);
+      await target.clock.pauseAt((await target.evaluate(() => Date.now())) + 1000);
+      const nudge = target.locator('#install-nudge');
+      const state = value => target.evaluate(value => {
+        document.body.dataset.state = value;
+        document.querySelector('#overlay').hidden = value === 'playing';
+        document.querySelector('#touch-controls').hidden = value !== 'playing' || navigator.maxTouchPoints === 0;
+      }, value);
+      if (!mobile) {
+        await target.clock.fastForward(120000);
+        assert.equal(await nudge.isHidden(), true, 'time on the title screen does not count as play');
+        await state('ready');
+        await target.clock.fastForward(120000);
+        assert.equal(await nudge.isHidden(), true, 'a ready stream has not started playing');
+        await state('playing');
+        await target.clock.fastForward(60000);
+        await state('disconnected');
+        await target.clock.fastForward(120000);
+        assert.equal(await nudge.isHidden(), true, 'disconnected time does not count');
+        await state('playing');
+        await openMenu(target);
+        await target.clock.fastForward(120000);
+        assert.equal(await nudge.isHidden(), true, 'time in the menu does not count');
+        await target.locator('#menu-close').click();
+        await target.locator('#video').focus();
+        await target.clock.fastForward(59999);
+        assert.equal(await nudge.isHidden(), true, 'the reminder waits for two cumulative minutes of play');
+        // Simulate ownership gates without capturing the real mouse or contacting a host.
+        await target.evaluate(() => {
+          window.__qaNudgePointerLocked = true;
+          Object.defineProperty(document, 'pointerLockElement', { configurable: true, get: () => window.__qaNudgePointerLocked ? document.querySelector('#video') : null });
+          document.querySelector('#touch-gas').dataset.pressed = 'true';
+          document.querySelector('#frame').dataset.pressed = 'true';
+        });
+        await target.clock.fastForward(1);
+        assert.equal(await nudge.isHidden(), true, 'held game input defers the reminder at the threshold');
+        assert.equal(await target.evaluate(() => localStorage.getItem('gta-north-install-reminder')), null, 'deferred UI does not consume the cooldown');
+        await target.evaluate(() => {
+          window.__qaNudgePointerLocked = false;
+          document.dispatchEvent(new Event('pointerlockchange'));
+        });
+        assert.equal(await nudge.isHidden(), true, 'releasing the mouse still waits for the held touch control');
+        await target.evaluate(() => {
+          delete document.querySelector('#touch-gas').dataset.pressed;
+          document.dispatchEvent(new PointerEvent('pointerup', { bubbles: true }));
+        });
+        assert.equal(await nudge.isHidden(), true, 'a held look drag still defers the reminder');
+        await target.evaluate(() => { delete document.querySelector('#frame').dataset.pressed; });
+        await target.clock.runFor(1);
+      } else {
+        await state('playing');
+        await target.locator('#video').focus();
+        await target.clock.fastForward(119999);
+        assert.equal(await nudge.isHidden(), true, 'the phone reminder also waits two minutes');
+        await target.clock.fastForward(1);
+      }
+      assert.equal(await nudge.isVisible(), true, 'the reminder appears after eligible play');
+      assert.equal(await target.evaluate(() => document.activeElement.id), 'video', 'appearing never steals game focus');
+      assert.ok(await target.evaluate(() => localStorage.getItem('gta-north-install-reminder')), 'showing records the cooldown');
+      for (const id of ['install-nudge-button', 'install-nudge-dismiss']) {
+        const box = await target.locator(`#${id}`).boundingBox();
+        assert.ok(box.width >= 44 && box.height >= 44, `${id} is a >=44 px target at ${width}`);
+      }
+      if (!mobile) {
+        await state('disconnected');
+        assert.equal(await nudge.isHidden(), true, 'the reminder hides when play stops');
+        await state('playing');
+        assert.equal(await nudge.isVisible(), true, 'the undismissed reminder can return during play');
+        await openMenu(target);
+        assert.equal(await nudge.isHidden(), true, 'the menu hides the reminder');
+        await target.locator('#menu-close').click();
+        assert.equal(await nudge.isVisible(), true, 'closing the menu restores an undismissed reminder');
+      }
+      await target.locator('#install-nudge-button').click();
+      assert.equal(await target.locator('#install-nudge-help').isVisible(), true, 'unsupported prompt UI offers manual installation help');
+      assert.match(await target.locator('#install-nudge-help').textContent(), /Add to Home Screen/);
+      const box = await nudge.boundingBox();
+      assert.ok(box.x >= 0 && box.y >= 0 && box.x + box.width <= width && box.y + box.height <= height, `reminder and help fit the ${width}x${height} screen`);
+      assert.equal(await nudge.evaluate(node => node.scrollWidth <= node.clientWidth), true, 'reminder help has no horizontal overflow');
+      assert.equal(await target.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
+      await target.screenshot({ path: `/tmp/nord-install-nudge-${width}.png`, fullPage: true });
+      if (mobile) {
+        for (const control of await target.locator('.move-stick:visible, .touch-primary button:visible').all()) {
+          const touch = await control.boundingBox();
+          const overlap = Math.min(box.x + box.width, touch.x + touch.width) > Math.max(box.x, touch.x)
+            && Math.min(box.y + box.height, touch.y + touch.height) > Math.max(box.y, touch.y);
+          assert.equal(overlap, false, `reminder help clears ${await control.getAttribute('id') || 'Move'} at ${width}x${height}`);
+        }
+      }
+      if (mobile) await target.locator('#install-nudge-dismiss').click();
+      else await target.keyboard.press('Escape');
+      assert.equal(await nudge.isHidden(), true, 'Not now or Escape dismisses the reminder');
+      assert.equal(await target.evaluate(() => document.querySelector('#install-nudge').contains(document.activeElement)), false, 'dismissal leaves no focus in hidden content');
+      await state('disconnected');
+      await state('playing');
+      await target.clock.fastForward(120000);
+      assert.equal(await nudge.isHidden(), true, 'dismissal prevents repeated reminders on this page');
+      await target.reload();
+      await state('playing');
+      await target.clock.fastForward(120000);
+      assert.equal(await nudge.isHidden(), true, 'the saved cooldown survives reload');
+    } finally {
+      await context.close();
+    }
+  }
+}
 const browser = await chromium.launch({ executablePath: process.env.NORD_CHROMIUM_PATH || '/usr/bin/chromium', headless: true, args: ['--disable-gpu'] });
 const page = await browser.newPage();
 const errors = [];
@@ -410,6 +524,7 @@ try {
   await phonePage.locator('#fullscreen').click();
   await phonePage.waitForFunction(() => !document.fullscreenElement);
   await phone.close();
+  await installNudgeChecks(browser, errors);
   // Still-only pages must not start MP4 downloads, even on rotation.
   for (const saver of [false, true]) {
     const still = await browser.newContext({ viewport: { width: 390, height: 844 }, reducedMotion: saver ? 'no-preference' : 'reduce' });
@@ -494,7 +609,7 @@ try {
   assert.equal(await page.locator('#status-title').isVisible(), true, 'closing the start screen shows the connection card');
   assert.deepEqual(errors, []);
   assert.deepEqual(loggingSpam, [], 'production logging suppresses debug/info and per-packet messages');
-  console.log('Browser UI checks passed: Chromium manifest/installability gates, installed assets, installation help at 320/390/1280, offline, desktop/mobile layout, title-screen trailer, start screen story and crew choice, warning-only logging, click-to-connect, unavailable host, ignored query overrides, occupied-slot selection and disconnect/reconnect. No native installation or live game asserted.');
+  console.log('Browser UI checks passed: Chromium manifest/installability gates, installed assets, installation help at 320/390/1280, two-minute install reminder timing/focus/input gates/layout/dismissal/cooldown, offline, desktop/mobile layout, title-screen trailer, start screen story and crew choice, warning-only logging, click-to-connect, unavailable host, ignored query overrides, occupied-slot selection and disconnect/reconnect. No native installation or live game asserted.');
 } catch (error) {
   console.error({ state: await page.locator('body').getAttribute('data-state').catch(() => null), title: await page.locator('#status-title').textContent().catch(() => null), errors });
   throw error;

@@ -134,6 +134,25 @@ test('look drag uses Epic video-coordinate normalization and bounded signed prot
   assert.deepEqual(f.messages, [['MouseEnter'], ['MouseMove', 32768, 32768, 1000, -500], ['MouseMove', 32768, 32768, 32767, -32767]]);
 });
 
+test('touching or dragging an install reminder descendant leaves UI input uncaptured', () => {
+  const f = fixture();
+  f.setEnabled(true);
+  const nudge = f.control({});
+  for (const part of ['padding', 'text', 'icon']) {
+    const target = part === 'padding' ? nudge : f.control({});
+    target.closest = selector => selector.split(',').some(value => value.trim() === '#install-nudge') ? nudge : null;
+    const down = f.pointer('pointerdown', target, 1, 20, 20);
+    assert.equal(down.defaultPrevented, false, part);
+    assert.equal(f.surface.hasPointerCapture(1), false, part);
+    const move = f.pointer('pointermove', target, 1, 50, 40);
+    assert.equal(move.defaultPrevented, false, part);
+    f.pointer('pointerup', target);
+    assert.deepEqual(f.messages, [], part);
+    assert.deepEqual(f.deltas, [], part);
+    assert.notEqual(f.surface.dataset.pressed, 'true', part);
+  }
+});
+
 test('dragging the game image looks while another finger moves; a second look finger cannot steal it', () => {
   const f = fixture();
   const move = f.control({ stick: 'move' });
