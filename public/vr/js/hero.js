@@ -14,6 +14,7 @@ const TAU = Math.PI * 2;
 const DIVE_G = 9.8; // the fall's gravity for the time to the floor, when the physics has none
 const ROLL_PIVOT = 0.55; // the tucked body turns about a point this high over the ground
 const XAX = new THREE.Vector3(1, 0, 0);
+const SMEAR = { from: 16, span: 24, max: 0.3 }; // m/s where the smear starts, m/s more to its full stretch, the full stretch
 
 // The bones the poses drive. Both rigs (the model and the code-built figure) have them under these names.
 const BONES = ["Hips", "Spine02", "Spine01", "Spine", "neck", "Head",
@@ -246,8 +247,13 @@ export function createHero(scene, renderer) {
   const holder = new THREE.Group(); // the model faces +z; the hero faces −z at yaw 0
   holder.name = "hero-model";
   holder.rotation.y = Math.PI;
+  // the smear: a stretch along the flight at speed, about the chest (main turns it on with the comic look; see H.update)
+  const smear = new THREE.Group();
+  smear.name = "hero-smear";
+  smear.matrixAutoUpdate = false;
   root.add(tilt);
-  tilt.add(holder);
+  tilt.add(smear);
+  smear.add(holder);
   scene.add(root);
 
   let rig = null, visible = false, opacity = 1, chestH = 1.25; // hidden until main shows it (flat play)
@@ -262,6 +268,7 @@ export function createHero(scene, renderer) {
     reach: [0, 0], yank: [0, 0], prevYank: [0, 0], prevGround: true, prevVy: 0, cling: 0, prevWall: false,
     tiltQ: new THREE.Quaternion(), headYaw: 0, headPitch: 0,
     twos: 0, stepAcc: 0, posed: false, poseNow: false,
+    smearOn: false, smear: 0, // the smear is allowed; how far the body stretches now (0 none, 0.3 = 30 % longer)
     sq: 0, sqV: 0, // squash (−) and stretch (+) of the body, and its rate: a spring after a landing or a launch // the pose rate (0 = every frame), the time since the last pose, a pose exists to hold
   };
   const mesh = { body: null, hull: null };
@@ -359,6 +366,7 @@ export function createHero(scene, renderer) {
   const E = new THREE.Euler(), EF = new THREE.Euler(0, 0, 0, "YXZ"), QA = new THREE.Quaternion(), QB = new THREE.Quaternion(), QC = new THREE.Quaternion();
   const V = { a: new THREE.Vector3(), b: new THREE.Vector3(), c: new THREE.Vector3(), n: new THREE.Vector3(), k: new THREE.Vector3(), u: new THREE.Vector3(), w: new THREE.Vector3() };
   const UP = new THREE.Vector3(0, 1, 0), FWD = new THREE.Vector3(0, 0, -1);
+  const SM = { v: new THREE.Vector3(), b: new THREE.Vector3(), c: new THREE.Vector3(), r: new THREE.Matrix4(), s: new THREE.Matrix4(), t: new THREE.Matrix4() };
   const HQ = new THREE.Quaternion();
   // limb targets in the model frame
   const arm = [0, 1].map(() => ({ up: new THREE.Vector3(), fore: new THREE.Vector3() }));
@@ -833,6 +841,19 @@ export function createHero(scene, renderer) {
     S.sq = clamp(S.sq, -0.25, 0.25);
     const sy = 1 + 0.8 * S.sq, sxz = 1 / Math.sqrt(sy);
     holder.scale.set(sxz, sy, sxz);
+    // the smear: at over SMEAR.from m/s the body stretches along its flight, thinner across (volume kept), about the chest
+    S.smear = S.smearOn && !cling && S.roll < 0 ? clamp((speed - SMEAR.from) / SMEAR.span, 0, 1) * SMEAR.max : 0;
+    if (S.smear > 1e-3) {
+      // the velocity in the tilt's frame (root turns by the yaw, tilt by tiltQ)
+      SM.v.set(vel.x, vel.y, vel.z).applyAxisAngle(UP, -S.yaw).applyQuaternion(QA.copy(S.tiltQ).invert()).normalize();
+      SM.b.set(0, 1, 0); if (Math.abs(SM.v.y) > 0.9) SM.b.set(1, 0, 0);
+      SM.c.crossVectors(SM.v, SM.b).normalize(); SM.b.crossVectors(SM.c, SM.v);
+      SM.r.makeBasis(SM.v, SM.b, SM.c);
+      const along = 1 + S.smear, across = 1 / Math.sqrt(along);
+      SM.s.makeScale(along, across, across);
+      smear.matrix.copy(SM.r).multiply(SM.s).multiply(SM.t.copy(SM.r).transpose());
+    } else smear.matrix.identity();
+    smear.matrixWorldNeedsUpdate = true;
     root.updateMatrixWorld(true);
     holder.getWorldQuaternion(HQ);
     QB.copy(HQ).invert(); // world → model frame
@@ -1092,6 +1113,7 @@ export function createHero(scene, renderer) {
     S.posed = true;
   };
   // the pose rate: 12 holds each pose for 1/12 s (on twos, as the film), 0 poses every frame
+  H.setSmear = (on) => { S.smearOn = !!on; };
   H.setTwos = (fps) => { S.twos = fps > 0 ? fps : 0; if (!S.twos) S.stepAcc = 0; };
 
   H.hand = (side) => handPos[side === 1 || side === "right" ? 1 : 0];
@@ -1126,7 +1148,7 @@ export function createHero(scene, renderer) {
   // in a car: no hero to draw (the pose keeps running underneath)
   H.setHidden = (b) => { S.hidden = !!b; applyVisible(); };
   H.info = () => ({
-    model: H.model, visible: root.visible, opacity, pose: H.pose, yaw: S.yaw, tris: H.tris, twos: S.twos, squash: S.sq, ghosts: ghosts.filter((q) => q && q.g.visible).length,
+    model: H.model, visible: root.visible, opacity, pose: H.pose, yaw: S.yaw, tris: H.tris, twos: S.twos, squash: S.sq, smear: S.smear, ghosts: ghosts.filter((q) => q && q.g.visible).length,
     weights: { run: S.run, air: S.air, swing: S.swing, dive: S.dive, roll: S.roll >= 0 ? S.roll / S.rollDur : -1, carry: S.carry, crouch: S.crouch, cling: S.cling, reach: S.reach.slice(), yank: S.yank.slice() },
     // the motion capture: how much it shows, the loop weights (idle, walk, jog, run) and the moving loops' phase
     clips: { loaded: !!MC.data, on: MC.on, w: MC.w.slice(), phase: MC.phase },
