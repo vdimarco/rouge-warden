@@ -1,0 +1,136 @@
+{
+  "passed": true,
+  "diagnosis_only": true,
+  "art_candidate_remains_rejected": true,
+  "inventory": {
+    "path": "Saved/Tests/TripoTopknotBagDiagnosis-v1/Inventory.json",
+    "sha256": "e4ad07f9b813244d2f2f9e9164d6c5dbdaa0a43a1e37dde62ab272c49c7740fa"
+  },
+  "array_receipt": {
+    "path": "Saved/Tests/TripoTopknotBagDiagnosis-v1/InventoryArrays.npz",
+    "sha256": "a70aab7a9e821d5b9d1248c04952a82bc004c70eda094293efe35d9eb6e824ae"
+  },
+  "inventory_recipe_sha256": "53dde8fe5f6322fc402eba792ebf8d062cfa6bb8bea90f4fbe0a0e519beb04b3",
+  "cpu_job": {
+    "exit_code": 0,
+    "threads": 4,
+    "timeout_seconds": 180,
+    "rendered": false
+  },
+  "automatic_accessory_mask_safe": false,
+  "reason": "One seam-welded geometry component; UV islands are fragmented and are not semantic accessory labels. Diagnostic ROI/color thresholds are unaccepted masks.",
+  "geometry": {
+    "vertices": 49418,
+    "polygons": 98953,
+    "raw_index_component_sizes": [
+      49415,
+      3
+    ],
+    "welded_component_sizes": [
+      49418
+    ],
+    "uv_islands": 273
+  },
+  "conservative_bag_bulge": {
+    "id": 0,
+    "vertices": 802,
+    "bounds_min": [
+      0.08457327634096146,
+      0.020708726719021797,
+      0.46711844205856323
+    ],
+    "bounds_max": [
+      0.10821523517370224,
+      0.10292267054319382,
+      0.6221665143966675
+    ],
+    "mean_bone_weights": {
+      "thigh_l": 0.7238510251045227,
+      "pelvis": 0.2211349904537201,
+      "spine_02": 0.05013856291770935,
+      "thigh_r": 0.0032147804740816355,
+      "spine_03": 0.0014860150404274464,
+      "thigh_twist_01_l": 0.0001750593219185248
+    },
+    "index_components": [
+      0
+    ],
+    "weld_components": [
+      0
+    ],
+    "fully_inside_faces": 1387,
+    "mixed_boundary_faces": 439,
+    "UV_islands_touched": [
+      136,
+      147,
+      151,
+      152,
+      155,
+      162,
+      167,
+      170,
+      173,
+      181,
+      191,
+      193,
+      194,
+      200,
+      205,
+      219,
+      241,
+      252
+    ],
+    "uv_islands_fully_within_mask": [
+      181,
+      194,
+      205
+    ],
+    "fraction_mean_weight_thigh_or_calf": 0.7272408649005229
+  },
+  "upper_strap_sample": {
+    "id": 0,
+    "vertices": 64,
+    "bounds_min": [
+      0.040483761578798294,
+      -0.04900544881820679,
+      0.7319372892379761
+    ],
+    "bounds_max": [
+      0.05728045105934143,
+      -0.02500450238585472,
+      0.7661396265029907
+    ],
+    "mean_bone_weights": {
+      "clavicle_r": 0.4131193161010742,
+      "spine_03": 0.2949688732624054,
+      "spine_02": 0.19635426998138428,
+      "upperarm_r": 0.0955575555562973
+    },
+    "index_components": [
+      0
+    ],
+    "weld_components": [
+      0
+    ],
+    "fully_inside_faces": 82,
+    "mixed_boundary_faces": 94,
+    "UV_islands_touched": [
+      69,
+      79,
+      92,
+      111
+    ],
+    "uv_islands_fully_within_mask": [],
+    "fraction_mean_weight_thigh_or_calf": 0
+  },
+  "practical_risks": [
+    "A whole connected-component selection edits nearly the entire character.",
+    "A spatial/color selection can include shirt, shorts and attachment transitions; it does not certify a complete accessory mask.",
+    "The bag body carries strong thigh weights while sampled upper strap follows torso/clavicle; one rigid weight replacement for the whole strap/bag assembly would discard this distinction.",
+    "Left hand remains occluded by the bag in the supplied idle closeup; this diagnosis does not accept hand clearance."
+  ],
+  "inputs_unchanged": true,
+  "weights_edited": false,
+  "data_or_public_or_helper_writes": false,
+  "no_further_blender_jobs": true
+}
