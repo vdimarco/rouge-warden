@@ -1,0 +1,76 @@
+{
+  "character": "RedJersey",
+  "source_sha256": "13bf9c9dc76a7a925ba31ad5fadf6ef5e3a7436ee0450e6579a221f1fabd96c8",
+  "expected_meshes": 1,
+  "expected_triangles": 97918,
+  "basis_world": {
+    "left": [
+      -0.01270868070423603,
+      0.9999192357063293,
+      0.0
+    ],
+    "forward": [
+      0.9999192357063293,
+      0.01270868070423603,
+      0.0
+    ],
+    "up": [
+      0.0,
+      0.0,
+      1.0
+    ]
+  },
+  "crops_basis_left_forward_up": {
+    "face": [
+      [
+        -0.1371373352792237,
+        -0.10087320921220494,
+        0.2643552082777023
+      ],
+      [
+        0.13692699815964962,
+        0.10136845856665458,
+        0.509055505990982
+      ]
+    ],
+    "hand-left": [
+      [
+        0.19824486989706142,
+        -0.10087320921220494,
+        -0.07810130029916763
+      ],
+      [
+        0.32941818018689617,
+        0.10136845856665458,
+        0.08340089619159699
+      ]
+    ],
+    "hand-right": [
+      [
+        -0.32962851730647025,
+        -0.10087320921220494,
+        -0.0784513732790947
+      ],
+      [
+        -0.1984552070166355,
+        0.10136845856665458,
+        0.08305082321166993
+      ]
+    ]
+  },
+  "measurement_basis": "Projected original mesh local+X is candidate front; world+Z is up; up cross forward defines character-left. Actual views must confirm heading and crop identities.",
+  "source_bounds_world": [
+    [
+      -0.09243316203355789,
+      -0.3143099844455719,
+      -0.4893217086791992
+    ],
+    [
+      0.09274394065141678,
+      0.3153155744075775,
+      0.4894794821739197
+    ]
+  ],
+  "source_height_units": 0.9788011908531189,
+  "crop_scope": "Actual source-space candidate morphology crops only, not joints, skin groups or semantic/deletion masks. No source scaling, rotation or translation applied."
+}

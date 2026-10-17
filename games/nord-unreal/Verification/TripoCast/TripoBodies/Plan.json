@@ -1,6 +1,6 @@
 {
-  "at_utc": "2026-10-17T23:00:48.691236+00:00",
-  "authorization": "User explicitly selected Tripo for both bodies and rigs; top-up freshly confirmed200available/0frozen",
+  "at_utc": "2026-10-17T23:21:38.215246+00:00",
+  "authorization": "User chose Tripo bodies+rigs and confirmed the additional400APIcredits; fresh balance430 before five remaining pairs",
   "generation_endpoint": "/v3/generation/image-to-model",
   "body_model": "v3.1-20260211",
   "rig_model": "v3.0-20260909",
@@ -15,8 +15,8 @@
   "each_body_and_rig_credits": 85,
   "seven_total_credits": 595,
   "balance_before_pilot_credits": 200,
-  "remaining_not_committed_credits": 30,
-  "additional_credits_requested": 400,
+  "remaining_not_committed_credits": 5,
+  "additional_credits_requested": 0,
   "automatic_paid_retries": false,
   "pilot": "BlackCap: useful comparison against the measured Meshy glasses defect",
   "references_pinned": true,
@@ -61,8 +61,10 @@
         "auto_size": false,
         "export_uv": true
       },
-      "job_status": "not_submitted",
-      "task_id": null
+      "job_status": "completed_downloaded",
+      "task_id": "fb558687-4093-4793-9395-687f9983fe06",
+      "rig_status": "completed_downloaded",
+      "rig_task_id": "d66571fa-6582-4f3b-ab55-d8f7d7a7ff06"
     },
     {
       "character": "Memphis33",
@@ -103,8 +105,10 @@
         "auto_size": false,
         "export_uv": true
       },
-      "job_status": "not_submitted",
-      "task_id": null
+      "job_status": "completed_downloaded",
+      "task_id": "37b3a1cd-d4c1-4b21-9348-88752ade1549",
+      "rig_status": "completed_downloaded",
+      "rig_task_id": "75a56cd6-daea-4f91-b158-239039972100"
     },
     {
       "character": "BlackCap",
@@ -198,8 +202,10 @@
         "auto_size": false,
         "export_uv": true
       },
-      "job_status": "not_submitted",
-      "task_id": null
+      "job_status": "completed_downloaded",
+      "task_id": "eb23c465-06bc-4b1d-a2fb-60a48190adc4",
+      "rig_status": "completed_downloaded",
+      "rig_task_id": "51b44d2e-ec0d-439c-8228-c3c2aea1c7cf"
     },
     {
       "character": "RedJersey",
@@ -240,8 +246,10 @@
         "auto_size": false,
         "export_uv": true
       },
-      "job_status": "not_submitted",
-      "task_id": null
+      "job_status": "completed_downloaded",
+      "task_id": "8845fab9-3804-44f5-8dbb-fd63d29d98cb",
+      "rig_status": "completed_downloaded",
+      "rig_task_id": "61597069-f8a8-4405-8289-c328a4999c08"
     },
     {
       "character": "LimeJacket",
@@ -282,8 +290,10 @@
         "auto_size": false,
         "export_uv": true
       },
-      "job_status": "not_submitted",
-      "task_id": null
+      "job_status": "completed_downloaded",
+      "task_id": "647104d8-4e97-4e99-a0ee-8929d83b632b",
+      "rig_status": "completed_downloaded",
+      "rig_task_id": "e53a95c0-64b7-488c-8be4-0e41d7671649"
     },
     {
       "character": "Topknot",
@@ -344,5 +354,10 @@
     "Actual output bone/mesh/material/coordinate contracts must be inspected before adapting old helpers.",
     "No more fal jobs; completed Meshy bodies/derivedrigs remain comparison evidence only."
   ],
-  "pilots_reserved_credits": 170
+  "pilots_reserved_credits": 170,
+  "balance_before_remaining_five": 430,
+  "additional_funding_confirmed": true,
+  "additional_topup_confirmed_credits": 400,
+  "final_balance_available_credits": 5,
+  "final_balance_frozen_credits": 0
 }

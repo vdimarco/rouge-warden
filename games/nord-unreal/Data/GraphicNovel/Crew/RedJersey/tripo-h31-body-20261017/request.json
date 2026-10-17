@@ -1,0 +1,16 @@
+{
+  "input": "https://raw.githubusercontent.com/vdimarco/rouge-warden/d33f5a4e8b2a7b096ebb8bf6a584394416df77d9/games/nord-unreal/Data/GraphicNovel/Crew/RedJersey/reference.png",
+  "model": "v3.1-20260211",
+  "texture": true,
+  "pbr": true,
+  "geometry_quality": "detailed",
+  "texture_quality": "detailed",
+  "texture_version": "v3.5-20260815",
+  "delight": true,
+  "face_limit": 100000,
+  "texture_alignment": "original_image",
+  "orientation": "align_image",
+  "enable_image_autofix": false,
+  "auto_size": false,
+  "export_uv": true
+}

@@ -1,0 +1,23 @@
+{
+  "character": "Memphis33",
+  "task_id": "37b3a1cd-d4c1-4b21-9348-88752ade1549",
+  "status": "completed_downloaded",
+  "credits_consumed": 60,
+  "request_path": "request.json",
+  "request_sha256": "c08cf80579e756087f930bb0a25e174b90c383076bfe1096e70e6c8872d85294",
+  "source_reference_sha256": "f47a69cc5330ab37e056235c3d2d8c2e84fe717b0d07e189c5a1aa1aacd6302d",
+  "outputs": {
+    "body.glb": {
+      "bytes": 12381444,
+      "sha256": "c8e0491c768b71108391a309e07b3b9b4f32074a84ce65fff7f7e7d3aa63138e"
+    },
+    "provider-preview.png": {
+      "bytes": 137808,
+      "sha256": "709fbf3da297152b30c2e9c7fcadd835a3a8747bf940a03d5f344bd424879097"
+    }
+  },
+  "preview_format_from_actual_magic": true,
+  "signed_urls_private_only": true,
+  "native_or_art_accepted": false,
+  "recorded_utc": "2026-10-17T23:24:05.595001+00:00"
+}

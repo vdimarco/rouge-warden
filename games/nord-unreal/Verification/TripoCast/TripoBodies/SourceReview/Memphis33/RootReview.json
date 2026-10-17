@@ -1,0 +1,46 @@
+{
+  "at_utc": "2026-10-17T23:33:25.927949+00:00",
+  "source_sha256": "c8e0491c768b71108391a309e07b3b9b4f32074a84ce65fff7f7e7d3aa63138e",
+  "reference_sha256": "f47a69cc5330ab37e056235c3d2d8c2e84fe717b0d07e189c5a1aa1aacd6302d",
+  "viewed": [
+    {
+      "file": "front.png",
+      "sha256": "3b508d05c479739332364feb2dbdb5b5111ac2a39b3fa2c99b9ce465deddd213"
+    },
+    {
+      "file": "threequarter.png",
+      "sha256": "baa929924f8cd9ebbe7863368d98fabf64a39511efa27641afa7a9b5c8fc3838"
+    },
+    {
+      "file": "side.png",
+      "sha256": "659f6569502f3b42d5836b389b4dd3db73bffe7bc796d55de39ac45f5910be48"
+    },
+    {
+      "file": "back.png",
+      "sha256": "1837af9b8ffa615c7beee94bcda69eb3a9a68caf9d3bd1241950bf9735ec2f9b"
+    },
+    {
+      "file": "face-front.png",
+      "sha256": "02342aff151676af3e6cd6538a07cee102d8cce772c6f8edaa32731796fd68c7"
+    },
+    {
+      "file": "face-threequarter.png",
+      "sha256": "21dc1facda9f9d50e129426401dfd3c6249c56d8776187496e2118445d91e469"
+    },
+    {
+      "file": "hand-left.png",
+      "sha256": "a2c7976f3536fc5713165d690ebad6385a379dac1ffcce809f8ab06c3e76a03b"
+    },
+    {
+      "file": "hand-right.png",
+      "sha256": "39ff4670f1b082a72313e740605bfde028ec44c5f14ce58547767b257a1c472d"
+    }
+  ],
+  "bounded_rig_trial_allowed": true,
+  "final_art_accepted": false,
+  "observations": [
+    "Adult Memphis33 jersey/cap/beard/socks/high-tops identity is recognizable; glasses rounder and face broader than reference.",
+    "Thumbs appear short/flattened in front-biased views; actual3D length/opposition and reverse angles must be measured after rigging before deciding whether repair is necessary. No geometry change authorized on2D appearance alone."
+  ],
+  "hand_review_required": true
+}

@@ -1,6 +1,6 @@
 {
-  "recorded_utc": "2026-10-17T23:00:48.691236+00:00",
-  "status": "Two completed Tripo HD body+rig pilots;832 own-rig CPU pose checks pass. Black natural palms reviewed in8 stills+210frames; Top9 stills reject bag deformation. Five further pairs need funding.",
+  "recorded_utc": "2026-10-17T23:45:58.098279+00:00",
+  "status": "All7 Tripo HD bodies and own rigs retained;5 credits remain/0frozen/no active paid jobs. Offline motion/native candidate review continues; Topbag rejected; no live promotion.",
   "jobs": [
     {
       "character": "BlackCap",
@@ -57,27 +57,29 @@
   "fal_uncommitted_usd": 7,
   "fal_published_estimate_all9_usd": 13.68,
   "settled_charges_known": false,
-  "tripo_last_observed_credits": 30,
-  "tripo_paid_jobs_this_cast": 7,
-  "native_or_package_changes": false,
+  "tripo_last_observed_credits": 5,
+  "tripo_paid_jobs_this_cast": 17,
+  "native_or_package_changes": true,
   "limits": [
     "Five remaining detailed Tripo body+rig pairs cost425credits, current30available/0frozen;400-credit top-up requested.",
     "BlackCap natural palms pass bounded CPU frame review; broad inherited gait sway/contact and native transitions remain unaccepted.",
     "Topknot bag has strong erroneous thigh weights; completed topology/UV diagnosis rejects automatic correction. Semantic bag/strap-mask review and native acceptance remain open.",
     "No Unreal/GPU/service/package operations; native/package/browser/device acceptance remains open."
   ],
-  "tripo_reserved_credits": 245,
-  "tripo_last_balance_snapshot_scope": "After two completed60-credit bodies and two completed25-credit rigs",
+  "tripo_reserved_credits": 670,
+  "tripo_last_balance_snapshot_scope": "All7 paid own Tripo body+rig jobs completed/downloaded, raw hashes checked; no cast art/native/promotion acceptance",
   "prior_jobs_scope": "Seven completedMeshy comparisons andthreeMeshy-derivedTripo rigs; preservehistory,costs,inputs; no furtheradoption",
   "tripo_paid_comparison_rigs": 3,
-  "tripo_paid_body_jobs": 2,
+  "tripo_paid_body_jobs": 7,
   "tripo_body_task_id": "7ea82881-e750-48a7-95aa-a55da483d18f",
   "tripo_new_cast_plan": "TripoBodies/Plan.json",
   "tripo_target_seven_body_and_rig_credits": 595,
-  "tripo_additional_credits_requested": 400,
-  "tripo_paid_h31_rigs": 2,
-  "tripo_reserved_new_pipeline_credits": 170,
-  "tripo_uncommitted_new_pipeline_credits": 30,
-  "tripo_actual_h31_completed_credits": 170,
-  "topknot_h31_body_task_id": "7c59f469-ad8a-4825-913f-14a69d0ba61b"
+  "tripo_additional_credits_requested": 0,
+  "tripo_paid_h31_rigs": 7,
+  "tripo_reserved_new_pipeline_credits": 595,
+  "tripo_uncommitted_new_pipeline_credits": 5,
+  "tripo_actual_h31_completed_credits": 595,
+  "topknot_h31_body_task_id": "7c59f469-ad8a-4825-913f-14a69d0ba61b",
+  "native_scope": "New isolated BlackCap candidate authoring/freshload and editor build only; checks ongoing",
+  "package_modified": false
 }

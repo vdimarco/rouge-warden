@@ -1,0 +1,29 @@
+{
+  "character": "GreenCap51",
+  "source_provider": "Tripo H3.1",
+  "source_body_task_id": "fb558687-4093-4793-9395-687f9983fe06",
+  "rig_task_id": "d66571fa-6582-4f3b-ab55-d8f7d7a7ff06",
+  "credits_consumed": 25,
+  "model": "v3.0-20260909",
+  "rig_type": "biped",
+  "spec": "unreal",
+  "out_format": "fbx",
+  "source": {
+    "path": "Data/GraphicNovel/Crew/GreenCap51/tripo-h31-body-20261017/body.glb",
+    "sha256": "43c538c2880b933fd2f2fc78c67e7ca08e913d05552f53f0dc96794e01ce51f6"
+  },
+  "outputs": {
+    "rig.fbx": {
+      "bytes": 7754492,
+      "sha256": "559b6a64944d8519f0d99c1f17df44e603397462847e3a2dc84e345e770814bc"
+    },
+    "provider-preview.png": {
+      "bytes": 138120,
+      "sha256": "9ca1b52c1089c9b9463d80fce707a7b745cb49e4b6c58ffe49711e56201bb85e"
+    }
+  },
+  "signed_urls_private_only": true,
+  "raw_provider_files_unchanged": true,
+  "native_or_art_accepted": false,
+  "recorded_utc": "2026-10-17T23:33:00.323520+00:00"
+}

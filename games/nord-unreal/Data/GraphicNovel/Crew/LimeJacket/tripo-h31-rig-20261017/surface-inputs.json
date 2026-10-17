@@ -1,0 +1,10 @@
+{
+  "source_glb": {
+    "path": "Data/GraphicNovel/Crew/LimeJacket/tripo-h31-body-20261017/body.glb",
+    "sha256": "178a21d8a3c963a9cf91e4014807a3f69f2c6bee0e95b472796740bf7179ab77"
+  },
+  "provider_fbx": {
+    "path": "Data/GraphicNovel/Crew/LimeJacket/tripo-h31-rig-20261017/rig.fbx",
+    "sha256": "59432254e8f9dbe46dbeb72e053539563475b135fd77daf956c13c75efc96393"
+  }
+}

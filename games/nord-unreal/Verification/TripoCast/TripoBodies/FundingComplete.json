@@ -1,0 +1,84 @@
+{
+  "at_utc": "2026-10-17T23:45:58.098279+00:00",
+  "passed": true,
+  "scope": "All7 paid own Tripo body+rig jobs completed/downloaded, raw hashes checked; no cast art/native/promotion acceptance",
+  "new_pipeline_credits_consumed": 595,
+  "retained_comparison_rig_credits_consumed": 75,
+  "total_cast_credits_consumed": 670,
+  "verified_available_credits": 5,
+  "verified_frozen_credits": 0,
+  "owned_paid_jobs_outstanding": 0,
+  "automatic_paid_retries": 0,
+  "jobs": [
+    {
+      "character": "BlackCap",
+      "body_task_id": "7ea82881-e750-48a7-95aa-a55da483d18f",
+      "rig_task_id": "2fd12b3e-1a82-45da-b3a4-93e9f2649c13",
+      "body_sha256": "ff4d393b98d5fba212295305b714ab7fce04229e34b14196c7e2f4c210467d70",
+      "rig_sha256": "54db95e20649c34c1d6dd2f28e1a1ec44a91250b0f73f6041774ac722764848b",
+      "actual_body_credits": 60,
+      "actual_rig_credits": 25,
+      "raw_files_retained_and_sha_verified": true
+    },
+    {
+      "character": "Topknot",
+      "body_task_id": "7c59f469-ad8a-4825-913f-14a69d0ba61b",
+      "rig_task_id": "38b3289d-c680-40df-b1dc-2506e8fe6fb7",
+      "body_sha256": "621c65ce305a29d27b7ee974ee928011c3a0d78a979bf9cc3b73ecb13d54fae2",
+      "rig_sha256": "9cfeefead9c03472bb8f718fe96e403e79f5eab07ea3f10a2ee07488fa41fb21",
+      "actual_body_credits": 60,
+      "actual_rig_credits": 25,
+      "raw_files_retained_and_sha_verified": true
+    },
+    {
+      "character": "GreenCap51",
+      "body_task_id": "fb558687-4093-4793-9395-687f9983fe06",
+      "rig_task_id": "d66571fa-6582-4f3b-ab55-d8f7d7a7ff06",
+      "body_sha256": "43c538c2880b933fd2f2fc78c67e7ca08e913d05552f53f0dc96794e01ce51f6",
+      "rig_sha256": "559b6a64944d8519f0d99c1f17df44e603397462847e3a2dc84e345e770814bc",
+      "actual_body_credits": 60,
+      "actual_rig_credits": 25,
+      "raw_files_retained_and_sha_verified": true
+    },
+    {
+      "character": "Memphis33",
+      "body_task_id": "37b3a1cd-d4c1-4b21-9348-88752ade1549",
+      "rig_task_id": "75a56cd6-daea-4f91-b158-239039972100",
+      "body_sha256": "c8e0491c768b71108391a309e07b3b9b4f32074a84ce65fff7f7e7d3aa63138e",
+      "rig_sha256": "b11ef3df911506705b92e1ef800d6418fc409d1e1e92ee42d35b1ee324d6674f",
+      "actual_body_credits": 60,
+      "actual_rig_credits": 25,
+      "raw_files_retained_and_sha_verified": true
+    },
+    {
+      "character": "WhiteCap",
+      "body_task_id": "eb23c465-06bc-4b1d-a2fb-60a48190adc4",
+      "rig_task_id": "51b44d2e-ec0d-439c-8228-c3c2aea1c7cf",
+      "body_sha256": "163e86ec12c6ee9a53ccee29f500dfba720d230c8046c9d968430262ee24e4d4",
+      "rig_sha256": "3c447abf193e012825c068838ec74b5da2af63e1f42c7b756be35ccb989648d4",
+      "actual_body_credits": 60,
+      "actual_rig_credits": 25,
+      "raw_files_retained_and_sha_verified": true
+    },
+    {
+      "character": "RedJersey",
+      "body_task_id": "8845fab9-3804-44f5-8dbb-fd63d29d98cb",
+      "rig_task_id": "61597069-f8a8-4405-8289-c328a4999c08",
+      "body_sha256": "13bf9c9dc76a7a925ba31ad5fadf6ef5e3a7436ee0450e6579a221f1fabd96c8",
+      "rig_sha256": "53d2bdfd3c8958865cf0865db4d8f92a85fc1079ef02f8fe441dd32e9c1afa67",
+      "actual_body_credits": 60,
+      "actual_rig_credits": 25,
+      "raw_files_retained_and_sha_verified": true
+    },
+    {
+      "character": "LimeJacket",
+      "body_task_id": "647104d8-4e97-4e99-a0ee-8929d83b632b",
+      "rig_task_id": "e53a95c0-64b7-488c-8be4-0e41d7671649",
+      "body_sha256": "178a21d8a3c963a9cf91e4014807a3f69f2c6bee0e95b472796740bf7179ab77",
+      "rig_sha256": "59432254e8f9dbe46dbeb72e053539563475b135fd77daf956c13c75efc96393",
+      "actual_body_credits": 60,
+      "actual_rig_credits": 25,
+      "raw_files_retained_and_sha_verified": true
+    }
+  ]
+}

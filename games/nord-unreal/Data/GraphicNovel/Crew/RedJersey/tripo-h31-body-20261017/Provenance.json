@@ -1,0 +1,23 @@
+{
+  "character": "RedJersey",
+  "task_id": "8845fab9-3804-44f5-8dbb-fd63d29d98cb",
+  "status": "completed_downloaded",
+  "credits_consumed": 60,
+  "request_path": "request.json",
+  "request_sha256": "ecd0974ab0e1c0425675be2181e401d5152b8d6e624cf94575d097804a803b36",
+  "source_reference_sha256": "3270ff8a8a29209ae1b1e7cb454a7883375b955adc651b12feb71332a2086bac",
+  "outputs": {
+    "body.glb": {
+      "bytes": 11338276,
+      "sha256": "13bf9c9dc76a7a925ba31ad5fadf6ef5e3a7436ee0450e6579a221f1fabd96c8"
+    },
+    "provider-preview.png": {
+      "bytes": 131908,
+      "sha256": "c622a9cd8a49f423842137db3f349cc7565f85826d5ed9b0ed772f30c793752a"
+    }
+  },
+  "preview_format_from_actual_magic": true,
+  "signed_urls_private_only": true,
+  "native_or_art_accepted": false,
+  "recorded_utc": "2026-10-17T23:24:09.000471+00:00"
+}
