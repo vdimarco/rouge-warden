@@ -42,7 +42,7 @@ export function receiverLagging(stats, previous) {
     / (stats.jitterBufferEmittedCount - previous.jitterBufferEmittedCount) > .12;
 }
 
-const phoneProfiles = [{ edge: 1280, bitrate: 4000 }, { edge: 960, bitrate: 2000 }, { edge: 800, bitrate: 1500 }, { edge: 640, bitrate: 1000 }];
+const phoneProfiles = [{ edge: 1280, bitrate: 6000 }, { edge: 960, bitrate: 2000 }, { edge: 800, bitrate: 1500 }, { edge: 640, bitrate: 1000 }];
 
 export function phoneStreamState(now) {
   return { ...phoneProfiles[1], level: 1, changedAt: now, poor: 0, healthy: 0, critical: 0 };

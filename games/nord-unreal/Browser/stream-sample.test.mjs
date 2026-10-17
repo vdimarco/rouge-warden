@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { spawnSync } from 'node:child_process';
 import { summarize } from './stream-sample.mjs';
 
 test('stream summary uses measured time and counter differences, including freezes', () => {
@@ -20,4 +21,24 @@ test('stream summary uses measured time and counter differences, including freez
   assert.equal(receiver.jitterBufferMsPerFrame, 25);
   assert.equal(receiver.packetsLost, 3);
   assert.equal(receiver.framesReceived, 60);
+});
+
+test('quantizer diagnostic uses decoded frame deltas only for comparable optional counters', () => {
+  const first = { timeMs: 1000, framesDecoded: 100, bytesReceived: 1000, framesDropped: 0, freezeCount: 0,
+    totalFreezesDuration: 0, totalDecodeTime: 1, qpSum: 5000, codec: 'video/VP8' };
+  const last = { ...first, timeMs: 3000, framesDecoded: 160, bytesReceived: 2000, totalDecodeTime: 1.2, qpSum: 7400 };
+  assert.equal(summarize([first, last]).meanQuantizer, 40);
+  for (const patch of [{ qpSum: undefined }, { qpSum: null }, { qpSum: 0 }, { codec: 'video/H264' }, { framesDecoded: 100 }]) {
+    assert.equal(summarize([first, { ...last, ...patch }]).meanQuantizer, undefined);
+  }
+  assert.equal(summarize([{ ...first, codec: undefined }, { ...last, codec: undefined }]).meanQuantizer, undefined);
+  assert.equal(summarize([{ ...first, qpSum: 0 }, { ...last, qpSum: 600 }]).meanQuantizer, 10);
+});
+
+test('invalid benchmark warmups are rejected before launching a browser', () => {
+  for (const value of ['NaN', '61', '1']) {
+    const result = spawnSync(process.execPath, ['stream-sample.mjs', '--warmup', value], { encoding: 'utf8' });
+    assert.notEqual(result.status, 0);
+    assert.match(result.stderr, /--warmup must be/);
+  }
 });

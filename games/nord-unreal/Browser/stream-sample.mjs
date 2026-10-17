@@ -23,6 +23,9 @@ export function summarize(samples) {
     result.decodeMsPerFrame = (last.totalDecodeTime - first.totalDecodeTime) * 1000 / (last.framesDecoded - first.framesDecoded);
     const emitted = last.jitterBufferEmittedCount - first.jitterBufferEmittedCount;
     result.jitterBufferMsPerFrame = emitted > 0 ? (last.jitterBufferDelay - first.jitterBufferDelay) * 1000 / emitted : null;
+    if (first.codec && first.codec === last.codec && Number.isFinite(first.qpSum) && Number.isFinite(last.qpSum) && last.qpSum >= first.qpSum) {
+      result.meanQuantizer = (last.qpSum - first.qpSum) / (last.framesDecoded - first.framesDecoded);
+    }
     result.packetsLost = last.packetsLost - first.packetsLost;
     result.framesReceived = last.framesReceived - first.framesReceived;
   }
@@ -31,12 +34,13 @@ export function summarize(samples) {
 
 async function main() {
   const { values } = parseArgs({ options: {
-    seconds: { type: 'string', default: '60' }, slot: { type: 'string', default: 'NordFriend1' },
+    seconds: { type: 'string', default: '60' }, warmup: { type: 'string', default: '2' }, slot: { type: 'string', default: 'NordFriend1' },
     url: { type: 'string', default: 'http://127.0.0.1:8100/' }, relay: { type: 'boolean', default: false },
     look: { type: 'boolean', default: false }, portrait: { type: 'boolean', default: false }
   } });
-  const seconds = Number(values.seconds), url = new URL(values.url);
+  const seconds = Number(values.seconds), warmup = Number(values.warmup), url = new URL(values.url);
   assert.ok(Number.isInteger(seconds) && seconds >= 5 && seconds <= 3600, '--seconds must be 5–3600');
+  assert.ok(Number.isInteger(warmup) && warmup >= 2 && warmup <= 60, '--warmup must be 2–60');
   assert.ok(['NordHost', 'NordFriend1'].includes(values.slot), '--slot must be NordHost or NordFriend1');
   assert.ok(['http:', 'https:'].includes(url.protocol) && !url.username && !url.password && !url.search && !url.hash,
     '--url must be an HTTP(S) player page without credentials, query or fragment');
@@ -44,7 +48,7 @@ async function main() {
   const output = resolve('../Saved/BrowserStreaming/samples', new Date().toISOString().replace(/[:.]/g, '-') + '-' + values.slot);
   await mkdir(output, { recursive: true });
   const report = { startedAt: new Date().toISOString(), playerUrl: url.href, slot: values.slot,
-    mode: values.relay ? 'forced-relay-scoped-turn-dns' : 'ordinary', cameraSweep: values.look, portrait: values.portrait, passed: false, samples: [],
+    mode: values.relay ? 'forced-relay-scoped-turn-dns' : 'ordinary', cameraSweep: values.look, portrait: values.portrait, warmupSeconds: warmup, passed: false, samples: [],
     limits: ['Host-PC Chromium is not a physical phone or an off-LAN network.',
       'No walking, driving, campaign input or audible playback is checked.'] };
   const args = ['--disable-gpu'];
@@ -64,7 +68,12 @@ async function main() {
       };
       // Selecting a slot must happen before the first subscription, even on a page built with a default slot.
       const NativeSocket = window.WebSocket;
+      window.__sampleSocketCloses = [];
       window.WebSocket = class extends NativeSocket {
+        constructor(...args) {
+          super(...args);
+          this.addEventListener('close', event => window.__sampleSocketCloses.push({ code: event.code, clean: event.wasClean }));
+        }
         send(data) {
           if (typeof data === 'string') {
             const message = JSON.parse(data);
@@ -107,7 +116,7 @@ async function main() {
     report.firstWorldAt = new Date().toISOString();
     await page.screenshot({ path: resolve(output, 'first-world.png') });
     // Warm playback before the measurement; retain all one-second observations after this point.
-    await page.waitForTimeout(2000);
+    await page.waitForTimeout(warmup * 1000);
     await page.evaluate(() => {
       const video = document.querySelector('#video video');
       window.__sampleGap = { previous: performance.now(), longest: 0, active: true };
@@ -131,7 +140,10 @@ async function main() {
         const result = { timeMs: Date.now(), width: video.videoWidth, height: video.videoHeight,
           framesDecoded: 0, framesReceived: 0, framesDropped: 0, bytesReceived: 0, freezeCount: 0, totalFreezesDuration: 0,
           totalDecodeTime: 0, jitterBufferDelay: 0, jitterBufferEmittedCount: 0, packetsLost: 0,
-          longestFrameGapMs: Math.max(gap.longest, performance.now() - gap.previous), candidate: null, codec: null };
+          longestFrameGapMs: Math.max(gap.longest, performance.now() - gap.previous), candidate: null, codec: null,
+          requested: document.body.dataset.streamSize, framesPerSecond: null, qpSum: null,
+          playerState: document.body.dataset.state, status: document.querySelector('#status-title')?.textContent,
+          peerStates: window.__samplePeers.map(peer => peer.connectionState), socketCloses: window.__sampleSocketCloses.slice() };
         for (const peer of window.__samplePeers.filter(peer => peer.connectionState === 'connected')) {
           const stats = await peer.getStats();
           for (const stat of stats.values()) {
@@ -142,6 +154,8 @@ async function main() {
             if (stat.type !== 'inbound-rtp' || (stat.kind || stat.mediaType) !== 'video') continue;
             for (const key of ['framesDecoded', 'framesReceived', 'framesDropped', 'bytesReceived', 'freezeCount', 'totalFreezesDuration',
               'totalDecodeTime', 'jitterBufferDelay', 'jitterBufferEmittedCount', 'packetsLost']) result[key] += stat[key] || 0;
+            result.framesPerSecond = stat.framesPerSecond ?? null;
+            result.qpSum = Number.isFinite(stat.qpSum) ? (result.qpSum || 0) + stat.qpSum : result.qpSum;
             result.codec = stats.get(stat.codecId)?.mimeType;
           }
         }
@@ -155,7 +169,12 @@ async function main() {
         await page.waitForTimeout(100);
       }
     } while (true);
-    if (touch) await touch.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+    if (touch) {
+      // Return the look gesture to its starting point so comparisons retain the same view.
+      await touch.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [point()] });
+      await touch.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+      await page.waitForTimeout(200);
+    }
     report.summary = summarize(report.samples);
     assert.ok(report.summary.decodedFps > 0, 'Video must decode new frames during the sample');
     if (values.relay) assert.equal(report.summary.candidate?.type, 'relay');
