@@ -70,7 +70,7 @@ for (const size of SIZES) {
   await page.keyboard.press("Enter");
   await settle(page);
   s = await state(page);
-  check(JSON.stringify(s.visible) === JSON.stringify(["olympus", "crimson", "tidebreak", "moonwell", "primordia", "river-rush"]), "Action shows its six games: " + s.visible.join(", "));
+  check(JSON.stringify(s.visible) === JSON.stringify(["olympus", "crimson", "tidebreak", "moonwell", "primordia", "river-rush", "ahead-of-the-light"]), "Action shows its seven games: " + s.visible.join(", "));
   check(s.on === "olympus", "first game selected");
   check(s.tokens === tokens, "opening a group spends no token");
   check(s.hash === "#action" && /ACTION/.test(s.sign) && !!s.back, "sign, address and back control show the group");

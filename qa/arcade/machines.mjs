@@ -110,6 +110,12 @@ for (const f of fs.readdirSync(path.join(PUB, "arcade")).filter((n) => /^(lab|wo
   const b = fs.readFileSync(path.join(PUB, "arcade", f));
   check(b.length < 60 * 1024 && b.toString("latin1", 0, 4) === "RIFF" && b.toString("latin1", 8, 12) === "WEBP", `arcade/${f} is a WebP under 60 KB (${(b.length / 1024).toFixed(1)} KB)`);
 }
+// Ahead of the Light's screen is cut from a real portrait screenshot: a WebP 480 px wide and under 60 KB
+{
+  const b = fs.readFileSync(path.join(PUB, "arcade/key/ahead-of-the-light.webp"));
+  const vp8x = b.toString("latin1", 12, 16) === "VP8X", w = vp8x ? 1 + b.readUIntLE(24, 3) : b.toString("latin1", 12, 16) === "VP8 " ? b.readUInt16LE(26) & 0x3fff : 1 + (b.readUInt32LE(21) & 0x3fff);
+  check(b.length < 60 * 1024 && b.toString("latin1", 8, 12) === "WEBP" && w === 480, `arcade/key/ahead-of-the-light.webp is a WebP 480 px wide under 60 KB (${w} px, ${(b.length / 1024).toFixed(1)} KB)`);
+}
 // the painted art from Higgsfield (higgsfield/arcade-key-art.json): one WebP for each entry, each under 100 KB
 for (const { id } of JSON.parse(read("higgsfield/arcade-key-art.json")).art) {
   const f = path.join(PUB, "arcade", "key", id + ".webp");
@@ -389,7 +395,7 @@ if (chromium) {
   await relaunch();
   /* ----- the high-score lines: a game's own save shows, and junk never throws ----- */
   const JUNK = ["not json", "null", "[]", "{}", "[1,2]", "-5", "0", "1e999", "\"x\"", "{\"best\":\"x\",\"ms\":[],\"runs\":{}}", "true"];
-  const KEYS = ["primordia.best", "neon-best", "loon-echo-rescue-best", "tilt.voyage.best", "lab.stats.plunge", "lab.stats.creek", "lab.stats.rules", "lab.rules.clears", "small-worlds-best-threadwake", "small-worlds-best-heartship", "follow-suit:best-chain", "moonwell.best.v1"];
+  const KEYS = ["primordia.best", "neon-best", "loon-echo-rescue-best", "tilt.voyage.best", "lab.stats.plunge", "lab.stats.creek", "lab.stats.rules", "lab.rules.clears", "small-worlds-best-threadwake", "small-worlds-best-heartship", "follow-suit:best-chain", "moonwell.best.v1", "ahead-of-the-light.meta.v1"];
   const lines = (page) => page.$$eval(".cab[data-game]", (cs) => Object.fromEntries(cs.map((c) => [c.dataset.game, c.querySelector(".hi").textContent])));
   if (PARTS.includes("saves")) {
     const clean = await open(browser, { width: 390, height: 844 });
@@ -409,16 +415,24 @@ if (chromium) {
       "lab.stats.rules": JSON.stringify({ ms: 100, runs: 1 }), "lab.rules.clears": JSON.stringify({ a1: 40, b2: 95 }),
       "small-worlds-best-threadwake": "120", "small-worlds-best-heartship": "80", "follow-suit:best-chain": "5432",
       "moonwell.best.v1": JSON.stringify({ score: 12345, island: 17 }),
+      "ahead-of-the-light.meta.v1": JSON.stringify({ v: 1, pages: ["home", "first-home"], records: { best: { home: true, legNo: 7, years: 14.23, ship: "lantern" } } }),
     };
     const { ctx, page, errors } = await open(browser, { width: 390, height: 844, store: good });
     const got = await lines(page);
-    const want = { primordia: "BEST 4,200", neon: "BEST 12,345", echo: "BEST 210", tilt: "BEST 9,800", plunge: "BEST 1,234 M", creek: "RUNS 3", rules: "CLEARS 2", worlds: "WORLDS DONE 2/6", lab: "TOYS TRIED 4/4", "follow-suit": "BEST CHAIN 5,432", moonwell: "BEST 12,345 · ISLAND 17" };
+    const want = { primordia: "BEST 4,200", neon: "BEST 12,345", echo: "BEST 210", tilt: "BEST 9,800", plunge: "BEST 1,234 M", creek: "RUNS 3", rules: "CLEARS 2", worlds: "WORLDS DONE 2/6", lab: "TOYS TRIED 4/4", "follow-suit": "BEST CHAIN 5,432", moonwell: "BEST 12,345 · ISLAND 17", "ahead-of-the-light": "FIRST HOME · 14.2 YR" };
     for (const [g, t] of Object.entries(want)) check(got[g] === t, `a real save shows on the ${g} machine: "${got[g]}" (want "${t}")`);
     // a save must change only its own machine's line
     const moved = Object.keys(plain).filter((g) => !(g in want) && got[g] !== plain[g]);
     check(moved.length === 0, `a real save changes no other machine's line${moved.length ? " (changed: " + moved.map((g) => g + " -> " + got[g]).join("; ") + ")" : ""}`);
     check(errors.length === 0, "real saves: no page errors" + (errors.length ? ": " + errors.join("; ") : ""));
     await ctx.close();
+    // Ahead of the Light's other two lines: home but not first, and the furthest leg of a run that never got home
+    for (const [best, pages, t] of [[{ home: true, legNo: 7, years: 31.04 }, ["home"], "HOME IN 31.0 YR"], [{ home: false, legNo: 2, years: 9.5 }, [], "BEST: VIRGO"]]) {
+      const o = await open(browser, { width: 390, height: 844, store: { "ahead-of-the-light.meta.v1": JSON.stringify({ v: 1, pages, records: { best } }) } });
+      const line = (await lines(o.page))["ahead-of-the-light"];
+      check(line === t && o.errors.length === 0, `Ahead of the Light's machine reads "${line}" (want "${t}")`);
+      await o.ctx.close();
+    }
   }
 
   await relaunch();
