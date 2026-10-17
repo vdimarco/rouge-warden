@@ -44,7 +44,10 @@ export async function open(browser, size, query = '', { store = null, reduced = 
   page.on('pageerror', (e) => errors.push('pageerror: ' + (e.stack || e.message).split('\n').slice(0, 3).join(' | ')));
   page.on('console', (m) => { if (m.type() === 'error') errors.push('console: ' + m.text()); });
   page.on('response', (r) => { if (r.status() >= 400) errors.push(`${r.status()} ${r.url()}`); });
-  page.on('requestfailed', (r) => { if (!/analytics|posthog/.test(r.url())) errors.push(`failed ${r.url()}`); });
+  // the game switcher probes a game still in the works with a HEAD request that may fail; nothing else may
+  page.on('requestfailed', (r) => {
+    if (r.method() !== 'HEAD' && !/analytics|posthog/.test(r.url())) errors.push(`failed ${r.url()} ${r.failure()?.errorText || ''}`);
+  });
   // the arcade's analytics beacon has no server here
   await page.route(/\/api\//, (r) => r.fulfill({ status: 204, body: '' }));
   await page.addInitScript(({ store, clear }) => {
