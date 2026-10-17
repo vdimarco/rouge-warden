@@ -298,6 +298,29 @@ export function createOverlay({ canvas, tune = TUNE, reduced = false, fx = {} } 
   const circle = (x, y, rad) => { ctx.beginPath(); V.ops++; ctx.arc(x, y, Math.max(0.5, rad), 0, Math.PI * 2); };
   const line = (x0, y0, x1, y1) => { ctx.beginPath(); V.ops++; ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); };
   const stroke = (style, width) => { ctx.strokeStyle = style; ctx.lineWidth = width; ctx.stroke(); };
+  // Boxes the caption line must keep clear of (22.1): an arc of the ring from rIn to rOut, cut into 15° pieces, each
+  // piece's bounding box; and a text's box. main.js moves the caption off them.
+  function keepArc(list, ang, half, rIn, rOut) {
+    const n = Math.max(1, Math.ceil((2 * half) / 15));
+    for (let i = 0; i < n; i++) {
+      const a0 = ang - half + (2 * half * i) / n, a1 = ang - half + (2 * half * (i + 1)) / n;
+      const pts = [P(a0, rIn), P(a0, rOut), P(a1, rIn), P(a1, rOut), P((a0 + a1) / 2, rOut)];
+      const xs = pts.map((q) => q[0]), ys = pts.map((q) => q[1]);
+      list.push({ x0: Math.min(...xs), y0: Math.min(...ys), x1: Math.max(...xs), y1: Math.max(...ys) });
+    }
+  }
+  function textBox(str, x, y, px, weight = 800, align = 'center') {
+    ctx.font = `${weight} ${px}px ${FONT}`;
+    const tw = ctx.measureText(str).width;
+    const x0 = align === 'center' ? x - tw / 2 : align === 'right' ? x - tw : x;
+    return { x0, y0: y - px * 0.6, x1: x0 + tw, y1: y + px * 0.6 };
+  }
+  // A small label's centre moved so its whole box stays on screen, 6 px from the edges.
+  function onScreen(str, x, y, px, w, h) {
+    ctx.font = `800 ${px}px ${FONT}`;
+    const hw = ctx.measureText(str).width / 2 + 6;
+    return [Math.max(hw, Math.min(w - hw, x)), Math.max(px, Math.min(h - px, y))];
+  }
   function text(str, x, y, { px = 11, weight = 600, color = '#fff', align = 'left', base = 'middle', alpha = 1 } = {}) {
     ctx.font = `${weight} ${px}px ${FONT}`;
     ctx.textAlign = align; ctx.textBaseline = base;
@@ -416,7 +439,7 @@ export function createOverlay({ canvas, tune = TUNE, reduced = false, fx = {} } 
     ctx.save();
     ctx.translate(V.sx, V.sy);
     const out = { ring: view.R, burstR: 0, labels: [], wings: null, rivals: [], marks: [], lightLabel: null, ops: 0,
-      bands: [], gateLines: [], landmarkBox: null };
+      bands: [], gateLines: [], landmarkBox: null, keep: [] };
 
     if (title) {
       // the title: a faint ring only (kept clear of the name by the page)
@@ -888,9 +911,11 @@ export function createOverlay({ canvas, tune = TUNE, reduced = false, fx = {} } 
         arc(ba, b.w / 2, R + 5 * s); stroke(`rgba(240,138,44,${a3(alpha)})`, lw);
         arc(ba, b.perfect, R + 5 * s); stroke(`rgba(255,200,140,${a3(alpha + 0.25)})`, lw);
         out.bands.push({ psi: b.psi, ang: ba });
+        keepArc(out.keep, ba, b.w / 2, R + 5 * s - lw / 2, R + 5 * s + lw / 2);
         if (b === next) {
           const [lx, ly] = P(ba, R - 26 * s);
           text('LET GO', lx, ly, { px: view.desk ? 26 : 18, weight: 800, color: ORANGE, align: 'center' });
+          out.keep.push(textBox('LET GO', lx, ly, view.desk ? 26 : 18));
         }
       }
     }
@@ -924,8 +949,12 @@ export function createOverlay({ canvas, tune = TUNE, reduced = false, fx = {} } 
         const px = view.desk ? 13 : 11;
         if (race.leg.type === 'earth') {
           arc(ta, (T.DOOR_DEG || 60) / 2, R + 6 * s); stroke(`rgba(255,255,255,${a3(0.9 * draw)})`, 3 * kz);
-          const [lx, ly] = P(ta, R + 30 * s);
+          const [lx, ly] = onScreen('EARTH', ...P(ta, R + 30 * s), px, w, h);
           text('EARTH', lx, ly, { px, weight: 800, align: 'center', alpha: draw });
+          if (draw > 0.05) {
+            keepArc(out.keep, ta, (T.DOOR_DEG || 60) / 2, R, R + 12 * s);
+            out.keep.push(textBox('EARTH', lx, ly, px));
+          }
         } else {
           // THREAD: the gap between the giants, orange
           arc(ta, gap, R + 6 * s); stroke(`rgba(240,138,44,${a3(0.95 * draw)})`, 3 * kz);
@@ -937,8 +966,13 @@ export function createOverlay({ canvas, tune = TUNE, reduced = false, fx = {} } 
           stroke(`rgba(240,138,44,${a3(draw)})`, 1.5 * kz);
           const [tx, ty] = P(ta, R + 16 * s), [tx2, ty2] = P(ta, R + 30 * s);
           line(tx, ty, tx2, ty2); stroke(`rgba(240,138,44,${a3(draw)})`, 1);
-          text('THREAD', tx2, ty2 + (ty2 > cy ? 8 : -8) * s, { px, weight: 800, color: ORANGE, align: 'center', alpha: draw });
+          const [lx, ly] = onScreen('THREAD', tx2, ty2 + (ty2 > cy ? 8 : -8) * s, px, w, h);
+          text('THREAD', lx, ly, { px, weight: 800, color: ORANGE, align: 'center', alpha: draw });
           out.gateLines.push({ kind: 'thread', x: tx2, y: ty2 });
+          if (draw > 0.05) {
+            keepArc(out.keep, ta, gap, R - 6 * s, R + 30 * s);
+            out.keep.push(textBox('THREAD', lx, ly, px));
+          }
           if (gate.dock && Number.isFinite(gate.dock.psi)) {
             const da = wrap(gate.dock.psi - cam), dw = (gate.dock.w || T.DOCK_DEG) / 2;
             ctx.setLineDash([6 * kz, 4 * kz]);
@@ -946,8 +980,13 @@ export function createOverlay({ canvas, tune = TUNE, reduced = false, fx = {} } 
             ctx.setLineDash([]);
             const [dx, dy] = P(da + dw * 0.6, R + 14 * s), [dx2, dy2] = P(da + dw * 0.6, R + 30 * s);
             line(dx, dy, dx2, dy2); stroke(`rgba(255,255,255,${a3(0.8 * draw)})`, 1);
-            text('DOCK +', dx2, dy2 + (dy2 > cy ? 8 : -8) * s, { px, weight: 800, align: 'center', alpha: draw });
+            const [kx, ky] = onScreen('DOCK +', dx2, dy2 + (dy2 > cy ? 8 : -8) * s, px, w, h);
+            text('DOCK +', kx, ky, { px, weight: 800, align: 'center', alpha: draw });
             out.gateLines.push({ kind: 'dock', x: dx2, y: dy2 });
+            if (draw > 0.05) {
+              keepArc(out.keep, da, dw, R, R + 30 * s);
+              out.keep.push(textBox('DOCK +', kx, ky, px));
+            }
           }
         }
       }

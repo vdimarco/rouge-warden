@@ -71,7 +71,7 @@ html[data-layout="desktop"] #place small { font-size: 13px; }
 html[data-layout="desktop"] #land { font-size: 13px; top: calc(var(--st) + 48px); }
 
 /* ---------- captions: one line, bold capitals in karaoke chunks, the current word orange ---------- */
-#captions { position: fixed; left: 0; right: 0; top: var(--cap-y); transform: translateY(-50%); text-align: center;
+#captions { position: fixed; left: 0; right: 0; top: calc(var(--cap-y) + var(--cap-dy, 0px)); transform: translateY(-50%); text-align: center;
   pointer-events: none; font-weight: 800; font-size: 26px; letter-spacing: 0.04em; text-shadow: var(--shade);
   padding: 0 calc(var(--sr) + 16px) 0 calc(var(--sl) + 16px); line-height: 1.1; white-space: nowrap; }
 #captions .now { color: var(--accent); }
