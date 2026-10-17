@@ -25,6 +25,7 @@ h1 .slash { align-self: flex-end; margin: -.04em 22% -.08em 0; color: var(--pape
 .play span { font: 700 25px/1 Barlow, Arial, sans-serif; }
 .play:hover { transform: translate(2px, 2px) rotate(-1deg); box-shadow: 5px 5px 0 var(--cyan); }
 .availability { max-width: 460px; margin: 21px 0 0; color: #a8bbb9; font: 500 14px/1.4 Barlow, Arial, sans-serif; }
+.availability a { display: inline-flex; align-items: center; min-height: 44px; color: var(--yellow); font-weight: 700; text-underline-offset: 4px; }
 .feature { min-width: 0; margin: 0; }
 .trailer-video { display: block; width: 100%; aspect-ratio: 16 / 9; border: 3px solid #09080e; background: #000; object-fit: cover; }
 .frame { position: relative; padding: 11px; border: 3px solid #06060c; background: var(--paper); transform: rotate(1.2deg); box-shadow: 12px 14px 0 #05050b, 19px 20px 0 var(--cyan); }

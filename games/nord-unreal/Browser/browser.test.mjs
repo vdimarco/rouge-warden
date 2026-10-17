@@ -1,8 +1,9 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { mkdir, readFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { createServer } from 'node:http';
-import { resolve } from 'node:path';
+import { tmpdir } from 'node:os';
+import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { WebSocketServer } from 'ws';
 
@@ -15,11 +16,12 @@ function build(endpoint) {
 }
 const server = createServer(async (request, response) => {
   const file = new URL(request.url, 'http://localhost').pathname.slice(1) || 'index.html';
-  if (!['index.html', 'player.js', 'hero.js', 'crew.js', 'intro.js', 'menu.js', 'styles.css', 'hero.css', 'intro.css', 'menu.css', 'crew-sprite.webp'].includes(file)) {
+  if (!['index.html', 'player.js', 'hero.js', 'crew.js', 'intro.js', 'menu.js', 'install.js', 'styles.css', 'hero.css', 'intro.css', 'menu.css', 'crew-sprite.webp', 'manifest.webmanifest', 'favicon.svg', 'favicon-32.png', 'apple-touch-icon.png', 'icon-192.png', 'icon-512.png', 'icon-maskable-512.png'].includes(file)) {
     response.writeHead(404).end();
     return;
   }
-  response.setHeader('Content-Type', file.endsWith('.js') ? 'text/javascript' : file.endsWith('.css') ? 'text/css' : file.endsWith('.webp') ? 'image/webp' : 'text/html');
+  const types = { js: 'text/javascript', css: 'text/css', webp: 'image/webp', webmanifest: 'application/manifest+json', svg: 'image/svg+xml', png: 'image/png' };
+  response.setHeader('Content-Type', types[file.split('.').at(-1)] || 'text/html');
   response.end(await readFile(`dist/${file}`));
 });
 await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
@@ -46,6 +48,25 @@ signalling.on('connection', socket => {
 // The player, sound, fullscreen and disconnect buttons live in the menu.
 async function openMenu(target) {
   if (await target.locator('#menu').isHidden()) await target.locator('[data-menu-toggle]:visible').first().click();
+}
+async function installationHelp(target, width, height, label) {
+  await target.setViewportSize({ width, height });
+  await target.goto(url);
+  await target.locator('#menu-toggle').click();
+  assert.equal(await target.locator('#install-help').isHidden(), true);
+  const box = await target.locator('#install-app').boundingBox();
+  assert.ok(box.width >= 44 && box.height >= 44, 'Install is a >=44 px target');
+  await target.locator('#install-app').click();
+  assert.equal(await target.locator('#install-help').isVisible(), true, 'Install reveals manual browser instructions when no prompt is offered');
+  assert.match(await target.locator('#install-help').textContent(), /Safari/);
+  assert.match(await target.locator('#install-help').textContent(), /Add to Home Screen/);
+  assert.equal(await target.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
+  assert.equal(await target.locator('.menu-panel').evaluate(panel => panel.scrollWidth <= panel.clientWidth), true, 'installation help does not overflow the menu');
+  await target.screenshot({ path: `.qa/install-help-${label}-${width}.png`, fullPage: true });
+  await target.keyboard.press('Escape');
+  assert.equal(await target.locator('#menu').isHidden(), true);
+  assert.equal(await target.locator('#overlay').evaluate(overlay => overlay.inert), false);
+  assert.equal(await target.evaluate(() => document.activeElement.id), 'menu-toggle', 'installation help preserves Escape and menu focus return');
 }
 const browser = await chromium.launch({ executablePath: process.env.NORD_CHROMIUM_PATH || '/usr/bin/chromium', headless: true, args: ['--disable-gpu'] });
 const page = await browser.newPage();
@@ -75,6 +96,37 @@ await page.addInitScript(() => {
 try {
   await mkdir('.qa', { recursive: true });
   build('');
+  // Chromium blocks installation in incognito; isolate this real manifest gate in a temporary normal profile.
+  const profile = await mkdtemp(join(tmpdir(), 'nord-installability-'));
+  let installContext;
+  try {
+    installContext = await chromium.launchPersistentContext(profile, { executablePath: process.env.NORD_CHROMIUM_PATH || '/usr/bin/chromium', headless: true, args: ['--disable-gpu'] });
+    const installPage = installContext.pages()[0] || await installContext.newPage();
+    await installPage.goto(url);
+    const cdp = await installContext.newCDPSession(installPage);
+    const manifest = await cdp.send('Page.getAppManifest');
+    const installability = await cdp.send('Page.getInstallabilityErrors');
+    await writeFile('.qa/installability.json', JSON.stringify({ manifest, installability }, null, 2));
+    assert.equal(manifest.url, `${url}/manifest.webmanifest`);
+    assert.deepEqual(manifest.errors, [], 'Chromium parses the served manifest without errors');
+    const app = JSON.parse(manifest.data);
+    assert.equal(app.name, 'GTA: NORTH');
+    for (const field of ['id', 'start_url', 'scope']) assert.equal(new URL(app[field], manifest.url).href, `${url}/`, `${field} resolves to the player root`);
+    assert.equal(app.display, 'standalone');
+    assert.deepEqual(installability.installabilityErrors, [], 'Chromium reports no installability errors; raw promotion gates are retained in .qa/installability.json');
+    await cdp.detach();
+  } finally {
+    try {
+      await installContext?.close();
+    } finally {
+      await rm(profile, { recursive: true, force: true });
+    }
+  }
+  for (const [file, type] of Object.entries({ 'install.js': 'text/javascript', 'manifest.webmanifest': 'application/manifest+json', 'favicon.svg': 'image/svg+xml', 'favicon-32.png': 'image/png', 'apple-touch-icon.png': 'image/png', 'icon-192.png': 'image/png', 'icon-512.png': 'image/png', 'icon-maskable-512.png': 'image/png' })) {
+    const response = await page.request.get(`${url}/${file}`);
+    assert.equal(response.status(), 200, `${file} is shipped`);
+    assert.equal(response.headers()['content-type'], type, `${file} has the correct media type`);
+  }
   for (const [width, height] of [[1280, 720], [1920, 1080], [360, 800]]) {
     await page.setViewportSize({ width, height });
     await page.goto(`${url}/?ss=wss://untrusted.example&AutoConnect=true`);
@@ -163,6 +215,26 @@ try {
   assert.equal(await page.locator('#menu').isHidden(), true, 'Escape closes the menu');
   assert.equal(await page.locator('#overlay').evaluate(overlay => overlay.inert), false);
   assert.equal(await page.evaluate(() => document.activeElement.id), 'menu-toggle', 'focus returns to the menu button');
+  // Browsers without an offered native prompt can still use the menu's installation instructions.
+  await installationHelp(page, 1280, 720, 'desktop');
+  // A synthetic prompt tests the real DOM focus lifecycle, not installation through the operating system.
+  await openMenu(page);
+  await page.evaluate(() => {
+    window.__installQaPrompts = 0;
+    window.dispatchEvent(Object.assign(new Event('beforeinstallprompt', { cancelable: true }), {
+      prompt: () => { window.__installQaPrompts++; return Promise.resolve(); },
+      userChoice: Promise.resolve({ outcome: 'accepted' })
+    }));
+    document.querySelector('#install-app').focus();
+  });
+  assert.equal(await page.evaluate(() => document.activeElement.id), 'install-app');
+  await page.keyboard.press('Enter');
+  await page.waitForFunction(() => document.querySelector('#install-app').hidden);
+  const installFocus = await page.evaluate(() => ({ prompts: window.__installQaPrompts, hidden: document.querySelector('#install-app').hidden, activeElement: document.activeElement.id, menuHidden: document.querySelector('#menu').hidden }));
+  await writeFile('.qa/install-focus-lifecycle.json', JSON.stringify({ synthetic: true, ...installFocus }, null, 2));
+  assert.equal(installFocus.prompts, 1, 'Enter invokes one deferred prompt');
+  assert.equal(installFocus.activeElement, 'menu-close', 'accepted installation returns focus to Close after disabling and hiding Install');
+  assert.equal(installFocus.menuHidden, false, 'the menu stays open after the install action');
   // Start screen: three story panels, then the crew choice; each layout fits without sideways scrolling.
   for (const [width, height] of [[360, 800], [800, 360], [1280, 720]]) {
     await page.setViewportSize({ width, height });
@@ -227,6 +299,7 @@ try {
   const phone = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
   const phonePage = await phone.newPage();
   phonePage.on('pageerror', error => errors.push(error.message));
+  for (const [width, height] of [[320, 740], [390, 844]]) await installationHelp(phonePage, width, height, 'touch');
   await phonePage.goto(url);
   await phonePage.evaluate(() => localStorage.setItem('gta-north-crew', '7'));
   await phonePage.reload();
@@ -421,7 +494,7 @@ try {
   assert.equal(await page.locator('#status-title').isVisible(), true, 'closing the start screen shows the connection card');
   assert.deepEqual(errors, []);
   assert.deepEqual(loggingSpam, [], 'production logging suppresses debug/info and per-packet messages');
-  console.log('Browser UI checks passed: offline, desktop/mobile layout, title-screen trailer, start screen story and crew choice, warning-only logging, click-to-connect, unavailable host, ignored query overrides, occupied-slot selection and disconnect/reconnect. No live game asserted.');
+  console.log('Browser UI checks passed: Chromium manifest/installability gates, installed assets, installation help at 320/390/1280, offline, desktop/mobile layout, title-screen trailer, start screen story and crew choice, warning-only logging, click-to-connect, unavailable host, ignored query overrides, occupied-slot selection and disconnect/reconnect. No native installation or live game asserted.');
 } catch (error) {
   console.error({ state: await page.locator('body').getAttribute('data-state').catch(() => null), title: await page.locator('#status-title').textContent().catch(() => null), errors });
   throw error;

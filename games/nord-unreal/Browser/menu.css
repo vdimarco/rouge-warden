@@ -10,6 +10,9 @@
 .menu button { min-height: 44px; background: var(--ink); color: var(--paper); border-color: var(--ink); font-size: 14px; }
 .menu button:hover:enabled { background: var(--paper); color: var(--ink); border-color: var(--ink); }
 .menu-close { width: 100%; margin-top: 16px; }
+.menu-install { margin-top: 18px; padding-top: 16px; border-top: 2px solid var(--ink); }
+.menu-install button { width: 100%; }
+.menu-install .small { margin: 10px 0 0; color: var(--ink); line-height: 1.5; }
 /* The game buttons send keys through the touch controls, which only run while playing on a touch screen. */
 .menu-game { display: none; }
 .touch-input[data-state="playing"] .menu-game { display: block; }
