@@ -777,9 +777,10 @@ function impact(k) {
 }
 // the Verse settings of this frame for bloom.render, or null (the headset, the title, Off); rdt: real seconds since the last
 function verseFrame(rdt) {
-  if (!flatOn || G.mode !== "desktop" || !gameStarted) return null;
+  // play only: a comic scene has its own look, and the title draws the key art
+  if (!flatOn || G.mode !== "desktop" || !gameStarted || G.state !== "play") return null;
   // the play view only: a comic scene and a test shot place the camera themselves
-  camLeaned = G.state === "play" && !shot && flatcam.post(rdt);
+  camLeaned = !shot && flatcam.post(rdt);
   const mode = verseMode();
   if (mode === "off") return null;
   const sp = Math.hypot(P.vel.x, P.vel.y, P.vel.z), h = renderer.getContext().drawingBufferHeight / 1080;

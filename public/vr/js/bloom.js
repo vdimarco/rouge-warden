@@ -55,9 +55,8 @@ uniform float uVerse, uNear, uFar, uFocus, uPlate, uImpact, uSense, uTime, uAspe
 uniform vec2 uTexel, uHead;
 uniform vec3 uInk, uHold;
 varying vec2 vUv;
-vec3 lit(vec2 uv) {
-  vec3 b = texture2D(uB0, uv).rgb * 1.0 + texture2D(uB1, uv).rgb * 0.8 + texture2D(uB2, uv).rgb * 0.6 + texture2D(uB3, uv).rgb * 0.45;
-  return texture2D(uScene, uv).rgb + b * uStrength;
+vec3 glow(vec2 uv) {
+  return (texture2D(uB0, uv).rgb * 1.0 + texture2D(uB1, uv).rgb * 0.8 + texture2D(uB2, uv).rgb * 0.6 + texture2D(uB3, uv).rgb * 0.45) * uStrength;
 }
 float viewZ(float z) { float n = z * 2.0 - 1.0; return 2.0 * uNear * uFar / (uFar + uNear - n * (uFar - uNear)); }
 void main() {
@@ -67,8 +66,9 @@ void main() {
     float d = viewZ(texture2D(uDepth, vUv).r);
     float oof = smoothstep(uFocus * 1.6, uFocus * 14.0, d) + 0.6 * (1.0 - smoothstep(uFocus * 0.25, uFocus * 0.6, d));
     vec2 off = vec2(1.0, 0.4) * uTexel * uPlate * oof;
-    c = vec3(lit(vUv + off).r, lit(vUv).g, lit(vUv - off).b);
-  } else c = lit(vUv);
+    // the plates move the scene only; the glow is soft already, so it is read once, in place
+    c = vec3(texture2D(uScene, vUv + off).r, texture2D(uScene, vUv).g, texture2D(uScene, vUv - off).b) + glow(vUv);
+  } else c = texture2D(uScene, vUv).rgb + glow(vUv);
   // added light, then a gentle shoulder so a bloomed highlight rolls off instead of clipping flat
   c = mix(c, 1.0 - exp(-c), smoothstep(0.85, 1.6, c));
   if (uVerse > 0.5) {

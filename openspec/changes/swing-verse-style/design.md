@@ -10,7 +10,7 @@
 
 ## The Verse pass rides on the bloom composite
 
-`bloom.js` already renders the scene to a half-float target and draws one full-screen composite. The Verse effects go into that composite, so they cost no extra full-screen draw when bloom is on. With bloom off (a phone by default), the scene still renders to the target and the composite runs with the glow levels bound to a black 1x1 texture. That adds the offscreen resolve on a phone. The pass does three texture reads more than before (the plates) plus one depth read.
+`bloom.js` already renders the scene to a half-float target and draws one full-screen composite. The Verse effects go into that composite, so they cost no extra full-screen draw when bloom is on. With bloom off (a phone by default), the scene still renders to the target and the composite runs with the glow levels bound to a black 1x1 texture. That adds the offscreen resolve on a phone. The plates read the scene three times and the glow once, plus one depth read: two scene reads and one depth read more than before. The pass runs only in play: a comic scene and the title skip it. On SwiftShader, `cutscene.e2e.mjs` took 389 s on this branch and 456 s on main.
 
 The scene target gets a `DepthTexture` (depth with stencil, since the target has a stencil buffer). three r185 resolves the depth of a multisampled target into it. The shader turns the depth to view metres with the camera's near and far planes.
 
