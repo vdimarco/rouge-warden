@@ -51,7 +51,7 @@ const store = {
 };
 function defaultSettings() {
   const p = COMFORT.presets[COMFORT.defaultPreset];
-  return { preset: COMFORT.defaultPreset, vignette: p.vignette, turn: p.turn, snap: p.snap, aim: p.aim, vignetteLook: "room", seated: false, height: 0, hand: "right", hold: "hold", cue: true, hz: PERF.hz, foveation: PERF.foveation, music: true, speedLines: true };
+  return { preset: COMFORT.defaultPreset, vignette: p.vignette, turn: p.turn, snap: p.snap, aim: p.aim, vignetteLook: "room", seated: false, height: 0, hand: "right", hold: "hold", cue: true, hz: PERF.hz, foveation: PERF.foveation, music: true, speedLines: true, verse: "full" };
 }
 // seen: the comic scenes already played (cutscene.js), so each plays once, and the phone's gesture card (mobile.js)
 function blankSave() { return { v: 1, intro: false, tutorial: false, clogs: [], loonies: [], bonus: 0, king: "sleeping", pipes: [], best: {}, seen: { opening: false, king: false, finale: false, mission2: false, phoneCoach: false, districts: [] }, jobs: { sludge: false, done: {} }, settings: defaultSettings() }; }
@@ -86,6 +86,7 @@ function loadSave() {
   if (typeof r.cue === "boolean") t.cue = r.cue;
   if (r.hz === 72 || r.hz === 90) t.hz = r.hz;
   if (r.bloom === "off" || r.bloom === "low" || r.bloom === "high") t.bloom = r.bloom;
+  if (r.verse === "full" || r.verse === "calm" || r.verse === "off") t.verse = r.verse;
   if (Number.isFinite(r.foveation)) t.foveation = clamp(r.foveation, 0, 1);
   for (const k of ["sound", "music", "stance", "speedLines"]) if (k in r && (typeof r[k] === "boolean" || typeof r[k] === "string")) t[k] = r[k];
   return s;
@@ -383,7 +384,7 @@ function streetFrame(dt, inPlay) {
   figures.begin(camera.getWorldPosition(CAMW), G.time);
   streetView.update(dt, G.time, CAMW);
   if (act) {
-    for (const g of combat.goons) if (g.on) figures.add(g, "goons");
+    for (const g of combat.goons) if (g.on) figures.add(goonOnThrees(g), "goons");
     for (const q of jobs.people) if (q.on) figures.add(q, "jobs");
   }
   figures.end();
@@ -434,13 +435,60 @@ function heroFight() {
 function tryAttack() {
   if (driving) return false;
   const a = combat.attack(heroFight());
-  if (!a) return false;
-  hero.attack(a.kind, a.side);
+  if (!a) return tryZip();
+  hero.ghost(); // a multiple of the wind-up, then the strike at full reach (the pose the hit-stop holds)
+  hero.attack(a.kind, a.side, true);
   audio.sfx(a.kind === "kick" ? "kick" : "punch", { pos: a.goon });
-  fx.word("BONK", FXP.set(a.goon.x, a.goon.y + 2.1, a.goon.z), { scale: a.kind === "kick" ? 1.5 : 1.1 });
+  // the word grows with the combo
+  fx.word("BONK", FXP.set(a.goon.x, a.goon.y + 2.1, a.goon.z), { scale: (a.kind === "kick" ? 1.5 : 1.1) * (1 + Math.min(combat.hits, 10) * 0.05) });
   haptic(1, 0.5, 30);
   catchFeedback(1, "yank");
+  if (a.kind === "kick") impact(VERSE_HIT.kick); else impact(VERSE_HIT.punch);
   return true;
+}
+// The zip strike: a press while the combo runs, with no goon in reach, sends the hero at the next goon in front of the view.
+let zip = null; // { id, t }
+function tryZip() {
+  if (zip || P.wall || G.state !== "play") return false;
+  const hf = heroFight();
+  const g = combat.zipTarget(hf, flatOn ? flatcam.yaw : hf.yaw);
+  if (!g) return false;
+  zip = { id: g.id, t: 0 };
+  for (let i = 0; i < 2; i++) if (P.ropes[i].state !== "idle") release(P, i);
+  hero.setYaw(Math.atan2(-(g.x - P.pos.x), -(g.z - P.pos.z)));
+  hero.flip(0.3);
+  audio.sfx("release", { vol: 0.9 });
+  fx.word("THWIP", FXP.set(P.pos.x, P.pos.y + 1.8, P.pos.z), { scale: 1.1 });
+  plateKick = 1;
+  pushRing({ type: "zip", id: g.id });
+  return true;
+}
+// before the physics: fly the zip at the goon's chest; in reach, the flying kick lands and the hero bounces off him
+function zipFrame(dt) {
+  if (!zip) return;
+  const g = combat.goons.find((q) => q.id === zip.id), Z = FIGHT.zip;
+  zip.t += dt;
+  if (!g || !combat.alive(g) || zip.t > Z.time || driving || G.state !== "play") { zip = null; return; }
+  const dx = g.x - P.pos.x, dy = g.y + 0.9 - (P.pos.y + 0.9), dz = g.z - P.pos.z, d = Math.hypot(dx, dy, dz) || 1;
+  if (d < FIGHT.reach * 0.75) {
+    const hf = heroFight();
+    if (combat.zipHit(g.id, hf)) {
+      hero.ghost();
+      hero.attack("kick", 1, true);
+      audio.sfx("kick", { pos: g });
+      fx.word("BONK", FXP.set(g.x, g.y + 2.1, g.z), { scale: 1.7 });
+      haptic(0, 0.8, 60); haptic(1, 0.8, 60);
+      impact(VERSE_HIT.zip);
+    }
+    const hl = Math.hypot(dx, dz) || 1;
+    P.vel.x = (-dx / hl) * Z.back; P.vel.z = (-dz / hl) * Z.back; P.vel.y = Z.bounce;
+    P.onGround = false; P.ground = null;
+    zip = null;
+    return;
+  }
+  P.vel.x = (dx / d) * Z.speed; P.vel.y = (dy / d) * Z.speed; P.vel.z = (dz / d) * Z.speed;
+  P.onGround = false; P.ground = null;
+  if ((zip.ghostT = (zip.ghostT || 0) - dt) <= 0) { zip.ghostT = 0.07; hero.ghost(); } // multiples along the flight
 }
 // a rope caught a goon (he is yanked off his feet), a falling person or the balloon (caught)
 function ropeCatch(i, r) {
@@ -450,7 +498,7 @@ function ropeCatch(i, r) {
     hf.perch = firePerch[i];
     const how = combat.pull(+id.slice(5), hf);
     if (how === "takedown") { audio.sfx("yank", { pos: r.anchor, vol: 0.5 }); fx.word("THWIP", r.anchor, { scale: 1.3 }); haptic(i, 0.5, 40); }
-    else if (how) { audio.sfx("yank", { pos: r.anchor }); fx.word("YANK", r.anchor, { scale: 1.3 }); }
+    else if (how) { audio.sfx("yank", { pos: r.anchor }); fx.word("YANK", r.anchor, { scale: 1.3 }); impact(VERSE_HIT.pull); }
   } else if (jobs.ropeCaught(tag)) {
     audio.sfx(tag === "getaway" ? "bump" : "stick", { pos: r.anchor });
     fx.word(tag === "getaway" ? "THUCK" : tag === "leak" ? "SPLORT" : "THWIP", r.anchor, { scale: 1.3 });
@@ -567,7 +615,7 @@ function actionFrame(dt, inp) {
     P.onGround = true; P.lastSafe.x = car.x; P.lastSafe.y = 0; P.lastSafe.z = car.z;
     hero.setYaw(car.yaw);
     syncRig();
-    if (combat.carHit(car.x, car.z, car.vx, car.vz)) { audio.sfx("bump", { vol: 1.2 }); fx.word("BONK", FXP.set(car.x, 2.5, car.z), { scale: 1.5 }); }
+    if (combat.carHit(car.x, car.z, car.vx, car.vz)) { audio.sfx("bump", { vol: 1.2 }); fx.word("BONK", FXP.set(car.x, 2.5, car.z), { scale: 1.5 }); impact(VERSE_HIT.car); }
   } else if (driving) { driving = false; hero.setHidden(false); }
   for (const e of cars.events) {
     if (e.type === "bump") { audio.sfx("bump", { vol: Math.min(1.5, e.speed / 8) }); haptic(0, 0.6, 60); }
@@ -612,6 +660,7 @@ function combatEvent(e) {
       hero.hit(dx / d, dz / d);
       if (P.onGround) { P.vel.x += (dx / d) * 4; P.vel.z += (dz / d) * 4; }
       actHud.flash(); audio.sfx("hurt"); haptic(0, 0.9, 80); haptic(1, 0.9, 80);
+      impact(VERSE_HIT.hurt);
       if (G.input.easySwing) D.mobile.buzz?.([60, 40, 60]);
       break;
     }
@@ -624,7 +673,8 @@ function combatEvent(e) {
       break;
     case "ko": if (!e.quiet) { audio.sfx("goonDown", { pos: e }); fx.word("SPLORT", FXP.set(e.x, e.y + 1.6, e.z), { scale: 1.2 }); } break;
     case "dodge": fx.word("WHOOSH", FXP.set(e.x, e.y + 2, e.z), { scale: e.perfect ? 1.4 : 1 }); audio.sfx("release", { vol: 0.7 }); break;
-    case "finisher": fx.word("KASPLASH", FXP.set(e.x, e.y + 2.4, e.z), { scale: 2 }); audio.sfx("kick", { vol: 1.5 }); haptic(0, 1, 120); haptic(1, 1, 120); break;
+    case "finisher": fx.word("KASPLASH", FXP.set(e.x, e.y + 2.4, e.z), { scale: 2, size: flatOn && !isXR() ? screenWide(FXP, 1 / 3) : 0 }); audio.sfx("kick", { vol: 1.5 }); haptic(0, 1, 120); haptic(1, 1, 120); impact(VERSE_HIT.finisher); break;
+    case "slam": impact(VERSE_HIT.slam); break;
     case "windup": if (fightHints < 1 && !G.input.easySwing) { fightHints++; ui.say("A goon! Get close and press " + (G.input.kind === "pad" ? "RT" : "the left mouse button") + " to punch. When he winds up, press " + (G.input.kind === "pad" ? "A" : "Space") + " to dodge.", 4); } break;
   }
 }
@@ -706,6 +756,70 @@ function takedownAim() {
   return combat.perched(g, heroFight());
 }
 
+/* ---------------- the Verse look and feel (flat play) ---------------- */
+// The gang moves on threes (8 poses a second) while the hero moves on twos: two rates in one shot, as in the film. A goon's
+// place moves every frame; his pose (the walk, the pose clock, the fall) holds between steps, and a new pose shows at once.
+const GOON_VIEW = new Map();
+function goonOnThrees(g) {
+  if (verseMode() === "off" || !flatOn) return g;
+  let v = GOON_VIEW.get(g);
+  if (!v) { v = { k: -1, pose: -1 }; GOON_VIEW.set(g, v); if (GOON_VIEW.size > 64) for (const q of GOON_VIEW.keys()) if (!q.on) GOON_VIEW.delete(q); }
+  const k = Math.floor(G.time * VERSE.goons);
+  if (k !== v.k || g.pose !== v.pose || g.state !== v.state) {
+    v.k = k; v.pose = g.pose; v.state = g.state;
+    v.phase = g.phase; v.poseT = g.poseT; v.stride = g.stride; v.yaw = g.yaw; v.bp = g.bp; v.br = g.br; v.lift = g.lift; v.delay = g.delay;
+  }
+  v.x = g.x; v.y = g.y; v.z = g.z;
+  v.shirt = g.shirt; v.pants = g.pants; v.skin = g.skin; v.height = g.height;
+  return v;
+}
+// Each kind of blow: stop (s of hit-stop), shake (camera trauma 0..1), frame (an impact frame).
+const VERSE_HIT = {
+  punch: { stop: 0.045, shake: 0.2 }, kick: { stop: 0.08, shake: 0.38, frame: true }, zip: { stop: 0.09, shake: 0.42, frame: true },
+  finisher: { stop: 0.12, shake: 0.6, frame: true }, slam: { stop: 0.06, shake: 0.45, frame: true }, pull: { stop: 0.05, shake: 0.22 },
+  hurt: { stop: 0.05, shake: 0.4 }, car: { stop: 0.03, shake: 0.3 },
+};
+// twos: the hero's poses a second; goons: the gang's; plate: px of slip at 1080 lines, at rest and at full speed (speed m/s),
+// doubled for a moment after a burst or a heavy blow; edge: more slip toward the frame edge; grain: the paper's darkening;
+// zoom: the snap zoom of a heavy blow; stay: s a wall word stays; frame: s of an impact frame and the shortest gap between
+// two (at most two a second, under the three-flash limit)
+const VERSE = { stay: 20, goons: 8, zoom: 0.12, edge: 0.6, grain: 0.07, twos: 12, plate: 2.6, plateFast: 2.2, speed: [14, 34], frame: 0.07, frameGap: 0.5 };
+let hitStopT = 0, camLeaned = false, plateKick = 0, impactT = 0, impactAt = -9, senseAmt = 0;
+const VS = { focus: 5, plate: 0, edge: 0, grain: 0, impact: 0, sense: 0, head: { x: 0.5, y: 0.6 }, time: 0 }, HEAD_UV = new THREE.Vector3();
+// "full": everything; "calm": no impact frames, no shake and no bank (the plates, the twos and the spider-sense stay); "off"
+function verseMode() { return settings.verse === "calm" || settings.verse === "off" ? settings.verse : "full"; }
+// a blow: the hit-stop (the moves stay, at any setting), the shake, and an impact frame
+function impact(k) {
+  if (!k || !actionOn()) return;
+  hitStopT = Math.max(hitStopT, k.stop || 0);
+  if (G.mode === "desktop") flatcam.shake(k.shake || 0);
+  if (k.frame && verseMode() === "full" && G.time - impactAt >= VERSE.frameGap) { impactAt = G.time; impactT = VERSE.frame; }
+  if (k.frame) { plateKick = 1; if (G.mode === "desktop") flatcam.snap(VERSE.zoom); } // a heavy blow: the plates slip twice as far, a snap zoom
+  pushRing({ type: "impact", stop: k.stop || 0, flash: impactAt === G.time });
+}
+// the Verse settings of this frame for bloom.render, or null (the headset, the title, Off); rdt: real seconds since the last
+function verseFrame(rdt) {
+  // play only: a comic scene has its own look, and the title draws the key art
+  if (!flatOn || G.mode !== "desktop" || !gameStarted || G.state !== "play") return null;
+  // the play view only: a comic scene and a test shot place the camera themselves
+  camLeaned = !shot && flatcam.post(rdt);
+  const mode = verseMode();
+  if (mode === "off") return null;
+  const sp = Math.hypot(P.vel.x, P.vel.y, P.vel.z), h = renderer.getContext().drawingBufferHeight / 1080;
+  plateKick = Math.max(0, plateKick - rdt * 3);
+  VS.plate = h * (VERSE.plate + VERSE.plateFast * clamp((sp - VERSE.speed[0]) / (VERSE.speed[1] - VERSE.speed[0]), 0, 1)) * (1 + plateKick);
+  VS.edge = VERSE.edge; VS.grain = VERSE.grain;
+  VS.focus = flatcam.opacity < 0.5 ? 6 : flatcam.dist + 0.4;
+  impactT = Math.max(0, impactT - rdt);
+  VS.impact = mode === "full" && impactT > 0 ? Math.min(1, impactT / (VERSE.frame * 0.5)) : 0;
+  const threat = actionOn() && G.state === "play" && !driving && !!combat.threat(heroFight());
+  senseAmt += ((threat ? 1 : 0) - senseAmt) * (1 - Math.exp(-rdt * (threat ? 18 : 6)));
+  VS.sense = flatcam.opacity < 0.5 ? 0 : senseAmt;
+  HEAD_UV.copy(hero.head).project(camera);
+  VS.head.x = HEAD_UV.x * 0.5 + 0.5; VS.head.y = HEAD_UV.y * 0.5 + 0.5;
+  VS.time = G.time;
+  return VS;
+}
 // The glow of flat play: the saved choice, else Low with a mouse or a pad and Off on a phone. A headset has none.
 function bloomLevel() {
   if (G.mode !== "desktop" || renderer.xr.isPresenting) return "off";
@@ -1016,6 +1130,9 @@ function flatFrame(dt, inp, yawDelta) {
   FLAT_FLAGS.drive = driving && cars.driving ? cars.driving.yaw : null; // behind the car, further back
   hero.setVisible(!shot);
   hero.setGlide(P.gliding);
+  // on twos, as the film; a full focus meter puts the hero on ones ("in the zone")
+  hero.setTwos(verseMode() !== "off" && combat.focus < 1 ? VERSE.twos : 0);
+  flatcam.bankOn = flatcam.shakeOn = verseMode() === "full";
   hero.update(dt, P, ropes, inp);
   flatcam.update(dt, P, hero, FLAT_LOOK, FLAT_FLAGS);
   // body[data-view] tells the page (the crosshair, the touch buttons) which view is on
@@ -1350,6 +1467,7 @@ function physics(dt, inp) {
   physIn.climb.up = intro ? 0 : inp.move.y;
   physIn.climb.x = intro ? 0 : -fz * inp.move.x; physIn.climb.z = intro ? 0 : fx * inp.move.x;
   fightKeys(inp, mx, mz);
+  zipFrame(dt);
   // desktop Space: a jump on the ground or off a wall, a yank on every rope in the air
   const airYank = inp.mode === "desktop" && inp.jumpDown && !P.onGround && !P.wall;
   physIn.jump = !intro && inp.jumpDown && !airYank;
@@ -1470,6 +1588,7 @@ function releaseBoost(i) {
   if (hs > 0.5) { v.x += (v.x / hs) * B.forward; v.z += (v.z / hs) * B.forward; }
   v.y = Math.max(v.y, 0) + B.up;
   fovKick = B.kick;
+  plateKick = 1; // the plates slip for a moment: a burst of speed
   hero.flip(B.flip);
   if (G.time - whooshAt >= 2) { whooshAt = G.time; wordAhead("WHOOSH", P.pos, 6, 1.6, 1.2); }
   pushRing({ type: "boost", side: i, speed: Math.hypot(v.x, v.y, v.z) });
@@ -1611,6 +1730,11 @@ function wordAhead(name, from, dist, up, scale) {
   if (FXD.lengthSq() < 1e-4) FXD.set(0, 0, -1); else FXD.normalize();
   fx.word(name, FXP.set(from.x + FXD.x * dist, from.y + up, from.z + FXD.z * dist), { scale });
 }
+// the width in metres that spans part of the view's width at the distance of p from the camera (flat play)
+function screenWide(p, part) {
+  const d = camera.position.distanceTo(p), hf = Math.atan(Math.tan((camera.fov * Math.PI) / 360) * camera.aspect);
+  return 2 * d * Math.tan(hf) * part;
+}
 // on the wall you hit, 1.3 m along it to the side you face, so it is not on top of your own head
 function wordAtBump(ev) {
   const nx = ev.nx || 0, nz = ev.nz || 0, hp = G.input.head.pos, l = Math.sqrt(nx * nx + nz * nz);
@@ -1620,7 +1744,9 @@ function wordAtBump(ev) {
   // a tangent along the wall (flat), turned to the side the head faces
   let tx = nz / l, tz = -nx / l;
   if (tx * FXD.x + tz * FXD.z < 0) { tx = -tx; tz = -tz; }
-  fx.word("BONK", FXP.set(cx + tx * 1.3, cy + 0.2, cz + tz * 1.3), { dir: { x: nx, y: 0, z: nz }, scale: 1.4 });
+  // in flat play a smaller copy stays on the wall for a while: the city keeps the story of your crashes
+  const stay = flatOn && !isXR() && verseMode() !== "off";
+  fx.word("BONK", FXP.set(cx + tx * 1.3, cy + 0.2, cz + tz * 1.3), { dir: { x: nx, y: 0, z: nz }, scale: stay ? 1 : 1.4, life: stay ? VERSE.stay : 0 });
 }
 
 // 13. Everything that draws or sounds.
@@ -1718,7 +1844,7 @@ function throwFrame(dt) {
     f.mesh.position.set(f.x0 + (tx - f.x0) * u, f.y0 + (ty - f.y0) * u + Math.sin(Math.PI * u) * 1.5, f.z0 + (tz - f.z0) * u);
     f.mesh.rotation.set(0.4, f.t * 18, 0);
     if (u >= 1 || !g) {
-      if (g && combat.landThrow(g.id, f.fromX, f.fromZ)) { audio.sfx("punch", { pos: g }); fx.word("BONK", FXP.set(g.x, g.y + 2.1, g.z), { scale: 1.4 }); }
+      if (g && combat.landThrow(g.id, f.fromX, f.fromZ)) { audio.sfx("punch", { pos: g }); fx.word("BONK", FXP.set(g.x, g.y + 2.1, g.z), { scale: 1.4 }); impact(VERSE_HIT.punch); }
       f.mesh.visible = false; flying.splice(k, 1);
     }
   }
@@ -1753,7 +1879,8 @@ function fightKeys(inp, mx, mz) {
     const hit = combat.finish(heroFight());
     if (hit) {
       inp.hands[0].yank = inp.hands[1].yank = 0;
-      hero.attack("kick", 1);
+      hero.ghost();
+      hero.attack("kick", 1, true);
       slowT = MOVES.finisher.time; fovKick = -MOVES.finisher.zoom;
       pushRing({ type: "finisher", n: hit.length });
     }
@@ -1774,15 +1901,18 @@ function loop(time, frame) {
     // a finisher runs the world slowly for a moment (real time)
     const slow = slowT > 0 && G.state === "play" ? MOVES.finisher.slow : 1;
     slowT = Math.max(0, slowT - dt);
-    if (!G.held) tick(dt * slow, frame, time);
-    render(frame);
+    // a blow that lands stops the world for a few hundredths of a second (the hit-stop); the camera still shakes
+    const stopped = hitStopT > 0 && G.state === "play";
+    hitStopT = Math.max(0, hitStopT - dt);
+    if (!G.held && !stopped) tick(dt * slow, frame, time);
+    render(frame, dt);
   } catch (e) {
     // an exception in the XR callback would stop three's loop for good: report it once and keep going
     const k = String(e && e.message);
     if (!errSeen.has(k)) { errSeen.add(k); console.error(e); }
   }
 }
-function render(frame) {
+function render(frame, rdt = 0) {
   const xr = renderer.xr.isPresenting;
   if (loadRing.visible) loadRing.rotation.z -= 0.08;
   if (shot && !xr) applyShot();
@@ -1798,7 +1928,11 @@ function render(frame) {
     if (G.viewDone && !titleCompiled) { titleCompiled = true; renderer.compile(scene, camera); }
     return;
   }
-  if (!xr) bloom.render(scene, camera, bloomLevel()); else renderer.render(scene, camera);
+  if (!xr) {
+    const vs = verseFrame(rdt);
+    bloom.render(scene, camera, bloomLevel(), vs);
+    if (camLeaned) { camLeaned = false; flatcam.restore(); } // the lean and the shake are for the eye only
+  } else renderer.render(scene, camera);
   const info = xr ? renderer.info.render : bloom.last;
   lastInfo.calls = info.calls; lastInfo.tris = info.triangles;
   lastInfo.views = xr ? renderer.xr.getCamera().cameras.length || 1 : 1;
@@ -2087,12 +2221,18 @@ G.test = {
   },
   renderInfo: () => ({ ...lastInfo }),
   // one frame through the real render path (the bloom passes included) while the loop is off; pixels can be read after it
-  render() { render(null); return { ...lastInfo }; },
+  // dt: real seconds since the last draw, for what fades in real time (the shake, the impact frame, the spider-sense)
+  render(dt = 0) { render(null, dt); return { ...lastInfo }; },
   // the people and the signs (js/street.js): counts, states, reactions; people: every person out, for the scenario checks
   street: (all) => ({ ...street.info(), view: streetView.info(), people: all ? street.people.filter((p) => p.on).map((p) => ({ id: p.id, x: p.x, z: p.z, yaw: p.yaw, state: p.state, pose: p.pose, onWalk: street.onWalk(p) })) : undefined }),
   bloom: () => ({ ...bloom.info(), want: bloomLevel() }),
+  // change saved settings for a test (not saved): settings({ verse: "calm" }); returns a copy of them all
+  settings(o) { if (o) Object.assign(settings, o); return { ...settings }; },
   // the city action (flat play): fights, cars, jobs, the moves, and the screen bits
-  action: () => ({ on: actionOn(), driving, sprinting, energy, roll: P.roll || 0, combat: combat.info(), cars: cars.info(), jobs: jobs.info(), hud: actHud.info(), view: actionView.info(), figures: figures.info(), save: JSON.parse(JSON.stringify(save.jobs)), ropeTargets: [...ropeIds], cueAir: cueAir.slice(), slowT, hero: G.hero.info().pose }),
+  action: () => ({ on: actionOn(), driving, sprinting, energy, roll: P.roll || 0, combat: combat.info(), cars: cars.info(), jobs: jobs.info(), hud: actHud.info(), view: actionView.info(), figures: figures.info(), save: JSON.parse(JSON.stringify(save.jobs)), ropeTargets: [...ropeIds], cueAir: cueAir.slice(), slowT, hero: G.hero.info().pose, zip: zip ? { ...zip } : null, hitStop: hitStopT,
+    verse: { mode: verseMode(), impact: impactT, sense: senseAmt, twos: G.hero.info().twos, plate: VS.plate, cam: flatcam.info() } }),
+  // the goon as the figures draw him (on threes in flat play)
+  goonView(id) { const g = combat.goons.find((q) => q.id === id); if (!g) return null; const v = goonOnThrees(g); return { phase: v.phase, poseT: v.poseT, pose: v.pose, x: v.x, z: v.z }; },
   // start a job (type: sludge, catch, washer, pizza, balloon, brawl, taxi, thief) at the nearest offer of that type, or at the hero
   job(type) { const o = jobs.offers.find((q) => q.type === type) || null; jobs.start(type, o, heroFight()); return jobs.info(); },
   jobOffers(on = true) { save.jobs.sludge = !!on; return jobs.info().offers; },

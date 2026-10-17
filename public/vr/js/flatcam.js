@@ -28,12 +28,17 @@ const smooth = (a, b, x) => { const t = clamp((x - a) / (b - a), 0, 1); return t
 const ease = (dt, rate) => 1 - Math.exp(-dt * rate);
 const stepK = (t, secs) => { const k = t / secs; return k * k * (3 - 2 * k); }; // the smooth step of turnTo (made once, so a frame allocates nothing)
 const wrap = (a) => Math.atan2(Math.sin(a), Math.cos(a));
+// the Verse camera (drawn only, never aimed with): a bank into the turn of a swing, and a shake from blows. The shake follows
+// the "trauma" model (Squirrel Eiserloh, GDC 2016): blows add trauma 0..1, it decays, and the shake grows with its square.
+const BANK_MAX = 7 * DEG, BANK_K = 0.006, BANK_RATE = 3; // rad at most, rad per m/s² across the view, the ease
+const SHAKE = { decay: 1.8, move: 0.22, turn: 1.6 * DEG, roll: 3 * DEG }; // trauma per s; m, rad and rad at full trauma
 
 export function createFlatCam(camera, city) {
   const E = new THREE.Euler(0, 0, 0, "YXZ");
   const HIT = { t: 0, x: 0, y: 0, z: 0, nx: 0, ny: 0, nz: 0, collider: null }, SPH = { x: 0, y: 0, z: 0, nx: 0, ny: 0, nz: 0 };
   const T = new THREE.Vector3(), EYE = new THREE.Vector3(), DIR = new THREE.Vector3(), BACK = new THREE.Vector3(), POS = new THREE.Vector3();
   const S = { yaw: 0, pitch: PITCH0, dist: ARM, room: ARM, el: PITCH0, blend: 1, fp: false, hold: 9, fov: FOV_TP[0], keyEdge: false, settle: false, turn: null };
+  const VX = { zoom: 0, fov: 0, bank: 0, lat: 0, pvx: 0, pvz: 0, trauma: 0, t: 0, ox: 0, oy: 0, rx: 0, ry: 0, rz: 0 }; // the Verse camera
 
   const FC = {
     active: false,
@@ -52,6 +57,34 @@ export function createFlatCam(camera, city) {
     reset(yaw, pitch = PITCH0, atEye = false) {
       S.yaw = FC.yaw = wrap(yaw); S.pitch = FC.pitch = pitch; S.hold = 9; S.dist = S.room = ARM; S.settle = false; S.turn = null;
       S.fp = FC.firstPerson = false; S.blend = atEye ? 0 : 1;
+    },
+    // the Verse camera: bank and shake on (main sets them from the Comic motion setting)
+    bankOn: true, shakeOn: true,
+    // a blow: add trauma (0..1); the shake is its square, so small knocks stay small
+    shake(amount) { if (FC.shakeOn) VX.trauma = Math.min(1, VX.trauma + amount); },
+    // a snap zoom on a strong blow: the view narrows by part (0.12 is 12 %) at once and eases back over about six frames
+    snap(part) { if (FC.shakeOn) VX.zoom = Math.max(VX.zoom, part); },
+    // Before the draw: lean and shake the camera (real time, so a hit-stop still shakes). True when it moved the camera: then
+    // call restore() after the draw.
+    post(dt) {
+      dt = clamp(dt || 0, 0, 0.1);
+      VX.t += dt;
+      VX.trauma = Math.max(0, VX.trauma - SHAKE.decay * dt);
+      const k = VX.trauma * VX.trauma, t = VX.t;
+      // noise from three sines a side: smooth, never a pattern you notice
+      const n = (a, b, c) => (Math.sin(t * a) + Math.sin(t * b + 1.3) * 0.6 + Math.sin(t * c + 2.1) * 0.3) / 1.9;
+      VX.ox = n(47, 71, 113) * SHAKE.move * k; VX.oy = n(53, 79, 101) * SHAKE.move * k;
+      VX.rx = n(37, 61, 97) * SHAKE.turn * k; VX.ry = n(41, 67, 89) * SHAKE.turn * k; VX.rz = n(43, 59, 107) * SHAKE.roll * k;
+      const roll = (FC.bankOn ? VX.bank : 0) + VX.rz;
+      VX.zoom *= Math.exp(-dt * 30);
+      if (VX.zoom < 1e-3) VX.zoom = 0;
+      if (Math.abs(roll) + k < 1e-5 && !VX.zoom) return false;
+      if (VX.zoom) { VX.fov = camera.fov; camera.fov = VX.fov * (1 - VX.zoom); camera.updateProjectionMatrix(); }
+      E.set(S.pitch + VX.rx, S.yaw + VX.ry, roll);
+      camera.quaternion.setFromEuler(E);
+      camera.position.copy(POS);
+      camera.position.x += Math.cos(S.yaw) * VX.ox; camera.position.z -= Math.sin(S.yaw) * VX.ox; camera.position.y += VX.oy;
+      return true;
     },
     // Ease the pitch to the default over the next second (the hand-off from the intro), until you move the view yourself.
     settle() { S.settle = true; },
@@ -99,6 +132,14 @@ export function createFlatCam(camera, city) {
       // driving (flags.drive: the car's yaw): the view swings round behind the car, faster than a swing's follow
       if (flags && flags.drive != null && !fp && S.hold > HOLD_LOOK * 0.5) { FC.following = true; S.yaw = wrap(S.yaw + wrap(flags.drive - S.yaw) * ease(dt, 2.2) * smooth(0.5, 4, hs)); }
       FC.yaw = S.yaw; FC.pitch = S.pitch;
+      // the bank: lean into the pull across the view while you swing or fly fast in third person
+      if (dt > 0) {
+        const ax = (vx - VX.pvx) / dt, az = (vz - VX.pvz) / dt, lat = ax * Math.cos(S.yaw) - az * Math.sin(S.yaw);
+        VX.pvx = vx; VX.pvz = vz;
+        VX.lat += (clamp(lat, -60, 60) - VX.lat) * ease(dt, 6);
+        const air = !fp && !P.onGround && (rope || speed > 10) && !(flags && flags.drive != null);
+        VX.bank += ((air ? clamp(-VX.lat * BANK_K, -BANK_MAX, BANK_MAX) : 0) - VX.bank) * ease(dt, BANK_RATE);
+      }
       const cp = Math.cos(S.pitch);
       DIR.set(-Math.sin(S.yaw) * cp, Math.sin(S.pitch), -Math.cos(S.yaw) * cp); // the way the camera looks
       FC.forward.copy(DIR);
@@ -160,11 +201,12 @@ export function createFlatCam(camera, city) {
     // The input module writes the camera every frame (it is the head there). This puts back the pose of the last update, so
     // whatever reads the camera before the next update (the reticles, the opening) sees the view you see.
     restore() {
+      if (VX.fov) { camera.fov = VX.fov; VX.fov = 0; camera.updateProjectionMatrix(); }
       camera.position.copy(POS);
       camera.quaternion.setFromEuler(E.set(S.pitch, S.yaw, 0));
     },
     // the state, for tests
-    info: () => ({ yaw: S.yaw, pitch: S.pitch, el: S.el, room: S.room, dist: S.dist, blend: S.blend, firstPerson: S.fp, following: FC.following, lifting: FC.lifting, turning: !!S.turn, blocked: FC.blocked, opacity: FC.opacity, fov: camera.fov, hold: S.hold }),
+    info: () => ({ zoom: VX.zoom, bank: VX.bank, trauma: VX.trauma, yaw: S.yaw, pitch: S.pitch, el: S.el, room: S.room, dist: S.dist, blend: S.blend, firstPerson: S.fp, following: FC.following, lifting: FC.lifting, turning: !!S.turn, blocked: FC.blocked, opacity: FC.opacity, fov: camera.fov, hold: S.hold }),
   };
 
   // The V key. It is not read while a menu, a text field or a modifier key is in play.

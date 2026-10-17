@@ -152,10 +152,10 @@ The player is the `nord-montreal` project in the `vdimarcos-projects` team. The 
 | Git repository | `vdimarco/rouge-warden`, production branch `main` |
 | Root directory | `games/nord-unreal/Browser` |
 | Build command and output | From `vercel.json`: `npm run build` into `dist` |
-| Ignored build step | `git diff --quiet HEAD^ HEAD -- .` |
+| Ignored build step | `ignoreCommand` in `vercel.json`: `bash vercel-ignore.sh` |
 | Variables (production and preview) | `NORD_SIGNALLING_URL`, `NORD_PORTRAIT_STREAM=0` |
 
-Vercel runs the ignored build step in the root directory. A push builds only when its last commit changes a file in this folder. Other pushes show as **CANCELED** in the deployment list. If one push holds several commits and only an earlier commit changes this folder, Vercel skips that build. A merge commit compares with its first parent, so a pull request merge builds correctly.
+Vercel runs [`vercel-ignore.sh`](vercel-ignore.sh) in the root directory. It compares the new commit with `VERCEL_GIT_PREVIOUS_SHA`, the last successful deployment on the same branch, so every commit in a push counts. A branch's first build compares with the parent commit. The script ignores files that never reach `dist/`: `*.test.mjs`, `*.md`, `stream-sample.mjs`, `.env.example` and `.gitignore`. If any other file in this folder changed, Vercel builds; if not, the deployment shows as **CANCELED**. Vercel's clone is shallow, so when the base commit is missing the script fetches that one commit. If the fetch or `git diff` fails, the script builds. The `ignoreCommand` in `vercel.json` takes priority over the Ignored Build Step in the project settings, which still holds the older `git diff --quiet HEAD^ HEAD -- .` rule.
 
 A push to `main` makes a production deployment. A push to any other branch makes a preview at `nord-montreal-git-<branch>-vdimarcos-projects.vercel.app`. The build reads `NORD_SIGNALLING_URL` from the project, so a new tunnel hostname needs only a variable change and a redeploy.
 

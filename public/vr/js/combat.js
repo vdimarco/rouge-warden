@@ -3,7 +3,8 @@
 // round a dive or roll landing, and knocks them over with a car. The hero's health (hearts) comes back after a quiet while; at
 // zero it is a knock-out (main wakes the hero on a safe roof). A goon that winds up near the hero is a threat: a dodge in that
 // window makes his blow miss. From above, out of a guard's sight, a rope takes him down quietly: he is lifted and left hanging.
-// Blows fill the focus meter; a full meter finishes the goons in reach at once. Pure: no three, no DOM; streetview.js draws them.
+// Blows fill the focus meter; a full meter finishes the goons in reach at once. While a combo runs, a press with no goon in
+// reach zips the hero to the next goon in front of the view (the zip strike), so a fight flows from goon to goon. Pure: no three, no DOM; streetview.js draws them.
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
 const wrap = (a) => Math.atan2(Math.sin(a), Math.cos(a));
 
@@ -29,7 +30,11 @@ export const FIGHT = {
   // the throw: something from the street (a trash-can lid, a vent cap) at a goon min to max m away and within cone degrees of
   // the facing; it flies time s and takes dmg; one throw every cool s
   throw: { min: 3, max: 18, cone: 40, time: 0.45, dmg: 2, push: 2, cool: 2.5 },
-  focus: { punch: 0.1, kick: 0.16, rope: 0.12, slam: 0.12, takedown: 0.25, dodge: 0.08, perfect: 0.2, r: 3.5 },
+  // the zip strike: while a combo runs (a blow landed under chain s ago), a press with no goon in reach zips the hero at speed m/s
+  // to the goon between min and max m away within cone degrees of the view (and within up m up or down); he takes dmg and push.
+  // A zip that has not arrived after time s ends. The hero bounces off him back m/s and up m/s.
+  zip: { chain: 2, min: 2.6, max: 14, cone: 50, up: 4, speed: 26, time: 0.7, dmg: 2, push: 3.5, back: 3, bounce: 5 },
+  focus: { punch: 0.1, zip: 0.14, kick: 0.16, rope: 0.12, slam: 0.12, takedown: 0.25, dodge: 0.08, perfect: 0.2, r: 3.5 },
 };
 // the gang's clothes: sludge-green hoodies, dark trousers, a green sludge mask; the runner wears hazard yellow
 const GANG = { shirt: [0.2, 0.46, 0.18], pants: [0.12, 0.12, 0.15], skin: [0.55, 0.8, 0.22] };
@@ -41,7 +46,7 @@ export function createCombat(city) {
   const C = {
     goons, hp: FIGHT.hp, quiet: 99, combo: 0, comboT: 9, cool: 0, events: [],
     hits: 0, hitsT: 9, focus: 0, dodgeT: 0, dodgeCool: 0, throwCool: 0, // the combo count (blows with no gap over 2 s), focus 0..1, the dodge clocks
-    stats: { punches: 0, kicks: 0, pulls: 0, slams: 0, kos: 0, hurt: 0, knockouts: 0, carHits: 0, dodges: 0, perfect: 0, takedowns: 0, finishers: 0, heaps: 0, throws: 0 },
+    stats: { punches: 0, kicks: 0, pulls: 0, slams: 0, kos: 0, hurt: 0, knockouts: 0, carHits: 0, dodges: 0, perfect: 0, takedowns: 0, finishers: 0, heaps: 0, throws: 0, zips: 0 },
   };
   const emit = (e) => { C.events.push(e); if (C.events.length > 64) C.events.shift(); };
 
@@ -124,6 +129,33 @@ export function createCombat(city) {
     knock(g, h.x, h.z, A.dmg, A.push, kick ? "kick" : "punch");
     scored(kick ? "kick" : "punch");
     return { kind: kick ? "kick" : "punch", side: C.combo === 1 ? 0 : 1, goon: g };
+  };
+  // The goon a zip strike would go to now: a combo runs, no goon is in reach, and a living goon stands within zip.min..max and the
+  // cone of yaw (the view's, else the hero's). The one nearest the middle of the view wins. Returns the goon or null.
+  C.zipTarget = function zipTarget(h, yaw = h.yaw || 0) {
+    const Z = FIGHT.zip;
+    if (!h || C.hits < 1 || C.hitsT >= Z.chain || C.inReach(h)) return null;
+    const fx = -Math.sin(yaw), fz = -Math.cos(yaw), cosC = Math.cos((Z.cone * Math.PI) / 180);
+    let best = null, bs = -2;
+    for (const g of goons) {
+      if (!C.alive(g) || Math.abs(g.y - h.y) > Z.up) continue;
+      const dx = g.x - h.x, dz = g.z - h.z, d = Math.hypot(dx, dz);
+      if (d < Z.min || d > Z.max) continue;
+      const c = (dx * fx + dz * fz) / d - d * 0.01; // the middle of the view first, then the nearer
+      if (c >= cosC - 0.14 && c > bs) { bs = c; best = g; }
+    }
+    return best;
+  };
+  // the zip reached goon id: a flying kick. Returns true when it landed.
+  C.zipHit = function zipHit(id, h) {
+    const g = goons.find((q) => q.id === id);
+    if (!g || !C.alive(g)) return false;
+    const Z = FIGHT.zip;
+    C.stats.zips++;
+    knock(g, h.x, h.z, Z.dmg, Z.push, "zip");
+    scored("zip");
+    emit({ type: "zip", id: g.id, x: g.x, y: g.y, z: g.z });
+    return true;
   };
   // A guard the hero can take down from above: the hero stands on a roof or holds a wall (h.perch, not in a swing, so a guard never
   // steals a swing), the guard has not seen him, and he stands perch.above m or more under him.
@@ -274,6 +306,7 @@ export function createCombat(city) {
     for (const g of goons) {
       if (!g.on) continue;
       g.poseT += dt; g.cool = Math.max(0, g.cool - dt);
+      if (g.stride > 0) g.phase = (g.phase + dt * g.stride * 2.2) % (Math.PI * 200); // the walk cycle, as street.js steps people
       const dx = h ? h.x - g.x : 0, dz = h ? h.z - g.z : 0, dy = h ? h.y - g.y : 99, d = Math.hypot(dx, dz);
       if (h && d > FIGHT.keep && !g.aggro && !g.path) { g.on = false; continue; }
       switch (g.state) {

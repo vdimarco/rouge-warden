@@ -1,0 +1,46 @@
+name: NORD browser player QA
+on:
+  pull_request:
+    paths:
+      - 'games/nord-unreal/Browser/**'
+      - 'qa/browser/package.json'
+      - 'qa/browser/package-lock.json'
+      - '.github/workflows/nord-browser.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'games/nord-unreal/Browser/**'
+      - 'qa/browser/package.json'
+      - 'qa/browser/package-lock.json'
+      - '.github/workflows/nord-browser.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: nord-browser-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  chromium:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: games/nord-unreal/Browser
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          # Matches the nord-montreal Vercel project.
+          node-version: '24'
+      - run: npm ci
+      - name: Unit checks
+        run: npm test
+      - name: Ignored build step syntax
+        run: bash -n vercel-ignore.sh
+      - run: npm ci --prefix ../../../qa/browser
+      - run: npx playwright install --with-deps chromium
+        working-directory: qa/browser
+      - name: Page checks without a running game
+        run: |
+          export NORD_CHROMIUM_PATH="$(cd ../../../qa/browser && node -e "import('playwright').then(p => console.log(p.chromium.executablePath()))")"
+          npm run test:browser

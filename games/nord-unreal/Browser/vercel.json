@@ -2,6 +2,7 @@
   "framework": null,
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
+  "ignoreCommand": "bash vercel-ignore.sh",
   "headers": [
     {
       "source": "/(.*)",
