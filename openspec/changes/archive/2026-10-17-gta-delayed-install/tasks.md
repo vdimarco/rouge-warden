@@ -4,4 +4,4 @@
 - [x] Add the delayed reminder using the existing install flow and gameplay state.
 - [x] Verify timer, suppression, focus and prompt lifecycle contracts.
 - [x] Check desktop/phone rendering and existing browser regressions.
-- [ ] Verify deployed preview, merge and check production delivery.
+- [x] Verify deployed preview and archive the completed implementation; production delivery follows the merge.
