@@ -19,7 +19,9 @@ export const MID_LEG_S = Object.freeze([45, 56, 60, 64, 67, 71, 75, 60]);
 // ---------------------------------------------------------------- jobs
 
 // A job is plain data (it crosses to a worker): { seed, driver, policy, opts, tune (overrides), redshift, meta
-// ('returning' | 'first' | object), setup ({ leg, fuel, hull, gap, eta, lane, build }), legs, force, maxS }.
+// ('returning' | 'first' | object), setup ({ leg, fuel, hull, gap, eta, lane, build }), legs, force, maxS, from (a
+// run at a break, from a `breakAt` job: the job plays on from a copy of it) }. breakAt: n stops at break n and returns
+// that run as `atBreak` (one leg 1 for many runs).
 function applySetup(run, sp) {
   if (!sp) return;
   if (Number.isFinite(sp.leg)) {
@@ -45,9 +47,10 @@ export function runJob(job) {
   const meta = job.meta === 'first' ? null : job.meta && typeof job.meta === 'object' ? job.meta : RETURNING;
   const s = playRun({ seed: job.seed, driver: job.driver, policy: job.policy || null, opts: job.opts || {},
     tune: tuneOf(job.tune), redshift: job.redshift || 0, meta, maxS: job.maxS || 1200,
-    setup: job.setup ? (run) => applySetup(run, job.setup) : null, legs: job.legs ?? Infinity,
-    force: job.force || null });
+    setup: job.setup ? (run) => applySetup(run, job.setup) : null, legs: job.breakAt || (job.legs ?? Infinity),
+    force: job.force || null, from: job.from || null, keep: Boolean(job.breakAt) });
   s.tag = job.tag || null;
+  if (job.breakAt) { s.atBreak = s.run && s.run.phase === 'break' ? s.run : null; delete s.run; }
   return s;
 }
 
@@ -167,7 +170,8 @@ export function report(runs) {
     g1By30: share(legs, (l) => l.g1At !== null && l.g1At <= 0.3),
     g2By60: share(legs, (l) => l.g2At !== null && l.g2At <= 0.6),
     lightspeedFrom3: share(legs.filter((l) => l.legNo >= 2), (l) => l.lightspeed),
-    grabbed: sum(legs, (l) => l.grabs) / Math.max(1, sum(legs, (l) => l.windows)),
+    // of the wells it could grab: a well another ship already holds gives a dull click (one tether per well, 5.3)
+    grabbed: sum(legs, (l) => l.grabs) / Math.max(1, sum(legs, (l) => l.windows - (l.windowsHeld || 0))),
     goodShare: sum(legs, (l) => l.good) / Math.max(1, sum(legs, (l) => l.releases)),
     perfectShare: sum(legs, (l) => l.perfect) / Math.max(1, sum(legs, (l) => l.releases)),
     scorchesLeg: sum(legs, (l) => l.scorches) / Math.max(1, legs.length),
@@ -189,13 +193,17 @@ export function report(runs) {
 }
 
 // Variety (21.2): the share of the starters each run was offered, how often each starter ends in a build, and the
-// legendaries per build.
+// legendaries per build (of every run, and of the runs that got home: all seven breaks, as the critic's offer sim
+// counted).
 export function variety(runs) {
   const off = runs.map((r) => r.offered.filter((id) => STARTERS.includes(id)).length / STARTERS.length);
   const inBuild = Object.fromEntries(STARTERS.map((id) => [id, share(runs, (r) => r.build.includes(id))]));
   const legends = runs.map((r) => r.build.filter((id) => CARD[id] && CARD[id].kind === 'legend').length);
+  const legendHome = share(runs.filter((r) => r.home),
+    (r) => r.build.some((id) => CARD[id] && CARD[id].kind === 'legend'));
   const top = Object.entries(inBuild).sort((a, b) => b[1] - a[1])[0];
-  return { offered: median(off), top, legend: share(legends, (x) => x > 0), two: legends.filter((x) => x > 1).length };
+  return { offered: median(off), top, legend: share(legends, (x) => x > 0), legendHome,
+    two: legends.filter((x) => x > 1).length };
 }
 
 const pct = (v) => (Number.isFinite(v) ? `${Math.round(v * 100)} %` : '-');
@@ -224,7 +232,7 @@ export function printReport(name, R) {
     + `${f1(R.perMin.takedowns)}`);
   const v = R.starters;
   lines.push(`  variety: offered ${pct(v.offered)} of starters; top starter ${v.top[0]} in ${pct(v.top[1])}; a legendary `
-    + `in ${pct(v.legend)}; two in ${v.two}`);
+    + `in ${pct(v.legend)} (${pct(v.legendHome)} of runs home); two in ${v.two}`);
   lines.push(`  hits per pass ${(R.hitRate * 100).toFixed(2)} %; by cause ${JSON.stringify(R.hitCauses)}`);
   lines.push(`  pieces over 2 × their share:`);
   for (const p of R.pieces.filter((x) => x.x > 2 && x.passes >= 30).slice(0, 12)) {

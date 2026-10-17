@@ -36,9 +36,10 @@ const wrap = (d) => {
 
 // ---------------------------------------------------------------- the planner (lab A, generalised)
 
-const RAIL_LEAD = 0.12;           // s: a rail beside the ship is judged where the ship will be this soon
+const RAIL_LEAD = 0;              // s: a rail beside the ship is judged from where it is now (then RAIL_DT on)
 const RAIL_DT = 0.12;             // s between the samples a held bearing is judged at along a rail
 const RAIL_SAMPLES = 3;
+const EDGE_SAFE = 0.3;            // °: a planned line this close to a hazard's edge counts as a hit (no line sits on one)
 
 // Course items still to pass within horizon seconds, in order: { it, t (s to its pass; 0 if a rail is beside
 // you), tEnd }. Cues and fog are not lines; a pickup another ship took is gone, and so is an item the director
@@ -98,14 +99,14 @@ export function worth(it, b, beat, tune, val, hold = 0, shipHalf = tune.SHIP_HAL
       const bt = beat + k * bps * RAIL_DT;
       if (k && (!(bps > 0) || bt >= it.end)) break;
       const r = resolve(it, b, bt, T, shipHalf);
-      if (r.hit) return val.hit;
+      if (r.hit || r.overlap < EDGE_SAFE) return val.hit;
       if (!first) first = r;
     }
     return first.overlap <= (it.skimBand ?? T.SKIM_BAND) ? val.skim * (it.skimX ?? 1) * Math.max(0.3, hold) : 0;
   }
   const r = resolve(it, b, it.beat, T, shipHalf);
   if (it.kind === 'pickup') return r.take ? val.fuel || 0 : 0;
-  if (r.hit) return val.hit;
+  if (r.hit || r.overlap < EDGE_SAFE) return val.hit;
   let v = 0;
   for (const { g } of r.gaps) {
     if (g < T.HAIR) v += val.hair;
@@ -129,14 +130,27 @@ function activeRails(race, ship) {
 
 // Search the next few items for the best line; → the bearing (unwrapped degrees) to aim at now. opts: depth, turn
 // (°/s it can count on), settle (s), gapsFor(it) → wanted gaps, val (a worth table), move (cost a degree), from,
-// rails (the rails beside the ship: a move may not cross one, judged where the rail is while the ship turns).
-export function plan(race, ship, items, opts, tune = TUNE) {
+// rails (the rails beside the ship now). Rails are lasting: the ones beside the ship take no depth (together they
+// score the first move: skim or hit along the hold), a rail still to come frees the line at its start, and no move
+// may cross a rail, or end inside one, while it is on (judged where the rail is as the ship turns).
+export function plan(race, ship, items0, opts, tune = TUNE) {
   const T = tune;
-  const n = Math.min(items.length, opts.depth);
-  const from = finite(opts.from) ? opts.from : ship.bearing;
-  if (n === 0) return from;
   const rails = opts.rails || [];
+  const from = finite(opts.from) ? opts.from : ship.bearing;
+  let items = rails.length ? items0.filter((x) => !rails.includes(x.it)) : items0;
+  let beside = rails;
+  if (!items.length && rails.length) {
+    // nothing but rails beside: they are the one level
+    const x0 = items0.find((x) => x.it === rails[0]) || { it: rails[0], t: 0, tEnd: 0 };
+    items = [x0];
+    beside = rails.slice(1);
+  }
+  const n = Math.min(items.length, opts.depth);
+  if (n === 0) return from;
   const beat = ship.dist, bps = bpsOf(ship, T);
+  const hold = RAIL_LEAD + RAIL_DT * (RAIL_SAMPLES - 1);
+  const allRails = [...rails];
+  for (const x of items0) if (x.it.kind === 'rail' && !allRails.includes(x.it)) allRails.push(x.it);
   let best = -Infinity, bestB = from;
   const rec = (i, b, tFree, acc, first) => {
     if (i === n) { if (acc > best) { best = acc; bestB = first; } return; }
@@ -144,27 +158,53 @@ export function plan(race, ship, items, opts, tune = TUNE) {
     const mb = meetBeat(x.it, beat, bps);
     const raw = candidates(x.it, mb, opts.gapsFor(x.it), T, ship.half);
     raw.push(b);
+    if (i === 0 && beside.length) {
+      // the first move may also go to a rail's riding line, or to the middle of the channel between two rails
+      const mids = [psiAt(x.it, mb)];
+      for (const r of beside) {
+        const rb = meetBeat(r, beat, bps);
+        for (const c of candidates(r, rb, opts.gapsFor(r), T, ship.half)) raw.push(c);
+        mids.push(psiAt(r, rb));
+      }
+      for (let p = 0; p < mids.length; p++) {
+        for (let q = p + 1; q < mids.length; q++) {
+          const d = wrap(mids[q] - mids[p]);
+          if (Math.abs(d) < 120) raw.push(mids[p] + d / 2);
+        }
+      }
+    }
     const seen = new Set();
+    const lasting = x.it.end !== undefined;
+    // the time the move has: to the item's pass; for a rail already beside, the hold it is judged over
+    const avail = lasting && x.t <= 0 ? hold : x.t - tFree - opts.settle;
     for (const c0 of raw) {
       const opts2 = [b + wrap(c0 - b)];
-      if (i === 0 && rails.length && x.it.kind !== 'rail') opts2.push(opts2[0] - 360 * Math.sign(opts2[0] - b || 1));
+      if (i === 0 && rails.length && !lasting) opts2.push(opts2[0] - 360 * Math.sign(opts2[0] - b || 1));
       for (const c of opts2) {
         const key = Math.round(c * 4);
         if (seen.has(key)) continue;
         seen.add(key);
         const dist = Math.abs(c - b);
-        const avail = x.t - tFree - opts.settle;
         let v = worth(x.it, c, mb, T, opts.val, x.tEnd - x.t, ship.half, bps) - dist * opts.move;
         if (dist > 0.5 && dist > opts.turn * Math.max(0, avail)) v += opts.val.late;
-        for (const r of rails) {
-          const tOff = (r.end - beat) / bps;
-          if (!(tFree < tOff)) continue;                      // the rail is gone before this move starts
-          const t1 = Math.min(tOff - 1e-3, Math.max(tFree, Math.min(x.t, tFree + dist / Math.max(1, opts.turn))));
-          const p0 = psiAt(r, beat + bps * tFree), p1 = psiAt(r, beat + bps * t1);
-          const a0 = wrap(b - p0), a1 = a0 + (c - b) - (p1 - p0);
-          if (Math.sign(a0) !== Math.sign(a1) || Math.abs(a1) < ship.half + r.half) v += opts.val.hit;
+        if (i === 0) for (const r of beside) v += worth(r, c, meetBeat(r, beat, bps), T, opts.val, 0.5, ship.half, bps);
+        const t1 = Math.max(tFree, Math.min(Math.max(x.t, tFree), tFree + dist / Math.max(1, opts.turn)));
+        for (const r of allRails) {
+          const b0 = beat + bps * tFree, hs = ship.half + r.half;
+          if (railOn(r, b0)) {
+            // on as the move starts: a move toward it that reaches its edge while it is still on crosses it
+            const a0 = wrap(b - psiAt(r, b0)), move = c - b;
+            if (Math.abs(a0) < 90 && a0 * move < 0 && Math.abs(move) > Math.abs(a0) - hs) {
+              const tc = tFree + Math.max(0, Math.abs(a0) - hs) / Math.max(1, opts.turn);
+              if (railOn(r, beat + bps * tc)) { v += opts.val.hit; continue; }
+            }
+          }
+          // there when the move ends: it may not end inside it
+          const b1 = beat + bps * t1;
+          if (r !== x.it && railOn(r, b1) && Math.abs(wrap(c - psiAt(r, b1))) < hs) v += opts.val.hit;
         }
-        rec(i + 1, c, x.it.end !== undefined ? x.tEnd : x.t, acc + v, i === 0 ? c : first);
+        if (opts.debug) opts.debug(i, c, v, acc);
+        rec(i + 1, c, lasting ? Math.max(tFree, x.t) : x.t, acc + v, i === 0 ? c : first);
       }
     }
   };
@@ -224,7 +264,8 @@ function cardSet(cards) {
 // whipper: true makes the whipper: every well 10° off, the furthest band before the warning, no errors.
 function human(opts = {}) {
   const o = { reactMs: 250, jitterDeg: 4, greed: 0.5, whipGreed: 0.5, burnPolicy: 'ttc6', draftSkill: 0.5,
-    ramBias: 0, seed: 1, whipper: false, policy: null, red: 'auto', land: 'keep', landKeep: 2, cards: null, ...opts };
+    ramBias: 0, seed: 1, whipper: false, policy: null, red: 'auto', land: 'keep', landKeep: 2, cards: null, lapse: 0,
+    ...opts };
   if (!BURN_POLICIES.has(o.burnPolicy)) o.burnPolicy = 'ttc6';
   if (!RED_POLICIES.has(o.red)) o.red = 'auto';
   if (!LAND_POLICIES.has(o.land)) o.land = 'keep';
@@ -239,6 +280,11 @@ function human(opts = {}) {
   const kickAt = has('kick-out') ? amountOf('kick-out', cards.get('kick-out')) : null;
   const sidestep = has('sidestep');
   const tidal = has('tidal-frame');
+  // a hit that costs less (a second charge, a blast of speed, a cell for a hull, a chain that recharges the shield)
+  // buys closer lines; a pull on rivals from a well buys more whips
+  const armour = has('twin-deflector') || has('reactive-hull') || has('ablative-tanks') || has('long-chain');
+  const greed = clamp(o.greed + (armour ? 0.2 : 0), 0, 1);
+  const whipGreed = clamp(o.whipGreed + (has('mass-shadow') ? 0.3 : 0), 0, 1);
   const rnd = mulberry32(hashSeed('human', o.seed, o.reactMs, o.jitterDeg, o.greed, o.whipGreed, o.draftSkill));
   const gauss = () => {
     const u = Math.max(1e-9, rnd()), v = rnd();
@@ -249,15 +295,20 @@ function human(opts = {}) {
   const railEvery = Math.max(0.08, react * 0.5);          // s between replans while riding beside a rail
   const mind = new Map(), wells = new Map(), rams = new Map(), drafts = new Map();
   const intent = { target: null, turn: 0, action: null, burn: false };
-  let aim = null, goal = 0, key = null, lastReal = 0, alarmAt = -1, sent = null, stunUntil = 0, railAt = 0;
+  // line: the planned bearing (the plan's, with the hand's error); goal: this step's, where an override may take it
+  let aim = null, goal = 0, line = 0, key = null, lastReal = 0, alarmAt = -1, sent = null, stunUntil = 0, railAt = 0;
+  let took = false, tookPrev = false;
   let burnAt = -1, lastBurn = -9, hitsSeen = 0, lastHitT = -9, launchBurned = false, oberthDone = null;
   let ramUntil = 0, ramAim = 0, pullUntil = 0, pullAim = 0, lastLeg = null, alarmOn = false;
 
   const decide = (it) => {
     let m = mind.get(it.id);
     if (!m) {
-      const greedy = rnd() < o.greed;
-      m = { greedy, hair: greedy && rnd() < o.greed * hairLove, err: o.whipper ? 0 : gauss() * o.jitterDeg };
+      const greedy = rnd() < greed;
+      // a lapse is a missed warning on a small thing passing (a knot, a pulse); a wall, a gate or a rail beside you
+      // is a line you are watching
+      m = { greedy, hair: greedy && rnd() < greed * hairLove, err: o.whipper ? 0 : gauss() * o.jitterDeg,
+        lapse: !o.whipper && (it.kind === 'knot' || it.kind === 'pulse') && rnd() < o.lapse };
       mind.set(it.id, m);
     }
     return m;
@@ -272,7 +323,7 @@ function human(opts = {}) {
     if (ship.hull <= 1 && ship.shield < 1) return false;     // the red zone would wreck it
     if (o.whipper || o.red === 'always') return true;
     if (o.red === 'ttc12') return ship.ttc < 12;
-    return o.whipGreed > 0.7;
+    return whipGreed > 0.7;
   };
 
   // The whip plan for a well: try or not, the side and depth to grab at, the band, and this try's errors.
@@ -280,13 +331,14 @@ function human(opts = {}) {
     let m = wells.get(win.well);
     if (m) return m;
     const it = win.item;
-    const tryP = o.whipper ? 1 : 0.3 + 0.7 * o.whipGreed;
+    // whipGreed is how much it wants whips: the share of wells in reach it goes for (weak 17 %, novice 51 %, mid and expert all)
+    const tryP = o.whipper ? 1 : Math.min(1, 1.7 * whipGreed);
     m = { try: rnd() < tryP, side: 1, b0: it.psi, aE: NaN, band: -1, pressed: false, relAt: NaN, warnAt: NaN,
       pressErr: o.whipper ? 0.02 : gauss() * (o.reactMs / 4000) + 0.02,
       relErr: o.whipper ? 0 : gauss() * (o.reactMs / 2600) };
     const off = o.whipper ? Math.max(10, win.core + ship.half + 1.5)
-      : win.core + ship.half + 2 + (1 - o.whipGreed) * 18;
-    const greedyBand = o.whipper || rnd() < o.whipGreed;
+      : win.core + ship.half + 2 + (1 - whipGreed) * 18;
+    const greedyBand = o.whipper || rnd() < whipGreed;
     const x = win.teach ? T.TEACH_SWEEP : 1;
     const red = redOK(ship);
     const span = (race.leg.rules && race.leg.rules.redSpan) || T.RED_SPAN;
@@ -295,10 +347,16 @@ function human(opts = {}) {
       const b0 = it.psi + s * off;
       const scorchAt = 360 - off - win.core - ship.half;
       const redAt = scorchAt - span;
-      // never plan a band past the warning (plus reaction time); a timid hand stays out of the red zone
+      // a timid hand never plans a band past the scorch warning (plus its reaction) and stays out of the red zone,
+      // which lies inside that warning; a hand that goes red plans up to two of its lift errors short of the scorch
       let limit = scorchAt;
-      while (limit > 0 && sweepTime(limit, scorchAt, T, x) < T.SCORCH_WARN + react + 0.1) limit -= 2;
-      if (!red) limit = Math.min(limit, redAt - 2);
+      if (red) {
+        const lift = Math.max(0.03, (o.reactMs / 2600) * 2) + T.LIFT_COMP;
+        while (limit > 0 && sweepTime(limit, scorchAt, T, x) < lift + 0.05) limit -= 2;
+      } else {
+        while (limit > 0 && sweepTime(limit, scorchAt, T, x) < T.SCORCH_WARN + react + 0.1) limit -= 2;
+        limit = Math.min(limit, redAt - 2);
+      }
       let pick = -1, pickA = NaN;
       (it.exits || []).forEach((e, k) => {
         const a = ((s * wrap(e - b0)) % 360 + 360) % 360;
@@ -310,7 +368,7 @@ function human(opts = {}) {
       const v = (T.GAIN_BASE + T.GAIN_DEPTH * d * d) * (pickA >= redAt ? T.RED_X : 1)
         - 0.004 * Math.abs(wrap(b0 - ship.bearing));
       if (v > bestV) { bestV = v; m.side = s; m.b0 = b0 + (o.whipper ? 0 : gauss() * o.jitterDeg * 0.6); m.aE = pickA;
-        m.band = pick; }
+        m.band = pick; m.red = pickA >= redAt; }
     }
     if (m.band < 0) m.try = false;
     wells.set(win.well, m);
@@ -331,11 +389,13 @@ function human(opts = {}) {
       const aim = m && finite(W.exitA[m.band]) ? W.exitA[m.band] : NaN;
       if (!finite(aim) || aim > W.angle + 25) return 'kick';
     }
-    if (sidestep && !W && alarmOn && Math.abs(ship.turnRate) > 320) return 'sidestep';
+    if (sidestep && !W && alarmOn && Math.abs(ship.turnRate) > 305) return 'sidestep';
     if (o.burnPolicy === 'ttc6') return false;
     if (!launchBurned && race.t < 3 && ship.gear === 0) return 'launch';
     if (now - lastHitT < 2 && ship.eta < 1.6) return 'hit';
     const leg = race.leg;
+    // the VOID has no burn cap and nothing to dodge: every cell at once is the shortest VOID (the next leg launches
+    // from its gate choice, not from the speed it leaves at)
     if (leg.burnCap === null || (leg.rules && leg.rules.burnCap === null)) return 'void';
     if (earth && o.land === 'all') return 'land-all';
     // full tanks with a cell coming: burn one rather than waste the pickup
@@ -356,12 +416,12 @@ function human(opts = {}) {
       lastLeg = race.leg; aim = null; mind.clear(); wells.clear(); rams.clear(); drafts.clear();
       launchBurned = false; hitsSeen = ship.stats.hits; lastHitT = -9; lastBurn = -9; burnAt = -1;
     }
-    if (aim === null) { aim = ship.bearing; goal = aim; lastReal = now; sent = ship.target; }
+    if (aim === null) { aim = ship.bearing; goal = line = aim; lastReal = now; sent = ship.target; }
     const dt = Math.max(0, now - lastReal);
     lastReal = now;
 
     // pulls, shoves and bumps move the thumb's frame too; a hard one takes a reaction to answer
-    if (ship.whip) { aim = ship.bearing; goal = aim; sent = ship.target; }
+    if (ship.whip) { aim = ship.bearing; goal = line = aim; sent = ship.target; }
     else if (sent !== null && ship.target !== sent) {
       const dlt = ship.target - sent;
       aim += dlt;
@@ -401,7 +461,8 @@ function human(opts = {}) {
       }
       const mm = wells.get(W.well);
       if (W.warned && !finite(mm.warnAt)) mm.warnAt = now;
-      const panic = finite(mm.warnAt) && now >= mm.warnAt + react;
+      // the scorch warning makes it let go, unless it planned a red release and its lift is not yet late
+      const panic = finite(mm.warnAt) && now >= mm.warnAt + react && !(mm.red && now < mm.relAt + react);
       if (now >= mm.relAt || panic) intent.action = 'up';
       return intent;
     }
@@ -410,8 +471,8 @@ function human(opts = {}) {
     // would carry it into the hazard (the orange tick) and leave you clear
     let setup = null;
     if (now < ramUntil) {
-      if (ship.shove) { ramUntil = 0; aim = ship.bearing; goal = aim; }     // touched: the ram is done
-      else { aim = ramAim; return send(ship); }
+      if (ship.shove) { ramUntil = 0; aim = ship.bearing; goal = line = aim; }     // touched: the ram is done
+      else { aim = ramAim; mark('ram'); return send(ship); }
     }
     if (ramBias > 0 && race.ships.length > 1 && !T.PHASE_HULL) {
       for (const r of race.ships) {
@@ -432,6 +493,7 @@ function human(opts = {}) {
             ramUntil = now + 0.3;
             m.go = false;
             aim = ramAim;
+            mark('ram');
             return send(ship);
           }
         }
@@ -443,20 +505,25 @@ function human(opts = {}) {
     const bps = bpsOf(ship, T);
     const items = upcoming(race, ship, T.TICK_LEAD + 0.2 - react, T);
     const k = items.length ? items[0].it.id : -1;
-    const first0 = items.length ? items[0] : null;
-    alarmOn = false;
-    if (first0 && first0.t <= T.ALARM_LEAD
-      && resolve(first0.it, goal, meetBeat(first0.it, ship.dist, bps), T, ship.half).hit) {
-      alarmOn = true;
-      if (alarmAt < 0) alarmAt = now;
-    } else alarmAt = -1;
+    // the alarm (the held whine): the line it is on would hit something passing within ALARM_LEAD; a lapse
+    // (o.lapse, once per hazard) is a warning the hand never answers
+    const hitX = firstHit(race, ship, items, goal, T.ALARM_LEAD, bps, T);
+    alarmOn = Boolean(hitX);
+    if (hitX && decide(hitX.it).lapse) alarmAt = -1;
+    else if (alarmOn) { if (alarmAt < 0) alarmAt = now; } else alarmAt = -1;
     let fix = false;
     if (alarmAt >= 0 && now - alarmAt >= react && items.length) {
+      // heard it: steer clear of everything in that window, no greedy lines, no cell beside a hazard, a steadier hand
       fix = true;
       alarmAt = -1;
-      const m = decide(items[0].it);
-      m.err = o.whipper ? 0 : gauss() * o.jitterDeg * 0.6;
-      m.greedy = false;
+      for (const x of items) {
+        if (x.t > T.ALARM_LEAD + react) break;
+        const m = decide(x.it);
+        m.err = o.whipper ? 0 : gauss() * o.jitterDeg * 0.6;
+        m.greedy = false;
+        m.hair = false;
+        if (x.it.kind === 'pickup') m.skip = true;
+      }
     }
     const rails = activeRails(race, ship);
     // beside a rail (or about to meet one) the line is redrawn as it moves
@@ -464,35 +531,50 @@ function human(opts = {}) {
     if (k !== key || fix || (railNear && now >= railAt)) {
       key = k;
       railAt = now + railEvery;
-      if (items.length) {
-        const first = decide(items[0].it);
+      const lines = items.filter((x) => x.it.kind !== 'pickup' || !decide(x.it).skip);
+      if (lines.length) {
+        const first = decide(lines[0].it);
         const dock = wantDock(ship);
-        const target = plan(race, ship, items, {
-          depth: o.greed >= 0.5 || o.whipper ? 2 : 1, turn: thumb * 0.8, settle: react * 0.5, move: 0.01, from: aim,
+        const target = plan(race, ship, lines, {
+          depth: greed >= 0.5 || o.whipper ? 2 : 1, turn: thumb * 0.8, settle: react * 0.5, move: 0.01, from: aim,
           rails,
           gapsFor: (it) => {
             const m = decide(it);
             if (it.kind === 'rail') {
-              const band = it.skimBand ?? T.SKIM_BAND;
-              return m.greedy ? [band / 2] : [band + 3.5];
+              // a turning rail closes on a line by its turn rate over the reaction (and the turn's lag): keep that
+              // much more room
+              const band = it.skimBand ?? T.SKIM_BAND, drift = Math.abs(it.omega || 0) * bps * (react + 0.1);
+              return m.greedy ? [band / 2 + drift] : [band + 3.5 + drift];
             }
             return m.greedy ? (m.hair ? [1.5, 4] : [4]) : [11];
           },
           val: { hit: -100, hair: 3, graze: 1.5, thread: 6, gate: dock ? 2 : 30, dock: dock ? 40 : -2,
             skim: 3, late: -40, margin: 0, fuel: 2 + 4 * (1 - ship.fuel / Math.max(1, ship.fuelCap)) },
         }, T);
-        goal = target + (target === aim ? 0 : keepOff(race, ship, items, rails, target, first.err, bps, T));
+        let err = target === aim ? 0 : keepOff(race, ship, lines, rails, target, first.err, bps, T);
+        // a fresh error never lands the line on something passing within its reaction time (no time to see it)
+        if (err && !lineHit(race, ship, lines, target, react + 0.3, bps, T)) {
+          for (let k = 0; k < 4 && lineHit(race, ship, lines, target + err, react + 0.3, bps, T); k++) err *= 0.5;
+          if (lineHit(race, ship, lines, target + err, react + 0.3, bps, T)) err = 0;
+        }
+        goal = line = target + err;
       }
     }
 
-    if (setup !== null) goal = setup;
+    // every move off the line must be clear: nothing hit at its end in OFF_LOOK, no rail crossed on the way
+    const clear = (to) => pathClear(race, ship, items, rails, aim, to, OFF_LOOK, bps, T);
+    if (setup !== null && clear(setup)) { goal = setup; mark('setup'); }
 
     // ---- the whip: approach on the planned side and press as the latch rings touch
-    const win = o.whipGreed > 0 || o.whipper ? windowOf(race, ship) : null;
+    const win = whipGreed > 0 || o.whipper ? windowOf(race, ship) : null;
     if (win && win.holder === null) {
       const m = wellPlan(race, ship, win, T);
       if (m.try && !m.pressed) {
-        if (win.t <= 1.4) goal = ship.bearing + wrap(m.b0 - ship.bearing);
+        if (win.t <= 1.4) {
+          // onto the grab bearing while the way there is clear; while it is not, the line steers
+          const to = ship.bearing + wrap(m.b0 - ship.bearing);
+          if (clear(to)) { goal = to; mark('approach'); }
+        }
         if (win.t <= m.pressErr && win.t >= -win.late) {
           m.pressed = true;
           intent.action = 'down';
@@ -501,13 +583,15 @@ function human(opts = {}) {
     }
 
     // ---- the draft: tuck into a wake ahead, then pull out for the slingshot
-    if (now < pullUntil) goal = pullAim;
-    else if (draftSkill > 0) {
+    // (a ram being set up beside a rival keeps the goal: no tuck into a wake meanwhile)
+    if (now < pullUntil && clear(pullAim)) { goal = pullAim; mark('pull'); }
+    else if (draftSkill > 0 && setup === null) {
       let lead = null, bestZ = Infinity;
       for (const r of race.ships) {
         if (r === ship || isOut(r) || r.whip) continue;
         const z = (r.dist - ship.dist) / bps;
-        if (z < 0.05 || z > 1.0 || Math.abs(wrap(r.bearing - ship.bearing)) > 25) continue;
+        // a wake worth crossing for: up to 25° off with no draft skill, 49° for a mid, 61° for an expert
+        if (z < 0.05 || z > 1.0 || Math.abs(wrap(r.bearing - ship.bearing)) > 25 + 40 * draftSkill) continue;
         if (z < bestZ) { bestZ = z; lead = r; }
       }
       if (lead && !(win && win.t < 1.6)) {
@@ -522,15 +606,22 @@ function human(opts = {}) {
           // the tow closes the gap: pull out at the charge it wanted, or before it closes to contact range
           const close = bestZ < T.CONTACT_Z + 0.05;
           if (D.lead === lead.id && (D.charge >= d.pullAt || close)) {
+            // out to a clear side; with neither clear, stay in the wake (and off its tail) until one is
             const side = pullSide(race, ship, lead, T);
-            pullAim = ship.bearing + wrap(lead.bearing + side * 22 - ship.bearing);
-            pullUntil = now + 0.6;
-            d.go = false;
-            goal = pullAim;
+            for (const sd of [side, -side]) {
+              const to = ship.bearing + wrap(lead.bearing + sd * 22 - ship.bearing);
+              if (!clear(to)) continue;
+              pullAim = to;
+              pullUntil = now + 0.6;
+              d.go = false;
+              goal = pullAim;
+              mark('pull');
+              break;
+            }
           } else if (D.lead === lead.id || bestZ >= T.CONTACT_Z + 0.06) {
             // tuck in (not onto its tail), unless the wake's line would put it into something now
             const tuck = ship.bearing + wrap(lead.bearing - ship.bearing);
-            if (!lineHit(race, ship, items, tuck, 0.5, bps, T)) goal = tuck;
+            if (clear(tuck)) { goal = tuck; mark('tuck'); }
           }
         }
       }
@@ -544,7 +635,17 @@ function human(opts = {}) {
     return send(ship);
   };
 
+  // what last took the goal from the line (for tools: opts.trace(why, t))
+  function mark(why) {
+    took = true;
+    if (o.trace) o.trace(why, lastReal);
+  }
+
+  // when an override lets go (a pull-out, a tuck, an approach, a ram), the line is drawn afresh from where it is
   function send(ship) {
+    if (tookPrev && !took) key = null;
+    tookPrev = took;
+    took = false;
     intent.target = aim;
     sent = aim;
     return intent;
@@ -552,7 +653,8 @@ function human(opts = {}) {
 }
 
 // The hand's error for this line, kept from carrying the ship into a rail it rides or is about to meet: toward a
-// rail it may close at most to 1° off the rail's edge; away from it, the full error.
+// rail it may close at most to 2° off the rail's edge (the turn's lag carries it about 1° further); away from it, the
+// full error.
 function keepOff(race, ship, items, rails, target, err, bps, T) {
   if (!err) return 0;
   let e = err;
@@ -560,12 +662,39 @@ function keepOff(race, ship, items, rails, target, err, bps, T) {
     if (!railOn(r, beat)) return;
     const d = wrap(target - psiAt(r, beat));
     if (Math.abs(d) > 40 || sgn(e) === sgn(d)) return;          // far, or the error points away from it
-    const room = Math.max(0, Math.abs(d) - ship.half - r.half - 1);
+    const room = Math.max(0, Math.abs(d) - ship.half - r.half - 2);
     if (Math.abs(e) > room) e = sgn(e) * room;
   };
   for (const r of rails) check(r, meetBeat(r, ship.dist, bps));
   for (const x of items) if (x.it.kind === 'rail' && x.t < 0.6) check(x.it, meetBeat(x.it, ship.dist, bps));
   return e;
+}
+
+const OFF_LOOK = 0.8;              // s a move off the line (a ram's setup, a tuck, a pull-out) must stay clear for
+
+// Is a move from one bearing to another clear: nothing in `items` hit at its end within `look` s, and no rail beside
+// the ship crossed on the way (or ended inside)?
+function pathClear(race, ship, items, rails, from, to, look, bps, T) {
+  if (lineHit(race, ship, items, to, look, bps, T)) return false;
+  for (const r of rails) {
+    const bt = meetBeat(r, ship.dist, bps);
+    const p = psiAt(r, bt);
+    const a0 = wrap(from - p), a1 = a0 + (to - from);
+    // 1.5° to spare, more beside a turning rail (it closes by its turn rate while the ship settles)
+    const room = ship.half + r.half + 1.5 + Math.abs(r.omega || 0) * bps * 0.3;
+    if (Math.sign(a0) !== Math.sign(a1) || Math.abs(a1) < room) return false;
+  }
+  return true;
+}
+
+// The first of `items` within `look` seconds that a bearing, held, would hit, or null.
+function firstHit(race, ship, items, b, look, bps, T) {
+  for (const x of items) {
+    if (x.t > look) break;
+    if (x.it.kind === 'pickup') continue;
+    if (worth(x.it, b, meetBeat(x.it, ship.dist, bps), T, HIT_ONLY, 0, ship.half, bps) < 0) return x;
+  }
+  return null;
 }
 
 // Does a bearing, held, hit anything in `items` within `look` seconds?
@@ -596,10 +725,13 @@ function fuelAhead(race, ship, T) {
 // it on the far side from the hazard. → a bearing (unwrapped, near the ship), or null.
 function ramSetup(race, ship, r, T) {
   const items = upcoming(race, r, 1.6, T);
+  const mySide = Math.sign(wrap(ship.bearing - r.bearing));
   for (const x of items) {
     if (x.t < 0.3 || (x.it.kind !== 'knot' && x.it.kind !== 'pulse' && x.it.kind !== 'gate')) continue;
     const d = wrap(r.bearing - x.it.psi), a = Math.abs(d);
     if (a < 12 || a > 36) continue;
+    // only from the side it is on: the far side from the hazard is across the rival otherwise (bumps, no slam)
+    if (mySide && Math.sign(d) !== mySide) continue;
     const want = r.bearing + Math.sign(d) * 16;
     return ship.bearing + wrap(want - ship.bearing);
   }
@@ -635,15 +767,18 @@ const whipper = (opts = {}) => human({ reactMs: 140, jitterDeg: 0, greed: 0.9, w
 export const DRIVERS = Object.freeze({ idle, dodge, graze, whipper, human });
 
 // The human() presets and their default run policies (21.1).
+// lapse (not in 21.1's table): the share of knots and pulses whose warning the hand never answers, calibrated so each
+// preset hits as often a minute as lab A's bots did with no rivals (weak 1.17, novice 1.50, mid 1.92, expert 0.58; the
+// numbers the hull, shield and light were designed against, survival 15).
 export const PRESETS = Object.freeze({
   weak: Object.freeze({ reactMs: 380, jitterDeg: 10, greed: 0.1, whipGreed: 0.1, burnPolicy: 'never', draftSkill: 0,
-    ramBias: 0, policy: Object.freeze({ dock: 'hull1', lane: 'safe', pick: 'casual' }) }),
+    ramBias: 0, lapse: 0.45, policy: Object.freeze({ dock: 'hull1', lane: 'safe', pick: 'casual' }) }),
   novice: Object.freeze({ reactMs: 300, jitterDeg: 7, greed: 0.2, whipGreed: 0.3, burnPolicy: 'ttc6', draftSkill: 0.2,
-    ramBias: 0, policy: Object.freeze({ dock: 'hull1', lane: 'safe', pick: 'casual' }) }),
+    ramBias: 0, lapse: 0.62, policy: Object.freeze({ dock: 'hull1', lane: 'safe', pick: 'casual' }) }),
   mid: Object.freeze({ reactMs: 200, jitterDeg: 3, greed: 0.6, whipGreed: 0.6, burnPolicy: 'launch-hits',
-    draftSkill: 0.6, ramBias: 0.3, policy: Object.freeze({ dock: 'hull1', lane: 'family', pick: 'planner' }) }),
+    draftSkill: 0.6, ramBias: 0.3, lapse: 0.8, policy: Object.freeze({ dock: 'hull1', lane: 'family', pick: 'planner' }) }),
   expert: Object.freeze({ reactMs: 140, jitterDeg: 1.5, greed: 0.9, whipGreed: 0.85, burnPolicy: 'all',
-    draftSkill: 0.9, ramBias: 0.6, policy: Object.freeze({ dock: 'never', lane: 'risk', pick: 'planner' }) }),
+    draftSkill: 0.9, ramBias: 0.6, lapse: 0.27, policy: Object.freeze({ dock: 'never', lane: 'risk', pick: 'planner' }) }),
 });
 
 export const POLICIES = Object.freeze({
@@ -685,7 +820,7 @@ const TASTE = Object.freeze({
 // The card to take from an offer by pick policy. casual: any; focus: the family it owns most; spread: a family it
 // does not own; planner: legendaries, fusions, cards that complete one, then its family toward a legendary and its
 // taste; risk: the rarest, then as planner. → an index into offer.cards, or -1 for none.
-export function pickFor(run, policy, rnd = Math.random) {
+export function pickFor(run, policy, rnd = mulberry32(hashSeed('picks', run.seed))) {
   const o = run.offer;
   if (!o || !o.cards.length) return -1;
   const open = o.cards.map((c, i) => i).filter((i) => !o.taken.includes(i));
@@ -706,11 +841,16 @@ export function pickFor(run, policy, rnd = Math.random) {
     if (how === 'focus') s += top && card.fam === top[0] ? 20 : 0;
     if (how === 'spread') s += fam ? 0 : 20;
     if (how === 'planner' || how === 'risk') {
+      // legendaries, fusions and what completes one first; then depth in one family toward its legendary (3 cards,
+      // one of them its form), led by the family it owns most
       if (card.kind === 'legend') s += 100;
       if (card.kind === 'fusion') s += 60;
       if (card.kind === 'trophy') s += 8;
       if (c.completes) s += 25;
-      s += 3 * fam;
+      s += 8 * fam;
+      if (top && card.fam === top[0]) s += 6;
+      const hasForm = run.build.some((b) => CARD[b.id] && CARD[b.id].kind === 'form' && CARD[b.id].fam === card.fam);
+      if (card.kind === 'form' && !hasForm) s += 6 + 2 * fam;
       if (card.kind === 'form' && c.replaces) s -= 8;
     }
     if (how === 'risk') s += 30 * (c.r || 0);
@@ -738,21 +878,24 @@ export function dockFor(run, policy, tune) {
 
 // Counts what a ship did in a leg, step by step, from the events and its own state: the stats 21.2 and the 20 % rule
 // read. Cheap: a handful of events a step and a few fields.
+const EDGE_HOLD = 0.25;
 function recorder(race, ship) {
   const L = race.leg;
   const s = {
     legNo: race.legNo, type: L.type, lane: L.lane ? L.lane.id : null, kind: L.lane ? L.lane.kind : null,
     beats: L.beats, t: 0, why: null, place: null, gate: null,
     grazes: 0, hairs: 0, rivalGrazes: 0, skimS: 0, hits: 0, shieldPops: 0, hullLost: 0, burns: 0, oberths: 0, drys: 0,
-    windows: 0, grabs: 0, releases: 0, good: 0, perfect: 0, wide: 0, reds: 0, redIns: 0, scorches: 0, drafts: 0,
+    windows: 0, windowsHeld: 0, grabs: 0,
+    releases: 0, good: 0, perfect: 0, wide: 0, reds: 0, redIns: 0, scorches: 0, drafts: 0,
     draftFull: 0, slings: 0, slamsBy: 0, slamsOn: 0, takedownsBy: 0, takedownsOn: 0, spilled: 0, fuelPicked: 0,
-    patches: 0, glareIns: 0, glareOuts: 0, glareS: 0, warnS: 0, ttcMin: Infinity, gapMin: Infinity, topGear: 0,
+    patches: 0, glareIns: 0, glareOuts: 0, glareS: 0, warnS: 0, edgeS: 0, ttcMin: Infinity, gapMin: Infinity, topGear: 0,
     g1At: null, g2At: null, lightspeed: false, years: 0, fuelEnd: 0, hullEnd: 0, fuelStart: ship.fuel,
     etaEnd: 0, gearEnd: 0, eaten: [], drifterEaten: null, boss: null, bossBeaten: false, firstPlace: false,
     hitsBy: {}, passesBy: {}, causes: {}, glareBeforeCatch: null, landMargin: null, doorstep: false,
     cards: 0,
   };
-  let next = 0, glareSeen = false;
+  // time near hazard edges: a graze, hairline or rival graze within the last EDGE_HOLD s, or a rail skim
+  let next = 0, glareSeen = false, edgeAt = -Infinity;
   const items = L.items;
   return {
     s,
@@ -777,9 +920,9 @@ function recorder(race, ship) {
         }
         if (e.ship !== ship.id) continue;
         switch (e.type) {
-          case 'graze': s.grazes++; break;
-          case 'hair': s.hairs++; break;
-          case 'rivalGraze': s.rivalGrazes++; break;
+          case 'graze': s.grazes++; edgeAt = race.t; break;
+          case 'hair': s.hairs++; edgeAt = race.t; break;
+          case 'rivalGraze': s.rivalGrazes++; edgeAt = race.t; break;
           case 'hit': {
             s.hits++;
             const p = e.piece || e.cause || '?';
@@ -792,7 +935,14 @@ function recorder(race, ship) {
           case 'burn': s.burns++; break;
           case 'oberth': s.burns++; s.oberths++; break;
           case 'dry': if (e.why === 'fuel') s.drys++; break;
-          case 'window': if (e.inReach !== false) s.windows++; break;
+          case 'window':
+            if (e.inReach !== false) {
+              s.windows++;
+              // a well another ship already holds cannot be grabbed (one tether per well, 5.3)
+              const w = race.wells[e.well];
+              if (w && w.holder && w.holder !== ship.id) s.windowsHeld++;
+            }
+            break;
           case 'grab': s.grabs++; break;
           case 'release':
             s.releases++;
@@ -823,7 +973,9 @@ function recorder(race, ship) {
         s.passesBy[p] = (s.passesBy[p] || 0) + 1;
       }
       if (!(dt > 0)) return;
-      if (skimOf(ship) > 0) s.skimS += dt;
+      const skim = skimOf(ship) > 0;
+      if (skim) s.skimS += dt;
+      if (skim || race.t - edgeAt < EDGE_HOLD) s.edgeS += dt;
       if (ship.light === 'glare') s.glareS += dt;
       if (ship.light === 'warned' || ship.light === 'glare') s.warnS += dt;
       if (ship.ttc < s.ttcMin) s.ttcMin = ship.ttc;
@@ -865,19 +1017,47 @@ export const RETURNING = Object.freeze({ seen: { runs: 3, goodWhip: true, offere
 //   driver: a driver or preset name; opts: more knobs for it (burnPolicy, red, land, ...); policy: { dock, lane,
 //   pick } over the preset's (null for a plain driver: lane 0, no card); meta: the meta (RETURNING by default);
 //   redshift, ship; setup(run): a hook before the first leg (start at another leg, set meters); legs: stop after
-//   this many legs; force: { at, id, r } takes that card at break `at` in place of the offer; onBreak(run): a hook
-//   at each break before the policy answers it.
+//   this many legs; force: { at, id, r } takes that card at break `at` in place of the offer (id null: skips the
+//   offer, no card); onBreak(run): a hook
+//   at each break before the policy answers it; from: a run at a break to play on from (a copy); keep: the summary
+//   carries the run itself (at its break when `legs` stopped it).
 export function playRun({ seed = 1, driver = 'idle', policy = null, tune = TUNE, maxS = 900, opts = {},
   meta = RETURNING, redshift = 0, ship = 'lantern', setup = null, legs = Infinity, force = null,
-  onBreak = null } = {}) {
+  onBreak = null, from = null, keep = false } = {}) {
   const preset = PRESETS[driver];
   const pol = policy || preset ? { ...(preset ? preset.policy : {}), ...(policy || {}) } : null;
-  const run = createRun({ seed, tune, meta: meta ? normalizeMeta(meta) : null, redshift, ship });
-  if (setup) setup(run);
+  // from: a run at a break (a copy is played, so one leg 1 can feed many runs); it answers that break first
+  const run = from ? structuredClone(from) : createRun({ seed, tune, meta: meta ? normalizeMeta(meta) : null, redshift,
+    ship });
+  if (setup && !from) setup(run);
   const rnd = mulberry32(hashSeed('picks', seed));
   let t = 0, events = 0, played = 0;
   const legStats = [];
+  // the break: the dock strip, the offer (or the forced card), then the lane → false when the run cannot go on
+  const answer = () => {
+    if (onBreak) onBreak(run);
+    if (pol) dockFor(run, pol, tune);
+    if (force && run.legs.length === force.at && run.offer && !force.id) skipOffer(run, tune);
+    else if (force && run.legs.length === force.at && run.offer) {
+      const i = run.offer.cards.findIndex((c) => c.id === force.id);
+      if (i >= 0) { run.offer.cards[i].r = force.r ?? run.offer.cards[i].r; pickCard(run, i); }
+      else {
+        run.offer.cards.push({ id: force.id, r: force.r || 0, slot: 9, why: 'forced', replaces: null,
+          completes: null });
+        pickCard(run, run.offer.cards.length - 1);
+      }
+    }
+    if (pol && run.offer) {
+      let guard = 8;
+      while (run.phase === 'break' && run.offer && guard-- > 0) {
+        const i = pickFor(run, pol, rnd);
+        if (i < 0 || !pickCard(run, i)) { skipOffer(run, tune); break; }
+      }
+    }
+    return chooseLane(run, pol ? laneFor(run, pol) : 0);
+  };
   for (;;) {
+    if (from && played === 0 && run.phase === 'break' && !answer()) break;
     const race = startLeg(run, tune);
     const you = race.ships[0];
     const drive = driverFor(driver, { seed: hashSeed(seed, run.leg), policy: pol, cards: run.build, ...opts });
@@ -897,26 +1077,7 @@ export function playRun({ seed = 1, driver = 'idle', policy = null, tune = TUNE,
     legStats.push(st);
     played++;
     if (run.phase !== 'break' || t >= maxS || played >= legs) break;
-    if (onBreak) onBreak(run);
-    // the break: the dock strip, the offer, then the lane
-    if (pol) dockFor(run, pol, tune);
-    if (force && run.legs.length === force.at && run.offer) {
-      const i = run.offer.cards.findIndex((c) => c.id === force.id);
-      if (i >= 0) { run.offer.cards[i].r = force.r ?? run.offer.cards[i].r; pickCard(run, i); }
-      else {
-        run.offer.cards.push({ id: force.id, r: force.r || 0, slot: 9, why: 'forced', replaces: null,
-          completes: null });
-        pickCard(run, run.offer.cards.length - 1);
-      }
-    }
-    if (pol && run.offer) {
-      let guard = 8;
-      while (run.phase === 'break' && run.offer && guard-- > 0) {
-        const i = pickFor(run, pol, rnd);
-        if (i < 0 || !pickCard(run, i)) { skipOffer(run, tune); break; }
-      }
-    }
-    if (!chooseLane(run, pol ? laneFor(run, pol) : 0)) break;
+    if (!answer()) break;
   }
   const last = legStats[legStats.length - 1] || null;
   const home = run.phase === 'home';
@@ -926,6 +1087,6 @@ export function playRun({ seed = 1, driver = 'idle', policy = null, tune = TUNE,
     caughtLeg: home ? null : run.legs.length, furthest: home ? ROUTE.length + 1 : run.legs.length,
     build: run.build.map((b) => b.id), firstHome: Boolean(run.legs.length && run.legs[run.legs.length - 1].firstHome),
     offered: [...new Set(run.legs.flatMap((l) => l.offered || []))],
-    legStats,
+    legStats, run: keep ? run : undefined,
   };
 }

@@ -52,7 +52,8 @@ async function cdpTouch(cdp, frames, gap = 30) {
 }
 const line = (x, y, dx, n, fingers = 1, spread = 60) => Array.from({ length: n + 1 }, (_, k) =>
   Array.from({ length: fingers }, (_, f) => [x + f * spread + (dx * k) / n, y]));
-const target = async (page) => (await S(page)).you.target;
+// the degrees of drag the input has turned into the aim so far (bumps and shoves in the toy move the ship's target too)
+const target = async (page) => (await S(page)).input.counts.aim;
 const settle = (page, n = 4) => R(page, (n) => window.__qa.frames(n), n);
 
 async function touchChecks(page, size, W, H) {
@@ -87,19 +88,19 @@ async function touchChecks(page, size, W, H) {
   check(`${size}: two fingers dragging 40 px together do not double the gain`, d > 15 && d < 31, `${d.toFixed(1)}°`);
 
   // a flick alone: one cell, no steering
-  let before = await R(page, () => ({ fuel: window.__race.state().you.fuel, t: window.__race.state().t, aim: window.__race.state().you.target }));
+  let before = await R(page, () => ({ fuel: window.__race.state().you.fuel, t: window.__race.state().t, aim: window.__race.state().input.counts.aim }));
   await R(page, ({ x, y }) => { const q = window.__qa; q.P('pointerdown', 4, x, y); for (let i = 1; i <= 6; i++) { q.busy(8); q.P('pointermove', 4, x + 2 * i, y - 12 * i); } q.busy(8); q.P('pointerup', 4, x + 12, y - 72); }, { x, y });
   await settle(page, 6);
-  let after = await R(page, (t) => ({ fuel: window.__race.state().you.fuel, aim: window.__race.state().you.target,
+  let after = await R(page, (t) => ({ fuel: window.__race.state().you.fuel, aim: window.__race.state().input.counts.aim,
     burns: window.__qa.mine(t).filter((e) => e.type === 'burn').length }), before.t);
   check(`${size}: a flick up burns one cell and does not steer`, after.burns === 1 && Math.abs(after.aim - before.aim) < 2,
     `${after.burns} burns, fuel ${before.fuel} → ${after.fuel}, aim moved ${(after.aim - before.aim).toFixed(1)}°`);
 
   // a flick mid-drag: the sideways drag steers, the flick's own swipe does not
-  before = await R(page, () => ({ t: window.__race.state().t, aim: window.__race.state().you.target, fuel: window.__race.state().you.fuel }));
+  before = await R(page, () => ({ t: window.__race.state().t, aim: window.__race.state().input.counts.aim, fuel: window.__race.state().you.fuel }));
   await R(page, ({ x, y }) => { const q = window.__qa; q.P('pointerdown', 5, x, y); for (let i = 1; i <= 5; i++) { q.busy(30); q.P('pointermove', 5, x + 6 * i, y); } for (let i = 1; i <= 6; i++) { q.busy(8); q.P('pointermove', 5, x + 30 + 3 * i, y - 12 * i); } q.busy(8); q.P('pointerup', 5, x + 48, y - 72); }, { x, y });
   await settle(page, 8);
-  after = await R(page, (t) => ({ aim: window.__race.state().you.target, fuel: window.__race.state().you.fuel,
+  after = await R(page, (t) => ({ aim: window.__race.state().input.counts.aim, fuel: window.__race.state().you.fuel,
     burns: window.__qa.mine(t).filter((e) => e.type === 'burn').length }), before.t);
   const md = after.aim - before.aim;
   check(`${size}: a flick mid-drag burns, and only the drag before it steers`, after.burns === 1 && md > 10 && md < 26,
@@ -163,7 +164,7 @@ async function windowChecks(page, size, W, H) {
     r && r.ev.includes('latchCancel') && !r.ev.includes('release'), JSON.stringify(r));
 
   // HOLD TO GO ON after a blur and after a hidden page; a pause by the button keeps the thumb's hold
-  for (const how of ['blur', 'hidden', 'button']) {
+  for (const how of ['blur', 'hidden', 'button', 'button-lift']) {
     r = await R(page, async ({ x, y, how }) => {
       const q = window.__qa;
       const t = await q.toWindow(5);
@@ -179,6 +180,8 @@ async function windowChecks(page, size, W, H) {
       } else document.getElementById('pause').click();
       await q.frames(2);
       const paused = q.st().paused;
+      // the whip thumb lifts while the game is paused (to tap RESUME): play goes on only with a fresh press
+      if (how === 'button-lift') q.P('pointerup', 11, x, y);
       await new Promise((res) => setTimeout(res, 300));
       window.__race.resume();
       await q.frames(3);
@@ -193,7 +196,11 @@ async function windowChecks(page, size, W, H) {
     const ok = how === 'button'
       ? r && r.whip0 && r.paused && !r.regrip && r.after.whip && r.after.holding && r.rel === 1
       : r && r.whip0 && r.paused && r.regrip && r.hint === 'HOLD TO GO ON' && r.whip1 && !r.after.regrip && r.after.whip && r.after.holding && r.rel === 1;
-    check(`${size}: ${how === 'button' ? 'the pause button keeps a held whip held' : `a ${how === 'blur' ? 'blur' : 'hidden page'} keeps a held whip held and goes on with HOLD TO GO ON and a fresh press`}`, ok, JSON.stringify(r));
+    const what = { blur: 'a blur keeps a held whip held and goes on with HOLD TO GO ON and a fresh press',
+      hidden: 'a hidden page keeps a held whip held and goes on with HOLD TO GO ON and a fresh press',
+      button: 'the pause button keeps a held whip held while the thumb stays down',
+      'button-lift': 'the pause button mid-whip, the thumb lifted while paused: HOLD TO GO ON, and a fresh press goes on' }[how];
+    check(`${size}: ${what}`, ok, JSON.stringify(r));
   }
 
   if (size === 'landscape') {
@@ -204,10 +211,10 @@ async function windowChecks(page, size, W, H) {
       for (let i = 1; i <= 3; i++) { q.busy(25); q.P('pointermove', 21, 120 + 4 * i, 300); }
       q.P('pointerdown', 22, 720, 300);
       await q.frames(3);
-      const aim0 = q.st().you.target;
+      const aim0 = q.st().input.counts.aim;
       for (let i = 1; i <= 6; i++) { q.busy(25); q.P('pointermove', 21, 132 - 5 * i, 300); }
       await q.frames(4);
-      const aim1 = q.st().you.target;
+      const aim1 = q.st().input.counts.aim;
       const ev = q.mine(t).map((e) => e.type).filter((k) => /grab|release|latchCancel/.test(k));
       q.P('pointerup', 22, 720, 300); q.P('pointerup', 21, 102, 300);
       await q.frames(3);

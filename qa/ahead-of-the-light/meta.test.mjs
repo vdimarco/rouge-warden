@@ -101,8 +101,8 @@ test('ship feats unlock once', () => {
   assert.equal(shipTune('tug', TUNE).HULL_MAX, 5);
   assert.equal(shipTune('tug', TUNE).SLAM_V, 140);
   assert.equal(shipTune('needle', TUNE).HIT_ETA, 0.8);
-  assert.equal(shipTune('ghost', TUNE).SHIELD_T, 5);
-  assert.equal(shipTune('needle', { ...TUNE, HIT_ETA: 0.7 }).HIT_ETA, 0.7, 'a URL override wins');
+  assert.equal(shipTune('ghost', TUNE).SHIELD_T, 4);
+  assert.equal(shipTune('needle', { ...TUNE, HIT_ETA: 0.6 }).HIT_ETA, 0.6, 'a URL override wins');
   assert.deepEqual(Object.keys(SHIPS), ['lantern', 'needle', 'tug', 'ghost']);
 });
 

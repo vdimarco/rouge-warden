@@ -56,7 +56,10 @@ const TABLE = {
   LS_DROP: 3.8, RIVAL_ETA_MAX: 3.8,
   KICK: 0.04, KICK_HAIR: 0.10,
   SKIM: 0.03,                   // η/s
-  KICK_RIVAL: 0.08, HIT_ETA: 0.5, THREAD_ETA: 0.8, PAIR_ETA: 0.25,
+  KICK_RIVAL: 0.08,
+  HIT_ETA: 0.7,                 // WP9: 0.5 → 0.7 (risk 3's first lever): a hit slows you enough for the light to press
+  RIVAL_HIT_ETA: 0.4,           // playtest P0-3: a rival's hit (WP9's 0.7 is yours); the field lives longer
+  THREAD_ETA: 0.8, PAIR_ETA: 0.25,
   CHAIN_TIMEOUT: 3.0,
   CHAIN_LIT_BONUS: 3,           // s added to the chain timer per burn in HEADLIGHT
 
@@ -75,15 +78,20 @@ const TABLE = {
   FULL_TANK_SHIELD: 2,          // s off the shield's recharge for a fuel pickup at full tanks (critic lead item 3)
 
   // ---- hull (5.6, 8.1) ----
-  HULL0: 3, HULL_MAX: 3, HULL_CAP: 5, SHIELD_MAX: 1, SHIELD_T: 8,
+  HULL0: 3, HULL_MAX: 3, HULL_CAP: 5, SHIELD_MAX: 1, SHIELD_T: 5,   // playtest P0-1: 8 → 5
   FLICKER: 1.0, HITSTOP: 0.12, STUMBLE: 1.0, STUMBLE_S: 0.4, SOFT_S: 10, BUMP: 10,
+  RIVAL_STUMBLE: 0.4,           // s of gap a rival's hit costs it (playtest P0-3; yours is STUMBLE)
   PATCH_AT: 0.55,               // of the leg
   PATCH_LOOK: 3,                // s before it comes into view
 
   // ---- the light (7) ----
-  GAP0: 8,
-  GAP_CAP: [8, 7, 6, 5, 5, 5, 4.5, 4.5],
-  MASS_K: [1.00, 0.94, 0.88, 0.83, 0.78, 0.73, 0.69, 0.65],
+  GAP0: 7,                      // s: your gap at a run's start (playtest P0-2: 8 → 7, the burst is nearer)
+  RIVAL_GAP0: 8,                // s: each rival's gap at a run's start
+  // WP9: legs 2 to 8 hold the light closer and push it back less (start 8, 7, 6, 5, 5, 5, 4.5, 4.5 and 1.00, 0.94,
+  // 0.88, 0.83, 0.78, 0.73, 0.69, 0.65); leg 1 is unchanged, so a first leg stays gentle. Playtest P0-1: the caps of
+  // legs 2 to 8 (WP9: 5, 4, 3.4, 3.4, 3.4, 3, 3) are a buffer of 2 or 3 hits, and each leg's cap holds from its launch
+  GAP_CAP: [8, 3.5, 3, 3, 3, 3, 2.8, 2.8],
+  MASS_K: [1.00, 0.70, 0.66, 0.63, 0.61, 0.58, 0.55, 0.51],
   BLEED: 1.0,                   // the gap falls by BLEED × (1 − tanh η) a second
   PB_GRAZE: 0.12, PB_HAIR: 0.30,
   PB_SKIM: 0.20,                // s/s
@@ -142,7 +150,8 @@ const TABLE = {
   GATE_CALL: 12,                // beats before the leg's end (L − 12)
 
   // ---- dock (9.2) ----
-  FREE_REPAIR: 1, REPAIR_S: 1.5, REFUEL_S: 1.0, REFUEL_N: 2, TUNE_S: 2.0, TTC_FLOOR: 6, CLEAN_BONUS: 1, ABANDON_S: 2,
+  // playtest P0-1 and P1-7: prices to the smaller gaps (1.5, 1.0, 2.0 s), the floor 6 → 4 s
+  FREE_REPAIR: 1, REPAIR_S: 0.6, REFUEL_S: 0.4, REFUEL_N: 2, TUNE_S: 0.8, TTC_FLOOR: 4, CLEAN_BONUS: 1, ABANDON_S: 2,
 
   // ---- landing (8.2) ----
   LAND_S: 3, LAND_PER_NINE: 1, LAND_FUEL_MAX: 3, DOOR_DEG: 60, DOOR_MISS_S: 1.5,
@@ -160,7 +169,9 @@ const TABLE = {
     [75, 25, 0], [68, 30, 2], [60, 33, 7], [52, 36, 12], [45, 38, 17],
   ],
   PITY_STEP: 4, FUSION_FROM: 2, LEGEND_FROM: 4, LEGEND_N: 3,
-  OFFER_N: 3, BONUS_N: 4, RISK_PICKS: 2, REROLLS0: 1, TEACH_RUNS: 3,
+  OFFER_N: 3, BONUS_N: 4,
+  RISK_PICKS: 1,                // pick 1 of 4, Rare or better (critic lead item 2; WP5's offer.riskRule)
+  REROLLS0: 1, TEACH_RUNS: 3,
 
   // ---- rivals (10) ----
   GRID_GAP: 0.25,

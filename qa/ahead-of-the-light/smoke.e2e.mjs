@@ -128,7 +128,51 @@ for (const size of sizeList()) {
   f = await layoutFaults(page);
   check(`${size}: the home card fits the screen`, faultCount(f) === 0, faultText(f));
 
+  // ---- the game switcher from the title (the arcade's own list), marked on this game
+  await R(page, () => window.__race.action('title'));
+  await wait(400);
+  await page.click('#title [data-switch]');
+  await page.waitForSelector('.gsw:not([hidden])', { timeout: 8000 }).catch(() => {});
+  await wait(300);
+  const sw = await R(page, () => {
+    const box = document.querySelector('.gsw:not([hidden])');
+    if (!box) return null;
+    const mine = [...box.querySelectorAll('.gsw-game')].find((g) => /Ahead of the Light/.test(g.textContent));
+    return { open: true, listed: Boolean(mine), here: Boolean(mine && mine.matches('.here')), mode: window.__race.state().mode };
+  });
+  check(`${size}: the title's switcher button opens the game switcher, Ahead of the Light marked as here, and no run starts behind it`,
+    Boolean(sw && sw.open && sw.listed && sw.here && sw.mode === 'title'), JSON.stringify(sw));
+  await page.keyboard.press('Escape');
+  await R(page, () => { if (window.GameSwitch) window.GameSwitch.close(); });
+  // and from the pause menu mid-leg: the switcher opens over a paused race
+  await R(page, () => { window.__race.goto({ leg: 1, seed: 'SMOKEP' }); window.__race.pause(); });
+  await wait(400);
+  await page.click('.s-pause [data-switch]', { timeout: 6000 }).catch(() => {});
+  await page.waitForSelector('.gsw:not([hidden])', { timeout: 8000 }).catch(() => {});
+  const ps = await R(page, () => ({ open: Boolean(document.querySelector('.gsw:not([hidden])')), paused: window.__race.state().paused,
+    mode: window.__race.state().mode }));
+  check(`${size}: the pause menu's switcher button opens the game switcher over the paused race`, ps.open && ps.paused && ps.mode === 'play', JSON.stringify(ps));
+  await R(page, () => { if (window.GameSwitch) window.GameSwitch.close(); });
+
   check(`${size}: no page errors, console errors or failed requests`, errors.length === 0, errors.slice(0, 6).join(' | '));
+  await ctx.close();
+}
+
+// ---- the hook and the arcade's mute, once
+{
+  rep.section('the hook');
+  const { page, errors, W, H, ctx } = await open(browser, 'portrait', '?gapcap=6&seed=7', { store: { 'arcade.sound': 'false' } });
+  check('the arcade\'s mute carries in: the game starts muted', (await S(page)).sound === false, `sound ${(await S(page)).sound}`);
+  await page.touchscreen.tap(W / 2, H * 0.3);
+  await waitMode(page, 'play', 5000).catch(() => {});
+  const sv = await R(page, () => window.__race.survival());
+  const keys = ['gap', 'ttc', 'light', 'hull', 'hullMax', 'shield', 'shieldT', 'fuel', 'fuelCap', 'years', 'earth', 'cap', 'leg'];
+  check('?gapcap=6&seed=7: survival() has its 13 keys, the cap is 6 s, and the run is unranked',
+    sv && keys.every((k) => k in sv) && sv.cap === 6 && (await S(page)).ranked === false, JSON.stringify(sv));
+  const g = await R(page, () => { window.__race.goto({ leg: 'virgo', lane: 'M87', seed: 3 }); return { leg: window.__race.leg(), s: window.__race.state() }; });
+  check('goto({ leg: virgo, lane: M87, seed: 3 }) flies M87 at Virgo, unranked', g.leg.type === 'virgo' && g.leg.lane && g.leg.lane.name === 'M87' && g.s.ranked === false && g.s.mode === 'play',
+    `${g.leg.type} ${g.leg.lane && g.leg.lane.name} ranked ${g.s.ranked}`);
+  check('the hook pages: no page errors', errors.length === 0, errors.slice(0, 4).join(' | '));
   await ctx.close();
 }
 await browser.close();

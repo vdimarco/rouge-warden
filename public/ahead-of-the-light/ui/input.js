@@ -83,7 +83,8 @@ export function createInput({ tune = TUNE, burnTap = false, halves = false, widt
   let padTurn = 0, padHold = false, padBurn = false;
   let w = width;
   const intent = { target: null, turn: 0, action: null, burn: false };
-  const counts = { presses: 0, flicks: 0, taps: 0, cancels: 0, drags: 0 };
+  // what the hands did, for the test hook; aim is the degrees of drag turned into the aim so far
+  const counts = { presses: 0, flicks: 0, taps: 0, cancels: 0, drags: 0, aim: 0 };
 
   const lock = (kind) => { scheme = kind; };
   const steerOk = (kind) => scheme === null || scheme === kind;
@@ -264,7 +265,7 @@ export function createInput({ tune = TUNE, burnTap = false, halves = false, widt
     }
     if (!turn && padTurn) turn = padTurn;
     if (turn) { intent.turn = turn; dAim = 0; }
-    else if (dAim !== 0 && ship) { intent.target = ship.target + dAim; dAim = 0; }
+    else if (dAim !== 0 && ship) { intent.target = ship.target + dAim; counts.aim += dAim; dAim = 0; }
     let gotAction = false, gotBurn = false;
     for (let i = 0; i < edges.length;) {
       const e = edges[i];

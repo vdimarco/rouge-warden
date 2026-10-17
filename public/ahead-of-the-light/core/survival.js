@@ -287,7 +287,9 @@ function hitStep(race, ship, e, T, S, wasGlare) {
   if (isOut(ship)) return;
   if (wasGlare) { catchShip(race, ship, S, T, 'glare'); return; }
   const floor = gapFor(T.STUMBLE_FLOOR_TTC, ship.eta);
-  ship.gap = Math.max(ship.gap - T.STUMBLE, floor);
+  const named = ship.kind === 'regular' || ship.kind === 'boss';        // a named rival's own ship (playtest P0-3)
+  const drop = named ? (T.RIVAL_STUMBLE ?? T.STUMBLE) : T.STUMBLE;
+  ship.gap = Math.max(ship.gap - drop, floor);
 }
 
 // A patch slot spawns only if your hull is below full PATCH_LOOK s before it comes into view, or always when the leg

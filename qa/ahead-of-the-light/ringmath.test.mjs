@@ -9,7 +9,7 @@ import assert from 'node:assert/strict';
 import { TUNE } from '../../public/ahead-of-the-light/core/tune.js';
 import {
   layoutFor, phiHazOf, phiSkyOf, depthPx, dopplerAt, ringPx, courseSpeed, beatsPerS, bpmOf, ringView, toScreen,
-  screenOf, burstU, burstPx, rivalPx, rearPx, wingsPx, captionY, lightLabelPx, placeLabels, wrap,
+  screenOf, burstU, burstPx, rivalPx, rearPx, wingsPx, captionY, lightLabelPx, placeLabels, wrap, ttcText,
 } from '../../public/ahead-of-the-light/core/ringmath.js';
 
 const near = (a, b, tol, msg) => assert.ok(Math.abs(a - b) <= tol, `${msg}: ${a} vs ${b} (±${tol})`);
@@ -293,4 +293,16 @@ test('nothing goes NaN for odd inputs (lab A\'s random-input check, for the geom
     const s = screenOf(v, { beat: 50 + rnd() * 12, psi: (rnd() - 0.5) * 720, half: rnd() * 9 }, 50);
     assert.ok(!Number.isNaN(s.r) && Number.isFinite(s.D) && Number.isFinite(s.ttp), `item at step ${i}`);
   }
+});
+
+test('the light\'s time reads as words (playtest P1-6): seconds under 100 s, then minutes, then HOURS', () => {
+  assert.equal(ttcText(7.4), '7 S');
+  assert.equal(ttcText(44), '44 S');
+  assert.equal(ttcText(99.4), '99 S');
+  assert.equal(ttcText(102), '2 MIN');
+  assert.equal(ttcText(1116), '19 MIN');
+  assert.equal(ttcText(36185), 'HOURS');
+  assert.equal(ttcText(Infinity), 'HOURS');
+  assert.equal(ttcText(0), '0 S');
+  assert.equal(ttcText(NaN), '0 S');
 });

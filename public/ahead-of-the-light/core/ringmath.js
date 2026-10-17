@@ -101,6 +101,15 @@ export function screenOf(view, item, dist, psi = item.psi) {
 
 // ---------- the burst ring (4.1) ----------
 
+// The light's time to catch as words a player can read (playtest P1-6): whole seconds under 100 s ("44 S"), then
+// whole minutes ("2 MIN"), then "HOURS" from an hour. LIGHT · 36185 S told nobody anything.
+export function ttcText(ttc) {
+  if (!(ttc > 0)) return '0 S';
+  if (ttc < 99.5) return `${Math.round(ttc)} S`;
+  if (ttc < 3600) return `${Math.max(2, Math.round(ttc / 60))} MIN`;
+  return 'HOURS';
+}
+
 // How far the burst ring has opened, 0 (it touches your ring) to 1 (full size), from the time to catch.
 export function burstU(ttc, tune = TUNE) {
   if (!(ttc > 0)) return 0;

@@ -47,7 +47,7 @@ export const ROSTER = deep({
     barks: { start: 'INSIDE LINE\'S MINE.', gap: 'MY GAP.', block: 'DOOR\'S SHUT.', feint: 'HM. CLEAN.',
       downed: 'UNPLANNED.', nemesis: 'NOTED. TWICE.', glare: 'RECALCULATING.', eaten: 'BAD ANGLE.' } },
   remora: { id: 'remora', name: 'REMORA', kind: 'regular', half: 3.5, ship: 'ring-nose', motif: 'rising-boop',
-    knobs: K(220, 3.5, 0.2, 0.4, 1.0, 0, 0), burn: 'sling', band: 'wake',
+    knobs: K(220, 3.5, 0.3, 0.4, 1.0, 0, 0), burn: 'sling', band: 'wake',
     rule: 'Rides whoever is ahead, then slingshots past.', weakness: 'Blind in a wake: dodge late.',
     barks: { start: 'MIND IF I TAG ALONG?', tuck: 'NICE WAKE, PAL.', sling: 'THANKS FOR THE TOW!',
       shaken: 'HEY, WAIT UP!', trapped: 'YOU DID THAT ON PURPOSE.', boss: 'FREE RIDE!', downed: 'OW. FAIR.',
@@ -70,7 +70,7 @@ export const ROSTER = deep({
     barks: { start: 'I COUNT CELLS.', finYou: '{N} CELLS. MINE.', finRival: '{NAME} IS BLEEDING.', ram: 'BITE.',
       downed: 'TEETH. GOOD.', backOff: 'ANOTHER DAY.', eaten: 'HUNGRY...' } },
   manta: { id: 'manta', name: 'MANTA', kind: 'boss', half: 10, ship: 'sail-arc', motif: 'airy-chord',
-    knobs: K(180, 2.0, 0, 0, 0, 0, 0), burn: 'never', band: 'none', meters: { hull: 2, shield: 0, fuel: 0, fuelCap: 0 },
+    knobs: K(180, 2.0, 0, 0, 0, 0, 0), burn: 'never', band: 'none', meters: { hull: 3, shield: 0, fuel: 0, fuelCap: 0 },
     card: 'IT RIDES THE LIGHT. GET BETWEEN THEM.', beat: 'REACH THE DOOR AHEAD OF IT.',
     rule: 'The light pushes its sail.', weakness: 'Sit behind it: no light reaches the sail.',
     barks: { start: 'THE LIGHT IS A WIND.', lane: 'HERE IT COMES.', passed: 'FLY WITH IT.',
@@ -166,7 +166,7 @@ export function perceived(race, index, delay) {
 // ---------------------------------------------------------------- the field (10.1)
 
 const secToBeats = (s, eta, T) => s * beatsPerS(eta, T);
-const WHALE_AHEAD = 1.5;                  // s: the WHALE starts this far ahead of the front of the grid (rivals 2.2)
+const WHALE_AHEAD = 2.5;                  // s: the WHALE starts this far ahead of the front of the grid (rivals 2.2)
 const WHALE_ETA = 1.3;                    // its launch η (its η swings between 1.3 and 1.8, 10.3)
 
 function rivalShip({ id, roster, bearing, eta, meters, knobs, legNo, T, extra = {} }) {
@@ -242,10 +242,15 @@ export function createField({ run = null, legNo = 0, rng = null, tune = TUNE, le
     const side = i % 2 ? -1 : 1;
     const bearing = wrap(side * (14 + 9 * i) + (rnd() * 2 - 1) * 4);
     if (R.kind === 'regular') {
-      const rec = recs[id] || { hull: T.HULL0, fuel: T.RIVAL_FUEL_MIN, gap: T.GAP0 };
-      let hull = finite(rec.hull) ? rec.hull : T.HULL0, gap = finite(rec.gap) ? rec.gap : T.GAP0;
+      const g0 = T.RIVAL_GAP0 ?? T.GAP0;
+      const rec = recs[id] || { hull: T.HULL0, fuel: T.RIVAL_FUEL_MIN, gap: g0 };
+      let hull = finite(rec.hull) ? rec.hull : T.HULL0, gap = finite(rec.gap) ? rec.gap : g0;
       let eta = legNo === 0 ? T.ETA0 : T.LAUNCH_THREAD;
-      if (legNo > 0 && hull <= 1) { hull = Math.min(T.HULL_MAX, hull + 2); eta = T.LAUNCH_DOCK; gap -= T.REPAIR_S; }
+      // a rival docks at 1 hull, as you may: only if its launch TTC stays at TTC_FLOOR or more (else it threads)
+      const dockTtc = (gap - T.REPAIR_S) / (1 - Math.tanh(T.LAUNCH_DOCK));
+      if (legNo > 0 && hull <= 1 && dockTtc >= T.TTC_FLOOR) {
+        hull = Math.min(T.HULL_MAX, hull + 2); eta = T.LAUNCH_DOCK; gap -= T.REPAIR_S;
+      }
       const fuel = Math.max(finite(rec.fuel) ? rec.fuel : 0, T.RIVAL_FUEL_MIN) + (id === nemId ? 1 : 0);
       const s = rivalShip({ id, roster: id, bearing, eta, legNo, T, knobs: knobOf(id),
         meters: { hull, hullMax: T.HULL_MAX, shield: T.SHIELD_MAX, shieldMax: T.SHIELD_MAX, fuel: Math.min(fuel, T.FUEL_CAP),
@@ -258,7 +263,9 @@ export function createField({ run = null, legNo = 0, rng = null, tune = TUNE, le
     // a boss
     const M = R.meters;
     const cap = T.GAP_CAP[legNo] ?? T.GAP0;
-    let at = 0, eta = T.LAUNCH_THREAD, gap = cap, b = bearing;
+    // a boss's own mass holds its light back: at least BOSS_GAP s at its launch, whatever the leg's cap (playtest:
+    // with the lower caps the light took the WHALE before a novice met it, and that counted as a win)
+    let at = 0, eta = T.LAUNCH_THREAD, gap = Math.max(cap, BOSS_GAP), b = bearing;
     if (id === 'whale') { at = front + WHALE_AHEAD; eta = WHALE_ETA; b = 0; }
     else if (id === 'mako') { at = -T.MAKO.startBehind; b = side * 8; }
     else if (id === 'manta') {
@@ -338,7 +345,7 @@ const gauss = (rnd) => {
 // −6 × draftSkill (REMORA × 2); a fuel cell on the line −3 × need; a gate's thread, or its dock at 1 hull; and the
 // mode's own pull (`want`). Allocation-light: the items are gathered once a think into a reused list.
 const PATH_RATE = 480;                     // °/s a rival's line turns at, for judging where it will be
-const SAMPLES = [0, 0.1, 0.2, 0.35, 0.5, 0.7, 0.95, 1.3];
+const SAMPLES = [0, 0.04, 0.1, 0.2, 0.35, 0.5, 0.7, 0.95, 1.3];
 const LINE = new WeakMap();
 
 function gather(race, r, T, look) {
@@ -371,10 +378,15 @@ function gather(race, r, T, look) {
 // bearing then (NaN while it is off). Speed only: lineCost reads these instead of calling railOn and psiAt per try.
 function railSamples(x, r, look) {
   const it = x.it, ss = [], ps = [];
-  for (let j = -1; j < SAMPLES.length; j++) {
-    const s = j < 0 ? x.t : SAMPLES[j];
+  // its start, the fixed samples, and its last moment (a rail that ends between two samples is still there until
+  // it ends: a line may not cut its tail)
+  const last = Math.min(x.tEnd, look) - 1e-3;
+  for (let j = -1; j <= SAMPLES.length; j++) {
+    const s = j < 0 ? x.t : j < SAMPLES.length ? SAMPLES[j] : last;
     if (j < 0 && !(x.t > 0)) continue;
+    if (j === SAMPLES.length && !(last > (ss.length ? ss[ss.length - 1] : -1) && last > 0)) continue;
     if (s < x.t || s > x.tEnd || s > look) continue;
+    if (ss.length && s <= ss[ss.length - 1]) continue;
     const beat = r.dist + x.bps * s;
     ss.push(s);
     ps.push(railOn(it, beat) ? psiAt(it, beat) : NaN);
@@ -509,6 +521,7 @@ const LINE_HOLD = 1.5;                     // cost a new line must win by
 const BLIND_EXTRA = 0.15;                  // s: REMORA in a wake sees its leader's swerve this much after its reaction
 const DRIFT_FELT = 6;                      // °: ... but feels its leader drift this far off its late view at once
 const CLOSE_FROM = 3;                      // s: HOUND burns to close on you from this far behind
+const REMORA_COAST = 30;                   // s: with no host REMORA coasts only while its light is this far (else it grazes)
 const REMORA_SLING = 0.12;                 // s: REMORA rides a wake to its leader's tail before it slingshots
 const RAIL_M = 3;                          // ° a rival keeps off a rail's edge (a bump is 6°), plus its wobble
 
@@ -851,7 +864,7 @@ function think(race, r, idx, A, T, S, you) {
     }
     A.host = lead ? lead.id : null;
     if (lead) { o.want = lead.bearing; o.wantDeg = 5; o.wantW = 14; }
-    else if (r.ttc >= 10) o.greed = 0;              // nobody to ride: it coasts, grazing nothing, and waits for one
+    else if (r.ttc >= REMORA_COAST) o.greed = 0;    // nobody to ride: it coasts, grazing nothing, and waits for one
   }
   // PIKE takes your line first: ahead of you and close, it wants where you will be in 0.8 s
   if (r.type === 'pike' && !flee && race.legNo >= 2 && zYou > 0.08 && zYou < 0.6 && you.draft.lead !== r.id
@@ -884,7 +897,11 @@ function think(race, r, idx, A, T, S, you) {
     A.jitterUntil = now + T.JITTER_HOLD;
   }
   let j = A.jitter || 0;
-  if (j && lineHits(race, r, L.b + j, 0.6, T, BIG)) j = lineHits(race, r, L.b + j / 2, 0.6, T, BIG) ? 0 : j / 2;
+  // the wobble never takes it into what passes in 0.6 s, though MOTH's greed only minds the big things
+  const wob = r.type === 'moth' ? BIG : null;
+  if (j && lineHits(race, r, L.b + j, 0.6, T, wob, WOBBLE_M)) {
+    j = lineHits(race, r, L.b + j / 2, 0.6, T, wob, WOBBLE_M) ? 0 : j / 2;
+  }
   let goal = L.b + j;
 
   // REMORA is blind in a wake: it feels its leader drift up to DRIFT_FELT (about the wake's width) at once, but a
@@ -947,7 +964,7 @@ function think(race, r, idx, A, T, S, you) {
 
 // Does a bearing hit anything passing this ship within `look` seconds? (A rail is judged where it will be at each
 // sample, so a turning filament counts.) kinds: optional, only these item kinds.
-function lineHits(race, r, b, look, T, kinds = null) {
+function lineHits(race, r, b, look, T, kinds = null, m = 0) {
   const items = race.leg.items, bps = bpsOf(r, T);
   for (let k = race.win.lo; k < race.win.hi; k++) {
     const it = items[k];
@@ -955,19 +972,23 @@ function lineHits(race, r, b, look, T, kinds = null) {
     if (kinds && !kinds.includes(it.kind)) continue;
     if (it.end !== undefined) {
       if (it.kind !== 'rail') continue;
-      for (let j = 1; j < SAMPLES.length && SAMPLES[j] <= look + 1e-9; j++) {
+      // from now (a bearing a few degrees off is reached in a few ms) to look
+      for (let j = 0; j < SAMPLES.length && SAMPLES[j] <= look + 1e-9; j++) {
         const beat = r.dist + bps * SAMPLES[j];
         if (!railOn(it, beat)) continue;
-        if (Math.abs(wrap(b - psiAt(it, beat))) - r.half - it.half < 0) return true;
+        if (Math.abs(wrap(b - psiAt(it, beat))) - r.half - it.half < m) return true;
       }
       continue;
     }
     const tA = (it.beat - r.dist) / bps;
     if (tA < 0 || tA > look) continue;
-    if (resolve(it, b, it.beat, T, r.half).hit) return true;
+    const res = resolve(it, b, it.beat, T, r.half);
+    if (res.hit || (m > 0 && res.overlap < m)) return true;
   }
   return false;
 }
+const BOSS_GAP = 4.5;                      // s: a boss's light gap at its launch, at least
+const WOBBLE_M = 1;                        // °: the wobble never brings the line closer than this to an edge
 const BIG = Object.freeze(['rail', 'wall', 'gate']);
 
 function burnThink(race, r, A, T, you, m) {
@@ -979,7 +1000,11 @@ function burnThink(race, r, A, T, you, m) {
   else if (m.gamble && r.fuel >= 2 - 1e-9) want = true;
   else if (P.burn === 'close') want = (m.zYou < -0.3 && m.zYou > -CLOSE_FROM && race.legNo > 0) || r.ttc < 8;
   else if (P.burn === 'climb') want = r.gear === 0;
-  else if (P.burn === 'sling') want = A.slingBurn > 0 && now - A.slingBurn < 0.5 && r.surge.until > now;
+  else if (P.burn === 'sling') {
+    // to finish a slingshot; and, with no host to ride and its light within REMORA_COAST, to climb out of gear 0
+    want = (A.slingBurn > 0 && now - A.slingBurn < 0.5 && r.surge.until > now)
+      || (!A.host && !r.draft.lead && r.gear === 0 && r.ttc < REMORA_COAST);
+  }
   else if (P.burn === 'glare') want = r.light === 'glare';
   else if (P.burn === 'hunt') {
     const p = m.prey;

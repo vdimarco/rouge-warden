@@ -16,6 +16,7 @@ const SLING_WINDOW = 0.4;      // s after leaving a wake in which a pull-out sti
 const CONTACT_CD = 0.1;        // s after a shove ends before the same two ships can touch again
 const APPROACH_S = 1.5;        // 5.3: a well's reach arc and exit bands show this long before it is abreast
 const RECENT = 4;              // passes each ship remembers, for TRAPPED
+const RAIL_CLEAR = 1;           // °: a rail hit glides the ship out to this far past the rail's edge
 const GEAR_HYST = 0.04;        // η: a gear drops only this far under its nine, so drag at a nine does not flap it
 const GRADES = ['PERFECT', 'GOOD', 'WIDE'];
 
@@ -483,7 +484,11 @@ export function hit(race, ship, cause, tune = TUNE, item = null, force = false) 
       }
     }
   }
-  ship.eta = Math.max(T.ETA_MIN, ship.eta - T.HIT_ETA);
+  // a named rival's hull is its own ship's: a hit costs it RIVAL_HIT_ETA (your ship's HIT_ETA is yours; a drifter's
+  // is yours too, so it stays the slow one the light takes)
+  const named = ship.kind === 'regular' || ship.kind === 'boss';
+  const loss = named ? (T.RIVAL_HIT_ETA ?? T.HIT_ETA) : T.HIT_ETA;
+  ship.eta = Math.max(T.ETA_MIN, ship.eta - loss);
   endLightspeed(race, ship, T, 'hit');
   breakChain(race, ship, 'hit');
   ship.flicker = T.FLICKER;
@@ -492,6 +497,13 @@ export function hit(race, ship, cause, tune = TUNE, item = null, force = false) 
   ship.stats.hits++;
   emit(race, E.hit, ship, { cause: why, piece: item ? item.piece ?? null : null, side, by,
     item: item ? item.id : null });
+  // a rail throws the ship off it: it glides out to the rail's nearer edge, so the stumble back along the rail does
+  // not replay the same contact once a FLICKER (WP2's request; tuning found novices wrecked in 15 s that way)
+  if (item && item.kind === 'rail' && cause === 'rail' && !ship.shove) {
+    const d = wrap(ship.bearing - psiAt(item, ship.dist));
+    const need = item.half + ship.half + RAIL_CLEAR - Math.abs(d);
+    if (need > 0) shove(race, ship, d >= 0 ? 1 : -1, need, null, T, false);
+  }
   return 'hit';
 }
 

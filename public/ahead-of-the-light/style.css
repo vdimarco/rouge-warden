@@ -73,7 +73,7 @@ html[data-layout="desktop"] #place small { font-size: 13px; }
 html[data-layout="desktop"] #land { font-size: 13px; top: calc(var(--st) + 48px); }
 
 /* ---------- captions: one line, bold capitals in karaoke chunks, the current word orange ---------- */
-#captions { position: fixed; left: 0; right: 0; top: calc(var(--cap-y) + var(--cap-dy, 0px)); transform: translateY(-50%); text-align: center;
+#captions { position: fixed; left: 0; right: 0; top: calc(var(--cap-y) + var(--cap-dy, 0px)); transform: translateY(-50%) scale(var(--cap-k, 1)); text-align: center;
   pointer-events: none; font-weight: 800; font-size: 26px; letter-spacing: 0.04em; text-shadow: var(--shade);
   padding: 0 calc(var(--sr) + 16px) 0 calc(var(--sl) + 16px); line-height: 1.1; white-space: nowrap; }
 #captions .now { color: var(--accent); }
@@ -287,16 +287,20 @@ html[data-layout="desktop"] .dchip { min-height: 72px; flex: 0 1 170px; }
   touch-action: manipulation; text-shadow: none; animation: fadein 0.4s 0.2s both; }
 .lane svg { position: absolute; top: 8px; right: 8px; }
 .lane b { font-size: 12px; font-weight: 800; letter-spacing: 0.04em; padding-right: 24px; }
+.lane b.long { font-size: 10.5px; letter-spacing: 0; }
 .lane span { font-size: 10.5px; font-weight: 800; letter-spacing: 0.04em; color: var(--accent); }
 .lane.k-family span:first-of-type { color: var(--fc); }
 .lane span.cond { color: #fff; }
 html[data-input="desk"] .lane.focus { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
 html[data-layout="desktop"] .lane b { font-size: 16px; }
+html[data-layout="desktop"] .lane b.long { font-size: 14px; }
 html[data-layout="desktop"] .lane span { font-size: 14px; }
 html[data-layout="desktop"] .chead { font-size: 15px; top: calc(var(--st) + 22px); }
 
 /* ---------- the result card (13) ---------- */
 .s-result { cursor: pointer; }
+/* over the light's white flood the result card needs a solid back to read */
+.s-result .panel.res { background: rgba(8, 8, 14, 0.94); }
 .res { max-width: 520px; text-align: left; }
 .res h2 { font-size: 26px; }
 .res h2.home { color: var(--accent); }

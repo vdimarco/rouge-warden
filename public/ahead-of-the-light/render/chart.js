@@ -138,9 +138,11 @@ export function drawChart(ctx, model, { w, h, dpr = 1, t = 9, chips = true, focu
         cx0 = chipX; cy0 = clamp(my - ch / 2, 60, h - ch - 50);
         qx = side === 0 ? mx : chipX + cw / 2;
       } else {
-        // on its side: the chips in a row above the spine, each curve rising through its chip's foot
-        const off = (i - (n - 1) / 2) * (cw + 12 * k);
-        cx0 = clamp(mx + off - cw / 2, 6, w - cw - 6);
+        // on its side: the chips in a row above the spine, each curve rising through its chip's foot; the row moves
+        // as one to stay on screen (each chip kept in on its own stacked them at the right edge on leg 7)
+        const gap = 12 * k, rowW = n * cw + (n - 1) * gap;
+        const left = clamp(mx - rowW / 2, 6, Math.max(6, w - rowW - 6));
+        cx0 = left + i * (cw + gap);
         cy0 = clamp(my - 64 * k - ch, 56, h - ch - 50);
         qx = cx0 + cw / 2;
       }
@@ -204,12 +206,17 @@ export function drawChart(ctx, model, { w, h, dpr = 1, t = 9, chips = true, focu
       const up = i % 2 === 0;
       lx = p.x + r * 0.7071; ly = p.y + r * 0.7071; ex = lx + 10 * k; ey = ly + (up ? 16 : 36) * k;
     }
+    // a name that would leave the screen's right edge (EARTH at the end of the landscape ladder) leads up and to the
+    // left, above the ladder, where no other name sits
+    ctx.font = `${cur ? 800 : 600} ${px}px ${FONT}`;
+    const dir = ex + 19 * k + ctx.measureText(nd.name).width > w - 6 ? -1 : 1;
+    if (dir < 0) { lx = p.x - (lx - p.x); ex = p.x - (ex - p.x); ly = p.y - (ly - p.y); ey = ly - 16 * k; }
     ctx.globalAlpha = appear * (passed || cur ? 0.9 : 0.6);
     ctx.strokeStyle = cur ? ORANGE : '#fff'; ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(lx, ly); ctx.lineTo(ex, ey); ctx.lineTo(ex + 8 * k, ey); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(lx, ly); ctx.lineTo(ex, ey); ctx.lineTo(ex + dir * 8 * k, ey); ctx.stroke();
     ctx.globalAlpha = 1;
-    label(ctx, nd.name, ex + 11 * k, ey, { px, weight: cur ? 800 : 600, color: cur ? ORANGE : '#fff',
-      alpha: appear * (passed || cur || nd.state === 'next' ? 1 : 0.65) });
+    label(ctx, nd.name, ex + dir * 11 * k, ey, { px, weight: cur ? 800 : 600, color: cur ? ORANGE : '#fff',
+      align: dir < 0 ? 'right' : 'left', alpha: appear * (passed || cur || nd.state === 'next' ? 1 : 0.65) });
     out.nodes.push({ x: p.x, y: p.y, r, name: nd.name });
   });
 

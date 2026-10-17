@@ -18,23 +18,26 @@ The Cottage Arcade SHALL have a machine for Ahead of the Light: an entry after R
 - **THEN** the machine shows whole, not clipped and not under the sign or the tray
 - **CHECK** `qa/arcade/machines.mjs`
 
-### Requirement: The cabinet screen and line
-The machine's screen SHALL be `public/arcade/key/ahead-of-the-light.webp`, 480 px wide and under 60 KB, cut from a real portrait screenshot at HEADLIGHT with a rival in the wake and the light's ring rising, with the alt text "A ship skims galaxies on a thin white ring while a ring of light closes from behind". The cabinet line SHALL read `ahead-of-the-light.meta.v1` inside try/catch and show "HOME IN 14.2 YR", "FIRST HOME · 14.2 YR" or "BEST: VIRGO".
+### Requirement: The cabinet screen
+The machine's screen SHALL be `public/arcade/key/ahead-of-the-light.webp`, 480 px wide and under 60 KB, cut from a real portrait screenshot at HEADLIGHT with a rival in the wake and the light's ring rising, with the alt text "A ship skims galaxies on a thin white ring while a ring of light closes from behind".
+
+#### Scenario: The screen
+- **WHEN** the screen file is checked
+- **THEN** it is 480 px wide, under 60 KB, and a frame of the game itself
+- **CHECK** `qa/arcade/machines.mjs`, and the frame reviewed by eye
+
+### Requirement: The cabinet line
+The cabinet line SHALL read `ahead-of-the-light.meta.v1` inside try/catch and show "FIRST HOME · 14.2 YR" (the best years, once you have come home first), "HOME IN 14.2 YR" (home, never first) or "BEST: VIRGO" (the furthest leg of runs that never got home). With no save it SHALL read SKIM · BURN · WHIP.
 
 #### Scenario: A best run
 - **WHEN** the save holds a best run home in 14.2 years ahead of MANTA
-- **THEN** the cabinet line reads FIRST HOME · 14.2 YR, and with a best that only reached Virgo it reads BEST: VIRGO
+- **THEN** the cabinet line reads FIRST HOME · 14.2 YR; home but never first it reads HOME IN 31.0 YR; and with a best that only reached Virgo it reads BEST: VIRGO
 - **CHECK** `qa/arcade/machines.mjs`
 
 #### Scenario: A junk save
 - **WHEN** `ahead-of-the-light.meta.v1` holds text that is not a save, or storage throws
 - **THEN** the machine shows its plain line and the page has no error
 - **CHECK** `qa/arcade/machines.mjs`
-
-#### Scenario: The screen
-- **WHEN** the screen file is checked
-- **THEN** it is 480 px wide, under 60 KB, and a frame of the game itself
-- **CHECK** `qa/arcade/machines.mjs`, and the frame reviewed by eye
 
 ### Requirement: The title starts play in one tap
 The title SHALL show AHEAD OF THE LIGHT with LIGHT in orange over black space with white points, and TAP TO FLY (on desktop CLICK OR PRESS SPACE), the hangar chip, DAILY, PRACTICE and LOG once open, settings, a link back to the arcade and the game switcher button. The sky SHALL be built behind the title. The tap SHALL start play with the ship already moving, steerable within 1.5 s.
@@ -59,7 +62,7 @@ The page SHALL load `/arcade/quiet.js` as the first script in its `<head>`. The 
 
 #### Scenario: Hidden
 - **WHEN** the page is hidden mid-leg
-- **THEN** its sound stops
+- **THEN** its sound stops while it is hidden, the race pauses, and when the page is shown again the pause card has a low-passed drone until the player goes on
 - **CHECK** `qa/arcade/quiet.mjs`
 
 #### Scenario: Muted in the arcade

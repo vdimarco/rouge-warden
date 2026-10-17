@@ -1,7 +1,7 @@
 ## ADDED Requirements
 
 ### Requirement: Every ship has its own light
-Each ship SHALL have a gap, the seconds between it and the burst's light, that falls by (1 − tanh η) every second; a docked or stopped ship SHALL lose 1 s a second. The light's only number SHALL be its time to catch, TTC = gap ÷ (1 − β). The light SHALL never speed up or target anyone, and nothing SHALL change because a player died. A run SHALL start with a gap of 8 s.
+Each ship SHALL have a gap, the seconds between it and the burst's light, that falls by (1 − tanh η) every second; a docked or stopped ship SHALL lose 1 s a second. The light's only number SHALL be its time to catch, TTC = gap ÷ (1 − β). The light SHALL never speed up or target anyone, and nothing SHALL change because a player died.
 
 #### Scenario: The bleed is exact
 - **WHEN** a ship holds η 1.0 for 10 s with nothing to push the light back
@@ -12,6 +12,19 @@ Each ship SHALL have a gap, the seconds between it and the burst's light, that f
 - **WHEN** a ship at η 0.8 with a 4 s gap burns to η 1.2
 - **THEN** its TTC jumps from 11.9 s to about 24 s, and the light's ring springs outward and reddens on that frame
 - **CHECK** `survival.test.mjs` and `feedback.e2e.mjs`
+
+### Requirement: The light at each launch
+Your run SHALL start with a gap of 7 s (the burst went off as you left: TTC 29 s at 0.76c) and each rival's with 8 s. At each gate every ship's gap SHALL be cut to the next leg's cap, so the light that one leg's masses held back does not carry past them.
+
+#### Scenario: The start
+- **WHEN** a run launches leg 1 at η 1.0
+- **THEN** your gap is 7 s and your TTC 29 s, and every rival's gap is 8 s
+- **CHECK** `race.test.mjs` and `tune.test.mjs`
+
+#### Scenario: The cap holds from the launch
+- **WHEN** a ship threads Coma's gate with an 8 s gap
+- **THEN** leg 2 launches it with a 3.5 s gap (leg 2's cap) at η 1.6, TTC 45 s, and the break's line reads LEAD AT LAUNCH 45 S
+- **CHECK** `run.test.mjs` and `sim.test.mjs`
 
 ### Requirement: The light's ring is always on screen
 The light SHALL be a white ring outside the play ring at R_b = R_p × (1 + K_B × u), u = clamp(ln(1 + TTC ÷ 2) ÷ ln(1 + 300 ÷ 2), 0, 1), with K_B 1.4 on phones and 0.85 on desktop, coloured by 30,000 K × e^−(η − 1): blue-white when you are slow, dull red when you are fast, white in the glare. At least 60 px of its arc SHALL be on screen in every frame: a bottom arc in portrait, side arcs in landscape and on desktop.
@@ -28,11 +41,11 @@ The light SHALL be a white ring outside the play ring at R_b = R_p × (1 + K_B �
 
 #### Scenario: One hit at speed pulls it in
 - **WHEN** a ship at η 2.0 on a 5 s gap (TTC 139 s) is hit
-- **THEN** its TTC falls to about 42 s and on a phone the ring pulls in from 2.19 × to 1.86 × on that frame
+- **THEN** its TTC falls to about 29 s and on a phone the ring pulls in from 2.19 × to 1.76 × on that frame
 - **CHECK** `survival.test.mjs` and `layout.e2e.mjs`
 
 ### Requirement: Skill pushes the light back
-Push-backs SHALL add to the gap, times the leg's mass factor M (1.00 on leg 1 down to 0.65 on leg 8): graze 0.12 s, hairline 0.30, rival graze 0.12, rail skim 0.20 a second, a whip 0.4 × mass × (0.5 + d) (half on WIDE), a mid-leg pair 0.5, takedown 0.3, gate thread 2.0, dock 1.5, fly past 0.5. Gains SHALL stop at the leg's cap (8, 7, 6, 5, 5, 5, 4.5, 4.5 s), except a red-zone release (up to +1.5 s, fading 0.1 s a second) and STILL LIGHT.
+Push-backs SHALL add to the gap, times the leg's mass factor M (1.00 on leg 1 down to 0.51 on leg 8): graze 0.12 s, hairline 0.30, rival graze 0.12, rail skim 0.20 a second, a whip 0.4 × mass × (0.5 + d) (half on WIDE), a mid-leg pair 0.5, takedown 0.3, gate thread 2.0, dock 1.5, fly past 0.5. Gains SHALL stop at the leg's cap (8, 3.5, 3, 3, 3, 3, 2.8, 2.8 s: a buffer of 2 or 3 hits), except a red-zone release (up to +1.5 s, fading 0.1 s a second) and STILL LIGHT.
 
 #### Scenario: A graze in leg 1
 - **WHEN** a ship below the cap grazes a knot in leg 1
@@ -40,8 +53,8 @@ Push-backs SHALL add to the gap, times the leg's mass factor M (1.00 on leg 1 do
 - **CHECK** `survival.test.mjs` and `feedback.e2e.mjs`
 
 #### Scenario: The cap holds
-- **WHEN** a ship at leg 3's 6 s cap hairlines a knot
-- **THEN** its gap stays at 6 s; only a red-zone release lifts it past the cap, by 1.5 s at most, fading at 0.1 s a second
+- **WHEN** a ship at leg 3's 3 s cap hairlines a knot
+- **THEN** its gap stays at 3 s; only a red-zone release lifts it past the cap, by 1.5 s at most, fading at 0.1 s a second
 - **CHECK** `survival.test.mjs`
 
 #### Scenario: STILL LIGHT raises the cap
@@ -72,8 +85,16 @@ The light SHALL be far at TTC 10 s or more (its label only in a run's first 20 s
 - **THEN** a `breather` fires, every optional item 1.3 to 5 s ahead is dropped, and no two knots in that window sit within 30° of each other for 5 s
 - **CHECK** `course.test.mjs`
 
+### Requirement: A far light reads
+The far light's label SHALL also show during each leg's launch, so its quiet seconds show what the gate left you. A time to catch of 100 s or more SHALL read in whole minutes (LIGHT · 3 MIN), and an hour or more as HOURS, on the ring, on the break (LEAD AT LAUNCH) and on the chart.
+
+#### Scenario: A far light reads
+- **WHEN** a leg launches with the light 150 s away
+- **THEN** its label reads LIGHT · 3 MIN during the launch, never LIGHT · 150 S, and hides once the race starts
+- **CHECK** `ringmath.test.mjs` and `layout.e2e.mjs`
+
 ### Requirement: Hits, catches and wrecks
-A hit SHALL cost 0.5 η (never below 0.6) and end HEADLIGHT and LIGHT SPEED, pop the shield or else cost 1 hull, break the chain, drop the gap 1.0 s and fall 1.0 s back in the field over 0.4 s, then give 1.0 s of flicker. A hit outside the glare SHALL never leave TTC under 2.9 s. A hit in the glare SHALL catch the ship in the same step; 0 hull and no shield SHALL wreck it. A run's first 10 s of leg 1 SHALL turn hits into a 10° bump with no cost.
+A hit SHALL cost you 0.7 η (never below 0.6) and end HEADLIGHT and LIGHT SPEED, pop the shield or else cost 1 hull, break the chain, drop the gap 1.0 s and fall 1.0 s back in the field over 0.4 s, then give 1.0 s of flicker. A hit outside the glare SHALL never leave TTC under 2.9 s. A hit in the glare SHALL catch the ship in the same step; 0 hull and no shield SHALL wreck it. A run's first 10 s of leg 1 SHALL turn hits into a 10° bump with no cost.
 
 #### Scenario: No catch from outside the glare
 - **WHEN** seeds 1 to 200 of random hit sequences run at every η from 0.6 to 4.9
@@ -95,13 +116,21 @@ A hit SHALL cost 0.5 η (never below 0.6) and end HEADLIGHT and LIGHT SPEED, pop
 - **THEN** the ship is shoved 10° aside with a `bump`, and it loses no speed, shield, hull or gap
 - **CHECK** `handle.test.mjs`
 
+
+### Requirement: A rival's own ship
+A named rival's hit SHALL cost it 0.4 η and 0.4 s of gap (each ship is its own ship, as NEEDLE's 0.8 η is); a drifter's SHALL cost what yours does. A boss SHALL launch at least 4.5 s ahead of its light. The light SHALL take about 1 to 2 regulars in a mid player's run, so the field keeps named ships to race to the end.
+
+#### Scenario: The field lives
+- **WHEN** the mid bot plays 64 runs
+- **THEN** the light takes 2.6 regulars a run or fewer (the known-gap floor; the target is about 1)
+- **CHECK** `sim.test.mjs`
 ### Requirement: Hull and shield
-The ship SHALL have 3 hull pips (cards and ships raise it to 5) and 1 shield charge that takes the damage of one hit and returns 8 s after the last hit. At 1 hull with the shield down, sparks SHALL trail the ship and a two-note alarm play once, with LAST HULL captioned the first time in a run. A clean leg (no hits, shield pops included) SHALL give +1 hull, or +1 fuel at full hull, shown as CLEAN LEG +1.
+The ship SHALL have 3 hull pips (cards and ships raise it to 5) and 1 shield charge that takes the damage of one hit and returns 5 s after the last hit (LANTERN; NEEDLE 4 s, TUG 7 s, GHOST 4 s). At 1 hull with the shield down, sparks SHALL trail the ship and a two-note alarm play once, with LAST HULL captioned the first time in a run. A clean leg (no hits, shield pops included) SHALL give +1 hull, or +1 fuel at full hull, shown as CLEAN LEG +1.
 
 #### Scenario: The shield takes a hit
 - **WHEN** a ship with its shield up clips a wall
 - **THEN** no hull is lost, the 13 px bubble bursts into six fragments with a glass pop, SHIELD DOWN shows and the music drops a step
-- **AND** the shield returns exactly 8.0 s after the last hit with a soft rising chime
+- **AND** the shield returns exactly 5.0 s after the last hit with a soft rising chime
 - **CHECK** `survival.test.mjs` and `feedback.e2e.mjs`
 
 #### Scenario: Last hull
@@ -179,15 +208,15 @@ About 4 s before each landmark, its THREAD line (the gap between its two giants,
 - **CHECK** `smoke.e2e.mjs`
 
 ### Requirement: The dock strip
-After a DOCK the break SHALL show chips priced in gap seconds, each labelled with its drop in launch TTC: FREE REPAIR +1 hull (automatic), REPAIR +1 hull for 1.5 s, REFUEL +2 fuel for 1.0 s, and TUNE one card up a rarity for 2.0 s, once a dock. A purchase SHALL never leave launch TTC under 6 s: its chip SHALL grey out and read TOO CLOSE. Tapping a bought chip again before launch SHALL refund it exactly. Each docked second SHALL age you 0.25 years.
+After a DOCK the break SHALL show chips priced in gap seconds, each labelled with its drop in launch TTC: FREE REPAIR +1 hull (automatic), REPAIR +1 hull for 0.6 s, REFUEL +2 fuel for 0.4 s, and TUNE one card up a rarity for 0.8 s, once a dock. A purchase SHALL never leave launch TTC under 4 s: its chip SHALL grey out and read TOO CLOSE. Tapping a bought chip again before launch SHALL refund it exactly. Each docked second SHALL age you 0.25 years.
 
 #### Scenario: Buying safety with time
 - **WHEN** a docked player at 390 × 844 taps REPAIR
-- **THEN** the chip reads "−4.5 S", LEAD AT LAUNCH drops by 1.5 s of gap, the ship gains 1 hull, and the run's years rise by 0.375
+- **THEN** the chip reads "−1.8 S", LEAD AT LAUNCH drops by 0.6 s of gap, the ship gains 1 hull, and the run's years rise by 0.15
 - **CHECK** `survival.test.mjs` and `layout.e2e.mjs`
 
 #### Scenario: Too close
-- **WHEN** a purchase would leave launch TTC under 6 s
+- **WHEN** a purchase would leave launch TTC under 4 s
 - **THEN** its chip is grey, reads TOO CLOSE and cannot be bought
 - **CHECK** `survival.test.mjs`
 

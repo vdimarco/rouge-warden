@@ -8,7 +8,7 @@
 // glare, flash and flood are CSS layers whose opacity alone changes (playtest A P2-10). No shadowBlur, no full-screen
 // gradients. Ported from lab A's view.js overlay and lab B's rush.
 import { TUNE } from '../core/tune.js';
-import { DEG, wrap, depthPx, burstPx, rivalPx, wingsPx, placeLabels, lightLabelPx } from '../core/ringmath.js';
+import { DEG, wrap, depthPx, burstPx, rivalPx, wingsPx, placeLabels, lightLabelPx, ttcText } from '../core/ringmath.js';
 import { resolve, psiAt, halfAt, railOn, wellCore } from '../core/course/kinds.js';
 import { isDropped } from '../core/course/director.js';
 import { windowOf, exitsOf, slamAim, gearOf } from '../core/handle.js';
@@ -18,6 +18,7 @@ import { inFog } from './hazards.js';
 
 const ORANGE = '#f08a2c';
 const RED = '#ff4d3d';
+const EATEN_S = 0.9;              // s the light's burst over an eaten rival lasts
 const FONT = 'system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 const smooth = (a, b, x) => { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
@@ -539,12 +540,13 @@ export function createOverlay({ canvas, tune = TUNE, reduced = false, fx = {} } 
         const [x0, y0] = P(a, R + 6), [x1, y1] = P(a, R + 6 + (Rb - R - 6) * k);
         line(x0, y0, x1, y1); stroke(`rgba(${col},${a3(0.5 * (1 - k))})`, 1.25 * kz);
       }
-      // its label: whole seconds when pressed, tenths in the glare, and only the run's first 20 s when far
+      // its label: whole seconds when pressed, tenths in the glare, and when far only the run's first 20 s and each
+      // leg's launch (playtest P1-4: the launch's quiet seconds show what the gate left you)
       const runT = opts.runT ?? (race.legNo === 0 ? race.t : 99);
       let label = null;
       if (glare) label = `LIGHT · ${Math.max(0, ttc).toFixed(1)} S`;
       else if (ttc < T.TTC_LABEL) label = `LIGHT · ${Math.max(0, Math.ceil(ttc))} S`;
-      else if (runT < 20) label = `LIGHT · ${Math.round(ttc)} S`;
+      else if (runT < 20 || race.phase === 'launch') label = `LIGHT · ${ttcText(ttc)}`;
       if (label && !you.caught) {
         const L = lightLabelPx(view, Rb, label, T);
         if (L) {
@@ -589,7 +591,8 @@ export function createOverlay({ canvas, tune = TUNE, reduced = false, fx = {} } 
       const r = race.ships[i];
       const mk = V.marks[r.id] || {};
       const gone = isOut(r);
-      if (gone && !(mk.flash && V.time - mk.flash < 0.6)) continue;
+      const eatenK = mk.eaten !== undefined && V.time - mk.eaten < EATEN_S ? (V.time - mk.eaten) / EATEN_S : -1;
+      if (gone && !(mk.flash && V.time - mk.flash < 0.6) && eatenK < 0) continue;
       const pos = rivalPx(view, r, you, Rb, T);
       if (!Number.isFinite(pos.x) || !Number.isFinite(pos.y)) continue;
       let x = pos.x, y = pos.y, rad = pos.r;
@@ -598,6 +601,12 @@ export function createOverlay({ canvas, tune = TUNE, reduced = false, fx = {} } 
       if (pos.place !== 'ahead' && dAng < wingZone.a0 && rad < R + (T.WING_OUT + 16) * s + 8) {
         rad = R + (T.WING_OUT + 24) * s;
         [x, y] = P(pos.ang, rad);
+        // moved out past the wings, it still stays BEHIND_EDGE px inside the screen along its bearing
+        const m = T.BEHIND_EDGE || 12, ux = Math.sin(pos.ang * DEG), uy = Math.cos(pos.ang * DEG);
+        let k = rad;
+        if (ux > 1e-6) k = Math.min(k, (w - m - cx) / ux); else if (ux < -1e-6) k = Math.min(k, (m - cx) / ux);
+        if (uy > 1e-6) k = Math.min(k, (h - m - cy) / uy); else if (uy < -1e-6) k = Math.min(k, (m - cy) / uy);
+        if (k < rad) { rad = Math.max(R + 6 * s, k); [x, y] = P(pos.ang, rad); }
       }
       const drifter = r.kind === 'drifter';
       const kind = SHAPES[r.type] || SHAPES[r.id] || 'chevron';
@@ -606,6 +615,15 @@ export function createOverlay({ canvas, tune = TUNE, reduced = false, fx = {} } 
       const flash = mk.flash && V.time - mk.flash < 0.6;
       const color = flash && Math.floor(V.time * 20) % 2 ? '#fff' : nemesis ? ORANGE : drifter ? 'rgba(200,200,210,0.85)'
         : '#fff';
+      // the light takes it (playtest P1-11): a white burst that opens where it was drawn, and a streak from outside,
+      // where the light comes from, so the moment reads at the screen's edge too
+      if (eatenK >= 0) {
+        const f = 1 - eatenK;
+        circle(x, y, (5 + 30 * eatenK) * s); stroke(`rgba(255,255,255,${a3(f)})`, (1 + 2.5 * f) * kz);
+        circle(x, y, 9 * f * s); ctx.fillStyle = `rgba(255,255,255,${a3(f)})`; ctx.fill(); V.ops++;
+        const dl = Math.max(1, Math.hypot(x - cx, y - cy)), ux = (x - cx) / dl, uy = (y - cy) / dl;
+        line(x + ux * 46 * s, y + uy * 46 * s, x, y); stroke(`rgba(255,255,255,${a3(0.9 * f)})`, 2 * kz);
+      }
       if (drifter) {
         circle(x, y, 2 * s); ctx.fillStyle = color; ctx.fill();
       } else {
@@ -1140,7 +1158,8 @@ export function createOverlay({ canvas, tune = TUNE, reduced = false, fx = {} } 
         const segs = tells && tells.has('diamond-segments');
         diamond(p.x, p.y, p.size / 2, p.fill, 1, dryK && p.fill < 1 ? dryK : 0, segs);
       }
-      out.wings = { hull: wings.hull.map((p) => ({ x: p.x, y: p.y })), fuel: wings.fuel.map((p) => ({ x: p.x, y: p.y })),
+      out.wings = { hull: wings.hull.map((p) => ({ x: p.x, y: p.y, size: p.len, wide: p.full ? p.wide : 1, ang: p.ang })),
+        fuel: wings.fuel.map((p) => ({ x: p.x, y: p.y, size: p.size })),
         shield: { x: shx, y: shy, r: wings.shield.r } };
     }
     // being drafted: an orange tick at your tail; MAKO's fin on you

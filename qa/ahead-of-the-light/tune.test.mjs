@@ -52,7 +52,8 @@ const KEYS_19 = [
 ];
 
 // Keys this build added to the table (each logged in race/contract.md).
-const ADDED = ['PUNCH_S', 'ETA0', 'SCOOP_LIFTER_MAX', 'FULL_TANK_SHIELD', 'CAP_OVERFLOW_SHIELD', 'QUIT_GAP'];
+const ADDED = ['PUNCH_S', 'ETA0', 'SCOOP_LIFTER_MAX', 'FULL_TANK_SHIELD', 'CAP_OVERFLOW_SHIELD', 'QUIT_GAP',
+  'RIVAL_GAP0', 'RIVAL_HIT_ETA', 'RIVAL_STUMBLE'];
 
 test('the slug prefixes the save keys', () => {
   assert.equal(SLUG, 'ahead-of-the-light');
@@ -75,17 +76,20 @@ test('the values are the table\'s, with the critic\'s changes', () => {
     F: 0.494, RING_FLOOR: 0.30, RING_FLOOR_PX: 112, RING_PUNCH: 0.26, ETA_RING_TOP: 3.8, SKY_CAP: 5.0, SKY_PUNCH: 6.0,
     AHEAD_MIN: 0.20, BEHIND_MIN: 22, BEHIND_EDGE: 12, KB_PHONE: 1.4, KB_DESK: 0.85, TTC_FULL: 300,
     WING_FROM: 8, WING_PITCH: 5, WING_OUT: 7, V0: 1.605, V_K: 0.16, BEAT_R: 0.86, BPM0: 112, CAM_MAX: 240,
-    LAUNCH_THREAD: 1.6, LAUNCH_PAST: 1.0, LAUNCH_DOCK: 0.8, HIT_ETA: 0.5, BURN_ETA: 0.4, BURN_CAP: 2.6,
-    OBERTH_ETA: 0.8, SCOOP_LEG_MAX: 2, SHIELD_T: 8, STUMBLE: 1.0, STUMBLE_S: 0.4, GAP0: 8, BLEED: 1.0,
+    LAUNCH_THREAD: 1.6, LAUNCH_PAST: 1.0, LAUNCH_DOCK: 0.8, HIT_ETA: 0.7, BURN_ETA: 0.4, BURN_CAP: 2.6,
+    OBERTH_ETA: 0.8, SCOOP_LEG_MAX: 2, SHIELD_T: 5, STUMBLE: 1.0, STUMBLE_S: 0.4, GAP0: 7, BLEED: 1.0,
     PB_GRAZE: 0.12, PB_HAIR: 0.30, PB_THREAD: 2.0, PB_DOCK: 1.5, PB_PAST: 0.5, STUMBLE_FLOOR_TTC: 2.9,
     TTC_WARN: 6, TTC_REARM: 9, GLARE_IN: 3.0, GLARE_OUT: 4.5, LEAN_S: 0.3, SLAM_V: 200, LAND_S: 3, LAND_PER_NINE: 1,
-    LAND_FUEL_MAX: 3, YEARS_PER_S: 0.25, OFFER_N: 3, BONUS_N: 4, RISK_PICKS: 2, TEACH_RUNS: 3, TICK: 0.05,
-    BARK_CHARS: 24, GATE_CALL: 12, TTC_FLOOR: 6,
+    LAND_FUEL_MAX: 3, YEARS_PER_S: 0.25, OFFER_N: 3, BONUS_N: 4, RISK_PICKS: 1, TEACH_RUNS: 3, TICK: 0.05,
+    BARK_CHARS: 24, GATE_CALL: 12, TTC_FLOOR: 4,
+    RIVAL_GAP0: 8, RIVAL_HIT_ETA: 0.4, RIVAL_STUMBLE: 0.4, REPAIR_S: 0.6, REFUEL_S: 0.4, TUNE_S: 0.8,
   };
   for (const [k, v] of Object.entries(want)) assert.equal(TUNE[k], v, k);
   assert.deepEqual(TUNE.NINES, [1.4722, 2.6467, 3.8002, 4.9517]);
-  assert.deepEqual(TUNE.GAP_CAP, [8, 7, 6, 5, 5, 5, 4.5, 4.5]);
-  assert.deepEqual(TUNE.MASS_K, [1.00, 0.94, 0.88, 0.83, 0.78, 0.73, 0.69, 0.65]);
+  // WP9's tuned values (HIT_ETA 0.5 → 0.7, the masses of legs 2 to 8, RISK_PICKS 2 → 1; race/tuning.md) and the
+  // playtest's (race/playtest.md: the caps of legs 2 to 8, SHIELD_T 8 → 5, GAP0 8 → 7, the dock's prices and floor)
+  assert.deepEqual(TUNE.GAP_CAP, [8, 3.5, 3, 3, 3, 3, 2.8, 2.8]);
+  assert.deepEqual(TUNE.MASS_K, [1.00, 0.70, 0.66, 0.63, 0.61, 0.58, 0.55, 0.51]);
   assert.deepEqual(TUNE.FUEL_PER_LEG, [1, 3, 3, 3, 3, 3, 3, 3]);
   assert.deepEqual(TUNE.LEG_BEATS, [96, 120, 128, 136, 144, 152, 160, 128]);
   assert.deepEqual(TUNE.RANKS, [15, 40, 65]);
@@ -119,7 +123,7 @@ test('the table\'s own relations hold', () => {
   for (let i = 1; i < 8; i++) {
     assert.ok(T.GAP_CAP[i] <= T.GAP_CAP[i - 1] && T.MASS_K[i] < T.MASS_K[i - 1], 'caps and masses fall toward home');
   }
-  assert.equal(T.GAP0, T.GAP_CAP[0]);
+  assert.ok(T.GAP0 <= T.GAP_CAP[0] && T.RIVAL_GAP0 <= T.GAP_CAP[0], 'a run starts at or under leg 1\'s cap');
   assert.equal(T.LEG_BEATS.reduce((a, b) => a + b, 0), 1064, '1,064 beats in all (11.1)');
   assert.equal(T.RARITY.length, 5);
   for (const row of T.RARITY) assert.equal(row.reduce((a, b) => a + b, 0), 100, `rarity row ${row}`);
@@ -159,16 +163,16 @@ test('URL names are unique once case and underscores are gone, and never clash w
 });
 
 test('overrides parse: numbers, any case, with or without underscores', () => {
-  const a = parseOverrides('?gapcap=6&HIT_ETA=0.7&hiteta=0.7&ttc_full=200&Sweep1=170');
+  const a = parseOverrides('?gapcap=6&HIT_ETA=0.9&hiteta=0.9&ttc_full=200&Sweep1=170');
   assert.deepEqual(a.tune.GAP_CAP, [6, 6, 6, 6, 6, 6, 6, 6]);
-  assert.equal(a.tune.HIT_ETA, 0.7);
+  assert.equal(a.tune.HIT_ETA, 0.9);
   assert.equal(a.tune.TTC_FULL, 200);
   assert.equal(a.tune.SWEEP1, 170);
   assert.equal(a.ranked, false);
   assert.deepEqual(Object.keys(a.set).sort(), ['GAP_CAP', 'HIT_ETA', 'SWEEP1', 'TTC_FULL']);
   assert.ok(Object.isFrozen(a.tune) && Object.isFrozen(a.tune.GAP_CAP));
-  assert.equal(TUNE.HIT_ETA, 0.5, 'the base table is untouched');
-  assert.deepEqual(TUNE.GAP_CAP, [8, 7, 6, 5, 5, 5, 4.5, 4.5]);
+  assert.equal(TUNE.HIT_ETA, 0.7, 'the base table is untouched');
+  assert.deepEqual(TUNE.GAP_CAP, [8, 3.5, 3, 3, 3, 3, 2.8, 2.8]);
 });
 
 test('overrides parse: per-leg lists, spans, rows and object fields; bad values are ignored', () => {

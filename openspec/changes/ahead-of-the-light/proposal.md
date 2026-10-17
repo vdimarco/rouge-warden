@@ -33,7 +33,7 @@ They chose to keep both games, so the racer is a separate game, and they chose a
   |---|---|
   | Outrun a threat | Every ship has its own light, gaining at (1 − β). It is a white ring outside the play ring that closes as you slow. Grazes push it back. A hit outside the glare can put you in the glare, never past it; one hit in the glare and it has you |
   | Hull and fuel | 3 hull pips with a recharging shield, and up to 4 fuel cells. A flick burns a cell for speed. Fuel and patches sit off the safe line. Docks repair and refuel for lead. Landing at Earth spends what you saved |
-  | Upgrades between legs | After legs 1 to 7, pick 1 of 3 cards (4 if you came first, 2 of 3 after a risky lane). Every card changes a rule. Pairs unlock fusions; 3 of a family unlock its legendary |
+  | Upgrades between legs | After legs 1 to 7, pick 1 of 3 cards (4 if you came first, 1 of 4 Rare or better after a risky lane). Every card changes a rule. Pairs unlock fusions; 3 of a family unlock its legendary |
   | Rival racers | HOUND, PIKE, REMORA and MOTH (three a run), drifters, a Nemesis, and a boss per act (WHALE, MAKO, MANTA) |
 
 - **The merge decisions** (spec section 2), in short: two meters (hull with a shield, and fuel); burn with a flick up;

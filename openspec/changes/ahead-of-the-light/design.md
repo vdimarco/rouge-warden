@@ -58,12 +58,12 @@ Keep these through every change to this game.
 | Item | Taken |
 |---|---|
 | 1 WELL has 4 cards | The spec settles it: HANDOFF waits for build 2 (12.1). WELL stays at 4 |
-| 2 RISK's pick 2 | Stays. If the bots show about 13 picks and a legendary in nearly every RISK run, switch to "pick 1 of 4, Rare or better" |
+| 2 RISK's pick 2 | Replaced: after a RISK lane you pick 1 of 4, every card Rare or better (chip tag PICK 1 OF 4 · RARE+). WP5's offer sim with the real `makeOffer` confirmed risk 7: with pick 2 a RISK-every-leg player made 13 picks, owned 40 to 46 % of the starters and got a legendary in 88 to 95 % of planned runs; with 1 of 4 Rare+ it is 7 picks, 22 % owned and a legendary in 45 to 65 % |
 | 3 Fuel at full tanks | A fuel pickup at full tanks takes 2 s off the shield's recharge |
 | 4 Fixed bosses per leg | Build 2 |
-| 5 Thin rival stakes | Place sets the offer's rarity row; WP5 sets the mapping and logs it in `contract.md` |
+| 5 Thin rival stakes | Place sets the offer's rarity row: 1st one row up, 2nd and 3rd as the leg says, 4th or lower one row down (it stacks with RISK and GHOST; first place still adds the 4th card) |
 | 6 The −2 s suspend penalty | A mid-leg snapshot saved on `pagehide` resumes with no penalty; −2 s stays for a deliberate quit |
-| 7 Push-back lost at the cap | The overflow speeds the shield's recharge; WP3 sets the rate and logs it |
+| 7 Push-back lost at the cap | The overflow speeds the shield's recharge: each second lost at the cap is a second off the recharge (`CAP_OVERFLOW_SHIELD` 1) |
 | 8 MAKO's ties | Ties go to the nearest ship, not to you |
 | 9 Scope | Kept: conditions second in the cut order, 22 starters and 3-piece pools never cut |
 | 10 Unverified values | The bots tune them |
@@ -75,14 +75,20 @@ Keep these through every change to this game.
   up, and it targets nobody.
 - **Time to catch** TTC = gap ÷ (1 − β) is the only number the player sees. It counts down one second per second at a
   steady speed, jumps up when you speed up and drops when you slow.
-- **Push-backs** (all × the leg's mass factor M: 1.00, 0.94, 0.88, 0.83, 0.78, 0.73, 0.69, 0.65): graze 0.12 s,
+- **Push-backs** (all × the leg's mass factor M: 1.00, 0.70, 0.66, 0.63, 0.61, 0.58, 0.55, 0.51): graze 0.12 s,
   hairline 0.30, rival graze 0.12, rail skim 0.20 a second, whip 0.4 × mass × (0.5 + d) (half on WIDE), mid-leg pair
-  0.5, takedown 0.3, gate thread 2.0, dock 1.5, fly past 0.5. They stop at the leg's cap (8, 7, 6, 5, 5, 5, 4.5, 4.5 s),
-  except a red-zone release (up to +1.5 s, fading at 0.1 s a second) and STILL LIGHT, which raises the cap by up to 2 s.
-  The physics is the Shapiro delay; its size is the game's.
-- **Hits.** A hit drops the gap 1.0 s and costs 0.5 η, so the light also gains faster. A hit outside the glare never
-  takes TTC under 2.9 s (`STUMBLE_FLOOR_TTC`): it puts you in the glare, never past it. Only a hit in the glare, a wreck,
-  or a gap that bleeds through the glare to 0 catches you.
+  0.5, takedown 0.3, gate thread 2.0, dock 1.5, fly past 0.5. They stop at the leg's cap (8, 3.5, 3, 3, 3, 3, 2.8,
+  2.8 s), except a red-zone release (up to +1.5 s, fading at 0.1 s a second) and STILL LIGHT, which raises the cap by up
+  to 2 s. The physics is the Shapiro delay; its size is the game's.
+- **The cap holds from each launch.** At a gate every ship's gap is cut to the next leg's cap: the light held back by
+  one leg's masses comes round them. Without it leg 1's 8 s carried over, and a mid player flew legs 2 and 3 with the
+  light 300 to 1,200 s away.
+- **The start.** Your run starts with a 7 s gap (TTC 29 s at 0.76c): the burst went off as you left. Rivals start
+  with 8 s.
+- **Hits.** A hit drops your gap 1.0 s and costs 0.7 η, so the light also gains faster; a named rival's hit costs it
+  0.4 s and 0.4 η (each ship is its own ship; drifters take yours). A hit outside the glare never takes TTC under 2.9 s
+  (`STUMBLE_FLOOR_TTC`): it puts you in the glare, never past it. Only a hit in the glare, a wreck, or a gap that bleeds
+  through the glare to 0 catches you. With caps near 3 s, two quick hits put a mid player in the glare.
 - **States.** Far (TTC 10 s or more), pressed (under 10 s, labelled), warned (under 6 s once, re-armed above 9 s, a
   heartbeat from 60 to 140 bpm), in the glare (under 3.0 s, left above 4.5 s), caught. Warnings key on TTC, never on the
   gap, so a frozen gap never blinks. Leaving the glare, or 4 s inside it, starts a breather (11.7).
@@ -90,11 +96,11 @@ Keep these through every change to this game.
   and 0.85 on desktop. On a phone: TTC 1 s gives 1.11 ×, 6 s 1.39 ×, 60 s 1.96 ×, 300 s or more 2.40 ×. Its colour is
   light from behind as you see it, 30,000 K × e^−(η − 1) through `blackbodyRGB`: blue-white when slow, dull red when
   fast, white in the glare.
-- **Why it still bites at speed** (critic calc): at a cap of 5 s, TTC is 50 s at 0.9c, 139 s at η 2.0 and 503 s at
-  HEADLIGHT. For a mid or expert who threads, the light is a threat after a dock launch or a hit cluster, not a constant
-  one. So the ring keeps moving at speed (`TTC_FULL` 300 s), and mid pressure comes from hit costs first: `HIT_ETA` 0.7,
-  then caps −1 s, then docks at η 0.6, then a 1.5 s stumble, in that order. Experts meet the light through REDSHIFT 3,
-  LATE LAUNCH.
+- **Why it still bites at speed**: at a cap of 3 s, TTC is 30 s at 0.9c, 83 s at η 2.0 and 300 s at HEADLIGHT. For a
+  mid or expert who threads, the light is a threat after a hit cluster, a dock launch or a slow leg start, not a
+  constant one: two quick hits at η 2 put them in the glare. So the ring keeps moving at speed (`TTC_FULL` 300 s), its
+  label shows at every launch, and a far light reads in minutes (LIGHT · 3 MIN). Experts meet it more through
+  REDSHIFT 3, LATE LAUNCH.
 
 ## One step
 
@@ -156,9 +162,60 @@ never takes the slot.
 `input(intent)`, `bot(name, opts)`, `rivalBot(id, overrides)`, `field(spec)`, `pick(i)`, `skip()`, `reroll()`,
 `banish(i)`, `lane(i)`, `buy(chip)`, `refund(chip)`, `leg()`, `course({ from, to })`, `gen(...)`, `validate(...)`,
 `chart()`, `goto({ leg, lane, seed, beat, build, ship })`, `save()`, `load(json)`, `clearSave()`, `meta()`,
-`setMeta(obj)`, `daily(date)`. URL options: `seed`, `daily`, `leg`, `lane`, `ship`, `piece` with `loop`, `toy`, `bot`,
+`setMeta(obj)`, `daily(date)`, and from the build: `toy(seed)`, `medal(type, years)`, `screen()`, `action(act, data)`,
+`pause()`, `resume()`, `realtime(on)` (off, only `advance` moves the race, so a browser check's timeline repeats) and
+`drawn()` (what the ring layer drew last frame: the burst ring, wings, rivals, labels, marks, bands, gate lines and the
+caption's keep-out boxes). `advance` skips a vista and the end hold, so a whole run can be driven through it. URL
+options: `seed`, `daily`, `leg`, `lane`, `ship`, `piece` with `loop`, `toy`, `bot`,
 `debug`, `perf`, `cam`, `button`, `scheme`, `burn`, `tier`, `barks` and every `TUNE` key; all but `seed` and `daily`
 make a run unranked.
+
+## Built differently from the spec
+
+The team's `contract.md` logs every change with its reason; these are the ones a player or a check can see.
+
+- **The caption keeps clear.** When the caption's words would sit on the next gate's THREAD or DOCK lines, an exit band
+  or LET GO, the line moves down (toward the centre, where the ring is wider) or up by 26 to 104 px, or its words shrink
+  to 0.8 or 0.66, by the least that clears it, and comes back once nothing is in the way. In portrait the ring at its
+  floor crosses the caption line, so THREAD OR DOCK met the THREAD label without it. The gate's labels stay 6 px inside
+  the screen.
+- **Earth's DOOR** is a cue at L − 4 (60°, labelled EARTH), not a gate item, so it is no hazard and pays no THREAD.
+- **RISK** is pick 1 of 4, every card Rare or better (above).
+- **Rivals drive by their own cost search** (72 bearings, then ±5° in 1°, rails judged where they will be), not through
+  the bots' `human()`, which read a rail at the ship's distance and wrecked most rivals. Same knobs, the same handling
+  rules and no hidden speed. A rival never turns toward a ship in contact range faster than 95° a second except its
+  flick, so every SLAM comes after a lean.
+- **Gears hold 0.04 η** under each nine before they drop, so drag at a nine does not flap the key every second.
+- **A hidden page** pauses the race; its sound is left to `/arcade/quiet.js`, which suspends it while hidden and resumes
+  it when shown, so the pause card keeps a low-passed drone. A pause on a visible page still suspends the sound.
+- **The result card's log line** names the pages left: LOG +5 PAGES · 1 PAGE TO REROLL +1.
+- **The cabinet line**: FIRST HOME · 14.2 YR once you have come home first (the record keeps the best years, not the
+  place), else HOME IN 14.2 YR, else BEST: and the furthest leg's name; the plain line is SKIM · BURN · WHIP.
+- **The key art** is cut from a 2 × portrait screenshot of leg 1 at 0.9931c with PIKE 0.1 s in your wake, staged with
+  `?gap0=0.3&gapcap=0.3&bleed=0` so the light's ring sits at 1.6 × the play ring (LIGHT · 44 S); at a real HEADLIGHT
+  gap the ring sits off the bottom edge.
+- **Tuning.** WP9 tuned the bots and the light's first levers: `HIT_ETA` 0.5 → 0.7, the masses of legs 2 to 8
+  (0.94 to 0.65 → 0.70 to 0.51) and RISK as pick 1 of 4; its stages are in the team's `race/tuning.md`. The playtest
+  pass (`race/playtest.md`) then found the light absent for anyone past a novice and retuned with the bots:
+
+  | Mid bot, 64 seeds | WP9 | Playtest pass |
+  |---|---|---|
+  | Home | 38 % | 33 % |
+  | How failed runs end | 27 wrecked, 13 caught | 18 wrecked, 23 caught, 2 on the doorstep |
+  | Legs with TTC under 10 s | 22 % | 34 % |
+  | Runs that meet the glare | 34 % | 64 % |
+  | Median TTC in legs 2 and 3 (16 and 32 seeds) | 592 and 1,205 s | 222 and 299 s |
+  | Time with the gap at its cap, legs 2 to 7 | 44 to 94 % | 40 to 59 % |
+  | Landing caught on the doorstep | 0 % | 7 % of landings |
+  | Regulars the light takes a run | 2.5 | 2.1 |
+  | Expert home | 77 % | 77 % |
+
+  The changes: each leg's cap holds from its launch; caps 8, 3.5, 3, 3, 3, 3, 2.8, 2.8 s (were 8, 5, 4, 3.4, 3.4,
+  3.4, 3, 3); your start 7 s (rivals 8 s); the shield back 5 s after a hit (LANTERN; NEEDLE 4, TUG 7, GHOST 4); dock
+  prices 0.6, 0.4 and 0.8 s with a 4 s floor; a named rival's hit costs it 0.4 η and 0.4 s; a boss launches at least
+  4.5 s ahead of its light; the WHALE starts 2.5 s ahead; MANTA has 3 hull. Known gaps stay as todos in `sim.test.mjs`
+  with floors (raised where the pass improved them: the mid's TTC under 10 s to 25 %, rivals eaten to 2.6, REDSHIFT
+  3's light to 15 %).
 
 ## Cuts
 
@@ -200,9 +257,13 @@ AGENTS.md asks for the source of every rendering technique.
   minutes) and `toy`. `node qa/ahead-of-the-light/bot.mjs mid 200` prints home rate, catches by leg, causes, years,
   top gear, glare share, rivals eaten and hits by piece id.
 - **Browser checks** with the server on 8765, Playwright from `qa/browser/node_modules` and SwiftShader, at 390 × 844
-  touch, 844 × 390 touch and 1440 × 900: `smoke.e2e`, `input.e2e` (real CDP touch), `layout.e2e` (30 moments per size
-  into a contact sheet, reviewed by eye), `perf.e2e` (4 × CPU throttle; SwiftShader numbers count only against each
-  other) and `feedback.e2e`, plus `qa/arcade/machines.mjs` and `qa/arcade/quiet.mjs`.
+  touch, 844 × 390 touch and 1440 × 900: `smoke.e2e`, `input.e2e` (real CDP touch for drags, re-grips and two
+  fingers; flicks and latch drags dispatched in the page with set gaps, since CDP touch moves arrive 80 to 100 ms apart
+  under SwiftShader), `layout.e2e` (the 30 moments of the spec, with the light's four states, every leg's signature,
+  every gate, MANTA lit and shadowed and the full wings shot apart: about 48 shots per size into a contact sheet, reviewed by eye,
+  and frame-by-frame rules over four mid-bot legs), `perf.e2e` (4 × CPU throttle; SwiftShader numbers count only
+  against each other) and `feedback.e2e`, plus `qa/arcade/machines.mjs` and `qa/arcade/quiet.mjs`. The shared
+  helpers live in `qa/ahead-of-the-light/e2e-lib.mjs`.
 - **The user's playtest** on real phones covers what the sandbox cannot: touch latency of the flick and the press,
   phone audio and the iPhone silent switch, haptics, real frame rates, whether the whip's spinning world bothers
   anyone, and whether the first 30 seconds are exciting. The build report says plainly which of these did not run.

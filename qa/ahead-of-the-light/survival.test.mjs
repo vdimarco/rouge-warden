@@ -213,26 +213,27 @@ test('push-back the cap throws away speeds the shield back (lead item 7); a cell
   assert.equal(you.hull, 3, 'never past hullMax');
 });
 
-test('dock prices take exactly their gap, add price × 0.25 years, refund exactly, and never pass the 6 s floor', () => {
+test('dock prices take exactly their gap, add price × 0.25 years, refund exactly, and never pass the TTC floor', () => {
   const T = TUNE;
   const run = createRun({ seed: 'DOCK', tune: T });
   run.build = [{ id: 'hair-trigger', r: 0 }];
-  Object.assign(run.you, { hull: 1, fuel: 1, gap: 4, years: 10, launchEta: T.LAUNCH_DOCK });
+  Object.assign(run.you, { hull: 1, fuel: 1, gap: 2, years: 10, launchEta: T.LAUNCH_DOCK });
   run.dock = { free: 1, bought: [] };
   const k = 1 / (1 - Math.tanh(T.LAUNCH_DOCK));
   const chips = dockPrices(run, T);
   assert.deepEqual(chips.map((c) => c.id), ['free', 'repair', 'refuel', 'tune']);
   const rep = chips.find((c) => c.id === 'repair');
   assert.equal(rep.price, T.REPAIR_S);
-  assert.equal(rep.text, '−4.5 S');
-  assert.equal(chips.find((c) => c.id === 'refuel').text, '−3 S');
-  assert.equal(chips.find((c) => c.id === 'tune').text, '−6 S');
+  // each chip shows its price as launch TTC at η 0.8 (× 2.98): 0.6, 0.4 and 0.8 s of gap
+  assert.equal(rep.text, '−1.8 S');
+  assert.equal(chips.find((c) => c.id === 'refuel').text, '−1.2 S');
+  assert.equal(chips.find((c) => c.id === 'tune').text, '−2.4 S');
   const before = JSON.stringify(run);
   assert.ok(buy(run, 'repair', T));
-  assert.ok(near(run.you.gap, 4 - T.REPAIR_S) && near(run.you.years, 10 + T.REPAIR_S * T.YEARS_PER_S));
+  assert.ok(near(run.you.gap, 2 - T.REPAIR_S) && near(run.you.years, 10 + T.REPAIR_S * T.YEARS_PER_S));
   assert.equal(run.you.hull, 2);
   assert.equal(buy(run, 'repair', T), false, 'each chip once a dock');
-  // 2.5 s of gap left: TTC 7.4; REFUEL (1.0 s) would leave 4.5 s: TOO CLOSE
+  // 1.4 s of gap left: TTC 4.2; REFUEL (0.4 s) would leave 3.0 s, under the 4 s floor: TOO CLOSE
   const refuel = dockPrices(run, T).find((c) => c.id === 'refuel');
   assert.equal(refuel.ok, false);
   assert.equal(refuel.why, 'TOO CLOSE');

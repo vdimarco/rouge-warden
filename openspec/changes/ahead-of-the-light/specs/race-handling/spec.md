@@ -188,7 +188,7 @@ Every event that has a sound, an effect or a haptic SHALL start it on the frame 
 - **CHECK** the user's playtest
 
 ### Requirement: The HUD and captions per layout
-During a leg the HUD SHALL show only speed (top left) and place (top right, with the next named ship and its gap under it, left of the pause button). One caption at most SHALL show, in bold capitals with the current word orange, by the priority listed in `design.md`. Captions SHALL sit at y 248 in portrait (22 to 28 px), y 89 in landscape (22 px) and y 224 on desktop (28 to 34 px), never over the next gate's lines or an exit band. Every tap target SHALL be 44 px or more.
+During a leg the HUD SHALL show only speed (top left) and place (top right, with the next named ship and its gap under it, left of the pause button). One caption at most SHALL show, in bold capitals with the current word orange, by the priority listed in `design.md`. Captions SHALL sit at y 248 in portrait (22 to 28 px), y 89 in landscape (22 px) and y 224 on desktop (28 to 34 px). Every tap target SHALL be 44 px or more.
 
 #### Scenario: Portrait
 - **WHEN** a leg is in flight at 390 × 844
@@ -204,6 +204,14 @@ During a leg the HUD SHALL show only speed (top left) and place (top right, with
 - **WHEN** SHIELD DOWN is due 0.3 s after THE LIGHT TOOK HOUND starts
 - **THEN** THE LIGHT TOOK HOUND stays for at least 0.6 s, and a bark due then is dropped if it cannot show within 1.0 s
 - **CHECK** `feedback.e2e.mjs`
+
+### Requirement: Captions keep clear of the gate and the bands
+A caption SHALL never sit over the next gate's lines or labels, an exit band or LET GO. While one is in the way the caption SHALL move by the least step that clears it (down toward the centre first, where the ring is wider) or shrink its words, and come back once the way is clear.
+
+#### Scenario: THREAD OR DOCK in portrait
+- **WHEN** the gate call shows THREAD OR DOCK at 390 × 844 with the ring at its floor and the THREAD label at 10 o'clock
+- **THEN** the caption moves down or shrinks until no word touches the THREAD or DOCK lines or labels, in every frame of the mid bot's legs
+- **CHECK** `layout.e2e.mjs`
 
 ### Requirement: Pause and resume keep a whip
 The input state SHALL freeze with the game. Pause, blur and a hidden page SHALL keep a held whip held, and play SHALL resume with HOLD TO GO ON and then 0.6 s of slow motion. Touches in the top 64 px SHALL never count as play. Esc or P SHALL pause on desktop, M SHALL mute and pad Start SHALL pause. The state SHALL be drawn between 120 Hz steps so faster screens do not judder.

@@ -119,8 +119,9 @@ test('createRace and createRun build the 18.2 shapes', () => {
   assert.equal(you.id, 'you');
   assert.equal(you.kind, 'you');
   assert.equal(you.eta, 1.0);
-  assert.equal(you.gap, 8);
-  assert.ok(Math.abs(you.ttc - 33.6) < 0.05, `TTC ${you.ttc}`);
+  assert.equal(you.gap, TUNE.GAP0);
+  const ttc0 = TUNE.GAP0 / (1 - Math.tanh(1));
+  assert.ok(Math.abs(you.ttc - ttc0) < 0.05, `TTC ${you.ttc}`);
   assert.equal(race.leg.type, 'web');
   assert.equal(race.leg.beats, 96);
   assert.equal(race.tune, TUNE, 'no cards: the tuning rides along unpatched');

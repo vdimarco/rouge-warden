@@ -200,6 +200,15 @@ export function layoutFaults(page, inset = { t: 0, r: 0, b: 0, l: 0 }) {
     }
     const cap = document.getElementById('captions');
     if (cap && vis(cap) && cap.textContent.trim() && outside(capBox(cap))) out.outside.push(desc(cap, capBox(cap)));
+    // no two tap targets (buttons, links, lane chips, cards) cover each other, unless one holds the other
+    const taps = [...document.querySelectorAll('button, a, .lane, .card')]
+      .filter((el) => vis(el) && !el.matches('section[data-act]') && !clipped(el));
+    for (let i = 0; i < taps.length; i++) for (let j = i + 1; j < taps.length; j++) {
+      const a = taps[i], b = taps[j];
+      if (a.contains(b) || b.contains(a)) continue;
+      const A = a.getBoundingClientRect(), B = b.getBoundingClientRect();
+      if (A.left < B.right - 2 && B.left < A.right - 2 && A.top < B.bottom - 2 && B.top < A.bottom - 2) out.overlap.push(`${desc(a, A)} × ${desc(b, B)}`);
+    }
     return out;
   }, inset);
 }

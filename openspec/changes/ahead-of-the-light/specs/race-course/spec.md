@@ -54,6 +54,14 @@ On a player's first runs, leg 1 SHALL teach one thing at a time: steer and skim 
 - **THEN** they say it is exciting, not "too simple"
 - **CHECK** the user's playtest
 
+### Requirement: The burn lesson
+On a first run the burn lesson SHALL also fire in leg 1 as soon as the light comes inside 12 s with a whole cell to burn. It SHALL outrank every other teaching line, so the whip's lines never drop it, and a burn of your own before it SHALL retire it.
+
+#### Scenario: The burn lesson is never dropped
+- **WHEN** the burn lesson's cue comes at the same moment as PRESS AS IT PASSES, HOLD and TUCK IN BEHIND
+- **THEN** THE LIGHT IS GAINING · FLICK UP TO BURN shows first, and the whip's lines follow
+- **CHECK** `smoke.e2e.mjs`, and the caption timeline of a real-time first run at 390 × 844 (`race/playtest.md`)
+
 ### Requirement: Lanes on the chart
 The chart SHALL offer the next leg's lanes: one on leg 1; a FAMILY and a RISK lane on legs 2, 3, 5, 6 and 7; FAMILY, RISK and THE LOCAL VOID on leg 4; JUPITER (the long way) and THE ASTEROID BELT (the short way, × 0.75) on leg 8. Each lane SHALL carry its named signature. FAMILY lanes SHALL cover all four families across legs 2 to 7, never the same family on two legs in a row, and edit only the build. A RISK lane SHALL add 16 beats and density × 1.25.
 
@@ -74,7 +82,7 @@ The chart SHALL offer the next leg's lanes: one on leg 1; a FAMILY and a RISK la
 
 #### Scenario: A RISK chip says what it pays
 - **WHEN** the chart shows leg 2
-- **THEN** COMA'S HEART shows a cracked ring and "PICK 2 · RARE+", and THE GREAT WALL its family glyph and "SKIM × 2" (or its rolled family)
+- **THEN** COMA'S HEART shows a cracked ring and "PICK 1 OF 4 · RARE+", and THE GREAT WALL its family glyph and "SKIM × 2" (or its rolled family), each name inside its chip
 - **CHECK** `layout.e2e.mjs`
 
 ### Requirement: THE LOCAL VOID
@@ -179,7 +187,7 @@ On a `breather` event the director SHALL drop every optional item more than 1.3 
 Each leg SHALL show its own backdrop in the video's look, built in the break's idle slices with the last one disposed: the cosmic web and Coma's giants; Virgo with M87's jet as a beamed line and no counter-jet; Andromeda and Triangulum as discs; the Milky Way's disc with dust lanes; Orion's named stars and haze; the Sun, the planets, Saturn's rings with their real gaps, the Moon and Earth.
 
 #### Scenario: The contact sheet
-- **WHEN** the layout check shoots 30 moments at each of 390 × 844, 844 × 390 and 1440 × 900, including each gate, each signature, the dust, Saturn and the landing
+- **WHEN** the layout check shoots its moments at each of 390 × 844, 844 × 390 and 1440 × 900, including every gate, every leg's signature, the dust, Saturn and the landing
 - **THEN** each backdrop reads as its place in black space with white points and thin labelled rings, as reviewed by eye
 - **CHECK** `layout.e2e.mjs`
 

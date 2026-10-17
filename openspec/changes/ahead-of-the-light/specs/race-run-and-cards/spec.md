@@ -24,7 +24,7 @@ A run SHALL fly 8 legs home along the video's route, about 10 minutes for a mid 
 - **CHECK** `input.e2e.mjs`
 
 ### Requirement: Pick 1 card of 3
-The offer SHALL hold 3 cards: slot 1 from a family you own and slot 2 from one you do not (both from the lane's family after a FAMILY lane), and slot 3 from the whole pool. First of the named ships through the gate, or a beaten boss, SHALL add a 4th card. After a RISK lane you SHALL pick 2, rolled one rarity row up with at least one Rare or better. An owned card SHALL never show again. SKIP SHALL give +1 fuel, or +1 reroll at full tanks.
+The offer SHALL hold 3 cards: slot 1 from a family you own and slot 2 from one you do not (both from the lane's family after a FAMILY lane), and slot 3 from the whole pool. First of the named ships through the gate, or a beaten boss, SHALL add a 4th card. An owned card SHALL never show again. SKIP SHALL give +1 fuel, or +1 reroll at full tanks.
 
 #### Scenario: The first offer ever
 - **WHEN** a player finishes leg 1 for the first time
@@ -36,14 +36,22 @@ The offer SHALL hold 3 cards: slot 1 from a family you own and slot 2 from one y
 - **THEN** the offer shows 4 cards headed "FIRST TO VIRGO", 110 px tall each at 390 × 844
 - **CHECK** `run.test.mjs` and `layout.e2e.mjs`
 
-#### Scenario: A RISK lane
-- **WHEN** a player finishes a RISK lane
-- **THEN** they pick 2 of 3, the cards roll from the next rarity row, and at least one is Rare or better
-- **CHECK** `run.test.mjs`
-
 #### Scenario: Teaching the families
 - **WHEN** a player on one of their first 3 runs finishes leg 1
 - **THEN** no RIVAL card is offered until after leg 2, and from run 4 every family can appear from break 1
+- **CHECK** `run.test.mjs`
+
+### Requirement: RISK and place change the offer
+After a RISK lane you SHALL pick 1 of 4, every card Rare or better, rolled one rarity row up. Your place among you and the named ships through the gate line SHALL move the rarity row: 1st one row up, 2nd and 3rd as the leg says, 4th or lower one row down.
+
+#### Scenario: A RISK lane
+- **WHEN** a player finishes a RISK lane
+- **THEN** they pick 1 of 4, every card is Rare or better, and the offer is headed PICK 1 OF 4 · RARE+
+- **CHECK** `run.test.mjs` and `layout.e2e.mjs`
+
+#### Scenario: Place sets the rarity
+- **WHEN** a player crosses a gate line 1st, and on another seed 5th
+- **THEN** the first offer rolls from one rarity row up and the second from one row down
 - **CHECK** `run.test.mjs`
 
 ### Requirement: Rarity and pity
@@ -202,7 +210,7 @@ The run SHALL save at the start of every break under `ahead-of-the-light.run.v1`
 - **CHECK** `save.test.mjs` and `smoke.e2e.mjs`
 
 ### Requirement: The ship's log and unlocks
-The title SHALL open a log of 84 pages in four tabs: PLACES (24: 8 gates and 16 lanes), CARDS (36), RIVALS (14) and ENDINGS (10). A page SHALL count once. Pages SHALL unlock REROLL +1 at 6, BANISH at 15, LUCKY STAR (1 offer in 5 shows a 4th card) at 25, REROLL +1 at 40, BANISH +1 at 55 and a gold frame on the cabinet at 84. The result card SHALL show the next unlock ("LOG +7 PAGES · 2 TO BANISH").
+The title SHALL open a log of 84 pages in four tabs: PLACES (24: 8 gates and 16 lanes), CARDS (36), RIVALS (14) and ENDINGS (10). A page SHALL count once. Pages SHALL unlock REROLL +1 at 6, BANISH at 15, LUCKY STAR (1 offer in 5 shows a 4th card) at 25, REROLL +1 at 40, BANISH +1 at 55 and a gold frame on the cabinet at 84. The result card SHALL show what opened or the next unlock ("LOG +7 PAGES · 2 PAGES TO BANISH").
 
 #### Scenario: Unlocks at their thresholds
 - **WHEN** a player's log reaches 6, then 15 pages
