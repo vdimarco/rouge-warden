@@ -261,6 +261,7 @@ export function createHero(scene, renderer) {
     roll: -1, rollDur: 0.62, atk: null, atkT: 0, hitT: 9, hitX: 0, hitZ: 0, carry: 0, carryOn: false, hidden: false,
     reach: [0, 0], yank: [0, 0], prevYank: [0, 0], prevGround: true, prevVy: 0, cling: 0, prevWall: false,
     tiltQ: new THREE.Quaternion(), headYaw: 0, headPitch: 0,
+    twos: 0, stepAcc: 0, posed: false, poseNow: false, // the pose rate (0 = every frame), the time since the last pose, a pose exists to hold
   };
   const mesh = { body: null, hull: null };
   // the motion capture: the loops, each limb's fix for a rig whose rest limbs point elsewhere (the built-in figure), the blend
@@ -632,6 +633,24 @@ export function createHero(scene, renderer) {
     dt = clamp(dt || 0, 0, 0.1);
     chestH = P.chest || 1.25;
     const pos = P.pos, vel = P.vel;
+    // On twos (the film's 12 poses a second): between poses the body slides with the player, but the pose and the facing hold.
+    // The hands, the head and the feet move with the body, so the ropes still start at the hands. A wall climb stays on ones (its
+    // hands and feet stay on holds in the world), and a new yank poses at once.
+    const yanked = P.yankCool && (P.yankCool[0] > S.prevYank[0] + 0.05 || P.yankCool[1] > S.prevYank[1] + 0.05);
+    if (S.twos > 0 && rig && visible && S.posed) {
+      S.stepAcc += dt;
+      V.c.set(pos.x + CL.off.x, pos.y + CL.off.y, pos.z + CL.off.z).sub(root.position);
+      // (a jump of over 2 m in a frame is a teleport or a respawn: pose there at once)
+      if (S.stepAcc < 1 / S.twos - 1e-4 && !P.wall && !S.prevWall && S.cling < 0.01 && !CL.on && !(CL.mantle > 0) && !yanked && !S.poseNow && V.c.lengthSq() < 4) {
+        root.position.add(V.c);
+        root.updateMatrixWorld(true);
+        for (let sd = 0; sd < 2; sd++) { handPos[sd].add(V.c); footPos[sd].add(V.c); CL.palm[sd].add(V.c); }
+        headPos.add(V.c);
+        return;
+      }
+      if (V.c.lengthSq() < 4) dt = Math.min(S.stepAcc, 0.1); // (after a teleport, the time before it does not count)
+    }
+    S.stepAcc = 0; S.poseNow = false;
     handPos[0].set(pos.x - 0.3, pos.y + chestH, pos.z); handPos[1].set(pos.x + 0.3, pos.y + chestH, pos.z); // until the model shows
     headPos.set(pos.x, pos.y + 1.65, pos.z);
     if (!rig || !visible) return;
@@ -1032,26 +1051,29 @@ export function createHero(scene, renderer) {
     const yk = Math.max(S.yank[0], S.yank[1]);
     H.pose = S.roll >= 0 ? (S.flip ? "flip" : "roll") : S.atk ? S.atk.kind : S.carry > 0.5 && ground ? "carry" : yk > 0.35 ? "yank" : S.crouch > 0.15 ? "land" : cling ? "cling" : ground ? (wR > 0.5 ? "run" : "idle") : nAtt ? "swing" : S.dive > 0.5 ? (S.glideOn ? "glide" : "dive") : vel.y > 1 ? "jump" : "fall";
     H.yaw = S.yaw;
+    S.posed = true;
   };
+  // the pose rate: 12 holds each pose for 1/12 s (on twos, as the film), 0 poses every frame
+  H.setTwos = (fps) => { S.twos = fps > 0 ? fps : 0; if (!S.twos) S.stepAcc = 0; };
 
   H.hand = (side) => handPos[side === 1 || side === "right" ? 1 : 0];
   H.setVisible = (b) => { visible = !!b; applyVisible(); };
   H.setOpacity = (a) => { opacity = clamp(a, 0, 1); OPA.value = opacity; applyVisible(); };
   H.setYaw = (y) => { S.yaw = y; S.inited = true; };
   // the landing roll (main calls it on the physics roll event), a punch or kick, a blow taken from (dx, dz), carrying someone
-  H.roll = (dur) => { S.roll = 0; S.rollDur = dur || S.rollDur; S.land = 0; S.crouch = 0; S.flip = false; };
+  H.roll = (dur) => { S.poseNow = true; S.roll = 0; S.rollDur = dur || S.rollDur; S.land = 0; S.crouch = 0; S.flip = false; };
   // a tucked flip in the air (a release boost): the same turn as the roll, with no ground under it
   H.flip = (dur) => { H.roll(dur); S.flip = true; };
   // the glide (main passes the physics' gliding flag every frame)
   H.setGlide = (on) => { S.glideOn = !!on; };
-  H.attack = (kind, side) => { S.atk = { kind, side: side ? 1 : 0, dur: kind === "kick" ? 0.42 : 0.26 }; S.atkT = 0; };
-  H.hit = (dx, dz) => { S.hitT = 0; S.hitX = dx; S.hitZ = dz; };
+  H.attack = (kind, side) => { S.poseNow = true; S.atk = { kind, side: side ? 1 : 0, dur: kind === "kick" ? 0.42 : 0.26 }; S.atkT = 0; };
+  H.hit = (dx, dz) => { S.poseNow = true; S.hitT = 0; S.hitX = dx; S.hitZ = dz; };
   H.setCarry = (on) => { S.carryOn = !!on; };
   H.diving = false;
   // in a car: no hero to draw (the pose keeps running underneath)
   H.setHidden = (b) => { S.hidden = !!b; applyVisible(); };
   H.info = () => ({
-    model: H.model, visible: root.visible, opacity, pose: H.pose, yaw: S.yaw, tris: H.tris,
+    model: H.model, visible: root.visible, opacity, pose: H.pose, yaw: S.yaw, tris: H.tris, twos: S.twos,
     weights: { run: S.run, air: S.air, swing: S.swing, dive: S.dive, roll: S.roll >= 0 ? S.roll / S.rollDur : -1, carry: S.carry, crouch: S.crouch, cling: S.cling, reach: S.reach.slice(), yank: S.yank.slice() },
     // the motion capture: how much it shows, the loop weights (idle, walk, jog, run) and the moving loops' phase
     clips: { loaded: !!MC.data, on: MC.on, w: MC.w.slice(), phase: MC.phase },
