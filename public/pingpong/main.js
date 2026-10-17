@@ -1,8 +1,8 @@
 // Boots the table, the gate, motion, swipe, mouse and the test hooks.
 
 import { desktopCourt, unlockCourt } from './gate.js';
-import { assistX, batFromTilt, createSwingDetector, depthWithBounce, driftNeutral, flickFromSamples, mapAxes, predictBounceZ, POINTER, springStep, swipeToSwing, swingPush, tiltFromCanvas } from './motion.js';
-import { BAT, RULES, planFrame, readOptions } from './rules.js';
+import { aimFromCanvas, assistX, batFromTilt, createSwingDetector, depthWithBounce, driftNeutral, flickFromSamples, leanFromCanvas, mapAxes, predictBounceZ, sideTarget, springStep, swipeToSwing, swingPush } from './motion.js';
+import { RULES, planFrame, readOptions } from './rules.js';
 import { createMatch } from './sim.js';
 import { createSoundKit } from './audio.js';
 import { createView } from './render.js';
@@ -14,12 +14,12 @@ const canvas = document.getElementById('table');
 const view = createView(canvas);
 const pose = { tiltX: 0, tiltY: 0, roll: 0, swingAt: 0, swingDir: 'forehand', push: 0, gyro: 0 };
 let inputMode = opts.input === 'touch' || opts.input === 'swing' ? 'swipe' : 'motion';
-let pointerAim = null;
+let aimU = 0.5;
+let aimV = 0.5;
 let flickSamples = [];
 let flickCool = -Infinity;
-let press = null;
-let flung = false;
-const held = new Set();
+let sideSpring = { x: 0, v: 0 };
+let leanSpring = { x: 0, v: 0 };
 let neutral = { beta: 0, gamma: 0 };
 let filtered = { tiltX: 0, tiltY: 0 };
 let springX = { x: 0, v: 0 };
@@ -46,7 +46,7 @@ function armPointerCourt() {
   const hint = document.getElementById('desk-hint');
   if (hint) hint.hidden = false;
   document.querySelectorAll('[data-phone]').forEach((el) => { el.hidden = true; });
-  if (canvas) canvas.setAttribute('aria-label', 'Table tennis. The mouse is the bat.');
+  if (canvas) canvas.setAttribute('aria-label', 'Table tennis. The mouse aims the shot.');
 }
 
 if (opts.input === 'pointer' || (inputMode === 'motion' && desktopCourt(window))) armPointerCourt();
@@ -111,23 +111,15 @@ function followAngle(targetX, targetY, dt) {
   filtered.tiltY = springY.x;
 }
 
-function aimFromKeys(base) {
-  const aim = base || { tiltX: 0, tiltY: 0 };
-  let tiltX = aim.tiltX;
-  let tiltY = aim.tiltY;
-  const left = held.has('left');
-  const right = held.has('right');
-  const up = held.has('up');
-  const down = held.has('down');
-  if (left !== right) tiltX = (right ? 1 : -1) * BAT.fullSide;
-  if (up !== down) tiltY = (up ? 1 : -1) * BAT.fullLean;
-  return { tiltX, tiltY };
-}
-
 function followPointer(dt) {
-  const aim = aimFromKeys(pointerAim);
-  followAngle(aim.tiltX, aim.tiltY, dt);
-  commitPose(false);
+  const live = match.state();
+  sideSpring = springStep(sideSpring, sideTarget(live.phase, live.ball.x), dt);
+  leanSpring = springStep(leanSpring, leanFromCanvas(aimV), dt);
+  const depth = batFromTilt(0, leanSpring.x).depth;
+  pose.tiltX = aimFromCanvas(aimU);
+  pose.tiltY = 0;
+  pose.roll = 0;
+  match.setBat({ x: sideSpring.x, depth, roll: 0 });
 }
 
 function followSwipe() {
@@ -210,6 +202,7 @@ function unlockFromTap() {
 
 function beginPlay() {
   if (gate) gate.hidden = true;
+  if (inputMode === 'pointer' && canvas) canvas.style.cursor = 'none';
   match.start();
   if (inputMode === 'motion') attachSensors();
 }
@@ -339,7 +332,12 @@ function attachSensors() {
   });
 }
 
-if (gateBtn) gateBtn.addEventListener('click', onGateTap);
+if (gateBtn) {
+  gateBtn.addEventListener('click', (e) => {
+    onGateTap();
+    if (inputMode === 'pointer' && !gateOpen()) placeAim(e);
+  });
+}
 
 const again = document.getElementById('again');
 if (again) {
@@ -367,12 +365,34 @@ function onHud(e) {
   return !!(target && target.closest && target.closest('button, a'));
 }
 
-function canvasPoint(e) {
+function pointerSample(e) {
   const box = canvas.getBoundingClientRect();
-  if (e.clientX < box.left || e.clientX > box.right || e.clientY < box.top || e.clientY > box.bottom) return null;
-  const u = box.width > 0 ? (e.clientX - box.left) / box.width : 0.5;
-  const v = box.height > 0 ? (e.clientY - box.top) / box.height : 0.5;
-  return { u, v, x: e.clientX, y: e.clientY };
+  const width = box.width > 0 ? box.width : Math.max(1, window.innerWidth || 1);
+  const height = box.height;
+  const stamp = Number(e.timeStamp);
+  const t = Number.isFinite(stamp) && stamp > 0 ? stamp / 1000 : performance.now() / 1000;
+  const u = (e.clientX - box.left) / width;
+  const v = height > 0 ? (e.clientY - box.top) / height : 0.5;
+  const inside = e.clientX >= box.left && e.clientX <= box.right && e.clientY >= box.top && e.clientY <= box.bottom;
+  return {
+    u: Math.max(0, Math.min(1, u)),
+    v: Math.max(0, Math.min(1, v)),
+    x: e.clientX,
+    y: e.clientY,
+    t,
+    px: e.clientX - box.left,
+    py: e.clientY - box.top,
+    width,
+    inside,
+  };
+}
+
+function placeAim(e) {
+  const point = pointerSample(e);
+  aimU = point.u;
+  aimV = point.v;
+  pose.tiltX = aimFromCanvas(aimU);
+  pose.dot = point.inside ? { x: point.px, y: point.py } : null;
 }
 
 function firePointerSwing(swing) {
@@ -393,102 +413,56 @@ function firePointerSwing(swing) {
   }));
 }
 
+function coalescedEvents(e) {
+  try {
+    const list = typeof e.getCoalescedEvents === 'function' ? e.getCoalescedEvents() : null;
+    if (list && list.length) return list;
+  } catch (err) {
+    // A synthetic event may not list coalesced samples.
+  }
+  return [e];
+}
+
 function notePointer(e) {
   if (gateOpen() || onHud(e)) return;
-  const point = canvasPoint(e);
-  if (!point) return;
-  pointerAim = tiltFromCanvas(point.u, point.v);
-  const t = performance.now() / 1000;
-  flickSamples.push({ x: point.x, y: point.y, t });
+  const events = coalescedEvents(e);
+  let last = null;
+  for (let i = 0; i < events.length; i++) {
+    const point = pointerSample(events[i]);
+    last = point;
+    flickSamples.push({ x: point.x, y: point.y, t: point.t });
+  }
+  if (!last) return;
+  aimU = last.u;
+  aimV = last.v;
+  pose.tiltX = aimFromCanvas(aimU);
+  pose.dot = last.inside ? { x: last.px, y: last.py } : null;
+  const t = last.t;
   const keep = t - 0.09;
   while (flickSamples.length && flickSamples[0].t < keep) flickSamples.shift();
   if (t < flickCool) return;
-  const flick = flickFromSamples(flickSamples, t);
+  const flick = flickFromSamples(flickSamples, t, last.width);
   if (!flick) return;
   flickCool = t + RULES.cooldown;
-  flung = true;
   firePointerSwing(flick);
 }
 
-function pointerDown(e) {
-  if (gateOpen() || onHud(e)) return;
-  const point = canvasPoint(e);
-  if (!point) return;
-  press = { x: point.x, y: point.y };
-  flung = false;
-  notePointer(e);
+function realMouseMove(e) {
+  if (!e || e.isTrusted === false) return false;
+  if (e.pointerType && e.pointerType !== 'mouse') return false;
+  const caps = e.sourceCapabilities;
+  if (caps && caps.firesTouchEvents) return false;
+  return true;
 }
 
-function pointerUp(e) {
-  if (!press) return;
-  const point = canvasPoint(e);
-  const x = point ? point.x : press.x;
-  const y = point ? point.y : press.y;
-  const dist = Math.hypot(x - press.x, y - press.y);
-  const wasFlung = flung;
-  press = null;
-  if (wasFlung || dist > POINTER.clickPx || gateOpen() || onHud(e)) return;
-  firePointerSwing({
-    degPerSec: POINTER.medium,
-    dir: 'forehand',
-    rollDegPerSec: 0,
-    at: performance.now() / 1000,
-  });
-}
-
-function editableTarget(target) {
-  if (!target || target.nodeType !== 1) return false;
-  const tag = target.tagName;
-  return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || target.isContentEditable;
-}
-
-function moveCode(code) {
-  if (code === 'ArrowLeft' || code === 'KeyA') return 'left';
-  if (code === 'ArrowRight' || code === 'KeyD') return 'right';
-  if (code === 'ArrowUp' || code === 'KeyW') return 'up';
-  if (code === 'ArrowDown' || code === 'KeyS') return 'down';
-  return '';
-}
-
+window.addEventListener('mousemove', (e) => {
+  if (inputMode !== 'motion' || !gateOpen() || !realMouseMove(e)) return;
+  armPointerCourt();
+});
 window.addEventListener('pointermove', (e) => {
   if (inputMode !== 'pointer') return;
   notePointer(e);
 });
-window.addEventListener('pointerdown', (e) => {
-  if (inputMode !== 'pointer') return;
-  pointerDown(e);
-});
-window.addEventListener('pointerup', (e) => {
-  if (inputMode !== 'pointer') return;
-  pointerUp(e);
-});
-window.addEventListener('pointercancel', () => { press = null; });
-window.addEventListener('keydown', (e) => {
-  if (inputMode !== 'pointer') return;
-  if (editableTarget(e.target)) return;
-  const move = moveCode(e.code);
-  if (move) {
-    e.preventDefault();
-    if (!gateOpen()) held.add(move);
-    return;
-  }
-  if (e.code === 'Space') {
-    e.preventDefault();
-    if (!e.repeat && !gateOpen()) {
-      firePointerSwing({
-        degPerSec: POINTER.medium,
-        dir: 'forehand',
-        rollDegPerSec: 0,
-        at: performance.now() / 1000,
-      });
-    }
-  }
-}, true);
-window.addEventListener('keyup', (e) => {
-  if (editableTarget(e.target)) return;
-  const move = moveCode(e.code);
-  if (move) held.delete(move);
-}, true);
 
 let drag = null;
 canvas.addEventListener('pointerdown', (e) => {
@@ -565,6 +539,13 @@ window.__test = {
     return batNow();
   },
   get bat() { return batNow(); },
+  aim() {
+    return {
+      tiltX: pose.tiltX,
+      tiltY: pose.tiltY,
+      dot: pose.dot ? { x: pose.dot.x, y: pose.dot.y } : null,
+    };
+  },
   fps() { return { fps, ghosts: view.ghostCount(), dpr: view.pixelRatio() }; },
   trail(n) { view.setTrailCap(n); },
   freeze() {

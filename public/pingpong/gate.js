@@ -19,8 +19,9 @@ export function unlockCourt(env) {
   return { asked, audio, resume };
 }
 
-// A fine pointer is a mouse or trackpad. A coarse touch phone keeps the tilt path,
-// even when this browser has no motion API, so the existing swipe fallback still runs.
+// Desktop is anything that is not a coarse touch phone. Headless Chrome reports
+// pointer:none and still has DeviceMotionEvent, so a missing fine pointer is not a phone.
+// A coarse pointer, or any touch points, keeps the tilt path and the swipe fallback.
 export function desktopCourt(env) {
   const match = (query) => {
     try {
@@ -30,11 +31,8 @@ export function desktopCourt(env) {
       return false;
     }
   };
-  if (match('(pointer: fine)')) return true;
-  if (match('(pointer: coarse)') || match('(any-pointer: coarse)')) return false;
+  if (match('(pointer: coarse)')) return false;
   const touches = Number(env && env.navigator && env.navigator.maxTouchPoints) || 0;
   if (touches > 0) return false;
-  const motion = env && env.DeviceMotionEvent;
-  const hasMotion = typeof motion === 'function' || !!(motion && typeof motion.requestPermission === 'function');
-  return !hasMotion;
+  return true;
 }

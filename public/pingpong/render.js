@@ -516,6 +516,21 @@ export function createView(canvas) {
     drawBat(ctx, w, h, state, pose);
     drawSparks(ctx, state, w, h);
     drawHud(ctx, w, h, state);
+    drawAim(ctx, pose);
+  }
+
+  function drawAim(ctx, pose) {
+    const dot = pose && pose.dot;
+    if (!dot || !Number.isFinite(dot.x) || !Number.isFinite(dot.y)) return;
+    ctx.save();
+    ctx.fillStyle = PAPER;
+    ctx.strokeStyle = INK;
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.arc(dot.x, dot.y, 4, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    ctx.restore();
   }
 
   function stampSplat(state, w, h, dpr) {

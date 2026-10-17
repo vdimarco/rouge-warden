@@ -4,11 +4,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
+import { spawn } from 'node:child_process';
 import { createRequire } from 'node:module';
 import { desktopCourt } from '../../public/pingpong/gate.js';
-import { BAT, shotFromPeak } from '../../public/pingpong/rules.js';
-import { POINTER, batFromTilt, flickFromSamples, springStep, tiltFromCanvas } from '../../public/pingpong/motion.js';
+import { BAT, RULES, shotFromPeak, spinFromRoll } from '../../public/pingpong/rules.js';
+import { POINTER, aimFromCanvas, batFromTilt, flickFromSamples, leanFromCanvas, sideTarget, springStep } from '../../public/pingpong/motion.js';
 
 const root = path.resolve(import.meta.dirname, '../..');
 const shots = '/opt/cursor/artifacts';
@@ -26,56 +28,108 @@ test('a fine pointer is the desktop court, and a coarse phone stays on tilt', ()
   motion.requestPermission = () => Promise.resolve('granted');
   assert.equal(desktopCourt({ ...media({ '(pointer: fine)': true }), DeviceMotionEvent: motion }), true);
   assert.equal(desktopCourt({
+    ...media({ '(pointer: none)': true }),
+    DeviceMotionEvent: motion,
+    navigator: { maxTouchPoints: 0 },
+  }), true);
+  assert.equal(desktopCourt({
     ...media({ '(pointer: coarse)': true, '(any-pointer: coarse)': true }),
     DeviceMotionEvent: motion,
     navigator: { maxTouchPoints: 5 },
   }), false);
   assert.equal(desktopCourt({
     ...media({ '(pointer: coarse)': true }),
+    navigator: { maxTouchPoints: 0 },
+  }), false);
+  assert.equal(desktopCourt({
+    ...media({ '(pointer: none)': true }),
+    DeviceMotionEvent: motion,
     navigator: { maxTouchPoints: 1 },
   }), false);
   assert.equal(desktopCourt({ ...media({}), navigator: { maxTouchPoints: 0 } }), true);
 });
 
-test('pointer position uses the bat spring and a 60 ms flick uses the phone bands', () => {
-  const edge = tiltFromCanvas(1, 0.5);
-  assert.equal(edge.tiltX, BAT.fullSide);
-  assert.equal(edge.tiltY, 0);
-  const near = tiltFromCanvas(0.5, 1);
-  assert.equal(near.tiltX, 0);
-  assert.equal(near.tiltY, -BAT.fullLean);
+function widthsFlick(widthsPerSec, width, bendDeg = 0) {
+  const dt = POINTER.window;
+  const dist = widthsPerSec * width * dt;
+  const ang = (bendDeg * Math.PI) / 180;
+  const dx = Math.cos(ang) * dist;
+  const dy = -Math.sin(ang) * dist;
+  return flickFromSamples(
+    [{ x: 0, y: 0, t: 0 }, { x: dx, y: dy, t: dt }],
+    dt,
+    width,
+  );
+}
+
+test('a slow move never swings, and the bands match at 1280 and 2560', () => {
+  assert.equal(aimFromCanvas(0.5), 0);
+  assert.equal(aimFromCanvas(0), -RULES.aimGamma);
+  assert.equal(aimFromCanvas(1), RULES.aimGamma);
+  assert.equal(batFromTilt(0, leanFromCanvas(0.5)).depth, BAT.homeZ);
+  assert.ok(batFromTilt(0, leanFromCanvas(0)).depth > batFromTilt(0, leanFromCanvas(1)).depth);
+  assert.equal(sideTarget('incoming', 0.42), 0.42);
+  assert.equal(sideTarget('count', 0.42), 0);
+  assert.equal(RULES.cooldown, 0.35);
+  assert.equal(RULES.windowMs, 120);
+  assert.equal(RULES.perfectMs, 40);
+  assert.ok(POINTER.window >= 0.05 && POINTER.window <= 0.07);
 
   const dt = 1 / 60;
   let sprung = { x: 0, v: 0 };
-  const first = springStep(sprung, edge.tiltX, dt);
-  assert.ok(first.x > 1 && first.x < edge.tiltX * 0.5, first.x);
-  let t = 0;
-  while (t < 0.08 - 1e-9) {
-    sprung = springStep(sprung, edge.tiltX, dt);
-    t += dt;
-    assert.ok(sprung.x <= edge.tiltX + 1e-6, sprung.x);
-  }
-  assert.ok(sprung.x >= edge.tiltX * 0.9, sprung.x);
-  assert.ok(batFromTilt(sprung.x, 0).x > 0.6);
+  const first = springStep(sprung, 0.42, dt);
+  assert.ok(first.x > 0 && first.x < 0.21, first.x);
 
-  assert.equal(flickFromSamples([{ x: 0, y: 0, t: 0 }, { x: 70, y: 0, t: 0.06 }], 0.06), null);
-  const drive = flickFromSamples([{ x: 0, y: 0, t: 0 }, { x: 220, y: -10, t: 0.06 }], 0.06);
-  assert.equal(drive.dir, 'forehand');
-  assert.ok(drive.degPerSec > 600 && drive.degPerSec <= 1100, drive.degPerSec);
-  const back = flickFromSamples([{ x: 0, y: 0, t: 0 }, { x: -220, y: 0, t: 0.06 }], 0.06);
-  assert.equal(back.dir, 'backhand');
-  const smash = flickFromSamples([{ x: 0, y: 0, t: 0 }, { x: 0, y: -420, t: 0.06 }], 0.06);
-  assert.ok(smash.degPerSec > 1100, smash.degPerSec);
-  assert.ok(smash.rollDegPerSec > 0);
+  const bands = [1.1, 1.2, 2.3, 2.4, 4.3, 4.4];
+  const seen = {};
+  for (const width of [1280, 2560]) {
+    assert.equal(widthsFlick(1.1, width), null, width);
+    const push = widthsFlick(1.2, width);
+    const pushTop = widthsFlick(2.3, width);
+    const drive = widthsFlick(2.4, width);
+    const driveTop = widthsFlick(4.3, width);
+    const smash = widthsFlick(4.4, width);
+    assert.equal(shotFromPeak(push.degPerSec, 1).speed, 6, width);
+    assert.equal(shotFromPeak(pushTop.degPerSec, 1).speed, 6, width);
+    assert.equal(shotFromPeak(drive.degPerSec, 1).speed, 11, width);
+    assert.equal(shotFromPeak(driveTop.degPerSec, 1).speed, 11, width);
+    assert.equal(shotFromPeak(smash.degPerSec, 1).speed, 17, width);
+    assert.equal(shotFromPeak(smash.degPerSec, 0.05).speed, 11, width);
+    assert.ok(Math.abs(push.widthsPerSec - 1.2) < 1e-6, push.widthsPerSec);
+    assert.ok(Math.abs(driveTop.widthsPerSec - 4.3) < 1e-6, driveTop.widthsPerSec);
+    seen[width] = bands.map((speed) => {
+      const flick = widthsFlick(speed, width);
+      return flick ? shotFromPeak(flick.degPerSec, 1).speed : 0;
+    });
+  }
+  assert.deepEqual(seen[1280], seen[2560]);
+  assert.deepEqual(seen[1280], [0, 6, 6, 11, 11, 17]);
+
+  const atNarrow = widthsFlick(3.2, 1280);
+  const atWide = widthsFlick(3.2, 2560);
+  assert.ok(Math.abs(atNarrow.widthsPerSec - atWide.widthsPerSec) < 1e-6);
+  assert.ok(Math.abs(atNarrow.degPerSec - atWide.degPerSec) < 1e-6);
+  assert.equal(shotFromPeak(atNarrow.degPerSec, 1).speed, 11);
+  const linePx = 1.2 * 1280;
+  assert.equal(shotFromPeak(widthsFlick(linePx / 1280, 1280).degPerSec, 1).speed, 6);
+  assert.equal(widthsFlick(linePx / 2560, 2560), null);
+
+  const top = widthsFlick(1.6, 1280, 20);
+  const flat = widthsFlick(1.6, 1280, 10);
+  const back = widthsFlick(1.6, 1280, -20);
+  assert.equal(spinFromRoll(top.rollDegPerSec).type, 'top');
+  assert.equal(flat.rollDegPerSec, 0);
+  assert.equal(spinFromRoll(back.rollDegPerSec).type, 'back');
+  assert.equal(widthsFlick(1.6, 1280, 0).dir, 'forehand');
+  assert.equal(widthsFlick(1.6, 1280, 180).dir, 'backhand');
+
   const stale = flickFromSamples([
     { x: 0, y: 0, t: 0 },
-    { x: 500, y: 0, t: 0.02 },
-    { x: 500, y: 0, t: 0.2 },
-    { x: 530, y: 0, t: 0.24 },
-  ], 0.24);
+    { x: 400, y: 0, t: 0.02 },
+    { x: 400, y: 0, t: 0.2 },
+    { x: 430, y: 0, t: 0.24 },
+  ], 0.24, 1280);
   assert.equal(stale, null);
-  assert.equal(shotFromPeak(POINTER.medium, 1).kind, 'drive');
-  assert.ok(POINTER.window >= 0.05 && POINTER.window <= 0.07);
 });
 
 test('the desktop gate skips motion permission and the phone tap still asks', () => {
@@ -90,6 +144,12 @@ test('the desktop gate skips motion permission and the phone tap still asks', ()
   const audio = main.slice(main.indexOf('function unlockAudio'), main.indexOf('function unlockFromTap'));
   assert.equal(audio.includes('DeviceMotionEvent'), false);
   assert.equal(audio.includes('DeviceOrientationEvent'), false);
+  assert.equal(main.includes('keydown'), false);
+  assert.equal(main.includes('tiltFromCanvas'), false);
+  assert.match(main, /getCoalescedEvents/);
+  assert.match(main, /flickCool = t \+ RULES\.cooldown/);
+  assert.match(main, /addEventListener\('mousemove'/);
+  assert.match(main, /realMouseMove\(e\)/);
 });
 
 function playwright() {
@@ -139,6 +199,9 @@ test('a desktop mouse flick wins the opening point', { timeout: 90000 }, async (
     });
     const page = await context.newPage();
     page.on('pageerror', (err) => errors.push(String(err)));
+    page.on('console', (msg) => {
+      if (msg.type() === 'error') errors.push(msg.text());
+    });
     await page.goto('http://127.0.0.1:8765/pingpong/', { waitUntil: 'domcontentloaded' });
     await page.waitForFunction(() => document.getElementById('gate-btn').textContent === 'Click to pick up your bat');
     const gate = await page.evaluate(() => ({
@@ -150,7 +213,7 @@ test('a desktop mouse flick wins the opening point', { timeout: 90000 }, async (
     }));
     assert.equal(gate.button, 'Click to pick up your bat');
     assert.equal(gate.hintHidden, false);
-    assert.match(gate.hint, /Flick or click to swing/);
+    assert.equal(gate.hint, 'The bat follows the ball. Move the mouse to aim. Flick to swing.');
     assert.equal(gate.phoneHidden, true);
     assert.equal(gate.fine, true);
     await page.screenshot({ path: path.join(shots, 'pingpong-desktop-gate.png') });
@@ -163,56 +226,12 @@ test('a desktop mouse flick wins the opening point', { timeout: 90000 }, async (
       }, 40);
     });
     await page.locator('#gate-btn').click();
-    const placed = await page.evaluate(async () => {
-      const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-      const key = (type, code) => window.dispatchEvent(new KeyboardEvent(type, { code, bubbles: true, cancelable: true }));
-      key('keydown', 'ArrowRight');
-      await wait(180);
-      const keyed = window.__test.bat.x;
-      key('keyup', 'ArrowRight');
-      key('keydown', 'Space');
-      key('keyup', 'Space');
-      await wait(200);
-      const afterKeys = { x: window.__test.bat.x, phase: window.__test.state().phase, shot: window.__test.state().lastShot };
-      const canvas = document.getElementById('table');
-      const box = () => canvas.getBoundingClientRect();
-      const fire = (type, x, y) => {
-        canvas.dispatchEvent(new PointerEvent(type, {
-          bubbles: true,
-          cancelable: true,
-          pointerId: 1,
-          pointerType: 'mouse',
-          isPrimary: true,
-          clientX: x,
-          clientY: y,
-          button: 0,
-          buttons: type === 'pointerup' ? 0 : 1,
-          view: window,
-        }));
-      };
-      const box0 = box();
-      const y = box0.top + box0.height * 0.5;
-      for (let i = 0; i <= 8; i++) {
-        const x = box0.left + box0.width * (0.5 + 0.42 * (i / 8));
-        fire('pointermove', x, y);
-        await wait(50);
-      }
-      await wait(120);
-      const aside = window.__test.bat.x;
-      for (let i = 0; i <= 8; i++) {
-        const x = box0.left + box0.width * (0.92 - 0.42 * (i / 8));
-        fire('pointermove', x, y);
-        await wait(50);
-      }
-      await wait(160);
-      return { keyed, afterKeys, aside, home: window.__test.bat.x, phase: window.__test.state().phase };
-    });
-    assert.ok(placed.keyed > 0.5, placed.keyed);
-    assert.equal(placed.afterKeys.phase, 'count');
-    assert.equal(placed.afterKeys.shot, null);
-    assert.ok(Math.abs(placed.afterKeys.x) < 0.2, placed.afterKeys.x);
-    assert.ok(placed.aside > 0.45, placed.aside);
-    assert.ok(Math.abs(placed.home) < 0.15, placed.home);
+    const started = await page.evaluate(() => ({
+      cursor: getComputedStyle(document.getElementById('table')).cursor,
+      dot: window.__test.aim().dot,
+    }));
+    assert.equal(started.cursor, 'none');
+    assert.ok(started.dot && Number.isFinite(started.dot.x) && Number.isFinite(started.dot.y));
 
     await page.waitForFunction(() => {
       const live = window.__test.state();
@@ -221,10 +240,17 @@ test('a desktop mouse flick wins the opening point', { timeout: 90000 }, async (
     await page.screenshot({ path: path.join(shots, 'pingpong-desktop-rally.png') });
     const room = await page.evaluate(() => {
       const c = document.getElementById('table');
-      const p = c.getContext('2d').getImageData(Math.floor(c.width * 0.38), Math.floor(c.height * 0.2), 1, 1).data;
-      return { r: p[0], g: p[1], b: p[2] };
+      const dot = window.__test.aim().dot;
+      const wall = c.getContext('2d').getImageData(Math.floor(c.width * 0.38), Math.floor(c.height * 0.2), 1, 1).data;
+      const aim = c.getContext('2d').getImageData(Math.round(dot.x), Math.round(dot.y), 1, 1).data;
+      return {
+        r: wall[0], g: wall[1], b: wall[2],
+        aimR: aim[0], aimG: aim[1], aimB: aim[2],
+      };
     });
     assert.ok(room.r - room.b < 70, JSON.stringify(room));
+    assert.ok(room.aimR > 200 && room.aimG > 190, JSON.stringify(room));
+
     const won = await page.evaluate(async () => {
       const waitFrame = () => new Promise((resolve) => requestAnimationFrame(resolve));
       const canvas = document.getElementById('table');
@@ -290,6 +316,72 @@ test('a desktop mouse flick wins the opening point', { timeout: 90000 }, async (
     assert.equal(won.neighbour, 0);
     assert.match(won.label, /You 1/);
     assert.equal(won.hint, false);
+    const placed = await page.evaluate(async () => {
+      const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+      const canvas = document.getElementById('table');
+      const fire = (x, y) => {
+        canvas.dispatchEvent(new PointerEvent('pointermove', {
+          bubbles: true,
+          cancelable: true,
+          pointerId: 1,
+          pointerType: 'mouse',
+          isPrimary: true,
+          clientX: x,
+          clientY: y,
+          button: 0,
+          buttons: 0,
+          view: window,
+        }));
+      };
+      const key = (code) => {
+        window.dispatchEvent(new KeyboardEvent('keydown', { code, bubbles: true, cancelable: true }));
+        window.dispatchEvent(new KeyboardEvent('keyup', { code, bubbles: true, cancelable: true }));
+      };
+      const begun = performance.now();
+      while (performance.now() - begun < 8000) {
+        const live = window.__test.state();
+        if (live.phase === 'incoming' && live.crossIn > 0.55 && live.score.you === 1) break;
+        await wait(20);
+      }
+      const before = window.__test.state();
+      const box0 = canvas.getBoundingClientRect();
+      const y = box0.top + box0.height * 0.5;
+      const x0 = box0.left + box0.width * 0.5;
+      const endX = x0 + 12 * 28;
+      for (let i = 1; i <= 12; i++) {
+        fire(x0 + i * 28, y);
+        await wait(40);
+      }
+      key('ArrowRight');
+      key('KeyD');
+      key('Space');
+      canvas.dispatchEvent(new PointerEvent('pointerdown', {
+        bubbles: true, pointerId: 1, pointerType: 'mouse', clientX: endX, clientY: y, button: 0, buttons: 1,
+      }));
+      canvas.dispatchEvent(new PointerEvent('pointerup', {
+        bubbles: true, pointerId: 1, pointerType: 'mouse', clientX: endX, clientY: y, button: 0, buttons: 0,
+      }));
+      canvas.dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: endX, clientY: y }));
+      await wait(40);
+      const live = window.__test.state();
+      return {
+        phase: live.phase,
+        you: live.score.you,
+        neighbour: live.score.neighbour,
+        struck: live.lastShot && live.lastShot.struckAt,
+        beforeStruck: before.lastShot && before.lastShot.struckAt,
+        batX: live.bat.x,
+        ballX: live.ball.x,
+        aim: window.__test.aim().tiltX,
+        cross: live.crossIn,
+      };
+    });
+    assert.equal(placed.phase, 'incoming', JSON.stringify(placed));
+    assert.equal(placed.you, 1, JSON.stringify(placed));
+    assert.equal(placed.neighbour, 0, JSON.stringify(placed));
+    assert.equal(placed.struck, placed.beforeStruck, JSON.stringify(placed));
+    assert.ok(Math.abs(placed.batX - placed.ballX) < 0.08, JSON.stringify(placed));
+    assert.ok(placed.aim > 15, JSON.stringify(placed));
     assert.deepEqual(errors, []);
     await context.close();
 
@@ -301,6 +393,10 @@ test('a desktop mouse flick wins the opening point', { timeout: 90000 }, async (
       userAgent: devices['iPhone 13'].userAgent,
     });
     const mobile = await phone.newPage();
+    mobile.on('pageerror', (err) => errors.push(String(err)));
+    mobile.on('console', (msg) => {
+      if (msg.type() === 'error') errors.push(msg.text());
+    });
     await mobile.goto('http://127.0.0.1:8765/pingpong/', { waitUntil: 'domcontentloaded' });
     await mobile.waitForFunction(() => document.getElementById('gate-btn').textContent.length > 0);
     const phoneGate = await mobile.evaluate(() => ({
@@ -326,8 +422,104 @@ test('a desktop mouse flick wins the opening point', { timeout: 90000 }, async (
     assert.equal(phoneGate.hintHidden, true);
     assert.equal(phoneGate.lines.every((line) => !line.hidden), true);
     assert.match(phoneGate.lines[0].text, /Hold your phone like a bat/);
-    await phone.close();
+
+    const switched = await phone.newPage();
+    switched.on('pageerror', (err) => errors.push(String(err)));
+    await switched.goto('http://127.0.0.1:8765/pingpong/', { waitUntil: 'domcontentloaded' });
+    await switched.waitForFunction(() => window.__test && document.getElementById('gate-btn').textContent === 'Tap to pick up your bat');
+    await switched.mouse.move(40, 80);
+    await switched.mouse.move(180, 240);
+    await switched.waitForFunction(() => document.getElementById('gate-btn').textContent === 'Click to pick up your bat');
+    const afterMouse = await switched.evaluate(() => ({
+      button: document.getElementById('gate-btn').textContent,
+      hintHidden: document.getElementById('desk-hint').hidden,
+      phoneHidden: [...document.querySelectorAll('[data-phone]')].every((el) => el.hidden),
+      hold: document.querySelector('[data-phone]').textContent,
+    }));
+    assert.equal(afterMouse.button, 'Click to pick up your bat');
+    assert.equal(afterMouse.hintHidden, false);
+    assert.equal(afterMouse.phoneHidden, true);
+    assert.match(afterMouse.hold, /Hold your phone/);
   } finally {
     await browser.close();
+  }
+});
+
+function waitForDebugPort(port) {
+  const started = Date.now();
+  return new Promise((resolve, reject) => {
+    const tick = () => {
+      fetch(`http://127.0.0.1:${port}/json/version`).then((res) => {
+        if (res.ok) resolve();
+        else if (Date.now() - started > 8000) reject(new Error('chrome debug port failed'));
+        else setTimeout(tick, 100);
+      }).catch(() => {
+        if (Date.now() - started > 8000) reject(new Error('chrome debug port did not open'));
+        else setTimeout(tick, 100);
+      });
+    };
+    tick();
+  });
+}
+
+test('plain headless Chrome at 1280 shows the desktop gate', { timeout: 60000 }, async () => {
+  const { chromium } = playwright();
+  const port = 9333;
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'pingpong-chrome-'));
+  const proc = spawn('google-chrome', [
+    '--headless=new',
+    '--no-sandbox',
+    '--disable-gpu',
+    '--disable-dev-shm-usage',
+    `--user-data-dir=${dir}`,
+    `--remote-debugging-port=${port}`,
+    '--window-size=1280,800',
+    'about:blank',
+  ], { stdio: 'ignore' });
+  let browser = null;
+  try {
+    await waitForDebugPort(port);
+    browser = await chromium.connectOverCDP(`http://127.0.0.1:${port}`);
+    const context = browser.contexts()[0];
+    const page = context.pages()[0] || await context.newPage();
+    const client = await context.newCDPSession(page);
+    await client.send('Emulation.setDeviceMetricsOverride', {
+      width: 1280,
+      height: 800,
+      deviceScaleFactor: 1,
+      mobile: false,
+    });
+    await page.goto('http://127.0.0.1:8765/pingpong/', { waitUntil: 'domcontentloaded' });
+    await page.waitForFunction(() => window.__test && document.getElementById('gate-btn').textContent.length > 0);
+    const gate = await page.evaluate(() => ({
+      button: document.getElementById('gate-btn').textContent,
+      hint: document.getElementById('desk-hint').textContent,
+      hintHidden: document.getElementById('desk-hint').hidden,
+      phoneHidden: [...document.querySelectorAll('[data-phone]')].every((el) => el.hidden),
+      phone: document.querySelector('[data-phone]').textContent,
+      fine: matchMedia('(pointer: fine)').matches,
+      coarse: matchMedia('(pointer: coarse)').matches,
+      none: matchMedia('(pointer: none)').matches,
+      touch: navigator.maxTouchPoints,
+      motion: typeof DeviceMotionEvent,
+      w: window.innerWidth,
+      h: window.innerHeight,
+    }));
+    assert.equal(gate.none, true, JSON.stringify(gate));
+    assert.equal(gate.fine, false, JSON.stringify(gate));
+    assert.equal(gate.coarse, false, JSON.stringify(gate));
+    assert.equal(gate.touch, 0, JSON.stringify(gate));
+    assert.equal(gate.motion, 'function', JSON.stringify(gate));
+    assert.equal(gate.w, 1280, JSON.stringify(gate));
+    assert.equal(gate.h, 800, JSON.stringify(gate));
+    assert.equal(gate.button, 'Click to pick up your bat', JSON.stringify(gate));
+    assert.equal(gate.hintHidden, false);
+    assert.equal(gate.hint, 'The bat follows the ball. Move the mouse to aim. Flick to swing.');
+    assert.equal(gate.phoneHidden, true);
+    assert.match(gate.phone, /Hold your phone/);
+  } finally {
+    if (browser) await browser.close().catch(() => {});
+    proc.kill('SIGKILL');
+    fs.rmSync(dir, { recursive: true, force: true });
   }
 });
