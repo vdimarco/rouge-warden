@@ -1,0 +1,89 @@
+{
+  "passed": true,
+  "recorded_utc": "2026-10-17T21:17:27.486593+00:00",
+  "scope": "Isolated native authoring/reload and NullRHI animation behavior; rendered appearance and promotion remain unaccepted.",
+  "parent_commit": "608a5c51b9132303462d66e65a3d0ced60f2638d",
+  "source_files": {
+    "games/nord-unreal/Scripts/import_tripo_pilot.py": "e9254caf0fa1c6e9b3706ef78fab935f626d2cc2ec9e838f0b98170d37b12496",
+    "games/nord-unreal/Scripts/verify_tripo_pilot.py": "cc2903fc259a6df6d3a5de141ef10117df341ef6e2d638ab2348f0707d6ee167",
+    "games/nord-unreal/Scripts/test_tripo_import.py": "dee6e6af5c538ba9f76ee0984abf6503859d75c19f4d66f0ad01c229458e1d02",
+    "games/nord-unreal/Scripts/prepare_tripo_surface.py": "934a10e3d471fb66f468a0c2c2b07b7fbb154ecb8c0d3652b99facb6bf85a277",
+    "games/nord-unreal/Scripts/prepare_tripo_locomotion.py": "a91c7960601fdaf4f82ce71d469e0224d81c45fc1a7ef2ae4b0c1bfc88d9aaac",
+    "games/nord-unreal/Scripts/prepare_tripo_native_timing.py": "c8e3fb402b914f83358fd09c0fb94224f4af0bcebb2938d736e66a60ef5eaf53",
+    "games/nord-unreal/Source/Quebec/QuebecCrewAnimation.cpp": "4c3ff1e1f9c17bbcac7e97c060890fe5c5a26aa93a6e75db120fbb812211f0c8",
+    "games/nord-unreal/Source/Quebec/QuebecCrewAnimation.h": "71f03673fc9ee59d850a5760ffdc5bc39697db7ab80f258e8564744f0980142a",
+    "games/nord-unreal/Source/Quebec/QuebecCrewAnimationTests.cpp": "ce802e8e8e20a54691d90ad18e6d19cb4d3092b279eaa46983b416e2264dc12f",
+    "games/nord-unreal/Source/Quebec/QuebecTripoTests.cpp": "ad5acf97bf3346b3835e1ed3cd108468312fb58714a4640537455127765f1c9a",
+    "games/nord-unreal/Source/Quebec/QuebecGameplay.cpp": "9e707df15edc468b290438b5f256a94f6646ce2a072cb321ab8f505b2f9baf04",
+    "games/nord-unreal/Source/Quebec/QuebecGameplay.h": "ab56aba4bd281302c648fbe28659fcb0009a79ae108e0b6c90c88b4e3895dd50"
+  },
+  "import_source_hashes": {
+    "Body": "2266ab807ec8e5ff02e5020db65e64ca91163647e5af731e304170a3711990c4",
+    "Walk": "c70f0830452bf468eebb6ae8d970931391c89fb5c3e8eb81c0eed54e1068dd0c",
+    "Run": "d9d45afae9d93edfba105a338ce9f847385d04b9db5108201ba685e035ae2b58",
+    "Idle": "622a2e1aa047c5106163145a26dac15df0ed79191e73453544a9e6dba1dd508a",
+    "Jump": "38fa865f8163a7a50a82029187a23baa27ef8eb7bb136123e1ee5971cdfe3929",
+    "base_color": "adf54ff0228275f6557fa5afbacb9ab0e5651fe1ddec0c638afa2cd197dba5d7",
+    "metallic_roughness": "b10a5ce423ce8922dce64f90edec8a750e0f3aad64588daa2cd4fbb710d86bcf",
+    "normal": "7845864ce13d1e3ce10e8149ef2ef98a048b8be249a60749dfc70c4897e9e7ab"
+  },
+  "process_exit_codes": {
+    "final_editor_build": 0,
+    "corrected_commandlet_import": 0,
+    "fresh_commandlet_reload": 0,
+    "final_native_automation_softquit": 0
+  },
+  "native_tests": {
+    "Quebec.Animation.BlendedLocomotion": "Success",
+    "Quebec.Animation.GraphicNovelCandidateSelection": "Success",
+    "Quebec.Animation.GraphicNovelHandsEyes": "Success",
+    "Quebec.Animation.ReapplyCrew": "Success",
+    "Quebec.Animation.SavedProductionLocomotion": "Success",
+    "Quebec.Animation.TripoPilot": "Success"
+  },
+  "counts": {
+    "succeeded": 6,
+    "succeededWithWarnings": 0,
+    "failed": 0,
+    "notRun": 0,
+    "inProcess": 0
+  },
+  "retained_report_hashes": {
+    "games/nord-unreal/Verification/TripoNative/Native/Import.json": "65c0dd4e33121614e2d0549ce52b2c3a76926ca7706876afa40591819d6c29fe",
+    "games/nord-unreal/Verification/TripoNative/Native/FreshLoad.json": "f14b2a430a7d6cbb845462f26b0990ff02da56ea3699aca6513412346cd64cd6",
+    "games/nord-unreal/Verification/TripoNative/Native/Automation.json": "3c894465d2bf831f479b92714e74ade40c51014b1a1d072f0cfa659b698c70f2",
+    "games/nord-unreal/Verification/TripoNative/Preservation.json": "44f6cd917f3bb2a93865a96460526a61f025f93acf17e970b484440bdbe90245"
+  },
+  "workarounds": {
+    "authoring_reload": "Python commandlets naturally disable experimental TEDS; no persistent config or engine patch.",
+    "native_automation": "-ini:Engine:[ConsoleVariables]:TEDS.Enable=0 and queued Automation SoftQuit; all four opt-in flags present.",
+    "import_warning": "One missing smoothing-group warning: prepared FBX uses explicit custom normals/Normals Only; saved normals/build settings checked; shading unaccepted."
+  },
+  "openspec": {
+    "cli_available": false,
+    "manual_structure_passed": [
+      "openspec/changes/nord-city-quality/proposal.md",
+      "openspec/changes/nord-city-quality/design.md",
+      "openspec/changes/nord-city-quality/tasks.md",
+      "openspec/changes/nord-city-quality/specs/nord-unreal/spec.md"
+    ]
+  },
+  "paid_jobs_submitted": 0,
+  "unaccepted": [
+    "Rendered both F2 modes at1280x720/1920x1080",
+    "Continuous native fluidity, contact, hand/prop/sleeve clearance",
+    "Functional grasp and facial animation",
+    "Affected driving/interact/co-op rendered checks",
+    "Package/native performance and browser decode",
+    "Physical-device and off-LAN behavior",
+    "Ordinary editor stability"
+  ],
+  "rejected_attempts_retained": [
+    "24Hz first import rejection (exit0/Python failure)",
+    "Editor second import/material slot and exit139",
+    "Bounded material recovery exit139",
+    "Fresh editor TEDS assertion before Python exit139",
+    "Protected socket-array Python verifier failure exit255",
+    "First suite:5 success/1 failed legacy fixture; forced TestExit1"
+  ]
+}

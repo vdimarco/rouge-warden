@@ -1,0 +1,18 @@
+{
+  "recorded_utc": "2026-10-17T21:07:01.484742+00:00",
+  "passed": false,
+  "process_exit_code": 0,
+  "success_marker_present": false,
+  "failure": "Walk FBX declares24Hz/31intervals (1.291667s); importer requires30Hz frame alignment. Also identified wrong24Hz time tags in frozenIdle/Jump. No resample/snap acceptance.",
+  "protected6850Content_exactly_preserved": true,
+  "only_owned_partial_folder_archived": "Saved/Recovery/tripo-native-20261017/rejected-import-1",
+  "partial_files": {
+    "Content/ParkComic/CrewGraphicNovelTripo/Resident9/SK_Body.uasset": "a1afa23ee1e2711438f6b8c1fe6487d5640a67c1076a40e8f8c23f4b36ae8ef3",
+    "Content/ParkComic/CrewGraphicNovelTripo/Resident9/T_base_color.uasset": "6e22cd2e85d325b2f2ee5d71cb69de92b04f7f6774c1bb71a14242ed571fbd0f",
+    "Content/ParkComic/CrewGraphicNovelTripo/Resident9/T_normal.uasset": "e772e3e6d09c910f0e1028b841dea936c0f75b989911d750ea893d02b20d5cf9",
+    "Content/ParkComic/CrewGraphicNovelTripo/Resident9/T_metallic_roughness.uasset": "a8e295b748415b4cfe763632739314b3da3ce1186887e8d5ca9bfe8f16d479bb",
+    "Content/ParkComic/CrewGraphicNovelTripo/Resident9/M_Crew.uasset": "6b48ab5f028e06232b3c6aba40b36ba6875dd21756bfc82fd3e2c8a311db4ef3",
+    "Content/ParkComic/CrewGraphicNovelTripo/Resident9/A_Idle.uasset": "fc292335021ffdf1db2e2f34a17e89b9aa1293d267e0707372a18dc4ded2f35d"
+  },
+  "services_stopped": false
+}

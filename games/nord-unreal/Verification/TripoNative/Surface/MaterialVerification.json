@@ -1,0 +1,23 @@
+{
+  "passed": true,
+  "created_utc": "2026-10-17T21:00:13.033758+00:00",
+  "scope": "Independent fresh FBX material wiring/image bytes and 61-bone boundary; CPU only",
+  "images": {
+    "base_color": {
+      "sha256": "adf54ff0228275f6557fa5afbacb9ab0e5651fe1ddec0c638afa2cd197dba5d7",
+      "path": "Data/GraphicNovel/Pilot/CurlyMetalhead/tripo-v3-rig-20261017/derived/native-ready/base_color.jpg",
+      "colorspace": "sRGB"
+    },
+    "normal": {
+      "sha256": "7845864ce13d1e3ce10e8149ef2ef98a048b8be249a60749dfc70c4897e9e7ab",
+      "path": "Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/normal.png",
+      "colorspace": "Non-Color"
+    }
+  },
+  "base_color_normal_images_distinct": true,
+  "original_tangent_normal_payload_unchanged": true,
+  "pinned_inputs_unchanged": true,
+  "packed_MR_sha256": "b10a5ce423ce8922dce64f90edec8a750e0f3aad64588daa2cd4fbb710d86bcf",
+  "packed_MR_requires_explicit_native_G_roughness_B_metallic": true,
+  "recipe_sha256": "c9b94bd042c12052a3fb6368e1d5e6c20b393b1d41480177f6283825da3d257a"
+}

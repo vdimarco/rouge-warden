@@ -6,6 +6,8 @@
 #include "QuebecCrewAnimation.generated.h"
 
 class UAnimSequence;
+class USkeletalMesh;
+class UStaticMesh;
 
 UCLASS(Transient)
 class QUEBEC_API UQuebecCrewAnimInstance : public UAnimInstance
@@ -15,6 +17,7 @@ public:
     UQuebecCrewAnimInstance();
     // Editor authoring only; the saved asset remains an ordinary engine BlendSpace1D.
     UFUNCTION(BlueprintCallable, Category="NORD") static bool ConfigureCrewBlendSpace(UBlendSpace1D* Space, UAnimSequence* Idle, UAnimSequence* Walk, UAnimSequence* Run);
+    UFUNCTION(BlueprintCallable, Category="NORD") static bool ConfigureTripoGrip(USkeletalMesh* Mesh, UStaticMesh* Prop);
     bool SetAssets(UBlendSpace* Locomotion, UAnimSequence* Jump);
     UPROPERTY(Transient, VisibleAnywhere, BlueprintReadOnly) TObjectPtr<UBlendSpace> LocomotionAsset;
     UPROPERTY(Transient, VisibleAnywhere, BlueprintReadOnly) TObjectPtr<UAnimSequence> JumpAsset;

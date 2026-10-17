@@ -80,3 +80,10 @@
 
 - [x] Author a separate own-rig relaxed idle and matching jump endpoints: soft forward elbows, shoulders closer to the torso, inward palms, staggered loose fingers and subtle asymmetric upper-body motion. Preserve all provider/source files and installed assets. Actual fresh61-bone imports pass314 half-frame samples; retained jump legs and all6,850 Content files remain unchanged. See `Verification/TripoPilot/NaturalPose/README.md`.
 - [x] Verify actual fresh-imported clips and review front/side/three-quarter standing and airborne views plus a short CPU motion preview; retain remaining deformation/acting limits and keep native adoption separate. Root/independent art reviewer inspect all six stills and all127 preview frames via contact sheets; no subjective native fluidity, flight or contact claim.
+
+## Isolated Tripo native integration
+
+- [x] Prepare a separate body with original UV-matched corner normals/PBR maps, matching own Walk/Run and consistent FBX armature roots; preserve provider files and verified relaxed Idle/Jump. Correct actual24Hz export metadata in new30Hz derivatives; retain frozen originals and rejected timing receipts.
+- [x] Import all five sources at the same1.82 scale in a fresh NullRHI commandlet into `CrewGraphicNovelTripo/Resident9`, save/reload its own skeleton, clips, BlendSpace, material and reference-derived hand socket; add the explicit opt-in route without changing ordinary crew. Clean commandlet import/reload exit0 supersede rejected editor attempts; ordinary editor stability remains open.
+- [x] Build and run the mandatory own-rig selection/evaluated-motion/prop/reset native checks; verify protected Content, packages, saves/settings and normal services remain preserved outside declared additions. All six native tests pass with clean queued SoftQuit; process-only TEDS workaround is disclosed in `Verification/TripoNative/README.md`.
+- [ ] Inspect actual rendered both-mode/two-size motion and tool clearance in a guarded GPU window before live promotion. Retain remaining hand geometry, grip/contact and performance limits.

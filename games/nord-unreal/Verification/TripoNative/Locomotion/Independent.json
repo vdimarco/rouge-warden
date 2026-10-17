@@ -1,0 +1,106 @@
+{
+  "passed": true,
+  "started_utc": "2026-10-17T21:07:36.352951+00:00",
+  "recipe_sha256": "18c41f5943b0c73a578be5a6ef4628eeca9f0f0b3eff9a7692e10b360b616fe0",
+  "input_sha256": {
+    "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/tripo-v3-rig-20261017/rig.fbx": "baaeb99a7e86fadadd4f64f6de6ea7e648777b33bcadd2ecb72347c4afe3dcc2",
+    "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/tripo-v3-rig-20261017/derived/natural-pose-20261017/relaxed-idle.fbx": "f5cf127b897cd54b52676932ff89461033becf1a19e8cf109a33d30c8958dfbc",
+    "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/walk.fbx": "0fe2b4d83846f826e3d448c870fcb77816c25fe6d106c873d755cd7a3d871d9e",
+    "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/run.fbx": "b0f8e4c359d21ca3a51dde5c94b45b4d9f4a3d27dedb2d44f671b69e41f6e8ae"
+  },
+  "scope": "Independent CPU gait retarget checks; no art/contact/native acceptance",
+  "clips": {
+    "walk": {
+      "sha256": "c70f0830452bf468eebb6ae8d970931391c89fb5c3e8eb81c0eed54e1068dd0c",
+      "source_range": [
+        1.0,
+        32.0
+      ],
+      "fresh_range": [
+        2.0,
+        33.0
+      ],
+      "fbx_version": 7400,
+      "binary_null_models": [
+        "Armature\u0000\u0001Model"
+      ],
+      "fresh_armature_object": "Armature",
+      "binary_time_mode": 6,
+      "binary_custom_frame_rate": 30.0,
+      "binary_stack_time_ticks": {
+        "LocalStart": 1539538600,
+        "LocalStop": 49265235200,
+        "ReferenceStart": 1539538600,
+        "ReferenceStop": 49265235200
+      },
+      "binary_declared_seconds": 1.0333333333333334,
+      "binary_curve_time_arrays_on_30Hz_grid": 558,
+      "binary_curve_max_30Hz_grid_error_ktime_ticks": 1,
+      "samples": 32,
+      "half_frame_samples": 63,
+      "fps": 30,
+      "mapped_component_delta_error_rad": 5.0770887358717066e-06,
+      "hip_xyz_error_target_units": 8.73260808716047e-08,
+      "finger_baseline_error_rad": 4.221187118032983e-06,
+      "unmapped_root_twist_rotation_error_rad": 3.0652260600749947e-07,
+      "root_matrix_error": 3.552713678800501e-15,
+      "object_matrix_error": 0.0,
+      "evaluated_quaternion_norm_error": 2.384185791015625e-07,
+      "loop_matrix_error": 2.5033950805664062e-06,
+      "foot_excursion_target_units": {
+        "l": 0.2688653476645003,
+        "r": 0.23218792646720668
+      },
+      "wrong_calf_mapping_rejected_max_error_rad": 1.0630971256898392
+    },
+    "run": {
+      "sha256": "d9d45afae9d93edfba105a338ce9f847385d04b9db5108201ba685e035ae2b58",
+      "source_range": [
+        1.0,
+        20.0
+      ],
+      "fresh_range": [
+        2.0,
+        21.0
+      ],
+      "fbx_version": 7400,
+      "binary_null_models": [
+        "Armature\u0000\u0001Model"
+      ],
+      "fresh_armature_object": "Armature",
+      "binary_time_mode": 6,
+      "binary_custom_frame_rate": 30.0,
+      "binary_stack_time_ticks": {
+        "LocalStart": 1539538600,
+        "LocalStop": 30790772000,
+        "ReferenceStart": 1539538600,
+        "ReferenceStop": 30790772000
+      },
+      "binary_declared_seconds": 0.6333333333333333,
+      "binary_curve_time_arrays_on_30Hz_grid": 558,
+      "binary_curve_max_30Hz_grid_error_ktime_ticks": 1,
+      "samples": 20,
+      "half_frame_samples": 39,
+      "fps": 30,
+      "mapped_component_delta_error_rad": 5.635139408860691e-06,
+      "hip_xyz_error_target_units": 8.857974442431856e-08,
+      "finger_baseline_error_rad": 4.34484012067317e-06,
+      "unmapped_root_twist_rotation_error_rad": 3.0520668652108256e-07,
+      "root_matrix_error": 3.552713678800501e-15,
+      "object_matrix_error": 0.0,
+      "evaluated_quaternion_norm_error": 2.384185791015625e-07,
+      "loop_matrix_error": 2.115964889526367e-06,
+      "foot_excursion_target_units": {
+        "l": 0.32231580386942826,
+        "r": 0.41356604773101563
+      },
+      "wrong_calf_mapping_rejected_max_error_rad": 2.7023898113466007
+    }
+  },
+  "errors": [],
+  "negative_controls": {
+    "bind_straight_fingers_rejected_max_error_rad": 0.5899214368107604
+  },
+  "retained_inputs_unchanged": true,
+  "finished_utc": "2026-10-17T21:07:37.650637+00:00"
+}

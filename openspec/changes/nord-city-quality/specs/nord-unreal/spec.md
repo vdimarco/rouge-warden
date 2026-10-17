@@ -50,6 +50,12 @@ The local pilot SHALL be available only through the explicit `-NordGraphicNovelC
 - **THEN** the authored idle keeps soft forward elbows, relaxed shoulders, inward palms and loosely curled fingers instead of returning to the rigid bind pose
 - **AND** actual exported clips preserve their own hierarchy/reference pose and matching relaxed endpoints, with front/side/three-quarter and motion review distinguishing CPU authoring evidence from native acceptance
 
+#### Scenario: Select the isolated own-rig Tripo pilot
+- **WHEN** Candidate, Generated, HighDetail and Tripo review flags are all present and crew style9 is selected
+- **THEN** the native character uses the separate Tripo mesh, own skeleton/four clips and saved three-sample BlendSpace with its baked relaxed finger poses
+- **AND** the held tool follows an own reference-derived `hand_r` socket, while selecting another crew or removing review flags restores the standard attachment and body
+- **AND** incomplete flags preserve their prior non-Tripo route; source inputs, ordinary crew/district assets, live package and saves remain protected until separately verified promotion
+
 ### Requirement: Detailed animated playable crew
 The supplied playable characters SHALL retain readable facial details and distinct locomotion in the comic view.
 

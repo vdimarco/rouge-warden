@@ -1,0 +1,47 @@
+Setting up bundled DotNet SDK
+Running command : dotnet Engine/Binaries/DotNET/UnrealBuildTool/UnrealBuildTool.dll QuebecEditor Linux Development /home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Quebec.uproject -WaitMutex -NoUBA -NoHotReloadFromIDE -MaxParallelActions=3
+Log file: /home/von/.config/Epic/UnrealBuildTool/Log.txt
+Executing up to 3 actions based on MaxProcessorCount override
+UbaStorageServer - FileMapping backing: memfd
+UbaSessionServer - Disable remote execution (remote sessions will finish current processes)
+Invalidating makefile for QuebecEditor (source file added)
+UHT compiled-in object format Default
+Building QuebecEditor...
+===== Toolchain Information =====
+Using ISPC compiler (/home/von/.local/share/Epic/UE_5.8.3/Engine/Source/ThirdParty/Intel/ISPC/bin/Linux/ispc)
+  Intel(r) Implicit SPMD Program Compiler (Intel(r) ISPC), 1.24.0 (build commit  @ 20240919, LLVM 18.1.6)
+Using Clang compiler 20.1.8 (/home/von/.local/share/Epic/UE_5.8.3/Engine/Extras/ThirdPartyNotUE/SDKs/HostLinux/Linux_x64/v26_clang-20.1.8-rockylinux8/x86_64-unknown-linux-gnu/bin/clang++)
+  clang version 20.1.8 (github.com/llvm/llvm-project 87f0227cb60147a26a1eeb4fb06e3b505e9c7261) Target: x86_64-unknown-linux-gnu Thread model: posix InstalledDir: /home/von/.local/share/Epic/UE_5.8.3/Engine/Extras/ThirdPartyNotUE/SDKs/HostLinux/Linux_x64/v26_clang-20.1.8-rockylinux8/x86_64-unknown-linux-gnu/bin
+Using Clang archiver (/home/von/.local/share/Epic/UE_5.8.3/Engine/Extras/ThirdPartyNotUE/SDKs/HostLinux/Linux_x64/v26_clang-20.1.8-rockylinux8/x86_64-unknown-linux-gnu/bin/llvm-ar)
+  LLVM (http://llvm.org/):   LLVM version 20.1.8   Optimized build.
+Using toolchain located at '/home/von/.local/share/Epic/UE_5.8.3/Engine/Extras/ThirdPartyNotUE/SDKs/HostLinux/Linux_x64/v26_clang-20.1.8-rockylinux8/x86_64-unknown-linux-gnu'
+Using bundled libc++ standard C++ library.
+Compressing debug files
+=================================
+Using Unreal Build Accelerator local executor to run 16 action(s)
+  CPU 24 physical cores, 32 logical cores
+  Memory 93.98 GB physical, 118.08 GB/234.96 GB committed
+  UBA Storage capacity 40 GB
+[1/16] Compile QuebecCarHandlingTests.cpp [NoUba]
+[2/16] Compile Module.Quebec.gen.cpp [NoUba]
+[3/16] Compile QuebecCrewAnimation.cpp [NoUba]
+[4/16] Compile QuebecCampaign.cpp [NoUba]
+[5/16] Compile QuebecCrewAnimationTests.cpp [NoUba]
+[6/16] Compile QuebecFeedbackTests.cpp [NoUba]
+[7/16] Compile QuebecMusic.cpp [NoUba]
+[8/16] Compile QuebecMusicTests.cpp [NoUba]
+[9/16] Compile QuebecDistrictTests.cpp [NoUba]
+[10/16] Compile QuebecResidentReactions.cpp [NoUba]
+[11/16] Compile QuebecResidentVisualTests.cpp [NoUba]
+[12/16] Compile QuebecSwimming.cpp [NoUba]
+[13/16] Compile QuebecTripoTests.cpp [NoUba]
+[14/16] Compile QuebecSky.cpp [NoUba]
+[15/16] Compile QuebecGameplay.cpp [NoUba]
+[16/16] Link libUnrealEditor-Quebec.so [NoUba]
+
+Total time in Unreal Build Accelerator local executor: 19.43 seconds
+Output binary: /home/von/.local/share/Epic/UE_5.8.3/Engine/Binaries/Linux/UnrealEditor
+
+Result: Succeeded
+Total execution time: 23.99 seconds
+Trace written to file /home/von/.config/Epic/UnrealBuildTool/Trace.uba with size 6.0kb

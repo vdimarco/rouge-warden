@@ -1,0 +1,28 @@
+{
+  "attempts": [
+    {
+      "attempt": "v1",
+      "path": "Saved/Tests/TripoSurface-20261017/rejected-v1/prepare_tripo_surface.py",
+      "recipe_sha256": "41eb9fb53623b753d3bd4178076dfe44f2bea919d3cc76d3d02e47773b6f70e8",
+      "export_written": false,
+      "gate": "maximum original-normal angle <0.1deg",
+      "result": "failed",
+      "next_action": "v2 added diagnostic printing; v3 recorded explicit mean/p99/max bounds after inspection"
+    },
+    {
+      "attempt": "v2",
+      "path": "Saved/Tests/TripoSurface-20261017/rejected-v2/prepare_tripo_surface.py",
+      "recipe_sha256": "c1acb7f2fae8f43aab031573ce502be3ec3dc3daeda7e8ad7c60332ae1c25329",
+      "export_written": false,
+      "gate": "maximum original-normal angle <0.1deg",
+      "result": "failed",
+      "next_action": "v2 added diagnostic printing; v3 recorded explicit mean/p99/max bounds after inspection"
+    }
+  ],
+  "observed_before_any_export": {
+    "mean_deg": 0.0015758404358213905,
+    "p99_deg": 0.013434918369693714,
+    "max_deg": 0.6608881288789538,
+    "corners_over_0_1deg": 12
+  }
+}

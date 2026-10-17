@@ -1,0 +1,143 @@
+           PID: 269077 (UnrealEditor-Cm)
+           TID: 269077 (UnrealEditor-Cm)
+           UID: 1000 (von)
+           GID: 1000 (von)
+        Signal: 11 (SEGV) si_code: SEGV_MAPERR
+     Timestamp: Sat 2026-10-17 17:09:15 EDT (1min 55s ago)
+  Command Line: /home/von/.local/share/Epic/UE_5.8.3/Engine/Binaries/Linux/UnrealEditor-Cmd /home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Quebec.uproject /Engine/Maps/Entry -NullRHI -unattended -nosplash -nosound -NoSourceControl -NoLiveCoding -NordNoCampaign -NordNoCampaignSave -ExecutePythonScript=/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Scripts/import_tripo_pilot.py -stdout -FullStdOutLogOutput -abslog=/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoNative/import-engine-2.log
+    Executable: /home/von/.local/share/Epic/UE_5.8.3/Engine/Binaries/Linux/UnrealEditor-Cmd
+ Control Group: /user.slice/user-1000.slice/user@1000.service/app.slice/app-org.chromium.Chromium-15012.scope
+          Unit: user@1000.service
+     User Unit: app-org.chromium.Chromium-15012.scope
+         Slice: user-1000.slice
+     Owner UID: 1000 (von)
+       Boot ID: 2a0d20f82ead48bd83d8d86428b069d5
+    Machine ID: 29937722896c4664bdffe71ab602f563
+      Hostname: omarchy
+       Storage: /var/lib/systemd/coredump/core.UnrealEditor-Cm.1000.2a0d20f82ead48bd83d8d86428b069d5.269077.1792271355000000.zst (present)
+  Size on Disk: 359.1M
+       Message: Process 269077 (UnrealEditor-Cm) of user 1000 dumped core.
+                
+                Module libtbbmalloc.so.2 without build-id.
+                Module libtbb.so.12 without build-id.
+                Module libembree4.so.4 without build-id.
+                Module libShaderConductor.so without build-id.
+                Module libdxcompiler.so without build-id.
+                Module libastcenc_thunk_linux64_5.0.1.so without build-id.
+                Module libispc_texcomp.so without build-id.
+                Stack trace of thread 269077:
+                #0  0x00007128c210b8b8 _Z20PlatformCrashHandleriP9siginfo_tPv (libUnrealEditor-Core.so + 0xf0b8b8)
+                #1  0x00007128b503e6f0 n/a (libc.so.6 + 0x3e6f0)
+                #2  0x00007128b509a17c n/a (libc.so.6 + 0x9a17c)
+                #3  0x00007128b503e5d0 raise (libc.so.6 + 0x3e5d0)
+                #4  0x00007128b5025685 abort (libc.so.6 + 0x25685)
+                #5  0x00007128b5026704 n/a (libc.so.6 + 0x26704)
+                #6  0x00007128b50a482c n/a (libc.so.6 + 0xa482c)
+                #7  0x00007128b50a4844 n/a (libc.so.6 + 0xa4844)
+                #8  0x00007128c1d203eb _ZN8TextBiDi8Internal12FICUTextBiDiD2Ev (libUnrealEditor-Core.so + 0xb203eb)
+                #9  0x00007128b9527324 _ZNK14TDefaultDeleteIN8TextBiDi9ITextBiDiEEclEPS1_ (libUnrealEditor-Slate.so + 0x527324)
+                #10 0x00007128b9568641 _ZN16FSlateTextLayoutD2Ev (libUnrealEditor-Slate.so + 0x568641)
+                #11 0x00007128b9363cb4 _ZN22SharedPointerInternals24TReferenceControllerBaseIL7ESPMode1EE22ReleaseSharedReferenceEv (libUnrealEditor-Slate.so + 0x363cb4)
+                #12 0x00007128b9448744 _ZN22SharedPointerInternals17FSharedReferencerIL7ESPMode1EED2Ev (libUnrealEditor-Slate.so + 0x448744)
+                #13 0x00007128b9734d23 _ZNK14TDefaultDeleteI21FSlateTextBlockLayoutEclEPS0_ (libUnrealEditor-Slate.so + 0x734d23)
+                #14 0x00007128b8ae3b74 _ZN22SharedPointerInternals24TReferenceControllerBaseIL7ESPMode1EE22ReleaseSharedReferenceEv (libUnrealEditor-SlateCore.so + 0x2e3b74)
+                #15 0x00007128b8c2a274 _ZN22SharedPointerInternals17FSharedReferencerIL7ESPMode1EED2Ev (libUnrealEditor-SlateCore.so + 0x42a274)
+                #16 0x00007128bf24dc48 _ZN31TWidgetSlotWithAttributeSupportIN14SHorizontalBox5FSlotEED2Ev (libUnrealEditor-Engine.so + 0x4c4dc48)
+                #17 0x00007128b8d948a7 _ZNK14TDefaultDeleteIN9SBoxPanel5FSlotEEclEPS1_ (libUnrealEditor-SlateCore.so + 0x5948a7)
+                #18 0x00007128b8d85524 _ZN6TArrayI10TUniquePtrIN9SBoxPanel5FSlotE14TDefaultDeleteIS2_EE22TSizedDefaultAllocatorILi32EEED2Ev (libUnrealEditor-SlateCore.so + 0x585524)
+                #19 0x00007128b8ae3b74 _ZN22SharedPointerInternals24TReferenceControllerBaseIL7ESPMode1EE22ReleaseSharedReferenceEv (libUnrealEditor-SlateCore.so + 0x2e3b74)
+                #20 0x00007128b8c2a274 _ZN22SharedPointerInternals17FSharedReferencerIL7ESPMode1EED2Ev (libUnrealEditor-SlateCore.so + 0x42a274)
+                #21 0x00007128bed9bb48 _ZN31TWidgetSlotWithAttributeSupportIN12SVerticalBox5FSlotEED2Ev (libUnrealEditor-Engine.so + 0x479bb48)
+                #22 0x00007128b8d948a7 _ZNK14TDefaultDeleteIN9SBoxPanel5FSlotEEclEPS1_ (libUnrealEditor-SlateCore.so + 0x5948a7)
+                #23 0x00007128b8d85524 _ZN6TArrayI10TUniquePtrIN9SBoxPanel5FSlotE14TDefaultDeleteIS2_EE22TSizedDefaultAllocatorILi32EEED2Ev (libUnrealEditor-SlateCore.so + 0x585524)
+                #24 0x00007128b8ae3b74 _ZN22SharedPointerInternals24TReferenceControllerBaseIL7ESPMode1EE22ReleaseSharedReferenceEv (libUnrealEditor-SlateCore.so + 0x2e3b74)
+                #25 0x00007128b8c2a274 _ZN22SharedPointerInternals17FSharedReferencerIL7ESPMode1EED2Ev (libUnrealEditor-SlateCore.so + 0x42a274)
+                #26 0x00007128bf24dc48 _ZN31TWidgetSlotWithAttributeSupportIN14SHorizontalBox5FSlotEED2Ev (libUnrealEditor-Engine.so + 0x4c4dc48)
+                #27 0x00007128b8d948a7 _ZNK14TDefaultDeleteIN9SBoxPanel5FSlotEEclEPS1_ (libUnrealEditor-SlateCore.so + 0x5948a7)
+                #28 0x00007128b8d85524 _ZN6TArrayI10TUniquePtrIN9SBoxPanel5FSlotE14TDefaultDeleteIS2_EE22TSizedDefaultAllocatorILi32EEED2Ev (libUnrealEditor-SlateCore.so + 0x585524)
+                #29 0x00007128b8ae3b74 _ZN22SharedPointerInternals24TReferenceControllerBaseIL7ESPMode1EE22ReleaseSharedReferenceEv (libUnrealEditor-SlateCore.so + 0x2e3b74)
+                #30 0x00007128b8c2a274 _ZN22SharedPointerInternals17FSharedReferencerIL7ESPMode1EED2Ev (libUnrealEditor-SlateCore.so + 0x42a274)
+                #31 0x00007128b95b6eb8 _ZN29TSingleWidgetChildrenWithSlotI40TSingleWidgetChildrenWithBasicLayoutSlotIL23EInvalidateWidgetReason0EEED2Ev (libUnrealEditor-Slate.so + 0x5b6eb8)
+                #32 0x00007128b8ae3b74 _ZN22SharedPointerInternals24TReferenceControllerBaseIL7ESPMode1EE22ReleaseSharedReferenceEv (libUnrealEditor-SlateCore.so + 0x2e3b74)
+                #33 0x00007128b8c2a274 _ZN22SharedPointerInternals17FSharedReferencerIL7ESPMode1EED2Ev (libUnrealEditor-SlateCore.so + 0x42a274)
+                #34 0x00007128b8d70418 _ZN29TSingleWidgetChildrenWithSlotI40TSingleWidgetChildrenWithBasicLayoutSlotIL23EInvalidateWidgetReason0EEED2Ev (libUnrealEditor-SlateCore.so + 0x570418)
+                #35 0x00007128b8ae3b74 _ZN22SharedPointerInternals24TReferenceControllerBaseIL7ESPMode1EE22ReleaseSharedReferenceEv (libUnrealEditor-SlateCore.so + 0x2e3b74)
+                #36 0x00007128b8c2a274 _ZN22SharedPointerInternals17FSharedReferencerIL7ESPMode1EED2Ev (libUnrealEditor-SlateCore.so + 0x42a274)
+                #37 0x00007128b8d70418 _ZN29TSingleWidgetChildrenWithSlotI40TSingleWidgetChildrenWithBasicLayoutSlotIL23EInvalidateWidgetReason0EEED2Ev (libUnrealEditor-SlateCore.so + 0x570418)
+                #38 0x00007128b9716b98 _ZN23SNotificationExtendableD2Ev (libUnrealEditor-Slate.so + 0x716b98)
+                #39 0x00007128b9363cb4 _ZN22SharedPointerInternals24TReferenceControllerBaseIL7ESPMode1EE22ReleaseSharedReferenceEv (libUnrealEditor-Slate.so + 0x363cb4)
+                #40 0x00007128b9514f32 _ZN22SharedPointerInternals17FSharedReferencerIL7ESPMode1EED2Ev (libUnrealEditor-Slate.so + 0x514f32)
+                #41 0x00007128c1a181ed _ZN13TDelegateBaseI26FNotThreadSafeDelegateModeE15UnbindUncheckedEv (libUnrealEditor-Core.so + 0x8181ed)
+                #42 0x00007128c1b6631a _ZN2UE4Core7Private8Function21TFunction_OwnedObjectIZN9FTSTicker8FElementC1EdfRK9TDelegateIFbfE26FDefaultDelegateUserPolicyEE3$_0Lb1ELb1EE7DestroyEv (libUnrealEditor-Core.so + 0x96631a)
+                #43 0x00007128c1bcdcf6 _ZN2UE4Core7Private8Function16FFunctionStorage6UnbindEv (libUnrealEditor-Core.so + 0x9cdcf6)
+                #44 0x00007128c1a1f964 _ZN22SharedPointerInternals24TReferenceControllerBaseIL7ESPMode1EE22ReleaseSharedReferenceEv (libUnrealEditor-Core.so + 0x81f964)
+                #45 0x00007128c1b75ff5 _ZN22SharedPointerInternals17FSharedReferencerIL7ESPMode1EED2Ev (libUnrealEditor-Core.so + 0x975ff5)
+                #46 0x00007128b5040fbf n/a (libc.so.6 + 0x40fbf)
+                #47 0x00007128b504109e exit (libc.so.6 + 0x4109e)
+                #48 0x00007128b5027788 n/a (libc.so.6 + 0x27788)
+                #49 0x00007128b50278b9 __libc_start_main (libc.so.6 + 0x278b9)
+                #50 0x0000000000234dfa _start (UnrealEditor-Cmd + 0x34dfa)
+                
+                Stack trace of thread 269093:
+                #0  0x00007128b50a0952 n/a (libc.so.6 + 0xa0952)
+                #1  0x00007128b50e4aed clock_nanosleep (libc.so.6 + 0xe4aed)
+                #2  0x00007128b50f0f27 __nanosleep (libc.so.6 + 0xf0f27)
+                #3  0x00007128b51202ea usleep (libc.so.6 + 0x1202ea)
+                #4  0x00007128c11c6b0b _ZN2UE5Trace7PrivateL19Writer_WorkerThreadEv (libUnrealEditor-TraceLog.so + 0x44b0b)
+                #5  0x00007128c11c8da3 _ZZN2UE5Trace7Private12ThreadCreateEPKcPFvvEENK3$_0clEPv (libUnrealEditor-TraceLog.so + 0x46da3)
+                #6  0x00007128b50980a2 n/a (libc.so.6 + 0x980a2)
+                #7  0x00007128b512080c n/a (libc.so.6 + 0x12080c)
+                
+                Stack trace of thread 269320:
+                #0  0x00007128b50a0952 n/a (libc.so.6 + 0xa0952)
+                #1  0x00007128b5094cd9 n/a (libc.so.6 + 0x94cd9)
+                #2  0x00007128b509754c pthread_cond_wait (libc.so.6 + 0x9754c)
+                #3  0x00007128c1bf521a _ZN13FPThreadEvent4WaitEjb (libUnrealEditor-Core.so + 0x9f521a)
+                #4  0x00007128c1ce5df1 _ZN6FEvent4WaitEv (libUnrealEditor-Core.so + 0xae5df1)
+                #5  0x00007128c1cdfd66 _ZN22FRunnableThreadPThread3RunEv (libUnrealEditor-Core.so + 0xadfd66)
+                #6  0x00007128c1c29413 _ZN22FRunnableThreadPThread11_ThreadProcEPv (libUnrealEditor-Core.so + 0xa29413)
+                #7  0x00007128b50980a2 n/a (libc.so.6 + 0x980a2)
+                #8  0x00007128b512080c n/a (libc.so.6 + 0x12080c)
+                
+                Stack trace of thread 269322:
+                #0  0x00007128b50a0952 n/a (libc.so.6 + 0xa0952)
+                #1  0x00007128b5094cd9 n/a (libc.so.6 + 0x94cd9)
+                #2  0x00007128b509754c pthread_cond_wait (libc.so.6 + 0x9754c)
+                #3  0x00007128c1bf521a _ZN13FPThreadEvent4WaitEjb (libUnrealEditor-Core.so + 0x9f521a)
+                #4  0x00007128c1ce5df1 _ZN6FEvent4WaitEv (libUnrealEditor-Core.so + 0xae5df1)
+                #5  0x00007128c1cdfd66 _ZN22FRunnableThreadPThread3RunEv (libUnrealEditor-Core.so + 0xadfd66)
+                #6  0x00007128c1c29413 _ZN22FRunnableThreadPThread11_ThreadProcEPv (libUnrealEditor-Core.so + 0xa29413)
+                #7  0x00007128b50980a2 n/a (libc.so.6 + 0x980a2)
+                #8  0x00007128b512080c n/a (libc.so.6 + 0x12080c)
+                
+                Stack trace of thread 269323:
+                #0  0x00007128b50a0952 n/a (libc.so.6 + 0xa0952)
+                #1  0x00007128b5094cd9 n/a (libc.so.6 + 0x94cd9)
+                #2  0x00007128b509754c pthread_cond_wait (libc.so.6 + 0x9754c)
+                #3  0x00007128c1bf521a _ZN13FPThreadEvent4WaitEjb (libUnrealEditor-Core.so + 0x9f521a)
+                #4  0x00007128c1ce5df1 _ZN6FEvent4WaitEv (libUnrealEditor-Core.so + 0xae5df1)
+                #5  0x00007128c1cdfd66 _ZN22FRunnableThreadPThread3RunEv (libUnrealEditor-Core.so + 0xadfd66)
+                #6  0x00007128c1c29413 _ZN22FRunnableThreadPThread11_ThreadProcEPv (libUnrealEditor-Core.so + 0xa29413)
+                #7  0x00007128b50980a2 n/a (libc.so.6 + 0x980a2)
+                #8  0x00007128b512080c n/a (libc.so.6 + 0x12080c)
+                
+                Stack trace of thread 269321:
+                #0  0x00007128b50a0952 n/a (libc.so.6 + 0xa0952)
+                #1  0x00007128b5094cd9 n/a (libc.so.6 + 0x94cd9)
+                #2  0x00007128b509754c pthread_cond_wait (libc.so.6 + 0x9754c)
+                #3  0x00007128c1bf521a _ZN13FPThreadEvent4WaitEjb (libUnrealEditor-Core.so + 0x9f521a)
+                #4  0x00007128c1ce5df1 _ZN6FEvent4WaitEv (libUnrealEditor-Core.so + 0xae5df1)
+                #5  0x00007128c1cdfd66 _ZN22FRunnableThreadPThread3RunEv (libUnrealEditor-Core.so + 0xadfd66)
+                #6  0x00007128c1c29413 _ZN22FRunnableThreadPThread11_ThreadProcEPv (libUnrealEditor-Core.so + 0xa29413)
+                #7  0x00007128b50980a2 n/a (libc.so.6 + 0x980a2)
+                #8  0x00007128b512080c n/a (libc.so.6 + 0x12080c)
+                
+                Stack trace of thread 269485:
+                #0  0x00007128b50a0952 n/a (libc.so.6 + 0xa0952)
+                #1  0x00007128b51055f9 waitid (libc.so.6 + 0x1055f9)
+                #2  0x00007128c217bfd5 _ZN18FChildWaiterThread3RunEv (libUnrealEditor-Core.so + 0xf7bfd5)
+                #3  0x00007128c1cdfd66 _ZN22FRunnableThreadPThread3RunEv (libUnrealEditor-Core.so + 0xadfd66)
+                #4  0x00007128c1c29413 _ZN22FRunnableThreadPThread11_ThreadProcEPv (libUnrealEditor-Core.so + 0xa29413)
+                #5  0x00007128b50980a2 n/a (libc.so.6 + 0x980a2)
+                #6  0x00007128b512080c n/a (libc.so.6 + 0x12080c)
+                ELF object binary architecture: AMD x86-64
