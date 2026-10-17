@@ -99,6 +99,25 @@ with tempfile.TemporaryDirectory() as directory:
     assert qa.hull_transforms(transform, 'CollegeBathurst') == {'QuebecCar_0': ((10.25,-20.,100.),15.322)}
     reject(lambda: qa.hull_transforms(transform.replace('VehicleHull','Collision'), 'CollegeBathurst'), 'deprecated car box transforms')
     reject(lambda: qa.hull_transforms(transform.replace('CollegeBathurst.CollegeBathurst:', 'LaFontaine.LaFontaine:'), 'CollegeBathurst'), 'wrong-map hull')
+    # Acceleration crosses 100 cm/s before the hull necessarily travels 10 cm.
+    # Keep polling the same bounded observation until both requirements hold.
+    drive_start = (2770.615, 354.556, 102.934575)
+    def drive_rows(speed, point):
+        rows = [actor('CollegeBathurst','StaticMeshComponent','QuebecCar_0.VehicleHull','RelativeLocation',
+                      '(X=%s,Y=%s,Z=%s)' % point),
+                actor('CollegeBathurst','StaticMeshComponent','QuebecCar_0.VehicleHull','RelativeRotation',
+                      '(Pitch=0,Yaw=15.322,Roll=0)')]
+        if speed is not None:
+            rows.append(actor('CollegeBathurst','QuebecCar','QuebecCar_0','Speed',str(speed)))
+        return '\n'.join(rows)
+    early = (2778.183121, 356.629527, 102.934575)
+    later = (2790.615, 354.556, 102.934575)
+    assert qa.driving_sample(drive_rows(123.519, early), 'CollegeBathurst', 'QuebecCar_0', drive_start) is None
+    assert qa.driving_sample(drive_rows(150, later), 'CollegeBathurst', 'QuebecCar_0', drive_start) == {
+        'speed_cm_s': 150., 'position_cm': later}
+    assert qa.driving_sample(drive_rows(0, later), 'CollegeBathurst', 'QuebecCar_0', drive_start) is None
+    assert qa.driving_sample(drive_rows(150, drive_start), 'CollegeBathurst', 'QuebecCar_0', drive_start) is None
+    assert qa.driving_sample(drive_rows(None, later), 'CollegeBathurst', 'QuebecCar_0', drive_start) is None
     pawn = actor('CollegeBathurst','QuebecController','QuebecController_0','Pawn', "QuebecCharacter'/Game/Maps/CollegeBathurst.CollegeBathurst:PersistentLevel.QuebecCharacter_1'")
     assert qa.local_walker(pawn,'CollegeBathurst') == 'QuebecCharacter_1'
     assert qa.controller_pawn(pawn.replace('QuebecCharacter_1','QuebecCar_0').replace("QuebecCharacter'", "QuebecCar'"),'CollegeBathurst') == 'QuebecCar_0'

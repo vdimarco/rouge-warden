@@ -474,7 +474,7 @@ AQuebecParkResident::AQuebecParkResident()
     GeneratedBody = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("GeneratedBody"));
     GeneratedBody->SetupAttachment(RootComponent);
     GeneratedBody->SetCollisionProfileName(TEXT("NoCollision"));
-    GeneratedBody->SetComponentTickEnabled(false);
+    GeneratedBody->PrimaryComponentTick.bCanEverTick = false;
     GeneratedBody->SetRenderCustomDepth(true);
     GeneratedBody->SetCustomDepthStencilValue(255);
     HandProp = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("HandProp"));
@@ -587,7 +587,7 @@ void AQuebecParkResident::Tick(float DeltaSeconds)
     const FVector View = bLocalView ? Player->PlayerCameraManager->GetCameraRotation().Vector() : FVector::ZeroVector;
     Label->SetVisibility(bLocalView && TowardLabel.SizeSquared() < FMath::Square(900.f) &&
         FVector::DotProduct(View,TowardLabel.GetSafeNormal()) > .99f);
-    if (!bLocalView || FVector::DistSquared(Eye,GetActorLocation()) > FMath::Square(14000.f)) return;
+    if (IsHidden() || !bLocalView || FVector::DistSquared(Eye,GetActorLocation()) > FMath::Square(14000.f)) return;
     const float AnimationClock = bReacting || Activity == 2 ? ServerTime + Phase :
         Travel.AnimationTime*(bWalking ? Pace/(Activity == 1 ? 260.f : 120.f) : 1.f)+Phase;
     const float Pose = AnimationClock;
@@ -1381,6 +1381,14 @@ AQuebecController::AQuebecController()
     static ConstructorHelpers::FObjectFinderOptional<USoundBase> Complete(TEXT("/Game/Audio/Feedback/Complete.Complete"));
     static ConstructorHelpers::FObjectFinderOptional<USoundBase> Dialogue(TEXT("/Game/Audio/Feedback/Dialogue.Dialogue"));
     FeedbackSounds = {Checkpoint.Get(), Complete.Get(), Dialogue.Get()};
+    static ConstructorHelpers::FObjectFinderOptional<USoundBase> Neighborhood(TEXT("/Game/Audio/Music/NeighborhoodLoop.NeighborhoodLoop"));
+    static ConstructorHelpers::FObjectFinderOptional<USoundBase> Race(TEXT("/Game/Audio/Music/RaceLoop.RaceLoop"));
+    NeighborhoodMusic = Neighborhood.Get();
+    RaceMusic = Race.Get();
+    MusicAudio = CreateDefaultSubobject<UAudioComponent>(TEXT("MusicAudio"));
+    MusicAudio->bAutoActivate = false;
+    MusicAudio->bAllowSpatialization = false;
+    MusicAudio->VolumeMultiplier = .045f;
 }
 
 void AQuebecController::PlayFeedback(EQuebecFeedbackCue Cue)
@@ -1508,6 +1516,7 @@ void AQuebecController::PlayerTick(float DeltaTime)
     }
     Super::PlayerTick(DeltaTime);
     if (!IsLocalController()) return;
+    UpdateMusic(Campaign && Campaign->Phase == EQuebecCampaignPhase::RaceRunning);
     BrowserStateElapsed += DeltaTime;
     if (BrowserStateElapsed >= .5f && !BrowserStreamerId.IsEmpty() && IPixelStreaming2Module::IsAvailable())
     {

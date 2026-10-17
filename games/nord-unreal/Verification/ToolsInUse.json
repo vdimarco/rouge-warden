@@ -1,0 +1,1742 @@
+{
+  "schema_version": 1,
+  "draft": false,
+  "delivery_complete": true,
+  "snapshot_utc": "2026-10-17T13:44:35.173506+00:00",
+  "current_combined_source": {
+    "main_commit": "936d2c18af9453019638121ab747e898443f16c0",
+    "scope": "Main plus owned music/hidden-resident changes; shared feedback and district/locomotion changes are not attributed to this task. Native/cook scope below covers 32 recorded C++/header files, not the entire repository.",
+    "source_sha256": {
+      "Source/Quebec/Quebec.cpp": "bfa80510f164ae216ed79f7efa9e93c54ac6f3caa1c1a4e3fe634027a64badad",
+      "Source/Quebec/QuebecCampaign.cpp": "3e6622eb4ac645e32168d57fe7ac5c26dc920cde1e5d179ee5d68535918657c7",
+      "Source/Quebec/QuebecCampaignSaveTests.cpp": "dcbeb910e523e2b2193983a41713ce9e66a1c34b47c1375b7b92491c6a7a8b68",
+      "Source/Quebec/QuebecCarHandlingTests.cpp": "4dd5c3a1f5e3d7cabdfc4b524c255a309073843ba4f86e1df3c63cb2deed5248",
+      "Source/Quebec/QuebecCrewAnimation.cpp": "e7cc2217f9ca1093118bb18d693ffc113fbf036f899f4b624c0ab9a91f9c6773",
+      "Source/Quebec/QuebecCrewAnimationTests.cpp": "d474e8bd8cfde1e1161979ccc0d605fa6255230cce51be6aec74e991e4085f84",
+      "Source/Quebec/QuebecDistrictTests.cpp": "9077c1aeee5b201a0f1feb579f537058e1f7785a064473c04aa7fc5b31c09e2d",
+      "Source/Quebec/QuebecFeedbackTests.cpp": "0dd5dbd16dc514a968ff478e412a659e5940a2b14ecf6086c5b2ed170992f3c0",
+      "Source/Quebec/QuebecGameplay.cpp": "391aa4fbfe5b4f9c948b6cc435f2e40f473149d8d6bb4c16a157f75fefe4fe46",
+      "Source/Quebec/QuebecMusic.cpp": "a99cf344c399e4f365807e98461bc1764a0ea7657961fef87e9f9fd9aebd3b9e",
+      "Source/Quebec/QuebecMusicTests.cpp": "0e3a6e45c6f0663f493129698120c43deafcd0c0a369f713e9663ac0db4b17fe",
+      "Source/Quebec/QuebecPedestrian.cpp": "f25815f5ff6034550c65152dc409e68033c9a7f872517c762b28a22ed1e14634",
+      "Source/Quebec/QuebecResidentReactions.cpp": "29b87387dc67f30286c3269d9acafd525c540a929b9556cfea508958a2782133",
+      "Source/Quebec/QuebecResidentVisualTests.cpp": "6ec40be09f99ae7d6ad568e707f737e091cbe9f97d5cd9c0bcdb13b908c74f1a",
+      "Source/Quebec/QuebecSky.cpp": "b05e83c071a80b35f18c358022134196a271213cb60c047a242dd0855bcf12cc",
+      "Source/Quebec/QuebecSkyTests.cpp": "86ab012c441d996e5d765601a7a8a35f9964a0539c15f791e10379fc941067c3",
+      "Source/Quebec/QuebecStreamIdle.cpp": "36e7342b6e36c9ef386471822acccf64862b1fca357362d40195deea71dc5299",
+      "Source/Quebec/QuebecSwimming.cpp": "eadc6bfa1985b3cfb758f6dd8594ad3f308f01116c5d4573377fd5890cb5e65d",
+      "Source/Quebec/QuebecVegetation.cpp": "f54866e7ecb8afa1730eafe4892f485ba339de885d23d724f5a038523c0b0a8a",
+      "Source/Quebec/CollegeBathurstMap.h": "5e011de207a3d4a2430c5cdd723c878f6ed10ee5b47424dbc68c2c1bcb6a997d",
+      "Source/Quebec/LaFontaineExtensionMap.h": "2764fee03b9c17bb63fd6b1c4a9d83a10457ffab8d9dbf7b3d0d7adb9a1f8046",
+      "Source/Quebec/LaFontaineLamps.h": "1ebba4641df8b7589ba2c81f89e6ff75587cbe0b5efe4f1b2fc87459cb1fac6f",
+      "Source/Quebec/LaFontaineMap.h": "80a96e858c315584598acd8d87dfb758ba45f64a58ccd4b6f5222ddb56ff1700",
+      "Source/Quebec/LaFontaineWater.h": "14613fcac45c02e42f3650a4acffeb4e0f7aa5f77d76db391200f2d13b90496a",
+      "Source/Quebec/QuebecCampaign.h": "38e1571791f6836c08f290eb885f28f6a18a7fd86a6c00f7835f3b95c60425cf",
+      "Source/Quebec/QuebecCrewAnimation.h": "99ef33e3fb2723474da58bc9cd0a822cca8812eb47028a82486a745077e07e5e",
+      "Source/Quebec/QuebecGameplay.h": "9c00525dd2826293ff2cdc87bbf55a1c52302ad6e7382f9a70bcf02b6f7879d6",
+      "Source/Quebec/QuebecPedestrian.h": "37a4b88edff6a8dcc32e70e66c307b01f78eac5feec1db2a0d10e83654bcce9d",
+      "Source/Quebec/QuebecSky.h": "e617ab5f8d73567f307cdde7c5c79bf907903378953a74f442a2ab7d3f01bb66",
+      "Source/Quebec/QuebecSkyModel.h": "faf3cd73241a83e0a7ba509c4a344741b6d42697de22964b4a7431e54fd2d034",
+      "Source/Quebec/QuebecStreamIdle.h": "18223123773b0fd9a460b903e7cb50a2a725e3de9980b1f6f3fb5c54f8fba800",
+      "Source/Quebec/QuebecVegetation.h": "27a9966ded6bb9249e1e2d303f094e384d1fa50c90809a1ac70aa082dbab7a9e"
+    },
+    "source_fingerprint_sha256": "cfd750bbc316e17728a113dd1de37ce84e6d47ca43d7a1f5c8f847717a423243",
+    "fingerprint_format": "UTF-8 sorted path<TAB>sha256<LF>",
+    "current_source_matches_native_and_cook": true,
+    "maps_sha256": {
+      "Content/Maps/Quebec.umap": "33f25a46d1fa4c39a1b846526b391192ffa19ee425addbde1533f414fc567a3a",
+      "Content/Maps/CollegeBathurst.umap": "4a01de008dc3d12d547ab0ec6a7023c7b588915030f0268c1147559dabd2ea64",
+      "Content/Maps/LaFontaine.umap": "1d10804760ffdef9c620bc2840014ec2e5dbc204931d9b9854699f511e5d0c40"
+    },
+    "current_maps_match_cook_snapshot": true,
+    "project_file": {
+      "path": "Quebec.uproject",
+      "bytes": 562,
+      "sha256": "0d72ad3147de9c7e54d92d00a22d966defeec28e9559367ef58b329fb2876e70"
+    },
+    "owned_standalone_files": {
+      "Data/Art/Music/ACE-Step-LICENSE": {
+        "path": "Data/Art/Music/ACE-Step-LICENSE",
+        "bytes": 1064,
+        "sha256": "05a6bce42a62636d2cfb24139cc008b6b899754e244175814bb5dd2f4a485357"
+      },
+      "Data/Art/Music/NeighborhoodLoop.wav": {
+        "path": "Data/Art/Music/NeighborhoodLoop.wav",
+        "bytes": 3840044,
+        "sha256": "4b6a6ee31ebfa32a7173535be424a7ee74fbccc9501ecaa7f9207acec847bab8"
+      },
+      "Data/Art/Music/README.md": {
+        "path": "Data/Art/Music/README.md",
+        "bytes": 1596,
+        "sha256": "71efe40e683e0dfdb15f7e611e3ca83d272f2be0965fc84aa088f93d2c676a87"
+      },
+      "Data/Art/Music/RaceLoop.wav": {
+        "path": "Data/Art/Music/RaceLoop.wav",
+        "bytes": 2792772,
+        "sha256": "69cbf336cb5c1094e676dd8ee37047af0cd578207dbcaea896f63f7c9d96ca23"
+      },
+      "Data/Art/Music/provenance.json": {
+        "path": "Data/Art/Music/provenance.json",
+        "bytes": 10619,
+        "sha256": "eaea88c9b59a7a44d2d3c69a4b0a37777c9e96e93167cc3ad767d1933da79fdd"
+      },
+      "Content/Audio/Music/NeighborhoodLoop.uasset": {
+        "path": "Content/Audio/Music/NeighborhoodLoop.uasset",
+        "bytes": 2453392,
+        "sha256": "6d5b4ed8b53191266dfc45ae58afdcdf00fa8c62c4fa990bf699218cf854bfb9"
+      },
+      "Content/Audio/Music/RaceLoop.uasset": {
+        "path": "Content/Audio/Music/RaceLoop.uasset",
+        "bytes": 1897455,
+        "sha256": "07f23f810a5002f81d77844242a360c153a9265f2b4fa6c2602cc6947b83fc67"
+      },
+      "Source/Quebec/QuebecMusic.cpp": {
+        "path": "Source/Quebec/QuebecMusic.cpp",
+        "bytes": 564,
+        "sha256": "a99cf344c399e4f365807e98461bc1764a0ea7657961fef87e9f9fd9aebd3b9e"
+      },
+      "Source/Quebec/QuebecMusicTests.cpp": {
+        "path": "Source/Quebec/QuebecMusicTests.cpp",
+        "bytes": 4332,
+        "sha256": "0e3a6e45c6f0663f493129698120c43deafcd0c0a369f713e9663ac0db4b17fe"
+      },
+      "Source/Quebec/QuebecResidentVisualTests.cpp": {
+        "path": "Source/Quebec/QuebecResidentVisualTests.cpp",
+        "bytes": 5410,
+        "sha256": "6ec40be09f99ae7d6ad568e707f737e091cbe9f97d5cd9c0bcdb13b908c74f1a"
+      },
+      "Scripts/import_music.py": {
+        "path": "Scripts/import_music.py",
+        "bytes": 2667,
+        "sha256": "f2a0238bc26d5a3ecc233d3b48e6bc1efe4cd8c26457037c4feb6468df818d24"
+      },
+      "Scripts/test_music.py": {
+        "path": "Scripts/test_music.py",
+        "bytes": 4393,
+        "sha256": "931876e834a2d92bbb5d9bbbd8bb32d219891ba8e6ccb05c3bfda56411f299c9"
+      }
+    },
+    "shared_owned_regions": [
+      "Source/Quebec/QuebecGameplay.cpp: body component tick default, hidden visual early return, controller music hooks",
+      "Source/Quebec/QuebecGameplay.h: controller music declarations"
+    ],
+    "integration_manifest": {
+      "path": "Saved/Tests/ToolsInUse/IntegrationManifest.json",
+      "bytes": 2228,
+      "sha256": "0ff229262910375871e7b84d3baef7d8873f6f2b1a1aae8bc415adecb1e6d001"
+    }
+  },
+  "native": {
+    "status": "passed",
+    "evidence": {
+      "path": "Saved/Tests/ToolsInUse/Native-20261017T1325/Process.json",
+      "bytes": 5816,
+      "sha256": "c1ac0e4add815646971820503969e2a6d8787bfde7ecb8546d5218d8f0693667"
+    },
+    "build_exit": 0,
+    "automation_exit": 0,
+    "test_count": 37,
+    "clean_successes": 35,
+    "successes_with_warnings": 2,
+    "failed": 0,
+    "warning_cases": [
+      {
+        "test": "Quebec.Camera.LookBounds",
+        "warnings": 2
+      },
+      {
+        "test": "Quebec.Driving.FittedHullCurbsAndWalls",
+        "warnings": 5
+      }
+    ],
+    "scope": "Isolated user directory, NullRHI, no sound; no rendered or audible acceptance."
+  },
+  "combined_cook": {
+    "status": "passed",
+    "evidence": {
+      "path": "Saved/Tests/ToolsInUse/CookCombined-20261017T1335/Process.json",
+      "bytes": 5266,
+      "sha256": "a942e50e06e1938d62c79539e7df89f3224441ef1eff0fac3be8bbfb2f9b86b4"
+    },
+    "exit": 0,
+    "seconds": 27.471,
+    "archive_root": "Builds/ToolsInUseCombined-20261017T1335/Archive/Linux",
+    "maps": [
+      "/Game/Maps/LaFontaine",
+      "/Game/Maps/CollegeBathurst"
+    ],
+    "additional_cooker_option": "-SkipZenStore",
+    "source_hashes_match_native_and_current": true,
+    "cooked_graphs": {
+      "count": 8,
+      "graphs": {
+        "3": {
+          "header": {
+            "path": "Builds/ToolsInUseCombined-20261017T1335/Cooked/Linux/Quebec/Content/ParkComic/Crew/Resident3/BS_Locomotion.uasset",
+            "bytes": 1368,
+            "sha256": "9db2473d4a9dc1ac3656e479ca29c51e1db03b392c5f540afc0552faf94a61fc"
+          },
+          "exports": {
+            "path": "Builds/ToolsInUseCombined-20261017T1335/Cooked/Linux/Quebec/Content/ParkComic/Crew/Resident3/BS_Locomotion.uexp",
+            "bytes": 193,
+            "sha256": "6a6c013549df3eeb5412a728ab111818a436fdcd059200c646181626fc88dda2"
+          }
+        },
+        "4": {
+          "header": {
+            "path": "Builds/ToolsInUseCombined-20261017T1335/Cooked/Linux/Quebec/Content/ParkComic/Crew/Resident4/BS_Locomotion.uasset",
+            "bytes": 1368,
+            "sha256": "005a1413bd9121e37288b912052a5c3061c925a2c4bf9d8fa5a307a2d8fa2e5c"
+          },
+          "exports": {
+            "path": "Builds/ToolsInUseCombined-20261017T1335/Cooked/Linux/Quebec/Content/ParkComic/Crew/Resident4/BS_Locomotion.uexp",
+            "bytes": 193,
+            "sha256": "9c924754540c2475255cf53e1dd8e01b755432ef582985f904d0b9ab0d31cd69"
+          }
+        },
+        "5": {
+          "header": {
+            "path": "Builds/ToolsInUseCombined-20261017T1335/Cooked/Linux/Quebec/Content/ParkComic/Crew/Resident5/BS_Locomotion.uasset",
+            "bytes": 1368,
+            "sha256": "9b200e2df8460324c4ec73092e0d746262848a7cf07240bd0ba6ad4aa1a1b39c"
+          },
+          "exports": {
+            "path": "Builds/ToolsInUseCombined-20261017T1335/Cooked/Linux/Quebec/Content/ParkComic/Crew/Resident5/BS_Locomotion.uexp",
+            "bytes": 193,
+            "sha256": "05311482672f883b1bc27f5f7064026ed6d7a6b839c427196cf4bccf72f066c1"
+          }
+        },
+        "6": {
+          "header": {
+            "path": "Builds/ToolsInUseCombined-20261017T1335/Cooked/Linux/Quebec/Content/ParkComic/Crew/Resident6/BS_Locomotion.uasset",
+            "bytes": 1368,
+            "sha256": "9f15f828ac732b17c05a93b50d9986d0a35e5750526ddc7a59894b4c21089451"
+          },
+          "exports": {
+            "path": "Builds/ToolsInUseCombined-20261017T1335/Cooked/Linux/Quebec/Content/ParkComic/Crew/Resident6/BS_Locomotion.uexp",
+            "bytes": 193,
+            "sha256": "9609aaca0150ef70c6a9b86637edbf7317f837638d29b9aac8f307e6239d1676"
+          }
+        },
+        "7": {
+          "header": {
+            "path": "Builds/ToolsInUseCombined-20261017T1335/Cooked/Linux/Quebec/Content/ParkComic/Crew/Resident7/BS_Locomotion.uasset",
+            "bytes": 1368,
+            "sha256": "8006a2ad577bdc3bdf04ae9c8ab8d4dc809e0fca03af0d0b6735c21f9c0df746"
+          },
+          "exports": {
+            "path": "Builds/ToolsInUseCombined-20261017T1335/Cooked/Linux/Quebec/Content/ParkComic/Crew/Resident7/BS_Locomotion.uexp",
+            "bytes": 193,
+            "sha256": "4ff28859660dcfb82654b710eb9c0fc9200c36c2abeff134331ad61a4199da32"
+          }
+        },
+        "8": {
+          "header": {
+            "path": "Builds/ToolsInUseCombined-20261017T1335/Cooked/Linux/Quebec/Content/ParkComic/Crew/Resident8/BS_Locomotion.uasset",
+            "bytes": 1368,
+            "sha256": "7cf1135afa378b2545b8f166d8e2e25eb55781258957f9ac5e7e7b056b03dfb8"
+          },
+          "exports": {
+            "path": "Builds/ToolsInUseCombined-20261017T1335/Cooked/Linux/Quebec/Content/ParkComic/Crew/Resident8/BS_Locomotion.uexp",
+            "bytes": 193,
+            "sha256": "daf407a58b1e4b8f0e991eb093d7d574fd4781bdce5fc31cd89167b11c802e0d"
+          }
+        },
+        "9": {
+          "header": {
+            "path": "Builds/ToolsInUseCombined-20261017T1335/Cooked/Linux/Quebec/Content/ParkComic/Crew/Resident9/BS_Locomotion.uasset",
+            "bytes": 1368,
+            "sha256": "8e64cb8881286ef2cb082e7f72fa197616a19130c36ca13421e879c5496af33d"
+          },
+          "exports": {
+            "path": "Builds/ToolsInUseCombined-20261017T1335/Cooked/Linux/Quebec/Content/ParkComic/Crew/Resident9/BS_Locomotion.uexp",
+            "bytes": 193,
+            "sha256": "d005540794aa5f9df67adc766b68554e5eb325e500d07c991351dfb3985f830e"
+          }
+        },
+        "10": {
+          "header": {
+            "path": "Builds/ToolsInUseCombined-20261017T1335/Cooked/Linux/Quebec/Content/ParkComic/Crew/Resident10/BS_Locomotion.uasset",
+            "bytes": 1374,
+            "sha256": "5b18e2d6bcf43b7d5ac887eead09390f95ee449a26a98b32c0a7916af6a4412f"
+          },
+          "exports": {
+            "path": "Builds/ToolsInUseCombined-20261017T1335/Cooked/Linux/Quebec/Content/ParkComic/Crew/Resident10/BS_Locomotion.uexp",
+            "bytes": 193,
+            "sha256": "b905347b9c135d84f18a633f4d045390d7b149d44638ef0dd06c9a23c869b62d"
+          }
+        }
+      },
+      "scope": "Eight loose isolated cooker graph outputs meet existing header magic/export predicates; not an independent IoStore archive listing or packaged peer selection proof."
+    }
+  },
+  "combined_failed_attempts": [
+    {
+      "status": "failed",
+      "evidence": {
+        "path": "Saved/Tests/ToolsInUse/CombinedDelivery-20261017T133235926845Z/Process.json",
+        "bytes": 10849,
+        "sha256": "6ec72e69cf52c8894e8a1f69ae12faad6a118845907880ecc1663c3300e599a2"
+      },
+      "render_report": {
+        "path": "Saved/Tests/ToolsInUse/CombinedPackage-20261017T133235926845Z/report.json",
+        "bytes": 13773,
+        "sha256": "fba2063986186b8de6bbc70691e1db2e9202c7d38a12b9e6ecaa5fea730ea686"
+      },
+      "failure": "Missing isolated cooked graph header during verifier preflight, before engine launch; default Zen cook layout did not meet existing verifier assumptions.",
+      "service_restored": true,
+      "service_configuration_matches": true,
+      "archive_preserved": true
+    },
+    {
+      "status": "failed",
+      "evidence": {
+        "path": "Saved/Tests/ToolsInUse/CombinedDelivery-20261017T133407824601Z/Process.json",
+        "bytes": 10851,
+        "sha256": "e17803d9941a772ba23ca7b8361245c28b3f8d88345b8de1a556188c7ec559cb"
+      },
+      "render_report": {
+        "path": "Saved/Tests/ToolsInUse/CombinedPackage-20261017T133407824601Z/report.json",
+        "bytes": 71336,
+        "sha256": "ecadac8f586667ad14137f0d591c5429552defec08d823e6b602733954308748"
+      },
+      "failure": "AssertionError: Speed changed without actual hull movement",
+      "completed_districts": {
+        "montreal": true
+      },
+      "service_restored": true,
+      "service_configuration_matches": true,
+      "archive_preserved": true,
+      "correction": "Verifier driving_sample now waits for both original speed>100cm/s and planar hull travel>10cm predicates within the existing 12-second poll. Five CPU cases cover early movement, success, stopped, unmoved and missing-speed; no game/native/asset change."
+    }
+  ],
+  "combined_render": {
+    "status": "passed",
+    "evidence": {
+      "path": "Saved/Tests/ToolsInUse/CombinedPackage-20261017T133723784841Z/report.json",
+      "bytes": 112034,
+      "sha256": "cf0cfd815808af4bb754af2039e08a52645288c1466a767b0fe1474b1be574af"
+    },
+    "elapsed_seconds": 117.627,
+    "archive_preserved": true,
+    "peers": [
+      {
+        "name": "montreal-standalone",
+        "exit": 0
+      },
+      {
+        "name": "montreal-host",
+        "exit": 0
+      },
+      {
+        "name": "montreal-client",
+        "exit": 0
+      },
+      {
+        "name": "toronto-standalone",
+        "exit": 0
+      },
+      {
+        "name": "toronto-host",
+        "exit": 0
+      },
+      {
+        "name": "toronto-client",
+        "exit": 0
+      }
+    ],
+    "screenshots": {
+      "Saved/Tests/ToolsInUse/CombinedPackage-20261017T133723784841Z/montreal-standalone/User/Saved/Screenshots/Linux/NordComic_Car.png": {
+        "path": "Saved/Tests/ToolsInUse/CombinedPackage-20261017T133723784841Z/montreal-standalone/User/Saved/Screenshots/Linux/NordComic_Car.png",
+        "bytes": 1757239,
+        "sha256": "313da9156ba82fad6b7fda45b5b76250d9a662ee926f5b59829896504d17c071"
+      },
+      "Saved/Tests/ToolsInUse/CombinedPackage-20261017T133723784841Z/montreal-standalone/User/Saved/Screenshots/Linux/NordComic_East.png": {
+        "path": "Saved/Tests/ToolsInUse/CombinedPackage-20261017T133723784841Z/montreal-standalone/User/Saved/Screenshots/Linux/NordComic_East.png",
+        "bytes": 1813221,
+        "sha256": "a26627f34020499891e6bc0bca591cebd82f55b6f699a2c0a1a473ac43f9f463"
+      },
+      "Saved/Tests/ToolsInUse/CombinedPackage-20261017T133723784841Z/montreal-standalone/User/Saved/Screenshots/Linux/NordComic_Jump.png": {
+        "path": "Saved/Tests/ToolsInUse/CombinedPackage-20261017T133723784841Z/montreal-standalone/User/Saved/Screenshots/Linux/NordComic_Jump.png",
+        "bytes": 1661902,
+        "sha256": "0ffb29a09312761bfeafd2b0ce1dc2c074f81c77ceff306cc1e9d68472f499b7"
+      },
+      "Saved/Tests/ToolsInUse/CombinedPackage-20261017T133723784841Z/montreal-standalone/User/Saved/Screenshots/Linux/NordComic_North.png": {
+        "path": "Saved/Tests/ToolsInUse/CombinedPackage-20261017T133723784841Z/montreal-standalone/User/Saved/Screenshots/Linux/NordComic_North.png",
+        "bytes": 1948396,
+        "sha256": "e020b84cde13b53b7130599337206463e038a890deacd4cb9db7705cce88527f"
+      },
+      "Saved/Tests/ToolsInUse/CombinedPackage-20261017T133723784841Z/montreal-standalone/User/Saved/Screenshots/Linux/NordComic_West.png": {
+        "path": "Saved/Tests/ToolsInUse/CombinedPackage-20261017T133723784841Z/montreal-standalone/User/Saved/Screenshots/Linux/NordComic_West.png",
+        "bytes": 1858931,
+        "sha256": "705f52a62e360509fd6a3d68cc3fb096e8f6bcf6fe7456c9f57cd7640c9f0476"
+      },
+      "Saved/Tests/ToolsInUse/CombinedPackage-20261017T133723784841Z/montreal-standalone/User/Saved/Screenshots/Linux/NordRealistic_East.png": {
+        "path": "Saved/Tests/ToolsInUse/CombinedPackage-20261017T133723784841Z/montreal-standalone/User/Saved/Screenshots/Linux/NordRealistic_East.png",
+        "bytes": 1754220,
+        "sha256": "d9d0f872f42b953a54a83c19dacfb9feca040cf0e378ebaeb7a3e49e39130091"
+      },
+      "Saved/Tests/ToolsInUse/CombinedPackage-20261017T133723784841Z/montreal-standalone/User/Saved/Screenshots/Linux/NordRealistic_North.png": {
+        "path": "Saved/Tests/ToolsInUse/CombinedPackage-20261017T133723784841Z/montreal-standalone/User/Saved/Screenshots/Linux/NordRealistic_North.png",
+        "bytes": 1878239,
+        "sha256": "0ecf4a01e343889950ee576eca7a6d18669d1e4fec405d6557a8231036f941c8"
+      },
+      "Saved/Tests/ToolsInUse/CombinedPackage-20261017T133723784841Z/toronto-standalone/User/Saved/Screenshots/Linux/NordComic_Car.png": {
+        "path": "Saved/Tests/ToolsInUse/CombinedPackage-20261017T133723784841Z/toronto-standalone/User/Saved/Screenshots/Linux/NordComic_Car.png",
+        "bytes": 1524675,
+        "sha256": "2f18fd44c6da1481c724befffad60ba61512de8809aac26c8f4cf9d21021239f"
+      },
+      "Saved/Tests/ToolsInUse/CombinedPackage-20261017T133723784841Z/toronto-standalone/User/Saved/Screenshots/Linux/NordComic_East.png": {
+        "path": "Saved/Tests/ToolsInUse/CombinedPackage-20261017T133723784841Z/toronto-standalone/User/Saved/Screenshots/Linux/NordComic_East.png",
+        "bytes": 1610385,
+        "sha256": "6cbd037b56702064caf2de7ee7d35ca55908f40c3b32fe820180469f7a24c002"
+      },
+      "Saved/Tests/ToolsInUse/CombinedPackage-20261017T133723784841Z/toronto-standalone/User/Saved/Screenshots/Linux/NordComic_Jump.png": {
+        "path": "Saved/Tests/ToolsInUse/CombinedPackage-20261017T133723784841Z/toronto-standalone/User/Saved/Screenshots/Linux/NordComic_Jump.png",
+        "bytes": 1250080,
+        "sha256": "55a04979cd98ef9754d14325cce3926ea3e1df28936f27fef0982ecdaac8e92e"
+      },
+      "Saved/Tests/ToolsInUse/CombinedPackage-20261017T133723784841Z/toronto-standalone/User/Saved/Screenshots/Linux/NordComic_North.png": {
+        "path": "Saved/Tests/ToolsInUse/CombinedPackage-20261017T133723784841Z/toronto-standalone/User/Saved/Screenshots/Linux/NordComic_North.png",
+        "bytes": 1546754,
+        "sha256": "1e30a1582b9cb4f405e9ffd47c9eb717ed84542673cf2662f8c84bae660d6f9d"
+      },
+      "Saved/Tests/ToolsInUse/CombinedPackage-20261017T133723784841Z/toronto-standalone/User/Saved/Screenshots/Linux/NordComic_West.png": {
+        "path": "Saved/Tests/ToolsInUse/CombinedPackage-20261017T133723784841Z/toronto-standalone/User/Saved/Screenshots/Linux/NordComic_West.png",
+        "bytes": 1651612,
+        "sha256": "b5706c0b331a2fef8c922bac4a9f591035d05a6072c1575d659cb915246ffe02"
+      },
+      "Saved/Tests/ToolsInUse/CombinedPackage-20261017T133723784841Z/toronto-standalone/User/Saved/Screenshots/Linux/NordRealistic_East.png": {
+        "path": "Saved/Tests/ToolsInUse/CombinedPackage-20261017T133723784841Z/toronto-standalone/User/Saved/Screenshots/Linux/NordRealistic_East.png",
+        "bytes": 1548276,
+        "sha256": "7ccb72351b70c3a431538edcc53127b6310f37b966f200778e49b2713e4a751f"
+      },
+      "Saved/Tests/ToolsInUse/CombinedPackage-20261017T133723784841Z/toronto-standalone/User/Saved/Screenshots/Linux/NordRealistic_North.png": {
+        "path": "Saved/Tests/ToolsInUse/CombinedPackage-20261017T133723784841Z/toronto-standalone/User/Saved/Screenshots/Linux/NordRealistic_North.png",
+        "bytes": 1471431,
+        "sha256": "88fabcd91ff75d3397596116d16a6fa9ed556e7d087a5a86ef4804d3675ea687"
+      }
+    },
+    "screenshot_count": 14,
+    "visual_review": {
+      "status": "passed",
+      "evidence": {
+        "path": "Saved/Tests/ToolsInUse/CombinedPackage-20261017T133723784841Z/VisualReview.json",
+        "bytes": 11872,
+        "sha256": "996dd3d9b004aa6c5128787fab36a57c1a9dedb4c934b93eb1662d454d8402d5"
+      },
+      "image_count": 14,
+      "district_image_counts": {
+        "montreal": 7,
+        "toronto": 7
+      },
+      "scope": "Direct visual review of all14 original fresh retry screenshots. Visual blocker check only; no old images used and previous overall failure remains unchanged.",
+      "findings": [
+        "No black frame, missing-material checkerboard, broad missing geometry or obvious rendering blocker seen in either district.",
+        "Both standard and comic rendering present in both districts; player/vehicle, readable main HUD and HOP! jump cues render.",
+        "Montr\u00e9al resident at left sidewalk is visible in both North modes; additional distant human figures appear in West. This is not exhaustive resident/crew coverage.",
+        "Toronto North standard/comic frames crop lower legs. Other on-foot views contain whole player. Toronto simplified base facades and sparse street remain distinct from the authored Sneaky Dee's storefront; no missing-asset failure inferred.",
+        "Montr\u00e9al car capture has a large tree trunk in right foreground; central car and roadway remain visible. This still does not establish camera behavior during driving.",
+        "Capture QA marker panels appear in some frames; main minimap, objective and controls remain readable."
+      ],
+      "not_established": [
+        "FPS, frame time or fluidity",
+        "continuous driving/camera behavior or collisions",
+        "player/resident animation continuity, jump landing or every crew/resident variant",
+        "audio listening, music quality or seamlessness",
+        "rendered client viewport or network behavior from stills alone"
+      ]
+    },
+    "districts": {
+      "montreal": {
+        "map": "/Game/Maps/LaFontaine",
+        "passed": true,
+        "checks": [
+          "standalone exact district and original crew/clips load",
+          "separate listen/client join",
+          "current VehicleHull source fixture readback",
+          "authority-only remote walker arrangement",
+          "native client enter/drive/brake/exit replication",
+          "mesh-bound own production graph/clip selection per process",
+          "clean peer departure",
+          "district-correct progression and population isolation",
+          "clean logs/exits and isolated save paths"
+        ],
+        "renderer_settings_before_cycle": {
+          "sg.ViewDistanceQuality": 3.0,
+          "sg.AntiAliasingQuality": 3.0,
+          "sg.ShadowQuality": 3.0,
+          "sg.GlobalIlluminationQuality": 3.0,
+          "sg.ReflectionQuality": 3.0,
+          "sg.PostProcessQuality": 3.0,
+          "sg.TextureQuality": 3.0,
+          "sg.EffectsQuality": 3.0,
+          "sg.FoliageQuality": 3.0,
+          "sg.ShadingQuality": 3.0,
+          "sg.LandscapeQuality": 3.0,
+          "r.ScreenPercentage": 100.0
+        },
+        "renderer_settings_after_cycle": {
+          "sg.ViewDistanceQuality": 3.0,
+          "sg.AntiAliasingQuality": 3.0,
+          "sg.ShadowQuality": 3.0,
+          "sg.GlobalIlluminationQuality": 3.0,
+          "sg.ReflectionQuality": 3.0,
+          "sg.PostProcessQuality": 3.0,
+          "sg.TextureQuality": 3.0,
+          "sg.EffectsQuality": 3.0,
+          "sg.FoliageQuality": 3.0,
+          "sg.ShadingQuality": 3.0,
+          "sg.LandscapeQuality": 3.0,
+          "r.ScreenPercentage": 100.0
+        },
+        "native_drive": {
+          "speed_cm_s": 742.530884,
+          "position_cm": [
+            38530.613541,
+            -7650.091941,
+            107.5
+          ]
+        },
+        "native_brake": {
+          "stopped_cm": [
+            38402.484251,
+            -8478.885279,
+            112.842024
+          ],
+          "held_cm": [
+            38402.484251,
+            -8478.885279,
+            112.842024
+          ],
+          "hold_seconds": 0.5
+        }
+      },
+      "toronto": {
+        "map": "/Game/Maps/CollegeBathurst",
+        "passed": true,
+        "checks": [
+          "standalone exact district and original crew/clips load",
+          "separate listen/client join",
+          "current VehicleHull source fixture readback",
+          "authority-only remote walker arrangement",
+          "native client enter/drive/brake/exit replication",
+          "mesh-bound own production graph/clip selection per process",
+          "clean peer departure",
+          "district-correct progression and population isolation",
+          "clean logs/exits and isolated save paths"
+        ],
+        "renderer_settings_before_cycle": {
+          "sg.ViewDistanceQuality": 3.0,
+          "sg.AntiAliasingQuality": 3.0,
+          "sg.ShadowQuality": 3.0,
+          "sg.GlobalIlluminationQuality": 3.0,
+          "sg.ReflectionQuality": 3.0,
+          "sg.PostProcessQuality": 3.0,
+          "sg.TextureQuality": 3.0,
+          "sg.EffectsQuality": 3.0,
+          "sg.FoliageQuality": 3.0,
+          "sg.ShadingQuality": 3.0,
+          "sg.LandscapeQuality": 3.0,
+          "r.ScreenPercentage": 100.0
+        },
+        "renderer_settings_after_cycle": {
+          "sg.ViewDistanceQuality": 3.0,
+          "sg.AntiAliasingQuality": 3.0,
+          "sg.ShadowQuality": 3.0,
+          "sg.GlobalIlluminationQuality": 3.0,
+          "sg.ReflectionQuality": 3.0,
+          "sg.PostProcessQuality": 3.0,
+          "sg.TextureQuality": 3.0,
+          "sg.EffectsQuality": 3.0,
+          "sg.FoliageQuality": 3.0,
+          "sg.ShadingQuality": 3.0,
+          "sg.LandscapeQuality": 3.0,
+          "r.ScreenPercentage": 100.0
+        },
+        "native_drive": {
+          "speed_cm_s": 867.683167,
+          "position_cm": [
+            3010.852719,
+            420.37676,
+            102.934575
+          ]
+        },
+        "native_brake": {
+          "stopped_cm": [
+            3799.894127,
+            636.559734,
+            102.934575
+          ],
+          "held_cm": [
+            3799.894127,
+            636.559734,
+            102.934575
+          ],
+          "hold_seconds": 0.5
+        }
+      }
+    },
+    "scope": "Rendered standalone per district, joined host/client NullRHI graph selection/replication; no sound, no phone/external NAT or performance claim.",
+    "fixture_source_sha256": {
+      "Scripts/verify_district_package.py": "752a41d9b43ff613ea0348a03ac01e9c332f47fe9024e48a3e4c723b39fa8d86",
+      "Scripts/package_inventory.py": "6e427a1b8aa90215a4b51f449188d1e5fca8720f42d3c9dac2139526ef1f9fc1",
+      "Scripts/render_log_guard.py": "fefcc6497b39deee609372ef6cedad98c0f7ad5deec1ddf027ed30d3e1541620",
+      "Data/Plateau/EastExtension/extension.json": "c19300127f80c9ebd4483610544acab9162a05280ab5a2717376c88c6770dcbf",
+      "Data/CollegeBathurst/SneakyDees/facade.json": "2f054cb949fc0f63da185a99e75ecc290fcba15b3c6b44511d467366b2bb49b3"
+    },
+    "limits": [
+      "Loopback native console handlers; no physical input, internet or continuous video acceptance.",
+      "No packaged frame-rate target, long soak, full campaign or save persistence claim.",
+      "Mesh inventory proves loaded assets; fresh editor collision/visual audits remain separate."
+    ]
+  },
+  "promotion": {
+    "status": "passed",
+    "evidence": {
+      "path": "Saved/Tests/ToolsInUse/CombinedDelivery-20261017T133723784841Z/Promotion/Promotion.json",
+      "bytes": 279596,
+      "sha256": "228180d390c5dee7e72b79cb8b32866c7d601b17d266a6dc346be4a825d01c46"
+    },
+    "source_archive": "Builds/ToolsInUseCombined-20261017T1335/Archive/Linux",
+    "source_archive_preserved": true,
+    "seconds": 22.037,
+    "targets": [
+      {
+        "path": "Builds/Linux",
+        "non_saved_identity_count": 48,
+        "non_saved_matches_archive": true,
+        "saved_inventory_rows": 400,
+        "saved_inventory_unchanged_during_copy": true,
+        "actual_sav_file_count": 0,
+        "actual_sav_files": {},
+        "backup": "Saved/Tests/ToolsInUse/CombinedDelivery-20261017T133723784841Z/Promotion/Backup0",
+        "backup_verified": true
+      },
+      {
+        "path": "Builds/Browser/Linux",
+        "non_saved_identity_count": 48,
+        "non_saved_matches_archive": true,
+        "saved_inventory_rows": 72,
+        "saved_inventory_unchanged_during_copy": true,
+        "actual_sav_file_count": 1,
+        "actual_sav_files": {
+          "Quebec/Saved_BrowserSaveQA/SaveGames/NordCampaign_StorySliceQA_v1.sav": {
+            "kind": "file",
+            "bytes": 2104,
+            "sha256": "cec872fd0b2c1b7ea7f18814c787448e00117c6acd8ac46a71f674a26470e88e",
+            "mode": 420
+          }
+        },
+        "backup": "Saved/Tests/ToolsInUse/CombinedDelivery-20261017T133723784841Z/Promotion/Backup1",
+        "backup_verified": true
+      }
+    ],
+    "critical_installed_files": {
+      "Quebec.sh": {
+        "kind": "file",
+        "bytes": 233,
+        "sha256": "78808122cea23ff2d53b21341ff4538184e5d197ee403ee74ebfdfa2c0f8572e",
+        "mode": 493
+      },
+      "Quebec/Content/Paks/Quebec-Linux.pak": {
+        "kind": "file",
+        "bytes": 10800517,
+        "sha256": "ff247d9c281857aedc98b56bffb952be45a3ece1e15b97acd6f51788d3840ffd",
+        "mode": 420
+      },
+      "Quebec/Content/Paks/global.ucas": {
+        "kind": "file",
+        "bytes": 3377712,
+        "sha256": "a2590f036959788e5947163ddbcf939ecf059402806d8af5654dea8238e4bdaf",
+        "mode": 420
+      },
+      "Quebec/Content/Paks/Quebec-Linux.ucas": {
+        "kind": "file",
+        "bytes": 1088041632,
+        "sha256": "e8548a556f2116f50ee7c11dd30f848171a4607417b94f4119dcf957c59cd653",
+        "mode": 420
+      },
+      "Quebec/Content/Paks/global.utoc": {
+        "kind": "file",
+        "bytes": 818,
+        "sha256": "7a3a73f0cc7646d111cb0f3ce75108c99c05c97645882179a6b2b3b1f0edfe87",
+        "mode": 420
+      },
+      "Quebec/Content/Paks/Quebec-Linux.utoc": {
+        "kind": "file",
+        "bytes": 1373107,
+        "sha256": "da1d182cb110d915184e89614b1085ad741719b36c0423a69aae555e01c45a16",
+        "mode": 420
+      },
+      "Quebec/Binaries/Linux/Quebec": {
+        "kind": "file",
+        "bytes": 326075152,
+        "sha256": "3400b071776c40522546d0122ba42c7522440f7a495c8ed32cf799a129699485",
+        "mode": 493
+      }
+    }
+  },
+  "public_browser": {
+    "status": "passed",
+    "evidence": {
+      "path": "Saved/Tests/ToolsInUse/CombinedBrowser-20261017T134204540787Z/Process.json",
+      "bytes": 4148,
+      "sha256": "441e6157c3d9e903cecd90a24735b0dccdf012831bbd8956db1d95b3029ce92a"
+    },
+    "source_ref": "936d2c18af9453019638121ab747e898443f16c0",
+    "local_frontend": "Saved/Tests/ToolsInUse/LocalPlayer-20261017T1333",
+    "runs": [
+      {
+        "name": "Local",
+        "url": "http://127.0.0.1:8101/",
+        "exit": 0,
+        "passed": true,
+        "evidence": {
+          "path": "Saved/Tests/ToolsInUse/LocalPlayer-20261017T1333/.qa/live-2026-10-17T13-42-04-882Z/summary.json",
+          "bytes": 4337,
+          "sha256": "b35d2b50e9f7bb433d876a4703daa53347990d9d8e4a23b336c7d72c32719b88"
+        },
+        "network_mode": "ordinary",
+        "dns_override": null,
+        "checks": [
+          {
+            "name": "host real stream",
+            "passed": true,
+            "durationMs": 2077
+          },
+          {
+            "name": "friend independent real stream",
+            "passed": true,
+            "durationMs": 2120
+          },
+          {
+            "name": "control-channel failure closes its session and late media cannot hide Reconnect",
+            "passed": true,
+            "durationMs": 1880
+          },
+          {
+            "name": "host native input and Escape release",
+            "passed": true,
+            "durationMs": 2834
+          },
+          {
+            "name": "friend native input and Escape release",
+            "passed": true,
+            "durationMs": 2871
+          },
+          {
+            "name": "occupied host slot rejects a third browser",
+            "passed": true,
+            "durationMs": 135
+          },
+          {
+            "name": "occupied browser reconnects after host frees its slot",
+            "passed": true,
+            "durationMs": 7083
+          },
+          {
+            "name": "original host reconnects and retains Disconnect control",
+            "passed": true,
+            "durationMs": 4579
+          }
+        ],
+        "media": {
+          "host": {
+            "width": 1280,
+            "height": 720,
+            "framesDecoded": 51,
+            "audioPackets": 293,
+            "sampleDurationMs": 1503
+          },
+          "friend": {
+            "width": 1280,
+            "height": 720,
+            "framesDecoded": 52,
+            "audioPackets": 291,
+            "sampleDurationMs": 1502
+          },
+          "control-error-recovered": {
+            "width": 1280,
+            "height": 720,
+            "framesDecoded": 45,
+            "audioPackets": 135,
+            "sampleDurationMs": 1503
+          },
+          "recovered-slot": {
+            "width": 1280,
+            "height": 720,
+            "framesDecoded": 46,
+            "audioPackets": 209,
+            "sampleDurationMs": 1504
+          },
+          "host-reconnected": {
+            "width": 1280,
+            "height": 720,
+            "framesDecoded": 45,
+            "audioPackets": 197,
+            "sampleDurationMs": 1504
+          },
+          "friend-still-connected": {
+            "width": 1280,
+            "height": 720,
+            "framesDecoded": 636,
+            "audioPackets": 1279,
+            "sampleDurationMs": 1502
+          }
+        },
+        "limits": [
+          "Input screenshots require visual review; native position/story progress are not asserted.",
+          "Headless playback does not verify audible sound or driving feel.",
+          "Testing from the host PC does not establish external NAT reachability."
+        ]
+      },
+      {
+        "name": "Public",
+        "url": "https://nord-montreal.vercel.app/",
+        "exit": 0,
+        "passed": true,
+        "evidence": {
+          "path": "Browser/.qa/live-2026-10-17T13-42-29-688Z/summary.json",
+          "bytes": 4291,
+          "sha256": "a0a462c132db390f64d468f2934e80fdb9ab78146f55c3c41d55f2e9793eb26a"
+        },
+        "network_mode": "ordinary",
+        "dns_override": null,
+        "checks": [
+          {
+            "name": "host real stream",
+            "passed": true,
+            "durationMs": 2293
+          },
+          {
+            "name": "friend independent real stream",
+            "passed": true,
+            "durationMs": 2350
+          },
+          {
+            "name": "control-channel failure closes its session and late media cannot hide Reconnect",
+            "passed": true,
+            "durationMs": 2051
+          },
+          {
+            "name": "host native input and Escape release",
+            "passed": true,
+            "durationMs": 2870
+          },
+          {
+            "name": "friend native input and Escape release",
+            "passed": true,
+            "durationMs": 2876
+          },
+          {
+            "name": "occupied host slot rejects a third browser",
+            "passed": true,
+            "durationMs": 262
+          },
+          {
+            "name": "occupied browser reconnects after host frees its slot",
+            "passed": true,
+            "durationMs": 7341
+          },
+          {
+            "name": "original host reconnects and retains Disconnect control",
+            "passed": true,
+            "durationMs": 4953
+          }
+        ],
+        "media": {
+          "host": {
+            "width": 1280,
+            "height": 720,
+            "framesDecoded": 44,
+            "audioPackets": 146,
+            "sampleDurationMs": 1504
+          },
+          "friend": {
+            "width": 1280,
+            "height": 720,
+            "framesDecoded": 46,
+            "audioPackets": 187,
+            "sampleDurationMs": 1502
+          },
+          "control-error-recovered": {
+            "width": 1280,
+            "height": 720,
+            "framesDecoded": 40,
+            "audioPackets": 158,
+            "sampleDurationMs": 1503
+          },
+          "recovered-slot": {
+            "width": 1280,
+            "height": 720,
+            "framesDecoded": 44,
+            "audioPackets": 135,
+            "sampleDurationMs": 1503
+          },
+          "host-reconnected": {
+            "width": 1280,
+            "height": 720,
+            "framesDecoded": 45,
+            "audioPackets": 208,
+            "sampleDurationMs": 1502
+          },
+          "friend-still-connected": {
+            "width": 1280,
+            "height": 720,
+            "framesDecoded": 653,
+            "audioPackets": 1224,
+            "sampleDurationMs": 1503
+          }
+        },
+        "limits": [
+          "Input screenshots require visual review; native position/story progress are not asserted.",
+          "Headless playback does not verify audible sound or driving feel.",
+          "Testing from the host PC does not establish external NAT reachability."
+        ]
+      }
+    ],
+    "owned_http_server_exit": -15,
+    "http_exit_scope": "Controlled shutdown of owned local frontend HTTP server.",
+    "scope": "Same-PC browser checks of installed combined package; local loopback and ordinary public route kept separate",
+    "limits": [
+      "No physical phone, off-LAN, headphone listening or full campaign acceptance.",
+      "Positive audio packets do not prove audible music identity, quality or physical listening."
+    ],
+    "visual_review": {
+      "status": "passed",
+      "evidence": {
+        "path": "Saved/Tests/ToolsInUse/CombinedBrowser-20261017T134204540787Z/VisualReview.json",
+        "bytes": 4291,
+        "sha256": "037fdae89bc262636a2404159dec53b0b10cc745e4103a556a71b3dc9167542c"
+      },
+      "image_count": 4,
+      "images": [
+        {
+          "path": "Saved/Tests/ToolsInUse/LocalPlayer-20261017T1333/.qa/live-2026-10-17T13-42-04-882Z/host-before-input.png",
+          "sha256": "a73b382ebbda27dfb47bb5b96f5855ad126ac343faa1ca2ee467f48e12c57f8e",
+          "bytes": 1346127,
+          "dimensions": [
+            1280,
+            900
+          ],
+          "surface": "local",
+          "directly_viewed_original": true,
+          "unexpected_visual_blocker_seen": false,
+          "finding": "Rendered Montr\u00e9al game fills the viewport beneath site header. Two nearby characters are visible; HUD reads 2 ONLINE and SKULL SHIRT. Objective, minimap and keyboard/mouse footer are readable. Click-to-control instruction is visible."
+        },
+        {
+          "path": "Saved/Tests/ToolsInUse/LocalPlayer-20261017T1333/.qa/live-2026-10-17T13-42-04-882Z/host-after-input.png",
+          "sha256": "72b25b29f18fb10b47e1ca850c96a5144fc45312182077a76d8b677e6fb9c369",
+          "bytes": 1068566,
+          "dimensions": [
+            1280,
+            900
+          ],
+          "surface": "local",
+          "directly_viewed_original": true,
+          "unexpected_visual_blocker_seen": false,
+          "finding": "Rendered game remains visible after the automation input stage. Host character now wears GREEN CAP 51 and is farther along the road (objective distance 344m versus 346m before). Main HUD/footer are readable; footer says You're in control. No black viewport or blocking overlay."
+        },
+        {
+          "path": "Browser/.qa/live-2026-10-17T13-42-29-688Z/host-reconnected.png",
+          "sha256": "ee501d562706111e2694968d49fccddb134c941efa3ff625ffd8e67ab20c49e8",
+          "bytes": 1389794,
+          "dimensions": [
+            1280,
+            900
+          ],
+          "surface": "public",
+          "directly_viewed_original": true,
+          "unexpected_visual_blocker_seen": false,
+          "finding": "Rendered Montr\u00e9al game visible after reconnect stage, showing two characters and 2 ONLINE. BLACK CAP character, roadway/buildings/trees, objective and minimap render. Site header, menu and click-to-control footer remain visible."
+        },
+        {
+          "path": "Browser/.qa/live-2026-10-17T13-42-29-688Z/occupied-slot.png",
+          "sha256": "241b7c4e13cd7f6bb85bcf4ba67438d179de77c318f614eb848152465ed9dfbc",
+          "bytes": 133454,
+          "dimensions": [
+            1280,
+            900
+          ],
+          "surface": "public",
+          "directly_viewed_original": true,
+          "unexpected_visual_blocker_seen": false,
+          "finding": "Expected occupied-slot error is clearly displayed on the entry page: This player is unavailable; Streamer NordHost is full, Max players = 1. Menu/alternate-player guidance and Reconnect button are readable. This is the intentional rejection state, not a failed game render."
+        }
+      ],
+      "scope": "CPU-only direct visual review of the four requested current local/public browser screenshots. Browser behavior/packet checks remain separate evidence.",
+      "summary": [
+        "Three gameplay screenshots show a nonblack rendered game, visible player geometry and readable site/game HUD at1280x900.",
+        "Local before/after images show a changed crew appearance and position; the stills themselves do not establish causal input delivery or motion continuity.",
+        "Public reconnect screenshot renders the game; occupied-slot screenshot clearly communicates the expected capacity rejection and recovery controls.",
+        "No unexpected blocking overlay, absent game viewport or obvious missing-material/rendering failure is seen in these four states."
+      ],
+      "not_established": [
+        "advancing video, FPS, smoothness or animation continuity from stills",
+        "audio packet activity, audible output or listening quality",
+        "reconnect/input/network correctness beyond the visible captured state",
+        "phone layouts or other screen sizes",
+        "unseen menu/route/character behavior"
+      ]
+    }
+  },
+  "final_preservation": {
+    "status": "passed",
+    "evidence": {
+      "path": "Saved/Tests/ToolsInUse/FinalPreservation-20261017.json",
+      "bytes": 1476,
+      "sha256": "d67d8c33d1494054dd9c5d9e1edf1bfa11c3b3ce371cd33b81c796637cdc1055"
+    },
+    "scope": "Final installed nonSaved identity, production sav bytes, tested source/maps and protected services after browser checks",
+    "packages": [
+      {
+        "path": "Builds/Linux",
+        "non_saved_files": 48,
+        "matches_candidate": true,
+        "sav_sha256": {},
+        "sav_bytes_preserved": true
+      },
+      {
+        "path": "Builds/Browser/Linux",
+        "non_saved_files": 48,
+        "matches_candidate": true,
+        "sav_sha256": {
+          "Quebec/Saved_BrowserSaveQA/SaveGames/NordCampaign_StorySliceQA_v1.sav": "cec872fd0b2c1b7ea7f18814c787448e00117c6acd8ac46a71f674a26470e88e"
+        },
+        "sav_bytes_preserved": true
+      }
+    ],
+    "actual_installed_sav_files_preserved_after_browser": 1,
+    "source_maps_unchanged": true,
+    "copy_stage_saved_bytes_preserved": true,
+    "protected_services": {
+      "nord-browser-demo.service": {
+        "ActiveState": "active",
+        "SubState": "running"
+      },
+      "nord-browser-public.service": {
+        "ActiveState": "active",
+        "SubState": "running"
+      },
+      "nord-browser-funnel.service": {
+        "ActiveState": "active",
+        "SubState": "running"
+      },
+      "nord-browser-turn-funnel.service": {
+        "ActiveState": "active",
+        "SubState": "running"
+      }
+    },
+    "limits": "Saved inventory row identity was checked during copy; final actual .sav bytes and installed package identities were checked again after browser tests. No claim that all runtime log/settings files remain immutable."
+  },
+  "historical_profile": {
+    "scope": "Oct14 pre-main packages only; no combined-revision performance claim.",
+    "comparison": {
+      "path": "Saved/Tests/ToolsInUse/Comparison-20261017T132240704133Z/comparison.json",
+      "bytes": 15880,
+      "sha256": "0d15645f6b919be311643f82983bc5376f2d04be4fda7607bd7f3f90a91855a4"
+    },
+    "independent_audit": {
+      "path": "Saved/Tests/ToolsInUse/Comparison-20261017T132240704133Z/IndependentAudit.json",
+      "bytes": 6042,
+      "sha256": "81a53f4b71c216eed6b83668a822295f99e389c9ff6ead6a4a8821cd75d86161"
+    },
+    "comparable": true,
+    "independently_recalculated_values": 60,
+    "raw_csv_count": 6,
+    "hardware": {
+      "platform": "Linux",
+      "cpu": "GenuineIntel|Intel(R) Core(TM) i9-14900K",
+      "gpu": "NVIDIA GeForce RTX 4090",
+      "gpudriver": "610.57",
+      "engineversion": "5.8.3-58210709+++UE5+Release-5.8",
+      "shaderplatform": "VULKAN_SM6"
+    },
+    "quality_commands": "sg.ViewDistanceQuality 2,sg.AntiAliasingQuality 2,sg.ShadowQuality 2,sg.GlobalIlluminationQuality 2,sg.ReflectionQuality 2,sg.PostProcessQuality 2,sg.TextureQuality 2,sg.EffectsQuality 2,sg.FoliageQuality 2,sg.GlobalIlluminationQuality 1,sg.ReflectionQuality 1,sg.ShadowQuality 1,r.Shadow.Virtual.Enable 0,r.ScreenPercentage 75,t.MaxFPS 0,r.VSync 0,r.SetRes 1280x720w",
+    "method": "1200 CSV frames per static scene; discard first 300 and last 2",
+    "scenes": [
+      {
+        "scene": "Sherbrooke",
+        "frames_each": 898,
+        "stats": {
+          "frame": {
+            "median_ms": {
+              "before_ms": 4.8886,
+              "after_ms": 4.7837,
+              "delta_ms": -0.1049,
+              "delta_percent": -2.15
+            },
+            "p95_ms": {
+              "before_ms": 5.8635,
+              "after_ms": 5.6289,
+              "delta_ms": -0.2346,
+              "delta_percent": -4.0
+            }
+          },
+          "gpu": {
+            "median_ms": {
+              "before_ms": 4.574,
+              "after_ms": 4.52,
+              "delta_ms": -0.054,
+              "delta_percent": -1.18
+            },
+            "p95_ms": {
+              "before_ms": 5.271,
+              "after_ms": 5.203,
+              "delta_ms": -0.068,
+              "delta_percent": -1.29
+            }
+          },
+          "game_thread": {
+            "median_ms": {
+              "before_ms": 3.1115,
+              "after_ms": 2.2345,
+              "delta_ms": -0.877,
+              "delta_percent": -28.19
+            },
+            "p95_ms": {
+              "before_ms": 4.927,
+              "after_ms": 3.556,
+              "delta_ms": -1.371,
+              "delta_percent": -27.83
+            }
+          },
+          "tick_actors": {
+            "median_ms": {
+              "before_ms": 0.8744,
+              "after_ms": 0.757,
+              "delta_ms": -0.1174,
+              "delta_percent": -13.43
+            },
+            "p95_ms": {
+              "before_ms": 1.9724,
+              "after_ms": 1.7995,
+              "delta_ms": -0.1729,
+              "delta_percent": -8.77
+            }
+          },
+          "animation": {
+            "median_ms": {
+              "before_ms": 0.4942,
+              "after_ms": 0.0675,
+              "delta_ms": -0.4267,
+              "delta_percent": -86.34
+            },
+            "p95_ms": {
+              "before_ms": 0.9526,
+              "after_ms": 0.1099,
+              "delta_ms": -0.8427,
+              "delta_percent": -88.46
+            }
+          }
+        },
+        "sample_seconds_before": 4.4244,
+        "sample_seconds_after": 4.3059,
+        "sky_log_before": "NORD_SKY host hour=15.00 weather=CLEAR->CLEAR seed=736948528 day_seconds=2400 freeze_clock=1 freeze_weather=1 latitude=45.525 solar_noon=12.67",
+        "sky_log_after": "NORD_SKY host hour=15.00 weather=CLEAR->CLEAR seed=301132048 day_seconds=2400 freeze_clock=1 freeze_weather=1 latitude=45.525 solar_noon=12.67"
+      },
+      {
+        "scene": "Pond",
+        "frames_each": 898,
+        "stats": {
+          "frame": {
+            "median_ms": {
+              "before_ms": 4.8552,
+              "after_ms": 4.8317,
+              "delta_ms": -0.0235,
+              "delta_percent": -0.48
+            },
+            "p95_ms": {
+              "before_ms": 5.8016,
+              "after_ms": 5.6635,
+              "delta_ms": -0.1381,
+              "delta_percent": -2.38
+            }
+          },
+          "gpu": {
+            "median_ms": {
+              "before_ms": 4.613,
+              "after_ms": 4.584,
+              "delta_ms": -0.029,
+              "delta_percent": -0.63
+            },
+            "p95_ms": {
+              "before_ms": 5.312,
+              "after_ms": 5.261,
+              "delta_ms": -0.051,
+              "delta_percent": -0.96
+            }
+          },
+          "game_thread": {
+            "median_ms": {
+              "before_ms": 2.805,
+              "after_ms": 2.2225,
+              "delta_ms": -0.5825,
+              "delta_percent": -20.77
+            },
+            "p95_ms": {
+              "before_ms": 4.32,
+              "after_ms": 3.437,
+              "delta_ms": -0.883,
+              "delta_percent": -20.44
+            }
+          },
+          "tick_actors": {
+            "median_ms": {
+              "before_ms": 0.8127,
+              "after_ms": 0.7611,
+              "delta_ms": -0.0516,
+              "delta_percent": -6.35
+            },
+            "p95_ms": {
+              "before_ms": 1.835,
+              "after_ms": 1.761,
+              "delta_ms": -0.074,
+              "delta_percent": -4.03
+            }
+          },
+          "animation": {
+            "median_ms": {
+              "before_ms": 0.4481,
+              "after_ms": 0.066,
+              "delta_ms": -0.3821,
+              "delta_percent": -85.27
+            },
+            "p95_ms": {
+              "before_ms": 0.8299,
+              "after_ms": 0.1022,
+              "delta_ms": -0.7277,
+              "delta_percent": -87.69
+            }
+          }
+        },
+        "sample_seconds_before": 4.3873,
+        "sample_seconds_after": 4.3242,
+        "sky_log_before": "NORD_SKY host hour=15.00 weather=CLEAR->CLEAR seed=858208528 day_seconds=2400 freeze_clock=1 freeze_weather=1 latitude=45.525 solar_noon=12.67",
+        "sky_log_after": "NORD_SKY host hour=15.00 weather=CLEAR->CLEAR seed=415832048 day_seconds=2400 freeze_clock=1 freeze_weather=1 latitude=45.525 solar_noon=12.67"
+      },
+      {
+        "scene": "NorthPark",
+        "frames_each": 898,
+        "stats": {
+          "frame": {
+            "median_ms": {
+              "before_ms": 4.8533,
+              "after_ms": 4.8036,
+              "delta_ms": -0.0497,
+              "delta_percent": -1.02
+            },
+            "p95_ms": {
+              "before_ms": 5.7823,
+              "after_ms": 5.6498,
+              "delta_ms": -0.1325,
+              "delta_percent": -2.29
+            }
+          },
+          "gpu": {
+            "median_ms": {
+              "before_ms": 4.586,
+              "after_ms": 4.5705,
+              "delta_ms": -0.0155,
+              "delta_percent": -0.34
+            },
+            "p95_ms": {
+              "before_ms": 5.27,
+              "after_ms": 5.247,
+              "delta_ms": -0.023,
+              "delta_percent": -0.44
+            }
+          },
+          "game_thread": {
+            "median_ms": {
+              "before_ms": 2.73,
+              "after_ms": 2.294,
+              "delta_ms": -0.436,
+              "delta_percent": -15.97
+            },
+            "p95_ms": {
+              "before_ms": 4.328,
+              "after_ms": 3.409,
+              "delta_ms": -0.919,
+              "delta_percent": -21.23
+            }
+          },
+          "tick_actors": {
+            "median_ms": {
+              "before_ms": 0.7953,
+              "after_ms": 0.801,
+              "delta_ms": 0.0057,
+              "delta_percent": 0.72
+            },
+            "p95_ms": {
+              "before_ms": 1.8275,
+              "after_ms": 1.7958,
+              "delta_ms": -0.0317,
+              "delta_percent": -1.73
+            }
+          },
+          "animation": {
+            "median_ms": {
+              "before_ms": 0.4502,
+              "after_ms": 0.0694,
+              "delta_ms": -0.3808,
+              "delta_percent": -84.58
+            },
+            "p95_ms": {
+              "before_ms": 0.8432,
+              "after_ms": 0.1005,
+              "delta_ms": -0.7427,
+              "delta_percent": -88.08
+            }
+          }
+        },
+        "sample_seconds_before": 4.3665,
+        "sample_seconds_after": 4.3201,
+        "sky_log_before": "NORD_SKY host hour=15.00 weather=CLEAR->CLEAR seed=974238528 day_seconds=2400 freeze_clock=1 freeze_weather=1 latitude=45.525 solar_noon=12.67",
+        "sky_log_after": "NORD_SKY host hour=15.00 weather=CLEAR->CLEAR seed=530692048 day_seconds=2400 freeze_clock=1 freeze_weather=1 latitude=45.525 solar_noon=12.67"
+      }
+    ],
+    "changed_package_files": {
+      "Quebec/Binaries/Linux/Quebec": {
+        "before": {
+          "bytes": 325837584,
+          "sha256": "a8af0a6c48dddf85a45692d4b31dffcca1eb8134d25f8f165aa258af66f3d2dc"
+        },
+        "after": {
+          "bytes": 325853968,
+          "sha256": "59bd1eb84d7350dbdeeb8e7aaf377d7d4d80df04b4c0297350d4dfb62d4c7b0b"
+        }
+      },
+      "Quebec/Content/Paks/Quebec-Linux.pak": {
+        "before": {
+          "bytes": 10797600,
+          "sha256": "1d2df78b0e6932aedaf95b922ed0c0354c12b24cfe95f5d6769c9dd91724fc89"
+        },
+        "after": {
+          "bytes": 10797808,
+          "sha256": "9d357a4c1e6467e1b00c4a1afd9e4be45133a870c5074a7f4ff5b75ba971f9e3"
+        }
+      },
+      "Quebec/Content/Paks/Quebec-Linux.ucas": {
+        "before": {
+          "bytes": 1068246688,
+          "sha256": "989084670cce925a50baff5f92d87bd4cf759e9c6f7a18a1b10e8440a6540fec"
+        },
+        "after": {
+          "bytes": 1069295312,
+          "sha256": "a96d37f40a1166b0c8e8e779f66dd44c12cfe1a2a1ef3df1573c7f647b7d0966"
+        }
+      },
+      "Quebec/Content/Paks/Quebec-Linux.utoc": {
+        "before": {
+          "bytes": 1349116,
+          "sha256": "5f0ac434ea56ba10713c665d7dbf3bf7c43944dc457dfb0fab84c119903cf219"
+        },
+        "after": {
+          "bytes": 1349692,
+          "sha256": "e0f8fccb33fb8ff106b3f57f2981549177b4ae488c4374a2478f94cf467f4e92"
+        }
+      },
+      "Quebec/Content/Paks/global.ucas": {
+        "before": {
+          "bytes": 3377648,
+          "sha256": "8e8541e94be77ae0f6cde7574df5f3d89d435a967cf0ce816adf0e8efdda35e2"
+        },
+        "after": {
+          "bytes": 3377712,
+          "sha256": "a2590f036959788e5947163ddbcf939ecf059402806d8af5654dea8238e4bdaf"
+        }
+      },
+      "Quebec/Content/Paks/global.utoc": {
+        "before": {
+          "bytes": 818,
+          "sha256": "51ae4c62307c171546f27f6ab4e4026c686f29e131b9dfbe7f82ccb15cbc4f9a"
+        },
+        "after": {
+          "bytes": 818,
+          "sha256": "7a3a73f0cc7646d111cb0f3ce75108c99c05c97645882179a6b2b3b1f0edfe87"
+        }
+      }
+    },
+    "limits": [
+      "Three static 1280x720 views, production High/75%, fixed clear 15h sky, uncapped/VSync off",
+      "898 warmed frames per scene after discarding 300 startup and two tail frames; durations are recorded",
+      "Audio disabled with -nosound: excludes music playback cost and audible acceptance",
+      "Short single-run observations, not a driving/co-op/streaming/phone or sustained 60 FPS claim",
+      "No screenshots or visual acceptance; package changes are recorded separately from matching measurement options"
+    ]
+  },
+  "historical_mixer": {
+    "scope": "Oct14 isolated real native mixer on pre-main source; not the combined packaged runtime or physical listening.",
+    "evidence": {
+      "path": "Saved/Tests/ToolsInUse/MusicMixer-20261014T175905Z/Process.json",
+      "bytes": 10848,
+      "sha256": "0eda4ee30144aa372ab2475b71a44dba2814a17d4826a44e6d945f1536c7b2dd"
+    },
+    "passed": true,
+    "native_exit": 0,
+    "recorder_exit": 255,
+    "recorder_exit_scope": "Controlled recorder stop; retained verbatim.",
+    "story_checks": 123,
+    "observation_samples": 23663,
+    "selection_log_counts": {
+      "NeighborhoodLoop": 16,
+      "RaceLoop": 4
+    },
+    "component_release_count": 14,
+    "protected_paths_changed": [],
+    "pcm": {
+      "method": "Music: fixed 2s source excerpt after a 400Hz high-pass; accepted only with gain consistent with 0.045, match time compatible with selection, and correlation margin >=0.25 over reversed-source and unused-garage controls. Equal-gain time-offset mix + engine/noise calibration verifies this margin. Feedback: unchanged raw mono12kHz comparison, reported separately without a mixed-signal pass threshold.",
+      "rate": 48000,
+      "channels": 2,
+      "seconds": 92.0,
+      "peak": 0.10546875,
+      "rms": 0.01445655818004669,
+      "clipped_sample_count": 0,
+      "sha256": "92fe4571c60877a370542bdbaec183ad1e2331e87a08ec6bb225736653eae4e4",
+      "music": [
+        {
+          "name": "NeighborhoodLoop",
+          "source_excerpt_seconds": [
+            1.0,
+            3.0
+          ],
+          "source_sha256": "4b6a6ee31ebfa32a7173535be424a7ee74fbccc9501ecaa7f9207acec847bab8",
+          "onset_seconds": 13.672,
+          "correlation": 0.7745824535521455,
+          "fitted_gain": 0.04525243160217825,
+          "negative_controls": [
+            {
+              "name": "Reversed source excerpt",
+              "onset_seconds": 27.472583333333333,
+              "correlation": 0.28336632102717974,
+              "fitted_gain": 0.01215638825736622
+            },
+            {
+              "name": "Unused garage audition",
+              "source_sha256": "e71a1d956f25cb57eeca086cbe90aa107161ab521fdb007a1bc35305bb30f75d",
+              "onset_seconds": 75.75416666666666,
+              "correlation": 0.22044754211166673,
+              "fitted_gain": 0.010525363440582653
+            }
+          ],
+          "correlation_margin_over_negatives": 0.49121613252496577,
+          "selection_time_residual_seconds": 0.045119831085205675,
+          "mixed_signal_identity_accepted": true,
+          "quiet_gain_gate": true
+        },
+        {
+          "name": "RaceLoop",
+          "source_excerpt_seconds": [
+            1.0,
+            3.0
+          ],
+          "source_sha256": "69cbf336cb5c1094e676dd8ee37047af0cd578207dbcaea896f63f7c9d96ca23",
+          "onset_seconds": 55.38933333333333,
+          "correlation": 0.6849531401979216,
+          "fitted_gain": 0.04489824380128508,
+          "negative_controls": [
+            {
+              "name": "Reversed source excerpt",
+              "onset_seconds": 56.002916666666664,
+              "correlation": 0.08246525592522481,
+              "fitted_gain": 0.005394801270171742
+            },
+            {
+              "name": "Unused garage audition",
+              "source_sha256": "e71a1d956f25cb57eeca086cbe90aa107161ab521fdb007a1bc35305bb30f75d",
+              "onset_seconds": 75.75416666666666,
+              "correlation": 0.22044754211166673,
+              "fitted_gain": 0.010525363440582653
+            }
+          ],
+          "correlation_margin_over_negatives": 0.4645055980862549,
+          "selection_time_residual_seconds": 0.040137376149495196,
+          "mixed_signal_identity_accepted": true,
+          "quiet_gain_gate": true
+        }
+      ],
+      "post_process_tail_rms": 0.0
+    },
+    "feedback_scope": "Feedback correlation retained separately in original report, not reinterpreted as a music threshold pass."
+  },
+  "historical_packaged_render": {
+    "scope": "Oct14 pre-main candidate; separate from CSV profile and current combined revision.",
+    "evidence": {
+      "path": "Saved/Tests/ToolsInUse/PackageRender-20261014T180116829910Z/Process.json",
+      "bytes": 126858,
+      "sha256": "e9158b6570a826d594b9cc8f54823d69b6f902dd1ecb85e5d57e4eeba552ff2e"
+    },
+    "passed": true,
+    "settings": "Epic 3, 100% internal resolution, VSM on, VSync off, 60 FPS cap; 1600x900",
+    "processes": [
+      {
+        "role": "host",
+        "exit": 0,
+        "accepted_exit": true,
+        "controlled_stop": false
+      },
+      {
+        "role": "client",
+        "exit": -15,
+        "accepted_exit": true,
+        "controlled_stop": true
+      }
+    ],
+    "screenshot_count": 7,
+    "resident_tick_dump": {
+      "components": 110,
+      "can_ever_tick": false
+    },
+    "active_music_samples": 2,
+    "package_unchanged": true,
+    "protected_settings_preserved": true,
+    "not_checked": [
+      "physical speakers or phones",
+      "audio PCM capture/listening",
+      "race-track transition and elapsed music playback continuity",
+      "rendered friend viewport",
+      "continuous-driving performance",
+      "external networking"
+    ]
+  },
+  "historical_preservation": {
+    "scope": "Oct14 snapshot only; current merged maps/packages need fresh preservation evidence.",
+    "evidence": {
+      "path": "Saved/Tests/ToolsInUse/DeliveryDraft.json",
+      "bytes": 95578,
+      "sha256": "80d41cbdec5be9eb5e4ef0a05f21173b8832537d82031c904c23048f1b672128"
+    },
+    "snapshot_utc": "2026-10-14T17:40:46.270129+00:00",
+    "baseline_protected_count": 224,
+    "unchanged_protected_count": 222,
+    "changed_protected_count": 2,
+    "missing_protected_count": 0,
+    "actual_sav_files": {
+      "baseline_active_count": 1,
+      "current_active_count": 1,
+      "unchanged_count": 1,
+      "changed_count": 0,
+      "scope": "Only direct project/package Saved*/SaveGames roots; archived/rejected recovery copies are excluded",
+      "current_sha256": {
+        "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Builds/Browser/Linux/Quebec/Saved_BrowserSaveQA/SaveGames/NordCampaign_StorySliceQA_v1.sav": "cec872fd0b2c1b7ea7f18814c787448e00117c6acd8ac46a71f674a26470e88e"
+      }
+    },
+    "settings_changes": [
+      {
+        "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Config/LinuxEditor/EditorPerProjectUserSettings.ini",
+        "baseline_sha256": "7d4f260a8099e059d8302a8e50e6aad25e994b2e48a13d7e874fd3b857e567d3",
+        "current_sha256": "77c2300c840caea09591422cb40973c4443586168bc23caca13616f42e8df60b",
+        "mtime_utc": "2026-10-14T17:34:24.224103+00:00",
+        "classification": "mutable_editor_or_guest_settings",
+        "chronology": "Editor/UI settings changed during first non-isolated native attempt; preserved as observed",
+        "restored": false
+      },
+      {
+        "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Builds/Browser/Linux/Quebec/Saved_BrowserGuest/Config/Linux/Engine.ini",
+        "baseline_sha256": "3b59e61d6e9f9c22bd315d88d59a25ce0a23de83b355190ea0f1c13156a354f2",
+        "current_sha256": "9265e02539cf3526545b8345cbe25ae0ca046298a86717c2c1c70dee42651b6b",
+        "mtime_utc": "2026-10-14T17:30:42.308300+00:00",
+        "classification": "mutable_editor_or_guest_settings",
+        "chronology": "Browser guest runtime settings changed during district service restoration at 13:30 EDT, before this task native attempt",
+        "restored": false
+      }
+    ],
+    "unknown_settings_restoration": "No settings were restored or reset by this evidence step",
+    "live_packages": {
+      "local": {
+        "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Builds/Linux",
+        "non_saved_file_count": 48,
+        "unchanged_count": 48,
+        "changed_files": []
+      },
+      "browser": {
+        "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Builds/Browser/Linux",
+        "non_saved_file_count": 48,
+        "unchanged_count": 48,
+        "changed_files": []
+      }
+    }
+  },
+  "historical_public_failure": {
+    "evidence": {
+      "path": "Browser/.qa/live-2026-10-14T18-01-48-554Z/summary.json",
+      "bytes": 1948,
+      "sha256": "f5b1ffa12e37a7a48551b9fe0a64c2d9897aec17a227df45baa4131fa8bea4f6"
+    },
+    "failed_window": {
+      "path": "Saved/Tests/ToolsInUse/CandidateWindow-20261014T175905023490Z/Process.json",
+      "bytes": 12782,
+      "sha256": "18659c632c1ebdcc3909648b27703da0ff1d6bc5af0a14868556b2e1d514bc97"
+    },
+    "passed": false,
+    "check": {
+      "name": "host real stream",
+      "passed": false,
+      "durationMs": 30045,
+      "error": "page.waitForFunction: Timeout 30000ms exceeded."
+    },
+    "observed_ui": "No players are online.",
+    "cause_limit": "Saved evidence establishes a stream timeout, not its underlying startup/signalling/endpoint cause. Successful service restoration did not establish media acceptance."
+  },
+  "retained_earlier_failures": [
+    {
+      "path": "Saved/Tests/ToolsInUse/Native-20261014T1733/Process.json",
+      "bytes": 5305,
+      "sha256": "fca02cbb8705657f02bfcdca0ec94ef79b0ca605485afc0c1c3cda832b646e01"
+    },
+    {
+      "path": "Saved/Tests/ToolsInUse/MusicMixer-20261014T174012Z/Process.json",
+      "bytes": 5704,
+      "sha256": "391e7563f9abf67fbe13179afe15eaa3c6382df768b31fd9cfcb020b503028e7"
+    }
+  ],
+  "openspec": {
+    "status": "passed",
+    "final_validation": {
+      "path": "Saved/Tests/ToolsInUse/SpecFinalValidation-20261017.json",
+      "bytes": 1811,
+      "sha256": "ec5ccbecb6747490aca19508ba30d93819e64d29dd03209efd1b14b3313bca1d"
+    },
+    "archive": "../../../openspec/changes/archive/2026-10-17-nord-tools-in-use",
+    "manual_structure_checks": 37,
+    "requirements": 2,
+    "scenarios": 4,
+    "canonical_prefix_preserved": true,
+    "canonical_requirement_counts": {
+      "nord-unreal": 22,
+      "nord-game-audio": 1
+    },
+    "canonical_updates_performed": true,
+    "archive_performed": true,
+    "cli_validation_performed": false,
+    "cli_status": "CLI absent; manual Markdown validation only, no authoritative schema/CLI-validation claim",
+    "archive_file_sha256": {
+      "openspec/changes/archive/2026-10-17-nord-tools-in-use/design.md": "e4faface5ee2d8f244be84c660b341450d804f8dc9391f95f2a68ce046ae9156",
+      "openspec/changes/archive/2026-10-17-nord-tools-in-use/proposal.md": "72e6721b622345e08435ec0914d292742566afe0a8feb2584479c84168f44677",
+      "openspec/changes/archive/2026-10-17-nord-tools-in-use/specs/nord-game-audio/spec.md": "415d3c3e3a96e4007d3ab8c3ab12205220e6660b22ac35ceb2b6e05db0166877",
+      "openspec/changes/archive/2026-10-17-nord-tools-in-use/specs/nord-unreal/spec.md": "93821f98fb1cd4a6c6e06f32c6a26a911a6643ffd52e4564d9d0c1793e0e7023",
+      "openspec/changes/archive/2026-10-17-nord-tools-in-use/tasks.md": "7e527f5b7f30aff5467fefd81684c9ea459f517927f07f7a0ccc4aa1bec937f7"
+    },
+    "historical_structure_snapshot": {
+      "path": "Saved/Tests/ToolsInUse/SpecValidation.json",
+      "bytes": 8351,
+      "sha256": "772ad2bedcce0b3079ef2244e703395109651bf05077a9a649fec5d98cf07fcf"
+    }
+  },
+  "limits": [
+    "No physical phone, off-LAN/carrier, headphone/speaker listening, musical-taste or full-campaign acceptance.",
+    "Historical short static noaudio measurements do not establish causal, sustained-FPS, driving or co-op streaming performance for the merged revision.",
+    "The original combined delivery aggregate remains false after QA cleanup KeyError; passed explicit finalization is retained separately.",
+    "OpenSpec CLI absent; final 37 checks are manual Markdown validation, not authoritative schema/CLI validation."
+  ],
+  "combined_cook_history": [
+    {
+      "status": "passed",
+      "evidence": {
+        "path": "Saved/Tests/ToolsInUse/CookCombined-20261017T1327/Process.json",
+        "bytes": 5251,
+        "sha256": "7e559bf9bdf82838a75c9af95020282eacb9f785043312404c4bb798993f8fc0"
+      },
+      "exit": 0,
+      "seconds": 45.91,
+      "archive_root": "Builds/ToolsInUseCombined-20261017T1327/Archive/Linux",
+      "maps": [
+        "/Game/Maps/LaFontaine",
+        "/Game/Maps/CollegeBathurst"
+      ],
+      "scope": "Default Zen cook succeeded; retained separately because the existing loose-header verifier rejected its layout before engine launch."
+    }
+  ],
+  "owned_qa_files": {
+    "Scripts/verify_district_package.py": {
+      "path": "Scripts/verify_district_package.py",
+      "bytes": 41153,
+      "sha256": "752a41d9b43ff613ea0348a03ac01e9c332f47fe9024e48a3e4c723b39fa8d86"
+    },
+    "Scripts/test_district_package.py": {
+      "path": "Scripts/test_district_package.py",
+      "bytes": 25701,
+      "sha256": "2fc315b058cae0473035080581a53f4a5a7197e92ad75d94d81f6870dcb3c12a"
+    }
+  },
+  "delivery_finalization": {
+    "status": "passed",
+    "evidence": {
+      "path": "Saved/Tests/ToolsInUse/DeliveryFinalization-20261017.json",
+      "bytes": 1387,
+      "sha256": "5f7ae2b94ad479836d37ca70bcdc5d2190b196f7d8b959c9a5a35cf671269179"
+    },
+    "original_aggregate_report": {
+      "path": "Saved/Tests/ToolsInUse/CombinedDelivery-20261017T133723784841Z/Process.json",
+      "bytes": 12259,
+      "sha256": "bb93790234bc3acd293d6dc1a13a77227ee46b92568fc7cacab9288ac748e4d9"
+    },
+    "original_aggregate_passed": false,
+    "failure_scope": "KeyError from QA null-sink cleanup JSON module index field after all five stages passed; original failed aggregate not rewritten.",
+    "stage_results": [
+      {
+        "name": "StopDemo",
+        "exit": 0,
+        "passed": true,
+        "seconds": 2.002
+      },
+      {
+        "name": "Render",
+        "exit": 0,
+        "passed": true,
+        "seconds": 118.935
+      },
+      {
+        "name": "Promote",
+        "exit": 0,
+        "passed": true,
+        "seconds": 22.037
+      },
+      {
+        "name": "RestorePreflight",
+        "exit": 0,
+        "passed": true,
+        "seconds": 0.251
+      },
+      {
+        "name": "RestoreDemo",
+        "exit": 0,
+        "passed": true,
+        "seconds": 0.251
+      }
+    ],
+    "service_restored": true,
+    "service_configuration_matches": true,
+    "cleanup_failure_resolved": true,
+    "owned_module_cleanup_actions": [
+      {
+        "module_id": "536870917",
+        "sink_name": "nord_candidate_qa_1824616",
+        "creation_report": "Saved/Tests/ToolsInUse/CombinedDelivery-20261017T133235926845Z/Process.json",
+        "exit": 0
+      },
+      {
+        "module_id": "536870918",
+        "sink_name": "nord_candidate_qa_1836558",
+        "creation_report": "Saved/Tests/ToolsInUse/CombinedDelivery-20261017T133407824601Z/Process.json",
+        "exit": 0
+      },
+      {
+        "module_id": "536870919",
+        "sink_name": "nord_candidate_qa_1860912",
+        "creation_report": "Saved/Tests/ToolsInUse/CombinedDelivery-20261017T133723784841Z/Process.json",
+        "exit": 0
+      },
+      {
+        "module_id": "536870916",
+        "sink_name": "nord_candidate_qa_1523291",
+        "creation_report": "Saved/Tests/ToolsInUse/CandidateWindow-20261014T175905023490Z/Process.json",
+        "exit": 0
+      }
+    ],
+    "scope": "Cleanup only module IDs returned by this task owned QA null sinks; prior aggregate failure retained"
+  },
+  "delivery_status": "DELIVERED: combined source/package/native/local/public checks passed; explicit finalization resolves retained aggregate cleanup failure."
+}
