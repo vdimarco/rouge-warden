@@ -31,6 +31,7 @@ test('quantizer diagnostic uses decoded frame deltas only for comparable optiona
   for (const patch of [{ qpSum: undefined }, { qpSum: null }, { qpSum: 0 }, { codec: 'video/H264' }, { framesDecoded: 100 }]) {
     assert.equal(summarize([first, { ...last, ...patch }]).meanQuantizer, undefined);
   }
+  assert.equal(summarize([{ ...first, codec: undefined }, { ...last, codec: undefined }]).meanQuantizer, undefined);
   assert.equal(summarize([{ ...first, qpSum: 0 }, { ...last, qpSum: 600 }]).meanQuantizer, 10);
 });
 

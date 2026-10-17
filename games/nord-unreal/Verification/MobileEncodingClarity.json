@@ -72,6 +72,13 @@
         "passed": false,
         "summary": null,
         "error": "AssertionError"
+      },
+      {
+        "report": "Saved/BrowserStreaming/samples/2026-10-17T13-44-37-499Z-NordFriend1/sample.json",
+        "passed": false,
+        "summary": null,
+        "error": "AssertionError",
+        "excluded_reason": "The newly installed package comparison overlapped a separate isolated race lifecycle/service restart."
       }
     ],
     "limits": [
@@ -89,5 +96,15 @@
     "Native configured 75% render scale still contributes softness.",
     "Unrelated dirty integrated/native checkout is preserved; work isolated in a clean sparse worktree.",
     "OpenSpec CLI not installed; manual validation."
-  ]
+  ],
+  "native_baseline": {
+    "initial_package_files": 48,
+    "initial_saves": 18,
+    "external_package_changes": 11,
+    "promoted_package_files": 48,
+    "promoted_saves": 19,
+    "original_save_bytes_preserved_at_promotion": true,
+    "promoted_service_start": "Sat 2026-10-17 09:41:22 EDT",
+    "stable_window_pending": true
+  }
 }

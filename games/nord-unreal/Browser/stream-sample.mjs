@@ -23,7 +23,7 @@ export function summarize(samples) {
     result.decodeMsPerFrame = (last.totalDecodeTime - first.totalDecodeTime) * 1000 / (last.framesDecoded - first.framesDecoded);
     const emitted = last.jitterBufferEmittedCount - first.jitterBufferEmittedCount;
     result.jitterBufferMsPerFrame = emitted > 0 ? (last.jitterBufferDelay - first.jitterBufferDelay) * 1000 / emitted : null;
-    if (first.codec === last.codec && Number.isFinite(first.qpSum) && Number.isFinite(last.qpSum) && last.qpSum >= first.qpSum) {
+    if (first.codec && first.codec === last.codec && Number.isFinite(first.qpSum) && Number.isFinite(last.qpSum) && last.qpSum >= first.qpSum) {
       result.meanQuantizer = (last.qpSum - first.qpSum) / (last.framesDecoded - first.framesDecoded);
     }
     result.packetsLost = last.packetsLost - first.packetsLost;
