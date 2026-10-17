@@ -1,5 +1,27 @@
 # Six-hour district and graphics continuation
 
+## Continuation checkpoint, 2026-10-17
+
+The Oct14 six-hour window has ended. The later human “continue” resumes the unfinished bounded polish; the historical heartbeat/deadline is not a new recurring work window.
+
+PR [359](https://github.com/vdimarco/rouge-warden/pull/359) merged at 17:53:02UTC Oct14 as `b97f467f83beecfb57a8a17ec34b199f9741fdda`. It delivered the separate College/Bathurst/Sneaky Dee’s free-roam map, the surveyed200m Montréal east extension, corrected venue glyphs/path shadows and eight original playable-crew locomotion graphs. Toronto20saved-map/35two-peer headless checks, Montréal19runtime checks,30native automation checks, six packaged standalone/listen/client processes and14actualEpic3/100720p startup captures passed. Final character/environment art, sustained fluidity/performance, physical devices and off-LAN access were not accepted by those checks.
+
+The unmerged Visitation detail trial remained in`/home/von/Work/rouge-warden-nord-graphic-novel` after the account-limit interruption. Its author/fresh/canonical readbacks passed against the earlier6,842-file epoch, but its rendered attempt`SingleRenderWindow-20261014T175542Z` failed the frozen-source guard after a concurrent source integration; restoration passed. It has no visual acceptance or merged native assets. Preserve its sealed receipts and rejected attempt rather than repinning them.
+
+Current work uses the active game in`/home/von/Work/rouge-warden-codex-nord-unreal`. Its accepted pre-Details map matches SHA`1d10804760ffdef9c620bc2840014ec2e5dbc204931d9b9854699f511e5d0c40`. Before Details,6,847 Content files include the separately owned music assets. After explicit runtime release, fresh Details authoring preserved every existing Content file except the map and added only Glass/Iron/Trim, producing6,850 files. Separate fresh and canonical native verification pass; the old trial map and receipts were not reused as current authoring evidence.
+
+No new fal generation: US$25 authorized, US$4 reserved for the two completed jobs (US$3.04 estimated), US$21 uncommitted; actual billing balance unverified. Panet skyline/source coverage, former-edge ground seams and the private high-detail character’s garment/rig defects remain open. No default character promotion.
+
+PR [378](https://github.com/vdimarco/rouge-warden/pull/378) subsequently merged as `efb2c2da62972468f756daa2addab2b45335b4da`; its committed tree equals the tested music/pose commit. Both installed48-file packages match that task's combined1335 archive, with37native tests, six packaged peers,14startup images and local/public8-check browser runs accepted by that task. See [ToolsInUse](ToolsInUse.md). This is the preserved installed-package baseline; the Details archive has not been promoted to those live slots.
+
+The accepted resident tick change required a documented semantic epoch: exactly14 original resident `GeneratedBody` skeletal components change `tick_enabled` from true to false. Their class/component identities and every other captured field remain exact, and the original backup map/Content bytes and receipts remain unchanged. The new epoch carries explicit migration provenance and no copied author receipt. The strict comparator still checks the original54 extension additions/four collision cubes; Details are three separately verified actors. Current source checks include24 strict/canonical rejection cases and all19 author/source pins match.
+
+Six actual1920×1080 Standard/Comic views of Visitation, Panet and the former edge pass capture guards and independent review for the visible decorative extent. All19 native Montréal crossing/car/boundary checks pass. A fresh isolated two-map Development cook and all six packaged standalone/listen/client processes pass, including the exact three Details meshes, original crew/graph and vehicle checks. The14actual720p packaged startup captures have Epic3/ScreenPercentage100 readbacks; their independent image review accepts scoped startup readability, retaining sparse scenery, a Montréal car-view tree obstruction and generic-body limits. The packaged views do not directly frame Visitation; its separate six-image review supplies that evidence. Both Details graphics windows completed and restored existing live packages, saves, settings and protected services. See [current Details verification](MontrealEastDetails/README.md). Final merge remains pending; this is no physical-input, off-LAN, continuous-fluidity/FPS, audio or save-persistence acceptance.
+
+Private character follow-up: the existing generated jump raises upper arms−95°/−110° with neutral shoulders; the defective airborne sample observes−108.43°. A CPU-only two-key trial proposes−60°/−70° (−68.96°at that sample), leaving all37sampled non-arm controls/endpoints unchanged. Static preparation and independent review pass, but no Blender/native A/B was executed and no character asset changed. The durable ignored plan is`Saved/Tests/GraphicNovel/PrivateJumpArmPlan-20261017`; it remains separate from the Details checkpoint. Collar geometry and anatomical weight quality remain unresolved.
+
+## Historical Oct14 six-hour record
+
 Authorized window: 2026-10-14 14:09:15–20:09:15 UTC (10:09–16:09 Montréal).
 Checkout: `/home/von/Work/rouge-warden-nord-graphic-novel`, branch `codex/nord-district-polish-six-hours`.
 Recurring follow-up: `nord-polish-and-college-street-expansion-six-hours`, every twenty minutes until the deadline.

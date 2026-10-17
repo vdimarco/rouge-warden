@@ -1,0 +1,44 @@
+<?xml version='1.0' encoding='utf-8'?>
+<osm version="0.6" generator="openstreetmap-cgimap 2.1.0 (1316 spike-07.openstreetmap.org)" copyright="OpenStreetMap and contributors" attribution="http://www.openstreetmap.org/copyright" license="http://opendatacommons.org/licenses/odbl/1-0/"><node id="3522112052" visible="true" version="2" changeset="146647824" timestamp="2024-01-24T21:17:47Z" user="une abeille" uid="19693869" lat="45.5220932" lon="-73.5619219" />
+ <node id="3522112053" visible="true" version="2" changeset="146647824" timestamp="2024-01-24T21:17:47Z" user="une abeille" uid="19693869" lat="45.5221412" lon="-73.5620314" />
+ <node id="3522113163" visible="true" version="2" changeset="146647824" timestamp="2024-01-24T21:17:47Z" user="une abeille" uid="19693869" lat="45.5221885" lon="-73.5618815" />
+ <node id="3522113164" visible="true" version="2" changeset="146647824" timestamp="2024-01-24T21:17:47Z" user="une abeille" uid="19693869" lat="45.5221841" lon="-73.5621294" />
+ <node id="3522113165" visible="true" version="2" changeset="146647824" timestamp="2024-01-24T21:17:47Z" user="une abeille" uid="19693869" lat="45.5222701" lon="-73.5620626" />
+ <node id="3522219208" visible="true" version="2" changeset="146646412" timestamp="2024-01-24T20:34:42Z" user="une abeille" uid="19693869" lat="45.5225847" lon="-73.5621904" />
+ <node id="3522219209" visible="true" version="2" changeset="146646412" timestamp="2024-01-24T20:34:42Z" user="une abeille" uid="19693869" lat="45.5224053" lon="-73.5620557" />
+ <node id="3522219210" visible="true" version="2" changeset="146646412" timestamp="2024-01-24T20:34:42Z" user="une abeille" uid="19693869" lat="45.5225023" lon="-73.5622673" />
+ <node id="3522219211" visible="true" version="2" changeset="146646412" timestamp="2024-01-24T20:34:42Z" user="une abeille" uid="19693869" lat="45.5224878" lon="-73.5619788" />
+ <node id="3522224855" visible="true" version="2" changeset="146646412" timestamp="2024-01-24T20:34:42Z" user="une abeille" uid="19693869" lat="45.5224348" lon="-73.5618744" />
+ <node id="3522224856" visible="true" version="2" changeset="146646412" timestamp="2024-01-24T20:34:42Z" user="une abeille" uid="19693869" lat="45.5223531" lon="-73.5619512" />
+ <node id="3522233749" visible="true" version="2" changeset="146646412" timestamp="2024-01-24T20:34:42Z" user="une abeille" uid="19693869" lat="45.5224445" lon="-73.5618652" />
+ <node id="3522233750" visible="true" version="2" changeset="146646412" timestamp="2024-01-24T20:34:42Z" user="une abeille" uid="19693869" lat="45.5223908" lon="-73.5620328" />
+ <node id="11547437001" visible="true" version="1" changeset="146646412" timestamp="2024-01-24T20:34:42Z" user="une abeille" uid="19693869" lat="45.5224822" lon="-73.5619468" />
+ <node id="11547521685" visible="true" version="1" changeset="146647824" timestamp="2024-01-24T21:17:47Z" user="une abeille" uid="19693869" lat="45.5221680" lon="-73.5618727" />
+ <way id="345567245" visible="true" version="3" changeset="146647824" timestamp="2024-01-24T21:17:47Z" user="une abeille" uid="19693869">
+  <nd ref="3522113163" />
+  <nd ref="3522113165" />
+  <nd ref="3522113164" />
+  <nd ref="3522112053" />
+  <nd ref="3522112052" />
+  <nd ref="11547521685" />
+  <nd ref="3522113163" />
+  <tag k="building" v="apartments" />
+ </way>
+ <way id="345578954" visible="true" version="2" changeset="146646412" timestamp="2024-01-24T20:34:42Z" user="une abeille" uid="19693869">
+  <nd ref="3522233750" />
+  <nd ref="11547437001" />
+  <nd ref="3522233749" />
+  <nd ref="3522224855" />
+  <nd ref="3522224856" />
+  <nd ref="3522233750" />
+  <tag k="building" v="yes" />
+ </way>
+ <way id="345578982" visible="true" version="1" changeset="31203262" timestamp="2015-05-16T17:13:20Z" user="minewman" uid="2845963">
+  <nd ref="3522219209" />
+  <nd ref="3522219211" />
+  <nd ref="3522219208" />
+  <nd ref="3522219210" />
+  <nd ref="3522219209" />
+  <tag k="building" v="yes" />
+ </way>
+ </osm>

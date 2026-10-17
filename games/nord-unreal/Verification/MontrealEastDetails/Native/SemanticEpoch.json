@@ -1,0 +1,121 @@
+{
+  "passed": true,
+  "scope": "Fresh current-code semantic epoch; no extension authoring or Content mutation; strict comparator unchanged.",
+  "accepted_source_commit": "efb2c2da62972468f756daa2addab2b45335b4da",
+  "original_backup": "Saved/Recovery/montreal-east-20261014T150229Z",
+  "original_manifest_sha256": "1df2845a7246219280617e2220790fa412d5be4407bd2eb30182227c9b92175c",
+  "new_backup": "Saved/Recovery/montreal-east-semantic-epoch-20261017T140808Z",
+  "new_manifest_sha256": "3314fb7d7700f478dcbe4a5948f2550484e486861fb662c5caa59e0eac214188",
+  "old_actor_snapshot_sha256": "c877de0ae3ede5745de5c8f5aa53b944e9a842e6ba06ec14702cb38df8e28fae",
+  "new_actor_snapshot_sha256": "85dd73e2ac3f2014ac992164640ab3366b44719301b4a7a90c875856b0ef4453",
+  "current_native_snapshot_sha256": "5ae1fd3b20e4573dac3d3b73b57a1afd5c106a586f83d88863207c7a2b136dd3",
+  "current_cpp_sha256": "391aa4fbfe5b4f9c948b6cc435f2e40f473149d8d6bb4c16a157f75fefe4fe46",
+  "unchanged_copied_files": {
+    "original-content.json": "33a50f0b38d025c260aec15069ce1d8468d80b2c38c137bcfcef40be90036d8d",
+    "Content/Maps/LaFontaine.umap": "ed0056d27b3a9496871c538bcbe7e6214b5dbe7d4ae87b88c03015900c3662ce"
+  },
+  "only_declared_differences": [
+    {
+      "actor": "/Game/Maps/LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_0",
+      "component": "/Game/Maps/LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_0.GeneratedBody",
+      "field": "tick_enabled",
+      "before": true,
+      "after": false
+    },
+    {
+      "actor": "/Game/Maps/LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_1",
+      "component": "/Game/Maps/LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_1.GeneratedBody",
+      "field": "tick_enabled",
+      "before": true,
+      "after": false
+    },
+    {
+      "actor": "/Game/Maps/LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_10",
+      "component": "/Game/Maps/LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_10.GeneratedBody",
+      "field": "tick_enabled",
+      "before": true,
+      "after": false
+    },
+    {
+      "actor": "/Game/Maps/LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_11",
+      "component": "/Game/Maps/LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_11.GeneratedBody",
+      "field": "tick_enabled",
+      "before": true,
+      "after": false
+    },
+    {
+      "actor": "/Game/Maps/LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_12",
+      "component": "/Game/Maps/LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_12.GeneratedBody",
+      "field": "tick_enabled",
+      "before": true,
+      "after": false
+    },
+    {
+      "actor": "/Game/Maps/LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_13",
+      "component": "/Game/Maps/LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_13.GeneratedBody",
+      "field": "tick_enabled",
+      "before": true,
+      "after": false
+    },
+    {
+      "actor": "/Game/Maps/LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_2",
+      "component": "/Game/Maps/LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_2.GeneratedBody",
+      "field": "tick_enabled",
+      "before": true,
+      "after": false
+    },
+    {
+      "actor": "/Game/Maps/LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_3",
+      "component": "/Game/Maps/LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_3.GeneratedBody",
+      "field": "tick_enabled",
+      "before": true,
+      "after": false
+    },
+    {
+      "actor": "/Game/Maps/LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_4",
+      "component": "/Game/Maps/LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_4.GeneratedBody",
+      "field": "tick_enabled",
+      "before": true,
+      "after": false
+    },
+    {
+      "actor": "/Game/Maps/LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_5",
+      "component": "/Game/Maps/LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_5.GeneratedBody",
+      "field": "tick_enabled",
+      "before": true,
+      "after": false
+    },
+    {
+      "actor": "/Game/Maps/LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_6",
+      "component": "/Game/Maps/LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_6.GeneratedBody",
+      "field": "tick_enabled",
+      "before": true,
+      "after": false
+    },
+    {
+      "actor": "/Game/Maps/LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_7",
+      "component": "/Game/Maps/LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_7.GeneratedBody",
+      "field": "tick_enabled",
+      "before": true,
+      "after": false
+    },
+    {
+      "actor": "/Game/Maps/LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_8",
+      "component": "/Game/Maps/LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_8.GeneratedBody",
+      "field": "tick_enabled",
+      "before": true,
+      "after": false
+    },
+    {
+      "actor": "/Game/Maps/LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_9",
+      "component": "/Game/Maps/LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_9.GeneratedBody",
+      "field": "tick_enabled",
+      "before": true,
+      "after": false
+    }
+  ],
+  "all_other_original_actor_semantics_match": true,
+  "original_actors": 3048,
+  "current_actors": 3102,
+  "migration_sha256": "817ea6d68d5d69a69a0e8cbbb974a07fb0c47bc76712404ffef4745c9f659d5d"
+}

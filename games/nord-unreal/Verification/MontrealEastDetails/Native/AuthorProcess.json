@@ -1,0 +1,33 @@
+{
+  "passed": true,
+  "mode": "author",
+  "command": [
+    "/home/von/.local/share/Epic/UE_5.8.3/Engine/Binaries/Linux/UnrealEditor-Cmd",
+    "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Quebec.uproject",
+    "/Game/Maps/LaFontaine",
+    "-NullRHI",
+    "-unattended",
+    "-nop4",
+    "-nosound",
+    "-UDPMESSAGING_TRANSPORT_ENABLE=0",
+    "-ExecutePythonScript=/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Scripts/apply_montreal_east_details.py",
+    "-NordMontrealEastDetailsBackup=/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Recovery/montreal-east-details-20261017T140808Z",
+    "-NordMontrealEastBackup=/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Recovery/montreal-east-semantic-epoch-20261017T140808Z",
+    "-abslog=/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/DistrictRuntime/EastDetailsAuthor-20261017T140808Z/native.log"
+  ],
+  "backup": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Recovery/montreal-east-details-20261017T140808Z",
+  "started_utc": "2026-10-17T14:08:08.925520+00:00",
+  "exit_code": 0,
+  "native_passed": true,
+  "changed_existing_content": [
+    "Content/Maps/LaFontaine.umap"
+  ],
+  "added_content": [
+    "Content/Plateau/EastDetails/SM_Glass.uasset",
+    "Content/Plateau/EastDetails/SM_Iron.uasset",
+    "Content/Plateau/EastDetails/SM_Trim.uasset"
+  ],
+  "only_declared_content_changes": true,
+  "settings_restored": true,
+  "protected_saves_unchanged": true
+}

@@ -1,0 +1,528 @@
+{
+  "passed": true,
+  "rendered": true,
+  "run": "20261017T141107975792Z",
+  "resolution": [
+    1920,
+    1080
+  ],
+  "display_pixels": [
+    2048,
+    1280
+  ],
+  "fixtures": [
+    {
+      "name": "Panet",
+      "point_cm": [
+        71674.55083309732,
+        -26098.562974604924
+      ],
+      "target_cm": [
+        75373.30293126713,
+        -28558.323949252477
+      ],
+      "source": "way/490998043",
+      "node_ids": [
+        "1497705451",
+        "10815396967"
+      ],
+      "derivation": "longest retained street segment midpoint",
+      "road_width_cm": 680,
+      "pitch": -12,
+      "yaw": -33.62488171113105,
+      "context_footprint_sample_clearance_cm": 8146.085232153709
+    },
+    {
+      "name": "Visitation",
+      "point_cm": [
+        60420.852460401,
+        -29134.670399994902
+      ],
+      "target_cm": [
+        63072.53175570845,
+        -30900.20560002219
+      ],
+      "source": "way/19938440",
+      "node_ids": [
+        "11547437024",
+        "2075285157"
+      ],
+      "derivation": "longest retained street segment midpoint",
+      "road_width_cm": 680,
+      "pitch": -12,
+      "yaw": -33.65638180733419,
+      "context_footprint_sample_clearance_cm": 620.8597428037924
+    },
+    {
+      "name": "FormerEdge",
+      "point_cm": [
+        54888.20160134625,
+        -14873.465199956201
+      ],
+      "target_cm": [
+        58710.539102254894,
+        -17399.19993901318
+      ],
+      "source": "way/490998043",
+      "former_exit_cm": [
+        55373.30293126712,
+        -15194.011797595113
+      ],
+      "derivation": "original Panet source node looking through former boundary",
+      "pitch": -12,
+      "yaw": -33.45604059137042,
+      "context_footprint_sample_clearance_cm": 882.9774136286053
+    }
+  ],
+  "captures": [
+    {
+      "label": "PanetStandard",
+      "path": "Saved/Tests/DistrictRuntime/MontrealEastRender1920-20261017T141107975792Z/PanetStandard.png",
+      "fixture": {
+        "name": "Panet",
+        "point_cm": [
+          71674.55083309732,
+          -26098.562974604924
+        ],
+        "target_cm": [
+          75373.30293126713,
+          -28558.323949252477
+        ],
+        "source": "way/490998043",
+        "node_ids": [
+          "1497705451",
+          "10815396967"
+        ],
+        "derivation": "longest retained street segment midpoint",
+        "road_width_cm": 680,
+        "pitch": -12,
+        "yaw": -33.62488171113105,
+        "context_footprint_sample_clearance_cm": 8146.085232153709
+      },
+      "actual_viewport": [
+        1920,
+        1080
+      ],
+      "hud_class": "QuebecHUD",
+      "comic_weight": 0.0,
+      "player_cm": [
+        71674.55083309732,
+        -26098.562974604924,
+        98.15000677108765
+      ],
+      "camera_cm": [
+        71341.98905518922,
+        -25877.401225315723,
+        239.27103497345823
+      ],
+      "camera_pitch": -12.000000000000002,
+      "camera_yaw": -33.62488174438475,
+      "horizontal_fov": 90.0,
+      "native_canvas_capture_requested": true,
+      "hud_pixel_review_pending": true,
+      "visual_review_pending": true,
+      "sha256": "dd6ac71a4e11dfed3705af2886f6206d2b4ea75cad300da3ce0732f985fa7cc5",
+      "bytes": 3075610,
+      "png_dimensions": [
+        1920,
+        1080
+      ]
+    },
+    {
+      "label": "PanetComic",
+      "path": "Saved/Tests/DistrictRuntime/MontrealEastRender1920-20261017T141107975792Z/PanetComic.png",
+      "fixture": {
+        "name": "Panet",
+        "point_cm": [
+          71674.55083309732,
+          -26098.562974604924
+        ],
+        "target_cm": [
+          75373.30293126713,
+          -28558.323949252477
+        ],
+        "source": "way/490998043",
+        "node_ids": [
+          "1497705451",
+          "10815396967"
+        ],
+        "derivation": "longest retained street segment midpoint",
+        "road_width_cm": 680,
+        "pitch": -12,
+        "yaw": -33.62488171113105,
+        "context_footprint_sample_clearance_cm": 8146.085232153709
+      },
+      "actual_viewport": [
+        1920,
+        1080
+      ],
+      "hud_class": "QuebecHUD",
+      "comic_weight": 1.0,
+      "player_cm": [
+        71674.55083309732,
+        -26098.562974604924,
+        98.15000677108765
+      ],
+      "camera_cm": [
+        71341.98905518922,
+        -25877.401225315723,
+        239.27103497345823
+      ],
+      "camera_pitch": -12.000000000000002,
+      "camera_yaw": -33.62488174438475,
+      "horizontal_fov": 90.0,
+      "native_canvas_capture_requested": true,
+      "hud_pixel_review_pending": true,
+      "visual_review_pending": true,
+      "sha256": "555b2bff618af7d9b76922f1470a631a8415764924729125f533859acd95c9cc",
+      "bytes": 3109310,
+      "png_dimensions": [
+        1920,
+        1080
+      ]
+    },
+    {
+      "label": "VisitationStandard",
+      "path": "Saved/Tests/DistrictRuntime/MontrealEastRender1920-20261017T141107975792Z/VisitationStandard.png",
+      "fixture": {
+        "name": "Visitation",
+        "point_cm": [
+          60420.852460401,
+          -29134.670399994902
+        ],
+        "target_cm": [
+          63072.53175570845,
+          -30900.20560002219
+        ],
+        "source": "way/19938440",
+        "node_ids": [
+          "11547437024",
+          "2075285157"
+        ],
+        "derivation": "longest retained street segment midpoint",
+        "road_width_cm": 680,
+        "pitch": -12,
+        "yaw": -33.65638180733419,
+        "context_footprint_sample_clearance_cm": 620.8597428037924
+      },
+      "actual_viewport": [
+        1920,
+        1080
+      ],
+      "hud_class": "QuebecHUD",
+      "comic_weight": 0.0,
+      "player_cm": [
+        60420.852460401,
+        -29134.670399994902,
+        98.15000677108765
+      ],
+      "camera_cm": [
+        60088.412329606384,
+        -28913.325838482044,
+        239.27103497345823
+      ],
+      "camera_pitch": -12.0,
+      "camera_yaw": -33.65638351440428,
+      "horizontal_fov": 90.0,
+      "native_canvas_capture_requested": true,
+      "hud_pixel_review_pending": true,
+      "visual_review_pending": true,
+      "sha256": "50a9bfd8dab083a1d6ecf4093e62d39e40177c7ebcdcae4e078e648bc948a2ba",
+      "bytes": 3787804,
+      "png_dimensions": [
+        1920,
+        1080
+      ]
+    },
+    {
+      "label": "VisitationComic",
+      "path": "Saved/Tests/DistrictRuntime/MontrealEastRender1920-20261017T141107975792Z/VisitationComic.png",
+      "fixture": {
+        "name": "Visitation",
+        "point_cm": [
+          60420.852460401,
+          -29134.670399994902
+        ],
+        "target_cm": [
+          63072.53175570845,
+          -30900.20560002219
+        ],
+        "source": "way/19938440",
+        "node_ids": [
+          "11547437024",
+          "2075285157"
+        ],
+        "derivation": "longest retained street segment midpoint",
+        "road_width_cm": 680,
+        "pitch": -12,
+        "yaw": -33.65638180733419,
+        "context_footprint_sample_clearance_cm": 620.8597428037924
+      },
+      "actual_viewport": [
+        1920,
+        1080
+      ],
+      "hud_class": "QuebecHUD",
+      "comic_weight": 1.0,
+      "player_cm": [
+        60420.852460401,
+        -29134.670399994902,
+        98.15000677108765
+      ],
+      "camera_cm": [
+        60088.41232960642,
+        -28913.325838482004,
+        239.2710349734582
+      ],
+      "camera_pitch": -11.999999999999995,
+      "camera_yaw": -33.65638351440427,
+      "horizontal_fov": 90.0,
+      "native_canvas_capture_requested": true,
+      "hud_pixel_review_pending": true,
+      "visual_review_pending": true,
+      "sha256": "edd6ff368b60e89e4bca6f7d6daa5fdd9c2c51fa3d72e67518bf5fdd0d6de592",
+      "bytes": 3962356,
+      "png_dimensions": [
+        1920,
+        1080
+      ]
+    },
+    {
+      "label": "FormerEdgeStandard",
+      "path": "Saved/Tests/DistrictRuntime/MontrealEastRender1920-20261017T141107975792Z/FormerEdgeStandard.png",
+      "fixture": {
+        "name": "FormerEdge",
+        "point_cm": [
+          54888.20160134625,
+          -14873.465199956201
+        ],
+        "target_cm": [
+          58710.539102254894,
+          -17399.19993901318
+        ],
+        "source": "way/490998043",
+        "former_exit_cm": [
+          55373.30293126712,
+          -15194.011797595113
+        ],
+        "derivation": "original Panet source node looking through former boundary",
+        "pitch": -12,
+        "yaw": -33.45604059137042,
+        "context_footprint_sample_clearance_cm": 882.9774136286053
+      },
+      "actual_viewport": [
+        1920,
+        1080
+      ],
+      "hud_class": "QuebecHUD",
+      "comic_weight": 0.0,
+      "player_cm": [
+        54888.20160134625,
+        -14873.465199956201,
+        98.15000677108765
+      ],
+      "camera_cm": [
+        54554.98953689793,
+        -14653.28442064033,
+        239.2710349734582
+      ],
+      "camera_pitch": -11.999999999999995,
+      "camera_yaw": -33.45603942871092,
+      "horizontal_fov": 90.0,
+      "native_canvas_capture_requested": true,
+      "hud_pixel_review_pending": true,
+      "visual_review_pending": true,
+      "sha256": "6fa3b312e85fe60a9d2d7fe3f24ca16d3da8fb0ee3879192785c79009ae8953b",
+      "bytes": 3855544,
+      "png_dimensions": [
+        1920,
+        1080
+      ]
+    },
+    {
+      "label": "FormerEdgeComic",
+      "path": "Saved/Tests/DistrictRuntime/MontrealEastRender1920-20261017T141107975792Z/FormerEdgeComic.png",
+      "fixture": {
+        "name": "FormerEdge",
+        "point_cm": [
+          54888.20160134625,
+          -14873.465199956201
+        ],
+        "target_cm": [
+          58710.539102254894,
+          -17399.19993901318
+        ],
+        "source": "way/490998043",
+        "former_exit_cm": [
+          55373.30293126712,
+          -15194.011797595113
+        ],
+        "derivation": "original Panet source node looking through former boundary",
+        "pitch": -12,
+        "yaw": -33.45604059137042,
+        "context_footprint_sample_clearance_cm": 882.9774136286053
+      },
+      "actual_viewport": [
+        1920,
+        1080
+      ],
+      "hud_class": "QuebecHUD",
+      "comic_weight": 1.0,
+      "player_cm": [
+        54888.20160134625,
+        -14873.465199956201,
+        98.15000677108765
+      ],
+      "camera_cm": [
+        54554.98953689775,
+        -14653.284420640586,
+        239.2710349734582
+      ],
+      "camera_pitch": -11.999999999999995,
+      "camera_yaw": -33.45603942871093,
+      "horizontal_fov": 90.0,
+      "native_canvas_capture_requested": true,
+      "hud_pixel_review_pending": true,
+      "visual_review_pending": true,
+      "sha256": "1e395cdab4961787168d58d8656578934f28fc6c3ddff093e2d611aa650a044d",
+      "bytes": 4018397,
+      "png_dimensions": [
+        1920,
+        1080
+      ]
+    }
+  ],
+  "mode": "one standalone immersive PIE player; native HUD/F2, source-derived authority camera fixtures",
+  "limits": [
+    "visual review pending",
+    "no multiplayer rendering acceptance",
+    "no naturally navigated corridor or physical input test",
+    "no motion/FPS/audio/package acceptance",
+    "NoCampaignSave suppresses disk loading and writing; no persistence acceptance",
+    "source road-center fixtures, not a naturally navigated sidewalk trip",
+    "CPU footprint samples do not prove native camera clearance"
+  ],
+  "source_sha256": {
+    "Saved/Tests/DistrictRuntime/EastCapturePrepared-20261017T141048830981Z/capture.py": "f6cca93a3f639f25a3b25496e3ea2f7abf878fecb42555189011c616dbb910b0",
+    "Data/LaFontaine/osm.xml": "fe4410d45007a627bf6d9b9ddeeae329fa9cdd7492dfb5fa6beff851e7cf8f86",
+    "Data/LaFontaine/layout.json": "4238d6ed45d5fb890e0f8dbcb672de0803c6dc7079b0b6a86b386d82ebbb4250",
+    "Data/Plateau/ContextGeometry/context.json": "74764fd01528c320439692fdc6eefd3394770e547f425b886ceabbd73fc9392a",
+    "Data/Plateau/EdgesGeometry/edges.json": "9b2adcc383903d64014e5a09851cea786aea5af4307242f5a37dc83362323a35",
+    "Source/Quebec/LaFontaineMap.h": "80a96e858c315584598acd8d87dfb758ba45f64a58ccd4b6f5222ddb56ff1700",
+    "Data/Plateau/EastExtension/extension.json": "c19300127f80c9ebd4483610544acab9162a05280ab5a2717376c88c6770dcbf",
+    "Scripts/capture_college_bathurst.py": "285bc8d2f9fa7af4eb97de325759ef43c9e2327b392d3cf859fa47d3f5db6fa8",
+    "Scripts/plateau_streets.py": "9e246e7c2d66e370be709117912df167be7edae5e6857adacc9d0641829c1179",
+    "Scripts/plateau_ground.py": "9ba1e57a062d94c6eb2c3ecef2ea191d63d5cf97ada05cccf9e9441a1ce7c445",
+    "Source/Quebec/QuebecCampaign.cpp": "3e6622eb4ac645e32168d57fe7ac5c26dc920cde1e5d179ee5d68535918657c7",
+    "Source/Quebec/QuebecGameplay.cpp": "391aa4fbfe5b4f9c948b6cc435f2e40f473149d8d6bb4c16a157f75fefe4fe46",
+    "Content/Maps/LaFontaine.umap": "1e0cf1e0a309e588469e98d22e30350b873e456e2b68fa0a3500878181039b28"
+  },
+  "population_before": {
+    "campaign": "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecCampaign_0",
+    "phase": "<QuebecCampaignPhase.AIM_WORKLIGHT: 0>",
+    "completed": 0,
+    "mission_index": 0,
+    "residents": 110,
+    "cars": 47
+  },
+  "population_last_checked": {
+    "campaign": "/Game/Maps/UEDPIE_0_LaFontaine.LaFontaine:PersistentLevel.QuebecCampaign_0",
+    "phase": "<QuebecCampaignPhase.AIM_WORKLIGHT: 0>",
+    "completed": 0,
+    "mission_index": 0,
+    "residents": 110,
+    "cars": 47
+  },
+  "viewport_calibration": {
+    "passed": true,
+    "display_pixels": [
+      2048,
+      1280
+    ],
+    "target_viewport_pixels": [
+      1920,
+      1080
+    ],
+    "method": "Editor.ResizeMainFrame then one measured chrome compensation",
+    "attempts": [
+      {
+        "requested_root_pixels": [
+          1920,
+          1080
+        ],
+        "observed_viewport_pixels": [
+          1920,
+          1080
+        ]
+      }
+    ],
+    "native_viewport_cursor_probes": [
+      {
+        "viewport_pixels": [
+          0,
+          0
+        ],
+        "desktop_pixels": [
+          34.0,
+          86.0
+        ]
+      },
+      {
+        "viewport_pixels": [
+          1919,
+          0
+        ],
+        "desktop_pixels": [
+          1953.0,
+          86.0
+        ]
+      },
+      {
+        "viewport_pixels": [
+          0,
+          1079
+        ],
+        "desktop_pixels": [
+          34.0,
+          1165.0
+        ]
+      }
+    ],
+    "cursor_restored_viewport_pixels": [
+      990,
+      554
+    ],
+    "desktop_rectangle": [
+      34.0,
+      86.0,
+      1920,
+      1080
+    ]
+  },
+  "actual_viewport_pixels": [
+    1920,
+    1080
+  ],
+  "renderer_settings": {
+    "sg.ViewDistanceQuality": 3,
+    "sg.AntiAliasingQuality": 3,
+    "sg.ShadowQuality": 3,
+    "sg.GlobalIlluminationQuality": 3,
+    "sg.ReflectionQuality": 3,
+    "sg.PostProcessQuality": 3,
+    "sg.TextureQuality": 3,
+    "sg.EffectsQuality": 3,
+    "sg.FoliageQuality": 3,
+    "sg.ShadingQuality": 3,
+    "sg.LandscapeQuality": 3,
+    "r.ScreenPercentage": 100.0
+  },
+  "all_save_hashes_unchanged": true,
+  "owned_pie_stopped": true,
+  "error": null,
+  "play_settings_restored": true,
+  "curation": {
+    "raw_report_sha256": "f2f04db75982a8cdda555c88b1d9591ba14d36e2428eb882c8b25fd1447046ee",
+    "scope": "Save inventories omitted; population actor lists reduced to counts. Raw pre-review pending flags retained; see separate ImageReview."
+  }
+}

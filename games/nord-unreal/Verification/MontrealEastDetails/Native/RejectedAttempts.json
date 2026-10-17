@@ -1,0 +1,18 @@
+[
+  {
+    "attempt": "EastDetailsAuthor-20261017T140236Z",
+    "reason": "Missing ignored closure OBJ: restored only the 40 exact metadata-pinned source files from the preserved art checkout.",
+    "native_log_sha256": "9e13382bd81e5b93cb55e607b6685f0d4868a7ef5b1edfb1d45c9291cdb032fc",
+    "native_error_lines": [
+      "[2026.10.17-14.02.49:807][  2]LogPython: Error: AssertionError: ('Missing/changed new closure geometry', 'ConstructionOrange_XP005_YM005.obj')"
+    ]
+  },
+  {
+    "attempt": "EastDetailsAuthor-20261017T140422Z",
+    "reason": "Accepted PR378 C++ disabled GeneratedBody component ticking; fresh snapshot isolated exactly14 original residents. A new sealed semantic epoch changes only that exact field on those exact components; old receipts and strict comparator remain unchanged.",
+    "native_log_sha256": "ce147cb7c15b54becf67da5e5118023527290c9f792d11c4c7b8ce70e84616e5",
+    "native_error_lines": [
+      "[2026.10.17-14.04.34:467][  2]LogPython: Error: AssertionError: ('Original actor semantics changed outside allowance', '/Game/Maps/LaFontaine.LaFontaine:PersistentLevel.QuebecParkResident_0')"
+    ]
+  }
+]

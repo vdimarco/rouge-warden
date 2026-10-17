@@ -1,0 +1,73 @@
+{
+  "raw_report_sha256": "42dba05bd8df5ab76b389fb463bf41862ef533e75a40cdcf2609359830b937ac",
+  "passed": true,
+  "phase": "complete",
+  "jobs": [
+    {
+      "name": "MontrealEast1920",
+      "command": [
+        "/home/von/.local/share/Epic/UE_5.8.3/Engine/Binaries/Linux/UnrealEditor",
+        "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Quebec.uproject",
+        "/Game/Maps/LaFontaine",
+        "-vulkan",
+        "-graphicsadapter=0",
+        "-windowed",
+        "-ForceRes",
+        "-ResX=1920",
+        "-ResY=1080",
+        "-WinX=0",
+        "-WinY=0",
+        "-unattended",
+        "-nop4",
+        "-nosound",
+        "-NoSplash",
+        "-ini:Engine:[ConsoleVariables]:Slate.bAllowNotifications=0",
+        "-UDPMESSAGING_TRANSPORT_ENABLE=0",
+        "-ExecutePythonScript=/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/DistrictRuntime/EastCapturePrepared-20261017T141048830981Z/capture.py",
+        "-abslog=/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/DistrictRuntime/SingleRenderWindow-20261017T141048Z/MontrealEast1920.log",
+        "-immersive",
+        "-ini:EditorPerProjectUserSettings:[/Script/UnrealEd.LevelEditorPlaySettings]:PlayNetMode=PIE_Standalone",
+        "-ini:EditorPerProjectUserSettings:[/Script/UnrealEd.LevelEditorPlaySettings]:PlayNumberOfClients=1",
+        "-ini:EditorPerProjectUserSettings:[/Script/UnrealEd.LevelEditorPlaySettings]:RunUnderOneProcess=True",
+        "-NordEastRenderChecks",
+        "-NordNoCampaignSave",
+        "-NordCaptureWidth=1920",
+        "-NordCaptureDisplayWidth=2048",
+        "-NordCaptureDisplayHeight=1280",
+        "-ExecCmds=Scalability 3,r.ScreenPercentage 100,t.MaxFPS 60",
+        "-PixelStreamingEditorAutoStreamPIE=false",
+        "-ini:EditorSettings:[/Script/UnrealEd.EditorPerformanceSettings]:bThrottleCPUWhenNotForeground=False",
+        "-csvGpuStats",
+        "-csvCompression=0"
+      ],
+      "process_exit_code": 0,
+      "report": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/DistrictRuntime/MontrealEastRender1920-20261017T141107975792Z/capture.json",
+      "video": null,
+      "log_guard": {
+        "passed": true,
+        "dependency_shader_and_fatal_errors": 0
+      },
+      "report_sha256": "f2f04db75982a8cdda555c88b1d9591ba14d36e2428eb882c8b25fd1447046ee",
+      "passed": true
+    }
+  ],
+  "service_actions": [
+    "stop nord-browser-demo.service",
+    "restore nord-browser-demo.service"
+  ],
+  "restored": true,
+  "global_settings_restored": true,
+  "source_settings_restored": true,
+  "protected_changed": [],
+  "generated_assets_changed": [],
+  "all_content_changed": [],
+  "frozen_source_changed": [],
+  "derivative_changed": [],
+  "stream_helper_unchanged": true,
+  "live_package_changed": [],
+  "live_saves_changed_before_restart": false,
+  "source_savegames_unchanged": true,
+  "preserved_units_unchanged": true,
+  "turn_running_after": true,
+  "curation": "Private baselines, environment/settings/save inventories and runtime service identities omitted."
+}
