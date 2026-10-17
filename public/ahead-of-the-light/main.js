@@ -779,7 +779,7 @@ function pauseGame(trust = true) {
   G.paused = true;
   G.regrip = false;
   input.pause(trust);
-  sound.setPaused(true);
+  sound.setPaused(true, { keep: document.hidden });
   G.modal = 'pause';
   hint('');
   showPause();

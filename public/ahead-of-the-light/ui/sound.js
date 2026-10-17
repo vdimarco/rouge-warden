@@ -644,10 +644,12 @@ export function createSound({ on = true, onToggle = null } = {}) {
     }
   }
 
-  function setPaused(p) {
+  // A pause suspends the context. A pause because the page was hidden leaves that to /arcade/quiet.js (keep: true),
+  // which suspends it while hidden and resumes it when shown, so the pause card has the low-passed drone.
+  function setPaused(p, { keep = false } = {}) {
     paused = Boolean(p);
     if (!ctx || !E) return;
-    if (paused) { if (ctx.state === 'running') ctx.suspend().catch(() => {}); }
+    if (paused) { if (!keep && ctx.state === 'running') ctx.suspend().catch(() => {}); }
     else if (ctx.state === 'suspended') ctx.resume().catch(() => {});
   }
   function setOn(v) {
