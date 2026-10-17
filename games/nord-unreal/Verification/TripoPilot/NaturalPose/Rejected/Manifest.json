@@ -1,0 +1,188 @@
+{
+  "scope": "Retained rejected CPU recipes, reports and logs; large authoring snapshots, FBXs and images remain private scratch. No native/provider operation.",
+  "scratch_prefix": "/tmp/nord-tripo-natural-pose-20261017-v",
+  "versions": {
+    "v1": {
+      "private_payloads": {
+        "Authoring.json": {
+          "bytes": 3885229,
+          "sha256": "d7886066df0d47a8304cd6f648553a1217b4fb8c46a75a37feb4631ff67ad215"
+        },
+        "relaxed-idle.fbx": {
+          "bytes": 844556,
+          "sha256": "ba3b581bcbc76c23e8abbdad52d146f6f5e112d7bd0828a16677d999f8b5e790"
+        },
+        "natural-jump.fbx": {
+          "bytes": 534844,
+          "sha256": "4a959a46916364659c105c4263bdf5cf4d6c67a6bc09d7c25d0f935e107341d9"
+        }
+      }
+    },
+    "v2": {
+      "private_payloads": {
+        "Authoring.json": {
+          "bytes": 3885460,
+          "sha256": "500e9bd8d702bc50a307654b6b4512eb623424a579e68d5477ea838f29fdb73b"
+        },
+        "relaxed-idle.fbx": {
+          "bytes": 844556,
+          "sha256": "99f34224c4481912962efef899e093464c481de37c30881592be2e5526acb5e3"
+        },
+        "natural-jump.fbx": {
+          "bytes": 534844,
+          "sha256": "8d640e52ea3e5b2af996ef56042d6e9e180b0e7fbeb10296d5cbfb6192293ebc"
+        }
+      }
+    },
+    "v3": {
+      "private_payloads": {
+        "Authoring.json": {
+          "bytes": 3928698,
+          "sha256": "d84906a0b5266c47d83778f1fa33beed1f29634c0d5894b8b0431fbeb877ccff"
+        },
+        "relaxed-idle.fbx": {
+          "bytes": 844556,
+          "sha256": "5318f70a6957c2b6f0b79504970b8ccc474b0297099041535c00ae09c07d763c"
+        },
+        "natural-jump.fbx": {
+          "bytes": 534796,
+          "sha256": "b69cc789812614b534d035b0d4bee4a6944d745204605c0909f2c45a4bf37d45"
+        },
+        "Views/hand-left.png": {
+          "bytes": 764044,
+          "sha256": "0a356836b41bebae80ac1877ad0d5918ed23e42d9a71f5656d4213bff724396b"
+        },
+        "Views/idle-front.png": {
+          "bytes": 744785,
+          "sha256": "1092e0800f4f16a18c62b037532879bfb1a051d3cbb953cb8585fe6e4a30b854"
+        },
+        "Views/idle-side.png": {
+          "bytes": 705270,
+          "sha256": "27643c7766c4ffb66ce1e8038213bbc176e7d5a41b762d8fefea631fc89b1f1c"
+        },
+        "Views/idle-threequarter.png": {
+          "bytes": 745008,
+          "sha256": "dadf9bfdcf67f380da7cea7e5d8218485e9f5fc43d33b4cd75c174de6501ef13"
+        },
+        "Views/jump-side.png": {
+          "bytes": 723865,
+          "sha256": "e6c67742509940f5ef5415fe16a31fb32ab2776e906f019157792f08576861be"
+        },
+        "Views/jump-threequarter.png": {
+          "bytes": 745148,
+          "sha256": "697f478f2d607cdd42124f701e170de7ab2a3c54d84eb6d9351dc4c1af4fcc2a"
+        }
+      }
+    }
+  },
+  "retained_files": {
+    "v1/Authoring-summary.json": {
+      "bytes": 880,
+      "sha256": "3284d11ead18fa3cf2ce79608098df99fefe907a40a81112eed25e4737ddca6f"
+    },
+    "v1/IndependentVerification.json": {
+      "bytes": 7224,
+      "sha256": "fe6c4f384c95816ea8af7fcb381db760032fec26ac9427469966b47a174925c2"
+    },
+    "v1/author.log": {
+      "bytes": 414,
+      "sha256": "87a3c9e4f331c1fa468046892fdb02b1820c49a9a3f9009b48c36791f620a72c"
+    },
+    "v1/author.py": {
+      "bytes": 9788,
+      "sha256": "b0d954cd6c7c5fe4bf395cae5fca65d3b31cef0135243649f306585cbf7ff6c7"
+    },
+    "v1/independent.log": {
+      "bytes": 634,
+      "sha256": "e71f7d6863d9a4f2a7b8d1589188460270067877dd67c80e1a00f64bf5ee5353"
+    },
+    "v2/Authoring-summary.json": {
+      "bytes": 1111,
+      "sha256": "edd4a6f81b0b49018abe1a0d28c3387b8be3b501de007671259ef7cf24e155be"
+    },
+    "v2/IndependentVerification.json": {
+      "bytes": 7228,
+      "sha256": "a22534146fc059312633bcc44dcd6d4acc40fdce9c242f84a4a37ecb36aef946"
+    },
+    "v2/author.log": {
+      "bytes": 414,
+      "sha256": "a1ff59bbfbb6a79ab31c4da5a7aba54817892022774daff6ea81592de739872c"
+    },
+    "v2/author.py": {
+      "bytes": 10445,
+      "sha256": "4aaac1f98659c1636c8b73b329aa3024ff6c90a0d1662addd6ebfcbed9db2512"
+    },
+    "v2/independent.log": {
+      "bytes": 638,
+      "sha256": "cab7574179e67d6954200efa0b30047326bdb8b8dadc7ad85f29d0dd9b565f27"
+    },
+    "v3/Authoring-summary.json": {
+      "bytes": 1111,
+      "sha256": "5b6d48615bf6b0e8c14c340ddc0d1493a6087a664619bd7ab900d89d859d907a"
+    },
+    "v3/IndependentDiagnostic-full-pre-semantic.json": {
+      "bytes": 130032,
+      "sha256": "178a421cd80fdd186ea3c23a33d0e03df369b142fb1fc6f10f1c7740817360b7"
+    },
+    "v3/IndependentDiagnostic-full-pre-step.json": {
+      "bytes": 129364,
+      "sha256": "fb38c8d383d051475e30dfd52c032eb79c4df7ea663d65b177d98dd1162aae89"
+    },
+    "v3/IndependentDiagnostic-partial.json": {
+      "bytes": 97956,
+      "sha256": "f89a0f0b6dfa68f8a4bc0f550681ba01d009772455144db0bc42ae83e9364146"
+    },
+    "v3/IndependentDiagnostic-semantic.json": {
+      "bytes": 131204,
+      "sha256": "c944c29f16f4933a119ec1f7399842844caaac3ee8b32aded18780bbd1aa4094"
+    },
+    "v3/IndependentVerification.json": {
+      "bytes": 7228,
+      "sha256": "3676f867964b66d287ae76d3ae21639fa43ffea60c9cd5086e6e8ea4d17b1b2e"
+    },
+    "v3/author.log": {
+      "bytes": 414,
+      "sha256": "f2eb7776c413e3bbfe7dff179475f64192070c7ae6413129a4cf1505267a51cf"
+    },
+    "v3/author.py": {
+      "bytes": 10574,
+      "sha256": "393f9f5c6828a1960fca60447834327a53d98208f0c8df05f8fdb676c40c24bc"
+    },
+    "v3/independent-diagnostic-partial.log": {
+      "bytes": 611,
+      "sha256": "5ca9fda9bf0173a0faa3e6163ba9c9f6d99113d3c4b4a4744629f019b8a98d1f"
+    },
+    "v3/independent-diagnostic-semantic.log": {
+      "bytes": 712,
+      "sha256": "08a375ecfef861ad8c02d352d466a7e5d1282af36441dbbea4479c43235d55db"
+    },
+    "v3/independent-diagnostic.log": {
+      "bytes": 703,
+      "sha256": "af1e75f796ed0b00e5f665dc166ec9522d7d8c37602ffa8efded4903593b8c2b"
+    },
+    "v3/independent.log": {
+      "bytes": 638,
+      "sha256": "cab7574179e67d6954200efa0b30047326bdb8b8dadc7ad85f29d0dd9b565f27"
+    },
+    "v3/verify-diagnostic-partial.py": {
+      "bytes": 15708,
+      "sha256": "cc88f566daccfa1802ae33bf6c5a2f50a27f18923ab8c36fe9a5ac6a859753d8"
+    },
+    "v3/verify-diagnostic-pre-step.py": {
+      "bytes": 16690,
+      "sha256": "a4a3c9b4bbbd1f8b3e0673e20170acdea9103db191da3f7d57fa0ae9f19a2f39"
+    },
+    "v3/verify-fixed-raw-bounds.py": {
+      "bytes": 17237,
+      "sha256": "524577778962b12b3e3feb1dabbe467fc81a229e285bc673eb9941cef9e5fdf6"
+    },
+    "v3/verify-semantic-diagnostic.py": {
+      "bytes": 19446,
+      "sha256": "b4f858cf51f36f25df763aa271518a00b5d50aa1ba63cadd25665e20140e3bf5"
+    },
+    "verify-original-raw-bounds.py": {
+      "bytes": 14144,
+      "sha256": "94f8241a2e845372cc867ed1468a4cd8e26664d0f99b531bd803e46a910a484e"
+    }
+  }
+}

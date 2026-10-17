@@ -45,6 +45,11 @@ The local pilot SHALL be available only through the explicit `-NordGraphicNovelC
 - **THEN** matching front, side and three-quarter airborne/landing views and actual continuous motion show a natural shoulder/sleeve silhouette and plausible held-prop scale/grip without face occlusion
 - **AND** original sources, ordinary crew/district packages, gameplay/input, collision and saved state remain preserved; passing import or pose counters alone do not accept art quality
 
+#### Scenario: Relax the Tripo pilot's stiff arms
+- **WHEN** the own-rig pilot is standing or recovering from a jump
+- **THEN** the authored idle keeps soft forward elbows, relaxed shoulders, inward palms and loosely curled fingers instead of returning to the rigid bind pose
+- **AND** actual exported clips preserve their own hierarchy/reference pose and matching relaxed endpoints, with front/side/three-quarter and motion review distinguishing CPU authoring evidence from native acceptance
+
 ### Requirement: Detailed animated playable crew
 The supplied playable characters SHALL retain readable facial details and distinct locomotion in the comic view.
 

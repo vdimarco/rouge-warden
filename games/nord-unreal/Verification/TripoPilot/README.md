@@ -2,6 +2,8 @@
 
 The user-authorized Tripo pilot produced an actual **v3.0 humanoid/Unreal FBX rig** for the existing detailed character. The [free compatibility check](RigCheck.json) passes as a biped; the [rigging task](RigResult.json) succeeds for **25 credits/US$0.25**, leaving **75 API credits** available and none frozen. No further paid job was submitted. The [original provider FBX, preview and provenance](../../Data/GraphicNovel/Pilot/CurlyMetalhead/tripo-v3-rig-20261017/README.md) are retained unchanged. No installed character or package is replaced.
 
+The user subsequently rejected the first apex as stiff. The current [relaxed-pose correction](NaturalPose/README.md) adds an own-rig idle and revised asymmetric jump with soft elbows, inward palms, loose fingers and matching relaxed endpoints. Actual fresh-import checks and six CPU views support this candidate; the earlier bind-neutral retarget below remains historical comparison evidence. No extra Tripo job was needed. Native adoption remains open.
+
 ## What improved
 
 The [CPU audit](CPU/Audit.json) finds 61 bones rather than the old 24, with all ten three-joint finger chains genuinely weighted. All thirty finger bones deform the mesh; skin weights are finite/normalized with at most four influences and no unweighted vertices. Both independently derived elbow axes flex the wrists forward, with opposite-sign controls bending backward. The actual [left elbow](CPU/Visual/03-elbow-l-forward.png), [right elbow](CPU/Visual/04-elbow-r-forward.png) and [neutral](CPU/Visual/05-hand-left-neutral.png)/[curled fingers](CPU/Visual/06-hand-left-flex.png) are isolated CPU diagnostics. Root and the authoring agent inspected all six stills. The diagnostic finger pose is not a closed prop grip or a natural-motion result.
