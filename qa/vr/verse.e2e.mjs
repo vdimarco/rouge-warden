@@ -43,7 +43,8 @@ const SETUP = () => {
   };
 };
 
-try {
+// a desktop page in flat play, with the loop stopped so the test steps and draws the game itself
+const play = async () => {
   const page = await newPage({ width: 960, height: 540 });
   await page.addInitScript(quiet);
   await open(page, "?nosw&skipintro");
@@ -52,6 +53,11 @@ try {
   await page.waitForFunction(() => G.state === "play", null, { timeout: 120000 });
   await page.evaluate(() => { G.renderer.setAnimationLoop(null); G.test.hold(true); });
   await page.evaluate(SETUP);
+  return page;
+};
+
+try {
+  const page = await play();
 
   /* ---- the hero on twos, and on ones with a full meter ---- */
   const twos = await page.evaluate(() => {
@@ -289,7 +295,14 @@ try {
   check(words.part > 0.28 && words.part < 0.4, "the finisher word fills a third of the view (" + (words.part * 100).toFixed(0) + "%)", words);
   check(words.stay === 6 && words.gone === 0, "wall words stay 20 s, six at most", words);
 
-  /* ---- the build guide, part two: ink lines, hatching, mood, the smear ---- */
+  check(page.errors.length === 0, "no page errors", page.errors);
+  await page.context().close();
+} catch (e) { check(false, "the verse check threw", e.stack || String(e)); }
+
+/* ---- the build guide, part two: ink lines, hatching, mood, the smear ----
+   On a new page: on SwiftShader the browser's memory grows over a long run of draws, and the page above ends near the limit */
+try {
+  const page = await play();
   const ink = await page.evaluate(() => {
     QA.clear(); QA.street(); QA.step(5);
     // the share of pixels that turn darker (by over `by`, the three channels summed) when the lines (or the hatching) come on;
@@ -334,9 +347,9 @@ try {
   });
   check(smear.fast > 0.15 && smear.fast <= 0.3 && smear.rest === 0, "at 32 m/s the hero smears along his flight (" + smear.fast.toFixed(2) + "), at rest not at all", smear);
 
-  check(page.errors.length === 0, "no page errors", page.errors);
+  check(page.errors.length === 0, "no page errors in part two", page.errors);
   await page.context().close();
-} catch (e) { check(false, "the verse check threw", e.stack || String(e)); }
+} catch (e) { check(false, "the part two verse check threw", e.stack || String(e)); }
 
 /* ---- a phone: the pass runs, and the screen draws ---- */
 try {
