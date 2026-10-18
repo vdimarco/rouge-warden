@@ -31,7 +31,6 @@
       <video id="hero-video" class="hero-video" loop playsinline preload="auto" poster="https://d2ol7oe51mr4n9.cloudfront.net/user_3JnxFRyLd68bfjwUMHz1De16TMw/99050026-3935-46bc-9571-17b60049cb1f.jpg" aria-hidden="true"
         data-landscape-src="https://d2ol7oe51mr4n9.cloudfront.net/user_3JnxFRyLd68bfjwUMHz1De16TMw/a7a1e663-b152-4806-9a6c-6907f9738a44.mp4"
         data-portrait-src="https://d2ol7oe51mr4n9.cloudfront.net/user_3JnxFRyLd68bfjwUMHz1De16TMw/4d0928ae-27d4-4c7e-92ec-f3927c66a4b0.mp4"></video>
-      <button id="hero-sound" class="hero-sound" type="button" hidden>🔊 Sound on</button>
       <div id="video" class="fixed-size" tabindex="-1" aria-label="Game video. Click to control; Escape releases the mouse."></div>
       <div id="touch-controls" aria-label="Touch game controls" hidden>
         <!-- Key senders for the menu's game buttons; touch-controls.js holds a key for a click on them. -->
@@ -100,9 +99,12 @@
             <div class="actions">
               <button id="connect" disabled>Connect</button>
               <button id="play" hidden>Play with sound</button>
-              <button id="watch-trailer" type="button">▶ Watch trailer</button>
             </div>
             <p class="small">Each player slot accepts one browser. Change slot, sound and fullscreen in the menu.</p>
+          </div>
+          <div class="media-actions">
+            <button id="watch-trailer" class="secondary" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>Watch trailer</button>
+            <button id="hero-sound" class="secondary hero-sound" type="button" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9z"/><path class="wave" d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12"/></svg>Sound on</button>
           </div>
         </div>
       </section>

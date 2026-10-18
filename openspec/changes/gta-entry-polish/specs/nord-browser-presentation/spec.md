@@ -36,3 +36,18 @@ The browser title screen SHALL show the title loop behind the badge, and SHALL g
 #### Scenario: Trailer
 - **WHEN** the player selects Watch trailer
 - **THEN** the full trailer opens in the dialog and the title loop unloads, as before
+
+### Requirement: Play page buttons have a clear order
+The title screen SHALL show one yellow main action (Connect, Reconnect or Play with sound) with an arrow, and SHALL show Watch trailer and Sound on as smaller paper buttons in their own row under it. Menu SHALL use the same paper button style.
+
+#### Scenario: Host offline
+- **WHEN** the host is offline
+- **THEN** Connect shows with a dashed border, no shadow and the words "Waiting for host", and it cannot be pressed
+
+#### Scenario: Host idle
+- **WHEN** the host is idle
+- **THEN** Connect is the only yellow button on the title screen, it is at least 46px high, and it moves into its shadow when pressed
+
+#### Scenario: Sound on
+- **WHEN** the title loop plays muted
+- **THEN** Sound on shows next to Watch trailer inside the panel, outside the status live region, and it does not cover the badge or ☰ Menu

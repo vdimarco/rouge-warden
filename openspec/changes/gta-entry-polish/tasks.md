@@ -9,6 +9,7 @@
 - [x] Play page: wrap title and status in one panel, and move Watch trailer next to Connect.
 - [x] Play page: replace the five `hero.css` layers with one, add Barlow Condensed, and enlarge phone text and buttons.
 - [x] Play page: `npm test`, `browser.test.mjs` and `steering-layout.test.mjs` pass. The overlay does not scroll at 320×568, 360×640, 390×844 and 1280×720.
+- [x] Play page buttons: one yellow main action, a paper secondary row with Sound on moved into the panel, a dashed offline state, matching Menu. Tests pass again; buttons are 44 to 60px high at 320, 360, 390, 844×390 and 1280.
 - [ ] Play page: run `media.test.mjs` and `mobile.test.mjs` against a deployment with a live game host.
 - [ ] Check H.264 trailer playback on a real phone. This container's Chromium has no H.264 decoder.
 - [ ] Archive the change after the checks above.
