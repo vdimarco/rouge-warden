@@ -125,6 +125,8 @@ test('look drag uses Epic video-coordinate normalization and bounded signed prot
   const f = fixture();
   const look = f.surface;
   f.setEnabled(true);
+  // The first finger on the game moves; it rests in the deadzone so the second finger's look is measured alone.
+  f.pointer('pointerdown', f.surface, 9, 300, 300);
   f.pointer('pointerdown', look, 1, 80, 40);
   f.pointer('pointermove', look, 1, 90, 35);
   f.pointer('pointermove', look, 1, 1000, -1000);
@@ -326,6 +328,7 @@ test('adaptive video sizes keep the same native drag gain in each orientation', 
   for (const sizes of [[[1280, 720], [800, 450], [640, 360]], [[576, 1280], [360, 800], [288, 640]]]) {
     const f = fixture();
     f.setEnabled(true);
+    f.pointer('pointerdown', f.surface, 9, 300, 300);
     const gains = [];
     for (const [width, height] of sizes) {
       f.video.videoWidth = width; f.video.videoHeight = height;
@@ -497,4 +500,49 @@ test('Sprint taps tolerate finger jitter but a look drag returning to its start 
   f.window.dispatchEvent(new Event('blur'));
   assert.deepEqual(f.messages.slice(-2), [['KeyUp', 87], ['KeyUp', 65]]);
   assert.equal(f.ui.steering.styles.get('--steer-angle'), '0deg');
+});
+
+test('on foot the first finger anywhere on the game moves from where it lands and a second finger looks', () => {
+  const f = fixture(); f.setEnabled(true); f.setDriving(false);
+  f.pointer('pointerdown', f.surface, 1, 300, 400);
+  assert.equal(f.ui.move.dataset.floating, 'true');
+  assert.equal(f.ui.move.styles.get('--float-x'), '300px');
+  assert.equal(f.ui.move.styles.get('--float-y'), '400px');
+  assert.deepEqual(f.messages, []);
+  f.pointer('pointermove', f.surface, 1, 305, 395);
+  assert.deepEqual(f.messages, [], 'small jitter stays in the deadzone');
+  f.pointer('pointermove', f.surface, 1, 300, 340);
+  assert.deepEqual(f.messages, [['KeyDown', 87, 0]], 'dragging up from the landing point walks forward');
+  f.pointer('pointerdown', f.surface, 2, 600, 200);
+  f.pointer('pointermove', f.surface, 2, 620, 210);
+  assert.deepEqual(f.deltas, [[20, 10]], 'the second finger turns the camera');
+  assert.deepEqual(f.messages.slice(1), [['MouseEnter'], ['MouseMove', 32768, 32768, 2000, 1000]]);
+  f.pointer('pointerup', f.surface, 1, 300, 340);
+  assert.deepEqual(f.messages.at(-1), ['KeyUp', 87]);
+  assert.equal(f.ui.move.dataset.floating, undefined);
+  assert.equal(f.ui.move.styles.get('--stick-x'), '0px');
+  f.pointer('pointerdown', f.surface, 3, 100, 100);
+  assert.equal(f.ui.move.dataset.floating, 'true', 'with no move finger down, the next finger moves again');
+  f.releaseAll();
+});
+
+test('double-tapping anywhere on the game latches sprint for the second hold', () => {
+  const f = fixture(); f.setEnabled(true); f.setDriving(false);
+  f.pointer('pointerdown', f.surface, 1, 300, 400, 100);
+  f.pointer('pointerup', f.surface, 1, 300, 400, 150);
+  f.pointer('pointerdown', f.surface, 1, 310, 405, 300);
+  f.pointer('pointermove', f.surface, 1, 310, 340, 320);
+  assert.ok(f.messages.some(m => m[0] === 'KeyDown' && m[1] === 16));
+  f.pointer('pointerup', f.surface, 1, 310, 340, 500);
+  assert.ok(f.messages.some(m => m[0] === 'KeyUp' && m[1] === 16));
+});
+
+test('in a car one finger on the game still looks and never places a move stick', () => {
+  const f = fixture(); f.setEnabled(true); f.setDriving(true);
+  f.pointer('pointerdown', f.surface, 1, 300, 400);
+  f.pointer('pointermove', f.surface, 1, 310, 400);
+  assert.equal(f.ui.move.dataset.floating, undefined);
+  assert.deepEqual(f.deltas, [[10, 0]]);
+  assert.ok(!f.messages.some(m => m[0] === 'KeyDown'));
+  f.releaseAll();
 });

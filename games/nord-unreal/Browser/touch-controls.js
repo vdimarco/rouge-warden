@@ -36,7 +36,7 @@ export function setupTouchControls({ root, surface, stream }) {
     sendLook({ x: delta.x * scale, y: delta.y * scale });
   }
 
-  function stopGyro(message = 'Drag anywhere on the game to look.') {
+  function stopGyro(message = 'Drag with a second finger to look.') {
     gyroRequest++;
     gyro = false;
     motionTime = null;
@@ -134,8 +134,11 @@ export function setupTouchControls({ root, surface, stream }) {
     } else if (pointer.stick === 'move') {
       const bounds = pointer.target.getBoundingClientRect();
       const radius = Math.max(1, Math.min(bounds.width, bounds.height) / 2);
-      const x = (event.clientX - bounds.left - bounds.width / 2) / radius;
-      const y = (event.clientY - bounds.top - bounds.height / 2) / radius;
+      // A stick placed under the thumb measures from where the finger landed, not from the drawn stick.
+      const centerX = pointer.originX ?? bounds.left + bounds.width / 2;
+      const centerY = pointer.originY ?? bounds.top + bounds.height / 2;
+      const x = (event.clientX - centerX) / radius;
+      const y = (event.clientY - centerY) / radius;
       pointer.keys = [x < -.28 && 65, x > .28 && 68, y < -.28 && 87, y > .28 && 83].filter(Boolean);
       const scale = radius * .55 / Math.max(1, Math.hypot(x, y));
       pointer.target.style.setProperty('--stick-x', `${x * scale}px`);
@@ -169,6 +172,7 @@ export function setupTouchControls({ root, surface, stream }) {
       sprintLatched = false;
       pointer.target.style.setProperty('--stick-x', '0px');
       pointer.target.style.setProperty('--stick-y', '0px');
+      delete pointer.target.dataset.floating;
     }
     syncKeys();
     if (pointer.target.hasPointerCapture(pointerId)) pointer.target.releasePointerCapture(pointerId);
@@ -236,6 +240,10 @@ export function setupTouchControls({ root, surface, stream }) {
     if (target === surface && (event.pointerType !== 'touch'
       || event.target.closest('button, select, a, input, textarea, #menu, #intro, #overlay, #crew-picker, #install-nudge'))) return;
     if (driving && [65, 68].includes(Number(target.dataset.key))) target = root.querySelector('.touch-steering');
+    // On foot the first finger on the game moves from wherever it lands; a second finger looks.
+    const moveStick = root.querySelector('[data-stick="move"]');
+    const floating = target === surface && !driving && ![...pointers.values()].some(pointer => pointer.stick === 'move');
+    if (floating) target = moveStick;
     const stick = target === surface ? 'look' : target.dataset.stick;
     if (stick && [...pointers.values()].some(pointer => pointer.stick === stick)) return;
     const key = Number(target.dataset.key);
@@ -249,6 +257,14 @@ export function setupTouchControls({ root, surface, stream }) {
     }
     const pointer = { target, stick, keys: stick ? [] : [key], lookDrag: !stick && key !== 65 && key !== 68,
       x: event.clientX, y: event.clientY, startX: event.clientX, startY: event.clientY, downTime: event.timeStamp };
+    if (floating) {
+      pointer.originX = event.clientX;
+      pointer.originY = event.clientY;
+      const frame = root.getBoundingClientRect?.() ?? { left: 0, top: 0 };
+      target.style.setProperty('--float-x', `${event.clientX - frame.left}px`);
+      target.style.setProperty('--float-y', `${event.clientY - frame.top}px`);
+      target.dataset.floating = 'true';
+    }
     pointers.set(event.pointerId, pointer);
     target.dataset.pressed = 'true';
     target.setPointerCapture(event.pointerId);
