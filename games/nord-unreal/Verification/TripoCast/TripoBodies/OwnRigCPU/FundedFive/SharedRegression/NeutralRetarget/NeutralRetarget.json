@@ -1,0 +1,228 @@
+{
+  "passed": true,
+  "threads": 4,
+  "rendered": false,
+  "recipe_sha256": "4493efa96945624139e814d4d06f7ad729605660bd4b4597f600ff779506ed16",
+  "motion_recipe_sha256": "0e14d5c967f1a55ca577a18604c26501cca68dff12a1c26ed6d4c13c447f6e9f",
+  "rigs": [
+    {
+      "input": {
+        "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Crew/BlackCap/tripo-h31-rig-20261017/rig.fbx",
+        "sha256": "54db95e20649c34c1d6dd2f28e1a1ec44a91250b0f73f6041774ac722764848b"
+      },
+      "cases": {
+        "exact_neutral": {
+          "mapped_component_rotation_error_rad": 2.457566580592135e-07,
+          "unmapped_parent_follow_rotation_error_rad": 4.3626645446509984e-07,
+          "root_matrix_error": 0.0,
+          "evaluated_skin_max_displacement_source_units": 1.2310379476739693e-07,
+          "maximum_basis_identity_error": 1.639127589214695e-07
+        },
+        "nonzero_component_delta": {
+          "mapped_component_rotation_error_rad": 1.2195943885284935e-05,
+          "unmapped_parent_follow_rotation_error_rad": 4.2836384049294947e-07,
+          "root_matrix_error": 0.0,
+          "evaluated_skin_max_displacement_source_units": 0.056289161867986784
+        },
+        "opposite_delta_negative": {
+          "mapped_component_rotation_error_rad": 9.623153862572852e-07,
+          "unmapped_parent_follow_rotation_error_rad": 5.638156409436803e-07,
+          "root_matrix_error": 0.0,
+          "evaluated_skin_max_displacement_source_units": 0.056289159896556404,
+          "wrong_direction_error_rad": 0.34906610314563413,
+          "rejected_by_unchanged_component_gate": true
+        }
+      },
+      "mapped_bones": 22,
+      "unmapped_bones": 39
+    },
+    {
+      "input": {
+        "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Crew/Topknot/tripo-h31-rig-20261017/rig.fbx",
+        "sha256": "9cfeefead9c03472bb8f718fe96e403e79f5eab07ea3f10a2ee07488fa41fb21"
+      },
+      "cases": {
+        "exact_neutral": {
+          "mapped_component_rotation_error_rad": 2.4031072065392715e-07,
+          "unmapped_parent_follow_rotation_error_rad": 3.0643926135567475e-07,
+          "root_matrix_error": 0.0,
+          "evaluated_skin_max_displacement_source_units": 1.2290988320938242e-07,
+          "maximum_basis_identity_error": 2.1606683731079102e-07
+        },
+        "nonzero_component_delta": {
+          "mapped_component_rotation_error_rad": 5.403147356992413e-06,
+          "unmapped_parent_follow_rotation_error_rad": 6.961011701596331e-07,
+          "root_matrix_error": 0.0,
+          "evaluated_skin_max_displacement_source_units": 0.05386084836908644
+        },
+        "opposite_delta_negative": {
+          "mapped_component_rotation_error_rad": 5.475827620857914e-07,
+          "unmapped_parent_follow_rotation_error_rad": 4.3274166750568514e-07,
+          "root_matrix_error": 0.0,
+          "evaluated_skin_max_displacement_source_units": 0.05386079392763395,
+          "wrong_direction_error_rad": 0.34906611720342984,
+          "rejected_by_unchanged_component_gate": true
+        }
+      },
+      "mapped_bones": 22,
+      "unmapped_bones": 39
+    },
+    {
+      "input": {
+        "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Crew/GreenCap51/tripo-h31-rig-20261017/rig.fbx",
+        "sha256": "559b6a64944d8519f0d99c1f17df44e603397462847e3a2dc84e345e770814bc"
+      },
+      "cases": {
+        "exact_neutral": {
+          "mapped_component_rotation_error_rad": 2.0383082712173322e-07,
+          "unmapped_parent_follow_rotation_error_rad": 3.14347060348571e-07,
+          "root_matrix_error": 0.0,
+          "evaluated_skin_max_displacement_source_units": 1.7943374184954607e-07,
+          "maximum_basis_identity_error": 1.220032714854824e-07
+        },
+        "nonzero_component_delta": {
+          "mapped_component_rotation_error_rad": 3.6589254385290555e-06,
+          "unmapped_parent_follow_rotation_error_rad": 9.047166504644085e-07,
+          "root_matrix_error": 0.0,
+          "evaluated_skin_max_displacement_source_units": 0.057527450405945126
+        },
+        "opposite_delta_negative": {
+          "mapped_component_rotation_error_rad": 1.876736884096908e-06,
+          "unmapped_parent_follow_rotation_error_rad": 1.1402632548295678e-06,
+          "root_matrix_error": 0.0,
+          "evaluated_skin_max_displacement_source_units": 0.05752750519688043,
+          "wrong_direction_error_rad": 0.34906733558795333,
+          "rejected_by_unchanged_component_gate": true
+        }
+      },
+      "mapped_bones": 22,
+      "unmapped_bones": 39
+    },
+    {
+      "input": {
+        "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Crew/Memphis33/tripo-h31-rig-20261017/rig.fbx",
+        "sha256": "b11ef3df911506705b92e1ef800d6418fc409d1e1e92ee42d35b1ee324d6674f"
+      },
+      "cases": {
+        "exact_neutral": {
+          "mapped_component_rotation_error_rad": 1.922976920876817e-07,
+          "unmapped_parent_follow_rotation_error_rad": 3.034811766529052e-07,
+          "root_matrix_error": 0.0,
+          "evaluated_skin_max_displacement_source_units": 1.2016948687486741e-07,
+          "maximum_basis_identity_error": 1.19674950838089e-07
+        },
+        "nonzero_component_delta": {
+          "mapped_component_rotation_error_rad": 1.1327905288548129e-05,
+          "unmapped_parent_follow_rotation_error_rad": 4.853790222829999e-07,
+          "root_matrix_error": 0.0,
+          "evaluated_skin_max_displacement_source_units": 0.05455894679734329
+        },
+        "opposite_delta_negative": {
+          "mapped_component_rotation_error_rad": 1.0590902697911988e-06,
+          "unmapped_parent_follow_rotation_error_rad": 6.856557647181449e-07,
+          "root_matrix_error": 0.0,
+          "evaluated_skin_max_displacement_source_units": 0.054559020057493385,
+          "wrong_direction_error_rad": 0.34906651955345686,
+          "rejected_by_unchanged_component_gate": true
+        }
+      },
+      "mapped_bones": 22,
+      "unmapped_bones": 39
+    },
+    {
+      "input": {
+        "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Crew/WhiteCap/tripo-h31-rig-20261017/rig.fbx",
+        "sha256": "3c447abf193e012825c068838ec74b5da2af63e1f42c7b756be35ccb989648d4"
+      },
+      "cases": {
+        "exact_neutral": {
+          "mapped_component_rotation_error_rad": 2.0786982456948674e-07,
+          "unmapped_parent_follow_rotation_error_rad": 2.5685376335593253e-07,
+          "root_matrix_error": 0.0,
+          "evaluated_skin_max_displacement_source_units": 1.6924465733171325e-07,
+          "maximum_basis_identity_error": 1.2293456563838845e-07
+        },
+        "nonzero_component_delta": {
+          "mapped_component_rotation_error_rad": 2.433025281985545e-06,
+          "unmapped_parent_follow_rotation_error_rad": 6.860199909136695e-07,
+          "root_matrix_error": 0.0,
+          "evaluated_skin_max_displacement_source_units": 0.05947388634304017
+        },
+        "opposite_delta_negative": {
+          "mapped_component_rotation_error_rad": 1.7104691804593152e-06,
+          "unmapped_parent_follow_rotation_error_rad": 6.685527896659359e-07,
+          "root_matrix_error": 0.0,
+          "evaluated_skin_max_displacement_source_units": 0.05947381661180084,
+          "wrong_direction_error_rad": 0.3490672207094355,
+          "rejected_by_unchanged_component_gate": true
+        }
+      },
+      "mapped_bones": 22,
+      "unmapped_bones": 39
+    },
+    {
+      "input": {
+        "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Crew/RedJersey/tripo-h31-rig-20261017/rig.fbx",
+        "sha256": "53d2bdfd3c8958865cf0865db4d8f92a85fc1079ef02f8fe441dd32e9c1afa67"
+      },
+      "cases": {
+        "exact_neutral": {
+          "mapped_component_rotation_error_rad": 2.5828304160502687e-07,
+          "unmapped_parent_follow_rotation_error_rad": 3.0953229602574986e-07,
+          "root_matrix_error": 0.0,
+          "evaluated_skin_max_displacement_source_units": 1.813187230175429e-07,
+          "maximum_basis_identity_error": 1.2293457984924316e-07
+        },
+        "nonzero_component_delta": {
+          "mapped_component_rotation_error_rad": 2.7926113889588057e-06,
+          "unmapped_parent_follow_rotation_error_rad": 4.1663753953177355e-07,
+          "root_matrix_error": 0.0,
+          "evaluated_skin_max_displacement_source_units": 0.05623937348432035
+        },
+        "opposite_delta_negative": {
+          "mapped_component_rotation_error_rad": 3.7497966087345696e-07,
+          "unmapped_parent_follow_rotation_error_rad": 3.602809846024836e-07,
+          "root_matrix_error": 0.0,
+          "evaluated_skin_max_displacement_source_units": 0.05623943156993477,
+          "wrong_direction_error_rad": 0.3490659783229343,
+          "rejected_by_unchanged_component_gate": true
+        }
+      },
+      "mapped_bones": 22,
+      "unmapped_bones": 39
+    },
+    {
+      "input": {
+        "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Crew/LimeJacket/tripo-h31-rig-20261017/rig.fbx",
+        "sha256": "59432254e8f9dbe46dbeb72e053539563475b135fd77daf956c13c75efc96393"
+      },
+      "cases": {
+        "exact_neutral": {
+          "mapped_component_rotation_error_rad": 3.40358874899227e-07,
+          "unmapped_parent_follow_rotation_error_rad": 2.4307169684151885e-07,
+          "root_matrix_error": 0.0,
+          "evaluated_skin_max_displacement_source_units": 1.7881393432617188e-07,
+          "maximum_basis_identity_error": 1.4880791354698886e-07
+        },
+        "nonzero_component_delta": {
+          "mapped_component_rotation_error_rad": 6.8313635680574326e-06,
+          "unmapped_parent_follow_rotation_error_rad": 6.639199995471761e-07,
+          "root_matrix_error": 0.0,
+          "evaluated_skin_max_displacement_source_units": 0.054627756739534475
+        },
+        "opposite_delta_negative": {
+          "mapped_component_rotation_error_rad": 7.165738963213012e-07,
+          "unmapped_parent_follow_rotation_error_rad": 4.249607661221022e-07,
+          "root_matrix_error": 0.0,
+          "evaluated_skin_max_displacement_source_units": 0.054627812273333604,
+          "wrong_direction_error_rad": 0.34906605032774085,
+          "rejected_by_unchanged_component_gate": true
+        }
+      },
+      "mapped_bones": 22,
+      "unmapped_bones": 39
+    }
+  ],
+  "provider_bytes_geometry_weights_binds_unchanged": true,
+  "art_native_acceptance": false
+}

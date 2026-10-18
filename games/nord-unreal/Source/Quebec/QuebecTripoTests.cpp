@@ -8,10 +8,12 @@
 #include "Animation/AttributesRuntime.h"
 #include "Animation/Skeleton.h"
 #include "BonePose.h"
+#include "Components/CapsuleComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Engine/SkeletalMesh.h"
 #include "Engine/SkeletalMeshSocket.h"
+#include "Engine/StaticMesh.h"
 #include "Engine/World.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Misc/AutomationTest.h"
@@ -19,9 +21,52 @@
 #include "Misc/MemStack.h"
 #include "Misc/ScopeExit.h"
 
-IMPLEMENT_SIMPLE_AUTOMATION_TEST(FQuebecTripoPilotTest, "Quebec.Animation.TripoPilot",
+// Keep the existing character friend and registered pilot test as the shared fixture.
+// The parameterized cast test inherits its checks without widening gameplay access.
+class FQuebecTripoPilotTest : public FAutomationTestBase
+{
+public:
+    FQuebecTripoPilotTest(const FString& InName, bool bComplexTask = false)
+        : FAutomationTestBase(InName, bComplexTask) {}
+    virtual EAutomationTestFlags GetTestFlags() const override { return EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter; }
+    virtual bool IsStressTest() const { return false; }
+    virtual uint32 GetRequiredDeviceNum() const override { return 1; }
+    virtual FString GetTestSourceFileName() const override { return __FILE__; }
+    virtual int32 GetTestSourceFileLine() const override { return __LINE__; }
+    virtual FString GetBeautifiedTestName() const override { return TEXT("Quebec.Animation.TripoPilot"); }
+protected:
+    virtual void GetTests(TArray<FString>& Names, TArray<FString>& Commands) const override
+    {
+        Names.Add(TEXT("Quebec.Animation.TripoPilot"));
+        Commands.Add(FString());
+    }
+    AUTORTFM_DISABLE_IF(true)
+    virtual bool RunTest(const FString& Parameters) override { return RunStyle(9); }
+    bool RunStyle(int32 Style);
+};
+#if WITH_AUTOMATION_WORKER
+namespace { FQuebecTripoPilotTest FQuebecTripoPilotTestAutomationTestInstance(TEXT("FQuebecTripoPilotTest")); }
+#endif
+
+IMPLEMENT_CUSTOM_COMPLEX_AUTOMATION_TEST(FQuebecTripoCastTest, FQuebecTripoPilotTest, "Quebec.Animation.TripoCast",
     EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
-bool FQuebecTripoPilotTest::RunTest(const FString& Parameters)
+void FQuebecTripoCastTest::GetTests(TArray<FString>& Names, TArray<FString>& Commands) const
+{
+    for (int32 Style = 3; Style <= 8; ++Style)
+    {
+        Names.Add(FString::Printf(TEXT("Resident%d"), Style));
+        Commands.Add(FString::FromInt(Style));
+    }
+}
+bool FQuebecTripoCastTest::RunTest(const FString& Parameters)
+{
+    const int32 Style = FCString::Atoi(*Parameters);
+    if (!TestTrue(TEXT("Cast case explicitly selects one of styles 3 through 8"),
+        Style >= 3 && Style <= 8 && Parameters == FString::FromInt(Style))) return false;
+    return RunStyle(Style);
+}
+
+bool FQuebecTripoPilotTest::RunStyle(int32 Style)
 {
     const FString OriginalCommandLine = FCommandLine::Get();
     const TCHAR* Flags[] = {TEXT("NordGraphicNovelCandidate"), TEXT("NordGraphicNovelGenerated"),
@@ -40,15 +85,18 @@ bool FQuebecTripoPilotTest::RunTest(const FString& Parameters)
     if (!TestNotNull(TEXT("Native Tripo test character"), Character)) return false;
     Character->SetActorEnableCollision(false);
     World->InitializeActorsForPlay(FURL());
+    if (!TestTrue(TEXT("Fixture selects the requested crew"), Character->ChooseCrew(Style))) return false;
     USkeletalMeshComponent* Mesh = Character->GetMesh();
-    const FString PilotFolder = TEXT("/Game/ParkComic/CrewGraphicNovelTripo/Resident9/");
-    const FString ProductionFolder = TEXT("/Game/ParkComic/Crew/Resident9/");
+    const FString PilotFolder = FString::Printf(TEXT("/Game/ParkComic/CrewGraphicNovelTripo/Resident%d/"), Style);
+    const FString ProductionFolder = FString::Printf(TEXT("/Game/ParkComic/Crew/Resident%d/"), Style);
     USkeletalMesh* Pilot = LoadObject<USkeletalMesh>(nullptr, *(PilotFolder + TEXT("SK_Body.SK_Body")));
     if (!TestNotNull(TEXT("Mandatory actual imported Tripo body; missing assets fail this test"), Pilot)) return false;
     USkeletalMesh* Production = LoadObject<USkeletalMesh>(nullptr, *(ProductionFolder + TEXT("SK_Body.SK_Body")));
     if (!TestNotNull(TEXT("Retained production body"), Production)) return false;
     TestTrue(TEXT("Tripo has its own skeleton rather than replacing production"), Pilot->GetSkeleton() &&
         Pilot->GetSkeleton() != Production->GetSkeleton());
+    if (!TestNotNull(TEXT("Mandatory own Tripo skeleton"), Pilot->GetSkeleton())) return false;
+    TestTrue(TEXT("The skeleton belongs to this character's isolated folder"), Pilot->GetSkeleton()->GetPathName().StartsWith(PilotFolder));
     for (int32 Mask = 0; Mask < 16; ++Mask)
     {
         FString CommandLine = DefaultCommandLine;
@@ -59,7 +107,7 @@ bool FQuebecTripoPilotTest::RunTest(const FString& Parameters)
         const bool Candidate = (Mask & 1) != 0;
         const bool Generated = Candidate && (Mask & 2) != 0;
         const bool HighDetail = Generated && (Mask & 4) != 0;
-        const FString Folder = Mask == 15 ? PilotFolder
+        const FString Folder = Mask == 15 ? PilotFolder : Style != 9 ? ProductionFolder
             : HighDetail ? TEXT("/Game/ParkComic/CrewGraphicNovelHighDetail/Resident9/")
             : Generated ? TEXT("/Game/ParkComic/CrewGraphicNovelGenerated/Resident9/")
             : Candidate ? TEXT("/Game/ParkComic/CrewGraphicNovel/Resident9/") : ProductionFolder;
@@ -72,6 +120,10 @@ bool FQuebecTripoPilotTest::RunTest(const FString& Parameters)
         }
     }
     if (!TestEqual(TEXT("All four flags select the actual isolated Tripo mesh"), Mesh->GetSkeletalMeshAsset(), Pilot)) return false;
+    const FBox BodyBounds = Pilot->GetBounds().GetBox().TransformBy(Mesh->GetComponentTransform());
+    TestTrue(TEXT("The actual native body is 182 cm tall within 0.1 cm"), FMath::IsNearlyEqual(BodyBounds.GetSize().Z, 182., .1));
+    const double GroundZ = Character->GetActorLocation().Z - Character->GetCapsuleComponent()->GetScaledCapsuleHalfHeight();
+    TestTrue(TEXT("The actual native feet meet the capsule ground within 0.1 cm"), FMath::IsNearlyEqual(BodyBounds.Min.Z, GroundZ, .1));
     const FReferenceSkeleton& Reference = Pilot->GetRefSkeleton();
     TMap<FName, FName> Parents = {{TEXT("root"), NAME_None}, {TEXT("pelvis"), TEXT("root")},
         {TEXT("spine_01"), TEXT("pelvis")}, {TEXT("spine_02"), TEXT("spine_01")},
@@ -146,12 +198,21 @@ bool FQuebecTripoPilotTest::RunTest(const FString& Parameters)
     TestEqual(TEXT("Tripo prop attaches to its own grip socket"), Character->CrewProp->GetAttachSocketName(), GripName);
     TestFalse(TEXT("Tripo prop inherits its animated hand rotation"), Character->CrewProp->IsUsingAbsoluteRotation());
     TestTrue(TEXT("Tripo prop uses the socket calibration without a second offset"), Character->CrewProp->GetRelativeTransform().Equals(FTransform::Identity, .0001f));
+    UStaticMesh* Prop = Character->CrewProp->GetStaticMesh();
+    if (!TestNotNull(TEXT("Mandatory actual held prop"), Prop)) return false;
+    TestEqual(TEXT("Each crew uses its intended actual prop"), Prop->GetPathName(), Style == 8
+        ? FString(TEXT("/Game/ParkComic/Crew/SM_PVCTube.SM_PVCTube")) : FString(TEXT("/Game/ParkComic/Crew/SM_Plunger.SM_Plunger")));
     const auto CheckProp = [&]()
     {
         Character->CrewProp->UpdateComponentToWorld();
         const FTransform Expected = Grip->GetSocketLocalTransform() * Mesh->GetSocketTransform(TEXT("hand_r"), RTS_World);
         TestTrue(TEXT("Native prop position, rotation and scale follow the actual evaluated hand"),
             Character->CrewProp->GetComponentTransform().Equals(Expected, .01f));
+        const FVector Size = Prop->GetBoundingBox().GetSize() * Character->CrewProp->GetComponentScale().GetAbs();
+        TestTrue(FString::Printf(TEXT("The hand-following prop retains intended centimeters style=%d clip=%s width=%.9f length=%.9f"),
+                Style, *GetNameSafe(Animation->ObservedClip), FMath::Max(Size.X, Size.Y), Size.Z),
+            FMath::IsNearlyEqual(FMath::Max(Size.X, Size.Y), Style == 8 ? 6.6 : 16., .01) &&
+            FMath::IsNearlyEqual(Size.Z, Style == 8 ? 90. : 55., .01));
     };
     const auto Advance = [Mesh, Movement](int32 Frames, float Speed, float Vertical = 0.f, bool Falling = false)
     {
@@ -165,6 +226,8 @@ bool FQuebecTripoPilotTest::RunTest(const FString& Parameters)
     };
     const auto CheckOwnPose = [&](UAnimSequence* Clip)
     {
+        TestTrue(TEXT("In-place own clips retain the static root reference transform, including jump scale"),
+            Mesh->GetSocketTransform(Reference.GetBoneName(0), RTS_ParentBoneSpace).Equals(Reference.GetRefBonePose()[0], .0001f));
         FMemMark Mark(FMemStack::Get());
         const FBoneContainer& Required = Animation->GetRequiredBones();
         FCompactPose Pose;
@@ -241,19 +304,42 @@ bool FQuebecTripoPilotTest::RunTest(const FString& Parameters)
     CheckOwnPose(Clips[0]);
     TestEqual(TEXT("Own animation never displaces the native capsule"), Character->GetActorLocation(), Origin);
     Character->CycleCrew();
-    TestEqual(TEXT("Crew cycling leaves Tripo style 9 normally"), Character->CrewStyle, 10);
-    TestTrue(TEXT("Other crew retain production bodies with all pilot flags present"),
-        Mesh->GetSkeletalMeshAsset() && Mesh->GetSkeletalMeshAsset()->GetPathName().Contains(TEXT("/Crew/Resident10/SK_Body")));
-    TestEqual(TEXT("Cycling restores the production hand attachment"), Character->CrewProp->GetAttachSocketName(), FName(TEXT("RightHand")));
-    TestTrue(TEXT("Cycling restores production absolute rotation"), Character->CrewProp->IsUsingAbsoluteRotation());
-    TestTrue(TEXT("Returning to crew 9 selects the private Tripo candidate again"), Character->ChooseCrew(9) && Mesh->GetSkeletalMeshAsset() == Pilot);
+    if (Style == 9)
+    {
+        TestEqual(TEXT("Crew cycling leaves Tripo style 9 normally"), Character->CrewStyle, 10);
+        TestTrue(TEXT("Other crew retain production bodies with all pilot flags present"),
+            Mesh->GetSkeletalMeshAsset() && Mesh->GetSkeletalMeshAsset()->GetPathName().Contains(TEXT("/Crew/Resident10/SK_Body")));
+        TestEqual(TEXT("Cycling restores the production hand attachment"), Character->CrewProp->GetAttachSocketName(), FName(TEXT("RightHand")));
+        TestTrue(TEXT("Cycling restores production absolute rotation"), Character->CrewProp->IsUsingAbsoluteRotation());
+        TestTrue(TEXT("Returning to crew 9 selects the private Tripo candidate again"), Character->ChooseCrew(9) && Mesh->GetSkeletalMeshAsset() == Pilot);
+    }
+    else
+    {
+        TestEqual(TEXT("Crew cycling selects the next style"), Character->CrewStyle, Style + 1);
+        const FString NextFolder = FString::Printf(TEXT("/Game/ParkComic/CrewGraphicNovelTripo/Resident%d/"), Style + 1);
+        USkeletalMesh* Next = Mesh->GetSkeletalMeshAsset();
+        if (!TestNotNull(TEXT("Cycling selects an actual next crew mesh"), Next)) return false;
+        TestEqual(TEXT("Cycling selects the next crew's own Tripo body"), Next->GetPathName(), NextFolder + TEXT("SK_Body.SK_Body"));
+        TestTrue(TEXT("Cycling selects the next crew's separate skeleton"), Next->GetSkeleton() &&
+            Next->GetSkeleton() != Pilot->GetSkeleton() && Next->GetSkeleton()->GetPathName().StartsWith(NextFolder));
+        const USkeletalMeshSocket* NextGrip = Next->FindSocket(GripName);
+        if (!TestNotNull(TEXT("The next crew has its own native grip"), NextGrip)) return false;
+        TestEqual(TEXT("The next grip belongs to its own hand"), NextGrip->BoneName, FName(TEXT("hand_r")));
+        TestEqual(TEXT("Cycling uses the next own grip attachment"), Character->CrewProp->GetAttachSocketName(), GripName);
+        TestFalse(TEXT("Cycling retains animated hand rotation"), Character->CrewProp->IsUsingAbsoluteRotation());
+        TestTrue(TEXT("Returning to this crew restores its own Tripo candidate"), Character->ChooseCrew(Style) && Mesh->GetSkeletalMeshAsset() == Pilot);
+    }
     FCommandLine::Set(*DefaultCommandLine);
     Character->ApplyCrewAppearance();
     TestEqual(TEXT("Removing the opt-in flags restores the original production mesh"), Mesh->GetSkeletalMeshAsset(), Production);
     TestEqual(TEXT("Removing flags restores the original prop attachment"), Character->CrewProp->GetAttachSocketName(), FName(TEXT("RightHand")));
     TestTrue(TEXT("Removing flags restores absolute prop rotation and identity relative offset"), Character->CrewProp->IsUsingAbsoluteRotation() &&
         Character->CrewProp->GetRelativeTransform().Equals(FTransform::Identity, .0001f));
-    if (!HasAnyErrors()) AddInfo(TEXT("NORD_TRIPO_NATIVE_CHECKED flags=16 providerBones=61 ownClips=4 authoredFingers=30 proceduralFingers=0 locomotionJumpLanding=1 socketHandFollow=1 crewRestore=1"));
+    if (!HasAnyErrors())
+    {
+        if (Style == 9) AddInfo(TEXT("NORD_TRIPO_NATIVE_CHECKED flags=16 providerBones=61 ownClips=4 authoredFingers=30 proceduralFingers=0 locomotionJumpLanding=1 socketHandFollow=1 crewRestore=1"));
+        else AddInfo(FString::Printf(TEXT("NORD_TRIPO_CAST_NATIVE_CHECKED style=%d flags=16 heightCm=182 grounded=1 providerBones=61 ownClips=4 authoredFingers=30 proceduralFingers=0 locomotionJumpLanding=1 socketHandFollow=1 crewRestore=1"), Style));
+    }
     return !HasAnyErrors();
 }
 #endif

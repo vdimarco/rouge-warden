@@ -1,0 +1,12 @@
+{
+  "source": {
+    "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Crew/Topknot/tripo-h31-body-20261017/body.glb",
+    "sha256": "621c65ce305a29d27b7ee974ee928011c3a0d78a979bf9cc3b73ecb13d54fae2",
+    "copy": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoTopknotBagSeamProposal-v1/input/source.glb"
+  },
+  "provider": {
+    "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Crew/Topknot/tripo-h31-rig-20261017/rig.fbx",
+    "sha256": "9cfeefead9c03472bb8f718fe96e403e79f5eab07ea3f10a2ee07488fa41fb21",
+    "copy": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoTopknotBagSeamProposal-v1/input/provider.fbx"
+  }
+}

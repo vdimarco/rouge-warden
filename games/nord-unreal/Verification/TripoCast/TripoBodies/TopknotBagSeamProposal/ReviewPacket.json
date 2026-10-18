@@ -1,0 +1,197 @@
+{
+  "status": "proposal_only_pending_manual_ownership_review",
+  "accepted": false,
+  "all_owned_jobs_closed": true,
+  "native_or_asset_adoption": false,
+  "actual_topology_or_weights_authored": false,
+  "authoring_scope_frozen_by_root": true,
+  "renders": {
+    "count": 48,
+    "CPU_threads": 4,
+    "GPU": false,
+    "source_geometry_and_weights_unchanged": true
+  },
+  "source_pins": {
+    "body": {
+      "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Crew/Topknot/tripo-h31-rig-20261017/derived/bag-rejected-v1/body.fbx",
+      "sha256": "5f5335fa0ec1e6df7ce39262894fef2c1f4a5c6704f0ed25fe33fa3783a040fa"
+    },
+    "base_color": {
+      "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Crew/Topknot/tripo-h31-rig-20261017/derived/bag-rejected-v1/base_color.jpg",
+      "sha256": "ecb21c998306bd0f65b3b8f052bba19066d981039dedd7cc7fa1bef556c8a397"
+    },
+    "normal": {
+      "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Crew/Topknot/tripo-h31-rig-20261017/derived/bag-rejected-v1/normal.png",
+      "sha256": "94e48a30195739c80857de8802cf5a48f1260c387bdde94ab8c3834281a6ab40"
+    },
+    "metallic_roughness": {
+      "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Crew/Topknot/tripo-h31-rig-20261017/derived/bag-rejected-v1/metallic_roughness.jpg",
+      "sha256": "c8b7f38acbcb41eb40b0e4b6c0aa504f5af77d262b0cc0d1fbf93c4439e5f738"
+    },
+    "provider": {
+      "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Crew/Topknot/tripo-h31-rig-20261017/rig.fbx",
+      "sha256": "9cfeefead9c03472bb8f718fe96e403e79f5eab07ea3f10a2ee07488fa41fb21"
+    },
+    "original": {
+      "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Crew/Topknot/tripo-h31-body-20261017/body.glb",
+      "sha256": "621c65ce305a29d27b7ee974ee928011c3a0d78a979bf9cc3b73ecb13d54fae2"
+    },
+    "Surface.json": {
+      "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Verification/TripoCast/TripoBodies/OwnRigCPU/20261017-natural-palms/Topknot/Surface.json",
+      "sha256": "6748ebbff2e64f684bd2b74b14d8fc9a73304ab03da206131220b7f0be475689"
+    },
+    "Motion.json": {
+      "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Verification/TripoCast/TripoBodies/OwnRigCPU/20261017-natural-palms/Topknot/Motion.json",
+      "sha256": "88a8178eaf59bf03866b5ee40d6875bbba350e5890b439b96affcba160b7e4db"
+    },
+    "idle": {
+      "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Crew/Topknot/tripo-h31-rig-20261017/derived/bag-rejected-v1/idle.fbx",
+      "sha256": "be74b1503f902c8b8555ff93e2ff956e581256599fb91cc8ecf20e5fb2e8b8d2"
+    },
+    "walk": {
+      "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Crew/Topknot/tripo-h31-rig-20261017/derived/bag-rejected-v1/walk.fbx",
+      "sha256": "6ae8236f44e4d5476531b5f72e0622506b546bfe72ef530edaea0db9f8526c6b"
+    },
+    "run": {
+      "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Crew/Topknot/tripo-h31-rig-20261017/derived/bag-rejected-v1/run.fbx",
+      "sha256": "3589bd91d495f03262e15bd1fab851560c53abaf07a867790b82551c6b9a8bd6"
+    },
+    "jump": {
+      "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Crew/Topknot/tripo-h31-rig-20261017/derived/bag-rejected-v1/jump.fbx",
+      "sha256": "4ab6b0bd4dd7f6d1ebd0b39214b502f27f3333261e850426efc71c4cafa34260"
+    }
+  },
+  "ownership_counts": {
+    "fixed_or_unclaimed_body": 81416,
+    "proposed_bag_pouches_connectors": 9052,
+    "proposed_contents": 772,
+    "proposed_plain_strap_band": 44,
+    "fixed_upper_strap": 2342,
+    "unresolved_do_not_guess": 5327
+  },
+  "hidden_unresolved_faces": 2699,
+  "blocked_interface_vertices": 1376,
+  "open_candidate_components": 15,
+  "all_candidate_components": 16,
+  "local_B_array_illustration": {
+    "original_vertices": 49418,
+    "proposed_vertices": 49419,
+    "candidate_duplicate_fans": 1,
+    "candidate_original_vertices": 1,
+    "faces_original_and_proposed": 98953,
+    "blocked_interface_vertices": 1376
+  },
+  "local_B_is_not_a_repair": true,
+  "manual_handoff": [
+    "Resolve A pale-connector/cloth and D bag-trim/navy-shorts ownership face by face.",
+    "Resolve hidden forearm/thumb/backing and every incomplete interface endpoint; do not infer from color, contour, visibility or prior labels.",
+    "Trace complete coherent bag/pouches/contents, own tabs/buckles/lower connectors and full plain-strap bands while keeping shirt/shorts/skin/hands/upper straps fixed.",
+    "Use reviewed bag-side seam fans with explicit new-to-old maps; no isolated local split, guessed cap/backing or blanket weight transfer.",
+    "If source backing is insufficient, manually author and review replacement accessory geometry under an explicit changed topology contract.",
+    "Before later weights: approved complete topology-only serialized proof, exact binds/PBR and full corner arrays including tangents/binormals/edge graph, then fresh416 all-corner equality with unchanged clips."
+  ],
+  "future416_gate_performed": false,
+  "unsupported_serialized_layer_inventory": [
+    {
+      "kind": "LayerElementBinormal",
+      "modes": {
+        "MappingInformationType": [
+          "ByPolygonVertex"
+        ],
+        "ReferenceInformationType": [
+          "Direct"
+        ]
+      },
+      "recognized_for_future_plan": false
+    },
+    {
+      "kind": "LayerElementTangent",
+      "modes": {
+        "MappingInformationType": [
+          "ByPolygonVertex"
+        ],
+        "ReferenceInformationType": [
+          "Direct"
+        ]
+      },
+      "recognized_for_future_plan": false
+    }
+  ],
+  "artifacts": {
+    "README.md": {
+      "sha256": "d0ad148d34e52e367b2cc20be391818b5509823d767593049ef02046f57785fc",
+      "bytes": 4589
+    },
+    "Ownership.json": {
+      "sha256": "77b2db3abe1975b950e1de6d3ba735a55498e9bbb2bebd6f7d99c192d0e2862b",
+      "bytes": 1342628
+    },
+    "OwnershipArrays.npz": {
+      "sha256": "b2f40bec11864a4fb658d2017c8a3bd940bdf8fae25133899ea8f9ef42de1bf8",
+      "bytes": 2752026
+    },
+    "ConnectivityPlan.json": {
+      "sha256": "b3764a6e1967361bfdf720399b017d7e2daf9aeb876ba98ae5fa937be42c17d7",
+      "bytes": 51402
+    },
+    "ConnectivityPlanArrays.npz": {
+      "sha256": "e088647eb1d3c15702598769721894ec14ef90a3323ea50d8134043d302bcf62",
+      "bytes": 6823566
+    },
+    "RenderReport.json": {
+      "sha256": "970a4ffd02b65c49df61f19edf09a10fccf11bec2978b448dec497adbc29bf75",
+      "bytes": 15996
+    },
+    "ContactPixels.json": {
+      "sha256": "41c6bf730e97fab254c7211948188ccbac649f241ff30e5c1ce2ef448c7c4408",
+      "bytes": 712
+    },
+    "Contacts-A-B-D.png": {
+      "sha256": "f0ad666bda370722ca5d60860374a57702d6b0d0efcdd09c48cc62714eec9b0c",
+      "bytes": 6519572
+    },
+    "HiddenContacts.png": {
+      "sha256": "e8315a1a3d1a2732781a363afbb0896a2a7d9af771469044c369a6ecceefd209",
+      "bytes": 4100476
+    },
+    "AssemblyViews.png": {
+      "sha256": "0aee26fb49e586f2708d93a3372fe7f02a88100e5dc047ac6019f689eea90a8d",
+      "bytes": 5897034
+    },
+    "FullViews.png": {
+      "sha256": "8fdd6a92cb627c6d5fea54857a485e0ec81628e3e04655838b8713b1b53b7c9a",
+      "bytes": 3222154
+    },
+    "contact-A-SourceClay.png": {
+      "sha256": "d7cf1e6563c5ae4d9db600835dfb123f14dbc990bfea3992a6df38cc1b6d1e6b",
+      "bytes": 1761247
+    },
+    "contact-B-SourceClay.png": {
+      "sha256": "05aea225b56a6dad7d0a7d2a6ee587747ea1361695a24c1cae6e429afe60cfac",
+      "bytes": 1370192
+    },
+    "contact-D-SourceClay.png": {
+      "sha256": "1c66722275cf0301c93c73bb70cf55b93128270dcfd97ad69b3cfba3132b7ff2",
+      "bytes": 1553816
+    },
+    "propose.py": {
+      "sha256": "da871098732db80c24650e7ec38e43a381984464b5f3619deff6f5ce054ae4c0",
+      "bytes": 19548
+    },
+    "plan_correspondence.py": {
+      "sha256": "2f7ccf61e5e49cf64ace626f6dfcc5deff9aaa06c92216e9b4520b7a8c9b6631",
+      "bytes": 10751
+    },
+    "annotate.py": {
+      "sha256": "b661ed1a3ad87f2b25ff7d01f0ce291c860ba3701fa5437a9a01634d0c4a492c",
+      "bytes": 3276
+    },
+    "ReviewDecision.json": {
+      "sha256": "4480c1de0b71c4975d62e8942291b043ab8d3ed4dc169bfbf10f8b560cf960b6",
+      "bytes": 1480
+    }
+  },
+  "rejected_attempt_retained": "Rejected-AggregateVisibility",
+  "no_further_jobs_planned": true,
+  "root_review_decision": "Full-mask/topology authoring rejected after all48 panels; manual separation/retopology handoff only."
+}

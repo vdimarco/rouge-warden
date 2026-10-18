@@ -1,0 +1,10 @@
+{
+  "source_glb": {
+    "path": "Data/GraphicNovel/Crew/Memphis33/tripo-h31-body-20261017/body.glb",
+    "sha256": "c8e0491c768b71108391a309e07b3b9b4f32074a84ce65fff7f7e7d3aa63138e"
+  },
+  "provider_fbx": {
+    "path": "Data/GraphicNovel/Crew/Memphis33/tripo-h31-rig-20261017/rig.fbx",
+    "sha256": "b11ef3df911506705b92e1ef800d6418fc409d1e1e92ee42d35b1ee324d6674f"
+  }
+}

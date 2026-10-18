@@ -1,0 +1,28 @@
+{
+  "recorded_utc": "2026-10-17T22:11:55.784436+00:00",
+  "character": "GreenCap51",
+  "rig_task_id": "ce22f7c8-702e-4b13-a292-645a9610eb63",
+  "status": "success",
+  "credits_consumed": 25.0,
+  "model": "v3.0-20260909",
+  "rig_type": "biped",
+  "spec": "unreal",
+  "out_format": "fbx",
+  "source": {
+    "path": "Data/GraphicNovel/Crew/GreenCap51/generated-v1-high-detail/body.glb",
+    "sha256": "729b56b0ed6d74be020f73ea87513d3963f6fb77a630d9f978ce66f0570599f6"
+  },
+  "outputs": {
+    "rig.fbx": {
+      "bytes": 8727340,
+      "sha256": "5ccc52f3d10544adc7788a06fd64aed4d9191a6d1171b7fed8b9b606cfc83958"
+    },
+    "provider-preview.png": {
+      "bytes": 91569,
+      "sha256": "990c3340598df51f4862e269e7241de4be5a18ac62fb7c10b98386cdeac5485e"
+    }
+  },
+  "signed_urls_retained_only_in_private_receipts": true,
+  "raw_provider_files_unchanged": true,
+  "geometry_motion_native_accepted": false
+}

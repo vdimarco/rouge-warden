@@ -1,0 +1,103 @@
+{
+  "passed": true,
+  "scope": "Byte retention and completed-CPU-receipt audit; no new pose generation/import/render/API/service operation",
+  "characters": {
+    "Memphis33": {
+      "data_provenance": {
+        "path": "Data/GraphicNovel/Crew/Memphis33/tripo-h31-rig-20261017/derived/natural-v1/Provenance.json",
+        "sha256": "1ab4d173755e4b41ca74f9a3e2aa5be0e57372baad8660123d11b785d44c9deb"
+      },
+      "retention_receipt": {
+        "path": "Verification/TripoCast/TripoBodies/OwnRigCPU/FundedFive/Memphis33/Retention.json",
+        "sha256": "53196a6c52b46f9b0cd9b72aff8c8324147b96fc95f0cf1b6c7eb3c4490d708b"
+      },
+      "eight_output_roles_sha_match": true,
+      "half_frame_samples_audited": 416,
+      "native_import_trial_allowed_at_retention": true,
+      "read_only_preflight": {
+        "passed": true,
+        "read_only_import_source_plan": true,
+        "import_scale": 1.8578451211389828,
+        "native_engine_executed": false
+      }
+    },
+    "WhiteCap": {
+      "data_provenance": {
+        "path": "Data/GraphicNovel/Crew/WhiteCap/tripo-h31-rig-20261017/derived/natural-v1/Provenance.json",
+        "sha256": "3c6e5065132c0532c23522afb1618e8373c61deec699edf3388cea10d21ab230"
+      },
+      "retention_receipt": {
+        "path": "Verification/TripoCast/TripoBodies/OwnRigCPU/FundedFive/WhiteCap/Retention.json",
+        "sha256": "874ba764aa357bce69f0ff8154a2554992076845c83c6ce6eb471ff46d5dbbb8"
+      },
+      "eight_output_roles_sha_match": true,
+      "half_frame_samples_audited": 416,
+      "native_import_trial_allowed_at_retention": true,
+      "read_only_preflight": {
+        "passed": true,
+        "read_only_import_source_plan": true,
+        "import_scale": 1.8581655898718021,
+        "native_engine_executed": false
+      }
+    },
+    "LimeJacket": {
+      "data_provenance": {
+        "path": "Data/GraphicNovel/Crew/LimeJacket/tripo-h31-rig-20261017/derived/natural-v1/Provenance.json",
+        "sha256": "fe706f18c577949f447db2cad36d396c18b3492989787ac1954ffb90e2ac8a0b"
+      },
+      "retention_receipt": {
+        "path": "Verification/TripoCast/TripoBodies/OwnRigCPU/FundedFive/LimeJacket/Retention.json",
+        "sha256": "87311e61037383699f7d192a4efb0825b933763f99ebea74352acfdc527d0182"
+      },
+      "eight_output_roles_sha_match": true,
+      "half_frame_samples_audited": 416,
+      "native_import_trial_allowed_at_retention": true,
+      "read_only_preflight": {
+        "passed": true,
+        "read_only_import_source_plan": true,
+        "import_scale": 1.8590655478867146,
+        "native_engine_executed": false
+      }
+    },
+    "GreenCap51": {
+      "data_provenance": {
+        "path": "Data/GraphicNovel/Crew/GreenCap51/tripo-h31-rig-20261017/derived/natural-v1/Provenance.json",
+        "sha256": "a0f7771551d8b16fd395d69d655e486275feb6f684ec4eb39ead3386831a8079"
+      },
+      "retention_receipt": {
+        "path": "Verification/TripoCast/TripoBodies/OwnRigCPU/FundedFive/GreenCap51/Retention.json",
+        "sha256": "074404f782429cbc23b0ab5ab37f05f668b6556517390b29c0769cc761ae67f1"
+      },
+      "eight_output_roles_sha_match": true,
+      "half_frame_samples_audited": 416,
+      "native_import_trial_allowed_at_retention": false,
+      "read_only_preflight": {
+        "passed": true,
+        "native_trial_approval_gate_rejected_pending_candidate": true,
+        "native_engine_executed": false
+      }
+    },
+    "RedJersey": {
+      "data_provenance": {
+        "path": "Data/GraphicNovel/Crew/RedJersey/tripo-h31-rig-20261017/derived/natural-v1/Provenance.json",
+        "sha256": "e4d3c1e4d8c3e65276e2279c5296ea5e60bbd693cae0e7ca72e7dfe92d462830"
+      },
+      "retention_receipt": {
+        "path": "Verification/TripoCast/TripoBodies/OwnRigCPU/FundedFive/RedJersey/Retention.json",
+        "sha256": "167479c07d1cd9f370bfc6fbf122cdf678068a8d5c3b4a1b624e00d8f7d40e7b"
+      },
+      "eight_output_roles_sha_match": true,
+      "half_frame_samples_audited": 416,
+      "native_import_trial_allowed_at_retention": false,
+      "read_only_preflight": {
+        "passed": true,
+        "native_trial_approval_gate_rejected_pending_candidate": true,
+        "native_engine_executed": false
+      }
+    }
+  },
+  "total_recorded_half_frame_samples": 2080,
+  "protected_originals_unchanged": true,
+  "retention_recipe_sha256": "2f687d348623235edaa2dc87ef40f381f1615f42bfa44d3f416d0f219ab34383",
+  "art_native_package_acceptance": false
+}

@@ -1,0 +1,106 @@
+{
+  "character": "GreenCap51",
+  "source_sha256": "43c538c2880b933fd2f2fc78c67e7ca08e913d05552f53f0dc96794e01ce51f6",
+  "review_receipt": {
+    "path": "Saved/Tests/TripoRemainingBodyReviews-20261017-v1/GreenCap51-views/Review.json",
+    "sha256": "e9a990b0ba598ea3afaa51b907d29b0879daa55a11000688aaed215113cc5e8b"
+  },
+  "inventory": {
+    "path": "Saved/Tests/TripoRemainingBodyReviews-20261017-v1/GreenCap51-measure-v3/Inventory.json",
+    "sha256": "18d379b951bdf3c4dce9420277977368401e79f4ff424f5e1eaf2e1aafc1415e"
+  },
+  "raw_normal_diagnostic": "Saved/Tests/TripoRemainingBodyReviews-20261017-v1/GreenCap51-measure-v2/RawNormalDiagnostic.json",
+  "all_eight_original_PBR_views_inspected": true,
+  "reference_pin_verified": true,
+  "candidate_heading_and_hand_crops_confirmed": true,
+  "rig_trial_recommendation": "Conditional source candidate for root review; do not treat imported-zero-normal issue as source corruption or weaken shared surface gate. Root decides rig spend after inspecting source views.",
+  "observations": [
+    "Recognizable adult face, moustache/goatee, brown hair and backward green cap; brow/eye aging is softer and more idealized than reference.",
+    "Navy/red jersey and chest51 retained; sleeve numerals are less clean than the reference.",
+    "Both hands show five separated digits; fingers and thumbs are thicker, shorter and more rounded than reference, with limited fine creases.",
+    "No gross source limb collapse or unintended bag/accessory observed in front/side/back views."
+  ],
+  "technical_limit": "Six zero Blender-imported corner normals, original GLB NORMAL accessor has finite unit vectors and no zeros. No source edits.",
+  "zero_imported_corner_normal_addresses": [
+    {
+      "loop": 216961,
+      "vertex": 37242,
+      "polygon": 72320,
+      "triangles": [
+        72320
+      ],
+      "world_position": [
+        0.014439854770898819,
+        0.08600717782974243,
+        -0.4174014627933502
+      ]
+    },
+    {
+      "loop": 219415,
+      "vertex": 37242,
+      "polygon": 73138,
+      "triangles": [
+        73138
+      ],
+      "world_position": [
+        0.014439854770898819,
+        0.08600717782974243,
+        -0.4174014627933502
+      ]
+    },
+    {
+      "loop": 219422,
+      "vertex": 37242,
+      "polygon": 73140,
+      "triangles": [
+        73140
+      ],
+      "world_position": [
+        0.014439854770898819,
+        0.08600717782974243,
+        -0.4174014627933502
+      ]
+    },
+    {
+      "loop": 219939,
+      "vertex": 37242,
+      "polygon": 73313,
+      "triangles": [
+        73313
+      ],
+      "world_position": [
+        0.014439854770898819,
+        0.08600717782974243,
+        -0.4174014627933502
+      ]
+    },
+    {
+      "loop": 222384,
+      "vertex": 37242,
+      "polygon": 74128,
+      "triangles": [
+        74128
+      ],
+      "world_position": [
+        0.014439854770898819,
+        0.08600717782974243,
+        -0.4174014627933502
+      ]
+    },
+    {
+      "loop": 222984,
+      "vertex": 37242,
+      "polygon": 74328,
+      "triangles": [
+        74328
+      ],
+      "world_position": [
+        0.014439854770898819,
+        0.08600717782974243,
+        -0.4174014627933502
+      ]
+    }
+  ],
+  "native_or_final_art_acceptance": false,
+  "scope": "Static-source original-PBR morphology only; no rig/skin/motion/grip/native acceptance."
+}

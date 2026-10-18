@@ -1,0 +1,12 @@
+{
+  "character": "WhiteCap",
+  "task_id": "14bbae93-b8ae-4c66-ba01-6b5545b74fed",
+  "source_body_task_id": "eb23c465-06bc-4b1d-a2fb-60a48190adc4",
+  "status": "success",
+  "credits_consumed": 0.0,
+  "output": {
+    "riggable": true,
+    "rig_type": "biped"
+  },
+  "scope": "Actual free biped compatibility; source and deformation review separate"
+}

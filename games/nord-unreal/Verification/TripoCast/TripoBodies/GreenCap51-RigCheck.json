@@ -1,0 +1,12 @@
+{
+  "character": "GreenCap51",
+  "task_id": "b78fa434-42c5-4b5b-b0a8-347097e25edb",
+  "source_body_task_id": "fb558687-4093-4793-9395-687f9983fe06",
+  "status": "success",
+  "credits_consumed": 0.0,
+  "output": {
+    "riggable": true,
+    "rig_type": "biped"
+  },
+  "scope": "Actual free biped compatibility; source and deformation review separate"
+}

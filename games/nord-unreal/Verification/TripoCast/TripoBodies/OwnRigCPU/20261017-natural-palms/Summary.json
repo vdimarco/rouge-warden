@@ -1,0 +1,209 @@
+{
+  "passed_cpu_pipeline": true,
+  "created_utc": "2026-10-17T23:10:58.234214+00:00",
+  "recipes_sha256": {
+    "prepare_tripo_cast_surface.py": "f83bdba794fc88472418253002cd7f9fec7701619d609b5ec635ae0699556a34",
+    "prepare_tripo_cast_motion.py": "466e97d34415cdcc11cf584fe99a336f4ba546b9e9c277e4978bef5f62223579",
+    "test_tripo_h31_motion.py": "cc23d76225271028abce45d7645bb7e73bb8756ced7e8fdfd2bca81cd9feb139",
+    "test_tripo_motion_frames.py": "46d5901843b9408c1eaaa191378d258e1fb4375abfd7dfb89ddc0e53134dbd81",
+    "test_tripo_bind_semantics.py": "7adebacc4566d7f428c6d18a98351cd3b4295ae6f20562da3fa6b36bbb1fcb1f",
+    "test_tripo_surface_correspondence.py": "1e3f46b384cb2d438280b5a8175960fab85f3b9be6c709829f1876371300e70e"
+  },
+  "cases": {
+    "BlackCap": {
+      "surface_receipt": {
+        "retained_path": "Saved/Tests/TripoH31Surface/BlackCap-v2/report/Surface.json",
+        "sha256": "fd290fd7eaccd6010a99fe1ed48b3456d105ba36ca14a487b18e2a1f57a9287c"
+      },
+      "motion_receipt": {
+        "retained_path": "Saved/Tests/TripoH31Motion/BlackCap-final-v7/report/Motion.json",
+        "sha256": "0f421db5f5991a466a226fe33ca5666911c1a848b4bd145e88ef2c1459e37846"
+      },
+      "surface_output": {
+        "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoH31Surface/BlackCap-v2/body/body.fbx",
+        "sha256": "1a81ac6d9485899203c1a37d8c52ab3ece40320536292bb382babf37fa3bd168",
+        "bytes": 8150844
+      },
+      "clip_outputs": {
+        "idle": {
+          "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoH31Motion/BlackCap-final-v7/clips/idle.fbx",
+          "sha256": "4d4de75ac8edf83c0d29a1f607b8519229ab28c7f6e7b9fc6c913dabe024ac1b",
+          "bytes": 839772
+        },
+        "jump": {
+          "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoH31Motion/BlackCap-final-v7/clips/jump.fbx",
+          "sha256": "d3dc8218c901e51e12f47c604388f221b114ad0efe19a64f35039e3a154a96e8",
+          "bytes": 531196
+        },
+        "walk": {
+          "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoH31Motion/BlackCap-final-v7/clips/walk.fbx",
+          "sha256": "1fc7850a927153aeb35a7d6640b57b374415ce25d06648dca1420055b8d56ce0",
+          "bytes": 541692
+        },
+        "run": {
+          "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoH31Motion/BlackCap-final-v7/clips/run.fbx",
+          "sha256": "ea89ed0347bec98f23abca81726fd36e15f33a7ad199ce857ea4f568f31487cb",
+          "bytes": 473628
+        }
+      },
+      "half_frame_pose_samples": 416,
+      "maximum_hierarchy_pose_matrix_error": 1.6093254089355469e-06,
+      "minimum_authored_palm_inward_dot": 0.9894048571586609,
+      "cpu_timing_pose_surface_gates_passed": true,
+      "native_or_package_acceptance": false,
+      "art_status": "Root accepted inward palms in exact v4 still/sequence candidate; broad inherited gait sway/fast legs are not final natural gait/contact acceptance."
+    },
+    "Topknot": {
+      "surface_receipt": {
+        "retained_path": "Saved/Tests/TripoH31Surface/Topknot-v3/report/Surface.json",
+        "sha256": "6748ebbff2e64f684bd2b74b14d8fc9a73304ab03da206131220b7f0be475689"
+      },
+      "motion_receipt": {
+        "retained_path": "Saved/Tests/TripoH31Motion/Topknot-final-v7/report/Motion.json",
+        "sha256": "88a8178eaf59bf03866b5ee40d6875bbba350e5890b439b96affcba160b7e4db"
+      },
+      "surface_output": {
+        "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoH31Surface/Topknot-v3/body/body.fbx",
+        "sha256": "5f5335fa0ec1e6df7ce39262894fef2c1f4a5c6704f0ed25fe33fa3783a040fa",
+        "bytes": 8579212
+      },
+      "clip_outputs": {
+        "idle": {
+          "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoH31Motion/Topknot-final-v7/clips/idle.fbx",
+          "sha256": "be74b1503f902c8b8555ff93e2ff956e581256599fb91cc8ecf20e5fb2e8b8d2",
+          "bytes": 841292
+        },
+        "jump": {
+          "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoH31Motion/Topknot-final-v7/clips/jump.fbx",
+          "sha256": "4ab6b0bd4dd7f6d1ebd0b39214b502f27f3333261e850426efc71c4cafa34260",
+          "bytes": 532844
+        },
+        "walk": {
+          "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoH31Motion/Topknot-final-v7/clips/walk.fbx",
+          "sha256": "6ae8236f44e4d5476531b5f72e0622506b546bfe72ef530edaea0db9f8526c6b",
+          "bytes": 541692
+        },
+        "run": {
+          "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoH31Motion/Topknot-final-v7/clips/run.fbx",
+          "sha256": "3589bd91d495f03262e15bd1fab851560c53abaf07a867790b82551c6b9a8bd6",
+          "bytes": 473628
+        }
+      },
+      "half_frame_pose_samples": 416,
+      "maximum_hierarchy_pose_matrix_error": 2.682209014892578e-06,
+      "minimum_authored_palm_inward_dot": 0.9833326455608962,
+      "cpu_timing_pose_surface_gates_passed": true,
+      "native_or_package_acceptance": false,
+      "art_status": "Rejected bag deformation at jump apex; natural whole-character art acceptance remains open."
+    }
+  },
+  "focused_checks": [
+    {
+      "command": [
+        "blender",
+        "-b",
+        "-t",
+        "4",
+        "--python-exit-code",
+        "1",
+        "--python",
+        "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Scripts/test_tripo_motion_frames.py"
+      ],
+      "exit_code": 0,
+      "recipe_sha256": "46d5901843b9408c1eaaa191378d258e1fb4375abfd7dfb89ddc0e53134dbd81",
+      "log_sha256": "b8cd0f7229612143c96d5d83a1ee2ca58ee870564589ba5988e2d4a5c7812b34"
+    },
+    {
+      "command": [
+        "blender",
+        "-b",
+        "-t",
+        "4",
+        "--python-exit-code",
+        "1",
+        "--python",
+        "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Scripts/test_tripo_bind_semantics.py"
+      ],
+      "exit_code": 0,
+      "recipe_sha256": "7adebacc4566d7f428c6d18a98351cd3b4295ae6f20562da3fa6b36bbb1fcb1f",
+      "log_sha256": "f99dcf553b0cd3d554342ce1bda14eefe194c6335b01aee0fbec20256b10f519"
+    },
+    {
+      "command": [
+        "blender",
+        "-b",
+        "-t",
+        "4",
+        "--python-exit-code",
+        "1",
+        "--python",
+        "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Scripts/test_tripo_surface_correspondence.py"
+      ],
+      "exit_code": 0,
+      "recipe_sha256": "1e3f46b384cb2d438280b5a8175960fab85f3b9be6c709829f1876371300e70e",
+      "log_sha256": "16e56735b9aef8baf4fbfeb6d5df69ef40e4353eda2d1499f5a79766b21f1d32"
+    }
+  ],
+  "retained_rejections": [
+    {
+      "path": "Saved/Tests/TripoH31Surface/Topknot-v1/report/Surface.json",
+      "sha256": "0c1f10e35ffea92636c20e36e6e0f4de796bb8fb11cb612e81a59ad602af5cbc",
+      "cause": "Former matrix1e-5 gate",
+      "not_reinterpreted_as_passed": true
+    },
+    {
+      "path": "Saved/Tests/TripoH31Surface/Topknot-v2/report/Surface.json",
+      "sha256": "bc063b3938cdb61b7669bc7841597dc7d077a5d6d153082b94974fb8d660bc28",
+      "cause": "Former static scale1e-5 gate",
+      "not_reinterpreted_as_passed": true
+    },
+    {
+      "path": "Saved/Tests/TripoH31Motion/Topknot-v1/report/Motion.json",
+      "sha256": "42c9a03125a7e33f46f7209fc55d33b2c71536d80c24c92081a1aeac1ef5fb59",
+      "cause": "Former corrected-source Jump reference scale1e-5 gate",
+      "not_reinterpreted_as_passed": true
+    },
+    {
+      "path": "Saved/Tests/TripoH31Motion/Topknot-natural-palms-v3/report/Motion.json",
+      "sha256": "9e4ed5dc74d84a6a47c62d32d803472473adc069954af9b9cd23169f42c5be85",
+      "cause": "Raw global pose roundtrip threshold; static bind decomposition was not separated",
+      "not_reinterpreted_as_passed": true
+    },
+    {
+      "path": "Saved/Tests/TripoH31Motion/Topknot-natural-palms-v5/report/Motion.json",
+      "sha256": "bc7129bc587fc905b8ee3104ededf66ae976b6b8f452fbb9c4453bab7c746120",
+      "cause": "Independent component reanchor ignores local animation hierarchy",
+      "not_reinterpreted_as_passed": true
+    },
+    {
+      "path": "Saved/Tests/TripoH31Motion/BlackCap-natural-palms-v3/report/Motion.json",
+      "sha256": "e68e355fec6577d94ad067612292ba269351e8dfdf2f3be6545dacc2005b4ac5",
+      "cause": "Unrelaxed sideways sign-control pose cannot reach full inward dot.85; physical/planar controls retained separately from actual hanging-pose gate",
+      "not_reinterpreted_as_passed": true
+    }
+  ],
+  "limits": {
+    "dynamic_pose_matrix": 2e-05,
+    "dynamic_local_scale_translation": 1e-05,
+    "static_Tripo_surface_bind_matrix_scale": 2e-05,
+    "static_Tripo_surface_bind_angle_rad": 0.0001,
+    "static_Tripo_surface_bind_head": 1e-05,
+    "legacy_surface_bind_matrix_unchanged": 1e-05,
+    "source_regular_gait_reference_scale_unchanged": 1e-05,
+    "corrected_source_jump_and_fresh_clip_reference_scale": 2e-05,
+    "minimum_actual_authored_palm_inward_dot": 0.85,
+    "maximum_residual_wrist_roll_deg": 10
+  },
+  "independent_reviews": [
+    "Surface proof and exact source/output hashes",
+    "Gravity/Q/scale and virtual arm reference algebra",
+    "Physical forearm/twist/hand distribution and actual8 Black stills",
+    "Hierarchy-consistent local-reference comparison algebra"
+  ],
+  "no_data_model_native_gpu_provider_service_writes_by_preparer": true,
+  "limitations": [
+    "Topknot bag/strap deformation rejected; accessory diagnosis pending",
+    "Inherited source gait broad sway/fast legs not final natural gait/contact acceptance",
+    "No native, blend-transition, package/performance/browser/device acceptance"
+  ]
+}

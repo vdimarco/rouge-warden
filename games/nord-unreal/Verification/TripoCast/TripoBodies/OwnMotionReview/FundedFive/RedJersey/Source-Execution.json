@@ -1,0 +1,79 @@
+{
+  "passed": true,
+  "jobs": [
+    {
+      "command": [
+        "blender",
+        "-b",
+        "-t",
+        "4",
+        "--python-exit-code",
+        "1",
+        "--python",
+        "Scripts/review_tripo_cast_motion.py",
+        "--",
+        "--surface",
+        "Saved/Tests/TripoH31RemainingPlan-20261017-v3/RedJersey/prepared-v1/surface/report/Surface.json",
+        "--motion",
+        "Saved/Tests/TripoH31RemainingPlan-20261017-v6/RedJersey/prepared-v1/motion/report/Motion.json",
+        "--output",
+        "Saved/Tests/TripoOwnMotionReview-RedJersey-20261017-v1/nine"
+      ],
+      "working_directory": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal",
+      "process_exit_code": 0,
+      "receipt": {
+        "path": "Saved/Tests/TripoOwnMotionReview-RedJersey-20261017-v1/nine/Readback.json",
+        "sha256": "e0ddb6ea2de07d5ff2da33fd6b9a3a82b3308e890bfdadf428530ea722100a6b",
+        "frames": 9,
+        "exit_code": 0,
+        "maximum_body_vs_clip_pose_error": 7.12275505065918e-06,
+        "unanimated_negative_error": 1.6057252883911133
+      },
+      "log": {
+        "path": "Saved/Tests/TripoOwnMotionReview-RedJersey-20261017-v1/nine.log",
+        "sha256": "ffa56765acba1ffc4d4892dbb33dc45090cbc92ccf760cac6f8e82c39fc2a118"
+      },
+      "all_png_hashes_verified": true
+    },
+    {
+      "command": [
+        "blender",
+        "-b",
+        "-t",
+        "4",
+        "--python-exit-code",
+        "1",
+        "--python",
+        "Saved/Tests/TripoOwnMotionReview-Remaining-20261017-v1/review_hand_angles.py",
+        "--",
+        "--surface",
+        "Saved/Tests/TripoH31RemainingPlan-20261017-v3/RedJersey/prepared-v1/surface/report/Surface.json",
+        "--motion",
+        "Saved/Tests/TripoH31RemainingPlan-20261017-v6/RedJersey/prepared-v1/motion/report/Motion.json",
+        "--output",
+        "Saved/Tests/TripoOwnMotionReview-RedJersey-20261017-v1/hands"
+      ],
+      "working_directory": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal",
+      "process_exit_code": 0,
+      "receipt": {
+        "path": "Saved/Tests/TripoOwnMotionReview-RedJersey-20261017-v1/hands/Readback.json",
+        "sha256": "49a46f05cfccb0a111798a2c13c44f952e77581bec88768a900d3eed14a8b6d5",
+        "frames": 6,
+        "exit_code": 0,
+        "maximum_body_vs_clip_pose_error": 5.342066287994385e-06,
+        "unanimated_negative_error": 1.6057252883911133
+      },
+      "log": {
+        "path": "Saved/Tests/TripoOwnMotionReview-RedJersey-20261017-v1/hands.log",
+        "sha256": "1c4d6e7d4f3dcceef5723f47944b97516008d02cec5937b8ea6feae37dc5143a"
+      },
+      "all_png_hashes_verified": true
+    }
+  ],
+  "assessment": {
+    "path": "Saved/Tests/TripoOwnMotionReview-RedJersey-20261017-v1/Assessment.json",
+    "sha256": "a81e46a7ba7bc8ea994b940234ddc0fbd5cb17197f3a58cfc452b123b462f0c3"
+  },
+  "owned_jobs_closed": true,
+  "native_or_final_art_acceptance": false
+}

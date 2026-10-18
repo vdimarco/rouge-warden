@@ -1,0 +1,13 @@
+{
+  "passed": true,
+  "neutral_world_head_displacement_max_m": 9.431681708374741e-08,
+  "neutral_world_skin_displacement_max_m": 2.9891247440289513e-07,
+  "neutral_actual_scale_key_deviation": 1.1920928955078125e-07,
+  "inserted_thigh_rotation_rad": 0.001,
+  "inserted_motion_world_skin_displacement_max_m": 0.0005231243434569358,
+  "skin_and_head_limit_m": 1e-05,
+  "no_model_data_written": true,
+  "neutral_hierarchy_pose_matrix_error": 4.172325134277344e-07,
+  "inserted_motion_hierarchy_pose_matrix_error": 0.0009957551956176758,
+  "hierarchy_pose_limit": 2e-05
+}

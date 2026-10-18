@@ -1,0 +1,29 @@
+{
+  "character": "Memphis33",
+  "source_provider": "Tripo H3.1",
+  "source_body_task_id": "37b3a1cd-d4c1-4b21-9348-88752ade1549",
+  "rig_task_id": "75a56cd6-daea-4f91-b158-239039972100",
+  "credits_consumed": 25,
+  "model": "v3.0-20260909",
+  "rig_type": "biped",
+  "spec": "unreal",
+  "out_format": "fbx",
+  "source": {
+    "path": "Data/GraphicNovel/Crew/Memphis33/tripo-h31-body-20261017/body.glb",
+    "sha256": "c8e0491c768b71108391a309e07b3b9b4f32074a84ce65fff7f7e7d3aa63138e"
+  },
+  "outputs": {
+    "rig.fbx": {
+      "bytes": 7662668,
+      "sha256": "b11ef3df911506705b92e1ef800d6418fc409d1e1e92ee42d35b1ee324d6674f"
+    },
+    "provider-preview.png": {
+      "bytes": 136182,
+      "sha256": "ddf8b3a98d0e6fb53834522e12e17957d61b3423ba85ebd262f109bbd0c93630"
+    }
+  },
+  "signed_urls_private_only": true,
+  "raw_provider_files_unchanged": true,
+  "native_or_art_accepted": false,
+  "recorded_utc": "2026-10-17T23:37:01.431712+00:00"
+}

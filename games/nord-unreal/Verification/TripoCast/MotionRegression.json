@@ -1,0 +1,2041 @@
+{
+  "passed": true,
+  "scope": "CPU authoring and actual fresh-FBX readback only; rendered/continuous art/native acceptance remain open",
+  "recipes": {
+    "prepare_tripo_cast_motion.py": {
+      "path": "Scripts/prepare_tripo_cast_motion.py",
+      "sha256": "659d041dad7470f12b5b1c2427dda8f70ff6d691f9ac215e021ca644815a8afa"
+    },
+    "test_prepare_tripo_cast_motion.py": {
+      "path": "Scripts/test_prepare_tripo_cast_motion.py",
+      "sha256": "e4393a434c1c69d3858a72705dcf461b3ea1fd64f416c273dc175c6358232223"
+    },
+    "prepare_tripo_cast_surface.py": {
+      "path": "Scripts/prepare_tripo_cast_surface.py",
+      "sha256": "6260beffc640f7bcd7eaae3a0b1bfc24b97d12a44379dbc86ac8d169c05a7df1"
+    },
+    "prepare_meshy_jump.py": {
+      "path": "Scripts/prepare_meshy_jump.py",
+      "sha256": "51cbc1072264c31eeafdd65cf1dfef76b36ac154e84d6a93b97f425a3e73a857"
+    }
+  },
+  "fixed_limits": {
+    "reference_matrix": 2e-05,
+    "reference_head_scale": 1e-05,
+    "rotation_rad": 0.0001,
+    "source_reference_head_world_m": 1e-05,
+    "local_translation_scale": 1e-05,
+    "object_matrix": 1e-07,
+    "authored_idle_step_deg_per_30Hz_frame": 3,
+    "authored_jump_step_deg_per_30Hz_frame": 20,
+    "authored_elbow_forward_delta_min_deg": 14,
+    "curve_grid_error_ktime_ticks": 1
+  },
+  "negative_controls": [
+    "Tampered SHA rejected before writes",
+    "Existing output/report preserved",
+    "Actual own rig backward elbow axis rejected by sign control"
+  ],
+  "protected_pilot_file_count": 306,
+  "protected_pilot_files_unchanged": true,
+  "full_pilot_hash_inventory": {
+    "path": "Saved/Tests/TripoCastMotionRegression/Curly-20261017-v7/Test.json",
+    "sha256": "b20cd9417895787f07bca4adeb600bc4bafc88c6c59b5109209a6bf86b96d9d2"
+  },
+  "clock_policy": "Raw Meshy sources must be explicit30Hz, exact-frame or float32-second-rounded30Hz within1 KTime tick of that encoding. New outputs require exact stack durations and <=1 KTime tick grid error. No raw bytes changed.",
+  "source_reference_policy": "Own source24 reference angles/scales/basis are checked; source heads are compared in world metres because the source armature local units use centimetres. Target61 retains original strict local reference bounds.",
+  "acting_policy": "NaturalPose/v4 anatomical axes and key values are derived per rig. Idle/Jump forward elbow delta >=14deg within1e-4deg numerical bound; authored upper-body step limits3/20deg per30Hz frame. Gaits retain original own source acting/timing; absolute elbow sign gate rejects backward bends.",
+  "inherited_leg_policy": "Corrected source Jump is authored with unchanged prepare_meshy_jump.py on a new copied body. A fresh own61 retarget export is compared against fresh final Jump at every half frame under1e-5 matrix bound; in-memory acting also leaves lower body unchanged.",
+  "cases": {
+    "Curly": {
+      "passed": true,
+      "inputs": {
+        "provider_fbx": {
+          "path": "Data/GraphicNovel/Pilot/CurlyMetalhead/tripo-v3-rig-20261017/rig.fbx",
+          "sha256": "baaeb99a7e86fadadd4f64f6de6ea7e648777b33bcadd2ecb72347c4afe3dcc2"
+        },
+        "source_body_fbx": {
+          "path": "Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/body.fbx",
+          "sha256": "b7e7ca0d9c486412108cba85e1cd4a5512fecd4ad36b8cfdb4677259ff6f9244"
+        },
+        "walk_fbx": {
+          "path": "Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/walk.fbx",
+          "sha256": "0fe2b4d83846f826e3d448c870fcb77816c25fe6d106c873d755cd7a3d871d9e"
+        },
+        "run_fbx": {
+          "path": "Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/run.fbx",
+          "sha256": "b0f8e4c359d21ca3a51dde5c94b45b4d9f4a3d27dedb2d44f671b69e41f6e8ae"
+        }
+      },
+      "manifest": {
+        "path": "Saved/Tests/TripoCastMotionRegression/Curly-20261017-v7/manifest.json",
+        "sha256": "ceda092c4eddcc79dafe964d3a67dc8be099646d62a2132133bee2894b213e76"
+      },
+      "full_receipt": {
+        "path": "Saved/Tests/TripoCastMotionRegression/Curly-20261017-v7/report/Motion.json",
+        "sha256": "be5250813ba574865e854aae1aeea8370eef6ae6924199f85c74717e2334d4a9"
+      },
+      "log": {
+        "path": "Saved/Tests/TripoCastMotionRegression/Curly-20261017-v7/blender.log",
+        "sha256": "708fcac0038d1af6e59e8a8dcef0ce9794350ef5d19ead83f799020e26297974"
+      },
+      "rig": {
+        "bones": 61,
+        "hierarchy": {
+          "root": null,
+          "pelvis": "root",
+          "spine_01": "pelvis",
+          "spine_02": "spine_01",
+          "spine_03": "spine_02",
+          "clavicle_l": "spine_03",
+          "upperarm_l": "clavicle_l",
+          "lowerarm_l": "upperarm_l",
+          "hand_l": "lowerarm_l",
+          "index_01_l": "hand_l",
+          "index_02_l": "index_01_l",
+          "index_03_l": "index_02_l",
+          "middle_01_l": "hand_l",
+          "middle_02_l": "middle_01_l",
+          "middle_03_l": "middle_02_l",
+          "pinky_01_l": "hand_l",
+          "pinky_02_l": "pinky_01_l",
+          "pinky_03_l": "pinky_02_l",
+          "ring_01_l": "hand_l",
+          "ring_02_l": "ring_01_l",
+          "ring_03_l": "ring_02_l",
+          "thumb_01_l": "hand_l",
+          "thumb_02_l": "thumb_01_l",
+          "thumb_03_l": "thumb_02_l",
+          "lowerarm_twist_01_l": "lowerarm_l",
+          "upperarm_twist_01_l": "upperarm_l",
+          "clavicle_r": "spine_03",
+          "upperarm_r": "clavicle_r",
+          "lowerarm_r": "upperarm_r",
+          "hand_r": "lowerarm_r",
+          "index_01_r": "hand_r",
+          "index_02_r": "index_01_r",
+          "index_03_r": "index_02_r",
+          "middle_01_r": "hand_r",
+          "middle_02_r": "middle_01_r",
+          "middle_03_r": "middle_02_r",
+          "pinky_01_r": "hand_r",
+          "pinky_02_r": "pinky_01_r",
+          "pinky_03_r": "pinky_02_r",
+          "ring_01_r": "hand_r",
+          "ring_02_r": "ring_01_r",
+          "ring_03_r": "ring_02_r",
+          "thumb_01_r": "hand_r",
+          "thumb_02_r": "thumb_01_r",
+          "thumb_03_r": "thumb_02_r",
+          "lowerarm_twist_01_r": "lowerarm_r",
+          "upperarm_twist_01_r": "upperarm_r",
+          "neck_01": "spine_03",
+          "head": "neck_01",
+          "thigh_l": "pelvis",
+          "calf_l": "thigh_l",
+          "calf_twist_01_l": "calf_l",
+          "foot_l": "calf_l",
+          "ball_l": "foot_l",
+          "thigh_twist_01_l": "thigh_l",
+          "thigh_r": "pelvis",
+          "calf_r": "thigh_r",
+          "calf_twist_01_r": "calf_r",
+          "foot_r": "calf_r",
+          "ball_r": "foot_r",
+          "thigh_twist_01_r": "thigh_r"
+        },
+        "weighted_finger_sums": {
+          "ring_01_l": 53.27474400826031,
+          "index_01_l": 75.67621656827396,
+          "pinky_03_r": 45.22639185190201,
+          "middle_02_l": 42.928449845756404,
+          "thumb_03_r": 68.1824047267437,
+          "thumb_03_l": 64.97882603574544,
+          "index_02_l": 44.5386206721887,
+          "thumb_02_r": 60.45088219596073,
+          "index_01_r": 68.00172687438317,
+          "middle_03_r": 53.451638801023364,
+          "ring_02_l": 32.6788912625052,
+          "index_02_r": 34.619385215919465,
+          "middle_03_l": 54.70499370805919,
+          "ring_01_r": 49.06390301087231,
+          "pinky_02_l": 31.85330159799196,
+          "index_03_r": 62.46415548119694,
+          "middle_01_l": 59.10679016757058,
+          "index_03_l": 53.88213206548244,
+          "pinky_02_r": 33.51574137760326,
+          "ring_03_r": 50.03659859113395,
+          "thumb_01_r": 58.7463588861865,
+          "pinky_03_l": 48.04560239147395,
+          "pinky_01_r": 61.46211752993986,
+          "middle_02_r": 44.67553445091471,
+          "pinky_01_l": 74.96457973957877,
+          "thumb_01_l": 70.4517618099926,
+          "ring_02_r": 34.450315589492675,
+          "ring_03_l": 52.67371874302626,
+          "thumb_02_l": 61.8919149786816,
+          "middle_01_r": 44.52458218066022
+        },
+        "bind_elbow_signed_deg": {
+          "l": 14.358832950845924,
+          "r": 13.711181847771948
+        },
+        "anatomical_axes": {
+          "up": [
+            -7.004563595813806e-10,
+            -0.04700682312250137,
+            0.9988946318626404
+          ],
+          "side": [
+            1.0,
+            -1.833989848876172e-08,
+            0.0
+          ],
+          "forward": [
+            -1.820391837270563e-08,
+            -0.9988945722579956,
+            -0.047006767243146896
+          ]
+        },
+        "actual_rig_backward_axis_negative_control": {
+          "l": {
+            "forward20_delta_deg": 19.99999847201743,
+            "backward_negative20_delta_deg": -19.999998733704498
+          },
+          "r": {
+            "forward20_delta_deg": 20.000004181860895,
+            "backward_negative20_delta_deg": -20.0000036378008
+          }
+        }
+      },
+      "source_body_provider_correspondence": {
+        "triangles": 103544,
+        "corners": 310632,
+        "provider_to_source_uniform_scale": 1.8200009207475394,
+        "source_residual_max_m": 1.1444306764863148e-06,
+        "source_residual_mean_m": 3.385966454617306e-07,
+        "corners_over_2micron": 0,
+        "source_residual_p99_m": 8.23808349852506e-07,
+        "source_residual_abs_axis_m": {
+          "x": {
+            "max": 9.608326557719593e-07,
+            "p99": 6.468985773167013e-07,
+            "mean": 1.8699566846531723e-07
+          },
+          "y": {
+            "max": 6.547419910130081e-07,
+            "p99": 4.5090930307634114e-07,
+            "mean": 1.8365220609330244e-07
+          },
+          "z": {
+            "max": 8.504504227513365e-07,
+            "p99": 6.787153223886122e-07,
+            "mean": 1.6689287525348984e-07
+          }
+        },
+        "residual_limit_m": 1e-05,
+        "exact_source_positions_claimed": false,
+        "translation_or_rotation_fit": false,
+        "uv_quantization": 1e-06,
+        "scale_fit_unambiguous_triangles": 103540,
+        "uv_duplicate_triangle_groups": 0,
+        "uv_duplicate_triangles": 0,
+        "uv_corner_tie_triangles": 4,
+        "geometry_resolved_groups": [
+          {
+            "target_sorted_triangle_range": [
+              30640,
+              30641
+            ],
+            "triangles": 1,
+            "unique_geometry_bijection": true,
+            "mapping": [
+              {
+                "target_triangle": 30640,
+                "source_triangle": 30640,
+                "source_corner_order": [
+                  0,
+                  1,
+                  2
+                ],
+                "candidate_count": 1,
+                "geometry_residual_max_m": 3.2619847801153625e-07
+              }
+            ]
+          },
+          {
+            "target_sorted_triangle_range": [
+              41506,
+              41507
+            ],
+            "triangles": 1,
+            "unique_geometry_bijection": true,
+            "mapping": [
+              {
+                "target_triangle": 41506,
+                "source_triangle": 41506,
+                "source_corner_order": [
+                  0,
+                  1,
+                  2
+                ],
+                "candidate_count": 1,
+                "geometry_residual_max_m": 2.91157588342983e-07
+              }
+            ]
+          },
+          {
+            "target_sorted_triangle_range": [
+              59836,
+              59837
+            ],
+            "triangles": 1,
+            "unique_geometry_bijection": true,
+            "mapping": [
+              {
+                "target_triangle": 59836,
+                "source_triangle": 59836,
+                "source_corner_order": [
+                  0,
+                  1,
+                  2
+                ],
+                "candidate_count": 1,
+                "geometry_residual_max_m": 2.6828724633468346e-07
+              }
+            ]
+          },
+          {
+            "target_sorted_triangle_range": [
+              70575,
+              70576
+            ],
+            "triangles": 1,
+            "unique_geometry_bijection": true,
+            "mapping": [
+              {
+                "target_triangle": 70575,
+                "source_triangle": 70575,
+                "source_corner_order": [
+                  0,
+                  1,
+                  2
+                ],
+                "candidate_count": 1,
+                "geometry_residual_max_m": 2.6828724633468346e-07
+              }
+            ]
+          }
+        ],
+        "geometry_mapping_unique": true
+      },
+      "scaling": {
+        "provider_to_source_uniform_scale": 1.8200009207475394,
+        "source_surface_residual_max_m": 1.1444306764863148e-06,
+        "source_xyz_to_target_factor": 0.005494502591996066,
+        "source_object_scale": [
+          0.009999999776482582,
+          0.009999999776482582,
+          0.009999999776482582
+        ],
+        "target_object_scale": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "rescale_or_translation_applied": false,
+        "uv_triangles": 103544
+      },
+      "source_clips": {
+        "walk": {
+          "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoCastMotion-q0i9jnml/walk_fbx.fbx",
+          "source_range": [
+            1.0,
+            32.0
+          ],
+          "binary_fbx": {
+            "version": 7400,
+            "time_mode": 6,
+            "custom_frame_rate": 30.0,
+            "stack_time_ticks": {
+              "LocalStart": 0,
+              "LocalStop": 47725695132,
+              "ReferenceStart": 0,
+              "ReferenceStop": 47725695132
+            },
+            "declared_seconds": 1.0333333015489186,
+            "curve_max_grid_error_ktime_ticks": 1468,
+            "source_exact_or_float32_30Hz_max_tick_error": 1,
+            "strict_export_clock": false,
+            "null_models": [
+              "Armature\u0000\u0001Model"
+            ]
+          },
+          "own_body_reference_error": {
+            "matrix": 0.0,
+            "angle_rad": 6.006850841776113e-08,
+            "head": 0.0,
+            "scale": 0.0,
+            "world_head_m": 2.3842585494815777e-07,
+            "basis_matrix": 0.0
+          }
+        },
+        "run": {
+          "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoCastMotion-q0i9jnml/run_fbx.fbx",
+          "source_range": [
+            1.0,
+            20.0
+          ],
+          "binary_fbx": {
+            "version": 7400,
+            "time_mode": 6,
+            "custom_frame_rate": 30.0,
+            "stack_time_ticks": {
+              "LocalStart": 0,
+              "LocalStop": 29251233033,
+              "ReferenceStart": 0,
+              "ReferenceStop": 29251233033
+            },
+            "declared_seconds": 0.6333333253872296,
+            "curve_max_grid_error_ktime_ticks": 1285,
+            "source_exact_or_float32_30Hz_max_tick_error": 1,
+            "strict_export_clock": false,
+            "null_models": [
+              "Armature\u0000\u0001Model"
+            ]
+          },
+          "own_body_reference_error": {
+            "matrix": 0.0,
+            "angle_rad": 6.006850841776113e-08,
+            "head": 0.0,
+            "scale": 0.0,
+            "world_head_m": 2.3842585494815777e-07,
+            "basis_matrix": 0.0
+          }
+        },
+        "jump": {
+          "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoCastMotion-q0i9jnml/corrected-source/Character/jump.fbx",
+          "source_range": [
+            2.0,
+            38.0
+          ],
+          "binary_fbx": {
+            "version": 7400,
+            "time_mode": 6,
+            "custom_frame_rate": 30.0,
+            "stack_time_ticks": {
+              "LocalStart": 1539538600,
+              "LocalStop": 56962928200,
+              "ReferenceStart": 1539538600,
+              "ReferenceStop": 56962928200
+            },
+            "declared_seconds": 1.2,
+            "curve_max_grid_error_ktime_ticks": 1,
+            "source_exact_or_float32_30Hz_max_tick_error": 1,
+            "strict_export_clock": false,
+            "null_models": [
+              "Armature\u0000\u0001Model"
+            ]
+          },
+          "own_body_reference_error": {
+            "matrix": 0.00010156631469726562,
+            "angle_rad": 6.175381620915239e-06,
+            "head": 0.00012283995266520618,
+            "scale": 9.059906005859375e-06,
+            "world_head_m": 1.2658314975897294e-06,
+            "basis_matrix": 8.255243301391602e-06
+          }
+        }
+      },
+      "corrected_source_jump": {
+        "command": [
+          "/home/von/.local/opt/blender-5.2.2-linux-x64/blender",
+          "-b",
+          "-t",
+          "4",
+          "--python-exit-code",
+          "1",
+          "--python",
+          "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Scripts/prepare_meshy_jump.py",
+          "--",
+          "--source-root",
+          "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoCastMotion-q0i9jnml/corrected-source",
+          "--names",
+          "Character",
+          "--report",
+          "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoCastMotion-q0i9jnml/SourceJump.json"
+        ],
+        "process_exit_code": 0,
+        "author_recipe_sha256": "51cbc1072264c31eeafdd65cf1dfef76b36ac154e84d6a93b97f425a3e73a857",
+        "body_copy_sha256": "b7e7ca0d9c486412108cba85e1cd4a5512fecd4ad36b8cfdb4677259ff6f9244",
+        "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoCastMotion-q0i9jnml/corrected-source/Character/jump.fbx",
+        "receipt_path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoCastMotion-q0i9jnml/SourceJump.json",
+        "sha256": "54105f51625f652e2162c0009b057c27cc52dae74a5a6a000a1f29a9b44db069"
+      },
+      "idle_jump_endpoint_matrix_error": 3.6209821701049805e-06,
+      "clips": {
+        "idle": {
+          "output": {
+            "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoCastMotionRegression/Curly-20261017-v7/clips/idle.fbx",
+            "sha256": "443707f1094a4862cdfc243ca37b60eaa6846a4d0b62e301381c237cd0bee776",
+            "bytes": 838428
+          },
+          "bones": 61,
+          "half_frame_samples": 241,
+          "fresh_frame_range": [
+            2.0,
+            122.0
+          ],
+          "binary_fbx": {
+            "version": 7400,
+            "time_mode": 6,
+            "custom_frame_rate": 30.0,
+            "stack_time_ticks": {
+              "LocalStart": 1539538600,
+              "LocalStop": 186284170600,
+              "ReferenceStart": 1539538600,
+              "ReferenceStop": 186284170600
+            },
+            "declared_seconds": 4.0,
+            "curve_max_grid_error_ktime_ticks": 1,
+            "source_exact_or_float32_30Hz_max_tick_error": 1,
+            "strict_export_clock": true,
+            "null_models": [
+              "Armature\u0000\u0001Model"
+            ]
+          },
+          "fps": 30,
+          "seconds": 4.0,
+          "metrics": {
+            "reference": {
+              "matrix": 1.0818243026733398e-05,
+              "angle_rad": 7.19307642695806e-06,
+              "head": 6.07130893599856e-07,
+              "scale": 8.225440979003906e-06
+            },
+            "half_frame_pose_matrix_error": 1.0818243026733398e-05,
+            "half_frame_pose_rotation_error_rad": 7.220555001090323e-06,
+            "hip_xyz_error_target_units": 0.0,
+            "local_translation_error": 3.430381667297696e-07,
+            "local_scale_error": 8.106231689453125e-06,
+            "root_matrix_error": 3.552713678800501e-15,
+            "object_matrix_error": 0.0,
+            "key_and_evaluated_quaternion_norm_error": 2.384185791015625e-07,
+            "loop_matrix_error": 0.0,
+            "loop_angle_error_rad": 1.2287812309317753e-07,
+            "minimum_elbow_forward_delta_deg": 13.999993729819293,
+            "minimum_elbow_signed_deg": 28.358826680665217,
+            "maximum_rotation_step_deg_per_30Hz_frame": 0.07938115647627911,
+            "maximum_upper_body_step_deg_per_30Hz_frame": 0.07938115647627911,
+            "jump_inherited_lower_body_matrix_error_half_frames": 0.0,
+            "jump_acting_in_memory_lower_body_matrix_change": 0.0,
+            "gait_mapped_component_delta_error_rad": 0.0,
+            "gait_finger_baseline_rotation_error_rad": 0.0
+          },
+          "finger_entry_local_deviation_deg": {
+            "ring_01_l": 19.99999282793807,
+            "index_01_l": 12.000018471176412,
+            "pinky_03_r": 7.800176745530757,
+            "middle_02_l": 22.999997452908996,
+            "thumb_03_r": 3.7999409396585886,
+            "thumb_03_l": 2.999968596211576,
+            "index_02_l": 17.99992281200356,
+            "thumb_02_r": 10.799991684601194,
+            "index_01_r": 12.799983930320861,
+            "middle_03_r": 5.799962057380716,
+            "ring_02_l": 28.00002224978912,
+            "index_02_r": 18.79998335884489,
+            "middle_03_l": 5.0000004587710425,
+            "ring_01_r": 20.799994945013033,
+            "pinky_02_l": 33.00001405673929,
+            "index_03_r": 4.799998516128974,
+            "middle_01_l": 15.999987060323463,
+            "index_03_l": 4.000159250949434,
+            "pinky_02_r": 33.799972637569034,
+            "ring_03_r": 6.799950197666702,
+            "thumb_01_r": 13.537768699223445,
+            "pinky_03_l": 7.000002480101457,
+            "pinky_01_r": 24.799985623480396,
+            "middle_02_r": 23.80000406165389,
+            "pinky_01_l": 24.000008310796197,
+            "thumb_01_l": 13.021280199262293,
+            "ring_02_r": 28.800052481697595,
+            "ring_03_l": 6.0000832250525695,
+            "thumb_02_l": 10.000032778264274,
+            "middle_01_r": 16.79998804366886
+          },
+          "local_motion_from_entry_deg": {
+            "ring_01_l": 0.7999948573940369,
+            "index_01_l": 0.8000036441770744,
+            "pinky_03_r": 0.800005667141327,
+            "hand_r": 0.4000059612254701,
+            "middle_02_l": 0.8000010580968874,
+            "thumb_03_r": 0.7999836449511486,
+            "thumb_03_l": 0.8000116736242009,
+            "index_02_l": 0.800006913238675,
+            "thumb_02_r": 0.799989665730202,
+            "index_01_r": 0.7999876860112222,
+            "middle_03_r": 0.7999871707795013,
+            "clavicle_l": 0.3999860616554076,
+            "upperarm_r": 0.4221661219095829,
+            "ring_02_l": 0.7999868048429972,
+            "index_02_r": 0.8000102498617458,
+            "middle_03_l": 0.8000063472035185,
+            "ring_01_r": 0.799985847747772,
+            "clavicle_r": 0.20002958099338858,
+            "pinky_02_l": 0.7999955072593027,
+            "index_03_r": 0.8000145928749868,
+            "middle_01_l": 0.8000099461130751,
+            "index_03_l": 0.7999788136884852,
+            "lowerarm_r": 1.2000118437625766,
+            "pinky_02_r": 0.8000025994136368,
+            "ring_03_r": 0.8000093112605471,
+            "thumb_01_r": 0.7999983996701424,
+            "hand_l": 0.40000553110054016,
+            "pinky_03_l": 0.7999896677615386,
+            "middle_02_r": 0.8000043049570593,
+            "pinky_01_l": 0.7999897715527645,
+            "thumb_01_l": 0.8000065831556701,
+            "upperarm_l": 0.41974117561389146,
+            "middle_01_r": 0.7999970431623644,
+            "ring_02_r": 0.8000051946387159,
+            "ring_03_l": 0.7999923465738755,
+            "lowerarm_l": 1.2000004407441667,
+            "thumb_02_l": 0.8000080772150383,
+            "pinky_01_r": 0.8000104679645691
+          },
+          "entry_palm_inward_dot": {
+            "l": 0.9933358448100679,
+            "r": 0.9894193988125983
+          },
+          "neutral_reference_frame_outside_exported_range": 0
+        },
+        "jump": {
+          "output": {
+            "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoCastMotionRegression/Curly-20261017-v7/clips/jump.fbx",
+            "sha256": "f72575278a6d98dbf477a3df27628cf21b2a41bf8c3e10bedb3fe11885529882",
+            "bytes": 531324
+          },
+          "bones": 61,
+          "half_frame_samples": 73,
+          "fresh_frame_range": [
+            2.0,
+            38.0
+          ],
+          "binary_fbx": {
+            "version": 7400,
+            "time_mode": 6,
+            "custom_frame_rate": 30.0,
+            "stack_time_ticks": {
+              "LocalStart": 1539538600,
+              "LocalStop": 56962928200,
+              "ReferenceStart": 1539538600,
+              "ReferenceStop": 56962928200
+            },
+            "declared_seconds": 1.2,
+            "curve_max_grid_error_ktime_ticks": 1,
+            "source_exact_or_float32_30Hz_max_tick_error": 1,
+            "strict_export_clock": true,
+            "null_models": [
+              "Armature\u0000\u0001Model"
+            ]
+          },
+          "fps": 30,
+          "seconds": 1.2,
+          "metrics": {
+            "reference": {
+              "matrix": 1.0818243026733398e-05,
+              "angle_rad": 7.19307642695806e-06,
+              "head": 6.07130893599856e-07,
+              "scale": 8.225440979003906e-06
+            },
+            "half_frame_pose_matrix_error": 1.0922551155090332e-05,
+            "half_frame_pose_rotation_error_rad": 7.333275968802923e-06,
+            "hip_xyz_error_target_units": 8.890818499599758e-08,
+            "local_translation_error": 3.221181452057199e-07,
+            "local_scale_error": 8.225440979003906e-06,
+            "root_matrix_error": 3.552713678800501e-15,
+            "object_matrix_error": 0.0,
+            "key_and_evaluated_quaternion_norm_error": 2.384185791015625e-07,
+            "loop_matrix_error": 0.0,
+            "loop_angle_error_rad": 8.940696716308588e-08,
+            "minimum_elbow_forward_delta_deg": 13.999995417619632,
+            "minimum_elbow_signed_deg": 28.358828368465556,
+            "maximum_rotation_step_deg_per_30Hz_frame": 26.4814827644058,
+            "maximum_upper_body_step_deg_per_30Hz_frame": 15.15205800028474,
+            "jump_inherited_lower_body_matrix_error_half_frames": 0.0,
+            "jump_acting_in_memory_lower_body_matrix_change": 0.0,
+            "gait_mapped_component_delta_error_rad": 0.0,
+            "gait_finger_baseline_rotation_error_rad": 0.0
+          },
+          "finger_entry_local_deviation_deg": {
+            "ring_01_l": 19.999988988389028,
+            "index_01_l": 12.000017170210528,
+            "pinky_03_r": 7.800177136881726,
+            "middle_02_l": 22.99999745290814,
+            "thumb_03_r": 3.7999324444261777,
+            "thumb_03_l": 2.999973515566286,
+            "index_02_l": 17.999922601436342,
+            "thumb_02_r": 10.799992813598683,
+            "index_01_r": 12.799984078976605,
+            "middle_03_r": 5.799960378577053,
+            "ring_02_l": 28.000022677828085,
+            "index_02_r": 18.7999829156557,
+            "middle_03_l": 5.000001299008742,
+            "ring_01_r": 20.79999018458734,
+            "pinky_02_l": 33.000009906766095,
+            "index_03_r": 4.800000075300604,
+            "middle_01_l": 15.99998739195408,
+            "index_03_l": 4.000156899274558,
+            "pinky_02_r": 33.7999726375659,
+            "ring_03_r": 6.799950646752114,
+            "thumb_01_r": 13.537768586829918,
+            "pinky_03_l": 7.000003270755174,
+            "pinky_01_r": 24.79998733286175,
+            "middle_02_r": 23.800008081254063,
+            "pinky_01_l": 24.000008122130534,
+            "thumb_01_l": 13.021280316154835,
+            "ring_02_r": 28.80005744950453,
+            "ring_03_l": 6.000082182539285,
+            "thumb_02_l": 10.000037428870671,
+            "middle_01_r": 16.799984520416267
+          },
+          "local_motion_from_entry_deg": {
+            "ring_01_l": 1.1859562098410566e-05,
+            "index_01_l": 7.77568518595649e-06,
+            "pinky_03_r": 3.7773369836099715e-06,
+            "hand_r": 6.267135768498736e-06,
+            "middle_02_l": 2.116536553844898e-05,
+            "thumb_03_r": 1.1213054265516105e-05,
+            "thumb_03_l": 8.065506583890337e-06,
+            "index_02_l": 1.5418976479230286e-05,
+            "thumb_02_r": 1.2147895843212704e-05,
+            "index_01_r": 6.822326587994397e-06,
+            "middle_03_r": 6.8517810084357696e-06,
+            "clavicle_l": 2.1052054371676145e-05,
+            "upperarm_r": 12.163782397664997,
+            "ring_02_l": 1.4806649386060814e-05,
+            "index_02_r": 1.4604896525650055e-05,
+            "middle_03_l": 6.795883090260167e-06,
+            "ring_01_r": 1.2290268287364326e-05,
+            "clavicle_r": 1.7745352001653036e-05,
+            "pinky_02_l": 1.4396061909977315e-05,
+            "index_03_r": 9.42904457911331e-06,
+            "middle_01_l": 2.1812579999350262e-05,
+            "index_03_l": 1.2397347528966732e-05,
+            "lowerarm_r": 16.997143076920466,
+            "pinky_02_r": 2.0844432137495647e-05,
+            "ring_03_r": 3.2076606934955374e-06,
+            "thumb_01_r": 1.884597528624787e-05,
+            "hand_l": 1.0302067652696114e-05,
+            "pinky_03_l": 7.5611176291072875e-06,
+            "middle_02_r": 1.060579545545168e-05,
+            "pinky_01_l": 2.8843305642508493e-05,
+            "thumb_01_l": 1.874903479607452e-05,
+            "upperarm_l": 12.075353375872806,
+            "middle_01_r": 6.989457011697453e-06,
+            "ring_02_r": 1.7749926576583603e-05,
+            "ring_03_l": 5.955462885797352e-06,
+            "lowerarm_l": 35.99083484145842,
+            "thumb_02_l": 1.891522042076984e-05,
+            "pinky_01_r": 1.5482007552056028e-05
+          },
+          "entry_palm_inward_dot": {
+            "l": 0.9933358448100669,
+            "r": 0.9894191603940188
+          },
+          "neutral_reference_frame_outside_exported_range": 0
+        },
+        "walk": {
+          "output": {
+            "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoCastMotionRegression/Curly-20261017-v7/clips/walk.fbx",
+            "sha256": "00584b1d1df73bde917b75186a8ebed0850dbf4822e0864d8185b817f6b78698",
+            "bytes": 541692
+          },
+          "bones": 61,
+          "half_frame_samples": 63,
+          "fresh_frame_range": [
+            2.0,
+            33.0
+          ],
+          "binary_fbx": {
+            "version": 7400,
+            "time_mode": 6,
+            "custom_frame_rate": 30.0,
+            "stack_time_ticks": {
+              "LocalStart": 1539538600,
+              "LocalStop": 49265235200,
+              "ReferenceStart": 1539538600,
+              "ReferenceStop": 49265235200
+            },
+            "declared_seconds": 1.0333333333333334,
+            "curve_max_grid_error_ktime_ticks": 1,
+            "source_exact_or_float32_30Hz_max_tick_error": 1,
+            "strict_export_clock": true,
+            "null_models": [
+              "Armature\u0000\u0001Model"
+            ]
+          },
+          "fps": 30,
+          "seconds": 1.0333333333333334,
+          "metrics": {
+            "reference": {
+              "matrix": 1.0818243026733398e-05,
+              "angle_rad": 7.19307642695806e-06,
+              "head": 6.07130893599856e-07,
+              "scale": 8.225440979003906e-06
+            },
+            "half_frame_pose_matrix_error": 1.1593103408813477e-05,
+            "half_frame_pose_rotation_error_rad": 7.757633119994962e-06,
+            "hip_xyz_error_target_units": 8.913491751257627e-08,
+            "local_translation_error": 3.1252785399862003e-07,
+            "local_scale_error": 8.344650268554688e-06,
+            "root_matrix_error": 3.552713678800501e-15,
+            "object_matrix_error": 0.0,
+            "key_and_evaluated_quaternion_norm_error": 2.384185791015625e-07,
+            "loop_matrix_error": 2.473592758178711e-06,
+            "loop_angle_error_rad": 2.5052079565879656e-06,
+            "minimum_elbow_forward_delta_deg": -11.267239933018764,
+            "minimum_elbow_signed_deg": 3.0915930178271607,
+            "maximum_rotation_step_deg_per_30Hz_frame": 32.256841301363636,
+            "maximum_upper_body_step_deg_per_30Hz_frame": 15.814987229681805,
+            "jump_inherited_lower_body_matrix_error_half_frames": 0.0,
+            "jump_acting_in_memory_lower_body_matrix_change": 0.0,
+            "gait_mapped_component_delta_error_rad": 5.060609702709645e-06,
+            "gait_finger_baseline_rotation_error_rad": 4.20434047998848e-06
+          },
+          "finger_entry_local_deviation_deg": {
+            "ring_01_l": 19.99997959445421,
+            "index_01_l": 12.000023056288143,
+            "pinky_03_r": 7.800175865016993,
+            "middle_02_l": 22.99997968363767,
+            "thumb_03_r": 3.7999360385259258,
+            "thumb_03_l": 2.9999705703246105,
+            "index_02_l": 17.999924101907926,
+            "thumb_02_r": 10.799986745228383,
+            "index_01_r": 12.799995550444336,
+            "middle_03_r": 5.799962468926474,
+            "ring_02_l": 28.000012203457334,
+            "index_02_r": 18.799986138918044,
+            "middle_03_l": 5.000003094061469,
+            "ring_01_r": 20.799986493544065,
+            "pinky_02_l": 32.99998779084644,
+            "index_03_r": 4.8000010126973525,
+            "middle_01_l": 15.999999698993298,
+            "index_03_l": 4.000155932484133,
+            "pinky_02_r": 33.799961626388836,
+            "ring_03_r": 6.79994906090871,
+            "thumb_01_r": 13.537772246643625,
+            "pinky_03_l": 6.999994519068656,
+            "pinky_01_r": 24.799980643463805,
+            "middle_02_r": 23.80001431687064,
+            "pinky_01_l": 24.000010373319196,
+            "thumb_01_l": 13.021297822627137,
+            "ring_02_r": 28.80006688965152,
+            "ring_03_l": 6.000085300679625,
+            "thumb_02_l": 10.000032655029479,
+            "middle_01_r": 16.79998444842796
+          },
+          "local_motion_from_entry_deg": {
+            "ring_01_l": 2.509259710334834e-05,
+            "index_01_l": 1.4173165127021477e-05,
+            "pinky_03_r": 1.4722018707120058e-05,
+            "hand_r": 23.351395929717278,
+            "middle_02_l": 2.9871405322275796e-05,
+            "thumb_03_r": 1.1152506735198113e-05,
+            "thumb_03_l": 1.482452403334809e-05,
+            "index_02_l": 2.8450093232044562e-05,
+            "thumb_02_r": 1.9014630280460477e-05,
+            "index_01_r": 2.349132767470996e-05,
+            "middle_03_r": 1.2500777907764982e-05,
+            "clavicle_l": 4.502108941695848,
+            "upperarm_r": 27.19098577921641,
+            "ring_02_l": 2.5391693303624385e-05,
+            "index_02_r": 1.539310318863298e-05,
+            "middle_03_l": 1.2706646318192759e-05,
+            "ring_01_r": 1.6261408023679635e-05,
+            "clavicle_r": 4.693834903517099,
+            "pinky_02_l": 3.518584859697737e-05,
+            "index_03_r": 1.5068594469252784e-05,
+            "middle_01_l": 1.2932825873389344e-05,
+            "index_03_l": 1.666619954997719e-05,
+            "lowerarm_r": 14.226307340728788,
+            "pinky_02_r": 2.9157543856498362e-05,
+            "ring_03_r": 1.3239602759269973e-05,
+            "thumb_01_r": 2.7681890701037585e-05,
+            "hand_l": 31.346787368576933,
+            "pinky_03_l": 1.9243652053882194e-05,
+            "middle_02_r": 2.546855988112139e-05,
+            "pinky_01_l": 2.1190374642654175e-05,
+            "thumb_01_l": 2.9434303055814032e-05,
+            "upperarm_l": 27.687676685332505,
+            "middle_01_r": 1.8066252185567418e-05,
+            "ring_02_r": 3.1239441287848504e-05,
+            "ring_03_l": 1.510609482188509e-05,
+            "lowerarm_l": 47.538413593726474,
+            "thumb_02_l": 1.2914327038283589e-05,
+            "pinky_01_r": 3.2115432235379236e-05
+          },
+          "entry_palm_inward_dot": {
+            "l": 0.6286248706780988,
+            "r": 0.8104604988140967
+          },
+          "neutral_reference_frame_outside_exported_range": 0
+        },
+        "run": {
+          "output": {
+            "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoCastMotionRegression/Curly-20261017-v7/clips/run.fbx",
+            "sha256": "5ce7aeb5af4523cb94c4b45dfc7fc715122c58e51a93744fe09a45ee70f6d9e7",
+            "bytes": 473628
+          },
+          "bones": 61,
+          "half_frame_samples": 39,
+          "fresh_frame_range": [
+            2.0,
+            21.0
+          ],
+          "binary_fbx": {
+            "version": 7400,
+            "time_mode": 6,
+            "custom_frame_rate": 30.0,
+            "stack_time_ticks": {
+              "LocalStart": 1539538600,
+              "LocalStop": 30790772000,
+              "ReferenceStart": 1539538600,
+              "ReferenceStop": 30790772000
+            },
+            "declared_seconds": 0.6333333333333333,
+            "curve_max_grid_error_ktime_ticks": 1,
+            "source_exact_or_float32_30Hz_max_tick_error": 1,
+            "strict_export_clock": true,
+            "null_models": [
+              "Armature\u0000\u0001Model"
+            ]
+          },
+          "fps": 30,
+          "seconds": 0.6333333333333333,
+          "metrics": {
+            "reference": {
+              "matrix": 1.0818243026733398e-05,
+              "angle_rad": 7.19307642695806e-06,
+              "head": 6.07130893599856e-07,
+              "scale": 8.225440979003906e-06
+            },
+            "half_frame_pose_matrix_error": 1.1861324310302734e-05,
+            "half_frame_pose_rotation_error_rad": 8.457169116000474e-06,
+            "hip_xyz_error_target_units": 8.865223583205078e-08,
+            "local_translation_error": 3.8204018132757154e-07,
+            "local_scale_error": 8.344650268554688e-06,
+            "root_matrix_error": 3.552713678800501e-15,
+            "object_matrix_error": 0.0,
+            "key_and_evaluated_quaternion_norm_error": 3.5762786865234375e-07,
+            "loop_matrix_error": 2.115964889526367e-06,
+            "loop_angle_error_rad": 2.149860217626787e-06,
+            "minimum_elbow_forward_delta_deg": 48.15129902062695,
+            "minimum_elbow_signed_deg": 62.51013197147287,
+            "maximum_rotation_step_deg_per_30Hz_frame": 63.33800430970386,
+            "maximum_upper_body_step_deg_per_30Hz_frame": 35.540921968689894,
+            "jump_inherited_lower_body_matrix_error_half_frames": 0.0,
+            "jump_acting_in_memory_lower_body_matrix_change": 0.0,
+            "gait_mapped_component_delta_error_rad": 5.698856513470513e-06,
+            "gait_finger_baseline_rotation_error_rad": 4.379007100852165e-06
+          },
+          "finger_entry_local_deviation_deg": {
+            "ring_01_l": 19.99998898838823,
+            "index_01_l": 12.000021096903428,
+            "pinky_03_r": 7.800171437772774,
+            "middle_02_l": 22.999982306406057,
+            "thumb_03_r": 3.799932896809136,
+            "thumb_03_l": 2.9999744548600136,
+            "index_02_l": 17.999922811997727,
+            "thumb_02_r": 10.79998766254299,
+            "index_01_r": 12.799981287267952,
+            "middle_03_r": 5.79995988483078,
+            "ring_02_l": 28.000017434370044,
+            "index_02_r": 18.79999010252023,
+            "middle_03_l": 5.000003781528547,
+            "ring_01_r": 20.79999487499199,
+            "pinky_02_l": 33.000014326953654,
+            "index_03_r": 4.799998068537355,
+            "middle_01_l": 15.999995283227022,
+            "index_03_l": 4.000152410837474,
+            "pinky_02_r": 33.79997571111494,
+            "ring_03_r": 6.799936863489224,
+            "thumb_01_r": 13.53777525595868,
+            "pinky_03_l": 7.000003134445433,
+            "pinky_01_r": 24.79998733286175,
+            "middle_02_r": 23.799999551353167,
+            "pinky_01_l": 24.000008100558155,
+            "thumb_01_l": 13.021280433047377,
+            "ring_02_r": 28.80005216996348,
+            "ring_03_l": 6.000083248424061,
+            "thumb_02_l": 10.000031511445773,
+            "middle_01_r": 16.79998446536672
+          },
+          "local_motion_from_entry_deg": {
+            "ring_01_l": 1.3320135225313299e-05,
+            "index_01_l": 1.3559447426280074e-05,
+            "pinky_03_r": 1.8539845590308582e-05,
+            "hand_r": 42.11743977758397,
+            "middle_02_l": 2.6202518363773164e-05,
+            "thumb_03_r": 1.1871301020875126e-05,
+            "thumb_03_l": 1.2818218572986789e-05,
+            "index_02_l": 1.863447554213274e-05,
+            "thumb_02_r": 1.732028267539567e-05,
+            "index_01_r": 1.3503875875250774e-05,
+            "middle_03_r": 1.5225179903055795e-05,
+            "clavicle_l": 7.7585198136985705,
+            "upperarm_r": 85.37796597996072,
+            "ring_02_l": 2.785599742194476e-05,
+            "index_02_r": 1.3642023215172317e-05,
+            "middle_03_l": 1.298197363335613e-05,
+            "ring_01_r": 2.0141937302375606e-05,
+            "clavicle_r": 9.543632229691706,
+            "pinky_02_l": 2.145776638523877e-05,
+            "index_03_r": 7.566962410390953e-06,
+            "middle_01_l": 1.1882709053837768e-05,
+            "index_03_l": 1.846931916426178e-05,
+            "lowerarm_r": 29.273207402649266,
+            "pinky_02_r": 3.1572719779964826e-05,
+            "ring_03_r": 2.234060885724135e-05,
+            "thumb_01_r": 1.6361519993116103e-05,
+            "hand_l": 25.50602243251864,
+            "pinky_03_l": 1.5895154670994002e-05,
+            "middle_02_r": 2.1540144494595942e-05,
+            "pinky_01_l": 3.218415949484121e-05,
+            "thumb_01_l": 3.0679474215707706e-05,
+            "upperarm_l": 105.71384030184281,
+            "middle_01_r": 1.7495930404042812e-05,
+            "ring_02_r": 2.6556391161130248e-05,
+            "ring_03_l": 1.0715767211219835e-05,
+            "lowerarm_l": 45.238114833697644,
+            "thumb_02_l": 1.7640612010186538e-05,
+            "pinky_01_r": 1.4187566065949253e-05
+          },
+          "entry_palm_inward_dot": {
+            "l": 0.9272577819187662,
+            "r": 0.975668848943027
+          },
+          "neutral_reference_frame_outside_exported_range": 0
+        }
+      },
+      "half_frame_samples": 416,
+      "retained_inputs_unchanged": true
+    },
+    "GreenCap51": {
+      "passed": true,
+      "inputs": {
+        "provider_fbx": {
+          "path": "Data/GraphicNovel/Crew/GreenCap51/tripo-v3-rig-20261017/rig.fbx",
+          "sha256": "5ccc52f3d10544adc7788a06fd64aed4d9191a6d1171b7fed8b9b606cfc83958"
+        },
+        "source_body_fbx": {
+          "path": "Data/GraphicNovel/Crew/GreenCap51/generated-v1-high-detail/body.fbx",
+          "sha256": "2ebbda49054a6b274305ae0c07db3021f8334df90de27d2e98b46362c4d24dc3"
+        },
+        "walk_fbx": {
+          "path": "Data/GraphicNovel/Crew/GreenCap51/generated-v1-high-detail/walk.fbx",
+          "sha256": "81da0dcdcc04d9465bc9aef1cc69d88fe8d3261936d0f29398d7f4b07a63ed02"
+        },
+        "run_fbx": {
+          "path": "Data/GraphicNovel/Crew/GreenCap51/generated-v1-high-detail/run.fbx",
+          "sha256": "39e8eacb4288b920c78633c89c28f67ab25fbca47546ebaa4d97d993a7633793"
+        }
+      },
+      "manifest": {
+        "path": "Saved/Tests/TripoCastMotion/GreenCap51-v3/manifest.json",
+        "sha256": "cf1ec1f4235dc543314da16374c9fcc016e6d3ffe35c494608159af6185670dc"
+      },
+      "full_receipt": {
+        "path": "Saved/Tests/TripoCastMotion/GreenCap51-v3/report/Motion.json",
+        "sha256": "6b0994ae4dc72c751dd4b0c53c88a310a459adfd5f46abd09444db9fcb7e12e4"
+      },
+      "log": {
+        "path": "Saved/Tests/TripoCastMotion/GreenCap51-v3/blender.log",
+        "sha256": "b7600191f2b15fd50467d01075d01e035e886dc10138c9f37578eb9af682ef0e"
+      },
+      "rig": {
+        "bones": 61,
+        "hierarchy": {
+          "root": null,
+          "pelvis": "root",
+          "spine_01": "pelvis",
+          "spine_02": "spine_01",
+          "spine_03": "spine_02",
+          "clavicle_l": "spine_03",
+          "upperarm_l": "clavicle_l",
+          "lowerarm_l": "upperarm_l",
+          "hand_l": "lowerarm_l",
+          "index_01_l": "hand_l",
+          "index_02_l": "index_01_l",
+          "index_03_l": "index_02_l",
+          "middle_01_l": "hand_l",
+          "middle_02_l": "middle_01_l",
+          "middle_03_l": "middle_02_l",
+          "pinky_01_l": "hand_l",
+          "pinky_02_l": "pinky_01_l",
+          "pinky_03_l": "pinky_02_l",
+          "ring_01_l": "hand_l",
+          "ring_02_l": "ring_01_l",
+          "ring_03_l": "ring_02_l",
+          "thumb_01_l": "hand_l",
+          "thumb_02_l": "thumb_01_l",
+          "thumb_03_l": "thumb_02_l",
+          "lowerarm_twist_01_l": "lowerarm_l",
+          "upperarm_twist_01_l": "upperarm_l",
+          "clavicle_r": "spine_03",
+          "upperarm_r": "clavicle_r",
+          "lowerarm_r": "upperarm_r",
+          "hand_r": "lowerarm_r",
+          "index_01_r": "hand_r",
+          "index_02_r": "index_01_r",
+          "index_03_r": "index_02_r",
+          "middle_01_r": "hand_r",
+          "middle_02_r": "middle_01_r",
+          "middle_03_r": "middle_02_r",
+          "pinky_01_r": "hand_r",
+          "pinky_02_r": "pinky_01_r",
+          "pinky_03_r": "pinky_02_r",
+          "ring_01_r": "hand_r",
+          "ring_02_r": "ring_01_r",
+          "ring_03_r": "ring_02_r",
+          "thumb_01_r": "hand_r",
+          "thumb_02_r": "thumb_01_r",
+          "thumb_03_r": "thumb_02_r",
+          "lowerarm_twist_01_r": "lowerarm_r",
+          "upperarm_twist_01_r": "upperarm_r",
+          "neck_01": "spine_03",
+          "head": "neck_01",
+          "thigh_l": "pelvis",
+          "calf_l": "thigh_l",
+          "calf_twist_01_l": "calf_l",
+          "foot_l": "calf_l",
+          "ball_l": "foot_l",
+          "thigh_twist_01_l": "thigh_l",
+          "thigh_r": "pelvis",
+          "calf_r": "thigh_r",
+          "calf_twist_01_r": "calf_r",
+          "foot_r": "calf_r",
+          "ball_r": "foot_r",
+          "thigh_twist_01_r": "thigh_r"
+        },
+        "weighted_finger_sums": {
+          "middle_01_l": 107.21427235734882,
+          "pinky_01_l": 124.34567107743351,
+          "thumb_02_l": 94.79762017790927,
+          "thumb_01_l": 139.43948088295292,
+          "middle_03_l": 101.3882627368439,
+          "thumb_02_r": 61.58771545533091,
+          "ring_02_r": 51.84329353575595,
+          "index_03_r": 103.4393556304276,
+          "ring_01_l": 118.07895021649892,
+          "ring_02_l": 58.49308280821424,
+          "index_02_l": 76.67586521689373,
+          "index_03_l": 104.46675238152966,
+          "thumb_03_r": 131.70434307400137,
+          "pinky_03_l": 78.3127375266049,
+          "ring_03_l": 106.56339151738212,
+          "pinky_02_l": 46.7019466040656,
+          "index_01_r": 89.09945643192623,
+          "thumb_03_l": 133.70837187115103,
+          "middle_02_r": 55.44026252857293,
+          "middle_01_r": 90.94568515998435,
+          "pinky_03_r": 88.0020249504596,
+          "middle_03_r": 116.58146190748084,
+          "index_01_l": 111.65293747815304,
+          "pinky_02_r": 42.65274810757546,
+          "middle_02_l": 71.28677398120635,
+          "thumb_01_r": 121.73542928183451,
+          "ring_03_r": 102.3386104182573,
+          "ring_01_r": 97.9190464016283,
+          "pinky_01_r": 104.39151454810053,
+          "index_02_r": 52.945398382958956
+        },
+        "bind_elbow_signed_deg": {
+          "l": 9.222074316170298,
+          "r": 9.302189922815415
+        },
+        "anatomical_axes": {
+          "up": [
+            0.0,
+            -0.011627410538494587,
+            0.9999324083328247
+          ],
+          "side": [
+            1.0,
+            0.0,
+            0.0
+          ],
+          "forward": [
+            0.0,
+            -0.9999324083328247,
+            -0.011627384461462498
+          ]
+        },
+        "actual_rig_backward_axis_negative_control": {
+          "l": {
+            "forward20_delta_deg": 19.999988116187225,
+            "backward_negative20_delta_deg": -19.99999400904902
+          },
+          "r": {
+            "forward20_delta_deg": 20.000002342716098,
+            "backward_negative20_delta_deg": -19.99999885702807
+          }
+        }
+      },
+      "source_body_provider_correspondence": {
+        "triangles": 102957,
+        "corners": 308871,
+        "provider_to_source_uniform_scale": 1.820000243253598,
+        "source_residual_max_m": 9.066176993895915e-06,
+        "source_residual_mean_m": 9.180602218003141e-07,
+        "corners_over_2micron": 35180,
+        "source_residual_p99_m": 5.8519609624382825e-06,
+        "source_residual_abs_axis_m": {
+          "x": {
+            "max": 8.53269163254844e-06,
+            "p99": 5.518567850044259e-06,
+            "mean": 8.21833324644658e-07
+          },
+          "y": {
+            "max": 2.890258889096109e-06,
+            "p99": 1.9307686878466956e-06,
+            "mean": 3.104378236134521e-07
+          },
+          "z": {
+            "max": 1.116040593031331e-06,
+            "p99": 7.024115484810523e-07,
+            "mean": 1.6090579945410777e-07
+          }
+        },
+        "residual_limit_m": 1e-05,
+        "exact_source_positions_claimed": false,
+        "translation_or_rotation_fit": false,
+        "uv_quantization": 1e-06,
+        "scale_fit_unambiguous_triangles": 102951,
+        "uv_duplicate_triangle_groups": 1,
+        "uv_duplicate_triangles": 2,
+        "uv_corner_tie_triangles": 6,
+        "geometry_resolved_groups": [
+          {
+            "target_sorted_triangle_range": [
+              0,
+              2
+            ],
+            "triangles": 2,
+            "unique_geometry_bijection": true,
+            "mapping": [
+              {
+                "target_triangle": 0,
+                "source_triangle": 0,
+                "source_corner_order": [
+                  0,
+                  1,
+                  2
+                ],
+                "candidate_count": 1,
+                "geometry_residual_max_m": 4.936041403355349e-07
+              },
+              {
+                "target_triangle": 1,
+                "source_triangle": 1,
+                "source_corner_order": [
+                  0,
+                  1,
+                  2
+                ],
+                "candidate_count": 1,
+                "geometry_residual_max_m": 4.936041403355349e-07
+              }
+            ]
+          },
+          {
+            "target_sorted_triangle_range": [
+              5280,
+              5281
+            ],
+            "triangles": 1,
+            "unique_geometry_bijection": true,
+            "mapping": [
+              {
+                "target_triangle": 5280,
+                "source_triangle": 5280,
+                "source_corner_order": [
+                  0,
+                  1,
+                  2
+                ],
+                "candidate_count": 1,
+                "geometry_residual_max_m": 4.229839786347013e-07
+              }
+            ]
+          },
+          {
+            "target_sorted_triangle_range": [
+              15640,
+              15641
+            ],
+            "triangles": 1,
+            "unique_geometry_bijection": true,
+            "mapping": [
+              {
+                "target_triangle": 15640,
+                "source_triangle": 15640,
+                "source_corner_order": [
+                  0,
+                  1,
+                  2
+                ],
+                "candidate_count": 1,
+                "geometry_residual_max_m": 5.384336096161679e-07
+              }
+            ]
+          },
+          {
+            "target_sorted_triangle_range": [
+              45614,
+              45615
+            ],
+            "triangles": 1,
+            "unique_geometry_bijection": true,
+            "mapping": [
+              {
+                "target_triangle": 45614,
+                "source_triangle": 45614,
+                "source_corner_order": [
+                  0,
+                  1,
+                  2
+                ],
+                "candidate_count": 1,
+                "geometry_residual_max_m": 4.229839786347013e-07
+              }
+            ]
+          },
+          {
+            "target_sorted_triangle_range": [
+              50131,
+              50132
+            ],
+            "triangles": 1,
+            "unique_geometry_bijection": true,
+            "mapping": [
+              {
+                "target_triangle": 50131,
+                "source_triangle": 50131,
+                "source_corner_order": [
+                  0,
+                  1,
+                  2
+                ],
+                "candidate_count": 1,
+                "geometry_residual_max_m": 5.384336096161679e-07
+              }
+            ]
+          }
+        ],
+        "geometry_mapping_unique": true
+      },
+      "scaling": {
+        "provider_to_source_uniform_scale": 1.820000243253598,
+        "source_surface_residual_max_m": 9.066176993895915e-06,
+        "source_xyz_to_target_factor": 0.005494504637321187,
+        "source_object_scale": [
+          0.009999999776482582,
+          0.009999999776482582,
+          0.009999999776482582
+        ],
+        "target_object_scale": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "rescale_or_translation_applied": false,
+        "uv_triangles": 102957
+      },
+      "source_clips": {
+        "walk": {
+          "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoCastMotion-jzuma_7i/walk_fbx.fbx",
+          "source_range": [
+            1.0,
+            32.0
+          ],
+          "binary_fbx": {
+            "version": 7400,
+            "time_mode": 6,
+            "custom_frame_rate": 30.0,
+            "stack_time_ticks": {
+              "LocalStart": 0,
+              "LocalStop": 47725695132,
+              "ReferenceStart": 0,
+              "ReferenceStop": 47725695132
+            },
+            "declared_seconds": 1.0333333015489186,
+            "curve_max_grid_error_ktime_ticks": 1468,
+            "source_exact_or_float32_30Hz_max_tick_error": 1,
+            "strict_export_clock": false,
+            "null_models": [
+              "Armature\u0000\u0001Model"
+            ]
+          },
+          "own_body_reference_error": {
+            "matrix": 0.0,
+            "angle_rad": 6.828570318369046e-08,
+            "head": 0.0,
+            "scale": 0.0,
+            "world_head_m": 1.6465456520942117e-07,
+            "basis_matrix": 0.0
+          }
+        },
+        "run": {
+          "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoCastMotion-jzuma_7i/run_fbx.fbx",
+          "source_range": [
+            1.0,
+            20.0
+          ],
+          "binary_fbx": {
+            "version": 7400,
+            "time_mode": 6,
+            "custom_frame_rate": 30.0,
+            "stack_time_ticks": {
+              "LocalStart": 0,
+              "LocalStop": 29251233033,
+              "ReferenceStart": 0,
+              "ReferenceStop": 29251233033
+            },
+            "declared_seconds": 0.6333333253872296,
+            "curve_max_grid_error_ktime_ticks": 1285,
+            "source_exact_or_float32_30Hz_max_tick_error": 1,
+            "strict_export_clock": false,
+            "null_models": [
+              "Armature\u0000\u0001Model"
+            ]
+          },
+          "own_body_reference_error": {
+            "matrix": 0.0,
+            "angle_rad": 6.828570318369046e-08,
+            "head": 0.0,
+            "scale": 0.0,
+            "world_head_m": 1.6465456520942117e-07,
+            "basis_matrix": 0.0
+          }
+        },
+        "jump": {
+          "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoCastMotion-jzuma_7i/corrected-source/Character/jump.fbx",
+          "source_range": [
+            2.0,
+            38.0
+          ],
+          "binary_fbx": {
+            "version": 7400,
+            "time_mode": 6,
+            "custom_frame_rate": 30.0,
+            "stack_time_ticks": {
+              "LocalStart": 1539538600,
+              "LocalStop": 56962928200,
+              "ReferenceStart": 1539538600,
+              "ReferenceStop": 56962928200
+            },
+            "declared_seconds": 1.2,
+            "curve_max_grid_error_ktime_ticks": 1,
+            "source_exact_or_float32_30Hz_max_tick_error": 1,
+            "strict_export_clock": false,
+            "null_models": [
+              "Armature\u0000\u0001Model"
+            ]
+          },
+          "own_body_reference_error": {
+            "matrix": 0.000152587890625,
+            "angle_rad": 1.519341013355033e-05,
+            "head": 0.00016469810659979324,
+            "scale": 3.2186508178710938e-06,
+            "world_head_m": 1.661999606354656e-06,
+            "basis_matrix": 1.3113021850585938e-05
+          }
+        }
+      },
+      "corrected_source_jump": {
+        "command": [
+          "/home/von/.local/opt/blender-5.2.2-linux-x64/blender",
+          "-b",
+          "-t",
+          "4",
+          "--python-exit-code",
+          "1",
+          "--python",
+          "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Scripts/prepare_meshy_jump.py",
+          "--",
+          "--source-root",
+          "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoCastMotion-jzuma_7i/corrected-source",
+          "--names",
+          "Character",
+          "--report",
+          "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoCastMotion-jzuma_7i/SourceJump.json"
+        ],
+        "process_exit_code": 0,
+        "author_recipe_sha256": "51cbc1072264c31eeafdd65cf1dfef76b36ac154e84d6a93b97f425a3e73a857",
+        "body_copy_sha256": "2ebbda49054a6b274305ae0c07db3021f8334df90de27d2e98b46362c4d24dc3",
+        "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoCastMotion-jzuma_7i/corrected-source/Character/jump.fbx",
+        "receipt_path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoCastMotion-jzuma_7i/SourceJump.json",
+        "sha256": "d61ec852fe66432376b1c4bf1d08b98c2b1e82e4d7ab86025603a942ed8ea0b5"
+      },
+      "idle_jump_endpoint_matrix_error": 5.364418029785156e-06,
+      "clips": {
+        "idle": {
+          "output": {
+            "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoCastMotion/GreenCap51-v3/clips/idle.fbx",
+            "sha256": "b40fcb6bab64c1cb9eb29963d5c4abffa2b6afd18b350f07e341409a6d3c5e8d",
+            "bytes": 838236
+          },
+          "bones": 61,
+          "half_frame_samples": 241,
+          "fresh_frame_range": [
+            2.0,
+            122.0
+          ],
+          "binary_fbx": {
+            "version": 7400,
+            "time_mode": 6,
+            "custom_frame_rate": 30.0,
+            "stack_time_ticks": {
+              "LocalStart": 1539538600,
+              "LocalStop": 186284170600,
+              "ReferenceStart": 1539538600,
+              "ReferenceStop": 186284170600
+            },
+            "declared_seconds": 4.0,
+            "curve_max_grid_error_ktime_ticks": 1,
+            "source_exact_or_float32_30Hz_max_tick_error": 1,
+            "strict_export_clock": true,
+            "null_models": [
+              "Armature\u0000\u0001Model"
+            ]
+          },
+          "fps": 30,
+          "seconds": 4.0,
+          "metrics": {
+            "reference": {
+              "matrix": 8.761882781982422e-06,
+              "angle_rad": 1.1540235791413939e-05,
+              "head": 9.93368059721394e-07,
+              "scale": 7.152557373046875e-07
+            },
+            "half_frame_pose_matrix_error": 8.940696716308594e-06,
+            "half_frame_pose_rotation_error_rad": 1.1639981687993196e-05,
+            "hip_xyz_error_target_units": 0.0,
+            "local_translation_error": 3.94893651678278e-07,
+            "local_scale_error": 9.5367431640625e-07,
+            "root_matrix_error": 7.105427357601002e-15,
+            "object_matrix_error": 0.0,
+            "key_and_evaluated_quaternion_norm_error": 4.172325134277344e-07,
+            "loop_matrix_error": 0.0,
+            "loop_angle_error_rad": 6.841260072666015e-08,
+            "minimum_elbow_forward_delta_deg": 14.000004511932575,
+            "minimum_elbow_signed_deg": 23.222078828102873,
+            "maximum_rotation_step_deg_per_30Hz_frame": 0.08129248311529541,
+            "maximum_upper_body_step_deg_per_30Hz_frame": 0.08129248311529541,
+            "jump_inherited_lower_body_matrix_error_half_frames": 0.0,
+            "jump_acting_in_memory_lower_body_matrix_change": 0.0,
+            "gait_mapped_component_delta_error_rad": 0.0,
+            "gait_finger_baseline_rotation_error_rad": 0.0
+          },
+          "finger_entry_local_deviation_deg": {
+            "middle_01_l": 16.000040563120706,
+            "pinky_01_l": 24.000049686639887,
+            "thumb_02_l": 10.000024830501934,
+            "thumb_01_l": 12.912371200292943,
+            "middle_03_l": 4.999880293967506,
+            "thumb_02_r": 10.800087490043833,
+            "ring_02_r": 28.799921350990484,
+            "index_03_r": 4.799953789345495,
+            "ring_01_l": 20.000000711918595,
+            "ring_02_l": 28.00007598097658,
+            "index_02_l": 18.000105321169155,
+            "index_03_l": 3.9996970019571085,
+            "thumb_03_r": 3.799810393321764,
+            "pinky_03_l": 6.999797195135341,
+            "ring_03_l": 5.999906714591576,
+            "pinky_02_l": 33.00002026499649,
+            "index_01_r": 12.800045543773924,
+            "thumb_03_l": 2.9999735559252887,
+            "middle_02_r": 23.799992065381844,
+            "middle_01_r": 16.799987216700778,
+            "pinky_03_r": 7.7997698029212215,
+            "middle_03_r": 5.800021473371093,
+            "index_01_l": 11.999993443442865,
+            "pinky_02_r": 33.80037130036451,
+            "middle_02_l": 22.999954293112328,
+            "thumb_01_r": 13.159492238724262,
+            "ring_03_r": 6.8001560847027465,
+            "ring_01_r": 20.799988591883487,
+            "pinky_01_r": 24.79997581402198,
+            "index_02_r": 18.800025601320865
+          },
+          "local_motion_from_entry_deg": {
+            "middle_01_l": 0.7999914964916501,
+            "pinky_01_l": 0.799990354468013,
+            "thumb_02_l": 0.800003050786378,
+            "thumb_01_l": 0.8000077326171109,
+            "middle_03_l": 0.8000042257438775,
+            "lowerarm_l": 1.1999897908580572,
+            "clavicle_r": 0.19999373941187218,
+            "thumb_02_r": 0.7999943011856795,
+            "ring_02_r": 0.8000090753204074,
+            "lowerarm_r": 1.2000043188836478,
+            "index_03_r": 0.8000047171377375,
+            "ring_01_l": 0.8000032243251488,
+            "ring_02_l": 0.7999878883881751,
+            "index_02_l": 0.800004455898283,
+            "index_03_l": 0.7999914413519393,
+            "upperarm_r": 0.42263266728228965,
+            "thumb_03_r": 0.7999921373781862,
+            "pinky_03_l": 0.7999942180252322,
+            "ring_03_l": 0.7999918518728282,
+            "pinky_02_l": 0.7999742672648659,
+            "index_01_r": 0.7999975516007969,
+            "thumb_03_l": 0.800002863149804,
+            "middle_02_r": 0.8000176850253721,
+            "clavicle_l": 0.39997988400309453,
+            "middle_01_r": 0.8000137170944716,
+            "pinky_03_r": 0.8000093552298494,
+            "middle_03_r": 0.7999907621131591,
+            "hand_l": 0.40000468594186606,
+            "index_01_l": 0.8000064413376224,
+            "pinky_02_r": 0.8000210429727689,
+            "middle_02_l": 0.8000056592987408,
+            "upperarm_l": 0.42014502380801416,
+            "thumb_01_r": 0.7999955514118144,
+            "ring_03_r": 0.8000076144395699,
+            "ring_01_r": 0.7999974964499313,
+            "pinky_01_r": 0.8000071682523093,
+            "hand_r": 0.4000064718450979,
+            "index_02_r": 0.8000088178076298
+          },
+          "entry_palm_inward_dot": {
+            "l": 0.9959156513214111,
+            "r": 0.9991910457611084
+          },
+          "neutral_reference_frame_outside_exported_range": 0
+        },
+        "jump": {
+          "output": {
+            "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoCastMotion/GreenCap51-v3/clips/jump.fbx",
+            "sha256": "e3cdbab19244acd5756ddb44352837128a9f6b269ea58b182118d8921ab2d36d",
+            "bytes": 531948
+          },
+          "bones": 61,
+          "half_frame_samples": 73,
+          "fresh_frame_range": [
+            2.0,
+            38.0
+          ],
+          "binary_fbx": {
+            "version": 7400,
+            "time_mode": 6,
+            "custom_frame_rate": 30.0,
+            "stack_time_ticks": {
+              "LocalStart": 1539538600,
+              "LocalStop": 56962928200,
+              "ReferenceStart": 1539538600,
+              "ReferenceStop": 56962928200
+            },
+            "declared_seconds": 1.2,
+            "curve_max_grid_error_ktime_ticks": 1,
+            "source_exact_or_float32_30Hz_max_tick_error": 1,
+            "strict_export_clock": true,
+            "null_models": [
+              "Armature\u0000\u0001Model"
+            ]
+          },
+          "fps": 30,
+          "seconds": 1.2,
+          "metrics": {
+            "reference": {
+              "matrix": 8.761882781982422e-06,
+              "angle_rad": 1.1540235791413939e-05,
+              "head": 9.93368059721394e-07,
+              "scale": 7.152557373046875e-07
+            },
+            "half_frame_pose_matrix_error": 1.1622905731201172e-05,
+            "half_frame_pose_rotation_error_rad": 1.6266033650298368e-05,
+            "hip_xyz_error_target_units": 1.272450821034226e-07,
+            "local_translation_error": 2.9805775289361924e-07,
+            "local_scale_error": 7.152557373046875e-07,
+            "root_matrix_error": 7.105427357601002e-15,
+            "object_matrix_error": 0.0,
+            "key_and_evaluated_quaternion_norm_error": 6.556510925292969e-07,
+            "loop_matrix_error": 0.0,
+            "loop_angle_error_rad": 8.429368697319749e-08,
+            "minimum_elbow_forward_delta_deg": 13.999987527488885,
+            "minimum_elbow_signed_deg": 23.222061843659183,
+            "maximum_rotation_step_deg_per_30Hz_frame": 26.48153609567197,
+            "maximum_upper_body_step_deg_per_30Hz_frame": 15.164722235678601,
+            "jump_inherited_lower_body_matrix_error_half_frames": 0.0,
+            "jump_acting_in_memory_lower_body_matrix_change": 0.0,
+            "gait_mapped_component_delta_error_rad": 0.0,
+            "gait_finger_baseline_rotation_error_rad": 0.0
+          },
+          "finger_entry_local_deviation_deg": {
+            "middle_01_l": 16.000040942801355,
+            "pinky_01_l": 24.000053703322166,
+            "thumb_02_l": 10.000022662120813,
+            "thumb_01_l": 12.912369820646829,
+            "middle_03_l": 4.999878728006613,
+            "thumb_02_r": 10.800090822001202,
+            "ring_02_r": 28.799924364489794,
+            "index_03_r": 4.799955261429896,
+            "ring_01_l": 19.99999541599002,
+            "ring_02_l": 28.000076623038353,
+            "index_02_l": 18.00010666878591,
+            "index_03_l": 3.9996946381345686,
+            "thumb_03_r": 3.7998091112919465,
+            "pinky_03_l": 6.9998010120821075,
+            "ring_03_l": 5.999907414576544,
+            "pinky_02_l": 33.00000913781814,
+            "index_01_r": 12.80004637629038,
+            "thumb_03_l": 2.9999724458132655,
+            "middle_02_r": 23.79999367982511,
+            "middle_01_r": 16.799986596423153,
+            "pinky_03_r": 7.799768726748611,
+            "middle_03_r": 5.800019761667228,
+            "index_01_l": 11.99999192035456,
+            "pinky_02_r": 33.800367192511594,
+            "middle_02_l": 22.99995639132772,
+            "thumb_01_r": 13.159493343753072,
+            "ring_03_r": 6.800151116898922,
+            "ring_01_r": 20.799988301138395,
+            "pinky_01_r": 24.79997678481696,
+            "index_02_r": 18.800028824595408
+          },
+          "local_motion_from_entry_deg": {
+            "middle_01_l": 1.0229195733237105e-05,
+            "pinky_01_l": 1.5433427010310252e-05,
+            "thumb_02_l": 9.459645798627228e-06,
+            "thumb_01_l": 2.0523890946446156e-05,
+            "middle_03_l": 9.565716354985165e-06,
+            "lowerarm_l": 35.99082188933374,
+            "clavicle_r": 2.316229839909717e-05,
+            "thumb_02_r": 1.1731402844566356e-05,
+            "ring_02_r": 1.0594650453460444e-05,
+            "lowerarm_r": 16.997135344417302,
+            "index_03_r": 1.0289065712487282e-05,
+            "ring_01_l": 1.2747437572811242e-05,
+            "ring_02_l": 9.992668497915127e-06,
+            "index_02_l": 8.324445867881228e-06,
+            "index_03_l": 1.0077729643567447e-05,
+            "upperarm_r": 12.176152658214585,
+            "thumb_03_r": 1.0590686767855087e-05,
+            "pinky_03_l": 1.0663643643397572e-05,
+            "ring_03_l": 1.0154253680199937e-05,
+            "pinky_02_l": 1.4429375510756106e-05,
+            "index_01_r": 7.184370561580937e-06,
+            "thumb_03_l": 8.402306527365903e-06,
+            "middle_02_r": 1.1361852631701491e-05,
+            "clavicle_l": 3.89754916703587e-05,
+            "middle_01_r": 9.905483954285923e-06,
+            "pinky_03_r": 8.237002271945738e-06,
+            "middle_03_r": 1.3116065205728906e-05,
+            "hand_l": 9.492529577399423e-06,
+            "index_01_l": 9.435086839270372e-06,
+            "pinky_02_r": 1.3766788163665411e-05,
+            "middle_02_l": 8.55443708321312e-06,
+            "upperarm_l": 12.080956313070295,
+            "thumb_01_r": 1.709680190452647e-05,
+            "ring_03_r": 1.2112562947627315e-05,
+            "ring_01_r": 9.322012713161122e-06,
+            "pinky_01_r": 1.0664600579247936e-05,
+            "hand_r": 7.441929193251411e-06,
+            "index_02_r": 1.3039306097326426e-05
+          },
+          "entry_palm_inward_dot": {
+            "l": 0.9959158301353455,
+            "r": 0.9991909265518188
+          },
+          "neutral_reference_frame_outside_exported_range": 0
+        },
+        "walk": {
+          "output": {
+            "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoCastMotion/GreenCap51-v3/clips/walk.fbx",
+            "sha256": "53c85a0f32ef5c223f53c00b58c4fad86e81b6c68531bd5d3e7c28a6da4e271b",
+            "bytes": 541692
+          },
+          "bones": 61,
+          "half_frame_samples": 63,
+          "fresh_frame_range": [
+            2.0,
+            33.0
+          ],
+          "binary_fbx": {
+            "version": 7400,
+            "time_mode": 6,
+            "custom_frame_rate": 30.0,
+            "stack_time_ticks": {
+              "LocalStart": 1539538600,
+              "LocalStop": 49265235200,
+              "ReferenceStart": 1539538600,
+              "ReferenceStop": 49265235200
+            },
+            "declared_seconds": 1.0333333333333334,
+            "curve_max_grid_error_ktime_ticks": 1,
+            "source_exact_or_float32_30Hz_max_tick_error": 1,
+            "strict_export_clock": true,
+            "null_models": [
+              "Armature\u0000\u0001Model"
+            ]
+          },
+          "fps": 30,
+          "seconds": 1.0333333333333334,
+          "metrics": {
+            "reference": {
+              "matrix": 8.761882781982422e-06,
+              "angle_rad": 1.1540235791413939e-05,
+              "head": 9.93368059721394e-07,
+              "scale": 7.152557373046875e-07
+            },
+            "half_frame_pose_matrix_error": 1.329183578491211e-05,
+            "half_frame_pose_rotation_error_rad": 1.537765358590986e-05,
+            "hip_xyz_error_target_units": 1.1590383340495858e-07,
+            "local_translation_error": 3.203810195472312e-07,
+            "local_scale_error": 2.384185791015625e-06,
+            "root_matrix_error": 7.105427357601002e-15,
+            "object_matrix_error": 0.0,
+            "key_and_evaluated_quaternion_norm_error": 1.1920928955078125e-06,
+            "loop_matrix_error": 3.121793270111084e-06,
+            "loop_angle_error_rad": 3.750744377892804e-06,
+            "minimum_elbow_forward_delta_deg": -5.040225681301373,
+            "minimum_elbow_signed_deg": 4.181848634868925,
+            "maximum_rotation_step_deg_per_30Hz_frame": 32.25675157170407,
+            "maximum_upper_body_step_deg_per_30Hz_frame": 15.814994371159043,
+            "jump_inherited_lower_body_matrix_error_half_frames": 0.0,
+            "jump_acting_in_memory_lower_body_matrix_change": 0.0,
+            "gait_mapped_component_delta_error_rad": 2.000911268316286e-05,
+            "gait_finger_baseline_rotation_error_rad": 9.75829559060804e-06
+          },
+          "finger_entry_local_deviation_deg": {
+            "middle_01_l": 16.0000350591186,
+            "pinky_01_l": 24.000037299372355,
+            "thumb_02_l": 10.000020413078714,
+            "thumb_01_l": 12.912363856300454,
+            "middle_03_l": 4.999876016164518,
+            "thumb_02_r": 10.800087329262922,
+            "ring_02_r": 28.79991858129226,
+            "index_03_r": 4.799953622697169,
+            "ring_01_l": 19.999996172553143,
+            "ring_02_l": 28.00007640900601,
+            "index_02_l": 18.00010767949639,
+            "index_03_l": 3.9996928231155264,
+            "thumb_03_r": 3.799808859421619,
+            "pinky_03_l": 6.999803684070611,
+            "ring_03_l": 5.99990222806077,
+            "pinky_02_l": 33.00001021867759,
+            "index_01_r": 12.800044235541845,
+            "thumb_03_l": 2.9999702365364675,
+            "middle_02_r": 23.799992682691602,
+            "middle_01_r": 16.79998974620612,
+            "pinky_03_r": 7.79977640774394,
+            "middle_03_r": 5.80002088085756,
+            "index_01_l": 11.999990904967321,
+            "pinky_02_r": 33.8003772716233,
+            "middle_02_l": 22.999951539207956,
+            "thumb_01_r": 13.159486966909938,
+            "ring_03_r": 6.800162062808663,
+            "ring_01_r": 20.79999419130443,
+            "pinky_01_r": 24.79998673548536,
+            "index_02_r": 18.800029643002276
+          },
+          "local_motion_from_entry_deg": {
+            "middle_01_l": 1.5117102864840477e-05,
+            "pinky_01_l": 2.4365264560091043e-05,
+            "thumb_02_l": 1.992338458401502e-05,
+            "thumb_01_l": 2.4367162046141204e-05,
+            "middle_03_l": 1.899750133584034e-05,
+            "lowerarm_l": 47.538396318736034,
+            "clavicle_r": 4.6937693666217,
+            "thumb_02_r": 1.704026509543977e-05,
+            "ring_02_r": 1.4664820611242448e-05,
+            "lowerarm_r": 14.22631615198741,
+            "index_03_r": 1.3408555344422249e-05,
+            "ring_01_l": 1.9296142602127002e-05,
+            "ring_02_l": 1.6869761159597672e-05,
+            "index_02_l": 1.7348906585575102e-05,
+            "index_03_l": 1.9483504434957122e-05,
+            "upperarm_r": 27.19098571229725,
+            "thumb_03_r": 1.2755875243927905e-05,
+            "pinky_03_l": 1.5874678111123484e-05,
+            "ring_03_l": 1.5273250113600777e-05,
+            "pinky_02_l": 1.888227897389491e-05,
+            "index_01_r": 1.6741643386940503e-05,
+            "thumb_03_l": 1.2760735805619974e-05,
+            "middle_02_r": 1.7894354436327522e-05,
+            "clavicle_l": 4.502077846634184,
+            "middle_01_r": 1.806948716207759e-05,
+            "pinky_03_r": 1.9543745753665644e-05,
+            "middle_03_r": 1.5439098610955894e-05,
+            "hand_l": 31.346786611158937,
+            "index_01_l": 1.2856672353004145e-05,
+            "pinky_02_r": 2.6235531143512072e-05,
+            "middle_02_l": 2.4991907427120758e-05,
+            "upperarm_l": 27.68768969360353,
+            "thumb_01_r": 1.7628152725755573e-05,
+            "ring_03_r": 1.881236746276283e-05,
+            "ring_01_r": 1.8306575128208557e-05,
+            "pinky_01_r": 1.7389612035588536e-05,
+            "hand_r": 23.35140144349645,
+            "index_02_r": 1.6346634707275862e-05
+          },
+          "entry_palm_inward_dot": {
+            "l": 0.7642248272895813,
+            "r": 0.8678906559944153
+          },
+          "neutral_reference_frame_outside_exported_range": 0
+        },
+        "run": {
+          "output": {
+            "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoCastMotion/GreenCap51-v3/clips/run.fbx",
+            "sha256": "e4aa6560c3b7a7d113629bb56aa955fd8673cdc126b7f7aa2c7e892d9ff6620b",
+            "bytes": 473628
+          },
+          "bones": 61,
+          "half_frame_samples": 39,
+          "fresh_frame_range": [
+            2.0,
+            21.0
+          ],
+          "binary_fbx": {
+            "version": 7400,
+            "time_mode": 6,
+            "custom_frame_rate": 30.0,
+            "stack_time_ticks": {
+              "LocalStart": 1539538600,
+              "LocalStop": 30790772000,
+              "ReferenceStart": 1539538600,
+              "ReferenceStop": 30790772000
+            },
+            "declared_seconds": 0.6333333333333333,
+            "curve_max_grid_error_ktime_ticks": 1,
+            "source_exact_or_float32_30Hz_max_tick_error": 1,
+            "strict_export_clock": true,
+            "null_models": [
+              "Armature\u0000\u0001Model"
+            ]
+          },
+          "fps": 30,
+          "seconds": 0.6333333333333333,
+          "metrics": {
+            "reference": {
+              "matrix": 8.761882781982422e-06,
+              "angle_rad": 1.1540235791413939e-05,
+              "head": 9.93368059721394e-07,
+              "scale": 7.152557373046875e-07
+            },
+            "half_frame_pose_matrix_error": 1.4483928680419922e-05,
+            "half_frame_pose_rotation_error_rad": 1.8355401631205398e-05,
+            "hip_xyz_error_target_units": 1.2255299202796802e-07,
+            "local_translation_error": 2.545242575650705e-07,
+            "local_scale_error": 2.86102294921875e-06,
+            "root_matrix_error": 7.105427357601002e-15,
+            "object_matrix_error": 0.0,
+            "key_and_evaluated_quaternion_norm_error": 1.9669532775878906e-06,
+            "loop_matrix_error": 2.384185791015625e-06,
+            "loop_angle_error_rad": 2.627670736269973e-06,
+            "minimum_elbow_forward_delta_deg": 54.98629049268725,
+            "minimum_elbow_signed_deg": 64.20836480885755,
+            "maximum_rotation_step_deg_per_30Hz_frame": 63.33696757992533,
+            "maximum_upper_body_step_deg_per_30Hz_frame": 35.540940029893584,
+            "jump_inherited_lower_body_matrix_error_half_frames": 0.0,
+            "jump_acting_in_memory_lower_body_matrix_change": 0.0,
+            "gait_mapped_component_delta_error_rad": 2.0204619792637913e-05,
+            "gait_finger_baseline_rotation_error_rad": 9.65379817046321e-06
+          },
+          "finger_entry_local_deviation_deg": {
+            "middle_01_l": 16.000042461526544,
+            "pinky_01_l": 24.000041567102407,
+            "thumb_02_l": 10.000021766304304,
+            "thumb_01_l": 12.912366171675528,
+            "middle_03_l": 4.999882005031467,
+            "thumb_02_r": 10.800089516607997,
+            "ring_02_r": 28.799910196268904,
+            "index_03_r": 4.799954306527837,
+            "ring_01_l": 19.9999878503767,
+            "ring_02_l": 28.00007105856903,
+            "index_02_l": 18.000104142026334,
+            "index_03_l": 3.999690459070415,
+            "thumb_03_r": 3.7998131454988,
+            "pinky_03_l": 6.999797086026702,
+            "ring_03_l": 5.999914390357398,
+            "pinky_02_l": 33.00001373814861,
+            "index_01_r": 12.800047803453264,
+            "thumb_03_l": 2.999975530040754,
+            "middle_02_r": 23.799999503779873,
+            "middle_01_r": 16.79998984866164,
+            "pinky_03_r": 7.799773521159246,
+            "middle_03_r": 5.8000154329623,
+            "index_01_l": 11.999994966526849,
+            "pinky_02_r": 33.80037159788616,
+            "middle_02_l": 22.999953324820467,
+            "thumb_01_r": 13.159490460714228,
+            "ring_03_r": 6.800160940395115,
+            "ring_01_r": 20.799994918154958,
+            "pinky_01_r": 24.79998455120529,
+            "index_02_r": 18.800033994391175
+          },
+          "local_motion_from_entry_deg": {
+            "middle_01_l": 1.526220819952876e-05,
+            "pinky_01_l": 1.794827483067329e-05,
+            "thumb_02_l": 1.3907578105093751e-05,
+            "thumb_01_l": 2.355336339734212e-05,
+            "middle_03_l": 1.020849902088652e-05,
+            "lowerarm_l": 45.23807700033261,
+            "clavicle_r": 9.543600797593909,
+            "thumb_02_r": 1.5295602713107018e-05,
+            "ring_02_r": 2.4164631763766533e-05,
+            "lowerarm_r": 29.273171657054107,
+            "index_03_r": 1.3091755925459935e-05,
+            "ring_01_l": 1.9977734566902916e-05,
+            "ring_02_l": 2.0241484609054994e-05,
+            "index_02_l": 1.4845826131627316e-05,
+            "index_03_l": 1.654146625253498e-05,
+            "upperarm_r": 85.37795440709745,
+            "thumb_03_r": 1.121332091367168e-05,
+            "pinky_03_l": 1.3614577089254976e-05,
+            "ring_03_l": 1.6500129857189175e-05,
+            "pinky_02_l": 2.52908489499705e-05,
+            "index_01_r": 1.0053955045329506e-05,
+            "thumb_03_l": 9.964767941593298e-06,
+            "middle_02_r": 1.3800256358261218e-05,
+            "clavicle_l": 7.758556444422187,
+            "middle_01_r": 1.1308502987404337e-05,
+            "pinky_03_r": 1.2415530807810874e-05,
+            "middle_03_r": 1.252459460387377e-05,
+            "hand_l": 25.506002299444226,
+            "index_01_l": 1.4086791426022899e-05,
+            "pinky_02_r": 2.546917477275421e-05,
+            "middle_02_l": 1.8951229843205705e-05,
+            "upperarm_l": 105.71384159527001,
+            "thumb_01_r": 2.133793434947911e-05,
+            "ring_03_r": 1.275341919379771e-05,
+            "ring_01_r": 1.3662286743084494e-05,
+            "pinky_01_r": 1.9831359080126965e-05,
+            "hand_r": 42.11741356724522,
+            "index_02_r": 1.573421456928984e-05
+          },
+          "entry_palm_inward_dot": {
+            "l": 0.9732404947280884,
+            "r": 0.9863935112953186
+          },
+          "neutral_reference_frame_outside_exported_range": 0
+        }
+      },
+      "half_frame_samples": 416,
+      "retained_inputs_unchanged": true
+    }
+  },
+  "graphics_accepted": false,
+  "limitations": [
+    "CPU pose checks do not establish naturalness, continuous contact, native blends/grip/materials or graphics acceptance.",
+    "Retained source Run upper-body steps reach about35.54deg per30Hz frame; authored20deg gate applies to new Idle/Jump, not inherited Run. Inherited brisk jump leg crouch remains.",
+    "No API/spending, GPU rendering, Unreal/native, package, service or live deployment operations performed.",
+    "Other actual body/rig pairs require their own manifests, successful proof and direct visual motion review before acceptance."
+  ],
+  "dependency_refresh": "Motion helper/test bytes remain unchanged; fresh Curly v7 and Green v3 executions pin the embedded-normal-aware surface helper. Earlier receipts/executed recipes remain retained."
+}

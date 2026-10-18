@@ -1,0 +1,29 @@
+{
+  "character": "Topknot",
+  "source_provider": "Tripo H3.1",
+  "source_body_task_id": "7c59f469-ad8a-4825-913f-14a69d0ba61b",
+  "rig_task_id": "38b3289d-c680-40df-b1dc-2506e8fe6fb7",
+  "credits_consumed": 25,
+  "model": "v3.0-20260909",
+  "rig_type": "biped",
+  "spec": "unreal",
+  "out_format": "fbx",
+  "source": {
+    "path": "Data/GraphicNovel/Crew/Topknot/tripo-h31-body-20261017/body.glb",
+    "sha256": "621c65ce305a29d27b7ee974ee928011c3a0d78a979bf9cc3b73ecb13d54fae2"
+  },
+  "outputs": {
+    "rig.fbx": {
+      "bytes": 7558252,
+      "sha256": "9cfeefead9c03472bb8f718fe96e403e79f5eab07ea3f10a2ee07488fa41fb21"
+    },
+    "provider-preview.png": {
+      "bytes": 128172,
+      "sha256": "1f7466426972fc83ccef7168dd9a67abff925dc374ffb320a0c7dae7b1a18332"
+    }
+  },
+  "signed_urls_private_only": true,
+  "raw_provider_files_unchanged": true,
+  "native_or_art_accepted": false,
+  "recorded_utc": "2026-10-17T22:51:46.173732+00:00"
+}

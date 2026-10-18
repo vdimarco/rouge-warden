@@ -1,0 +1,19 @@
+{
+  "reviewer": "root",
+  "viewed_all210_frames_in_five_exhaustive_contact_sheets": true,
+  "contact_sheet_files": [
+    "idle-a.jpg",
+    "idle-b.jpg",
+    "walk.jpg",
+    "run.jpg",
+    "jump.jpg"
+  ],
+  "bounded_findings": [
+    "Stable inward palms and soft elbows through Idle/Jump, no obvious wrist torsion or isolated flipped arm frame at thumbnail resolution.",
+    "The actual own body is animated through complete four clips; retained video is210frames at30fps,7seconds.",
+    "Walk/Run retain broad source torso sway and fast leg acting; natural gait/contact and native transitions are not accepted here.",
+    "Jump is an in-place pose clip; preview does not simulate actor flight."
+  ],
+  "scope": "Complete CPU frame-sequence review with detailed hand stills, not native/final-art acceptance",
+  "native_or_final_art_accepted": false
+}

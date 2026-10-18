@@ -1,0 +1,28 @@
+{
+  "command": [
+    "/home/von/.local/share/Epic/UE_5.8.3/Engine/Binaries/Linux/UnrealEditor-Cmd",
+    "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Quebec.uproject",
+    "-run=pythonscript",
+    "-script=/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Scripts/import_tripo_cast.py",
+    "-NullRHI",
+    "-unattended",
+    "-nosplash",
+    "-nosound",
+    "-nop4",
+    "-stdout",
+    "-FullStdOutLogOutput",
+    "-abslog=/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoCastNative/BlackCap/Import-Engine.log"
+  ],
+  "started_utc": "2026-10-17T23:40:59.734530+00:00",
+  "script_sha256": "90a7cea37d1ba2cccc11fc744b43a15989498381d917d4ffdf7fed645b926fab",
+  "shared_import_sha256": "a52d62d259df1239c6370e44d7b71063314fd054af0c4ce61139066765f139ce",
+  "editor_module_sha256": "ba967029f2493ea0b0063fd509824ac17378a491784e5f2576096bcb7fbd3f18",
+  "controller_pid": 919646,
+  "character": "BlackCap",
+  "NullRHI": true,
+  "service_operations": false,
+  "editor_pid": 919701,
+  "exit_code": 255,
+  "finished_utc": "2026-10-17T23:41:11.848928+00:00",
+  "report_exists": false
+}

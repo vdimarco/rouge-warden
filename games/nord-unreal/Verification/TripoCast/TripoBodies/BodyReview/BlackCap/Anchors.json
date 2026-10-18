@@ -1,0 +1,19 @@
+{
+  "character": "BlackCap",
+  "source_sha256": "ff4d393b98d5fba212295305b714ab7fce04229e34b14196c7e2f4c210467d70",
+  "expected_meshes": 1,
+  "expected_triangles": 96140,
+  "basis_world": {
+    "left": [-0.014820638112723827, -0.999890148639679, 0],
+    "forward": [0.999890148639679, -0.014820638112723827, 0],
+    "up": [0, 0, 1]
+  },
+  "crops_basis_left_forward_up": {
+    "face": [[-0.10, -0.15, 0.34], [0.10, 0.15, 0.50]],
+    "hand-left": [[0.24, -0.15, -0.13], [0.33, 0.15, 0.03]],
+    "hand-right": [[-0.33, -0.15, -0.13], [-0.24, 0.15, 0.03]]
+  },
+  "measurement_basis": "Actual GLB POSITION extents plus its retained node matrix; Blender glTF conversion maps localY to worldZ and localZ to negative worldY. The source node retains a -0.849195 degree world-Z yaw. Local positiveX is the candidate face/front direction; the actual front/face renders must confirm it before visual review.",
+  "raw_local_bounds_source_units": [[-0.10187247395515442, -0.48968902230262756, -0.3131168484687805], [0.10167859494686127, 0.4897361695766449, 0.3131808936595917]],
+  "crop_scope": "Explicit source-space morphology crops, not anatomical joints, skin groups or deletion masks. Keep original geometry and node transform; no source scaling or meter assumption. Left/right refer to the character."
+}

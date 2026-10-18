@@ -1,0 +1,29 @@
+{
+  "at_utc": "2026-10-18T00:08:29.891901+00:00",
+  "owned_native_after_sha256": "2e0b1e26d0a4686f62dc8fdb93822774e1e9694d03c7a7ffccc344c3a3d2ced5",
+  "restored_original_sha256": "77c2300c840caea09591422cb40973c4443586168bc23caca13616f42e8df60b",
+  "baseline_source": "Saved/Recovery/tripo-cast-20261017/Saved/Config/LinuxEditor/EditorPerProjectUserSettings.ini",
+  "cause": "Owned fresh native import/automation serialized editor per-project settings; original exact bytes restored after all owned editor processes exited",
+  "source_diff_lines": [
+    "--- \n",
+    "+++ \n",
+    "@@ -374,8 +374,8 @@\n",
+    " ",
+    " [EditorStartup]",
+    "-LastLevel=/Game/Maps/LaFontaine",
+    "+LastLevel=/Engine/Maps/Entry",
+    " ",
+    " [ModuleFileTracking]",
+    "-Quebec.TimeStamp=2026.10.14-17.34.06",
+    "+Quebec.TimeStamp=2026.10.18-00.03.07",
+    " Quebec.LastCompileMethod=External",
+    " StorageServerClient.TimeStamp=2026.09.17-23.16.00",
+    "@@ -1989,5 +1989,5 @@\n",
+    " ",
+    " [/Script/CrashDiagnostics.CrashDiagnosticsSettings]",
+    "-LastSessionStartTime=2026.10.14-17.34.14",
+    "+LastSessionStartTime=2026.10.18-00.04.57",
+    " ",
+    " [Directories2]"
+  ]
+}

@@ -1,0 +1,29 @@
+{
+  "passed": true,
+  "command": [
+    "blender",
+    "-b",
+    "-t",
+    "4",
+    "--python-exit-code",
+    "1",
+    "--python",
+    "Scripts/test_tripo_surface_correspondence.py"
+  ],
+  "exit_code": 0,
+  "recipe_sha256": "1a8c1ade86f6773eb726f4aa7f9d27f3dfa129618e25dc7b9521e63a2934ad10",
+  "test_sha256": "1e3f46b384cb2d438280b5a8175960fab85f3b9be6c709829f1876371300e70e",
+  "cases": [
+    "Unique permuted UV/geometry bijection",
+    "Ambiguous coincident normals rejected",
+    "Changed geometry rejected",
+    "9.999micron accepted",
+    "10.001 and20micron rejected",
+    "Static translation accepted without mutation",
+    "Legacy translation rejected",
+    "Nonuniform scale rejected",
+    "Rotation rejected",
+    "Static20micron deformation rejected"
+  ],
+  "log_sha256": "16e56735b9aef8baf4fbfeb6d5df69ef40e4353eda2d1499f5a79766b21f1d32"
+}

@@ -1,0 +1,37 @@
+{
+  "reviewer": "root",
+  "character": "WhiteCap",
+  "review_recorded_utc": "2026-10-18T00:17:37.657129+00:00",
+  "viewed_all210_frames_in_five_exhaustive_contact_sheets": true,
+  "contact_sheet_files": [
+    {
+      "file": "idle-a.jpg",
+      "sha256": "1f0fc8833fd034441ad257af3958fb57c312706e81118635214c764d66c642bf"
+    },
+    {
+      "file": "idle-b.jpg",
+      "sha256": "db07464cc7aa8b81e65d9fa57cde3169948faca0b1c2ccb77e4a579750306dcd"
+    },
+    {
+      "file": "walk.jpg",
+      "sha256": "f2deef3d2c3ad500b40ceb7e8234e30f12045f8411aa9659d1d3af0b5a92417a"
+    },
+    {
+      "file": "run.jpg",
+      "sha256": "d06ef50037a4a5440e1280083851d42e0d891c9fa4a6aa89c8491023c63d4706"
+    },
+    {
+      "file": "jump.jpg",
+      "sha256": "ee687bd4c8f77dc00d6cb7eb00fc3f7e7800b6fbf8066d3a6ec3d81522538eb4"
+    }
+  ],
+  "bounded_findings": [
+    "All 210 frames were inspected in five exhaustive contact sheets; no obvious isolated arm flip or sudden body collapse was observed at thumbnail resolution.",
+    "Resting palms face inward, elbows remain soft and the own body retains the reviewed character identity.",
+    "Walk/Run retain broad source torso sway and fast leg acting. Natural gait, ground contact, blending and physical prop clearance remain unaccepted.",
+    "Jump is an in-place pose clip; these previews do not simulate actor flight. The four complete clips meet at hard cuts."
+  ],
+  "video_playback_review_performed": false,
+  "scope": "Complete CPU frame-sequence contact-sheet review, not native/final-art or subjective fluidity acceptance",
+  "native_or_final_art_accepted": false
+}

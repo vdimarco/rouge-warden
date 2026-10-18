@@ -1,0 +1,70 @@
+{
+  "at_utc": "2026-10-18T00:38:10.256698+00:00",
+  "gpu_total_used_free_MiB": "24564, 19766, 4300",
+  "GPU_process_snapshot": [
+    {
+      "pid": 2823,
+      "process": "voxtype-osd-gtk4",
+      "used_MiB": 10
+    },
+    {
+      "pid": 14336,
+      "process": "chrome",
+      "used_MiB": 557
+    },
+    {
+      "pid": 15062,
+      "process": "ChatGPT",
+      "used_MiB": 323
+    },
+    {
+      "pid": 21024,
+      "process": "claude-desktop",
+      "used_MiB": 305
+    },
+    {
+      "pid": 1365474,
+      "process": "quickshell",
+      "used_MiB": 4846
+    },
+    {
+      "pid": 3901407,
+      "process": "dota",
+      "used_MiB": 3862
+    },
+    {
+      "pid": 3956763,
+      "process": "Quebec",
+      "used_MiB": 3340
+    },
+    {
+      "pid": 3957237,
+      "process": "Quebec",
+      "used_MiB": 3143
+    },
+    {
+      "pid": 74165,
+      "process": "beepertexts",
+      "used_MiB": 79
+    },
+    {
+      "pid": 97022,
+      "process": "beepertexts",
+      "used_MiB": 217
+    }
+  ],
+  "existing_guard": "Scripts/browser_streaming.py",
+  "guard_lines": [
+    "require(free_mib >= 12000,",
+    "f\"Two browser players need at least 12000 MiB free GPU memory; only {free_mib} MiB is free. \""
+  ],
+  "required_free_MiB": 12000,
+  "render_launched": false,
+  "demo_or_other_app_stopped": false,
+  "reason": "Current free VRAM is below the existing guard. Dota is unrelated and remains open; pausing demo alone cannot guarantee its safe restoration. CPU work continues.",
+  "native_render_art_or_performance_accepted": false,
+  "guard_source_sha256": "c7c32af6e099c3af1c7d35a0419dec68e7ce123ed4cafa74dd0f7546f03478e8",
+  "snapshot_redaction": "Only PID, executable basename and memory retained; process command arguments omitted.",
+  "demo_only_release_estimate_MiB": 10783,
+  "estimate_is_not_a_reservation": true
+}

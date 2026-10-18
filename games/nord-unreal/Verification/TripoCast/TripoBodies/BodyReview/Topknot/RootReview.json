@@ -1,0 +1,48 @@
+{
+  "at_utc": "2026-10-17T22:49:04.618733+00:00",
+  "source_sha256": "621c65ce305a29d27b7ee974ee928011c3a0d78a979bf9cc3b73ecb13d54fae2",
+  "reviewer": "root",
+  "viewed": [
+    {
+      "file": "front.png",
+      "sha256": "04928ed2bcd741d1d98615bea546933cdf9a40c737b083bf75d084e7988f54e4"
+    },
+    {
+      "file": "threequarter.png",
+      "sha256": "4c9d00aefd8d1e8102e859309f9d2e8e89172d23e8b02362be02f0708296cd22"
+    },
+    {
+      "file": "side.png",
+      "sha256": "118cb6ee3ad19091dd423171f68a0315807103e3cb2525a6c7bacb6244631cd6"
+    },
+    {
+      "file": "back.png",
+      "sha256": "a78c730aff3c9e9a6963e74f61062b8402de381d90a4ed202b734041ed2a1d69"
+    },
+    {
+      "file": "face-front.png",
+      "sha256": "e90320ba14ac533ff755400b875395b003fdd03952bcecb96edbb417648bb0c7"
+    },
+    {
+      "file": "face-threequarter.png",
+      "sha256": "11804f4430d681de41614addf98fdf8d6c0cda2968fba4c5cdcb9b85cbb6a924"
+    },
+    {
+      "file": "hand-left.png",
+      "sha256": "792ccf5bdbcfab0a6be6733c1138c2c76dec464d6e3e5666d951dc9746c79686"
+    },
+    {
+      "file": "hand-right.png",
+      "sha256": "ceaa735c5108d8c4a2a8fb5e48b5fce2f5a402c697d1ab3c557ea3cd72f01e8f"
+    }
+  ],
+  "bounded_rig_trial_allowed": true,
+  "final_art_accepted": false,
+  "observations": [
+    "Adult face/build, moustache/goatee, sunglasses, white shirt/navy shorts/shoes and bag with supplies remain recognizable.",
+    "Front/back/side retain continuous bag strap and integrated clothing; bag deformation remains untested.",
+    "Thumb and four long digits visibly separated distally; broad webs and angular fingertips remain.",
+    "Hair has chunky glossy loops/strands around bun/ears; sunglasses/face and bag contents simplify the reference. These remain source-art limits.",
+    "Actual positive-X face orientation and hand crop identities confirmed in all eight source views."
+  ]
+}

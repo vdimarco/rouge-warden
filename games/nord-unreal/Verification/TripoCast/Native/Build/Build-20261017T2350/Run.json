@@ -1,0 +1,25 @@
+{
+  "command": [
+    "/home/von/.local/share/Epic/UE_5.8.3/Engine/Build/BatchFiles/Linux/Build.sh",
+    "QuebecEditor",
+    "Linux",
+    "Development",
+    "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Quebec.uproject",
+    "-NoHotReload",
+    "-MaxParallelActions=4"
+  ],
+  "at_utc": "2026-10-17T23:39:27.947618+00:00",
+  "controller_pid": 912515,
+  "sources": {
+    "Source/Quebec/QuebecGameplay.cpp": "b2e11fff7c36c71e7c78d554552b5482353cebda7a223dd9e88e31dbf98a779f",
+    "Source/Quebec/QuebecCrewAnimation.cpp": "8c3497f5e5dcf16f3a1ce3325c99d639ef5d95cfa8d883690779691daef8e96a",
+    "Source/Quebec/QuebecCrewAnimationTests.cpp": "e90874b1e45894653d586d89b78391b4893a10eb810f6ab1754c2ce8003179d3",
+    "Source/Quebec/QuebecTripoTests.cpp": "67158dd5a8ff6a6771338c01bf44901cd35ecadd6832996d100a682f57caaae9"
+  },
+  "CPU_build_only": true,
+  "service_operations": false,
+  "build_pid": 912517,
+  "exit_code": 0,
+  "finished_utc": "2026-10-17T23:39:39.657052+00:00",
+  "editor_module_sha256": "ba967029f2493ea0b0063fd509824ac17378a491784e5f2576096bcb7fbd3f18"
+}

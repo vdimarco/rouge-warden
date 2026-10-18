@@ -1,0 +1,44 @@
+{
+  "scope": "Evidence contact sheet of six exact already reviewed own-body idle stills; CPU, not native/comic/final art",
+  "sources": [
+    {
+      "character": "GreenCap51",
+      "source": "Verification/TripoCast/TripoBodies/OwnMotionReview/FundedFive/GreenCap51/nine/idle-threequarter.png",
+      "sha256": "bb02421d7f4569886e44a30492be4f1cfe5d9eceb3605c2eb5ca5a568a4202e8",
+      "operation": "Uniform full-frame scaling plus evidence-only title/name bands; no model or surface repair"
+    },
+    {
+      "character": "Memphis33",
+      "source": "Verification/TripoCast/TripoBodies/OwnMotionReview/FundedFive/Memphis33/nine/idle-threequarter.png",
+      "sha256": "c986bdafaf06367783508ed421b8e595d73df6f843adb34592b9124655bbe8a9",
+      "operation": "Uniform full-frame scaling plus evidence-only title/name bands; no model or surface repair"
+    },
+    {
+      "character": "BlackCap",
+      "source": "Verification/TripoCast/TripoBodies/OwnMotionReview/BlackCap-v2/idle-threequarter.png",
+      "sha256": "c402a486005f33b4055e6e9daf83b0dce0cad747ecbfd671bad691b0547aef65",
+      "operation": "Uniform full-frame scaling plus evidence-only title/name bands; no model or surface repair"
+    },
+    {
+      "character": "WhiteCap",
+      "source": "Verification/TripoCast/TripoBodies/OwnMotionReview/FundedFive/WhiteCap/nine/idle-threequarter.png",
+      "sha256": "3fa9a88e55ba8dafbb2e7771c9956ff274d1da9dcb9eea51305cd794778759c0",
+      "operation": "Uniform full-frame scaling plus evidence-only title/name bands; no model or surface repair"
+    },
+    {
+      "character": "RedJersey",
+      "source": "Verification/TripoCast/TripoBodies/OwnMotionReview/FundedFive/RedJersey/nine/idle-threequarter.png",
+      "sha256": "5970b5571776725da95e6494e4abb69a71b580065d79e8b4a6f4de12d1281431",
+      "operation": "Uniform full-frame scaling plus evidence-only title/name bands; no model or surface repair"
+    },
+    {
+      "character": "LimeJacket",
+      "source": "Verification/TripoCast/TripoBodies/OwnMotionReview/FundedFive/LimeJacket/nine/idle-threequarter.png",
+      "sha256": "f4beaf52ca9836fba9dd7bf873737622151f449a8fccfeb5399675292fee1ce5",
+      "operation": "Uniform full-frame scaling plus evidence-only title/name bands; no model or surface repair"
+    }
+  ],
+  "output": "SixCandidatesCPU.jpg",
+  "sha256": "ddf867188a02a3c2b8a165e6c806933582558707cc0840adc2bb7cb9fb1d3bd3",
+  "native_or_final_art_accepted": false
+}

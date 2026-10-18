@@ -1,4 +1,5 @@
 #include "QuebecGameplay.h"
+#include "Misc/PackageName.h"
 #include "QuebecCampaign.h"
 #include "QuebecSky.h"
 #include "QuebecCrewAnimation.h"
@@ -221,11 +222,19 @@ void AQuebecCharacter::CycleCrew()
 void AQuebecCharacter::ApplyCrewAppearance()
 {
     if (CrewStyle < 3 || CrewStyle > 10) return;
-    const bool bGraphicNovelCandidate = CrewStyle == 9 && FParse::Param(FCommandLine::Get(), TEXT("NordGraphicNovelCandidate"));
-    const bool bGraphicNovelGenerated = bGraphicNovelCandidate && FParse::Param(FCommandLine::Get(), TEXT("NordGraphicNovelGenerated"));
-    const bool bGraphicNovelHighDetail = bGraphicNovelGenerated && FParse::Param(FCommandLine::Get(), TEXT("NordGraphicNovelHighDetail"));
-    const bool bGraphicNovelTripo = bGraphicNovelHighDetail && FParse::Param(FCommandLine::Get(), TEXT("NordGraphicNovelTripo"));
-    const FString Folder = bGraphicNovelTripo ? TEXT("/Game/ParkComic/CrewGraphicNovelTripo/Resident9/")
+    const bool bCandidateRequested = FParse::Param(FCommandLine::Get(), TEXT("NordGraphicNovelCandidate"));
+    const bool bGeneratedRequested = bCandidateRequested && FParse::Param(FCommandLine::Get(), TEXT("NordGraphicNovelGenerated"));
+    const bool bHighDetailRequested = bGeneratedRequested && FParse::Param(FCommandLine::Get(), TEXT("NordGraphicNovelHighDetail"));
+    const bool bGraphicNovelCandidate = CrewStyle == 9 && bCandidateRequested;
+    const bool bGraphicNovelGenerated = CrewStyle == 9 && bGeneratedRequested;
+    const bool bGraphicNovelHighDetail = CrewStyle == 9 && bHighDetailRequested;
+    // Topknot stays on production until the rejected bag skin has been repaired.
+    bool bGraphicNovelTripo = CrewStyle < 10 && bHighDetailRequested && FParse::Param(FCommandLine::Get(), TEXT("NordGraphicNovelTripo"));
+    const FString TripoFolder = FString::Printf(TEXT("/Game/ParkComic/CrewGraphicNovelTripo/Resident%d/"), CrewStyle);
+    if (bGraphicNovelTripo)
+        for (const TCHAR* Asset : {TEXT("SK_Body"), TEXT("A_Idle"), TEXT("A_Walk"), TEXT("A_Run"), TEXT("A_Jump"), TEXT("BS_Locomotion")})
+            bGraphicNovelTripo &= FPackageName::DoesPackageExist(TripoFolder + Asset);
+    const FString Folder = bGraphicNovelTripo ? TripoFolder
         : bGraphicNovelHighDetail ? TEXT("/Game/ParkComic/CrewGraphicNovelHighDetail/Resident9/")
         : bGraphicNovelGenerated ? TEXT("/Game/ParkComic/CrewGraphicNovelGenerated/Resident9/")
         : bGraphicNovelCandidate ? TEXT("/Game/ParkComic/CrewGraphicNovel/Resident9/")
@@ -236,11 +245,13 @@ void AQuebecCharacter::ApplyCrewAppearance()
     GetMesh()->SetSkeletalMesh(Body);
     GetMesh()->SetRelativeRotation(FRotator::ZeroRotator);
     GetMesh()->SetRenderCustomDepth(true);
-    GetMesh()->SetCustomDepthStencilValue(bGraphicNovelCandidate ? 254 : 255);
+    GetMesh()->SetCustomDepthStencilValue((bGraphicNovelCandidate || bGraphicNovelTripo) ? 254 : 255);
     CrewWalk = LoadObject<UAnimSequence>(nullptr, *(Folder + TEXT("A_Walk.A_Walk")));
     CrewIdle = LoadObject<UAnimSequence>(nullptr, *(Folder + TEXT("A_Idle.A_Idle")));
     CrewRun = LoadObject<UAnimSequence>(nullptr, *(Folder + TEXT("A_Run.A_Run")));
     CrewJump = LoadObject<UAnimSequence>(nullptr, *(Folder + TEXT("A_Jump.A_Jump")));
+    // Own jumps move the pelvis; the static root must keep its imported reference scale.
+    if (bGraphicNovelTripo && CrewJump) CrewJump->bForceRootLock = true;
     CrewLocomotion = LoadObject<UBlendSpace>(nullptr, *(Folder + TEXT("BS_Locomotion.BS_Locomotion")), nullptr, LOAD_NoWarn | LOAD_Quiet);
     CrewAnimation = nullptr;
     CrewProp->SetStaticMesh(LoadObject<UStaticMesh>(nullptr, CrewStyle == 8

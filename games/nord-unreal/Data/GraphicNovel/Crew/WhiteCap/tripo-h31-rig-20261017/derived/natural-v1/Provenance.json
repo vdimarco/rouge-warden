@@ -1,0 +1,102 @@
+{
+  "character": "WhiteCap",
+  "source_body_provider": "Tripo H3.1",
+  "rig_provider": "Tripo v3",
+  "byte_identical_copies_of_passed_CPU_outputs": true,
+  "outputs": {
+    "body": {
+      "path": "Data/GraphicNovel/Crew/WhiteCap/tripo-h31-rig-20261017/derived/natural-v1/body.fbx",
+      "sha256": "9a50f28b05f0e28cba4a56e9fa962fc9478667693739aed064b2a88ddd6b23e3",
+      "source_proof_output_sha256": "9a50f28b05f0e28cba4a56e9fa962fc9478667693739aed064b2a88ddd6b23e3"
+    },
+    "base_color": {
+      "path": "Data/GraphicNovel/Crew/WhiteCap/tripo-h31-rig-20261017/derived/natural-v1/base_color.jpg",
+      "sha256": "9621e1d2fa65e3434f5bfa87e30edda5c4bd4f16e7693bb93afdd1f6af24c826",
+      "source_proof_output_sha256": "9621e1d2fa65e3434f5bfa87e30edda5c4bd4f16e7693bb93afdd1f6af24c826"
+    },
+    "metallic_roughness": {
+      "path": "Data/GraphicNovel/Crew/WhiteCap/tripo-h31-rig-20261017/derived/natural-v1/metallic_roughness.jpg",
+      "sha256": "515cb160f618c05e849804382c9fc25d5e1fa6e5f8bca13fe929948ee1afc16a",
+      "source_proof_output_sha256": "515cb160f618c05e849804382c9fc25d5e1fa6e5f8bca13fe929948ee1afc16a"
+    },
+    "normal": {
+      "path": "Data/GraphicNovel/Crew/WhiteCap/tripo-h31-rig-20261017/derived/natural-v1/normal.png",
+      "sha256": "eef8531b0749d069847ce143370909adc0384bb41b8c61a0237c82ff53620743",
+      "source_proof_output_sha256": "eef8531b0749d069847ce143370909adc0384bb41b8c61a0237c82ff53620743"
+    },
+    "idle": {
+      "path": "Data/GraphicNovel/Crew/WhiteCap/tripo-h31-rig-20261017/derived/natural-v1/idle.fbx",
+      "sha256": "4f3d428172aeb608b4465117abf66519965f55bc016d72fe34014b4c0f1e70f8",
+      "source_proof_output_sha256": "4f3d428172aeb608b4465117abf66519965f55bc016d72fe34014b4c0f1e70f8"
+    },
+    "jump": {
+      "path": "Data/GraphicNovel/Crew/WhiteCap/tripo-h31-rig-20261017/derived/natural-v1/jump.fbx",
+      "sha256": "3a8150b16b53c12e3629d4d7892140b447cb0d9e7a61721671c03cf29b34cb94",
+      "source_proof_output_sha256": "3a8150b16b53c12e3629d4d7892140b447cb0d9e7a61721671c03cf29b34cb94"
+    },
+    "walk": {
+      "path": "Data/GraphicNovel/Crew/WhiteCap/tripo-h31-rig-20261017/derived/natural-v1/walk.fbx",
+      "sha256": "789aeac186de4dbef8e0874be6e7d0be55d326e993fea9ee972e0e38b2550d3e",
+      "source_proof_output_sha256": "789aeac186de4dbef8e0874be6e7d0be55d326e993fea9ee972e0e38b2550d3e"
+    },
+    "run": {
+      "path": "Data/GraphicNovel/Crew/WhiteCap/tripo-h31-rig-20261017/derived/natural-v1/run.fbx",
+      "sha256": "c4154af026da052691e665ef3bb64b87e38f0eaa33ae3c2ebe1b905a4662a4d5",
+      "source_proof_output_sha256": "c4154af026da052691e665ef3bb64b87e38f0eaa33ae3c2ebe1b905a4662a4d5"
+    }
+  },
+  "proofs": {
+    "Surface.json": {
+      "path": "Verification/TripoCast/TripoBodies/OwnRigCPU/FundedFive/WhiteCap/Surface.json",
+      "sha256": "14dc797db71625933ffc22789ae17ee3d9caaac90203d971ec25ed4e1598defa"
+    },
+    "Motion.json": {
+      "path": "Verification/TripoCast/TripoBodies/OwnRigCPU/FundedFive/WhiteCap/Motion.json",
+      "sha256": "1444f4f45ffb2a55e17d0f8c8bf32715d403dbdb6791ab9cece770aa846b3a43"
+    },
+    "MotionTest.json": {
+      "path": "Verification/TripoCast/TripoBodies/OwnRigCPU/FundedFive/WhiteCap/MotionTest.json",
+      "sha256": "4b80aa42f488c25da63e76ab228c4792c8b9c9d26a8d139668682f0413f8935b"
+    }
+  },
+  "frozen_executed_recipes": {
+    "prepare_tripo_cast_surface.py": {
+      "path": "Verification/TripoCast/TripoBodies/OwnRigCPU/FundedFive/WhiteCap/Recipes/prepare_tripo_cast_surface.py",
+      "sha256": "82040586d9b77fafcfc574b39dbfd05d3d32b15effb38d91bb96f84605409948"
+    },
+    "prepare_tripo_cast_motion.py": {
+      "path": "Verification/TripoCast/TripoBodies/OwnRigCPU/FundedFive/WhiteCap/Recipes/prepare_tripo_cast_motion.py",
+      "sha256": "dcd567249846c31f35b2b8d2a4876e93fef10815d2ee3e47c1174895812bd030"
+    },
+    "prepare_meshy_jump.py": {
+      "path": "Verification/TripoCast/TripoBodies/OwnRigCPU/FundedFive/WhiteCap/Recipes/prepare_meshy_jump.py",
+      "sha256": "51cbc1072264c31eeafdd65cf1dfef76b36ac154e84d6a93b97f425a3e73a857"
+    }
+  },
+  "raw_provider_fbx": {
+    "path": "Data/GraphicNovel/Crew/WhiteCap/tripo-h31-rig-20261017/rig.fbx",
+    "sha256": "3c447abf193e012825c068838ec74b5da2af63e1f42c7b756be35ccb989648d4"
+  },
+  "original_glb": {
+    "path": "Data/GraphicNovel/Crew/WhiteCap/tripo-h31-body-20261017/body.glb",
+    "sha256": "163e86ec12c6ee9a53ccee29f500dfba720d230c8046c9d968430262ee24e4d4"
+  },
+  "preview_height_m": 1.82,
+  "native_import_scale_proposal_only": 1.8581655898718021,
+  "retained_provider_height_m": 0.9794606088500244,
+  "rendered_continuous_review_pending": true,
+  "native_or_final_art_accepted": false,
+  "native_import_trial_allowed": true,
+  "native_import_trial_scope": "Root authorized isolated candidate import after reviewing15 own-body stills; continuous motion/native/package/final art acceptance separate",
+  "limits": [
+    "Original source-unit geometry, weights and binds preserved; no native import executed by retention.",
+    "Exact original GLB PBR payloads; no native shader acceptance.",
+    "Broad inherited gait/contact and physical-device/package acceptance remain separate."
+  ],
+  "retention_scope": "Exactly8roles copied from accepted CPU proofs; no source/provider overwrites or new authoring",
+  "protected_originals_unchanged": true,
+  "bounded_visual_review": {
+    "path": "Verification/TripoCast/TripoBodies/OwnMotionReview/FundedFive/WhiteCap/RootReview.json",
+    "sha256": "16a171d726a2994821fc170c5c8536daac81980fb610403862fb1767d145287d"
+  }
+}

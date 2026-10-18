@@ -1,0 +1,144 @@
+{
+  "at_utc": "2026-10-18T00:37:16.905092+00:00",
+  "scope": "Exact selected copy of rejected/pending proposal evidence, maps and executed recipes; original complete Saved packet remains unchanged",
+  "original_full_packet_manifest_sha256": "f382dd2577c823728a6c79ad41775be09636bed634063fe126a107674fda08e9",
+  "files": [
+    {
+      "file": "ownership_block.py",
+      "sha256": "6365285498a2a74c1bfa1e5c20eb412f99cade2335a0303acda5584c38cddc0e",
+      "bytes": 10243
+    },
+    {
+      "file": "plan_correspondence.py",
+      "sha256": "2f7ccf61e5e49cf64ace626f6dfcc5deff9aaa06c92216e9b4520b7a8c9b6631",
+      "bytes": 10751
+    },
+    {
+      "file": "propose.py",
+      "sha256": "da871098732db80c24650e7ec38e43a381984464b5f3619deff6f5ce054ae4c0",
+      "bytes": 19548
+    },
+    {
+      "file": "Inputs.json",
+      "sha256": "60ed768783103e518bec0b1ff7f2425f70f8b9ac0b006580374c836894425dac",
+      "bytes": 769
+    },
+    {
+      "file": "OwnershipArrays.npz",
+      "sha256": "b2f40bec11864a4fb658d2017c8a3bd940bdf8fae25133899ea8f9ef42de1bf8",
+      "bytes": 2752026
+    },
+    {
+      "file": "Ownership.json",
+      "sha256": "77b2db3abe1975b950e1de6d3ba735a55498e9bbb2bebd6f7d99c192d0e2862b",
+      "bytes": 1342628
+    },
+    {
+      "file": "annotate.py",
+      "sha256": "b661ed1a3ad87f2b25ff7d01f0ce291c860ba3701fa5437a9a01634d0c4a492c",
+      "bytes": 3276
+    },
+    {
+      "file": "RenderReport.json",
+      "sha256": "970a4ffd02b65c49df61f19edf09a10fccf11bec2978b448dec497adbc29bf75",
+      "bytes": 15996
+    },
+    {
+      "file": "ConnectivityPlanArrays.npz",
+      "sha256": "e088647eb1d3c15702598769721894ec14ef90a3323ea50d8134043d302bcf62",
+      "bytes": 6823566
+    },
+    {
+      "file": "ConnectivityPlan.json",
+      "sha256": "b3764a6e1967361bfdf720399b017d7e2daf9aeb876ba98ae5fa937be42c17d7",
+      "bytes": 51402
+    },
+    {
+      "file": "ContactPixels.json",
+      "sha256": "41c6bf730e97fab254c7211948188ccbac649f241ff30e5c1ce2ef448c7c4408",
+      "bytes": 712
+    },
+    {
+      "file": "README.md",
+      "sha256": "d0ad148d34e52e367b2cc20be391818b5509823d767593049ef02046f57785fc",
+      "bytes": 4589
+    },
+    {
+      "file": "ReviewPacket.json",
+      "sha256": "47ed05c1aa1b7cd2b33ecab981c013843f2a21567602165d773b49b5775bcf42",
+      "bytes": 8688
+    },
+    {
+      "file": "ReviewDecision.json",
+      "sha256": "4480c1de0b71c4975d62e8942291b043ab8d3ed4dc169bfbf10f8b560cf960b6",
+      "bytes": 1480
+    },
+    {
+      "file": "Contacts-A-B-D.png",
+      "sha256": "f0ad666bda370722ca5d60860374a57702d6b0d0efcdd09c48cc62714eec9b0c",
+      "bytes": 6519572
+    },
+    {
+      "file": "HiddenContacts.png",
+      "sha256": "e8315a1a3d1a2732781a363afbb0896a2a7d9af771469044c369a6ecceefd209",
+      "bytes": 4100476
+    },
+    {
+      "file": "AssemblyViews.png",
+      "sha256": "0aee26fb49e586f2708d93a3372fe7f02a88100e5dc047ac6019f689eea90a8d",
+      "bytes": 5897034
+    },
+    {
+      "file": "FullViews.png",
+      "sha256": "8fdd6a92cb627c6d5fea54857a485e0ec81628e3e04655838b8713b1b53b7c9a",
+      "bytes": 3222154
+    },
+    {
+      "file": "contact-A-SourceClay.png",
+      "sha256": "d7cf1e6563c5ae4d9db600835dfb123f14dbc990bfea3992a6df38cc1b6d1e6b",
+      "bytes": 1761247
+    },
+    {
+      "file": "contact-B-SourceClay.png",
+      "sha256": "05aea225b56a6dad7d0a7d2a6ee587747ea1361695a24c1cae6e429afe60cfac",
+      "bytes": 1370192
+    },
+    {
+      "file": "contact-D-SourceClay.png",
+      "sha256": "1c66722275cf0301c93c73bb70cf55b93128270dcfd97ad69b3cfba3132b7ff2",
+      "bytes": 1553816
+    },
+    {
+      "file": "Rejected-AggregateVisibility/propose.py",
+      "sha256": "ce65a68e32dbda30eab2989ca77fd49e90c8392042c2a0fa451cb435aadcf6e9",
+      "bytes": 18964
+    },
+    {
+      "file": "Rejected-AggregateVisibility/Inputs.json",
+      "sha256": "60ed768783103e518bec0b1ff7f2425f70f8b9ac0b006580374c836894425dac",
+      "bytes": 769
+    },
+    {
+      "file": "Rejected-AggregateVisibility/OwnershipArrays.npz",
+      "sha256": "aeb7c8e58990eb763e3b9a5dbd277f8e12b90ee146065f6db509f9a6ca476560",
+      "bytes": 2752438
+    },
+    {
+      "file": "Rejected-AggregateVisibility/Ownership.json",
+      "sha256": "b490bb30f25e1979033413b157f453bf0ed4e77ffc506541d06c25754ade9803",
+      "bytes": 1352518
+    },
+    {
+      "file": "Rejected-AggregateVisibility/RenderReport.json",
+      "sha256": "138ef8a35e635606f884490b46824372be06b69274998064902019237c17f89f",
+      "bytes": 15997
+    },
+    {
+      "file": "Rejected-AggregateVisibility/Rejection.json",
+      "sha256": "ec94e8545dc178f54081250ee5a3c8a7151cc8ac0b72d2d51b4d583d24fa44ff",
+      "bytes": 184
+    }
+  ],
+  "all_source_input_copies_omitted": "Byte-pinned originals/derivatives already retained in Data and prior Verification. Other full-resolution renders/logs remain in original Saved packet.",
+  "source_Data_Content_or_native_changes": false
+}

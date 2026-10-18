@@ -1,0 +1,33 @@
+{
+  "character": "WhiteCap",
+  "scope": "Bounded review of actual own body + imported authored Idle/Walk/Run/Jump stills; all 15 images inspected",
+  "receipts": {
+    "nine": {
+      "path": "Saved/Tests/TripoOwnMotionReview-Remaining-20261017-v1/WhiteCap-nine/Readback.json",
+      "sha256": "2a2aa948f600b91430b90ef1b1c279dc44678570c03154fe9a166c6ffb74aa12",
+      "frames": 9,
+      "exit_code": 0,
+      "maximum_body_vs_clip_pose_error": 1.800060272216797e-05,
+      "unanimated_negative_error": 1.5564181804656982
+    },
+    "hands": {
+      "path": "Saved/Tests/TripoOwnMotionReview-Remaining-20261017-v1/WhiteCap-hands/Readback.json",
+      "sha256": "2a657f22ba0108d05197d35933bb6bb7a643ff7e1fcdef3a370c51a6b56693dc",
+      "frames": 6,
+      "exit_code": 0,
+      "maximum_body_vs_clip_pose_error": 1.519918441772461e-05,
+      "unanimated_negative_error": 1.5564181804656982
+    }
+  },
+  "findings": [
+    "Adult bearded/glasses appearance, backward white cap, black T shirt, gray shorts and shoes remain recognizable against the pinned reference, with softer face/detail.",
+    "Idle shows soft elbows and relaxed fingers; sampled walk/run/apex show plausible physical flexion without an obvious detached limb or severe crotch/accessory pull.",
+    "Radial hand profiles show a distinct projecting thumb on each side. Thumb-tip shortening in the original camera is substantially view-dependent; exact 3D length is not measured.",
+    "Fingertips/knuckle contours still look blunt/faceted close up. Some plane/reverse views are cropped or physically occluded by the body/opposite hand, so they are not full independent silhouettes.",
+    "Every part remains present; neither cropping nor occlusion was used to infer a deletion or correction mask."
+  ],
+  "continuous_motion_reviewed": false,
+  "prop_or_native_grip_reviewed": false,
+  "native_or_final_art_acceptance": false,
+  "recommendation": "Root may review stills and decide on a continuous-motion proof, retaining close-hand and likeness limits."
+}

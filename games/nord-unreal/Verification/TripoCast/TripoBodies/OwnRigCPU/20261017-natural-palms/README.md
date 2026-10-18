@@ -1,0 +1,25 @@
+# Own Tripo bodies: CPU checkpoint, 17 October 2026
+
+BlackCap and Topknot each pass their own surface, four-clip timing and 416 fresh half-frame pose checks. [Summary.json](Summary.json) pins every recipe, input/output receipt, negative check and retained rejection. This is technical CPU acceptance. Topknot's visible bag compression at jump apex is rejected; broad inherited gait sway and fast legs remain open for both characters. Native, transitions, package performance and devices were not tested here.
+
+| Check | BlackCap | Topknot |
+| --- | --- | --- |
+| Fresh half-frame poses | 416 | 416 |
+| Maximum hierarchy-aware pose matrix error | 0.000001610 | 0.000002683 |
+| Minimum authored palm inward dot | 0.9894 | 0.9833 |
+| Own hierarchy / weighted finger controls | 61 / 30 | 61 / 30 |
+| Clip durations at exact 30Hz | 4s, 1.2s, 31/30s, 19/30s | Same |
+
+The hands now derive pronation from each actual posed forearm and palm. The proximal lowerarm receives part of the turn; its weighted twist child and hand receive the same distal remainder. The residual wrist turn is anatomically derived and limited to10°. Black's actual residual stays below0.68°. All authored key and fresh half-frame inward dots exceed0.85; elbow/head geometry, finger curls, source Jump legs and loop continuity remain checked. Upper-arm swing carries the elbow hinge so longitudinal forearm pronation cannot disguise a backwards elbow. Actual ±20° flex controls still hold after pronation; deliberately splayed bind controls use projected alignment and are not accepted as hanging poses.
+
+Root and an independent reviewer inspected all eight exact Black v4 stills: inward palms improved, with no obvious wrist/forearm collapse in those views. Root also viewed the210-frame CPU sequence and retained its natural-palm checkpoint. [BlackV4V7CurveChannels.json](BlackV4V7CurveChannels.json) proves final v7 and reviewed v4 have identical animation curve payloads for every bone/property/axis; FBX UUIDs and file bytes differ. The earlier UUID-based comparison failed and remains in Saved. Root retained the exact reviewed v4 files separately. These observations do not accept the inherited gait/contact or native graphics. Top's nine-view review found the bag defect despite valid matrices.
+
+The original static Tripo GLB is compared only with its own returned rig. A measured positive uniform scale and recentering translation establish UV correspondence, without rotation fitting or any mesh/bind/object correction. Original indexed PBR payloads remain unchanged. Native gameplay height is separate and intentionally null in the surface receipt.
+
+Top's FBX round trip exposed small basis decomposition errors. The explicit static-only surface policy is matrix/scale below2e-5, angle below1e-4rad and head below1e-5 provider units; geometry remains below2µm and weights below1e-6. Legacy skinned-source matrix policy remains1e-5. Corrected copied-source Jump and fresh target reference scale use2e-5; ordinary source Walk/Run scale stays1e-5. Both former Top surface rejections, former Jump rejection and their exact executed recipes remain retained; they were not relabelled as passes.
+
+Dynamic pose comparison preserves FBX's local channels. For each bone, derive the original evaluated local animation basis `oldLocalBind⁻¹ · oldParentPose⁻¹ · oldBonePose`, then rebuild the hierarchy with `freshParentPose · freshLocalBind · basis`. The fresh bind is read independently and separately gated. The actual animated sample never enters the prediction. Raw global discrepancies remain reported, including Top's rejected2.13e-5 raw Jump and2.38e-5 independent component reanchor Run. The hierarchy-aware pose limit remains2e-5; dynamic local translation/scale limits remain1e-5. No bind normalization or model edit occurs.
+
+[NeutralSkinHierarchy.json](NeutralSkinHierarchy.json) substantiates this separation on the actual own Top mesh: neutral head displacement0.094µm, skin displacement0.299µm and pose error0.000000418. An inserted0.001rad thigh deformation produces0.523mm skin displacement and0.0009958 pose error, which fails the unchanged gates. [NeutralBaseline.json](NeutralBaseline.json) also separates static decomposition from actual identity scale keys. Synthetic checks cover hierarchy identity/neutral reconstruction, nonzero rotation/translation/scale rejection, gravity/facing/mirror controls, every bind-semantic boundary and unique UV correspondence. Their exact commands, hashes and logs are in Summary.
+
+Final source recipes are `prepare_tripo_cast_surface.py` SHA `f83bdba794fc88472418253002cd7f9fec7701619d609b5ec635ae0699556a34` and `prepare_tripo_cast_motion.py` SHA `466e97d34415cdcc11cf584fe99a336f4ba546b9e9c277e4978bef5f62223579`. Actual final files and executed recipes are in `Saved/Tests/TripoH31Motion/{BlackCap-final-v7,Topknot-final-v7}`; Top's passed surface is `Saved/Tests/TripoH31Surface/Topknot-v3`. Root owns exact-byte Data retention, bag diagnosis decisions and further visual/native checks. Earlier public Black proof remains unchanged.

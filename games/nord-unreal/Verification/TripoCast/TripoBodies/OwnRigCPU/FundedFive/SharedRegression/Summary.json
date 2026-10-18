@@ -1,0 +1,295 @@
+{
+  "passed": true,
+  "retained_utc": "2026-10-18T00:13:32.686466+00:00",
+  "scope": "Exact archival retention of four already completed CPU regressions; no test regeneration, new pose evaluation or native operation",
+  "all_original_positive_process_exit_codes": 0,
+  "process_evidence": "Historical worker exec completion observations plus exact retained success logs; no processes rerun during this retention",
+  "tests": {
+    "SourceNormals": {
+      "passed": true,
+      "receipt": {
+        "path": "Verification/TripoCast/TripoBodies/OwnRigCPU/FundedFive/SharedRegression/SourceNormals/SourceNormals.json",
+        "sha256": "1df87af06c0c11715413ea2708f3a88d2c388430c55a735429d140e4efbec9db",
+        "original_path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoSourceNormalRecovery-20261017-v3/SourceNormals.json"
+      },
+      "execution_log": {
+        "path": "Verification/TripoCast/TripoBodies/OwnRigCPU/FundedFive/SharedRegression/SourceNormals/execution.log",
+        "sha256": "04959329235b3af0014238e7e97581e5f233e5820f63dd5a8c5ba43737bba864",
+        "original_path": "/tmp/nord-source-normal-recovery-v3.log"
+      },
+      "original_process_exit_code": 0,
+      "historical_exec_session_id": 60594,
+      "original_command": [
+        "blender",
+        "-b",
+        "-t",
+        "4",
+        "--python-exit-code",
+        "1",
+        "--python",
+        "Scripts/test_tripo_source_normals.py",
+        "--",
+        "--report",
+        "Saved/Tests/TripoSourceNormalRecovery-20261017-v3"
+      ],
+      "executed_recipes": {
+        "test_tripo_source_normals.py": {
+          "path": "Verification/TripoCast/TripoBodies/OwnRigCPU/FundedFive/SharedRegression/SourceNormals/ExecutedRecipes/test_tripo_source_normals.py",
+          "sha256": "abb29aa94fec7f39ed840ff9330a79f663f76f31f7ebe28d61bf1104188909b6",
+          "original_path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoSourceNormalRecovery-20261017-v3/test_tripo_source_normals.py"
+        },
+        "prepare_tripo_cast_surface.py": {
+          "path": "Verification/TripoCast/TripoBodies/OwnRigCPU/FundedFive/SharedRegression/SourceNormals/ExecutedRecipes/prepare_tripo_cast_surface.py",
+          "sha256": "82040586d9b77fafcfc574b39dbfd05d3d32b15effb38d91bb96f84605409948",
+          "original_path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoSourceNormalRecovery-20261017-v3/prepare_tripo_cast_surface.py"
+        }
+      },
+      "scope": "Previously completed test process and exact receipt/log/recipe bytes; archival copy only"
+    },
+    "MotionScale": {
+      "passed": true,
+      "receipt": {
+        "path": "Verification/TripoCast/TripoBodies/OwnRigCPU/FundedFive/SharedRegression/MotionScale/MotionScale.json",
+        "sha256": "84c27a5e6f473fe5885170e10a8252c4dfa7eb4e9fc87941279e3498b9118afa",
+        "original_path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoMotionScaleRegression-20261017-v1/report/MotionScale.json"
+      },
+      "execution_log": {
+        "path": "Verification/TripoCast/TripoBodies/OwnRigCPU/FundedFive/SharedRegression/MotionScale/execution.log",
+        "sha256": "d3edd2434b4855671e86250c18f11a613408d22a44c88807158c1712137d5e72",
+        "original_path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoMotionScaleRegression-20261017-v1/test.log"
+      },
+      "original_process_exit_code": 0,
+      "historical_exec_session_id": 40382,
+      "original_command": [
+        "blender",
+        "-b",
+        "-t",
+        "4",
+        "--python-exit-code",
+        "1",
+        "--python",
+        "Scripts/test_tripo_motion_scale.py",
+        "--",
+        "--report",
+        "Saved/Tests/TripoMotionScaleRegression-20261017-v1/report",
+        "--clips",
+        "Saved/Tests/TripoMotionScaleRegression-20261017-v1/clips.json"
+      ],
+      "executed_recipes": {
+        "test_tripo_motion_scale.py": {
+          "path": "Verification/TripoCast/TripoBodies/OwnRigCPU/FundedFive/SharedRegression/MotionScale/ExecutedRecipes/test_tripo_motion_scale.py",
+          "sha256": "1b9f41d89839ff0f088cf54300ca1f2fdf17dfe314af1137b56cd4e2da78e10e",
+          "original_path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoMotionScaleRegression-20261017-v1/report/test_tripo_motion_scale.py"
+        },
+        "prepare_tripo_cast_motion.py": {
+          "path": "Verification/TripoCast/TripoBodies/OwnRigCPU/FundedFive/SharedRegression/MotionScale/ExecutedRecipes/prepare_tripo_cast_motion.py",
+          "sha256": "dcd567249846c31f35b2b8d2a4876e93fef10815d2ee3e47c1174895812bd030",
+          "original_path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoMotionScaleRegression-20261017-v1/report/prepare_tripo_cast_motion.py"
+        }
+      },
+      "scope": "Previously completed test process and exact receipt/log/recipe bytes; archival copy only",
+      "input_manifest": {
+        "path": "Verification/TripoCast/TripoBodies/OwnRigCPU/FundedFive/SharedRegression/MotionScale/clips.json",
+        "sha256": "bc2ac540aca019d8580cb3abd9f547e10fbe1fa9a4d670de670c4a5209d1d12e",
+        "original_path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoMotionScaleRegression-20261017-v1/clips.json"
+      }
+    },
+    "NeutralRetarget": {
+      "passed": true,
+      "receipt": {
+        "path": "Verification/TripoCast/TripoBodies/OwnRigCPU/FundedFive/SharedRegression/NeutralRetarget/NeutralRetarget.json",
+        "sha256": "d899ed5f0e78e2bc303ae3ccefbc2cdaf58efa7be767acf055ac6ca1746713e9",
+        "original_path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoNeutralRetargetRegression-20261017-v1/report/NeutralRetarget.json"
+      },
+      "execution_log": {
+        "path": "Verification/TripoCast/TripoBodies/OwnRigCPU/FundedFive/SharedRegression/NeutralRetarget/execution.log",
+        "sha256": "e8bb8ec4b473e164707bba0740750770b41dd5f03e148af34286df8a06916c44",
+        "original_path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoNeutralRetargetRegression-20261017-v1/test.log"
+      },
+      "original_process_exit_code": 0,
+      "historical_exec_session_id": 6477,
+      "original_command": [
+        "blender",
+        "-b",
+        "-t",
+        "4",
+        "--python-exit-code",
+        "1",
+        "--python",
+        "Scripts/test_tripo_retarget_neutral.py",
+        "--",
+        "--rigs",
+        "Saved/Tests/TripoNeutralRetargetRegression-20261017-v1/rigs.json",
+        "--report",
+        "Saved/Tests/TripoNeutralRetargetRegression-20261017-v1/report"
+      ],
+      "executed_recipes": {
+        "test_tripo_retarget_neutral.py": {
+          "path": "Verification/TripoCast/TripoBodies/OwnRigCPU/FundedFive/SharedRegression/NeutralRetarget/ExecutedRecipes/test_tripo_retarget_neutral.py",
+          "sha256": "4493efa96945624139e814d4d06f7ad729605660bd4b4597f600ff779506ed16",
+          "original_path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoNeutralRetargetRegression-20261017-v1/report/test_tripo_retarget_neutral.py"
+        },
+        "prepare_tripo_cast_motion.py": {
+          "path": "Verification/TripoCast/TripoBodies/OwnRigCPU/FundedFive/SharedRegression/NeutralRetarget/ExecutedRecipes/prepare_tripo_cast_motion.py",
+          "sha256": "0e14d5c967f1a55ca577a18604c26501cca68dff12a1c26ed6d4c13c447f6e9f",
+          "original_path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoNeutralRetargetRegression-20261017-v1/report/prepare_tripo_cast_motion.py"
+        }
+      },
+      "scope": "Previously completed test process and exact receipt/log/recipe bytes; archival copy only",
+      "input_manifest": {
+        "path": "Verification/TripoCast/TripoBodies/OwnRigCPU/FundedFive/SharedRegression/NeutralRetarget/rigs.json",
+        "sha256": "e756ff16561e3a8f3afc294210f4d1d3c0b36e5bc35a1173839a0f4153b5c7d4",
+        "original_path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoNeutralRetargetRegression-20261017-v1/rigs.json"
+      }
+    },
+    "SourceJumpCapture": {
+      "passed": true,
+      "receipt": {
+        "path": "Verification/TripoCast/TripoBodies/OwnRigCPU/FundedFive/SharedRegression/SourceJumpCapture/JumpCapture.json",
+        "sha256": "23fcb323feaf384b6f35a65502951a9bd21f55e3bc45adc54e38eb4d6a7285a7",
+        "original_path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoJumpCaptureRegression-20261017-v1/JumpCapture.json"
+      },
+      "execution_log": {
+        "path": "Verification/TripoCast/TripoBodies/OwnRigCPU/FundedFive/SharedRegression/SourceJumpCapture/execution.log",
+        "sha256": "0e6ef7d0fc76bb0dd61959a602afdaaabeed808bafb447c3c57b5d92027b024a",
+        "original_path": "/tmp/nord-jump-capture-regression-v1.log"
+      },
+      "original_process_exit_code": 0,
+      "historical_exec_session_id": 41566,
+      "original_command": [
+        "blender",
+        "-b",
+        "-t",
+        "4",
+        "--python-exit-code",
+        "1",
+        "--python",
+        "Scripts/test_tripo_jump_capture.py",
+        "--",
+        "--motion-report",
+        "Saved/Tests/TripoH31RemainingPlan-20261017-v6/RedJersey/prepared-v1/motion/report/Motion.json",
+        "--report",
+        "Saved/Tests/TripoJumpCaptureRegression-20261017-v1"
+      ],
+      "executed_recipes": {
+        "test_tripo_jump_capture.py": {
+          "path": "Verification/TripoCast/TripoBodies/OwnRigCPU/FundedFive/SharedRegression/SourceJumpCapture/ExecutedRecipes/test_tripo_jump_capture.py",
+          "sha256": "38c639f978137153b55c7c970a61357ef0357eb7f44f4087f900a8acf6032a34",
+          "original_path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoJumpCaptureRegression-20261017-v1/test_tripo_jump_capture.py"
+        }
+      },
+      "scope": "Previously completed test process and exact receipt/log/recipe bytes; archival copy only",
+      "negative_logs": [
+        {
+          "path": "Verification/TripoCast/TripoBodies/OwnRigCPU/FundedFive/SharedRegression/SourceJumpCapture/NegativeControls/wrong-source-SHA.log",
+          "sha256": "6041eddcc34fe1f5e9669009fd1fd9e4d7a1559aa628b840602131324969fc71",
+          "original_path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoJumpCaptureRegression-20261017-v1/wrong-source-SHA.log"
+        },
+        {
+          "path": "Verification/TripoCast/TripoBodies/OwnRigCPU/FundedFive/SharedRegression/SourceJumpCapture/NegativeControls/overwrite-existing-capture.log",
+          "sha256": "f09809633f5cdc5075a2ec389ca4511359ed3ab07b1a5fff2a362b9a04b1c9fc",
+          "original_path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoJumpCaptureRegression-20261017-v1/overwrite-existing-capture.log"
+        }
+      ],
+      "linked_completed_motion_and_source_capture": {
+        "Motion.json": {
+          "path": "Verification/TripoCast/TripoBodies/OwnRigCPU/FundedFive/RedJersey/Motion.json",
+          "sha256": "8d0a4bec01e22663e39d7aab1b6087f6e5548c917518567cac2543c2a61c85e4"
+        },
+        "OriginalSourceSceneSamples.json": {
+          "path": "Verification/TripoCast/TripoBodies/OwnRigCPU/FundedFive/RedJersey/OriginalSourceSceneSamples.json",
+          "sha256": "3446f0c2da88d9a4f740adafec02e34a2b43425cd9e5c0e004eb791d4eacfd5b"
+        }
+      },
+      "captured_source_dependency_recipes": {
+        "prepare_tripo_cast_motion.py": {
+          "path": "Verification/TripoCast/TripoBodies/OwnRigCPU/FundedFive/SharedRegression/SourceJumpCapture/CapturedSourceDependencies/prepare_tripo_cast_motion.py",
+          "sha256": "a4ec4e93a4877454340ea8daa3b2c5901ea25642b25553f005dc110c76036557",
+          "original_path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Verification/TripoCast/TripoBodies/OwnRigCPU/FundedFive/RedJersey/Recipes/prepare_tripo_cast_motion.py"
+        },
+        "capture_tripo_source_jump.py": {
+          "path": "Verification/TripoCast/TripoBodies/OwnRigCPU/FundedFive/SharedRegression/SourceJumpCapture/CapturedSourceDependencies/capture_tripo_source_jump.py",
+          "sha256": "08d07d596e72a6f21d2b77ac75f0bda98e98d395ede4d1046be759942ab29967",
+          "original_path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Verification/TripoCast/TripoBodies/OwnRigCPU/FundedFive/RedJersey/Recipes/capture_tripo_source_jump.py"
+        },
+        "prepare_meshy_jump.py": {
+          "path": "Verification/TripoCast/TripoBodies/OwnRigCPU/FundedFive/SharedRegression/SourceJumpCapture/CapturedSourceDependencies/prepare_meshy_jump.py",
+          "sha256": "51cbc1072264c31eeafdd65cf1dfef76b36ac154e84d6a93b97f425a3e73a857",
+          "original_path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Verification/TripoCast/TripoBodies/OwnRigCPU/FundedFive/RedJersey/Recipes/prepare_meshy_jump.py"
+        },
+        "prepare_tripo_cast_surface.py": {
+          "path": "Verification/TripoCast/TripoBodies/OwnRigCPU/FundedFive/SharedRegression/SourceJumpCapture/CapturedSourceDependencies/prepare_tripo_cast_surface.py",
+          "sha256": "82040586d9b77fafcfc574b39dbfd05d3d32b15effb38d91bb96f84605409948",
+          "original_path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoSourceNormalRecovery-20261017-v3/prepare_tripo_cast_surface.py"
+        }
+      }
+    }
+  },
+  "current_recipe_versions_at_retention": {
+    "prepare_tripo_cast_surface.py": {
+      "path": "Scripts/prepare_tripo_cast_surface.py",
+      "sha256": "82040586d9b77fafcfc574b39dbfd05d3d32b15effb38d91bb96f84605409948"
+    },
+    "prepare_tripo_cast_motion.py": {
+      "path": "Scripts/prepare_tripo_cast_motion.py",
+      "sha256": "a4ec4e93a4877454340ea8daa3b2c5901ea25642b25553f005dc110c76036557"
+    },
+    "capture_tripo_source_jump.py": {
+      "path": "Scripts/capture_tripo_source_jump.py",
+      "sha256": "08d07d596e72a6f21d2b77ac75f0bda98e98d395ede4d1046be759942ab29967"
+    },
+    "test_tripo_source_normals.py": {
+      "path": "Scripts/test_tripo_source_normals.py",
+      "sha256": "abb29aa94fec7f39ed840ff9330a79f663f76f31f7ebe28d61bf1104188909b6"
+    },
+    "test_tripo_motion_scale.py": {
+      "path": "Scripts/test_tripo_motion_scale.py",
+      "sha256": "1b9f41d89839ff0f088cf54300ca1f2fdf17dfe314af1137b56cd4e2da78e10e"
+    },
+    "test_tripo_retarget_neutral.py": {
+      "path": "Scripts/test_tripo_retarget_neutral.py",
+      "sha256": "4493efa96945624139e814d4d06f7ad729605660bd4b4597f600ff779506ed16"
+    },
+    "test_tripo_jump_capture.py": {
+      "path": "Scripts/test_tripo_jump_capture.py",
+      "sha256": "38c639f978137153b55c7c970a61357ef0357eb7f44f4087f900a8acf6032a34"
+    }
+  },
+  "current_versions_not_reinterpreted_as_historical_executed_versions": true,
+  "data_shared_helpers_native_gpu_api_mutations": false,
+  "art_native_package_acceptance": false,
+  "protected_originals_unchanged": true,
+  "protected_original_files": {
+    "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Scripts/prepare_tripo_cast_surface.py": "82040586d9b77fafcfc574b39dbfd05d3d32b15effb38d91bb96f84605409948",
+    "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Scripts/prepare_tripo_cast_motion.py": "a4ec4e93a4877454340ea8daa3b2c5901ea25642b25553f005dc110c76036557",
+    "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Scripts/capture_tripo_source_jump.py": "08d07d596e72a6f21d2b77ac75f0bda98e98d395ede4d1046be759942ab29967",
+    "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Scripts/test_tripo_source_normals.py": "abb29aa94fec7f39ed840ff9330a79f663f76f31f7ebe28d61bf1104188909b6",
+    "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Scripts/test_tripo_motion_scale.py": "1b9f41d89839ff0f088cf54300ca1f2fdf17dfe314af1137b56cd4e2da78e10e",
+    "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Scripts/test_tripo_retarget_neutral.py": "4493efa96945624139e814d4d06f7ad729605660bd4b4597f600ff779506ed16",
+    "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Scripts/test_tripo_jump_capture.py": "38c639f978137153b55c7c970a61357ef0357eb7f44f4087f900a8acf6032a34",
+    "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoSourceNormalRecovery-20261017-v3/SourceNormals.json": "1df87af06c0c11715413ea2708f3a88d2c388430c55a735429d140e4efbec9db",
+    "/tmp/nord-source-normal-recovery-v3.log": "04959329235b3af0014238e7e97581e5f233e5820f63dd5a8c5ba43737bba864",
+    "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoSourceNormalRecovery-20261017-v3/test_tripo_source_normals.py": "abb29aa94fec7f39ed840ff9330a79f663f76f31f7ebe28d61bf1104188909b6",
+    "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoSourceNormalRecovery-20261017-v3/prepare_tripo_cast_surface.py": "82040586d9b77fafcfc574b39dbfd05d3d32b15effb38d91bb96f84605409948",
+    "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoMotionScaleRegression-20261017-v1/report/MotionScale.json": "84c27a5e6f473fe5885170e10a8252c4dfa7eb4e9fc87941279e3498b9118afa",
+    "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoMotionScaleRegression-20261017-v1/test.log": "d3edd2434b4855671e86250c18f11a613408d22a44c88807158c1712137d5e72",
+    "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoMotionScaleRegression-20261017-v1/report/test_tripo_motion_scale.py": "1b9f41d89839ff0f088cf54300ca1f2fdf17dfe314af1137b56cd4e2da78e10e",
+    "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoMotionScaleRegression-20261017-v1/report/prepare_tripo_cast_motion.py": "dcd567249846c31f35b2b8d2a4876e93fef10815d2ee3e47c1174895812bd030",
+    "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoMotionScaleRegression-20261017-v1/clips.json": "bc2ac540aca019d8580cb3abd9f547e10fbe1fa9a4d670de670c4a5209d1d12e",
+    "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoNeutralRetargetRegression-20261017-v1/report/NeutralRetarget.json": "d899ed5f0e78e2bc303ae3ccefbc2cdaf58efa7be767acf055ac6ca1746713e9",
+    "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoNeutralRetargetRegression-20261017-v1/test.log": "e8bb8ec4b473e164707bba0740750770b41dd5f03e148af34286df8a06916c44",
+    "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoNeutralRetargetRegression-20261017-v1/report/test_tripo_retarget_neutral.py": "4493efa96945624139e814d4d06f7ad729605660bd4b4597f600ff779506ed16",
+    "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoNeutralRetargetRegression-20261017-v1/report/prepare_tripo_cast_motion.py": "0e14d5c967f1a55ca577a18604c26501cca68dff12a1c26ed6d4c13c447f6e9f",
+    "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoNeutralRetargetRegression-20261017-v1/rigs.json": "e756ff16561e3a8f3afc294210f4d1d3c0b36e5bc35a1173839a0f4153b5c7d4",
+    "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoJumpCaptureRegression-20261017-v1/JumpCapture.json": "23fcb323feaf384b6f35a65502951a9bd21f55e3bc45adc54e38eb4d6a7285a7",
+    "/tmp/nord-jump-capture-regression-v1.log": "0e6ef7d0fc76bb0dd61959a602afdaaabeed808bafb447c3c57b5d92027b024a",
+    "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoJumpCaptureRegression-20261017-v1/test_tripo_jump_capture.py": "38c639f978137153b55c7c970a61357ef0357eb7f44f4087f900a8acf6032a34",
+    "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Verification/TripoCast/TripoBodies/OwnRigCPU/FundedFive/RedJersey/Motion.json": "8d0a4bec01e22663e39d7aab1b6087f6e5548c917518567cac2543c2a61c85e4",
+    "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Verification/TripoCast/TripoBodies/OwnRigCPU/FundedFive/RedJersey/OriginalSourceSceneSamples.json": "3446f0c2da88d9a4f740adafec02e34a2b43425cd9e5c0e004eb791d4eacfd5b",
+    "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Verification/TripoCast/TripoBodies/OwnRigCPU/FundedFive/RedJersey/Recipes/prepare_tripo_cast_motion.py": "a4ec4e93a4877454340ea8daa3b2c5901ea25642b25553f005dc110c76036557",
+    "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Verification/TripoCast/TripoBodies/OwnRigCPU/FundedFive/RedJersey/Recipes/capture_tripo_source_jump.py": "08d07d596e72a6f21d2b77ac75f0bda98e98d395ede4d1046be759942ab29967",
+    "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Verification/TripoCast/TripoBodies/OwnRigCPU/FundedFive/RedJersey/Recipes/prepare_meshy_jump.py": "51cbc1072264c31eeafdd65cf1dfef76b36ac154e84d6a93b97f425a3e73a857",
+    "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoJumpCaptureRegression-20261017-v1/wrong-source-SHA.log": "6041eddcc34fe1f5e9669009fd1fd9e4d7a1559aa628b840602131324969fc71",
+    "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoJumpCaptureRegression-20261017-v1/overwrite-existing-capture.log": "f09809633f5cdc5075a2ec389ca4511359ed3ab07b1a5fff2a362b9a04b1c9fc"
+  }
+}

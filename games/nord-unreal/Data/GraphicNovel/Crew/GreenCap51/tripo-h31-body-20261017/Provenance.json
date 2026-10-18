@@ -1,0 +1,23 @@
+{
+  "character": "GreenCap51",
+  "task_id": "fb558687-4093-4793-9395-687f9983fe06",
+  "status": "completed_downloaded",
+  "credits_consumed": 60,
+  "request_path": "request.json",
+  "request_sha256": "bf8f4d6869d0fba66af3c4e7c832f7e387354d2316293062e9a4da89fdcd310b",
+  "source_reference_sha256": "7998152ab482a55571f6ffa113ef901988ccf4cfd2bfd6c9fa79134cc37d8ed0",
+  "outputs": {
+    "body.glb": {
+      "bytes": 12400152,
+      "sha256": "43c538c2880b933fd2f2fc78c67e7ca08e913d05552f53f0dc96794e01ce51f6"
+    },
+    "provider-preview.png": {
+      "bytes": 142005,
+      "sha256": "815832f889a2427c321071f7a90fbad5bbdc579606758a8db827cc847c3108dd"
+    }
+  },
+  "preview_format_from_actual_magic": true,
+  "signed_urls_private_only": true,
+  "native_or_art_accepted": false,
+  "recorded_utc": "2026-10-17T23:23:55.821475+00:00"
+}

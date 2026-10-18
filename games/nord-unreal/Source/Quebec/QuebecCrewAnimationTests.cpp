@@ -25,6 +25,12 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(FQuebecCrewAnimationTest, "Quebec.Animation.Ble
     EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
 bool FQuebecCrewAnimationTest::RunTest(const FString& Parameters)
 {
+    const FString OriginalCommandLine = FCommandLine::Get();
+    FString ProductionCommandLine = OriginalCommandLine;
+    for (const TCHAR* Flag : {TEXT("NordGraphicNovelCandidate"), TEXT("NordGraphicNovelGenerated"), TEXT("NordGraphicNovelHighDetail"), TEXT("NordGraphicNovelTripo")})
+        ProductionCommandLine = ProductionCommandLine.Replace(*(FString(TEXT("-")) + Flag), TEXT(""), ESearchCase::IgnoreCase);
+    FCommandLine::Set(*ProductionCommandLine);
+    ON_SCOPE_EXIT { FCommandLine::Set(*OriginalCommandLine); };
     UWorld::InitializationValues Initialization;
     Initialization.AllowAudioPlayback(false).CreateNavigation(false).CreateAISystem(false);
     UWorld* World = UWorld::CreateWorld(EWorldType::Game, false, NAME_None, nullptr, true, ERHIFeatureLevel::Num, &Initialization);

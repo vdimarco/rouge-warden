@@ -1,0 +1,34 @@
+{
+  "character": "RedJersey",
+  "source_sha256": "13bf9c9dc76a7a925ba31ad5fadf6ef5e3a7436ee0450e6579a221f1fabd96c8",
+  "review_receipt": {
+    "path": "Saved/Tests/TripoRemainingBodyReviews-20261017-v1/RedJersey-views/Review.json",
+    "sha256": "cd5ae0ddc77568fde2394a8160a13fd4d2b36f49e5f474e282a62de486f928b4"
+  },
+  "inventory": {
+    "path": "Saved/Tests/TripoRemainingBodyReviews-20261017-v1/RedJersey-measure/Inventory.json",
+    "sha256": "8c05fa303ed4a8e336d7e0e0e5762243b41ffc9e3126a718f4e56fc338f61f2d"
+  },
+  "raw_normal_diagnostic": "Saved/Tests/TripoRemainingBodyReviews-20261017-v1/RedJersey-measure/RawNormalDiagnostic.json",
+  "all_eight_original_PBR_views_inspected": true,
+  "reference_pin_verified": true,
+  "candidate_heading_and_hand_crops_confirmed": true,
+  "rig_trial_recommendation": "Conditional source candidate for root likeness/thumb decision before paid rig; resolve Blender-only lost normal representation without editing source or weakening preservation gates.",
+  "observations": [
+    "Lean adult body, backward navy cap, blue mirrored glasses, red button-front baseball jersey with white/navy piping and W emblem retain recognizable reference identity.",
+    "Face is smoother/younger and moustache/goatee are substantially fainter than reference; root should assess likeness at both face views.",
+    "Both hands show four separated fingers plus short flattened thumb tips, with reduced thumb length/opposition; fine grip anatomy not accepted.",
+    "No extra accessory, bag or gross limb loss observed. Shirt emblem/trim remain recognizable but less clean and more raised-looking than reference."
+  ],
+  "technical_counts": {
+    "vertices": 54560,
+    "triangles": 97918,
+    "raw_zero_length_corner_normals": 2,
+    "exact_zero_area_triangles": 0,
+    "uv_duplicate_groups": 0,
+    "uv_corner_ties": 0
+  },
+  "technical_limit": "Two Blender-only zero corner normals at vertex44916; original NORMAL accessor is finite/unit with no zeros. Exact addresses in inventory/RawNormalDiagnostic.json.",
+  "native_or_final_art_acceptance": false,
+  "scope": "Static-source original-PBR morphology only; no rig/skin/motion/grip/native acceptance."
+}

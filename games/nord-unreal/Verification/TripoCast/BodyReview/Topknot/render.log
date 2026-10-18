@@ -1,0 +1,29 @@
+18:11:22 | INFO: Data are loaded, start creating Blender stuff
+18:11:22 | INFO: Blender create Mesh node Mesh_0
+18:11:22 | INFO: glTF import finished in 0.34s
+/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Scripts/review_graphic_novel_cast.py:105: DeprecationWarning: 'Material.use_nodes' is expected to be removed in Blender 6.0
+  assert material and material.use_nodes
+/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Scripts/review_graphic_novel_cast.py:143: DeprecationWarning: 'World.use_nodes' is expected to be removed in Blender 6.0
+  scene.world.use_nodes = True
+/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Scripts/review_graphic_novel_cast.py:166: DeprecationWarning: 'Material.use_nodes' is expected to be removed in Blender 6.0
+  ink.use_nodes = True
+00:02.062  render           | Saved: '/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoCastReview-Topknot-20261017-v2/front.png'
+CPU_BODY_REVIEW_VIEW front
+00:03.159  render           | Saved: '/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoCastReview-Topknot-20261017-v2/threequarter.png'
+CPU_BODY_REVIEW_VIEW threequarter
+00:04.024  render           | Saved: '/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoCastReview-Topknot-20261017-v2/side.png'
+CPU_BODY_REVIEW_VIEW side
+00:05.107  render           | Saved: '/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoCastReview-Topknot-20261017-v2/back.png'
+CPU_BODY_REVIEW_VIEW back
+00:06.731  render           | Saved: '/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoCastReview-Topknot-20261017-v2/face-front.png'
+CPU_BODY_REVIEW_VIEW face-front
+00:08.546  render           | Saved: '/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoCastReview-Topknot-20261017-v2/face-threequarter.png'
+CPU_BODY_REVIEW_VIEW face-threequarter
+00:09.947  render           | Saved: '/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoCastReview-Topknot-20261017-v2/hand-left.png'
+CPU_BODY_REVIEW_VIEW hand-left
+00:11.384  render           | Saved: '/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoCastReview-Topknot-20261017-v2/hand-right.png'
+CPU_BODY_REVIEW_VIEW hand-right
+CPU_BODY_REVIEW_COMPLETE /home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoCastReview-Topknot-20261017-v2
+Blender 5.2.2 LTS (hash d13f752e3b9c built 2026-09-15 01:34:58)
+
+Blender quit

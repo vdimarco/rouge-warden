@@ -1,0 +1,46 @@
+{
+  "at_utc": "2026-10-17T23:33:25.929809+00:00",
+  "source_sha256": "163e86ec12c6ee9a53ccee29f500dfba720d230c8046c9d968430262ee24e4d4",
+  "reference_sha256": "61bbfd6c38e51506f59f8f1293b44f89bef39d148d9d3c948906d8be8e24fb33",
+  "viewed": [
+    {
+      "file": "front.png",
+      "sha256": "5d3ad00d63c597a38b4547b7271eb7e0d8bd7417aa9b1b71c09bca7899eac413"
+    },
+    {
+      "file": "threequarter.png",
+      "sha256": "d118c32b827011b65999696c421a53f21fcf45a211548a16894d09088edee38b"
+    },
+    {
+      "file": "side.png",
+      "sha256": "de74476d0df88b161e784af53fd002627ba4479791ac2e4be0b8776321f05ca8"
+    },
+    {
+      "file": "back.png",
+      "sha256": "714ea2f625eb7e166adbc6cb1509f9b020bfb488dca86505463aa5336fd717fa"
+    },
+    {
+      "file": "face-front.png",
+      "sha256": "0b17909ebac23d73d5f61619e8ddeed48a5f2aada0a6d15a52a47c225fb38ba8"
+    },
+    {
+      "file": "face-threequarter.png",
+      "sha256": "fb20ee80eb1e0be0fe0c34b6d17f833fa2e3bc36d279ca785217185f47d5ef93"
+    },
+    {
+      "file": "hand-left.png",
+      "sha256": "67e31113811802dbe5fde088ca4997232c4a4f9306357e8c37c5f965761caaac"
+    },
+    {
+      "file": "hand-right.png",
+      "sha256": "2c5f5b4973344d7b90763d016c150aa2000a5c44ae9c550fa692709daa930c52"
+    }
+  ],
+  "bounded_rig_trial_allowed": true,
+  "final_art_accepted": false,
+  "observations": [
+    "Adult broad build, backward white cap, beard and rectangular glasses remain recognizable; face smoother and frames lighter/thicker.",
+    "Thumbs appear short/flattened in front-biased views; actual3D length/opposition and reverse angles must be measured after rigging before deciding whether repair is necessary. No geometry change authorized on2D appearance alone."
+  ],
+  "hand_review_required": true
+}

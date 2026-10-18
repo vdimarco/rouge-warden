@@ -41,7 +41,6 @@ def source_plan(root):
 
 
 def main():
-    import sys
     import unreal as u
     root = Path(u.Paths.project_dir()).resolve()
     args = set(u.SystemLibrary.get_command_line().lower().split())
@@ -49,6 +48,18 @@ def main():
     assert not u.EditorLevelLibrary.get_pie_worlds(False), 'Stop PIE before importing'
     assert not (root / 'Content/ParkComic/CrewGraphicNovelTripo').exists(), 'Preserve/recover any prior owned import before rerunning'
     paths, hashes = source_plan(root)
+    import_assets(u, root, paths, hashes, FOLDER, SCALE,
+                  root / 'Saved/Tests/TripoNative/Import.json', '/Game/ParkComic/Crew/SM_Plunger')
+    u.SystemLibrary.quit_editor()
+
+
+def import_assets(u, root, paths, hashes, folder, scale, report_path, prop_path):
+    """Shared own-rig import; every call creates a new isolated resident folder."""
+    import sys
+    assert '-nullrhi' in set(u.SystemLibrary.get_command_line().lower().split())
+    assert not u.EditorLevelLibrary.get_pie_worlds(False)
+    assert not report_path.exists(), 'Preserve the previous import report'
+    assert not (root / 'Content' / folder.removeprefix('/Game/')).exists(), 'Preserve the previous resident import'
     sys.path.insert(0, str(root / 'Scripts'))
     import plateau_atmosphere
     tools = u.AssetToolsHelpers.get_asset_tools()
@@ -57,14 +68,14 @@ def main():
     u.SystemLibrary.execute_console_command(None, 'Interchange.FeatureFlags.Import.FBX 0')
 
     def load_file(path, name, options=None):
-        assert not assets.does_asset_exist(FOLDER + '/' + name)
+        assert not assets.does_asset_exist(folder + '/' + name)
         task = u.AssetImportTask()
-        task.filename, task.destination_path, task.destination_name = str(path), FOLDER, name
+        task.filename, task.destination_path, task.destination_name = str(path), folder, name
         task.automated, task.replace_existing, task.save = True, False, True
         if options:
             task.options, task.factory = options, u.FbxFactory()
         tools.import_asset_tasks([task])
-        asset = u.load_asset(FOLDER + '/' + name)
+        asset = u.load_asset(folder + '/' + name)
         assert asset, (name, list(task.imported_object_paths))
         return asset
 
@@ -74,7 +85,7 @@ def main():
     options.import_as_skeletal, options.import_mesh, options.import_animations = True, True, False
     options.import_materials, options.import_textures, options.create_physics_asset = False, False, False
     mesh_data = options.skeletal_mesh_import_data
-    mesh_data.import_uniform_scale = SCALE
+    mesh_data.import_uniform_scale = scale
     mesh_data.force_front_x_axis = True
     mesh_data.convert_scene, mesh_data.convert_scene_unit = True, True
     mesh_data.normal_import_method = u.FBXNormalImportMethod.FBXNIM_IMPORT_NORMALS
@@ -90,14 +101,16 @@ def main():
         build.set_editor_property(key, value)
     u.SkeletalMeshEditorSubsystem.set_lod_build_settings(mesh, 0, build)
     skeleton = mesh.get_editor_property('skeleton')
-    assert skeleton and skeleton.get_path_name().startswith(FOLDER + '/')
+    assert skeleton and skeleton.get_path_name().startswith(folder + '/')
     pose = u.AnimPoseExtensions.get_reference_pose(skeleton)
     bones = set(map(str, u.AnimPoseExtensions.get_bone_names(pose)))
     assert {'root', 'pelvis', 'hand_r', 'head', 'middle_03_r'} <= bones and len(bones) in (61, 62)
     height = mesh.get_bounds().box_extent.z * 2
-    assert 178 < height < 186, ('Wrong native body scale', height)
+    assert abs(height - 182.) < .1, ('Wrong native body scale', height)
+    feet_z = mesh.get_bounds().origin.z - mesh.get_bounds().box_extent.z
+    assert abs(feet_z) < .1, ('Wrong native foot grounding', feet_z)
 
-    material = tools.create_asset('M_Crew', FOLDER, u.Material, u.MaterialFactoryNew())
+    material = tools.create_asset('M_Crew', folder, u.Material, u.MaterialFactoryNew())
     samples = {}
     textures = {}
     for kind in ('base_color', 'normal', 'metallic_roughness'):
@@ -147,7 +160,7 @@ def main():
         options.import_as_skeletal, options.import_mesh, options.import_animations = True, False, True
         options.import_materials, options.import_textures, options.skeleton = False, False, skeleton
         anim_data = options.anim_sequence_import_data
-        anim_data.import_uniform_scale = SCALE
+        anim_data.import_uniform_scale = scale
         anim_data.force_front_x_axis = True
         anim_data.convert_scene, anim_data.convert_scene_unit = True, True
         anim_data.set_editor_property('use_default_sample_rate', True)
@@ -159,26 +172,25 @@ def main():
         clips[kind] = clip
     factory = u.BlendSpaceFactory1D()
     factory.set_editor_property('target_skeleton', skeleton)
-    space = tools.create_asset('BS_Locomotion', FOLDER, u.BlendSpace1D, factory)
+    space = tools.create_asset('BS_Locomotion', folder, u.BlendSpace1D, factory)
     assert u.QuebecCrewAnimInstance.configure_crew_blend_space(space, clips['Idle'], clips['Walk'], clips['Run'])
-    prop = u.load_asset('/Game/ParkComic/Crew/SM_Plunger')
+    prop = u.load_asset(prop_path)
     assert isinstance(prop, u.StaticMesh) and u.QuebecCrewAnimInstance.configure_tripo_grip(mesh, prop)
     for asset in (skeleton, mesh, space):
         assert assets.save_loaded_asset(asset, only_if_is_dirty=False)
-    assets.save_directory(FOLDER, only_if_is_dirty=False, recursive=True)
+    assets.save_directory(folder, only_if_is_dirty=False, recursive=True)
     assert all(hashlib.sha256(path.read_bytes()).hexdigest() == hashes[name] for name, path in paths.items())
-    report = {'passed': True, 'folder': FOLDER, 'import_scale': SCALE, 'height_cm': height,
-              'bones': sorted(bones), 'sources': {name: {'path': str(path.relative_to(root)), 'sha256': hashes[name]} for name, path in paths.items()},
+    report = {'passed': True, 'folder': folder, 'import_scale': scale, 'height_cm': height,
+              'feet_z_cm': feet_z, 'bones': sorted(bones), 'sources': {name: {'path': str(path.relative_to(root)), 'sha256': hashes[name]} for name, path in paths.items()},
               'mesh': mesh.get_path_name(), 'skeleton': skeleton.get_path_name(),
               'clips': {name: {'path': clip.get_path_name(), 'seconds': clip.get_play_length()} for name, clip in clips.items()},
               'material': material.get_path_name(), 'textures': {name: t.get_path_name() for name, t in textures.items()},
               'socket': 'TripoGrip / hand_r; own native reference and existing measured prop bounds',
               'scope': 'Fresh saved native authoring only; reload, motion, shading and grip appearance require separate checks'}
-    output = root / 'Saved/Tests/TripoNative/Import.json'
-    output.parent.mkdir(parents=True, exist_ok=True)
-    output.write_text(json.dumps(report, indent=2) + '\n')
-    u.log('NORD_TRIPO_IMPORT_OK ' + str(output))
-    u.SystemLibrary.quit_editor()
+    report_path.parent.mkdir(parents=True, exist_ok=True)
+    report_path.write_text(json.dumps(report, indent=2) + '\n')
+    u.log('NORD_TRIPO_IMPORT_OK ' + str(report_path))
+    return report
 
 
 if __name__ == '__main__':

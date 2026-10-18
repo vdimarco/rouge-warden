@@ -1,0 +1,46 @@
+{
+  "at_utc": "2026-10-17T23:35:19.531354+00:00",
+  "source_sha256": "178a21d8a3c963a9cf91e4014807a3f69f2c6bee0e95b472796740bf7179ab77",
+  "reference_sha256": "29b9afda5d1e68c64d0b67e8faa843f7b4aee676a5c218b530eedba3969f14dd",
+  "viewed": [
+    {
+      "file": "front.png",
+      "sha256": "9f507a6b1b9db79dadecd088c352ef870f112160509a5a65c708b6192e433826"
+    },
+    {
+      "file": "threequarter.png",
+      "sha256": "305a6d38bd402cb5ef656832fadc4212d8a300fc83975a0368e4df9f4b020e07"
+    },
+    {
+      "file": "side.png",
+      "sha256": "07fabfbb6006326097c41a35fa8d3352e2073088a2e8dc9720ac09341a5611cc"
+    },
+    {
+      "file": "back.png",
+      "sha256": "6104547e8a4a24bd9cfb3d91eea42b7a0d10d583d6aeb000c0ba715a3b136cbb"
+    },
+    {
+      "file": "face-front.png",
+      "sha256": "d805619c70bce61ddd37555f132642ec08eea500decb866b0c9f9f979a65db80"
+    },
+    {
+      "file": "face-threequarter.png",
+      "sha256": "26476359f7d6b787e341a59851a66d464adeb36973fc777fbc86dc5d8e38c409"
+    },
+    {
+      "file": "hand-left.png",
+      "sha256": "fd42c4a47a504a508b3119d3418ea7df81214608b31a688cb17d128ed5b2c11d"
+    },
+    {
+      "file": "hand-right.png",
+      "sha256": "14de39891f23176bddd112358ebf5ba845b2cb7914e86fcd9860d664b055dd0e"
+    }
+  ],
+  "bounded_rig_trial_allowed": true,
+  "final_art_accepted": false,
+  "observations": [
+    "Older adult grayhair/beard/beanie, lime jacket/gaiter and piped pants recognizable; source face softer than illustrated reference.",
+    "Five digit projections visible, thumbs partly aligned with palm/view; actual3D and motion review needed.",
+    "Collar/gaiter needs actual neck/head deformation review; PVC prop is separate runtime asset."
+  ]
+}

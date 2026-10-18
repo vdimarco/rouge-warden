@@ -1,0 +1,32 @@
+{
+  "character": "WhiteCap",
+  "source_sha256": "163e86ec12c6ee9a53ccee29f500dfba720d230c8046c9d968430262ee24e4d4",
+  "review_receipt": {
+    "path": "Saved/Tests/TripoRemainingBodyReviews-20261017-v1/WhiteCap-views/Review.json",
+    "sha256": "9628134ea392dbb6de25551bf13d0d0ce0f4c13908f36a0b8460a4c5d58fafa4"
+  },
+  "inventory": {
+    "path": "Saved/Tests/TripoRemainingBodyReviews-20261017-v1/WhiteCap-measure/Inventory.json",
+    "sha256": "563de8964a988d565cfb96a62e96ae9480f63bf7ee8c5baa937ab4377c7c7e6b"
+  },
+  "all_eight_original_PBR_views_inspected": true,
+  "reference_pin_verified": true,
+  "candidate_heading_and_hand_crops_confirmed": true,
+  "rig_trial_recommendation": "Conditional source candidate, pending root explicit visual acceptance of short thumb geometry before spending on a rig. Glasses/outfit are more faithful than Memphis33, but rigging cannot restore missing thumb length.",
+  "observations": [
+    "Recognizable broad adult build, full dark beard and backward white cap; plain black shirt/gray shorts/gray running shoes retain reference identity and palette.",
+    "Rectangular glasses are present with bridge and temples; frames look thicker/lighter and face smoother than reference, requiring root likeness review.",
+    "Both hands retain four separated fingers and a thumb, but thumb tips are very short wedge-like projections with reduced opposition length. Other fingers are thick and rounded.",
+    "No bag/accessory occlusion or gross limb loss seen in all four body views; some shoulder/hand skin looks glossy in original PBR."
+  ],
+  "technical_counts": {
+    "vertices": 54599,
+    "triangles": 98860,
+    "raw_zero_length_corner_normals": 0,
+    "exact_zero_area_triangles": 0,
+    "uv_duplicate_groups": 0,
+    "uv_corner_ties": 0
+  },
+  "native_or_final_art_acceptance": false,
+  "scope": "Static-source original-PBR morphology only; no rig/skin/motion/grip/native acceptance."
+}

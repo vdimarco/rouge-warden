@@ -1,0 +1,33 @@
+{
+  "status": "submitted",
+  "recipe": {
+    "endpoint_id": "meshy/v7.1/image-to-3d",
+    "input": {
+      "model_type": "standard",
+      "topology": "triangle",
+      "target_polycount": 100000,
+      "symmetry_mode": "auto",
+      "should_remesh": true,
+      "should_texture": true,
+      "enable_pbr": true,
+      "pose_mode": "a-pose",
+      "enable_rigging": true,
+      "rigging_height_meters": 1.82,
+      "enable_animation": true,
+      "animation_action_id": 0,
+      "enable_safety_checker": true,
+      "geometry_resolution": "4k",
+      "image_url": "https://raw.githubusercontent.com/vdimarco/rouge-warden/d33f5a4e8b2a7b096ebb8bf6a584394416df77d9/games/nord-unreal/Data/GraphicNovel/Crew/WhiteCap/reference.png",
+      "texture_prompt": "Preserve the reference adult's face, natural anatomy, palette, markings and accessories. Recognizable mature face, full dark beard, rectangular glasses and backward white mesh cap retained; calm closed-mouth expression. Plain black T-shirt, plain gray shorts and gray-and-white running shoes retained with broad adult body frame. Restrained dimensional hand-painted graphic-novel PBR surfaces. No added text, symbols, baked outlines, halftone or harsh lighting."
+    },
+    "note": "These are the submitted inputs, not resolved server defaults. For a variation, copy them and change only requested fields; reuse returned_seed when supported by the schema. Source URLs may expire."
+  },
+  "request_id": "01a14be3-b1b5-7640-8a19-1eda5e09e5e5",
+  "endpoint_id": "meshy/v7.1/image-to-3d",
+  "status_url": "https://queue.fal.run/meshy/v7.1/requests/01a14be3-b1b5-7640-8a19-1eda5e09e5e5/status",
+  "response_url": "https://queue.fal.run/meshy/v7.1/requests/01a14be3-b1b5-7640-8a19-1eda5e09e5e5",
+  "cancel_url": "https://queue.fal.run/meshy/v7.1/requests/01a14be3-b1b5-7640-8a19-1eda5e09e5e5/cancel",
+  "poll_after_seconds": 20,
+  "polling_hint": "Wait poll_after_seconds before calling check_job with the same request_id and status_url. This interval is not an ETA. Report meaningful status changes rather than repeating unchanged progress. Do not submit another job to check progress.",
+  "hint": "Job submitted. Use check_job with status_url: it waits up to 40 seconds per call while the job runs and returns its result in the same call once it is COMPLETED (get_job_result with response_url also works)."
+}

@@ -1,0 +1,10 @@
+{
+  "source_glb": {
+    "path": "Data/GraphicNovel/Crew/GreenCap51/tripo-h31-body-20261017/body.glb",
+    "sha256": "43c538c2880b933fd2f2fc78c67e7ca08e913d05552f53f0dc96794e01ce51f6"
+  },
+  "provider_fbx": {
+    "path": "Data/GraphicNovel/Crew/GreenCap51/tripo-h31-rig-20261017/rig.fbx",
+    "sha256": "559b6a64944d8519f0d99c1f17df44e603397462847e3a2dc84e345e770814bc"
+  }
+}

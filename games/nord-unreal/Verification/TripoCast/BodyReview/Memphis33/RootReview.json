@@ -1,0 +1,24 @@
+{
+  "at_utc": "2026-10-17T22:16:51.504721+00:00",
+  "source_sha256": "e3bb935c87891489a9c967eeb8e46d3af3156dd8469bcbb17fa0c78715fbf1a8",
+  "viewed": [
+    {
+      "file": "front.png",
+      "sha256": "6f2d5a5d85423c273e17fd72f68f817ba3b058906f7dbcffac45439a3dd7a487"
+    },
+    {
+      "file": "hand-right.png",
+      "sha256": "7a0039fcec9440525f482facebd045c3334cf64ae678095b0e496d713fa15c32"
+    },
+    {
+      "file": "face-threequarter.png",
+      "sha256": "6f3c1ae031b8117e61ef698fc55c5ff006a31eb095a8c3a468847135828ce22d"
+    }
+  ],
+  "bounded_rig_trial_allowed": true,
+  "final_art_accepted": false,
+  "observations": [
+    "Adult face, cap, red Memphis33 jersey and separate digits are readable.",
+    "Softer rounder glasses and simplified face remain; no natural-motion acceptance."
+  ]
+}

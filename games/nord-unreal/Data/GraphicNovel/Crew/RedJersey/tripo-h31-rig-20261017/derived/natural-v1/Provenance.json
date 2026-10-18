@@ -1,0 +1,106 @@
+{
+  "character": "RedJersey",
+  "source_body_provider": "Tripo H3.1",
+  "rig_provider": "Tripo v3",
+  "byte_identical_copies_of_passed_CPU_outputs": true,
+  "outputs": {
+    "body": {
+      "path": "Data/GraphicNovel/Crew/RedJersey/tripo-h31-rig-20261017/derived/natural-v1/body.fbx",
+      "sha256": "e76def5603bfc515768f95617222b5b0c0cb4cf381cfd64b691eefb21a17b306",
+      "source_proof_output_sha256": "e76def5603bfc515768f95617222b5b0c0cb4cf381cfd64b691eefb21a17b306"
+    },
+    "base_color": {
+      "path": "Data/GraphicNovel/Crew/RedJersey/tripo-h31-rig-20261017/derived/natural-v1/base_color.jpg",
+      "sha256": "cb85d90d94182fa32298957ca629b341fc0c2d705ca43d1805bd283abee0fb40",
+      "source_proof_output_sha256": "cb85d90d94182fa32298957ca629b341fc0c2d705ca43d1805bd283abee0fb40"
+    },
+    "metallic_roughness": {
+      "path": "Data/GraphicNovel/Crew/RedJersey/tripo-h31-rig-20261017/derived/natural-v1/metallic_roughness.jpg",
+      "sha256": "2e8ea173f17bea990d88d4da966fb5aa01ea7edaf982d2578771924ae4afe501",
+      "source_proof_output_sha256": "2e8ea173f17bea990d88d4da966fb5aa01ea7edaf982d2578771924ae4afe501"
+    },
+    "normal": {
+      "path": "Data/GraphicNovel/Crew/RedJersey/tripo-h31-rig-20261017/derived/natural-v1/normal.png",
+      "sha256": "a6d4c01c3df2d71655c65219251778f26496746b1d9c0ef18c4cdefeafd45385",
+      "source_proof_output_sha256": "a6d4c01c3df2d71655c65219251778f26496746b1d9c0ef18c4cdefeafd45385"
+    },
+    "idle": {
+      "path": "Data/GraphicNovel/Crew/RedJersey/tripo-h31-rig-20261017/derived/natural-v1/idle.fbx",
+      "sha256": "664373214318ef85b591b8c0b7c22fc7d0a2297e83c4c37bceb7c99b0c0966e4",
+      "source_proof_output_sha256": "664373214318ef85b591b8c0b7c22fc7d0a2297e83c4c37bceb7c99b0c0966e4"
+    },
+    "jump": {
+      "path": "Data/GraphicNovel/Crew/RedJersey/tripo-h31-rig-20261017/derived/natural-v1/jump.fbx",
+      "sha256": "fadbce913e3be6433c7c6634385a89583c11cbe23ae543588d8353e73d755a00",
+      "source_proof_output_sha256": "fadbce913e3be6433c7c6634385a89583c11cbe23ae543588d8353e73d755a00"
+    },
+    "walk": {
+      "path": "Data/GraphicNovel/Crew/RedJersey/tripo-h31-rig-20261017/derived/natural-v1/walk.fbx",
+      "sha256": "253374d86ebbcc23afe134cdf03bf26b6b0f19d1cf5228de5819ac4d07219bc6",
+      "source_proof_output_sha256": "253374d86ebbcc23afe134cdf03bf26b6b0f19d1cf5228de5819ac4d07219bc6"
+    },
+    "run": {
+      "path": "Data/GraphicNovel/Crew/RedJersey/tripo-h31-rig-20261017/derived/natural-v1/run.fbx",
+      "sha256": "8f523185d565fc81e68878e62c4f3b77960c58fc3f68586c0da00edfeab16fda",
+      "source_proof_output_sha256": "8f523185d565fc81e68878e62c4f3b77960c58fc3f68586c0da00edfeab16fda"
+    }
+  },
+  "proofs": {
+    "Surface.json": {
+      "path": "Verification/TripoCast/TripoBodies/OwnRigCPU/FundedFive/RedJersey/Surface.json",
+      "sha256": "887613bce0481b381fa1af3210668c8aa63c9e952167beffa2e2b9647980a14c"
+    },
+    "Motion.json": {
+      "path": "Verification/TripoCast/TripoBodies/OwnRigCPU/FundedFive/RedJersey/Motion.json",
+      "sha256": "8d0a4bec01e22663e39d7aab1b6087f6e5548c917518567cac2543c2a61c85e4"
+    },
+    "MotionTest.json": {
+      "path": "Verification/TripoCast/TripoBodies/OwnRigCPU/FundedFive/RedJersey/MotionTest.json",
+      "sha256": "0ba8650515a92ddfffd2ca95152d751de9377f3391b9e77dc0259b9a9acfc8c3"
+    }
+  },
+  "frozen_executed_recipes": {
+    "prepare_tripo_cast_surface.py": {
+      "path": "Verification/TripoCast/TripoBodies/OwnRigCPU/FundedFive/RedJersey/Recipes/prepare_tripo_cast_surface.py",
+      "sha256": "82040586d9b77fafcfc574b39dbfd05d3d32b15effb38d91bb96f84605409948"
+    },
+    "prepare_tripo_cast_motion.py": {
+      "path": "Verification/TripoCast/TripoBodies/OwnRigCPU/FundedFive/RedJersey/Recipes/prepare_tripo_cast_motion.py",
+      "sha256": "a4ec4e93a4877454340ea8daa3b2c5901ea25642b25553f005dc110c76036557"
+    },
+    "prepare_meshy_jump.py": {
+      "path": "Verification/TripoCast/TripoBodies/OwnRigCPU/FundedFive/RedJersey/Recipes/prepare_meshy_jump.py",
+      "sha256": "51cbc1072264c31eeafdd65cf1dfef76b36ac154e84d6a93b97f425a3e73a857"
+    },
+    "capture_tripo_source_jump.py": {
+      "path": "Verification/TripoCast/TripoBodies/OwnRigCPU/FundedFive/RedJersey/Recipes/capture_tripo_source_jump.py",
+      "sha256": "08d07d596e72a6f21d2b77ac75f0bda98e98d395ede4d1046be759942ab29967"
+    }
+  },
+  "raw_provider_fbx": {
+    "path": "Data/GraphicNovel/Crew/RedJersey/tripo-h31-rig-20261017/rig.fbx",
+    "sha256": "53d2bdfd3c8958865cf0865db4d8f92a85fc1079ef02f8fe441dd32e9c1afa67"
+  },
+  "original_glb": {
+    "path": "Data/GraphicNovel/Crew/RedJersey/tripo-h31-body-20261017/body.glb",
+    "sha256": "13bf9c9dc76a7a925ba31ad5fadf6ef5e3a7436ee0450e6579a221f1fabd96c8"
+  },
+  "preview_height_m": 1.82,
+  "native_import_scale_proposal_only": 1.8594175176385108,
+  "retained_provider_height_m": 0.9788011475289468,
+  "rendered_continuous_review_pending": true,
+  "native_or_final_art_accepted": false,
+  "native_import_trial_allowed": true,
+  "native_import_trial_scope": "Root reviewed all fifteen retained own-body/hand stills and permits isolated native import; final art, continuous native motion and physical grip remain unaccepted.",
+  "limits": [
+    "Original source-unit geometry, weights and binds preserved; no native import executed by retention.",
+    "Exact original GLB PBR payloads; no native shader acceptance.",
+    "Broad inherited gait/contact and physical-device/package acceptance remain separate."
+  ],
+  "retention_scope": "Exactly8roles copied from accepted CPU proofs; no source/provider overwrites or new authoring",
+  "protected_originals_unchanged": true,
+  "bounded_visual_review": {
+    "path": "Verification/TripoCast/TripoBodies/OwnMotionReview/FundedFive/RedJersey/RootReview.json",
+    "sha256": "3b54bbb09e865b38a73a4652e188dee9391237185d598c534ab2014cde35f7cc"
+  }
+}

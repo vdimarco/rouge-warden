@@ -1,0 +1,32 @@
+{
+  "character": "LimeJacket",
+  "source_sha256": "178a21d8a3c963a9cf91e4014807a3f69f2c6bee0e95b472796740bf7179ab77",
+  "review_receipt": {
+    "path": "Saved/Tests/TripoRemainingBodyReviews-20261017-v1/LimeJacket-views/Review.json",
+    "sha256": "aea6bfa0f482989fb72e6c8a5c59823b1c20bee0a1695b0de32eab16e545228d"
+  },
+  "inventory": {
+    "path": "Saved/Tests/TripoRemainingBodyReviews-20261017-v1/LimeJacket-measure/Inventory.json",
+    "sha256": "3560f86dade886aaca138797b52d040c17c91b84b856163e74f8cb37ec1ef85b"
+  },
+  "all_eight_original_PBR_views_inspected": true,
+  "reference_pin_verified": true,
+  "candidate_heading_and_hand_crops_confirmed": true,
+  "rig_trial_recommendation": "Conditional source candidate for root review: strong older-adult/outfit identity, but visible thumb/palm shape needs scrutiny and grip/opposition is unverified. No paid retry requested by this reviewer.",
+  "observations": [
+    "Older adult face, gray hair/beard and black beanie remain recognizable; facial brow/cheek forms are softened compared with reference but maturity retained.",
+    "Lime/black zip jacket, layered red/black/gray neck gaiter, black trousers with white piping and gray running shoes retain palette/outfit.",
+    "Four separated fingers are visible on each hand; thumb profile appears close to or blended against the palm in these front-biased views. Three-dimensional thumb length/separation is not independently measured.",
+    "No gross limb loss or hanging accessory/bag observed. Raised collar and gaiter need future neck/head deformation and clipping review."
+  ],
+  "technical_counts": {
+    "vertices": 54812,
+    "triangles": 99034,
+    "raw_zero_length_corner_normals": 0,
+    "exact_zero_area_triangles": 0,
+    "uv_duplicate_groups": 0,
+    "uv_corner_ties": 0
+  },
+  "native_or_final_art_acceptance": false,
+  "scope": "Static-source original-PBR morphology only; no rig/skin/motion/grip/native acceptance."
+}
