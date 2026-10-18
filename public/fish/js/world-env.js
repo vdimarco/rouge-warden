@@ -6,6 +6,7 @@ import { artStyle, storyMaterial } from "./art-style.js";
 import { cartoonGeometry } from "./cartoon-models.js";
 import { paintedTrees } from "./painted-forest.js";
 import { rng, noise, capsule } from "./places/util.js";
+import { loadSeaWaves, SLOPE_RANGE } from "./sea-waves.js";
 
 export const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
 export const lerp = (a, b, t) => a + (b - a) * t;
@@ -343,10 +344,12 @@ export function buildWater(low, place, look) {
     uAimTo: { value: new THREE.Vector2(0, 0) },   // the aim preview: m along the line to the landing (0: none), 1 = dry land
     uLoon: { value: new THREE.Vector4(0, 0, 0, 0) },
     uLure: { value: new THREE.Vector4(0, 0, 0, 0) },
+    // the open-sea wave tile (sea-waves.js): the baked frames, how much of it shows (0..1), and 1 / tile size, frames, period
+    uSea: { value: null }, uSeaOn: { value: 0 }, uSeaTile: { value: new THREE.Vector3(1, 1, 1) },
   };
   const mat = new THREE.ShaderMaterial({
     uniforms: u, transparent: true, depthWrite: false, fog: false,
-    defines: { LOW: low ? 1 : 0, RIPPLES, RINGS },
+    defines: { LOW: low ? 1 : 0, RIPPLES, RINGS, SLOPE_RANGE: SLOPE_RANGE.toFixed(3) },
     vertexShader: /* glsl */ `varying vec3 vW; void main() { vec4 w = modelMatrix * vec4(position, 1.0); vW = w.xyz; gl_Position = projectionMatrix * viewMatrix * w; }`,
     fragmentShader: /* glsl */ `
       precision highp float;
@@ -357,10 +360,16 @@ export function buildWater(low, place, look) {
       uniform vec4 uRip[RIPPLES];
       uniform vec4 uRing[RINGS];
       uniform vec4 uAim, uLoon, uLure; uniform vec2 uAimTo;
+      uniform highp sampler2DArray uSea; uniform float uSeaOn; uniform vec3 uSeaTile;
       varying vec3 vW;
       ${SKY_GLSL}
       ${NOISE_GLSL}
       vec2 swell(vec2 p, vec2 dir, float k, float w, float a) { float ph = dot(p, dir) * k + uTime * w; return dir * cos(ph) * a * k; }
+      // the sea tile at uv, at frame fr (0..frames): the two nearest baked frames blended. xy: slope, z: foam, w: fresh foam
+      vec4 seaAt(vec2 uv, float fr) {
+        float f0 = floor(fr), f1 = mod(f0 + 1.0, uSeaTile.y);
+        return mix(texture(uSea, vec3(uv, f0)), texture(uSea, vec3(uv, f1)), fr - f0);
+      }
       // a V-shaped wake behind something moving on the surface (s = x, z, vx, vz)
       float wake(vec2 p, vec4 s, float len, vec2 fw) {
         float sp = length(s.zw); if (sp < 0.04) return 0.0;
@@ -410,8 +419,28 @@ export function buildWater(low, place, look) {
         vec2 g = vec2(0.0);
         float keep = 0.0;
         float s1 = 1.0 - smoothstep(0.8, 4.0, fp);
-        g += (swell(p, vec2(0.83, 0.56), 0.55, 1.3, 0.05) + swell(p, vec2(0.28, 0.96), 0.9, 1.8, 0.03)) * s1 * uSwell;
-        g += swell(p, vec2(-0.6, 0.8), 1.7, 2.6, 0.012) * (1.0 - smoothstep(0.3, 1.4, fp)) * uSwell;
+        // the open sea's own waves take over from the near swell, which stays to carry the far water
+        float swellK = uSwell * (1.0 - 0.55 * uSeaOn);
+        g += (swell(p, vec2(0.83, 0.56), 0.55, 1.3, 0.05) + swell(p, vec2(0.28, 0.96), 0.9, 1.8, 0.03)) * s1 * swellK;
+        g += swell(p, vec2(-0.6, 0.8), 1.7, 2.6, 0.012) * (1.0 - smoothstep(0.3, 1.4, fp)) * swellK;
+        // Gull Rock: the baked FFT sea (sea-waves.js), a 32 m tile. A second copy, 2.7 times bigger, turned 33° and
+        // slower, hides the repeat on high quality. Each fades out where its waves get smaller than a pixel.
+        float seaFoam = 0.0, seaFresh = 0.0;
+        if (uSeaOn > 0.0) {
+          float fr = fract(uTime / uSeaTile.z) * uSeaTile.y;
+          float w1 = 1.0 - smoothstep(0.6, 2.5, fp);
+          vec4 A = seaAt(p * uSeaTile.x, fr);
+          g += (A.xy - 0.5) * (2.0 * SLOPE_RANGE) * w1 * uSeaOn;
+          seaFoam = A.z * w1; seaFresh = A.w * w1;
+          #if LOW == 0
+          mat2 turn = mat2(0.839, 0.545, -0.545, 0.839);
+          float w2 = 1.0 - smoothstep(1.5, 6.0, fp);
+          vec4 B = seaAt(turn * p * (uSeaTile.x / 2.7), fract(uTime / (uSeaTile.z * 1.5) + 0.5) * uSeaTile.y);
+          // turned back into the world: the slope of the bigger copy (its waves are as steep, 2.7 times longer and taller)
+          g += ((B.xy - 0.5) * (2.0 * SLOPE_RANGE) * turn) * 0.75 * w2 * uSeaOn;
+          seaFoam = max(seaFoam, B.z * w2 * 0.35); seaFresh = max(seaFresh, B.w * w2 * 0.35);
+          #endif
+        }
         float s2 = 1.0 - smoothstep(0.2, 0.9, fp);
         // a river carries its small ripples downstream: one speed for the whole water
         vec2 pf = p - uFlow * uTime;
@@ -473,6 +502,16 @@ export function buildWater(low, place, look) {
           foam += smoothstep(0.6, 0.85, streak) * smoothstep(0.45, 0.8, dtx.b) * (1.0 - smoothstep(0.4, 1.8, depth)) * uCur * (1.0 - smoothstep(0.3, 1.2, fp));
         }
         #endif
+        // the sea's crest foam: dense where a crest breaks now, then thin streaks along the wind as it ages and drifts.
+        // Painted: cut into flat brush dabs
+        if (seaFoam > 0.004) {
+          float age = clamp(1.0 - seaFresh / max(seaFoam, 1e-3), 0.0, 1.0);
+          vec2 wd = vec2(0.35, 0.94);
+          float lace = vnoise(vec2(dot(p, vec2(-wd.y, wd.x)) * 1.7, dot(p, wd) * 0.45) + vec2(0.0, uTime * 0.05));
+          float sf = seaFoam * mix(1.0, smoothstep(0.5, 0.78, lace + seaFoam * 0.3), age) + seaFresh * 0.3;
+          float dab = smoothstep(0.42, 0.5, sf * (0.7 + 0.6 * vnoise(p * vec2(1.3, 3.4))));
+          foam += mix(sf * 1.1, dab * 0.75, uArtStyle) * uSeaOn;
+        }
         vec3 N = normalize(vec3(-g.x, 1.0, -g.y));
         float ndv = max(dot(N, V), 0.0);
         float fres = 0.02 + 0.98 * pow(1.0 - ndv, 5.0);
@@ -605,11 +644,40 @@ export function setWaterPlace(water, u, place, look) {
   u.uCur.value = look.flow ? look.flow.foam : 0;
   const stand = place.stand.dock;
   u.uAim.value.w = stand.z0;
+  setSeaWaves(u, !!look.waves);
   const geo = new THREE.PlaneGeometry(W.w, W.h, 1, 1);
   geo.rotateX(-Math.PI / 2);
   geo.translate(W.x0 + W.w / 2, 0, W.z0 + W.h / 2);
   if (water.geometry) water.geometry.dispose();
   water.geometry = geo;
+}
+
+// The open-sea waves: baked once per session off the main thread; the texture is made when the place has `waves` and freed
+// when the player leaves. Until the bake is done the water is the plain swell, then the waves fade in (updateSeaWaves).
+export function setSeaWaves(u, on) {
+  u.seaWanted = on;
+  if (!on) {
+    u.uSeaOn.value = 0;
+    if (u.uSea.value) { u.uSea.value.dispose(); u.uSea.value = null; }
+    return;
+  }
+  if (u.uSea.value) return;
+  u.seaReady = loadSeaWaves().then((b) => {
+    if (!u.seaWanted || u.uSea.value) return !!u.uSea.value;
+    const t = new THREE.DataArrayTexture(b.data, b.n, b.n, b.frames);
+    t.wrapS = t.wrapT = THREE.RepeatWrapping;
+    t.magFilter = THREE.LinearFilter; t.minFilter = THREE.LinearMipmapLinearFilter;
+    t.generateMipmaps = true;
+    t.needsUpdate = true;
+    u.uSea.value = t;
+    u.uSeaTile.value.set(1 / b.size, b.frames, b.period);
+    return true;
+  });
+}
+// The sea waves fade in over a second once their texture is there
+export function updateSeaWaves(u, dt) {
+  const target = u.seaWanted && u.uSea.value ? 1 : 0;
+  u.uSeaOn.value = target ? Math.min(1, u.uSeaOn.value + dt) : 0;
 }
 
 /* ---------------- trees ---------------- */

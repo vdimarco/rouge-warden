@@ -41,3 +41,7 @@ Brief: seamless top-down calm lake water, a hand-painted gouache background, jad
 ## Bobber vector, 2026-10-05
 
 `bobber.svg` (585 × 568, about 72 KB) is a hand-built vector copy of a painted bobber illustration: a red and cream float with a gold band on jade water, with ripples, a reflection, sparkles and the line. It has no raster data. The groups `water`, `line`, `sparkles`, `reflection`, `ripples` and `bobber` let you reuse parts. The game does not load it yet.
+
+## Gull Rock sea waves, 2026-10-18
+
+No image file. The sea at Gull Rock bakes a small looping FFT wave tile with crest foam in code (`js/sea-waves.js`, in a worker). The spectrum and the foam rule are adapted from [web-ocean](https://github.com/Noniv/web-ocean) by Maksymilian Dendura (MIT licence): the JONSWAP spectrum with Donelan-Banner spreading, and foam that starts where the surface folds, then fades and drifts downwind. The looping waves follow Tessendorf, "Simulating Ocean Water" (2001). The painted water texture and the shader's look stay as they were; the waves bend them, and the foam is drawn as brush dabs in the Painted style.

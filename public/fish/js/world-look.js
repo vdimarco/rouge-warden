@@ -9,6 +9,7 @@
 //   nightShadow  the shadow of a following fish is hidden when the night value is above this (null: never)
 //   swell        how tall the big waves are (1 = Loon Lake)
 //   flow         null, or { x, z, foam }: the water noise scrolls at this speed (m/s); foam streaks on high quality
+//   waves        true: the open-sea FFT waves with crest foam (sea-waves.js), on top of the swell
 //   water        null (the water plane is the depth box), or { x0, z0, w, h }
 //   shore        what the water mirrors: the far shore is an ellipse c, trees treeH tall (amp, tips: how ragged),
 //                nothing lower than minEl, and up to two round hills `isles` [{ x, z, r, h }] (h: how tall, 1 = Loon's island)
@@ -381,7 +382,7 @@ export const LOOK = {
     hours: SEA_HOURS, sunTurn: 40, moon: null,
     // a morning fog bank: near 20, far 260 until 7.0, gone by 9.0
     fog: (h, b) => { const w = 1 - smooth(7, 9, h); return { near: lerp(b.near, 20, w), far: lerp(b.far, 260, w), col: "#cdd4d6", k: w * 0.6 }; },
-    nightShadow: null, swell: 2.5, flow: null,
+    nightShadow: null, swell: 2.5, flow: null, waves: true,
     water: { x0: -800, z0: -1400, w: 1600, h: 1600 },
     // an open horizon: no far shore. The headland is the one hill in the mirror
     shore: { c: { x: 0, z: 0, rx: 1e6, rz: 1e6 }, treeH: 15, amp: 5, tips: 28, minEl: 0, isles: [{ x: 60, z: -76, r: 30, h: 1.1 }, { x: 100, z: -10, r: 44, h: 1.1 }] },

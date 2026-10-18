@@ -759,6 +759,7 @@ export async function createWorld(container, { quality = "high", place = PLACES.
     // the rod tip's twitch holds, then dies away
     if (S.clock > S.kickHold) S.kick *= Math.exp(-dt * WORLD.KICK_DECAY);
     U.uTime.value = S.clock % 3600;
+    E.updateSeaWaves(WU, dt);
     updateCamera(dt);
     drawLoon(dt);
     drawFish(dt);
@@ -975,6 +976,8 @@ export async function createWorld(container, { quality = "high", place = PLACES.
       return { calls: S.info.calls, tris: S.info.tris, fps: Math.round(S.fps), scale: +res.scale.toFixed(2), mem: { geometries: m.geometries, textures: m.textures } };
     },
     place: () => PL,
+    // for the tests: resolves when the open-sea waves of this place are baked (false: the place has none)
+    seaReady: () => (WU.seaWanted && WU.seaReady) || Promise.resolve(false),
     // one trip at a time: a second call waits for the first
     setPlace(next) {
       const trip = travel.then(() => goTo(next));
