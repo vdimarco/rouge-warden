@@ -35,7 +35,19 @@
 // - perf, sound and motion are getters that return plain copies. sound adds hearing (the hearing milestone) and
 //   beats ({ mother, you }: the last 8 beat times scheduled, core seconds) to the sound stats.
 // - The seed of a new run is ?seed when given, else random (main.js is not core; Math.random is allowed here).
-// - An `sfx` event's `at` is in stage seconds, like every stage time (16.3); its core time is at + stageStart.
+// - Sound: run.js hands on every stage time in core seconds (t and an sfx's or a song's `at`), so a sound plays at
+//   `at` when the event has one, else at its t: sound.sfx(id, ctxTime, event), sound.hum(notes, ctxTime, { clear,
+//   lit, noteS, gapS, muffled }), and the ending's inhale, cry and breath through sound.breath(id, ctxTime, event).
+// - Captions: one path. A `caption` event's id is a string (core/text.js) or, failing that, a fact; a `fact` event
+//   whose where (its own, else the fact's) is "caption" is a fact caption. Every caption is one call,
+//   captions.say(id, text, { dir, ms, kind }) with its final text; kind is "say", "fact" (once per stage, text
+//   "<clock label>: <fact text>", no label in the ending, with fact, label and body beside it) or "cue" (a sound's
+//   caption, design.md 12: a stage's own "<stage>.sfx.<id>" string, else the shared cue.* string, once per stage). A
+//   stage 1 caption lasts 2.5 s. An unknown id shows nothing, never the id.
+// - The prompt line names keys on a desktop (a fine pointer, or a mouse or key used last): the prompt's textKeys,
+//   else "<text>.keys" or "<text>Keys" when registered. In Birth the HUD score stays at the earlier stages' total
+//   (6.8: Birth's points show only on the run result). The ending's run time line takes run.ms (none in practice).
+// - ?q=low|full pins the tier and ?gl=0 is its alias (14.5): FLAGS.gl is false for the low tier.
 // - Settings changed through the URL (?assist, ?one, ?carer, ?rm) hold for the visit and are not saved; a key
 //   toggle (C) saves only its own field. M toggles and writes arcade.sound; ?mute=1 mutes the visit.
 import { DT, label as gaLabel } from "./core/clock.js";
@@ -43,7 +55,8 @@ import { makeIntents, shiftIntents } from "./core/intent.js";
 import { createRun } from "./core/run.js";
 import { createBot } from "./core/bots.js";
 import { SAVE_KEY, parse, recordStage, recordRun, recordCarryIn } from "./core/save.js";
-import { say, ordinal, CARERS } from "./core/text.js";
+import { say, has, ordinal, minSec, CARERS } from "./core/text.js";
+import { byId as factById, line as factLine } from "./core/facts.js";
 import { grade as gradeOf, runTotal } from "./core/score.js";
 import { ENDING } from "./core/stages/index.js";
 import * as store from "./ui/store.js";
@@ -82,7 +95,9 @@ const FLAGS = Object.freeze({
   seed: Q.has("seed") && Q.get("seed") !== "" && Number.isFinite(Number(Q.get("seed"))) ? Number(Q.get("seed")) >>> 0 : null,
   stage: Q.get("stage") || null,
   moment: Q.get("moment") || null,
-  gl: Q.get("gl") !== "0",
+  // ?q=low|full pins the paper tier; ?gl=0 is an alias for ?q=low (14.3, 14.5). gl: true is the full tier.
+  q: Q.get("q") === "low" || Q.get("q") === "full" ? Q.get("q") : Q.get("gl") === "0" ? "low" : null,
+  gl: Q.get("q") === "full" ? true : Q.get("q") === "low" ? false : Q.get("gl") !== "0",
   res: Q.has("res") && Number(Q.get("res")) > 0 ? Number(Q.get("res")) : null,
   freeze: flagOn("freeze"),
   test: flagOn("test"),
@@ -277,6 +292,76 @@ function processEvents() {
   }
 }
 
+// ---- the one caption path (12, 15.1). Nothing raw reaches the screen: a string id goes through core/text.js, a
+// fact id through core/facts.js with its clock label in front, and an id that is neither shows nothing.
+const capSeen = new Set();            // this stage's fact captions and once-per-stage sound captions
+const textOf = (id, vars = {}) => (has(id) ? say(id, vars || {}, settings) : null);
+const capMs = () => (run && run.stageId === "swim" ? 2500 : 4000);   // stage 1: one line for 2.5 s (8, 9)
+
+// Every caption goes out as captions.say(id, text, { dir, ms, kind }), the text final. kind is "say" (a stage's
+// caption or sub-goal line), "fact" (with label and body beside it) or "cue" (a sound's caption, design.md 12), so
+// the captions can rank them: a fact waits behind a line, a cue shows only when nothing else does.
+function sayCaption(id, text, extra = {}) {
+  if (!text) return false;
+  return captions.say(id, text, { kind: "say", ms: capMs(), ...extra, dir: extra.dir || null });
+}
+
+// A fact as a caption, once per stage: "Week 10: From about now you are called a fetus. …" (no label in the ending).
+function factCaption(id, dir = null) {
+  const key = "fact:" + id;
+  if (capSeen.has(key)) return false;
+  const ln = factLine(id, settings);
+  if (!ln) return false;
+  capSeen.add(key);
+  return sayCaption(id, ln.label ? ln.label + ": " + ln.text : ln.text, { dir, kind: "fact", fact: id, label: ln.label, body: ln.text });
+}
+
+// A caption event: a registered string first (an id can be both, such as egg.seal), else a fact.
+function caption(id, vars = {}, dir = null, kind = "say") {
+  if (!id) return false;
+  const text = textOf(id, vars);
+  if (text) return sayCaption(id, text, { dir, kind });
+  if (factById(id)) return factCaption(id, dir);
+  return false;
+}
+
+// A sound cue's caption, once per stage.
+function cueCaption(id) {
+  if (capSeen.has("cue:" + id)) return false;
+  capSeen.add("cue:" + id);
+  return caption(id, {}, null, "cue");
+}
+
+// The sound captions (design.md 12): a stage's own "<stage>.sfx.<id>" string (split.sfx.pling), else the shared one
+// for that sound, each once per stage. The other one-shots go uncaptioned: their stage already says what happens.
+const CUE_OF = {
+  bump: "cue.pack", bounce: "cue.bounce", goldIn: "cue.goldIn", seal: "cue.seal",
+  "swim:swell": "cue.wave", "birth:birth.swell": "cue.wave", "root:root.link": "cue.link", "root:root.linkBeat": "cue.link",
+  "grow:bell": "cue.bell", "grow:move": "cue.move", "birth:birth.open": "cue.open",
+};
+function cueOf(ev) {
+  if (ev.name === "sfx") {
+    const id = String(ev.id || "");
+    const own = id.includes(".") ? id.replace(/^([^.]+)\./, "$1.sfx.") : `${ev.stage}.sfx.${id}`;
+    if (has(own)) return own;
+    return CUE_OF[`${ev.stage}:${id}`] || null;
+  }
+  if (ev.name === "bump" && !(ev.a === "you" || ev.b === "you")) return null;    // only the bumps you are in
+  return CUE_OF[ev.name] || null;
+}
+
+// The ending's run time line: {time} from the ending's own vars, else run.ms; none in practice (run.ms 0).
+function endingTime(ev) {
+  if (ev.vars && ev.vars.time) return caption(ev.id, ev.vars, ev.dir);
+  if (!(run.ms > 0)) return false;
+  return caption(ev.id, { time: minSec(run.ms) }, ev.dir);
+}
+
+// Sound times: every stage time reaches the host in core seconds (run.js moves t and at); a sound plays at `at`
+// when the event has one (a beat-locked cue laid ahead), else at its t.
+const soundAt = (ev) => toCtx(fin(ev.at) ? ev.at : ev.t);
+const BREATHS = new Set(["inhale", "cry", "breath"]);
+
 function onEvent(ev) {
   switch (ev.name) {
     case "screen": onScreen(ev.screen, ev.data); break;
@@ -284,7 +369,9 @@ function onEvent(ev) {
       placeText = null;
       placeNum = null;
       hearing = false;
+      capSeen.clear();
       captions.clear();
+      if (ev.index === 0 && ev.attempt === 1 && !ev.practice) cueCaption("cue.mother");   // at Play: her heartbeat
       if (sound) sound.setScene({ stage: ev.id, cutoffHz: ev.id === "ending" ? 300 : cutoffFor(ev.id, run.gaDay), hearing: false });
       break;
     case "carryIn":
@@ -294,31 +381,55 @@ function onEvent(ev) {
     case "stageEnd": save = recordStage(save, ev.id, ev.result, ev.marks); persist(); break;
     case "runEnd": save = recordRun(save, ev.summary); persist(); break;
     case "prompt": input.setLive(ev.gesture || "none", ev.keys || "steer"); break;
-    case "caption": captions.say(ev.id, say(ev.id, ev, settings), { dir: ev.dir || null }); break;
-    case "subgoal": if (ev.text) captions.say(ev.text, say(ev.text, {}, settings)); break;
+    case "caption":
+      if (ev.id === "ending.time") endingTime(ev);
+      else caption(ev.id, ev.vars || {}, ev.dir || null);
+      break;
+    case "fact": {
+      // card and overlay facts show on their screens (run.js puts them in the screen data); a caption fact here
+      const f = factById(ev.id);
+      if ((ev.where || (f && f.where)) === "caption") factCaption(ev.id, ev.dir || null);
+      break;
+    }
+    case "subgoal": if (ev.text) caption(ev.text); break;
     case "place": {
       // the place slot; the pluck only when you gain a place (11)
       const gained = fin(ev.place) && fin(placeNum) && ev.place < placeNum;
       if (fin(ev.place)) { placeText = say("hud.place", { place: ordinal(ev.place), of: fin(ev.of) ? ev.of : 20 }); placeNum = ev.place; }
-      if (sound && gained) sound.sfx("place", toCtx(ev.t), ev);
+      if (sound && gained) sound.sfx("place", soundAt(ev), ev);
       break;
     }
     case "judge":
       judges.push({ target: ev.target, grade: ev.grade, errMs: ev.errMs, rawMs: ev.rawMs, heart: ev.heart, t: ev.t, stage: ev.stage });
       if (judges.length > 32) judges.splice(0, judges.length - 32);
       break;
-    case "sfx": if (sound) sound.sfx(ev.id, toCtx(fin(ev.at) ? ev.at + run.stageStart : ev.t), ev); break;
+    case "sfx":
+      { const c = cueOf(ev); if (c) cueCaption(c); }
+      if (!sound) break;
+      if (ev.stage === "ending" && BREATHS.has(ev.id)) sound.breath(ev.id, soundAt(ev), ev);   // the birth bus
+      else sound.sfx(ev.id, soundAt(ev), ev);
+      break;
     case "milestone":
       if (ev.id === "hearing") hearing = true;
       if (sound) {
         sound.setScene({ hearing });
-        if (ev.id === "ready") sound.sfx("ready", toCtx(ev.t), ev);
-        if (ev.id === "breath") sound.breath("inhale", toCtx(ev.t));
+        if (ev.id === "ready") sound.sfx("ready", soundAt(ev), ev);
       }
       break;
-    case "song": if (sound) sound.hum(ev.notes, toCtx(ev.t), { clear: false }); break;
+    case "song":
+      if (sound) sound.hum(ev.notes, soundAt(ev), { clear: !!ev.clear, lit: ev.lit, noteS: ev.noteS, gapS: ev.gapS,
+        muffled: !!ev.muffled, stage: ev.stage });
+      break;
     default:
-      if (CUES.has(ev.name) && sound) sound.sfx(ev.name, toCtx(ev.t), ev);
+      { const c = cueOf(ev); if (c) cueCaption(c); }
+      if (CUES.has(ev.name) && sound) {
+        // a bump between two rivals plays 10 dB softer within 40 u of you (11); the sound needs to be told which
+        if (ev.name === "bump" && ev.a !== "you" && ev.b !== "you") {
+          const a = lastView && lastView.anchor;
+          ev.near = !!(a && fin(ev.x) && fin(ev.y) && Math.hypot(ev.x - a.x, ev.y - a.y) <= 40);
+        }
+        sound.sfx(ev.name, soundAt(ev), ev);
+      }
       break;
   }
 }
@@ -384,8 +495,7 @@ function act(name, arg = null) {
       ensureAudio();
       if (run.screen !== "title") newRun("new");
       ok = run.act("play");
-      processEvents();
-      if (ok) captions.say("cue.mother", say("cue.mother", {}, settings));
+      processEvents();                       // stageStart names her heartbeat first (onEvent), then the stage speaks
       applyMoment();
       break;
     case "again":
@@ -410,6 +520,16 @@ function act(name, arg = null) {
       ok = true;
       break;
     case "mute": toggleMute(); ok = true; break;
+    case "setting": {
+      // ui/screens.js has set the live settings and written the save; the page follows what it owns
+      const key = arg && arg.key;
+      if (key === "motion") { updateMotion(); root.classList.toggle("reduced", motion.reduced); }
+      if (key === "largeText") root.classList.toggle("large", !!settings.largeText);
+      if (key === "captions" && settings.captions === false) captions.clear();
+      if (key === "offsetMs") input.flush();
+      ok = true;
+      break;
+    }
     case "practice": ensureAudio(); ok = goto(arg); break;
     default: ok = run.act(name); break;
   }
@@ -454,11 +574,22 @@ function scaleText(scale) {
   return "";
 }
 
+// The scale bar for the HUD: { text, px } with px the bar's round length drawn at the camera's px per mm (the size
+// line of stages 1 and 2 is text only).
+function scaleBar(view) {
+  const text = scaleText(view.scale);
+  if (!text || !view.scale || !fin(view.scale.mm)) return text;
+  const c = view.camera || {};
+  const px = fin(c.mmPerU) && c.mmPerU > 0 && fin(camera.pxPerU) ? (view.scale.mm / c.mmPerU) * camera.pxPerU : null;
+  return fin(px) ? { text, px: Math.round(px) } : text;
+}
+
 function liveScore() {
   const sum = run.summary();
   const id = run.stageId;
   let total = runTotal(sum.stages.filter((s) => s.id !== id));
   const mine = sum.stages.find((s) => s.id === id);
+  if (id === "birth") return total;          // Birth's points show only on the run result (6.8)
   if (run.screen === "stage" && run.mod && run.mod.meta.scored && run.state) {
     const r = run.result();
     const live = r && r.score && fin(r.score.total) ? r.score.total : 0;
@@ -467,11 +598,35 @@ function liveScore() {
   return total;
 }
 
+// Keys or touch: the prompt names keys on a desktop (a fine pointer, a mouse or a key used last) and gestures on
+// touch (a touch or pen used last). A prompt's textKeys, else its text id + ".keys" or + "Keys" when registered
+// (turn.breathe.keys, egg.guardKeys), is the desktop form.
+let device = (() => {
+  try { return window.matchMedia && window.matchMedia("(hover: hover) and (pointer: fine)").matches ? "keys" : "touch"; }
+  catch (e) { return "touch"; }
+})();
+let lastTouch = null;                 // { x, y } CSS px of the last touch-down in the play area (the ending's thumb ring)
+window.addEventListener("pointerdown", (e) => {
+  device = e.pointerType === "mouse" ? "keys" : "touch";
+  if (e.pointerType !== "mouse") lastTouch = { x: e.clientX, y: e.clientY };
+}, true);
+window.addEventListener("keydown", () => { device = "keys"; }, true);
+
+function promptText(p) {
+  if (!p || !p.text) return null;
+  if (device === "keys") {
+    const k = [p.textKeys, p.text + ".keys", p.text + "Keys"].find((id) => has(id));
+    if (k) return textOf(k);
+  }
+  return textOf(p.text);
+}
+
 function promptLine() {
   if (!PLAYING.has(run.screen) || !run.state) return null;
   const p = run.mod.prompt(run.state) || {};
   if (!p.text || p.gesture === "none") return null;
-  return { text: say(p.text, {}, settings), gesture: p.gesture };
+  const text = promptText(p);
+  return text ? { text, gesture: p.gesture, keys: device === "keys" } : null;
 }
 
 function updateHud(view) {
@@ -481,7 +636,7 @@ function updateHud(view) {
     clock: st && mod !== ENDING ? gaLabel(st.gaDay, { fertilized: !!st.fertilized }) : "",
     score: mod && mod.meta.scored ? liveScore() : "",
     place: run.stageId === "swim" ? placeText : null,
-    scale: mod && mod !== ENDING ? scaleText(view.scale) : "",
+    scale: mod && mod !== ENDING ? scaleBar(view) : "",
     prompt: promptLine(),
   });
 }
@@ -500,7 +655,7 @@ function present(frameStart) {
   lastView = view;
   camera = makeCamera(vw, vh, view.camera);
   renderer.draw(view, fin(frameStart) ? { frameStart } : {});
-  rings.draw(view.rings, camera, motion, view.stage);
+  rings.draw(view.rings, camera, motion, view.stage, { lastTouch, device });
   updateHud(view);
   updateStick();
   const sa = run.stageId || "title";
@@ -596,7 +751,7 @@ function fbState() {
     score: total,
     runScore: run.summary().total,
     grade: res && res.done && mod.meta.scored ? gradeOf(total || 0, !!res.goalMet) : null,
-    prompt: pr ? { ...pr, line: pr.text ? say(pr.text, {}, settings) : null } : null,
+    prompt: pr ? { ...pr, line: promptText(pr) } : null,
     subgoals: st && st.subgoals ? { ...st.subgoals } : {},
     paused: run.paused,
     seed: run.seed,
@@ -611,6 +766,8 @@ function fbState() {
     done: run.done,
     live: input.live(),
     judges: judges.slice(-8),
+    device,
+    tier: FLAGS.q,
   };
 }
 

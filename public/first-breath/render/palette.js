@@ -269,3 +269,171 @@ export function backOf(stage) {
   const r = STAGES[stage] || STAGES.swim;
   return r.tokens[r.back[0]];
 }
+
+// ---- Renderer roles (render/items.js, render/bake.js): which token each draw-list item takes in each stage, and
+// the stage's frames. Data only. A role is a token name of the stage row (or SHARED), a literal hex, or
+// { mix: [a, b, t] } (a mixed from a toward b by t). The tokens the 13.2 table does not name (the stage 7 placenta
+// disc and cord, the stage 6 and 7 cord, the derived figure pieces of stages 4 and 6 to 8) are mixes of the row's
+// own tokens, so they stay inside its colour family; RENDER_TOKENS lists the few literal additions.
+//
+// splats: rules tried in order; the first that matches a splat sets its role. Fields: hue [lo, hi] (inclusive),
+// k ("c" | "s"), m [lo, hi], v [lo, hi], r [lo, hi] (u), token, h (sheet height, px at step 1), group ("figure":
+// one union shadow, each piece its own sheet; "cells": the same, each piece with a pale cut edge; "heart": the
+// heart sheet; "solo": its own body), core (the pale cut-edge token), sticker (keyline and cream margin), nucleus
+// (a disc on top when n > 0), piece (figure pieces: "head" for the first disc, "body" for the first capsule,
+// "limb" for the rest).
+export const RENDER_TOKENS = Object.freeze({
+  turnDisc: "#b04a2c", turnDisc2: "#c25a34",     // stage 7 placenta disc and its lobes (frame3 family, darker)
+});
+
+const FIG = (tok, head, limb, h = 4.5) => [
+  { hue: [0.025, 0.035], k: "c", group: "figure", piece: "head", token: head, h },
+  { hue: [0.025, 0.035], group: "figure", piece: "body", token: tok, h, limbs: limb },
+];
+
+export const ROLES = Object.freeze({
+  swim: {
+    back: "floor",
+    course: {
+      walls: ["wall3", "wall2", "wall1"],          // inner to outer; drawn in this order, each higher and darker
+      depth: [0, 5, 10], height: [4.5, 4.5, 9],
+      floorDots: ["floorDot1", "floorDot2"],
+      tones: { womb: null, warm: "warmTube", cool: "coolTube" },
+    },
+    splats: [
+      { m: [1.2, 9], token: "you", h: 7.5, group: "solo", sticker: true },
+      { token: "rival", h: 4, group: "solo" },
+    ],
+    tails: { rival: "rival", rivalBack: "rivalBack", you: "you", youBack: "youBack" },
+    lane: "lane", chevron: "chevrons", band: "waveBand", meet: "meet",
+    ripple: "glow", glow: "glow", warm: "lane", arrow: { token: "chevrons", sticker: false },
+    frames: null,
+  },
+  egg: {
+    back: "board",
+    splats: [
+      { hue: [0.015, 0.025], token: "follicle", h: 3, group: "solo" },
+      { hue: [0.045, 0.055], token: "shell", h: 4.5, group: "solo" },
+      { hue: [0.065, 0.075], token: "cell", h: 5.5, group: "solo" },
+      { hue: [0.075, 0.085], token: "innerDisc", h: 6, group: "solo", nucleus: "nucleus" },
+      { hue: [0.025, 0.035], token: "nucleus", h: 6.5, group: "solo" },
+      { token: "you", h: 7, group: "solo", sticker: true },
+    ],
+    dots: ["corona1", "corona2", "corona3"], dotsDim: "pathDots", dotR: [1.3, 0.5],
+    tails: { rival: "rival", rivalBack: "rivalBack", you: "you", youBack: "youBack", dashes: "cutDashes" },
+    ripple: "glow", rippleBig: "ripples", cilia: "cilia", arc: "arc", arcSmall: "sealWave", glow: "glow",
+    frames: null,
+  },
+  split: {
+    back: "back",
+    course: {
+      walls: ["tubeWalls", "frame2"], depth: [0, 7], height: [3.5, 6],
+      floorDots: [{ mix: ["back", "frame3", 0.6] }, { mix: ["back", "glow", 0.12] }],
+      tones: { womb: null, warm: null, cool: null },
+    },
+    splats: [
+      { hue: [0.015, 0.025], token: "cells", core: "cellCore", h: 4.5, group: "cells" },
+      { hue: [0.085, 0.095], token: "hollow", h: 3, group: "solo" },
+    ],
+    dots: [{ mix: ["back", "glow", 0.4] }], dotR: [1.2, 0.35],
+    cilia: { mix: ["tubeWalls", "glow", 0.32] }, arc: "shell", ripple: "glow",
+    band: { mix: ["back", "tubeWalls", 0.55] }, glow: "glow",
+    frames: { shape: "oval", tokens: ["frame3", "frame2", "frame1"], size: 0.5 },
+  },
+  root: {
+    back: "lining",
+    splats: [
+      { hue: [0.035, 0.045], token: "you", h: 5, group: "solo" },
+      { hue: [0.055, 0.065], token: "beads", h: 6, group: "solo" },
+      ...FIG("you", { mix: ["you", "beads", 0.25] }, { mix: ["you", "tree", 0.5] }),
+      { hue: [0.97, 0.99], token: { mix: ["you", "beads", 0.55] }, h: 5.5, group: "heart" },
+      { hue: [0.015, 0.025], token: "tree", h: 4, group: "solo" },
+      { hue: [0.085, 0.095], token: "beads", h: 6, group: "solo", sticker: true },
+      { hue: [0.065, 0.075], token: { mix: ["tree", "beads", 0.4] }, h: 4, group: "solo" },
+    ],
+    tree: "tree", beads: "beads", pool: "pools", poolOn: { mix: ["pools", "tree", 0.45] }, poolRim: "poolRim",
+    lake: { mix: ["tree", "deepLining", 0.35] }, lake2: { mix: ["tree", "beads", 0.2] },
+    spot: { mix: ["lining", "thinLayer", 0.22] }, spotOn: { mix: ["lining", "thinLayer", 0.5] },
+    ripple: "beads", glow: "softSpot",
+    frames: { shape: "oval", scallops: 9, depthK: 1.6, tokens: ["frame3", "frame2", "frame1"], size: 0.52 },
+  },
+  grow: {
+    back: "sac", motes: "motes",
+    splats: [
+      ...FIG("body", "head", "limbs"),
+      { hue: [0.97, 0.99], token: "you", h: 6, group: "heart", sticker: true },
+      { hue: [0.015, 0.025], token: "cord", h: 4, group: "solo" },
+    ],
+    tree: "placenta2", beads: "poolRim", cord: "cord", cordBack: "cordBack", lights: "cordLights",
+    lake: "placenta", lake2: "placenta2", pool: { mix: ["placenta2", "sac", 0.25] }, poolOn: "pools", poolRim: "poolRim",
+    ripple: "poolRim", glow: "moveGlow", arrow: { token: "glow", sticker: false },
+    frames: { shape: "scallop", scallops: 12, tokens: ["frame3", "frame2", "frame1"], size: 0.5 },
+  },
+  answer: {
+    back: "wall", inner: "fluid",
+    splats: [
+      ...FIG("you", { mix: ["you", "warmPatch", 0.35] }, { mix: ["you", "frame3", 0.18] }),
+      { hue: [0.97, 0.99], token: { mix: ["you", "frame3", 0.35] }, h: 5, group: "heart" },
+      { hue: [0.015, 0.025], token: { mix: ["frame3", "you", 0.4] }, h: 4, group: "solo" },
+    ],
+    tree: { mix: ["you", "warmPatch", 0.5] }, beads: "voiceRipples",
+    cord: { mix: ["frame3", "you", 0.4] }, cordBack: { mix: ["frame3", "frame2", 0.4] }, lights: "voiceRipples",
+    disc: { mix: ["frame3", "fluid", 0.3] }, ripple: "voiceRipples", ghost: "answerGhosts",
+    glow: "warmPatch", hand: "handGlow", slot: "answerGhosts", dapple: "dapple",
+    frames: { shape: "scallop", scallops: 9, depthK: 1.5, tokens: ["frame3", "frame2", "frame1"], size: 0.52 },
+  },
+  turn: {
+    back: "back", inner: { mix: ["back", "snugWalls", 0.45] },
+    splats: [
+      { hue: [-0.001, 0.005], token: "turnDisc", h: 3, group: "solo" },
+      { hue: [0.005, 0.015], token: "turnDisc2", h: 3.5, group: "solo" },
+      ...FIG("you", { mix: ["you", "dapple", 0.3] }, { mix: ["you", "frame3", 0.2] }),
+      { hue: [0.97, 0.99], token: { mix: ["you", "frame3", 0.35] }, h: 5, group: "heart" },
+      { hue: [0.015, 0.025], token: { mix: ["frame3", "you", 0.4] }, h: 4, group: "solo" },
+    ],
+    cord: { mix: ["frame3", "you", 0.35] }, cordBack: { mix: ["frame3", "frame2", 0.4] }, lights: "roomyGlow",
+    snug: "snugWalls", arc: "breathRing", ripple: "breathRing", glow: "roomyGlow", dapple: "dapple",
+    frames: { shape: "oval", tokens: ["frame3", "frame2", "frame1"], size: 0.5 },
+  },
+  birth: {
+    back: "back",
+    splats: [
+      ...FIG("you", { mix: ["you", "opening", 0.25] }, { mix: ["you", "flat3", 0.2] }),
+      { hue: [0.97, 0.99], token: { mix: ["you", "flat3", 0.3] }, h: 5, group: "heart" },
+      { hue: [0.015, 0.025], token: { mix: ["flat3", "you", 0.45] }, h: 4, group: "solo" },
+    ],
+    ripple: "waveRing", glow: "opening", arrow: { token: "arrow", sticker: true },
+    frames: { shape: "sides", tokens: ["flat3", "flat2", "flat1"], size: 0.5 },
+  },
+  ending: {
+    back: "back",
+    splats: [
+      { k: "s", r: [15, 1e9], token: "bigOval", h: 5, group: "solo" },
+      { token: "smallOval", h: 6, group: "solo" },
+    ],
+    dots: ["rings"], dotR: [1.6, 0.4], ripple: "rings", glow: "room2", spot: "smallOval",
+    frames: { shape: "room", tokens: ["room1", "room2"], size: 0.5 },
+  },
+});
+
+// A role's hex in a stage: a token name, a literal hex or { mix: [a, b, t] } (null when it does not resolve).
+export function roleHex(stage, role) {
+  if (!role) return null;
+  if (typeof role === "string") {
+    if (role[0] === "#") return role;
+    return hex(stage, role) || (Object.prototype.hasOwnProperty.call(RENDER_TOKENS, role) ? RENDER_TOKENS[role] : null);
+  }
+  if (role.mix) {
+    const [a, b, t] = role.mix;
+    const ha = roleHex(stage, a), hb = roleHex(stage, b);
+    return ha && hb ? mixHex(ha, hb, t) : ha || hb;
+  }
+  return null;
+}
+
+// a mixed from a toward b by t (sRGB, rounded), as #rrggbb.
+export function mixHex(a, b, t) {
+  const p = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
+  const x = p(a), y = p(b);
+  return "#" + x.map((v, i) => Math.round(v + (y[i] - v) * t).toString(16).padStart(2, "0")).join("");
+}

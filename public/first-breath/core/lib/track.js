@@ -12,6 +12,8 @@
 // - A target with `free: true` (after a resume, 5.2) is judged as usual but left out of accuracy() and streak().
 // - accuracy() divides by every counted target in the group, judged or not (5.2: Σ credit / the number of targets),
 //   and gives 0 for a group with none.
+// - feed() never throws on odd input: intents that are null, or whose presses or releases are not arrays, judge
+//   nothing (misses still fall due by tEnd).
 // - Extra exports: SPACING_MIN_S, PREVIEW_MIN_S, previewS(beatS) and check(targets), for stages and their tests.
 import { windows, grade, GRACE_S, CREDIT } from "../judge.js";
 
@@ -76,8 +78,9 @@ export function feed(track, intents, tEnd) {
     }
   };
   const evs = [];
-  for (const p of (intents && intents.presses) || []) if (p && Number.isFinite(p.t)) evs.push({ t: p.t, raw: Number.isFinite(p.raw) ? p.raw : p.t, input: "press" });
-  for (const p of (intents && intents.releases) || []) if (p && Number.isFinite(p.t)) evs.push({ t: p.t, raw: Number.isFinite(p.raw) ? p.raw : p.t, input: "release" });
+  const list = (k) => (intents && Array.isArray(intents[k]) ? intents[k] : []);   // a missing or odd list reads as none
+  for (const p of list("presses")) if (p && Number.isFinite(p.t)) evs.push({ t: p.t, raw: Number.isFinite(p.raw) ? p.raw : p.t, input: "press" });
+  for (const p of list("releases")) if (p && Number.isFinite(p.t)) evs.push({ t: p.t, raw: Number.isFinite(p.raw) ? p.raw : p.t, input: "release" });
   evs.sort((a, b) => a.t - b.t);
   for (const ev of evs) {
     missBefore(ev.t);

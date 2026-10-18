@@ -19,45 +19,55 @@
   <div id="stick" hidden aria-hidden="true"></div>
 </div>
 
-<!-- The HUD: the stage and clock top left, the score, place and pause top right, the scale bar, the prompt line. -->
+<!-- The HUD (design.md 8, 9): the stage name, the clock and the scale bar top left (the bar moves bottom left in
+     landscape), the score with the stage 1 place slot under it and the pause button top right, and the prompt line
+     under them, top centre. Every label is a cream paper tag. -->
 <div id="hud" hidden>
   <div class="hud-left">
-    <p class="tag name" data-hud="stage"></p>
-    <p class="tag" data-hud="clock"></p>
+    <div class="hud-id">
+      <p class="tag name" data-hud="stage"></p>
+      <p class="tag clock" data-hud="clock"></p>
+    </div>
     <p class="tag scale" data-hud="scale"></p>
   </div>
+  <p class="tag prompt" data-hud="prompt" role="status"></p>
   <div class="hud-right">
     <div class="hud-score">
-      <p class="tag" data-hud="score"></p>
+      <p class="tag score" data-hud="score"></p>
       <p class="tag place" data-hud="place" hidden></p>
     </div>
     <button type="button" id="pause" class="pause" data-act="pause" aria-label="Pause"><svg viewBox="0 0 16 16" aria-hidden="true">
       <rect x="3" y="2" width="3.4" height="12" rx="0.8"/><rect x="9.6" y="2" width="3.4" height="12" rx="0.8"/></svg></button>
   </div>
-  <p class="tag prompt" data-hud="prompt"></p>
 </div>
 
-<!-- One caption at a time. -->
+<!-- One caption at a time, in its band (design.md 9, 12). -->
 <div id="captions" aria-live="polite"></div>
 
 <!-- The title, the stage card, the overlay, the Almost card, pause, the result and the menus. -->
 <div id="screens">
-  <section id="title" class="screen" data-screen="title" aria-label="Title">
-    <a class="back" href="/">‹ Arcade</a>
-    <h1>FIRST BREATH</h1>
-    <p class="sub">Nine months. Eight small stages. One first breath.</p>
-    <p class="note">A gentle story of growing before birth. Cells, the womb and birth are shown simply.</p>
-    <button type="button" id="play" class="btn play" data-act="play">Play</button>
-    <div class="row">
-      <button type="button" class="btn" data-act="stages">Stages</button>
-      <button type="button" class="btn" data-act="settings">Settings</button>
-      <button type="button" class="btn" data-act="sources">Sources</button>
+  <section id="title" class="screen" data-screen="title" aria-label="First Breath">
+    <div class="panel title-card">
+      <div class="title-words">
+      <h1>FIRST BREATH</h1>
+      <p class="sub">Nine months. Eight small stages. One first breath.</p>
+      <p class="note">A gentle story of growing before birth. Cells, the womb and birth are shown simply.</p>
+      </div>
+      <div class="title-acts">
+      <button type="button" id="play" class="btn play" data-act="play">Play</button>
+      <p class="best" data-best hidden></p>
+      <div class="row">
+        <button type="button" class="btn" data-act="stages">Stages</button>
+        <button type="button" class="btn" data-act="settings">Settings</button>
+        <button type="button" class="btn" data-act="sources">Sources</button>
+      </div>
+      <div class="row">
+        <a class="btn quiet back" href="/">‹ Arcade</a>
+        <button type="button" class="btn quiet" data-switch>Switch game</button>
+        <button type="button" class="btn quiet" data-act="mute" aria-pressed="true">Sound: On</button>
+      </div>
+      </div>
     </div>
-    <div class="row">
-      <button type="button" class="btn quiet" data-switch>Switch game</button>
-      <button type="button" class="btn quiet" data-act="mute">Sound: On</button>
-    </div>
-    <p class="best" data-best hidden></p>
   </section>
 </div>
 
