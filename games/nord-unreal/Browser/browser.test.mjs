@@ -16,11 +16,11 @@ function build(endpoint) {
 }
 const server = createServer(async (request, response) => {
   const file = new URL(request.url, 'http://localhost').pathname.slice(1) || 'index.html';
-  if (!['index.html', 'player.js', 'hero.js', 'crew.js', 'intro.js', 'menu.js', 'install.js', 'styles.css', 'hero.css', 'intro.css', 'menu.css', 'crew-sprite.webp', 'manifest.webmanifest', 'favicon.svg', 'favicon-32.png', 'apple-touch-icon.png', 'icon-192.png', 'icon-512.png', 'icon-maskable-512.png'].includes(file)) {
+  if (!['index.html', 'player.js', 'hero.js', 'crew.js', 'intro.js', 'menu.js', 'install.js', 'styles.css', 'hero.css', 'intro.css', 'menu.css', 'crew-sprite.webp', 'manifest.webmanifest', 'bungee-400.woff2', 'favicon.svg', 'favicon-32.png', 'apple-touch-icon.png', 'icon-192.png', 'icon-512.png', 'icon-maskable-512.png'].includes(file)) {
     response.writeHead(404).end();
     return;
   }
-  const types = { js: 'text/javascript', css: 'text/css', webp: 'image/webp', webmanifest: 'application/manifest+json', svg: 'image/svg+xml', png: 'image/png' };
+  const types = { woff2: 'font/woff2', js: 'text/javascript', css: 'text/css', webp: 'image/webp', webmanifest: 'application/manifest+json', svg: 'image/svg+xml', png: 'image/png' };
   response.setHeader('Content-Type', types[file.split('.').at(-1)] || 'text/html');
   response.end(await readFile(`dist/${file}`));
 });
