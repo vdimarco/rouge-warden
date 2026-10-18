@@ -135,3 +135,55 @@ body:not([data-state="playing"]) #frame { min-height: 0; }
 .play-label { position: absolute; top: 70%; left: 50%; transform: translate(-50%, -50%); font: 400 clamp(32px, 6vw, 64px)/1 Bungee, Impact, sans-serif; color: var(--yellow); -webkit-text-stroke: 2px var(--ink); paint-order: stroke fill; text-shadow: 4px 4px 0 var(--ink); animation: play-pulse 1.8s ease-in-out infinite; pointer-events: none; }
 @keyframes play-pulse { 0%, 100% { transform: translate(-50%, -50%) scale(1); } 50% { transform: translate(-50%, -50%) scale(1.1); } }
 @media (prefers-reduced-motion: reduce) { .play-label { animation: none; } }
+
+/* Echo the badge's ink, sun-yellow lettering and hot-pink comic panels. */
+body:not([data-state="playing"]) > header {
+  background: var(--ink);
+  border-bottom-color: #ed2865;
+}
+body:not([data-state="playing"]) > header .brand strong {
+  color: var(--paper);
+  text-shadow: 2px 2px 0 #a81044;
+}
+body:not([data-state="playing"]) > header .brand span { color: var(--paper); }
+body:not([data-state="playing"]) #menu-toggle {
+  background: var(--yellow);
+  color: var(--ink);
+  border: 2px solid var(--ink);
+  box-shadow: 3px 3px 0 #ed2865;
+  font-family: Bungee, Impact, sans-serif;
+  font-weight: 400;
+  font-size: 12px;
+}
+#overlay {
+  background:
+    radial-gradient(circle, #0b0a162e 1px, transparent 1.5px) 0 0 / 6px 6px,
+    linear-gradient(155deg, transparent 0 76%, var(--ink) 76% 77%, #ed2865 77%),
+    linear-gradient(25deg, #ffe33f 0 12%, var(--ink) 12% 13%, transparent 13%),
+    #24c9db;
+}
+#overlay .hero { box-shadow: 5px 5px 0 var(--ink); }
+#overlay .hero-title { text-shadow: 2px 2px 0 var(--yellow); }
+#overlay .hero-actions #watch-trailer {
+  background: var(--yellow);
+  font-family: Bungee, Impact, sans-serif;
+  font-weight: 400;
+  font-size: 14px;
+  letter-spacing: .03em;
+}
+#watch-trailer::before { content: "▶"; margin-right: 10px; }
+#overlay .hero-actions #watch-trailer:hover { background: var(--paper); }
+#overlay .caption { border-left: 7px solid #ed2865; box-shadow: 5px 5px 0 var(--ink); }
+#overlay .caption .eyebrow { color: #9d1643; font-family: Bungee, Impact, sans-serif; font-weight: 400; letter-spacing: .08em; }
+#overlay .caption h1 { font-family: Bungee, Impact, sans-serif; font-weight: 400; font-size: clamp(18px, 2vw, 26px); line-height: 1.15; letter-spacing: -.03em; }
+#overlay .caption .actions button { font-family: Bungee, Impact, sans-serif; font-weight: 400; font-size: 12px; box-shadow: 3px 3px 0 #ed2865; }
+.hero-sound { border: 2px solid var(--ink); background: var(--paper); box-shadow: 3px 3px 0 var(--ink); }
+body:not([data-state="playing"]) > footer { background: var(--ink); border-top-color: #ed2865; }
+body:not([data-state="playing"]) > footer #input-note,
+body:not([data-state="playing"]) > footer .controls,
+body:not([data-state="playing"]) > footer .controls b { color: var(--paper); }
+@media (max-width: 760px) {
+  #overlay .hero { box-shadow: none; }
+  #overlay .caption h1 { font-size: 15px; }
+  #overlay .caption .actions button { font-size: 10px; }
+}
