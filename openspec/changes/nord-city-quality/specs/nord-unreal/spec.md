@@ -252,3 +252,12 @@ Each player SHALL be able to play as any of the eight supplied cottage crew desi
 - **THEN** each new production candidate uses a reviewed Tripo-generated body and its own Tripo rig, preserving the mature identity and outfit references
 - **AND** completed Meshy comparisons remain recoverable with their original costs and are not reported as the selected final cast
 - **AND** missing funds, incompatible geometry or unfinished native/visual checks keep that character pending rather than silently substituting a different source or repeating paid jobs
+### Requirement: Generated crew face their direction of forward travel
+
+The complete private Tripo route SHALL align the six generated styles3–8 with the native pawn's forward movement, while retaining pilot9 and ordinary production orientation.
+
+#### Scenario: Switch between generated, pilot and production crew
+
+- **WHEN** a player selects each generated crew style, switches to pilot9 or production10, or removes the Tripo opt-in flags
+- **THEN** the evaluated standing feet and visible face point along native forward travel for the selected body, held tools follow their own hand sockets, and production orientation is restored when its route is selected
+- **AND** fresh native and rendered checks cover the actual selected body rather than substituting a capture-only transform

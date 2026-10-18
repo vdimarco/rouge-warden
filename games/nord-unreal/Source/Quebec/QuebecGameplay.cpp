@@ -243,7 +243,8 @@ void AQuebecCharacter::ApplyCrewAppearance()
     if (!Body) return;
     GetMesh()->SetAnimationMode(EAnimationMode::AnimationSingleNode);
     GetMesh()->SetSkeletalMesh(Body);
-    GetMesh()->SetRelativeRotation(FRotator::ZeroRotator);
+    // Generated cast bodies face -Y; the retained Meshy pilot already faces +X.
+    GetMesh()->SetRelativeRotation(FRotator(0., bGraphicNovelTripo && CrewStyle < 9 ? 90. : 0., 0.));
     GetMesh()->SetRenderCustomDepth(true);
     GetMesh()->SetCustomDepthStencilValue((bGraphicNovelCandidate || bGraphicNovelTripo) ? 254 : 255);
     CrewWalk = LoadObject<UAnimSequence>(nullptr, *(Folder + TEXT("A_Walk.A_Walk")));

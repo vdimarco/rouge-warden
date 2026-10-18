@@ -115,6 +115,7 @@ bool FQuebecTripoPilotTest::RunStyle(int32 Style)
             Mesh->GetSkeletalMeshAsset() && Mesh->GetSkeletalMeshAsset()->GetPathName() == Folder + TEXT("SK_Body.SK_Body"));
         if (Mask != 15)
         {
+            TestTrue(TEXT("Non-Tripo appearances restore the original mesh orientation"), Mesh->GetRelativeRotation().IsNearlyZero());
             TestEqual(TEXT("Non-Tripo appearance restores the production attachment"), Character->CrewProp->GetAttachSocketName(), FName(TEXT("RightHand")));
             TestTrue(TEXT("Non-Tripo appearance restores absolute prop rotation"), Character->CrewProp->IsUsingAbsoluteRotation());
         }
@@ -261,6 +262,12 @@ bool FQuebecTripoPilotTest::RunStyle(int32 Style)
     Advance(30, 0.f);
     TestTrue(TEXT("Tripo idle reaches its real own clip"), Animation->ObservedIdleWeight > .99f && Animation->ObservedClip == Clips[0]);
     CheckOwnPose(Clips[0]);
+    FVector ToeForward = FVector::ZeroVector;
+    for (const TCHAR* Side : {TEXT("l"), TEXT("r")})
+        ToeForward += Mesh->GetSocketLocation(FName(*FString::Printf(TEXT("ball_%s"), Side))) -
+            Mesh->GetSocketLocation(FName(*FString::Printf(TEXT("foot_%s"), Side)));
+    TestTrue(TEXT("Actual evaluated feet face the native forward movement direction"),
+        FVector::DotProduct(ToeForward.GetSafeNormal2D(), Character->GetActorForwardVector()) > .98);
     const FQuat IdleKnee = Mesh->GetSocketTransform(TEXT("calf_l"), RTS_Component).GetRotation();
     const FTransform IdleProp = Character->CrewProp->GetComponentTransform();
     Advance(1, 450.f);

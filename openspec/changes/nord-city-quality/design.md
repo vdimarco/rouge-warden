@@ -204,6 +204,10 @@ The latest user top-up is verified as430 available/0 frozen before the remaining
 
 ### Six-candidate native continuation
 
+#### Deployment-facing correction
+
+Fresh Vulkan inspection during deployment found that the six Tripo-generated bodies face component−Y, while the retained Meshy/Tripo pilot9 faces+X. The captured bilateral foot-to-ball vectors independently confirm the difference (minimum corrected alignment0.99965). Native movement uses actor+X, so apply mesh yaw+90 only for the complete Tripo route with styles3–8. Preserve source FBX/clip/material/socket bytes; attachment transforms naturally follow the mesh. Regression checks use evaluated world foot direction and require non-Tripo flag combinations to restore the original orientation. Capture cameras must use each body's actual reference-facing basis. Retain the failed fixture/API and old knee-threshold attempts separately; they do not accept graphics or natural motion.
+
 Reuse the pilot importer/reloader with explicit selected-character provenance and eight byte-pinned own sources. Import Resident3–8 into new folders; keep style10 production until bag repair passes and retain all old Resident9 assets. Require the existing complete four-flag private opt-in and all six native asset packages; default launches and installed packages are unchanged. Keep the same animation graph and calibrate the tube separately from the plunger.
 
 Five new surface/motion pipelines pass2,080 half-frame gates; exact raw-normal recovery is limited to missing zero corners with complete UV/position/topology correspondence, dynamic scale is measured relative to the fresh local bind, and neutral retarget rotations use the same component reference quaternions. Red's intermediate Jump FBX fails its unchanged reference gate, so consume exact original-author poses from a pinned73-sample capture instead; preserve the rejected intermediary and test20ppm/identity/transport negative controls. These are transport/observable fixes, not gate waivers.

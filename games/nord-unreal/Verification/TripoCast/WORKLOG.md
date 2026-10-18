@@ -22,3 +22,12 @@ The unchanged 12,000 MiB VRAM guard cannot provide safe rendering/restoration wh
 
 
 The checked native code/assets checkpoint is pushed at `5e86a8d7`; this later evidence checkpoint changes no production behavior. Final credit read confirms 5 available/0 frozen (`Native/FinalCreditBalance.json`), no paid jobs. All owned Blender/encoder/Unreal jobs are closed. Current preservation still passes; normal demo/tunnel/TURN identities remain unchanged. Keep PR387 in draft until remaining visual/gameplay acceptance is complete.
+
+
+## Superseding deployment checkpoint — 18 October 2026 UTC
+
+The user explicitly authorized merging/deployment and closing Dota after the earlier handoff. PR387 merged as22c2986; Dota was terminated normally and remains closed. The earlier “do not close Dota / keep PR387 draft” instructions above are historical and superseded. No paid jobs were submitted.
+
+The bounded facing correction is in PR395/native implementation38d15e1a. Corrected native12, two-map cook48/77headers,196 Vulkan stills, two motion recordings/322 sampled frames, both-district six-peer native QA and all seven current-production performance scenes pass. Rejected fixture attempts and complete restorations are retained. The checked package is installed inBuilds/Browser/Linux with all five Saved roots preserved, existing tunnels/TURN retained, both actual native executable hashes/four flags verified, and all8 ordinary public stream/input/recovery checks passing. Root inspected GreenCap/Memphis public screenshots. See [deployment report](DEPLOY-20261018.md) and [machine record](Deployment-20261018.json) for exact evidence and operational wrapper/rollback paths.
+
+The live managed launcher now uses the fixed Saved Tripo wrapper; preserve it and its pinned lifecycle during restarts. Original package rollback remains available. Topknot retains production; physical grasp, foot planting/final art, physical-device/off-LAN/full-campaign and citywide performance remain open. Separately owned frontend/PWA/Branding changes were excluded.
