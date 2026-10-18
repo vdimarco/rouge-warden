@@ -310,9 +310,9 @@ export const ROLES = Object.freeze({
     frames: null,
   },
   egg: {
-    back: "board",
+    back: "board", wash: 0.12,
     splats: [
-      { hue: [0.015, 0.025], token: "follicle", h: 3, group: "solo" },
+      { hue: [0.015, 0.025], token: "follicle", h: 3, group: "solo", scallops: 16 },
       { hue: [0.045, 0.055], token: "shell", h: 4.5, group: "solo" },
       { hue: [0.065, 0.075], token: "cell", h: 5.5, group: "solo" },
       { hue: [0.075, 0.085], token: "innerDisc", h: 6, group: "solo", nucleus: "nucleus" },
@@ -325,7 +325,7 @@ export const ROLES = Object.freeze({
     frames: null,
   },
   split: {
-    back: "back",
+    back: "back", wash: 0.4,
     course: {
       walls: ["tubeWalls", "frame2"], depth: [0, 7], height: [3.5, 6],
       floorDots: [{ mix: ["back", "frame3", 0.6] }, { mix: ["back", "glow", 0.12] }],
@@ -338,10 +338,10 @@ export const ROLES = Object.freeze({
     dots: [{ mix: ["back", "glow", 0.4] }], dotR: [1.2, 0.35],
     cilia: { mix: ["tubeWalls", "glow", 0.32] }, arc: "shell", ripple: "glow",
     band: { mix: ["back", "tubeWalls", 0.55] }, glow: "glow",
-    frames: { shape: "oval", tokens: ["frame3", "frame2", "frame1"], size: 0.5 },
+    frames: { shape: "oval", tokens: ["frame3", "frame2", "frame1"], size: 0.64 },
   },
   root: {
-    back: "lining",
+    back: "lining", wash: 0.62,
     splats: [
       { hue: [0.035, 0.045], token: "you", h: 5, group: "solo" },
       { hue: [0.055, 0.065], token: "beads", h: 6, group: "solo" },
@@ -355,7 +355,7 @@ export const ROLES = Object.freeze({
     lake: { mix: ["tree", "deepLining", 0.35] }, lake2: { mix: ["tree", "beads", 0.2] },
     spot: { mix: ["lining", "thinLayer", 0.22] }, spotOn: { mix: ["lining", "thinLayer", 0.5] },
     ripple: "beads", glow: "softSpot",
-    frames: { shape: "oval", scallops: 9, depthK: 1.6, tokens: ["frame3", "frame2", "frame1"], size: 0.52 },
+    frames: { shape: "oval", scallops: 9, depthK: 1.6, tokens: ["frame3", "frame2", "frame1"], size: 0.68 },
   },
   grow: {
     back: "sac", motes: "motes",
@@ -383,7 +383,7 @@ export const ROLES = Object.freeze({
     frames: { shape: "scallop", scallops: 9, depthK: 1.5, tokens: ["frame3", "frame2", "frame1"], size: 0.52 },
   },
   turn: {
-    back: "back", inner: { mix: ["back", "snugWalls", 0.45] },
+    back: "back", inner: { mix: ["back", "snugWalls", 0.62] },
     splats: [
       { hue: [-0.001, 0.005], token: "turnDisc", h: 3, group: "solo" },
       { hue: [0.005, 0.015], token: "turnDisc2", h: 3.5, group: "solo" },
@@ -412,7 +412,7 @@ export const ROLES = Object.freeze({
       { token: "smallOval", h: 6, group: "solo" },
     ],
     dots: ["rings"], dotR: [1.6, 0.4], ripple: "rings", glow: "room2", spot: "smallOval",
-    frames: { shape: "room", tokens: ["room1", "room2"], size: 0.5 },
+    frames: { shape: "room", tokens: ["room1", "room2"], size: 0.5, behind: true },
   },
 });
 

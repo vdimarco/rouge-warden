@@ -36,8 +36,8 @@
 //   and makes no sound.
 // - hum(notes, at, { clear, noteS = 0.5, gapS = 0.08, muffled }): MIDI notes (or Hz when a note is over 127) on the
 //   voice, one after another from `at`; a later hum replaces the notes of an earlier one that have not started.
-// - breath(kind, at): "inhale" (the first breath; a second inhale within 0.4 s is the same one), "breath", "exhale",
-//   "cry". They play on the birth bus.
+// - breath(kind, at, opts): "inhale" (the first breath; a second inhale within 0.4 s is the same one), "breath"
+//   (opts.pitch), "exhale", "cry". They play on the birth bus.
 // - open(seconds): the world opens (the ending): the womb bus cutoff glides 300 Hz → 16 kHz and the birth bus and
 //   the room tone come up over `seconds`.
 // - suspend() and resume() suspend and resume the context (quiet.js also suspends it while the page is hidden); the
@@ -124,10 +124,10 @@ export function createSound(ctx, { seed = 1, latencyS = null } = {}) {
     // the birth bus: silent until the opening
     const birth = gain(0, master);
 
-    // noise: 3 s of seeded pink noise (Kellet's refined filter) and 1 s of seeded white noise
+    // noise: 2 s of seeded pink noise (Kellet's refined filter) and 0.6 s of seeded white noise
     const r = stream(seed, "sound:noise");
     const sr = c.sampleRate;
-    const pinkBuf = c.createBuffer(1, Math.floor(3 * sr), sr), pd = pinkBuf.getChannelData(0);
+    const pinkBuf = c.createBuffer(1, Math.floor(2 * sr), sr), pd = pinkBuf.getChannelData(0);
     let b0 = 0, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0, b6 = 0;
     for (let i = 0; i < pd.length; i++) {
       const w = r() * 2 - 1;
@@ -136,7 +136,7 @@ export function createSound(ctx, { seed = 1, latencyS = null } = {}) {
       pd[i] = (b0 + b1 + b2 + b3 + b4 + b5 + b6 + w * 0.5362) * 0.11;
       b6 = w * 0.115926;
     }
-    const whiteBuf = c.createBuffer(1, Math.floor(sr), sr), wd = whiteBuf.getChannelData(0);
+    const whiteBuf = c.createBuffer(1, Math.floor(0.6 * sr), sr), wd = whiteBuf.getChannelData(0);
     for (let i = 0; i < wd.length; i++) wd[i] = r() * 2 - 1;
     const loop = (buf, to, offset = 0) => {
       const s = c.createBufferSource(); s.buffer = buf; s.loop = true; s.connect(to); s.start(0, offset % buf.duration); return s;
@@ -615,7 +615,7 @@ export function createSound(ctx, { seed = 1, latencyS = null } = {}) {
       const peak = muffled ? 0.22 : clear ? 0.36 : 0.3;
       list.slice(0, 32).forEach((n, i) => voiceNote(t0 + i * step, noteHz(n), step, peak));
     },
-    breath(kind, at) { breath(kind || "breath", fin(at) ? at - lat : now()); },
+    breath(kind, at, opts = {}) { breath(kind || "breath", fin(at) ? at - lat : now(), opts && fin(opts.pitch) && opts.pitch > 0 ? opts.pitch : 1); },
     open(seconds = 1.5) {
       const s = fin(seconds) && seconds > 0 ? seconds : 1.5;
       openTo(OPEN_HZ, s, now(), 300, true);
@@ -623,10 +623,12 @@ export function createSound(ctx, { seed = 1, latencyS = null } = {}) {
     suspend() {
       suspended = true;
       masterTo(0, 0.02);
-      if (ctx && ctx.state === "running" && typeof ctx.suspend === "function") {
-        // let the ramp land before the clock stops
-        if (typeof setTimeout === "function") setTimeout(() => { if (suspended && ctx.state === "running") quietly(() => ctx.suspend()); }, 60);
-        else quietly(() => ctx.suspend());
+      if (ctx && ctx.state !== "closed" && typeof ctx.suspend === "function") {
+        // let the ramp land before the clock stops; suspend even when quiet.js got there first (a hidden page), so
+        // the page, not quiet.js, decides when the sound comes back (on Resume)
+        const go = () => { if (suspended && ctx.state !== "closed") quietly(() => ctx.suspend()); };
+        if (ctx.state === "running" && typeof setTimeout === "function") setTimeout(go, 60);
+        else go();
       }
     },
     resume() {

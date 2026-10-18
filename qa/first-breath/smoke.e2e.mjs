@@ -8,7 +8,7 @@
 //   and its finish leads on;
 // - the ending's thumb prompt names keys on the desktop ("Rest here. Hold Space if you like.") and the thumb on
 //   touch ("Rest your thumb here.");
-// - the shared bot plays a whole run from Play to the run result (under ?test=1, stepped through window.__fb), and
+// - the shared bot plays a whole run from Play to the run result (under ?test=1, stepped through window.__fb); then
 //   a fact caption arrives with its clock label in front ("Week 10: From about now you are called a fetus. …");
 // - the low tier in every stage, with ?q=low and with its alias ?gl=0 (and ?probe=1): the tier is low, the mean
 //   frame luminance (lum()) is above 0.04, and the frame's luminance at targets().anchor is above its median;
@@ -172,17 +172,30 @@ for (const size of sizeList()) {
   // ---- 1. the first 10 seconds, in real time
   {
     const { ctx, page, errors } = await open(size, "?seed=1");
-    await press(page, size, "#play");
-    await page.waitForFunction(() => {
-      const s = window.__fb.state();
+    // the stage time at which the prompt tag first shows its line, and the live gesture then (recorded in the page,
+    // so the check does not depend on how fast this script polls)
+    await F(page, () => {
+      window.__fbFirst = null;
       const tagEl = document.querySelector('[data-hud="prompt"]');
-      return s.screen === "stage" && s.prompt && s.prompt.line && tagEl && !tagEl.hidden && tagEl.textContent.trim().length > 0;
-    }, null, { timeout: 5000, polling: 16 }).catch(() => null);
+      const look = () => {
+        if (window.__fbFirst) return;
+        const s = window.__fb.state();
+        if (s.screen === "stage" && s.prompt && s.prompt.line && tagEl && !tagEl.hidden && tagEl.textContent.trim() === s.prompt.line) {
+          window.__fbFirst = { t: s.t, prompt: s.prompt, live: s.live, line: tagEl.textContent.trim() };
+        }
+      };
+      if (tagEl) new MutationObserver(look).observe(tagEl, { subtree: true, childList: true, characterData: true, attributes: true });
+      const poll = () => { look(); if (!window.__fbFirst) requestAnimationFrame(poll); };
+      requestAnimationFrame(poll);
+    });
+    await press(page, size, "#play");
+    await page.waitForFunction(() => !!window.__fbFirst, null, { timeout: 5000, polling: 16 }).catch(() => null);
+    const first0 = await F(page, () => window.__fbFirst);
     const s = await S(page);
-    const line = await F(page, () => (document.querySelector('[data-hud="prompt"]') || {}).textContent || "");
-    check(`${tag}: Play shows the stage 1 prompt line by 0.5 s`, s.screen === "stage" && s.stageId === "swim" && s.t !== null && s.t <= 0.5
-      && s.prompt && s.prompt.gesture === "drag" && line.trim() === s.prompt.line, `t=${s.t} ${JSON.stringify(s.prompt)} "${line}"`);
-    check(`${tag}: steering is live by 0.5 s`, s.live && s.live.gesture === "drag" && s.t <= 0.5, JSON.stringify(s.live));
+    check(`${tag}: Play shows the stage 1 prompt line by 0.5 s`, !!first0 && s.stageId === "swim" && first0.t !== null && first0.t <= 0.5
+      && first0.prompt.gesture === "drag", JSON.stringify(first0));
+    check(`${tag}: steering is live by 0.5 s`, !!first0 && first0.live && first0.live.gesture === "drag" && first0.t <= 0.5,
+      JSON.stringify(first0 && first0.live));
     check(`${tag}: the rAF clock runs (real time)`, s.realtime === true);
     // goto(2) in real time: the first target by 2.7 s, the guard's prompt by 9.0 s
     await F(page, () => window.__fb.goto(2, { seed: 1 }));
@@ -194,6 +207,31 @@ for (const size of sizeList()) {
     const g = await S(page);
     check(`${tag}: the guard's prompt shows by 9.0 s`, g.prompt && g.prompt.keys === "turn" && g.t <= 9.0 + 0.1 && !!g.prompt.line,
       `t=${g.t} ${JSON.stringify(g.prompt)}`);
+    // a hidden page pauses (visibilitychange), and so does pagehide; Resume plays on
+    const hid = await F(page, () => {
+      Object.defineProperty(document, "visibilityState", { configurable: true, get: () => "hidden" });
+      document.dispatchEvent(new Event("visibilitychange"));
+      const a = window.__fb.state();
+      const pausePanel = document.querySelector('[data-screen="pause"]');
+      const shown = !!pausePanel && !pausePanel.hidden;
+      delete document.visibilityState;
+      window.__fb.act("resume");
+      const b = window.__fb.state();
+      window.dispatchEvent(new Event("pagehide"));
+      const c = window.__fb.state();
+      window.__fb.act("resume");
+      return { a: a.paused, shown, b: b.paused, c: c.paused };
+    });
+    check(`${tag}: a hidden page pauses with the pause screen, and pagehide pauses`, hid.a === true && hid.shown && hid.b === false && hid.c === true,
+      JSON.stringify(hid));
+    // M mutes through the arcade's shared arcade.sound, and again turns it back on
+    const before = await F(page, () => ({ muted: window.__fb.sound.muted, key: localStorage.getItem("arcade.sound") }));
+    await page.keyboard.press("m");
+    const after = await F(page, () => ({ muted: window.__fb.sound.muted, key: localStorage.getItem("arcade.sound") }));
+    await page.keyboard.press("m");
+    const back = await F(page, () => ({ muted: window.__fb.sound.muted, key: localStorage.getItem("arcade.sound") }));
+    check(`${tag}: M toggles the sound and writes arcade.sound`, before.muted === false && after.muted === true && back.muted === false
+      && after.key !== null && after.key !== back.key, `${JSON.stringify(before)} ${JSON.stringify(after)} ${JSON.stringify(back)}`);
     const raw = await rawTexts(page);
     check(`${tag}: no raw id in the real-time page's text`, raw.bad.length === 0, raw.bad.slice(0, 4).join(" | "));
     check(`${tag}: no page or console errors (real time)`, errors.length === 0, errors.slice(0, 4).join(" || "));
@@ -256,9 +294,16 @@ for (const size of sizeList()) {
       return { result: res && !res.hidden ? res.textContent.replace(/\s+/g, " ").trim() : "" };
     });
     check(`${tag}: the run result is on screen`, shown.result.length > 0, shown.result.slice(0, 80));
+    // a fact caption, with its clock label in front: grow.fetus at week 10 (the captions queue a fact behind a line on
+    // the wall clock, so this waits in real time with the run held still)
+    await F(page, () => { window.__fb.goto("grow"); window.__fb.jump("beat10"); window.__fb.step(30); });
+    const fetus = await page.waitForFunction(() => {
+      const e = document.querySelector('#captions [data-fact="grow.fetus"], #captions [data-id="grow.fetus"]');
+      return e && e.textContent.trim() ? e.textContent.trim() : false;
+    }, null, { timeout: 10000, polling: 50 }).then((h) => h.jsonValue()).catch(() => null);
+    check(`${tag}: a fact caption shows with its clock label in front`, typeof fetus === "string" && fetus.startsWith("Week 10: From about now"),
+      String(fetus));
     const raw = await rawTexts(page);
-    check(`${tag}: a fact caption shows with its clock label in front`,
-      raw.all.some((t) => t.startsWith("Week 10: From about now you are called a fetus.")), raw.all.filter((t) => /fetus/.test(t)).join(" | "));
     check(`${tag}: no raw string id or unfilled {var} in any caption, HUD or screen text (${raw.count} texts)`, raw.bad.length === 0,
       raw.bad.slice(0, 6).join(" | "));
     check(`${tag}: no page or console errors (test mode)`, errors.length === 0, errors.slice(0, 4).join(" || "));

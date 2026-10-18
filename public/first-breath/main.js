@@ -153,7 +153,7 @@ const area = $("area"), canvas = $("view"), svg = $("rings"), stickEl = $("stick
 const hudRoot = $("hud"), pauseBtn = $("pause");
 let vw = Math.max(1, window.innerWidth), vh = Math.max(1, window.innerHeight);
 
-const renderer = createRenderer(canvas, { gl: FLAGS.gl, res: FLAGS.res, probe: FLAGS.probe, motion });
+const renderer = createRenderer(canvas, { gl: FLAGS.gl, q: Q.get("q"), res: FLAGS.res, probe: FLAGS.probe, motion });
 renderer.resize(vw, vh);
 const rings = createRings(svg);
 const hud = createHud(hudRoot);

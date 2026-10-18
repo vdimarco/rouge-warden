@@ -197,7 +197,7 @@ export function createScreens(root, { act = () => {}, settings = null } = {}) {
       </div>`;
     },
     pause(d = {}) {
-      return `<div class="panel pause">
+      return `<div class="panel pause-panel">
         <h2>${esc(say("pause.title"))}</h2>
         <div class="col">
           ${btn("resume", say("pause.resume"), { id: "resume", cls: "btn play" })}
@@ -218,7 +218,10 @@ export function createScreens(root, { act = () => {}, settings = null } = {}) {
       const soundOn = store.soundOn() && !(lastData && lastData.soundOn === false);
       return `<div class="panel settings">
         <h2>${esc(say("settings.title"))}</h2>
-        ${seg("carer", Object.keys(CARERS).map((k) => [k, say("settings.carer." + k)]), say("settings.carer"))}
+        <div class="pair">
+          ${seg("carer", Object.keys(CARERS).map((k) => [k, say("settings.carer." + k)]), say("settings.carer"))}
+          ${seg("motion", ["auto", "full", "reduced"].map((k) => [k, say("settings.motion." + k)]), say("settings.motion"))}
+        </div>
         <div class="grid">
           ${tog("assist", say("settings.assist"), !!st.assist)}
           ${tog("oneButton", say("settings.oneButton"), !!st.oneButton)}
@@ -226,10 +229,9 @@ export function createScreens(root, { act = () => {}, settings = null } = {}) {
           ${tog("largeText", say("settings.largeText"), !!st.largeText)}
           ${tog("sound", say("settings.sound"), soundOn)}
         </div>
-        ${seg("motion", ["auto", "full", "reduced"].map((k) => [k, say("settings.motion." + k)]), say("settings.motion"))}
-        <div class="opt"><label class="opt-name" for="offset">${esc(say("settings.offset"))}: <output data-offset-out>${esc(say("settings.offsetValue", { ms: off > 0 ? "+" + off : String(off) }))}</output></label>
-          <input id="offset" type="range" min="-150" max="150" step="10" value="${esc(off)}" data-set="offsetMs">
-          ${btn("tapTest", say("settings.tapTest"), { id: "tapTestBtn" })}</div>
+        <div class="opt offset"><label class="opt-name" for="offset">${esc(say("settings.offset"))}: <output data-offset-out>${esc(say("settings.offsetValue", { ms: off > 0 ? "+" + off : String(off) }))}</output></label>
+          <div class="offset-row"><input id="offset" type="range" min="-150" max="150" step="10" value="${esc(off)}" data-set="offsetMs">
+          ${btn("tapTest", say("settings.tapTest"), { id: "tapTestBtn" })}</div></div>
         <p class="weeks">${esc(say("settings.weeks"))}</p>
         ${btn("back", say("ui.back"), { id: "back" })}
       </div>`;

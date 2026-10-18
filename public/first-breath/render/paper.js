@@ -63,12 +63,18 @@ export function mix(a, b, t) {
 const lin = (c) => { const x = c / 255; return x <= 0.04045 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4; };
 export function luminance(hex) { const [r, g, b] = rgb(hex); return 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b); }
 
+// ---- detail: outlines never take more than one vertex per ~2.5 device pixels (the raster cost follows the vertex
+// count; on desktop below step 1 a CSS px is a quarter of a device px)
+let MIN_STEP = 0;
+export function setDetail(dpx) { MIN_STEP = dpx > 0 ? 2.5 / dpx : 0; }
+export const minStep = () => MIN_STEP;
+
 // ---- cuts
 // Hand cut: resample a polyline every `step` px (per segment, so shared vertices give shared points) and push each
 // point along its segment's normal. o: { step = 7, amp = 1.4, jitter = 0.45, lambda = 60, seed = 0,
 // at(x, y) → [cx, cy] (the point's cut-space position; default: the point itself) }.
 export function cut(pts, closed = true, o = {}) {
-  const step = o.step || 7, amp = o.amp == null ? 1.4 : o.amp, jit = o.jitter == null ? 0.45 : o.jitter;
+  const step = o.space === "cut" ? o.step || 7 : Math.max(o.step || 7, MIN_STEP), amp = o.amp == null ? 1.4 : o.amp, jit = o.jitter == null ? 0.45 : o.jitter;
   const lam = o.lambda || 60, seed = o.seed || 0, at = o.at || null, s = o.snip || step;
   const n = pts.length >> 1;
   if (n < 2) return pts.slice();
@@ -98,8 +104,9 @@ export function cut(pts, closed = true, o = {}) {
 // kind (`seed`), so discs that change order or move keep their shape. o: { amp, jitter, step, seed, scallops,
 // depth, rot, sx, sy (stretch), n }.
 export function circle(x, y, r, o = {}) {
-  const step = o.step || 5;
-  const n = o.n || Math.max(10, Math.min(96, Math.round((TAU * r) / step)));
+  if (!(r > 0) || !Number.isFinite(r)) r = 0.5;
+  const step = Math.max(o.step || 5, MIN_STEP);
+  const n = o.n ? (o.fixed ? o.n : Math.max(8, Math.min(o.n, Math.round((TAU * r * Math.max(o.sx || 1, o.sy || 1)) / MIN_STEP) || o.n))) : Math.max(8, Math.min(96, Math.round((TAU * r) / step)));
   const amp = o.amp == null ? Math.min(1.2, r * 0.035) : o.amp, jit = o.jitter == null ? Math.min(0.35, r * 0.03) : o.jitter;
   const seed = o.seed || 0, sc = o.scallops || 0, dep = o.depth || 0, rot = o.rot || 0;
   const sx = o.sx || 1, sy = o.sy || 1;
@@ -121,9 +128,9 @@ export function capsule(ax, ay, bx, by, ra, rb = ra, o = {}) {
   if (L < 1e-6) return circle(ax, ay, Math.max(ra, rb), o);
   const a = Math.atan2(dy, dx);
   const s = Math.asin(Math.max(-1, Math.min(1, (ra - rb) / L)));
-  const step = o.step || 5, amp = o.amp == null ? Math.min(1, Math.max(ra, rb) * 0.03) : o.amp, seed = o.seed || 0;
+  const step = Math.max(o.step || 5, MIN_STEP), amp = o.amp == null ? Math.min(1, Math.max(ra, rb) * 0.03) : o.amp, seed = o.seed || 0;
   const out = [];
-  const nA = Math.max(5, Math.round((Math.PI * ra) / step)), nB = Math.max(5, Math.round((Math.PI * rb) / step));
+  const nA = Math.max(4, Math.round((Math.PI * ra) / step)), nB = Math.max(4, Math.round((Math.PI * rb) / step));
   let k = 0;
   const push = (cx, cy, rr, t) => {
     const w = amp * noise2(0.9 * Math.cos(t + k * 0.01) + 9, 0.9 * Math.sin(t) + 9, seed);
@@ -181,17 +188,28 @@ export function shadow(ctx, p, h, o = {}) {
   ctx.restore();
 }
 
-// The cheap shadow of a moving sheet: one offset silhouette fill, plus at most `strokes` (0 to 2) widening strokes
-// at a low alpha (no clip; the sheet covers their inner half).
+// The cheap shadow of a moving sheet: one offset silhouette fill at the shadow's offset; with `strokes` > 0 a second,
+// weaker fill a little further out softens its far edge (two fills rasterize far faster than a wide stroke in
+// software). o.stroke: true keeps the widening strokes instead (the highest live sheets: the arc, your sperm).
 export function shadowCheap(ctx, p, h, o = {}) {
   const alpha = o.alpha == null ? 0.32 : o.alpha, strokes = o.strokes == null ? 1 : o.strokes;
   const off = shadowOffset(h), blur = o.blur == null ? blurOf(h) : o.blur;
-  const ga = ctx.globalAlpha;
+  const ga = ctx.globalAlpha, rule = o.rule || "nonzero";
   ctx.save();
-  ctx.translate(off.x, off.y);
   ctx.fillStyle = ctx.strokeStyle = o.color || INK;
+  if (strokes > 0 && !o.stroke) {
+    ctx.translate(off.x, off.y);
+    ctx.globalAlpha = ga * alpha * 0.72;
+    ctx.fill(p, rule);
+    ctx.translate(blur * 0.22, blur * 0.3);
+    ctx.globalAlpha = ga * alpha * 0.45;
+    ctx.fill(p, rule);
+    ctx.restore();
+    return;
+  }
+  ctx.translate(off.x, off.y);
   ctx.globalAlpha = ga * alpha;
-  ctx.fill(p, o.rule || "nonzero");
+  ctx.fill(p, rule);
   if (strokes > 0 && blur > 0.6) {
     ctx.lineJoin = "round";
     for (let i = 1; i <= strokes; i++) {
@@ -236,11 +254,19 @@ export function paper(ctx, p, color, o = {}) {
 }
 
 // Fill a path with the grain pattern, turned and moved with its sheet.
+// The tile maps 1:1 to device pixels (ctx.__dpx is the context's device px per CSS px), so a pattern fill never
+// resamples the tile.
+// The grain turns with its sheet by quarter turns only and moves by whole device pixels: a pattern fill then copies
+// its tile without resampling (the raster cost of a resampled pattern is several times higher in software).
 export function grainOver(ctx, p, pattern, alpha, gx = 0, gy = 0, ang = 0, s = 1, rule = "nonzero") {
   if (!pattern || !(alpha > 0)) return;
+  const dpx = ctx.__dpx || 1;
+  s /= dpx;
   if (pattern.setTransform && typeof DOMMatrix !== "undefined") {
-    const c = Math.cos(ang) * s, sn = Math.sin(ang) * s;
-    pattern.setTransform(new DOMMatrix([c, sn, -sn, c, gx, gy]));
+    const q = ((Math.round(ang / (Math.PI / 2)) % 4) + 4) % 4;
+    const c = [1, 0, -1, 0][q] * s, sn = [0, 1, 0, -1][q] * s;
+    const tx = Math.round((((gx % 256) + 256) % 256) * dpx) / dpx, ty = Math.round((((gy % 256) + 256) % 256) * dpx) / dpx;
+    pattern.setTransform(new DOMMatrix([c, sn, -sn, c, tx, ty]));
   }
   const ga = ctx.globalAlpha;
   ctx.globalAlpha = ga * alpha;
@@ -336,6 +362,7 @@ export function bakeCanvas(makeCanvas, x, y, w, h, m, dpr, draw) {
   const cv = makeCanvas(W, H);
   const c = cv.getContext("2d");
   c.setTransform(dpr, 0, 0, dpr, (m - x) * dpr, (m - y) * dpr);
+  c.__dpx = dpr;
   draw(c);
   return { cv, x: x - m, y: y - m, w: W / dpr, h: H / dpr, dpr };
 }

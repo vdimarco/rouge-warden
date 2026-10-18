@@ -14,6 +14,7 @@
 //   for burrow rings. `dashed` and `dotted` override a kind's own line; `grade` thickens a judged ring briefly.
 // - The svg's viewBox follows the camera's W and H (CSS px), so its user units are CSS px.
 // - Visible groups carry data-id and data-kind; spare groups are hidden and carry neither.
+// - draw takes an optional 5th argument from main.js, { lastTouch, device }, for the ending's thumb ring (dock).
 import { RINGS } from "./palette.js";
 
 const NS = "http://www.w3.org/2000/svg";
@@ -45,7 +46,21 @@ export function createRings(svg) {
 
   const set = (e, k, v) => { const s = String(v); if (e.getAttribute(k) !== s) e.setAttribute(k, s); };
 
-  function draw(rings, camera, motion = {}, stage = null) {
+  // The ending's thumb ring (dock: "thumb"): the stage gives its 390 × 844 portrait spot; in phone landscape it sits
+  // in the bottom corner on the side of the last touch (the right one before any touch), and on desktop at the
+  // bottom centre, always clear of the bottom edge.
+  function docked(r, camera, at, rad, host) {
+    if (camera.layout === "portrait") return at;
+    const W = camera.W, H = camera.H, pad = Math.max(24, rad + 18);
+    if (camera.layout === "landscape") {
+      const t = host && host.lastTouch;
+      const left = t && Number.isFinite(t.x) ? t.x < W / 2 : false;
+      return { x: left ? Math.max(pad, 0.13 * W) : Math.min(W - pad, 0.87 * W), y: H - pad - 8 };
+    }
+    return { x: W / 2, y: Math.min(H - pad - 16, 0.84 * H) };
+  }
+
+  function draw(rings, camera, motion = {}, stage = null, host = null) {
     if (!svg || !camera) return;
     const box = `0 0 ${Math.round(camera.W)} ${Math.round(camera.H)}`;
     if (box !== vb) { svg.setAttribute("viewBox", box); vb = box; }
@@ -59,9 +74,14 @@ export function createRings(svg) {
         if (p.last !== "off") { set(p.g, "display", "none"); p.g.removeAttribute("data-id"); p.g.removeAttribute("data-kind"); p.last = "off"; }
         continue;
       }
-      const at = camera.toScreen(r.x, r.y);
+      let at = camera.toScreen(r.x, r.y);
       const prog = clamp01(r.progress);
       let rad = Math.max(2, r.r * camera.pxPerU);
+      if (r.dock === "thumb") {
+        // a thumb-sized ring in every layout (at least 44 px across)
+        rad = Math.max(22, Math.min(rad, 40));
+        at = docked(r, camera, at, rad, host);
+      }
       let color = RINGS.target, width = 3, dash = "", opacity = 1;
       if (r.kind === "mother") {
         color = RINGS.mother;

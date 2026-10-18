@@ -34,6 +34,8 @@ export function createPerf({ res = null, tier = null } = {}) {
   const perf = { emaMs: 0, p95Ms: 0, scale: STEPS[state.step], w: 0, h: 0, px: 0, draws: 0, splats: 0, points: 0,
     fallback: state.low, tier: state.low ? "low" : "full", baked: 0 };
   const costs = new Float64Array(WINDOW);
+  // perf.recent: the measured costs in the window (an enumerable getter, so __fb.perf's copy carries it for tests)
+  Object.defineProperty(perf, "recent", { enumerable: true, get: () => api.costs() });
   let nCost = 0, iCost = 0, lastT = null, intAvg = 1000 / 60, slow = 0, quick = 0, slowTier = 0;
   let calls = 0;
 
@@ -97,9 +99,11 @@ export function createPerf({ res = null, tier = null } = {}) {
     return null;
   }
 
-  return {
+  const api = {
     perf,
     count,
+    // the measured frame costs in the window, oldest first (tests print their spread)
+    costs() { const n = Math.min(nCost, WINDOW), o = []; for (let i = 0; i < n; i++) o.push(costs[(iCost - n + i + WINDOW) % WINDOW]); return o; },
     frame,
     get step() { return STEPS[state.step]; },
     get low() { return state.low; },
@@ -107,4 +111,5 @@ export function createPerf({ res = null, tier = null } = {}) {
     // a new run starts in the full tier unless ?q pins it (14.3)
     reset() { if (!state.tierPinned) { state.low = false; perf.fallback = false; perf.tier = "full"; } },
   };
+  return api;
 }

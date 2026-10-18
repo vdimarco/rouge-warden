@@ -8,6 +8,8 @@
 // Contract choices (16.2 gives createCaptions(root, { on }) → { say(id, text, { dir, ms = 4000 }), clear() }):
 // - on is a boolean or a function read at each say(); when it is false nothing shows. An extra option, settings (an
 //   object or a function), gives the carer word for fact captions (else "mother").
+// - say(id, text, { dir, ms, kind, fact }): kind is "say" (a stage's caption or sub-goal line), "fact" (a fact
+//   caption; fact is its id) or "cue" (a sound's caption), as main.js sends them with their final text.
 // - Order: a caption (say) replaces what is on screen; a fact caption waits behind a caption and replaces a sound
 //   cue; a sound cue shows only when nothing else does. At most 3 wait; one that waited 8 s is dropped. The same id
 //   again within 6 s is ignored, so a stage that sends a fact as both `fact` and `caption` shows it once.
@@ -189,11 +191,12 @@ export function createCaptions(root, { on = true, settings = null } = {}) {
     return offer({ id, fact: id, prio: PRIO.fact, text: fill(f.text, {}, st || S()), dir, ms: Number(ms) || 4000 });
   }
 
-  function say(id, text, { dir = null, ms = 4000 } = {}) {
+  function say(id, text, { dir = null, ms = 4000, kind = "say", fact: factId = null } = {}) {
     if (text === null || text === undefined || text === "") return false;
     const s = String(text);
     if (id && s === id && byId(id)) return fact(id, { dir, ms });
-    return offer({ id: id || s, prio: PRIO.say, text: s, dir, ms: Math.max(500, Number(ms) || 4000) });
+    const prio = PRIO[kind] ?? PRIO.say;
+    return offer({ id: id || s, prio, text: s, dir, fact: kind === "fact" ? factId || id : null, ms: Math.max(500, Number(ms) || 4000) });
   }
 
   // The caption for a sound cue event (16.6), when it has one.

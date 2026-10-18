@@ -27,6 +27,7 @@ const CHUNK_X = 175;                // chunk half-width across the course (u)
 const KREF = 2.6;                   // cut space: world u × this, so a course edge is the same at every zoom
 
 const ink = SHARED.ink;
+const TONE_SEED = { womb: 0, warm: 1, cool: 2 };
 const fin = (v) => typeof v === "number" && Number.isFinite(v);
 
 // ---- the renderer's frames
@@ -73,15 +74,15 @@ export function bakeFrames(v, stage, rec, tier) {
       } else if (rec.shape === "room") {
         // the ending's warm room: large soft sheets in two corners, never a closed window
         const blob = i === 0
-          ? P.circle(v.W * 0.08, v.H * 1.02, long * 0.42, { seed: 61, step: 8, amp: 2.5 * hs, scallops: 5, depth: 6 * hs })
-          : P.circle(v.W * 1.0, v.H * 0.02, long * 0.3, { seed: 62, step: 8, amp: 2.5 * hs, scallops: 4, depth: 5 * hs });
+          ? P.circle(v.W * 0.06, v.H * 1.04, short * 0.92, { seed: 61, step: 8, amp: 2.5 * hs, scallops: 5, depth: 6 * hs })
+          : P.circle(v.W * 1.02, v.H * 0.0, short * 0.62, { seed: 62, step: 8, amp: 2.5 * hs, scallops: 4, depth: 5 * hs });
         P.path(blob, true, p);
         P.sheet(c, p, color, (3 + 2 * i) * hs, flatOr(flat, { edge: 0, core: 0.25, coreWidth: 2 * hs, grain: tier.grain * 0.7, pattern: v.pattern, ga: 1 + i, shadow: { alpha: 0.18 } }));
       } else {
         p.rect(-m, -m, v.W + 2 * m, v.H + 2 * m);
         const sc = rec.shape === "scallop" ? rec.scallops || 12 : rec.scallops || 0;
         const ring = P.circle(w.cx, w.cy, 1, {
-          n: 140, amp: 0, jitter: 0, scallops: sc, depth: sc ? (rec.depthK || 1.2) * 0.012 * (1 + 0.15 * i) : 0,
+          n: 168, amp: 0, jitter: 0, scallops: sc, depth: sc ? (rec.depthK || 1.2) * 0.034 * (1 + 0.12 * i) : 0,
           rot: (i % 2) * (Math.PI / Math.max(1, sc)), sx: w.rx, sy: w.ry,
         });
         const pts = P.cut(ring, true, { step: 6, amp: 1.4 * hs, jitter: 0.45, seed: 50 + i });
@@ -120,7 +121,7 @@ function chunkMap(cam, j) {
 }
 
 // Edges of a course strip at depth D (u), as world polylines: left (+normal) and right (−normal).
-function stripEdges(st, D) {
+export function stripEdges(st, D) {
   const pts = st.pts, w = st.w, n = pts.length >> 1;
   const L = [], R = [];
   for (let i = 0; i < n; i++) {
@@ -139,7 +140,7 @@ export function cutCourseEdge(worldPts, k, hs, seed, map) {
   const cs = new Array(worldPts.length);
   for (let i = 0; i < worldPts.length; i++) cs[i] = worldPts[i] * KREF;
   const f = KREF / k;     // px → cut-space units
-  const cutPts = P.cut(cs, false, { step: 7 * f, amp: 1.7 * hs * f, jitter: 0.5 * f, lambda: 50 * f, snip: 7 * f, seed });
+  const cutPts = P.cut(cs, false, { space: "cut", step: Math.max(7, P.minStep()) * f, amp: 1.7 * hs * f, jitter: 0.5 * f, lambda: 50 * f, snip: 7 * f, seed });
   if (!map) return cutPts.map((v) => v / KREF);
   const out = new Array(cutPts.length);
   for (let i = 0; i < cutPts.length; i += 2) { const q = map(cutPts[i] / KREF, cutPts[i + 1] / KREF); out[i] = q[0]; out[i + 1] = q[1]; }
@@ -152,21 +153,30 @@ function lumenPoly(st, D, k, hs, seed, map) {
   return L.concat(P.rev2(R));
 }
 
-// Bake one chunk. strips: this frame's course strips (world). Returns { cv, lx, ly, w, h, k, theta, provisional }.
+// Bake one chunk. strips: this frame's course strips (world). The chunk is cut, shadowed and lit over a padded world
+// range (PAD u beyond each end) so shadows and lit edges run on across its edges; only its core is blitted.
+// Returns { cv, lx, ly, w, h (the core in chunk-local CSS px), sx, sy (the core's offset in the canvas, device px),
+// k, theta, j }.
+export const CHUNK_PAD = 12;
 export function bakeChunk(v, stage, strips, j, scratch, tier) {
   const role = ROLES[stage].course;
   const cam = v.cam, k = cam.pxPerU, hs = v.hs;
   const map = chunkMap(cam, j);
-  // the chunk's world rect → its local px box
-  const corners = [map(-CHUNK_X, j * CHUNK_U), map(CHUNK_X, j * CHUNK_U), map(-CHUNK_X, (j + 1) * CHUNK_U), map(CHUNK_X, (j + 1) * CHUNK_U)];
-  const lx = Math.min(...corners.map((q) => q[0])), ly = Math.min(...corners.map((q) => q[1]));
-  const w = Math.max(...corners.map((q) => q[0])) - lx, h = Math.max(...corners.map((q) => q[1])) - ly;
+  const box = (ya, yb) => {
+    const q = [map(-CHUNK_X, ya), map(CHUNK_X, ya), map(-CHUNK_X, yb), map(CHUNK_X, yb)];
+    const x0 = Math.min(...q.map((e) => e[0])), y0 = Math.min(...q.map((e) => e[1]));
+    return { x: x0, y: y0, w: Math.max(...q.map((e) => e[0])) - x0, h: Math.max(...q.map((e) => e[1])) - y0 };
+  };
+  const ya = j * CHUNK_U - CHUNK_PAD, yb = (j + 1) * CHUNK_U + CHUNK_PAD;
+  const pad = box(ya, yb), core = box(j * CHUNK_U, (j + 1) * CHUNK_U);
+  const lx = pad.x, ly = pad.y, w = pad.w, h = pad.h;
   const dpx = v.dpx;
   const W = Math.max(1, Math.ceil(w * dpx)), H = Math.max(1, Math.ceil(h * dpx));
   const cv = v.makeCanvas(W, H);
   const c = cv.getContext("2d");
   const T = (cc) => cc.setTransform(dpx, 0, 0, dpx, -lx * dpx, -ly * dpx);
   T(c);
+  c.__dpx = dpx;
   const flat = tier.bakeShadow === "flat";
 
   // floor dots (world-anchored, from a hash of their cell)
@@ -174,7 +184,7 @@ export function bakeChunk(v, stage, strips, j, scratch, tier) {
   if (tones.length) {
     const cell = 9;
     for (let gx = Math.floor(-CHUNK_X / cell); gx < CHUNK_X / cell; gx++) {
-      for (let gy = Math.floor((j * CHUNK_U) / cell); gy < ((j + 1) * CHUNK_U) / cell; gy++) {
+      for (let gy = Math.floor(ya / cell); gy < yb / cell; gy++) {
         const hh = P.hash2(gx, gy, 901);
         if (hh < 0.25) continue;
         const wx = (gx + 0.5 + 0.4 * P.hash2(gx, gy, 902)) * cell, wy = (gy + 0.5 + 0.4 * P.hash2(gx, gy, 903)) * cell;
@@ -199,6 +209,7 @@ export function bakeChunk(v, stage, strips, j, scratch, tier) {
   // soft shadow from offset copies of its silhouette, a paler copy toward the light for the lit edge, then the layer
   const [L, S] = scratch(W, H);
   const lc = L.getContext("2d"), sc = S.getContext("2d");
+  lc.__dpx = dpx;
   role.walls.forEach((tok, i) => {
     const color = roleHex(stage, tok);
     const D = role.depth[i], hh = role.height[i] * hs;
@@ -211,7 +222,8 @@ export function bakeChunk(v, stage, strips, j, scratch, tier) {
     T(lc);
     lc.globalCompositeOperation = "destination-out";
     lc.fillStyle = "#000";
-    strips.forEach((st, si) => lc.fill(P.path(lumenPoly(st, D, k, hs, 10 + 10 * i + 2 * si, map))));
+    // seeds by tone, never by the strip's place in the list (a strip that leaves the window must not recut the rest)
+    for (const st of strips) lc.fill(P.path(lumenPoly(st, D, k, hs, 10 + 10 * i + 2 * (TONE_SEED[st.tone] || 0), map)));
     lc.globalCompositeOperation = "source-over";
     lc.setTransform(1, 0, 0, 1, 0, 0);
     // the silhouette in ink
@@ -240,7 +252,7 @@ export function bakeChunk(v, stage, strips, j, scratch, tier) {
     c.drawImage(L, 0, 0);
     c.restore();
   });
-  return { cv, lx, ly, w, h, k, theta: cam.theta, j };
+  return { cv, lx: core.x, ly: core.y, w: core.w, h: core.h, sx: (core.x - lx) * dpx, sy: (core.y - ly) * dpx, k, theta: cam.theta, j };
 }
 
 // ---- the dot atlas: paper dots in 8 sizes per tone, each with its cheap shadow and lit edge baked in
@@ -264,13 +276,14 @@ export function bakeAtlas(v, tones, r0, dr, tier) {
 }
 
 // ---- the dapple tiles: cut cream spots on transparency
+// The tile is made at device resolution (220 × hs CSS px across) and filled 1:1 (render/renderer.js).
 export function bakeDapple(v, color, seed) {
-  const S = 220;
+  const f = v.dpx * v.hs, S = Math.max(16, Math.round(220 * f));
   const cv = v.makeCanvas(S, S);
   const c = cv.getContext("2d");
-  for (let i = 0; i < 26; i++) {
+  for (let i = 0; i < 12; i++) {
     const x = (0.5 + 0.5 * P.hash1(i, seed)) * S, y = (0.5 + 0.5 * P.hash1(i, seed + 1)) * S;
-    const r = 6 + 16 * Math.pow(0.5 + 0.5 * P.hash1(i, seed + 2), 2);
+    const r = (5 + 12 * Math.pow(0.5 + 0.5 * P.hash1(i, seed + 2), 2)) * f;
     c.fillStyle = color;
     for (let ox = -S; ox <= S; ox += S) for (let oy = -S; oy <= S; oy += S) {
       c.fill(P.path(P.circle(x + ox, y + oy, r, { step: 4, amp: r * 0.12, seed: seed + i, scallops: 3, depth: r * 0.15 })));

@@ -130,6 +130,7 @@ button { font: inherit; color: inherit; }
 .cab.river-rush { --c1: #083d31; --c2: #f9c65b; --glow: rgba(249, 198, 91, 0.45); }
 .cab.light-years-home { --c1: #0a0a0c; --c2: #cfe0ff; --glow: rgba(207, 224, 255, 0.45); }
 .cab.ahead-of-the-light { --c1: #0b0b14; --c2: #f08a2c; --glow: rgba(240, 138, 44, 0.45); }
+.cab.first-breath { --c1: #5e1c34; --c2: #ffc53d; --glow: rgba(255, 197, 61, 0.45); }
 /* The two newest marquees: the title takes one line where it can. At the 12px floor it takes two close lines over a
    one-line sub of 8 characters, with no gap between them, which needs a box 100px wide inside (a machine 259px tall).
    In a narrower box the sub line goes, so it is never cut in half, and the title shows whole on a machine down to about
@@ -692,6 +693,16 @@ button { font: inherit; color: inherit; }
       <div class="door"><button class="slot" type="button" aria-label="Drop a token into Light Years Home"><i></i><span>25¢</span></button><button class="slot" type="button" aria-label="Drop a token into Light Years Home"><i></i><span>25¢</span></button></div>
       <div class="kick"></div>
       </article>
+      <article class="cab first-breath" data-game="first-breath" data-url="/first-breath/" aria-label="First Breath: a baby's journey to birth">
+      <div class="marquee"><div><b>FIRST BREATH</b><small>A BABY'S JOURNEY TO BIRTH</small></div></div>
+      <div class="bezel"><div class="screen">
+      <img src="arcade/key/first-breath.svg" alt="A cut-paper egg in cream rings and a cloud of paper dots on wine red, with a cream arc round it and a small marigold sperm coming in" loading="lazy" decoding="async">
+      <div class="osd"><p class="hi">RACE · GUARD · GROW · BREATHE</p><p class="press">INSERT COIN</p><p class="credit">CREDIT 0</p></div>
+      </div></div>
+      <div class="panel"><span class="stick"></span><span class="pbtn a"></span><span class="pbtn b"></span><button class="start" type="button">START</button></div>
+      <div class="door"><button class="slot" type="button" aria-label="Drop a token into First Breath"><i></i><span>25¢</span></button><button class="slot" type="button" aria-label="Drop a token into First Breath"><i></i><span>25¢</span></button></div>
+      <div class="kick"></div>
+      </article>
     </div>
     <button class="nav next" id="nextBtn" type="button" aria-label="Next machine">▶</button>
   </main>
@@ -792,7 +803,7 @@ $("#changeBtn").onclick = () => {
 // Every game cabinet stays in the page (hidden while its group is closed), so its attract screen and high score keep working.
 const GROUPS = [
   { id: "cottage", label: "Cottage", games: ["plungerd", "drain", "brawl", "wild", "fish", "vr", "pingpong"], c1: "#d2332a", c2: "#ffcf4a", glow: "rgba(255, 90, 60, 0.55)", art: "arcade/plungerd.webp", art2: "arcade/plungerd-bosses.webp" },
-  { id: "action", label: "Action", games: ["olympus", "crimson", "tidebreak", "moonwell", "primordia", "river-rush", "ahead-of-the-light", "light-years-home"], c1: "#7a0a10", c2: "#ff2a2a", glow: "rgba(255, 30, 30, 0.45)", art: "crimson/art/keyart2.webp", art2: "olympus/art/asphodel.webp" },
+  { id: "action", label: "Action", games: ["olympus", "crimson", "tidebreak", "moonwell", "primordia", "river-rush", "ahead-of-the-light", "light-years-home", "first-breath"], c1: "#7a0a10", c2: "#ff2a2a", glow: "rgba(255, 30, 30, 0.45)", art: "crimson/art/keyart2.webp", art2: "olympus/art/asphodel.webp" },
   { id: "ascii", label: "ASCII Scenes", games: ["ascii-front", "battle-tanks"], c1: "#344238", c2: "#d2f584", glow: "rgba(210, 245, 132, 0.45)", art: "ascii-front/key.svg", art2: "battle-tanks/key.svg" },
   { id: "strategy", label: "Strategy", games: ["breakthrough", "follow-suit"], c1: "#3e5c44", c2: "#f0c56a", glow: "rgba(232, 176, 84, 0.62)", art: "arcade/follow-suit.webp", art2: "arcade/breakthrough.webp" },
   { id: "gta", label: "GTA", games: ["gta"], c1: "#5a3410", c2: "#f2c14e", glow: "rgba(242, 193, 78, 0.5)", art: "arcade/gta.webp" },
@@ -1487,6 +1498,11 @@ try {
     $(".hi", $('.cab[data-game="light-years-home"]')).textContent = (sv.chapterDone === true ? "CHAPTER I DONE" : ZONES.get(sv.zoneId)) + " · GOLDS " + golds;
   }
 } catch (e) { /* a broken save leaves the plain line */ }
+// First Breath keeps its best finished run in its save; the rule is cabinetLine() in first-breath/core/save.js (design.md 10)
+try {
+  const s = JSON.parse(localStorage.getItem("first-breath.save.v1")), b = s && s.best;
+  if (b && b.done === true && typeof b.score === "number" && Number.isFinite(b.score) && b.score > 0) $(".hi", $('.cab[data-game="first-breath"]')).textContent = "BEST " + b.score.toLocaleString("en-US");
+} catch (e) { /* no save, a broken save or storage that is off leaves the plain line RACE · GUARD · GROW · BREATHE */ }
 drawTokens();
 games.forEach(showCredit);
 // open on the hall, or on the group in the address; back from a game, that game is selected

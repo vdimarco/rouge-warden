@@ -136,31 +136,40 @@ what is known of that choice.
 
 ### 3.1 Stage table
 
-`gaDay` is days since the first day of the last period (section 4). "Ref", "mid" and "idle" are expected stage times
-for the reference bot (skill 1.0), a mid bot (skill 0.7) and no input. "Cap" is the hard limit. Real scale is the
-real width of the short screen axis (section 5.6).
+`gaDay` is days since the first day of the last period (section 4). "Ref", "mid" and "idle" are stage times for the
+reference bot (skill 1.0), a mid bot (skill 0.7) and no input (skill 0), measured: the means of 20 whole runs (run
+seeds 1 to 20) played by `qa/first-breath/bot.mjs` through `core/run.js`, from each stage's start to its end. "Cap" is
+the hard limit. Real scale is the real width of the short screen axis (section 5.6).
 
 | # | Id | Stage (the user's phase) | Verb | Live gestures (families) | gaDay | Real scale | Ref | Mid | Idle | Cap |
 |---|---|---|---|---|---|---|---|---|---|---|
-| 1 | `swim` | The Race (the sperm) | Race | drag (steer) | 14 | 0.3 mm (not to scale) | 52 s | 64 s | 117 s ("Almost") | 117 s (+3 s after Go on) |
-| 2 | `egg` | The Egg (ovulation and fertilization) | Guard | tap, drag, hold (beat tap, rotate, hold-release) | 14 | 0.4 mm (not to scale) | 53 s | 54 s | 64 s | 80 s |
+| 1 | `swim` | The Race (the sperm) | Race | drag (steer) | 14 | 0.3 mm (not to scale) | 51 s | 65 s | 120 s ("Almost" at 117 s, then Go on) | 117 s (+3 s after Go on) |
+| 2 | `egg` | The Egg (ovulation and fertilization) | Guard | tap, drag, hold (beat tap, rotate, hold-release) | 14 | 0.4 mm (not to scale) | 52 s | 52 s | 62 s | 80 s |
 | 3 | `split` | The Embryo: first cells | Split | tap, hold (beat tap, hold-release) | 15 to 20 | 0.45 mm | 34 s | 34 s | 34 s | 50 s |
-| 4 | `root` | The Placenta (and the growing embryo) | Root | drag, tap (steer, beat tap) | 20 to 49 | 0.6 to 30 mm | 45 s | 54 s | 67 s | 75 s |
-| 5 | `grow` | First Trimester | Grow | tap, drag (beat tap, steer) | 49 to 97 | 30 to 150 mm | 60 s | 64 s | 69 s | 90 s |
+| 4 | `root` | The Placenta (and the growing embryo) | Root | drag, tap (steer, beat tap) | 20 to 49 | 0.6 to 30 mm | 35 s | 36 s | 66 s | 75 s |
+| 5 | `grow` | First Trimester | Grow | tap, drag (beat tap, steer) | 49 to 97 | 30 to 150 mm | 54 s | 58 s | 63 s | 90 s |
 | 6 | `answer` | Second Trimester | Answer | tap (beat tap) | 98 to 195 | 150 to 600 mm | 64 s | 64 s | 64 s | 80 s |
-| 7 | `turn` | Third Trimester | Turn | hold, drag (hold-release, rotate) | 196 to 280 | 600 to 700 mm | 60 s | 66 s | 81 s | 100 s |
-| 8 | `birth` | Birth | Ride | hold, drag-and-hold (hold-release) | 280 | 700 mm | 70 s | 70 s | 70 s | 80 s |
+| 7 | `turn` | Third Trimester | Turn | hold, drag (hold-release, rotate) | 196 to 280 | 600 to 700 mm | 58 s | 58 s | 80 s | 100 s |
+| 8 | `birth` | Birth | Ride | hold, drag-and-hold (hold-release) | 280 | 700 mm | 70.5 s | 70.5 s | 70.5 s | 80 s |
 | – | `ending` | First breath and skin-to-skin (not scored) | Breathe | hold (optional) | 280 | 2 m | 33 s | 33 s | 33 s | 40 s |
 
 Stage 3 takes the same time for every input; its length moves by less than one beat with her beat phase (section
 5.1). Stage 1 times are stage times: the arrival at the meeting place plus its 2.5 s wait (ref arrives at about 49 s,
-mid at about 61 s, 6.1). Stage 2 times use the place each bot gets in stage 1: ref 1st, mid 3rd, idle 20th. Your
+mid at about 62 s, 6.1); idle reaches the 117 s cap, the Almost card, and with Go on the carried 3 s. Stage 2 times
+use the place each bot gets in stage 1: ref 1st, mid 3rd (every one of the 20 runs in the top 3), idle 20th. Your
 sperm comes 0.3 s later for each place lower, up to 5.7 s later after 20th. Nudging it with the arc adds up to about
 3.2 s, and the seal up to about 2.5 s. In stage 1, "mid" is the skill 0.7 bot, which finishes in the top 3 (6.1).
+Stage 4 is shorter than first planned (45 / 54 s) because a bot that steers links all 8 pools and reaches the heart
+hinge about 16 s into the stage; stage 5 because its phrases are fixed in beats and every bot that drags ends its moves early (6.5's "+3 s"
+has no moment); and stage 7 at mid because the skill 0.7 bot turns head-down in about 10 s.
 
-Run time: stages (ref about 438 s, mid about 470 s, idle about 566 s), plus 7 stage-end overlays (2.5 s each; none
-after Birth), 7 stage cards (1.0 to 3.5 s), and the ending (33 s). A mid run is about 9 minutes. The skill 0.7 bot
-gate is 8 to 12 minutes of game time.
+Run time, measured the same way (the bot skips each card at 1.0 s, as a player may; a card left alone adds 2.5 s
+each): stages (ref about 418 s, mid about 438 s, idle about 559 s), plus 7 stage-end overlays (2.5 s each; none
+after Birth), 7 stage cards (1.0 to 3.5 s), and the ending (33 s). `run.ms` (Play to the end of Birth): ref 7 min
+22 s, mid 7 min 42 s, idle 9 min 44 s. Game time (Play to the run result, the ending included): ref 7.9 min, mid
+8.25 min (8.16 to 8.35 over 20 seeds), skill 0.5 8.55 min, idle 10.3 min. The skill 0.7 bot gate is 8 to 12 minutes
+of game time, every run (`sim.test.mjs`); the mid run clears it by about 10 s, so a stage that gets shorter needs
+this gate rechecked.
 
 ### 3.2 Flow
 
