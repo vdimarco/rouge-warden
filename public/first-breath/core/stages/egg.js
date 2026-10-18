@@ -934,16 +934,21 @@ export function view(st) {
   // the corona: a cloud of paper dots, darker along your sperm's path; held rivals rest in it as dim points
   const held = G.rivals.filter((rv) => !rv.gone && rv.state === "held");
   const N = SZ.coronaN, n = N + held.length;
-  const xy = new Float32Array(2 * n), al = new Float32Array(n);
+  const xy = new Float32Array(2 * n), al = new Float32Array(n), id = new Float32Array(n);
   const breath = 1 + 0.02 * pulse;
   for (let i = 0; i < N; i++) {
     const r = st.corona[3 * i] * breath, th = st.corona[3 * i + 1];
     xy[2 * i] = r * Math.cos(th);
     xy[2 * i + 1] = r * Math.sin(th);
     al[i] = st.corona[3 * i + 2] * (g && angDist(th, g.theta) < GD.pathDeg * RAD ? 0.5 : 1);
+    id[i] = i;                                          // a corona dot keeps its slot
   }
-  held.forEach((rv, j) => { xy[2 * (N + j)] = rv.x; xy[2 * (N + j) + 1] = rv.y; al[N + j] = 0.35; });
-  d.points = { n, xy, a: al, hue: H.corona };
+  // a held rival keeps its own key (10000 + its number) as others come and go from the list
+  held.forEach((rv, j) => {
+    xy[2 * (N + j)] = rv.x; xy[2 * (N + j) + 1] = rv.y; al[N + j] = 0.35;
+    id[N + j] = 10000 + (Number(String(rv.id).slice(1)) || 0);
+  });
+  d.points = { n, xy, a: al, id, hue: H.corona };
 
   // strips, by priority (at most 6): the sperm, the guard arc, the seal wave, the ripples, the cilia
   const strips = [];

@@ -105,6 +105,8 @@ await check("shapes, kinds and ranges", () => {
   bad((d) => { d.splats[1].r = -1; }, /splats\[1\]\.r/);
   bad((d) => { d.points.xy = [0, 0]; }, /Float32Array/);
   bad((d) => { d.points.xy[3] = NaN; }, /points\.xy\[3\]/);
+  bad((d) => { d.points.id = [0, 1]; }, /points\.id is not a Float32Array/);
+  bad((d) => { d.points.id = new Float32Array(d.points.n).fill(0.5); }, /points\.id\[0\]/);
   bad((d) => { d.strips[0].kind = "spiral"; }, /strips\[0\]\.kind is spiral/);
   bad((d) => { d.strips[0].items[0].ring = "gold"; }, /ring is gold/);
   bad((d) => { d.strips[1].a = [0]; }, /\.a is not \[x, y\]/);

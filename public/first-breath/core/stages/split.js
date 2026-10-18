@@ -325,7 +325,9 @@ function enter(st, mi) {
   st.mi = mi;
   st.moment = IDS[mi];
   emit(st, "moment", { id: st.moment });
-  emit(st, "prompt", promptOf(mi));
+  // stamped at the moment's own start, so the host's fresh-press line (ui/input.js, 5.3) is the one momentAt draws
+  const at = Number.isFinite(st.starts[mi]) && st.starts[mi] <= st.t ? st.starts[mi] : st.t;
+  emit(st, "prompt", { ...promptOf(mi), t: at });
   if (mi === 1) {
     st.gaDay = Math.max(st.gaDay, meta.moments[1].ga[0]);
     subgoal(st, "bloom", "split.goal.bloom");
@@ -586,13 +588,13 @@ export function view(st) {
   d.strips.push({ kind: "cilia", a: [-wall, c0], b: [-wall, c0 + 285], count: 58, phase: cph, amp: 0.55 });
   d.strips.push({ kind: "cilia", a: [wall, c0], b: [wall, c0 + 285], count: 58, phase: (cph + 0.5) % 1, amp: 0.55 });
   const n = st.motes.length;
-  const xy = new Float32Array(2 * n), al = new Float32Array(n);
+  const xy = new Float32Array(2 * n), al = new Float32Array(n), id = new Float32Array(n);
   st.motes.forEach((m, i) => {
     const wy = m.y + 2.6 * t;
     const rel = (((wy - (cy - 140)) % 290) + 290) % 290;
-    xy[2 * i] = m.x; xy[2 * i + 1] = cy - 140 + rel; al[i] = m.a;
+    xy[2 * i] = m.x; xy[2 * i + 1] = cy - 140 + rel; al[i] = m.a; id[i] = i;   // each mote keeps its key
   });
-  d.points = { n, xy, a: al, hue: 0.08 };
+  d.points = { n, xy, a: al, id, hue: 0.08 };
 
   // the clear shell: a cream ring that thins as you press on it, and opens at the front as you slip out
   const th = hatchT(st);

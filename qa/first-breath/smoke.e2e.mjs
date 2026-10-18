@@ -7,11 +7,13 @@
 // - every stage by goto (and the ending) steps 120 frames, draws, shows its stage name, clock and prompt as words,
 //   and its finish leads on;
 // - the ending's thumb prompt names keys on the desktop ("Rest here. Hold Space if you like.") and the thumb on
-//   touch ("Rest your thumb here.");
+//   touch ("Rest your thumb here."); so do stage 1's prompt and Birth's wave prompts (keys on the desktop, the drag on
+//   touch), and a Birth wave's prompt line is never also shown as a caption;
 // - the shared bot plays a whole run from Play to the run result (under ?test=1, stepped through window.__fb); then
 //   a fact caption arrives with its clock label in front ("Week 10: From about now you are called a fetus. …");
 // - the low tier in every stage, with ?q=low and with its alias ?gl=0 (and ?probe=1): the tier is low, the mean
-//   frame luminance (lum()) is above 0.04, and the frame's luminance at targets().anchor is above its median;
+//   frame luminance (lum()) is above 0.04, and in stages 1 to 8 the frame's luminance at targets().anchor is above
+//   its median (the ending is left out, as in visual.e2e.mjs: it is dark shapes on light paper, 13.2);
 // - in every page: no raw string id ("grow.fetus", "ui.next"), and no unfilled {var}, ever shows in a caption, the
 //   HUD or a screen (a MutationObserver keeps every text those three roots ever show), and no page error, console
 //   error or failed request.
@@ -256,6 +258,27 @@ for (const size of sizeList()) {
       check(`${tag}: ${id} shows its HUD as words`, look.hud && look.name.length > 0 && (id === "ending" ? look.clock === "" : look.clock.length > 0)
         && (!s.prompt || !s.prompt.line || s.prompt.gesture === "none" ? true : look.prompt === s.prompt.line),
         `${look.name} | ${look.clock} | ${look.prompt} | ${JSON.stringify(s.prompt)}`);
+      if (id === "swim") {
+        const want = touch ? "Drag to swim." : "Swim with the arrow keys, or drag with the mouse.";
+        check(`${tag}: stage 1's prompt names ${touch ? "the drag" : "the keys"}`, look.prompt === want, look.prompt);
+      }
+      if (id === "birth") {
+        // the first wave (from 2.0 s) and the Turn wave (from 26 s): the prompt in this device's words, said once
+        const waves = [[0, "Hold through the wave.", "Hold Space through the wave."],
+          [25.1, "Turn: drag sideways and hold.", "Turn: hold the left or right arrow."]];
+        for (const [more, onTouch, onKeys] of waves) {
+          const want = touch ? onTouch : onKeys;
+          if (more) await F(page, (n) => window.__fb.step(n), Math.round(more * 60));
+          const w = await F(page, () => {
+            const e = document.querySelector('[data-hud="prompt"]');
+            const caps = [...document.querySelectorAll("#captions .cap")].filter((c) => !c.hidden).map((c) => c.textContent.trim());
+            return { prompt: e && !e.hidden ? e.textContent.trim() : "", caps, t: window.__fb.state().t };
+          });
+          check(`${tag}: birth at ${w.t.toFixed(1)} s: the prompt reads "${want}"`, w.prompt === want, w.prompt);
+          check(`${tag}: birth at ${w.t.toFixed(1)} s: the prompt's line is not also a caption`, !w.caps.some((c) => c === onTouch || c === onKeys),
+            JSON.stringify(w.caps));
+        }
+      }
       if (id === "ending") {
         await F(page, () => window.__fb.jump("thumb"));
         const e = await F(page, () => window.__fb.step(30));
@@ -323,11 +346,12 @@ for (const size of sizeList()) {
       const f = await F(page, frameLum, s.anchor);
       if (m.tier !== "low" || m.perf.fallback !== true) tierOk = false;
       if (!(m.lum > 0.04)) dark.push(`${s.stageId}: lum ${m.lum}`);
-      if (!(f.at > f.median)) dim.push(`${s.stageId}: anchor ${f.at && f.at.toFixed(3)} vs median ${f.median.toFixed(3)}`);
+      // stages 1 to 8 only, as visual.e2e.mjs: the ending is dark shapes on light paper by design (13.2)
+      if (target !== "ending" && !(f.at > f.median)) dim.push(`${s.stageId}: anchor ${f.at && f.at.toFixed(3)} vs median ${f.median.toFixed(3)}`);
     }
     check(`${tag}: ?${q} pins the low tier (perf.fallback)`, tierOk);
     check(`${tag}: ?${q}: every stage's frame is lit (lum() > 0.04)`, dark.length === 0, dark.join("; "));
-    check(`${tag}: ?${q}: in every stage the subject's sheet (at targets().anchor) is brighter than the frame's median`,
+    check(`${tag}: ?${q}: in stages 1 to 8 the subject's sheet (at targets().anchor) is brighter than the frame's median`,
       dim.length === 0, dim.join("; "));
     const raw = await rawTexts(page);
     check(`${tag}: ?${q}: no raw id in shown text`, raw.bad.length === 0, raw.bad.slice(0, 4).join(" | "));

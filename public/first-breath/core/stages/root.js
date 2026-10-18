@@ -483,12 +483,15 @@ function ends(st) {
   }
 }
 
+// The camera keeps you (in roots, you at the spot the roots grow from) on the layout's subject point (5.6, 9): the
+// look-aheads are 0, so in portrait you sit at 45% of the height, above the caption band, and the pools ahead
+// (within 166 u) still fit the free screen in every layout.
 function camTarget(st) {
   if (st.mi === 0) return { x: st.nest.x * 0.5, y: st.nest.y + N.lookU, span: N.span };
   if (st.mi === 1) return { x: st.root.x, y: st.root.y + R.aheadU, span: R.span };
   const f = figAt(st);
-  if (st.mi === 2) return { x: f.x, y: f.y + 8, span: H.span };
-  return { x: f.x, y: f.y + 25, span: growSpan(st) };
+  if (st.mi === 2) return { x: f.x, y: f.y + H.lookU, span: H.span };
+  return { x: f.x, y: f.y + G.lookU, span: growSpan(st) };
 }
 
 function camera(st, snap = false) {

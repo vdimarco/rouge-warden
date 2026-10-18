@@ -4,7 +4,8 @@
    sheet over the ink scrim. Safe areas are env(safe-area-inset-*) plus the test flag ?inset=t,r,b,l (main.js sets
    --inset-*). Three layouts: phone portrait (390 × 844), phone landscape (844 × 390) and desktop (1440 × 900).
    - Portrait: the HUD top left and top right, the prompt line under it; captions in a band at 50 to 58% of the height
-     (18 to 26% in stage 2, above the egg); during play nothing to read sits in the bottom 40% (the thumb zone); the
+     (18 to 26% in stage 2, above the egg; in other stages moved clear of the subject's body, see the captions rules);
+     during play nothing to read sits in the bottom 40% (the thumb zone); the
      in-world overlay and the Almost card sit between 24% and 60%; the scale bar top left under the clock.
    - Landscape and desktop: the prompt line between the HUD corners at the top; captions bottom centre, clear of the
      scale bar, which sits bottom left.
@@ -200,7 +201,8 @@ button.pause svg { width: 18px; height: 18px; fill: var(--tag-ink); }
   }
 }
 
-/* ---- captions: one at a time, in a band at 50 to 58% in portrait (18 to 26% in stage 2), bottom centre elsewhere */
+/* ---- captions: one at a time, in a band at 50 to 58% in portrait (18 to 26% in stage 2, and clear of the subject's
+   body in the stages below), bottom centre elsewhere */
 #captions {
   position: fixed;
   left: calc(var(--safe-l) + 12px);
@@ -222,6 +224,19 @@ button.pause svg { width: 18px; height: 18px; fill: var(--tag-ink); }
 }
 .cap.fit { font-size: var(--cap-min); }
 html[data-stage="egg"] #captions { top: 18%; align-items: flex-end; }
+/* In portrait a stage's band sits clear of its subject's body (design.md 9). Where the body reaches into 50 to 58%,
+   the band starts 8 px under the body's lowest point in that stage (rounded up to a whole percent) and ends at 60%,
+   if a line fits there (4% of the height); else the captions sit at the top, 8 px under the prompt line (--hud-b,
+   the HUD's bottom, from main.js), in an 8% band. Stage 2 keeps its band above the egg; the ending keeps 50 to 58%. */
+@media (orientation: portrait) {
+  html[data-stage="swim"] #captions { top: 52%; height: 8%; }
+  html[data-stage="split"] #captions,
+  html[data-stage="turn"] #captions { top: 53%; height: 7%; }
+  html[data-stage="root"] #captions { top: 55%; height: 5%; }
+  html[data-stage="grow"] #captions,
+  html[data-stage="answer"] #captions,
+  html[data-stage="birth"] #captions { top: calc(var(--hud-b, 19%) + 8px); height: 8%; }
+}
 @media (orientation: landscape) {
   #captions,
   html[data-stage="egg"] #captions {

@@ -7,7 +7,9 @@
 // - validate(list) returns a list of problems as plain lines; an empty list means the draw list is fine.
 // - Required: stage (a non-empty palette key), camera, scale, light, warp, caustics, the five arrays (points may be
 //   null), anchor; cue may be null. Optional fields are checked only when present: a mark's rim, on, pulse and ang
-//   (w is required for band and meet), and a ring's progress, dashed, dotted and grade.
+//   (w is required for band and meet), a ring's progress, dashed, dotted and grade, and points.id.
+// - points.id (optional) is a Float32Array of n whole numbers, one stable key per point: the renderer picks a dot's
+//   size and tone from it, never from its place in the list (14.1), so a dot that moves in the list keeps its look.
 // - Ranges checked: span, r and mmPerU > 0; exposure 1..6; white, vignette, warp and caustics 0..1; progress 0..1;
 //   cord lights 0..1. Other numbers only need to be finite.
 // - LIMITS adds treeNodes (260, the colonize.js cap); ripples and chevrons have no count limit in 16.5.
@@ -122,6 +124,10 @@ export function validate(list) {
       need(fin(pt.hue), "points.hue is not finite");
       if (pt.xy instanceof Float32Array) {
         for (let i = 0; i < Math.min(pt.xy.length, 2 * pt.n); i++) if (!fin(pt.xy[i])) { bad.push(`points.xy[${i}] is not finite`); break; }
+      }
+      if (pt.id !== undefined && pt.id !== null) {
+        if (!(pt.id instanceof Float32Array) || pt.id.length < pt.n) bad.push("points.id is not a Float32Array of n");
+        else for (let i = 0; i < pt.n; i++) if (!Number.isInteger(pt.id[i])) { bad.push(`points.id[${i}] is not a whole number`); break; }
       }
     }
   }
