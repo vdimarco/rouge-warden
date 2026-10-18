@@ -253,7 +253,7 @@ try {
       { level: 2, stack: false }, 'offline pages initialize warning-only logging without stack capture');
     assert.equal(await page.locator('.hero-title').textContent(), 'GTA: NORTH', 'the title screen shows the game title');
     assert.equal(await page.locator('#overlay').evaluate(el => el.scrollHeight <= el.clientHeight && el.scrollWidth <= el.clientWidth), true, 'entry screen fits without internal scrolling');
-    assert.equal(await page.locator('.badge-launch').evaluate(el => el.querySelector('#start').getBoundingClientRect().top >= el.querySelector('img').getBoundingClientRect().bottom), true, 'Start sits below the badge');
+    assert.equal(await page.locator('.badge-launch').evaluate(el => (() => { const image = el.querySelector('img').getBoundingClientRect(); const button = el.querySelector('.play-label').getBoundingClientRect(); const center = button.top + button.height / 2; return center > image.top + image.height * .65 && center < image.top + image.height * .8; })()), true, 'PLAY overlays the lower third of the clickable badge');
     assert.equal(await page.locator('#watch-trailer').isVisible(), true);
     assert.equal(await page.locator('#hero-video').isVisible(), true, 'the trailer loop plays behind the start card');
     assert.equal(await page.locator('#trailer-video').getAttribute('src'), null, 'full trailer is not loaded until opened');
