@@ -131,15 +131,15 @@ button { font: inherit; color: inherit; }
 .cab.light-years-home { --c1: #0a0a0c; --c2: #cfe0ff; --glow: rgba(207, 224, 255, 0.45); }
 .cab.ahead-of-the-light { --c1: #0b0b14; --c2: #f08a2c; --glow: rgba(240, 138, 44, 0.45); }
 .cab.first-breath { --c1: #5e1c34; --c2: #ffc53d; --glow: rgba(255, 197, 61, 0.45); }
-/* The two newest marquees: the title takes one line where it can. At the 12px floor it takes two close lines over a
+/* The newest marquees: the title takes one line where it can. At the 12px floor it takes two close lines over a
    one-line sub of 8 characters, with no gap between them, which needs a box 100px wide inside (a machine 259px tall).
    In a narrower box the sub line goes, so it is never cut in half, and the title shows whole on a machine down to about
    230px tall. On a landscape phone every marquee is cut. The box is an inline-size container: its width is a fixed
    share of the machine's height, and the 100cqh in --h still means the stage. */
-.cab.light-years-home .marquee, .cab.ahead-of-the-light .marquee { container-type: inline-size; }
-.cab.light-years-home .marquee b, .cab.ahead-of-the-light .marquee b { display: block; font-size: max(12px, calc(var(--h) * 0.03)); line-height: max(10.8px, calc(var(--h) * 0.03)); }
-.cab.light-years-home .marquee small, .cab.ahead-of-the-light .marquee small { margin-top: clamp(0px, calc(var(--h) * 0.03 - 9px), 3px); }
-@container (width < 100px) { .cab.light-years-home .marquee small, .cab.ahead-of-the-light .marquee small { display: none; } }
+.cab.light-years-home .marquee, .cab.ahead-of-the-light .marquee, .cab.first-breath .marquee { container-type: inline-size; }
+.cab.light-years-home .marquee b, .cab.ahead-of-the-light .marquee b, .cab.first-breath .marquee b { display: block; font-size: max(12px, calc(var(--h) * 0.03)); line-height: max(10.8px, calc(var(--h) * 0.03)); }
+.cab.light-years-home .marquee small, .cab.ahead-of-the-light .marquee small, .cab.first-breath .marquee small { margin-top: clamp(0px, calc(var(--h) * 0.03 - 9px), 3px); }
+@container (width < 100px) { .cab.light-years-home .marquee small, .cab.ahead-of-the-light .marquee small, .cab.first-breath .marquee small { display: none; } }
 /* Ahead of the Light's last log unlock (84 pages): a gold frame round the screen, drawn as a shadow so no size changes */
 .cab.ahead-of-the-light.gold .bezel { box-shadow: 0 0 0 3px var(--gold), 0 0 14px rgba(255, 207, 74, 0.5), inset 0 0 0 2px rgba(255, 255, 255, 0.06), 0 2px 0 rgba(0, 0, 0, 0.6); }
 .cab.gta { --c1: #174b4a; --c2: #ffc65b; --glow: rgba(255, 198, 91, 0.45); }
@@ -694,10 +694,10 @@ button { font: inherit; color: inherit; }
       <div class="kick"></div>
       </article>
       <article class="cab first-breath" data-game="first-breath" data-url="/first-breath/" aria-label="First Breath: a baby's journey to birth">
-      <div class="marquee"><div><b>FIRST BREATH</b><small>A BABY'S JOURNEY TO BIRTH</small></div></div>
+      <div class="marquee"><div><b>FIRST BREATH</b><small>BE BORN</small></div></div>
       <div class="bezel"><div class="screen">
       <img src="arcade/key/first-breath.svg" alt="A cut-paper egg in cream rings and a cloud of paper dots on wine red, with a cream arc round it and a small marigold sperm coming in" loading="lazy" decoding="async">
-      <div class="osd"><p class="hi">RACE · GUARD · GROW · BREATHE</p><p class="press">INSERT COIN</p><p class="credit">CREDIT 0</p></div>
+      <div class="osd"><p class="hi">RACE · GUARD · CRY</p><p class="press">INSERT COIN</p><p class="credit">CREDIT 0</p></div>
       </div></div>
       <div class="panel"><span class="stick"></span><span class="pbtn a"></span><span class="pbtn b"></span><button class="start" type="button">START</button></div>
       <div class="door"><button class="slot" type="button" aria-label="Drop a token into First Breath"><i></i><span>25¢</span></button><button class="slot" type="button" aria-label="Drop a token into First Breath"><i></i><span>25¢</span></button></div>
@@ -1502,7 +1502,7 @@ try {
 try {
   const s = JSON.parse(localStorage.getItem("first-breath.save.v1")), b = s && s.best;
   if (b && b.done === true && typeof b.score === "number" && Number.isFinite(b.score) && b.score > 0) $(".hi", $('.cab[data-game="first-breath"]')).textContent = "BEST " + b.score.toLocaleString("en-US");
-} catch (e) { /* no save, a broken save or storage that is off leaves the plain line RACE · GUARD · GROW · BREATHE */ }
+} catch (e) { /* no save, a broken save or storage that is off leaves the plain line RACE · GUARD · CRY */ }
 drawTokens();
 games.forEach(showCredit);
 // open on the hall, or on the group in the address; back from a game, that game is selected

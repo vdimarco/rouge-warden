@@ -133,9 +133,9 @@ for (const { id } of JSON.parse(read("higgsfield/arcade-key-art.json")).art) {
   check(fb !== "" && blank(fb) === blank(aotl), "First Breath's article is a whole copy of the Ahead of the Light article (marquee, bezel, screen, .osd, panel with START, door with two slots, kick)");
   const want = [
     ['<article class="cab first-breath" data-game="first-breath" data-url="/first-breath/" aria-label="First Breath: a baby\'s journey to birth">', "the article's class, id, route and label"],
-    ["<b>FIRST BREATH</b><small>A BABY'S JOURNEY TO BIRTH</small>", "the marquee"],
+    ["<b>FIRST BREATH</b><small>BE BORN</small>", "the marquee"],
     ['<img src="arcade/key/first-breath.svg" alt="A cut-paper egg in cream rings and a cloud of paper dots on wine red, with a cream arc round it and a small marigold sperm coming in" loading="lazy" decoding="async">', "the screen image, its alt text, lazy and async"],
-    ['<p class="hi">RACE · GUARD · GROW · BREATHE</p>', "the attract line"],
+    ['<p class="hi">RACE · GUARD · CRY</p>', "the attract line"],
   ];
   for (const [t, what] of want) check(fb.includes(t), `First Breath's machine has ${what}: ${t}`);
   check((fb.match(/<button class="slot" type="button" aria-label="Drop a token into First Breath">/g) || []).length === 2 && (fb.match(/class="slot"/g) || []).length === 2, 'both coin slots of First Breath are labelled "Drop a token into First Breath"');
@@ -414,7 +414,7 @@ if (chromium) {
     const tag = `${width}x${height}`;
     const { ctx, page, errors } = await open(browser, { width, height });
     await page.evaluate(() => document.fonts.ready);
-    for (const id of ["light-years-home", "ahead-of-the-light"]) {
+    for (const id of ["light-years-home", "ahead-of-the-light", "first-breath"]) {
       await page.selectOption("#machinePicker", id);
       await page.waitForFunction((id) => document.querySelector(".cab.on")?.dataset.game === id, id);
       await settle(page);
@@ -479,7 +479,7 @@ if (chromium) {
   const KEYS = ["primordia.best", "neon-best", "loon-echo-rescue-best", "tilt.voyage.best", "lab.stats.plunge", "lab.stats.creek", "lab.stats.rules", "lab.rules.clears", "small-worlds-best-threadwake", "small-worlds-best-heartship", "follow-suit:best-chain", "moonwell.best.v1", "ahead-of-the-light.meta.v1", "light-years-home.v3.save", "first-breath.save.v1"];
   const lines = (page) => page.$$eval(".cab[data-game]", (cs) => Object.fromEntries(cs.map((c) => [c.dataset.game, c.querySelector(".hi").textContent])));
   // First Breath's plain line, and a finished best run as core/save.js stores it (design.md 10)
-  const FB_PLAIN = "RACE · GUARD · GROW · BREATHE";
+  const FB_PLAIN = "RACE · GUARD · CRY";
   const FB_SAVE = { v: 1, best: { score: 61240, ms: 401000, done: true, assist: false, oneButton: false, grades: ["Good", "Great", "Glowing", "Great", "Good", "Great", "Glowing", "Great"] }, reached: 8, stages: {}, carryIn: {}, settings: {} };
   // the machines that wear a gold frame (Ahead of the Light's last log unlock)
   const framed = (page) => page.$$eval(".cab.gold", (cs) => cs.map((c) => c.dataset.game));

@@ -29,7 +29,7 @@ import { CARERS } from "./text.js";
 export const SAVE_KEY = "first-breath.save.v1";
 export const VERSION = 1;
 export const STAGE_IDS = Object.freeze(["swim", "egg", "split", "root", "grow", "answer", "turn", "birth"]);
-const ATTRACT = "RACE · GUARD · GROW · BREATHE";
+const ATTRACT = "RACE · GUARD · CRY";
 
 const GRADES = new Set(["Good", "Great", "Glowing"]);
 const MOTIONS = new Set(["auto", "full", "reduced"]);

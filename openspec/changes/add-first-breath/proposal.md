@@ -64,8 +64,8 @@ saying "paper cut is still the nicest" at the boards before it (design.md 1.2).
   with Canvas 2D: still sheets baked once, moving sheets with cheap shadows, and a low quality tier (no grain, flat
   shadows) when frames run slow. Stages join with a short crossfade. Womb sound that is felt first, then heard, then
   opens at birth.
-- **The arcade**: a machine at the end of the Action row, after Ahead of the Light; a switcher entry; a hand-drawn SVG
-  screen; a cabinet line with the best run, or the attract line RACE · GUARD · GROW · BREATHE; homepage checks at 390,
+- **The arcade**: a machine at the end of the Action row, after Light Years Home; a switcher entry; a hand-drawn SVG
+  screen; a cabinet line with the best run, or the attract line RACE · GUARD · CRY; homepage checks at 390,
   320 and 1280 px wide.
 
 ### Scope of this change
@@ -134,10 +134,10 @@ None. The arcade's own requirements already ask for a machine for every game pag
   - `public/index.html`: the cabinet article after `ahead-of-the-light` in `#row`, its `.cab.first-breath` colours,
     `"first-breath"` appended to the Action group's `games`, and the cabinet best-line block.
   - `public/arcade/switch.js`: the `GAMES` entry after Ahead of the Light.
-  - `qa/arcade/groups.e2e.mjs`: Action goes from seven games to eight.
+  - `qa/arcade/groups.e2e.mjs`: Action goes from eight games to nine.
   - `qa/arcade/machines.mjs`: the best-line key `first-breath.save.v1`, its wanted line ("BEST 61,240") and plain
-    line (RACE · GUARD · GROW · BREATHE), the size
-    check for the SVG screen, and a new part `firstbreath` for the homepage checks at 390 × 844, 320 × 568 and
+    line (RACE · GUARD · CRY), the size
+    check for the SVG screen, and a new part `firstbreath` for the homepage checks at 390 × 844, 320 × 700 and
     1280 × 720, with screenshots.
   - `qa/arcade/quiet.mjs`: a page entry for `/first-breath/` that presses `#play`.
   - `public/arcade/game-dates.json`: regenerated from git with `node qa/arcade/game-dates.mjs`.

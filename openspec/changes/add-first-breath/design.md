@@ -53,9 +53,10 @@ what is known of that choice.
 | Topic | Our choice | Why |
 |---|---|---|
 | Title | **First Breath** | It names the ending that the whole run climbs to. |
-| Subtitle (`<small>`, switcher `sub`) | **A baby's journey to birth** (marquee: A BABY'S JOURNEY TO BIRTH) | Short for the marquee. All Games search finds "baby" and "birth". |
+| Subtitle (switcher `sub`) | **A baby's journey to birth** | All Games search finds "baby" and "birth". |
+| Marquee subtitle (`<small>`) | **BE BORN** | 7 characters. The marquee rule of Light Years Home and Ahead of the Light fits a sub line of up to 8 characters; A BABY'S JOURNEY TO BIRTH was cut at 390, 320 and 1280 px. |
 | Tagline (title screen) | "Nine months. Eight small stages. One first breath." | |
-| Cabinet attract line | **RACE · GUARD · GROW · BREATHE** | Four verbs from the run. 29 characters, within the 31 of "EXPLORE · DRIVE · SAVE THE PARK" on the same homepage. |
+| Cabinet attract line | **RACE · GUARD · CRY** | Three verbs from the run: the race, the egg's guard and the first cry of the ending. It takes two rows like its neighbours in the Action row (DRIFT · RACE · JUMP). A longer last word (BREATHE, GROW, BIRTH) took three rows on the selected machine at 1280 × 720 and ran over INSERT COIN. |
 | Stages 1 and 2 (the user's choice after review) | **Stage 1, The Race**: one sperm in a pack of 20. **Stage 2, The Egg**: the view switches to the egg, which guards its shell with an arc until your own sperm comes in, then seals. | The user asked for "A race with other sperm" and for stage 2 as "a switch to the egg defending against the sperms invasion". See 1.2. |
 | Row | **Action**, the last machine, after `ahead-of-the-light` | A real-time skill game with a score chase. Primordia, the other cell game, is in this row. |
 | Art direction (chosen after the art boards, 1.2) | **Paper cut**: flat sheets of coloured paper stacked like a shadow box or tunnel book, each one flat colour with a fine grain, hand-cut edges, depth only from soft drop shadows (light from above and a little left), one marigold accent for "you", small cream tags for labels. The light still rises over the run, from dim violet-red sheets to a cream-white glow at birth and a warm cream room. Abstract baby figure in a few rounded pieces, with no face. Drawn with Canvas 2D (section 14). | It won the side-by-side against Warm Lantern, watercolour wash and oil. Flat cut shapes read as calm, made by hand and clearly not a picture of a real body, which suits the tone rules. No realistic fetus portraits: Nilsson-style images now read as political (`research/research-art.md` B7). Sources in 14.2. |
@@ -949,14 +950,14 @@ No points, no grade and no score line appear from the end of stage 8 until the r
 - A broken or old save gives defaults and never throws.
 - **Cabinet line** (in `public/index.html`, next to the Ahead of the Light block, in try/catch): if `best.done === true`
   and `best.score` is a finite number > 0: `"BEST " + score.toLocaleString("en-US")` (for example "BEST 61,240"). Else
-  the plain line RACE · GUARD · GROW · BREATHE. `core/save.js` exports the same rule as `cabinetLine(save)` for the
+  the plain line RACE · GUARD · CRY. `core/save.js` exports the same rule as `cabinetLine(save)` for the
   node test. (The FURTHEST line is deferred.)
 - **Cabinet**: copy the `ahead-of-the-light` article in `#row` whole: the marquee, the bezel with its screen and
   `.osd`, the `.panel` with START, the `.door` with its two `.slot` buttons, and the `.kick`. Then replace the names:
   `<article class="cab first-breath" data-game="first-breath" data-url="/first-breath/" aria-label="First Breath: a
-  baby's journey to birth">`; marquee `<b>FIRST BREATH</b><small>A BABY'S JOURNEY TO BIRTH</small>`; screen `<img
+  baby's journey to birth">`; marquee `<b>FIRST BREATH</b><small>BE BORN</small>`, with the `.cab.first-breath` selectors added to the marquee rule of Light Years Home and Ahead of the Light; screen `<img
   src="arcade/key/first-breath.svg" alt="A cut-paper egg in cream rings and a cloud of paper dots on wine red, with a
-  cream arc round it and a small marigold sperm coming in" loading="lazy" decoding="async">`; `.hi` RACE · GUARD · GROW · BREATHE (it wraps like its neighbours with `text-wrap: balance`); both slots
+  cream arc round it and a small marigold sperm coming in" loading="lazy" decoding="async">`; `.hi` RACE · GUARD · CRY (it wraps like its neighbours with `text-wrap: balance`); both slots
   `aria-label="Drop a token into First Breath"`. CSS `.cab.first-breath { --c1: #5e1c34; --c2: #ffc53d; --glow:
   rgba(255, 197, 61, 0.45); }` (the stage 2 board and the marigold accent). The article goes after the `ahead-of-the-light` article in `#row`, and
   `"first-breath"` is appended to the Action group's `games`.
@@ -2061,7 +2062,7 @@ in tasks.md.
 | Sound | OfflineAudioContext, 6 s per scene: ≥ 90% of energy below 500 Hz before birth; > 20 dB more energy above 2 kHz after the opening than before; envelope peaks match the beat times within 5 ms; a second peak train from the stage 4 hinge; with `latencyS: 0.04`, each beat scheduled 40 ms early; across a card and a stage start, her peaks keep an even spacing with no extra or missing beat | `sound.e2e.mjs` |
 | First 10 seconds | Play → `prompt` by 0.5 s and steering live by 0.5 s (stage 1); `goto(2)` → first target by 2.7 s, and the guard's prompt by 9.0 s | `smoke.e2e.mjs` |
 | Screenshots | every stage at the three layouts, in both tiers; a 1 s strip of stage 1 at `?res=0.5` (10 frames) to review the sway for stepping by eye; the homepage at 390 × 844, 320 × 568 and 1280 × 720 for the PR | `shots.mjs`; `qa/arcade/machines.mjs` part `firstbreath` with `SHOTS` |
-| The homepage machine | at 390 × 844, 320 × 568 and 1280 × 720: the last cabinet in `#action` is First Breath, inside the window and not under the sign or the tray; `.slot`, `.start`, `#prevBtn`, `#nextBtn`, `.section-nav button` and `.all-games` ≥ 44 px on the shorter side; START goes to `/first-breath/`; the other groups' members unchanged | `qa/arcade/machines.mjs` part `firstbreath` |
+| The homepage machine | at 390 × 844, 320 × 700 and 1280 × 720 (at 320 × 568 every machine's screen is about 52 × 43 px, too small for any attract line): the last cabinet in `#action` is First Breath, inside the window and not under the sign or the tray; `.slot`, `.start`, `#prevBtn`, `#nextBtn`, `.section-nav button` and `.all-games` ≥ 44 px on the shorter side; START goes to `/first-breath/`; the other groups' members unchanged | `qa/arcade/machines.mjs` part `firstbreath` |
 
 ## 18. QA files
 
@@ -2091,7 +2092,7 @@ in tasks.md.
 | `layout.e2e.mjs` | section 17 layout rows at 390 × 844 and 844 × 390 (touch) and 1440 × 900; the thumb reach; the race HUD; the fork in view; the egg and its arc; the gold's path in portrait; the ending's thumb ring at bottom centre in portrait and in the corner of the last touch in landscape; a screenshot per stage and screen |
 | `input.e2e.mjs` | touch stick steers in portrait and landscape; a second pointer is ignored; keys only on desktop; in a tap moment a press that drags is judged at touch-down; in a `dragHold` moment an arrow keydown is a press with its dir and Space alone is a plain hold; landscape touch in stages 1 (drag right swims forward), 2 (the arc follows the drag, and the seal by hold and release), 4 (drag right grows forward), 5 (a move drag), 7 (the turn) and 8 (directions on screen axes); stage 1 on desktop with a left-button mouse drag; the stage 2 arc on desktop (the mouse aims it after a 4 px move; the arrows and A/D turn it at 540°/s; W, S, up and down do nothing; a parked cursor never pulls it back after a turn key); a hold needs a fresh press at the seal (the thumb held from the guard, and one-button Space held from the guard); one-button mode clears stages 1 (top 3), 2 (the arc tracks while held), 4, 5, 7 and 8; hidden page pauses; M writes `arcade.sound`; muted rings |
 | `perf.e2e.mjs`, `visual.e2e.mjs`, `sound.e2e.mjs` | section 17 (Chromium with `--disable-gpu`) |
-| `qa/arcade/machines.mjs`, `groups.e2e.mjs`, `quiet.mjs` | the machine, the row of eight, the switcher, the cabinet line, the homepage part `firstbreath` (section 17), the hidden-page silence |
+| `qa/arcade/machines.mjs`, `groups.e2e.mjs`, `quiet.mjs` | the machine, the row of nine, the switcher, the cabinet line, the homepage part `firstbreath` (section 17), the hidden-page silence |
 
 The PR states plainly which checks did not run: real phones, real touch latency, phone speakers, and the iPhone
 silent switch.
