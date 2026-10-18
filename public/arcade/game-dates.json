@@ -97,10 +97,15 @@
       "added": "2026-10-04T19:19:41+00:00",
       "updated": "2026-10-09T14:51:32+00:00"
     },
+    "light-years-home": {
+      "path": "public/light-years-home",
+      "added": "2026-10-13T05:28:17+00:00",
+      "updated": "2026-10-17T00:08:20+00:00"
+    },
     "ahead-of-the-light": {
       "path": "public/ahead-of-the-light",
       "added": "2026-10-14T07:26:22+00:00",
-      "updated": "2026-10-17T00:32:26+00:00"
+      "updated": "2026-10-17T23:09:23+00:00"
     },
     "lab": {
       "path": "public/lab",

@@ -193,7 +193,7 @@ async function moments(browser, size) {
     await R(page, () => window.__race.advance(0.5));
     await shot(page, size, 'draft');
   }
-  await goto(page, { leg: 2, seed: 'LAYC' });
+  await goto(page, { leg: 2, seed: 'LAYB' });
   if (await want('slam', await until(page, "return ev.some((e) => e.type === 'contact' && e.kind === 'slam' && (e.victim === 'you' || e.by === 'you'));", { max: 90 }))) {
     await R(page, () => window.__race.advance(0.1));
     await shot(page, size, 'slam');
