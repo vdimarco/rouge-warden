@@ -158,7 +158,7 @@ async function installNudgeChecks(browser, errors) {
       assert.equal(await target.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
       await target.screenshot({ path: `/tmp/nord-install-nudge-${width}.png`, fullPage: true });
       if (mobile) {
-        for (const control of await target.locator('.move-stick:visible, .touch-primary button:visible').all()) {
+        for (const control of await target.locator('.move-stick:visible, .touch-primary button:visible, #touch-menu:visible').all()) {
           const touch = await control.boundingBox();
           const overlap = Math.min(box.x + box.width, touch.x + touch.width) > Math.max(box.x, touch.x)
             && Math.min(box.y + box.height, touch.y + touch.height) > Math.max(box.y, touch.y);
@@ -452,7 +452,7 @@ try {
       radius: parseFloat(getComputedStyle(button).borderTopLeftRadius), icon: button.querySelector('svg')?.getBoundingClientRect().height,
       border: parseFloat(getComputedStyle(button).borderTopWidth), background: getComputedStyle(button).backgroundColor };
   }));
-  assert.equal(buttons.length, 4);
+  assert.equal(buttons.length, 3);
   assert.equal(new Set(buttons.map(button => button.top)).size, 2, 'two rows');
   assert.equal(new Set(buttons.map(button => button.left)).size, 2, 'two columns');
   for (const button of buttons) {
@@ -460,7 +460,7 @@ try {
     assert.ok(button.radius >= 50 && button.icon >= 28, 'round faces with clear action icons');
     assert.ok(button.border > 0 && button.background !== 'rgba(0, 0, 0, 0)', 'full visible button faces');
   }
-  assert.ok(buttons[0].left > 390 * .45 && Math.abs(buttons.at(-1).right - (390 - 16)) <= 1, 'bottom-right grid');
+  assert.ok(buttons[0].left > 390 * .45 && Math.abs(buttons[1].right - (390 - 16)) <= 1, 'bottom-right grid');
   assert.ok(buttons[1].left - buttons[0].right >= 12 && buttons[2].top - buttons[0].top - buttons[0].height >= 12, '12 px thumb clearance');
   assert.equal(await phonePage.locator('[data-stick="look"]').count(), 0, 'image drag replaces the look pad');
   for (const [width, height] of [[390, 844], [844, 390]]) {

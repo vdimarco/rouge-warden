@@ -54,9 +54,11 @@
         <div class="touch-stick move-stick" data-stick="move" role="group" aria-label="Movement and steering touch stick">
           <span class="stick-knob"></span><span class="stick-label">MOVE</span>
         </div>
-        <div class="touch-steering" role="group" aria-label="Steering" hidden>
-          <button data-key="65" aria-label="Steer left"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="m17 6-10 10 10 10M7 16h20"/></svg>Left</button>
-          <button data-key="68" aria-label="Steer right"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="m15 6 10 10-10 10M5 16h20"/></svg>Right</button>
+        <div class="touch-steering" data-stick="steer" role="group" aria-label="Steering wheel: drag left or right" hidden>
+          <svg class="steering-wheel" viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="43"/><circle cx="50" cy="50" r="9"/><path d="M8 44h33m18 0h33M50 59v34"/></svg>
+          <span class="steering-hint">Drag ↔</span>
+          <button data-key="65" aria-label="Steer left"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="m17 6-10 10 10 10M7 16h20"/></svg><b>Left</b></button>
+          <button data-key="68" aria-label="Steer right"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="m15 6 10 10-10 10M5 16h20"/></svg><b>Right</b></button>
         </div>
         <div class="touch-primary" role="group" aria-label="Game actions">
           <button id="touch-gas" data-key="16" aria-label="Hold to sprint">
@@ -71,6 +73,8 @@
             <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M11 17V5a2 2 0 0 1 4 0v10-7a2 2 0 0 1 4 0v8-5a2 2 0 0 1 4 0v6-3a2 2 0 0 1 4 0v9c0 5-3 7-8 7h-2c-3 0-5-1-7-4l-6-8a2.5 2.5 0 0 1 4-3l3 3"/></svg>
             <b>Use</b><span>Interact</span>
           </button>
+        </div>
+        <div class="touch-navigation">
           <button id="touch-menu" type="button" data-menu-toggle aria-expanded="false" aria-controls="menu" aria-label="Menu">
             <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M6 8h20M6 16h20M6 24h20"/></svg>
             Menu

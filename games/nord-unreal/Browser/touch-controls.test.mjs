@@ -52,7 +52,7 @@ function fixture() {
     Object.defineProperties(event, { target: { value: target }, detail: { value: detail } });
     root.dispatchEvent(event);
   }
-  const ui = { move: control({ stick: 'move' }), steering: { hidden: true },
+  const ui = { move: control({ stick: 'move' }), steering: control({ stick: 'steer' }),
     gas: control({ key: '16' }), brake: control({ key: '32' }), use: control({ key: '69' }) };
   const buttons = new Map([['touch-gas', ui.gas], ['touch-brake', ui.brake], ['touch-use', ui.use]]);
   root.querySelector = selector => selector === '.touch-steering' ? ui.steering : ui.move;
@@ -352,7 +352,7 @@ test('actual driving mode separates steering and pedals, prioritizes brake and i
   assert.equal(f.ui.use.querySelector('b').textContent, 'Exit');
   const left = f.control({ key: '65' });
   f.pointer('pointerdown', f.ui.gas);
-  f.pointer('pointerdown', left, 2);
+  f.pointer('pointerdown', left, 2, 25, 50);
   f.setDriving(true);
   f.setDriving('false');
   assert.deepEqual(f.messages.slice(-2), [['KeyDown', 87, 0], ['KeyDown', 65, 0]]);
@@ -376,14 +376,14 @@ test('driving controls release on menu, rotation, blur, cancel and disconnect', 
     const f = fixture();
     f.setEnabled(true); f.setDriving(true);
     const right = f.control({ key: '68' });
-    f.pointer('pointerdown', f.ui.gas); f.pointer('pointerdown', right, 2);
+    f.pointer('pointerdown', f.ui.gas); f.pointer('pointerdown', right, 2, 75, 50);
     if (reason === 'menu') f.releaseAll();
     else if (reason === 'disconnect') f.setEnabled(false);
     else if (reason === 'cancel') { f.pointer('pointercancel', f.ui.gas); f.pointer('pointercancel', right, 2); }
     else f.window.dispatchEvent(new Event(reason));
     assert.deepEqual(f.messages.slice(-2), [['KeyUp', 87], ['KeyUp', 68]], reason);
     assert.equal(f.ui.gas.dataset.pressed, 'false');
-    assert.equal(right.dataset.pressed, 'false');
+    assert.equal(f.ui.steering.dataset.pressed, 'false');
   }
 });
 
@@ -480,4 +480,21 @@ test('Sprint taps tolerate finger jitter but a look drag returning to its start 
     assert.equal(f.ui.gas.getAttribute('aria-pressed'), String(distance === 3));
     f.releaseAll();
   }
+});
+
+ test('wheel drag crosses center and reverses without lifting while Gas stays held', () => {
+  const f = fixture();
+  f.setEnabled(true); f.setDriving(true);
+  f.pointer('pointerdown', f.ui.gas, 2);
+  f.pointer('pointerdown', f.ui.steering, 1, 10, 50);
+  f.pointer('pointermove', f.ui.steering, 1, 50, 0);
+  f.pointer('pointermove', f.ui.steering, 1, 90, 100);
+  assert.deepEqual(f.messages, [['KeyDown', 87, 0], ['KeyDown', 65, 0], ['KeyUp', 65], ['KeyDown', 68, 0]]);
+  f.pointer('pointercancel', f.ui.steering);
+  assert.deepEqual(f.messages.at(-1), ['KeyUp', 68]);
+  assert.equal(f.ui.steering.styles.get('--steer-angle'), '0deg');
+  f.pointer('pointerdown', f.ui.steering, 1, 10, 50);
+  f.window.dispatchEvent(new Event('blur'));
+  assert.deepEqual(f.messages.slice(-2), [['KeyUp', 87], ['KeyUp', 65]]);
+  assert.equal(f.ui.steering.styles.get('--steer-angle'), '0deg');
 });
