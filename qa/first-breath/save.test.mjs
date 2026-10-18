@@ -1,7 +1,7 @@
 // First Breath: the save and the cabinet line (design.md 10, 7). Broken JSON, old versions and blocked storage give
 // defaults and never throw; bad fields fall back one by one; the best run only improves (a tie goes to the faster
 // time) and an unfinished run never counts; each stage keeps its best; carryIn is kept per stage; the cabinet line
-// reads "BEST 61,240" for a finished best run above 0 and RACE · GUARD · GROW · BREATHE otherwise. Also the score
+// reads "BEST 61,240" for a finished best run above 0 and RACE · GUARD · CRY otherwise. Also the score
 // rules the save relies on (clampScore, grade, runTotal) and mergeCarry.
 // node qa/first-breath/save.test.mjs
 import assert from "node:assert/strict";
@@ -16,7 +16,7 @@ const failed = [];
 async function check(name, fn) {
   try { await fn(); passed++; } catch (e) { failed.push(`${name}\n     ${String(e.message).split("\n").slice(0, 12).join("\n     ")}`); }
 }
-const PLAIN = "RACE · GUARD · GROW · BREATHE";
+const PLAIN = "RACE · GUARD · CRY";
 const result = (total, goalMet = true) => ({ done: true, goalMet, score: { goal: 3000, skill: total - 3000, flourish: 0, total } });
 const summary = (total, ms, extra = {}) => ({
   total, ms, sparks: 0, facts: [], marks: { assist: false, oneButton: false },

@@ -520,6 +520,27 @@ Ahead of the Light (`/ahead-of-the-light/`) is a survival race home at the speed
 
 The race is pure code in `core/` that node tests and bots play headless. The sky, the galaxies and the light use three.js r185 points, and the ring, the ships and every label are drawn on a 2D layer above them in the video's look.
 
+## First Breath
+
+First Breath (`/first-breath/`) is a baby's journey to birth, seen from the baby. It has eight short stages and an ending, and a run takes about 8 to 10 minutes. The look is paper cut: flat sheets of coloured paper stacked like a shadow box, with hand-cut edges and soft drop shadows. The heartbeat of the one who carries you plays through the whole run, and most moves keep time with it. Only the first stage has a goal you can miss: if you are not in the top 3, the Almost card lets you try again or go on.
+
+1. **The Race.** Swim with 19 rivals to the meeting place, and arrive in the top 3.
+2. **The Egg.** Guard your shell: turn an arc round it, and the other sperm bounce off. Let your own sperm in, then seal the shell.
+3. **The Embryo: first cells.** Tap as each ring closes, and the cells split. Then hold, and let go at the glow.
+4. **The Placenta.** Drift into a soft spot, and grow roots to 8 pools. Then tap with your first heartbeat.
+5. **First Trimester.** Tap when the light reaches your heart, and drag to stretch.
+6. **Second Trimester.** Tap with the heartbeat. Then listen to each hummed phrase and answer it.
+7. **Third Trimester.** Practise four breaths, and turn head-down when there is room.
+8. **Birth.** Ride 8 waves. Hold through each wave, and drag the way the prompt shows. Then the light grows from below and fills the screen. The ending is your first breath.
+
+- **Controls.** On a phone, drag anywhere to steer. The stick starts where you touch. Tap, or hold and let go, as the prompt line says. On a computer, the arrow keys or WASD steer, and Space, Enter or Z is the tap and the hold. In the egg stage the left and right arrows (or A and D) turn the arc, or the mouse points it. In Birth, hold the arrow of the prompted direction. Esc or P pauses, M mutes and C turns the captions on or off.
+- **One-button mode** (Settings) makes any key or tap the one button. Hold it, and the game steers for you.
+- **Settings** also hold Assist, the word for the one who carries you (mother, mum, mom or parent), Motion (Auto, Full or Reduced), Captions, Large text, the Tap test and the timing offset.
+- **Facts.** Each stage shows short facts, each with its week or day. Each fact has a source, and Sources on the title lists them all. The run result says what was real and what is the game's.
+- **Your best** run stays in this browser, and the machine shows it (BEST 61,240). With no finished run, the machine shows RACE · GUARD · CRY.
+
+The game is pure code in `core/` that node tests and bots play headless. A Canvas 2D renderer in `render/` draws it as paper, and its low tier keeps the paper look on a slow phone. The sound is made in code in `ui/sound.js`. The plan, the facts table and the sources are in `openspec/changes/add-first-breath/`.
+
 ## The lab
 
 The lab at `/lab/` holds toys. A toy is a small build that tests the core move of a new game idea before anyone builds the game. The arcade shows the lab: The Lab machine opens `/lab/`, the **LAB ↗** link under the sign does too, and each toy has a machine of its own. The game switcher lists the lab and its toys. Each lab page asks search engines not to index it. The ideas, and the bar a new game must pass, are in `docs/game-ideas.md`.
@@ -626,6 +647,11 @@ The terminal draws the pinball table, the brick wall and the Lenia dish with hal
 | `public/arcade/key/ahead-of-the-light.webp` | The Ahead of the Light machine's screen, cut from a portrait frame of the game |
 | `public/arcade/key/light-years-home.webp` | The Light Years Home machine's screen, cut from a frame of the drop-out into Coma City |
 | `qa/ahead-of-the-light/` | Tests for Ahead of the Light (see below) |
+| `public/first-breath/index.html`, `style.css`, `main.js` | First Breath: the page, the paper-tag styles for the HUD and the screens, the 60 Hz fixed-step loop, the URL flags, and `window.__fb` (the test hook) |
+| `public/first-breath/core/` | First Breath's game, pure and node-tested: the clock and its labels, the beats, the judge, the run, the bots, the save and the cabinet line, the facts and their sources, the words, `lib/` (targets, sub-goals, steering, flow, the root tree and the baby figure) and `stages/` (each stage with its `.tune.js`, `.facts.js` and `.text.js`) |
+| `public/first-breath/render/`, `ui/` | First Breath's paper-cut renderer (Canvas 2D: the paper kit, the bakes, the items, the low tier, the frame cost, the colour script and the DOM rings) and its input, HUD, captions, screens, sound and storage |
+| `public/arcade/key/first-breath.svg` | The First Breath machine's screen, drawn by hand as cut paper |
+| `qa/first-breath/` | Tests for First Breath (see below) |
 | `public/lab/index.html` | The lab: the four toys, and your play time in each |
 | `public/lab/kit/` | What the toys share: sound made in code, the frame loop, the start and end cards, play time, and a seeded random with a byte codec for links |
 | `public/lab/plunge/` | Take the Plunge: `sim.js` (the flight, the dives and the lakes, exact in every browser), `ghost.js` (ghost links), and `main.js` |
@@ -754,6 +780,23 @@ Run these from the repo root. Each node test runs alone and exits with code 1 wh
 | `NODE_PATH=qa/browser/node_modules node qa/ahead-of-the-light/layout.e2e.mjs` | About 48 moments at each size (every gate and every signature among them) into a contact sheet (`SHOTS` keeps them), and frame by frame over the mid bot's legs: the light's arc, the wings clear of the HUD, rivals on screen, labels clear of landmarks, captions clear of gate lines and bands, the full wings, tap targets, card text and the safe area |
 | `NODE_PATH=qa/browser/node_modules node qa/ahead-of-the-light/perf.e2e.mjs` | At 390 × 844 with the CPU slowed 4 ×: frame times, draw calls (20 or fewer), points (22,000 or fewer), and the glare against no glare |
 | `NODE_PATH=qa/browser/node_modules node qa/ahead-of-the-light/feedback.e2e.mjs` | Every event with a sound, an effect or a haptic starts it on its own frame (through `__race.feedback()`) |
+
+### First Breath tests
+
+Run these from the repo root. Each node test runs alone and exits with code 1 when something fails. The browser checks start `python3 -m http.server 8765 --directory public` when nothing answers there, and need Playwright on `NODE_PATH`. They run headless Chromium with `--disable-gpu` and no SwiftShader flags, so the canvas draws in software. They do not test a real phone, real touch latency or phone speakers.
+
+| Script | What it checks |
+| --- | --- |
+| `for f in qa/first-breath/*.test.mjs; do node $f \|\| echo FAIL $f; done` | Every node test: the clock and its labels, the beats, the judge and the targets, the draw-list limits, the save and the cabinet line, the run (stage order, retries, carry, one-button mode), the purity of `core/`, each stage (`stage-<id>.test.mjs`) and the ending, the paper kit with the colour script's contrast rules (`paper.test.mjs`), and the bots' whole-run gates over 20 seeds and 4 skills (`sim.test.mjs`) |
+| `node qa/first-breath/bot.mjs 20 0.7 1` | Bots play whole runs headless (the number of runs, the skill from 0 to 1, the first seed) and report each stage's time, score, grade and accuracy, and the run time |
+| `node qa/first-breath/race-sim.mjs` | A numeric model of the stage 1 race, apart from the game: the places and arrival times of the ref, mid and idle players and every rival over 20 seeds |
+| `NODE_PATH=qa/browser/node_modules node qa/first-breath/boot.e2e.mjs` | At 390 × 844, 844 × 390 and 1440 × 900: the scripts in the right order, every member of `window.__fb`, Play, a whole run to the result, every stage by `goto`, and no errors |
+| `NODE_PATH=qa/browser/node_modules node qa/first-breath/smoke.e2e.mjs` | The first 10 seconds, every stage by `goto`, the bot from Play to the run result, the low tier in every stage (`?q=low` and `?gl=0`), and no raw string ids, console errors or failed requests |
+| `NODE_PATH=qa/browser/node_modules node qa/first-breath/layout.e2e.mjs` | Every screen and stage with `?inset=47,0,34,0`: 44 px targets, the safe area, no overlaps, the caption bands, the thumb reach, the stage 1 place slot and fork, the egg and its arc, your sperm's path in portrait, the ending's thumb ring, and Large text (`SHOTS` keeps a screenshot of each) |
+| `NODE_PATH=qa/browser/node_modules node qa/first-breath/perf.e2e.mjs` | The frame cost of every stage at the pinned steps under `?probe=1`: full tier p95 16 ms or less, low tier 10 ms or less, 400 draws or fewer, and the adaptive scale and the tier switch |
+| `NODE_PATH=qa/browser/node_modules node qa/first-breath/visual.e2e.mjs` | No text on the canvas, the brightest cue, the paper cell, the light rising from stage to stage, the flash rule, the birth light and its opening, the ending's warmth, reduced motion, and the low tier |
+| `NODE_PATH=qa/browser/node_modules node qa/first-breath/sound.e2e.mjs` | The sound in an `OfflineAudioContext` (the womb filter, the opening at birth, beat times within 5 ms, the output latency) and in the page (no sound before Play, her beats even across cards, M, `?mute=1` and a hidden page) |
+| `SHOTS=<folder> NODE_PATH=qa/browser/node_modules node qa/first-breath/shots.mjs` | Screenshots of every stage at the three sizes in both tiers, the birth light, and a 1 s strip of stage 1 at `?res=0.5` to review the sway |
 
 ### Arcade tests
 

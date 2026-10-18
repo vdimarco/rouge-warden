@@ -8,9 +8,9 @@ The Cottage Arcade SHALL have a machine for First Breath: `<article class="cab f
 - **THEN** the browser goes to `/first-breath/`
 - **CHECK** `qa/arcade/machines.mjs`
 
-#### Scenario: Action has eight games
+#### Scenario: Action has nine games
 - **WHEN** a player opens the Action collection
-- **THEN** it shows olympus, crimson, tidebreak, moonwell, primordia, river-rush, ahead-of-the-light and first-breath, in that order
+- **THEN** it shows olympus, crimson, tidebreak, moonwell, primordia, river-rush, ahead-of-the-light, light-years-home and first-breath, in that order
 - **CHECK** `qa/arcade/groups.e2e.mjs`
 
 #### Scenario: The other rows
@@ -27,11 +27,11 @@ The article SHALL be a copy of the whole `ahead-of-the-light` article with the n
 - **CHECK** `qa/arcade/machines.mjs` (part `firstbreath`)
 
 ### Requirement: The marquee and colours
-The machine's marquee SHALL show the name FIRST BREATH in its `<b>` and A BABY'S JOURNEY TO BIRTH in its `<small>`. A `.cab.first-breath` rule SHALL set `--c1: #5e1c34`, `--c2: #ffc53d` and `--glow: rgba(255, 197, 61, 0.45)`, the game's wine board and marigold accent.
+The machine's marquee SHALL show the name FIRST BREATH in its `<b>` and BE BORN in its `<small>`. A `.cab.first-breath` rule SHALL set `--c1: #5e1c34`, `--c2: #ffc53d` and `--glow: rgba(255, 197, 61, 0.45)`, the game's wine board and marigold accent.
 
 #### Scenario: The marquee
 - **WHEN** the homepage is read
-- **THEN** the First Breath article's marquee shows FIRST BREATH and A BABY'S JOURNEY TO BIRTH, and its colours come from `.cab.first-breath`
+- **THEN** the First Breath article's marquee shows FIRST BREATH and BE BORN, and its colours come from `.cab.first-breath`
 - **CHECK** `qa/arcade/machines.mjs`
 
 ### Requirement: The switcher knows it
@@ -64,7 +64,7 @@ The screen's `<img>` SHALL have the alt text "A cut-paper egg in cream rings and
 - **CHECK** `qa/arcade/machines.mjs`
 
 ### Requirement: The cabinet line
-The cabinet line SHALL read `first-breath.save.v1` inside try/catch. For a finished best run with a score above 0 it SHALL show "BEST " and the score with thousands commas, such as "BEST 61,240". With no finished run, no save, or a broken save, it SHALL show the attract line RACE · GUARD · GROW · BREATHE, which SHALL fit the cabinet screen like its neighbours' lines.
+The cabinet line SHALL read `first-breath.save.v1` inside try/catch. For a finished best run with a score above 0 it SHALL show "BEST " and the score with thousands commas, such as "BEST 61,240". With no finished run, no save, or a broken save, it SHALL show the attract line RACE · GUARD · CRY, which SHALL fit the cabinet screen like its neighbours' lines.
 
 #### Scenario: A best run
 - **WHEN** the save holds a finished best run of 61,240
@@ -73,12 +73,12 @@ The cabinet line SHALL read `first-breath.save.v1` inside try/catch. For a finis
 
 #### Scenario: A run not finished
 - **WHEN** the save has no finished run and reached 6 stages
-- **THEN** the cabinet line reads RACE · GUARD · GROW · BREATHE
+- **THEN** the cabinet line reads RACE · GUARD · CRY
 - **CHECK** `qa/first-breath/save.test.mjs`
 
 #### Scenario: The attract line fits
-- **WHEN** the homepage shows the First Breath machine with no save at 390 × 844, 320 × 568 and 1280 × 720
-- **THEN** the `.hi` line reads RACE · GUARD · GROW · BREATHE and its box stays inside the cabinet's `.screen`
+- **WHEN** the homepage shows the First Breath machine with no save at 390 × 844, 320 × 700 and 1280 × 720
+- **THEN** the `.hi` line reads RACE · GUARD · CRY and its box stays inside the cabinet's `.screen`
 - **CHECK** `qa/arcade/machines.mjs` (part `firstbreath`)
 
 #### Scenario: A junk save
@@ -113,10 +113,10 @@ The game SHALL start its AudioContext on the Play tap, use `navigator.audioSessi
 - **CHECK** `qa/first-breath/smoke.e2e.mjs`
 
 ### Requirement: The homepage at three widths
-The homepage SHALL be checked at 390 × 844, 320 × 568 and 1280 × 720. At each size, with the Action collection open, the First Breath machine SHALL be the last cabinet in the row, whole, inside the window and not under the sign or the token tray, and START SHALL go to `/first-breath/`. Screenshots of the three sizes SHALL be in the pull request.
+The homepage SHALL be checked at 390 × 844, 320 × 700 and 1280 × 720. At each size, with the Action collection open, the First Breath machine SHALL be the last cabinet in the row, whole, inside the window and not under the sign or the token tray, and START SHALL go to `/first-breath/`. Screenshots of the three sizes SHALL be in the pull request.
 
 #### Scenario: Phone widths
-- **WHEN** the check opens `#action` at 390 × 844 and at 320 × 568
+- **WHEN** the check opens `#action` at 390 × 844 and at 320 × 700
 - **THEN** the last visible cabinet is first-breath, inside the window and not under the sign or the tray
 - **CHECK** `qa/arcade/machines.mjs` (part `firstbreath`)
 

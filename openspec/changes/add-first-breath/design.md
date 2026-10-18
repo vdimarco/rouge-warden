@@ -53,9 +53,10 @@ what is known of that choice.
 | Topic | Our choice | Why |
 |---|---|---|
 | Title | **First Breath** | It names the ending that the whole run climbs to. |
-| Subtitle (`<small>`, switcher `sub`) | **A baby's journey to birth** (marquee: A BABY'S JOURNEY TO BIRTH) | Short for the marquee. All Games search finds "baby" and "birth". |
+| Subtitle (switcher `sub`) | **A baby's journey to birth** | All Games search finds "baby" and "birth". |
+| Marquee subtitle (`<small>`) | **BE BORN** | 7 characters. The marquee rule of Light Years Home and Ahead of the Light fits a sub line of up to 8 characters; A BABY'S JOURNEY TO BIRTH was cut at 390, 320 and 1280 px. |
 | Tagline (title screen) | "Nine months. Eight small stages. One first breath." | |
-| Cabinet attract line | **RACE · GUARD · GROW · BREATHE** | Four verbs from the run. 29 characters, within the 31 of "EXPLORE · DRIVE · SAVE THE PARK" on the same homepage. |
+| Cabinet attract line | **RACE · GUARD · CRY** | Three verbs from the run: the race, the egg's guard and the first cry of the ending. It takes two rows like its neighbours in the Action row (DRIFT · RACE · JUMP). A longer last word (BREATHE, GROW, BIRTH) took three rows on the selected machine at 1280 × 720 and ran over INSERT COIN. |
 | Stages 1 and 2 (the user's choice after review) | **Stage 1, The Race**: one sperm in a pack of 20. **Stage 2, The Egg**: the view switches to the egg, which guards its shell with an arc until your own sperm comes in, then seals. | The user asked for "A race with other sperm" and for stage 2 as "a switch to the egg defending against the sperms invasion". See 1.2. |
 | Row | **Action**, the last machine, after `ahead-of-the-light` | A real-time skill game with a score chase. Primordia, the other cell game, is in this row. |
 | Art direction (chosen after the art boards, 1.2) | **Paper cut**: flat sheets of coloured paper stacked like a shadow box or tunnel book, each one flat colour with a fine grain, hand-cut edges, depth only from soft drop shadows (light from above and a little left), one marigold accent for "you", small cream tags for labels. The light still rises over the run, from dim violet-red sheets to a cream-white glow at birth and a warm cream room. Abstract baby figure in a few rounded pieces, with no face. Drawn with Canvas 2D (section 14). | It won the side-by-side against Warm Lantern, watercolour wash and oil. Flat cut shapes read as calm, made by hand and clearly not a picture of a real body, which suits the tone rules. No realistic fetus portraits: Nilsson-style images now read as political (`research/research-art.md` B7). Sources in 14.2. |
@@ -688,12 +689,21 @@ first caption.
 
   | Name | Value |
   |---|---|
-  | Tip | 40 u/s, turn 2.6 rad/s |
-  | Pools | 8, radius 16 u, seeded 60 to 150 u from the root, at least 40 u apart; swell 1 + 0.12 × pulse on her beat |
-  | Space colonization | N = 400 attraction points; D = 6 u; d_i = 48 u; d_k = 12 u; active points only within 60 u of the tip or of a pool being linked by itself; at most 2 iterations per step; at most 260 nodes |
-  | Auto-link | from 12 s into `roots`, the nearest unlinked pool every 3.5 s |
-  | Grow | 7 s; buds 2 → 10 mm; camera span 6 → 30 mm |
-  | Lengths | ref 45 s, mid 54 s, idle 67 s; cap 75 s |
+  | Nestle | drift 30 u/s at full stick, following the stick at a rate of 8/s; the lining slides by at 8 u/s; your drift stays within ±46 u of the lining's centre line; 3 spots of radius 12 u, 24 to 44 u to the side of your start line and 38 to 78 u ahead of your start, so an idle drift never touches one; sink 2 s; idle 8 s, then drawn in over 3 s; a player who drifts but never touches a spot is drawn in from 9 s, so `nestle` ends by 12 s |
+  | Tip | 40 u/s, turn 2.6 rad/s; accel 160 u/s², drag 6/s (lift the finger and the tip rests); the firm edge 172 u from the root, and at most 14 u behind the root |
+  | Pools | 8, radius 16 u, seeded 60 to 150 u from the root, at least 40 u apart, within ±56° of forward; swell 1 + 0.12 × pulse on her beat, the pulse decaying over 0.35 s; a link's glow runs back to you over 0.8 s |
+  | Her beat | 72 bpm with no jitter in this stage (the on-beat links and the heart targets read it) |
+  | Space colonization | N = 400 attraction points (160 over the fan ahead of the root, the rest within 30 u of the pools); D = 6 u; d_i = 48 u; d_k = 12 u; active points only within 60 u of the tip or of a pool being linked by itself; at most 2 iterations per step; at most 260 nodes; colonization stops at 216 nodes, so the steered tip and the reaches keep nodes for their paths |
+  | Auto-link | from 12 s into `roots` (Assist 8 s), the nearest unlinked pool every 3.5 s; a reach grows at 52 u/s, so the 8th reach, started at 36.5 s, links by 40 s |
+  | Heart | your heart at 110 bpm from the end of the 1.5 s hush (her heart −8 dB, light × 0.9); `root.heart` 0.3 s into the hush; "This beat is yours. Tap with it." at 3.5 s; 8 targets on your 7th to 14th beats (P = 0.545 s), the first 1.27 s after that line; then 3 s of both hearts together |
+  | Grow | 7 s; buds 2 → 6 → 10 mm at gaDay 36, 42 and 49; the real span 5.2 → 30 mm; "This will become your placenta." from gaDay 45 |
+  | Camera | span 100 u in `nestle` (15 u ahead of you), 320 u in `roots` (50 u ahead of the root), 160 u in `heart`, back to 320 u in `grow` |
+  | Sub-goals | the pools sub-goal is yours when you link at least 4 pools; the heart sub-goal at an accuracy of 0.5 |
+  | Bot | eases its speed in the last 20 u, down to a stick of 0.05 |
+  | Lengths | targets: ref 45 s, mid 54 s, idle 67 s; cap 75 s. Measured by `stage-root.test.mjs`: ref 35.3 s, mid 36.9 s, idle 66.2 s |
+
+  Numbers that 6.4 did not give before the build are the builder's choices for v1. They are in `root.tune.js`, and
+  the header of `root.js` lists them.
 
 - **Score.** Goal 3,000. Skill: 3,000 × pools you linked / 8; 1,000 × on-beat links / 8; 2,000 × heart accuracy (8).
   Flourish: 1,000 × heart taps In time / 8.
@@ -823,23 +833,38 @@ first caption.
 - **Sees.** Snug walls hug you. Dim plum. Waves of pressure narrow the vignette and press the walls in. Below you, a
   soft glow spans the full width of the bottom of the screen and grows with each wave. Nothing anatomical: the
   opening is drawn only as light.
-- **Moments** (her 76 → 92 bpm): 8 waves, one every 8.0 s: a warning ring 1.0 s before, a 5.0 s swell, a 3.0 s rest.
-  The first warning is at 2.0 s. Each wave moves you 1/8 of the way by itself.
-  - Plain waves (1, 3, 5, 7): live `hold`. "Hold through the wave."
-  - Prompt waves (live `dragHold`): 2 "Tuck: drag down and hold." 4 "Turn: drag sideways and hold." (left or right) 6
-    "Lift: drag up and hold." 8 "Turn back: drag the other way and hold." Directions are screen axes, in every layout.
-    Desktop: hold the arrow (5.3). The move plays on its wave either way.
-  - Between waves: "Rest."
-  - After wave 8: `light`: the bottom glow rises to fill the screen while exposure goes 1 → 6 over 2.0 s (the
-    cream glow sheet, 14.1), then white 0 → 1 over 1.0 s (a full-screen `#ffffff` sheet, grain fading out), hold
-    0.5 s. The sound opens from 300 Hz to 16 kHz over 1.5 s.
-- **Tuning.** Overlap = the share of the 5.0 s swell held (in the right direction on prompt waves). Rested gap =
-  released for ≥ 80% of the rest. The squeeze: vignette to 35%, walls in 6% per swell (none in reduced motion),
-  filter 300 Hz, a 40 to 80 Hz rumble. Length 2 + 64 + 3.5 ≈ 70 s for everyone. Cap 80 s.
+- **Moments** (her 76 → 92 bpm over the waves, then 92 in the light; your heart 130 bpm). `waves`: 8 waves, one every
+  8.0 s: a warning ring 1.0 s before, a 5.0 s swell, a 3.0 s rest. The first warning is at 2.0 s. Each wave moves you
+  1/8 of the way by itself.
+  - **One live gesture.** The live gesture is `dragHold` for all of `waves`. A hold with no drag (a touch that moves
+    less than 12 px, or Space alone) is a `dragHold` with no direction (`dir` null), and it counts on every wave. The
+    gesture does not change at a warning, so the fresh-press rule of 5.3 never drops a release in this moment.
+  - Plain waves (1, 3, 5, 7): "Hold through the wave." Any hold counts, with a direction or with none.
+  - Prompt waves (2, 4, 6, 8): 2 "Tuck: drag down and hold." 4 "Turn: drag sideways and hold." (left or right) 6
+    "Lift: drag up and hold." 8 "Turn back: drag the other way and hold." Only the time held in the prompted direction
+    counts for the move. Turn back wants the other way from the side you held longer on wave 4. If you held no side
+    on wave 4, it wants the other way from the carry's `turnDir`. Directions are screen axes, in every layout.
+    Marigold arrow stickers and prompt rings show the direction from the warning to the end of the swell. Desktop:
+    hold an arrow or a WASD key (5.3). The move plays on its wave either way.
+  - Targets: each wave lays a `press` target at its swell start and a `release` target at its swell end (16 in all).
+    They give the rings their grades and add no points. A hold that starts at or after the warning and is still down
+    when the swell starts is on time for the press.
+  - Between waves: "Rest." After a wave you held for less than 0.4 of its swell (in the prompted direction on a prompt
+    wave), the rest says "Rest. Another wave will come." The last rest always says "Rest."
+  - After wave 8, at 67.0 s: `light` (live gesture `none`): the bottom glow rises to fill the screen while exposure
+    goes 1 → 6 over 2.0 s (the cream glow sheet, 14.1), then white 0 → 1 over 1.0 s (a full-screen `#ffffff` sheet,
+    grain fading out), hold 0.5 s. The sound opens from 300 Hz to 16 kHz over 1.5 s.
+- **Tuning** (`birth.tune.js`). Overlap = the share of the 5.0 s swell held (in the prompted direction on prompt
+  waves). Rested gap = released for ≥ 80% of the first 2.0 s of the rest (before the next warning), and only after a
+  wave with some hold. The squeeze: `light.vignette` 0.15 in a rest to 0.35 at a swell's peak, `warp` 0.15 to 0.65,
+  walls in 6% at the peak (none in reduced motion), filter 300 Hz, a 40 to 80 Hz rumble. Length 70.5 s for everyone
+  (the waves end at 67.0 s, then the 3.5 s light). Cap 80 s.
 - **Score.** Goal 3,000. Skill: 3,000 × mean overlap over 8 waves (any hold counts); 600 per prompt move (overlap in
   the right direction ≥ 0.7: 600, ≥ 0.4: 300); 600 × rested gaps / 8. Flourish: 1,000 × waves with overlap ≥ 0.9 / 8.
   The score is **not shown** at the end of this stage. It appears only on the run result.
-- **Miss.** "Rest. Another wave will come." You move on anyway.
+- **Miss.** "Rest. Another wave will come." You move on anyway. A wave's sub-goal is yours at 0.4 of the swell held
+  (in the prompted direction on a prompt wave). Below that, the sub-goal ends by itself. On a prompt wave its line is
+  "The wave moves you on anyway."
 - **One-button.** Hold through every wave; `botSteer` gives the prompted direction.
 - **Carry.** `turnDir` from wave 4 sets the direction of wave 8.
 - **Facts.** Card `birth.card`. Captions `birth.fast`, `birth.waves`, `birth.tuck`, `birth.turn`, `birth.skull`,
@@ -847,7 +872,10 @@ first caption.
 - **Look and sound.** Plum to white: straight plum side flats, darker toward the viewer, press in on each wave; the
   opening is only a cream-white paper glow along the whole bottom edge, growing. Waves are deep swells (brown noise 40 to 80 Hz) and her slow breath. Never a
   sound of pain.
-- **Bot steering.** Hold from the warning; on prompt waves drag in the prompted direction; release in the rest.
+- **Bot steering.** Hold from the warning; on prompt waves drag in the prompted direction (on wave 4, the carry's
+  side); release in the rest. Below skill 1 the bot starts its hold up to 2.0 s × (1 − skill) late and lets go up to
+  1.0 s × (1 − skill) late, and it drags a prompt wave the wrong way with a chance of 0.5 × (1 − skill). Its draws stay
+  in `r.mem`.
 - **v1 builds.** 8 waves with the light, plus the four prompt waves.
 - **Floor.** 8 plain hold waves, then the light.
 
@@ -949,14 +977,14 @@ No points, no grade and no score line appear from the end of stage 8 until the r
 - A broken or old save gives defaults and never throws.
 - **Cabinet line** (in `public/index.html`, next to the Ahead of the Light block, in try/catch): if `best.done === true`
   and `best.score` is a finite number > 0: `"BEST " + score.toLocaleString("en-US")` (for example "BEST 61,240"). Else
-  the plain line RACE · GUARD · GROW · BREATHE. `core/save.js` exports the same rule as `cabinetLine(save)` for the
+  the plain line RACE · GUARD · CRY. `core/save.js` exports the same rule as `cabinetLine(save)` for the
   node test. (The FURTHEST line is deferred.)
 - **Cabinet**: copy the `ahead-of-the-light` article in `#row` whole: the marquee, the bezel with its screen and
   `.osd`, the `.panel` with START, the `.door` with its two `.slot` buttons, and the `.kick`. Then replace the names:
   `<article class="cab first-breath" data-game="first-breath" data-url="/first-breath/" aria-label="First Breath: a
-  baby's journey to birth">`; marquee `<b>FIRST BREATH</b><small>A BABY'S JOURNEY TO BIRTH</small>`; screen `<img
+  baby's journey to birth">`; marquee `<b>FIRST BREATH</b><small>BE BORN</small>`, with the `.cab.first-breath` selectors added to the marquee rule of Light Years Home and Ahead of the Light; screen `<img
   src="arcade/key/first-breath.svg" alt="A cut-paper egg in cream rings and a cloud of paper dots on wine red, with a
-  cream arc round it and a small marigold sperm coming in" loading="lazy" decoding="async">`; `.hi` RACE · GUARD · GROW · BREATHE (it wraps like its neighbours with `text-wrap: balance`); both slots
+  cream arc round it and a small marigold sperm coming in" loading="lazy" decoding="async">`; `.hi` RACE · GUARD · CRY (it wraps like its neighbours with `text-wrap: balance`); both slots
   `aria-label="Drop a token into First Breath"`. CSS `.cab.first-breath { --c1: #5e1c34; --c2: #ffc53d; --glow:
   rgba(255, 197, 61, 0.45); }` (the stage 2 board and the marigold accent). The article goes after the `ahead-of-the-light` article in `#row`, and
   `"first-breath"` is appended to the Action group's `games`.
@@ -1126,6 +1154,11 @@ each stroked over a 2 px wider `ink` keyline (cream `#fff8f0` in the ending).
 UI (DOM): tags and cream buttons `#fff0dc` with ink `#3a1029`; Play `#ffc53d` with ink `#3a1029`; menus on a scrim
 `rgba(26, 6, 16, 0.72)` with text `#fff4ea`; the focus ring of section 12.
 
+Renderer tokens (`RENDER_TOKENS` in `render/palette.js`): the table gives no colour for the stage 7 placenta disc, so
+the renderer adds two tokens. `turnDisc` `#b04a2c` is the disc, and `turnDisc2` `#c25a34` is its lobes. Both are
+darker tones of the stage 7 back frame `#c4602a`. The other parts that the table does not name (the cords of stages 6
+and 7, the stage 6 disc, the figure pieces of stages 4 and 6 to 8) are mixes of their row's own tokens.
+
 Rules (`palette.test.mjs`, in normal, protan, deutan and tritan views, Machado 2009):
 
 - each cue ≥ 3:1 against its keyline;
@@ -1168,13 +1201,24 @@ every label as a paper tag (13.1). The `render/` files (14.5 says how this reads
 
 - `paper.js`: `cut`, `sheet`, `shadow`, `grain`, `bake`, `blit`. A port of `research/paper-cut/kit.src.js` as an ES
   module, with cut jitter from world position, one shadow colour (`ink`) and sub-pixel blits below step 1.
-- `bake.js`: the bake cache (renderer frames, world-space course tiles, the tree per version, the dot atlas, the
-  dapple tiles).
-- `items.js`: draws each draw-list item as paper (the table below), live or from the cache.
+- `bake.js`: the bake cache (renderer frames, world-space course tiles, the dot atlas, the dapple tiles).
+- `items.js`: draws each draw-list item as paper (the table below), live or from the cache. The strip drawers
+  (`tails`, `cilia`, `tree`, `cord`, `chevrons`, `ripples`, `arc`, `course`) are in this file too.
 - `low.js`: the low tier's forms (14.3).
 - `perf.js`: the frame cost, the probe readback, the tier switch, the scale steps and the `perf` fields (14.3).
-- `renderer.js` (behind the frozen `createRenderer` signature), `camera.js`, `palette.js`, `rings.js`, `debug.js`, and
-  `strips/` (`tails`, `cilia`, `tree`, `cord`, `chevrons`, `ripples`, `arc`, `course`).
+- `renderer.js` (behind the frozen `createRenderer` signature), `camera.js`, `palette.js`, `rings.js` and `debug.js`.
+
+**As built.** The build differs from the plan in this section in these ways:
+
+- The plan had a `render/strips/` folder. There is no such folder: the strip drawers are in `items.js`.
+- The plan baked the tree per `tree.version`. The build draws the tree of stages 4 to 6 live in each frame, as
+  round-capped strokes in four width buckets (one path per bucket), with its beads on top.
+- The plan gave moving sheets a cheap shadow of one offset fill plus at most 2 widening strokes. Wide strokes cost too
+  much in software raster, so the build uses two offset fills: the second is weaker and a little further out, which
+  softens the far edge. The highest live sheets (the `arc` strips and your sperm's sticker) keep one fill and up to 2
+  widening strokes.
+- The plan keyed the course tiles by tile x and tile y. The build bakes bands 64 u long down the course and 350 u
+  across, keyed by their index along the course. A band more than 3 bands off the screen leaves the cache.
 
 **Draw order** (back to front): the back sheet and its light; baked course tiles and still sheets; ground details
 (dots, waves, pools); bodies with their shadows; strips; marks; the subject; the cue stickers; the renderer's frames
@@ -1196,7 +1240,7 @@ s = 7 px, amp 1.4 px, jitter 0.45 px, λ = 60 px, times `hs`.
 **Shadows** are laid in screen space after the camera's orientation, so the light stays above and a little left in
 every layout, also in `long` landscape and desktop, where the world turns −90°. Still sheets get the reference's soft
 shadow (one offset fill, then up to 8 widening strokes clipped to the outside), baked. Moving sheets get a cheap
-shadow: one offset silhouette fill at low alpha plus at most 2 widening strokes. The splats of one body (overlapping
+shadow: two offset silhouette fills at low alpha, the second weaker and a little further out (see "As built"). The splats of one body (overlapping
 discs and capsules in one hue band, such as stage 3's cells or the egg) share one union outline and one shadow; this
 replaces the summed-field merge of the WebGL plan.
 
@@ -1218,8 +1262,8 @@ rises, the grain fades to 0.
   sides and the lane. A tile is baked once the points that cross it and its neighbours have arrived; until then that
   part is drawn live. While the span eases from 170 to 150 u, tiles are blitted scaled, and they re-bake once the span
   settles. A `camera.rot` change of more than 1° re-bakes. Tiles more than 2 tiles behind you leave the cache.
-- *The tree* (stage 4, and the placenta disc after it): baked per `tree.version`; its `pulse` is drawn live as cream
-  beads riding the branches.
+- *The tree* (stage 4, and the placenta disc after it): drawn live in each frame (see "As built"); its `pulse` is
+  drawn as cream beads riding the branches.
 - *The dot atlas*: one sheet of paper dots in 8 sizes and each stage's dot tones, with the cheap shadow baked in, for
   `points` and the motes: one `drawImage` per dot.
 - *The dapple tiles* (`caustics`) and the grain tile.
@@ -1249,7 +1293,7 @@ image smoothing on) and the sway moves smoothly. The step-0.5 strip in `shots.mj
 | render motes | ≤ 150 atlas dots drifting at the back | 1 | baked in the atlas | no | atlas | none |
 | strip `tails` | paper ribbons, each cut from one strip: a teardrop head (when no splat draws it) and a tail that twists to show its back colour, beating by `phase`; `ring: "halo"` the sticker (cream card and ink keyline); `"dashed"` cut cream dashes round the head | 4 (you 7.5) | cheap | no | live | a plain ribbon, no twist, flat shadow |
 | strip `cilia` | a fringe of short cut strips along a→b, bending by `phase` and `amp` | 2 | cheap | no | live | half the strips |
-| strip `tree` | cut ribbons by node width; `pulse` as cream beads by arc length | 2 to 3 | soft, baked | baked | baked per `version`, beads live | the same bake with flat shadows, beads kept |
+| strip `tree` | cut ribbons by node width, as round-capped strokes in four width buckets; `pulse` as cream beads by arc length | 2 to 3 | one offset stroke of each bucket, a little wider than its ribbon | no | live | the same strokes, with a shadow no wider than its ribbon, beads kept |
 | strip `cord` | a twisted paper ribbon (its back colour where it turns); `lights` are plain gold beads on it | 3 | cheap | no | live | no twist |
 | strip `chevrons` | cut cream V shapes with the keyline, sliding with `phase` | 1.3 | cheap | no | live | flat shadow |
 | strip `ripples` | cut paper rings (an even-odd annulus) at alpha `a`; `dashed` as cut dashes; the contact rings are small and short-lived | 1.5 | cheap | no | live | no shadow |
@@ -1358,7 +1402,13 @@ radial vignette, Blinn's blobs) are no longer used and are left out. The art ref
   under 16 ms. Baking can: the course tiles and the frames (14.1), plus two bakes the reference did not have, the
   race's warm, cool and lane sheets (inside the course tiles) and the guard's corona (its 220 points as atlas dots, one
   `drawImage` each, or one baked ring bitmap only if the stage moves them as one rigid ring, so the frame still shows
-  the list's points); no grain on moving shapes under about 12 px; cheap shadows on every moving shape. Task 3.7 measures every stage in both tiers before tuning, and writes the numbers here.
+  the list's points); no grain on moving shapes under about 12 px; cheap shadows on every moving shape.
+- **Measured** (task 3.7, `perf.e2e.mjs`): headless Chromium with `--disable-gpu`, under `?probe=1` at the pinned
+  steps, every stage at the three layouts, on a shared machine with a load average of 6 to 12. Full tier `p95Ms`: 6 to
+  15.9 ms. Low tier `p95Ms`: 3 to 10 ms. The most draws in one frame was 311, so the `perf.draws` cap is 400 (17).
+  Stage 3 in landscape read 22.8 ms in one run under load, and 10.5 ms when it ran alone. `perf.e2e.mjs` takes a
+  measure over the budget once more after a pause, and the better of the two counts. The margin under the budget is
+  small at 1440 × 900 and in stage 3 in landscape.
 - **The tier switch is the main lever.** A run starts in the full tier (unless `?q` pins it). If the rAF interval
   average stays above 20 ms for 60 frames while the step is 0.5 or lower, the renderer switches to the low tier for
   the rest of the run. It never switches back mid-run.
@@ -1367,8 +1417,8 @@ radial vignette, Blinn's blobs) are no longer used and are left out. The art ref
   step down to 0.5 (phones) or 0.35 (desktop); then the tier switch; then the lower steps. Bake frames and the first
   frame after a resize are left out of the counters.
 - **The `perf` fields** (16.9; the names stay): `emaMs` and `p95Ms` as above; `scale` the step; `w`, `h`, `px` the
-  backing store; `draws` the canvas `fill`, `stroke` and `drawImage` calls in the frame, counted in `perf.js` (its cap
-  is measured in task 3.7 and written into section 17); `splats` the splats drawn; `points` the points drawn (atlas
+  backing store; `draws` the canvas `fill`, `stroke`, `fillRect` and `drawImage` calls on the main canvas in the frame,
+  counted in `perf.js` (bake canvases are not counted; the cap is 400, from the measure above); `splats` the splats drawn; `points` the points drawn (atlas
   dots and motes); `fallback` true while the low tier is active.
 - **`lum()`** (needs `?probe=1`): the frame's mean luminance, from the canvas drawn down to 32 × 32 on a small canvas
   and read back. Each call is a readback, so the flash and birth-light checks take it under `?test=1&probe=1`, one
@@ -1397,7 +1447,8 @@ change.
 
 - **16.1** `render/`: `gl.js`, `field.js`, `composite.js`, `overlay.js` and `flat.js` are not written. In their place:
   `paper.js`, `bake.js`, `items.js` and `low.js` (14.1), beside `renderer.js`, `camera.js`, `perf.js`, `palette.js`,
-  `rings.js`, `debug.js` and `strips/` (with `strips/course.js` added). The QA list gains `paper.test.mjs` (18).
+  `rings.js` and `debug.js`. There is no `strips/` folder: `items.js` draws the strips, `course` included (14.1, "As
+  built"). The QA list gains `paper.test.mjs` (18).
 - **16.2** `createRenderer(canvas, { gl = true, res, probe, motion })`: the option keeps its name. `gl: true` means the
   full paper tier and `gl: false` the low tier. `perf` keeps its fields, with the meanings of 14.3. `lum()` is as 14.3.
 - **16.5** "Both the WebGL path and the 2D fallback draw only this list" reads "both tiers draw only this list".
@@ -2034,7 +2085,7 @@ in tasks.md.
 | Where browser checks run | every Canvas 2D browser check below runs headless Chromium with `--disable-gpu` and no SwiftShader flags (14.3) | all `*.e2e.mjs`, `shots.mjs` |
 | Frame cost | `?probe=1`, `?res=0.5` at 390 × 844 and 844 × 390, `?res=0.35` at 1440 × 900 (its base is already capped at 0.6 MP), every stage via `goto`, after 3 s, over the next 120 frames, in a run with no `lum()` calls: full tier `perf.p95Ms ≤ 16`; with `?q=low`, `perf.p95Ms ≤ 10` | `perf.e2e.mjs` |
 | Adaptive scale and the tier switch | no `?res`, no `?q`, after 6 s: settled step ≥ 0.5 in portrait and landscape, ≥ 0.35 on desktop (per axis); the step and the tier move only on the rAF interval (14.3); once `perf.fallback` is true it stays true for the run | `perf.e2e.mjs` |
-| Draw budget | `perf.splats ≤ 32`, `perf.points ≤ 750` (600 from the stage, 150 motes), `perf.draws` ≤ the cap that task 3.7 measures and writes here; node: every 30th view validates against `LIMITS` (≤ 600 points from the stage) | `perf.e2e.mjs`, `draw.test.mjs` |
+| Draw budget | `perf.splats ≤ 32`, `perf.points ≤ 750` (600 from the stage, 150 motes), `perf.draws` ≤ 400 (the most in one frame was 311, 14.3); node: every 30th view validates against `LIMITS` (≤ 600 points from the stage) | `perf.e2e.mjs`, `draw.test.mjs` |
 | Core CPU | node, each stage's ref run: p99 of `step` ≤ 1 ms; the full bot suite (20 seeds × 4 skills) ≤ 120 s wall time | `perf.test.mjs`, `sim.test.mjs` |
 | The low tier | `?q=low` (and `?gl=0`, its alias) in **every** stage: mean luminance > 0.04, and the subject's sheet (the luminance at `targets().anchor`) brighter than the frame's median | `smoke.e2e.mjs` |
 | A paper cell | palette: stage 3's cells ≥ 3:1 against its back and redder (R / (G + B)); frame `?seed=1&freeze=1&stage=3`: the brightest ring within 8 px of a cell's edge is its pale cut edge, and the pixels just below and right of the cell (its shadow) are darker than the back sheet | `palette.test.mjs`, `visual.e2e.mjs` |
@@ -2061,7 +2112,7 @@ in tasks.md.
 | Sound | OfflineAudioContext, 6 s per scene: ≥ 90% of energy below 500 Hz before birth; > 20 dB more energy above 2 kHz after the opening than before; envelope peaks match the beat times within 5 ms; a second peak train from the stage 4 hinge; with `latencyS: 0.04`, each beat scheduled 40 ms early; across a card and a stage start, her peaks keep an even spacing with no extra or missing beat | `sound.e2e.mjs` |
 | First 10 seconds | Play → `prompt` by 0.5 s and steering live by 0.5 s (stage 1); `goto(2)` → first target by 2.7 s, and the guard's prompt by 9.0 s | `smoke.e2e.mjs` |
 | Screenshots | every stage at the three layouts, in both tiers; a 1 s strip of stage 1 at `?res=0.5` (10 frames) to review the sway for stepping by eye; the homepage at 390 × 844, 320 × 568 and 1280 × 720 for the PR | `shots.mjs`; `qa/arcade/machines.mjs` part `firstbreath` with `SHOTS` |
-| The homepage machine | at 390 × 844, 320 × 568 and 1280 × 720: the last cabinet in `#action` is First Breath, inside the window and not under the sign or the tray; `.slot`, `.start`, `#prevBtn`, `#nextBtn`, `.section-nav button` and `.all-games` ≥ 44 px on the shorter side; START goes to `/first-breath/`; the other groups' members unchanged | `qa/arcade/machines.mjs` part `firstbreath` |
+| The homepage machine | at 390 × 844, 320 × 700 and 1280 × 720 (at 320 × 568 every machine's screen is about 52 × 43 px, too small for any attract line): the last cabinet in `#action` is First Breath, inside the window and not under the sign or the tray; `.slot`, `.start`, `#prevBtn`, `#nextBtn`, `.section-nav button` and `.all-games` ≥ 44 px on the shorter side; START goes to `/first-breath/`; the other groups' members unchanged | `qa/arcade/machines.mjs` part `firstbreath` |
 
 ## 18. QA files
 
@@ -2081,7 +2132,7 @@ in tasks.md.
 | `save.test.mjs` | broken JSON, old versions, blocked storage; best only improves; tie → faster; `carryIn` per stage; `cabinetLine` cases (BEST, plain) |
 | `facts.test.mjs` | every fact has a gaDay, a computed label, allow-listed sources, access R or A; no S; `checked: false` facts are not shown; no text starts with "Week" or "Day"; spans never cross gaDay 42; size comparisons say "the NHS says" or "The NHS compares this to"; trimester cards say "about" |
 | `text.test.mjs` | the banned words and pronouns (section 15.4, including invad…, invas…, attack…, destroy…, defeat…, conquer…, enem…, fight… and battle…) across all strings × all 4 carer words; no "fastest" or "winner", no whole word win, wins or won, and no "beat the" or "beats the" in stage 1 and 2 strings; sentence length; no "Apgar" outside `end.apgar` and Sources |
-| `palette.test.mjs` | the contrast rules of 13.2 (keyline, `under`, you over the rivals, the pairs); chromatic ending hues 0° to 50°; stage 5 pools at L ≥ 0.25; no rule on the back tokens rising (the frame means do that, in `visual.e2e.mjs`) |
+| `palette.test.mjs` (as built: these checks are in `paper.test.mjs`) | the contrast rules of 13.2 (keyline, `under`, you over the rivals, the pairs); chromatic ending hues 0° to 50°; stage 5 pools at L ≥ 0.25; no rule on the back tokens rising (the frame means do that, in `visual.e2e.mjs`) |
 | `paper.test.mjs` | `render/paper.js` in node with a stub context: cut offsets come from world position only (two overlapping course windows give the same edge where they overlap); moving items' outlines do not depend on their order; the shadow offset is (0.42 h, h) in screen space for both orients |
 | `perf.test.mjs` | p99 step ≤ 1 ms per stage |
 | `sim.test.mjs` | 20 seeds × skills 1.0, 0.7, 0.5 and 0: skill 1.0 mean ≥ 8,500 per stage; skill 0.5 reaches the goal in ≥ 90% of runs in stages 2 to 8 (stage 1 is a race: skill 0.7 is in the top 3 in ≥ 90% of runs, and skill 0.5 may get the Almost card and Go on); skill 0.7 runs take 8 to 12 min of game time; skill 0 never throws and every stage ends by its cap; under 120 s wall |
@@ -2091,7 +2142,7 @@ in tasks.md.
 | `layout.e2e.mjs` | section 17 layout rows at 390 × 844 and 844 × 390 (touch) and 1440 × 900; the thumb reach; the race HUD; the fork in view; the egg and its arc; the gold's path in portrait; the ending's thumb ring at bottom centre in portrait and in the corner of the last touch in landscape; a screenshot per stage and screen |
 | `input.e2e.mjs` | touch stick steers in portrait and landscape; a second pointer is ignored; keys only on desktop; in a tap moment a press that drags is judged at touch-down; in a `dragHold` moment an arrow keydown is a press with its dir and Space alone is a plain hold; landscape touch in stages 1 (drag right swims forward), 2 (the arc follows the drag, and the seal by hold and release), 4 (drag right grows forward), 5 (a move drag), 7 (the turn) and 8 (directions on screen axes); stage 1 on desktop with a left-button mouse drag; the stage 2 arc on desktop (the mouse aims it after a 4 px move; the arrows and A/D turn it at 540°/s; W, S, up and down do nothing; a parked cursor never pulls it back after a turn key); a hold needs a fresh press at the seal (the thumb held from the guard, and one-button Space held from the guard); one-button mode clears stages 1 (top 3), 2 (the arc tracks while held), 4, 5, 7 and 8; hidden page pauses; M writes `arcade.sound`; muted rings |
 | `perf.e2e.mjs`, `visual.e2e.mjs`, `sound.e2e.mjs` | section 17 (Chromium with `--disable-gpu`) |
-| `qa/arcade/machines.mjs`, `groups.e2e.mjs`, `quiet.mjs` | the machine, the row of eight, the switcher, the cabinet line, the homepage part `firstbreath` (section 17), the hidden-page silence |
+| `qa/arcade/machines.mjs`, `groups.e2e.mjs`, `quiet.mjs` | the machine, the row of nine, the switcher, the cabinet line, the homepage part `firstbreath` (section 17), the hidden-page silence |
 
 The PR states plainly which checks did not run: real phones, real touch latency, phone speakers, and the iPhone
 silent switch.
