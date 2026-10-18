@@ -834,7 +834,7 @@ void AQuebecCar::ResetMotion()
 {
     if (!HasAuthority()) return;
     StopInput();
-    Speed = LateralSpeed = VerticalSpeed = SteeringState = WheelSteering = VisualSteering = 0.f;
+    Speed = LateralSpeed = VerticalSpeed = SteeringState = WheelSteering = VisualSteering = YawRate = KnockTime = 0.f;
     bGrounded = false;
     LastDriveInputTime = GetWorld()->GetTimeSeconds();
     ForceNetUpdate();
@@ -1146,6 +1146,26 @@ void AQuebecCar::Tick(float DeltaSeconds)
 
 void AQuebecCar::SimulateDrive(float Step, bool bFailsafe)
 {
+    if (KnockTime > 0.f)
+    {
+        // Struck: tyres scrub instead of rolling, so the car slides, spins and bleeds speed until it settles.
+        KnockTime -= Step;
+        Speed = FMath::FInterpConstantTo(Speed,0.f,Step,650.f);
+        LateralSpeed = FMath::FInterpConstantTo(LateralSpeed,0.f,Step,900.f);
+        YawRate = FMath::FInterpConstantTo(YawRate,0.f,Step,220.f);
+        if (!FMath::IsNearlyZero(YawRate))
+        {
+            const FQuat Rotation = (GetActorRotation()+FRotator(0.,YawRate*Step,0.)).Quaternion();
+            if (CanFitAt(GetActorLocation(),Rotation)) SetActorRotation(Rotation);
+        }
+        MoveWithCollision(Step,PlanarVelocity()*Step);
+        if (KnockTime <= 0.f || (FMath::Abs(Speed)<20.f && FMath::Abs(LateralSpeed)<20.f && FMath::Abs(YawRate)<5.f))
+        {
+            KnockTime = YawRate = 0.f;
+            if (!Controller) { Speed = LateralSpeed = 0.f; SetActorTickInterval(bTraffic ? .05f : .1f); }
+        }
+        return;
+    }
     if (bTraffic)
     {
         LateralSpeed = 0.f;
@@ -1185,9 +1205,9 @@ void AQuebecCar::SimulateDrive(float Step, bool bFailsafe)
         if (!bTraffic)
         {
             const float Lock = FMath::Lerp(30.f,4.2f,FMath::SmoothStep(0.f,2400.f,FMath::Abs(Speed)));
-            float YawRate = FMath::RadiansToDegrees(Speed/310.f*FMath::Tan(FMath::DegreesToRadians(SteeringState*Lock)));
-            if (bHandbrake && FMath::Abs(Speed)>450.f) YawRate *= 1.4f;
-            Turn = FMath::Clamp(YawRate,-110.f,110.f)*Step;
+            float SteeringYawRate = FMath::RadiansToDegrees(Speed/310.f*FMath::Tan(FMath::DegreesToRadians(SteeringState*Lock)));
+            if (bHandbrake && FMath::Abs(Speed)>450.f) SteeringYawRate *= 1.4f;
+            Turn = FMath::Clamp(SteeringYawRate,-110.f,110.f)*Step;
         }
         const FQuat Rotation = (GetActorRotation()+FRotator(0.,Turn,0.)).Quaternion();
         if (CanFitAt(GetActorLocation(),Rotation)) SetActorRotation(Rotation);
@@ -1205,6 +1225,55 @@ void AQuebecCar::SimulateDrive(float Step, bool bFailsafe)
         if (FMath::Abs(Speed)<1.f && FMath::Abs(Throttle)<.01f) Speed=0.f;
     }
     MoveWithCollision(Step,(GetActorForwardVector().GetSafeNormal2D()*Speed+GetActorRightVector().GetSafeNormal2D()*LateralSpeed)*Step);
+}
+
+QuebecCarImpact::FResult QuebecCarImpact::Resolve(const FVector& VelocityA, const FVector& VelocityB, const FVector& Normal,
+    const FVector& ArmA, const FVector& ArmB)
+{
+    FResult Result;
+    const FVector N = Normal.GetSafeNormal2D();
+    const FVector Relative = FVector(VelocityA.X-VelocityB.X,VelocityA.Y-VelocityB.Y,0.);
+    const double Closing = FVector::DotProduct(Relative,N);
+    // Resting or separating contact exchanges nothing; it only blocks.
+    if (N.IsNearlyZero() || Closing > -60.) return Result;
+    // Equal masses: each car takes half of the (1 + restitution) normal exchange, which conserves momentum.
+    constexpr double Restitution = .25;
+    const double Normal_J = -(1.+Restitution)*Closing*.5;
+    Result.DeltaA = N*Normal_J;
+    // Scraping friction resists the sideways slide between the bodies, never reversing it.
+    const FVector Tangent = Relative-N*Closing;
+    const double TangentSpeed = Tangent.Size();
+    if (TangentSpeed > 1.) Result.DeltaA -= Tangent/TangentSpeed*FMath::Min(.3*Normal_J,TangentSpeed*.5);
+    // Off-centre hits spin each car: yaw change = (arm x impulse) / box inertia (4.6 m x 1.9 m), damped for road tyres.
+    constexpr double InertiaScale = 12./(460.*460.+190.*190.);
+    const auto Spin = [](const FVector& Arm, const FVector& Delta)
+    {
+        const double Radians = InertiaScale*(Arm.X*Delta.Y-Arm.Y*Delta.X);
+        return static_cast<float>(FMath::Clamp(FMath::RadiansToDegrees(Radians)*.45,-180.,180.));
+    };
+    Result.SpinA = Spin(ArmA,Result.DeltaA);
+    Result.SpinB = Spin(ArmB,-Result.DeltaA);
+    Result.bImpact = true;
+    return Result;
+}
+
+FVector AQuebecCar::PlanarVelocity() const
+{
+    return GetActorForwardVector().GetSafeNormal2D()*Speed+GetActorRightVector().GetSafeNormal2D()*LateralSpeed;
+}
+
+void AQuebecCar::ReceiveImpact(const FVector& DeltaVelocity, float DeltaSpin, float KnockSeconds)
+{
+    if (!HasAuthority() || !FMath::IsFinite(DeltaSpin) || DeltaVelocity.ContainsNaN()) return;
+    const FVector Velocity = PlanarVelocity()+FVector(DeltaVelocity.X,DeltaVelocity.Y,0.);
+    Speed = FMath::Clamp(FVector::DotProduct(Velocity,GetActorForwardVector().GetSafeNormal2D()),-3000.,3000.);
+    LateralSpeed = FMath::Clamp(FVector::DotProduct(Velocity,GetActorRightVector().GetSafeNormal2D()),-3000.,3000.);
+    YawRate = FMath::Clamp(YawRate+DeltaSpin,-240.f,240.f);
+    KnockTime = FMath::Max(KnockTime,KnockSeconds);
+    bGrounded = false;
+    // Parked and traffic cars tick slowly; a struck car moves every frame until it settles.
+    SetActorTickInterval(0.f);
+    ForceNetUpdate();
 }
 
 bool AQuebecCar::CanFitAt(const FVector& Point, const FQuat& Rotation, const AActor* Ignore) const
@@ -1252,8 +1321,25 @@ void AQuebecCar::MoveWithCollision(float Step, const FVector& Travel)
     if (Hit.bBlockingHit)
     {
         const FVector Normal = Hit.Normal.GetSafeNormal2D();
-        FVector Velocity = GetActorForwardVector().GetSafeNormal2D()*Speed+GetActorRightVector().GetSafeNormal2D()*LateralSpeed;
-        Velocity -= Normal*FMath::Min(0.,FVector::DotProduct(Velocity,Normal));
+        FVector Velocity = PlanarVelocity();
+        AQuebecCar* Other = HasAuthority() ? Cast<AQuebecCar>(Hit.GetActor()) : nullptr;
+        if (Other && Other != this)
+        {
+            // Another car is a body, not a wall: trade momentum so the struck car is shoved and spun.
+            const FVector OtherVelocity = Other->PlanarVelocity();
+            const QuebecCarImpact::FResult Impact = QuebecCarImpact::Resolve(Velocity,OtherVelocity,Normal,
+                Hit.ImpactPoint-GetActorLocation(),Hit.ImpactPoint-Other->GetActorLocation());
+            if (Impact.bImpact)
+            {
+                Velocity += Impact.DeltaA;
+                YawRate = FMath::Clamp(YawRate+Impact.SpinA,-240.f,240.f);
+                if (!FMath::IsNearlyZero(Impact.SpinA,2.f)) KnockTime = FMath::Max(KnockTime,Controller ? .35f : 1.5f);
+                Other->ReceiveImpact(-Impact.DeltaA,Impact.SpinB,Other->Controller ? .35f : 1.5f);
+            }
+            // Only the closing speed relative to the other car is lost, so a pushing car keeps pace behind it.
+            Velocity -= Normal*FMath::Min(0.,FVector::DotProduct(Velocity-Other->PlanarVelocity(),Normal));
+        }
+        else Velocity -= Normal*FMath::Min(0.,FVector::DotProduct(Velocity,Normal));
         Speed = FVector::DotProduct(Velocity,GetActorForwardVector().GetSafeNormal2D());
         LateralSpeed = FVector::DotProduct(Velocity,GetActorRightVector().GetSafeNormal2D());
         AddActorWorldOffset(FVector::VectorPlaneProject(Travel*(1.-Hit.Time),Normal),true);

@@ -259,10 +259,48 @@ bool FQuebecCarContactTest::RunTest(const FString& Parameters)
     Fixture.Reset();
     FActorSpawnParameters Spawn; Spawn.SpawnCollisionHandlingOverride=ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
     AQuebecCar* Parked = Fixture.World->SpawnActor<AQuebecCar>(FVector(700.,0.,100.5),FRotator::ZeroRotator,Spawn);
-    Fixture.Input(TEXT("MoveForward"),1.f); Fixture.Advance(2.f);
-    TestTrue(TEXT("Parked car stops driving bumper"),Car->GetActorLocation().X>200. && Car->GetActorLocation().X<260.);
-    TestTrue(TEXT("Parked-car contact leaves no overlap"),Car->CanFitAt(Car->GetActorLocation(),Car->GetActorQuat()));
+    // Both cars tick as the live authority does, so the struck car can react.
+    const auto AdvanceBoth = [&](float Seconds)
+    {
+        for (float Elapsed = 0.f; Elapsed < Seconds-UE_SMALL_NUMBER; Elapsed += 1.f/60.f) { Car->Tick(1.f/60.f); Parked->Tick(1.f/60.f); }
+    };
+    Fixture.Input(TEXT("MoveForward"),1.f); AdvanceBoth(2.f);
+    AddInfo(FString::Printf(TEXT("Push driver=%s parked=%s"),*Car->GetActorLocation().ToString(),*Parked->GetActorLocation().ToString()));
+    TestTrue(TEXT("Driving into a parked car shoves it forward"),Parked->GetActorLocation().X>760.);
+    TestTrue(TEXT("The pushing car follows instead of passing through"),Car->GetActorLocation().X<Parked->GetActorLocation().X-300.);
+    TestTrue(TEXT("Pushed-car contact leaves no overlap"),Car->CanFitAt(Car->GetActorLocation(),Car->GetActorQuat()) &&
+        Parked->CanFitAt(Parked->GetActorLocation(),Parked->GetActorQuat()));
+    TestTrue(TEXT("A pushed car stays on its wheels"),FMath::Abs(Parked->GetActorRotation().Pitch)<3.f && FMath::Abs(Parked->GetActorRotation().Roll)<3.f);
+    // Brake so the driver stops pushing, then let the struck car settle.
+    Fixture.Input(TEXT("MoveForward"),-1.f); AdvanceBoth(.8f);
+    Fixture.Input(TEXT("MoveForward"),0.f); AdvanceBoth(2.5f);
+    TestTrue(TEXT("A struck car slides to a stop once nothing pushes it"),FMath::Abs(Parked->Speed)<1.f && FMath::Abs(Parked->LateralSpeed)<1.f);
     Parked->Destroy();
+    return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FQuebecCarImpactTest,"Quebec.Driving.CarImpactMomentum",EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+bool FQuebecCarImpactTest::RunTest(const FString& Parameters)
+{
+    using QuebecCarImpact::Resolve;
+    // Head-on into a parked car: equal masses share the momentum, with a little bounce.
+    QuebecCarImpact::FResult Hit = Resolve(FVector(1000.,0.,0.),FVector::ZeroVector,FVector(-1.,0.,0.),FVector(230.,0.,0.),FVector(-230.,0.,0.));
+    TestTrue(TEXT("Closing cars impact"),Hit.bImpact);
+    TestEqual(TEXT("Striking car keeps 37.5% of its speed"),1000.+Hit.DeltaA.X,375.,1.);
+    TestEqual(TEXT("Struck car takes 62.5% of the speed"),-Hit.DeltaA.X,625.,1.);
+    TestEqual(TEXT("Momentum is conserved"),(1000.+Hit.DeltaA.X)+(-Hit.DeltaA.X),1000.,1.);
+    TestTrue(TEXT("A centred hit does not spin"),FMath::Abs(Hit.SpinA)<1.f && FMath::Abs(Hit.SpinB)<1.f);
+    // Corner hit on the struck car's rear quarter spins it.
+    Hit = Resolve(FVector(1000.,0.,0.),FVector::ZeroVector,FVector(-1.,0.,0.),FVector(230.,90.,0.),FVector(-230.,90.,0.));
+    TestTrue(TEXT("An off-centre hit spins the struck car"),FMath::Abs(Hit.SpinB)>20.f && FMath::Abs(Hit.SpinB)<=180.f);
+    TestTrue(TEXT("Both cars spin in opposite senses"),Hit.SpinA*Hit.SpinB<0.f);
+    // A glancing scrape loses some speed along the side but never reverses it.
+    Hit = Resolve(FVector(1000.,-200.,0.),FVector::ZeroVector,FVector(0.,1.,0.),FVector(0.,-95.,0.),FVector(0.,95.,0.));
+    TestTrue(TEXT("Scraping friction slows the slide"),Hit.DeltaA.X<0. && 1000.+Hit.DeltaA.X>800.);
+    TestTrue(TEXT("The side hit pushes the cars apart"),Hit.DeltaA.Y>0.);
+    // Separating or resting contact exchanges nothing.
+    TestFalse(TEXT("A car pulling away is not struck"),Resolve(FVector::ZeroVector,FVector(500.,0.,0.),FVector(-1.,0.,0.),FVector::ZeroVector,FVector::ZeroVector).bImpact);
+    TestFalse(TEXT("Touching at walking pace is not a crash"),Resolve(FVector(40.,0.,0.),FVector::ZeroVector,FVector(-1.,0.,0.),FVector::ZeroVector,FVector::ZeroVector).bImpact);
     return true;
 }
 #endif

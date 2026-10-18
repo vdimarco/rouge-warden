@@ -41,6 +41,20 @@ namespace QuebecDistrict
     QUEBEC_API const FSettings& ForWorld(const UWorld* World);
 }
 
+// Planar car-to-car impact between two equal-mass cars, as velocity changes (cm/s) and spin changes (deg/s).
+namespace QuebecCarImpact
+{
+    struct FResult
+    {
+        FVector DeltaA = FVector::ZeroVector; // Car B receives -DeltaA.
+        float SpinA = 0.f;
+        float SpinB = 0.f;
+        bool bImpact = false;
+    };
+    // Normal points from B toward A; arms run from each car's centre to the contact point.
+    QUEBEC_API FResult Resolve(const FVector& VelocityA, const FVector& VelocityB, const FVector& Normal, const FVector& ArmA, const FVector& ArmB);
+}
+
 UCLASS()
 class QUEBEC_API AQuebecParkInstances : public AActor
 {
@@ -169,6 +183,9 @@ public:
     void StopInput();
     void ResetMotion();
     bool CanFitAt(const FVector& Point, const FQuat& Rotation, const AActor* Ignore = nullptr) const;
+    FVector PlanarVelocity() const;
+    // A struck car slides on locked tyres for KnockSeconds, then returns to parked, traffic or driver control.
+    void ReceiveImpact(const FVector& DeltaVelocity, float DeltaSpin, float KnockSeconds);
 
 private:
     UPROPERTY(VisibleAnywhere) TObjectPtr<UBoxComponent> Collision; // Saved-map compatibility.
@@ -183,6 +200,8 @@ private:
     float Throttle = 0.f;
     float Steering = 0.f;
     float VerticalSpeed = 0.f;
+    float YawRate = 0.f;
+    float KnockTime = 0.f;
     float LastLookTime = -10.f;
     float WheelAngle = 0.f;
     float DriveThrottle = 0.f;
