@@ -1,7 +1,8 @@
 // First Breath: captions (design.md 8, 9, 12, 16.2; tasks.md 3.9). One caption at a time, a cream paper tag in the
 // aria-live root, gone after its time. style.css puts the root in its band: 50 to 58% of the height in portrait (18 to
-// 26% in stage 2, above the egg) and bottom centre in landscape and on desktop, so nothing to read sits in the
-// portrait thumb zone (the bottom 40%). A caption too long for its band shrinks to 16 px (18 px with Large text) and
+// 26% in stage 2, above the egg; clear of the subject's body in stages 1, 3 to 8: just under it, to 60%, or 8 px
+// under the prompt line) and bottom centre in landscape and on desktop, so nothing to read sits in the portrait thumb
+// zone (the bottom 40%). A caption too long for its band shrinks to 16 px (18 px with Large text) and
 // then splits into pages, one after another, at sentence ends where it can and else between words. In portrait in
 // stage 1, and in landscape in stage 2, every page is one line; a stage 1 page goes after 2.4 s.
 //

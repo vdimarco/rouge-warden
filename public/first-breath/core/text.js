@@ -50,6 +50,7 @@ const BASE = {
   "tap.title": "Tap test",
   "tap.how": "Tap with each click and flash. Eight taps in all.",
   "tap.done": "Your timing offset is now {ms} ms.",
+  "tap.start": "Start",
 
   "ui.on": "On",
   "ui.off": "Off",
@@ -58,6 +59,9 @@ const BASE = {
   "ui.close": "Close",
 
   "card.stage": "Stage {n}",
+
+  "overlay.hint": "Tap to stay.",
+  "overlay.again": "Tap again to go on.",
 
   "almost.title": "Almost. Try again?",
   "almost.came": "You came {place} of {of}.",
@@ -118,6 +122,7 @@ const BASE = {
 
   "sources.title": "Sources",
   "sources.note": "Every fact in the game, with where it comes from.",
+  "sources.list": "Where they come from",
 };
 
 // Each stage's TEXT table, in stage order, then the ending's.

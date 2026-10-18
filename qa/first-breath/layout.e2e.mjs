@@ -9,7 +9,9 @@
 //   in portrait the in-world overlay and Almost card keep every word above 60% of the height and clear of the HUD;
 // - in every stage and the ending, played by the ref bot and sampled every 0.25 s of stage time: the HUD tags, the
 //   prompt line and the caption sit inside the safe area and overlap neither each other nor the pause button; in
-//   portrait the caption sits in its band (50 to 58% of the height; 18 to 26% in stage 2), nothing to read sits below
+//   portrait the caption sits in its stage's band (50 to 58% of the height; 18 to 26% in stage 2; just under the
+//   subject's body in stages 1, 3, 4 and 7, to 60%; 8 px under the prompt line in stages 5, 6 and 8) and never covers
+//   the subject's own body (its sperm, cells, disc or figure, not only its ring), nothing to read sits below
 //   60%, the subject (targets().anchor) stays above 60% (the thumb reach), and the scale bar sits under the clock at
 //   the top left; in landscape and on desktop the scale bar sits bottom left; in stage 2 landscape a caption is one
 //   line; in stage 1 portrait a caption is one line;
@@ -124,6 +126,31 @@ function pageHelpers(inset) {
     const pad = parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom);
     return { ...r, lines: Math.round((r.h - pad) / lh), id: el.dataset.id || "", page: el.dataset.page || "", text: el.textContent };
   };
+  // The portrait caption bands (design.md 9): [top, bottom] as shares of the height, or "top" for the band 8 px under
+  // the HUD's bottom (style.css, --hud-b), 8% tall. Every stage not named keeps 50 to 58%.
+  const BANDS = { egg: [0.18, 0.26], swim: [0.52, 0.6], split: [0.53, 0.6], turn: [0.53, 0.6], root: [0.55, 0.6],
+    grow: "top", answer: "top", birth: "top" };
+  // The subject's own body on screen, as one box: stage 1 your sperm (its head at the anchor, its 22 u body with the
+  // tail straight down, the longest case, at the stage's closest span, 150 u); else the baby's figure and heart
+  // pieces, the stage 3 cells round the anchor, and any disc (under 80 px) that holds the anchor.
+  function subjectBox(s) {
+    const a = s.anchor;
+    if (!a) return null;
+    let box = null;
+    const add = (x0, y0, x1, y1) => { box = box ? { x: Math.min(box.x, x0), y: Math.min(box.y, y0), r: Math.max(box.r, x1), b: Math.max(box.b, y1) } : { x: x0, y: y0, r: x1, b: y1 }; };
+    if (s.stageId === "swim") {
+      const k = Math.min(innerWidth, innerHeight) / 150;
+      add(a.x - 3 * k, a.y - 3 * k, a.x + 3 * k, a.y + 19 * k);
+    } else {
+      for (const b of (window.__fbPaper && window.__fbPaper.lastBodies) || []) {
+        const d = Math.hypot(b.x - a.x, b.y - a.y);
+        if (b.kind === "figure" || b.kind === "heart" || (b.kind === "cells" && d < 70) || (b.kind === "solo" && d <= b.r + 2 && b.r < 80)) {
+          add(b.x - b.r, b.y - b.r, b.x + b.r, b.y + b.r);
+        }
+      }
+    }
+    return box;
+  }
   // The checks of one frame in play; → a list of problems.
   function frame(ctx) {
     const W = innerWidth, H = innerHeight, portrait = H >= W;
@@ -143,9 +170,19 @@ function pageHelpers(inset) {
     }
     if (portrait) {
       if (c) {
-        const [lo, hi] = s.stageId === "egg" ? [0.18, 0.26] : [0.5, 0.58];
-        if (c.y < lo * H - 1 || c.b > hi * H + 1) bad.push(`${at} caption ${Math.round(c.y)}..${Math.round(c.b)} outside ${lo * 100}..${hi * 100}%`);
+        const band = BANDS[s.stageId] || [0.5, 0.58];
+        if (band === "top") {
+          const hb = Math.ceil(document.getElementById("hud").getBoundingClientRect().bottom);
+          const v = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--hud-b"));
+          const lo = (Number.isFinite(v) ? v : hb) + 8, hi = lo + 0.08 * H;
+          if (c.y < hb + 8 - 1 || c.y < lo - 1 || c.b > hi + 1) bad.push(`${at} caption ${Math.round(c.y)}..${Math.round(c.b)} not 8 px under the HUD (${hb}) in its band ${Math.round(lo)}..${Math.round(hi)}`);
+        } else {
+          const [lo, hi] = band;
+          if (c.y < lo * H - 1 || c.b > hi * H + 1) bad.push(`${at} caption ${Math.round(c.y)}..${Math.round(c.b)} outside ${lo * 100}..${hi * 100}%`);
+        }
         if (s.stageId === "swim" && c.lines > 1) bad.push(`${at} stage 1 caption on ${c.lines} lines: ${c.text}`);
+        const body = s.screen === "stage" || s.screen === "ending" ? subjectBox(s) : null;
+        if (body && overlap(c, body)) bad.push(`${at} caption ${Math.round(c.y)}..${Math.round(c.b)} covers the subject's body ${Math.round(body.y)}..${Math.round(body.b)}`);
       }
       for (const [n, b] of named) if (n !== "pause" && b.b > 0.6 * H + 0.5) bad.push(`${at} ${n} text below 60% (${Math.round(b.b)})`);
       if (s.screen === "stage" && s.anchor && s.anchor.y > 0.6 * H + 0.5) bad.push(`${at} the subject below 60% (${Math.round(s.anchor.y)})`);

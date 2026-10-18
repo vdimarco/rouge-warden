@@ -22,7 +22,8 @@ export const TUNE = Object.freeze({
     spotAhead: Object.freeze([38, 78]), // y of a spot ahead of your start
     halfW: 46,           // your drift stays within ±46 u of the lining's centre line
     span: 100,           // camera span (u)
-    lookU: 15,           // the camera looks this far ahead of you
+    lookU: 0,            // the camera looks this far ahead of you: none, so you sit on the layout's subject point
+                         //   (45% of the height in portrait, 5.6, 9), above the portrait caption band
     glands: 6,           // gland mouths on the lining, texture that shows the slide
   }),
   roots: Object.freeze({
@@ -47,7 +48,7 @@ export const TUNE = Object.freeze({
     firmR: 172,          // the firm edge: the tip slides along it, never past it
     backU: 14,           // ... and never more than this far behind the root (into the wall)
     span: 320,           // camera span while the roots grow
-    aheadU: 50,          // the camera looks this far ahead of the root
+    aheadU: 0,           // the camera looks this far ahead of the root (none: you stay on the subject point)
     glowS: 0.8,          // a link's glow runs back to you over this long
   }),
   tree: Object.freeze({
@@ -73,11 +74,13 @@ export const TUNE = Object.freeze({
     tailS: 3,            // then both hearts play together (root.tube shows 0.6 s in, with time to read it)
     heartCapS: 0.3,      // root.heart shows this long into the hush
     span: 160,           // the camera comes close to you
+    lookU: 0,            // the camera looks this far ahead of you (none: you stay on the subject point)
   }),
   grow: Object.freeze({
     lenS: 7,             // (6.4) 7 s
     mm: Object.freeze([[36, 2], [42, 6], [49, 10]]),   // (6.4, NHS weeks 5 to 7) your length in mm by gaDay
     spanTo: 320,         // the camera pulls back while you grow (the real span goes 5.2 → 30 mm, 4)
+    lookU: 0,            // the camera looks this far ahead of you (none: you stay on the subject point)
     placentaGa: 45,      // "This will become your placenta." from this gaDay
   }),
   score: Object.freeze({

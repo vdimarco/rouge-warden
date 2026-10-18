@@ -14,7 +14,8 @@
 //   for burrow rings. `dashed` and `dotted` override a kind's own line; `grade` thickens a judged ring briefly.
 // - The svg's viewBox follows the camera's W and H (CSS px), so its user units are CSS px.
 // - Visible groups carry data-id and data-kind; spare groups are hidden and carry neither.
-// - draw takes an optional 5th argument from main.js, { lastTouch, device }, for the ending's thumb ring (dock).
+// - draw takes an optional 5th argument from main.js, { lastTouch, device, safe }, for the ending's thumb ring (dock):
+//   safe is the safe area in CSS px ({ t, r, b, l }, the --safe-* insets the HUD uses), which the ring stays inside.
 import { RINGS } from "./palette.js";
 
 const NS = "http://www.w3.org/2000/svg";
@@ -48,16 +49,22 @@ export function createRings(svg) {
 
   // The ending's thumb ring (dock: "thumb"): the stage gives its 390 × 844 portrait spot; in phone landscape it sits
   // in the bottom corner on the side of the last touch (the right one before any touch), and on desktop at the
-  // bottom centre, always clear of the bottom edge.
+  // bottom centre, always clear of the bottom edge and inside the safe area (host.safe), stroke and all.
   function docked(r, camera, at, rad, host) {
-    if (camera.layout === "portrait") return at;
-    const W = camera.W, H = camera.H, pad = Math.max(24, rad + 18);
+    const W = camera.W, H = camera.H;
+    const sa = (host && host.safe) || {};
+    const ins = (k) => (fin(sa[k]) && sa[k] > 0 ? sa[k] : 0);
+    const L = ins("l"), R = W - ins("r"), T = ins("t"), Bt = H - ins("b");
+    const edge = rad + 6;                          // the ring and its keyline stay this far inside the safe area
+    const fit = (p) => ({ x: Math.max(L + edge, Math.min(R - edge, p.x)), y: Math.max(T + edge, Math.min(Bt - edge, p.y)) });
+    if (camera.layout === "portrait") return fit(at);
+    const pad = Math.max(24, rad + 18);
     if (camera.layout === "landscape") {
       const t = host && host.lastTouch;
       const left = t && Number.isFinite(t.x) ? t.x < W / 2 : false;
-      return { x: left ? Math.max(pad, 0.13 * W) : Math.min(W - pad, 0.87 * W), y: H - pad - 8 };
+      return fit({ x: left ? Math.max(L + pad, 0.13 * W) : Math.min(R - pad, 0.87 * W), y: Bt - pad - 8 });
     }
-    return { x: W / 2, y: Math.min(H - pad - 16, 0.84 * H) };
+    return fit({ x: (L + R) / 2, y: Math.min(Bt - pad - 16, 0.84 * H) });
   }
 
   function draw(rings, camera, motion = {}, stage = null, host = null) {

@@ -20,7 +20,8 @@
 // - state().stage is the stage number 1 to 8, "ending" for the ending, or null on the title. score is the current
 //   stage's total so far, runScore the run summary's total, grade the stage's grade word once it is done. prompt is
 //   the stage's prompt plus `line`, its text through core/text.js. Extras: frames, realtime, practice, done, live
-//   (the input's live gesture and keys) and judges (the last 8 judge events, core seconds).
+//   (the input's live gesture and keys), judges (the last 8 judge events, core seconds) and stageStart (the stage's
+//   start in core seconds, the clock of sound.beats).
 // - step(n, intents) takes intents in stage seconds: its presses, releases and taps are queued once (at
 //   stageStart + t), its other fields hold for the n steps. Without intents the held ones (input()) apply over the
 //   live input. step and the other hook calls present the frame at once, so the DOM matches the state they return.
@@ -74,6 +75,9 @@ const SOUND_TICK_MS = 25;
 const MAX_BEHIND_S = 0.5;     // a longer stall drops time instead of running steps to catch up (core time stays
                               //   on the wall clock, and so on the audio clock, through any shorter hitch)
 const MAX_STEPS = 32;
+const START_LEAD_S = 0.01;    // a run's clock starts this much (plus the output latency) after its first frame is up
+const MAX_LEAD_S = 0.1;
+const STARTS = new Set(["play", "again", "practice"]);   // the actions that start a run from a menu
 const TAP_LIFT_S = 0.08;
 const HELD = ["steer", "touching", "dir", "turn", "aim"];
 const PLAYING = new Set(["stage", "ending"]);
@@ -147,6 +151,25 @@ if (FLAGS.inset) {
 }
 root.classList.toggle("large", !!settings.largeText);
 root.classList.toggle("reduced", motion.reduced);
+
+// The safe area in CSS px, from the same --safe-* the HUD and the captions use (style.css: env(safe-area-inset-*)
+// plus ?inset), read through a hidden probe, since a custom property with env() does not compute to px by itself.
+const safeProbe = document.createElement("div");
+safeProbe.setAttribute("aria-hidden", "true");
+safeProbe.style.cssText = "position:fixed;left:0;top:0;width:0;height:0;visibility:hidden;pointer-events:none;"
+  + "padding:var(--safe-t) var(--safe-r) var(--safe-b) var(--safe-l)";
+document.body.appendChild(safeProbe);
+const safe = { t: 0, r: 0, b: 0, l: 0 };
+function readSafe() {
+  try {
+    const cs = getComputedStyle(safeProbe);
+    for (const [k, p] of [["t", "paddingTop"], ["r", "paddingRight"], ["b", "paddingBottom"], ["l", "paddingLeft"]]) {
+      const v = parseFloat(cs[p]);
+      safe[k] = Number.isFinite(v) && v > 0 ? v : 0;
+    }
+  } catch (e) { /* keep the last */ }
+}
+readSafe();
 
 // ---- the modules
 const area = $("area"), canvas = $("view"), svg = $("rings"), stickEl = $("stick");
@@ -380,7 +403,7 @@ function onEvent(ev) {
     case "crossfade": renderer.crossfade(ev.seconds); break;
     case "stageEnd": save = recordStage(save, ev.id, ev.result, ev.marks); persist(); break;
     case "runEnd": save = recordRun(save, ev.summary); persist(); break;
-    case "prompt": input.setLive(ev.gesture || "none", ev.keys || "steer"); break;
+    case "prompt": input.setLive(ev.gesture || "none", ev.keys || "steer", ev.t); break;   // from its core time (5.3)
     case "caption":
       if (ev.id === "ending.time") endingTime(ev);
       else caption(ev.id, ev.vars || {}, ev.dir || null);
@@ -391,7 +414,11 @@ function onEvent(ev) {
       if ((ev.where || (f && f.where)) === "caption") factCaption(ev.id, ev.dir || null);
       break;
     }
-    case "subgoal": if (ev.text) caption(ev.text); break;
+    case "subgoal":
+      // a sub-goal line that the prompt line already shows (birth's waves, stage 6's beat) is not said again as a
+      // caption
+      if (ev.text && !(ev.state === "shown" && promptShows(ev.text))) caption(ev.text);
+      break;
     case "place": {
       // the place slot; the pluck only when you gain a place (11)
       const gained = fin(ev.place) && fin(placeNum) && ev.place < placeNum;
@@ -540,7 +567,22 @@ function act(name, arg = null) {
 function uiAct(name, arg) {
   const ok = act(name, arg);
   present();
+  if (ok && STARTS.has(name)) startClock();
   return ok;
+}
+
+// A run started from a menu (Play, Play again, a practice stage) starts its clock once its first frame is up. That
+// frame bakes the stage's paper, which can stall the page for most of a second, so the stall is dropped as a long
+// frame drops time: core time goes on from run.t when the frame is up. It goes on the output latency (at most
+// 0.1 s) plus 10 ms after now, and her beats are scheduled at once, so the beat on the stage's first instant (her
+// heartbeat at Play) is scheduled on time, latency-early, and heard with its drawn beat. The scheduler's rule stays:
+// a beat already more than 20 ms late is dropped, never played late (ui/sound.js).
+function startClock() {
+  if (!realtime || !run || run.paused || !PLAYING.has(run.screen)) return;
+  const lat = sound ? Number(sound.stats().latencyS) : 0;
+  const lead = Math.max(0, Math.min(MAX_LEAD_S, fin(lat) ? lat : 0)) + START_LEAD_S;
+  wallBase = performance.now() - (run.t - lead) * 1000;
+  scheduleSound();
 }
 
 // ---- one fixed step
@@ -621,6 +663,16 @@ function promptText(p) {
   return textOf(p.text);
 }
 
+// Does the prompt line show this line now: the same string id (in its touch or desktop form), or the same words?
+function promptShows(id) {
+  if (!PLAYING.has(run.screen) || !run.state) return false;
+  const p = run.mod.prompt(run.state) || {};
+  if (!p.text || p.gesture === "none") return false;
+  if (p.text === id || p.textKeys === id) return true;
+  const line = promptText(p), said = textOf(id);
+  return !!line && line === said;
+}
+
 function promptLine() {
   if (!PLAYING.has(run.screen) || !run.state) return null;
   const p = run.mod.prompt(run.state) || {};
@@ -629,16 +681,26 @@ function promptLine() {
   return text ? { text, gesture: p.gesture, keys: device === "keys" } : null;
 }
 
+let hudPromptKey = null;
+const fmtLen = (n) => (fin(n) ? Math.round(n).toLocaleString("en-US").length : String(n ?? "").length);
 function updateHud(view) {
   const st = run.state, mod = run.mod;
-  hud.set({
+  const v = {
     stageName: mod ? mod.meta.name : "",
     clock: st && mod !== ENDING ? gaLabel(st.gaDay, { fertilized: !!st.fertilized }) : "",
     score: mod && mod.meta.scored ? liveScore() : "",
     place: run.stageId === "swim" ? placeText : null,
     scale: mod && mod !== ENDING ? scaleBar(view) : "",
     prompt: promptLine(),
-  });
+  };
+  hud.set(v);
+  // the words set the HUD's height: measure its bottom again when a line changes, or the score gets a digit (a wider
+  // score narrows the left block, and the clock may wrap); the ResizeObserver also does, at the next frame, and this
+  // keeps the caption band right in the same frame
+  const sc = v.scale && typeof v.scale === "object" ? v.scale.text : v.scale;
+  const key = [run.stageId, hudRoot.hidden, v.stageName, v.clock, fmtLen(v.score), v.place, sc,
+    v.prompt ? v.prompt.text : ""].join("|");
+  if (key !== hudPromptKey) { hudPromptKey = key; trackHud(); }
 }
 
 function updateStick() {
@@ -649,13 +711,26 @@ function updateStick() {
   if (show) stickEl.style.transform = `translate(${s.ox.toFixed(1)}px, ${s.oy.toFixed(1)}px)`;
 }
 
+// The HUD's bottom (CSS px) as --hud-b, for the portrait caption band under the prompt line (style.css). Within a
+// stage it only moves down, so a caption never jumps up when the prompt line hides between moments.
+let hudB = 0, hudBStage = null;
+function trackHud() {
+  if (hudRoot.hidden) return;
+  const b = Math.ceil(hudRoot.getBoundingClientRect().bottom);
+  const stage = run ? run.stageId : null;
+  const next = stage === hudBStage ? Math.max(hudB, b) : b;
+  hudBStage = stage;
+  if (next !== hudB || !root.style.getPropertyValue("--hud-b")) { hudB = next; root.style.setProperty("--hud-b", hudB + "px"); }
+}
+if (typeof ResizeObserver === "function") new ResizeObserver(trackHud).observe(hudRoot);
+
 let stageAttr = null;
 function present(frameStart) {
   const view = run.view();
   lastView = view;
   camera = makeCamera(vw, vh, view.camera);
   renderer.draw(view, fin(frameStart) ? { frameStart } : {});
-  rings.draw(view.rings, camera, motion, view.stage, { lastTouch, device });
+  rings.draw(view.rings, camera, motion, view.stage, { lastTouch, device, safe });
   updateHud(view);
   updateStick();
   const sa = run.stageId || "title";
@@ -702,8 +777,11 @@ window.addEventListener("pagehide", () => { if (pauseGame()) present(); });
 window.addEventListener("resize", () => {
   vw = Math.max(1, window.innerWidth);
   vh = Math.max(1, window.innerHeight);
+  readSafe();
+  hudBStage = null;                  // the HUD's bottom is measured again for the new size
   renderer.resize(vw, vh);
   present();
+  trackHud();
 });
 
 // ---- the test hook (16.9); every time it takes or returns is in stage seconds
@@ -766,6 +844,7 @@ function fbState() {
     done: run.done,
     live: input.live(),
     judges: judges.slice(-8),
+    stageStart: run.state ? run.stageStart : null,
     device,
     tier: FLAGS.q,
   };

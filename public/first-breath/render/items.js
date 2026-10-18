@@ -205,10 +205,13 @@ export function drawSubjects(F, bodies) {
 }
 
 // ---- points: atlas dots (and the render motes)
+// A dot's size and tone come from its stable key, points.id (14.1: no per-index variation on moving items), so a dot
+// that changes place in the list keeps its look. A list with no ids draws every dot at the middle size and tone.
 export function drawPoints(F, atlas) {
   const pt = F.d.points;
   if (!pt || !(pt.n > 0) || !pt.xy || !atlas) return;
   const ctx = F.ctx, n = Math.min(pt.n, 600, pt.xy.length >> 1);
+  const ids = pt.id && pt.id.length >= n ? pt.id : null;
   const tones = F.role.dots ? F.role.dots.length : 1;
   const dimRow = F.role.dotsDim ? tones : -1;
   const cell = atlas.cell, src = cell * atlas.dpx, ga = ctx.globalAlpha;
@@ -218,8 +221,9 @@ export function drawPoints(F, atlas) {
     const wx = pt.xy[2 * i], wy = pt.xy[2 * i + 1];
     const x = F.X(wx, wy), y = F.Y(wx, wy);
     if (x < -cell || y < -cell || x > F.v.W + cell || y > F.v.H + cell) continue;
-    const size = (P.hash1(i, 77) * 0.5 + 0.5) * atlas.sizes | 0;
-    let row = ((P.hash1(i, 78) * 0.5 + 0.5) * tones) | 0, alpha = a;
+    const key = ids ? ids[i] : null;
+    const size = key === null ? atlas.sizes >> 1 : ((P.hash1(key, 77) * 0.5 + 0.5) * atlas.sizes) | 0;
+    let row = key === null ? (tones - 1) >> 1 : ((P.hash1(key, 78) * 0.5 + 0.5) * tones) | 0, alpha = a;
     if (dimRow >= 0 && a < 0.5) { row = dimRow; alpha = Math.min(1, a * 2.2); }
     ctx.globalAlpha = ga * Math.min(1, alpha * 1.15);
     ctx.drawImage(atlas.cv, size * src, row * src, src, src, x - atlas.pad, y - atlas.pad, cell, cell);

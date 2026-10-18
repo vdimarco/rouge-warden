@@ -10,7 +10,8 @@
 //   renderer role of every stage resolves to a hex;
 // - stable cuts: a course edge cut from two overlapping windows gives the same points where they overlap; a disc
 //   cut is the same wherever the disc is drawn (shape-local); a tails strip and a list of splats in another order
-//   give the same outlines; cut() takes no index;
+//   give the same outlines; cut() takes no index; atlas dots (points) in another order, with their ids, draw the same
+//   dots, each with its own size and tone, and a list with no ids draws one size;
 // - the shadow offset is (0.42 h, h) in screen space for both camera orients (portrait "long" and landscape "long",
 //   where the world turns −90°);
 // - every draw-list kind is mapped: each stage's views from a ref-bot run, drawn through createRenderer in both
@@ -256,6 +257,26 @@ await check("cuts: tails and splats in another order give the same outlines", ()
     return outlineSet(F.ctx);
   };
   assert.deepEqual(bodies([0, 1, 2, 3, 4]), bodies([4, 2, 0, 3, 1]));
+});
+await check("cuts: points in another order (with their ids) draw the same dots; no ids, no per-index size", () => {
+  const cam0 = { x: 0, y: 0, span: 140, rot: 0, orient: "long", mmPerU: 0.001 };
+  const P0 = Array.from({ length: 12 }, (_, i) => ({ x: -40 + 7 * i, y: 5 * Math.sin(i), a: 0.5 + 0.04 * i, id: 3 * i + 1 }));
+  const atlas = { cv: {}, cell: 8, dpx: 1, pad: 4, sizes: 5, tones: ["#fff", "#eee", "#ddd"] };
+  const dots = (order, withIds) => {
+    const n = order.length, xy = new Float32Array(2 * n), a = new Float32Array(n), id = new Float32Array(n);
+    order.forEach((k, i) => { xy[2 * i] = P0[k].x; xy[2 * i + 1] = P0[k].y; a[i] = P0[k].a; id[i] = P0[k].id; });
+    const d = { stage: "egg", camera: cam0, splats: [], strips: [], marks: [], points: { n, xy, a, hue: 0.05, ...(withIds ? { id } : {}) } };
+    const F = frameFor("egg", makeCamera(390, 844, cam0), d);
+    const seen = [];
+    F.ctx.drawImage = (img, sx, sy, sw, sh, dx, dy) => seen.push([sx, sy, dx.toFixed(3), dy.toFixed(3)].join(","));
+    I.drawPoints(F, atlas);
+    return seen.sort();
+  };
+  const fwd = P0.map((_, i) => i), mixed = [7, 2, 11, 0, 5, 9, 1, 10, 3, 8, 6, 4];
+  assert.deepEqual(dots(fwd, true), dots(mixed, true));
+  assert.ok(new Set(dots(fwd, true).map((s) => s.split(",")[0])).size > 1, "the ids give the dots more than one size");
+  assert.deepEqual(dots(fwd, false), dots(mixed, false));
+  assert.equal(new Set(dots(fwd, false).map((s) => s.split(",")[0])).size, 1, "with no ids every dot is the one size");
 });
 await check("shadows: the offset is (0.42 h, h) in screen space for both orients", () => {
   const h = 6;

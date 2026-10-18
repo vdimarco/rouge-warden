@@ -383,8 +383,9 @@ export function view(st) {
     const songEnd = songT + notes.length * T.noteS;
     const after = clamp01(1 - (t - songEnd) / 3);
     if (after > 0) {
-      const xy = new Float32Array(2 * shown), a = new Float32Array(shown);
+      const xy = new Float32Array(2 * shown), a = new Float32Array(shown), id = new Float32Array(shown);
       for (let k = 0; k < shown; k++) {
+        id[k] = k;                                      // note k keeps its key
         const s = notes.length > 1 ? k / (notes.length - 1) : 0.5;
         xy[2 * k] = -30 + 60 * s;
         xy[2 * k + 1] = 22 + 6 * Math.sin(Math.PI * s) + 0.5 * (notes[k] - 57);
@@ -392,7 +393,7 @@ export function view(st) {
         const shimmer = (lit >> k) & 1 ? 0.75 + 0.25 * Math.sin(6 * t + k) : 0.45;
         a[k] = inP * shimmer * after;
       }
-      d.points = { n: shown, xy, a, hue: 0.1 };
+      d.points = { n: shown, xy, a, id, hue: 0.1 };
     }
   }
 

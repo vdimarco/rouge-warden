@@ -15,6 +15,8 @@
 // - no AudioContext exists before Play (window.__quiet.contexts()), and the sound runs from the Play tap;
 // - her beats are scheduled, each once, at her rate, and across the stage end, the overlay, the stage card and the
 //   next stage start (in real time) her beats keep an even spacing with no extra or missing beat;
+// - her first beat after Play is scheduled (no beat at her spacing fits between the stage's start and the first one
+//   scheduled), though the stage's first frame stalls the page, by a tap at 390 × 844 and by a click at 1440 × 900;
 // - M mutes and writes arcade.sound (false, then true again), and ?mute=1 starts muted;
 // - a hidden page goes quiet: it pauses, the context is suspended, and it stays so until Resume;
 // - the womb bus cutoff follows the stage (150 Hz in stage 1, 250 to 450 Hz in stage 6) and opens to 16 kHz in the
@@ -259,6 +261,10 @@ const browser = await pw.chromium.launch({
     for (let i = 0; i < unknown.x.length; i++) up = Math.max(up, Math.abs(unknown.x[i] - bed.x[i]));
     R.sounded = sounded;
     R.unknown = { played: unknown.stats.played, sfx: unknown.stats.sfx, peak: up };
+
+    // 6. a beat more than 20 ms late is dropped, never played late; one less late still plays
+    const late = await render((s) => { s.setScene({ stage: "swim", cutoffHz: 150 }); s.schedule("mother", [-0.05, -0.01, 0.5], (t) => t); }, { len: 1 });
+    R.late = { dropped: late.stats.dropped, scheduled: late.stats.scheduled.mother };
     return R;
   }, [...SFX_IDS]);
 
@@ -281,13 +287,21 @@ const browser = await pw.chromium.launch({
   check(`offline: every sfx id the stages emit makes a sound (${Object.keys(out.sounded).length} ids)`, silent.length === 0, silent.join(", "));
   check("offline: an unknown sfx id is counted and adds no sound to the bed", out.unknown.played === 0 && out.unknown.sfx === 1 && out.unknown.peak < 1e-6,
     JSON.stringify(out.unknown));
+  check("offline: a beat more than 20 ms late is dropped, never played late", out.late.dropped === 1 && out.late.scheduled === 2,
+    JSON.stringify(out.late));
   check("offline: no page errors", errors.length === 0, errors.join("; "));
   await ctx.close();
 }
 
 // ---- live, in the page
-async function open(query = "") {
-  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+// No beat was lost at Play: the first beat scheduled comes at or after the stage's start, and so soon after it that
+// no beat at her spacing (the next interval, less 10% for her small jitter) fits between the start and it.
+const firstBeatOk = (f) => Number.isFinite(f.ss) && f.beats.length >= 2 && f.beats[0] >= f.ss - 0.02
+  && f.beats[0] - 0.9 * (f.beats[1] - f.beats[0]) < f.ss;
+const PORTRAIT = { viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true };
+const DESKTOP = { viewport: { width: 1440, height: 900 } };
+async function open(query = "", size = PORTRAIT) {
+  const ctx = await browser.newContext({ ...size });
   const page = await ctx.newPage();
   const errors = [];
   page.on("pageerror", (e) => errors.push("pageerror: " + e.message));
@@ -322,6 +336,8 @@ async function open(query = "") {
   check("live: her beats are scheduled from Play", s1.scheduled.mother >= 1 && s1.beats.mother.length >= 1, JSON.stringify(s1.scheduled));
   check("live: stage 1's womb bus cutoff is 150 Hz", Math.abs(s1.cutoffHz - 150) < 1, String(s1.cutoffHz));
   await wait(2000);
+  const f1 = await page.evaluate(() => ({ ss: window.__fb.state().stageStart, beats: [...window.__beats].sort((a, b) => a - b) }));
+  check("live: her first beat after the Play tap is scheduled", firstBeatOk(f1), JSON.stringify(f1));
   // end stage 1, go on, and ride the overlay and the card into stage 2 in real time
   await page.evaluate(() => { window.__fb.finish(); if (window.__fb.state().screen === "almost") window.__fb.act("goOn"); });
   for (let i = 0; i < 160; i++) {
@@ -382,6 +398,21 @@ async function open(query = "") {
   const e = await page.evaluate(() => window.__fb.sound);
   check("live: the ending opens the womb bus to 16 kHz", e.cutoffHz >= 15999, String(e.cutoffHz));
   check("live: no page errors", errors.length === 0, errors.slice(0, 3).join("; "));
+  await ctx.close();
+}
+
+// her first beat after a Play click on the desktop (the stage's first frame stalls the page there the longest)
+{
+  const { ctx, page, errors } = await open("?seed=1", DESKTOP);
+  await page.evaluate(() => {
+    window.__beats = new Set();
+    setInterval(() => { for (const b of window.__fb.sound.beats.mother) window.__beats.add(Math.round(b * 1e6) / 1e6); }, 50);
+  });
+  await page.click("#play");
+  await wait(2500);
+  const f = await page.evaluate(() => ({ ss: window.__fb.state().stageStart, beats: [...window.__beats].sort((a, b) => a - b), s: window.__fb.sound }));
+  check("live: her first beat after the Play click is scheduled (1440 × 900)", f.s.state === "running" && firstBeatOk(f), JSON.stringify({ ss: f.ss, beats: f.beats }));
+  check("live: no page errors (1440 × 900)", errors.length === 0, errors.slice(0, 3).join("; "));
   await ctx.close();
 }
 

@@ -128,7 +128,7 @@ export function createScreens(root, { act = () => {}, settings = null } = {}) {
         if (overlayTaps === 1) {
           act("linger", null);
           const hint = sec.querySelector(".hint");
-          if (hint) hint.textContent = say("overlay.again") !== "overlay.again" ? say("overlay.again") : "Tap again to go on.";
+          if (hint) hint.textContent = say("overlay.again");
           sec.classList.add("lingering");
         } else act("next", null);
       }
@@ -178,7 +178,7 @@ export function createScreens(root, { act = () => {}, settings = null } = {}) {
     overlay(d = {}) {
       overlayTaps = 0;
       const words = d.grade ? `${say("grade." + d.grade)} · ${fmt(d.total)}` : fmt(d.total);
-      const hint = say("overlay.hint") !== "overlay.hint" ? say("overlay.hint") : "Tap to stay.";
+      const hint = say("overlay.hint");
       return `<div class="panel overlay">
         <p class="grade">${esc(words)}</p>
         ${factP(d.fact)}
@@ -242,7 +242,7 @@ export function createScreens(root, { act = () => {}, settings = null } = {}) {
         <p>${esc(say("tap.how"))}</p>
         <button type="button" class="pad" data-act="tapPad" id="tapPad" aria-label="${esc(say("tap.title"))}"><span class="flash"></span></button>
         <p class="count" data-tap-count aria-live="polite"></p>
-        <div class="row">${btn("tapStart", say("tap.start") !== "tap.start" ? say("tap.start") : "Start", { id: "tapStart", cls: "btn play" })}
+        <div class="row">${btn("tapStart", say("tap.start"), { id: "tapStart", cls: "btn play" })}
           ${btn("settings", say("ui.back"), { id: "back" })}</div>
       </div>`;
     },
@@ -278,7 +278,7 @@ export function createScreens(root, { act = () => {}, settings = null } = {}) {
         <p>${esc(say("sources.note"))}</p>
         ${btn("back", say("ui.back"), { id: "back" })}
         ${body}
-        <h3>${esc(say("sources.list") !== "sources.list" ? say("sources.list") : "Where they come from")}</h3>
+        <h3>${esc(say("sources.list"))}</h3>
         <ol class="refs-list">${list}</ol>
         ${btn("back", say("ui.back"), { id: "back2" })}
       </div>`;

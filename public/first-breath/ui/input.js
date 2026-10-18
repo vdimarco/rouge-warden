@@ -24,7 +24,10 @@
 // or turn, and core/run.js sets steer and dir from the stage's botSteer while the button is held (16.4).
 //
 // A hold needs a fresh press (5.3): when the live gesture becomes hold or dragHold, a pointer or key that is already
-// down cannot start the hold, and its release is dropped; the next touch-down or keydown is the press.
+// down cannot start the hold, and its release is dropped; the next touch-down or keydown is the press. "Already
+// down" is judged at the core time of the change (setLive's `at`), not at the call: the page hears of a stage's new
+// moment only after the step that made it, so a press made in between (at or after `at`, its t after the offset) is
+// a fresh press in the new moment, as the stage judges it, and keeps its release.
 //
 // Times: every press, release and tap carries raw = coreTime(event.timeStamp) (core seconds, before the offset) and
 // t = raw − settings.offsetMs / 1000. intents(tStepEnd) drains every queued event with t < tStepEnd, in time order,
@@ -32,6 +35,8 @@
 //
 // Contract choices (16.2 gives createInput(el, { coreTime, camera, settings }) → { setLive, intents, stick, inject,
 // dispose }):
+// - setLive(gesture, keys, at) takes an optional third argument, the core time (seconds, after the offset) the new
+//   gesture began: main.js passes a prompt event's t. Without it the change counts from now (a screen change, Resume).
 // - settings is an object read live (offsetMs, oneButton), or a function that returns one. camera is a function that
 //   returns the current camera (render/camera.js); without one, the screen stick maps to world as portrait does.
 // - el is the play area: pointer events count only there (the HUD, the screens and their buttons sit outside it).
@@ -100,7 +105,7 @@ export function createInput(el, { coreTime = (ms) => ms / 1000, camera = null, s
   function down(id, kind, button, x, y, raw) {
     if (ptr) return;                             // only the first pointer counts
     if (kind === "mouse" && button !== 0) return;
-    ptr = { id, kind, x0: x, y0: y, ox: x, oy: y, x, y, t0: raw, state: "pressed", stale: false, dir: null };
+    ptr = { id, kind, x0: x, y0: y, ox: x, oy: y, x, y, t0: raw, t: raw - offS(), state: "pressed", stale: false, dir: null };
     if (kind === "mouse") { aimOn = false; mouse = null; }
     stick.on = true; stick.ox = x; stick.oy = y; stick.x = x; stick.y = y;
     queue("press", raw);
@@ -151,7 +156,7 @@ export function createInput(el, { coreTime = (ms) => ms / 1000, camera = null, s
   function keyDown(code, repeat, raw) {
     if (!code || MENU_KEYS.has(code) || MODIFIERS.has(code)) return;
     if (repeat || held.has(code)) return;        // repeats are ignored
-    const k = { order: ++order, stale: false, pressed: false };
+    const k = { order: ++order, stale: false, pressed: false, raw, t: raw - offS() };
     held.set(code, k);
     // a steer or turn key clears the aim (in keys "turn" only the turn keys count: W and S do nothing there)
     const steerKey = keysMode === "turn" ? TURN_L.has(code) || TURN_R.has(code) : code in KEY_VEC;
@@ -174,13 +179,21 @@ export function createInput(el, { coreTime = (ms) => ms / 1000, camera = null, s
     for (const code of [...held.keys()]) keyUp(code, raw);
   }
 
-  // The live gesture and key mode for the moment on screen. A change into hold or dragHold makes every press that is
-  // already down stale: it cannot start the hold, and its release is dropped.
-  function setLive(g, keys = "steer") {
+  // The live gesture and key mode for the moment on screen. A change into hold or dragHold makes every press that
+  // was already down when the new gesture began (its t before `at`; with no `at`, every one down now) stale: it
+  // cannot start the hold, and its release is dropped.
+  function setLive(g, keys = "steer", at = Infinity) {
     const next = GESTURES.has(g) ? g : "none";
+    const from = fin(at) ? at : Infinity;
     if (HOLDS.has(next) && !HOLDS.has(gesture)) {
-      if (ptr) ptr.stale = true;
-      for (const k of held.values()) k.stale = true;
+      if (ptr && ptr.t < from) ptr.stale = true;
+      for (const k of held.values()) if (k.t < from) k.stale = true;
+    }
+    // an arrow or WASD key that went down at or after `at` is the press of a new dragHold moment, with its own time
+    if (next === "dragHold" && gesture !== "dragHold" && keys !== "turn" && !oneButton()) {
+      for (const [code, k] of held) {
+        if (!k.pressed && k.t >= from && code in KEY_VEC) { k.pressed = true; queue("press", k.raw); }
+      }
     }
     gesture = next;
     keysMode = keys === "turn" ? "turn" : "steer";
