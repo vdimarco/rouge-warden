@@ -9,6 +9,7 @@
 //
 // Contract choices: gather(tables) (an extra export) flattens the tables in order, keeps the first fact of each id
 // and freezes each one; byId() gives null for an unknown id; a fact's fertilized defaults to gaDay > 14 (15.1);
+// isShown(fact) and line(id, settings) are extras (one fact as a caption line, label first);
 // shown(settings) lists the checked R and A facts in order as copies with `label`, the text filled for the carer
 // word, and `links` ([{ name, url }] from SOURCES; unknown keys are skipped there and caught by facts.test.mjs).
 import { label as clockLabel, range } from "./clock.js";
@@ -45,8 +46,22 @@ export function label(fact) {
   return clockLabel(fact.gaDay, { fertilized });
 }
 
+// Is this fact ever shown? Only checked facts with access R or A (15.1).
+export function isShown(fact) {
+  return !!fact && fact.checked === true && (fact.access === "R" || fact.access === "A");
+}
+
+// One fact as a line to show: { id, label, text } with the carer word filled, or null for an unknown or unshown
+// fact. label is the clock label (clock.label or clock.range), or null for the ending's facts (4.1: no label is
+// shown in the ending). Captions, cards, overlays and "What was real" print the label in front of the text.
+export function line(id, settings = {}) {
+  const f = byId(id);
+  if (!isShown(f)) return null;
+  return { id: f.id, label: f.stage === "ending" ? null : label(f), text: fill(f.text, {}, settings) };
+}
+
 export function shown(settings = {}) {
-  return FACTS.filter((f) => f.checked === true && (f.access === "R" || f.access === "A")).map((f) => ({
+  return FACTS.filter(isShown).map((f) => ({
     ...f,
     label: label(f),
     text: fill(f.text, {}, settings),

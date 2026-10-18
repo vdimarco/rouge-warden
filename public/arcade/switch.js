@@ -25,6 +25,7 @@
     { id: "river-rush", name: "River Rush", sub: "Three wild rivers", url: "/river-rush/", art: "/arcade/key/river-rush.webp", color: "#f9c65b" },
     { id: "light-years-home", name: "Light Years Home", sub: "Drive on", url: "/light-years-home/", art: "/arcade/key/light-years-home.webp", color: "#cfe0ff" },
     { id: "ahead-of-the-light", name: "Ahead of the Light", sub: "Run home", url: "/ahead-of-the-light/", art: "/arcade/key/ahead-of-the-light.webp", color: "#f08a2c" },
+    { id: "first-breath", name: "First Breath", sub: "A baby's journey to birth", url: "/first-breath/", art: "/arcade/key/first-breath.svg", color: "#ffc53d" },
     // credits: false keeps a game off the end card of Crimson Rogue (the Lab tile covers the four toys)
   // The Lab and the games it lists. A game inside the Lab has a longer address than the Lab, and the longest match wins.
   // labOnly: a game that stands only in the Lab. All Games leaves it out (the Lab tile covers it), and so do the Crimson Rogue credits.

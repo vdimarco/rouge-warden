@@ -7,20 +7,28 @@ built to its v1 form (design.md section 6); the items in design.md 19.2 are not 
 
 ## 1. Shared core and the build contract (wave 0)
 
-- [ ] 1.1 Create `public/first-breath/` with skeletons of `index.html` (`/arcade/quiet.js` first in `<head>`, then `/arcade/switch.js`; `canvas#view`, `svg#rings`, DOM HUD and screen roots; the title's Play button `#play`; `/arcade/analytics.js` with `data-game="first-breath"` at the end of `<body>`; `viewport-fit=cover`; `touch-action: none` on the play area) and `style.css`, and the folders of design.md 16.1.
-- [ ] 1.2 Write `core/rng.js` (wrapping `../../lab/kit/rng.js`), `core/clock.js` (`DT`, `week`, `label`, `range`, `gaAt`, `mmPerShortAxis`, `bpmYou`) and `core/beat.js` (`makeBeats`, with `first` for her phase).
-- [ ] 1.3 Write `core/judge.js` (windows, credit, `GRACE_S`, `median`) and `core/lib/track.js` (targets with `P`, `feed` with `errMs` and `rawMs` and the miss grace, `upcoming`, `accuracy`, `streak`).
-- [ ] 1.4 Write `core/intent.js` (times with `t` and `raw`), `core/draw.js` (`LIMITS`, `validate`, with `scale` and `cue`), `core/events.js`, `core/carry.js` (`DEFAULT_CARRY` with `sperm: { hue: 0.11, place: 3, glow: 0.5 }`, `DEFAULT_SONG`), `core/score.js`.
-- [ ] 1.5 Write `core/text.js` (carer words, `say`, `allStrings`), `core/sources.js` (the allow-list from `research/research-biology.md` section 12 and its inline URLs), `core/facts.js` (the aggregator, labels from `clock.label` and `clock.range`) and `core/save.js` (schema, `parse`, records, `recordCarryIn`, `cabinetLine`).
-- [ ] 1.6 Write the shared lib: `core/lib/goals.js` (`subgoals` as `{ id: "shown" | "done" | "auto" }`), `steer.js`, `flow.js`, `colonize.js` (caps built in) and `figure.js` (at most 14 splats, no face, buds that grow from 2 to 10 mm).
-- [ ] 1.7 Write `core/stages/index.js` with 8 stub stages that follow the Stage interface, with `meta.moments` from the design.md 4.1 table and `meta.motherBpm` (each a timer that completes with `goalMet: true`; the `swim` stub ends at its cap with `goalMet: false` and has the `carried` moment; every stub exports `probe`, which returns null), and a stub `core/ending.js`, each with `.tune.js`, `.facts.js` and `.text.js` files that export empty `TUNE`, `FACTS` and `TEXT`.
-- [ ] 1.8 Write `core/run.js` (the sequencer: stages, overlay, Almost card (on a stage 1 result with `goalMet: false`: a finish outside the top 3, or the cap), cards over the crossfade, ending, result, retry, Go on through `jump("carried")`, practice, run time; the stage time base; her continuous beat clock with `motherPhase`; the one-button rule of design.md 16.4) and `core/bots.js` (`createBot(skill, seed)` → `{ intents, choose }`, with the Gaussian timing model).
-- [ ] 1.9 Write `ui/input.js` (the one-pointer state machine with the 220 ms and 12 px numbers, the floating stick, keys with the drag-and-hold key rule, `setLive(gesture, keys)` with the `keys: "turn"` mode of design.md 5.3, `turn` from the left and right arrows or A and D, `aim` from a mouse with no button down only after a 4 px move and cleared by any steer or turn key, a hold that needs a fresh press, one-button presses, event timestamps mapped to core time with `raw` and the offset), `ui/store.js`, `render/camera.js` (`long` and `fit`; in `long` the subject at 45% of the height in portrait, at 38% of the width and 55% of the height in phone landscape, and at 40% of the width on desktop; a rotation with no mirror, so `turn` +1 decreases the world angle), `render/palette.js` (the hex colour script) and `render/debug.js`.
-- [ ] 1.10 Write no-op stubs with the frozen signatures of design.md 16.2: `render/renderer.js` (drawing with `debug.js`, with `perf` and `crossfade`), `ui/hud.js` (with `place`), `ui/captions.js`, `ui/screens.js` and `ui/sound.js`.
-- [ ] 1.11 Write `main.js`, fully wired to every module through those signatures: boot, URL flags (design.md 16.10), the 60 Hz fixed step, run ↔ render ↔ ui, sound scheduling from `run.beats()`, captions, screens, pause on Esc, P, the pause button, `visibilitychange` and `pagehide` (not `blur`), `place` events to the HUD, and `window.__fb` with every member of design.md 16.9, including `race()` and `guard()`, which map the current stage's `probe(state)` from world units to screen px (stage time throughout).
-- [ ] 1.12 Pass `purity.test.mjs`, `clock.test.mjs`, `beat.test.mjs`, `judge.test.mjs`, `track.test.mjs`, `draw.test.mjs`, `save.test.mjs` and `run.test.mjs` against the stubs (including the stage time base, the clock that never runs back, and her beats across cards), and check that the page boots through all 8 stub stages to the result with the stub renderer.
-- [ ] 1.13 Write `qa/first-breath/race-sim.mjs`, a stand-alone numeric model of the design.md 6.1 race with bumps, the gate squeeze, shared wave thresholds, glow rests, catch-up and the rival policy. Print the place distribution and arrival times over 20 seeds for the ref, mid and idle players and every rival. Freeze the 6.1 numbers only when the ref is 1st and the mid bot in the top 3 in at least 18 of 20 seeds, with the mid's mean arrival at 55 to 65 s; if not, tune in the order 6.1 gives and record the new numbers there.
-- [ ] 1.14 Freeze design.md section 16. Any later change to it is made by the contract owner and noted in this file.
+- [x] 1.1 Create `public/first-breath/` with skeletons of `index.html` (`/arcade/quiet.js` first in `<head>`, then `/arcade/switch.js`; `canvas#view`, `svg#rings`, DOM HUD and screen roots; the title's Play button `#play`; `/arcade/analytics.js` with `data-game="first-breath"` at the end of `<body>`; `viewport-fit=cover`; `touch-action: none` on the play area) and `style.css`, and the folders of design.md 16.1.
+- [x] 1.2 Write `core/rng.js` (wrapping `../../lab/kit/rng.js`), `core/clock.js` (`DT`, `week`, `label`, `range`, `gaAt`, `mmPerShortAxis`, `bpmYou`) and `core/beat.js` (`makeBeats`, with `first` for her phase).
+- [x] 1.3 Write `core/judge.js` (windows, credit, `GRACE_S`, `median`) and `core/lib/track.js` (targets with `P`, `feed` with `errMs` and `rawMs` and the miss grace, `upcoming`, `accuracy`, `streak`).
+- [x] 1.4 Write `core/intent.js` (times with `t` and `raw`), `core/draw.js` (`LIMITS`, `validate`, with `scale` and `cue`), `core/events.js`, `core/carry.js` (`DEFAULT_CARRY` with `sperm: { hue: 0.11, place: 3, glow: 0.5 }`, `DEFAULT_SONG`), `core/score.js`.
+- [x] 1.5 Write `core/text.js` (carer words, `say`, `allStrings`), `core/sources.js` (the allow-list from `research/research-biology.md` section 12 and its inline URLs), `core/facts.js` (the aggregator, labels from `clock.label` and `clock.range`) and `core/save.js` (schema, `parse`, records, `recordCarryIn`, `cabinetLine`).
+- [x] 1.6 Write the shared lib: `core/lib/goals.js` (`subgoals` as `{ id: "shown" | "done" | "auto" }`), `steer.js`, `flow.js`, `colonize.js` (caps built in) and `figure.js` (at most 14 splats, no face, buds that grow from 2 to 10 mm).
+- [x] 1.7 Write `core/stages/index.js` with 8 stub stages that follow the Stage interface, with `meta.moments` from the design.md 4.1 table and `meta.motherBpm` (each a timer that completes with `goalMet: true`; the `swim` stub ends at its cap with `goalMet: false` and has the `carried` moment; every stub exports `probe`, which returns null), and a stub `core/ending.js`, each with `.tune.js`, `.facts.js` and `.text.js` files that export empty `TUNE`, `FACTS` and `TEXT`.
+- [x] 1.8 Write `core/run.js` (the sequencer: stages, overlay, Almost card (on a stage 1 result with `goalMet: false`: a finish outside the top 3, or the cap), cards over the crossfade, ending, result, retry, Go on through `jump("carried")`, practice, run time; the stage time base; her continuous beat clock with `motherPhase`; the one-button rule of design.md 16.4) and `core/bots.js` (`createBot(skill, seed)` → `{ intents, choose }`, with the Gaussian timing model).
+- [x] 1.9 Write `ui/input.js` (the one-pointer state machine with the 220 ms and 12 px numbers, the floating stick, keys with the drag-and-hold key rule, `setLive(gesture, keys)` with the `keys: "turn"` mode of design.md 5.3, `turn` from the left and right arrows or A and D, `aim` from a mouse with no button down only after a 4 px move and cleared by any steer or turn key, a hold that needs a fresh press, one-button presses, event timestamps mapped to core time with `raw` and the offset), `ui/store.js`, `render/camera.js` (`long` and `fit`; in `long` the subject at 45% of the height in portrait, at 38% of the width and 55% of the height in phone landscape, and at 40% of the width on desktop; a rotation with no mirror, so `turn` +1 decreases the world angle), `render/palette.js` (the hex colour script) and `render/debug.js`.
+- [x] 1.10 Write no-op stubs with the frozen signatures of design.md 16.2: `render/renderer.js` (drawing with `debug.js`, with `perf` and `crossfade`), `ui/hud.js` (with `place`), `ui/captions.js`, `ui/screens.js` and `ui/sound.js`.
+- [x] 1.11 Write `main.js`, fully wired to every module through those signatures: boot, URL flags (design.md 16.10), the 60 Hz fixed step, run ↔ render ↔ ui, sound scheduling from `run.beats()`, captions, screens, pause on Esc, P, the pause button, `visibilitychange` and `pagehide` (not `blur`), `place` events to the HUD, and `window.__fb` with every member of design.md 16.9, including `race()` and `guard()`, which map the current stage's `probe(state)` from world units to screen px (stage time throughout).
+- [x] 1.12 Pass `purity.test.mjs`, `clock.test.mjs`, `beat.test.mjs`, `judge.test.mjs`, `track.test.mjs`, `draw.test.mjs`, `save.test.mjs` and `run.test.mjs` against the stubs (including the stage time base, the clock that never runs back, and her beats across cards), and check that the page boots through all 8 stub stages to the result with the stub renderer.
+- [x] 1.13 Write `qa/first-breath/race-sim.mjs`, a stand-alone numeric model of the design.md 6.1 race with bumps, the gate squeeze, shared wave thresholds, glow rests, catch-up and the rival policy. Print the place distribution and arrival times over 20 seeds for the ref, mid and idle players and every rival. Freeze the 6.1 numbers only when the ref is 1st and the mid bot in the top 3 in at least 18 of 20 seeds, with the mid's mean arrival at 55 to 65 s; if not, tune in the order 6.1 gives and record the new numbers there.
+- [x] 1.14 Freeze design.md section 16. Any later change to it is made by the contract owner and noted in this file.
+  - Contract notes (integration): `core/run.js` passes a stage event's `at` (a sound's time) on in core seconds, like
+    its `t` (16.8); it drops fact events for unknown or unshown facts and picks card and overlay facts only from
+    shown ones (`checked: true`, access R or A, 15.1); it gives the ending `opts.runMs` (run.ms, 0 in practice).
+    `core/text.js` adds `has(id)`, `core/facts.js` adds `isShown(fact)` and `line(id, settings)`. `main.js` has one
+    caption path, `captions.say(id, text, { dir, ms, kind })` with the final text (kind `say`, `fact` with the clock
+    label in front as "Week 10: …", or `cue` for a sound caption), the prompt's `textKeys` (else `<text>.keys` or
+    `<text>Keys`) on a desktop, `?q=low|full` with `?gl=0` as its alias, `act("setting", { key })` from the
+    screens, the scale bar as `{ text, px }`, and `near` on rival bumps for the sound.
 
 ## 2. Stage modules (wave 1, in parallel)
 
@@ -32,66 +40,66 @@ moments that match the design.md 4.1 table. Every stage exports `botSteer`; the 
 
 ### 2a. The Race (`swim`, design 6.1): one builder
 
-- [ ] 2.1 Build the course of design.md 6.1: the womb with waves that lift only a swimming sperm (shared thresholds from `stream(seed, "wave:" + k)`), the gate, the fork with the seeded warm side and the 160 u cool loop with its 40 u/s flow that rejoins at 1,300 u, and the tube with its current profile, upstream bonus (tube only), warm lane (tube only, current halved), wall slide, checkpoints and the meeting place at 4,600 u; the camera spans (170 u, then 150 u) with sideways follow; the `course` strips and wave `band` marks of design.md 16.5.
-- [ ] 2.2 Build the 19 rivals: the skill ladder (0.80 and 0.76; 0.42 to 0.27; 0.24 to 0.04) seeded onto the start grid, one steering function shared with `botSteer` (stick magnitude 0.4 + 0.6 × skill, memory in `r.mem`), the cool-tube choice, glow rests and ready for the two front-runners only, resting when in the tube and 500 u or more behind you, the mild catch-up on the stick term, and soft bumps (circle against circle, the push apart every step, the speed loss at most once per 0.4 s) between every pair of swimming sperm.
-- [ ] 2.3 Build the glow walls with the attach rule and "ready" (×1.6 on the stick term, on her 4th beat attached), the checkpoint rests by the same rule, the place (`placeNow` by progress, arrivals by time, the shown place after a 0.25 s hold, `place` and `arrive` events), the `meet` moment, the result outside the top 3 and at the 117 s cap for the Almost card, the `carried` moment for Go on after the cap, `probe`, and Assist.
-- [ ] 2.4 Write the score (place, wave riding, warm lane, ready; 1st place as the Flourish), the carry out (`sperm` with `place`), `botSteer`, the facts (with `swim.hyper` and `swim.frame`, without `swim.race`) and the strings.
-- [ ] 2.5 Pass `stage-swim.test.mjs` with the race checks of design.md 18: rival determinism over 20 seeds, the place at every step and its 0.25 s hold, bumps, the cool loop back within 6 s, the lane faster than the wall, the attach rule and ready, ready rivals only among the front-runners, resting rivals, the ref bot 1st arriving at 44 to 54 s, the mid bot in the top 3 with a mean arrival of 55 to 65 s, idle never past the gate and ending at the 117 s cap, no stage time past 120 s, and no harm in any event or string. If a time gate misses, tune in the order of design.md 6.1 and record the numbers there.
+- [x] 2.1 Build the course of design.md 6.1: the womb with waves that lift only a swimming sperm (shared thresholds from `stream(seed, "wave:" + k)`), the gate, the fork with the seeded warm side and the 160 u cool loop with its 40 u/s flow that rejoins at 1,300 u, and the tube with its current profile, upstream bonus (tube only), warm lane (tube only, current halved), wall slide, checkpoints and the meeting place at 4,600 u; the camera spans (170 u, then 150 u) with sideways follow; the `course` strips and wave `band` marks of design.md 16.5.
+- [x] 2.2 Build the 19 rivals: the skill ladder (0.80 and 0.76; 0.42 to 0.27; 0.24 to 0.04) seeded onto the start grid, one steering function shared with `botSteer` (stick magnitude 0.4 + 0.6 × skill, memory in `r.mem`), the cool-tube choice, glow rests and ready for the two front-runners only, resting when in the tube and 500 u or more behind you, the mild catch-up on the stick term, and soft bumps (circle against circle, the push apart every step, the speed loss at most once per 0.4 s) between every pair of swimming sperm.
+- [x] 2.3 Build the glow walls with the attach rule and "ready" (×1.6 on the stick term, on her 4th beat attached), the checkpoint rests by the same rule, the place (`placeNow` by progress, arrivals by time, the shown place after a 0.25 s hold, `place` and `arrive` events), the `meet` moment, the result outside the top 3 and at the 117 s cap for the Almost card, the `carried` moment for Go on after the cap, `probe`, and Assist.
+- [x] 2.4 Write the score (place, wave riding, warm lane, ready; 1st place as the Flourish), the carry out (`sperm` with `place`), `botSteer`, the facts (with `swim.hyper` and `swim.frame`, without `swim.race`) and the strings.
+- [x] 2.5 Pass `stage-swim.test.mjs` with the race checks of design.md 18: rival determinism over 20 seeds, the place at every step and its 0.25 s hold, bumps, the cool loop back within 6 s, the lane faster than the wall, the attach rule and ready, ready rivals only among the front-runners, resting rivals, the ref bot 1st arriving at 44 to 54 s, the mid bot in the top 3 with a mean arrival of 55 to 65 s, idle never past the gate and ending at the 117 s cap, no stage time past 120 s, and no harm in any event or string. If a time gate misses, tune in the order of design.md 6.1 and record the numbers there.
 
 ### 2b. The Egg (`egg`, design 6.2): one builder
 
-- [ ] 2.6 Build the opening, laid from `motherPhase`: `surge` (beats 1 and 2, no input), `open` (beats 3 to 8; the third good tap or beat 8, "It opens anyway.") and the 2 s `sweep`; "Now you are the egg." as the first caption when there is no card.
-- [ ] 2.7 Build `guard` at a 140 u span with keys `turn`: the 8 waves with their counts, speeds and angles; the arc (stick angle, `aim`, `turn` at 540°/s, Assist width) and the rule for the arc over a sperm (angle within the half-width, head within 22 u, checked every step, by sperm state); bounces; sticking with burrow rings; popping loose; held rivals in the cloud; and your gold sperm (`goldIn` at 27 + 0.3 × (place − 1) s, its angle from the 72 seeded candidates of design.md 6.2, "Let it in.", up to 3 nudges, entry by 52 s at the latest).
-- [ ] 2.8 Build `enter` (Izumo1 meets Juno), `seal` (her beats counted from 0.6 s after the prompt, the release target on the 3rd, only a press after the prompt counting, the wave both ways round the shell from the entry point, the others drifting off, the seal by itself on the 6th counted beat or with a hold still down), the 5 s `fusion` with input `none`, and the clock turning to "Day 0 after fertilization (week 2)" when the nuclei touch.
-- [ ] 2.9 Write the score (follicle taps; the guard credit, leaving out rivals still swimming in or burrowing at entry; a clean entry, paid only when the guard credit is above 0; the seal Flourish of 1,000 In time and 500 Close), `botSteer` for the arc (the nearest rival that is not gold, turning the way that avoids the gold zone, memory in `r.mem`), `probe`, the facts (with `egg.zona`, `egg.corona`, `egg.choice` as a general fact in the guard, `egg.stick` on the gold's stick, `egg.wave`, `egg.seal` and `egg.frame`, and (f) only from `egg.pronuclei` on) and the strings.
-- [ ] 2.10 Pass `stage-egg.test.mjs` with the guard checks of design.md 18: the surge before any target, the first payoff by 4.5 s, the opening by 8.9 s, the arc over each kind of sperm (bounce, pop loose, nudge, ignored), held rivals never entering, exactly one `enter` for every input (including the arc held on your sperm), the gold's time for places 1, 3 and 20, a gold angle always found, at most 3 nudges, the seal's fresh press, grades, Flourish and auto seal, the guard credit rules, the ref bot with 0 nudges, and the turn-keys bot reaching Great.
+- [x] 2.6 Build the opening, laid from `motherPhase`: `surge` (beats 1 and 2, no input), `open` (beats 3 to 8; the third good tap or beat 8, "It opens anyway.") and the 2 s `sweep`; "Now you are the egg." as the first caption when there is no card.
+- [x] 2.7 Build `guard` at a 140 u span with keys `turn`: the 8 waves with their counts, speeds and angles; the arc (stick angle, `aim`, `turn` at 540°/s, Assist width) and the rule for the arc over a sperm (angle within the half-width, head within 22 u, checked every step, by sperm state); bounces; sticking with burrow rings; popping loose; held rivals in the cloud; and your gold sperm (`goldIn` at 27 + 0.3 × (place − 1) s, its angle from the 72 seeded candidates of design.md 6.2, "Let it in.", up to 3 nudges, entry by 52 s at the latest).
+- [x] 2.8 Build `enter` (Izumo1 meets Juno), `seal` (her beats counted from 0.6 s after the prompt, the release target on the 3rd, only a press after the prompt counting, the wave both ways round the shell from the entry point, the others drifting off, the seal by itself on the 6th counted beat or with a hold still down), the 5 s `fusion` with input `none`, and the clock turning to "Day 0 after fertilization (week 2)" when the nuclei touch.
+- [x] 2.9 Write the score (follicle taps; the guard credit, leaving out rivals still swimming in or burrowing at entry; a clean entry, paid only when the guard credit is above 0; the seal Flourish of 1,000 In time and 500 Close), `botSteer` for the arc (the nearest rival that is not gold, turning the way that avoids the gold zone, memory in `r.mem`), `probe`, the facts (with `egg.zona`, `egg.corona`, `egg.choice` as a general fact in the guard, `egg.stick` on the gold's stick, `egg.wave`, `egg.seal` and `egg.frame`, and (f) only from `egg.pronuclei` on) and the strings.
+- [x] 2.10 Pass `stage-egg.test.mjs` with the guard checks of design.md 18: the surge before any target, the first payoff by 4.5 s, the opening by 8.9 s, the arc over each kind of sperm (bounce, pop loose, nudge, ignored), held rivals never entering, exactly one `enter` for every input (including the arc held on your sperm), the gold's time for places 1, 3 and 20, a gold angle always found, at most 3 nudges, the seal's fresh press, grades, Flourish and auto seal, the guard credit rules, the ref bot with 0 nudges, and the turn-keys bot reaching Great.
 
 ### 2c. The Embryo: first cells (`split`, design 6.3)
 
-- [ ] 2.11 Build 4 days of splits on schedule with approach rings and 12 targets.
-- [ ] 2.12 Build Bloom and Hatch as hold-release targets released at the glow, with the 0.25 credit for a held Off release and no mash.
-- [ ] 2.13 Write the score, the facts and the strings.
-- [ ] 2.14 Pass `stage-split.test.mjs`, including "Off taps never reset a count".
+- [x] 2.11 Build 4 days of splits on schedule with approach rings and 12 targets.
+- [x] 2.12 Build Bloom and Hatch as hold-release targets released at the glow, with the 0.25 credit for a held Off release and no mash.
+- [x] 2.13 Write the score, the facts and the strings.
+- [x] 2.14 Pass `stage-split.test.mjs`, including "Off taps never reset a count".
 
 ### 2d. The Placenta (`root`, design 6.4)
 
-- [ ] 2.15 Build `nestle` (3 spots, sink in 2 s, the nearest spot after 8 s idle) and the carry out `nestleX`.
-- [ ] 2.16 Build `roots`: the steered tip, space colonization within its caps, 8 gland pools that swell on the mother's beat, on-beat links, and the auto-link every 3.5 s from 12 s.
-- [ ] 2.17 Build the `heart` hinge (the hush, the two captions, 8 targets at 110 bpm, then both hearts) and the 7 s `grow` moment (buds from 2 to 10 mm, the camera to 30 mm, the tree into a disc, `root.size` and `root.buds`); carry out `treeSeed`.
-- [ ] 2.18 Write the score, `botSteer`, the facts and the strings, and pass `stage-root.test.mjs` (no red pools; all 8 linked by 40 s idle; the clock at week 7 at the end).
+- [x] 2.15 Build `nestle` (3 spots, sink in 2 s, the nearest spot after 8 s idle) and the carry out `nestleX`.
+- [x] 2.16 Build `roots`: the steered tip, space colonization within its caps, 8 gland pools that swell on the mother's beat, on-beat links, and the auto-link every 3.5 s from 12 s.
+- [x] 2.17 Build the `heart` hinge (the hush, the two captions, 8 targets at 110 bpm, then both hearts) and the 7 s `grow` moment (buds from 2 to 10 mm, the camera to 30 mm, the tree into a disc, `root.size` and `root.buds`); carry out `treeSeed`.
+- [x] 2.18 Write the score, `botSteer`, the facts and the strings, and pass `stage-root.test.mjs` (no red pools; all 8 linked by 40 s idle; the clock at week 7 at the end).
 
 ### 2e. First Trimester (`grow`, design 6.5)
 
-- [ ] 2.19 Build 7 weekly phrases on the player's heart with the gap patterns, the cord lights and the preview rule.
-- [ ] 2.20 Build the 6 move moments (weeks 8 to 13) with the drag cone and the 3 s self-play, the week 10 fetus line, and the week 12 red pools with `grow.flow` and `grow.never`.
-- [ ] 2.21 Write the score, `botSteer`, the facts and the strings.
-- [ ] 2.22 Pass `stage-grow.test.mjs`, including spacing ≥ 0.5 s at 170 bpm and the tempo curve.
+- [x] 2.19 Build 7 weekly phrases on the player's heart with the gap patterns, the cord lights and the preview rule.
+- [x] 2.20 Build the 6 move moments (weeks 8 to 13) with the drag cone and the 3 s self-play, the week 10 fetus line, and the week 12 red pools with `grow.flow` and `grow.never`.
+- [x] 2.21 Write the score, `botSteer`, the facts and the strings.
+- [x] 2.22 Pass `stage-grow.test.mjs`, including spacing ≥ 0.5 s at 170 bpm and the tempo curve.
 
 ### 2f. Second Trimester (`answer`, design 6.6)
 
-- [ ] 2.23 Build `hear`, the 8 heartbeat targets (weeks 15 to 18), and the 6 call-and-response phrases from week 19, one note slot per beat, with ripples and ghost ripples.
-- [ ] 2.24 Build the match rule, "{Carer} feels you." and the hand glow from phrase 2, the eyes opening by themselves, and the carry out `song`.
-- [ ] 2.25 Write the score, the facts and the strings.
-- [ ] 2.26 Pass `stage-answer.test.mjs`, including "the voice never stops" and no phrase before gaDay 133.
+- [x] 2.23 Build `hear`, the 8 heartbeat targets (weeks 15 to 18), and the 6 call-and-response phrases from week 19, one note slot per beat, with ripples and ghost ripples.
+- [x] 2.24 Build the match rule, "{Carer} feels you." and the hand glow from phrase 2, the eyes opening by themselves, and the carry out `song`.
+- [x] 2.25 Write the score, the facts and the strings.
+- [x] 2.26 Pass `stage-answer.test.mjs`, including "the voice never stops" and no phrase before gaDay 133.
 
 ### 2g. Third Trimester (`turn`, design 6.7)
 
-- [ ] 2.27 Build the 4 practice breaths as press and release targets, with the ring that shrinks anyway.
-- [ ] 2.28 Build the turn with roomy moments and the turn by itself at 30 s; then the unscored rest with the hummed song and the outro.
-- [ ] 2.29 Write the score (Flourish: the turn done yourself before 30 s), `botSteer`, the facts and the strings.
-- [ ] 2.30 Pass `stage-turn.test.mjs`, including "nothing is judged in the rest".
+- [x] 2.27 Build the 4 practice breaths as press and release targets, with the ring that shrinks anyway.
+- [x] 2.28 Build the turn with roomy moments and the turn by itself at 30 s; then the unscored rest with the hummed song and the outro.
+- [x] 2.29 Write the score (Flourish: the turn done yourself before 30 s), `botSteer`, the facts and the strings.
+- [x] 2.30 Pass `stage-turn.test.mjs`, including "nothing is judged in the rest".
 
 ### 2h. Birth (`birth`, design 6.8)
 
-- [ ] 2.31 Build 8 waves on schedule with warning rings, plain hold waves and the four drag-and-hold prompt waves on screen axes, `turnDir`, and rested gaps.
-- [ ] 2.32 Build the squeeze values and the light (the full-width bottom glow, exposure, white, the sound opening) and the `born` milestone.
-- [ ] 2.33 Write the score (never shown at the stage end), `botSteer`, the facts and the strings.
-- [ ] 2.34 Pass `stage-birth.test.mjs`, including "every wave moves you on with no input".
+- [x] 2.31 Build 8 waves on schedule with warning rings, plain hold waves and the four drag-and-hold prompt waves on screen axes, `turnDir`, and rested gaps.
+- [x] 2.32 Build the squeeze values and the light (the full-width bottom glow, exposure, white, the sound opening) and the `born` milestone.
+- [x] 2.33 Write the score (never shown at the stage end), `botSteer`, the facts and the strings.
+- [x] 2.34 Pass `stage-birth.test.mjs`, including "every wave moves you on with no input".
 
 ### 2i. The ending (`ending`, design 6.9)
 
-- [ ] 2.35 Build the timeline: the 1.5 s silence, "Breathe.", the optional hold, the breath by itself at 3.0 s with its caption, two more breaths, skin-to-skin with her heart close and clear, "Rest your thumb here." with its ring placed by layout, the clear song and the run time line.
-- [ ] 2.36 Pass `ending.test.mjs`: no `points` event, the breath by itself at 3.0 s, results only after skin-to-skin, her beats silent only in the first 1.5 s.
+- [x] 2.35 Build the timeline: the 1.5 s silence, "Breathe.", the optional hold, the breath by itself at 3.0 s with its caption, two more breaths, skin-to-skin with her heart close and clear, "Rest your thumb here." with its ring placed by layout, the clear song and the run time line.
+- [x] 2.36 Pass `ending.test.mjs`: no `points` event, the breath by itself at 3.0 s, results only after skin-to-skin, her beats silent only in the first 1.5 s.
 
 ## 3. Presentation (wave 1, beside group 2)
 

@@ -38,7 +38,11 @@
 //   and the run's own (RUN_EVENTS): screen { screen, data }, stageStart { id, index, attempt, seed, motherPhase,
 //   carry, practice }, carryIn { id, carry } (at Play for swim and at each card, never in practice), crossfade
 //   { seconds } (at each card), stageEnd { id, index, attempt, result, kept, marks, practice } and runEnd { summary }.
-//   The run also emits fact { id, where } for the card and overlay facts it shows.
+//   The run also emits fact { id, where } for the card and overlay facts it shows. A stage event's `at` (a sound's
+//   time) goes on in core seconds too. A fact event whose fact is unknown or not shown (checked: false, or access
+//   not R or A, 15.1) is dropped, and card and overlay facts are picked only from the shown ones.
+// - The ending gets opts.runMs: the run time so far (run.ms, which stops when the ending starts), or 0 in practice,
+//   where the ending then leaves out its run time line.
 // - summary() → { total, ms, stages: [{ id, score: { goal, skill, flourish, total }, grade, parts, goalMet,
 //   attempts, marks }], marks, sparks, facts, done, practice }; done is true once a full run reaches its result.
 import { DT, label } from "./clock.js";
@@ -48,7 +52,7 @@ import { DEFAULT_CARRY, mergeCarry } from "./carry.js";
 import { clampScore, grade as gradeOf, runTotal, PARTS } from "./score.js";
 import { makeIntents, shiftIntents } from "./intent.js";
 import { emptyDraw } from "./draw.js";
-import { FACTS } from "./facts.js";
+import { FACTS, byId, isShown as showable } from "./facts.js";
 import { STAGES, ENDING } from "./stages/index.js";
 
 export const TIMERS = Object.freeze({ overlayS: 2.5, cardSkipS: 1.0, cardS: 3.5, crossfadeS: 0.8, glideS: 1.0, endingSkipS: 29 });
@@ -141,15 +145,22 @@ export function createRun({ seed = 1, settings = {}, save = null, start = "new",
   const push = (name, data) => { events.push({ ...data, name, t }); };
   const show = (name, data = null) => { screen = name; push("screen", { screen: name, data }); };
   const noteFact = (id) => { if (id && !factSeen.has(id)) { factSeen.add(id); facts.push(id); } };
-  const factsFor = (id, where) => FACTS.filter((f) => f.stage === id && f.where === where).map((f) => f.id);
+  // Only checked facts with access R or A are ever shown (15.1): a `checked: false` fact never reaches a screen.
+  const factsFor = (id, where) => FACTS.filter((f) => f.stage === id && f.where === where && showable(f)).map((f) => f.id);
   const glowing = () => Object.values(kept).filter((e) => e.grade === "Glowing").length;
 
   // Stage events go on to the host in core seconds.
   function drain() {
     if (!st || !Array.isArray(st.events)) return;
     for (const ev of st.events) {
-      events.push({ ...ev, t: (Number.isFinite(ev.t) ? ev.t : st.t) + ss, stage: mod.meta.id });
-      if (ev.name === "fact") noteFact(ev.id);
+      const out = { ...ev, t: (Number.isFinite(ev.t) ? ev.t : st.t) + ss, stage: mod.meta.id };
+      if (Number.isFinite(ev.at)) out.at = ev.at + ss;                   // a sound's time, also in core seconds
+      if (ev.name === "fact") {
+        const f = byId(ev.id);
+        if (!showable(f)) continue;                                       // an unknown or unchecked fact is dropped
+        noteFact(ev.id);
+      }
+      events.push(out);
     }
     st.events.length = 0;
   }
@@ -174,7 +185,8 @@ export function createRun({ seed = 1, settings = {}, save = null, start = "new",
     const sd = stageSeed(runSeed, id);
     const assist = !!(run.settings && run.settings.assist), oneButton = !!(run.settings && run.settings.oneButton);
     mod = m; idx = i; ss = t;
-    st = m.create(sd, mergeCarry(carryIns[id], null), { ...(stageOpts || {}), assist, oneButton, motherPhase });
+    const extra = i === ENDING_INDEX ? { runMs: practice ? 0 : Math.round(msS * 1000) } : {};
+    st = m.create(sd, mergeCarry(carryIns[id], null), { ...(stageOpts || {}), ...extra, assist, oneButton, motherPhase });
     clock = "stage";
     rOne = stream(sd, "oneButton");
     rOne.mem = {};

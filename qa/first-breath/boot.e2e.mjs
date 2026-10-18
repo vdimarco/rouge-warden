@@ -1,6 +1,6 @@
 // First Breath: the wave-0 boot check (tasks.md 1.11, 1.12). With the site served (it starts
 // `python3 -m http.server 8765 --directory public` itself when nothing answers), at 390 × 844 and 844 × 390 with touch
-// and at 1440 × 900 on SwiftShader, it opens /first-breath/?test=1 and checks:
+// and at 1440 × 900 in Chromium with --disable-gpu, it opens /first-breath/?test=1 and checks:
 // - /arcade/quiet.js is the first script in <head>, /arcade/switch.js the next, /arcade/analytics.js the last in <body>;
 // - every member of window.__fb (design.md 16.9) is there;
 // - the title has #play (at least 56 px tall), "‹ Arcade" to / and a Switch game button;
@@ -65,12 +65,11 @@ if (!(await answers())) {
   process.exit(1);
 }
 
-// ---- the browser on SwiftShader
+// ---- Chromium with --disable-gpu (Canvas 2D, design.md 14.3; no SwiftShader flags)
 const exe = process.env.CHROMIUM || "/opt/pw-browsers/chromium";
 const browser = await pw.chromium.launch({
   ...(fs.existsSync(exe) ? { executablePath: exe } : {}),
-  args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist",
-    "--autoplay-policy=no-user-gesture-required"],
+  args: ["--disable-gpu", "--autoplay-policy=no-user-gesture-required"],
 });
 
 async function open(size, query) {

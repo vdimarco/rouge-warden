@@ -10,7 +10,7 @@
 // Contract choices: say() of an unknown id returns the id itself, so a missing string shows up in tests and on
 // screen rather than as a blank; an unknown {var} is left as written; a carer setting that is not one of the four
 // words reads as "mother"; a later table never replaces an earlier id (registerConflicts() lists any clash).
-// Extra exports: fill(template, vars, settings), ordinal(n) ("3rd") and minSec(ms) ("9 min 48 s").
+// Extra exports: has(id), fill(template, vars, settings), ordinal(n) ("3rd") and minSec(ms) ("9 min 48 s").
 import { TEXT_TABLES } from "./stages/index.js";
 
 export const CARERS = { mother: "your mother", mum: "your mum", mom: "your mom", parent: "your parent" };
@@ -81,6 +81,15 @@ const BASE = {
 
   "cue.mother": "♥ {carer}'s heartbeat",
   "cue.you": "♥ your heartbeat",
+  "cue.pack": "~ the pack swims around you",
+  "cue.bounce": "· sperm bounce off the arc",
+  "cue.goldIn": "♪ your sperm comes in",
+  "cue.seal": "♪ a shimmer runs round your shell",
+  "cue.wave": "~ wave",
+  "cue.link": "♪ a soft note as a pool links",
+  "cue.bell": "♪ a soft bell on each good tap",
+  "cue.move": "~ a soft whoosh as you move",
+  "cue.open": "~ the sound opens",
 
   "grade.Good": "Good",
   "grade.Great": "Great",
@@ -138,6 +147,11 @@ export function fill(template, vars = {}, settings = {}) {
     if (vars && Object.prototype.hasOwnProperty.call(vars, name) && vars[name] !== undefined && vars[name] !== null) return String(vars[name]);
     return all;
   });
+}
+
+// Is this string id registered? (The host shows nothing for an unknown id, never the id itself.)
+export function has(id) {
+  return typeof id === "string" && REGISTRY.has(id);
 }
 
 export function say(id, vars = {}, settings = {}) {

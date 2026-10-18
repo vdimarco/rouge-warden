@@ -13,7 +13,8 @@
 // Options: --old stubs out /arcade/quiet.js, to show which pages are loud today (the exit code is 0 then). --only=echo,fall runs only
 // those pages. --skip=scan,unit,pages,silent leaves a part out. --modes=emulate,pagehide,tap,real,freeze picks the ways to hide.
 // Environment: QUIET_URL (default http://localhost:8912), QUIET_ROOT (the folder that holds public/, for the scan), QUIET_JS (try
-// another copy of quiet.js), QUIET_SC_API (run SoundCloud's real api.js against the stand-in player), VERBOSE=1 (show every detail).
+// another copy of quiet.js), QUIET_SC_API (run SoundCloud's real api.js against the stand-in player), VERBOSE=1 (show every detail),
+// CHROMIUM_PATH (the Chromium to run, when Playwright's own build is not installed).
 // The exit code is 1 when a check fails.
 import { createRequire } from "module";
 import { fileURLToPath } from "url";
@@ -244,7 +245,7 @@ const answer = (url) => { for (const [g, h] of ROUTES) if (globRe(g).test(url)) 
 class PwTab {
   constructor(page, errors) { this.page = page; this.errors = errors; this.backend = "pw"; }
   static async launch({ open }) {
-    const browser = await chromium.launch({ args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist", ...(open ? ["--autoplay-policy=no-user-gesture-required"] : [])] });
+    const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || undefined, args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist", ...(open ? ["--autoplay-policy=no-user-gesture-required"] : [])] });
     return {
       newTab: async (url, { init = [] } = {}) => {
         const ctx = await browser.newContext({ viewport: { width: 1280, height: 800 }, ignoreHTTPSErrors: true });
@@ -280,7 +281,7 @@ class CdpTab {
   constructor(b, targetId, sessionId) { this.b = b; this.targetId = targetId; this.sessionId = sessionId; this.errors = []; this.backend = "cdp"; }
   static async launch({ open }) {
     const port = 9400 + Math.floor(Math.random() * 400), dir = fs.mkdtempSync(path.join(os.tmpdir(), "quiet-cdp-"));
-    const proc = spawn(chromium.executablePath(), ["--headless=new", "--no-sandbox", `--remote-debugging-port=${port}`, `--user-data-dir=${dir}`, "--window-size=1280,800", "--ignore-certificate-errors", "--no-first-run", "--disable-background-networking", "--disable-sync", "--disable-component-update", "--disable-default-apps",
+    const proc = spawn(process.env.CHROMIUM_PATH || chromium.executablePath(), ["--headless=new", "--no-sandbox", `--remote-debugging-port=${port}`, `--user-data-dir=${dir}`, "--window-size=1280,800", "--ignore-certificate-errors", "--no-first-run", "--disable-background-networking", "--disable-sync", "--disable-component-update", "--disable-default-apps",
       "--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist", ...(open ? ["--autoplay-policy=no-user-gesture-required"] : []), "about:blank"], { stdio: "ignore" });
     let info = null;
     for (let i = 0; i < 100 && !info; i++) { await sleep(150); try { info = await (await fetch(`http://127.0.0.1:${port}/json/version`)).json(); } catch (e) { /* not up yet */ } }
@@ -392,6 +393,9 @@ const PAGES = [
   // Ahead of the Light makes its context on the first tap (TAP TO FLY); a hidden page pauses the race, and the pause card
   // keeps a low-passed drone once the page is shown again
   { id: "ahead-of-the-light", path: "/ahead-of-the-light/", boot: () => !!window.__race && !document.querySelector("#title").hidden, start: click("#go"), sound: "ctx", music: true },
+  // First Breath builds its sound graph on the Play tap (#play) and schedules her heart ahead on a timer (design.md 11);
+  // a hidden page pauses the run, and quiet.js suspends the context
+  { id: "first-breath", path: "/first-breath/", boot: () => { const b = document.querySelector("#play"); return !!window.__fb && !!b && !b.disabled && b.getClientRects().length > 0; }, start: click("#play"), sound: "ctx", music: true },
   { id: "neon", path: "/neon/", boot: () => !!document.querySelector("#start"), start: click("#start"), sound: "ctx" },
   { id: "primordia", path: "/primordia/", start: click("#playBtn"), sound: "ctx" },
   { id: "olympus", path: "/olympus/", start: click('button[aria-label="Enable audio"]'), sound: "ctx" },

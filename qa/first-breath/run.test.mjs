@@ -8,7 +8,9 @@
 // ending's first 1.5 s are the one silence); one-button sets steer and dir from botSteer in every stage and clears
 // turn and aim; stage 1's sperm.place reaches stage 2 and sets when your sperm comes in; exactly one sperm enters in
 // a whole run; the overlay, card and crossfade timers; run.ms leaves out pause and the ending; the summary; every run
-// view validates; the same seed plays the same run.
+// view validates; the same seed plays the same run. The host's contract: only shown facts (checked, R or A) reach
+// the host, the summary, the cards and the overlays; sound times (`at`) come in core seconds; the ending's run time
+// line carries run.ms (none in practice); track feed() takes odd intents.
 // node qa/first-breath/run.test.mjs
 import assert from "node:assert/strict";
 import { createRun, stageSeed, TIMERS, RUN_EVENTS } from "../../public/first-breath/core/run.js";
@@ -20,6 +22,9 @@ import { makeIntents, shiftIntents } from "../../public/first-breath/core/intent
 import { runTotal } from "../../public/first-breath/core/score.js";
 import { validate } from "../../public/first-breath/core/draw.js";
 import { stream } from "../../public/first-breath/core/rng.js";
+import { FACTS, byId as factById, isShown } from "../../public/first-breath/core/facts.js";
+import { minSec } from "../../public/first-breath/core/text.js";
+import { createTrack, feed } from "../../public/first-breath/core/lib/track.js";
 
 const FILE = "qa/first-breath/run.test.mjs";
 let passed = 0;
@@ -561,6 +566,52 @@ await check("the shared bot (16.11): σ = 15 + 135 (1 − skill) ms, skip = 0.4 
   assert.deepEqual(["title", "almost", "card", "overlay", "stage", "ending", "result"].map((s) => c.choose(s)),
     ["play", "goOn", "skip", null, null, null, null]);
   assert.equal(createBot(0, 1).choose("almost"), "goOn", "even idle goes on");
+});
+
+// ---- the host's contract (integration): facts, sound times, the ending's run time
+await check("every fact the run passes on or lists is a shown one (checked, access R or A), and card and overlay facts too", () => {
+  for (const { run, evs } of [REF, IDLE]) {
+    for (const e of named(evs, "fact")) assert.ok(isShown(factById(e.id)), `fact ${e.id} (${e.stage}) is shown`);
+    for (const id of run.summary().facts) assert.ok(isShown(factById(id)), `summary fact ${id}`);
+    for (const e of named(evs, "screen")) {
+      const d = e.data || {};
+      if (e.screen === "card") for (const id of d.facts || []) assert.ok(isShown(factById(id)), `card fact ${id}`);
+      if (e.screen === "overlay" && d.fact) assert.ok(isShown(factById(d.fact)), `overlay fact ${d.fact}`);
+    }
+  }
+  // a fact table entry with checked: false (turn.weight, 15.1) is never picked
+  for (const f of FACTS) if (f.checked !== true) assert.ok(!REF.run.summary().facts.includes(f.id), `${f.id} stays out`);
+});
+
+await check("sound times reach the host in core seconds: an sfx's and a song's `at` sit by its core t", () => {
+  let n = 0;
+  for (const e of REF.evs) {
+    if ((e.name !== "sfx" && e.name !== "song") || !Number.isFinite(e.at)) continue;
+    n++;
+    assert.ok(e.at >= e.t - 10 && e.at <= e.t + 15, `${e.stage} ${e.name} ${e.id}: at ${e.at.toFixed(2)} vs t ${e.t.toFixed(2)}`);
+  }
+  assert.ok(n > 50, `${n} timed sounds`);
+});
+
+await check("the ending's run time line: run.ms from Play to the end of Birth in a run, and none in practice", () => {
+  const start = named(REF.evs, "stageStart").find((e) => e.id === "ending");
+  const line = named(REF.evs, "caption").find((e) => e.id === "ending.time");
+  assert.ok(start && line, "the ending starts and says the run time");
+  assert.equal(line.ms, REF.run.ms, "the line's ms is run.ms (which stops when the ending starts)");
+  assert.equal(line.vars && line.vars.time, minSec(REF.run.ms));
+  const p = createRun({ seed: 7, start: { practice: "ending" } });
+  const pe = play(p, {});
+  const pl = named(pe, "caption").find((e) => e.id === "ending.time");
+  assert.equal(p.ms, 0, "practice counts no run time");
+  assert.ok(!pl || (pl.ms === null && !pl.vars), "in practice the ending leaves the time to the host, which shows none");
+});
+
+await check("feed() takes odd intents without throwing", () => {
+  const tr = createTrack([{ id: 1, t: 1, P: 0.8, kind: "tap" }, { id: 2, t: 2, P: 0.8, kind: "release" }]);
+  for (const odd of [null, undefined, {}, { presses: 5 }, { presses: {}, releases: "x" }, { presses: [null, { t: "a" }], releases: [{}] }]) {
+    assert.doesNotThrow(() => feed(tr, odd, 0.5));
+  }
+  assert.deepEqual(feed(tr, { presses: [{ t: 1.01, raw: 1.01 }] }, 1.1).map((r) => r.grade), ["in"]);
 });
 
 await check("the same seed and bot play the same run", () => {
