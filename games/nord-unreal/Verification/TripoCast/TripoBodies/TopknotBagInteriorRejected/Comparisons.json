@@ -1,0 +1,99 @@
+{
+  "passed": true,
+  "partial_pilot_only": true,
+  "accepted": false,
+  "old_render_exit_code": 0,
+  "repaired_render_exit_code": 0,
+  "same_exact_four_own_clips": true,
+  "fresh_old_and_repaired_renders": true,
+  "CPU_threads": 4,
+  "GPU": false,
+  "same_PBR_camera_pose_settings": true,
+  "views": [
+    {
+      "file": "Compare-idle-front.png",
+      "sha256": "53b9c17721127cb0d943f892a234f54a55f173647599438a97215bcf04718e07",
+      "old_sha256": "b193eb5c9e50bef3a7d8b90351d987754ca82d1da4fe8ec74648a1706fc55bc7",
+      "repaired_sha256": "1fda9f27c928621d3d851e370397cb47458f23e84d0d3ce8b66a63405263030c",
+      "clip": "idle",
+      "seconds": 0,
+      "frame": 2.0
+    },
+    {
+      "file": "Compare-idle-side.png",
+      "sha256": "f670e62c82e1cc87bed72ecb72d998e8c4a52605d4d7f9910176007cb6cc77c3",
+      "old_sha256": "48fb6001646bb6fe97480dd35abca803be44848dd0127e4e4a0249b3551d4723",
+      "repaired_sha256": "1d4ac8e1bbf40fa882ab674e26c8dfc044c19453504b723f63cbaef486d5a39e",
+      "clip": "idle",
+      "seconds": 0,
+      "frame": 2.0
+    },
+    {
+      "file": "Compare-idle-threequarter.png",
+      "sha256": "56545ae883bfc55a9a09b1a4b823cdeb749bd3b5961e0617e68427d3c46d8115",
+      "old_sha256": "7703ebd86a368fda6f0ff7476c059ccda26676db44b3b6b2233682124a8d6e54",
+      "repaired_sha256": "acb23103eae2261b8b1b5498eb6b7813bdc12f96831d8a2c7332903dd1592162",
+      "clip": "idle",
+      "seconds": 0,
+      "frame": 2.0
+    },
+    {
+      "file": "Compare-idle-back.png",
+      "sha256": "b3b21d0f1158f6236573f964fdc17f44f0d16d12b49714a1273abaddddc0271e",
+      "old_sha256": "586eeb302ea31ccede49e2ea641bde7fa7b1117ecb5dd8fc011db8f2db6b5f0d",
+      "repaired_sha256": "d9fb15e3e3f81ff86e0a32e0850c47271bd7bec0b45053a685723430b3384329",
+      "clip": "idle",
+      "seconds": 0,
+      "frame": 2.0
+    },
+    {
+      "file": "Compare-walk-threequarter.png",
+      "sha256": "294e357283f4ca69b4b50f24060d9e654d04ee96b26d3fece4c6420373cc3a57",
+      "old_sha256": "93fa61b8d37e5f3138d0c6fc944d68ecd03ac81688922c8a138b3c19333d9360",
+      "repaired_sha256": "dd54ba0edbe1aff40920576f0877dce7f2d35c1a78c2aebd95272dd620a8936d",
+      "clip": "walk",
+      "seconds": 0.26,
+      "frame": 9.800000190734863
+    },
+    {
+      "file": "Compare-run-threequarter.png",
+      "sha256": "b328d3278be62abac8fd44e6e9db8ce9be6324a7ee926397d1092fc6d18e5edd",
+      "old_sha256": "a534e16b6f7076a1d836908866132cbf1ff0ac56ce87e84d47d1ace31f5c4ede",
+      "repaired_sha256": "4add1984e73d1fe8c8ae0e4b8c9135ea2a0c21240af92e15f0ad669289c027bf",
+      "clip": "run",
+      "seconds": 0.16,
+      "frame": 6.800000190734863
+    },
+    {
+      "file": "Compare-jump-threequarter.png",
+      "sha256": "fbe9356edf75d55c0c393ce15d1fdc12a5b5a252dafe22114bd42df80d37d48f",
+      "old_sha256": "708e53eca546253b1d2e801730c22bc16dfb03715a175b245cae47cbabc853cd",
+      "repaired_sha256": "7f3b7e82b86d9089d07bc60cde1f52bb14ec49f528cead5037f3794667f45526",
+      "clip": "jump",
+      "seconds": 0.47,
+      "frame": 16.100000381469727
+    },
+    {
+      "file": "Compare-hand-l.png",
+      "sha256": "f8fca437acb5abde37fa7b5ab016c6db85b3c604b179076dbe5bb5a240d3f85f",
+      "old_sha256": "07aca20b9cad09d2a3ab1ef23f0f82541acadb731be9dd29e03f53e8072effb4",
+      "repaired_sha256": "a8a2788f056a3b1cc6b056245af529cad8ec3aa976b3ec7322b631bb34130891",
+      "clip": "idle",
+      "seconds": 0,
+      "frame": 2.0
+    },
+    {
+      "file": "Compare-hand-r.png",
+      "sha256": "754b6e1f87d165b5bda9a013a3db3f9a6c7ba76bc9c4e3afa8afb75ace167fc1",
+      "old_sha256": "54726853f04e8c31b5db7c4a73f58d4929e9d0f1d6c46a724d48af1f0a65e628",
+      "repaired_sha256": "ee0efc6d53ffe9e45b75b86a2bf3fb8142cf691603a9ec9ebae9a40bfef8857b",
+      "clip": "idle",
+      "seconds": 0,
+      "frame": 2.0
+    }
+  ],
+  "limits": [
+    "Nine static samples; no continuous/native motion or final art acceptance",
+    "Only approved interior weights changed; retained boundary and strap deformations remain possible"
+  ]
+}

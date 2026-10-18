@@ -1,0 +1,20 @@
+{
+  "at_utc": "2026-10-18T00:37:16.905013+00:00",
+  "reviewer": "root",
+  "reviewed_all48_panels_in_four_composite_sheets": [
+    "Contacts-A-B-D.png",
+    "HiddenContacts.png",
+    "AssemblyViews.png",
+    "FullViews.png"
+  ],
+  "decision": "Reject full-mask and topology authoring; manual coherent accessory ownership/separation remains pending",
+  "bounded_findings": [
+    "B has a defensible local shared bag/white-shirt fan; one duplicate is not a bag repair.",
+    "A connector/cloth, D bag/shorts and hidden forearm/thumb/backing ownership remain unresolved.",
+    "Yellow/hidden ownership and open interface components prevent approval of a complete bag-side seam.",
+    "No evidence establishes absent backing surfaces or physical hand clearance.",
+    "No topology, new mesh, weight change, native import or adoption follows from this proposal."
+  ],
+  "actual_topology_or_weight_writer_export_reimport_performed": false,
+  "native_or_final_art_accepted": false
+}

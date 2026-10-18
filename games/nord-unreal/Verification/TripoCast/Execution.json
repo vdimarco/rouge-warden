@@ -1,5 +1,5 @@
 {
-  "recorded_utc": "2026-10-18T00:18:11.203782+00:00",
+  "recorded_utc": "2026-10-18T00:34:18.211208+00:00",
   "status": "All7 Tripo HD bodies/rigs retained. Six isolated native candidates import/reload and all12 native animation tests pass; Topknot bag remains rejected. Balance5/0, no paid jobs or live promotion.",
   "jobs": [
     {
@@ -61,13 +61,13 @@
   "tripo_paid_jobs_this_cast": 17,
   "native_or_package_changes": true,
   "limits": [
-    "Five remaining detailed Tripo body+rig pairs cost425credits, current30available/0frozen;400-credit top-up requested.",
-    "BlackCap natural palms pass bounded CPU frame review; broad inherited gait sway/contact and native transitions remain unaccepted.",
-    "Topknot bag has strong erroneous thigh weights; completed topology/UV diagnosis rejects automatic correction. Semantic bag/strap-mask review and native acceptance remain open.",
-    "No Unreal/GPU/service/package operations; native/package/browser/device acceptance remains open."
+    "All seven selected Tripo bodies/rigs are funded and retained; balance5 available/0 frozen and no paid job outstanding. No additional credits requested.",
+    "Six isolated native imports/fresh reloads and all12 native animation tests pass. Rendered native art, continuous motion/contact and physical grasp remain unaccepted.",
+    "Topknot bag repair remains rejected. Full bag/cloth/shorts/hidden-contact ownership is incomplete; no topology or further weight edit is authorized by the proposal.",
+    "No GPU/service/package operation or live promotion. Existing VRAM guard, package/performance, browser/device/off-LAN acceptance remain open."
   ],
   "tripo_reserved_credits": 670,
-  "tripo_last_balance_snapshot_scope": "All7 paid own Tripo body+rig jobs completed/downloaded, raw hashes checked; no cast art/native/promotion acceptance",
+  "tripo_last_balance_snapshot_scope": "All7 paid own Tripo body+rig jobs completed/downloaded; final actual5 available/0 frozen, no outstanding paid job. This balance snapshot is separate from native/art acceptance.",
   "prior_jobs_scope": "Seven completedMeshy comparisons andthreeMeshy-derivedTripo rigs; preservehistory,costs,inputs; no furtheradoption",
   "tripo_paid_comparison_rigs": 3,
   "tripo_paid_body_jobs": 7,
@@ -80,7 +80,13 @@
   "tripo_uncommitted_new_pipeline_credits": 5,
   "tripo_actual_h31_completed_credits": 595,
   "topknot_h31_body_task_id": "7c59f469-ad8a-4825-913f-14a69d0ba61b",
-  "native_scope": "New isolated BlackCap candidate authoring/freshload and editor build only; checks ongoing",
+  "native_scope": "Six new Resident3\u20138 candidate folders/66 assets, editor module build, six fresh import/reload pairs and final12/12 animation tests; original Content/packages/saves/settings/services preserved. No native rendered art acceptance.",
   "package_modified": false,
-  "native_checkpoint": "Verification/TripoCast/Native/README.md"
+  "native_checkpoint": "Verification/TripoCast/Native/README.md",
+  "historical_pilot_limits": [
+    "Five remaining detailed Tripo body+rig pairs cost425credits, current30available/0frozen;400-credit top-up requested.",
+    "BlackCap natural palms pass bounded CPU frame review; broad inherited gait sway/contact and native transitions remain unaccepted.",
+    "Topknot bag has strong erroneous thigh weights; completed topology/UV diagnosis rejects automatic correction. Semantic bag/strap-mask review and native acceptance remain open.",
+    "No Unreal/GPU/service/package operations; native/package/browser/device acceptance remains open."
+  ]
 }

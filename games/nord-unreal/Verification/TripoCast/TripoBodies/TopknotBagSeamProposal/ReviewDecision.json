@@ -1,0 +1,22 @@
+{
+  "outcome": "not_ready_full_mask_or_topology_authoring_rejected",
+  "root_reviewed_all48_panels": true,
+  "root_decision": "Yellow/hidden ownership and open seam components remain unresolved. B local split concept defensible, but one vertex is not a repair. No backing-surface absence or hidden-hand-clearance claim.",
+  "independent_review": {
+    "reviewed": [
+      "Contacts-A-B-D.png",
+      "HiddenContacts.png",
+      "AssemblyViews.png",
+      "ConnectivityPlan.json"
+    ],
+    "B": "Array-only +1vertex, four bag faces remapped, three fixed shirt faces unchanged; zero face delta; boundary edges11\u219215, no new nonmanifold edges. Local cut does not release the whole bag.",
+    "A": "Shiny connector edge versus shirt remains ambiguous.",
+    "D": "Lower bag trim versus navy shorts remains ambiguous; color does not settle ownership.",
+    "hidden": "Side/bottom views do not establish backing or hand/forearm ownership.",
+    "strap_bands": "Locations are plausible plain-strap segments above buckles; complete width/thickness and anchor-loop ownership needs manual face work."
+  },
+  "required_next_work": "Manual face ownership and complete accessory separation/retopology; retain original fixed body and upper strap vertices/weights/corner attributes. No further automated selection, deformation or adoption.",
+  "future_topology_only416_equality_and_later_weight_passes": "pending_not_performed",
+  "all_owned_jobs_closed": true,
+  "no_further_jobs": true
+}
