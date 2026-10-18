@@ -1,0 +1,4 @@
+- [x] Inspect both pages, existing flows and design the coordinated surfaces.
+- [x] Implement approved-badge artwork and responsive comic styling.
+- [x] Build and verify unit and browser flows.
+- [x] Inspect desktop and mobile screenshots against the visual direction.
