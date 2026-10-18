@@ -241,7 +241,7 @@ try {
     assert.equal(response.status(), 200, `${file} is shipped`);
     assert.equal(response.headers()['content-type'], type, `${file} has the correct media type`);
   }
-  for (const [width, height] of [[1280, 720], [1920, 1080], [360, 800]]) {
+  for (const [width, height] of [[1280, 720], [1920, 1080], [360, 800], [320, 568], [844, 390]]) {
     await page.setViewportSize({ width, height });
     await page.goto(`${url}/?ss=wss://untrusted.example&AutoConnect=true`);
     assert.equal(await page.locator('body').getAttribute('data-state'), 'offline');
@@ -252,6 +252,8 @@ try {
     assert.deepEqual(await page.evaluate(() => ({ level: window.loggerContext.logLevel, stack: window.loggerContext.includeStack })),
       { level: 2, stack: false }, 'offline pages initialize warning-only logging without stack capture');
     assert.equal(await page.locator('.hero-title').textContent(), 'GTA: NORTH', 'the title screen shows the game title');
+    assert.equal(await page.locator('#overlay').evaluate(el => el.scrollHeight <= el.clientHeight && el.scrollWidth <= el.clientWidth), true, 'entry screen fits without internal scrolling');
+    assert.equal(await page.locator('.badge-launch').evaluate(el => el.querySelector('#start').getBoundingClientRect().top >= el.querySelector('img').getBoundingClientRect().bottom), true, 'Start sits below the badge');
     assert.equal(await page.locator('#watch-trailer').isVisible(), true);
     assert.equal(await page.locator('#hero-video').isVisible(), true, 'the trailer loop plays behind the start card');
     assert.equal(await page.locator('#trailer-video').getAttribute('src'), null, 'full trailer is not loaded until opened');
