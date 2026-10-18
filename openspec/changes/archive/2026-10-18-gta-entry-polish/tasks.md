@@ -13,4 +13,4 @@
 - [x] Merge main (#398) and carry its badge-matched chrome into the single layer. Tests pass, and the overlay fits without scrolling at all five sizes.
 - [ ] Play page: run `media.test.mjs` and `mobile.test.mjs` against a deployment with a live game host.
 - [ ] Check H.264 trailer playback on a real phone. This container's Chromium has no H.264 decoder.
-- [ ] Archive the change after the checks above.
+- [x] Archive the change (2026-10-18, at the owner's request after merge #399). The two phone checks above were still open at archive time.
