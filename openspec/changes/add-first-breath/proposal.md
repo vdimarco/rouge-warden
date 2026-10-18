@@ -18,8 +18,8 @@ The user then reviewed the plan and asked for two changes, in these words: stage
 game the words stay gentle: you race, and the egg guards its shell (design.md 1.2).
 
 After eleven art boards, the user asked "show me watercolor wash vs paper vs oil", and the look moved from the plan's
-WebGL "Warm Lantern" to **paper cut**, drawn with Canvas 2D. The build workflow reports paper cut as the user's pick;
-the user's own words choosing it are not quoted here yet (design.md 1.2, task 3.0).
+WebGL "Warm Lantern" to **paper cut**, drawn with Canvas 2D. The user picked "Paper cut" from that side-by-side, after
+saying "paper cut is still the nicest" at the boards before it (design.md 1.2).
 
 ## What Changes
 
@@ -79,14 +79,14 @@ cabinet line, and the stage 6 repeats, jump and hiccups.
 ### Choices
 
 The user chose the play of stages 1 and 2 and kept the Action row. The art direction was chosen after the user's
-side-by-side of the boards; the build workflow reports it as the user's choice, and task 3.0 quotes the user's words.
+side-by-side of the boards: the user picked "Paper cut" (design.md 1.2).
 The rest are our choices, since the user gave none.
 
 | Topic | Choice |
 |---|---|
 | Stage 1 and 2 play (the user's) | A race with 19 rivals, then the egg guarding its shell until your own sperm comes in (design.md 6.1 and 6.2) |
 | Title | First Breath |
-| Art direction (reported as the user's, after the boards) | Paper cut, over Warm Lantern, watercolour wash and oil (design.md section 13, with the hex colour script; reference art in `research/paper-cut/`) |
+| Art direction (the user's pick, after the boards) | Paper cut, over Warm Lantern, watercolour wash and oil (design.md section 13, with the hex colour script; reference art in `research/paper-cut/`) |
 | Controls | One live gesture per moment; relative stick; keys only on desktop; one-button mode |
 | Row | Action, the last machine, after `ahead-of-the-light` (kept by the user after review) |
 | The person carrying the baby | "your mother" by default; Settings offer mother, mum, mom, parent; no pronouns in any string |

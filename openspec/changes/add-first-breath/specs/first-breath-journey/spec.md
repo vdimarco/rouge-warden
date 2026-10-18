@@ -169,7 +169,7 @@ Stages SHALL pass one carry object from each result to the next stage, with a de
 - **CHECK** `qa/first-breath/run.test.mjs`
 
 ### Requirement: The rivals of the first two stages
-The other sperm in stages 1 and 2 SHALL be seeded from each stage's seed, so a Try again or a replay with the same seed brings the same rivals doing the same things. They SHALL look alike in both stages, pale mauve with soft tails and no faces. Nobody SHALL be harmed in either stage: rivals bump, fall behind, bounce away, drift off and rest. In a whole run, only the player's own sperm SHALL enter the egg.
+The other sperm in stages 1 and 2 SHALL be seeded from each stage's seed, so a Try again or a replay with the same seed brings the same rivals doing the same things. They SHALL look alike in both stages, mauve paper sperm with beating tails and no faces. Nobody SHALL be harmed in either stage: rivals bump, fall behind, bounce away, drift off and rest. In a whole run, only the player's own sperm SHALL enter the egg.
 
 #### Scenario: The same rivals on Try again
 - **WHEN** the player taps Try again in stage 1
@@ -216,7 +216,7 @@ After Birth the game SHALL play the ending: white, 1.5 s of silence, the prompt 
 
 #### Scenario: Skin-to-skin
 - **WHEN** the ending reaches skin-to-skin
-- **THEN** a big warm shape and a small one rest in a circle of light, "You know this heartbeat." shows, and "Rest your thumb here." invites a touch that makes both rings pulse together
+- **THEN** two plain paper ovals, a big warm one and a small one, rest in a circle of cream light, "You know this heartbeat." shows, and "Rest your thumb here." invites a touch that makes both rings pulse together
 - **CHECK** `qa/first-breath/visual.e2e.mjs`
 
 #### Scenario: Rest your thumb in landscape

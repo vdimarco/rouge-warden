@@ -27,7 +27,7 @@ The article SHALL be a copy of the whole `ahead-of-the-light` article with the n
 - **CHECK** `qa/arcade/machines.mjs` (part `firstbreath`)
 
 ### Requirement: The marquee and colours
-The machine's marquee SHALL show the name FIRST BREATH in its `<b>` and A BABY'S JOURNEY TO BIRTH in its `<small>`. A `.cab.first-breath` rule SHALL set `--c1: #3a0f24`, `--c2: #ffb36b` and `--glow: rgba(255, 170, 120, 0.5)`, the game's plum and amber.
+The machine's marquee SHALL show the name FIRST BREATH in its `<b>` and A BABY'S JOURNEY TO BIRTH in its `<small>`. A `.cab.first-breath` rule SHALL set `--c1: #5e1c34`, `--c2: #ffc53d` and `--glow: rgba(255, 197, 61, 0.45)`, the game's wine board and marigold accent.
 
 #### Scenario: The marquee
 - **WHEN** the homepage is read
@@ -35,7 +35,7 @@ The machine's marquee SHALL show the name FIRST BREATH in its `<b>` and A BABY'S
 - **CHECK** `qa/arcade/machines.mjs`
 
 ### Requirement: The switcher knows it
-`GAMES` in `public/arcade/switch.js` SHALL have the entry `{ id: "first-breath", name: "First Breath", sub: "A baby's journey to birth", url: "/first-breath/", art: "/arcade/key/first-breath.svg", color: "#ff9a7a" }` after the Ahead of the Light entry. Its colour SHALL be a token of the game's colour script. The id, title and route SHALL match the cabinet. The game page SHALL load `/arcade/switch.js` and give its Switch game button `data-switch`.
+`GAMES` in `public/arcade/switch.js` SHALL have the entry `{ id: "first-breath", name: "First Breath", sub: "A baby's journey to birth", url: "/first-breath/", art: "/arcade/key/first-breath.svg", color: "#ffc53d" }` after the Ahead of the Light entry. Its colour SHALL be a token of the game's colour script. The id, title and route SHALL match the cabinet. The game page SHALL load `/arcade/switch.js` and give its Switch game button `data-switch`.
 
 #### Scenario: Switcher on the game page
 - **WHEN** a player opens the game switcher from the First Breath title or pause menu
@@ -48,11 +48,19 @@ The machine's marquee SHALL show the name FIRST BREATH in its `<b>` and A BABY'S
 - **CHECK** `qa/arcade/machines.mjs`
 
 ### Requirement: The cabinet screen
-The machine's screen SHALL be `public/arcade/key/first-breath.svg`: hand-drawn, viewBox `0 0 480 396`, under 10 KB, with no script, no external reference and no text. It SHALL show a glowing egg with its ring of cells on deep plum, a small gold cell beside it and a soft white light above. Its `<img>` SHALL have the alt text "A glowing egg in its ring of cells on deep plum, a small gold cell beside it, and soft white light above" and `loading="lazy" decoding="async"`, like its neighbours.
+The machine's screen SHALL be `public/arcade/key/first-breath.svg`: hand-drawn as cut paper in the game's palette, viewBox `0 0 480 396`, under 10 KB, with no script, no external reference, no text and no filter. It SHALL show the egg as stacked paper rings with a cream shell in a cloud of paper dots on a wine board (`#5e1c34`), a cream arc round it, and a small marigold (`#ffc53d`) sperm on a cream card coming in, with depth from offset shadow shapes.
 
 #### Scenario: The screen file
 - **WHEN** the screen file is checked
-- **THEN** it is an SVG under 10 KB with that viewBox and no script or external reference
+- **THEN** it is an SVG under 10 KB with that viewBox and no script, external reference or filter
+- **CHECK** `qa/arcade/machines.mjs`
+
+### Requirement: The cabinet screen's alt text
+The screen's `<img>` SHALL have the alt text "A cut-paper egg in cream rings and a cloud of paper dots on wine red, with a cream arc round it and a small marigold sperm coming in" and `loading="lazy" decoding="async"`, like its neighbours.
+
+#### Scenario: The screen image
+- **WHEN** the First Breath article's screen `<img>` is read
+- **THEN** it has that alt text and loads lazily and asynchronously
 - **CHECK** `qa/arcade/machines.mjs`
 
 ### Requirement: The cabinet line

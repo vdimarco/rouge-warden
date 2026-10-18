@@ -1,7 +1,7 @@
 ## ADDED Requirements
 
 ### Requirement: The paper-cut look
-The game SHALL draw every stage as flat sheets of coloured paper stacked like a shadow box or tunnel book, using the paper colour script in the design for each stage. Each sheet SHALL be one flat colour with a fine grain that moves with its sheet, with hand-cut edges, and depth SHALL come only from soft drop shadows between sheets, with the light above and a little left in every layout. Frame sheets SHALL get darker toward the viewer, and the subject SHALL sit on the highest sheet with the deepest shadow. One marigold accent SHALL mark "you". Light SHALL rise over the run from dim violet-red sheets to deep red, rose, amber and ember, then plum toward a bright opening at birth and a warm cream room in the ending. In each stage the cue the player needs now SHALL be the brightest thing on screen.
+The game SHALL draw every stage as flat sheets of coloured paper stacked like a shadow box or tunnel book, using the paper colour script in the design for each stage. Each sheet SHALL be one flat colour with a fine grain that moves with its sheet, with hand-cut edges that stay put from frame to frame. Depth SHALL come only from soft drop shadows between sheets, with the light above and a little left in every layout.
 
 #### Scenario: A paper cell
 - **GIVEN** `?seed=1&freeze=1&stage=3` at 390 × 844
@@ -13,6 +13,9 @@ The game SHALL draw every stage as flat sheets of coloured paper stacked like a 
 - **WHEN** a course edge is cut from two overlapping windows, and a list of tails or splats is drawn in another order
 - **THEN** the cut offsets are the same where the windows overlap, and every outline is the same, because no cut depends on an index or on the window's start
 - **CHECK** `qa/first-breath/paper.test.mjs`
+
+### Requirement: Depth, one accent and the rising light
+Frame sheets SHALL get darker toward the viewer, and the subject SHALL sit on the highest sheet with the deepest shadow. One marigold accent SHALL mark "you". Light SHALL rise over the run from dim violet-red sheets to deep red, rose, amber and ember, then plum toward a bright opening at birth and a warm cream room in the ending. In each stage the cue the player needs now SHALL be the brightest thing on screen.
 
 #### Scenario: No black stage
 - **WHEN** each stage is frozen at 390 × 844, 844 × 390 and 1440 × 900
@@ -55,7 +58,16 @@ The low tier SHALL draw the same sheets as the full tier with no grain, one flat
 - **CHECK** `qa/first-breath/smoke.e2e.mjs`
 
 ### Requirement: Smooth frames
-The frame cost SHALL be the JavaScript time of one frame, from the start of its fixed steps to the end of its draw calls. Under `?probe=1` each frame SHALL end with a 1 px `getImageData` of the canvas, so the cost includes the raster. The checks SHALL run in headless Chromium with `--disable-gpu` and no SwiftShader flags. No canvas SHALL use `willReadFrequently`. Under `?probe=1`, with the scale step pinned (`?res=0.5` on the two phone sizes, `?res=0.35` on desktop, whose base is capped at 0.6 MP), the 95th percentile over 120 frames after 3 s SHALL be 16 ms or less in the full tier and 10 ms or less in the low tier, in every stage.
+The frame cost SHALL be the JavaScript time of one frame, from the start of its fixed steps to the end of its draw calls. Under `?probe=1` each frame SHALL end with a 1 px `getImageData` of the canvas, so the cost includes the raster. The checks SHALL run in headless Chromium with `--disable-gpu` and no SwiftShader flags. No canvas SHALL use `willReadFrequently`.
+
+#### Scenario: The probe counts the raster
+- **GIVEN** `?probe=1` in headless Chromium with `--disable-gpu`
+- **WHEN** a stage runs
+- **THEN** each frame ends with a 1 px readback of the canvas, and no canvas was created with `willReadFrequently`
+- **CHECK** `qa/first-breath/perf.e2e.mjs`
+
+### Requirement: Frame budgets
+Under `?probe=1`, with the scale step pinned (`?res=0.5` on the two phone sizes, `?res=0.35` on desktop, whose base is capped at 0.6 MP), the 95th percentile of the frame cost over 120 frames after 3 s SHALL be 16 ms or less in the full tier and 10 ms or less in the low tier, in every stage.
 
 #### Scenario: Pinned scale
 - **WHEN** each stage runs for 3 s and then 120 more frames at 390 × 844, 844 × 390 and 1440 × 900 with its pinned step and `?probe=1`, in the full tier and then with `?q=low`, in runs with no luminance probes
@@ -250,7 +262,15 @@ The game SHALL make one swell per heartbeat, never one each for "lub" and "dub".
 - **CHECK** `qa/first-breath/visual.e2e.mjs`
 
 ### Requirement: Colour-blind safe cues
-No goal SHALL depend on hue alone. Cues SHALL differ by shape and brightness: solid and dashed rings with a dot for the two hearts, dotted rims for gland pools, wavy rims for blood pools, chevrons for the warm lane, and words for grades. Every cue SHALL be drawn as a sticker: a 2 px ink keyline outside (its halo; cream in the ending), a cream margin when the cue is not cream, then the cue. Each cue colour SHALL have a contrast of at least 3:1 against its keyline, and each cue SHALL read against every sheet it can sit on: for a sticker, its keyline or its light layer, whichever contrasts more, at least 3:1; for a plain cue with no keyline, the cue itself at least 3:1. In stages 1 and 2 the player's sperm SHALL be at least 2.25:1 brighter than the rivals. All of this SHALL hold in normal vision and under protan, deutan and tritan simulation.
+No goal SHALL depend on hue alone. Cues SHALL differ by shape and brightness: solid and dashed rings with a dot for the two hearts, dotted rims for gland pools, wavy rims for blood pools, chevrons for the warm lane, and words for grades. Every cue SHALL be drawn as a sticker: a 2 px ink keyline outside (its halo; cream in the ending), a cream margin when the cue is not cream, then the cue.
+
+#### Scenario: Shapes, not hue
+- **WHEN** each stage is frozen and shown in greyscale
+- **THEN** each cue is still told apart by its ring, dash, dot, rim, chevron or word, and each has its keyline
+- **CHECK** `qa/first-breath/visual.e2e.mjs`, `qa/first-breath/shots.mjs`
+
+### Requirement: Cue contrast
+Each cue colour SHALL have a contrast of at least 3:1 against its keyline. Each cue SHALL read against every sheet it can sit on: for a sticker, its keyline or its light layer, whichever contrasts more, at least 3:1; for a plain cue with no keyline, the cue itself at least 3:1. In stages 1 and 2 the player's sperm SHALL be at least 2.25:1 brighter than the rivals. All of this SHALL hold in normal vision and under protan, deutan and tritan simulation.
 
 #### Scenario: Palette test
 - **WHEN** every cue token in `render/palette.js` is checked against its keyline and its `under` tokens with the Machado 2009 matrices
@@ -277,7 +297,7 @@ Between stages the game SHALL crossfade for 0.8 s. A scale bar SHALL show a roun
 - **CHECK** `qa/first-breath/layout.e2e.mjs`
 
 ### Requirement: An abstract, warm baby
-The embryo, fetus and newborn SHALL be a few rounded paper pieces on a 2D skeleton with no face and no expression. The newborn SHALL never be drawn blue, grey, dusky or limp, and SHALL show no lungs or other anatomy. Its warmth SHALL rise only as a warm paper glow. The skin-to-skin image SHALL be two plain paper ovals, a big warm one and a small one, in a circle of cream light, with no face, no limbs and no head-and-shoulders outline. The ending's room SHALL be large cream and peach sheets fading in from white, with no blur.
+The embryo, fetus and newborn SHALL be a few rounded paper pieces on a 2D skeleton with no face and no expression. The newborn SHALL never be drawn blue, grey, dusky or limp, and SHALL show no lungs or other anatomy. Its warmth SHALL rise only as a warm paper glow. The skin-to-skin image SHALL be two plain paper ovals, a big warm one and a small one, in a circle of cream light, with no face, no limbs and no head-and-shoulders outline.
 
 #### Scenario: Ending colours
 - **WHEN** a frozen frame of skin-to-skin is read

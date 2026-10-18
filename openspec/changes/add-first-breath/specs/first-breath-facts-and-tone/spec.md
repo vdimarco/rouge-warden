@@ -111,7 +111,7 @@ The game SHALL start inside the body with cells and SHALL NOT show or suggest in
 - **CHECK** the pull request description
 
 ### Requirement: The body and the birth are shown gently
-The mother's body SHALL never be an obstacle, and no hazard SHALL be tied to the mother. The birth opening SHALL be drawn only as light, with no blood, no people until the ending and no sign of pain. The game SHALL give no medical advice and no viability or prematurity facts.
+The mother's body SHALL never be an obstacle, and no hazard SHALL be tied to the mother. The birth opening SHALL be drawn only as light, with no blood, no people until the ending and no sign of pain. In stage 8 the renderer's own frames SHALL be straight side flats with no closed aperture, so no ring of paper edges frames the light. No drop or drip shapes SHALL be drawn, and the stage 5 pools SHALL be rose, not crimson. The game SHALL give no medical advice and no viability or prematurity facts.
 
 #### Scenario: No hazards from the mother
 - **WHEN** stage 1 runs with any seed
@@ -121,6 +121,11 @@ The mother's body SHALL never be an obstacle, and no hazard SHALL be tied to the
 #### Scenario: The birth frame
 - **WHEN** a frozen frame of the last birth wave is read
 - **THEN** the opening is a full-width band of light at the bottom, and no splat or mark of an anatomy kind is in the draw list
+- **CHECK** `qa/first-breath/visual.e2e.mjs`
+
+#### Scenario: The light is not framed
+- **WHEN** the first frame of the birth light and a frame 1 s into it are read, in both tiers
+- **THEN** the brightest region touches the bottom edge across at least 90% of the width, a flood fill over the brightest 10% of pixels from the brightest pixel reaches the bottom row, and the stage 8 frames touch only the left or the right edge of the screen
 - **CHECK** `qa/first-breath/visual.e2e.mjs`
 
 ### Requirement: A content note on the title
