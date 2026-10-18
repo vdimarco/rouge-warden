@@ -1205,9 +1205,9 @@ void AQuebecCar::SimulateDrive(float Step, bool bFailsafe)
         if (!bTraffic)
         {
             const float Lock = FMath::Lerp(30.f,4.2f,FMath::SmoothStep(0.f,2400.f,FMath::Abs(Speed)));
-            float YawRate = FMath::RadiansToDegrees(Speed/310.f*FMath::Tan(FMath::DegreesToRadians(SteeringState*Lock)));
-            if (bHandbrake && FMath::Abs(Speed)>450.f) YawRate *= 1.4f;
-            Turn = FMath::Clamp(YawRate,-110.f,110.f)*Step;
+            float SteeringYawRate = FMath::RadiansToDegrees(Speed/310.f*FMath::Tan(FMath::DegreesToRadians(SteeringState*Lock)));
+            if (bHandbrake && FMath::Abs(Speed)>450.f) SteeringYawRate *= 1.4f;
+            Turn = FMath::Clamp(SteeringYawRate,-110.f,110.f)*Step;
         }
         const FQuat Rotation = (GetActorRotation()+FRotator(0.,Turn,0.)).Quaternion();
         if (CanFitAt(GetActorLocation(),Rotation)) SetActorRotation(Rotation);
