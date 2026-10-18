@@ -20,3 +20,6 @@ This is the standard rigid-body impulse for two bodies with a restitution coeffi
 ## Check
 - `Quebec.Driving.CarImpactMomentum`: head-on (37.5% / 62.5% split, momentum conserved, no spin), corner hit (opposite spins), glancing scrape (slows, never reverses), and no exchange when separating or at walking pace.
 - `Quebec.Driving.FittedHullCurbsAndWalls`: the parked-car block now expects the parked car to be shoved forward, no overlap, both cars upright, and the struck car stopped after the driver brakes.
+
+## Host verification — 18 October 2026
+The Linux compiler rejects a steering-local `YawRate` that shadows the new impact field. Rename only that local and its two uses to `SteeringYawRate`; the steering calculation and impact state remain separate. Editor/game builds, five native driving tests, the saved-map regression and fresh package all pass. See `games/nord-unreal/Verification/CarImpacts-20261018.md` for live impact evidence and limits.
