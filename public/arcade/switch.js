@@ -318,7 +318,7 @@
     }
     const st = document.createElement("style");
     st.textContent = css;
-    st.textContent += `.gsw .arcade-vote{display:flex;align-items:center;justify-content:center;min-height:44px;margin:4px;padding:10px 8px;border:1px solid #ffcf4a88;border-radius:6px;background:#201a10;color:#ffcf4a;font:12px/1.5 system-ui,sans-serif;text-align:center;text-decoration:none;overflow-wrap:anywhere;}.gsw .arcade-vote:hover{background:#3b2b10;}.gsw .arcade-vote:focus-visible{outline:3px solid #3ff0ff;outline-offset:2px;}`;
+    st.textContent += `.scoreboard .gsw-card{min-width:0;}@media(max-width:360px){.scoreboard .board-head{grid-template-columns:minmax(0,1fr) auto;}.scoreboard .board-head h2{white-space:normal;font-size:12px;}}.gsw .arcade-vote{display:flex;align-items:center;justify-content:center;min-height:44px;margin:4px;padding:10px 8px;border:1px solid #ffcf4a88;border-radius:6px;background:#201a10;color:#ffcf4a;font:12px/1.5 system-ui,sans-serif;text-align:center;text-decoration:none;overflow-wrap:anywhere;}.gsw .arcade-vote:hover{background:#3b2b10;}.gsw .arcade-vote:focus-visible{outline:3px solid #3ff0ff;outline-offset:2px;}`;
     document.head.appendChild(st);
     box = document.createElement("div");
     box.className = "gsw" + (home ? " scoreboard" : "");
