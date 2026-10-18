@@ -230,7 +230,8 @@ export function createInput(el, { coreTime = (ms) => ms / 1000, camera = null, s
 
   // One step's intents: every queued event with t < tStepEnd, and the held state now.
   function intents(tStepEnd) {
-    const dt = lastEnd === null || !fin(tStepEnd) ? 1 / 60 : clamp(tStepEnd - lastEnd, 0, 0.1);
+    // the key stick eases over the step just run (at most two steps' worth, so a gap never jumps it)
+    const dt = lastEnd === null || !fin(tStepEnd) ? 1 / 60 : clamp(tStepEnd - lastEnd, 0, 2 / 60);
     if (fin(tStepEnd)) lastEnd = tStepEnd;
     smoothKeys(dt);
     if (ptr && ptr.state === "pressed" && fin(tStepEnd) && tStepEnd + offS() - ptr.t0 >= PTR.tapS) ptr.state = "holding";

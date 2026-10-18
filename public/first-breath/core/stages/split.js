@@ -18,7 +18,8 @@
 //   outro) never counts as a hold; a hold pressed in bloom may carry on into hatch (the gesture stays `hold`).
 // - Caption facts go out as `fact { id, where: "caption" }` only (one event per shown line); sounds go out as `sfx`
 //   with ids pling, sparkle, tone, toneEnd and slip (strings `split.sfx.<id>` for their captions).
-// - jump(state, moment) starts that moment now on her next beat grid; open targets of earlier moments close as
+// - jump(state, moment) starts that moment now, its start beat her last beat at or before now (for `split`, beat 1 a
+//   fresh lead-in after now); open targets of earlier moments close as
 //   misses (silently), and the targets of that moment and those after are laid again.
 import { DT, gaAt, mmPerShortAxis } from "../clock.js";
 import { makeBeats } from "../beat.js";
@@ -88,7 +89,12 @@ function firstAtOrAfter(M, t) {
 function plan(st, from, t) {
   const M = st.beats.mother;
   if (from === 0) st.i1 = firstAtOrAfter(M, t + TUNE.leadS);
-  else st.i1 = firstAtOrAfter(M, t - HALF) - START_BEAT[from] + 1;
+  else {
+    // the moment's start beat is her last beat at or before now, so what came before it (the splits) is done
+    let j = firstAtOrAfter(M, t);
+    if (j >= M.length || M[j] > t + EPS) j -= 1;
+    st.i1 = j - START_BEAT[from] + 1;
+  }
   st.starts[from] = t;
   for (let j = from + 1; j < IDS.length; j++) st.starts[j] = B(st, START_BEAT[j]) + HALF;
   st.endT = st.starts[3] + TUNE.outroS;
@@ -225,6 +231,7 @@ export function create(seed, carryIn, opts = {}) {
     down: null,                 // the press now held: { t, mi, stale }
     fill: 0, push: 0,           // the hollow (bloom) and the press on the shell (hatch), 0..1
     splits: 0,                  // splits played so far
+    slipped: false,             // you slipped out of the shell (hatch beat 6)
     said: {},                   // caption facts already shown
     fx: [], fxN: 0,             // short-lived sparkles and grade rings
     shown: { skill: 0, flourish: 0 },
@@ -305,7 +312,7 @@ function judged(st, r, ring) {
   const x = r.target;
   const at = Number.isFinite(r.errMs) ? x.t + r.errMs / 1000 : st.t;
   emit(st, "judge", { target: x.id, grade: r.grade, errMs: r.errMs, rawMs: r.rawMs, heart: x.heart, t: at });
-  fx(st, "grade", { grade: r.grade, ring, t: at });
+  if (r.grade !== "miss") fx(st, "grade", { grade: r.grade, ring, t: at });   // a miss shows nothing
   if (r.grade === "in" || r.grade === "close") {
     if (x.kind === "tap") {
       fx(st, "hit", { grade: r.grade, day: x.day, t: at });
@@ -329,7 +336,6 @@ function enter(st, mi) {
   } else if (mi === 3) {
     st.gaDay = meta.moments[3].ga[0];
     st.fill = 1;
-    st.push = Math.max(st.push, 0);
   }
 }
 
@@ -386,16 +392,18 @@ function captions(st) {
 }
 
 // Presses and releases in time order: the holds of bloom and hatch.
+const list = (v) => (Array.isArray(v) ? v : []);
+
 function holds(st, it) {
   const evs = [];
-  for (const p of (it && it.presses) || []) if (p && Number.isFinite(p.t)) evs.push({ t: p.t, raw: Number.isFinite(p.raw) ? p.raw : p.t, up: false });
-  for (const p of (it && it.releases) || []) if (p && Number.isFinite(p.t)) evs.push({ t: p.t, raw: Number.isFinite(p.raw) ? p.raw : p.t, up: true });
+  for (const p of list(it.presses)) if (p && Number.isFinite(p.t)) evs.push({ t: p.t, raw: Number.isFinite(p.raw) ? p.raw : p.t, up: false });
+  for (const p of list(it.releases)) if (p && Number.isFinite(p.t)) evs.push({ t: p.t, raw: Number.isFinite(p.raw) ? p.raw : p.t, up: true });
   evs.sort((a, b) => a.t - b.t || (a.up ? 1 : 0) - (b.up ? 1 : 0));
   const valid = [];
   for (const e of evs) {
     const mi = momentAt(st, e.t);
     if (!e.up) {
-      if (st.down) continue;                                   // only the first pointer counts
+      // a new press replaces the one held (one pointer: input.js may drop a stale press's release, 5.3)
       const hold = GESTURE[mi] === "hold";
       st.down = { t: e.t, mi, stale: !hold };                   // a hold needs a fresh press in a hold moment
       if (hold) emit(st, "sfx", { id: "tone", at: e.t, pitch: mi, gain: 0.4 });
@@ -415,7 +423,7 @@ function holds(st, it) {
 export function step(st, intents) {
   if (!st || typeof st !== "object") return;
   try {
-    stepInner(st, intents || EMPTY_INTENTS);
+    stepInner(st, intents && typeof intents === "object" ? intents : EMPTY_INTENTS);
   } catch (e) {
     // a stage step never throws; end gently if something went wrong
     if (!st.done) { st.done = true; st.how = "error"; }
@@ -427,7 +435,7 @@ function stepInner(st, it) {
   const t1 = st.t + DT;
 
   // taps: every press is judged at touch-down against the open tap targets
-  for (const r of feed(st.track, { presses: it.presses || [], releases: [] }, t1)) judged(st, r, "approach");
+  for (const r of feed(st.track, { presses: list(it.presses), releases: [] }, t1)) judged(st, r, "approach");
 
   // holds: fresh presses in bloom and hatch; a release after a hold of a beat or more is judged
   const valid = holds(st, it);
@@ -513,8 +521,12 @@ function cellSplats(st, bx, by) {
   const cell = (x, y, r) => out.push({ k: "c", x: bx + x * scale, y: by + y * scale, r: Math.max(0.3, r * scale), m: 1, n: 0.35, v: 0, hue: 0.02 });
   if (k < TUNE.days) {
     const d = k + 1, ts = splitT(st, d), t0 = ts - TUNE.pinchBeats * PB;
-    const hits = dayStats(st)[k].hit;
-    const q0 = Math.min(0.3, TUNE.furrowPerHit * (t < t0 ? hits : Math.min(hits, 2)));
+    let hits = 0;                                   // taps landed before the pinch deepen the furrow
+    st.track.targets.forEach((x, i) => {
+      const r = st.track.results[i];
+      if (x.day === d && x.t < t0 && r && (r.grade === "in" || r.grade === "close")) hits++;
+    });
+    const q0 = Math.min(0.3, TUNE.furrowPerHit * hits);
     const q = t < t0 ? q0 : q0 + (1 - q0) * ease((t - t0) / (ts - t0));
     if (q <= 0) { for (const c of L[k]) cell(c.x, c.y, c.r); return out; }
     const kids = L[k + 1];

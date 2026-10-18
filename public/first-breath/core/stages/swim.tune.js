@@ -54,8 +54,8 @@ export const TUNE = Object.freeze({
   LOOP_R: 30, LOOP_BACK_X: 17,
   // the meeting place band and your glide to the wall in `meet`
   MEET_W: 12, MEET_GLIDE: 20, MEET_READY_S: 1.2,
-  // captions: at least this long between two, so each 2.5 s line clears first; facts at their moments
-  SAY_GAP_S: 2.8, HALF_S: 3.0, WAVES_LATE_S: 9, FLOW_AFTER_S: 4, REST_SHOW: 80, HYPER_AFTER_S: 3,
+  // captions: at least this long between two, so each 2.5 s portrait line clears first; facts at their moments
+  SAY_GAP_S: 2.6, WAVES_LATE_S: 9, FLOW_AFTER_S: 4, REST_SHOW: 80, HYPER_AFTER_S: 3,
   // the view: what the stage sends of the course around the camera, and its sample step
   VIEW_BACK: 220, VIEW_AHEAD: 380, VIEW_STEP: 25, DRAW_RANGE: 320,
   // a sperm is drawn 22 u long; the tail beats faster with its speed

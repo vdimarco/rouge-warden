@@ -13,7 +13,7 @@ export const TEXT = Object.freeze({
   "root.goalSpot": "Find a soft spot to settle in.",
   "root.nestled": "You bury yourself in the lining.",
   "root.nestledAuto": "A soft spot draws you in. You bury yourself in the lining.",
-  "root.goalPools": "Reach the pools. Arrive as they swell.",
+  "root.goalPools": "Reach the pools. Arrive as each one swells.",
   "root.poolsDone": "Every pool is linked.",
   "root.poolsAuto": "The roots reach the rest anyway.",
   "root.yours": "This beat is yours. Tap with it.",

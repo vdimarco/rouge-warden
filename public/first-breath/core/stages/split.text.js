@@ -9,11 +9,11 @@ export const TEXT = Object.freeze({
   // sub-goals: shown, then done by you or by itself (5.4)
   "split.goal.split": "Help your cell split.",
   "split.done.split": "Now you are 16 cells.",
-  "split.auto.split": "Your cells split by themselves. Now you are 16 cells.",
+  "split.auto.split": "Your cells split anyway. Now you are 16 cells.",
   "split.goal.bloom": "Fill your hollow.",
   "split.done.bloom": "Your hollow is full.",
   "split.auto.bloom": "Your hollow fills by itself.",
-  "split.goal.hatch": "Press out of your shell.",
+  "split.goal.hatch": "Push gently against your shell.",
   "split.done.hatch": "You hatch.",
   "split.auto.hatch": "You slip out by yourself.",
 

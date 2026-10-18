@@ -30,7 +30,7 @@
 import { DT, gaAt, mmPerShortAxis } from "../clock.js";
 import { makeBeats } from "../beat.js";
 import { emit } from "../events.js";
-import { EMPTY_INTENTS } from "../intent.js";
+import { EMPTY_INTENTS, makeIntents } from "../intent.js";
 import { CREDIT } from "../judge.js";
 import { clampScore, PARTS } from "../score.js";
 import { mergeCarry } from "../carry.js";
@@ -408,8 +408,9 @@ function turnStep(st, it, t0) {
 export function step(st, intents) {
   if (!st || typeof st !== "object") return;
   if (st.done) { st.t += DT; return; }
-  const it = intents && typeof intents === "object" ? intents : EMPTY_INTENTS;
   const t0 = fin(st.t) ? st.t : 0, t1 = t0 + DT;
+  // a clean copy: finite times, lists that are lists, |steer| ≤ 1 (the shared judge trusts its input)
+  const it = intents && typeof intents === "object" ? makeIntents(intents) : EMPTY_INTENTS;
   try {
     switch (st.moment) {
       case "breathe":
@@ -567,7 +568,8 @@ export function view(st) {
   }
 
   // rings (DOM): her beat, your heart, then the breath ring and the next target, or the rest ring
-  d.rings.push({ id: "mother", kind: "mother", x: 0, y: 0, r: 12, progress: clamp01(st.beats.phase("mother", t)) });
+  // her ring rounds you, just inside the breath ring (it stays off your body); yours sits on your heart
+  d.rings.push({ id: "mother", kind: "mother", x: 0, y: 0, r: TUNE.ring.r0 - 6, progress: clamp01(st.beats.phase("mother", t)) });
   d.rings.push({ id: "you", kind: "you", x: heart.x, y: heart.y, r: 5 * (1 + 0.25 * warm), progress: clamp01(st.beats.phase("you", t)), dashed: true });
   if (st.moment === "breathe") {
     const rr = ringR(bp.p);

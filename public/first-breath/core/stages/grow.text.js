@@ -24,9 +24,6 @@ export const TEXT = Object.freeze({
   "grow.sub.done13": "Your thumb finds your mouth.",
   "grow.sub.auto": "Your body makes the move by itself.",
 
-  // captions for the picture (the facts carry their own text)
-  "grow.cap.pools": "The pools by your roots turn red.",
-
   // the run result's parts
   "grow.part.heart": "Taps with your heart",
   "grow.part.moves": "Moves you made",

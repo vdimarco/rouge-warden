@@ -67,7 +67,8 @@ export const TUNE = Object.freeze({
     hushS: 1.5,          // (6.4) 1.5 s hush
     hushDb: -8,          // (6.4) her heart −8 dB in the hush
     hushLight: 0.9,      // (6.4) light −10%
-    leadBeats: 3,        // your heart beats 3 times alone before the first target (its preview, 5.2)
+    yoursS: 3.5,         // "This beat is yours. Tap with it." once your heart has beaten by itself for 2 s
+    leadBeats: 6,        // the first target is your 7th beat, 1.27 s after that line (its preview, 5.2)
     targets: 8,          // (6.4) 8 targets on your beats (P = 0.545 s)
     tailS: 1.5,          // then both hearts play together
     heartCapS: 0.3,      // root.heart shows this long into the hush
