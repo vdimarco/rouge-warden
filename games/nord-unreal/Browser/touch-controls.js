@@ -126,10 +126,15 @@ export function setupTouchControls({ root, surface, stream }) {
   function move(pointer, event) {
     if (Math.hypot(event.clientX - pointer.startX, event.clientY - pointer.startY) > 12) pointer.tapMoved = true;
     if (pointer.stick === 'steer') {
+      // The wheel is a stick: left and right steer, up accelerates, down brakes and then reverses.
       const bounds = pointer.target.getBoundingClientRect();
-      const x = Math.max(-1, Math.min(1, (event.clientX - bounds.left - bounds.width / 2) / (bounds.width / 2)));
-      pointer.keys = x < -.18 ? [65] : x > .18 ? [68] : [];
+      const centerX = pointer.originX ?? bounds.left + bounds.width / 2;
+      const centerY = pointer.originY ?? bounds.top + bounds.height / 2;
+      const x = Math.max(-1, Math.min(1, (event.clientX - centerX) / (bounds.width / 2)));
+      const y = Math.max(-1, Math.min(1, (event.clientY - centerY) / (bounds.height / 2)));
+      pointer.keys = [x < -.18 && 65, x > .18 && 68, y < -.28 && 87, y > .28 && 83].filter(Boolean);
       pointer.target.style.setProperty('--steer-angle', `${x * 60}deg`);
+      pointer.target.style.setProperty('--steer-y', `${Math.round(y * 12)}px`);
       syncKeys();
     } else if (pointer.stick === 'move') {
       const bounds = pointer.target.getBoundingClientRect();
@@ -167,7 +172,11 @@ export function setupTouchControls({ root, surface, stream }) {
       } else lastTap = undefined;
     }
     updatePressed(pointer.target);
-    if (pointer.stick === 'steer') pointer.target.style.setProperty('--steer-angle', '0deg');
+    if (pointer.stick === 'steer') {
+      pointer.target.style.setProperty('--steer-angle', '0deg');
+      pointer.target.style.setProperty('--steer-y', '0px');
+      delete pointer.target.dataset.floating;
+    }
     if (pointer.stick === 'move') {
       sprintLatched = false;
       pointer.target.style.setProperty('--stick-x', '0px');
@@ -240,10 +249,10 @@ export function setupTouchControls({ root, surface, stream }) {
     if (target === surface && (event.pointerType !== 'touch'
       || event.target.closest('button, select, a, input, textarea, #menu, #intro, #overlay, #crew-picker, #install-nudge'))) return;
     if (driving && [65, 68].includes(Number(target.dataset.key))) target = root.querySelector('.touch-steering');
-    // On foot the first finger on the game moves from wherever it lands; a second finger looks.
-    const moveStick = root.querySelector('[data-stick="move"]');
-    const floating = target === surface && !driving && ![...pointers.values()].some(pointer => pointer.stick === 'move');
-    if (floating) target = moveStick;
+    // The first finger on the game moves (on foot) or drives (in a car) from wherever it lands; a second finger looks.
+    const floatStick = driving ? 'steer' : 'move';
+    const floating = target === surface && ![...pointers.values()].some(pointer => pointer.stick === floatStick);
+    if (floating) target = driving ? root.querySelector('.touch-steering') : root.querySelector('[data-stick="move"]');
     const stick = target === surface ? 'look' : target.dataset.stick;
     if (stick && [...pointers.values()].some(pointer => pointer.stick === stick)) return;
     const key = Number(target.dataset.key);

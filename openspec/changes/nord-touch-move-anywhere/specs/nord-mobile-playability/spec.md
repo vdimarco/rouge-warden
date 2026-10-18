@@ -16,4 +16,4 @@ On foot, the first finger that lands on the game image SHALL place the move stic
 
 #### Scenario: In a car
 - **WHEN** the player is driving
-- **THEN** no move stick appears, the wheel steers, and one finger dragging on the game image turns the camera
+- **THEN** no move stick appears; the first finger on the game image brings the wheel instead, and a second finger turns the camera

@@ -490,8 +490,8 @@ test('Sprint taps tolerate finger jitter but a look drag returning to its start 
   f.setEnabled(true); f.setDriving(true);
   f.pointer('pointerdown', f.ui.gas, 2);
   f.pointer('pointerdown', f.ui.steering, 1, 10, 50);
-  f.pointer('pointermove', f.ui.steering, 1, 50, 0);
-  f.pointer('pointermove', f.ui.steering, 1, 90, 100);
+  f.pointer('pointermove', f.ui.steering, 1, 50, 50);
+  f.pointer('pointermove', f.ui.steering, 1, 90, 50);
   assert.deepEqual(f.messages, [['KeyDown', 87, 0], ['KeyDown', 65, 0], ['KeyUp', 65], ['KeyDown', 68, 0]]);
   f.pointer('pointercancel', f.ui.steering);
   assert.deepEqual(f.messages.at(-1), ['KeyUp', 68]);
@@ -537,12 +537,35 @@ test('double-tapping anywhere on the game latches sprint for the second hold', (
   assert.ok(f.messages.some(m => m[0] === 'KeyUp' && m[1] === 16));
 });
 
-test('in a car one finger on the game still looks and never places a move stick', () => {
+test('the wheel is a stick: up accelerates, down brakes then reverses, diagonals steer at the same time', () => {
+  const f = fixture(); f.setEnabled(true); f.setDriving(true);
+  f.pointer('pointerdown', f.ui.steering, 1, 50, 50);
+  assert.deepEqual(f.messages, [], 'the center is neutral');
+  f.pointer('pointermove', f.ui.steering, 1, 50, 10);
+  assert.deepEqual(f.messages, [['KeyDown', 87, 0]], 'up accelerates');
+  assert.equal(f.ui.steering.styles.get('--steer-y'), '-10px');
+  f.pointer('pointermove', f.ui.steering, 1, 10, 10);
+  assert.deepEqual(f.messages.at(-1), ['KeyDown', 65, 0], 'up-left accelerates and steers left');
+  f.pointer('pointermove', f.ui.steering, 1, 50, 90);
+  assert.deepEqual(f.messages.slice(-3), [['KeyUp', 65], ['KeyUp', 87], ['KeyDown', 83, 0]], 'down brakes, then the game reverses');
+  f.pointer('pointerup', f.ui.steering, 1, 50, 90);
+  assert.deepEqual(f.messages.at(-1), ['KeyUp', 83]);
+  assert.equal(f.ui.steering.styles.get('--steer-y'), '0px');
+});
+
+test('in a car the first finger anywhere drives from where it lands and a second finger looks', () => {
   const f = fixture(); f.setEnabled(true); f.setDriving(true);
   f.pointer('pointerdown', f.surface, 1, 300, 400);
-  f.pointer('pointermove', f.surface, 1, 310, 400);
+  assert.equal(f.ui.steering.dataset.floating, 'true');
   assert.equal(f.ui.move.dataset.floating, undefined);
-  assert.deepEqual(f.deltas, [[10, 0]]);
-  assert.ok(!f.messages.some(m => m[0] === 'KeyDown'));
+  assert.equal(f.ui.steering.styles.get('--float-x'), '300px');
+  f.pointer('pointermove', f.surface, 1, 260, 350);
+  assert.deepEqual(f.messages, [['KeyDown', 65, 0], ['KeyDown', 87, 0]], 'up-left from the landing point accelerates and steers left');
+  f.pointer('pointerdown', f.surface, 2, 600, 200);
+  f.pointer('pointermove', f.surface, 2, 610, 200);
+  assert.deepEqual(f.deltas, [[10, 0]], 'the second finger turns the camera');
+  f.pointer('pointerup', f.surface, 1, 260, 350);
+  assert.deepEqual(f.messages.slice(-2), [['KeyUp', 65], ['KeyUp', 87]]);
+  assert.equal(f.ui.steering.dataset.floating, undefined);
   f.releaseAll();
 });

@@ -13,7 +13,11 @@ for (const [width,height] of [[320,568],[390,844],[844,390],[1280,720]]) {
  await page.evaluate(`(() => {` + code + `;window.sent=[]; window.controls=setupTouchControls({root:document.querySelector('#touch-controls'),surface:document.querySelector('#frame'),stream:{toStreamerHandlers:new Map(['KeyDown','KeyUp'].map(n=>[n,v=>sent.push([n,...v])]))}});controls.setEnabled(true);controls.setDriving(true);document.body.classList.add('touch-input');document.body.dataset.state='playing';document.querySelector('#overlay').hidden=true;})()`);
  await page.addScriptTag({content: '(() => {' + await readFile('menu.js', 'utf8') + '})()'});
  const menuBox = await page.locator('#touch-menu').boundingBox();
- assert.equal(menuBox.x, 16); assert.equal(menuBox.y, 12);
+ const useBox = await page.locator('#touch-use').boundingBox();
+ const jumpBox = await page.locator('#touch-brake').boundingBox();
+ // Menu fills the bottom-right corner of the action group: beside Use, under Jump.
+ assert.equal(menuBox.y, useBox.y); assert.ok(menuBox.x > useBox.x); assert.equal(menuBox.x, jumpBox.x);
+ assert.ok(Math.abs(width - 16 - (menuBox.x + menuBox.width)) <= 1 && Math.abs(height - 16 - (menuBox.y + menuBox.height)) <= 1, `${width}px: Menu sits in the bottom-right corner`);
  await page.locator('#touch-menu').click();
  assert.equal(await page.locator('#menu').isVisible(), true);
  await page.keyboard.press('Escape');

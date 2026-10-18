@@ -4,5 +4,7 @@
 - [x] Update help text in `index.html`, `player.js` and the gyro status.
 - [x] Unit tests: `npm test` (64 pass), including three new touch tests.
 - [x] Browser: `browser.test.mjs` and `steering-layout.test.mjs` pass; Chromium touch emulation shows the stick under the touch and W sent on an upward drag.
-- [ ] Play on a real phone with the host online (not possible from this container).
+- [x] Follow-up: move Menu into the bottom-right action group; make the wheel a stick (up gas, down brake/reverse); drive from anywhere in a car.
+- [x] Follow-up tests: `npm test` (65 pass), `steering-layout.test.mjs` and `browser.test.mjs` pass; car-mode touch emulation checked.
+- [ ] Play on a real phone with the host online, walking and driving (not possible from this container).
 - [ ] Archive the change after the phone check.

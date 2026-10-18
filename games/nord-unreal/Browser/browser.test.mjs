@@ -454,7 +454,7 @@ try {
       radius: parseFloat(getComputedStyle(button).borderTopLeftRadius), icon: button.querySelector('svg')?.getBoundingClientRect().height,
       border: parseFloat(getComputedStyle(button).borderTopWidth), background: getComputedStyle(button).backgroundColor };
   }));
-  assert.equal(buttons.length, 3);
+  assert.equal(buttons.length, 4, 'Sprint, Jump, Use and Menu');
   assert.equal(new Set(buttons.map(button => button.top)).size, 2, 'two rows');
   assert.equal(new Set(buttons.map(button => button.left)).size, 2, 'two columns');
   for (const button of buttons) {
@@ -464,6 +464,7 @@ try {
   }
   assert.ok(buttons[0].left > 390 * .45 && Math.abs(buttons[1].right - (390 - 16)) <= 1, 'bottom-right grid');
   assert.ok(buttons[1].left - buttons[0].right >= 12 && buttons[2].top - buttons[0].top - buttons[0].height >= 12, '12 px thumb clearance');
+  assert.ok(buttons[3].top === buttons[2].top && Math.abs(buttons[3].right - (390 - 16)) <= 1, 'Menu fills the bottom-right corner');
   assert.equal(await phonePage.locator('[data-stick="look"]').count(), 0, 'image drag replaces the look pad');
   for (const [width, height] of [[390, 844], [844, 390]]) {
     await phonePage.setViewportSize({ width, height });
