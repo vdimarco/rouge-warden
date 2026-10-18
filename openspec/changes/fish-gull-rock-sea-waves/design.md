@@ -32,3 +32,16 @@ Slopes add to the existing normal gradient `g`, so the reflection, the sun glitt
 ## Tuning (after renders)
 
 The first render had foam over about 16% of the sea, in big flat patches that hid the aim dots. Final values: 1.8% of the tile breaks at once, foam fades at 0.8/s, and the bigger copy adds faint foam only (35%). Painted foam is cut at a brush-noise threshold into small dabs. The aim dots, rings and wakes draw after the foam and stay clear.
+
+## Every place (after the user saw Gull Rock)
+
+The user asked for the waves at every place. All places share the one bake. Each place's look has `waves: { amp, foam, scale }`:
+
+| Place | amp | foam | scale | Tile | Loop |
+|---|---|---|---|---|---|
+| Gull Rock | 1 | 1 | 1 | 32 m | 8 s |
+| Loon Lake | 0.5 | 0.3 | 0.5625 | 18 m | 6 s |
+| Stump Bay | 0.4 | 0.2 | 0.5625 | 18 m | 6 s |
+| Cedar River | 0.45 | 0.35 | 0.5625 | 18 m | 6 s |
+
+`scale` shortens the waves (shorter fetch on a lake) and their period by its square root, as deep-water dispersion does (ω² = gk). 0.5625 gives a 6 s loop, so the game clock's 3600 s wrap still holds whole loops (the second copy: 9 s). On the river the tile is sampled at `p - flow · t`, so the waves and their foam drift with the current. The wave texture stays on the GPU between places (one 1 MB texture); the travel loop shows a steady texture count.

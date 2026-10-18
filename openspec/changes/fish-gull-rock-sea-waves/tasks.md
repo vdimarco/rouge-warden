@@ -8,4 +8,5 @@
 - [x] Render Gull Rock before and after (`WORLD_PLACES=sea node qa/fish/world.render.mjs`) and tune the foam; run the full render for every place (106 shots, OK; draw calls and triangles unchanged).
 - [x] Loon Lake and Cedar River cast shots match the base build, apart from the random sun sparkle that also differs between two runs of one build.
 - [x] Motion: frame-to-frame change is steady over 24 frames (no pulse at the baked-frame steps); aim dots, rings and wakes stay above the foam.
+- [x] Every place: per-place `waves` (amp, foam, scale) in `world-look.js`; river waves drift with the current; full render of every place (106 shots, OK, steady texture count).
 - [ ] Phone check on a real device (feel of the motion, worker start in the iOS and Android apps).

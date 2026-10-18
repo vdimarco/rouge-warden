@@ -44,7 +44,7 @@ import { PLACES } from "./js/places.js";
 const P = new URLSearchParams(location.search);
 const q = P.get("q") || "high", place = P.get("place") || "loon";
 const W = await createWorld(document.getElementById("game"), { quality: q, place: PLACES[place] });
-// Gull Rock's waves are baked in a worker: wait for them, and let them fade in (one second)
+// the wind waves are baked in a worker: wait for them, and let them fade in (one second)
 if (await W.seaReady()) for (let i = 0; i < 12; i++) W.update(0.1);
 window.W = W; window.fishMesh = fishMesh; window.PLACES = PLACES; window.PLACE = place; window.THREE = THREE;
 W.resize(innerWidth, innerHeight);

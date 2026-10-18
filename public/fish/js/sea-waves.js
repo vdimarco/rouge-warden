@@ -1,4 +1,4 @@
-// The open-sea waves at Gull Rock: a small FFT wave tile, baked once and looped, with crest foam that fades and drifts.
+// The wind waves on the water of every place: a small FFT wave tile, baked once and looped, with crest foam that fades and drifts.
 // Pure data (no three.js), so node can test it: node qa/fish/sea-waves.test.mjs
 //
 // Adapted from web-ocean by Maksymilian Dendura (MIT, https://github.com/Noniv/web-ocean, js/wgsl/sim.js): the JONSWAP
