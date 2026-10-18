@@ -90,6 +90,13 @@
 
 ## Full cast extension after merged PR385
 
+### Deployment facing correction
+
+- [x] Diagnose new Tripo3–8 facing from fresh Vulkan pixels and actual bilateral foot-to-ball vectors; keep pilot9 and production10 separate.
+- [x] Align only the six generated Tripo bodies with native forward movement; add actual evaluated world-foot direction and flag-reset regressions.
+- [ ] Repeat native animation tests, fresh both-mode/two-size visuals and continuous motion against the corrected module; preserve rejected capture attempts.
+- [ ] Rebuild and verify the corrected package, both districts, crew selection/co-op and recorded production performance; install with Saved state and rollback preserved, then verify public browser media/input/reconnect.
+
 - [x] Pin the seven current mature references, identity/outfit constraints, current neutral fallback models/locomotion and live docs/prices/balances; retain tested request preparation and separate provider ledgers. The Tripo-body plan is `Verification/TripoCast/TripoBodies/Plan.json`.
 - [x] Retain the completed comparison branch: seven Meshy bodies,56 inspected CPU views, three25-credit Tripo rerigs and bounded CPU surface/motion proofs. After the explicit body-provider reply, these are comparison evidence only; no cast/native adoption follows.
 - [x] Complete the two funded Tripo-body/rig pilots and their own surface, anatomical palm/elbow,30Hz and832 half-frame CPU pose checks. Inspect BlackCap's complete210-frame CPU sequence and Topknot's nine stills; retain the rejected forward-palm derivative and Topknot bag deformation. This closes the bounded CPU checkpoint, not final cast art/native acceptance. That pilot checkpoint left30 credits; the later funded full-cast generation is recorded below.

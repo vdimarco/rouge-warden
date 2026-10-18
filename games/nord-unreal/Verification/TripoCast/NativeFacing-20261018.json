@@ -1,0 +1,319 @@
+{
+  "passed": true,
+  "at_utc": "2026-10-18T01:47:28.154213+00:00",
+  "scope": "Read-only diagnosis from actual rejected v2 native component-bone observations; no model/clip/native mutation. The capture run is rejected independently for pilot knee gate.",
+  "report": {
+    "path": "Saved/Tests/TripoCastDeploy-20261018/capture-plan-v2/Jobs/Standard1280/PlayerQuality1280.json",
+    "sha256": "e87322635b4d533f879bdd0c1387b14bab00101865183a3e7e23afcf075e4a1a",
+    "passed": false,
+    "completed_characters": 6,
+    "active_character": 9
+  },
+  "characters": {
+    "3": {
+      "name": "GreenCap51",
+      "idle_clip_path": "/Game/ParkComic/CrewGraphicNovelTripo/Resident3/A_Idle.A_Idle",
+      "foot_to_ball_average_component_cm": [
+        0.0002400000000006841,
+        -12.796825,
+        -8.88671
+      ],
+      "normalized_horizontal_anatomical_forward": [
+        1.875465202958356e-05,
+        -0.9999999998241315
+      ],
+      "thigh_l_minus_r_component_cm": [
+        -21.32813,
+        0.0,
+        1.0000000003174137e-05
+      ],
+      "sample_camera": {
+        "position_cm": [
+          5238.54596,
+          40867.49067,
+          132.15001
+        ],
+        "rotation_degrees": [
+          -3.4050464630126953,
+          -172.59309387207034,
+          4.9784055644766625e-17
+        ],
+        "horizontal_fov_degrees": 60.0,
+        "unpaused_prepare_frames": 2
+      },
+      "proposed_native_mesh_relative_yaw_degrees": 90,
+      "forward_after_proposed_yaw": [
+        0.9999999998241315,
+        1.8754652029522328e-05
+      ],
+      "dot_actor_forward_after_proposed_yaw": 0.9999999998241315,
+      "negative_control_wrong_yaw_forward": [
+        -0.9999999998241315,
+        -1.8754652029644795e-05
+      ],
+      "negative_control_rejected": true
+    },
+    "4": {
+      "name": "Memphis33",
+      "idle_clip_path": "/Game/ParkComic/CrewGraphicNovelTripo/Resident4/A_Idle.A_Idle",
+      "foot_to_ball_average_component_cm": [
+        1.000000000139778e-05,
+        -13.50784,
+        -9.24215
+      ],
+      "normalized_horizontal_anatomical_forward": [
+        7.403108121946247e-07,
+        -0.999999999999726
+      ],
+      "thigh_l_minus_r_component_cm": [
+        -19.90626,
+        0.0,
+        0.0
+      ],
+      "sample_camera": {
+        "position_cm": [
+          5238.54596,
+          40867.49067,
+          132.15001
+        ],
+        "rotation_degrees": [
+          -3.4050464630126953,
+          -172.59309387207034,
+          4.9784055644766625e-17
+        ],
+        "horizontal_fov_degrees": 60.0,
+        "unpaused_prepare_frames": 2
+      },
+      "proposed_native_mesh_relative_yaw_degrees": 90,
+      "forward_after_proposed_yaw": [
+        0.999999999999726,
+        7.403108121333924e-07
+      ],
+      "dot_actor_forward_after_proposed_yaw": 0.999999999999726,
+      "negative_control_wrong_yaw_forward": [
+        -0.999999999999726,
+        -7.403108122558571e-07
+      ],
+      "negative_control_rejected": true
+    },
+    "5": {
+      "name": "BlackCap",
+      "idle_clip_path": "/Game/ParkComic/CrewGraphicNovelTripo/Resident5/A_Idle.A_Idle",
+      "foot_to_ball_average_component_cm": [
+        0.3554750000000002,
+        -13.507815,
+        -9.24219
+      ],
+      "normalized_horizontal_anatomical_forward": [
+        0.02630713943769534,
+        -0.9996539073172304
+      ],
+      "thigh_l_minus_r_component_cm": [
+        -22.75,
+        0.0,
+        1.0000000003174137e-05
+      ],
+      "sample_camera": {
+        "position_cm": [
+          5238.54596,
+          40867.49067,
+          132.15001
+        ],
+        "rotation_degrees": [
+          -3.4050464630126953,
+          -172.59309387207034,
+          4.9784055644766625e-17
+        ],
+        "horizontal_fov_degrees": 60.0,
+        "unpaused_prepare_frames": 2
+      },
+      "proposed_native_mesh_relative_yaw_degrees": 90,
+      "forward_after_proposed_yaw": [
+        0.9996539073172304,
+        0.026307139437695276
+      ],
+      "dot_actor_forward_after_proposed_yaw": 0.9996539073172304,
+      "negative_control_wrong_yaw_forward": [
+        -0.9996539073172304,
+        -0.0263071394376954
+      ],
+      "negative_control_rejected": true
+    },
+    "6": {
+      "name": "WhiteCap",
+      "idle_clip_path": "/Game/ParkComic/CrewGraphicNovelTripo/Resident6/A_Idle.A_Idle",
+      "foot_to_ball_average_component_cm": [
+        0.000140000000000029,
+        -13.507800000000001,
+        -9.242189999999999
+      ],
+      "normalized_horizontal_anatomical_forward": [
+        1.0364382060180752e-05,
+        -0.9999999999462897
+      ],
+      "thigh_l_minus_r_component_cm": [
+        -23.460929999999998,
+        0.0,
+        9.999999988963282e-06
+      ],
+      "sample_camera": {
+        "position_cm": [
+          5238.54596,
+          40867.49067,
+          132.15001
+        ],
+        "rotation_degrees": [
+          -3.4050464630126953,
+          -172.59309387207034,
+          4.9784055644766625e-17
+        ],
+        "horizontal_fov_degrees": 60.0,
+        "unpaused_prepare_frames": 2
+      },
+      "proposed_native_mesh_relative_yaw_degrees": 90,
+      "forward_after_proposed_yaw": [
+        0.9999999999462897,
+        1.036438206011952e-05
+      ],
+      "dot_actor_forward_after_proposed_yaw": 0.9999999999462897,
+      "negative_control_wrong_yaw_forward": [
+        -0.9999999999462897,
+        -1.0364382060241984e-05
+      ],
+      "negative_control_rejected": true
+    },
+    "7": {
+      "name": "RedJersey",
+      "idle_clip_path": "/Game/ParkComic/CrewGraphicNovelTripo/Resident7/A_Idle.A_Idle",
+      "foot_to_ball_average_component_cm": [
+        5.000000000165983e-05,
+        -12.79691,
+        -8.531265
+      ],
+      "normalized_horizontal_anatomical_forward": [
+        3.907193220963355e-06,
+        -0.9999999999923669
+      ],
+      "thigh_l_minus_r_component_cm": [
+        -21.32812,
+        0.0,
+        -1.0000000003174137e-05
+      ],
+      "sample_camera": {
+        "position_cm": [
+          5238.54596,
+          40867.49067,
+          132.15001
+        ],
+        "rotation_degrees": [
+          -3.4050464630126953,
+          -172.59309387207034,
+          4.9784055644766625e-17
+        ],
+        "horizontal_fov_degrees": 60.0,
+        "unpaused_prepare_frames": 2
+      },
+      "proposed_native_mesh_relative_yaw_degrees": 90,
+      "forward_after_proposed_yaw": [
+        0.9999999999923669,
+        3.907193220902123e-06
+      ],
+      "dot_actor_forward_after_proposed_yaw": 0.9999999999923669,
+      "negative_control_wrong_yaw_forward": [
+        -0.9999999999923669,
+        -3.907193221024587e-06
+      ],
+      "negative_control_rejected": true
+    },
+    "8": {
+      "name": "LimeJacket",
+      "idle_clip_path": "/Game/ParkComic/CrewGraphicNovelTripo/Resident8/A_Idle.A_Idle",
+      "foot_to_ball_average_component_cm": [
+        -2.5000000000829914e-05,
+        -12.085935,
+        -8.53125
+      ],
+      "normalized_horizontal_anatomical_forward": [
+        -2.0685201435202515e-06,
+        -0.9999999999978606
+      ],
+      "thigh_l_minus_r_component_cm": [
+        -19.90625,
+        0.0,
+        0.0
+      ],
+      "sample_camera": {
+        "position_cm": [
+          5238.54596,
+          40867.49067,
+          132.15001
+        ],
+        "rotation_degrees": [
+          -3.4050464630126953,
+          -172.59309387207034,
+          4.9784055644766625e-17
+        ],
+        "horizontal_fov_degrees": 60.0,
+        "unpaused_prepare_frames": 2
+      },
+      "proposed_native_mesh_relative_yaw_degrees": 90,
+      "forward_after_proposed_yaw": [
+        0.9999999999978606,
+        -2.068520143581484e-06
+      ],
+      "dot_actor_forward_after_proposed_yaw": 0.9999999999978606,
+      "negative_control_wrong_yaw_forward": [
+        -0.9999999999978606,
+        2.068520143459019e-06
+      ],
+      "negative_control_rejected": true
+    },
+    "9": {
+      "name": "CurlyMetalhead",
+      "idle_clip_path": "/Game/ParkComic/CrewGraphicNovelTripo/Resident9/A_Idle.A_Idle",
+      "foot_to_ball_average_component_cm": [
+        13.507895000000001,
+        -4.999999999810711e-06,
+        -10.66405
+      ],
+      "normalized_horizontal_anatomical_forward": [
+        0.9999999999999315,
+        -3.701538988725015e-07
+      ],
+      "thigh_l_minus_r_component_cm": [
+        0.0,
+        -18.484360000000002,
+        -9.999999988963282e-06
+      ],
+      "sample_camera": {
+        "position_cm": [
+          5238.54596,
+          40867.49067,
+          132.15001
+        ],
+        "rotation_degrees": [
+          -3.4050464630126953,
+          -172.59309387207034,
+          4.9784055644766625e-17
+        ],
+        "horizontal_fov_degrees": 60.0,
+        "unpaused_prepare_frames": 2
+      },
+      "proposed_native_mesh_relative_yaw_degrees": 0,
+      "forward_after_proposed_yaw": [
+        0.9999999999999315,
+        -3.701538988725015e-07
+      ],
+      "dot_actor_forward_after_proposed_yaw": 0.9999999999999315,
+      "negative_control_wrong_yaw_forward": [
+        3.7015389893373383e-07,
+        0.9999999999999315
+      ],
+      "negative_control_rejected": true
+    }
+  },
+  "conclusion": "New Tripo3\u20138 faces component\u2212Y while pilot9 faces+X. Current zero mesh yaw is incorrect for new3\u20138. A Tripo-only/style<9 mesh relativeYaw+90 aligns their anatomical forward with actor+X. Preserve pilot/default/Top yaw0.",
+  "fixture_face_basis": "Use component\u2212Y before head-reference inversion for styles3\u20138; +X for9, then transport through the actual posed head world rotation.",
+  "preserved_source_report_sha256": "e87322635b4d533f879bdd0c1387b14bab00101865183a3e7e23afcf075e4a1a",
+  "engine_or_art_jobs_launched": false
+}
