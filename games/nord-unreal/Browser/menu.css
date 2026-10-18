@@ -29,6 +29,8 @@
 .install-nudge #install-nudge-dismiss { background: transparent; color: var(--ink); }
 .install-nudge .small { grid-column: 1 / -1; }
 
+.touch-input .install-nudge { top: calc(max(12px, env(safe-area-inset-top)) + 76px); max-height: calc(100% - 264px); }
+
 @media (orientation: landscape) and (max-height: 600px) {
-  .touch-input .install-nudge { left: max(16px, env(safe-area-inset-left)); transform: none; width: min(430px, calc(100% - 224px)); max-height: calc(100% - 132px); }
+  .touch-input .install-nudge { top: max(12px, env(safe-area-inset-top)); left: calc(max(16px, env(safe-area-inset-left)) + 76px); transform: none; width: min(430px, calc(100% - 300px)); max-height: calc(100% - 132px); }
 }
