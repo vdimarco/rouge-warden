@@ -7,6 +7,10 @@
 // leg 2 idle (hits, the shield, the glare, the catch), leg 3 with the whipper (the red zone, scorches, the WHALE),
 // leg 6 (MAKO), Earth's landing, and the VOID with big burns (LIGHT SPEED, a dry click). Types a stretch never made are
 // listed, not failed. A rival's motif may be dropped by design (two at once at most), so those need only one play.
+// And the ticks on the ring tell what crossing a knot does, mid-whip too, where no wall, gate or rail raises the alarm
+// or the whine; PHASE HULL draws no SLAM tick and no rival's lean tick on you while its phase is ready, and its
+// see-through tell follows the phase; Earth's landing never calls THREAD OR DOCK (a test race drawn on a canvas of
+// its own).
 //   NODE_PATH=qa/browser/node_modules node qa/ahead-of-the-light/feedback.e2e.mjs      (the site served on 8765)
 import { launch, open, reporter, R, wait, waitMode } from './e2e-lib.mjs';
 
@@ -159,6 +163,187 @@ await ctx.close();
   await o.page.touchscreen.tap(W / 2, H * 0.3);
   await waitMode(o.page, 'play', 5000).catch(() => {});
   await stretch(o.page, 'leg 2, the light let in', "window.__race.goto({ leg: 2, seed: 'FEEDH' }); window.__race.bot('dodge');", { n: 1200 });
+  errors.push(...o.errors);
+  await o.ctx.close();
+}
+// the ticks tell what the race does (5.1, 5.3, 5.5, 12.4): a test race in the page, the ring layer drawing on a
+// canvas of its own. One knot at a time, dead on and 1°, 5° and 9° off its edge, mid-whip and not, with and without
+// LENSED LANE: the tick's state against the event handle's pass check makes. Then a real grab with knots, walls, gates
+// or rails all round the ring: while you sweep nothing on your line hits, so no frame raises the hit alarm or the
+// danger whine (main.js dangerOf), and the same frame with the whip let go does. Then a rival abreast of a knot: a
+// SLAM from your line would carry it in, so the knot's tick turns orange, but not with PHASE HULL (no SLAM to make).
+// And Earth's landing, which has only its DOOR, never calls THREAD OR DOCK.
+{
+  const o = await open(browser, 'portrait');
+  const r = await R(o.page, async () => {
+    const u = (p) => new URL(p, location.href).href;
+    const [{ createOverlay, lineState }, RC, { ringView }, H, K, { applyBuild }, { dangerOf }, { buildLeg },
+      { captionsFor, createCaptionMemory }] = await Promise.all([import(u('render/overlay.js')), import(u('core/race.js')),
+      import(u('core/ringmath.js')), import(u('core/handle.js')), import(u('core/course/kinds.js')),
+      import(u('core/cards.js')), import(u('main.js')), import(u('core/course/gen.js')), import(u('ui/hud.js'))]);
+    const { resolve } = K;
+    const T = window.__race.tune;
+    const legOf = (list, beats = 200) => Object.freeze({ type: 'test', lane: null, seed: 1, beats,
+      items: Object.freeze(list.map((x, i) => Object.freeze({ id: i, piece: 'test', ...x }))), sections: [],
+      gate: { id: null, beat: beats - 4 }, pickups: [], wells: [], labels: [], hash: 'ticks',
+      report: { ok: true, errors: [] } });
+    const rows = [];
+    const lens = applyBuild([{ id: 'lensed-lane', r: 0 }], T);
+    const edge = T.SHIP_HALF + 3.5;
+    const offs = [0, edge + 1, edge + 5, edge + 9];
+    for (const lensed of [false, true]) for (const whip of [false, true]) for (const off of offs) {
+      const race = RC.createRace({ leg: legOf([{ kind: 'knot', beat: 10, psi: off, half: 3.5 }]), tune: T });
+      race.legNo = 1;
+      if (lensed) race.hooks = lens.hooks;
+      const ship = race.ships[0];
+      ship.bearing = 0; ship.soft = false; ship.flicker = 0;
+      if (whip) ship.whip = { well: 99, angle: 90 };
+      race.events.length = 0;
+      const it = race.leg.items[0];
+      const draw = lineState(it, resolve(it, 0, it.beat, T, ship.half), whip, T, lensed);
+      H.passCheck(race, ship, it, T, 1);
+      const ev = race.events.find((e) => e.ship === 'you' && ['hit', 'hair', 'graze'].includes(e.type));
+      rows.push({ lensed, whip, off, draw, did: ev ? ev.type : 'clear' });
+    }
+    // a grab at a large well, then the ring after it filled with one kind: what is on your line within ALARM_LEAD
+    const fills = {
+      knot: (b, add) => { for (let p = -180; p < 180; p += 12) add(K.knot(b, p, 2)); },
+      wall: (b, add) => add(K.wall(b, [{ psi: ((b * 97) % 360) - 180, w: 30 }])),
+      gate: (b, add) => add(K.gate(b, ((b * 61) % 360) - 180, 20, [40, 40], ['A', 'B'], { psi: ((b * 61) % 360), w: 60 })),
+      rail: (b, add) => { if (b === 21) for (let p = -165; p < 180; p += 30) add(K.rail(21, 40, p, 1.5)); },
+    };
+    const lineOf = (q, you, bps) => {
+      if (q.kind === 'rail') {
+        return q.beat <= you.dist && K.railOn(q, you.dist) && resolve(q, you.bearing, you.dist, T, you.half).hit;
+      }
+      const ttp = (q.beat - you.dist) / bps;
+      return ttp > 0 && ttp <= T.ALARM_LEAD && resolve(q, you.bearing, q.beat, T, you.half).hit;
+    };
+    const sweeps = {};
+    for (const [kind, fill] of Object.entries(fills)) {
+      const list = [{ kind: 'well', beat: 20, psi: 0, size: 'large', exits: [150, -150] }];
+      for (let b = 21; b < 40; b += kind === 'knot' ? 0.5 : 1) fill(b, (x) => list.push(x));
+      list.sort((a, b) => a.beat - b.beat);
+      const race = RC.createRace({ leg: legOf(list), tune: T });
+      race.legNo = 1;
+      race.ships.length = 1;
+      const you = race.ships[0], well = race.leg.items[0];
+      const ov = createOverlay({ canvas: document.createElement('canvas'), tune: T });
+      ov.resize(390, 844, 1);
+      const tally = { whipFrames: 0, onLine: 0, alarmWhip: 0, alarmLetGo: 0, whineWhip: 0, whineLetGo: 0, hitsWhip: 0 };
+      let grabAt = null;
+      for (let i = 0; i < 4000 && race.phase !== 'done'; i++) {
+        let it = RC.NO_INTENT;
+        if (grabAt === null) {
+          // fly 15° off the well and press as it comes abreast
+          you.bearing = 15; you.target = 15;
+          const t = (well.beat - you.dist) / H.bpsOf(you, T);
+          const down = t <= RC.STEP * H.bpsOf(you, T) / 2 + 1e-6;
+          it = { target: 15, turn: 0, action: down ? 'down' : null, burn: false };
+          if (down) grabAt = race.real;
+        }
+        const ev = RC.stepRace(race, { you: it }, RC.STEP);
+        if (you.whip) tally.hitsWhip += ev.filter((e) => e.ship === 'you' && e.type === 'hit').length;
+        if (grabAt !== null && (!you.whip || race.real - grabAt > 1.4)) break;
+        if (!you.whip) continue;
+        tally.whipFrames++;
+        const bps = H.bpsOf(you, T);
+        let line = false;
+        for (let k = race.win.lo; k < race.win.hi && !line; k++) {
+          const q = race.leg.items[k];
+          line = q.kind === kind && lineOf(q, you, bps);
+        }
+        if (!line) continue;
+        tally.onLine++;
+        const view = ringView({ w: 390, h: 844, eta: you.eta, cam: you.bearing, tune: T });
+        if (ov.render(race, view, 1 / 60, {}).alarm) tally.alarmWhip++;
+        if (dangerOf(race)) tally.whineWhip++;
+        const W = you.whip;
+        you.whip = null;
+        if (ov.render(race, view, 1 / 60, {}).alarm) tally.alarmLetGo++;
+        if (dangerOf(race)) tally.whineLetGo++;
+        you.whip = W;
+      }
+      sweeps[kind] = tally;
+    }
+    // PHASE HULL: a rival abreast of you with a knot just past it on its side (handle.test's SLAM into a knot); the
+    // ring's ram ticks are its 4.5 px orange strokes. With the phase ready you are see-through and have no SLAM to
+    // show; solid after a pass, the tick is back and you are not see-through; ready with the rival far off, solid.
+    // PIKE leans at you as the frame starts: its lean tick (3.5 px orange) shows on your ring only while you are solid
+    const rams = {};
+    const bps0 = H.bpsOf(RC.createRace({ leg: legOf([]), tune: T }).ships[0], T);
+    const PH = [{ id: 'phase-hull', r: 0 }];
+    for (const [label, build, cool, at] of [['no card', null, 0, 20], ['PHASE HULL', PH, 0, 20],
+      ['PHASE HULL solid', PH, 3, 20], ['PHASE HULL far', PH, 0, 120]]) {
+      const race = RC.createRace({ leg: legOf([K.knot(2 + bps0 * 0.2, 48, 3.5)]), tune: T });
+      race.legNo = 1;
+      if (build) { const B = applyBuild(build, T); race.tune = B.tune; race.hooks = B.hooks; }
+      race.ships.length = 1;
+      const you = race.ships[0];
+      you.bearing = you.target = 0; you.soft = false;
+      you.dist = 2;
+      you.phaseCool = cool;
+      const pike = H.createShip({ id: 'pike', kind: 'regular', type: 'pike', bearing: at, eta: you.eta, tune: race.tune,
+        meters: { fuel: 2, fuelCap: 4 } });
+      pike.dist = you.dist;
+      race.ships.push(pike);
+      race.win.hi = race.leg.items.length;
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      let strokes = 0, leans = 0;
+      const stroke = ctx.stroke.bind(ctx);
+      ctx.stroke = (...a) => {
+        if (ctx.lineWidth === 4.5 && /^rgba\(240, 138, 44/.test(String(ctx.strokeStyle))) strokes++;
+        if (ctx.lineWidth === 3.5 && String(ctx.strokeStyle) === '#f08a2c') leans++;
+        return stroke(...a);
+      };
+      const ov = createOverlay({ canvas, tune: race.tune });
+      ov.resize(390, 844, 1);
+      ov.onEvents([{ type: 'lean', ship: 'pike', target: 'you', side: -1, by: 'pike' }], race);
+      const drawn = ov.render(race, ringView({ w: 390, h: 844, eta: you.eta, cam: you.bearing, tune: race.tune }), 1 / 60,
+        { tells: new Set(build ? ['see-through-near-rivals'] : []) });
+      rams[label] = { strokes, leans, phase: race.tune.PHASE_HULL || 0, aim: Boolean(H.slamAim(race, you, pike, T)),
+        ready: drawn.phase ? drawn.phase.ready : null, see: drawn.phase ? drawn.phase.see : null };
+    }
+    // Earth's landing on a first run (THREAD OR DOCK teaches the first 3 runs) and the web's gate
+    const calls = {};
+    for (const type of ['earth', 'web']) {
+      const leg = buildLeg({ type });
+      const you = { id: 'you', dist: 0, ttc: 99, shield: 1 };
+      const race = { leg, legNo: type === 'earth' ? 7 : 0, ships: [you], t: 10 };
+      const mem = createCaptionMemory();
+      const said = [];
+      let prev = leg.beats - 16;
+      for (let d = prev; d <= leg.beats; d += 0.25) {
+        you.dist = d;
+        const ctx = { race, mem, runs: 0, desk: false, toy: false, fires: [], prevDist: prev };
+        for (const c of captionsFor([], ctx)) said.push(c.text);
+        prev = d;
+      }
+      calls[type] = said;
+    }
+    return { rows, sweeps, rams, calls };
+  });
+  const bad = r.rows.filter((x) => x.draw !== x.did);
+  check('the ticks: a knot\'s tick shows what crossing it does, mid-whip and not, with and without LENSED LANE',
+    r.rows.length === 16 && bad.length === 0, bad.length ? JSON.stringify(bad.slice(0, 4)) : `${r.rows.length} cases`);
+  for (const [kind, t] of Object.entries(r.sweeps)) {
+    const whine = kind === 'rail' || t.whineLetGo === t.onLine;      // the whine listens for knots, walls and gates
+    check(`mid-whip a ${kind} on your line raises no hit alarm and no whine and nothing hits (both do, the whip let go)`,
+      t.onLine >= 10 && t.alarmWhip === 0 && t.whineWhip === 0 && t.hitsWhip === 0 && t.alarmLetGo === t.onLine && whine,
+      JSON.stringify(t));
+  }
+  const [plain, phase, solid, far] = ['no card', 'PHASE HULL', 'PHASE HULL solid', 'PHASE HULL far'].map((k) => r.rams[k]);
+  check('a rival abreast of a knot turns its tick orange (a SLAM would carry it in), but not with PHASE HULL ready',
+    plain.aim && plain.strokes > 0 && phase.phase === 1 && phase.strokes === 0, JSON.stringify(r.rams));
+  check('PHASE HULL\'s tell: see-through near a rival while the phase is ready; solid (and the SLAM tick back) after a '
+    + 'pass; solid with no rival near', plain.see === null && phase.ready && phase.see && solid.ready === false
+    && solid.see === false && solid.strokes > 0 && far.ready && far.see === false, JSON.stringify(r.rams));
+  check('a rival\'s lean tick on you shows without the card and while your hull is solid, never while the phase is ready',
+    plain.leans > 0 && solid.leans > 0 && phase.leans === 0 && far.leans === 0, JSON.stringify(r.rams));
+  check('Earth\'s landing (only its DOOR) never calls THREAD OR DOCK; the web\'s gate does on a first run',
+    !r.calls.earth.includes('THREAD OR DOCK') && r.calls.earth.includes('LAND BEFORE THE LIGHT')
+      && r.calls.web.includes('THREAD OR DOCK'), JSON.stringify(r.calls));
   errors.push(...o.errors);
   await o.ctx.close();
 }

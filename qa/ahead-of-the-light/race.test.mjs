@@ -55,7 +55,7 @@ const RACE_KEYS = ['t', 'real', 'legNo', 'leg', 'win', 'ships', 'wells', 'slow',
 const SHIP_KEYS = ['id', 'kind', 'name', 'type', 'half', 'turnMax', 'bearing', 'target', 'turnRate', 'dist', 'far', 'eta',
   'gear', 'bestGear', 'headlight', 'lightspeed', 'punch', 'hull', 'hullMax', 'shield', 'shieldMax', 'shieldT',
   'fuel', 'fuelCap', 'burn', 'gap', 'ttc', 'light', 'lightHold', 'overCap', 'chain', 'chainT', 'flicker',
-  'stumble', 'soft', 'whip', 'draft', 'surge', 'shove', 'gate', 'caught', 'wrecked', 'fedBy', 'years', 'earth', 'ai',
+  'stumble', 'soft', 'whip', 'draft', 'surge', 'shove', 'phaseCool', 'gate', 'caught', 'wrecked', 'fedBy', 'years', 'earth', 'ai',
   'stats'];
 const STATS_KEYS = ['grazes', 'hairs', 'hits', 'burns', 'whips', 'perfect', 'slings', 'slams', 'takedowns', 'glareS',
   'topGear'];
@@ -311,6 +311,8 @@ test('Earth\'s DOOR: a bearing outside its arc misses and the landing needs DOOR
   assert.equal(on.door.miss, false);
   assert.equal(edge.door.miss, false);
   assert.equal(off.door.miss, true);
+  // the land event carries the miss, so the HUD can say it with HOME or CAUGHT ON THE DOORSTEP in the same step
+  assert.deepEqual([on.land.miss, edge.land.miss, off.land.miss], [false, false, true]);
   assert.ok(Math.abs(on.land.margin - off.land.margin - TUNE.DOOR_MISS_S) < 1e-6,
     `margins ${on.land.margin} and ${off.land.margin}`);
   assert.equal(off.end.why, 'home');

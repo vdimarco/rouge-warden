@@ -90,6 +90,14 @@ The pool SHALL hold 22 starters in four families (SKIM, WELL, SHIP and RIVAL), e
 - **THEN** a long orange flare shows, the grazes inside it count double, and AFTERBURNER shows at the ship in orange the first 2 times it fires this run
 - **CHECK** `feedback.e2e.mjs`
 
+#### Scenario: PHASE HULL lets one rival through, then the hull is solid
+- **WHEN** a player with PHASE HULL, its phase ready, touches PIKE and then touches HOUND 2 s later
+- **THEN** the ship flies through PIKE as a hairline and takes half of one of its cells, then hits HOUND as normal contact (a flick is a SLAM); the hull stays solid for 6.5 s after the pass, and the phase is ready again after that
+- **AND** the ship looks see-through near rivals only while the phase is ready, rivals lean at it only while it is solid, and a SLAM's orange tick shows only while it is solid
+- **AND** the ship flies on through PIKE until the two are clearly apart (a hairline between them, or twice the contact depth), so PIKE sitting on the edge of contact after the pass never bumps it; a touch after that is normal contact
+- **AND** a rival's lean that began while the hull was solid ends, with its orange tick on the ship's ring, as soon as the phase is ready again
+- **CHECK** `handle.test.mjs`, `rivals.test.mjs` and `feedback.e2e.mjs`
+
 ### Requirement: Stacking caps
 Builds SHALL stay within caps: graze band 12°, hairline band 5°, 3 shield charges, 6 fuel cells, 5 hull, whip gain multipliers × 2.5 after multiplying, and chances combined as 1 − Π(1 − p). Light-holding effects SHALL never lift the gap above the leg's cap, and STILL LIGHT SHALL raise the cap by 2 s at most. BUSSARD SCOOP SHALL fill at most 2 cells a leg, 3 with STAR LIFTER. SPARK GAP SHALL refund half a cell once a burn, and CHERENKOV's touch SHALL cost 10 chain.
 

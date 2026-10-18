@@ -154,6 +154,10 @@ export function createScreens({ root, onAction }) {
     // the game switcher's button belongs to /arcade/switch.js: a tap on it never reaches the screen under it (on the
     // title that screen is TAP TO FLY, so it started a run behind the switcher)
     if (e.target.closest('[data-switch], a[href]')) return;
+    // a pointer click leaves no focus on a screen button (one a lock ignores too), so Space and Enter go back to the
+    // screen's own keys (AGAIN on the result card); a click a key made (detail 0: a button you tabbed to) keeps it
+    const f = e.target.closest('button');
+    if (e.detail > 0 && f && f === document.activeElement) f.blur();
     const b = e.target.closest('[data-act]');
     if (!b || !root.contains(b) || locked()) return;
     e.preventDefault();

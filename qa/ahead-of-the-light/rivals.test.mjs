@@ -14,7 +14,7 @@ import { buildLeg } from '../../public/ahead-of-the-light/core/course/gen.js';
 import { ROUTE } from '../../public/ahead-of-the-light/core/course/legs.js';
 import { driverFor } from '../../public/ahead-of-the-light/core/bots.js';
 import { courseSpeed, beatsPerS } from '../../public/ahead-of-the-light/core/ringmath.js';
-import { skimOf } from '../../public/ahead-of-the-light/core/handle.js';
+import { skimOf, shoveShip, phaseReady } from '../../public/ahead-of-the-light/core/handle.js';
 import { wrap } from '../../public/ahead-of-the-light/core/course/kinds.js';
 
 const { ROSTER, pickRegulars, createField, rivalIntents, barkFor, legResult, hazardPast } = mod;
@@ -216,6 +216,27 @@ test('no rival reaches η 3.80 + 1e-9; a stumble moves exactly 1.0 s over 0.4 s'
   assert.ok(Math.abs(p.dist - d0 - (0.4 - T.STUMBLE) * bps) < 1e-3, `moved ${p.dist - d0}, want ${(0.4 - T.STUMBLE) * bps}`);
 });
 
+test('a SLAMmed rival holds its line until its reactMs after the shove ends, a card\'s longer shove included', () => {
+  for (const id of ['pike', 'moth']) {
+    for (const s of [TUNE.SHOVE_S, TUNE.TAKEDOWN_S]) {
+      const { race, T } = fieldRace({ regulars: [id] });
+      for (let i = 0; i < 120; i++) stepRace(race, null, STEP);
+      const r = race.ships[1];
+      shoveShip(race, r, 1, 20, 'you', T, true, s);
+      const t0 = race.t, end = t0 + s + r.ai.knobs.reactMs / 1000;
+      let free = null;
+      while (race.t < end + 0.3) {
+        stepRace(race, null, STEP);
+        const held = r.ai.intent.target === r.bearing;
+        if (race.t < end - 1e-9) {
+          assert.ok(held, `${id} after a ${s} s shove steers back ${(race.t - t0).toFixed(3)} s in, before ${end - t0}`);
+        } else if (!held && free === null) free = race.t;
+      }
+      assert.ok(free !== null && free - end < 0.05, `${id} steers back once its reaction is over (${free})`);
+    }
+  }
+});
+
 // PIKE's block (5.4 and 10.4): you draft PIKE 0.3 s behind at full charge, then pull out (or feint).
 function pikeTrial(seed, legNo, plan) {
   const { race, you, T } = fieldRace({ seed, legNo, regulars: ['pike'] });
@@ -354,6 +375,54 @@ test('in legs 2 and 3 no rival SLAM on you starts with a hazard within 30° past
   }
   const first = slamsOf([1, 2, 3, 4, 5, 6, 7, 8], [0]);
   assert.equal(first.filter((s) => s.e.victim === 'you').length, 0, 'no rival slams you in leg 1');
+});
+
+test('PHASE HULL: rivals lean at you and touch you only while your hull is solid after a pass; passes pay hairlines', () => {
+  const count = (build) => {
+    const n = { leans: 0, contacts: 0, takedowns: 0, hairs: 0, readyLeans: 0, readyContacts: 0, readyTrapped: 0,
+      readyLeaning: 0, solidLeaning: 0, endedAtReady: 0 };
+    // seed 6 leg 2 has a lean on you that began in the last moments of the cool-down (endedAtReady says if a retune
+    // moves it: then pick another seed and leg)
+    for (const seed of [1, 2, 6]) {
+      for (const legNo of seed === 6 ? [2] : [2, 3, 4]) {
+        const { race } = legRace(seed, legNo, { tune: NOLIGHT, setup: (run) => { run.build = build; } });
+        const you = race.ships[0];
+        let before = you.phaseCool;               // the cool-down as this step began (when its hits were judged)
+        let leaning = false;                      // a rival leaned at you as the last step ended
+        fly(race, driverFor('mid', { seed }), 90, (ev) => {
+          const ready = build.length > 0 && phaseReady(you, race.tune);
+          for (const e of ev) {
+            if (e.type === 'lean' && e.target === 'you') { n.leans++; if (ready) n.readyLeans++; }
+            if (e.type === 'contact' && (e.by === 'you' || e.victim === 'you')) { n.contacts++; if (ready) n.readyContacts++; }
+            if (e.type === 'takedown' && e.victim === 'you') {
+              n.takedowns++;
+              if (build.length && e.trapped && !(before > 0)) n.readyTrapped++;
+            }
+            if (e.type === 'hair' && e.kind === 'rival') n.hairs++;
+          }
+          // a lean on you that began while you were solid ends once the phase is ready again (no tick, no flick)
+          const now = race.ships.some((r) => r.ai && r.ai.lean && r.ai.lean.victim === 'you');
+          if (build.length && now) {
+            if (phaseReady(you, race.tune)) n.readyLeaning++;
+            else n.solidLeaning++;
+          }
+          if (build.length && leaning && !now && before > 0 && phaseReady(you, race.tune)) n.endedAtReady++;
+          leaning = now;
+          before = you.phaseCool;
+        });
+      }
+    }
+    return n;
+  };
+  const none = count([]);
+  assert.ok(none.leans > 0 && none.contacts > 0, `without the card: ${JSON.stringify(none)}`);
+  const ph = count([{ id: 'phase-hull', r: 0 }]);
+  assert.deepEqual([ph.readyLeans, ph.readyContacts, ph.readyTrapped, ph.readyLeaning], [0, 0, 0, 0], JSON.stringify(ph));
+  assert.ok(ph.solidLeaning > 0, `rivals lean at you while you are solid: ${JSON.stringify(ph)}`);
+  assert.ok(ph.endedAtReady > 0, `these legs have a lean on you as the phase turns ready: ${JSON.stringify(ph)}`);
+  assert.ok(ph.hairs > 0, `passes pay hairlines: ${JSON.stringify(ph)}`);
+  assert.ok(ph.leans + ph.contacts > 0, `with the hull solid, rivals come at you again: ${JSON.stringify(ph)}`);
+  assert.ok(ph.leans + ph.contacts < none.leans + none.contacts, `fewer than without the card: ${JSON.stringify({ none, ph })}`);
 });
 
 test('DIRTY AIR\'s speed loss shows as a dirtyAir event', () => {

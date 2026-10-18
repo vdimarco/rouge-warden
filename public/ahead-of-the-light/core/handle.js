@@ -50,7 +50,10 @@ function scratch(ship) {
         exits: [0, 0], exitA: [NaN, NaN], letgo: [false, false], warned: false, gate: null },
       shove: { v: 0, left: 0, until: -1, by: null, t0: -1e9, slam: false },
       recId: new Array(RECENT).fill(null), recT: new Float64Array(RECENT), recGap: new Float64Array(RECENT), recK: 0,
-      ctx: { race: null, ship, event: null, tune: null, item: null, res: null, bearing: 0, other: null, gap: 0 },
+      ctx: { race: null, ship, event: null, tune: null, item: null, res: null, bearing: 0, other: null, gap: 0,
+        phase: false },
+      // PHASE HULL: the ship your hull is flying through now, until the two part
+      phaseWith: null,
     };
     s.n[B0] = ship.bearing;
     s.n[D0] = ship.dist;
@@ -83,6 +86,7 @@ export function createShip({ id, kind = 'you', type = 'lantern', name = null, be
     draft: { lead: null, charge: 0, keep: 0, tow: T.TOW, exitLead: null, exitCharge: 0, exitT: -1e9 },
     surge: { x: 1, until: 0 },
     shove: null,
+    phaseCool: 0,                  // PHASE HULL: seconds the hull stays solid after a pass (0: the phase is ready)
     gate: null,
     caught: false, wrecked: false, fedBy: null,
     years: 0, earth: 0,
@@ -100,6 +104,11 @@ function shipById(race, id) {
   for (let i = 0; i < ships.length; i++) if (ships[i].id === id) return ships[i];
   return null;
 }
+
+// PHASE HULL (12.3): is your phase ready? It is while you own the card and your hull is not solid from a pass in the
+// last PHASE_COOLDOWN s. Ready, the next rival you touch is a pass, and nothing can ram you or trap you. Solid,
+// contact is as normal: rams, slams, takedowns and TRAPPED, and rivals lean at you again.
+export const phaseReady = (ship, tune = TUNE) => Boolean(tune.PHASE_HULL) && isYou(ship) && !(ship.phaseCool > 0);
 
 // The world runs at x for s more real seconds. A stronger slow motion already running wins.
 function slowFor(race, x, s) {
@@ -452,8 +461,8 @@ function finishItems(race, ship, T, S) {
 // A hit: −HIT_ETA (never under ETA_MIN), LIGHT SPEED ends, the chain breaks, FLICKER of safety, the hit-stop (yours),
 // and the stumble's glide back in the field. Survival applies the damage, the gap's stumble and the catch from the
 // `hit` event. A hit inside a shove's TAKEDOWN_S is the rammer's takedown; a drafter hitting what its leader just
-// passed close is TRAPPED. In leg 1's first SOFT_S it is a bump: 10° aside and nothing else. force: a scorch hits
-// through the flicker. → 'hit' | 'bump' | null.
+// passed close is TRAPPED (not on you while your PHASE HULL is ready). In leg 1's first SOFT_S it is a bump: 10°
+// aside and nothing else. force: a scorch hits through the flicker. → 'hit' | 'bump' | null.
 export function hit(race, ship, cause, tune = TUNE, item = null, force = false) {
   const T = tune;
   if (isOut(ship)) return null;
@@ -482,7 +491,9 @@ export function hit(race, ship, cause, tune = TUNE, item = null, force = false) 
         const room = Math.max(0, r.fuelCap - r.fuel);
         r.fuel += Math.min(T.TAKEDOWN_FUEL, room);
       }
-    } else {
+    } else if (!phaseReady(ship, T)) {
+      // PHASE HULL (12.3): while your phase is ready, a hit behind the ship you draft is a plain hit, never TRAPPED
+      // (a SLAM's takedown above needs a SLAM, and none lands on you while the phase is ready)
       const leadId = ship.draft.lead || (race.t - ship.draft.exitT <= T.TRAP_S ? ship.draft.exitLead : null);
       const lead = leadId ? shipById(race, leadId) : null;
       if (lead && trappedBy(race, lead, item, T)) {
@@ -617,7 +628,18 @@ export function stepWell(race, ship, intent, dt, tune = TUNE) {
   if (isOut(ship)) return;
   finishItems(race, ship, T, S);
   const action = intent ? intent.action : null;
-  if (ship.whip) { whipStep(race, ship, action, dt, T, S); return; }
+  if (ship.whip) {
+    whipStep(race, ship, action, dt, T, S);
+    // the leg's end (the run-out's last beat) with a gate the whip carried the ship across still unjudged: no release
+    // came through it, so it is a fly past (9.1), paid this step as any gate is
+    const W = ship.whip;
+    if (W && W.gate && ship.dist >= race.leg.beats) {
+      const G = W.gate;
+      W.gate = null;
+      settleGate(race, ship, G, T, null);
+    }
+    return;
+  }
   const k = nextWell(race, ship, T);
   if (k < 0) return;
   const it = race.leg.items[k];
@@ -893,6 +915,7 @@ export function stepContact(race, dt, tune = TUNE) {
   const T = tune, B = race.baseTune || T, ships = race.ships, n = ships.length;
   for (let i = 0; i < n; i++) {
     const a = ships[i];
+    if (a.phaseCool > 0) a.phaseCool = Math.max(0, a.phaseCool - dt);
     if (isOut(a)) continue;
     draftStep(race, a, dt, isYou(a) ? T : B);
   }
@@ -1003,15 +1026,54 @@ function pairStep(race, a, b, T) {
       if (race.hooks && race.hooks.rivalPass) {
         const c = S.ctx;
         c.race = race; c.tune = T; c.other = you === a ? b : a; c.gap = g; c.event = null; c.item = null;
+        c.phase = false;
         runHooks(race, 'rivalPass', c);
       }
     }
   }
-  if (a.whip || b.whip || g >= 0) return;
-  const z = Math.abs(now) / bpsOf(now >= 0 ? b : a, T);
-  if (z > T.CONTACT_Z) return;
+  if (a.whip || b.whip) return;
+  const touch = g < 0 && Math.abs(now) / bpsOf(now >= 0 ? b : a, T) <= T.CONTACT_Z;
+  if (T.PHASE_HULL && (isYou(a) || isYou(b))) {
+    const ya = isYou(a);
+    if (phased(race, ya ? a : b, ya ? b : a, ya ? Sa : Sb, g, touch, T)) return;
+  }
+  if (!touch) return;
   if (cooling(race, a, b) || cooling(race, b, a)) return;
   contact(race, a, b, dpsi, T);
+}
+
+// PHASE HULL (12.3). With the phase ready, the first ship your hull touches (where contact would start) is a pass:
+// no contact, the card's rivalPass hook with ctx.phase (a hairline and some of its fuel), and your hull is solid
+// for PHASE_COOLDOWN s. You fly on through that ship until the two of you part; any other touch while solid is
+// normal contact. The two have parted once they are clearly apart (see near): two ships at almost one speed sit on
+// the edge of contact for a while, and a hair outside it is not a part. → true when this pair has no contact.
+// It stays small (S, your scratch, comes from pairStep; the pass and the part test are their own functions):
+// pairStep inlines it, and a bigger one crowds bpsOf out of pairStep's inlining, so the touch test boxes a number.
+function phased(race, you, other, S, g, touch, T) {
+  if (S.phaseWith === other) {
+    if (touch || near(you, other, g, T)) return true;
+    S.phaseWith = null;
+  }
+  if (!touch || you.phaseCool > 0) return false;
+  phasePass(race, you, other, S, g, T);
+  return true;
+}
+// The pass: the hull is solid from now, you fly on through `other`, and the card pays its hairline and fuel.
+function phasePass(race, you, other, S, g, T) {
+  you.phaseCool = T.PHASE_COOLDOWN;
+  S.phaseWith = other;
+  if (race.hooks && race.hooks.rivalPass) {
+    const c = S.ctx;
+    c.race = race; c.tune = T; c.other = other; c.gap = g; c.event = null; c.item = null; c.phase = true;
+    runHooks(race, 'rivalPass', c);
+    c.phase = false;
+  }
+}
+
+// Not yet clearly apart: less than a hairline (HAIR) between the hulls and within twice the contact depth.
+function near(you, other, g, T) {
+  const dz = you.dist - other.dist;
+  return g < T.HAIR && Math.abs(dz) / bpsOf(dz >= 0 ? other : you, T) <= 2 * T.CONTACT_Z;
 }
 
 const cooling = (race, s, other) => s.shove && s.shove.by === other.id && race.t <= s.shove.until + CONTACT_CD;
@@ -1043,6 +1105,10 @@ function shove(race, ship, dir, dist, by, T, slam = false, s = T.SHOVE_S) {
 export function shoveShip(race, ship, dir, deg, by, tune = TUNE, slam = false, s = tune.SHOVE_S) {
   shove(race, ship, dir, deg, by, tune, Boolean(slam), s);
 }
+
+// The ship's last shove, { v, left, until, by, t0, slam }: the record stays after ship.shove clears (CONTACT_CD past
+// its end), and until is when the shove really ended, so a driver's reaction counts from there.
+export const lastShove = (ship) => scratch(ship).shove;
 
 // How hard a ship shoves: MAKO × 1.5, your cards' SHOVE_X; the WHALE barely moves (× 0.25).
 const shoveOut = (s, T) => (MAKO(s) ? T.MAKO.shove : isYou(s) ? T.SHOVE_X : 1);

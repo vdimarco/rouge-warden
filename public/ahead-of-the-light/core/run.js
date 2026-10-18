@@ -211,7 +211,7 @@ export function endLeg(run, race, tune = null) {
     end: { t: race.t, fuel: you.fuel, eta: you.eta, light: you.light, piece: lastHit ? lastHit.piece : null,
       takedownBy: takedown, takedownT: lastHit ? lastHit.t : 0, red, hitCatch: Boolean(hitCatch),
       slowFor: race.t - L.lastFast, land: land ? { ok: land.ok, margin: land.margin, cells: land.cellsSpent ?? null,
-        hull: land.hullSpent ?? null } : null },
+        hull: land.hullSpent ?? null, miss: Boolean(land.miss), missS: land.miss ? T.DOOR_MISS_S : 0 } : null },
     lastHit: lastHit ? { cause: lastHit.cause, piece: lastHit.piece, by: lastHit.by } : null,
   };
   for (const v of L.downed) { const n = namedOf(race, v); if (n && !rec.beat.includes(n)) rec.beat.push(n); }
@@ -578,6 +578,7 @@ export function resultOf(run, meta = null, tune = TUNE, applied = null) {
     line = scorched ? `SCORCHED BUT HOME · ${land.hull} HULL SPENT ON THE AIR`
       : land && finite(land.margin) ? `HOME · ${(Math.round(land.margin * 10) / 10).toFixed(1)} S AHEAD OF THE LIGHT`
         : 'HOME AHEAD OF THE LIGHT';
+    if (land && land.miss) line += ' · MISSED THE DOOR';
   } else if (cause && cause.by) {
     line = `CAUGHT AT ${legName(type)} AFTER ${rivalName(cause.by)}'S TAKEDOWN`;
   } else if (cause && cause.place) line = `CAUGHT ${cause.place} AT ${legName(type)}`;

@@ -396,7 +396,6 @@ html[data-layout="desktop"] .panel { max-width: 560px; }
 /* html[data-motion] is the OS setting or REDUCED MOTION in Settings (main.js keeps it current) */
 html[data-motion="reduced"] #title .go, html[data-motion="reduced"] #hint, html[data-motion="reduced"] .card.frame-epic,
 html[data-motion="reduced"] #speed.big { animation: none; }
-html[data-layout="landscape"] .offer.n4 .ctitle { white-space: normal; font-size: 13px; line-height: 1.15; }
 html[data-layout="landscape"] .offer.n4 .cfx { font-size: 12px; }
 html[data-layout="landscape"] .s-break.docked .shipbox { height: 62px; }
 /* every tap shows on its own frame */
@@ -416,4 +415,30 @@ html[data-layout="portrait"] .s-break .cardw, html[data-layout="portrait"] .s-br
   html[data-layout="portrait"] .s-break .card .cfx { font-size: 12.5px; }
   html[data-layout="portrait"] .s-break .card .ctitle { font-size: 15px; }
   html[data-layout="portrait"] .s-break .cbody { gap: 2px; padding: 6px 0; }
+}
+/* the break in landscape follows the same rule: a card is never shorter than its words, and the offer scrolls inside
+   its own row (an iPhone SE on its side is 667 × 375, about 667 × 325 in Safari). A name wraps at its space and its
+   size follows its card's width (AFTERBURNER, the longest word, is about 8 × the font size wide; the card's padding
+   takes 30 px), so it fits the card; a card too narrow for that even at 11 px (4 cards on a screen under 760 px)
+   breaks the word. Narrow screens get a narrower status column and smaller card words. */
+html[data-layout="landscape"] .s-break .offer { overflow-y: auto; touch-action: pan-y; overscroll-behavior: contain; }
+html[data-layout="landscape"] .s-break .offer.more {
+  -webkit-mask-image: linear-gradient(#000 calc(100% - 36px), transparent);
+  mask-image: linear-gradient(#000 calc(100% - 36px), transparent); }
+html[data-layout="landscape"] .s-break .cards { flex: 1 0 auto; }
+html[data-layout="landscape"] .s-break .cardw { container-type: inline-size; }
+html[data-layout="landscape"] .s-break .ctitle { white-space: normal; overflow-wrap: anywhere; line-height: 1.15;
+  font-size: clamp(11px, calc((100cqi - 30px) / 8), 15px); }
+@media (max-width: 760px) {
+  html[data-layout="landscape"] .s-break { grid-template-columns: 190px minmax(0, 1fr); column-gap: 12px; }
+  html[data-layout="landscape"] .s-break .card { padding-right: 6px; }
+  html[data-layout="landscape"] .s-break .card .glyph { margin-left: 8px; }
+  html[data-layout="landscape"] .s-break .card .cbody { padding-left: 8px; }
+  html[data-layout="landscape"] .s-break .cfx { font-size: 12px; }
+}
+@media (max-width: 600px) {
+  html[data-layout="landscape"] .s-break { grid-template-columns: 150px minmax(0, 1fr); }
+  html[data-layout="landscape"] .s-break .lead { font-size: 11px; letter-spacing: 0.04em; }
+  html[data-layout="landscape"] .s-break .dchip { flex-direction: column; justify-content: center;
+    align-items: flex-start; }
 }

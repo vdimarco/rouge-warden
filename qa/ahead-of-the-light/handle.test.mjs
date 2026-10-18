@@ -13,6 +13,7 @@ import { createRace, stepRace, STEP, NO_INTENT } from '../../public/ahead-of-the
 import * as H from '../../public/ahead-of-the-light/core/handle.js';
 import { createInput, gainAt } from '../../public/ahead-of-the-light/ui/input.js';
 import { toyLeg } from '../../public/ahead-of-the-light/core/toy.js';
+import { applyBuild } from '../../public/ahead-of-the-light/core/cards.js';
 import { buildLeg } from '../../public/ahead-of-the-light/core/course/gen.js';
 import { ROUTE } from '../../public/ahead-of-the-light/core/course/legs.js';
 import { mulberry32 } from '../../public/light-years-home/core/rng.js';
@@ -22,15 +23,23 @@ const EPS = 1e-9;
 const still = parseOverrides('?drag=0&engine=0').tune;            // no drag and no engine: η changes only by events
 
 // A frozen leg of these items (numbered in order), the gen.js shape.
-function legOf(items, beats = 200) {
+function legOf(items, beats = 200, gateBeat = beats - 4) {
   const its = items.map((x, i) => Object.freeze({ id: i, piece: 'test', ...x }));
   return Object.freeze({ type: 'test', lane: null, seed: 1, beats, items: Object.freeze(its), sections: [],
-    gate: { id: null, beat: beats - 4 }, pickups: [], wells: [], labels: [], hash: 'test', report: { ok: true, errors: [] } });
+    gate: { id: null, beat: gateBeat }, pickups: [], wells: [], labels: [], hash: 'test', report: { ok: true, errors: [] } });
 }
 // A race on that leg out of leg 1 (no soft start, no teaching whip) unless legNo says so.
-function raceOf(items, { tune = TUNE, legNo = 1, beats } = {}) {
-  const race = createRace({ leg: legOf(items, beats), tune });
+function raceOf(items, { tune = TUNE, legNo = 1, beats, gateBeat } = {}) {
+  const race = createRace({ leg: legOf(items, beats, gateBeat), tune });
   race.legNo = legNo;
+  return race;
+}
+// Your cards on a race: their patches in race.tune (yours) and their hooks; the rivals keep `tune`.
+function withBuild(race, build, tune = race.tune) {
+  const B = applyBuild(build, tune);
+  race.tune = B.tune;
+  race.hooks = B.hooks;
+  race.baseTune = tune;
   return race;
 }
 function rival(race, { id = 'pike', bearing = 0, ahead = 0, eta = null, fuel = 2, fuelCap = 4 } = {}) {
@@ -56,13 +65,16 @@ const types = (ev, ship = 'you') => ev.filter((e) => e.ship === ship).map((e) =>
 const tTo = (race, item, ship = race.ships[0]) => (item.beat - ship.dist) / H.bpsOf(ship, race.tune);
 
 // The allocation probe runs in a child with the gc exposed: a ship riding a rail in a rival's full wake with a burn
-// ramping and a whip sweeping, stepped through handle's own parts with the event buffer reused. Bytes a step, the
-// best of six windows with no collector run.
+// ramping and a whip sweeping, PHASE HULL's cool-down running down, stepped through handle's own parts with the
+// event buffer reused. Bytes a step, the best of six windows with no collector run. The child compiles on its main
+// thread (--no-concurrent-recompilation): with background compiles, a busy machine delays the optimized code, and
+// until it lands the step runs unoptimized and boxes its numbers (30 to 700 bytes a step), so on a loaded machine all
+// six windows could miss it.
 async function allocChild() {
   const { PerformanceObserver, performance } = await import('node:perf_hooks');
   const gc = globalThis.gc;
   // a slow sweep so PIKE's whip lasts the whole probe; no suction or skim gain, so no gear changes
-  const T = parseOverrides('?sweep0=1&sweep1=1&scorchwarn=0.01&suction=0&skim=0').tune;
+  const T = { ...parseOverrides('?sweep0=1&sweep1=1&scorchwarn=0.01&suction=0&skim=0').tune, PHASE_HULL: 1 };
   const items = [{ kind: 'rail', beat: 1, end: 1e6, psi: 10, half: 1.5, omega: 0, breaks: [], skimBand: 6, skimX: 1 },
     { kind: 'well', beat: 12, psi: 0, size: 'landmark', exits: [] }];
   const race = raceOf(items, { beats: 1e6, tune: T });
@@ -70,6 +82,7 @@ async function allocChild() {
   const lead = rival(race, { id: 'remora', bearing: 0, ahead: 0.3 });
   const pike = rival(race, { id: 'pike', bearing: 25, ahead: 0.0 });
   const intents = [intentOf(0), lead.ai.intent, pike.ai.intent];
+  you.phaseCool = 1e6;                         // solid from a pass: the cool-down ticks every step
   const ev = race.events;
   race.win.hi = items.length;
   const step = (i) => {
@@ -108,6 +121,7 @@ async function allocChild() {
     if (!stamps.some((t) => t >= w0 && t <= w1) && n === 0) best = Math.min(best, bytes);
   }
   return { best, drafting: you.draft.lead === 'remora', skim: H.skimOf(you), whip: Boolean(pike.whip),
+    phase: you.phaseCool > 0 && you.phaseCool < 1e6,
     windows: windows.map((w) => [Math.round(w[2] * 10) / 10, w[3]]) };
 }
 
@@ -366,10 +380,13 @@ test('a rival 0.3 s ahead, held in the wake 1.0 s then left, gives a slingshot',
   assert.ok(y3.eta > 2.0, 'suction and no drag');
 });
 
-// You at `you` degrees, a rival abreast at `at` degrees; a flick toward it on step `when`. → events.
-function slam({ you = 0, at = 20, knotAt = null, knotIn = 0.25, when = 30, fuel = [2, 2], cap = 4, flick = 60 } = {}) {
+// You at `you` degrees, a rival abreast at `at` degrees; a flick toward it on step `when`. build: your cards (their
+// patches and hooks). → events.
+function slam({ you = 0, at = 20, knotAt = null, knotIn = 0.25, when = 30, fuel = [2, 2], cap = 4, flick = 60,
+  build = null } = {}) {
   const race = raceOf(knotAt === null ? [] : [{ kind: 'knot', beat: 2 + 1.866 * (when / 120 + knotIn), psi: knotAt, half: 3.5 }],
     { tune: still });
+  if (build) withBuild(race, build, still);
   const y = race.ships[0];
   y.bearing = y.target = you;
   y.fuel = fuel[0];
@@ -483,6 +500,200 @@ test('a rival rams with the rivals\' SLAM_V, you with yours (BATTERING PROW\'s 0
   assert.equal(meet('you').kind, 'slam', 'you on HOUND at 150 °/s is a SLAM with BATTERING PROW');
 });
 
+test('PHASE HULL: with the phase ready, the rival your hull touches flies through as a hairline that takes its fuel', () => {
+  const card = [{ id: 'phase-hull', r: 0 }];
+  const hairsOf = (ev) => ev.filter((e) => e.type === 'hair' && e.ship === 'you' && e.kind === 'rival');
+  // your flick into PIKE: a SLAM that spills its cell without the card; with it you fly through PIKE, one hairline
+  // and half its cell, and PIKE is not shoved
+  assert.ok(slam().ev.some((e) => e.type === 'contact' && e.kind === 'slam'));
+  const a = slam({ build: card });
+  assert.ok(!a.ev.some((e) => e.type === 'contact'), types(a.ev, 'pike').join(','));
+  assert.equal(a.r.shove, null, 'PIKE is not shoved');
+  assert.equal(a.y.stats.slams, 0);
+  assert.deepEqual(hairsOf(a.ev).map((e) => e.other), ['pike']);
+  assert.ok(a.ev.some((e) => e.type === 'spill' && e.ship === 'pike' && e.by === 'phase-hull' && e.to === 'you'));
+  assert.deepEqual([a.y.fuel, a.r.fuel], [2.5, 1.5]);
+  assert.ok(a.y.phaseCool > 0 && !H.phaseReady(a.y, a.race.tune), 'the hull is solid after the pass');
+  // PIKE flicks into you with a knot past you (you hold your line): its takedown on you without the card; with it
+  // PIKE flies through you, you are not shoved and nothing hits you
+  const flickIn = (build) => {
+    const race = raceOf([{ kind: 'knot', beat: 2 + 1.866 * 0.5, psi: -28, half: 3.5 }], { tune: still });
+    if (build) withBuild(race, build, still);
+    for (const s of race.ships) s.dist = 2;
+    const r = rival(race, { id: 'pike', bearing: 20 });
+    const ev = fly(race, 180, (i) => { if (i === 30) r.ai.intent.target = -40; return intentOf(null); });
+    return { ev, you: race.ships[0] };
+  };
+  const b0 = flickIn(null);
+  assert.ok(b0.ev.some((e) => e.type === 'takedown' && e.victim === 'you' && e.by === 'pike'), types(b0.ev).join(','));
+  const b = flickIn(card);
+  assert.ok(!b.ev.some((e) => e.type === 'contact' || e.type === 'takedown'), types(b.ev).join(','));
+  assert.equal(b.you.stats.hits, 0);
+  assert.equal(b.you.shove, null, 'you are not shoved');
+  assert.equal(hairsOf(b.ev).length, 1, 'PIKE passing through you is your hairline');
+  // you overtake PIKE straight through it: a rear-end without the card; with it one hairline and half its cell
+  const through = (build) => {
+    const race = raceOf([], { tune: still });
+    if (build) withBuild(race, build, still);
+    const y = race.ships[0];
+    y.eta = 2.0;
+    y.fuel = 1;
+    const r = rival(race, { id: 'pike', bearing: 0, ahead: 0.3, eta: 1.0, fuel: 2 });
+    const ev = fly(race, 240, () => intentOf(0));
+    return { ev, y, r };
+  };
+  const c0 = through(null);
+  assert.ok(c0.ev.some((e) => e.type === 'contact' && e.kind === 'rear'), types(c0.ev).join(','));
+  const c = through(card);
+  assert.ok(c.y.dist > c.r.dist, 'you passed it');
+  assert.ok(!c.ev.some((e) => e.type === 'contact'), types(c.ev).join(','));
+  const hairs = hairsOf(c.ev);
+  assert.equal(hairs.length, 1);
+  assert.deepEqual([hairs[0].kind, hairs[0].other], ['rival', 'pike']);
+  assert.deepEqual([c.y.fuel, c.r.fuel], [1.5, 1.5]);
+  assert.ok(c.ev.some((e) => e.type === 'spill' && e.ship === 'pike' && e.by === 'phase-hull' && e.to === 'you'));
+  // the rivals fly with the base tune: two rivals still touch each other
+  const race = withBuild(raceOf([], { tune: still }), card, still);
+  race.ships[0].bearing = race.ships[0].target = 180;
+  const p = rival(race, { id: 'pike', bearing: 0 }), h = rival(race, { id: 'hound', bearing: 5 });
+  for (const s of race.ships) { s.soft = false; s.dist = 2; s.turnRate = 0; }
+  p.turnRate = 300;
+  race.events = [];
+  H.stepContact(race, STEP, race.tune);
+  assert.equal(race.events.find((e) => e.type === 'contact').kind, 'slam', `${h.id} is slammed`);
+});
+
+test('PHASE HULL: the phase passes once; a touch inside PHASE_COOLDOWN is normal contact; then it is ready again', () => {
+  const race = withBuild(raceOf([], { tune: still }), [{ id: 'phase-hull', r: 0 }], still);
+  const T = race.tune, you = race.ships[0];
+  assert.ok(T.PHASE_COOLDOWN >= 3 && T.PHASE_COOLDOWN <= 10, `PHASE_COOLDOWN ${T.PHASE_COOLDOWN}`);
+  const p = rival(race, { id: 'pike', bearing: 40, fuel: 2 });
+  for (const s of race.ships) { s.soft = false; s.dist = 2; s.turnRate = 0; }
+  you.fuel = 1;
+  // one step of contact with you flicking at 300 °/s (a SLAM without the card), PIKE at `at`°
+  const touch = (at) => {
+    p.bearing = at;
+    you.turnRate = at === 5 ? 300 : 0;
+    race.events = [];
+    race.t += STEP;
+    H.stepContact(race, STEP, T);
+    return race.events.filter((e) => e.ship === 'you' || e.ship === 'pike').map((e) => `${e.type}:${e.kind || e.by || ''}`);
+  };
+  // apart for T s: the cool-down runs down
+  const apart = (s) => { for (let t = 0; t < s - 1e-9; t += STEP) touch(40); };
+  assert.ok(H.phaseReady(you, T));
+  assert.deepEqual(touch(5), ['hair:rival', 'spill:phase-hull'], 'the pass');
+  assert.equal(you.phaseCool, T.PHASE_COOLDOWN);
+  assert.ok(!H.phaseReady(you, T));
+  // still inside PIKE: you fly on through it, no contact, no second hairline
+  assert.deepEqual(touch(5), []);
+  apart(0.5);
+  // a touch inside the cool-down is a normal SLAM: PIKE is shoved and spills its cell, which you take
+  const fuel0 = you.fuel;
+  assert.deepEqual(touch(5), ['contact:slam', 'spill:'], 'normal contact while solid');
+  assert.ok(p.shove && p.shove.slam && p.shove.by === 'you');
+  assert.deepEqual([you.fuel, p.fuel], [fuel0 + T.SPILL, 0.5], 'a SLAM\'s spill: one cell');
+  assert.ok(Math.abs(you.phaseCool - (T.PHASE_COOLDOWN - 0.5 - 2 * STEP)) < 1e-6, `cool ${you.phaseCool}`);
+  // the cool-down ends PHASE_COOLDOWN s after the pass, to the step
+  p.shove = null;
+  apart(T.PHASE_COOLDOWN - 0.5 - 3 * STEP);
+  assert.ok(!H.phaseReady(you, T) && you.phaseCool <= STEP + 1e-9, `cool ${you.phaseCool}`);
+  apart(STEP);
+  assert.ok(H.phaseReady(you, T), `ready again: cool ${you.phaseCool}`);
+  p.fuel = 1;
+  assert.deepEqual(touch(5), ['hair:rival', 'spill:phase-hull'], 'the next pass');
+  assert.equal(you.phaseCool, T.PHASE_COOLDOWN);
+  // a new leg starts with the phase ready
+  assert.equal(H.createShip({ id: 'you', kind: 'you', tune: T }).phaseCool, 0);
+});
+
+test('PHASE HULL: on the edge of contact after a pass, a hair apart is the same pass; clearly apart, they part', () => {
+  // two ships at almost one speed sit on the edge of contact after a pass (z near CONTACT_Z, or a bearing gap near 0)
+  // and drift a hair out and back in: you fly on through that ship with no contact, however long that lasts. Once
+  // they are clearly apart (twice the contact depth, or a hairline between the hulls) they have parted, and a touch
+  // while your hull is solid is normal contact
+  const race = withBuild(raceOf([], { tune: still }), [{ id: 'phase-hull', r: 0 }], still);
+  const T = race.tune, you = race.ships[0];
+  const p = rival(race, { id: 'pike', bearing: 0, fuel: 2 });
+  for (const s of race.ships) { s.soft = false; s.dist = 2; s.turnRate = 0; }
+  // PIKE at `gap`° between the hulls (0 in your line), z s behind you (in your wake: the draft's events are left out)
+  const at = (z, gap = null) => {
+    p.dist = you.dist - z * H.bpsOf(p, T);
+    p.bearing = gap === null ? 0 : you.half + p.half + gap;
+    race.events = [];
+    race.t += STEP;
+    H.stepContact(race, STEP, T);
+    return race.events.filter((e) => ['contact', 'hair', 'spill'].includes(e.type))
+      .map((e) => `${e.type}:${e.kind || e.by || ''}`);
+  };
+  const IN = T.CONTACT_Z - 1e-4, OUT = T.CONTACT_Z + 1e-4, FAR = 2 * T.CONTACT_Z + 1e-3;
+  assert.deepEqual(at(IN), ['hair:rival', 'spill:phase-hull'], 'the pass');
+  for (const n of [1, 2, 5, 11, 60]) {
+    for (let i = 0; i < n; i++) assert.deepEqual(at(OUT), []);
+    assert.deepEqual(at(IN), [], `back in after ${n} steps a hair behind: the same pass`);
+    for (let i = 0; i < n; i++) assert.deepEqual(at(IN, 0.2), []);
+    assert.deepEqual(at(IN), [], `back in after ${n} steps a hair to the side: the same pass`);
+  }
+  assert.equal(p.shove, null, 'PIKE is not shoved');
+  assert.equal(you.shove, null, 'you are not shoved');
+  assert.ok(!H.phaseReady(you, T), 'still solid');
+  // one step clearly behind: they parted, and this touch is a rear-end
+  assert.deepEqual(at(FAR), []);
+  assert.deepEqual(at(IN), ['contact:rear'], 'twice the contact depth apart: they parted');
+  // the same for a hairline between the hulls, after a new pass with the phase ready again
+  you.phaseCool = 0;
+  p.shove = you.shove = null;
+  race.t += 1;
+  assert.deepEqual(at(FAR), []);
+  assert.deepEqual(at(IN), ['hair:rival', 'spill:phase-hull'], 'the next pass');
+  assert.deepEqual(at(IN, T.HAIR), []);
+  assert.deepEqual(at(IN), ['contact:rear'], 'a hairline apart: they parted');
+});
+
+test('PHASE HULL: while your hull is solid, a rival SLAM on you is a takedown and a drafter clipping a knot is TRAPPED', () => {
+  const card = [{ id: 'phase-hull', r: 0 }];
+  // PIKE flicks into you with a knot past you, as above, but your hull is solid from a pass 1 s ago
+  const race = raceOf([{ kind: 'knot', beat: 2 + 1.866 * 0.5, psi: -28, half: 3.5 }], { tune: still });
+  withBuild(race, card, still);
+  for (const s of race.ships) s.dist = 2;
+  const you = race.ships[0];
+  you.phaseCool = race.tune.PHASE_COOLDOWN - 1;
+  const r = rival(race, { id: 'pike', bearing: 20 });
+  const ev = fly(race, 180, (i) => { if (i === 30) r.ai.intent.target = -40; return intentOf(null); });
+  assert.ok(ev.some((e) => e.type === 'contact' && e.kind === 'slam' && e.victim === 'you'), types(ev).join(','));
+  assert.ok(ev.some((e) => e.type === 'takedown' && e.victim === 'you' && e.by === 'pike'), types(ev).join(','));
+  assert.ok(!ev.some((e) => e.type === 'hair' && e.kind === 'rival'), 'no pass while solid');
+});
+
+test('TRAPPED: you draft PIKE, it skims a knot and you clip it; PHASE HULL ready makes that a plain hit, solid not', () => {
+  // the knot at 9.5° (half 3): PIKE on 0° (half 3.5) passes it at a 3° gap; you on 4°, 0.3 s behind, hit it
+  const trap = (build, solid = false) => {
+    const race = raceOf([{ kind: 'knot', beat: 6.9, psi: 9.5, half: 3 }], { tune: still });
+    const you = race.ships[0];
+    you.dist = 5;
+    you.bearing = you.target = 4;
+    const r = rival(race, { id: 'pike', bearing: 0, ahead: 0.3 });
+    if (build) withBuild(race, build, still);
+    if (solid) you.phaseCool = race.tune.PHASE_COOLDOWN;      // a pass just now: the hull is solid
+    const ev = fly(race, 720, () => intentOf(4));
+    return { ev, you, r };
+  };
+  const a = trap(null);
+  assert.ok(a.ev.some((e) => e.type === 'trapped' && e.ship === 'you' && e.by === 'pike'), types(a.ev).join(','));
+  assert.ok(a.ev.some((e) => e.type === 'takedown' && e.victim === 'you' && e.by === 'pike' && e.trapped));
+  assert.equal(a.ev.find((e) => e.type === 'hit' && e.ship === 'you').cause, 'trapped');
+  assert.equal(a.r.stats.takedowns, 1);
+  const b = trap([{ id: 'phase-hull', r: 0 }]);
+  const h = b.ev.filter((e) => e.type === 'hit' && e.ship === 'you');
+  assert.equal(h.length, 1, types(b.ev).join(','));
+  assert.deepEqual([h[0].cause, h[0].by], ['knot', null]);
+  assert.ok(!b.ev.some((e) => e.type === 'trapped' || e.type === 'takedown'), types(b.ev).join(','));
+  assert.equal(b.r.stats.takedowns, 0);
+  const c = trap([{ id: 'phase-hull', r: 0 }], true);
+  assert.ok(c.ev.some((e) => e.type === 'trapped' && e.ship === 'you' && e.by === 'pike'), types(c.ev).join(','));
+  assert.equal(c.ev.find((e) => e.type === 'hit' && e.ship === 'you').cause, 'trapped');
+});
+
 test('a knot crossed mid-whip pays a plain graze, not a hairline', () => {
   const items = [{ kind: 'well', beat: 20, psi: 0, size: 'landmark', exits: [150] }];
   const go = (extra) => {
@@ -535,6 +746,33 @@ test('a gate the whip carries you across is judged at the release (SLINGSHOT HOM
   assert.ok(b.ev.some((e) => e.type === 'past'), types(b.ev).join(','));
   assert.ok(!b.ev.some((e) => e.type === 'hit'));
   assert.equal(b.you.gate, 'past');
+});
+
+test('a gate the whip carried you across, still unjudged when the leg ends mid-whip, is a fly past and pays its push-back', () => {
+  // the gate line at beat 21 and the leg's end 1.5 beats on, so a held whip from the well at 20 outlasts the leg
+  const race = raceOf([{ kind: 'well', beat: 20, psi: 0, size: 'landmark', exits: [105] },
+    { kind: 'gate', beat: 21, psi: 105, gap: 26, halves: [12, 12], names: ['A', 'B'], dock: { psi: 195, w: 20 } }],
+  { tune: still, beats: 22.5, gateBeat: 21 });
+  const you = race.ships[0], well = race.leg.items[0];
+  you.dist = 18;
+  you.gap = 3;
+  let grabbed = false;
+  const ev = fly(race, 900, (i, r) => {
+    if (you.whip) grabbed = true;
+    if (grabbed) return NO_INTENT;                          // held: no lift before the leg ends
+    you.bearing = you.target = 20;
+    return intentOf(20, tTo(r, well) <= 0.01 ? 'down' : null);
+  });
+  const end = ev.find((e) => e.type === 'legEnd');
+  assert.ok(end && end.why === 'gate', types(ev).join(','));
+  assert.ok(you.whip && !ev.some((e) => e.type === 'release'), 'the leg ended mid-whip');
+  const past = ev.find((e) => e.type === 'past' && e.ship === 'you');
+  assert.ok(past, `a fly past: ${types(ev).join(',')}`);
+  assert.equal(you.gate, 'past');
+  const push = ev.find((e) => e.type === 'push' && e.ship === 'you' && e.from === 'past');
+  assert.ok(push && Math.abs(push.amount - still.PB_PAST * still.MASS_K[1]) < EPS, 'the fly past pays PB_PAST x M');
+  assert.ok(ev.indexOf(past) < ev.indexOf(end), 'paid before the leg ends');
+  assert.equal(you.whip.gate, null);
 });
 
 test('forceRelease (KICK OUT) is a PERFECT release that pays the race\'s RED_X in the red zone', () => {
@@ -791,12 +1029,13 @@ test('10,000 steps of random intents and dt (1 to 50 ms): no NaN, no throw', () 
 });
 
 test('the handling step allocates nothing but its events (gc exposed)', () => {
-  const out = spawnSync(process.execPath, ['--expose-gc', fileURLToPath(import.meta.url)],
+  const flags = ['--expose-gc', '--no-concurrent-recompilation'];
+  const out = spawnSync(process.execPath, [...flags, fileURLToPath(import.meta.url)],
     { env: { ...process.env, AOL_ALLOC_CHILD: '1' }, encoding: 'utf8' });
   const m = /ALLOC (\{.*\})/.exec(out.stdout || '');
   assert.ok(m, `child reported: ${out.stdout} ${out.stderr}`);
   const r = JSON.parse(m[1]);
-  assert.ok(r.drafting && r.skim > 0 && r.whip, `the probe drafts, skims and whips: ${m[1]}`);
+  assert.ok(r.drafting && r.skim > 0 && r.whip && r.phase, `the probe drafts, skims, whips and cools: ${m[1]}`);
   assert.ok(Number.isFinite(r.best), `a quiet window with no events and no collector run: ${m[1]}`);
   assert.ok(r.best < 8, `about ${r.best.toFixed(1)} bytes a step`);
 });

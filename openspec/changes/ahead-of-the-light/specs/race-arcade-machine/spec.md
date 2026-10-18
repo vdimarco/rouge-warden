@@ -1,7 +1,7 @@
 ## ADDED Requirements
 
 ### Requirement: A machine in the arcade
-The Cottage Arcade SHALL have a machine for Ahead of the Light: an entry after River Rush in `GAMES` of `public/arcade/switch.js` (id `ahead-of-the-light`, name "Ahead of the Light", sub "Race home before the burst", url `/ahead-of-the-light/`, colour `#f08a2c`), an article at the end of the row in `public/index.html` with its colours (`#0b0b14`, `#f08a2c`), and its id in the Action group. The page SHALL drop `noindex` when the machine goes in.
+The Cottage Arcade SHALL have a machine for Ahead of the Light: an entry after River Rush in `GAMES` of `public/arcade/switch.js` (id `ahead-of-the-light`, name "Ahead of the Light", sub "Run home", url `/ahead-of-the-light/`, colour `#f08a2c`), an article after River Rush's in `public/index.html` with its colours (`#0b0b14`, `#f08a2c`), and its id in the Action group. The page SHALL drop `noindex` when the machine goes in.
 
 #### Scenario: Start the machine
 - **WHEN** a player drops a token in the Ahead of the Light machine and presses START, on a phone or a computer
@@ -13,10 +13,45 @@ The Cottage Arcade SHALL have a machine for Ahead of the Light: an entry after R
 - **THEN** the switcher lists Ahead of the Light with the machine's id and name and marks it as the game being played
 - **CHECK** `qa/arcade/machines.mjs`
 
-#### Scenario: The last machine on a phone
-- **WHEN** a player walks to Ahead of the Light at the end of the Action row on a 390 × 844 screen
+#### Scenario: The machine on a phone
+- **WHEN** a player walks to Ahead of the Light in the Action row on a 390 × 844 screen
 - **THEN** the machine shows whole, not clipped and not under the sign or the tray
-- **CHECK** `qa/arcade/machines.mjs`
+- **CHECK** `qa/arcade/machines.mjs` (the `marquee` part)
+
+### Requirement: The place in the row
+The Ahead of the Light article SHALL come after the Action articles that were there before it. The Light Years Home
+article, whose cabinet came later, SHALL come after it, as AGENTS.md's New games rule says, so the Action row ends
+with Ahead of the Light and then Light Years Home, in the row and in the Action group's `games`.
+
+#### Scenario: The Action row
+- **WHEN** a player opens the Action row on a computer, in portrait or in landscape
+- **THEN** Ahead of the Light is the 7th of its 8 machines, after River Rush, and Light Years Home is the last
+- **CHECK** `qa/arcade/groups.e2e.mjs`
+
+### Requirement: The marquee fits
+The marquee of this machine and of the Light Years Home machine SHALL show the whole title and sub line, with nothing
+cut, on a machine at least 259 px tall (a box 100 px wide inside). The sub lines SHALL be RUN HOME and DRIVE ON, as in
+the switcher's `sub`: 8 characters fit one line in that box (`design.md`). Where it fits, the title SHALL take one line.
+
+#### Scenario: A computer and a phone
+- **WHEN** a player opens the Action row at 1280 × 720, 1280 × 800 or 390 × 844 and picks either machine
+- **THEN** its title takes one line, its sub line shows under it, and no letter is cut
+- **CHECK** `qa/arcade/machines.mjs` (the `marquee` part)
+
+#### Scenario: A small phone
+- **WHEN** a player opens the Action row at 360 × 740, 375 × 667 or 320 × 700 and picks either machine
+- **THEN** its title takes one or two lines, its sub line shows under it, and no letter is cut
+- **CHECK** `qa/arcade/machines.mjs` (the `marquee` part), and the marquee shots reviewed by eye
+
+### Requirement: A short machine hides the sub line
+On a machine from about 230 to 259 px tall, these two marquees SHALL hide the sub line and show the whole title on two
+lines, so no line is cut in half. On a shorter machine, as on a landscape phone at 844 × 390, the 12 px type floor
+leaves no room for the title, and these marquees are cut like every other machine's.
+
+#### Scenario: A short window
+- **WHEN** a player opens the Action row at 360 × 640 or 800 × 600 and picks either machine
+- **THEN** its title shows whole on two lines, its sub line is hidden, and no letter is cut
+- **CHECK** `qa/arcade/machines.mjs` (the `marquee` part), and the marquee shots reviewed by eye
 
 ### Requirement: The cabinet screen
 The machine's screen SHALL be `public/arcade/key/ahead-of-the-light.webp`, 480 px wide and under 60 KB, cut from a real portrait screenshot at HEADLIGHT with a rival in the wake and the light's ring rising, with the alt text "A ship skims galaxies on a thin white ring while a ring of light closes from behind".

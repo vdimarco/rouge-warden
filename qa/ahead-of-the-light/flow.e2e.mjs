@@ -1,10 +1,13 @@
 // Ahead of the Light's screen flow in a browser (final.md 14, 15.2, 16, 22.1): the daily route's one seed (the DAILY
-// chip, ?daily=1 and AGAIN), PRACTICE never touching the saved run, AGAIN on a practice card replaying that leg, a
-// saved run resumed on a tuned page going unranked, input after QUIT RUN, Esc and P pausing, M in the toy, a steer key
-// let go on a screen or in the pause, Space after the pause button, Enter on a focused button, keys behind the open
-// game switcher, THE FULL RUN from the toy, a double tap on REROLL, the camera at each launch, REDUCED MOTION from
-// Settings, the break's ship redrawn on a rotation, short phone screens (the break, the title, the captions) and the
-// ring layer's labels (rival labels off the light's label, the wings and the HUD; landmark labels off each other).
+// chip, ?daily=1 and AGAIN), PRACTICE never touching the saved run, AGAIN on a practice card replaying that leg, its
+// medals only on a page with no URL option but seed and daily, a saved run resumed on a tuned page going unranked,
+// input after QUIT RUN, Esc and P pausing, M in the toy, a steer key let go on a screen or in the pause, Space after
+// the pause button, Enter on a focused button, Space and Enter after a mouse click on a result card chip, keys behind
+// the open game switcher, THE FULL RUN from the toy, a double tap on REROLL, the camera at each launch, REDUCED MOTION
+// from Settings, the break's ship redrawn on a rotation, short phone screens upright and on their side (the break, the
+// title, the captions, a missed DOOR's landing caption), a missed DOOR's landing caption through the real ending (each
+// chunk before the result card) and the ring layer's labels (rival labels off the light's label, the wings and the
+// HUD; landmark labels off each other).
 //   NODE_PATH=qa/browser/node_modules node qa/ahead-of-the-light/flow.e2e.mjs      (the site served on 8765)
 import { launch, open, reporter, S, R, wait, waitMode, BASE } from './e2e-lib.mjs';
 
@@ -169,6 +172,35 @@ const browser = await launch();
       await wait(200);
       check('desktop: Enter on the focused TITLE chip opens the title', (await S(page)).mode === 'title', (await S(page)).mode);
     }
+    // a mouse click leaves no focus on the result card's chips: after a click on COPY LOG (or on TITLE inside the
+    // card's 0.9 s lock, which ignores it) Space and Enter go AGAIN, as the card says; Enter on a focused COPY LOG
+    // still copies (the clipboard's writes are counted)
+    await R(page, () => {
+      window.__copies = 0;
+      if (navigator.clipboard) navigator.clipboard.writeText = () => { window.__copies++; return Promise.resolve(); };
+    });
+    const again = async (chip, key, inLock) => {
+      await R(page, () => window.__race.action(window.__race.state().mode === 'title' ? 'fly' : 'again'));
+      await waitMode(page, 'play', 5000).catch(() => {});
+      if (!(await toResult(page))) return null;
+      if (!inLock) await wait(1100);
+      const c0 = await R(page, () => window.__copies);
+      if (chip === 'focus') await page.focus('.s-result [data-act="copylog"]');
+      else await tap(page, `.s-result [data-act="${chip}"]`, true);
+      if (inLock) await wait(1100);
+      await page.keyboard.press(key);
+      await wait(250);
+      return { mode: (await S(page)).mode, copies: (await R(page, () => window.__copies)) - c0 };
+    };
+    for (const [chip, key, inLock, want] of [['copylog', 'Space', false, 'play'], ['copylog', 'Enter', false, 'play'],
+      ['title', 'Space', true, 'play'], ['focus', 'Enter', false, 'result']]) {
+      const r = await again(chip, key, inLock);
+      const what = chip === 'focus' ? 'Enter on the focused COPY LOG copies the log and keeps the card'
+        : `${key} after a click on ${chip === 'title' ? 'TITLE in the card\'s lock' : 'COPY LOG'} goes AGAIN`;
+      check(`desktop: ${what}`, r && r.mode === want && r.copies === (chip === 'copylog' || chip === 'focus' ? 1 : 0),
+        JSON.stringify(r));
+    }
+    await R(page, () => window.__race.action('title'));
   }
 
   // the switcher open from the title: Space never starts a run behind it, and Esc closes it
@@ -400,18 +432,62 @@ for (const [size, q, seed0, back] of [['portrait', '?gap0=0.4&gapcap=0.4&bleed=0
   await ctx.close();
 }
 
+// ---------------------------------------------------------------- practice medals and URL options
+// A practice leg earns medals only on a plain page (14.4, 20): ?bot= or any other option but seed and daily blocks
+// them, as a tuning key does. The mid bot clears practice leg 1 in years that earn a medal (three tries), then the
+// meta's medals are read.
+{
+  rep.section('practice medals');
+  const pages = [['', true], ['?seed=4', true], ['?bot=mid', false], ['?barks=0', false], ['?gapcap=30', false]];
+  for (const [query, want] of pages) {
+    const { page, errors, ctx } = await open(browser, 'portrait', query);
+    let r = null;
+    for (let k = 0; k < 3 && !(r && r.earns); k++) {
+      r = await R(page, async () => {
+        const { medalFor } = await import(new URL('core/meta.js', location.href).href);
+        const h = window.__race;
+        h.setMeta({ ...h.meta(), medals: {} });
+        h.action('practice-leg', { i: '0' });
+        h.bot('mid');
+        h.realtime(false);
+        const tuned = h.run().tuned;
+        for (let i = 0; i < 200 && ['play', 'ending'].includes(h.state().mode); i++) h.advance(2);
+        const leg = (h.run().legs || [])[0] || {};
+        const earns = leg.why === 'gate' ? medalFor('web', leg.years) : null;
+        return { tuned, why: leg.why, years: leg.years, earns, medal: h.meta().medals.web || null,
+          mode: h.state().mode };
+      });
+      await R(page, () => { window.__race.bot(null); window.__race.realtime(true); window.__race.action('title'); });
+    }
+    const tag = query || 'a plain page';
+    check(`practice on ${tag}: ${want ? 'a cleared leg earns its medal' : 'a cleared leg earns no medal'}`,
+      Boolean(r.earns) && r.tuned === !want && r.medal === (want ? r.earns : null), JSON.stringify(r));
+    check(`practice on ${tag}: no page errors`, errors.length === 0, errors.slice(0, 4).join(' | '));
+    await ctx.close();
+  }
+}
+
 // ---------------------------------------------------------------- short phone screens
+// Upright (an iPhone SE in Safari is 375 × 553) and on its side (667 × 375, about 667 × 325 in Safari; 568 × 320).
 const phone = (w, h) => ({ viewport: { width: w, height: h }, hasTouch: true, isMobile: true });
-for (const [w, h] of [[375, 553], [360, 640], [320, 568]]) {
+const LONG = ['afterburner', 'twin-deflector', 'close-quarters', 'ablative-tanks'];     // the longest word and names
+for (const [w, h] of [[375, 553], [360, 640], [320, 568], [667, 375], [667, 325], [568, 320]]) {
   const tag = `${w}x${h}`;
   rep.section(tag);
   const { page, errors, ctx } = await open(browser, phone(w, h));
-  // the break, plain and with the dock strip: SKIP is never under a card, and no card's text is cut
+  // the break, plain, with the dock strip, with the longest names and with 4 of them: SKIP is never under a card,
+  // no card's text is cut at its bottom or its side, and a name breaks only at its space (4 cards side by side on a
+  // screen under 760 px may break a word: a card is 101 px or less)
   if (await toBreak(page, 1, 'SHRT')) {
     const save = await R(page, () => window.__race.save());
-    for (const dock of [false, true]) {
+    for (const kind of ['plain', 'dock', 'long', 'long4']) {
       const env = JSON.parse(save);
-      if (dock) { env.run.dock = { free: 1, bought: [] }; env.run.you.hull = 1; }
+      if (kind === 'dock') { env.run.dock = { free: 1, bought: [] }; env.run.you.hull = 1; }
+      if (kind.startsWith('long')) {
+        const cards = env.run.offer.cards, n = kind === 'long4' ? 4 : 3;
+        while (cards.length < n) cards.push({ ...cards[0], slot: cards.length });
+        env.run.offer.cards = cards.slice(0, n).map((c, i) => ({ ...c, id: LONG[i] }));
+      }
       await R(page, (j) => window.__race.load(j), JSON.stringify(env));
       await wait(900);
       const r = await R(page, () => {
@@ -419,11 +495,39 @@ for (const [w, h] of [[375, 553], [360, 640], [320, 568]]) {
         skip.scrollIntoView({ block: 'nearest' });
         const b = skip.getBoundingClientRect();
         const hit = document.elementFromPoint(b.left + b.width / 2, b.top + b.height / 2);
-        const cut = [...document.querySelectorAll('.s-break .card')].filter((c) => [...c.querySelectorAll('.ctitle, .cfx, .ctag')]
-          .some((e) => e.getBoundingClientRect().bottom > c.getBoundingClientRect().bottom + 1)).length;
-        return { hit: Boolean(hit && hit.closest('[data-act="skip"]')), inView: b.top >= 0 && b.bottom <= innerHeight, cut };
+        const box = (e) => {
+          const rg = document.createRange();
+          rg.selectNodeContents(e);
+          return rg.getBoundingClientRect();
+        };
+        const cards = [...document.querySelectorAll('.s-break .card')];
+        const cut = cards.filter((c) => {
+          const B = c.getBoundingClientRect();
+          return c.scrollWidth > c.clientWidth + 1 || [...c.querySelectorAll('.ctitle, .cfx, .ctag')].some((e) => {
+            const a = box(e);
+            return e.getBoundingClientRect().bottom > B.bottom + 1 || a.bottom > B.bottom + 1 || a.right > B.right + 1;
+          });
+        }).map((c) => c.querySelector('.ctitle').textContent);
+        // a word of a name on two lines
+        const split = [];
+        for (const c of cards) {
+          const tn = c.querySelector('.ctitle').firstChild;
+          let at = 0;
+          for (const wd of tn ? tn.textContent.split(' ') : []) {
+            const rg = document.createRange();
+            rg.setStart(tn, at); rg.setEnd(tn, at + wd.length);
+            if (new Set([...rg.getClientRects()].map((q) => Math.round(q.top))).size > 1) split.push(wd);
+            at += wd.length + 1;
+          }
+        }
+        return { hit: Boolean(hit && hit.closest('[data-act="skip"]')), inView: b.top >= 0 && b.bottom <= innerHeight, cut,
+          split, cards: cards.length, w: cards[0] ? Math.round(cards[0].getBoundingClientRect().width) : 0 };
       });
-      check(`${tag}: the break${dock ? ' with the dock strip' : ''}: SKIP takes its own tap and no card's text is cut`, r.hit && r.inView && r.cut === 0, JSON.stringify(r));
+      const what = { plain: '', dock: ' with the dock strip', long: ' with the longest names',
+        long4: ' with 4 long names' }[kind];
+      const splitOk = r.split.length === 0 || (kind === 'long4' && w > h && w < 760);
+      check(`${tag}: the break${what}: SKIP takes its own tap, no card's text is cut and a name breaks at its space`,
+        r.hit && r.inView && r.cut.length === 0 && splitOk, JSON.stringify(r));
     }
   } else check(`${tag}: a leg played to its gate opens the break`, false);
   // the title of a returning player with every chip: the name stays on screen and clear of ‹ Arcade
@@ -449,7 +553,86 @@ for (const [w, h] of [[375, 553], [360, 640], [320, 568]]) {
     return { left: Math.round(b.left), right: Math.round(b.right) };
   });
   check(`${tag}: the widest caption chunk stays on screen`, cap.left >= 0 && cap.right <= w, JSON.stringify(cap));
+  // the landing caption after a missed DOOR (8.2): the HUD's own words for the land event, shown chunk by chunk by a
+  // HUD of its own on the caption line, each chunk on screen
+  const door = await R(page, async () => {
+    const hud = await import(new URL('ui/hud.js', location.href).href);
+    const el = document.getElementById('captions');
+    const race = { leg: { type: 'earth', items: [] }, legNo: 7, ships: [{ id: 'you', dist: 0 }], t: 60 };
+    const out = [];
+    for (const ok of [false, true]) {
+      const ctx = { race, mem: hud.createCaptionMemory(), runs: 5, desk: false, toy: false, fires: [], prevDist: 0 };
+      const c = hud.captionsFor([{ type: 'land', ship: 'you', ok, miss: true }], ctx).find((x) => x.type === 'land');
+      const h = hud.createHud({ captions: el });
+      h.say(c.text, { pri: c.pri, type: c.type });
+      el.style.visibility = 'visible';
+      let prev = '';
+      for (let t = 0; t < 5 && h.caption; t += 0.05) {
+        if (el.innerHTML !== prev) {
+          prev = el.innerHTML;
+          const rg = document.createRange(); rg.selectNodeContents(el);
+          const b = rg.getBoundingClientRect();
+          if (b.width > 0) out.push({ text: c.text, chunk: el.textContent, left: Math.round(b.left), right: Math.round(b.right) });
+        }
+        h.frame(0.05);
+      }
+      h.clearCaptions();
+    }
+    el.innerHTML = ''; el.style.visibility = '';
+    return out;
+  });
+  const chunks = [...new Set(door.map((d) => d.chunk))];
+  check(`${tag}: a missed DOOR's landing caption says so first, and each of its chunks stays on screen`,
+    door.length > 0 && door.every((d) => d.text.startsWith('MISSED THE DOOR · ') && d.left >= 0 && d.right <= w)
+      && ['MISSED THE DOOR', 'HOME'].every((c) => chunks.includes(c)) && chunks.some((c) => /DOORSTEP/.test(c)),
+    JSON.stringify({ chunks, widest: door.reduce((m, d) => Math.max(m, d.right - d.left), 0), bad: door.filter((d) => d.left < 0 || d.right > w) }));
   check(`${tag}: no page errors`, errors.length === 0, errors.slice(0, 4).join(' | '));
+  await ctx.close();
+}
+
+// ---------------------------------------------------------------- a missed DOOR through the real ending
+// Earth's leg from just before its DOOR with your bearing far off the DOOR's arc, on the page's own clock: the result
+// card waits until the landing caption's last chunk has shown, home and caught on the doorstep (?lands=30, a landing
+// that needs more than you have), with Slow captions too
+for (const [label, q, slow, want] of [['home', '', false, ['MISSED THE DOOR', 'HOME']],
+  ['doorstep', '?lands=30', false, ['MISSED THE DOOR', 'CAUGHT ON', 'THE DOORSTEP']],
+  ['doorstep with Slow captions', '?lands=30', true, ['MISSED THE DOOR', 'CAUGHT ON', 'THE DOORSTEP']]]) {
+  rep.section(`missed DOOR ending: ${label}`);
+  const { page, errors, ctx } = await open(browser, 'portrait', q);
+  if (slow) {
+    // Slow captions is a setting: saved in the meta, read as the page loads
+    await R(page, () => {
+      const h = window.__race, m = h.meta();
+      m.settings = { ...(m.settings || {}), slowCaptions: true };
+      h.setMeta(m);
+    });
+    await page.reload();
+    await page.waitForFunction(() => window.__race && window.__race.state().frames > 2, null, { timeout: 60000 });
+  }
+  const end = await R(page, async () => {
+    const h = window.__race;
+    h.goto({ leg: 'earth', seed: 'DOORQ' });
+    h.goto({ leg: 'earth', seed: 'DOORQ', beat: h.leg().gate.beat - 3 });
+    h.bot(null);
+    h.input({ target: h.leg().gate.psi + 120 });
+    const el = document.getElementById('captions'), seen = [];
+    let land = null, landAt = 0;
+    const t0 = performance.now();
+    while (performance.now() - t0 < 20000 && h.state().mode !== 'result') {
+      await new Promise((r) => requestAnimationFrame(r));
+      if (!land && (land = h.events(20).find((e) => e.type === 'land') || null)) landAt = performance.now();
+      const txt = (el.textContent || '').trim();
+      if (land && txt && (!seen.length || seen[seen.length - 1].text !== txt)) {
+        seen.push({ text: txt, ms: Math.round(performance.now() - landAt) });
+      }
+    }
+    return { land, seen, mode: h.state().mode, cardMs: Math.round(performance.now() - landAt) };
+  });
+  const shown = end.seen.map((x) => x.text);
+  check(`missed DOOR ending, ${label}: every chunk of the landing caption shows before the result card`,
+    end.mode === 'result' && Boolean(end.land && end.land.miss) && end.land.ok === (label === 'home')
+      && want.every((c) => shown.includes(c)), JSON.stringify(end));
+  check(`missed DOOR ending, ${label}: no page errors`, errors.length === 0, errors.slice(0, 4).join(' | '));
   await ctx.close();
 }
 

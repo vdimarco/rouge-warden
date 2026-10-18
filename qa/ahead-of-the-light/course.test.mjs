@@ -132,21 +132,31 @@ function startSweeps() {
   for (const p of Object.values(SWEEPS)) p.catch(() => {});
 }
 
+// The CPU time this thread spent, in ms. A build is timed by the work it does, not the wall clock, so a busy machine
+// (other tests, a browser) does not count against it. A node without process.threadCpuUsage has only the process's
+// clock, which also counts V8's compiler and collector threads (a little more, never less).
+const cpuMs = typeof process.threadCpuUsage === 'function'
+  ? () => { const u = process.threadCpuUsage(); return (u.user + u.system) / 1000; }
+  : () => { const u = process.cpuUsage(); return (u.user + u.system) / 1000; };
+
 it('buildLeg plus validateLeg under 40 ms a leg', () => {
   try {
     for (const type of ROUTE) {
       for (const name of lanesOf(type)) {
-        const times = [];
+        const times = [], walls = [];
         for (let s = 1; s <= 60; s++) {
-          const t0 = performance.now();
+          const t0 = cpuMs(), w0 = performance.now();
           const L = buildLeg({ runSeed: s, type, lane: name, seen: s % 2 ? FIRST : LATER });
           validateLeg(L);
-          times.push(performance.now() - t0);
+          times.push(cpuMs() - t0);
+          walls.push(performance.now() - w0);
         }
-        times.sort((a, b) => a - b);
         const mean = times.reduce((a, b) => a + b, 0) / times.length;
-        assert.ok(mean < 40, `${type} ${name}: ${mean.toFixed(1)} ms a leg`);
-        assert.ok(times[Math.floor(times.length * 0.9)] < 40, `${type} ${name}: p90 ${times[54].toFixed(1)} ms`);
+        const wall = walls.reduce((a, b) => a + b, 0) / walls.length;
+        times.sort((a, b) => a - b);
+        const p90 = times[Math.floor(times.length * 0.9)];
+        assert.ok(mean < 40, `${type} ${name}: ${mean.toFixed(1)} ms of CPU a leg (${wall.toFixed(1)} ms on the clock)`);
+        assert.ok(p90 < 40, `${type} ${name}: p90 ${p90.toFixed(1)} ms of CPU`);
       }
     }
   } finally {

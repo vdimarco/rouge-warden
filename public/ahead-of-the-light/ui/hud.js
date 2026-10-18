@@ -179,6 +179,11 @@ export function createHud({ speed, place, land, captions, tune, slow = false } =
     say, frame, update, reset, clearCaptions, bigGear,
     setSlow(v) { H.slow = Boolean(v); },
     get caption() { return H.cur ? { text: H.cur.text, pri: H.cur.pri, tag: H.cur.tag } : null; },
+    // s until the current caption's last word is done (0 with none, or with one under minPri)
+    wordsLeft(minPri = 0) {
+      const c = H.cur;
+      return c && c.pri >= minPri ? Math.max(0, c.tm.total - (H.time - c.t0)) : 0;
+    },
     counts: () => ({ ...H.counts }),
     state: H,
   };
@@ -238,7 +243,8 @@ export function captionsFor(events, ctx) {
       if (n === 'steer' && first && once('run', 'steer')) add(ctx.desk ? '← → TO STEER' : 'DRAG TO STEER', PRI.teach, 'cue');
       else if (n === 'burn' && first && once('run', 'burn')) burnLesson(you, ctx, add);
       else if (n === 'ram' && first && once('run', 'ram')) add('RAM IT INTO THE KNOT', PRI.teach, 'cue');
-      else if (n === 'gateCall' && teach) add('THREAD OR DOCK', PRI.gate, 'cue');
+      // Earth's landing has only its DOOR (8.2): no thread and no dock to choose, so no THREAD OR DOCK there
+      else if (n === 'gateCall' && teach && race.leg.type !== 'earth') add('THREAD OR DOCK', PRI.gate, 'cue');
       else if (CUES[n] && (!CUES[n].first || once('run', `cue:${n}`))) add(CUES[n].text, CUES[n].pri || PRI.teach, 'cue');
       else if (n === 'fact' && FACT[d.fact] && once('run', `fact:${d.fact}`)) {
         add(FACT[d.fact].text, PRI.fact, 'cue', { wait: 1.0 });
@@ -251,7 +257,10 @@ export function captionsFor(events, ctx) {
     switch (e.type) {
       case 'caught': if (mine) add('CAUGHT', PRI.end, e.type); break;
       case 'wreck': if (mine) add('WRECKED', PRI.end, e.type); break;
-      case 'land': if (mine) add(e.ok ? 'HOME' : 'CAUGHT ON THE DOORSTEP', PRI.end, e.type); break;
+      case 'land':
+        // a missed DOOR says so first: the loop round it cost margin (8.2)
+        if (mine) add(`${e.miss ? 'MISSED THE DOOR · ' : ''}${e.ok ? 'HOME' : 'CAUGHT ON THE DOORSTEP'}`, PRI.end, e.type);
+        break;
       case 'lightspeed': if (mine) add('LIGHT SPEED', PRI.gear, e.type); break;
       case 'headlight': if (mine && e.full) add('HEADLIGHT', PRI.gear, e.type); break;
       case 'thread':

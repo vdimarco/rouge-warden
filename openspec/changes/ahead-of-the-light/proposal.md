@@ -20,7 +20,7 @@ They chose to keep both games, so the racer is a separate game, and they chose a
 
 - Add a new game, **AHEAD OF THE LIGHT**, at `/ahead-of-the-light/` (slug `ahead-of-the-light`, the `SLUG` constant
   that prefixes every save key). Cabinet line: "Race home ahead of a gamma-ray burst. Every near miss holds the light
-  back." Sub line on the machine: "Race home before the burst".
+  back." Sub line on the machine: "Run home" (8 characters, so it fits the marquee on a 320 px phone).
 - **The game.** A star at the edge of the cosmic web collapsed into a gamma-ray burst as you left, and its light races
   you home along the video's route. You fly lab A's ring: drag to steer round it, and skim galaxies to speed up and to
   hold the light back. Flick up to burn fuel. Press as a big mass passes to whip round it, which is lab B's swing

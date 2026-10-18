@@ -137,6 +137,7 @@ const TABLE = {
   SHOVE_K: 0.04,                // ° per °/s of closing speed
   SHOVE_MAX: 30, SHOVE_S: 0.15, SHOVE_X: 1,
   SLAM_V: 200, BUMP_SHOVE: 6, REAR_ETA: 0.2, REAR_SHOVE: 4, TAKEDOWN_S: 0.4, TRAP_S: 0.4, TRAP_GAP: 7, LEAN_S: 0.3,
+  PHASE_COOLDOWN: 6.5,          // s PHASE HULL's hull stays solid after a pass through a rival (12.3)
 
   // ---- reading (playtest A) ----
   TICK_LEAD: 1.3, OUTLINE_LEAD: 1.2, PREVIEW_LEAD: 3.0, SILHOUETTE: 0.5, ALARM_LEAD: 0.6,

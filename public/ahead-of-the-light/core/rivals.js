@@ -6,7 +6,7 @@
 // Pure: no clocks, no Math.random. Drivers and per-leg bookkeeping live in WeakMaps; ship.ai is plain data.
 import { TUNE } from './tune.js';
 import { emit, E } from './events.js';
-import { createShip, bpsOf, windowOf, slamAim, sweepTime } from './handle.js';
+import { createShip, bpsOf, windowOf, slamAim, sweepTime, lastShove, phaseReady } from './handle.js';
 import { resolve, psiAt, railOn, halfAt, wellCore } from './course/kinds.js';
 import { beatsPerS } from './ringmath.js';
 import { mulberry32, hashSeed } from '../../light-years-home/core/rng.js';
@@ -1028,8 +1028,10 @@ function leanThink(race, r, A, T, S, you, prey) {
   const k = A.knobs;
   if (!(k.ramBias > 0)) return;
   const cands = prey ? [prey] : race.ships;
+  // PHASE HULL with its phase ready: a ram would pass through you; with your hull solid, you are fair game again
+  const phased = Boolean(you && race.tune && phaseReady(you, race.tune));
   for (const v of cands) {
-    if (v === r || isOut(v) || v.whip || v.kind === 'drifter' && !prey) continue;
+    if (v === r || isOut(v) || v.whip || v.kind === 'drifter' && !prey || (phased && v === you)) continue;
     const z = aheadS(r, v, T);
     const dz = (bpsOf(v, T) - bpsOf(r, T)) / bpsOf(r, T);
     if (Math.abs(z) > T.CONTACT_Z * 0.8 || Math.abs(z + dz * (T.LEAN_S + 0.12)) > T.CONTACT_Z * 0.9) continue;
@@ -1072,11 +1074,15 @@ export function hazardPast(race, v, side, T, look = T.LEAN_S + T.TAKEDOWN_S + 0.
 function fast(race, r, idx, A, T, S, you, dt) {
   const now = race.t;
   const I = A.intent;
+  // PHASE HULL: a lean on you that began while your hull was solid ends once your phase is ready again (a ready phase
+  // means no ram is coming), as a lean that leaves its range does
+  if (A.lean && A.lean.victim === you.id && race.tune && phaseReady(you, race.tune)) { A.lean = null; A.cool = now + 0.8; }
   // bosses' own per-step rules (MAKO's roll, MANTA's lane) may own the bearing
   if (r.kind === 'boss' && bossFast(race, r, A, T)) return;
-  // after a SLAM's shove it takes its reaction to steer back
-  const sh = r.shove;
-  if (sh && sh.slam && sh.by !== r.id && now - sh.t0 < T.SHOVE_S + A.knobs.reactMs / 1000) {
+  // after a SLAM's shove it takes its reaction to steer back, from the shove's real end (handle's record outlives
+  // r.shove, and a card's shove can run longer than SHOVE_S)
+  const sh = lastShove(r);
+  if (sh.slam && sh.by !== r.id && now < sh.until + A.knobs.reactMs / 1000) {
     I.target = r.bearing;
     A.lean = null;
     return;
