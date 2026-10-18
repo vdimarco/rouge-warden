@@ -1,0 +1,37 @@
+{
+  "reviewer": "root",
+  "character": "GreenCap51",
+  "review_recorded_utc": "2026-10-18T00:28:59.228253+00:00",
+  "viewed_all210_frames_in_five_exhaustive_contact_sheets": true,
+  "contact_sheet_files": [
+    {
+      "file": "idle-a.jpg",
+      "sha256": "ec4693feba736f41c60e472a840dd59597f8a938ae75524493f1a70a70313500"
+    },
+    {
+      "file": "idle-b.jpg",
+      "sha256": "bd1a0781db16548ac9c73384ebf73ae68adf7787054893c0084af64e02fe8106"
+    },
+    {
+      "file": "walk.jpg",
+      "sha256": "01ceee4f834c4c95a65609dcc1a641bdc62325c21396bcec276627a095ba42bc"
+    },
+    {
+      "file": "run.jpg",
+      "sha256": "e65fa4727ce0ea0e9f73583228f4fe1d9efd18780cdff2787ffef759159059bf"
+    },
+    {
+      "file": "jump.jpg",
+      "sha256": "dcc476cea830a214df1d8a78a2f0b7efcd64f49c4999e363e1c50bf83a90c8b1"
+    }
+  ],
+  "bounded_findings": [
+    "All210 frames were visually inspected in five exhaustive contact sheets; no obvious isolated arm flip, wrist torsion or body collapse was observed at thumbnail resolution.",
+    "Own idle retains soft forward elbows and inward palms. The cap, jersey, shorts and own-body identity remain readable.",
+    "Walk/Run retain broad source torso sway, fast leg acting and visibly open hands; natural gait, ground contact and tool grasp remain unaccepted.",
+    "Jump is an in-place pose clip; no native actor flight is simulated. The four clips meet at hard cuts."
+  ],
+  "video_playback_review_performed": false,
+  "scope": "Complete CPU frame-sequence contact-sheet review, not native/final-art or subjective fluidity acceptance",
+  "native_or_final_art_accepted": false
+}

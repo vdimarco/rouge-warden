@@ -1,0 +1,24 @@
+{
+  "at_utc": "2026-10-17T22:20:06.553093+00:00",
+  "source_sha256": "36cb56d15c07cac1d4533c1964eb42028a3c0d11da52a797859ab2f93c37175c",
+  "viewed": [
+    {
+      "file": "front.png",
+      "sha256": "35a8f7b98a14b46b7547f8acc83897bb667cb5dc8f24c4ce677a34e84d5730b0"
+    },
+    {
+      "file": "face-threequarter.png",
+      "sha256": "87353f70102d20a8859fd06ad9caf82d29c701b2ed150f6e86f798f708257b7f"
+    },
+    {
+      "file": "hand-right.png",
+      "sha256": "b2c8a5df95adf2a8df9e57b1047d97fac5019d22d0fc6d5c258d124aefbee95a"
+    }
+  ],
+  "bounded_rig_trial_allowed": true,
+  "final_art_accepted": false,
+  "observations": [
+    "Adult face, blue glasses and jersey details remain readable.",
+    "Long drooping cap brim and coarse broad finger webs remain; no finalart/motion/grip acceptance."
+  ]
+}

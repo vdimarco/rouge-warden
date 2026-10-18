@@ -1,0 +1,18 @@
+{
+  "provider_fbx": {
+    "path": "Data/GraphicNovel/Crew/GreenCap51/tripo-v3-rig-20261017/rig.fbx",
+    "sha256": "5ccc52f3d10544adc7788a06fd64aed4d9191a6d1171b7fed8b9b606cfc83958"
+  },
+  "source_body_fbx": {
+    "path": "Data/GraphicNovel/Crew/GreenCap51/generated-v1-high-detail/body.fbx",
+    "sha256": "2ebbda49054a6b274305ae0c07db3021f8334df90de27d2e98b46362c4d24dc3"
+  },
+  "walk_fbx": {
+    "path": "Data/GraphicNovel/Crew/GreenCap51/generated-v1-high-detail/walk.fbx",
+    "sha256": "81da0dcdcc04d9465bc9aef1cc69d88fe8d3261936d0f29398d7f4b07a63ed02"
+  },
+  "run_fbx": {
+    "path": "Data/GraphicNovel/Crew/GreenCap51/generated-v1-high-detail/run.fbx",
+    "sha256": "39e8eacb4288b920c78633c89c28f67ab25fbca47546ebaa4d97d993a7633793"
+  }
+}

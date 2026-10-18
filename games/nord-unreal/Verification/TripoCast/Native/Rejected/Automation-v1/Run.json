@@ -1,0 +1,33 @@
+{
+  "command": [
+    "/home/von/.local/share/Epic/UE_5.8.3/Engine/Binaries/Linux/UnrealEditor",
+    "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Quebec.uproject",
+    "/Engine/Maps/Entry",
+    "-NullRHI",
+    "-unattended",
+    "-nopause",
+    "-nosplash",
+    "-nosound",
+    "-NoSourceControl",
+    "-NoLiveCoding",
+    "-NordNoCampaign",
+    "-NordNoCampaignSave",
+    "-NordGraphicNovelCandidate",
+    "-NordGraphicNovelGenerated",
+    "-NordGraphicNovelHighDetail",
+    "-NordGraphicNovelTripo",
+    "-ini:Engine:[ConsoleVariables]:TEDS.Enable=0",
+    "-ExecCmds=Automation RunTests Quebec.Animation;SoftQuit",
+    "-ReportExportPath=/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoCastNative/Automation-v1/Report",
+    "-stdout",
+    "-FullStdOutLogOutput",
+    "-abslog=/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoCastNative/Automation-v1/Engine.log"
+  ],
+  "started_utc": "2026-10-17T23:56:01.181145+00:00",
+  "controller_pid": 991997,
+  "editor_module_sha256": "ba967029f2493ea0b0063fd509824ac17378a491784e5f2576096bcb7fbd3f18",
+  "GPU_or_service_operations": false,
+  "editor_pid": 991998,
+  "exit_code": 255,
+  "finished_utc": "2026-10-17T23:56:25.188448+00:00"
+}

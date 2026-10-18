@@ -1,0 +1,8 @@
+{
+  "status": "IN_PROGRESS",
+  "request_id": "01a14be3-bdea-7df3-97fa-15e6d8129e30",
+  "status_url": "https://queue.fal.run/meshy/v7.1/requests/01a14be3-bdea-7df3-97fa-15e6d8129e30/status",
+  "response_url": "https://queue.fal.run/meshy/v7.1/requests/01a14be3-bdea-7df3-97fa-15e6d8129e30",
+  "cancel_url": "https://queue.fal.run/meshy/v7.1/requests/01a14be3-bdea-7df3-97fa-15e6d8129e30/cancel",
+  "poll_after_seconds": 10
+}

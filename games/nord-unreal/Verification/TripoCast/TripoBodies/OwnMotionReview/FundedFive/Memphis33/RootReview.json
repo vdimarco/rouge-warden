@@ -1,0 +1,86 @@
+{
+  "at_utc": "2026-10-17T23:54:42.737839+00:00",
+  "reviewer": "root",
+  "viewed_actual_own_body_pngs": [
+    {
+      "file": "nine/hand-l.png",
+      "sha256": "ec1c7ab11dd2886ab206dabe6a863229b1d459d066ba32de0c53d9e23c327a0e"
+    },
+    {
+      "file": "nine/hand-r.png",
+      "sha256": "9d0d35d18b678786e7710eeff077ba340409fc081e2027e58700892adb521bf3"
+    },
+    {
+      "file": "nine/idle-back.png",
+      "sha256": "a2bd5072744a52289ed2ec53fcd4121fde2c318abacd8def124327cf4d82c82b"
+    },
+    {
+      "file": "nine/idle-front.png",
+      "sha256": "d7e2c3f6ea7d8c630014004cbe1eb2cd8ced16b6a3037e47e8c480f41a30bb41"
+    },
+    {
+      "file": "nine/idle-side.png",
+      "sha256": "0c642a4eccd04bec02d497ae944ff6e06c03f34e863996a3bcd1e6c6ae5c6f6d"
+    },
+    {
+      "file": "nine/idle-threequarter.png",
+      "sha256": "c986bdafaf06367783508ed421b8e595d73df6f843adb34592b9124655bbe8a9"
+    },
+    {
+      "file": "nine/jump-threequarter.png",
+      "sha256": "a5821bf0ea48f6e48ef44494934079405718995d2136dca8a2018d5ca091222d"
+    },
+    {
+      "file": "nine/run-threequarter.png",
+      "sha256": "4ca9b77dcb66ca5a8d2d78478f4e60e93cf25075c51b1ef81ea026c1086d6ce6"
+    },
+    {
+      "file": "nine/walk-threequarter.png",
+      "sha256": "14091e8bda8ebe9b2476ff19663c9197bc2c3b2c82d20915f63d46ef1109b1e6"
+    },
+    {
+      "file": "hands/hand-l-plane-negative.png",
+      "sha256": "67fd4116c15fd25f1b9a5c5722b70353cdc8e186f6d9ec8015dc403cdfbb50f5"
+    },
+    {
+      "file": "hands/hand-l-plane-positive.png",
+      "sha256": "1261e9e7f21433f31888c181866ef36e592e667eb2fb8bbe734654a5ca76cf46"
+    },
+    {
+      "file": "hands/hand-l-radial-profile.png",
+      "sha256": "f2754f33fb682eb5af53ae0b71c5fed69a00983c5127ac2a91a95a8e1a0b2d5c"
+    },
+    {
+      "file": "hands/hand-r-plane-negative.png",
+      "sha256": "b9e38632cd15614788d9d8b3572e0828609092cfc5efb8d8b795493b6fa84adc"
+    },
+    {
+      "file": "hands/hand-r-plane-positive.png",
+      "sha256": "c2ec2b05eb4c25a1ddde58b9798cc36217e25c4dbc73f91924262d4461eb8599"
+    },
+    {
+      "file": "hands/hand-r-radial-profile.png",
+      "sha256": "0049679d3a72bb2b8a79134fa0a407ff786943d14dab054c227acdf48a37b7b7"
+    }
+  ],
+  "readback_receipts": {
+    "nine": {
+      "path": "Verification/TripoCast/TripoBodies/OwnMotionReview/FundedFive/Memphis33/nine/Readback.json",
+      "sha256": "bdb1cb485060184b49c43ab8eb7387926598f7556ff6dc12fd3cf4827da5bcc6"
+    },
+    "hands": {
+      "path": "Verification/TripoCast/TripoBodies/OwnMotionReview/FundedFive/Memphis33/hands/Readback.json",
+      "sha256": "859eed95441a4471b6eef5ba2b2402174ae5a8b089701319579f42a36d4814a4"
+    }
+  },
+  "bounded_native_import_trial_allowed": true,
+  "continuous_sequence_review_completed": false,
+  "native_or_final_art_accepted": false,
+  "findings": [
+    "Actual own body is relaxed with lowered shoulders, soft forward elbows, inward palms and loose unequal curls in sampled poses.",
+    "Sampled Walk/Run/apex show connected limbs; continuous contact, transitions and physical clearance need separate checks.",
+    "Radial/dorsal angles show distinct projecting thumbs; no geometry stretch is justified by front-biased foreshortening.",
+    "Finger contours remain blunt/faceted close up; some reverse views are body-occluded/cropped. No closed prop grasp or native shading acceptance.",
+    "Glasses remain rounder than the illustrated reference."
+  ]
+}

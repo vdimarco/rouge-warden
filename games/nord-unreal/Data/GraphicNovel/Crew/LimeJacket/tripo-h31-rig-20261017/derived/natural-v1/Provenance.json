@@ -1,0 +1,102 @@
+{
+  "character": "LimeJacket",
+  "source_body_provider": "Tripo H3.1",
+  "rig_provider": "Tripo v3",
+  "byte_identical_copies_of_passed_CPU_outputs": true,
+  "outputs": {
+    "body": {
+      "path": "Data/GraphicNovel/Crew/LimeJacket/tripo-h31-rig-20261017/derived/natural-v1/body.fbx",
+      "sha256": "782ba33479b7d0f2adaf8f533df829287f351673afd3e859dd9fc580bec734c5",
+      "source_proof_output_sha256": "782ba33479b7d0f2adaf8f533df829287f351673afd3e859dd9fc580bec734c5"
+    },
+    "base_color": {
+      "path": "Data/GraphicNovel/Crew/LimeJacket/tripo-h31-rig-20261017/derived/natural-v1/base_color.jpg",
+      "sha256": "61611c35a680845cecc72bc589c3ad4d67b64b24040536a3875482df70e9fca7",
+      "source_proof_output_sha256": "61611c35a680845cecc72bc589c3ad4d67b64b24040536a3875482df70e9fca7"
+    },
+    "metallic_roughness": {
+      "path": "Data/GraphicNovel/Crew/LimeJacket/tripo-h31-rig-20261017/derived/natural-v1/metallic_roughness.jpg",
+      "sha256": "b382c9961f38368fe63bc9c3ebdbaf46a4fbc62d8168dfda03409d3151ebd3be",
+      "source_proof_output_sha256": "b382c9961f38368fe63bc9c3ebdbaf46a4fbc62d8168dfda03409d3151ebd3be"
+    },
+    "normal": {
+      "path": "Data/GraphicNovel/Crew/LimeJacket/tripo-h31-rig-20261017/derived/natural-v1/normal.png",
+      "sha256": "cab7d7bfc765412e47141b5ebc7bc123192ab63c245bb5374a46a81374f6c033",
+      "source_proof_output_sha256": "cab7d7bfc765412e47141b5ebc7bc123192ab63c245bb5374a46a81374f6c033"
+    },
+    "idle": {
+      "path": "Data/GraphicNovel/Crew/LimeJacket/tripo-h31-rig-20261017/derived/natural-v1/idle.fbx",
+      "sha256": "0c5b0115b0b507c3e869310d7f42aeb186ae95602e52342b0b6ba726afa785f9",
+      "source_proof_output_sha256": "0c5b0115b0b507c3e869310d7f42aeb186ae95602e52342b0b6ba726afa785f9"
+    },
+    "jump": {
+      "path": "Data/GraphicNovel/Crew/LimeJacket/tripo-h31-rig-20261017/derived/natural-v1/jump.fbx",
+      "sha256": "f6ec2fc234e16b903c47aeb8e69c681a696e5f1572240facca4bb9d674964a70",
+      "source_proof_output_sha256": "f6ec2fc234e16b903c47aeb8e69c681a696e5f1572240facca4bb9d674964a70"
+    },
+    "walk": {
+      "path": "Data/GraphicNovel/Crew/LimeJacket/tripo-h31-rig-20261017/derived/natural-v1/walk.fbx",
+      "sha256": "e85edcb25347a76b20a193b45b74bee30ac89c9578949f1f9a18288a7eb52500",
+      "source_proof_output_sha256": "e85edcb25347a76b20a193b45b74bee30ac89c9578949f1f9a18288a7eb52500"
+    },
+    "run": {
+      "path": "Data/GraphicNovel/Crew/LimeJacket/tripo-h31-rig-20261017/derived/natural-v1/run.fbx",
+      "sha256": "ddd1af993c4c4700bc451cdc9a52cd8271bdb579e0ed3ea97c514df7b38623fe",
+      "source_proof_output_sha256": "ddd1af993c4c4700bc451cdc9a52cd8271bdb579e0ed3ea97c514df7b38623fe"
+    }
+  },
+  "proofs": {
+    "Surface.json": {
+      "path": "Verification/TripoCast/TripoBodies/OwnRigCPU/FundedFive/LimeJacket/Surface.json",
+      "sha256": "3db86feef03f8df68adc4276b0ec7f61af9f250c53fc1fe729b029e9f91575ba"
+    },
+    "Motion.json": {
+      "path": "Verification/TripoCast/TripoBodies/OwnRigCPU/FundedFive/LimeJacket/Motion.json",
+      "sha256": "e0b39ca494a26ff3a68a176516063dbe1d31337c4b033a63df03b67e6a13b0f7"
+    },
+    "MotionTest.json": {
+      "path": "Verification/TripoCast/TripoBodies/OwnRigCPU/FundedFive/LimeJacket/MotionTest.json",
+      "sha256": "3137db360d6b8bb8907df312b431ca127e3b2476cc83b2e711482b1aa0767afa"
+    }
+  },
+  "frozen_executed_recipes": {
+    "prepare_tripo_cast_surface.py": {
+      "path": "Verification/TripoCast/TripoBodies/OwnRigCPU/FundedFive/LimeJacket/Recipes/prepare_tripo_cast_surface.py",
+      "sha256": "82040586d9b77fafcfc574b39dbfd05d3d32b15effb38d91bb96f84605409948"
+    },
+    "prepare_tripo_cast_motion.py": {
+      "path": "Verification/TripoCast/TripoBodies/OwnRigCPU/FundedFive/LimeJacket/Recipes/prepare_tripo_cast_motion.py",
+      "sha256": "dcd567249846c31f35b2b8d2a4876e93fef10815d2ee3e47c1174895812bd030"
+    },
+    "prepare_meshy_jump.py": {
+      "path": "Verification/TripoCast/TripoBodies/OwnRigCPU/FundedFive/LimeJacket/Recipes/prepare_meshy_jump.py",
+      "sha256": "51cbc1072264c31eeafdd65cf1dfef76b36ac154e84d6a93b97f425a3e73a857"
+    }
+  },
+  "raw_provider_fbx": {
+    "path": "Data/GraphicNovel/Crew/LimeJacket/tripo-h31-rig-20261017/rig.fbx",
+    "sha256": "59432254e8f9dbe46dbeb72e053539563475b135fd77daf956c13c75efc96393"
+  },
+  "original_glb": {
+    "path": "Data/GraphicNovel/Crew/LimeJacket/tripo-h31-body-20261017/body.glb",
+    "sha256": "178a21d8a3c963a9cf91e4014807a3f69f2c6bee0e95b472796740bf7179ab77"
+  },
+  "preview_height_m": 1.82,
+  "native_import_scale_proposal_only": 1.8590655478867146,
+  "retained_provider_height_m": 0.9789864601971017,
+  "rendered_continuous_review_pending": true,
+  "native_or_final_art_accepted": false,
+  "native_import_trial_allowed": true,
+  "native_import_trial_scope": "Root authorized isolated candidate import after reviewing15 own-body stills; continuous motion/native/package/final art acceptance separate",
+  "limits": [
+    "Original source-unit geometry, weights and binds preserved; no native import executed by retention.",
+    "Exact original GLB PBR payloads; no native shader acceptance.",
+    "Broad inherited gait/contact and physical-device/package acceptance remain separate."
+  ],
+  "retention_scope": "Exactly8roles copied from accepted CPU proofs; no source/provider overwrites or new authoring",
+  "protected_originals_unchanged": true,
+  "bounded_visual_review": {
+    "path": "Verification/TripoCast/TripoBodies/OwnMotionReview/FundedFive/LimeJacket/RootReview.json",
+    "sha256": "177686b96f312d1d517d7dc2b5af6c81a4a91536b939b65966f171f7c78a1889"
+  }
+}

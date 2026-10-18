@@ -1,0 +1,33 @@
+{
+  "character": "LimeJacket",
+  "scope": "Bounded review of actual own body + imported authored Idle/Walk/Run/Jump stills; all 15 images inspected",
+  "receipts": {
+    "nine": {
+      "path": "Saved/Tests/TripoOwnMotionReview-Remaining-20261017-v1/LimeJacket-nine/Readback.json",
+      "sha256": "f6d4023301d60724fab69fef98180258fa814fe15c7db43f0dea70134675e9a8",
+      "frames": 9,
+      "exit_code": 0,
+      "maximum_body_vs_clip_pose_error": 1.4781951904296875e-05,
+      "unanimated_negative_error": 1.3634607791900635
+    },
+    "hands": {
+      "path": "Saved/Tests/TripoOwnMotionReview-Remaining-20261017-v1/LimeJacket-hands/Readback.json",
+      "sha256": "4d3ea52bf83fa0bee6ae311413f01f1d7c7b235714643fc16d9272c7ba079231",
+      "frames": 6,
+      "exit_code": 0,
+      "maximum_body_vs_clip_pose_error": 1.233816146850586e-05,
+      "unanimated_negative_error": 1.3634607791900635
+    }
+  },
+  "findings": [
+    "Older gray-haired/bearded likeness, black hat, layered neck scarf, lime/black jacket, striped pants and shoes remain recognizable against the pinned reference.",
+    "Sampled idle/walk/run/apex retain connected sleeves and physical knee/elbow flexion; no obvious detached part or severe accessory/groin pull appears in these views.",
+    "Extra radial/visible dorsal views show distinct thumbs extending beyond each palm, and show why baseline angles shorten the visible tip. Precise 3D proportions remain unmeasured.",
+    "Close fingertips/knuckles remain blunt/faceted; a jagged cuff/skin boundary is visible and remains an art-review limit.",
+    "Some reverse plane views are body/opposite-hand occluded or cropped, so they cannot independently establish a complete target-hand silhouette. All parts remain present."
+  ],
+  "continuous_motion_reviewed": false,
+  "prop_or_native_grip_reviewed": false,
+  "native_or_final_art_acceptance": false,
+  "recommendation": "Root may review stills and decide on a continuous-motion proof, retaining cuff/close-hand/likeness limits; the style8 tube grip is untested."
+}

@@ -1,0 +1,127 @@
+{
+  "passed": true,
+  "scope": "Fresh saved asset/source/material/socket reload; no rendered art or functional grasp acceptance",
+  "mesh": "/Game/ParkComic/CrewGraphicNovelTripo/Resident8/SK_Body.SK_Body",
+  "skeleton": "/Game/ParkComic/CrewGraphicNovelTripo/Resident8/SK_Body_Skeleton.SK_Body_Skeleton",
+  "bones": [
+    "root",
+    "pelvis",
+    "spine_01",
+    "spine_02",
+    "spine_03",
+    "clavicle_l",
+    "upperarm_l",
+    "lowerarm_l",
+    "hand_l",
+    "index_01_l",
+    "index_02_l",
+    "index_03_l",
+    "middle_01_l",
+    "middle_02_l",
+    "middle_03_l",
+    "pinky_01_l",
+    "pinky_02_l",
+    "pinky_03_l",
+    "ring_01_l",
+    "ring_02_l",
+    "ring_03_l",
+    "thumb_01_l",
+    "thumb_02_l",
+    "thumb_03_l",
+    "lowerarm_twist_01_l",
+    "upperarm_twist_01_l",
+    "clavicle_r",
+    "upperarm_r",
+    "lowerarm_r",
+    "hand_r",
+    "index_01_r",
+    "index_02_r",
+    "index_03_r",
+    "middle_01_r",
+    "middle_02_r",
+    "middle_03_r",
+    "pinky_01_r",
+    "pinky_02_r",
+    "pinky_03_r",
+    "ring_01_r",
+    "ring_02_r",
+    "ring_03_r",
+    "thumb_01_r",
+    "thumb_02_r",
+    "thumb_03_r",
+    "lowerarm_twist_01_r",
+    "upperarm_twist_01_r",
+    "neck_01",
+    "head",
+    "thigh_l",
+    "calf_l",
+    "calf_twist_01_l",
+    "foot_l",
+    "ball_l",
+    "thigh_twist_01_l",
+    "thigh_r",
+    "calf_r",
+    "calf_twist_01_r",
+    "foot_r",
+    "ball_r",
+    "thigh_twist_01_r"
+  ],
+  "height_cm": 182.0000042309789,
+  "feet_z_cm": -4.230978902342031e-06,
+  "shared_import_scale": 1.8590655478867146,
+  "build_flags": {
+    "recompute_normals": false,
+    "recompute_tangents": true,
+    "use_mikk_t_space": true,
+    "compute_weighted_normals": false,
+    "use_full_precision_u_vs": true,
+    "use_high_precision_tangent_basis": true
+  },
+  "clips": {
+    "Idle": {
+      "path": "/Game/ParkComic/CrewGraphicNovelTripo/Resident8/A_Idle.A_Idle",
+      "seconds": 4.0
+    },
+    "Walk": {
+      "path": "/Game/ParkComic/CrewGraphicNovelTripo/Resident8/A_Walk.A_Walk",
+      "seconds": 1.0333333015441895
+    },
+    "Run": {
+      "path": "/Game/ParkComic/CrewGraphicNovelTripo/Resident8/A_Run.A_Run",
+      "seconds": 0.6333333253860474
+    },
+    "Jump": {
+      "path": "/Game/ParkComic/CrewGraphicNovelTripo/Resident8/A_Jump.A_Jump",
+      "seconds": 1.2000000476837158
+    }
+  },
+  "material_connections": {
+    "<MaterialProperty.MP_BASE_COLOR: 5>": {
+      "texture": "/Game/ParkComic/CrewGraphicNovelTripo/Resident8/T_base_color.T_base_color",
+      "channel": "RGB"
+    },
+    "<MaterialProperty.MP_NORMAL: 10>": {
+      "texture": "/Game/ParkComic/CrewGraphicNovelTripo/Resident8/T_normal.T_normal",
+      "channel": "RGB"
+    },
+    "<MaterialProperty.MP_ROUGHNESS: 8>": {
+      "texture": "/Game/ParkComic/CrewGraphicNovelTripo/Resident8/T_metallic_roughness.T_metallic_roughness",
+      "channel": "G"
+    },
+    "<MaterialProperty.MP_METALLIC: 6>": {
+      "texture": "/Game/ParkComic/CrewGraphicNovelTripo/Resident8/T_metallic_roughness.T_metallic_roughness",
+      "channel": "B"
+    }
+  },
+  "socket_parent": "hand_r",
+  "source_hashes": {
+    "Body": "782ba33479b7d0f2adaf8f533df829287f351673afd3e859dd9fc580bec734c5",
+    "Idle": "0c5b0115b0b507c3e869310d7f42aeb186ae95602e52342b0b6ba726afa785f9",
+    "Walk": "e85edcb25347a76b20a193b45b74bee30ac89c9578949f1f9a18288a7eb52500",
+    "Run": "ddd1af993c4c4700bc451cdc9a52cd8271bdb579e0ed3ea97c514df7b38623fe",
+    "Jump": "f6ec2fc234e16b903c47aeb8e69c681a696e5f1572240facca4bb9d674964a70",
+    "base_color": "61611c35a680845cecc72bc589c3ad4d67b64b24040536a3875482df70e9fca7",
+    "normal": "cab7d7bfc765412e47141b5ebc7bc123192ab63c245bb5374a46a81374f6c033",
+    "metallic_roughness": "b382c9961f38368fe63bc9c3ebdbaf46a4fbc62d8168dfda03409d3151ebd3be"
+  }
+}

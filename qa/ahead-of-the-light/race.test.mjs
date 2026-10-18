@@ -51,8 +51,8 @@ const API = {
 const PIECE_FILES = ['common', 'web', 'coma', 'virgo', 'local', 'milkyway', 'orion', 'neighbours', 'earth', 'gates'];
 
 const RACE_KEYS = ['t', 'real', 'legNo', 'leg', 'win', 'ships', 'wells', 'slow', 'stop', 'director', 'phase', 'order',
-  'snaps', 'rng', 'hooks', 'events', 'log', 'tune'];
-const SHIP_KEYS = ['id', 'kind', 'name', 'type', 'half', 'turnMax', 'bearing', 'target', 'turnRate', 'dist', 'eta',
+  'snaps', 'rng', 'hooks', 'events', 'log', 'tune', 'baseTune', 'teachWhip'];
+const SHIP_KEYS = ['id', 'kind', 'name', 'type', 'half', 'turnMax', 'bearing', 'target', 'turnRate', 'dist', 'far', 'eta',
   'gear', 'bestGear', 'headlight', 'lightspeed', 'punch', 'hull', 'hullMax', 'shield', 'shieldMax', 'shieldT',
   'fuel', 'fuelCap', 'burn', 'gap', 'ttc', 'light', 'lightHold', 'overCap', 'chain', 'chainT', 'flicker',
   'stumble', 'soft', 'whip', 'draft', 'surge', 'shove', 'gate', 'caught', 'wrecked', 'fedBy', 'years', 'earth', 'ai',
@@ -241,6 +241,81 @@ test('a leg walks launch → race → gate → runout → done, with the gate li
   assert.deepEqual(ce.map((e) => [e.type, e.why]), [['legEnd', 'caught']]);
 });
 
+test('a stumble glides you back, but each knot, wall or gate you passed is judged once', () => {
+  const T = Object.freeze({ ...TUNE, BLEED: 0, SHIELD_T: 1e9 });
+  const leg = (items) => Object.freeze({ ...buildLeg({ type: 'web' }),
+    items: Object.freeze(items.map((x, i) => Object.freeze({ id: i, piece: 'test', ...x }))) });
+  const cases = {
+    knot: { items: [{ kind: 'knot', beat: 30, psi: 0, half: 3 }], aim: 0, hits: 1, threads: 0 },
+    wall: { items: [{ kind: 'wall', beat: 30, gaps: [{ psi: 90, w: 20 }] }], aim: 0, hits: 1, threads: 0 },
+    // a THREAD, then the run-out knot 1.5 beats on: its stumble carries you back over the gate line
+    gate: { items: [{ kind: 'gate', beat: 30, psi: 10, gap: 30, halves: [8, 8], names: ['A', 'B'],
+      dock: { psi: 120, w: 20 } }, { kind: 'knot', beat: 31.5, psi: 5, half: 3 }], aim: 5, hits: 1, threads: 1 },
+  };
+  for (const [kind, c] of Object.entries(cases)) {
+    for (let eta = 1.0; eta <= 5.0001; eta += 0.2) {
+      const race = createRace({ leg: leg(c.items), tune: T });
+      race.legNo = 1;
+      const you = race.ships[0];
+      Object.assign(you, { eta, dist: 20, hull: 99, hullMax: 99 });
+      let hits = 0, threads = 0;
+      while (you.dist < 45 && race.phase !== 'done') {
+        for (const e of stepRace(race, { you: { target: c.aim } }, STEP)) {
+          if (e.ship === 'you' && e.type === 'hit') hits++;
+          if (e.ship === 'you' && e.type === 'thread') threads++;
+        }
+      }
+      assert.deepEqual([hits, threads], [c.hits, c.threads], `${kind} at η ${eta.toFixed(1)}: ${hits} hits`);
+      assert.ok(you.far >= you.dist - 1e-9, 'ship.far is the furthest dist');
+    }
+  }
+});
+
+test('the rivals fly with race.baseTune: your ship\'s and cards\' patches stay yours', () => {
+  const run = createRun({ seed: 7 });
+  run.leg = 1;
+  run.lanes[1] = run.chart[1][0];
+  run.build = [{ id: 'twin-deflector', r: 2 }, { id: 'battering-prow', r: 0 }];
+  const ST = Object.freeze({ ...TUNE, HULL_MAX: 5, FUEL_CAP: 5, BLEED: 0.75 });   // a TUG on EASY LIGHT, say
+  const race = createRace({ run, tune: ST, base: TUNE });
+  assert.equal(race.baseTune, TUNE);
+  assert.equal(race.tune.SLAM_V, 0, 'BATTERING PROW: your rams always SLAM');
+  assert.equal(race.tune.SHIELD_MAX, 3);
+  const rivals = race.ships.filter((s) => s.kind !== 'you');
+  assert.ok(rivals.length > 0);
+  for (const r of rivals.filter((s) => s.kind === 'regular' || s.kind === 'drifter')) {
+    assert.deepEqual([r.hullMax, r.shieldMax], [TUNE.HULL_MAX, TUNE.SHIELD_MAX], r.id);
+    if (r.kind === 'regular') assert.equal(r.fuelCap, TUNE.FUEL_CAP, r.id);
+  }
+  // without a base the rivals take the tune you passed, never your cards' patches
+  const r2 = createRace({ run, tune: ST });
+  assert.equal(r2.baseTune, ST);
+  assert.ok(r2.ships.filter((s) => s.kind === 'regular').every((s) => s.shieldMax === ST.SHIELD_MAX));
+});
+
+test('Earth\'s DOOR: a bearing outside its arc misses and the landing needs DOOR_MISS_S more', () => {
+  const L0 = buildLeg({ type: 'earth' });
+  assert.ok(L0.gate.door && Number.isFinite(L0.gate.psi), 'the DOOR is the leg\'s gate');
+  const leg = Object.freeze({ ...L0, items: Object.freeze([]) });
+  const fly = (off) => {
+    const race = createRace({ leg, tune: STILL });
+    const you = race.ships[0];
+    you.gap = 20;
+    const ev = [];
+    while (race.phase !== 'done' && race.real < 200) {
+      for (const e of stepRace(race, { you: { target: L0.gate.psi + off } }, STEP)) ev.push(e);
+    }
+    return { door: ev.find((e) => e.type === 'door'), land: ev.find((e) => e.type === 'land'), end: ev.at(-1) };
+  };
+  const on = fly(0), off = fly(180), edge = fly(L0.gate.gap / 2 - 5);
+  assert.equal(on.door.miss, false);
+  assert.equal(edge.door.miss, false);
+  assert.equal(off.door.miss, true);
+  assert.ok(Math.abs(on.land.margin - off.land.margin - TUNE.DOOR_MISS_S) < 1e-6,
+    `margins ${on.land.margin} and ${off.land.margin}`);
+  assert.equal(off.end.why, 'home');
+});
+
 test('card hooks run on your events in order, never a rival\'s, and the step hook once a step', () => {
   const race = createRace({ leg: testLeg() });
   const got = [];
@@ -248,16 +323,18 @@ test('card hooks run on your events in order, never a rival\'s, and the step hoo
     graze: [(ctx) => got.push(['graze', ctx.event.gap, ctx.ship.id, ctx.tune === TUNE]),
       (ctx) => { got.push(['second']); emit(ctx.race, 'graze', 'you', { gap: 9 }); }],
     takedown: [(ctx) => got.push(['takedown', ctx.event.by])],
+    hit: [(ctx) => got.push(['hit', ctx.event.ship])],
     step: [(ctx) => got.push(['step', ctx.event, ctx.dt])],
   };
   race.events = [];
   emit(race, 'graze', 'you', { gap: 4 });
   emit(race, 'graze', 'pike', { gap: 5 });                      // a rival's graze is not yours
   emit(race, 'takedown', 'pike', { by: 'you', victim: 'pike' }); // your takedown, on PIKE's ship
+  emit(race, 'hit', 'pike', { cause: 'takedown', by: 'you' });   // PIKE's hit from it is PIKE's, not yours
   emit(race, 'hair', 'you', { gap: 1 });                         // no hook for it
   cardHooks(race, 0.5);
   assert.deepEqual(got, [['graze', 4, 'you', true], ['second'], ['takedown', 'you'], ['step', null, 0.5]]);
-  assert.equal(race.events.length, 5, 'the hook\'s own graze was emitted, and ran no hooks');
+  assert.equal(race.events.length, 6, 'the hook\'s own graze was emitted, and ran no hooks');
   // in a whole leg, the step hook runs once for every step that moves
   const r2 = createRace({ leg: testLeg() });
   let steps = 0, moving = 0;

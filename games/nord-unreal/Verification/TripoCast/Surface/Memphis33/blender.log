@@ -1,0 +1,18 @@
+18:29:05 | INFO: Data are loaded, start creating Blender stuff
+18:29:05 | INFO: Blender create Mesh node Mesh_0
+18:29:05 | INFO: glTF import finished in 0.27s
+FBX version: 7400
+
+FBX export starting... '/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Crew/Memphis33/tripo-v3-rig-20261017/derived/native-ready/body.fbx'
+export finished in 0.2444 sec.
+FBX version: 7400
+TRIPO_CAST_SURFACE_PASS /home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoCastSurface/Memphis33-root-v2/Surface.json
+Blender 5.2.2 LTS (hash d13f752e3b9c built 2026-09-15 01:34:58)
+Image_0
+Image_0.jpg
+Image_1
+Image_1.jpg
+Image_2
+Image_2.jpg
+
+Blender quit

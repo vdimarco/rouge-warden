@@ -90,12 +90,13 @@ function fallbackScene() {
     render(race, dt, o = {}) {
       const you = race ? race.ships[0] : null;
       const cam = you ? roll.step(you, dt, { fixed: o.fixed, whip: Boolean(you.whip) }) : roll.cam;
-      view = ringView({ w, h, eta: you ? you.eta : o.skyEta ?? 1, punch: you ? you.punch : 0, cam,
+      view = ringView({ w, h, eta: you ? you.eta : o.skyEta ?? 1, punch: you && !reducedNow() ? you.punch : 0, cam,
         lightspeed: Boolean(you && you.lightspeed), tune });
       return view;
     },
     adapt: () => 1,
-    info: () => ({ calls: 0, points: 0, glScale: 1, tier: 'none', ratio: 1, hazards: 0, backdrop: null, backdropPoints: 0 }),
+    info: () => ({ calls: 0, points: 0, glScale: 1, tier: 'none', ratio: 1, hazards: 0, backdrop: null, backdropPoints: 0,
+      reduced: reducedNow() }),
     setBackdrop() {}, backdrop: () => null, view: () => view, layout: () => layoutFor(w, h, tune), dispose() {},
   };
 }
@@ -144,6 +145,7 @@ let playAt = 0, retryAt = null;
 const perfS = { frame: [], step: [], render: [] };
 
 // ---------------------------------------------------------------- layout
+let hudKeep = null, hudKeepAt = -1;       // the HUD's boxes for the ring layer (hudBoxes)
 function resize() {
   W = window.innerWidth;
   H = window.innerHeight;
@@ -158,6 +160,7 @@ function resize() {
   st.setProperty('--cap-y', `${Math.round(captionY(v, tune))}px`);
   root.dataset.layout = v.kind;
   if (G.mode === 'chart') G.chartRects = null;
+  hudKeep = null;
 }
 window.addEventListener('resize', resize);
 resize();
@@ -175,6 +178,8 @@ function startBuilder(type) {
   const work = (deadline) => {
     const b = G.builder;
     if (!b || G.builderType !== type) return;
+    // a sky section runs whole in one slice (30 to 140 ms): never during the vista's fly-by
+    if (G.mode === 'vista') { idle(work); return; }
     const playing = G.mode === 'play' && !G.paused;
     const ms = playing ? 2 : Math.max(2, Math.min(8, deadline.timeRemaining ? deadline.timeRemaining() : 4));
     if (b.step(ms)) { G.built[type] = b.result; G.builder = null; G.builderType = null; return; }
@@ -223,12 +228,13 @@ function shipChoice() {
   return SHIPS[want] && (meta.ships.includes(want) || opt.ship) ? want : 'lantern';
 }
 // A new run with the player's ship, REDSHIFT level and EASY LIGHT. ranked: only seed and daily keep a run ranked
-// (url.ranked), and EASY LIGHT never is.
+// (url.ranked), and EASY LIGHT never is. A daily run with no seed given flies the day's seed (daySeed, one for all).
 function freshRun({ seed = null, daily = null, ship = null, ranked = url.ranked } = {}) {
   sound.start();
   const s = settings();
-  const run = createRun({ seed: seed ?? (opt.seed || newSeed()), ship: ship || (daily ? null : shipChoice()), daily,
-    redshift: s.redshift || 0, easy: Boolean(meta.easy && meta.easy.on), meta, tune });
+  const run = createRun({ seed: seed ?? (daily ? null : (opt.seed || newSeed())),
+    ship: ship || (daily ? null : shipChoice()), daily, redshift: s.redshift || 0,
+    easy: Boolean(meta.easy && meta.easy.on), meta, tune });
   run.ranked = Boolean(ranked && run.ranked);
   G.ranked = run.ranked;
   return run;
@@ -244,16 +250,22 @@ function beginRun(run) {
   launchLeg();
 }
 
+// The one run save holds a real run: a practice leg never writes it, nor clears it when it ends (14.1, 14.4).
+const practiceOf = (run) => Boolean(run && run.seen && run.seen.practice);
+function saveRun(run, at) { if (run && !practiceOf(run)) store.saveRun(suspend(run, at)); }
+
 // The run's current leg, from its launch.
 function launchLeg() {
   const run = G.run;
   G.race = startLeg(run, tune);
   useBackdrop(ROUTE[run.leg]);
   afterLaunch();
-  store.saveRun(suspend(run, 'leg'));
+  saveRun(run, 'leg');
 }
 function afterLaunch() {
   const race = G.race;
+  // the camera starts at your ship (each leg's bearing starts at 0; the last leg's roll would spin the world back)
+  scene.roll.reset(race.ships[0].bearing);
   overlay.reset();
   hud.reset();
   newLegMemory(G.mem);
@@ -287,10 +299,14 @@ function start() {
   beginRun(freshRun());
 }
 
+// AGAIN: the same kind of run again. A practice card replays its leg; a daily flies the day's seed again.
 function restart(seed) {
   retryAt = performance.now();
   timing.lastRetryMs = null;
-  const run = freshRun({ seed: seed || newSeed(), daily: G.run && G.run.daily && !seed ? G.run.daily : null });
+  const was = G.run;
+  if (!seed && practiceOf(was)) { startPractice(was.leg); return G.run.seed; }
+  const daily = was && was.daily && !seed ? was.daily : null;
+  const run = freshRun({ seed: seed || (daily ? null : newSeed()), daily });
   beginRun(run);
   return run.seed;
 }
@@ -428,6 +444,7 @@ function stepOnce(stepMs) {
   if (G.piece && you.dist >= G.piece.leg.beats - 1) {
     G.race = createRace({ leg: G.piece.leg, tune: G.piece.tune });
     G.race.ships[0].gap = 99;
+    scene.roll.reset(G.race.ships[0].bearing);
     overlay.reset();
     newLegMemory(G.mem);
   }
@@ -445,11 +462,13 @@ function onLegEnd() {
   G.races.push({ leg: { legNo: race.legNo, hash: race.leg.hash } });
   G.runT += race.t;
   if (run.phase === 'break') {
-    store.saveRun(suspend(run, 'break'));
+    saveRun(run, 'break');
     startBuilder(ROUTE[run.leg + 1]);
     const rec = run.legs[run.legs.length - 1];
     G.vistaSkippable = Boolean(rec && rec.vista && rec.vista.skippable);
     if (vista && scene.backdrop() && end && end.why === 'gate') {
+      // the glare and the flash belong to the ring's view: they leave with it, not freeze over the fly-by
+      overlay.fxOff();
       vista.begin({ race, backdrop: scene.backdrop() });
       G.mode = 'vista';
       hint(G.vistaSkippable ? (desk() ? 'SPACE TO SKIP' : 'TAP TO SKIP') : '');
@@ -473,7 +492,7 @@ function finishRun() {
   meta = applied.meta;
   store.saveMeta(meta);
   store.pushLog({ ...summary, text: runLogText(run, G.races) });
-  store.clearRun();
+  if (!practiceOf(run)) store.clearRun();
   G.metaBefore = before;
   G.applied = applied;
   G.result = resultOf(run, before, tune, applied);
@@ -659,8 +678,11 @@ function action(act, d = {}) {
     case 'resume-save': {
       const env = store.run();
       const r = env ? resume(env, tune) : null;
-      if (!r) { store.clearRun(); showTitle(); break; }
-      G.ranked = r.ranked !== false;
+      // a practice run saved by an older page is not a run to go on with
+      if (!r || practiceOf(r)) { store.clearRun(); showTitle(); break; }
+      // a run resumed on a page with tuning keys or options is unranked from now on (20), as a new one would be
+      r.ranked = Boolean(r.ranked !== false && url.ranked);
+      G.ranked = r.ranked;
       G.run = r;
       G.toy = null; G.piece = null; G.races = []; G.runT = 0; G.mem = createCaptionMemory();
       overlay.reset({ run: true });
@@ -679,10 +701,11 @@ function action(act, d = {}) {
       if (G.mode === 'break' && skip(run, tune)) { sound.ui(); showChart(); }
       break;
     case 'reroll':
-      if (G.mode === 'break' && reroll(run, tune)) { sound.ui(); showBreak(); }
+      // a new offer is a new screen: the input lock starts again, so a double tap spends one reroll
+      if (G.mode === 'break' && reroll(run, tune)) { sound.ui(); screens.hide(); showBreak(); }
       break;
     case 'banish':
-      if (G.mode === 'break' && banish(run, i, tune)) { sound.ui(); showBreak(); }
+      if (G.mode === 'break' && banish(run, i, tune)) { sound.ui(); screens.hide(); showBreak(); }
       break;
     case 'buy': {
       if (G.mode !== 'break') break;
@@ -714,7 +737,8 @@ function action(act, d = {}) {
       break;
     case 'again': if (G.mode === 'result') restart(); break;
     case 'toy-again': if (G.mode === 'toycard') startToy((G.toy ? G.toy.seed : 1) + 1); break;
-    case 'title': showTitle(); break;
+    // THE FULL RUN on the toy's card: this page's title then flies the full run, not the toy again
+    case 'title': if (G.mode === 'toycard') delete opt.toy; showTitle(); break;
     case 'copylog': copyLog(); break;
     case 'easy':
       meta.easy = { ...(meta.easy || {}), on: !(meta.easy && meta.easy.on) };
@@ -744,7 +768,7 @@ function action(act, d = {}) {
     case 'resume': resumeGame(); break;
     case 'mute': sound.toggle(); showPause(); break;
     case 'quit':
-      if (run) store.saveRun(suspend(run, 'leg'));
+      saveRun(run, 'leg');
       input.pause(false);
       showTitle();
       break;
@@ -755,7 +779,13 @@ function action(act, d = {}) {
 function setSetting(key) {
   const s = settings();
   if (key === 'sound') sound.toggle();
-  else if (key === 'reduced') { s.reduced = !reducedNow(); overlay = makeOverlay(); overlay.resize(W, H, DPR()); }
+  else if (key === 'reduced') {
+    s.reduced = !reducedNow();
+    overlay = makeOverlay();
+    overlay.resize(W, H, DPR());
+    if (scene.setReduced) scene.setReduced(reducedNow());
+    motionAttr();
+  }
   else if (key === 'barks') s.barks = s.barks === false;
   else if (key === 'button') s.button = !s.button;
   else s[key] = !s[key];
@@ -763,6 +793,12 @@ function setSetting(key) {
   if (actBtn) actBtn.hidden = !buttonOn();
   store.saveMeta(meta);
   showSettings(G.back);
+}
+
+// html[data-motion]: the page's CSS half of reduced motion (the OS setting or REDUCED MOTION), set again on a change
+function motionAttr() {
+  if (reducedNow()) root.dataset.motion = 'reduced';
+  else delete root.dataset.motion;
 }
 
 function copyLog() {
@@ -806,15 +842,20 @@ function goOn() {
 }
 document.addEventListener('visibilitychange', () => {
   if (!document.hidden) return;
-  if (G.run && (G.mode === 'play')) store.saveRun(suspend(G.run, 'pagehide'));
+  if (G.mode === 'play') saveRun(G.run, 'pagehide');
   pauseGame(false);
 });
-window.addEventListener('pagehide', () => { if (G.run && G.mode === 'play') store.saveRun(suspend(G.run, 'pagehide')); });
+window.addEventListener('pagehide', () => { if (G.mode === 'play') saveRun(G.run, 'pagehide'); });
 window.addEventListener('blur', () => pauseGame(false));
 document.addEventListener('click', (e) => {
   if (e.target.closest && e.target.closest('[data-switch]')) pauseGame(true);
 }, true);
-$('pause').addEventListener('click', (e) => { e.stopPropagation(); if (!pauseGame(true)) resumeGame(); });
+// the button gives its focus back at once: kept, Space (the grab) would press it and pause again
+$('pause').addEventListener('click', (e) => {
+  e.stopPropagation();
+  e.currentTarget.blur();
+  if (!pauseGame(true)) resumeGame();
+});
 
 function hint(text) {
   const el = $('hint');
@@ -831,10 +872,14 @@ function fx(name, on) {
 bindInput(input, {
   el: window, tune, topDead: tune.TOP_DEAD,
   button: () => (actBtn && !actBtn.hidden ? actBtn.getBoundingClientRect() : null),
-  blocked: () => !(G.mode === 'play' || G.mode === 'toy') || G.paused || screens.open,
+  blocked: () => !(G.mode === 'play' || G.mode === 'toy') || G.paused || screens.open || switcherOpen(),
+  // the keys it uses go no further, so the screens' listener below never acts on the same press
   onKey: (code, e) => {
-    if (code === 'Escape' || code === 'KeyP') { e.preventDefault(); pauseGame(true); }
-    else if (code === 'KeyM') sound.toggle();
+    if (code !== 'Escape' && code !== 'KeyP' && code !== 'KeyM') return false;
+    root.dataset.input = 'desk';
+    if (code === 'KeyM') sound.toggle();
+    else { e.preventDefault(); pauseGame(true); }
+    return true;
   },
 });
 if (actBtn) actBtn.hidden = !buttonOn();
@@ -847,9 +892,17 @@ window.addEventListener('pointerdown', (e) => {
   if (G.mode === 'ending' && performance.now() - G.endAt > 400) G.endAt = -1e9;
 }, true);
 
+// The arcade switcher over the game owns every key: one that reached the page (its text was clicked, so focus left
+// its box) never starts or resumes the race behind it, and Esc closes it.
+function switcherOpen() { return Boolean(window.GameSwitch && window.GameSwitch.isOpen); }
+
 // Keys for the screens (the play keys go through bindInput).
 window.addEventListener('keydown', (e) => {
   if (e.metaKey || e.ctrlKey || e.altKey) return;
+  if (switcherOpen()) {
+    if (e.code === 'Escape' && !e.repeat) { e.preventDefault(); window.GameSwitch.close(); }
+    return;
+  }
   root.dataset.input = 'desk';
   if (timing.firstInputMs === null && (G.mode === 'play' || G.mode === 'toy')) timing.firstInputMs = performance.now() - playAt;
   if (e.repeat) return;
@@ -874,6 +927,9 @@ window.addEventListener('keydown', (e) => {
     vista.skip();
     return;
   }
+  // Enter or Space on a focused screen button is that button's own press (its native click), not the highlight's
+  const own = e.target && e.target.closest && e.target.closest('#screens button, #screens a');
+  if ((code === 'Enter' || code === 'Space') && own) return;
   if (['break', 'chart', 'result', 'toycard'].includes(G.mode) && screens.key(code)) { e.preventDefault(); return; }
   if (code === 'KeyM' && G.mode !== 'play') sound.toggle();
 });
@@ -886,6 +942,8 @@ function padScreens() {
   if (!g) return;
   const b = (k) => Boolean(g.buttons[k] && g.buttons[k].pressed);
   const now = { l: b(14) || g.axes[0] < -0.6, r: b(15) || g.axes[0] > 0.6, a: b(0), y: b(3), start: b(9) };
+  // the switcher open: nothing here, and a button still held when it closes is not a new press
+  if (switcherOpen()) { Object.assign(padWas, now); return; }
   const edge = (k) => now[k] && !padWas[k];
   if (edge('start')) {
     if (G.paused) resumeGame();
@@ -997,6 +1055,21 @@ function interp(race, alpha, on) {
   }
 }
 
+// The HUD's boxes for the ring layer's rival labels to keep off, read twice a second (the words change length; each
+// box is widened for that) and again after a resize (hudKeep, by resize()).
+function hudBoxes() {
+  if (hudKeep && frames - hudKeepAt < 30) return hudKeep;
+  hudKeepAt = frames;
+  hudKeep = [];
+  for (const id of ['speed', 'land', 'place', 'pause']) {
+    const el = $(id);
+    if (!el || (id !== 'pause' && !el.textContent.trim())) continue;
+    const r = el.getBoundingClientRect();
+    if (r.width > 0) hudKeep.push({ x: r.left - 24, y: r.top - 4, w: r.width + 48, h: r.height + 8 });
+  }
+  return hudKeep;
+}
+
 function drawPlay(dt, alpha) {
   const race = G.race;
   const run = G.run;
@@ -1007,7 +1080,7 @@ function drawPlay(dt, alpha) {
   const view = scene.render(race, live ? dt : 0, { fixed, shake: overlay.shake() });
   const drawn = overlay.render(race, view, live || G.mode === 'ending' ? dt : 0, {
     backdrop: scene.backdrop(), first: (meta.seen.runs || 0) < tune.TEACH_RUNS && !G.toy,
-    runT: G.runT + race.t, tells: run ? tellsOf(run.build) : null,
+    runT: G.runT + race.t, tells: run ? tellsOf(run.build) : null, hud: hudBoxes(),
   });
   interp(race, a, false);
   G.drawn = drawn;
@@ -1230,7 +1303,8 @@ window.__race = {
       ratio: i.ratio, hazards: i.hazards, backdrop: i.backdrop, backdropPoints: i.backdropPoints,
       frameMs: { p50: q(perfS.frame, 0.5), p95: q(perfS.frame, 0.95) }, renderMs: { p50: q(perfS.render, 0.5),
         p95: q(perfS.render, 0.95) }, stepMs: { p50: q(perfS.step, 0.5), p95: q(perfS.step, 0.95) },
-      overlayOps: overlay.state ? overlay.state.ops : 0, voices: sound.voices(), fallback: Boolean(scene.fallback) });
+      overlayOps: overlay.state ? overlay.state.ops : 0, voices: sound.voices(), fallback: Boolean(scene.fallback),
+      reduced: i.reduced ?? reducedNow() });
   },
   // sounds started, effects drawn (the overlay's and the HUD's) and haptics fired, per event type, where they start
   feedback: () => plain({ sounds: sound.played(), effects: sumCounts(overlay.shown(), hud.counts()),
@@ -1346,6 +1420,6 @@ window.__race = {
 
 // ---------------------------------------------------------------- boot
 if (opt.bot) window.__race.bot(opt.bot);
-if (reducedNow()) root.dataset.motion = 'reduced';
+motionAttr();
 showTitle();
 requestAnimationFrame(frame);

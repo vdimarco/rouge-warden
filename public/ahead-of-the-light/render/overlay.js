@@ -59,6 +59,7 @@ export function createOverlay({ canvas, tune = TUNE, reduced = false, fx = {} } 
     fin: {},                           // MAKO's target: { [makoId]: { target, t } }
     lastGraze: null, intro: -1, legKey: null, landmarkOn: false, gateOn: false, cardShown: {}, cardSeen: 0,
     patchSeen: false, ops: 0, labelsDrawn: [], wingsDrawn: null,
+    markWay: {},                       // per landmark id: the way its label went last frame (kept while it is clear)
   };
   const shown = {};
   const count = (type) => { shown[type] = (shown[type] || 0) + 1; };
@@ -87,7 +88,7 @@ export function createOverlay({ canvas, tune = TUNE, reduced = false, fx = {} } 
     V.fx = []; V.ripples = []; V.popups = []; V.sparks = []; V.frags = []; V.digits = []; V.trail = []; V.beams = [];
     V.bulges = []; V.words = []; V.arcs = []; V.marks = {}; V.fin = {}; V.lens = null; V.flood = 0; V.white = 0;
     V.flash = 0; V.intro = -1; V.landmarkOn = false; V.gateOn = false; V.ringK.x = V.ringK.v = 0;
-    V.burstK.x = V.burstK.v = 0; V.lastGraze = null; V.legKey = null;
+    V.burstK.x = V.burstK.v = 0; V.lastGraze = null; V.legKey = null; V.markWay = {};
     if (run) { V.hairs = 0; V.releases = 0; V.cardShown = {}; V.cardSeen = 0; V.patchSeen = false; }
   }
 
@@ -335,32 +336,51 @@ export function createOverlay({ canvas, tune = TUNE, reduced = false, fx = {} } 
   }
 
   // The video's mark: a thin ring round a thing, a leader line from its lower right going down and right, then flat,
-  // and a small label. Returns the label's box.
-  function videoMark(x, y, r, label, { alpha = 1, color = 'rgba(255,255,255,0.85)', px = 11, dir = 0 } = {}) {
-    ctx.globalAlpha = alpha;
-    circle(x, y, r); stroke(color, 1);
+  // and a small label. markLayout says where the leader and label go (dir ±1 picks the side, 0 is right unless the
+  // screen's edge turns it; up leads upward); drawMark draws it and returns the label's box.
+  function markLayout(x, y, r, label, { px = 11, dir = 0, up = false } = {}) {
     ctx.font = `600 ${px}px ${FONT}`;
     const tw = ctx.measureText(label).width;
     let sx = dir || 1;
     const run = 16 * (px / 11);
     if (!dir && x + r * 0.7071 + run + 14 + tw > V.w - 8) sx = -1;
     if (sx < 0 && x - r * 0.7071 - run - 14 - tw < 8) sx = 1;
-    let sy = 1;
-    if (y + r * 0.7071 + run + px > V.h - 8) sy = -1;
+    let sy = up ? -1 : 1;
+    if (sy > 0 && y + r * 0.7071 + run + px > V.h - 8) sy = -1;
     let lx = x + sx * r * 0.7071, ly = y + sy * r * 0.7071;
     // a ring bigger than the screen: lead from where it crosses the screen's lower right instead
     lx = clamp(lx, 10, V.w - 10); ly = clamp(ly, 70, V.h - 30);
     let ex = lx + sx * run;
     const ey = ly + sy * run;
     if (sx > 0) ex = Math.min(ex, V.w - 8 - 14 - tw - 10); else ex = Math.max(ex, 8 + 14 + tw + 10);
+    const bx = sx > 0 ? ex + sx * 14 : ex + sx * 14 - tw;
+    return { x, y, r, label, px, sx, lx, ly, ex, ey, box: { x: bx, y: ey - px * 0.6, w: tw, h: px * 1.2 } };
+  }
+  function drawMark(L, { alpha = 1, color = 'rgba(255,255,255,0.85)' } = {}) {
+    ctx.globalAlpha = alpha;
+    circle(L.x, L.y, L.r); stroke(color, 1);
     ctx.beginPath(); V.ops++;
-    ctx.moveTo(lx, ly); ctx.lineTo(ex, ey); ctx.lineTo(ex + sx * 10, ey);
+    ctx.moveTo(L.lx, L.ly); ctx.lineTo(L.ex, L.ey); ctx.lineTo(L.ex + L.sx * 10, L.ey);
     stroke(color, 1);
     ctx.globalAlpha = 1;
     const tc = color.startsWith('rgba(255,255,255') ? '#fff' : color;
-    text(label, ex + sx * 14, ey, { px, align: sx > 0 ? 'left' : 'right', alpha, color: tc });
-    const bx = sx > 0 ? ex + sx * 14 : ex + sx * 14 - tw;
-    return { x: bx, y: ey - px * 0.6, w: tw, h: px * 1.2 };
+    text(L.label, L.ex + L.sx * 14, L.ey, { px: L.px, align: L.sx > 0 ? 'left' : 'right', alpha, color: tc });
+    return L.box;
+  }
+  // A mark's label clear (4 px) of the labels already placed: the way it went last frame while that stays clear, else
+  // its own side and down, the other side, its side and up, the other side and up. → the layout, or null.
+  const boxTouch = (a, b, m) => a.x - m < b.x + b.w && b.x - m < a.x + a.w && a.y - m < b.y + b.h && b.y - m < a.y + a.h;
+  function placeMark(id, x, y, r, label, px, placed) {
+    const L0 = markLayout(x, y, r, label, { px });
+    const ways = [L0, markLayout(x, y, r, label, { px, dir: -L0.sx }),
+      markLayout(x, y, r, label, { px, dir: L0.sx, up: true }), markLayout(x, y, r, label, { px, dir: -L0.sx, up: true })];
+    const last = V.markWay[id];
+    for (const k of last ? [last, 0, 1, 2, 3] : [0, 1, 2, 3]) {
+      if (placed.some((b) => boxTouch(ways[k].box, b, 4))) continue;
+      V.markWay[id] = k;
+      return ways[k];
+    }
+    return null;
   }
 
   // A rival's ship in its silhouette (10.2, 10.3): nose toward the centre. half: px half-width.
@@ -472,17 +492,23 @@ export function createOverlay({ canvas, tune = TUNE, reduced = false, fx = {} } 
     // ---- the landmarks: thin rings, leader lines and labels (the video's look) ----
     let landmarkBox = null;
     const marks = opts.marks || (opts.backdrop ? opts.backdrop.marks(view, view.progress ?? 0, view.phiL ?? view.phi) : null);
+    // the labels of the marks drawn so far: no two landmark labels sit on each other
+    const markBoxes = [];
     if (marks && marks.length) {
       let drawn = 0;
-      for (const m of marks) {
+      // the leg's goal first (it always draws, and the others keep clear of it), then the nearest others
+      for (const m of [...marks.filter((q) => q.ahead), ...marks.filter((q) => !q.ahead)]) {
         if (drawn >= 2) break;
         if (m.ahead && !V.landmarkOn) continue;
         if (!m.ahead && m.r < 6) continue;
         if (Math.hypot(m.x - cx, m.y - cy) < R * 0.98 && m.r > R * 0.9) continue;
         const hot = m.ahead && V.lens && V.time - V.lens.t0 < 1.5;
         const appear = m.ahead ? smooth(0, 0.6, V.time - (V.landmarkT ?? (V.landmarkT = V.time))) : 1;
-        const box = videoMark(m.x, m.y, m.r + 4, m.text, { alpha: 0.9 * appear, color: hot ? ORANGE : 'rgba(255,255,255,0.85)',
-          px: view.desk ? 13 : 11 });
+        const px = view.desk ? 13 : 11;
+        const L = placeMark(m.id, m.x, m.y, m.r + 4, m.text, px, markBoxes);
+        if (!L) continue;
+        const box = drawMark(L, { alpha: 0.9 * appear, color: hot ? ORANGE : 'rgba(255,255,255,0.85)' });
+        markBoxes.push(box);
         out.marks.push({ id: m.id, x: m.x, y: m.y, r: m.r, box });
         if (!landmarkBox || m.ahead) landmarkBox = box;
         drawn++;
@@ -899,9 +925,13 @@ export function createOverlay({ canvas, tune = TUNE, reduced = false, fx = {} } 
     if (named) {
       const [nx, ny] = P(wrap(named.it.psi - cam), named.rr);
       const half = named.it.kind === 'well' ? wellCore(named.it, T) * 1.6 : named.it.half || 3;
-      namedBox = videoMark(nx, ny, Math.max(6, named.rr * half * DEG) + 3, named.it.name,
-        { alpha: smooth(T.OUTLINE_LEAD + 0.4, T.OUTLINE_LEAD - 0.1, named.ttp), px: view.desk ? 13 : 11 });
-      out.marks.push({ id: named.it.id, box: namedBox });
+      // clear of the landmark labels, or not drawn this frame
+      const L = placeMark(`item:${named.it.id}`, nx, ny, Math.max(6, named.rr * half * DEG) + 3, named.it.name,
+        view.desk ? 13 : 11, markBoxes);
+      if (L) {
+        namedBox = drawMark(L, { alpha: smooth(T.OUTLINE_LEAD + 0.4, T.OUTLINE_LEAD - 0.1, named.ttp) });
+        out.marks.push({ id: named.it.id, box: namedBox });
+      }
     }
 
     // ---- wells: the reach arc, the window flash, exit bands, the red zone, the tether ----
@@ -1224,15 +1254,26 @@ export function createOverlay({ canvas, tune = TUNE, reduced = false, fx = {} } 
     labelCands.sort((a, b) => (b.nemesis - a.nemesis) || (b.boss - a.boss) || (a.near - b.near) || (b.changed - a.changed));
     const cands = labelCands.filter((c) => !c.skip);
     // ringmath.placeLabels keeps clear of one landmark label; with more marks on screen a label that lands on another
-    // is placed again against that one, and dropped if it still touches a mark
+    // is placed again against that one, and dropped if it still touches a mark. Labels also never touch (3 px) the
+    // light's label (its time to catch), your wings and shield, or the HUD (main.js passes its boxes).
     const avoid = out.marks.map((m) => m.box).filter(Boolean);
-    const near = (a, b) => a.x - 24 < b.x + b.w && b.x - 24 < a.x + a.w && a.y - 24 < b.y + b.h && b.y - 24 < a.y + a.h;
+    const near = (a, b) => boxTouch(a, b, 24);
+    const clear = (opts.hud || hudCorners(view)).slice();
+    if (out.lightLabel) clear.push(out.lightLabel);
+    if (out.wings) {
+      for (const p of [...out.wings.hull, ...out.wings.fuel]) {
+        clear.push({ x: p.x - p.size / 2, y: p.y - p.size / 2, w: p.size, h: p.size });
+      }
+      const sh = out.wings.shield;
+      clear.push({ x: sh.x - sh.r, y: sh.y - sh.r, w: sh.r * 2, h: sh.r * 2 });
+    }
+    const bad = (box) => avoid.find((b) => near(box, b)) || clear.find((b) => boxTouch(box, b, 3));
     const placed = [];
     for (const L of placeLabels(view, cands, { landmark: namedBox || landmarkBox, max: 2 })) {
-      const hit = avoid.find((b) => near(L.box, b));
-      if (!hit) { placed.push(L); continue; }
+      const hit = bad(L.box);
+      if (!hit) { if (!placed.some((q) => boxTouch(L.box, q.box, 2))) placed.push(L); continue; }
       const again = placeLabels(view, cands.filter((c) => L.ids.includes(c.id)), { landmark: hit, max: 1 })[0];
-      if (again && !avoid.some((b) => near(again.box, b)) && !placed.some((q) => near(again.box, q.box))) placed.push(again);
+      if (again && !bad(again.box) && !placed.some((q) => near(again.box, q.box))) placed.push(again);
     }
     for (const L of placed) {
       const nem = cands.find((c) => c.id === L.ids[0]);
@@ -1348,6 +1389,20 @@ export function createOverlay({ canvas, tune = TUNE, reduced = false, fx = {} } 
     ctx.lineCap = 'butt';
   }
 
+  // The HUD's two top corners as style.css lays them out, when the page passes no boxes of its own.
+  function hudCorners(view) {
+    return view.desk ? [{ x: 0, y: 0, w: Math.min(V.w / 2, 480), h: 80 }, { x: V.w - 260, y: 0, w: 260, h: 72 }]
+      : [{ x: 0, y: 0, w: Math.min(V.w / 2, 410), h: 72 }, { x: V.w - 200, y: 0, w: 200, h: 62 }];
+  }
+
+  // The glare and the flash off at once (the vista's camera cut leaves the ring's view): through setFx, so the next
+  // frame that draws the ring writes its own values again.
+  function fxOff() {
+    V.flash = 0; V.white = 0;
+    setFx('glare', 0);
+    setFx('flash', 0);
+  }
+
   // The CSS layers: the glare (0.55 × clamp((3 − TTC) ÷ 3, 0, 1)), the HEADLIGHT flash and LIGHT SPEED white-out, the
   // caught flood.
   function fxLayers(you, dt, T) {
@@ -1363,7 +1418,7 @@ export function createOverlay({ canvas, tune = TUNE, reduced = false, fx = {} } 
   }
 
   return {
-    resize, reset, onEvents, render,
+    resize, reset, onEvents, render, fxOff,
     shake: () => ({ x: V.sx, y: V.sy }),
     shown: () => ({ ...shown }),
     state: V,

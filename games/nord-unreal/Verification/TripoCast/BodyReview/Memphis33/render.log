@@ -1,0 +1,29 @@
+18:13:22 | INFO: Data are loaded, start creating Blender stuff
+18:13:22 | INFO: Blender create Mesh node Mesh_0
+18:13:23 | INFO: glTF import finished in 0.28s
+/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Scripts/review_graphic_novel_cast.py:105: DeprecationWarning: 'Material.use_nodes' is expected to be removed in Blender 6.0
+  assert material and material.use_nodes
+/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Scripts/review_graphic_novel_cast.py:143: DeprecationWarning: 'World.use_nodes' is expected to be removed in Blender 6.0
+  scene.world.use_nodes = True
+/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Scripts/review_graphic_novel_cast.py:166: DeprecationWarning: 'Material.use_nodes' is expected to be removed in Blender 6.0
+  ink.use_nodes = True
+00:01.936  render           | Saved: '/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoCastReview-Memphis33-20261017-v1/front.png'
+CPU_BODY_REVIEW_VIEW front
+00:02.942  render           | Saved: '/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoCastReview-Memphis33-20261017-v1/threequarter.png'
+CPU_BODY_REVIEW_VIEW threequarter
+00:03.756  render           | Saved: '/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoCastReview-Memphis33-20261017-v1/side.png'
+CPU_BODY_REVIEW_VIEW side
+00:04.776  render           | Saved: '/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoCastReview-Memphis33-20261017-v1/back.png'
+CPU_BODY_REVIEW_VIEW back
+00:06.308  render           | Saved: '/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoCastReview-Memphis33-20261017-v1/face-front.png'
+CPU_BODY_REVIEW_VIEW face-front
+00:07.625  render           | Saved: '/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoCastReview-Memphis33-20261017-v1/face-threequarter.png'
+CPU_BODY_REVIEW_VIEW face-threequarter
+00:09.113  render           | Saved: '/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoCastReview-Memphis33-20261017-v1/hand-left.png'
+CPU_BODY_REVIEW_VIEW hand-left
+00:10.632  render           | Saved: '/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoCastReview-Memphis33-20261017-v1/hand-right.png'
+CPU_BODY_REVIEW_VIEW hand-right
+CPU_BODY_REVIEW_COMPLETE /home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoCastReview-Memphis33-20261017-v1
+Blender 5.2.2 LTS (hash d13f752e3b9c built 2026-09-15 01:34:58)
+
+Blender quit

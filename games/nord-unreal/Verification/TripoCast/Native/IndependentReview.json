@@ -1,0 +1,32 @@
+{
+  "reviewer": "/root/tripo_locomotion_prepare",
+  "recorded_utc": "2026-10-18T00:21:28.575680+00:00",
+  "scope": "Read-only current native code, shared import/reload, source-plan tests and docs/OpenSpec review; no new test or engine process",
+  "serious_blockers": [],
+  "reviewed_cpp": [
+    "QuebecGameplay.cpp",
+    "QuebecCrewAnimation.cpp",
+    "QuebecCrewAnimationTests.cpp",
+    "QuebecTripoTests.cpp"
+  ],
+  "all20_native_source_hashes_match_successful_run": true,
+  "editor_module_sha256": "c99aa9f437be629ea83bece418a0575c6500b840d213a335366b7de082352e17",
+  "native_result": {
+    "succeeded": 12,
+    "succeededWithWarnings": 0,
+    "failed": 0,
+    "notRun": 0,
+    "inProcess": 0
+  },
+  "raw_report_matches_aggregate": true,
+  "current_source_plan_audit": {
+    "path": "games/nord-unreal/Verification/TripoCast/TripoBodies/OwnRigCPU/FundedFive/CurrentSourcePlanAudit.json",
+    "sha256": "1e90abf3f472e03c6e23948711e54e09a690eee2f7d1c9829aad0c8f383e5634"
+  },
+  "bounded_findings": [
+    "No serious correctness gap or overstated acceptance found.",
+    "Private in-memory root lock, saved Jump flag distinction, default routes/Top exclusion/fallbacks and attachment reset remain consistent.",
+    "All48 current output hashes and approval-only historical provenance reconstruction pass.",
+    "Rendered final art/contact, package/performance, browser/device/off-LAN acceptance remain open."
+  ]
+}

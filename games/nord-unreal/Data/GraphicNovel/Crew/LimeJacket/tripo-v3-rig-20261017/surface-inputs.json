@@ -1,0 +1,14 @@
+{
+  "source_glb": {
+    "path": "Data/GraphicNovel/Crew/LimeJacket/generated-v1-high-detail/body.glb",
+    "sha256": "3eda089ac9baea41e1cc1c5c15ca027e218e41a39f9d3ac814bbd89f671139ff"
+  },
+  "provider_fbx": {
+    "path": "Data/GraphicNovel/Crew/LimeJacket/tripo-v3-rig-20261017/rig.fbx",
+    "sha256": "fdde159419847dc343fa5efb6f13569872dd54fbe730dcb025b6d1623ffa5802"
+  },
+  "normal_png": {
+    "path": "Data/GraphicNovel/Crew/LimeJacket/generated-v1-high-detail/normal.png",
+    "sha256": "84d92b8629372fc68a62a11d4b2fb4757a0e09426a03f94d88459fa1bc4ff8f4"
+  }
+}

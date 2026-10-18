@@ -75,7 +75,7 @@ Keep these through every change to this game.
   up, and it targets nobody.
 - **Time to catch** TTC = gap ÷ (1 − β) is the only number the player sees. It counts down one second per second at a
   steady speed, jumps up when you speed up and drops when you slow.
-- **Push-backs** (all × the leg's mass factor M: 1.00, 0.70, 0.66, 0.63, 0.61, 0.58, 0.55, 0.51): graze 0.12 s,
+- **Push-backs** (all × the leg's mass factor M: 1.00, 0.78, 0.74, 0.71, 0.69, 0.66, 0.63, 0.59): graze 0.12 s,
   hairline 0.30, rival graze 0.12, rail skim 0.20 a second, whip 0.4 × mass × (0.5 + d) (half on WIDE), mid-leg pair
   0.5, takedown 0.3, gate thread 2.0, dock 1.5, fly past 0.5. They stop at the leg's cap (8, 3.5, 3, 3, 3, 3, 2.8,
   2.8 s), except a red-zone release (up to +1.5 s, fading at 0.1 s a second) and STILL LIGHT, which raises the cap by up
@@ -190,7 +190,11 @@ The team's `contract.md` logs every change with its reason; these are the ones a
   it when shown, so the pause card keeps a low-passed drone. A pause on a visible page still suspends the sound.
 - **The result card's log line** names the pages left: LOG +5 PAGES · 1 PAGE TO REROLL +1.
 - **The cabinet line**: FIRST HOME · 14.2 YR once you have come home first (the record keeps the best years, not the
-  place), else HOME IN 14.2 YR, else BEST: and the furthest leg's name; the plain line is SKIM · BURN · WHIP.
+  place), else HOME IN 14.2 YR, else BEST: and the furthest leg's name; the plain line is SKIM · BURN · WHIP. Leg 7
+  reads THE SUN'S STARS on the machine: the line is Press Start 2P at 12 px, a word cannot wrap, and NEIGHBOURS (130 px
+  with the padding) is wider than the 97 px screen at 320 × 700 and 375 × 667. A smaller font would break the arcade's
+  12 px floor. With `gold-frame` in the save's unlocks the machine gets the class `gold`: a 3 px gold ring and a soft
+  glow as a box-shadow on the bezel, so no size changes.
 - **The key art** is cut from a 2 × portrait screenshot of leg 1 at 0.9931c with PIKE 0.1 s in your wake, staged with
   `?gap0=0.3&gapcap=0.3&bleed=0` so the light's ring sits at 1.6 × the play ring (LIGHT · 44 S); at a real HEADLIGHT
   gap the ring sits off the bottom edge.
@@ -216,6 +220,10 @@ The team's `contract.md` logs every change with its reason; these are the ones a
   4.5 s ahead of its light; the WHALE starts 2.5 s ahead; MANTA has 3 hull. Known gaps stay as todos in `sim.test.mjs`
   with floors (raised where the pass improved them: the mid's TTC under 10 s to 25 %, rivals eaten to 2.6, REDSHIFT
   3's light to 15 %).
+  The review fixes judge each item once, so a stumble back over it no longer pays a second THREAD or graze. That took
+  the mid home rate from 33 to 23 %, so the masses of legs 2 to 8 rose 0.08 (now 0.78 to 0.59; mid home 38 %). Two
+  floors moved with it: 12 of 22 base cards pass the 20 % rule (was 14), and a hull-2 dock may age up to 0.15 years a
+  leg less than a hull-1 dock (2.52 against 2.61), inside the noise of 40 runs.
 
 ## Cuts
 

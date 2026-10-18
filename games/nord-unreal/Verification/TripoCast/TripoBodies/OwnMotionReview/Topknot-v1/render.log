@@ -1,0 +1,36 @@
+19:09:20 | INFO: Data are loaded, start creating Blender stuff
+19:09:20 | INFO: Blender create Mesh node tripo_mesh_7c59f469-ad8a-4825-913f-14a69d0ba61b
+19:09:20 | INFO: glTF import finished in 0.11s
+/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Scripts/review_tripo_cast_motion.py:57: DeprecationWarning: 'Material.use_nodes' is expected to be removed in Blender 6.0
+  assert material.use_nodes and len([n for n in material.node_tree.nodes if n.type == 'TEX_IMAGE']) == 3
+/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Scripts/review_tripo_cast_motion.py:99: DeprecationWarning: 'World.use_nodes' is expected to be removed in Blender 6.0
+  scene.world = bpy.data.worlds.new('CPUStudio'); scene.world.use_nodes = True
+/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Scripts/review_tripo_cast_motion.py:113: DeprecationWarning: 'Material.use_nodes' is expected to be removed in Blender 6.0
+  label_material = bpy.data.materials.new('Label'); label_material.use_nodes = True
+00:04.018  render           | Saved: '/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoOwnMotionReview-Topknot-20261017-v1/idle-front.png'
+FBX version: 7400
+FBX version: 7400
+FBX version: 7400
+FBX version: 7400
+FBX version: 7400
+OWN_TRIPO_VIEW idle-front
+00:06.969  render           | Saved: '/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoOwnMotionReview-Topknot-20261017-v1/idle-side.png'
+OWN_TRIPO_VIEW idle-side
+00:10.270  render           | Saved: '/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoOwnMotionReview-Topknot-20261017-v1/idle-threequarter.png'
+OWN_TRIPO_VIEW idle-threequarter
+00:13.461  render           | Saved: '/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoOwnMotionReview-Topknot-20261017-v1/idle-back.png'
+OWN_TRIPO_VIEW idle-back
+00:16.787  render           | Saved: '/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoOwnMotionReview-Topknot-20261017-v1/walk-threequarter.png'
+OWN_TRIPO_VIEW walk-threequarter
+00:20.126  render           | Saved: '/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoOwnMotionReview-Topknot-20261017-v1/run-threequarter.png'
+OWN_TRIPO_VIEW run-threequarter
+00:23.481  render           | Saved: '/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoOwnMotionReview-Topknot-20261017-v1/jump-threequarter.png'
+OWN_TRIPO_VIEW jump-threequarter
+00:27.633  render           | Saved: '/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoOwnMotionReview-Topknot-20261017-v1/hand-l.png'
+OWN_TRIPO_VIEW hand-l
+00:31.642  render           | Saved: '/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoOwnMotionReview-Topknot-20261017-v1/hand-r.png'
+OWN_TRIPO_VIEW hand-r
+OWN_TRIPO_RENDER_COMPLETE /home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoOwnMotionReview-Topknot-20261017-v1
+Blender 5.2.2 LTS (hash d13f752e3b9c built 2026-09-15 01:34:58)
+
+Blender quit

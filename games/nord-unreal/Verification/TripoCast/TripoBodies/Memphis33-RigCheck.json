@@ -1,0 +1,12 @@
+{
+  "character": "Memphis33",
+  "task_id": "1336cd9e-182d-4eec-b735-809eaca2ee8a",
+  "source_body_task_id": "37b3a1cd-d4c1-4b21-9348-88752ade1549",
+  "status": "success",
+  "credits_consumed": 0.0,
+  "output": {
+    "riggable": true,
+    "rig_type": "biped"
+  },
+  "scope": "Actual free biped compatibility; source and deformation review separate"
+}

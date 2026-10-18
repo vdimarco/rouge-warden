@@ -1,0 +1,14 @@
+{
+  "source_glb": {
+    "path": "Data/GraphicNovel/Crew/GreenCap51/generated-v1-high-detail/body.glb",
+    "sha256": "729b56b0ed6d74be020f73ea87513d3963f6fb77a630d9f978ce66f0570599f6"
+  },
+  "provider_fbx": {
+    "path": "Data/GraphicNovel/Crew/GreenCap51/tripo-v3-rig-20261017/rig.fbx",
+    "sha256": "5ccc52f3d10544adc7788a06fd64aed4d9191a6d1171b7fed8b9b606cfc83958"
+  },
+  "normal_png": {
+    "path": "Data/GraphicNovel/Crew/GreenCap51/generated-v1-high-detail/normal.png",
+    "sha256": "366b7e5c510d5d3e61c2e1bbd597c5e3f4851e5be13058f44b76d5704374c016"
+  }
+}

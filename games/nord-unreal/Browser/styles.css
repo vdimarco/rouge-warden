@@ -41,13 +41,13 @@ footer p { margin: 0; }
 #touch-controls button span { display: block; margin-top: 2px; font-size: 8.5px; letter-spacing: .08em; color: var(--cyan); }
 #touch-controls button[data-pressed="true"] span { color: var(--ink); }
 /* Floating game buttons keep full thumb-sized faces without obscuring the world. */
-#touch-controls :is(.touch-primary, .touch-steering) button { width: var(--action-size); height: var(--action-size); padding: 8px; border: 2px solid #fffaf0b3; border-radius: 50%; background: #0b0a16c9; color: var(--paper); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; font-size: 13px; letter-spacing: .03em; box-shadow: 0 4px 0 #0009, inset 0 1px 0 #fff3; text-shadow: 0 1px 2px #000; }
+#touch-controls :is(.touch-primary, .touch-steering, .touch-navigation) button { width: var(--action-size); height: var(--action-size); padding: 8px; border: 2px solid #fffaf0b3; border-radius: 50%; background: #0b0a16c9; color: var(--paper); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; font: 700 12px/1.1 Arial, sans-serif; letter-spacing: 0; box-shadow: 0 4px 0 #0009, inset 0 1px 0 #fff3; text-shadow: 0 1px 2px #000; }
 #touch-controls #touch-brake { border-color: var(--cyan); }
 #touch-controls #touch-use { border-color: var(--yellow); }
-#touch-controls :is(.touch-primary, .touch-steering) svg { width: 28px; height: 28px; flex-shrink: 0; fill: none; stroke: currentColor; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; pointer-events: none; }
-#touch-controls :is(.touch-primary, .touch-steering) button span { margin: 0; font: 700 10px/1 Arial, sans-serif; letter-spacing: .02em; color: inherit; }
-#touch-controls :is(.touch-primary, .touch-steering) button:is(:active, [data-pressed="true"], [aria-expanded="true"]) { background: var(--yellow); color: var(--ink); border-color: var(--paper); box-shadow: 0 1px 0 #0009, inset 0 2px 4px #0004; text-shadow: none; transform: translateY(3px); }
-#touch-controls :is(.touch-primary, .touch-steering) button:focus-visible { outline: 3px solid var(--cyan); outline-offset: 3px; }
+#touch-controls :is(.touch-primary, .touch-steering, .touch-navigation) svg { width: 28px; height: 28px; flex-shrink: 0; fill: none; stroke: currentColor; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; pointer-events: none; }
+#touch-controls :is(.touch-primary, .touch-steering, .touch-navigation) button span { margin: 0; font: 700 10px/1 Arial, sans-serif; letter-spacing: .02em; color: inherit; }
+#touch-controls :is(.touch-primary, .touch-steering, .touch-navigation) button:is(:active, [data-pressed="true"], [aria-expanded="true"]) { background: var(--yellow); color: var(--ink); border-color: var(--paper); box-shadow: 0 1px 0 #0009, inset 0 2px 4px #0004; text-shadow: none; transform: translateY(3px); }
+#touch-controls :is(.touch-primary, .touch-steering, .touch-navigation) button:focus-visible { outline: 3px solid var(--cyan); outline-offset: 3px; }
 /* Sticks: a paper ring inside an ink ring around a halftone-dot fill. */
 .touch-stick { position: absolute; width: 96px; height: 96px; border: 2px solid var(--paper); border-radius: 50%; display: grid; place-items: center;
   background: radial-gradient(circle, #fffaf03d 0 1.1px, transparent 1.6px) 0 0 / 6px 6px, #0b0a1673;
@@ -68,7 +68,7 @@ footer p { margin: 0; }
 .touch-input .brand strong { font-size: 16px; }
 .touch-input .brand span, .touch-input footer .controls { display: none; }
 .touch-input select { min-height: 44px; }
-/* While playing on a touch screen the header hides; the ☰ button next to Sprint, Jump and Use opens the menu. */
+/* While playing on a touch screen the header hides; the top-left ☰ button opens the menu. */
 .touch-input[data-state="playing"] header { display: none; }
 .touch-input footer { font-size: 11px; line-height: 1.35; padding: 6px max(10px, env(safe-area-inset-right)) max(6px, env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left)); }
 @media (orientation: landscape) and (max-height: 600px) {
@@ -102,10 +102,25 @@ footer p { margin: 0; }
 /* The open crew list sits above the sticks so they cannot take its taps. */
 .touch-input.portrait-stream .crew-picker { top: auto; bottom: calc(2 * var(--action-size) + 32px + max(16px, env(safe-area-inset-bottom))); }
 
-#touch-controls :is(.touch-primary, .touch-steering) b { font: inherit; }
+#touch-controls :is(.touch-primary, .touch-steering, .touch-navigation) b { font: inherit; }
 #touch-controls[data-driving="true"] #touch-gas { border-color: var(--cyan); }
 #touch-controls[data-driving="true"] #touch-brake { border-color: var(--yellow); }
 
-@media (orientation: portrait) {
-  .touch-steering { grid-template-columns: auto; bottom: max(16px, env(safe-area-inset-bottom)); }
+.touch-steering { width: 112px; height: 112px; bottom: max(16px, env(safe-area-inset-bottom)); display: flex; align-items: center; gap: 0; border-radius: 50%; background: #0b0a16c9; pointer-events: auto; touch-action: none; }
+#touch-controls .touch-steering .steering-wheel { position: absolute; inset: 0; width: 112px; height: 112px; stroke-width: 5; transform: rotate(var(--steer-angle, 0deg)); }
+#touch-controls .touch-steering button { width: 56px; height: 56px; min-width: 44px; z-index: 1; background: transparent; border: 0; box-shadow: none; font-size: 10px; gap: 0; }
+#touch-controls .touch-steering button svg { width: 20px; height: 20px; }
+.steering-hint { position: absolute; bottom: 14px; left: 50%; transform: translateX(-50%); padding: 2px 4px; border-radius: 3px; background: var(--ink); color: var(--paper); white-space: nowrap; text-align: center; font: 700 10px/1.2 Arial, sans-serif; pointer-events: none; }
+@media (max-width: 360px) {
+  #touch-controls { --action-size: 72px; }
+  .touch-primary { gap: 8px; }
+  #touch-controls .touch-primary button { padding: 6px; gap: 2px; }
+  #touch-controls .touch-primary svg { width: 22px; height: 22px; }
 }
+
+#touch-controls :is(.touch-primary, .touch-steering, .touch-navigation) button :is(b, span) { white-space: nowrap; flex-shrink: 0; }
+#touch-controls .touch-steering b { background: var(--ink); padding: 1px 3px; border-radius: 2px; color: var(--paper); }
+
+.touch-navigation { position: absolute; top: max(12px, env(safe-area-inset-top)); left: max(16px, env(safe-area-inset-left)); }
+#touch-controls .touch-navigation button { width: 64px; height: 64px; gap: 2px; padding: 6px; }
+#touch-controls .touch-navigation svg { width: 22px; height: 22px; }

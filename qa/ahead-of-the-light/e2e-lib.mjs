@@ -36,9 +36,11 @@ export async function launch() {
   });
 }
 
-// A page at one size, with its errors collected. store: localStorage keys set before the page loads.
+// A page at one size (a SIZES key, or a context spec such as { viewport, hasTouch, isMobile }), with its errors
+// collected. store: localStorage keys set before the page loads.
 export async function open(browser, size, query = '', { store = null, reduced = false, clear = true } = {}) {
-  const ctx = await browser.newContext({ ...SIZES[size], userAgent: UA, reducedMotion: reduced ? 'reduce' : 'no-preference' });
+  const spec = typeof size === 'string' ? SIZES[size] : size;
+  const ctx = await browser.newContext({ ...spec, userAgent: UA, reducedMotion: reduced ? 'reduce' : 'no-preference' });
   const page = await ctx.newPage();
   const errors = [];
   page.on('pageerror', (e) => errors.push('pageerror: ' + (e.stack || e.message).split('\n').slice(0, 3).join(' | ')));
@@ -59,7 +61,7 @@ export async function open(browser, size, query = '', { store = null, reduced = 
   await page.goto(BASE + query);
   await page.waitForFunction(() => window.__race && window.__race.state && window.__race.state().frames > 2, null,
     { timeout: 60000 });
-  return { ctx, page, errors, size, W: SIZES[size].viewport.width, H: SIZES[size].viewport.height };
+  return { ctx, page, errors, size, W: spec.viewport.width, H: spec.viewport.height };
 }
 
 // A reporter: check(name, ok, detail) prints one line; done() prints the tally and sets the exit code.
@@ -167,7 +169,7 @@ export function layoutFaults(page, inset = { t: 0, r: 0, b: 0, l: 0 }) {
     const desc = (el, r) => `${el.tagName.toLowerCase()}${el.id ? '#' + el.id : ''}${el.classList.length ? '.' + [...el.classList].join('.') : ''}[${(el.textContent || '').trim().slice(0, 20)}] ${Math.round(r.left)},${Math.round(r.top)} ${Math.round(r.width)}x${Math.round(r.height)}`;
     const outside = (r) => r.left < ins.l - 0.5 || r.top < ins.t - 0.5 || r.right > W - ins.r + 0.5 || r.bottom > H - ins.b + 0.5;
     // a box inside a scrolling list counts only while it is scrolled into its list
-    const clipped = (el) => { const sc = el.closest('.pages, .pbuild, .scroll'); if (!sc || sc === el) return false; const a = el.getBoundingClientRect(), c = sc.getBoundingClientRect(); return a.bottom > c.bottom + 1 || a.top < c.top - 1; };
+    const clipped = (el) => { const sc = el.closest('.pages, .pbuild, .scroll, .s-break .offer'); if (!sc || sc === el) return false; const a = el.getBoundingClientRect(), c = sc.getBoundingClientRect(); return a.bottom > c.bottom + 1 || a.top < c.top - 1; };
     for (const el of document.querySelectorAll('button, a, [data-act]')) {
       if (!vis(el) || el.matches('section[data-act]') || clipped(el)) continue;
       const r = el.getBoundingClientRect();

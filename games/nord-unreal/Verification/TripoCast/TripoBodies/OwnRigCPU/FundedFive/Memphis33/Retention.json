@@ -1,0 +1,70 @@
+{
+  "passed": true,
+  "character": "Memphis33",
+  "output_roles": 8,
+  "files_byte_identical": true,
+  "outputs": {
+    "body": {
+      "path": "Data/GraphicNovel/Crew/Memphis33/tripo-h31-rig-20261017/derived/natural-v1/body.fbx",
+      "sha256": "f1a7ebc4d44c94dde9b9cc81b1460e0fa4b9b4837e77e2be6fb97796f1ddfdb5",
+      "source_proof_output_sha256": "f1a7ebc4d44c94dde9b9cc81b1460e0fa4b9b4837e77e2be6fb97796f1ddfdb5"
+    },
+    "base_color": {
+      "path": "Data/GraphicNovel/Crew/Memphis33/tripo-h31-rig-20261017/derived/natural-v1/base_color.jpg",
+      "sha256": "30968d487dae955613beb168a2b352353f27b9a7d66713057dff435b4108ea86",
+      "source_proof_output_sha256": "30968d487dae955613beb168a2b352353f27b9a7d66713057dff435b4108ea86"
+    },
+    "metallic_roughness": {
+      "path": "Data/GraphicNovel/Crew/Memphis33/tripo-h31-rig-20261017/derived/natural-v1/metallic_roughness.jpg",
+      "sha256": "918733bfde365f6d78751b373945e5c9d6328acef63b20b26c06aa4c25126835",
+      "source_proof_output_sha256": "918733bfde365f6d78751b373945e5c9d6328acef63b20b26c06aa4c25126835"
+    },
+    "normal": {
+      "path": "Data/GraphicNovel/Crew/Memphis33/tripo-h31-rig-20261017/derived/natural-v1/normal.png",
+      "sha256": "3fc2f93f8a85a767018b18b32419a8940ea60ec104dfbd5854bbf3407e6e4b61",
+      "source_proof_output_sha256": "3fc2f93f8a85a767018b18b32419a8940ea60ec104dfbd5854bbf3407e6e4b61"
+    },
+    "idle": {
+      "path": "Data/GraphicNovel/Crew/Memphis33/tripo-h31-rig-20261017/derived/natural-v1/idle.fbx",
+      "sha256": "fa7ed17b97cea698c9cd664da9bcb4fb51a7cb0e3bb79c9cca42d4e2fc29ef52",
+      "source_proof_output_sha256": "fa7ed17b97cea698c9cd664da9bcb4fb51a7cb0e3bb79c9cca42d4e2fc29ef52"
+    },
+    "jump": {
+      "path": "Data/GraphicNovel/Crew/Memphis33/tripo-h31-rig-20261017/derived/natural-v1/jump.fbx",
+      "sha256": "7d1e954af23571aa4bd9916378170955eba03e0c23afae06b98977902680a952",
+      "source_proof_output_sha256": "7d1e954af23571aa4bd9916378170955eba03e0c23afae06b98977902680a952"
+    },
+    "walk": {
+      "path": "Data/GraphicNovel/Crew/Memphis33/tripo-h31-rig-20261017/derived/natural-v1/walk.fbx",
+      "sha256": "7b0deb8dda02b21af63864c919ff2116ca7afdec00d722b8c11511d29b80a1cd",
+      "source_proof_output_sha256": "7b0deb8dda02b21af63864c919ff2116ca7afdec00d722b8c11511d29b80a1cd"
+    },
+    "run": {
+      "path": "Data/GraphicNovel/Crew/Memphis33/tripo-h31-rig-20261017/derived/natural-v1/run.fbx",
+      "sha256": "9b38d7b214eb7f2107e841dd913685ed50dd8e9f2eb2177180ad1b99202a7b12",
+      "source_proof_output_sha256": "9b38d7b214eb7f2107e841dd913685ed50dd8e9f2eb2177180ad1b99202a7b12"
+    }
+  },
+  "provenance": {
+    "path": "Data/GraphicNovel/Crew/Memphis33/tripo-h31-rig-20261017/derived/natural-v1/Provenance.json",
+    "sha256": "1ab4d173755e4b41ca74f9a3e2aa5be0e57372baad8660123d11b785d44c9deb"
+  },
+  "proofs": {
+    "Surface.json": {
+      "path": "Verification/TripoCast/TripoBodies/OwnRigCPU/FundedFive/Memphis33/Surface.json",
+      "sha256": "e5580d681794725684345b2045012944f691fb561f2b02085f3e5f6088ec7b6e"
+    },
+    "Motion.json": {
+      "path": "Verification/TripoCast/TripoBodies/OwnRigCPU/FundedFive/Memphis33/Motion.json",
+      "sha256": "eb9ecf50e6fdf87dd60d28451b0cef0b5ad186850f74c7607db1375230464cb0"
+    },
+    "MotionTest.json": {
+      "path": "Verification/TripoCast/TripoBodies/OwnRigCPU/FundedFive/Memphis33/MotionTest.json",
+      "sha256": "688b4f1293f0e2ca34c713f61e3b37f185cd762cf6296768ca8b6e76dcaf874a"
+    }
+  },
+  "protected_originals_unchanged": true,
+  "native_import_trial_allowed": true,
+  "no_blender_unreal_gpu_api_services": true,
+  "retention_recipe_sha256": "2f687d348623235edaa2dc87ef40f381f1615f42bfa44d3f416d0f219ab34383"
+}

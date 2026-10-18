@@ -1,0 +1,11 @@
+{
+  "observed_utc": "2026-10-17T23:07:51Z",
+  "gpu_total_mib": 24564,
+  "gpu_used_mib": 19839,
+  "gpu_free_mib": 4226,
+  "required_free_mib_guard": 12000,
+  "native_render_launched": false,
+  "owned_services_stopped": false,
+  "unrelated_applications_interrupted": false,
+  "scope": "Read-only snapshot; does not reserve memory or waive safe demo restoration"
+}

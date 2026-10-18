@@ -1,0 +1,643 @@
+{
+  "passed": true,
+  "started_utc": "2026-10-17T22:49:28.981115+00:00",
+  "blender": "5.2.2 LTS",
+  "threads": 4,
+  "rendered": false,
+  "recipe_sha256": "1a8c1ade86f6773eb726f4aa7f9d27f3dfa129618e25dc7b9521e63a2934ad10",
+  "manifest": {
+    "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Crew/BlackCap/tripo-h31-rig-20261017/surface-inputs.json",
+    "sha256": "aff054c7a7a5c67789469204b147e8a0f6c576df7e35d0c83cab0a257bf87e23"
+  },
+  "inputs": {
+    "source_glb": {
+      "path": "Data/GraphicNovel/Crew/BlackCap/tripo-h31-body-20261017/body.glb",
+      "sha256": "ff4d393b98d5fba212295305b714ab7fce04229e34b14196c7e2f4c210467d70"
+    },
+    "provider_fbx": {
+      "path": "Data/GraphicNovel/Crew/BlackCap/tripo-h31-rig-20261017/rig.fbx",
+      "sha256": "54db95e20649c34c1d6dd2f28e1a1ec44a91250b0f73f6041774ac722764848b"
+    }
+  },
+  "working_input_copies": {
+    "source_glb": "Saved/Tests/TripoCastSurface-jz3r_9u3/source_glb.glb",
+    "provider_fbx": "Saved/Tests/TripoCastSurface-jz3r_9u3/provider_fbx.fbx"
+  },
+  "rescale_applied": false,
+  "errors": [],
+  "source_geometry": {
+    "bones": 0,
+    "static_unrigged": true,
+    "triangles": 96140,
+    "height_m": 0.9794251918792725,
+    "mesh_matrix_world": [
+      [
+        0.9998900890350342,
+        0.014820639044046402,
+        0.0,
+        0.0
+      ],
+      [
+        -0.014820639044046402,
+        0.9998900890350342,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        1.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ]
+    ]
+  },
+  "correspondence": {
+    "triangles": 96140,
+    "corners": 288420,
+    "provider_to_source_uniform_scale": 0.9999999606255184,
+    "source_residual_max_m": 6.731862076239102e-08,
+    "source_residual_mean_m": 2.5858570858075887e-08,
+    "corners_over_2micron": 0,
+    "source_residual_p99_m": 5.0499362439950856e-08,
+    "source_residual_abs_axis_m": {
+      "x": {
+        "max": 1.3536049364715197e-08,
+        "p99": 9.174964357705484e-09,
+        "mean": 2.1668172139960714e-09
+      },
+      "y": {
+        "max": 5.878382625112977e-08,
+        "p99": 4.56959594052897e-08,
+        "mean": 2.0352125905027162e-08
+      },
+      "z": {
+        "max": 3.968287459743536e-08,
+        "p99": 3.288831964487481e-08,
+        "mean": 1.2180835576747715e-08
+      }
+    },
+    "residual_limit_m": 1e-05,
+    "exact_source_positions_claimed": false,
+    "translation_or_rotation_fit": true,
+    "rotation_fit": false,
+    "translation_fit": true,
+    "provider_to_source_translation_m": [
+      0.0006604060398993873,
+      -0.000894532714155192,
+      -0.48968896984928306
+    ],
+    "transform_policy": "Positive uniform scale and translation, correspondence only",
+    "geometry_bind_or_object_transform_correction_applied": false,
+    "source_bounds_m": {
+      "min": [
+        -0.10215300340007347,
+        -0.3140053401184119,
+        -0.48968902230262756
+      ],
+      "max": [
+        0.10347381561853997,
+        0.31221646530434227,
+        0.4897361695766449
+      ]
+    },
+    "provider_bounds_m": {
+      "min": [
+        -0.10281341958020325,
+        -0.3131108236244952,
+        -4.466361536170638e-08
+      ],
+      "max": [
+        0.10281340334401783,
+        0.3131109984958053,
+        0.9794251610947129
+      ]
+    },
+    "provider_feet_z_m": -4.466361536170638e-08,
+    "uv_quantization": 1e-06,
+    "scale_fit_unambiguous_triangles": 96140,
+    "uv_duplicate_triangle_groups": 0,
+    "uv_duplicate_triangles": 0,
+    "uv_corner_tie_triangles": 0,
+    "geometry_resolved_groups": [],
+    "geometry_mapping_unique": true
+  },
+  "original_corner_normals": {
+    "provider_before": {
+      "mean_deg": 0.004291099548493276,
+      "p99_deg": 0.013999862889844861,
+      "max_deg": 0.33198378808989226,
+      "corners_over_0_1deg": 17
+    },
+    "after_blender_store": {
+      "mean_deg": 0.0009959140170732678,
+      "p99_deg": 0.004612826121845023,
+      "max_deg": 0.3319836500567074,
+      "corners_over_0_1deg": 8
+    },
+    "explicit_limits": {
+      "mean_deg": 0.02,
+      "p99_deg": 0.1,
+      "max_deg": 1.0
+    },
+    "after_store_corners_over_0_1deg": [
+      {
+        "uv_triangle_order": 4932,
+        "corner_order": 2,
+        "degrees": 0.1375657951355242,
+        "provider_vertex": 1564,
+        "original_normal": [
+          0.8776165464800721,
+          0.3484872087243289,
+          0.32915932722606756
+        ],
+        "restored_normal": [
+          0.8787505670229686,
+          0.346713636075697,
+          0.32800471874041714
+        ]
+      },
+      {
+        "uv_triangle_order": 16940,
+        "corner_order": 0,
+        "degrees": 0.3297268478072414,
+        "provider_vertex": 14175,
+        "original_normal": [
+          0.5475739589339679,
+          -0.7847068932980266,
+          -0.290513082507382
+        ],
+        "restored_normal": [
+          0.5523637505585375,
+          -0.7819141390350665,
+          -0.2889715665008524
+        ]
+      },
+      {
+        "uv_triangle_order": 16941,
+        "corner_order": 0,
+        "degrees": 0.3297268478072414,
+        "provider_vertex": 14175,
+        "original_normal": [
+          0.5475739589339679,
+          -0.7847068932980266,
+          -0.290513082507382
+        ],
+        "restored_normal": [
+          0.5523637505585375,
+          -0.7819141390350665,
+          -0.2889715665008524
+        ]
+      },
+      {
+        "uv_triangle_order": 33351,
+        "corner_order": 2,
+        "degrees": 0.3297268478072414,
+        "provider_vertex": 14175,
+        "original_normal": [
+          0.5475739589339679,
+          -0.7847068932980266,
+          -0.290513082507382
+        ],
+        "restored_normal": [
+          0.5523637505585375,
+          -0.7819141390350665,
+          -0.2889715665008524
+        ]
+      },
+      {
+        "uv_triangle_order": 42552,
+        "corner_order": 2,
+        "degrees": 0.3319836500567074,
+        "provider_vertex": 14175,
+        "original_normal": [
+          0.5475466671863066,
+          -0.7846967429132984,
+          -0.2905919285087402
+        ],
+        "restored_normal": [
+          0.5523637505585375,
+          -0.7819141390350665,
+          -0.2889715665008524
+        ]
+      },
+      {
+        "uv_triangle_order": 42553,
+        "corner_order": 2,
+        "degrees": 0.3319836500567074,
+        "provider_vertex": 14175,
+        "original_normal": [
+          0.5475466671863066,
+          -0.7846967429132984,
+          -0.2905919285087402
+        ],
+        "restored_normal": [
+          0.5523637505585375,
+          -0.7819141390350665,
+          -0.2889715665008524
+        ]
+      },
+      {
+        "uv_triangle_order": 49957,
+        "corner_order": 1,
+        "degrees": 0.3319836500567074,
+        "provider_vertex": 14175,
+        "original_normal": [
+          0.5475466671863066,
+          -0.7846967429132984,
+          -0.2905919285087402
+        ],
+        "restored_normal": [
+          0.5523637505585375,
+          -0.7819141390350665,
+          -0.2889715665008524
+        ]
+      },
+      {
+        "uv_triangle_order": 57890,
+        "corner_order": 1,
+        "degrees": 0.3297268478072414,
+        "provider_vertex": 14175,
+        "original_normal": [
+          0.5475739589339679,
+          -0.7847068932980266,
+          -0.290513082507382
+        ],
+        "restored_normal": [
+          0.5523637505585375,
+          -0.7819141390350665,
+          -0.2889715665008524
+        ]
+      }
+    ],
+    "exact_preservation_claimed": false,
+    "fresh_fbx_reimport": {
+      "mean_deg": 0.001756697732025972,
+      "p99_deg": 0.007514886045103133,
+      "max_deg": 0.3319664063972213,
+      "corners_over_0_1deg": 8
+    },
+    "fresh_corners_over_0_1deg": [
+      {
+        "uv_triangle_order": 4932,
+        "corner_order": 2,
+        "degrees": 0.13773155205486626,
+        "provider_vertex": 1564,
+        "original_normal": [
+          0.8776165464800721,
+          0.3484872087243289,
+          0.32915932722606756
+        ],
+        "restored_normal": [
+          0.8787557689315673,
+          0.3467435466110743,
+          0.3279591612580197
+        ]
+      },
+      {
+        "uv_triangle_order": 16940,
+        "corner_order": 0,
+        "degrees": 0.32973973660076356,
+        "provider_vertex": 14175,
+        "original_normal": [
+          0.5475739589339679,
+          -0.7847068932980266,
+          -0.290513082507382
+        ],
+        "restored_normal": [
+          0.5523666422175959,
+          -0.7818982403456739,
+          -0.2890090557570765
+        ]
+      },
+      {
+        "uv_triangle_order": 16941,
+        "corner_order": 0,
+        "degrees": 0.32973973660076356,
+        "provider_vertex": 14175,
+        "original_normal": [
+          0.5475739589339679,
+          -0.7847068932980266,
+          -0.290513082507382
+        ],
+        "restored_normal": [
+          0.5523666422175959,
+          -0.7818982403456739,
+          -0.2890090557570765
+        ]
+      },
+      {
+        "uv_triangle_order": 33351,
+        "corner_order": 2,
+        "degrees": 0.32973973660076356,
+        "provider_vertex": 14175,
+        "original_normal": [
+          0.5475739589339679,
+          -0.7847068932980266,
+          -0.290513082507382
+        ],
+        "restored_normal": [
+          0.5523666422175959,
+          -0.7818982403456739,
+          -0.2890090557570765
+        ]
+      },
+      {
+        "uv_triangle_order": 42552,
+        "corner_order": 2,
+        "degrees": 0.3319664063972213,
+        "provider_vertex": 14175,
+        "original_normal": [
+          0.5475466671863066,
+          -0.7846967429132984,
+          -0.2905919285087402
+        ],
+        "restored_normal": [
+          0.5523666422175959,
+          -0.7818982403456739,
+          -0.2890090557570765
+        ]
+      },
+      {
+        "uv_triangle_order": 42553,
+        "corner_order": 2,
+        "degrees": 0.3319664063972213,
+        "provider_vertex": 14175,
+        "original_normal": [
+          0.5475466671863066,
+          -0.7846967429132984,
+          -0.2905919285087402
+        ],
+        "restored_normal": [
+          0.5523666422175959,
+          -0.7818982403456739,
+          -0.2890090557570765
+        ]
+      },
+      {
+        "uv_triangle_order": 49957,
+        "corner_order": 1,
+        "degrees": 0.3319664063972213,
+        "provider_vertex": 14175,
+        "original_normal": [
+          0.5475466671863066,
+          -0.7846967429132984,
+          -0.2905919285087402
+        ],
+        "restored_normal": [
+          0.5523666422175959,
+          -0.7818982403456739,
+          -0.2890090557570765
+        ]
+      },
+      {
+        "uv_triangle_order": 57890,
+        "corner_order": 1,
+        "degrees": 0.32973973660076356,
+        "provider_vertex": 14175,
+        "original_normal": [
+          0.5475739589339679,
+          -0.7847068932980266,
+          -0.290513082507382
+        ],
+        "restored_normal": [
+          0.5523666422175959,
+          -0.7818982403456739,
+          -0.2890090557570765
+        ]
+      }
+    ]
+  },
+  "normal_payload_selection": {
+    "source": "Pinned GLB material.normalTexture index",
+    "texture_index": 2,
+    "image_index": 2,
+    "buffer_view": 6,
+    "mime_type": "image/png",
+    "bytes": 4059453,
+    "sha256": "193be451678e0f69245b33436d692377ad680c9a51601d4d7ad5c746e7292609",
+    "external_provider_normal_png": null,
+    "external_png_bytes_equal_embedded_payload": null,
+    "external_normal_receipt_available": false,
+    "conversion_or_rebake_applied": false
+  },
+  "fresh_correspondence": {
+    "triangles": 96140,
+    "corners": 288420,
+    "provider_to_source_uniform_scale": 1.0,
+    "source_residual_max_m": 1.3091410148351137e-07,
+    "source_residual_mean_m": 8.083315232057035e-08,
+    "corners_over_2micron": 0,
+    "source_residual_p99_m": 1.2844589743126948e-07,
+    "source_residual_abs_axis_m": {
+      "x": {
+        "max": 1.3300597706544792e-08,
+        "p99": 1.2751209171879552e-08,
+        "mean": 5.634935823330279e-09
+      },
+      "y": {
+        "max": 1.0608850154608662e-07,
+        "p99": 1.0188659582334447e-07,
+        "mean": 4.9941498156565554e-08
+      },
+      "z": {
+        "max": 9.78125759831805e-08,
+        "p99": 9.445095239257739e-08,
+        "mean": 5.957984544175771e-08
+      }
+    },
+    "residual_limit_m": 2e-06,
+    "exact_source_positions_claimed": false,
+    "translation_or_rotation_fit": false,
+    "rotation_fit": false,
+    "translation_fit": false,
+    "provider_to_source_translation_m": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "transform_policy": "Positive uniform scale through origin, correspondence only",
+    "geometry_bind_or_object_transform_correction_applied": false,
+    "source_bounds_m": {
+      "min": [
+        -0.10281343286458688,
+        -0.3131108166990168,
+        -1.230501023297137e-07
+      ],
+      "max": [
+        0.10281341497091914,
+        0.31311108163823875,
+        0.9794251002051881
+      ]
+    },
+    "provider_bounds_m": {
+      "min": [
+        -0.10281341958020325,
+        -0.3131108236244952,
+        -4.466361536170638e-08
+      ],
+      "max": [
+        0.10281340334401783,
+        0.3131109984958053,
+        0.9794251610947129
+      ]
+    },
+    "provider_feet_z_m": -4.466361536170638e-08,
+    "uv_quantization": 1e-06,
+    "scale_fit_unambiguous_triangles": 96140,
+    "uv_duplicate_triangle_groups": 0,
+    "uv_duplicate_triangles": 0,
+    "uv_corner_tie_triangles": 0,
+    "geometry_resolved_groups": [],
+    "geometry_mapping_unique": true
+  },
+  "output": {
+    "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoH31Surface/BlackCap-v2/body/body.fbx",
+    "sha256": "1a81ac6d9485899203c1a37d8c52ab3ece40320536292bb382babf37fa3bd168",
+    "bytes": 8150844
+  },
+  "geometry": {
+    "triangles": 96140,
+    "height_m": 0.9794252232552905,
+    "residual_max_m": 1.3091410148351137e-07,
+    "provider_size_preserved": true,
+    "uv_quantization": 1e-06
+  },
+  "rig": {
+    "bones": 61,
+    "armature_object": "Armature",
+    "weighted_finger_bones": [
+      "index_01_l",
+      "index_01_r",
+      "index_02_l",
+      "index_02_r",
+      "index_03_l",
+      "index_03_r",
+      "middle_01_l",
+      "middle_01_r",
+      "middle_02_l",
+      "middle_02_r",
+      "middle_03_l",
+      "middle_03_r",
+      "pinky_01_l",
+      "pinky_01_r",
+      "pinky_02_l",
+      "pinky_02_r",
+      "pinky_03_l",
+      "pinky_03_r",
+      "ring_01_l",
+      "ring_01_r",
+      "ring_02_l",
+      "ring_02_r",
+      "ring_03_l",
+      "ring_03_r",
+      "thumb_01_l",
+      "thumb_01_r",
+      "thumb_02_l",
+      "thumb_02_r",
+      "thumb_03_l",
+      "thumb_03_r"
+    ],
+    "fresh_finger_weight_sums": {
+      "middle_03_r": 63.10589599609375,
+      "pinky_01_l": 83.06358337402344,
+      "middle_01_l": 69.8362045288086,
+      "ring_01_l": 68.0453872680664,
+      "index_03_r": 42.37727355957031,
+      "ring_01_r": 65.93519592285156,
+      "ring_02_l": 41.603118896484375,
+      "pinky_02_l": 38.698219299316406,
+      "middle_03_l": 47.670387268066406,
+      "index_03_l": 51.748477935791016,
+      "ring_02_r": 40.77079772949219,
+      "thumb_01_l": 105.37994384765625,
+      "middle_02_r": 54.521873474121094,
+      "pinky_02_r": 34.175533294677734,
+      "pinky_01_r": 97.05166625976562,
+      "thumb_03_l": 73.9938735961914,
+      "thumb_03_r": 70.82494354248047,
+      "thumb_01_r": 117.1408920288086,
+      "index_01_r": 85.62640380859375,
+      "pinky_03_r": 25.852527618408203,
+      "ring_03_l": 44.329689025878906,
+      "middle_02_l": 44.50323486328125,
+      "index_02_l": 50.0464973449707,
+      "thumb_02_r": 70.7372055053711,
+      "pinky_03_l": 39.1672248840332,
+      "thumb_02_l": 80.71402740478516,
+      "ring_03_r": 41.81513214111328,
+      "index_01_l": 90.30990600585938,
+      "index_02_r": 45.750648498535156,
+      "middle_01_r": 80.04060363769531
+    },
+    "bind_max_abs_error": 5.140900611877441e-06,
+    "corner_weight_max_abs_error": 0.0,
+    "hierarchy_preserved": true
+  },
+  "textures": {
+    "base_color": {
+      "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoH31Surface/BlackCap-v2/body/base_color.jpg",
+      "bytes": 2948912,
+      "sha256": "8ce8eff69e6f9d71e063dacb34f628e5a21fbd1b3c2cf9dda648eb47a7581156",
+      "mime_type": "image/jpeg",
+      "source_texture_index": 0,
+      "source_image_index": 0,
+      "colorspace": "sRGB",
+      "source": "Unmodified original GLB embedded payload",
+      "channels": "base_color"
+    },
+    "metallic_roughness": {
+      "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoH31Surface/BlackCap-v2/body/metallic_roughness.jpg",
+      "bytes": 1571515,
+      "sha256": "e311d9760701b30e416273e7144cd815fdeef6731c7e96f3b41cebf84095f23e",
+      "mime_type": "image/jpeg",
+      "source_texture_index": 1,
+      "source_image_index": 1,
+      "colorspace": "Non-Color",
+      "source": "Unmodified original GLB embedded payload",
+      "channels": "G=Roughness, B=Metallic"
+    },
+    "normal": {
+      "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoH31Surface/BlackCap-v2/body/normal.png",
+      "bytes": 4059453,
+      "sha256": "193be451678e0f69245b33436d692377ad680c9a51601d4d7ad5c746e7292609",
+      "mime_type": "image/png",
+      "source_texture_index": 2,
+      "source_image_index": 2,
+      "colorspace": "Non-Color",
+      "source": "Unmodified original GLB embedded payload",
+      "channels": "normal"
+    }
+  },
+  "fresh_import_images": {
+    "base_color": {
+      "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoH31Surface/BlackCap-v2/body/base_color.jpg",
+      "sha256": "8ce8eff69e6f9d71e063dacb34f628e5a21fbd1b3c2cf9dda648eb47a7581156"
+    },
+    "normal": {
+      "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoH31Surface/BlackCap-v2/body/normal.png",
+      "sha256": "193be451678e0f69245b33436d692377ad680c9a51601d4d7ad5c746e7292609"
+    }
+  },
+  "native_import_scale_required": null,
+  "native_scale_policy": "Static original has no gameplay height; native target height must be calibrated separately",
+  "material": {
+    "source": "Exact original GLB graph; provider material discarded",
+    "base_color_and_normal_distinct": true,
+    "packed_MR_native_wiring_required": true,
+    "MR_channels": "G=Roughness, B=Metallic",
+    "normal_convention": "Original tangent payload unchanged; native convention must be explicit"
+  },
+  "limitations": [
+    "No source/provider geometry, rig, weight, animation or transform redesign.",
+    "Source/provider geometry uses the separately calibrated 10micron bound; exact source positions are not claimed. Provider-before/after export retains the strict 2micron bound.",
+    "Native packed MR wiring, normal/tangent convention and rendered shading still require acceptance."
+  ],
+  "retained_inputs_unchanged": true,
+  "finished_utc": "2026-10-17T22:49:31.175693+00:00"
+}

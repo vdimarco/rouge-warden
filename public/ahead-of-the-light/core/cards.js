@@ -5,7 +5,7 @@
 // handle.js, damage and shieldPop from survival.js); or a course mod (SLINGSHOT HOME's gateWell). No card touches the
 // renderer: each card's tell is a render rule keyed by its id. Pure.
 import { TUNE } from './tune.js';
-import { emit, E } from './events.js';
+import { emit, E, runHooks } from './events.js';
 import * as H from './handle.js';
 import * as SV from './survival.js';
 
@@ -75,30 +75,13 @@ function rivalHair(race, ship, other, gap, T) {
   emit(race, E.hair, ship, { gap: Math.max(0, gap), side: 0, item: null, kind: 'rival', other: other.id,
     chain: ship.chain, piece: null, psi: other.bearing });
 }
-// Set a shove: handle's own when it exports one, else the same shape handle reads (ship.shove).
+// Set a shove through handle's own record (so a card's SLAM counts for takedowns): deg degrees over s seconds.
 function shoveShip(race, ship, dir, deg, by, T, slam, s = T.SHOVE_S) {
-  if (typeof H.shoveShip === 'function') { H.shoveShip(race, ship, dir, deg, by, T, slam); return; }
-  ship.shove = { v: (dir * deg) / Math.max(1e-3, s), left: deg, until: race.t + s, by, t0: race.t, slam: !!slam };
+  H.shoveShip(race, ship, dir, deg, by, T, slam, s);
 }
-// A PERFECT release now (KICK OUT): handle's when it exports one, else the same sums as handle's release.
+// A PERFECT release now (KICK OUT): handle's release, so its red zone, gate and wake rules are a lift's.
 function forceRelease(race, ship, T) {
-  if (typeof H.forceRelease === 'function') return H.forceRelease(race, ship, 'PERFECT', T);
-  const W = ship.whip;
-  if (!W) return null;
-  const a = Math.max(0, W.angle), d = Math.min(a, T.SWEEP_A) / T.SWEEP_A, red = !!W.red;
-  const redX = (race.leg && race.leg.rules && race.leg.rules.redX) || T.RED_X;
-  const gain = (T.GAIN_BASE + T.GAIN_DEPTH * d * d) * W.mass * T.AIM[0] * (red ? redX : 1) * T.WHIP_GAIN_X;
-  addEta(ship, gain, T);
-  ship.stats.whips++;
-  ship.stats.perfect++;
-  ship.flicker = Math.max(ship.flicker, T.LAND_GRACE);
-  const well = W.well, mass = W.mass;
-  const h = race.wells[well];
-  if (h && h.holder === ship.id) h.holder = null;
-  ship.whip = null;
-  ship.target = ship.bearing;
-  return emit(race, E.release, ship, { well, grade: 'PERFECT', angle: a, gain, red, mass, d, scorched: false,
-    kick: true });
+  return H.forceRelease(race, ship, 'PERFECT', T);
 }
 // Undo a burn that a card turned into something else: stop its ramp and take back what the ramp added this step.
 function cancelBurn(ship, left0) {
@@ -661,7 +644,12 @@ function kickOut(c, v, s, left0) {
   const ship = c.ship, W = ship.whip;
   if (!W || W.latched || !(W.angle >= v)) return;
   cancelBurn(ship, left0);
-  if (forceRelease(c.race, ship, c.tune)) fired(c, s, 'kick-out');
+  const rel = forceRelease(c.race, ship, c.tune);
+  if (!rel) return;
+  fired(c, s, 'kick-out');
+  // the release comes from inside a hook, past what cardHooks walks this step, so its own hooks run here (STAR
+  // LIFTER, MASS SHADOW, LENSED LANE, the run log); the one exception to "events a hook emits run no hooks"
+  runHooks(c.race, E.release, { race: c.race, ship, event: rel, tune: c.tune });
 }
 
 function afterGraze(c, s, hair) {

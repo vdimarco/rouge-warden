@@ -458,6 +458,17 @@ test('bosses: the WHALE cannot be taken down; its bow wave moves a ship 40°/s; 
   w3.shove = { v: 400, left: 30, until: r3.race.t + 0.15, by: 'you', t0: r3.race.t, slam: true };
   const ev3 = fly(r3.race, null, 1);
   assert.ok(!ev3.some((e) => e.type === 'takedown' && e.victim === 'whale'));
+  // it cannot graze (10.3): knots brushing its 10° half pay it nothing; and its light never takes it (its gap holds)
+  const brush = [];
+  for (let b = 6; b < 60; b += 3) brush.push({ kind: 'knot', beat: b, psi: (b % 2 ? 1 : -1) * 16, half: 3 });
+  const r4 = fieldRace({ legNo: 2, regulars: [], boss: 'whale', items: brush });
+  const w4 = r4.race.ships.find((s) => s.id === 'whale');
+  w4.gap = 0.5;
+  const ev4 = fly(r4.race, () => ({ target: 120 }), 30, () => { w4.bearing = w4.target = w4.ai.intent.target = 0; });
+  const mine = ev4.filter((e) => e.ship === 'whale');
+  assert.ok(!mine.some((e) => e.type === 'graze' || e.type === 'hair' || e.type === 'rivalGraze'),
+    mine.map((e) => e.type).join(','));
+  assert.ok(!w4.caught && w4.gap >= 2 - 1e-9, `the WHALE's gap ${w4.gap}`);
 });
 
 test('MAKO\'s fin moves to a ship with fewer fuel cells within 1.0 s; it backs off after 2 takedowns', () => {
@@ -607,6 +618,22 @@ test('the light takes a drifter before 30 s of leg 1 on every seed; the Nemesis 
   assert.equal(legResult(race).settled, r.id);
   assert.equal(r.ai.nemesis, false);
   assert.ok(!down().some((e) => e.type === 'nemesis'), 'never again this run');
+  // nor in a later leg: the run's record carries SETTLED into the next field
+  const later = legRace('NEM', 4, { tune: NOLIGHT, racing: ['hound', 'pike', 'remora'], setup: (run) => {
+    run.field.rivals.hound = { hull: 3, fuel: 2, gap: 3, alive: true, nemesis: false, settled: true };
+  } }).race;
+  const h = later.ships.find((x) => x.type === 'hound');
+  assert.ok(h && h.ai.settled, 'HOUND is on the grid, settled');
+  const ram = (type, fields) => {
+    later.events = [];
+    emit(later, type, h, fields);
+    rivalIntents(later, STEP, later.tune);
+    return later.events;
+  };
+  const ev = [...ram('contact', { kind: 'slam', by: h.id, victim: 'you' }), ...ram('contact', { kind: 'slam', by: h.id,
+    victim: 'you' }), ...ram('takedown', { by: h.id, victim: 'you' }), ...ram('takedown', { by: 'you', victim: h.id })];
+  assert.ok(!ev.some((e) => e.type === 'nemesis'), 'a ship settled in an earlier leg is never your Nemesis again');
+  assert.equal(h.ai.nemesis, false);
 });
 
 test('AI time under 1 ms per 120 Hz step for six ships', () => {

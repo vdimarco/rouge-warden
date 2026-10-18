@@ -1,0 +1,20 @@
+{
+  "inspected": [
+    "idle-front",
+    "idle-side",
+    "idle-threequarter",
+    "walk-threequarter",
+    "run-threequarter",
+    "jump-threequarter",
+    "hand-l",
+    "hand-r"
+  ],
+  "static_views_accept_bounded_CPU_pose_review": true,
+  "observations": [
+    "Palms now rest inward alongside the thighs; curled fingers and relaxed forward elbows read more naturally.",
+    "No obvious wrist pinching in the inspected stills; own forearm and distal twist share anatomical pronation.",
+    "Mature body/clothes/cap/glasses remain recognizable; coarse finger webs and simplified face/eye detail persist."
+  ],
+  "continuous_motion_review_pending": true,
+  "native_or_final_art_accepted": false
+}

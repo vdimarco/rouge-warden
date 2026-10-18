@@ -1,0 +1,10 @@
+{
+  "passed": false,
+  "reason": "New generated source has colliding UV-triangle keys at the retained1e-6 precision; no ambiguous correspondence accepted.",
+  "process_exit_code": 1,
+  "recipe_sha256": "f3c47bfae190b096d621a2f99b30e0ec8af315ef0b456e3f0c0fff3c0b7a6939",
+  "receipt_sha256": "19f484ade81318fe23557f1839c566856ad4daed45377eab2ed4f53a6f04d5d6",
+  "preserved_attempt": "Saved/Recovery/tripo-cast-20261017/GreenCap51-surface-rejected-v1",
+  "raw_inputs_unchanged": true,
+  "next_step": "Measure collisions; establish unique or provably shading-equivalent geometry/UV correspondence without relaxing surface or normal precision."
+}

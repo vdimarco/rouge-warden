@@ -1,0 +1,1730 @@
+{
+  "passed": true,
+  "started_utc": "2026-10-17T22:29:06.806597+00:00",
+  "blender": "5.2.2 LTS",
+  "threads": 4,
+  "rendered": false,
+  "recipe_sha256": "6260beffc640f7bcd7eaae3a0b1bfc24b97d12a44379dbc86ac8d169c05a7df1",
+  "manifest": {
+    "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Crew/LimeJacket/tripo-v3-rig-20261017/surface-inputs.json",
+    "sha256": "5af5fa3777aa66524e06ab26297f6535ccc9cb73c378ca96681d876dea1cbb25"
+  },
+  "inputs": {
+    "source_glb": {
+      "path": "Data/GraphicNovel/Crew/LimeJacket/generated-v1-high-detail/body.glb",
+      "sha256": "3eda089ac9baea41e1cc1c5c15ca027e218e41a39f9d3ac814bbd89f671139ff"
+    },
+    "provider_fbx": {
+      "path": "Data/GraphicNovel/Crew/LimeJacket/tripo-v3-rig-20261017/rig.fbx",
+      "sha256": "fdde159419847dc343fa5efb6f13569872dd54fbe730dcb025b6d1623ffa5802"
+    },
+    "normal_png": {
+      "path": "Data/GraphicNovel/Crew/LimeJacket/generated-v1-high-detail/normal.png",
+      "sha256": "84d92b8629372fc68a62a11d4b2fb4757a0e09426a03f94d88459fa1bc4ff8f4"
+    }
+  },
+  "working_input_copies": {
+    "source_glb": "Saved/Tests/TripoCastSurface-gs752fsa/source_glb.glb",
+    "provider_fbx": "Saved/Tests/TripoCastSurface-gs752fsa/provider_fbx.fbx"
+  },
+  "rescale_applied": false,
+  "errors": [],
+  "correspondence": {
+    "triangles": 103056,
+    "corners": 309168,
+    "provider_to_source_uniform_scale": 1.8199996617929388,
+    "source_residual_max_m": 6.938426338214743e-07,
+    "source_residual_mean_m": 2.9835772727275995e-07,
+    "corners_over_2micron": 0,
+    "source_residual_p99_m": 5.840505970745075e-07,
+    "source_residual_abs_axis_m": {
+      "x": {
+        "max": 4.32680660633622e-07,
+        "p99": 3.379928715241398e-07,
+        "mean": 1.0162331401831808e-07
+      },
+      "y": {
+        "max": 3.5996519505421265e-07,
+        "p99": 3.0165034442530825e-07,
+        "mean": 1.312446113931549e-07
+      },
+      "z": {
+        "max": 5.914735355244671e-07,
+        "p99": 5.216065102203737e-07,
+        "mean": 2.170485135580138e-07
+      }
+    },
+    "residual_limit_m": 1e-05,
+    "exact_source_positions_claimed": false,
+    "translation_or_rotation_fit": false,
+    "uv_quantization": 1e-06,
+    "scale_fit_unambiguous_triangles": 103050,
+    "uv_duplicate_triangle_groups": 0,
+    "uv_duplicate_triangles": 0,
+    "uv_corner_tie_triangles": 6,
+    "geometry_resolved_groups": [
+      {
+        "target_sorted_triangle_range": [
+          0,
+          1
+        ],
+        "triangles": 1,
+        "unique_geometry_bijection": true,
+        "mapping": [
+          {
+            "target_triangle": 0,
+            "source_triangle": 0,
+            "source_corner_order": [
+              0,
+              1,
+              2
+            ],
+            "candidate_count": 1,
+            "geometry_residual_max_m": 1.5098995952463584e-07
+          }
+        ]
+      },
+      {
+        "target_sorted_triangle_range": [
+          10805,
+          10806
+        ],
+        "triangles": 1,
+        "unique_geometry_bijection": true,
+        "mapping": [
+          {
+            "target_triangle": 10805,
+            "source_triangle": 10805,
+            "source_corner_order": [
+              0,
+              1,
+              2
+            ],
+            "candidate_count": 1,
+            "geometry_residual_max_m": 2.3513113419994305e-07
+          }
+        ]
+      },
+      {
+        "target_sorted_triangle_range": [
+          23578,
+          23579
+        ],
+        "triangles": 1,
+        "unique_geometry_bijection": true,
+        "mapping": [
+          {
+            "target_triangle": 23578,
+            "source_triangle": 23578,
+            "source_corner_order": [
+              0,
+              1,
+              2
+            ],
+            "candidate_count": 1,
+            "geometry_residual_max_m": 2.4036285031102243e-07
+          }
+        ]
+      },
+      {
+        "target_sorted_triangle_range": [
+          41434,
+          41435
+        ],
+        "triangles": 1,
+        "unique_geometry_bijection": true,
+        "mapping": [
+          {
+            "target_triangle": 41434,
+            "source_triangle": 41434,
+            "source_corner_order": [
+              0,
+              1,
+              2
+            ],
+            "candidate_count": 1,
+            "geometry_residual_max_m": 2.230012510311612e-07
+          }
+        ]
+      },
+      {
+        "target_sorted_triangle_range": [
+          79501,
+          79502
+        ],
+        "triangles": 1,
+        "unique_geometry_bijection": true,
+        "mapping": [
+          {
+            "target_triangle": 79501,
+            "source_triangle": 79501,
+            "source_corner_order": [
+              0,
+              1,
+              2
+            ],
+            "candidate_count": 1,
+            "geometry_residual_max_m": 1.9140215404754196e-07
+          }
+        ]
+      },
+      {
+        "target_sorted_triangle_range": [
+          83519,
+          83520
+        ],
+        "triangles": 1,
+        "unique_geometry_bijection": true,
+        "mapping": [
+          {
+            "target_triangle": 83519,
+            "source_triangle": 83519,
+            "source_corner_order": [
+              0,
+              1,
+              2
+            ],
+            "candidate_count": 1,
+            "geometry_residual_max_m": 1.4803628246474494e-07
+          }
+        ]
+      }
+    ],
+    "geometry_mapping_unique": true
+  },
+  "original_corner_normals": {
+    "provider_before": {
+      "mean_deg": 11.707686312467962,
+      "p99_deg": 79.00714107223622,
+      "max_deg": 178.4147120140485,
+      "corners_over_0_1deg": 171961
+    },
+    "after_blender_store": {
+      "mean_deg": 0.0014600368897359564,
+      "p99_deg": 0.013150688225481353,
+      "max_deg": 0.7116341212860103,
+      "corners_over_0_1deg": 37
+    },
+    "explicit_limits": {
+      "mean_deg": 0.02,
+      "p99_deg": 0.1,
+      "max_deg": 1.0
+    },
+    "after_store_corners_over_0_1deg": [
+      {
+        "uv_triangle_order": 1314,
+        "corner_order": 0,
+        "degrees": 0.6231927749707543,
+        "provider_vertex": 23217,
+        "original_normal": [
+          -0.1639887622198772,
+          -0.886805876008097,
+          0.4320683095797519
+        ],
+        "restored_normal": [
+          -0.17469742259343313,
+          -0.8849364764640821,
+          0.43170388365469486
+        ]
+      },
+      {
+        "uv_triangle_order": 4645,
+        "corner_order": 2,
+        "degrees": 0.13371318718126068,
+        "provider_vertex": 33850,
+        "original_normal": [
+          -0.5224136191731886,
+          0.3086190215448417,
+          -0.7948825762608432
+        ],
+        "restored_normal": [
+          -0.5220546823431222,
+          0.3065573418644493,
+          -0.7959155136021818
+        ]
+      },
+      {
+        "uv_triangle_order": 6145,
+        "corner_order": 2,
+        "degrees": 0.4455874505683813,
+        "provider_vertex": 48576,
+        "original_normal": [
+          0.039315518727193535,
+          0.1790710849480054,
+          -0.983050271615219
+        ],
+        "restored_normal": [
+          0.04075992910348941,
+          0.1865729135265486,
+          -0.9815952200972118
+        ]
+      },
+      {
+        "uv_triangle_order": 6954,
+        "corner_order": 2,
+        "degrees": 0.4455874505683813,
+        "provider_vertex": 48576,
+        "original_normal": [
+          0.039315518727193535,
+          0.1790710849480054,
+          -0.983050271615219
+        ],
+        "restored_normal": [
+          0.04075992910348941,
+          0.1865729135265486,
+          -0.9815952200972118
+        ]
+      },
+      {
+        "uv_triangle_order": 6956,
+        "corner_order": 1,
+        "degrees": 0.2218551495051601,
+        "provider_vertex": 46879,
+        "original_normal": [
+          -0.0008048806655860019,
+          -0.0025815731929158753,
+          -0.9999963438167981
+        ],
+        "restored_normal": [
+          -0.004633461382313427,
+          -0.0020027392739934966,
+          -0.9999872599543552
+        ]
+      },
+      {
+        "uv_triangle_order": 6956,
+        "corner_order": 2,
+        "degrees": 0.4455874505683813,
+        "provider_vertex": 48576,
+        "original_normal": [
+          0.039315518727193535,
+          0.1790710849480054,
+          -0.983050271615219
+        ],
+        "restored_normal": [
+          0.04075992910348941,
+          0.1865729135265486,
+          -0.9815952200972118
+        ]
+      },
+      {
+        "uv_triangle_order": 7491,
+        "corner_order": 0,
+        "degrees": 0.1687723653363084,
+        "provider_vertex": 3641,
+        "original_normal": [
+          0.03879099324755594,
+          -0.7282250496362888,
+          0.6842393849560932
+        ],
+        "restored_normal": [
+          0.03837604614948045,
+          -0.7262367185879057,
+          0.6863727177391332
+        ]
+      },
+      {
+        "uv_triangle_order": 7491,
+        "corner_order": 2,
+        "degrees": 0.5012545043998801,
+        "provider_vertex": 3211,
+        "original_normal": [
+          0.03879099324755594,
+          -0.7282250496362888,
+          0.6842393849560932
+        ],
+        "restored_normal": [
+          0.03756581876285984,
+          -0.72230025364269,
+          0.6905585803162407
+        ]
+      },
+      {
+        "uv_triangle_order": 30558,
+        "corner_order": 0,
+        "degrees": 0.7116341212860103,
+        "provider_vertex": 9820,
+        "original_normal": [
+          -0.46895381787089474,
+          -0.8826814254776038,
+          0.030916303484360457
+        ],
+        "restored_normal": [
+          -0.4755150545248725,
+          -0.8787652098409569,
+          0.040707970882699
+        ]
+      },
+      {
+        "uv_triangle_order": 30558,
+        "corner_order": 2,
+        "degrees": 0.15582319378927625,
+        "provider_vertex": 10071,
+        "original_normal": [
+          -0.46895381787089474,
+          -0.8826814254776038,
+          0.030916303484360457
+        ],
+        "restored_normal": [
+          -0.470410050877136,
+          -0.881828860922615,
+          0.03304911614088058
+        ]
+      },
+      {
+        "uv_triangle_order": 31036,
+        "corner_order": 0,
+        "degrees": 0.2790264144033792,
+        "provider_vertex": 8850,
+        "original_normal": [
+          -0.16356993037883125,
+          0.0746963634631273,
+          -0.9836998176076118
+        ],
+        "restored_normal": [
+          -0.16817322311881655,
+          0.07602106578105386,
+          -0.982821735913152
+        ]
+      },
+      {
+        "uv_triangle_order": 31036,
+        "corner_order": 1,
+        "degrees": 0.47699505933729547,
+        "provider_vertex": 8901,
+        "original_normal": [
+          -0.16356993037883125,
+          0.0746963634631273,
+          -0.9836998176076118
+        ],
+        "restored_normal": [
+          -0.17146656916287306,
+          0.07685590216737179,
+          -0.9821875513167294
+        ]
+      },
+      {
+        "uv_triangle_order": 32329,
+        "corner_order": 0,
+        "degrees": 0.4154322046060995,
+        "provider_vertex": 89,
+        "original_normal": [
+          -0.09447351028472917,
+          0.7311196869402802,
+          -0.6756765196622034
+        ],
+        "restored_normal": [
+          -0.08826430964398824,
+          0.7340452690743596,
+          -0.6733401477653186
+        ]
+      },
+      {
+        "uv_triangle_order": 34114,
+        "corner_order": 2,
+        "degrees": 0.12199562986219999,
+        "provider_vertex": 33850,
+        "original_normal": [
+          -0.5225331782046724,
+          0.308367490694786,
+          -0.794901609230932
+        ],
+        "restored_normal": [
+          -0.5220546823431222,
+          0.3065573418644493,
+          -0.7959155136021818
+        ]
+      },
+      {
+        "uv_triangle_order": 34555,
+        "corner_order": 2,
+        "degrees": 0.13371318718126068,
+        "provider_vertex": 33850,
+        "original_normal": [
+          -0.5224136191731886,
+          0.3086190215448417,
+          -0.7948825762608432
+        ],
+        "restored_normal": [
+          -0.5220546823431222,
+          0.3065573418644493,
+          -0.7959155136021818
+        ]
+      },
+      {
+        "uv_triangle_order": 34556,
+        "corner_order": 2,
+        "degrees": 0.12199562986219999,
+        "provider_vertex": 33850,
+        "original_normal": [
+          -0.5225331782046724,
+          0.308367490694786,
+          -0.794901609230932
+        ],
+        "restored_normal": [
+          -0.5220546823431222,
+          0.3065573418644493,
+          -0.7959155136021818
+        ]
+      },
+      {
+        "uv_triangle_order": 44001,
+        "corner_order": 1,
+        "degrees": 0.12199562986219999,
+        "provider_vertex": 33850,
+        "original_normal": [
+          -0.5225331782046724,
+          0.308367490694786,
+          -0.794901609230932
+        ],
+        "restored_normal": [
+          -0.5220546823431222,
+          0.3065573418644493,
+          -0.7959155136021818
+        ]
+      },
+      {
+        "uv_triangle_order": 46818,
+        "corner_order": 2,
+        "degrees": 0.12199562986219999,
+        "provider_vertex": 33850,
+        "original_normal": [
+          -0.5225331782046724,
+          0.308367490694786,
+          -0.794901609230932
+        ],
+        "restored_normal": [
+          -0.5220546823431222,
+          0.3065573418644493,
+          -0.7959155136021818
+        ]
+      },
+      {
+        "uv_triangle_order": 50483,
+        "corner_order": 0,
+        "degrees": 0.34886054388174986,
+        "provider_vertex": 48576,
+        "original_normal": [
+          0.04209677267203188,
+          0.19239453108402005,
+          -0.9804143033124104
+        ],
+        "restored_normal": [
+          0.04075992910348941,
+          0.1865729135265486,
+          -0.9815952200972118
+        ]
+      },
+      {
+        "uv_triangle_order": 52258,
+        "corner_order": 2,
+        "degrees": 0.42207364449973395,
+        "provider_vertex": 30369,
+        "original_normal": [
+          -0.6077582918672194,
+          -0.29993635823282744,
+          0.7353013257683334
+        ],
+        "restored_normal": [
+          -0.6027597263746683,
+          -0.3049432188039967,
+          0.737353609583755
+        ]
+      },
+      {
+        "uv_triangle_order": 55282,
+        "corner_order": 2,
+        "degrees": 0.34886054388174986,
+        "provider_vertex": 48576,
+        "original_normal": [
+          0.04209677267203188,
+          0.19239453108402005,
+          -0.9804143033124104
+        ],
+        "restored_normal": [
+          0.04075992910348941,
+          0.1865729135265486,
+          -0.9815952200972118
+        ]
+      },
+      {
+        "uv_triangle_order": 55283,
+        "corner_order": 2,
+        "degrees": 0.34886054388174986,
+        "provider_vertex": 48576,
+        "original_normal": [
+          0.04209677267203188,
+          0.19239453108402005,
+          -0.9804143033124104
+        ],
+        "restored_normal": [
+          0.04075992910348941,
+          0.1865729135265486,
+          -0.9815952200972118
+        ]
+      },
+      {
+        "uv_triangle_order": 74376,
+        "corner_order": 1,
+        "degrees": 0.6369574059164349,
+        "provider_vertex": 10071,
+        "original_normal": [
+          -0.47635063958640733,
+          -0.87826395361198,
+          0.041743214436295015
+        ],
+        "restored_normal": [
+          -0.470410050877136,
+          -0.881828860922615,
+          0.03304911614088058
+        ]
+      },
+      {
+        "uv_triangle_order": 82495,
+        "corner_order": 2,
+        "degrees": 0.27467271728003245,
+        "provider_vertex": 8850,
+        "original_normal": [
+          -0.1727161067931673,
+          0.07726994637753534,
+          -0.981936098654604
+        ],
+        "restored_normal": [
+          -0.16817322311881655,
+          0.07602106578105386,
+          -0.982821735913152
+        ]
+      },
+      {
+        "uv_triangle_order": 82641,
+        "corner_order": 1,
+        "degrees": 0.34886054388174986,
+        "provider_vertex": 48576,
+        "original_normal": [
+          0.04209677267203188,
+          0.19239453108402005,
+          -0.9804143033124104
+        ],
+        "restored_normal": [
+          0.04075992910348941,
+          0.1865729135265486,
+          -0.9815952200972118
+        ]
+      },
+      {
+        "uv_triangle_order": 82824,
+        "corner_order": 2,
+        "degrees": 0.2218551495051601,
+        "provider_vertex": 46879,
+        "original_normal": [
+          -0.0008048806655860019,
+          -0.0025815731929158753,
+          -0.9999963438167981
+        ],
+        "restored_normal": [
+          -0.004633461382313427,
+          -0.0020027392739934966,
+          -0.9999872599543552
+        ]
+      },
+      {
+        "uv_triangle_order": 84242,
+        "corner_order": 0,
+        "degrees": 0.47311068837497144,
+        "provider_vertex": 9928,
+        "original_normal": [
+          0.1603809332202298,
+          0.9862230315795217,
+          -0.04052268798470858
+        ],
+        "restored_normal": [
+          0.16497300457180367,
+          0.9851630999713181,
+          -0.04730300431742457
+        ]
+      },
+      {
+        "uv_triangle_order": 84242,
+        "corner_order": 1,
+        "degrees": 0.4842805493773166,
+        "provider_vertex": 9614,
+        "original_normal": [
+          0.1603809332202298,
+          0.9862230315795217,
+          -0.04052268798470858
+        ],
+        "restored_normal": [
+          0.16506856702245248,
+          0.9851389678636311,
+          -0.047471909354202806
+        ]
+      },
+      {
+        "uv_triangle_order": 84638,
+        "corner_order": 1,
+        "degrees": 0.34886054388174986,
+        "provider_vertex": 48576,
+        "original_normal": [
+          0.04209677267203188,
+          0.19239453108402005,
+          -0.9804143033124104
+        ],
+        "restored_normal": [
+          0.04075992910348941,
+          0.1865729135265486,
+          -0.9815952200972118
+        ]
+      },
+      {
+        "uv_triangle_order": 84638,
+        "corner_order": 2,
+        "degrees": 0.24451640872308028,
+        "provider_vertex": 46879,
+        "original_normal": [
+          -0.008501833887913176,
+          -0.000200610599646946,
+          -0.9999638386341426
+        ],
+        "restored_normal": [
+          -0.004633461382313427,
+          -0.0020027392739934966,
+          -0.9999872599543552
+        ]
+      },
+      {
+        "uv_triangle_order": 84639,
+        "corner_order": 2,
+        "degrees": 0.24451640872308028,
+        "provider_vertex": 46879,
+        "original_normal": [
+          -0.008501833887913176,
+          -0.000200610599646946,
+          -0.9999638386341426
+        ],
+        "restored_normal": [
+          -0.004633461382313427,
+          -0.0020027392739934966,
+          -0.9999872599543552
+        ]
+      },
+      {
+        "uv_triangle_order": 88877,
+        "corner_order": 1,
+        "degrees": 0.5735664674767386,
+        "provider_vertex": 23211,
+        "original_normal": [
+          -0.1752097612795566,
+          -0.8848883540628677,
+          0.43159487994677337
+        ],
+        "restored_normal": [
+          -0.1653512203884402,
+          -0.8865705961638591,
+          0.4320318876352912
+        ]
+      },
+      {
+        "uv_triangle_order": 91166,
+        "corner_order": 1,
+        "degrees": 0.40131439439130573,
+        "provider_vertex": 30207,
+        "original_normal": [
+          -0.602535841011883,
+          -0.3051761374408155,
+          0.7374402249896648
+        ],
+        "restored_normal": [
+          -0.6072771196418493,
+          -0.30039488614487847,
+          0.7355116670301733
+        ]
+      },
+      {
+        "uv_triangle_order": 93358,
+        "corner_order": 0,
+        "degrees": 0.15287258298243053,
+        "provider_vertex": 3211,
+        "original_normal": [
+          0.037182839286055626,
+          -0.7204833929290225,
+          0.6924746327311285
+        ],
+        "restored_normal": [
+          0.03756581876285984,
+          -0.72230025364269,
+          0.6905585803162407
+        ]
+      },
+      {
+        "uv_triangle_order": 93358,
+        "corner_order": 1,
+        "degrees": 0.485354081694233,
+        "provider_vertex": 3641,
+        "original_normal": [
+          0.037182839286055626,
+          -0.7204833929290225,
+          0.6924746327311285
+        ],
+        "restored_normal": [
+          0.03837604614948045,
+          -0.7262367185879057,
+          0.6863727177391332
+        ]
+      },
+      {
+        "uv_triangle_order": 102348,
+        "corner_order": 2,
+        "degrees": 0.2794411915319671,
+        "provider_vertex": 89,
+        "original_normal": [
+          -0.08398893574003913,
+          0.7358825889080327,
+          -0.6718799550628572
+        ],
+        "restored_normal": [
+          -0.08826430964398824,
+          0.7340452690743596,
+          -0.6733401477653186
+        ]
+      },
+      {
+        "uv_triangle_order": 102349,
+        "corner_order": 2,
+        "degrees": 0.2675159304680286,
+        "provider_vertex": 89,
+        "original_normal": [
+          -0.08421926427403452,
+          0.7358600099550898,
+          -0.6718758525754853
+        ],
+        "restored_normal": [
+          -0.08826430964398824,
+          0.7340452690743596,
+          -0.6733401477653186
+        ]
+      }
+    ],
+    "exact_preservation_claimed": false,
+    "fresh_fbx_reimport": {
+      "mean_deg": 0.002066328725435931,
+      "p99_deg": 0.016177048879308834,
+      "max_deg": 0.7116396995430591,
+      "corners_over_0_1deg": 37
+    },
+    "fresh_corners_over_0_1deg": [
+      {
+        "uv_triangle_order": 1314,
+        "corner_order": 0,
+        "degrees": 0.6231937958814816,
+        "provider_vertex": 23217,
+        "original_normal": [
+          -0.1639887622198772,
+          -0.886805876008097,
+          0.4320683095797519
+        ],
+        "restored_normal": [
+          -0.1746974348215258,
+          -0.884936422075406,
+          0.43170399019601136
+        ]
+      },
+      {
+        "uv_triangle_order": 4645,
+        "corner_order": 2,
+        "degrees": 0.1339333359627455,
+        "provider_vertex": 33850,
+        "original_normal": [
+          -0.5224136191731886,
+          0.3086190215448417,
+          -0.7948825762608432
+        ],
+        "restored_normal": [
+          -0.5220909325834412,
+          0.3065388097656282,
+          -0.7958988731124229
+        ]
+      },
+      {
+        "uv_triangle_order": 6145,
+        "corner_order": 2,
+        "degrees": 0.4455808015822879,
+        "provider_vertex": 48576,
+        "original_normal": [
+          0.039315518727193535,
+          0.1790710849480054,
+          -0.983050271615219
+        ],
+        "restored_normal": [
+          0.040759929332516764,
+          0.18657279745793978,
+          -0.9815952421489863
+        ]
+      },
+      {
+        "uv_triangle_order": 6954,
+        "corner_order": 2,
+        "degrees": 0.4455808015822879,
+        "provider_vertex": 48576,
+        "original_normal": [
+          0.039315518727193535,
+          0.1790710849480054,
+          -0.983050271615219
+        ],
+        "restored_normal": [
+          0.040759929332516764,
+          0.18657279745793978,
+          -0.9815952421489863
+        ]
+      },
+      {
+        "uv_triangle_order": 6956,
+        "corner_order": 1,
+        "degrees": 0.22185429631560796,
+        "provider_vertex": 46879,
+        "original_normal": [
+          -0.0008048806655860019,
+          -0.0025815731929158753,
+          -0.9999963438167981
+        ],
+        "restored_normal": [
+          -0.004633464152294677,
+          -0.002002857224355913,
+          -0.9999872597052865
+        ]
+      },
+      {
+        "uv_triangle_order": 6956,
+        "corner_order": 2,
+        "degrees": 0.4455808015822879,
+        "provider_vertex": 48576,
+        "original_normal": [
+          0.039315518727193535,
+          0.1790710849480054,
+          -0.983050271615219
+        ],
+        "restored_normal": [
+          0.040759929332516764,
+          0.18657279745793978,
+          -0.9815952421489863
+        ]
+      },
+      {
+        "uv_triangle_order": 7491,
+        "corner_order": 0,
+        "degrees": 0.1687791319623389,
+        "provider_vertex": 3641,
+        "original_normal": [
+          0.03879099324755594,
+          -0.7282250496362888,
+          0.6842393849560932
+        ],
+        "restored_normal": [
+          0.0383760365571625,
+          -0.726236637855642,
+          0.6863728036965745
+        ]
+      },
+      {
+        "uv_triangle_order": 7491,
+        "corner_order": 2,
+        "degrees": 0.49851700590422693,
+        "provider_vertex": 3211,
+        "original_normal": [
+          0.03879099324755594,
+          -0.7282250496362888,
+          0.6842393849560932
+        ],
+        "restored_normal": [
+          0.037572454794545046,
+          -0.7223327691189775,
+          0.6905242076115957
+        ]
+      },
+      {
+        "uv_triangle_order": 30558,
+        "corner_order": 0,
+        "degrees": 0.7116396995430591,
+        "provider_vertex": 9820,
+        "original_normal": [
+          -0.46895381787089474,
+          -0.8826814254776038,
+          0.030916303484360457
+        ],
+        "restored_normal": [
+          -0.47551506564934526,
+          -0.8787651986532138,
+          0.04070808244657017
+        ]
+      },
+      {
+        "uv_triangle_order": 30558,
+        "corner_order": 2,
+        "degrees": 0.15582875059651471,
+        "provider_vertex": 10071,
+        "original_normal": [
+          -0.46895381787089474,
+          -0.8826814254776038,
+          0.030916303484360457
+        ],
+        "restored_normal": [
+          -0.4704100621431682,
+          -0.8818288507191006,
+          0.033049228037745924
+        ]
+      },
+      {
+        "uv_triangle_order": 31036,
+        "corner_order": 0,
+        "degrees": 0.2790246295276646,
+        "provider_vertex": 8850,
+        "original_normal": [
+          -0.16356993037883125,
+          0.0746963634631273,
+          -0.9836998176076118
+        ],
+        "restored_normal": [
+          -0.16817322496789736,
+          0.07602095052850512,
+          -0.9828217445115057
+        ]
+      },
+      {
+        "uv_triangle_order": 31036,
+        "corner_order": 1,
+        "degrees": 0.47699335779152835,
+        "provider_vertex": 8901,
+        "original_normal": [
+          -0.16356993037883125,
+          0.0746963634631273,
+          -0.9836998176076118
+        ],
+        "restored_normal": [
+          -0.1714665710114449,
+          0.07685578700500356,
+          -0.9821875600054292
+        ]
+      },
+      {
+        "uv_triangle_order": 32329,
+        "corner_order": 0,
+        "degrees": 0.4154292655188182,
+        "provider_vertex": 89,
+        "original_normal": [
+          -0.09447351028472917,
+          0.7311196869402802,
+          -0.6756765196622034
+        ],
+        "restored_normal": [
+          -0.08826429997860973,
+          0.7340451906851722,
+          -0.6733402344886686
+        ]
+      },
+      {
+        "uv_triangle_order": 34114,
+        "corner_order": 2,
+        "degrees": 0.1220035843482809,
+        "provider_vertex": 33850,
+        "original_normal": [
+          -0.5225331782046724,
+          0.308367490694786,
+          -0.794901609230932
+        ],
+        "restored_normal": [
+          -0.5220909325834412,
+          0.3065388097656282,
+          -0.7958988731124229
+        ]
+      },
+      {
+        "uv_triangle_order": 34555,
+        "corner_order": 2,
+        "degrees": 0.1339333359627455,
+        "provider_vertex": 33850,
+        "original_normal": [
+          -0.5224136191731886,
+          0.3086190215448417,
+          -0.7948825762608432
+        ],
+        "restored_normal": [
+          -0.5220909325834412,
+          0.3065388097656282,
+          -0.7958988731124229
+        ]
+      },
+      {
+        "uv_triangle_order": 34556,
+        "corner_order": 2,
+        "degrees": 0.1220035843482809,
+        "provider_vertex": 33850,
+        "original_normal": [
+          -0.5225331782046724,
+          0.308367490694786,
+          -0.794901609230932
+        ],
+        "restored_normal": [
+          -0.5220909325834412,
+          0.3065388097656282,
+          -0.7958988731124229
+        ]
+      },
+      {
+        "uv_triangle_order": 44001,
+        "corner_order": 1,
+        "degrees": 0.1220035843482809,
+        "provider_vertex": 33850,
+        "original_normal": [
+          -0.5225331782046724,
+          0.308367490694786,
+          -0.794901609230932
+        ],
+        "restored_normal": [
+          -0.5220909325834412,
+          0.3065388097656282,
+          -0.7958988731124229
+        ]
+      },
+      {
+        "uv_triangle_order": 46818,
+        "corner_order": 2,
+        "degrees": 0.1220035843482809,
+        "provider_vertex": 33850,
+        "original_normal": [
+          -0.5225331782046724,
+          0.308367490694786,
+          -0.794901609230932
+        ],
+        "restored_normal": [
+          -0.5220909325834412,
+          0.3065388097656282,
+          -0.7958988731124229
+        ]
+      },
+      {
+        "uv_triangle_order": 50483,
+        "corner_order": 0,
+        "degrees": 0.3488671445538898,
+        "provider_vertex": 48576,
+        "original_normal": [
+          0.04209677267203188,
+          0.19239453108402005,
+          -0.9804143033124104
+        ],
+        "restored_normal": [
+          0.040759929332516764,
+          0.18657279745793978,
+          -0.9815952421489863
+        ]
+      },
+      {
+        "uv_triangle_order": 52258,
+        "corner_order": 2,
+        "degrees": 0.42207079853045704,
+        "provider_vertex": 30369,
+        "original_normal": [
+          -0.6077582918672194,
+          -0.29993635823282744,
+          0.7353013257683334
+        ],
+        "restored_normal": [
+          -0.6027597243002201,
+          -0.3049431274742962,
+          0.737353649050249
+        ]
+      },
+      {
+        "uv_triangle_order": 55282,
+        "corner_order": 2,
+        "degrees": 0.3488671445538898,
+        "provider_vertex": 48576,
+        "original_normal": [
+          0.04209677267203188,
+          0.19239453108402005,
+          -0.9804143033124104
+        ],
+        "restored_normal": [
+          0.040759929332516764,
+          0.18657279745793978,
+          -0.9815952421489863
+        ]
+      },
+      {
+        "uv_triangle_order": 55283,
+        "corner_order": 2,
+        "degrees": 0.3488671445538898,
+        "provider_vertex": 48576,
+        "original_normal": [
+          0.04209677267203188,
+          0.19239453108402005,
+          -0.9804143033124104
+        ],
+        "restored_normal": [
+          0.040759929332516764,
+          0.18657279745793978,
+          -0.9815952421489863
+        ]
+      },
+      {
+        "uv_triangle_order": 74376,
+        "corner_order": 1,
+        "degrees": 0.6369518594871513,
+        "provider_vertex": 10071,
+        "original_normal": [
+          -0.47635063958640733,
+          -0.87826395361198,
+          0.041743214436295015
+        ],
+        "restored_normal": [
+          -0.4704100621431682,
+          -0.8818288507191006,
+          0.033049228037745924
+        ]
+      },
+      {
+        "uv_triangle_order": 82495,
+        "corner_order": 2,
+        "degrees": 0.27467442826742283,
+        "provider_vertex": 8850,
+        "original_normal": [
+          -0.1727161067931673,
+          0.07726994637753534,
+          -0.981936098654604
+        ],
+        "restored_normal": [
+          -0.16817322496789736,
+          0.07602095052850512,
+          -0.9828217445115057
+        ]
+      },
+      {
+        "uv_triangle_order": 82641,
+        "corner_order": 1,
+        "degrees": 0.3488671445538898,
+        "provider_vertex": 48576,
+        "original_normal": [
+          0.04209677267203188,
+          0.19239453108402005,
+          -0.9804143033124104
+        ],
+        "restored_normal": [
+          0.040759929332516764,
+          0.18657279745793978,
+          -0.9815952421489863
+        ]
+      },
+      {
+        "uv_triangle_order": 82824,
+        "corner_order": 2,
+        "degrees": 0.22185429631560796,
+        "provider_vertex": 46879,
+        "original_normal": [
+          -0.0008048806655860019,
+          -0.0025815731929158753,
+          -0.9999963438167981
+        ],
+        "restored_normal": [
+          -0.004633464152294677,
+          -0.002002857224355913,
+          -0.9999872597052865
+        ]
+      },
+      {
+        "uv_triangle_order": 84242,
+        "corner_order": 0,
+        "degrees": 0.47311685838969486,
+        "provider_vertex": 9928,
+        "original_normal": [
+          0.1603809332202298,
+          0.9862230315795217,
+          -0.04052268798470858
+        ],
+        "restored_normal": [
+          0.16497301964822136,
+          0.9851630917020653,
+          -0.04730312395789341
+        ]
+      },
+      {
+        "uv_triangle_order": 84242,
+        "corner_order": 1,
+        "degrees": 0.4842867252195536,
+        "provider_vertex": 9614,
+        "original_normal": [
+          0.1603809332202298,
+          0.9862230315795217,
+          -0.04052268798470858
+        ],
+        "restored_normal": [
+          0.16506858209753164,
+          0.9851389595725151,
+          -0.04747202899279422
+        ]
+      },
+      {
+        "uv_triangle_order": 84638,
+        "corner_order": 1,
+        "degrees": 0.3488671445538898,
+        "provider_vertex": 48576,
+        "original_normal": [
+          0.04209677267203188,
+          0.19239453108402005,
+          -0.9804143033124104
+        ],
+        "restored_normal": [
+          0.040759929332516764,
+          0.18657279745793978,
+          -0.9815952421489863
+        ]
+      },
+      {
+        "uv_triangle_order": 84638,
+        "corner_order": 2,
+        "degrees": 0.24451911866575288,
+        "provider_vertex": 46879,
+        "original_normal": [
+          -0.008501833887913176,
+          -0.000200610599646946,
+          -0.9999638386341426
+        ],
+        "restored_normal": [
+          -0.004633464152294677,
+          -0.002002857224355913,
+          -0.9999872597052865
+        ]
+      },
+      {
+        "uv_triangle_order": 84639,
+        "corner_order": 2,
+        "degrees": 0.24451911866575288,
+        "provider_vertex": 46879,
+        "original_normal": [
+          -0.008501833887913176,
+          -0.000200610599646946,
+          -0.9999638386341426
+        ],
+        "restored_normal": [
+          -0.004633464152294677,
+          -0.002002857224355913,
+          -0.9999872597052865
+        ]
+      },
+      {
+        "uv_triangle_order": 88877,
+        "corner_order": 1,
+        "degrees": 0.5735655172216231,
+        "provider_vertex": 23211,
+        "original_normal": [
+          -0.1752097612795566,
+          -0.8848883540628677,
+          0.43159487994677337
+        ],
+        "restored_normal": [
+          -0.16535123269705643,
+          -0.8865705418931583,
+          0.4320319942930565
+        ]
+      },
+      {
+        "uv_triangle_order": 91166,
+        "corner_order": 1,
+        "degrees": 0.4013172572189601,
+        "provider_vertex": 30207,
+        "original_normal": [
+          -0.602535841011883,
+          -0.3051761374408155,
+          0.7374402249896648
+        ],
+        "restored_normal": [
+          -0.6072771174604727,
+          -0.30039479505340033,
+          0.735511706034462
+        ]
+      },
+      {
+        "uv_triangle_order": 93358,
+        "corner_order": 0,
+        "degrees": 0.15561005489342078,
+        "provider_vertex": 3211,
+        "original_normal": [
+          0.037182839286055626,
+          -0.7204833929290225,
+          0.6924746327311285
+        ],
+        "restored_normal": [
+          0.037572454794545046,
+          -0.7223327691189775,
+          0.6905242076115957
+        ]
+      },
+      {
+        "uv_triangle_order": 93358,
+        "corner_order": 1,
+        "degrees": 0.48534731497188577,
+        "provider_vertex": 3641,
+        "original_normal": [
+          0.037182839286055626,
+          -0.7204833929290225,
+          0.6924746327311285
+        ],
+        "restored_normal": [
+          0.0383760365571625,
+          -0.726236637855642,
+          0.6863728036965745
+        ]
+      },
+      {
+        "uv_triangle_order": 102348,
+        "corner_order": 2,
+        "degrees": 0.27944388578943896,
+        "provider_vertex": 89,
+        "original_normal": [
+          -0.08398893574003913,
+          0.7358825889080327,
+          -0.6718799550628572
+        ],
+        "restored_normal": [
+          -0.08826429997860973,
+          0.7340451906851722,
+          -0.6733402344886686
+        ]
+      },
+      {
+        "uv_triangle_order": 102349,
+        "corner_order": 2,
+        "degrees": 0.2675187547904862,
+        "provider_vertex": 89,
+        "original_normal": [
+          -0.08421926427403452,
+          0.7358600099550898,
+          -0.6718758525754853
+        ],
+        "restored_normal": [
+          -0.08826429997860973,
+          0.7340451906851722,
+          -0.6733402344886686
+        ]
+      }
+    ]
+  },
+  "normal_payload_selection": {
+    "source": "Pinned GLB material.normalTexture index",
+    "texture_index": 0,
+    "image_index": 0,
+    "buffer_view": 7,
+    "mime_type": "image/png",
+    "bytes": 5520049,
+    "sha256": "84d92b8629372fc68a62a11d4b2fb4757a0e09426a03f94d88459fa1bc4ff8f4",
+    "external_provider_normal_png": {
+      "path": "Data/GraphicNovel/Crew/LimeJacket/generated-v1-high-detail/normal.png",
+      "sha256": "84d92b8629372fc68a62a11d4b2fb4757a0e09426a03f94d88459fa1bc4ff8f4"
+    },
+    "external_png_bytes_equal_embedded_payload": true,
+    "conversion_or_rebake_applied": false
+  },
+  "fresh_correspondence": {
+    "triangles": 103056,
+    "corners": 309168,
+    "provider_to_source_uniform_scale": 1.0,
+    "source_residual_max_m": 1.1933485968624028e-07,
+    "source_residual_mean_m": 6.785122313392257e-08,
+    "corners_over_2micron": 0,
+    "source_residual_p99_m": 1.1651424982513136e-07,
+    "source_residual_abs_axis_m": {
+      "x": {
+        "max": 1.4875138294734302e-08,
+        "p99": 1.4347112629875536e-08,
+        "mean": 8.280179294919994e-09
+      },
+      "y": {
+        "max": 1.1840438769988165e-07,
+        "p99": 1.1545955334521518e-07,
+        "mean": 6.676233738725902e-08
+      },
+      "z": {
+        "max": 1.19672715070962e-08,
+        "p99": 1.0888687285159904e-08,
+        "mean": 4.1321655375839496e-09
+      }
+    },
+    "residual_limit_m": 2e-06,
+    "exact_source_positions_claimed": false,
+    "translation_or_rotation_fit": false,
+    "uv_quantization": 1e-06,
+    "scale_fit_unambiguous_triangles": 103050,
+    "uv_duplicate_triangle_groups": 0,
+    "uv_duplicate_triangles": 0,
+    "uv_corner_tie_triangles": 6,
+    "geometry_resolved_groups": [
+      {
+        "target_sorted_triangle_range": [
+          0,
+          1
+        ],
+        "triangles": 1,
+        "unique_geometry_bijection": true,
+        "mapping": [
+          {
+            "target_triangle": 0,
+            "source_triangle": 0,
+            "source_corner_order": [
+              0,
+              1,
+              2
+            ],
+            "candidate_count": 1,
+            "geometry_residual_max_m": 9.977923285067689e-08
+          }
+        ]
+      },
+      {
+        "target_sorted_triangle_range": [
+          10805,
+          10806
+        ],
+        "triangles": 1,
+        "unique_geometry_bijection": true,
+        "mapping": [
+          {
+            "target_triangle": 10805,
+            "source_triangle": 10805,
+            "source_corner_order": [
+              0,
+              1,
+              2
+            ],
+            "candidate_count": 1,
+            "geometry_residual_max_m": 1.1314217430244848e-07
+          }
+        ]
+      },
+      {
+        "target_sorted_triangle_range": [
+          23578,
+          23579
+        ],
+        "triangles": 1,
+        "unique_geometry_bijection": true,
+        "mapping": [
+          {
+            "target_triangle": 23578,
+            "source_triangle": 23578,
+            "source_corner_order": [
+              0,
+              1,
+              2
+            ],
+            "candidate_count": 1,
+            "geometry_residual_max_m": 1.1314217430244848e-07
+          }
+        ]
+      },
+      {
+        "target_sorted_triangle_range": [
+          41434,
+          41435
+        ],
+        "triangles": 1,
+        "unique_geometry_bijection": true,
+        "mapping": [
+          {
+            "target_triangle": 41434,
+            "source_triangle": 41434,
+            "source_corner_order": [
+              0,
+              1,
+              2
+            ],
+            "candidate_count": 1,
+            "geometry_residual_max_m": 1.1089287758433174e-07
+          }
+        ]
+      },
+      {
+        "target_sorted_triangle_range": [
+          79501,
+          79502
+        ],
+        "triangles": 1,
+        "unique_geometry_bijection": true,
+        "mapping": [
+          {
+            "target_triangle": 79501,
+            "source_triangle": 79501,
+            "source_corner_order": [
+              0,
+              1,
+              2
+            ],
+            "candidate_count": 1,
+            "geometry_residual_max_m": 1.1082364823162551e-07
+          }
+        ]
+      },
+      {
+        "target_sorted_triangle_range": [
+          83519,
+          83520
+        ],
+        "triangles": 1,
+        "unique_geometry_bijection": true,
+        "mapping": [
+          {
+            "target_triangle": 83519,
+            "source_triangle": 83519,
+            "source_corner_order": [
+              0,
+              1,
+              2
+            ],
+            "candidate_count": 1,
+            "geometry_residual_max_m": 9.978746520078858e-08
+          }
+        ]
+      }
+    ],
+    "geometry_mapping_unique": true
+  },
+  "output": {
+    "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Crew/LimeJacket/tripo-v3-rig-20261017/derived/native-ready/body.fbx",
+    "sha256": "2750db9b5bf791e8f9bb65505dc8430256c47d78583cb7b92af50fcb74224919",
+    "bytes": 10010364
+  },
+  "geometry": {
+    "triangles": 103056,
+    "height_m": 1.000000021322069,
+    "residual_max_m": 1.1933485968624028e-07,
+    "provider_size_preserved": true,
+    "uv_quantization": 1e-06
+  },
+  "rig": {
+    "bones": 61,
+    "armature_object": "Armature",
+    "weighted_finger_bones": [
+      "index_01_l",
+      "index_01_r",
+      "index_02_l",
+      "index_02_r",
+      "index_03_l",
+      "index_03_r",
+      "middle_01_l",
+      "middle_01_r",
+      "middle_02_l",
+      "middle_02_r",
+      "middle_03_l",
+      "middle_03_r",
+      "pinky_01_l",
+      "pinky_01_r",
+      "pinky_02_l",
+      "pinky_02_r",
+      "pinky_03_l",
+      "pinky_03_r",
+      "ring_01_l",
+      "ring_01_r",
+      "ring_02_l",
+      "ring_02_r",
+      "ring_03_l",
+      "ring_03_r",
+      "thumb_01_l",
+      "thumb_01_r",
+      "thumb_02_l",
+      "thumb_02_r",
+      "thumb_03_l",
+      "thumb_03_r"
+    ],
+    "fresh_finger_weight_sums": {
+      "pinky_03_r": 65.70393371582031,
+      "thumb_03_r": 87.2247543334961,
+      "middle_02_r": 52.105525970458984,
+      "index_02_r": 56.17924880981445,
+      "middle_01_l": 98.0560302734375,
+      "thumb_01_r": 147.2245635986328,
+      "ring_02_l": 50.09710693359375,
+      "pinky_01_l": 93.83763122558594,
+      "index_02_l": 53.580448150634766,
+      "ring_03_r": 70.28691864013672,
+      "index_01_l": 95.7988052368164,
+      "pinky_02_l": 49.68202209472656,
+      "pinky_02_r": 40.43355178833008,
+      "thumb_01_l": 146.47381591796875,
+      "index_03_r": 77.39335632324219,
+      "middle_03_r": 80.48263549804688,
+      "ring_02_r": 46.646514892578125,
+      "ring_01_l": 88.16795349121094,
+      "thumb_03_l": 98.24928283691406,
+      "index_01_r": 85.35808563232422,
+      "middle_02_l": 54.16998291015625,
+      "middle_03_l": 85.00757598876953,
+      "ring_01_r": 73.59636688232422,
+      "pinky_01_r": 85.83214569091797,
+      "ring_03_l": 79.35124969482422,
+      "thumb_02_l": 99.16021728515625,
+      "thumb_02_r": 66.1723861694336,
+      "pinky_03_l": 63.045406341552734,
+      "index_03_l": 85.7458724975586,
+      "middle_01_r": 82.11911010742188
+    },
+    "bind_max_abs_error": 3.986060619354248e-06,
+    "corner_weight_max_abs_error": 0.0,
+    "hierarchy_preserved": true
+  },
+  "textures": {
+    "base_color": {
+      "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Crew/LimeJacket/tripo-v3-rig-20261017/derived/native-ready/base_color.jpg",
+      "bytes": 3749911,
+      "sha256": "bdad58497f8ba4f25c7e9f5c6454ae5cf9de430c533f52324d8b4a3d05d31d0d",
+      "mime_type": "image/jpeg",
+      "source_texture_index": 1,
+      "source_image_index": 1,
+      "colorspace": "sRGB",
+      "source": "Unmodified original GLB embedded payload",
+      "channels": "base_color"
+    },
+    "metallic_roughness": {
+      "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Crew/LimeJacket/tripo-v3-rig-20261017/derived/native-ready/metallic_roughness.jpg",
+      "bytes": 1971857,
+      "sha256": "69a06ff90be089c5e780fc073c15824ad94c95fc855981b891aeb7ae68ffa199",
+      "mime_type": "image/jpeg",
+      "source_texture_index": 2,
+      "source_image_index": 2,
+      "colorspace": "Non-Color",
+      "source": "Unmodified original GLB embedded payload",
+      "channels": "G=Roughness, B=Metallic"
+    },
+    "normal": {
+      "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Crew/LimeJacket/tripo-v3-rig-20261017/derived/native-ready/normal.png",
+      "bytes": 5520049,
+      "sha256": "84d92b8629372fc68a62a11d4b2fb4757a0e09426a03f94d88459fa1bc4ff8f4",
+      "mime_type": "image/png",
+      "source_texture_index": 0,
+      "source_image_index": 0,
+      "colorspace": "Non-Color",
+      "source": "Unmodified original GLB embedded payload",
+      "channels": "normal"
+    }
+  },
+  "fresh_import_images": {
+    "base_color": {
+      "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Crew/LimeJacket/tripo-v3-rig-20261017/derived/native-ready/base_color.jpg",
+      "sha256": "bdad58497f8ba4f25c7e9f5c6454ae5cf9de430c533f52324d8b4a3d05d31d0d"
+    },
+    "normal": {
+      "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Crew/LimeJacket/tripo-v3-rig-20261017/derived/native-ready/normal.png",
+      "sha256": "84d92b8629372fc68a62a11d4b2fb4757a0e09426a03f94d88459fa1bc4ff8f4"
+    }
+  },
+  "native_import_scale_required": 1.8199996617929388,
+  "material": {
+    "source": "Exact original GLB graph; provider material discarded",
+    "base_color_and_normal_distinct": true,
+    "packed_MR_native_wiring_required": true,
+    "MR_channels": "G=Roughness, B=Metallic",
+    "normal_convention": "Original tangent payload unchanged; native convention must be explicit"
+  },
+  "limitations": [
+    "No source/provider geometry, rig, weight, animation or transform redesign.",
+    "Source/provider geometry uses the separately calibrated 10micron bound; exact source positions are not claimed. Provider-before/after export retains the strict 2micron bound.",
+    "Native packed MR wiring, normal/tangent convention and rendered shading still require acceptance."
+  ],
+  "retained_inputs_unchanged": true,
+  "finished_utc": "2026-10-17T22:29:09.606882+00:00"
+}

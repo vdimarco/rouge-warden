@@ -1,0 +1,2195 @@
+{
+  "proposal_only": true,
+  "authored_or_exported_mesh": false,
+  "deformation_performed": false,
+  "ready_for_authoring": false,
+  "inputs": {
+    "body": {
+      "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Crew/Topknot/tripo-h31-rig-20261017/derived/bag-rejected-v1/body.fbx",
+      "sha256": "5f5335fa0ec1e6df7ce39262894fef2c1f4a5c6704f0ed25fe33fa3783a040fa",
+      "copy": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoTopknotBagSeamProposal-v1/plan-input/body.fbx"
+    },
+    "base_color": {
+      "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Crew/Topknot/tripo-h31-rig-20261017/derived/bag-rejected-v1/base_color.jpg",
+      "sha256": "ecb21c998306bd0f65b3b8f052bba19066d981039dedd7cc7fa1bef556c8a397",
+      "copy": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoTopknotBagSeamProposal-v1/plan-input/base_color.jpg"
+    },
+    "normal": {
+      "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Crew/Topknot/tripo-h31-rig-20261017/derived/bag-rejected-v1/normal.png",
+      "sha256": "94e48a30195739c80857de8802cf5a48f1260c387bdde94ab8c3834281a6ab40",
+      "copy": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoTopknotBagSeamProposal-v1/plan-input/normal.png"
+    },
+    "metallic_roughness": {
+      "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Crew/Topknot/tripo-h31-rig-20261017/derived/bag-rejected-v1/metallic_roughness.jpg",
+      "sha256": "c8b7f38acbcb41eb40b0e4b6c0aa504f5af77d262b0cc0d1fbf93c4439e5f738",
+      "copy": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoTopknotBagSeamProposal-v1/plan-input/metallic_roughness.jpg"
+    },
+    "provider": {
+      "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Crew/Topknot/tripo-h31-rig-20261017/rig.fbx",
+      "sha256": "9cfeefead9c03472bb8f718fe96e403e79f5eab07ea3f10a2ee07488fa41fb21",
+      "copy": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoTopknotBagSeamProposal-v1/plan-input/provider.fbx"
+    },
+    "original": {
+      "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Crew/Topknot/tripo-h31-body-20261017/body.glb",
+      "sha256": "621c65ce305a29d27b7ee974ee928011c3a0d78a979bf9cc3b73ecb13d54fae2",
+      "copy": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoTopknotBagSeamProposal-v1/plan-input/original.glb"
+    },
+    "Surface.json": {
+      "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Verification/TripoCast/TripoBodies/OwnRigCPU/20261017-natural-palms/Topknot/Surface.json",
+      "sha256": "6748ebbff2e64f684bd2b74b14d8fc9a73304ab03da206131220b7f0be475689",
+      "copy": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoTopknotBagSeamProposal-v1/plan-input/Surface.json"
+    },
+    "Motion.json": {
+      "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Verification/TripoCast/TripoBodies/OwnRigCPU/20261017-natural-palms/Topknot/Motion.json",
+      "sha256": "88a8178eaf59bf03866b5ee40d6875bbba350e5890b439b96affcba160b7e4db",
+      "copy": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoTopknotBagSeamProposal-v1/plan-input/Motion.json"
+    },
+    "idle": {
+      "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Crew/Topknot/tripo-h31-rig-20261017/derived/bag-rejected-v1/idle.fbx",
+      "sha256": "be74b1503f902c8b8555ff93e2ff956e581256599fb91cc8ecf20e5fb2e8b8d2",
+      "copy": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoTopknotBagSeamProposal-v1/plan-input/idle.fbx"
+    },
+    "walk": {
+      "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Crew/Topknot/tripo-h31-rig-20261017/derived/bag-rejected-v1/walk.fbx",
+      "sha256": "6ae8236f44e4d5476531b5f72e0622506b546bfe72ef530edaea0db9f8526c6b",
+      "copy": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoTopknotBagSeamProposal-v1/plan-input/walk.fbx"
+    },
+    "run": {
+      "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Crew/Topknot/tripo-h31-rig-20261017/derived/bag-rejected-v1/run.fbx",
+      "sha256": "3589bd91d495f03262e15bd1fab851560c53abaf07a867790b82551c6b9a8bd6",
+      "copy": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoTopknotBagSeamProposal-v1/plan-input/run.fbx"
+    },
+    "jump": {
+      "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Crew/Topknot/tripo-h31-rig-20261017/derived/bag-rejected-v1/jump.fbx",
+      "sha256": "4ab6b0bd4dd7f6d1ebd0b39214b502f27f3333261e850426efc71c4cafa34260",
+      "copy": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoTopknotBagSeamProposal-v1/plan-input/jump.fbx"
+    }
+  },
+  "ownership_sha256": "77b2db3abe1975b950e1de6d3ba735a55498e9bbb2bebd6f7d99c192d0e2862b",
+  "bridge": {
+    "triangles": 98953,
+    "corners": 296859,
+    "provider_to_source_uniform_scale": 1.0,
+    "source_residual_max_m": 1.7229599204417575e-07,
+    "source_residual_mean_m": 9.855342132197492e-08,
+    "corners_over_2micron": 0,
+    "source_residual_p99_m": 1.6659058503170578e-07,
+    "source_residual_abs_axis_m": {
+      "x": {
+        "max": 9.598398020838061e-09,
+        "p99": 8.388056998986926e-09,
+        "mean": 3.410229192365761e-09
+      },
+      "y": {
+        "max": 1.2786860725116922e-07,
+        "p99": 1.238667224623402e-07,
+        "mean": 6.991936574896257e-08
+      },
+      "z": {
+        "max": 1.2046849795499526e-07,
+        "p99": 1.1663062726707807e-07,
+        "mean": 6.53984582239445e-08
+      }
+    },
+    "residual_limit_m": 2e-06,
+    "exact_source_positions_claimed": false,
+    "translation_or_rotation_fit": false,
+    "rotation_fit": false,
+    "translation_fit": false,
+    "provider_to_source_translation_m": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "transform_policy": "Positive uniform scale through origin, correspondence only",
+    "geometry_bind_or_object_transform_correction_applied": false,
+    "source_bounds_m": {
+      "min": [
+        -0.10821524538998588,
+        -0.29626765091055435,
+        -1.7222624160151412e-08
+      ],
+      "max": [
+        0.10821524037795563,
+        0.29626752324058797,
+        0.9792830955467778
+      ]
+    },
+    "provider_bounds_m": {
+      "min": [
+        -0.10821523700021046,
+        -0.2962675300262984,
+        -2.2159801771337584e-09
+      ],
+      "max": [
+        0.10821523608851731,
+        0.296267536038344,
+        0.9792829769492859
+      ]
+    },
+    "provider_feet_z_m": -2.2159801771337584e-09,
+    "uv_quantization": 1e-06,
+    "scale_fit_unambiguous_triangles": 98953,
+    "uv_duplicate_triangle_groups": 0,
+    "uv_duplicate_triangles": 0,
+    "uv_corner_tie_triangles": 0,
+    "geometry_resolved_groups": [],
+    "geometry_mapping_unique": true
+  },
+  "unique_vertex_and_face_bijections": true,
+  "candidate_duplicates": [
+    {
+      "proposed_new_vertex_id": 49418,
+      "old_derived_vertex_id": 38348,
+      "raw_vertex_id": 38348,
+      "derived_face_ids": [
+        71640,
+        71869,
+        72383,
+        72618
+      ],
+      "raw_face_ids": [
+        71640,
+        71869,
+        72383,
+        72618
+      ]
+    }
+  ],
+  "counts": {
+    "original_vertices": 49418,
+    "proposed_vertices": 49419,
+    "candidate_duplicate_fans": 1,
+    "candidate_original_vertices": 1,
+    "faces_original_and_proposed": 98953,
+    "blocked_interface_vertices": 1376
+  },
+  "original_connectivity": {
+    "edges": 148435,
+    "boundary_edges": 11,
+    "nonmanifold_edges": 0
+  },
+  "proposed_connectivity": {
+    "edges": 148437,
+    "boundary_edges": 15,
+    "nonmanifold_edges": 0
+  },
+  "array_plan_reconstruction": {
+    "all_original_loops_winding_exact_via_new_to_old": true,
+    "all_corner_positions_exact": true,
+    "corner_uv_normals_material_arrays_retained_exact": true,
+    "all_initial_corner_weights_exact": true,
+    "all_original_vertex_weights_exact": true,
+    "no_added_removed_faces_caps_or_backing": true
+  },
+  "inventory": {
+    "fbx_version": 7400,
+    "serialized_geometry_fields": [
+      "Properties70",
+      "GeometryVersion",
+      "Vertices",
+      "PolygonVertexIndex",
+      "Edges",
+      "LayerElementNormal",
+      "LayerElementBinormal",
+      "LayerElementTangent",
+      "LayerElementUV",
+      "LayerElementMaterial",
+      "Layer"
+    ],
+    "serialized_layers": [
+      {
+        "kind": "LayerElementNormal",
+        "modes": {
+          "MappingInformationType": [
+            "ByPolygonVertex"
+          ],
+          "ReferenceInformationType": [
+            "IndexToDirect"
+          ]
+        },
+        "recognized_for_future_plan": true
+      },
+      {
+        "kind": "LayerElementBinormal",
+        "modes": {
+          "MappingInformationType": [
+            "ByPolygonVertex"
+          ],
+          "ReferenceInformationType": [
+            "Direct"
+          ]
+        },
+        "recognized_for_future_plan": false
+      },
+      {
+        "kind": "LayerElementTangent",
+        "modes": {
+          "MappingInformationType": [
+            "ByPolygonVertex"
+          ],
+          "ReferenceInformationType": [
+            "Direct"
+          ]
+        },
+        "recognized_for_future_plan": false
+      },
+      {
+        "kind": "LayerElementUV",
+        "modes": {
+          "MappingInformationType": [
+            "ByPolygonVertex"
+          ],
+          "ReferenceInformationType": [
+            "IndexToDirect"
+          ]
+        },
+        "recognized_for_future_plan": true
+      },
+      {
+        "kind": "LayerElementMaterial",
+        "modes": {
+          "MappingInformationType": [
+            "AllSame"
+          ],
+          "ReferenceInformationType": [
+            "IndexToDirect"
+          ]
+        },
+        "recognized_for_future_plan": true
+      }
+    ],
+    "unsupported_serialized_layers": [
+      {
+        "kind": "LayerElementBinormal",
+        "modes": {
+          "MappingInformationType": [
+            "ByPolygonVertex"
+          ],
+          "ReferenceInformationType": [
+            "Direct"
+          ]
+        },
+        "recognized_for_future_plan": false
+      },
+      {
+        "kind": "LayerElementTangent",
+        "modes": {
+          "MappingInformationType": [
+            "ByPolygonVertex"
+          ],
+          "ReferenceInformationType": [
+            "Direct"
+          ]
+        },
+        "recognized_for_future_plan": false
+      }
+    ],
+    "imported_attributes": [
+      {
+        "name": ".select_vert",
+        "domain": "POINT",
+        "data_type": "BOOLEAN",
+        "elements": 49418
+      },
+      {
+        "name": "position",
+        "domain": "POINT",
+        "data_type": "FLOAT_VECTOR",
+        "elements": 49418
+      },
+      {
+        "name": ".corner_vert",
+        "domain": "CORNER",
+        "data_type": "INT",
+        "elements": 296859
+      },
+      {
+        "name": ".corner_edge",
+        "domain": "CORNER",
+        "data_type": "INT",
+        "elements": 296859
+      },
+      {
+        "name": ".select_poly",
+        "domain": "FACE",
+        "data_type": "BOOLEAN",
+        "elements": 98953
+      },
+      {
+        "name": "material_index",
+        "domain": "FACE",
+        "data_type": "INT",
+        "elements": 98953
+      },
+      {
+        "name": "UVMap",
+        "domain": "CORNER",
+        "data_type": "FLOAT2",
+        "elements": 296859
+      },
+      {
+        "name": ".select_edge",
+        "domain": "EDGE",
+        "data_type": "BOOLEAN",
+        "elements": 148435
+      },
+      {
+        "name": ".edge_verts",
+        "domain": "EDGE",
+        "data_type": "INT32_2D",
+        "elements": 148435
+      },
+      {
+        "name": "custom_normal",
+        "domain": "CORNER",
+        "data_type": "INT16_2D",
+        "elements": 296859
+      },
+      {
+        "name": "sharp_edge",
+        "domain": "EDGE",
+        "data_type": "BOOLEAN",
+        "elements": 148435
+      }
+    ],
+    "uv_layers": [
+      "UVMap"
+    ],
+    "color_attributes": [],
+    "shape_keys": false,
+    "modifiers": [
+      {
+        "name": "Armature",
+        "type": "ARMATURE"
+      }
+    ]
+  },
+  "binds": {
+    "bone_names": [
+      "ball_l",
+      "ball_r",
+      "calf_l",
+      "calf_r",
+      "calf_twist_01_l",
+      "calf_twist_01_r",
+      "clavicle_l",
+      "clavicle_r",
+      "foot_l",
+      "foot_r",
+      "hand_l",
+      "hand_r",
+      "head",
+      "index_01_l",
+      "index_01_r",
+      "index_02_l",
+      "index_02_r",
+      "index_03_l",
+      "index_03_r",
+      "lowerarm_l",
+      "lowerarm_r",
+      "lowerarm_twist_01_l",
+      "lowerarm_twist_01_r",
+      "middle_01_l",
+      "middle_01_r",
+      "middle_02_l",
+      "middle_02_r",
+      "middle_03_l",
+      "middle_03_r",
+      "neck_01",
+      "pelvis",
+      "pinky_01_l",
+      "pinky_01_r",
+      "pinky_02_l",
+      "pinky_02_r",
+      "pinky_03_l",
+      "pinky_03_r",
+      "ring_01_l",
+      "ring_01_r",
+      "ring_02_l",
+      "ring_02_r",
+      "ring_03_l",
+      "ring_03_r",
+      "root",
+      "spine_01",
+      "spine_02",
+      "spine_03",
+      "thigh_l",
+      "thigh_r",
+      "thigh_twist_01_l",
+      "thigh_twist_01_r",
+      "thumb_01_l",
+      "thumb_01_r",
+      "thumb_02_l",
+      "thumb_02_r",
+      "thumb_03_l",
+      "thumb_03_r",
+      "upperarm_l",
+      "upperarm_r",
+      "upperarm_twist_01_l",
+      "upperarm_twist_01_r"
+    ],
+    "parents": {
+      "root": null,
+      "pelvis": "root",
+      "spine_01": "pelvis",
+      "spine_02": "spine_01",
+      "spine_03": "spine_02",
+      "clavicle_l": "spine_03",
+      "upperarm_l": "clavicle_l",
+      "lowerarm_l": "upperarm_l",
+      "hand_l": "lowerarm_l",
+      "index_01_l": "hand_l",
+      "index_02_l": "index_01_l",
+      "index_03_l": "index_02_l",
+      "middle_01_l": "hand_l",
+      "middle_02_l": "middle_01_l",
+      "middle_03_l": "middle_02_l",
+      "pinky_01_l": "hand_l",
+      "pinky_02_l": "pinky_01_l",
+      "pinky_03_l": "pinky_02_l",
+      "ring_01_l": "hand_l",
+      "ring_02_l": "ring_01_l",
+      "ring_03_l": "ring_02_l",
+      "thumb_01_l": "hand_l",
+      "thumb_02_l": "thumb_01_l",
+      "thumb_03_l": "thumb_02_l",
+      "lowerarm_twist_01_l": "lowerarm_l",
+      "upperarm_twist_01_l": "upperarm_l",
+      "clavicle_r": "spine_03",
+      "upperarm_r": "clavicle_r",
+      "lowerarm_r": "upperarm_r",
+      "hand_r": "lowerarm_r",
+      "index_01_r": "hand_r",
+      "index_02_r": "index_01_r",
+      "index_03_r": "index_02_r",
+      "middle_01_r": "hand_r",
+      "middle_02_r": "middle_01_r",
+      "middle_03_r": "middle_02_r",
+      "pinky_01_r": "hand_r",
+      "pinky_02_r": "pinky_01_r",
+      "pinky_03_r": "pinky_02_r",
+      "ring_01_r": "hand_r",
+      "ring_02_r": "ring_01_r",
+      "ring_03_r": "ring_02_r",
+      "thumb_01_r": "hand_r",
+      "thumb_02_r": "thumb_01_r",
+      "thumb_03_r": "thumb_02_r",
+      "lowerarm_twist_01_r": "lowerarm_r",
+      "upperarm_twist_01_r": "upperarm_r",
+      "neck_01": "spine_03",
+      "head": "neck_01",
+      "thigh_l": "pelvis",
+      "calf_l": "thigh_l",
+      "calf_twist_01_l": "calf_l",
+      "foot_l": "calf_l",
+      "ball_l": "foot_l",
+      "thigh_twist_01_l": "thigh_l",
+      "thigh_r": "pelvis",
+      "calf_r": "thigh_r",
+      "calf_twist_01_r": "calf_r",
+      "foot_r": "calf_r",
+      "ball_r": "foot_r",
+      "thigh_twist_01_r": "thigh_r"
+    },
+    "matrices": {
+      "ball_l": [
+        [
+          0.57920902967453,
+          0.7296913266181946,
+          0.3634038269519806,
+          0.03718436509370804
+        ],
+        [
+          -0.729684591293335,
+          0.2653424143791199,
+          0.6301923990249634,
+          0.13787537813186646
+        ],
+        [
+          0.3634226322174072,
+          -0.630188524723053,
+          0.6861385703086853,
+          0.01721235364675522
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "ball_r": [
+        [
+          0.25780540704727173,
+          0.7229597568511963,
+          0.6409807205200195,
+          0.03335878252983093
+        ],
+        [
+          -0.7229639887809753,
+          -0.2957567572593689,
+          0.6243751645088196,
+          -0.13754786550998688
+        ],
+        [
+          0.6409778594970703,
+          -0.6243779063224792,
+          0.446429580450058,
+          0.017212510108947754
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "calf_l": [
+        [
+          0.9717989563941956,
+          -0.1751154512166977,
+          -0.15791282057762146,
+          -0.008719533681869507
+        ],
+        [
+          0.17511945962905884,
+          0.08755765110254288,
+          0.9806404113769531,
+          0.08814609795808792
+        ],
+        [
+          -0.15790025889873505,
+          -0.9806468486785889,
+          0.1157551258802414,
+          0.3041120767593384
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "calf_r": [
+        [
+          0.965849757194519,
+          -0.17482000589370728,
+          -0.19121409952640533,
+          -0.012544848024845123
+        ],
+        [
+          0.1748383492231369,
+          -0.10489249229431152,
+          0.9789904952049255,
+          -0.08016819506883621
+        ],
+        [
+          -0.19120541214942932,
+          -0.9789970517158508,
+          -0.07074615359306335,
+          0.30411195755004883
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "calf_twist_01_l": [
+        [
+          0.9717990756034851,
+          -0.1751154363155365,
+          -0.1579122245311737,
+          -0.028206273913383484
+        ],
+        [
+          0.17511886358261108,
+          0.08755769580602646,
+          0.9806405305862427,
+          0.09788945317268372
+        ],
+        [
+          -0.15790031850337982,
+          -0.9806468486785889,
+          0.11575507372617722,
+          0.19498611986637115
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "calf_twist_01_r": [
+        [
+          0.9658498167991638,
+          -0.1748199760913849,
+          -0.19121374189853668,
+          -0.03203151375055313
+        ],
+        [
+          0.17483797669410706,
+          -0.1048925369977951,
+          0.9789905548095703,
+          -0.09186021983623505
+        ],
+        [
+          -0.19120536744594574,
+          -0.9789970517158508,
+          -0.0707462802529335,
+          0.1949862241744995
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "clavicle_l": [
+        [
+          0.9999999403953552,
+          -2.9802322387695312e-08,
+          2.9802322387695312e-08,
+          -0.02784615568816662
+        ],
+        [
+          2.2351741790771484e-08,
+          0.8837876915931702,
+          0.4678882360458374,
+          0.03841692954301834
+        ],
+        [
+          -3.346940502524376e-08,
+          -0.4678882658481598,
+          0.8837875723838806,
+          0.7861031293869019
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "clavicle_r": [
+        [
+          0.9999998807907104,
+          -2.9802322387695312e-08,
+          -7.82310962677002e-08,
+          -0.03167148306965828
+        ],
+        [
+          -2.9802322387695312e-08,
+          -0.8944268822669983,
+          0.4472143054008484,
+          -0.030438987538218498
+        ],
+        [
+          -5.5530108511447906e-08,
+          -0.4472139775753021,
+          -0.8944269418716431,
+          0.7861030697822571
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "foot_l": [
+        [
+          0.5792064666748047,
+          0.7296913266181946,
+          0.3634079098701477,
+          -0.046972788870334625
+        ],
+        [
+          -0.7296890616416931,
+          0.2653424143791199,
+          0.6301872134208679,
+          0.1072726920247078
+        ],
+        [
+          0.36341777443885803,
+          -0.630188524723053,
+          0.6861411333084106,
+          0.08989368379116058
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "foot_r": [
+        [
+          0.25781112909317017,
+          0.7229599356651306,
+          0.640978217124939,
+          -0.05079792067408562
+        ],
+        [
+          -0.7229583859443665,
+          -0.29575663805007935,
+          0.6243817210197449,
+          -0.1031201183795929
+        ],
+        [
+          0.6409818530082703,
+          -0.6243777871131897,
+          0.4464239776134491,
+          0.08989377319812775
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "hand_l": [
+        [
+          0.9227279424667358,
+          0.32126086950302124,
+          0.21299000084400177,
+          0.009629210457205772
+        ],
+        [
+          -0.3212607502937317,
+          0.33564963936805725,
+          0.8855117559432983,
+          0.2366594821214676
+        ],
+        [
+          0.21299025416374207,
+          -0.8855116367340088,
+          0.4129217267036438,
+          0.5225141644477844
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "hand_r": [
+        [
+          0.8445026278495789,
+          0.3113926649093628,
+          0.4357174336910248,
+          -0.0037785619497299194
+        ],
+        [
+          -0.311392605304718,
+          -0.37641769647598267,
+          0.8725504875183105,
+          -0.23629912734031677
+        ],
+        [
+          0.43571776151657104,
+          -0.8725502490997314,
+          -0.22092056274414062,
+          0.5233790278434753
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "head": [
+        [
+          0.9135134816169739,
+          0.2940858006477356,
+          -0.28108111023902893,
+          -0.01637015864253044
+        ],
+        [
+          -0.294085830450058,
+          8.367756976213059e-08,
+          -0.955778956413269,
+          0.003988989163190126
+        ],
+        [
+          -0.2810809910297394,
+          0.9557788968086243,
+          0.08648668974637985,
+          0.8511337041854858
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "index_01_l": [
+        [
+          0.9515866041183472,
+          0.25466054677963257,
+          0.1721370667219162,
+          0.03244232386350632
+        ],
+        [
+          -0.25466063618659973,
+          0.3395436406135559,
+          0.9054602384567261,
+          0.2703360319137573
+        ],
+        [
+          0.17213691771030426,
+          -0.9054602980613708,
+          0.38795706629753113,
+          0.47634491324424744
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "index_01_r": [
+        [
+          0.9156461358070374,
+          0.23398205637931824,
+          0.3268704116344452,
+          0.017670633271336555
+        ],
+        [
+          -0.23398253321647644,
+          -0.3509747087955475,
+          0.906680166721344,
+          -0.2714976966381073
+        ],
+        [
+          0.326870322227478,
+          -0.9066800475120544,
+          -0.2666211426258087,
+          0.47608086466789246
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "index_02_l": [
+        [
+          0.920548141002655,
+          0.3154393136501312,
+          0.23041188716888428,
+          0.037330880761146545
+        ],
+        [
+          -0.31543976068496704,
+          0.2523530125617981,
+          0.9147764444351196,
+          0.2768540382385254
+        ],
+        [
+          0.23041129112243652,
+          -0.9147765636444092,
+          0.3318050801753998,
+          0.4589633643627167
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "index_02_r": [
+        [
+          0.8541041016578674,
+          0.32191118597984314,
+          0.40850839018821716,
+          0.022070448845624924
+        ],
+        [
+          -0.3219109773635864,
+          -0.28972089290618896,
+          0.9013518691062927,
+          -0.2780974507331848
+        ],
+        [
+          0.4085088074207306,
+          -0.9013516306877136,
+          -0.1438252329826355,
+          0.4590315818786621
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "index_03_l": [
+        [
+          0.9205467104911804,
+          0.3154430389404297,
+          0.230412557721138,
+          0.04276254400610924
+        ],
+        [
+          -0.31544259190559387,
+          0.2523563504219055,
+          0.9147745370864868,
+          0.2811993956565857
+        ],
+        [
+          0.23041315376758575,
+          -0.9147743582725525,
+          0.3318098485469818,
+          0.44321149587631226
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "index_03_r": [
+        [
+          0.8541035652160645,
+          0.321911096572876,
+          0.4085094630718231,
+          0.027570288628339767
+        ],
+        [
+          -0.32191213965415955,
+          -0.28972092270851135,
+          0.9013514518737793,
+          -0.28304722905158997
+        ],
+        [
+          0.40850889682769775,
+          -0.9013516902923584,
+          -0.1438247710466385,
+          0.4436320960521698
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "lowerarm_l": [
+        [
+          0.9667624235153198,
+          0.21921966969966888,
+          0.13157962262630463,
+          -0.016370154917240143
+        ],
+        [
+          -0.21921968460083008,
+          0.445870578289032,
+          0.86783766746521,
+          0.18377947807312012
+        ],
+        [
+          0.13157960772514343,
+          -0.8678377270698547,
+          0.479108065366745,
+          0.625439465045929
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "lowerarm_r": [
+        [
+          0.9209932088851929,
+          0.19880744814872742,
+          0.3350326716899872,
+          -0.02784615382552147
+        ],
+        [
+          -0.1988077014684677,
+          -0.499733030796051,
+          0.8430553674697876,
+          -0.17580142617225647
+        ],
+        [
+          0.33503270149230957,
+          -0.8430551886558533,
+          -0.4207265079021454,
+          0.625439465045929
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "lowerarm_twist_01_l": [
+        [
+          0.9667624235153198,
+          0.21921972930431366,
+          0.13157956302165985,
+          -0.002876575104892254
+        ],
+        [
+          -0.21921971440315247,
+          0.44587090611457825,
+          0.8678374886512756,
+          0.21122394502162933
+        ],
+        [
+          0.13157959282398224,
+          -0.8678374886512756,
+          0.47910842299461365,
+          0.5720215439796448
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "lowerarm_twist_01_r": [
+        [
+          0.9209931492805481,
+          0.19880743324756622,
+          0.3350328207015991,
+          -0.015355195850133896
+        ],
+        [
+          -0.19880788028240204,
+          -0.4997329115867615,
+          0.8430554270744324,
+          -0.20719951391220093
+        ],
+        [
+          0.33503273129463196,
+          -0.843055248260498,
+          -0.42072632908821106,
+          0.5724704265594482
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "middle_01_l": [
+        [
+          0.987553596496582,
+          0.12749476730823517,
+          0.09210390597581863,
+          0.028096964582800865
+        ],
+        [
+          -0.1274949610233307,
+          0.30598655343055725,
+          0.9434604644775391,
+          0.2567567527294159
+        ],
+        [
+          0.09210368990898132,
+          -0.9434604048728943,
+          0.3184329867362976,
+          0.47091323137283325
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "middle_01_r": [
+        [
+          0.9845594167709351,
+          0.1064489334821701,
+          0.13896462321281433,
+          0.014370759949088097
+        ],
+        [
+          -0.10644954442977905,
+          -0.26612207293510437,
+          0.9580436944961548,
+          -0.25829827785491943
+        ],
+        [
+          0.13896439969539642,
+          -0.9580435156822205,
+          -0.2506817877292633,
+          0.4711311459541321
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "middle_02_l": [
+        [
+          0.8825850486755371,
+          0.3708243668079376,
+          0.2890210747718811,
+          0.030812833458185196
+        ],
+        [
+          -0.37082356214523315,
+          0.1711474061012268,
+          0.912797212600708,
+          0.26327481865882874
+        ],
+        [
+          0.28902217745780945,
+          -0.9127968549728394,
+          0.28856244683265686,
+          0.4508158266544342
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "middle_02_r": [
+        [
+          0.872915506362915,
+          0.3183389902114868,
+          0.36970067024230957,
+          0.016570700332522392
+        ],
+        [
+          -0.3183395266532898,
+          -0.2025785595178604,
+          0.9260788559913635,
+          -0.2637981176376343
+        ],
+        [
+          0.3697006106376648,
+          -0.9260788559913635,
+          -0.07549428939819336,
+          0.45133188366889954
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "middle_03_l": [
+        [
+          0.8825855851173401,
+          0.3708232343196869,
+          0.289020836353302,
+          0.03787399083375931
+        ],
+        [
+          -0.3708234429359436,
+          0.17114892601966858,
+          0.9127969741821289,
+          0.2665337324142456
+        ],
+        [
+          0.2890206277370453,
+          -0.9127970337867737,
+          0.28856343030929565,
+          0.433434396982193
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "middle_03_r": [
+        [
+          0.8729156255722046,
+          0.3183400332927704,
+          0.36969947814941406,
+          0.022620463743805885
+        ],
+        [
+          -0.31834056973457336,
+          -0.20257249474525452,
+          0.9260798096656799,
+          -0.26764795184135437
+        ],
+        [
+          0.3696993887424469,
+          -0.9260798692703247,
+          -0.07548835128545761,
+          0.4337325394153595
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "neck_01": [
+        [
+          0.9135136008262634,
+          0.29408571124076843,
+          -0.28108084201812744,
+          -0.03167148679494858
+        ],
+        [
+          -0.2940855324268341,
+          1.0803341865539551e-07,
+          -0.9557790756225586,
+          0.003988978918641806
+        ],
+        [
+          -0.2810809314250946,
+          0.955778956413269,
+          0.08648660033941269,
+          0.8014043569564819
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "pelvis": [
+        [
+          0.9949074983596802,
+          -0.07136190682649612,
+          0.07117989659309387,
+          -0.012544852681457996
+        ],
+        [
+          0.07136183977127075,
+          -4.440892098500626e-16,
+          -0.9974504113197327,
+          0.003988971468061209
+        ],
+        [
+          0.07117996364831924,
+          0.9974504113197327,
+          0.00509267533197999,
+          0.5374568104743958
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "pinky_01_l": [
+        [
+          0.9500241279602051,
+          0.20751413702964783,
+          0.23322153091430664,
+          0.020492570474743843
+        ],
+        [
+          -0.20751434564590454,
+          -0.13834327459335327,
+          0.9684002995491028,
+          0.23285728693008423
+        ],
+        [
+          0.2332213819026947,
+          -0.968400239944458,
+          -0.08836725354194641,
+          0.470913290977478
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "pinky_01_r": [
+        [
+          0.9492515921592712,
+          0.24023954570293427,
+          0.20299296081066132,
+          0.007221038453280926
+        ],
+        [
+          -0.24023965001106262,
+          0.13728025555610657,
+          0.9609573483467102,
+          -0.23354917764663696
+        ],
+        [
+          0.202993243932724,
+          -0.9609572291374207,
+          0.18802829086780548,
+          0.47058117389678955
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "pinky_02_l": [
+        [
+          0.8962213397026062,
+          0.3006752133369446,
+          0.3261624276638031,
+          0.023751597851514816
+        ],
+        [
+          -0.30067509412765503,
+          -0.12886285781860352,
+          0.9449809789657593,
+          0.23068459331989288
+        ],
+        [
+          0.32616254687309265,
+          -0.9449809193611145,
+          -0.02508407086133957,
+          0.4557044804096222
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "pinky_02_r": [
+        [
+          0.919914186000824,
+          0.30067503452301025,
+          0.2516983449459076,
+          0.011070868000388145
+        ],
+        [
+          -0.30067533254623413,
+          0.1288607269525528,
+          0.9449810981750488,
+          -0.23134924471378326
+        ],
+        [
+          0.25169840455055237,
+          -0.9449809789657593,
+          0.2089461237192154,
+          0.45518168807029724
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "pinky_03_l": [
+        [
+          0.8962223529815674,
+          0.30067363381385803,
+          0.3261611759662628,
+          0.027553871273994446
+        ],
+        [
+          -0.300674170255661,
+          -0.12886177003383636,
+          0.9449813961982727,
+          0.22905504703521729
+        ],
+        [
+          0.3261606693267822,
+          -0.944981575012207,
+          -0.025083966553211212,
+          0.4437546730041504
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "pinky_03_r": [
+        [
+          0.919914186000824,
+          0.3006749451160431,
+          0.2516983151435852,
+          0.014920739457011223
+        ],
+        [
+          -0.30067530274391174,
+          0.1288606971502304,
+          0.9449810981750488,
+          -0.22969934344291687
+        ],
+        [
+          0.2516983449459076,
+          -0.9449809193611145,
+          0.2089460790157318,
+          0.4430823028087616
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "ring_01_l": [
+        [
+          0.9930263161659241,
+          0.08952228724956512,
+          0.07671093940734863,
+          0.02375159226357937
+        ],
+        [
+          -0.0895223319530487,
+          0.14920610189437866,
+          0.984745442867279,
+          0.245350182056427
+        ],
+        [
+          0.07671093940734863,
+          -0.9847453236579895,
+          0.15617981553077698,
+          0.46819737553596497
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "ring_01_r": [
+        [
+          0.9833665490150452,
+          0.11899256706237793,
+          0.13722488284111023,
+          0.009970929473638535
+        ],
+        [
+          -0.11899295449256897,
+          -0.14873915910720825,
+          0.9816911220550537,
+          -0.24564866721630096
+        ],
+        [
+          0.13722476363182068,
+          -0.9816910028457642,
+          -0.13210612535476685,
+          0.46838128566741943
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "ring_02_l": [
+        [
+          0.8971912860870361,
+          0.3258189558982849,
+          0.2981441020965576,
+          0.025381114333868027
+        ],
+        [
+          -0.32581913471221924,
+          0.032577626407146454,
+          0.9448708295822144,
+          0.24806609749794006
+        ],
+        [
+          0.29814401268959045,
+          -0.9448707103729248,
+          0.1353864073753357,
+          0.4502726197242737
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "ring_02_r": [
+        [
+          0.8868156671524048,
+          0.3253006339073181,
+          0.32823342084884644,
+          0.012170852161943913
+        ],
+        [
+          -0.32530122995376587,
+          -0.06505809724330902,
+          0.9433698058128357,
+          -0.2483985424041748
+        ],
+        [
+          0.3282332420349121,
+          -0.9433698058128357,
+          0.048125892877578735,
+          0.4502318799495697
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "ring_03_l": [
+        [
+          0.8971928358078003,
+          0.325816810131073,
+          0.2981417775154114,
+          0.03081284835934639
+        ],
+        [
+          -0.32581689953804016,
+          0.03257934749126434,
+          0.9448715448379517,
+          0.24860920011997223
+        ],
+        [
+          0.2981417775154114,
+          -0.9448713660240173,
+          0.13538657128810883,
+          0.4345206618309021
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "ring_03_r": [
+        [
+          0.8868151903152466,
+          0.3253004550933838,
+          0.32823488116264343,
+          0.017670638859272003
+        ],
+        [
+          -0.325300931930542,
+          -0.06506336480379105,
+          0.9433695673942566,
+          -0.24949850142002106
+        ],
+        [
+          0.32823479175567627,
+          -0.9433695077896118,
+          0.04812110215425491,
+          0.43428266048431396
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "root": [
+        [
+          1.0,
+          0.0,
+          0.0,
+          -0.012544851750135422
+        ],
+        [
+          0.0,
+          1.0,
+          0.0,
+          0.003988971468061209
+        ],
+        [
+          0.0,
+          0.0,
+          1.0,
+          -1.3560056686401367e-06
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "spine_01": [
+        [
+          0.9941176772117615,
+          -0.07669639587402344,
+          0.07647045701742172,
+          -0.016370166093111038
+        ],
+        [
+          0.07669638097286224,
+          4.70608938485384e-08,
+          -0.9970544576644897,
+          0.003988971002399921
+        ],
+        [
+          0.07647047191858292,
+          0.9970544576644897,
+          0.005882540717720985,
+          0.583360493183136
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "spine_02": [
+        [
+          0.9972376227378845,
+          -0.052558526396751404,
+          0.0524858757853508,
+          -0.02019551396369934
+        ],
+        [
+          0.0525585375726223,
+          1.100124791264534e-07,
+          -0.9986178278923035,
+          0.003988973330706358
+        ],
+        [
+          0.0524858757853508,
+          0.9986177086830139,
+          0.0027626673690974712,
+          0.633090078830719
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "spine_03": [
+        [
+          0.9939649105072021,
+          -0.07769925892353058,
+          0.0774369090795517,
+          -0.024020804092288017
+        ],
+        [
+          0.07769929617643356,
+          0.0003547712694853544,
+          -0.9969766736030579,
+          0.003988981246948242
+        ],
+        [
+          0.07743687927722931,
+          0.9969766736030579,
+          0.006389965768903494,
+          0.7057710289955139
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "thigh_l": [
+        [
+          0.9999975562095642,
+          -2.9336661100387573e-08,
+          -1.2800097465515137e-05,
+          -0.008719520643353462
+        ],
+        [
+          5.27501106262207e-06,
+          0.09053567051887512,
+          0.9958875775337219,
+          0.06901945918798447
+        ],
+        [
+          9.8120654001832e-07,
+          -0.995893120765686,
+          0.09053578972816467,
+          0.5145049095153809
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "thigh_r": [
+        [
+          0.9996346831321716,
+          -0.01810421049594879,
+          -0.019830744713544846,
+          -0.008719520643353462
+        ],
+        [
+          0.01812192052602768,
+          -0.090520940721035,
+          0.9957262277603149,
+          -0.06104154512286186
+        ],
+        [
+          -0.019821856170892715,
+          -0.9957298040390015,
+          -0.09016091376543045,
+          0.5145047903060913
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "thigh_twist_01_l": [
+        [
+          0.9999975562095642,
+          -4.539912282913727e-14,
+          -1.2716632227238733e-05,
+          -0.008719533681869507
+        ],
+        [
+          5.1892325245717075e-06,
+          0.09053575247526169,
+          0.9958875775337219,
+          0.07894590497016907
+        ],
+        [
+          1.0028671795225819e-06,
+          -0.995893120765686,
+          0.09053587168455124,
+          0.40531420707702637
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "thigh_twist_01_r": [
+        [
+          0.9996346831321716,
+          -0.018104158341884613,
+          -0.01983090117573738,
+          -0.010704809799790382
+        ],
+        [
+          0.018122082576155663,
+          -0.09052086621522903,
+          0.9957262277603149,
+          -0.07096801698207855
+        ],
+        [
+          -0.01982181891798973,
+          -0.9957297444343567,
+          -0.09016084671020508,
+          0.4053140878677368
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "thumb_01_l": [
+        [
+          0.6747717261314392,
+          0.7175173759460449,
+          0.17277789115905762,
+          0.029183294624090195
+        ],
+        [
+          -0.7175176739692688,
+          0.5829838514328003,
+          0.38118040561676025,
+          0.2534977197647095
+        ],
+        [
+          0.17277684807777405,
+          -0.38118091225624084,
+          0.9082121849060059,
+          0.5138235092163086
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "thumb_01_r": [
+        [
+          -0.2149953991174698,
+          0.6400116682052612,
+          0.737673282623291,
+          0.016570664942264557
+        ],
+        [
+          -0.6400130391120911,
+          -0.662866473197937,
+          0.38857603073120117,
+          -0.25389838218688965
+        ],
+        [
+          0.7376722097396851,
+          -0.3885782063007355,
+          0.5521290898323059,
+          0.5134795308113098
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "thumb_02_l": [
+        [
+          0.731938898563385,
+          0.6383489370346069,
+          0.23827779293060303,
+          0.046564750373363495
+        ],
+        [
+          -0.6383489370346069,
+          0.5201354026794434,
+          0.5674239993095398,
+          0.26762017607688904
+        ],
+        [
+          0.23827773332595825,
+          -0.5674240589141846,
+          0.7881965637207031,
+          0.5045896172523499
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "thumb_02_r": [
+        [
+          0.1918395310640335,
+          0.601057767868042,
+          0.775839626789093,
+          0.03197009116411209
+        ],
+        [
+          -0.6010550260543823,
+          -0.5529741644859314,
+          0.5770202875137329,
+          -0.26984772086143494
+        ],
+        [
+          0.7758419513702393,
+          -0.5770174264907837,
+          0.25518643856048584,
+          0.5041298866271973
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "thumb_03_l": [
+        [
+          0.7319381833076477,
+          0.6383498907089233,
+          0.23827733099460602,
+          0.06123029440641403
+        ],
+        [
+          -0.638349711894989,
+          0.5201355814933777,
+          0.5674229860305786,
+          0.2795698642730713
+        ],
+        [
+          0.2382778525352478,
+          -0.5674227476119995,
+          0.7881974577903748,
+          0.49155351519584656
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "thumb_03_r": [
+        [
+          0.19183045625686646,
+          0.6010558605194092,
+          0.7758433222770691,
+          0.04571956396102905
+        ],
+        [
+          -0.6010552048683167,
+          -0.5529804825782776,
+          0.5770140290260315,
+          -0.28249725699424744
+        ],
+        [
+          0.7758440375328064,
+          -0.577013373374939,
+          0.2551892399787903,
+          0.49093034863471985
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "upperarm_l": [
+        [
+          0.9961909651756287,
+          0.07647206634283066,
+          0.04189882427453995,
+          -0.027846157550811768
+        ],
+        [
+          -0.07647205144166946,
+          0.5353054404258728,
+          0.8411897420883179,
+          0.10344751179218292
+        ],
+        [
+          0.04189885035157204,
+          -0.8411896228790283,
+          0.5391144156455994,
+          0.7516751289367676
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "upperarm_r": [
+        [
+          0.9986071586608887,
+          0.025906475260853767,
+          0.04596196115016937,
+          -0.03167148679494858
+        ],
+        [
+          -0.025906627997756004,
+          -0.5181279182434082,
+          0.8549107313156128,
+          -0.09929478913545609
+        ],
+        [
+          0.04596193879842758,
+          -0.8549104928970337,
+          -0.516735315322876,
+          0.7516751289367676
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "upperarm_twist_01_l": [
+        [
+          0.9961910247802734,
+          0.07647103071212769,
+          0.04189852997660637,
+          -0.027657022699713707
+        ],
+        [
+          -0.07647102326154709,
+          0.5353010296821594,
+          0.8411926627159119,
+          0.10477132350206375
+        ],
+        [
+          0.041898541152477264,
+          -0.8411925435066223,
+          0.5391098856925964,
+          0.7495948672294617
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "upperarm_twist_01_r": [
+        [
+          0.9986071586608887,
+          0.025906750932335854,
+          0.0459623858332634,
+          -0.03160843253135681
+        ],
+        [
+          -0.025907132774591446,
+          -0.518122673034668,
+          0.8549138903617859,
+          -0.1005556583404541
+        ],
+        [
+          0.04596223309636116,
+          -0.8549136519432068,
+          -0.516730010509491,
+          0.7495946884155273
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ]
+    },
+    "rig_matrix": [
+      [
+        1.0,
+        0.0,
+        0.0,
+        -0.0008437857031822205
+      ],
+      [
+        0.0,
+        1.0,
+        1.6292067073209182e-07,
+        0.0017489045858383179
+      ],
+      [
+        0.0,
+        -1.6292067073209182e-07,
+        1.0,
+        1.3242524801171385e-06
+      ],
+      [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ]
+    ],
+    "mesh_matrix": [
+      [
+        0.9792831540107727,
+        -4.4703477031227123e-10,
+        -4.6193591174414905e-09,
+        -3.4924596548080444e-09
+      ],
+      [
+        -4.321336177781632e-09,
+        0.9792829751968384,
+        1.942256488973726e-07,
+        -1.0011717677116394e-08
+      ],
+      [
+        3.278255444882916e-09,
+        -2.018625053779033e-07,
+        0.9792830348014832,
+        0.4896414875984192
+      ],
+      [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ]
+    ]
+  },
+  "PBR": [
+    {
+      "name": "TripoOriginalPBR",
+      "links": [
+        [
+          "BSDF_PRINCIPLED",
+          "BSDF",
+          "OUTPUT_MATERIAL",
+          "Surface"
+        ],
+        [
+          "NORMAL_MAP",
+          "Normal",
+          "BSDF_PRINCIPLED",
+          "Normal"
+        ],
+        [
+          "TEX_IMAGE",
+          "Color",
+          "BSDF_PRINCIPLED",
+          "Base Color"
+        ],
+        [
+          "TEX_IMAGE",
+          "Color",
+          "NORMAL_MAP",
+          "Color"
+        ]
+      ],
+      "images": [
+        {
+          "sha256": "ecb21c998306bd0f65b3b8f052bba19066d981039dedd7cc7fa1bef556c8a397",
+          "colorspace": "sRGB"
+        },
+        {
+          "sha256": "94e48a30195739c80857de8802cf5a48f1260c387bdde94ab8c3834281a6ab40",
+          "colorspace": "Non-Color"
+        }
+      ]
+    }
+  ],
+  "limits": [
+    "This is an array-only candidate plan, not an authored topology variant or an accepted semantic mask.",
+    "A, D and hidden hand/forearm/backing ownership unresolved; open interface chains prevent coherent whole-bag separation.",
+    "Only B local fan ownership is confirmed. Every other candidate duplicate awaits visual review.",
+    "Original serialized corner layers, edge/smoothing graph, skin/bind and PBR must be proven after any future actual topology writer.",
+    "A future authorized topology-only variant must pass fresh 416 all-corner old-clip equality samples before any weight pilot. This has not been run."
+  ],
+  "future_animation_gate": {
+    "performed": false,
+    "old_clips_unchanged": true,
+    "idle": 241,
+    "walk": 63,
+    "run": 39,
+    "jump": 73,
+    "total": 416
+  },
+  "arrays_sha256": "e088647eb1d3c15702598769721894ec14ef90a3323ea50d8134043d302bcf62",
+  "recipe_sha256": "2f7ccf61e5e49cf64ace626f6dfcc5deff9aaa06c92216e9b4520b7a8c9b6631"
+}

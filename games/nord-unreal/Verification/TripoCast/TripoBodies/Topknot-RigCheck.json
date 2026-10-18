@@ -1,0 +1,12 @@
+{
+  "character": "Topknot",
+  "body_task_id": "7c59f469-ad8a-4825-913f-14a69d0ba61b",
+  "body_sha256": "621c65ce305a29d27b7ee974ee928011c3a0d78a979bf9cc3b73ecb13d54fae2",
+  "task_id": "557e3cb8-cf56-45c7-b766-7e50ac641c31",
+  "status": "success",
+  "output": {
+    "riggable": true,
+    "rig_type": "biped"
+  },
+  "credits_consumed": 0.0
+}

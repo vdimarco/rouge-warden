@@ -1,0 +1,11 @@
+{
+  "old_run": "Saved/Tests/TripoCastReview-GreenCap51-20261017-v1",
+  "current_run": "Saved/Tests/TripoCastReview-GreenCap51-20261017-v2",
+  "reason": "Horizontal orthographic cameras prevent floor occlusion of lower-body geometry.",
+  "source_sha256": "729b56b0ed6d74be020f73ea87513d3963f6fb77a630d9f978ce66f0570599f6",
+  "raw_body_material_and_geometry_same": true,
+  "previous_recipe_sha256": "cde5b6b2db26c46f771179b5ca48477c53572ca4830d8c715bec1fb332eceb19",
+  "current_recipe_sha256": "ada98f3780a8a4a10c7c89b496d5ea32d1ed975823682bb5622717ce3be33e07",
+  "RootReview_json_preserved_sha256": "f3bc161c4e9254d02f0d8ced0ff2ab98586236158dd94f866cb7cf8c75837f0b",
+  "RootReview_json_is_current_camera_acceptance": false
+}

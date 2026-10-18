@@ -1,0 +1,12 @@
+{
+  "character": "RedJersey",
+  "task_id": "87fb8c51-8c9c-488a-afb1-06aa50feca71",
+  "source_body_task_id": "8845fab9-3804-44f5-8dbb-fd63d29d98cb",
+  "status": "success",
+  "credits_consumed": 0.0,
+  "output": {
+    "riggable": true,
+    "rig_type": "biped"
+  },
+  "scope": "Actual free biped compatibility; source and deformation review separate"
+}

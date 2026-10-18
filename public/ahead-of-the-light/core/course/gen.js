@@ -100,8 +100,9 @@ function legLength(def, L, legNo, T) {
   return n;
 }
 
-// Choose a section's pieces from its stream: teaching pieces first while unseen, then a weighted pick among the
-// pieces this run has not used (a pool that `used` empties may repeat a common piece), then the role's fallback.
+// Choose a section's pieces from its stream: teaching pieces first while unseen (once a run: a teaching piece the run
+// has used is not taught again), then a weighted pick among the pieces this run has not used (a pool that `used`
+// empties may repeat a common piece), then the role's fallback.
 function choose(sec, rnd, ctx) {
   const { seen, usedAll } = ctx;
   const count = sec.opts && sec.opts.count ? sec.opts.count : 1;
@@ -112,7 +113,7 @@ function choose(sec, rnd, ctx) {
     return [PIECES[sec.force], ...rest];
   }
   const written = sec.pool.filter((e) => PIECES[idOf(e)]);
-  const teach = written.filter((e) => teaching(PIECES[idOf(e)], seen));
+  const teach = written.filter((e) => teaching(PIECES[idOf(e)], seen) && !usedAll.has(idOf(e)));
   if (teach.length) return [PIECES[idOf(teach[0])]];
   const able = written.filter((e) => !PIECES[idOf(e)].teach);
   const picks = [];
@@ -358,11 +359,12 @@ function choosePickups(G, draft) {
   draft.items = out;
 }
 
-// The rules the leg hands to handle.js and survival.js (VOID, conditions).
+// The rules the leg hands to handle.js and survival.js (VOID, conditions). redX is null unless a condition sets
+// it (TIDES): handle pays the larger of it and the race's RED_X, so a card's RED_X (TIDAL FRAME) still counts.
 function legRules(G) {
   const T = G.T, cond = G.L.cond ? CONDITIONS[G.L.cond] : null;
   const r = { noDrag: false, burnCap: T.BURN_CAP, dragX: 1, skimX: 1, wideFree: false, redSpan: T.RED_SPAN,
-    redX: T.RED_X, dustPush: 1, patchAlways: false };
+    redX: null, dustPush: 1, patchAlways: false };
   if (G.L.kind === 'void') { r.noDrag = true; r.burnCap = null; }
   if (cond && cond.rules) Object.assign(r, cond.rules);
   const fam = G.L.kind === 'family' && G.L.fam ? FAMILY_EDITS[G.L.fam] : null;
@@ -405,7 +407,8 @@ export function hashItems(items) { return hashSeed(JSON.stringify(items)).toStri
 // cond }), its name or id, or null for the leg's first; mods: the build's (gateWell for SLINGSHOT HOME, density);
 // seen: the meta's teaching flags ({ runs, goodWhip, ... }); used: piece ids this run has flown.
 // → { type, name, legNo, lane, seed, beats, items, sections, gate, pickups, wells, labels, rules, noDrag, burnCap,
-//     field, mods, hash, report }, frozen. noDrag and burnCap (null in the VOID) repeat rules' for handle.js.
+//     dragX, redSpan, redX, field, mods, hash, report }, frozen. noDrag, burnCap (null in the VOID), dragX
+//     (HEADWIND), redSpan and redX (TIDES; null elsewhere) repeat rules' for handle.js.
 //     sections: [{ role, id, ids, b0, b1, params, mirror, anchor, exit, attempt }].
 export function buildLeg({ runSeed = 1, type = 'web', lane = null, mods = {}, seen = {}, used = new Set(),
   tune = TUNE, validate = true } = {}) {
@@ -463,7 +466,8 @@ export function buildLeg({ runSeed = 1, type = 'web', lane = null, mods = {}, se
     seed, beats: draft.beats, items, sections: draft.sections, gate,
     pickups: items.filter((it) => it.kind === 'pickup'),
     wells: items.filter((it) => it.kind === 'well'),
-    labels, rules, noDrag: rules.noDrag, burnCap: rules.burnCap, field: legField(G), mods: { ...G.mods },
+    labels, rules, noDrag: rules.noDrag, burnCap: rules.burnCap, dragX: rules.dragX, redSpan: rules.redSpan,
+    redX: rules.redX, field: legField(G), mods: { ...G.mods },
     hash: hashItems(items), report,
   });
 }

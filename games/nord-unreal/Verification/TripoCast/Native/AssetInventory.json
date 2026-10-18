@@ -1,0 +1,336 @@
+{
+  "new_assets": [
+    {
+      "file": "Content/ParkComic/CrewGraphicNovelTripo/Resident3/A_Idle.uasset",
+      "bytes": 559009,
+      "sha256": "ec159f0923f5272ef5eeade3fe9bcf309e99b598af49bdf19756db207d775d69"
+    },
+    {
+      "file": "Content/ParkComic/CrewGraphicNovelTripo/Resident3/A_Jump.uasset",
+      "bytes": 115438,
+      "sha256": "aca11e0fd6997ca3ed3dc5585e8a33f496668fe34157a7d557e964059c53cc10"
+    },
+    {
+      "file": "Content/ParkComic/CrewGraphicNovelTripo/Resident3/A_Run.uasset",
+      "bytes": 107544,
+      "sha256": "125fabdee2107dc5926e8e4a33dbfac79b7e79339407d251c0f0cb4a2f17e519"
+    },
+    {
+      "file": "Content/ParkComic/CrewGraphicNovelTripo/Resident3/A_Walk.uasset",
+      "bytes": 134046,
+      "sha256": "97e7f4958e34e8238d1a595996c7db72086854e8bd0ef3cd0fb35732d10e832f"
+    },
+    {
+      "file": "Content/ParkComic/CrewGraphicNovelTripo/Resident3/BS_Locomotion.uasset",
+      "bytes": 4387,
+      "sha256": "79ba7dc22c6da62c6ab6d27315b9402a4a1bd70be0958d80bc8a8b1bf576d17f"
+    },
+    {
+      "file": "Content/ParkComic/CrewGraphicNovelTripo/Resident3/M_Crew.uasset",
+      "bytes": 10176,
+      "sha256": "8384de9ff5c80f33ffd39ee2c65eea109d5e82a34f4cb0daadec7463635df98d"
+    },
+    {
+      "file": "Content/ParkComic/CrewGraphicNovelTripo/Resident3/SK_Body.uasset",
+      "bytes": 13930663,
+      "sha256": "afaa97358bedfd7af63e03b42b809d62e9eed0a543eaa4ec79ca0ac38403c688"
+    },
+    {
+      "file": "Content/ParkComic/CrewGraphicNovelTripo/Resident3/SK_Body_Skeleton.uasset",
+      "bytes": 14779,
+      "sha256": "19240d56c2ecced3e606d06b18c0c98e3eb6fbb62806e177d3983f782afd8dbc"
+    },
+    {
+      "file": "Content/ParkComic/CrewGraphicNovelTripo/Resident3/T_base_color.uasset",
+      "bytes": 3225243,
+      "sha256": "d24e6d959b1c1ea7c150554789111cd6ac34d389dc13ef5f39dd1a36ff62482c"
+    },
+    {
+      "file": "Content/ParkComic/CrewGraphicNovelTripo/Resident3/T_metallic_roughness.uasset",
+      "bytes": 1602568,
+      "sha256": "90005ac1e1a031f763daf3455ebf7afb2ebeb3d0a7f5d26563b82ab19f258a1f"
+    },
+    {
+      "file": "Content/ParkComic/CrewGraphicNovelTripo/Resident3/T_normal.uasset",
+      "bytes": 5326542,
+      "sha256": "532fde35ce8cf2a14a79d8099b2a0edf85cab7a410c1b70854577fc5b2251e86"
+    },
+    {
+      "file": "Content/ParkComic/CrewGraphicNovelTripo/Resident4/A_Idle.uasset",
+      "bytes": 551263,
+      "sha256": "fd776a8f70f3adea3cb2acc0b8fa2301937cb022edbbfb6aff6347b37eb45699"
+    },
+    {
+      "file": "Content/ParkComic/CrewGraphicNovelTripo/Resident4/A_Jump.uasset",
+      "bytes": 114252,
+      "sha256": "8eb5e9a3a443ea5b8500e1277d51b64acc3efb161f4e1f6f3c6117f55b9dcb5a"
+    },
+    {
+      "file": "Content/ParkComic/CrewGraphicNovelTripo/Resident4/A_Run.uasset",
+      "bytes": 107542,
+      "sha256": "1b88149aa1d1d014ebe0b3d520cc7d3cd9151aaf25f129b168472de648c08f9d"
+    },
+    {
+      "file": "Content/ParkComic/CrewGraphicNovelTripo/Resident4/A_Walk.uasset",
+      "bytes": 134044,
+      "sha256": "9e6aa5565a213d2c523758bb9072987115e0ca1af8e618faf1c4457cfd6a39f7"
+    },
+    {
+      "file": "Content/ParkComic/CrewGraphicNovelTripo/Resident4/BS_Locomotion.uasset",
+      "bytes": 4387,
+      "sha256": "628f1a11e94e64d082db1a16edbb18c6fb7caf185a9720d992a2653602b8a7c4"
+    },
+    {
+      "file": "Content/ParkComic/CrewGraphicNovelTripo/Resident4/M_Crew.uasset",
+      "bytes": 10176,
+      "sha256": "d140f4716842a7da14efb2dd1cafbcaa23ceadbf96f5e8fad33cf624dc6b86ae"
+    },
+    {
+      "file": "Content/ParkComic/CrewGraphicNovelTripo/Resident4/SK_Body.uasset",
+      "bytes": 13678481,
+      "sha256": "4945282b2d617531d620ebad85b91b973cb9689cc5fbd739be957ee1fcecdbbb"
+    },
+    {
+      "file": "Content/ParkComic/CrewGraphicNovelTripo/Resident4/SK_Body_Skeleton.uasset",
+      "bytes": 14779,
+      "sha256": "11554abf29fab6b2e5b1a21ba5a903267c7d32dc0e46df1ae67aa716120b48d9"
+    },
+    {
+      "file": "Content/ParkComic/CrewGraphicNovelTripo/Resident4/T_base_color.uasset",
+      "bytes": 3193209,
+      "sha256": "6f7b21ac89049d4d8aec1861f94ccddea24e532b451be25d94c9a545be55ed63"
+    },
+    {
+      "file": "Content/ParkComic/CrewGraphicNovelTripo/Resident4/T_metallic_roughness.uasset",
+      "bytes": 1784365,
+      "sha256": "5db33e0465cd71aa81a6dd41c61c628cac826aff948ca97986b25421e548682e"
+    },
+    {
+      "file": "Content/ParkComic/CrewGraphicNovelTripo/Resident4/T_normal.uasset",
+      "bytes": 5240298,
+      "sha256": "9c3ee535a2c16da32c173c03cead64fb5f4e5f061f3761249f97de7549131b83"
+    },
+    {
+      "file": "Content/ParkComic/CrewGraphicNovelTripo/Resident5/A_Idle.uasset",
+      "bytes": 551261,
+      "sha256": "00bf0c16815f9bc9079091631e7815a659af418a1d9e8c00dded96ffd17fd3ba"
+    },
+    {
+      "file": "Content/ParkComic/CrewGraphicNovelTripo/Resident5/A_Jump.uasset",
+      "bytes": 114250,
+      "sha256": "fac96ceab75c274449faf5ade7a0b8b15e038eb98778c4330e222a3576bce295"
+    },
+    {
+      "file": "Content/ParkComic/CrewGraphicNovelTripo/Resident5/A_Run.uasset",
+      "bytes": 107540,
+      "sha256": "8338bb721590ce2c6ef589958c65224028b78ba756ff91af344a816ae9181bb8"
+    },
+    {
+      "file": "Content/ParkComic/CrewGraphicNovelTripo/Resident5/A_Walk.uasset",
+      "bytes": 134042,
+      "sha256": "a88d55eb6e56c0db17aaa7b360de2f4f05f3b3cc6647152bc11b7d47c7b9de48"
+    },
+    {
+      "file": "Content/ParkComic/CrewGraphicNovelTripo/Resident5/BS_Locomotion.uasset",
+      "bytes": 4387,
+      "sha256": "ff714273aef0f5d380cf4157ab22fac33577562934129b02fcc4c974888792d3"
+    },
+    {
+      "file": "Content/ParkComic/CrewGraphicNovelTripo/Resident5/M_Crew.uasset",
+      "bytes": 10176,
+      "sha256": "191df8209a29186db218af4985f4b467cdc19ce079626557a4e6c14cd9fa1391"
+    },
+    {
+      "file": "Content/ParkComic/CrewGraphicNovelTripo/Resident5/SK_Body.uasset",
+      "bytes": 13660647,
+      "sha256": "30455e2d470965fd359baabb35fb9c639ad68a1c5fcd0ff76e72f0eb161f7106"
+    },
+    {
+      "file": "Content/ParkComic/CrewGraphicNovelTripo/Resident5/SK_Body_Skeleton.uasset",
+      "bytes": 14779,
+      "sha256": "d07da9f3e100fc1b8d5d9589957573229cc699f9237123e688c898df3fad49dd"
+    },
+    {
+      "file": "Content/ParkComic/CrewGraphicNovelTripo/Resident5/T_base_color.uasset",
+      "bytes": 2960352,
+      "sha256": "764bdbf9426d2773ca0848fdb7c848cf3644d85fa3ef89f1433ab79749287d16"
+    },
+    {
+      "file": "Content/ParkComic/CrewGraphicNovelTripo/Resident5/T_metallic_roughness.uasset",
+      "bytes": 1582906,
+      "sha256": "ddb3153ccf7854dd20e46fd817287f87414f7a49d5dcfb594751577551f44809"
+    },
+    {
+      "file": "Content/ParkComic/CrewGraphicNovelTripo/Resident5/T_normal.uasset",
+      "bytes": 4662769,
+      "sha256": "0b457bc6c51dd7b5049c7eaa53736ec17de292919e0546192422ec10d1fb1542"
+    },
+    {
+      "file": "Content/ParkComic/CrewGraphicNovelTripo/Resident6/A_Idle.uasset",
+      "bytes": 547389,
+      "sha256": "52687e248d53f8a98c922515c53f8e2cd6207707962226d18547016e5ba42801"
+    },
+    {
+      "file": "Content/ParkComic/CrewGraphicNovelTripo/Resident6/A_Jump.uasset",
+      "bytes": 115434,
+      "sha256": "abc9bfbb50eea8ef91393c740977bbdee10fe74cfb330a2ab7d70fd2e730ff12"
+    },
+    {
+      "file": "Content/ParkComic/CrewGraphicNovelTripo/Resident6/A_Run.uasset",
+      "bytes": 107540,
+      "sha256": "10c20499091f9ceae15e27033653a2063fcca8019e5a6b6ca1e20b6a8442fcce"
+    },
+    {
+      "file": "Content/ParkComic/CrewGraphicNovelTripo/Resident6/A_Walk.uasset",
+      "bytes": 134042,
+      "sha256": "e83b2a953ca9979d0c8fe87901f74144b47f01cd34ce66fe2d28af3be2a233f5"
+    },
+    {
+      "file": "Content/ParkComic/CrewGraphicNovelTripo/Resident6/BS_Locomotion.uasset",
+      "bytes": 4387,
+      "sha256": "375cbee5a7e74d5c816023e11b96369dc24b7c8e37baa525a516034d4858c239"
+    },
+    {
+      "file": "Content/ParkComic/CrewGraphicNovelTripo/Resident6/M_Crew.uasset",
+      "bytes": 10176,
+      "sha256": "1b00b437fe9979931867e1bd31c0dd422dbf6dc286b11b4bf2a4824199aab882"
+    },
+    {
+      "file": "Content/ParkComic/CrewGraphicNovelTripo/Resident6/SK_Body.uasset",
+      "bytes": 13973919,
+      "sha256": "08351cd7b46d9ed655a47b1a74a84a63e68fe5c04e4a111fa9bb16dbc1f5c2c4"
+    },
+    {
+      "file": "Content/ParkComic/CrewGraphicNovelTripo/Resident6/SK_Body_Skeleton.uasset",
+      "bytes": 14779,
+      "sha256": "4956d3b641534faaf5499c1ce631baa8575b073308f50a77b1a61324b5b7a401"
+    },
+    {
+      "file": "Content/ParkComic/CrewGraphicNovelTripo/Resident6/T_base_color.uasset",
+      "bytes": 3015826,
+      "sha256": "47646bd50e5c7dab3f6b1d98366d0e4c939cf0355b43277407945458f1987924"
+    },
+    {
+      "file": "Content/ParkComic/CrewGraphicNovelTripo/Resident6/T_metallic_roughness.uasset",
+      "bytes": 1559765,
+      "sha256": "5b856e3c4cb4f703749f0399c82eefb9d3dbdf0cb3104fd3dba1c2b7c5c585a1"
+    },
+    {
+      "file": "Content/ParkComic/CrewGraphicNovelTripo/Resident6/T_normal.uasset",
+      "bytes": 4227808,
+      "sha256": "b858cd1ba7a4d3dc5454bd252d686cc14841ff19e9835e7728a5fbbe33a876e9"
+    },
+    {
+      "file": "Content/ParkComic/CrewGraphicNovelTripo/Resident7/A_Idle.uasset",
+      "bytes": 543519,
+      "sha256": "bbfab44cda37075899bb756743beea429ecc22567d09971ec623c51505852bc6"
+    },
+    {
+      "file": "Content/ParkComic/CrewGraphicNovelTripo/Resident7/A_Jump.uasset",
+      "bytes": 114252,
+      "sha256": "4790182df88d70eaee5dcf4c982a122557ca07f63d0c5b27b7d01b530f56dbd7"
+    },
+    {
+      "file": "Content/ParkComic/CrewGraphicNovelTripo/Resident7/A_Run.uasset",
+      "bytes": 107542,
+      "sha256": "9351ac17c6b6c140b8a283c3774b259bdcc3cfc48fbb02ea36a111ccc9bea3ea"
+    },
+    {
+      "file": "Content/ParkComic/CrewGraphicNovelTripo/Resident7/A_Walk.uasset",
+      "bytes": 134044,
+      "sha256": "2d18bb3f2da9b1b15142f5c41d3fde99e55df426a90dbf0377cfb9ad7a790884"
+    },
+    {
+      "file": "Content/ParkComic/CrewGraphicNovelTripo/Resident7/BS_Locomotion.uasset",
+      "bytes": 4387,
+      "sha256": "0052393743779ce4d63f099b32c023dce0c16953405f9b9c6e80b9607fcaa1d4"
+    },
+    {
+      "file": "Content/ParkComic/CrewGraphicNovelTripo/Resident7/M_Crew.uasset",
+      "bytes": 10176,
+      "sha256": "71f7e20dfac0e2f293effe24a5831ca256e86aefe7e3379bc86fecd968070631"
+    },
+    {
+      "file": "Content/ParkComic/CrewGraphicNovelTripo/Resident7/SK_Body.uasset",
+      "bytes": 13865804,
+      "sha256": "ae42edd499d5b1eb468984e8cb80209900aa1fb5d33d9098eb3517957cdc3b1b"
+    },
+    {
+      "file": "Content/ParkComic/CrewGraphicNovelTripo/Resident7/SK_Body_Skeleton.uasset",
+      "bytes": 14779,
+      "sha256": "08f1832fadfee3d0e6adfe23e882a040f917e8a77b6cb45bf25ab9a3744e5ee8"
+    },
+    {
+      "file": "Content/ParkComic/CrewGraphicNovelTripo/Resident7/T_base_color.uasset",
+      "bytes": 2811549,
+      "sha256": "13cfed74b1af52582e623b39de11288e9d4afbfdf3ffe06ef0091be6a87c2b4f"
+    },
+    {
+      "file": "Content/ParkComic/CrewGraphicNovelTripo/Resident7/T_metallic_roughness.uasset",
+      "bytes": 1586701,
+      "sha256": "2cbbf124f327876080e31e10259f3993eaa3a6fb6c0eb36d7b9b17ab33e90b50"
+    },
+    {
+      "file": "Content/ParkComic/CrewGraphicNovelTripo/Resident7/T_normal.uasset",
+      "bytes": 4570266,
+      "sha256": "888d7e4912fdc011d1f3508a1ad4890d03e41455c174c5d3aa892b664e4ccf2a"
+    },
+    {
+      "file": "Content/ParkComic/CrewGraphicNovelTripo/Resident8/A_Idle.uasset",
+      "bytes": 559009,
+      "sha256": "79588473d17e7a3189b50c27391cab552ffe360e2b278c876cc719e6a35116c1"
+    },
+    {
+      "file": "Content/ParkComic/CrewGraphicNovelTripo/Resident8/A_Jump.uasset",
+      "bytes": 114254,
+      "sha256": "ce2ea90acecdd92927b01f6a3efd33c91e6c167e1a53ea18d61b5dd347571a6f"
+    },
+    {
+      "file": "Content/ParkComic/CrewGraphicNovelTripo/Resident8/A_Run.uasset",
+      "bytes": 107544,
+      "sha256": "ee9ea656a41a6188c51e08c2950a8938dcb9aa7e67f63621c01e70f92d97855a"
+    },
+    {
+      "file": "Content/ParkComic/CrewGraphicNovelTripo/Resident8/A_Walk.uasset",
+      "bytes": 134046,
+      "sha256": "a09db70247eb9d8c2c155d60d7490924dcb11d7ad3982e35ccc1149f4fd267ad"
+    },
+    {
+      "file": "Content/ParkComic/CrewGraphicNovelTripo/Resident8/BS_Locomotion.uasset",
+      "bytes": 4387,
+      "sha256": "e2a9b5c7b766185f5d029ba18790df62291a90c6ab19fe2b58089d9d7026b3cb"
+    },
+    {
+      "file": "Content/ParkComic/CrewGraphicNovelTripo/Resident8/M_Crew.uasset",
+      "bytes": 10176,
+      "sha256": "11f619db0c6bc1d579363435eb34ef57a867328fa6dc1043e1e6ed12df7e6dbb"
+    },
+    {
+      "file": "Content/ParkComic/CrewGraphicNovelTripo/Resident8/SK_Body.uasset",
+      "bytes": 13974581,
+      "sha256": "f357c6e8d9425d170d4b05f62049b3b9a981cc58eda200fad0cb878604d9e07a"
+    },
+    {
+      "file": "Content/ParkComic/CrewGraphicNovelTripo/Resident8/SK_Body_Skeleton.uasset",
+      "bytes": 14779,
+      "sha256": "006c3ff4744fdebb428bb539dd496e5aca7f2c0e689ba329bac7fb59f599d39f"
+    },
+    {
+      "file": "Content/ParkComic/CrewGraphicNovelTripo/Resident8/T_base_color.uasset",
+      "bytes": 2871675,
+      "sha256": "e5b3e90f101c81a989dcc169f6cc71e40aa3e9fc44c4529cbca24f838a16b052"
+    },
+    {
+      "file": "Content/ParkComic/CrewGraphicNovelTripo/Resident8/T_metallic_roughness.uasset",
+      "bytes": 1547850,
+      "sha256": "2c646186dcc0bf4c4940934b7202773bed2239385376dd86740281f9230e7d60"
+    },
+    {
+      "file": "Content/ParkComic/CrewGraphicNovelTripo/Resident8/T_normal.uasset",
+      "bytes": 5318629,
+      "sha256": "8951872b3446d18fb422a6a262cbe8843ed6098eb2af09f935a37c4c00ae6a6f"
+    }
+  ],
+  "count": 66,
+  "scope": "Six isolated candidate folders; original Resident9 and all original Content remain unchanged"
+}

@@ -74,7 +74,7 @@ html[data-layout="desktop"] #land { font-size: 13px; top: calc(var(--st) + 48px)
 
 /* ---------- captions: one line, bold capitals in karaoke chunks, the current word orange ---------- */
 #captions { position: fixed; left: 0; right: 0; top: calc(var(--cap-y) + var(--cap-dy, 0px)); transform: translateY(-50%) scale(var(--cap-k, 1)); text-align: center;
-  pointer-events: none; font-weight: 800; font-size: 26px; letter-spacing: 0.04em; text-shadow: var(--shade);
+  pointer-events: none; font-weight: 800; font-size: min(26px, 6.67vw); letter-spacing: 0.04em; text-shadow: var(--shade);
   padding: 0 calc(var(--sr) + 16px) 0 calc(var(--sl) + 16px); line-height: 1.1; white-space: nowrap; }
 #captions .now { color: var(--accent); }
 #captions .tag { font-size: 11px; font-weight: 600; color: var(--muted); margin-right: 6px; letter-spacing: 0.06em;
@@ -126,8 +126,13 @@ html[data-input="desk"] .desk { display: inline; }
 html[data-input="desk"] .touch { display: none; }
 
 /* ---------- title (16) ---------- */
-#title { cursor: pointer; justify-content: flex-end; padding-bottom: calc(var(--sb) + 7vh); gap: 10px; }
-#title h1 { font-size: clamp(30px, 9vw, 60px); font-weight: 800; letter-spacing: 0.04em; line-height: 1.02; margin: 0; }
+/* the title sits at the bottom while it fits (the name's auto top margin takes the room above); with many chips on a
+   short phone it starts below ‹ Arcade and scrolls, never off the top */
+#title { cursor: pointer; justify-content: flex-start; overflow-y: auto; touch-action: pan-y;
+  padding-bottom: calc(var(--sb) + 7vh); gap: 10px; }
+#title h1 { font-size: clamp(30px, 9vw, 60px); font-weight: 800; letter-spacing: 0.04em; line-height: 1.02;
+  margin: auto 0 0; }
+html[data-layout="portrait"] #title { padding-top: calc(var(--st) + 60px); }
 #title h1 span { color: var(--accent); }
 #title .sub { margin: 0; color: var(--muted); font-size: 13px; font-weight: 700; letter-spacing: 0.2em; }
 #title .best { margin: 0; font-size: 12px; font-weight: 700; letter-spacing: 0.1em; }
@@ -388,7 +393,9 @@ html[data-layout="desktop"] .panel { max-width: 560px; }
   .card.frame-epic { animation: none; }
   #speed.big { animation: none; }
 }
-html[data-motion="reduced"] #title .go, html[data-motion="reduced"] #hint { animation: none; }
+/* html[data-motion] is the OS setting or REDUCED MOTION in Settings (main.js keeps it current) */
+html[data-motion="reduced"] #title .go, html[data-motion="reduced"] #hint, html[data-motion="reduced"] .card.frame-epic,
+html[data-motion="reduced"] #speed.big { animation: none; }
 html[data-layout="landscape"] .offer.n4 .ctitle { white-space: normal; font-size: 13px; line-height: 1.15; }
 html[data-layout="landscape"] .offer.n4 .cfx { font-size: 12px; }
 html[data-layout="landscape"] .s-break.docked .shipbox { height: 62px; }
@@ -396,3 +403,17 @@ html[data-layout="landscape"] .s-break.docked .shipbox { height: 62px; }
 .btn:active, .chip:active, .card:active, .lane:active, .dchip:active, .toggle:active, .ship:active, .tab:active,
 #pause:active, #title .go:active { transform: scale(0.97); border-color: var(--accent); }
 .card:disabled, .card[disabled] { cursor: default; }
+/* the break on a phone: a card is never shorter than its words, and the offer scrolls inside its own row, so a card
+   can never sit over SKIP (an iPhone SE in Safari is 375 × 553); short screens get a smaller ship and cards */
+html[data-layout="portrait"] .s-break .offer { overflow-y: auto; touch-action: pan-y; overscroll-behavior: contain; }
+html[data-layout="portrait"] .s-break .offer.more { -webkit-mask-image: linear-gradient(#000 calc(100% - 36px), transparent);
+  mask-image: linear-gradient(#000 calc(100% - 36px), transparent); }
+html[data-layout="portrait"] .s-break .cardw, html[data-layout="portrait"] .s-break .offer.n4 .cardw { min-height: auto;
+  flex-shrink: 0; }
+@media (max-height: 700px) {
+  html[data-layout="portrait"] .s-break .shipbox { height: 64px; }
+  html[data-layout="portrait"] .s-break .cards { gap: 8px; }
+  html[data-layout="portrait"] .s-break .card .cfx { font-size: 12.5px; }
+  html[data-layout="portrait"] .s-break .card .ctitle { font-size: 15px; }
+  html[data-layout="portrait"] .s-break .cbody { gap: 2px; padding: 6px 0; }
+}

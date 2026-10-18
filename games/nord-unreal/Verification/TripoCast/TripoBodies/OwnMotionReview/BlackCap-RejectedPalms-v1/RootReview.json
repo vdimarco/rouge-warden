@@ -1,0 +1,16 @@
+{
+  "accepted": false,
+  "reason": "Actual idle palms face forward/up; numerical skeleton/timing proof did not establish natural resting palms. Shared own-rig acting must correct anatomical forearm pronation before accepting this derivative.",
+  "unchanged_provider_assets": true,
+  "native_or_production_changes": false,
+  "reviewed_views": [
+    "idle-front",
+    "idle-side",
+    "idle-threequarter",
+    "walk-threequarter",
+    "run-threequarter",
+    "jump-threequarter",
+    "hand-l",
+    "hand-r"
+  ]
+}

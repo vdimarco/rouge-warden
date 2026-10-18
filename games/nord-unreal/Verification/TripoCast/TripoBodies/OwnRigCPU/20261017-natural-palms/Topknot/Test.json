@@ -1,0 +1,15 @@
+{
+  "passed": true,
+  "motion_receipt": {
+    "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoH31Motion/Topknot-final-v7/report/Motion.json",
+    "sha256": "88a8178eaf59bf03866b5ee40d6875bbba350e5890b439b96affcba160b7e4db"
+  },
+  "postcheck_recipe_sha256": "2278a22542dcfe909d2025f2021e482f50631ef619bbcbf2d62c8d3609484fef",
+  "helper_sha256": "466e97d34415cdcc11cf584fe99a336f4ba546b9e9c277e4978bef5f62223579",
+  "half_frame_samples": 416,
+  "negative_controls": [
+    "Actual own source hash tamper rejected before writes",
+    "Existing actual clip directory rejected before writes"
+  ],
+  "no_model_data_written": true
+}

@@ -1,0 +1,30 @@
+{
+  "passed": true,
+  "threads": 4,
+  "rendered": false,
+  "recipe_sha256": "38c639f978137153b55c7c970a61357ef0357eb7f44f4087f900a8acf6032a34",
+  "motion_report_sha256": "8d0a4bec01e22663e39d7aab1b6087f6e5548c917518567cac2543c2a61c85e4",
+  "source_capture": {
+    "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoCastMotion-ibmlazfo/SourceJumpSamples.json",
+    "sha256": "3446f0c2da88d9a4f740adafec02e34a2b43425cd9e5c0e004eb791d4eacfd5b",
+    "half_frame_samples": 73
+  },
+  "fresh_source_half_pose_samples": 73,
+  "exact_source_bind_object_hierarchy": true,
+  "maximum_replayed_head_error_world_m": 3.625608998714816e-07,
+  "maximum_replayed_rotation_error_rad": 5.73452821335334e-07,
+  "maximum_source_local_scale_error": 3.5762786865234375e-07,
+  "actual20ppm_scale_insertion_rejected": 1.990795135498047e-05,
+  "negative_controls": [
+    {
+      "negative": "wrong source SHA",
+      "exit_code": 1
+    },
+    {
+      "negative": "overwrite existing capture",
+      "exit_code": 1
+    }
+  ],
+  "inputs_unchanged": true,
+  "art_native_acceptance": false
+}

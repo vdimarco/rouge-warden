@@ -516,7 +516,7 @@ Ahead of the Light (`/ahead-of-the-light/`) is a survival race home at the speed
 - **Rivals.** Three of HOUND, PIKE, REMORA and MOTH race you every run, with a few drifters. Tuck into a wake to draft, pull out to slingshot past, and slam a rival into a galaxy to take it down. The light eats the slow ones. Each act has a boss: the WHALE at Virgo, MAKO in Orion and MANTA at Earth.
 - **Gates and cards.** At each landmark, THREAD the gap between two giants for speed, DOCK for repairs, or fly past. Then pick 1 card of 3 (4 if you came first) and the next lane on a star chart. Every card changes a rule. Pairs of cards make fusions, and three of a family make its legendary. A dock sells repairs and fuel for seconds of lead.
 - **Controls.** On a phone, drag anywhere to steer, flick up to burn, and lift and press as a well passes to grab it. In landscape either thumb works, and the other thumb can grab while one steers. On a computer, ← → or A D steer, ↑, W or Shift burns, and Space holds a grab. The mouse steers with its left button held and burns with the right one. A gamepad uses the left stick, A, and RB or RT. Esc or P pauses and M mutes. `?toy=30` opens the 30-second toy that teaches the verbs.
-- **Your best** run stays in this browser, with the ship's log of pages, the unlocks and the ships you earn. The machine shows it: HOME IN 14.2 YR, FIRST HOME · 14.2 YR, or the furthest leg (BEST: VIRGO).
+- **Your best** run stays in this browser, with the ship's log of pages, the unlocks and the ships you earn. The machine shows it: HOME IN 14.2 YR, FIRST HOME · 14.2 YR, or the furthest leg (BEST: VIRGO). A full log of 84 pages puts a gold frame round the machine's screen.
 
 The race is pure code in `core/` that node tests and bots play headless. The sky, the galaxies and the light use three.js r185 points, and the ring, the ships and every label are drawn on a 2D layer above them in the video's look.
 
@@ -624,6 +624,7 @@ The terminal draws the pinball table, the brick wall and the Lenia dish with hal
 | `public/ahead-of-the-light/render/`, `ui/` | Ahead of the Light's drawing (the three.js sky and hazards, the 2D ring layer, the landmarks, the vista and the chart) and its input, HUD, screens, sound, haptics and storage |
 | `public/ahead-of-the-light/dev/strip.html` | A tool that draws any leg, lane and seed as a strip, with a bot's line over it |
 | `public/arcade/key/ahead-of-the-light.webp` | The Ahead of the Light machine's screen, cut from a portrait frame of the game |
+| `public/arcade/key/light-years-home.webp` | The Light Years Home machine's screen, cut from a frame of the drop-out into Coma City |
 | `qa/ahead-of-the-light/` | Tests for Ahead of the Light (see below) |
 | `public/lab/index.html` | The lab: the four toys, and your play time in each |
 | `public/lab/kit/` | What the toys share: sound made in code, the frame loop, the start and end cards, play time, and a seeded random with a byte codec for links |

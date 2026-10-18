@@ -1,0 +1,45 @@
+{
+  "passed": true,
+  "scope": "Diagnostic gray shader on unchanged source geometry; not original material or art acceptance",
+  "device": "CPU",
+  "threads": 4,
+  "samples": 16,
+  "denoising": false,
+  "dimensions": [
+    512,
+    640
+  ],
+  "geometry_sha256": "919ac66035be9a81f0af256874635c7692688e46ac10c3dfc8cc3097fe321712",
+  "views": [
+    {
+      "file": "clay-face-front.png",
+      "sha256": "c81010e1ff317840b298d5eb62f47f4bdb29506d85d9dd546bb99a4039b5924f",
+      "camera": [
+        -0.003926895558834076,
+        -5.423142433166504,
+        1.6869300603866577
+      ],
+      "target": [
+        -0.0039261518977582455,
+        0.036857541650533676,
+        1.6869300603866577
+      ],
+      "scale": 0.5603771656751633
+    },
+    {
+      "file": "clay-face-threequarter.png",
+      "sha256": "018a0e92d3df6d313b8819106a7a3aa076ca7a896ed7d219d44d1cb2769196f8",
+      "camera": [
+        -3.8545632362365723,
+        -3.8340842723846436,
+        1.6869300603866577
+      ],
+      "target": [
+        -0.0039261518977582455,
+        0.036857541650533676,
+        1.6869300603866577
+      ],
+      "scale": 0.5524454712867737
+    }
+  ]
+}

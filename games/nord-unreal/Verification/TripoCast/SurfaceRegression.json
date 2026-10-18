@@ -1,0 +1,976 @@
+{
+  "passed": true,
+  "scope": "CPU regression of new generalized helper using immutable Curly pilot inputs; other cast outputs not yet accepted",
+  "finished_utc": "2026-10-17T22:26:46.950261+00:00",
+  "command": [
+    "/home/von/.local/bin/blender",
+    "-b",
+    "-t",
+    "4",
+    "--python-exit-code",
+    "1",
+    "--python",
+    "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Scripts/prepare_tripo_cast_surface.py",
+    "--",
+    "--manifest",
+    "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoCastSurfaceRegression/Curly-20261017-v7/manifest.json",
+    "--output",
+    "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoCastSurfaceRegression/Curly-20261017-v7/body",
+    "--report",
+    "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoCastSurfaceRegression/Curly-20261017-v7/report"
+  ],
+  "process_exit_code": 0,
+  "recipes": {
+    "prepare_tripo_cast_surface.py": {
+      "path": "Scripts/prepare_tripo_cast_surface.py",
+      "sha256": "6260beffc640f7bcd7eaae3a0b1bfc24b97d12a44379dbc86ac8d169c05a7df1"
+    },
+    "test_prepare_tripo_cast_surface.py": {
+      "path": "Scripts/test_prepare_tripo_cast_surface.py",
+      "sha256": "4f82e283bb6d6d8752113d969bb1454bb47de22efa610b49950d8893cc5e5b71"
+    },
+    "test_tripo_surface_correspondence.py": {
+      "path": "Scripts/test_tripo_surface_correspondence.py",
+      "sha256": "0eaa3fc2ed97f48377ad7cb84ade2e487d053c2e7f277ec5d17e8b842bb79e80"
+    },
+    "test_tripo_cast_embedded_normal.py": {
+      "path": "Scripts/test_tripo_cast_embedded_normal.py",
+      "sha256": "605dd3d850285824f3b9e751c8f8b4c10afcf28c75ac7ad7d97f9128d22b06cc"
+    }
+  },
+  "inputs": {
+    "source_glb": {
+      "path": "Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/body.glb",
+      "sha256": "25041be9666422c30ba39449cb283a83928bb3de596fe063389707c070335613"
+    },
+    "provider_fbx": {
+      "path": "Data/GraphicNovel/Pilot/CurlyMetalhead/tripo-v3-rig-20261017/rig.fbx",
+      "sha256": "baaeb99a7e86fadadd4f64f6de6ea7e648777b33bcadd2ecb72347c4afe3dcc2"
+    },
+    "normal_png": {
+      "path": "Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/normal.png",
+      "sha256": "7845864ce13d1e3ce10e8149ef2ef98a048b8be249a60749dfc70c4897e9e7ab"
+    }
+  },
+  "ignored_full_receipts": {
+    "Test.json": {
+      "path": "Saved/Tests/TripoCastSurfaceRegression/Curly-20261017-v7/Test.json",
+      "sha256": "60f76893ad16d85028ed19b3dcb46828bf2e95d062d6ace7139596cdce82c090"
+    },
+    "report/Surface.json": {
+      "path": "Saved/Tests/TripoCastSurfaceRegression/Curly-20261017-v7/report/Surface.json",
+      "sha256": "212f37f8207d90eddf7d3c23ba464b117096899613e41292bc63d6cda90bfe43"
+    },
+    "blender.log": {
+      "path": "Saved/Tests/TripoCastSurfaceRegression/Curly-20261017-v7/blender.log",
+      "sha256": "301043e6db5401d1e7afa616035e60283b58384656963c69ca1ef4b17c58b953"
+    },
+    "correspondence.log": {
+      "path": "Saved/Tests/TripoCastSurfaceRegression/Curly-20261017-v7/correspondence.log",
+      "sha256": "d992e1083a8e50194c0562788772af7ac751f0e156766bdc2de47b3cccb8f542"
+    }
+  },
+  "manifest_schema": {
+    "source_glb": {
+      "path": "Data/.../body.glb",
+      "sha256": "<exact lowercase SHA256>"
+    },
+    "provider_fbx": {
+      "path": "Data/.../rig.fbx",
+      "sha256": "<exact lowercase SHA256>"
+    },
+    "normal_png": {
+      "path": "Data/.../normal.png",
+      "sha256": "<exact lowercase SHA256>"
+    }
+  },
+  "correspondence": {
+    "triangles": 103544,
+    "corners": 310632,
+    "provider_to_source_uniform_scale": 1.8200012506273517,
+    "source_residual_max_m": 1.1788337813903226e-06,
+    "source_residual_mean_m": 2.7466691697085015e-07,
+    "corners_over_2micron": 0,
+    "source_residual_p99_m": 7.992267464665083e-07,
+    "source_residual_abs_axis_m": {
+      "x": {
+        "max": 1.0240991079601969e-06,
+        "p99": 6.704364068910174e-07,
+        "mean": 1.8958932473309e-07
+      },
+      "y": {
+        "max": 6.136045514193444e-07,
+        "p99": 4.406220902794522e-07,
+        "mean": 1.252848129340149e-07
+      },
+      "z": {
+        "max": 5.192265739584201e-07,
+        "p99": 4.273345369787407e-07,
+        "mean": 1.1802509509930781e-07
+      }
+    },
+    "residual_limit_m": 1e-05,
+    "exact_source_positions_claimed": false,
+    "translation_or_rotation_fit": false,
+    "uv_quantization": 1e-06,
+    "scale_fit_unambiguous_triangles": 103540,
+    "uv_duplicate_triangle_groups": 0,
+    "uv_duplicate_triangles": 0,
+    "uv_corner_tie_triangles": 4,
+    "geometry_resolved_groups": [
+      {
+        "target_sorted_triangle_range": [
+          30640,
+          30641
+        ],
+        "triangles": 1,
+        "unique_geometry_bijection": true,
+        "mapping": [
+          {
+            "target_triangle": 30640,
+            "source_triangle": 30640,
+            "source_corner_order": [
+              0,
+              1,
+              2
+            ],
+            "candidate_count": 1,
+            "geometry_residual_max_m": 1.4055352599274374e-07
+          }
+        ]
+      },
+      {
+        "target_sorted_triangle_range": [
+          41506,
+          41507
+        ],
+        "triangles": 1,
+        "unique_geometry_bijection": true,
+        "mapping": [
+          {
+            "target_triangle": 41506,
+            "source_triangle": 41506,
+            "source_corner_order": [
+              0,
+              1,
+              2
+            ],
+            "candidate_count": 1,
+            "geometry_residual_max_m": 1.4055352599274374e-07
+          }
+        ]
+      },
+      {
+        "target_sorted_triangle_range": [
+          59836,
+          59837
+        ],
+        "triangles": 1,
+        "unique_geometry_bijection": true,
+        "mapping": [
+          {
+            "target_triangle": 59836,
+            "source_triangle": 59836,
+            "source_corner_order": [
+              0,
+              1,
+              2
+            ],
+            "candidate_count": 1,
+            "geometry_residual_max_m": 1.3437661288205782e-07
+          }
+        ]
+      },
+      {
+        "target_sorted_triangle_range": [
+          70575,
+          70576
+        ],
+        "triangles": 1,
+        "unique_geometry_bijection": true,
+        "mapping": [
+          {
+            "target_triangle": 70575,
+            "source_triangle": 70575,
+            "source_corner_order": [
+              0,
+              1,
+              2
+            ],
+            "candidate_count": 1,
+            "geometry_residual_max_m": 1.3437661288205782e-07
+          }
+        ]
+      }
+    ],
+    "geometry_mapping_unique": true
+  },
+  "geometry": {
+    "triangles": 103544,
+    "height_m": 0.9999995266235263,
+    "residual_max_m": 1.3270637559427345e-07,
+    "provider_size_preserved": true,
+    "uv_quantization": 1e-06
+  },
+  "rig": {
+    "bones": 61,
+    "armature_object": "Armature",
+    "weighted_finger_bones": [
+      "index_01_l",
+      "index_01_r",
+      "index_02_l",
+      "index_02_r",
+      "index_03_l",
+      "index_03_r",
+      "middle_01_l",
+      "middle_01_r",
+      "middle_02_l",
+      "middle_02_r",
+      "middle_03_l",
+      "middle_03_r",
+      "pinky_01_l",
+      "pinky_01_r",
+      "pinky_02_l",
+      "pinky_02_r",
+      "pinky_03_l",
+      "pinky_03_r",
+      "ring_01_l",
+      "ring_01_r",
+      "ring_02_l",
+      "ring_02_r",
+      "ring_03_l",
+      "ring_03_r",
+      "thumb_01_l",
+      "thumb_01_r",
+      "thumb_02_l",
+      "thumb_02_r",
+      "thumb_03_l",
+      "thumb_03_r"
+    ],
+    "bind_max_abs_error": 3.993511199951172e-06,
+    "corner_weight_max_abs_error": 0.0,
+    "hierarchy_preserved": true
+  },
+  "fresh_finger_weight_sum_min": 31.853302001953125,
+  "original_corner_normals": {
+    "provider_before": {
+      "mean_deg": 21.033028008210977,
+      "p99_deg": 99.33967352962017,
+      "max_deg": 177.72585333276757,
+      "corners_over_0_1deg": 226342
+    },
+    "after_blender_store": {
+      "mean_deg": 0.0015758404358213905,
+      "p99_deg": 0.013434918369693714,
+      "max_deg": 0.6608881288789538,
+      "corners_over_0_1deg": 12
+    },
+    "explicit_limits": {
+      "mean_deg": 0.02,
+      "p99_deg": 0.1,
+      "max_deg": 1.0
+    },
+    "exact_preservation_claimed": false,
+    "fresh_fbx_reimport": {
+      "mean_deg": 0.002222331824882702,
+      "p99_deg": 0.016882332833643567,
+      "max_deg": 0.6608947940084335,
+      "corners_over_0_1deg": 12
+    }
+  },
+  "textures": {
+    "base_color": {
+      "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoCastSurfaceRegression/Curly-20261017-v7/body/base_color.jpg",
+      "bytes": 4213353,
+      "sha256": "adf54ff0228275f6557fa5afbacb9ab0e5651fe1ddec0c638afa2cd197dba5d7",
+      "mime_type": "image/jpeg",
+      "source_texture_index": 1,
+      "source_image_index": 1,
+      "colorspace": "sRGB",
+      "source": "Unmodified original GLB embedded payload",
+      "channels": "base_color"
+    },
+    "metallic_roughness": {
+      "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoCastSurfaceRegression/Curly-20261017-v7/body/metallic_roughness.jpg",
+      "bytes": 2249463,
+      "sha256": "b10a5ce423ce8922dce64f90edec8a750e0f3aad64588daa2cd4fbb710d86bcf",
+      "mime_type": "image/jpeg",
+      "source_texture_index": 2,
+      "source_image_index": 2,
+      "colorspace": "Non-Color",
+      "source": "Unmodified original GLB embedded payload",
+      "channels": "G=Roughness, B=Metallic"
+    },
+    "normal": {
+      "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoCastSurfaceRegression/Curly-20261017-v7/body/normal.png",
+      "bytes": 6648844,
+      "sha256": "7845864ce13d1e3ce10e8149ef2ef98a048b8be249a60749dfc70c4897e9e7ab",
+      "mime_type": "image/png",
+      "source_texture_index": 0,
+      "source_image_index": 0,
+      "colorspace": "Non-Color",
+      "source": "Unmodified original GLB embedded payload",
+      "channels": "normal"
+    }
+  },
+  "material": {
+    "source": "Exact original GLB graph; provider material discarded",
+    "base_color_and_normal_distinct": true,
+    "packed_MR_native_wiring_required": true,
+    "MR_channels": "G=Roughness, B=Metallic",
+    "normal_convention": "Original tangent payload unchanged; native convention must be explicit"
+  },
+  "rescale_applied": false,
+  "negative_controls": [
+    "Tampered provider SHA rejected before writes",
+    "Existing output directory preserved",
+    "Existing report directory preserved",
+    "Ambiguous coincident faces with differing normals rejected",
+    "Changed geometry rejected",
+    "9.999micron residual accepted; 10.001micron and 20micron source geometry rejected"
+  ],
+  "protected_pilot_file_count": 47,
+  "protected_pilot_hash_inventory": {
+    "path": "Saved/Tests/TripoCastSurfaceRegression/Curly-20261017-v7/Test.json",
+    "sha256": "60f76893ad16d85028ed19b3dcb46828bf2e95d062d6ace7139596cdce82c090"
+  },
+  "protected_pilot_files_unchanged": true,
+  "retained_inputs_unchanged": true,
+  "independent_review": {
+    "findings_fixed": [
+      "Use case-insensitive GLB loader suffix matching accepted manifest paths",
+      "Name computed provider-to-source scale in its actual direction"
+    ],
+    "reviewed_scope": "CPU-only script logic; no review agent executions",
+    "scope_note": "Earlier independent reviews and their fixes remain recorded. The embedded-normal policy change has the exact actual Memphis payload test; parent review is separate."
+  },
+  "limitations": [
+    "No source/provider geometry, rig, weight, animation or transform redesign.",
+    "Source/provider geometry uses the separately calibrated 10micron bound; exact source positions are not claimed. Provider-before/after export retains the strict 2micron bound.",
+    "Native packed MR wiring, normal/tangent convention and rendered shading still require acceptance.",
+    "Other source/provider pairs require their own successful CPU receipts; no native/rendered acceptance follows."
+  ],
+  "correspondence_control": {
+    "command": [
+      "/home/von/.local/bin/blender",
+      "-b",
+      "-t",
+      "4",
+      "--python-exit-code",
+      "1",
+      "--python",
+      "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Scripts/test_tripo_surface_correspondence.py"
+    ],
+    "exit_code": 0,
+    "recipe_sha256": "0eaa3fc2ed97f48377ad7cb84ade2e487d053c2e7f277ec5d17e8b842bb79e80",
+    "log_sha256": "d992e1083a8e50194c0562788772af7ac751f0e156766bdc2de47b3cccb8f542"
+  },
+  "actual_green": {
+    "passed": true,
+    "inputs": {
+      "source_glb": {
+        "path": "Data/GraphicNovel/Crew/GreenCap51/generated-v1-high-detail/body.glb",
+        "sha256": "729b56b0ed6d74be020f73ea87513d3963f6fb77a630d9f978ce66f0570599f6"
+      },
+      "provider_fbx": {
+        "path": "Data/GraphicNovel/Crew/GreenCap51/tripo-v3-rig-20261017/rig.fbx",
+        "sha256": "5ccc52f3d10544adc7788a06fd64aed4d9191a6d1171b7fed8b9b606cfc83958"
+      },
+      "normal_png": {
+        "path": "Data/GraphicNovel/Crew/GreenCap51/generated-v1-high-detail/normal.png",
+        "sha256": "366b7e5c510d5d3e61c2e1bbd597c5e3f4851e5be13058f44b76d5704374c016"
+      }
+    },
+    "correspondence": {
+      "triangles": 102957,
+      "corners": 308871,
+      "provider_to_source_uniform_scale": 1.8200005429819974,
+      "source_residual_max_m": 5.8904810125016865e-06,
+      "source_residual_mean_m": 7.083967835567709e-07,
+      "corners_over_2micron": 15642,
+      "source_residual_p99_m": 3.97539454300183e-06,
+      "source_residual_abs_axis_m": {
+        "x": {
+          "max": 5.359341561428366e-06,
+          "p99": 3.6105849190032346e-06,
+          "mean": 6.050835726449528e-07
+        },
+        "y": {
+          "max": 2.3367617815461816e-06,
+          "p99": 1.5860832772933277e-06,
+          "mean": 2.348930723849917e-07
+        },
+        "z": {
+          "max": 8.204673532206941e-07,
+          "p99": 6.794008379919202e-07,
+          "mean": 1.9041674332700874e-07
+        }
+      },
+      "residual_limit_m": 1e-05,
+      "exact_source_positions_claimed": false,
+      "translation_or_rotation_fit": false,
+      "uv_quantization": 1e-06,
+      "scale_fit_unambiguous_triangles": 102951,
+      "uv_duplicate_triangle_groups": 1,
+      "uv_duplicate_triangles": 2,
+      "uv_corner_tie_triangles": 6,
+      "geometry_resolved_groups": [
+        {
+          "target_sorted_triangle_range": [
+            0,
+            2
+          ],
+          "triangles": 2,
+          "unique_geometry_bijection": true,
+          "mapping": [
+            {
+              "target_triangle": 0,
+              "source_triangle": 0,
+              "source_corner_order": [
+                0,
+                1,
+                2
+              ],
+              "candidate_count": 1,
+              "geometry_residual_max_m": 4.440871740686297e-07
+            },
+            {
+              "target_triangle": 1,
+              "source_triangle": 1,
+              "source_corner_order": [
+                0,
+                1,
+                2
+              ],
+              "candidate_count": 1,
+              "geometry_residual_max_m": 4.440871740686297e-07
+            }
+          ]
+        },
+        {
+          "target_sorted_triangle_range": [
+            5280,
+            5281
+          ],
+          "triangles": 1,
+          "unique_geometry_bijection": true,
+          "mapping": [
+            {
+              "target_triangle": 5280,
+              "source_triangle": 5280,
+              "source_corner_order": [
+                0,
+                1,
+                2
+              ],
+              "candidate_count": 1,
+              "geometry_residual_max_m": 4.604848652808033e-07
+            }
+          ]
+        },
+        {
+          "target_sorted_triangle_range": [
+            15640,
+            15641
+          ],
+          "triangles": 1,
+          "unique_geometry_bijection": true,
+          "mapping": [
+            {
+              "target_triangle": 15640,
+              "source_triangle": 15640,
+              "source_corner_order": [
+                0,
+                1,
+                2
+              ],
+              "candidate_count": 1,
+              "geometry_residual_max_m": 6.718437834144462e-07
+            }
+          ]
+        },
+        {
+          "target_sorted_triangle_range": [
+            45614,
+            45615
+          ],
+          "triangles": 1,
+          "unique_geometry_bijection": true,
+          "mapping": [
+            {
+              "target_triangle": 45614,
+              "source_triangle": 45614,
+              "source_corner_order": [
+                0,
+                1,
+                2
+              ],
+              "candidate_count": 1,
+              "geometry_residual_max_m": 4.604848652808033e-07
+            }
+          ]
+        },
+        {
+          "target_sorted_triangle_range": [
+            50131,
+            50132
+          ],
+          "triangles": 1,
+          "unique_geometry_bijection": true,
+          "mapping": [
+            {
+              "target_triangle": 50131,
+              "source_triangle": 50131,
+              "source_corner_order": [
+                0,
+                1,
+                2
+              ],
+              "candidate_count": 1,
+              "geometry_residual_max_m": 6.718437834144462e-07
+            }
+          ]
+        }
+      ],
+      "geometry_mapping_unique": true
+    },
+    "fresh_provider_geometry": {
+      "triangles": 102957,
+      "height_m": 0.9999997556016388,
+      "residual_max_m": 1.2400822467618632e-07,
+      "provider_size_preserved": true,
+      "uv_quantization": 1e-06
+    },
+    "fresh_correspondence": {
+      "triangles": 102957,
+      "corners": 308871,
+      "provider_to_source_uniform_scale": 1.0,
+      "source_residual_max_m": 1.2400822467618632e-07,
+      "source_residual_mean_m": 8.686866012952582e-08,
+      "corners_over_2micron": 0,
+      "source_residual_p99_m": 1.2288191514391464e-07,
+      "source_residual_abs_axis_m": {
+        "x": {
+          "max": 1.7961922421649845e-08,
+          "p99": 1.649894632027582e-08,
+          "mean": 4.497310685544295e-09
+        },
+        "y": {
+          "max": 1.2015050535919836e-07,
+          "p99": 1.1889552087307464e-07,
+          "mean": 7.880830466425637e-08
+        },
+        "z": {
+          "max": 4.251517649045411e-08,
+          "p99": 3.934485814927058e-08,
+          "mean": 3.022147802384022e-08
+        }
+      },
+      "residual_limit_m": 2e-06,
+      "exact_source_positions_claimed": false,
+      "translation_or_rotation_fit": false,
+      "uv_quantization": 1e-06,
+      "scale_fit_unambiguous_triangles": 102951,
+      "uv_duplicate_triangle_groups": 1,
+      "uv_duplicate_triangles": 2,
+      "uv_corner_tie_triangles": 6,
+      "geometry_resolved_groups": [
+        {
+          "target_sorted_triangle_range": [
+            0,
+            2
+          ],
+          "triangles": 2,
+          "unique_geometry_bijection": true,
+          "mapping": [
+            {
+              "target_triangle": 0,
+              "source_triangle": 0,
+              "source_corner_order": [
+                0,
+                1,
+                2
+              ],
+              "candidate_count": 1,
+              "geometry_residual_max_m": 1.0250073332478611e-07
+            },
+            {
+              "target_triangle": 1,
+              "source_triangle": 1,
+              "source_corner_order": [
+                0,
+                1,
+                2
+              ],
+              "candidate_count": 1,
+              "geometry_residual_max_m": 1.0252645118611083e-07
+            }
+          ]
+        },
+        {
+          "target_sorted_triangle_range": [
+            5280,
+            5281
+          ],
+          "triangles": 1,
+          "unique_geometry_bijection": true,
+          "mapping": [
+            {
+              "target_triangle": 5280,
+              "source_triangle": 5280,
+              "source_corner_order": [
+                0,
+                1,
+                2
+              ],
+              "candidate_count": 1,
+              "geometry_residual_max_m": 1.2073144264479058e-07
+            }
+          ]
+        },
+        {
+          "target_sorted_triangle_range": [
+            15640,
+            15641
+          ],
+          "triangles": 1,
+          "unique_geometry_bijection": true,
+          "mapping": [
+            {
+              "target_triangle": 15640,
+              "source_triangle": 15640,
+              "source_corner_order": [
+                0,
+                1,
+                2
+              ],
+              "candidate_count": 1,
+              "geometry_residual_max_m": 2.870585290448966e-08
+            }
+          ]
+        },
+        {
+          "target_sorted_triangle_range": [
+            45614,
+            45615
+          ],
+          "triangles": 1,
+          "unique_geometry_bijection": true,
+          "mapping": [
+            {
+              "target_triangle": 45614,
+              "source_triangle": 45614,
+              "source_corner_order": [
+                0,
+                1,
+                2
+              ],
+              "candidate_count": 1,
+              "geometry_residual_max_m": 1.208097730660606e-07
+            }
+          ]
+        },
+        {
+          "target_sorted_triangle_range": [
+            50131,
+            50132
+          ],
+          "triangles": 1,
+          "unique_geometry_bijection": true,
+          "mapping": [
+            {
+              "target_triangle": 50131,
+              "source_triangle": 50131,
+              "source_corner_order": [
+                0,
+                1,
+                2
+              ],
+              "candidate_count": 1,
+              "geometry_residual_max_m": 2.8698857442860293e-08
+            }
+          ]
+        }
+      ],
+      "geometry_mapping_unique": true
+    },
+    "fresh_normals": {
+      "mean_deg": 0.002467343078010751,
+      "p99_deg": 0.019038454764717733,
+      "max_deg": 0.6556280546267269,
+      "corners_over_0_1deg": 141
+    },
+    "retained_inputs_unchanged": true,
+    "output": {
+      "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoCastSurface/GreenCap51-v4/body/body.fbx",
+      "sha256": "cc39be4fd3002d5319ef1b075699d83c47742ad4afc21556fc09c4108e4c40e4",
+      "bytes": 10114684
+    },
+    "full_receipt": {
+      "path": "Saved/Tests/TripoCastSurface/GreenCap51-v4/report/Surface.json",
+      "sha256": "1057b31dfb6a6230a113b1006bb4e0aad15e2cc427594e8369c96a828f852b75"
+    },
+    "normal_gate_unchanged": {
+      "mean_deg": 0.02,
+      "p99_deg": 0.1,
+      "max_deg": 1.0
+    },
+    "normal_payload_selection": {
+      "source": "Pinned GLB material.normalTexture index",
+      "texture_index": 0,
+      "image_index": 0,
+      "buffer_view": 7,
+      "mime_type": "image/png",
+      "bytes": 5857476,
+      "sha256": "366b7e5c510d5d3e61c2e1bbd597c5e3f4851e5be13058f44b76d5704374c016",
+      "external_provider_normal_png": {
+        "path": "Data/GraphicNovel/Crew/GreenCap51/generated-v1-high-detail/normal.png",
+        "sha256": "366b7e5c510d5d3e61c2e1bbd597c5e3f4851e5be13058f44b76d5704374c016"
+      },
+      "external_png_bytes_equal_embedded_payload": true,
+      "conversion_or_rebake_applied": false
+    },
+    "textures": {
+      "base_color": {
+        "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoCastSurface/GreenCap51-v4/body/base_color.jpg",
+        "bytes": 3968490,
+        "sha256": "379cf5613b880b43cbff9fdccd385b7b35fdea0b4c44720565b64423164d7b66",
+        "mime_type": "image/jpeg",
+        "source_texture_index": 1,
+        "source_image_index": 1,
+        "colorspace": "sRGB",
+        "source": "Unmodified original GLB embedded payload",
+        "channels": "base_color"
+      },
+      "metallic_roughness": {
+        "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoCastSurface/GreenCap51-v4/body/metallic_roughness.jpg",
+        "bytes": 1829039,
+        "sha256": "a6fd3e3127ff4cd0f8d3e6c523c673d4d645e9fcea90d6b36f214f1e1e0a9cfd",
+        "mime_type": "image/jpeg",
+        "source_texture_index": 2,
+        "source_image_index": 2,
+        "colorspace": "Non-Color",
+        "source": "Unmodified original GLB embedded payload",
+        "channels": "G=Roughness, B=Metallic"
+      },
+      "normal": {
+        "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoCastSurface/GreenCap51-v4/body/normal.png",
+        "bytes": 5857476,
+        "sha256": "366b7e5c510d5d3e61c2e1bbd597c5e3f4851e5be13058f44b76d5704374c016",
+        "mime_type": "image/png",
+        "source_texture_index": 0,
+        "source_image_index": 0,
+        "colorspace": "Non-Color",
+        "source": "Unmodified original GLB embedded payload",
+        "channels": "normal"
+      }
+    },
+    "source_provider_bound_m": 1e-05,
+    "strict_provider_before_after_bound_m": 2e-06,
+    "exact_source_positions_claimed": false,
+    "prior_rejected_receipts": {
+      "GreenCap51-v1": {
+        "path": "Saved/Tests/TripoCastSurface/GreenCap51-v1/Surface.json",
+        "sha256": "19f484ade81318fe23557f1839c566856ad4daed45377eab2ed4f53a6f04d5d6"
+      },
+      "GreenCap51-v2": {
+        "path": "Saved/Tests/TripoCastSurface/GreenCap51-v2/report/Surface.json",
+        "sha256": "f0d254cfb1d45d052d8328a66b8fb2ca04e831d0098b4e0641ebf1c0210e0416"
+      }
+    }
+  },
+  "normal_payload_selection": {
+    "source": "Pinned GLB material.normalTexture index",
+    "texture_index": 0,
+    "image_index": 0,
+    "buffer_view": 7,
+    "mime_type": "image/png",
+    "bytes": 6648844,
+    "sha256": "7845864ce13d1e3ce10e8149ef2ef98a048b8be249a60749dfc70c4897e9e7ab",
+    "external_provider_normal_png": {
+      "path": "Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/normal.png",
+      "sha256": "7845864ce13d1e3ce10e8149ef2ef98a048b8be249a60749dfc70c4897e9e7ab"
+    },
+    "external_png_bytes_equal_embedded_payload": true,
+    "conversion_or_rebake_applied": false
+  },
+  "actual_memphis": {
+    "passed": true,
+    "inputs": {
+      "source_glb": {
+        "path": "Data/GraphicNovel/Crew/Memphis33/generated-v1-high-detail/body.glb",
+        "sha256": "e3bb935c87891489a9c967eeb8e46d3af3156dd8469bcbb17fa0c78715fbf1a8"
+      },
+      "provider_fbx": {
+        "path": "Data/GraphicNovel/Crew/Memphis33/tripo-v3-rig-20261017/rig.fbx",
+        "sha256": "0b6815c73efcf00f654330c905ecc8a49eafa5743825fe56e027d84db55186f4"
+      },
+      "normal_png": {
+        "path": "Data/GraphicNovel/Crew/Memphis33/generated-v1-high-detail/normal.png",
+        "sha256": "c3d1f0b177853c995af9406e2d7da6c5f98264c9a07653dd5637f4dfa94742f0"
+      }
+    },
+    "correspondence": {
+      "triangles": 102976,
+      "corners": 308928,
+      "provider_to_source_uniform_scale": 1.8199991117738836,
+      "source_residual_max_m": 1.3036253351862316e-06,
+      "source_residual_mean_m": 3.778296829282092e-07,
+      "corners_over_2micron": 0,
+      "source_residual_p99_m": 1.0961167371243828e-06,
+      "source_residual_abs_axis_m": {
+        "x": {
+          "max": 9.879552388403212e-07,
+          "p99": 8.371854418598446e-07,
+          "mean": 2.0930799129682163e-07
+        },
+        "y": {
+          "max": 9.467125951651001e-07,
+          "p99": 7.29775571514657e-07,
+          "mean": 2.289181932221629e-07
+        },
+        "z": {
+          "max": 5.521844810580517e-07,
+          "p99": 4.630078693224071e-07,
+          "mean": 1.4800217655710925e-07
+        }
+      },
+      "residual_limit_m": 1e-05,
+      "exact_source_positions_claimed": false,
+      "translation_or_rotation_fit": false,
+      "uv_quantization": 1e-06,
+      "scale_fit_unambiguous_triangles": 102976,
+      "uv_duplicate_triangle_groups": 0,
+      "uv_duplicate_triangles": 0,
+      "uv_corner_tie_triangles": 0,
+      "geometry_resolved_groups": [],
+      "geometry_mapping_unique": true
+    },
+    "fresh_provider_geometry": {
+      "triangles": 102976,
+      "height_m": 1.0000002922827524,
+      "residual_max_m": 1.3007634425444447e-07,
+      "provider_size_preserved": true,
+      "uv_quantization": 1e-06
+    },
+    "fresh_correspondence": {
+      "triangles": 102976,
+      "corners": 308928,
+      "provider_to_source_uniform_scale": 1.0,
+      "source_residual_max_m": 1.3007634425444447e-07,
+      "source_residual_mean_m": 6.962891789108742e-08,
+      "corners_over_2micron": 0,
+      "source_residual_p99_m": 1.2708997386700595e-07,
+      "source_residual_abs_axis_m": {
+        "x": {
+          "max": 5.791965573820335e-09,
+          "p99": 5.598316588084629e-09,
+          "mean": 2.7748291363063746e-09
+        },
+        "y": {
+          "max": 1.1490269641659112e-07,
+          "p99": 1.1297855493502817e-07,
+          "mean": 5.443869186478517e-08
+        },
+        "z": {
+          "max": 6.821196391060269e-08,
+          "p99": 6.491175824629991e-08,
+          "mean": 3.109270516527347e-08
+        }
+      },
+      "residual_limit_m": 2e-06,
+      "exact_source_positions_claimed": false,
+      "translation_or_rotation_fit": false,
+      "uv_quantization": 1e-06,
+      "scale_fit_unambiguous_triangles": 102976,
+      "uv_duplicate_triangle_groups": 0,
+      "uv_duplicate_triangles": 0,
+      "uv_corner_tie_triangles": 0,
+      "geometry_resolved_groups": [],
+      "geometry_mapping_unique": true
+    },
+    "fresh_normals": {
+      "mean_deg": 0.0017053343291680428,
+      "p99_deg": 0.011148438054554519,
+      "max_deg": 0.6625551237909748,
+      "corners_over_0_1deg": 102
+    },
+    "retained_inputs_unchanged": true,
+    "output": {
+      "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoCastSurface/Memphis33-jpeg-v2/body/body.fbx",
+      "sha256": "2f7340f80b1a5954223a3d1f5a87014fa7aaaa16c3982b781f0b1aa9b401442c",
+      "bytes": 9493532
+    },
+    "full_receipt": {
+      "path": "Saved/Tests/TripoCastSurface/Memphis33-jpeg-v2/report/Surface.json",
+      "sha256": "4c403862ab8220492826fc0d97a9d81edfcde4f5ced2d1d55bdc7b3e6b0ff22c"
+    },
+    "normal_gate_unchanged": {
+      "mean_deg": 0.02,
+      "p99_deg": 0.1,
+      "max_deg": 1.0
+    },
+    "normal_payload_selection": {
+      "source": "Pinned GLB material.normalTexture index",
+      "texture_index": 0,
+      "image_index": 0,
+      "buffer_view": 7,
+      "mime_type": "image/jpeg",
+      "bytes": 2782130,
+      "sha256": "331cde6e456ae94b9ab4f3de6f4891d2ae627657c9ffc2162074a52d81573799",
+      "external_provider_normal_png": {
+        "path": "Data/GraphicNovel/Crew/Memphis33/generated-v1-high-detail/normal.png",
+        "sha256": "c3d1f0b177853c995af9406e2d7da6c5f98264c9a07653dd5637f4dfa94742f0"
+      },
+      "external_png_bytes_equal_embedded_payload": false,
+      "conversion_or_rebake_applied": false
+    },
+    "textures": {
+      "base_color": {
+        "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoCastSurface/Memphis33-jpeg-v2/body/base_color.jpg",
+        "bytes": 3962840,
+        "sha256": "5e8053bd72e7e489aa70a391d3e13fa78f8d1223c783c5c07e27a57368229faa",
+        "mime_type": "image/jpeg",
+        "source_texture_index": 1,
+        "source_image_index": 1,
+        "colorspace": "sRGB",
+        "source": "Unmodified original GLB embedded payload",
+        "channels": "base_color"
+      },
+      "metallic_roughness": {
+        "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoCastSurface/Memphis33-jpeg-v2/body/metallic_roughness.jpg",
+        "bytes": 1582415,
+        "sha256": "f6efd6ce3147b145078506c361ce93c0df87546d3477476d29e0827426696e6b",
+        "mime_type": "image/jpeg",
+        "source_texture_index": 2,
+        "source_image_index": 2,
+        "colorspace": "Non-Color",
+        "source": "Unmodified original GLB embedded payload",
+        "channels": "G=Roughness, B=Metallic"
+      },
+      "normal": {
+        "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoCastSurface/Memphis33-jpeg-v2/body/normal.jpg",
+        "bytes": 2782130,
+        "sha256": "331cde6e456ae94b9ab4f3de6f4891d2ae627657c9ffc2162074a52d81573799",
+        "mime_type": "image/jpeg",
+        "source_texture_index": 0,
+        "source_image_index": 0,
+        "colorspace": "Non-Color",
+        "source": "Unmodified original GLB embedded payload",
+        "channels": "normal"
+      }
+    },
+    "source_provider_bound_m": 1e-05,
+    "strict_provider_before_after_bound_m": 2e-06,
+    "exact_source_positions_claimed": false,
+    "jpeg_fixture_receipt": {
+      "path": "Saved/Tests/TripoCastSurface/Memphis33-jpeg-v2/Test.json",
+      "sha256": "304ecde7fe9a1ecf4013f8ded594f56d48919893eb63b3a5f17feaba68ead9db"
+    },
+    "prior_rejected_receipt": {
+      "path": "Saved/Tests/TripoCastSurface/Memphis33-root-v1/Surface.json",
+      "sha256": "5125fb54a3cfd51a363d6d485ed5d6353a0a315ffde18dbfd6b099c3f9078181"
+    }
+  },
+  "normal_payload_policy": "Preserve the exact pinned GLB material.normalTexture indexed embedded payload and its MIME without conversion. Retain separately pinned external normalPNG and explicit byte-equality comparison; equality is true for Curly/Green and false for actual Memphis JPEG. Native normal convention remains an acceptance step."
+}

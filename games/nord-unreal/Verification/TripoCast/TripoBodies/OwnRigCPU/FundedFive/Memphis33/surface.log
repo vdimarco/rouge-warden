@@ -1,0 +1,18 @@
+19:38:51 | INFO: Data are loaded, start creating Blender stuff
+19:38:51 | INFO: Blender create Mesh node tripo_mesh_37b3a1cd-d4c1-4b21-9348-88752ade1549
+19:38:51 | INFO: glTF import finished in 0.11s
+FBX version: 7400
+
+FBX export starting... '/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoH31RemainingPlan-20261017-v3/Memphis33/prepared-v1/surface/body/body.fbx'
+export finished in 0.2392 sec.
+FBX version: 7400
+TRIPO_CAST_SURFACE_PASS /home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoH31RemainingPlan-20261017-v3/Memphis33/prepared-v1/surface/report/Surface.json
+Blender 5.2.2 LTS (hash d13f752e3b9c built 2026-09-15 01:34:58)
+Color_37b3a1cd-d4c1-4b21-9348-88752ade1549
+Color_37b3a1cd-d4c1-4b21-9348-88752ade1549.jpg
+ORM_37b3a1cd-d4c1-4b21-9348-88752ade1549
+ORM_37b3a1cd-d4c1-4b21-9348-88752ade1549.jpg
+NormalGL_37b3a1cd-d4c1-4b21-9348-88752ade1549
+NormalGL_37b3a1cd-d4c1-4b21-9348-88752ade1549.png
+
+Blender quit

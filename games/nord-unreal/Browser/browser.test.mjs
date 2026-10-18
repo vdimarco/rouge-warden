@@ -16,11 +16,11 @@ function build(endpoint) {
 }
 const server = createServer(async (request, response) => {
   const file = new URL(request.url, 'http://localhost').pathname.slice(1) || 'index.html';
-  if (!['index.html', 'player.js', 'hero.js', 'crew.js', 'intro.js', 'menu.js', 'install.js', 'styles.css', 'hero.css', 'intro.css', 'menu.css', 'crew-sprite.webp', 'manifest.webmanifest', 'favicon.svg', 'favicon-32.png', 'apple-touch-icon.png', 'icon-192.png', 'icon-512.png', 'icon-maskable-512.png'].includes(file)) {
+  if (!['index.html', 'player.js', 'hero.js', 'crew.js', 'intro.js', 'menu.js', 'install.js', 'styles.css', 'hero.css', 'intro.css', 'menu.css', 'crew-sprite.webp', 'manifest.webmanifest', 'bungee-400.woff2', 'favicon.svg', 'favicon-32.png', 'apple-touch-icon.png', 'icon-192.png', 'icon-512.png', 'icon-maskable-512.png'].includes(file)) {
     response.writeHead(404).end();
     return;
   }
-  const types = { js: 'text/javascript', css: 'text/css', webp: 'image/webp', webmanifest: 'application/manifest+json', svg: 'image/svg+xml', png: 'image/png' };
+  const types = { woff2: 'font/woff2', js: 'text/javascript', css: 'text/css', webp: 'image/webp', webmanifest: 'application/manifest+json', svg: 'image/svg+xml', png: 'image/png' };
   response.setHeader('Content-Type', types[file.split('.').at(-1)] || 'text/html');
   response.end(await readFile(`dist/${file}`));
 });
@@ -158,7 +158,7 @@ async function installNudgeChecks(browser, errors) {
       assert.equal(await target.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
       await target.screenshot({ path: `/tmp/nord-install-nudge-${width}.png`, fullPage: true });
       if (mobile) {
-        for (const control of await target.locator('.move-stick:visible, .touch-primary button:visible').all()) {
+        for (const control of await target.locator('.move-stick:visible, .touch-primary button:visible, #touch-menu:visible').all()) {
           const touch = await control.boundingBox();
           const overlap = Math.min(box.x + box.width, touch.x + touch.width) > Math.max(box.x, touch.x)
             && Math.min(box.y + box.height, touch.y + touch.height) > Math.max(box.y, touch.y);
@@ -241,7 +241,7 @@ try {
     assert.equal(response.status(), 200, `${file} is shipped`);
     assert.equal(response.headers()['content-type'], type, `${file} has the correct media type`);
   }
-  for (const [width, height] of [[1280, 720], [1920, 1080], [360, 800]]) {
+  for (const [width, height] of [[1280, 720], [1920, 1080], [360, 800], [320, 568], [844, 390]]) {
     await page.setViewportSize({ width, height });
     await page.goto(`${url}/?ss=wss://untrusted.example&AutoConnect=true`);
     assert.equal(await page.locator('body').getAttribute('data-state'), 'offline');
@@ -252,6 +252,8 @@ try {
     assert.deepEqual(await page.evaluate(() => ({ level: window.loggerContext.logLevel, stack: window.loggerContext.includeStack })),
       { level: 2, stack: false }, 'offline pages initialize warning-only logging without stack capture');
     assert.equal(await page.locator('.hero-title').textContent(), 'GTA: NORTH', 'the title screen shows the game title');
+    assert.equal(await page.locator('#overlay').evaluate(el => el.scrollHeight <= el.clientHeight && el.scrollWidth <= el.clientWidth), true, 'entry screen fits without internal scrolling');
+    assert.equal(await page.locator('.badge-launch').evaluate(el => (() => { const image = el.querySelector('img').getBoundingClientRect(); const button = el.querySelector('.play-label').getBoundingClientRect(); const center = button.top + button.height / 2; return center > image.top + image.height * .65 && center < image.top + image.height * .8; })()), true, 'PLAY overlays the lower third of the clickable badge');
     assert.equal(await page.locator('#watch-trailer').isVisible(), true);
     assert.equal(await page.locator('#hero-video').isVisible(), true, 'the trailer loop plays behind the start card');
     assert.equal(await page.locator('#trailer-video').getAttribute('src'), null, 'full trailer is not loaded until opened');
@@ -452,7 +454,7 @@ try {
       radius: parseFloat(getComputedStyle(button).borderTopLeftRadius), icon: button.querySelector('svg')?.getBoundingClientRect().height,
       border: parseFloat(getComputedStyle(button).borderTopWidth), background: getComputedStyle(button).backgroundColor };
   }));
-  assert.equal(buttons.length, 4);
+  assert.equal(buttons.length, 3);
   assert.equal(new Set(buttons.map(button => button.top)).size, 2, 'two rows');
   assert.equal(new Set(buttons.map(button => button.left)).size, 2, 'two columns');
   for (const button of buttons) {
@@ -460,7 +462,7 @@ try {
     assert.ok(button.radius >= 50 && button.icon >= 28, 'round faces with clear action icons');
     assert.ok(button.border > 0 && button.background !== 'rgba(0, 0, 0, 0)', 'full visible button faces');
   }
-  assert.ok(buttons[0].left > 390 * .45 && Math.abs(buttons.at(-1).right - (390 - 16)) <= 1, 'bottom-right grid');
+  assert.ok(buttons[0].left > 390 * .45 && Math.abs(buttons[1].right - (390 - 16)) <= 1, 'bottom-right grid');
   assert.ok(buttons[1].left - buttons[0].right >= 12 && buttons[2].top - buttons[0].top - buttons[0].height >= 12, '12 px thumb clearance');
   assert.equal(await phonePage.locator('[data-stick="look"]').count(), 0, 'image drag replaces the look pad');
   for (const [width, height] of [[390, 844], [844, 390]]) {

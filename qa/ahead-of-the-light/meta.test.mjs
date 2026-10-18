@@ -8,6 +8,8 @@ import { pagesFor, unlocksAt, nextUnlock, shipUnlocks, applyRun, createMeta, run
   shipTune, logLine, PAGES, ALL_PAGES, UNLOCKS, SHIPS, REDSHIFT_MAX, MEDAL_YEARS }
   from '../../public/ahead-of-the-light/core/meta.js';
 import { createRun, openBreak, pick, skip, chooseLane, practiceRun } from '../../public/ahead-of-the-light/core/run.js';
+import { runSummary } from '../../public/ahead-of-the-light/core/log.js';
+import { parseOverrides } from '../../public/ahead-of-the-light/core/tune.js';
 import { CARDS } from '../../public/ahead-of-the-light/core/cards.js';
 import { ROUTE } from '../../public/ahead-of-the-light/core/course/legs.js';
 import { TUNE } from '../../public/ahead-of-the-light/core/tune.js';
@@ -148,6 +150,16 @@ test('medals, records and EASY LIGHT', () => {
   out = applyRun(meta, log([leg('web', 'gate', { years: 3 })]));
   assert.deepEqual(out.medals, [], 'a worse medal changes nothing');
   assert.equal(out.meta.medals.web, 'gold');
+  // no medal from EASY LIGHT or an unranked (URL-tuned) run; a practice leg earns one, unless it flew URL tuning
+  for (const extra of [{ easy: true, ranked: false }, { ranked: false }, { practice: true, ranked: false, tuned: true }]) {
+    const o = applyRun(createMeta(), log([leg('web', 'gate', { years: 0.5 })], extra));
+    assert.deepEqual(o.medals, [], JSON.stringify(extra));
+    assert.deepEqual(o.meta.medals, {});
+  }
+  assert.deepEqual(applyRun(createMeta(), log([leg('web', 'gate', { years: 0.5 })], { practice: true, ranked: false }))
+    .medals, [{ type: 'web', medal: 'gold' }]);
+  assert.equal(practiceRun({ seed: 1, leg: 0, tune: parseOverrides('?seed=4').tune }).tuned, false);
+  assert.equal(practiceRun({ seed: 1, leg: 0, tune: parseOverrides('?gapcap=30').tune }).tuned, true);
   // records: furthest leg first, then fewer years
   meta = createMeta();
   meta = applyRun(meta, log([leg('web', 'gate'), leg('coma', 'caught')], { legNo: 1, years: 20 })).meta;
@@ -164,6 +176,21 @@ test('medals, records and EASY LIGHT', () => {
   assert.equal(meta.easy.on, false, 'never automatic');
   assert.equal(meta.runs, 5);
   assert.equal(meta.seen.runs, 5);
+});
+
+test('FIRST HOME reaches the meta: a run home first through runSummary and applyRun earns the page', () => {
+  const run = createRun({ seed: 'HOME' });
+  run.phase = 'home';
+  for (let i = 0; i < ROUTE.length; i++) {
+    run.legs.push({ legNo: i, type: ROUTE[i], lane: null, why: i === ROUTE.length - 1 ? 'home' : 'gate', place: 1,
+      years: 1, hits: 0, takedowns: 0, beat: [], eaten: [], took: [], trophies: [], firstHome: i === ROUTE.length - 1 });
+  }
+  const summary = runSummary(run);
+  assert.equal(summary.firstHome, true);
+  assert.equal(summary.legs.at(-1).firstHome, true);
+  assert.ok(applyRun(createMeta(), summary).meta.pages.includes('first-home'));
+  run.legs.at(-1).firstHome = false;                     // home, but not first
+  assert.ok(!applyRun(createMeta(), runSummary(run)).meta.pages.includes('first-home'));
 });
 
 test('two daily runs on the same date with the same choices match; different dates differ', () => {

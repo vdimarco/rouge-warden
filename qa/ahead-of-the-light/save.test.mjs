@@ -71,6 +71,24 @@ test('a run left mid-leg resumes at that leg\'s start: −2 s for a quit, nothin
   const hidden = through(serialize(suspend(run, 'pagehide')));
   assert.equal(hidden.you.gap, gap, 'pagehide: no penalty (critic lead item 6)');
   assert.equal(startLeg(quit, RUN_TUNE).leg.hash, startLeg(hidden, RUN_TUNE).leg.hash);
+  // a leg that launched close: the quit still costs, but never takes the launch TTC under TTC_FLOOR (or under the TTC
+  // it had) nor under 3/4 of the gap, so GO ON gives a leg to play, not a catch on the first step
+  const ttcOf = (gap, eta) => gap / (1 - Math.tanh(eta));
+  for (const [g0, eta] of [[1.5, 1.6], [1.9, 0.8], [1.0, 0.8], [0.4, 1.6], [2.5, 1.0]]) {
+    const close = createRun({ seed: 'QUIT', tune: RUN_TUNE });
+    fly(close);
+    skip(close);
+    chooseLane(close, 0);
+    Object.assign(close.you, { gap: g0, launchEta: eta });
+    const back = resume(suspend(close, 'leg'), TUNE);
+    const g = back.you.gap, ttc = ttcOf(g, eta);
+    assert.ok(g > 0 && g < g0, `gap ${g0} at η ${eta} resumes at ${g}`);
+    assert.ok(g >= g0 * 0.75 - 1e-9 || ttc >= Math.min(ttcOf(g0, eta), TUNE.TTC_FLOOR) - 1e-9, `TTC ${ttc}`);
+    assert.ok(g >= g0 - TUNE.QUIT_GAP - 1e-9);
+    const race = startLeg(back, TUNE);
+    for (let i = 0; i < 120; i++) stepRace(race, { you: NO_INTENT }, STEP);
+    assert.ok(!race.ships[0].caught, `gap ${g0} at η ${eta}: caught in the first second after GO ON`);
+  }
   // a run at its break saves as a break whatever the caller says
   const at = createRun({ seed: 'QUIT', tune: RUN_TUNE });
   fly(at);

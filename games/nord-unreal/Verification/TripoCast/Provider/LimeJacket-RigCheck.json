@@ -1,0 +1,12 @@
+{
+  "character": "LimeJacket",
+  "task_id": "7a1b294a-02e9-4b35-9433-f8acac99c1c9",
+  "status": "success",
+  "output": {
+    "riggable": true,
+    "rig_type": "biped"
+  },
+  "credits_consumed": 0.0,
+  "body_sha256": "3eda089ac9baea41e1cc1c5c15ca027e218e41a39f9d3ac814bbd89f671139ff",
+  "paid_rig_allowed_by_check": true
+}

@@ -36,7 +36,23 @@ The cabinet line SHALL read `ahead-of-the-light.meta.v1` inside try/catch and sh
 
 #### Scenario: A junk save
 - **WHEN** `ahead-of-the-light.meta.v1` holds text that is not a save, or storage throws
-- **THEN** the machine shows its plain line and the page has no error
+- **THEN** the machine shows its plain line, wears no gold frame, and the page has no error
+- **CHECK** `qa/arcade/machines.mjs`
+
+### Requirement: The cabinet line fits a small phone
+Every cabinet line SHALL fit inside the machine's screen. The leg names SHALL be the game's, except that leg 7 SHALL read THE SUN'S STARS, because the word NEIGHBOURS is wider than the screen on a small phone and a word cannot wrap.
+
+#### Scenario: A small phone
+- **WHEN** a player whose best run reached any leg, or came home, opens the Action row at 320 × 700 or 375 × 667 and picks the machine
+- **THEN** the whole line shows inside the screen; the best run caught on leg 7 reads BEST: THE SUN'S STARS
+- **CHECK** `qa/arcade/machines.mjs`
+
+### Requirement: The gold frame
+When the save's unlocks hold `gold-frame` (the log's last unlock, at 84 pages), the machine SHALL wear a gold frame round its screen. The frame SHALL be drawn as a shadow on the bezel, so the machine, its coin slots and its START button keep their sizes.
+
+#### Scenario: A full log
+- **WHEN** the save's unlocks list `gold-frame` and the player opens the arcade
+- **THEN** the Ahead of the Light machine has a gold ring round its screen; with 83 pages, or with unlocks that are not a list, it has none
 - **CHECK** `qa/arcade/machines.mjs`
 
 ### Requirement: The title starts play in one tap

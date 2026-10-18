@@ -1,0 +1,18 @@
+{
+  "provider_fbx": {
+    "path": "Data/GraphicNovel/Crew/Memphis33/tripo-v3-rig-20261017/rig.fbx",
+    "sha256": "0b6815c73efcf00f654330c905ecc8a49eafa5743825fe56e027d84db55186f4"
+  },
+  "source_body_fbx": {
+    "path": "Data/GraphicNovel/Crew/Memphis33/generated-v1-high-detail/body.fbx",
+    "sha256": "35357a74c41401bd05d5df4ae26ddc91eab4511fccc0383af3c94ba449fb22a8"
+  },
+  "walk_fbx": {
+    "path": "Data/GraphicNovel/Crew/Memphis33/generated-v1-high-detail/walk.fbx",
+    "sha256": "69fd692330dd132ff47a7d8705f9825ac0ad48e52aa6b1c9e9876e1cbd4b0873"
+  },
+  "run_fbx": {
+    "path": "Data/GraphicNovel/Crew/Memphis33/generated-v1-high-detail/run.fbx",
+    "sha256": "4ec8ef047e3afe53eb0894379c9633ef859cbb163f1be53ef95e7363e85d7c14"
+  }
+}

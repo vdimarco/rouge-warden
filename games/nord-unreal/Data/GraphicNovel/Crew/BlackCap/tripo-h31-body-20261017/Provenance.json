@@ -1,0 +1,24 @@
+{
+  "character": "BlackCap",
+  "task_id": "7ea82881-e750-48a7-95aa-a55da483d18f",
+  "status": "completed_downloaded",
+  "credits_consumed": 60,
+  "request_path": "request.json",
+  "request_sha256": "1113a6316fa3f2b9f39ed8e7c12dbf8a8119bcce7feba82ff51218bf6fa0e1b6",
+  "source_reference_sha256": "baed5a933fd2c7bcd6e2979836caeb92f7233beb4125ceb6eac2c920822cc3a9",
+  "outputs": {
+    "body.glb": {
+      "bytes": 11439844,
+      "sha256": "ff4d393b98d5fba212295305b714ab7fce04229e34b14196c7e2f4c210467d70"
+    },
+    "provider-preview.png": {
+      "bytes": 140007,
+      "sha256": "fb96af1c515822d73f81499fd0f5996b27a94413571ab79cac4d4b8a31249082"
+    }
+  },
+  "preview_url_suffix": ".webp",
+  "preview_actual_format": "PNG, detected from unchanged downloaded bytes",
+  "signed_urls_private_only": true,
+  "native_or_art_accepted": false,
+  "recorded_utc": "2026-10-17T22:36:37.297834+00:00"
+}

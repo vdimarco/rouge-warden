@@ -305,13 +305,17 @@ export function createInput({ tune = TUNE, burnTap = false, halves = false, widt
     },
     // Back to play. With a whip still live and nothing holding, the next press carries it on with no new action:
     // → 'regrip' (show HOLD TO GO ON until `waiting` is false), else 'play'.
+    // A steer key let go in the pause turns no more: the keys' state is read again from what is held now.
     resume(whipLive = false) {
       frozen = false;
+      keyQ.length = 0;
+      keyNow = { ...keys };
       if (whipLive && hold === null) { waiting = true; return 'regrip'; }
       return 'play';
     },
-    // A new run: drop every edge and the drag, keep the lock's device as the start (the last run's scheme).
-    reset() { edges.length = 0; dAim = 0; keyQ.length = 0; waiting = false; },
+    // New play (a new run, a leg, or play after QUIT RUN's pause): unfreeze, drop every edge and the drag, take the
+    // keys as held now (one let go on a screen turns no more), keep the lock's device as the start (the last scheme).
+    reset() { frozen = false; edges.length = 0; dAim = 0; keyQ.length = 0; keyNow = { ...keys }; waiting = false; },
     unlock() { scheme = null; },
     resize(width2) { w = width2; },
     get holding() { return hold !== null; },
@@ -329,7 +333,8 @@ export function createInput({ tune = TUNE, burnTap = false, halves = false, widt
 /**
  * Wire the page to an input machine. opts: { el (the play surface), now() (ms, the events' clock), topDead (px at
  * the top that never count as play), button (?button=1: a function returning the action button's rect),
- * blocked() (true while a menu or the arcade switcher owns input), onKey(code, e) (keys the game does not use) }.
+ * blocked() (true while a menu or the arcade switcher owns input), onKey(code, e) (keys the game does not use; it
+ * returns true for a key it used, and that press goes no further) }.
  * Returns a function that unbinds everything.
  */
 export function bindInput(input, { el = window, tune = TUNE, topDead = tune.TOP_DEAD, button = null,
@@ -372,7 +377,9 @@ export function bindInput(input, { el = window, tune = TUNE, topDead = tune.TOP_
       if (!e.repeat) input.keyDown(e.code, e.timeStamp + clock(e));
       return;
     }
-    if (onKey) onKey(e.code, e);
+    // onKey returns true for a key it used: the page's other keydown listeners then never see the same press (Esc
+    // would pause here and go on there)
+    if (onKey && onKey(e.code, e) === true) e.stopImmediatePropagation();
   }));
   offs.push(on(window, 'keyup', (e) => { if (GAME_KEYS.has(e.code)) input.keyUp(e.code, e.timeStamp + clock(e)); }));
   return () => { for (const off of offs) off(); };

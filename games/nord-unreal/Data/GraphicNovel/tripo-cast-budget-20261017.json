@@ -1,0 +1,178 @@
+{
+  "authorization": "User: great lets do all the characters; same merged pilot rig pipeline",
+  "provider": "Tripo API",
+  "starting_available_credits": 75.0,
+  "starting_frozen_credits": 0.0,
+  "credits_per_rig_published": 25,
+  "planned_seven_rig_credits": 175,
+  "additional_credits_requested": 0,
+  "agent_credit_purchases": 0,
+  "jobs": [
+    {
+      "character": "GreenCap51",
+      "status": "completed_downloaded",
+      "task_id": "ce22f7c8-702e-4b13-a292-645a9610eb63",
+      "source_sha256": "729b56b0ed6d74be020f73ea87513d3963f6fb77a630d9f978ce66f0570599f6",
+      "reserved_credits": 25,
+      "actual_credits_consumed": 25
+    },
+    {
+      "character": "Memphis33",
+      "status": "completed_downloaded",
+      "source_sha256": "e3bb935c87891489a9c967eeb8e46d3af3156dd8469bcbb17fa0c78715fbf1a8",
+      "reserved_credits": 25,
+      "task_id": "aefee195-9e7b-4dde-ae97-edb9c0c852cc",
+      "actual_credits_consumed": 25.0
+    },
+    {
+      "character": "LimeJacket",
+      "status": "completed_downloaded",
+      "source_sha256": "3eda089ac9baea41e1cc1c5c15ca027e218e41a39f9d3ac814bbd89f671139ff",
+      "reserved_credits": 25,
+      "task_id": "4eff77e2-a0bd-4d52-b216-405b073c06f5",
+      "actual_credits_consumed": 25.0
+    }
+  ],
+  "reserved_credits": 670,
+  "available_less_owned_reservations": 5,
+  "fal_ledger_separate": true,
+  "actual_credits_consumed_this_cast": 670.0,
+  "last_observed_available_credits": 5,
+  "last_observed_frozen_credits": 0,
+  "body_provider_choice": "Tripo bodies and rigs: user explicit reply after comparison jobs completed",
+  "user_reports_api_topup": true,
+  "body_generation_submitted": 7,
+  "target_generation_model": "v3.1-20260211",
+  "target_rigging_model": "v3.0-20260909",
+  "verified_topup_since_comparison_credits": 600,
+  "target_seven_hd_bodies_and_rigs_credits": 595,
+  "target_body_credits_each": 60,
+  "target_rig_credits_each": 25,
+  "additional_credits_for_all7_requested": 400,
+  "additional_exact_credits_needed": 0,
+  "body_jobs": [
+    {
+      "character": "BlackCap",
+      "status": "completed_downloaded",
+      "reserved_body_credits": 60,
+      "reserved_paired_rig_credits": 25,
+      "source_reference_sha256": "baed5a933fd2c7bcd6e2979836caeb92f7233beb4125ceb6eac2c920822cc3a9",
+      "task_id": "7ea82881-e750-48a7-95aa-a55da483d18f",
+      "actual_credits_consumed": 60,
+      "rig_status": "completed_downloaded",
+      "rig_task_id": "2fd12b3e-1a82-45da-b3a4-93e9f2649c13",
+      "actual_rig_credits_consumed": 25
+    },
+    {
+      "character": "Topknot",
+      "status": "completed_downloaded",
+      "reserved_body_credits": 60,
+      "reserved_paired_rig_credits": 25,
+      "source_reference_sha256": "ea303ba5b08813fb7ff5c3da1eae5d842094a0687f78a06e0d4abed158ab7b3b",
+      "task_id": "7c59f469-ad8a-4825-913f-14a69d0ba61b",
+      "actual_credits_consumed": 60,
+      "rig_status": "completed_downloaded",
+      "rig_task_id": "38b3289d-c680-40df-b1dc-2506e8fe6fb7",
+      "actual_rig_credits_consumed": 25
+    },
+    {
+      "character": "GreenCap51",
+      "status": "completed_downloaded",
+      "reserved_body_credits": 60,
+      "reserved_paired_rig_credits": 25,
+      "source_reference_sha256": "7998152ab482a55571f6ffa113ef901988ccf4cfd2bfd6c9fa79134cc37d8ed0",
+      "rig_status": "completed_downloaded",
+      "task_id": "fb558687-4093-4793-9395-687f9983fe06",
+      "actual_credits_consumed": 60,
+      "rig_check_task_id": "b78fa434-42c5-4b5b-b0a8-347097e25edb",
+      "rig_task_id": "d66571fa-6582-4f3b-ab55-d8f7d7a7ff06",
+      "actual_rig_credits_consumed": 25
+    },
+    {
+      "character": "Memphis33",
+      "status": "completed_downloaded",
+      "reserved_body_credits": 60,
+      "reserved_paired_rig_credits": 25,
+      "source_reference_sha256": "f47a69cc5330ab37e056235c3d2d8c2e84fe717b0d07e189c5a1aa1aacd6302d",
+      "rig_status": "completed_downloaded",
+      "task_id": "37b3a1cd-d4c1-4b21-9348-88752ade1549",
+      "actual_credits_consumed": 60,
+      "rig_check_task_id": "1336cd9e-182d-4eec-b735-809eaca2ee8a",
+      "rig_task_id": "75a56cd6-daea-4f91-b158-239039972100",
+      "rig_request": {
+        "input": "37b3a1cd-d4c1-4b21-9348-88752ade1549",
+        "model": "v3.0-20260909",
+        "rig_type": "biped",
+        "spec": "unreal",
+        "out_format": "fbx"
+      },
+      "actual_rig_credits_consumed": 25
+    },
+    {
+      "character": "WhiteCap",
+      "status": "completed_downloaded",
+      "reserved_body_credits": 60,
+      "reserved_paired_rig_credits": 25,
+      "source_reference_sha256": "61bbfd6c38e51506f59f8f1293b44f89bef39d148d9d3c948906d8be8e24fb33",
+      "rig_status": "completed_downloaded",
+      "task_id": "eb23c465-06bc-4b1d-a2fb-60a48190adc4",
+      "actual_credits_consumed": 60,
+      "rig_check_task_id": "14bbae93-b8ae-4c66-ba01-6b5545b74fed",
+      "rig_task_id": "51b44d2e-ec0d-439c-8228-c3c2aea1c7cf",
+      "rig_request": {
+        "input": "eb23c465-06bc-4b1d-a2fb-60a48190adc4",
+        "model": "v3.0-20260909",
+        "rig_type": "biped",
+        "spec": "unreal",
+        "out_format": "fbx"
+      },
+      "actual_rig_credits_consumed": 25
+    },
+    {
+      "character": "RedJersey",
+      "status": "completed_downloaded",
+      "reserved_body_credits": 60,
+      "reserved_paired_rig_credits": 25,
+      "source_reference_sha256": "3270ff8a8a29209ae1b1e7cb454a7883375b955adc651b12feb71332a2086bac",
+      "rig_status": "completed_downloaded",
+      "task_id": "8845fab9-3804-44f5-8dbb-fd63d29d98cb",
+      "actual_credits_consumed": 60,
+      "rig_check_task_id": "87fb8c51-8c9c-488a-afb1-06aa50feca71",
+      "rig_task_id": "61597069-f8a8-4405-8289-c328a4999c08",
+      "rig_request": {
+        "input": "8845fab9-3804-44f5-8dbb-fd63d29d98cb",
+        "model": "v3.0-20260909",
+        "rig_type": "biped",
+        "spec": "unreal",
+        "out_format": "fbx"
+      },
+      "actual_rig_credits_consumed": 25
+    },
+    {
+      "character": "LimeJacket",
+      "status": "completed_downloaded",
+      "reserved_body_credits": 60,
+      "reserved_paired_rig_credits": 25,
+      "source_reference_sha256": "29b9afda5d1e68c64d0b67e8faa843f7b4aee676a5c218b530eedba3969f14dd",
+      "rig_status": "completed_downloaded",
+      "task_id": "647104d8-4e97-4e99-a0ee-8929d83b632b",
+      "actual_credits_consumed": 60,
+      "rig_check_task_id": "5451c762-6de7-487d-9170-e9aa51d5bf57",
+      "rig_task_id": "e53a95c0-64b7-488c-8be4-0e41d7671649",
+      "rig_request": {
+        "input": "647104d8-4e97-4e99-a0ee-8929d83b632b",
+        "model": "v3.0-20260909",
+        "rig_type": "biped",
+        "spec": "unreal",
+        "out_format": "fbx"
+      },
+      "actual_rig_credits_consumed": 25
+    }
+  ],
+  "prior_three_rigs_scope": "Meshy body comparison; source provider superseded by user choice; preserve all75 actual credits consumed",
+  "last_balance_observed_utc": "2026-10-17T23:37:05.826952+00:00",
+  "last_balance_scope": "Allseven own Tripo detailed body+rig pairs and three retained comparison rigs completed; no active or ambiguous paid jobs",
+  "full_cast_funding_confirmed": true,
+  "additional_topup_confirmed_credits": 400,
+  "remaining_uncommitted_credits": 5.0
+}

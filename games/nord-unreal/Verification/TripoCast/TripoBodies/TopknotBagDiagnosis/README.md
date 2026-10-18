@@ -1,0 +1,9 @@
+# Topknot bag: rejected accessory weighting
+
+Actual own-rig jump views reveal bag compression/leg pull. The CPU diagnostic confirms the conservative802-vertex bag-core sample averages72.39% `thigh_l`; its upper strap instead follows torso/clavicle. The provider has49,415 of49,418 vertices in one indexed component, and all vertices join after diagnostic1µm seam welding. UVs have273 fragmented islands; the bag-core ROI touches18, only three completely inside that diagnostic sample. ROIs are diagnostic witnesses, not accepted semantic masks.
+
+Whole-component selection would edit the character. Spatial/color thresholds or touched UV islands cannot certify a complete bag-only boundary. No source, mesh, normal, UV, bind, weight, Data asset or shared helper was changed; the CPU job exited0 and no further job remains. Topknot stays rejected for native/art use, with exact prepared proof files retained in `Data/GraphicNovel/Crew/Topknot/tripo-h31-rig-20261017/derived/bag-rejected-v1`.
+
+Resume with a visually reviewed semantic vertex/face mask covering the bag body, pouches and contents, with a separate torso-to-bag strap transition. Inspect selection overlays from front, both sides and back, including shirt/shorts/skin boundaries and the hidden left hand. On a fresh derivative, preserve geometry/UV/normals/binds, prove every nonmasked weight unchanged, retain normalized finite influence limits and compare all four own clips, shoulders/hip bends and hand clearance. Do not treat these diagnostic boxes as an accepted mask or spend on an automatic retry.
+
+Exact inputs and executed inventory recipe/log are retained here. Full arrays remain under ignored `Saved/Tests/TripoTopknotBagDiagnosis-v1/InventoryArrays.npz`, pinned by Assessment.json; this packet does not claim a completed repair.

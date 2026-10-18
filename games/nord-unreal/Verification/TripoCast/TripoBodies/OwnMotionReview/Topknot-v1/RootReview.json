@@ -1,0 +1,23 @@
+{
+  "reviewer": "root",
+  "inspected": [
+    "idle-front",
+    "idle-side",
+    "idle-threequarter",
+    "idle-back",
+    "walk-threequarter",
+    "run-threequarter",
+    "jump-threequarter",
+    "hand-l",
+    "hand-r"
+  ],
+  "accepted": false,
+  "observations": [
+    "Inward palms/soft elbows read more naturally; source face, glasses, hair, clothes and bag remain recognizable.",
+    "Bag visibly compresses and pulls toward the groin during the actual jump apex; accessory deformation requires diagnosis.",
+    "Left hand is partly occluded by the bag in the detailed view, so unoccluded finger clearance is not established.",
+    "Hair remains glossy/clumped and fingers coarse."
+  ],
+  "native_or_final_art_accepted": false,
+  "next_step": "Bounded CPU bag-weight/topology diagnosis before additional full-motion renders or any native import."
+}

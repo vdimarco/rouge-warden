@@ -1,7 +1,7 @@
 // Ahead of the Light: the bosses (final.md 10.3): WHALE, MAKO and MANTA. Each drives under every rival rule (rivals.js)
 // plus one rule of its own, applied here once a step (race.js part 8, bossStep) and in the rival AI (bossThink,
 // bossFast). WHALE: its bow wave shoves ships beside it and it breaches every 12 s, towing its wake harder (its wake,
-// tow and the SLAM on contact are handle.js's). MAKO: hunts the ship with the fewest fuel cells near it, rolls after
+// tow, the SLAM on contact and its no-graze rule are handle.js's), and its mass holds its light 2 s off. MAKO: hunts the ship with the fewest fuel cells near it, rolls after
 // each ram, and backs off after two takedowns. MANTA: the light pushes its sail unless a ship shadows it, the sail
 // holds its gap off 1 s, its lane lights before it passes, and a takedown tears the sail. Every change shows as an
 // event. Pure.
@@ -79,8 +79,13 @@ export function bossStep(race, ship, dt, tune = race.tune || TUNE) {
 
 // ---------------------------------------------------------------- WHALE
 
+const WHALE_FLOOR = 2;                    // s: the WHALE's light gap, at least
+
 function whaleStep(race, w, dt, T) {
   const A = w.ai, W = T.WHALE, now = race.t;
+  // its mass holds its own light: it cannot graze to push the light back as the others do, and it is beaten only by
+  // crossing the gate ahead of it (10.3), so its gap never falls under WHALE_FLOOR (out of the glare at any η)
+  if (w.gap < WHALE_FLOOR) w.gap = WHALE_FLOOR;
   // the breach: its song 1 s before, then +breachEta over breachS (2 fuel), the wake towing × breachTow meanwhile
   if (now >= A.songAt && A.songAt >= 0) {
     A.songAt = -1;

@@ -125,7 +125,13 @@ export function setupTouchControls({ root, surface, stream }) {
 
   function move(pointer, event) {
     if (Math.hypot(event.clientX - pointer.startX, event.clientY - pointer.startY) > 12) pointer.tapMoved = true;
-    if (pointer.stick === 'move') {
+    if (pointer.stick === 'steer') {
+      const bounds = pointer.target.getBoundingClientRect();
+      const x = Math.max(-1, Math.min(1, (event.clientX - bounds.left - bounds.width / 2) / (bounds.width / 2)));
+      pointer.keys = x < -.18 ? [65] : x > .18 ? [68] : [];
+      pointer.target.style.setProperty('--steer-angle', `${x * 60}deg`);
+      syncKeys();
+    } else if (pointer.stick === 'move') {
       const bounds = pointer.target.getBoundingClientRect();
       const radius = Math.max(1, Math.min(bounds.width, bounds.height) / 2);
       const x = (event.clientX - bounds.left - bounds.width / 2) / radius;
@@ -158,6 +164,7 @@ export function setupTouchControls({ root, surface, stream }) {
       } else lastTap = undefined;
     }
     updatePressed(pointer.target);
+    if (pointer.stick === 'steer') pointer.target.style.setProperty('--steer-angle', '0deg');
     if (pointer.stick === 'move') {
       sprintLatched = false;
       pointer.target.style.setProperty('--stick-x', '0px');
@@ -223,11 +230,12 @@ export function setupTouchControls({ root, surface, stream }) {
 
   function pointerDown(event) {
     const control = event.target.closest('[data-stick], [data-key]');
-    const target = control && root.contains(control) ? control : surface.contains(event.target) ? surface : null;
+    let target = control && root.contains(control) ? control : surface.contains(event.target) ? surface : null;
     if (!enabled || event.button !== 0 || !target) return;
     if (root.inert || surface.inert) return;
     if (target === surface && (event.pointerType !== 'touch'
       || event.target.closest('button, select, a, input, textarea, #menu, #intro, #overlay, #crew-picker, #install-nudge'))) return;
+    if (driving && [65, 68].includes(Number(target.dataset.key))) target = root.querySelector('.touch-steering');
     const stick = target === surface ? 'look' : target.dataset.stick;
     if (stick && [...pointers.values()].some(pointer => pointer.stick === stick)) return;
     const key = Number(target.dataset.key);
@@ -244,7 +252,7 @@ export function setupTouchControls({ root, surface, stream }) {
     pointers.set(event.pointerId, pointer);
     target.dataset.pressed = 'true';
     target.setPointerCapture(event.pointerId);
-    if (stick === 'move') move(pointer, event);
+    if (stick === 'move' || stick === 'steer') move(pointer, event);
     else if (stick === 'look') send('MouseEnter', []);
     else syncKeys();
   }

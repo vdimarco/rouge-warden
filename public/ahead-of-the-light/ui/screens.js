@@ -138,6 +138,18 @@ export function createScreens({ root, onAction }) {
   root.appendChild(layer);
   const locked = () => now() - S.shownAt < S.unlock * 1000;
 
+  // a rotation or a resized window at the break: the ship picture is drawn again for its box's new size (a frame
+  // later, once main.js has set the new layout)
+  window.addEventListener('resize', () => {
+    const cv = S.name === 'break' && S.el ? S.el.querySelector('.shipcv') : null;
+    if (cv && S.model) requestAnimationFrame(() => { drawShip(cv, S.model); moreCards(S.el); });
+  });
+  // On a short phone the offer scrolls in its own row: while cards wait below, its bottom edge fades (.more).
+  function moreCards(el) {
+    const o = el && el.querySelector('.s-break .offer');
+    if (o) o.classList.toggle('more', o.scrollTop + o.clientHeight < o.scrollHeight - 2);
+  }
+
   root.addEventListener('click', (e) => {
     // the game switcher's button belongs to /arcade/switch.js: a tap on it never reaches the screen under it (on the
     // title that screen is TAP TO FLY, so it started a run behind the switcher)
@@ -255,6 +267,11 @@ export function createScreens({ root, onAction }) {
       cls: m.dock ? 'docked' : '' });
     const cv = el.querySelector('.shipcv');
     if (cv) requestAnimationFrame(() => drawShip(cv, m));
+    const off = el.querySelector('.offer');
+    if (off) {
+      off.addEventListener('scroll', () => moreCards(el), { passive: true });
+      requestAnimationFrame(() => moreCards(el));
+    }
   }
 
   // ---------- the chart's chips (11.3): DOM buttons over the chart main.js draws ----------

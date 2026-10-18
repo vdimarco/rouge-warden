@@ -1,0 +1,47 @@
+{
+  "at_utc": "2026-10-17T23:29:19.553051+00:00",
+  "source_sha256": "43c538c2880b933fd2f2fc78c67e7ca08e913d05552f53f0dc96794e01ce51f6",
+  "reference_sha256": "7998152ab482a55571f6ffa113ef901988ccf4cfd2bfd6c9fa79134cc37d8ed0",
+  "viewed": [
+    {
+      "file": "front.png",
+      "sha256": "160de2a1944f5f29e7208d9cc24d6cb297ba173d0e0a790d93b8a417faba842b"
+    },
+    {
+      "file": "threequarter.png",
+      "sha256": "d2e1e3d2f278f4df2cc6df5e8afc0e5cd5b1863c850de5d449cc4313f9515520"
+    },
+    {
+      "file": "side.png",
+      "sha256": "b142690d8af66735a63a40e9470da4756ad55468a66cc62706e3b05aef130e66"
+    },
+    {
+      "file": "back.png",
+      "sha256": "d8781c740ac452da4f342818875d6474ddb0559ec02b899e5e3090d0ef170b56"
+    },
+    {
+      "file": "face-front.png",
+      "sha256": "cdf199b16bd7e165ce4930cdd9bfa1cd15b02436dd323af3843e4558bc8bf1c4"
+    },
+    {
+      "file": "face-threequarter.png",
+      "sha256": "945d9652bdd02bb0f505a925a59350ed67533b366aec0065aa3251cc8dc88333"
+    },
+    {
+      "file": "hand-left.png",
+      "sha256": "c1807571a020e3426535ed91d510a2ea0f97f1098755ce4713c53fdce6004c7d"
+    },
+    {
+      "file": "hand-right.png",
+      "sha256": "568e1b616d0a3cc758dfa92da2c6dc04bba065e698a8aed8c8f848a3ee381a61"
+    }
+  ],
+  "bounded_rig_trial_allowed": true,
+  "final_art_accepted": false,
+  "observations": [
+    "Mature adult build/likeness, green cap, moustache/goatee, navy/red51 outfit and shoes remain recognizable.",
+    "Five distal digits are separated; palms/fingers remain thick/rounded and sleeve numbers less clean than the reference.",
+    "Face/brow age details softened. No gross visible limb or accessory defect in all8 actual source views.",
+    "Original source normals are valid; separate Blender-only6-corner loss nearankle requires authoritative accessor recovery during preparation."
+  ]
+}

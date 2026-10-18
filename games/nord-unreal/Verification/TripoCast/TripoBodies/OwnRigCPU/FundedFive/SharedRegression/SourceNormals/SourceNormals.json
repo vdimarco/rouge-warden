@@ -1,0 +1,201 @@
+{
+  "passed": true,
+  "threads": 4,
+  "rendered": false,
+  "recipe_sha256": "abb29aa94fec7f39ed840ff9330a79f663f76f31f7ebe28d61bf1104188909b6",
+  "surface_recipe_sha256": "82040586d9b77fafcfc574b39dbfd05d3d32b15effb38d91bb96f84605409948",
+  "cases": {
+    "GreenCap51": {
+      "source_sha256": "43c538c2880b933fd2f2fc78c67e7ca08e913d05552f53f0dc96794e01ce51f6",
+      "proof": {
+        "applied": true,
+        "source_sha256": "43c538c2880b933fd2f2fc78c67e7ca08e913d05552f53f0dc96794e01ce51f6",
+        "original_accessors": {
+          "POSITION": {
+            "accessor": 1,
+            "count": 54552,
+            "sha256": "eb76e496064cec1199a6279688a191b4c90e03f1c8ad5be3c9f02f7911e6af79"
+          },
+          "TEXCOORD_0": {
+            "accessor": 2,
+            "count": 54552,
+            "sha256": "bdc5cf14f6b0c998d85167dac1c64d2a8ea5ff79b5160c29d60e0eb4931b74fb"
+          },
+          "NORMAL": {
+            "accessor": 3,
+            "count": 54552,
+            "sha256": "677863ca7eb1c9b76e07ed2f2f8ed58b3f054ef7a2ee5d6ebbb93bb64ed3dc82"
+          },
+          "indices": {
+            "accessor": 0,
+            "count": 294498,
+            "sha256": "7ffe5b93dc822c92a383c1231e4d71f4e97d83e473d184b0e130e1c374c3df6b"
+          }
+        },
+        "recovered_corner_count": 6,
+        "unique_uv_triangles": 98166,
+        "vertex_bijection_count": 54552,
+        "position_residual_max_m": 0.0,
+        "uv_max_abs_error": 0.0,
+        "original_triangle_winding_preserved": true,
+        "healthy_corner_normals_bitwise_unchanged": true,
+        "mesh_custom_normals_modified": false,
+        "geometry_uv_topology_or_transform_correction_applied": false,
+        "scope": "Original static GLB source snapshot arrays only; provider/store/export gates unchanged",
+        "corners": [
+          {
+            "blender_loop": 216961,
+            "blender_vertex": 37242,
+            "raw_vertex": 37242,
+            "authoritative_Blender_local_normal": [
+              0.28332340717315674,
+              -0.7893335223197937,
+              0.5446837544441223
+            ]
+          },
+          {
+            "blender_loop": 219415,
+            "blender_vertex": 37242,
+            "raw_vertex": 37242,
+            "authoritative_Blender_local_normal": [
+              0.28332340717315674,
+              -0.7893335223197937,
+              0.5446837544441223
+            ]
+          },
+          {
+            "blender_loop": 219422,
+            "blender_vertex": 37242,
+            "raw_vertex": 37242,
+            "authoritative_Blender_local_normal": [
+              0.28332340717315674,
+              -0.7893335223197937,
+              0.5446837544441223
+            ]
+          },
+          {
+            "blender_loop": 219939,
+            "blender_vertex": 37242,
+            "raw_vertex": 37242,
+            "authoritative_Blender_local_normal": [
+              0.28332340717315674,
+              -0.7893335223197937,
+              0.5446837544441223
+            ]
+          },
+          {
+            "blender_loop": 222384,
+            "blender_vertex": 37242,
+            "raw_vertex": 37242,
+            "authoritative_Blender_local_normal": [
+              0.28332340717315674,
+              -0.7893335223197937,
+              0.5446837544441223
+            ]
+          },
+          {
+            "blender_loop": 222984,
+            "blender_vertex": 37242,
+            "raw_vertex": 37242,
+            "authoritative_Blender_local_normal": [
+              0.28332340717315674,
+              -0.7893335223197937,
+              0.5446837544441223
+            ]
+          }
+        ]
+      },
+      "source_bytes_mesh_geometry_uv_topology_normals_and_transform_unchanged": true,
+      "negative_controls_rejected": [
+        "Zero imported normals rejected without original-source context",
+        "zero raw normal",
+        "nonfinite raw normal",
+        "20micron POSITION deformation",
+        "changed UV",
+        "ambiguous UV triangles",
+        "reversed triangle winding"
+      ]
+    },
+    "RedJersey": {
+      "source_sha256": "13bf9c9dc76a7a925ba31ad5fadf6ef5e3a7436ee0450e6579a221f1fabd96c8",
+      "proof": {
+        "applied": true,
+        "source_sha256": "13bf9c9dc76a7a925ba31ad5fadf6ef5e3a7436ee0450e6579a221f1fabd96c8",
+        "original_accessors": {
+          "POSITION": {
+            "accessor": 1,
+            "count": 54560,
+            "sha256": "4de8da189349032bcc29efcabba6630a0ce62abebee8f57c676ee2ad6ac382d1"
+          },
+          "TEXCOORD_0": {
+            "accessor": 2,
+            "count": 54560,
+            "sha256": "6b27ceb205cea8f44d89c8c4b6355f862d3e066457b92cb27933228e1c659b12"
+          },
+          "NORMAL": {
+            "accessor": 3,
+            "count": 54560,
+            "sha256": "1d5e1aa5b0f836b8e960501d4a86a88923ce470f7e66cdfa6b96e869a47fef7d"
+          },
+          "indices": {
+            "accessor": 0,
+            "count": 293754,
+            "sha256": "ad208c67d7ff66e01be8059fe9ba6801d90f5749aa025e701e68c61c10fb9bb7"
+          }
+        },
+        "recovered_corner_count": 2,
+        "unique_uv_triangles": 97918,
+        "vertex_bijection_count": 54560,
+        "position_residual_max_m": 0.0,
+        "uv_max_abs_error": 0.0,
+        "original_triangle_winding_preserved": true,
+        "healthy_corner_normals_bitwise_unchanged": true,
+        "mesh_custom_normals_modified": false,
+        "geometry_uv_topology_or_transform_correction_applied": false,
+        "scope": "Original static GLB source snapshot arrays only; provider/store/export gates unchanged",
+        "corners": [
+          {
+            "blender_loop": 175984,
+            "blender_vertex": 44916,
+            "raw_vertex": 44916,
+            "authoritative_Blender_local_normal": [
+              0.3507119417190552,
+              -0.8675702810287476,
+              0.35259461402893066
+            ]
+          },
+          {
+            "blender_loop": 176664,
+            "blender_vertex": 44916,
+            "raw_vertex": 44916,
+            "authoritative_Blender_local_normal": [
+              0.3507119417190552,
+              -0.8675702810287476,
+              0.35259461402893066
+            ]
+          }
+        ]
+      },
+      "source_bytes_mesh_geometry_uv_topology_normals_and_transform_unchanged": true,
+      "negative_controls_rejected": [
+        "Zero imported normals rejected without original-source context",
+        "zero raw normal",
+        "nonfinite raw normal",
+        "20micron POSITION deformation",
+        "changed UV",
+        "ambiguous UV triangles",
+        "reversed triangle winding"
+      ]
+    },
+    "BlackCap": {
+      "source_sha256": "ff4d393b98d5fba212295305b714ab7fce04229e34b14196c7e2f4c210467d70",
+      "proof": {
+        "applied": false,
+        "recovered_corner_count": 0
+      },
+      "source_bytes_mesh_geometry_uv_topology_normals_and_transform_unchanged": true,
+      "negative_controls_rejected": []
+    }
+  },
+  "art_native_or_provider_surface_acceptance": false
+}

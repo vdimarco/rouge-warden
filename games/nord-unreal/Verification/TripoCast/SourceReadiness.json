@@ -1,0 +1,317 @@
+{
+  "status": "dry_run_not_submitted",
+  "endpoint_id": "meshy/v7.1/image-to-3d",
+  "reference_url_commit": "d33f5a4e8b2a7b096ebb8bf6a584394416df77d9",
+  "character_count": 7,
+  "pilot_template": {
+    "path": "games/nord-unreal/Data/GraphicNovel/Pilot/CurlyMetalhead/generated-v2-high-detail/request.json",
+    "sha256": "47209121445fc43283c50481d7fc6adece8274fdf049ddec31e52c58f4a352d1"
+  },
+  "style_kit": {
+    "path": "higgsfield/styles/nord.json",
+    "sha256": "06aeff519d85e425dfd4c2e1cfaae1891659155599e939aa36d9584bac34c943"
+  },
+  "settings": {
+    "model_type": "standard",
+    "topology": "triangle",
+    "target_polycount": 100000,
+    "symmetry_mode": "auto",
+    "should_remesh": true,
+    "should_texture": true,
+    "enable_pbr": true,
+    "pose_mode": "a-pose",
+    "enable_rigging": true,
+    "rigging_height_meters": 1.82,
+    "enable_animation": true,
+    "animation_action_id": 0,
+    "enable_safety_checker": true,
+    "geometry_resolution": "4k"
+  },
+  "provider_schema": {
+    "path": "games/nord-unreal/Verification/TripoCast/Provider/input-schema.json",
+    "sha256": "3862d19ba32c9de1b96024c703c2966ea67b84a77e72dbb51afbae9b044cca9c"
+  },
+  "provider_schema_snapshot_validated": true,
+  "geometry_resolution_note": "4k geometry resolution; does not establish 4k texture resolution.",
+  "target_polycount_note": "100000 is a requested target, not proof of returned topology or triangle count.",
+  "face_animation_promised": false,
+  "network_requests": 0,
+  "provider_jobs_submitted": 0,
+  "spent_usd": 0,
+  "public_reference_http_hashes_verified": false,
+  "live_schema_verified_by_this_planner": false,
+  "characters": [
+    {
+      "character": "GreenCap51",
+      "style": 3,
+      "request_file": "GreenCap51.json",
+      "request_sha256": "778acb70e3f72d5d4ea99e2d64798944adcf4fe4ed67651a3ba13a09ff2e1be6",
+      "reference": {
+        "path": "games/nord-unreal/Data/GraphicNovel/Crew/GreenCap51/reference.png",
+        "sha256": "7998152ab482a55571f6ffa113ef901988ccf4cfd2bfd6c9fa79134cc37d8ed0",
+        "dimensions": [
+          1024,
+          1536
+        ],
+        "url": "https://raw.githubusercontent.com/vdimarco/rouge-warden/d33f5a4e8b2a7b096ebb8bf6a584394416df77d9/games/nord-unreal/Data/GraphicNovel/Crew/GreenCap51/reference.png"
+      },
+      "review": {
+        "path": "games/nord-unreal/Data/GraphicNovel/Crew/GreenCap51/source-review.json",
+        "sha256": "8ac31eb3d9ccf23e0e55cf9efa9be2943a7b6df0a96380e50251ef4b81bf7d93"
+      },
+      "edit_prompt": {
+        "path": "games/nord-unreal/Data/GraphicNovel/Crew/GreenCap51/prompt.txt",
+        "sha256": "eb0b6ce6f054406b86a0c6e512a179c89479a3f09a190b4ed26883284a592ded"
+      },
+      "texture_prompt_characters": 451,
+      "identity_constraints": {
+        "identity": "Recognizable mature face, dark hair, moustache/goatee and backward green cap retained; closed-mouth expression remains calm.",
+        "outfit": "Navy jersey with red trim and white 51 chest/sleeve numbers, navy shorts and gray running shoes retained.",
+        "mature_adult_proportions": true,
+        "preserve_reference_palette_markings_accessories": true,
+        "new_wardrobe": false
+      },
+      "remaining_model_risks": [
+        "Inspect cap/back-of-head reconstruction, jersey numbering and material boundaries in the generated model.",
+        "Visible digit count/gaps do not establish separate finger topology, skin weights or controls.",
+        "A single front view does not establish backside geometry, complete anatomy or topology.",
+        "No finger articulation, facial rig, blink, jaw or speech controls are guaranteed by this edited image.",
+        "Rigging, skinning, clips, materials, native motion and rendered appearance require actual model and engine review."
+      ]
+    },
+    {
+      "character": "Memphis33",
+      "style": 4,
+      "request_file": "Memphis33.json",
+      "request_sha256": "06a7790dbc562e4637e347011cbc99c84c4f33d96bbc6979bd7c8587bf628c9b",
+      "reference": {
+        "path": "games/nord-unreal/Data/GraphicNovel/Crew/Memphis33/reference.png",
+        "sha256": "f47a69cc5330ab37e056235c3d2d8c2e84fe717b0d07e189c5a1aa1aacd6302d",
+        "dimensions": [
+          1024,
+          1536
+        ],
+        "url": "https://raw.githubusercontent.com/vdimarco/rouge-warden/d33f5a4e8b2a7b096ebb8bf6a584394416df77d9/games/nord-unreal/Data/GraphicNovel/Crew/Memphis33/reference.png"
+      },
+      "review": {
+        "path": "games/nord-unreal/Data/GraphicNovel/Crew/Memphis33/source-review.json",
+        "sha256": "3419b2477e20e2e09b7cdfb17142239b619d8e4ab391f4a26e161f4f4d40684b"
+      },
+      "edit_prompt": {
+        "path": "games/nord-unreal/Data/GraphicNovel/Crew/Memphis33/prompt.txt",
+        "sha256": "04ab4e338af288f920b18c5cc80687cd3b39d00b453d7d315f8bf28939520b2d"
+      },
+      "texture_prompt_characters": 491,
+      "identity_constraints": {
+        "identity": "Recognizable mature face, beard, navy forward cap and brown-tinted rectangular glasses retained; closed-mouth expression remains calm.",
+        "outfit": "Red sleeveless jersey with white trim, Memphis script and large 33, navy shorts, white calf socks and white high-top sneakers retained.",
+        "mature_adult_proportions": true,
+        "preserve_reference_palette_markings_accessories": true,
+        "new_wardrobe": false
+      },
+      "remaining_model_risks": [
+        "Thin tinted glasses, face likeness and the Memphis/33 markings need actual generated-mesh and texture inspection.",
+        "Visible digit count/gaps do not establish separate finger topology, skin weights or controls.",
+        "A single front view does not establish backside geometry, complete anatomy or topology.",
+        "No finger articulation, facial rig, blink, jaw or speech controls are guaranteed by this edited image.",
+        "Rigging, skinning, clips, materials, native motion and rendered appearance require actual model and engine review."
+      ]
+    },
+    {
+      "character": "BlackCap",
+      "style": 5,
+      "request_file": "BlackCap.json",
+      "request_sha256": "41ed3a882d49e45a0fb7097aab42e4e74caf3160bfa9f05117a4f0704d7bd7a9",
+      "reference": {
+        "path": "games/nord-unreal/Data/GraphicNovel/Crew/BlackCap/reference.png",
+        "sha256": "baed5a933fd2c7bcd6e2979836caeb92f7233beb4125ceb6eac2c920822cc3a9",
+        "dimensions": [
+          1024,
+          1536
+        ],
+        "url": "https://raw.githubusercontent.com/vdimarco/rouge-warden/d33f5a4e8b2a7b096ebb8bf6a584394416df77d9/games/nord-unreal/Data/GraphicNovel/Crew/BlackCap/reference.png"
+      },
+      "review": {
+        "path": "games/nord-unreal/Data/GraphicNovel/Crew/BlackCap/source-review.json",
+        "sha256": "d9176a9966b90215568cba34e6e80d60905fc50afb3869faef92c5249fde6c83"
+      },
+      "edit_prompt": {
+        "path": "games/nord-unreal/Data/GraphicNovel/Crew/BlackCap/prompt.txt",
+        "sha256": "fbcdd82d5a0e945ce576a68877ac8ed1ec42e3ec356ffc6ed2b9d9f5219ff473"
+      },
+      "texture_prompt_characters": 436,
+      "identity_constraints": {
+        "identity": "Recognizable face, complexion, full beard, black cap and rectangular glasses with visible eyes retained.",
+        "outfit": "Black T-shirt, charcoal cargo shorts and black sneakers retained with cleaner dimensional material boundaries.",
+        "mature_adult_proportions": true,
+        "preserve_reference_palette_markings_accessories": true,
+        "new_wardrobe": false
+      },
+      "remaining_model_risks": [
+        "Thin glasses, eye visibility and face likeness require generated-mesh inspection.",
+        "Digit count and gaps in this image do not establish separate finger topology, weights or controls.",
+        "A single front view does not establish backside geometry, complete anatomy or topology.",
+        "No finger articulation, facial rig, blink, jaw or speech controls are guaranteed by this edited image.",
+        "Rigging, skinning, clips, materials, native motion and rendered appearance require actual model and engine review."
+      ]
+    },
+    {
+      "character": "WhiteCap",
+      "style": 6,
+      "request_file": "WhiteCap.json",
+      "request_sha256": "b42c32c14911973aace41210d4a8abb9e3c437e7853637e38c6784f478a04d4a",
+      "reference": {
+        "path": "games/nord-unreal/Data/GraphicNovel/Crew/WhiteCap/reference.png",
+        "sha256": "61bbfd6c38e51506f59f8f1293b44f89bef39d148d9d3c948906d8be8e24fb33",
+        "dimensions": [
+          1024,
+          1536
+        ],
+        "url": "https://raw.githubusercontent.com/vdimarco/rouge-warden/d33f5a4e8b2a7b096ebb8bf6a584394416df77d9/games/nord-unreal/Data/GraphicNovel/Crew/WhiteCap/reference.png"
+      },
+      "review": {
+        "path": "games/nord-unreal/Data/GraphicNovel/Crew/WhiteCap/source-review.json",
+        "sha256": "f13e7bcd90e07bf60de79c6a3bbe23f3e742e24dbd62e8b777cb8a99597a0ca6"
+      },
+      "edit_prompt": {
+        "path": "games/nord-unreal/Data/GraphicNovel/Crew/WhiteCap/prompt.txt",
+        "sha256": "d376bc71257eb0eeae6d23fb44dcdb7ded65fefba567ed83a69e00eeff060e1c"
+      },
+      "texture_prompt_characters": 461,
+      "identity_constraints": {
+        "identity": "Recognizable mature face, full dark beard, rectangular glasses and backward white mesh cap retained; calm closed-mouth expression.",
+        "outfit": "Plain black T-shirt, plain gray shorts and gray-and-white running shoes retained with broad adult body frame.",
+        "mature_adult_proportions": true,
+        "preserve_reference_palette_markings_accessories": true,
+        "new_wardrobe": false
+      },
+      "remaining_model_risks": [
+        "White cap mesh/strap, thin glasses and face likeness require generated-mesh and texture inspection.",
+        "Visible five-digit count and gaps do not establish separate finger topology, skin weights or controls.",
+        "A single front view does not establish backside geometry, complete anatomy or topology.",
+        "No finger articulation, facial rig, blink, jaw or speech controls are guaranteed by this edited image.",
+        "Rigging, skinning, clips, materials, native motion and rendered appearance require actual model and engine review."
+      ]
+    },
+    {
+      "character": "RedJersey",
+      "style": 7,
+      "request_file": "RedJersey.json",
+      "request_sha256": "f5b144512d6df439f25cbfa03f7fb7f466923c95396f784eae6fb63f3abbf4e8",
+      "reference": {
+        "path": "games/nord-unreal/Data/GraphicNovel/Crew/RedJersey/reference.png",
+        "sha256": "3270ff8a8a29209ae1b1e7cb454a7883375b955adc651b12feb71332a2086bac",
+        "dimensions": [
+          1024,
+          1536
+        ],
+        "url": "https://raw.githubusercontent.com/vdimarco/rouge-warden/d33f5a4e8b2a7b096ebb8bf6a584394416df77d9/games/nord-unreal/Data/GraphicNovel/Crew/RedJersey/reference.png"
+      },
+      "review": {
+        "path": "games/nord-unreal/Data/GraphicNovel/Crew/RedJersey/source-review.json",
+        "sha256": "30fa7a9edd67cd96c4ecb09bd22da56602df61ab4ba4d82ae359c31c4be9c75a"
+      },
+      "edit_prompt": {
+        "path": "games/nord-unreal/Data/GraphicNovel/Crew/RedJersey/prompt.txt",
+        "sha256": "59c9440ba2d7d9dba30d1294a538ca03a52cc5d81ddb4dc8ee134bf8e75219fd"
+      },
+      "texture_prompt_characters": 505,
+      "identity_constraints": {
+        "identity": "Recognizable mature lean face, moustache/small goatee, backward navy cap and blue mirrored sunglasses retained; calm closed-mouth expression.",
+        "outfit": "Red button-front baseball jersey with navy/white piping and outlined white W chest emblem, black shorts and white/gray running shoes retained.",
+        "mature_adult_proportions": true,
+        "preserve_reference_palette_markings_accessories": true,
+        "new_wardrobe": false
+      },
+      "remaining_model_risks": [
+        "Inspect mirrored lens reflections, thin sunglasses, jersey button/piping geometry and W marking in actual generated output.",
+        "Visible five-digit count and gaps do not establish separate finger topology, skin weights or controls.",
+        "A single front view does not establish backside geometry, complete anatomy or topology.",
+        "No finger articulation, facial rig, blink, jaw or speech controls are guaranteed by this edited image.",
+        "Rigging, skinning, clips, materials, native motion and rendered appearance require actual model and engine review."
+      ]
+    },
+    {
+      "character": "LimeJacket",
+      "style": 8,
+      "request_file": "LimeJacket.json",
+      "request_sha256": "5e5b5484f1f8c4efee36f90bc126d0e3e88cb02285ec982f5b1a04f5f623c201",
+      "reference": {
+        "path": "games/nord-unreal/Data/GraphicNovel/Crew/LimeJacket/reference.png",
+        "sha256": "29b9afda5d1e68c64d0b67e8faa843f7b4aee676a5c218b530eedba3969f14dd",
+        "dimensions": [
+          1024,
+          1536
+        ],
+        "url": "https://raw.githubusercontent.com/vdimarco/rouge-warden/d33f5a4e8b2a7b096ebb8bf6a584394416df77d9/games/nord-unreal/Data/GraphicNovel/Crew/LimeJacket/reference.png"
+      },
+      "review": {
+        "path": "games/nord-unreal/Data/GraphicNovel/Crew/LimeJacket/source-review.json",
+        "sha256": "031c0c77448420f8983e59fef7e8c6400a06b3b44e69bbd3c96ef54a2fa58779"
+      },
+      "edit_prompt": {
+        "path": "games/nord-unreal/Data/GraphicNovel/Crew/LimeJacket/prompt.txt",
+        "sha256": "64a8dbd3b7ca3b7830f14bda7760fa140ab40833d337f54549ecffcd418762bc"
+      },
+      "texture_prompt_characters": 460,
+      "identity_constraints": {
+        "identity": "Recognizable older face, gray wavy hair and beard, black beanie, calm brow and gentle closed-mouth expression retained.",
+        "outfit": "Lime-and-black zip jacket, red-and-black neck gaiter, black trousers with white side piping and gray sneakers retained.",
+        "mature_adult_proportions": true,
+        "preserve_reference_palette_markings_accessories": true,
+        "new_wardrobe": false
+      },
+      "remaining_model_risks": [
+        "Inspect whether remaining dark garment contours become baked edge artifacts in the generated model.",
+        "Neck gaiter, jacket cuffs, zipper, white piping and shoe silhouette require generated-mesh/material inspection.",
+        "A single front view does not establish backside geometry, complete anatomy or topology.",
+        "No finger articulation, facial rig, blink, jaw or speech controls are guaranteed by this edited image.",
+        "Rigging, skinning, clips, materials, native motion and rendered appearance require actual model and engine review."
+      ]
+    },
+    {
+      "character": "Topknot",
+      "style": 10,
+      "request_file": "Topknot.json",
+      "request_sha256": "3cf20f22a761c8b38dadbd5614e5a79a90a3ec2226da37ef4d02264699f641d5",
+      "reference": {
+        "path": "games/nord-unreal/Data/GraphicNovel/Crew/Topknot/reference.png",
+        "sha256": "ea303ba5b08813fb7ff5c3da1eae5d842094a0687f78a06e0d4abed158ab7b3b",
+        "dimensions": [
+          1024,
+          1536
+        ],
+        "url": "https://raw.githubusercontent.com/vdimarco/rouge-warden/d33f5a4e8b2a7b096ebb8bf6a584394416df77d9/games/nord-unreal/Data/GraphicNovel/Crew/Topknot/reference.png"
+      },
+      "review": {
+        "path": "games/nord-unreal/Data/GraphicNovel/Crew/Topknot/source-review.json",
+        "sha256": "33955a1524945fbedbc1b605bcb9da31f188977764d6265ced243df5c5a5f8b2"
+      },
+      "edit_prompt": {
+        "path": "games/nord-unreal/Data/GraphicNovel/Crew/Topknot/prompt.txt",
+        "sha256": "13bf5d03fb82d91e5562b8f9144af28d32aa5b65d6cc309e60c1838334cb2fc0"
+      },
+      "texture_prompt_characters": 517,
+      "identity_constraints": {
+        "identity": "Recognizable mature lean face, moustache/goatee, dark sunglasses, high bun and loose dark curls retained; calm closed-mouth expression.",
+        "outfit": "Open-collar white short-sleeve button shirt, navy shorts, white/navy running shoes and black crossbody strap/bag with visible white/pale-blue contents retained.",
+        "mature_adult_proportions": true,
+        "preserve_reference_palette_markings_accessories": true,
+        "new_wardrobe": false
+      },
+      "remaining_model_risks": [
+        "Inspect the strap, bag and visible contents for fusion, thin geometry, body intersections and skinning.",
+        "Bun, loose curls, thin sunglasses and face likeness require generated-mesh inspection.",
+        "Visible five-digit count and gaps do not establish separate finger topology, skin weights or controls.",
+        "A single front view does not establish backside geometry, complete anatomy or topology.",
+        "No finger articulation, facial rig, blink, jaw or speech controls are guaranteed by this edited image.",
+        "Rigging, skinning, clips, materials, native motion and rendered appearance require actual model and engine review."
+      ]
+    }
+  ],
+  "limits": [
+    "Root must separately verify public URL bytes and current endpoint schema before submission.",
+    "Reference review does not establish generated anatomy, topology, fingers or native acceptance.",
+    "Generation, Tripo rigging, source directories, spending and native operations remain separate."
+  ]
+}

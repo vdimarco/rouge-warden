@@ -28,3 +28,22 @@ The browser launcher SHALL default to a frozen 15:00 clock while preserving expl
 #### Scenario: Shared daytime
 - **WHEN** either player connects or reconnects to the default live demo
 - **THEN** both peers render the host's daytime clock without changing campaign saves or authored map assets
+
+### Requirement: Drag steering wheel
+The browser SHALL display a single wheel-shaped horizontal steering surface with adjacent left and right targets in portrait and landscape. Gas and Brake SHALL remain adjacent. Dragging across the wheel SHALL switch steering direction without lifting, its center SHALL stop steering, and releasing or interrupting the gesture SHALL clear steering. Walking controls and keyboard activation SHALL remain available.
+
+#### Scenario: Drag while accelerating
+- **WHEN** a driver holds Gas and drags across the wheel from left through center to right
+- **THEN** left steering releases at center, right steering activates on the right, and Gas remains held
+
+#### Scenario: Interrupted steering
+- **WHEN** a steering touch ends, is cancelled, or the player changes mode, rotates, opens the menu or disconnects
+- **THEN** steering releases and the wheel recenters
+
+#### Scenario: Phone layouts
+- **WHEN** driving controls are shown at 320px or 390px portrait or landscape
+- **THEN** the wheel and adjacent pedals fit without overlap and each steering button is at least 44px
+
+#### Scenario: Readable controls and separate menu
+- **WHEN** touch controls render in driving, walking or swimming mode at 320px portrait or wider supported layouts
+- **THEN** labels fit inside their buttons without overflow or wheel artwork covering the text, and Menu appears at the safe-area-aware top left of the play area

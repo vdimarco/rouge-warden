@@ -87,9 +87,10 @@ test('the values are the table\'s, with the critic\'s changes', () => {
   for (const [k, v] of Object.entries(want)) assert.equal(TUNE[k], v, k);
   assert.deepEqual(TUNE.NINES, [1.4722, 2.6467, 3.8002, 4.9517]);
   // WP9's tuned values (HIT_ETA 0.5 → 0.7, the masses of legs 2 to 8, RISK_PICKS 2 → 1; race/tuning.md) and the
-  // playtest's (race/playtest.md: the caps of legs 2 to 8, SHIELD_T 8 → 5, GAP0 8 → 7, the dock's prices and floor)
+  // playtest's (race/playtest.md: the caps of legs 2 to 8, SHIELD_T 8 → 5, GAP0 8 → 7, the dock's prices and floor);
+  // the masses + 0.08 after the review fixes (an item is judged once: no second THREAD or graze after a stumble)
   assert.deepEqual(TUNE.GAP_CAP, [8, 3.5, 3, 3, 3, 3, 2.8, 2.8]);
-  assert.deepEqual(TUNE.MASS_K, [1.00, 0.70, 0.66, 0.63, 0.61, 0.58, 0.55, 0.51]);
+  assert.deepEqual(TUNE.MASS_K, [1.00, 0.78, 0.74, 0.71, 0.69, 0.66, 0.63, 0.59]);
   assert.deepEqual(TUNE.FUEL_PER_LEG, [1, 3, 3, 3, 3, 3, 3, 3]);
   assert.deepEqual(TUNE.LEG_BEATS, [96, 120, 128, 136, 144, 152, 160, 128]);
   assert.deepEqual(TUNE.RANKS, [15, 40, 65]);

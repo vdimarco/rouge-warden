@@ -1,0 +1,13 @@
+19:35:17 | INFO: Data are loaded, start creating Blender stuff
+19:35:17 | INFO: Blender create Mesh node tripo_mesh_fb558687-4093-4793-9395-687f9983fe06
+19:35:17 | INFO: glTF import finished in 0.10s
+19:35:19 | INFO: Data are loaded, start creating Blender stuff
+19:35:19 | INFO: Blender create Mesh node tripo_mesh_8845fab9-3804-44f5-8dbb-fd63d29d98cb
+19:35:19 | INFO: glTF import finished in 0.10s
+19:35:21 | INFO: Data are loaded, start creating Blender stuff
+19:35:21 | INFO: Blender create Mesh node tripo_mesh_7ea82881-e750-48a7-95aa-a55da483d18f
+19:35:21 | INFO: glTF import finished in 0.10s
+TRIPO_AUTHORITATIVE_SOURCE_NORMALS_PASS {'GreenCap51': 6, 'RedJersey': 2, 'BlackCap': 0}
+Blender 5.2.2 LTS (hash d13f752e3b9c built 2026-09-15 01:34:58)
+
+Blender quit

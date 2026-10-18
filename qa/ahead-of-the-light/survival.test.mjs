@@ -103,10 +103,11 @@ test('a hit in the glare emits caught in the same step; 0 hull and no shield giv
   const t2 = types(ev2);
   assert.ok(t2.indexOf('wreck') >= 0 && t2.indexOf('caught') > t2.indexOf('wreck'), t2.join(','));
   assert.ok(w.you.wrecked && w.you.caught);
-  // in a whole race the leg ends on that step, wrecked
-  const r = bare({ items: [{ kind: 'knot', beat: 30, psi: 0, half: 3 }] });
+  // in a whole race the leg ends on that step, wrecked (the shield stays down: it would grow back before the knot)
+  const r = bare({ tune: { ...STILL, SHIELD_T: Infinity }, items: [{ kind: 'knot', beat: 30, psi: 0, half: 3 }] });
   r.you.hull = 1;
   r.you.shield = 0;
+  r.you.shieldT = 0;
   let end = null;
   while (r.race.phase !== 'done' && r.race.t < 40) for (const e of stepRace(r.race, null, STEP)) if (e.type === 'legEnd') end = e;
   assert.equal(end.why, 'wrecked');

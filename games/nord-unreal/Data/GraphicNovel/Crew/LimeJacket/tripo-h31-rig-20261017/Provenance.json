@@ -1,0 +1,29 @@
+{
+  "character": "LimeJacket",
+  "source_provider": "Tripo H3.1",
+  "source_body_task_id": "647104d8-4e97-4e99-a0ee-8929d83b632b",
+  "rig_task_id": "e53a95c0-64b7-488c-8be4-0e41d7671649",
+  "credits_consumed": 25,
+  "model": "v3.0-20260909",
+  "rig_type": "biped",
+  "spec": "unreal",
+  "out_format": "fbx",
+  "source": {
+    "path": "Data/GraphicNovel/Crew/LimeJacket/tripo-h31-body-20261017/body.glb",
+    "sha256": "178a21d8a3c963a9cf91e4014807a3f69f2c6bee0e95b472796740bf7179ab77"
+  },
+  "outputs": {
+    "rig.fbx": {
+      "bytes": 7413164,
+      "sha256": "59432254e8f9dbe46dbeb72e053539563475b135fd77daf956c13c75efc96393"
+    },
+    "provider-preview.png": {
+      "bytes": 134511,
+      "sha256": "dafebf16570d0a841e411d8e3f048055044148aa406ed01fbb0b54c68642f65b"
+    }
+  },
+  "signed_urls_private_only": true,
+  "raw_provider_files_unchanged": true,
+  "native_or_art_accepted": false,
+  "recorded_utc": "2026-10-17T23:37:05.447977+00:00"
+}
