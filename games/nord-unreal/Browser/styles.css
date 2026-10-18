@@ -124,3 +124,6 @@ footer p { margin: 0; }
 .touch-navigation { position: absolute; top: max(12px, env(safe-area-inset-top)); left: max(16px, env(safe-area-inset-left)); }
 #touch-controls .touch-navigation button { width: 64px; height: 64px; gap: 2px; padding: 6px; }
 #touch-controls .touch-navigation svg { width: 22px; height: 22px; }
+
+/* On foot the move stick jumps under the thumb that lands anywhere on the game. */
+#touch-controls .move-stick[data-floating="true"] { left: var(--float-x) !important; top: var(--float-y) !important; bottom: auto !important; translate: -50% -50%; transition: none; }

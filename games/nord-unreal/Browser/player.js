@@ -51,7 +51,7 @@ function updateInput() {
   touchRoot.hidden = !touchMode || !playing;
   touchControls?.setEnabled(touchMode && playing);
   element('input-note').textContent = playing
-    ? (touchMode ? 'Drag anywhere on the game to look · Move / drag the steering wheel on the left · Gas and Brake in cars · Gyro look in ☰ Menu.'
+    ? (touchMode ? 'On foot, drag anywhere to move and use a second finger to look · In cars, drag the wheel and the game to look · Gyro look in ☰ Menu.'
       : locked ? 'You’re in control. Esc releases the mouse.' : 'Click the game to control it. Esc releases the mouse.')
     : `${touchMode ? 'Touch controls appear when you play.' : 'Keyboard + mouse supported.'} The host PC must stay online.`;
 }
