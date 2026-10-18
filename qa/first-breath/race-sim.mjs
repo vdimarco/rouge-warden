@@ -17,9 +17,10 @@
 //  3. A wave's p is its front edge: wave k's front is at −20 + 140 (t − tk), and the band runs 60 u behind it. Its
 //     window is |x − centre| ≤ 40. The first value of stream(seed, "wave:" + k) is the threshold, the second sets the
 //     centre: (2v − 1) × 40. "Blends to 140 u/s over 0.3 s" is a ramp of 140 / 0.3 u/s² (0 to 140 in 0.3 s).
-//  4. A bot that does not ride wave k keeps its head out of that wave's window (the nearer side, 8 u clear), so the
-//     miss is real; it rides the next wave whose threshold is under its line. "Nearest wave" is the wave whose band
-//     is over the head, else the next one coming from behind.
+//  4. "Nearest wave" is the wave whose band is over the head, else the next one coming from behind. A bot that rides
+//     it keeps its head in the middle half of its window (20 u in from each edge), so its heading noise does not
+//     carry it out. A bot that does not ride it lets go (stick 0, under the 0.3 lift line) from when the wave's front
+//     is 30 u behind its head until the band has passed, then swims on: the miss is real and costs about one gap.
 //  5. Bonuses add to the speed along the heading; the current pushes along −p. A wall keeps 0.9 of the speed on each
 //     new contact (not every step, or a sperm could not hug a wall at 63 u/s).
 //  6. The cool loop is its own 160 u track: a sperm in it moves at 40 u/s + its own speed and counts as at 1,300 u.
@@ -39,7 +40,8 @@
 //     the wave lift's 140 u/s included, from ×0.8 back to ×1 over 0.6 s. Bumps act in the loop too, between sperm in
 //     it; never between a sperm in the loop and one outside it.
 // 11. The race runs on after you arrive (you count at 4,600 u), so every rival's arrival is shown; the stage itself
-//     ends 2.5 s after your arrival. A rival's place is its rank when the sim ends: arrivals by time, then progress.
+//     ends 2.5 s after your arrival, so rivals start resting only while you still race. A rival's place is its rank
+//     when the sim ends: arrivals by time, then progress.
 
 const DT = 1 / 60;
 const DEG = Math.PI / 180;
@@ -74,7 +76,7 @@ const TUNE = {
   FRONT: 2, COOL: 0.5, REST_BEHIND: 500, REST_SLOW_S: 2, CATCH_AHEAD: 0.10, CATCH_BEHIND: 0.06, CATCH_SPAN: 400,
   // bot steering
   M0: 0.4, M1: 0.6, RIDE0: 0.3, RIDE1: 0.7, AIM_SD: 15, NOISE_DEG: 30, NOISE_EVERY_S: 0.5, LAG_S: 0.15, SEP: 12,
-  LET_GO: 10, GLOW_LOOK: 80, REST_1: 0.75, REST_2: 0.4,
+  LET_GO: 10, GLOW_LOOK: 80, REST_1: 0.75, REST_2: 0.4, MISS_AHEAD: 30, RIDE_IN: 20,
 };
 
 // ---------------------------------------------------------------- seeded random (the core/rng.js contract, 16.2)
@@ -169,7 +171,7 @@ export function createRace(seed, player, T = TUNE) {
   const rb = stream(seed, 'beats'), beats = [];
   for (let b = 0; b < T.CAP_S + 10; b += (60 / T.BPM) * (1 + T.JITTER * (2 * rb() - 1))) beats.push(b);
   const warm = stream(seed, 'fork')() < 0.5 ? -1 : 1;
-  return { T, seed, t: 0, you, rivals, all: [you, ...rivals], thr, cen, beats, warm, place: null };
+  return { T, seed, player, t: 0, you, rivals, all: [you, ...rivals], thr, cen, beats, warm, place: null };
 }
 
 const progOf = (w, sp) => (sp.arrived ? w.T.TUBE_END : sp.zone === 'loop' ? w.T.FORK : sp.p);
@@ -201,11 +203,9 @@ function aimNow(w, sp, skill, pick, mem) {
   let tx, look, lim;
   if (sp.zone === 'path' && sp.p < T.WOMB_END) {
     const k = waveNear(T, w.t, sp.p), c = w.cen[k], h = T.WAVE_HALF;
-    if (w.thr[k] < T.RIDE0 + T.RIDE1 * skill) tx = clamp(sp.x, c - h + 8, c + h - 8);
-    else if (Math.abs(sp.x - c) < h + 8) {
-      const hi = c + h + 8, lo = c - h - 8, wall = T.WOMB_HALF - T.HEAD_R - 2;
-      tx = (sp.x >= c ? hi <= wall : lo < -wall) ? hi : lo;
-    } else tx = sp.x;
+    if (w.thr[k] < T.RIDE0 + T.RIDE1 * skill) tx = clamp(sp.x, c - h + T.RIDE_IN, c + h - T.RIDE_IN);
+    else if (waveFront(T, k, w.t) >= sp.p - T.MISS_AHEAD) return ZERO;   // a wave it misses: let go as it passes
+    else tx = sp.x;
     look = 40; lim = 40 * DEG;
   } else if (sp.zone === 'path') {
     tx = pick.side * clamp(halfAt(T, sp.p + 30) - 8, 0, T.TUBE_HALF);
@@ -249,8 +249,10 @@ function botSteer(w, sp, skill, r, pick) {
 function steer(w, sp) {
   const T = w.T;
   if (sp.kind === 'idle') return ZERO;
+  if (sp.kind === 'fixed') return w.player.steer(w, sp);
   if (sp.kind !== 'rival') {
-    return botSteer(w, sp, sp.skill, sp.r, { side: w.warm, wall: sp.skill >= T.REST_1 ? 0 : sp.skill >= T.REST_2 ? 1 : -1 });
+    const wall = w.player.wall ?? (sp.skill >= T.REST_1 ? 0 : sp.skill >= T.REST_2 ? 1 : -1);
+    return botSteer(w, sp, sp.skill, sp.r, { side: w.warm, wall });
   }
   // the three rival choices: the cool tube, glow rests for the front-runners only, resting far behind
   if (sp.plan === null && sp.p >= T.WOMB_END) sp.plan = sp.r() < T.COOL * (1 - sp.skill) ? 'cool' : 'warm';
@@ -422,7 +424,7 @@ export function stepRace(w) {
     const g = progOf(w, sp) - yp;
     sp.catchF = g > 0 ? 1 - T.CATCH_AHEAD * clamp(g / T.CATCH_SPAN, 0, 1)
       : swimming(T, sp) ? 1 + T.CATCH_BEHIND * clamp(-g / T.CATCH_SPAN, 0, 1) : 1;
-    if (sp.rest === null && sp.zone === 'tube' && -g >= T.REST_BEHIND) sp.rest = w.t;
+    if (sp.rest === null && !you.arrived && sp.zone === 'tube' && -g >= T.REST_BEHIND) sp.rest = w.t;
   }
   for (const sp of w.all) if (!sp.arrived) sp.stick = steer(w, sp);
   for (const sp of w.all) if (!sp.arrived) move(w, sp);
@@ -482,12 +484,12 @@ function report(name, player, runs, quiet) {
   const T = runs.T;
   console.log(`\n${name} (skill ${player.skill.toFixed(1)}, m ${(player.kind === 'idle' ? 0 : T.M0 + T.M1 * player.skill).toFixed(2)})`);
   if (!quiet) {
-    console.log('  seed warm place arrive waves w0 ride  1100  1400  ready wall lane bumps');
+    console.log('  seed warm place arrive waves w0 ride  1100  1400  ready wall lane bumps cool');
     for (const r of runs) {
       const y = r.you;
       console.log(`  ${String(r.seed).padStart(4)} ${r.warm > 0 ? '  R ' : '  L '} ${String(y.place).padStart(5)} ${y.capped ? ' cap ' : f1(y.arriveT)}`
         + `  ${String(y.waves).padStart(4)}  ${y.wave0 ? 'y' : 'n'} ${f1(y.rideS)} ${f1(y.at1100)} ${f1(y.at1400)} ${f1(y.readyAt)}`
-        + `  ${y.readyWall >= 0 ? y.readyWall + 1 : '–'}  ${y.lane.toFixed(2)} ${String(y.bumps).padStart(5)}`);
+        + `  ${y.readyWall >= 0 ? y.readyWall + 1 : '–'}  ${y.lane.toFixed(2)} ${String(y.bumps).padStart(5)} ${String(y.loops).padStart(4)}`);
     }
   }
   const arr = runs.filter((r) => !r.you.capped).map((r) => r.you.arriveT);
@@ -502,6 +504,60 @@ function report(name, player, runs, quiet) {
       + `    ${String(rs.filter((x) => x.loops > 0).length).padStart(2)}     ${String(rs.filter((x) => x.ready).length).padStart(2)}`
       + `     ${String(rs.filter((x) => x.maxP >= T.FORK).length).padStart(2)}`);
   }
+}
+
+// The hand numbers of 6.1, measured on this model with no rivals: the lane against the walls, the cool loop, the
+// glow rest and its trade, and a clean wave ride. They show the model matches the design before the race does.
+function solo(T, player, seed, setup, seconds) {
+  const w = createRace(seed, player, { ...T, SKILLS: [] });
+  if (setup) setup(w, w.you);
+  const n = Math.round(seconds / DT), trace = [];
+  for (let i = 0; i < n && !w.you.arrived; i++) { const p0 = w.you.p; stepRace(w); trace.push((w.you.p - p0) / DT); }
+  return { w, you: w.you, trace };
+}
+
+function calibrate(T, seeds) {
+  const lines = [];
+  const inTube = (p, x) => (w, y) => { y.zone = 'tube'; y.p = p; y.lastCheck = p; y.x = w.warm * T.TUBE_HALF + x(w); y.s = T.SWIM; y.th = 0; };
+  // full stick in the lane (steering to its centre, as the ref bot does) and straight along each wall
+  const lane = solo(T, { kind: 'fixed', steer: (w, y) => {
+    const a = clamp(Math.atan2(w.warm * T.TUBE_HALF + laneAt(T, w.t) - y.x, 40), -20 * DEG, 20 * DEG);
+    return { x: Math.sin(a), y: Math.cos(a) };
+  } }, 1, inTube(2200, (w) => laneAt(T, 0)), 10);
+  const wallRun = (side) => solo(T, { kind: 'fixed', steer: () => ({ x: 0, y: 1 }) }, 1,
+    inTube(2200, () => side * (T.TUBE_HALF - T.HEAD_R)), 10).trace;
+  const walls2 = [...wallRun(-1), ...wallRun(1)];
+  const laneMean = mean(lane.trace), wallMean = mean(walls2);
+  lines.push(`forward speed at full stick, unready: ${laneMean.toFixed(1)} u/s in the lane (min ${Math.min(...lane.trace).toFixed(1)}),`
+    + ` ${wallMean.toFixed(1)} u/s along a wall (max ${Math.max(...walls2).toFixed(1)}, the moment the lane's edge touches it)`);
+  // the cool loop, idle and at full stick
+  const loopT = (stick, s0) => {
+    const w = createRace(1, { kind: 'fixed', steer: () => stick }, { ...T, SKILLS: [] });
+    Object.assign(w.you, { zone: 'loop', p: T.FORK, loopS: 0, s: s0 });
+    while (!w.you.loops && w.t < 10) stepRace(w);
+    return w.t;
+  };
+  lines.push(`cool loop back at the fork after ${loopT(ZERO, 0).toFixed(2)} s idle, ${loopT({ x: 0, y: 1 }, T.SWIM).toFixed(2)} s at full stick`);
+  // the glow rest: her 4th beat after letting go
+  const w0 = createRace(1, { kind: 'idle', skill: 0 }, T), waits = [];
+  for (let ta = 1; ta < 100; ta += 0.05) {
+    let j = 0;
+    while (w0.beats[j] <= ta) j++;
+    waits.push(w0.beats[j + T.READY_BEAT - 1] - ta);
+  }
+  lines.push(`ready ${Math.min(...waits).toFixed(2)} to ${Math.max(...waits).toFixed(2)} s after letting go on a glow`);
+  // the rest trade, alone on the course: arrival with each glow wall, and with no rest
+  for (const skill of [1.0, 0.7]) {
+    const row = [-1, 0, 1, 2].map((wall) => {
+      const runs = seeds.map((sd) => solo(T, { kind: 'bot', skill, wall }, sd, null, T.CAP_S).you);
+      return { wall, arr: mean(runs.map((y) => y.arriveT ?? T.CAP_S)), at1100: mean(runs.map((y) => y.at1100 ?? NaN)) };
+    });
+    const none = row[0].arr;
+    lines.push(`alone, skill ${skill.toFixed(1)}: 1,100 u at ${row[0].at1100.toFixed(1)} s; arrival ${none.toFixed(1)} s with no rest, `
+      + row.slice(1).map((r) => `${r.arr.toFixed(1)} s resting at wall ${r.wall + 1} (${(none - r.arr >= 0 ? '−' : '+') + Math.abs(none - r.arr).toFixed(1)} s)`).join(', '));
+  }
+  console.log('\nthe model alone (6.1 hand numbers)');
+  for (const l of lines) console.log('  ' + l);
 }
 
 function parseArgs(argv) {
@@ -532,6 +588,7 @@ function main() {
     all[pl.name] = runs;
     report(pl.name, pl, runs, opt.quiet);
   }
+  calibrate(T, seeds);
   // the 6.1 gates
   const n = seeds.length, need = Math.ceil(n * 0.9);
   const ref = all.ref, mid = all.mid, idle = all.idle;
@@ -559,4 +616,5 @@ function main() {
   console.log('PASS race-sim');
 }
 
-main();
+import { pathToFileURL } from 'node:url';
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) main();

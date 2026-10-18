@@ -5,8 +5,9 @@
 // Contract choices (16.2 left these open):
 // - A segment's bpm is a number, or [from, to] for a linear glide over the segment (labour's 76 → 92). With no bpm,
 //   gaFrom/gaTo give your heart's rate from clock.bpmYou along the segment; with neither, her rate is 72.
-// - Beats fall in [from, to). A segment with no `first` carries on from the same heart's last beat (on its grid),
-//   or starts at `from` when there is none. Beats never fall before `from`.
+// - Beats fall in [from, to). A segment with no `first` carries on with the beat the same heart's last segment
+//   would have laid next (so the gap across the join is the old period), stepping on by its own period if that
+//   beat falls before `from`; with no earlier segment it starts at `from`. Beats never fall before `from`.
 // - bpm(heart, t) is the nominal rate (no jitter): the segment's at t, else the nearest segment's edge rate; NaN for
 //   a heart with no segments. next(heart, t) is the first beat at or after t; past the last laid beat it goes on at
 //   the last rate, so the run can keep her clock going. between(heart, t0, t1) lists laid beats in [t0, t1).
@@ -49,12 +50,13 @@ export function makeBeats(seed, segments) {
     const list = segs[heart].sort((a, b) => a.from - b.from);
     const r = stream(seed, "beat:" + heart);
     const out = [];
+    let pending = NaN;                       // the beat the last segment would have laid next
     for (const s of list) {
       const per0 = 60 / rateOf(s, s.from);
       if (!(per0 > 0.05) || !Number.isFinite(per0)) continue;
       let b;
       if (Number.isFinite(s.first)) b = s.first;
-      else if (out.length) b = out[out.length - 1] + per0;
+      else if (Number.isFinite(pending)) b = pending;
       else b = s.from;
       while (b < s.from) b += per0;
       while (b < s.to && out.length < MAX_BEATS) {
@@ -64,6 +66,7 @@ export function makeBeats(seed, segments) {
         if (s.jitter > 0) per *= 1 + s.jitter * (2 * r() - 1);
         b += per;
       }
+      pending = b;
     }
     return Float64Array.from(out);
   };
