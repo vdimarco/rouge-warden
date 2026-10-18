@@ -344,7 +344,8 @@
     "owned_public_browser_processes_closed": true,
     "all_performance_settings_saves_services_restored_before_promotion": true,
     "separate_source_art_checkout_and_concurrent_frontend_preserved": true,
-    "frontend_build_or_deploy_performed": false
+    "manual_frontend_build_or_publication_invoked": false,
+    "frontend_scope": "No frontend runtime-file changes in this PR; normal repository CI may preview/rebuild static pages."
   },
   "limits": [
     "Topknot10 retains production body; replacement bag deformation remains rejected.",
