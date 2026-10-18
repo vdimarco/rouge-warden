@@ -4,6 +4,11 @@
 ### Requirement: Consistent comic entry pages
 The browser home screen and GTA arcade landing page SHALL use the approved collage badge, cream text panels, cyan halftone backgrounds, black ink borders and yellow primary actions.
 
+#### Scenario: Badge-matched browser chrome
+- **WHEN** the browser entry screen is visible
+- **THEN** its header and footer use cream lettering on ink, its background uses angled cyan, yellow and hot-pink comic panels, and its trailer and status controls repeat the badge’s bold display lettering
+- **AND** the large badge remains the primary action without changing the gameplay controls
+
 #### Scenario: Desktop entry
 - **WHEN** a player opens either entry page at 1280px width
 - **THEN** the badge, readable primary actions and existing status or installation information are visible in a coherent comic layout
