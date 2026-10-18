@@ -941,7 +941,10 @@ export function botSteer(st, skill, r) {
     if (!st || st.done || st.moment === "meet" || st.moment === "carried" || st.you.arrived || st.you.out) return still;
     const sk = clamp01(skill);
     const s = steerFor(st, st.you, sk, r, { side: st.warm, wall: wallFor(sk) });
-    return { steer: { x: s.x, y: s.y }, dir: null, hold: false };
+    // at skill 1 the stick is 1 long, and sin² + cos² can round above 1: keep it just inside, so a caller that
+    // clamps |steer| ≤ 1 (makeIntents, the one-button rule) passes it on unchanged
+    const h = Math.hypot(s.x, s.y), k = h > 1 - 1e-9 ? (1 - 1e-9) / h : 1;
+    return { steer: { x: s.x * k, y: s.y * k }, dir: null, hold: false };
   } catch (e) {
     return still;
   }
