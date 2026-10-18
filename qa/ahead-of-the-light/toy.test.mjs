@@ -18,6 +18,7 @@ import {
   createToy, stepToy, toyLeg, toySummary, TOY_CAPTIONS, TOY_S, TOY_TTC0,
 } from '../../public/ahead-of-the-light/core/toy.js';
 import { KINDS } from '../../public/ahead-of-the-light/core/course/kinds.js';
+import { shoveShip } from '../../public/ahead-of-the-light/core/handle.js';
 
 const SEEDS = Array.from({ length: 20 }, (_, i) => i + 1);
 const HELD = Object.freeze({ ...TUNE, BLEED: 0 });          // the handling half: the light holds after the drop
@@ -197,6 +198,28 @@ test('the light takes REMORA if you leave it be: THE LIGHT TOOK REMORA', { skip:
     assert.ok(e && e.t >= 24 && e.t < TOY_S, `seed ${r.seed}: REMORA ${e ? `eaten at ${e.t.toFixed(1)} s` : 'not eaten'}`);
     assert.equal(e.line, e.fedBy === 'you' ? 'FED TO THE LIGHT' : 'THE LIGHT TOOK REMORA');   // a slam of yours feeds it
     assert.ok(r.game.captions.some((c) => c.id === 'took' && c.text === 'THE LIGHT TOOK REMORA'), `seed ${r.seed}`);
+  }
+});
+
+test('a SLAMmed REMORA holds its line 0.22 s past the shove\'s end, a card\'s longer shove included', () => {
+  for (const s of [TUNE.SHOVE_S, TUNE.TAKEDOWN_S]) {
+    const game = createToy({ seed: 1, tune: HELD });
+    const race = game.race, you = race.ships[0], R = race.ships[1];
+    const drive = bots.driverFor('mid', { seed: 1 });
+    while (race.t < 18 && race.phase !== 'done') stepToy(game, { you: drive(race, you) }, STEP);
+    assert.equal(R.ai.phase, 'lure');
+    shoveShip(race, R, 1, 20, 'you', HELD, true, s);
+    const t0 = race.t;
+    let b = null, still = 0, moved = null;
+    while (race.t < t0 + 1 && race.phase !== 'done') {
+      stepToy(game, { you: drive(race, you) }, STEP);
+      if (race.t < t0 + s + 1e-9) continue;
+      if (b === null) b = R.bearing;
+      else if (R.bearing === b && moved === null) still = race.t - t0;
+      else if (moved === null) moved = race.t - t0;
+    }
+    assert.ok(still >= s + 0.22 - 1e-9, `after a ${s} s shove REMORA held its line ${still.toFixed(3)} s`);
+    assert.ok(moved !== null && moved <= s + 0.22 + 0.05, `then it steers back (${moved})`);
   }
 });
 

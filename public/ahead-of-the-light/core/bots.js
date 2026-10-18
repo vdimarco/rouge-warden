@@ -15,7 +15,7 @@ import { stepRace, STEP, NO_INTENT } from './race.js';
 import { createRun, startLeg, endLeg, chooseLane, pick as pickCard, skip as skipOffer } from './run.js';
 import { blocked, resolve, psiAt, railOn, isHazard } from './course/kinds.js';
 import { ROUTE } from './course/legs.js';
-import { bpsOf, windowOf, sweepTime, slamAim, skimOf } from './handle.js';
+import { bpsOf, windowOf, sweepTime, slamAim, skimOf, phaseReady } from './handle.js';
 import { dockPrices, buy as buyChip } from './survival.js';
 import { CARD, amountOf } from './cards.js';
 import { normalizeMeta } from './meta.js';
@@ -478,7 +478,8 @@ function human(opts = {}) {
       if (ship.shove) { ramUntil = 0; aim = ship.bearing; goal = line = aim; }     // touched: the ram is done
       else { aim = ramAim; mark('ram'); return send(ship); }
     }
-    if (ramBias > 0 && race.ships.length > 1 && !T.PHASE_HULL) {
+    // (with PHASE HULL ready a ram would pass through: rams wait until the hull is solid)
+    if (ramBias > 0 && race.ships.length > 1 && !phaseReady(ship, T)) {
       for (const r of race.ships) {
         if (r === ship || isOut(r) || r.whip) continue;
         const z = Math.abs(r.dist - ship.dist) / bpsOf(ship, T);

@@ -338,14 +338,15 @@ const LIST = [
     tell: 'hard-prow', patch: (v, T) => ({ SLAM_V: 0, SHOVE_X: (T.SHOVE_X || 1) * v }) }),
   card({ id: 'phase-hull', name: 'PHASE HULL', fam: 'RIVAL', kind: 'form', values: ['½', '¾', '1'],
     amounts: [0.5, 0.75, 1], tag: 'SKIM', pack: 'starter',
-    face: 'Fly through rivals. Each pass is a hairline and steals {v} cell.',
-    rule: 'No contact either way: no rams, no slams, no takedowns on you. Passing through a ship is a hairline and '
-      + 'takes some of its fuel.',
+    face: `Fly through a rival: a hairline that steals {v} cell. Solid for ${TUNE.PHASE_COOLDOWN} s.`,
+    rule: 'Touch a rival and you fly through it: a hairline, and you take some of its fuel. Then your hull is solid '
+      + `for ${TUNE.PHASE_COOLDOWN} s and contact works as normal. While you can pass, you look see-through near `
+      + 'rivals and none of them rams you.',
     tell: 'see-through-near-rivals', patch: () => ({ PHASE_HULL: 1 }),
     hooks: {
       rivalPass: (c, v, s) => {
         const o = c.other, ship = c.ship;
-        if (!o || !(c.gap < 0) || isOut(o)) return;
+        if (!c.phase || !o || isOut(o)) return;              // handle.js's phase pass, not an ordinary one
         rivalHair(c.race, ship, o, 0, c.tune);
         const take = Math.min(v, o.fuel, Math.max(0, ship.fuelCap - ship.fuel));
         if (take > 0) {

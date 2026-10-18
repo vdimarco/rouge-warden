@@ -12,7 +12,7 @@ const PUB = path.join(ROOT, "public");
 const BASE = (process.env.ARCADE_URL || "http://localhost:8765/").replace(/\/?$/, "/");
 const GTA_URL = "/gta/";
 const SHOTS = process.env.SHOTS || ""; // a folder for screenshots; none are taken without it
-const PARTS = (process.env.PARTS || "gta,walk,layout,switcher,saves,credits,focus,backlinks").split(","); // run only some of the browser parts while you work on the page
+const PARTS = (process.env.PARTS || "gta,walk,layout,marquee,switcher,saves,credits,focus,backlinks").split(","); // run only some of the browser parts while you work on the page
 const read = (p) => fs.readFileSync(path.join(ROOT, p), "utf8");
 const fails = [];
 setTimeout(() => { console.log("  FAIL the run did not finish in 30 minutes"); process.exit(1); }, 30 * 60 * 1000).unref();
@@ -358,6 +358,46 @@ if (chromium) {
     check(await sel(page) === (before + 1) % n, `${tag}: one flick of the scroll wheel moves one machine`);
     }
     check(errors.length === 0, `${width}x${height}: no page errors${errors.length ? ":\n    " + errors.join("\n    ") : ""}`);
+    await ctx.close();
+  }
+
+  await relaunch();
+  /* ----- the two newest machines: the title and the sub line fit on the marquee, on a computer and on phones ----- */
+  // The marquee is a box 13 % of the machine's height that hides what spills out, and its type stops shrinking at 12 px. At
+  // 320 x 700 (or 375 x 667) the machine is about 122 x 265 and the box 112 x 34: room for the title on two lines and a sub
+  // line of 8 characters. Wider, the title takes one line. In a shorter window (360 x 640 or 800 x 600: a machine about
+  // 235 px tall, a box 99 x 30) the sub line is hidden and the title shows whole on two lines. Each size: the most title
+  // lines, and whether the sub line shows.
+  const MARQUEE = [[1280, 720, 1, true], [1280, 800, 1, true], [390, 844, 1, true], [360, 740, 2, true], [375, 667, 2, true], [320, 700, 2, true],
+    [360, 640, 2, false], [800, 600, 2, false]];
+  for (const [width, height, most, sub] of PARTS.includes("marquee") ? MARQUEE : []) {
+    const tag = `${width}x${height}`;
+    const { ctx, page, errors } = await open(browser, { width, height });
+    await page.evaluate(() => document.fonts.ready);
+    for (const id of ["light-years-home", "ahead-of-the-light"]) {
+      await page.selectOption("#machinePicker", id);
+      await page.waitForFunction((id) => document.querySelector(".cab.on")?.dataset.game === id, id);
+      await settle(page);
+      const f = await page.evaluate((id) => {
+        const m = document.querySelector(`.cab[data-game="${id}"] .marquee`), box = m.getBoundingClientRect(), block = m.firstElementChild.getBoundingClientRect();
+        const lines = (el) => { const r = document.createRange(); r.selectNodeContents(el); return [...r.getClientRects()]; };
+        const t = lines(m.querySelector("b")), s = lines(m.querySelector("small"));
+        const rows = (rs) => new Set(rs.map((r) => Math.round(r.top))).size;
+        // a line wider than the box is cut at its sides; lines that stack taller than the box are cut at its top and bottom
+        const sides = Math.max(0, ...[...t, ...s].map((r) => Math.max(box.left - r.left, r.right - box.right)));
+        const ends = Math.max(0, box.top - block.top, block.bottom - box.bottom);
+        // the machine itself: inside the window, below the sign and above the token tray
+        const r = (q) => document.querySelector(q).getBoundingClientRect(), cab = r(".cab.on"), sign = r(".sign"), tray = r(".tray");
+        const whole = cab.left >= -1 && cab.right <= innerWidth + 1 && cab.top >= sign.bottom - 2 && cab.bottom <= tray.top + 2;
+        return { title: m.querySelector("b").textContent, sub: m.querySelector("small").textContent, titleRows: rows(t), subRows: rows(s), sides, ends, w: Math.round(box.width), h: Math.round(box.height),
+          whole, at: `${Math.round(cab.left)} to ${Math.round(cab.right)} of ${innerWidth}, ${Math.round(cab.top)} to ${Math.round(cab.bottom)} between ${Math.round(sign.bottom)} and ${Math.round(tray.top)}` };
+      }, id);
+      check(f.whole, `${tag}: ${id}'s machine shows whole, not under the sign or the token tray (${f.at})`);
+      const want = `${most === 1 ? "1 line" : "1 or 2 lines"}, ${sub ? "the sub line on 1" : "no sub line"}`;
+      check(f.sides <= 0.5 && f.ends <= 0.5 && f.titleRows >= 1 && f.titleRows <= most && f.subRows === (sub ? 1 : 0), `${tag}: ${id}'s marquee (${f.w}x${f.h}) shows ${f.title} on ${f.titleRows} line${f.titleRows > 1 ? "s" : ""} and ${f.sub} on ${f.subRows} (want ${want}), and spills ${f.sides.toFixed(1)} px past its sides and ${f.ends.toFixed(1)} px past its top and bottom (want 0)`);
+      if (SHOTS) await page.locator(`.cab[data-game="${id}"] .marquee`).screenshot({ path: path.join(SHOTS, `marquee-${tag}-${id}.png`) });
+    }
+    check(errors.length === 0, `${tag}: the marquees cause no page errors${errors.length ? ": " + errors.join("; ") : ""}`);
     await ctx.close();
   }
 

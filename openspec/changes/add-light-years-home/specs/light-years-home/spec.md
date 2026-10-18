@@ -365,7 +365,7 @@ The game SHALL pick a quality tier (high on desktop with a hardware GPU, mid on 
 - **THEN** the desktop median frame time is at most 16.7 ms with p95 at most 20 ms, and the phone p95 is at most 20 ms at the mid tier and at most 33 ms at the low tier
 
 ### Requirement: Arcade machine
-The Cottage Arcade SHALL offer Light Years Home at `/light-years-home/` in the shared game switcher and as a cabinet, the seventh and last machine in the Action group. The cabinet SHALL show a best line from a valid save and its plain line otherwise. The game page SHALL load `/arcade/quiet.js` as its first script and report to analytics as `light-years-home`.
+The Cottage Arcade SHALL offer Light Years Home at `/light-years-home/` in the shared game switcher and as a cabinet, the last machine in the Action group. The cabinet SHALL show a best line from a valid save and its plain line otherwise. The game page SHALL load `/arcade/quiet.js` as its first script and report to analytics as `light-years-home`.
 
 #### Scenario: Cabinet best line
 - **GIVEN** the best save is `{"score":6800,"reached":3,"home":false}`

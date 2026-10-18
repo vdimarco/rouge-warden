@@ -89,6 +89,7 @@ export const GOALS = Object.freeze({
   dock: 'YOU BOUGHT TOO MUCH TIME AT THE DOCK',
   slow: 'SKIM CLOSER: EVERY GRAZE HOLDS THE LIGHT BACK',
   doorstep: 'SAVE A CELL OR TWO FOR THE LANDING',
+  door: 'STEER INTO THE EARTH ARC AT THE DOOR',
 });
 
 // The cause of a run's end, the first that matches (13's table, read in order): → { id, line, goal, by, place }.
@@ -98,8 +99,16 @@ export function causeOf(rec, prev = null) {
   const E = rec.end || {};
   const place = E.piece && PLACE_OF[E.piece] ? PLACE_OF[E.piece]
     : rec.cond && CONDITIONS[rec.cond] && rec.cond === 'dust' ? 'IN THE DUST' : null;
-  const out = (id, line, goal, by = null) => ({ id, line, goal, by, place });
-  if (rec.why === 'doorstep') return out('doorstep', 'Caught on the doorstep, short of the landing', GOALS.doorstep);
+  const out = (id, line, goal, by = null, at = place) => ({ id, line, goal, by, place: at });
+  // a doorstep is at the door, not where the last hit was. A DOOR miss decided it when the landing would have held
+  // without the loop's seconds (a failed landing has spent every cell it could and all the hull)
+  if (rec.why === 'doorstep') {
+    const land = E.land;
+    if (land && land.miss && land.margin + (land.missS || 0) >= -1e-9) {
+      return out('door', `Missed the door: looping round cost ${land.missS} s`, GOALS.door, null, null);
+    }
+    return out('doorstep', 'Caught on the doorstep, short of the landing', GOALS.doorstep, null, null);
+  }
   if (E.takedownBy && E.t - E.takedownT <= 12) {
     const by = E.takedownBy;
     return out('takedown', `Taken down by ${rivalName(by)}`, RIVAL_GOALS[by] || GOALS.takedown, by);

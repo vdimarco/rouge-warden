@@ -195,6 +195,22 @@ The team's `contract.md` logs every change with its reason; these are the ones a
   with the padding) is wider than the 97 px screen at 320 × 700 and 375 × 667. A smaller font would break the arcade's
   12 px floor. With `gold-frame` in the save's unlocks the machine gets the class `gold`: a 3 px gold ring and a soft
   glow as a box-shadow on the bezel, so no size changes.
+- **The marquee**: the title is Bungee at max(12 px, 3 % of the machine's height), so it takes one line on a computer
+  and at 390 × 844. At the 12 px floor (360 × 740, 375 × 667, 320 × 700) it wraps to two lines 10.8 px apart, the gap
+  over the sub line goes to 0, and the sub line holds 8 characters of Press Start 2P (96 of the 102 px inside the box).
+  So the sub lines are RUN HOME (was RACE HOME BEFORE THE BURST) and DRIVE ON on Light Years Home (was DRIVE HOME, 10
+  characters). That needs a box 100 px wide inside, a machine 259 px tall. On a shorter machine (360 × 640 or
+  800 × 600, about 230 px) two title lines and a sub line are 34 px in a 30 px box, so the sub line is hidden and the
+  title shows whole; before, the box cut RUN HOME to RUN. The rule is a CSS container query (MDN, "CSS container
+  queries") on the marquee's width, which is a fixed share of the machine's height. The marquee is an `inline-size`
+  container, not a `size` one, because `--h` holds `100cqh`, and inside a `size` container that would measure the
+  marquee instead of the stage. On a landscape phone (844 × 390, a machine 137 px tall) the 12 px floor leaves no room
+  for the title, and these marquees are cut like every other. The older machines' marquees and attract text overflow at
+  320 × 700 the same way these did; they are left as they are.
+- **The row order**: AGENTS.md's New games rule puts a new cabinet after the others in its group. This machine came
+  first and the Light Years Home cabinet after it, so Light Years Home is last in the Action row and last in the
+  Action group's `games`. No spot in the row was asked for. The switcher keeps Light Years Home's entry where its own
+  change put it, after River Rush.
 - **The key art** is cut from a 2 × portrait screenshot of leg 1 at 0.9931c with PIKE 0.1 s in your wake, staged with
   `?gap0=0.3&gapcap=0.3&bleed=0` so the light's ring sits at 1.6 × the play ring (LIGHT · 44 S); at a real HEADLIGHT
   gap the ring sits off the bottom edge.

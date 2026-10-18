@@ -243,6 +243,12 @@ Leg 8 SHALL end with LAND BEFORE THE LIGHT: a 60° DOOR labelled EARTH at L − 
 - **THEN** 4 s is short of the 6 s margin: CAUGHT ON THE DOORSTEP, and the result's goal reads SAVE A CELL OR TWO FOR THE LANDING
 - **CHECK** `survival.test.mjs` and `run.test.mjs`
 
+#### Scenario: Missed the door
+- **WHEN** a ship reaches Earth's gate beat outside the DOOR, on any screen from 320 px wide
+- **THEN** the landing caption reads MISSED THE DOOR · HOME or MISSED THE DOOR · CAUGHT ON THE DOORSTEP, and each of its chunks fits the screen
+- **AND** the result card waits until the caption's last chunk has shown, with Slow captions too
+- **CHECK** `race.test.mjs` and `flow.e2e.mjs`
+
 #### Scenario: Keep cells for the landing
 - **WHEN** 200 mid runs burn every cell in leg 8, and 200 keep 2
 - **THEN** the first group is caught on the doorstep at least twice as often

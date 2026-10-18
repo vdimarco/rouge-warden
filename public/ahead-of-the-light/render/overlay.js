@@ -11,7 +11,7 @@ import { TUNE } from '../core/tune.js';
 import { DEG, wrap, depthPx, burstPx, rivalPx, wingsPx, placeLabels, lightLabelPx, ttcText } from '../core/ringmath.js';
 import { resolve, psiAt, halfAt, railOn, wellCore } from '../core/course/kinds.js';
 import { isDropped } from '../core/course/director.js';
-import { windowOf, exitsOf, slamAim, gearOf } from '../core/handle.js';
+import { windowOf, exitsOf, slamAim, gearOf, phaseReady } from '../core/handle.js';
 import { CARD, cardFires } from '../core/cards.js';
 import { blackbodyRGB, srgbEncode } from '../../light-years-home/core/physics.js';
 import { inFog } from './hazards.js';
@@ -25,6 +25,7 @@ const smooth = (a, b, x) => { const t = clamp((x - a) / (b - a), 0, 1); return t
 const hash01 = (n) => { const x = Math.sin(n * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); };
 const a3 = (v) => clamp(v, 0, 1).toFixed(3);
 const isOut = (s) => s.caught || s.wrecked;
+const PHASE_NEAR_S = 0.6, PHASE_NEAR_DEG = 40;     // PHASE HULL's tell: how near a rival makes you see-through
 const SHAPES = { hound: 'hound', pike: 'pike', remora: 'remora', moth: 'moth', whale: 'whale', mako: 'mako',
   manta: 'manta' };
 
@@ -460,7 +461,7 @@ export function createOverlay({ canvas, tune = TUNE, reduced = false, fx = {} } 
     ctx.save();
     ctx.translate(V.sx, V.sy);
     const out = { ring: view.R, burstR: 0, labels: [], wings: null, rivals: [], marks: [], lightLabel: null, ops: 0,
-      bands: [], gateLines: [], landmarkBox: null, keep: [] };
+      bands: [], gateLines: [], landmarkBox: null, keep: [], phase: null };
 
     if (title) {
       // the title: a faint ring only (kept clear of the name by the page)
@@ -656,7 +657,9 @@ export function createOverlay({ canvas, tune = TUNE, reduced = false, fx = {} } 
         const halfDeg = r.half || T.SHIP_HALF;
         const youHalf = Math.max(7, R * T.SHIP_HALF * DEG) * (view.desk ? 1.2 : 1);
         const half = clamp(Math.min(rad, R) * halfDeg * DEG, 4 * s, youHalf * (halfDeg / T.SHIP_HALF));
-        const lean = mk.lean && V.time - mk.lean.t0 < T.LEAN_S ? mk.lean : null;
+        // a lean on you stops showing once your PHASE HULL is ready again (the rival drops it then)
+        const lean = mk.lean && V.time - mk.lean.t0 < T.LEAN_S
+          && !(mk.lean.target === you.id && phaseReady(you, T)) ? mk.lean : null;
         if (kind === 'manta') {
           // the sail: a thin bright arc 20° wide, white when lit, grey when shadowed
           const lit = !(r.ai && (r.ai.shadowed || r.ai.tornUntil > race.t));
@@ -770,12 +773,15 @@ export function createOverlay({ canvas, tune = TUNE, reduced = false, fx = {} } 
 
     // ---- hazards: outlines inside the ring (the truth), ticks on it ----
     let alarm = false;
+    const lensed = Boolean(opts.tells && opts.tells.has('lensed-knots'));
     const inner = [];
     const ticks = [];
     const rams = new Set();
     let named = null;
-    // a SLAM from your line that would carry a rival into a hazard turns that hazard's tick orange (5.5)
-    for (let i = 1; i < race.ships.length; i++) {
+    // a SLAM from your line that would carry a rival into a hazard turns that hazard's tick orange (5.5); with PHASE
+    // HULL ready your ship would fly through the rival, so it has no SLAM to show until the hull is solid again
+    const phaseOn = phaseReady(you, T);
+    for (let i = 1; !phaseOn && i < race.ships.length; i++) {
       const r = race.ships[i];
       if (isOut(r)) continue;
       const dz = Math.abs(r.dist - you.dist) / bps;
@@ -792,9 +798,7 @@ export function createOverlay({ canvas, tune = TUNE, reduced = false, fx = {} } 
       const psiNow = it.kind === 'rail' ? psiAt(it, Math.max(it.beat, you.dist)) : it.psi;
       const ang = wrap(psiNow - cam);
       const res = resolve(it, you.bearing, beatNow, T, you.half);
-      const band = it.soft ? T.GRAZE_SOFT : T.GRAZE;
-      const state = res.hit ? 'hit' : res.gaps.some((x) => x.g < T.HAIR) ? 'hair' : res.gaps.some((x) => x.g < band)
-        ? 'graze' : 'clear';
+      const state = lineState(it, res, Boolean(you.whip), T, lensed);
       const rr = depthPx(z, view.phi, view.fPx) + (z <= 0 ? V.ringK.x : V.ringK.x * clamp(1 - z, 0, 1));
       if (it.kind === 'rail') {
         const z1 = (it.end - you.dist) * T.BEAT_R;
@@ -1138,7 +1142,20 @@ export function createOverlay({ canvas, tune = TUNE, reduced = false, fx = {} } 
     const [shx, shy] = P(shipA, R);
     const flicker = you.flicker > 0 && Math.floor(V.time * 16) % 2 === 0;
     const shipHalf = Math.max(7, R * T.SHIP_HALF * DEG) * (view.desk ? 1.2 : 1);
-    if (!flicker && !you.caught) drawShip(shx, shy, shipHalf, you, alarm && Math.floor(V.time * 12) % 2 === 0);
+    // PHASE HULL's tell (see-through-near-rivals): see-through while the phase is ready and a rival is near (within
+    // PHASE_NEAR_S in depth and PHASE_NEAR_DEG in bearing); solid after a pass, until the phase is ready again
+    if (T.PHASE_HULL) {
+      let near = false;
+      for (let i = 1; !near && i < race.ships.length; i++) {
+        const r = race.ships[i];
+        near = !isOut(r) && Math.abs(r.dist - you.dist) / bps <= PHASE_NEAR_S
+          && Math.abs(wrap(r.bearing - you.bearing)) <= PHASE_NEAR_DEG;
+      }
+      out.phase = { ready: phaseOn, near, see: phaseOn && near, cool: Math.max(0, you.phaseCool || 0) };
+    }
+    if (!flicker && !you.caught) {
+      drawShip(shx, shy, shipHalf, you, alarm && Math.floor(V.time * 12) % 2 === 0, Boolean(out.phase && out.phase.see));
+    }
     // sparks: the burn's flare, the last hull's trail
     if (you.hull <= 1 && you.shield < 1 && !you.caught && hash01(V.time * 13.3) < 0.6) {
       V.sparks.push({ t0: V.time, ang: you.bearing, dr: 4 + 10 * hash01(V.time * 7), da: (hash01(V.time * 3) - 0.5) * 6, life: 0.4 });
@@ -1318,12 +1335,14 @@ export function createOverlay({ canvas, tune = TUNE, reduced = false, fx = {} } 
   }
 
   // Your ship: a white chevron with an orange tail on the ring (lab A); red while something will hit you.
-  function drawShip(x, y, half, you, red) {
+  // ghost: PHASE HULL's see-through look, a faint fill under a white outline
+  function drawShip(x, y, half, you, red, ghost = false) {
     const ang = Math.atan2(cy - y, cx - x);
     const sc = half / 7;
     ctx.save();
     ctx.translate(x, y);
     ctx.rotate(ang);
+    if (ghost) ctx.globalAlpha = 0.3;
     const tail = (8 + 12 * clamp((you.eta - 0.6) / 2.4, 0, 1)) * Math.sqrt(sc) * (you.burn && you.burn.t > 0 ? 1.8 : 1);
     ctx.beginPath(); V.ops++;
     ctx.moveTo(-2, -half * 0.45); ctx.lineTo(-tail - 4, 0); ctx.lineTo(-2, half * 0.45);
@@ -1332,6 +1351,7 @@ export function createOverlay({ canvas, tune = TUNE, reduced = false, fx = {} } 
     ctx.moveTo(9 * sc, 0); ctx.lineTo(-4 * sc, -half); ctx.lineTo(-1 * sc, 0); ctx.lineTo(-4 * sc, half); ctx.closePath();
     ctx.fillStyle = red ? RED : '#fff';
     ctx.fill();
+    if (ghost) { ctx.globalAlpha = 0.9; ctx.lineWidth = 1.5; ctx.strokeStyle = red ? RED : '#fff'; ctx.stroke(); V.ops++; }
     ctx.restore();
   }
 
@@ -1423,6 +1443,22 @@ export function createOverlay({ canvas, tune = TUNE, reduced = false, fx = {} } 
     shown: () => ({ ...shown }),
     state: V,
   };
+}
+
+// What your line does to an item if you cross it now (5.1, 5.3), for its tick and outline: 'hit', 'hair', 'graze'
+// or 'clear'. Mid-whip nothing hits: a knot or a pulse touched is a plain graze, and with LENSED LANE (lensed) any
+// knot touched or within the graze band is a hairline, as handle's pass check and the card's pass hook score them;
+// walls, rails, wells and gates do not touch a whipping ship (a gate is judged at the release), so they are clear.
+export function lineState(it, res, whip, T = TUNE, lensed = false) {
+  const knot = whip && (it.kind === 'knot' || it.kind === 'pulse');
+  if (whip && !knot && it.kind !== 'pickup') return 'clear';
+  if (knot && lensed && (res.hit || gapUnder(res, T.GRAZE))) return 'hair';
+  if (res.hit) return knot ? 'graze' : 'hit';
+  return gapUnder(res, T.HAIR) ? 'hair' : gapUnder(res, it.soft ? T.GRAZE_SOFT : T.GRAZE) ? 'graze' : 'clear';
+}
+function gapUnder(res, lim) {
+  for (let k = 0; k < res.gaps.length; k++) if (res.gaps[k].g < lim) return true;
+  return false;
 }
 
 // The card tells a build shows (12.7): CARD[id].tell for each card owned.

@@ -1,7 +1,8 @@
 // Checks that every page with sound goes silent when it is hidden, and comes back when it is visible again.
 //   cd public && python3 -m http.server 8912 &      (any port: set QUIET_URL=http://localhost:8912)
 //   NODE_PATH=/opt/node22/lib/node_modules node qa/arcade/quiet.mjs [--old] [--only=echo,fall] [--skip=scan,unit,pages,silent]
-// 1. scan: a page under public/ that makes sound must load /arcade/quiet.js as its first script (vr is on an allow-list).
+// 1. scan: a page under public/ that makes sound must load /arcade/quiet.js as its first script (vr is on an allow-list), and a
+//    game's page with sound must have an entry in part 3 (UNPLAYED lists the ones without, each with the reason).
 // 2. unit: public/arcade/quiet.js on small test pages: the contexts it suspends and resumes, a game that suspends its own, a
 //    context made while hidden, a hide and show in one tick, pagehide and pageshow, <audio>, SoundCloud, no AudioContext at all.
 // 3. pages: every game page, started the way a player starts it. Sound must be running, then silent while hidden (even when the
@@ -85,8 +86,21 @@ function scan() {
     const quietFirst = !!first && /\bsrc="\/arcade\/quiet\.js"/.test(first[0]) && (head < 0 || first.index < head);
     if (ALLOW[rel]) { check(`${rel} is on the allow-list`, !quietFirst, "quiet.js is there now: take it off the allow-list"); continue; }
     check(`${rel} loads /arcade/quiet.js as its first script`, quietFirst, first ? "first script: " + first[0].slice(0, 80) : "no script");
+    // a game's page (public/<game>/ or public/lab/<toy>/) with sound is also played in part 3, so it needs an entry in PAGES
+    const game = /^(?:lab\/)?[^/]+\/index\.html$/.test(rel) ? "/" + rel.replace(/index\.html$/, "") : null;
+    if (game && !UNPLAYED[game]) check(`${game} has an entry in PAGES, so part 3 plays it`, played(game), "add one: how a player starts its sound");
   }
+  const stale = Object.keys(UNPLAYED).filter((g) => played(g) || !fs.existsSync(path.join(PUBLIC, g, "index.html")));
+  check("the list of unplayed pages is up to date", stale.length === 0, "take off: " + stale.join(", "));
 }
+// game pages with sound that part 3 does not play, each with the reason. A new game gets an entry in PAGES instead.
+const OLDER = "it came before part 3 had to play every game, and its entry is not written yet";
+const UNPLAYED = {
+  ...Object.fromEntries(["/afterlight/", "/ascii-front/", "/battle-tanks/", "/echoes-under-ice/", "/gta/", "/last-light/", "/lighthouse-keeper/",
+    "/mirage-runner/", "/orbital-gardener/", "/pingpong/"].map((g) => [g, OLDER])),
+  "/tennis/": "Lawn Tennis stays on disk with no machine: Table Tennis (/pingpong/) took its place",
+};
+const played = (game) => PAGES.some((p) => p.path.split("?")[0] === game);
 
 /* ------------------------------------------------------------------ the page side: a tracker, written by the test */
 // Runs before the page's scripts, below quiet.js: it only watches. It never touches suspend or resume.
@@ -373,6 +387,8 @@ const PAGES = [
   { id: "lab/worlds", path: "/lab/worlds/", start: click("#start-button"), sound: "ctx" },
   { id: "moonwell", path: "/moonwell/", start: click("#launch"), sound: "ctx" },
   { id: "river-rush", path: "/river-rush/", boot: () => !!document.querySelector('button[aria-label="Enable sound"]'), start: click('button[aria-label="Enable sound"]'), sound: "ctx" },
+  // Light Years Home makes its context on PLAY; its music is a few long-running oscillators, and a hidden page pauses the drive
+  { id: "light-years-home", path: "/light-years-home/", boot: () => !!window.__lyh && !!document.querySelector(".m-title:not([hidden]) [data-act=play]"), start: click(".m-title [data-act=play]"), sound: "ctx", music: true },
   // Ahead of the Light makes its context on the first tap (TAP TO FLY); a hidden page pauses the race, and the pause card
   // keeps a low-passed drone once the page is shown again
   { id: "ahead-of-the-light", path: "/ahead-of-the-light/", boot: () => !!window.__race && !document.querySelector("#title").hidden, start: click("#go"), sound: "ctx", music: true },
@@ -481,6 +497,8 @@ async function cycle(P, driver, { policy, modes }) {
 async function pages() {
   section = "pages";
   const todo = PAGES.filter((p) => !ONLY || ONLY.includes(p.id));
+  // --only with a name part 3 does not know would test nothing and pass
+  if (ONLY) check("--only names pages that part 3 plays", ONLY.every((id) => PAGES.some((p) => p.id === id)), "unknown: " + ONLY.filter((id) => !PAGES.some((p) => p.id === id)).join(", "));
   // "open" policy: contexts start running by themselves. "normal": they wait for the real tap that start() makes.
   const runs = [];
   const emu = MODES.filter((m) => m === "emulate" || m === "pagehide");

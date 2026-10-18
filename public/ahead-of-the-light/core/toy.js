@@ -9,10 +9,11 @@
 // speed, which a real rival never does. Pure.
 import { TUNE } from './tune.js';
 import { createRace, stepRace, NO_INTENT } from './race.js';
-import { createShip, bpsOf } from './handle.js';
+import { createShip, bpsOf, lastShove } from './handle.js';
 import { wrap } from './ringmath.js';
 
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+const REMORA_REACT = 0.22;                    // s: REMORA's reaction after a SLAM (its roster reactMs)
 
 export const TOY_S = 30;
 export const TOY_TTC0 = 12;                   // s: the light at the start (TTC about 12 s)
@@ -180,9 +181,9 @@ function remoraStep(game, dt) {
   // (it glides up to 0.6 s of lead a second; to come abreast for the slam it may close 1.5 s a second)
   const rate = A.phase === 'slam' ? 1.5 : 0.6;
   if (want !== null) R.dist += clamp((want - ahead) * 3, -rate, rate) * bps * dt;
-  // after a shove it takes REMORA's reaction (220 ms) to steer back
-  const sh = R.shove;
-  if (sh && sh.slam && t - sh.t0 < T.SHOVE_S + 0.22) A.intent.target = R.bearing;
+  // after a SLAM's shove it takes REMORA's reaction (220 ms) to steer back, from the shove's real end
+  const sh = lastShove(R);
+  if (sh.slam && t < sh.until + REMORA_REACT) A.intent.target = R.bearing;
   else A.intent.target = R.bearing + clamp(wrap(bearing - R.bearing), -150 * dt, 150 * dt);
 }
 

@@ -143,6 +143,9 @@ let driver = null, driverName = null;
 const timing = { firstInputMs: null, firstSteerMs: null, lastRetryMs: null, fps: 0 };
 let playAt = 0, retryAt = null;
 const perfS = { frame: [], step: [], render: [] };
+// every step's time since the page loaded, so a check can take the mean over a whole stretch (one step's 0.2 ms is
+// near the browser's 0.1 ms timer grain, so a p50 of single steps flips between two grains)
+const stepTotal = { ms: 0, n: 0 };
 
 // ---------------------------------------------------------------- layout
 let hudKeep = null, hudKeepAt = -1;       // the HUD's boxes for the ring layer (hudBoxes)
@@ -336,9 +339,11 @@ function gotoLeg({ leg, lane, seed, beat, build, ship } = {}) {
   return { seed: run.seed, leg: ROUTE[run.leg] };
 }
 
+// A practice leg earns medals only on a plain page: any URL option but seed and daily, or any tuning key, blocks them.
 function startPractice(i) {
   sound.start();
   const run = practiceRun({ seed: newSeed(), leg: i, lane: 0, tune });
+  run.tuned = Boolean(run.tuned || !url.ranked);
   G.ranked = false;
   beginRun(run);
 }
@@ -432,7 +437,10 @@ function stepOnce(stepMs) {
   G.prev.length = race.ships.length;
   const t0 = performance.now();
   const ev = G.toy ? stepToy(G.toy, { you: want }, STEP) : stepRace(race, { you: want }, STEP);
-  perfS.step.push(performance.now() - t0);
+  const ms = performance.now() - t0;
+  perfS.step.push(ms);
+  stepTotal.ms += ms;
+  stepTotal.n++;
   if (G.run) follow(G.run, race);
   let ended = false;
   for (const e of ev) {
@@ -968,10 +976,12 @@ function nearYou(id) {
   return Math.abs(s.dist - you.dist) / Math.max(1e-6, beatsPerS(you.eta, race.tune || tune)) < 1;
 }
 
-// The first thing on your line that would hit within ALARM_LEAD: { t, side } or null.
-function dangerOf(race) {
+// The first thing on your line that would hit within ALARM_LEAD, for the danger whine: { t, side } or null. Nothing
+// hits a whipping ship (5.3: a knot is a graze, the rest do not touch it), so the whine is quiet mid-whip, as the
+// ring's alarm is (overlay.js lineState); a scorch has its own glow and crackle. Exported for feedback.e2e.
+export function dangerOf(race) {
   const you = race.ships[0], T = race.tune || tune;
-  if (you.caught || you.wrecked) return null;
+  if (you.caught || you.wrecked || you.whip) return null;
   const bps = Math.max(1e-6, beatsPerS(you.eta, T, you.lightspeed));
   const lead = T.ALARM_LEAD * bps;
   const items = race.leg.items;
@@ -1180,7 +1190,8 @@ function frame(now) {
   switch (G.mode) {
     case 'play': case 'toy': case 'ending':
       if (race) drawPlay(dt, alpha);
-      if (G.mode === 'ending' && (now - G.endAt) / 1000 >= G.endHold) showResult();
+      // the card waits for the end caption's last word (a missed DOOR's landing caption runs past the hold)
+      if (G.mode === 'ending' && (now - G.endAt) / 1000 >= G.endHold && !(hud.wordsLeft(PRI.end) > 0)) showResult();
       break;
     case 'vista': {
       const on = vista ? vista.render(dt, octx) : false;
@@ -1302,7 +1313,8 @@ window.__race = {
     return plain({ fps: timing.fps, drawCalls: i.calls, points: i.points, glScale: i.glScale, tier: i.tier,
       ratio: i.ratio, hazards: i.hazards, backdrop: i.backdrop, backdropPoints: i.backdropPoints,
       frameMs: { p50: q(perfS.frame, 0.5), p95: q(perfS.frame, 0.95) }, renderMs: { p50: q(perfS.render, 0.5),
-        p95: q(perfS.render, 0.95) }, stepMs: { p50: q(perfS.step, 0.5), p95: q(perfS.step, 0.95) },
+        p95: q(perfS.render, 0.95) }, stepMs: { p50: q(perfS.step, 0.5), p95: q(perfS.step, 0.95), sum: stepTotal.ms,
+        n: stepTotal.n },
       overlayOps: overlay.state ? overlay.state.ops : 0, voices: sound.voices(), fallback: Boolean(scene.fallback),
       reduced: i.reduced ?? reducedNow() });
   },

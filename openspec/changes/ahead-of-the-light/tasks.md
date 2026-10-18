@@ -87,10 +87,18 @@ every check on it passes (the machine, the switcher entry, the Action group, the
 `quiet.mjs --only=ahead-of-the-light` 34 of 34), but the box stays open: `machines.mjs` and `quiet.mjs` still fail on
 other games, the same way on the tree from before this game's cabinet (light-years-home has no machine, the switcher
 part counts Lab-only games, focus and tellme checks, a hang in the 360 × 740 Lab swipes, and pingpong and tennis
-loading `/arcade/quiet.js` late). The review fixes then gave Light Years Home its machine (AGENTS.md's New games rule,
-in the Action row between River Rush and this game), so the light-years-home lines of `machines.mjs` pass; and on this
+loading `/arcade/quiet.js` late). The review fixes then gave Light Years Home its machine (AGENTS.md's New games rule:
+its cabinet came after this one, so it stands last in the Action row, after this game), so the light-years-home lines
+of `machines.mjs` pass; and on this
 machine leg 7 reads THE SUN'S STARS so the line fits a 320 × 700 or 375 × 667 screen, and a full log of 84 pages puts
 on the gold frame (both checked in `machines.mjs`).
+Round 2 (2026-10-18): both new marquees show their whole title and sub line (RUN HOME and DRIVE ON) at 1280 × 720,
+1280 × 800, 390 × 844, 360 × 740, 375 × 667 and 320 × 700, and in a shorter window (360 × 640, 800 × 600: a machine
+under 259 px tall) the sub line is hidden and the title shows whole, where it was cut in half before. The `marquee` part
+of `machines.mjs` checks all eight sizes and that the machine shows whole; it fails on the old rules at the two short
+sizes. A landscape phone (844 × 390) still cuts these marquees, like every machine's. The Light Years Home machine moved
+to the end of the Action row, after this game (`groups.e2e.mjs` checks the order and fails on the old one). `quiet.mjs`
+plays Light Years Home too (34 of 34) and fails when a game's page with sound has no entry, or `--only` names none.
 
 ## 11. Playtest pass
 

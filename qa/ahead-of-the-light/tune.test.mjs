@@ -53,7 +53,7 @@ const KEYS_19 = [
 
 // Keys this build added to the table (each logged in race/contract.md).
 const ADDED = ['PUNCH_S', 'ETA0', 'SCOOP_LIFTER_MAX', 'FULL_TANK_SHIELD', 'CAP_OVERFLOW_SHIELD', 'QUIT_GAP',
-  'RIVAL_GAP0', 'RIVAL_HIT_ETA', 'RIVAL_STUMBLE'];
+  'RIVAL_GAP0', 'RIVAL_HIT_ETA', 'RIVAL_STUMBLE', 'PHASE_COOLDOWN'];
 
 test('the slug prefixes the save keys', () => {
   assert.equal(SLUG, 'ahead-of-the-light');

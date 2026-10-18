@@ -255,7 +255,7 @@ function legStep(race, T) {
         && Math.abs(wrap(you.bearing - G.psi)) > (finite(G.gap) ? G.gap : T.DOOR_DEG) / 2;
       emit(race, E.door, you, { miss });
       const r = land(you, T, miss ? T.DOOR_MISS_S : 0);
-      emit(race, E.land, you, { ok: r.ok, margin: r.margin, cellsSpent: r.cellsSpent, hullSpent: r.hullSpent });
+      emit(race, E.land, you, { ok: r.ok, margin: r.margin, cellsSpent: r.cellsSpent, hullSpent: r.hullSpent, miss });
       race.phase = 'done';
       emit(race, E.legEnd, you, { why: r.ok ? 'home' : 'doorstep', place: place() });
       return;

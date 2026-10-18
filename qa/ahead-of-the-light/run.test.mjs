@@ -547,12 +547,16 @@ test('card hooks do what their faces say', () => {
   f.you.eta = 2.5;
   f.run('shieldPop', { event: { type: 'shieldPop' } });
   assert.ok(Math.abs(f.you.eta - TUNE.BURN_CAP) < 1e-9);
-  // PHASE HULL: through a rival, a hairline and a stolen half cell
+  // PHASE HULL: handle's phase pass through a rival, a hairline and a stolen half cell; an ordinary pass (the
+  // overtake after it, or one while the hull is solid) pays nothing
   f = fakeRace([{ id: 'phase-hull', r: 0 }]);
   assert.equal(f.T.PHASE_HULL, 1);
+  assert.ok(f.T.PHASE_COOLDOWN > 0);
   f.you.fuel = 1;
   f.rival.fuel = 2;
-  f.run('rivalPass', { other: f.rival, gap: -2 });
+  f.run('rivalPass', { other: f.rival, gap: -2, phase: false });
+  assert.deepEqual([f.you.fuel, f.rival.fuel, f.race.events.length], [1, 2, 0]);
+  f.run('rivalPass', { other: f.rival, gap: -2, phase: true });
   assert.deepEqual([f.you.fuel, f.rival.fuel], [1.5, 1.5]);
   assert.ok(f.race.events.some((e) => e.type === E.hair && e.other === 'hound'));
   // CLOSE QUARTERS: a rival passed within 2.5° is a hairline
@@ -832,6 +836,44 @@ test('the result card: one cause, one goal (13)', () => {
   const applied = applyRun(meta, withLog.summary);
   assert.equal(resultOf(run, applied.meta, TUNE, applied).log, withLog.log, 'the same line once the page applied it');
   assert.equal(resultOf(run).log, null, 'no meta, no log line');
+  // the DOOR: a miss that decided the landing is the cause; one that a hit would not have saved stays the doorstep's.
+  // Either way the place is the door, not the last hit's piece
+  const landed = (margin, miss) => ({ ok: false, margin, cells: 3, hull: 1, miss, missS: miss ? 1.5 : 0 });
+  const door = causeOf(rec('doorstep', { land: landed(-0.3, true), piece: 'asteroids' }));
+  assert.deepEqual([door.id, door.goal, door.place], ['door', GOALS.door, null]);
+  assert.equal(door.line, 'Missed the door: looping round cost 1.5 s');
+  assert.equal(causeOf(rec('doorstep', { land: landed(-1.6, true) })).id, 'doorstep');
+  const step = causeOf(rec('doorstep', { land: landed(-0.3, false), piece: 'asteroids' }));
+  assert.deepEqual([step.id, step.place], ['doorstep', null]);
+});
+
+test('Earth\'s DOOR: a miss is on the leg\'s record, and the result card names it when it cost the landing', () => {
+  // LAND_S 12: the landing spends every cell and the hull, so the door's 1.5 s decides it
+  const T = Object.freeze({ ...TUNE, BLEED: 0, LAND_S: 12 });
+  const play = (off, tune = T) => {
+    const run = createRun({ seed: 11, tune, meta: SEEN });
+    run.leg = 7;
+    run.you.fuel = 3;
+    run.you.hull = 3;
+    const race = startLeg(run, tune);
+    race.leg = Object.freeze({ ...race.leg, items: Object.freeze(race.leg.items.filter((it) => it.kind === 'cue')) });
+    const psi = race.leg.gate.psi;
+    while (race.phase !== 'done' && race.real < 400) stepRace(race, { you: { target: psi + off } }, STEP);
+    const land = race.events.find((e) => e.type === 'land');
+    endLeg(run, race, tune);
+    return { land, rec: run.legs.at(-1), r: resultOf(run, null, tune) };
+  };
+  const hit = play(0), miss = play(90);
+  assert.deepEqual([hit.land.miss, hit.rec.end.land.miss, hit.r.title], [false, false, 'SCORCHED BUT HOME']);
+  assert.deepEqual([miss.land.miss, miss.rec.end.land.miss, miss.rec.end.land.missS], [true, true, TUNE.DOOR_MISS_S]);
+  assert.equal(miss.r.title, 'CAUGHT ON THE DOORSTEP');
+  assert.equal(miss.r.causeId, 'door');
+  assert.equal(miss.r.goal, `NEXT TIME: ${GOALS.door}`);
+  assert.equal(miss.r.line, null);
+  // home with margin to spare: the card's line says the door was missed
+  const easy = Object.freeze({ ...TUNE, BLEED: 0 });
+  assert.equal(play(0, easy).r.line, 'HOME · 4.0 S AHEAD OF THE LIGHT');
+  assert.equal(play(90, easy).r.line, 'HOME · 2.5 S AHEAD OF THE LIGHT · MISSED THE DOOR');
 });
 
 test('every card\'s face fits 14 and 68 characters; there are 36 cards', () => {
