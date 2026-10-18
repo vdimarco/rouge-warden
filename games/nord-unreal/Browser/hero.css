@@ -5,8 +5,8 @@
 /* Title screen: the trailer loop plays full bleed behind the badge and one comic panel. */
 .hero-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; pointer-events: none; }
 #overlay { --pink: #ed2865; grid-template-columns: minmax(0, 1fr) minmax(300px, 440px); align-items: center; justify-items: stretch; justify-content: center; align-content: center; gap: 24px clamp(28px, 5vw, 72px); overflow-y: auto; padding: 24px max(24px, calc((100% - 1180px) / 2));
-  /* A light halftone screen and a dark fade keep the loop visible and the panel readable. */
-  background: radial-gradient(circle, #0b0a1659 1px, transparent 1.4px) 0 0 / 5px 5px, linear-gradient(90deg, #14d8f833 0%, #0b0a1666 55%, #0b0a16b8 100%); }
+  /* The badge's angled cyan, yellow and hot-pink panels, partly see-through so the title loop shows. */
+  background: radial-gradient(circle, #0b0a162e 1px, transparent 1.5px) 0 0 / 6px 6px, linear-gradient(155deg, transparent 0 76%, var(--ink) 76% 77%, #ed2865cc 77%), linear-gradient(25deg, #ffe33fcc 0 12%, var(--ink) 12% 13%, transparent 13%), #24c9db99; }
 #overlay, body > header, body > footer { font-family: Barlow, "Arial Narrow", Arial, sans-serif; }
 
 /* The badge is the Play button; a yellow stamp marks its lower third. */
@@ -23,25 +23,25 @@
 #overlay .hero { padding: 20px 24px 14px; border-bottom: 3px solid var(--ink); background: var(--yellow); text-align: left; text-shadow: none; }
 #overlay .hero-title { margin: 0; color: var(--ink); font: 400 clamp(30px, 3.4vw, 44px)/1.05 Bungee, Impact, sans-serif; letter-spacing: -.02em; text-shadow: none; }
 #overlay .hero-tagline { margin: 6px 0 0; font-size: 16px; font-weight: 700; letter-spacing: .08em; }
-#overlay .caption { width: auto; padding: 18px 24px 20px; border: 0; background: none; box-shadow: none; color: var(--ink); }
-#overlay .eyebrow { display: inline-flex; align-items: center; gap: 7px; margin: 0 0 8px; padding: 3px 9px 2px; border: 2px solid var(--ink); font-size: 13px; font-weight: 700; letter-spacing: .1em; }
+#overlay .caption { width: auto; padding: 18px 24px 20px; border: 0; border-left: 7px solid var(--pink); background: none; box-shadow: none; color: var(--ink); }
+#overlay .eyebrow { display: inline-flex; align-items: center; gap: 7px; margin: 0 0 8px; padding: 3px 9px 2px; border: 2px solid var(--ink); color: #9d1643; font: 400 12px/1 Bungee, Impact, sans-serif; letter-spacing: .08em; }
 #overlay .eyebrow::before { content: ""; width: 9px; height: 9px; border-radius: 50%; background: #9c9590; }
 body[data-state="idle"] #overlay .eyebrow::before, body[data-state="ready"] #overlay .eyebrow::before { background: #12a150; }
 body:is([data-state="connecting"], [data-state="selecting"]) #overlay .eyebrow::before { background: #e7a400; }
 body:is([data-state="error"], [data-state="disconnected"], [data-state="offline"]) #overlay .eyebrow::before { background: var(--pink); }
-#overlay .caption h1 { margin: 0 0 6px; font: 700 clamp(24px, 2.4vw, 32px)/1.1 Barlow, "Arial Narrow", Arial, sans-serif; letter-spacing: 0; }
+#overlay .caption h1 { margin: 0 0 6px; font: 400 clamp(20px, 2vw, 26px)/1.15 Bungee, Impact, sans-serif; letter-spacing: -.03em; }
 #overlay #status-detail { font-size: 18px; line-height: 1.3; }
 /* Buttons: one big yellow main action with an arrow, then a row of smaller paper buttons. */
 #overlay .actions { display: flex; margin-top: 16px; }
-#overlay .actions button { flex: 1; display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 60px; padding: 10px 20px; border: 3px solid var(--ink); background: var(--yellow); color: var(--ink); box-shadow: 5px 5px 0 var(--ink); font: 700 26px/1 Barlow, "Arial Narrow", Arial, sans-serif; text-transform: uppercase; letter-spacing: .02em; transition: transform .08s, box-shadow .08s; }
+#overlay .actions button { flex: 1; display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 60px; padding: 10px 20px; border: 3px solid var(--ink); background: var(--yellow); color: var(--ink); box-shadow: 5px 5px 0 var(--ink); font: 400 21px/1 Bungee, Impact, sans-serif; letter-spacing: .02em; transition: transform .08s, box-shadow .08s; }
 #overlay .actions button::after { content: "→"; font: 700 28px/1 Arial, sans-serif; }
 #overlay .actions button:hover:enabled { background: var(--cyan); border-color: var(--ink); color: var(--ink); }
 #overlay .actions button:active:enabled { transform: translate(4px, 4px); box-shadow: 1px 1px 0 var(--ink); }
 /* With the host offline, Connect reads as waiting rather than as a broken button. */
 #overlay .actions button:disabled { opacity: 1; border-style: dashed; background: transparent; color: #7a736c; box-shadow: none; cursor: not-allowed; }
-#overlay .actions button:disabled::after { content: "WAITING FOR HOST"; font: 700 13px/1 Barlow, "Arial Narrow", Arial, sans-serif; letter-spacing: .08em; }
-#overlay .media-actions { display: flex; gap: 10px; padding: 0 24px 20px; }
-#overlay .secondary { flex: 1 1 0; display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-width: 0; min-height: 46px; padding: 8px 14px; border: 2px solid var(--ink); background: var(--paper); color: var(--ink); box-shadow: 3px 3px 0 var(--ink); font: 700 17px/1 Barlow, "Arial Narrow", Arial, sans-serif; text-transform: uppercase; letter-spacing: .03em; white-space: nowrap; transition: transform .08s, box-shadow .08s; }
+#overlay .actions button:disabled::after { content: "WAITING FOR HOST"; font: 700 14px/1 Barlow, "Arial Narrow", Arial, sans-serif; letter-spacing: .08em; }
+#overlay .media-actions { display: flex; gap: 10px; padding: 0 24px 20px; border-left: 7px solid var(--pink); }
+#overlay .secondary { flex: 1 1 0; display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-width: 0; min-height: 46px; padding: 8px 14px; border: 2px solid var(--ink); background: var(--paper); color: var(--ink); box-shadow: 3px 3px 0 var(--ink); font: 400 13px/1 Bungee, Impact, sans-serif; letter-spacing: .02em; white-space: nowrap; transition: transform .08s, box-shadow .08s; }
 #overlay .secondary svg { width: 18px; height: 18px; flex: none; fill: currentColor; stroke: currentColor; stroke-width: 0; }
 #overlay .secondary svg .wave { fill: none; stroke-width: 2; stroke-linecap: round; }
 #overlay .secondary:hover:enabled { background: var(--cyan); border-color: var(--ink); color: var(--ink); }
@@ -59,16 +59,17 @@ body:is([data-state="error"], [data-state="disconnected"], [data-state="offline"
 #close-trailer { position: absolute; top: max(12px, env(safe-area-inset-top)); right: max(12px, env(safe-area-inset-right)); z-index: 1; min-height: 44px; background: var(--yellow); color: var(--ink); border-color: var(--ink); box-shadow: 4px 4px 0 #c2185b; }
 
 /* Header and footer read as the printed page around the cover. */
-body > header { background: var(--paper); color: var(--ink); border-bottom: 4px solid var(--ink); }
-body > header .brand strong { color: var(--ink); font: 400 22px/1 Bungee, Impact, sans-serif; letter-spacing: .02em; }
-body > header .brand span { color: #47414a; font-size: 15px; font-weight: 500; }
+/* Header and footer: cream lettering on ink with a hot-pink rule, like the badge. */
+body > header { background: var(--ink); color: var(--paper); border-bottom: 4px solid var(--pink, #ed2865); }
+body > header .brand strong { color: var(--paper); font: 400 22px/1 Bungee, Impact, sans-serif; letter-spacing: .02em; text-shadow: 2px 2px 0 #a81044; }
+body > header .brand span { color: var(--paper); font-size: 15px; font-weight: 500; }
 /* ☰ Menu matches the panel buttons: paper face, ink border, hard shadow. */
-:is(body > header, #overlay) .menu-toggle, #overlay .overlay-menu { min-height: 44px; padding: 8px 16px; border: 3px solid var(--ink); background: var(--paper); color: var(--ink); box-shadow: 3px 3px 0 var(--ink); font: 700 18px/1 Barlow, "Arial Narrow", Arial, sans-serif; text-transform: uppercase; letter-spacing: .03em; }
-:is(body > header .menu-toggle, #overlay .overlay-menu):hover:enabled { background: var(--yellow); color: var(--ink); border-color: var(--ink); }
+:is(body > header, #overlay) .menu-toggle, #overlay .overlay-menu { min-height: 44px; padding: 8px 16px; border: 2px solid var(--ink); background: var(--yellow); color: var(--ink); box-shadow: 3px 3px 0 #ed2865; font: 400 14px/1 Bungee, Impact, sans-serif; letter-spacing: .02em; }
+:is(body > header .menu-toggle, #overlay .overlay-menu):hover:enabled { background: var(--paper); color: var(--ink); border-color: var(--ink); }
 :is(body > header .menu-toggle, #overlay .overlay-menu):active:enabled { transform: translate(3px, 3px); box-shadow: 0 0 0 var(--ink); }
-body > footer { background: var(--paper); color: var(--ink); border-top: 4px solid var(--ink); font-size: 15px; }
-body > footer #input-note, body > footer .controls { color: var(--ink); }
-body > footer .controls b { display: inline-block; margin-right: 3px; padding: 0 5px; border: 2px solid var(--ink); border-radius: 3px; color: var(--ink); line-height: 1.3; }
+body > footer { background: var(--ink); color: var(--paper); border-top: 4px solid #ed2865; font-size: 15px; }
+body > footer #input-note, body > footer .controls { color: var(--paper); }
+body > footer .controls b { display: inline-block; margin-right: 3px; padding: 0 5px; border: 2px solid var(--paper); border-radius: 3px; color: var(--paper); line-height: 1.3; }
 body:not([data-state="playing"]) { height: 100dvh; }
 body:not([data-state="playing"]) #frame { min-height: 0; }
 
@@ -80,7 +81,7 @@ body:not([data-state="playing"]) #frame { min-height: 0; }
   body:not([data-state="playing"]) > footer .controls { display: none; }
   body > header .brand { min-width: 0; white-space: normal; }
   body > header .brand strong { font-size: 19px; }
-  #overlay { grid-template-columns: minmax(0, 1fr); align-content: center; gap: 18px; padding: 14px 16px 20px; background: radial-gradient(circle, #0b0a1659 1px, transparent 1.4px) 0 0 / 5px 5px, linear-gradient(180deg, #14d8f81a 0%, #0b0a1666 45%, #0b0a16c4 100%); }
+  #overlay { grid-template-columns: minmax(0, 1fr); align-content: center; gap: 18px; padding: 14px 16px 20px; }
   #overlay #start.badge-launch { width: min(90vw, calc(100dvh - 330px), 440px); min-width: 180px; }
   .comic-badge { filter: drop-shadow(5px 5px 0 var(--ink)); }
   .play-label { font-size: clamp(20px, 6.4vw, 30px); box-shadow: 4px 4px 0 var(--ink); }
@@ -88,12 +89,13 @@ body:not([data-state="playing"]) #frame { min-height: 0; }
   #overlay .hero { display: none; }
   #overlay .caption { padding: 12px 14px 14px; }
   #overlay .eyebrow { font-size: 11px; margin-bottom: 6px; }
-  #overlay .caption h1 { font-size: 23px; margin-bottom: 4px; }
+  #overlay :is(.caption, .media-actions) { border-left-width: 6px; }
+  #overlay .caption h1 { font-size: 19px; margin-bottom: 4px; }
   #overlay #status-detail { font-size: 16px; line-height: 1.25; }
   #overlay .actions { margin-top: 12px; }
-  #overlay .actions button { min-height: 54px; padding: 8px 16px; font-size: 22px; box-shadow: 4px 4px 0 var(--ink); }
+  #overlay .actions button { min-height: 54px; padding: 8px 16px; font-size: 19px; box-shadow: 4px 4px 0 var(--ink); }
   #overlay .media-actions { padding: 0 14px 14px; gap: 8px; }
-  #overlay .secondary { padding: 8px 10px; font-size: 16px; }
+  #overlay .secondary { padding: 8px 8px; font-size: 12px; }
   #overlay .small { display: none; }
 }
 /* Short phones: a smaller badge keeps the panel on screen without scrolling. */
@@ -102,11 +104,11 @@ body:not([data-state="playing"]) #frame { min-height: 0; }
   #overlay { gap: 12px; padding: 10px 14px 14px; }
   #overlay #start.badge-launch { width: min(90vw, calc(100dvh - 350px)); min-width: 150px; }
   .play-label { font-size: 18px; }
-  #overlay .caption h1 { font-size: 20px; }
+  #overlay .caption h1 { font-size: 17px; }
   #overlay #status-detail { font-size: 15px; }
-  #overlay .actions button { min-height: 48px; font-size: 20px; }
+  #overlay .actions button { min-height: 48px; font-size: 17px; }
   #overlay .media-actions { gap: 8px; }
-  #overlay .secondary { gap: 6px; min-height: 44px; padding: 6px 8px; font-size: 15px; letter-spacing: .01em; }
+  #overlay .secondary { gap: 6px; min-height: 44px; padding: 6px 6px; font-size: 11px; letter-spacing: 0; }
   #overlay .secondary svg { width: 15px; height: 15px; }
 }
 /* Phones turned sideways and short windows: badge left, compact panel right. */
@@ -121,12 +123,12 @@ body:not([data-state="playing"]) #frame { min-height: 0; }
   #overlay .hero-tagline { font-size: 12px; }
   #overlay .caption { padding: 10px 16px 12px; }
   #overlay .eyebrow { font-size: 10px; margin-bottom: 4px; }
-  #overlay .caption h1 { font-size: 20px; margin-bottom: 2px; }
+  #overlay .caption h1 { font-size: 17px; margin-bottom: 2px; }
   #overlay #status-detail { font-size: 14px; }
   #overlay .actions { margin-top: 8px; }
-  #overlay .actions button { min-height: 46px; font-size: 20px; }
+  #overlay .actions button { min-height: 46px; font-size: 17px; }
   #overlay .media-actions { padding: 0 16px 12px; }
-  #overlay .secondary { min-height: 44px; font-size: 15px; }
+  #overlay .secondary { min-height: 44px; font-size: 12px; }
   #overlay .small { display: none; }
 }
 @media (prefers-reduced-motion: reduce) {

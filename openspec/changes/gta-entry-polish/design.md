@@ -7,6 +7,13 @@
 - Phones hide the panel title, because the badge already names the game. Short phones (≤700px high) shrink the badge so the overlay never scrolls.
 - Barlow Condensed 500 and 700 come from `public/vr/fonts/`. The build copies them, and THIRD_PARTY_NOTICES carries the OFL text.
 
+## Merge with #398 (badge-matched chrome)
+#398 landed on main during this change. It sets the entry-screen direction: ink header and footer with cream lettering and a hot-pink rule, angled cyan, yellow and hot-pink background panels, and Bungee lettering on the status and controls. This change keeps that direction inside the single-layer layout:
+- Header, footer and ☰ Menu use #398's colors. Menu is yellow with a pink shadow and Bungee lettering.
+- The status chip, status title, Connect, Watch trailer and Sound on use Bungee. They use larger sizes than #398 (17 to 21px on the main button, 11 to 13px on the secondary row), because of the "too small on phone" feedback.
+- The status block and the button row carry #398's 7px hot-pink left rule.
+- The angled panels are partly see-through (80% on the panels, 60% on the cyan). #398's opaque cyan base would hide the title loop again, which is the fault this change fixes.
+
 ## Play page buttons
 - Main action: full-width yellow button, 3px ink border, 5px hard shadow, label on the left and "→" on the right (the same pattern as the arcade Play button). player.js sets its text, so the arrow and "Waiting for host" are CSS `::after` content.
 - Secondary row (`.media-actions`, after `.caption`): Watch trailer and Sound on, paper fill, 2px border, 3px shadow, inline SVG icons. The row sits outside the `role="status"` caption, so showing Sound on does not trigger an announcement.
