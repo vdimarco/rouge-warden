@@ -1,34 +1,53 @@
-// First Breath: stage 6, Second Trimester (`answer`), the WAVE-0 STUB (design.md 16.4, 16.12; tasks.md 1.7). It stands in for
-// the stage until its wave-1 builder replaces this file with the design.md 6.6 form. It follows the Stage interface
-// exactly, so core/run.js, core/bots.js and the tests can play a whole run now. Pure: no DOM, no clocks, no storage.
-// Taps on her 78 bpm beats in beat and phrases. Milestones hearing (start of hear) and eyes (end of eyes). Carry
-// out: song with the carried notes and lit = a mask of the first 16 phrase targets graded Close or better.
+// First Breath: stage 6, Second Trimester (`answer`): "Listen. Then answer." (design.md 6.6, the v1 form). Pure: no
+// DOM, no clocks, no storage, no Math.random; every draw comes from seeded streams (core/rng.js). Deterministic, and
+// step() never throws.
 //
-// Stub rules (the same in all 9 wave-0 stubs; the engine is the second half of this file):
-// - A timer. PLAN gives each moment's stub seconds, its live gesture and its targets; the moments play in order and
-//   the stage ends after the last one (or at meta.capS). The default length is 3.1's ref time (swim: its cap).
-//   opts.stubS (seconds; a test hook that core/run.js passes through from createRun's stageOpts) scales the plan to
-//   that length. A real stage ignores it. gaDay follows each 4.1 moment over its stub seconds (clock.gaAt).
-// - Her beats start at opts.motherPhase at meta.motherBpm (5.1), with jitter only in free time.
-// - Targets: a "tap" moment lays a tap on every 2nd beat of its heart, a "hold" moment a press on a beat and a release
-//   2 beats later; none comes sooner than 2 s after the start (or a jump), so each one is listed for its preview.
-//   Score: Goal 3,000 when done, Skill 6,000 x accuracy, Flourish 1,000 x the best In-time streak over min(8, targets).
-// - One sub-goal ("stub"), shown at the start and settled at the end. jump(state, id) starts that moment now: the
-//   moments after it follow on, open targets are dropped and new ones laid. probe() is null.
-// - Strings are ids only (`answer.text.js` is empty in wave 0, so say() shows the id).
+// What happens, all on her 78 bpm beats (laid once in create from opts.motherPhase, no jitter while targets run):
+// - `hear` (week 15, 3 s, no input): her heartbeat changes from felt to heard (milestone `hearing`, fact answer.hear).
+// - `beat` (weeks 15 to 18, 10 beats from her first beat at or after 3.0 s): 8 tap targets on beats 2 to 9 (a
+//   two-beat count-in after the prompt). Sub-goal `beat`.
+// - `phrases` (weeks 19 to 24, 6 phrases of 10 beats): each phrase is 4 beats of call (her voice hums one note per
+//   `x` slot; a gold ripple at that slot and at the warm patch on the wall), 4 beats of answer (a dashed ghost ripple
+//   at each slot to tap; each one is a tap target on that beat) and 2 beats of gap. Patterns x..., x.x., xx.x, x.xx,
+//   xxx., xxxx (16 notes). An answer with at least 75% of its notes Close or better is a match: "{Carer} feels
+//   you." and, from phrase 2 (week 20), the hand glow on the wall. A miss only adds less: the next phrase comes on
+//   time and the voice never stops. Each phrase plays once (repeats are deferred, 19.2). Sub-goal `answer`.
+// - `eyes` (weeks 25 to 26, 4 s, no input): fact answer.jump; at its end (gaDay 182, week 26) the eyes open by
+//   themselves (milestone `eyes`) and the vignette lifts over 2 s.
+// - `outro` (week 27, 3 s, no input), then the stage ends with its goal met (always met from stage 2 on).
+// Length ≈ 3 + 7.7 + 46.2 + 4 + 3 ≈ 64 s for every input (plus under one beat of her phase); cap 80 s.
+//
+// Score (7, 6.6): Goal 3,000; Skill 1,500 × beat accuracy (of 8) + 4,500 × answer accuracy (of 16); Flourish 250 per
+// phrase with every note In time, at most 1,000. Carry in: nestleX and treeSeed (the placenta disc on the wall and
+// its tree), sparks (rim sparks). Carry out: song = { notes: the 16 call notes (MIDI), lit: bit k set when call note
+// k was answered Close or better }.
+//
+// Events beyond the shared ones: sfx { id: "answer.hum", at, pitch (Hz), gain, note (MIDI) } for each hummed note
+// (sent up to 0.2 s ahead of `at`, never before the phrases moment), sfx "answer.thump" at each answer or beat tap
+// that lands Close or better (a soft low thump), sfx "answer.hand" with each hand glow (a warm low chord); caption
+// ids answer.cap.hum1..4 ("♪ … hums, left: n notes") at each call and answer.feels on each match; fact { id, where:
+// "caption" } for each caption fact at the gaDay its label names.
+//
+// Contract choices: one track holds both groups ("beat", "answer"); P is the seconds since the previous target (the
+// beat period for the first), floored at 0.5 s (5.2). Presses count only while the live gesture is `tap`.
+// jump(state, id) starts that moment now (a `beat` or `phrases` jump lays its targets from her next beat), drops the
+// targets and the scoring of that moment and the ones after it, keeps what came before, and opens the eyes when it
+// skips past `eyes`.
 import { DT, gaAt, mmPerShortAxis } from "../clock.js";
 import { makeBeats } from "../beat.js";
+import { stream, pick } from "../rng.js";
 import { emit } from "../events.js";
-import { EMPTY_INTENTS } from "../intent.js";
 import { CREDIT } from "../judge.js";
 import { clampScore, PARTS } from "../score.js";
 import { mergeCarry } from "../carry.js";
 import { emptyDraw } from "../draw.js";
-import { createTrack, feed, upcoming, accuracy, streak } from "../lib/track.js";
+import { createTrack, feed, upcoming } from "../lib/track.js";
 import { subgoal, doneBy } from "../lib/goals.js";
 import { figure } from "../lib/figure.js";
+import { createTree, growTree } from "../lib/colonize.js";
+import { TUNE } from "./answer.tune.js";
 
-// One 4.1 moment: gaDay from → to while it runs, and the lenS that gaDay follows (null where 4.1 gives none).
+const BEAT_S = 60 / TUNE.bpm;
 const mo = (id, from, to, lenS = null) => Object.freeze({ id, ga: Object.freeze([from, to]), lenS });
 
 export const meta = Object.freeze({
@@ -37,215 +56,325 @@ export const meta = Object.freeze({
   families: Object.freeze(["tap"]),
   ga: Object.freeze({ start: 98, end: 195 }), fertilized: true,
   mm: Object.freeze({ start: 150, end: 600 }),
-  motherBpm: 78, parS: 64, capS: 80, canFail: false, scored: true,
+  motherBpm: TUNE.bpm, parS: 64, capS: 80, canFail: false, scored: true,
   moments: Object.freeze([
     mo("hear", 105, 105),
-    mo("beat", 105, 126, (8 * 60) / 78),
-    mo("phrases", 133, 175, (60 * 60) / 78),
-    mo("eyes", 175, 182, 4),
-    mo("outro", 189, 195, 3),
+    mo("beat", 105, 126, TUNE.beatTargets * BEAT_S),          // p follows its 8 targets
+    mo("phrases", 133, 175, TUNE.patterns.length * TUNE.phraseBeats * BEAT_S),   // 6 phrases of 10 beats
+    mo("eyes", 175, 182, TUNE.eyesS),
+    mo("outro", 189, 195, TUNE.outroS),
   ]),
 });
 
-// The stub's timeline, one entry per meta.moments entry and in the same order: s is the moment's stub seconds (a
-// number, or a function of the carry), gesture its live gesture (keys "turn" only in the egg's guard), targets
-// "tap" | "hold" | none, heart the targets' heart (default hers); extra moments come only through jump().
-const PLAN = [
-  { id: "hear", s: 3, gesture: "none" },
-  { id: "beat", s: 7.7, gesture: "tap", targets: "tap" },
-  { id: "phrases", s: 46.3, gesture: "tap", targets: "tap" },
-  { id: "eyes", s: 4, gesture: "none" },
-  { id: "outro", s: 3, gesture: "none" },
-];
-
-// Milestone events (16.6) at the start or end of a moment.
-const MILESTONES = { hear: { start: "hearing" }, eyes: { end: "eyes" } };
-
-// Her beats with no jitter (5.1); your heart along clock.bpmYou from gaDay 98 to 195.
-function segments(phase, st, end) {
-  return [
-    { heart: "mother", from: 0, to: end + 30, bpm: meta.motherBpm, jitter: 0, first: phase },
-    { heart: "you", from: 0, to: end, gaFrom: 98, gaTo: 195, jitter: 0 },
-    { heart: "you", from: end, to: end + 30, gaFrom: 195, jitter: 0 },
-  ];
-}
-
-// The view: span in u across the short axis, the subject's size in stages 1 and 2, the light level.
-const VIEW = { span: () => 100, you: null, light: 0.6 };
-
-function look(st, d) {
-  d.splats.push(...figure("thumb", 45, st.gaDay));
-  if (st.moment === "phrases") {
-    const p = clamp01(st.beats.phase("mother", st.t));
-    d.strips.push({ kind: "ripples", items: [{ x: -35, y: 25, r: 4 + 12 * p, a: 1 - p, dashed: false }] });
-  }
-}
-
-// The stage's own touches on the shared engine below (each is optional).
-const HOOKS = {
-  carryOut(st) {
-    let lit = 0, k = 0;
-    st.track.targets.forEach((x, i) => {
-      if (x.group !== "phrases" || k >= 16) return;
-      const r = st.track.results[i];
-      if (r && (r.grade === "in" || r.grade === "close")) lit |= 1 << k;
-      k++;
-    });
-    return { song: { notes: st.carry.song.notes, lit } };
-  },
-};
-
-// ---- the shared stub engine (the same in every wave-0 stub) ----
-
-const LEAD_S = 2;        // no target in the first 2 s after the start or a jump, so each one gets its preview (5.2)
-const TAIL_S = 0.25;     // a moment's last target comes at least this long before the moment ends
+const IDS = meta.moments.map((m) => m.id);
+const HEAR = 0, BEAT = 1, PHRASES = 2, EYES = 3, OUTRO = 4, LAST = OUTRO;
+const GESTURE = Object.freeze({ hear: "none", beat: "tap", phrases: "tap", eyes: "none", outro: "none" });
+const GROUP_MOMENT = Object.freeze({ beat: BEAT, answer: PHRASES });
+const NOTES = TUNE.patterns.join("").split("").filter((c) => c === "x").length;   // 16
+// the caption fact that opens each phrase (phrase 6 has none), and answer.feel at phrase 2's answer
+const PHRASE_FACT = Object.freeze(["answer.respond", "answer.w20", "answer.outside", "answer.low", "answer.hic", null]);
 const NONE = Object.freeze({ gesture: "none", text: null, keys: "steer" });
-const MAIN = PLAN.filter((p) => !p.extra).length;   // the moments played in order; the extra ones only by jump()
-const clamp01 = (v) => Math.max(0, Math.min(1, v));
+const S = TUNE.score;
+const V = TUNE.view;
 
-function promptOf(i) {
-  const p = PLAN[i];
-  return { gesture: p.gesture, text: meta.id + "." + p.id, keys: p.keys || "steer" };
-}
+const clamp01 = (v) => Math.max(0, Math.min(1, Number.isFinite(v) ? v : 0));
+const lerp = (a, b, p) => a + (b - a) * p;
+const hz = (midi) => 440 * Math.pow(2, (midi - 69) / 12);
 
-// Seconds per moment: the stub lengths, scaled so the moments played in order last opts.stubS when it is given.
-function lengths(carry, stubS) {
-  const base = PLAN.map((p) => (typeof p.s === "function" ? p.s(carry) : p.s));
-  if (!(stubS > 0)) return base;
-  const main = base.slice(0, MAIN).reduce((a, b) => a + b, 0);
-  return base.map((s) => (s * stubS) / main);
-}
+// ---- her beats ----
 
-// Moment i starts at stage time t; the moments after it follow on.
-function planFrom(st, i, t) {
-  st.starts[i] = t;
-  for (let j = i + 1; j < PLAN.length; j++) st.starts[j] = st.starts[j - 1] + st.lens[j - 1];
-}
-
-const periodOf = (st, heart, t) => 60 / st.beats.bpm(heart, t);
-
-// Targets for moment `from` on, none before t0 + LEAD_S: taps on every 2nd beat of the moment's heart; holds as a
-// press on a beat and a release 2 beats later. No two targets are closer than max(0.5 s, 1.9 beats).
-function lay(st, from, t0) {
-  const out = [];
-  let last = st.lastT;
-  for (let i = from; i < PLAN.length; i++) {
-    const p = PLAN[i];
-    if (!p.targets || (p.extra && i !== from)) continue;
-    const heart = p.heart || "mother";
-    const a = Math.max(st.starts[i], t0 + LEAD_S), b = st.starts[i] + st.lens[i] - TAIL_S;
-    if (!(b > a)) continue;
-    const bs = st.beats.between(heart, a, b);
-    const free = (x) => !(x - last < Math.max(0.5, 1.9 * periodOf(st, heart, x)));
-    const gap = (x) => Math.max(0.5, Number.isFinite(last) ? x - last : periodOf(st, heart, x));
-    let k = 0;
-    const add = (kind, t, P) => out.push({ id: p.id + "." + st.gen + "." + k++, t, P, kind, heart, group: p.id });
-    if (p.targets === "tap") {
-      for (const x of bs) if (free(x)) { add("tap", x, gap(x)); last = x; }
-    } else {
-      for (let j = 0; j + 2 < bs.length; j++) {
-        if (!free(bs[j])) continue;
-        add("press", bs[j], gap(bs[j]));
-        add("release", bs[j + 2], bs[j + 2] - bs[j]);
-        last = bs[j + 2];
-        j += 3;
-      }
-    }
+function lowerBound(arr, t) {
+  let lo = 0, hi = arr.length;
+  while (lo < hi) {
+    const mid = (lo + hi) >> 1;
+    if (arr[mid] < t) lo = mid + 1; else hi = mid;
   }
-  st.lastT = last;
+  return lo;
+}
+// The index of her first beat at or after t, and the time of beat n (past the laid ones it carries on at 78 bpm).
+const beatIdx = (st, t) => lowerBound(st.beats.mother, t - 1e-9);
+function beatTime(st, n) {
+  const a = st.beats.mother;
+  if (!a.length) return n * BEAT_S;
+  return n < a.length ? a[n] : a[a.length - 1] + (n - a.length + 1) * BEAT_S;
+}
+
+// The song: a seeded walk on the pentatonic set, one note per call slot (16).
+function makeSong(seed) {
+  const r = stream(seed, "song");
+  const { set, start, steps } = TUNE.song;
+  const out = [];
+  let i = start;
+  for (let k = 0; k < NOTES; k++) {
+    if (k > 0) {
+      i += pick(r, steps);
+      if (i < 0) i = 1;
+      if (i > set.length - 1) i = set.length - 2;
+    }
+    out.push(set[i]);
+  }
   return out;
 }
 
-// After a jump: keep the judged targets, drop the open ones and lay new ones from now.
-function relay(st) {
-  const keep = [], res = new Map();
-  st.track.targets.forEach((x, i) => { const r = st.track.results[i]; if (r) { keep.push(x); res.set(x.id, r); } });
+// ---- the plan: moment starts, targets, phrases and timed cues from moment `from` at time t0 ----
+
+function plan(st, from, t0) {
+  // keep the judged targets (and results) of the moments before `from`; drop the open ones and the rest
+  const keep = [], kept = new Map();
+  if (st.track) {
+    st.track.targets.forEach((x, i) => {
+      const r = st.track.results[i];
+      if (GROUP_MOMENT[x.group] < from && r) { keep.push(x); kept.set(x.id, r); }
+    });
+  }
   st.gen++;
-  st.lastT = keep.length ? keep[keep.length - 1].t : -Infinity;
-  const track = createTrack([...keep, ...lay(st, st.mi, st.t)], { assist: st.assist });
-  track.targets.forEach((x, i) => { if (res.has(x.id)) track.results[i] = res.get(x.id); });
-  st.track = track;
+  if (from <= BEAT) { st.credit.beat = 0; st.judged.beat = 0; }
+  if (from <= PHRASES) {
+    st.credit.answer = 0; st.judged.answer = 0; st.phrases = []; st.calls = [];
+    st.flourish = 0; st.matches = 0; st.perfect = 0; st.lit = 0; st.handT = -Infinity; st.litAt = {};
+  }
+  const add = [];
+  let cur = t0;
+  for (let j = from; j <= LAST; j++) {
+    st.starts[j] = j === from ? t0 : cur;
+    if (j === HEAR) cur = st.starts[j] + TUNE.hearS;
+    else if (j === BEAT) {
+      const n0 = beatIdx(st, st.starts[j]);
+      if (j !== from) st.starts[j] = beatTime(st, n0);
+      for (let k = 0; k < TUNE.beatTargets; k++) {
+        add.push({ id: `beat.${st.gen}.${k}`, t: beatTime(st, n0 + TUNE.beatFirst + k), kind: "tap", heart: "mother", group: "beat" });
+      }
+      cur = beatTime(st, n0 + TUNE.beatBeats);
+    } else if (j === PHRASES) {
+      const n0 = beatIdx(st, st.starts[j]);
+      if (j !== from) st.starts[j] = beatTime(st, n0);
+      let note = 0;
+      TUNE.patterns.forEach((pat, p) => {
+        const base = n0 + p * TUNE.phraseBeats;
+        const ph = {
+          p, pat, t0: beatTime(st, base), tAnswer: beatTime(st, base + TUNE.callBeats),
+          t1: beatTime(st, base + TUNE.phraseBeats), notes: [], good: 0, inTime: 0, judged: 0, matched: null,
+        };
+        for (let k = 0; k < pat.length; k++) {
+          if (pat[k] !== "x") continue;
+          const id = `answer.${st.gen}.${p}.${k}`;
+          const tCall = beatTime(st, base + k), tAns = beatTime(st, base + TUNE.callBeats + k);
+          ph.notes.push({ k, song: note, tCall, tAns, id });
+          st.calls.push({ t: tCall, k, p, song: note, midi: st.song[note] });
+          add.push({ id, t: tAns, kind: "tap", heart: "mother", group: "answer", slot: k, phrase: p, song: note });
+          note++;
+        }
+        st.phrases.push(ph);
+      });
+      cur = beatTime(st, n0 + TUNE.patterns.length * TUNE.phraseBeats);
+    } else if (j === EYES) cur = st.starts[j] + TUNE.eyesS;
+    else cur = st.starts[j] + TUNE.outroS;
+  }
+  st.end = cur;
+
+  // P: the seconds since the previous target, or the beat period for the first; floored at 0.5 s (5.2)
+  const all = [...keep, ...add].sort((a, b) => a.t - b.t);
+  all.forEach((x, i) => { if (!Number.isFinite(x.P)) x.P = Math.max(0.5, i ? x.t - all[i - 1].t : BEAT_S); });
+  st.track = createTrack(all, { assist: st.assist });
+  st.track.targets.forEach((x, i) => { if (kept.has(x.id)) st.track.results[i] = kept.get(x.id); });
+  st.where = {};
+  for (const x of st.track.targets) st.where[x.id] = x.group === "answer"
+    ? { x: V.slotX[x.slot], y: V.slotY, r0: V.ringSlot.r0, r1: V.ringSlot.r1 }
+    : { x: V.baby.x, y: V.baby.y, r0: V.ringBeat.r0, r1: V.ringBeat.r1 };
+
+  // timed cues, sorted by when they go out
+  const cues = [];
+  const cue = (at, name, data) => cues.push({ at, name, data });
+  if (from <= HEAR) cue(st.starts[HEAR], "fact", { id: "answer.hear", where: "caption" });
+  if (from <= PHRASES) {
+    for (const ph of st.phrases) {
+      const fact = PHRASE_FACT[ph.p];
+      if (fact) cue(ph.t0, "fact", { id: fact, where: "caption" });
+      cue(ph.t0, "caption", { id: "answer.cap.hum" + Math.min(4, ph.notes.length), dir: "left" });
+      if (ph.p === 1) cue(ph.tAnswer, "fact", { id: "answer.feel", where: "caption" });
+    }
+    for (const c of st.calls) {
+      cue(Math.max(st.starts[PHRASES], c.t - TUNE.humLeadS), "sfx",
+        { id: "answer.hum", at: c.t, pitch: hz(c.midi), gain: 1, note: c.midi, slot: c.k, phrase: c.p });
+    }
+  }
+  if (from <= EYES) cue(st.starts[EYES], "fact", { id: "answer.jump", where: "caption" });
+  st.cues = cues.sort((a, b) => a.at - b.at);
+  st.ci = 0;
 }
 
-function edge(st, i, which) {
-  const m = MILESTONES[PLAN[i].id];
-  if (m && m[which]) emit(st, "milestone", { id: m[which] });
-  if (HOOKS.moment) HOOKS.moment(st, PLAN[i].id, which);
+// ---- moments ----
+
+function promptOf(i) {
+  return { gesture: GESTURE[IDS[i]], text: "answer.prompt." + IDS[i], keys: "steer" };
+}
+
+function openEyes(st) {
+  if (st.eyesT !== null) return;
+  st.eyesT = st.t;
+  emit(st, "milestone", { id: "eyes" });
+}
+
+// Moment i ends: gaDay jumps to its end (4.1); the eyes open at the end of `eyes`.
+function leave(st, i) {
+  st.gaDay = Math.max(st.gaDay, meta.moments[i].ga[1]);
+  if (i === EYES) openEyes(st);
 }
 
 function enter(st, i) {
   st.mi = i;
-  st.moment = PLAN[i].id;
+  st.moment = IDS[i];
   st.gaDay = meta.moments[i].ga[0];
   emit(st, "moment", { id: st.moment });
   emit(st, "prompt", promptOf(i));
-  edge(st, i, "start");
+  if (i === HEAR) emit(st, "milestone", { id: "hearing" });
+  if (i === BEAT) subgoal(st, "beat", "answer.sub.beat");
+  if (i === PHRASES) subgoal(st, "answer", "answer.sub.answer");
 }
 
-// A moment ends: gaDay jumps to its end (4.1), then the next moment, or the end of the stage.
-function advance(st) {
-  const i = st.mi;
-  st.gaDay = meta.moments[i].ga[1];
-  edge(st, i, "end");
-  if (PLAN[i].extra || i >= MAIN - 1) return finish(st, PLAN[i].extra ? PLAN[i].id : "end");
-  enter(st, i + 1);
+// ---- judging ----
+
+const skillOf = (st) => Math.round((S.beat * st.credit.beat) / TUNE.beatTargets) + Math.round((S.answer * st.credit.answer) / NOTES);
+
+function settleBeat(st) {
+  if (st.subgoals.beat !== "shown") return;
+  const you = st.credit.beat / TUNE.beatTargets >= TUNE.doneBeatK - 1e-9;
+  doneBy(st, "beat", you ? "you" : "auto", you ? "answer.sub.beatDone" : "answer.sub.beatAuto");
+}
+
+function settleAnswer(st) {
+  if (st.subgoals.answer !== "shown") return;
+  const you = st.matches >= TUNE.doneMatches;
+  doneBy(st, "answer", you ? "you" : "auto", you ? "answer.sub.answerDone" : "answer.sub.answerAuto");
+}
+
+// A phrase's last note is judged: the match, the hand glow from phrase 2, the Flourish.
+function settlePhrase(st, ph, t) {
+  const n = ph.notes.length;
+  ph.matched = n > 0 && ph.good / n >= TUNE.matchK - 1e-9;
+  if (ph.matched) {
+    st.matches++;
+    emit(st, "caption", { id: "answer.feels", dir: null, t });
+    if (ph.p >= TUNE.handFrom) {
+      st.handT = t;
+      emit(st, "sfx", { id: "answer.hand", at: t, pitch: hz(st.song[ph.notes[0].song] - 24), gain: 0.8, t });
+    }
+  }
+  if (n > 0 && ph.inTime === n && st.flourish < S.flourishMax) {
+    const add = Math.min(S.flourishPer, S.flourishMax - st.flourish);
+    st.flourish += add;
+    st.perfect++;
+    emit(st, "points", { part: "flourish", add, t });
+  }
+  if (st.phrases.every((q) => q.matched !== null)) settleAnswer(st);
 }
 
 function judged(st, r) {
   const x = r.target;
-  emit(st, "judge", { target: x.id, grade: r.grade, errMs: r.errMs, rawMs: r.rawMs, heart: x.heart,
-    t: Number.isFinite(r.errMs) ? x.t + r.errMs / 1000 : st.t });
+  const at = Number.isFinite(r.errMs) ? x.t + r.errMs / 1000 : st.t;          // a miss: the step that saw it
+  emit(st, "judge", { target: x.id, grade: r.grade, errMs: r.errMs, rawMs: r.rawMs, heart: x.heart, t: at });
+  st.fb = { t: at, id: x.id, grade: r.grade };
+  if (r.grade === "off") return;                          // Off changes nothing; the target stays open (5.2)
   const c = CREDIT[r.grade] || 0;
-  if (c > 0) emit(st, "points", { part: "skill", add: Math.round((PARTS.skill * c) / st.track.targets.length) });
+  const before = skillOf(st);
+  if (x.group === "beat") { st.credit.beat += c; st.judged.beat++; }
+  else if (x.group === "answer") { st.credit.answer += c; st.judged.answer++; }
+  const add = skillOf(st) - before;
+  if (add > 0) emit(st, "points", { part: "skill", add, t: at });
+  if (c > 0) emit(st, "sfx", { id: "answer.thump", at, pitch: 70, gain: c, t: at });
+  if (x.group === "beat") {
+    if (c > 0) st.litAt[x.id] = at;
+    if (st.judged.beat >= st.track.targets.filter((y) => y.group === "beat").length) settleBeat(st);
+    return;
+  }
+  const ph = st.phrases[x.phrase];
+  if (!ph) return;
+  if (c >= CREDIT.close) { st.lit |= 1 << x.song; st.litAt[x.id] = at; ph.good++; }
+  if (r.grade === "in") ph.inTime++;
+  ph.judged++;
+  if (ph.judged >= ph.notes.length && ph.matched === null) settlePhrase(st, ph, at);
 }
 
 function finish(st, how) {
   if (st.done) return;
-  for (const r of feed(st.track, EMPTY_INTENTS, st.t + 3600)) judged(st, r);
+  for (const r of feed(st.track, { presses: [], releases: [] }, st.t + 3600)) judged(st, r);
+  for (const ph of st.phrases) if (ph.matched === null) settlePhrase(st, ph, st.t);
+  settleBeat(st);
+  settleAnswer(st);
+  openEyes(st);
   st.done = true;
   st.how = how;
-  if (HOOKS.finish) HOOKS.finish(st, how);
-  const you = result(st).goalMet && st.track.targets.length > 0 && accuracy(st.track) >= 0.5;
-  doneBy(st, "stub", you ? "you" : "auto", meta.id + (you ? ".goalDone" : ".goalAuto"));
+  emit(st, "points", { part: "goal", add: S.goal });
   emit(st, "prompt", { ...NONE });
   emit(st, "done", {});
 }
 
+// ---- the Stage interface ----
+
 export function create(seed, carryIn, opts = {}) {
   const o = opts || {};
   const carry = mergeCarry(carryIn, null);
-  const lens = lengths(carry, Number(o.stubS));
   const phase = Number.isFinite(o.motherPhase) && o.motherPhase >= 0 ? o.motherPhase : 0;
+  const sd = Number.isFinite(Number(seed)) ? Number(seed) >>> 0 : 1;
   const st = {
-    id: meta.id, seed: seed >>> 0, t: 0, gaDay: meta.moments[0].ga[0], fertilized: meta.fertilized,
-    events: [], beats: null, subgoals: {}, moment: PLAN[0].id,
-    mi: 0, starts: [], lens, gen: 0, lastT: -Infinity, track: null,
-    done: false, how: null, assist: !!o.assist, oneButton: !!o.oneButton, carry, x: {},
+    id: meta.id, seed: sd, t: 0, gaDay: meta.moments[0].ga[0], fertilized: meta.fertilized,
+    events: [], beats: null, subgoals: {}, moment: IDS[0],
+    mi: 0, starts: [0, 0, 0, 0, 0], end: 0, gen: 0, track: null, where: {}, cues: [], ci: 0,
+    song: makeSong(sd), calls: [], phrases: [],
+    credit: { beat: 0, answer: 0 }, judged: { beat: 0, answer: 0 },
+    flourish: 0, matches: 0, perfect: 0, lit: 0, litAt: {}, handT: -Infinity, eyesT: null, fb: null,
+    done: false, how: null, assist: !!o.assist, oneButton: !!o.oneButton, carry, tree: null,
   };
-  planFrom(st, 0, 0);
-  const end = st.starts[MAIN - 1] + lens[MAIN - 1];
-  st.beats = makeBeats(seed, segments(phase, st, end));
-  st.track = createTrack(lay(st, 0, 0), { assist: st.assist });
-  if (HOOKS.create) HOOKS.create(st, seed);
-  emit(st, "moment", { id: st.moment });
-  emit(st, "prompt", promptOf(0));
-  subgoal(st, "stub", meta.id + ".goal");
-  edge(st, 0, "start");
+  st.beats = makeBeats(sd, [
+    { heart: "mother", from: 0, to: TUNE.layAheadS, bpm: TUNE.bpm, jitter: 0, first: phase },
+    { heart: "you", from: 0, to: 70, gaFrom: 105, gaTo: 195, jitter: 0 },
+    { heart: "you", from: 70, to: TUNE.layAheadS, gaFrom: 195, jitter: 0 },
+  ]);
+  // the placenta disc on the wall where you nestled, its tree from your root tree's seed
+  const dx = carry.nestleX * V.disc.spread, dy = V.disc.y;
+  st.tree = createTree({
+    seed: carry.treeSeed === null ? sd : carry.treeSeed, root: { x: dx, y: dy - V.disc.r * 0.7 },
+    region: { x: dx, y: dy + 2, r: V.disc.r * 0.9 }, N: 90, D: 3, di: 12, dk: 3, maxNodes: 70,
+  });
+  for (let i = 0; i < 20; i++) growTree(st.tree);
+  plan(st, HEAR, 0);
+  enter(st, HEAR);
+  cues(st);
   return st;
 }
 
-export function step(st, intents) {
-  const it = intents || EMPTY_INTENTS;
-  if (st.done) { st.t += DT; return; }
-  if (HOOKS.step) HOOKS.step(st, it);
-  for (const r of feed(st.track, it, st.t + DT)) judged(st, r);
-  st.t += DT;
-  while (!st.done && st.t >= st.starts[st.mi] + st.lens[st.mi] - 1e-9) advance(st);
-  if (st.done) return;
-  const m = meta.moments[st.mi];
-  st.gaDay = gaAt({ ga: m.ga, lenS: st.lens[st.mi] }, st.t - st.starts[st.mi]);
-  if (!PLAN[st.mi].extra && st.t >= meta.capS - 1e-9) finish(st, "cap");
+// Send every cue that is due by now.
+function cues(st) {
+  while (st.ci < st.cues.length && st.cues[st.ci].at <= st.t + 1e-9) {
+    const c = st.cues[st.ci++];
+    emit(st, c.name, { ...c.data });                    // stamped with the step that sends it
+  }
 }
+
+export function step(st, intents) {
+  if (!st || typeof st !== "object" || !st.track) return;
+  if (st.done) { st.t += DT; return; }
+  const it = intents && typeof intents === "object" ? intents : {};
+  const live = GESTURE[st.moment] === "tap";
+  const presses = live && Array.isArray(it.presses)
+    ? it.presses.filter((p) => p && Number.isFinite(p.t)).map((p) => ({ t: p.t, raw: Number.isFinite(p.raw) ? p.raw : p.t }))
+    : [];
+  for (const r of feed(st.track, { presses, releases: [] }, st.t + DT)) judged(st, r);
+  st.t += DT;
+  while (st.mi < LAST && st.t >= st.starts[st.mi + 1] - 1e-9) { leave(st, st.mi); enter(st, st.mi + 1); }
+  if (st.mi === LAST && st.t >= st.end - 1e-9) {
+    leave(st, LAST);
+    cues(st);
+    finish(st, "end");
+    return;
+  }
+  const m = meta.moments[st.mi];
+  st.gaDay = Math.max(st.gaDay, gaAt(m, st.t - st.starts[st.mi]));
+  cues(st);
+  if (st.t >= meta.capS - 1e-9) finish(st, "cap");
+}
+
+// ---- the picture ----
 
 // The scale bar's round length: the largest of 0.1 mm, 1 mm, 1 cm, 10 cm and 1 m within 30% of the short axis.
 function bar(mm) {
@@ -254,30 +383,122 @@ function bar(mm) {
   return best;
 }
 
-function rings(st, span) {
-  const out = [{ id: "mother", kind: "mother", x: 0, y: 0, r: span * 0.12, progress: clamp01(st.beats.phase("mother", st.t)) }];
-  const you = st.beats.you;
-  if (you && you.length && st.t >= you[0]) {
-    out.push({ id: "you", kind: "you", x: 0, y: 0, r: span * 0.07, progress: clamp01(st.beats.phase("you", st.t)), dashed: true });
-  }
-  for (const x of targets(st, 2.5).slice(0, 2)) {
-    const p = clamp01(1 - (x.t - st.t) / 2.5);
-    out.push({ id: "t:" + x.id, kind: x.kind === "release" ? "hold" : "approach", x: 0, y: 0, r: span * (0.3 - 0.18 * p), progress: p });
-  }
-  return out;
+const phraseAt = (st, t) => st.phrases.find((ph) => t >= ph.t0 && t < ph.t1) || null;
+
+function handLevel(st) {
+  const u = st.t - st.handT;
+  if (!(u >= 0)) return 0;
+  if (u < TUNE.handRiseS) return u / TUNE.handRiseS;
+  if (u < TUNE.handRiseS + TUNE.handHoldS) return 1;
+  return clamp01(1 - (u - TUNE.handRiseS - TUNE.handHoldS) / TUNE.handFadeS);
 }
 
 export function view(st) {
   const d = emptyDraw(meta.id);
-  const span = VIEW.span(st);
+  const t = st.t;
   const mm = mmPerShortAxis(meta, st.gaDay);
-  d.camera = { x: 0, y: 0, span, rot: 0, orient: meta.orient, mmPerU: mm / span };
-  d.scale = VIEW.you ? { you: VIEW.you } : { mm: bar(mm) };
-  d.light = { level: VIEW.light, warm: 0.6, exposure: 1, white: 0, vignette: 0.5, tint: 0 };
-  d.rings = rings(st, span);
-  d.anchor = { x: 0, y: 0 };
-  d.cue = targets(st, 2.5).length ? { x: 0, y: 0 } : null;
-  look(st, d);
+  const gp = clamp01((st.gaDay - 105) / (195 - 105));
+  const lift = st.eyesT === null ? 0 : clamp01((t - st.eyesT) / TUNE.liftS);
+  d.camera = { x: 0, y: V.camY, span: V.span, rot: 0, orient: meta.orient, mmPerU: mm / V.span };
+  d.scale = { mm: bar(mm) };
+  d.light = { level: lerp(V.level0, V.level1, Math.max(gp, lift)), warm: V.warm, exposure: 1, white: 0,
+    vignette: lerp(V.vignette0, V.vignette1, lift), tint: V.tint };
+  d.warp = V.warp;
+  d.caustics = V.caustics;
+
+  const B = V.baby, size = lerp(B.size0, B.size1, gp);
+  d.splats = figure("thumb", size, st.gaDay, { x: B.x, y: B.y });
+  const herPh = clamp01(st.beats.phase("mother", t));
+
+  // ripples: her heard heartbeat, the hummed notes, the ghost slots and your answers
+  const rip = [];
+  if (st.mi <= BEAT) rip.push({ x: B.x, y: B.y, r: V.motherR + 8 * herPh, a: 0.35 * (1 - herPh), dashed: false });
+  for (const x of st.track.targets) {
+    const tj = st.litAt[x.id];
+    if (x.group !== "beat" || !(t >= tj && t < tj + V.litS)) continue;
+    const u = (t - tj) / V.litS;
+    rip.push({ x: B.x, y: B.y, r: V.motherR + 8 * u, a: 0.8 * (1 - u), dashed: false });
+  }
+  let hum = 0;
+  for (const c of st.calls) {
+    if (!(t >= c.t && t < c.t + V.rippleS)) continue;
+    const u = (t - c.t) / V.rippleS;
+    hum = Math.max(hum, 1 - u);
+    rip.push({ x: V.slotX[c.k], y: V.slotY, r: 3 + 9 * u, a: 0.9 * (1 - u), dashed: false });
+    rip.push({ x: V.voice.x, y: V.voice.y, r: V.voice.r + 10 * u, a: 0.6 * (1 - u), dashed: false });
+  }
+  const ph = st.mi === PHRASES ? phraseAt(st, t) : null;
+  if (ph) {
+    const answering = t >= ph.tAnswer;
+    for (const n of ph.notes) {
+      const tj = st.litAt[n.id];
+      if (Number.isFinite(tj) && t >= tj) {
+        const u = Math.min(1, (t - tj) / V.litS);
+        rip.push({ x: V.slotX[n.k], y: V.slotY, r: 6 + 6 * u, a: 1 - 0.5 * u, dashed: false });
+      } else {
+        const missed = t > n.tAns + 0.25;
+        rip.push({ x: V.slotX[n.k], y: V.slotY, r: 6, a: missed ? 0.15 : answering ? 0.5 : 0.3, dashed: true });
+      }
+    }
+  }
+  d.strips.push({ kind: "ripples", items: rip });
+
+  // the placenta disc's tree and the cord to your belly, a light running down it on her beat
+  const dx = st.carry.nestleX * V.disc.spread, dy = V.disc.y;
+  if (st.tree && st.tree.n > 1) d.strips.push({ kind: "tree", nodes: st.tree.view, version: st.tree.version, pulse: herPh });
+  const belly = { x: B.x + 0.06 * size, y: B.y - 0.16 * size };
+  const p0 = { x: dx, y: dy - V.disc.r * 0.7 }, pc = { x: dx * 0.5 + 44, y: 6 };
+  const pts = [];
+  const sway = Math.sin(t * 0.8) * 2;
+  for (let i = 0; i < 10; i++) {
+    const s = i / 9, a = (1 - s) * (1 - s), b = 2 * s * (1 - s), c = s * s;
+    pts.push(a * p0.x + b * (pc.x + sway) + c * belly.x, a * p0.y + b * pc.y + c * belly.y);
+  }
+  d.strips.push({ kind: "cord", pts, lights: [herPh] });
+
+  // marks: the disc, the voice's warm patch, the hand glow, the four slots and the beat cursor, your glow, sparks
+  d.marks.push({ kind: "glowwall", x: dx, y: dy, r: V.disc.r, rim: "wavy", on: true, pulse: herPh });
+  d.marks.push({ kind: "warm", x: V.voice.x, y: V.voice.y, r: V.voice.r, rim: "solid", on: st.mi >= PHRASES ? 0.3 + 0.7 * hum : 0.15, pulse: hum });
+  const hand = handLevel(st);
+  if (hand > 0) d.marks.push({ kind: "hand", x: V.hand.x, y: V.hand.y, r: V.hand.r, rim: "solid", on: hand, pulse: hand });
+  if (ph) {
+    const cur = Math.floor((t - ph.t0) / BEAT_S + 1e-6);
+    const slot = cur < TUNE.callBeats ? cur : cur - TUNE.callBeats;
+    for (let k = 0; k < 4; k++) {
+      const note = ph.pat[k] === "x";
+      d.marks.push({ kind: "spot", x: V.slotX[k], y: V.slotY, r: 4, rim: note ? "solid" : "dotted", on: note, pulse: slot === k && cur < 8 ? 1 : 0 });
+    }
+    if (cur < TUNE.callBeats + TUNE.answerBeats) {
+      d.marks.push({ kind: "light", x: V.slotX[Math.max(0, Math.min(3, slot))], y: V.slotY - 9, r: 2.5, on: true, pulse: 1 - herPh });
+    }
+    if (t >= ph.tAnswer && cur < TUNE.callBeats + TUNE.answerBeats) d.marks.push({ kind: "glow", x: B.x, y: B.y, r: 20, on: 0.6, pulse: 1 - herPh });
+  }
+  const sparks = Math.max(0, Math.min(8, st.carry.sparks | 0));
+  for (let i = 0; i < sparks; i++) {
+    const a = Math.PI / 2 + (i - (sparks - 1) / 2) * 0.45;
+    d.marks.push({ kind: "light", x: B.x + 25 * Math.cos(a), y: B.y + 25 * Math.sin(a), r: 1.2, on: true, pulse: herPh });
+  }
+
+  // rings (DOM SVG): her heart (the target heart), yours (faint, dashed), every target in its preview, feedback
+  d.rings.push({ id: "mother", kind: "mother", x: B.x, y: B.y, r: V.motherR, progress: herPh });
+  const you = st.beats.you;
+  if (you && you.length) d.rings.push({ id: "you", kind: "you", x: B.x + 1, y: B.y - 1, r: V.youR, progress: clamp01(st.beats.phase("you", t)), dashed: true });
+  const next = targets(st, V.approachS).slice(0, 5);
+  for (const x of next) {
+    const w = st.where[x.id];
+    const p = clamp01(1 - (x.t - t) / V.approachS);
+    d.rings.push({ id: "t:" + x.id, kind: "approach", x: w.x, y: w.y, r: lerp(w.r0, w.r1, p), progress: p });
+  }
+  if (st.fb && t >= st.fb.t && t < st.fb.t + V.fbS && st.where[st.fb.id]) {
+    const w = st.where[st.fb.id];
+    d.rings.push({ id: "fb", kind: "approach", x: w.x, y: w.y, r: w.r1, progress: 1, grade: st.fb.grade, dotted: st.fb.grade === "off" });
+  }
+
+  d.anchor = { x: B.x, y: B.y };
+  if (next.length) d.cue = { x: st.where[next[0].id].x, y: st.where[next[0].id].y };
+  else if (st.mi === PHRASES) d.cue = { x: V.voice.x, y: V.voice.y };
+  else if (st.mi <= BEAT) d.cue = { x: B.x, y: B.y };
+  else d.cue = null;
   return d;
 }
 
@@ -286,17 +507,13 @@ export function prompt(st) {
 }
 
 export function targets(st, horizonS) {
-  if (st.done) return [];
-  return upcoming(st.track, st.t, horizonS).map((x) => ({ id: x.id, t: x.t, P: x.P, kind: x.kind, heart: x.heart, group: x.group }));
+  if (!st || st.done || !st.track) return [];
+  const h = Number.isFinite(horizonS) ? horizonS : 3;
+  return upcoming(st.track, st.t, h).map((x) => ({ id: x.id, t: x.t, P: x.P, kind: x.kind, heart: x.heart, group: x.group }));
 }
 
-// Forward (world +y) in drag moments, down in dragHold ones, still otherwise. The stub keeps no memory, so it never
-// touches r or r.mem.
+// A tap-only stage: no steering, no hold. It keeps no memory, so it never touches r or r.mem.
 export function botSteer(st, skill, r) {
-  const g = st.done ? "none" : PLAN[st.mi].gesture;
-  const m = 0.4 + 0.6 * clamp01(skill);
-  if (g === "drag") return { steer: { x: 0, y: m }, dir: "up", hold: false };
-  if (g === "dragHold") return { steer: { x: 0, y: -m }, dir: "down", hold: false };
   return { steer: { x: 0, y: 0 }, dir: null, hold: false };
 }
 
@@ -305,37 +522,42 @@ export function probe(st) {
 }
 
 export function result(st) {
-  const n = st.track.targets.length;
-  const acc = n ? accuracy(st.track) : 0;
-  const best = streak(st.track).best;
-  const goalMet = HOOKS.goalMet ? HOOKS.goalMet(st) : st.done;
-  const score = meta.scored ? clampScore({
-    goal: goalMet ? PARTS.goal : 0,
-    skill: PARTS.skill * acc,
-    flourish: PARTS.flourish * Math.min(1, best / Math.max(1, Math.min(8, n))),
-  }) : null;
-  const out = {
-    done: st.done,
+  const beatAcc = st.credit.beat / TUNE.beatTargets, answerAcc = st.credit.answer / NOTES;
+  const beatPts = Math.round(S.beat * beatAcc), answerPts = Math.round(S.answer * answerAcc);
+  const goalMet = !!st.done;
+  const score = clampScore({ goal: goalMet ? PARTS.goal : 0, skill: beatPts + answerPts, flourish: st.flourish });
+  return {
+    done: !!st.done,
     goalMet,
     score,
-    parts: score ? [
+    parts: [
       { id: "goal", label: "part.goal", value: score.goal, max: PARTS.goal },
-      { id: "timing", label: "part.skill", value: score.skill, max: PARTS.skill },
-      { id: "streak", label: "part.flourish", value: score.flourish, max: PARTS.flourish },
-    ] : [],
-    metrics: { stub: true, targets: n, accuracy: acc, streak: best, moment: st.moment, how: st.how },
-    carryOut: HOOKS.carryOut ? HOOKS.carryOut(st) : {},
+      { id: "beat", label: "answer.part.beat", value: beatPts, max: S.beat },
+      { id: "answer", label: "answer.part.answer", value: answerPts, max: S.answer },
+      { id: "flourish", label: "answer.part.flourish", value: score.flourish, max: S.flourishMax },
+    ],
+    metrics: {
+      beatAccuracy: beatAcc, answerAccuracy: answerAcc, matches: st.matches, perfect: st.perfect,
+      phrases: st.phrases.length, notes: NOTES, lit: st.lit, eyesOpen: st.eyesT !== null, moment: st.moment, how: st.how,
+    },
+    carryOut: { song: { notes: st.song.slice(), lit: st.lit } },
   };
-  return HOOKS.result ? HOOKS.result(st, out) : out;
 }
 
 export function jump(st, id) {
-  const i = PLAN.findIndex((p) => p.id === id);
-  if (i < 0) return false;
+  const i = IDS.indexOf(id);
+  if (i < 0 || !st || !st.track) return false;
   st.done = false;
   st.how = null;
-  planFrom(st, i, st.t);
+  if (i > EYES) openEyes(st);
+  plan(st, i, st.t);
+  // the moments jumped past are over: their sub-goals settle now
+  if (i > BEAT) settleBeat(st);
+  if (i > PHRASES) {
+    for (const ph of st.phrases) if (ph.matched === null) settlePhrase(st, ph, st.t);
+    settleAnswer(st);
+  }
   enter(st, i);
-  relay(st);
+  cues(st);
   return true;
 }

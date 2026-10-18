@@ -1,36 +1,46 @@
-// First Breath: the ending (`ending`), the WAVE-0 STUB (design.md 16.4, 16.12; tasks.md 1.7). It stands in for
-// the stage until its wave-1 builder replaces this file with the design.md 6.9 form. It follows the Stage interface
-// exactly, so core/run.js, core/bots.js and the tests can play a whole run now. Pure: no DOM, no clocks, no storage.
-// Not scored (score null, no parts, no points). Her beats are silent for the first 1.5 s (5.1, 6.9): her first beat is
-// the first one at or after 1.5 s on the beat grid that opts.motherPhase sets, so the phase carries on. Milestone
-// breath at the start of breathe. The moment ids (white, breathe, skin, song, time) follow the 6.9 timeline; 4.1
-// gives the ending none of its own, so its builder may rename them.
+// First Breath: the ending (`ending`, design.md 6.9): "Breathe." Not scored (meta.scored is false): no points, no
+// grade, no score line, and nothing here can fail. It follows the Stage interface of design.md 16.4. Pure: no DOM, no
+// clocks, no storage; its only randomness is stream(seed, "breaths") for the two uneven breaths after the first.
 //
-// Stub rules (the same in all 9 wave-0 stubs; the engine is the second half of this file):
-// - A timer. PLAN gives each moment's stub seconds, its live gesture and its targets; the moments play in order and
-//   the stage ends after the last one (or at meta.capS). The default length is 3.1's ref time (swim: its cap).
-//   opts.stubS (seconds; a test hook that core/run.js passes through from createRun's stageOpts) scales the plan to
-//   that length. A real stage ignores it. gaDay follows each 4.1 moment over its stub seconds (clock.gaAt).
-// - Her beats start at opts.motherPhase at meta.motherBpm (5.1), with jitter only in free time.
-// - Targets: a "tap" moment lays a tap on every 2nd beat of its heart, a "hold" moment a press on a beat and a release
-//   2 beats later; none comes sooner than 2 s after the start (or a jump), so each one is listed for its preview.
-//   Score: Goal 3,000 when done, Skill 6,000 x accuracy, Flourish 1,000 x the best In-time streak over min(8, targets).
-// - One sub-goal ("stub"), shown at the start and settled at the end. jump(state, id) starts that moment now: the
-//   moments after it follow on, open targets are dropped and new ones laid. probe() is null.
-// - Strings are ids only (`ending.text.js` is empty in wave 0, so say() shows the id).
-import { DT, gaAt, mmPerShortAxis } from "./clock.js";
+// The timeline (stage seconds; the numbers are in ending.tune.js):
+//   0.0  white       White. The warm room fades in from the white over 1.5 s. Her heart is silent (the one gap, 5.1).
+//   1.5  breathe     "Breathe." (live hold, optional). Her heart comes back soft and far. A fresh press starts the
+//                    inhale (your glow fills); its release, at least 0.4 s in (it lets go by itself at 2.5 s), gives
+//                    a soft first cry. With no press the breath comes by itself 3.0 s after the prompt (4.5 s), with
+//                    the caption end.seconds.
+//   cry  breaths     Two more breaths come by themselves at about 6 to 9 s, a little uneven. Your glow warms.
+//   ~9   skin        Skin-to-skin: a big warm oval rises under you in a circle of cream light. Her heart comes close
+//                    and clear: "[{Carer}'s heartbeat, clear now]", "You know this heartbeat."
+//   ~12  thumb       "Rest your thumb here." (live hold, optional). The thumb ring breathes slowly; while a fresh
+//                    press rests on it, it pulses with her heart ring.
+//   ~16  song        Your song (carry.song) is hummed, clear and full band; notes you answered shimmer.
+//   ~29  time        "Your nine months took 9 min 48 s."
+//   ~33  done        The run result (the run also takes a tap from 29 s).
+// The moments from skin on follow skin-to-skin, which comes at 9.0 s, or 0.1 s after the third breath if that is
+// later (only after a late first breath; at most about 10.6 s, so the ending ends by about 34.6 s, cap 40 s).
+//
+// Contract notes (gaps in design.md 16, handled here; see the builder's report):
+// - No timed targets: 6.9 judges nothing, so targets() is always [] and the bot plays through botSteer's hold.
+// - The thumb ring is a `rest` ring with the extra field dock: "thumb" (validate() allows extra fields); its x, y is
+//   the 390 × 844 portrait spot (78% of the height), and the rings layer moves it by layout (landscape: low in the
+//   corner of the last touch). The thumb prompt carries textKeys: "ending.thumbKeys" for desktop.
+// - The run time line is a caption event { id: "ending.time", ms, vars }: ms is opts.runMs when the host passes it,
+//   else null, and then the host fills {time} from run.ms (which stops counting when the ending starts).
+// - Sound: sfx events heartFar (gain 0.25, −12 dB) at 1.5 s and heartClose (gain 1) at skin-to-skin; inhale, cry and
+//   breath one-shots; one song event { notes, lit, clear: true, noteS } at the song.
+// - end.apgar is a "result" fact: the run result shows it; the ending emits no event for it.
+import { DT } from "./clock.js";
 import { makeBeats } from "./beat.js";
 import { emit } from "./events.js";
 import { EMPTY_INTENTS } from "./intent.js";
-import { CREDIT } from "./judge.js";
-import { clampScore, PARTS } from "./score.js";
 import { mergeCarry } from "./carry.js";
 import { emptyDraw } from "./draw.js";
-import { createTrack, feed, upcoming, accuracy, streak } from "./lib/track.js";
+import { stream } from "./rng.js";
 import { subgoal, doneBy } from "./lib/goals.js";
+import { TUNE } from "./ending.tune.js";
 
-// One 4.1 moment: gaDay from → to while it runs, and the lenS that gaDay follows (null where 4.1 gives none).
-const mo = (id, from, to, lenS = null) => Object.freeze({ id, ga: Object.freeze([from, to]), lenS });
+// One moment: gaDay 280 → 280 throughout, with no lenS (4.1: "ending | all | 280 → 280 | – | none shown").
+const mo = (id) => Object.freeze({ id, ga: Object.freeze([280, 280]), lenS: null });
 
 export const meta = Object.freeze({
   id: "ending", index: 8, name: "First Breath", verb: "Breathe",
@@ -38,202 +48,246 @@ export const meta = Object.freeze({
   families: Object.freeze(["hold"]),
   ga: Object.freeze({ start: 280, end: 280 }), fertilized: true,
   mm: Object.freeze({ start: 2000, end: 2000 }),
-  motherBpm: 76, parS: 33, capS: 40, canFail: false, scored: false,
-  moments: Object.freeze([
-    mo("white", 280, 280),
-    mo("breathe", 280, 280),
-    mo("skin", 280, 280),
-    mo("song", 280, 280),
-    mo("time", 280, 280),
-  ]),
+  motherBpm: TUNE.motherBpm, parS: 33, capS: TUNE.capS, canFail: false, scored: false,
+  moments: Object.freeze(["white", "breathe", "breaths", "skin", "thumb", "song", "time"].map(mo)),
 });
 
-// The stub's timeline, one entry per meta.moments entry and in the same order: s is the moment's stub seconds (a
-// number, or a function of the carry), gesture its live gesture (keys "turn" only in the egg's guard), targets
-// "tap" | "hold" | none, heart the targets' heart (default hers); extra moments come only through jump().
-const PLAN = [
-  { id: "white", s: 1.5, gesture: "none" },
-  { id: "breathe", s: 7.5, gesture: "hold" },
-  { id: "skin", s: 7, gesture: "hold" },
-  { id: "song", s: 13, gesture: "hold" },
-  { id: "time", s: 4, gesture: "none" },
-];
-
-// Milestone events (16.6) at the start or end of a moment.
-const MILESTONES = { breathe: { start: "breath" } };
-
-// Her beats at 76 bpm from motherPhase, but silent before 1.5 s (the one gap, 5.1); your heart at 130 bpm.
-function segments(phase, st, end) {
-  return [
-    { heart: "mother", from: Math.min(1.5, st.lens[0]), to: end + 30, bpm: meta.motherBpm, jitter: 0, first: phase },
-    { heart: "you", from: 0, to: end + 30, gaFrom: 280, jitter: 0 },
-  ];
-}
-
-// The view: span in u across the short axis, the subject's size in stages 1 and 2, the light level.
-const VIEW = { span: () => 100, you: null, light: 0.95 };
-
-function look(st, d) {
-  d.light.white = st.mi === 0 ? 1 - clamp01(st.t / 1.5) : 0;
-  d.marks.push({ kind: "light", x: 0, y: 0, r: 48, on: true, pulse: clamp01(st.beats.phase("mother", st.t)) });
-  d.splats.push({ k: "c", x: 0, y: -8, r: 30, m: 0.8, n: 0, v: 0, hue: 0.07 });
-  d.splats.push({ k: "c", x: 4, y: 6, r: 10, m: 1, n: 0, v: 0, hue: 0.06 });
-}
-
-// The stage's own touches on the shared engine below (each is optional).
-const HOOKS = { goalMet: (st) => st.done };
-
-// ---- the shared stub engine (the same in every wave-0 stub) ----
-
-const LEAD_S = 2;        // no target in the first 2 s after the start or a jump, so each one gets its preview (5.2)
-const TAIL_S = 0.25;     // a moment's last target comes at least this long before the moment ends
+// The live gesture and prompt text of each moment (one gesture per moment, 5.3).
+const GESTURE = Object.freeze({ white: "none", breathe: "hold", breaths: "none", skin: "none", thumb: "hold", song: "hold", time: "hold" });
+const PROMPT_TEXT = Object.freeze({ breathe: "ending.breathe", thumb: "ending.thumb", song: "ending.thumb", time: "ending.thumb" });
 const NONE = Object.freeze({ gesture: "none", text: null, keys: "steer" });
-const MAIN = PLAN.filter((p) => !p.extra).length;   // the moments played in order; the extra ones only by jump()
-const clamp01 = (v) => Math.max(0, Math.min(1, v));
+const RESTING = new Set(["thumb", "song", "time"]);
 
-function promptOf(i) {
-  const p = PLAN[i];
-  return { gesture: p.gesture, text: meta.id + "." + p.id, keys: p.keys || "steer" };
+// What follows skin-to-skin, as offsets from its start.
+const SKIN_PLAN = Object.freeze([
+  [0, "moment", "skin"],
+  [TUNE.knowAfterS, "caption", "ending.know"],
+  [TUNE.thumbAfterS, "moment", "thumb"],
+  [TUNE.skinFactAfterS, "fact", "end.skin"],
+  [TUNE.songAfterS, "moment", "song"],
+  [TUNE.voiceFactAfterS, "fact", "end.voice"],
+  [TUNE.restSettleAfterS, "settleRest", null],
+  [TUNE.timeAfterS, "moment", "time"],
+  [TUNE.endAfterS, "end", null],
+]);
+const SKIN_AT = Object.freeze({ skin: 0, thumb: TUNE.thumbAfterS, song: TUNE.songAfterS, time: TUNE.timeAfterS });
+
+const MM = meta.mm.start;
+const clamp01 = (v) => Math.max(0, Math.min(1, Number.isFinite(v) ? v : 0));
+const smooth = (v) => { const x = clamp01(v); return x * x * (3 - 2 * x); };
+const lerp = (a, b, p) => a + (b - a) * p;
+
+// "9 min 48 s" (the same form as core/text.js minSec, which a stage file may not import).
+function minSec(ms) {
+  const s = Math.max(0, Math.round((Number(ms) || 0) / 1000));
+  const m = Math.floor(s / 60);
+  return m ? m + " min " + (s % 60) + " s" : s + " s";
 }
 
-// Seconds per moment: the stub lengths, scaled so the moments played in order last opts.stubS when it is given.
-function lengths(carry, stubS) {
-  const base = PLAN.map((p) => (typeof p.s === "function" ? p.s(carry) : p.s));
-  if (!(stubS > 0)) return base;
-  const main = base.slice(0, MAIN).reduce((a, b) => a + b, 0);
-  return base.map((s) => (s * stubS) / main);
-}
-
-// Moment i starts at stage time t; the moments after it follow on.
-function planFrom(st, i, t) {
-  st.starts[i] = t;
-  for (let j = i + 1; j < PLAN.length; j++) st.starts[j] = st.starts[j - 1] + st.lens[j - 1];
-}
-
-const periodOf = (st, heart, t) => 60 / st.beats.bpm(heart, t);
-
-// Targets for moment `from` on, none before t0 + LEAD_S: taps on every 2nd beat of the moment's heart; holds as a
-// press on a beat and a release 2 beats later. No two targets are closer than max(0.5 s, 1.9 beats).
-function lay(st, from, t0) {
-  const out = [];
-  let last = st.lastT;
-  for (let i = from; i < PLAN.length; i++) {
-    const p = PLAN[i];
-    if (!p.targets || (p.extra && i !== from)) continue;
-    const heart = p.heart || "mother";
-    const a = Math.max(st.starts[i], t0 + LEAD_S), b = st.starts[i] + st.lens[i] - TAIL_S;
-    if (!(b > a)) continue;
-    const bs = st.beats.between(heart, a, b);
-    const free = (x) => !(x - last < Math.max(0.5, 1.9 * periodOf(st, heart, x)));
-    const gap = (x) => Math.max(0.5, Number.isFinite(last) ? x - last : periodOf(st, heart, x));
-    let k = 0;
-    const add = (kind, t, P) => out.push({ id: p.id + "." + st.gen + "." + k++, t, P, kind, heart, group: p.id });
-    if (p.targets === "tap") {
-      for (const x of bs) if (free(x)) { add("tap", x, gap(x)); last = x; }
-    } else {
-      for (let j = 0; j + 2 < bs.length; j++) {
-        if (!free(bs[j])) continue;
-        add("press", bs[j], gap(bs[j]));
-        add("release", bs[j + 2], bs[j + 2] - bs[j]);
-        last = bs[j + 2];
-        j += 3;
-      }
-    }
-  }
-  st.lastT = last;
+function promptOf(id) {
+  const out = { gesture: GESTURE[id] || "none", text: PROMPT_TEXT[id] || null, keys: "steer" };
+  if (id === "thumb" || id === "song" || id === "time") out.textKeys = "ending.thumbKeys";
   return out;
 }
 
-// After a jump: keep the judged targets, drop the open ones and lay new ones from now.
-function relay(st) {
-  const keep = [], res = new Map();
-  st.track.targets.forEach((x, i) => { const r = st.track.results[i]; if (r) { keep.push(x); res.set(x.id, r); } });
-  st.gen++;
-  st.lastT = keep.length ? keep[keep.length - 1].t : -Infinity;
-  const track = createTrack([...keep, ...lay(st, st.mi, st.t)], { assist: st.assist });
-  track.targets.forEach((x, i) => { if (res.has(x.id)) track.results[i] = res.get(x.id); });
-  st.track = track;
+// ---- the agenda: timeline items in time order (ties keep the order they were added) ----
+
+function schedule(st, t, what, id = null) {
+  const item = { t, seq: st.seq++, what, id };
+  let i = st.agenda.length;
+  while (i > 0 && (st.agenda[i - 1].t > t || (st.agenda[i - 1].t === t && st.agenda[i - 1].seq > item.seq))) i--;
+  st.agenda.splice(i, 0, item);
+}
+const unschedule = (st, what) => { st.agenda = st.agenda.filter((a) => a.what !== what); };
+
+function enterMoment(st, id) {
+  st.moment = id;
+  emit(st, "moment", { id });
+  emit(st, "prompt", promptOf(id));
+  const t = st.t;
+  if (id === "white") {
+    st.whiteT = t;
+    schedule(st, t + TUNE.whiteS, "moment", "breathe");
+  } else if (id === "breathe") {
+    st.breatheT = t;
+    subgoal(st, "breath", "ending.breathe");
+    emit(st, "sfx", { id: "heartFar", at: t, pitch: 1, gain: TUNE.heartFarGain });
+    if (!st.first) schedule(st, t + TUNE.autoAfterS, "auto");
+  } else if (id === "skin") {
+    emit(st, "sfx", { id: "heartClose", at: t, pitch: 1, gain: TUNE.heartCloseGain });
+    emit(st, "caption", { id: "ending.capHeart", dir: null });
+  } else if (id === "thumb") {
+    subgoal(st, "rest", "ending.thumb");
+  } else if (id === "song") {
+    const song = st.carry.song;
+    emit(st, "song", { notes: song.notes.slice(), lit: song.lit, clear: true, noteS: TUNE.noteS, at: t });
+    emit(st, "caption", { id: "ending.capSong", dir: null });
+  } else if (id === "time") {
+    const ms = Number.isFinite(st.runMs) && st.runMs > 0 ? st.runMs : null;
+    emit(st, "caption", { id: "ending.time", dir: null, ms, vars: ms === null ? null : { time: minSec(ms) } });
+  }
 }
 
-function edge(st, i, which) {
-  const m = MILESTONES[PLAN[i].id];
-  if (m && m[which]) emit(st, "milestone", { id: m[which] });
-  if (HOOKS.moment) HOOKS.moment(st, PLAN[i].id, which);
+// Skin-to-skin starts at S: lay every item from `from` (an offset into SKIN_PLAN) on.
+function planSkin(st, S, from = 0) {
+  st.skinT = S;
+  for (const [off, what, id] of SKIN_PLAN) if (off >= from) schedule(st, S + off, what, id);
 }
 
-function enter(st, i) {
-  st.mi = i;
-  st.moment = PLAN[i].id;
-  st.gaDay = meta.moments[i].ga[0];
-  emit(st, "moment", { id: st.moment });
-  emit(st, "prompt", promptOf(i));
-  edge(st, i, "start");
+// The first breath starts (by your press, or by itself).
+function inhale(st, by) {
+  const t = st.t;
+  st.first = by;
+  st.inhale = { t0: t, by, released: false };
+  st.breaths.push({ t0: t, t1: null, by });
+  unschedule(st, "auto");
+  emit(st, "milestone", { id: "breath" });
+  emit(st, "sfx", { id: "inhale", at: t, pitch: 1, gain: 1 });
+  if (by === "you") {
+    doneBy(st, "breath", "you", "ending.capBreath");
+    schedule(st, t + TUNE.maxHoldS, "letGo");
+  } else {
+    doneBy(st, "breath", "auto", "ending.capBreath");
+    emit(st, "fact", { id: "end.seconds", where: "caption" });
+    schedule(st, t + TUNE.autoInhaleS, "letGo");
+  }
 }
 
-// A moment ends: gaDay jumps to its end (4.1), then the next moment, or the end of the stage.
-function advance(st) {
-  const i = st.mi;
-  st.gaDay = meta.moments[i].ga[1];
-  edge(st, i, "end");
-  if (PLAN[i].extra || i >= MAIN - 1) return finish(st, PLAN[i].extra ? PLAN[i].id : "end");
-  enter(st, i + 1);
+// The first breath goes out with a soft cry; two more breaths and skin-to-skin are laid from it.
+function cry(st) {
+  const t = st.t, r = st.r;
+  st.inhale = null;
+  st.cryT = t;
+  const b = st.breaths[0];
+  if (b && b.t1 === null) b.t1 = t;
+  unschedule(st, "letGo");
+  emit(st, "sfx", { id: "cry", at: t, pitch: 1, gain: 1 });
+  emit(st, "caption", { id: "ending.capCry", dir: null });
+  enterMoment(st, "breaths");
+  schedule(st, t + TUNE.breathFactS, "fact", "end.breath");
+  // four draws, always, so the same seed lays the same breaths
+  const u = [r(), r(), r(), r()];
+  const b2 = Math.max(TUNE.breath2At + TUNE.breath2JitterS * u[0], t + TUNE.afterCryS);
+  const e2 = b2 + TUNE.inhaleS + TUNE.inhaleJitterS * u[1];
+  const b3 = e2 + TUNE.breathGapS + TUNE.breathGapJitterS * u[2];
+  const e3 = b3 + TUNE.inhaleS + TUNE.inhaleJitterS * u[3];
+  schedule(st, b2, "breath");
+  schedule(st, b2, "caption", "ending.capBreathing");
+  schedule(st, e2, "exhale");
+  schedule(st, b3, "breath");
+  schedule(st, b3, "fact", "end.fluid");
+  schedule(st, e3, "exhale");
+  schedule(st, Math.max(TUNE.skinAt, e3 + TUNE.skinAfterBreathS), "skinStart");
 }
 
-function judged(st, r) {
-  const x = r.target;
-  emit(st, "judge", { target: x.id, grade: r.grade, errMs: r.errMs, rawMs: r.rawMs, heart: x.heart,
-    t: Number.isFinite(r.errMs) ? x.t + r.errMs / 1000 : st.t });
-  const c = CREDIT[r.grade] || 0;
-  if (c > 0) emit(st, "points", { part: "skill", add: Math.round((PARTS.skill * c) / st.track.targets.length) });
+function settleRest(st, how) {
+  subgoal(st, "rest", "ending.thumb");
+  doneBy(st, "rest", how, how === "you" ? "ending.together" : "ending.restAuto");
 }
 
+function fire(st, a) {
+  switch (a.what) {
+    case "moment": enterMoment(st, a.id); break;
+    case "auto": if (!st.first) inhale(st, "auto"); break;
+    case "letGo": if (st.inhale) cry(st); break;
+    case "breath":
+      st.breaths.push({ t0: st.t, t1: null, by: "auto" });
+      emit(st, "sfx", { id: "breath", at: st.t, pitch: 1 + 0.04 * (st.breaths.length - 2), gain: 0.8 });
+      break;
+    case "exhale": { const b = st.breaths[st.breaths.length - 1]; if (b && b.t1 === null) b.t1 = st.t; break; }
+    case "skinStart": planSkin(st, st.t, 0); break;
+    case "caption": emit(st, "caption", { id: a.id, dir: null }); break;
+    case "fact": emit(st, "fact", { id: a.id, where: "caption" }); break;
+    case "settleRest": settleRest(st, "auto"); break;
+    case "end": finish(st, "end"); break;
+    default: break;
+  }
+}
+
+function press(st) {
+  if (st.moment === "breathe" && !st.first) { inhale(st, "you"); return; }
+  if (RESTING.has(st.moment) && !st.rest) {
+    st.rest = { t0: st.t };
+    st.restN++;
+    if (st.subgoals.rest === "shown") settleRest(st, "you");
+  }
+}
+
+function release(st) {
+  const h = st.inhale;
+  if (h && h.by === "you" && !h.released) {
+    h.released = true;
+    unschedule(st, "letGo");
+    const at = h.t0 + TUNE.minHoldS;
+    if (st.t >= at - 1e-9) cry(st);
+    else schedule(st, at, "letGo");          // a quick tap still draws a full small breath
+    return;
+  }
+  if (st.rest) { st.restS += st.t - st.rest.t0; st.rest = null; }
+}
+
+// Every sub-goal ends done or auto (5.4), also at the cap or after a jump.
 function finish(st, how) {
   if (st.done) return;
-  for (const r of feed(st.track, EMPTY_INTENTS, st.t + 3600)) judged(st, r);
+  if (!st.first) { subgoal(st, "breath", "ending.breathe"); doneBy(st, "breath", "auto", "ending.capBreath"); st.first = "auto"; }
+  settleRest(st, "auto");
+  if (st.rest) { st.restS += st.t - st.rest.t0; st.rest = { t0: st.t }; }
+  st.agenda = [];
   st.done = true;
   st.how = how;
-  if (HOOKS.finish) HOOKS.finish(st, how);
-  const you = result(st).goalMet && st.track.targets.length > 0 && accuracy(st.track) >= 0.5;
-  doneBy(st, "stub", you ? "you" : "auto", meta.id + (you ? ".goalDone" : ".goalAuto"));
+  st.endT = st.t;
   emit(st, "prompt", { ...NONE });
   emit(st, "done", {});
 }
 
 export function create(seed, carryIn, opts = {}) {
   const o = opts || {};
-  const carry = mergeCarry(carryIn, null);
-  const lens = lengths(carry, Number(o.stubS));
   const phase = Number.isFinite(o.motherPhase) && o.motherPhase >= 0 ? o.motherPhase : 0;
+  const end = TUNE.capS + 30;
   const st = {
-    id: meta.id, seed: seed >>> 0, t: 0, gaDay: meta.moments[0].ga[0], fertilized: meta.fertilized,
-    events: [], beats: null, subgoals: {}, moment: PLAN[0].id,
-    mi: 0, starts: [], lens, gen: 0, lastT: -Infinity, track: null,
-    done: false, how: null, assist: !!o.assist, oneButton: !!o.oneButton, carry, x: {},
+    id: meta.id, seed: seed >>> 0, t: 0, gaDay: 280, fertilized: true,
+    events: [], beats: null, subgoals: {}, moment: "white",
+    done: false, how: null, endT: null,
+    assist: !!o.assist, oneButton: !!o.oneButton, carry: mergeCarry(carryIn, null),
+    runMs: Number.isFinite(o.runMs) ? o.runMs : null,
+    r: stream(seed >>> 0, "breaths"),
+    agenda: [], seq: 0,
+    whiteT: 0, breatheT: null, cryT: null, skinT: null,
+    first: null, inhale: null, breaths: [],
+    rest: null, restS: 0, restN: 0,
   };
-  planFrom(st, 0, 0);
-  const end = st.starts[MAIN - 1] + lens[MAIN - 1];
-  st.beats = makeBeats(seed, segments(phase, st, end));
-  st.track = createTrack(lay(st, 0, 0), { assist: st.assist });
-  if (HOOKS.create) HOOKS.create(st, seed);
-  emit(st, "moment", { id: st.moment });
-  emit(st, "prompt", promptOf(0));
-  subgoal(st, "stub", meta.id + ".goal");
-  edge(st, 0, "start");
+  // Her beats at 76 bpm on the grid opts.motherPhase sets, silent before 1.5 s; yours (130 bpm at gaDay 280) from
+  // 1.5 s too, so the first 1.5 s are quiet.
+  st.beats = makeBeats(st.seed, [
+    { heart: "mother", from: TUNE.whiteS, to: end, bpm: TUNE.motherBpm, jitter: 0, first: phase },
+    { heart: "you", from: TUNE.whiteS, to: end, gaFrom: 280, jitter: 0 },
+  ]);
+  enterMoment(st, "white");
   return st;
 }
 
 export function step(st, intents) {
-  const it = intents || EMPTY_INTENTS;
   if (st.done) { st.t += DT; return; }
-  if (HOOKS.step) HOOKS.step(st, it);
-  for (const r of feed(st.track, it, st.t + DT)) judged(st, r);
-  st.t += DT;
-  while (!st.done && st.t >= st.starts[st.mi] + st.lens[st.mi] - 1e-9) advance(st);
-  if (st.done) return;
-  const m = meta.moments[st.mi];
-  st.gaDay = gaAt({ ga: m.ga, lenS: st.lens[st.mi] }, st.t - st.starts[st.mi]);
-  if (!PLAN[st.mi].extra && st.t >= meta.capS - 1e-9) finish(st, "cap");
+  const it = intents || EMPTY_INTENTS;
+  const t0 = st.t, t1 = t0 + DT;
+  const into = (t) => Math.min(Math.max(t, t0), t1 - 1e-9);
+  const inputs = [];
+  for (const p of it.presses || []) if (p && Number.isFinite(p.t)) inputs.push({ t: into(p.t), kind: 0 });
+  for (const p of it.releases || []) if (p && Number.isFinite(p.t)) inputs.push({ t: into(p.t), kind: 1 });
+  inputs.sort((a, b) => a.t - b.t || a.kind - b.kind);
+  let i = 0;
+  for (let guard = 0; guard < 512 && !st.done; guard++) {
+    const a = st.agenda[0];
+    const ta = a ? a.t : Infinity, ti = i < inputs.length ? inputs[i].t : Infinity;
+    if (!(Math.min(ta, ti) < t1)) break;
+    if (ta <= ti) { st.agenda.shift(); st.t = Math.max(t0, ta); fire(st, a); }
+    else { const x = inputs[i++]; st.t = x.t; if (x.kind === 0) press(st); else release(st); }
+  }
+  st.t = t1;
+  if (!st.done && st.t >= TUNE.capS - 1e-9) finish(st, "cap");
 }
+
+// ---- the view ----
 
 // The scale bar's round length: the largest of 0.1 mm, 1 mm, 1 cm, 10 cm and 1 m within 30% of the short axis.
 function bar(mm) {
@@ -242,50 +296,159 @@ function bar(mm) {
   return best;
 }
 
-function rings(st, span) {
-  const out = [{ id: "mother", kind: "mother", x: 0, y: 0, r: span * 0.12, progress: clamp01(st.beats.phase("mother", st.t)) }];
-  const you = st.beats.you;
-  if (you && you.length && st.t >= you[0]) {
-    out.push({ id: "you", kind: "you", x: 0, y: 0, r: span * 0.07, progress: clamp01(st.beats.phase("you", st.t)), dashed: true });
-  }
-  for (const x of targets(st, 2.5).slice(0, 2)) {
-    const p = clamp01(1 - (x.t - st.t) / 2.5);
-    out.push({ id: "t:" + x.id, kind: x.kind === "release" ? "hold" : "approach", x: 0, y: 0, r: span * (0.3 - 0.18 * p), progress: p });
-  }
-  return out;
+// How full the breath is now (0..1): rising through an inhale, falling over 0.6 s after it.
+function swellOf(st) {
+  const b = st.breaths[st.breaths.length - 1];
+  if (!b) return 0;
+  const inS = b.by === "you" ? 1.2 : TUNE.inhaleS + 0.15;
+  if (b.t1 === null) return clamp01((st.t - b.t0) / inS);
+  const top = clamp01((b.t1 - b.t0) / inS);
+  return top * (1 - clamp01((st.t - b.t1) / 0.6));
+}
+
+// Your warmth (0..1): it grows with each breath and at skin-to-skin (warm tones only).
+function warmthOf(st) {
+  const done = st.breaths.filter((b) => b.t1 !== null).length;
+  const skin = st.skinT === null ? 0 : smooth((st.t - st.skinT) / TUNE.bigRiseS);
+  return clamp01(0.25 * Math.min(3, done) + 0.25 * skin);
 }
 
 export function view(st) {
+  const T = TUNE, t = st.t;
   const d = emptyDraw(meta.id);
-  const span = VIEW.span(st);
-  const mm = mmPerShortAxis(meta, st.gaDay);
-  d.camera = { x: 0, y: 0, span, rot: 0, orient: meta.orient, mmPerU: mm / span };
-  d.scale = VIEW.you ? { you: VIEW.you } : { mm: bar(mm) };
-  d.light = { level: VIEW.light, warm: 0.6, exposure: 1, white: 0, vignette: 0.5, tint: 0 };
-  d.rings = rings(st, span);
-  d.anchor = { x: 0, y: 0 };
-  d.cue = targets(st, 2.5).length ? { x: 0, y: 0 } : null;
-  look(st, d);
+  const you = T.you;
+  d.camera = { x: you.x, y: you.y, span: T.span, rot: 0, orient: meta.orient, mmPerU: MM / T.span };
+  d.scale = { mm: bar(MM) };
+  const fade = smooth((t - st.whiteT) / T.whiteS);
+  const warmth = warmthOf(st), swell = swellOf(st);
+  const her = clamp01(st.beats.phase("mother", t));
+  const herPulse = t >= T.whiteS ? 1 - her : 0;
+  d.light = { level: 0.7 + 0.3 * fade, warm: 0.8 + 0.2 * warmth, exposure: 1 + 2 * (1 - fade), white: 1 - fade,
+    vignette: 0.12, tint: 0 };
+  d.warp = 0.12;
+  d.caustics = 0;
+
+  // the warm room: two soft sheets of light behind everything
+  d.marks.push({ kind: "glow", x: -38, y: 34, r: 70, on: 0.35 * fade });
+  d.marks.push({ kind: "glow", x: 40, y: -30, r: 64, on: 0.3 * fade });
+
+  // skin-to-skin: the big warm oval rises under you, in a circle of cream light
+  const skinP = st.skinT === null ? 0 : smooth((t - st.skinT) / T.bigRiseS);
+  const lightP = st.skinT === null ? 0 : smooth((t - st.skinT) / T.light.riseS);
+  const bigY = lerp(T.big.fromY, T.big.y, skinP);
+  if (st.skinT !== null) {
+    d.marks.push({ kind: "glow", x: you.x, y: T.light.y, r: T.light.r, on: lightP, pulse: herPulse * lightP });
+    d.splats.push({ k: "s", x: -T.big.half, y: bigY, x2: T.big.half, y2: bigY, r: T.big.r, m: 1, n: 0, v: 0, hue: T.big.hue });
+  }
+
+  // you: one small plain oval, its glow filling with each breath
+  const r = you.r * (1 + 0.08 * swell);
+  d.marks.push({ kind: "glow", x: you.x, y: you.y, r: 10 + 8 * swell + 4 * warmth,
+    on: clamp01((0.35 + 0.65 * Math.max(swell, 0.7 * warmth)) * fade), pulse: swell });
+  d.splats.push({ k: "s", x: you.x - you.half, y: you.y, x2: you.x + you.half, y2: you.y, r, m: 1, n: 0, v: 0,
+    hue: you.hue + 0.01 * warmth });
+  const sparks = Math.min(T.sparks.max, st.carry.sparks | 0);
+  for (let k = 0; k < sparks; k++) {
+    const a = (2 * Math.PI * k) / sparks + Math.PI / 2;
+    d.marks.push({ kind: "spot", x: you.x + T.sparks.ringR * 1.5 * Math.cos(a), y: you.y + T.sparks.ringR * Math.sin(a),
+      r: T.sparks.r, on: fade });
+  }
+
+  // ripples: one per breath, out from you; one per hummed note, out from the big oval (lit notes solid, others dashed)
+  const items = [];
+  for (const b of st.breaths) {
+    const age = t - b.t0;
+    if (age < 0 || age >= T.ripple.life) continue;
+    const p = age / T.ripple.life;
+    items.push({ x: you.x, y: you.y, r: T.ripple.r0 + T.ripple.grow * p, a: 0.55 * (1 - p), dashed: false });
+  }
+  const songT = st.skinT === null ? null : st.skinT + T.songAfterS;
+  const notes = st.carry.song.notes, lit = st.carry.song.lit;
+  let shown = 0;
+  if (songT !== null && t >= songT) {
+    for (let k = 0; k < notes.length; k++) {
+      const age = t - (songT + k * T.noteS);
+      if (age < 0) break;
+      shown = k + 1;
+      if (age >= T.noteRipple.life) continue;
+      const p = age / T.noteRipple.life;
+      items.push({ x: you.x, y: T.big.y, r: T.noteRipple.r0 + T.noteRipple.grow * p, a: 0.4 * (1 - p),
+        dashed: !((lit >> k) & 1) });
+    }
+  }
+  if (items.length) d.strips.push({ kind: "ripples", items });
+
+  // the song's notes as dots in a low arc above you: they come in as they are hummed and fade after the song
+  if (shown > 0) {
+    const songEnd = songT + notes.length * T.noteS;
+    const after = clamp01(1 - (t - songEnd) / 3);
+    if (after > 0) {
+      const xy = new Float32Array(2 * shown), a = new Float32Array(shown);
+      for (let k = 0; k < shown; k++) {
+        const s = notes.length > 1 ? k / (notes.length - 1) : 0.5;
+        xy[2 * k] = -30 + 60 * s;
+        xy[2 * k + 1] = 22 + 6 * Math.sin(Math.PI * s) + 0.5 * (notes[k] - 57);
+        const inP = clamp01((t - (songT + k * T.noteS)) / 0.4);
+        const shimmer = (lit >> k) & 1 ? 0.75 + 0.25 * Math.sin(6 * t + k) : 0.45;
+        a[k] = inP * shimmer * after;
+      }
+      d.points = { n: shown, xy, a, hue: 0.1 };
+    }
+  }
+
+  // rings: her heart (far, then close round the big oval), yours, the slow breath ring, the thumb ring
+  if (t >= T.whiteS) {
+    d.rings.push({ id: "mother", kind: "mother", x: you.x, y: lerp(you.y, bigY + 4, skinP), r: lerp(30, 18, skinP),
+      progress: her });
+    d.rings.push({ id: "you", kind: "you", x: you.x, y: you.y, r: 12, progress: clamp01(st.beats.phase("you", t)), dashed: true });
+  }
+  if (st.moment === "breathe" && st.breatheT !== null) {
+    const h = st.inhale;
+    const p = h ? clamp01((t - h.t0) / 1.2) : 0;
+    const slow = ((t - st.breatheT) / 3) % 1;
+    d.rings.push({ id: "breath", kind: "breath", x: you.x, y: you.y, r: 18 + 10 * p + (h ? 0 : 2 * Math.sin(2 * Math.PI * slow)),
+      progress: h ? p : clamp01(slow) });
+  }
+  if (st.skinT !== null && t >= st.skinT + T.thumbAfterS) {
+    const slow = clamp01(((t - st.skinT - T.thumbAfterS) / T.restPulseS) % 1);
+    d.rings.push({ id: "thumb", kind: "rest", x: T.thumbRing.x, y: T.thumbRing.y, r: T.thumbRing.r,
+      progress: st.rest ? her : slow, dock: "thumb" });
+  }
+
+  d.anchor = { x: you.x, y: you.y };
+  d.cue = { x: you.x, y: you.y };
   return d;
 }
 
 export function prompt(st) {
-  return st.done ? { ...NONE } : promptOf(st.mi);
+  return st.done ? { ...NONE } : promptOf(st.moment);
 }
 
+// The ending judges nothing (6.9), so it lays no timed targets.
 export function targets(st, horizonS) {
-  if (st.done) return [];
-  return upcoming(st.track, st.t, horizonS).map((x) => ({ id: x.id, t: x.t, P: x.P, kind: x.kind, heart: x.heart, group: x.group }));
+  return [];
 }
 
-// Forward (world +y) in drag moments, down in dragHold ones, still otherwise. The stub keeps no memory, so it never
-// touches r or r.mem.
+// The bot breathes once after a short wait, holds for about a second, and rests its thumb from the thumb prompt.
+// Its waits and the hold come from r, kept in r.mem; it never steers.
 export function botSteer(st, skill, r) {
-  const g = st.done ? "none" : PLAN[st.mi].gesture;
-  const m = 0.4 + 0.6 * clamp01(skill);
-  if (g === "drag") return { steer: { x: 0, y: m }, dir: "up", hold: false };
-  if (g === "dragHold") return { steer: { x: 0, y: -m }, dir: "down", hold: false };
-  return { steer: { x: 0, y: 0 }, dir: null, hold: false };
+  const out = { steer: { x: 0, y: 0 }, dir: null, hold: false };
+  if (!st || st.done) return out;
+  const k = clamp01(skill);
+  let mem = r && r.mem;
+  if (!mem) { mem = {}; if (r) r.mem = mem; }
+  if (!mem.ending) {
+    const u = () => (typeof r === "function" ? r() : 0.5);
+    mem.ending = { breathDelay: 0.25 + (1 - k) * u(), breathHold: 0.9 + 0.8 * u(), restDelay: 0.3 + 1.5 * (1 - k) * u() };
+  }
+  const p = mem.ending;
+  if (st.moment === "breathe" && st.breatheT !== null) {
+    if (!st.first) out.hold = st.t - st.breatheT >= p.breathDelay;
+    else if (st.inhale && st.inhale.by === "you" && !st.inhale.released) out.hold = st.t - st.inhale.t0 < p.breathHold;
+  } else if (RESTING.has(st.moment) && st.skinT !== null) {
+    out.hold = st.t - (st.skinT + TUNE.thumbAfterS) >= p.restDelay;
+  }
+  return out;
 }
 
 export function probe(st) {
@@ -293,37 +456,58 @@ export function probe(st) {
 }
 
 export function result(st) {
-  const n = st.track.targets.length;
-  const acc = n ? accuracy(st.track) : 0;
-  const best = streak(st.track).best;
-  const goalMet = HOOKS.goalMet ? HOOKS.goalMet(st) : st.done;
-  const score = meta.scored ? clampScore({
-    goal: goalMet ? PARTS.goal : 0,
-    skill: PARTS.skill * acc,
-    flourish: PARTS.flourish * Math.min(1, best / Math.max(1, Math.min(8, n))),
-  }) : null;
-  const out = {
+  const first = st.breaths[0] || null;
+  const restS = st.restS + (st.rest ? (st.done ? 0 : st.t - st.rest.t0) : 0);
+  return {
     done: st.done,
-    goalMet,
-    score,
-    parts: score ? [
-      { id: "goal", label: "part.goal", value: score.goal, max: PARTS.goal },
-      { id: "timing", label: "part.skill", value: score.skill, max: PARTS.skill },
-      { id: "streak", label: "part.flourish", value: score.flourish, max: PARTS.flourish },
-    ] : [],
-    metrics: { stub: true, targets: n, accuracy: acc, streak: best, moment: st.moment, how: st.how },
-    carryOut: HOOKS.carryOut ? HOOKS.carryOut(st) : {},
+    goalMet: st.done,
+    score: null,
+    parts: [],
+    metrics: {
+      moment: st.moment, how: st.how, firstBreath: st.first, firstT: first ? first.t0 : null, cryT: st.cryT,
+      heldS: first && first.by === "you" && st.cryT !== null ? st.cryT - first.t0 : null,
+      breaths: st.breaths.length, skinT: st.skinT, restS, restPresses: st.restN, endT: st.endT, runMs: st.runMs,
+    },
+    carryOut: {},
   };
-  return HOOKS.result ? HOOKS.result(st, out) : out;
 }
 
+// Skip to a named moment now (tests and the host's ?moment=). The breath and the rest settle by themselves when a jump
+// passes them; skin-to-skin and what follows are laid from the moment jumped to.
 export function jump(st, id) {
-  const i = PLAN.findIndex((p) => p.id === id);
-  if (i < 0) return false;
+  if (!meta.moments.some((m) => m.id === id)) return false;
   st.done = false;
   st.how = null;
-  planFrom(st, i, st.t);
-  enter(st, i);
-  relay(st);
+  st.endT = null;
+  st.agenda = [];
+  if (id === "white" || id === "breathe") {
+    st.first = null; st.inhale = null; st.breaths = []; st.cryT = null; st.skinT = null; st.rest = null;
+    st.subgoals = {};
+    enterMoment(st, id);
+    return true;
+  }
+  if (!st.first) {
+    subgoal(st, "breath", "ending.breathe");
+    doneBy(st, "breath", "auto", "ending.capBreath");
+    st.first = "auto";
+    st.breaths.push({ t0: st.t, t1: st.t, by: "auto" });
+  }
+  if (st.inhale) { const b = st.breaths[0]; if (b && b.t1 === null) b.t1 = st.t; st.inhale = null; }
+  if (st.cryT === null) st.cryT = st.t;
+  if (id === "breaths") {
+    st.skinT = null;
+    st.inhale = { t0: st.t, by: "auto", released: true };
+    cry(st);
+    return true;
+  }
+  const off = SKIN_AT[id];
+  const S = st.t - off;
+  if (off > 0) emit(st, "sfx", { id: "heartClose", at: st.t, pitch: 1, gain: TUNE.heartCloseGain });
+  if (off >= TUNE.thumbAfterS) subgoal(st, "rest", "ending.thumb");
+  if (off > TUNE.restSettleAfterS) settleRest(st, "auto");
+  planSkin(st, S, off);
+  // the moment jumped to is the first item now: start it at once
+  const a = st.agenda[0];
+  if (a && a.what === "moment" && a.id === id) { st.agenda.shift(); enterMoment(st, id); }
   return true;
 }
