@@ -26,6 +26,7 @@ try {
     await page.goto(base);
     await page.locator('.scoreboard .arcade-vote').first().waitFor();
     assert.equal(await page.locator('.scoreboard .arcade-vote').count(),6);
+    await page.screenshot({path:`test-results/voting/home-${width}.png`});
     for (const [id,[,slug]] of Object.entries(expected)) {
       const card=page.locator('.gsw-game').filter({has:page.locator(`[data-arcade-like="${id}"]`)});
       const vote=card.locator('.arcade-vote');
@@ -34,7 +35,7 @@ try {
       assert.match(await vote.getAttribute('rel'),/noopener/);
       assert.match(await vote.getAttribute('aria-label'),/opens in a new tab/);
       assert.equal(await vote.locator('a').count(),0);
-      const box=await vote.boundingBox(); assert.ok(box.height>=44 && box.x>=0 && box.x+box.width<=width);
+      const box=await vote.boundingBox(); assert.ok(box.height>=44 && box.x>=0 && box.x+box.width<=width,JSON.stringify({width,id,box}));
     }
     const first=page.locator('.arcade-vote').first();
     await first.press('Shift+Tab'); await page.keyboard.press('Tab');
@@ -48,7 +49,7 @@ try {
       await page.getByRole('button',{name:'Switch game',exact:true}).click();
       const vote=page.locator('.gsw-row .arcade-vote');
       assert.equal(await vote.getAttribute('href'),'https://vibetoplist.com/vote/'+slug);
-      const box=await vote.boundingBox(); assert.ok(box.height>=44 && box.x>=0 && box.x+box.width<=width);
+      const box=await vote.boundingBox(); assert.ok(box.height>=44 && box.x>=0 && box.x+box.width<=width,JSON.stringify({width,id,box}));
       if(id==='fish') await page.screenshot({path:`test-results/voting/menu-${width}.png`});
       await page.getByRole('button',{name:'Keep playing',exact:true}).click();
       assert.equal(await page.locator('.gsw').isVisible(),false);
