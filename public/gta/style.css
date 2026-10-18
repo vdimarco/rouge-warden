@@ -12,6 +12,8 @@ a:focus-visible, video:focus-visible { outline: 4px solid #9c1041; outline-offse
 .back span { font: 32px Arial, sans-serif; }
 .edition { text-align: right; font-size: 14px; }
 .hero { width: min(100%, 1440px); margin: auto; padding: 38px clamp(18px, 4vw, 64px) 46px; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: center; gap: 36px; }
+.badge-launch { display: grid; justify-items: center; gap: 22px; min-width: 0; }
+.badge-launch .play { width: min(100%, 360px); }
 .comic-badge { display: block; width: 100%; height: auto; filter: drop-shadow(8px 8px 0 var(--ink)); }
 .copy { min-width: 0; padding: clamp(20px, 2.4vw, 34px); border: 4px solid var(--ink); background: var(--paper); box-shadow: 9px 9px 0 var(--pink), 13px 13px 0 var(--ink); }
 h1 { margin: 0 0 18px; font: 400 clamp(25px, 2.5vw, 36px)/1.15 Bungee, Impact, sans-serif; letter-spacing: -.025em; }
@@ -39,4 +41,47 @@ h1 { margin: 0 0 18px; font: 400 clamp(25px, 2.5vw, 36px)/1.15 Bungee, Impact, s
   .copy { padding: 20px; }
   .play { font-size: 23px; }
   .controls { grid-template-columns: 1fr; }
+}
+
+/* Size the cover around the viewport instead of making the reader scroll to Play. */
+.page { min-height: 100dvh; }
+.hero { padding: 16px 28px; gap: 28px; }
+.comic-badge { width: min(100%, 48dvh); }
+.badge-launch { gap: 12px; }
+.copy { padding: 16px 22px; }
+h1 { font-size: clamp(24px, 2.5vw, 34px); margin-bottom: 10px; }
+.description { margin-bottom: 10px; font-size: 17px; }
+.availability { margin-top: 8px; font-size: 14px; }
+.feature { margin-top: 8px; }
+.trailer-video { max-height: 23dvh; object-fit: contain; }
+.frame-caption { font-size: 12px; margin-top: 4px; }
+.controls { padding-top: 8px; padding-bottom: 8px; font-size: 12px; gap: 4px 20px; }
+.controls strong { font-size: 11px; margin-bottom: 2px; }
+.controls p { font-size: 11px; }
+@media (max-width: 760px) {
+  .masthead { padding: 4px 12px; }
+  .back { font-size: 17px; }
+  .edition { font-size: 10px; }
+  .hero { padding: 10px 14px; gap: 10px; }
+  .comic-badge { width: min(40vw, 18dvh); }
+  .badge-launch { gap: 6px; }
+  .badge-launch .play { min-height: 44px; padding: 8px 16px; font-size: 19px; width: min(280px, 100%); }
+  .copy { padding: 10px 12px; box-shadow: 4px 4px 0 var(--pink); }
+  h1 { font-size: clamp(18px, 4.8vw, 24px); margin-bottom: 6px; }
+  .description { font-size: 14px; line-height: 1.2; margin-bottom: 4px; }
+  .availability { font-size: 12px; line-height: 1.2; margin-top: 4px; }
+  .feature { margin-top: 4px; }
+  .trailer-video { max-height: 15dvh; }
+  .frame-caption, .controls { display: none; }
+}
+@media (max-height: 500px) and (min-width: 761px) {
+  .masthead { padding: 3px 18px; }
+  .hero { gap: 20px; padding: 10px 24px; }
+  .copy { padding: 10px 14px; }
+  h1 { font-size: 20px; margin-bottom: 6px; }
+  .description { font-size: 13px; line-height: 1.2; margin-bottom: 4px; }
+  .availability { font-size: 12px; margin-top: 2px; }
+  .frame-caption, .controls { display: none; }
+  .feature { margin-top: 2px; }
+  .trailer-video { max-height: 18dvh; }
 }
