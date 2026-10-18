@@ -67,20 +67,43 @@ The game SHALL call the person carrying the baby "your mother" by default, and S
 - **CHECK** `qa/first-breath/text.test.mjs`
 
 ### Requirement: Banned words
-No shown string SHALL contain the words die, dies, died, dying, dead, death, lose, loses, losing, lost, loser or NICU, or any word that starts with kill, fail, miscarr, abort, sex, pain, hurt, danger, sick, viab or prematur, in any of the four carer settings.
+No shown string SHALL contain the words die, dies, died, dying, dead, death, lose, loses, losing, lost, loser or NICU, or any word that starts with kill, fail, miscarr, abort, sex, pain, hurt, danger, sick, viab, prematur, invad, invas, attack, destroy, defeat, conquer, enem, fight or battle, in any of the four carer settings. No stage 1 or stage 2 string SHALL contain "fastest" or "winner", the whole words win, wins or won, or the phrases "beat the" or "beats the".
 
 #### Scenario: The word scan
 - **WHEN** the text test scans every string, fact, caption, card and screen text
 - **THEN** no banned word is found
 - **CHECK** `qa/first-breath/text.test.mjs`
 
+#### Scenario: Race and guard words
+- **WHEN** the text test scans the strings of stages 1 and 2
+- **THEN** none says "kill", "invade", "invasion", "attack", "destroy", "defeat", "conquer" or "enemy" in any form, none contains "fastest" or "winner", none has the whole word "win", "wins" or "won", and none says "beat the" or "beats the"
+- **CHECK** `qa/first-breath/text.test.mjs`
+
+### Requirement: Gentle words for the race and the guard
+The race and the guard SHALL be game framing told in gentle words: "race", "place", "bump", "rest", "bounce", "drift off", "Guard your shell", "Only one may enter" and "Let it in". Rivals SHALL bump, fall behind, bounce away, drift off and rest, and nobody SHALL be harmed. No string SHALL say that the fastest sperm wins. The run result SHALL say what is real: in life a sperm must be ready at the right time and place, and the shell changes only after one sperm joins.
+
+#### Scenario: The guard's lines
+- **WHEN** stage 2's guard starts and the player's sperm comes in
+- **THEN** the captions read "Guard your shell. Only one may enter." and "Let it in."
+- **CHECK** `qa/first-breath/stage-egg.test.mjs`
+
+#### Scenario: The egg's fluid is a general fact
+- **WHEN** stage 2 runs with any input
+- **THEN** `egg.choice` shows in the guard before the gold sperm comes in, and no string says that the egg picks the player's sperm
+- **CHECK** `qa/first-breath/stage-egg.test.mjs`, the human read of every string
+
+#### Scenario: What was real after the race
+- **WHEN** a whole run reaches the run result
+- **THEN** "What was real" lists `swim.frame` and `egg.frame` with their labels and sources, after the stage 2 facts
+- **CHECK** `qa/first-breath/facts.test.mjs`
+
 ### Requirement: Tender tone
-The game SHALL start inside the body with cells and SHALL NOT show or suggest intercourse or sexual anatomy, or label anatomy. It SHALL NOT show or imply miscarriage, injury, distress or death. Other sperm SHALL only rest, and nothing SHALL be killed.
+The game SHALL start inside the body with cells and SHALL NOT show or suggest intercourse or sexual anatomy, or label anatomy. It SHALL NOT show or imply miscarriage, injury, distress or death. Rivals in the race and the sperm at the egg SHALL only bump, bounce, drift off and rest, and nothing SHALL be killed.
 
 #### Scenario: Stage events
 - **WHEN** every stage runs with the reference bot and with no input
-- **THEN** no event or string names harm, and no other sperm in stage 1 moves from its wall spot
-- **CHECK** `qa/first-breath/stage-swim.test.mjs`, `qa/first-breath/text.test.mjs`
+- **THEN** no event or string names harm, and every sperm in stages 1 and 2 ends swimming, resting, held still in the cloud, or drifting off
+- **CHECK** `qa/first-breath/stage-swim.test.mjs`, `qa/first-breath/stage-egg.test.mjs`, `qa/first-breath/text.test.mjs`
 
 #### Scenario: A human read
 - **WHEN** the pull request is ready
@@ -92,7 +115,7 @@ The mother's body SHALL never be an obstacle, and no hazard SHALL be tied to the
 
 #### Scenario: No hazards from the mother
 - **WHEN** stage 1 runs with any seed
-- **THEN** only the gentle current and wall contact (which keeps 0.9 of the speed) slow the sperm cell, and nothing blocks or harms it
+- **THEN** only the gentle current, wall contact (which keeps 0.9 of the speed) and soft bumps with other sperm slow the cell, the course has no immune cells or hazards, and nothing harms it
 - **CHECK** `qa/first-breath/stage-swim.test.mjs`
 
 #### Scenario: The birth frame

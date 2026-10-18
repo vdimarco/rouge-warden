@@ -1,7 +1,7 @@
 ## ADDED Requirements
 
 ### Requirement: Play starts the first stage at once
-The title SHALL start the audio and stage 1 (The Journey) in the same tap, click or key press on Play (`#play`), with no card or screen between them. The prompt "Drag to swim." SHALL show by 0.5 s after Play, and steering SHALL respond by 0.5 s.
+The title SHALL start the audio and stage 1 (The Race) in the same tap, click or key press on Play (`#play`), with no card or screen between them. The prompt "Drag to swim." SHALL show by 0.5 s after Play, and steering SHALL respond by 0.5 s.
 
 #### Scenario: Phone portrait
 - **GIVEN** the title at 390 × 844 with touch
@@ -23,7 +23,7 @@ The title SHALL start the audio and stage 1 (The Journey) in the same tap, click
 - **CHECK** `qa/first-breath/smoke.e2e.mjs`
 
 ### Requirement: The stages come in the user's order
-A run SHALL play The Journey, Ovulation, The Embryo: first cells, The Placenta, First Trimester, Second Trimester, Third Trimester and Birth, in that order, and then the ending. No stage SHALL be skipped in a run.
+A run SHALL play The Race, The Egg, The Embryo: first cells, The Placenta, First Trimester, Second Trimester, Third Trimester and Birth, in that order, and then the ending. No stage SHALL be skipped in a run.
 
 #### Scenario: A whole run
 - **WHEN** the bot plays a whole run with any seed
@@ -123,17 +123,22 @@ From stage 2 onward, every stage SHALL complete its goal by itself at its cap or
 - **CHECK** `qa/first-breath/stage-<id>.test.mjs`
 
 ### Requirement: A gentle retry before fertilization
-Only stage 1 SHALL be able to end without its goal. At its 120 s cap it SHALL show "Almost. Try again?" with "Your run and points are kept.", a focused Try again button and a Go on button. Try again SHALL recreate stage 1 at once with the same seed and carry. Go on SHALL carry the sperm cell to the pocket in 3 s and score the stage with no Goal points and no grade word. A retry SHALL leave earlier stages' scores and carry unchanged.
+Only stage 1 SHALL be able to end without its goal. When the sperm reaches the meeting place outside the top 3, or at the 117 s cap, the game SHALL show "Almost. Try again?" with the place ("You came 5th of 20." after a finish, "You were 5th of 20." at the cap), "Your run and points are kept.", a focused Try again and Go on. Try again SHALL recreate stage 1 at once with the same seed and carry.
 
 #### Scenario: Try again
-- **GIVEN** stage 1 reaches its cap without the sperm settling
+- **GIVEN** stage 1 reaches its cap before the sperm reaches the meeting place
 - **WHEN** the player taps Try again
-- **THEN** stage 1 starts again at once, and the run total and carry are what they were
+- **THEN** stage 1 starts again at once with the rivals on the same start grid, and the run total and carry are what they were
 - **CHECK** `qa/first-breath/run.test.mjs`
 
-#### Scenario: Go on
-- **WHEN** the player chooses Go on at the cap
-- **THEN** the waves carry the sperm to the pocket in 3 s, the overlay shows only points, and stage 2 follows
+#### Scenario: Outside the top 3
+- **WHEN** the sperm reaches the meeting place in 5th place
+- **THEN** after the 2.5 s wait at the meeting place, the Almost card shows with "You came 5th of 20."
+- **CHECK** `qa/first-breath/run.test.mjs`
+
+#### Scenario: At the cap
+- **WHEN** stage 1 reaches its 117 s cap with the sperm in 5th place by progress
+- **THEN** the Almost card shows with "You were 5th of 20."
 - **CHECK** `qa/first-breath/run.test.mjs`
 
 #### Scenario: Keys on the card
@@ -142,17 +147,38 @@ Only stage 1 SHALL be able to end without its goal. At its 120 s cap it SHALL sh
 - **THEN** Try again runs, because it has focus
 - **CHECK** `qa/first-breath/input.e2e.mjs`
 
-### Requirement: Carry-over joins the stages
-Stages SHALL pass one carry object from each stage's result to the next stage's create call, with a documented default for every field. The sperm cell steered in stage 1 SHALL be the one that waits in stage 2. The spot where the embryo nestles in stage 4 SHALL be where the placenta grows in stages 5 to 7. The phrases answered in stage 6 SHALL become the song hummed in stage 7 and heard clearly in the ending. Each Glowing grade SHALL add a spark to the rim for the rest of the run.
+### Requirement: Go on after the Almost card
+After the cap, Go on SHALL carry the cell to the meeting place in 3 s; after a finish outside the top 3 it SHALL go straight on. Either way stage 1 SHALL score with no Goal points and no grade word, and SHALL not run past 120 s.
 
-#### Scenario: Your sperm waits for you
-- **WHEN** stage 1 ends with the sperm in the pocket on the left wall
-- **THEN** in stage 2 the waiting sperm sits on the left wall with stage 1's tint, and it is the one that meets the egg
+#### Scenario: Go on
+- **WHEN** the player chooses Go on at the Almost card after the cap
+- **THEN** the waves carry the sperm to the meeting place in 3 s, the stage has run no more than 120 s, the overlay shows only points, and stage 2 follows
+- **CHECK** `qa/first-breath/run.test.mjs`
+
+### Requirement: Carry-over joins the stages
+Stages SHALL pass one carry object from each result to the next stage, with a default for every field. The sperm raced in stage 1 SHALL come to the egg in stage 2 as the gold sperm, with its tint, sooner the higher it placed. The embryo's nestle spot in stage 4 SHALL be where the placenta grows in stages 5 to 7. The phrases answered in stage 6 SHALL become the song hummed in stage 7 and heard clearly in the ending. Each Glowing grade SHALL add a spark to the rim for the rest of the run.
+
+#### Scenario: Your sperm comes to you
+- **WHEN** stage 1 ends in 2nd place, and in another run in 3rd place
+- **THEN** in stage 2 the gold sperm has stage 1's tint and comes in 0.3 s sooner after 2nd than after 3rd, and it is the one that enters
 - **CHECK** `qa/first-breath/run.test.mjs`
 
 #### Scenario: A stage alone uses defaults
 - **WHEN** a test opens stage 6 or the ending through `goto` with no carry
 - **THEN** the stage runs with the default carry, and the ending hums the default song
+- **CHECK** `qa/first-breath/run.test.mjs`
+
+### Requirement: The rivals of the first two stages
+The other sperm in stages 1 and 2 SHALL be seeded from each stage's seed, so a Try again or a replay with the same seed brings the same rivals doing the same things. They SHALL look alike in both stages, pale mauve with soft tails and no faces. Nobody SHALL be harmed in either stage: rivals bump, fall behind, bounce away, drift off and rest. In a whole run, only the player's own sperm SHALL enter the egg.
+
+#### Scenario: The same rivals on Try again
+- **WHEN** the player taps Try again in stage 1
+- **THEN** the 19 rivals start from the same grid with the same skills, and with the same input they race the same way
+- **CHECK** `qa/first-breath/run.test.mjs`
+
+#### Scenario: One sperm enters in a run
+- **WHEN** whole runs are played in node with the bots at skills 1.0, 0.7, 0.5 and 0
+- **THEN** each run has exactly one `enter` event, and it is in stage 2 for the player's own sperm
 - **CHECK** `qa/first-breath/run.test.mjs`
 
 ### Requirement: Points, grades and the run total

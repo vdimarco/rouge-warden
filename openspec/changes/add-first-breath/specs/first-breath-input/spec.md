@@ -1,7 +1,7 @@
 ## ADDED Requirements
 
 ### Requirement: One live gesture at a time
-Each moment SHALL have exactly one live gesture (drag, tap, hold, drag and hold, or none), and the prompt line SHALL name it with an icon. Input that does not match the live gesture SHALL be ignored with no penalty. No stage SHALL use more than two feel families, and the run SHALL use at least three (analog steer, beat tap, hold-release, rotate).
+Each moment SHALL have exactly one live gesture (drag, tap, hold, drag and hold, or none), and the prompt line SHALL name it with an icon. Input that does not match the live gesture SHALL be ignored with no penalty. No stage SHALL use more than two feel families, except stage 2, which uses three (beat tap, rotate and hold-release). The run SHALL use at least three (analog steer, beat tap, hold-release, rotate).
 
 #### Scenario: A tap moment ignores drags
 - **GIVEN** a tap moment in stage 2
@@ -16,7 +16,7 @@ Each moment SHALL have exactly one live gesture (drag, tap, hold, drag and hold,
 
 #### Scenario: Families per stage
 - **WHEN** the stage table is checked
-- **THEN** no stage declares more than two families, and the run declares four
+- **THEN** no stage but stage 2 declares more than two families, stage 2 declares three, and the run declares four
 - **CHECK** `qa/first-breath/run.test.mjs`
 
 ### Requirement: Presses count at touch-down
@@ -58,6 +58,50 @@ On desktop, the arrows or WASD SHALL steer (8 directions, smoothed over 0.12 s),
 - **GIVEN** 1440 × 900 with no mouse events
 - **WHEN** a scripted key player plays every stage
 - **THEN** every stage can be played and every menu reached with keys alone
+- **CHECK** `qa/first-breath/input.e2e.mjs`
+
+### Requirement: Aiming the arc on desktop
+In stage 2's guard on desktop, a mouse over the page with no button down SHALL aim the arc at the pointer once it has moved more than 4 px, and the left and right arrows or A and D SHALL turn it anticlockwise and clockwise as seen. A drag with the left button SHALL steer it like a stick. Clockwise on screen SHALL stay clockwise in every layout.
+
+#### Scenario: The guard with keys alone
+- **GIVEN** stage 2's guard at 1440 × 900 with no mouse events
+- **WHEN** the player holds the left arrow, then D
+- **THEN** the arc turns anticlockwise, then clockwise, as seen on screen
+- **CHECK** `qa/first-breath/input.e2e.mjs`
+
+#### Scenario: The mouse aims the arc
+- **GIVEN** stage 2's guard at 1440 × 900
+- **WHEN** the mouse moves to the left of the egg with no button down
+- **THEN** the arc turns to face it, within 10°
+- **CHECK** `qa/first-breath/input.e2e.mjs`
+
+### Requirement: Turn keys keep up and keep their place
+In the guard the turn keys SHALL turn the arc at 540° a second (720° with Assist), fast enough to keep up with the waves. Any steer or turn key SHALL clear the mouse aim until the mouse moves more than 4 px again, so a cursor resting over the page never pulls the arc back. W, S and the up and down arrows SHALL do nothing in the guard.
+
+#### Scenario: A parked cursor
+- **GIVEN** stage 2's guard at 1440 × 900 with the cursor resting over the page since Play was clicked
+- **WHEN** the player turns the arc with D and lets go
+- **THEN** the arc stays where D left it, and W or the up arrow does not move it
+- **CHECK** `qa/first-breath/input.e2e.mjs`
+
+#### Scenario: Keys keep up
+- **WHEN** a bot that aims only through the turn keys guards 20 seeds
+- **THEN** it reaches Great in at least 18 of them, with a mean guard credit within 0.15 of the reference bot's
+- **CHECK** `qa/first-breath/stage-egg.test.mjs`
+
+### Requirement: A hold needs a fresh press
+When the live gesture becomes hold or drag and hold, a pointer, key or one-button press that is already down SHALL NOT start a hold, and its release SHALL be ignored. The next touch-down or keydown SHALL be the press.
+
+#### Scenario: A thumb held into the seal
+- **GIVEN** stage 2 at 390 × 844 with the thumb still down from the guard drag when the seal prompt shows
+- **WHEN** the player lifts the thumb, then presses and lets go again on the glowing beat
+- **THEN** the first lift does nothing, and the second release is graded
+- **CHECK** `qa/first-breath/input.e2e.mjs`
+
+#### Scenario: One button held into the seal
+- **GIVEN** one-button mode at 1440 × 900 with Space held from the guard when the seal prompt shows
+- **WHEN** the player lets go of Space, then presses and lets go again
+- **THEN** the first release does nothing, and the second is graded
 - **CHECK** `qa/first-breath/input.e2e.mjs`
 
 ### Requirement: Keys in a drag-and-hold moment
@@ -140,8 +184,8 @@ One-button mode SHALL let every stage be played with one key or tap: any input p
 
 #### Scenario: One button through the steering stages
 - **GIVEN** one-button mode
-- **WHEN** the player plays stages 1, 4, 5, 7 and 8 with Space alone
-- **THEN** each stage reaches its goal, and stage 1 settles before its cap
+- **WHEN** the player plays stages 1, 2, 4, 5, 7 and 8 with Space alone
+- **THEN** each stage reaches its goal, stage 1 reaches the meeting place in the top 3 before its cap, and in stage 2 the arc tracks only while Space is held
 - **CHECK** `qa/first-breath/input.e2e.mjs`
 
 #### Scenario: Let go to rest
@@ -151,7 +195,7 @@ One-button mode SHALL let every stage be played with one key or tap: any input p
 - **CHECK** `qa/first-breath/run.test.mjs`
 
 ### Requirement: Assist
-Assist SHALL widen windows 1.6 times (Close capped at 0.4 P) and SHALL ease each stage as listed in the design (a weaker current in stage 1, larger pools in stage 4, a wider move cone in stage 5, longer roomy moments in stage 7). A run with Assist SHALL show an Assist mark and still count.
+Assist SHALL widen windows 1.6 times (Close capped at 0.4 P) and SHALL ease each stage as listed in the design (a weaker current and softer bumps in stage 1, a wider arc in stage 2, larger pools in stage 4, a wider move cone in stage 5, longer roomy moments in stage 7). A run with Assist SHALL show an Assist mark and still count.
 
 #### Scenario: Wider windows
 - **GIVEN** Assist on

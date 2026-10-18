@@ -4,8 +4,12 @@ Id `first-breath`, route `/first-breath/`, change `add-first-breath`. This is th
 from the winning "Arcade anthology" design (8 stages in the user's order, a score per stage, one camera, one heartbeat)
 and grafts the best parts of "Phone-first heartbeat" (the first 10 seconds, real heart rates as the difficulty curve,
 the fair timing judge, the first-heartbeat hinge, the lull before labour, the ending) and "One continuous journey"
-(one gaDay clock, felt sound before ears, the egg as an active caller, development that never fails). Section 1.2
+(one gaDay clock, felt sound before ears, the egg as an active player, development that never fails). Section 1.2
 records how each judge conflict was settled.
+
+The user reviewed the plan and asked for two changes: stage 1 is "A race with other sperm", and stage 2 is "a switch
+to the egg defending against the sperms invasion". The user kept the Action row. Sections 1.2, 6.1 and 6.2 record
+the new stages. In the game the words stay gentle: the egg guards its shell.
 
 This change builds the **v1 form** of each stage: its minimum form plus its best one or two flourishes (section 6).
 Section 19.2 lists what is deferred. The research behind the design is in this change folder:
@@ -15,12 +19,14 @@ Plain words and short sentences are the house style. The same rule applies to ev
 
 ## 0. Summary
 
-- **What the player does.** You live a baby's nine months from the inside, in 8 short stages and an ending: swim as a
-  sperm cell, call it in as the egg, split as the first cells, grow roots into the placenta while your body takes
-  shape, grow with your new heart, answer your mother's voice, turn and practise breathing, ride the waves of birth,
-  then take your first breath.
+- **What the player does.** You live a baby's nine months from the inside, in 8 short stages and an ending: race as
+  one sperm cell in a pack, then switch to the egg and guard your shell until your own sperm comes in, split as the
+  first cells, grow roots into the placenta while your body takes shape, grow with your new heart, answer your
+  mother's voice, turn and practise breathing, ride the waves of birth, then take your first breath.
 - **One verb at a time.** Each moment has one live gesture (drag, tap, hold, or drag-and-hold), and the prompt names it.
-  Four feel families across the run: analog steer, beat tap, hold-release and rotate. No stage has more than two.
+  Four feel families across the run: analog steer, beat tap, hold-release and rotate. No stage has more than two,
+  except stage 2, which has three: a few beat taps in its short opening, then the arc (rotate) and the seal
+  (hold-release).
 - **One heartbeat.** Your mother's heart keeps time from Play to the end, also between stages. Your own heart joins on
   Day 22 after fertilization (week 5) at 110 bpm, peaks at about 170 bpm in weeks 9 to 10, and eases. The tempo is the
   difficulty curve. Her heart quickens in labour.
@@ -32,7 +38,8 @@ Plain words and short sentences are the house style. The same rule applies to ev
 
 ## 1. Our choices
 
-The user gave no art direction, no controls preference and no arcade row. These choices are ours.
+The user gave no art direction, no controls preference and no arcade row. These choices are ours. After reviewing the
+plan, the user chose the play of stages 1 and 2 and kept the Action row; those choices are the user's (1.2).
 
 ### 1.1 Choices table
 
@@ -41,7 +48,8 @@ The user gave no art direction, no controls preference and no arcade row. These 
 | Title | **First Breath** | It names the ending that the whole run climbs to. |
 | Subtitle (`<small>`, switcher `sub`) | **A baby's journey to birth** (marquee: A BABY'S JOURNEY TO BIRTH) | Short for the marquee. All Games search finds "baby" and "birth". |
 | Tagline (title screen) | "Nine months. Eight small stages. One first breath." | |
-| Cabinet attract line | **SWIM · SPLIT · GROW · BREATHE** | Four verbs from the run. |
+| Cabinet attract line | **RACE · GUARD · GROW · BREATHE** | Four verbs from the run. 29 characters, within the 31 of "EXPLORE · DRIVE · SAVE THE PARK" on the same homepage. |
+| Stages 1 and 2 (the user's choice after review) | **Stage 1, The Race**: one sperm in a pack of 20. **Stage 2, The Egg**: the view switches to the egg, which guards its shell with an arc until your own sperm comes in, then seals. | The user asked for "A race with other sperm" and for stage 2 as "a switch to the egg defending against the sperms invasion". See 1.2. |
 | Row | **Action**, the last machine, after `ahead-of-the-light` | A real-time skill game with a score chase. Primordia, the other cell game, is in this row. |
 | Art direction | **"Warm Lantern"**: soft translucent membranes lit from behind, plum shadows, coral and amber bodies, cream rims. Light rises from dim red to amber to white at birth. Abstract baby figure with no face. | Light through tissue is red (d'Eon and Luebke). It reads as calm and inside. No realistic fetus portraits: Nilsson-style images now read as political (`research/research-art.md` B7). |
 | Controls | One live gesture per moment: drag anywhere (relative stick), tap, hold, or drag-and-hold. Keys only on desktop. One-button mode in every stage. | One thumb on a phone in portrait. No guessing between tap, hold and drag. |
@@ -55,12 +63,17 @@ The user gave no art direction, no controls preference and no arcade row. These 
 
 | Conflict | Decision | Why |
 |---|---|---|
-| Journey's egg-first scent trail vs the user's order (sperm first) | The user's order wins: stage 1 sperm, stage 2 egg. The trail moves into stage 2: the egg's on-beat puffs widen the gold trail that your waiting sperm follows to you. | The user's order is a requirement. The idea (the egg is active, its puffs shape the meeting) survives. |
+| Journey's egg-first scent trail vs the user's order (sperm first) | The user's order wins: stage 1 sperm, stage 2 egg. The trail first moved into stage 2 as gold call beats; after review, the guard below replaced it. | The user's order is a requirement. The idea (the egg is active) survives in the guard and the seal. |
+| **User review:** stage 1 "It is not a race" (our earlier decision, after the myth table in `research/research-biology.md` 10) vs the user's "A race with other sperm" | **The user wins.** Stage 1 is a race against 19 moving rivals to the meeting place, with a top-3 goal, a fork, bumps and a place in the HUD. Every shown fact stays true: `swim.race` ("It is not a race.") is removed; no line says the fastest sperm wins; being ready (hyperactivation) is a real speed burst and is scored; `swim.frame` on the run result says that in life a sperm must be ready at the right time and place. | The user chose it after reading the plan. The race is game framing (section 2). |
+| **User review:** stage 2 as the egg's call (gold beats and a trail) vs the user's "add section 2 as a switch to the egg defending against the sperms invasion" | **The user wins.** Stage 2 switches to the egg: a short ovulation opening, then the egg guards its shell with a glowing arc while sperm come from all sides, lets in only your own gold sperm, and seals its shell. The words stay gentle: "Guard your shell", "bounce", "Only one may enter", "Let it in". | The user asked for it. The guard is game framing; the seal is real (section 6.2). |
+| At most two feel families per stage vs stage 2's taps, arc and seal | Stage 2 has three: beat taps (the follicle, under 10 s), rotate (the arc) and hold-release (the seal). Each moment still has one live gesture, and the prompt names it. Every other stage keeps at most two. | The user's stage 2 needs all three; the opening is short. |
+| The fork and moving rivals deferred (earlier v1 scope) vs the user's race | Both are in v1. The deferred list no longer holds them (19.2). | A race needs moving rivals. |
+| The seal before fusion (the user's order of play) vs biology (the shell block follows fusion) | As your sperm enters, its membrane meets yours (Izumo1 meets Juno, `egg.fuse`). The seal then shows the block, and fusion shows the nuclei drawing close. Every caption keeps the real order. | Fidelity. |
 | Pause on window `blur` (fun judge) vs not on blur (feasibility judge) | Pause on `visibilitychange` (hidden) and `pagehide`, on Esc or P, and on the pause button. Not on window `blur`. | On phones every app switch and lock fires `visibilitychange`. `blur` also fires on desktop when focus moves to devtools or another window while the page is still visible, and it makes headless runs flaky. |
 | Fixed step 1/120 s (heartbeat) vs 1/60 s | 60 Hz fixed step. Input carries its own time stamp with sub-step precision. | Half the node cost, and the judge never quantizes to the step. |
 | Score shape: points and grades, Ten Lights 0 to 2, or "APGAR" | Points out of 10,000 per stage, Good / Great / Glowing. Apgar appears only as a sourced fact after the ending. | Real spread for a score chase. No health-score framing. |
 | Breath comes by itself after 6 s (heartbeat) or 10 s (journey) | It comes by itself 3 s after the prompt. | Fidelity must-fix: no wait with a newborn who is not breathing. |
-| Stage 1 can end in "Almost" vs "no lose state, assist completes at the cap" | Stage 1 ends at its cap with "Almost. Try again?" and two buttons: Try again, and Go on (the waves carry you on, no goal points). All other stages complete by themselves at their cap. | Fun judge allows a gentle retry only before fertilization. Feasibility wants a hard cap. Both hold. |
+| Stage 1 can end in "Almost" vs "no lose state, assist completes at the cap" | Stage 1 ends with "Almost. Try again?" when you reach the meeting place outside the top 3, or at its 117 s cap, with two buttons: Try again, and Go on (after the cap, the waves carry you on for 3 s; no goal points). With the wait at the meeting place or the 3 s carry, stage 1 never runs past 120 s. All other stages complete by themselves at their cap. | Fun judge allows a gentle retry only before fertilization. Feasibility wants a hard cap. Both hold. |
 | White blood cells as obstacles (anthology) | Dropped. | The mother's body is never an obstacle. |
 | Start in the cervix (anthology) | Start in the wide space of the womb, with no anatomy labels. | Fidelity must-fix. |
 | Ultrasound scan fan in the first trimester (anthology) | Dropped. Reflex moves are shown from the baby's own view. | Clinical, outside-in frame. |
@@ -94,8 +107,14 @@ The user gave no art direction, no controls preference and no arcade row. These 
 
 - Tender, wondrous and curious. Accurate, but never clinical or graphic.
 - The journey starts inside the body, with cells. No intercourse, no innuendo, no sexual anatomy, no anatomy labels.
-- No miscarriage, injury, distress or death, shown or implied. Other sperm only rest. Nothing is killed.
+- No miscarriage, injury, distress or death, shown or implied. Nothing is killed.
+- The race (stage 1) and the guard (stage 2) are game framing. Nobody is ever harmed: rivals bump, fall behind,
+  bounce away, drift off and rest. A rival that is not let in rests, still, in the egg's soft cloud.
+- In-game words are gentle: "race", "guard your shell", "bounce", "Only one may enter", "Let it in". Never kill,
+  invade, invasion, attack, destroy, defeat, conquer, enemy, fight or battle (section 15.4). No string says the
+  fastest sperm wins, and no stage 1 or 2 string says win, wins, won, or that one sperm beats the others.
 - The mother's body is never an obstacle or an enemy. No hazards tied to the mother (no alcohol, smoke or illness).
+  The race course is the path: stage 1 has no immune cells and no hazards, and the egg guards only its own shell.
 - No medical advice. No viability or prematurity facts.
 - The birth opening is drawn only as light. No blood, no people until the end, no sign of pain.
 - The newborn is never blue, dusky or limp. No anatomical lungs. The first breath comes by itself.
@@ -112,8 +131,8 @@ real width of the short screen axis (section 5.6).
 
 | # | Id | Stage (the user's phase) | Verb | Live gestures (families) | gaDay | Real scale | Ref | Mid | Idle | Cap |
 |---|---|---|---|---|---|---|---|---|---|---|
-| 1 | `swim` | The Journey (the sperm) | Swim | drag (steer) | 14 | 0.3 mm (not to scale) | 43 s | 60 s | 120 s ("Almost") | 120 s |
-| 2 | `egg` | Ovulation (and fertilization) | Call | tap (beat tap) | 14 | 0.4 mm (not to scale) | 39 to 40 s | 39 to 40 s | 39 to 40 s | 60 s |
+| 1 | `swim` | The Race (the sperm) | Race | drag (steer) | 14 | 0.3 mm (not to scale) | 52 s | 64 s | 117 s ("Almost") | 117 s (+3 s after Go on) |
+| 2 | `egg` | The Egg (ovulation and fertilization) | Guard | tap, drag, hold (beat tap, rotate, hold-release) | 14 | 0.4 mm (not to scale) | 53 s | 54 s | 64 s | 80 s |
 | 3 | `split` | The Embryo: first cells | Split | tap, hold (beat tap, hold-release) | 15 to 20 | 0.45 mm | 34 s | 34 s | 34 s | 50 s |
 | 4 | `root` | The Placenta (and the growing embryo) | Root | drag, tap (steer, beat tap) | 20 to 49 | 0.6 to 30 mm | 45 s | 54 s | 67 s | 75 s |
 | 5 | `grow` | First Trimester | Grow | tap, drag (beat tap, steer) | 49 to 97 | 30 to 150 mm | 60 s | 64 s | 69 s | 90 s |
@@ -122,10 +141,13 @@ real width of the short screen axis (section 5.6).
 | 8 | `birth` | Birth | Ride | hold, drag-and-hold (hold-release) | 280 | 700 mm | 70 s | 70 s | 70 s | 80 s |
 | – | `ending` | First breath and skin-to-skin (not scored) | Breathe | hold (optional) | 280 | 2 m | 33 s | 33 s | 33 s | 40 s |
 
-Stages 2 and 3 take the same time for every input. Their length moves by less than one beat with her beat phase
-(section 5.1).
+Stage 3 takes the same time for every input; its length moves by less than one beat with her beat phase (section
+5.1). Stage 1 times are stage times: the arrival at the meeting place plus its 2.5 s wait (ref arrives at about 49 s,
+mid at about 61 s, 6.1). Stage 2 times use the place each bot gets in stage 1: ref 1st, mid 3rd, idle 20th. Your
+sperm comes 0.3 s later for each place lower, up to 5.7 s later after 20th. Nudging it with the arc adds up to about
+3.2 s, and the seal up to about 2.5 s. In stage 1, "mid" is the skill 0.7 bot, which finishes in the top 3 (6.1).
 
-Run time: stages (ref about 416 s, mid about 452 s, idle about 545 s), plus 7 stage-end overlays (2.5 s each; none
+Run time: stages (ref about 438 s, mid about 470 s, idle about 566 s), plus 7 stage-end overlays (2.5 s each; none
 after Birth), 7 stage cards (1.0 to 3.5 s), and the ending (33 s). A mid run is about 9 minutes. The skill 0.7 bot
 gate is 8 to 12 minutes of game time.
 
@@ -146,8 +168,8 @@ The curve follows the biology. Timing windows never get tighter than ±60 ms / �
 
 | Stage | Tempo of the target heart | What rises |
 |---|---|---|
-| 1 | free (her 72 bpm in the background) | steering against a current |
-| 2 | her 72 bpm: a gold surge, then a target on every beat | first taps; gold call beats |
+| 1 | free (her 72 bpm in the background) | steering in a pack: waves, the gate, the fork, a current, soft bumps; when to rest |
+| 2 | her 72 bpm: a gold surge, then a few follicle taps | first taps; then turning the arc to more sperm from more sides as the waves build; one hold-release |
 | 3 | her 72 bpm, targets every 2nd beat | taps plus 2 hold-releases |
 | 4 | her 72 bpm (pool entries), then yours 110 bpm | steering timed to her beat; the hinge |
 | 5 | yours 130 → 170 → 155 bpm | **peak**: fastest pulse, mixed gaps of 2 to 4 beats, drags between phrases |
@@ -190,8 +212,8 @@ Try again in stage 1 restarts stage 1, which stays at gaDay 14.
 
 | Stage | Moment | gaDay from → to | `lenS` (what `p` follows) | Labels shown |
 |---|---|---|---|---|
-| `swim` | `womb`, `tube`, `pocket`, `carried` | 14 → 14 | – | Week 2 |
-| `egg` | `surge`, `open`, `ride`, `meet`, `fusion`, `outro` | 14 → 14 | – | Week 2; fertilized turns true at the end of `fusion` |
+| `swim` | `womb`, `gate`, `fork`, `tube`, `meet`, `carried` | 14 → 14 | – | Week 2 |
+| `egg` | `surge`, `open`, `sweep`, `guard`, `enter`, `seal`, `fusion`, `outro` | 14 → 14 | – | Week 2; fertilized turns true at the end of `fusion` |
 | `split` | `split` | 15 → 19 | 24 of her beats | Days 1 to 4 |
 | `split` | `bloom` | 19 → 20 | 6 beats | Day 5 |
 | `split` | `hatch`, `outro` | 20 → 20 | – | Day 6 |
@@ -284,6 +306,9 @@ The only reset allowed is a stage 1 Try again.
   - `drag`: the stick vector steers; lifting the finger means "not steering" (coast or rest).
   - `dragHold`: `press` starts a hold; `dir` (once past 12 px) is the direction; `release` ends it.
   - `none`: input is ignored (fusion, outros, the grow moment, cards in the world).
+  - **A hold needs a fresh press.** When the live gesture becomes `hold` (or `dragHold`), a pointer, key or one-button
+    press that is already down does not start a hold, and its release is dropped. The next touch-down or keydown is
+    the press. So a thumb still down from the stage 2 guard drag cannot seal the shell by lifting.
 - **Floating stick**: origin at touch-down, anywhere on the screen. Dead zone 8 px. Full deflection at 56 px. Past
   80 px the origin trails the finger. Magnitude `m = clamp((d − 8) / 48, 0, 1)`. The stick ring is drawn at the
   origin while touching.
@@ -292,6 +317,15 @@ The only reset allowed is a stage 1 Try again.
   the release. Space alone is a press with `dir` null, which counts as a plain hold. Key repeats are ignored. Esc or P
   pauses, M mutes, C toggles captions, Tab and Enter move through menus. The mouse is optional: the left button acts as
   the pointer.
+- **Turn and aim** (used only by the stage 2 arc): the left and right arrows, or A and D, also set `turn` (−1 turns
+  anticlockwise as seen, +1 clockwise). In a moment whose prompt has `keys: "turn"` (the guard), the arrows and WASD
+  set only `turn`: W, S and the up and down arrows do nothing, and keys never set `steer`; only a pointer drag sets
+  `steer`. A mouse over the page with no button down sets `aim`, its world point, but only after it has moved more
+  than 4 px; any steer or turn key clears `aim`, and it stays null until the mouse moves more than 4 px again. So a
+  cursor left resting over the page after clicking Play never pulls the arc back. Touch and pen never set `aim`.
+  World angles are in radians, counterclockwise from world +x, as in a y-up plane. The camera maps world to screen
+  by rotation and scale only, never a mirror, so a clockwise turn on screen is a clockwise turn in the world in every
+  layout, and `turn` +1 decreases the world angle.
 - **One-button mode**: `ui/input.js` turns any key or tap into a press and release. `core/run.js` sets `steer` and
   `dir` for every stage from that stage's `botSteer` at skill 1.0, steering only while the button is held (section
   16.4). Stages do not read the setting, except for tuning like Assist.
@@ -310,7 +344,7 @@ import each other. Every field has a default, so any stage runs alone in node, i
 | Field | Written by | Read by | Default | Meaning |
 |---|---|---|---|---|
 | `sparks` | run (each Glowing) | all (rim sparks) | 0 | sparks on your membrane rim |
-| `sperm` | `swim` | `egg` | `{ hue: 0.11, side: 1, glow: 0.5 }` | your sperm's tint, which wall it waits on, how bright it rested |
+| `sperm` | `swim` | `egg` | `{ hue: 0.11, place: 3, glow: 0.5 }` | your sperm's tint (gold); your place in the race, 1 to 20, which sets when it comes to the egg; how bright it is (1 if it became ready, else 0.5) |
 | `nestleX` | `root` | `grow`, `answer`, `turn` | 0 | where on the wall you nestled (−1..1); the placenta grows there |
 | `treeSeed` | `root` | `grow`, `answer`, `turn` | stage seed | the placenta disc texture echoes your root tree |
 | `song` | `answer` | `turn`, `ending` | `{ notes: DEFAULT_SONG, lit: 0 }` | 16 MIDI notes of your song, and which you answered |
@@ -322,16 +356,22 @@ import each other. Every field has a default, so any stage runs alone in node, i
 
 - Each stage declares `orient`:
   - `long` (stages 1 to 4): world forward (+y) maps to the long screen axis: up in portrait, right in landscape and
-    desktop. In portrait the subject sits at 45% of the height from the top, so it sees ahead and stays above the
-    thumb zone. In landscape it sits at 38% of the width from the left, and at 40% on desktop.
+    desktop (a −90° rotation, so world +x is screen down there). In portrait the subject sits at 45% of the height
+    from the top, so it sees ahead and stays above the thumb zone. In phone landscape it sits at 38% of the width from
+    the left and 55% of the height from the top, below the top HUD and the prompt line. On desktop it sits at 40% of
+    the width and half the height.
   - `fit` (stages 5 to 8 and the ending): world up is screen up ("head-down" stays down). The world fits the short
     axis. The subject sits at 42% of the height in portrait.
 - World unit `u`: the short screen axis is 100 u at camera span 100.
 - Each view gives `camera.mmPerU`. The scale bar picks a round value (0.1 mm, 1 mm, 1 cm, 10 cm, 1 m), and the real
   span of the short axis never shrinks over the run (`mmPerShortAxis`, section 4).
 - **Stages 1 and 2 are not drawn to scale**: the womb and the tube would be centimetres wide. There the bar shows only
-  the subject's own size: "You: about 0.05 mm" (the sperm cell, drawn at 15% of the short axis) and "You: about
-  0.1 mm" (the egg).
+  the subject's own size: "You: about 0.05 mm" (the sperm cell) and "You: about 0.1 mm" (the egg). Sizes are fixed in
+  u. In stage 1 every sperm is 22 u long with a head of radius 3 u (13 to 15% of the short axis at the stage's span of
+  170 u in the womb and 150 u from the gate on, 6.1). In stage 2 the egg cell is 18 u across and each sperm is 10 u
+  long with a head of radius 1.5 u, so the egg is about two sperm lengths, as `egg.size` says. The stage 2 camera
+  span is 140 u, so the egg, its arc, every stuck sperm and your incoming gold sperm fit the free part of the screen
+  in all three layouts (section 9).
 - **Where the bar sits**: top left under the clock in portrait; bottom left in landscape and desktop.
 - **Between stages** (v1): a 0.8 s crossfade under the card. The log zoom with nested anchors, after Eames, *Powers of
   Ten* (1977), is deferred (section 19.2). The placenta disc still stays in view through stages 5 to 7.
@@ -346,94 +386,230 @@ facts (ids from section 15), look and sound, the bot's steering policy, what v1 
 cut list (section 19.1). Points: Goal 3,000 + Skill up to 6,000 + Flourish up to 1,000. One-button lines describe what
 the run's one-button rule (section 16.4) gives in that stage; stages add no code for it.
 
-### 6.1 Stage 1, The Journey (`swim`): "Drag to swim."
+### 6.1 Stage 1, The Race (`swim`): "Drag to swim."
 
-- **Sees.** You are a sperm cell, a gold head with a soft tail, 15% of the short screen axis. You start in a wide,
-  warm, soft space (the womb, never named on screen). Slow waves of light roll forward. The space narrows into a tube
-  that glows warm. Inside the tube, a gentle current flows toward you. Other sperm rest, still, on the tube walls.
+The user asked for "A race with other sperm". The race is game framing (section 2): nobody is harmed, and every
+shown fact stays true.
+
+- **Sees.** You are one sperm cell in a pack of 20: you and 19 rivals, who stand for many more. You are a gold head
+  with a soft tail, 22 u long like every sperm, and the brightest sperm, with a soft halo. You start in a wide, warm,
+  soft space (the womb, never named on screen) where slow waves of light roll forward. It narrows to a gate, then
+  splits in two: one tube glows warm (the egg's side), the other is cool and dim and curls back. In the warm tube a
+  gentle current flows toward you, a warm lane shimmers, and three walls glow. Far ahead, a soft warm band marks the
+  meeting place, where sperm wait for the egg. The HUD shows your place ("3rd of 20").
+- **Camera.** Span 170 u in the womb, easing to 150 u between 1,100 and 1,250 u, then 150 u to the finish. It follows
+  your progress along the course, and follows you sideways with a 0.4 s ease. At 150 u both branch mouths are on
+  screen, under no HUD or prompt, at least 1.5 s before your head reaches the split in all three layouts: portrait
+  sees about 98 u ahead below the prompt line (at about 56 u/s there, 1.75 s), landscape about 200 u, desktop about
+  144 u (section 17 checks it).
 - **Moments.**
-  1. `womb` (0 to 1,300 u): ride the waves forward. Prompt "Drag to swim." at 0.3 s; steering live at 0.5 s; the
-     first wave is in view by 2 s.
-  2. `tube` (1,300 to 3,000 u): swim against the current, follow the warm lane, rest on a glowing wall to become ready.
-  3. `pocket` (at 2,950 u): settle in the warm pocket on the wall. "Wait here. The egg is coming."
-  4. `carried` (only after Go on, 3 s, live gesture `none`): the waves carry you to the pocket.
-- **Tuning** (`swim.tune.js`):
+  1. `womb` (0 to 1,100 u): ride the waves forward. Prompt "Drag to swim." at 0.3 s; steering live at 0.5 s; the
+     pack starts at once; the first wave reaches the back row by 2 s. At 1.0 s: "Race to the meeting place. Get there
+     in the first three." (`swim.goal`, a sub-goal line; the goal itself is scored, section 7).
+  2. `gate` (1,100 to 1,300 u): the space narrows to a 40 u gate, and the pack squeezes and jostles.
+  3. `fork` (1,300 to 1,400 u, and all the time inside the cool loop): two tubes. Sub-goal "Take the warm way." The
+     cool tube loops back to the fork: "This way is cool. It leads back." Back at the fork: "The warm way is the egg's
+     side."
+  4. `tube` (1,400 to 4,600 u): swim against the current, follow the warm lane, and rest on a glow wall to become
+     ready. Sub-goal "Rest on a glow to get ready." at the first glow wall.
+  5. `meet` (from crossing 4,600 u; 2.5 s, live gesture `none`): your place is fixed as your head crosses the band.
+     You glide to the wall: "Wait here. The egg is coming." If you are not yet ready, you rest there and get ready
+     ("You rest here and get ready.", the `ready` sub-goal `auto`). In the top 3, the stage ends with its overlay;
+     otherwise the run shows the Almost card.
+  6. `carried` (only after Go on at the cap; 3 s, live gesture `none`): the waves carry you to the meeting place.
+     After a finish outside the top 3 you are already there, so Go on goes straight to the overlay.
+- **Tuning** (`swim.tune.js`). Units are u; the short screen axis is 100 u at span 100. "Progress" is the distance
+  along the course's centre line. Every rule is the same for you and for every rival.
 
   | Name | Value |
   |---|---|
-  | Swim speed | 55 u/s at full stick; accel 120 u/s²; coast drag 1.8 /s; turn 3.0 rad/s |
-  | Womb | 160 u wide, narrowing to 60 u from 1,100 to 1,300 u; the camera follows |
-  | Waves | one every 3.2 s; 60 u thick; move forward at 140 u/s; each spans a lateral window 80 u wide, centre seeded within ±40 u; inside, your speed blends to 140 u/s over 0.3 s |
-  | Tube | 60 u wide; current 22 u/s toward you × (0.3 + 0.7 (1 − r²)), r = distance from the centre / half-width |
-  | Upstream | heading within 25° of forward: +18 u/s |
-  | Warm lane | 30 u wide; drifts ±12 u at 0.1 Hz; inside: +12 u/s |
+  | Racers | you and 19 rivals (20). Start grid: 5 rows of 4, rows 12 u apart, 30 u across, from 0 to 48 u; you in row 3. Everyone starts at 0.5 s. |
+  | Swim | own speed target = 55 u/s × m, where m is the stick magnitude (0 to 1, section 5.3); accel 120 u/s² up to the target; above the target the speed eases down with drag 1.8 /s; turn 3.0 rad/s. "Ready" multiplies only this stick term (×1.6), never the bonuses below. |
+  | Womb | 160 u wide to 1,100 u; no current |
+  | Waves | wave k (k = 0, 1, 2, …) starts at t = 1.2 + 3.2 k s at −20 u, is 60 u thick, and moves forward at 140 u/s inside a lateral window 80 u wide. `stream(seed, "wave:" + k)` gives, in order, its threshold (0 to 1) and its window centre (within ±40 u); every sperm uses the same two values. A wave lifts a sperm that swims with it (stick ≥ 0.3, heading within 45° of forward, head inside the band and the window): its own speed blends to 140 u/s over 0.3 s and stays there while it stays inside. Waves fade out at 1,100 u, so an idle sperm is never carried. A wave that lifts you at about 2 s carries you to 1,100 u by about 9.4 s; each wave you miss costs about 3.2 s. |
+  | Gate | narrows from 160 u to 40 u between 1,100 and 1,250 u; 40 u wide to 1,300 u, where it opens into the fork |
+  | Fork | from 1,300 u it widens to hold two mouths side by side, each 60 u wide; it splits at 1,330 u; the warm side (left or right) is seeded |
+  | Cool loop | the cool tube narrows to 40 u, curls round on its own side in three quarters of a circle of radius 30 u (its centre line), and rejoins the path from that side at 1,300 u, where the gate opens into the fork: 160 u in all. A 40 u/s flow along it carries any sperm round, also with no input: back at the fork after 4.0 s idle, about 1.7 s at full stick. It has no current against you, no lane and no upstream bonus. A sperm in the loop counts as at 1,300 u for the place, and its moment stays `fork`. A trip round costs about 2 to 4 s. |
+  | Tube | 60 u wide, from 1,400 to 4,600 u; current toward you 22 u/s × (0.3 + 0.7 (1 − r²)), r = distance from the centre / half-width: 22 u/s at the centre, 9.5 u/s at r = 0.9 |
+  | Upstream (tube only) | heading within 25° of forward: +18 u/s |
+  | Warm lane (tube only) | 30 u wide; its centre drifts ±12 u at 0.1 Hz; inside: +12 u/s, and the current is halved. At full stick that is about 75 u/s in the lane (55 + 18 + 12 − about 10) against about 63 u/s hugging a wall (55 + 18 − 9.5), so the lane is clearly faster. |
   | Walls | contact keeps 0.9 of your speed along the wall |
-  | Glow walls | at 1,900, 2,300 and 2,650 u, alternating sides, radius 20 u. Rest = speed < 15 u/s inside for 4 of her beats. Then "Now you are ready.": swim ×1.4 to the end. Passing one unrested: "Rest at the next glow." |
-  | Checkpoints | 1,300, 1,725, 2,150 and 2,575 u. The current never pushes you behind the last one passed; there you rest on the wall, glowing, and go on. No fade. |
-  | Pocket | radius 14 u. Settle = speed < 30 u/s inside for 1.0 s. If you arrive not ready, you rest there 4 beats first. |
-  | Other sperm (v1) | 12, seeded on the tube walls between 1,400 and 2,700 u, drawn as resting tails that wiggle. They never move and never touch you: you pass over them. |
-  | Cap | 120 s |
+  | Glow walls | at 1,700, 2,600 and 3,500 u, alternating sides; each a glow of radius 20 u centred on the wall. **Attach:** a sperm whose head is inside a glow with stick < 0.25 attaches to the wall: its velocity is 0 and the current no longer moves it (sperm do bind the tube wall). It counts her beats while attached and becomes ready on the 4th (2.5 to 3.3 s at 72 bpm): "Now you are ready.", and ×1.6 on its stick term to the finish (hyperactivated). Stick ≥ 0.25 detaches it. A rest costs about 4 s in all (the turn to the wall, the beats, the speed-up). At full stick in the lane, resting gains about 8 s by the finish at the first wall, about 4 s at the second and about 0.5 s at the third: a real trade. Passing one unrested: "Rest at the next glow." |
+  | Checkpoints | 1,400, 2,200, 3,000 and 3,800 u. The current never pushes a sperm behind the last one it passed: a sperm that drifts back there with stick < 0.25 attaches to the wall by the same rule, glowing, until it swims again. No fade. |
+  | Bumps | heads are circles of radius 3 u. A sperm is swimming when its stick is ≥ 0.25 or its speed is ≥ 15 u/s; an attached sperm never is. Two swimming sperm that overlap are pushed apart along the line between them, every step. Each also keeps 0.7 of its speed, and its top speed eases back from ×0.8 to ×1 over 0.6 s; this speed loss happens at most once per sperm per 0.4 s, while the push apart is never skipped. Sperm that are not swimming are passed over, never bumped. |
+  | Rival skill | 19 skills, seeded onto the start grid (`stream(seed, "grid")`): two front-runners 0.80 and 0.76; a middle pack 0.42, 0.39, 0.36, 0.33, 0.30 and 0.27; a tail 0.24, 0.22, 0.20, 0.18, 0.16, 0.14, 0.12, 0.10, 0.08, 0.06 and 0.04 |
+  | Rival policy | the same steering function as `botSteer` (below) at the rival's skill, with its own stream `rival:<i>` and its own `mem` in the state. Three rival choices replace the bot's: the cool tube with chance 0.5 × (1 − skill); a rest at the first glow wall for the two front-runners only (only they become ready; no other rival rests on a glow); and a rival in the tube that is 500 u or more behind you by progress slows over 2 s, attaches to the nearest wall and rests there for the rest of the stage, glowing softly, never ready. A resting rival still counts in the place, behind you. |
+  | Catch-up (mild, never shown) | a rival g u ahead of you by progress multiplies its stick term by 1 − 0.10 × clamp(g / 400, 0, 1); a rival behind you that still swims, by 1 + 0.06 × clamp(−g / 400, 0, 1), never above full stick. It never changes the waves, the current, the bonuses, the bumps or the walls. |
+  | Place | 1 + the number of sperm with more progress; sperm that arrived rank by arrival time, ahead of all others. `state.placeNow` holds this value every step. The shown place (`state.place`, the `place` event, the HUD and `probe`) changes only after a new value has held for 0.25 s, so jostling never spams plucks. |
+  | Finish | the meeting place, a soft band across the tube at 4,600 u; the times below are arrival times there |
+  | Cap | 117 s. With the 2.5 s `meet` or the 3 s `carried`, the stage never runs past 120 s. |
 
-- **Score.** Goal 3,000 if you settle before the cap. Skill: 2,000 × min(1, seconds riding waves / 5); 2,000 × the
-  share of tube time inside the warm lane; 2,000 × the share of tube time heading upstream. Flourish: 500 if you
-  became ready at the first glow wall; 500 if you settled at < 15 u/s. Speed is never scored ("It is not a race.").
-- **At the cap.** `result()` is `{ done: true, goalMet: false }`. The run shows a soft card: "Almost. Try again?" and
-  "Your run and points are kept." Buttons: **Try again** (focused; recreates this stage at once) and **Go on** ("The
-  waves carry you on."). Go on calls `swim.jump(state, "carried")`: a 3 s carry to the pocket, then `result()` is
-  `{ done: true, goalMet: false }` with Goal 0, Skill and Flourish kept, and no grade word.
-- **One-button.** Hold to swim: `botSteer` rides the waves, follows the warm lane and stops on each glow wall until you
-  are ready. Release to coast.
-- **Assist.** Current ×0.7, warm lane ×1.5 wide, settle speed < 40 u/s.
-- **Carry out.** `sperm = { hue, side, glow }`: `side` is the wall of the pocket, `glow` the share of ready time.
-- **Facts.** Card: none (Play starts the stage at once); `swim.half` is the first caption. Captions `swim.waves`,
-  `swim.side`, `swim.few`, `swim.flow`, `swim.warm`, `swim.walls`, `swim.rest`, `swim.ready`. Overlay `swim.race`, or
-  `swim.wait` after Go on.
-- **Look and sound.** Violet-plum and rose. Other sperm pale mauve. The warm lane is an amber shimmer with chevrons.
-  Waves are broad soft bands. Soft swish on turns, a low "whoom" when a wave carries you, a warm two-note chime on
-  "ready".
-- **Bot steering.** Ride the nearest wave window in the womb; in the tube, steer to the lane centre while heading
-  upstream; stop on each glow wall until ready; brake into the pocket. Noise and a 150 ms × (1 − skill) lag.
-- **v1 builds.** The tube with its current, warm lane and upstream bonus; the pocket; the cap card; plus the womb waves
-  and the glow walls with "ready". Deferred: the fork with the cool tube, and moving rivals.
-- **Floor.** Tube only, steer to the pocket, cap card.
+- **Expected times.** Hand estimates from the numbers above, with the first wave caught, no bumps and no catch-up.
+  The wave-0 race sim (`qa/first-breath/race-sim.mjs`) measures them with bumps and the gate squeeze, and
+  `stage-swim.test.mjs` gates the built stage (section 18).
 
-### 6.2 Stage 2, Ovulation (`egg`): "Tap with the heartbeat."
+  | Sperm | Skill (m) | Tube speed, unready / ready | Rest | Arrival |
+  |---|---|---|---|---|
+  | You, ref bot | 1.0 (1.00) | 74.6 / 107.6 u/s | wall 1 | about 49 s, 1st |
+  | You, mid bot | 0.7 (0.82) | 64.0 / 90.8 u/s | wall 2 | about 60 s; 3.2 s later when it misses the first wave (21% of seeds); mean about 61 s; 3rd, sometimes 2nd |
+  | You, idle | 0 | – | – | never moves and never passes the gate; 20th at the cap |
+  | Front-runners | 0.80, 0.76 (0.88, 0.86) | about 68 / 96 u/s | wall 1 | about 53 and 54 s; about 52 s just behind a ref player, about 55 s ahead of a mid player |
+  | Middle pack | 0.42 to 0.27 (0.65 to 0.56) | about 50 to 40 u/s | none | about 81 to 97 s if still swimming; most fall 500 u behind a mid or ref player and rest |
+  | Tail | 0.24 to 0.04 (0.54 to 0.42) | about 39 to 27 u/s | none | from about 101 s, or resting |
 
-- **Sees.** You are the egg in a glowing follicle, in a cloud of small cells (the corona). Fringed fimbriae sway near.
-  Then the tube: cilia beat in a travelling wave. Ahead on the wall, your sperm from stage 1 waits, glowing.
+  So the ref leads the nearest front-runner by about 3 to 4 s, and the mid bot leads the best of the middle pack by
+  about 18 s. The race sim must show the ref 1st and the mid bot in the top 3 in at least 18 of 20 seeds before these
+  numbers are frozen (task 1.13). If a gate misses, tune in this order and record the result in these tables: the tube
+  length (±300 u), the wave gap (2.8 to 3.6 s), the rival skill ladder.
+- **Score.** Goal 3,000 if you cross the meeting place in the top 3 before the cap. Skill: 2,500 × (20 − place) / 19
+  (1st 2,500, 3rd 2,237); 1,500 × min(1, seconds riding waves / 5); 1,000 × the share of your swimming tube time
+  inside the warm lane (time attached to a wall is left out); 1,000 if you became ready on a glow wall. Flourish:
+  1,000 for 1st place. Top speed is never scored on its own.
+- **Misses and the cap.** A bump only slows you for a moment. The cool loop only costs time. If you cross outside the
+  top 3, or the 117 s cap comes first, `result()` is `{ done: true, goalMet: false }` and every open sub-goal ends
+  `auto`. The run shows the soft card: "Almost. Try again?", your place ("You came 5th of 20." after a finish, "You
+  were 5th of 20." at the cap) and "Your run and points are kept." Buttons: **Try again** (focused; recreates this
+  stage at once with the same seed, so the rivals race the same way) and **Go on** ("The waves carry you on."). After
+  the cap, Go on calls `swim.jump(state, "carried")` for a 3 s carry; after a finish it goes straight on. Either way
+  `result()` is `{ done: true, goalMet: false }` with Goal 0, Skill and Flourish kept, and no grade word. At the cap
+  your place is your place by progress at that moment.
+- **One-button.** Hold to swim: `botSteer` at skill 1.0 rides the waves, takes the warm tube, follows the warm lane
+  and rests on the first glow wall until ready. It finishes in the top 3 (usually 1st). Release to coast.
+- **Assist.** Current ×0.7; warm lane ×1.5 wide; your bumps keep 0.85 of your speed (top speed ×0.9); rivals ahead
+  of you ease by up to 20%, and rivals behind you get no push.
+- **Carry out.** `sperm = { hue, place, glow }`: your gold tint, your place (at the finish, or by progress at the cap),
+  and 1 if you became ready, else 0.5.
+- **Facts.** Card: none (Play starts the stage at once); `swim.half` is the first caption. Captions `swim.waves`
+  (womb), `swim.few` (gate), `swim.side` (fork), `swim.warm` (warm tube), `swim.flow` (tube), `swim.walls` (first wall
+  contact), `swim.rest` (first glow wall), `swim.ready` and `swim.hyper` (on your ready; at most 3 of the 20 sperm are
+  ever ready, you and the two front-runners, so the scene agrees with `swim.ready`). When the first rival rests far
+  behind: "Some sperm rest on the walls." Overlay `swim.wait`, also after Go on. Run result: `swim.frame`. In
+  portrait, stage 1 captions are one line and show for 2.5 s, so the band at 50 to 58% covers your tail and the pack
+  just behind you only briefly.
+- **Look and sound.** Violet-plum and rose (colour script row 1). Rivals pale mauve `#c7a2b8`, with tails that wiggle
+  by their own speed. You gold `#ffd77a` with a soft halo, the brightest sperm. The course is drawn as `course`
+  strips and the waves as `band` marks (16.5). The warm tube and lane amber `#ffb36b` with chevrons; the cool tube
+  dim lilac `#3e2c52` with no chevrons. Glow walls soft rose; the meeting place a soft band `#f4d9e6`. Waves are broad
+  soft bands. A bump shows a small soft ring at the contact. Sounds, all through the womb bus (section 11): a soft
+  swish on turns; a low "whoom" when a wave lifts you; a soft low bump; a faint rising pluck when you gain a place; a
+  warm two-note chime on "ready"; a soft settling swell at the meeting place.
+- **Bot steering** (`botSteer(state, skill, r)`, also the rivals' policy). In the womb, ride the nearest wave window:
+  wave k is ridden when its shared threshold < 0.3 + 0.7 × skill. At the fork, take the warm tube. In the tube, steer
+  to the lane centre (aim error σ = 15 u × (1 − skill)) while heading upstream. Rest on the first glow wall if skill ≥
+  0.75, else the second if skill ≥ 0.4, else none: steer the head to the glow's centre, let go (stick 0) once within
+  10 u of it, so it attaches, and swim on after the 4th beat. Steer round a sperm within 12 u ahead (Reynolds
+  separation). Stick magnitude m = 0.4 + 0.6 × skill; heading noise σ = 30° × (1 − skill), new every 0.5 s; a
+  150 ms × (1 − skill) lag. The noise and the lag need memory: `botSteer` keeps it only in `r.mem`, a plain object
+  that each caller attaches to its own stream (`r.mem = {}`). So the bot, the one-button rule and each rival keep
+  their own, and the same inputs always give the same state.
+- **v1 builds.** The whole course (the womb with waves, the gate, the fork with the cool loop, the tube with its
+  current, warm lane, upstream bonus and glow walls with "ready"), 19 moving rivals with their skill spread, soft
+  bumps with their contact rings, mild catch-up and resting, the place in the HUD, the meeting place, the Almost card
+  and Go on. The fork and the moving rivals, deferred before, are in v1 for the user's race.
+- **Floor.** The course with the fork, moving rivals with bumps and contact rings, the place and the Almost card.
+
+### 6.2 Stage 2, The Egg (`egg`): "Guard your shell."
+
+The user asked for stage 2 as "a switch to the egg defending against the sperms invasion". The view switches: now
+you are the egg. The stage card leads with "Now you are the egg."; with no card (practice or `goto`), that line is the
+first caption.
+
+- **Sees.** You are the egg in a glowing follicle, inside a soft cloud of small cells (the corona). A gold surge washes
+  over you. The follicle bursts, and fringed fimbriae sweep you into the tube, where cilia beat. Then sperm come from
+  all sides toward your clear shell. A glowing arc follows your drag round the shell. Sperm that meet the arc bounce
+  away. Your own sperm from stage 1 comes in gold, with a dashed ring.
 - **Moments** (her 72 bpm, P = 0.833 s, no jitter; beat 1 is her first beat at or after 0.2 s, so between 0.2 and
-  1.03 s):
+  1.03 s). The opening (`surge`, `open`, `sweep`) ends by 8.9 s for every input.
   1. `surge` (beats 1 and 2, live gesture `none`): a gold wave, the LH surge of the card's fact `egg.surge`, washes
      over the follicle.
-  2. `open` (beats 3 to 8, 6 targets): the follicle swells with each beat. Tap on the beat. The 3rd tap graded Close or
-     better opens it; otherwise it opens by itself on beat 8. Once open, you float out to the fimbriae; the rest of
-     the open beats carry no targets.
-  3. `ride` (beats 9 to 32, 24 targets): the fimbriae catch you and cilia carry you. Each beat is a cilia crest. Every
-     third beat (11, 14, 17, 20, 23, 26, 29, 32) is gold: "Tap the gold beats to call." An on-beat gold tap puffs a
-     signal that widens the gold trail toward your sperm.
-  4. `meet` (4 s, no input): your sperm leaves the wall and follows the trail to you. A wider trail draws a straighter
-     path. Caption "The half of you that swam is here."
-  5. `fusion` (6 s, no input): the corona parts (0 to 1.5 s); two small lights fit, Izumo1 and Juno (1.5 to 2.5 s); a
-     shimmer runs round the shell (2.5 to 4.0 s) and a few other sperm drift away; the two nuclei draw close and touch
-     but stay apart (4.0 to 6.0 s). The clock turns to "Day 0 after fertilization (week 2)".
-  6. `outro` (2 s).
-- **Tuning.** Ride step: In time +1, Close +0.6, a missed beat +0.2 (the cilia carry you anyway). Arrival is
-  scheduled; steps only move you up to 30 u ahead of the scheduled place, as a visible surf. Trail width
-  = 8 + 18 × (Σ call credit) / 8 u. Length 39 to 40 s (her beat phase), the same for every input. Cap 60 s.
-- **Score.** Goal 3,000 (always). Skill: 1,000 × open accuracy (targets presented until it opens, at least 3); 3,000 ×
-  ride accuracy (16 plain targets); 2,000 × call accuracy (8 gold targets). Flourish: 1,000 × best In-time streak / 24.
-- **Miss.** A smaller swell; a smaller surf; a thinner trail. Never a stall.
-- **One-button.** Already one button.
-- **Carry in.** `sperm` sets your sperm's tint, wall side and glow.
-- **Facts.** Card `egg.surge`. Captions `egg.size`, `egg.fimbriae`, `egg.cilia`, `egg.signal`, `egg.day`, `egg.fuse`,
-  `egg.block`, `egg.pronuclei`, `egg.place`. Overlay `egg.weeks`.
-- **Look and sound.** Peach and gold on deep rose. The corona is a sunburst of small splats. Cilia are one shader
-  strip. A soft low pluck per tap, pentatonic plucks that climb with the streak, a warm swell at release, a held
-  fifth at fusion.
-- **Bot steering.** None needed (taps only); `botSteer` returns no steer.
-- **v1 builds.** The surge, `open` and `ride` with the surf, then fusion with captions; plus the gold call beats and
-  the trail.
-- **Floor.** The surge, `open` and `ride` without gold beats, then fusion.
+  2. `open` (beats 3 to 8, up to 6 targets, live gesture `tap`): "Tap with the heartbeat." The follicle swells with
+     each beat. The 3rd tap graded Close or better bursts it; otherwise it bursts by itself on beat 8 ("It opens
+     anyway."). Once it bursts, the rest of the open beats carry no targets.
+  3. `sweep` (2.0 s, live gesture `none`): the fimbriae catch you and sweep you into the tube; the cilia beat.
+  4. `guard` (about 34 to 40 s, live gesture `drag` with keys `turn`, 5.3): "Drag to guard your shell." Caption
+     "Guard your shell. Only one may enter." Waves of sperm swim in from all sides. Each swimming one that the arc is
+     over bounces away and drifts off. One that reaches an open part of the shell sticks and starts to burrow, with a
+     small dotted progress ring; the arc over a stuck sperm pops it loose, and it drifts off. A rival that finishes
+     burrowing never gets in: it moves out to the cloud and is held there, still, and rests. Your gold sperm comes in
+     at a seeded angle, earlier if you placed higher: "Let it in." The arc over it only nudges it back, and it always
+     returns. It burrows and enters.
+  5. `enter` (1.2 s, live gesture `none`): your sperm passes the shell, and two small lights fit where it meets your
+     membrane: Izumo1 meets Juno (`egg.fuse`).
+  6. `seal` (up to her 6th counted beat, live gesture `hold`): "Seal your shell. Hold, then let go." Only a press made
+     after this prompt counts: a thumb or a button still down from the guard must lift and press again (5.3). A ring
+     grows while you hold; the glow comes on the target beat. The release sends a shimmering wave round the shell
+     from where your sperm entered, both ways, until it meets on the far side. The shell hardens, and every other
+     sperm, held or swimming, drifts off. With no release by her 6th counted beat, or a hold still down then, it seals
+     by itself ("Your shell seals itself.").
+  7. `fusion` (5 s, live gesture `none`): the egg takes your sperm's contents inside (0 to 1.5 s); it finishes its
+     last division, and a tiny bead buds at its rim (1.5 to 2.5 s); the two nuclei draw close and touch but stay apart
+     (2.5 to 5.0 s). When they touch, at the end of fusion, the clock turns to "Day 0 after fertilization (week 2)".
+  8. `outro` (2 s).
+- **Tuning** (`egg.tune.js`).
+
+  | Name | Value |
+  |---|---|
+  | Opening | surge on beats 1 and 2; open targets on beats 3 to 8; it bursts on the 3rd tap graded Close or better, else on beat 8; sweep 2.0 s. It ends between about 6.0 s (three good taps) and 8.9 s (none). |
+  | Camera | span 140 u across the short axis; the egg at the layout's subject point (5.6, 9) |
+  | Sizes | egg cell radius 9 u (18 u across); shell (the zona) radius 11 u; the corona cloud from 11 to 20 u (220 points); every sperm 10 u long, head radius 1.5 u |
+  | Angles | radians in world space, counterclockwise from world +x; `turn` +1 (clockwise as seen) decreases the angle (5.3). The `arc` strip's `a0` and `a1` use the same units. |
+  | Arc | radius 16 u, drawn 3 u wide; half-width 35° (70° in all). It starts at a seeded angle. It turns toward its target at up to 720°/s: the stick angle on touch (a stick under 0.25 deflection leaves it still), or the mouse `aim` on desktop (set only after the mouse moves more than 4 px, 5.3). The `turn` keys turn it at 540°/s. It takes `turn`, then `aim`, then `steer` (16.3). Lifting the finger leaves it where it is. |
+  | The arc over a sperm | the arc is over a sperm when the angle between the arc's centre and the sperm's head is at most the half-width and the head is within 22 u of the egg's centre. It is checked every step, both when a sperm swims under the arc and when the arc sweeps onto a sperm. What happens depends on the sperm's state: a swimming rival bounces; a stuck rival pops loose; your gold sperm is nudged; held and drifting sperm ignore the arc. |
+  | Waves | 8 waves, at 2, 8, 14, 20, 26, 32, 38 and 44 s into `guard`, only while your sperm has not yet entered; counts 3, 4, 5, 6, 6, 7, 8, 8; inward speeds 9, 10, 11, 12, 13, 14, 15, 15 u/s. Wave 1 comes from one 90° sector; wave 2 from two opposite 60° sectors; waves 3 to 8 from all round, at least 25° apart within a wave, with ±10° jitter. Arrivals in a wave are 0.3 s apart. They fade in on a ring at 75 u over 0.5 s and swim straight in with a slight wiggle. |
+  | Bounce | a swimming rival the arc is over turns outward at 14 u/s, with up to ±20° of spread, and drifts off; it is removed past 80 u |
+  | Stick | a swimming rival that reaches the shell (head at 11.5 u) while the arc is not over it sticks there, head in, and burrows for 4.0 s with a dotted progress ring. The arc over it pops it loose: it drifts off at 10 u/s. |
+  | Held | a rival that finishes burrowing moves out to the cloud at 18 u over 0.6 s and is held there, still, drawn as a dim point. It never enters. At the seal it drifts off with the rest. |
+  | Your gold sperm | comes in at 27 + 0.3 × (place − 1) s into `guard` (27.0 s after 1st, 27.6 s after 3rd, 32.7 s after 20th), with a `goldIn` event. **Its angle:** of 72 candidates, one every 5°, in a seeded order (`stream(seed, "gold")`), it drops those within 45° of world −y (under the thumb in portrait), those within 40° of world +y (under the portrait caption band), and those closer than (half-width + 30°) to the arc's centre at that moment (65°, or 80° with Assist). Of the rest it takes the one farthest from every stuck sperm (held sperm ignored), the first in seeded order on a tie. Two side sectors of 95° are left, and the arc rule can empty at most one of them, so a candidate always remains. It swims in at 14 u/s (4.5 s from 75 u to the shell) and burrows for 3.0 s, with a dashed ring. **Nudge:** the arc over it pushes it 6 u outward over 0.3 s; its burrow pauses (it is not reset); it returns at 8 u/s and ignores the arc until it is back, so each nudge costs about 1.05 s. After 3 nudges it slips under the arc. It enters by itself at 52 s into `guard` at the latest. Exactly one sperm enters: yours. |
+  | Guard length | your sperm enters about 7.5 s after it comes in: at about 34.5 s after 1st place, 35.1 s after 3rd and 40.2 s after 20th, plus up to about 3.2 s of nudges |
+  | Seal | the prompt shows at the end of `enter`. Her beats are counted from the first one at least 0.6 s after the prompt; the release target is the 3rd counted beat; kind `release`, P = 0.833 s. Only a press made after the prompt counts, and a release with no such press is ignored. The press may come any time before the target. With no release by the 6th counted beat, or a hold still down then, the shell seals by itself with no credit. The wave runs round the shell in 1.2 s. Then the others drift off at 12 u/s. |
+  | Lengths | ref about 53 s (place 1), mid about 54 s (place 3), idle about 64 s (place 20, as after an idle stage 1; about 59 s at the default place 3); cap 80 s |
+
+- **Score.** Goal 3,000 (always; nothing fails after the race). Skill: 1,500 × open accuracy (targets presented until
+  it bursts, at least 3); 3,500 × the guard credit; 1,000 × (1 − nudges / 3) for letting your sperm in cleanly, paid
+  only when the guard credit is above 0, so an idle guard earns none of it. The guard credit is the mean over every
+  rival that came within 22 u of the centre before your sperm entered and was then settled: bounced before it stuck
+  1, popped loose 0.5, held 0. Rivals still swimming in or burrowing when your sperm enters are left out of the mean;
+  with none counted, the credit is 0. Flourish: the seal release, 1,000 In time, 500 Close, else 0.
+- **Misses.** A smaller swell. A sperm that sticks and burrows. A held rival rests, still, in the cloud. Nothing stalls:
+  the follicle bursts, your sperm always enters, and the shell always seals.
+- **One-button.** Hold to let the arc track by itself (`botSteer` at skill 1.0); release to hold it still. The follicle
+  taps and the seal are already one button; a button still held from the guard must be released and pressed again
+  for the seal (5.3). In one-button mode `aim` and `turn` are cleared (16.4).
+- **Assist.** Arc half-width 50° (100° in all); `turn` keys 720°/s; rivals burrow for 5.0 s; windows ×1.6 for the
+  taps and the seal.
+- **Carry in.** `sperm`: `hue` tints your gold sperm, `glow` sets its brightness, and `place` sets when it comes.
+- **Facts.** Card `egg.surge` after "Now you are the egg.". Captions: `egg.fimbriae` and `egg.cilia` (sweep); in the
+  guard, one general fact per wave before your sperm comes: `egg.zona` (wave 1), `egg.corona` (wave 2), `egg.choice`
+  (wave 3), `egg.signal` (wave 4) and `egg.size` (wave 5); `egg.day` when your sperm comes in; `egg.stick` when your
+  sperm sticks to the shell (the `stick` event with `gold: true`), since only it works its way through; `egg.fuse`
+  (enter); `egg.wave` and `egg.seal` (seal); `egg.block` (fusion start); `egg.pronuclei` (when the nuclei touch, as
+  the clock turns); `egg.place` (outro). Overlay `egg.weeks`. Run result: `egg.frame`. Up to `egg.block` the labels
+  read "Week 2", like the HUD; from `egg.pronuclei` on they read "Day 0 after fertilization (week 2)" (15.2).
+- **Game framing.** The guard is a game. Before fertilization the egg does not push sperm away, and many sperm can
+  reach its cloud. The real block comes after one sperm fuses: cortical granules release their contents, and the
+  shell changes so that other sperm cannot stick to it or get through (TTUHSC; `research/research-biology.md` 3.8).
+  The seal shows that block. `egg.choice` shows in the guard as a general fact about the fluid around eggs
+  (Fitzpatrick et al. 2020 compared different women's fluid on different men's sperm); no string says or implies that
+  the egg picks your sperm over the others. `egg.frame` on the run result says the guard is the game's.
+- **Look and sound.** Peach and gold on deep rose (colour script row 2). The corona is a soft cloud of small points.
+  Cilia are one shader strip. Rivals pale mauve `#c7a2b8`, as in stage 1. The arc is cream `#fff4ea`, the brightest
+  thing in the guard. Your sperm is gold `#ffd77a` with a dashed ring. The seal wave is pale gold `#ffe9a8`. A bounce
+  shows a small soft ring where it meets the arc. Sounds, through the womb bus: a soft low pluck per follicle tap and
+  a warm swell at the burst; a soft low "boop" per bounce; a faint low tick when a sperm sticks; a small up-glide when
+  one pops loose; a warm two-note swell when your sperm enters; at the seal, a soft shimmer swell that follows the
+  wave round the shell; a held fifth at fusion.
+- **Bot steering** (the arc). The target is the nearest rival that is not gold: the swimming rival that will reach
+  22 u soonest; if none will in the next 1.5 s, the stuck rival with the most burrow progress. While your gold sperm
+  comes in or burrows, the gold zone is every arc angle within (half-width + 10°) of it. The bot skips any target in
+  the zone and turns toward its target the way that does not pass through the zone; if the arc is inside the zone, it
+  first turns away from the gold. If both ways would cross the zone, it holds still or takes the next target on the
+  gold's free side. So the ref bot never nudges your sperm. Angle error σ = 25° × (1 − skill), lag 150 ms × (1 −
+  skill), memory in `r.mem` (6.1). `botSteer` returns a unit `steer` at the chosen angle. The taps and the seal come
+  from the shared bot timing (16.11); the bot presses for the seal only after its prompt.
+- **v1 builds.** The surge, the follicle taps and the sweep; the guard with its 8 waves, bounces, sticking, popping
+  loose and held rivals; your gold sperm with nudges; `enter`; the seal with its wave; fusion with captions.
+- **Floor.** The surge and the taps (the follicle bursts by itself on beat 8); the guard with the arc, sticking, held
+  rivals and your gold sperm; the seal by itself at its cap; fusion.
 
 ### 6.3 Stage 3, The Embryo: first cells (`split`): "Split."
 
@@ -664,7 +840,8 @@ No points, no grade and no score line appear from the end of stage 8 until the r
 
 ## 7. Scoring
 
-- Per stage: **Goal** (3,000: the stage's goal; always met after fertilization), **Skill** (up to 6,000) and
+- Per stage: **Goal** (3,000: the stage's goal; in stage 1, the top 3 at the meeting place; always met from stage 2
+  on), **Skill** (up to 6,000) and
   **Flourish** (up to 1,000). Total up to 10,000. Only `core/score.js` clamps and grades; only `core/run.js` adds up.
 - **Grades:** Good (goal met), Great (≥ 6,500), Glowing (≥ 8,500). A stage 1 "Go on" shows points with no grade word.
 - **Run total** = the sum of the 8 stages + 500 per Glowing (max 84,000). **Run time** = core time from Play to the
@@ -681,13 +858,13 @@ No points, no grade and no score line appear from the end of stage 8 until the r
 | Screen | Contents |
 |---|---|
 | Title | FIRST BREATH, the tagline, the content note "A gentle story of growing before birth. Cells, the womb and birth are shown simply.", **Play** (`#play`, ≥ 56 px), Stages (practice), Settings, Sources, the best line, "‹ Arcade" (to `/`), "Switch game" (`data-switch`), mute. Behind: her ring pulses on plum. |
-| HUD | Top left: the stage name (16 px caps) and the clock label (16 px). Top right: the pause button (48 × 48 px) and the score to its left. The scale bar: top left under the clock in portrait, bottom left in landscape and desktop. The prompt line under the HUD, top centre, names the live gesture with an icon (dot, ring, arrow). Captions in a band at 50 to 58% of the height in portrait, bottom centre in landscape and desktop. In portrait no HUD, caption or overlay text sits in the bottom 40% during play. All inside `env(safe-area-inset-*)`. |
-| Stage card | Number and name, the one-word verb with its gesture icon, the clock label, the size (NHS object where NHS gives one), one fact, and on the trimester stages the border line. Shown over the crossfade. Skippable from 1.0 s (tap, Space or Enter). Gone by itself at 3.5 s. |
+| HUD | Top left: the stage name (16 px caps) and the clock label (16 px). Top right: the pause button (48 × 48 px) and the score to its left. In stage 1, the place slot sits under the score, right-aligned, left of the pause button: "3rd of 20" (16 px; 20 px with Large text), inside the HUD block and above the prompt line, so it is never in the thumb zone. The scale bar: top left under the clock in portrait, bottom left in landscape and desktop. The prompt line under the HUD, top centre, names the live gesture with an icon (dot, ring, arrow). Captions in a band at 50 to 58% of the height in portrait (18 to 26% in stage 2, above the egg; one line for 2.5 s in stage 1), bottom centre in landscape and desktop (one line in stage 2 landscape). In portrait no HUD, caption or overlay text sits in the bottom 40% during play. All inside `env(safe-area-inset-*)`. |
+| Stage card | Number and name, the one-word verb with its gesture icon, the clock label, the size (NHS object where NHS gives one), one fact, and on the trimester stages the border line. The stage 2 card leads with "Now you are the egg.". Shown over the crossfade. Skippable from 1.0 s (tap, Space or Enter). Gone by itself at 3.5 s. |
 | Stage-end overlay | The grade word, the stage total, one fact. Continues by itself at 2.5 s. A tap lingers; a second tap or Next continues. Not after Birth. |
-| Almost card (stage 1 only) | "Almost. Try again?", "Your run and points are kept.", Try again (focused), Go on. |
+| Almost card (stage 1 only) | "Almost. Try again?", your place ("You came 5th of 20." after a finish, "You were 5th of 20." at the cap), "Your run and points are kept.", Try again (focused), Go on. It shows when you reach the meeting place outside the top 3, or at the 117 s cap. |
 | Pause | Resume, Try this stage again, Settings, Sound, Switch game, ‹ Arcade. Opens on Esc, P, the pause button, `visibilitychange` (hidden) and `pagehide`. |
 | Settings | Word for the one who carries you (mother, mum, mom, parent), Assist, One-button mode, Motion (Auto, Full, Reduced), Captions (on), Large text, Tap test, Timing offset (−150 to +150 ms), Sound, and the line "Weeks count from the first day of the last period. Midwives and doctors count this way." |
-| Run result | "Hello.", the run total and time, 8 grade chips (Good, Great, Glowing), the breakdown per stage, best, marks, sparks, Play again, Stages, ‹ Arcade, and the line "In this game, every baby is born well. The ending is the same for every score." Below a divider, "What was real": every fact shown this run with its clock label and link, ending with the Apgar fact. |
+| Run result | "Hello.", the run total and time, 8 grade chips (Good, Great, Glowing), the breakdown per stage, best, marks, sparks, Play again, Stages, ‹ Arcade, and the line "In this game, every baby is born well. The ending is the same for every score." Below a divider, "What was real": every fact shown this run with its clock label and link, with the two game-framing lines `swim.frame` and `egg.frame` after the stage 2 facts, ending with the Apgar fact. |
 | Stages | Each reached stage, with its best and grade, as a button. Plays that stage alone with the carry it last started with in a run (or defaults). Its score goes only to that stage's best. |
 | Sources | Every fact in the game with its clock label and its source links. |
 
@@ -696,11 +873,34 @@ No points, no grade and no score line appear from the end of stage 8 until the r
 | Layout | Input | Long axis (forward in `long`) | Subject | Captions | Notes |
 |---|---|---|---|---|---|
 | Phone portrait 390 × 844 | touch, one thumb | up | 45% of the height from the top in `long`, 42% in `fit`; always above 60% | band at 50 to 58% | the bottom 40% is the thumb zone; nothing to read there during play; the scale bar sits top left under the clock |
-| Phone landscape 844 × 390 | touch, either thumb | right | 38% of the width from the left | bottom centre, above the safe area | HUD at the top corners; scale bar bottom left |
-| Desktop 1440 × 900 | keys (mouse optional) | right | 40% of the width | bottom centre | the canvas is capped at 0.6 MP before scaling |
+| Phone landscape 844 × 390 | touch, either thumb | right | 38% of the width from the left, 55% of the height from the top in `long` | bottom centre, above the safe area | HUD at the top corners; scale bar bottom left |
+| Desktop 1440 × 900 | keys (mouse optional) | right | 40% of the width, half the height | bottom centre | the canvas is capped at 0.6 MP before scaling |
 
 - Tap targets are ≥ 44 px on the shorter side. Play is 56 px tall, pause 48 px. No horizontal scroll on any screen.
 - Safe areas: CSS `env(safe-area-inset-*)`, combined with the test flag `?inset=t,r,b,l` (section 16.10).
+- **Stage 1, the place slot**: under the score at the top right, left of the pause button, in every layout. In
+  portrait with `?inset=47,0,34,0` it sits at about 100 to 124 px (12 to 15% of the height).
+- **Stage 1, the fork in view**: at the stage's 150 u span from the gate on, both branch mouths are on screen, under
+  no HUD or prompt, at least 1.5 s before your head reaches the split in all three layouts (6.1). In portrait the
+  stage 1 captions are one line and show for 2.5 s.
+- **Stage 2, the egg and its arc** sit in the free part of the screen: the camera span is 140 u, and the egg's centre
+  is the layout's subject point. Everything that matters stays within 28 u of the centre: the shell (11 u), the arc
+  and its reach (22 u), every stuck sperm (head at 11.5 u, tail to 21.5 u) and held sperm (head at 18 u, tail to
+  28 u), and your gold sperm from 28 u in. With `?inset=47,0,34,0`, the HUD and the prompt line end by about 125 px
+  from the top in every layout.
+  - Portrait 390 × 844 (2.79 px/u): the centre at 45% of the height (380 px); the 28 u zone spans 302 to 458 px (36 to
+    54%), all above the thumb zone. Captions move up to a band at 18 to 26% (152 to 219 px), so they never cover the
+    egg. Sperm from below cross 60% of the height at 45 u from the centre, 1.5 to 2.6 s before they reach the arc's
+    reach. The band hides sperm 58 to 82 u above the centre, so the gold never comes from within 40° of straight up
+    or 45° of straight down (6.2), and its path is never under a caption or below 60%.
+  - Landscape 844 × 390 (2.79 px/u): the centre at 38% of the width (321 px) and 55% of the height (215 px); the 28 u
+    zone spans 137 to 293 px from the top and 243 to 399 px from the left, below the prompt line (which ends by about
+    125 px) and above the one-line captions (from about 311 px down, also with Large text).
+  - Desktop 1440 × 900 (6.43 px/u): the centre at 40% of the width (576 px) and half the height (450 px); the 28 u
+    zone spans 270 to 630 px from the top.
+  - Sperm fade in on a ring at 75 u (209 px in portrait and landscape, 482 px on desktop). Where that ring leaves the
+    screen they come in from off screen: left and right in portrait, the bottom in landscape (the top sits at the
+    screen's edge, under the HUD), the top and bottom on desktop. Everywhere else they fade in on screen.
 
 ## 10. Saves and the cabinet
 
@@ -719,14 +919,14 @@ No points, no grade and no score line appear from the end of stage 8 until the r
 - A broken or old save gives defaults and never throws.
 - **Cabinet line** (in `public/index.html`, next to the Ahead of the Light block, in try/catch): if `best.done === true`
   and `best.score` is a finite number > 0: `"BEST " + score.toLocaleString("en-US")` (for example "BEST 61,240"). Else
-  the plain line SWIM · SPLIT · GROW · BREATHE. `core/save.js` exports the same rule as `cabinetLine(save)` for the
+  the plain line RACE · GUARD · GROW · BREATHE. `core/save.js` exports the same rule as `cabinetLine(save)` for the
   node test. (The FURTHEST line is deferred.)
 - **Cabinet**: copy the `ahead-of-the-light` article in `#row` whole: the marquee, the bezel with its screen and
   `.osd`, the `.panel` with START, the `.door` with its two `.slot` buttons, and the `.kick`. Then replace the names:
   `<article class="cab first-breath" data-game="first-breath" data-url="/first-breath/" aria-label="First Breath: a
   baby's journey to birth">`; marquee `<b>FIRST BREATH</b><small>A BABY'S JOURNEY TO BIRTH</small>`; screen `<img
   src="arcade/key/first-breath.svg" alt="A glowing egg in its ring of cells on deep plum, a small gold cell beside it,
-  and soft white light above" loading="lazy" decoding="async">`; `.hi` SWIM · SPLIT · GROW · BREATHE; both slots
+  and soft white light above" loading="lazy" decoding="async">`; `.hi` RACE · GUARD · GROW · BREATHE (it wraps like its neighbours with `text-wrap: balance`); both slots
   `aria-label="Drop a token into First Breath"`. CSS `.cab.first-breath { --c1: #3a0f24; --c2: #ffb36b; --glow:
   rgba(255, 170, 120, 0.5); }`. The article goes after the `ahead-of-the-light` article in `#row`, and
   `"first-breath"` is appended to the Action group's `games`.
@@ -763,6 +963,21 @@ No points, no grade and no score line appear from the end of stage 8 until the r
   100 ms on `currentTime`. Her beat times come from `run.beats()` (the stage's `state.beats` inside a stage, the run's
   own clock between stages, section 5.1), so sound and picture agree, also when muted, and there is no jump at a
   stage start. Each sound is scheduled `latencyS` early.
+- **Race and guard cues** (stages 1 and 2, one-shots through the womb bus, so they stay low and soft). Each plays
+  from its event (16.6). Bumps, bounces and sticks share a limit of 6 a second.
+
+  | Cue | Event | Sound |
+  |---|---|---|
+  | Bump | `bump` | a soft low thump: a 90 Hz sine with a 180 Hz click, 80 ms, when you are in it; a bump between two rivals within 40 u of you (from its `x, y`) plays 10 dB softer; others are silent |
+  | Place | `place`, when you gain one | a faint rising pluck, 110 → 147 Hz |
+  | Ready | milestone `ready` | a warm two-note chime, 98 and 147 Hz with soft harmonics |
+  | Bounce | `bounce` | a soft low "boop": a sine gliding 110 → 140 Hz, 70 ms, one pentatonic step higher per wave (its `wave`) |
+  | Stick | `stick` | a faint low tick: low-passed noise, 30 ms, 12 dB under the bounce |
+  | Loose | `loose` | a small up-glide, 120 → 160 Hz, 90 ms |
+  | Your sperm comes in | `goldIn` | a soft warm pluck at 147 Hz, panned toward its `angle`, with the caption "♪ your sperm comes in" |
+  | Enter | `enter` | a warm two-note swell, 98 and 147 Hz, 1.0 s |
+  | Seal | `seal` | a soft shimmer swell, three detuned sines at 110, 165 and 220 Hz whose slow tremolo follows the wave round the shell, 1.2 s, then a low bloom |
+
 - **Birth sounds**: a first inhale (noise bandpassed 1 to 3 kHz, rising), a soft short cry (two sines at 450 and
   900 Hz with a gentle fall, 1.2 s), then the clear room.
 - **Budget**: about 10 persistent voices plus the one-shot pool. No node churn per beat. Mute and pause ramp the master
@@ -773,17 +988,23 @@ No points, no grade and no score line appear from the end of stage 8 until the r
 
 - **Captions** on by default, in an `aria-live="polite"` region: every sound cue has a caption with a symbol and, where
   it helps, a direction: "♥ {carer}'s heartbeat", "♥ your heartbeat", "~ wave", "♪ voice, left: 3 notes", "a loud
-  sound outside", "first breath", "a soft cry".
+  sound outside", "first breath", "a soft cry". The frequent contact sounds (bump, bounce, stick, loose) are named
+  once per stage ("~ the pack swims around you", "· sperm bounce off the arc"); each contact also shows a small soft
+  ring. Your sperm entering and the seal have their own captions ("♪ your sperm comes in", "♪ a shimmer runs round
+  your shell").
 - **Visual-only play**: every beat is a ring, every hummed note is a ripple, every answer note has a ghost ripple, and
   every target has a DOM ring in `svg#rings` before its time. Stages 2, 3, 5 and 6 play fully with sound off.
 - **Reduced motion** (follows `prefers-reduced-motion`; Settings can override): warp ×0.5, no scale bounce, no camera
   shake, beats change brightness only, contractions do not move the walls (the vignette only), the birth light is a
-  plain 1.5 s fade. The stage crossfade is the same in both modes. Rhythm stays.
+  plain 1.5 s fade. Bumps never shake the camera, and the seal wave is a brightness sweep round the shell with no
+  ripple warp. The stage crossfade is the same in both modes. Rhythm stays.
 - **Flash safety** (WCAG 2.3.1): one swell per beat, never one each for "lub" and "dub"; a full-screen tint follows only
   her heart (≤ 100 bpm) and changes frame luminance by ≤ 6%; your faster heart moves only its ring and a small splat
   (< 2% of the screen); at most 3 luminance swings of ≥ 10% in any 1 s; no red flashes; the birth light rises steadily.
 - **Colour**: no goal depends on hue. Cues differ by shape and brightness: rings, dotted rims (gland pools) and wavy
-  rims (blood pools), dashes and dots for the two hearts, chevrons for the warm lane, words for grades. Every cue has a
+  rims (blood pools), dashes and dots for the two hearts, chevrons for the warm lane, words for grades. In stage 1
+  you are the brightest sperm, with a halo, and the warm tube has chevrons while the cool tube has none. In stage 2
+  the arc is the brightest band, your sperm has a dashed ring, and stuck sperm show a dotted ring. Every cue has a
   2 px dark halo. Contrast ≥ 3:1 for each cue against its stage background and against its halo, also under protan,
   deutan and tritan simulation (section 17).
 - **One-button mode** in every stage, and **Assist** (section 5 and each stage).
@@ -811,8 +1032,8 @@ everywhere except the ending.
 
 | Stage | bg | tissue | body | rim | cue (main) | cue (second) | light tint |
 |---|---|---|---|---|---|---|---|
-| 1 The Journey | `#1e0a1c` | `#4a1f3d` | `#c7a2b8` (other sperm) | `#f4d9e6` | `#ffd77a` (you) | `#ffb36b` (warm lane, chevrons) | `#ff9a8a` |
-| 2 Ovulation | `#2a0e1a` | `#6e2436` | `#ffc9a8` (corona) | `#fff4ea` | `#ffd77a` (beat ring) | `#ffe9a8` (gold beats, trail) | `#ffb08a` |
+| 1 The Race | `#1e0a1c` | `#4a1f3d`; `#3e2c52` (cool tube) | `#c7a2b8` (rival sperm) | `#f4d9e6` (also the meeting place band) | `#ffd77a` (you, with a halo) | `#ffb36b` (warm tube and lane, chevrons) | `#ff9a8a` |
+| 2 The Egg | `#2a0e1a` | `#6e2436` | `#ffc9a8` (corona); `#c7a2b8` (other sperm) | `#fff4ea` | `#fff4ea` (guard arc); `#ffd77a` (beat ring) | `#ffd77a` (your sperm, dashed ring); `#ffe9a8` (seal wave) | `#ffb08a` |
 | 3 The Embryo | `#3a0f24` | `#5a1426` | `#ff8a6b` (cells) | `#fff4ea` | `#ffd77a` (approach ring) | `#fff4ea` (hold ring) | `#ff9a7a` |
 | 4 The Placenta | `#4a0f1e` | `#7a1e2e` | `#ffb3a0` (tree) | `#fff4ea` | `#f3eadf` (gland pools, dotted rim) | `#fff4ea` (your heart, dashed) | `#ff8a6a` |
 | 5 First Trimester | `#521626` | `#74223a` | `#ffb8a8` (you) | `#fff4ea` | `#ffd77a` (cord lights) | `#ffe0c8` (move glow); `#ffb3c0` (blood pool rim, wavy) | `#ff8a7a` |
@@ -863,7 +1084,17 @@ One WebGL2 canvas (`alpha: false`, `antialias: false`), two passes, then overlay
 | Glow | Field mip sampling, which a mobile OpenGL ES benchmark found faster than Kawase (ETASR); Intel's blur survey |
 | Vignette | The common radial falloff, `1 − 1.3 · dot(v, v)` in the composite, as in `research/research-art.md` A3. No outside source fit beyond that. |
 | Current | Bridson, Hourihan and Nordenstam, "Curl-Noise for Procedural Fluid Flow" (SIGGRAPH 2007), with the wall ramp; Reynolds, "Steering Behaviors for Autonomous Characters" (GDC 1999) for the bot's steering; Shiffman, *The Nature of Code* |
-| Tails (your tail and the other sperm) | **None fit; our own design**: a travelling sine on each strip, amplitude rising toward the tip, phase from the swim speed. |
+| Tails (you, the rivals and the sperm at the egg) | **None fit; our own design**: a travelling sine on each strip, amplitude rising toward the tip, phase from each sperm's own swim speed. |
+| Rival steering in the race | Reynolds, "Steering Behaviors for Autonomous Characters" (GDC 1999): seek the lane, separation, flow following. The rivals share the player bot's steering at their own skill. |
+| Catch-up in the race | Adapted against Iain Gilfeather's warning in "Advanced racing game AI in Pure", GDC Europe 2009 (reported by MCV): he argued against rubber-banding, because players should feel the AI follows the same rules, and proposed race scripting instead. Ours keeps every rule the same for every sperm; the catch-up only scales how hard a rival swims, is capped at 10% (ahead of you) and 6% (behind you), and is never shown. |
+| Soft bumps | **None needed**: the plain overlap test of two circles, with an equal push apart along the line between their centres; Reynolds' separation keeps the pack from piling up. |
+| The fork, the warm tube and the cool loop | **None fit; our own design**, built from the tube flow (the curl-noise row) and the chevrons. |
+| Course strips and wave bands | **None fit; our own design**: each `course` strip is a soft-edged band of varying width along a centre line of at most 32 points, drawn like the tail strips; a wave is a `band` mark, a soft bar with a feathered edge, drawn additively. |
+| The guard arc (the mechanic) | Atari, *Warlords* (1980): a shield that slides round a base and turns incoming balls away. Ours turns sperm away gently and harms nothing. |
+| The guard arc (the drawing) | Inigo Quilez, "2D distance functions", `sdArc` (exact): the arc's soft width and round caps, drawn as one strip in the overlay pass. |
+| Burrow rings | The DOM beat rings (the osu! row below), dotted for rivals and dashed for your sperm, with their progress as the ring's sweep. |
+| The seal wave | **None fit; our own design**: two arc strips that spread both ways round the shell from the entry point and meet on the far side, after the wave that spreads through the egg from where the sperm entered (TTUHSC, `egg.wave`). |
+| Contact rings (bumps and bounces) | **None fit; our own design**: small, short-lived rings from the ripple strip. |
 | Cilia | A vertex-shader metachronal wave, after the metachronal-wave review (PMC11044847) |
 | Villous tree | Runions et al., venation (SIGGRAPH 2005) and space colonization (2007); pipe-model widths |
 | Vessel and cord pulse by arc length | **None fit; our own design**: one swell per beat, `exp(−((φ − s/c − 0.08)/0.06)²)` |
@@ -883,6 +1114,14 @@ One WebGL2 canvas (`alpha: false`, `antialias: false`), two passes, then overlay
 
 - Per frame: ≤ 32 splats (the baby figure included), ≤ 600 points in a stage's draw list plus ≤ 900 decorative motes
   from render (≤ 1,500 points in all), ≤ 6 strips, ≤ 24 marks, ≤ 8 DOM rings, ≤ 12 WebGL draw calls.
+  - Stage 1: 20 heads as splats and 20 tails in one `tails` strip (≤ 25 items), plus the `chevrons` and contact
+    `ripples` strips and at most 3 `course` strips (the path, the warm tube, the cool loop): 6 strips. Marks: the 3
+    glow walls, at most 2 wave bands, the meeting place, and the warm and cool mouths.
+  - Stage 2: at most 24 sperm swimming or stuck at once (the wave sizes keep it there), plus your gold sperm: 25 tails
+    and 25 head splats, with the egg in at most 4 splats. Held rivals are dim points in the corona's 220 points.
+    Strips: `cilia` (opening), `tails`, two `arc` strips (the guard arc, the seal wave) and `ripples`. DOM rings: her
+    ring, plus up to 7 burrow rings (the stuck sperm with the most progress), or up to 6 while a target ring shows
+    (the follicle taps and the seal): at most 8.
 - Base size: phones 1.0 × CSS px (DPR ignored); desktop capped at 0.6 MP. The **scale step** multiplies the base
   width and the base height (per axis, so 0.5 draws a quarter of the pixels): steps [1, 0.8, 0.66, 0.5, 0.4, 0.35].
   `?res=` pins the step.
@@ -929,7 +1168,9 @@ One WebGL2 canvas (`alpha: false`, `antialias: false`), two passes, then overlay
 
 ### 15.2 Fact table
 
-The gaDay column gives `gaDay`, or `gaDay` to `gaEnd` for a span. "(f)" marks `fertilized: true` at gaDay 14.
+The gaDay column gives `gaDay`, or `gaDay` to `gaEnd` for a span. "(f)" marks `fertilized: true` at gaDay 14. In stage 2
+only the facts shown once the nuclei touch (`egg.pronuclei`, `egg.place`, `egg.weeks`) are (f), so every caption's label
+matches the HUD, which reads "Week 2" until then.
 
 | Id | gaDay | Text | Sources (access) |
 |---|---|---|---|
@@ -942,19 +1183,27 @@ The gaDay column gives `gaDay`, or `gaDay` to `gaEnd` for a span. "(f)" marks `f
 | `swim.walls` | 14 | "Sperm that meet a wall tend to swim along it." | PMID 26183721 (A) |
 | `swim.rest` | 14 | "In many mammals, sperm rest on the tube wall before the egg comes. Human data are less clear." | PMID 26183721 (A); PMID 8150897 (A) |
 | `swim.ready` | 14 | "In lab tests, only 2 to 14 in 100 sperm are ready at one time." | PMID 7479932 (A) |
-| `swim.race` | 14 | "It is not a race. A sperm must be ready at the right time and place." | PMID 16607290 (A); PMID 7479932 (A) |
+| `swim.hyper` | 14 | "Ready sperm swim harder. It helps a sperm push through to the egg." | PMID 16272225 (A) |
 | `swim.wait` | 14 | "Sperm can stay alive in the body for up to five days." | CC sperm (R) |
+| `swim.frame` (result only) | 14 | "In the game you race. In life, a sperm must be ready at the right time and place." | PMID 16607290 (A); PMID 7479932 (A) |
 | `egg.surge` | 14 | "A surge of a hormone called LH releases the egg." | CC 23439 ovulation (R) |
-| `egg.size` | 14 | "The egg is about 0.1 mm across, about two sperm lengths." | BioNumbers 111184 (R); PMID 22848657 (A) |
 | `egg.fimbriae` | 14 | "Finger-like ends of the tube move close and catch the egg." | CC 24346 fimbriae (R) |
 | `egg.cilia` | 14 | "The egg cannot swim. Tiny hairs called cilia sweep it into the tube." | embryology.ch migration (R); CC 24346 (R) |
+| `egg.zona` | 14 | "A clear shell called the zona pellucida protects the egg." | CC 22889 blastocyst (R); TTUHSC (R) |
+| `egg.corona` | 14 | "A cloud of cells surrounds the egg. Sperm pass through the corona to reach the shell." | PMID 21412339 (A); TTUHSC (R) |
+| `egg.size` | 14 | "The egg is about 0.1 mm across, about two sperm lengths." | BioNumbers 111184 (R); PMID 22848657 (A) |
 | `egg.signal` | 14 | "Cells around the egg release a signal. It helps ready sperm find the egg." | PMID 21412339 (A) |
+| `egg.stick` | 14 | "A sperm passes the corona and sticks to the shell. Then it works its way through." | TTUHSC (R) |
+| `egg.choice` | 14 | "In one study, the fluid around eggs drew some men's sperm more than others." | PMID 32517615 (A) |
 | `egg.day` | 14 | "The egg can meet a sperm for about a day." | CC 23439 (R) |
-| `egg.place` | 14 | "This usually happens in the wide outer part of the tube." | CC 11585 conception (R); PMID 16272225 (A) |
-| `egg.fuse` | 14 (f) | "A sperm protein called Izumo1 meets an egg protein called Juno." | PMID 24739963 (A) |
-| `egg.block` | 14 (f) | "Then the egg's shell changes, so no other sperm can join." | TTUHSC (R); PMID 24739963 (A) |
+| `egg.fuse` | 14 | "A sperm protein called Izumo1 meets an egg protein called Juno." | PMID 24739963 (A) |
+| `egg.wave` | 14 | "A wave spreads through the egg from where the sperm entered." | TTUHSC (R) |
+| `egg.seal` | 14 | "Tiny granules in the egg release enzymes. These change the shell and harden it." | TTUHSC (R) |
+| `egg.block` | 14 | "Now no other sperm can stick to the shell or get through." | TTUHSC (R); PMID 24739963 (A) |
 | `egg.pronuclei` | 14 (f) | "The two nuclei touch but stay apart. The two sets join at the first split." | PMID 33964210 (A) |
+| `egg.place` | 14 (f) | "This usually happens in the wide outer part of the tube." | CC 11585 conception (R); PMID 16272225 (A) |
 | `egg.weeks` | 14 (f) | "Midwives and doctors already call this week 2. Weeks count from the first day of the last period." | NHS week 4 (R); CC 7247 (R) |
+| `egg.frame` (result only) | 14 | "In the game you guard your shell. In life, the shell changes only after one sperm joins." | TTUHSC (R); PMID 24739963 (A) |
 | `split.two` | 15 | "You are 2 cells." | embryology.ch migration (R) |
 | `split.small` | 16 | "You divide, but you do not grow. Your cells get smaller." | UNSW Carnegie table (R) |
 | `split.carried` | 16 | "Tiny hairs and gentle squeezes of the tube carry you toward the womb." | embryology.ch migration (R) |
@@ -1037,6 +1286,22 @@ NHS week N: `https://www.nhs.uk/best-start-in-life/pregnancy/week-by-week-guide-
 · WHO `https://journals.plos.org/plosmedicine/article?id=10.1371/journal.pmed.1002220`
 · PubMed `https://pubmed.ncbi.nlm.nih.gov/<PMID>/`.
 
+New for the race and the guard (checked 2026-10-18): `egg.choice` is PMID 32517615, Fitzpatrick et al. 2020,
+"Chemical signals from eggs facilitate cryptic female choice in humans", *Proc. R. Soc. B* 287: 20200805
+(`https://doi.org/10.1098/rspb.2020.0805`; the abstract was re-read through Europe PMC, so access A). It tested
+follicular fluid from different women on sperm from different men and found that each fluid drew some men's sperm
+more than others. It says nothing about choosing among one man's sperm, so the game shows it only as a general fact
+in the guard (6.2). `egg.zona` uses CC 22889, which says "A clear outer protective layer called the zona pellucida"
+(R). `egg.corona` uses PMID 21412339 (Lishko et al. 2011, "Progesterone activates the principal Ca2+ channel of
+human sperm"), whose abstract names "the cumulus cells that encircle the egg" (A), and the TTUHSC page, where the
+sperm penetrates "the egg's corona radiata" and, once inside it, binds to the egg's coat (R). `egg.stick`,
+`egg.wave`, `egg.seal` and `egg.block` use the TTUHSC page, re-read for the corona, the sperm binding to the egg's
+coat, the wave of Ca++ that "spreads through the egg" from the point of sperm entry, the cortical granules, whose
+enzymes "break down the ZP3 receptors in the zona pellucida and also further harden the coat", and the granule
+polysaccharides that "form a physical barrier to sperm penetration" (R). `swim.hyper` uses PMID 16272225, whose
+abstract says hyperactivated motility helps sperm push through mucus, the cumulus and the zona (A). All of these are
+already in `research/research-biology.md` section 12, so the allow-list holds them.
+
 Full notes, with every fact's access tag: `research/research-biology.md` and `research/research-art.md` in this change
 folder. The benchmark pages named in `research/research-art.md` A0 stayed in the design session's scratchpad; A0 records their
 numbers.
@@ -1044,7 +1309,12 @@ numbers.
 ### 15.4 Words
 
 - **Banned** in every shown string (case-insensitive, word start): die, dies, died, dying, dead, death, kill…, lose,
-  loses, losing, lost, loser, fail…, miscarr…, abort…, sex…, pain…, hurt…, danger…, sick…, viab…, prematur…, NICU.
+  loses, losing, lost, loser, fail…, miscarr…, abort…, sex…, pain…, hurt…, danger…, sick…, viab…, prematur…, NICU,
+  invad…, invas…, attack…, destroy…, defeat…, conquer…, enem…, fight…, battle….
+- **The race and the guard** use gentle words: race, place, bump, rest, bounce, drift off, guard your shell, "Only one
+  may enter", "Let it in". No stage 1 or stage 2 string contains "fastest" or "winner", the whole words win, wins or
+  won, or the phrases "beat the" or "beats the" (one sperm beating others). The phrases match only at a word start,
+  so heartbeat lines such as "Tap with the heartbeat." pass.
 - **Pronouns banned** in every shown string: she, her, hers, herself, he, him, his, himself, they, them, their, theirs,
   themselves.
 - No shown string names or frames the score as Apgar. "Apgar" appears only in `end.apgar` and the Sources screen.
@@ -1101,7 +1371,7 @@ public/first-breath/
   render/
     renderer.js       createRenderer(canvas, opts)            (a wave-0 stub that draws with debug.js; wave 1 fills it)
     gl.js  field.js  composite.js  overlay.js  flat.js  camera.js  perf.js  palette.js  rings.js  debug.js
-    strips/  tails.js  cilia.js  tree.js  cord.js  chevrons.js  ripples.js
+    strips/  tails.js  cilia.js  tree.js  cord.js  chevrons.js  ripples.js  arc.js
   ui/
     input.js  hud.js  captions.js  screens.js  sound.js  store.js   (hud, captions, screens, sound: wave-0 stubs)
 public/arcade/key/first-breath.svg
@@ -1111,7 +1381,7 @@ qa/first-breath/
   save.test.mjs  facts.test.mjs  text.test.mjs  palette.test.mjs  perf.test.mjs  sim.test.mjs
   stage-swim.test.mjs  stage-egg.test.mjs  stage-split.test.mjs  stage-root.test.mjs
   stage-grow.test.mjs  stage-answer.test.mjs  stage-turn.test.mjs  stage-birth.test.mjs  ending.test.mjs
-  bot.mjs
+  bot.mjs  race-sim.mjs
   smoke.e2e.mjs  layout.e2e.mjs  input.e2e.mjs  perf.e2e.mjs  visual.e2e.mjs  sound.e2e.mjs  shots.mjs
 ```
 
@@ -1194,7 +1464,8 @@ export function soundOn(); export function setSoundOn(on)   // "arcade.sound"
 
 // ui/input.js
 export function createInput(el, { coreTime /* wallMs → core s */, camera /* () => Camera */, settings })
-//   → { setLive(gesture), intents(tStepEnd) /* drains events up to tStepEnd, in core seconds */,
+//   → { setLive(gesture, keys = "steer") /* keys: "steer" | "turn"; a new hold needs a fresh press (5.3) */,
+//       intents(tStepEnd) /* drains events up to tStepEnd, in core seconds */,
 //       stick /* {on, ox, oy, x, y} */, inject(events) /* tests */, dispose() }
 
 // render/renderer.js
@@ -1211,7 +1482,7 @@ export function createRings(svg) // → { draw(rings, camera, motion) }
 export function drawDebug(ctx2d, drawList)   // plain shapes; for stage agents' own checks
 
 // ui/hud.js
-export function createHud(root)  // → { set({ stageName, clock, score, prompt, scale }), dispose() }
+export function createHud(root)  // → { set({ stageName, clock, score, prompt, scale, place /* "3rd of 20" | null */ }), dispose() }
 // ui/captions.js
 export function createCaptions(root, { on }) // → { say(id, text, { dir, ms = 4000 }), clear() }
 // ui/screens.js
@@ -1234,9 +1505,19 @@ export function createSound(ctx /* AudioContext or OfflineAudioContext */, { see
   presses:  [{ t, raw }],   // each touch-down, action keydown, or (in dragHold) arrow keydown in this step
   releases: [{ t, raw }],   // each release in this step
   taps:     [{ t }],        // classified taps (touch-down time), for menus only; no stage reads them
-  dir: null                 // "up"|"down"|"left"|"right" (screen axes) once a drag passes 12 px, or from the arrow key
+  dir: null,                // "up"|"down"|"left"|"right" (screen axes) once a drag passes 12 px, or from the arrow key
+  turn: 0,                  // −1 | 0 | 1 from the left/right arrows or A/D (anticlockwise | none | clockwise, as seen);
+                            //   +1 decreases the world angle (radians, counterclockwise from world +x)
+  aim: null                 // { x, y } world point of a mouse over the page with no button down, set only after it
+                            //   moves > 4 px and cleared by any steer or turn key (5.3); null for touch and pen
 }
 ```
+
+- **Turn and aim** are read only by the stage 2 guard (6.2). Its arc takes, in order: `turn` when it is not 0; else
+  `aim` when it is set; else the angle of `steer` when |steer| ≥ 0.25; else it stays still. A mouse drag with the left
+  button is a stick, as everywhere, so `aim` is null while a button is down. In the guard the prompt carries
+  `keys: "turn"`, so the keys set only `turn` (W, S and the up and down arrows do nothing) and `steer` comes only from
+  a pointer drag.
 
 - **Core time** (`main.js`): `raw = (wallMs − wallStart − pausedMs) / 1000`, where `wallMs` is
   `PointerEvent.timeStamp` or `KeyboardEvent.timeStamp` (the `performance.now()` clock). `t = raw − offsetMs / 1000`.
@@ -1257,9 +1538,9 @@ Every module in `core/stages/` (and `core/ending.js`) exports exactly this:
 
 ```js
 export const meta = {
-  id, index, name, verb,              // "swim", 0, "The Journey", "Swim"
+  id, index, name, verb,              // "swim", 0, "The Race", "Race"
   orient,                             // "long" | "fit"
-  families,                           // e.g. ["steer"]; at most 2
+  families,                           // from "steer" | "tap" | "hold" | "rotate"; at most 2 (egg: ["tap", "rotate", "hold"], 1.2)
   ga: { start, end }, fertilized,     // gaDay span; fertilized at the start?
   mm: { start, end },                 // real mm across the short axis (section 3.1)
   motherBpm,                          // her rate at the stage start; the run glides to it over the card
@@ -1270,10 +1551,15 @@ export const meta = {
 export function create(seed, carryIn, opts)  // opts: { assist, oneButton, motherPhase }  → state (plain object)
 export function step(state, intents)         // advances DT; intents in stage seconds; pushes events; never throws
 export function view(state)                  // → DrawList (16.5); pure; no allocation of more than the limits
-export function prompt(state)                // → { gesture: "drag"|"tap"|"hold"|"dragHold"|"none", text: stringId }
+export function prompt(state)                // → { gesture: "drag"|"tap"|"hold"|"dragHold"|"none", text: stringId,
+                                             //     keys: "steer"|"turn" }  (keys defaults to "steer"; "turn" only in the guard)
 export function targets(state, horizonS)     // → upcoming timed targets [{ id, t, P, kind, heart, group }]
 export function botSteer(state, skill, r)    // → { steer: {x, y}, dir, hold: bool }; every stage exports it
-                                             //   (a tap-only stage returns { steer: {x: 0, y: 0}, dir: null, hold: false })
+                                             //   (a tap-only stage returns { steer: {x: 0, y: 0}, dir: null, hold: false });
+                                             //   r is the caller's stream with a plain `r.mem = {}` attached: any lag or
+                                             //   noise memory lives there (the stage keeps each rival's own r in its state)
+export function probe(state)                 // → swim: the race shape; egg: the guard shape; every other stage: null
+                                             //   (16.9), plain data in world units; pure, like view()
 export function result(state)                // → { done, goalMet, score: {goal, skill, flourish, total} | null,
                                              //     parts: [{ id, label, value, max }], metrics: {…}, carryOut }
 export function jump(state, moment)          // skip to a named moment; for tests, and for swim's "carried"
@@ -1291,15 +1577,19 @@ from it at `meta.motherBpm` (5.1).
 
 ```js
 if (settings.oneButton) {
-  const a = mod.botSteer(state, 1, rOne);              // rOne = stream(stageSeed, "oneButton")
+  const a = mod.botSteer(state, 1, rOne);              // rOne = stream(stageSeed, "oneButton"); rOne.mem = {}
   intents.steer = intents.touching ? a.steer : { x: 0, y: 0 };
   intents.dir = a.dir;
+  intents.turn = 0;                                    // the stage 2 arc tracks only through steer
+  intents.aim = null;
 }
 ```
 
 At its cap a stage ends: `swim` with `goalMet: false`; every other stage completes its goal by itself and ends with
-`goalMet: true`. After Go on, the run calls `swim.jump(state, "carried")`: 3 s with input `none`, then `result()` is
-`{ done: true, goalMet: false }` with `score.goal` 0.
+`goalMet: true`. `swim` also ends with `goalMet: false` when you reach the meeting place outside the top 3. Its
+`result().metrics` carries `place` and `of` (20), and `capped` (true when the 117 s cap ended it). After Go on at the
+cap, the run calls `swim.jump(state, "carried")`: 3 s with input `none`; after a finish outside the top 3 it goes
+straight on. Then `result()` is `{ done: true, goalMet: false }` with `score.goal` 0.
 
 ### 16.5 Draw list
 
@@ -1312,24 +1602,31 @@ At its cap a stage ends: `swim` with `goalMet: false`; every other stage complet
   warp: 0..1, caustics: 0..1,
   splats: [{ k: "c"|"s", x, y, r, x2, y2, m, n, v, hue }],          // ≤ 32 (k "s" = capsule from (x,y) to (x2,y2))
   points: { n, xy: Float32Array /* 2n */, a: Float32Array /* n */, hue } | null,   // ≤ 600 (render adds ≤ 900 motes)
-  strips: [ { kind: "tails",    items: [{ x, y, ang, len, phase, hue }] }            // ≤ 25 items
+  strips: [ { kind: "tails",    items: [{ x, y, ang, len, phase, hue, ring }] }      // ≤ 25 items; ring: null|"halo"|"dashed"
           | { kind: "cilia",    a: [x, y], b: [x, y], count, phase, amp }
           | { kind: "tree",     nodes: Float32Array /* x, y, parent, width */, version, pulse }
           | { kind: "cord",     pts: [x, y, …] /* ≤ 16 points */, lights: [s0, …] /* 0..1 along it */ }
           | { kind: "chevrons", pts: [x, y, …], w, phase }
-          | { kind: "ripples",  items: [{ x, y, r, a, dashed }] } ],                 // ≤ 6 strips
-  marks: [{ kind: "pool"|"lake"|"pocket"|"glowwall"|"spot"|"glow"|"hand"|"arrow"|"light", x, y, r,
-            rim: "solid"|"dotted"|"wavy", on, pulse, ang }],                         // ≤ 24
-  rings: [{ id, kind: "mother"|"you"|"approach"|"hold"|"breath"|"wave"|"prompt"|"rest",
+          | { kind: "ripples",  items: [{ x, y, r, a, dashed }] }                   // also the contact rings
+          | { kind: "arc",      x, y, r, a0, a1, w, glow }                         // the guard arc, the seal wave;
+                                                                                   //   a0, a1 in radians, world space
+          | { kind: "course",   pts: [x, y, …] /* ≤ 32 points, centre line */, w: [w0, …] /* width per point */,
+              tone: "womb"|"warm"|"cool" } ],                                      // stage 1 path, tubes, loop; ≤ 6 strips
+  marks: [{ kind: "pool"|"lake"|"meet"|"band"|"warm"|"cool"|"glowwall"|"spot"|"glow"|"hand"|"arrow"|"light", x, y, r,
+            w /* band and meet only: thickness along ang */, rim: "solid"|"dotted"|"wavy", on, pulse, ang }],  // ≤ 24
+            // band: a soft bar centred at (x, y), r = half its length across, w = its thickness (stage 1 waves);
+            // meet: the meeting place, drawn the same way
+  rings: [{ id, kind: "mother"|"you"|"approach"|"hold"|"breath"|"wave"|"prompt"|"rest"|"burrow",
             x, y, r, progress, dashed, dotted, grade }],                             // ≤ 8, drawn in DOM SVG
-  anchor: { x, y },                                // the subject (thumb-zone check)
+  anchor: { x, y },                                // the subject (thumb-zone check): you in stage 1, the egg's centre in stage 2
   cue: { x, y } | null                             // the thing the player needs now (the brightness check)
 }
 ```
 
 `core/draw.js` exports `LIMITS` and `validate(list)`. `draw.test.mjs` validates every 30th view of each stage's ref and
 idle runs. Both the WebGL path and the 2D fallback draw only this list. (A `zoomAnchor` comes back with the deferred
-zoom.)
+zoom.) A stage sends only the visible part of its course, at most 32 points per `course` strip. The stage 1 camera
+span is 170 u in the womb and 150 u from the gate on; the stage 2 span is 140 u (6.1, 6.2).
 
 ### 16.6 Events
 
@@ -1338,7 +1635,7 @@ Each event is `{ name, t, ...data }` pushed by `emit(state, name, data)`; `t` is
 | Name | Data | Host use |
 |---|---|---|
 | `moment` | `{ id }` | test hook, captions |
-| `prompt` | `{ gesture, text }` | `input.setLive`, HUD prompt line |
+| `prompt` | `{ gesture, text, keys }` | `input.setLive(gesture, keys)`, HUD prompt line |
 | `subgoal` | `{ id, text, state: "shown"|"done"|"auto" }` | caption and confirm chime |
 | `judge` | `{ target, grade: "in"|"close"|"off"|"miss", errMs, rawMs, heart }` | ring feedback, the Tap test |
 | `points` | `{ part, add }` | HUD score tick |
@@ -1347,11 +1644,23 @@ Each event is `{ name, t, ...data }` pushed by `emit(state, name, data)`; `t` is
 | `sfx` | `{ id, at, pitch, gain }` | sound |
 | `milestone` | `{ id: "ready"|"fertilized"|"implanted"|"heart"|"fetus"|"hearing"|"eyes"|"headDown"|"born"|"breath" }` | sound scene changes, tests |
 | `song` | `{ notes, lit }` | sound (the hum) |
+| `place` | `{ place, of }` | HUD place slot (stage 1); the place pluck. Emitted only after a new place has held for 0.25 s (6.1). |
+| `bump` | `{ a, b, x, y }` (sperm ids, `"you"` for you; the contact point in world u) | sound (softer when it is not you), contact ring, tests |
+| `fork` | `{ tube: "warm"|"cool" }` | captions, tests |
+| `arrive` | `{ id, place }` | tests (each sperm that reaches the meeting place) |
+| `bounce` | `{ id, angle, wave }` (`wave`: 1 to 8) | sound (a step higher per wave), contact ring, guard credit, tests |
+| `stick` | `{ id, angle, gold, wave }` (`wave`: 1 to 8, null for the gold) | sound, burrow ring, `egg.stick` on the gold's, tests |
+| `loose` | `{ id }` | sound, tests |
+| `held` | `{ id }` | tests (a rival held in the cloud; it never enters) |
+| `goldIn` | `{ angle }` | sound, caption, tests (your gold sperm comes in, once per stage 2) |
+| `nudge` | `{ n }` | tests (the arc nudged your sperm) |
+| `enter` | `{ angle }` | sound, the seal wave's start, tests (once per stage 2) |
+| `seal` | `{ grade, auto }` | sound, tests |
 | `done` | `{}` | run |
 
 ### 16.7 Carry
 
-`core/carry.js` exports `DEFAULT_CARRY = { sparks: 0, sperm: { hue: 0.11, side: 1, glow: 0.5 }, nestleX: 0, treeSeed:
+`core/carry.js` exports `DEFAULT_CARRY = { sparks: 0, sperm: { hue: 0.11, place: 3, glow: 0.5 }, nestleX: 0, treeSeed:
 null, song: { notes: DEFAULT_SONG, lit: 0 }, turnDir: 1 }`. `treeSeed: null` means "use the stage seed".
 `mergeCarry(prev, out)` returns a new object; unknown fields are dropped.
 
@@ -1380,7 +1689,8 @@ run.summary()          // { total, ms, stages: [{ id, score, grade, parts }], ma
 - **One-button** (16.4) for every stage.
 - **Seeds.** Stage seed = `fnv1a(runSeed + ":" + stageId) >>> 0`. "Try again" recreates the stage with the same seed
   and the same carry-in. Earlier stages' scores and carry are unchanged.
-- **Go on** calls `swim.jump(state, "carried")` and plays its 3 s before the overlay.
+- **Go on** after the cap calls `swim.jump(state, "carried")` and plays its 3 s before the overlay; after a finish
+  outside the top 3 it goes straight to the overlay.
 - **Timers**: overlay 2.5 s (linger holds it); card skippable from 1.0 s, gone at 3.5 s; crossfade 0.8 s under the
   card.
 - `run.ms` counts core time in stages, overlays and cards, not in pause or the ending.
@@ -1392,12 +1702,12 @@ Every time the hook takes or returns is in stage seconds.
 
 | Member | Does |
 |---|---|
-| `state()` | `{ screen, stage, stageId, moment, t, gaDay, label, fertilized, score, runScore, grade, prompt, subgoals, paused, seed, settings, anchor /* screen px */, cue /* screen px */, ms }` |
+| `state()` | `{ screen, stage, stageId, moment, t, gaDay, label, fertilized, score, runScore, grade, prompt, subgoals, paused, seed, settings, anchor /* screen px */, cue /* screen px */, ms, place /* stage 1: "3rd of 20", else null */ }` |
 | `goto(stage, { seed, carry, assist, oneButton })` | jump into stage 1 to 8 (index or id) or `"ending"`, skipping the card |
 | `jump(moment)` | jump to a named moment of the current stage |
 | `realtime(on)` | stop or restart the rAF clock |
 | `step(n, intents?)` | advance n fixed steps, with optional intents in stage seconds (else the held ones) |
-| `input(partialIntents)` | set held intents (`steer`, `touching`, `dir`) |
+| `input(partialIntents)` | set held intents (`steer`, `touching`, `dir`, `turn`, `aim`) |
 | `tap({ errMs = 0 })`, `press()`, `release()` | inject a timed event at the next target's `t` ± errMs (stage time), or now |
 | `nextTarget()` | `{ t, P, kind, heart, id }` or null |
 | `bot(skill \| false)` | let the shared bot drive (also the attract mode) |
@@ -1406,6 +1716,8 @@ Every time the hook takes or returns is in stage seconds.
 | `result()` | the current stage result, or the run summary |
 | `targets()` | bounding boxes of every interactive DOM element, and the subject's and the cue's screen positions |
 | `facts()` | fact ids shown this run |
+| `race()` | stage 1: `swim.probe(state)`, `{ place, placeNow, of, you: { progress, x, y, ready }, rivals: [{ id, skill, progress, x, y, state: "swim"|"rest"|"arrived", tube: "warm"|"cool"|null, ready }] }`, with `main.js` adding a `screen` point in px beside each world point; else null |
+| `guard()` | stage 2: `egg.probe(state)`, `{ arc: { angle, half }, egg: { x, y, r }, sperm: [{ id, state: "in"|"stuck"|"bounce"|"loose"|"held", angle, r, progress, x, y }], gold: { state, angle, r, nudges, x, y } | null, entered }` (angles in radians, world space), with `main.js` adding `screen` points in px and the arc's screen angle; else null |
 | `perf` | `{ emaMs, p95Ms, scale, w, h, px, draws, splats, points, fallback }` |
 | `sound` | `{ state, cutoffHz, hearing, beats: { mother, you }, scheduled, muted, voices, latencyS }` |
 | `motion` | `{ reduced, warpAmp, bounce }` |
@@ -1436,13 +1748,15 @@ console.log(swim.result(st).score);
 ```
 
 `qa/first-breath/bot.mjs <runs> <skill> <seed>` plays whole runs through `createRun` the same way and prints, per stage,
-the time, total, grade, accuracy and goal. At a stage 1 cap the bot's `choose("almost")` picks Go on.
+the time, total, grade, accuracy and goal, and in stage 1 the place. When the Almost card shows (a finish outside the
+top 3, or the cap), the bot's `choose("almost")` picks Go on. In stage 2 the bot steers the arc with `egg.botSteer`,
+presses for the seal after its prompt (a fresh press, 5.3) and releases at the target's `t` + gauss·σ.
 
 ### 16.12 Ownership (who may edit what)
 
 | Wave | Owner | Files |
 |---|---|---|
-| 0 | contract | everything in `core/` except the stage bodies; `core/stages/index.js` with 8 stub stages (each a timer that completes with `goalMet: true`, except the `swim` stub, which ends at its cap); `main.js`, **fully wired** to every module through the frozen signatures; no-op stubs of `render/renderer.js` (drawing with `debug.js`), `ui/hud.js`, `ui/captions.js`, `ui/screens.js` and `ui/sound.js`; `ui/input.js`; `ui/store.js`; `render/debug.js`, `render/camera.js`, `render/palette.js`; skeletons of `index.html` and `style.css`; the wave-0 tests |
+| 0 | contract | everything in `core/` except the stage bodies; `core/stages/index.js` with 8 stub stages (each a timer that completes with `goalMet: true`, except the `swim` stub, which ends at its cap; each exports `probe`, which returns null); `main.js`, **fully wired** to every module through the frozen signatures; no-op stubs of `render/renderer.js` (drawing with `debug.js`), `ui/hud.js`, `ui/captions.js`, `ui/screens.js` and `ui/sound.js`; `ui/input.js`; `ui/store.js`; `render/debug.js`, `render/camera.js`, `render/palette.js`; skeletons of `index.html` and `style.css`; the wave-0 tests; `qa/first-breath/race-sim.mjs` (the numeric race sim of 6.1, before the `swim` builder starts) |
 | 1 | one agent per stage | `core/stages/<id>.js`, `<id>.tune.js`, `<id>.facts.js`, `<id>.text.js`, `qa/first-breath/stage-<id>.test.mjs`. Nothing else. |
 | 1 | ending | `core/ending.js`, `qa/first-breath/ending.test.mjs` |
 | 1 | renderer | `render/*` except camera and palette tokens; strips. It fills the `renderer.js` stub behind its signature. |
@@ -1472,10 +1786,16 @@ in tasks.md.
 | Reduced motion | `?rm=1` (and emulated media): `motion.warpAmp ≤ 0.5 ×` the full value; `bounce = 0`; the stage change is the same 0.8 s crossfade | `visual.e2e.mjs` |
 | Colour contrast | each cue token ≥ 3:1 against its stage bg and against `ink`, normal and protan, deutan and tritan (Machado 2009) | `palette.test.mjs` |
 | Thumb reach | at 390 × 844, `targets().anchor.y ≤ 0.60 × 844` in every stage | `layout.e2e.mjs` |
-| Layout | no horizontal scroll; HUD, prompt and captions inside the safe area with `?inset=47,0,34,0`; no overlap between HUD, prompt, captions and pause; captions inside 50 to 58% of the height in portrait; during play, no HUD, caption or overlay text below 60% of the height in portrait; the scale bar top left under the clock in portrait; every target ≥ 44 px on the shorter side; every screen fits | `layout.e2e.mjs` |
+| The race HUD | stage 1 at 390 × 844 and 844 × 390 (touch) and 1440 × 900, with `?inset=47,0,34,0`: the place slot reads "Nth of 20" and matches `__fb.race().place` once a change has held for 0.25 s after a bump changes the order; it sits under the score at the top right, inside the safe area, above 60% of the height in portrait, and overlaps no HUD, prompt or caption box | `layout.e2e.mjs` |
+| The fork in view | stage 1 at the three layouts with `?inset=47,0,34,0`, the ref bot driving: both branch mouths are on screen and under no HUD or prompt box at least 1.5 s before your head reaches the split (1,330 u); in portrait every stage 1 caption is one line and gone within 2.5 s | `layout.e2e.mjs` |
+| The egg and its arc | stage 2 at the same three layouts: the egg's centre is the layout's subject point (45% of the height in portrait; 38% of the width and 55% of the height in landscape; 40% of the width and half the height on desktop); at a span of 140 u; in a guard frame with stuck sperm and your sperm coming in (`?seed=1&moment=guard`, stepped to 33 s, when your sperm burrows at the shell), every stuck or held sperm and your sperm within 28 u are inside the safe area and under no HUD, prompt or caption box; in portrait the captions sit at 18 to 26% of the height, and in landscape they are one line; the arc is the brightest band (the brightest-cue row) | `layout.e2e.mjs`, `visual.e2e.mjs` |
+| The gold's path in portrait | stage 2 at 390 × 844 over 20 seeds and places 1, 3 and 20, idle and with the ref bot: from `goldIn` to `enter`, your sperm's screen point is never inside a caption box and never below 60% of the height | `layout.e2e.mjs` |
+| The arc follows the input | a touch drag turns the arc to the drag's screen angle within 10° in portrait and landscape; on desktop the arc faces the mouse within 10° once it moves more than 4 px, the right arrow turns it clockwise as seen at 540°/s, W, S and the up and down arrows leave it still, and with the cursor parked over the page a turn with D and its release leave the arc where D left it | `input.e2e.mjs` |
+| A hold needs a fresh press | stage 2 at 390 × 844 with the thumb held down from the guard drag through `enter`, and at 1440 × 900 in one-button mode with Space held from the guard: lifting after the seal prompt seals nothing; a new press and release does | `input.e2e.mjs` |
+| Layout | no horizontal scroll; HUD, prompt and captions inside the safe area with `?inset=47,0,34,0`; no overlap between HUD, prompt, captions and pause; captions inside 50 to 58% of the height in portrait (18 to 26% in stage 2); during play, no HUD, caption or overlay text below 60% of the height in portrait; the scale bar top left under the clock in portrait; every target ≥ 44 px on the shorter side; every screen fits | `layout.e2e.mjs` |
 | Muted cues | sound muted with M, stages 2 and 6: every target has a DOM ring in `svg#rings` at least its preview time (max(2 beats, 1.2 s)) before its `t` | `input.e2e.mjs` |
 | Sound | OfflineAudioContext, 6 s per scene: ≥ 90% of energy below 500 Hz before birth; > 20 dB more energy above 2 kHz after the opening than before; envelope peaks match the beat times within 5 ms; a second peak train from the stage 4 hinge; with `latencyS: 0.04`, each beat scheduled 40 ms early; across a card and a stage start, her peaks keep an even spacing with no extra or missing beat | `sound.e2e.mjs` |
-| First 10 seconds | Play → `prompt` by 0.5 s and steering live by 0.5 s (stage 1); `goto(2)` → first target by 2.7 s | `smoke.e2e.mjs` |
+| First 10 seconds | Play → `prompt` by 0.5 s and steering live by 0.5 s (stage 1); `goto(2)` → first target by 2.7 s, and the guard's prompt by 9.0 s | `smoke.e2e.mjs` |
 | Screenshots | every stage at the three layouts; the homepage at 390 × 844, 320 × 568 and 1280 × 720 for the PR | `shots.mjs`; `qa/arcade/machines.mjs` part `firstbreath` with `SHOTS` |
 | The homepage machine | at 390 × 844, 320 × 568 and 1280 × 720: the last cabinet in `#action` is First Breath, inside the window and not under the sign or the tray; `.slot`, `.start`, `#prevBtn`, `#nextBtn`, `.section-nav button` and `.all-games` ≥ 44 px on the shorter side; START goes to `/first-breath/`; the other groups' members unchanged | `qa/arcade/machines.mjs` part `firstbreath` |
 
@@ -1483,25 +1803,28 @@ in tasks.md.
 
 | File | Asserts |
 |---|---|
-| `purity.test.mjs` | `core/` has no `document`, `window`, `Date`, `performance`, `Math.random`, `setTimeout`, `requestAnimationFrame`, `localStorage`; stage files import no other stage, nor `render/`, `ui/` or `main.js` |
+| `purity.test.mjs` | `core/` has no `document`, `window`, `Date`, `performance`, `Math.random`, `setTimeout`, `requestAnimationFrame`, `localStorage`; stage files import no other stage, nor `render/`, `ui/` or `main.js`; every stage and stub exports `probe`, and calling `view` or `probe` twice gives equal results and leaves the state unchanged |
 | `clock.test.mjs` | the label and range check values (section 4); `week = floor((14 + N) / 7)` for N = 0..30; every label that starts with "Day" says "after fertilization"; "fetus" strings only from gaDay 70; cards at 98 and 196; no "cycle day" in any string; `gaAt` and `mmPerShortAxis` against the 4.1 table |
 | `beat.test.mjs` | `clock.bpmYou`: 110 at 36 and 42, 170 at 63 and 70, 150 at 98, 140 at 140 to 196, 130 at 280; `makeBeats`: `first` places her first beat; jitter seeded and 0 in tracks |
 | `judge.test.mjs` | windows at P = 0.5, 0.706, 0.833 s; Assist and the 0.4 P cap; free taps; Off changes nothing; a press 160 ms late that arrives a step late is Close, not a miss (the 50 ms grace); two targets 0.5 s apart judged on their own sub-step times; `median` |
 | `track.test.mjs` | spacing ≥ 0.5 s; every target carries `P`; preview ≥ max(2 beats, 1.2 s); `errMs` and `rawMs` differ by the offset |
 | `draw.test.mjs` | every view within `LIMITS` |
-| `stage-<id>.test.mjs` | same seed and intents give the same result; the scripted ideal input reaches Glowing; idle ends by the cap (`swim` with `goalMet: false`, others `true`); one live gesture per moment; at most 2 families; every subgoal ends `done` or `auto`; meta.moments match the 4.1 table; stage-specific checks (other sperm never move and none sits past 2,800 u; pools turn red only from gaDay 84; no phrase before gaDay 133; the turn happens by itself at 30 s; the rest is not judged) |
+| `stage-<id>.test.mjs` | same seed and intents give the same result; the scripted ideal input reaches Glowing; idle ends by the cap (`swim` with `goalMet: false`, others `true`); one live gesture per moment; at most 2 families (3 for `egg`); every subgoal ends `done` or `auto`; meta.moments match the 4.1 table; stage-specific checks (pools turn red only from gaDay 84; no phrase before gaDay 133; the turn happens by itself at 30 s; the rest is not judged) |
+| `stage-swim.test.mjs` (race checks) | over 20 seeds: the same seed and input give the same rival positions at every step; `placeNow` is 1 + the number of sperm ahead at every step, arrivals rank by time, and the shown place and `place` events change only after a new place has held for 0.25 s; two swimming sperm that overlap are pushed apart every step, each keeps 0.7 of its speed at most once per 0.4 s, and the top speed is back to ×1 after 0.6 s; sperm that are not swimming (stick < 0.25 and speed < 15 u/s, or attached) are never bumped; the cool loop brings any sperm back to the fork at 1,300 u within 6 s, also with no input, with `moment` `fork` all the while; the waves never lift an idle sperm, and every bot uses each wave's shared threshold; at full stick the lane centre gives ≥ 70 u/s and a wall ≤ 65 u/s; letting go inside a glow attaches the sperm (speed 0, no drift) and makes it ready on her 4th beat, and stick ≥ 0.25 detaches it; ready multiplies only the stick term, by 1.6; among the rivals only the two front-runners become ready; a rival in the tube 500 u or more behind you rests; the ref bot is 1st in ≥ 18 seeds and arrives at 44 to 54 s; the mid bot (0.7) is in the top 3 in ≥ 18 seeds with a mean arrival of 55 to 65 s; idle never passes the gate, and the stage ends at 117 s with `goalMet: false` and place 20; a finish outside the top 3 ends with `goalMet: false`; with `meet` or `carried` the stage never runs past 120 s; `botSteer` keeps its memory only in `r.mem`; `probe` returns the race shape of 16.9 in world units; no event or string names harm |
+| `stage-egg.test.mjs` (guard checks) | the surge before any target; the first payoff by 4.5 s; the opening ends by 8.9 s for any input; the arc is over a sperm when the angle is within its half-width and the head within 22 u, checked every step, also when the arc sweeps onto a sperm: a swimming rival bounces, a stuck rival pops loose, the gold is nudged, and held and drifting sperm are left alone; a rival that finishes burrowing is held and never enters; exactly one `enter` event, for your sperm, for every input: none, the ref bot, random drags, and the arc held on your sperm the whole time; `goldIn` at 27.0, 27.6 and 32.7 s into `guard` for places 1, 3 and 20; over 20 seeds with no input, and with the arc parked at every 5°, a gold angle is always found, never within 45° of world −y or 40° of world +y; at most 3 nudges; it enters by 52 s into `guard`; the seal counts only a press after its prompt (a release with no such press is ignored), gives a Flourish of 1,000 for In time, 500 for Close and 0 otherwise, and seals by itself on her 6th counted beat, also with a hold still down; every other sperm drifts off after the seal; the guard credit leaves out rivals still swimming in or burrowing at entry, and an idle guard earns no clean-entry bonus; the ref bot makes 0 nudges over 20 seeds; a bot that aims only through `turn` ±1 at 540°/s reaches Great in ≥ 18 of 20 seeds, with a mean guard credit within 0.15 of the ref bot's; `botSteer` keeps its memory only in `r.mem`; `probe` returns the guard shape of 16.9 in world units |
 | `ending.test.mjs` | the breath comes by itself 3.0 s after the prompt; no `points` event; results only after skin-to-skin; her beats are silent only in the first 1.5 s |
-| `run.test.mjs` | the stage order; Try again recreates the stage at once and leaves earlier scores and carry unchanged; better attempt kept; Go on (`jump("carried")`) gives no Goal and no grade word; `goto` of every stage works with `DEFAULT_CARRY`; no overlay after Birth; a press at `stageStart + target.t` (core time) is graded In time; gaDay and `mmPerShortAxis` never decrease across a whole run (only a stage 1 retry restarts stage 1); her beats run on across overlays and cards with no gap and no jump; one-button sets steer and dir from `botSteer` in every stage; families per stage |
+| `run.test.mjs` | the stage order; Try again recreates the stage at once and leaves earlier scores and carry unchanged; better attempt kept; Go on (`jump("carried")`) gives no Goal and no grade word; `goto` of every stage works with `DEFAULT_CARRY`; no overlay after Birth; a press at `stageStart + target.t` (core time) is graded In time; gaDay and `mmPerShortAxis` never decrease across a whole run (only a stage 1 retry restarts stage 1); her beats run on across overlays and cards with no gap and no jump; one-button sets steer and dir from `botSteer` in every stage, and clears `turn` and `aim`; families per stage; stage 1's `sperm.place` reaches stage 2 and sets when your sperm comes in; exactly one sperm enters in a whole run |
 | `save.test.mjs` | broken JSON, old versions, blocked storage; best only improves; tie → faster; `carryIn` per stage; `cabinetLine` cases (BEST, plain) |
 | `facts.test.mjs` | every fact has a gaDay, a computed label, allow-listed sources, access R or A; no S; `checked: false` facts are not shown; no text starts with "Week" or "Day"; spans never cross gaDay 42; size comparisons say "the NHS says" or "The NHS compares this to"; trimester cards say "about" |
-| `text.test.mjs` | the banned words and pronouns (section 15.4) across all strings × all 4 carer words; sentence length; no "Apgar" outside `end.apgar` and Sources |
+| `text.test.mjs` | the banned words and pronouns (section 15.4, including invad…, invas…, attack…, destroy…, defeat…, conquer…, enem…, fight… and battle…) across all strings × all 4 carer words; no "fastest" or "winner", no whole word win, wins or won, and no "beat the" or "beats the" in stage 1 and 2 strings; sentence length; no "Apgar" outside `end.apgar` and Sources |
 | `palette.test.mjs` | contrast rules; chromatic ending hues 0° to 50°; stage backgrounds rise in luminance from stage 1 to 7 |
 | `perf.test.mjs` | p99 step ≤ 1 ms per stage |
-| `sim.test.mjs` | 20 seeds × skills 1.0, 0.7, 0.5 and 0: skill 1.0 mean ≥ 8,500 per stage; skill 0.5 reaches the goal in ≥ 90% of runs; skill 0.7 runs take 8 to 12 min of game time; skill 0 never throws and every stage ends by its cap; under 120 s wall |
+| `sim.test.mjs` | 20 seeds × skills 1.0, 0.7, 0.5 and 0: skill 1.0 mean ≥ 8,500 per stage; skill 0.5 reaches the goal in ≥ 90% of runs in stages 2 to 8 (stage 1 is a race: skill 0.7 is in the top 3 in ≥ 90% of runs, and skill 0.5 may get the Almost card and Go on); skill 0.7 runs take 8 to 12 min of game time; skill 0 never throws and every stage ends by its cap; under 120 s wall |
 | `bot.mjs` | CLI report |
+| `race-sim.mjs` (wave 0) | a stand-alone numeric model of the 6.1 race (the course, waves with shared thresholds, the current, lane, upstream bonus, glow rests, bumps, catch-up and the rival policy) that prints, over 20 seeds, the place distribution and arrival times of the ref, mid and idle players and every rival. The 6.1 numbers are frozen only when the ref is 1st and the mid bot in the top 3 in ≥ 18 of 20 seeds, with the mid's mean arrival at 55 to 65 s. |
 | `smoke.e2e.mjs` | no console errors; Play to prompt by 0.5 s; every stage via `goto` steps 120 frames and draws; `?gl=0` per stage; the bot reaches the run result |
-| `layout.e2e.mjs` | section 17 layout rows at 390 × 844 and 844 × 390 (touch) and 1440 × 900; the thumb reach; the ending's thumb ring at bottom centre in portrait and in the corner of the last touch in landscape; a screenshot per stage and screen |
-| `input.e2e.mjs` | touch stick steers in portrait and landscape; a second pointer is ignored; keys only on desktop; in a tap moment a press that drags is judged at touch-down; in a `dragHold` moment an arrow keydown is a press with its dir and Space alone is a plain hold; landscape touch in stages 4 (drag right grows forward), 5 (a move drag), 7 (the turn) and 8 (directions on screen axes); one-button mode clears stages 1, 4, 5, 7 and 8; hidden page pauses; M writes `arcade.sound`; muted rings |
+| `layout.e2e.mjs` | section 17 layout rows at 390 × 844 and 844 × 390 (touch) and 1440 × 900; the thumb reach; the race HUD; the fork in view; the egg and its arc; the gold's path in portrait; the ending's thumb ring at bottom centre in portrait and in the corner of the last touch in landscape; a screenshot per stage and screen |
+| `input.e2e.mjs` | touch stick steers in portrait and landscape; a second pointer is ignored; keys only on desktop; in a tap moment a press that drags is judged at touch-down; in a `dragHold` moment an arrow keydown is a press with its dir and Space alone is a plain hold; landscape touch in stages 1 (drag right swims forward), 2 (the arc follows the drag, and the seal by hold and release), 4 (drag right grows forward), 5 (a move drag), 7 (the turn) and 8 (directions on screen axes); stage 1 on desktop with a left-button mouse drag; the stage 2 arc on desktop (the mouse aims it after a 4 px move; the arrows and A/D turn it at 540°/s; W, S, up and down do nothing; a parked cursor never pulls it back after a turn key); a hold needs a fresh press at the seal (the thumb held from the guard, and one-button Space held from the guard); one-button mode clears stages 1 (top 3), 2 (the arc tracks while held), 4, 5, 7 and 8; hidden page pauses; M writes `arcade.sound`; muted rings |
 | `perf.e2e.mjs`, `visual.e2e.mjs`, `sound.e2e.mjs` | section 17 |
 | `qa/arcade/machines.mjs`, `groups.e2e.mjs`, `quiet.mjs` | the machine, the row of eight, the switcher, the cabinet line, the homepage part `firstbreath` (section 17), the hidden-page silence |
 
@@ -1517,6 +1840,8 @@ silent switch.
 | Eight stages feel stitched (the Spore problem) | One camera scale, one look, one continuous heartbeat, carry-over (your sperm, the nestle spot, your song), a birth that remixes hold and drag. |
 | Timing feels wrong on phones | The drawn beat is the truth; touch-down timestamps; output latency; the Tap test and the manual offset; wide Close windows; the 50 ms miss grace. |
 | Frame time on phones and in SwiftShader | The measured two-pass stack, adaptive scale, the plain 2D fallback, hard budgets, perf checks per stage and layout. |
+| The race reads as the "fastest sperm wins" myth (`research/research-biology.md` 10) | No string says the fastest wins; the text test bans "fastest", "winner", win, wins, won and "beat the" in stages 1 and 2. Being ready is the race's best move and is scored. `swim.few` shows how few sperm reach the tubes, and `swim.frame` on the run result says what is real. |
+| The guard reads as hostile | Gentle words only (15.4); rivals bounce, drift off and rest, and nobody is harmed; held rivals rest, still, in the cloud; the seal is the real biology; `egg.frame` says the guard is the game's; a human read of every string. |
 | Scope: 8 stages in one PR | v1 is each stage's minimum form plus one or two flourishes; the heavy extras are deferred (19.2). The frozen contract, a fully wired wave-0 `main.js` with stubs, per-stage files, one shared judge and bot, and the cut list. |
 
 ### 19.1 Cut list
@@ -1528,11 +1853,11 @@ Cut from the top when late. Each stage keeps its floor (section 6).
 3. The hum in the stage 7 rest.
 4. The stage 5 drag moves (the moves play by themselves).
 5. The stage 8 direction prompts (plain hold waves).
-6. Gold call beats in stage 2 (plain ride).
-7. The Tap test (keep the manual offset).
+6. The Tap test (keep the manual offset).
 
 **Never cut:** the carer-word setting, captions, one-button mode, reduced motion, the flash rule, the facts gate, the
-ending, the per-stage 2D fallback check, and the arcade machine.
+ending, the per-stage 2D fallback check, the contact rings for bumps and bounces (the picture for those sounds,
+section 12), and the arcade machine.
 
 ### 19.2 Deferred from v1
 
@@ -1548,4 +1873,6 @@ These are not built in this change, and the specs do not ask for them. Each can 
 - "Play your song" on the run result.
 - The FURTHEST cabinet line.
 - Stage 6: repeats of a missed phrase, the loud-sound jump, the hiccup animation.
-- Stage 1: the fork with the cool tube, and moving rivals (v1 shows still sperm resting on the walls).
+
+The stage 1 fork with the cool tube, and the moving rivals, were on this list before. The user's race brings both
+into v1 (section 6.1).

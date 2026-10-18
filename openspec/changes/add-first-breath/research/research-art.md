@@ -334,6 +334,14 @@ Expected ≈ 15–20 ms in SwiftShader. Avoid full-screen gradients each frame, 
 
 ### B8. Design lessons for a 7-stage game from sperm and egg to birth
 
+Note (2026-10-18): after review, the user chose a race with other sperm for stage 1 and a switch to the egg, which
+guards its shell, for stage 2. Lessons 4 and 5 still hold in that frame: nobody is harmed, rivals bump, drift off and
+rest, and the egg stays active (design.md 1.2, 6.1 and 6.2). A4's rival steering (Reynolds) and its 20 to 60 rivals
+fit the race. For the guard, design.md 14.2 names Atari's *Warlords* (1980) for the shield mechanic and Quilez's
+`sdArc` for the arc's drawing; for the catch-up, Iain Gilfeather's GDC Europe 2009 talk on the AI of *Pure*
+(https://www.mcvuk.com/development-news/black-rock-studio-blasts-arubber-bandinga/): keep the same rules for every
+racer.
+
 1. **One verb, one thumb, every stage.** Drag to steer, with one secondary action (tap or hold) that each stage reinterprets: dash, latch, divide, root, grow, kick, push. flOw and WarioWare show that a shared verb is what holds an anthology together. Controls must be clear at once, and each stage beatable on the 2nd or 3rd try (Abe).
 2. **Teach in play, in under 10 s, with one or two words.** For example "Swim up.", "Catch the egg.", "Split.", "Grow roots.", "Feel the beat.", "Turn.", "Push." Rhythm Heaven shows a short tutorial before each test. No text walls.
 3. **Carry something forward, so it is one journey and not stitched mini-games.** Spore's diet carry-over and flOw's visible growth both do this. Ideas: the colour and spark you collect as a sperm becomes the embryo's hue, nutrient score becomes placenta size, and the placenta size sets later stamina. Use one continuous camera that zooms out as you grow (Osmos and flOw scale): cell → embryo → baby, so stage changes feel like growth, not cuts.

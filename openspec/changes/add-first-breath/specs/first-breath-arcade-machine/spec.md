@@ -56,7 +56,7 @@ The machine's screen SHALL be `public/arcade/key/first-breath.svg`: hand-drawn, 
 - **CHECK** `qa/arcade/machines.mjs`
 
 ### Requirement: The cabinet line
-The cabinet line SHALL read `first-breath.save.v1` inside try/catch. For a finished best run with a score above 0 it SHALL show "BEST " and the score with thousands commas, such as "BEST 61,240". With no finished run, no save, or a broken save, it SHALL show SWIM · SPLIT · GROW · BREATHE.
+The cabinet line SHALL read `first-breath.save.v1` inside try/catch. For a finished best run with a score above 0 it SHALL show "BEST " and the score with thousands commas, such as "BEST 61,240". With no finished run, no save, or a broken save, it SHALL show the attract line RACE · GUARD · GROW · BREATHE, which SHALL fit the cabinet screen like its neighbours' lines.
 
 #### Scenario: A best run
 - **WHEN** the save holds a finished best run of 61,240
@@ -65,8 +65,13 @@ The cabinet line SHALL read `first-breath.save.v1` inside try/catch. For a finis
 
 #### Scenario: A run not finished
 - **WHEN** the save has no finished run and reached 6 stages
-- **THEN** the cabinet line reads SWIM · SPLIT · GROW · BREATHE
+- **THEN** the cabinet line reads RACE · GUARD · GROW · BREATHE
 - **CHECK** `qa/first-breath/save.test.mjs`
+
+#### Scenario: The attract line fits
+- **WHEN** the homepage shows the First Breath machine with no save at 390 × 844, 320 × 568 and 1280 × 720
+- **THEN** the `.hi` line reads RACE · GUARD · GROW · BREATHE and its box stays inside the cabinet's `.screen`
+- **CHECK** `qa/arcade/machines.mjs` (part `firstbreath`)
 
 #### Scenario: A junk save
 - **WHEN** the save holds text that is not JSON, or storage throws

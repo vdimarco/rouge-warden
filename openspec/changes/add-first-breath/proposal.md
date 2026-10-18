@@ -13,15 +13,23 @@ point of view, and stay tender, accurate and never graphic.
 The user gave no art direction, no controls preference and no arcade row. Those choices are ours, and this change
 records them as ours (design.md section 1).
 
+The user then reviewed the plan and asked for two changes, in these words: stage 1 "A race with other sperm"; stage 2
+"add section 2 as a switch to the egg defending against the sperms invasion". The user kept the Action row. In the
+game the words stay gentle: you race, and the egg guards its shell (design.md 1.2).
+
 ## What Changes
 
 - Add a new game, **First Breath**, at `/first-breath/` (id `first-breath`). Subtitle: "A baby's journey to birth".
   Tagline: "Nine months. Eight small stages. One first breath."
 - **Eight stages in the user's order, then an ending:**
-  1. The Journey: you are a sperm cell. Drag to swim on the waves and against a gentle current, rest on a glowing wall
-     until you are ready, and settle in a warm pocket. It is not a race; other sperm only rest on the walls.
-  2. Ovulation: you are the egg. A gold hormone surge comes first; then tap with your mother's heartbeat to open the
-     follicle and ride the cilia. Tap the gold beats to call your waiting sperm. Fertilization plays with no input.
+  1. The Race: you are one sperm cell in a pack of 20. Drag to swim: ride the waves in the womb, squeeze through the
+     gate, take the warm tube at the fork (the cool one loops back), swim against a gentle current in the warm lane,
+     and rest on a glowing wall to get ready, a real speed burst. Reach the meeting place in the top 3. Rivals bump
+     softly, fall behind and rest; nobody is harmed. The HUD shows your place ("3rd of 20").
+  2. The Egg: now you are the egg. A gold hormone surge, a few taps with your mother's heartbeat to burst the follicle,
+     and the fimbriae sweep you into the tube. Then sperm come from all sides: drag a glowing arc round your shell so
+     they bounce away. Your own sperm comes in gold, sooner if you placed higher: "Let it in." Only it enters. Then
+     hold and let go to seal your shell. Fusion plays with no input.
   3. The Embryo: first cells: tap as each split comes, then hold and let go to fill your hollow and hatch.
   4. The Placenta: drift to a soft spot and nestle in, then steer your growing roots to the pools. Then your heart
      beats for the first time: "This beat is yours. Tap with it." Then your body grows from 2 mm to 10 mm, by itself.
@@ -35,10 +43,10 @@ records them as ours (design.md section 1).
      light.
   - Ending (not scored): white, a breath that comes by itself within 3 seconds, skin-to-skin, your mother's heartbeat
     clear, your song clear, then "Your nine months took 9 min 48 s".
-- **Nothing fails after fertilization.** Development happens on schedule; skill only changes the score. Only stage 1
-  can end in "Almost. Try again?", with Try again (at once, nothing lost) and Go on.
+- **Nothing fails after the race.** Development happens on schedule; skill only changes the score. Only stage 1 can
+  end in "Almost. Try again?" (outside the top 3, or at its cap), with Try again (at once, nothing lost) and Go on.
 - **One live gesture per moment**, named by the prompt: drag anywhere (a floating stick), tap, hold, or drag and hold.
-  Keys only on desktop. One-button mode and Assist in every stage. A fair timing judge on input timestamps, with a Tap
+  Keys only on desktop; in stage 2 the mouse can also aim the arc, and the arrows or A and D turn it. One-button mode and Assist in every stage. A fair timing judge on input timestamps, with a Tap
   test and a manual offset.
 - **One heartbeat** that runs on through overlays and cards, so the beat never jumps at a stage start.
 - **Score**: up to 10,000 points per stage (Goal, Skill, Flourish), grades Good, Great and Glowing, a run total and run
@@ -50,23 +58,28 @@ records them as ours (design.md section 1).
   splat-and-composite stack with a plain-shape Canvas 2D fallback. Stages join with a short crossfade. Womb sound that
   is felt first, then heard, then opens at birth.
 - **The arcade**: a machine at the end of the Action row, after Ahead of the Light; a switcher entry; a hand-drawn SVG
-  screen; a cabinet line with the best run; homepage checks at 390, 320 and 1280 px wide.
+  screen; a cabinet line with the best run, or the attract line RACE · GUARD · GROW · BREATHE; homepage checks at 390,
+  320 and 1280 px wide.
 
 ### Scope of this change
 
 This change builds the **v1 form** of each stage: its minimum form plus its best one or two flourishes (design.md
-section 6). These wait for later changes (design.md section 19.2): Continue, density assist, auto-drift of the timing
-offset, the log zoom between stages, a 2D fallback that matches the look, the formant voice, haptics, "Play your song",
-the FURTHEST cabinet line, the stage 6 repeats, jump and hiccups, and the stage 1 fork and moving rivals.
+section 6). For the user's race, v1 includes the stage 1 fork with its cool loop and the 19 moving rivals. These wait
+for later changes (design.md section 19.2): Continue, density assist, auto-drift of the timing offset, the log zoom
+between stages, a 2D fallback that matches the look, the formant voice, haptics, "Play your song", the FURTHEST
+cabinet line, and the stage 6 repeats, jump and hiccups.
 
-### Our choices (the user gave none)
+### Choices
+
+The user chose the play of stages 1 and 2 and kept the Action row. The rest are our choices, since the user gave none.
 
 | Topic | Choice |
 |---|---|
+| Stage 1 and 2 play (the user's) | A race with 19 rivals, then the egg guarding its shell until your own sperm comes in (design.md 6.1 and 6.2) |
 | Title | First Breath |
 | Art direction | "Warm Lantern" (design.md section 13, with the hex colour script) |
 | Controls | One live gesture per moment; relative stick; keys only on desktop; one-button mode |
-| Row | Action, the last machine, after `ahead-of-the-light` |
+| Row | Action, the last machine, after `ahead-of-the-light` (kept by the user after review) |
 | The person carrying the baby | "your mother" by default; Settings offer mother, mum, mom, parent; no pronouns in any string |
 | Week convention | Gestational age from the first day of the last period; "Day N after fertilization (week M)" in early stages |
 
@@ -78,7 +91,8 @@ the FURTHEST cabinet line, the stage 6 repeats, jump and hiccups, and the stage 
   clock and its moment spans, the one heartbeat, carry-over, scoring and grades, the stage 1 retry, pause, saves,
   practice, the ending and the run result.
 - `first-breath-stages`: what each of the eight stages asks and how it always completes, with its controls on touch
-  portrait, touch landscape and desktop, its one-button form and its gentle misses.
+  portrait, touch landscape and desktop, its one-button form and its gentle misses; the race with its place and
+  top-3 goal, and the guard, the gold sperm and the seal.
 - `first-breath-input`: one live gesture at a time, presses at touch-down, the floating stick, keys only on desktop,
   the timing judge on the stage clock, calibration, one-button mode and Assist.
 - `first-breath-presentation`: the Warm Lantern look, the renderer and its plain 2D fallback, the frame-cost budget,
@@ -111,7 +125,8 @@ None. The arcade's own requirements already ask for a machine for every game pag
     `"first-breath"` appended to the Action group's `games`, and the cabinet best-line block.
   - `public/arcade/switch.js`: the `GAMES` entry after Ahead of the Light.
   - `qa/arcade/groups.e2e.mjs`: Action goes from seven games to eight.
-  - `qa/arcade/machines.mjs`: the best-line key `first-breath.save.v1` and its wanted line ("BEST 61,240"), the size
+  - `qa/arcade/machines.mjs`: the best-line key `first-breath.save.v1`, its wanted line ("BEST 61,240") and plain
+    line (RACE · GUARD · GROW · BREATHE), the size
     check for the SVG screen, and a new part `firstbreath` for the homepage checks at 390 × 844, 320 × 568 and
     1280 × 720, with screenshots.
   - `qa/arcade/quiet.mjs`: a page entry for `/first-breath/` that presses `#play`.

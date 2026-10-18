@@ -1,7 +1,7 @@
 ## ADDED Requirements
 
-### Requirement: Stage 1, The Journey
-Stage 1 SHALL make the player a sperm cell that starts in the wide space of the womb with no anatomy labels, rides waves forward into a warm tube, swims against a gentle current, rests on a glowing wall until ready, and settles in a warm pocket on the tube wall. Steering SHALL be analog with the drag gesture. Speed SHALL never be scored. The current SHALL never push the cell behind the last checkpoint passed, and nothing SHALL fade to black.
+### Requirement: Stage 1, The Race
+Stage 1 SHALL make the player one sperm cell racing 19 rivals along a course: the wide womb with waves that speed a sperm swimming with them, a narrow gate, a fork where the egg's side glows warm and the cool side loops back to the fork within a few seconds, then a tube with a gentle current, a warm lane that is clearly faster than the walls, and glow walls, to the meeting place. Steering SHALL be analog with the drag gesture.
 
 #### Scenario: Portrait drag
 - **GIVEN** stage 1 at 390 × 844 with touch
@@ -13,31 +13,109 @@ Stage 1 SHALL make the player a sperm cell that starts in the wide space of the 
 - **GIVEN** stage 1 at 844 × 390 with touch
 - **WHEN** the player drags right with either thumb
 - **THEN** the sperm cell swims forward, which is right
+- **AND** the place slot changes as the cell passes rivals
 - **CHECK** `qa/first-breath/input.e2e.mjs`
 
 #### Scenario: Desktop keys
 - **GIVEN** stage 1 at 1440 × 900
 - **WHEN** the player steers with the arrows or WASD
-- **THEN** the cell steers in 8 directions with smoothing, and no mouse is needed to finish the stage
+- **THEN** the cell steers in 8 directions with smoothing, and no mouse is needed to finish the race
 - **CHECK** `qa/first-breath/input.e2e.mjs`
 
-#### Scenario: Rest to become ready
-- **WHEN** the player lets go on a glowing wall so the cell stays there for 4 of the mother's beats
-- **THEN** "Now you are ready." shows and the cell swims 1.4 times as fast for the rest of the stage
+#### Scenario: Desktop mouse drag
+- **GIVEN** stage 1 at 1440 × 900
+- **WHEN** the player holds the left mouse button and drags to the right of the press point
+- **THEN** the drag acts as the floating stick and the cell swims forward, which is right
+- **CHECK** `qa/first-breath/input.e2e.mjs`
+
+#### Scenario: Ride a wave
+- **WHEN** the player swims forward inside a wave's window in the womb
+- **THEN** the cell's speed blends up to the wave's 140 u/s
+- **AND** a sperm that does not swim is not lifted by the wave
 - **CHECK** `qa/first-breath/stage-swim.test.mjs`
 
-#### Scenario: One-button
+#### Scenario: The cool tube loops back
+- **WHEN** the player takes the cool tube at the fork, or lets go inside it
+- **THEN** "This way is cool. It leads back." shows, and the cell is back at the fork within 6 s, also with no input
+- **CHECK** `qa/first-breath/stage-swim.test.mjs`
+
+#### Scenario: The warm lane is faster
+- **WHEN** a sperm swims at full stick in the tube, once in the warm lane and once along a wall
+- **THEN** it moves forward at 70 u/s or more in the lane and at 65 u/s or less along the wall
+- **CHECK** `qa/first-breath/stage-swim.test.mjs`
+
+#### Scenario: One-button race
 - **GIVEN** one-button mode
 - **WHEN** the player holds the button
-- **THEN** the cell follows the warm lane by itself, rests on each glowing wall until ready, and settles in the pocket before the cap
+- **THEN** the cell rides the waves, takes the warm tube, rests on the first glow wall and reaches the meeting place in the top 3 before the cap
 - **CHECK** `qa/first-breath/input.e2e.mjs`
 
-### Requirement: Stage 2, Ovulation
-Stage 2 SHALL make the player the egg. A gold wave, the hormone surge, SHALL wash over the follicle on the mother's first two beats with no input. Then taps with her beat SHALL swell the follicle: the third tap graded Close or better opens it, or it opens by itself on beat 8. The stage SHALL take the same time for every input.
+#### Scenario: The fork in view
+- **GIVEN** stage 1 at 390 × 844, 844 × 390 and 1440 × 900
+- **WHEN** the cell nears the fork
+- **THEN** both branch mouths are on screen, under no HUD or prompt, at least 1.5 s before the cell reaches the split
+- **CHECK** `qa/first-breath/layout.e2e.mjs`
+
+### Requirement: Rest on a glow to get ready
+A sperm that lets go inside a glow on the tube wall SHALL hold to the wall and become ready on the mother's 4th beat, which multiplies its own swim speed by 1.6 to the finish. The current SHALL never push a sperm behind the last checkpoint it passed, and nothing SHALL fade to black.
+
+#### Scenario: Rest to become ready
+- **WHEN** the player lets go inside a glow on the wall
+- **THEN** the cell holds to the wall with no drift, and on the mother's 4th beat "Now you are ready." shows and its own swim speed is 1.6 times as fast to the finish
+- **AND** a new drag past a quarter of the stick lets it go
+- **CHECK** `qa/first-breath/stage-swim.test.mjs`
+
+### Requirement: The place in the HUD
+In stage 1 the HUD SHALL show the player's place among the 20 sperm, such as "3rd of 20", ranked by progress along the course. The shown place SHALL change only after a new place has held for 0.25 s.
+
+#### Scenario: The place changes
+- **WHEN** a rival passes the player in the tube and stays ahead
+- **THEN** a `place` event moves the slot from "3rd of 20" to "4th of 20" within 0.3 s, once the new place has held for 0.25 s
+- **CHECK** `qa/first-breath/stage-swim.test.mjs`, `qa/first-breath/layout.e2e.mjs`
+
+### Requirement: The top-3 goal
+Stage 1's goal SHALL be to reach the meeting place in the top 3 before the 117 s cap; there the game SHALL show "Wait here. The egg is coming." With the wait at the meeting place, or the 3 s carry after Go on at the cap, stage 1 SHALL never run past 120 s. The score SHALL count the place, wave riding, the warm lane and becoming ready, with 1st place as the Flourish.
+
+#### Scenario: A mid player
+- **WHEN** the skill 0.7 bot races 20 seeds
+- **THEN** it reaches the meeting place in the top 3 in at least 18 of them, arriving 55 to 65 s into the stage on average
+- **CHECK** `qa/first-breath/stage-swim.test.mjs`
+
+#### Scenario: First place
+- **WHEN** the reference bot races 20 seeds
+- **THEN** it is 1st in at least 18 of them, arriving 44 to 54 s into the stage, and earns the Flourish
+- **CHECK** `qa/first-breath/stage-swim.test.mjs`
+
+#### Scenario: An idle player
+- **WHEN** the player touches nothing in stage 1
+- **THEN** the cell never passes the gate, every rival passes it, and the stage ends at 117 s without its goal, in 20th place
+- **CHECK** `qa/first-breath/stage-swim.test.mjs`
+
+### Requirement: Rivals race, and nobody is harmed
+The 19 rivals SHALL move by a seeded policy with a spread of skill: they ride waves, sometimes take the cool tube, and jostle; only the two front-runners rest on a glow and become ready. Contact SHALL be a soft bump between two circles that pushes them apart and costs speed for a moment. Rivals far behind SHALL slow and rest on the walls. A mild catch-up SHALL keep the race close under the same rules for every sperm. Nothing SHALL be killed, and the course SHALL have no hazards.
+
+#### Scenario: The same race for the same seed
+- **WHEN** stage 1 runs twice in node with the same seed and the same input
+- **THEN** every rival is at the same spot at every step, and the places are equal
+- **CHECK** `qa/first-breath/stage-swim.test.mjs`
+
+#### Scenario: A soft bump
+- **WHEN** two swimming sperm touch
+- **THEN** they are pushed apart, each keeps 0.7 of its speed, and each is back to its full top speed 0.6 s later
+- **AND** a sperm resting on the wall is passed over, never bumped
+- **CHECK** `qa/first-breath/stage-swim.test.mjs`
+
+#### Scenario: Falling behind
+- **WHEN** a rival in the tube is 500 u or more behind the player
+- **THEN** it slows and rests on the nearest wall, and it still counts behind the player in the place
+- **CHECK** `qa/first-breath/stage-swim.test.mjs`
+
+### Requirement: Stage 2, The Egg: the opening
+Stage 2 SHALL switch the view to the egg, with "Now you are the egg." on its card, or as its first caption when there is no card. A gold wave, the hormone surge, SHALL wash over the follicle on the mother's first two beats with no input. Taps with her beat SHALL then burst the follicle: the third tap graded Close or better bursts it, or it bursts by itself on beat 8. The fimbriae SHALL then sweep the egg into the tube. The opening SHALL end within 9 s.
 
 #### Scenario: The first payoff
 - **WHEN** the player taps on beats 3, 4 and 5 in time
-- **THEN** the follicle opens on the third tap, by 4.5 s into the stage
+- **THEN** the follicle bursts on the third tap, by 4.5 s into the stage
 - **CHECK** `qa/first-breath/stage-egg.test.mjs`
 
 #### Scenario: The surge comes first
@@ -50,25 +128,134 @@ Stage 2 SHALL make the player the egg. A gold wave, the hormone surge, SHALL was
 - **THEN** each press is judged at its touch-down time against the nearest beat
 - **CHECK** `qa/first-breath/input.e2e.mjs`
 
-### Requirement: The ride and the call
-In stage 2, cilia SHALL carry the egg whatever the input, and each tap on a beat SHALL add a visible surf. Every third beat of the ride SHALL be gold, and on-beat gold taps SHALL widen the trail that the waiting sperm follows to the egg.
-
-#### Scenario: Gold beats shape the meeting
-- **WHEN** a player taps all 8 gold beats In time and another player taps none
-- **THEN** the first trail is 26 u wide and the second 8 u wide, and the sperm reaches the egg in both
+#### Scenario: A short opening
+- **WHEN** the player does nothing in the opening
+- **THEN** the follicle bursts by itself on beat 8 with "It opens anyway.", and the guard starts by 8.9 s
 - **CHECK** `qa/first-breath/stage-egg.test.mjs`
+
+### Requirement: Guard your shell
+In stage 2's guard, waves of sperm SHALL swim toward the egg's shell from all sides, building over about 35 to 40 s. A glowing arc SHALL follow one drag round the shell. A swimming rival under the arc SHALL bounce away. A rival that reaches an open part of the shell SHALL stick and burrow, with a progress ring, and the arc over it SHALL pop it loose. A rival that finishes burrowing SHALL be held, still, in the egg's cloud and SHALL never enter.
+
+#### Scenario: Guard in portrait
+- **GIVEN** the guard at 390 × 844 with touch
+- **WHEN** the player touches down near the bottom of the screen and drags toward the upper left
+- **THEN** the arc turns to the upper left of the shell, within 10° of the drag's angle, and the egg stays above 60% of the screen height
+- **CHECK** `qa/first-breath/input.e2e.mjs`
+
+#### Scenario: Guard in landscape
+- **GIVEN** the guard at 844 × 390 with touch
+- **WHEN** the player drags right with either thumb
+- **THEN** the arc moves to the right side of the shell
+- **CHECK** `qa/first-breath/input.e2e.mjs`
+
+#### Scenario: Guard on desktop
+- **GIVEN** the guard at 1440 × 900
+- **WHEN** the mouse moves above the egg with no button down, then the right arrow is held, then released with the cursor still over the page
+- **THEN** the arc first faces the pointer, then turns clockwise as seen, then stays where the arrow left it
+- **CHECK** `qa/first-breath/input.e2e.mjs`
+
+#### Scenario: Pop a stuck sperm loose
+- **WHEN** a sperm sticks to the shell and the player moves the arc over it before 4.0 s pass
+- **THEN** it comes loose and drifts off, and it counts half in the guard credit
+- **CHECK** `qa/first-breath/stage-egg.test.mjs`
+
+#### Scenario: A held rival never enters
+- **WHEN** a rival finishes burrowing
+- **THEN** it is held, still, in the cloud, the guard goes on, and it never enters
+- **CHECK** `qa/first-breath/stage-egg.test.mjs`
+
+#### Scenario: One-button guard
+- **GIVEN** one-button mode in the guard
+- **WHEN** the player holds the button, and then lets go
+- **THEN** while held the arc turns to the nearest rival that is not gold, the one that will reach the arc's reach soonest, and after the release it stays still
+- **CHECK** `qa/first-breath/input.e2e.mjs`
+
+#### Scenario: The arc bot keeps off the gold sperm
+- **WHEN** the reference bot guards over 20 seeds
+- **THEN** it never nudges the player's gold sperm
+- **CHECK** `qa/first-breath/stage-egg.test.mjs`
+
+### Requirement: The arc over a sperm
+The arc SHALL be over a sperm when the angle between them is within the arc's half-width and the sperm's head is within 22 u of the egg's centre, checked every step, whether the sperm moves under the arc or the arc sweeps onto it. A swimming rival under it SHALL bounce, a stuck rival SHALL pop loose, the gold sperm SHALL be nudged, and held and drifting sperm SHALL ignore it.
+
+#### Scenario: The arc sweeps onto a sperm
+- **WHEN** the arc turns onto a swimming rival within 22 u, onto a stuck rival, and onto a held rival
+- **THEN** the swimming rival bounces away, the stuck one pops loose and drifts off, and the held one stays where it is
+- **CHECK** `qa/first-breath/stage-egg.test.mjs`
+
+### Requirement: Only your sperm enters
+The player's sperm from stage 1 SHALL come to the egg in gold, with "Let it in." The arc SHALL only nudge it back, at most 3 times, and it SHALL always return, burrow and enter by itself. Exactly one sperm SHALL enter in stage 2: the player's. No input SHALL take it into the egg. As it enters, Izumo1 SHALL meet Juno.
+
+#### Scenario: It always gets in
+- **WHEN** the player holds the arc on the gold sperm the whole time
+- **THEN** it is nudged back 3 times, slips under the arc and enters by 52 s into the guard
+- **CHECK** `qa/first-breath/stage-egg.test.mjs`
+
+#### Scenario: Exactly one enters
+- **WHEN** stage 2 runs over 20 seeds with no input, with the reference bot and with random drags
+- **THEN** every run has exactly one `enter` event, and it is the gold sperm's
+- **CHECK** `qa/first-breath/stage-egg.test.mjs`
+
+### Requirement: The gold sperm's way in
+The gold sperm SHALL come in 27 s into the guard after 1st place, and 0.3 s later for each place lower. Its seeded angle SHALL always exist and SHALL keep clear of the arc, of the thumb side and of the portrait caption band.
+
+#### Scenario: Earlier when placed higher
+- **WHEN** stage 2 runs with a stage 1 place of 1, 3 and 20
+- **THEN** the gold sperm comes in at 27.0, 27.6 and 32.7 s into the guard
+- **CHECK** `qa/first-breath/stage-egg.test.mjs`
+
+#### Scenario: A place to come in from
+- **WHEN** stage 2 runs over 20 seeds with no input, and with the arc parked at each of 72 angles
+- **THEN** the gold sperm always finds an angle, at least the arc's half-width plus 30° from it, never from straight below or under the portrait caption band
+- **CHECK** `qa/first-breath/stage-egg.test.mjs`, `qa/first-breath/layout.e2e.mjs`
+
+### Requirement: Seal your shell
+When the player's sperm has entered, stage 2 SHALL ask "Seal your shell. Hold, then let go." with a release target on the mother's 3rd beat, counted from her first beat at least 0.6 s after the prompt. The release SHALL send a shimmering wave round the shell from the entry point, push the other sperm away and harden the shell. An In time release SHALL earn a Flourish of 1,000, and a Close one 500. With no release by her 6th counted beat, the shell SHALL seal by itself with no Flourish.
+
+#### Scenario: Seal on a phone
+- **GIVEN** the seal at 390 × 844
+- **WHEN** the player holds and lets go on the glowing beat
+- **THEN** the release is In time, the wave runs round the shell from the entry point, and the other sperm drift off
+- **CHECK** `qa/first-breath/stage-egg.test.mjs`
+
+#### Scenario: Seal in landscape
+- **GIVEN** the seal at 844 × 390 with touch
+- **WHEN** the player presses with either thumb and lets go on the glowing beat
+- **THEN** the release is graded In time and the shell seals
+- **CHECK** `qa/first-breath/input.e2e.mjs`
+
+#### Scenario: Seal with Space
+- **GIVEN** the seal at 1440 × 900
+- **WHEN** the player holds Space and lets go on the glow
+- **THEN** the release is graded and the shell seals
+- **CHECK** `qa/first-breath/input.e2e.mjs`
+
+#### Scenario: No input at the seal
+- **WHEN** the player does nothing at the seal
+- **THEN** "Your shell seals itself." shows on her 6th counted beat, no Flourish is given, and fusion follows
+- **CHECK** `qa/first-breath/stage-egg.test.mjs`
+
+### Requirement: A fresh press seals the shell
+Only a press made after the seal prompt SHALL count toward the seal. A thumb or button still down from the guard SHALL have to lift and press again, and lifting it SHALL do nothing. A hold still down at her 6th counted beat SHALL seal by itself with no Flourish.
+
+#### Scenario: A thumb still down from the guard
+- **GIVEN** the guard at 390 × 844 with the thumb still down from its drag when the seal prompt shows, and one-button mode at 1440 × 900 with Space still held from the guard
+- **WHEN** the player lifts the thumb, or lets go of Space, right after the prompt
+- **THEN** nothing seals, and a new press and release seals the shell and is graded
+- **CHECK** `qa/first-breath/input.e2e.mjs`, `qa/first-breath/stage-egg.test.mjs`
 
 ### Requirement: Fertilization needs no input
-Fertilization SHALL play for 6 s with input ignored: the corona parts, Izumo1 meets Juno, the shell changes, the other sperm drift away, and the two nuclei touch but stay apart. No push, drill or hold mechanic SHALL take the sperm into the egg.
+After the seal, fusion SHALL play for 5 s with input ignored: the egg takes in the sperm's contents, and the two nuclei draw close and touch but stay apart. No push, drill or hold mechanic SHALL take the sperm into the egg. Captions SHALL keep the real order: Izumo1 meets Juno as the sperm enters, the shell changes at the seal, and the nuclei touch at fusion.
 
 #### Scenario: Fusion needs no input
-- **WHEN** the meeting ends
-- **THEN** fusion plays for 6 s with input ignored, and the prompt shows no gesture
+- **WHEN** the seal ends
+- **THEN** fusion plays for 5 s with input ignored, and the prompt shows no gesture
 - **CHECK** `qa/first-breath/stage-egg.test.mjs`
 
-#### Scenario: The steps of fusion
-- **WHEN** fusion plays
-- **THEN** captions name, in order, the parting cells, Izumo1 meeting Juno, the shell changing, and the two nuclei touching but staying apart
+#### Scenario: The steps in order
+- **WHEN** stage 2 runs from the entry to the end of fusion
+- **THEN** captions name, in order, Izumo1 meeting Juno, the wave and the shell changing, no other sperm getting through, and the two nuclei touching but staying apart
+- **AND** each caption's label matches the HUD clock, "Week 2" until the nuclei touch
 - **CHECK** `qa/first-breath/stage-egg.test.mjs`
 
 ### Requirement: Stage 3, The Embryo: first cells
@@ -285,14 +472,6 @@ Waves 2, 4, 6 and 8 SHALL ask for Tuck (drag down and hold), Turn (drag sideways
 - **WHEN** the player holds the button through every wave
 - **THEN** every move counts in the right direction and the birth completes
 - **CHECK** `qa/first-breath/input.e2e.mjs`
-
-### Requirement: Other sperm only rest
-In stage 1 the other sperm SHALL only rest, still, on the tube walls. They SHALL never move toward the pocket, sit past 2,800 u, block or touch the player's cell, and nothing SHALL be killed. Moving rivals and the fork with the cool tube are not part of this change.
-
-#### Scenario: Other sperm over many seeds
-- **WHEN** stage 1 runs for 20 seeds with the reference bot and with no input
-- **THEN** every other sperm stays at its seeded wall spot, none sits past 2,800 u, and the player's speed never changes from passing one
-- **CHECK** `qa/first-breath/stage-swim.test.mjs`
 
 ### Requirement: Every sub-goal is shown and confirmed
 Each sub-goal SHALL show its prompt and caption when it starts, and SHALL be confirmed when the player does it ("Now you are ready.") or when it happens by itself ("The roots reach it anyway."). No sub-goal SHALL pass with no message.

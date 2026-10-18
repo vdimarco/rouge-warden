@@ -91,12 +91,13 @@ The game SHALL fit phone portrait (390 × 844, touch), phone landscape (844 × 3
 - **CHECK** `qa/first-breath/layout.e2e.mjs`
 
 ### Requirement: The thumb zone in portrait
-In portrait, the bottom 40% of the screen is the thumb zone. During play (the stages, their overlays and the ending) the subject SHALL stay above it, and nothing to read SHALL sit in it. Menus and cards MAY use the whole screen. Captions SHALL sit in a band at 50% to 58% of the height in portrait, and at the bottom centre in landscape and desktop.
+In portrait, the bottom 40% of the screen is the thumb zone. During play (the stages, their overlays and the ending) the subject SHALL stay above it, and nothing to read SHALL sit in it. Menus and cards MAY use the whole screen. Captions SHALL sit in a band at 50% to 58% of the height in portrait (18% to 26% in stage 2, above the egg), and at the bottom centre in landscape and desktop. In stage 1 in portrait, captions SHALL be one line and SHALL show for 2.5 s.
 
 #### Scenario: Captions and text in portrait
 - **GIVEN** 390 × 844
 - **WHEN** each stage, its overlay and the ending are shown
-- **THEN** captions sit between 50% and 58% of the height, and no HUD, caption or overlay text sits below 60% of the height
+- **THEN** captions sit between 50% and 58% of the height (between 18% and 26% in stage 2), and no HUD, caption or overlay text sits below 60% of the height
+- **AND** in stage 1 each caption is one line and is gone within 2.5 s
 - **CHECK** `qa/first-breath/layout.e2e.mjs`
 
 #### Scenario: Thumb reach
@@ -105,17 +106,52 @@ In portrait, the bottom 40% of the screen is the thumb zone. During play (the st
 - **CHECK** `qa/first-breath/layout.e2e.mjs`
 
 ### Requirement: The HUD and prompt line
-The HUD SHALL show the stage name and the clock label at the top left and the score and the pause button at the top right. The scale bar SHALL sit at the top left under the clock in portrait, and at the bottom left in landscape and desktop. A prompt line under the HUD SHALL name the live gesture with an icon. Text SHALL be at least 16 px, and 20 px with Large text.
+The HUD SHALL show the stage name and the clock label at the top left and the score and the pause button at the top right. In stage 1 a place slot under the score SHALL show the place, such as "3rd of 20". The scale bar SHALL sit at the top left under the clock in portrait, and at the bottom left in landscape and desktop. A prompt line under the HUD SHALL name the live gesture with an icon. Text SHALL be at least 16 px, and 20 px with Large text.
 
 #### Scenario: Large text
 - **WHEN** the player turns on Large text at 390 × 844
 - **THEN** HUD and caption text grow to 20 px and 22 px with no overlap
 - **CHECK** `qa/first-breath/layout.e2e.mjs`
 
+#### Scenario: The place slot in every layout
+- **GIVEN** stage 1 at 390 × 844 and 844 × 390 with touch, and at 1440 × 900, with `?inset=47,0,34,0`
+- **WHEN** the race is under way
+- **THEN** the place slot reads the same place as `__fb.race()`, sits under the score inside the safe area, above 60% of the height in portrait, and overlaps no HUD, prompt or caption box
+- **CHECK** `qa/first-breath/layout.e2e.mjs`
+
 #### Scenario: The scale bar in portrait
 - **WHEN** stage 4 is shown at 390 × 844
 - **THEN** the scale bar sits under the clock at the top left, above 60% of the height
 - **CHECK** `qa/first-breath/layout.e2e.mjs`
+
+### Requirement: The egg and its arc in the free part of the screen
+In stage 2 the egg's centre SHALL be the layout's subject point: 45% of the height in portrait; 38% of the width and 55% of the height in landscape; 40% of the width and half the height on desktop. The camera SHALL show 140 u across the short axis. The shell, the arc, every stuck or held sperm and the player's incoming gold sperm SHALL stay inside the safe area, under no HUD, prompt or caption, in 390 × 844, 844 × 390 and 1440 × 900.
+
+#### Scenario: Portrait guard
+- **GIVEN** `?seed=1&moment=guard` at 390 × 844, stepped 33 s into the guard, when the gold sperm burrows at the shell
+- **WHEN** the frame and `__fb.guard()` are read
+- **THEN** the egg's centre is at 45% of the height, every stuck sperm and the gold sperm are between the caption band and 60% of the height, and none is under the HUD or prompt
+- **CHECK** `qa/first-breath/layout.e2e.mjs`
+
+#### Scenario: Landscape and desktop guard
+- **GIVEN** the same guard frame at 844 × 390 and 1440 × 900
+- **WHEN** the frame and `__fb.guard()` are read
+- **THEN** the egg's centre is at 38% of the width and 55% of the height in landscape, and at 40% of the width and half the height on desktop, and every stuck sperm and the gold sperm are inside the screen and under no HUD, prompt or caption box
+- **CHECK** `qa/first-breath/layout.e2e.mjs`
+
+### Requirement: The gold sperm's path and the bright arc
+In portrait the gold sperm's path SHALL never pass under a caption or below 60% of the height. The arc SHALL be the brightest band in the guard.
+
+#### Scenario: The gold's path in portrait
+- **GIVEN** stage 2 at 390 × 844 over 20 seeds and stage 1 places of 1, 3 and 20
+- **WHEN** the gold sperm comes in and enters, with no input and with the reference bot
+- **THEN** its screen point is never inside a caption box and never below 60% of the height
+- **CHECK** `qa/first-breath/layout.e2e.mjs`
+
+#### Scenario: The arc is the brightest band
+- **WHEN** a frozen guard frame is captured with its DOM rings
+- **THEN** the luminance on the arc is at or above the frame's 95th percentile
+- **CHECK** `qa/first-breath/visual.e2e.mjs`
 
 ### Requirement: Womb sound
 Sound SHALL be synthesized in one graph built on the Play tap against an injected AudioContext, with no audio files. Every source except the birth sounds SHALL pass a womb low-pass bus. The voice SHALL be a sine hum. The mother's beat sounds SHALL come from the run's beat clock, so sound and picture agree and the beat does not jump at a stage start. The mother's heart SHALL include 2nd and 3rd harmonics so phone speakers carry it.
@@ -149,7 +185,7 @@ The womb bus cutoff SHALL be 150 Hz with heart harmonics kept in stages 1 to 5 (
 - **CHECK** `qa/first-breath/sound.e2e.mjs`
 
 ### Requirement: Captions and a picture for every sound
-Captions SHALL be on by default in an `aria-live="polite"` region, with a symbol and a direction where it helps. Every sound cue SHALL also have a visual cue: every beat a ring, every hummed note a ripple, every answer note a ghost ripple, and every target a DOM ring in `svg#rings` before its time. Stages 2, 3, 5 and 6 SHALL be playable with sound off.
+Captions SHALL be on by default in an `aria-live="polite"` region, with a symbol and a direction where it helps. Every sound cue SHALL also have a visual cue: every beat a ring, every hummed note a ripple, every answer note a ghost ripple, every bump or bounce a small contact ring, and every target a DOM ring in `svg#rings` before its time. The contact rings SHALL NOT be cut. Stages 2, 3, 5 and 6 SHALL be playable with sound off.
 
 #### Scenario: Muted rhythm stage
 - **GIVEN** the sound muted with M
@@ -161,6 +197,15 @@ Captions SHALL be on by default in an `aria-live="polite"` region, with a symbol
 - **WHEN** the voice hums from the left in stage 6
 - **THEN** a caption such as "♪ voice, left: 3 notes" shows
 - **CHECK** `qa/first-breath/layout.e2e.mjs`
+
+### Requirement: A ring budget
+A frame SHALL have at most 8 DOM rings. In the guard, burrow rings SHALL be capped at 7, and at 6 while a target ring shows.
+
+#### Scenario: Rings at the seal
+- **GIVEN** stage 2 idle until the seal, so many rivals are stuck when the seal target shows
+- **WHEN** `svg#rings` is read during the seal
+- **THEN** it holds the mother's ring, the target ring and at most 6 burrow rings, 8 in all at most
+- **CHECK** `qa/first-breath/input.e2e.mjs`, `qa/first-breath/draw.test.mjs`
 
 ### Requirement: Reduced motion
 With `prefers-reduced-motion: reduce`, `?rm=1` or the Motion setting at Reduced, the game SHALL halve the membrane warp, drop scale bounce and camera shake, change beats by brightness only, keep the walls still during contractions, and make the birth light a plain 1.5 s fade. The stage change SHALL stay the same 0.8 s crossfade. The rhythm and the timing SHALL stay the same.
@@ -207,7 +252,7 @@ Between stages the game SHALL crossfade for 0.8 s. A scale bar SHALL show a roun
 
 #### Scenario: Not to scale
 - **WHEN** stage 1 or stage 2 is shown
-- **THEN** the bar reads only the subject's size, "You: about 0.05 mm" or "You: about 0.1 mm", and the sperm cell spans 15% of the short axis
+- **THEN** the bar reads only the subject's size, "You: about 0.05 mm" or "You: about 0.1 mm", and the stage 1 sperm cell is drawn 22 u long, 13% to 15% of the short axis
 - **CHECK** `qa/first-breath/layout.e2e.mjs`
 
 ### Requirement: An abstract, warm baby
