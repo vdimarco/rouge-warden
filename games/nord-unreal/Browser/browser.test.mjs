@@ -16,11 +16,11 @@ function build(endpoint) {
 }
 const server = createServer(async (request, response) => {
   const file = new URL(request.url, 'http://localhost').pathname.slice(1) || 'index.html';
-  if (!['index.html', 'player.js', 'hero.js', 'crew.js', 'intro.js', 'menu.js', 'install.js', 'styles.css', 'hero.css', 'intro.css', 'menu.css', 'crew-sprite.webp', 'manifest.webmanifest', 'bungee-400.woff2', 'barlow-condensed-500.woff2', 'barlow-condensed-700.woff2', 'favicon.svg', 'favicon-32.png', 'apple-touch-icon.png', 'icon-192.png', 'icon-512.png', 'icon-maskable-512.png'].includes(file)) {
+  if (!['index.html', 'player.js', 'hero.js', 'crew.js', 'intro.js', 'menu.js', 'install.js', 'styles.css', 'hero.css', 'intro.css', 'menu.css', 'crew-sprite.webp', 'title-loop-wide.mp4', 'title-loop-tall.mp4', 'manifest.webmanifest', 'bungee-400.woff2', 'barlow-condensed-500.woff2', 'barlow-condensed-700.woff2', 'favicon.svg', 'favicon-32.png', 'apple-touch-icon.png', 'icon-192.png', 'icon-512.png', 'icon-maskable-512.png'].includes(file)) {
     response.writeHead(404).end();
     return;
   }
-  const types = { woff2: 'font/woff2', js: 'text/javascript', css: 'text/css', webp: 'image/webp', webmanifest: 'application/manifest+json', svg: 'image/svg+xml', png: 'image/png' };
+  const types = { woff2: 'font/woff2', js: 'text/javascript', css: 'text/css', webp: 'image/webp', webmanifest: 'application/manifest+json', svg: 'image/svg+xml', png: 'image/png', mp4: 'video/mp4' };
   response.setHeader('Content-Type', types[file.split('.').at(-1)] || 'text/html');
   response.end(await readFile(`dist/${file}`));
 });
@@ -236,7 +236,7 @@ try {
       await rm(profile, { recursive: true, force: true });
     }
   }
-  for (const [file, type] of Object.entries({ 'install.js': 'text/javascript', 'manifest.webmanifest': 'application/manifest+json', 'favicon.svg': 'image/svg+xml', 'favicon-32.png': 'image/png', 'apple-touch-icon.png': 'image/png', 'icon-192.png': 'image/png', 'icon-512.png': 'image/png', 'icon-maskable-512.png': 'image/png' })) {
+  for (const [file, type] of Object.entries({ 'title-loop-wide.mp4': 'video/mp4', 'title-loop-tall.mp4': 'video/mp4', 'install.js': 'text/javascript', 'manifest.webmanifest': 'application/manifest+json', 'favicon.svg': 'image/svg+xml', 'favicon-32.png': 'image/png', 'apple-touch-icon.png': 'image/png', 'icon-192.png': 'image/png', 'icon-512.png': 'image/png', 'icon-maskable-512.png': 'image/png' })) {
     const response = await page.request.get(`${url}/${file}`);
     assert.equal(response.status(), 200, `${file} is shipped`);
     assert.equal(response.headers()['content-type'], type, `${file} has the correct media type`);
@@ -257,7 +257,7 @@ try {
     assert.equal(await page.locator('#watch-trailer').isVisible(), true);
     assert.equal(await page.locator('#hero-video').isVisible(), true, 'the trailer loop plays behind the start card');
     assert.equal(await page.locator('#trailer-video').getAttribute('src'), null, 'full trailer is not loaded until opened');
-    assert.equal(await page.locator('#hero-video').getAttribute('src'), width < height ? 'https://d2ol7oe51mr4n9.cloudfront.net/user_3JnxFRyLd68bfjwUMHz1De16TMw/4d0928ae-27d4-4c7e-92ec-f3927c66a4b0.mp4' : 'https://d2ol7oe51mr4n9.cloudfront.net/user_3JnxFRyLd68bfjwUMHz1De16TMw/a7a1e663-b152-4806-9a6c-6907f9738a44.mp4', 'the title screen loops a light 15 s clip, vertical in portrait');
+    assert.equal(await page.locator('#hero-video').getAttribute('src'), width < height ? './title-loop-tall.mp4' : './title-loop-wide.mp4', 'the title screen loops the text-free 14.5 s clip, vertical in portrait');
     assert.equal(await page.locator('#hero-video').evaluate(video => video.loop && !video.hasAttribute('muted')), true);
     assert.equal(await page.locator('#connect').isVisible(), true, 'the start card stays reachable under the hero');
     await page.screenshot({ path: `.qa/offline-${width}.png`, fullPage: true });

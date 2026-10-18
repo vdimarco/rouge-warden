@@ -1,0 +1,5 @@
+- [x] Find the text in both loop clips: caption boxes near the top and the 4.0 to 5.0 s title card.
+- [x] Make text-free wide and tall clips with ffmpeg and check a frame grid of each.
+- [x] Serve the clips from the play page; update `index.html`, `build.mjs` and `browser.test.mjs`.
+- [x] `npm test`, `browser.test.mjs` and `steering-layout.test.mjs` pass.
+- [ ] Watch the loop on a real phone and a desktop browser (this container's Chromium cannot decode H.264).
