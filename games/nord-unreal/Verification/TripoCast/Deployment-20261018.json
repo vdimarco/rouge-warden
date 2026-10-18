@@ -1,0 +1,372 @@
+{
+  "deployed": true,
+  "at_utc": "2026-10-18T02:28:16.048874+00:00",
+  "public_url": "https://nord-montreal.vercel.app/",
+  "implementation_commit": "38d15e1a57e74cdc01e7238f90e0ca9888fd60ec",
+  "pull_request": "https://github.com/vdimarco/rouge-warden/pull/395",
+  "native_executable_sha256": "4c6768b6581611b948ad7b0fc469753cfd138f9df7e15c3f480d67adf822df15",
+  "native_tests": {
+    "success": 12,
+    "errors": 0,
+    "warning": "Known NullRHI SDL initialization warning on each test; BOM-aware actual report validation."
+  },
+  "native_pixels": {
+    "stills": 196,
+    "modes": [
+      "Standard",
+      "Comic"
+    ],
+    "sizes": [
+      [
+        1280,
+        720
+      ],
+      [
+        1920,
+        1080
+      ]
+    ],
+    "continuous_1x_recordings": 2,
+    "independent_sampled_video_frames": 322,
+    "acceptance": "Bounded no-new-gross-facing/anatomy/scale failure; final naturalness/art remains open.",
+    "plan_metadata_amendment": "Only source-fix metadata changed after launch; six job argv/inputs/fixture/module unchanged; reconstruction and exact diffs retained."
+  },
+  "package": {
+    "files": 48,
+    "fresh_Tripo_cooked_headers": 77,
+    "districts": [
+      "LaFontaine",
+      "CollegeBathurst"
+    ],
+    "native_peers_exit0": 6,
+    "crew": "Tripo3\u20139 plus production10; active own graphs, exact clips and remote selection verified.",
+    "behavior": "Crew cycling, independent host/client join, enter/drive/brake/exit and district/progression isolation."
+  },
+  "performance": {
+    "hardware": {
+      "platform": "Linux",
+      "cpu": "GenuineIntel|Intel(R) Core(TM) i9-14900K",
+      "gpu": "NVIDIA GeForce RTX 4090",
+      "gpudriver": "610.57",
+      "engineversion": "5.8.3-58210709+++UE5+Release-5.8",
+      "shaderplatform": "VULKAN_SM6"
+    },
+    "method": "1200 CSV frames per static scene; discard first 300 and last 2",
+    "settings": "Production High2/GI1/reflection1/shadow1/VSM0/75%,30FPS cap,VSync off,standard view; all7styles3\u20139",
+    "resolution": [
+      1280,
+      720
+    ],
+    "scenes": [
+      {
+        "style": 3,
+        "average_fps": 30.0,
+        "raw_frames": 1200,
+        "warmed_frames": 898,
+        "frame": {
+          "median_ms": 33.4596,
+          "p95_ms": 34.4298,
+          "p99_ms": 34.7238
+        },
+        "gpu": {
+          "median_ms": 4.361,
+          "p95_ms": 5.379,
+          "p99_ms": 5.52
+        },
+        "game_thread": {
+          "median_ms": 3.126,
+          "p95_ms": 3.625,
+          "p99_ms": 4.404
+        },
+        "animation": {
+          "median_ms": 0.0676,
+          "p95_ms": 0.0853,
+          "p99_ms": 0.123
+        }
+      },
+      {
+        "style": 4,
+        "average_fps": 30.0,
+        "raw_frames": 1200,
+        "warmed_frames": 898,
+        "frame": {
+          "median_ms": 33.1698,
+          "p95_ms": 34.6826,
+          "p99_ms": 35.4259
+        },
+        "gpu": {
+          "median_ms": 4.672,
+          "p95_ms": 5.375,
+          "p99_ms": 5.48
+        },
+        "game_thread": {
+          "median_ms": 3.2125,
+          "p95_ms": 3.936,
+          "p99_ms": 5.083
+        },
+        "animation": {
+          "median_ms": 0.0694,
+          "p95_ms": 0.0983,
+          "p99_ms": 0.1185
+        }
+      },
+      {
+        "style": 5,
+        "average_fps": 30.0,
+        "raw_frames": 1200,
+        "warmed_frames": 898,
+        "frame": {
+          "median_ms": 33.4293,
+          "p95_ms": 34.4937,
+          "p99_ms": 34.9192
+        },
+        "gpu": {
+          "median_ms": 4.362,
+          "p95_ms": 5.189,
+          "p99_ms": 5.492
+        },
+        "game_thread": {
+          "median_ms": 3.135,
+          "p95_ms": 3.637,
+          "p99_ms": 4.666
+        },
+        "animation": {
+          "median_ms": 0.0669,
+          "p95_ms": 0.0849,
+          "p99_ms": 0.1068
+        }
+      },
+      {
+        "style": 6,
+        "average_fps": 30.0,
+        "raw_frames": 1200,
+        "warmed_frames": 898,
+        "frame": {
+          "median_ms": 33.4952,
+          "p95_ms": 34.478,
+          "p99_ms": 35.486
+        },
+        "gpu": {
+          "median_ms": 4.3565,
+          "p95_ms": 5.313,
+          "p99_ms": 5.447
+        },
+        "game_thread": {
+          "median_ms": 3.0995,
+          "p95_ms": 3.712,
+          "p99_ms": 4.898
+        },
+        "animation": {
+          "median_ms": 0.0672,
+          "p95_ms": 0.0868,
+          "p99_ms": 0.1133
+        }
+      },
+      {
+        "style": 7,
+        "average_fps": 30.0,
+        "raw_frames": 1200,
+        "warmed_frames": 898,
+        "frame": {
+          "median_ms": 33.1667,
+          "p95_ms": 34.6304,
+          "p99_ms": 35.1301
+        },
+        "gpu": {
+          "median_ms": 4.8195,
+          "p95_ms": 5.534,
+          "p99_ms": 5.619
+        },
+        "game_thread": {
+          "median_ms": 3.1305,
+          "p95_ms": 3.694,
+          "p99_ms": 4.842
+        },
+        "animation": {
+          "median_ms": 0.0681,
+          "p95_ms": 0.0928,
+          "p99_ms": 0.1093
+        }
+      },
+      {
+        "style": 8,
+        "average_fps": 30.0,
+        "raw_frames": 1200,
+        "warmed_frames": 898,
+        "frame": {
+          "median_ms": 33.173,
+          "p95_ms": 34.6242,
+          "p99_ms": 35.2923
+        },
+        "gpu": {
+          "median_ms": 4.8075,
+          "p95_ms": 5.499,
+          "p99_ms": 5.605
+        },
+        "game_thread": {
+          "median_ms": 3.129,
+          "p95_ms": 3.648,
+          "p99_ms": 4.711
+        },
+        "animation": {
+          "median_ms": 0.0687,
+          "p95_ms": 0.088,
+          "p99_ms": 0.1224
+        }
+      },
+      {
+        "style": 9,
+        "average_fps": 30.0,
+        "raw_frames": 1200,
+        "warmed_frames": 898,
+        "frame": {
+          "median_ms": 33.5091,
+          "p95_ms": 34.4199,
+          "p99_ms": 34.8619
+        },
+        "gpu": {
+          "median_ms": 4.784,
+          "p95_ms": 5.456,
+          "p99_ms": 5.576
+        },
+        "game_thread": {
+          "median_ms": 3.0635,
+          "p95_ms": 3.524,
+          "p99_ms": 3.998
+        },
+        "animation": {
+          "median_ms": 0.0683,
+          "p95_ms": 0.0848,
+          "p99_ms": 0.1063
+        }
+      }
+    ],
+    "scope": "One fixed Sherbrooke standard-view camera per selected style; configured30cap; not citywide/co-op/streaming or physical-device acceptance."
+  },
+  "promotion": {
+    "installed": "Builds/Browser/Linux",
+    "rollback": "Builds/Browser/Linux-BeforeTripo-20261018",
+    "source": "Builds/TripoCastDeploy-20261018-v2/Archive/Linux",
+    "saved_roots_preserved_at_swap": [
+      "Engine/Saved",
+      "Quebec/Saved",
+      "Quebec/Saved_BrowserArgsQA",
+      "Quebec/Saved_BrowserGuest",
+      "Quebec/Saved_BrowserSaveQA"
+    ],
+    "saved_inventory_entries": 144,
+    "wrapper": "Saved/Tests/TripoCastDeploy-20261018/deploy-audit-v1/browser_tripo.py",
+    "wrapper_sha256": "a34ac001dc00ebdb90feff7f4e67e47ad1ecb003964acd4bf7172aaf55da1f0d",
+    "demo_pid": 1634125,
+    "native_children": [
+      {
+        "name": "host",
+        "pid": 1634168,
+        "executable_sha256": "4c6768b6581611b948ad7b0fc469753cfd138f9df7e15c3f480d67adf822df15",
+        "all_four_flags": true
+      },
+      {
+        "name": "friend",
+        "pid": 1634624,
+        "executable_sha256": "4c6768b6581611b948ad7b0fc469753cfd138f9df7e15c3f480d67adf822df15",
+        "all_four_flags": true
+      }
+    ],
+    "rollback_self_check_preserves_newer_runtime_progress": true
+  },
+  "public": {
+    "checks": [
+      {
+        "name": "host real stream",
+        "passed": true,
+        "durationMs": 2523
+      },
+      {
+        "name": "friend independent real stream",
+        "passed": true,
+        "durationMs": 2353
+      },
+      {
+        "name": "control-channel failure closes its session and late media cannot hide Reconnect",
+        "passed": true,
+        "durationMs": 2112
+      },
+      {
+        "name": "host native input and Escape release",
+        "passed": true,
+        "durationMs": 2844
+      },
+      {
+        "name": "friend native input and Escape release",
+        "passed": true,
+        "durationMs": 2888
+      },
+      {
+        "name": "occupied host slot rejects a third browser",
+        "passed": true,
+        "durationMs": 345
+      },
+      {
+        "name": "occupied browser reconnects after host frees its slot",
+        "passed": true,
+        "durationMs": 7360
+      },
+      {
+        "name": "original host reconnects and retains Disconnect control",
+        "passed": true,
+        "durationMs": 4676
+      }
+    ],
+    "network_mode": "ordinary",
+    "decoded_fps_short_samples": {
+      "host": 28.63,
+      "friend": 27.96,
+      "control-error-recovered": 27.98,
+      "recovered-slot": 28.61,
+      "host-reconnected": 28.63,
+      "friend-still-connected": 29.94
+    },
+    "root_visual_review": [
+      "host-after-input.png: GreenCap and remote crew visible with natural hanging arms; no gross facing/scale failure.",
+      "friend-after-input.png: Memphis and GreenCap visible; open tool-grip limit remains."
+    ],
+    "scope": "Ordinary public URL on host PC, real independently advancing1280x720VP8 video/input/release/recovery/slot checks; no DNS or certificate bypass.",
+    "retained_screenshot": {
+      "path": "Verification/TripoCast/Public-20261018.png",
+      "sha256": "3e08cd593712e219374c98180105f8c067e4c9bf4f348d7b939cd49ad5620258",
+      "bytes": 1033617,
+      "scope": "Unedited actual public browser capture after input: Memphis own player and GreenCap remote peer."
+    }
+  },
+  "preservation": {
+    "Content_Data_unchanged": true,
+    "public_funnel_TURN_unit_identities_unchanged": true,
+    "owned_public_browser_processes_closed": true,
+    "all_performance_settings_saves_services_restored_before_promotion": true,
+    "separate_source_art_checkout_and_concurrent_frontend_preserved": true,
+    "frontend_build_or_deploy_performed": false
+  },
+  "limits": [
+    "Topknot10 retains production body; replacement bag deformation remains rejected.",
+    "Finger grasp, foot planting/landing weight, continuous human-reviewed fluidity and final-art acceptance remain open.",
+    "Physical phones/controllers/sensors, audible playback, off-LAN/carrier reachability, long soak and full campaign remain unverified by this deployment.",
+    "Native static30FPS measurement and short browser28\u201330decodedFPS samples are separate observations; no60FPS or sustained-citywide claim."
+  ],
+  "budget": "No new generation/spending. Last Tripo balance5 available/0 frozen; falUS$18 reserved ofUS$25, US$7 uncommitted; settled charges unavailable.",
+  "evidence_sha256": {
+    "Saved/Tests/TripoCastDeploy-20261018/Approved.json": "7e6aaa42f0f08a213c19636c1f295375174122f7ac70607b1b5e6c2a2a6418d0",
+    "Saved/Tests/TripoCastDeploy-20261018/build-v2/AutomationValidated.json": "96cc6caab9b7b5274203a7cd8c498143fd6326b214caead14566ad63a08feecc",
+    "Saved/Tests/TripoCastDeploy-20261018/build-v2-cook/Result.json": "5734e6a80cae6d1605280d4710748e3d0309a1f3702dbbca064a59924507c990",
+    "Saved/Tests/TripoCastDeploy-20261018/render-window-v3/Result.json": "282d3f3d2c13ac351386a8e4ede841e79358410f2542b27a4fe1b6f9f6535844",
+    "Saved/Tests/TripoCastDeploy-20261018/capture-plan-v3/MetadataAmendment.json": "3fa5a9bc9e3724ffd5f0d98ff7f6380ebb8db9a4e86b299c53734f8b8a3e6065",
+    "Saved/Tests/TripoCastDeploy-20261018/VisualAcceptance.json": "40c3345c2385d31a6375743dc60b3f303446e086772328d85a6ecc983bc71f6c",
+    "Saved/Tests/TripoCastDeploy-20261018/package-qa-v2/Runs/Rendered-v1/report.json": "1321fe2f4a45e0f3f18b9ce06a8500b69e5dfcc4420747a6b51cf137b23ba8df",
+    "Saved/Tests/TripoCastDeploy-20261018/package-qa-v2/production-profile-v4/Ready.json": "dd0f6d77df3923c67c30fb13df6abc8526643be58ae4e45ceaa4381e6946673f",
+    "Saved/Tests/TripoCastDeploy-20261018/package-qa-v2/production-profile-v4-supplement/CPUCheck.json": "9840c9df8068e369881176bb328dd8dbf325cd909ce4a6d8d65f981ac889527f",
+    "Saved/Tests/TripoCastDeploy-20261018/package-qa-v2/production-profile-v4/Run-v1/report.json": "776e0581283cbbe7b2d5475a63c74a30ed5d842c9259abdb19c50874d05aa425",
+    "Saved/Tests/TripoCastDeploy-20261018/performance-window-v2/Result.json": "3fa0a565ef1aa5ae2d5fc03415a959279a05d7d16472ed50becea567475eb779",
+    "Saved/Tests/TripoCastDeploy-20261018/delivery-window-v1/Promotion/Install.json": "f785e27e2bab4614737cab1f9d70c957d357fff6bdfba6ca789a69e38c1cb1a1",
+    "Saved/Tests/TripoCastDeploy-20261018/delivery-window-v1/Result.json": "c80b7d0a75e9ba081df2d129b90482b7332aabb59a96a28199b471c60b6f7f4b",
+    "Browser/.qa/live-2026-10-18T02-26-30-872Z/summary.json": "aa9d8590194590a6de5c427c2a70a2908aa3aae65c9d81ef16311fb6cc348960"
+  }
+}

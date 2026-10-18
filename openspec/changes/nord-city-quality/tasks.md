@@ -94,8 +94,8 @@
 
 - [x] Diagnose new Tripo3–8 facing from fresh Vulkan pixels and actual bilateral foot-to-ball vectors; keep pilot9 and production10 separate.
 - [x] Align only the six generated Tripo bodies with native forward movement; add actual evaluated world-foot direction and flag-reset regressions.
-- [ ] Repeat native animation tests, fresh both-mode/two-size visuals and continuous motion against the corrected module; preserve rejected capture attempts.
-- [ ] Rebuild and verify the corrected package, both districts, crew selection/co-op and recorded production performance; install with Saved state and rollback preserved, then verify public browser media/input/reconnect.
+- [x] Repeat native animation tests, fresh both-mode/two-size visuals and continuous motion against the corrected module; preserve rejected capture attempts. All12 native tests,196 Vulkan stills and two1× motion recordings pass bounded review for activeTripo3–9; final-art, physical grip and foot planting remain open. See `Verification/TripoCast/DEPLOY-20261018.md`.
+- [x] Rebuild and verify the corrected package, both districts, crew selection/co-op and recorded production performance; install with Saved state and rollback preserved, then verify public browser media/input/reconnect. All7 production-profile scenes and8 public checks pass;48 installed files and five Saved roots are verified. Final-art/Topknot/physical/off-LAN limits remain open.
 
 - [x] Pin the seven current mature references, identity/outfit constraints, current neutral fallback models/locomotion and live docs/prices/balances; retain tested request preparation and separate provider ledgers. The Tripo-body plan is `Verification/TripoCast/TripoBodies/Plan.json`.
 - [x] Retain the completed comparison branch: seven Meshy bodies,56 inspected CPU views, three25-credit Tripo rerigs and bounded CPU surface/motion proofs. After the explicit body-provider reply, these are comparison evidence only; no cast/native adoption follows.
