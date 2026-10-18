@@ -1,0 +1,16 @@
+- [x] Inspect the landing page at 1280, 390, 320 and 844×390, and list the problems.
+- [x] Rewrite `public/gta/index.html` with one name, status chip, numbered steps, key caps and social tags.
+- [x] Replace the layered stylesheet with one set of responsive rules.
+- [x] Add the WebP badge with PNG fallback.
+- [x] Check layout, overflow and 44px targets at 1280×800, 390×844, 320×568 and 844×390.
+- [x] Run `qa/arcade/gta-title-media.mjs` and `games/nord-unreal/Browser/manifest.test.mjs`.
+- [x] Run the GTA parts of `qa/arcade/machines.mjs` (gta, backlinks). The GTA checks pass. The `tellme` back-link checks fail; that page is not in this change.
+- [x] Play page: screenshot the live page at 390, 320, 1280 and 844×390, and find why the loop is hidden.
+- [x] Play page: wrap title and status in one panel, and move Watch trailer next to Connect.
+- [x] Play page: replace the five `hero.css` layers with one, add Barlow Condensed, and enlarge phone text and buttons.
+- [x] Play page: `npm test`, `browser.test.mjs` and `steering-layout.test.mjs` pass. The overlay does not scroll at 320×568, 360×640, 390×844 and 1280×720.
+- [x] Play page buttons: one yellow main action, a paper secondary row with Sound on moved into the panel, a dashed offline state, matching Menu. Tests pass again; buttons are 44 to 60px high at 320, 360, 390, 844×390 and 1280.
+- [x] Merge main (#398) and carry its badge-matched chrome into the single layer. Tests pass, and the overlay fits without scrolling at all five sizes.
+- [ ] Play page: run `media.test.mjs` and `mobile.test.mjs` against a deployment with a live game host.
+- [ ] Check H.264 trailer playback on a real phone. This container's Chromium has no H.264 decoder.
+- [ ] Archive the change after the checks above.

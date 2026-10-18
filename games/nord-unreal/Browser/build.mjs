@@ -21,5 +21,5 @@ await build({
     NORD_PORTRAIT_STREAM: JSON.stringify(process.env.NORD_PORTRAIT_STREAM !== '0')
   }
 });
-await Promise.all(['index.html', 'styles.css', 'hero.css', 'intro.css', 'menu.css', 'hero.js', 'crew.js', 'intro.js', 'menu.js', 'install.js', 'crew-sprite.webp', 'THIRD_PARTY_NOTICES.txt', 'manifest.webmanifest', 'bungee-400.woff2', 'favicon.svg', 'favicon-32.png', 'apple-touch-icon.png', 'icon-192.png', 'icon-512.png', 'icon-maskable-512.png'].map(file => copyFile(file, `dist/${file}`)));
+await Promise.all(['index.html', 'styles.css', 'hero.css', 'intro.css', 'menu.css', 'hero.js', 'crew.js', 'intro.js', 'menu.js', 'install.js', 'crew-sprite.webp', 'THIRD_PARTY_NOTICES.txt', 'manifest.webmanifest', 'bungee-400.woff2', 'barlow-condensed-500.woff2', 'barlow-condensed-700.woff2', 'favicon.svg', 'favicon-32.png', 'apple-touch-icon.png', 'icon-192.png', 'icon-512.png', 'icon-maskable-512.png'].map(file => copyFile(file, `dist/${file}`)));
 console.log(`NORD browser player built (${endpoint ? 'signalling configured' : 'host offline'}).`);

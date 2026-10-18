@@ -1,9 +1,6 @@
 /* Start screen: comic story panels, then the crew choice, over the title screen. */
-.hero-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; }
 #start { min-height: 48px; padding: 10px 28px; background: var(--yellow); color: var(--ink); border: 3px solid var(--ink); font: 900 20px/1 Impact, "Arial Black", Arial, sans-serif; letter-spacing: 1px; box-shadow: 5px 5px 0 #c2185b; }
 #start:hover { background: var(--paper); color: var(--ink); border-color: var(--ink); }
-.hero-actions #watch-trailer { background: #0b0a16cc; color: var(--paper); border-color: var(--paper); box-shadow: none; }
-.hero-actions #watch-trailer:hover { background: var(--paper); color: var(--ink); }
 
 .intro { position: absolute; inset: 0; z-index: 3; display: grid; justify-items: center; align-content: safe center; gap: 10px; padding: 16px max(16px, env(safe-area-inset-right)) 16px max(16px, env(safe-area-inset-left)); overflow-y: auto; background: var(--ink); }
 .intro-story, .intro-crew { width: min(760px, 100%); }
