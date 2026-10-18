@@ -10,9 +10,11 @@
 // over the waves (no jitter: a target track runs), then holds at 92; your heart beats at 130 bpm.
 //
 // Contract notes (gaps in design.md 16 and 6.8, handled here; see the builder's report):
-// - Live gestures. 6.8 gives plain waves `hold` and prompt waves `dragHold` inside the one 4.1 moment `waves`, so the
-//   gesture is constant per wave (from its warning to the next warning, rests included, so a late release is still
-//   read), not per 4.1 moment. The lead-in uses wave 1's `hold`; `light` is `none`.
+// - Live gestures. 6.8 gives plain waves `hold` and prompt waves `dragHold` inside the one 4.1 moment `waves`. A
+//   switch at each warning would trip 5.3's fresh-press rule (a press made just before a warning would lose its
+//   release in ui/input.js while the stage had seen the press), so `waves` is `dragHold` throughout, its one live
+//   gesture: a plain hold (Space, or a touch that does not drag) is a dragHold with dir null and counts on every
+//   wave; the prompt text still says "Hold through the wave." on plain waves. `light` is `none`.
 // - Targets. 6.8 scores overlap, not timing, but the run's judge needs timed targets: each wave lays a `press` at its
 //   swell start and a `release` at its swell end (16 targets, P from 5.2's spacing rule). They give the rings their
 //   grades and are not scored. A hold already down when the swell starts, pressed at or after its warning, is on time
@@ -436,7 +438,8 @@ function you(st, t, swell, prog) {
   const at = { x, y, rot: -lean(st) * T.turnRad * turn * (1 - back) };
   let a = "headDown", b = "headDown", q = 0;
   if (lift > 0) { a = "tuck"; b = "lift"; q = lift; } else if (tuck > 0) { a = "headDown"; b = "tuck"; q = tuck; }
-  const splats = q > 0 ? lerpSplats(figure(a, size, T.youGa, at), figure(b, size, T.youGa, at), q) : figure(a, size, T.youGa, at);
+  const splats = q >= 1 ? figure(b, size, T.youGa, at)
+    : q > 0 ? lerpSplats(figure(a, size, T.youGa, at), figure(b, size, T.youGa, at), q) : figure(a, size, T.youGa, at);
   return { x, y, splats };
 }
 

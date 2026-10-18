@@ -3,7 +3,7 @@
 // at several skills and seeded random input, and through core/run.js (practice, a press at stageStart + target.t,
 // one-button). Asserts the meta and the 4.1 moments; determinism for two seeds; the ideal input reaching Glowing; idle
 // ending by itself inside the cap with goalMet true; the skill 0.7 bot completing (and skill 1.0 at 8,500 or more);
-// one live gesture per wave and `none` in the light; every sub-goal ending done or auto; the 16 targets carrying P,
+// one live gesture per moment (dragHold through the waves, none in the light); every sub-goal ending done or auto; the 16 targets carrying P,
 // with their preview; every view valid; every wave moving you on with no input; the squeeze; the light (exposure,
 // white, the bottom glow, `born`); the score parts (overlap, moves at 0.7 and 0.4, rested gaps, Flourish); turnDir
 // from the Turn wave setting Turn back; an early hold from the warning on time; botSteer (memory only in r.mem);
@@ -272,20 +272,15 @@ await check("the shared bot completes at skill 0.7 (and skill 1.0 scores 8,500 o
   assert.ok(BOTS[1] >= BOTS[0.7] && BOTS[0.7] >= BOTS[0.4], `means ${JSON.stringify(BOTS)}`);
 });
 
-await check("one live gesture per wave: hold on waves 1, 3, 5, 7, dragHold on 2, 4, 6, 8, none in the light", () => {
+await check("one live gesture per moment: dragHold through the waves (a plain hold counts), none in the light", () => {
   for (const { seen, evs } of [IDLE, IDEAL]) {
     for (const s of seen) {
-      let want;
-      if (s.moment === "light" || s.t >= LIGHT_AT - 1e-9) want = "none";
-      else if (s.t < W(0) - 1e-9) want = "hold";
-      else {
-        let k = 0;
-        for (let i = 0; i < 8; i++) if (s.t >= W(i) - 1e-9) k = i;
-        want = TUNE.plan[k].gesture;
-      }
+      const want = s.moment === "light" || s.t >= LIGHT_AT - 1e-9 ? "none" : "dragHold";
       assert.equal(s.gesture, want, `t ${s.t.toFixed(3)} (${s.moment})`);
       assert.equal(s.keys, "steer");
     }
+    assert.deepEqual([...new Set(seen.filter((s) => s.moment === "waves").map((s) => s.gesture))], ["dragHold"], "one gesture in waves");
+    assert.deepEqual([...new Set(seen.filter((s) => s.moment === "light").map((s) => s.gesture))], ["none"], "and one in the light");
     // every change of prompt is an event, and the events agree with prompt()
     const prompts = named(evs, "prompt");
     let i = 0;
@@ -577,6 +572,7 @@ await check("through the run: practice with the ref bot (no overlay), presses at
     const a = birth.botSteer(r3.state, 1, rr);
     r3.step(makeIntents({ touching: down, presses, releases, dir: "up", steer: { x: 0, y: 1 } }));
     assert.equal(r3.lastIntents.dir, a.dir, `the held dir is botSteer's at ${t.toFixed(3)}`);
+    assert.deepEqual(r3.lastIntents.steer, down ? a.steer : { x: 0, y: 0 }, "steer from botSteer only while touching");
     if (down && k >= 0 && TUNE.plan[k].move) checked++;
     r3.events.length = 0;
   }

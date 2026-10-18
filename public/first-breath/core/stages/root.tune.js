@@ -1,7 +1,7 @@
 // First Breath: stage 4, The Placenta (`root`), its numbers (design.md 6.4). World units are u (the short screen axis is
 // 100 u at camera span 100); times are stage seconds unless a name says otherwise. Pure data.
 //
-// Numbers 6.4 gives are marked (6.4). The rest are this builder's choices for the v1 prototype, noted in tasks.md 2d:
+// Numbers 6.4 gives are marked (6.4). The rest are this builder's choices for the v1 prototype (for tasks.md 2d):
 // the tip's accel and drag (6.4 gives only its speed and turn rate), the spot and pool layout ranges, the firm edge,
 // the auto reach's growth speed (fast enough that a reach started at 36.5 s links by 40 s), the heart moment's lead-in
 // and tail, the camera spans and the bot's easing.
@@ -70,7 +70,7 @@ export const TUNE = Object.freeze({
     yoursS: 3.5,         // "This beat is yours. Tap with it." once your heart has beaten by itself for 2 s
     leadBeats: 6,        // the first target is your 7th beat, 1.27 s after that line (its preview, 5.2)
     targets: 8,          // (6.4) 8 targets on your beats (P = 0.545 s)
-    tailS: 1.5,          // then both hearts play together
+    tailS: 3,            // then both hearts play together (root.tube shows 0.6 s in, with time to read it)
     heartCapS: 0.3,      // root.heart shows this long into the hush
     span: 160,           // the camera comes close to you
   }),

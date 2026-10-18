@@ -25,6 +25,9 @@
 //   for being ready counts only a glow.
 // - Assist changes only your own current, lane width and bumps, and the rivals' catch-up (6.1); the rivals' rules
 //   stay the same.
+// - The tube's upstream and lane bonuses go to a sperm that swims (stick ≥ 0.25). The race sim gives them to any
+//   sperm heading upstream, so a sperm that let go in the tube crept on at about 19 u/s and never drifted back to a
+//   checkpoint as 6.1 says it does. Bots never steer below 0.42 in the tube, so their races are unchanged.
 // Pure: no DOM, no clocks, no storage, no Math.random; every draw comes from stream(seed, name). step() never
 // throws: a fault is caught, kept in state.fault, and the stage still ends by its cap.
 import { DT, mmPerShortAxis } from "../clock.js";
@@ -323,8 +326,10 @@ function move(st, sp) {
     const laneW = T.LANE_W * (mine ? T.ASSIST_LANE : 1);
     const lane = Math.abs(u - laneAt(t)) <= laneW / 2;
     cur = tubeFlow(rr, T.CURRENT) * (lane ? 0.5 : 1) * (mine ? T.ASSIST_CURRENT : 1);
-    if (Math.abs(th) <= T.UP_DEG * DEG) along += T.UP_BONUS;
-    if (lane) { along += T.LANE_BONUS; sp.laneS += DT; }
+    // the bonuses are for a sperm that swims (stick ≥ 0.25): one that lets go drifts back with the current
+    const swims = mag >= T.SWIM_STICK;
+    if (swims && Math.abs(th) <= T.UP_DEG * DEG) along += T.UP_BONUS;
+    if (lane) { if (swims) along += T.LANE_BONUS; sp.laneS += DT; }
     sp.tubeS += DT;
   }
   const p0 = sp.p;

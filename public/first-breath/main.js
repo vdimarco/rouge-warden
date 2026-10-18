@@ -8,7 +8,7 @@
 //
 // Core time (16.3): raw = (wallMs − wallStart − pausedMs) / 1000 and t = raw − offsetMs / 1000 (ui/input.js applies
 // the offset). Here wallBase = wallStart + pausedMs: it moves on while the run is paused, while realtime is off and
-// when a long frame drops time (more than 0.25 s behind), so core time always equals run.t at a step boundary. Each
+// when a long frame drops time (more than 0.5 s behind), so core time always equals run.t at a step boundary. Each
 // fixed step covers [run.t, run.t + DT); the loop steps while the step's end is in the past, so every event of the
 // step has arrived. A new run restarts run.t at 0, and the base moves with it.
 //
@@ -58,8 +58,9 @@ import { createRings } from "./render/rings.js";
 
 const LOOKAHEAD_S = 0.1;      // the sound scheduler looks this far ahead (11, "A tale of two clocks")
 const SOUND_TICK_MS = 25;
-const MAX_BEHIND_S = 0.25;    // a longer stall drops time instead of running steps to catch up
-const MAX_STEPS = 30;
+const MAX_BEHIND_S = 0.5;     // a longer stall drops time instead of running steps to catch up (core time stays
+                              //   on the wall clock, and so on the audio clock, through any shorter hitch)
+const MAX_STEPS = 32;
 const TAP_LIFT_S = 0.08;
 const HELD = ["steer", "touching", "dir", "turn", "aim"];
 const PLAYING = new Set(["stage", "ending"]);
@@ -153,7 +154,7 @@ let lastScreen = { name: "title", data: null };
 let menu = null;                  // a menu opened over the title, the result or pause: { name }
 let botDriver = null;
 let held = {};
-let placeText = null;
+let placeText = null, placeNum = null;
 let momentPending = FLAGS.moment;
 let frames = 0, stopped = false;
 let audioCtx = null, sound = null, hearing = false;
@@ -176,6 +177,7 @@ function newRun(start = "new", seed = newSeed()) {
   anchor();
   lastBeat.mother = lastBeat.you = -Infinity;
   placeText = null;
+  placeNum = null;
   menu = null;
   judges.length = 0;
   input.flush();
@@ -265,7 +267,7 @@ function toggleMute() {
 }
 
 // ---- events from the run (16.6, 16.8)
-const CUES = new Set(["bump", "bounce", "stick", "loose", "goldIn", "enter", "seal", "place"]);
+const CUES = new Set(["bump", "bounce", "stick", "loose", "goldIn", "enter", "seal"]);
 
 function processEvents() {
   const evs = run.events;
@@ -280,6 +282,7 @@ function onEvent(ev) {
     case "screen": onScreen(ev.screen, ev.data); break;
     case "stageStart":
       placeText = null;
+      placeNum = null;
       hearing = false;
       captions.clear();
       if (sound) sound.setScene({ stage: ev.id, cutoffHz: ev.id === "ending" ? 300 : cutoffFor(ev.id, run.gaDay), hearing: false });
@@ -293,10 +296,13 @@ function onEvent(ev) {
     case "prompt": input.setLive(ev.gesture || "none", ev.keys || "steer"); break;
     case "caption": captions.say(ev.id, say(ev.id, ev, settings), { dir: ev.dir || null }); break;
     case "subgoal": if (ev.text) captions.say(ev.text, say(ev.text, {}, settings)); break;
-    case "place":
-      if (fin(ev.place)) placeText = say("hud.place", { place: ordinal(ev.place), of: fin(ev.of) ? ev.of : 20 });
-      if (sound) sound.sfx("place", toCtx(ev.t), ev);
+    case "place": {
+      // the place slot; the pluck only when you gain a place (11)
+      const gained = fin(ev.place) && fin(placeNum) && ev.place < placeNum;
+      if (fin(ev.place)) { placeText = say("hud.place", { place: ordinal(ev.place), of: fin(ev.of) ? ev.of : 20 }); placeNum = ev.place; }
+      if (sound && gained) sound.sfx("place", toCtx(ev.t), ev);
       break;
+    }
     case "judge":
       judges.push({ target: ev.target, grade: ev.grade, errMs: ev.errMs, rawMs: ev.rawMs, heart: ev.heart, t: ev.t, stage: ev.stage });
       if (judges.length > 32) judges.splice(0, judges.length - 32);

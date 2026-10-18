@@ -8,9 +8,8 @@
 // breath, open, suspend, resume, stats }):
 // - ctx may be null (no Web Audio); every call still works and stats().state reads "none".
 // - latencyS null takes ctx.outputLatency, else ctx.baseLatency, else 0. Each beat is "scheduled" at
-//   toCtxTime(t) − latencyS (11), and the stub counts it. A beat at or before the last context time scheduled for
-//   that heart is skipped, so overlapping lookahead windows never count a beat twice (context time never runs back,
-//   also across a new run).
+//   toCtxTime(t) − latencyS (11), and the stub counts it. The caller passes each beat once (main.js keeps the last
+//   beat time it scheduled per heart), so the stub does not filter.
 // - suspend() and resume() suspend and resume ctx (quiet.js also suspends it when the page is hidden).
 // - stats() → { state, cutoffHz, scheduled: { mother, you }, muted, voices, latencyS }, plus the extras hearing,
 //   sfx (one-shots asked for) and last ({ mother, you }: the last ctx time scheduled).
@@ -19,7 +18,6 @@ export function createSound(ctx, { seed = 1, latencyS = null } = {}) {
   const lat = Number.isFinite(latencyS) ? latencyS
     : ctx ? (Number.isFinite(ctx.outputLatency) && ctx.outputLatency > 0 ? ctx.outputLatency : Number(ctx.baseLatency) || 0) : 0;
   const scheduled = { mother: 0, you: 0 };
-  const lastT = { mother: -Infinity, you: -Infinity };
   const lastAt = { mother: null, you: null };
   const scene = { stage: null, cutoffHz: 150, hearing: false, motherDb: 0, youDb: -8, voice: null };
   let muted = false, started = false, sfxCount = 0;
@@ -33,8 +31,7 @@ export function createSound(ctx, { seed = 1, latencyS = null } = {}) {
       const h = heart === "you" ? "you" : "mother";
       for (const t of times || []) {
         const at = (typeof toCtxTime === "function" ? toCtxTime(t) : t) - lat;
-        if (!Number.isFinite(at) || at <= lastT[h] + 1e-4) continue;
-        lastT[h] = at;
+        if (!Number.isFinite(at)) continue;
         lastAt[h] = at;
         scheduled[h]++;
       }

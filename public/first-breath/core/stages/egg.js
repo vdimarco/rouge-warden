@@ -42,6 +42,7 @@ const RAD = Math.PI / 180;
 const clamp01 = (v) => (Number.isFinite(v) ? Math.max(0, Math.min(1, v)) : 0);
 const angDist = (a, b) => Math.abs(wrapAngle(a - b));
 const fin = (v) => typeof v === "number" && Number.isFinite(v);
+const UNIT = 1 - 1e-9;   // botSteer's steer length: under 1 even after rounding
 
 const O = TUNE.opening, A = TUNE.arc, W = TUNE.waves, BO = TUNE.bounce, SK = TUNE.stick, HE = TUNE.held;
 const GD = TUNE.gold, SL = TUNE.seal, FU = TUNE.fusion, SC = TUNE.score, SZ = TUNE.sizes, BOT = TUNE.bot;
@@ -191,7 +192,7 @@ function flushLater(st, tag, tEnd) {
   st.later = keep;
 }
 
-const fact = (st, id, t) => emit(st, "fact", { id, t });
+const fact = (st, id, t) => emit(st, "fact", { id, where: "caption", t });
 
 // Sub-goal events at an exact time inside a step (goals.js stamps them with state.t).
 function at(st, t, f) {
@@ -248,14 +249,14 @@ function startMoment(st, i, t) {
       at(st, t, () => subgoal(st, "open", "egg.openGoal"));
       break;
     case "sweep":
-      for (const [fid, at] of TUNE.sweepFacts) later(st, t + at, "sweep", "fact", { id: fid });
+      for (const [fid, at] of TUNE.sweepFacts) later(st, t + at, "sweep", "fact", { id: fid, where: "caption" });
       break;
     case "guard":
       G.t0 = t;
       G.simT = t;
       G.goldAt = t + GD.atS + GD.perPlaceS * (st.place - 1);
       at(st, t, () => subgoal(st, "guard", "egg.guardGoal"));
-      TUNE.waveFacts.forEach((fid, k) => later(st, t + W.at[k], "guard", "fact", { id: fid }));
+      TUNE.waveFacts.forEach((fid, k) => later(st, t + W.at[k], "guard", "fact", { id: fid, where: "caption" }));
       break;
     case "enter":
       fact(st, "egg.fuse", t);
@@ -267,8 +268,8 @@ function startMoment(st, i, t) {
     case "fusion":
       st.fusionAt = t;
       fact(st, "egg.wave", t);
-      later(st, t + FU.sealFactS, "fusion", "fact", { id: "egg.seal" });
-      later(st, t + FU.blockFactS, "fusion", "fact", { id: "egg.block" });
+      later(st, t + FU.sealFactS, "fusion", "fact", { id: "egg.seal", where: "caption" });
+      later(st, t + FU.blockFactS, "fusion", "fact", { id: "egg.block", where: "caption" });
       sfx(st, "egg.fifth", t, 1, 0.8);
       break;
     case "outro":
@@ -801,7 +802,8 @@ export function botSteer(st, skill, r) {
     } else d = wrapAngle(bAng - a);
     w = Math.abs(d) <= way ? a + d : a + Math.sign(d) * way;
   }
-  return { steer: { x: Math.cos(w), y: Math.sin(w) }, dir: null, hold: false };
+  // a hair under unit length, so cos² + sin² rounding past 1 never makes the run rescale it
+  return { steer: { x: UNIT * Math.cos(w), y: UNIT * Math.sin(w) }, dir: null, hold: false };
 }
 
 // The guard shape of 16.9, in world units and radians.
@@ -1014,11 +1016,11 @@ export function view(st) {
   }
   if (st.fusionAt !== null) marks.push({ kind: "glow", x: 0, y: 0, r: 8, on: 0.5 + 0.5 * clamp01((t - st.fusionAt) / FU.s) });
 
-  // rings (DOM, at most 8): her beat, the approach of the next targets, the seal hold, the burrow rings
+  // rings (DOM, at most 8): her beat, the approach of the next targets (up to 3, so each keeps its preview), the seal hold, the burrow rings
   const rings = d.rings;
   rings.push({ id: "mother", kind: "mother", x: 0, y: 0, r: R.mother, progress: herPh });
   const pv = previewS(PERIOD);
-  for (const x of targets(st, pv).slice(0, 2)) {
+  for (const x of targets(st, pv).slice(0, 3)) {
     const p = clamp01(1 - (x.t - t) / pv);
     const r = x.group === "open" ? R.approachTo + (R.approachFrom - R.approachTo) * (1 - p) : SL.ringR + 14 * (1 - p);
     rings.push({ id: "t:" + x.id, kind: "approach", x: 0, y: 0, r, progress: p });

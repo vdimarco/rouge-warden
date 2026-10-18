@@ -9,7 +9,7 @@
 //   and AGAIN starts a new run;
 // - __fb.goto reaches every stage and the ending, steps it, draws it, and its finish leads to the result; in stage 2 a
 //   tap on the next target through __fb.tap is judged In time;
-// - without ?test=1, after #play the rAF loop advances the stage clock;
+// - without ?test=1, after #play the rAF loop advances the stage clock and her beats go to the sound once each;
 // - no page error, console error or failed request anywhere.
 //   NODE_PATH=qa/browser/node_modules node qa/first-breath/boot.e2e.mjs
 import fs from "node:fs";
@@ -274,10 +274,16 @@ for (const size of sizeList()) {
   const rt = await open(size, "");
   await press(rt.page, size, "#play");
   const a = await S(rt.page);
-  await wait(1500);
+  await wait(2200);
   const b = await S(rt.page);
   check(`${tag}: without ?test=1 the rAF loop advances the stage clock`,
-    a.screen === "stage" && b.screen === "stage" && b.realtime === true && b.t - a.t > 0.6, `t ${a.t} → ${b.t}`);
+    a.screen === "stage" && b.screen === "stage" && b.realtime === true && b.t - a.t > 1, `t ${a.t} → ${b.t}`);
+  // her beats go to the sound from run.beats(), each once, about a beat period apart
+  const snd = await F(rt.page, () => window.__fb.sound);
+  const gaps = snd.beats.mother.slice(1).map((x, i) => x - snd.beats.mother[i]);
+  check(`${tag}: her beats are scheduled once each, a beat apart`,
+    snd.scheduled.mother >= 2 && snd.scheduled.mother === snd.beats.mother.length && gaps.every((g) => g > 0.5 && g < 1.2),
+    `${snd.scheduled.mother} scheduled, gaps ${gaps.map((g) => g.toFixed(3)).join(" ")}`);
   const rtPerf = await F(rt.page, () => window.__fb.perf);
   check(`${tag}: realtime frames keep the frame cost`, rtPerf.emaMs > 0 && rtPerf.p95Ms > 0, JSON.stringify(rtPerf));
   check(`${tag}: no page or console errors (realtime)`, rt.errors.length === 0, rt.errors.slice(0, 5).join(" || "));

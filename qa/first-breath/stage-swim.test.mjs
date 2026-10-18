@@ -66,7 +66,7 @@ function play(seed, { skill = null, input = null, each = null, opts = OPTS, carr
 // The per-step race checks: placeNow, the shown place and its 0.25 s hold, place events, arrivals, rivals resting,
 // one live gesture per moment, every 30th view valid. Returns the moments' gestures seen.
 function watcher(st) {
-  let since = 0, prevNow = st.placeNow, prevShown = st.place, n = 0;
+  let since = 0, prevNow = st.placeNow, prevShown = st.place, n = 0, mustRest = [];
   const gestures = {};
   const note = (m, g) => { (gestures[m] = gestures[m] || new Set()).add(g); };
   note(st.moment, swim.prompt(st).gesture);
@@ -97,12 +97,10 @@ function watcher(st) {
       prevShown = s.place;
     } else assert.equal(pe.length, 0, "no place event without a change");
     if (s.place !== s.placeNow) assert.ok(s.t - since < TUNE.PLACE_HOLD_S - 1e-9, "a held place is shown");
-    // a rival in the tube 500 u or more behind you rests (one step of slack for the order of the step)
-    if (!you.arrived && s.racing) {
-      for (const o of s.rivals) {
-        if (!o.arrived && o.zone === "tube" && prog(you) - prog(o) >= TUNE.REST_BEHIND + 4) assert.ok(o.rest !== null, `rival ${o.id} rests`);
-      }
-    }
+    // a rival in the tube 500 u or more behind you rests: the step decides from where everyone was at its start
+    for (const o of mustRest) assert.ok(o.rest !== null, `rival ${o.id} rests at ${s.t.toFixed(2)} s`);
+    mustRest = !you.arrived && s.racing
+      ? s.rivals.filter((o) => !o.arrived && o.zone === "tube" && prog(you) - prog(o) >= TUNE.REST_BEHIND) : [];
   };
   return { each, gestures };
 }
@@ -466,6 +464,7 @@ await check("the cool loop brings you back to the fork at 1,300 u within 6 s, al
     let n = 0;
     while (st.you.zone !== "loop" && n++ < 300) swim.step(st, makeIntents({ steer: { x: 0.8 * cool, y: 0.6 }, touching: true }));
     assert.equal(st.you.zone, "loop", "the cool side of the split leads into the loop");
+    if (!stick) st.you.speed = 0;                         // idle from the mouth: only the loop's flow carries it
     assert.ok(st.events.some((e) => e.name === "fork" && e.tube === "cool"));
     const t0 = st.t;
     while (st.you.zone === "loop" && st.t - t0 < 10) {
@@ -596,12 +595,13 @@ await check("ready multiplies only the stick term, by 1.6: not the bonuses, not 
   assert.equal(s.you.speed, 140, "a wave lifts a ready sperm to 140 u/s, not more");
 });
 
-await check("among the rivals only the two front-runners ever get ready; resting rivals never do", () => {
+await check("among the rivals only the two front-runners ever get ready, on a glow; resting never makes one ready", () => {
   let readies = 0;
   for (const r of [...RACES.ref, ...RACES.mid, ...RACES.idle]) {
     for (const o of r.st.rivals) {
       if (o.ready) { readies++; assert.ok(o.id < 2, `seed ${r.seed}: rival ${o.id} (skill ${o.skill}) got ready`); }
-      if (o.rest !== null) assert.equal(o.ready, false);
+      if (o.ready) assert.equal(o.readyHow, "glow", "ready only on a glow");
+      if (o.rest !== null && o.ready) assert.ok(o.readyAt <= o.rest, `rival ${o.id} was ready before it rested`);
     }
     assert.ok(r.st.rivals.filter((o) => o.ready).length + (r.st.you.ready ? 1 : 0) <= 3, "at most 3 of the 20");
   }
@@ -681,7 +681,7 @@ await check("the carry: your tint in, your place and glow out; Assist still lets
     const st = swim.create(1, DEFAULT_CARRY, { ...OPTS, assist });
     for (let i = 0; i < 40; i++) swim.step(st, makeIntents());
     swim.jump(st, "tube");
-    Object.assign(st.you, { x: st.warm * 30 + 20, p: 2500, lastCheck: 2200, speed: 0 });
+    Object.assign(st.you, { x: st.warm * 30, p: 2500, lastCheck: 2200, speed: 0 });   // the lane covers the centre
     const p0 = st.you.p;
     swim.step(st, makeIntents());
     return (p0 - st.you.p) / DT;

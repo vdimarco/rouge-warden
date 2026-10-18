@@ -14,7 +14,7 @@
 //    simply waits (the miss of 6.4). The moment ends when all 8 are linked (gaDay jumps to 35).
 // 3. heart (Day 22, tap): a 1.5 s hush (sfx root.hush, light −10%) with root.heart. Your heart beats by itself at
 //    110 bpm from the end of the hush (milestone `heart`); at 3.5 s "This beat is yours. Tap with it."; 8 tap targets
-//    on your 7th to 14th beats (P = 0.545 s); then 1.5 s of both hearts together and root.tube.
+//    on your 7th to 14th beats (P = 0.545 s); then 3 s of both hearts together and root.tube.
 // 4. grow (7 s, Day 22 to week 7, none): core/lib/figure.js buds grow from 2 to 10 mm, the camera pulls back, the tree
 //    thickens into a disc ("This will become your placenta."), root.size and root.buds. Carry out `treeSeed`.
 //
@@ -23,11 +23,11 @@
 // and times its arrival to her next beat by easing speed in the last 20 u; its only memory is r.mem (aim noise per
 // pool, drawn only below skill 1, so one-button mode at skill 1 never depends on r).
 //
-// Contract gaps, handled here and noted in tasks.md 2d: 6.4 gives no accel or drag for the tip, no layout for spots
-// and pools beyond 6.4's ranges, no rule for a player who drifts but never touches a spot (drawn in from 9 s so nestle
-// ends by 12 s), and no auto-reach speed (52 u/s, so the 8th reach, started at 36.5 s, links by 40 s). Her beats keep
-// 0% jitter through the stage (the on-beat links and the heart targets both read them). Caption facts are emitted as
-// `fact` events; stage captions that are not facts as `caption` events.
+// Contract gaps, handled here (for the lead to note in tasks.md 2d): 6.4 gives no accel or drag for the tip, no layout
+// for spots and pools beyond 6.4's ranges, no rule for a player who drifts but never touches a spot (drawn in from
+// 9 s, so nestle ends by 12 s), and no auto-reach speed (52 u/s, so the 8th reach, started at 36.5 s, links by 40 s).
+// Her beats keep 0% jitter through the stage (the on-beat links and the heart targets both read them). Caption facts
+// are emitted as `fact` events; stage captions that are not facts as `caption` events.
 import { DT, gaAt, mmPerShortAxis, bpmYou } from "../clock.js";
 import { makeBeats } from "../beat.js";
 import { emit } from "../events.js";

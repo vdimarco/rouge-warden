@@ -18,16 +18,18 @@ export const TUNE = Object.freeze({
   motherBpm: [76, 92],   // her rate rises over the waves, then holds at 92 through the light (5.1)
   youGa: 280,            // your heart from clock.bpmYou(280): 130 bpm
 
-  // the waves: 1, 3, 5, 7 plain (live hold); 2, 4, 6, 8 prompt waves (live dragHold, screen axes)
+  // the waves: 1, 3, 5, 7 plain (any hold counts); 2, 4, 6, 8 prompt waves (a hold dragged the prompted way, screen
+  // axes). The live gesture is dragHold for every wave (see birth.js: a plain hold, with no drag, is a dragHold with
+  // dir null, 5.3), so the gesture never changes inside `waves` and 5.3's fresh-press rule never drops a release there.
   // want: the direction that counts as the move; "side" is left or right; "back" is the other way from wave 4
   plan: Object.freeze([
-    Object.freeze({ n: 1, move: null, gesture: "hold", want: null, text: "birth.hold" }),
+    Object.freeze({ n: 1, move: null, gesture: "dragHold", want: null, text: "birth.hold" }),
     Object.freeze({ n: 2, move: "tuck", gesture: "dragHold", want: "down", text: "birth.tuck.do" }),
-    Object.freeze({ n: 3, move: null, gesture: "hold", want: null, text: "birth.hold" }),
+    Object.freeze({ n: 3, move: null, gesture: "dragHold", want: null, text: "birth.hold" }),
     Object.freeze({ n: 4, move: "turn", gesture: "dragHold", want: "side", text: "birth.turn.do" }),
-    Object.freeze({ n: 5, move: null, gesture: "hold", want: null, text: "birth.hold" }),
+    Object.freeze({ n: 5, move: null, gesture: "dragHold", want: null, text: "birth.hold" }),
     Object.freeze({ n: 6, move: "lift", gesture: "dragHold", want: "up", text: "birth.lift.do" }),
-    Object.freeze({ n: 7, move: null, gesture: "hold", want: null, text: "birth.hold" }),
+    Object.freeze({ n: 7, move: null, gesture: "dragHold", want: null, text: "birth.hold" }),
     Object.freeze({ n: 8, move: "back", gesture: "dragHold", want: "back", text: "birth.back.do" }),
   ]),
 
