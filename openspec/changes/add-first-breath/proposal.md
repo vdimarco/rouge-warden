@@ -10,12 +10,16 @@ The arcade has no game like this. The user named eight phases, in order: the spe
 placenta, the first, second and third trimesters, and the birth. The game must follow that order, from the baby's
 point of view, and stay tender, accurate and never graphic.
 
-The user gave no art direction, no controls preference and no arcade row. Those choices are ours, and this change
-records them as ours (design.md section 1).
+The user gave no art direction, no controls preference and no arcade row at first. Those choices are ours, and this
+change records them as ours (design.md section 1), except where the user later chose.
 
 The user then reviewed the plan and asked for two changes, in these words: stage 1 "A race with other sperm"; stage 2
 "add section 2 as a switch to the egg defending against the sperms invasion". The user kept the Action row. In the
 game the words stay gentle: you race, and the egg guards its shell (design.md 1.2).
+
+After eleven art boards, the user asked "show me watercolor wash vs paper vs oil", and the look moved from the plan's
+WebGL "Warm Lantern" to **paper cut**, drawn with Canvas 2D. The build workflow reports paper cut as the user's pick;
+the user's own words choosing it are not quoted here yet (design.md 1.2, task 3.0).
 
 ## What Changes
 
@@ -54,9 +58,12 @@ game the words stay gentle: you race, and the egg guards its shell (design.md 1.
   the ending.
 - **One clock**: weeks count from the first day of the last period, as midwives and doctors count. Early stages show
   "Day N after fertilization (week M)". Every fact has a source and an access tag, and its label comes from the clock.
-- **The look**: "Warm Lantern", soft membranes lit from behind, from dim red to amber to white, drawn by one WebGL2
-  splat-and-composite stack with a plain-shape Canvas 2D fallback. Stages join with a short crossfade. Womb sound that
-  is felt first, then heard, then opens at birth.
+- **The look**: paper cut. Flat sheets of coloured paper stacked like a shadow box, each one flat colour with a fine
+  grain, hand-cut edges, depth only from soft drop shadows, one marigold accent for "you", and labels as small cream
+  DOM tags. The light rises from dim violet-red sheets to a cream-white glow at birth and a warm cream room. Drawn
+  with Canvas 2D: still sheets baked once, moving sheets with cheap shadows, and a low quality tier (no grain, flat
+  shadows) when frames run slow. Stages join with a short crossfade. Womb sound that is felt first, then heard, then
+  opens at birth.
 - **The arcade**: a machine at the end of the Action row, after Ahead of the Light; a switcher entry; a hand-drawn SVG
   screen; a cabinet line with the best run, or the attract line RACE · GUARD · GROW · BREATHE; homepage checks at 390,
   320 and 1280 px wide.
@@ -66,18 +73,20 @@ game the words stay gentle: you race, and the egg guards its shell (design.md 1.
 This change builds the **v1 form** of each stage: its minimum form plus its best one or two flourishes (design.md
 section 6). For the user's race, v1 includes the stage 1 fork with its cool loop and the 19 moving rivals. These wait
 for later changes (design.md section 19.2): Continue, density assist, auto-drift of the timing offset, the log zoom
-between stages, a 2D fallback that matches the look, the formant voice, haptics, "Play your song", the FURTHEST
+between stages, the formant voice, haptics, "Play your song", the FURTHEST
 cabinet line, and the stage 6 repeats, jump and hiccups.
 
 ### Choices
 
-The user chose the play of stages 1 and 2 and kept the Action row. The rest are our choices, since the user gave none.
+The user chose the play of stages 1 and 2 and kept the Action row. The art direction was chosen after the user's
+side-by-side of the boards; the build workflow reports it as the user's choice, and task 3.0 quotes the user's words.
+The rest are our choices, since the user gave none.
 
 | Topic | Choice |
 |---|---|
 | Stage 1 and 2 play (the user's) | A race with 19 rivals, then the egg guarding its shell until your own sperm comes in (design.md 6.1 and 6.2) |
 | Title | First Breath |
-| Art direction | "Warm Lantern" (design.md section 13, with the hex colour script) |
+| Art direction (reported as the user's, after the boards) | Paper cut, over Warm Lantern, watercolour wash and oil (design.md section 13, with the hex colour script; reference art in `research/paper-cut/`) |
 | Controls | One live gesture per moment; relative stick; keys only on desktop; one-button mode |
 | Row | Action, the last machine, after `ahead-of-the-light` (kept by the user after review) |
 | The person carrying the baby | "your mother" by default; Settings offer mother, mum, mom, parent; no pronouns in any string |
@@ -95,8 +104,8 @@ The user chose the play of stages 1 and 2 and kept the Action row. The rest are 
   top-3 goal, and the guard, the gold sperm and the seal.
 - `first-breath-input`: one live gesture at a time, presses at touch-down, the floating stick, keys only on desktop,
   the timing judge on the stage clock, calibration, one-button mode and Assist.
-- `first-breath-presentation`: the Warm Lantern look, the renderer and its plain 2D fallback, the frame-cost budget,
-  the three layouts and the thumb zone, the womb sound, captions, reduced motion, flash safety, colour contrast and the
+- `first-breath-presentation`: the paper-cut look, the Canvas 2D renderer and its low quality tier, the frame-cost
+  budget, the DOM paper tags, the three layouts and the thumb zone, the womb sound, captions, reduced motion, flash safety, colour contrast and the
   scale bar.
 - `first-breath-facts-and-tone`: sourced facts, labels from the clock, the clock wording, the word for the person
   carrying the baby, banned words and pronouns, the tone rules and the Sources screen.
@@ -111,15 +120,16 @@ None. The arcade's own requirements already ask for a machine for every game pag
 
 - **New folder** `public/first-breath/`: `index.html`, `style.css`, `main.js`; a pure `core/` (`rng`, `clock`, `beat`,
   `judge`, `intent`, `draw`, `events`, `carry`, `score`, `text`, `facts`, `sources`, `save`, `run`, `bots`, `ending`,
-  `lib/` and `stages/` with a module, a tune file, a facts file and a text file per stage); `render/` (the WebGL2 stack,
-  the plain 2D fallback, the camera, the palette, DOM rings, strips); `ui/` (input, HUD, captions, screens, sound,
-  store).
+  `lib/` and `stages/` with a module, a tune file, a facts file and a text file per stage); `render/` (the Canvas 2D
+  paper renderer with its bakes and low tier, the camera, the palette, DOM rings, strips); `ui/` (input, HUD,
+  captions, screens, sound, store).
 - **New file** `public/arcade/key/first-breath.svg` (the cabinet screen, under 10 KB).
 - **New tests** in `qa/first-breath/`: node tests (purity, clock, beat, judge, track, draw, run, save, facts, text,
-  palette, perf, sim, one per stage, ending), the bot CLI `bot.mjs`, browser checks (`smoke`, `layout`, `input`,
-  `perf`, `visual`, `sound`) and `shots.mjs`.
-- **Research notes** in this change folder: `research/research-biology.md` (the facts and their access tags) and
-  `research/research-art.md` (rendering, game and audio sources, and the SwiftShader measurements).
+  palette, paper, perf, sim, one per stage, ending), the bot CLI `bot.mjs`, browser checks (`smoke`, `layout`,
+  `input`, `perf`, `visual`, `sound`, run in Chromium with `--disable-gpu`) and `shots.mjs`.
+- **Research notes** in this change folder: `research/research-biology.md` (the facts and their access tags),
+  `research/research-art.md` (game and audio sources, and the earlier WebGL look's measurements) and
+  `research/paper-cut/` (the paper-cut reference art, its palettes, its runner and its measured cost).
 - **Edited files:**
   - `public/index.html`: the cabinet article after `ahead-of-the-light` in `#row`, its `.cab.first-breath` colours,
     `"first-breath"` appended to the Action group's `games`, and the cabinet best-line block.

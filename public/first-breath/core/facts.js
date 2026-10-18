@@ -3,10 +3,9 @@
 // label: label(fact) makes it with clock.label (or clock.range for a span), and screens print it in front of the
 // text. Only checked facts with access R or A are ever shown. Pure.
 //
-// Each stage's FACTS arrive from core/stages/<id>.facts.js through core/stages/index.js, which does not exist yet
-// in wave 0, so FACTS is empty for now and this file imports nothing from core/stages/.
-// WIRE: when core/stages/index.js lands, import its list of FACTS tables (stage order, then the ending's) and pass it
-// to gather() below. Stage and ending files must not import this file (it would be an import cycle).
+// Each stage's FACTS arrive from core/stages/<id>.facts.js (and core/ending.facts.js) through core/stages/index.js,
+// as FACT_TABLES (stage order, then the ending's). Stage and ending files must not import this file (it would be an
+// import cycle).
 //
 // Contract choices: gather(tables) (an extra export) flattens the tables in order, keeps the first fact of each id
 // and freezes each one; byId() gives null for an unknown id; a fact's fertilized defaults to gaDay > 14 (15.1);
@@ -15,6 +14,7 @@
 import { label as clockLabel, range } from "./clock.js";
 import { SOURCES } from "./sources.js";
 import { fill } from "./text.js";
+import { FACT_TABLES } from "./stages/index.js";
 
 export function gather(tables) {
   const out = [], seen = new Set();
@@ -28,8 +28,8 @@ export function gather(tables) {
   return Object.freeze(out);
 }
 
-// Each stage's FACTS table (see WIRE above).
-const STAGE_TABLES = [];
+// Each stage's FACTS table, in stage order, then the ending's.
+const STAGE_TABLES = FACT_TABLES;
 
 export const FACTS = gather(STAGE_TABLES);
 const BY_ID = new Map(FACTS.map((f) => [f.id, f]));

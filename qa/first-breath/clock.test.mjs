@@ -2,15 +2,16 @@
 // floor((14 + N) / 7) for Day N after fertilization, N = 0..30; every label that starts with "Day" says "after
 // fertilization"; the trimester cards at gaDay 98 and 196; "fetus" only from gaDay 70 and no "cycle day" in any
 // registered string or fact; gaAt over the 4.1 moment table, never running back within or across stages; and
-// mmPerShortAxis over the 3.1 scales, never shrinking over a run. Once core/stages/index.js exists, each stage's
-// meta.moments, meta.ga and meta.mm are checked against the same tables.
+// mmPerShortAxis over the 3.1 scales, never shrinking over a run; fact labels made by clock.label and clock.range;
+// the text helpers that print beside the clock (carer words, ordinals, minutes). Once core/stages/index.js exists,
+// each stage's meta.moments, meta.ga and meta.mm are checked against the same tables.
 // node qa/first-breath/clock.test.mjs
 import assert from "node:assert/strict";
 import { existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { DT, week, label, range, gaAt, mmPerShortAxis, bpmYou } from "../../public/first-breath/core/clock.js";
-import { FACTS, label as factLabel } from "../../public/first-breath/core/facts.js";
-import { allStrings } from "../../public/first-breath/core/text.js";
+import { FACTS, label as factLabel, gather, byId, shown } from "../../public/first-breath/core/facts.js";
+import { allStrings, say, fill, ordinal, minSec, registerConflicts } from "../../public/first-breath/core/text.js";
 
 const FILE = "qa/first-breath/clock.test.mjs";
 let passed = 0;
@@ -197,6 +198,41 @@ await check("mmPerShortAxis log-lerps across meta.ga and never shrinks over a ru
       }
     }
   }
+});
+
+await check("fact labels come from clock.label and clock.range (15.1); shown() fills the carer word", () => {
+  const [a, b, c, d] = gather([[
+    { id: "x.unf", gaDay: 14, fertilized: false, text: "A.", src: ["TTUHSC"], access: "R", checked: true },
+    { id: "x.f", gaDay: 14, fertilized: true, text: "B.", src: ["PMID 33964210"], access: "A", checked: true },
+  ], [
+    { id: "x.span", gaDay: 20, gaEnd: 23, text: "{Carer} hums.", src: ["UNSW Week 2", "nope"], access: "R", checked: true },
+    { id: "x.unf", gaDay: 99, text: "a repeated id is dropped" },
+    { id: "x.who", gaDay: 280, text: "C.", src: ["WHO"], access: "R", checked: false },
+  ]]);
+  assert.equal(factLabel(a), "Week 2");
+  assert.equal(factLabel(b), "Day 0 after fertilization (week 2)");
+  assert.equal(factLabel(c), "Days 6 to 9 after fertilization (weeks 2 to 3)");
+  assert.equal(factLabel({ gaDay: 36 }), "Day 22 after fertilization (week 5)", "fertilized defaults to gaDay > 14");
+  assert.equal(factLabel({ gaDay: 14 }), "Week 2");
+  assert.equal(d.id, "x.who");
+  assert.ok(Object.isFrozen(a));
+  assert.equal(byId("no.such"), null);
+  assert.ok(Array.isArray(shown({ carer: "mum" })), "shown() lists the checked facts");
+  assert.equal(fill(c.text, {}, { carer: "parent" }), "Your parent hums.");
+});
+
+await check("text helpers: carer words, named vars, ordinals and minutes", () => {
+  assert.equal(say("cue.mother"), "♥ your mother's heartbeat");
+  assert.equal(say("cue.mother", {}, { carer: "mom" }), "♥ your mom's heartbeat");
+  assert.equal(say("almost.came", { place: ordinal(5), of: 20 }), "You came 5th of 20.");
+  assert.equal(say("no.such.string"), "no.such.string", "a missing id shows itself");
+  assert.equal(fill("{Carer} and {who}", { who: "you" }, { carer: "bogus" }), "Your mother and you");
+  assert.deepEqual([1, 2, 3, 4, 11, 12, 13, 20, 21, 22, 23, 101, 111].map(ordinal),
+    ["1st", "2nd", "3rd", "4th", "11th", "12th", "13th", "20th", "21st", "22nd", "23rd", "101st", "111th"]);
+  assert.equal(minSec(588000), "9 min 48 s");
+  assert.equal(minSec(48400), "48 s");
+  assert.deepEqual(registerConflicts(), []);
+  assert.ok(allStrings().length > 50);
 });
 
 const INDEX = fileURLToPath(new URL("../../public/first-breath/core/stages/index.js", import.meta.url));

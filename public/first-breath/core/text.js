@@ -4,14 +4,14 @@
 //
 // The shared strings (title, settings, the Almost card, pause, the run result and the HUD) live in BASE below. Each
 // stage's strings arrive from core/stages/<id>.text.js (`export const TEXT = { id: "text" }`) through
-// core/stages/index.js, which does not exist yet in wave 0.
-// WIRE: when core/stages/index.js lands, import its list of TEXT tables (stage order, then the ending's) and put it
-// in STAGE_TABLES below. Stage and ending files must not import this file (it would be an import cycle).
+// core/stages/index.js, as TEXT_TABLES (stage order, then the ending's). Stage and ending files must not import this
+// file (it would be an import cycle).
 //
 // Contract choices: say() of an unknown id returns the id itself, so a missing string shows up in tests and on
 // screen rather than as a blank; an unknown {var} is left as written; a carer setting that is not one of the four
 // words reads as "mother"; a later table never replaces an earlier id (registerConflicts() lists any clash).
 // Extra exports: fill(template, vars, settings), ordinal(n) ("3rd") and minSec(ms) ("9 min 48 s").
+import { TEXT_TABLES } from "./stages/index.js";
 
 export const CARERS = { mother: "your mother", mum: "your mum", mom: "your mom", parent: "your parent" };
 
@@ -111,8 +111,8 @@ const BASE = {
   "sources.note": "Every fact in the game, with where it comes from.",
 };
 
-// Each stage's TEXT table, in stage order, then the ending's (see WIRE above).
-const STAGE_TABLES = [];
+// Each stage's TEXT table, in stage order, then the ending's.
+const STAGE_TABLES = TEXT_TABLES;
 
 const REGISTRY = new Map();
 const CONFLICTS = [];

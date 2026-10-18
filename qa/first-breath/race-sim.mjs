@@ -42,6 +42,8 @@
 // 11. The race runs on after you arrive (you count at 4,600 u), so every rival's arrival is shown; the stage itself
 //     ends 2.5 s after your arrival, so rivals start resting only while you still race. A rival's place is its rank
 //     when the sim ends: arrivals by time, then progress.
+// 12. Not modelled, since neither changes an arrival: Assist, and the 0.25 s hold on the shown place (your place is
+//     fixed by arrival order as your head crosses 4,600 u, or by progress at the cap).
 
 const DT = 1 / 60;
 const DEG = Math.PI / 180;

@@ -13,7 +13,12 @@ the new stages. In the game the words stay gentle: the egg guards its shell.
 
 This change builds the **v1 form** of each stage: its minimum form plus its best one or two flourishes (section 6).
 Section 19.2 lists what is deferred. The research behind the design is in this change folder:
-`research/research-biology.md` and `research/research-art.md`.
+`research/research-biology.md`, `research/research-art.md` (written for the earlier WebGL look; its game and audio
+sources still hold) and `research/paper-cut/` (the paper-cut reference art, its palettes and its measured
+cost, sections 13 and 14).
+
+After eleven art boards and a side-by-side of paper cut, watercolour wash and oil, the look changed from the plan's
+WebGL "Warm Lantern" to **paper cut**, drawn with Canvas 2D (sections 1.2, 13 and 14).
 
 Plain words and short sentences are the house style. The same rule applies to every string in the game.
 
@@ -38,8 +43,10 @@ Plain words and short sentences are the house style. The same rule applies to ev
 
 ## 1. Our choices
 
-The user gave no art direction, no controls preference and no arcade row. These choices are ours. After reviewing the
-plan, the user chose the play of stages 1 and 2 and kept the Action row; those choices are the user's (1.2).
+The user gave no art direction, no controls preference and no arcade row at first. These choices are ours. After
+reviewing the plan, the user chose the play of stages 1 and 2 and kept the Action row; those choices are the user's
+(1.2). After the art boards, the paper-cut look was chosen over Warm Lantern, watercolour wash and oil; 1.2 records
+what is known of that choice.
 
 ### 1.1 Choices table
 
@@ -51,12 +58,12 @@ plan, the user chose the play of stages 1 and 2 and kept the Action row; those c
 | Cabinet attract line | **RACE · GUARD · GROW · BREATHE** | Four verbs from the run. 29 characters, within the 31 of "EXPLORE · DRIVE · SAVE THE PARK" on the same homepage. |
 | Stages 1 and 2 (the user's choice after review) | **Stage 1, The Race**: one sperm in a pack of 20. **Stage 2, The Egg**: the view switches to the egg, which guards its shell with an arc until your own sperm comes in, then seals. | The user asked for "A race with other sperm" and for stage 2 as "a switch to the egg defending against the sperms invasion". See 1.2. |
 | Row | **Action**, the last machine, after `ahead-of-the-light` | A real-time skill game with a score chase. Primordia, the other cell game, is in this row. |
-| Art direction | **"Warm Lantern"**: soft translucent membranes lit from behind, plum shadows, coral and amber bodies, cream rims. Light rises from dim red to amber to white at birth. Abstract baby figure with no face. | Light through tissue is red (d'Eon and Luebke). It reads as calm and inside. No realistic fetus portraits: Nilsson-style images now read as political (`research/research-art.md` B7). |
+| Art direction (chosen after the art boards, 1.2) | **Paper cut**: flat sheets of coloured paper stacked like a shadow box or tunnel book, each one flat colour with a fine grain, hand-cut edges, depth only from soft drop shadows (light from above and a little left), one marigold accent for "you", small cream tags for labels. The light still rises over the run, from dim violet-red sheets to a cream-white glow at birth and a warm cream room. Abstract baby figure in a few rounded pieces, with no face. Drawn with Canvas 2D (section 14). | It won the side-by-side against Warm Lantern, watercolour wash and oil. Flat cut shapes read as calm, made by hand and clearly not a picture of a real body, which suits the tone rules. No realistic fetus portraits: Nilsson-style images now read as political (`research/research-art.md` B7). Sources in 14.2. |
 | Controls | One live gesture per moment: drag anywhere (relative stick), tap, hold, or drag-and-hold. Keys only on desktop. One-button mode in every stage. | One thumb on a phone in portrait. No guessing between tap, hold and drag. |
 | The person carrying the baby | **"your mother"** by default. Settings offer **mother, mum, mom, parent**. No string uses a pronoun for this person. | See 1.3. |
 | Week convention | **"Week N"** = N whole weeks since the first day of the last period (gestational age), as the NHS pages, midwives and doctors use. After fertilization, early stages show "Day N after fertilization (week M)". | One clock. See section 4. |
 | Grades | **Good / Great / Glowing**, points out of 10,000 per stage | Rhythm Heaven style. Never Apgar: a real Apgar of 3 describes a baby in trouble. |
-| Cabinet art | A hand-drawn SVG, `public/arcade/key/first-breath.svg`, under 10 KB | The cabinet does not wait on the renderer. |
+| Cabinet art | A hand-drawn SVG in cut paper, `public/arcade/key/first-breath.svg`, under 10 KB | The cabinet does not wait on the renderer. |
 | Scope | **v1**: each stage's minimum form plus its best one or two flourishes | Eight stages in one pull request, built in parallel. Section 19.2 lists what waits. |
 
 ### 1.2 Judge conflicts and how we settled them
@@ -66,6 +73,7 @@ plan, the user chose the play of stages 1 and 2 and kept the Action row; those c
 | Journey's egg-first scent trail vs the user's order (sperm first) | The user's order wins: stage 1 sperm, stage 2 egg. The trail first moved into stage 2 as gold call beats; after review, the guard below replaced it. | The user's order is a requirement. The idea (the egg is active) survives in the guard and the seal. |
 | **User review:** stage 1 "It is not a race" (our earlier decision, after the myth table in `research/research-biology.md` 10) vs the user's "A race with other sperm" | **The user wins.** Stage 1 is a race against 19 moving rivals to the meeting place, with a top-3 goal, a fork, bumps and a place in the HUD. Every shown fact stays true: `swim.race` ("It is not a race.") is removed; no line says the fastest sperm wins; being ready (hyperactivation) is a real speed burst and is scored; `swim.frame` on the run result says that in life a sperm must be ready at the right time and place. | The user chose it after reading the plan. The race is game framing (section 2). |
 | **User review:** stage 2 as the egg's call (gold beats and a trail) vs the user's "add section 2 as a switch to the egg defending against the sperms invasion" | **The user wins.** Stage 2 switches to the egg: a short ovulation opening, then the egg guards its shell with a glowing arc while sperm come from all sides, lets in only your own gold sperm, and seals its shell. The words stay gentle: "Guard your shell", "bounce", "Only one may enter", "Let it in". | The user asked for it. The guard is game framing; the seal is real (section 6.2). |
+| **User review: art direction.** The plan's WebGL "Warm Lantern" vs eleven art boards, then a side-by-side the user asked for in these words: "show me watercolor wash vs paper vs oil" (`research/paper-cut/compare-*.webp`) | **Paper cut** (sections 13 and 14), drawn with Canvas 2D. The build workflow reports it as the user's pick over Warm Lantern, watercolour wash and oil. | The user's own words choosing paper cut are not quoted here yet: the only user words that reached this edit were the request to compare. Task 3.0 quotes them here and in the proposal, or brings the question back to the user. |
 | At most two feel families per stage vs stage 2's taps, arc and seal | Stage 2 has three: beat taps (the follicle, under 10 s), rotate (the arc) and hold-release (the seal). Each moment still has one live gesture, and the prompt names it. Every other stage keeps at most two. | The user's stage 2 needs all three; the opening is short. |
 | The fork and moving rivals deferred (earlier v1 scope) vs the user's race | Both are in v1. The deferred list no longer holds them (19.2). | A race needs moving rivals. |
 | The seal before fusion (the user's order of play) vs biology (the shell block follows fusion) | As your sperm enters, its membrane meets yours (Izumo1 meets Juno, `egg.fuse`). The seal then shows the block, and fusion shows the nuclei drawing close. Every caption keeps the real order. | Fidelity. |
@@ -100,8 +108,9 @@ plan, the user chose the play of stages 1 and 2 and kept the Action row; those c
   are singular nouns, so verbs agree with no grammar code ("Your parent hums", "Your mum hums").
 - No shown string contains she, her, hers, herself, he, him, his, himself, they, them, their, theirs or themselves. A
   test scans every string with a word-boundary regex.
-- The person is never shown in full, never an obstacle and never in pain. At the end the person is a soft warm shape
-  with no face and no body outline.
+- The person is never shown in full, never an obstacle and never in pain. At the end the person is a plain warm paper
+  oval with no face, no limbs and no head-and-shoulders outline (cut paper always has an edge, so the rule is about
+  the shape, not the edge).
 
 ## 2. Tone rules (hard)
 
@@ -116,7 +125,9 @@ plan, the user chose the play of stages 1 and 2 and kept the Action row; those c
 - The mother's body is never an obstacle or an enemy. No hazards tied to the mother (no alcohol, smoke or illness).
   The race course is the path: stage 1 has no immune cells and no hazards, and the egg guards only its own shell.
 - No medical advice. No viability or prematurity facts.
-- The birth opening is drawn only as light. No blood, no people until the end, no sign of pain.
+- The birth opening is drawn only as light. No blood, no people until the end, no sign of pain. In stage 8 the
+  renderer's own frames are straight side flats with no closed aperture, so no ring of paper edges frames the light
+  (13.1). No drop or drip shapes anywhere; the stage 5 pools are rose, never crimson.
 - The newborn is never blue, dusky or limp. No anatomical lungs. The first breath comes by itself.
 - Failure is gentle and immediate to retry, and only before fertilization.
 - One banned-word list for every shown string (section 15.4).
@@ -392,7 +403,7 @@ The user asked for "A race with other sperm". The race is game framing (section 
 shown fact stays true.
 
 - **Sees.** You are one sperm cell in a pack of 20: you and 19 rivals, who stand for many more. You are a gold head
-  with a soft tail, 22 u long like every sperm, and the brightest sperm, with a soft halo. You start in a wide, warm,
+  with a soft tail, 22 u long like every sperm, and the brightest sperm, on a cream card. You start in a wide, warm,
   soft space (the womb, never named on screen) where slow waves of light roll forward. It narrows to a gate, then
   splits in two: one tube glows warm (the egg's side), the other is cool and dim and curls back. In the warm tube a
   gentle current flows toward you, a warm lane shimmers, and three walls glow. Far ahead, a soft warm band marks the
@@ -486,11 +497,13 @@ shown fact stays true.
   behind: "Some sperm rest on the walls." Overlay `swim.wait`, also after Go on. Run result: `swim.frame`. In
   portrait, stage 1 captions are one line and show for 2.5 s, so the band at 50 to 58% covers your tail and the pack
   just behind you only briefly.
-- **Look and sound.** Violet-plum and rose (colour script row 1). Rivals pale mauve `#c7a2b8`, with tails that wiggle
-  by their own speed. You gold `#ffd77a` with a soft halo, the brightest sperm. The course is drawn as `course`
-  strips and the waves as `band` marks (16.5). The warm tube and lane amber `#ffb36b` with chevrons; the cool tube
-  dim lilac `#3e2c52` with no chevrons. Glow walls soft rose; the meeting place a soft band `#f4d9e6`. Waves are broad
-  soft bands. A bump shows a small soft ring at the contact. Sounds, all through the womb bus (section 11): a soft
+- **Look and sound.** Plum wall sheets over a rose floor, a tunnel book (colour script row 1,
+  `research/paper-cut/scenes/paper-race.js`). Rivals mauve `#967088`, each cut from one strip, with tails that beat by
+  their own speed. You marigold `#ffc53d` on a cream card with an ink keyline, on the highest sheet with the deepest
+  shadow: the brightest sperm. The course is drawn as `course` strips (tube sheets baked into world tiles, 14.1) and
+  the waves as `band` marks (16.5): crescents of paler rose that slide forward. The warm tube coral `#e8834f`, its lane
+  amber `#f6ab48` with cream chevrons; the cool tube dim lilac `#4e3a5e` with no chevrons. Glow walls are paper glows
+  on the wall; the meeting place a pale rose band `#f3c9d6`. A bump shows a small cut ring at the contact. Sounds, all through the womb bus (section 11): a soft
   swish on turns; a low "whoom" when a wave lifts you; a soft low bump; a faint rising pluck when you gain a place; a
   warm two-note chime on "ready"; a soft settling swell at the meeting place.
 - **Bot steering** (`botSteer(state, skill, r)`, also the rivals' policy). In the womb, ride the nearest wave window:
@@ -591,10 +604,12 @@ first caption.
   The seal shows that block. `egg.choice` shows in the guard as a general fact about the fluid around eggs
   (Fitzpatrick et al. 2020 compared different women's fluid on different men's sperm); no string says or implies that
   the egg picks your sperm over the others. `egg.frame` on the run result says the guard is the game's.
-- **Look and sound.** Peach and gold on deep rose (colour script row 2). The corona is a soft cloud of small points.
-  Cilia are one shader strip. Rivals pale mauve `#c7a2b8`, as in stage 1. The arc is cream `#fff4ea`, the brightest
-  thing in the guard. Your sperm is gold `#ffd77a` with a dashed ring. The seal wave is pale gold `#ffe9a8`. A bounce
-  shows a small soft ring where it meets the arc. Sounds, through the womb bus: a soft low pluck per follicle tap and
+- **Look and sound.** Peach and cream paper rings like a target on a wine board (colour script row 2,
+  `research/paper-cut/scenes/paper-guard.js`). The corona is a cloud of small paper dots, darker along your sperm's
+  path. Cilia are a fringe of short paper strips. Rivals mauve `#967088`, as in stage 1. The arc is cream `#fff4e2`
+  with an ink keyline, the highest sheet in the box and the brightest thing in the guard. Your sperm is marigold
+  `#ffc53d` on a cream card, circled by cut cream dashes. The seal wave is a pale gold paper band `#ffe9a8` running
+  round the shell. A bounce shows a small cut cream ring where it meets the arc. Sounds, through the womb bus: a soft low pluck per follicle tap and
   a warm swell at the burst; a soft low "boop" per bounce; a faint low tick when a sperm sticks; a small up-glide when
   one pops loose; a warm two-note swell when your sperm enters; at the seal, a soft shimmer swell that follows the
   wave round the shell; a held fifth at fusion.
@@ -633,8 +648,8 @@ first caption.
 - **One-button.** Already one button.
 - **Facts.** Card `split.two`. Captions `split.small`, `split.carried`, `split.morula`, `split.inner`. Overlay
   `split.hatch`.
-- **Look and sound.** Coral cells with pearl rims on plum. Mitosis is two splats parting while a small bridge splat
-  shrinks. A glassy pling per split, one step higher each time; a soft rising tone while holding.
+- **Look and sound.** Coral paper cells with pale cut edges inside a cream shell ring, on a violet-red sheet.
+  Mitosis is two paper discs parting while a small bridge capsule shrinks. A glassy pling per split, one step higher each time; a soft rising tone while holding.
 - **Bot steering.** None needed.
 - **v1 builds.** 4 days of splits on taps, plus Bloom and Hatch as hold-release targets.
 - **Floor.** 4 splits on taps; bloom and hatch play by themselves.
@@ -680,8 +695,8 @@ first caption.
 - **Carry out.** `nestleX`, `treeSeed`.
 - **Facts.** Card `root.bury` (a span, labelled "Days 6 to 9 after fertilization (weeks 2 to 3)"). Captions
   `root.hcg`, `root.grows`, `root.glands`, `root.heart`, `root.tube`, `root.size`, `root.buds`. Overlay `root.w7`.
-- **Look and sound.** Deep red tissue, milk-white pools with dotted rims, a pale coral tree. Vessels pulse by arc
-  length. A rising tone while growing, a bloom chime per link, then your own soft quick beat under hers, and a slow
+- **Look and sound.** Deep red lining sheets, milk-white paper pools with rims of cut dots, a pale coral paper tree.
+  Vessels pulse by arc length as cream beads riding the branches. A rising tone while growing, a bloom chime per link, then your own soft quick beat under hers, and a slow
   warm swell in the grow moment.
 - **Bot steering.** Seek the nearest spot, then the nearest unlinked pool; time arrival to her next beat by easing
   speed in the last 20 u.
@@ -717,7 +732,10 @@ first caption.
 - **Carry in.** `nestleX`, `treeSeed` for the disc.
 - **Facts.** Card `grow.w7` and `grow.tri`. Captions `grow.w8`, `grow.arms`, `grow.peak`, `grow.fetus`, `grow.w11`,
   `grow.w11kick`, `grow.w12`, `grow.flow`, `grow.never`. Overlay `grow.w13`.
-- **Look and sound.** Rose and pearl. The baby figure is 10 to 12 splats on a 2D skeleton (section 14.4). Your heart
+- **Look and sound.** Rose sheets in a tunnel book (`research/paper-cut/scenes/paper-grow.js`, with the sac darkened
+  to rose, 13.2). The baby figure is 10 to 12 splats on a 2D skeleton (section 14.4), drawn as a few rounded paper
+  pieces. The cord lights are gold beads on a darker cord. From week 12 the pools are rose paper with a wavy pale rim,
+  never crimson, and never drops or drips. Your heart
   is a soft click; hers is a low bed. Each In-time tap plays a soft bell from a pentatonic set (felt, very low-passed).
 - **Bot steering.** Point the stick at the move glow.
 - **v1 builds.** Heart taps with the cord lights, the week 10 line and the week 12 red pools, plus the drag moves.
@@ -725,7 +743,7 @@ first caption.
 
 ### 6.6 Stage 6, Second Trimester (`answer`): "Listen. Then answer."
 
-- **Sees.** A warm, roomy space of fluid. Amber-red light comes through the wall, with soft caustics. You suck a thumb.
+- **Sees.** A warm, roomy space of fluid. Amber-red light comes through the wall, with a soft dapple of light. You suck a thumb.
   From week 19 your mother's voice arrives through the wall as gold ripples from a warm patch. From week 20 a soft
   warm hand glow presses on the wall when you answer well. At week 26 your eyes open and the vignette lifts.
 - **Moments** (her 78 bpm, P_beat = 0.769 s):
@@ -749,7 +767,7 @@ first caption.
 - **Carry out.** `song = { notes: the 16 call notes, lit: a mask of notes answered Close or better }`.
 - **Facts.** Card `answer.card` and `answer.tri`. Captions `answer.hear`, `answer.respond`, `answer.w20`,
   `answer.feel`, `answer.outside`, `answer.low`, `answer.hic`, `answer.jump`. Overlay `answer.eyes`.
-- **Look and sound.** Amber and honey. Caustics at 25%. The voice is a sine hum (a sine at F0 with a soft 2nd harmonic
+- **Look and sound.** Amber and honey sheets. The dapple sheet (the `caustics` field, 14.1) at 25%. The voice is a sine hum (a sine at F0 with a soft 2nd harmonic
   and a slow vibrato), through the womb filter, so only melody passes. Your answers are soft low thumps (70 Hz with a
   150 Hz click for phone speakers). The hand glow brings a warm low chord.
 - **Bot steering.** None needed.
@@ -783,7 +801,8 @@ first caption.
 - **Carry in.** `song` (the hum), `nestleX`, `treeSeed`.
 - **Facts.** Card `turn.card` (plus `turn.weight` only once it is checked). Captions `turn.lungs`, `turn.practice`,
   `turn.focus`, `turn.voices`, `turn.curl`, `turn.head`. Overlay `turn.voice`.
-- **Look and sound.** Ember orange; caustics at full; the roomy glow is the brightest thing on screen. The womb filter
+- **Look and sound.** Ember orange sheets; the dapple sheet at full; the roomy paper glow is the brightest thing on
+  screen. The womb filter
   opens to about 600 Hz.
 - **Bot steering.** Full stick toward the shorter way, only in roomy moments.
 - **v1 builds.** Breaths, then the turn by itself, then the rest; plus the steered turn in roomy moments and the hum in
@@ -802,8 +821,9 @@ first caption.
     "Lift: drag up and hold." 8 "Turn back: drag the other way and hold." Directions are screen axes, in every layout.
     Desktop: hold the arrow (5.3). The move plays on its wave either way.
   - Between waves: "Rest."
-  - After wave 8: `light`: the bottom glow rises to fill the screen while exposure goes 1 → 6 over 2.0 s (Reinhard
-    roll-off), then white 0 → 1 over 1.0 s, hold 0.5 s. The sound opens from 300 Hz to 16 kHz over 1.5 s.
+  - After wave 8: `light`: the bottom glow rises to fill the screen while exposure goes 1 → 6 over 2.0 s (the
+    cream glow sheet, 14.1), then white 0 → 1 over 1.0 s (a full-screen `#ffffff` sheet, grain fading out), hold
+    0.5 s. The sound opens from 300 Hz to 16 kHz over 1.5 s.
 - **Tuning.** Overlap = the share of the 5.0 s swell held (in the right direction on prompt waves). Rested gap =
   released for ≥ 80% of the rest. The squeeze: vignette to 35%, walls in 6% per swell (none in reduced motion),
   filter 300 Hz, a 40 to 80 Hz rumble. Length 2 + 64 + 3.5 ≈ 70 s for everyone. Cap 80 s.
@@ -815,7 +835,8 @@ first caption.
 - **Carry.** `turnDir` from wave 4 sets the direction of wave 8.
 - **Facts.** Card `birth.card`. Captions `birth.fast`, `birth.waves`, `birth.tuck`, `birth.turn`, `birth.skull`,
   `birth.overlap`.
-- **Look and sound.** Plum to white. Waves are deep swells (brown noise 40 to 80 Hz) and her slow breath. Never a
+- **Look and sound.** Plum to white: straight plum side flats, darker toward the viewer, press in on each wave; the
+  opening is only a cream-white paper glow along the whole bottom edge, growing. Waves are deep swells (brown noise 40 to 80 Hz) and her slow breath. Never a
   sound of pain.
 - **Bot steering.** Hold from the warning; on prompt waves drag in the prompted direction; release in the rest.
 - **v1 builds.** 8 waves with the light, plus the four prompt waves.
@@ -826,11 +847,11 @@ first caption.
 | Time | What happens |
 |---|---|
 | 0.0 s | White. |
-| 0.0 to 1.5 s | Silence: the one gap in her heartbeat (5.1). The white starts to soften into a warm, blurred room. |
+| 0.0 to 1.5 s | Silence: the one gap in her heartbeat (5.1). Large cream and peach paper sheets fade in from the white: a warm room with no detail. |
 | 1.5 s | "Breathe." A slow ring. Live gesture `hold`, optional. A press starts the inhale (a warm glow fills you); a release (at least 0.4 s; it lets go by itself at 2.5 s) gives a soft first cry. Her heart comes back soft and far (−12 dB). |
 | 4.5 s | If there was no press, the breath comes by itself, with the caption "It can take a few seconds. That is normal." |
 | about 6 to 9 s | Two more breaths come by themselves, a little uneven. Your glow warms (warm tones only, never a skin colour change). |
-| about 9 s | Skin-to-skin: a big warm shape and a small one in a circle of light. No faces, no body outline. Her heartbeat comes close and clear, 76 bpm: "[{Carer}'s heartbeat, clear now]", "You know this heartbeat." |
+| about 9 s | Skin-to-skin: two plain paper ovals, a big warm one and a small one, in a circle of cream light. No faces, no limbs, no head-and-shoulders outline. Her heartbeat comes close and clear, 76 bpm: "[{Carer}'s heartbeat, clear now]", "You know this heartbeat." |
 | about 12 s | "Rest your thumb here." A soft ring: in portrait at bottom centre, 78% of the height; in landscape low in the corner on the side of your last touch (right if none), inside the safe area. Touching it makes both rings pulse together. Desktop: "Rest here. Hold Space if you like." |
 | about 16 to 28 s | Your song is hummed, clear and full band. Notes you answered shimmer a little. |
 | about 29 s | "Your nine months took 9 min 48 s." (run core time from Play to the end of Birth, pauses left out) |
@@ -925,17 +946,19 @@ No points, no grade and no score line appear from the end of stage 8 until the r
   `.osd`, the `.panel` with START, the `.door` with its two `.slot` buttons, and the `.kick`. Then replace the names:
   `<article class="cab first-breath" data-game="first-breath" data-url="/first-breath/" aria-label="First Breath: a
   baby's journey to birth">`; marquee `<b>FIRST BREATH</b><small>A BABY'S JOURNEY TO BIRTH</small>`; screen `<img
-  src="arcade/key/first-breath.svg" alt="A glowing egg in its ring of cells on deep plum, a small gold cell beside it,
-  and soft white light above" loading="lazy" decoding="async">`; `.hi` RACE · GUARD · GROW · BREATHE (it wraps like its neighbours with `text-wrap: balance`); both slots
-  `aria-label="Drop a token into First Breath"`. CSS `.cab.first-breath { --c1: #3a0f24; --c2: #ffb36b; --glow:
-  rgba(255, 170, 120, 0.5); }`. The article goes after the `ahead-of-the-light` article in `#row`, and
+  src="arcade/key/first-breath.svg" alt="A cut-paper egg in cream rings and a cloud of paper dots on wine red, with a
+  cream arc round it and a small marigold sperm coming in" loading="lazy" decoding="async">`; `.hi` RACE · GUARD · GROW · BREATHE (it wraps like its neighbours with `text-wrap: balance`); both slots
+  `aria-label="Drop a token into First Breath"`. CSS `.cab.first-breath { --c1: #5e1c34; --c2: #ffc53d; --glow:
+  rgba(255, 197, 61, 0.45); }` (the stage 2 board and the marigold accent). The article goes after the `ahead-of-the-light` article in `#row`, and
   `"first-breath"` is appended to the Action group's `games`.
 - **Switcher**: `{ id: "first-breath", name: "First Breath", sub: "A baby's journey to birth", url: "/first-breath/",
-  art: "/arcade/key/first-breath.svg", color: "#ff9a7a" }` (the stage 3 light tint), after the Ahead of the Light
-  entry in `GAMES`.
+  art: "/arcade/key/first-breath.svg", color: "#ffc53d" }` (the marigold "you" accent), after the Ahead of the
+  Light entry in `GAMES`.
 - **Cabinet art**: `public/arcade/key/first-breath.svg`, viewBox `0 0 480 396` (the screen's 4 : 3.3), under 10 KB,
-  no script, no external reference, no text. A glowing egg with its corona on plum `#2a0818`, a small gold cell
-  `#ffd77a` with a short tail, a soft white breath of light `#fff8f0` at the top.
+  no script, no external reference, no text, drawn as cut paper after `research/paper-cut/board-paper.webp`: a wine
+  board `#5e1c34`, the egg as stacked rings (peach `#ffc49c`, a cream `#fff0dc` shell), a few paper dots of the
+  corona, a cream `#fff0dc` arc, and a small marigold `#ffc53d` sperm on a cream card. Depth is offset shadow shapes
+  in ink `#1a0610` at low opacity (no filters, no blur), straight snipped edges, no grain.
 
 ## 11. Audio (`ui/sound.js`)
 
@@ -994,7 +1017,8 @@ No points, no grade and no score line appear from the end of stage 8 until the r
   your shell").
 - **Visual-only play**: every beat is a ring, every hummed note is a ripple, every answer note has a ghost ripple, and
   every target has a DOM ring in `svg#rings` before its time. Stages 2, 3, 5 and 6 play fully with sound off.
-- **Reduced motion** (follows `prefers-reduced-motion`; Settings can override): warp ×0.5, no scale bounce, no camera
+- **Reduced motion** (follows `prefers-reduced-motion`; Settings can override): warp ×0.5 (the paper sheets sway half
+  as far, 14.1), no scale bounce, no camera
   shake, beats change brightness only, contractions do not move the walls (the vignette only), the birth light is a
   plain 1.5 s fade. Bumps never shake the camera, and the seal wave is a brightness sweep round the shell with no
   ripple warp. The stage crossfade is the same in both modes. Rhythm stays.
@@ -1003,117 +1027,293 @@ No points, no grade and no score line appear from the end of stage 8 until the r
   (< 2% of the screen); at most 3 luminance swings of ≥ 10% in any 1 s; no red flashes; the birth light rises steadily.
 - **Colour**: no goal depends on hue. Cues differ by shape and brightness: rings, dotted rims (gland pools) and wavy
   rims (blood pools), dashes and dots for the two hearts, chevrons for the warm lane, words for grades. In stage 1
-  you are the brightest sperm, with a halo, and the warm tube has chevrons while the cool tube has none. In stage 2
-  the arc is the brightest band, your sperm has a dashed ring, and stuck sperm show a dotted ring. Every cue has a
-  2 px dark halo. Contrast ≥ 3:1 for each cue against its stage background and against its halo, also under protan,
-  deutan and tritan simulation (section 17).
+  you are the brightest sperm, at least 2.25:1 above the rivals, on your cream card, and the warm tube has chevrons
+  while the cool tube has none. In stage 2 the arc is the brightest band, your sperm has cut cream dashes round it,
+  and stuck sperm show a dotted ring. **Every cue is a sticker**: from the outside in, a 2 px ink keyline `#1a0610`
+  (the halo; cream `#fff8f0` in the ending), a cream margin `#fff0cf` when the cue itself is not cream, then the cue.
+  Each cue token has a contrast ≥ 3:1 against its keyline, and the sticker reads against every sheet it can sit on
+  (its `under` tokens, 13.2), in normal vision and under protan, deutan and tritan simulation (section 17). A plain cue
+  with no keyline (the stage 5 cord lights) needs ≥ 3:1 against its `under` sheet itself.
 - **One-button mode** in every stage, and **Assist** (section 5 and each stage).
 - **Large text**: base 16 px → 20 px; captions 18 px → 22 px.
-- **Keyboard**: full play and full menus with visible focus (3 px `#ffd77a` ring). No moment needs the mouse.
+- **Keyboard**: full play and full menus with visible focus (a 3 px marigold `#ffc53d` ring with a 1 px ink
+  `#1a0610` line outside it, so it shows on cream paper and on dark sheets). No moment needs the mouse.
 - **No mash input** anywhere. No input needs two pointers.
 - **Haptics** are deferred (section 19.2). Every cue already has a sound and a picture.
 
-## 13. Art direction: "Warm Lantern"
+## 13. Art direction: paper cut
+
+The reference art is `research/paper-cut/`: the shared helpers (`kit.src.js`), three scenes (`paper-race.js`,
+`paper-guard.js`, `paper-grow.js`, each with its palette in its header), the board (`board-paper.webp`) and the
+side-by-side with watercolour wash and oil (`compare-*.webp`). Section 14 says how the game draws it.
 
 ### 13.1 Direction
 
-- Soft translucent membranes lit from behind. Plum shadows. Coral and amber bodies. Cream rims.
-- Light rises over the run: dim violet-red (stages 1 to 3), deep red (4), rose (5), amber (6), ember (7), plum to
-  white (8), a warm cream room (ending). The stage backgrounds below rise in luminance in that order.
-- The baby figure is abstract: soft blobs on a 2D skeleton, no face, no expression (NHS week 16: faces before birth are
-  random). No realistic fetus portrait. No Nilsson-style composition.
+- **Flat sheets of coloured paper stacked like a shadow box or tunnel book.** Each sheet is one flat colour with a
+  fine grain that moves and turns with its sheet. No gradients inside a sheet, no gloss, no outlines except the cue
+  keylines.
+- **Hand-cut edges** from short straight snips: a slow wobble along the edge plus a small jitter per snip, stable from
+  frame to frame (14.1).
+- **Depth only from soft drop shadows** between sheets. The light is above and a little left in every layout, so a
+  sheet's shadow falls down and a little right, offset by its height. A sheet's cut edge toward the light is a hair
+  paler.
+- **Frame sheets get darker toward the viewer**, like the front flats of a tunnel book. The subject sits on the
+  highest sheet, with the deepest shadow.
+- **One marigold accent for "you"** (`#ffc53d`): your sperm in stages 1 and 2, your heart in stage 5, the direction
+  arrow in stage 8. Nothing else on screen is marigold.
+- **Labels are small cream tags**: the place slot, the prompt line, captions, the stage name and the clock are DOM
+  elements styled as paper tags (background `#fff0dc`, ink `#3a1029`, rounded, a CSS `box-shadow` down and a little
+  right). **The canvas draws no text.** The tags sit at the positions sections 8 and 9 give, so the layout checks read
+  their DOM boxes. The no-`shadowBlur` rule covers the canvas only; CSS shadows on DOM tags are fine.
+- **Motion**: sheets sway a few px in parallax (the deeper the sheet, the less it moves; shadows stay put), tails beat,
+  waves and dots slide. No sheet ever flashes.
+- **The light rises over the run**, now in paper: dim violet-red sheets in stages 1 to 3, deep red in 4, rose in 5,
+  amber in 6, ember in 7, plum toward a bright opening in 8, and a warm cream room for the ending. The stage frame
+  means rise in that order (13.3); single tokens may not.
+- **The birth opening is drawn only as light**: a cream-white paper glow along the whole bottom edge that grows, never
+  anatomy. In stage 8 the renderer's frames are straight side flats with no closed aperture: no round or scalloped
+  window, and no ring of sheet edges round the light.
+- **Tone rules stay hard** (section 2): no face, no anatomy, no blood. Pools are rose with a pale wavy rim, never
+  crimson, never drops or drips. The baby is a few rounded paper pieces (a round head, a curled bean of a body, buds
+  or short folded limbs) with no face and no expression (NHS week 16: faces before birth are random). No realistic
+  fetus portrait. No Nilsson-style composition. In the ending the two shapes are plain ovals with no limbs and no
+  head-and-shoulders outline.
 - One camera whose scale only grows, from a 0.05 mm sperm to a 2 m room, with a scale bar from stage 3 on.
-- Every frame has one brightest thing: the cue the player needs now (`cue` in the draw list).
+- Every frame has one brightest thing: the cue the player needs now (`cue` in the draw list). Every cue is a sticker
+  (section 12): a 2 px ink keyline outside, a cream margin when the cue is not cream, then the cue.
 
 ### 13.2 Colour script (hex)
 
-Tokens live in `render/palette.js` (plain data, node-importable). `ink` `#1a0610` is the halo and scrim colour
-everywhere except the ending.
+Tokens live in `render/palette.js` (plain data, node-importable); the contract owner lands this table there (task
+3.1). Stages 1, 2 and 5 start from the reference scenes' hex values (`research/paper-cut/README.md`), changed where
+the checks needed it; stages 3, 4, 6, 7, 8 and the ending have no reference art yet, and their rows are a first cut
+for task 3.8 to tune.
 
-| Stage | bg | tissue | body | rim | cue (main) | cue (second) | light tint |
-|---|---|---|---|---|---|---|---|
-| 1 The Race | `#1e0a1c` | `#4a1f3d`; `#3e2c52` (cool tube) | `#c7a2b8` (rival sperm) | `#f4d9e6` (also the meeting place band) | `#ffd77a` (you, with a halo) | `#ffb36b` (warm tube and lane, chevrons) | `#ff9a8a` |
-| 2 The Egg | `#2a0e1a` | `#6e2436` | `#ffc9a8` (corona); `#c7a2b8` (other sperm) | `#fff4ea` | `#fff4ea` (guard arc); `#ffd77a` (beat ring) | `#ffd77a` (your sperm, dashed ring); `#ffe9a8` (seal wave) | `#ffb08a` |
-| 3 The Embryo | `#3a0f24` | `#5a1426` | `#ff8a6b` (cells) | `#fff4ea` | `#ffd77a` (approach ring) | `#fff4ea` (hold ring) | `#ff9a7a` |
-| 4 The Placenta | `#4a0f1e` | `#7a1e2e` | `#ffb3a0` (tree) | `#fff4ea` | `#f3eadf` (gland pools, dotted rim) | `#fff4ea` (your heart, dashed) | `#ff8a6a` |
-| 5 First Trimester | `#521626` | `#74223a` | `#ffb8a8` (you) | `#fff4ea` | `#ffd77a` (cord lights) | `#ffe0c8` (move glow); `#ffb3c0` (blood pool rim, wavy) | `#ff8a7a` |
-| 6 Second Trimester | `#5e2a16` | `#8a3a20` | `#ffc0a0` | `#fff4ea` | `#ffd77a` (voice ripples) | `#fff4ea` (answer ghosts, dashed); `#ffc9a8` (hand glow) | `#ffa860` |
-| 7 Third Trimester | `#6e3214` | `#9a4a20` | `#ffc8a0` | `#fff4ea` | `#fff4ea` (breath ring) | `#ffe0a0` (roomy glow) | `#ffb36b` |
-| 8 Birth | `#2a0818` | `#4a1630` | `#e8a0b8` | `#fff4ea` | `#fff4ea` (wave and prompt ring) | `#ffd77a` (direction arrow) | `#ffffff` |
-| Ending | `#ffe8d6` | `#ffd2b8` | `#ffc9a8` (big shape), `#ffb38a` (small shape) | `#fff8f0` | `#7a2e1e` (rings, dark on light; halo `#fff8f0`) | `#4a1e10` (text) | `#ffffff` |
+Shared tokens: `ink` `#1a0610` is the keyline (the halo), the colour of every drop shadow (the reference's shadow
+`#1c0612` is merged into it) and the scrim base; `margin` `#fff0cf` is a sticker's cream card; `glow` `#fff4e2` is the
+paper glow; `you` `#ffc53d` (back of a twisted ribbon `#ee951c`); `tag` `#fff0dc` with `tagInk` `#3a1029`; `white`
+`#ffffff`. Shadows are `ink` at alpha 0.28 to 0.42.
 
-UI: text `#fff4ea` on a scrim `rgba(26, 6, 16, 0.72)`; buttons `#ffb36b` with text `#2a0818`; focus ring `#ffd77a`.
-If a hex fails the contrast test, the cue is lightened (or darkened in the ending), never the background, and this
-table is updated. The ending hue test skips achromatic tokens such as `#ffffff`.
+In the table, sheets run from the front of the box (the darkest frame) to the back. `back` is the lit back sheet.
+Each cue lists its `under` tokens: every sheet it can sit on. A cue marked **sticker** has the keyline and the cream
+margin; **keyline** has the keyline only (the cue is cream already); **plain** has neither.
+
+| Stage | back | frames and sheets (front → back) | bodies | cue (main) → under | cue (second) → under | tint |
+|---|---|---|---|---|---|---|
+| 1 The Race | floor `#86355a`; floor dots `#9b4a6c`, `#702b4c`; wave bands `#a3536f` | walls `#36102a` / `#4c1839` / `#64224a`; warm tube `#e8834f` with lane `#f6ab48`; cool tube `#4e3a5e`; meeting band `#f3c9d6` | rivals `#967088` (back `#7c5872`, resting `#84607a`) | you `#ffc53d`, sticker → floor, dots, wave bands, walls, warm tube, lane, cool tube | chevrons `#fde7c6`, keyline → lane, warm tube | `#ff9a8a` |
+| 2 The Egg | board `#5e1c34`; ripples `#6c2440` | follicle `#f4a88a` (opening); cilia `#e8a090` | corona `#f2a07e` / `#f8c3a2` / `#e07f66`, and `#9a4a44` along your sperm's path; cell `#ffc49c`, shell `#fbe3d0`, inner disc `#ffd8b8`, nucleus `#f08c6c`; rivals as stage 1 | arc `#fff4e2`, keyline → board, ripples, corona (all four), rivals | your sperm `#ffc53d`, sticker, with cut dashes `#fff0cf` → board, ripples, path dots; seal wave `#ffe9a8`, keyline → shell, cell | `#ffb08a` |
+| 3 The Embryo | `#7a2c50` | frames `#3a1030` / `#52183e` / `#6a2448`; tube walls `#64224a` | cells `#f07860` (cut-edge core `#fff0dc`); shell `#fbe3d0`; hollow `#ffd8b8` | approach ring (DOM) `#ffc53d`, keyline → back, cells, shell | hold ring (DOM) `#fff4e2`, keyline → back, cells, hollow | `#ff9a7a` |
+| 4 The Placenta | lining `#7a1e34`; deep lining `#5c1428` | frames `#2e0814` / `#44101e` / `#5a1628`; the thin layer `#ffd8c8` | tree `#f4a890` (beads `#fff0dc`); you `#ffb8a0`; soft spots as paper glows | gland pools `#f3eadf` with a rim of cut dots `#fff8ee`, keyline → lining, deep lining | your heart ring (DOM) `#fff4e2`, dashed, keyline → lining, tree | `#ff8a6a` |
+| 5 First Trimester | sac `#d4788a` (rose; the reference's pearl `#f6d6cc` outshone the cue); motes `#ebb5b2` | frames `#4e1430` / `#8e2c4b` / `#c25470` | placenta `#b04058` and `#c25470`; pools `#d9667c` (L ≥ 0.25, from week 12) with a wavy rim `#ffc8d0`; cord `#a8405a` (back `#8a3048`); body `#f39477`, head `#f6a585`, limbs `#e57a62` | your heart `#ffc53d`, sticker → body, head, sac | cord lights `#ffd25a`, plain → cord, cord back; pool rim `#ffc8d0`, plain → placenta `#b04058`; move glow, a paper glow | `#ff8a7a` |
+| 6 Second Trimester | wall `#c8703c` | frames `#5e2a16` / `#8a3a20` / `#b4542c`; fluid `#e89a5a`; dapple `#f6c890` (alpha ≤ 0.12) | you `#ffc0a0`; the warm patch and the hand glow as paper glows `#ffd8b0` | voice ripples `#fff0b8`, keyline → wall, fluid, back frame | answer ghosts `#fff4e2`, cut dashes, keyline → wall, fluid, back frame | `#ffa860` |
+| 7 Third Trimester | `#d97a40` | frames `#6e3214` / `#9a4a20` / `#c4602a`; snug walls `#e8925a`; dapple `#ffd8a0` | you `#ffc8a0` | breath ring (DOM) `#fff4e2`, keyline → back, walls, you, back frame | roomy glow, a paper glow `#ffe0a0` | `#ffb36b` |
+| 8 Birth | `#6a2a4a` | straight side flats `#2a0818` / `#3e1028` / `#521a38`, no aperture | you `#e8a0b8`; the opening glow `#fff4e2` rising to `#ffffff` | wave and prompt ring (DOM) `#fff4e2`, keyline → back, flats, you | direction arrow `#ffc53d`, sticker → back, you, glow, back flat | `#ffffff` |
+| Ending | `#ffe8d6` | room sheets `#ffd2b8`, `#fff4ea` | big oval `#ffc9a8`, small oval `#ffb38a` | rings `#7a2e1e`, dark on light, cream keyline `#fff8f0` → back, room sheets, ovals | text `#4a1e10`, cream keyline → back, room sheets | `#ffffff` |
+
+DOM rings (`render/rings.js`): her ring `#ffc53d` solid; your heart ring `#fff4e2` dashed with a dot; target rings
+(approach, hold, breath, wave, prompt) `#fff4e2`; burrow rings `#fff0cf`, dotted for rivals and dashed for your sperm;
+each stroked over a 2 px wider `ink` keyline (cream `#fff8f0` in the ending).
+
+UI (DOM): tags and cream buttons `#fff0dc` with ink `#3a1029`; Play `#ffc53d` with ink `#3a1029`; menus on a scrim
+`rgba(26, 6, 16, 0.72)` with text `#fff4ea`; the focus ring of section 12.
+
+Rules (`palette.test.mjs`, in normal, protan, deutan and tritan views, Machado 2009):
+
+- each cue ≥ 3:1 against its keyline;
+- each **sticker** or **keyline** cue: for each `under` token, the keyline or the cue's light layer (the margin, or
+  the cue itself when cream), whichever contrasts more, ≥ 3:1;
+- each **plain** cue ≥ 3:1 against each `under` token;
+- stages 1 and 2: you ≥ 2.25:1 above the rivals; stage 1: warm tube ≥ 3:1 against the cool tube; stage 2: your sperm
+  ≥ 3:1 against the path dots; stage 3: cells ≥ 3:1 against the back, and redder (R / (G + B)) than it;
+- every chromatic ending token has a hue of 0° to 50° (achromatic tokens such as `#ffffff` are skipped);
+- no rule asks the `back` tokens to rise from stage to stage: the frame means do that (13.3).
+
+The rows above pass these rules in a scratch run of the same maths before wave 1 (the worst cases: stage 1 you over
+the rivals 2.45:1, stage 5 cord lights 3.83:1 on the cord, stage 5 pool rim 3.56:1 on the placenta). If a hex fails,
+the cue or its under sheet changes and this table is updated.
 
 ### 13.3 Visual checks
 
-Each is a test, not a judgement by eye (section 17): a frozen frame per stage (non-black; a cell centre redder than the
-background; the rim the brightest band within 20 px; the cue at or above the frame's 95th luminance percentile), the
-stage means rising in colour-script order, the palette contrast test, the flash rule, the birth-light ramp, the
-ending's warm hues, and a screenshot of every stage at the three layouts for the PR.
+Each is a test, not a judgement by eye (section 17):
+
+- a frozen frame per stage: non-black, and the cue at or above the frame's 95th luminance percentile (DOM rings
+  included);
+- stage 3, a paper cell: the palette rule above, plus in the frame the cell's pale cut edge (its `core`) is the
+  brightest ring within 8 px of the cell's edge, and the shadow just below and right of the cell is darker than the
+  back sheet;
+- the stage frame means rising in colour-script order (stages 1 to 7);
+- the palette rules, the flash rule, the birth-light ramp, the ending's warm hues;
+- stage 8: when the light starts, its brightest region touches the bottom edge across ≥ 90% of the width, and no
+  closed ring of sheet edges surrounds it;
+- the low tier in every stage (14.3);
+- a screenshot of every stage at the three layouts, in both tiers, for the PR.
 
 ## 14. Rendering stack and named sources (AGENTS.md rule)
 
-### 14.1 Passes
+### 14.1 The paper renderer
 
-One WebGL2 canvas (`alpha: false`, `antialias: false`), two passes, then overlays, measured in
-`research/research-art.md` A0 at 7.0 ms for 195 × 422 px in SwiftShader with 32 blobs and 1,500 points.
+One Canvas 2D context on `canvas#view` (`{ alpha: false }`). Never `willReadFrequently`, `ctx.filter`, `shadowBlur`
+or a per-frame full-screen gradient. It draws the frozen draw list of 16.5 and nothing else: no stage knows that the
+frame is paper. DOM SVG draws the beat rings (sharp, moved by `transform`, assertable in Playwright), and the DOM draws
+every label as a paper tag (13.1). The `render/` files (14.5 says how this reads against 16.1):
 
-1. **Splat**: one quad per splat into a half-resolution RGBA8 field with additive blending. Kernel `(1 − r²)³` on the
-   distance to a point (circle) or to a segment (capsule). Channels: R membrane, G nucleus, B vessel and heart, A hue ×
-   weight. Then `generateMipmap`.
-2. **Composite** (one full-screen triangle, `mediump`): womb background from 2 taps of a seeded 128² noise texture;
-   one domain warp of the sample position; threshold to membrane, rim and cytoplasm (`1 − exp(−σ f)`); hue = A / R;
-   transmittance light `exp(−σ T)` with σ = (0.6, 2.2, 3.0) and a red scatter band; a back-light rim from the field
-   gradient; caustics (stages 6 and 7); glow from the field's mip lod 3; the heart tint (≤ 6%); vignette; exposure with
-   Reinhard roll-off; white mix.
-3. **Overlays** (additive, same target): points as `gl.POINTS`; strips (tails, cilia, tree, cord, chevrons, ripples).
-4. **DOM SVG** for beat rings (sharp, moved by `transform`, assertable in Playwright). HUD text stays in the DOM.
-5. **Stage crossfade**: the last frame of the old stage is copied to a texture and mixed out over 0.8 s.
+- `paper.js`: `cut`, `sheet`, `shadow`, `grain`, `bake`, `blit`. A port of `research/paper-cut/kit.src.js` as an ES
+  module, with cut jitter from world position, one shadow colour (`ink`) and sub-pixel blits below step 1.
+- `bake.js`: the bake cache (renderer frames, world-space course tiles, the tree per version, the dot atlas, the
+  dapple tiles).
+- `items.js`: draws each draw-list item as paper (the table below), live or from the cache.
+- `low.js`: the low tier's forms (14.3).
+- `perf.js`: the frame cost, the probe readback, the tier switch, the scale steps and the `perf` fields (14.3).
+- `renderer.js` (behind the frozen `createRenderer` signature), `camera.js`, `palette.js`, `rings.js`, `debug.js`, and
+  `strips/` (`tails`, `cilia`, `tree`, `cord`, `chevrons`, `ripples`, `arc`, `course`).
+
+**Draw order** (back to front): the back sheet and its light; baked course tiles and still sheets; ground details
+(dots, waves, pools); bodies with their shadows; strips; marks; the subject; the cue stickers; the renderer's frames
+(the front flats, darkest); the dapple sheet; the tint sheet; the exposure and white sheets; the crossfade copy. DOM
+rings and tags sit above the canvas.
+
+**Sheet heights** (px at step 1 on a phone, times `hs = √(short side / 390)` as in the reference): the back 0; ground
+details 1 to 2; course sides and the lane 1.6 to 2.2; bodies 3 to 5; rivals 4; the subject 6 to 8, plus its margin;
+the stage 2 arc 10, the highest sheet; frames 5 to 9, the front frame highest. A shadow falls (0.42 h, h) px from its
+sheet and is 0.8 + 0.85 h px soft.
+
+**Cut edges.** Each edge point moves along its normal by `amp · noise(x / λ, y / λ) + jitter · hash(⌊x / s⌋, ⌊y / s⌋)`,
+where (x, y) is the point's **world** position. Never the point's index or the arc length from the window's start: a
+course window that slides cuts the same edge as before, so edges never flicker. Moving items (splats, tails, ripples,
+points, marks) get no per-index jitter: their wobble comes from shape-local coordinates only (along a tail, round a
+disc), the same for every item of a kind, so items that change order in the list keep their shape. Defaults: snip
+s = 7 px, amp 1.4 px, jitter 0.45 px, λ = 60 px, times `hs`.
+
+**Shadows** are laid in screen space after the camera's orientation, so the light stays above and a little left in
+every layout, also in `long` landscape and desktop, where the world turns −90°. Still sheets get the reference's soft
+shadow (one offset fill, then up to 8 widening strokes clipped to the outside), baked. Moving sheets get a cheap
+shadow: one offset silhouette fill at low alpha plus at most 2 widening strokes. The splats of one body (overlapping
+discs and capsules in one hue band, such as stage 3's cells or the egg) share one union outline and one shadow; this
+replaces the summed-field merge of the WebGL plan.
+
+**Grain.** One 256² tiling value-noise tile (mottle, streaks, specks, fibres), made once at boot and filled over each
+sheet as a `CanvasPattern` whose `setTransform` follows the sheet, so the grain moves and turns with it. No grain on
+moving shapes under about 12 px across (most sperm heads, dots, beads), and none in the low tier. As `light.white`
+rises, the grain fades to 0.
+
+**Bakes.**
+
+- *Renderer frames* (tunnel-book flats, the stage 8 side flats, the ending's room sheets): baked once per stage, size
+  and scale step, with a margin for the sway, during the stage card or the crossfade, never in a measured frame. In
+  stage 8 the flats press in 6% per swell: they are blitted scaled about the screen centre (or drawn live if the
+  scaled blit looks soft), and they stay still in reduced motion.
+- *Course tiles* (stage 1). The stage sends only the visible part of each `course` strip (≤ 32 points), and the window
+  moves every frame, so the renderer never has the whole course at once. It keeps the course's points in world space as
+  the windows reveal them (the course never moves in the world) and bakes **world-space tiles** of 64 u, keyed by
+  (stage, scale step, orient, tile x, tile y). Each tile holds the floor, the three wall sheets, the warm and cool
+  sides and the lane. A tile is baked once the points that cross it and its neighbours have arrived; until then that
+  part is drawn live. While the span eases from 170 to 150 u, tiles are blitted scaled, and they re-bake once the span
+  settles. A `camera.rot` change of more than 1° re-bakes. Tiles more than 2 tiles behind you leave the cache.
+- *The tree* (stage 4, and the placenta disc after it): baked per `tree.version`; its `pulse` is drawn live as cream
+  beads riding the branches.
+- *The dot atlas*: one sheet of paper dots in 8 sizes and each stage's dot tones, with the cheap shadow baked in, for
+  `points` and the motes: one `drawImage` per dot.
+- *The dapple tiles* (`caustics`) and the grain tile.
+- A frame that bakes is flagged, and it is left out of `emaMs`, `p95Ms` and the adaptive counters (14.3).
+
+**Sway.** One slow sway vector (about 0.12 Hz), of length `motion.warpAmp` = 3 px × `warp` × `hs` (half in reduced
+motion), moves each sheet by its depth factor: frames 1.4, items 0.5 to 1, the back 0. Shadows stay put. At step 1 a
+blit snaps to whole device pixels; below step 1 a device pixel is 2 to 3 CSS px, so blits use sub-pixel offsets (with
+image smoothing on) and the sway moves smoothly. The step-0.5 strip in `shots.mjs` checks it (task 5.8).
+
+**The draw list as paper.** Every 16.5 item, its paper form, and its low-tier form (14.3). Heights are px at step 1.
+
+| 16.5 item | Paper form | Height | Shadow | Grain | Baked or live | Low tier |
+|---|---|---|---|---|---|---|
+| `stage` | the palette row (13.2) | | | | | same |
+| `camera` | world to screen (`camera.js`); sway per sheet depth | | | | | same |
+| `scale` | the DOM scale bar in the HUD | | | | DOM | same |
+| `light.level`, `light.warm` | the back sheet lit: a `glow` sheet over it at alpha 0.25 × level, its colour mixed from `glow` toward the stage tint by `warm` | 0 | none | no | live, one fill | same |
+| `light.vignette` | the front frame closing in: its window shrinks by vignette × 20% of the short side | frame | baked | baked | blitted scaled | same, flat shadow |
+| `light.tint` | a full-screen sheet of the stage tint at alpha ≤ 0.06 (the flash rule) | top | none | no | live | same |
+| `light.exposure` (1..6) | the cream glow sheet: `glow` at alpha 0.85 × (exposure − 1) / 5 over the frame | top | none | fades out | live | same |
+| `light.white` (0..1) | a full-screen `#ffffff` sheet at alpha `white`; grain × (1 − white) | top | none | fades out | live | same |
+| `warp` (0..1) | the sway amplitude, `motion.warpAmp` | | | | | same |
+| `caustics` (0..1) | the dapple sheet: two baked tiles of cut cream spots sliding against each other at alpha 0.12 × caustics (cut list 2) | 0.5 | none | no | baked, slid | none |
+| `splats` | `k: "c"` a paper disc, `k: "s"` a capsule; colour from `hue` through the stage's body ramp in `palette.js`; `m` sets the height (m × 5 px); `n` > 0 adds a nucleus disc on top; `v` > 0 is the heart sheet (a `you` sticker from stage 4 on); one body's splats share one union outline and shadow | 3 to 5 | cheap, one per body | only ≥ 12 px | live | flat fill, one flat shadow per body |
+| `points` (≤ 600) | atlas dots; `hue` picks the tone row, `a` the alpha | 1 to 2 | baked in the atlas | no | atlas | atlas dots with no shadow |
+| render motes | ≤ 150 atlas dots drifting at the back | 1 | baked in the atlas | no | atlas | none |
+| strip `tails` | paper ribbons, each cut from one strip: a teardrop head (when no splat draws it) and a tail that twists to show its back colour, beating by `phase`; `ring: "halo"` the sticker (cream card and ink keyline); `"dashed"` cut cream dashes round the head | 4 (you 7.5) | cheap | no | live | a plain ribbon, no twist, flat shadow |
+| strip `cilia` | a fringe of short cut strips along a→b, bending by `phase` and `amp` | 2 | cheap | no | live | half the strips |
+| strip `tree` | cut ribbons by node width; `pulse` as cream beads by arc length | 2 to 3 | soft, baked | baked | baked per `version`, beads live | the same bake with flat shadows, beads kept |
+| strip `cord` | a twisted paper ribbon (its back colour where it turns); `lights` are plain gold beads on it | 3 | cheap | no | live | no twist |
+| strip `chevrons` | cut cream V shapes with the keyline, sliding with `phase` | 1.3 | cheap | no | live | flat shadow |
+| strip `ripples` | cut paper rings (an even-odd annulus) at alpha `a`; `dashed` as cut dashes; the contact rings are small and short-lived | 1.5 | cheap | no | live | no shadow |
+| strip `arc` | a cut cream arc with round ends and the keyline, the highest sheet; `glow` adds a paper glow behind it | 10 | soft, live (fill plus 2 strokes) | yes | live | flat shadow, no grain |
+| strip `course` | layered tube sheets: the floor, three wall sheets darker toward the viewer, the warm or cool side and the lane, by `tone` | 0 to 9 | soft, baked | baked | world tiles | tiles with flat shadows and no grain |
+| marks `pool`, `lake` | a cut disc or a big scalloped sheet; rim `dotted` a ring of cut cream dots, `wavy` a wavy-cut pale rim (never drops); `pulse` scales it by 1 + 0.12 pulse; `on` gives the linked colour | 1.2 to 3 | cheap | only ≥ 12 px | live | flat shadow |
+| marks `band`, `meet` | cut ribbons across the course: a wave is a crescent of paler rose; the meeting band | 1.8 | cheap | yes | live | flat shadow |
+| marks `warm`, `cool` | the fork mouths as cut sheets in their tone | 2.2 | in the tiles | baked | in the course tiles | same |
+| marks `glowwall`, `glow`, `light`, `spot`, `hand` | a **paper glow**: 3 stacked translucent `glow` discs (radius r, 0.72 r, 0.45 r; alpha 0.10, 0.12, 0.16, times `on`), no shadow; `glowwall` sits on a wall; `light` (stage 8) is a wide glow along the whole bottom edge; `hand` is a soft cream oval pressed into the wall, never a hand shape | 0 | none | no | live | 2 discs |
+| mark `arrow` | a cut marigold arrow sticker | 6 | cheap | no | live | same |
+| `rings` | DOM SVG (`rings.js`), each over an ink keyline | | | | DOM | same |
+| `anchor`, `cue` | tests only (the thumb zone, the brightest cue) | | | | | |
+| the crossfade | an offscreen copy of the old stage's last frame, blitted with `globalAlpha` over the new stage for 0.8 s | | | | live | same |
+
+The ending's warm room is its renderer frames: large cream and peach sheets that fade in from the white (no blur).
 
 ### 14.2 Sources
 
+The WebGL plan's rendering sources (metaballs after Wong and Bebber, Quilez's distance functions, Gustavson's noise
+warp, the GPU Gems transmittance light, d'Eon and Luebke, Barré-Brisebois, mip glow, Reinhard tone mapping, the
+radial vignette, Blinn's blobs) are no longer used and are left out. The art reference is `research/paper-cut/`.
+
 | Technique | Source adapted |
 |---|---|
-| Splat-and-threshold metaballs, `(1 − r²)³` kernel | Jamie Wong, "Metaballs and Marching Squares" (2014); Lucas Bebber, "Creative Gooey Effects", Codrops (2015) |
-| Capsule kernel (distance to a segment) | Inigo Quilez, "2D distance functions" (sdSegment, sdCircle) |
-| Smooth union | The summed field blends shapes by itself (Bebber's goo). Quilez's polynomial smin was considered and **not** used per pixel: `research/research-art.md` A0 measured per-pixel loops over blobs as the slow path. |
-| Membrane wobble: one domain warp from a seeded noise texture | Stefan Gustavson, "Simplex noise demystified" (2005); `webgl-noise` (MIT) as reference |
-| Light through tissue | Simon Green, GPU Gems ch. 16 (wrap, scatter band, `exp(−σ t)`); d'Eon and Luebke, GPU Gems 3 ch. 14 (red scatters farthest); Barré-Brisebois and Bouchard, GDC 2011, via Alan Zucconi (back-light term) |
-| Glow | Field mip sampling, which a mobile OpenGL ES benchmark found faster than Kawase (ETASR); Intel's blur survey |
-| Vignette | The common radial falloff, `1 − 1.3 · dot(v, v)` in the composite, as in `research/research-art.md` A3. No outside source fit beyond that. |
+| The look: flat cut shapes with a few strong colours floating on fields of colour | Henri Matisse's cut-outs: "The Snail" (1953) and "Polynesia, the Sky" (1946) |
+| A body told in a few cut shapes (the baby figure, 14.4) | Henri Matisse, "Blue Nude II" (1952). The skeleton of splats is our own (`core/lib/figure.js`). |
+| Reduced round forms, rows of dots, concentric targets (the egg and its cloud) | Charley Harper's flat geometric prints |
+| Paper that is cut, not modelled; the twisted paper ribbon; cut-card bursts | Tearaway (Media Molecule); Rex Crowle, "Building the Touchy-Feely World of Tearaway" (GDC 2013) |
+| Layered silhouettes that darken toward the viewer | Gris (Nomada Studio) |
+| A stack of frames with windows, lit from behind | Tunnel books and shadow boxes (paper engineering) |
+| A drop shadow per layer plus a noise grain layer | Abduzeedo, "Learn How to Create Paper Cut Effect with this Photoshop Tutorial"; Red Shark Digital, "How to create layered cut out paper in Adobe Illustrator" |
+| Still sheets pre-rendered offscreen; whole-pixel `drawImage`; no `shadowBlur` | MDN, "Optimizing canvas" (pre-render similar or repeating objects on an offscreen canvas, avoid floating-point coordinates, avoid `shadowBlur`). Below step 1 we take sub-pixel offsets on purpose (14.1). |
+| Grain that moves and turns with its sheet | MDN, `CanvasPattern.setTransform()` |
+| The soft shadow from widening clipped strokes | **None fit; our own** (`research/paper-cut/kit.src.js`): the offset silhouette filled once, then stroked with widening lines clipped to its outside, each pass weak enough that the stack sums to the shadow's alpha at the edge. |
+| Hand-cut snip edges, jittered by world position | **None fit; our own** (14.1). |
+| The grain tile | **None fit; our own**: a tiling value-noise tile with mottle, streaks, specks and fibres. |
+| The paper glow | **None fit; our own**: three stacked translucent cream discs, with no gradient, blur or filter. |
+| One union outline and shadow per body | **None fit; our own**: the splats of one body filled as one `Path2D` (nonzero rule), so the WebGL summed field is not needed. |
+| World-space course tiles | **None fit; our own** (14.1). |
+| The low tier | **None fit; our own**: the same sheets with no grain and one flat shadow (14.3). |
+| The vignette as the front frame closing in | **None fit; our own**, after the tunnel book's front flat. |
 | Current | Bridson, Hourihan and Nordenstam, "Curl-Noise for Procedural Fluid Flow" (SIGGRAPH 2007), with the wall ramp; Reynolds, "Steering Behaviors for Autonomous Characters" (GDC 1999) for the bot's steering; Shiffman, *The Nature of Code* |
-| Tails (you, the rivals and the sperm at the egg) | **None fit; our own design**: a travelling sine on each strip, amplitude rising toward the tip, phase from each sperm's own swim speed. |
+| Tails (you, the rivals and the sperm at the egg) | **None fit; our own design**: a travelling sine on each strip, amplitude rising toward the tip, phase from each sperm's own swim speed. The ribbon that twists to show its back follows Tearaway's paper strips. |
 | Rival steering in the race | Reynolds, "Steering Behaviors for Autonomous Characters" (GDC 1999): seek the lane, separation, flow following. The rivals share the player bot's steering at their own skill. |
 | Catch-up in the race | Adapted against Iain Gilfeather's warning in "Advanced racing game AI in Pure", GDC Europe 2009 (reported by MCV): he argued against rubber-banding, because players should feel the AI follows the same rules, and proposed race scripting instead. Ours keeps every rule the same for every sperm; the catch-up only scales how hard a rival swims, is capped at 10% (ahead of you) and 6% (behind you), and is never shown. |
 | Soft bumps | **None needed**: the plain overlap test of two circles, with an equal push apart along the line between their centres; Reynolds' separation keeps the pack from piling up. |
 | The fork, the warm tube and the cool loop | **None fit; our own design**, built from the tube flow (the curl-noise row) and the chevrons. |
-| Course strips and wave bands | **None fit; our own design**: each `course` strip is a soft-edged band of varying width along a centre line of at most 32 points, drawn like the tail strips; a wave is a `band` mark, a soft bar with a feathered edge, drawn additively. |
+| Course strips and wave bands | **None fit; our own design**: each `course` strip is a band of varying width along a centre line of at most 32 points, drawn as layered tube sheets in world tiles (14.1); a wave is a `band` mark, a crescent of paler rose paper. |
 | The guard arc (the mechanic) | Atari, *Warlords* (1980): a shield that slides round a base and turns incoming balls away. Ours turns sperm away gently and harms nothing. |
-| The guard arc (the drawing) | Inigo Quilez, "2D distance functions", `sdArc` (exact): the arc's soft width and round caps, drawn as one strip in the overlay pass. |
+| The guard arc (the drawing) | **None needed**: a cut cream sheet whose outline is two concentric Canvas `arc()` calls joined by round ends, with the keyline and the deepest shadow (Tearaway's cut card for the feel). |
 | Burrow rings | The DOM beat rings (the osu! row below), dotted for rivals and dashed for your sperm, with their progress as the ring's sweep. |
-| The seal wave | **None fit; our own design**: two arc strips that spread both ways round the shell from the entry point and meet on the far side, after the wave that spreads through the egg from where the sperm entered (TTUHSC, `egg.wave`). |
-| Contact rings (bumps and bounces) | **None fit; our own design**: small, short-lived rings from the ripple strip. |
-| Cilia | A vertex-shader metachronal wave, after the metachronal-wave review (PMC11044847) |
-| Villous tree | Runions et al., venation (SIGGRAPH 2005) and space colonization (2007); pipe-model widths |
-| Vessel and cord pulse by arc length | **None fit; our own design**: one swell per beat, `exp(−((φ − s/c − 0.08)/0.06)²)` |
+| The seal wave | **None fit; our own design**: two pale gold paper bands that spread both ways round the shell from the entry point and meet on the far side, after the wave that spreads through the egg from where the sperm entered (TTUHSC, `egg.wave`). |
+| Contact rings (bumps and bounces) | **None fit; our own design**: small, short-lived cut rings from the ripple strip. |
+| Cilia | A fringe of cut strips bending in a metachronal wave, after the metachronal-wave review (PMC11044847) |
+| Villous tree | Runions et al., venation (SIGGRAPH 2005) and space colonization (2007); pipe-model widths; drawn as cut ribbons and baked per version |
+| Vessel and cord pulse by arc length | **None fit; our own design**: one swell per beat, `exp(−((φ − s/c − 0.08)/0.06)²)`, drawn as cream beads riding the branch or the cord |
 | Chevrons (warm lane) | **None fit; our own design**: V marks along the lane centre, scrolling forward at the lane's speed. |
 | Ripples (the voice) and ghost ripples (answers) | **None fit; our own design**: ring strips that grow at a fixed speed and fade as 1 − r / rMax; the dashed ghosts follow the approach-circle idea in the beat-cue row. |
-| Caustics | Zucconi, "Believable Caustics Reflections" (2019): one tileable texture sampled twice, combined with `min`; Quilez, "Voronoi edges", for the baked texture. No Shadertoy code (licence). |
-| Exposure and white at birth | Reinhard et al., "Photographic Tone Reproduction for Digital Images" (2002) for the roll-off; the arc after Jenova Chen, "Designing Journey" (GDC 2013); WCAG 2.3.1 |
-| The ending's blurred warm room | `research/research-art.md` A8 (after the Journey arc): 3 large soft splats seen through the field's glow at a high mip (lod 5), so the blur needs no extra pass. |
-| Stage crossfade | **None fit**: a plain alpha mix of the old frame and the new one. (The log zoom after Eames, *Powers of Ten* (1977), is deferred.) |
+| The dapple sheet (the `caustics` field) | Adapted from Zucconi, "Believable Caustics Reflections" (2019), the idea of one tileable texture moved twice against itself: here two baked tiles of cut cream spots at low alpha. No Shadertoy code (licence). |
+| Exposure and white at birth | The arc after Jenova Chen, "Designing Journey" (GDC 2013); WCAG 2.3.1 for the steady rise. The cream glow sheet and the white sheet are **our own** (no tone mapping). |
+| The ending's warm room | **None fit; our own**: large cream and peach sheets fading in from the white, after the Journey arc for the warmth. No blur. |
+| Stage crossfade | **None fit**: a plain alpha mix of the old frame's copy and the new one. (The log zoom after Eames, *Powers of Ten* (1977), is deferred.) |
 | Beat cue rings | osu! approach circles; Rhythm Heaven's sound-plus-picture cues |
-| Baby figure as blobs on a skeleton | James Blinn, "A Generalization of Algebraic Surface Drawing" (1982), as splats |
-| Canvas 2D fallback (plain shapes) | MDN, "Optimizing canvas" for what to avoid. No look source: it is plain on purpose. |
+| Cue stickers (keyline, cream margin, cue) | **None fit; our own**, after the cream card under "you" in the reference art. |
 | Colour-vision simulation (tests) | Machado, Oliveira and Fernandes, "A Physiologically-based Model for Simulation of Color Vision Deficiency" (IEEE TVCG 2009), severity 1.0 matrices; WCAG 2.x relative luminance and contrast |
 | Audio timing and the womb | Chris Wilson, "A tale of two clocks"; Gerhardt and Abrams, J Perinatol 2000 (energy above 0.5 kHz down 40 to 50 dB); Paul Kellet's pink noise. The sine hum and the cry: **none fit**, plain sines. |
 
-### 14.3 Budgets and adaptive resolution
+### 14.3 Budgets, tiers and frame cost
 
-- Per frame: ≤ 32 splats (the baby figure included), ≤ 600 points in a stage's draw list plus ≤ 900 decorative motes
-  from render (≤ 1,500 points in all), ≤ 6 strips, ≤ 24 marks, ≤ 8 DOM rings, ≤ 12 WebGL draw calls.
+- Per frame (the draw-list limits of 16.5, `core/draw.js` `LIMITS`, unchanged): ≤ 32 splats (the baby figure
+  included), ≤ 600 points in a stage's draw list, ≤ 6 strips, ≤ 24 marks, ≤ 8 DOM rings. Render adds ≤ 150 motes in
+  the full tier and none in the low tier (the 900 that 16.5 allows is an upper bound this renderer never uses). There
+  is no WebGL draw-call rule; `perf.draws` is redefined below.
   - Stage 1: 20 heads as splats and 20 tails in one `tails` strip (≤ 25 items), plus the `chevrons` and contact
     `ripples` strips and at most 3 `course` strips (the path, the warm tube, the cool loop): 6 strips. Marks: the 3
     glow walls, at most 2 wave bands, the meeting place, and the warm and cool mouths.
@@ -1125,18 +1325,47 @@ One WebGL2 canvas (`alpha: false`, `antialias: false`), two passes, then overlay
 - Base size: phones 1.0 × CSS px (DPR ignored); desktop capped at 0.6 MP. The **scale step** multiplies the base
   width and the base height (per axis, so 0.5 draws a quarter of the pixels): steps [1, 0.8, 0.66, 0.5, 0.4, 0.35].
   `?res=` pins the step.
+- **Two tiers.** The *full* tier draws 14.1 as written. The *low* tier draws the same sheets and the same draw list
+  with no grain, one flat shadow per sheet (one offset fill, no strokes), no motes, no dapple sheet, 2-disc paper glows
+  and plain tails. The low tier replaces the WebGL plan's 2D fallback, and it must still look like paper cut. `?q=low`
+  pins the low tier and `?q=full` the full tier; `?gl=0` stays as an alias for `?q=low` (14.5).
 - **Frame cost** (`perf.emaMs`, `perf.p95Ms`): the JS time of one frame, from the start of its fixed steps to the end
-  of its draw, by `performance.now()`. Under `?probe=1` the draw ends with `gl.finish()`, so the cost includes the GPU
-  work (SwiftShader runs it on the CPU). `emaMs` is an EMA with α = 0.1; `p95Ms` is the 95th percentile of the last
-  120 frames.
-- **Adaptive steps**: step down when `emaMs` > 14 ms, or the rAF interval average > 20 ms, for 30 frames in a row.
-  Step up when `emaMs` < 8 ms and the interval average < 18 ms for 120 frames.
-- `uTime` wraps at 1,000 s. `mediump` in fragment shaders.
-- **Canvas 2D fallback** (v1: plain shapes) when WebGL2 is missing, a shader fails, the context is lost twice, or
-  `?gl=0`. It draws the same draw list: the background as one flat fill with a CSS vignette, splats as filled circles
-  and capsules with one translucent fill each, ≤ 300 points as `fillRect`, strips as plain lines, marks as plain
-  circles. Never `ctx.filter`, `shadowBlur`, per-frame full-screen gradients or `arc` batches. A fallback that matches
-  the Warm Lantern look is deferred.
+  of its draw calls, by `performance.now()`. A 2D canvas records its commands and rasterizes them later, so without
+  `?probe` this covers the steps and the recording only (1.4 to 3.6 ms in the reference scenes, whatever the raster
+  cost). Under `?probe=1` each frame ends with a 1 px `getImageData` of the main canvas, which waits for the raster, so
+  the cost includes it. `emaMs` is an EMA with α = 0.1; `p95Ms` is the 95th percentile of the last 120 frames. Frames
+  that bake are left out. **Never `willReadFrequently`**: on the main canvas, with GPU-backed bake canvases, it cost
+  289 to 335 ms a frame in the reference measure.
+- **Where it is measured**: headless Chromium with `--disable-gpu` (software raster, a stand-in for a phone that is
+  short of GPU time), never the SwiftShader flags. With those flags a 2D canvas ran at 3 to 4 fps (rAF gaps of 257 to
+  405 ms, also at 195 × 422) while its JS took 1.4 to 2.3 ms, so every real-time check broke, and a 1 px readback cost
+  94 ms (`research/paper-cut/README.md`).
+- **Budgets** (`perf.e2e.mjs`): under `?probe=1` at the pinned step (`?res=0.5` at 390 × 844 and 844 × 390,
+  `?res=0.35` at 1440 × 900), over 120 frames after 3 s, in every stage: full tier `p95Ms` ≤ 16 ms, low tier
+  (`?q=low`) `p95Ms` ≤ 10 ms. Taken in a run of its own, apart from the luminance checks.
+- **What it takes.** The reference scenes, measured that way at 390 × 844: p95 32, 36 and 23 ms (race, guard, grow) at
+  full size; 17.4, 16.9 and 8.6 ms at step 0.5; still 13.4 to 13.8 ms at step 0.35; 4 to 10 ms with grain off and flat
+  shadows. The cost follows the number of shapes, not the pixels, so the scale step alone cannot bring stages 1 and 2
+  under 16 ms. Baking can: the course tiles and the frames (14.1), plus two bakes the reference did not have, the
+  race's warm, cool and lane sheets (inside the course tiles) and the guard's corona (the 220 dots as one baked ring
+  bitmap that turns slowly, or as atlas dots); no grain on moving shapes under about 12 px; cheap shadows on every
+  moving shape. Task 3.7 measures every stage in both tiers before tuning, and writes the numbers here.
+- **The tier switch is the main lever.** A run starts in the full tier (unless `?q` pins it). If the rAF interval
+  average stays above 20 ms for 60 frames while the step is 0.5 or lower, the renderer switches to the low tier for
+  the rest of the run. It never switches back mid-run.
+- **Adaptive steps** use the rAF interval only (the JS cost alone measures almost nothing): step down when the
+  interval average is above 20 ms for 30 frames in a row; step up when it is below 18 ms for 120 frames. The order:
+  step down to 0.5 (phones) or 0.35 (desktop); then the tier switch; then the lower steps. Bake frames and the first
+  frame after a resize are left out of the counters.
+- **The `perf` fields** (16.9; the names stay): `emaMs` and `p95Ms` as above; `scale` the step; `w`, `h`, `px` the
+  backing store; `draws` the canvas `fill`, `stroke` and `drawImage` calls in the frame, counted in `perf.js` (its cap
+  is measured in task 3.7 and written into section 17); `splats` the splats drawn; `points` the points drawn (atlas
+  dots and motes); `fallback` true while the low tier is active.
+- **`lum()`** (needs `?probe=1`): the frame's mean luminance, from the canvas drawn down to 32 × 32 on a small canvas
+  and read back. Each call is a readback, so the flash and birth-light checks take it under `?test=1&probe=1`, one
+  frame at a time through `__fb.step(1)` (under `?test=1` each step ends with one draw, 14.5), never every real-time
+  frame.
+- Never `ctx.filter`, `shadowBlur` or a per-frame full-screen gradient. A glow is stacked translucent discs.
 
 ### 14.4 The baby figure (`core/lib/figure.js`)
 
@@ -1145,8 +1374,30 @@ One WebGL2 canvas (`alpha: false`, `antialias: false`), two passes, then overlay
   kick, fist, thumb, headDown, tuck, lift.
 - The shape changes by gaDay: buds that grow from 2 mm to 10 mm (gaDay 36 to 49, the stage 4 grow moment, and on to
   week 8), limbs (from week 8), rounder body (from week 28).
-- In the ending the small shape is 3 soft splats with a warm glow. Its warmth rises as a glow; its hue stays in the warm
-  range (no blue, no grey).
+- The renderer draws the splats of one figure as a few rounded paper pieces with one union outline and shadow (14.1).
+  With no face the pieces read as a round head, a curled bean of a body and buds or short folded limbs.
+- In the ending the small shape is a plain paper oval: one capsule splat, or overlapping splats whose union is a plain
+  oval, with no limbs and no head-and-shoulders outline, beside a bigger plain oval. Its warmth rises as a paper glow;
+  its hue stays in the warm range (no blue, no grey).
+
+### 14.5 How section 16 reads for the paper renderer
+
+Section 16 is frozen and wave 0 is building against it, so this change does not edit it. Until the contract owner
+updates its wording (task 3.1), these lines of section 16 read as follows. The draw list of 16.5 itself does not
+change.
+
+- **16.1** `render/`: `gl.js`, `field.js`, `composite.js`, `overlay.js` and `flat.js` are not written. In their place:
+  `paper.js`, `bake.js`, `items.js` and `low.js` (14.1), beside `renderer.js`, `camera.js`, `perf.js`, `palette.js`,
+  `rings.js`, `debug.js` and `strips/` (with `strips/course.js` added). The QA list gains `paper.test.mjs` (18).
+- **16.2** `createRenderer(canvas, { gl = true, res, probe, motion })`: the option keeps its name. `gl: true` means the
+  full paper tier and `gl: false` the low tier. `perf` keeps its fields, with the meanings of 14.3. `lum()` is as 14.3.
+- **16.5** "Both the WebGL path and the 2D fallback draw only this list" reads "both tiers draw only this list".
+- **16.9** `perf` as 14.3; `motion.warpAmp` is the sway in px (14.1); `lum()` needs `?probe=1`.
+- **16.10** `?gl=0` is an alias for `?q=low`; `?q=low|full` pins the tier; `?probe=1` ends each frame with a 1 px
+  readback and turns on `lum()` (no `gl.finish()`). Under `?test=1`, every `__fb.step(n)` ends with one draw.
+- **16.12** `render/palette.js`: the contract owner lands the paper table of 13.2 now, in place of the Warm Lantern
+  table. The renderer agent still does not edit the tokens; it asks the contract owner for any change it finds while
+  tuning (task 3.8).
 
 ## 15. Facts and sources
 
@@ -1771,20 +2022,24 @@ in tasks.md.
 
 | Requirement | Check | File |
 |---|---|---|
-| Frame cost | SwiftShader (`--use-gl=angle --use-angle=swiftshader --enable-unsafe-swiftshader --ignore-gpu-blocklist`), `?probe=1`, `?res=0.5` at 390 × 844 and 844 × 390, `?res=0.35` at 1440 × 900 (its base is already capped at 0.6 MP; `research/research-art.md` A0 measured 11.6 ms at 504 × 315), every stage via `goto`, after 3 s, over the next 120 frames: `perf.p95Ms ≤ 12` | `perf.e2e.mjs` |
-| Adaptive scale | `?probe=1`, no `?res`, after 6 s: settled step ≥ 0.5 in portrait and landscape, ≥ 0.35 on desktop (per axis) | `perf.e2e.mjs` |
-| Draw budget | `perf.draws ≤ 12`, `perf.splats ≤ 32`, `perf.points ≤ 1,500`; node: every 30th view validates against `LIMITS` (≤ 600 points from the stage) | `perf.e2e.mjs`, `draw.test.mjs` |
+| Where browser checks run | every Canvas 2D browser check below runs headless Chromium with `--disable-gpu` and no SwiftShader flags (14.3) | all `*.e2e.mjs`, `shots.mjs` |
+| Frame cost | `?probe=1`, `?res=0.5` at 390 × 844 and 844 × 390, `?res=0.35` at 1440 × 900 (its base is already capped at 0.6 MP), every stage via `goto`, after 3 s, over the next 120 frames, in a run with no `lum()` calls: full tier `perf.p95Ms ≤ 16`; with `?q=low`, `perf.p95Ms ≤ 10` | `perf.e2e.mjs` |
+| Adaptive scale and the tier switch | no `?res`, no `?q`, after 6 s: settled step ≥ 0.5 in portrait and landscape, ≥ 0.35 on desktop (per axis); the step and the tier move only on the rAF interval (14.3); once `perf.fallback` is true it stays true for the run | `perf.e2e.mjs` |
+| Draw budget | `perf.splats ≤ 32`, `perf.points ≤ 750` (600 from the stage, 150 motes), `perf.draws` ≤ the cap that task 3.7 measures and writes here; node: every 30th view validates against `LIMITS` (≤ 600 points from the stage) | `perf.e2e.mjs`, `draw.test.mjs` |
 | Core CPU | node, each stage's ref run: p99 of `step` ≤ 1 ms; the full bot suite (20 seeds × 4 skills) ≤ 120 s wall time | `perf.test.mjs`, `sim.test.mjs` |
-| 2D fallback | `?gl=0` in **every** stage: mean luminance > 0.04, the centre brighter than the 4 corners | `smoke.e2e.mjs` |
-| Membrane look | `?seed=1&freeze=1&stage=3`: the pixel at a cell centre has a higher R / (G + B) than the background; the rim ring is the brightest band within 20 px of it | `visual.e2e.mjs` |
+| The low tier | `?q=low` (and `?gl=0`, its alias) in **every** stage: mean luminance > 0.04, and the subject's sheet (the luminance at `targets().anchor`) brighter than the frame's median | `smoke.e2e.mjs` |
+| A paper cell | palette: stage 3's cells ≥ 3:1 against its back and redder (R / (G + B)); frame `?seed=1&freeze=1&stage=3`: the brightest ring within 8 px of a cell's edge is its pale cut edge, and the pixels just below and right of the cell (its shadow) are darker than the back sheet | `palette.test.mjs`, `visual.e2e.mjs` |
+| Stable cuts | node: a `course` edge cut from two overlapping windows gives the same offsets where they overlap; a list of tails or splats in another order gives the same outlines; no cut takes an index | `paper.test.mjs` |
+| The canvas draws no text | an init script spies on `CanvasRenderingContext2D.prototype.fillText` and `strokeText`: no call in any stage, screen or tier; the place slot, prompt, captions and tags are DOM boxes | `visual.e2e.mjs` |
 | Non-black stages | `?freeze=1` per stage: mean luminance > 0.04 | `visual.e2e.mjs` |
 | The brightest cue | `?freeze=1` per stage, a page screenshot (DOM rings included): the luminance at `targets().cue` is at or above the frame's 95th percentile | `visual.e2e.mjs` |
 | Light rises | frozen frames of stages 1 to 7 at 390 × 844: each mean luminance ≥ 0.9 × the one before, and stage 7 ≥ 2 × stage 1 | `visual.e2e.mjs` |
-| Flash rule | `?probe=1`, `lum()` every frame for 5 s in stages 4, 5, 6 and 8: at most 3 swings of ≥ 10% in any 1 s window | `visual.e2e.mjs` |
-| Birth light | luminance non-decreasing (1% tolerance) through the 3.5 s light and ≥ 0.95 at its end | `visual.e2e.mjs` |
+| Flash rule | `?test=1&probe=1`, 300 frames (5 s) in stages 4, 5, 6 and 8, each `__fb.step(1)` then `lum()`: at most 3 swings of ≥ 10% in any 60-frame window | `visual.e2e.mjs` |
+| Birth light | `?test=1&probe=1`, stepped one frame at a time through the 3.5 s light: luminance non-decreasing (1% tolerance), and ≥ 0.95 at its end, where the white sheet is `#ffffff` at alpha 1 with the grain faded to 0 | `visual.e2e.mjs` |
+| The birth opening | stage 8, the first frame of `light` and a frame 1 s in, both tiers: the brightest region (the top 5% of luminance) touches the bottom edge across ≥ 90% of the width, and no closed ring of sheet edges surrounds it: a flood fill over the top 10% of luminance, from the brightest pixel, reaches the bottom row, and the renderer's stage 8 frames are side flats that touch only the left or the right screen edge | `visual.e2e.mjs` |
 | Ending warmth | a frozen ending frame: mean R > G > B; palette test: every chromatic ending token has a hue of 0° to 50° (achromatic tokens skipped) | `visual.e2e.mjs`, `palette.test.mjs` |
 | Reduced motion | `?rm=1` (and emulated media): `motion.warpAmp ≤ 0.5 ×` the full value; `bounce = 0`; the stage change is the same 0.8 s crossfade | `visual.e2e.mjs` |
-| Colour contrast | each cue token ≥ 3:1 against its stage bg and against `ink`, normal and protan, deutan and tritan (Machado 2009) | `palette.test.mjs` |
+| Colour contrast | the rules of 13.2, normal and protan, deutan and tritan (Machado 2009): each cue against its keyline; each sticker or keyline cue's outer layers, and each plain cue, against every `under` token; you over the rivals ≥ 2.25:1; the pair rules | `palette.test.mjs` |
 | Thumb reach | at 390 × 844, `targets().anchor.y ≤ 0.60 × 844` in every stage | `layout.e2e.mjs` |
 | The race HUD | stage 1 at 390 × 844 and 844 × 390 (touch) and 1440 × 900, with `?inset=47,0,34,0`: the place slot reads "Nth of 20" and matches `__fb.race().place` once a change has held for 0.25 s after a bump changes the order; it sits under the score at the top right, inside the safe area, above 60% of the height in portrait, and overlaps no HUD, prompt or caption box | `layout.e2e.mjs` |
 | The fork in view | stage 1 at the three layouts with `?inset=47,0,34,0`, the ref bot driving: both branch mouths are on screen and under no HUD or prompt box at least 1.5 s before your head reaches the split (1,330 u); in portrait every stage 1 caption is one line and gone within 2.5 s | `layout.e2e.mjs` |
@@ -1796,7 +2051,7 @@ in tasks.md.
 | Muted cues | sound muted with M, stages 2 and 6: every target has a DOM ring in `svg#rings` at least its preview time (max(2 beats, 1.2 s)) before its `t` | `input.e2e.mjs` |
 | Sound | OfflineAudioContext, 6 s per scene: ≥ 90% of energy below 500 Hz before birth; > 20 dB more energy above 2 kHz after the opening than before; envelope peaks match the beat times within 5 ms; a second peak train from the stage 4 hinge; with `latencyS: 0.04`, each beat scheduled 40 ms early; across a card and a stage start, her peaks keep an even spacing with no extra or missing beat | `sound.e2e.mjs` |
 | First 10 seconds | Play → `prompt` by 0.5 s and steering live by 0.5 s (stage 1); `goto(2)` → first target by 2.7 s, and the guard's prompt by 9.0 s | `smoke.e2e.mjs` |
-| Screenshots | every stage at the three layouts; the homepage at 390 × 844, 320 × 568 and 1280 × 720 for the PR | `shots.mjs`; `qa/arcade/machines.mjs` part `firstbreath` with `SHOTS` |
+| Screenshots | every stage at the three layouts, in both tiers; a 1 s strip of stage 1 at `?res=0.5` (10 frames) to review the sway for stepping by eye; the homepage at 390 × 844, 320 × 568 and 1280 × 720 for the PR | `shots.mjs`; `qa/arcade/machines.mjs` part `firstbreath` with `SHOTS` |
 | The homepage machine | at 390 × 844, 320 × 568 and 1280 × 720: the last cabinet in `#action` is First Breath, inside the window and not under the sign or the tray; `.slot`, `.start`, `#prevBtn`, `#nextBtn`, `.section-nav button` and `.all-games` ≥ 44 px on the shorter side; START goes to `/first-breath/`; the other groups' members unchanged | `qa/arcade/machines.mjs` part `firstbreath` |
 
 ## 18. QA files
@@ -1817,15 +2072,16 @@ in tasks.md.
 | `save.test.mjs` | broken JSON, old versions, blocked storage; best only improves; tie → faster; `carryIn` per stage; `cabinetLine` cases (BEST, plain) |
 | `facts.test.mjs` | every fact has a gaDay, a computed label, allow-listed sources, access R or A; no S; `checked: false` facts are not shown; no text starts with "Week" or "Day"; spans never cross gaDay 42; size comparisons say "the NHS says" or "The NHS compares this to"; trimester cards say "about" |
 | `text.test.mjs` | the banned words and pronouns (section 15.4, including invad…, invas…, attack…, destroy…, defeat…, conquer…, enem…, fight… and battle…) across all strings × all 4 carer words; no "fastest" or "winner", no whole word win, wins or won, and no "beat the" or "beats the" in stage 1 and 2 strings; sentence length; no "Apgar" outside `end.apgar` and Sources |
-| `palette.test.mjs` | contrast rules; chromatic ending hues 0° to 50°; stage backgrounds rise in luminance from stage 1 to 7 |
+| `palette.test.mjs` | the contrast rules of 13.2 (keyline, `under`, you over the rivals, the pairs); chromatic ending hues 0° to 50°; stage 5 pools at L ≥ 0.25; no rule on the back tokens rising (the frame means do that, in `visual.e2e.mjs`) |
+| `paper.test.mjs` | `render/paper.js` in node with a stub context: cut offsets come from world position only (two overlapping course windows give the same edge where they overlap); moving items' outlines do not depend on their order; the shadow offset is (0.42 h, h) in screen space for both orients |
 | `perf.test.mjs` | p99 step ≤ 1 ms per stage |
 | `sim.test.mjs` | 20 seeds × skills 1.0, 0.7, 0.5 and 0: skill 1.0 mean ≥ 8,500 per stage; skill 0.5 reaches the goal in ≥ 90% of runs in stages 2 to 8 (stage 1 is a race: skill 0.7 is in the top 3 in ≥ 90% of runs, and skill 0.5 may get the Almost card and Go on); skill 0.7 runs take 8 to 12 min of game time; skill 0 never throws and every stage ends by its cap; under 120 s wall |
 | `bot.mjs` | CLI report |
 | `race-sim.mjs` (wave 0) | a stand-alone numeric model of the 6.1 race (the course, waves with shared thresholds, the current, lane, upstream bonus, glow rests, bumps, catch-up and the rival policy) that prints, over 20 seeds, the place distribution and arrival times of the ref, mid and idle players and every rival. The 6.1 numbers are frozen only when the ref is 1st and the mid bot in the top 3 in ≥ 18 of 20 seeds, with the mid's mean arrival at 55 to 65 s. |
-| `smoke.e2e.mjs` | no console errors; Play to prompt by 0.5 s; every stage via `goto` steps 120 frames and draws; `?gl=0` per stage; the bot reaches the run result |
+| `smoke.e2e.mjs` | no console errors; Play to prompt by 0.5 s; every stage via `goto` steps 120 frames and draws; `?q=low` (and `?gl=0`) per stage; the bot reaches the run result |
 | `layout.e2e.mjs` | section 17 layout rows at 390 × 844 and 844 × 390 (touch) and 1440 × 900; the thumb reach; the race HUD; the fork in view; the egg and its arc; the gold's path in portrait; the ending's thumb ring at bottom centre in portrait and in the corner of the last touch in landscape; a screenshot per stage and screen |
 | `input.e2e.mjs` | touch stick steers in portrait and landscape; a second pointer is ignored; keys only on desktop; in a tap moment a press that drags is judged at touch-down; in a `dragHold` moment an arrow keydown is a press with its dir and Space alone is a plain hold; landscape touch in stages 1 (drag right swims forward), 2 (the arc follows the drag, and the seal by hold and release), 4 (drag right grows forward), 5 (a move drag), 7 (the turn) and 8 (directions on screen axes); stage 1 on desktop with a left-button mouse drag; the stage 2 arc on desktop (the mouse aims it after a 4 px move; the arrows and A/D turn it at 540°/s; W, S, up and down do nothing; a parked cursor never pulls it back after a turn key); a hold needs a fresh press at the seal (the thumb held from the guard, and one-button Space held from the guard); one-button mode clears stages 1 (top 3), 2 (the arc tracks while held), 4, 5, 7 and 8; hidden page pauses; M writes `arcade.sound`; muted rings |
-| `perf.e2e.mjs`, `visual.e2e.mjs`, `sound.e2e.mjs` | section 17 |
+| `perf.e2e.mjs`, `visual.e2e.mjs`, `sound.e2e.mjs` | section 17 (Chromium with `--disable-gpu`) |
 | `qa/arcade/machines.mjs`, `groups.e2e.mjs`, `quiet.mjs` | the machine, the row of eight, the switcher, the cabinet line, the homepage part `firstbreath` (section 17), the hidden-page silence |
 
 The PR states plainly which checks did not run: real phones, real touch latency, phone speakers, and the iPhone
@@ -1839,7 +2095,8 @@ silent switch.
 | Wrong facts or mixed clocks | One label function; facts store gaDay; allow-listed sources; R or A only; WHO gated; the moment table (4.1). |
 | Eight stages feel stitched (the Spore problem) | One camera scale, one look, one continuous heartbeat, carry-over (your sperm, the nestle spot, your song), a birth that remixes hold and drag. |
 | Timing feels wrong on phones | The drawn beat is the truth; touch-down timestamps; output latency; the Tap test and the manual offset; wide Close windows; the 50 ms miss grace. |
-| Frame time on phones and in SwiftShader | The measured two-pass stack, adaptive scale, the plain 2D fallback, hard budgets, perf checks per stage and layout. |
+| Frame time on phones and in headless checks | The paper renderer bakes every still sheet (frames, world-space course tiles, the tree, the dot atlas), gives moving shapes cheap shadows and no small grain, and switches to the low tier when the rAF interval stays slow; adaptive scale; budgets measured with a 1 px readback under `--disable-gpu`, never SwiftShader (14.3); perf checks per stage, tier and layout. |
+| The look reads as anatomy | Cut shapes stay plain and abstract (13.1); stage 8 frames are straight side flats with no aperture, checked by a frame test; rose pools with no drops; no face and no limbs in the ending. |
 | The race reads as the "fastest sperm wins" myth (`research/research-biology.md` 10) | No string says the fastest wins; the text test bans "fastest", "winner", win, wins, won and "beat the" in stages 1 and 2. Being ready is the race's best move and is scored. `swim.few` shows how few sperm reach the tubes, and `swim.frame` on the run result says what is real. |
 | The guard reads as hostile | Gentle words only (15.4); rivals bounce, drift off and rest, and nobody is harmed; held rivals rest, still, in the cloud; the seal is the real biology; `egg.frame` says the guard is the game's; a human read of every string. |
 | Scope: 8 stages in one PR | v1 is each stage's minimum form plus one or two flourishes; the heavy extras are deferred (19.2). The frozen contract, a fully wired wave-0 `main.js` with stubs, per-stage files, one shared judge and bot, and the cut list. |
@@ -1849,14 +2106,14 @@ silent switch.
 Cut from the top when late. Each stage keeps its floor (section 6).
 
 1. Attract mode behind the title.
-2. Caustics (stages 6 and 7).
+2. The dapple sheet (the `caustics` field, stages 6 and 7).
 3. The hum in the stage 7 rest.
 4. The stage 5 drag moves (the moves play by themselves).
 5. The stage 8 direction prompts (plain hold waves).
 6. The Tap test (keep the manual offset).
 
 **Never cut:** the carer-word setting, captions, one-button mode, reduced motion, the flash rule, the facts gate, the
-ending, the per-stage 2D fallback check, the contact rings for bumps and bounces (the picture for those sounds,
+ending, the low tier and its per-stage check, the contact rings for bumps and bounces (the picture for those sounds,
 section 12), and the arcade machine.
 
 ### 19.2 Deferred from v1
@@ -1867,7 +2124,6 @@ These are not built in this change, and the specs do not ask for them. Each can 
 - Density assist.
 - Auto-drift of the timing offset (judge events keep `rawMs` for it).
 - The log zoom with nested anchors between stages (v1 crossfades).
-- A 2D fallback that matches the Warm Lantern look (v1 draws plain shapes).
 - The formant voice and the formant cry (v1 hums sine tones).
 - Haptics.
 - "Play your song" on the run result.
@@ -1875,4 +2131,6 @@ These are not built in this change, and the specs do not ask for them. Each can 
 - Stage 6: repeats of a missed phrase, the loud-sound jump, the hiccup animation.
 
 The stage 1 fork with the cool tube, and the moving rivals, were on this list before. The user's race brings both
-into v1 (section 6.1).
+into v1 (section 6.1). "A 2D fallback that matches the Warm Lantern look" was on this list too; with paper cut there is
+no WebGL path, and the low tier (14.3) is in v1. The Warm Lantern WebGL renderer is not deferred: paper cut replaced
+it (1.2).

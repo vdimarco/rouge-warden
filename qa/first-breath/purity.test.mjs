@@ -1,8 +1,10 @@
 // First Breath: the layer rules (design.md 16.1, 16.4, 18). core/ is pure: no document, window, Date, performance,
 // Math.random, timers, requestAnimationFrame or storage. It imports only core/ and the shared kit rng
 // (public/lab/kit/rng.js), by relative paths to files that exist, and never render/, ui/ or main.js. Stage files
-// import no other stage. Once core/stages/index.js exists: every stage (and core/ending.js) exports the whole Stage
-// interface, probe included, and calling view or probe twice gives equal results and leaves the state unchanged.
+// import no other stage, and not core/facts.js or core/text.js (those gather every stage's tables through the stage
+// index, so the import would be a cycle). Once core/stages/index.js exists: every stage (and core/ending.js) exports
+// the whole Stage interface, probe included, and calling view or probe twice gives equal results and leaves the
+// state unchanged.
 // Comments and string text are ignored; import paths are read from the code. The tokenizer is the one in
 // qa/ahead-of-the-light/purity.test.mjs, copied.
 // node qa/first-breath/purity.test.mjs
@@ -194,7 +196,7 @@ await check("core/ never calls the kit's clock (cottageDay)", () => {
   assert.deepEqual(bad, []);
 });
 
-await check("stage files import no other stage (only their own tune, facts and text files and core/)", () => {
+await check("stage files import no other stage, nor core/facts.js or core/text.js (only their own files and core/)", () => {
   const bad = [];
   const own = (file) => basename(file).split(".")[0];
   const stageFiles = [...jsFiles(STAGES_DIR).filter((f) => basename(f) !== "index.js"),
@@ -207,6 +209,10 @@ await check("stage files import no other stage (only their own tune, facts and t
       const isEnding = dirname(target) === CORE && /^ending(\.|$)/.test(basename(target));
       if ((inStages || isEnding) && own(target) !== own(file)) bad.push(`${rel(file)} imports ${rel(target)}`);
       if (basename(target) === "index.js" && inside(target, STAGES_DIR)) bad.push(`${rel(file)} imports the stage index`);
+      // facts.js and text.js gather the stages' tables through the stage index, so a stage importing them is a cycle
+      if (target === join(CORE, "facts.js") || target === join(CORE, "text.js")) {
+        bad.push(`${rel(file)} imports ${rel(target)} (it gathers the stages' tables: emit ids, not text)`);
+      }
     }
   }
   assert.deepEqual(bad, []);
