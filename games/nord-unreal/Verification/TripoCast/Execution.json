@@ -1,6 +1,6 @@
 {
-  "recorded_utc": "2026-10-17T23:45:58.098279+00:00",
-  "status": "All7 Tripo HD bodies and own rigs retained;5 credits remain/0frozen/no active paid jobs. Offline motion/native candidate review continues; Topbag rejected; no live promotion.",
+  "recorded_utc": "2026-10-18T00:18:11.203782+00:00",
+  "status": "All7 Tripo HD bodies/rigs retained. Six isolated native candidates import/reload and all12 native animation tests pass; Topknot bag remains rejected. Balance5/0, no paid jobs or live promotion.",
   "jobs": [
     {
       "character": "BlackCap",
@@ -81,5 +81,6 @@
   "tripo_actual_h31_completed_credits": 595,
   "topknot_h31_body_task_id": "7c59f469-ad8a-4825-913f-14a69d0ba61b",
   "native_scope": "New isolated BlackCap candidate authoring/freshload and editor build only; checks ongoing",
-  "package_modified": false
+  "package_modified": false,
+  "native_checkpoint": "Verification/TripoCast/Native/README.md"
 }

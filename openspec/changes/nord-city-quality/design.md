@@ -200,3 +200,12 @@ Static-source FBX export precision is measured per bone: retain matrix/angle/hea
 ### Funded full-cast generation complete
 
 The latest user top-up is verified as430 available/0 frozen before the remaining five85-credit pairs. All seven Tripo H3.1 detailed bodies and v3 Unreal rigs are retained with original references, raw GLB/FBX/PBR bytes and task receipts; all free biped checks passed before rig spending. Final actual balance5/0,595 selected-pipeline credits plus75 comparison credits, no active paid job. Source40-view review remains separate from own-rig motion, native art and promotion. Do not stretch apparently short thumbs based on front-biased projections: actual radial hand views expose full projecting geometry. Preserve original provider files and review real deformation before any repair.
+
+
+### Six-candidate native continuation
+
+Reuse the pilot importer/reloader with explicit selected-character provenance and eight byte-pinned own sources. Import Resident3–8 into new folders; keep style10 production until bag repair passes and retain all old Resident9 assets. Require the existing complete four-flag private opt-in and all six native asset packages; default launches and installed packages are unchanged. Keep the same animation graph and calibrate the tube separately from the plunger.
+
+Five new surface/motion pipelines pass2,080 half-frame gates; exact raw-normal recovery is limited to missing zero corners with complete UV/position/topology correspondence, dynamic scale is measured relative to the fresh local bind, and neutral retarget rotations use the same component reference quaternions. Red's intermediate Jump FBX fails its unchanged reference gate, so consume exact original-author poses from a pinned73-sample capture instead; preserve the rejected intermediary and test20ppm/identity/transport negative controls. These are transport/observable fixes, not gate waivers.
+
+All12 native animation tests pass after a measured100× jump shrink failure. The private own Jump moves pelvis and keeps a static root; loading the candidate sets `bForceRootLock=true` in memory to retain its imported root reference scale. Saved clip bytes remain immutable, including the merged pilot. Assert root reference transform/body height/prop dimensions in every sampled phase. Native socket following is not physical grip acceptance. NullRHI checks and CPU timelines remain separate from actual Vulkan both-mode/two-size motion/art, package/performance and browser/device/off-LAN evidence.

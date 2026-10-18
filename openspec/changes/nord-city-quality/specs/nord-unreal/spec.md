@@ -63,6 +63,11 @@ The local pilot SHALL be available only through the explicit `-NordGraphicNovelC
 - **AND** ordinary launches and incomplete flag combinations retain their prior routes until separately checked promotion; missing or unreviewed bodies are not reported as completed candidates
 - **AND** actual continuous motion and head/hand/sleeve/prop clearance are reviewed in both F2 modes at1280×720 and1920×1080 before live rollout; headless counters alone do not accept natural graphics
 
+#### Scenario: Preserve own-rig body and prop scale through Jump
+- **WHEN** a completed private Tripo candidate transitions from standing through ascent, airborne pose, landing and recovery
+- **THEN** its static root keeps the imported reference transform while the pelvis carries the own Jump pose, with no body or held-tool scale collapse
+- **AND** native headless checks retain the calibrated182cm body and16×55cm plunger or6.6×90cm tube; actual grip/contact and rendered naturalness still require separate visual review
+
 ### Requirement: Detailed animated playable crew
 The supplied playable characters SHALL retain readable facial details and distinct locomotion in the comic view.
 

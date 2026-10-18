@@ -1,0 +1,32 @@
+{
+  "character": "GreenCap51",
+  "scope": "Actual own body + imported authored Idle/Walk/Run/Jump stills; all15 images inspected",
+  "receipts": {
+    "nine": {
+      "path": "Saved/Tests/TripoOwnMotionReview-GreenCap51-20261017-v1/nine/Readback.json",
+      "sha256": "b95e650100ea0e11a9aafa413e92a365c4b5ab2d7a7e388678831998c2c5c6ec",
+      "frames": 9,
+      "exit_code": 0,
+      "maximum_body_vs_clip_pose_error": 8.314847946166992e-06,
+      "unanimated_negative_error": 1.6870098114013672
+    },
+    "hands": {
+      "path": "Saved/Tests/TripoOwnMotionReview-GreenCap51-20261017-v1/hands/Readback.json",
+      "sha256": "779393d48670a46614a688800b88e6ea1e3a9826d2a98a4c45f9d99c5dc3db2b",
+      "frames": 6,
+      "exit_code": 0,
+      "maximum_body_vs_clip_pose_error": 8.225440979003906e-06,
+      "unanimated_negative_error": 1.6870098114013672
+    }
+  },
+  "findings": [
+    "Adult goatee/backward green cap, navy51 jersey/red trims/shorts and shoes retain the source design, with softened facial/detail quality.",
+    "Sampled idle/gait/apex retain connected sleeves and plausible physical elbow/knee flexion; no obvious severe limb or accessory pull in these views.",
+    "Additional radial/visible dorsal views show distinct projecting thumbs; baseline frontal shortening is view-dependent. Blunt/faceted tips and contours remain; exact3D proportions are unmeasured.",
+    "Reverse plane views can be cropped or body/opposite-hand occluded; no geometry was hidden, deleted or inferred as a mask."
+  ],
+  "continuous_motion_reviewed": false,
+  "prop_or_native_grip_reviewed": false,
+  "native_or_final_art_acceptance": false,
+  "recommendation": "Root review of these bounded stills before any broader art acceptance; continuous motion and actual grasp remain open."
+}

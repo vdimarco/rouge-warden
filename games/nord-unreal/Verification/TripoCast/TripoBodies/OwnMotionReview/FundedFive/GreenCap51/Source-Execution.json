@@ -1,0 +1,71 @@
+{
+  "passed": true,
+  "jobs": [
+    {
+      "command": [
+        "blender",
+        "-b",
+        "-t",
+        "4",
+        "--python-exit-code",
+        "1",
+        "--python",
+        "Scripts/review_tripo_cast_motion.py",
+        "--",
+        "--surface",
+        "Saved/Tests/TripoH31RemainingPlan-20261017-v2/GreenCap51/prepared-v1/surface/report/Surface.json",
+        "--motion",
+        "Saved/Tests/TripoH31RemainingPlan-20261017-v4/GreenCap51/prepared-v1/motion/report/Motion.json",
+        "--output",
+        "Saved/Tests/TripoOwnMotionReview-GreenCap51-20261017-v1/nine"
+      ],
+      "working_directory": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal",
+      "process_exit_code": 0,
+      "receipt": {
+        "path": "Saved/Tests/TripoOwnMotionReview-GreenCap51-20261017-v1/nine/Readback.json",
+        "sha256": "b95e650100ea0e11a9aafa413e92a365c4b5ab2d7a7e388678831998c2c5c6ec"
+      },
+      "log": {
+        "path": "Saved/Tests/TripoOwnMotionReview-GreenCap51-20261017-v1/nine.log",
+        "sha256": "4f4114a2889fb8539888f340b22a1a196c439511fa3bdbef69cd89b68db38fb2"
+      },
+      "all_png_hashes_verified": true
+    },
+    {
+      "command": [
+        "blender",
+        "-b",
+        "-t",
+        "4",
+        "--python-exit-code",
+        "1",
+        "--python",
+        "Saved/Tests/TripoOwnMotionReview-Remaining-20261017-v1/review_hand_angles.py",
+        "--",
+        "--surface",
+        "Saved/Tests/TripoH31RemainingPlan-20261017-v2/GreenCap51/prepared-v1/surface/report/Surface.json",
+        "--motion",
+        "Saved/Tests/TripoH31RemainingPlan-20261017-v4/GreenCap51/prepared-v1/motion/report/Motion.json",
+        "--output",
+        "Saved/Tests/TripoOwnMotionReview-GreenCap51-20261017-v1/hands"
+      ],
+      "working_directory": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal",
+      "process_exit_code": 0,
+      "receipt": {
+        "path": "Saved/Tests/TripoOwnMotionReview-GreenCap51-20261017-v1/hands/Readback.json",
+        "sha256": "779393d48670a46614a688800b88e6ea1e3a9826d2a98a4c45f9d99c5dc3db2b"
+      },
+      "log": {
+        "path": "Saved/Tests/TripoOwnMotionReview-GreenCap51-20261017-v1/hands.log",
+        "sha256": "1e9c7c42ba4667b033b01d8cb16c5bb51d5f2f34a2aeba6a0ed372f7cc721cbe"
+      },
+      "all_png_hashes_verified": true
+    }
+  ],
+  "assessment": {
+    "path": "Saved/Tests/TripoOwnMotionReview-GreenCap51-20261017-v1/Assessment.json",
+    "sha256": "8564d49e6b2a3ad4419e6eaabd1048f2285f15eb7826336caad326c06fad1b0b"
+  },
+  "owned_jobs_closed": true,
+  "native_or_final_art_acceptance": false
+}

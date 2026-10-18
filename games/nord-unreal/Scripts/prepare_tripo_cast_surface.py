@@ -12,6 +12,9 @@ New-cast source/provider geometry uses a calibrated10micron bound; provider
 before/after export retains2microns. Positive scale is measured, never applied.
 Static originals permit measured correspondence-only translation for rig recentering;
 legacy skinned sources remain origin-only. No rotation is fitted or transform applied.
+Exact zero normals lost by Blender's static GLB importer may be read from the
+original NORMAL accessor after a complete POSITION/UV/topology vertex bijection.
+Only source snapshot arrays are repaired; provider storage/export gates stay strict.
 """
 import argparse
 from datetime import datetime, timezone
@@ -207,7 +210,111 @@ def load_mesh(path, allow_static=False):
     return rig, meshes[0]
 
 
-def snapshot_mesh(rig, ob):
+def static_glb_normal_arrays(path):
+    """Read the bounded original-static contract, without rewriting/importing data."""
+    import numpy as np
+    raw = Path(path).read_bytes()
+    assert raw[:4] == b'glTF' and struct.unpack_from('<II', raw, 4) == (2, len(raw))
+    size, kind = struct.unpack_from('<II', raw, 12)
+    assert kind == 0x4e4f534a
+    document = json.loads(raw[20:20+size])
+    bin_size, bin_kind = struct.unpack_from('<II', raw, 20+size)
+    start = 28+size
+    assert bin_kind == 0x004e4942 and start+bin_size == len(raw)
+    assert len(document['nodes']) == len(document['meshes']) == 1
+    assert not document.get('skins') and not document.get('animations')
+    primitives = document['meshes'][0]['primitives']
+    assert len(primitives) == 1 and primitives[0].get('mode', 4) == 4
+    primitive = primitives[0]
+    accessor_receipts = {}
+    def accessor(role, index, width, component):
+        a = document['accessors'][index]
+        assert 'sparse' not in a and not a.get('normalized', False)
+        assert a['type'] == {1: 'SCALAR', 2: 'VEC2', 3: 'VEC3'}[width] and a['componentType'] == component
+        view = document['bufferViews'][a['bufferView']]
+        assert view.get('buffer', 0) == 0 and len(document['buffers']) == 1 and 'uri' not in document['buffers'][0]
+        dtype = np.dtype({5125: '<u4', 5126: '<f4'}[component])
+        stride = view.get('byteStride', width*dtype.itemsize)
+        offset = view.get('byteOffset', 0)+a.get('byteOffset', 0)
+        assert a['count'] > 0 and stride >= width*dtype.itemsize
+        assert a.get('byteOffset', 0)+(a['count']-1)*stride+width*dtype.itemsize <= view['byteLength']
+        assert offset+(a['count']-1)*stride+width*dtype.itemsize <= bin_size
+        result = np.ndarray((a['count'], width), dtype=dtype, buffer=raw,
+            offset=start+offset, strides=(stride, dtype.itemsize)).copy()
+        accessor_receipts[role] = {'accessor': index, 'count': a['count'],
+            'sha256': hashlib.sha256(result.tobytes()).hexdigest()}
+        return result
+    attributes = primitive['attributes']
+    position = accessor('POSITION', attributes['POSITION'], 3, 5126).astype(np.float64)
+    uv = accessor('TEXCOORD_0', attributes['TEXCOORD_0'], 2, 5126).astype(np.float64)
+    normal = accessor('NORMAL', attributes['NORMAL'], 3, 5126).astype(np.float64)
+    indices = accessor('indices', primitive['indices'], 1, 5125).reshape(-1).astype(np.int64)
+    assert len(indices) % 3 == 0 and len(position) == len(normal) == len(uv)
+    assert indices.min() >= 0 and indices.max() < len(position)
+    # glTF Y-up to Blender Z-up. Every imported POSITION and UV is checked below.
+    basis = np.array([[1., 0, 0], [0, 0, -1], [0, 1, 0]])
+    uv[:, 1] = 1-uv[:, 1]
+    return {'position': position @ basis.T, 'normal': normal @ basis.T,
+        'uv': uv, 'indices': indices.reshape(-1, 3), 'accessors': accessor_receipts,
+        'source_sha256': digest(Path(path))}
+
+
+def recover_static_source_normals(raw, points, uv, loops, vertices, normals):
+    """Recover only importer-zero corners from an unambiguous original vertex."""
+    import numpy as np
+    assert all(np.isfinite(a).all() for a in (points, uv, normals, raw['position'], raw['uv'], raw['normal']))
+    assert np.max(np.abs(np.linalg.norm(raw['normal'], axis=1)-1)) < 1e-5, 'Finite unit raw GLB normals required'
+    bad = np.flatnonzero(np.all(normals == 0, axis=1))
+    assert len(bad) and len(loops)*3 == len(normals)
+    assert np.array_equal(np.sort(loops.ravel()), np.arange(len(normals))), 'Triangle topology must cover each corner once'
+    def keys(values):
+        quant = np.rint(values/1e-6).astype(np.int64)
+        order = np.lexsort((quant[:, :, 1], quant[:, :, 0]), axis=1)
+        quant = np.take_along_axis(quant, order[:, :, None], axis=1)
+        key = np.ascontiguousarray(quant.reshape(-1, 6)).view(np.dtype((np.void, 48))).ravel()
+        assert len(np.unique(key)) == len(key), 'Ambiguous original/imported UV triangle identity'
+        assert not np.any(np.all(quant[:, 1:] == quant[:, :-1], axis=2)), 'Ambiguous original/imported UV corner identity'
+        sort = np.argsort(key)
+        return key[sort], order, sort
+    raw_keys, raw_order, raw_sort = keys(raw['uv'][raw['indices']])
+    imported_keys, order, sort = keys(uv[loops])
+    assert np.array_equal(raw_keys, imported_keys), 'Original/imported UV triangle topology mismatch'
+    def winding(permutation):
+        return np.prod(permutation[:, [0, 1, 0]]-permutation[:, [1, 2, 2]], axis=1)
+    assert np.array_equal(winding(raw_order[raw_sort]), winding(order[sort])), 'Original/imported triangle winding mismatch'
+    raw_ids = np.take_along_axis(raw['indices'], raw_order, axis=1)[raw_sort]
+    imported_loops = np.take_along_axis(loops, order, axis=1)[sort]
+    imported_vertices = np.take_along_axis(vertices, order, axis=1)[sort]
+    residual = np.linalg.norm(raw['position'][raw_ids]-points[imported_vertices], axis=2)
+    assert residual.max() < 1e-7, 'Original/imported POSITION mismatch'
+    uv_error = float(np.abs(raw['uv'][raw_ids]-uv[imported_loops]).max())
+    assert uv_error < 1e-6, 'Original/imported UV mismatch'
+    mapping = np.full(len(points), -1, np.int64)
+    for vertex, raw_id in zip(imported_vertices.ravel(), raw_ids.ravel()):
+        assert mapping[vertex] in (-1, raw_id), 'Ambiguous original/imported vertex identity'
+        mapping[vertex] = raw_id
+    assert (mapping >= 0).all() and len(np.unique(mapping)) == len(raw['position']) == len(points), 'Complete vertex bijection required'
+    per_loop = np.empty(len(normals), np.int64)
+    per_loop[imported_loops] = raw_ids
+    result = normals.copy()
+    result[bad] = raw['normal'][per_loop[bad]]
+    healthy = np.ones(len(normals), bool)
+    healthy[bad] = False
+    assert np.array_equal(result[healthy], normals[healthy])
+    assert np.isfinite(result).all() and (np.linalg.norm(result, axis=1) > 0).all()
+    proof = {'applied': True, 'source_sha256': raw['source_sha256'], 'original_accessors': raw['accessors'],
+        'recovered_corner_count': len(bad), 'unique_uv_triangles': len(raw_keys), 'vertex_bijection_count': len(points),
+        'position_residual_max_m': float(residual.max()), 'uv_max_abs_error': uv_error,
+        'original_triangle_winding_preserved': True,
+        'healthy_corner_normals_bitwise_unchanged': True, 'mesh_custom_normals_modified': False,
+        'geometry_uv_topology_or_transform_correction_applied': False,
+        'scope': 'Original static GLB source snapshot arrays only; provider/store/export gates unchanged',
+        'corners': [{'blender_loop': int(i), 'blender_vertex': int(np.flatnonzero(mapping == per_loop[i])[0]),
+            'raw_vertex': int(per_loop[i]), 'authoritative_Blender_local_normal': result[i].tolist()} for i in bad]}
+    return result, proof
+
+
+def snapshot_mesh(rig, ob, original_static_glb=None):
     import numpy as np
     mesh = ob.data
     mesh.calc_loop_triangles()
@@ -218,11 +325,18 @@ def snapshot_mesh(rig, ob):
     mesh.uv_layers.active.data.foreach_get('uv', uv.ravel())
     normals = np.empty((len(mesh.corner_normals), 3), np.float64)
     mesh.corner_normals.foreach_get('vector', normals.ravel())
+    points = np.empty((len(mesh.vertices), 3), np.float64)
+    mesh.vertices.foreach_get('co', points.ravel())
+    recovery = {'applied': False, 'recovered_corner_count': 0}
+    if original_static_glb is not None:
+        assert rig is None, 'Raw GLB recovery restricted to original static source'
+        if np.any(np.all(normals == 0, axis=1)):
+            normals, recovery = recover_static_source_normals(static_glb_normal_arrays(original_static_glb),
+                points, uv, loops, vertices, normals)
+    assert np.isfinite(normals).all() and (np.linalg.norm(normals, axis=1) > 0).all(), 'Finite nonzero corner normals required'
     matrix = np.array(ob.matrix_world, np.float64)
     normals = normals @ np.linalg.inv(matrix[:3, :3])
     normals /= np.linalg.norm(normals, axis=1)[:, None]
-    points = np.empty((len(mesh.vertices), 3), np.float64)
-    mesh.vertices.foreach_get('co', points.ravel())
     points = points @ matrix[:3, :3].T + matrix[:3, 3]
     assert all(np.isfinite(a).all() for a in (points, uv, normals, matrix))
     quantized = np.rint(uv[loops] / 1e-6).astype(np.int64)
@@ -252,7 +366,8 @@ def snapshot_mesh(rig, ob):
             'normals': normals[loops], 'uv': uv[loops], 'weights': weights, 'bones': bones,
             'bind': {b.name: np.array(b.matrix_local) for b in rig.data.bones} if rig else {},
             'parents': {b.name: b.parent.name if b.parent else None for b in rig.data.bones} if rig else {},
-            'rig_matrix': np.array(rig.matrix_world) if rig else None, 'mesh_matrix': matrix, 'height': float(np.ptp(points[:, 2]))}
+            'rig_matrix': np.array(rig.matrix_world) if rig else None, 'mesh_matrix': matrix, 'height': float(np.ptp(points[:, 2])),
+            'source_normal_recovery': recovery}
 
 
 def prepare(manifest, output, report):
@@ -290,10 +405,11 @@ def prepare(manifest, output, report):
 
     try:
         source_rig, source_mesh = load_mesh(working['source_glb'], allow_static=True)
-        original = snapshot_mesh(source_rig, source_mesh)
+        original = snapshot_mesh(source_rig, source_mesh, working['source_glb'] if source_rig is None else None)
         assert not original['bones'] or len(original['bones']) == 24 and {'Hips', 'Head'} <= set(original['bones'])
         result['source_geometry'] = {'bones': len(original['bones']), 'static_unrigged': source_rig is None,
             'triangles': len(original['keys']), 'height_m': original['height'], 'mesh_matrix_world': original['mesh_matrix'].tolist()}
+        result['source_normal_recovery'] = original['source_normal_recovery']
         material = source_mesh.data.materials[0].copy()
         material.name, material.use_fake_user = 'TripoOriginalPBR', True
         for image in bpy.data.images:

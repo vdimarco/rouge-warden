@@ -1,0 +1,33 @@
+{
+  "character": "Memphis33",
+  "scope": "Bounded review of actual own body + imported authored Idle/Walk/Run/Jump stills; all 15 images inspected",
+  "receipts": {
+    "nine": {
+      "path": "Saved/Tests/TripoOwnMotionReview-Remaining-20261017-v1/Memphis33-nine/Readback.json",
+      "sha256": "bdb1cb485060184b49c43ab8eb7387926598f7556ff6dc12fd3cf4827da5bcc6",
+      "frames": 9,
+      "exit_code": 0,
+      "maximum_body_vs_clip_pose_error": 1.4454126358032227e-05,
+      "unanimated_negative_error": 1.5328903198242188
+    },
+    "hands": {
+      "path": "Saved/Tests/TripoOwnMotionReview-Remaining-20261017-v1/Memphis33-hands/Readback.json",
+      "sha256": "859eed95441a4471b6eef5ba2b2402174ae5a8b089701319579f42a36d4814a4",
+      "frames": 6,
+      "exit_code": 0,
+      "maximum_body_vs_clip_pose_error": 1.4454126358032227e-05,
+      "unanimated_negative_error": 1.5328903198242188
+    }
+  },
+  "findings": [
+    "Adult build, cap, glasses, red Memphis33 jersey and black shorts retain the source appearance.",
+    "Idle has lowered shoulders/soft elbows; sampled walk/run/jump show bent physical limbs without an obvious detached part or Topknot-style bag failure.",
+    "Baseline close views shorten the thumbs in projection; extra radial profiles and visible dorsal angles show distinct thumbs extending beyond the palm. These images do not establish precise anatomical length.",
+    "Several reverse plane views see the body or opposite hand in front of the targeted hand; no geometry was hidden or deleted to remove that occlusion.",
+    "Close finger tips remain blunt and some palm/knuckle shading faceted. Existing rounded glasses/softened face differences from the reference remain."
+  ],
+  "continuous_motion_reviewed": false,
+  "prop_or_native_grip_reviewed": false,
+  "native_or_final_art_acceptance": false,
+  "recommendation": "Root may review the inspected stills and decide whether to request a continuous-motion proof; retain hand/ref likeness limits, no final-art claim."
+}

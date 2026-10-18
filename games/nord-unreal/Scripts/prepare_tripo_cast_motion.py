@@ -123,6 +123,26 @@ def poses_in_fresh_reference(expected, original_bind, fresh_bind, parents):
     return result
 
 
+def dynamic_local_scale_error(local_pose, local_bind):
+    """Measure animation-basis scale, independent of immutable bind anisotropy.
+
+    Rotating an anisotropic bind changes its column-length decomposition even
+    with identity animation scale. FBX local channels act after the local bind.
+    """
+    return max(abs(value-1) for value in (local_bind.inverted() @ local_pose).to_scale())
+
+
+def component_local_rest_rotations(bind, parents):
+    """Compose rest quaternions in the same component space as motion deltas.
+
+    Quaternion-decomposing a multiplied anisotropic local bind is not equivalent
+    and can invent a rotation even when every component motion delta is zero.
+    """
+    rotation = {name: matrix.to_quaternion().normalized() for name, matrix in bind.items()}
+    return {name: (rotation[parent].inverted() @ rotation[name]).normalized() if parent else rotation[name]
+        for name, parent in parents.items()}
+
+
 def prepare(manifest, output, report):
     paths, hashes = source_plan(manifest, output, report)
     own_surface, surface_protected = checked_surface(paths, hashes)
@@ -141,8 +161,9 @@ def prepare(manifest, output, report):
         shutil.copyfile(path, working[role])
         assert digest(working[role]) == hashes[role]
     jump_author = ROOT / 'Scripts/prepare_meshy_jump.py'
+    jump_capture = ROOT / 'Scripts/capture_tripo_source_jump.py'
     surface_recipe = ROOT/'Scripts/prepare_tripo_cast_surface.py'
-    protected = {str(p): digest(p) for p in [manifest, jump_author, surface_recipe, *paths.values()]}
+    protected = {str(p): digest(p) for p in [manifest, jump_author, jump_capture, surface_recipe, *paths.values()]}
     protected.update(surface_protected)
     result = {'passed': False, 'started_utc': datetime.now(timezone.utc).isoformat(), 'recipe_sha256': digest(Path(__file__)),
               'inputs': {k: {'path': str(p.relative_to(ROOT)), 'sha256': hashes[k]} for k, p in paths.items()},
@@ -360,14 +381,14 @@ def prepare(manifest, output, report):
         desired = {}
         for b in rig.data.bones:
             parent = parents[b.name]
-            local = tl[b.name].to_quaternion()
+            local = component_local_bind[b.name]
             if b.name in FINGERS:
                 local = local @ relaxed_fingers[b.name]
             desired[b.name] = ((row['delta'][b.name] @ virtual[b.name]).normalized() if b.name in MAPPING.values()
                               else (desired[parent] @ local).normalized() if parent else local.normalized())
         for b in rig.pose.bones:
             local = desired[b.parent.name].inverted() @ desired[b.name] if b.parent else desired[b.name]
-            b.rotation_mode, b.rotation_quaternion = 'QUATERNION', (tl[b.name].to_quaternion().inverted() @ local).normalized()
+            b.rotation_mode, b.rotation_quaternion = 'QUATERNION', (component_local_bind[b.name].inverted() @ local).normalized()
             b.location, b.scale = (0, 0, 0), (1, 1, 1)
             if b.name == 'pelvis':
                 b.location = tb['pelvis'].to_3x3().inverted() @ row['hip']
@@ -407,16 +428,24 @@ def prepare(manifest, output, report):
         # This historical author writes only into the fresh copied character folder.
         copied = work/'corrected-source'/'Character'; copied.mkdir(parents=True)
         shutil.copyfile(working['source_body_fbx'], copied/'body.fbx')
-        command = [bpy.app.binary_path, '-b', '-t', '4', '--python-exit-code', '1', '--python', str(jump_author), '--',
-                   '--source-root', str(copied.parent), '--names', copied.name, '--report', str(work/'SourceJump.json')]
+        capture_path = work/'SourceJumpSamples.json'
+        command = [bpy.app.binary_path, '-b', '-t', '4', '--python-exit-code', '1', '--python', str(jump_capture), '--',
+                   '--source-root', str(copied.parent), '--name', copied.name, '--body-sha256', hashes['source_body_fbx'],
+                   '--report', str(work/'SourceJump.json'), '--samples', str(capture_path)]
         with (report/'source-jump.log').open('w') as log:
             process = subprocess.run(command, cwd=ROOT, stdout=log, stderr=subprocess.STDOUT, timeout=120)
         result['corrected_source_jump'] = {'command': command, 'process_exit_code': process.returncode,
             'author_recipe_sha256': digest(jump_author), 'body_copy_sha256': digest(copied/'body.fbx'),
+            'capture_recipe_sha256': digest(jump_capture),
             'path': str(copied/'jump.fbx'), 'receipt_path': str(work/'SourceJump.json')}
         assert process.returncode == 0 and digest(copied/'body.fbx') == hashes['source_body_fbx']
         assert json.loads((work/'SourceJump.json').read_text())['passed']
         result['corrected_source_jump']['sha256'] = digest(copied/'jump.fbx')
+        captured = json.loads(capture_path.read_text())
+        assert captured['passed'] and captured['body_sha256'] == hashes['source_body_fbx'] and captured['author_recipe_sha256'] == digest(jump_author)
+        assert captured['half_frame_samples'] == len(captured['samples']) == 73 and captured['range'] == [1, 37] and captured['fps'] == 30
+        result['corrected_source_jump']['original_scene_samples'] = {'path': str(capture_path), 'sha256': digest(capture_path), 'half_frame_samples': 73}
+        protected[str(capture_path)] = digest(capture_path)
         reset(); body = imported(working['source_body_fbx'], False); rest(body)
         assert len(body.data.bones) == 24 and set(MAPPING) <= set(body.data.bones.keys())
         sb, source_hierarchy, source_object = bind_snapshot(body), hierarchy(body), body.matrix_world.copy()
@@ -425,6 +454,7 @@ def prepare(manifest, output, report):
         target.name = 'Armature'; assert target.name == 'Armature' and len(target.data.bones) == 61
         tb, parents, target_object = bind_snapshot(target), hierarchy(target), target.matrix_world.copy()
         tl = {b.name: b.parent.matrix_local.inverted() @ b.matrix_local if b.parent else b.matrix_local.copy() for b in target.data.bones}
+        component_local_bind = component_local_rest_rotations(tb, parents)
         assert set(MAPPING.values()) | FINGERS | {'root'} <= set(tb)
         provider_height, target_mesh = body_geometry(target)
         correspondence = own_surface['correspondence']
@@ -530,7 +560,34 @@ def prepare(manifest, output, report):
             source_reference['basis_matrix'] = max(abs(v) for b in source.data.bones for row in b.matrix_local.to_3x3()-sb[b.name].to_3x3() for v in row)
             # Source24 armatures use centimetre-sized local units; compare heads in world metres.
             source_scale_limit = REFERENCE_SCALE_LIMIT if kind == 'jump' else 1e-5
-            assert source_reference['basis_matrix'] < 2e-5 and source_reference['angle_rad'] < 1e-4 and source_reference['scale'] < source_scale_limit and source_reference['world_head_m'] < 1e-5, source_reference
+            reference_passed = source_reference['basis_matrix'] < 2e-5 and source_reference['angle_rad'] < 1e-4 and source_reference['scale'] < source_scale_limit and source_reference['world_head_m'] < 1e-5
+            if kind == 'jump' and not reference_passed:
+                # Retain the failed optional FBX transport; consume the exact author scene.
+                assert captured['parents'] == source_hierarchy
+                original_bind = {name: Matrix(value) for name, value in captured['reference'].items()}
+                original_object = Matrix(captured['object_matrix'])
+                assert set(original_bind) == set(sb) and max(merror(original_bind[n], sb[n]) for n in sb) == 0
+                assert merror(original_object, source_object) == 0
+                assert captured['source_bytes_bind_and_object_unchanged'] and not captured['normalization_applied']
+                rows = []
+                for index, sample in enumerate(captured['samples']):
+                    assert sample['frame'] == 1+index/2 and abs(sample['seconds']-index/60) < 1e-12
+                    assert set(sample['pose']) == set(sample['basis']) == set(sb)
+                    assert all(math.isfinite(v) for matrix in sample['pose'].values() for row in matrix for v in row)
+                    if index % 2: continue
+                    pose = {name: Matrix(value) for name, value in sample['pose'].items()}
+                    rows.append({'delta': {t: (transport @ (pose[s].to_quaternion().normalized() @ original_bind[s].to_quaternion().normalized().inverted()) @ transport.inverted()).normalized() for s, t in MAPPING.items()},
+                        'hip': (transport @ (pose['Hips'].translation-original_bind['Hips'].translation))*factor})
+                assert len(rows) == count
+                source_samples[kind] = rows
+                result.setdefault('source_clips', {})[kind] = {'path': str(capture_path), 'source_range': [1, 37],
+                    'transport': 'Pinned original author in-memory scene samples', 'original_reference_matrix_error': 0.,
+                    'original_object_matrix_error': 0., 'captured_half_frame_samples': 73, 'consumed_integer_samples': count,
+                    'half_frame_policy': 'All original author half poses retained; own target keys authored at30Hz and all target half frames checked',
+                    'intermediate_fbx': {'path': str(path), 'sha256': digest(path), 'reference_passed': False,
+                        'reference_errors': source_reference, 'poses_consumed': False, 'binary_fbx': clock(path, count-1)}}
+                continue
+            assert reference_passed, source_reference
             clip_bind = bind_snapshot(source)
             assert merror(source.matrix_world, source_object) < 1e-5
             first, last = source.animation_data.action.frame_range; assert abs(last-first-count+1) < 1e-5
@@ -608,6 +665,7 @@ def prepare(manifest, output, report):
             first, last = rig.animation_data.action.frame_range; assert abs(last-first-count+1) < 1e-5
             matrix_err = rotation_err = hip_err = scale_err = translation_err = root_err = object_err = norm_err = finger_err = leg_err = mapped_err = 0.
             raw_matrix_err = raw_rotation_err = raw_local_scale_err = raw_local_translation_err = 0.
+            raw_fresh_bind_column_scale_err = 0.
             maximum_step = max_authored_step = 0.; min_elbow = min_elbow_signed = float('inf'); prev = None
             temporal = {n: 0. for n in ARMS | FINGERS}; finger_relax = {}; elbow_samples = []; palm_entry = {}
             minimum_palm_inward = float('inf')
@@ -636,7 +694,8 @@ def prepare(manifest, output, report):
                     if b.name != 'pelvis':
                         translation_err = max(translation_err, (loc-rloc).length)
                         raw_local_translation_err = max(raw_local_translation_err, (loc-tl[b.name].translation).length)
-                    scale_err = max(scale_err, max(abs(a-c) for a, c in zip(scale, rscale)))
+                    raw_fresh_bind_column_scale_err = max(raw_fresh_bind_column_scale_err, max(abs(a-c) for a, c in zip(scale, rscale)))
+                    scale_err = max(scale_err, dynamic_local_scale_error(locals_now[b.name], fresh_local_bind[b.name]))
                     raw_local_scale_err = max(raw_local_scale_err, max(abs(a-c) for a, c in zip(scale, tl[b.name].to_scale())))
                     norm_err = max(norm_err, abs(b.matrix.to_quaternion().magnitude-1))
                     if i % 2 == 0: norm_err = max(norm_err, abs(b.rotation_quaternion.magnitude-1))
@@ -666,7 +725,8 @@ def prepare(manifest, output, report):
                        'pose_comparison': 'Expected evaluated local animation basis rebuilt through the fresh imported bind hierarchy; provider data unchanged',
                        'half_frame_raw_pose_matrix_error': raw_matrix_err, 'half_frame_raw_pose_rotation_error_rad': raw_rotation_err,
                        'local_scale_error_vs_provider_bind': raw_local_scale_err, 'local_translation_error_vs_provider_bind': raw_local_translation_err,
-                       'dynamic_local_baseline': 'Fresh imported bind; immutable provider/reference error is separately gated and reported',
+                       'raw_local_column_scale_error_vs_fresh_bind': raw_fresh_bind_column_scale_err,
+                       'dynamic_local_baseline': 'Scale of fresh_local_bind^-1 * evaluated_local_pose; immutable bind anisotropy and raw column errors reported separately',
                        'hip_xyz_error_target_units': hip_err, 'local_translation_error': translation_err, 'local_scale_error': scale_err,
                        'root_matrix_error': root_err, 'object_matrix_error': object_err, 'key_and_evaluated_quaternion_norm_error': norm_err,
                        'loop_matrix_error': seam_matrix, 'loop_angle_error_rad': seam_angle, 'minimum_elbow_forward_delta_deg': min_elbow,

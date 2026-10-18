@@ -77,5 +77,7 @@
     "Earlier forward-palm derivative remains explicitly rejected.",
     "Broad inherited gait torso sway/contact and native transitions remain unaccepted."
   ],
-  "bounded_cpu_motion_sequence": "Verification/TripoCast/TripoBodies/OwnMotionSequence/BlackCap-v1/RootReview.json"
+  "bounded_cpu_motion_sequence": "Verification/TripoCast/TripoBodies/OwnMotionSequence/BlackCap-v1/RootReview.json",
+  "native_import_trial_allowed": true,
+  "native_import_trial_scope": "Isolated candidate folder only after reviewed own-body CPU stills and all210 frames; no live package, final-art or native acceptance"
 }

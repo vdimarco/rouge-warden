@@ -1,0 +1,795 @@
+﻿{
+	"devices": [
+		{
+			"deviceName": "omarchy",
+			"instance": "01A14C4B3BDB747E9F449293173F1329",
+			"instanceName": "omarchy-991998",
+			"platform": "LinuxEditor",
+			"oSVersion": "Omarchy 7.2.5-3-omarchy",
+			"model": "Default",
+			"gPU": "NVIDIA GeForce RTX 4090 (NVIDIA UNIX Open Kernel Module for x86_64  610.57.04  Release Build  (root@omarchy))",
+			"cPUModel": "Intel(R) Core(TM) i9-14900K",
+			"rAMInGB": 94,
+			"renderMode": "SM6",
+			"rHI": "",
+			"appInstanceLog": ""
+		}
+	],
+	"reportCreatedOn": "2026.10.17-23.56.22",
+	"succeeded": 5,
+	"succeededWithWarnings": 0,
+	"failed": 7,
+	"notRun": 0,
+	"inProcess": 0,
+	"totalDuration": 2.0936732292175293,
+	"comparisonExported": false,
+	"comparisonExportDirectory": "",
+	"tests": [
+		{
+			"testDisplayName": "Resident3",
+			"fullTestPath": "Quebec.Animation.TripoCast.Resident3",
+			"tags": [],
+			"state": "Fail",
+			"deviceInstance": [
+				"01A14C4B3BDB747E9F449293173F1329"
+			],
+			"duration": 0.38489079475402832,
+			"dateTime": "2026.10.17-23.56.20",
+			"entries": [
+				{
+					"event":
+					{
+						"type": "Info",
+						"message": "LogStreaming: FlushAsyncLoading(362): 1 QueuedPackages, 0 AsyncPackages",
+						"context": "log",
+						"artifact": "00000000000000000000000000000000"
+					},
+					"filename": "",
+					"lineNumber": -1,
+					"timestamp": "2026.10.17-23.56.20"
+				},
+				{
+					"event":
+					{
+						"type": "Info",
+						"message": "LogSkinnedAsset: Waiting for skinned assets to be ready 0/1 (SK_Body) ...",
+						"context": "log",
+						"artifact": "00000000000000000000000000000000"
+					},
+					"filename": "",
+					"lineNumber": -1,
+					"timestamp": "2026.10.17-23.56.20"
+				},
+				{
+					"event":
+					{
+						"type": "Info",
+						"message": "LogSkinnedAsset: Waiting for skinned assets to be ready 0/1 (SK_Body) ...",
+						"context": "log",
+						"artifact": "00000000000000000000000000000000"
+					},
+					"filename": "",
+					"lineNumber": -1,
+					"timestamp": "2026.10.17-23.56.20"
+				},
+				{
+					"event":
+					{
+						"type": "Info",
+						"message": "LogAnimationCompression: Building compressed animation data for AnimSequence /Game/ParkComic/CrewGraphicNovelTripo/Resident3/A_Idle.A_Idle (Required Memory Estimate: 1.62 MB)",
+						"context": "log",
+						"artifact": "00000000000000000000000000000000"
+					},
+					"filename": "",
+					"lineNumber": -1,
+					"timestamp": "2026.10.17-23.56.20"
+				},
+				{
+					"event":
+					{
+						"type": "Info",
+						"message": "LogAnimationCompression: Storing compressed animation data for /Game/ParkComic/CrewGraphicNovelTripo/Resident3/A_Idle.A_Idle, at AnimationSequence/5af607d7576824af1531ec4b98ae6e5f13e31794",
+						"context": "log",
+						"artifact": "00000000000000000000000000000000"
+					},
+					"filename": "",
+					"lineNumber": -1,
+					"timestamp": "2026.10.17-23.56.20"
+				},
+				{
+					"event":
+					{
+						"type": "Error",
+						"message": "Expected 'The hand-following prop retains its intended width and length in centimeters' to be true.",
+						"context": "",
+						"artifact": "00000000000000000000000000000000"
+					},
+					"filename": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Source/Quebec/QuebecTripoTests.cpp",
+					"lineNumber": 212,
+					"timestamp": "2026.10.17-23.56.20"
+				},
+				{
+					"event":
+					{
+						"type": "Info",
+						"message": "LogSkinnedAsset: Waiting for skinned assets to be ready 0/1 (SK_Body) ...",
+						"context": "log",
+						"artifact": "00000000000000000000000000000000"
+					},
+					"filename": "",
+					"lineNumber": -1,
+					"timestamp": "2026.10.17-23.56.20"
+				},
+				{
+					"event":
+					{
+						"type": "Info",
+						"message": "LogAnimationCompression: Building compressed animation data for AnimSequence /Game/ParkComic/CrewGraphicNovelTripo/Resident4/A_Idle.A_Idle (Required Memory Estimate: 1.62 MB)",
+						"context": "log",
+						"artifact": "00000000000000000000000000000000"
+					},
+					"filename": "",
+					"lineNumber": -1,
+					"timestamp": "2026.10.17-23.56.20"
+				},
+				{
+					"event":
+					{
+						"type": "Info",
+						"message": "LogAnimationCompression: Storing compressed animation data for /Game/ParkComic/CrewGraphicNovelTripo/Resident4/A_Idle.A_Idle, at AnimationSequence/a53c9c7ec93e672d0d785f40843ffc58644485a6",
+						"context": "log",
+						"artifact": "00000000000000000000000000000000"
+					},
+					"filename": "",
+					"lineNumber": -1,
+					"timestamp": "2026.10.17-23.56.20"
+				}
+			],
+			"warnings": 0,
+			"errors": 1,
+			"artifacts": []
+		},
+		{
+			"testDisplayName": "Resident4",
+			"fullTestPath": "Quebec.Animation.TripoCast.Resident4",
+			"tags": [],
+			"state": "Fail",
+			"deviceInstance": [
+				"01A14C4B3BDB747E9F449293173F1329"
+			],
+			"duration": 0.25403502583503723,
+			"dateTime": "2026.10.17-23.56.20",
+			"entries": [
+				{
+					"event":
+					{
+						"type": "Info",
+						"message": "LogStreaming: FlushAsyncLoading(381): 1 QueuedPackages, 0 AsyncPackages",
+						"context": "log",
+						"artifact": "00000000000000000000000000000000"
+					},
+					"filename": "",
+					"lineNumber": -1,
+					"timestamp": "2026.10.17-23.56.20"
+				},
+				{
+					"event":
+					{
+						"type": "Info",
+						"message": "LogSkinnedAsset: Waiting for skinned assets to be ready 0/1 (SK_Body) ...",
+						"context": "log",
+						"artifact": "00000000000000000000000000000000"
+					},
+					"filename": "",
+					"lineNumber": -1,
+					"timestamp": "2026.10.17-23.56.21"
+				},
+				{
+					"event":
+					{
+						"type": "Error",
+						"message": "Expected 'The hand-following prop retains its intended width and length in centimeters' to be true.",
+						"context": "",
+						"artifact": "00000000000000000000000000000000"
+					},
+					"filename": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Source/Quebec/QuebecTripoTests.cpp",
+					"lineNumber": 212,
+					"timestamp": "2026.10.17-23.56.21"
+				},
+				{
+					"event":
+					{
+						"type": "Info",
+						"message": "LogSkinnedAsset: Waiting for skinned assets to be ready 0/1 (SK_Body) ...",
+						"context": "log",
+						"artifact": "00000000000000000000000000000000"
+					},
+					"filename": "",
+					"lineNumber": -1,
+					"timestamp": "2026.10.17-23.56.21"
+				},
+				{
+					"event":
+					{
+						"type": "Info",
+						"message": "LogAnimationCompression: Building compressed animation data for AnimSequence /Game/ParkComic/CrewGraphicNovelTripo/Resident5/A_Idle.A_Idle (Required Memory Estimate: 1.62 MB)",
+						"context": "log",
+						"artifact": "00000000000000000000000000000000"
+					},
+					"filename": "",
+					"lineNumber": -1,
+					"timestamp": "2026.10.17-23.56.21"
+				},
+				{
+					"event":
+					{
+						"type": "Info",
+						"message": "LogAnimationCompression: Storing compressed animation data for /Game/ParkComic/CrewGraphicNovelTripo/Resident5/A_Idle.A_Idle, at AnimationSequence/47c35adcc18bb470dd7f30a6aeff633bd87adcc6",
+						"context": "log",
+						"artifact": "00000000000000000000000000000000"
+					},
+					"filename": "",
+					"lineNumber": -1,
+					"timestamp": "2026.10.17-23.56.21"
+				}
+			],
+			"warnings": 0,
+			"errors": 1,
+			"artifacts": []
+		},
+		{
+			"testDisplayName": "Resident5",
+			"fullTestPath": "Quebec.Animation.TripoCast.Resident5",
+			"tags": [],
+			"state": "Fail",
+			"deviceInstance": [
+				"01A14C4B3BDB747E9F449293173F1329"
+			],
+			"duration": 0.234378382563591,
+			"dateTime": "2026.10.17-23.56.21",
+			"entries": [
+				{
+					"event":
+					{
+						"type": "Info",
+						"message": "LogStreaming: FlushAsyncLoading(393): 1 QueuedPackages, 0 AsyncPackages",
+						"context": "log",
+						"artifact": "00000000000000000000000000000000"
+					},
+					"filename": "",
+					"lineNumber": -1,
+					"timestamp": "2026.10.17-23.56.21"
+				},
+				{
+					"event":
+					{
+						"type": "Error",
+						"message": "Expected 'The hand-following prop retains its intended width and length in centimeters' to be true.",
+						"context": "",
+						"artifact": "00000000000000000000000000000000"
+					},
+					"filename": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Source/Quebec/QuebecTripoTests.cpp",
+					"lineNumber": 212,
+					"timestamp": "2026.10.17-23.56.21"
+				},
+				{
+					"event":
+					{
+						"type": "Info",
+						"message": "LogSkinnedAsset: Waiting for skinned assets to be ready 0/1 (SK_Body) ...",
+						"context": "log",
+						"artifact": "00000000000000000000000000000000"
+					},
+					"filename": "",
+					"lineNumber": -1,
+					"timestamp": "2026.10.17-23.56.21"
+				},
+				{
+					"event":
+					{
+						"type": "Info",
+						"message": "LogAnimationCompression: Building compressed animation data for AnimSequence /Game/ParkComic/CrewGraphicNovelTripo/Resident6/A_Idle.A_Idle (Required Memory Estimate: 1.62 MB)",
+						"context": "log",
+						"artifact": "00000000000000000000000000000000"
+					},
+					"filename": "",
+					"lineNumber": -1,
+					"timestamp": "2026.10.17-23.56.21"
+				},
+				{
+					"event":
+					{
+						"type": "Info",
+						"message": "LogAnimationCompression: Storing compressed animation data for /Game/ParkComic/CrewGraphicNovelTripo/Resident6/A_Idle.A_Idle, at AnimationSequence/ed78d0527de96dc4866f687717fbc6b6c030157e",
+						"context": "log",
+						"artifact": "00000000000000000000000000000000"
+					},
+					"filename": "",
+					"lineNumber": -1,
+					"timestamp": "2026.10.17-23.56.21"
+				}
+			],
+			"warnings": 0,
+			"errors": 1,
+			"artifacts": []
+		},
+		{
+			"testDisplayName": "Resident6",
+			"fullTestPath": "Quebec.Animation.TripoCast.Resident6",
+			"tags": [],
+			"state": "Fail",
+			"deviceInstance": [
+				"01A14C4B3BDB747E9F449293173F1329"
+			],
+			"duration": 0.21807563304901123,
+			"dateTime": "2026.10.17-23.56.21",
+			"entries": [
+				{
+					"event":
+					{
+						"type": "Info",
+						"message": "LogStreaming: FlushAsyncLoading(405): 1 QueuedPackages, 0 AsyncPackages",
+						"context": "log",
+						"artifact": "00000000000000000000000000000000"
+					},
+					"filename": "",
+					"lineNumber": -1,
+					"timestamp": "2026.10.17-23.56.21"
+				},
+				{
+					"event":
+					{
+						"type": "Info",
+						"message": "LogSkinnedAsset: Waiting for skinned assets to be ready 0/1 (SK_Body) ...",
+						"context": "log",
+						"artifact": "00000000000000000000000000000000"
+					},
+					"filename": "",
+					"lineNumber": -1,
+					"timestamp": "2026.10.17-23.56.21"
+				},
+				{
+					"event":
+					{
+						"type": "Error",
+						"message": "Expected 'The hand-following prop retains its intended width and length in centimeters' to be true.",
+						"context": "",
+						"artifact": "00000000000000000000000000000000"
+					},
+					"filename": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Source/Quebec/QuebecTripoTests.cpp",
+					"lineNumber": 212,
+					"timestamp": "2026.10.17-23.56.21"
+				},
+				{
+					"event":
+					{
+						"type": "Info",
+						"message": "LogSkinnedAsset: Waiting for skinned assets to be ready 0/1 (SK_Body) ...",
+						"context": "log",
+						"artifact": "00000000000000000000000000000000"
+					},
+					"filename": "",
+					"lineNumber": -1,
+					"timestamp": "2026.10.17-23.56.21"
+				},
+				{
+					"event":
+					{
+						"type": "Info",
+						"message": "LogAnimationCompression: Building compressed animation data for AnimSequence /Game/ParkComic/CrewGraphicNovelTripo/Resident7/A_Idle.A_Idle (Required Memory Estimate: 1.62 MB)",
+						"context": "log",
+						"artifact": "00000000000000000000000000000000"
+					},
+					"filename": "",
+					"lineNumber": -1,
+					"timestamp": "2026.10.17-23.56.21"
+				},
+				{
+					"event":
+					{
+						"type": "Info",
+						"message": "LogAnimationCompression: Storing compressed animation data for /Game/ParkComic/CrewGraphicNovelTripo/Resident7/A_Idle.A_Idle, at AnimationSequence/e1085bcac453036df307bc39f8b389ccecb5276b",
+						"context": "log",
+						"artifact": "00000000000000000000000000000000"
+					},
+					"filename": "",
+					"lineNumber": -1,
+					"timestamp": "2026.10.17-23.56.21"
+				}
+			],
+			"warnings": 0,
+			"errors": 1,
+			"artifacts": []
+		},
+		{
+			"testDisplayName": "Resident7",
+			"fullTestPath": "Quebec.Animation.TripoCast.Resident7",
+			"tags": [],
+			"state": "Fail",
+			"deviceInstance": [
+				"01A14C4B3BDB747E9F449293173F1329"
+			],
+			"duration": 0.20271302759647369,
+			"dateTime": "2026.10.17-23.56.21",
+			"entries": [
+				{
+					"event":
+					{
+						"type": "Info",
+						"message": "LogStreaming: FlushAsyncLoading(417): 1 QueuedPackages, 0 AsyncPackages",
+						"context": "log",
+						"artifact": "00000000000000000000000000000000"
+					},
+					"filename": "",
+					"lineNumber": -1,
+					"timestamp": "2026.10.17-23.56.21"
+				},
+				{
+					"event":
+					{
+						"type": "Info",
+						"message": "LogSkinnedAsset: Waiting for skinned assets to be ready 0/1 (SK_Body) ...",
+						"context": "log",
+						"artifact": "00000000000000000000000000000000"
+					},
+					"filename": "",
+					"lineNumber": -1,
+					"timestamp": "2026.10.17-23.56.21"
+				},
+				{
+					"event":
+					{
+						"type": "Error",
+						"message": "Expected 'The hand-following prop retains its intended width and length in centimeters' to be true.",
+						"context": "",
+						"artifact": "00000000000000000000000000000000"
+					},
+					"filename": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Source/Quebec/QuebecTripoTests.cpp",
+					"lineNumber": 212,
+					"timestamp": "2026.10.17-23.56.21"
+				},
+				{
+					"event":
+					{
+						"type": "Info",
+						"message": "LogSkinnedAsset: Waiting for skinned assets to be ready 0/1 (SK_Body) ...",
+						"context": "log",
+						"artifact": "00000000000000000000000000000000"
+					},
+					"filename": "",
+					"lineNumber": -1,
+					"timestamp": "2026.10.17-23.56.21"
+				},
+				{
+					"event":
+					{
+						"type": "Info",
+						"message": "LogAnimationCompression: Building compressed animation data for AnimSequence /Game/ParkComic/CrewGraphicNovelTripo/Resident8/A_Idle.A_Idle (Required Memory Estimate: 1.62 MB)",
+						"context": "log",
+						"artifact": "00000000000000000000000000000000"
+					},
+					"filename": "",
+					"lineNumber": -1,
+					"timestamp": "2026.10.17-23.56.21"
+				},
+				{
+					"event":
+					{
+						"type": "Info",
+						"message": "LogAnimationCompression: Storing compressed animation data for /Game/ParkComic/CrewGraphicNovelTripo/Resident8/A_Idle.A_Idle, at AnimationSequence/e44951e50e86b68192ef3085eb90a5ef09722869",
+						"context": "log",
+						"artifact": "00000000000000000000000000000000"
+					},
+					"filename": "",
+					"lineNumber": -1,
+					"timestamp": "2026.10.17-23.56.21"
+				}
+			],
+			"warnings": 0,
+			"errors": 1,
+			"artifacts": []
+		},
+		{
+			"testDisplayName": "Resident8",
+			"fullTestPath": "Quebec.Animation.TripoCast.Resident8",
+			"tags": [],
+			"state": "Fail",
+			"deviceInstance": [
+				"01A14C4B3BDB747E9F449293173F1329"
+			],
+			"duration": 0.24746882915496826,
+			"dateTime": "2026.10.17-23.56.21",
+			"entries": [
+				{
+					"event":
+					{
+						"type": "Info",
+						"message": "LogStreaming: FlushAsyncLoading(430): 1 QueuedPackages, 0 AsyncPackages",
+						"context": "log",
+						"artifact": "00000000000000000000000000000000"
+					},
+					"filename": "",
+					"lineNumber": -1,
+					"timestamp": "2026.10.17-23.56.21"
+				},
+				{
+					"event":
+					{
+						"type": "Info",
+						"message": "LogSkinnedAsset: Waiting for skinned assets to be ready 0/1 (SK_Body) ...",
+						"context": "log",
+						"artifact": "00000000000000000000000000000000"
+					},
+					"filename": "",
+					"lineNumber": -1,
+					"timestamp": "2026.10.17-23.56.21"
+				},
+				{
+					"event":
+					{
+						"type": "Error",
+						"message": "Expected 'The hand-following prop retains its intended width and length in centimeters' to be true.",
+						"context": "",
+						"artifact": "00000000000000000000000000000000"
+					},
+					"filename": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Source/Quebec/QuebecTripoTests.cpp",
+					"lineNumber": 212,
+					"timestamp": "2026.10.17-23.56.21"
+				},
+				{
+					"event":
+					{
+						"type": "Info",
+						"message": "LogSkinnedAsset: Waiting for skinned assets to be ready 0/1 (SK_Body) ...",
+						"context": "log",
+						"artifact": "00000000000000000000000000000000"
+					},
+					"filename": "",
+					"lineNumber": -1,
+					"timestamp": "2026.10.17-23.56.22"
+				}
+			],
+			"warnings": 0,
+			"errors": 1,
+			"artifacts": []
+		},
+		{
+			"testDisplayName": "BlendedLocomotion",
+			"fullTestPath": "Quebec.Animation.BlendedLocomotion",
+			"tags": [],
+			"state": "Success",
+			"deviceInstance": [
+				"01A14C4B3BDB747E9F449293173F1329"
+			],
+			"duration": 0.00780458003282547,
+			"dateTime": "2026.10.17-23.56.22",
+			"entries": [],
+			"warnings": 0,
+			"errors": 0,
+			"artifacts": []
+		},
+		{
+			"testDisplayName": "GraphicNovelCandidateSelection",
+			"fullTestPath": "Quebec.Animation.GraphicNovelCandidateSelection",
+			"tags": [],
+			"state": "Success",
+			"deviceInstance": [
+				"01A14C4B3BDB747E9F449293173F1329"
+			],
+			"duration": 0.42946925759315491,
+			"dateTime": "2026.10.17-23.56.22",
+			"entries": [
+				{
+					"event":
+					{
+						"type": "Info",
+						"message": "NORD_GRAPHIC_NOVEL_SELECTION_CHECKED default=production pilot=native style8=production privateF2=1",
+						"context": "",
+						"artifact": "00000000000000000000000000000000"
+					},
+					"filename": "",
+					"lineNumber": -1,
+					"timestamp": "2026.10.17-23.56.22"
+				}
+			],
+			"warnings": 0,
+			"errors": 0,
+			"artifacts": []
+		},
+		{
+			"testDisplayName": "GraphicNovelHandsEyes",
+			"fullTestPath": "Quebec.Animation.GraphicNovelHandsEyes",
+			"tags": [],
+			"state": "Success",
+			"deviceInstance": [
+				"01A14C4B3BDB747E9F449293173F1329"
+			],
+			"duration": 0.014333302155137062,
+			"dateTime": "2026.10.17-23.56.22",
+			"entries": [
+				{
+					"event":
+					{
+						"type": "Info",
+						"message": "NORD_PILOT_HIPS sourceIndex=0 root=Hips forceRootLock=1 rootLock=0 time=0.411594 rawTrack={1.603684,0.870115,102.953583|-9.537442,81.384080,3.162438|1.000000,1.000000,1.000000} fullSourcePose={-3.266998,-0.392615,103.014885|0.413151,-0.305498,0.305498|1.000000,1.000000,1.000000} graphObserved={-3.266998,-0.392615,103.014885|0.413151,-0.305498,0.305498|1.000000,1.000000,1.000000}",
+						"context": "",
+						"artifact": "00000000000000000000000000000000"
+					},
+					"filename": "",
+					"lineNumber": -1,
+					"timestamp": "2026.10.17-23.56.22"
+				},
+				{
+					"event":
+					{
+						"type": "Info",
+						"message": "NORD_GRAPHIC_NOVEL_CONTROLS_CHECKED bones=20 idleFlex=4.000 runFlex=10.000 runSquint=.35 sourceBodyPreserved=1",
+						"context": "",
+						"artifact": "00000000000000000000000000000000"
+					},
+					"filename": "",
+					"lineNumber": -1,
+					"timestamp": "2026.10.17-23.56.22"
+				}
+			],
+			"warnings": 0,
+			"errors": 0,
+			"artifacts": []
+		},
+		{
+			"testDisplayName": "ReapplyCrew",
+			"fullTestPath": "Quebec.Animation.ReapplyCrew",
+			"tags": [],
+			"state": "Success",
+			"deviceInstance": [
+				"01A14C4B3BDB747E9F449293173F1329"
+			],
+			"duration": 0.0096658766269683838,
+			"dateTime": "2026.10.17-23.56.22",
+			"entries": [],
+			"warnings": 0,
+			"errors": 0,
+			"artifacts": []
+		},
+		{
+			"testDisplayName": "SavedProductionLocomotion",
+			"fullTestPath": "Quebec.Animation.SavedProductionLocomotion",
+			"tags": [],
+			"state": "Success",
+			"deviceInstance": [
+				"01A14C4B3BDB747E9F449293173F1329"
+			],
+			"duration": 0.080368965864181519,
+			"dateTime": "2026.10.17-23.56.22",
+			"entries": [
+				{
+					"event":
+					{
+						"type": "Info",
+						"message": "NORD_SAVED_CREW_LOCOMOTION style=3",
+						"context": "",
+						"artifact": "00000000000000000000000000000000"
+					},
+					"filename": "",
+					"lineNumber": -1,
+					"timestamp": "2026.10.17-23.56.22"
+				},
+				{
+					"event":
+					{
+						"type": "Info",
+						"message": "NORD_SAVED_CREW_LOCOMOTION style=4",
+						"context": "",
+						"artifact": "00000000000000000000000000000000"
+					},
+					"filename": "",
+					"lineNumber": -1,
+					"timestamp": "2026.10.17-23.56.22"
+				},
+				{
+					"event":
+					{
+						"type": "Info",
+						"message": "NORD_SAVED_CREW_LOCOMOTION style=5",
+						"context": "",
+						"artifact": "00000000000000000000000000000000"
+					},
+					"filename": "",
+					"lineNumber": -1,
+					"timestamp": "2026.10.17-23.56.22"
+				},
+				{
+					"event":
+					{
+						"type": "Info",
+						"message": "NORD_SAVED_CREW_LOCOMOTION style=6",
+						"context": "",
+						"artifact": "00000000000000000000000000000000"
+					},
+					"filename": "",
+					"lineNumber": -1,
+					"timestamp": "2026.10.17-23.56.22"
+				},
+				{
+					"event":
+					{
+						"type": "Info",
+						"message": "NORD_SAVED_CREW_LOCOMOTION style=7",
+						"context": "",
+						"artifact": "00000000000000000000000000000000"
+					},
+					"filename": "",
+					"lineNumber": -1,
+					"timestamp": "2026.10.17-23.56.22"
+				},
+				{
+					"event":
+					{
+						"type": "Info",
+						"message": "NORD_SAVED_CREW_LOCOMOTION style=8",
+						"context": "",
+						"artifact": "00000000000000000000000000000000"
+					},
+					"filename": "",
+					"lineNumber": -1,
+					"timestamp": "2026.10.17-23.56.22"
+				},
+				{
+					"event":
+					{
+						"type": "Info",
+						"message": "NORD_SAVED_CREW_LOCOMOTION style=9",
+						"context": "",
+						"artifact": "00000000000000000000000000000000"
+					},
+					"filename": "",
+					"lineNumber": -1,
+					"timestamp": "2026.10.17-23.56.22"
+				},
+				{
+					"event":
+					{
+						"type": "Info",
+						"message": "NORD_SAVED_CREW_LOCOMOTION style=10",
+						"context": "",
+						"artifact": "00000000000000000000000000000000"
+					},
+					"filename": "",
+					"lineNumber": -1,
+					"timestamp": "2026.10.17-23.56.22"
+				}
+			],
+			"warnings": 0,
+			"errors": 0,
+			"artifacts": []
+		},
+		{
+			"testDisplayName": "TripoPilot",
+			"fullTestPath": "Quebec.Animation.TripoPilot",
+			"tags": [],
+			"state": "Fail",
+			"deviceInstance": [
+				"01A14C4B3BDB747E9F449293173F1329"
+			],
+			"duration": 0.01046950276941061,
+			"dateTime": "2026.10.17-23.56.22",
+			"entries": [
+				{
+					"event":
+					{
+						"type": "Error",
+						"message": "Expected 'The hand-following prop retains its intended width and length in centimeters' to be true.",
+						"context": "",
+						"artifact": "00000000000000000000000000000000"
+					},
+					"filename": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Source/Quebec/QuebecTripoTests.cpp",
+					"lineNumber": 212,
+					"timestamp": "2026.10.17-23.56.22"
+				}
+			],
+			"warnings": 0,
+			"errors": 1,
+			"artifacts": []
+		}
+	]
+}

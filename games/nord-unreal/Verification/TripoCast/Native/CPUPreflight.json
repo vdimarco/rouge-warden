@@ -1,0 +1,25 @@
+{
+  "recorded_utc": "2026-10-18T00:18:56.977748+00:00",
+  "scope": "Root-observed completed CPU-only source-plan/negative-control runs after approval-only metadata correction; no native/GPU operation",
+  "commands": [
+    "python3 Scripts/test_tripo_import.py",
+    "python3 Scripts/test_tripo_cast_import.py"
+  ],
+  "observed_pass_messages": 2,
+  "combined_shell_exit_code": 0,
+  "source_hashes": {
+    "Scripts/import_tripo_pilot.py": "80377f85a05ccf6e1e4258d8288a1b4fb08ed5e0a66d200cd23e6e8ab731b833",
+    "Scripts/verify_tripo_pilot.py": "10e65ac31ed0ba9022021b6216586d3e19fc77675b3bde5c1913853334efb8c1",
+    "Scripts/import_tripo_cast.py": "42b7090430fe996cb98f12748a0913bda7e50bb5003b937c6f5cfb59fd3f68ae",
+    "Scripts/verify_tripo_cast.py": "414197e2ad9b80ebc2c2b9a2ca3ae4f073b50bae46f6d2932fb417b0ed2978cd",
+    "Scripts/test_tripo_import.py": "dee6e6af5c538ba9f76ee0984abf6503859d75c19f4d66f0ad01c229458e1d02",
+    "Scripts/test_tripo_cast_import.py": "df7ed9f818f7bbd0d2303bb8a89f7fdf24d00cc07a6903ac9dc254ba0228ee1a"
+  },
+  "git_diff_check_exit_code": 0,
+  "native_report": "Verification/TripoCast/Native/Automation-Aggregate.json",
+  "credential_scan": {
+    "scope": "291 new retained Verification files including decompressed native logs;111 JSON documents parsed including BOM-aware automation reports",
+    "credential_pattern_matches": 0,
+    "files_over_100MB": 0
+  }
+}

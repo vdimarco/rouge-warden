@@ -1,0 +1,62 @@
+{
+  "native_exit_code": 0,
+  "counts": {
+    "succeeded": 12,
+    "succeededWithWarnings": 0,
+    "failed": 0,
+    "notRun": 0,
+    "inProcess": 0
+  },
+  "tests": [
+    {
+      "fullTestPath": "Quebec.Animation.TripoCast.Resident3",
+      "state": "Success"
+    },
+    {
+      "fullTestPath": "Quebec.Animation.TripoCast.Resident4",
+      "state": "Success"
+    },
+    {
+      "fullTestPath": "Quebec.Animation.TripoCast.Resident5",
+      "state": "Success"
+    },
+    {
+      "fullTestPath": "Quebec.Animation.TripoCast.Resident6",
+      "state": "Success"
+    },
+    {
+      "fullTestPath": "Quebec.Animation.TripoCast.Resident7",
+      "state": "Success"
+    },
+    {
+      "fullTestPath": "Quebec.Animation.TripoCast.Resident8",
+      "state": "Success"
+    },
+    {
+      "fullTestPath": "Quebec.Animation.BlendedLocomotion",
+      "state": "Success"
+    },
+    {
+      "fullTestPath": "Quebec.Animation.GraphicNovelCandidateSelection",
+      "state": "Success"
+    },
+    {
+      "fullTestPath": "Quebec.Animation.GraphicNovelHandsEyes",
+      "state": "Success"
+    },
+    {
+      "fullTestPath": "Quebec.Animation.ReapplyCrew",
+      "state": "Success"
+    },
+    {
+      "fullTestPath": "Quebec.Animation.SavedProductionLocomotion",
+      "state": "Success"
+    },
+    {
+      "fullTestPath": "Quebec.Animation.TripoPilot",
+      "state": "Success"
+    }
+  ],
+  "errors": {},
+  "report_sha256": "215f9c93d07e27286786907625d1e1f3f0f5b05eeb983b676eb1814f63ba2e97"
+}

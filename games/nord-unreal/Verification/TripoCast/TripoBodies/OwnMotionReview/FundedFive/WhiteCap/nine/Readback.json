@@ -1,0 +1,139 @@
+{
+  "passed": true,
+  "inputs": {
+    "surface": {
+      "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoH31RemainingPlan-20261017-v3/WhiteCap/prepared-v1/surface/report/Surface.json",
+      "sha256": "14dc797db71625933ffc22789ae17ee3d9caaac90203d971ec25ed4e1598defa"
+    },
+    "motion": {
+      "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoH31RemainingPlan-20261017-v3/WhiteCap/prepared-v1/motion/report/Motion.json",
+      "sha256": "1444f4f45ffb2a55e17d0f8c8bf32715d403dbdb6791ab9cece770aa846b3a43"
+    },
+    "recipe": {
+      "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Scripts/review_tripo_cast_motion.py",
+      "sha256": "62bb0b2824744baf47ef806605b3de2f89653784d03a4e0d64844bc6f94f5926"
+    },
+    "original": {
+      "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Data/GraphicNovel/Crew/WhiteCap/tripo-h31-body-20261017/body.glb",
+      "sha256": "163e86ec12c6ee9a53ccee29f500dfba720d230c8046c9d968430262ee24e4d4"
+    },
+    "body": {
+      "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoH31RemainingPlan-20261017-v3/WhiteCap/prepared-v1/surface/body/body.fbx",
+      "sha256": "9a50f28b05f0e28cba4a56e9fa962fc9478667693739aed064b2a88ddd6b23e3"
+    },
+    "idle": {
+      "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoH31RemainingPlan-20261017-v3/WhiteCap/prepared-v1/motion/clips/idle.fbx",
+      "sha256": "4f3d428172aeb608b4465117abf66519965f55bc016d72fe34014b4c0f1e70f8"
+    },
+    "jump": {
+      "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoH31RemainingPlan-20261017-v3/WhiteCap/prepared-v1/motion/clips/jump.fbx",
+      "sha256": "3a8150b16b53c12e3629d4d7892140b447cb0d9e7a61721671c03cf29b34cb94"
+    },
+    "walk": {
+      "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoH31RemainingPlan-20261017-v3/WhiteCap/prepared-v1/motion/clips/walk.fbx",
+      "sha256": "789aeac186de4dbef8e0874be6e7d0be55d326e993fea9ee972e0e38b2550d3e"
+    },
+    "run": {
+      "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/TripoH31RemainingPlan-20261017-v3/WhiteCap/prepared-v1/motion/clips/run.fbx",
+      "sha256": "c4154af026da052691e665ef3bb64b87e38f0eaa33ae3c2ebe1b905a4662a4d5"
+    }
+  },
+  "reference_matrix_errors": {
+    "idle": 1.5139579772949219e-05,
+    "walk": 1.5139579772949219e-05,
+    "run": 1.5139579772949219e-05,
+    "jump": 1.5139579772949219e-05
+  },
+  "unanimated_body_negative_control_error": 1.5564181804656982,
+  "device": "CPU",
+  "threads": 4,
+  "gpu_denoising": false,
+  "samples": 16,
+  "dimensions": [
+    512,
+    640
+  ],
+  "fps": 30,
+  "frames": [
+    {
+      "file": "idle-front.png",
+      "clip": "idle",
+      "seconds": 0,
+      "frame": 2.0,
+      "body_vs_clip_pose_error": 1.519918441772461e-05,
+      "sha256": "51a4f2db06afc3ce69f093199393bff226bae178adc75f87dfcb735726b8fa67"
+    },
+    {
+      "file": "idle-side.png",
+      "clip": "idle",
+      "seconds": 0,
+      "frame": 2.0,
+      "body_vs_clip_pose_error": 1.519918441772461e-05,
+      "sha256": "86bca3357d037221bac9e8412e7ab97f5c798131aa6021e26eb7ee583e2b26da"
+    },
+    {
+      "file": "idle-threequarter.png",
+      "clip": "idle",
+      "seconds": 0,
+      "frame": 2.0,
+      "body_vs_clip_pose_error": 1.519918441772461e-05,
+      "sha256": "3fa9a88e55ba8dafbb2e7771c9956ff274d1da9dcb9eea51305cd794778759c0"
+    },
+    {
+      "file": "idle-back.png",
+      "clip": "idle",
+      "seconds": 0,
+      "frame": 2.0,
+      "body_vs_clip_pose_error": 1.519918441772461e-05,
+      "sha256": "c8135f38bcb57fe3851ab6e80e0d4f94c523bdfdcf715babc00e677bd1bb7a92"
+    },
+    {
+      "file": "walk-threequarter.png",
+      "clip": "walk",
+      "seconds": 0.26,
+      "frame": 9.800000190734863,
+      "body_vs_clip_pose_error": 1.6868114471435547e-05,
+      "sha256": "180b14160630b94a137bb7faed66c4a7ba27c5ecbc7a2277358ec0858891a69a"
+    },
+    {
+      "file": "run-threequarter.png",
+      "clip": "run",
+      "seconds": 0.16,
+      "frame": 6.800000190734863,
+      "body_vs_clip_pose_error": 1.3113021850585938e-05,
+      "sha256": "8171e429540abbf93f5357d145d79b32a8b823649e2831371b77ef4e1c2ee386"
+    },
+    {
+      "file": "jump-threequarter.png",
+      "clip": "jump",
+      "seconds": 0.47,
+      "frame": 16.100000381469727,
+      "body_vs_clip_pose_error": 1.800060272216797e-05,
+      "sha256": "f423be0b802ca40e2aa42f933b1bdaafc5c9ac3b2db8914e4557aabdfa7dfdc1"
+    },
+    {
+      "file": "hand-l.png",
+      "clip": "idle",
+      "seconds": 0,
+      "frame": 2.0,
+      "body_vs_clip_pose_error": 1.519918441772461e-05,
+      "sha256": "42bb546d43074d060ccf03a6e7fbf09956443430007f1d467d6e09ad1bce0ca4"
+    },
+    {
+      "file": "hand-r.png",
+      "clip": "idle",
+      "seconds": 0,
+      "frame": 2.0,
+      "body_vs_clip_pose_error": 1.519918441772461e-05,
+      "sha256": "918f91a023b44c236e5ab00a4623afd243bbe99c5f132c716560700d99867006"
+    }
+  ],
+  "preview_only_uniform_height_scale": 1.8581656689317325,
+  "original_GLB_material_graph": true,
+  "retained_inputs_unchanged": true,
+  "native_or_final_art_acceptance": false,
+  "limitations": [
+    "In-place clips with hard cuts, no native transitions/actor flight/prop grip.",
+    "Inclusive endpoints add four duplicate endpoint frames to the encoded timeline."
+  ]
+}
