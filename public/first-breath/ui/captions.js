@@ -189,11 +189,14 @@ export function createCaptions(root, { on = true, settings = null } = {}) {
     return offer({ id, fact: id, prio: PRIO.fact, text: fill(f.text, {}, st || S()), dir, ms: Number(ms) || 4000 });
   }
 
-  function say(id, text, { dir = null, ms = 4000 } = {}) {
+  function say(id, text, { dir = null, ms = 4000, kind = "say", fact: factId = null } = {}) {
     if (text === null || text === undefined || text === "") return false;
     const s = String(text);
     if (id && s === id && byId(id)) return fact(id, { dir, ms });
-    return offer({ id: id || s, prio: PRIO.say, text: s, dir, ms: Math.max(500, Number(ms) || 4000) });
+    // kind ("say" | "fact" | "cue") drives the rank (main.js routes every caption through say): a fact waits behind a
+    // line and a cue shows only when nothing else does. An unknown kind falls back to say.
+    const prio = kind in PRIO ? PRIO[kind] : PRIO.say;
+    return offer({ id: id || s, prio, fact: factId, text: s, dir, ms: Math.max(500, Number(ms) || 4000) });
   }
 
   // The caption for a sound cue event (16.6), when it has one.
