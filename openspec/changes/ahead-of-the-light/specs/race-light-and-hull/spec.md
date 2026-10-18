@@ -45,7 +45,7 @@ The light SHALL be a white ring outside the play ring at R_b = R_p × (1 + K_B �
 - **CHECK** `survival.test.mjs` and `layout.e2e.mjs`
 
 ### Requirement: Skill pushes the light back
-Push-backs SHALL add to the gap, times the leg's mass factor M (1.00 on leg 1 down to 0.51 on leg 8): graze 0.12 s, hairline 0.30, rival graze 0.12, rail skim 0.20 a second, a whip 0.4 × mass × (0.5 + d) (half on WIDE), a mid-leg pair 0.5, takedown 0.3, gate thread 2.0, dock 1.5, fly past 0.5. Gains SHALL stop at the leg's cap (8, 3.5, 3, 3, 3, 3, 2.8, 2.8 s: a buffer of 2 or 3 hits), except a red-zone release (up to +1.5 s, fading 0.1 s a second) and STILL LIGHT.
+Push-backs SHALL add to the gap, times the leg's mass factor M (1.00 on leg 1 down to 0.59 on leg 8): graze 0.12 s, hairline 0.30, rival graze 0.12, rail skim 0.20 a second, a whip 0.4 × mass × (0.5 + d) (half on WIDE), a mid-leg pair 0.5, takedown 0.3, gate thread 2.0, dock 1.5, fly past 0.5. Gains SHALL stop at the leg's cap (8, 3.5, 3, 3, 3, 3, 2.8, 2.8 s: a buffer of 2 or 3 hits), except a red-zone release (up to +1.5 s, fading 0.1 s a second) and STILL LIGHT.
 
 #### Scenario: A graze in leg 1
 - **WHEN** a ship below the cap grazes a knot in leg 1

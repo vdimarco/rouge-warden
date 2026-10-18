@@ -75,7 +75,7 @@ Keep these through every change to this game.
   up, and it targets nobody.
 - **Time to catch** TTC = gap ÷ (1 − β) is the only number the player sees. It counts down one second per second at a
   steady speed, jumps up when you speed up and drops when you slow.
-- **Push-backs** (all × the leg's mass factor M: 1.00, 0.70, 0.66, 0.63, 0.61, 0.58, 0.55, 0.51): graze 0.12 s,
+- **Push-backs** (all × the leg's mass factor M: 1.00, 0.78, 0.74, 0.71, 0.69, 0.66, 0.63, 0.59): graze 0.12 s,
   hairline 0.30, rival graze 0.12, rail skim 0.20 a second, whip 0.4 × mass × (0.5 + d) (half on WIDE), mid-leg pair
   0.5, takedown 0.3, gate thread 2.0, dock 1.5, fly past 0.5. They stop at the leg's cap (8, 3.5, 3, 3, 3, 3, 2.8,
   2.8 s), except a red-zone release (up to +1.5 s, fading at 0.1 s a second) and STILL LIGHT, which raises the cap by up
@@ -220,6 +220,10 @@ The team's `contract.md` logs every change with its reason; these are the ones a
   4.5 s ahead of its light; the WHALE starts 2.5 s ahead; MANTA has 3 hull. Known gaps stay as todos in `sim.test.mjs`
   with floors (raised where the pass improved them: the mid's TTC under 10 s to 25 %, rivals eaten to 2.6, REDSHIFT
   3's light to 15 %).
+  The review fixes judge each item once, so a stumble back over it no longer pays a second THREAD or graze. That took
+  the mid home rate from 33 to 23 %, so the masses of legs 2 to 8 rose 0.08 (now 0.78 to 0.59; mid home 38 %). Two
+  floors moved with it: 12 of 22 base cards pass the 20 % rule (was 14), and a hull-2 dock may age up to 0.15 years a
+  leg less than a hull-1 dock (2.52 against 2.61), inside the noise of 40 runs.
 
 ## Cuts
 
