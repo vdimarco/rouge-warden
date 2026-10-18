@@ -1,0 +1,8 @@
+- [x] Read the car movement and collision code; find why struck cars never move.
+- [x] Add `QuebecCarImpact::Resolve` (equal-mass impulse with restitution, friction and spin).
+- [x] Apply the impulse in `MoveWithCollision`; add `ReceiveImpact` and the slide state in `SimulateDrive`.
+- [x] Add `Quebec.Driving.CarImpactMomentum`; change the parked-car block of `Quebec.Driving.FittedHullCurbsAndWalls` to expect a push.
+- [x] Compile `Resolve` and the math test outside Unreal with g++ (-Wall -Wextra): 11 of 11 pass.
+- [ ] Build the Quebec module and run `Quebec.Driving.*` in Unreal 5.8 (needs the owner's Linux PC; Unreal is not in this container).
+- [ ] Run `Scripts/car_collision_test.py` on the map, then drive into parked and traffic cars on the live stream.
+- [ ] Publish the native package to the host PC, then archive the change.
