@@ -1015,6 +1015,8 @@ export function view(st) {
     marks.push({ kind: "glow", x: rr * ux - tx, y: rr * uy - ty, r: 1.8, on: 1 });
   }
   if (st.fusionAt !== null) marks.push({ kind: "glow", x: 0, y: 0, r: 8, on: 0.5 + 0.5 * clamp01((t - st.fusionAt) / FU.s) });
+  // your sperm's own glow: carry.sperm.glow (1 if it became ready in the race, else 0.5) sets how bright it is
+  if (g && g.state !== "entered") marks.push({ kind: "glow", x: g.x, y: g.y, r: 5, on: 0.25 + 0.5 * goldGlow });
 
   // rings (DOM, at most 8): her beat, the approach of the next targets (up to 3, so each keeps its preview), the seal hold, the burrow rings
   const rings = d.rings;

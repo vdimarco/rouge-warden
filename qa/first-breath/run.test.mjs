@@ -16,7 +16,7 @@ import { createBot, playStep } from "../../public/first-breath/core/bots.js";
 import { STAGES, ENDING } from "../../public/first-breath/core/stages/index.js";
 import { DEFAULT_CARRY, mergeCarry } from "../../public/first-breath/core/carry.js";
 import { DT, mmPerShortAxis } from "../../public/first-breath/core/clock.js";
-import { makeIntents } from "../../public/first-breath/core/intent.js";
+import { makeIntents, shiftIntents } from "../../public/first-breath/core/intent.js";
 import { runTotal } from "../../public/first-breath/core/score.js";
 import { validate } from "../../public/first-breath/core/draw.js";
 import { stream } from "../../public/first-breath/core/rng.js";
@@ -54,6 +54,13 @@ function play(run, { bot = null, intents = null, each = null, before = null, max
 }
 const named = (evs, name) => evs.filter((e) => e.name === name);
 
+// One whole run with the idle bot (skill 0): stage 1 reaches its 117 s cap, so it passes the Almost card and Go on.
+const IDLE = (() => {
+  const run = createRun({ seed: 7, settings: {}, start: "new" });
+  const evs = play(run, { bot: createBot(0, 7) });
+  return { run, evs };
+})();
+
 // One whole run with the ref bot, shared by several checks.
 const REF = (() => {
   const run = createRun({ seed: 7, settings: {}, start: "new" });
@@ -79,10 +86,12 @@ await check("the stage order and the screens of a whole run; no overlay after Bi
   assert.equal(ENDING.meta.scored, false);
   assert.deepEqual(named(REF.evs, "stageStart").map((e) => e.id), [...IDS, "ending"]);
   const screens = named(REF.evs, "screen").map((e) => e.screen + (e.data && e.data.id ? ":" + e.data.id : ""));
-  const want = ["title", "stage:swim", "almost:swim", "stage:swim", "overlay:swim"];
+  const want = ["title", "stage:swim", "overlay:swim"];
   for (const id of IDS.slice(1)) want.push(`card:${id}`, `stage:${id}`, ...(id === "birth" ? [] : [`overlay:${id}`]));
   want.push("ending:ending", "result");
-  assert.deepEqual(screens, want, "the swim stub reaches its cap, so the run passes the Almost card and Go on");
+  assert.deepEqual(screens, want, "the ref bot reaches the meeting place 1st, so stage 1 goes straight to its overlay");
+  const idle = named(IDLE.evs, "screen").map((e) => e.screen + (e.data && e.data.id ? ":" + e.data.id : "")).slice(0, 5);
+  assert.deepEqual(idle, ["title", "stage:swim", "almost:swim", "stage:swim", "overlay:swim"], "idle: the cap, the Almost card, Go on");
   assert.ok(!screens.includes("overlay:birth"), "no overlay after Birth");
   assert.equal(REF.run.done, true);
   assert.equal(REF.run.summary().done, true);
@@ -138,17 +147,20 @@ await check("Try again from pause recreates the stage at once; earlier scores an
   assert.equal(run.act("retry"), false, "nothing to retry on the result");
 });
 
-// Stage 1 at a short stub length: steer forward (the stub's Skill), or idle.
+// Stage 1 attempts that both end at the Almost card: "idle" reaches the 117 s cap (place 20, no points); "late"
+// waits 62 s, then swims as the ref bot and reaches the meeting place outside the top 3 (with points).
 function swimAttempts(order) {
-  const run = createRun({ seed: 5, start: "new", stageOpts: { stubS: 7 } });
+  const run = createRun({ seed: 5, start: "new" });
   run.act("play");
   const evs = [];
   for (const how of order) {
+    const bot = createBot(1, 5);
     while (run.screen === "stage") {
-      run.step(how === "steer" ? makeIntents({ steer: { x: 0, y: 1 }, touching: true }) : makeIntents());
+      const late = how === "late" && run.state.t >= 62;
+      run.step(late ? shiftIntents(bot.intents(run.mod, run.state), -run.stageStart) : makeIntents());
       evs.push(...run.events.splice(0));
     }
-    assert.equal(run.screen, "almost", "the swim stub ends at its cap with goalMet false");
+    assert.equal(run.screen, "almost", "the cap, or a finish outside the top 3, ends stage 1 with goalMet false");
     if (how !== order[order.length - 1]) { assert.equal(run.act("retry"), true); evs.push(...run.events.splice(0)); }
   }
   assert.equal(run.act("goOn"), true);
@@ -162,17 +174,19 @@ function swimAttempts(order) {
 }
 
 await check("Try again at the Almost card: the better attempt's score is kept, the latest attempt's carry goes on", () => {
-  for (const order of [["steer", "idle"], ["idle", "steer"]]) {
+  for (const order of [["late", "idle"], ["idle", "late"]]) {
     const { run, evs } = swimAttempts(order);
     const swim = run.summary().stages.find((s) => s.id === "swim");
     assert.equal(swim.attempts, 2, order.join(" then "));
-    assert.equal(swim.score.total, 1500, `${order.join(" then ")}: the better attempt is kept`);
     const ends = named(evs, "stageEnd").filter((e) => e.id === "swim");
+    const lateEnd = ends[order.indexOf("late")];
+    assert.ok(lateEnd.result.score.total > 0 && !lateEnd.result.metrics.capped && lateEnd.result.metrics.place > 3, "the late attempt finishes outside the top 3");
+    assert.equal(swim.score.total, lateEnd.result.score.total, `${order.join(" then ")}: the better attempt is kept`);
     assert.equal(ends.length, 2, "each closed attempt reports its end");
     const last = ends[ends.length - 1].result.carryOut.sperm.place;
     const egg = named(evs, "stageStart").find((e) => e.id === "egg");
     assert.equal(egg.carry.sperm.place, last, "the latest attempt's carry");
-    assert.equal(last, order[1] === "idle" ? 20 : 19);
+    assert.equal(last, order[1] === "idle" ? 20 : lateEnd.result.metrics.place);
     const swimStarts = named(evs, "stageStart").filter((e) => e.id === "swim");
     assert.deepEqual(swimStarts[0].carry, swimStarts[1].carry, "Try again keeps the carry-in");
     assert.equal(swimStarts[0].seed, swimStarts[1].seed, "and the seed");
@@ -180,25 +194,26 @@ await check("Try again at the Almost card: the better attempt's score is kept, t
 });
 
 await check("Go on after the cap plays the 3 s carry: no Goal, no grade word, never past 120 s", () => {
-  const almost = named(REF.evs, "screen").find((e) => e.screen === "almost");
+  assert.ok(!named(REF.evs, "screen").some((e) => e.screen === "almost"), "the ref run never sees the Almost card");
+  const almost = named(IDLE.evs, "screen").find((e) => e.screen === "almost");
   assert.equal(almost.data.capped, true);
-  assert.equal(almost.data.place, 4, "the ref stub steers to place 4");
+  assert.equal(almost.data.place, 20, "idle is 20th at the cap");
   assert.equal(almost.data.of, 20);
   near(almost.t, 117, 1e-6, "the cap");
-  const carried = named(REF.evs, "moment").find((e) => e.stage === "swim" && e.id === "carried");
+  const carried = named(IDLE.evs, "moment").find((e) => e.stage === "swim" && e.id === "carried");
   assert.ok(carried, "jump(\"carried\")");
   near(carried.t, almost.t, 1e-6, "Go on at once (the bot chooses it)");
-  const end = named(REF.evs, "stageEnd").find((e) => e.id === "swim");
+  const end = named(IDLE.evs, "stageEnd").find((e) => e.id === "swim");
   assert.equal(end.result.goalMet, false);
   assert.equal(end.result.score.goal, 0);
   near(end.t - almost.t, 3, 1e-6, "3 s carried");
-  const ov = named(REF.evs, "screen").find((e) => e.screen === "overlay" && e.data.id === "swim");
+  const ov = named(IDLE.evs, "screen").find((e) => e.screen === "overlay" && e.data.id === "swim");
   assert.equal(ov.data.grade, null, "no grade word");
-  const swim = REF.run.summary().stages[0];
+  const swim = IDLE.run.summary().stages[0];
   assert.equal(swim.grade, null);
   assert.equal(swim.score.goal, 0);
   assert.equal(swim.goalMet, false);
-  const start = named(REF.evs, "stageStart")[0];
+  const start = named(IDLE.evs, "stageStart")[0];
   assert.ok(end.t - start.t <= 120 + 1e-6, "stage 1 never runs past 120 s of stage time");
   // the Almost card waits for a choice; Go on then resumes the stage on a moved time base
   const run = createRun({ seed: 2, start: "new" });
@@ -291,7 +306,8 @@ await check("stage events reach the host in core seconds, tagged with their stag
     near(p.t, s.t, 1e-9, `${s.id}: its first prompt`);
   }
   const done = REF.evs.filter((e) => e.name === "done");
-  assert.equal(done.length, 10, "8 stages, the carried swim again, and the ending");
+  assert.equal(done.length, 9, "8 stages and the ending (the ref run is never carried)");
+  assert.equal(IDLE.evs.filter((e) => e.name === "done").length, 10, "idle: 8 stages, the carried swim again, and the ending");
 });
 
 await check("gaDay and mmPerShortAxis never decrease over a whole run", () => {
@@ -321,7 +337,7 @@ await check("her beats run on across overlays, the Almost card and cards: no gap
     assert.ok(gap >= 0.62 && gap <= 0.87, `gap ${gap.toFixed(4)} s at ${b[i].toFixed(2)} s`);
   }
   assert.equal(silence, 1);
-  assert.ok(b.length > 600, `${b.length} beats`);
+  assert.ok(b.length > 500, `${b.length} beats`);
   // each stage's first beat is the run clock's next beat: motherPhase is under one period
   for (const s of named(REF.evs, "stageStart")) assert.ok(s.motherPhase >= 0 && s.motherPhase < 0.87, `${s.id} motherPhase ${s.motherPhase}`);
 });
@@ -386,15 +402,14 @@ await check("stage 1's sperm.place reaches stage 2 and sets when your sperm come
 
 await check("exactly one sperm enters in a whole run", () => {
   assert.equal(named(REF.evs, "enter").length, 1, "the ref run");
-  const idle = play(createRun({ seed: 9, start: "new" }), { bot: createBot(0, 9) });
-  assert.equal(named(idle, "enter").length, 1, "an idle run");
-  assert.equal(named(idle, "milestone").filter((e) => e.id === "fertilized").length, 1);
+  assert.equal(named(IDLE.evs, "enter").length, 1, "an idle run");
+  assert.equal(named(IDLE.evs, "milestone").filter((e) => e.id === "fertilized").length, 1);
 });
 
 await check("timers: overlay 2.5 s (linger holds it), card skippable from 1.0 s and gone at 3.5 s, crossfade 0.8 s", () => {
   const run = createRun({ seed: 6, start: "new", stageOpts: { stubS: 4 } });
   run.act("play");
-  const stepTo = (pred, max = 60 * 30) => { for (let i = 0; i < max && !pred(); i++) run.step(makeIntents()); };
+  const stepTo = (pred, max = 60 * 130) => { for (let i = 0; i < max && !pred(); i++) run.step(makeIntents()); };
   stepTo(() => run.screen === "almost");
   assert.equal(run.act("goOn"), true);
   stepTo(() => run.screen === "overlay");
