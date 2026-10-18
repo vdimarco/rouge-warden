@@ -18,9 +18,9 @@ The browser home screen and GTA arcade landing page SHALL use the approved colla
 
 #### Scenario: Play from the badge
 - **WHEN** either entry page is opened
-- **THEN** its primary Start or Play action appears directly beneath the circular badge, before the text panel on narrow screens
+- **THEN** the dominant circular badge is the browser Play button, with a gently pulsing PLAY word over its lower third and no animation under reduced-motion preferences; the arcade Play link remains beneath its badge
 
 #### Scenario: Single-viewport entry
 - **WHEN** either entry page opens at 320×568, 390×844, 844×390 or 1280×720
-- **THEN** its primary action is directly below the badge and the entry page has no horizontal or vertical overflow
+- **THEN** its primary action stays on or below the badge and the entry page has no horizontal or vertical overflow
 - **AND** compact layouts omit repeated branding and keyboard legends while keeping trailer, host status and installation access available
