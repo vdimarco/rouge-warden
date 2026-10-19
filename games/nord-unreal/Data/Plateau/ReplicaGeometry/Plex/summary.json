@@ -95,7 +95,41 @@
   "tower over 24 m": 8
  },
  "triangles_per_front": {
-  "median": 1502,
-  "max": 13728
+  "median": 1496,
+  "max": 13724
+ },
+ "rear": {
+  "back_walls": {
+   "lane": 311,
+   "rear": 1708,
+   "side": 2195,
+   "street": 283
+  },
+  "lots_with_galleries": 749,
+  "galleries": 1566,
+  "stairs": {
+   "spiral": 435,
+   "straight": 380
+  },
+  "flights": 1566,
+  "no_gallery_reasons": {
+   "a building, structure or traffic lane behind the wall": 93,
+   "no rear wall of 3 m or more": 377,
+   "yard too shallow or lot too narrow for a gallery and stair": 88
+  },
+  "fences": {
+   "lane": 621,
+   "rear_lot_line": 258,
+   "gates": 620,
+   "kinds": {
+    "boards": 591,
+    "slats": 288
+   }
+  },
+  "outbuildings": {
+   "garage": 10,
+   "shed": 134
+  },
+  "triangles": 313908
  }
 }

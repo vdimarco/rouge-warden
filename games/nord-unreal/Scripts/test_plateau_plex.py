@@ -193,10 +193,233 @@ def test_determinism_fixture():
     assert texts[0] == texts[2] and texts[1] == texts[3]
 
 
+# ------------------------------------------------------------------------------------------ rear of the lot
+def _alley(y, x0=-3000, x1=9000):
+    return {'id': 'al', 'name': '', 'width': 430, 'tags': {'highway': 'service', 'service': 'alley'},
+            'points': [(x0, y), (x1, y)]}
+
+
+def _rear_fixture(alley_from_wall=None, opposite_at=None, count=4, width=760, levels='3', year=1905):
+    """A row facing south (front at y = 0, rear wall at y = 1600) with a ruelle or a back-to-back row behind."""
+    buildings = _row(count, width, levels=levels)
+    roads = _roads(-(230 + 100 + 350), 230)
+    if alley_from_wall is not None:
+        roads.append(_alley(1600 + alley_from_wall))
+    if opposite_at is not None:
+        buildings += [{'id': str(100 + i), 'height': 960., 'tags': {'building': 'residential'},
+                       'points': [(i * width, 1600 + opposite_at), ((i + 1) * width, 1600 + opposite_at),
+                                  ((i + 1) * width, 3200 + opposite_at), (i * width, 3200 + opposite_at)]}
+                      for i in range(count)]
+    lots, _ = P.select_fronts(buildings, roads, {b['id'] for b in buildings if int(b['id']) >= 100},
+                              {str(i): [year, 3, 3, 1] for i in range(1, count + 1)}, {}, ())
+    mesh, records, counts = P.build(lots, rear=True)
+    return buildings, roads, lots, mesh, records, counts
+
+
+def _seg_dist(p, a, b):
+    return P._nearest(p, a, b)[0]
+
+
+def _poly_seg(poly, a, b):
+    """Distance between a polygon (xy) and a segment."""
+    if P._inside(a, poly) or P._inside(b, poly):
+        return 0.
+    best = min(_seg_dist(p, a, b) for p in poly)
+    for p, q in zip(poly, poly[1:] + poly[:1]):
+        best = min(best, _seg_dist(a, p, q), _seg_dist(b, p, q))
+        d1 = (b[0] - a[0]) * (p[1] - a[1]) - (b[1] - a[1]) * (p[0] - a[0])
+        d2 = (b[0] - a[0]) * (q[1] - a[1]) - (b[1] - a[1]) * (q[0] - a[0])
+        d3 = (q[0] - p[0]) * (a[1] - p[1]) - (q[1] - p[1]) * (a[0] - p[0])
+        d4 = (q[0] - p[0]) * (b[1] - p[1]) - (q[1] - p[1]) * (b[0] - p[0])
+        if d1 * d2 < 0 and d3 * d4 < 0:
+            return 0.
+    return best
+
+
+def _rear_faces(mesh):
+    start = getattr(mesh, 'rear_start', {})
+    return {m: faces[start.get(m, 0):] for m, faces in mesh.groups.items()}
+
+
+def _check_reachable(rear, tol=60.):
+    """Every deck is reached by a flight from the yard or the deck below; heads and feet touch their decks."""
+    decks = sorted(rear['decks'], key=lambda d: d['z'])
+    levels = sorted({d['z'] for d in decks})
+    flights = rear['flights']
+    reached = {0.}
+    for flight in sorted(flights, key=lambda f: f['z0']):
+        assert flight['z0'] in reached, ('flight starts on an unreached level', flight, reached)
+        reached.add(flight['z1'])
+        head = flight['head']
+        assert abs(head[2] - flight['z1']) < 1, flight
+        near = [d for d in decks if abs(d['z'] - flight['z1']) < 1]
+        assert near and min(_poly_dist(head[:2], d['quad']) for d in near) <= tol, ('head off its deck', flight)
+        if flight['foot'] is not None and flight['z0'] > 0:
+            below = [d for d in decks if abs(d['z'] - flight['z0']) < 1]
+            assert below and min(_poly_dist(flight['foot'][:2], d['quad']) for d in below) <= tol, ('foot off its deck', flight)
+    assert all(z in reached for z in levels), ('deck without a stair', levels, reached)
+
+
+def _poly_dist(p, poly):
+    if P._inside(tuple(p), [tuple(q) for q in poly]):
+        return 0.
+    return min(_seg_dist(tuple(p), tuple(a), tuple(b)) for a, b in zip(poly, poly[1:] + poly[:1]))
+
+
+def test_rear_fixture_galleries_and_fence():
+    buildings, roads, lots, mesh, records, counts = _rear_fixture(alley_from_wall=1100)
+    alley = roads[-1]['points']
+    for lot, record in zip(lots, records):
+        rear = record['rear']
+        kinds = [w['kind'] for w in lot['backs']]
+        assert 'rear' in kinds, kinds
+        assert [w['kind'] for w in rear['walls']] == kinds, 'every back wall gets a skin or a façade'
+        main = [w for w in rear['walls'] if w['galleries']]
+        assert len(main) == 1 and main[0]['doors'] == 3, rear['walls']
+        # 3 storeys: a gallery on the 2nd and 3rd floors, each reached from the yard
+        assert rear['galleries'] == 2 and len(rear['decks']) == 2, rear
+        assert rear['stair'] in ('straight', 'spiral')
+        _check_reachable(rear)
+        floors = P._floor_levels(lot)
+        assert sorted(d['z'] for d in rear['decks']) == [round(floors[1], 1), round(floors[2], 1)]
+        # the yard is closed toward the ruelle: fence runs, the gate and a shed front cover the lot width
+        fence = rear['fence']
+        assert fence and fence['lane'] and fence['gate'], fence
+        assert fence['covered_cm'] >= fence['lot_width_cm'] - 1, fence
+        assert abs(fence['distance_cm'] - (1100 - P.FENCE_FROM_ALLEY)) < 1
+        for p in fence['line']:
+            assert min(_seg_dist(tuple(p), a, b) for a, b in zip(alley, alley[1:])) >= 280, p
+    # rear collision (decks, landings, treads) keeps 300 cm from the ruelle centreline and stays out of the masses
+    rear = _rear_faces(mesh)
+    assert rear.get('Wood_Deck'), 'rear decks and treads exist'
+    for face in rear['Wood_Deck']:
+        poly = [p[:2] for p in face]
+        assert min(_poly_seg(poly, a, b) for a, b in zip(alley, alley[1:])) >= P.TRAFFIC_CLEAR - .01
+    for faces in rear.values():
+        for face in faces:
+            for p in face:
+                assert not (.5 < p[0] < 3039.5 and .5 < p[1] < 1599.5 and p[2] < 950), ('rear geometry inside a mass', p)
+    assert counts['rear_galleries'] == 8 and counts['rear_gates'] == 4
+
+
+def test_rear_spiral_in_a_shallow_yard():
+    # ruelle 5.3 m behind the wall: no room for a flight beside the galleries, so a spiral in the end bay
+    _, roads, lots, mesh, records, counts = _rear_fixture(alley_from_wall=530)
+    alley = roads[-1]['points']
+    for record in records:
+        rear = record['rear']
+        assert rear['stair'] == 'spiral' and rear['galleries'] == 2, rear
+        _check_reachable(rear)
+        assert rear['fence'] and rear['fence']['covered_cm'] >= rear['fence']['lot_width_cm'] - 1
+    for face in _rear_faces(mesh)['Wood_Deck']:
+        poly = [p[:2] for p in face]
+        assert min(_poly_seg(poly, a, b) for a, b in zip(alley, alley[1:])) >= P.TRAFFIC_CLEAR - .01
+    assert counts.get('rear_stairs_spiral') == 4
+
+
+def test_rear_back_to_back_and_duplex():
+    # no ruelle: a row of yards back to back; the fence sits on the mid line, with no gate
+    _, _, lots, mesh, records, counts = _rear_fixture(opposite_at=1400, levels='2', year=1912)
+    for lot, record in zip(lots, records):
+        rear = record['rear']
+        assert lot['storeys'] in (2, 3)
+        assert rear['galleries'] == lot['storeys'] - 1, (lot['storeys'], rear['galleries'])
+        _check_reachable(rear)
+        fence = rear['fence']
+        assert fence and not fence['lane'] and not fence['gate'] and abs(fence['distance_cm'] - 700) < 1, fence
+        for footprint in rear['footprints']:
+            assert max(p[1] for p in footprint) <= 1600 + 700 - 30, 'structures stay on this side of the lot line'
+
+
+def test_rear_leaves_the_front_alone():
+    buildings, roads, lots, mesh, records, counts = _rear_fixture(alley_from_wall=1100)
+    mesh0, records0, _ = P.build(lots)
+    assert [r['front'] for r in records] == [r['front'] for r in records0]
+    assert [r['sides'] for r in records] == [r['sides'] for r in records0]
+    # front faces come first and are unchanged, apart from the extension band the rear skins replace
+    for material, faces in mesh0.groups.items():
+        if material not in ('Slate',) and not material.startswith('Brick'):
+            assert mesh.groups[material][:len(faces)] == faces, material
+
+
+def test_rear_determinism():
+    texts = []
+    for _ in range(2):
+        _, _, lots, mesh, records, _ = _rear_fixture(alley_from_wall=900)
+        groups, _ = P.batches(mesh)
+        texts.append({k: hashlib.sha256(P.obj_text(k, v[1]).encode()).hexdigest() for k, v in groups.items()})
+        texts.append(json.dumps([r['rear'] for r in records], sort_keys=True))
+    assert texts[0] == texts[2] and texts[1] == texts[3]
+
+
+def _check_rear_district(manifest, fronts, keep):
+    lots = {lot['id']: lot for lot in keep['lots']}
+    counts = manifest['counts']
+    layout = json.loads((P.ROOT / 'Data/LaFontaine/layout.json').read_text())
+    traffic = [(tuple(a[:2]), tuple(b[:2])) for road in layout['roads'] for a, b in zip(road, road[1:])]
+    grid = P.Grid(2000)
+    for seg in traffic:
+        grid.add(seg, [seg[0][0], seg[1][0]], [seg[0][1], seg[1][1]])
+    treated = galleries = 0
+    stairs = {'straight': 0, 'spiral': 0}
+    for record in fronts['fronts']:
+        lot, rear = lots[record['id']], record['rear']
+        # every back wall (rear, lane, street, side) is skinned, so no old glass card floats on it
+        assert [w['kind'] for w in rear['walls']] == [w['kind'] for w in lot['backs']], record['id']
+        if any(w['kind'] == 'rear' for w in lot['backs']):
+            treated += 1
+        if rear['galleries']:
+            # every upper floor under the wall top has a gallery, and every gallery a stair from the yard
+            zt = rear['wall_top_cm']
+            floors = P._floor_levels(lot)
+            want = [round(floors[k], 1) for k in range(1, lot['storeys']) if floors[k] + P.REAR_HEAD <= zt - 10 + .06]
+            modules = [w for w in rear['walls'] if w['galleries']][0]['modules']
+            assert sorted({d['z'] for d in rear['decks']}) == want and len(rear['decks']) == len(want) * modules, record['id']
+            _check_reachable(rear)
+            galleries += rear['galleries']
+            stairs[rear['stair']] += modules
+            for footprint in rear['footprints']:
+                poly = [tuple(p) for p in footprint]
+                cx, cy = sum(p[0] for p in poly) / 4, sum(p[1] for p in poly) / 4
+                worst = min([_poly_seg(poly, a, b) for a, b in grid.near(cx, cy, 1500)] or [1e9])
+                assert worst >= P.TRAFFIC_CLEAR - .01, ('rear collision near a traffic lane', record['id'], worst)
+        elif any(w['kind'] == 'rear' and w['width'] >= 300 for w in lot['backs']):
+            assert rear['reason'], record['id']
+        fence = rear['fence']
+        if fence and fence['lane']:
+            assert fence['gate'] or fence['covered_cm'] > 0, record['id']
+        # fences stand in yards, never on a traffic lane (they have no collision, but cars would drive through)
+        segments = [tuple(map(tuple, s)) for s in rear.get('side_fences', [])]
+        if fence:
+            (x0, y0), (x1, y1) = fence['line']
+            for r0, r1 in fence['runs']:
+                f0, f1 = r0 / fence['lot_width_cm'], r1 / fence['lot_width_cm']
+                segments.append(((x0 + (x1 - x0) * f0, y0 + (y1 - y0) * f0), (x0 + (x1 - x0) * f1, y0 + (y1 - y0) * f1)))
+        for a, b in segments:
+            near = grid.near((a[0] + b[0]) / 2, (a[1] + b[1]) / 2, math.dist(a, b) / 2 + 400)
+            assert all(_poly_seg([a, b], c, d) >= 240 for c, d in near), ('fence on a traffic lane', record['id'], a, b)
+    # rear decks and treads stay inside their recorded footprints
+    footprints = P.Grid(1000)
+    for record in fronts['fronts']:
+        for footprint in record['rear'].get('footprints', []):
+            poly = [tuple(p) for p in footprint]
+            footprints.add(poly, [p[0] for p in poly], [p[1] for p in poly])
+    for face in _rear_faces(keep['mesh']).get('Wood_Deck', []):
+        cx, cy = sum(p[0] for p in face) / len(face), sum(p[1] for p in face) / len(face)
+        assert any(_poly_dist((cx, cy), poly) < 30 for poly in footprints.near(cx, cy, 50)), ('stray rear deck', cx, cy)
+    assert treated == counts['rear_lots_with_rear_walls'] and galleries == counts['rear_galleries']
+    assert stairs['straight'] == counts.get('rear_stairs_straight', 0) and stairs['spiral'] == counts.get('rear_stairs_spiral', 0)
+    assert counts['rear_lots_with_galleries'] >= 700 and counts['rear_galleries'] >= 1400, counts
+    assert counts['rear_fence_runs'] >= 1000 and counts['rear_gates'] >= 500 and counts.get('rear_sheds', 0) >= 100
+    return {'lots_with_rear_walls': treated, 'lots_with_galleries': counts['rear_lots_with_galleries'],
+            'galleries': galleries, 'stairs': stairs, 'rear_triangles': counts['rear_triangles']}
+
+
 def test_district():
     manifest_path = P.OUT / 'manifest.json'
     committed = json.loads(manifest_path.read_text())
-    manifest, stats, fronts, groups = P.prepare(write=False)
+    keep = {}
+    manifest, stats, fronts, groups = P.prepare(write=False, keep=keep)
     # byte-identical regeneration of every git-ignored OBJ recorded in the committed manifest
     assert manifest['geometry_sha256'] == committed['geometry_sha256'], 'regenerated OBJ bytes differ from the manifest'
     assert manifest['batches'] == committed['batches']
@@ -240,14 +463,18 @@ def test_district():
     excluded = P.excluded_ids()
     assert not excluded & {f['id'] for f in fronts['fronts']}, 'route and perimeter fronts stay untouched'
     assert stats['storeys_histogram'].get('3', 0) > stats['storeys_histogram'].get('2', 0) > 0
+    rear = _check_rear_district(manifest, fronts, keep)
     print('district', json.dumps({'fronts': stats['fronts'], 'triangles': total, 'batches': len(manifest['batches']),
-                                  'tile_cm': manifest['batching']['tile_cm'], 'stair_share_1890_1930': round(share, 3)}))
+                                  'tile_cm': manifest['batching']['tile_cm'], 'stair_share_1890_1930': round(share, 3),
+                                  'rear': rear}))
 
 
 if __name__ == '__main__':
     tests = [test_selection_and_party_walls, test_orientation_offsets_and_float32, test_stairs_by_setback,
              test_dimensions, test_storeys_and_mass_cover, test_wide_footprint_gets_lot_modules,
-             test_obj_writer_and_batches, test_determinism_fixture]
+             test_obj_writer_and_batches, test_determinism_fixture, test_rear_fixture_galleries_and_fence,
+             test_rear_spiral_in_a_shallow_yard, test_rear_back_to_back_and_duplex, test_rear_leaves_the_front_alone,
+             test_rear_determinism]
     if '--quick' not in sys.argv:
         tests.append(test_district)
     for test in tests:

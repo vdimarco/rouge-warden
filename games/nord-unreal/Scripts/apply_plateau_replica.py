@@ -651,6 +651,9 @@ def apply(u, root, backup):
             comp.set_static_mesh(meshes[row['mesh']])
             comp.set_material(0, materials[row['material']])
             comp.set_collision_profile_name('BlockAll' if row['collision'] else 'NoCollision')
+            if row['collision']:
+                # Props block people and cars but not the spring arms, which test ECC_Camera; the profile becomes Custom.
+                comp.set_collision_response_to_channel(u.CollisionChannel.ECC_CAMERA, u.CollisionResponseType.ECR_IGNORE)
             comp.set_cull_distances(9000, 12000)
             comp.set_cast_shadow(row['prop'] in ('lamp_cobra', 'lamp_park', 'utility_pole', 'bixi_dock', 'bench'))
             transforms = [u.Transform(u.Vector(*p), u.Rotator(roll=0., pitch=0., yaw=yaw), u.Vector(s, s, s))
@@ -735,11 +738,16 @@ def verify(u, root, backup):
         comp = actor.get_component_by_class(u.HierarchicalInstancedStaticMeshComponent)
         assert comp and comp.get_instance_count() == row['count'], row['label']
         assert comp.get_material(0).get_path_name().split('.')[0] == row['material'], row['label']
-        assert str(comp.get_collision_profile_name()) == ('BlockAll' if row['collision'] else 'NoCollision'), row['label']
         if row['collision']:
-            boxes = comp.get_static_mesh().get_editor_property('body_setup').get_editor_property('agg_geom') \
+            assert comp.get_collision_response_to_channel(u.CollisionChannel.ECC_CAMERA) == \
+                u.CollisionResponseType.ECR_IGNORE, row['label'] + ' blocks the camera'
+            assert comp.get_collision_response_to_channel(u.CollisionChannel.ECC_PAWN) == \
+                u.CollisionResponseType.ECR_BLOCK, row['label'] + ' does not block pawns'
+            boxes = comp.static_mesh.get_editor_property('body_setup').get_editor_property('agg_geom') \
                 .get_editor_property('box_elems')
             assert len(boxes) == len(by_mesh[row['mesh']]['colliders']) > 0, row['label'] + ' has no simple collision'
+        else:
+            assert str(comp.get_collision_profile_name()) == 'NoCollision', row['label']
         instances += row['count']
     assets = u.EditorAssetLibrary
     for row in the_plan['textures']:

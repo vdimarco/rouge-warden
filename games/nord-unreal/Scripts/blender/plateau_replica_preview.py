@@ -18,7 +18,8 @@ Prop instances use the file coordinates of their meshes, position (x, -y, z) and
 
 These are previews of generated geometry, not Unreal captures. Colours come from the layer manifests
 and from the colours `upgrade_plateau.py` gives the existing materials; the four Poly Haven textures in
-Data/Art are used the way the game materials use them.
+Data/Art are used the way the game materials use them, and the greystone and slate maps in
+ReplicaGeometry/Textures the way apply_plateau_replica.py uses them (same keys, tint and tiling).
 """
 import argparse
 import json
@@ -37,6 +38,8 @@ REPLICA = os.path.join(DATA, 'ReplicaGeometry')
 ART = os.path.join(ROOT, 'Data', 'Art')
 CACHE = os.path.join(ROOT, 'Saved', 'ReplicaPreview')
 OUT = os.path.join(ROOT, 'Preview', 'Replica')
+sys.path.insert(0, os.path.join(ROOT, 'Scripts'))
+from apply_plateau_replica import base_material  # noqa: E402  the apply step's material rules
 
 # Labels hidden in the game: the OSM masses keep collision only, the old canopies are replaced by the
 # mapped trees, and the replica apply step hides OSM Marking.
@@ -75,6 +78,7 @@ TEXTURED = {  # name: (tint, texture, tiles per metre or 'world' metres)
 TEXTURE_MEAN = {'asphalt_02': (.1162, .1143, .1020), 'concrete_pavement': (.2170, .1790, .1372),
                 'brick_wall_001': (.1402, .0776, .0516), 'grass_ground': (.1593, .1198, .0498)}
 TINT_LIMIT = 8.  # apply_plateau_replica.TINT_LIMIT
+TEXTURES = os.path.join(REPLICA, 'Textures')  # Scripts/plateau_textures.py: greystone and slate
 GREEN_TINT, GOLD_TINT = (.85, 1.35, .75), (1.8, 1.2, .5)
 TILE = re.compile(r'_X[MP]\d+_Y[MP]\d+(_P\d+)?$')
 
@@ -181,6 +185,12 @@ def views():
     v['ruelle'] = dict(title='Ruelle behind Rachel with laundry lines and wooden utility poles', far=9000,
                        sun=(228., 24.), exposure=.35,
                        camera=street_view(alley, d - 1500, 90, 6.8, look_ahead=6000, yaw_deg=-4, pitch_target=650))
+    # The ruelle between Mentana and Saint-André (OSM way 204859680), where the Plex yard side is built:
+    # galleries, straight and spiral stairs, fences with gates, sheds.
+    lane = s['__alley__204859680'][0]
+    v['ruelle_mentana'] = dict(title='Ruelle between Mentana and Saint-André: galleries, stairs, fences', far=9000,
+                               exposure=.8,
+                               camera=street_view(lane, 36300, 60, 6.8, look_ahead=6000, yaw_deg=0, pitch_target=650))
     # Mentana between Rachel and Duluth, seen from above the sunlit side, about 60 m up.
     (tx, ty), (dx, dy) = along(mentana, 12000)
     a = math.atan2(-0.838, -0.545) + math.radians(28)
@@ -301,10 +311,10 @@ def sock(sockets, name, kind='RGBA'):
     return [x for x in sockets if x.name == name and x.type == kind][0]
 
 
-def image(name):
+def image(name, folder=ART):
     key = 'IMG_' + name
     if key not in bpy.data.images:
-        img = bpy.data.images.load(os.path.join(ART, name))
+        img = bpy.data.images.load(os.path.join(folder, name))
         img.name = key
         if 'nor' in name or 'rough' in name or 'alpha' in name or 'arm' in name:
             img.colorspace_settings.name = 'Non-Color'
@@ -383,12 +393,59 @@ def existing_material(layer, base):
     return material('E_' + name, color, rough, metal, emission=emission, emission_strength=.4 if emission else 0.)
 
 
+def replica_set_material(name, color, set_name, metal=0.):
+    """A greystone or slate key as the apply step builds it: the M_BrickRed graph with the replica maps,
+    UV tiling 1 / tile_m, base colour = diff x (colour / mean_linear) capped at TINT_LIMIT, normal from
+    the DirectX-convention map and roughness from the R of the rough map."""
+    if name in MATS:
+        return MATS[name]
+    entry = json.load(open(os.path.join(TEXTURES, 'textures.json')))['sets'][set_name]
+    tint = tuple(min(TINT_LIMIT, c / m) for c, m in zip(color, entry['mean_linear']))
+    m = bpy.data.materials.new(name)
+    nt = m.node_tree
+    bsdf = nt.nodes['Principled BSDF']
+    bsdf.inputs['Metallic'].default_value = metal
+    coord = nt.nodes.new('ShaderNodeTexCoord')
+    mapping = nt.nodes.new('ShaderNodeMapping')
+    mapping.inputs['Scale'].default_value = (entry['tiling'][0], entry['tiling'][1], 1)
+    nt.links.new(coord.outputs['UV'], mapping.inputs['Vector'])
+    tex = {}
+    for role in ('diff', 'nor_dx', 'rough'):
+        node = nt.nodes.new('ShaderNodeTexImage')
+        node.image = image(entry['maps'][role]['file'], TEXTURES)
+        node.image.colorspace_settings.name = 'sRGB' if entry['maps'][role]['srgb'] else 'Non-Color'
+        nt.links.new(mapping.outputs['Vector'], node.inputs['Vector'])
+        tex[role] = node
+    mul = nt.nodes.new('ShaderNodeMix')
+    mul.data_type = 'RGBA'
+    mul.blend_type = 'MULTIPLY'
+    sock(mul.inputs, 'Factor', 'VALUE').default_value = 1.
+    nt.links.new(tex['diff'].outputs['Color'], sock(mul.inputs, 'A'))
+    sock(mul.inputs, 'B').default_value = (*tint, 1)
+    nt.links.new(sock(mul.outputs, 'Result'), bsdf.inputs['Base Color'])
+    nmap = nt.nodes.new('ShaderNodeNormalMap')
+    nmap.convention = 'DIRECTX'  # Blender 5.1: green points down, as Unreal reads these maps
+    nmap.inputs['Strength'].default_value = 1.
+    nt.links.new(tex['nor_dx'].outputs['Color'], nmap.inputs['Color'])
+    nt.links.new(nmap.outputs['Normal'], bsdf.inputs['Normal'])
+    rough = nt.nodes.new('ShaderNodeSeparateColor')
+    nt.links.new(tex['rough'].outputs['Color'], rough.inputs['Color'])
+    nt.links.new(rough.outputs['Red'], bsdf.inputs['Roughness'])
+    MATS[name] = m
+    return m
+
+
 def replica_material(layer, key, spec):
     color = srgb_to_linear(spec['base_color_srgb'])
+    # The apply step's own rule decides which keys take the greystone or slate maps (Stone, Slate...).
+    parent_texture = base_material(key, spec)[1] or ''
+    if parent_texture.startswith('replica_'):
+        return replica_set_material(f'R_{layer}_{key}', color, parent_texture[len('replica_'):],
+                                    spec.get('metallic', 0.))
     texture = spec.get('texture') or ''
     tex = None
     tiling = 1.
-    # As apply_plateau_replica.base_material: only asphalt and brick keep a textured parent.
+    # As apply_plateau_replica.base_material: asphalt and brick keep their Poly Haven parent texture.
     if 'asphalt' in texture:
         tex, tiling = 'asphalt_02', 'world2'
     elif 'brick' in texture:

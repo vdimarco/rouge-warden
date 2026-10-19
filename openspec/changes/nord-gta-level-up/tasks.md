@@ -24,7 +24,7 @@
 - [x] Engine-free model tests pass with g++ and clang++ under `-Wshadow -Werror`.
 - [x] Map CPU tests and browser unit tests pass.
 - [x] Independent reviews for UE API use, replication, `-Wshadow`, pinned tests and contracts; fixes applied.
-- [ ] Second review of the fix commits; confirmed findings fixed.
+- [x] Second review of the fix commits; all 17 confirmed findings fixed.
 - [x] OpenSpec structure validated.
 
 ## Host verification (owner's PC with UE 5.8.3)
