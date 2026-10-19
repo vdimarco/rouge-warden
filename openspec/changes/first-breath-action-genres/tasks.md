@@ -140,5 +140,5 @@ Keep everything `design.md` 5.2 lists under "What stays" (the arc and its contro
 - [ ] 10.4 Screenshots of every stage at 390 × 844, 844 × 390 and 1440 × 900 in both tiers (`shots.mjs`), including each stage's busiest moment.
 - [ ] 10.5 Play every stage by hand at the three layouts; note what feels off and tune.
 - [x] 10.6 Validate the change again with `openspec validate first-breath-action-genres --strict`.
-- [ ] 10.7 State in the pull request which checks did not run (real phones, touch latency, phone speakers).
+- [x] 10.7 State in the pull request which checks did not run (real phones, touch latency, phone speakers).
 - [ ] 10.8 Archive the change once every task is done, and review the canonical specs it writes.
