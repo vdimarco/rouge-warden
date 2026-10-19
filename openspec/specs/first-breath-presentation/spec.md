@@ -1,7 +1,7 @@
 # first-breath-presentation Specification
 
 ## Purpose
-TBD - created by archiving change add-first-breath. Update Purpose after archive.
+How First Breath looks and sounds: the paper-cut look, the HUD, captions and screens in each layout, and the synthesized sound of her heartbeat and the birth.
 
 ## Requirements
 

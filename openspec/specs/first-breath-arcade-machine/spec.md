@@ -1,7 +1,7 @@
 # first-breath-arcade-machine Specification
 
 ## Purpose
-TBD - created by archiving change add-first-breath. Update Purpose after archive.
+The First Breath cabinet on the arcade homepage: its place last in the Action row, its marquee, screen art and attract line, its switcher entry, and its best-run line.
 
 ## Requirements
 

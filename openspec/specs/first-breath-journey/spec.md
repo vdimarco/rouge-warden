@@ -1,7 +1,7 @@
 # first-breath-journey Specification
 
 ## Purpose
-TBD - created by archiving change add-first-breath. Update Purpose after archive.
+The run through First Breath from the title to the result: the eight stages and the ending in order, pause and resume, practice, the score and the save.
 
 ## Requirements
 

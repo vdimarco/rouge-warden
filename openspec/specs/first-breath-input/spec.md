@@ -1,7 +1,7 @@
 # first-breath-input Specification
 
 ## Purpose
-TBD - created by archiving change add-first-breath. Update Purpose after archive.
+How a player controls First Breath on a phone, a tablet and a computer: touch, mouse and keys, one-button mode, and the timing offset.
 
 ## Requirements
 

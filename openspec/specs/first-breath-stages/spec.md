@@ -1,7 +1,7 @@
 # first-breath-stages Specification
 
 ## Purpose
-TBD - created by archiving change add-first-breath. Update Purpose after archive.
+What each of the eight First Breath stages and the ending asks of the player, how each one always completes, and the facts each one shows.
 
 ## Requirements
 

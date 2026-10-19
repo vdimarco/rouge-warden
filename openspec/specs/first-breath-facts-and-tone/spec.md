@@ -1,7 +1,7 @@
 # first-breath-facts-and-tone Specification
 
 ## Purpose
-TBD - created by archiving change add-first-breath. Update Purpose after archive.
+The facts First Breath shows about life before birth: each has a checked source, plain words and a calm tone, and each shows whole at its moment or on the run result.
 
 ## Requirements
 
