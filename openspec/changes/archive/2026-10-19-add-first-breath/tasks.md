@@ -159,4 +159,4 @@ The look is paper cut, drawn with Canvas 2D (design.md 13 and 14; reference art 
 - [x] 7.1 Run `npx -y @fission-ai/openspec@1.14.3 validate add-first-breath --strict` and fix every error.
 - [ ] 7.2 Test the code against every scenario in the six capability specs and tick each task only when its checks pass.
 - [x] 7.3 Keep design.md and the specs current with what was built, including any item taken from the cut list.
-- [ ] 7.4 Archive the change with the OpenSpec CLI once every task is done, and review the canonical specs it writes to `openspec/specs/`.
+- [x] 7.4 Archive the change with the OpenSpec CLI once every task is done, and review the canonical specs it writes to `openspec/specs/`.
