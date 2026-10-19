@@ -15,7 +15,9 @@
       "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/DrivingLatency-20261019/Production60-v2/fps60_lifecycle.py",
       "sha256": "ff772c5a454ec61693f23c89b9b401b716fb1a9c17634b868bda5213a87fd57b"
     },
-    "demo_pid": 2972648
+    "demo_pid": 2972648,
+    "configuration_source_pull_request": "https://github.com/vdimarco/rouge-warden/pull/415",
+    "configuration_source_commit": "d6ed7d07f143a7a807a241caedd2932c58599fc7"
   },
   "observations": [
     {

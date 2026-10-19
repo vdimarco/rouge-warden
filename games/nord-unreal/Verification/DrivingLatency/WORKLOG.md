@@ -1,6 +1,6 @@
 # Driving latency checkpoint and handoff
 
-Status: verified 60 FPS launch ceilings are live; source checkpoint ready to merge. Runtime product change: only native `t.MaxFPS` and `PixelStreamingWebRTCFps` from 30 to 60. Existing handling, graphics, assets and browser code are retained.
+Status: verified 60 FPS launch ceilings are live. The source correction is tracked in [PR #415](https://github.com/vdimarco/rouge-warden/pull/415), initial source checkpoint `d6ed7d07f143a7a807a241caedd2932c58599fc7`. Runtime product change: only native `t.MaxFPS` and `PixelStreamingWebRTCFps` from 30 to 60. Existing handling, graphics, assets and browser code are retained.
 
 - Solo matched control → production: 29.81 → 59.76 decoded FPS; receiver buffering 73.22 → 43.14 ms; same 1412×652 VP8, zero loss/drops/freezes.
 - Upright mobile emulation: 59.89 decoded FPS over 60.49 seconds, 652×1412 VP8, zero loss/drops/freezes. Host is awake and Friend asleep throughout both solo tests.
