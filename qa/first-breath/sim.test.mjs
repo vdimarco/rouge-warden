@@ -66,6 +66,69 @@ await check("skill 1.0: every stage's mean total is at least 8,500", () => {
   assert.deepEqual(low, [], `stages under ${GATE.refMean}: ${low.map(([id, m]) => `${id} ${Math.round(m)}`).join(", ")}`);
 });
 
+// stage 6, the rhythm stage (first-breath-action-genres, design.md 4.5 and 5.6): no hp, so every bot completes it
+await check("stage 6 (answer): skill 1.0 is Great or better in at least 18 of 20; skill 0.5 and idle meet the goal every run", () => {
+  const great = of(1).filter((r) => ["Great", "Glowing"].includes(stageOf(r, "answer").grade)).length;
+  assert.ok(great >= Math.ceil(0.9 * of(1).length), `skill 1.0 Great or better in ${great} of ${of(1).length}`);
+  for (const skill of [0.5, 0]) {
+    const miss = of(skill).filter((r) => !stageOf(r, "answer").goalMet).map((r) => r.seed);
+    assert.deepEqual(miss, [], `skill ${skill}: goal unmet in seeds ${miss.join(", ")}`);
+  }
+  assert.ok(mean(of(0.5).map((r) => stageOf(r, "answer").total)) > mean(of(0).map((r) => stageOf(r, "answer").total)), "skill 0.5 outscores idle");
+});
+
+// stage 5, the shooter (first-breath-action-genres, design.md 4.5, contract.md 8): hp and a knock-out
+await check("stage 5 (grow): skill 1.0 is Great or better in at least 18 of 20 and knocked out in at most 1; skill 0.5 is not knocked out in at least 16 of 20; idle is knocked out or completes, and the run goes on", () => {
+  const n = of(1).length;
+  const great = of(1).filter((r) => ["Great", "Glowing"].includes(stageOf(r, "grow").grade)).length;
+  assert.ok(great >= Math.ceil(0.9 * n), `skill 1.0 Great or better in ${great} of ${n}`);
+  const refKo = of(1).filter((r) => stageOf(r, "grow").ko).length;
+  assert.ok(refKo <= Math.floor(n / 20), `skill 1.0 knocked out in ${refKo} of ${n}`);
+  const midKo = of(0.5).filter((r) => stageOf(r, "grow").ko).length;
+  assert.ok(of(0.5).length - midKo >= Math.ceil(0.8 * of(0.5).length), `skill 0.5 knocked out in ${midKo} of ${of(0.5).length}`);
+  for (const r of of(0)) {
+    const s = stageOf(r, "grow");
+    if (s.goalMet) continue;
+    assert.ok(s.ko && s.wentOn && s.grade === null, `seed ${r.seed}: idle knocked out, Go on taken, no grade word`);
+  }
+  assert.ok(mean(of(0.5).map((r) => stageOf(r, "grow").total)) > mean(of(0).map((r) => stageOf(r, "grow").total)), "skill 0.5 outscores idle");
+});
+
+// stage 2, the brick breaker (first-breath-action-genres, design.md 4.5 and 5.2): shell pips, a knock-out and Go on to
+// your sperm's entry; exactly one enter in every run
+await check("stage 2 (egg): skill 1.0 is Great or better in at least 18 of 20 and knocked out in at most 1; skill 0.5 is not knocked out in at least 16 of 20; idle is knocked out or completes, and the run goes on", () => {
+  const n = of(1).length;
+  const great = of(1).filter((r) => ["Great", "Glowing"].includes(stageOf(r, "egg").grade)).length;
+  assert.ok(great >= Math.ceil(0.9 * n), `skill 1.0 Great or better in ${great} of ${n}`);
+  const refKo = of(1).filter((r) => stageOf(r, "egg").ko).length;
+  assert.ok(refKo <= Math.floor(n / 20), `skill 1.0 knocked out in ${refKo} of ${n}`);
+  const midKo = of(0.5).filter((r) => stageOf(r, "egg").ko).length;
+  assert.ok(of(0.5).length - midKo >= Math.ceil(0.8 * of(0.5).length), `skill 0.5 knocked out in ${midKo} of ${of(0.5).length}`);
+  for (const r of of(0)) {
+    const s = stageOf(r, "egg");
+    if (s.goalMet) continue;
+    assert.ok(s.ko && s.wentOn && s.grade === null, `seed ${r.seed}: idle knocked out, Go on taken, no grade word`);
+  }
+  assert.ok(mean(of(0.5).map((r) => stageOf(r, "egg").total)) > mean(of(0).map((r) => stageOf(r, "egg").total)), "skill 0.5 outscores idle");
+});
+
+// stage 3, the roguelike (first-breath-action-genres, design.md 4.5 and 5.3): hp, a knock-out and Go on to the hatch
+await check("stage 3 (split): skill 1.0 is Great or better in at least 18 of 20 and knocked out in at most 1; skill 0.5 is not knocked out in at least 16 of 20; idle is knocked out or completes, and the run goes on", () => {
+  const n = of(1).length;
+  const great = of(1).filter((r) => ["Great", "Glowing"].includes(stageOf(r, "split").grade)).length;
+  assert.ok(great >= Math.ceil(0.9 * n), `skill 1.0 Great or better in ${great} of ${n}`);
+  const refKo = of(1).filter((r) => stageOf(r, "split").ko).length;
+  assert.ok(refKo <= Math.floor(n / 20), `skill 1.0 knocked out in ${refKo} of ${n}`);
+  const midKo = of(0.5).filter((r) => stageOf(r, "split").ko).length;
+  assert.ok(of(0.5).length - midKo >= Math.ceil(0.8 * of(0.5).length), `skill 0.5 knocked out in ${midKo} of ${of(0.5).length}`);
+  for (const r of of(0)) {
+    const s = stageOf(r, "split");
+    if (s.goalMet) continue;
+    assert.ok(s.ko && s.wentOn && s.grade === null, `seed ${r.seed}: idle knocked out, Go on taken, no grade word`);
+  }
+  assert.ok(mean(of(0.5).map((r) => stageOf(r, "split").total)) > mean(of(0).map((r) => stageOf(r, "split").total)), "skill 0.5 outscores idle");
+});
+
 await check("skill 0.5 reaches the goal in at least 90% of runs in each of stages 2 to 8", () => {
   const rs = of(0.5);
   assert.equal(rs.length, SEEDS);

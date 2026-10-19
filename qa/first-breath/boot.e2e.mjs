@@ -173,7 +173,7 @@ for (const size of sizeList()) {
   await press(page, size, "#play");
   let s = await S(page);
   check(`${tag}: #play starts stage 1`, s.screen === "stage" && s.stageId === "swim" && s.stage === 1, `${s.screen} ${s.stageId}`);
-  check(`${tag}: stage 1's prompt is a drag`, s.prompt && s.prompt.gesture === "drag", JSON.stringify(s.prompt));
+  check(`${tag}: stage 1's prompt is a drag (the action "move" gesture)`, s.prompt && s.prompt.gesture === "move", JSON.stringify(s.prompt));
   const visited = [];
   let runOk = true;
   for (let i = 0; i < STAGE_IDS.length; i++) {

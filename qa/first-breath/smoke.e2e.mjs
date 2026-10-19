@@ -3,7 +3,7 @@
 // Chromium with --disable-gpu (design.md 14.3; no SwiftShader flags), at 390 × 844 and 844 × 390 with touch and at
 // 1440 × 900, it checks:
 // - the first 10 seconds, in real time: Play shows the stage 1 prompt line (a drag) by 0.5 s with steering live; and
-//   goto(2) has its first target by 2.7 s and the guard's prompt (keys "turn") by 9.0 s;
+//   goto(2) has no target and the guard's prompt (keys "turn") by 4.8 s;
 // - every stage by goto (and the ending) steps 120 frames, draws, shows its stage name, clock and prompt as words,
 //   and its finish leads on;
 // - the ending's thumb prompt names keys on the desktop ("Rest here. Hold Space if you like.") and the thumb on
@@ -198,19 +198,19 @@ for (const size of sizeList()) {
     const first0 = await F(page, () => window.__fbFirst);
     const s = await S(page);
     check(`${tag}: Play shows the stage 1 prompt line by 0.5 s`, !!first0 && s.stageId === "swim" && first0.t !== null && first0.t <= 0.5
-      && first0.prompt.gesture === "drag", JSON.stringify(first0));
-    check(`${tag}: steering is live by 0.5 s`, !!first0 && first0.live && first0.live.gesture === "drag" && first0.t <= 0.5,
+      && first0.prompt.gesture === "move", JSON.stringify(first0));     // stage 1 steers with the action "move" gesture
+    check(`${tag}: steering is live by 0.5 s`, !!first0 && first0.live && first0.live.gesture === "move" && first0.t <= 0.5,
       JSON.stringify(first0 && first0.live));
     check(`${tag}: the rAF clock runs (real time)`, s.realtime === true);
-    // goto(2) in real time: the first target by 2.7 s, the guard's prompt by 9.0 s
+    // goto(2) in real time: no target (the follicle opens by itself; first-breath-action-genres design.md 5.2), the
+    // guard's prompt by 4.8 s
     await F(page, () => window.__fb.goto(2, { seed: 1 }));
     const first = await F(page, () => ({ s: window.__fb.state(), next: window.__fb.nextTarget() }));
-    check(`${tag}: goto(2) has its first target by 2.7 s`, first.s.stageId === "egg" && first.next && first.next.t <= 2.7,
-      JSON.stringify(first.next));
-    await page.waitForFunction(() => { const s = window.__fb.state(); return (s.prompt && s.prompt.keys === "turn") || s.t > 9.5; },
+    check(`${tag}: goto(2) starts stage 2 with no target`, first.s.stageId === "egg" && !first.next, JSON.stringify(first.next));
+    await page.waitForFunction(() => { const s = window.__fb.state(); return (s.prompt && s.prompt.keys === "turn") || s.t > 6; },
       null, { timeout: 15000, polling: 50 }).catch(() => null);
     const g = await S(page);
-    check(`${tag}: the guard's prompt shows by 9.0 s`, g.prompt && g.prompt.keys === "turn" && g.t <= 9.0 + 0.1 && !!g.prompt.line,
+    check(`${tag}: the guard's prompt shows by 4.8 s`, g.prompt && g.prompt.keys === "turn" && g.t <= 4.8 + 0.1 && !!g.prompt.line,
       `t=${g.t} ${JSON.stringify(g.prompt)}`);
     // a hidden page pauses (visibilitychange), and so does pagehide; Resume plays on
     const hid = await F(page, () => {

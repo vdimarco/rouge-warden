@@ -3,9 +3,10 @@
 // 15.2 table's; every key is in the allow-list (core/sources.js, from research/research-biology.md section 12). When
 // a fact has sources of both kinds, `access` is the weaker one (A). In this stage only the facts shown once the nuclei
 // touch (egg.pronuclei, egg.place, egg.weeks) are fertilized, so each label matches the HUD ("Week 2" until then).
-// Seven are captions, sent in priority order at the calm points of the guard (the sweep, each wave's arrival, your
-// sperm coming in, the seal), each shown whole before the stage ends (v1 12); the stage has no room for the others,
-// so they are "result" facts: the run result's "What was real" lists them with this stage's facts. egg.caps is new
+// Six are captions, sent in priority order at the calm points of the guard (the sweep, waves 1 to 3 as they come,
+// your sperm coming in, the seal), each shown whole before the stage ends (v1 12); the stage has no room for the
+// others (egg.choice, the lowest in design.md 5.2's order, among them: pacing.test.mjs found no room for it), so they
+// are "result" facts: the run result's "What was real" lists them with this stage's facts. egg.caps is new
 // (design.md 4.10): its source line (research 2.2, Cleveland Clinic "sperm") was re-read on 2026-10-19: 'A cap
 // (acrosome) covers the head and contains enzymes.'
 // core/facts.js gathers this table through core/stages/index.js.
@@ -22,7 +23,7 @@ export const FACTS = Object.freeze([
   f("egg.corona", "A cloud of cells surrounds the egg. Sperm pass through the corona to reach the shell.",
     ["PMID 21412339", "TTUHSC"], "A", "caption"),
   f("egg.choice", "In one study, the fluid around eggs drew some men's sperm more than others.",
-    ["PMID 32517615"], "A", "caption"),
+    ["PMID 32517615"], "A", "result"),
   f("egg.signal", "Cells around the egg release a signal. It helps ready sperm find the egg.", ["PMID 21412339"], "A", "result"),
   f("egg.size", "The egg is about 0.1 mm across, about two sperm lengths.", ["BioNumbers 111184", "PMID 22848657"], "A", "result"),
   f("egg.day", "The egg can meet a sperm for about a day.", ["CC 23439"], "R", "result"),

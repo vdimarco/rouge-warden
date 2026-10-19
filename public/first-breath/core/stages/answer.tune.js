@@ -72,6 +72,7 @@ export const TUNE = Object.freeze({
     slideS: 0.08,                // your ring slides to a new lane this fast
     kickS: 0.24,                 // a kick's pose
     startleS: 0.7,               // the jump note's startle
+    shake: 0.6, shakeS: 0.45,    // and its small shake (render/action.js: at most 3 px, off with reduced motion)
     rippleS: 1.0,                // a hummed note's gold ripple at the wall lasts this long
     hitS: 0.45,                  // a kicked note's ripple at your ring
     fbS: 0.35,                   // the judge feedback ring shows this long

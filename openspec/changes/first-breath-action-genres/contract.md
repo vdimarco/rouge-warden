@@ -5,8 +5,9 @@ an API name or a default, this file wins. Stage 5 (`core/stages/grow.js`) is the
 
 Files: `core/lib/action.js` (the world), `core/lib/actionbot.js` (the bot), `core/lib/rest.js` (a knock-out's rest
 until the captions are read), `core/draw.js` (`action` in the draw list),
-`render/action.js` (the paper items), `ui/input.js` (the `move` gesture), `ui/hud.js` (hp pips), `ui/pops.js`
-(number pops), `ui/sound.js` (`act.*` sounds). Tests: `qa/first-breath/action.test.mjs`, `stage-grow.test.mjs`.
+`render/action.js` (the paper items; `render/items.js` re-exports them), `ui/input.js` (the `move` gesture),
+`ui/hud.js` (hp pips and the boss bar), `ui/pops.js` (number pops), `ui/sound.js` (`act.*` sounds), `core/run.js`
+(the Almost card, Try again, Go on). Tests: `qa/first-breath/action.test.mjs`, `stage-grow.test.mjs`.
 
 ## 1. The world: `core/lib/action.js`
 
@@ -30,6 +31,9 @@ Read-only state a stage may use: `A.t`, `A.p` (`x, y, vx, vy, r, body, hp, hpMax
 my`), `A.foes`, `A.b` and `A.k` (pools: `n`, typed arrays), `A.tells`, `A.score`, `A.combo`, `A.bestCombo`,
 `A.kills`, `A.hits`, `A.dashes`, `A.food`, `A.spawned`, `A.value` (sum of spawned values), `A.cleared` (sum cleared),
 `A.ko`, `A.fire` (writable: grow your sparks by setting `rate`, `spread`, `arc`, `pierce`, `dmg`, `range`).
+Writable by a stage: `A.bossBar` (unset: the boss bar follows the first foe with `boss: true`; `{ hp 0..1, phase }`:
+your own bar, such as stage 2's swarm; `null`: no bar), a foe's `phase` (its core colour and the bar's colour) and a
+`still` foe's `vx, vy`.
 
 ### Defaults (`ACT`)
 
@@ -67,6 +71,10 @@ my`), `A.foes`, `A.b` and `A.k` (pools: `n`, typed arrays), `A.tells`, `A.score`
 - Waves: `W = makeWaves(rows)` (each row a `spawnFoe` spec plus `at` in world time `A.t`, `ang` on the wall or `x, y`,
   `n` and `spread` for a group), `spawnDue(A, W)` each step, `wavesDone(W)`, `foesLeft(A)`.
 
+Foe bullet speed caps (design.md 3.2), after `bulletK`: stage 2 at most 24 u/s, 3 at most 34, 4 at most 24, 5 at
+most 36 (the run's fastest: an aimed stack at 30 and 34), 7 at most 30. A spawn tell is at least 0.6 s, a pattern's
+tell at least 0.35 s; the foe bullet cap is the stage's (`bulletCap`).
+
 ### You, pickups, zone, juice, score
 
 - `hitPlayer(A, dmg, from, fx, fy)`: a shield pip goes first, else hp; i-frames, a push away from `(fx, fy)`, the
@@ -82,17 +90,32 @@ my`), `A.foes`, `A.b` and `A.k` (pools: `n`, typed arrays), `A.tells`, `A.score`
 
 ## 2. The bot: `core/lib/actionbot.js`
 
-`actionSteer(A, skill, r)` → `{ steer: { x, y }, dash }` with `|steer| < 1`. A potential field: each foe bullet's
-closest pass within a look-ahead, the tells it has seen (out of a `charge` or `line` strip, round a `fan`, back from a
-`ring`), foe bodies, the range from the nearest foe (inside `A.fire.range`), pickups when calm, the wall and the safe
-zone. It dashes when a bullet is about to land or the field is crowded. Lower skill sees bullets later (`BOT.react0`),
-looks less ahead, keeps a thinner margin, turns slowly and wobbles. Memory only in `r.mem`; at skill 1 no memory and
-no draws (one-button mode calls it every step).
+`actionSteer(A, skill, r, { keep, picks })` → `{ steer: { x, y }, dash }` with `|steer| < 1`. `keep: false` drops
+the range it keeps from the nearest foe, `picks: false` the pickups it fetches (for a stage whose goal is elsewhere).
+A potential field: each foe bullet's closest pass within a look-ahead, the tells it has seen (out of a `charge` or
+`line` strip, round a `fan`, back from a `ring`), foe bodies, the range from the nearest foe (inside
+`A.fire.range`), pickups when calm, the wall and the safe zone. It dashes when a bullet is about to land or the
+field is crowded. Lower skill sees bullets later (`BOT.react0`), looks less ahead, keeps a thinner margin, turns
+slowly and wobbles. Memory only in `r.mem`; at skill 1 no memory and no draws (one-button mode calls it every step).
 
-A stage's `botSteer(st, skill, r)` returns `{ steer, dir: null, hold: false, dash }`, starting from `actionSteer`
-and blending in its own goal (design.md 4.11). `core/bots.js` turns `dash: true` into a tap (a press, lifted 80 ms
-later). In one-button mode `core/run.js` drops the button's own presses in a stage with `meta.action` and presses for
-`botSteer`'s dash while the button is held.
+`goalSteer(A, a, goal, skill, r, { weight, slowR })` → `{ steer, dash }` blends a stage goal `{ x, y }` (world) into
+`a` (actionSteer's answer), as design.md 4.11 sets: a unit pull of `BOT.goalCalm` 0.6, or `BOT.goalBusy` 0.25 with a
+foe bullet within 20 u, times `weight`, easing off within `slowR` (6 u); below skill 1 the goal is sampled every
+0.6 s × (1 − skill) (in `r.mem`), so the bot reacts late. `goal: null` returns `a`.
+
+A stage's `botSteer(st, skill, r)` returns `{ steer, dir: null, hold: false, dash }`:
+
+```js
+export function botSteer(st, skill, r) {
+  if (!st || st.done || st.A.ko) return { steer: { x: 0, y: 0 }, dir: null, hold: false, dash: false };
+  const a = goalSteer(st.A, actionSteer(st.A, skill, r, { keep: false }), st.goal /* or null */, skill, r);
+  return { steer: a.steer, dir: null, hold: false, dash: a.dash };
+}
+```
+
+Stage 5 uses `actionSteer` alone (its goal is the nearest germ, which the range keeping already gives).
+`core/bots.js` turns `dash: true` into a tap (a press, lifted 80 ms later). In one-button mode `core/run.js` drops
+the button's own presses in a stage with `meta.action` and presses for `botSteer`'s dash while the button is held.
 
 ## 3. Input: the `move` gesture (`ui/input.js`)
 
@@ -111,26 +134,37 @@ stick ring shows for `move`; main.js uses a prompt's `.one` text in one-button m
   Assist (design.md 4.2): hp +3, `bulletK` 0.75, dash `cdS` × 0.7, foe counts × 0.75 rounded up.
 - `step`: `const moved = X.stepWorld(st.A, intents)`, read `A.out` (score, pops, growth, sub-goals), `X.emitOut(A,
   st)`, then your phase logic (only when `moved`), then the clock.
+- **Hits:** the layer does them. A stage adds only its own (contact with its own actors: `hitPlayer(A, 1, "why", x,
+  y)`).
 - **Knock-out** (`A.ko`): clear foes and bullets (bursts), settle the sub-goals (the rest line "You need a rest."),
   prompt `none`, and **hold the stage until the captions already sent are read** (`core/lib/rest.js`: call
   `noteCaptions(st, FACTS, TEXT)` after every step with your own tables; end once `st.t >= readBy(st, st.koAt +
   1.5)`), so `pacing.test.mjs` holds. Then end it: `done`,
   `goalMet: false`, gaDay at the stage's end, its milestones fired if they had not yet, its carry written, Goal 0,
   the Skill and Flourish it had. `result().metrics` carries `ko: true`, `koAt` and `almost: "almost.ko"` (the
-  Almost card's line, "Your body keeps growing."). `core/run.js` shows the Almost card (Try again or Go on); Go on
-  closes the attempt with no grade word. A stage that plays out a `meta.goOn` moment after Go on (design.md 4.4) uses
-  `metrics.capped` with `jump(st, "carried")` as stage 1 does.
+  Almost card's line, "Your body keeps growing."). `core/run.js` shows the Almost card (Try again or Go on); Try
+  again recreates the stage with the same seed and carry; Go on closes the attempt with no grade word.
+- **Go on with a moment** (stages 2, 3, 4 and 7, design.md 4.4): set `meta.goOn` to a moment id. After Go on,
+  `core/run.js` calls `jump(st, meta.goOn)` when the result has `metrics.ko`, and the stage plays on: `jump` clears
+  `done`, keeps `st.koAt` and `metrics.ko`, starts that moment with prompt `none` (input ignored), and the stage ends
+  again with `done`, `goalMet: false`, its milestones and carry. The run closes it with no grade word (the attempt
+  `wentOn`). Without `meta.goOn` (stage 5) the knocked-out result closes at once. Stage 1's `metrics.capped` keeps
+  `jump(st, "carried")`.
 - `view`: draw yourself as splats as before; add `d.action = { ...X.actionView(A), arena }`, put `anchor` and
   `cue` on `A.p` (the cue sticker becomes the hitbox's glint), and a soft `glow` mark under you.
 - `resume(st)`: `A.p.inv = max(A.p.inv, 1.2)`.
 - `jump(st, id)`: clear foes, bullets and tells, start that moment now.
 - Score: Goal 3,000; stage 5 ticks its Skill to the HUD at each clear (`points` events; the pop shows the same
   number) and adds the rest at the end, so the `points` events always add up to the total.
+- A boss: `spawnFoe(A, { kind: "boss", ai: "still", boss: true, ... })`, move it by its `vx, vy`, script its
+  patterns with `addTell` then `shoot`, set `f.phase` at each phase (clear the foe shots, `hitStop(A, 8)`, an
+  `act.phase` sound). The HUD's boss bar follows it. When it is cleared, play a short victory beat before `done`
+  (stage 5: 1.4 s; the shots turn to sparkles, `act.win`).
 
 ## 5. Draw items (`core/draw.js`, `render/action.js`)
 
 `d.action` (optional, `null` in `emptyDraw`); `validate` checks it. LIMITS: `bullets` 640, `foes` 48, `pickups` 96,
-`tells` 16, `pops` 12, `bursts` 16, `hp` 12.
+`tells` 16, `pops` 12, `bursts` 16, `hp` 12, `gifts` 4.
 
 | Field | Shape | Drawn as |
 |---|---|---|
@@ -138,12 +172,14 @@ stick ring shows for `move`; main.js uses a prompt's `.one` text in one-button m
 | `zone` | `{ x, y, r, next }` | ink at 30% outside, a cut cream edge, dots where it shrinks to |
 | `tells` | `[{ kind, x, y, ang, r, len, w, p }]` | dashed ink and cream: a strip filling (`line`, `charge`), a cone (`fan`), a ring closing in (`ring`), a dotted spot (`spot`) |
 | `pickups` | `{ n, xy, kind, a }` | food beads, heal hearts, up stars; one path per kind |
-| `foes` | `[{ kind, x, y, r, ang, hp, flash, born, charge, boss, phase }]` | a cut-out per kind, one union shadow, a white flash on a hit, the core swelling with `charge`, a cream hp arc round a boss |
+| `foes` | `[{ kind, x, y, r, ang, hp, flash, born, charge, boss, phase, look? }]` | a cut-out per kind, one union shadow, a white flash on a hit, the core swelling with `charge`, a cream hp arc round a boss; `look: "clump"` (set by a stage on its view's copy) draws stacked sage and brown discs instead (stage 3's Knot) |
 | `bursts` | `[{ x, y, r, age, kind, rot }]` | paper flecks flying out |
 | `bullets` | `{ n, xy, r, tone, ang }` | **batched**: per tone one path for each sheet (shadow, ink keyline, colour, cream core), so 640 bullets cost a fixed 16 fills; your sparks are marigold streaks along `ang` |
 | `player` | `{ x, y, r, body, ang, inv, dash, ready }` | the hitbox: a white bead on an ink keyline, on top; a blinking cream ring in i-frames; a dash trail; a thin arc while the dash comes back |
 | `pops` | `[{ x, y, v, a, combo }]` | DOM tags (`ui/pops.js`), never canvas text |
 | `hp` | `{ n, max, shield }` | HUD pips under the score (`ui/hud.js`): shields cream, hp marigold |
+| `boss` | `null` or `{ hp, phase, label? }` | the HUD's boss bar under the pips (`ui/hud.js`), its fill by phase (teal, violet, rose); `label` a text id for its aria-label (default `hud.boss`) |
+| `gifts` | `[{ x, y, r, icon, a?, on?, lv? }]`, at most 4 | gift bubbles (design.md 4.6, stages 3 and 7): a cream paper disc on an ink keyline with a cut ink icon by name (`quick spread bounce sticky shell dash orbit chain magnet`; any other name a star), `lv` ink dots for the levels you have, `on` an ink arc filling round the one that picks itself. The one-word name is a DOM tag: a pop with a `word` (a text id) and `v` 0, put up and back of the bubble in world terms (`x − r − 1, y + r + 1`) so it sits above it on screen in every layout |
 | `shake`, `flash` | 0 to 1 | the shake rides on the renderer's sway by depth (none with reduced motion); the flash is one tint sheet at most 20% |
 
 Colours: `ROLES[stage].action` in `render/palette.js` names a stage's tokens (`foe foe2 boss bossCore mine b1 b2 b3
@@ -153,9 +189,13 @@ cuts bullets with 6 points and drops their shadow.
 ## 6. Sound and words
 
 `emitOut` sends `act.shot` (0.09 s apart), `act.strike`, `act.clear` (pitch: the combo), `act.fire`, `act.tell`,
-`act.dash`, `act.ouch`, `act.ko`, `act.pick`; stage 5 adds `act.up`, `act.heal`, `act.phase`. `ui/sound.js` plays them
-softly through the womb bus. Captions once per stage: `act.sfx.shot` "· sparks fly", `act.sfx.clear` "· germs pop",
-`act.sfx.dash` "~ you dash" (core/text.js). Shared strings: `almost.ko`, `hud.hp`. Stage strings follow v1 15.4:
+`act.dash`, `act.ouch`, `act.ko`, `act.pick`; a stage may send `act.up` (a growth step), `act.heal`, `act.phase` (a
+boss phase) and `act.win` (a boss or swarm cleared) itself with `emit(st, "sfx", { id, x, y })`. `ui/sound.js`
+plays them softly through the womb bus. Captions once per stage: `act.sfx.shot` "· sparks fly", `act.sfx.clear` "· germs pop",
+`act.sfx.dash` "~ you dash" (core/text.js). Shared strings: `almost.ko`, `hud.hp`, `hud.boss`. The move prompt
+reads "Drag to move. Tap to dash." (desktop: "WASD to move. Space to dash."; one-button: "Hold to move. You dash by
+yourself."); a stage may name its own special in place of the dash. A desktop form names Space or the arrows, a
+one-button form says to hold (`prompts.test.mjs`). Stage strings follow v1 15.4:
 no em dash, no pronoun for the carer, and none of the banned words (no "enemy", "attack", "fight", "kill", "hurt").
 
 ## 7. Perf rules
@@ -172,14 +212,19 @@ no em dash, no pronoun for the carer, and none of the banned words (no "enemy", 
 - Weeks 7 to 12: a wave a week (moments `wave7` to `wave12`, gaDay 7N to 7N + 7), each ending when cleared or at
   11 s, then a 2.2 s rest (the food is drawn in; the cord brings a heal; germs left drift away). Week 13: `boss`, the
   big germ (r 11, hp 440) in three phases by its hp: a spiral with buds, then hops with aimed fans and rings, then a
-  rush along a charge tell with a ring as it stops and a wave fan. Each phase change clears the foe shots.
-- Foes: chasers (`germ`), wanderers (`spore`), shooters (`blob` aimed, fan of 3, fan of 5; `drop` wave), orbiters
-  (`ring`). Spawns never come through the placenta (`keepOut`). Bullet cap 150.
+  rush along a charge tell with a ring as it stops and a wave fan. Each phase change clears the foe shots, holds the
+  world for 8 frames, shakes and swells (`act.phase`); its core and the boss bar change colour. Clearing it plays a
+  1.4 s victory beat (the shots turn to sparkles, the germs left pop, more bursts, `act.win`, the thumb pose; you can
+  still move), then the stage ends.
+- Foes: chasers (`germ`), wanderers (`spore`), shooters (`blob` aimed stack at 30 u/s, fan of 3, fan of 5; `drop`
+  wave), orbiters (`ring`). Spawns never come through the placenta (`keepOut`). Bullet cap 150. The fastest foe
+  shots of the run (the aimed stack's second shot 34 u/s; the big germ's fan 30 u/s).
 - Food grows your sparks (rate 6, spread 2, pierce 1, rate 7, spread 3, strength 1.5, rate 8, pierce 2) and your
   heart powers them: the fire rate is that rate × your heart's bpm / 150.
 - Sac to scale (meta.mm 30 to 150); you are drawn 9.5 to 15 u long, smaller than true.
 - Score: Goal 3,000; Skill 3,500 for germs cleared (combo score over the value × 1.75) and 2,500 for dodges (1 − hits
-  / 5); Flourish 1,000 × best combo / 25. Bots (10 seeds): skill 1 about 9,900, 0.7 about 9,700, 0.5 about 9,200 with
-  no knock-out; idle is knocked out in waves 7 or 8; one-button held completes 20 of 20. About 84 s; cap 120 s.
+  / 5); Flourish 1,000 × best combo / 25. Bots (10 seeds): skill 1 about 9,900, 0.7 about 9,600, 0.5 about 9,300 with
+  no knock-out; idle is knocked out in week 7 or 8 (about 12 s); one-button held completes. About 85 s; cap 120 s.
+- No `meta.goOn`: after a knock-out, Go on closes the stage at once (the clock and carry at the stage's end).
 - The facts are v1's; `grow.frame` ("In the game you clear germs. ...") is a result fact, `checked: false` until its
   page is re-read (research-biology.md 5.13 supports it).

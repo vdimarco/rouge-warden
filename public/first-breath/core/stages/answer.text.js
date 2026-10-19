@@ -40,6 +40,7 @@ export const TEXT = Object.freeze({
   "answer.pop.in": "Perfect",
   "answer.pop.close": "Good",
   "answer.pop.miss": "Miss",
+  "answer.pop.fever": "Singing together",
 
   // the run result's parts
   "answer.part.beat": "Heartbeat kicks",

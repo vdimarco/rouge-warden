@@ -88,6 +88,8 @@ const MODIFIERS = new Set(["ShiftLeft", "ShiftRight", "ControlLeft", "ControlRig
   "MetaLeft", "MetaRight", "CapsLock", "Fn"]);
 const HOLDS = new Set(["hold", "dragHold"]);
 const GESTURES = new Set(["drag", "tap", "hold", "dragHold", "move", "none"]);
+// "move": E or Shift press with `item: true` (stage 1 uses the item you hold; design.md 5.1 of the action change)
+const ITEM_KEYS = new Set(["KeyE", "ShiftLeft", "ShiftRight"]);
 
 const fin = (v) => typeof v === "number" && Number.isFinite(v);
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
@@ -211,7 +213,8 @@ export function createInput(el, { coreTime = (ms) => ms / 1000, camera = null, s
   };
 
   function keyDown(code, repeat, raw) {
-    if (!code || MENU_KEYS.has(code) || MODIFIERS.has(code)) return;
+    const itemKey = gesture === "move" && ITEM_KEYS.has(code) && !oneButton();
+    if (!code || MENU_KEYS.has(code) || (MODIFIERS.has(code) && !itemKey)) return;
     if (repeat || held.has(code)) return;        // repeats are ignored
     const k = { order: ++order, stale: false, pressed: false, raw, t: raw - offS(), tok: null };
     held.set(code, k);
@@ -223,9 +226,10 @@ export function createInput(el, { coreTime = (ms) => ms / 1000, camera = null, s
     else if (ACTION.has(code)) press = true;
     else if (code in KEY_VEC && gesture === "dragHold" && keysMode === "steer") press = true;
     else if (code in KEY_VEC && keysMode === "lanes") press = true;     // stage 6: an arrow kicks, with its dir
+    else if (itemKey) press = true;
     if (press) {
       k.pressed = true;
-      const info = keysMode === "lanes" && !oneButton() && KEY_DIR[code] ? { dir: KEY_DIR[code] } : null;
+      const info = itemKey ? { item: true } : keysMode === "lanes" && !oneButton() && KEY_DIR[code] ? { dir: KEY_DIR[code] } : null;
       k.tok = (HOLDS.has(gesture) ? holdOn(k) : null) || queue("press", raw, raw, null, info);   // or it joins the hold that is on
     }
   }

@@ -26,11 +26,13 @@ const her = (beats, bpm) => (beats * 60) / bpm;
 const MOMENTS = {
   swim: ["womb", "gate", "fork", "tube", "meet", "carried"].map((id) => ({ id, ga: [14, 14] })),
   egg: ["surge", "open", "sweep", "guard", "enter", "seal", "fusion", "outro"].map((id) => ({ id, ga: [14, 14] })),
+  // stage 3 as the roguelike (first-breath-action-genres, design.md 5.3): a day a room (its 10 s timer, the 0.6 s
+  // clear, the 1.2 s split and the 3 s pick), the Knot's room (it drifts off at 18 s), the hatch and the outro
   split: [
-    { id: "split", ga: [15, 19], lenS: her(24, 72), beats: true },
-    { id: "bloom", ga: [19, 20], lenS: her(6, 72), beats: true },
-    { id: "hatch", ga: [20, 20] },
-    { id: "outro", ga: [20, 20] },
+    ...["day1", "day2", "day3", "day4"].map((id, i) => ({ id, ga: [15 + i, 16 + i], lenS: 14.8 })),
+    { id: "bloom", ga: [19, 20], lenS: 18 },
+    { id: "hatch", ga: [20, 20], lenS: 3 },
+    { id: "outro", ga: [20, 20], lenS: 2 },
   ],
   root: [
     { id: "nestle", ga: [20, 23], lenS: 12 },
@@ -48,8 +50,11 @@ const MOMENTS = {
   })(),
   answer: [
     { id: "hear", ga: [105, 105] },
-    { id: "beat", ga: [105, 126], lenS: her(8, 78), beats: true },
-    { id: "phrases", ga: [133, 175], lenS: her(60, 78), beats: true },
+    // stage 6 as the rhythm stage (first-breath-action-genres, design.md 5.6): 6 kicks every 2nd beat, 6 phrases of 9
+    // beats, the sing-along of 16 notes and the jump note
+    { id: "beat", ga: [105, 126], lenS: her(12, 78), beats: true },
+    { id: "phrases", ga: [133, 168], lenS: her(54, 78), beats: true },
+    { id: "song", ga: [168, 175], lenS: her(17, 78), beats: true },
     { id: "eyes", ga: [175, 182], lenS: 4 },
     { id: "outro", ga: [189, 195], lenS: 3 },
   ],
@@ -159,7 +164,7 @@ await check("gaAt follows each 4.1 moment and holds at its ends", () => {
     }
   }
   near(gaAt({ ga: [20, 23], lenS: 12 }, 4), 21, 1e-12, "nestle at 4 s");
-  near(MOMENTS.split[0].lenS, 20, 1e-9, "24 of her beats at 72 bpm");
+  near(MOMENTS.split[0].lenS, 14.8, 1e-9, "a day: room, clear, split and pick");
 });
 
 await check("gaDay never runs back: each moment starts at or after the last one's end, across stages too", () => {

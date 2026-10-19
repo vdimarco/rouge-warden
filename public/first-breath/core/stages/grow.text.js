@@ -4,12 +4,12 @@
 // line after a knock-out is the shared "almost.ko" (core/text.js).
 export const TEXT = Object.freeze({
   // the prompt line (".keys" is the desktop form, ".one" the one-button form)
-  "grow.prompt.move": "Drag anywhere to move. Your sparks aim for you.",
-  "grow.prompt.move.keys": "Move with WASD or the arrow keys. Your sparks aim for you.",
+  "grow.prompt.move": "Drag to move. Your sparks aim for you.",
+  "grow.prompt.move.keys": "Move with WASD or the arrows. Your sparks aim for you.",
   "grow.prompt.move.one": "Hold to move. Your sparks aim for you.",
-  "grow.prompt.dash": "Drag to move. Tap with a second finger to dash.",
-  "grow.prompt.dash.keys": "Move with WASD or the arrow keys. Press Space to dash.",
-  "grow.prompt.dash.one": "Hold to move. Tap to dash.",
+  "grow.prompt.dash": "Drag to move. Tap to dash.",
+  "grow.prompt.dash.keys": "WASD to move. Space to dash.",
+  "grow.prompt.dash.one": "Hold to move. You dash by yourself.",
   "grow.prompt.rest": "Rest. Food comes down the cord.",
   "grow.prompt.boss": "Clear the big germ. Dash through its shots.",
 

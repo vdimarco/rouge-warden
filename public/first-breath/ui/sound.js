@@ -28,10 +28,10 @@
 //   root.swell), an opening from birth.open ends, and a hum's notes not yet sung stop. cutoffHz sets the womb bus
 //   cutoff, except while an opening runs (open() or birth.open), which holds it until the next scene.
 // - sfx(id, at, opts): at is the context time. The ids are the stages' sfx ids (swim swell, whoom, swish; egg.surge,
-//   egg.pluck, egg.burst, egg.enter, egg.fifth; split sparkle, tone, toneEnd, pling, slip; root.link, root.linkBeat,
-//   root.hush, root.swell, root.tipOn, root.tipOff; grow bell, move; answer.hum, answer.thump, answer.hand, answer.boom; turn
+//   egg.pluck, egg.burst, egg.enter, egg.fifth; split sparkle, tone, toneEnd, pling, slip; root.link, root.linkBeat, root.dig, root.shoot, root.snap, root.ping,
+//   root.hush, root.swell, root.tipOn, root.tipOff; grow bell, move; answer.hum, answer.thump, answer.echo, answer.hand, answer.boom; turn
 //   headDown, roomy; birth.warn, birth.breath, birth.swell, birth.open; ending heartFar, heartClose, inhale, cry,
-//   breath), the action layer's act.<outcome> (shot, strike, clear, fire, tell, dash, ouch, ko, pick, up, heal, phase;
+//   breath), the action layer's act.<outcome> (shot, strike, clear, fire, tell, dash, ouch, ko, pick, up, heal, phase, win;
 //   core/lib/action.js emitOut) and the event cues of 11 (bump, place, ready, bounce, stick, loose, goldIn, enter, seal). opts is the
 //   event: pitch, gain, and the event's own fields (wave, angle, a, b, near, fromHz, toHz, seconds, dur, rumbleHz).
 //   A bump plays full when "you" is in it, 10 dB softer when opts.near is true (a rival pair within 40 u of you; the
@@ -461,6 +461,12 @@ export function createSound(ctx, { seed = 1, latencyS = null } = {}) {
           quietly(() => { const t = Math.max(at, now()); v.g.gain.cancelScheduledValues(t); v.g.gain.setTargetAtTime(0, t, 0.15); });
         }
         return true;
+      // the lining map (first-breath-action-genres 5.4): a soft crunch as you tunnel (firmer through firm tissue), the
+      // tendril's flick, its springy snap, the compass ping
+      case "root.dig": noise(at, { type: "bandpass", f0: p >= 1 ? 420 : 260, f1: p >= 1 ? 300 : 180, glideS: 0.08, q: 1.6, peak: 0.07 * k, attack: 0.005, tau: 0.05 }); return true;
+      case "root.shoot": noise(at, { type: "bandpass", f0: 700, f1: 1400, glideS: 0.08, q: 2, peak: 0.05 * k, attack: 0.004, tau: 0.04 }); return true;
+      case "root.snap": pluck(at, p >= 1 ? 196 : 131, 0.16 * k, 0.09); pluck(at + 0.03, p >= 1 ? 294 : 165, 0.08 * k, 0.07); return true;
+      case "root.ping": pluck(at, 523, 0.07 * k, 0.18); pluck(at + 0.12, 784, 0.04 * k, 0.16); return true;
 
       // stage 5, the first trimester
       case "bell": {
@@ -477,6 +483,12 @@ export function createSound(ctx, { seed = 1, latencyS = null } = {}) {
         return true;
       }
       case "answer.thump": pluck(at, o && fin(o.pitch) && o.pitch > 20 ? o.pitch : 70, 0.4 * clamp(k, 0.2, 1), 0.035); return true;
+      // your kick plays her note back: a soft pluck at the note's pitch with a quiet octave above
+      case "answer.echo": {
+        const hz = o && fin(o.pitch) && o.pitch > 20 ? o.pitch : 420;
+        pluck(at, hz, 0.12 * clamp(k, 0.2, 1), 0.22); pluck(at, hz * 2, 0.03 * clamp(k, 0.2, 1), 0.12);
+        return true;
+      }
       case "answer.hand": {
         const hz = o && fin(o.pitch) && o.pitch > 20 ? o.pitch : 110;
         swell(at, hz, 0.18 * k, 0.4, 1.4); swell(at, hz * 1.5, 0.08 * k, 0.4, 1.2);
@@ -535,6 +547,11 @@ export function createSound(ctx, { seed = 1, latencyS = null } = {}) {
       case "act.up": pluck(at, 262, 0.18 * k, 0.12); pluck(at + 0.09, 392, 0.16 * k, 0.14); return true;
       case "act.heal": swell(at, 262, 0.14 * k, 0.08, 0.6); swell(at, 392, 0.08 * k, 0.1, 0.6); return true;
       case "act.phase": swell(at, 73, 0.3 * k, 0.04, 1.0); noise(at, { type: "lowpass", f0: 300, f1: 90, glideS: 0.6, peak: 0.22 * k, attack: 0.01, tau: 0.25 }); return true;
+      // a boss or a swarm cleared: a warm rising arpeggio over a low swell (no fanfare, no sting)
+      case "act.win":
+        [262, 330, 392, 523].forEach((f, i) => pluck(at + 0.09 * i, f, 0.16 * k, 0.18));
+        swell(at, 131, 0.16 * k, 0.1, 1.4);
+        return true;
       default: return false;
     }
   }

@@ -39,8 +39,8 @@ Where you move, your hitbox SHALL be about 40% of your drawn body. No foe SHALL 
 Stage 1 SHALL keep the race as built: the pack of 20, the analog steering, the waves, the gate, the fork and cool loop, the tube's current and warm lane, the glow walls, the place slot and the catch-up. Its tube SHALL now bend six times, a hairpin among them, with the warm lane on the inside of each bend, 4,600 u to the meeting place. The camera SHALL turn with the track. Stage 1 SHALL have no auto-fire.
 
 #### Scenario: The steering is the same
-- **WHEN** a sperm in node steers on a straight with the same stick as in the v1 race model, with no drift, item, slipstream or wave
-- **THEN** its speed, heading and progress match `qa/first-breath/race-sim.mjs` step for step
+- **WHEN** a sperm in node steers on a straight with the same stick as in the v1 race, with no drift, item, slipstream or wave
+- **THEN** it steers with the v1 numbers (55 u/s at full stick, 3.0 rad/s), reaches at least 70 u/s in the warm lane and at most 65 u/s by a wall, and `qa/first-breath/race-sim.mjs` plays the same stage for the race gates
 - **CHECK** `qa/first-breath/stage-swim.test.mjs`
 
 #### Scenario: Portrait drag
@@ -274,7 +274,7 @@ Stage 3's Day 5 room SHALL hold the Knot, a big clump at the tube's end, with a 
 
 #### Scenario: The phases
 - **WHEN** the reference bot plays the Knot
-- **THEN** its patterns change at 30 and 12 hp, each change with a charge tell, and it pops or drifts off by 18 s
+- **THEN** its patterns change at 60% and 24% of its hp, each change with a tell, and it pops or drifts off by 18 s
 - **CHECK** `qa/first-breath/stage-split.test.mjs`
 
 ### Requirement: Tunnels, the grapple and the compass
@@ -325,6 +325,12 @@ Stage 5 SHALL end at week 13 with the big germ, a boss with a boss bar and three
 #### Scenario: Waves, rests and the boss
 - **WHEN** the reference bot plays stage 5
 - **THEN** six waves come with a rest after each, the big germ follows at week 13 in three phases, and the clock runs from week 7 to week 13
+- **CHECK** `qa/first-breath/stage-grow.test.mjs`
+
+#### Scenario: The victory beat
+- **GIVEN** stage 5 at 390 × 844 with the boss bar showing
+- **WHEN** your sparks clear the big germ
+- **THEN** the boss bar goes, the shots on screen turn to sparkles, the germs left pop, a warm rising chord plays, "The big germ is gone." shows, you suck your thumb and can still move, and the stage ends 1.4 s later
 - **CHECK** `qa/first-breath/stage-grow.test.mjs`
 
 ### Requirement: Stage 7, Third Trimester as survivor waves
@@ -468,7 +474,7 @@ The 19 rivals SHALL race by the same rules as you, by a seeded policy with a spr
 
 #### Scenario: Falling behind
 - **WHEN** a gate closes on a rival
-- **THEN** it slows to a stop over 1 s, dims, stays drawn by the wall, still counts in the places, and "Some sperm rest here." shows the first time
+- **THEN** it slows to a stop over 1 s, dims, stays drawn by the wall, still counts in the places, and "Some sperm rest here." shows the first time one rests near you
 - **CHECK** `qa/first-breath/stage-swim.test.mjs`
 
 ### Requirement: Stage 2, The Egg: the opening
@@ -674,7 +680,7 @@ Stage 6 SHALL be the one rhythm stage, at the mother's 78 bpm, with three lanes.
 
 #### Scenario: The fever
 - **WHEN** the player kicks 8 notes in a row In time in the sing-along
-- **THEN** the hand glow lights round your ring, each note counts 1.5 times toward the song part until a miss, and the part never passes its max
+- **THEN** the 8 pips of the streak meter under your ring are full, the hand glow lights round your ring with a soft chord under the hum and the word "Singing together", each note counts 1.5 times toward the song part until a miss, and the part never passes its max
 - **CHECK** `qa/first-breath/stage-answer.test.mjs`
 
 ### Requirement: Answers bring a warm reply

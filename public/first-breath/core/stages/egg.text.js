@@ -17,10 +17,10 @@ export const TEXT = Object.freeze({
   "egg.seal.keys": "Press Space to seal your shell.",
 
   // sub-goals: shown, then done by you or by itself
-  "egg.guardGoal": "Bounce the glow off your arc. Guard your shell.",
+  "egg.guardGoal": "Bounce the glow off your arc.",
   "egg.guardDone": "You guarded your shell.",
   "egg.guardAuto": "Your shell held on.",
-  "egg.chargeGoal": "Tap with a second finger to seal. It clears the sparks.",
+  "egg.chargeGoal": "Tap to seal. It clears the sparks.",
   "egg.chargeGoal.keys": "Press Space to seal. It clears the sparks.",
   "egg.chargeDone": "The sparks turn to gold.",
   "egg.chargeAuto": "Kept seals shine at the end.",
@@ -36,6 +36,13 @@ export const TEXT = Object.freeze({
   "egg.swarm": "A swarm comes.",
   "egg.swarmOff": "The swarm drifts off.",
   "egg.rest": "Your shell needs a rest.",
+
+  // the tags on falling gifts (DOM, beside each one)
+  "egg.up.multi": "Multi",
+  "egg.up.wide": "Wide",
+  "egg.up.pierce": "Pierce",
+  "egg.up.slow": "Slow",
+  "egg.up.mend": "Mend",
 
   // the score breakdown on the run result
   "egg.part.hits": "Sperm bounced away",

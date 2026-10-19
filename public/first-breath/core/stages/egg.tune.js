@@ -11,6 +11,16 @@
 // - The curtain closes in from 45 u (design: 50 u), inside the rim.
 // - The rush's 4 rivals reach the shell from 1.2 s before your sperm to 1.05 s after it (design: within 1.5 s of it),
 //   so each is settled before your sperm enters and counts toward the rush credit.
+// - A glow meets the arc when its centre reaches the arc's outer edge plus its own radius (16 + 1.5 + 1.2 = 18.7 u),
+//   so it bounces where it is seen to touch; it has slipped by once it is inside the arc's inner edge (14.5 u). A
+//   spark meets the arc the same way (16 + 1.5 + 1.4 = 18.9 u). The arc can still sweep onto a glow or a spark between
+//   the two edges and send it back.
+// - A blocked spark mirrors off the arc (the radial normal at the point it meets) at 1.3 times its speed, so a spark
+//   aimed at the centre goes straight back to the rival that fired it.
+// - The seal charge's gold sparkles show as gold flecks; they add no points, so the score stays the parts below.
+// - A diver the glow hits with hits left is pushed back 3 u and keeps coming; with none left it drifts off.
+// - Your gold sperm never comes within 55° of world −y (v1: 45°): it now swims in from 75 u, and from any lower
+//   angle its path would start below 60% of the portrait screen (75 × sin 35° = 43 u below the egg is the most).
 // - Measured stage lengths (sim, 20 seeds): see the header of qa/first-breath/stage-egg.test.mjs and design.md 3.1.
 export const TUNE = Object.freeze({
   // The opening: beat 1 is her first beat at or after leadS; the surge is beats 1 and 2; the follicle opens by itself
@@ -45,7 +55,7 @@ export const TUNE = Object.freeze({
   // wakeS after the arc wakes, or firstS into the guard. A glow that has not met the arc for staleS fades and serves
   // again with no pip lost. At most n glows; each keeps `trail` points of its trail.
   ball: Object.freeze({
-    r: 1.2, drawR: 1.9, speed: 34, speedAssist: 28, gain: 1, max: 50, maxAssist: 40, retDeg: 55, rimDeg: 14,
+    r: 1.2, drawR: 2.3, speed: 34, speedAssist: 28, gain: 1, max: 50, maxAssist: 40, retDeg: 55, rimDeg: 14,
     rimAssistDeg: 10, serveS: 1.0, serveTellS: 0.6, wakeS: 0.6, firstS: 3, staleS: 10, n: 6, trail: 7, fadeS: 0.35,
   }),
 
@@ -77,7 +87,7 @@ export const TUNE = Object.freeze({
       Object.freeze({ kind: "ring", R: 31, w: 0.25, kinds: "PTPTPTPT", guns: Object.freeze({}) }),
       Object.freeze({ kind: "ring", R: 43, w: -0.2, kinds: "CPPCPPCPPP", guns: Object.freeze({ 1: "fan", 6: "fan" }) }),
     ]) }),
-    Object.freeze({ at: 21, fact: "egg.choice", dive: 5, forms: Object.freeze([
+    Object.freeze({ at: 21, fact: null, dive: 5, forms: Object.freeze([
       Object.freeze({ kind: "ring", R: 34, w: 0.22, reform: true, kinds: "PTPPTPTPPT", guns: Object.freeze({ 0: "curtain" }) }),
       Object.freeze({ kind: "orbit", R: 44, w: 0.5, kinds: "T", guns: Object.freeze({ 0: "ring" }) }),
     ]) }),
@@ -140,7 +150,7 @@ export const TUNE = Object.freeze({
   // the arc's centre; of the rest the one farthest from every stuck rival, the first on a tie. It enters by latestS
   // into the guard whatever happens. After Go on it comes in from goOnFrom u (within 2 s).
   gold: Object.freeze({
-    candidates: 72, stepDeg: 5, thumbDeg: 45, captionDeg: 40, arcMarginDeg: 30,
+    candidates: 72, stepDeg: 5, thumbDeg: 55, captionDeg: 40, arcMarginDeg: 30,
     speed: 14, burrowS: 3.0, nudgeOut: 6, nudgeS: 0.3, returnSpeed: 8, maxNudges: 3, latestS: 60, pathDeg: 14, goOnFrom: 38,
   }),
 
@@ -186,7 +196,11 @@ export const TUNE = Object.freeze({
   // The draw list. Hues are keys into the stage 2 body ramp (render/palette.js): your sperm uses carry.sperm.hue.
   hue: Object.freeze({ follicle: 0.02, shell: 0.05, cell: 0.07, inner: 0.08, nucleus: 0.03, rival: 0.88, corona: 0.06 }),
   light: Object.freeze({ level: 0.5, warm: 0.6, vignette: 0.45, tintMax: 0.05, warp: 0.25 }),
-  // DOM rings: her beat round the arc's field, the seal charge inside the egg, burrow rings.
-  rings: Object.freeze({ mother: 23, charge: 7.4, burrow: 3 }),
+  // DOM rings: her beat round the arc's field, the seal charge inside the egg (filling, and the kept ones), burrow
+  // rings.
+  rings: Object.freeze({ mother: 23, charge: 6.2, kept: 8.0, burrow: 3 }),
+  // The look of the play: a rival's head (u, drawn; its dots of hits left sit on it), its length; how long a pip's
+  // crack shows on the shell; how far a hit pushes a head out (u) and how fast that eases (1/s).
+  look: Object.freeze({ head: 2.1, len: 9, crackS: 6, kick: 1.6, kickEase: 9, flashS: 0.14 }),
   capS: 80,
 });

@@ -152,10 +152,10 @@ await check("idle: knocked out (never a game over: goal unmet, the Almost line) 
 
 // ---- the live gesture and the prompts ----
 
-await check("one live gesture: move in every moment, its prompt by phase (move, dash, rest, the big germ), none once done", () => {
+await check("one live gesture: move in every moment, its prompt by phase (move, dash, rest, the big germ, no words in the victory beat), none once done", () => {
   const r = REF[0];
   const texts = new Set();
-  for (const s of r.seen) { assert.equal(s.prompt.gesture, "move", `${s.moment} at ${s.t.toFixed(2)}`); texts.add(s.prompt.text); }
+  for (const s of r.seen) { assert.equal(s.prompt.gesture, "move", `${s.moment} at ${s.t.toFixed(2)}`); if (s.prompt.text) texts.add(s.prompt.text); }
   assert.deepEqual([...texts].sort(), ["grow.prompt.boss", "grow.prompt.dash", "grow.prompt.move", "grow.prompt.rest"]);
   assert.equal(grow.prompt(r.st).gesture, "none");
   for (const p of named(r.evs, "prompt")) if (p.text) assert.notEqual(say(p.text), p.text, `${p.text} is registered`);
@@ -175,7 +175,10 @@ await check("every sub-goal is shown, then ends done or auto, with its events (c
     for (const e of subs) assert.notEqual(say(e.text), e.text, `${e.text} is registered`);
   }
   const ref = named(REF[0].evs, "subgoal");
-  for (const id of ["clear", "food", "dash", "boss"]) assert.ok(ref.some((e) => e.id === id && e.state === "done"), `ref: ${id} done by you`);
+  for (const id of ["clear", "food", "boss"]) assert.ok(ref.some((e) => e.id === id && e.state === "done"), `ref: ${id} done by you`);
+  // the ref bot dashes only when a shot is about to land (it dodges most of them by moving): in most seeds it has
+  const dashed = REF.filter((r) => named(r.evs, "subgoal").some((e) => e.id === "dash" && e.state === "done")).length;
+  assert.ok(dashed >= 5, `ref: dash done by you in ${dashed} of ${REF.length}`);
 });
 
 // ---- waves, telegraphs, the big germ ----
@@ -215,6 +218,21 @@ await check("the big germ: three phases in order, each change clearing the foe s
     assert.ok(named(r.evs, "sfx").some((e) => e.id === "act.clear" && e.gain === 1), "the big germ's clear");
     assert.equal(r.st.gaDay, 97);
     assert.equal(r.st.A.foes.length, 0);
+  }
+});
+
+await check("the victory beat: the big germ's clear plays act.win, pops what is left, says it is gone, and the stage ends outroS later", () => {
+  for (const r of REF.slice(0, 5)) {
+    const clear = named(r.evs, "sfx").find((e) => e.id === "act.clear" && e.gain === 1);
+    const win = named(r.evs, "sfx").find((e) => e.id === "act.win");
+    assert.ok(clear && win && Math.abs(win.at - clear.at) < 0.05, `seed ${r.st.seed}: act.win as the big germ clears`);
+    const gone = named(r.evs, "subgoal").find((e) => e.id === "boss" && e.state === "done");
+    assert.ok(gone && Math.abs(gone.at - win.at) < 0.05, "the big germ is gone, at once");
+    const done = named(r.evs, "done")[0];
+    assert.ok(done && Math.abs(done.at - win.at - TUNE.outroS) < 0.1, `done ${done && done.at} after the win at ${win.at}`);
+    // in the beat: you can still move (the move gesture, no words), no foe shot is left, the thumb pose
+    const beat = r.seen.filter((x) => x.t > r.st.oT0 + 0.05 && x.t < r.st.doneT - 0.05);
+    assert.ok(beat.length > 30 && beat.every((x) => x.prompt.gesture === "move" && x.prompt.text === null), "the move gesture, no words");
   }
 });
 

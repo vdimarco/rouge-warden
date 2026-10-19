@@ -226,9 +226,22 @@ function foeShape(kind, x, y, r, ang, t, id) {
       }
       return out;
     }
-    case "boss": return P.circle(x, y, r, { step: Math.max(4, r * 0.18), seed: 85, scallops: 11, depth: r * (0.1 + 0.03 * Math.sin(t * 2.2)), rot: t * 0.25 });
+    // the big germ: a germ's spiky rim, bigger, breathing slowly
+    case "boss": return P.circle(x, y, r, { step: Math.max(4, r * 0.16), seed: 85, scallops: 13, depth: r * (0.15 + 0.03 * Math.sin(t * 2.2)), rot: t * 0.25 });
     default: return P.circle(x, y, r, { step: Math.max(3, r * 0.25), seed: 86 });        // ring, cell
   }
+}
+
+// A clump: stacked sage and brown paper discs round a middle one, turning slowly, each breathing a little.
+const CLUMP = ["#9fae7e", "#8a6a4a", "#7d8f62"];
+function clumpDiscs(x, y, r, t) {
+  const out = [];
+  for (let k = 0; k < 7; k++) {
+    const a = (k / 7) * TAU + t * 0.25, rr = r * (0.42 + 0.05 * Math.sin(t * 2.1 + k * 1.7)), d = r * 0.56;
+    out.push({ pts: P.circle(x + Math.cos(a) * d, y + Math.sin(a) * d, rr, { step: Math.max(3, rr * 0.3), seed: 96 + k }), c: k % 2 });
+  }
+  out.push({ pts: P.circle(x, y, r * 0.66, { step: Math.max(3, r * 0.2), seed: 104, scallops: 5, depth: r * 0.05, rot: t * 0.2 }), c: 2 });
+  return out;
 }
 
 export function drawFoes(F) {
@@ -244,6 +257,13 @@ export function drawFoes(F) {
     const r = Math.max(1.5, f.r * k * (0.35 + 0.65 * born));
     if (x < -r - 10 || y < -r - 10 || x > W + r + 10 || y > H + r + 10) return;
     const sa = F.v.cam.screenAngle(fin(f.ang) ? f.ang : 0);
+    if (f.look === "clump") {                         // a clump (stage 3's Knot): overlapping paper discs (design.md 4.8)
+      const discs = clumpDiscs(x, y, r, t);
+      const p = new Path2D();
+      for (const d of discs) { P.path(d.pts, true, p); if (born >= 1) P.path(d.pts, true, union); }
+      items.push({ f, x, y, r, p, born, discs });
+      return;
+    }
     const pts = foeShape(f.kind, x, y, r, sa, t, i * 0.7);
     const p = P.path(pts);
     if (f.kind === "ring") P.path(P.rev2(P.circle(x, y, r * 0.48, { step: 3, seed: 87 })), true, p);
@@ -258,7 +278,8 @@ export function drawFoes(F) {
     const col = kind === "boss" ? tone(F, "boss") : kind === "spore" || kind === "ring" ? tone(F, "foe2") : tone(F, "foe");
     ctx.save();
     if (born < 1) ctx.globalAlpha *= 0.35 + 0.5 * born;
-    P.paper(ctx, p, col, { rule: kind === "ring" ? "evenodd" : "nonzero", edge: F.tier.edge ? 0.8 * hs : 0, edgeMix: 0.38 });
+    if (it.discs) for (const d of it.discs) P.paper(ctx, P.path(d.pts), CLUMP[d.c], { edge: F.tier.edge ? 0.8 * hs : 0, edgeMix: 0.38 });
+    else P.paper(ctx, p, col, { rule: kind === "ring" ? "evenodd" : "nonzero", edge: F.tier.edge ? 0.8 * hs : 0, edgeMix: 0.38 });
     // a pale cut core: the germs' spots, the blobs' and the big germ's middles (it grows as a blob's shot comes)
     if (kind === "germ" || kind === "cell") {
       const q = new Path2D();
@@ -269,10 +290,13 @@ export function drawFoes(F) {
       // the core swells and pales as a shot winds up (f.charge), so you see it coming
       const ch = clamp01(f.charge), base = kind === "boss" ? 0.45 : kind === "ring" ? 0.3 : 0.36;
       const core = P.path(P.circle(x, y, r * base * (1 + 0.45 * ch), { step: 3, seed: 90, scallops: kind === "boss" ? 7 : 0, depth: r * 0.04 }));
-      ctx.fillStyle = P.mix(kind === "boss" ? tone(F, "bossCore") : P.mix(col, P.CREAM, 0.5), "#ffffff", 0.7 * ch);
+      // a boss's core takes its phase's colour (as its HUD bar does): teal, then violet, then rose (never red)
+      const bc = kind !== "boss" ? null : (f.phase | 0) >= 2 ? "#e2a6bd" : (f.phase | 0) === 1 ? "#b9abe2" : tone(F, "bossCore");
+      ctx.fillStyle = P.mix(bc || P.mix(col, P.CREAM, 0.5), "#ffffff", 0.7 * ch);
       if (kind !== "ring" || ch > 0) ctx.fill(core);
     }
-    if (f.flash > 0.01) { ctx.globalAlpha = Math.min(1, ctx.globalAlpha) * 0.85 * f.flash; ctx.fillStyle = "#ffffff"; ctx.fill(p, kind === "ring" ? "evenodd" : "nonzero"); }
+    // a hit flash brightens that foe only; a boss under steady fire only a little (the flash rule: few big swings)
+    if (f.flash > 0.01) { ctx.globalAlpha = Math.min(1, ctx.globalAlpha) * (f.boss ? 0.3 : 0.85) * f.flash; ctx.fillStyle = "#ffffff"; ctx.fill(p, kind === "ring" ? "evenodd" : "nonzero"); }
     ctx.restore();
     // the big germ's hp: a cut cream arc round it, shrinking
     if (f.boss && born >= 1) {
@@ -431,6 +455,82 @@ export function drawPlayer(F) {
   }
   ctx.restore();
   F.stickers.push({ x, y, r: r + 4 });
+}
+
+// ---- gift bubbles (stages 3 and 7, design.md 4.6): a cream paper disc on an ink keyline with a cut ink icon; its
+// one-word name is a DOM tag (a pop with a word). `on` (0..1) fills an ink arc round it: the bubble that picks itself.
+// `lv` small dots under the icon: the levels you already have of it. Icons by name; an unknown name is a star.
+const ICON = {
+  quick: () => [[[-0.45, 0.05], [0, -0.4], [0.45, 0.05]], [[-0.45, 0.45], [0, 0], [0.45, 0.45]]],
+  spread: () => [[[0, 0.5], [0, -0.45]], [[0, 0.5], [-0.42, -0.3]], [[0, 0.5], [0.42, -0.3]]],
+  bounce: () => [[[-0.55, -0.35], [-0.2, 0.35], [0.15, -0.35], [0.5, 0.35]]],
+  dash: () => [[[-0.5, 0], [0.45, 0]], [[0.15, -0.3], [0.45, 0], [0.15, 0.3]], [[-0.5, -0.32], [-0.1, -0.32]], [[-0.5, 0.32], [-0.1, 0.32]]],
+  magnet: () => {
+    const u = [];
+    for (let i = 0; i <= 8; i++) { const a = Math.PI * (i / 8); u.push([-0.4 * Math.cos(a), 0.05 + 0.4 * Math.sin(a)]); }
+    return [[[-0.4, -0.45], ...u.slice(0, 1)], u, [[0.4, 0.05], [0.4, -0.45]]];
+  },
+};
+const ICON_FILL = {
+  sticky: () => { const o = [0, -0.58]; for (let i = 0; i <= 12; i++) { const a = -Math.PI / 6 + (i / 12) * (4 * Math.PI / 3); o.push(0.36 * Math.cos(a), 0.14 + 0.36 * Math.sin(a)); } return o; },
+  chain: () => { const o = []; for (let i = 0; i < 8; i++) { const a = (i / 8) * TAU - Math.PI / 2, rr = i % 2 ? 0.2 : 0.55; o.push(Math.cos(a) * rr, Math.sin(a) * rr); } return o; },
+  star: () => { const o = []; for (let i = 0; i < 10; i++) { const a = (i / 10) * TAU - Math.PI / 2, rr = i % 2 ? 0.22 : 0.52; o.push(Math.cos(a) * rr, Math.sin(a) * rr); } return o; },
+};
+
+export function drawGifts(F) {
+  const a = act(F);
+  if (!a || !Array.isArray(a.gifts) || !a.gifts.length) return;
+  const ctx = F.ctx, k = F.k, hs = F.v.hs, ink = P.INK, cream = tone(F, "core");
+  for (const g of a.gifts) {
+    if (!g || !fin(g.x) || !fin(g.y)) continue;
+    const x = F.X(g.x, g.y), y = F.Y(g.x, g.y), al = g.a === undefined ? 1 : clamp01(g.a);
+    const rr = Math.max(9 * hs, (fin(g.r) ? g.r : 5) * k);
+    ctx.save();
+    ctx.globalAlpha *= 0.3 + 0.7 * al;
+    const disc = P.path(P.circle(x, y, rr, { step: 4, seed: 95, amp: 0.4, jitter: 0.1 }));
+    P.shadowCheap(ctx, disc, 3 * hs, { alpha: 0.3, strokes: F.tier.shadowStrokes });
+    P.sticker(ctx, disc, 0, { kl: 1.6 * hs });
+    P.paper(ctx, disc, cream, { edge: F.tier.edge ? 0.8 * hs : 0, edgeMix: 0.5 });
+    // a bubble's shine: a short cut arc at its upper left
+    ctx.lineCap = "round";
+    ctx.lineWidth = 1.6 * hs; ctx.strokeStyle = "#ffffff"; ctx.globalAlpha = Math.min(1, ctx.globalAlpha) * 0.8;
+    ctx.beginPath(); ctx.arc(x, y, rr * 0.72, Math.PI * 1.1, Math.PI * 1.45); ctx.stroke();
+    ctx.globalAlpha = 0.3 + 0.7 * al;
+    // the icon, in ink
+    const s = rr * 0.8, id = typeof g.icon === "string" ? g.icon : "";
+    ctx.strokeStyle = ink; ctx.fillStyle = ink; ctx.lineJoin = "round";
+    ctx.lineWidth = Math.max(1.8 * hs, rr * 0.16);
+    if (ICON[id]) {
+      for (const line of ICON[id]()) {
+        ctx.beginPath();
+        line.forEach(([u, v], i) => (i ? ctx.lineTo(x + u * s, y + v * s) : ctx.moveTo(x + u * s, y + v * s)));
+        ctx.stroke();
+      }
+    } else if (id === "shell") {
+      ctx.beginPath(); ctx.arc(x, y, s * 0.45, 0, TAU); ctx.stroke();
+      ctx.beginPath(); ctx.arc(x, y, s * 0.12, 0, TAU); ctx.fill();
+    } else if (id === "orbit") {
+      ctx.lineWidth = Math.max(1, rr * 0.07);
+      ctx.beginPath(); ctx.arc(x, y, s * 0.5, 0, TAU); ctx.stroke();
+      for (const [u, v, q] of [[0, 0, 0.2], [0.5, 0, 0.13], [-0.5, 0, 0.13]]) { ctx.beginPath(); ctx.arc(x + u * s, y + v * s, s * q, 0, TAU); ctx.fill(); }
+    } else {
+      const pts = (ICON_FILL[id] || ICON_FILL.star)();
+      const q = [];
+      for (let i = 0; i < pts.length; i += 2) q.push(x + pts[i] * s, y + pts[i + 1] * s);
+      ctx.fill(P.path(q));
+    }
+    // the levels you have of it: small ink dots under the icon
+    const lv = Math.max(0, Math.min(4, fin(g.lv) ? g.lv | 0 : 0));
+    for (let i = 0; i < lv; i++) { ctx.beginPath(); ctx.arc(x + (i - (lv - 1) / 2) * rr * 0.28, y + rr * 0.68, Math.max(1, rr * 0.07), 0, TAU); ctx.fill(); }
+    // the one that picks itself: an ink arc filling round it
+    const on = clamp01(g.on);
+    if (on > 0.01) {
+      ctx.lineWidth = 2.2 * hs; ctx.globalAlpha = 0.75;
+      ctx.beginPath(); ctx.arc(x, y, rr + 4 * hs, -Math.PI / 2, -Math.PI / 2 + TAU * on); ctx.stroke();
+    }
+    ctx.restore();
+    F.stickers.push({ x, y, r: rr + 4 });
+  }
 }
 
 // The hit flash: one translucent sheet of the stage's tint over the frame (one rise, never a strobe).

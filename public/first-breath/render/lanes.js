@@ -201,4 +201,45 @@ export function drawLaneNotes(F, st) {
     F.stickers.push({ x, y: yy, r: R + 4 });
   }
   ctx.globalAlpha = ga;
+  drawMeter(F, st, T, lx, y1);
+}
+
+// The streak meter: `of` pips in an arc under your ring, one filled (gold, keylined) per In time note in a row; once
+// the fever is lit (`lit` eases in) they all glow and swell a little on her beat. Empty pips are cream dotted rings.
+// Shape code: filled discs against hollow rings, never hue alone.
+function drawMeter(F, st, T, lx, y1) {
+  const m = st.meter;
+  if (!m || !fin(m.of) || m.of < 1) return;
+  const a = clamp01(num(m.a, 1));
+  if (!(a > 0.02)) return;
+  const ctx = F.ctx, hs = F.v.hs, k = F.k, ga = ctx.globalAlpha;
+  const of = Math.min(16, Math.round(m.of)), n = Math.max(0, Math.min(of, Math.round(num(m.n, 0))));
+  const lit = clamp01(m.lit), beat = clamp01(st.beat);
+  const you = Math.max(0, Math.min(2, num(st.you, 1)));
+  const cx = F.X(lx(you, 1), y1), cy = F.Y(lx(you, 1), y1);
+  const R = (num(st.ring, 9.5) + 2.6) * k;
+  const r0 = Math.max(2.2, 0.95 * k);
+  for (let i = 0; i < of; i++) {
+    // from lower left to lower right, under the ring (screen y grows down)
+    const b = Math.PI * (0.84 - (0.68 * i) / Math.max(1, of - 1));
+    const x = cx + Math.cos(b) * R, y = cy + Math.sin(b) * R;
+    const on = i < n;
+    const r = r0 * (on ? 1 + 0.25 * lit * (1 - beat) : 0.8);
+    const p = P.path(P.circle(x, y, r, { n: 10, amp: 0.1, jitter: 0.05, seed: 72 + i }));
+    ctx.globalAlpha = ga * a;
+    if (on) {
+      if (lit > 0.02) { paperGlow(F, x, y, r * 2.6, 0.55 * lit, T.glow); ctx.globalAlpha = ga * a; }
+      ctx.lineJoin = "round"; ctx.strokeStyle = SHARED.ink; ctx.lineWidth = 2; ctx.stroke(p);
+      P.paper(ctx, p, lit > 0.5 ? T.sing : T.voice, { edge: 0, edgeMix: 0 });
+    } else {
+      // an empty pip: a pale cream hole with a dotted ink rim
+      ctx.globalAlpha = ga * a * 0.5; ctx.fillStyle = T.cream; ctx.fill(p);
+      ctx.globalAlpha = ga * a * 0.7;
+      ctx.lineWidth = Math.max(1.2, 0.45 * hs); ctx.strokeStyle = SHARED.ink;
+      ctx.setLineDash && ctx.setLineDash([1.2 * hs, 1.4 * hs]);
+      ctx.stroke(p);
+      ctx.setLineDash && ctx.setLineDash([]);
+    }
+  }
+  ctx.globalAlpha = ga;
 }

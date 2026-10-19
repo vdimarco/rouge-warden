@@ -323,6 +323,56 @@ export function pairHeads(d) {
 
 const isYouHue = (h) => fin(h) && h > 0.095 && h < 0.13;
 
+// Stage 2's rivals carry optional marks on their tails items (core/stages/egg.js): `dots` (hits left, 1 to 3 cream
+// dots across the head, so they read by count in greyscale), `cap` (1 a cream cap on the head's front, 2 the cap with
+// a cut crack), `gun` (a pale rose ring round the head, brighter with `wind`, the wind-up before a spark) and `flash`
+// (a hit: the head brightens by itself, never red).
+function drawRivalMarks(F, list) {
+  const ctx = F.ctx, hs = F.v.hs;
+  const dots = new Path2D(), caps = new Path2D(), cracks = new Path2D(), rose = [], flash = [];
+  for (const { it, rh } of list) {
+    const x = F.X(it.x, it.y), y = F.Y(it.x, it.y), a = F.v.cam.screenAngle(num(it.ang, 0));
+    const c = Math.cos(a), s = Math.sin(a);
+    if (it.cap > 0) {
+      // the cap: a cream crescent over the front of the head
+      const q = [];
+      for (let i = 0; i <= 8; i++) { const u = -1.15 + (2.3 * i) / 8; q.push(x + Math.cos(a + u) * rh * 1.18, y + Math.sin(a + u) * rh * 1.18); }
+      for (let i = 8; i >= 0; i--) { const u = -1.0 + (2.0 * i) / 8; q.push(x + Math.cos(a + u) * rh * 0.62 + c * rh * 0.25, y + Math.sin(a + u) * rh * 0.62 + s * rh * 0.25); }
+      P.path(q, true, caps);
+      if (it.cap > 1) { cracks.moveTo(x + c * rh * 1.2 - s * rh * 0.35, y + s * rh * 1.2 + c * rh * 0.35); cracks.lineTo(x + c * rh * 0.7 + s * rh * 0.05, y + s * rh * 0.7 - c * rh * 0.05); cracks.lineTo(x + c * rh * 0.85 + s * rh * 0.4, y + s * rh * 0.85 - c * rh * 0.4); }
+    }
+    const n = Math.max(0, Math.min(3, Math.round(num(it.dots, 0))));
+    const dr = Math.max(1.3 * hs, rh * 0.24), gap = dr * 2.5;
+    for (let j = 0; j < n; j++) {
+      const o = (j - (n - 1) / 2) * gap, bx = x - c * rh * 0.15 - s * o, by = y - s * rh * 0.15 + c * o;
+      dots.moveTo(bx + dr, by);
+      dots.arc(bx, by, dr, 0, Math.PI * 2);
+    }
+    if (it.gun) rose.push({ x, y, r: rh * 1.75, w: clamp01(num(it.wind, 0)) });
+    if (it.flash > 0) flash.push({ x, y, r: rh * 1.05, a: clamp01(it.flash) });
+  }
+  ctx.save();
+  ctx.lineJoin = "round";
+  if (rose.length) {
+    for (const g of rose) {
+      ctx.globalAlpha = 0.45 + 0.55 * g.w;
+      ctx.beginPath(); ctx.arc(g.x, g.y, g.r + 2 * hs * g.w, 0, Math.PI * 2);
+      ctx.lineWidth = (1.6 + 1.6 * g.w) * hs + 2; ctx.strokeStyle = SHARED.ink; ctx.stroke();
+      ctx.lineWidth = (1.6 + 1.6 * g.w) * hs; ctx.strokeStyle = "#f6c2c8"; ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+  }
+  ctx.fillStyle = "#fff4e2"; ctx.strokeStyle = SHARED.ink; ctx.lineWidth = Math.max(1, 1.1 * hs);
+  ctx.stroke(caps); ctx.fill(caps);
+  ctx.lineWidth = Math.max(1, 1.2 * hs); ctx.stroke(cracks);
+  ctx.lineWidth = Math.max(1, 0.9 * hs); ctx.stroke(dots); ctx.fillStyle = "#fff4e2"; ctx.fill(dots);
+  for (const f of flash) {
+    ctx.globalAlpha = 0.6 * f.a; ctx.fillStyle = "#fff8ee";
+    ctx.beginPath(); ctx.arc(f.x, f.y, f.r, 0, Math.PI * 2); ctx.fill();
+  }
+  ctx.restore();
+}
+
 export function drawTails(F, st, heads, { subject }) {
   const ctx = F.ctx, hs = F.v.hs, k = F.k, tails = F.role.tails || {};
   const items = (st.items || []).filter((it) => it && fin(it.x) && fin(it.y));
@@ -332,18 +382,22 @@ export function drawTails(F, st, heads, { subject }) {
     if (!rivals.length) return;
     // the pack: every shadow in one fill, then the paper in one fill and the backs in one (order-independent)
     const out = new Path2D(), back = new Path2D();
+    const marked = [];
     for (const it of rivals) {
       const s = heads.get(it);
       const L = Math.max(6, num(it.len, 10) * k);
-      const rh = s ? Math.max(1.6, s.r * k) : Math.max(1.6, 0.13 * L);
+      // it.head (world u, optional): the head's radius when no head splat is paired (stage 2's rivals)
+      const rh = s ? Math.max(1.6, s.r * k) : fin(it.head) ? Math.max(1.6, it.head * k) : Math.max(1.6, 0.13 * L);
       const shape = spermShape(F.X(it.x, it.y), F.Y(it.x, it.y), F.v.cam.screenAngle(num(it.ang, 0)), L, rh, num(it.phase, 0), { twist: F.tier.twist });
       P.path(shape.pts, true, out);
       for (const b of shape.backs) P.path(b, true, back);
+      if (it.dots > 0 || it.cap > 0 || it.gun || it.flash > 0) marked.push({ it, rh });
     }
     shadowLive(F, out, 4 * hs, { alpha: 0.3 });
     const col = hexOf(F, tails.rival || "rival") || "#967088";
     P.paper(ctx, out, col, { edge: F.tier.edge ? 0.6 * hs : 0, edgeMix: 0.3 });
     if (F.tier.twist) { ctx.fillStyle = hexOf(F, tails.rivalBack || "rivalBack") || P.mix(col, "#000000", 0.15); ctx.fill(back); }
+    if (marked.length) drawRivalMarks(F, marked);
     F.stats.splats += rivals.filter((it) => heads.has(it)).length;
     return;
   }

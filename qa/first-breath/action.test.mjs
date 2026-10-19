@@ -17,11 +17,14 @@
 // - the knock-out path: hp 0 sets ko and emits "ko" (never throws, the stage decides); the view validates throughout;
 // - the bot dodges: at skill 1 it takes far fewer hits than standing still under the same fire, and its answer at
 //   skill 1 needs no memory;
+// - the boss bar: the view's boss is the first boss foe's hp share and phase, or the stage's own A.bossBar;
+// - the goal pull (goalSteer): toward a stage goal, 0.6 when calm, 0.25 with a foe bullet near, seen late below
+//   skill 1 (r.mem), none at skill 1; actionSteer's keep and picks can be turned off;
 // - perf: a step with 600 bullets, 48 foes and 96 pickups stays far under the 1 ms budget (p99).
 // node qa/first-breath/action.test.mjs
 import assert from "node:assert/strict";
 import * as X from "../../public/first-breath/core/lib/action.js";
-import { actionSteer, BOT } from "../../public/first-breath/core/lib/actionbot.js";
+import { actionSteer, goalSteer, BOT } from "../../public/first-breath/core/lib/actionbot.js";
 import { makeIntents } from "../../public/first-breath/core/intent.js";
 import { emptyDraw, validate } from "../../public/first-breath/core/draw.js";
 import { DT } from "../../public/first-breath/core/clock.js";
@@ -367,6 +370,65 @@ await check("the bot: at skill 1 it takes far fewer hits than standing still und
   assert.deepEqual(a1, a2, "skill 1 needs no stream and no memory");
   assert.ok(Math.hypot(a1.steer.x, a1.steer.y) < 1, "|steer| stays under 1");
   assert.ok(BOT.lookR > 0);
+});
+
+await check("the boss bar: the first boss foe's hp share and phase, or the stage's own A.bossBar; null with none", () => {
+  const A = quiet();
+  assert.equal(X.actionView(A).boss, null);
+  const f = X.spawnFoe(A, { kind: "boss", ai: "still", boss: true, x: 0, y: 30, r: 9, hp: 200, spawnS: 0.5, touch: 0 });
+  assert.deepEqual(X.actionView(A).boss, { hp: 1, phase: 0 }, "from its spawn tell on");
+  steps(A, 40);
+  X.damageFoe(A, f, 50);
+  f.phase = 1;
+  assert.deepEqual(X.actionView(A).boss, { hp: 0.75, phase: 1 });
+  A.bossBar = { hp: 0.4, phase: 2 };
+  assert.deepEqual(X.actionView(A).boss, { hp: 0.4, phase: 2 }, "the stage's own bar wins (a swarm)");
+  A.bossBar = null;
+  assert.equal(X.actionView(A).boss, null, "null hides it");
+  delete A.bossBar;
+  const d = emptyDraw("grow");
+  d.action = { ...X.actionView(A), arena: A.arena };
+  d.action.boss.label = "hud.boss";
+  assert.deepEqual(validate(d), []);
+  d.action.boss = { hp: 2, phase: 0.5 };
+  assert.equal(validate(d).filter((m) => /action\.boss/.test(m)).length, 2, "hp out of 0..1 and a broken phase are caught");
+});
+
+await check("the goal pull: toward the goal, 0.6 calm and 0.25 with a shot near; late below skill 1; keep and picks can be off", () => {
+  const A = quiet();
+  A.p.x = 0; A.p.y = 0;
+  const base = actionSteer(A, 1, null);
+  assert.deepEqual(base.steer, { x: 0, y: 0 }, "a calm empty sac: no steer");
+  const g = goalSteer(A, base, { x: 30, y: 0 }, 1, null);
+  near(g.steer.x, BOT.goalCalm, 1e-9, "calm pull");
+  near(g.steer.y, 0, 1e-9, "straight at it");
+  X.addBullet(A, 2, 10, 10, 0, 0, { life: 9 });
+  near(goalSteer(A, base, { x: 30, y: 0 }, 1, null).steer.x, BOT.goalBusy, 1e-9, "a foe shot within 20 u: the busy pull");
+  X.clearBullets(A, 0);
+  near(goalSteer(A, base, { x: 3, y: 0 }, 1, null).steer.x, BOT.goalCalm * 3 / BOT.goalSlowR, 1e-9, "it eases off near the goal");
+  assert.deepEqual(goalSteer(A, base, null, 1, null), base, "no goal: as it was");
+  // below skill 1 the goal is seen late (sampled every goalLag × (1 − skill) s, in r.mem)
+  const r = stream(3, "bot");
+  r.mem = {};
+  goalSteer(A, base, { x: 30, y: 0 }, 0.5, r);
+  steps(A, 6);
+  const late = goalSteer(A, base, { x: -30, y: 0 }, 0.5, r);
+  assert.ok(late.steer.x > 0, "the old goal for a while");
+  steps(A, Math.ceil((BOT.goalLag * 0.5) / DT));
+  assert.ok(goalSteer(A, base, { x: -30, y: 0 }, 0.5, r).steer.x < 0, "then the new one");
+  // keep: false drops the range kept from the nearest foe; picks: false drops the pickups
+  const B = quiet();
+  X.spawnFoe(B, { kind: "germ", ai: "still", x: 0, y: 10, spawnS: 0, touch: 0, anywhere: true });
+  assert.ok(Math.hypot(actionSteer(B, 1, null).steer.x, actionSteer(B, 1, null).steer.y) > 0.1, "it backs off a near foe");
+  const C = quiet();
+  X.drop(C, "food", 26, 0, 1, 1);           // out of the magnet's reach, in the bot's
+  steps(C, 30);
+  assert.ok(actionSteer(C, 1, null).steer.x > 0, "it fetches food when calm");
+  assert.deepEqual(actionSteer(C, 1, null, { picks: false }).steer, { x: 0, y: 0 }, "picks: false leaves it");
+  const D = quiet();
+  X.spawnFoe(D, { kind: "germ", ai: "still", x: 0, y: 44, spawnS: 0, touch: 0, anywhere: true });
+  assert.ok(actionSteer(D, 1, null).steer.y > 0.1, "it closes to range on a far foe");
+  assert.deepEqual(actionSteer(D, 1, null, { keep: false }).steer, { x: 0, y: 0 }, "keep: false leaves it");
 });
 
 let PERF = null;

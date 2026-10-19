@@ -112,11 +112,11 @@ await check("the stage order and the screens of a whole run; no overlay after Bi
 });
 
 await check("families per stage (16.4): at most 2, 3 for egg, from steer, tap, hold and rotate", () => {
-  const want = { swim: ["steer"], egg: ["tap", "rotate", "hold"], split: ["tap", "hold"], root: ["steer", "tap"],
+  const want = { swim: ["steer", "tap"], egg: ["rotate", "tap"], split: ["steer", "tap"], root: ["steer", "tap"],
     grow: ["steer", "tap"], answer: ["tap", "steer"], turn: ["hold", "rotate"], birth: ["hold"], ending: ["hold"] };
   for (const m of [...STAGES, ENDING]) {
     assert.deepEqual([...m.meta.families], want[m.meta.id], m.meta.id);
-    assert.ok(m.meta.families.length <= (m.meta.id === "egg" ? 3 : 2));
+    assert.ok(m.meta.families.length <= 2);
     for (const f of m.meta.families) assert.ok(["steer", "tap", "hold", "rotate"].includes(f));
     // the race can fail, and so can every action-layer stage (a knock-out; contract.md)
     assert.equal(m.meta.canFail, m.meta.id === "swim" || !!m.meta.action, `${m.meta.id} canFail`);
@@ -160,16 +160,16 @@ await check("Try again from pause recreates the stage at once; earlier scores an
   assert.equal(run.act("retry"), false, "nothing to retry on the result");
 });
 
-// Stage 1 attempts that both end at the Almost card: "idle" reaches the 117 s cap (place 20, no points); "late"
-// waits 62 s, then swims as the ref bot and reaches the meeting place outside the top 3 (with points).
+// Stage 1 attempts that both end at the Almost card: "idle" is reached by the cool tide (place 20, no points); "late"
+// swims as a weak bot (skill 0.3) and is out at a knockout gate or by the tide, outside the top 3 (with points).
 function swimAttempts(order) {
   const run = createRun({ seed: 5, start: "new" });
   run.act("play");
   const evs = [];
   for (const how of order) {
-    const bot = createBot(1, 5);
+    const bot = createBot(0.3, 5);
     while (run.screen === "stage") {
-      const late = how === "late" && run.state.t >= 62;
+      const late = how === "late";
       run.step(late ? shiftIntents(bot.intents(run.mod, run.state), -run.stageStart) : makeIntents());
       evs.push(...run.events.splice(0));
     }
@@ -193,7 +193,7 @@ await check("Try again at the Almost card: the better attempt's score is kept, t
     assert.equal(swim.attempts, 2, order.join(" then "));
     const ends = named(evs, "stageEnd").filter((e) => e.id === "swim");
     const lateEnd = ends[order.indexOf("late")];
-    assert.ok(lateEnd.result.score.total > 0 && !lateEnd.result.metrics.capped && lateEnd.result.metrics.place > 3, "the late attempt finishes outside the top 3");
+    assert.ok(lateEnd.result.score.total > 0 && lateEnd.result.metrics.place > 3, "the late attempt ends outside the top 3");
     assert.equal(swim.score.total, lateEnd.result.score.total, `${order.join(" then ")}: the better attempt is kept`);
     assert.equal(ends.length, 2, "each closed attempt reports its end");
     const last = ends[ends.length - 1].result.carryOut.sperm.place;
@@ -210,9 +210,9 @@ await check("Go on after the cap plays the 3 s carry: no Goal, no grade word, ne
   assert.ok(!named(REF.evs, "screen").some((e) => e.screen === "almost"), "the ref run never sees the Almost card");
   const almost = named(IDLE.evs, "screen").find((e) => e.screen === "almost");
   assert.equal(almost.data.capped, true);
-  assert.equal(almost.data.place, 20, "idle is 20th at the cap");
+  assert.equal(almost.data.place, 20, "idle is 20th when the cool tide reaches it");
   assert.equal(almost.data.of, 20);
-  near(almost.t, 117, 1e-6, "the cap");
+  assert.ok(almost.t > 12 && almost.t < 30, `out by the cool tide at about 14 s (the card at ${almost.t.toFixed(1)} s)`);
   const carried = named(IDLE.evs, "moment").find((e) => e.stage === "swim" && e.id === "carried");
   assert.ok(carried, "jump(\"carried\")");
   near(carried.t, almost.t, 1e-6, "Go on at once (the bot chooses it)");
@@ -235,11 +235,11 @@ await check("Go on after the cap plays the 3 s carry: no Goal, no grade word, ne
   for (let i = 0; i < 120; i++) run.step(makeIntents());
   assert.equal(run.screen, "almost", "the Almost card has no timer");
   run.events.length = 0;
-  const at = run.t;
+  const at = run.t, endT = run.state.t;     // stage 1 ended when the cool tide reached you (no longer at the 117 s cap)
   assert.equal(run.act("goOn"), true);
   assert.equal(run.screen, "stage");
   assert.equal(run.state.moment, "carried");
-  near(run.stageStart, at - 117, 1e-6, "the time base moves on by the card's 2 s");
+  near(run.stageStart, at - endT, 1e-6, "the time base moves on by the card's 2 s");
   const evs = [];
   while (run.stageId === "swim" && run.screen === "stage") {
     near(run.state.t, run.t - run.stageStart, 1e-6, "state.t = run.t − stageStart in the carry");
@@ -248,7 +248,7 @@ await check("Go on after the cap plays the 3 s carry: no Goal, no grade word, ne
   }
   assert.equal(run.screen, "overlay");
   near(named(evs, "stageEnd")[0].t, at + 3, 1e-6, "the carry ends 3 s after Go on (core time)");
-  near(run.state.t, 120, 1e-6, "at 120 s of stage time");
+  near(run.state.t, endT + 3, 1e-6, "3 s of stage time after it ended");
 });
 
 await check("practice (the goto path) of every stage works with DEFAULT_CARRY", () => {
@@ -322,7 +322,9 @@ await check("stage events reach the host in core seconds, tagged with their stag
   }
   const done = REF.evs.filter((e) => e.name === "done");
   assert.equal(done.length, 9, "8 stages and the ending (the ref run is never carried)");
-  assert.equal(IDLE.evs.filter((e) => e.name === "done").length, 10, "idle: 8 stages, the carried swim again, and the ending");
+  // a knock-out ends a stage once, and Go on to its meta.goOn moment plays it out and ends it again (design.md 4.4)
+  const wentOn = IDLE.evs.filter((e) => e.name === "screen" && e.screen === "stage" && e.data && e.data.carried && e.data.id !== "swim").length;
+  assert.equal(IDLE.evs.filter((e) => e.name === "done").length, 10 + wentOn, "idle: 8 stages, the carried swim again, each stage played on after a knock-out, and the ending");
 });
 
 await check("gaDay and mmPerShortAxis never decrease over a whole run", () => {
@@ -400,19 +402,20 @@ await check("stage 1's sperm.place reaches stage 2 and sets when your sperm come
   const place = swimEnd.result.carryOut.sperm.place;
   const egg = named(REF.evs, "stageStart").find((e) => e.id === "egg");
   assert.equal(egg.carry.sperm.place, place);
-  const guard = REF.evs.find((e) => e.name === "moment" && e.stage === "egg" && e.id === "guard");
+  // the rush (first-breath-action-genres design.md 5.2): your sperm comes in 1.0 s + 0.3 s per place below 1st after
+  // the swarm drifts off (to the step; a hit-stop in between may hold it a few frames)
+  const off = (evs) => evs.find((e) => e.name === "caption" && e.stage === "egg" && e.id === "egg.swarmOff");
   const gold = named(REF.evs, "goldIn");
   assert.equal(gold.length, 1);
-  near(gold[0].t - guard.t, 27 + 0.3 * (place - 1), 1e-6, "goldIn at 27 + 0.3 (place − 1) s into the guard");
+  near(gold[0].t - off(REF.evs).t, 1 + 0.3 * (place - 1), 0.15, "goldIn 1 + 0.3 (place − 1) s after the swarm drifts off");
   const at = (p) => {
     const run = createRun({ seed: 3, start: { practice: "egg", carry: { sperm: { place: p } } } });
-    const evs = play(run, {});
-    const g = evs.find((e) => e.name === "moment" && e.id === "guard");
-    return named(evs, "goldIn")[0].t - g.t;
+    const evs = play(run, { bot: createBot(1, 3) });
+    return named(evs, "goldIn")[0].t - off(evs).t;
   };
-  near(at(1), 27, 1e-6, "1st");
-  near(at(3), 27.6, 1e-6, "3rd");
-  near(at(20), 32.7, 1e-6, "20th");
+  near(at(1), 1, 0.15, "1st");
+  near(at(3), 1.6, 0.15, "3rd");
+  near(at(20), 6.7, 0.15, "20th");
 });
 
 await check("exactly one sperm enters in a whole run", () => {
@@ -443,7 +446,9 @@ await check("timers: overlay 2.5 s (linger holds it), card skippable from 1.0 s 
   stepTo(() => run.screen !== "card");
   near(run.t - t0, TIMERS.cardS, DT + 1e-9, "the card goes by itself at 3.5 s");
   assert.equal(run.stageId, "egg");
-  stepTo(() => run.screen === "overlay");
+  // with no input the egg's shell needs a rest (a knock-out): Go on plays it out, then its overlay
+  stepTo(() => run.screen === "overlay" || run.screen === "almost");
+  if (run.screen === "almost") { assert.equal(run.act("goOn"), true); stepTo(() => run.screen === "overlay"); }
   assert.equal(run.act("linger"), true);
   t0 = run.t;
   stepTo(() => run.screen !== "overlay", 600);

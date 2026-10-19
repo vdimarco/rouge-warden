@@ -154,10 +154,10 @@ check("swim.frame, egg.frame and end.apgar are shown run result facts, and the r
   }
   // the facts with no room to show whole in their stage (design.md 12): "What was real" lists them with their stage
   const more = ALL.filter((f) => f.where === "result" && !["egg.frame", "end.apgar", "swim.frame"].includes(f.id)).map((f) => f.id);
-  assert.deepEqual(more.sort(), ["answer.hic", "answer.outside", "egg.cilia", "egg.day", "egg.place",
+  assert.deepEqual(more.sort(), ["answer.hic", "answer.outside", "egg.choice", "egg.cilia", "egg.day", "egg.place",
     "egg.pronuclei", "egg.seal", "egg.signal", "egg.size", "egg.stick", "egg.wave", "end.fluid", "end.seconds", "grow.flow", "grow.frame",
-    "grow.never", "grow.w11kick", "root.buds", "root.glands", "root.grows", "root.size", "root.tube", "split.inner", "swim.few",
-    "swim.hyper", "swim.ready", "swim.walls", "swim.warm"]);
+    "grow.never", "grow.w11kick", "root.buds", "root.glands", "root.grows", "root.size", "root.tube", "split.frame", "swim.few",
+    "swim.flow", "swim.hyper", "swim.mucus", "swim.ready", "swim.rest", "swim.side", "swim.walls", "swim.warm"]);
   assert.ok(screens.includes('f.where === "result"'), "the run result lists the played stages' result facts");
 });
 

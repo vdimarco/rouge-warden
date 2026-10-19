@@ -13,16 +13,18 @@
 // Contract choices:
 // - Moments: wave7 to wave12 (gaDay 7N to 7N + 7: 7N + 6 over the wave's nominal 7.5 s, the last day over its
 //   rest), then boss (gaDay 91 to 97). A wave ends when its rows have all spawned and no germ is left, or at 11 s;
-//   germs left then drift away (no score). The boss ends the stage when it is cleared; at the 120 s cap the stage
+//   germs left then drift away (no score). Clearing the boss plays a 1.4 s victory beat (outroS: the shots turn to
+//   sparkles, act.win, the thumb; you can still move), then the stage ends; at the 120 s cap the stage
 //   ends with the goal met (you lasted); a knock-out ends it with the goal unmet (canFail), after a short rest
 //   (at least koS, and until the captions already sent are read).
 // - Wave times run on the world clock (A.t), which holds still under a hit-stop; the cap on the stage clock.
-// - The score (7): Goal 3,000; Skill: 3,500 × min(1, your combo score / (the whole value × 1.3)) for germs cleared,
+// - The score (7): Goal 3,000; Skill: 3,500 × min(1, your combo score / (the whole value × 1.75)) for germs cleared,
 //   ticked to the HUD at each clear (each clear's pop shows those points), and 2,500 × (1 − hits / 5) for shots
-//   dodged, at the end; Flourish 1,000 × min(1, best combo / 12), at the end.
+//   dodged, at the end; Flourish 1,000 × min(1, best combo / 25), at the end.
 // - The camera holds the sac still (fit, span 112). The sac is to scale (meta.mm 30 to 150 mm across the short axis:
 //   about 25 mm across at week 7, 12 cm by week 13), and so is the scale bar; you are drawn smaller than your true
-//   length (8 to 14 u, growing with the NHS lengths), so there is room to play.
+//   length (9.5 to 15 u, growing with the NHS lengths), so there is room to play.
+// - The HUD's boss bar follows the big germ (core/lib/action.js actionView); its phase colours its core and the bar.
 // - meta.action marks a stage built on the action layer: no timed targets; a press is a dash.
 import { DT, mmPerShortAxis, bpmYou } from "../clock.js";
 import { makeBeats } from "../beat.js";
@@ -78,6 +80,7 @@ const P_MOVE = Object.freeze({ gesture: "move", text: "grow.prompt.move", keys: 
 const P_DASH = Object.freeze({ gesture: "move", text: "grow.prompt.dash", keys: "steer" });
 const P_REST = Object.freeze({ gesture: "move", text: "grow.prompt.rest", keys: "steer" });
 const P_BOSS = Object.freeze({ gesture: "move", text: "grow.prompt.boss", keys: "steer" });
+const P_FREE = Object.freeze({ gesture: "move", text: null, keys: "steer" });         // the victory beat: no words
 
 // Captions on the clock: [seconds into the wave, fact id] (each fact shows at the gaDay its label names).
 const CAPTIONS = Object.freeze({
@@ -264,6 +267,38 @@ function bossStep(st) {
   }
 }
 
+// The big germ is cleared: a short victory beat before the stage ends. The germs left pop, the shots on screen turn to
+// sparkles, the food is drawn in, the big germ bursts again and again where it was, and you suck your thumb; then the
+// stage ends (finish "boss"). You can still move about.
+function startOutro(st) {
+  const A = st.A, at = st.bossXY || { x: 0, y: 0, r: 11 };
+  st.phase = "outro";
+  st.o0 = A.t;
+  st.oT0 = st.t;
+  st.booms = 0;
+  for (const f of A.foes.slice()) { X.burst(A, f.x, f.y, f.r, 0); X.removeFoe(A, f.id); }
+  const B = A.b, step = Math.max(1, Math.ceil(B.n / 8));
+  for (let i = 0; i < B.n; i += step) if (B.side[i] === 2) X.burst(A, B.x[i], B.y[i], 2, 2);    // shots to sparkles
+  X.clearBullets(A, 2);
+  A.tells.length = 0;
+  X.vacuum(A, TUNE.outroS);
+  A.juice.shake = Math.min(1, A.juice.shake + 0.6);
+  if (st.subgoals.boss === "shown") doneBy(st, "boss", "you", "grow.sub.bossDone");
+  setPrompt(st, P_FREE);
+  emit(st, "sfx", { id: "act.win", x: at.x, y: at.y });
+}
+
+function outroStep(st) {
+  const A = st.A, at = st.bossXY || { x: 0, y: 0, r: 11 }, k = A.t - st.o0;
+  // four more bursts round where it was, 0.12 s apart, each a little further out
+  while (st.booms < 4 && k >= 0.12 * (st.booms + 1)) {
+    const a = A.rnd() * TAU, d = at.r * (0.3 + 0.2 * st.booms);
+    X.burst(A, at.x + Math.cos(a) * d, at.y + Math.sin(a) * d, at.r * (0.7 - 0.1 * st.booms), st.booms % 2 ? 2 : 0);
+    A.juice.shake = Math.min(1, A.juice.shake + 0.25);
+    st.booms++;
+  }
+}
+
 // ---- growth: food grows your sparks
 
 function growCheck(st) {
@@ -287,7 +322,7 @@ function outcomes(st) {
       const add = Math.max(0, Math.min(room, Math.floor((TUNE.score.clear * o.gain) / REF_SCORE)));
       if (add > 0) { st.ticked += add; emit(st, "points", { part: "skill", add }); }
       X.pop(A, o.x, o.y, add, o.combo);
-      if (o.boss) st.bossCleared = true;
+      if (o.boss) { st.bossCleared = true; st.bossXY = { x: o.x, y: o.y, r: TUNE.boss.spec.r }; }
     } else if (o.type === "pick") {
       if (o.kind === "food") growCheck(st);
     } else if (o.type === "dash") {
@@ -402,7 +437,7 @@ export function create(seed, carryIn, opts = {}) {
     A, mi: 0, phase: "wave", w0: 0, r0: 0, b0: 0, W: null, boss: null, bossCleared: false,
     rWave: stream(s, "waves"), pcAng, pc, attach, tree, cordLights: [], grow: 0, grewAt: -Infinity,
     capQ: [], prompt: null, ticked: 0, done: false, doneT: 0, how: null, goalMet: false, capBusy: 0, evSeen: 0, koAt: null, koEnd: null,
-    fired: {}, assistK: assist ? As.foesK : 1, rate: TUNE.fire.rate,
+    fired: {}, assistK: assist ? As.foesK : 1, rate: TUNE.fire.rate, bossXY: null, o0: 0, oT0: null, booms: 0,
   };
   st.beats = makeBeats(s, [
     { heart: "mother", from: 0, to: END_S, bpm: meta.motherBpm, jitter: 0, first: phase },
@@ -437,6 +472,8 @@ export function step(st, intents) {
     }
   } else if (st.phase === "boss") {
     bossStep(st);
+  } else if (st.phase === "outro") {
+    outroStep(st);
   }
   st.t += DT;
   while (st.capQ.length && st.capQ[0].at <= A.t + 1e-9) {
@@ -457,7 +494,8 @@ export function step(st, intents) {
     if (st.t >= st.koEnd - 1e-9 || st.t >= meta.capS - 1e-9) finish(st, "ko");
     return;
   }
-  if (st.bossCleared) return finish(st, "boss");
+  if (st.bossCleared && st.phase !== "outro") startOutro(st);
+  if (st.phase === "outro") { if (A.t - st.o0 >= TUNE.outroS - 1e-9 || st.t >= meta.capS - 1e-9) finish(st, "boss"); return; }
   if (st.t >= meta.capS - 1e-9) finish(st, "cap");
 }
 
@@ -488,7 +526,7 @@ const swell = (phase) => { const u = Math.max(0, 1 - phase / 0.35); return u * u
 // The pose: a kick while you dash, a startle when you are hit, the thumb once the big germ is gone, else the curl.
 function poseOf(st) {
   const p = st.A.p;
-  if (st.done && st.how === "boss") return { name: "thumb", p: smooth((st.t - st.doneT) / 0.6) };
+  if (st.phase === "outro" || (st.done && st.how === "boss")) return { name: "thumb", p: smooth((st.t - (st.oT0 ?? st.doneT)) / 0.6) };
   if (p.dashT > 0) return { name: "kick", p: 1 };
   if (p.inv > 0 && p.inv > p.invS - 0.35) return { name: "startle", p: smooth((p.invS - p.inv) / 0.15) };
   return "curl";
@@ -626,6 +664,9 @@ export function jump(st, id) {
   st.capQ = [];
   st.done = false;
   st.how = null;
+  st.bossCleared = false;
+  st.bossXY = null;
+  st.oT0 = null;
   if (i === BOSS) startBoss(st);
   else startWave(st, i);
   return true;

@@ -322,6 +322,9 @@ export const ROLES = Object.freeze({
     dots: ["corona1", "corona2", "corona3"], dotsDim: "pathDots", dotR: [1.3, 0.5],
     tails: { rival: "rival", rivalBack: "rivalBack", you: "you", youBack: "youBack", dashes: "cutDashes" },
     ripple: "glow", rippleBig: "ripples", cilia: "cilia", arc: "arc", arcSmall: "sealWave", glow: "glow",
+    // the action layer (render/action.js): the glow and your returned sparks are cream like the arc (marigold stays
+    // your gold sperm); the gifts are cream stars
+    action: { mine: "arc", up: "cutDashes" },
     frames: null,
   },
   split: {
@@ -338,6 +341,8 @@ export const ROLES = Object.freeze({
     dots: [{ mix: ["back", "glow", 0.4] }], dotR: [1.2, 0.35],
     cilia: { mix: ["tubeWalls", "glow", 0.32] }, arc: "shell", ripple: "glow",
     band: { mix: ["back", "tubeWalls", 0.55] }, glow: "glow",
+    // the action layer (render/action.js ACTION_TONES fills the rest): germs in teal and sage (design.md 4.8)
+    action: { foe: "#6f9a8e", foe2: "#9fae7e" },
     frames: { shape: "oval", tokens: ["frame3", "frame2", "frame1"], size: 0.64 },
   },
   root: {

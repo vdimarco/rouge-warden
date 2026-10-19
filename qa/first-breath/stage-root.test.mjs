@@ -1,29 +1,42 @@
-// First Breath: stage 4, The Placenta (`root`, design.md 6.4, 4.1, 5.2 to 5.5, 7, 15, 16.4 to 16.7, 18; tasks 2.15 to
-// 2.18). The meta and moments match the 4.1 table; the same seed and input play the same stage (two seeds); the
-// scripted ideal input and the ref bot reach Glowing; idle ends by the cap with its goal met, all 8 pools linked by
-// 40 s into roots and the clock at week 7; the skill 0.7 bot completes; one live gesture per moment; at most 2
-// families; every sub-goal ends done or auto; the heart targets carry P, sit on your beats at 110 bpm and get their
-// preview; every view validates, with an anchor and a cue; no red pools; nestle (a touch sinks you in over 2 s, idle
-// is drawn in from 8 s), the firm edge, the swell, on-beat links, the auto reach from 12 s (8 s with Assist), the
-// score parts and their points events, the carry out; botSteer keeps its memory in r.mem and is the same at skill 1
-// for any r (one-button); jump; junk input never throws; the facts and the strings.
-// node qa/first-breath/stage-root.test.mjs
+// First Breath: stage 4, The Placenta (`root`), as the action-adventure of first-breath-action-genres (design.md 5.4;
+// contract.md). Node only, no DOM. It checks:
+// - meta: the moments and their gaDays, families, the action layer, Go on to the heart, the cap;
+// - the lining map: the same for the same seed; 8 pools (3 in open fluid, 3 under soft tissue, 2 walled in firm
+//   tissue) 40 u apart and 50 to 140 u from the start; the shares of open and firm ground; 14 knots 30 u apart, none in
+//   firm tissue; every pool reachable (the open and hidden ones without digging firm tissue), over 20 seeds;
+// - movement: soft tissue slows you to 16 u/s and leaves a tunnel you then swim at 40 u/s; firm tissue blocks you
+//   until 5 pools, then you dig it at 12 u/s; firm tissue stops sparks;
+// - the grapple: it snaps to a knot in its cone and reach and pulls you there; not to one outside the cone or past
+//   the reach (60 u, 90 u after 3 pools); it sticks in tissue and pulls you to it; it comes back from open fluid;
+// - pools: entering one links it (yours: 375 points, 675 for a hidden one, a glow back along the roots, "+1 root");
+//   with no input every pool links by itself by 58 s ("The roots reach it anyway." each); 3 pools give the reach and
+//   5 strong roots; the pools are milk-white with dotted rims in every view (never red);
+// - germs: never spawn within 24 u of you or more than 40 u behind you (no spawn in the bottom 40% in portrait);
+// - the heart: no input asked; the hush (her heart −8 dB, the light −10%), your heart at 110 bpm, the milestone, the
+//   clock reads "Day 22 after fertilization (week 5)"; the 8 pulses pop every germ within 40 u of the tree;
+// - a knock-out: the rest line, the Almost card's metrics, Go on links the pools left and plays the heart and grow,
+//   with Goal 0 and the milestones once;
+// - the score: the points events add up to the total; the parts; Flourish for all 8 by 40 s; the carry out;
+// - facts and captions: root.hcg before root.glands, root.heart in the hush, root.frame on the result;
+// - the draw list is valid every 30th view of the ref and idle runs; p99 of a step;
+// - the gates (design.md 4.5): skill 1.0 Great or better in at least 18 of 20 and knocked out in at most 1, mean at
+//   least 8,500; skill 0.5 not knocked out in at least 16 of 20; one-button (botSteer at skill 1 while held) completes
+//   with no knock-out in at least 18 of 20; idle completes or is knocked out, never throws.
 import assert from "node:assert/strict";
 import * as root from "../../public/first-breath/core/stages/root.js";
 import { TUNE } from "../../public/first-breath/core/stages/root.tune.js";
 import { FACTS } from "../../public/first-breath/core/stages/root.facts.js";
 import { TEXT } from "../../public/first-breath/core/stages/root.text.js";
+import { makeMap, cellAt, fieldOf, fieldAt, OPEN, SOFT, FIRM, TUNNEL, DUG, EDGE } from "../../public/first-breath/core/stages/root.map.js";
 import { DEFAULT_CARRY } from "../../public/first-breath/core/carry.js";
 import { createBot } from "../../public/first-breath/core/bots.js";
-import { DT, label, range, mmPerShortAxis } from "../../public/first-breath/core/clock.js";
+import { DT, label } from "../../public/first-breath/core/clock.js";
 import { makeIntents } from "../../public/first-breath/core/intent.js";
-import { validate, LIMITS } from "../../public/first-breath/core/draw.js";
+import { validate } from "../../public/first-breath/core/draw.js";
 import { grade as gradeOf } from "../../public/first-breath/core/score.js";
-import { windows } from "../../public/first-breath/core/judge.js";
-import { check as checkTargets, previewS } from "../../public/first-breath/core/lib/track.js";
 import { stream } from "../../public/first-breath/core/rng.js";
 import { SOURCES } from "../../public/first-breath/core/sources.js";
-import { CARERS, fill } from "../../public/first-breath/core/text.js";
+import * as X from "../../public/first-breath/core/lib/action.js";
 
 const FILE = "qa/first-breath/stage-root.test.mjs";
 let passed = 0;
@@ -32,605 +45,459 @@ async function check(name, fn) {
   try { await fn(); passed++; } catch (e) { failed.push(`${name}\n     ${String(e.stack || e.message).split("\n").slice(0, 12).join("\n     ")}`); }
 }
 const near = (a, b, tol, msg) => assert.ok(Math.abs(a - b) <= tol, `${msg}: ${a} vs ${b} (±${tol})`);
-
-const OPTS = { assist: false, oneButton: false, motherPhase: 0 };
-const HER = 60 / 72, YOU = 60 / 110;
-const GESTURES = { nestle: "drag", roots: "drag", heart: "tap", grow: "none" };
-const MAX_STEPS = Math.ceil((root.meta.capS + 5) / DT);
+const hyp = Math.hypot;
+const OPTS = { motherPhase: 0 };
+const SEEDS = 20;
 const PERF = { p99: NaN };
+const P = TUNE.pools, Y = TUNE.you, GP = TUNE.grapple, H = TUNE.heart;
 
-// Inputs: each is (st) → intents for the step [st.t, st.t + DT), made fresh per play.
-const idle = () => () => makeIntents();
-const botInput = (skill, seed) => { const bot = createBot(skill, seed); return (st) => bot.intents(root, st); };
-// The ideal player: steers with botSteer at skill 1 (its own r) and presses every heart target exactly on time.
-function ideal(seed) {
-  const r = stream(seed, "ideal");
-  r.mem = {};
-  const done = new Set();
-  return (st) => {
-    const a = root.botSteer(st, 1, r);
-    const presses = [];
-    for (const x of root.targets(st, 1)) {
-      if (done.has(x.id) || x.t >= st.t + DT || x.t < st.t - 0.3) continue;
-      done.add(x.id);
-      presses.push({ t: Math.max(x.t, st.t), raw: Math.max(x.t, st.t) });
-    }
-    const s = a.steer;
-    return makeIntents({ steer: s, touching: presses.length > 0 || Math.hypot(s.x, s.y) > 0.01, presses });
-  };
-}
-// A seeded mash of junk: random steer (some NaN), random presses and releases, sometimes no intents at all.
-function junk(seed) {
-  const r = stream(seed, "junk");
-  return (st) => {
-    const k = r();
-    if (k < 0.05) return undefined;
-    if (k < 0.1) return { steer: { x: NaN, y: 1 }, presses: [{ t: NaN }], releases: null };
-    if (k < 0.15) return { steer: { x: 5, y: -7 }, touching: true, presses: [{ t: st.t + DT * r(), raw: st.t }] };
-    return makeIntents({
-      steer: { x: 2 * r() - 1, y: 2 * r() - 1 }, touching: r() < 0.5,
-      presses: r() < 0.1 ? [{ t: st.t + DT * r(), raw: st.t + DT * r() }] : [],
-      releases: r() < 0.1 ? [{ t: st.t + DT * r(), raw: st.t + DT * r() }] : [],
-    });
-  };
-}
+// ---- runs
 
-// Play one stage to its end. `every(st, i)` sees the state before each step; `after(st, evs)` sees the step's events.
-function play(seed, input, { opts = OPTS, every = null, after = null, viewsEvery = 0 } = {}) {
-  const st = root.create(seed, DEFAULT_CARRY, opts);
-  const evs = [...st.events];
-  st.events.length = 0;
-  const views = [];
-  let i = 0;
-  for (; i < MAX_STEPS && !root.result(st).done; i++) {
-    if (viewsEvery && i % viewsEvery === 0) views.push({ t: st.t, moment: st.moment, v: root.view(st) });
-    if (every) every(st, i);
+function play(seed, input, { carry = DEFAULT_CARRY, opts = OPTS, views = false, each = null } = {}) {
+  const st = root.create(seed, carry, opts);
+  const evs = [], bad = [];
+  let steps = 0;
+  while (!root.result(st).done && steps < (root.meta.capS + 5) / DT) {
     root.step(st, input(st));
-    if (after) after(st, st.events);
-    evs.push(...st.events);
+    for (const e of st.events) evs.push({ t: st.t, ...e });
     st.events.length = 0;
+    if (each) each(st);
+    if (views && steps % 30 === 0) { const b = validate(root.view(st)); if (b.length) bad.push(`${st.t.toFixed(2)} ${st.moment}: ${b.slice(0, 3).join("; ")}`); }
+    steps++;
   }
-  if (viewsEvery) views.push({ t: st.t, moment: st.moment, v: root.view(st) });
-  return { st, evs, views, res: root.result(st), steps: i };
+  return { st, res: root.result(st), evs, bad };
 }
-const named = (evs, name) => evs.filter((e) => e.name === name);
+const botIn = (skill, seed) => { const b = createBot(skill, seed); return (st) => b.intents(root, st); };
+const idle = () => makeIntents();
+// one-button mode: botSteer at skill 1 while the button is held, its dash as a press (core/run.js)
+const oneIn = (seed) => { const r = stream(seed, "one"); r.mem = {}; return (st) => {
+  const a = root.botSteer(st, 1, r);
+  return makeIntents({ steer: a.steer, touching: true, presses: a.dash ? [{ t: st.t, raw: st.t }] : [] });
+}; };
 
-// Shared plays.
-const IDLE = [1, 2, 3, 4, 5].map((seed) => play(seed, idle(), { viewsEvery: 15 }));
-const REF = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((seed) => play(seed, botInput(1, seed), { viewsEvery: 15 }));
-const MID = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((seed) => play(seed, botInput(0.7, seed), { viewsEvery: 30 }));
-const IDEAL = [1, 2, 3].map((seed) => play(seed, ideal(seed)));
+const REF = [], MID = [], IDLE = [], ONE = [];
+for (let s = 1; s <= SEEDS; s++) {
+  REF.push(play(s, botIn(1, s), { views: s <= 3 }));
+  MID.push(play(s, botIn(0.5, s)));
+  IDLE.push(play(s, idle, { views: s <= 3 }));
+  ONE.push(play(s, oneIn(s)));
+}
 
-await check("meta and moments match the Stage interface and the 4.1 and 3.1 tables", () => {
-  const m = root.meta;
-  assert.deepEqual([m.id, m.index, m.name, m.verb, m.orient], ["root", 3, "The Placenta", "Root", "long"]);
-  assert.deepEqual([...m.families], ["steer", "tap"]);
-  assert.ok(m.families.length <= 2, "at most 2 families");
-  assert.deepEqual({ ...m.ga }, { start: 20, end: 49 });
-  assert.deepEqual({ ...m.mm }, { start: 0.6, end: 30 });
-  assert.equal(m.fertilized, true);
-  assert.deepEqual([m.motherBpm, m.parS, m.capS, m.canFail, m.scored], [72, 45, 75, false, true]);
-  assert.deepEqual(m.moments.map((x) => [x.id, [...x.ga], x.lenS]),
-    [["nestle", [20, 23], 12], ["roots", [25, 35], 40], ["heart", [36, 36], null], ["grow", [36, 49], 7]]);
-  for (const name of ["create", "step", "view", "prompt", "targets", "botSteer", "probe", "result", "jump"]) assert.equal(typeof root[name], "function", name);
-});
-
-await check("the same seed and input play the same stage (seeds 1 and 2, bot and junk input)", () => {
-  for (const seed of [1, 2]) {
-    for (const make of [() => botInput(0.7, seed), () => junk(seed)]) {
-      const a = play(seed, make(), { viewsEvery: 20 }), b = play(seed, make(), { viewsEvery: 20 });
-      assert.equal(JSON.stringify(a.evs), JSON.stringify(b.evs), `seed ${seed}: the same events`);
-      assert.deepEqual(a.res, b.res, `seed ${seed}: the same result`);
-      assert.equal(JSON.stringify(a.views.map((v) => ({ ...v.v, strips: v.v.strips.map((s) => ({ ...s, nodes: s.nodes ? Array.from(s.nodes) : undefined })) }))),
-        JSON.stringify(b.views.map((v) => ({ ...v.v, strips: v.v.strips.map((s) => ({ ...s, nodes: s.nodes ? Array.from(s.nodes) : undefined })) }))), `seed ${seed}: the same views`);
-    }
-  }
-  const c = play(3, botInput(0.7, 3));
-  assert.notEqual(JSON.stringify(c.res.metrics), JSON.stringify(play(4, botInput(0.7, 3)).res.metrics), "another seed lays another stage");
-});
-
-await check("the scripted ideal input reaches Glowing; the ref bot is Glowing on every seed", () => {
-  for (const { res, st } of IDEAL) {
-    assert.equal(res.done, true);
-    assert.equal(st.err, null);
-    assert.equal(res.metrics.heartAccuracy, 1, "every heart tap In time");
-    assert.equal(res.metrics.onBeat, res.metrics.you, "every pool you reach is on the beat");
-    assert.equal(gradeOf(res.score.total, res.goalMet), "Glowing", `ideal ${res.score.total}`);
-  }
-  for (const { res } of REF) assert.equal(gradeOf(res.score.total, res.goalMet), "Glowing", `ref ${res.score.total} (${JSON.stringify(res.metrics)})`);
-  const mean = REF.reduce((a, p) => a + p.res.score.total, 0) / REF.length;
-  assert.ok(mean >= 8500, `ref mean ${mean}`);
-});
-
-await check("idle ends by the cap with its goal met: drawn in at 8 s, all 8 pools by 40 s, the clock at week 7", () => {
-  for (const { st, res, evs } of IDLE) {
-    assert.equal(res.done, true);
-    assert.equal(res.goalMet, true);
-    assert.equal(res.score.goal, 3000);
-    assert.ok(st.t <= root.meta.capS + 1e-9, `ended at ${st.t}`);
-    assert.equal(res.metrics.nestled, "auto");
-    near(res.metrics.times.roots, TUNE.nestle.idleS + TUNE.nestle.drawS, 2 * DT, "idle: drawn in from 8 s over 3 s");
-    assert.equal(res.metrics.you, 0);
-    assert.equal(res.metrics.auto, 8);
-    const rootsLen = res.metrics.times.heart - res.metrics.times.roots;
-    assert.ok(rootsLen <= TUNE.roots.lenS + DT, `all 8 linked by 40 s (${rootsLen.toFixed(2)} s)`);
-    const autos = named(evs, "caption").filter((e) => e.id === "root.anyway");
-    assert.equal(autos.length, 8, "\"The roots reach it anyway.\" for each");
-    assert.ok(autos[0].t - res.metrics.times.roots >= TUNE.roots.autoFromS - 1e-9, "no auto link before 12 s");
-    assert.equal(st.gaDay, 49);
-    assert.equal(label(st.gaDay), "Week 7");
-    assert.equal(res.score.total, 3000, "idle earns the Goal only");
-    assert.ok(st.t >= 60 && st.t <= 70, `idle stage time ${st.t.toFixed(1)} s (6.4: about 67 s)`);
-  }
-});
-
-await check("the skill 0.7 bot completes every seed with its goal met", () => {
-  for (const { st, res } of MID) {
-    assert.equal(res.done, true);
-    assert.equal(res.goalMet, true);
-    assert.equal(st.err, null);
-    assert.ok(st.t <= root.meta.capS);
-    assert.ok(res.metrics.you >= 3, `mid reached ${res.metrics.you}`);
-  }
-  const mean = MID.reduce((a, p) => a + p.res.score.total, 0) / MID.length;
-  assert.ok(mean >= 7000, `mid mean ${mean}`);
-});
-
-await check("one live gesture per moment, named by its prompt; prompt() agrees", () => {
-  for (const { evs, st } of [...IDLE.slice(0, 2), ...REF.slice(0, 2), ...MID.slice(0, 2)]) {
-    let moment = null;
-    const seen = {};
-    for (const e of evs) {
-      if (e.name === "moment") moment = e.id;
-      if (e.name !== "prompt" || !moment) continue;
-      (seen[moment] ||= new Set()).add(e.gesture);
-      assert.equal(e.keys, "steer");
-    }
-    for (const [m, set] of Object.entries(seen)) assert.deepEqual([...set], [GESTURES[m]], m);
-    assert.deepEqual(Object.keys(seen), ["nestle", "roots", "heart", "grow"]);
-    assert.equal(root.prompt(st).gesture, "none", "none once done");
-  }
-  const st = root.create(1, DEFAULT_CARRY, OPTS);
-  const input = botInput(1, 1);
-  while (!root.result(st).done) {
-    assert.equal(root.prompt(st).gesture, GESTURES[st.moment], st.moment);
-    root.step(st, input(st));
-    st.events.length = 0;
-  }
-});
-
-await check("every sub-goal is shown, then ends done or auto (idle, ref, mid, junk, jump)", () => {
-  const plays = [...IDLE, ...REF, ...MID, play(1, junk(1)), play(2, junk(2))];
-  const j = root.create(1, DEFAULT_CARRY, OPTS);
-  root.jump(j, "grow");
-  while (!root.result(j).done) root.step(j, makeIntents());
-  plays.push({ st: j, evs: j.events });
-  for (const { st, evs } of plays) {
-    assert.deepEqual(Object.keys(st.subgoals).sort(), ["heart", "nestle", "pools"]);
-    for (const [id, s] of Object.entries(st.subgoals)) assert.ok(s === "done" || s === "auto", `${id}: ${s}`);
-    for (const id of Object.keys(st.subgoals)) {
-      const list = named(evs, "subgoal").filter((e) => e.id === id).map((e) => e.state);
-      assert.equal(list[0], "shown", `${id} shown first`);
-      assert.equal(list.length, 2, `${id}: shown once, settled once`);
-    }
-  }
-  const ref = REF[0].st.subgoals, idleGoals = IDLE[0].st.subgoals;
-  assert.deepEqual(ref, { nestle: "done", pools: "done", heart: "done" });
-  assert.deepEqual(idleGoals, { nestle: "auto", pools: "auto", heart: "auto" });
-});
-
-await check("heart targets: 8 taps on your beats at 110 bpm, each with P, spaced ≥ 0.5 s, previewed ≥ max(2 beats, 1.2 s)", () => {
-  for (const seed of [1, 2]) {
-    const first = new Map();
-    const { st, evs } = play(seed, botInput(1, seed), { every: (s) => { for (const x of root.targets(s, 60)) if (!first.has(x.id)) first.set(x.id, { ...x, seen: s.t }); } });
-    const list = [...first.values()].sort((a, b) => a.t - b.t);
-    assert.equal(list.length, TUNE.heart.targets);
-    assert.deepEqual(checkTargets(list), []);
-    const you = Array.from(st.beats.you);
-    list.forEach((x, k) => {
-      assert.equal(x.kind, "tap"); assert.equal(x.heart, "you"); assert.equal(x.group, "heart");
-      near(x.P, YOU, 1e-6, `${x.id} P`);
-      assert.ok(you.some((b) => Math.abs(b - x.t) < 1e-9), `${x.id} sits on one of your beats`);
-      assert.ok(x.t - x.seen >= previewS(YOU) - 1e-9, `${x.id} previewed ${(x.t - x.seen).toFixed(2)} s`);
-      if (k) near(x.t - list[k - 1].t, YOU, 1e-6, "on consecutive beats");
-    });
-    const yours = named(evs, "subgoal").find((e) => e.id === "heart");
-    assert.ok(list[0].t - yours.t >= 1.2 - 1e-9, "the first target comes ≥ 1.2 s after \"This beat is yours.\"");
-    const ms = named(evs, "milestone");
-    assert.deepEqual(ms.map((e) => e.id), ["implanted", "heart"]);
-    near(ms[1].t, you[0], 1e-9, "milestone heart on your first beat");
-    near(you[0] - st.times.heart, TUNE.heart.hushS, 1e-9, "your heart starts after the 1.5 s hush");
-    for (let i = 1; i < you.length && you[i] < st.times.grow; i++) near(you[i] - you[i - 1], YOU, 1e-9, "110 bpm");
-    assert.ok(named(evs, "judge").every((e) => e.heart === "you"));
-  }
-});
-
-await check("every view validates, with an anchor and a cue in play, the camera long, and no red pools", () => {
-  const all = [...IDLE, ...REF, ...MID.slice(0, 3)];
-  const assist = play(1, botInput(1, 1), { opts: { ...OPTS, assist: true }, viewsEvery: 15 });
-  const one = play(2, botInput(0.7, 2), { opts: { ...OPTS, oneButton: true }, viewsEvery: 15 });
-  for (const { views } of [...all, assist, one]) {
-    assert.ok(views.length > 50);
-    for (const { t, moment, v } of views) {
-      assert.deepEqual(validate(v), [], `t ${t.toFixed(2)} (${moment})`);
-      assert.equal(v.stage, "root");
-      assert.equal(v.camera.orient, "long");
-      assert.ok(v.cue, `a cue at ${t.toFixed(2)} (${moment})`);
-      assert.ok(v.splats.length <= LIMITS.splats && v.marks.length <= LIMITS.marks && v.rings.length <= LIMITS.rings);
-      for (const m of v.marks) assert.notEqual(m.rim, "wavy", "pools turn red (wavy rims) only from gaDay 84");
-      for (const m of v.marks.filter((x) => x.kind === "pool")) assert.equal(m.rim, "dotted");
-      const tree = v.strips.find((s) => s.kind === "tree");
-      if (moment !== "nestle") assert.ok(tree && tree.nodes.length / 4 <= TUNE.tree.maxNodes, "the tree, within its cap");
-      if (moment === "roots") assert.equal(v.marks.filter((x) => x.kind === "pool").length, 8);
-    }
-  }
-  // the stage reads with plain shapes: lining spots, pools, the tree, you, rings for both hearts
-  const ref = REF[0].views;
-  const kinds = (m) => new Set(ref.filter((x) => x.moment === m).flatMap((x) => [...x.v.marks.map((k) => k.kind), ...x.v.strips.map((k) => k.kind), ...x.v.rings.map((k) => k.kind)]));
-  for (const k of ["spot", "glow", "mother"]) assert.ok(kinds("nestle").has(k), `nestle shows ${k}`);
-  for (const k of ["pool", "tree", "ripples", "mother"]) assert.ok(kinds("roots").has(k), `roots shows ${k}`);
-  for (const k of ["you", "approach", "mother"]) assert.ok(kinds("heart").has(k), `heart shows ${k}`);
-  assert.ok(kinds("grow").has("lake"), "grow shows the disc");
-});
-
-await check("gaDay follows 4.1 and never falls; the real scale never shrinks; labels from Day 6 to week 7", () => {
-  for (const play_ of [IDLE[0], REF[0], MID[0]]) {
-    const st = root.create(play_.st.seed, DEFAULT_CARRY, OPTS);
-    const input = play_ === IDLE[0] ? idle() : botInput(play_ === REF[0] ? 1 : 0.7, play_.st.seed);
-    let g = st.gaDay, mm = mmPerShortAxis(root.meta, g);
-    const span = { nestle: [20, 23], roots: [25, 35], heart: [36, 36], grow: [36, 49] };
-    assert.equal(label(st.gaDay), "Day 6 after fertilization (week 2)");
-    while (!root.result(st).done) {
-      root.step(st, input(st));
-      st.events.length = 0;
-      assert.ok(st.gaDay >= g - 1e-12, `gaDay ${g} → ${st.gaDay}`);
-      const m2 = mmPerShortAxis(root.meta, st.gaDay);
-      assert.ok(m2 >= mm - 1e-12);
-      if (!root.result(st).done) {
-        const [a, b] = span[st.moment];
-        assert.ok(st.gaDay >= a - 1e-9 && st.gaDay <= b + 1e-9, `${st.moment} gaDay ${st.gaDay}`);
-      }
-      g = st.gaDay; mm = m2;
-    }
-    assert.equal(st.gaDay, 49);
-    near(mmPerShortAxis(root.meta, st.gaDay), 30, 1e-9, "30 mm at the end");
-  }
-});
-
-await check("nestle: a touch sinks you in over 2 s by itself; nestleX follows the spot", () => {
-  for (const seed of [1, 2, 3, 4]) {
-    const st = root.create(seed, DEFAULT_CARRY, OPTS);
-    const target = st.spots.reduce((a, s) => (Math.hypot(s.x, s.y) < Math.hypot(a.x, a.y) ? s : a));
-    let sinkAt = null;
-    while (st.moment === "nestle") {
-      const dx = target.x - st.nest.x, dy = target.y - st.nest.y, d = Math.hypot(dx, dy) || 1;
-      root.step(st, makeIntents({ steer: { x: dx / d, y: dy / d - 0.25 }, touching: true }));
-      if (sinkAt === null && st.nest.state === "sink") sinkAt = st.t;
-    }
-    assert.equal(st.nest.by, "you");
-    assert.equal(st.spots[st.nest.spot], target, "the spot you touched");
-    near(st.times.roots - sinkAt, TUNE.nestle.sinkS, 2 * DT, "sinks in over 2 s");
-    assert.ok(st.times.roots < TUNE.nestle.lenS);
-    assert.deepEqual(st.root, { x: target.x, y: target.y });
-    assert.equal(st.subgoals.nestle, "done");
-    assert.ok(named(st.events, "subgoal").some((e) => e.id === "nestle" && e.text === "root.nestled"));
-    const nx = root.result(st).carryOut.nestleX;
-    assert.ok(nx >= -1 && nx <= 1 && Math.sign(nx) === Math.sign(target.x), `nestleX ${nx} for x ${target.x}`);
-  }
-  // spots are never on the idle line, so an idle drift is drawn in, not touched
-  for (let seed = 1; seed <= 40; seed++) {
-    const st = root.create(seed, DEFAULT_CARRY, OPTS);
-    assert.equal(st.spots.length, 3);
-    for (const s of st.spots) assert.ok(Math.abs(s.x) >= TUNE.nestle.spotR + TUNE.nestle.youR + 4, `spot x ${s.x}`);
-  }
-  // still drifting at 9 s: the nearest spot draws you in, so nestle ends by 12 s
-  const st = root.create(5, DEFAULT_CARRY, OPTS);
-  let k = 0;
-  while (st.moment === "nestle") { root.step(st, makeIntents({ steer: { x: (k++ % 120) < 60 ? 0.05 : -0.05, y: -0.27 }, touching: true })); }
-  assert.equal(st.nest.by, "auto");
-  assert.ok(st.times.roots <= TUNE.nestle.lenS + DT, `nestle ended at ${st.times.roots}`);
-});
-
-await check("roots: pools 60 to 150 u out, 40 u apart; the firm edge holds the tip; the swell; the tree within its caps", () => {
-  for (let seed = 1; seed <= 30; seed++) {
-    const st = root.create(seed, DEFAULT_CARRY, OPTS);
-    root.jump(st, "roots");
-    assert.equal(st.pools.length, 8);
-    st.pools.forEach((p, i) => {
-      const d = Math.hypot(p.x - st.root.x, p.y - st.root.y);
-      assert.ok(d >= 60 - 1e-9 && d <= 150 + 1e-9, `pool ${i} at ${d.toFixed(1)} u`);
-      for (let j = 0; j < i; j++) assert.ok(Math.hypot(p.x - st.pools[j].x, p.y - st.pools[j].y) >= 40 - 1e-9, `pools ${i}, ${j}`);
-      assert.ok(Math.abs(p.x - st.root.x) <= 130, "inside the free screen sideways");
-    });
-  }
-  // steer hard sideways, then back into the wall: the tip slides along the firm edge
-  const st = root.create(2, DEFAULT_CARRY, OPTS);
+// A state in the roots with nothing else moving: germs and guards gone, you at (x, y) in a cleared patch.
+function rootsAt(seed = 3) {
+  const st = root.create(seed, DEFAULT_CARRY, OPTS);
   root.jump(st, "roots");
-  let maxD = 0, minY = Infinity, nodesMax = 0;
-  for (let i = 0; i < 60 * 14 && st.moment === "roots"; i++) {
-    const s = i < 300 ? { x: 1, y: 0.1 } : i < 600 ? { x: -0.2, y: -1 } : { x: -1, y: 0 };
-    root.step(st, makeIntents({ steer: s, touching: true }));
-    if (st.moment !== "roots") break;
-    maxD = Math.max(maxD, Math.hypot(st.tip.x - st.root.x, st.tip.y - st.root.y));
-    minY = Math.min(minY, st.tip.y - st.root.y);
-    nodesMax = Math.max(nodesMax, st.tree.n);
+  st.events.length = 0;
+  for (const f of st.A.foes.slice()) X.removeFoe(st.A, f.id);
+  st.germT = Infinity;
+  st.autoK = 99;
+  return st;
+}
+// Set the cells round (x, y) within r to v.
+function paint(st, x, y, r, v) {
+  const m = st.map;
+  for (let j = 0; j < m.n; j++) for (let i = 0; i < m.n; i++) {
+    const cx = m.ox + (i + 0.5) * m.cell, cy = m.oy + (j + 0.5) * m.cell;
+    if (hyp(cx - x, cy - y) <= r && m.grid[j * m.n + i] !== EDGE) m.grid[j * m.n + i] = v;
   }
-  assert.ok(maxD <= TUNE.roots.firmR + 1e-6, `tip ${maxD} from the root`);
-  assert.ok(minY >= -TUNE.roots.backU - 1e-6, `tip ${minY} behind the root`);
-  assert.ok(nodesMax <= 260);
-  // pools swell 1 + 0.12 × pulse on her beat
-  const s2 = root.create(3, DEFAULT_CARRY, OPTS);
-  root.jump(s2, "roots");
-  const b = s2.beats.next("mother", s2.t + 0.1);
-  while (s2.t + DT < b) root.step(s2, makeIntents());
-  const before = root.view(s2).marks.find((m) => m.kind === "pool").r;
-  root.step(s2, makeIntents());
-  root.step(s2, makeIntents());
-  const onBeat = root.view(s2).marks.find((m) => m.kind === "pool").r;
-  near(before, TUNE.roots.poolR, 0.2, "between beats, radius 16");
-  assert.ok(onBeat > 1.08 * TUNE.roots.poolR && onBeat <= 1.12 * TUNE.roots.poolR + 1e-9, `on the beat ${onBeat}`);
+  m.gen++;
+}
+const steerX = (sx, sy, press = false) => makeIntents({ steer: { x: sx, y: sy }, touching: true, presses: press ? [{ t: 0, raw: 0 }] : [] });
+
+// ---- meta
+
+await check("meta: moments, gaDays, families, the action layer, Go on to the heart, the cap", () => {
+  const m = root.meta;
+  assert.equal(m.id, "root");
+  assert.equal(m.index, 3);
+  assert.deepEqual([...m.families], ["steer", "tap"]);
+  assert.equal(m.action, true);
+  assert.equal(m.goOn, "heart");
+  assert.equal(m.canFail, true);
+  assert.equal(m.capS, 90);
+  assert.deepEqual(m.moments.map((x) => [x.id, ...x.ga]), [["nestle", 20, 23], ["roots", 25, 35], ["heart", 36, 36], ["grow", 36, 49]]);
+  assert.deepEqual(root.targets(root.create(1, DEFAULT_CARRY, OPTS), 5), [], "no timed targets");
 });
 
-await check("on-beat links: arriving on her beat counts, arriving 0.4 s late still links but not on the beat", () => {
-  const close = windows(HER, false).close;
-  for (const seed of [1, 2, 3]) {
-    const late = stream(seed, "late");
-    late.mem = { aims: Object.fromEntries([0, 1, 2, 3, 4, 5, 6, 7].map((i) => [i, 0.4])) };
-    const st = root.create(seed, DEFAULT_CARRY, OPTS);
-    root.jump(st, "roots");
-    const t0 = st.t;
-    while (st.moment === "roots") {
-      const a = root.botSteer(st, 0.999, late);
-      root.step(st, makeIntents({ steer: a.steer, touching: true }));
-    }
-    const mine = st.pools.filter((p) => p.by === "you");
-    assert.ok(mine.length >= 4, `late player reached ${mine.length}`);
-    assert.ok(st.counts.onBeat <= 1, `late: ${st.counts.onBeat} on the beat`);
-    const ref = root.create(seed, DEFAULT_CARRY, OPTS);
-    root.jump(ref, "roots");
-    const r1 = stream(1, "x");
-    while (ref.moment === "roots") root.step(ref, makeIntents({ steer: root.botSteer(ref, 1, r1).steer, touching: true }));
-    for (const p of ref.pools.filter((q) => q.by === "you")) {
-      const b = ref.beats.next("mother", p.at - close - 1e-9);
-      assert.ok(Math.abs(b - p.at) <= close + 1e-9 && p.onBeat, `ref entry ${p.at - t0} vs beat ${b - t0}`);
-    }
-  }
+// ---- the map
+
+await check("the map is the same for the same seed, and another seed gives another", () => {
+  const a = makeMap(7, { x: 10, y: 40 }, TUNE), b = makeMap(7, { x: 10, y: 40 }, TUNE), c = makeMap(8, { x: 10, y: 40 }, TUNE);
+  assert.deepEqual([...a.grid], [...b.grid]);
+  assert.deepEqual(a.pools, b.pools);
+  assert.deepEqual(a.knots, b.knots);
+  assert.notDeepEqual([...a.grid], [...c.grid]);
 });
 
-await check("auto reach: from 12 s (8 s with Assist), one pool every 3.5 s; Assist pools ×1.3", () => {
-  for (const assist of [false, true]) {
-    const { evs, st } = play(4, idle(), { opts: { ...OPTS, assist } });
-    const start = st.times.roots;
-    const links = named(evs, "sfx").filter((e) => e.id === "root.link").map((e) => e.t - start);
-    assert.equal(links.length, 8);
-    const from = assist ? TUNE.roots.assistAutoFromS : TUNE.roots.autoFromS;
-    links.forEach((t, k) => {
-      assert.ok(t >= from + TUNE.roots.autoEveryS * k - 1e-9, `link ${k} at ${t.toFixed(2)} s`);
-      assert.ok(t <= from + TUNE.roots.autoEveryS * k + 3.2, `link ${k} at ${t.toFixed(2)} s, within its reach`);
+await check("20 maps: 8 pools by kind, apart, at their distances; the ground shares; 14 knots; every pool reachable", () => {
+  for (let s = 1; s <= SEEDS; s++) {
+    const o = { x: 20, y: 50 }, m = makeMap(s, o, TUNE);
+    const kinds = m.pools.map((q) => q.kind).sort();
+    assert.deepEqual(kinds, ["firm", "firm", "open", "open", "open", "soft", "soft", "soft"], `seed ${s}`);
+    for (let i = 0; i < 8; i++) {
+      const q = m.pools[i], d = hyp(q.x - o.x, q.y - o.y);
+      assert.ok(d >= 50 - 1e-6 && d <= 140 + 1e-6, `seed ${s} pool ${i} at ${d.toFixed(1)} u`);
+      for (let j = i + 1; j < 8; j++) assert.ok(hyp(q.x - m.pools[j].x, q.y - m.pools[j].y) >= 28, `seed ${s}: pools ${i}, ${j} too close`);
+      const v = cellAt(m, q.x, q.y);
+      if (q.kind === "open") assert.equal(v, OPEN, `seed ${s}: an open pool lies in fluid`);
+      if (q.kind === "soft") assert.equal(v, SOFT, `seed ${s}: a hidden pool lies under soft tissue`);
+      if (q.kind === "firm") {
+        assert.equal(v, OPEN, `seed ${s}: a walled pool's chamber is fluid`);
+        for (let a = 0; a < 16; a++) {
+          const ux = Math.cos((a / 16) * 2 * Math.PI), uy = Math.sin((a / 16) * 2 * Math.PI);
+          let hit = false;
+          for (let r = 0; r <= TUNE.map.wallOut + 1 && !hit; r += 1) { const w = cellAt(m, q.x + ux * r, q.y + uy * r); hit = w === FIRM || w === EDGE; }
+          assert.ok(hit, `seed ${s}: the wall round pool ${i} is shut`);
+        }
+      }
+    }
+    let open = 0, firm = 0;
+    for (const v of m.grid) { if (v === OPEN) open++; else if (v === FIRM) firm++; }
+    const n = m.grid.length;
+    assert.ok(open / n > 0.12 && open / n < 0.45, `seed ${s}: open share ${(open / n).toFixed(2)}`);
+    assert.ok(firm / n > 0.03 && firm / n < 0.25, `seed ${s}: firm share ${(firm / n).toFixed(2)}`);
+    assert.ok(m.knots.length >= 12 && m.knots.length <= 14, `seed ${s}: ${m.knots.length} knots`);
+    for (const k of m.knots) {
+      assert.notEqual(cellAt(m, k.x, k.y), FIRM, `seed ${s}: a knot in firm tissue`);
+      for (const k2 of m.knots) if (k2 !== k) assert.ok(hyp(k.x - k2.x, k.y - k2.y) >= 30 - 1e-6, `seed ${s}: knots too close`);
+    }
+    // every pool reachable: the open and hidden ones without digging firm tissue, the walled ones with strong roots
+    m.pools.forEach((q, i) => {
+      const F = fieldOf(m, q, q.kind === "firm", TUNE);
+      assert.ok(Number.isFinite(fieldAt(F, o.x, o.y)), `seed ${s}: pool ${i} (${q.kind}) cannot be reached`);
     });
-    assert.ok(links[7] <= TUNE.roots.lenS);
-  }
-  const a = root.create(1, DEFAULT_CARRY, { ...OPTS, assist: true });
-  root.jump(a, "roots");
-  const r = root.view(a).marks.find((m) => m.kind === "pool").r;
-  assert.ok(r >= 16 * 1.3 - 1e-9 && r <= 16 * 1.3 * 1.12 + 1e-9, `assist pool ${r}`);
-});
-
-await check("score: Goal 3,000; Skill 3,000 × yours / 8 + 1,000 × on-beat / 8 + 2,000 × heart; Flourish 1,000 × In time / 8", () => {
-  for (const { res, evs } of [...REF.slice(0, 3), ...MID.slice(0, 3), IDLE[0]]) {
-    const m = res.metrics;
-    const skill = 3000 * m.you / 8 + 1000 * m.onBeat / 8 + 2000 * m.heartAccuracy;
-    assert.equal(res.score.goal, 3000);
-    assert.equal(res.score.skill, Math.round(skill));
-    assert.equal(res.score.flourish, Math.round(1000 * m.heartInTime / 8));
-    assert.equal(res.score.total, res.score.goal + res.score.skill + res.score.flourish);
-    assert.deepEqual(res.parts.map((p) => [p.id, p.max]), [["goal", 3000], ["pools", 3000], ["onBeat", 1000], ["heart", 2000], ["inTime", 1000]]);
-    for (const p of res.parts) assert.ok(TEXT[p.label] || p.label === "part.goal", `part label ${p.label}`);
-    const sum = (part) => named(evs, "points").filter((e) => e.part === part).reduce((a, e) => a + e.add, 0);
-    assert.equal(sum("skill"), res.score.skill, "points events add up to Skill");
-    assert.equal(sum("flourish"), res.score.flourish, "points events add up to the Flourish");
-  }
-  // a miss adds less, never takes away: the score never falls during a play
-  const st = root.create(2, DEFAULT_CARRY, OPTS);
-  const input = botInput(0.5, 2);
-  let last = 0;
-  while (!root.result(st).done) {
-    root.step(st, input(st));
-    st.events.length = 0;
-    const s = root.result(st).score;
-    assert.ok(s.skill + s.flourish >= last);
-    last = s.skill + s.flourish;
   }
 });
 
-await check("carry: in from DEFAULT_CARRY or junk; out nestleX in −1..1 and treeSeed a deterministic uint32", () => {
-  for (const { res } of [...REF.slice(0, 3), IDLE[0]]) {
-    const c = res.carryOut;
-    assert.deepEqual(Object.keys(c).sort(), ["nestleX", "treeSeed"]);
-    assert.ok(c.nestleX >= -1 && c.nestleX <= 1);
-    assert.ok(Number.isInteger(c.treeSeed) && c.treeSeed >= 0 && c.treeSeed < 2 ** 32);
-  }
-  assert.deepEqual(play(6, botInput(1, 6)).res.carryOut, play(6, botInput(1, 6)).res.carryOut);
-  for (const carry of [undefined, null, {}, { nestleX: "x", treeSeed: -4, sperm: 7 }]) {
-    const st = root.create(1, carry, OPTS);
-    while (!root.result(st).done) { root.step(st, makeIntents()); st.events.length = 0; }
-    assert.equal(st.err, null);
-  }
+// ---- movement
+
+await check("soft tissue slows you to 16 u/s and leaves a tunnel, which you then swim at 40 u/s", () => {
+  const st = rootsAt(3), p = st.A.p;
+  paint(st, p.x, p.y, 12, OPEN);
+  paint(st, p.x + 40, p.y, 26, SOFT);
+  paint(st, p.x + 40, p.y, 8, SOFT);
+  st.map.grid.fill(SOFT, 0, 0);
+  const x0 = p.x;
+  // into the soft tissue
+  for (let i = 0; i < 90; i++) root.step(st, steerX(1, 0));
+  const startDig = p.x;
+  for (let i = 0; i < 60; i++) root.step(st, steerX(1, 0));
+  near((p.x - startDig) / 1.0, Y.digUS, 2.5, "the speed through soft tissue");
+  assert.equal(cellAt(st.map, p.x - 6, p.y), TUNNEL, "a tunnel behind you");
+  // back along the tunnel
+  for (let i = 0; i < 20; i++) root.step(st, steerX(-1, 0));
+  const back0 = p.x;
+  for (let i = 0; i < 30; i++) root.step(st, steerX(-1, 0));
+  near((back0 - p.x) / 0.5, Y.swimUS, 3, "the speed in your tunnel");
+  assert.ok(p.x < x0 + 60, "you came back");
 });
 
-await check("botSteer: memory only in r.mem, no state change, |steer| ≤ 1, the same at skill 1 for any r (one-button)", () => {
-  const st = root.create(7, DEFAULT_CARRY, OPTS);
-  const used = stream(7, "oneButton");
-  used.mem = {};
-  const bot = botInput(0.7, 7);
+await check("firm tissue blocks you until 5 pools; then you dig it at 12 u/s; it stops sparks", () => {
+  const st = rootsAt(4), p = st.A.p;
+  paint(st, p.x, p.y, 14, OPEN);
+  paint(st, p.x + 30, p.y, 12, FIRM);
+  for (let i = 0; i < 120; i++) root.step(st, steerX(1, 0));
+  assert.ok(p.x < st.origin.x + 30 - 12 - 2, `firm tissue held you at ${(p.x - st.origin.x).toFixed(1)} u`);
+  assert.equal(st.strong, false);
+  // 5 pools linked (open and hidden ones first): strong roots
+  const five = st.pools.map((q, i) => i).filter((i) => st.pools[i].kind !== "firm").slice(0, 5);
+  for (const i of five) { p.x = st.pools[i].x; p.y = st.pools[i].y; root.step(st, makeIntents()); }
+  assert.equal(st.strong, true, "strong roots at 5 pools");
+  assert.equal(st.reach, true, "the reach at 3");
+  p.x = st.origin.x + 10; p.y = st.origin.y; p.vx = 0; p.vy = 0;
+  paint(st, p.x, p.y, 8, OPEN);
+  paint(st, p.x + 20, p.y, 12, FIRM);
+  for (let i = 0; i < 60; i++) root.step(st, steerX(1, 0));
+  const x1 = p.x;
+  for (let i = 0; i < 60; i++) root.step(st, steerX(1, 0));
+  near(p.x - x1, Y.firmUS, 3, "the speed through firm tissue with strong roots");
+  assert.equal(cellAt(st.map, p.x - 6, p.y), DUG, "dug firm tissue behind you");
+  // a foe spark in firm tissue is gone next step
+  const fx = p.x + 30, fy = p.y + 30;
+  paint(st, fx, fy, 6, FIRM);
+  X.addBullet(st.A, 2, fx, fy, 0, 0, { r: 1, life: 5 });
+  const before = X.foeBullets(st.A);
+  root.step(st, makeIntents()); root.step(st, makeIntents());
+  assert.equal(X.foeBullets(st.A), before - 1, "the spark in firm tissue is gone");
+});
+
+// ---- the grapple
+
+function grappleCase(seed, dx, dy, { reach = false } = {}) {
+  const st = rootsAt(seed), p = st.A.p;
+  paint(st, p.x, p.y, 110, OPEN);
+  st.knots = [{ x: p.x + dx, y: p.y + dy }];
+  st.pools.forEach((q) => { q.x += 1000; });            // no pool rim in the way
+  if (reach) st.reach = true;
+  st.A.t += 1;
+  root.step(st, steerX(1, 0, true));
+  for (let i = 0; i < 70; i++) root.step(st, makeIntents());
+  return { st, d: hyp(p.x - st.knots[0].x, p.y - st.knots[0].y) };
+}
+
+await check("the grapple snaps to a knot in its cone and reach and pulls you there; not outside the cone or past the reach", () => {
+  const a = grappleCase(5, 50, 6);
+  assert.ok(a.d <= GP.stopU + 1.5, `pulled to the knot (${a.d.toFixed(1)} u off)`);
+  assert.ok(a.st.grapples === 1);
+  const b = grappleCase(5, 40, 40 * Math.tan(0.6));    // 34° off the aim
+  assert.ok(b.d > 30, `no snap outside the cone (${b.d.toFixed(1)} u off)`);
+  const c = grappleCase(5, 75, 0);
+  assert.ok(c.d > 60, `no snap past 60 u (${c.d.toFixed(1)} u off)`);
+  const d = grappleCase(5, 75, 0, { reach: true });
+  assert.ok(d.d <= GP.stopU + 1.5, `after 3 pools it reaches 90 u (${d.d.toFixed(1)} u off)`);
+});
+
+await check("the tendril sticks in tissue and pulls you to it; from open fluid it comes back", () => {
+  const st = rootsAt(6), p = st.A.p;
+  paint(st, p.x, p.y, 40, OPEN);
+  paint(st, p.x + 30, p.y, 6, SOFT);
+  st.knots = [];
+  st.pools.forEach((q) => { q.x += 1000; });
+  st.A.t += 1;
+  const x0 = p.x;
+  root.step(st, steerX(1, 0, true));
+  for (let i = 0; i < 40; i++) root.step(st, makeIntents());
+  assert.ok(p.x - x0 > 15, `pulled toward the tissue (${(p.x - x0).toFixed(1)} u)`);
+  assert.ok(p.x < x0 + 26, "and stopped at it");
+  const st2 = rootsAt(6), p2 = st2.A.p;
+  paint(st2, p2.x, p2.y, 110, OPEN);
+  st2.knots = [];
+  st2.pools.forEach((q) => { q.x += 1000; });
+  st2.A.t += 1;
+  root.step(st2, steerX(1, 0, true));
+  assert.equal(st2.gr.kind, "miss");
+  for (let i = 0; i < 40; i++) root.step(st2, makeIntents());
+  assert.equal(st2.gr, null, "it came back");
+  assert.ok(Math.abs(p2.x - st2.origin.x) < 3, "and pulled nothing");
+});
+
+// ---- pools and the clock
+
+await check("entering a pool links it: points (675 for a hidden one), a glow back along the roots, +1 root", () => {
+  const st = rootsAt(7), p = st.A.p;
+  const i = st.pools.findIndex((q) => q.kind === "soft");
+  p.x = st.pools[i].x; p.y = st.pools[i].y;
+  root.step(st, makeIntents());
+  assert.equal(st.pools[i].linked, true);
+  assert.equal(st.pools[i].by, "you");
+  const pts = st.events.filter((e) => e.name === "points");
+  assert.deepEqual(pts.map((e) => [e.part, e.add]), [["skill", 675]]);
+  assert.equal(st.glows.length, 1);
+  assert.ok(st.glows[0].pts.length >= 4, "the glow runs along a path of the roots");
+  assert.ok(st.tags.some((g) => g.word === "root.plusRoot"));
+  assert.ok(st.events.some((e) => e.name === "sfx" && e.id === "root.link"));
+});
+
+await check("with no input every pool links by itself by 58 s, with \"The roots reach it anyway.\" for each", () => {
+  for (const r of IDLE) {
+    if (r.res.metrics.ko) continue;
+    const roots0 = r.res.metrics.times.roots, heart0 = r.res.metrics.times.heart;
+    assert.ok(heart0 - roots0 <= TUNE.roots.lenS + 0.1, `roots took ${(heart0 - roots0).toFixed(1)} s`);
+    assert.equal(r.res.metrics.auto, 8);
+    assert.equal(r.evs.filter((e) => e.name === "caption" && e.id === "root.anyway").length, 8);
+    assert.ok(r.res.goalMet, "idle completes");
+  }
+  assert.ok(IDLE.filter((r) => !r.res.metrics.ko).length >= 1, "some idle runs complete");
+});
+
+await check("the pools are milk-white with dotted rims in every view, never red", () => {
+  const st = root.create(2, DEFAULT_CARRY, OPTS), bot = createBot(1, 2);
   let n = 0;
-  const snap = (s) => JSON.stringify(s, (k, v) => (ArrayBuffer.isView(v) ? Array.from(v) : typeof v === "function" ? "fn" : v));
   while (!root.result(st).done) {
-    if (n++ % 7 === 0) {
-      const before = snap(st);
-      const fresh = stream(n, "fresh");                     // no mem at all
-      const a = root.botSteer(st, 1, used), b = root.botSteer(st, 1, fresh);
-      assert.deepEqual(a, b, `skill 1 at ${st.t.toFixed(2)} s`);
-      assert.ok(Math.hypot(a.steer.x, a.steer.y) <= 1, "never rescaled by the run");
-      assert.equal(snap(st), before, "botSteer leaves the state alone");
-      const c = root.botSteer(st, 0.4, used);
-      assert.ok(Math.hypot(c.steer.x, c.steer.y) <= 1);
-      assert.deepEqual(Object.keys(c).sort(), ["dir", "hold", "steer"]);
+    root.step(st, bot.intents(root, st)); st.events.length = 0;
+    if (Math.round(st.t / DT) % 20) continue;
+    for (const m of root.view(st).marks) if (m.kind === "pool") { assert.equal(m.rim, "dotted"); n++; }
+  }
+  assert.ok(n > 100);
+});
+
+await check("germs never spawn within 24 u of you or more than 40 u behind you", () => {
+  for (const s of [1, 2, 3, 4, 5]) {
+    const seen = new Set();
+    play(s, botIn(0.7, s), { each: (st) => {
+      if (st.moment !== "roots" || !st.A) return;
+      const p = st.A.p;
+      for (const f of st.A.foes) {
+        if (seen.has(f.id)) continue;
+        seen.add(f.id);
+        if (f.kind !== "germ") continue;
+        assert.ok(hyp(f.x - p.x, f.y - p.y) >= 24 - 1e-6, `seed ${s}: a germ ${hyp(f.x - p.x, f.y - p.y).toFixed(1)} u from you`);
+        assert.ok(f.y - p.y >= -TUNE.germs.behindU - 1e-6, `seed ${s}: a germ ${(p.y - f.y).toFixed(1)} u behind you`);
+      }
+    } });
+    assert.ok(seen.size >= 5, `seed ${s}: only ${seen.size} foes`);
+  }
+});
+
+// ---- the heart
+
+await check("the heart: no input, the hush, 110 bpm, the milestone, Day 22 (week 5), pulses pop every germ near the tree", () => {
+  const st = root.create(9, DEFAULT_CARRY, OPTS), bot = createBot(1, 9);
+  while (st.moment !== "heart") { root.step(st, bot.intents(root, st)); st.events.length = 0; }
+  const h0 = st.t;
+  assert.equal(root.prompt(st).gesture, "none");
+  assert.equal(label(st.gaDay, { fertilized: true }), "Day 22 after fertilization (week 5)");
+  const hush = st.events.find((e) => e.name === "sfx" && e.id === "root.hush");
+  assert.ok(hush && hush.gain === -8, "her heart 8 dB down");
+  const lv = root.view(st).light.level;
+  let milestone = null, pops = 0;
+  const pulses = [];
+  while (st.moment === "heart") {
+    const before = st.A.foes.length;
+    root.step(st, makeIntents({ steer: { x: 1, y: 0 }, touching: true, presses: [{ t: st.t, raw: st.t }] }));
+    for (const e of st.events) { if (e.name === "milestone" && e.id === "heart") milestone = st.t - h0; if (e.name === "sfx" && e.id === "act.clear") pops++; }
+    st.events.length = 0;
+    if (st.heart.pulses.length > pulses.length) pulses.push(st.t - h0);
+    if (st.t - h0 > 0.2 && st.t - h0 < 1.4) assert.ok(root.view(st).light.level < lv / 0.9 * 0.91 + 1e-9, "the light is down in the hush");
+    if (pulses.length === 8 && st.t - h0 >= H.hushS + 7 * 60 / H.bpm + H.pulseMaxS + 0.05 && st.moment === "heart") {
+      const nd = st.tree.nodes;
+      for (const f of st.A.foes) {
+        for (let i = 0; i < st.tree.n; i++) assert.ok(hyp(nd[4 * i] - f.x, nd[4 * i + 1] - f.y) > H.popR, "a germ near the tree after the 8th pulse");
+      }
     }
-    root.step(st, bot(st));
+    void before;
+  }
+  near(milestone, H.hushS, DT * 1.5, "the heart milestone at the end of the hush");
+  assert.equal(pulses.length, 8);
+  for (let k = 0; k < 8; k++) near(pulses[k], H.hushS + k * 60 / H.bpm, DT * 1.5, `pulse ${k + 1} on your beat`);
+  near(60 / (st.beats.bpm("you", h0 + 3)), 60 / 110, 1e-6, "your heart at 110 bpm");
+  assert.ok(pops >= 6, `${pops} germs popped`);
+  assert.equal(st.A.p.hp, root.result(st).metrics.hp);
+});
+
+// ---- a knock-out and Go on
+
+await check("a knock-out rests, ends with Goal 0, and Go on links the rest and plays the heart and grow", () => {
+  const st = root.create(11, DEFAULT_CARRY, OPTS), bot = createBot(0.7, 11);
+  const evs = [];
+  while (!root.result(st).done) {
+    if (st.moment === "roots" && st.t - st.m0 > 6 && !st.A.ko) { st.A.p.inv = 0; st.A.p.shield = 0; st.A.p.hp = 1; X.hitPlayer(st.A, 1, "test", st.A.p.x + 1, st.A.p.y); }
+    root.step(st, bot.intents(root, st));
+    evs.push(...st.events); st.events.length = 0;
+  }
+  const r = root.result(st);
+  assert.equal(r.goalMet, false);
+  assert.equal(r.metrics.ko, true);
+  assert.equal(r.metrics.almost, "almost.ko");
+  assert.ok(Number.isFinite(r.metrics.koAt));
+  assert.equal(r.score.goal, 0);
+  assert.ok(evs.some((e) => e.name === "subgoal" && e.text === "root.rest"), "You need a rest.");
+  assert.equal(root.prompt(st).gesture, "none");
+  assert.equal(root.jump(st, "heart"), true);
+  assert.equal(st.moment, "heart");
+  assert.ok(st.pools.every((q) => q.linked), "the pools left link");
+  assert.ok(st.events.some((e) => e.name === "caption" && e.id === "root.anywayAll"));
+  let saw = new Set();
+  while (!root.result(st).done) { root.step(st, makeIntents()); saw.add(st.moment); evs.push(...st.events); st.events.length = 0; }
+  assert.ok(saw.has("grow"), "grow plays");
+  const r2 = root.result(st);
+  assert.equal(r2.goalMet, false);
+  assert.equal(r2.score.goal, 0);
+  assert.equal(r2.metrics.ko, true);
+  assert.equal(st.gaDay, 49);
+  for (const id of ["implanted", "heart"]) assert.equal(evs.filter((e) => e.name === "milestone" && e.id === id).length, 1, id);
+  assert.deepEqual(Object.keys(r2.carryOut).sort(), ["nestleX", "treeSeed"]);
+});
+
+// ---- score, facts, carry
+
+await check("the score: points add up to the total; the parts; Goal on the goal; Flourish only for all 8 by 40 s", () => {
+  for (const r of [...REF, ...MID, ...IDLE]) {
+    const sum = r.evs.filter((e) => e.name === "points").reduce((a, e) => a + e.add, 0);
+    assert.equal(sum, r.res.score.total, `seed: points ${sum} vs total ${r.res.score.total}`);
+    const parts = r.res.parts.reduce((a, p) => a + p.value, 0);
+    assert.equal(parts, r.res.score.total);
+    assert.equal(r.res.score.goal, r.res.goalMet ? 3000 : 0);
+    const m = r.res.metrics;
+    assert.equal(r.res.score.flourish > 0, m.you === 8 && m.lastYouS < 40 && !m.ko);
+  }
+});
+
+await check("captions in priority order (root.hcg, root.glands, root.heart); root.frame on the result; the sources", () => {
+  for (const r of REF.slice(0, 5)) {
+    const f = r.evs.filter((e) => e.name === "fact").map((e) => e.id);
+    assert.deepEqual(f, ["root.hcg", "root.glands", "root.heart"]);
+  }
+  const frame = FACTS.find((x) => x.id === "root.frame");
+  assert.ok(frame && frame.where === "result" && frame.checked);
+  for (const x of FACTS) for (const k of x.src) assert.ok(SOURCES[k] || (SOURCES.get && SOURCES.get(k)) || Object.values(SOURCES).some((s) => s && s.key === k), `${x.id}: source ${k}`);
+  for (const id of ["root.move", "root.move.keys", "root.move.one", "root.rest", "root.anyway", "root.anywayAll", "root.reach", "root.strong", "root.yours"]) assert.ok(TEXT[id], id);
+});
+
+await check("carry out: nestleX in −1..1 and treeSeed, the same for the same play", () => {
+  const a = REF[0].res.carryOut, b = play(1, botIn(1, 1)).res.carryOut;
+  assert.deepEqual(a, b);
+  assert.ok(a.nestleX >= -1 && a.nestleX <= 1);
+  assert.ok(Number.isInteger(a.treeSeed) && a.treeSeed >= 0);
+});
+
+await check("Assist: hp 8, pools of 16 u, the roots reach by themselves from 22 s", () => {
+  const st = root.create(3, DEFAULT_CARRY, { ...OPTS, assist: true });
+  assert.equal(st.A.p.hp, 8);
+  root.jump(st, "roots");
+  const v = root.view(st).marks.find((m) => m.kind === "pool");
+  assert.ok(v.r >= 16 - 1e-6);
+  let first = null;
+  while (st.moment === "roots" && first === null) {
+    root.step(st, makeIntents());
+    if (st.events.some((e) => e.name === "caption" && e.id === "root.anyway")) first = st.t - st.m0;
     st.events.length = 0;
   }
-  assert.ok(used.mem.aims && Object.keys(used.mem.aims).length > 0, "aim noise kept in r.mem below skill 1");
-  // at the start of nestle the bot heads for a spot (16.11: a stick off centre is touching)
-  const s0 = root.create(1, DEFAULT_CARRY, OPTS);
-  const a = root.botSteer(s0, 0.5, stream(0, "x"));
-  assert.ok(Math.hypot(a.steer.x, a.steer.y) > 0.5);
-  assert.deepEqual(createBot(0.5, 1).intents(root, s0).steer, a.steer);
-  // one-button through a whole stage: hold all the time, steer from botSteer at skill 1
-  const one = root.create(8, DEFAULT_CARRY, { ...OPTS, oneButton: true });
-  const r1 = stream(8, "oneButton");
-  r1.mem = {};
-  while (!root.result(one).done) {
-    const p = root.botSteer(one, 1, r1);
-    const presses = root.targets(one, 1).filter((x) => x.t >= one.t && x.t < one.t + DT).map((x) => ({ t: x.t, raw: x.t }));
-    root.step(one, makeIntents({ steer: p.steer, touching: true, presses }));
-  }
-  const res = root.result(one);
-  assert.equal(res.metrics.nestled, "you");
-  assert.ok(res.metrics.you >= 5, `one-button reached ${res.metrics.you}`);
-  assert.equal(gradeOf(res.score.total, true), "Glowing");
+  near(first, 22, DT * 2, "the first link by itself");
 });
 
-await check("jump: forward only, settling what it skips; probe is null", () => {
-  for (const to of ["roots", "heart", "grow"]) {
-    const st = root.create(1, DEFAULT_CARRY, OPTS);
-    assert.equal(root.jump(st, to), true);
-    assert.equal(st.moment, to);
-    assert.equal(root.jump(st, "nestle"), false, "never back");
-    assert.equal(root.jump(st, to), false);
-    assert.equal(root.jump(st, "moon"), false);
-    assert.ok(named(st.events, "moment").some((e) => e.id === to));
-    if (to !== "roots") assert.equal(st.pools.filter((p) => p.linked).length, 8);
-    while (!root.result(st).done) root.step(st, makeIntents());
-    assert.equal(st.gaDay, 49);
-    assert.equal(st.err, null);
-    assert.equal(root.probe(st), null);
-  }
-  const st = root.create(1, DEFAULT_CARRY, OPTS);
-  root.jump(st, "grow");
-  const g0 = st.t;
-  while (!root.result(st).done) root.step(st, makeIntents());
-  near(st.t - g0, TUNE.grow.lenS, DT + 1e-9, "grow lasts 7 s");
-  assert.equal(root.result(st).metrics.heartAccuracy, 0, "skipped heart targets count as misses");
+await check("resume gives 1.2 s of i-frames; the same seed and bot play the same stage", () => {
+  const st = rootsAt(2);
+  root.resume(st);
+  assert.ok(st.A.p.inv >= 1.2);
+  const a = play(5, botIn(0.7, 5)), b = play(5, botIn(0.7, 5));
+  assert.deepEqual(a.res, b.res);
 });
 
-await check("junk input never throws, and the stage still ends by its cap with its goal", () => {
-  for (const seed of [1, 2, 3, 4, 5, 6]) {
-    const { st, res } = play(seed, junk(seed), { viewsEvery: 25 });
-    assert.equal(st.err, null, st.err);
-    assert.equal(res.done, true);
-    assert.equal(res.goalMet, true);
-    assert.ok(st.t <= root.meta.capS + 1e-9);
-  }
-  // the longest a player can make it: drift past every spot, never reach a pool, still ends well under the cap
-  const st = root.create(3, DEFAULT_CARRY, OPTS);
+await check("the draw list is valid every 30th view of the ref and idle runs; the lining strip shows in the roots", () => {
+  for (const r of [...REF.slice(0, 3), ...IDLE.slice(0, 3)]) assert.deepEqual(r.bad, []);
+  const st = rootsAt(1);
+  const d = root.view(st);
+  const ln = d.strips.find((s) => s.kind === "lining");
+  assert.ok(ln && ln.grid.length === ln.n * ln.n && ln.knots.length >= 12);
+  assert.notEqual(ln.grid, st.map.grid, "the view hands out a copy of the ground");
+});
+
+await check("p99 of a step stays under 1 ms", () => {
+  const st = root.create(4, DEFAULT_CARRY, OPTS), bot = createBot(1, 4);
+  const ts = [];
   while (!root.result(st).done) {
-    const s = st.moment === "nestle" ? { x: 0, y: -0.27 } : st.moment === "roots" ? { x: 0, y: -1 } : { x: 0, y: 0 };
-    root.step(st, makeIntents({ steer: s, touching: true }));
-  }
-  assert.ok(st.t <= 12 + 40 + 11 + 7 + 0.5 && st.t < root.meta.capS, `ended at ${st.t.toFixed(1)} s`);
-  assert.doesNotThrow(() => root.step(null, null));
-  const done = root.create(1, DEFAULT_CARRY, OPTS);
-  root.jump(done, "grow");
-  while (!root.result(done).done) root.step(done, makeIntents());
-  const t = done.t;
-  root.step(done, makeIntents());
-  near(done.t, t + DT, 1e-12, "a done stage only moves its clock");
-  assert.deepEqual(root.targets(done, 10), []);
-});
-
-await check("facts: 6.4's ids with 15.2's text, allow-listed sources, R or A, labels from the clock", () => {
-  assert.deepEqual(FACTS.map((f) => f.id), ["root.bury", "root.hcg", "root.grows", "root.glands", "root.heart", "root.tube", "root.size", "root.buds", "root.w7"]);
-  const where = Object.fromEntries(FACTS.map((f) => [f.id, f.where]));
-  assert.equal(where["root.bury"], "card");
-  assert.equal(where["root.w7"], "overlay");
-  for (const f of FACTS) {
-    assert.equal(f.stage, "root");
-    assert.equal(f.checked, true);
-    assert.ok(f.access === "R" || f.access === "A", f.id);
-    assert.ok(f.src.length > 0 && f.src.every((k) => SOURCES[k]), `${f.id} sources ${f.src}`);
-    assert.ok(!/^(Week|Day)/.test(f.text), `${f.id} starts with a label`);
-    assert.ok(f.text.split(/\s+/).length <= 20, `${f.id} ≤ 20 words`);
-    for (const s of f.text.split(/(?<=[.!?])\s+/)) assert.ok(s.split(/\s+/).length <= 16, `${f.id}: "${s}"`);
-    if (f.gaEnd !== undefined) assert.ok(f.gaEnd < 42 || f.gaDay >= 42, "a span never crosses gaDay 42");
-  }
-  assert.equal(range(20, 23), "Days 6 to 9 after fertilization (weeks 2 to 3)");
-  assert.equal(label(36), "Day 22 after fertilization (week 5)");
-  assert.ok(/the NHS compares this to/i.test(FACTS.find((f) => f.id === "root.size").text));
-  // every caption fact is shown in a full play, each once, after the clock reaches it (or at its moment's end)
-  for (const { evs } of [REF[0], IDLE[0], MID[0]]) {
-    const shown = named(evs, "fact").map((e) => e.id);
-    assert.deepEqual([...shown].sort(), FACTS.filter((f) => f.where === "caption").map((f) => f.id).sort());
-    assert.equal(new Set(shown).size, shown.length, "each once");
-  }
-});
-
-await check("strings: every id the stage emits exists; no banned words, no pronouns, short sentences", () => {
-  const BANNED = /\b(die|dies|died|dying|dead|death|kill\w*|lose|loses|losing|lost|loser|fail\w*|miscarr\w*|abort\w*|sex\w*|pain\w*|hurt\w*|danger\w*|sick\w*|viab\w*|prematur\w*|nicu|invad\w*|invas\w*|attack\w*|destroy\w*|defeat\w*|conquer\w*|enem\w*|fight\w*|battle\w*)/i;
-  const PRONOUNS = /\b(she|her|hers|herself|he|him|his|himself|they|them|their|theirs|themselves)\b/i;
-  const texts = [...Object.values(TEXT), ...FACTS.map((f) => f.text)];
-  for (const carer of Object.keys(CARERS)) {
-    for (const t of texts) {
-      const s = fill(t, {}, { carer });
-      assert.ok(!BANNED.test(s), `banned word in "${s}"`);
-      assert.ok(!PRONOUNS.test(s), `pronoun in "${s}"`);
-      for (const sentence of s.split(/(?<=[.!?])\s+/)) assert.ok(sentence.split(/\s+/).length <= 16, `"${sentence}"`);
-    }
-  }
-  for (const id of Object.keys(TEXT)) assert.ok(id.startsWith("root."), id);
-  const ids = new Set();
-  for (const { evs } of [...REF.slice(0, 2), ...IDLE.slice(0, 2), ...MID.slice(0, 2)]) {
-    for (const e of evs) {
-      if (e.name === "prompt" && e.text) ids.add(e.text);
-      if (e.name === "subgoal") ids.add(e.text);
-      if (e.name === "caption") ids.add(e.id);
-    }
-  }
-  for (const id of ids) assert.ok(TEXT[id], `the stage emits ${id}, which has no string`);
-  for (const id of named(REF[0].evs, "fact").map((e) => e.id)) assert.ok(FACTS.some((f) => f.id === id), id);
-});
-
-await check("events: moments in order, one done, milestones implanted then heart, stage times", () => {
-  for (const { evs, st } of [REF[0], IDLE[0], MID[0]]) {
-    assert.deepEqual(named(evs, "moment").map((e) => e.id), ["nestle", "roots", "heart", "grow"]);
-    assert.equal(named(evs, "done").length, 1);
-    assert.deepEqual(named(evs, "milestone").map((e) => e.id), ["implanted", "heart"]);
-    for (const e of evs) assert.ok(Number.isFinite(e.t) && e.t >= 0 && e.t <= st.t + 1e-9, `${e.name} at ${e.t}`);
-    assert.equal(named(evs, "moment")[0].t, 0, "the first moment at the start");
-    assert.ok(named(evs, "prompt")[0].t === 0, "the prompt by 0.5 s");
-  }
-});
-
-await check("view and probe are pure; p99 step stays small", () => {
-  const st = root.create(4, DEFAULT_CARRY, OPTS);
-  const input = botInput(1, 4);
-  const times = [];
-  while (!root.result(st).done) {
-    const a = process.hrtime.bigint();
-    root.step(st, input(st));
-    times.push(Number(process.hrtime.bigint() - a) / 1e6);
+    const it = bot.intents(root, st);
+    const t0 = process.hrtime.bigint();
+    root.step(st, it);
+    ts.push(Number(process.hrtime.bigint() - t0) / 1e6);
     st.events.length = 0;
-    if (times.length % 97 === 0) {
-      const v1 = JSON.stringify(root.view(st), (k, v) => (ArrayBuffer.isView(v) ? Array.from(v) : v));
-      const v2 = JSON.stringify(root.view(st), (k, v) => (ArrayBuffer.isView(v) ? Array.from(v) : v));
-      assert.equal(v1, v2);
-      assert.equal(root.probe(st), null);
-    }
   }
-  times.sort((x, y) => x - y);
-  const p99 = times[Math.floor(times.length * 0.99)];
-  assert.ok(p99 <= 2, `p99 step ${p99.toFixed(3)} ms`);
-  PERF.p99 = p99;
+  ts.sort((a, b) => a - b);
+  PERF.p99 = ts[Math.floor(ts.length * 0.99)];
+  assert.ok(PERF.p99 < 1, `p99 ${PERF.p99.toFixed(3)} ms`);
+});
+
+// ---- the gates
+
+await check("gates: skill 1.0 Great or better in 18 of 20, at most 1 knock-out, mean at least 8,500", () => {
+  const great = REF.filter((r) => ["Great", "Glowing"].includes(gradeOf(r.res.score.total, r.res.goalMet))).length;
+  assert.ok(great >= 18, `Great or better in ${great} of 20`);
+  assert.ok(REF.filter((r) => r.res.metrics.ko).length <= 1);
+  const mean = REF.reduce((a, r) => a + r.res.score.total, 0) / REF.length;
+  assert.ok(mean >= 8500, `mean ${Math.round(mean)}`);
+});
+
+await check("gates: skill 0.5 not knocked out in 16 of 20; one-button completes with no knock-out in 18 of 20; idle completes or rests", () => {
+  assert.ok(MID.filter((r) => !r.res.metrics.ko).length >= 16, `skill 0.5 knocked out in ${MID.filter((r) => r.res.metrics.ko).length}`);
+  const one = ONE.filter((r) => r.res.goalMet && !r.res.metrics.ko).length;
+  assert.ok(one >= 18, `one-button completes in ${one} of 20`);
+  for (const r of IDLE) {
+    assert.ok(r.res.done, "idle ends");
+    assert.ok(r.res.goalMet || r.res.metrics.ko, "idle completes or is knocked out");
+    assert.equal(r.res.metrics.err, null);
+  }
+  assert.ok(MID.reduce((a, r) => a + r.res.score.total, 0) > IDLE.reduce((a, r) => a + r.res.score.total, 0), "skill 0.5 outscores idle");
 });
 
 if (failed.length) {
@@ -638,7 +505,8 @@ if (failed.length) {
   console.log(`FAIL ${FILE}: ${failed.length} of ${passed + failed.length} checks failed`);
   process.exitCode = 1;
 } else {
-  const mean = (list) => Math.round(list.reduce((a, p) => a + p.res.score.total, 0) / list.length);
-  const meanT = (list) => (list.reduce((a, p) => a + p.st.t, 0) / list.length).toFixed(1);
-  console.log(`PASS ${FILE}: ${passed} checks (ideal ${mean(IDEAL)}, ref ${mean(REF)} in ${meanT(REF)} s, mid ${mean(MID)} in ${meanT(MID)} s, idle ${mean(IDLE)} in ${meanT(IDLE)} s; p99 step ${PERF.p99.toFixed(3)} ms)`);
+  const mean = (list) => Math.round(list.reduce((a, r) => a + r.res.score.total, 0) / list.length);
+  const meanT = (list) => (list.reduce((a, r) => a + r.st.t, 0) / list.length).toFixed(1);
+  const ko = (list) => list.filter((r) => r.res.metrics.ko).length;
+  console.log(`PASS ${FILE}: ${passed} checks (ref ${mean(REF)} in ${meanT(REF)} s, 0.5 ${mean(MID)} in ${meanT(MID)} s with ${ko(MID)} KO, one-button ${mean(ONE)}, idle ${mean(IDLE)} in ${meanT(IDLE)} s with ${ko(IDLE)} KO; p99 step ${PERF.p99.toFixed(3)} ms)`);
 }

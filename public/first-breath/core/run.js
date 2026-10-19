@@ -382,7 +382,11 @@ export function createRun({ seed = 1, settings = {}, save = null, start = "new",
           const res = almost.res;
           almost = null;
           attempt.wentOn = true;
-          if (res.metrics && res.metrics.capped && mod.jump(st, "carried") !== false) {
+          // the stage plays on: stage 1's carried finish, or an action stage's meta.goOn moment after a knock-out
+          // (design.md 4.4: it plays out by itself and ends with its goal unmet; wentOn closes it with no grade word)
+          const mt = res.metrics || {};
+          const goOnId = mt.capped ? "carried" : mt.ko && typeof mod.meta.goOn === "string" ? mod.meta.goOn : null;
+          if (goOnId && typeof mod.jump === "function" && mod.jump(st, goOnId) !== false) {
             ss = t - st.t;                 // the stage resumes: its time base moves on by the card's time
             screen = "stage";
             push("screen", { screen, data: { id: mod.meta.id, index: idx, carried: true } });

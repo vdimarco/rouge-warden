@@ -13,7 +13,8 @@
 // stays after the lift, lanes do not matter in `beat`, for the jump note or with Assist; the fever lights after 8
 // In time notes, multiplies only the song part, never passes its max and goes out on a miss; the match rule and the
 // hand glow; the eyes open by themselves at week 26; the score parts add up; the carry out `song` and its lit mask;
-// Off and free presses change nothing; jump; junk input never throws; botSteer; every view validates within LIMITS;
+// the juice (each kick plays her note back, the streak meter of 8 pips, the fever's word, the jump note's small
+// shake); Off and free presses change nothing; jump; junk input never throws; botSteer; every view validates within LIMITS;
 // the facts and the strings.
 // node qa/first-breath/stage-answer.test.mjs
 import assert from "node:assert/strict";
@@ -304,7 +305,7 @@ await check("the notes: P, her beats, spacing >= 0.5 s, patterns and lanes, the 
     assert.deepEqual(checkTargets(all), []);
     all.forEach((x, i) => {
       assert.ok(Number.isFinite(x.P) && x.P >= 0.5, `${x.id} P ${x.P}`);
-      near(x.P, Math.max(0.5, i ? x.t - all[i - 1].t : BEAT), 1e-9, `${x.id} P is its spacing`);
+      near(x.P, Math.max(0.5, i ? x.t - all[i - 1].t : 2 * BEAT), 1e-9, `${x.id} P is its spacing (the first heartbeat kick: 2 beats)`);
       assert.equal(x.kind, "tap"); assert.equal(x.heart, "mother");
       near(st.beats.next("mother", x.t - 1e-6), x.t, 1e-9, `${x.id} on her beat`);
     });
@@ -314,7 +315,7 @@ await check("the notes: P, her beats, spacing >= 0.5 s, patterns and lanes, the 
     assert.ok(beats.every((x) => x.lane === 1), "all in the middle lane");
     // the phrases: slot k of phrase p lies 4 + k beats after the phrase's start, phrases 9 beats apart
     const ph0 = notes[0].t - 4 * BEAT;
-    near(ph0 - beats[5].t, 2 * BEAT, 1e-9, "the phrases start one beat after the heartbeat's 12th beat");
+    near(ph0 - beats[5].t, BEAT, 1e-9, "the phrases start on the beat after the heartbeat's last kick (its 12th beat)");
     for (const x of notes) {
       const { phrase, slot } = parse(x.id);
       const c = TUNE.patterns[phrase][slot];
@@ -585,6 +586,39 @@ await check("score parts: 1,000 beat + 3,000 answer + 2,000 song; Flourish by th
   }
   const beatOnly = play(1, scripted({ skip: (x) => x.group !== "beat" }), { views: false });
   assert.deepEqual(beatOnly.res.score, { goal: 3000, skill: 1000, flourish: 250, total: 4250 });
+});
+
+await check("juice: your kick plays her note back, the streak meter fills to 8, the fever's word, the jump note's small shake", () => {
+  // each answer and sing-along note kicked plays its own pitch back (32 notes; not the heartbeat, not the jump note)
+  const echo = named(IDEAL.evs, "sfx", "answer.echo");
+  assert.equal(echo.length, 32);
+  assert.ok(echo.every((e) => Number.isFinite(e.pitch) && e.pitch > 200 && e.gain > 0), "a pitch an octave over her hum");
+  assert.equal(named(IDLE.evs, "sfx", "answer.echo").length, 0, "no kick, no echo");
+  // the meter, the fever's word and the shake, read off the views of a perfect play
+  const st = answer.create(1, DEFAULT_CARRY, OPTS);
+  const input = scripted();
+  const meters = {}, words = new Set();
+  let shakeBefore = 0, shakeAfter = 0, maxN = 0;
+  while (!answer.result(st).done && st.t < 120) {
+    const v = answer.view(st);
+    const lanes = v.strips.find((s) => s.kind === "lanes");
+    (meters[st.moment] = meters[st.moment] || new Set()).add(lanes && lanes.meter ? "on" : "off");
+    if (lanes && lanes.meter) {
+      assert.ok(lanes.meter.n >= 0 && lanes.meter.n <= lanes.meter.of && lanes.meter.of === 8, JSON.stringify(lanes.meter));
+      maxN = Math.max(maxN, lanes.meter.n);
+    }
+    for (const p of v.action.pops) words.add(p.word);
+    const sh = v.action.shake || 0;
+    assert.ok(sh >= 0 && sh <= 1);
+    if (st.jumpT !== null && st.t >= st.jumpT) shakeAfter = Math.max(shakeAfter, sh); else shakeBefore = Math.max(shakeBefore, sh);
+    answer.step(st, input(st));
+    st.events.length = 0;
+  }
+  assert.deepEqual([...meters.beat], ["off"]); assert.deepEqual([...meters.phrases], ["on"]); assert.deepEqual([...meters.song], ["on"]);
+  assert.equal(maxN, 8);
+  assert.ok(words.has("answer.pop.fever") && words.has("answer.pop.in"), [...words].join(" "));
+  assert.equal(shakeBefore, 0, "no shake before the jump note");
+  assert.ok(shakeAfter > 0.3 && shakeAfter <= TUNE.view.shake, `the jump note's shake ${shakeAfter}`);
 });
 
 await check("carry out: song = the 16 call notes and a mask of the notes kicked Close or better, phrases or song", () => {

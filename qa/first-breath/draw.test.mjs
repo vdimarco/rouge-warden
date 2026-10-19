@@ -61,7 +61,7 @@ function bad(mutate, pattern) {
 
 await check("LIMITS are the 16.5 and 14.3 budgets", () => {
   assert.deepEqual({ ...LIMITS }, { splats: 32, points: 600, strips: 6, marks: 24, rings: 8, tails: 25, cordPts: 16, coursePts: 32, treeNodes: 260,
-    laneNotes: 24, bullets: 640, foes: 48, pickups: 96, tells: 16, pops: 12, bursts: 16, hp: 12 });
+    laneNotes: 24, bullets: 640, foes: 48, pickups: 96, tells: 16, pops: 12, bursts: 16, hp: 12, gifts: 4 });
 });
 
 // The action layer's part (contract.md): a full one inside every budget, and bad ones named.
@@ -78,6 +78,7 @@ function fullAction() {
     tells: ["line", "fan", "ring", "spot", "charge"].map((kind, i) => ({ kind, x: i, y: 0, ang: 0, r: 6, len: 40, w: 1.2, p: i / 4 })),
     pops: Array.from({ length: 12 }, (_, i) => ({ x: i, y: 0, v: 10 * i, a: 1 - i / 12, combo: i })),
     hp: { n: 3, max: 5 }, shake: 0.4, flash: 0.2,
+    gifts: ["quick", "spread", "orbit", "star"].map((icon, i) => ({ x: i * 10, y: 20, r: 6, icon, a: 1, on: i === 1 ? 0.5 : 0, lv: i % 2 })),
   };
 }
 await check("action: a full action part validates, and bad ones are named", () => {
@@ -106,6 +107,9 @@ await check("action: a full action part validates, and bad ones are named", () =
   bad((a) => { a.pops.push({ x: 0, y: 0, v: 1, a: 1 }); }, "13 pops (max 12)");
   bad((a) => { a.hp = { n: 6, max: 5 }; }, "action.hp is not");
   bad((a) => { a.shake = 2; }, "action.shake is not in 0..1");
+  bad((a) => { a.gifts.push({ x: 0, y: 0, r: 6, icon: "chain" }); }, "5 gifts (max 4)");
+  bad((a) => { a.gifts[0].icon = ""; }, "action.gifts[0].icon is not a name");
+  bad((a) => { a.gifts[1].on = 2; }, "action.gifts[1].on is not in 0..1");
 });
 
 await check("an empty list and a full list both validate", () => {

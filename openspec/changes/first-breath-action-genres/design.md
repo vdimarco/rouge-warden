@@ -79,11 +79,11 @@ stage has hp and a knock-out.
 
 | # | Id | Genre | Families | gaDay | Real scale | Ref | Mid | Idle | Cap | KO |
 |---|---|---|---|---|---|---|---|---|---|---|
-| 1 | `swim` | kart racing, knockout gates | steer, tap | 14 | 0.3 mm (not to scale) | 53 s | 65 s | out at about 14 s, then the Almost card | 117 s (+3 s carried) | by place, gate or tide |
-| 2 | `egg` | radial brick breaker, bullet-hell patterns | rotate, tap | 14 | 0.4 mm (not to scale) | 55 s | 63 s | out at about 25 s, then the Almost card | 80 s | yes |
-| 3 | `split` | roguelike | steer, tap | 15 to 20 | 0.45 mm | 58 s | 72 s | about 25 s, then the Almost card | 100 s | yes |
+| 1 | `swim` | kart racing, knockout gates | steer, tap | 14 | 0.3 mm (not to scale) | 52 s (measured: arrival 49 s + `meet`) | 66 s (measured: arrival 63 s + `meet`) | out at about 14 s (measured 13.7 s), then the Almost card | 117 s (+3 s carried) | by place, gate or tide |
+| 2 | `egg` | radial brick breaker, bullet-hell patterns | rotate, tap | 14 | 0.4 mm (not to scale) | 60 s (measured; 55 to 64) | 61 s (measured) | out at about 23 s (18 s into the guard), then the Almost card; Go on about 13 s more | 80 s | yes |
+| 3 | `split` | roguelike | steer, tap | 15 to 20 | 0.45 mm | 56 s (built) | 57 s (built) | knocked out in 14 of 20 seeds (19 to 72 s), else 75 s | 100 s | yes |
 | 4 | `root` | action-adventure | steer, tap | 20 to 49 | 0.6 to 30 mm | 52 s | 62 s | 79 s, or a KO first | 90 s | yes |
-| 5 | `grow` | twin-stick shooter | steer, tap | 49 to 97 | as `contract.md` | about 76 s | about 76 s | a KO | 120 s | yes (contract.md) |
+| 5 | `grow` | twin-stick shooter | steer, tap | 49 to 97 | 30 to 150 mm (sac across) | 85 s | 85 s | a KO at about 12 s, then the Almost card | 120 s | yes (contract.md) |
 | 6 | `answer` | rhythm | tap, steer | 98 to 195 | 150 to 600 mm | 74 s | 74 s | 74 s | 90 s | no |
 | 7 | `turn` | survivor auto-shooter | steer, tap | 196 to 280 | 600 to 700 mm | 78 s | 78 s | about 30 s, then the Almost card | 100 s | yes |
 | 8 | `birth` | endless runner | steer, tap | 280 | 700 mm | 65.5 s | 65.5 s | 65.5 s | 80 s | no |
@@ -498,6 +498,20 @@ bend's entry and release at orange (skill 0.9 or more: pink at B3 and B6); use a
 ahead, a Shield at once, a Rush on a straight, Goo when a sperm is within 40 u behind; draft the nearest sperm ahead
 on straights at skill 0.4 or more. Every rival uses the same bot at its skill, with its own stream and `r.mem`.
 
+**As built** (the stage builder's notes; numbers in `swim.tune.js`). The ladder's middle is raised (rungs 3 to 10 from
+0.42 to 0.30 now 0.55 to 0.34) so the pack stays near a mid player and the gates bite: over 40 seeds the mid bot's
+race closes Gate 1 at about 28 s, Gate 2 at about 53 s and Gate 3 at about 65 s (the 18, 38 and 50 s targets need a
+faster pack than the mid bot's top 3 allows), the ref arrives 1st at about 49 s, the mid bot is in the top 3 in 39 of
+40 and one-button in 40 of 40. The tube is cut live (`render/race.js`), since the baked course tiles cannot turn with
+the camera. Captions: only four fit a strong race in portrait (`pacing.test.mjs`): `swim.half`, `swim.waves`,
+`swim.cells` and `swim.acid`; `swim.side`, `swim.flow`, `swim.hyper` and `swim.few` are result facts. The new facts'
+"They" became "sperm" and "These cells" (no shown fact may use that pronoun). When the third arrives every sperm still
+racing rests, you too, so a finish 4th or 5th only comes from arrivals in the same step; out (gate, tide or the end)
+ends the stage with `metrics.capped`, so the card reads "You were 9th of 20." and Go on plays `carried`. "The way
+closes." shows when the cut is within 500 u of you; the chord, the gate's band and the "racing" tag mark every gate.
+The desktop item line reads "Press E or Space to use it." (`prompts.test.mjs` asks a desktop line to name a key it
+knows). E and Shift press with `item: true` in the `move` gesture (`ui/input.js`, `core/intent.js`).
+
 **Checks** (`stage-swim.test.mjs`, rewritten; `race-sim.mjs` updated first). Kept from v1: the swim, wave, current,
 lane, checkpoint, glow wall, bump and place rules, with their numbers; same seed and input give the same race. New:
 the track's bends and its 4,600 u length; progress never jumps along the bends; the turn rate is v1's with and
@@ -684,7 +698,8 @@ seal, the way `move` takes a press as the dash.
 then Go on. Cap 80 s.
 
 **Facts** (priority; v1 order kept). Card `egg.surge` after "Now you are the egg.". Captions: `egg.fimbriae` (sweep),
-`egg.zona` (W1), `egg.caps` (W2, as the first enzyme sparks fly), `egg.corona` (W3), `egg.choice` (W4), `egg.fuse`
+`egg.zona` (W1), `egg.caps` (W2, as the first enzyme sparks fly), `egg.corona` (W3), `egg.choice` (W4; as built a
+`result` fact: `pacing.test.mjs` found no room for it among the guard's lines), `egg.fuse`
 (with "Let it in.", done by `enter`), `egg.block` (after "Your shell seals."). Overlay `egg.weeks`. Result:
 `egg.frame` and the v1 result facts. The facts' pacing is checked by `pacing.test.mjs` as v1.
 
@@ -770,9 +785,9 @@ gaDay follows each moment's progress (v1 4.1), so the clock reads Days 1 to 6 af
 | Room | x ±48 u, y from −40 to +60 u of the subject point (keeps you above 60% in portrait); soft walls; the exit at +y, a ring of cilia that opens when the room clears |
 | You | the ball in its shell: body 7 u (it never grows), hitbox 2.5 u, speed 34 u/s; hp 4 pips (Assist 7) |
 | Dash | 100 u/s for 0.18 s, cooldown 1.0 s |
-| Cell shots | cream dots at the nearest germ within 70 u, 110 u/s, damage 1; shots in a fan 10° apart: 1 shot at 2 cells, 2 at 4, 3 at 8, 4 at 16; 3 volleys a second |
+| Cell shots | cream dots at the nearest germ within 50 u (built; design 70), 110 u/s, damage 1; shots in a fan 10° apart: 1 shot at 2 cells, 2 at 4, 3 at 8, 4 at 16; 3.3 volleys a second (built; design 3) |
 | Room timer | 10 s; at the timer the germs left drift off ("The tube carries you on.") and the exit opens; a clear before the timer: "Clear!" and +300 points |
-| Foes | germ kinds: drifter (`wander`, 10 u/s, 3 hp, contact 1 pip); chaser (`chase`, 24 u/s, 2 hp, wobbles 0.3 s before it lunges); puffer (`shooter` near a wall, 5 hp, fan of 3 sticky spores, `soft` tone, 22 u/s, every 2.0 s); splitter (Day 3 on: `wander`, 4 hp, pops into 2 small chasers of 1 hp) |
+| Foes | germ kinds: drifter (`wander`, 10 u/s, 3 hp, contact 1 pip); chaser (`chase`, 24 u/s, 2 hp, wobbles 0.3 s before it lunges; built: 3 hp, walks at 18 u/s, wobbles 0.35 s with a line tell when within 36 u, then lunges at 55 u/s along it); puffer (`shooter` near a wall, 5 hp, fan of 3 sticky spores, `soft` tone, 22 u/s, every 2.0 s; built: 24 u/s every 1.5 s, the spores slow down and linger); splitter (Day 3 on: `wander`, 4 hp, pops into 2 small chasers of 1 hp) |
 | Rooms | Day 1: 6 drifters, 2 chasers. Day 2: 4 drifters, 4 chasers, 2 puffers. Day 3: 4 chasers, 3 puffers, 2 splitters. Day 4: in two waves at 0 and 4 s, 6 chasers, 4 puffers, 3 splitters. Spawns use 0.6 s tells. Assist ×0.75. |
 | Spore cap | at most 60 foe spores on screen |
 | Split | at a room's end, 1 s, input `none`: the cells pinch in two with a paper bridge that shrinks; +1 shot |
@@ -794,10 +809,11 @@ gaDay follows each moment's progress (v1 4.1), so the clock reads Days 1 to 6 af
 The bot's preference: Spread, Quick, Orbit, Chain, Shell, Bounce, Long dash, Sticky, Magnet.
 
 **Boss: the Knot** (`bloom`). A big clump of old cells and germs blocks the tube's end, at +y 40 u. Foe kind `boss`,
-body 14 u, 50 hp (Assist 38); the HUD shows a DOM boss bar.
-- Phase 1 (50 to 30 hp): a ring of 12 every 2.5 s at 24 u/s; 2 drifters every 5 s.
+body 14 u, 50 hp (Assist 38); the HUD shows a DOM boss bar. Built: 200 hp (Assist 152), its phases at the same shares (60% and 24%), since
+the ref bot pops 50 hp in under 3 s; it is drawn as a clump of stacked sage and brown discs (render/action.js `look: "clump"`).
+- Phase 1 (50 to 30 hp): a ring of 12 every 2.5 s at 24 u/s; 2 drifters every 5 s. Built: a ring every 2.0 s.
 - Phase 2 (30 to 12 hp): a 2-arm spiral, 3 s on and 2 s off, 26 u/s; an aimed fan of 5 every 3 s.
-- Phase 3 (12 hp and less): it rolls toward you at 8 u/s and puffs a fan of 3 every 1.2 s.
+- Phase 3 (12 hp and less): it rolls toward you at 8 u/s and puffs a fan of 3 every 1.2 s. Built: every 1.0 s.
 - Each phase change: a 0.6 s pause with a charge tell, a low swell and 8 frames of hit-stop.
 - At 18 s the Knot loosens by itself and drifts off ("The tube carries you past.").
 - While you play, the hollow fills inside your ball (the blastocyst, Day 5), drawn as a growing pale disc.
@@ -806,12 +822,15 @@ body 14 u, 50 hp (Assist 38); the HUD shows a DOM boss bar.
 
 **Score.** Goal 3,000. Skill: 3,000 × germs popped / germs that came (the Knot counts as 10); 1,500 × rooms cleared
 before their timer / 5 (the boss room counts); 1,500 × pips left at `hatch` / 4. Flourish: 1,000 if the Knot pops
-before 12 s.
+before 12 s. Built: the popped share's floor is the whole schedule (so a knock-out keeps only what it popped), the
+Flourish within 13 s of the Knot's room start (its spawn tell is 1.2 s). Germs pop into sparkles; every 8 sparkles
+mend a pip (built, so Magnet draws in something that matters). Bots over 20 seeds: skill 1 mean 9,810 (no knock-out),
+0.7 9,570 and 0.5 9,480 (no knock-out), idle 4,130 (knocked out in 14).
 
 **Knock-out.** "Your cells need a rest." The Almost card. Go on: the rooms left clear by themselves, each split
 plays, and the stage jumps to `hatch`.
 
-**Assist.** Hp 7; foes ×0.75; spores ×0.75 speed; the Knot 38 hp; dash cooldown ×0.7.
+**Assist.** Hp 7; foes ×0.75; spores ×0.75 speed; the Knot 38 hp (built: 152 of its 200); dash cooldown ×0.7.
 
 **One-button.** Hold: the bot moves you; it takes gifts by swimming into its first preference. Release: still.
 
@@ -819,7 +838,8 @@ plays, and the stage jumps to `hatch`.
 about 72 s. Cap 100 s.
 
 **Facts** (priority). Card `split.two`. Captions: `split.small` (Day 2 pick), `split.carried` (Day 3 pick),
-`split.morula` (Day 4 pick), `split.inner` (the Knot's first phase change, if it fits). Overlay `split.hatch`.
+`split.morula` (Day 4 pick), `split.inner` (the Knot's first phase change, if it fits; built: as the Knot's room starts, since
+the ref bot pops the Knot about 5 s after its first change). Overlay `split.hatch`.
 Result: `split.frame` and any that did not fit.
 
 **Carry.** None in or out, except the shield sparks.
@@ -954,7 +974,8 @@ the user's plan:
 - **A design idea for the builder** (optional, not a gate): let the fire rate follow your own heart's curve (130 bpm
   at week 7, 170 at weeks 9 to 10, about 155 at week 13), so the peak heart is the peak firepower.
 - **Facts.** v1 6.5's list in priority order, plus `grow.frame` on the run result.
-- **Length.** Six waves of about 9.7 s with their rests, then the boss: about 76 s. Cap 120 s (as built).
+- **Length.** Six waves of about 9.7 s with their rests, then the boss and a 1.4 s victory beat: about 85 s for
+  the ref and mid bots (as built). Cap 120 s.
 
 ### 5.6 Stage 6, Second Trimester (`answer`): rhythm. "Listen. Then answer."
 
@@ -1001,7 +1022,10 @@ better brings "{Carer} feels you." and, from phrase 2, the warm hand glow (v1).
 **The sing-along** (`song`). The 16 notes of the phrases, in order, one per beat, in their lanes. The 17th is the
 **jump note**: a big ring across all three lanes ("A loud noise can make you jump."), and a press in any lane counts.
 **Fever:** 8 In time notes in a row light the hand glow round your ring; while it is lit, each note's credit counts
-×1.5 toward the song part (capped at the part's max). A miss ends the fever.
+×1.5 toward the song part (capped at the part's max). A miss ends the fever. A streak meter of 8 cut paper pips
+under your ring (filled gold discs against hollow dotted ones) counts the In time streak in the phrases and the
+sing-along, so a streak carried out of the phrases starts the sing-along lit; "Singing together" pops as it lights.
+The jump note gives a small shake (at most 3 px, none with reduced motion).
 
 **Targets and preview.** Every note is a target of kind `tap` with its P and a lane. Each is visible at least
 max(2 beats, 1.2 s) ahead (v1). A press away from any open target is free. Each target has a DOM ring in `svg#rings`.
@@ -1032,7 +1056,8 @@ running from the warm patch on the wall down to you. Notes are the v1 gold voice
 slots are ghost ripples with cut dashes. Your ring sits at the lanes' foot. The jump note is a wide ring.
 
 **Sound.** v1: the sine hum through the womb filter, opening from 250 to 450 Hz over the stage; your kicks are soft
-low thumps; the fever adds a soft chord under the hum; the jump note a soft "boom" from outside.
+low thumps, and each kick on a hummed note plays that note back an octave up as a soft pluck (`answer.echo`, Rhythm
+Heaven: your answer makes the sound); the fever adds a soft chord under the hum; the jump note a soft "boom" from outside.
 
 **Bot steering.** `dir` toward the next note's lane; the shared bot timing presses at `target.t` + gauss·σ (v1
 16.11).

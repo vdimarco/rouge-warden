@@ -37,6 +37,7 @@ const times = (list, keepRaw) => (Array.isArray(list) ? list : [])
     const o = { t: e.t, raw: Number.isFinite(e.raw) ? e.raw : e.t };
     if (Number.isFinite(e.x) && Number.isFinite(e.y)) { o.x = e.x; o.y = e.y; }
     if (DIRS.has(e.dir)) o.dir = e.dir;
+    if (e.item === true) o.item = true;          // stage 1: E or Shift uses the item (ui/input.js "move")
     return o;
   });
 

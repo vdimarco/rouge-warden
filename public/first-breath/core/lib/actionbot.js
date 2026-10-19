@@ -28,9 +28,13 @@ export const BOT = Object.freeze({
   crowd: 2.6,                // a field this strong (many close passes at once) is worth a dash
   wobble: 1.2,               // aim error of the steer (rad) × (1 − skill), redrawn each 0.3 s
   turn0: 0.1, turnK: 0.9,    // how fast the steer follows the field (per step share): 0.1 + 0.9 × skill
+  goalCalm: 0.6, goalBusy: 0.25, goalBusyR: 20,   // a stage goal's pull: 0.6, or 0.25 with a foe bullet within 20 u
+  goalLag: 0.6,              // the goal is seen 0.6 s × (1 − skill) late (design.md 4.11)
+  goalSlowR: 6,              // the pull eases off inside this distance, so the bot settles on a goal
 });
 
-// → { steer: { x, y } (|steer| <= 1, world), dash: boolean }.
+// → { steer: { x, y } (|steer| <= 1, world), dash: boolean }. o: { keep: false (no range kept from the nearest foe:
+// a stage whose goal is elsewhere), picks: false (no pickups fetched) }.
 export function actionSteer(A, skill, r, o = {}) {
   if (!A || A.ko) return ZERO;
   const s = clamp01(skill), p = A.p, B = A.b, K = BOT;
@@ -95,7 +99,7 @@ export function actionSteer(A, skill, r, o = {}) {
       danger += w * 0.5;
     }
   }
-  if (near) {
+  if (near && o.keep !== false) {
     const dx = near.x - p.x, dy = near.y - p.y, d = nd;
     // stay inside your sparks' reach (A.fire.range), but not so close that a shot has no time to cross
     const reach = A.fire ? A.fire.range + near.r - 4 : K.keepMax;
@@ -105,7 +109,7 @@ export function actionSteer(A, skill, r, o = {}) {
   }
 
   // pickups, when it is calm enough
-  if (danger < 1.2) {
+  if (danger < 1.2 && o.picks !== false) {
     const P = A.k, reach = K.pickR0 + K.pickRK * s;
     let bi = -1, bd = reach;
     for (let i = 0; i < P.n; i++) {
@@ -156,4 +160,36 @@ export function actionSteer(A, skill, r, o = {}) {
   M.actX = ox; M.actY = oy;
   if (want && p.dashCd <= 0 && A.dash) dash = r() < s * 0.9;
   return { steer: { x: ox, y: oy }, dash };
+}
+
+// A stage's goal blended into actionSteer's answer (design.md 4.11): a unit pull toward goal { x, y } (world), weight
+// BOT.goalCalm when no foe bullet is within BOT.goalBusyR of you, else BOT.goalBusy (times o.weight, default 1),
+// easing off inside BOT.goalSlowR (o.slowR). Below skill 1 the goal is seen late: it is sampled every BOT.goalLag ×
+// (1 − skill) s (kept in r.mem). goal null leaves a as it is. → { steer, dash } (|steer| < 1; a.dash kept).
+export function goalSteer(A, a, goal, skill, r, o = {}) {
+  const base = a && a.steer ? a : ZERO;
+  if (!A || A.ko || !goal || !Number.isFinite(goal.x) || !Number.isFinite(goal.y)) return base;
+  const s = clamp01(skill), p = A.p, K = BOT;
+  let gx = goal.x, gy = goal.y;
+  if (s < 1 && typeof r === "function") {
+    if (!r.mem || typeof r.mem !== "object") r.mem = {};
+    const M = r.mem, lag = K.goalLag * (1 - s);
+    if (!M.goal || !(A.t - M.goal.t < lag) || A.t < M.goal.t) M.goal = { x: gx, y: gy, t: A.t };
+    gx = M.goal.x; gy = M.goal.y;
+  }
+  const dx = gx - p.x, dy = gy - p.y, d = Math.hypot(dx, dy);
+  if (d < 1e-3) return base;
+  let busy = false;
+  const B = A.b, R2 = K.goalBusyR * K.goalBusyR;
+  for (let i = 0; i < B.n && !busy; i++) {
+    if (B.side[i] !== 2) continue;
+    const bx = B.x[i] - p.x, by = B.y[i] - p.y;
+    if (bx * bx + by * by < R2) busy = true;
+  }
+  const w = (busy ? K.goalBusy : K.goalCalm) * (Number.isFinite(o.weight) ? o.weight : 1)
+    * Math.min(1, d / (Number.isFinite(o.slowR) ? Math.max(1e-3, o.slowR) : K.goalSlowR));
+  let sx = base.steer.x + (dx / d) * w, sy = base.steer.y + (dy / d) * w;
+  const m = Math.hypot(sx, sy);
+  if (m > FULL) { sx *= FULL / m; sy *= FULL / m; }
+  return { steer: { x: sx, y: sy }, dash: !!base.dash };
 }

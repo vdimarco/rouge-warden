@@ -35,9 +35,10 @@ export const LIMITS = Object.freeze({
   pops: 12,
   bursts: 16,
   hp: 12,
+  gifts: 4,         // gift bubbles (stages 3 and 7)
 });
 
-const STRIP_KINDS = new Set(["tails", "cilia", "tree", "cord", "chevrons", "ripples", "arc", "course", "lanes"]);
+const STRIP_KINDS = new Set(["tails", "cilia", "tree", "cord", "chevrons", "ripples", "arc", "course", "lanes", "race", "lining"]);
 const MARK_KINDS = new Set(["pool", "lake", "meet", "band", "warm", "cool", "glowwall", "spot", "glow", "hand", "arrow", "light"]);
 const RING_KINDS = new Set(["mother", "you", "approach", "hold", "breath", "wave", "prompt", "rest", "burrow"]);
 const RIMS = new Set(["solid", "dotted", "wavy"]);
@@ -228,6 +229,43 @@ export function validate(list) {
           need(TONES.has(st.tone), `${wk}.tone is ${st.tone}`);
           break;
         }
+        case "race": {
+          // stage 1's live-drawn course and kart parts (render/race.js): parts are course lumens (world centre lines
+          // with a width per point, at most 96 points each), the rest are lists of plain world items
+          if (!Array.isArray(st.parts)) { bad.push(`${wk}.parts is not a list`); break; }
+          need(st.parts.length <= 8, `${wk} has ${st.parts.length} parts (max 8)`);
+          st.parts.forEach((q, j) => {
+            if (!isObj(q)) { bad.push(`${wk}.parts[${j}] is not an object`); return; }
+            const n = flatPts(q.pts, 96, `${wk}.parts[${j}].pts`);
+            need(n >= 2, `${wk}.parts[${j}] has fewer than 2 points`);
+            need(Array.isArray(q.w) && q.w.length === n && q.w.every((v) => fin(v) && v >= 0), `${wk}.parts[${j}].w is not one width per point`);
+            need(TONES.has(q.tone), `${wk}.parts[${j}].tone is ${q.tone}`);
+          });
+          for (const key of ["gates", "boxes", "goo", "cells", "sparks", "shields", "rest", "streaks", "fx"]) {
+            const list2 = st[key];
+            if (list2 === undefined) continue;
+            if (!Array.isArray(list2)) { bad.push(`${wk}.${key} is not a list`); continue; }
+            need(list2.length <= 40, `${wk}.${key} has ${list2.length} (max 40)`);
+            list2.forEach((it, j) => { if (!isObj(it)) bad.push(`${wk}.${key}[${j}] is not an object`); });
+          }
+          break;
+        }
+        case "lining": {
+          // stage 4's lining map (render/lining.js): a grid of n × n cells (0 open, 1 soft, 2 firm, 3 tunnel, 4 dug, 5
+          // edge) from (ox, oy), a bake version per tile, and lists of plain world items
+          nums(st, ["a", "ox", "oy", "n", "cell", "tiles", "gen"], wk);
+          need(Number.isInteger(st.n) && st.n > 0 && st.n <= 256, `${wk}.n is not a whole number 1..256`);
+          need(st.grid instanceof Uint8Array && st.grid.length === st.n * st.n, `${wk}.grid is not a Uint8Array of n × n`);
+          need(st.ver instanceof Uint16Array && st.ver.length === st.tiles * st.tiles, `${wk}.ver is not a Uint16Array of tiles²`);
+          for (const [key, max] of [["knots", 16], ["pings", 8], ["glows", 24], ["beads", 120], ["lit", 160], ["crumbs", 32], ["rings", 8]]) {
+            const list2 = st[key];
+            if (!Array.isArray(list2)) { bad.push(`${wk}.${key} is not a list`); continue; }
+            need(list2.length <= max, `${wk}.${key} has ${list2.length} (max ${max})`);
+            list2.forEach((it, j) => { if (!isObj(it) || !fin(it.x) || !fin(it.y)) bad.push(`${wk}.${key}[${j}] is not { x, y }`); });
+          }
+          for (const key of ["aim", "tendril", "compass"]) if (st[key] !== null && !isObj(st[key])) bad.push(`${wk}.${key} is neither null nor an object`);
+          break;
+        }
       }
     });
   }
@@ -289,6 +327,7 @@ export function validate(list) {
 //   pops     [{ x, y, v, a 0..1, combo }]   number pops (DOM, never canvas text)
 //   bursts   [{ x, y, r, age 0..1, kind (0 a foe cleared, 1 you were hit, 2 a pickup), rot }]   paper flecks
 //   hp       null | { n, max, shield? }   whole numbers, 0 <= n <= max <= LIMITS.hp, shield 0..2 (HUD pips)
+//   boss     null | { hp 0..1, phase 0..8, label? }   the HUD's boss bar; label a text id for its aria-label
 //   shake, flash   0..1
 function validateAction(a, bad) {
   const need = (ok, msg) => { if (!ok) bad.push(msg); };
@@ -389,6 +428,30 @@ function validateAction(a, bad) {
     need(isObj(h) && Number.isInteger(h.n) && Number.isInteger(h.max) && h.n >= 0 && h.n <= h.max && h.max >= 1 && h.max <= LIMITS.hp,
       "action.hp is not { n, max } with 0 <= n <= max <= " + LIMITS.hp);
     if (isObj(h) && h.shield !== undefined) need(Number.isInteger(h.shield) && h.shield >= 0 && h.shield <= 2, "action.hp.shield is not 0, 1 or 2");
+  }
+  if (a.gifts !== undefined && a.gifts !== null) {
+    if (!Array.isArray(a.gifts)) bad.push("action.gifts is not a list");
+    else {
+      need(a.gifts.length <= LIMITS.gifts, `${a.gifts.length} gifts (max ${LIMITS.gifts})`);
+      a.gifts.forEach((g, i) => {
+        const w = `action.gifts[${i}]`;
+        pt(g, w);
+        if (!isObj(g)) return;
+        need(fin(g.r) && g.r > 0, `${w}.r is not > 0`);
+        need(typeof g.icon === "string" && g.icon.length > 0, `${w}.icon is not a name`);
+        for (const k of ["a", "on"]) if (g[k] !== undefined) unit(g[k], `${w}.${k}`);
+        if (g.lv !== undefined) need(Number.isInteger(g.lv) && g.lv >= 0, `${w}.lv is not a whole number`);
+      });
+    }
+  }
+  if (a.boss !== undefined && a.boss !== null) {
+    const b = a.boss;
+    if (!isObj(b)) bad.push("action.boss is neither null nor an object");
+    else {
+      unit(b.hp, "action.boss.hp");
+      need(Number.isInteger(b.phase) && b.phase >= 0 && b.phase <= 8, "action.boss.phase is not a whole number 0..8");
+      if (b.label !== undefined && b.label !== null) need(typeof b.label === "string" && b.label.length > 0, "action.boss.label is not a text id");
+    }
   }
   for (const k of ["shake", "flash"]) if (a[k] !== undefined) unit(a[k], `action.${k}`);
 }

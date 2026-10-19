@@ -82,6 +82,7 @@ const BASE = {
 
   "hud.place": "{place} of {of}",
   "hud.hp": "Hits left: {n} of {max}",
+  "hud.boss": "Still to clear: {n} in 100",
   // the action layer's sound captions, once per stage (main.js cueOf finds "act.sfx.<id>" for an sfx "act.<id>")
   "act.sfx.shot": "· sparks fly",
   "act.sfx.clear": "· germs pop",

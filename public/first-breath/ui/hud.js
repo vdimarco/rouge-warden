@@ -16,10 +16,12 @@
 //   its label, so on a desktop it can reach 30% of the short axis, about 270 px). A string draws a 24 px bar; a size line in
 //   stages 1 and 2 ("You: about …", not to scale) draws none.
 // - hp (the action stages) is { n, max, label }: max pips under the score, n of them full (setHp).
-// - The tags are found in root by their data-hud names (stage, clock, score, place, hp, scale, prompt) and made when
+// - boss (an action stage's boss or swarm) is { hp 0..1, phase, label }: a cut-paper bar under the hp, filled to hp,
+//   its data-phase set for its colour (setBoss); label goes on aria-label. null hides it.
+// - The tags are found in root by their data-hud names (stage, clock, score, place, hp, boss, scale, prompt) and made when
 //   missing. root gets data-place="on" while the place slot shows (style.css keeps the right column tidy).
 
-const FIELDS = ["stage", "clock", "score", "place", "hp", "scale", "prompt"];
+const FIELDS = ["stage", "clock", "score", "place", "race", "hp", "boss", "scale", "prompt"];
 const GESTURES = new Set(["tap", "hold", "drag", "dragHold"]);
 const fin = (v) => typeof v === "number" && Number.isFinite(v);
 
@@ -135,6 +137,27 @@ export function createHud(root) {
     e.setAttribute("role", "img");
   }
 
+  // The boss bar (contract.md): { hp 0..1, phase, label } as a cut-paper bar whose fill shrinks with hp (whole
+  // percent steps, so the DOM is touched only when it moves); data-phase gives each phase its fill. null hides it.
+  function setBoss(v) {
+    const e = tags.boss;
+    if (!e) return;
+    const ok = v && typeof v === "object" && fin(v.hp);
+    const pct = ok ? Math.max(0, Math.min(100, Math.round(v.hp * 100))) : 0;
+    const ph = ok && fin(v.phase) ? Math.max(0, Math.round(v.phase)) : 0;
+    const key = ok ? `${pct}/${ph}/${v.label || ""}` : "";
+    if (last.boss === key) return;
+    last.boss = key;
+    e.hidden = !ok;
+    if (!ok) { e.textContent = ""; e.removeAttribute("aria-label"); return; }
+    let fill = e.firstElementChild;
+    if (!fill) { fill = document.createElement("span"); fill.className = "fill"; fill.setAttribute("aria-hidden", "true"); e.appendChild(fill); }
+    fill.style.width = pct + "%";
+    e.dataset.phase = String(ph);
+    if (v.label) e.setAttribute("aria-label", String(v.label)); else e.removeAttribute("aria-label");
+    e.setAttribute("role", "img");
+  }
+
   function set(v = {}) {
     if (!v || typeof v !== "object") return;
     if ("stageName" in v) setText("stage", v.stageName);
@@ -144,7 +167,9 @@ export function createHud(root) {
       setText("place", v.place);
       if (root) { if (v.place) root.dataset.place = "on"; else delete root.dataset.place; }
     }
+    if ("race" in v) setText("race", v.race);          // stage 1's tags under the place slot: "14 racing", a gate's call, your item
     if ("hp" in v) setHp(v.hp);
+    if ("boss" in v) setBoss(v.boss);
     if ("scale" in v) setScale(v.scale);
     if ("prompt" in v) setPrompt(v.prompt);
   }

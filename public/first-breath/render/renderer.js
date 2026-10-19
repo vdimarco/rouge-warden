@@ -39,6 +39,8 @@ import * as B from "./bake.js";
 import * as I from "./items.js";
 import * as AX from "./action.js";
 import { drawLanes, drawLaneNotes } from "./lanes.js";
+import { drawRaceGround, drawRaceTop } from "./race.js";
+import { drawLiningFloor, drawLiningSheets, drawLiningMid, drawLiningTop } from "./lining.js";
 import { tierOf } from "./low.js";
 import { createPerf, STEPS } from "./perf.js";
 import { TUNE as BT } from "../core/stages/birth.tune.js";
@@ -300,6 +302,12 @@ export function createRenderer(canvas, { gl = true, q = null, res = null, probe 
     // 3. the course tiles
     const course = (d.strips || []).filter((x) => x && x.kind === "course" && Array.isArray(x.pts) && x.pts.length >= 4);
     if (course.length && role.course) at(0.2, () => { if (drawCourse(F, v, stage, course, tier0)) baked = true; });
+    // stage 1's bending course and kart parts, cut live (render/race.js): it turns with the camera
+    const race = (d.strips || []).find((x) => x && x.kind === "race");
+    if (race) at(0.2, () => drawRaceGround(F, race));
+    // stage 4's lining map (render/lining.js): the deep floor here, its tissue sheets over the pools below
+    const lining = (d.strips || []).find((x) => x && x.kind === "lining");
+    if (lining) at(0.2, () => drawLiningFloor(F, lining));
     if (cache.re) { repaper(v, stage, role, tier0); baked = true; }
 
     // 4. motes at the back
@@ -310,6 +318,7 @@ export function createRenderer(canvas, { gl = true, q = null, res = null, probe 
       for (const st of d.strips || []) if (st && st.kind === "ripples") I.drawRipples(F, st, { big: true });
       AX.drawArena(F);                 // the action layer's ground: its wall, the safe zone (render/action.js)
       I.drawGroundMarks(F);
+      if (lining && drawLiningSheets(F, lining)) baked = true;   // tiles a tunnel crossed bake again
       I.drawPoints(F, cache.atlas);
       AX.drawZone(F);
       AX.drawTells(F);
@@ -325,6 +334,7 @@ export function createRenderer(canvas, { gl = true, q = null, res = null, probe 
         else if (st.kind === "cord") I.drawCord(F, st);
         else if (st.kind === "chevrons") I.drawChevrons(F, st);
         else if (st.kind === "lanes") drawLanes(F, st);   // stage 6's note highway (render/lanes.js)
+        else if (st.kind === "lining") drawLiningMid(F, st);   // stage 4's knots, tendril, pings and glows
       }
     });
 
@@ -346,10 +356,12 @@ export function createRenderer(canvas, { gl = true, q = null, res = null, probe 
       I.drawArrows(F);
       AX.drawBursts(F);
       AX.drawBullets(F);
+      AX.drawGifts(F);                 // gift bubbles (stages 3 and 7)
       // 8. the subject on the highest sheet
       for (const st of tails) I.drawTails(F, st, heads, { subject: true });
       I.drawSubjects(F, bodies);
       AX.drawPlayer(F);
+      if (race) drawRaceTop(F, race);
     });
 
     // 9. the renderer's frames (front flats), closing in with the vignette
@@ -359,7 +371,7 @@ export function createRenderer(canvas, { gl = true, q = null, res = null, probe 
     if (stage === "birth") I.drawBirthLight(F);
 
     // 11. the cue sticker (over the frames: the cue always reads)
-    at(0.9, () => { out.lastCue = I.drawCue(F); });
+    at(0.9, () => { out.lastCue = I.drawCue(F); if (lining) drawLiningTop(F, lining); });
 
     // 12. tint, exposure, white
     const tint = Math.min(0.06, Math.max(0, fin(light.tint) ? light.tint : 0));

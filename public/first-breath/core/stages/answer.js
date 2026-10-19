@@ -251,9 +251,12 @@ function plan(st, from, t0) {
   }
   st.end = cur;
 
-  // P: the seconds since the previous target, or the beat period for the first; floored at 0.5 s (v1 5.2)
+  // P: the seconds since the previous target, or for the first its own group's spacing (the heartbeat kicks every
+  // 2nd beat, P 1.54 s; the others one beat); floored at 0.5 s (v1 5.2)
   const all = [...keep, ...add].sort((a, b) => a.t - b.t);
-  all.forEach((x, i) => { if (!Number.isFinite(x.P)) x.P = Math.max(0.5, i ? x.t - all[i - 1].t : BEAT_S); });
+  all.forEach((x, i) => {
+    if (!Number.isFinite(x.P)) x.P = Math.max(0.5, i ? x.t - all[i - 1].t : x.group === "beat" ? BT.every * BEAT_S : BEAT_S);
+  });
   st.track = createTrack(all, { assist: st.assist, lag: st.lag });
   st.track.targets.forEach((x, i) => { if (kept.has(x.id)) st.track.results[i] = kept.get(x.id); });
 
@@ -399,6 +402,8 @@ function feverOn(st, t) {
   st.feverT = t;
   if (!st.feverSeen) { st.feverSeen = true; emit(st, "caption", { id: "answer.cap.fever", dir: null, t }); }
   emit(st, "sfx", { id: "answer.hand", at: t, pitch: hz(st.song[0] - 12), gain: 0.9, t });
+  // a word over your ring as it lights (Guitar Hero's star power call-out, in plain words)
+  st.pops.push({ x: laneX(st.lane, 1), y: LN.y1 + V.ringR + 4, word: "answer.pop.fever", combo: 0, t });
 }
 function feverOff(st, t) {
   if (!st.fever) return;
@@ -417,6 +422,9 @@ function judged(st, r) {
   if (r.grade === "off") return;                          // Off changes nothing; the note stays open (v1 5.2)
   const c = CREDIT[r.grade] || 0;
   const skill0 = skillOf(st), flo0 = st.flourish;
+  // a streak carried in from the phrases lights the fever on the sing-along's first note (that note can land a moment
+  // before the step that starts the song)
+  if (x.group === "song" && c > 0 && st.streak >= FEVER.need) feverOn(st, at);
   // streaks: In time in a row (the Flourish and the fever), and the combo (Close or better in a row)
   if (r.grade === "in") { st.streak++; if (st.streak > st.best) st.best = st.streak; } else st.streak = 0;
   st.combo = c > 0 ? st.combo + 1 : 0;
@@ -436,6 +444,9 @@ function judged(st, r) {
   st.pops.push({ x: hx, y: LN.y1 - V.ringR - 5, word: "answer.pop." + r.grade, combo: c > 0 ? st.combo : 0, t: at });
   if (c > 0) {
     emit(st, "sfx", { id: "answer.thump", at, pitch: st.fever ? 82 : 70, gain: c, t: at });
+    // your kick plays her note back (Rhythm Heaven: your answer makes the sound), softer when only Close
+    const midi = Number.isInteger(x.song) && x.song < NOTES ? st.song[x.song] : null;
+    if (midi !== null) emit(st, "sfx", { id: "answer.echo", at, pitch: hz(midi + 12), gain: c * (st.fever ? 1 : 0.8), t: at });
     const big = r.grade === "in";
     if (x.jump) for (let j = 0; j < 3; j++) st.bursts.push({ x: laneX(j, 1), y: LN.y1, r: 5, kind: 2, t: at, rot: j * 0.7 });
     else st.bursts.push({ x: hx, y: LN.y1, r: big ? 4 : 2.6, kind: big ? 2 : 1, t: at, rot: (st.gen * 0.37 + x.t * 1.7) % 6.283 });
@@ -508,8 +519,9 @@ function press(st, p) {
   for (const pd of st.pend) {
     const x = tr.targets[pd.i];
     if (!laneOk(st, x)) continue;
-    const g = gradeOf(p.t - x.t, x.P, tr.assist);
-    if ((RANK[g] || 0) > (RANK[pd.grade] || 0)) { pd.grade = g; pd.err = p.t - x.t; pd.raw = p.raw; }
+    const g = gradeOf(p.t - x.t, x.P, tr.assist), e = p.t - x.t;
+    const better = (RANK[g] || 0) - (RANK[pd.grade] || 0);
+    if (better > 0 || (better === 0 && RANK[g] && Math.abs(e) < Math.abs(pd.err))) { pd.grade = g; pd.err = e; pd.raw = p.raw; }
     settlePend(st, pd, true);
     return;
   }
@@ -771,8 +783,12 @@ export function view(st) {
     notes.push({ lane: x.lane, u, r: noteR(u), kind, state, a, hot: x.group === "song" ? fv : 0 });
     if (state === 0 && x.lane >= 0 && u <= 1.05) slots[x.lane] = Math.max(slots[x.lane], clamp01(1 - (x.t - t) / BEAT_S));
   }
+  // the streak meter under your ring (the phrases and the sing-along): one pip per In time note in a row, up to 8;
+  // full in the sing-along, it lights the fever, and then every pip glows on her beat
+  const meterA = st.mi === PHRASES || st.mi === SONG ? laneAlpha(st)[1] : 0;
+  const meter = meterA > 0.02 ? { n: st.fever ? FEVER.need : Math.min(FEVER.need, st.streak), of: FEVER.need, lit: fv, a: meterA } : null;
   d.strips.push({ kind: "lanes", y0: LN.y0, y1: LN.y1, gap0: LN.gap0, gap1: LN.gap1, w0: LN.w0, w1: LN.w1, tail: LN.tail,
-    a: laneAlpha(st), you: youLane, ring: V.ringR, fever: fv, beat: herPh, notes, slots });
+    a: laneAlpha(st), you: youLane, ring: V.ringR, fever: fv, beat: herPh, notes, slots, meter });
 
   // marks: the disc, the voice's warm patch, the hand glow, the fever's glow round your ring, sparks
   d.marks.push({ kind: "glowwall", x: dx, y: dy, r: V.disc.r, rim: "wavy", on: true, pulse: herPh });
@@ -808,6 +824,8 @@ export function view(st) {
     }),
     bursts: st.bursts.map((q) => ({ x: q.x, y: q.y, r: q.r, age: clamp01((t - q.t) / V.burstS), kind: q.kind, rot: q.rot })),
   };
+  // the jump note's loud sound outside: a small shake (at most 3 px; none with reduced motion, render/action.js)
+  if (st.jumpT !== null && t >= st.jumpT && t < st.jumpT + V.shakeS) d.action.shake = V.shake * (1 - (t - st.jumpT) / V.shakeS);
 
   d.anchor = { x: youX, y: youY };
   if (next.length) { const u = clamp01(uOf(next[0], t)); d.cue = { x: next[0].lane < 0 ? 0 : laneX(next[0].lane, u), y: laneY(u) }; }

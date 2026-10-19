@@ -397,7 +397,7 @@ for (const key of ["Space", "Enter"]) {
       else await page.keyboard.down(key);
     };
     const up = async () => { if (dry) return; if (how === "touch") await T.up(); else if (how === "mouse") await page.mouse.up(); else await page.keyboard.up(key); };
-    if (at.gesture === "drag") {
+    if (at.gesture === "drag" || at.gesture === "move") {     // "move" (the action stages, stage 1): drag to move
       if (how === "keys") {
         const ks = at.keys === "turn" ? ["ArrowRight"] : ["ArrowUp", "ArrowRight"];
         for (const k of ks) if (!dry) await page.keyboard.down(k);
@@ -464,6 +464,49 @@ for (const key of ["Space", "Enter"]) {
       check(`${size}: two idle twins of each stage are the same (the control)`, same.length === 0, `stages ${same.join(", ")} differ`);
     }
     check(`${size}: no page errors (each stage's gesture)`, errors.length === 0, errors.slice(0, 3).join(" || "));
+    await ctx.close();
+  }
+  // stage 6, the rhythm stage (design.md 5.6): on desktop an arrow keydown moves one lane and is the kick, in the new
+  // lane (two quick arrows cross two lanes); on a phone a tap kicks in the lane's column (low, where a thumb rests),
+  // and a touch-down on the beat with a drag past 24 px inside 0.12 s counts in the lane it slides to
+  for (const size of ["desktop", "portrait"]) {
+    const touch = !!SIZES[size].hasTouch;
+    const { ctx, page, errors } = await open(size, "?test=1&mute=1");
+    const T = touch ? await touchOf(page) : null;
+    const W = SIZES[size].viewport.width, H = SIZES[size].viewport.height;
+    await page.evaluate(() => { window.__fb.goto("answer", { seed: 4 }); window.__fb.jump("phrases"); window.__fb.step(1); });
+    const toNote = () => page.evaluate(() => {
+      let n = 0, x = window.__fb.nextTarget();
+      while (x && x.t - window.__fb.state().t > 1 / 60 - 1e-6 && n++ < 3000) { window.__fb.step(1); x = window.__fb.nextTarget(); }
+      return x;
+    });
+    const gradeOf = (id) => page.evaluate((id) => { window.__fb.step(12); const j = window.__fb.state().judges.filter((e) => e.target === id); return j.length ? j[j.length - 1].grade : null; }, id);
+    const LANES = "MLRLMR";                                   // the first six answer notes' lanes (phrases 1 to 3)
+    const got = [];
+    let lane = "M";
+    for (let k = 0; k < LANES.length; k++) {
+      const x = await toNote();
+      const want = LANES[k], d = "LMR".indexOf(want) - "LMR".indexOf(lane);
+      const { y: ay, x: mx } = await page.evaluate(() => window.__fb.state().anchor);
+      if (!touch) {
+        if (Math.abs(d) === 2) await page.keyboard.press(d > 0 ? "ArrowRight" : "ArrowLeft");
+        await page.keyboard.press(d > 0 ? "ArrowRight" : d < 0 ? "ArrowLeft" : "ArrowUp");
+      } else if (k % 2 === 0) {
+        // a tap in the note's lane column, below your ring (your ring is at mx; lanes are 20 u apart at the line)
+        const cx = W / 2 + ("LMR".indexOf(want) - 1) * 0.2 * W;
+        await T.down(cx, Math.min(H - 20, ay + 0.12 * H)); await T.up();
+      } else {
+        // a touch-down where you are on the beat, then a flick past 24 px toward the note's lane within 0.12 s
+        await T.down(mx, ay + 0.1 * H);
+        for (let i = 1; i <= 3; i++) { await T.move(mx + Math.sign(d) * 14 * i * Math.abs(d), ay + 0.1 * H); await page.evaluate(() => window.__fb.step(1)); }
+        await T.up();
+      }
+      lane = want;
+      got.push(await gradeOf(x.id));
+    }
+    check(`${size}: stage 6 ${touch ? "lane taps and flicks" : "arrows"} kick each answer note in its lane, In time (${got.join(" ")})`,
+      got.length === 6 && got.every((g) => g === "in"), got);
+    check(`${size}: no page errors (stage 6 lanes)`, errors.length === 0, errors.slice(0, 3).join(" || "));
     await ctx.close();
   }
   // one-button mode completes a stage: stage 1 with one key or one touch held from the start, top 3 at the meeting place

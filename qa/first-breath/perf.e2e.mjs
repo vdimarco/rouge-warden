@@ -145,7 +145,10 @@ if (only.includes("desktop") && process.env.CHUNKS !== "0") {
   const k1 = await page.evaluate(() => ({ frames: window.__k1.frames, beats: [...window.__k1.beats].sort((a, b) => a - b), ss: __fb.state().stageStart }));
   const swim = k1.frames.filter((f) => f.screen === "stage" && f.stage === "swim");
   const after = swim.slice(2);                         // the stage's first frame bakes what is on screen
-  const whole = after.filter((f) => !f.bakes || f.whole > 0);
+  // stage 1 now cuts its bending course live (render/race.js) and bakes no course chunks: the chunk checks hold for
+  // whatever it bakes, the frame and beat checks stay
+  const baking = swim.some((f) => f.bakes && f.rescaled !== null);
+  const whole = after.filter((f) => f.bakes && f.whole > 0);
   const longest = Math.max(0, ...after.map((f) => f.gap));
   const rescaled = swim.length ? swim[swim.length - 1].rescaled : null;
   const beats = k1.beats.filter((t) => t >= k1.ss);
@@ -154,7 +157,7 @@ if (only.includes("desktop") && process.env.CHUNKS !== "0") {
   rows.push(`desktop   chunks    ${swim.length} stage 1 frames, longest ${longest.toFixed(0)} ms, ${whole.length} with a whole chunk, ${rescaled} rescaled, ${beats.length} beats`);
   check("desktop stage 1: after its first frame no frame bakes a whole course chunk", swim.length > 600 && whole.length === 0,
     `${whole.length} of ${after.length}: ${whole.slice(0, 4).map((f) => (f.t || 0).toFixed(2) + " s").join(", ")}`);
-  check("desktop stage 1: the rescale after the span settles comes in", rescaled > 0, String(rescaled));
+  if (baking) check("desktop stage 1: the rescale after the span settles comes in", rescaled > 0, String(rescaled));
   check("desktop stage 1: no frame takes 200 ms or more", longest < 200, `${longest.toFixed(0)} ms`);
   check("desktop stage 1: her beats keep an even spacing (none dropped)", beats.length >= 30 && odd.length === 0,
     `${beats.length} beats; ${odd.slice(0, 4).map(([i, d]) => `#${i}: ${(d * 1000).toFixed(0)} ms`).join(", ")}`);

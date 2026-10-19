@@ -3,6 +3,10 @@
 // wave of germs and toxin blobs a week (weeks 7 to 12), each with a short rest after it, then the big germ (week 13)
 // in three phases. Food from cleared germs grows your sparks; the cord brings a heal in each rest. Positions and sizes
 // are world units (u); the camera's short axis is `view.span` u. Pure data.
+// Tuned (first-breath-action-genres): the fastest foe shots of the run (design.md 3.2): the blob's aimed stack 28 to
+// 30 u/s (its second shot 34), the big germ's fan 27 to 30 and its wave 22 to 24; a 1.4 s victory beat (outroS).
+// Bots over 10 seeds: skill 1 mean 9,900 (no knock-out), 0.7 9,600, 0.5 9,300 (no knock-out); idle knocked out at
+// about 12 s; about 85 s a stage.
 export const TUNE = Object.freeze({
   motherBpm: 72,                 // her rate (5.1); her beats swell the placenta
 
@@ -31,6 +35,7 @@ export const TUNE = Object.freeze({
   bossInS: 1.6,                  // the big germ's spawn tell
   bossS: 16,                     // its nominal length (gaDay runs 91 to 96 over it)
   koS: 1.5,                      // a knock-out rests at least this long before the stage ends
+  outroS: 1.4,                   // the victory beat after the big germ is cleared, before the stage ends
   capS: 120,
   // the foes (spawnFoe specs; contract.md) and each wave's rows: [at s, foe, n, angle (turns from the wave's base
   // angle), spread (rad between a group's members)]
@@ -40,7 +45,7 @@ export const TUNE = Object.freeze({
       drops: Object.freeze({ food: 1 }) }),
     blob: Object.freeze({ kind: "blob", ai: "shooter", r: 3.6, hp: 8, speed: 10, keep: 40, value: 25, touch: 1, mass: 2.5,
       drops: Object.freeze({ food: 3, heal: 0.06 }),
-      gun: Object.freeze({ pattern: Object.freeze({ kind: "aimed", n: 2, speed: 28, r: 1.5, tone: "foe" }), every: 2.0, tellS: 0.6, first: 1.4 }) }),
+      gun: Object.freeze({ pattern: Object.freeze({ kind: "aimed", n: 2, speed: 30, r: 1.5, tone: "foe" }), every: 2.0, tellS: 0.6, first: 1.4 }) }),
     blob3: Object.freeze({ kind: "blob", ai: "shooter", r: 3.6, hp: 8, speed: 10, keep: 40, value: 25, touch: 1, mass: 2.5,
       drops: Object.freeze({ food: 3, heal: 0.06 }),
       gun: Object.freeze({ pattern: Object.freeze({ kind: "fan", n: 3, arc: 0.3, speed: 25, r: 1.5, tone: "foe" }), every: 2.6, tellS: 0.7, first: 1.6 }) }),
@@ -89,11 +94,11 @@ export const TUNE = Object.freeze({
       addEvery: 5.0, adds: 2 }),
     // phase 2: it glides from place to place; a wide fan aimed at you, then a ring
     p2: Object.freeze({ hopS: 3.0, hopR: 22, glide: 3,
-      fan: Object.freeze({ kind: "fan", n: 7, arc: 0.19, speed: 27, r: 1.5, tone: "hot" }), ring: Object.freeze({ kind: "ring", n: 16, speed: 19, r: 1.4, tone: "soft" }),
+      fan: Object.freeze({ kind: "fan", n: 7, arc: 0.19, speed: 30, r: 1.5, tone: "hot" }), ring: Object.freeze({ kind: "ring", n: 16, speed: 19, r: 1.4, tone: "soft" }),
       tellS: 0.7, gapS: 1.4 }),
     // phase 3: it rushes at you (a charge line first), rings as it stops, then a wave fan
     p3: Object.freeze({ tellS: 0.85, rushSpeed: 64, rushS: 0.6, ring: Object.freeze({ kind: "ring", n: 20, speed: 18, r: 1.4, tone: "soft" }),
-      wave: Object.freeze({ kind: "wave", n: 5, arc: 0.3, speed: 22, r: 1.4, w: 4, wf: 7, tone: "soft" }), restS: 1.0 }),
+      wave: Object.freeze({ kind: "wave", n: 5, arc: 0.3, speed: 24, r: 1.4, w: 4, wf: 7, tone: "soft" }), restS: 1.0 }),
   }),
 
   // the score (7): Goal 3,000 for clearing the big germ (or lasting to the cap); Skill 6,000: 3,500 for the germs

@@ -202,7 +202,7 @@ let lastScreen = { name: "title", data: null };
 let menu = null;                  // a menu opened over the title, the result or pause: { name }
 let botDriver = null;
 let held = {};
-let placeText = null, placeNum = null;
+let placeText = null, placeNum = null, raceText = null;
 let momentPending = FLAGS.moment;
 let frames = 0, stopped = false;
 let audioCtx = null, sound = null, hearing = false;
@@ -226,6 +226,7 @@ function newRun(start = "new", seed = newSeed()) {
   lastBeat.mother = lastBeat.you = -Infinity;
   placeText = null;
   placeNum = null;
+  raceText = null;
   menu = null;
   judges.length = 0;
   captions.resume();                       // a new run is never paused
@@ -410,6 +411,7 @@ function onEvent(ev) {
     case "stageStart":
       placeText = null;
       placeNum = null;
+      raceText = null;
       hearing = false;
       capSeen.clear();
       captions.clear();
@@ -443,6 +445,15 @@ function onEvent(ev) {
       const gained = fin(ev.place) && fin(placeNum) && ev.place < placeNum;
       if (fin(ev.place)) { placeText = say("hud.place", { place: ordinal(ev.place), of: fin(ev.of) ? ev.of : 20 }); placeNum = ev.place; }
       if (sound && gained) sound.sfx("place", soundAt(ev), ev);
+      break;
+    }
+    case "race": {
+      // stage 1's tags under the place slot: how many still race (once the first sperm rests), the next gate's call,
+      // the item you hold; nothing to say hides the tag, so the portrait prompt line keeps its place
+      const bits = [fin(ev.racing) && ev.racing < (fin(ev.of) ? ev.of : 20) ? say("swim.tag.racing", { n: ev.racing }) : null,
+        ev.gate && fin(ev.gate.n) ? say("swim.tag.gate", { n: ev.gate.n, first: ev.gate.first }) : null,
+        ev.item ? say("swim.item." + ev.item) : ev.rolling ? say("swim.tag.rolling") : null];
+      raceText = bits.filter(Boolean).join(" · ") || null;
       break;
     }
     case "judge":
@@ -742,10 +753,14 @@ function updateHud(view) {
     clock: st && mod !== ENDING ? gaLabel(st.gaDay, { fertilized: !!st.fertilized }) : "",
     score: mod && mod.meta.scored ? liveScore() : "",
     place: run.stageId === "swim" ? placeText : null,
+    race: run.stageId === "swim" && PLAYING.has(run.screen) ? raceText : null,
     scale: mod && mod !== ENDING ? scaleBar(view) : "",
     prompt: promptLine(),
     hp: PLAYING.has(run.screen) && view && view.action && view.action.hp
       ? { ...view.action.hp, label: say("hud.hp", { n: view.action.hp.n, max: view.action.hp.max }, settings) } : null,
+    // the boss bar: the stage's label id (its aria-label) or the shared one, with the share left in whole percent
+    boss: PLAYING.has(run.screen) && view && view.action && view.action.boss
+      ? { ...view.action.boss, label: say(view.action.boss.label || "hud.boss", { n: Math.round(100 * view.action.boss.hp) }, settings) } : null,
   };
   hud.set(v);
   // the words set the HUD's height: measure its bottom again when a line changes, or the score gets a digit (a wider

@@ -836,6 +836,11 @@ export function actionView(A, { player = true } = {}) {
     ready: D ? (p.dashCd <= 0 ? 1 : clamp(1 - p.dashCd / D.cdS, 0, 1)) : 0,
   } : null;
   const z = A.zone;
+  // the boss bar (a HUD tag): the stage's own A.bossBar when it sets one ({ hp 0..1, phase } or null: stage 2's swarm),
+  // else the first boss foe's hp share and phase, from its spawn tell on
+  let bb = A.bossBar;
+  if (bb === undefined) { bb = null; for (const f of A.foes) if (f.boss) { bb = { hp: f.hp / f.hpMax, phase: f.phase }; break; } }
+  const boss = bb && typeof bb === "object" ? { hp: clamp(num(bb.hp, 0), 0, 1), phase: Math.max(0, num(bb.phase, 0) | 0) } : null;
   return {
     bullets: { n: nb, xy, r, tone, ang },
     foes,
@@ -847,6 +852,7 @@ export function actionView(A, { player = true } = {}) {
     bursts,
     hp: { n: Math.min(HP_PIPS, Math.max(0, Math.round(p.hp))), max: Math.min(HP_PIPS, Math.max(1, Math.round(p.hpMax))),
       shield: Math.min(2, p.shield) },
+    boss,
     shake: clamp(A.juice.shake, 0, 1),
     flash: clamp(A.juice.flash, 0, 1),
     combo: A.combo,
