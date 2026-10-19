@@ -70,6 +70,7 @@ function startArcade() {
   return new Promise((resolve) => {
     server.listen(0, '127.0.0.1', () => {
       const { port } = server.address();
+      server.unref();
       resolve({ server, origin: `http://127.0.0.1:${port}` });
     });
   });

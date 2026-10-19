@@ -27,7 +27,7 @@ Spin is the change in heading from the first part of the stroke to the last, 20 
 
 The side reach stays 0.22 m and the depth reach stays 0.5 m. A ball 0.20 m to the side of the bat is inside that side reach, so a swing 9 ms early at that gap connects. A centre 0.23 m aside misses for reach. The serve ease-in clock can call a swing 9 ms early while the ball is still about 0.25 m short of the bat. That gap is inside the 0.5 m depth reach, so it is not a reach miss. Desktop tracking keeps the side gap near 0, well under 0.22 m.
 
-Table ink is one layer, drawn opaque and blitted at 25% times its fade, so overlapping marks stay at or under 25%. The fade runs to 0 even after the pause ends, then the layer is cleared and that landing is not stamped again. The slash is drawn after the bat, so a push, a drive, and a smash all read on top of it. `__test.lastSlash` and `__test.splatCount` expose the latest slash and how many marks are still up.
+Table ink is one layer, drawn opaque and blitted at 25% times its fade, so overlapping marks stay at or under 25%. The fade runs to 0 even after the pause ends, then the layer is cleared and that landing is not stamped again. The slash is drawn after the bat, with an ink edge under the shot colour, so a push, a drive, and a smash all read on top of the bat and on the table. `__test.lastSlash` and `__test.splatCount` expose the latest slash and how many marks are still up.
 
 A 2560-wide view caps the canvas backing store at 2560 px, so device pixel ratio 2 does not allocate an 8 megapixel frame. The static room is already cached. 390 and 1280 stay at the existing cap of 2.
 

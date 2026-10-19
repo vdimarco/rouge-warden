@@ -610,15 +610,19 @@ export function createView(canvas) {
     ctx.rotate(slash.dir * 0.5);
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
+    ctx.globalAlpha = alpha;
+    ctx.strokeStyle = INK;
+    ctx.lineWidth = 9;
+    brush(ctx, slash.len);
     if (slash.perfect) {
       ctx.globalAlpha = alpha * 0.95;
       ctx.strokeStyle = GOLD;
-      ctx.lineWidth = 7;
-      brush(ctx, slash.len + 4);
+      ctx.lineWidth = 6.5;
+      brush(ctx, slash.len);
     }
     ctx.globalAlpha = alpha;
     ctx.strokeStyle = slash.color;
-    ctx.lineWidth = 3.2;
+    ctx.lineWidth = 3.6;
     brush(ctx, slash.len);
     ctx.restore();
   }
