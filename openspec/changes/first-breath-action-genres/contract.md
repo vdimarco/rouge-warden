@@ -229,5 +229,5 @@ no em dash, no pronoun for the carer, and none of the banned words (no "enemy", 
   completes. About 92 s; cap 120 s. The shots are faster and come sooner than first built (the aimed stack of 3 at 32
   to 41 u/s; week 7's gentler blob0), and a hit gives 1.4 s of i-frames and clears shots within 12 u.
 - No `meta.goOn`: after a knock-out, Go on closes the stage at once (the clock and carry at the stage's end).
-- The facts are v1's; `grow.frame` ("In the game you clear germs. ...") is a result fact, `checked: false` until its
-  page is re-read (research-biology.md 5.13 supports it).
+- The facts are v1's; `grow.frame` ("In the game you clear germs. ...") is a result fact, checked against CC 22337
+  ("It provides food and oxygen to the fetus.") on 2026-10-19.

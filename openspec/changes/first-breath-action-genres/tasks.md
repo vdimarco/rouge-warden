@@ -16,8 +16,8 @@ any tuned value in the tune file header and in `design.md` 3.1. API names come f
   The items are in `render/action.js` (re-exported by `render/items.js`); `ACTION_TONES` there gives every token a default, `ROLES[stage].action` overrides.
 - [x] 0.5 Foundation: the knock-out flow in `core/run.js` (the Almost card with the rest line, Try again, Go on to `meta.goOn`, Goal 0 and no grade word); `meta.canFail` for stages 1 to 5 and 7.
   Go on calls `jump(st, meta.goOn)` when the result has `metrics.ko` (contract.md 4); each stage sets its own `meta.canFail` and `meta.goOn`.
-- [ ] 0.8 Foundation: stage 1's press in `ui/input.js` and `core/bots.js` (a press while turning drifts, a press while straight uses the item; on desktop Space held while turning drifts with its keyup as the release, and E or Shift uses the item).
-- [ ] 0.6 Foundation: HUD hp pips, shield sparks, stage 1's place slot with its "racing", gate and item tags, the boss bar and the edge arrow in `ui/hud.js`; number pops as DOM tags.
+- [x] 0.8 Foundation: stage 1's press in `ui/input.js` and `core/bots.js` (a press while turning drifts, a press while straight uses the item; on desktop Space held while turning drifts with its keyup as the release, and E or Shift uses the item).
+- [x] 0.6 Foundation: HUD hp pips, shield sparks, stage 1's place slot with its "racing", gate and item tags, the boss bar and the edge arrow in `ui/hud.js`; number pops as DOM tags.
   Done: hp pips, shield pips, the boss bar (`action.boss`, `hud.boss`) and number pops (`ui/pops.js`). Left: stage 1's racing, gate and item tags and the edge arrow (with stages 1 and 4).
 - [x] 0.7 Foundation: stage 5 rebuilt as the shooter (`design.md` 5.5, `contract.md`).
 
@@ -86,7 +86,7 @@ Keep everything `design.md` 5.2 lists under "What stays" (the arc and its contro
 ## 5. Stage 5, First Trimester (`grow`)
 
 - [x] 5.1 As `contract.md` (the foundation builder); add `grow.frame` to the result facts.
-  `grow.frame` ships `checked: false` until its page is re-read (9.6). The stage 5 gate is in `sim.test.mjs`.
+  `grow.frame` was checked against CC 22337 in 9.6. The stage 5 gate is in `sim.test.mjs`.
 
 ## 6. Stage 6, Second Trimester (`answer`): rhythm
 
@@ -123,22 +123,22 @@ Keep everything `design.md` 5.2 lists under "What stays" (the arc and its contro
 
 ## 9. Integration
 
-- [ ] 9.1 `core/stages/index.js` and `core/run.js` play the whole run with the new stages; `meta.goOn` for stages 2, 3, 4 and 7.
-- [ ] 9.2 Shield sparks from `carry.sparks` in every action stage; no gift carries.
-- [ ] 9.3 Captions: every new line and fact in `ui/captions.js` order; `pacing.test.mjs` passes; facts with no room set to `result`.
-- [ ] 9.4 Sound: the new one-shots (`design.md` 4.9) through the womb bus, with captions.
-- [ ] 9.5 Text: every new string passes `text.test.mjs` (banned words, pronouns, the race words, sentence length).
-- [ ] 9.6 Facts: re-read each new fact's source and set `checked: true` only then; `facts.test.mjs` passes.
-- [ ] 9.7 Stage cards: verbs and gesture icons for the move gesture.
+- [x] 9.1 `core/stages/index.js` and `core/run.js` play the whole run with the new stages; `meta.goOn` for stages 2, 3, 4 and 7.
+- [x] 9.2 Shield sparks from `carry.sparks` in every action stage; no gift carries.
+- [x] 9.3 Captions: every new line and fact in `ui/captions.js` order; `pacing.test.mjs` passes; facts with no room set to `result`.
+- [x] 9.4 Sound: the new one-shots (`design.md` 4.9) through the womb bus, with captions.
+- [x] 9.5 Text: every new string passes `text.test.mjs` (banned words, pronouns, the race words, sentence length).
+- [x] 9.6 Facts: re-read each new fact's source and set `checked: true` only then; `facts.test.mjs` passes.
+- [x] 9.7 Stage cards: verbs and gesture icons for the move gesture.
 - [x] 9.8 Difficulty and feel at the peaks: stages 5 and 8 grade by hits and bumps (skill 1.0 Great or better, 0.7 mostly Great, 0.5 mostly Good; the `sim.test.mjs` grade spread); stage 1's gate quotas 8, 5 and 4; stage 7's Beat gift lifts her heart, darts end at the wall, and the portrait caption band comes back down.
 
 ## 10. QA
 
-- [ ] 10.1 Node: `for f in qa/first-breath/*.test.mjs; do node $f || echo FAIL $f; done`.
+- [x] 10.1 Node: `for f in qa/first-breath/*.test.mjs; do node $f || echo FAIL $f; done`.
 - [ ] 10.2 Bot runs: `node qa/first-breath/bot.mjs 20 0.7 1` and the gates of `design.md` 4.5 in `sim.test.mjs`.
 - [ ] 10.3 Browser (server up, Chromium with `--disable-gpu`): `smoke`, `boot`, `layout`, `input`, `screens`, `perf`, `visual` and `sound` e2e checks.
 - [ ] 10.4 Screenshots of every stage at 390 × 844, 844 × 390 and 1440 × 900 in both tiers (`shots.mjs`), including each stage's busiest moment.
 - [ ] 10.5 Play every stage by hand at the three layouts; note what feels off and tune.
-- [ ] 10.6 Validate the change again with `openspec validate first-breath-action-genres --strict`.
+- [x] 10.6 Validate the change again with `openspec validate first-breath-action-genres --strict`.
 - [ ] 10.7 State in the pull request which checks did not run (real phones, touch latency, phone speakers).
 - [ ] 10.8 Archive the change once every task is done, and review the canonical specs it writes.

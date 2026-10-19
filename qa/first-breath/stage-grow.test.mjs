@@ -397,7 +397,7 @@ await check("facts: the 15.2 rows, allow-listed sources, access R or A, checked,
     assert.ok(f.gaDay >= 49 && f.gaDay <= 97, f.id);
     assert.ok(f.src.length && f.src.every((k) => SOURCES[k]), `${f.id}: ${f.src}`);
     assert.ok(f.access === "R" || f.access === "A", f.id);
-    assert.equal(f.checked, f.id !== "grow.frame", `${f.id} checked (grow.frame waits for its page to be re-read)`);
+    assert.equal(f.checked, true, `${f.id} checked`);
     assert.equal(f.where, ["grow.w11kick", "grow.flow", "grow.never", "grow.frame"].includes(f.id) ? "result"
       : ["card", "caption", "overlay"].includes(f.where) ? f.where : "card, caption or overlay", f.id);
     assert.ok(!/^(Week|Day)\b/.test(f.text), f.id);

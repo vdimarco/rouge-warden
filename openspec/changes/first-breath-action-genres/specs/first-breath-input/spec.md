@@ -57,7 +57,16 @@ In stage 1 a press while the stick points at least 25° off your heading SHALL s
 - **CHECK** `qa/first-breath/input.e2e.mjs`
 
 ### Requirement: Lanes
-Stages 6 and 8 SHALL use three lanes. A drag left or right SHALL move you between lanes (in stage 6 one lane per 24 px from the touch-down point, sticky after the lift; in stage 8 sideways at 70 u/s by the stick, settling on the nearest lane), and on desktop the left and right arrows or A and D SHALL move one lane per keydown. In stage 6 an arrow keydown SHALL also count as the kick, in the new lane, the up and down arrows SHALL kick where you are, a touch-down SHALL put you in the lane whose column it lands in (anywhere down the column, so a thumb low on the screen can tap a lane), and a kick SHALL count in the lane you are in at the press or 0.12 s after it.
+Stages 6 and 8 SHALL use three lanes. A drag left or right SHALL move you between lanes (in stage 6 one lane per 24 px from the touch-down point, sticky after the lift; in stage 8 sideways at 70 u/s by the stick, settling on the nearest lane). On desktop the left and right arrows or A and D SHALL move one lane per keydown.
+
+#### Scenario: Runner lanes on desktop
+- **GIVEN** stage 8 at 1440 × 900
+- **WHEN** the player presses A once
+- **THEN** you move exactly one lane left and stay there
+- **CHECK** `qa/first-breath/input.e2e.mjs`
+
+### Requirement: Rhythm lane kicks
+In stage 6 an arrow keydown SHALL also count as the kick, in the new lane, and the up and down arrows SHALL kick where you are. A touch-down SHALL put you in the lane whose column it lands in, anywhere down the column, so a thumb low on the screen can tap a lane. A kick SHALL count in the lane you are in at the press or 0.12 s after it.
 
 #### Scenario: Tap a lane
 - **GIVEN** stage 6 at 390 × 844 with a note in the left lane
@@ -69,12 +78,6 @@ Stages 6 and 8 SHALL use three lanes. A drag left or right SHALL move you betwee
 - **GIVEN** stage 6 at 390 × 844 with a note in the right lane
 - **WHEN** the player touches down on the beat and drags right past 24 px within 0.12 s
 - **THEN** the kick is judged at its touch-down time and counts in the right lane
-- **CHECK** `qa/first-breath/input.e2e.mjs`
-
-#### Scenario: Runner lanes on desktop
-- **GIVEN** stage 8 at 1440 × 900
-- **WHEN** the player presses A once
-- **THEN** you move exactly one lane left and stay there
 - **CHECK** `qa/first-breath/input.e2e.mjs`
 
 ## MODIFIED Requirements
