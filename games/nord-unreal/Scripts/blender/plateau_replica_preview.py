@@ -40,7 +40,8 @@ OUT = os.path.join(ROOT, 'Preview', 'Replica')
 
 # Labels hidden in the game: the OSM masses keep collision only, the old canopies are replaced by the
 # mapped trees, and the replica apply step hides OSM Marking.
-HIDDEN_BASE = {'Brick', 'Cream', 'Sage', 'Roof', 'Canopy', 'CanopyGold', 'CanopyRust', 'Wood', 'HiddenTrunks'}
+HIDDEN_BASE = {'Brick', 'Cream', 'Sage', 'Roof', 'Canopy', 'CanopyGold', 'CanopyRust', 'Wood', 'HiddenTrunks',
+               'Grass'}  # plateau_ground.apply gives OSM Grass the GroundGeometry/ParkGrass mesh
 
 # Linear colours of the existing materials (upgrade_plateau.py palette and textured tints).
 PALETTE = {
@@ -154,9 +155,9 @@ def views():
     s = load_streets()
     v = {}
     mentana = [w for w in s['Rue de Mentana'] if -43000 < w[0][0] < -42000 and len(w) > 20][0]
-    v['mentana'] = dict(title='Rue de Mentana, plex street west of the park, from the middle of the street',
-                        camera=street_view(mentana, 6000, -150, 7., look_ahead=6000, yaw_deg=-3, pitch_target=480),
-                        far=17000, sun=(250., 24.))
+    v['mentana'] = dict(title='Rue de Mentana, plex street west of the park, from the shady sidewalk',
+                        camera=street_view(mentana, 5200, -690, 18., look_ahead=6000, yaw_deg=13, pitch_target=430),
+                        far=17000)
     fabre = [w for w in s['Rue Fabre'] if len(w) == 7][0]
     v['fabre'] = dict(title='Rue Fabre north of Rachel, with the chantier', far=17000,
                       camera=street_view(fabre, 4300, -640, 18., look_ahead=6000, yaw_deg=-5, pitch_target=430))
@@ -178,6 +179,7 @@ def views():
     alley = s['__alley__21062511'][0]
     d = project(alley, (-18860., 37542.))
     v['ruelle'] = dict(title='Ruelle behind Rachel with laundry lines and wooden utility poles', far=9000,
+                       sun=(228., 24.), exposure=.35,
                        camera=street_view(alley, d - 1500, 90, 6.8, look_ahead=6000, yaw_deg=-4, pitch_target=650))
     # Mentana between Rachel and Duluth, seen from above the sunlit side, about 60 m up.
     (tx, ty), (dx, dy) = along(mentana, 12000)
