@@ -264,7 +264,7 @@ export function setupTouchControls({ root, surface, stream }) {
       sprintLatched = stick === 'move' || !sprintLatched;
       lastTap = undefined;
     }
-    const pointer = { target, stick, keys: stick ? [] : [key], lookDrag: !stick && key !== 65 && key !== 68,
+    const pointer = { target, stick, keys: stick ? [] : [key], lookDrag: !driving && !stick && key !== 65 && key !== 68,
       x: event.clientX, y: event.clientY, startX: event.clientX, startY: event.clientY, downTime: event.timeStamp };
     if (floating) {
       pointer.originX = event.clientX;

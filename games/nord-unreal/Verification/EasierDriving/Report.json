@@ -1,0 +1,205 @@
+{
+  "status": "native_and_local_browser_checkpoint; packaged/rendered/public acceptance pending",
+  "at_utc": "2026-10-19T01:30:52.136041+00:00",
+  "worktree_base": "5a682ac88b9e9e11344024c4e14ce5ea96e89365",
+  "raw_evidence_root": "Saved/Tests/EasierDriving-20261019",
+  "evidence_sha256": {
+    "Workspace.json": "e10013fd104e023a160b421b15bf5fc87e741969eaf2b2b0fca0c20e406e5e00",
+    "SchemaCompatibility.json": "b2b66191296a42c34aeb997d380a1735e57ca5ce683d7fadca784d323b8e6b4d",
+    "Build/Result.json": "c4ac8d02037b5c33aea6fd2655ce78dee7a001d1932b7ce2f7f828b65be11e04",
+    "NativeTests-v1/Result.json": "ad7792fecfb775a908b21e2b82c924f5073446bde69c85d38f5ccd728eb9de5f",
+    "NativeTests-v1/Automation/index.json": "880ce22554b25cf316e3655bc8bf0510b2cf46b0dba2e2f7c3e8bc9f41926943",
+    "BrowserUnits.json": "94c487b08f715a77c8ed17a87b45a2f49cc6bc78fdf32b0376b214f63fd6bec9",
+    "BrowserUnits.log": "0b1684fc49fbce802e3849cfb59a233c47babe71177df3dc5fbb34a633e0a680",
+    "BrowserUI-Summary.json": "d9d8fbccf45191b58196db1af0475e8a4a8e35b16d9de524ff6828a98963d510",
+    "Candidate.json": "978d1617eb9e69669fe0f1b60358382c086e64edf9adcc711d292389b984b332"
+  },
+  "implementation_sha256_at_checkpoint": {
+    "Source/Quebec/QuebecGameplay.cpp": "3f10a401aeda806aa5e6b8064ef2a249740a92d5aeee295770a5edc1668cdfa5",
+    "Source/Quebec/QuebecCarHandlingTests.cpp": "8052315500ac78e2906d26e367512f729a8338b02caa3774c37dadc85714bc5d",
+    "Browser/touch-controls.js": "cc06e7713cef2a53f82bbb6e57e2aac848c8854100c49647b3f4b9d2eac82e52",
+    "Browser/touch-controls.test.mjs": "60fab1537b39fae2d2fe0f0605bcd2b519e82986ea613da393931504f61ae027"
+  },
+  "completed": {
+    "editor_and_game_builds": {
+      "passed": true,
+      "targets": [
+        "QuebecEditor",
+        "Quebec"
+      ],
+      "exit_codes": [
+        0,
+        0
+      ]
+    },
+    "native_automation": {
+      "passed": true,
+      "mode": "UnrealEditor-Cmd; NullRHI, unattended, no sound; actual possessed authority-world simulation",
+      "process_exit_code": 0,
+      "success": 46,
+      "failed": 0,
+      "not_run": 0,
+      "exported_success_with_warnings": 46,
+      "warnings": "Every test reports the existing SDL initialization warning; isolated world cleanup warnings also remain. Success is not a warning-free claim.",
+      "driving_tests": [
+        {
+          "path": "Quebec.Driving.CarImpactMomentum",
+          "state": "Success",
+          "errors": 0,
+          "warnings": 1,
+          "native_info_messages": []
+        },
+        {
+          "path": "Quebec.Driving.EasyCorneringAndLiftOff",
+          "state": "Success",
+          "errors": 0,
+          "warnings": 1,
+          "native_info_messages": [
+            "Brief correction yaw=1.283 steering=0.350",
+            "Lift-off after 2s speed=1108.916 travel=3069.360",
+            "Assisted full corner speed=897.616 yaw=118.557"
+          ]
+        },
+        {
+          "path": "Quebec.Driving.FittedHullCurbsAndWalls",
+          "state": "Success",
+          "errors": 0,
+          "warnings": 6,
+          "native_info_messages": [
+            "Curb front wheels position=X=301.408 Y=0.000 Z=109.347 rotation=P=3.323120 Y=0.000000 R=-0.000000",
+            "Glancing wall position=X=169.949 Y=333.214 Z=100.500 speed=11.13 lateral=13.26",
+            "Push driver=X=404.613 Y=-0.012 Z=100.500 parked=X=875.001 Y=0.000 Z=100.500"
+          ]
+        },
+        {
+          "path": "Quebec.Driving.FrameRateConsistency",
+          "state": "Success",
+          "errors": 0,
+          "warnings": 1,
+          "native_info_messages": [
+            "30Hz speed=1552.749 position=X=1526.836 Y=340.878 Z=100.500 yaw=24.019; 120Hz speed=1549.452 position=X=1515.437 Y=331.656 Z=100.500 yaw=23.899"
+          ]
+        },
+        {
+          "path": "Quebec.Driving.SteeringHandbrakeRecovery",
+          "state": "Success",
+          "errors": 0,
+          "warnings": 1,
+          "native_info_messages": [
+            "City yaw=13.499 fast yaw=7.187 fast speed=2387.313",
+            "Dry lateral=79.777 handbrake lateral=203.786 speed=1206.756",
+            "Recovered lateral=-0.364 speed=903.698",
+            "Handbrake release speed=1278.722 lateral=0.000"
+          ]
+        },
+        {
+          "path": "Quebec.Driving.ThrottleBrakeValidation",
+          "state": "Success",
+          "errors": 0,
+          "warnings": 1,
+          "native_info_messages": [
+            "Acceleration speed=1202.736 travel=X=884.050 Y=0.000 Z=100.500 local=1 authority=1 initialized=1",
+            "Top speed=3000.000",
+            "Braking stopped=1 subsequent reverse speed=-804.351",
+            "Reverse response after 0.1s speed=-18.988 no_forward_twitch=1"
+          ]
+        }
+      ],
+      "settings_restored": true,
+      "source_content_files_unchanged": 6927,
+      "source_content_unchanged": true,
+      "owned_process_closed": true,
+      "service_operations": false
+    },
+    "browser_units": {
+      "passed": true,
+      "tests": 66,
+      "failures": 0,
+      "process_exit_code": 0
+    },
+    "local_browser_ui": {
+      "passed": true,
+      "browser_plugin": "Browser plugin not available; installed Playwright fallback",
+      "suites": [
+        {
+          "name": "Existing browser.test.mjs",
+          "passed": true,
+          "scope": "Manifest, assets, desktop/mobile title/menu/layout, install reminder and loopback WebSocket subscription/refusal/reconnect fixture",
+          "navigationCount": 29
+        },
+        {
+          "name": "Existing steering-layout.test.mjs",
+          "passed": true,
+          "viewports": [
+            [
+              320,
+              568
+            ],
+            [
+              390,
+              844
+            ],
+            [
+              844,
+              390
+            ],
+            [
+              1280,
+              720
+            ]
+          ],
+          "scope": "Horizontal wheel drag, adjacent pedals, >=44px targets, menu and labels across driving/walking/swimming"
+        },
+        {
+          "name": "Additional actual DOM CDP touch scenarios",
+          "passed": true,
+          "scenarios": 3,
+          "scope": "Pedal/Exit camera isolation and release; preserved floating drive + deliberate second finger look; preserved walking action-look"
+        }
+      ],
+      "console": {
+        "uncaughtJavaScriptErrors": 0,
+        "focusedGestureConsoleErrors": 0,
+        "focusedGestureConsoleWarnings": 0,
+        "existingHarnessExpectedEventsExplainedIn": "BrowserUI.json"
+      },
+      "visual_inspection": {
+        "files": [
+          "offline-1280.png",
+          "move-held-390.png",
+          "drive-pedals-held-390.png"
+        ],
+        "result": "Entry identity and content clear; phone controls fit; Brake visibly overrides Gas; controlled fixture backgrounds do not represent live game media"
+      },
+      "limits": [
+        "Local recording transport only; no Unreal/native video/live slot claim",
+        "No physical phone, off-LAN, audible sound, native car handling feel or installation assertion"
+      ]
+    },
+    "candidate_inventory_preparation": {
+      "passed": true,
+      "files": 48,
+      "changed": [
+        "Quebec/Binaries/Linux/Quebec"
+      ],
+      "cooked_content_and_dependencies_identical": true,
+      "executable_sha256": "7ec371215daf4aca90fd26b77cf8dd94ef04a1ccaaa63fa1f108e3a057ac8d4e",
+      "scope": "Prepared inventory only; not packaged gameplay or deployment acceptance."
+    }
+  },
+  "behavior_notes": [
+    "Player power is gentler in both forward and reverse; reverse cap and service-brake-before-reverse precedence are retained.",
+    "Corner speed is a soft target while forward Gas is held with steering above 0.2; braking is bounded per simulation step, not an instantaneous speed clamp.",
+    "Lift-off measurements cover a two-second slowing window, not a measured full stop.",
+    "The mobile wheel still sends digital steering; no new analog transport was introduced.",
+    "CPU equation predictions and historical older native reports are not current before/after measurements."
+  ],
+  "pending": [
+    "Rendered packaged steering/braking and two-peer ownership checks",
+    "Native package promotion with latest runtime Saved preservation and rollback",
+    "Frontend/source publication and pull-request checks",
+    "Ordinary public HTTPS stream/input/reconnect verification",
+    "Physical iOS/Android comfort and off-LAN testing",
+    "Subjective handling acceptance, audible sound and complete campaign playthrough"
+  ]
+}
