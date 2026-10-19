@@ -439,7 +439,7 @@ test('a desktop mouse flick wins the opening point', { timeout: 90000 }, async (
     assert.equal(afterMouse.button, 'Click to pick up your bat');
     assert.equal(afterMouse.hintHidden, false);
     assert.equal(afterMouse.phoneHidden, true);
-    assert.match(afterMouse.hold, /Hold your phone/);
+    assert.match(afterMouse.hold, /Move your phone/);
   } finally {
     await browser.close();
   }
@@ -516,7 +516,7 @@ test('plain headless Chrome at 1280 shows the desktop gate', { timeout: 60000 },
     assert.equal(gate.hintHidden, false);
     assert.equal(gate.hint, 'The bat follows the ball. Move the mouse to aim. Flick to swing.');
     assert.equal(gate.phoneHidden, true);
-    assert.match(gate.phone, /Hold your phone/);
+    assert.match(gate.phone, /Move your phone/);
   } finally {
     if (browser) await browser.close().catch(() => {});
     proc.kill('SIGKILL');

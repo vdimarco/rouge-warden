@@ -29,6 +29,9 @@ jobs:
       - run: node qa/pingpong/phone-motion.e2e.mjs
         env:
           NODE_PATH: qa/browser/node_modules
+      - run: node --test qa/pingpong/desktop.test.mjs
+        env:
+          NODE_PATH: qa/browser/node_modules
       - uses: actions/upload-artifact@v4
         if: always()
         with:
