@@ -1,7 +1,8 @@
 """Import the Plateau replica layers into the saved LaFontaine map (editor Python, host only).
 
 Additive and refuses to run twice. Reads every Data/Plateau/ReplicaGeometry/<Layer>/manifest.json
-(Streets, Soul, Plex, Props...), checks the OBJ hashes, duplicates materials (never rebuilds an
+(Streets, Soul, Plex, Props...), checks the OBJ hashes, imports the greystone and slate textures of
+Scripts/plateau_textures.py, duplicates materials (never rebuilds an
 existing M_*; see the wet-street gotcha in plateau_atmosphere.py), imports each batch with the
 upgrade_plateau.import_mesh semantics, enables Nanite, spawns labelled actors under the 'Replica'
 folder, and instances Furniture/Soul placements of the MAP-PROPS meshes on HISM components.
@@ -40,6 +41,16 @@ TINT_LIMIT = 8.      # light buff brick (#CCB07F) needs about 5.6x the brick tex
 # Mean linear colour of the textures the duplicated materials multiply (measured from Data/Art).
 TEXTURE_MEAN = {'asphalt_02': (.1162, .1143, .1020), 'concrete_pavement': (.2170, .1790, .1372),
                 'brick_wall_001': (.1402, .0776, .0516), 'grass_ground': (.1593, .1198, .0498)}
+# Greystone and slate: tileable PNGs from Scripts/plateau_textures.py, imported next to the replica materials.
+# Their materials duplicate the brick parent (same graph, no NordSky wrapper on walls and roofs) with the
+# three texture samples swapped and the UV tiling set to 1 / tile_m (replica OBJ UVs are metres).
+TEXTURES = 'Textures'                      # folder under Data/Plateau/ReplicaGeometry
+TEXTURE_INDEX = 'textures.json'
+TEXTURE_ASSETS = ASSETS + '/Textures'
+TEXTURE_ROLES = ('diff', 'nor_dx', 'rough')
+TEXTURED_PARENT = '/Game/Plateau/Materials/M_BrickRed'
+# Material keys (case-insensitive) that take a replica texture set; Stone_Cast stays a smooth flat colour.
+TEXTURE_SET_KEYS = {'limestone': ('stone', 'limestone', 'greystone'), 'slate': ('slate', 'roof_slate')}
 GROUND_KEYS = ('sidewalk', 'curb', 'joint', 'alley_gutter', 'yard_soil', 'yard_path', 'soil', 'patch', 'chantier',
                'pothole', 'crack')
 SHADOWLESS = ('paint', 'joint', 'curb', 'patch', 'crack', 'pothole', 'leaf', 'grass_edge', 'soil', 'rust',
@@ -110,6 +121,19 @@ def material_name(layer, key):
     return f'M_Replica_{layer}_{key}'
 
 
+def texture_set(key, spec):
+    """The replica texture set ('limestone', 'slate') a material key takes, else None."""
+    texture = (spec.get('texture') or '').lower()
+    for name in TEXTURE_SET_KEYS:
+        if f'replica_{name}' in texture:
+            return name
+    k = key.lower()
+    for name, keys in TEXTURE_SET_KEYS.items():
+        if k in keys or any(k.startswith(n + '_') and n != 'stone' for n in keys):
+            return name
+    return None
+
+
 def base_material(key, spec):
     texture = spec.get('texture') or ''
     if spec.get('emissive_srgb'):
@@ -119,9 +143,38 @@ def base_material(key, spec):
         return '/Game/Plateau/Materials/M_Asphalt', 'asphalt_02'
     if 'brick' in texture:
         return '/Game/Plateau/Materials/M_BrickRed', 'brick_wall_001'
+    textured = texture_set(key, spec)
+    if textured:
+        return TEXTURED_PARENT, 'replica_' + textured
     if any(key.startswith(g) for g in GROUND_KEYS):
         return '/Game/Plateau/Materials/M_ConcreteDark', None
     return '/Game/Plateau/Materials/M_Trim', None
+
+
+def load_textures(root=ROOT):
+    """textures.json of Scripts/plateau_textures.py, with each PNG's image stream checked against it.
+
+    The check hashes the decompressed stream (raw_sha256), so a PNG rebuilt with another zlib still
+    passes; the plan records the file's own sha256 as well. Returns {} when the folder was never built.
+    """
+    import plateau_textures
+    folder = Path(root) / 'Data/Plateau/ReplicaGeometry' / TEXTURES
+    if not (folder / TEXTURE_INDEX).is_file():
+        return {}
+    index = json.loads((folder / TEXTURE_INDEX).read_text())
+    sets = {}
+    for name, entry in sorted(index['sets'].items()):
+        for role in TEXTURE_ROLES:
+            row = entry['maps'][role]
+            path = folder / row['file']
+            assert path.is_file(), f'Missing {path}; run python3 Scripts/plateau_textures.py'
+            data = path.read_bytes()
+            width, height, raw = plateau_textures.read_png(data)
+            assert [width, height] == entry['size_px'], f'Wrong size {path}'
+            assert hashlib.sha256(raw).hexdigest() == row['raw_sha256'], f'Stale texture {path}'
+            row['file_sha256'] = hashlib.sha256(data).hexdigest()
+        sets[name] = entry
+    return sets
 
 
 def plan(root=ROOT):
@@ -139,15 +192,35 @@ def plan(root=ROOT):
     colliders = {key: props_meta.get(key, {}).get('colliders_cm', []) for key in parts}
     main_part = {key: main_part_mesh(batches) for key, batches in parts.items()}
     out = {'materials': [], 'meshes': [], 'actors': [], 'instances': [], 'texts': [], 'hide': list(HIDE_LABELS),
-           'missing_props': []}
+           'missing_props': [], 'textures': []}
+    texture_sets, used_sets = load_textures(root), set()
     for layer, manifest in manifests.items():
         for key, spec in sorted(manifest.get('materials', {}).items()):
             base, texture = base_material(key, spec)
-            out['materials'].append({'layer': layer, 'key': key, 'asset': f'{MATERIALS}/{material_name(layer, key)}',
-                                     'duplicate_of': base, 'texture_mean': texture,
-                                     'base_color_srgb': spec['base_color_srgb'],
-                                     'emissive_srgb': spec.get('emissive_srgb'),
-                                     'emissive_strength': spec.get('emissive_strength', 0.)})
+            row = {'layer': layer, 'key': key, 'asset': f'{MATERIALS}/{material_name(layer, key)}',
+                   'duplicate_of': base, 'texture_mean': texture,
+                   'mean_linear': list(TEXTURE_MEAN[texture]) if texture in TEXTURE_MEAN else None,
+                   'base_color_srgb': spec['base_color_srgb'],
+                   'emissive_srgb': spec.get('emissive_srgb'),
+                   'emissive_strength': spec.get('emissive_strength', 0.)}
+            if texture and texture.startswith('replica_'):
+                name = texture[len('replica_'):]
+                assert name in texture_sets, f'{layer} {key} needs the {name} textures; run python3 Scripts/plateau_textures.py'
+                entry = texture_sets[name]
+                used_sets.add(name)
+                row.update({'texture_set': name, 'mean_linear': entry['mean_linear'], 'tiling': entry['tiling'],
+                            'textures': {role: f'{TEXTURE_ASSETS}/{Path(entry["maps"][role]["file"]).stem}'
+                                         for role in TEXTURE_ROLES}})
+            out['materials'].append(row)
+    for name in sorted(used_sets):
+        entry = texture_sets[name]
+        for role in TEXTURE_ROLES:
+            m = entry['maps'][role]
+            out['textures'].append({'set': name, 'role': role, 'file': f'{TEXTURES}/{m["file"]}',
+                                    'asset': f'{TEXTURE_ASSETS}/{Path(m["file"]).stem}', 'size_px': entry['size_px'],
+                                    'srgb': m['srgb'], 'compression': m['compression'], 'sampler': m['sampler'],
+                                    'sha256': m['file_sha256'], 'raw_sha256': m['raw_sha256']})
+    for layer, manifest in manifests.items():
         for batch in manifest.get('batches', []):
             mesh = f'{ASSETS}/{layer}/{batch["mesh"]}'
             key = prop_key(batch, keys) if layer == 'Props' else None
@@ -186,6 +259,8 @@ def plan(root=ROOT):
                 'transforms': [(r['position'], r['yaw'], r.get('scale', 1.)) for r in group]})
     out['counts'] = {'materials': len(out['materials']), 'meshes': len(out['meshes']), 'actors': len(out['actors']),
                      'emissive_materials': sum(1 for m in out['materials'] if m['emissive_srgb']),
+                     'textures': len(out['textures']),
+                     'textured_replica_materials': sum(1 for m in out['materials'] if m.get('texture_set')),
                      'instance_components': len(out['instances']),
                      'instances': sum(i['count'] for i in out['instances'] if i['mesh']),
                      'colliding_instance_components': sum(1 for i in out['instances'] if i['collision']),
@@ -268,8 +343,13 @@ def preflight(u, root, backup, the_plan):
     assert not any(a.get_actor_label().startswith(PREFIX) for a in actors), 'Replica actors already exist: refusing to run twice'
     assert not assets.does_directory_exist(ASSETS), f'{ASSETS} already exists: refusing to run twice'
     for name in ('AssetImportTask', 'FbxImportUI', 'StaticMeshEditorSubsystem', 'MaterialEditingLibrary',
-                 'HierarchicalInstancedStaticMeshComponent', 'TextRenderActor', 'StaticMeshActor', 'KBoxElem'):
+                 'HierarchicalInstancedStaticMeshComponent', 'TextRenderActor', 'StaticMeshActor', 'KBoxElem',
+                 'Texture2D', 'TextureCompressionSettings', 'MaterialSamplerType', 'MaterialExpressionTextureSample',
+                 'MaterialExpressionTextureCoordinate'):
         assert getattr(u, name, None) is not None, 'Missing Unreal API ' + name
+    for row in the_plan['textures']:
+        assert getattr(u.TextureCompressionSettings, row['compression'], None) is not None, row['compression']
+        assert getattr(u.MaterialSamplerType, row['sampler'], None) is not None, row['sampler']
     assert u.load_class(None, INSTANCES_CLASS), 'Build the Quebec module first: ' + INSTANCES_CLASS + ' is missing'
     for row in the_plan['materials']:
         assert assets.does_asset_exist(row['duplicate_of']), 'Missing base material ' + row['duplicate_of']
@@ -293,16 +373,98 @@ def backup_map(u, root, backup, actors):
     return [str(p) for p in files]
 
 
-def make_material(u, row, spec):
-    """Duplicate a base material and set its single tint; fall back to a fresh constant material."""
+def import_texture(u, root, row):
+    """Import one replica PNG (Scripts/plateau_textures.py) with the colour space and compression it needs."""
+    folder, name = row['asset'].rsplit('/', 1)
+    task = u.AssetImportTask()
+    task.filename = str(Path(root) / 'Data/Plateau/ReplicaGeometry' / row['file'])
+    task.destination_path, task.destination_name = folder, name
+    task.automated, task.save, task.replace_existing = True, False, False
+    u.AssetToolsHelpers.get_asset_tools().import_asset_tasks([task])
+    assert task.imported_object_paths, row['file']
+    texture = u.EditorAssetLibrary.load_asset(task.imported_object_paths[0])
+    assert isinstance(texture, u.Texture2D), row['file']
+    texture.set_editor_property('srgb', row['srgb'])
+    texture.set_editor_property('compression_settings', getattr(u.TextureCompressionSettings, row['compression']))
+    group = getattr(u.TextureGroup, 'TEXTUREGROUP_WORLD_NORMAL_MAP' if row['role'] == 'nor_dx' else 'TEXTUREGROUP_WORLD',
+                    None)
+    if group is not None:
+        texture.set_editor_property('lod_group', group)
+    assert u.EditorAssetLibrary.save_loaded_asset(texture, only_if_is_dirty=False)
+    return texture
+
+
+def texture_role(texture):
+    """'diff', 'nor_dx' or 'rough' from a texture asset name (brick_wall_001_diff, T_Replica_Slate_rough...)."""
+    name = texture.get_name() if texture else ''
+    return next((r for r in TEXTURE_ROLES if name.endswith('_' + r)), None)
+
+
+def retexture(u, mat, row, textures):
+    """Swap the brick parent's three samples for the replica set and set the metre tiling.
+
+    Returns False, changing nothing, unless the duplicate has exactly one authored texture coordinate
+    and one sample per role (diff, nor_dx, rough), as upgrade_plateau.material() authors M_BrickRed.
+    """
+    nodes = [n for n in u.MaterialEditingLibrary.get_material_expressions(mat)
+             if str(n.get_editor_property('desc')) != MARKER]
+    coords = [n for n in nodes if isinstance(n, u.MaterialExpressionTextureCoordinate)]
+    samples = {}
+    for n in nodes:
+        if isinstance(n, u.MaterialExpressionTextureSample):
+            samples.setdefault(texture_role(n.get_editor_property('texture')), []).append(n)
+    if len(coords) != 1 or sorted(samples) != sorted(TEXTURE_ROLES) or any(len(v) != 1 for v in samples.values()):
+        return False
+    samplers = {t['role']: t['sampler'] for t in textures.values()}
+    for role, (node,) in samples.items():
+        node.set_editor_property('texture', textures[row['textures'][role]]['object'])
+        node.set_editor_property('sampler_type', getattr(u.MaterialSamplerType, samplers[role]))
+    coords[0].set_editor_property('u_tiling', float(row['tiling'][0]))
+    coords[0].set_editor_property('v_tiling', float(row['tiling'][1]))
+    return True
+
+
+def textured_graph(u, mat, row, textures, tint, spec):
+    """Fresh-material fallback that keeps the textures: tint x diff, normal, roughness from R (as M_BrickRed)."""
+    lib = u.MaterialEditingLibrary
+    coords = lib.create_material_expression(mat, u.MaterialExpressionTextureCoordinate)
+    coords.set_editor_property('u_tiling', float(row['tiling'][0]))
+    coords.set_editor_property('v_tiling', float(row['tiling'][1]))
+    samples = {}
+    for role in TEXTURE_ROLES:
+        t = textures[row['textures'][role]]
+        node = lib.create_material_expression(mat, u.MaterialExpressionTextureSample)
+        node.set_editor_property('texture', t['object'])
+        node.set_editor_property('sampler_type', getattr(u.MaterialSamplerType, t['sampler']))
+        assert lib.connect_material_expressions(coords, '', node, '')
+        samples[role] = node
+    product = lib.create_material_expression(mat, u.MaterialExpressionMultiply)
+    assert lib.connect_material_expressions(samples['diff'], 'RGB', product, 'A')
+    assert lib.connect_material_expressions(tint, '', product, 'B')
+    assert lib.connect_material_property(product, '', u.MaterialProperty.MP_BASE_COLOR)
+    assert lib.connect_material_property(samples['nor_dx'], 'RGB', u.MaterialProperty.MP_NORMAL)
+    assert lib.connect_material_property(samples['rough'], 'R', u.MaterialProperty.MP_ROUGHNESS)
+    metal = lib.create_material_expression(mat, u.MaterialExpressionConstant)
+    metal.set_editor_property('r', spec.get('metallic', 0.))
+    assert lib.connect_material_property(metal, '', u.MaterialProperty.MP_METALLIC)
+
+
+def make_material(u, row, spec, textures=None):
+    """Duplicate a base material and set its single tint; fall back to a fresh constant material.
+
+    Rows with a replica texture set also get the parent's samples swapped (retexture); the fallback for
+    them is a fresh textured graph. Returns (material, True if the fallback was used).
+    """
     assets, lib = u.EditorAssetLibrary, u.MaterialEditingLibrary
     colour = linear(spec['base_color_srgb'])
+    if row['texture_mean']:
+        textured_colour = tuple(min(TINT_LIMIT, c / m) for c, m in zip(colour, row['mean_linear']))
     mat = assets.duplicate_asset(row['duplicate_of'], row['asset'])
     tints = authored_tints(u, mat) if mat else []
-    if mat and len(tints) == 1:
+    duplicated = bool(mat) and len(tints) == 1 and (not row.get('textures') or retexture(u, mat, row, textures))
+    if duplicated:
         if row['texture_mean']:
-            mean = TEXTURE_MEAN[row['texture_mean']]
-            colour = tuple(min(TINT_LIMIT, c / m) for c, m in zip(colour, mean))
+            colour = textured_colour
         tints[0].set_editor_property('constant', u.LinearColor(*colour, 1))
         if spec.get('emissive_srgb'):
             emissive_input(u, mat, spec, tints[0])
@@ -312,20 +474,24 @@ def make_material(u, row, spec):
         folder, name = row['asset'].rsplit('/', 1)
         mat = u.AssetToolsHelpers.get_asset_tools().create_asset(name, folder, u.Material, u.MaterialFactoryNew())
         tint = lib.create_material_expression(mat, u.MaterialExpressionConstant3Vector)
-        tint.set_editor_property('constant', u.LinearColor(*colour, 1))
-        lib.connect_material_property(tint, '', u.MaterialProperty.MP_BASE_COLOR)
-        for value, prop in ((spec.get('roughness', .8), u.MaterialProperty.MP_ROUGHNESS),
-                            (spec.get('metallic', 0.), u.MaterialProperty.MP_METALLIC)):
-            node = lib.create_material_expression(mat, u.MaterialExpressionConstant)
-            node.set_editor_property('r', value)
-            lib.connect_material_property(node, '', prop)
+        if row.get('textures'):
+            tint.set_editor_property('constant', u.LinearColor(*textured_colour, 1))
+            textured_graph(u, mat, row, textures, tint, spec)
+        else:
+            tint.set_editor_property('constant', u.LinearColor(*colour, 1))
+            lib.connect_material_property(tint, '', u.MaterialProperty.MP_BASE_COLOR)
+            for value, prop in ((spec.get('roughness', .8), u.MaterialProperty.MP_ROUGHNESS),
+                                (spec.get('metallic', 0.), u.MaterialProperty.MP_METALLIC)):
+                node = lib.create_material_expression(mat, u.MaterialExpressionConstant)
+                node.set_editor_property('r', value)
+                lib.connect_material_property(node, '', prop)
         if spec.get('emissive_srgb'):
             emissive_input(u, mat, spec, tint)
     for usage in (u.MaterialUsage.MATUSAGE_NANITE, u.MaterialUsage.MATUSAGE_INSTANCED_STATIC_MESHES):
         lib.set_base_material_usage(mat, usage, True)
     lib.recompile_material(mat)
     assert assets.save_loaded_asset(mat, only_if_is_dirty=False)
-    return mat
+    return mat, not duplicated
 
 
 def authored_tints(u, mat):
@@ -444,15 +610,22 @@ def apply(u, root, backup):
     map_files = backup_map(u, root, backup, actors)
     editor = u.get_editor_subsystem(u.EditorActorSubsystem)
     report = {'passed': False, 'map': MAP, 'backup': str(backup.relative_to(root)), 'map_package_files': map_files,
-              'plan_counts': the_plan['counts'], 'materials': {}, 'actors': {}, 'instances': {}, 'texts': 0,
+              'plan_counts': the_plan['counts'], 'textures': {}, 'materials': {}, 'fresh_materials': [],
+              'actors': {}, 'instances': {}, 'texts': 0,
               'hidden': {}, 'missing_props': the_plan['missing_props'],
               'manifest_sha256': {n: sha(root / 'Data/Plateau/ReplicaGeometry' / n / 'manifest.json') for n in manifests}}
     try:
+        textures = {}
+        for row in the_plan['textures']:
+            textures[row['asset']] = dict(row, object=import_texture(u, root, row))
+            report['textures'][row['asset']] = row['sha256']
         materials = {}
         for row in the_plan['materials']:
             spec = manifests[row['layer']]['materials'][row['key']]
-            materials[row['asset']] = make_material(u, row, spec)
+            materials[row['asset']], fresh = make_material(u, row, spec, textures)
             report['materials'][row['asset']] = row['duplicate_of']
+            if fresh:
+                report['fresh_materials'].append(row['asset'])
         meshes = {}
         for row in the_plan['meshes']:
             folder, name = row['asset'].rsplit('/', 1)
@@ -569,6 +742,20 @@ def verify(u, root, backup):
             assert len(boxes) == len(by_mesh[row['mesh']]['colliders']) > 0, row['label'] + ' has no simple collision'
         instances += row['count']
     assets = u.EditorAssetLibrary
+    for row in the_plan['textures']:
+        texture = assets.load_asset(row['asset'])
+        assert isinstance(texture, u.Texture2D), 'Missing texture ' + row['asset']
+        assert bool(texture.get_editor_property('srgb')) == row['srgb'], row['asset'] + ' has the wrong colour space'
+        assert texture.get_editor_property('compression_settings') == \
+            getattr(u.TextureCompressionSettings, row['compression']), row['asset'] + ' has the wrong compression'
+        assert [texture.blueprint_get_size_x(), texture.blueprint_get_size_y()] == row['size_px'], row['asset']
+    samplers = {t['role']: getattr(u.MaterialSamplerType, t['sampler']) for t in the_plan['textures']}
+    parents = {}
+
+    def nord_parameters(mat):
+        return sorted(str(n.get_editor_property('parameter_name')) for n in u.MaterialEditingLibrary.get_material_expressions(mat)
+                      if isinstance(n, u.MaterialExpressionCollectionParameter))
+
     for row in the_plan['materials']:
         mat = assets.load_asset(row['asset'])
         assert mat, 'Missing material ' + row['asset']
@@ -586,12 +773,33 @@ def verify(u, root, backup):
             assert any(isinstance(n, u.MaterialExpressionTextureSample) for n in nodes), row['asset'] + ' lost its texture'
         if 'M_Asphalt' in row['duplicate_of'] or 'M_ConcreteDark' in row['duplicate_of']:
             assert 'Wetness' in collection, row['asset'] + ' lost the NordSky wet-street wrapper'
+        if row.get('textures'):
+            # Greystone and slate: exactly the three replica maps, the right samplers, the metre tiling, and the
+            # same NordSky wrappers (Wetness, WindowGlow...) as the brick parent the other façade duplicates use.
+            samples = [n for n in nodes if isinstance(n, u.MaterialExpressionTextureSample)]
+            used = sorted(n.get_editor_property('texture').get_path_name().split('.')[0] for n in samples
+                          if n.get_editor_property('texture'))
+            assert used == sorted(row['textures'].values()), row['asset'] + f' samples {used}'
+            for n in samples:
+                role = texture_role(n.get_editor_property('texture'))
+                assert role in samplers and n.get_editor_property('sampler_type') == samplers[role], \
+                    f'{row["asset"]} sampler {role}'
+            coords = [n for n in nodes if isinstance(n, u.MaterialExpressionTextureCoordinate)
+                      and str(n.get_editor_property('desc')) != MARKER]
+            assert any(abs(c.get_editor_property('u_tiling') - row['tiling'][0]) < 1e-4
+                       and abs(c.get_editor_property('v_tiling') - row['tiling'][1]) < 1e-4 for c in coords), \
+                row['asset'] + ' lost its metre tiling'
+            if row['duplicate_of'] not in parents:
+                parents[row['duplicate_of']] = nord_parameters(assets.load_asset(row['duplicate_of']))
+            assert nord_parameters(mat) == parents[row['duplicate_of']], \
+                row['asset'] + ' NordSky wrappers differ from ' + row['duplicate_of']
     texts = sum(1 for label in actors if label.startswith(PREFIX + 'street name '))
     assert texts == report['texts'], 'Street-name text count changed'
     for label in HIDE_LABELS:
         if label in report['hidden']:
             assert actors[label].get_editor_property('hidden'), label + ' is visible again'
     result = {'passed': True, 'actors': checked, 'instances': instances, 'texts': texts,
+              'textures': len(the_plan['textures']), 'textured_materials': the_plan['counts']['textured_replica_materials'],
               'missing_props': report['missing_props']}
     (backup / 'verify-report.json').write_text(json.dumps(result, indent=1) + '\n')
     return result
@@ -601,7 +809,11 @@ def main():
     if '--dry-run' in sys.argv:
         the_plan = plan(ROOT)
         print(json.dumps({'counts': the_plan['counts'], 'missing_props': the_plan['missing_props'],
-                          'hide': the_plan['hide']}, indent=1))
+                          'hide': the_plan['hide'],
+                          'textures': {t['asset']: t['sha256'] for t in the_plan['textures']},
+                          'textured_materials': {m['asset']: {'set': m['texture_set'], 'duplicate_of': m['duplicate_of'],
+                                                              'tiling': m['tiling']}
+                                                 for m in the_plan['materials'] if m.get('texture_set')}}, indent=1))
         return
     import unreal as u
     root = Path(u.Paths.project_dir()).resolve()

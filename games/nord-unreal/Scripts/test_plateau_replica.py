@@ -3,8 +3,10 @@
 Run from games/nord-unreal:  python3 Scripts/test_plateau_replica.py
 Builds the layers twice into temporary directories (the committed Data folder is not touched),
 then checks determinism, manifest schema, runtime naming, curb heights, the 300 cm traffic band,
-paint heights, OSM parity of stops/crossings/lamps/hydrants, budgets and the apply plan.
+paint heights, OSM parity of stops/crossings/lamps/hydrants, budgets and the apply plan, including the
+greystone and slate textures (Scripts/plateau_textures.py) and their textured materials.
 """
+import hashlib
 import json
 import math
 from pathlib import Path
@@ -16,6 +18,7 @@ import tempfile
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import plateau_replica as replica  # noqa: E402
 import apply_plateau_replica as apply_replica  # noqa: E402
+import plateau_textures  # noqa: E402
 
 HEX = re.compile(r'^#[0-9a-f]{6}$')
 
@@ -120,6 +123,62 @@ def check_schema(manifest, directory):
         assert 0 <= spec['roughness'] <= 1 and 0 <= spec['metallic'] <= 1
     for rel, digest in manifest['source_sha256'].items():
         assert replica.sha_file(replica.ROOT / rel) == digest, rel
+
+
+def check_textures(the_plan):
+    """Greystone and slate: textured duplicates of the brick parent, with the plan listing each PNG and its hashes."""
+    A = apply_replica
+    assert A.texture_set('Stone', {}) == 'limestone' and A.texture_set('Slate', {}) == 'slate'
+    assert A.texture_set('Stone_Cast', {}) is None and A.texture_set('Trim', {}) is None
+    assert A.texture_set('limestone_rear', {}) == 'limestone' and A.texture_set('roof_slate', {}) == 'slate'
+    assert A.texture_set('Wall', {'texture': A.TEXTURE_ASSETS + '/T_Replica_Slate_diff'}) == 'slate'
+    folder = replica.OUT / A.TEXTURES
+    index = json.loads((folder / A.TEXTURE_INDEX).read_text())
+    textures = {t['asset']: t for t in the_plan['textures']}
+    assert len(textures) == len(the_plan['textures']) == the_plan['counts']['textures']
+    for t in the_plan['textures']:
+        entry = index['sets'][t['set']]
+        stored = entry['maps'][t['role']]
+        path = replica.OUT / t['file']
+        data = path.read_bytes()
+        assert hashlib.sha256(data).hexdigest() == t['sha256'], t['file']
+        width, height, raw = plateau_textures.read_png(data)
+        assert hashlib.sha256(raw).hexdigest() == t['raw_sha256'] == stored['raw_sha256'], t['file']
+        assert [width, height] == t['size_px'] == entry['size_px'] and width >= 512 and height >= 512
+        assert t['asset'] == f'{A.TEXTURE_ASSETS}/{path.stem}' and t['asset'].startswith(A.ASSETS + '/')
+        assert (t['srgb'], t['compression'], t['sampler']) == (stored['srgb'], stored['compression'], stored['sampler'])
+        assert t['srgb'] == (t['role'] == 'diff') and (t['compression'] == 'TC_NORMALMAP') == (t['role'] == 'nor_dx')
+    textured = [m for m in the_plan['materials'] if m.get('texture_set')]
+    assert len(textured) == the_plan['counts']['textured_replica_materials']
+    specs = {layer: json.loads((replica.OUT / layer / 'manifest.json').read_text()).get('materials', {})
+             for layer in {m['layer'] for m in the_plan['materials']}}
+    for m in the_plan['materials']:
+        spec = specs[m['layer']][m['key']]
+        assert bool(m.get('texture_set')) == bool(A.texture_set(m['key'], spec) and not spec.get('emissive_srgb')
+                                                   and 'brick' not in (spec.get('texture') or '')
+                                                   and 'asphalt' not in (spec.get('texture') or '')), m['asset']
+    for m in textured:
+        entry = index['sets'][m['texture_set']]
+        assert m['duplicate_of'] == A.TEXTURED_PARENT and m['texture_mean'] == 'replica_' + m['texture_set']
+        assert sorted(m['textures']) == sorted(A.TEXTURE_ROLES) and all(a in textures for a in m['textures'].values())
+        assert all(textures[a]['set'] == m['texture_set'] and textures[a]['role'] == r for r, a in m['textures'].items())
+        assert m['mean_linear'] == entry['mean_linear'] and m['tiling'] == entry['tiling']
+        assert all(abs(t * s - 1) < 1e-6 for t, s in zip(m['tiling'], entry['tile_m'])), m['asset']
+    used = {t['set'] for t in the_plan['textures']}
+    assert used == {m['texture_set'] for m in textured}
+    plex = replica.OUT / 'Plex/manifest.json'
+    if plex.is_file():
+        keys = {m['key']: m for m in the_plan['materials'] if m['layer'] == 'Plex'}
+        assert keys['Stone'].get('texture_set') == 'limestone' and keys['Slate'].get('texture_set') == 'slate'
+        assert not keys.get('Stone_Cast', {}).get('texture_set')
+        stone_meshes = [mesh for mesh in the_plan['meshes'] if mesh['material'] == keys['Stone']['asset']]
+        slate_meshes = [mesh for mesh in the_plan['meshes'] if mesh['material'] == keys['Slate']['asset']]
+        assert stone_meshes and slate_meshes, 'No Plex batch uses the textured stone or slate material'
+    return {'textures': {t['asset'].rsplit('/', 1)[1]: {'size_px': t['size_px'], 'sha256': t['sha256'][:16],
+                                                        'raw_sha256': t['raw_sha256'][:16]} for t in the_plan['textures']},
+            'materials': {m['asset'].rsplit('/', 1)[1]: {'set': m['texture_set'], 'tiling': m['tiling'],
+                                                         'duplicate_of': m['duplicate_of'].rsplit('/', 1)[1]}
+                          for m in textured}}
 
 
 def main():
@@ -330,9 +389,9 @@ def main():
             if m['key'] in ('asphalt', 'alley') and m['layer'] == 'Streets':
                 assert m['duplicate_of'].endswith('/M_Asphalt') and m['texture_mean'] == 'asphalt_02'
             if m['texture_mean']:
-                need = max(c / t for c, t in zip(apply_replica.linear(m['base_color_srgb']),
-                                                 apply_replica.TEXTURE_MEAN[m['texture_mean']]))
+                need = max(c / t for c, t in zip(apply_replica.linear(m['base_color_srgb']), m['mean_linear']))
                 assert need <= apply_replica.TINT_LIMIT, (m['asset'], need)
+        report['textures'] = check_textures(the_plan)
         ini = (replica.ROOT / 'Config/DefaultGame.ini').read_text()
         assert '+DirectoriesToAlwaysCook=(Path="/Game/Plateau/Replica/Props")' in ini, 'Props folder is not always cooked'
         header = (replica.ROOT / 'Source/Quebec/QuebecReplicaInstances.h').read_text()

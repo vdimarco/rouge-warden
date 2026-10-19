@@ -516,9 +516,17 @@ def select_fronts(buildings, roads, skip_ids, roll=None, lod2=None, shops=()):
         fronts.sort(key=lambda f: (f['street'] != street, f['road_distance'] + max(0, 460 - f['width']) * 3, -f['width']))
         primary = fronts[0]
         sides = [f for f in fronts[1:] if f['street'] != primary['street'] and f['width'] >= 300]
-        lots.append(_lot(building, points, primary, sides[:1], roll.get(bid), lod2.get(bid),
-                         [s for s in shop_grid.near(cx, cy, 2500) if _inside(s[0], points)
-                          or _nearest(s[0], primary['a'], primary['b'])[0] < 150]))
+        lot = _lot(building, points, primary, sides[:1], roll.get(bid), lod2.get(bid),
+                   [s for s in shop_grid.near(cx, cy, 2500) if _inside(s[0], points)
+                    or _nearest(s[0], primary['a'], primary['b'])[0] < 150])
+        # Rear of the lot (yard, ruelle and exposed side walls), kept out of _lot so the front draws are unchanged.
+        obstacles = [points] + [other[1] for other in building_grid.near(cx, cy, 6000) if other[0] is not building]
+        roads_near = [(c, d, road.get('tags', {}).get('service') == 'alley',
+                       road.get('tags', {}).get('highway') in DRIVE and bool(road.get('name')))
+                      for c, d, road, _ in road_grid.near(cx, cy, 6000)]
+        lot['backs'] = _back_walls(points, [primary] + sides[:1], obstacles, shared, roads_near, primary['normal'])
+        lot['obstacles'], lot['roads_near'] = obstacles, roads_near
+        lots.append(lot)
     lots.sort(key=lambda lot: lot['id'])
     return lots, skipped
 
@@ -1231,14 +1239,870 @@ def _extension(mesh, lot, top, skin_edges):
     return 1
 
 
-def build(lots):
+# ----------------------------------------------------------------------------- rear of the lot
+# Plateau rears (research §13, the Plateau and Villeray ruelles vertes guides, the heritage sheets): plain brick
+# or painted siding with a door and a window or two per floor; a wooden gallery on every upper floor across most
+# of the lot, on square posts from the yard; a steep straight wooden flight or a steel spiral between galleries;
+# a yard closed toward the ruelle by a board or slatted chain-link fence with a gate; here and there a shed
+# (hangar) or garage with its door on the lane, a cedar hedge, a small cedar or a creeper. Low-poly on purpose:
+# solid board guards, open treads drawn as their top faces, one post per gallery corner from yard to top.
+FENCE_FROM_ALLEY = 290.     # fence line from the ruelle centreline: the 430 cm lane strip plus a verge
+TRAFFIC_CLEAR = 300.        # Streets layer rule: no collision within 300 cm of a drive or service centreline
+GUARD_H = 107.              # guards over 1.89 m above grade are 1070 mm (MRC de Coaticook SARP gallery sheet)
+STAIR_W = 90.
+REAR_RISE = 22.5            # steep rear flights (research §6: about 45-50 degrees, risers 20-23 cm)
+GOING_MAX, GOING_MIN = 24., 20.
+SPIRAL_R = 70.
+SPIRAL_STEPS = 16           # treads per full turn; one turn per storey above the first gallery
+REAR_WINDOW = 80.
+REAR_HEAD = 215.            # door and window heads line up on the rear walls
+REAR_PAINT = ('Wood_Grey', 'Wood_Grey', 'Trim', 'Wood_Cream', 'Wood_Green', 'Wood_Oak', 'Iron', 'Wood_Burgundy')
+REAR_DOORS = ('Trim', 'Trim', 'Wood_Oak', 'Wood_Grey', 'Wood_Green', 'Wood_Burgundy')
+SIDING = ('Wood_Cream', 'Wood_Grey', 'Trim', 'Wood_Cream', 'Wood_Green')
+COMMON_BRICK = ('Brick_Red', 'Brick_Red', 'Brick_RedDark', 'Brick_Brown', 'Brick_Orange')
+FENCE_WOOD = ('Wood_Oak', 'Wood_Oak', 'Wood_Grey', 'Wood_Grey', 'Wood_Green', 'Wood_Burgundy', 'Wood_Cream')
+SHED_WALLS = ('Wood_Grey', 'Wood_Oak', 'Wood_Green', 'Wood_Cream', 'Iron', 'Wood_Burgundy')
+
+
+def _back_walls(points, fronts, obstacles, shared, roads, primary_normal):
+    """Exposed walls that are not street fronts (CGA comp(f) after Müller et al. 2006): 'rear' (facing away from
+    the front), 'lane' (on a ruelle), 'street' (an unnamed-front street side) and 'side' walls. Party walls,
+    walls covered by a neighbour and front runs are left out."""
+    count = len(points)
+
+    def front_edge(a, b):
+        return any(_nearest(a, f['a'], f['b'])[0] < 35 and _nearest(b, f['a'], f['b'])[0] < 35 for f in fronts)
+
+    walls = []
+    for i in range(count):
+        a, b = points[i], points[(i + 1) % count]
+        width = math.dist(a, b)
+        if width < 100 or tuple(sorted((a, b))) in shared or front_edge(a, b):
+            continue
+        u = ((b[0] - a[0]) / width, (b[1] - a[1]) / width)
+        normal = (u[1], -u[0])
+        samples = [(a[0] + (b[0] - a[0]) * f + normal[0] * 25, a[1] + (b[1] - a[1]) * f + normal[1] * 25)
+                   for f in (.2, .5, .8)]
+        if sum(any(_inside(s, other) for other in obstacles[1:]) for s in samples) >= 2:
+            continue
+        rays = [(a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f) for f in (.12, .5, .88)]
+        clear = min(_outward_clearance(p, normal, obstacles) for p in rays)
+        mid = rays[1]
+        alley = street = None
+        for c, d, is_alley, named in roads:
+            length = math.dist(c, d)
+            if length < 1:
+                continue
+            distance, q = _nearest(mid, c, d)
+            facing = (q[0] - mid[0]) * normal[0] + (q[1] - mid[1]) * normal[1]
+            if facing <= distance * .8:
+                continue
+            parallel = abs(u[0] * (d[0] - c[0]) + u[1] * (d[1] - c[1])) / length > .8
+            if is_alley and parallel and facing < min(3500., clear + 250):
+                alley = facing if alley is None else min(alley, facing)
+            elif named and parallel and facing < min(2500., clear + 500):
+                street = facing if street is None else min(street, facing)
+        dot = normal[0] * primary_normal[0] + normal[1] * primary_normal[1]
+        if street is not None and (alley is None or street < alley):
+            kind = 'street'
+        elif alley is not None and alley - FENCE_FROM_ALLEY < 150:
+            kind = 'lane'
+        elif dot < -.7:
+            kind = 'rear'
+        else:
+            kind = 'side'
+        walls.append({'index': i, 'a': a, 'b': b, 'width': width, 'normal': normal, 'kind': kind,
+                      'clear': round(clear, 1), 'alley': None if alley is None else round(alley, 1)})
+    # a skin ends flush with the next skin round a convex corner (no 16 cm notch, no return face)
+    skinned = {w['index'] for w in walls}
+    for w in walls:
+        i = w['index']
+        for key, j in (('ext0', (i - 1) % count), ('ext1', (i + 1) % count)):
+            ja, jb = points[j], points[(j + 1) % count]
+            e1, e2 = ((ja, jb), (w['a'], w['b'])) if key == 'ext0' else ((w['a'], w['b']), (ja, jb))
+            cross = ((e1[1][0] - e1[0][0]) * (e2[1][1] - e2[0][1]) - (e1[1][1] - e1[0][1]) * (e2[1][0] - e2[0][0]))
+            w[key] = (j in skinned or front_edge(ja, jb)) and cross > 0 and math.dist(ja, jb) >= 100
+    return walls
+
+
+def _floor_levels(lot):
+    """Floor heights of the front (author_front), so rear doors open at the same storeys."""
+    FH, raise_cm = lot['floor_height'], lot['raise']
+    ground = FH + 40 if lot['commercial'] else FH
+    return [raise_cm] + [raise_cm + ground + FH * (k - 1) for k in range(1, lot['storeys'] + 1)]
+
+
+def _rear_wall_top(lot, top):
+    return top - 10 if top - 10 - lot['height_cm'] >= 10 else lot['height_cm']
+
+
+def _subtract(interval, cuts, minimum=20.):
+    """interval minus the cut intervals, keeping pieces of at least `minimum`."""
+    pieces = [interval]
+    for c0, c1 in cuts:
+        out = []
+        for p0, p1 in pieces:
+            if c1 <= p0 or c0 >= p1:
+                out.append((p0, p1))
+                continue
+            if c0 > p0:
+                out.append((p0, c0))
+            if c1 < p1:
+                out.append((c1, p1))
+        pieces = out
+    return [(p0, p1) for p0, p1 in pieces if p1 - p0 >= minimum]
+
+
+class Occupancy:
+    """World footprints of planned rear structures (galleries, stairs, sheds) for free-space checks."""
+
+    def __init__(self):
+        self.grid = Grid(1000)
+
+    def add(self, polygon):
+        self.grid.add(polygon, [p[0] for p in polygon], [p[1] for p in polygon])
+
+    def hit(self, point):
+        return any(_inside(point, polygon) for polygon in self.grid.near(point[0], point[1], 1))
+
+
+def fence_panel(mesh, mat, a, b, height, thick=3., base=0.):
+    """A board fence or gate panel from world point a to b: both faces and the top."""
+    if math.dist(a, b) < 20:
+        return 0
+    F = Frame(mesh, a, b)
+    F.box(mat, 0, math.dist(a, b), -thick / 2, thick / 2, base, height, skip='tblr')
+    return 1
+
+
+class Rear:
+    """Plan and author the yard side of one lot. It has its own seed, so the front draws stay as they were."""
+
+    def __init__(self, lot, top):
+        self.lot = lot
+        rng = random.Random(_seed('plex-rear', lot['id']))
+        self.zt = _rear_wall_top(lot, top)
+        self.floor_z = _floor_levels(lot)
+        # every draw up front, in a fixed order, so a planning branch never shifts later choices
+        brick = lot['masonry'] if lot['masonry'] != 'Stone' and rng.random() < .5 else rng.choice(COMMON_BRICK)
+        self.siding = rng.random() < .25
+        self.wall = rng.choice(SIDING) if self.siding else brick
+        self.paint = rng.choice(REAR_PAINT)
+        self.door = rng.choice(REAR_DOORS)
+        self.frame = 'Trim' if rng.random() < .7 else rng.choice(('Iron', 'Wood_Oak', 'Wood_Green'))
+        self.sill = 'Trim' if self.siding else rng.choice(('Stone_Cast', 'Stone_Cast', 'Stone'))
+        self.prefer_spiral = rng.random() < .3
+        self.depth = rng.choice((150., 165., 180., 195.))
+        self.climb = 1 if rng.random() < .5 else -1
+        self.roofed = rng.random() < .45
+        self.roof_mat = rng.choice(('Iron', 'Slate', 'Wood_Grey'))
+        self.two_windows = rng.random() < .6
+        self.fence_kind = 'slats' if rng.random() < .3 else 'boards'
+        self.fence_paint = rng.choice(('Wood_Green', 'Wood_Grey')) if self.fence_kind == 'slats' else rng.choice(FENCE_WOOD)
+        self.gate_paint = rng.choice(FENCE_WOOD)
+        self.fence_h = 150. if self.fence_kind == 'slats' else rng.choice((165., 180., 180., 195.))
+        self.shed_roll, self.garage_roll = rng.random(), rng.random()
+        self.shed_w, self.shed_d = rng.uniform(220, 320), rng.uniform(190, 260)
+        self.shed_mat, self.shed_door = rng.choice(SHED_WALLS), rng.choice(('Wood_Grey', 'Wood_Oak', 'Trim', 'Wood_Green'))
+        self.hedge_roll, self.tree_roll, self.vine_roll = rng.random(), rng.random(), rng.random()
+        self.vine_mat = rng.choice(('Wood_Burgundy', 'Wood_Burgundy', 'Wood_Green'))   # autumn Virginia creeper, ivy
+        self.tree_h, self.vine_f = rng.uniform(280, 420), rng.random()
+        self.counts = {}
+        self.stack = None
+        self.yard_plan = None
+        self.reason = None
+        backs = lot.get('backs', [])
+        rears = sorted((w for w in backs if w['kind'] == 'rear' and w['width'] >= 300),
+                       key=lambda w: (-w['width'], w['index']))
+        self.main = rears[0] if rears else None
+        bounds = []
+        for polygon in lot.get('obstacles', []):
+            xs, ys = [p[0] for p in polygon], [p[1] for p in polygon]
+            bounds.append((polygon, min(xs), min(ys), max(xs), max(ys)))
+        self.obstacle_bounds = bounds
+
+    def count(self, key, n=1):
+        self.counts[key] = self.counts.get(key, 0) + n
+
+    def near(self, points, margin=0.):
+        """Obstacle polygons whose bounds overlap the bounds of `points`."""
+        bx0, by0 = min(p[0] for p in points) - margin, min(p[1] for p in points) - margin
+        bx1, by1 = max(p[0] for p in points) + margin, max(p[1] for p in points) + margin
+        return [poly for poly, a0, b0, a1, b1 in self.obstacle_bounds if a0 <= bx1 and a1 >= bx0 and b0 <= by1 and b1 >= by0]
+
+    def blocked(self, point, near, occupancy):
+        return any(_inside(point, poly) for poly in near) or occupancy.hit(point)
+
+    # ------------------------------------------------------------------ planning
+    def yard(self, wall):
+        """Usable depth in front of a wall for collision structures, and whether a ruelle closes it."""
+        clear = wall['clear']
+        if wall['alley'] is not None:
+            return min(clear - 20, wall['alley'] - TRAFFIC_CLEAR - 35), True
+        if clear < 1990:
+            return clear / 2 - 30, False        # back-to-back yards: stay on this side of the rear lot line
+        return clear - 20, False
+
+    def free(self, F, x0, x1, d0, d1, occupancy, roads=True):
+        """No building or planned structure on a sample grid of the rectangle; roads at least 300 cm away."""
+        corners = [F.p(x, d, 0)[:2] for x in (x0, x1) for d in (d0, d1)]
+        bx0, by0 = min(p[0] for p in corners), min(p[1] for p in corners)
+        bx1, by1 = max(p[0] for p in corners), max(p[1] for p in corners)
+        near = self.near(corners)
+        nx, nd = max(2, math.ceil((x1 - x0) / 45) + 1), max(2, math.ceil((d1 - d0) / 45) + 1)
+        for i in range(nx):
+            for j in range(nd):
+                if self.blocked(F.p(x0 + (x1 - x0) * i / (nx - 1), d0 + (d1 - d0) * j / (nd - 1), 0)[:2], near, occupancy):
+                    return False
+        if roads:
+            reach = TRAFFIC_CLEAR + 60
+            segs = [(c, d) for c, d, _, _ in self.lot.get('roads_near', ())
+                    if min(c[0], d[0]) - reach <= bx1 and max(c[0], d[0]) + reach >= bx0
+                    and min(c[1], d[1]) - reach <= by1 and max(c[1], d[1]) + reach >= by0]
+            if segs:
+                # perimeter samples 40 cm apart: a sampled 320 cm guarantees the true 300 cm
+                ring = []
+                for (xa, da), (xb, db) in (((x0, d0), (x1, d0)), ((x1, d0), (x1, d1)), ((x1, d1), (x0, d1)), ((x0, d1), (x0, d0))):
+                    steps = max(1, math.ceil(max(abs(xb - xa), abs(db - da)) / 40))
+                    ring += [F.p(xa + (xb - xa) * s / steps, da + (db - da) * s / steps, 0)[:2] for s in range(steps)]
+                if min(_nearest(p, c, d)[0] for p in ring for c, d in segs) < TRAFFIC_CLEAR + 20:
+                    return False
+        return True
+
+    def _fit(self, kind, levels, yard, mw):
+        z1 = self.floor_z[levels[0]]
+        FH = self.lot['floor_height']
+        room = mw - 12 - 12 - STAIR_W               # gallery length minus the landing or spiral end
+        if kind == 'straight':
+            need = 185. if len(levels) > 1 else 140.
+            gd = min(max(self.depth, need), yard - D_FACE - 2 - STAIR_W)
+            if gd < need:
+                return None
+            n1 = math.ceil(z1 / REAR_RISE)
+            n2 = math.ceil(FH / REAR_RISE)
+            going1 = min(GOING_MAX, room / (n1 - 1))
+            going2 = min(GOING_MAX, room / (n2 - 1))
+            if going1 < GOING_MIN or (len(levels) > 1 and going2 < GOING_MIN):
+                return None
+            return {'kind': kind, 'gd': gd, 'n1': n1, 'going1': going1, 'n2': n2, 'going2': going2,
+                    'extent': D_FACE + gd + 2 + STAIR_W}
+        # steel spiral at the end of the gallery, inside its depth: the shallow-yard answer
+        need = 2 * SPIRAL_R + 12
+        gd = min(max(self.depth, need), yard - D_FACE)
+        if gd < need or mw - 12 - (2 * SPIRAL_R + 10) < 120:      # a door's width of deck beside the spiral
+            return None
+        return {'kind': kind, 'gd': gd, 'extent': D_FACE + gd}
+
+    def plan_stack(self, occupancy):
+        """Galleries on every upper floor of the main rear wall, with a stair from the yard to the top."""
+        wall = self.main
+        if wall is None:
+            self.reason = 'no rear wall of 3 m or more'
+            return
+        levels = [k for k in range(1, self.lot['storeys']) if self.floor_z[k] + REAR_HEAD <= self.zt - 10]
+        if not levels:
+            self.reason = 'no upper floor below the wall top'
+            return
+        yard, lane = self.yard(wall)
+        W = wall['width']
+        modules = max(1, round(W / 763)) if W >= 1150 else 1
+        mw = W / modules
+        plan = None
+        for kind in (('spiral', 'straight') if self.prefer_spiral else ('straight', 'spiral')):
+            plan = self._fit(kind, levels, yard, mw)
+            if plan:
+                break
+        if plan is None:
+            self.reason = 'yard too shallow or lot too narrow for a gallery and stair'
+            return
+        F = Frame(None, wall['a'], wall['b'])
+        plan.update({'levels': levels, 'modules': [], 'wall': wall, 'climb': self.climb, 'lane': lane})
+        footprints = []
+        for m in range(modules):
+            mx0, mx1 = m * mw, (m + 1) * mw
+            gx0, gx1 = mx0 + 6, mx1 - 6
+            if not self.free(F, gx0, gx1, D_FACE, plan['extent'], occupancy):
+                self.reason = 'a building, structure or traffic lane behind the wall'
+                return
+            module = {'mx0': mx0, 'mx1': mx1, 'gx0': gx0, 'gx1': gx1}
+            if plan['kind'] == 'straight':
+                module['xh'] = gx1 - 6 - STAIR_W
+                module['deck_end'] = gx1
+                module['xd'] = module['xh'] - 40
+            else:
+                module['xs'] = gx1 - 6 - SPIRAL_R
+                module['deck_end'] = module['xs'] - SPIRAL_R - 4
+                module['xd'] = module['deck_end'] - 60
+            plan['modules'].append(module)
+            footprints.append([F.p(x, d, 0)[:2] for x, d in ((gx0, 0), (gx1, 0), (gx1, plan['extent']), (gx0, plan['extent']))])
+        top_z = self.floor_z[levels[-1]]
+        roof = min(self.zt - 5, top_z + 265)
+        plan['roof'] = roof if self.roofed and roof - 10 >= top_z + 215 else None
+        for polygon in footprints:
+            occupancy.add(polygon)
+        self.stack = plan
+
+    def fence_wall(self):
+        if self.stack:
+            return self.stack['wall']
+        rears = sorted((w for w in self.lot.get('backs', []) if w['kind'] == 'rear' and w['width'] >= 200 and w['clear'] >= 250),
+                       key=lambda w: (-w['width'], w['index']))
+        return rears[0] if rears else None
+
+    def plan_yard(self, occupancy, side_fences):
+        """Fence toward the ruelle (or the rear lot line) with a gate, side fences, a shed or garage, plants."""
+        wall = self.fence_wall()
+        if wall is None:
+            return
+        extent = self.stack['extent'] if self.stack else D_FACE + 100
+        if wall['alley'] is not None:
+            fd, gate = wall['alley'] - FENCE_FROM_ALLEY, True
+        elif wall['clear'] < 1990:
+            fd, gate = wall['clear'] / 2, False
+        else:
+            return
+        if fd < extent + 40:
+            return
+        F = Frame(None, wall['a'], wall['b'])
+        a = wall['a']
+        u, n = F.u, F.n
+        local = [((p[0] - a[0]) * u[0] + (p[1] - a[1]) * u[1], (p[0] - a[0]) * n[0] + (p[1] - a[1]) * n[1])
+                 for p in self.lot['points']]
+        lx0, lx1 = min(x for x, _ in local), max(x for x, _ in local)
+        if lx1 - lx0 < 250:
+            return
+        # free samples along the fence line (buildings, galleries and sheds already placed)
+        step = 40.
+        count = max(2, math.ceil((lx1 - lx0) / step) + 1)
+        xs = [lx0 + (lx1 - lx0) * i / (count - 1) for i in range(count)]
+        near = self.near([F.p(lx0, fd, 0), F.p(lx1, fd, 0)], 5)
+        free = [not self.blocked(F.p(x, fd, 0)[:2], near, occupancy) for x in xs]
+        runs, start = [], None
+        for i, ok in enumerate(free + [False]):
+            if ok and start is None:
+                start = i
+            elif not ok and start is not None:
+                x0 = lx0 if start == 0 else xs[start] - step / 2
+                x1 = lx1 if i == count else xs[i - 1] + step / 2
+                if x1 - x0 >= 60:
+                    runs.append((max(lx0, x0), min(lx1, x1)))
+                start = None
+        if not runs:
+            return
+        plan = {'wall': wall, 'fd': fd, 'lx': (lx0, lx1), 'runs': runs, 'gate': None, 'shed': None,
+                'lane': wall['alley'] is not None, 'extent': extent, 'hedge': None, 'cedar': None}
+        # gate near the stair foot, inside a free run
+        if gate:
+            if self.stack:
+                module = self.stack['modules'][0]
+                X = (lambda x: x) if self.stack['climb'] > 0 else (lambda x: module['mx0'] + module['mx1'] - x)
+                want = X(module['xh'] - (self.stack['n1'] - 1) * self.stack['going1']) if self.stack['kind'] == 'straight' else X(module['xs'])
+            else:
+                want = (lx0 + lx1) / 2
+            best = None
+            for r0, r1 in runs:
+                if r1 - r0 < 130:
+                    continue
+                gc = min(max(want, r0 + 60), r1 - 60)
+                key = (abs(gc - want), gc)
+                if best is None or key < best[0]:
+                    best = (key, gc)
+            if best:
+                plan['gate'] = best[1]
+        # shed (hangar) or garage against the fence, door on the lane, at the end away from the gate
+        room = fd - extent - 40
+        gc = plan['gate'] if plan['gate'] is not None else (lx0 + lx1) / 2
+        far_right = gc < (lx0 + lx1) / 2
+        if plan['lane'] and self.garage_roll < .1 and room >= 600 and lx1 - lx0 >= 480:
+            kind, sw, sd = 'garage', 300., 560.
+        elif self.shed_roll < .3 and room >= 200:
+            kind, sw, sd = 'shed', self.shed_w, min(self.shed_d, room)
+        else:
+            kind = None
+        if kind:
+            sw = min(sw, lx1 - lx0 - 170)
+            if sw >= 180:
+                sx0, sx1 = (lx1 - 12 - sw, lx1 - 12) if far_right else (lx0 + 12, lx0 + 12 + sw)
+                if self.free(F, sx0, sx1, fd - sd, fd - 3, occupancy, roads=False):
+                    plan['shed'] = {'kind': kind, 'x': (sx0, sx1), 'd': (fd - sd, fd)}
+                    occupancy.add([F.p(x, d, 0)[:2] for x, d in ((sx0, fd - sd), (sx1, fd - sd), (sx1, fd), (sx0, fd))])
+        # cedar hedge along the side away from the shed, a small cedar in the larger yards
+        shed_left = plan['shed'] is not None and plan['shed']['x'][0] < (lx0 + lx1) / 2
+        if self.hedge_roll < .15 and fd - extent - 60 >= 200:
+            hx = (lx1 - 66, lx1 - 6) if shed_left else (lx0 + 6, lx0 + 66)
+            if self.free(F, hx[0], hx[1], extent + 20, fd - 20, occupancy, roads=False):
+                plan['hedge'] = (hx, (extent + 20, fd - 20), 150 + 50 * self.vine_f)
+                occupancy.add([F.p(x, d, 0)[:2] for x, d in ((hx[0], extent + 20), (hx[1], extent + 20), (hx[1], fd - 20), (hx[0], fd - 20))])
+        if self.tree_roll < .15 and fd - extent >= 300 and lx1 - lx0 >= 400:
+            tx = (lx0 + lx1) / 2 + (self.vine_f - .5) * (lx1 - lx0) * .3
+            td = (extent + fd) / 2
+            if self.free(F, tx - 75, tx + 75, td - 75, td + 75, occupancy, roads=False):
+                plan['cedar'] = (tx, td)
+                occupancy.add([F.p(x, d, 0)[:2] for x, d in ((tx - 75, td - 75), (tx + 75, td - 75), (tx + 75, td + 75), (tx - 75, td + 75))])
+        # side fences on the lateral lot lines, from the house to the fence line (deduplicated across lots)
+        for side, lx in ((0, lx0), (1, lx1)):
+            ds = [d for x, d in local if abs(x - lx) < 40]
+            d0 = max(0., max(ds) if ds else 0.) + D_FACE + 2
+            if fd - d0 >= 150:
+                side_fences.append({'lot': self.lot['id'], 'side': side, 'a': F.p(lx, d0, 0)[:2], 'b': F.p(lx, fd, 0)[:2],
+                                    'height': self.fence_h, 'paint': self.fence_paint, 'rear': self})
+        self.yard_plan = plan
+
+    # ------------------------------------------------------------------ authoring
+    def author(self, mesh):
+        record = {'walls': [], 'galleries': 0, 'stair': None, 'flights': [], 'decks': [], 'fence': None,
+                  'shed': None, 'reason': self.reason}
+        for wall in self.lot.get('backs', []):
+            if self.stack and wall is self.stack['wall']:
+                self._author_stack_wall(mesh, wall, record)
+            else:
+                self._author_skin(mesh, wall, record)
+        if self.yard_plan:
+            self._author_yard(mesh, record)
+        return record
+
+    def _skin_faces(self, F, wall, base):
+        """One opaque plane 16 cm proud of the retained wall (hiding its old glass cards), a concrete base,
+        flashing on top, and returns at free ends."""
+        W, zt = wall['width'], self.zt
+        x_start = -D_FACE if wall['ext0'] else 0.
+        x_end = W + D_FACE if wall['ext1'] else W
+        if base > 0:
+            F.quad_d('Stone', x_start, x_end, 0, base, D_FACE)
+        F.quad_d(self.wall, x_start, x_end, base, zt, D_FACE)
+        F.quad_z('Iron', x_start, x_end, 0, D_FACE, zt, 1)
+        if not wall['ext0']:
+            F.quad_x(self.wall, 0, 0, D_FACE, 0, zt, -1)
+        if not wall['ext1']:
+            F.quad_x(self.wall, W, 0, D_FACE, 0, zt, 1)
+
+    def _window(self, F, x0, x1, z0, z1, rail=True):
+        """Applied rear window: frame field, glass, meeting rail and a proud sill (the wall is not cut)."""
+        F.quad_d(self.frame, x0, x1, z0, z1, D_FACE + 1)
+        F.quad_d('Glass', x0 + 6, x1 - 6, z0 + 6, z1 - 6, D_FACE + 2.5)
+        if rail:
+            zm = (z0 + z1) / 2
+            F.quad_d(self.frame, x0 + 6, x1 - 6, zm - 2.5, zm + 2.5, D_FACE + 3.5)
+        F.box(self.sill, x0 - 5, x1 + 5, D_FACE - 1, D_FACE + 5, z0 - 5, z0, skip='kblr')
+        self.count('windows')
+
+    def _door(self, F, x0, x1, z0, z1):
+        """Applied half-glazed back door with its frame and a sill."""
+        F.quad_d(self.frame, x0, x1, z0, z1, D_FACE + 1)
+        F.quad_d(self.door, x0 + 6, x1 - 6, z0, z1 - 6, D_FACE + 2.5)
+        F.quad_d('Glass', x0 + 16, x1 - 16, z0 + 110, z1 - 22, D_FACE + 3.5)
+        F.quad_z('Stone' if not self.siding else 'Trim', x0 - 4, x1 + 4, D_FACE - 1, D_FACE + 5, z0 + 1, 1)
+        self.count('doors')
+
+    def _author_skin(self, mesh, wall, record):
+        """Rear, lane and street walls get a window per bay and floor; side walls a plain skin."""
+        F = Frame(mesh, wall['a'], wall['b'])
+        W = wall['width']
+        windows = 0
+        if wall['kind'] in ('lane', 'street') and W >= 250 or wall['kind'] == 'rear' and W >= 300:
+            bays = max(1, min(3, int(W // 450))) if wall['kind'] != 'rear' else 1
+            for k in range(self.lot['storeys']):
+                z = self.floor_z[k]
+                if z + REAR_HEAD > self.zt - 10:
+                    break
+                for i in range(bays):
+                    c = (i + .5) * W / bays
+                    self._window(F, c - REAR_WINDOW / 2, c + REAR_WINDOW / 2, z + 80, z + REAR_HEAD, rail=False)
+                    windows += 1
+        self._skin_faces(F, wall, self.lot['raise'] if wall['kind'] in ('lane', 'street') else 0.)
+        self.count('skins_' + wall['kind'])
+        record['walls'].append({'kind': wall['kind'], 'width_cm': round(W, 1), 'windows': windows, 'doors': 0,
+                                'galleries': 0})
+
+    def _author_stack_wall(self, mesh, wall, record):
+        """The rear façade: per module a door column and one or two windows on each floor, galleries, stair."""
+        st = self.stack
+        F = Frame(mesh, wall['a'], wall['b'])
+        W = wall['width']
+        levels, c = st['levels'], st['climb']
+        floors = [0] + levels
+        windows = doors = 0
+        for module in st['modules']:
+            mx0, mx1 = module['mx0'], module['mx1']
+            X = (lambda x: x) if c > 0 else (lambda x, s=mx0 + mx1: s - x)
+            xd = module['xd']
+            room0, room1 = mx0 + 30, xd - 43 - 30
+            n = 2 if self.two_windows and mx1 - mx0 >= 640 else 1
+            while n > 0 and room1 - room0 < n * REAR_WINDOW + (n - 1) * 40:
+                n -= 1
+            centres = [room0 + (i + .5) * (room1 - room0) / n for i in range(n)]
+            for k in floors:
+                z = self.floor_z[k]
+                d0, d1 = sorted((X(xd - 43), X(xd + 43)))
+                self._door(F, d0, d1, z, z + REAR_HEAD)
+                doors += 1
+                for cx in centres:
+                    w0, w1 = sorted((X(cx - REAR_WINDOW / 2), X(cx + REAR_WINDOW / 2)))
+                    self._window(F, w0, w1, z + 80, z + REAR_HEAD)
+                    windows += 1
+            self._stoop(F, c, mx0, mx1, xd)
+            self._gallery_module(mesh, F, module, record)
+        self._skin_faces(F, wall, self.lot['raise'])
+        self.count('facades')
+        record['stair'] = st['kind']
+        record['walls'].append({'kind': 'rear', 'width_cm': round(W, 1), 'windows': windows, 'doors': doors,
+                                'galleries': len(levels) * len(st['modules']), 'modules': len(st['modules'])})
+
+    def _stoop(self, F, c, mx0, mx1, xd):
+        """Concrete stoop and side steps at the ground-floor back door (module coordinates, mirrored when c < 0)."""
+        raise_cm = self.lot['raise']
+        if raise_cm < 25:
+            return
+
+        def box(mat, x0, x1, d0, d1, z0, z1, skip):
+            if c < 0:
+                skip = skip.translate(str.maketrans('lr', 'rl'))
+                x0, x1 = mx0 + mx1 - x1, mx0 + mx1 - x0
+            F.box(mat, x0, x1, d0, d1, z0, z1, skip)
+        box('Stone', xd - 55, xd + 55, D_FACE - 2, D_FACE + 85, 0, raise_cm, 'kb')
+        steps = max(0, round(raise_cm / 20) - 1)
+        rise = raise_cm / (steps + 1)
+        for j in range(1, steps + 1):
+            x1 = xd - 55 - (j - 1) * 27
+            if x1 - 27 < mx0 + 8:
+                break
+            box('Stone', x1 - 27, x1, D_FACE - 2, D_FACE + 85, 0, raise_cm - j * rise, 'kbr')
+        self.count('stoops')
+
+    def _gallery_module(self, mesh, F, module, record):
+        st = self.stack
+        c = st['climb']
+        mx0, mx1, gx0, gx1 = module['mx0'], module['mx1'], module['gx0'], module['gx1']
+        X = (lambda x: x) if c > 0 else (lambda x, s=mx0 + mx1: s - x)
+
+        def span(x0, x1):
+            a, b = X(x0), X(x1)
+            return (a, b) if a <= b else (b, a)
+
+        def box(mat, x0, x1, d0, d1, z0, z1, skip=''):
+            if c < 0:
+                skip = skip.translate(str.maketrans('lr', 'rl'))
+            F.box(mat, *span(x0, x1), d0, d1, z0, z1, skip)
+
+        def P(x, d, z):
+            return F.p(X(x), d, z)
+
+        paint = self.paint
+        levels = st['levels']
+        zs = [self.floor_z[k] for k in levels]
+        gd = st['gd']
+        dF = D_FACE + gd
+        straight = st['kind'] == 'straight'
+        bi = dF - 12 - STAIR_W
+        if straight:
+            xh = module['xh']
+            n1, going1 = st['n1'], st['going1']
+            n2, going2 = st['n2'], st['going2']
+            run2 = (n2 - 1) * going2
+            xo0, xo1 = xh - run2 - 2, xh - .3 * run2
+        else:
+            xs, ds = module['xs'], D_FACE + gd / 2
+        deck_end = module['deck_end']
+        # decks and guards
+        for i, z in enumerate(zs):
+            if straight and i > 0:
+                box('Wood_Deck', gx0, gx1, D_FACE - 2, bi, z - 18, z, 'k')
+                if xo0 - gx0 >= 20:
+                    box('Wood_Deck', gx0, xo0, bi, dF, z - 18, z, 'k')
+                box('Wood_Deck', xo1, gx1, bi, dF, z - 18, z, 'k')
+                box(paint, max(gx0, xo0), xo1, bi - 4, bi, z + 12, z + GUARD_H, 'tblr')
+                box(paint, xo1, xo1 + 4, bi, dF - 5, z + 12, z + GUARD_H, 'tfkb')
+            else:
+                box('Wood_Deck', gx0, deck_end, D_FACE - 2, dF, z - 18, z, 'k')
+            corners = [P(gx0, D_FACE, z), P(deck_end, D_FACE, z), P(deck_end, dF, z), P(gx0, dF, z)]
+            record['decks'].append({'z': round(z, 1), 'quad': [[round(p[0], 1), round(p[1], 1)] for p in corners]})
+            gaps = [(xh - 2, gx1 + 1)] if straight and i == 0 else []
+            for a0, a1 in _subtract((gx0, gx1), gaps):
+                box(paint, a0, a1, dF - 5, dF - 1, z + 12, z + GUARD_H, 'tblr')
+            box(paint, gx0, gx0 + 4, D_FACE, dF - 1, z + 12, z + GUARD_H, 'tfkb')
+            box(paint, gx1 - 4, gx1, D_FACE, dF + 2 + STAIR_W if straight and i == 0 else dF - 1,
+                z + 12, z + GUARD_H, 'tfkb')
+            record['galleries'] += 1
+            self.count('galleries')
+        # posts from the yard; a module shares the post of its neighbour at the party line
+        roof = st['roof']
+        post_top = roof - 10 if roof else zs[-1] + GUARD_H
+        for x in ([mx0 + 12] if mx0 < 1 else []) + [mx1 - 12]:
+            F.box(paint, x - 5, x + 5, dF - 11, dF - 1, 0, post_top, 'b')
+            self.count('posts')
+        if roof:
+            F.box(self.roof_mat, mx0 + 2, mx1 - 2, D_FACE - 2, dF + 12, roof - 10, roof, 'k')
+            self.count('gallery_roofs')
+        if straight:
+            self._straight(mesh, F, box, P, xh, zs, dF, bi, n1, going1, n2, going2, record)
+        else:
+            self._spiral(mesh, F, P, c, xs, ds, zs, record)
+
+    def _straight(self, mesh, F, box, P, xh, zs, dF, bi, n1, going1, n2, going2, record):
+        paint = self.paint
+        # flight 1: from the yard to the first gallery, outside the deck edge, landing at the deck end
+        z1 = zs[0]
+        rise1 = z1 / n1
+        run1 = (n1 - 1) * going1
+        e0, e1 = dF + 2, dF + 2 + STAIR_W
+        for t in range(1, n1):
+            xa = xh - (n1 - t) * going1 - 1.5
+            xb = min(xh, xh - (n1 - 1 - t) * going1 + 1.5)
+            box('Wood_Deck', xa, xb, e0 + 3, e1 - 3, t * rise1, t * rise1, 'kfblr')     # open tread: top face only
+        box('Wood_Deck', xh, xh + STAIR_W, dF - 2, e1, z1 - 18, z1, 'k')
+        for d in (e0 + 2.5, e1 - 2.5):
+            beam(mesh, paint, P(xh - run1 - going1 * .6, d, 4), P(xh, d, z1 - 22), 5, 24, bottom=False)
+        beam(mesh, paint, P(xh - run1, e1 - 3, rise1 + 88), P(xh, e1 - 3, z1 + 88), 5, 6, bottom=False)
+        box(paint, xh, xh + STAIR_W, e1 - 4, e1, z1 + 12, z1 + GUARD_H, 'tblr')
+        lx = xh + STAIR_W - 5
+        box(paint, lx - 5, lx + 5, e1 - 10, e1, 0, z1 + GUARD_H, 'b')
+        record['flights'].append({'kind': 'straight', 'z0': 0, 'z1': round(z1, 1), 'treads': n1 - 1,
+                                  'foot': [round(v, 1) for v in P(xh - run1 + going1 / 2, (e0 + e1) / 2, rise1)],
+                                  'head': [round(v, 1) for v in P(xh + STAIR_W / 2, (e0 + e1) / 2, z1)]})
+        self.count('flights')
+        # flights 2..: inside the deck front band, stacked in one plan, each through an opening in the deck above
+        s0, s1 = bi, dF - 12
+        run2 = (n2 - 1) * going2
+        for za, zb in zip(zs, zs[1:]):
+            rise2 = (zb - za) / n2
+            for t in range(1, n2):
+                xb = min(xh, xh - (t - 1) * going2 + 1.5)
+                xa = xh - t * going2 - 1.5
+                box('Wood_Deck', xa, xb, s0 + 3, s1 - 3, za + t * rise2, za + t * rise2, 'kfblr')
+            for d in (s0 + 2.5, s1 - 2.5):
+                beam(mesh, paint, P(xh + going2 * .5, d, za + 2), P(xh - run2, d, zb - 22), 5, 24, bottom=False)
+            beam(mesh, paint, P(xh, s0 + 4, za + rise2 + 88), P(xh - run2, s0 + 4, zb + 88), 5, 6, bottom=False)
+            record['flights'].append({'kind': 'straight', 'z0': round(za, 1), 'z1': round(zb, 1), 'treads': n2 - 1,
+                                      'foot': [round(v, 1) for v in P(xh - going2 / 2, (s0 + s1) / 2, za + rise2)],
+                                      'head': [round(v, 1) for v in P(xh - run2 - going2 / 2, (s0 + s1) / 2, zb)]})
+            self.count('flights')
+        self.count('stairs_straight')
+
+    def _spiral(self, mesh, F, P, sx, xs, ds, zs, record):
+        """Steel spiral in the end bay of the gallery: a full turn per storey, stepping off onto each deck.
+        sx is -1 in a mirrored module (P mirrors points; facing vectors are mirrored here)."""
+        exit_angle = math.pi              # toward the deck end
+        delta = 2 * math.pi / SPIRAL_STEPS
+        r0, R = 8., SPIRAL_R
+        treads = []                       # (unwrapped angle, top z) bottom up; every deck level ends at exit_angle
+        z_prev = 0.
+        for k, z in enumerate(zs):
+            n = math.ceil(z / 21.) if k == 0 else SPIRAL_STEPS
+            rise = (z - z_prev) / n
+            base_angle = exit_angle + 2 * math.pi * k
+            treads += [(base_angle - (n - i) * delta, z_prev + i * rise) for i in range(1, n + 1)]
+            z_prev = z
+        for phi, z in treads:
+            a0, a1 = phi - delta / 2 - .02, phi + delta / 2 + .02
+            pts = [P(xs + r * math.cos(a), ds + r * math.sin(a), z) for r, a in ((r0, a0), (R, a0), (R, a1), (r0, a1))]
+            mesh.face('Wood_Deck', pts, (0, 0, 1))
+        top = zs[-1]
+        centre = P(xs, ds, 0)
+        cx = (centre[0] - F.a[0]) * F.u[0] + (centre[1] - F.a[1]) * F.u[1]
+        F.box('Iron', cx - 5, cx + 5, ds - 5, ds + 5, 0, top + 100, 'b')
+        first, last = treads[0][0] - delta, treads[-1][0]
+        rise0 = treads[0][1]
+
+        def z_at(phi):
+            if phi <= treads[0][0]:
+                return max(0., rise0 * (phi - first) / delta)
+            for (p0, h0), (p1, h1) in zip(treads, treads[1:]):
+                if p0 <= phi <= p1:
+                    return h0 + (h1 - h0) * (phi - p0) / (p1 - p0)
+            return treads[-1][1]
+        third = 2 * math.pi / 3
+        m = math.floor((first - exit_angle - third / 2) / third) + 1
+        verts = [first]
+        while exit_angle + third / 2 + m * third < last:
+            verts.append(exit_angle + third / 2 + m * third)
+            m += 1
+        verts.append(last)
+
+        def rail_point(phi, lift):
+            return P(xs + (R - 4) * math.cos(phi), ds + (R - 4) * math.sin(phi), z_at(phi) + lift)
+        for p0, p1 in zip(verts, verts[1:]):
+            # the rail stays open where it passes the exit direction at a deck, so the deck can be reached
+            k = math.floor((p1 + 1e-6 - exit_angle) / (2 * math.pi))
+            crossing = exit_angle + k * 2 * math.pi
+            if p0 < crossing <= p1 + 1e-6 and any(abs(z_at(crossing) - z) < 30 for z in zs):
+                continue
+            beam(mesh, 'Iron', rail_point(p0, 90), rail_point(p1, 90), 4, 4, bottom=False)
+        for phi in verts[1:-1]:
+            base = rail_point(phi, 0)
+            card(mesh, 'Iron', base, (base[0], base[1], base[2] + 90), F.out(sx * math.cos(phi), math.sin(phi), 0)[:2], 1.2)
+        start = 0.
+        for z in zs:
+            head = P(xs + (r0 + R) / 2 * math.cos(exit_angle), ds + (r0 + R) / 2 * math.sin(exit_angle), z)
+            record['flights'].append({'kind': 'spiral', 'z0': round(start, 1), 'z1': round(z, 1), 'foot': None,
+                                      'head': [round(v, 1) for v in head]})
+            start = z
+            self.count('flights')
+        phi0 = treads[0][0]
+        foot = P(xs + (r0 + R) / 2 * math.cos(phi0), ds + (r0 + R) / 2 * math.sin(phi0), treads[0][1])
+        record['flights'][-len(zs)]['foot'] = [round(v, 1) for v in foot]
+        self.count('stairs_spiral')
+
+    def _author_yard(self, mesh, record):
+        plan = self.yard_plan
+        wall = plan['wall']
+        F = Frame(mesh, wall['a'], wall['b'])
+        fd, (lx0, lx1) = plan['fd'], plan['lx']
+        cuts = []
+        if plan['gate'] is not None:
+            cuts.append((plan['gate'] - 50, plan['gate'] + 50))
+        if plan['shed']:
+            cuts.append(plan['shed']['x'])
+        h = self.fence_h
+        runs = []
+        for r0, r1 in plan['runs']:
+            runs += _subtract((r0, r1), cuts, 40)
+        for x0, x1 in runs:
+            F.box(self.fence_paint, x0, x1, fd - 1.5, fd + 1.5, 0, h, 'tblr')
+            if self.fence_kind == 'slats':
+                F.box('Wood_Grey', x0, x1, fd - 2.5, fd + 2.5, h, h + 4, 'blr')
+            self.count('fence_runs')
+        covered = sum(x1 - x0 for x0, x1 in runs)
+        if plan['gate'] is not None:
+            g = plan['gate']
+            F.box(self.gate_paint, g - 47, g + 47, fd - 1.5, fd + 1.5, 4, h - 6, 'tblr')
+            F.box(self.fence_paint if self.fence_kind == 'boards' else 'Wood_Grey', g - 55, g - 47, fd - 4, fd + 4, 0, h + 8, 'b')
+            self.count('gates')
+            covered += 100
+        shed = plan['shed']
+        if shed:
+            self._shed(mesh, F, shed)
+            covered += shed['x'][1] - shed['x'][0]
+        # creeper on the lane side of the longest run
+        if runs and self.vine_roll < .35:
+            x0, x1 = max(runs, key=lambda r: (r[1] - r[0], r[0]))
+            if x1 - x0 >= 160:
+                w = min(x1 - x0 - 20, 140 + self.vine_f * 140)
+                v0 = x0 + 10 + (x1 - x0 - 20 - w) * self.vine_f
+                v1 = v0 + w
+                p = F.p
+                d = fd + 2.5
+                blob = [p(v0 + 15, d, 15), p(v1 - 10, d, 10), p(v1 + 8, d, h * .55), p(v1 - 25, d, h + 22),
+                        p(v0 + 35, d, h + 30), p(v0 - 8, d, h * .5)]
+                mesh.face(self.vine_mat, blob, F.out(0, 1, 0))
+                self.count('creepers')
+        if plan['hedge']:
+            (hx0, hx1), (hd0, hd1), hh = plan['hedge']
+            F.box('Wood_Green', hx0, hx1, hd0, hd1, 0, hh, 'b')
+            self.count('hedges')
+        if plan['cedar']:
+            tx, td = plan['cedar']
+            base = F.p(tx, td, 0)
+            apex = (base[0], base[1], self.tree_h)
+            ring = [F.p(tx + 75 * math.cos(k * math.pi / 3), td + 75 * math.sin(k * math.pi / 3), 40) for k in range(6)]
+            for k in range(6):
+                q0, q1 = ring[k], ring[(k + 1) % 6]
+                mesh.face('Wood_Green', [q0, q1, apex], ((q0[0] + q1[0]) / 2 - base[0], (q0[1] + q1[1]) / 2 - base[1], 40))
+            self.count('cedars')
+        span = lx1 - lx0
+        record['fence'] = {'kind': self.fence_kind, 'lane': plan['lane'], 'gate': plan['gate'] is not None,
+                           'height_cm': h, 'distance_cm': round(fd, 1), 'lot_width_cm': round(span, 1),
+                           'covered_cm': round(min(covered, span), 1),
+                           'line': [[round(v, 1) for v in F.p(lx0, fd, 0)[:2]], [round(v, 1) for v in F.p(lx1, fd, 0)[:2]]]}
+        if shed:
+            record['shed'] = shed['kind']
+
+    def _shed(self, mesh, F, shed):
+        (x0, x1), (d0, d1) = shed['x'], shed['d']
+        garage = shed['kind'] == 'garage'
+        hl, hy = (265., 245.) if garage else (250., 215.)
+        mat = (self.wall if not self.siding else 'Wood_Grey') if garage else self.shed_mat
+        p = F.p
+        mesh.face(mat, [p(x0, d1, 0), p(x1, d1, 0), p(x1, d1, hl), p(x0, d1, hl)], F.out(0, 1, 0))
+        mesh.face(mat, [p(x0, d0, 0), p(x1, d0, 0), p(x1, d0, hy), p(x0, d0, hy)], F.out(0, -1, 0))
+        mesh.face(mat, [p(x0, d0, 0), p(x0, d1, 0), p(x0, d1, hl), p(x0, d0, hy)], F.out(-1, 0, 0))
+        mesh.face(mat, [p(x1, d0, 0), p(x1, d1, 0), p(x1, d1, hl), p(x1, d0, hy)], F.out(1, 0, 0))
+        mesh.face('Slate' if garage else 'Iron' if self.shed_mat != 'Iron' else 'Slate',
+                  [p(x0, d0, hy), p(x1, d0, hy), p(x1, d1, hl), p(x0, d1, hl)], (0, 0, 1))
+        xc = (x0 + x1) / 2
+        dw = 120 if garage and x1 - x0 >= 250 else 45
+        if garage:
+            F.quad_d('Trim' if self.shed_door == 'Trim' else 'Wood_Grey', xc - dw, xc + dw, 0, 215, d1 + .8)
+        else:
+            F.quad_d(self.shed_door, xc - dw, xc + dw, 0, 195, d1 + .8)
+        self.count('garages' if garage else 'sheds')
+
+
+def build_rears(mesh, lots, tops):
+    """Plan every lot's galleries first (so yards see their neighbours' structures), then fences, then author."""
+    rears = [Rear(lot, tops[lot['id']]) for lot in lots]
+    occupancy = Occupancy()
+    for rear in rears:
+        rear.plan_stack(occupancy)
+    side_fences = []
+    for rear in rears:
+        rear.plan_yard(occupancy, side_fences)
+    records, counts = {}, {}
+    total_before = mesh.triangles()
+    for rear in rears:
+        before = mesh.triangles()
+        record = rear.author(mesh)
+        record['triangles'] = mesh.triangles() - before
+        records[rear.lot['id']] = record
+    # side fences: one per party line (the longer of two neighbours' candidates), cut around buildings and structures
+    side_fences.sort(key=lambda f: (-math.dist(f['a'], f['b']), f['lot'], f['side']))
+    kept = []
+    for fence in side_fences:
+        u = ((fence['b'][0] - fence['a'][0]) / math.dist(fence['a'], fence['b']),
+             (fence['b'][1] - fence['a'][1]) / math.dist(fence['a'], fence['b']))
+        duplicate = False
+        for other in kept:
+            v = other['u']
+            if abs(u[0] * v[0] + u[1] * v[1]) > .95 and (_nearest(fence['a'], other['a'], other['b'])[0] < 60
+                                                         and _nearest(fence['b'], other['a'], other['b'])[0] < 60
+                                                         or math.dist(fence['a'], other['a']) < 100):
+                duplicate = True
+                break
+        if not duplicate:
+            fence['u'] = u
+            kept.append(fence)
+    side_count = 0
+    for fence in sorted(kept, key=lambda f: (f['lot'], f['side'])):
+        rear = fence['rear']
+        a, b = fence['a'], fence['b']
+        length = math.dist(a, b)
+        steps = max(2, math.ceil(length / 40) + 1)
+        near = rear.near([a, b], 5)
+        pts = [(a[0] + (b[0] - a[0]) * i / (steps - 1), a[1] + (b[1] - a[1]) * i / (steps - 1)) for i in range(steps)]
+        ok = [not rear.blocked(p, near, occupancy) for p in pts]
+        start = None
+        for i, flag in enumerate(ok + [False]):
+            if flag and start is None:
+                start = i
+            elif not flag and start is not None:
+                if i - 1 > start:
+                    fence_panel(mesh, fence['paint'], pts[start], pts[i - 1], fence['height'])
+                    side_count += 1
+                start = None
+        records[fence['lot']].setdefault('side_fences', 0)
+        records[fence['lot']]['side_fences'] += 1
+    for rear in rears:
+        for key, value in rear.counts.items():
+            counts[key] = counts.get(key, 0) + value
+    counts['side_fence_runs'] = side_count
+    counts['lots_with_rear_walls'] = sum(1 for r in records.values() if any(w['kind'] == 'rear' for w in r['walls']))
+    counts['lots_with_galleries'] = sum(1 for r in records.values() if r['galleries'])
+    counts['triangles'] = mesh.triangles() - total_before
+    return records, counts
+
+
+def build(lots, rear=False):
+    """Fronts (and with rear=True the yard side of every lot). The default keeps the front-only fixtures."""
     mesh = PlexMesh()
     records, counts = [], {}
+    tops = {}
     for lot in lots:
         kit = Kit(mesh, lot)
         before = mesh.triangles()
         record, top = author_front(mesh, lot, lot['primary'], kit, primary=True)
         skins = [(tuple(lot['primary']['a']), tuple(lot['primary']['b']))]
+        if rear:
+            # back walls get their own skin up to the extension top, so the extension band skips them
+            skins += [(w['a'], w['b']) for w in lot.get('backs', ())]
         side_records = []
         for side in lot['sides']:
             side_lot = dict(lot, balconies=False, stair=None)
@@ -1264,6 +2128,13 @@ def build(lots):
             'front': record, 'sides': side_records, 'top_extension': bool(extended),
             'triangles': mesh.triangles() - before,
         })
+        tops[lot['id']] = top
+    if rear:
+        rear_records, rear_counts = build_rears(mesh, lots, tops)
+        for record in records:
+            record['rear'] = rear_records[record['id']]
+        for key, value in rear_counts.items():
+            counts['rear_' + key] = value
     return mesh, records, counts
 
 
@@ -1342,7 +2213,7 @@ def prepare(directory=OUT, write=True):
     plain = [b for b in buildings if str(b['id']) not in skip]
     lod2 = lod2_heights(plain)
     lots, skipped = select_fronts(buildings, roads, skip, roll_data['buildings'], lod2, shops)
-    mesh, records, counts = build(lots)
+    mesh, records, counts = build(lots, rear=True)
     groups, tile = batches(mesh)
     directory = Path(directory)
     manifest_batches = []

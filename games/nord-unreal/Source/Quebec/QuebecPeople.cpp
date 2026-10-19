@@ -486,13 +486,17 @@ bool AQuebecParkResident::Flee(const FVector& Source, float Seconds)
     BeginAway(Now);
     FleeSource = Source;
     FleeUntil = FMath::Max(Stride == 2 ? FleeUntil : 0.f, Now + FMath::Clamp(Seconds, .5f, 10.f));
-    // Head straight away at once; the swept probes start on a per-resident offset so a crowd never probes on one frame.
-    FleeHeading = (GetActorLocation() - Source).GetSafeNormal2D();
-    if (FleeHeading.IsNearlyZero()) FleeHeading = GetActorForwardVector().GetSafeNormal2D();
-    NextFleeProbe = Now + FMath::Fmod(FMath::Abs(Phase) * 1.37f, .25f);
-    StreetGroundZ = GetActorLocation().Z;
-    Stride = 2;
-    ForceNetUpdate();
+    // A resident already running keeps its checked heading and probe schedule, so repeated nudges cannot starve the
+    // probe; a new run probes on its first tick (TickAway) and staggers only the later re-probes.
+    if (Stride != 2)
+    {
+        FleeHeading = (GetActorLocation() - Source).GetSafeNormal2D();
+        if (FleeHeading.IsNearlyZero()) FleeHeading = GetActorForwardVector().GetSafeNormal2D();
+        NextFleeProbe = 0.f;
+        StreetGroundZ = GetActorLocation().Z;
+        Stride = 2;
+        ForceNetUpdate();
+    }
     return true;
 }
 
@@ -517,7 +521,7 @@ void AQuebecParkResident::TickAway(float ServerTime, float DeltaSeconds)
         FleeUntil = ServerTime + FleeAfterKnockSeconds;
         FleeHeading = (GetActorLocation() - FleeSource).GetSafeNormal2D();
         if (FleeHeading.IsNearlyZero()) FleeHeading = GetActorForwardVector().GetSafeNormal2D();
-        NextFleeProbe = ServerTime + FMath::Fmod(FMath::Abs(Phase) * 1.37f, .25f);
+        NextFleeProbe = 0.f;
         StreetGroundZ = GetActorLocation().Z;
         ForceNetUpdate();
     }
@@ -533,7 +537,8 @@ void AQuebecParkResident::TickAway(float ServerTime, float DeltaSeconds)
         if (ServerTime >= NextFleeProbe)
         {
             // Four times a second: the clearest heading away from the threat, swept like the population's route checks.
-            NextFleeProbe = ServerTime + .25f;
+            // About four times a second, on a per-resident offset so a crowd that started together spreads its re-probes.
+            NextFleeProbe = ServerTime + .2f + FMath::Fmod(FMath::Abs(Phase) * 1.37f, .1f);
             FVector Away = (Here - FleeSource).GetSafeNormal2D();
             if (Away.IsNearlyZero()) Away = GetActorForwardVector().GetSafeNormal2D();
             FleeHeading = FVector::ZeroVector;
