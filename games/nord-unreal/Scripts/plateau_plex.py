@@ -1852,6 +1852,7 @@ class Rear:
         box('Wood_Deck', xh, xh + STAIR_W, dF - 2, e1, z1 - 18, z1, 'k')
         for d in (e0 + 2.5, e1 - 2.5):
             beam(mesh, paint, P(xh - run1 - going1 * .6, d, 4), P(xh, d, z1 - 22), 5, 24, bottom=False)
+        self._soffit(mesh, P, xh - run1, xh, e0 + 3, e1 - 3, 0., z1 - rise1 - 5)
         beam(mesh, paint, P(xh - run1, e1 - 3, rise1 + 88), P(xh, e1 - 3, z1 + 88), 5, 6, bottom=False)
         box(paint, xh, xh + STAIR_W, e1 - 4, e1, z1 + 12, z1 + GUARD_H, 'tblr')
         lx = xh + STAIR_W - 5
@@ -1871,12 +1872,19 @@ class Rear:
                 box('Wood_Deck', xa, xb, s0 + 3, s1 - 3, za + t * rise2, za + t * rise2, 'kfblr')
             for d in (s0 + 2.5, s1 - 2.5):
                 beam(mesh, paint, P(xh + going2 * .5, d, za + 2), P(xh - run2, d, zb - 22), 5, 24, bottom=False)
+            self._soffit(mesh, P, xh - run2, xh, s0 + 3, s1 - 3, zb - rise2 - 5, za - 5)
             beam(mesh, paint, P(xh, s0 + 4, za + rise2 + 88), P(xh - run2, s0 + 4, zb + 88), 5, 6, bottom=False)
             record['flights'].append({'kind': 'straight', 'z0': round(za, 1), 'z1': round(zb, 1), 'treads': n2 - 1,
                                       'foot': [round(v, 1) for v in P(xh - going2 / 2, (s0 + s1) / 2, za + rise2)],
                                       'head': [round(v, 1) for v in P(xh - run2 - going2 / 2, (s0 + s1) / 2, zb)]})
             self.count('flights')
         self.count('stairs_straight')
+
+    def _soffit(self, mesh, P, x0, x1, d0, d1, z0, z1):
+        """One downward face under a flight's treads, so the stair still reads from the yard below
+        (open treads are drawn as their top faces only), 5 cm under the tread backs. z0 at x0, z1 at x1."""
+        pts = [P(x0, d0, z0), P(x1, d0, z1), P(x1, d1, z1), P(x0, d1, z0)]
+        mesh.face('Wood_Grey', pts, (0, 0, -1))
 
     def _spiral(self, mesh, F, P, sx, xs, ds, zs, record):
         """Steel spiral in the end bay of the gallery: a full turn per storey, stepping off onto each deck.

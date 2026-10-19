@@ -53,9 +53,9 @@ Z comes from a downward visibility trace from 4 m at BeginPlay (fallback 10 cm).
 - Nothing ran in Unreal. No browser, phone, audio or visual check ran.
 
 ## Host checks still open
-1. Build both targets; run `Automation RunTests Quebec.` (7 new `Quebec.Combat.*` tests) and confirm the existing 46 and the other new suites still pass, especially `Quebec.Browser.InputRelease`, `Quebec.Camera.LookBounds` and the crew animation/Tripo tests (the held weapon and the hidden plunger only appear with a weapon).
+1. Build both targets; run `Automation RunTests Quebec.` (9 `Quebec.Combat.*` tests) and confirm the existing tests and the other new suites still pass, especially `Quebec.Browser.InputRelease`, `Quebec.Camera.LookBounds` and the crew animation/Tripo tests (the held weapon and the hidden plunger only appear with a weapon).
 2. Story suite, smoke (runs with `-NordNoCampaign`, so no pickups), population, resident feedback: unchanged counts and captions (pickups use the notice channel, never `ResidentCaption`).
 3. Play: pick up each item, fire each weapon at residents, officers, goons and a traffic car; watch the tracer, flash, word and sound on both peers; check the K.-O. banner, the 4 s down time and the respawn at the hospital stop on Sherbrooke; check that a driver shot to zero falls out beside the car; check the shoulder camera and slow turn while aiming; check that `RightHand` is a socket on every crew mesh (else weapons sit at the hip).
 4. Look at every pickup point in the editor: ground height, no wall or fence through it, reachable on foot.
-5. POLICE: to hurt a player driving a car, officers should call `QuebecCombat::DamagePlayer(Car->Occupant, ...)` instead of `Car->AddBodyDamage` when the car has an occupant; `DamagePlayer` applies both the driver's half and the body damage. Today officers call `AddBodyDamage` for cars, so drivers stay unhurt until POLICE makes that change.
+5. Officers hurt a driving player through `QuebecCombat::DamagePlayer` (`QuebecPolice.cpp` near line 680); only an empty car takes `AddBodyDamage` directly. Check on the host that a driver shot by officers loses health and that the car smokes.
 6. Phone: FIRE and WEAPON buttons must send F (key code 70, hold for the SMG) and Q (81); aim assist works without the Aim button. This change does not add those buttons to `Browser/`.

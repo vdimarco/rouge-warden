@@ -88,7 +88,8 @@ namespace QuebecTraces
 // QuebecSideJobs.cpp
 namespace QuebecJobs
 {
-    // Server: true when an active side job handled the R key for this player.
+    // Server: true when side jobs took the R key for this player: an active job or its retry window handled it,
+    // or the player is down or held by police, so R must do nothing.
     QUEBEC_API bool HandleRecover(AQuebecController* Player);
     QUEBEC_API bool IsJobActive(const UWorld* World);
 }
