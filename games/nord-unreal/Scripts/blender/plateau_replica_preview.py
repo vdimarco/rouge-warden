@@ -738,12 +738,6 @@ def render(name, spec, before=False, samples=40, threads=3, res=(1280, 720), out
     return out
 
 
-def ruelle_camera(spec):
-    s = load_streets()
-    pts = s['__alley__' + spec['alley']][0]
-    return pts
-
-
 def main(argv):
     ap = argparse.ArgumentParser()
     ap.add_argument('--view', action='append')
