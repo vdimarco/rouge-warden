@@ -5,7 +5,7 @@
     "gta": {
       "path": "public/gta",
       "added": "2026-10-10T23:49:08-04:00",
-      "updated": "2026-10-13T06:41:59+00:00"
+      "updated": "2026-10-18T09:57:12-04:00"
     },
     "ascii-front": {
       "path": "public/ascii-front",
@@ -55,17 +55,17 @@
     "fish": {
       "path": "public/fish",
       "added": "2026-09-27T22:29:24+00:00",
-      "updated": "2026-10-11T17:21:17+00:00"
+      "updated": "2026-10-18T00:28:51-04:00"
     },
     "vr": {
       "path": "public/vr",
       "added": "2026-09-28T20:59:28+00:00",
-      "updated": "2026-10-11T16:09:34-04:00"
+      "updated": "2026-10-17T22:42:41+00:00"
     },
     "pingpong": {
       "path": "public/pingpong",
-      "added": "2026-10-15T11:06:41+00:00",
-      "updated": "2026-10-15T11:30:52+00:00"
+      "added": "2026-10-15T11:41:46-04:00",
+      "updated": "2026-10-18T21:31:03-04:00"
     },
     "olympus": {
       "path": "public/olympus",
@@ -85,7 +85,7 @@
     "breakthrough": {
       "path": "public/breakthrough2",
       "added": "2026-10-01T09:47:06-04:00",
-      "updated": "2026-10-08T11:28:41-04:00"
+      "updated": "2026-10-16T02:44:08+00:00"
     },
     "follow-suit": {
       "path": "public/follow-suit",
@@ -105,7 +105,12 @@
     "ahead-of-the-light": {
       "path": "public/ahead-of-the-light",
       "added": "2026-10-14T07:26:22+00:00",
-      "updated": "2026-10-18T16:50:12+00:00"
+      "updated": "2026-10-18T13:00:29-04:00"
+    },
+    "first-breath": {
+      "path": "public/first-breath",
+      "added": "2026-10-18T15:01:19-04:00",
+      "updated": "2026-10-19T00:43:53-04:00"
     },
     "lab": {
       "path": "public/lab",
