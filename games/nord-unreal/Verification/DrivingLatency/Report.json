@@ -1,0 +1,670 @@
+{
+  "status": "Production60 promoted; complete native/browser controls, root visuals, 60-second portrait playback and preservation passed",
+  "recorded_utc": "2026-10-19T03:12:24.982938+00:00",
+  "normal_production": {
+    "native_executable_sha256": "7ec371215daf4aca90fd26b77cf8dd94ef04a1ccaaa63fa1f108e3a057ac8d4e",
+    "frontend_bundle_sha256": "4d15cd0443170c7e25ce89222c1ef6d04abc3cff50c1e41fe3ad9deeae8e60de",
+    "identity_source": "Verification/EasierDriving/Report.json",
+    "settings": "High 2; GI/reflection/shadow 1; VSM 0; internal screen percentage 75; native/WebRTC cap 60; VP8; scheduling 0; four retained Tripo flags",
+    "scope": "Unchanged easier-driving native binary and player.js; only the launch ceilings changed",
+    "native_binary_source_merge_commit": "eccd60d9c468f5f9de062ebbcf24695cd2465b45",
+    "native_binary_pull_request": "https://github.com/vdimarco/rouge-warden/pull/413",
+    "configuration_source": "This driving-latency change; two FPS ceiling literals only",
+    "configuration_source_sha256": "fb8cf4b704dfdb4396748e91219ab82dd883d19b02cc8457d0893a1558ba7c63",
+    "launcher": {
+      "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/DrivingLatency-20261019/Production60-v2/fps60_lifecycle.py",
+      "sha256": "ff772c5a454ec61693f23c89b9b401b716fb1a9c17634b868bda5213a87fd57b"
+    },
+    "demo_pid": 2972648
+  },
+  "observations": [
+    {
+      "name": "single viewer baseline v1",
+      "status": "passed bounded media check",
+      "receipt": {
+        "path": "Saved/Tests/DrivingLatency-20261019/Baseline-v1/Result.json",
+        "sha256": "0ae86527b19404a7e150f6a82970578a9ba7f1a2f75c9d5d3ad6416443e946c7"
+      },
+      "retained_media_receipt": {
+        "path": "Saved/Tests/DrivingLatency-20261019/Baseline-v1/Evidence/sample.json",
+        "sha256": "074d94966f780450572ec5fe8108f3222b1875fafbb325e043457776e6114d1b"
+      },
+      "decoded_fps": 29.825,
+      "jitter_buffer_ms": 71.137,
+      "decode_ms": 1.748,
+      "packets_lost": 0,
+      "dropped_frames": 0,
+      "freezes": 0,
+      "native_unchanged": true
+    },
+    {
+      "name": "dual baseline v2",
+      "status": "passed bounded two-viewer observation",
+      "receipt": {
+        "path": "Saved/Tests/DrivingLatency-20261019/DualBaseline-v2/Result.json",
+        "sha256": "2fbffec6d6cbcae89a1c434cff94e534830437785567898be17fecba3c23f1b0"
+      },
+      "viewers": {
+        "NordHost": {
+          "decodedFps": 19.756,
+          "jitterBufferMsPerFrame": 77.498,
+          "decodeMsPerFrame": 0.696,
+          "packetsLost": 0,
+          "framesDropped": 0,
+          "freezes": 2
+        },
+        "NordFriend1": {
+          "decodedFps": 16.677,
+          "jitterBufferMsPerFrame": 76.046,
+          "decodeMsPerFrame": 0.784,
+          "packetsLost": 0,
+          "framesDropped": 0,
+          "freezes": 2
+        }
+      },
+      "native_fps_samples": {
+        "host": [
+          19.664545980335454,
+          20.496649586125347,
+          20.72438504745303
+        ],
+        "friend": [
+          17.21137110810288,
+          17.247987734764276,
+          17.59530791788856
+        ]
+      },
+      "common_sample_seconds": 20.148,
+      "interpretation": "Both native throughput and decoded delivery fall with two active viewers; this local observation does not establish the cause on a remote phone",
+      "native_unchanged": true
+    },
+    {
+      "name": "receiver target experiment v1",
+      "status": "overall rejected by an overbroad no-gameplay classifier; phase metrics diagnostic only",
+      "receipt": {
+        "path": "Saved/Tests/DrivingLatency-20261019/Receiver-v1/Result.json",
+        "sha256": "4ff93e282a69d93b4be6b7fbd3209f8fc51f92c4414515528bd357a2da92637a"
+      },
+      "phases": [
+        {
+          "name": "default",
+          "decoded_fps": 29.797,
+          "jitter_buffer_ms": 81.45,
+          "target_ms": 65.579,
+          "minimum_ms": 65.579
+        },
+        {
+          "name": "zero-buffer-target",
+          "decoded_fps": 30.011,
+          "jitter_buffer_ms": 82.111,
+          "target_ms": 58.981,
+          "minimum_ms": 58.981
+        },
+        {
+          "name": "restored",
+          "decoded_fps": 30.058,
+          "jitter_buffer_ms": 72.866,
+          "target_ms": 52.557,
+          "minimum_ms": 52.557
+        }
+      ],
+      "echo_rtt_ms": [
+        0.4,
+        0.5,
+        0.5,
+        0.5,
+        0.3
+      ],
+      "interpretation": "Target0 did not improve actual receiver queue. Original targets restored; no production receiver-target patch. V1 counted20 range-matched packets without identities, so do not retrospectively assert all were settings",
+      "classifier_repair": {
+        "path": "Saved/Tests/DrivingLatency-20261019/Classifier-v2.json",
+        "sha256": "441bd5fc6d72f36be40e0d812e6b9bfebdafc9c76e3e7ff7d268ec22fe926c9e"
+      }
+    },
+    {
+      "name": "MediaIO scheduling1 trial v1",
+      "status": "measurement passed; overall strict Saved guard rejected; normal scheduling0 restored",
+      "receipt": {
+        "path": "Saved/Tests/DrivingLatency-20261019/SchedulingTrial-v1/Result.json",
+        "sha256": "3ac05afafb364e5b2eda7facde138a2764345cc8f21870bb1581e3f96d0e6032"
+      },
+      "media_receipt": {
+        "path": "Saved/Tests/DrivingLatency-20261019/SchedulingTrial-v1/Dual/Report.json",
+        "sha256": "d44d10dca451b65adc1c789bb8910fbc87d873b297c51f055e0b4f2f755b3583"
+      },
+      "viewers": {
+        "NordHost": {
+          "decodedFps": 17.56,
+          "jitterBufferMsPerFrame": 112.53,
+          "decodeMsPerFrame": 0.748,
+          "packetsLost": 0,
+          "framesDropped": 0,
+          "freezes": 2
+        },
+        "NordFriend1": {
+          "decodedFps": 17.661,
+          "jitterBufferMsPerFrame": 99.508,
+          "decodeMsPerFrame": 0.82,
+          "packetsLost": 0,
+          "framesDropped": 0,
+          "freezes": 2
+        }
+      },
+      "exact_normal_demo_restored": true,
+      "package_preserved": true,
+      "saved_review": {
+        "path": "Saved/Tests/DrivingLatency-20261019/SchedulingTrial-v1/SavedMutationReview.json",
+        "sha256": "f5d0a8e8e087482583ae39fa08c83a7c40b2bf5b78f82aa85f238d07c79c4647"
+      },
+      "interpretation": "No useful dual-view improvement accepted; review attributes Saved delta to per-launch crash-report config and guest connection cache, with existing gameplay save bytes unchanged. Original failed guard is retained"
+    },
+    {
+      "name": "wallpaper pause and static background trials",
+      "status": "no useful improvement established; static trial reports original restoration",
+      "paused_receipt": {
+        "path": "Saved/Tests/DrivingLatency-20261019/WallpaperPaused-v1/Result.json",
+        "sha256": "d367fa9b501dd3a3be314040188d10f9b2e49803dabf6dd14b8d687ea444dbf2"
+      },
+      "paused_viewers": {
+        "NordHost": {
+          "decodedFps": 18.824,
+          "jitterBufferMsPerFrame": 68.336,
+          "decodeMsPerFrame": 0.705,
+          "packetsLost": 0,
+          "framesDropped": 0,
+          "freezes": 2
+        },
+        "NordFriend1": {
+          "decodedFps": 18.758,
+          "jitterBufferMsPerFrame": 69.592,
+          "decodeMsPerFrame": 0.75,
+          "packetsLost": 0,
+          "framesDropped": 0,
+          "freezes": 2
+        }
+      },
+      "static_receipt": {
+        "path": "Saved/Tests/DrivingLatency-20261019/StaticBackground-v1/Result.json",
+        "sha256": "a5685633bce8474e2351ce9f1eb2ebd40d6c6f24034cacd87cd02b65aa6525e0"
+      },
+      "static_original_restored": true,
+      "background_link_unchanged": true,
+      "interpretation": "Paused dual streams remained about18.8FPS. Five idle GPU samples overlap between before/static cases; do not promote a desktop change as a latency fix"
+    },
+    {
+      "name": "native CSV ProfileTrial v1/v2",
+      "status": "Original fixtures rejected; separate native-only marked-profile derivation completed.",
+      "receipts": [
+        {
+          "path": "Saved/Tests/DrivingLatency-20261019/ProfileTrial-v1/Result.json",
+          "sha256": "3694ff2a355f1924c20971dbc98392e0ac78d753415cb5d7ce5dbb6dda4318b4"
+        },
+        {
+          "path": "Saved/Tests/DrivingLatency-20261019/ProfileTrial-v2/Result.json",
+          "sha256": "f5a2bceb1c62892f95c050ed1e6636ac74fc94ebfe99585721058f9f32acd375"
+        }
+      ],
+      "fixture_errors": [
+        "v1 duplicate BEGIN acknowledgement count",
+        "v2 missing/duplicate timing column alias"
+      ],
+      "exact_normal_demo_restored": [
+        true,
+        true
+      ],
+      "package_preserved": [
+        true,
+        true
+      ],
+      "exploratory_only": {
+        "path": "Saved/Tests/DrivingLatency-20261019/ProfileTrial-v1/ExploratoryHostCoreTimes.json",
+        "sha256": "d6e0b3984697a544a507a760d6aff2f3c8ce6a637bf842607fc34ffb8d747e18"
+      },
+      "render_audit": {
+        "path": "Saved/Tests/DrivingLatency-20261019/NativeRenderAudit.json",
+        "sha256": "1e295b8db505cc31905df92e50f38019484c01605986446ec0013d6222cab2ec"
+      },
+      "interpretation": "An87-frame rejected host subset suggests GPU-dominated work, not accepted paired profiling. Do not blame character rigs or sum overlapping GPU categories from it",
+      "derived_result": "See derived_native_timing: completed read-only native-only analysis; original rejected receipts unchanged."
+    }
+  ],
+  "pending": {
+    "physical_phone_and_off_lan": "Unverified",
+    "subjective_driving_comfort_audio_and_input_to_photon": "Unverified"
+  },
+  "preservation_and_budget": {
+    "quality_cut_shipped": false,
+    "latency_fix_shipped": true,
+    "art_or_asset_generation_submitted": false,
+    "new_generation_spend_usd": 0,
+    "prior_authorized_budgets_changed": false,
+    "maps_art_saves_and_tunnel_identities": "Final release receipt and root acceptance verify unchanged package/source/current campaign/settings and protected units. Full Saved inequality remains retained; only known per-launch CrashReportClient files and Guest CachedClientID+1 are classified runtime writes."
+  },
+  "limits": [
+    "Host-PC Chromium with ordinary public URL negotiated local host/UDP candidates; this is not an external-network test.",
+    "No physical-device comfort, audible sound or input-to-photon measurement.",
+    "Protocol echo RTT is not render/display latency; totalProcessingDelay already overlaps jitter and decode time.",
+    "Single/dual samples differ in duration and adaptive resolution; they establish a local throughput regression, not a universal guarantee or isolated causal benchmark."
+  ],
+  "sources": {
+    "stream_tuning": "https://dev.epicgames.com/documentation/en-us/unreal-engine/stream-tuning-guide",
+    "receiver_target": "https://www.w3.org/TR/webrtc/#dom-rtcrtpreceiver-jitterbuffertarget",
+    "video_frame_timing": "https://wicg.github.io/video-rvfc/"
+  },
+  "handoff": "Live PID2972648 uses the pinned Production60-v2 adapter with both caps60 and no CSV. Complete production window, native view-toggle input/release/reconnect, root static clarity,60.49-second portrait sample and preservation checks pass. Keep original C7 source/art launcher,48package files, four cast flags, current progress and tunnel/TURN identities. No owned browser/test jobs remain. The source correction is two cap literals. Physical-device/off-LAN, audible playback, moving-camera quality and subjective driving remain unverified; dual play stays limited near17FPS.",
+  "derived_native_timing": {
+    "report": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/DrivingLatency-20261019/ProfileTrial-v2/Derived-v1/Report.json",
+    "sha256": "efc025b35f221bed0632baffe958eefb66b30ad42439129906a8d7aa656a6e1d",
+    "original_receipt_stays_rejected": true,
+    "scope": "20.594s native marked overlap; browser summaries incomplete",
+    "native_fps": [
+      17.86,
+      18.05
+    ],
+    "median_gpu_ms": [
+      55.5035,
+      54.7315
+    ],
+    "median_game_ms": [
+      5.779,
+      3.903
+    ]
+  },
+  "cap60_first_attempt": {
+    "report": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/DrivingLatency-20261019/Profile60Trial-v1/Result.json",
+    "measured": false,
+    "rejected_reason": "Idle proof did not establish both worlds sleeping; no measurement child launched",
+    "normal_demo_restored": true,
+    "restored_demo_pid": 2842653
+  },
+  "controlled_cap60_trial": {
+    "report": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/DrivingLatency-20261019/Profile60Trial-v2/Measurement/Report.json",
+    "sha256": "56eee8d8ec23613774732426b75930e7c86d1cbed506697e2e0299c4ac4de1d7",
+    "measurement_passed": true,
+    "solo": {
+      "seconds": 20.179,
+      "decodedFps": 58.526190594182076,
+      "receivedMbps": 3.0267105406610835,
+      "framesDropped": 0,
+      "freezes": 1,
+      "freezeSeconds": 0.227,
+      "longestFrameGapMs": 216.70000000000073,
+      "width": 1412,
+      "height": 652,
+      "candidate": {
+        "type": "host",
+        "protocol": "udp"
+      },
+      "codec": "video/VP8",
+      "decodeMsPerFrame": 1.4952320067739204,
+      "jitterBufferMsPerFrame": 45.33151271186441,
+      "meanQuantizer": 24.624047417442846,
+      "packetsLost": 0,
+      "framesReceived": 1182
+    },
+    "dual": {
+      "NordHost": {
+        "seconds": 30.228,
+        "decodedFps": 15.581579992060341,
+        "receivedMbps": 0.6112356755326188,
+        "framesDropped": 0,
+        "freezes": 2,
+        "freezeSeconds": 0.967,
+        "longestFrameGapMs": 483.2999999999993,
+        "width": 706,
+        "height": 326,
+        "candidate": {
+          "type": "host",
+          "protocol": "udp"
+        },
+        "codec": "video/VP8",
+        "decodeMsPerFrame": 0.7485626326963908,
+        "jitterBufferMsPerFrame": 87.60250530785562,
+        "meanQuantizer": 21.75583864118896,
+        "packetsLost": 0,
+        "framesReceived": 472
+      },
+      "NordFriend1": {
+        "seconds": 20.16,
+        "decodedFps": 15.823412698412698,
+        "receivedMbps": 0.7165634920634921,
+        "framesDropped": 0,
+        "freezes": 2,
+        "freezeSeconds": 0.9750000000000001,
+        "longestFrameGapMs": 516.5999999999985,
+        "width": 706,
+        "height": 326,
+        "candidate": {
+          "type": "host",
+          "protocol": "udp"
+        },
+        "codec": "video/VP8",
+        "decodeMsPerFrame": 0.8854670846394986,
+        "jitterBufferMsPerFrame": 97.70909404388715,
+        "meanQuantizer": 25.786833855799372,
+        "packetsLost": 0,
+        "framesReceived": 318
+      }
+    },
+    "scope": "Diagnostic native/WebRTC cap60 at unchanged High75/VP8: one passive public HTTPS viewer then two. Existing sampler/dual fixtures unchanged; no driving input, physical-device, off-LAN or input-to-photon claim. CSV timings are not an acceptance gate.",
+    "production_promoted": false
+  },
+  "fresh_cap30_controls": {
+    "SoloControl30-v1": {
+      "receipt": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/DrivingLatency-20261019/SoloControl30-v1/Result.json",
+      "sha256": "d3165796525280ca9071f98175722d62d929a5f3142e709fd3a1364570ef61ca",
+      "passed": true,
+      "summary": {
+        "seconds": 20.16,
+        "decodedFps": 29.811507936507937,
+        "receivedMbps": 2.999489682539682,
+        "framesDropped": 0,
+        "freezes": 0,
+        "freezeSeconds": 0,
+        "longestFrameGapMs": 150,
+        "width": 1412,
+        "height": 652,
+        "candidate": {
+          "type": "host",
+          "protocol": "udp"
+        },
+        "codec": "video/VP8",
+        "decodeMsPerFrame": 1.7428485856905154,
+        "jitterBufferMsPerFrame": 73.21947088186356,
+        "meanQuantizer": 9.835274542429284,
+        "packetsLost": 0,
+        "framesReceived": 602
+      }
+    },
+    "DualControl30-v1": {
+      "receipt": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/DrivingLatency-20261019/DualControl30-v1/Result.json",
+      "sha256": "9adbc9aeb977b00cd618a7824b4c7ade3b1f980369a3cda005199f6668589657",
+      "passed": true,
+      "summary": {
+        "viewers": {
+          "NordFriend1": {
+            "seconds": 20.163,
+            "decodedFps": 15.573079402866636,
+            "receivedMbps": 0.7025299806576403,
+            "framesDropped": 0,
+            "freezes": 2,
+            "freezeSeconds": 0.9700000000000001,
+            "longestFrameGapMs": 499.8999999999978,
+            "width": 706,
+            "height": 326,
+            "candidate": {
+              "type": "host",
+              "protocol": "udp"
+            },
+            "codec": "video/VP8",
+            "decodeMsPerFrame": 0.9141273885350318,
+            "jitterBufferMsPerFrame": 85.65565286624202,
+            "meanQuantizer": 20.006369426751593,
+            "packetsLost": 0,
+            "framesReceived": 314
+          },
+          "NordHost": {
+            "seconds": 30.248,
+            "decodedFps": 15.538217402803491,
+            "receivedMbps": 0.6173432954244908,
+            "framesDropped": 0,
+            "freezes": 2,
+            "freezeSeconds": 1.003,
+            "longestFrameGapMs": 499.89999999999964,
+            "width": 706,
+            "height": 326,
+            "candidate": {
+              "type": "host",
+              "protocol": "udp"
+            },
+            "codec": "video/VP8",
+            "decodeMsPerFrame": 0.8201787234042552,
+            "jitterBufferMsPerFrame": 79.33511276595745,
+            "meanQuantizer": 17.608510638297872,
+            "packetsLost": 0,
+            "framesReceived": 471
+          }
+        },
+        "native_rates": {
+          "host": [
+            16.50671785028791,
+            15.658225401121205,
+            15.35130879748081
+          ],
+          "friend": [
+            16.70269208095893,
+            16.166281755196305,
+            15.78137028483449
+          ]
+        },
+        "common_sample_seconds": 20.162999868392944
+      }
+    }
+  },
+  "production60_first_attempt": {
+    "report": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/DrivingLatency-20261019/Production60Window-v1/Result.json",
+    "sha256": "46f8de3101f928b40e099fd772efeb7f81b44a7c1949c79b283f9b3913c08c38",
+    "passed": false,
+    "solo_summary": {
+      "seconds": 20.164,
+      "decodedFps": 59.71037492560999,
+      "receivedMbps": 3.0861241817099776,
+      "framesDropped": 0,
+      "freezes": 0,
+      "freezeSeconds": 0,
+      "longestFrameGapMs": 166.59999999999854,
+      "width": 1412,
+      "height": 652,
+      "candidate": {
+        "type": "host",
+        "protocol": "udp"
+      },
+      "codec": "video/VP8",
+      "decodeMsPerFrame": 1.400765780730897,
+      "jitterBufferMsPerFrame": 44.587641196013294,
+      "meanQuantizer": 13.769933554817277,
+      "packetsLost": 0,
+      "framesReceived": 1205
+    },
+    "dual_viewers": {
+      "NordFriend1": {
+        "seconds": 20.169,
+        "decodedFps": 17.05587783231692,
+        "receivedMbps": 0.709121919777877,
+        "framesDropped": 0,
+        "freezes": 2,
+        "freezeSeconds": 0.8929999999999999,
+        "longestFrameGapMs": 466.6999999999989,
+        "width": 706,
+        "height": 326,
+        "candidate": {
+          "type": "host",
+          "protocol": "udp"
+        },
+        "codec": "video/VP8",
+        "decodeMsPerFrame": 0.7749563953488372,
+        "jitterBufferMsPerFrame": 78.23847246376812,
+        "meanQuantizer": 16.97093023255814,
+        "packetsLost": 0,
+        "framesReceived": 345
+      },
+      "NordHost": {
+        "seconds": 30.212,
+        "decodedFps": 17.145505097312327,
+        "receivedMbps": 0.6033737587713491,
+        "framesDropped": 0,
+        "freezes": 2,
+        "freezeSeconds": 0.923,
+        "longestFrameGapMs": 466.7000000000007,
+        "width": 706,
+        "height": 326,
+        "candidate": {
+          "type": "host",
+          "protocol": "udp"
+        },
+        "codec": "video/VP8",
+        "decodeMsPerFrame": 0.7118436293436293,
+        "jitterBufferMsPerFrame": 92.99306756756756,
+        "meanQuantizer": 15.046332046332047,
+        "packetsLost": 0,
+        "framesReceived": 519
+      }
+    },
+    "rejected_reason": "Controls fixture observed pointerLockElement before the app pointerlockchange handler enabled SDK keyboard listeners. Only one of two F2 KeyDown packets was sent. Input gate stays rejected. This cause is inferred from source ordering and packet receipts; v1 did not capture an event timeline.",
+    "exact_normal30_restored": true,
+    "restored_demo_pid": 2961634,
+    "controls_report": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/DrivingLatency-20261019/Production60Window-v1/Measurement/Controls/Report.json"
+  },
+  "production60_release": {
+    "window": {
+      "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/DrivingLatency-20261019/Production60Window-v2/Result.json",
+      "sha256": "cbb254c157d003cd7f0c8036190890268aaa2609df47863df075a5c701d45619"
+    },
+    "measurement": {
+      "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/DrivingLatency-20261019/Production60Window-v2/Measurement/Report.json",
+      "sha256": "784a2deb31c5c1dd26d007317361c3e056a31dfb0b7e15ac288db45b816100f3"
+    },
+    "root_acceptance": {
+      "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/DrivingLatency-20261019/Production60Window-v2/RootAcceptance.json",
+      "sha256": "fb6dcc01160cf62fd5e0281f7c8d761aa775131d254bfa7b2a0b22316a86c2d0"
+    },
+    "passed": true,
+    "solo": {
+      "seconds": 20.164,
+      "decodedFps": 59.759968260265815,
+      "receivedMbps": 3.105331481848839,
+      "framesDropped": 0,
+      "freezes": 0,
+      "freezeSeconds": 0,
+      "longestFrameGapMs": 166.70000000000073,
+      "width": 1412,
+      "height": 652,
+      "candidate": {
+        "type": "host",
+        "protocol": "udp"
+      },
+      "codec": "video/VP8",
+      "decodeMsPerFrame": 1.4510771784232366,
+      "jitterBufferMsPerFrame": 43.141802325581395,
+      "meanQuantizer": 13.236514522821576,
+      "packetsLost": 0,
+      "framesReceived": 1204
+    },
+    "dual": {
+      "NordHost": {
+        "seconds": 30.225,
+        "decodedFps": 17.3697270471464,
+        "receivedMbps": 0.6013019685690654,
+        "framesDropped": 0,
+        "freezes": 2,
+        "freezeSeconds": 0.94,
+        "longestFrameGapMs": 483.3000000000011,
+        "width": 706,
+        "height": 326,
+        "candidate": {
+          "type": "host",
+          "protocol": "udp"
+        },
+        "codec": "video/VP8",
+        "decodeMsPerFrame": 0.7434552380952383,
+        "jitterBufferMsPerFrame": 92.10725523809522,
+        "meanQuantizer": 14.114285714285714,
+        "packetsLost": 0,
+        "framesReceived": 524
+      },
+      "NordFriend1": {
+        "seconds": 20.147,
+        "decodedFps": 17.32267831438924,
+        "receivedMbps": 0.7030704323224302,
+        "framesDropped": 0,
+        "freezes": 2,
+        "freezeSeconds": 0.8679999999999999,
+        "longestFrameGapMs": 433.39999999999964,
+        "width": 706,
+        "height": 326,
+        "candidate": {
+          "type": "host",
+          "protocol": "udp"
+        },
+        "codec": "video/VP8",
+        "decodeMsPerFrame": 0.8350974212034382,
+        "jitterBufferMsPerFrame": 77.1983982808023,
+        "meanQuantizer": 16.363896848137536,
+        "packetsLost": 0,
+        "framesReceived": 348
+      }
+    },
+    "controls": "Two balanced real native F2 pulses, direct before/alternate/restored visual inspection, Escape release and browser cleanup passed. Multiple fresh Host reconnections completed. No driving input or timed input-to-photon result.",
+    "preservation": {
+      "non_saved_package_files": 48,
+      "package_preserved": true,
+      "source_config_scripts_files": 243,
+      "source_preserved": true,
+      "full_saved_inventory_equal": false,
+      "classified_current_progress_and_settings_preserved": true,
+      "allowed_runtime_deltas": [
+        "new normal per-launch CrashReportClient directory",
+        "new normal CrashReportClient INI with known exact bytes",
+        "new normal per-launch CrashReportClient directory",
+        "new normal CrashReportClient INI with known exact bytes",
+        "only Guest CachedClientID increment; all other bytes and mode unchanged"
+      ],
+      "protected_tunnel_units_unchanged": true,
+      "owned_measurement_processes_closed": true
+    },
+    "native_visual_and_static_clarity_review": "Root directly inspected fresh 30 FPS and final 60 FPS solo screenshots plus all three F2 views; static clarity remains consistent. Mean QP 9.84\u219213.24 at about 3.0\u21923.1 Mbps; this does not assert identical compression.",
+    "rollback": {
+      "helper": {
+        "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/DrivingLatency-20261019/Production60-v2/rollback.py",
+        "sha256": "d09ab901d7f8d936aa82e8bd2a738e9941e222b578e69075507fdea5a5f2946e"
+      },
+      "private_snapshot": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/DrivingLatency-20261019/Production60Window-v2/Service.private.json",
+      "instruction": "Run the helper with python3, --window pointing to this accepted window, and --expected-demo-pid 2972648; it verifies actual 60 FPS ownership and restores captured 30 FPS settings without overwriting current saves."
+    },
+    "portrait": {
+      "receipt": {
+        "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/DrivingLatency-20261019/Portrait60-v1/Result.json",
+        "sha256": "c1430ee48dcfad9c867ba02fe151e8ed946b133ab640303b214dc8ba659794e0"
+      },
+      "summary": {
+        "seconds": 60.493,
+        "decodedFps": 59.89122708412543,
+        "receivedMbps": 4.267778949630535,
+        "framesDropped": 0,
+        "freezes": 0,
+        "freezeSeconds": 0,
+        "longestFrameGapMs": 116.70000000000073,
+        "width": 652,
+        "height": 1412,
+        "candidate": {
+          "type": "host",
+          "protocol": "udp"
+        },
+        "codec": "video/VP8",
+        "decodeMsPerFrame": 1.8034871653325975,
+        "jitterBufferMsPerFrame": 52.50880099365167,
+        "meanQuantizer": 7.491857576593983,
+        "packetsLost": 0,
+        "framesReceived": 3624
+      },
+      "root_visual_acceptance": {
+        "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/DrivingLatency-20261019/Portrait60-v1/RootVisualAcceptance.json",
+        "sha256": "c660f106f39aa3edf462aa092b875dd3029c0ae33f9481f71aa9d3a266fa26f7"
+      },
+      "scope": "Passive mobile-emulated upright playback for60.493seconds. Host awake/Friend asleep throughout; native identities, package, Source/Config/Scripts, exact Saved bytes and protected units preserved. No camera sweep or physical-device claim."
+    },
+    "native_log_guard": {
+      "path": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/DrivingLatency-20261019/FinalRenderLogs.json",
+      "sha256": "c15361eb09b0df3d7f0f66acb85ce57d3103a8a196dffa0348ab4b2b64008f80"
+    }
+  },
+  "validation": {
+    "current_launcher_self_check": "passed",
+    "adapter_transaction_control_CPU_self_checks": "passed",
+    "complete_production60_window_and_root_visual_review": "passed",
+    "portrait_passive_60_seconds_and_direct_still_review": "passed",
+    "dependency_shader_fatal_native_log_scan": "passed",
+    "openspec": "Manual delta/canonical/scenario structure checks passed; CLI unavailable. Archived only completed nord-driving-latency change.",
+    "unchanged_component_evidence": "Reused EasierDriving native handling/browser unit evidence for unchanged ELF/player.js identities; no recook or fresh full campaign/drive replay."
+  }
+}
