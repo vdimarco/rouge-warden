@@ -7,8 +7,12 @@
 //   drifts but never touches is drawn in from 5 s, the same as idle, so nestle ends by 8 s.
 // - The grapple's 30° cone is ±15° round the aim, widened by the target's own radius and 3 u of slack, so a tap aimed
 //   at a knot on a phone still finds it. A tendril that snaps flies out at 600 u/s, then pulls at 140 u/s.
-// - The tendril passes through soft tissue (a root grows through it) and pulls you through, cutting a tunnel; firm
-//   tissue stops it (it sticks and pulls you to the wall), as 5.4 says.
+// - The tendril flies only through fluid and your tunnels: it sticks in any tissue, soft or firm, and pulls you to it
+//   (5.4 says so for firm tissue and leaves soft open). So digging opens grapple lanes, and a hidden pool is dug to.
+//   Knots lie in fluid or within 4 u of it, where a tendril can reach them.
+// - The tunnel: cells within 5.5 u of you are cleared, which shows about 8 u wide between the cut edges (5.4: 8 u).
+// - The bot follows a Dijkstra path field (5 u cells, soft 2.5×, firm shut until strong roots, 3.4× after) to the
+//   nearest pool it can reach, not A*: the field also says how much a grapple saves.
 // - Hidden pools behind soft tissue lie under it (the front sheet covers them until you tunnel in); the compass ping
 //   shows through.
 // - Firm tissue stops sparks, yours and the guard germs' (a guard behind its wall cannot reach you, and you hold
@@ -21,8 +25,13 @@
 // - More germs than 5.4 (3 at the start, 2 more every 7 s up to 6, then every 5 s up to 8 from 24 s), whose wander bends
 //   toward you, so a slow dig has company; the bots took no hits at all with 5.4's numbers.
 // - Germ pops carry no points (the graded parts are 5.4's); a germ may drop a heal (15%), a guard always does.
+// - Germs have 3 hp (5.4: 2) and your sparks reach 42 u (5.4: 50 u), so a pair can reach you.
+// - The longer reach and strong roots are word pops by you ("Longer reach", "Strong roots"), not captions, and "This
+//   beat is yours." waits until root.heart has been read: the caption band is kept for the facts (pacing.test.mjs).
 // - Knock-out: the stage ends with gaDay at the roots' end (35), not the stage end, so Go on plays the heart at Day 22
 //   (the clock never goes back).
+// - Measured (20 seeds): the ref bot 41 s (the roots 25 s), 9,770 on average; skill 0.7 43 s (the roots 27 s); skill
+//   0.5 9,400 with no knock-out; idle 79 s, 4,400, no knock-out (5.4's targets: 52, 62 and 79 s).
 export const TUNE = Object.freeze({
   motherBpm: 72,
   capS: 90,
@@ -81,7 +90,7 @@ export const TUNE = Object.freeze({
     solidR: 2.6,         // firm tissue keeps your centre this far (plus half a cell) away
     accel: 14,
     hp: 5,               // (5.4) 5 pips
-    figU: 8.5,           // you are drawn this long in the roots (fits a tunnel)
+    figU: 11,            // you are drawn this long in the roots (curled, about as wide as a tunnel)
   }),
   grapple: Object.freeze({
     reach: 60,           // (5.4) 60 u

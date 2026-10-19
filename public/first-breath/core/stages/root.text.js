@@ -23,14 +23,14 @@ export const TEXT = Object.freeze({
 
   // captions
   "root.anyway": "The roots reach it anyway.",
-  "root.anywayAll": "The roots reach them anyway.",
-  "root.reach": "Your roots reach further.",
-  "root.strong": "Your roots grow strong.",
+  "root.anywayAll": "The roots reach every pool anyway.",
   "root.yours": "This beat is yours.",
   "root.placenta": "This will become your placenta.",
 
-  // number pops
+  // word pops by you
   "root.plusRoot": "+1 root",
+  "root.reachPop": "Longer reach",
+  "root.strongPop": "Strong roots",
 
   // result parts
   "root.part.pools": "Pools you found",

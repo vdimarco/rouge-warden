@@ -173,10 +173,8 @@ await check("20 maps: 8 pools by kind, apart, at their distances; the ground sha
 
 await check("soft tissue slows you to 16 u/s and leaves a tunnel, which you then swim at 40 u/s", () => {
   const st = rootsAt(3), p = st.A.p;
+  paint(st, p.x + 80, p.y, 62, SOFT);
   paint(st, p.x, p.y, 12, OPEN);
-  paint(st, p.x + 40, p.y, 26, SOFT);
-  paint(st, p.x + 40, p.y, 8, SOFT);
-  st.map.grid.fill(SOFT, 0, 0);
   const x0 = p.x;
   // into the soft tissue
   for (let i = 0; i < 90; i++) root.step(st, steerX(1, 0));
@@ -201,7 +199,7 @@ await check("firm tissue blocks you until 5 pools; then you dig it at 12 u/s; it
   assert.equal(st.strong, false);
   // 5 pools linked (open and hidden ones first): strong roots
   const five = st.pools.map((q, i) => i).filter((i) => st.pools[i].kind !== "firm").slice(0, 5);
-  for (const i of five) { p.x = st.pools[i].x; p.y = st.pools[i].y; root.step(st, makeIntents()); }
+  for (const i of five) { p.x = st.pools[i].x; p.y = st.pools[i].y; for (let k = 0; k < 10; k++) root.step(st, makeIntents()); }
   assert.equal(st.strong, true, "strong roots at 5 pools");
   assert.equal(st.reach, true, "the reach at 3");
   p.x = st.origin.x + 10; p.y = st.origin.y; p.vx = 0; p.vy = 0;
@@ -333,7 +331,7 @@ await check("germs never spawn within 24 u of you or more than 40 u behind you",
 
 await check("the heart: no input, the hush, 110 bpm, the milestone, Day 22 (week 5), pulses pop every germ near the tree", () => {
   const st = root.create(9, DEFAULT_CARRY, OPTS), bot = createBot(1, 9);
-  while (st.moment !== "heart") { root.step(st, bot.intents(root, st)); st.events.length = 0; }
+  while (st.moment !== "heart") { st.events.length = 0; root.step(st, bot.intents(root, st)); }
   const h0 = st.t;
   assert.equal(root.prompt(st).gesture, "none");
   assert.equal(label(st.gaDay, { fertilized: true }), "Day 22 after fertilization (week 5)");
@@ -421,7 +419,7 @@ await check("captions in priority order (root.hcg, root.glands, root.heart); roo
   const frame = FACTS.find((x) => x.id === "root.frame");
   assert.ok(frame && frame.where === "result" && frame.checked);
   for (const x of FACTS) for (const k of x.src) assert.ok(SOURCES[k] || (SOURCES.get && SOURCES.get(k)) || Object.values(SOURCES).some((s) => s && s.key === k), `${x.id}: source ${k}`);
-  for (const id of ["root.move", "root.move.keys", "root.move.one", "root.rest", "root.anyway", "root.anywayAll", "root.reach", "root.strong", "root.yours"]) assert.ok(TEXT[id], id);
+  for (const id of ["root.move", "root.move.keys", "root.move.one", "root.rest", "root.anyway", "root.anywayAll", "root.reachPop", "root.strongPop", "root.yours"]) assert.ok(TEXT[id], id);
 });
 
 await check("carry out: nestleX in −1..1 and treeSeed, the same for the same play", () => {

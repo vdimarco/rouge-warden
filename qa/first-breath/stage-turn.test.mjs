@@ -1,25 +1,24 @@
-// First Breath: stage 7, Third Trimester (`turn`), design.md 6.7, 4.1, 5.2, 5.4, 7, 16.4 and 18; tasks 2.27 to 2.30.
-// Plays the stage in node with no DOM (16.11): idle, the scripted ideal input, the shared bot at several skills and
-// seeded random input. Asserts the meta and the 4.1 moments; determinism for two seeds; the ideal input reaching
-// Glowing; idle ending by itself well inside the cap with goalMet true; the skill 0.7 bot completing; one live gesture
-// per moment; every sub-goal ending done or auto; the 8 breath targets (press on beat 1, release on beat 5, each with
-// its P) and their preview; every view valid; the ring shrinking anyway and a missed breath earning nothing, silently;
-// the turn speeds (60°/s roomy, 15°/s outside, Assist 25°/s and 3.5 s roomy moments); the turn by itself at 30 s over
-// 3 s; the Flourish only for a turn you finish yourself; nothing judged in the rest; botSteer (full stick the shorter
-// way only in roomy moments, memory only in r.mem); one-button play; jump; the song carried in; the facts and strings
-// (sources, access, word counts, banned words and pronouns); and that garbage input never throws.
+// First Breath: stage 7, Third Trimester (`turn`), rebuilt as a survivor-style auto-shooter on the shared action layer
+// (openspec/changes/first-breath-action-genres design.md 5.7, contract.md). Plays the stage in node with no DOM (16.11):
+// idle, the shared bot at skills 1, 0.7 and 0.5, one-button (botSteer at skill 1 every step) and seeded random input.
+// Asserts the meta and the moments; determinism; the gates (skill 1 Great or better, 0.5 completes without a
+// knock-out in most seeds, idle knocked out or lasting); the wave table and its calms; the arena easing from 54 to 38
+// u; the grow meter's levels with 3 distinct gifts each; each gift's effect; the kick; the Big Germ; the clear at 60 s
+// popping every germ; the turn by you and by itself at 6 s with its line; the rest unjudged with the song; a
+// knock-out with Go on reaching the rest; the week clock (28 to 40, never back, facts on their days); valid views;
+// botSteer; Assist; resume; jump; the carry in; the points adding up; garbage input; the facts and strings.
 // node qa/first-breath/stage-turn.test.mjs
 import assert from "node:assert/strict";
 import * as turn from "../../public/first-breath/core/stages/turn.js";
 import { TUNE } from "../../public/first-breath/core/stages/turn.tune.js";
 import { FACTS } from "../../public/first-breath/core/stages/turn.facts.js";
 import { TEXT } from "../../public/first-breath/core/stages/turn.text.js";
+import * as X from "../../public/first-breath/core/lib/action.js";
 import { DEFAULT_CARRY, mergeCarry } from "../../public/first-breath/core/carry.js";
 import { createBot } from "../../public/first-breath/core/bots.js";
 import { makeIntents } from "../../public/first-breath/core/intent.js";
 import { validate } from "../../public/first-breath/core/draw.js";
-import { DT, mmPerShortAxis, label as clockLabel, range } from "../../public/first-breath/core/clock.js";
-import { check as checkTargets, previewS } from "../../public/first-breath/core/lib/track.js";
+import { DT, label as clockLabel } from "../../public/first-breath/core/clock.js";
 import { stream } from "../../public/first-breath/core/rng.js";
 import { SOURCES } from "../../public/first-breath/core/sources.js";
 import { grade as gradeOf } from "../../public/first-breath/core/score.js";
@@ -32,704 +31,641 @@ async function check(name, fn) {
   try { await fn(); passed++; } catch (e) { failed.push(`${name}\n     ${String(e.stack || e.message).split("\n").slice(0, 8).join("\n     ")}`); }
 }
 const near = (a, b, tol, msg) => assert.ok(Math.abs(a - b) <= tol, `${msg}: ${a} vs ${b} (±${tol})`);
-const PER = 60 / 72;
 const MAX_STEPS = Math.ceil((turn.meta.capS + 5) / DT);
 const named = (evs, name) => evs.filter((e) => e.name === name);
+const IDS = ["waves", "turn", "rest", "outro"];
+const sum = (evs) => named(evs, "points").reduce((a, e) => a + e.add, 0);
+const C0 = DEFAULT_CARRY;
 
-// The 4.1 rows for this stage.
-const MOMENTS = [
-  { id: "breathe", ga: [196, 231], lenS: (32 * 60) / 72 },
-  { id: "turn", ga: [231, 252], lenS: 30 },
-  { id: "rest", ga: [259, 280], lenS: 16 },
-  { id: "outro", ga: [280, 280], lenS: null },
-];
-const GESTURES = { breathe: "hold", turn: "drag", rest: "hold", outro: "none" };
-
-// Is the turn `el` seconds in a roomy moment? (6.7: 2.5 s every 6.0 s, on her out-breath, the end of each cycle)
-const roomy = (el, assist = false) => {
-  const len = assist ? 3.5 : 2.5;
-  const ph = el - 6 * Math.floor(el / 6);
-  return el >= 0 && ph >= 6 - len - 1e-9;
-};
-
-// Play one attempt. `input(st, ctx)` gives each step's intents (ctx: { turnT0, headDown, restT0 } from the events).
-// Returns the state, every event, the prompt seen at each step (with its moment) and every view's problems.
-function play({ seed = 1, carry = DEFAULT_CARRY, opts = {}, input = null, bot = null, every = 1, before = null } = {}) {
+// Play one attempt and record what a test needs: every event (with the gaDay, the phase and the world time after its
+// step), the prompt at each step, every view's problems, the gaDay after each step and the arena's radius.
+function play({ seed = 1, carry = C0, opts = {}, input = null, bot = null, every = 1, before = null, steps = MAX_STEPS } = {}) {
   const st = turn.create(seed, carry, { assist: false, oneButton: false, motherPhase: 0, ...opts });
-  const evs = [...st.events];
+  const evs = st.events.map((e) => ({ ...e, ga: st.gaDay, phase: st.phase, at: st.A.t, t: st.t }));
   st.events.length = 0;
-  const ctx = { turnT0: null, headDown: null, restT0: null };
-  const seen = [];
-  const bad = [];
-  const ga = [];
+  const seen = [], bad = [], ga = [], arena = [], foes = [];
   let n = 0;
-  for (; n < MAX_STEPS && !turn.result(st).done; n++) {
+  for (; n < steps && !turn.result(st).done; n++) {
     if (n % every === 0) {
-      const v = turn.view(st);
-      const out = validate(v);
-      if (out.length) bad.push(`t ${st.t.toFixed(2)} ${st.moment}: ${out.join("; ")}`);
+      const out = validate(turn.view(st));
+      if (out.length) bad.push(`t ${st.t.toFixed(2)} ${st.phase}: ${out.join("; ")}`);
     }
-    if (before) before(st, ctx);
-    seen.push({ moment: st.moment, gesture: turn.prompt(st).gesture, t: st.t });
-    const it = bot ? bot.intents(turn, st) : input ? input(st, ctx) : makeIntents();
+    if (before) before(st);
+    seen.push({ moment: st.moment, phase: st.phase, prompt: turn.prompt(st), t: st.t });
+    const it = bot ? bot.intents(turn, st) : input ? input(st) : makeIntents();
     turn.step(st, it);
-    for (const e of st.events) {
-      if (e.name === "moment" && e.id === "turn") ctx.turnT0 = e.t;
-      if (e.name === "moment" && e.id === "rest") ctx.restT0 = e.t;
-      if (e.name === "milestone" && e.id === "headDown") ctx.headDown = e.t;
-    }
-    evs.push(...st.events);
+    for (const e of st.events) evs.push({ ...e, ga: st.gaDay, phase: st.phase, at: st.A.t, t: st.t });
     st.events.length = 0;
-    ga.push({ t: st.t, gaDay: st.gaDay, mm: mmPerShortAxis(turn.meta, st.gaDay) });
+    ga.push({ t: st.t, gaDay: st.gaDay, moment: st.moment, phase: st.phase });
+    if (n % 30 === 0 && st.phase === "waves") arena.push({ tw: st.A.t - st.w0, r: st.A.arena.r });
+    foes.push(st.A.foes.length);
   }
-  bad.push(...validate(turn.view(st)).map((l) => `last view: ${l}`));
-  return { st, evs, seen, bad, ga, steps: n, res: turn.result(st) };
+  const last = validate(turn.view(st));
+  if (last.length) bad.push(`last view: ${last.join("; ")}`);
+  return { st, evs, seen, bad, ga, arena, foes, res: turn.result(st), steps: n };
 }
 
-// The scripted ideal input: press on beat 1 and release on beat 5 exactly; full stick only in roomy moments until
-// head-down; a fresh press at the start of the rest.
-function ideal(stickX = 1) {
-  let restPressed = false;
-  return (st, ctx) => {
-    const t0 = st.t, t1 = t0 + DT;
-    const presses = [], releases = [];
-    for (const x of turn.targets(st, 1)) {
-      if (x.t >= t0 && x.t < t1) (x.kind === "press" ? presses : releases).push({ t: x.t, raw: x.t });
-    }
-    let steer = { x: 0, y: 0 };
-    if (ctx.turnT0 !== null && ctx.headDown === null && roomy(t0 - ctx.turnT0)) steer = { x: stickX, y: 0 };
-    if (ctx.restT0 !== null && !restPressed) { presses.push({ t: t0, raw: t0 }); restPressed = true; }
-    return makeIntents({ steer, touching: true, presses, releases });
-  };
+// The one-button host (core/run.js): botSteer at skill 1 every step, its steer and its dash as a press.
+function oneButton(st) {
+  const a = turn.botSteer(st, 1, null);
+  return makeIntents({ steer: a.steer, touching: true, presses: a.dash ? [{ t: st.t, raw: st.t }] : [] });
 }
 
-// Seeded random input: presses, releases and drags at any time.
-function noisy(seed) {
-  const r = stream(seed, "noise");
-  let down = false;
-  return (st) => {
-    const t = st.t + r() * DT;
-    const presses = [], releases = [];
-    if (!down && r() < 0.04) { presses.push({ t, raw: t }); down = true; } else if (down && r() < 0.05) { releases.push({ t, raw: t }); down = false; }
-    const steer = r() < 0.3 ? { x: 2 * r() - 1, y: 2 * r() - 1 } : { x: 0, y: 0 };
-    return makeIntents({ steer, touching: down, presses, releases });
-  };
-}
+const IDLE = [1, 2, 3].map((seed) => play({ seed }));
+const BOTS = {};
+for (const skill of [1, 0.7, 0.5]) BOTS[skill] = Array.from({ length: 10 }, (_, i) => play({ seed: i + 1, bot: createBot(skill, i + 1), every: 6 }));
+const REF = BOTS[1];
+const ONE = [1, 2, 3].map((seed) => play({ seed, input: oneButton, every: 12 }));
+const mean = (rs) => rs.reduce((a, r) => a + r.res.score.total, 0) / rs.length;
 
-// The arc strip's span in degrees: how far you have turned from head-up.
-const turnedDeg = (st) => {
-  const a = turn.view(st).strips.find((s) => s.kind === "arc");
-  return a ? ((a.a1 - a.a0) * 180) / Math.PI : null;
-};
-
-// A plain-data picture of a value (functions as a marker, typed arrays as lists), for comparing states.
-function snap(v, seen = new WeakSet()) {
-  if (typeof v === "function") return "[fn]";
-  if (typeof v === "number" && !Number.isFinite(v)) return String(v);
-  if (v === null || typeof v !== "object") return v;
-  if (ArrayBuffer.isView(v)) return Array.from(v);
-  if (seen.has(v)) return "[cycle]";
-  seen.add(v);
-  const out = Array.isArray(v) ? v.map((x) => snap(x, seen)) : Object.fromEntries(Object.keys(v).sort().map((k) => [k, snap(v[k], seen)]));
-  seen.delete(v);
-  return out;
-}
-
-// Shared runs.
-const IDLE = play({ seed: 1, every: 1 });
-const IDEAL = play({ seed: 1, input: ideal(), every: 1 });
-const REF = play({ seed: 1, bot: createBot(1, 1), every: 3 });
-const MIDS = Array.from({ length: 10 }, (_, i) => play({ seed: i + 1, opts: { motherPhase: (i * 0.137) % PER }, bot: createBot(0.7, i + 1), every: 5 }));
-const NOISY = [1, 2, 3].map((s) => play({ seed: s, input: noisy(s), every: 2 }));
-const ALL = [IDLE, IDEAL, REF, ...MIDS, ...NOISY];
-
-await check("meta: the 6.7 stage, its families and the 4.1 moments", () => {
+await check("meta: stage 7, fit, steer and tap, gaDay 196 to 280, 600 to 700 mm, her 72 bpm, cap 100 s, an action stage that can fail, Go on to the turn", () => {
   const m = turn.meta;
-  assert.equal(m.id, "turn");
-  assert.equal(m.index, 6);
-  assert.equal(m.name, "Third Trimester");
-  assert.equal(m.verb, "Turn");
-  assert.equal(m.orient, "fit");
-  assert.deepEqual([...m.families], ["hold", "rotate"]);
-  assert.ok(m.families.length <= 2);
+  assert.deepEqual([m.id, m.index, m.name, m.verb, m.orient, m.motherBpm, m.capS, m.canFail, m.scored, m.fertilized, m.action, m.goOn],
+    ["turn", 6, "Third Trimester", "Turn", "fit", 72, 100, true, true, true, true, "turn"]);
+  assert.deepEqual([...m.families], ["steer", "tap"]);
   assert.deepEqual({ ...m.ga }, { start: 196, end: 280 });
   assert.deepEqual({ ...m.mm }, { start: 600, end: 700 });
-  assert.equal(m.fertilized, true);
-  assert.equal(m.motherBpm, 72);
-  assert.equal(m.capS, 100);
-  assert.equal(m.canFail, false);
-  assert.equal(m.scored, true);
-  assert.deepEqual(m.moments.map((x) => x.id), MOMENTS.map((x) => x.id));
-  m.moments.forEach((x, i) => {
-    assert.deepEqual([...x.ga], MOMENTS[i].ga, `${x.id} ga`);
-    if (MOMENTS[i].lenS === null) assert.ok(!(x.lenS > 0), `${x.id} has no lenS`);
-    else near(x.lenS, MOMENTS[i].lenS, 1e-9, `${x.id} lenS`);
-  });
+  assert.deepEqual(m.moments.map((x) => x.id), IDS);
+  assert.deepEqual(m.moments.map((x) => [...x.ga]), [[196, 245], [245, 252], [259, 280], [280, 280]]);
+  assert.deepEqual(m.moments.map((x) => x.lenS), [60, 6, 10, 3]);
+  assert.ok(m.parS >= 75 && m.parS <= 80 && m.parS <= m.capS, `par ${m.parS}`);
+  assert.deepEqual(turn.targets(), []);
 });
 
-await check("determinism: the same seed and input give the same events and result (seeds 3 and 11)", () => {
-  for (const seed of [3, 11]) {
-    const a = play({ seed, bot: createBot(0.7, seed), every: 50 });
-    const b = play({ seed, bot: createBot(0.7, seed), every: 50 });
-    assert.equal(JSON.stringify(a.evs), JSON.stringify(b.evs), `seed ${seed}: events`);
-    assert.deepEqual(a.res, b.res, `seed ${seed}: result`);
-    const c = play({ seed, input: noisy(seed), every: 50 });
-    const d = play({ seed, input: noisy(seed), every: 50 });
-    assert.equal(JSON.stringify(c.evs), JSON.stringify(d.evs), `seed ${seed}: random input events`);
-    assert.equal(JSON.stringify(snap(turn.view(c.st))), JSON.stringify(snap(turn.view(d.st))), `seed ${seed}: last view`);
+await check("determinism: the same seed and input give the same events and result, for two seeds", () => {
+  for (const seed of [3, 9]) {
+    const a = play({ seed, bot: createBot(0.7, seed), every: 60 }), b = play({ seed, bot: createBot(0.7, seed), every: 60 });
+    assert.equal(JSON.stringify(a.evs), JSON.stringify(b.evs), `seed ${seed}`);
+    assert.deepEqual(a.res, b.res);
   }
+  assert.notEqual(JSON.stringify(play({ seed: 3, bot: createBot(0.7, 3), every: 60 }).res.metrics),
+    JSON.stringify(play({ seed: 4, bot: createBot(0.7, 3), every: 60 }).res.metrics));
 });
 
-await check("the scripted ideal input reaches Glowing (10,000) for several her-beat phases and both turn directions", () => {
-  for (const [phase, x] of [[0, 1], [0.3, -1], [0.8, 1]]) {
-    const r = phase === 0 && x === 1 ? IDEAL : play({ seed: 5, opts: { motherPhase: phase }, input: ideal(x), every: 20 });
-    assert.equal(r.res.done, true);
-    assert.equal(r.res.goalMet, true);
-    assert.deepEqual(r.res.score, { goal: 3000, skill: 6000, flourish: 1000, total: 10000 }, `phase ${phase}, stick ${x}`);
-    assert.equal(gradeOf(r.res.score.total, r.res.goalMet), "Glowing");
-    assert.equal(r.res.metrics.turnedBy, "you");
-    near(r.res.metrics.roomyDeg, 180, 1e-6, "every degree in roomy moments");
-    assert.ok(r.res.metrics.turnS < 30);
-    near(r.st.t, 57.6 + phase, 1.2, "about 58 s (3.1: ref 60 s)");
-    const judged = named(r.evs, "judge");
-    assert.equal(judged.length, 8);
-    assert.ok(judged.every((e) => e.grade === "in" && e.errMs === 0));
-    const parts = r.res.parts.reduce((a, p) => a + p.value, 0);
-    assert.equal(parts, r.res.score.total, "the parts add up to the total");
+// ---- the bots ----
+
+await check("the gates: skill 1 Great or better in most seeds (mean at least 8,500); 0.5 completes without a knock-out in most; one-button completes", () => {
+  for (const r of REF) assert.deepEqual(r.bad, []);
+  const great = REF.filter((r) => r.res.goalMet && gradeOf(r.res.score.total, true) !== "Good").length;
+  assert.ok(great >= 9, `skill 1 Great or better in ${great} of 10`);
+  assert.ok(REF.filter((r) => r.st.how === "ko").length === 0, "skill 1 is never knocked out");
+  assert.ok(mean(REF) >= 8500, `ref mean ${mean(REF)}`);
+  assert.ok(BOTS[0.7].filter((r) => r.res.goalMet).length >= 9, "0.7 completes");
+  assert.ok(BOTS[0.5].filter((r) => r.st.how !== "ko").length >= 8, `0.5 knocked out: ${BOTS[0.5].map((r) => r.st.how).join(", ")}`);
+  assert.ok(mean(REF) >= mean(BOTS[0.5]), `more skill scores more: ${[1, 0.7, 0.5].map((k) => Math.round(mean(BOTS[k])))}`);
+  for (const r of ONE) assert.ok(r.res.goalMet && r.st.how === "end", `one-button seed ${r.st.seed}: ${r.st.how}`);
+  for (const r of REF) {
+    assert.ok(r.st.t > 70 && r.st.t < 90, `ref ${r.st.t.toFixed(1)} s`);
+    assert.equal(r.res.metrics.turnedBy, "you", "the ref bot turns itself");
+    assert.ok(r.res.metrics.levels >= 3, `levels ${r.res.metrics.levels}`);
   }
+  assert.ok(REF.filter((r) => r.res.metrics.bigPopped).length >= 7, "the ref bot pops the Big Germ in most seeds");
 });
 
-await check("idle: the stage ends by itself well inside the cap, goal met, Goal only, every sub-goal by itself", () => {
-  const { st, res, evs } = IDLE;
-  assert.equal(res.done, true);
-  assert.equal(res.goalMet, true);
-  assert.deepEqual(res.score, { goal: 3000, skill: 0, flourish: 0, total: 3000 });
-  assert.equal(gradeOf(res.score.total, true), "Good");
-  near(st.t, 80, 1.5, "about 80 s (3.1: idle 81 s)");
-  assert.ok(st.t < turn.meta.capS);
-  assert.deepEqual(st.subgoals, { breaths: "auto", turn: "auto" });
-  assert.equal(res.metrics.turnedBy, "auto");
-  assert.equal(named(evs, "done").length, 1);
-  assert.equal(named(evs, "points").filter((e) => e.part === "skill" || e.part === "flourish").length, 0, "no skill or flourish points");
-  // the cap itself: a stage held in a moment past 100 s still ends, complete
-  const held = turn.create(1, DEFAULT_CARRY, { motherPhase: 0 });
-  turn.jump(held, "rest");
-  held.rest.t0 = 1e9;                           // a stuck clock: only the cap can end it
-  for (let i = 0; i < MAX_STEPS && !turn.result(held).done; i++) { turn.step(held, makeIntents()); held.events.length = 0; }
-  assert.equal(turn.result(held).done, true);
-  assert.equal(turn.result(held).goalMet, true);
-  assert.equal(held.how, "cap");
-  near(held.t, turn.meta.capS, DT + 1e-9, "ends at the cap");
-});
-
-await check("the skill 0.7 bot completes: goal met, turned by itself before 30 s, Great or better in ≥ 8 of 10 seeds", () => {
-  let great = 0;
-  for (const r of MIDS) {
-    assert.equal(r.res.done, true);
-    assert.equal(r.res.goalMet, true);
-    assert.equal(r.res.metrics.turnedBy, "you");
-    assert.ok(r.res.metrics.turnS < 30, `turn took ${r.res.metrics.turnS}`);
-    assert.ok(r.st.t > 55 && r.st.t < 70, `stage time ${r.st.t.toFixed(1)} s`);
-    if (r.res.score.total >= 6500) great++;
+await check("idle: knocked out at about 30 s (never a game over: goal unmet, the Almost line, Week 40, headDown fired); the points events add up", () => {
+  for (const r of IDLE) {
+    assert.equal(r.st.how, "ko", `seed ${r.st.seed}: ${r.st.how}`);
+    assert.ok(r.res.metrics.koAt > 18 && r.res.metrics.koAt < 45, `knocked out at ${r.res.metrics.koAt}`);
+    assert.equal(r.res.goalMet, false);
+    assert.equal(r.res.score.goal, 0);
+    assert.equal(r.res.metrics.almost, "almost.ko");
+    assert.notEqual(say("almost.ko"), "almost.ko");
+    assert.equal(r.st.gaDay, 280, "development goes on: the clock reaches the stage's end");
+    assert.deepEqual(named(r.evs, "milestone").map((e) => e.id), ["headDown"]);
+    assert.equal(gradeOf(r.res.score.total, false), null, "no grade word");
+    assert.ok(named(r.evs, "sfx").some((e) => e.id === "act.ko"));
+    assert.ok(r.evs.some((e) => (e.name === "caption" && e.id === "turn.sub.rest") || (e.name === "subgoal" && e.text === "turn.sub.rest")), "the rest line");
+    assert.equal(named(r.evs, "done").length, 1);
+    // it rests until what was said is read, at least koS
+    assert.ok(r.st.t - r.res.metrics.koAt >= TUNE.koS - 1e-9);
   }
-  assert.ok(great >= 8, `${great} of 10 Great or better`);
-  assert.equal(REF.res.score.total, 10000, "the ref bot (skill 1) scores 10,000");
+  for (const r of [...IDLE, ...REF, ...BOTS[0.5], ...ONE]) assert.equal(sum(r.evs), r.res.score.total, `seed ${r.st.seed}: points add up`);
 });
 
-await check("one live gesture per moment, and each moment's gesture is the 6.7 one", () => {
-  for (const r of ALL) {
-    const by = {};
-    for (const s of r.seen) {
-      if (!(s.moment in by)) by[s.moment] = s.gesture;
-      assert.equal(s.gesture, by[s.moment], `${s.moment} at ${s.t.toFixed(2)} s`);
-    }
-    for (const [m, g] of Object.entries(by)) assert.equal(g, GESTURES[m], m);
-    const ps = named(r.evs, "prompt");
-    const live = ps.slice(0, -1);
-    assert.deepEqual(live.map((p) => p.gesture), ["hold", "drag", "hold", "none"], "one prompt per moment");
-    assert.deepEqual(live.map((p) => p.text), ["turn.breathe", "turn.turn", "turn.rest", "turn.outro"]);
-    assert.ok(ps.every((p) => p.keys === "steer"));
-    assert.equal(ps[ps.length - 1].gesture, "none", "the last prompt at the end is none");
-    assert.deepEqual(named(r.evs, "moment").map((e) => e.id), ["breathe", "turn", "rest", "outro"]);
+// ---- the gesture and the prompts ----
+
+await check("prompts: move in the waves (move, gift, none in the clear), move at the turn, a fresh hold in the rest, words in the outro, none once done", () => {
+  const r = REF[0];
+  const by = {};
+  for (const s of r.seen) (by[s.phase] = by[s.phase] || new Set()).add(`${s.prompt.gesture}:${s.prompt.text}`);
+  assert.deepEqual([...by.waves].sort(), ["move:turn.prompt.gift", "move:turn.prompt.move"]);
+  assert.deepEqual([...by.clear], ["move:null"]);
+  assert.ok(by.turn.has("move:turn.turn") && [...by.turn].every((x) => x === "move:turn.turn" || x === "none:null"), [...by.turn].join());
+  assert.deepEqual([...by.rest], ["hold:turn.rest"]);
+  assert.deepEqual([...by.outro], ["none:turn.outro"]);
+  assert.equal(turn.prompt(r.st).gesture, "none");
+  for (const id of ["turn.prompt.move", "turn.turn", "turn.prompt.gift"]) {
+    assert.ok(say(id + ".keys") !== id + ".keys" && say(id + ".one") !== id + ".one", `${id} has its forms`);
   }
+  assert.equal(say("turn.rest"), "Rest. Touch and hold if you like.");
 });
 
-await check("every sub-goal is shown, then ends done or auto, each with its text", () => {
-  for (const r of ALL) {
-    const subs = named(r.evs, "subgoal");
-    for (const id of ["breaths", "turn"]) {
-      const mine = subs.filter((e) => e.id === id);
-      assert.equal(mine.length, 2, `${id}: shown then settled`);
-      assert.equal(mine[0].state, "shown");
-      assert.ok(mine[1].state === "done" || mine[1].state === "auto");
-      for (const e of mine) assert.ok(TEXT[e.text], `${e.text} is a string`);
-    }
-    for (const v of Object.values(r.st.subgoals)) assert.ok(v === "done" || v === "auto");
+await check("sub-goals: grow (gather sparkles) and the Big Germ, each shown then settled by you or by itself", () => {
+  for (const r of [REF[0], REF[1], IDLE[0]]) {
+    const shown = named(r.evs, "subgoal").filter((e) => e.state === "shown").map((e) => e.id);
+    const settled = named(r.evs, "subgoal").filter((e) => e.state !== "shown").map((e) => e.id);
+    assert.deepEqual([...shown].sort(), [...settled].sort(), `seed ${r.st.seed}: every shown sub-goal settles`);
+    assert.ok(shown.includes("grow"));
   }
+  assert.ok(named(REF[0].evs, "subgoal").some((e) => e.id === "big" && e.state === "shown"));
 });
 
-await check("the 8 breath targets: press on beat 1, release on beat 5, on her beats, each with its P and its preview", () => {
-  for (const phase of [0, 0.3, 0.6, 0.83]) {
-    const st = turn.create(2, DEFAULT_CARRY, { motherPhase: phase });
-    const xs = turn.targets(st, 60);
-    assert.equal(xs.length, 8);
-    assert.deepEqual(checkTargets(xs), [], "spacing ≥ 0.5 s, sorted, every P ≥ 0.5 s");
-    assert.deepEqual(xs.map((x) => x.kind), ["press", "release", "press", "release", "press", "release", "press", "release"]);
-    assert.ok(xs.every((x) => x.heart === "mother" && x.group === "breath"));
-    const b0 = xs[0].t;
-    assert.ok(b0 >= 1.0 - 1e-9 && b0 < 1.0 + PER, `beat 1 at ${b0} (her first beat at or after 1.0 s)`);
-    const beats = Array.from(st.beats.mother);
-    assert.ok(beats.some((b) => Math.abs(b - b0) < 1e-9), "beat 1 is one of her beats");
-    assert.ok(!beats.some((b) => b >= 1.0 - 1e-9 && b < b0 - 1e-9), "and the first at or after 1.0 s");
-    xs.forEach((x, i) => {
-      const j = i >> 1;
-      const want = b0 + (8 * j + (x.kind === "press" ? 0 : 4)) * PER;
-      near(x.t, want, 1e-6, `${x.id} on beat ${x.kind === "press" ? 1 : 5} of breath ${j + 1}`);
-      const P = i === 0 ? PER : x.t - xs[i - 1].t;
-      near(x.P, P, 1e-9, `${x.id} P`);
-    });
-    // her beats carry no jitter through the breaths (5.1)
-    for (let k = 1; k < beats.length && beats[k] < xs[7].t + 4 * PER; k++) near(beats[k] - beats[k - 1], PER, 1e-9, "no jitter in the track");
-  }
-  // each target's ring shows at least max(2 beats, 1.2 s) before its time (the first from the first frame)
-  const st = turn.create(4, DEFAULT_CARRY, { motherPhase: 0.5 });
-  const xs = turn.targets(st, 60);
-  const firstSeen = new Map();
-  for (let i = 0; i < 2400 && st.moment === "breathe"; i++) {
-    for (const g of turn.view(st).rings) if (g.id.startsWith("t:") && !firstSeen.has(g.id)) firstSeen.set(g.id, st.t);
-    turn.step(st, makeIntents());
-    st.events.length = 0;
-  }
-  xs.forEach((x, i) => {
-    const seen = firstSeen.get("t:" + x.id);
-    assert.ok(seen !== undefined, `${x.id} has a ring`);
-    if (i === 0) assert.equal(seen, 0, "the first target's ring is there from the first frame");
-    else assert.ok(x.t - seen >= previewS(PER) - DT, `${x.id} shows ${(x.t - seen).toFixed(2)} s ahead`);
-  });
-  assert.deepEqual(turn.targets(IDLE.st, 10), [], "no targets once done");
+// ---- the waves ----
+
+await check("the wave table: drifters, puffers, swarmer rings at 26, 34 and 40 s, the Big Germ at 48 s; no spawn in each 1 s calm", () => {
+  const st = turn.create(1, C0, { motherPhase: 0 });
+  const rows = st.rows;
+  const count = (kind, a, b) => rows.filter((r) => r.kind === kind && r.at >= a && r.at < b).length;
+  assert.equal(count("drifter", 0, 12), 10);
+  assert.equal(count("drifter", 12, 24), 13);
+  assert.equal(count("puffer", 12, 24), 2);
+  assert.equal(count("puffer", 24, 36), 2);
+  assert.equal(count("drifter", 36, 48), 19);
+  assert.equal(count("puffer", 36, 48), 3);
+  assert.equal(count("drifter", 48, 60), 14);
+  assert.deepEqual(rows.filter((r) => r.kind === "ring").map((r) => r.at), [26, 34, 40]);
+  assert.deepEqual(rows.filter((r) => r.kind === "big").map((r) => r.at), [48]);
+  for (const k of TUNE.calms) assert.deepEqual(rows.filter((r) => r.kind !== "big" && r.at >= k && r.at < k + 1), [], `the calm at ${k} s`);
+  assert.ok(rows.every((r) => r.at < 60));
+  // in play: the foe cap of 40 (with a swarmer ring's few extra) and the foe spark cap of 50
+  for (const r of [...REF, ...BOTS[0.5]]) assert.ok(Math.max(...r.foes) <= TUNE.foeCap + 4 + TUNE.big.adds, `foes ${Math.max(...r.foes)}`);
+  const swells = named(REF[0].evs, "sfx").filter((e) => e.id === "swell").map((e) => Math.round(e.at));
+  assert.deepEqual(swells, TUNE.calms, "a soft swell opens each calm");
 });
 
-await check("every view is a valid draw list, with a camera, the anchor, the scale bar and a cue while there is one", () => {
-  for (const r of ALL) assert.deepEqual(r.bad, []);
-  const st = turn.create(1, DEFAULT_CARRY, { motherPhase: 0 });
-  const kinds = new Set();
-  for (let i = 0; i < MAX_STEPS && !turn.result(st).done; i++) {
-    const v = turn.view(st);
-    assert.equal(v.stage, "turn");
-    assert.equal(v.camera.orient, "fit");
-    assert.equal(v.camera.span, 100);
-    near(v.camera.mmPerU * v.camera.span, mmPerShortAxis(turn.meta, st.gaDay), 1e-9, "mmPerU");
-    assert.equal(v.scale.mm, 100, "a 10 cm bar");
-    assert.deepEqual(v.anchor, { x: 0, y: 0 });
-    if (st.moment === "breathe" || st.moment === "rest") assert.ok(v.cue, `a cue in ${st.moment}`);
-    assert.ok(v.splats.length >= 12, "the figure and the placenta disc");
-    assert.ok(v.strips.some((s) => s.kind === "cord"), "the cord");
-    for (const g of v.rings) kinds.add(g.kind);
-    for (const s of v.strips) kinds.add(s.kind);
-    for (const m of v.marks) kinds.add(m.kind);
-    turn.step(st, ideal()(st, { turnT0: st.moment === "turn" ? st.turn.t0 : null, headDown: st.turn.by ? 1 : null, restT0: st.rest.t0 }));
-    st.events.length = 0;
+await check("the arena eases from 54 to 38 u between 20 and 55 s (It gets snug in here.)", () => {
+  const a = REF[0].arena;
+  for (const q of a) {
+    if (q.tw <= 20) near(q.r, 54, 1e-6, `at ${q.tw.toFixed(1)} s`);
+    if (q.tw >= 55) near(q.r, 38, 1e-6, `at ${q.tw.toFixed(1)} s`);
   }
-  for (const k of ["mother", "you", "breath", "approach", "hold", "rest", "cord", "arc", "ripples", "glow", "glowwall", "spot"]) assert.ok(kinds.has(k), `draws ${k}`);
+  for (let i = 1; i < a.length; i++) assert.ok(a[i].r <= a[i - 1].r + 1e-9, "it never grows back");
+  const mid = a.find((q) => q.tw > 36 && q.tw < 39);
+  assert.ok(mid && mid.r < 50 && mid.r > 42, `mid ${mid && mid.r}`);
+  assert.ok(REF[0].evs.some((e) => e.name === "caption" && e.id === "turn.snug" && e.at >= 19.9 && e.at < 21));
+  // you stay inside it
+  for (const r of REF) assert.ok(Math.hypot(r.st.A.p.x, r.st.A.p.y) <= TUNE.arena.r1 + 1e-6);
 });
 
-await check("the ring grows and shrinks by itself; a missed breath earns nothing and no sound marks it", () => {
-  const a = turn.create(6, DEFAULT_CARRY, { motherPhase: 0.2 });
-  const b = turn.create(6, DEFAULT_CARRY, { motherPhase: 0.2 });
-  const inp = ideal();
-  const ctx = { turnT0: null, headDown: null, restT0: null };
-  const rs = [];
-  while (a.moment === "breathe") {
-    const ra = turn.view(a).rings.find((g) => g.id === "breath"), rb = turn.view(b).rings.find((g) => g.id === "breath");
-    assert.equal(ra.r, rb.r, "the same ring with and without input");
-    assert.equal(ra.progress, rb.progress);
-    rs.push({ t: a.t, r: ra.r });
-    turn.step(a, inp(a, ctx)); turn.step(b, makeIntents());
-    a.events.length = 0; b.events.length = 0;
-  }
-  const xs = turn.targets(turn.create(6, DEFAULT_CARRY, { motherPhase: 0.2 }), 60);
-  const at = (t) => rs.reduce((p, q) => (Math.abs(q.t - t) < Math.abs(p.t - t) ? q : p)).r;
-  for (let j = 0; j < 4; j++) {
-    const b1 = xs[2 * j].t, b5 = xs[2 * j + 1].t;
-    near(at(b1), TUNE.ring.r0, 0.2, `breath ${j + 1}: small on beat 1`);
-    near(at(b5), TUNE.ring.r1, 0.2, `breath ${j + 1}: full on beat 5`);
-    near(at(b5 + 4 * PER - DT), TUNE.ring.r0, 0.3, `breath ${j + 1}: small again by itself`);
-  }
-  const breathe = IDLE.evs.filter((e) => e.t < IDLE.evs.find((x) => x.name === "moment" && x.id === "turn").t);
-  assert.equal(named(breathe, "judge").length, 8);
-  assert.ok(named(breathe, "judge").every((e) => e.grade === "miss"));
-  assert.equal(named(breathe, "sfx").length, 0, "no sound marks a miss");
-  assert.equal(named(breathe, "points").length, 0, "a missed breath earns nothing");
-});
-
-await check("the turn: 60°/s in a roomy moment, 15°/s outside, the stick's sign sets the way, Assist 25°/s and 3.5 s", () => {
-  const at = (assist, stick, from, secs) => {
-    const st = turn.create(1, DEFAULT_CARRY, { motherPhase: 0, assist });
-    turn.jump(st, "turn");
-    const t0 = st.t;
-    while (st.t - t0 < from - 1e-9) { turn.step(st, makeIntents()); st.events.length = 0; }
-    const d0 = turnedDeg(st);
-    const n = Math.round(secs / DT);
-    for (let i = 0; i < n; i++) { turn.step(st, makeIntents({ steer: { x: stick, y: 0 }, touching: true })); st.events.length = 0; }
-    return { st, deg: turnedDeg(st) - d0, view: turn.view(st) };
-  };
-  near(at(false, 1, 0, 1).deg, 15, 0.01, "outside: 15°/s at full stick");
-  near(at(false, 0.5, 0, 1).deg, 7.5, 0.01, "half stick, half speed");
-  near(at(false, 1, 3.5, 1).deg, 60, 0.01, "roomy: 60°/s");
-  near(at(true, 1, 0, 1).deg, 25, 0.01, "Assist outside: 25°/s");
-  near(at(true, 1, 2.5, 1).deg, 60, 0.01, "Assist: roomy from 2.5 s (3.5 s long)");
-  near(at(false, 1, 2.5, 0.5).deg, 7.5, 0.01, "no Assist: 2.5 s in is not roomy yet");
-  // the stick's sign: right is clockwise as seen (the head goes right), left anticlockwise
-  const head = (stick) => {
-    const r = at(false, stick, 0, 1);
-    const f = r.view.splats.filter((p) => p.k === "c" && p.m === 1)[0];  // the figure's head
-    return f.x;
-  };
-  assert.ok(head(1) > 0.5, "stick right: the head tips right");
-  assert.ok(head(-1) < -0.5, "stick left: the head tips left");
-  // roomy moments come every 6.0 s and last 2.5 s (Assist 3.5 s), in the sfx and the caption
-  const r = IDLE.evs.filter((e) => e.name === "sfx" && e.id === "roomy");
-  const t0 = IDLE.evs.find((e) => e.name === "moment" && e.id === "turn").t;
-  assert.deepEqual(r.map((e) => +(e.t - t0).toFixed(3)), [3.5, 9.5, 15.5, 21.5, 27.5]);
-  assert.equal(IDLE.evs.filter((e) => e.name === "caption" && e.id === "turn.roomy").length, 1, "the first roomy moment says so");
-  // turning outside a roomy moment costs nothing and earns no roomy degrees; back and forth earns nothing either
-  const out = at(false, 1, 0, 3.4);
-  assert.equal(turn.result(out.st).metrics.roomyDeg, 0);
-  const wob = turn.create(1, DEFAULT_CARRY, { motherPhase: 0 });
-  turn.jump(wob, "turn");
-  for (let i = 0; i < 60 * 12 && !wob.turn.by; i++) {
-    const el = wob.t - wob.turn.t0;
-    const x = roomy(el) ? 1 : -1;            // forward when roomy, back again outside
-    turn.step(wob, makeIntents({ steer: { x, y: 0 }, touching: true }));
-    wob.events.length = 0;
-    if (wob.turn.by) break;                  // head-down: the arc is gone, the turn is scored
-    assert.ok(turn.result(wob).metrics.roomyDeg <= turnedDeg(wob) + 1e-6, "roomy degrees never pass the turn held now");
-  }
-});
-
-await check("the turn by itself at 30 s over 3 s, with its line; the Flourish only for a turn you finish yourself", () => {
-  const evs = IDLE.evs;
-  const t0 = evs.find((e) => e.name === "moment" && e.id === "turn").t;
-  const auto = evs.find((e) => e.name === "subgoal" && e.id === "turn" && e.state === "auto");
-  near(auto.t - t0, 30, DT + 1e-9, "the turn by itself starts at 30 s");
-  assert.equal(say(auto.text), "You turn now.");
-  const head = evs.find((e) => e.name === "fact" && e.id === "turn.head");
-  near(head.t, auto.t, DT + 1e-9, "with 'Most babies turn head-down by 36 to 37 weeks.'");
-  const hd = named(evs, "milestone").filter((e) => e.id === "headDown");
-  assert.equal(hd.length, 1);
-  near(hd[0].t - auto.t, 3, DT + 1e-9, "over 3 s");
-  const rest = evs.find((e) => e.name === "moment" && e.id === "rest");
-  near(rest.t, hd[0].t, DT + 1e-9, "the rest follows");
-  assert.equal(IDLE.res.score.flourish, 0);
-  // the figure ends head-down: the head below the body
-  const v = turn.view(IDLE.st);
-  const body = v.splats.find((p) => p.k === "s" && p.m === 1), headS = v.splats.filter((p) => p.k === "c" && p.m === 1)[0];
-  assert.ok(headS.y < Math.min(body.y, body.y2), "head-down");
-  // a turn made only outside roomy moments still finishes yourself before 30 s: the Flourish, no roomy degrees
-  const slow = play({ seed: 1, input: (st, ctx) => makeIntents({ steer: { x: ctx.turnT0 !== null && !roomy(st.t - ctx.turnT0) ? 1 : 0, y: 0 }, touching: true }) });
-  assert.equal(slow.res.metrics.turnedBy, "you");
-  assert.equal(slow.res.score.flourish, 1000);
-  assert.ok(slow.res.parts.find((p) => p.id === "turn").value < 400, "few roomy degrees");
-  for (const r of ALL) assert.equal(named(r.evs, "milestone").filter((e) => e.id === "headDown").length, 1, "headDown once");
-});
-
-await check("nothing is judged in the rest: no judge, no points, the score holds, no targets", () => {
-  for (const seed of [1, 2]) {
-    const st = turn.create(seed, DEFAULT_CARRY, { motherPhase: 0 });
-    const inp = ideal();
-    const ctx = { turnT0: null, headDown: null, restT0: null };
-    while (st.moment !== "rest") {
-      turn.step(st, inp(st, ctx));
-      for (const e of st.events) {
-        if (e.name === "moment" && e.id === "turn") ctx.turnT0 = e.t;
-        if (e.name === "milestone" && e.id === "headDown") ctx.headDown = e.t;
+await check("the grow meter: levels at 8, 20, 36, 56, 80 and 108 sparkles; each offers 3 distinct gifts, none at its top level; the middle one picks itself after 3 s", () => {
+  assert.deepEqual([...TUNE.levels], [8, 20, 36, 56, 80, 108]);
+  let offers = 0;
+  for (const r of [...REF.slice(0, 4), IDLE[0], ...BOTS[0.5].slice(0, 3)]) {
+    const st = turn.create(r.st.seed, C0, { motherPhase: 0 });
+    let last = null;
+    const bot = r === IDLE[0] ? null : createBot(r.st.seed === IDLE[0].st.seed && r === IDLE[0] ? 0 : 1, r.st.seed);
+    for (let n = 0; n < MAX_STEPS && !turn.result(st).done; n++) {
+      if (st.offer && st.offer !== last) {
+        last = st.offer;
+        offers++;
+        const ids = st.offer.map((b) => b.id);
+        assert.equal(new Set(ids).size, ids.length, "distinct");
+        assert.equal(ids.length, 3);
+        for (const id of ids) assert.ok((st.gifts[id] || 0) < 3, `${id} is not at its top level`);
+        for (const b of st.offer) assert.ok(Math.hypot(b.x, b.y) <= st.A.arena.r - TUNE.gift.bubbleR, "inside the wall");
+        assert.ok(st.levelsDue >= 1);
       }
+      turn.step(st, bot ? bot.intents(turn, st) : makeIntents());
       st.events.length = 0;
     }
-    const before = JSON.stringify(turn.result(st).score);
-    const r = stream(seed, "mash");
-    let down = false;
-    const evs = [];
-    while (!turn.result(st).done) {
-      const t = st.t + r() * DT;
-      const it = r() < 0.2 ? (down ? { releases: [{ t, raw: t }] } : { presses: [{ t, raw: t }] }) : {};
-      if (it.presses) down = true; else if (it.releases) down = false;
-      assert.deepEqual(turn.targets(st, 30), []);
-      turn.step(st, makeIntents({ ...it, touching: down, steer: { x: 2 * r() - 1, y: 0 } }));
-      evs.push(...st.events);
-      st.events.length = 0;
-      if (!turn.result(st).done) assert.equal(JSON.stringify(turn.result(st).score.skill), JSON.stringify(JSON.parse(before).skill));
-    }
-    assert.equal(named(evs, "judge").length, 0, "no judge in the rest or the outro");
-    assert.deepEqual(named(evs, "points").map((e) => e.part), ["goal"], "only the Goal, at the end");
-    const after = turn.result(st).score;
-    assert.equal(after.skill, JSON.parse(before).skill);
-    assert.equal(after.flourish, JSON.parse(before).flourish);
+    const M = turn.result(st).metrics;
+    const want = TUNE.levels.filter((x) => M.sparkles >= x).length;
+    assert.equal(M.levels, want, `levels for ${M.sparkles} sparkles`);
   }
-  // the rest lasts 16 s, then 3 s of "You are ready.", and holding warms your heart ring a little
-  const evs = IDEAL.evs;
-  const rest = evs.find((e) => e.name === "moment" && e.id === "rest"), outro = evs.find((e) => e.name === "moment" && e.id === "outro");
-  near(outro.t - rest.t, 16, DT + 1e-9, "rest 16 s");
-  near(named(evs, "done")[0].t - outro.t, 3, DT + 1e-9, "outro 3 s");
-  assert.equal(say("turn.outro"), "You are ready.");
-  assert.equal(clockLabel(280) + ". " + say("turn.outro"), "Week 40. You are ready.");
-  assert.ok(IDEAL.st.rest.warm > 0.9, "held: warm");
-  assert.equal(IDLE.st.rest.warm, 0, "not held: no warmth");
+  assert.ok(offers >= 20, `${offers} offers`);
+  // idle: the middle one picks itself after 3 s of stage time
+  const auto = REF.concat(IDLE).flatMap((r) => r.res.metrics.taken).filter((x) => x.how === "auto");
+  assert.ok(IDLE.some((r) => r.res.metrics.taken.length > 0), "idle reaches a level and its gift picks itself");
+  assert.ok(auto.length > 0);
+  // the level part: 250 a level
+  for (const r of REF) assert.equal(r.res.parts.find((p) => p.id === "levels").value, Math.round((1500 * r.res.metrics.levels) / 6));
 });
 
-await check("the rest hums the song carried in (song event), and the ripples show its notes", () => {
-  const notes = [60, 62, 64, 67, 69, 67, 64, 62, 60, 62, 64, 67, 69, 72, 69, 67];
-  const carry = mergeCarry(DEFAULT_CARRY, { song: { notes, lit: 0b1010101010101010 } });
-  const r = play({ seed: 2, carry, every: 10 });
-  const song = named(r.evs, "song");
-  assert.equal(song.length, 1);
-  assert.deepEqual(song[0].notes, notes);
-  assert.equal(song[0].lit, 0b1010101010101010);
-  // the hum's note period (sound.hum: noteS + gapS, start to start) is the ripples' period, 0.95 s (it was 1.45 s)
-  assert.equal(song[0].noteS, TUNE.rest.noteGapS, "song.noteS is the drawn note period");
-  assert.ok(!song[0].gapS, `no extra gap between the hummed notes (gapS ${song[0].gapS})`);
-  const rest = r.evs.find((e) => e.name === "moment" && e.id === "rest");
-  near(song[0].t, rest.t, 1e-9, "at the rest's start");
-  assert.equal(r.evs.filter((e) => e.name === "caption" && e.id === "turn.hum").length, 1);
-  const st = turn.create(2, carry, { motherPhase: 0 });
-  turn.jump(st, "rest");
-  let ripples = 0;
-  for (let i = 0; i < 16 * 60; i++) { if (turn.view(st).strips.some((s) => s.kind === "ripples")) ripples++; turn.step(st, makeIntents()); st.events.length = 0; }
-  assert.ok(ripples > 600, `ripples in ${ripples} of 960 frames`);
-  const d = turn.create(2, DEFAULT_CARRY, { motherPhase: 0 });
-  turn.jump(d, "rest");
-  assert.deepEqual(named(d.events, "song")[0].notes, [...DEFAULT_CARRY.song.notes], "the default song when none is carried");
+// A fresh state in the waves with one gift offered at your feet; one step takes it.
+function withGift(id, seed = 5, opts = {}) {
+  const st = turn.create(seed, C0, { motherPhase: 0, ...opts });
+  st.rows = [];                          // no germs but the test's own
+  st.levelsDue = 1;
+  st.offer = [{ id, x: st.A.p.x, y: st.A.p.y, t0: st.t }];
+  turn.step(st, makeIntents());
+  st.events.length = 0;
+  assert.equal(st.gifts[id], (id === "darts" ? 1 : 0) + 1, `${id} taken`);
+  assert.equal(st.offer, null);
+  return st;
+}
+const germ = (st, x, y, hp = 3, extra = {}) => X.spawnFoe(st.A, { kind: "germ", ai: "still", x, y, r: 2.8, hp, speed: 0, touch: 0, spawnS: 0, anywhere: true, ...extra });
+function run(st, s, it = makeIntents()) { for (let i = 0; i < Math.round(s / DT); i++) { turn.step(st, it); st.events.length = 0; } }
+
+await check("each gift's effect: Darts, Ring, Clump, Beat, Snug, Kick and Grow", () => {
+  // Darts: +1 dart a volley, volleys 15% faster
+  let st = withGift("darts");
+  assert.equal(st.A.fire.spread, 2);
+  near(st.A.fire.rate, TUNE.fire.rate * 1.15, 1e-9, "rate");
+  // Ring: 2 antibodies orbit at 16 u and pop what they touch (1 a touch, once a germ each 0.4 s)
+  st = withGift("ring");
+  st.A.fire = null;
+  const f = germ(st, st.A.p.x + 16, st.A.p.y, 5);
+  run(st, 2.1);
+  assert.ok(f.hp < 5 && f.hp >= 5 - Math.ceil(2.1 / TUNE.ring.perS), `ring hits ${5 - f.hp}`);
+  // Clump: every 3 s the densest group within 50 u is pulled together and pops for 3 in 12 u
+  st = withGift("clump");
+  st.A.fire = null;
+  const g = [germ(st, 30, 20), germ(st, 34, 22), germ(st, 32, 26), germ(st, -40, -30)];
+  run(st, 1.6);
+  assert.equal(st.A.foes.filter((x) => g.slice(0, 3).includes(x)).length, 0, "the group popped");
+  assert.ok(st.A.foes.includes(g[3]), "the lone germ far off stays");
+  assert.equal(st.clumps, 1);
+  // Beat: every 4 of her beats, a 30 u pulse: 1 damage and a push back
+  st = withGift("beat");
+  st.A.fire = null;
+  const b = germ(st, st.A.p.x + 20, st.A.p.y, 5, { ai: "chase", speed: 0.001 });
+  run(st, (4 * 60) / 72 + 0.2);
+  assert.ok(b.hp === 4 && st.pulses === 1, `beat ${b.hp}, pulses ${st.pulses}`);
+  assert.ok(b.x > st.A.p.x + 24, `pushed back to ${b.x - st.A.p.x}`);
+  // Snug: +1 pip and heal to full
+  st = turn.create(5, C0, { motherPhase: 0 });
+  st.A.p.hp = 2;
+  st.levelsDue = 1;
+  st.offer = [{ id: "snug", x: st.A.p.x, y: st.A.p.y, t0: 0 }];
+  turn.step(st, makeIntents());
+  assert.deepEqual([st.A.p.hp, st.A.p.hpMax], [7, 7]);
+  // Kick: the knock-back grows, the cooldown falls by 0.3 s
+  st = withGift("kick");
+  near(st.A.dash.cdS, 1.1, 1e-9, "kick cooldown");
+  // Grow: the sparkle magnet +50%
+  st = withGift("grow");
+  near(st.A.pick.magnet, 27, 1e-9, "magnet");
+  // a gift gives 0.5 s of i-frames as the world comes back to full speed
+  assert.ok(st.A.p.inv > 0.3);
 });
 
-await check("botSteer: full stick the shorter way only in roomy moments, memory only in r.mem, hold in the rest", () => {
-  const st = turn.create(1, DEFAULT_CARRY, { motherPhase: 0 });
-  const none = { steer: { x: 0, y: 0 }, dir: null, hold: false };
-  const r0 = stream(9, "x"); r0.mem = {};
-  assert.deepEqual(turn.botSteer(st, 1, r0), none, "breathe: the bot plays the targets, not the stick");
-  turn.jump(st, "turn");
-  const t0 = st.t;
-  let on = 0, off = 0;
-  for (let i = 0; i < 60 * 12 && st.moment === "turn"; i++) {
-    const r = stream(9, "y"); r.mem = {};
-    const a = turn.botSteer(st, 1, r);
-    if (roomy(st.t - t0) && !st.turn.by) {
-      assert.equal(Math.abs(a.steer.x), 1); assert.equal(a.steer.y, 0);
-      assert.equal(a.dir, a.steer.x > 0 ? "right" : "left");
-      on++;
-    } else { assert.deepEqual(a, none); off++; }
-    turn.step(st, makeIntents({ steer: a.steer, touching: a.steer.x !== 0, dir: a.dir }));
-    st.events.length = 0;
+await check("the bubbles slow the world to a quarter while you move at full speed, and you cannot kick then", () => {
+  const st = turn.create(5, C0, { motherPhase: 0 });
+  st.rows = [];
+  st.levelsDue = 1;
+  st.offer = [{ id: "grow", x: 40, y: 0, t0: 0 }, { id: "snug", x: 40, y: 10, t0: 0 }, { id: "beat", x: 40, y: 20, t0: 0 }];
+  const A = st.A, t0 = A.t, x0 = A.p.x;
+  for (let i = 0; i < 40; i++) { turn.step(st, makeIntents({ steer: { x: -1, y: 0 }, presses: i === 5 ? [{ t: st.t, raw: st.t }] : [] })); st.events.length = 0; }
+  near(A.t - t0, 10 * DT, 1e-9, "the world clock at a quarter");
+  assert.ok(x0 - A.p.x > 15, `you moved ${x0 - A.p.x} u`);
+  assert.equal(st.kicks, 0, "no kick while choosing");
+  run(st, 3.1);
+  assert.equal(st.offer, null, "it picked itself");
+  assert.equal(st.taken[0].id, "snug");
+  assert.equal(st.taken[0].how, "auto");
+});
+
+await check("the kick: 80 u/s for 0.2 s, back in 1.4 s; germs within 14 u take 1 and are knocked back", () => {
+  const st = turn.create(5, C0, { motherPhase: 0 });
+  st.rows = [];
+  st.A.fire = null;
+  const p = st.A.p;
+  const a = germ(st, p.x + 9, p.y, 3, { ai: "chase", speed: 0.001 }), far = germ(st, p.x - 30, p.y, 3);
+  turn.step(st, makeIntents({ steer: { x: 0, y: 1 }, presses: [{ t: st.t, raw: st.t }] }));
+  st.events.length = 0;
+  assert.equal(st.kicks, 1);
+  assert.equal(a.hp, 2);
+  assert.equal(far.hp, 3);
+  run(st, 0.6);
+  assert.ok(Math.hypot(a.x - p.x, a.y - p.y) > 20, "knocked back");
+  near(st.A.dash.cdS, 1.4, 1e-9, "cooldown");
+  near(st.A.dash.speed, 80, 1e-9, "speed");
+});
+
+await check("the Big Germ: from the far edge at 48 s with a 1.2 s tell; its ring, its swarmers, a second phase at half hp; popping it before 60 s is the Flourish", () => {
+  for (const r of REF.slice(0, 5)) {
+    const tw = named(r.evs, "subgoal").find((e) => e.id === "big" && e.state === "shown");
+    assert.ok(tw && Math.abs(tw.at - 48) < 0.05, "it comes at 48 s");
+    if (r.res.metrics.bigPopped) {
+      assert.equal(r.res.score.flourish, 1000);
+      assert.ok(r.res.metrics.bigAt < 60);
+      assert.ok(named(r.evs, "sfx").some((e) => e.id === "act.win" && e.at < 60));
+      assert.ok(named(r.evs, "sfx").filter((e) => e.id === "act.phase").length >= 2, "its arrival and its second phase");
+    } else assert.equal(r.res.score.flourish, 0);
   }
-  assert.ok(on > 100 && off > 100);
-  // the shorter way: tipped anticlockwise (head left), keep going anticlockwise (stick left)
-  const left = turn.create(1, DEFAULT_CARRY, { motherPhase: 0 });
-  turn.jump(left, "turn");
-  for (let i = 0; i < 60; i++) { turn.step(left, makeIntents({ steer: { x: -1, y: 0 }, touching: true })); left.events.length = 0; }
-  while (!roomy(left.t - left.turn.t0)) { turn.step(left, makeIntents()); left.events.length = 0; }
-  const rr = stream(1, "z"); rr.mem = {};
-  assert.equal(turn.botSteer(left, 1, rr).steer.x, -1);
-  assert.equal(turn.botSteer(left, 1, rr).dir, "left");
-  // memory only in r.mem; the state is unchanged
-  const m = turn.create(3, DEFAULT_CARRY, { motherPhase: 0 });
-  turn.jump(m, "turn");
-  for (let i = 0; i < 60 * 4; i++) { turn.step(m, makeIntents()); m.events.length = 0; }
-  const r = stream(4, "w"); r.mem = {};
-  const keys = Object.keys(r).sort();
-  const before = JSON.stringify(snap(m));
-  for (let i = 0; i < 5; i++) turn.botSteer(m, 0.7, r);
-  assert.equal(JSON.stringify(snap(m)), before, "botSteer leaves the state alone");
-  assert.deepEqual(Object.keys(r).sort(), keys, "only r.mem holds memory");
-  assert.ok(Object.keys(r.mem).length > 0, "and it uses r.mem");
-  // a stream with no mem still works (no memory then)
-  assert.doesNotThrow(() => turn.botSteer(m, 0.5, stream(1, "bare")));
-  assert.doesNotThrow(() => turn.botSteer(m, 0.5, null));
-  // the rest: the bot keeps its thumb down; the outro and the end: nothing
-  const rest = turn.create(1, DEFAULT_CARRY, { motherPhase: 0 });
-  turn.jump(rest, "rest");
-  assert.equal(turn.botSteer(rest, 0.7, r0).hold, true);
-  turn.jump(rest, "outro");
-  assert.deepEqual(turn.botSteer(rest, 1, r0), none);
-  assert.deepEqual(turn.botSteer(IDLE.st, 1, r0), none);
+  const st = turn.create(2, C0, { motherPhase: 0 });
+  st.A.p.inv = 1e9;
+  st.rows = st.rows.filter((r) => r.kind === "big").map((r) => ({ ...r, at: 0 }));
+  st.A.fire = null;
+  run(st, 0.1);
+  const f = st.A.foes.find((x) => x.boss);
+  assert.ok(f && f.hp === 60 && Math.hypot(f.x - st.A.p.x, f.y - st.A.p.y) > 40, "far from you");
+  run(st, 5.6);
+  assert.ok(st.A.foes.filter((x) => x.kind === "spore").length >= 2, "its swarmers, 4 s after its tell");
+  assert.ok(st.A.b.n > 0, "its ring");
+  X.damageFoe(st.A, f, 31, 0, 0);
+  run(st, 0.3);
+  assert.equal(f.phase, 1);
+  assert.equal(f.gun.burst, 2);
+  assert.equal(turn.view(st).action.boss.phase, 1);
 });
 
-await check("one-button: steer from botSteer at skill 1 only while touching turns you head-down before 30 s", () => {
-  // the run's rule (16.4): intents.steer = touching ? botSteer(state, 1).steer : 0; here the button is held throughout
-  const st = turn.create(1, DEFAULT_CARRY, { motherPhase: 0, oneButton: true });
-  turn.jump(st, "turn");
-  const rOne = stream(1, "oneButton"); rOne.mem = {};
-  while (st.moment === "turn") {
-    const a = turn.botSteer(st, 1, rOne);
-    turn.step(st, makeIntents({ steer: a.steer, dir: a.dir, touching: true }));
+await check("the clear at 60 s: every germ left pops, every sparkle is pulled in, the pips and the popped share are scored, and nothing after counts", () => {
+  for (const r of REF.slice(0, 4)) {
+    const c = r.evs.find((e) => e.phase === "clear");
+    assert.ok(c && Math.abs(c.at - 60) < 0.05, "at 60 s of the world clock");
+    assert.ok(r.evs.some((e) => (e.name === "caption" && e.id === "turn.clear") || (e.name === "subgoal" && e.text === "turn.clear")));
+    const after = r.evs.filter((e) => e.phase !== "waves" && e.name === "points" && e.part === "skill");
+    // the clear adds the pips and the popped share at once; then only the turn's 1,000
+    const pips = r.res.parts.find((p) => p.id === "pips").value;
+    assert.equal(pips, Math.round((1000 * r.res.metrics.hp) / r.res.metrics.hpMax));
+    assert.ok(after.every((e) => e.phase === "clear" || e.add === 1000), JSON.stringify(after.map((e) => [e.phase, e.add])));
+    const i = r.ga.findIndex((g) => g.phase === "turn");
+    assert.ok(i > 0);
+  }
+  const st = turn.create(4, C0, { motherPhase: 0 });
+  st.A.p.inv = 1e9;
+  run(st, 1);
+  for (let k = 0; k < 6; k++) germ(st, -20 + 8 * k, 20, 50);
+  const popped = st.popped;
+  st.w0 = st.A.t - 59.99;
+  run(st, TUNE.clearS + 0.2);
+  assert.equal(st.A.foes.length, 0, "every germ left pops");
+  assert.equal(st.popped, popped, "the clear's pops are not yours");
+  assert.equal(st.phase, "turn");
+});
+
+// ---- the turn, the rest, the outro ----
+
+await check("the turn: drag down 1 s in all and you turn yourself (+1,000); else at 6 s you turn by yourself, with its line", () => {
+  const you = turn.create(1, C0, { motherPhase: 0 });
+  turn.jump(you, "turn");
+  you.events.length = 0;
+  const evs = [];
+  for (let i = 0; i < 30; i++) { turn.step(you, makeIntents({ steer: { x: 0, y: -1 }, touching: true })); evs.push(...you.events); you.events.length = 0; }
+  for (let i = 0; i < 40; i++) { turn.step(you, makeIntents({ steer: { x: 0, y: 0.4 } })); evs.push(...you.events); you.events.length = 0; }
+  assert.equal(you.T.by, null, "half a second is not enough");
+  for (let i = 0; i < 31; i++) { turn.step(you, makeIntents({ steer: { x: 0.2, y: -0.8 }, touching: true })); evs.push(...you.events); you.events.length = 0; }
+  assert.equal(you.T.by, "you");
+  assert.ok(evs.some((e) => e.name === "points" && e.add === 1000));
+  assert.ok(evs.some((e) => e.name === "fact" && e.id === "turn.head"));
+  assert.deepEqual(named(evs, "milestone").map((e) => e.id), ["headDown"]);
+  assert.equal(you.gaDay, 252);
+  const self = turn.create(1, C0, { motherPhase: 0 });
+  turn.jump(self, "turn");
+  self.events.length = 0;
+  const t0 = self.t, ev2 = [];
+  for (let i = 0; i < 9 / DT && self.phase === "turn"; i++) { turn.step(self, makeIntents()); for (const e of self.events) ev2.push({ ...e, t: self.t }); self.events.length = 0; }
+  assert.equal(self.T.by, "auto");
+  const line = ev2.find((e) => e.name === "caption" && e.id === "turn.auto");
+  assert.ok(line && Math.abs(line.t - t0 - 6) < 0.05, "at 6 s, You turn now.");
+  assert.ok(ev2.some((e) => e.name === "fact" && e.id === "turn.head"));
+  assert.ok(!ev2.some((e) => e.name === "points"), "no points for the turn by itself");
+  near(self.T.ang, Math.PI, 0.05, "head-down");
+  assert.equal(self.phase, "rest");
+  assert.equal(turn.view(self).splats.length > 6, true);
+});
+
+await check("the rest: 10 s, not judged (the score does not change), your song hummed; then the outro, Week 40", () => {
+  for (const r of [REF[0], BOTS[0.5][0]]) {
+    const inRest = r.evs.filter((e) => e.phase === "rest" || e.phase === "outro");
+    assert.equal(named(inRest, "points").filter((e) => e.part !== "goal").length, 0, "no points in the rest");
+    const song = r.evs.find((e) => e.name === "song");
+    assert.ok(song && song.notes.length === 16 && song.noteS === TUNE.rest.noteGapS && song.muffled === true);
+    const rs = r.ga.find((g) => g.phase === "rest"), os = r.ga.find((g) => g.phase === "outro");
+    near(os.t - rs.t, 10, 0.05, "the rest's length");
+    assert.equal(r.st.gaDay, 280);
+    assert.equal(clockLabel(r.st.gaDay), "Week 40");
+  }
+});
+
+await check("a knock-out, then Go on: the turn by itself, the rest and the outro with input ignored; no more points; done with the goal unmet", () => {
+  const r = play({ seed: 2 });
+  assert.equal(r.st.how, "ko");
+  const st = r.st, total = r.res.score.total;
+  assert.equal(turn.jump(st, turn.meta.goOn), true);
+  assert.equal(st.done, false);
+  const evs = [], prompts = new Set();
+  for (let i = 0; i < 30 / DT && !turn.result(st).done; i++) {
+    turn.step(st, makeIntents({ steer: { x: 0, y: -1 }, touching: true, presses: i % 50 === 0 ? [{ t: st.t, raw: st.t }] : [] }));
+    prompts.add(turn.prompt(st).gesture);
+    evs.push(...st.events);
     st.events.length = 0;
   }
   const res = turn.result(st);
-  assert.equal(res.metrics.turnedBy, "you");
-  near(res.metrics.roomyDeg, 180, 1e-6, "all in roomy moments");
-  assert.equal(res.score.flourish, 1000);
+  assert.equal(res.done, true);
+  assert.equal(res.goalMet, false);
+  assert.equal(res.metrics.ko, true);
+  assert.equal(res.metrics.wentOn, true);
+  assert.equal(res.score.total, total, "no points after the knock-out");
+  assert.equal(named(evs, "points").length, 0);
+  assert.deepEqual([...prompts], ["none"]);
+  assert.deepEqual(named(evs, "moment").map((e) => e.id), ["turn", "rest", "outro"]);
+  assert.equal(res.metrics.turnedBy, "auto");
+  assert.ok(evs.some((e) => e.name === "fact" && e.id === "turn.head") && evs.some((e) => e.name === "fact" && e.id === "turn.curl"));
+  assert.ok(evs.some((e) => e.name === "song"));
+  assert.equal(named(evs, "milestone").length, 0, "headDown fired once, at the knock-out");
 });
 
-await check("jump: forward to any moment, never back; skipped moments settle by themselves; gaDay never decreases", () => {
-  for (const to of ["turn", "rest", "outro"]) {
-    const st = turn.create(1, DEFAULT_CARRY, { motherPhase: 0 });
-    for (let i = 0; i < 200; i++) { turn.step(st, makeIntents()); st.events.length = 0; }
-    const ga0 = st.gaDay;
-    assert.equal(turn.jump(st, to), true);
-    assert.equal(st.moment, to);
-    assert.ok(st.gaDay >= ga0);
-    near(st.gaDay, MOMENTS.find((m) => m.id === to).ga[0], 1e-9, `${to}: gaDay at its start`);
-    assert.equal(turn.prompt(st).gesture, GESTURES[to]);
-    assert.equal(turn.jump(st, "breathe"), false, "never back");
-    assert.equal(turn.jump(st, "carried"), false, "an unknown moment");
-    assert.equal(turn.jump(st, to), true, "the moment it is in");
-    let last = st.gaDay;
-    for (let i = 0; i < MAX_STEPS && !turn.result(st).done; i++) {
-      turn.step(st, makeIntents()); st.events.length = 0;
-      assert.ok(st.gaDay >= last - 1e-12); last = st.gaDay;
-    }
-    assert.equal(turn.result(st).done, true);
-    for (const v of Object.values(st.subgoals)) assert.ok(v === "done" || v === "auto");
-    assert.equal(st.turn.milestone, true, "head-down, by itself if skipped");
-  }
-  for (const r of ALL) {
-    for (let i = 1; i < r.ga.length; i++) {
-      assert.ok(r.ga[i].gaDay >= r.ga[i - 1].gaDay - 1e-9, `gaDay ${r.ga[i - 1].gaDay} → ${r.ga[i].gaDay}`);
-      assert.ok(r.ga[i].mm >= r.ga[i - 1].mm - 1e-9);
-    }
-    assert.equal(r.st.gaDay, 280);
-  }
-  assert.equal(turn.jump(IDLE.st, "outro"), false, "not after the end");
-});
+// ---- the clock and the captions ----
 
-await check("gaDay follows the 4.1 moments: 196 → 231 over the breaths, 231 → 252 over 30 s (or at head-down), 259 → 280", () => {
-  const st = turn.create(1, DEFAULT_CARRY, { motherPhase: 0 });
-  const seen = { breathe: [], turn: [], rest: [], outro: [] };
-  for (let i = 0; i < MAX_STEPS && !turn.result(st).done; i++) {
-    seen[st.moment].push(st.gaDay);
-    turn.step(st, makeIntents()); st.events.length = 0;
-  }
-  near(seen.breathe[0], 196, 1e-9, "breathe start");
-  near(Math.max(...seen.breathe), 231, 0.05, "breathe end");
-  near(seen.turn[0], 231, 1e-9, "turn start");
-  near(Math.max(...seen.turn), 252, 1e-9, "turn end");
-  near(seen.rest[0], 259, 1e-9, "rest start");
-  near(Math.max(...seen.rest), 280, 0.05, "rest end");
-  assert.ok(seen.outro.every((g) => g === 280));
-  const hd = IDEAL.evs.find((e) => e.name === "milestone" && e.id === "headDown");
-  assert.ok(hd.t - IDEAL.evs.find((e) => e.name === "moment" && e.id === "turn").t < 12, "the ideal turn is early");
-});
-
-await check("facts: the 6.7 ids, allow-listed sources, R or A, word counts, no Week or Day start; captions in order", () => {
-  const ids = FACTS.map((f) => f.id);
-  assert.deepEqual(ids, ["turn.card", "turn.lungs", "turn.focus", "turn.voices", "turn.practice", "turn.curl", "turn.head", "turn.voice"]);
-  const where = Object.fromEntries(FACTS.map((f) => [f.id, f.where]));
-  assert.equal(where["turn.card"], "card");
-  assert.equal(where["turn.voice"], "overlay");
-  for (const id of ["turn.lungs", "turn.practice", "turn.focus", "turn.voices", "turn.curl", "turn.head"]) assert.equal(where[id], "caption", id);
-  assert.ok(!ids.includes("turn.weight"), "the WHO weight stays out until it is checked");
-  for (const f of FACTS) {
-    assert.equal(f.stage, "turn");
-    assert.equal(f.checked, true);
-    assert.ok(f.access === "R" || f.access === "A", `${f.id} access`);
-    assert.ok(f.src.length > 0 && f.src.every((k) => SOURCES[k]), `${f.id} sources ${f.src}`);
-    assert.ok(!/^(week|day)\b/i.test(f.text), `${f.id} starts with a label`);
-    assert.ok(f.gaDay >= 196 && f.gaDay <= 280);
-    if (f.gaEnd !== undefined) {
-      assert.ok(f.gaEnd > f.gaDay && !(f.gaDay < 42 && f.gaEnd >= 42));
-      assert.equal(range(f.gaDay, f.gaEnd), "Weeks 31 to 34");
+await check("the clock reads weeks 28 to 40, never runs back, stays in each moment's span; each caption fact comes on or after its day", () => {
+  assert.equal(clockLabel(196), "Week 28");
+  assert.equal(clockLabel(245), "Week 35");
+  assert.equal(clockLabel(280), "Week 40");
+  for (const r of [...REF.slice(0, 3), BOTS[0.5][0], IDLE[0]]) {
+    for (let i = 1; i < r.ga.length; i++) assert.ok(r.ga[i].gaDay >= r.ga[i - 1].gaDay - 1e-9, `back at ${r.ga[i].t}`);
+    for (const g of r.ga) {
+      if (g.phase === "ko" || r.st.how === "ko") continue;
+      const m = turn.meta.moments.find((x) => x.id === g.moment);
+      assert.ok(g.gaDay >= m.ga[0] - 1e-9 && g.gaDay <= m.ga[1] + 1e-9, `${g.moment} ${g.gaDay}`);
     }
-    for (const c of Object.keys(CARERS)) {
-      const text = fill(f.text, {}, { carer: c });
-      assert.ok(words(text) <= 20, `${f.id} (${c}): ${words(text)} words`);
-      for (const s of sentences(text)) assert.ok(words(s) <= 16, `${f.id}: "${s}"`);
-    }
-  }
-  assert.ok(/about/.test(FACTS[0].text), "the trimester card says about");
-  // in play: each caption fact once, in gaDay order, at or after its day, apart from each other
-  for (const r of [IDLE, IDEAL, MIDS[0]]) {
-    const caps = r.evs.filter((e) => e.name === "fact");
-    assert.deepEqual(caps.map((e) => e.id), ["turn.lungs", "turn.focus", "turn.voices", "turn.practice", "turn.curl", "turn.head"]);
-    for (let i = 1; i < caps.length; i++) assert.ok(caps[i].t - caps[i - 1].t >= TUNE.captionGapS - 1e-9);
-    for (const e of caps) {
+    for (const e of named(r.evs, "fact")) {
       const f = FACTS.find((x) => x.id === e.id);
-      const g = r.ga.find((x) => Math.abs(x.t - e.t) < 1e-9);
-      assert.ok(g && g.gaDay >= f.gaDay - 1e-9, `${e.id} at gaDay ${g && g.gaDay}`);
-      if (f.gaEnd) assert.ok(g.gaDay <= f.gaEnd, `${e.id} inside its span`);
+      assert.ok(f && f.where === "caption", e.id);
+      assert.ok(e.ga >= f.gaDay - 1e-9, `${e.id} at gaDay ${e.ga}, its day ${f.gaDay}`);
     }
   }
+  const sent = named(REF[0].evs, "fact").map((e) => e.id);
+  assert.deepEqual(sent, ["turn.antibody", "turn.lungs", "turn.focus", "turn.months", "turn.practice", "turn.head", "turn.curl"]);
+  const at = (id) => REF[0].evs.find((e) => e.name === "fact" && e.id === id).at;
+  near(at("turn.antibody"), 1, 0.05, "the first darts");
+  for (const [id, k] of [["turn.lungs", 12], ["turn.focus", 24], ["turn.months", 36], ["turn.practice", 48]]) assert.ok(at(id) >= k && at(id) < k + 1, `${id} in the ${k} s calm`);
 });
+
+// ---- the picture ----
+
+await check("every view is valid: a fit camera on the womb, the anchor and cue on you, the action part (the wall, Ys, hp), the disc and its cord", () => {
+  for (const r of [REF[0], IDLE[0], ...ONE]) assert.deepEqual(r.bad, []);
+  const st = turn.create(2, C0, { motherPhase: 0 });
+  for (let i = 0; i < 240; i++) { turn.step(st, makeIntents({ steer: { x: 0.6, y: 0.2 }, touching: true })); st.events.length = 0; }
+  const before = JSON.stringify(st, (k, v) => (ArrayBuffer.isView(v) ? Array.from(v) : typeof v === "function" ? "[fn]" : v));
+  const v = turn.view(st);
+  assert.equal(JSON.stringify(st, (k, v2) => (ArrayBuffer.isView(v2) ? Array.from(v2) : typeof v2 === "function" ? "[fn]" : v2)), before, "view is pure");
+  assert.deepEqual(validate(v), []);
+  assert.equal(v.camera.orient, "fit"); assert.equal(v.camera.span, 140);
+  assert.deepEqual(v.anchor, { x: st.A.p.x, y: st.A.p.y });
+  assert.ok(v.action && v.action.player && v.action.arena && v.action.hp && v.action.ys === true);
+  near(v.action.arena.r, 54, 1e-9, "the wall");
+  assert.deepEqual(v.action.hp, { n: st.A.p.hp, max: 6, shield: 0 });
+  assert.equal(turn.view(turn.create(2, mergeCarry(C0, { sparks: 5 }), { motherPhase: 0 })).action.hp.shield, 2, "shield pips, up to 2");
+  assert.ok(v.strips.some((s) => s.kind === "cord" && s.lights.length > 0), "her antibodies ride the cord");
+  // the Tag ring's antibodies are drawn with your darts
+  const g = withGift("ring");
+  const w = turn.view(g);
+  assert.ok(w.action.bullets.n >= 2);
+  assert.deepEqual(validate(w), []);
+  // the gift bubbles with their tags
+  const o = turn.create(3, C0, { motherPhase: 0 });
+  o.offer = [{ id: "ring", x: 0, y: 18, t0: 0 }, { id: "clump", x: -15, y: 10, t0: 0 }, { id: "beat", x: 15, y: 10, t0: 0 }];
+  o.levelsDue = 1;
+  const vo = turn.view(o);
+  assert.equal(vo.action.gifts.length, 3);
+  assert.deepEqual(vo.action.gifts.map((x) => x.icon), ["orbit", "chain", "bounce"]);
+  assert.ok(vo.action.pops.filter((x) => x.word).map((x) => x.word).includes("turn.gift.clump"));
+});
+
+// ---- botSteer, Assist, resume, jump, carry ----
+
+await check("botSteer: steer under 1, a dash flag, memory only in r.mem, the state untouched; down at the turn; a hold in the rest; zero when done", () => {
+  const st = turn.create(4, C0, { motherPhase: 0 });
+  for (let i = 0; i < 600; i++) { turn.step(st, makeIntents()); st.events.length = 0; }
+  const ser = () => JSON.stringify(st, (k, v) => (ArrayBuffer.isView(v) ? Array.from(v) : typeof v === "function" ? "[fn]" : v));
+  const before = ser();
+  const r = stream(1, "b");
+  r.mem = {};
+  const a = turn.botSteer(st, 0.6, r);
+  assert.ok(Math.hypot(a.steer.x, a.steer.y) < 1);
+  assert.equal(typeof a.dash, "boolean");
+  assert.equal(ser(), before);
+  assert.ok(Object.keys(r.mem).length > 0, "its memory is in r.mem");
+  assert.deepEqual(turn.botSteer(st, 1, null), turn.botSteer(st, 1, null), "skill 1 needs no memory");
+  const t = turn.create(4, C0, { motherPhase: 0 });
+  turn.jump(t, "turn");
+  assert.ok(turn.botSteer(t, 1, null).steer.y < -0.9);
+  turn.jump(t, "rest");
+  assert.equal(turn.botSteer(t, 0.7, stream(2, "b")).hold, true);
+  assert.deepEqual(turn.botSteer(REF[0].st, 1, null), { steer: { x: 0, y: 0 }, dir: null, hold: false, dash: false });
+});
+
+await check("Assist: hp +3, foes 0.75×, foe sparks 0.75× as fast, the kick back 0.7× as soon, the Big Germ 45 hp, levels at 0.8×", () => {
+  const st = turn.create(1, C0, { motherPhase: 0, assist: true });
+  const plain = turn.create(1, C0, { motherPhase: 0 });
+  assert.deepEqual([st.A.p.hp, st.A.p.hpMax], [9, 9]);
+  assert.equal(st.A.bulletK, 0.75);
+  near(st.A.dash.cdS, 1.4 * 0.7, 1e-9, "kick cooldown");
+  assert.ok(st.plan < plain.plan * 0.8, `${st.plan} vs ${plain.plan}`);
+  st.rows = st.rows.filter((r) => r.kind === "big").map((r) => ({ ...r, at: 0 }));
+  st.A.p.inv = 1e9;
+  run(st, 0.1);
+  assert.equal(st.A.foes.find((f) => f.boss).hp, 45);
+  st.sparkles = 7;
+  X.drop(st.A, "up", st.A.p.x, st.A.p.y, 1, 1);
+  run(st, 0.5);
+  assert.equal(st.level, 1, "level 1 at ceil(8 × 0.8) = 7 sparkles");
+  const a = play({ seed: 1, opts: { assist: true }, bot: createBot(0.5, 1), every: 30 });
+  assert.equal(a.res.goalMet, true);
+});
+
+await check("resume: 1.2 s of i-frames, so a pause never ends in a hit", () => {
+  const st = turn.create(1, C0, { motherPhase: 0 });
+  turn.resume(st);
+  near(st.A.p.inv, 1.2, 1e-9, "i-frames");
+});
+
+await check("jump: forward only; each moment starts now with the womb cleared; the clock moves on", () => {
+  const st = turn.create(6, C0, { motherPhase: 0 });
+  for (let i = 0; i < 300; i++) { turn.step(st, makeIntents()); st.events.length = 0; }
+  for (const id of IDS.slice(1)) {
+    const g0 = st.gaDay;
+    assert.equal(turn.jump(st, id), true);
+    assert.equal(st.moment, id);
+    assert.equal(st.A.b.n, 0);
+    assert.equal(st.A.foes.length, 0);
+    assert.ok(st.gaDay >= g0);
+    for (let i = 0; i < 30; i++) { turn.step(st, makeIntents()); st.events.length = 0; }
+  }
+  assert.equal(turn.jump(st, "waves"), false);
+  assert.equal(turn.jump(st, "nowhere"), false);
+  run(st, 4);
+  assert.equal(turn.result(st).done, true);
+  assert.equal(turn.result(st).goalMet, true);
+});
+
+await check("carry in: the placenta disc sits on the side you nestled, its lobes from treeSeed; shield pips from the sparks; carry out is empty", () => {
+  const right = turn.create(1, mergeCarry(C0, { nestleX: 0.8, treeSeed: 77 }), { motherPhase: 0 });
+  const left = turn.create(1, mergeCarry(C0, { nestleX: -0.8, treeSeed: 77 }), { motherPhase: 0 });
+  const disc = (st) => turn.view(st).splats[0];
+  assert.ok(disc(right).x > 0 && disc(left).x < 0 && disc(right).y > 0);
+  near(Math.hypot(disc(right).x, disc(right).y), 54 + TUNE.view.disc.out, 1e-9, "on the wall");
+  const again = turn.create(1, mergeCarry(C0, { nestleX: 0.8, treeSeed: 77 }), { motherPhase: 0 });
+  assert.deepEqual(right.disc.lobes, again.disc.lobes);
+  assert.notDeepEqual(right.disc.lobes, turn.create(1, mergeCarry(C0, { nestleX: 0.8, treeSeed: 78 }), { motherPhase: 0 }).disc.lobes);
+  assert.deepEqual(turn.result(right).carryOut, {});
+  // no germ comes through the placenta
+  for (const r of REF.slice(0, 3)) assert.equal(r.st.A.keepOut.length, 1);
+});
+
+await check("garbage input never throws, and the stage still ends by its cap", () => {
+  for (const seed of [1, 2]) {
+    const st = turn.create(seed, C0, { motherPhase: 0 });
+    const r = stream(seed, "junk");
+    assert.doesNotThrow(() => {
+      for (let n = 0; n < MAX_STEPS && !turn.result(st).done; n++) {
+        const it = r() < 0.05 ? { steer: { x: NaN, y: "x" }, presses: "no" } : makeIntents({ steer: { x: 4 * r() - 2, y: 4 * r() - 2 }, touching: r() < 0.5,
+          presses: r() < 0.3 ? [{ t: st.t + DT * r(), raw: st.t }] : [], releases: r() < 0.2 ? [{ t: st.t }] : [], dir: "up" });
+        turn.step(st, it);
+        st.events.length = 0;
+        if (n % 37 === 0) { assert.deepEqual(validate(turn.view(st)), []); turn.botSteer(st, r(), r); }
+      }
+    });
+    assert.equal(turn.result(st).done, true);
+    assert.ok(st.t <= turn.meta.capS + 1e-9);
+    assert.equal(st.faults, 0);
+  }
+});
+
+// ---- facts and strings ----
 
 function sentences(text) { return text.split(/(?<=[.!?])\s+/).filter(Boolean); }
 function words(text) { return text.split(/\s+/).filter((w) => /[\w{]/.test(w)).length; }
 const BANNED = /\b(die|dies|died|dying|dead|death|lose|loses|losing|lost|loser|nicu)\b|\b(kill|fail|miscarr|abort|sex|pain|hurt|danger|sick|viab|prematur|invad|invas|attack|destroy|defeat|conquer|enem|fight|battle)/i;
 const PRONOUNS = /\b(she|her|hers|herself|he|him|his|himself|they|them|their|theirs|themselves)\b/i;
 
-await check("strings: every id the stage emits is a string; no banned word, no pronoun, short sentences, every carer", () => {
-  const used = new Set();
-  for (const r of ALL) {
-    for (const e of r.evs) {
-      if (e.name === "prompt" && e.text) used.add(e.text);
-      if (e.name === "subgoal" || e.name === "caption") used.add(e.text || e.id);
-    }
-    for (const p of r.res.parts) used.add(p.label);
-  }
-  for (const id of used) assert.notEqual(say(id), id, `${id} is registered`);
-  const texts = [...Object.values(TEXT), ...FACTS.map((f) => f.text)];
-  for (const raw of texts) {
+await check("facts: the card, the captions in priority order, the result and overlay facts; allow-listed sources, access R or A, checked, short", () => {
+  assert.deepEqual(FACTS.map((f) => f.id), ["turn.card", "turn.antibody", "turn.lungs", "turn.focus", "turn.months", "turn.practice",
+    "turn.curl", "turn.head", "turn.voices", "turn.frame", "turn.voice"]);
+  for (const f of FACTS) {
+    assert.equal(f.stage, "turn");
+    assert.ok(f.gaDay >= 196 && f.gaDay <= 280, f.id);
+    assert.ok(f.src.length && f.src.every((k) => SOURCES[k]), `${f.id}: ${f.src}`);
+    assert.ok(f.access === "R" || f.access === "A", f.id);
+    assert.equal(f.checked, true, f.id);
+    assert.ok(!/^(Week|Day)\b/.test(f.text), f.id);
     for (const c of Object.keys(CARERS)) {
-      const s = fill(raw, {}, { carer: c });
-      assert.ok(!BANNED.test(s), `banned word in "${s}"`);
-      assert.ok(!PRONOUNS.test(s), `pronoun in "${s}"`);
-      for (const x of sentences(s)) assert.ok(words(x) <= 16, `"${x}"`);
+      const text = fill(f.text, {}, { carer: c });
+      assert.ok(words(text) <= 20, `${f.id}: ${words(text)} words`);
+      for (const s of sentences(text)) assert.ok(words(s) <= 16, `${f.id}: "${s}"`);
+      assert.ok(!BANNED.test(text) && !PRONOUNS.test(text), `${f.id} (${c})`);
     }
   }
-  assert.equal(say("turn.breathe"), "Hold. Let go.");
-  assert.equal(say("turn.turn"), "Drag to turn. Turn when it is roomy.");
-  // the rest is a hold and needs a fresh touch (5.3), so it never asks to keep the thumb from the turn down (F15)
-  assert.equal(say("turn.rest"), "Rest. Touch and hold if you like.");
-  assert.equal(say("turn.goal.turnAuto"), "You turn now.");
+  assert.deepEqual(FACTS.filter((f) => f.where === "card").map((f) => f.id), ["turn.card"]);
+  assert.deepEqual(FACTS.filter((f) => f.where === "overlay").map((f) => f.id), ["turn.voice"]);
+  assert.deepEqual(FACTS.filter((f) => f.where === "result").map((f) => f.id), ["turn.voices", "turn.frame"]);
 });
 
-await check("never throws: garbage intents, carry and options; probe is null; view and probe are pure", () => {
-  const junk = [null, undefined, {}, 5, "x", { presses: [null, { t: NaN }, { t: "a" }, { t: Infinity }], releases: 3, steer: { x: NaN, y: 1 } },
-    { steer: { x: 1e9, y: -1e9 }, presses: [{ t: -50 }], releases: [{ t: 1e9 }] }, { steer: null, touching: "yes", dir: 7 }];
-  for (const carry of [null, undefined, { song: { notes: [1] }, nestleX: 99, treeSeed: -4 }, DEFAULT_CARRY]) {
-    for (const opts of [null, undefined, { motherPhase: NaN }, { motherPhase: 7, assist: 1 }, {}]) {
-      let st;
-      assert.doesNotThrow(() => { st = turn.create(8, carry, opts); });
-      for (let i = 0; i < MAX_STEPS && !turn.result(st).done; i++) {
-        assert.doesNotThrow(() => turn.step(st, junk[i % junk.length]));
-        st.events.length = 0;
-        if (i % 97 === 0) assert.deepEqual(validate(turn.view(st)), [], `t ${st.t}`);
-      }
-      assert.equal(turn.result(st).done, true);
-      assert.equal(st.faults, 0, "no fault was swallowed");
+await check("strings: every id the stage emits is a string; no banned word, no pronoun, no em dash, short sentences, every carer", () => {
+  const ids = new Set();
+  for (const r of [REF[0], IDLE[0], BOTS[0.5][0]]) {
+    for (const e of r.evs) {
+      if (e.name === "prompt" && e.text) ids.add(e.text);
+      if (e.name === "subgoal") ids.add(e.text);
+      if (e.name === "caption" && !FACTS.some((f) => f.id === e.id)) ids.add(e.id);
+    }
+    for (const p of r.res.parts) ids.add(p.label);
+    if (r.res.metrics.almost) ids.add(r.res.metrics.almost);
+  }
+  for (const id of ids) assert.notEqual(say(id), id, `${id} is registered`);
+  for (const [id, s] of Object.entries(TEXT)) {
+    assert.ok(id.startsWith("turn."), id);
+    assert.ok(!s.includes("—"), `${id} has an em dash`);
+    for (const c of Object.keys(CARERS)) {
+      const text = fill(s, {}, { carer: c });
+      assert.ok(!BANNED.test(text), `banned word in "${text}"`);
+      assert.ok(!PRONOUNS.test(text), `pronoun in "${text}"`);
+      for (const x of sentences(text)) assert.ok(words(x) <= 16, `"${x}"`);
     }
   }
-  assert.doesNotThrow(() => turn.step(null, null));
-  for (const r of ALL) assert.equal(r.st.faults, 0);
-  const st = turn.create(1, DEFAULT_CARRY, { motherPhase: 0 });
-  for (let i = 0; i < 2000; i++) { turn.step(st, noisy(1)(st)); st.events.length = 0; }
-  const before = JSON.stringify(snap(st));
-  assert.equal(JSON.stringify(snap(turn.view(st))), JSON.stringify(snap(turn.view(st))));
-  assert.equal(turn.probe(st), null);
-  assert.equal(JSON.stringify(snap(st)), before);
-});
-
-await check("Assist widens the breath windows 1.6 times", () => {
-  const late = (assist) => {
-    const st = turn.create(1, DEFAULT_CARRY, { motherPhase: 0, assist });
-    const x = turn.targets(st, 5)[0];
-    const evs = [];
-    while (st.t < x.t + 0.5) {
-      const t = x.t + 0.1;
-      const it = t >= st.t && t < st.t + DT ? makeIntents({ presses: [{ t, raw: t }], touching: true }) : makeIntents();
-      turn.step(st, it);
-      evs.push(...st.events); st.events.length = 0;
-    }
-    return named(evs, "judge")[0].grade;
-  };
-  assert.equal(late(false), "close", "100 ms late: Close");
-  assert.equal(late(true), "in", "100 ms late with Assist: In time");
 });
 
 if (failed.length) {
@@ -737,7 +673,9 @@ if (failed.length) {
   console.log(`FAIL ${FILE}: ${failed.length} of ${passed + failed.length} checks failed`);
   process.exitCode = 1;
 } else {
-  const mid = MIDS.map((r) => r.res.score.total);
-  console.log(`PASS ${FILE}: ${passed} checks (ideal ${IDEAL.res.score.total} in ${IDEAL.st.t.toFixed(1)} s; ref ${REF.res.score.total} in ${REF.st.t.toFixed(1)} s; `
-    + `mid mean ${Math.round(mid.reduce((a, b) => a + b, 0) / mid.length)} in ${(MIDS.reduce((a, r) => a + r.st.t, 0) / MIDS.length).toFixed(1)} s; idle ${IDLE.res.score.total} in ${IDLE.st.t.toFixed(1)} s)`);
+  const len = (rs) => (rs.reduce((a, r) => a + r.st.t, 0) / rs.length).toFixed(1);
+  const kos = (rs) => rs.filter((r) => r.st.how === "ko").length;
+  console.log(`PASS ${FILE}: ${passed} checks (ref mean ${Math.round(mean(REF))} in ${len(REF)} s; 0.7 mean ${Math.round(mean(BOTS[0.7]))}; `
+    + `0.5 mean ${Math.round(mean(BOTS[0.5]))}, ${kos(BOTS[0.5])} knocked out; one-button ${Math.round(mean(ONE))}; `
+    + `idle ${IDLE.map((r) => `${r.st.how} at ${r.res.metrics.koAt.toFixed(1)} s`).join(", ")})`);
 }

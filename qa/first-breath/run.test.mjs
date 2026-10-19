@@ -113,7 +113,7 @@ await check("the stage order and the screens of a whole run; no overlay after Bi
 
 await check("families per stage (16.4): at most 2, 3 for egg, from steer, tap, hold and rotate", () => {
   const want = { swim: ["steer", "tap"], egg: ["rotate", "tap"], split: ["steer", "tap"], root: ["steer", "tap"],
-    grow: ["steer", "tap"], answer: ["tap", "steer"], turn: ["hold", "rotate"], birth: ["hold"], ending: ["hold"] };
+    grow: ["steer", "tap"], answer: ["tap", "steer"], turn: ["steer", "tap"], birth: ["hold"], ending: ["hold"] };
   for (const m of [...STAGES, ENDING]) {
     assert.deepEqual([...m.meta.families], want[m.meta.id], m.meta.id);
     assert.ok(m.meta.families.length <= 2);
@@ -566,18 +566,25 @@ await check("the shared bot (16.11): σ = 15 + 135 (1 − skill) ms, skip = 0.4 
   const b = createBot(0.5, 1).intents(root, rs);
   assert.deepEqual(b.steer, root.botSteer(rs, 0.5, stream(0, "x")).steer);
   assert.equal(b.touching, true, "a stick off centre is touching");
-  const turn = STAGES[6];
-  const ts = turn.create(2, DEFAULT_CARRY, { motherPhase: 0 });
-  const tb = createBot(1, 2);
-  let held = false, sawRelease = false;
-  while (!turn.result(ts).done && ts.moment === "breathe") {
-    const it = tb.intents(turn, ts);
-    if (it.presses.length) { assert.equal(held, false, "a press only after a release"); held = true; }
-    if (it.releases.length) { assert.equal(held, true); held = false; sawRelease = true; }
-    turn.step(ts, it);
-    ts.events.length = 0;
+  // in a stage with release targets (stage 7's breaths were the case; now any stage that still has them)
+  const relOf = (m) => (m.targets(m.create(2, DEFAULT_CARRY, { motherPhase: 0 }), 1e4) || []).some((x) => x.kind === "release");
+  const rel = STAGES.find(relOf);
+  if (rel) {
+    const ts = rel.create(2, DEFAULT_CARRY, { motherPhase: 0 });
+    const tb = createBot(1, 2);
+    let held = false, sawRelease = false;
+    for (let i = 0; i < 60 / DT && !rel.result(ts).done && !sawRelease; i++) {
+      const it = tb.intents(rel, ts);
+      const evs = [...it.presses.map((p) => [p.t, 1]), ...it.releases.map((p) => [p.t, 0])].sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+      for (const [, down] of evs) {
+        if (down) { assert.equal(held, false, "a press only after a release"); held = true; }
+        else { assert.equal(held, true); held = false; sawRelease = true; }
+      }
+      rel.step(ts, it);
+      ts.events.length = 0;
+    }
+    assert.ok(sawRelease, rel.meta.id);
   }
-  assert.ok(sawRelease);
   const c = createBot(0.7, 1);
   assert.deepEqual(["title", "almost", "card", "overlay", "stage", "ending", "result"].map((s) => c.choose(s)),
     ["play", "goOn", "skip", null, null, null, null]);

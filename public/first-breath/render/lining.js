@@ -154,9 +154,13 @@ export function drawLiningSheets(F, st) {
       const ax = rd(F.X(wx0, wy1)), ay = rd(F.Y(wx0, wy1));
       const bx = rd(F.X(wx0 + tu, wy1)), by = rd(F.Y(wx0 + tu, wy1));
       const cx = rd(F.X(wx0, wy1 - tu)), cy = rd(F.Y(wx0, wy1 - tu));
-      const S = t.cv.width;
+      // the tile's own axes on screen (a turn and a scale: the camera turns by quarter turns only)
+      const S = t.cv.width, ux = (bx - ax) / S, uy = (by - ay) / S, vx = (cx - ax) / S, vy = (cy - ay) / S;
+      const su = Math.hypot(ux, uy) || 1e-9;
       ctx.save();
-      ctx.transform((bx - ax) / S, (by - ay) / S, (cx - ax) / S, (cy - ay) / S, ax, ay);
+      ctx.translate(ax, ay);
+      ctx.rotate(Math.atan2(uy, ux));
+      ctx.scale(su, (ux * vy - uy * vx) / su);
       ctx.drawImage(t.cv, 0, 0);
       ctx.restore();
     }

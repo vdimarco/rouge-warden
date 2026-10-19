@@ -73,15 +73,15 @@ Keep everything `design.md` 5.2 lists under "What stays" (the arc and its contro
 
 ## 4. Stage 4, The Placenta (`root`): action-adventure
 
-- [ ] 4.1 Nestle (3 spots, 5 s idle pull).
-- [ ] 4.2 The seeded lining map (12 × 12 tiles): soft, open and firm tissue; tunnels; knots; 8 pools by kind; every pool reachable.
-- [ ] 4.3 The grapple (cone, reach, pull, retract), reach at 3 pools and strong roots at 5.
-- [ ] 4.4 Linking with the glow along the roots, the compass ping and edge arrow, auto-link from 30 s.
-- [ ] 4.5 Germs and guard germs; root sparks.
-- [ ] 4.6 The first heartbeat with 8 pulses that pop germs near the tree; `grow` as v1.
-- [ ] 4.7 The knock-out with "You need a rest.", Go on to `heart`; score parts; facts; new fact `root.frame`; carry out.
-- [ ] 4.8 Tunnels baked per tile, re-baked only when crossed (with the renderer owner).
-- [ ] 4.9 `botSteer` (A* to the next pool, grapple on the path); `stage-root.test.mjs` rewritten, gates passing.
+- [x] 4.1 Nestle (3 spots, 5 s idle pull).
+- [x] 4.2 The seeded lining map (12 × 12 tiles): soft, open and firm tissue; tunnels; knots; 8 pools by kind; every pool reachable.
+- [x] 4.3 The grapple (cone, reach, pull, retract), reach at 3 pools and strong roots at 5.
+- [x] 4.4 Linking with the glow along the roots, the compass ping and edge arrow (drawn on the canvas by `render/lining.js`, inside a margin clear of the HUD; not yet a DOM tag the layout check can find), auto-link from 30 s.
+- [x] 4.5 Germs and guard germs; root sparks.
+- [x] 4.6 The first heartbeat with 8 pulses that pop germs near the tree; `grow` as v1.
+- [x] 4.7 The knock-out with "You need a rest.", Go on to `heart`; score parts; facts; new fact `root.frame`; carry out.
+- [x] 4.8 Tunnels baked per tile, re-baked only when crossed (with the renderer owner).
+- [x] 4.9 `botSteer` (a Dijkstra path field to the nearest pool, grapple when it saves path); `stage-root.test.mjs` rewritten, gates passing (and the stage 4 gate in `sim.test.mjs`).
 
 ## 5. Stage 5, First Trimester (`grow`)
 

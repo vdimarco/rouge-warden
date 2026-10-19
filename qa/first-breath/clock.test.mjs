@@ -34,10 +34,12 @@ const MOMENTS = {
     { id: "hatch", ga: [20, 20], lenS: 3 },
     { id: "outro", ga: [20, 20], lenS: 2 },
   ],
+  // stage 4 as the action-adventure (first-breath-action-genres, design.md 5.4): nestle up to 8 s, the lining map up
+  // to 58 s, the 6 s heart, the 7 s grow
   root: [
-    { id: "nestle", ga: [20, 23], lenS: 12 },
-    { id: "roots", ga: [25, 35], lenS: 40 },
-    { id: "heart", ga: [36, 36] },
+    { id: "nestle", ga: [20, 23], lenS: 8 },
+    { id: "roots", ga: [25, 35], lenS: 58 },
+    { id: "heart", ga: [36, 36], lenS: 6 },
     { id: "grow", ga: [36, 49], lenS: 7 },
   ],
   // stage 5 on the action layer (openspec/changes/first-breath-action-genres): a wave a week (7.5 s and a 2.2 s
@@ -58,11 +60,13 @@ const MOMENTS = {
     { id: "eyes", ga: [175, 182], lenS: 4 },
     { id: "outro", ga: [189, 195], lenS: 3 },
   ],
+  // stage 7 as the survivor stage (first-breath-action-genres, design.md 5.7): 60 s of waves, the turn up to 6 s, the
+  // 10 s rest and the 3 s outro
   turn: [
-    { id: "breathe", ga: [196, 231], lenS: her(32, 72), beats: true },
-    { id: "turn", ga: [231, 252], lenS: 30 },
-    { id: "rest", ga: [259, 280], lenS: 16 },
-    { id: "outro", ga: [280, 280] },
+    { id: "waves", ga: [196, 245], lenS: 60 },
+    { id: "turn", ga: [245, 252], lenS: 6 },
+    { id: "rest", ga: [259, 280], lenS: 10 },
+    { id: "outro", ga: [280, 280], lenS: 3 },
   ],
   birth: [{ id: "waves", ga: [280, 280] }, { id: "light", ga: [280, 280] }],
 };

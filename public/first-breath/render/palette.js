@@ -390,16 +390,18 @@ export const ROLES = Object.freeze({
     frames: { shape: "scallop", scallops: 9, depthK: 1.5, tokens: ["frame3", "frame2", "frame1"], size: 0.52 },
   },
   turn: {
-    back: "back", inner: { mix: ["back", "snugWalls", 0.62] },
+    back: "back", inner: { mix: ["back", "frame3", 0.4] },     // a deeper ember floor, so you and the germs stand out
     splats: [
       { hue: [-0.001, 0.005], token: "turnDisc", h: 3, group: "solo" },
       { hue: [0.005, 0.015], token: "turnDisc2", h: 3.5, group: "solo" },
       ...FIG("you", { mix: ["you", "dapple", 0.3] }, { mix: ["you", "frame3", 0.2] }),
-      { hue: [0.97, 0.99], token: { mix: ["you", "frame3", 0.35] }, h: 5, group: "heart" },
+      { hue: [0.97, 0.99], token: { mix: ["you", "frame3", 0.35] }, h: 5, group: "heart", sticker: true },
       { hue: [0.015, 0.025], token: { mix: ["frame3", "you", 0.4] }, h: 4, group: "solo" },
     ],
     cord: { mix: ["frame3", "you", 0.35] }, cordBack: { mix: ["frame3", "frame2", 0.4] }, lights: "roomyGlow",
     snug: "snugWalls", arc: "breathRing", ripple: "breathRing", glow: "roomyGlow", dapple: "dapple",
+    // the action layer (render/action.js): the snug wall closing in, her antibodies as cream paper Ys (design.md 5.7)
+    action: { wall: { mix: ["frame3", "snugWalls", 0.45] }, mine: "breathRing" },
     frames: { shape: "oval", tokens: ["frame3", "frame2", "frame1"], size: 0.5 },
   },
   birth: {

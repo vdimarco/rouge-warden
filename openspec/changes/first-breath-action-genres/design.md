@@ -82,7 +82,7 @@ stage has hp and a knock-out.
 | 1 | `swim` | kart racing, knockout gates | steer, tap | 14 | 0.3 mm (not to scale) | 52 s (measured: arrival 49 s + `meet`) | 66 s (measured: arrival 63 s + `meet`) | out at about 14 s (measured 13.7 s), then the Almost card | 117 s (+3 s carried) | by place, gate or tide |
 | 2 | `egg` | radial brick breaker, bullet-hell patterns | rotate, tap | 14 | 0.4 mm (not to scale) | 60 s (measured; 55 to 64) | 61 s (measured) | out at about 23 s (18 s into the guard), then the Almost card; Go on about 13 s more | 80 s | yes |
 | 3 | `split` | roguelike | steer, tap | 15 to 20 | 0.45 mm | 56 s (built) | 57 s (built) | knocked out in 14 of 20 seeds (19 to 72 s), else 75 s | 100 s | yes |
-| 4 | `root` | action-adventure | steer, tap | 20 to 49 | 0.6 to 30 mm | 52 s | 62 s | 79 s, or a KO first | 90 s | yes |
+| 4 | `root` | action-adventure | steer, tap | 20 to 49 | 0.6 to 30 mm | 52 s (measured: 41 s, the roots 25 s) | 62 s (measured: 43 s, the roots 27 s) | 79 s, or a KO first (measured: 79 s, no KO in 20 seeds) | 90 s | yes |
 | 5 | `grow` | twin-stick shooter | steer, tap | 49 to 97 | 30 to 150 mm (sac across) | 85 s | 85 s | a KO at about 12 s, then the Almost card | 120 s | yes (contract.md) |
 | 6 | `answer` | rhythm | tap, steer | 98 to 195 | 150 to 600 mm | 74 s | 74 s | 74 s | 90 s | no |
 | 7 | `turn` | survivor auto-shooter | steer, tap | 196 to 280 | 600 to 700 mm | 78 s | 78 s | about 30 s, then the Almost card | 100 s | yes |

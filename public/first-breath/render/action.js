@@ -383,6 +383,16 @@ export function drawBullets(F) {
     if (tn === 0) {
       // your sparks: short streaks along their flight (a capsule of 3 r), a white core
       const sa = b.ang ? F.v.cam.screenAngle(b.ang[i]) : 0, c = Math.cos(sa), s = Math.sin(sa), L = b.ang ? r * 1.7 : 0;
+      if (a.ys) {
+        // stage 7's antibodies (design.md 5.7): small paper Ys, the stem behind, the arms open ahead
+        const fx = x + c * L * 0.15, fy = y + s * L * 0.15, w = r * 0.42;
+        streak(body[0], x - c * L, y - s * L, fx, fy, w);
+        for (const q of [0.6, -0.6]) {
+          const qc = Math.cos(q), qs = Math.sin(q), ac = c * qc - s * qs, as = s * qc + c * qs;
+          streak(body[0], fx, fy, fx + ac * L * 0.95, fy + as * L * 0.95, w);
+        }
+        continue;
+      }
       streak(body[0], x - c * L, y - s * L, x + c * L * 0.4, y + s * L * 0.4, r * 0.72);
       disc(core[0], x + c * L * 0.25, y + s * L * 0.25, r * 0.36);
       continue;
@@ -396,7 +406,7 @@ export function drawBullets(F) {
   if (used[0]) {
     ctx.save();
     ctx.globalAlpha *= 0.9;
-    ctx.lineJoin = "round"; ctx.lineWidth = 1.4 * hs; ctx.strokeStyle = P.mix(tone(F, "mine"), P.INK, 0.45); ctx.stroke(body[0]);
+    ctx.lineJoin = "round"; ctx.lineWidth = 1.4 * hs; ctx.strokeStyle = P.mix(tone(F, "mine"), P.INK, a.ys ? 0.8 : 0.45); ctx.stroke(body[0]);
     ctx.fillStyle = tone(F, "mine"); ctx.fill(body[0]);
     ctx.fillStyle = "#ffffff"; ctx.fill(core[0]);
     ctx.restore();

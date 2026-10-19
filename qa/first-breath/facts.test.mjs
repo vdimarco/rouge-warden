@@ -156,8 +156,9 @@ check("swim.frame, egg.frame and end.apgar are shown run result facts, and the r
   const more = ALL.filter((f) => f.where === "result" && !["egg.frame", "end.apgar", "swim.frame"].includes(f.id)).map((f) => f.id);
   assert.deepEqual(more.sort(), ["answer.hic", "answer.outside", "egg.choice", "egg.cilia", "egg.day", "egg.place",
     "egg.pronuclei", "egg.seal", "egg.signal", "egg.size", "egg.stick", "egg.wave", "end.fluid", "end.seconds", "grow.flow", "grow.frame",
-    "grow.never", "grow.w11kick", "root.buds", "root.glands", "root.grows", "root.size", "root.tube", "split.frame", "swim.few",
-    "swim.flow", "swim.hyper", "swim.mucus", "swim.ready", "swim.rest", "swim.side", "swim.walls", "swim.warm"]);
+    "grow.never", "grow.w11kick", "root.buds", "root.frame", "root.grows", "root.size", "root.tube", "split.frame", "swim.few",
+    "swim.flow", "swim.hyper", "swim.mucus", "swim.ready", "swim.rest", "swim.side", "swim.walls", "swim.warm", "turn.frame",
+    "turn.voices"]);
   assert.ok(screens.includes('f.where === "result"'), "the run result lists the played stages' result facts");
 });
 

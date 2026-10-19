@@ -1,5 +1,11 @@
-// First Breath: stage 7, Third Trimester (`turn`), its numbers (design.md 6.7, 4.1, 5.1, 5.2). Plain data, deep-frozen.
-// Times are stage seconds; angles in degrees here (the stage turns them into radians).
+// First Breath: stage 7, Third Trimester (`turn`), its numbers (openspec/changes/first-breath-action-genres design.md
+// 5.7, 4.2, 4.6; contract.md). A survivor-style auto-shooter on the shared action layer (core/lib/action.js). Plain
+// data, deep-frozen. World units (u), seconds, radians unless named in degrees. Wave times are seconds into `waves` on
+// the world clock (A.t, which holds still under a hit-stop and runs at 0.25× while the gift bubbles show).
+//
+// Measured (qa/first-breath/stage-turn.test.mjs, 10 seeds; FB_VERBOSE=1 prints them): see the stage test's PASS line
+// and design.md 3.1. Changes from design.md 5.7 found in play: the Big Germ has 60 hp (Assist 45) and a second phase at
+// half hp (its ring comes every 2.2 s, as two rings 0.3 s apart), so the climax lasts; sparkles stay 14 s.
 
 const deep = (o) => {
   for (const v of Object.values(o)) if (v && typeof v === "object") deep(v);
@@ -7,73 +13,103 @@ const deep = (o) => {
 };
 
 export const TUNE = deep({
-  motherBpm: 72,          // her rate all stage (P_beat = 0.833 s)
-  leadS: 1.0,             // beat 1 is her first beat at or after this (5.1)
+  motherBpm: 72,
+  capS: 100,
 
-  // 1. breathe: 4 breaths of 8 of her beats; press on beat 1, let go on beat 5 (8 targets)
-  breaths: 4,
-  beatsPerBreath: 8,
-  pressBeat: 1,
-  releaseBeat: 5,
-  ring: {
-    r0: 30, r1: 42,       // the breath ring, u: small on beat 1, full on beat 5, small again by beat 8 (by itself)
-    showS: 2.0,           // a target's ring shows this long before its time (≥ max(2 beats, 1.2 s), 5.2)
-    approachR: 54,        // a press ring starts this wide and closes onto r0 on beat 1
-    flashS: 0.5,          // how long a judged grade stays on the ring
-  },
-
-  // 2. turn: up to 30 s, then by itself over 3 s
-  turn: {
-    maxS: 30,             // the limit; the turn by itself starts here
-    autoS: 3,             // ... and takes this long
-    holdS: 1.2,           // after you reach head-down, the moment lingers this long (the figure settles)
-    cycleS: 6.0,          // her slow breath: in-breath, then the out-breath (the roomy moment) at its end
-    roomyS: 2.5,          // roomy moment length
-    roomyAssistS: 3.5,    // ... with Assist
-    roomyDegS: 60,        // turn speed in a roomy moment, × stick x
-    outsideDegS: 15,      // ... outside one
-    outsideAssistDegS: 25,
-    headDownDeg: 20,      // head-down = within this of straight down (180° from head-up)
-    fullDeg: 180,         // the score's "degrees turned in roomy moments / 180"
-    settleDegS: 120,      // the last few degrees settle by themselves at this rate
-    glowRampS: 0.6,       // the wall's glow builds this long before a roomy moment and fades this long after
-  },
-
-  // 3. rest: 16 s, not scored; the song is hummed, muffled
-  rest: {
-    s: 16,
-    warmUpS: 1.5,         // holding warms your heart ring fully in this long
-    warmDownS: 3.0,       // ... and it cools in this long when you let go
-    noteLeadS: 0.6,       // the first hummed note, after the rest starts
-    noteGapS: 0.95,       // 16 notes, one every 0.95 s (the last at 14.85 s)
-  },
-
-  // 4. outro
+  // the moments (stage seconds; waves on the world clock)
+  waveS: 60,                 // the survivor waves
+  clearS: 1.4,               // the clear at 60 s: every germ left pops, every sparkle is pulled to you
+  turn: { maxS: 6, holdS: 1.0, deflect: 0.5, autoS: 1.6, settleS: 0.8, growS: 1.2 },
+  rest: { s: 10, warmUpS: 1.5, warmDownS: 3.0, noteLeadS: 0.5, noteGapS: 0.56 },
   outroS: 3,
+  koS: 1.5,                  // a knock-out rests at least this long (and until the captions sent are read)
 
-  // section 7: Goal 3,000 + Skill (3,000 breaths + 3,000 turn) + Flourish 1,000
-  score: { breaths: 3000, turn: 3000, flourish: 1000 },
-
-  // the bot's steering (botSteer below skill 1): a lag into and out of each roomy moment, a softer stick
-  bot: { lagS: 0.5, minStick: 0.55 },
-
-  // fact captions, in order, each once gaDay reaches its day and the last caption is this old
-  captionGapS: 4.5,
-  captions: [
-    ["turn.lungs", 203],
-    ["turn.focus", 210],
-    ["turn.voices", 217],
-    ["turn.practice", 220],   // the span fact of weeks 31 to 34, a little after the voices one
-    ["turn.curl", 238],
-    ["turn.head", 252],       // gaDay reaches 252 only at head-down, or at the 30 s limit
-  ],
-
-  // the view, in world u (fit orient; the short axis is span u)
+  // the camera holds the womb still (fit), its centre on the subject point
   view: {
-    span: 100,
-    crMm: [250, 360],     // your length head to bottom, curled, from week 28 to week 40 (about; it only sizes the figure)
-    wallR: 47,            // the snug wall
-    discDist: 40, discR: 11,
-    youBpm: [140, 130],   // your heart over the stage (5.1)
+    span: 140,
+    camY: -6,                // the womb's centre a little above the subject point (42% of the height in portrait), so
+                             // you stay above 60% of the height in portrait down to 360 × 640
+    sizeU: [16, 18],         // your figure, head to bottom, over the waves (smaller than true: room to play)
+    snugU: 40,               // ... and after the clear, filling the snug womb (closer to true)
+    disc: { r: 12, out: 0 }, // the placenta on the wall, where you nestled (carry nestleX), its lobes from treeSeed
+    cordS: 1.2,              // an antibody bead rides the cord this long
+    light: { level: 0.8, warm: 0.7, vignette: 0.04, snugK: 0.3 },   // the frames close in as the womb gets snug
+    warp: 0.2,
   },
+
+  // the arena: round, easing from 54 to 38 u between 20 and 55 s ("It gets snug in here.")
+  arena: { r0: 54, r1: 38, t0: 20, t1: 55 },
+  keepOut: 0.11,             // turns of the wall kept clear of germs either side of the placenta
+
+  // you (contract.md player overrides): the fetus figure, body 6 u, hitbox 2.4 u, 30 u/s, 6 pips
+  player: { r: 2.4, body: 6, speed: 30, accel: 16, hp: 6, invS: 1.0, mercyR: 10, push: 6, safeR: 14, clearR: 24 },
+  // the kick (the layer's dash): 80 u/s for 0.2 s, back in 1.4 s; germs within 14 u are knocked 20 u and take 1
+  kick: { speed: 80, s: 0.2, invS: 0.3, cdS: 1.4, bufferS: 0.12, r: 14, push: 20, dmg: 1 },
+  // the starting weapon, Y darts level 1: a dart every 0.6 s at the nearest germ within 60 u, 90 u/s, damage 2,
+  // passes through 1
+  fire: { rate: 1 / 0.6, dmg: 2, speed: 90, spread: 1, arc: 0.2, pierce: 1, range: 60, r: 1.4, life: 0.75, kb: 4 },
+  pickup: { magnet: 18, pull: 70, lifeS: 14, r: 1.6, drag: 3 },
+  bulletCap: 50,             // foe sparks at once
+  foeCap: 40,                // germs at once (a spawn waits for room)
+
+  // Assist (the shared rule, design.md 4.2): hp +3, foes ×0.75, foe sparks ×0.75 speed, the kick back 0.7× as soon;
+  // the Big Germ 45 hp; levels at 0.8× the sparkles
+  assist: { hpPlus: 3, bulletK: 0.75, dashCdK: 0.7, foesK: 0.75, bigHp: 45, levelK: 0.8 },
+
+  // the germs (a spawnFoe spec each; `drops` are made by the stage: 1 sparkle a germ, the Big Germ 12)
+  foes: {
+    drifter: { kind: "germ", ai: "wander", r: 2.8, hp: 3, speed: 14, touch: 1, value: 10, mass: 1, chaseR: 40 },
+    swarmer: { kind: "spore", ai: "chase", r: 2.0, hp: 1, speed: 22, touch: 1, value: 5, mass: 0.6, steer: 3 },
+    puffer: { kind: "blob", ai: "shooter", r: 3.6, hp: 6, speed: 9, touch: 1, value: 20, mass: 1.6, keep: 32,
+      gun: { pattern: { kind: "fan", n: 3, arc: 0.32, speed: 22, tone: "foe", life: 4 }, every: 2.5, tellS: 0.6, first: 1.6, jitter: 0.12 } },
+    big: { kind: "boss", ai: "chase", boss: true, r: 10, hp: 60, speed: 8, touch: 1, value: 100, mass: 6, steer: 2,
+      spawnS: 1.2, sparkles: 12,
+      gun: { pattern: { kind: "ring", n: 12, speed: 24, tone: "hot", r: 1.7, life: 4 }, every: 3, tellS: 0.7, first: 1.4, jitter: 0 } },
+  },
+  big: { addEvery: 4, adds: 2, phase2: 0.5, every2: 2.2, gap2: 0.3 },
+  ringR: 50,                 // a swarmer ring closes in on you from this far (members past the wall are left out)
+  ringN: 12,
+
+  // the waves, seconds into `waves`: each row spawns its kind every `every` s from `from` (after the 1 s calm at each
+  // wave start) to `to`; rings and the Big Germ at their times
+  waves: [
+    { from: 0.5, to: 12, drifter: 1.2 },
+    { from: 13, to: 24, drifter: 0.9, puffer: 6 },
+    { from: 25, to: 36, drifter: 0.9, puffer: 6, rings: [26, 34] },
+    { from: 37, to: 48, drifter: 0.6, puffer: 4, rings: [40] },
+    { from: 49, to: 60, drifter: 0.8 },
+  ],
+  bigAt: 48,
+  calms: [12, 24, 36, 48],   // 1 s calms (a soft swell; a fact may show)
+
+  // the grow meter: levels at these sparkle totals; each level offers 3 gifts
+  levels: [8, 20, 36, 56, 80, 108],
+
+  // gift bubbles (design.md 4.6): 22 u round you, up-left, up, up-right; the world at 0.25× while they show; after 3 s
+  // of stage time the middle one picks itself
+  gift: { bubbleD: 22, bubbleR: 5, angs: [2.6, Math.PI / 2, 0.54], pickS: 3.0, slowK: 0.25, gapS: 0.4, wallPad: 4 },
+  gifts: [
+    { id: "darts", icon: "spread", max: 3 },
+    { id: "ring", icon: "orbit", max: 3 },
+    { id: "clump", icon: "chain", max: 3 },
+    { id: "beat", icon: "bounce", max: 3 },
+    { id: "snug", icon: "shell", max: 3 },
+    { id: "kick", icon: "dash", max: 3 },
+    { id: "grow", icon: "magnet", max: 3 },
+  ],
+  prefer: ["darts", "ring", "clump", "beat", "snug", "kick", "grow"],
+  darts: { addN: 1, rateK: 1.15 },                                   // each level after 1: +1 dart, volleys 15% faster
+  ring: { n0: 2, r0: 16, nK: 1, rK: 2, w: 3.0, hitR: 1.8, perS: 0.4, dmg: 1, push: 8 },
+  clump: { every: [3, 2.5, 2], range: 50, r: 12, dmg: 3, pullS: 0.35, pull: 34 },
+  beat: { every: 4, r: [30, 40, 50], push: 15, dmg: 1, showS: 0.45 },
+  kickGift: { kbK: 2, cdLess: 0.3 },
+  growGift: { magnetK: 0.5 },
+
+  // the score (design.md 5.7): Goal 3,000; Skill 2,500 × germs popped / germs that came (a tick at each pop, under
+  // the final share), 1,500 × levels / 6, 1,000 × pips left at 60 s / your max, 1,000 if you turn yourself;
+  // Flourish 1,000 if the Big Germ pops before 60 s
+  score: { goal: 3000, popped: 2500, popTick: 2000, levels: 1500, pips: 1000, turn: 1000, flourish: 1000 },
+
+  // the bot (design.md 5.7): kite round at 60% of the arena's radius, kick with 3 or more germs within 14 u
+  bot: { kiteK: 0.6, lead: 0.7, weight: 0.8, kickN: 3, giftWeight: 2.5 },
 });

@@ -395,8 +395,9 @@ for (const size of sizeList()) {
         && (where === "ending" ? after.screen === "ending" : after.screen === "stage" && after.stage === "swim");
       check(`${tag}: Try this stage again from pause on the ${where} starts it again`, ok, `${JSON.stringify(before)} → ${JSON.stringify(after)}`);
     }
-    // F34: the overlay lingers after one tap, and still after a pause and Resume: the next tap goes on
-    await F(page, () => { window.__fb.goto(4); window.__fb.finish(); });
+    // F34: the overlay lingers after one tap, and still after a pause and Resume: the next tap goes on (stage 6: it
+    // cannot fail, so a forced finish shows the overlay; stage 4 now can, and would show the Almost card)
+    await F(page, () => { window.__fb.goto(6); window.__fb.finish(); });
     await page.mouse.click(W / 2, H * 0.15);
     await F(page, () => { window.__fb.act("pause"); window.__fb.act("resume"); window.__fb.step(400); });
     const linger = await now();

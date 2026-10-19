@@ -324,7 +324,8 @@ function groundSpeed(st, m) {
     if (v < 1) return Y.swimUS;
     ux = p.vx / v; uy = p.vy / v;
   }
-  const k = digAhead(st.map, p.x + ux * Y.body * 0.6, p.y + uy * Y.body * 0.6, Y.carveR * 0.75, st.strong);
+  // the ground just past the tunnel you cut (a disc of carveR round you): tissue there means you are digging
+  const k = digAhead(st.map, p.x + ux * Y.carveR, p.y + uy * Y.carveR, Y.carveR * 0.6, st.strong);
   return k === 2 ? Y.firmUS : k === 1 ? Y.digUS : Y.swimUS;
 }
 
@@ -479,6 +480,17 @@ function treeDepth(tr, from) {
 
 // ---- linking
 
+// Your roots grow stronger: a word pop by you (not a caption: the caption band is kept for the facts), a chime, a
+// marigold ring, a short hold.
+function upgrade(st, word, pitch, r) {
+  const A = st.A;
+  tag(st, A.p.x, A.p.y + 9, word, 0, 1.6);
+  sfx(st, "act.up", A.p.x, A.p.y, { pitch });
+  fx(st, "up", A.p.x, A.p.y, r);
+  X.hitStop(A, R.upStop);
+  A.juice.shake = Math.min(1, A.juice.shake + 0.3);
+}
+
 function link(st, i, by, quiet = false) {
   const q = st.pools[i];
   if (!q || q.linked) return;
@@ -513,11 +525,11 @@ function link(st, i, by, quiet = false) {
   }
   if (!st.reach && total >= R.reachAt) {
     st.reach = true;
-    if (!quiet) { caption(st, "root.reach"); sfx(st, "act.up", A.p.x, A.p.y, { pitch: 1 }); fx(st, "up", A.p.x, A.p.y, 14); X.hitStop(A, R.upStop); }
+    if (!quiet) { upgrade(st, "root.reachPop", 1, 14); }
   }
   if (!st.strong && total >= R.strongAt) {
     st.strong = true;
-    if (!quiet) { caption(st, "root.strong"); sfx(st, "act.up", A.p.x, A.p.y, { pitch: 2 }); fx(st, "up", A.p.x, A.p.y, 18); X.hitStop(A, R.upStop); }
+    if (!quiet) { upgrade(st, "root.strongPop", 2, 18); }
   }
 }
 
@@ -542,7 +554,15 @@ function startRoots(st) {
   const sp = st.spots[st.nest.spot];
   const o = { x: sp.x, y: sp.y };
   st.origin = o;
-  st.map = makeMap(st.seed, o, TUNE);
+  // the map was laid out at create (round 0, 0): it moves to your spot
+  const m = st.map0 || makeMap(st.seed, { x: 0, y: 0 }, TUNE);
+  st.map0 = null;
+  m.ox += o.x; m.oy += o.y;
+  m.origin = { x: o.x, y: o.y };
+  m.pools = m.pools.map((q) => ({ ...q, x: q.x + o.x, y: q.y + o.y }));
+  m.knots = m.knots.map((k) => ({ x: k.x + o.x, y: k.y + o.y }));
+  m.gen++;
+  st.map = m;
   st.pools = st.map.pools.map((q) => ({ x: q.x, y: q.y, kind: q.kind, linked: false, by: null, at: null, guard: 0 }));
   st.knots = st.map.knots;
   st.tree = createTree({ seed: st.seed, root: o, points: [], maxNodes: TUNE.tree.maxNodes, D: TUNE.tree.D });
@@ -859,10 +879,18 @@ function stepHeart(st) {
       if (f.popD <= front) { X.burst(A, f.x, f.y, f.r * 1.5, 2); X.damageFoe(A, f, f.hp + 99, 0, 0); }
     }
   }
-  if (s1 >= H.yoursS && !st.said.yours) { st.said.yours = true; caption(st, "root.yours"); }
+  yours(st);
+}
+
+// "This beat is yours.": once your heart has beaten a while and the caption band is free (root.heart read whole).
+function yours(st) {
+  if (st.said.yours || !st.heart || st.t + DT - st.heart.h0 < H.yoursS || st.t + DT < (st.capBusy || 0)) return;
+  st.said.yours = true;
+  caption(st, "root.yours");
 }
 
 function stepGrow(st) {
+  yours(st);
   const g = gaAt(meta.moments[3], st.t + DT - st.m0);
   if (g >= GR.placentaGa && !st.said.placenta) { st.said.placenta = true; caption(st, "root.placenta"); }
 }
@@ -943,7 +971,7 @@ export function create(seed, carryIn, opts = {}) {
     carry, phaseIn: phase, prompt: null, phase: "play", goalMet: false, doneT: 0,
     spots: laySpots(s), glands: layGlands(s),
     nest: { x: 0, y: 0, vx: 0, vy: N.slideUS, lastIn: 0, state: "drift", spot: -1, by: null, from: null, s0: 0, len: 0, p: 0 },
-    A, origin: null, map: null, pools: [], knots: [], tree: null, trailNode: 0, gr: null, cdUntil: 0,
+    A, origin: null, map: null, map0: makeMap(s, { x: 0, y: 0 }, TUNE), pools: [], knots: [], tree: null, trailNode: 0, gr: null, cdUntil: 0,
     reach: false, strong: false, autoK: 0, germT: 0, herK: 0, lastBeat: -Infinity,
     counts: { you: 0, auto: 0, hidden: 0 }, order: [], lastYouS: null, quick: false, pipsPart: 0,
     pts: { goal: 0, skill: 0, flourish: 0 },
@@ -1157,7 +1185,7 @@ export function view(st) {
   const f = figAt(st);
   const youPulse = pulse(st, "you", t);
   d.marks.push({ kind: "glow", x: f.x, y: f.y, r: Math.max(5, 0.6 * f.s), on: A.ko ? 0 : 0.7, pulse: st.mi >= 2 ? youPulse : herPulse });
-  d.strips.push({ kind: "tree", nodes: st.tree.view, version: st.tree.version, pulse: st.mi >= 2 ? youPulse : herPh });
+  if (st.tree.n >= 2) d.strips.push({ kind: "tree", nodes: st.tree.view, version: st.tree.version, pulse: st.mi >= 2 ? youPulse : herPh });
   d.strips.push(liningView(st));
   rimSparks(d, st.carry.sparks, f.x, f.y, 0.55 * f.s, { t, span: c.span });
 
@@ -1205,17 +1233,17 @@ function fieldFor(st, i) {
   return m[key] || (m[key] = fieldOf(st.map, st.pools[i], st.strong, TUNE));
 }
 
-// The pool the bot goes for: the cheapest to reach by its path field (a walled one once strong).
+// The pool the bot goes for: the nearest it can reach now (a walled one once strong), by plain distance, so the answer
+// never depends on which path fields were worked out before (one-button mode asks at skill 1 every step).
 function botPool(st) {
   const p = st.A.p;
-  let best = -1, bv = Infinity, near = -1, nd = Infinity;
+  let best = -1, bd = Infinity, near = -1, nd = Infinity;
   st.pools.forEach((q, i) => {
     if (q.linked) return;
     const d = hyp(q.x - p.x, q.y - p.y);
     if (d < nd) { nd = d; near = i; }
     if (q.kind === "firm" && !st.strong) return;
-    const v = fieldAt(fieldFor(st, i), p.x, p.y);
-    if (v < bv) { bv = v; best = i; }
+    if (d < bd) { bd = d; best = i; }
   });
   return best >= 0 ? best : near;
 }
