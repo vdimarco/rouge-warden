@@ -732,14 +732,14 @@
    "bounds_cm": [
     -88.89,
     -27.5,
-    0.11,
+    0.0,
     88.89,
     27.51,
-    110.39
+    110.28
    ],
    "prop": "bixi_bike",
    "part": "tyres",
-   "sha256": "7dc528b16ef4e3370f4281bd569afbc06ddc2935ad9d70b376233a0915294506"
+   "sha256": "7c410b21215cc3573861fb89e9eac3dfbd733dfb483bc7fe97649e9c5a2d112b"
   },
   {
    "file": "bixi_bike_frame.obj",
@@ -750,14 +750,14 @@
    "bounds_cm": [
     -92.56,
     -15.08,
-    3.7,
+    3.59,
     90.49,
     15.08,
-    109.0
+    108.89
    ],
    "prop": "bixi_bike",
    "part": "frame",
-   "sha256": "a3cd949008094d899a71db55b3b48dcbc9cc51905e4f81dc0d197c36aa76af24"
+   "sha256": "196a6edf8f947d4ac162de7c062d840fe6cdbad4d4458fbb2cc7dfb996b470bf"
   },
   {
    "file": "bixi_bike_brand_red.obj",
@@ -768,14 +768,14 @@
    "bounds_cm": [
     -63.0,
     -15.0,
-    69.4,
+    69.29,
     77.25,
     15.0,
-    103.5
+    103.39
    ],
    "prop": "bixi_bike",
    "part": "brand_red",
-   "sha256": "b867974aa87b68da650c3be593bea7f77e131f6595ff6b9fd58961c6b6cf9e84"
+   "sha256": "99d673e88fad87af0ba16bcc589f5fe866b9e51c10682d0672ca72b193b67232"
   },
   {
    "file": "bixi_bike_chain_guard.obj",
@@ -786,14 +786,14 @@
    "bounds_cm": [
     -53.0,
     -10.5,
-    22.0,
+    21.89,
     0.5,
     -5.0,
-    44.0
+    43.89
    ],
    "prop": "bixi_bike",
    "part": "chain_guard",
-   "sha256": "9465eff82456fdfdb8aff62ff8aed4f5f1021092750412fee18937130420558d"
+   "sha256": "63eabc8cbcd21e3316afbd4d4710db745cf1bb8d8e32e1d9be889af54b51b01b"
   },
   {
    "file": "bin_recycling_body.obj",
@@ -938,14 +938,14 @@
    "bounds_cm": [
     -27.28,
     -33.64,
-    -5.01,
+    0.0,
     42.46,
     35.25,
-    67.52
+    72.53
    ],
    "prop": "bin_garbage",
    "part": "bags",
-   "sha256": "8fecce73ec8a8c15394f16ee2df4bc815e5ff7586dccab18271022b8dc5ff430",
+   "sha256": "8cac208490ef1faefbf1d9a5d4abaacef06e82e0c31e51dd6969e0e3c7e68a21",
    "variants": [
     "BagGreen",
     "BagGrey"
@@ -1204,14 +1204,14 @@
    "bounds_cm": [
     -306.0,
     -1.5,
-    144.0,
+    107.98,
     306.0,
     1.5,
-    156.0
+    119.98
    ],
    "prop": "laundry_line",
    "part": "pulleys",
-   "sha256": "5b78f0a80b3b15ccdf9a2dcf44d407fe8caf58313f0d8ed114489bba8d917bb5"
+   "sha256": "efb6273e11e7793b44c3aea5c4862c7890bb1a3da8e2a1b63b1e1f74af56d81b"
   },
   {
    "file": "laundry_line_pulleys_steelDark.obj",
@@ -1222,14 +1222,14 @@
    "bounds_cm": [
     -313.0,
     -1.5,
-    148.5,
+    112.48,
     313.0,
     1.5,
-    151.5
+    115.48
    ],
    "prop": "laundry_line",
    "part": "pulleys_steelDark",
-   "sha256": "4435bd95aabf2656b76fec3ba7115302a6c0692585fd994edfd829864987f2ce"
+   "sha256": "c3dbd1dd91266fbc68a2112b759386c71d42a5672ccd724488fcae09f5d8e0c0"
   },
   {
    "file": "laundry_line_rope.obj",
@@ -1240,14 +1240,14 @@
    "bounds_cm": [
     -300.04,
     -0.9,
-    120.77,
+    84.75,
     300.04,
     0.9,
-    156.35
+    120.33
    ],
    "prop": "laundry_line",
    "part": "rope",
-   "sha256": "89704fc5a5922df76b67746f5ae94ec674b26b15adedad045710427625a29553"
+   "sha256": "a15ee91eff7390aa2aaee33d7fc9af191b98d52d7b0a848eca50b2c422cc26be"
   },
   {
    "file": "laundry_line_cloth_a.obj",
@@ -1258,14 +1258,14 @@
    "bounds_cm": [
     -238.0,
     -1.76,
-    36.02,
+    0.0,
     239.0,
     2.87,
-    134.54
+    98.52
    ],
    "prop": "laundry_line",
    "part": "cloth_a",
-   "sha256": "8214ca1cb505e76172c37a794ec6ab56ac7ccc4daeb03141f4798833ae472b24",
+   "sha256": "62bb2ea13d19bdf3934792d5a9be11d1f7394fa20897990c85f2f4c725a7396b",
    "variants": [
     "ClothGrey",
     "ClothPink"
@@ -1280,14 +1280,14 @@
    "bounds_cm": [
     -124.0,
     -3.66,
-    44.38,
+    8.36,
     -17.0,
     1.59,
-    124.68
+    88.66
    ],
    "prop": "laundry_line",
    "part": "cloth_b",
-   "sha256": "373759598cd96ffbde0bc57c262a06f1cd992135fbe149d9bedf71a75667c6f3",
+   "sha256": "1d4c8564804de74ef329882e39cbc7774b1a6c04eb8b3d267a3f3c2c24082500",
    "variants": [
     "ClothDenim",
     "ClothGreen"
@@ -1302,14 +1302,14 @@
    "bounds_cm": [
     6.0,
     -0.2,
-    60.39,
+    24.37,
     54.0,
     4.2,
-    122.28
+    86.27
    ],
    "prop": "laundry_line",
    "part": "cloth_c",
-   "sha256": "81720f8e995db1cd2044bab6f9ea07b41bef7f7766f51281eb22a9f4e36384b3",
+   "sha256": "4ea81b4d0d0bdba01891819cc00a95a8e95349c9ee7031be37b9991f4498ab1f",
    "variants": [
     "ClothRed",
     "ClothPink"
@@ -1324,14 +1324,14 @@
    "bounds_cm": [
     66.0,
     -1.92,
-    74.69,
+    38.67,
     170.0,
     1.57,
-    129.12
+    93.1
    ],
    "prop": "laundry_line",
    "part": "cloth_d",
-   "sha256": "9ca3fba5142569959e18d4f74a4aaf920bd2c031865e5e3886c3f5d6770af4cc",
+   "sha256": "270fc9088cc1cac888f282e1c4467a46c0a513c94cd47bf154eda0864e58dd74",
    "variants": [
     "ClothOchre",
     "ClothGreen"
@@ -1481,14 +1481,14 @@
    "bounds_cm": [
     -11.0,
     -46.0,
-    4.0,
+    4.78,
     12.4,
     46.0,
-    22.0
+    22.78
    ],
    "prop": "flower_box",
    "part": "box",
-   "sha256": "6c603ac849dd86149c228e41b3674b834920af46e29e65ceca66daf2ac0ee5e2",
+   "sha256": "3b7d9b0cfe8fa87dc55decf0b89bf64d2515bea19bf509545ea648098f540908",
    "variants": [
     "BoxGreen",
     "BoxWhite"
@@ -1503,14 +1503,14 @@
    "bounds_cm": [
     -9.0,
     -43.0,
-    21.2,
+    21.98,
     9.0,
     43.0,
-    22.0
+    22.78
    ],
    "prop": "flower_box",
    "part": "soil",
-   "sha256": "a59d5e8169f432e9991620edd74e388c877dc8754de4590fa16feb8f7de6976f"
+   "sha256": "2aeb0aa26ef3d25323922637a4f6d64bbc00199bf2ffeeb5743c2d5a8be3c687"
   },
   {
    "file": "flower_box_brackets.obj",
@@ -1521,14 +1521,14 @@
    "bounds_cm": [
     -11.8,
     -30.8,
-    -0.78,
+    0.0,
     8.8,
     30.8,
-    12.0
+    12.78
    ],
    "prop": "flower_box",
    "part": "brackets",
-   "sha256": "d1edf87a77bdf215aae49dc9b01117e0f8111d4cfd5473721d55cc7a7cd98831"
+   "sha256": "b514bf372de48d45b2b8a16af22005bff79e55ee3c9cee97e3f9b98c4a8ee26e"
   },
   {
    "file": "flower_box_leaves.obj",
@@ -1539,14 +1539,14 @@
    "bounds_cm": [
     -10.34,
     -44.73,
-    7.76,
+    8.54,
     14.24,
     43.25,
-    36.15
+    36.93
    ],
    "prop": "flower_box",
    "part": "leaves",
-   "sha256": "4f13749ab701f0e1c96cb42a7cfb5467e45a2aa9284cbf8c8ffc7a1683992040"
+   "sha256": "d80da7413139c8cab819c290dcacfb2d5a60288d1f2cf60ca04574d495c0d7e5"
   },
   {
    "file": "flower_box_flowers.obj",
@@ -1557,14 +1557,14 @@
    "bounds_cm": [
     -10.41,
     -37.6,
-    28.73,
+    29.52,
     11.29,
     42.65,
-    40.64
+    41.42
    ],
    "prop": "flower_box",
    "part": "flowers",
-   "sha256": "1ed13f783a883450c408367c9dc91bb7fd99b0dfd37572fc4e1f3601316e3bad",
+   "sha256": "f3ca60037e1947f94736f942e4328d2eb190dffdc1b97f3ea03f72cc0efe7e28",
    "variants": [
     "FlowerPink",
     "FlowerWhite"
@@ -1579,14 +1579,14 @@
    "bounds_cm": [
     -31.53,
     -83.5,
-    -0.04,
+    0.0,
     29.6,
     83.5,
-    88.29
+    88.33
    ],
    "prop": "bench",
    "part": "ends",
-   "sha256": "1fded76932936c7188f926afafae3dbe7c7aad475fe9a1a783795be208867c4a"
+   "sha256": "1418937c3cd805c86cc401ae00c301fbf14a45dae01d96eabbf59208ebbbcd08"
   },
   {
    "file": "bench_slats.obj",
@@ -1597,14 +1597,14 @@
    "bounds_cm": [
     -30.84,
     -92.0,
-    44.7,
+    44.74,
     24.75,
     92.0,
-    86.61
+    86.65
    ],
    "prop": "bench",
    "part": "slats",
-   "sha256": "82e893ecbf514bea9f30f080f5b65737f7f09887d8dc87c0e4481504b8f8a856",
+   "sha256": "eb98ad49d6379527f71f9f9be27de7d0b2eb9555984ef25789b3933157364827",
    "variants": [
     "BenchWoodLight",
     "BenchGreen"
@@ -1803,14 +1803,14 @@
    "bounds_cm": [
     -23.29,
     -8.69,
-    -0.39,
+    0.0,
     29.7,
     9.2,
-    42.2
+    42.59
    ],
    "prop": "dog_small",
    "part": "merged_coat",
-   "sha256": "2f7a99f808cac5eb678ab0243cb1f2fc300a65771937de21dde284be1db277d9",
+   "sha256": "121a4e6f9ded1aa2813e592bad4a5dbf47fd0cc711ccbb9c69fbde0cd3c31998",
    "variants": [
     "DogCoatWhite",
     "DogCoatBlack"
@@ -1847,14 +1847,14 @@
    "bounds_cm": [
     12.63,
     -6.37,
-    18.71,
+    19.1,
     17.27,
     6.37,
-    32.54
+    32.93
    ],
    "prop": "dog_small",
    "part": "merged_collar",
-   "sha256": "978648969cc1970a8eb1ac883a071496ea6f167a787b928234f85d1f01ac0da1",
+   "sha256": "b141bb2bc083afdeaae26c8d0305d6ccf01c0e79fb736d68dc1fec0e7105e533",
    "variants": [
     "CollarBlue",
     "CollarGreen"
@@ -1909,14 +1909,14 @@
    "bounds_cm": [
     23.87,
     -4.28,
-    26.87,
+    27.26,
     31.01,
     4.28,
-    33.93
+    34.32
    ],
    "prop": "dog_small",
    "part": "merged_dark",
-   "sha256": "568aeb6f4a09f3defc352ed043138ee1f22e2d26f801bc6e788c6b4de5952024"
+   "sha256": "00fa3d4cbb109ae4499a4fb13c31c39377c8dd6c6a6a6d7826258242df435b68"
   },
   {
    "file": "dog_small_leg_fl.obj",
@@ -2059,14 +2059,14 @@
    "bounds_cm": [
     -47.8,
     -12.49,
-    -0.54,
+    0.0,
     41.4,
     13.2,
-    57.27
+    57.81
    ],
    "prop": "dog_medium",
    "part": "merged_coat",
-   "sha256": "0e0ac169a516ed29d5fd5ef8e5fad611d1ec91cb64d44284f42accc6591c3ae1",
+   "sha256": "eb9f904c7892acd9f8b59b459e014eb21daa1037d03e0e5682c8e169fe6a76d1",
    "variants": [
     "DogCoatBlack",
     "DogCoatGrey"
@@ -2103,14 +2103,14 @@
    "bounds_cm": [
     17.93,
     -9.38,
-    30.12,
+    30.66,
     24.43,
     9.38,
-    49.74
+    50.28
    ],
    "prop": "dog_medium",
    "part": "merged_collar",
-   "sha256": "024d7d69b25dd835d9e6db75409fe143e2f4d932fdfeb975cef0590e07d13e0b",
+   "sha256": "54e7fbaf830f15558b3a57b0409ff19951acb746a3288fb38bbb1b0deae870e8",
    "variants": [
     "CollarBlue",
     "CollarGreen"
@@ -2165,14 +2165,14 @@
    "bounds_cm": [
     32.93,
     -5.54,
-    40.96,
+    41.5,
     43.17,
     5.54,
-    50.41
+    50.95
    ],
    "prop": "dog_medium",
    "part": "merged_dark",
-   "sha256": "e1029f9597f2de6c543e1df4bf2caed952fa9deb5dfa3fc9ff02af853bb971a5"
+   "sha256": "552319712e69a99f7e4b27ff3f3c123ce02650b7d70df47635045b3527821f85"
   },
   {
    "file": "dog_medium_leg_fl.obj",
@@ -2315,14 +2315,14 @@
    "bounds_cm": [
     -63.73,
     -16.4,
-    -0.72,
+    0.0,
     54.42,
     17.35,
-    75.11
+    75.83
    ],
    "prop": "dog_large",
    "part": "merged_coat",
-   "sha256": "3119a9bc107d3c10ef172281936d401eb4855639e79372b510440a0c9bdcb908",
+   "sha256": "1dd54b30c4795ddaabc124657468576ee9555d91d4e0cfa51665877332d54794",
    "variants": [
     "DogCoatBlack",
     "DogCoatChocolate"
@@ -2359,14 +2359,14 @@
    "bounds_cm": [
     23.95,
     -12.39,
-    39.53,
+    40.25,
     32.54,
     12.39,
-    64.95
+    65.67
    ],
    "prop": "dog_large",
    "part": "merged_collar",
-   "sha256": "6494f6369f659cab8b2eee5ba202a28c6e91a6984e5ae72d4dfe5a2757dcda84",
+   "sha256": "1ed897bf3d644fef0e043395d7a9a1f0c606ab6a1cf718ef2df5f6863f821438",
    "variants": [
     "CollarBlue",
     "CollarGreen"
@@ -2421,14 +2421,14 @@
    "bounds_cm": [
     42.7,
     -6.8,
-    52.99,
+    53.71,
     56.54,
     6.8,
-    64.89
+    65.61
    ],
    "prop": "dog_large",
    "part": "merged_dark",
-   "sha256": "2750d861edebcb76bf590bedc87be1f5cbd1afebd5aff5cb85d8740334d740af"
+   "sha256": "cf16ad1847e5040227d18dfbc4b3386138b56af153c6be659b28a3c0ee33928a"
   },
   {
    "file": "dog_large_leg_fl.obj",
@@ -2570,14 +2570,14 @@
    "bounds_cm": [
     -47.88,
     -27.5,
-    11.05,
+    10.96,
     30.95,
     27.5,
-    107.65
+    107.57
    ],
    "prop": "stroller",
    "part": "merged_frame",
-   "sha256": "047157262adf3f327215d57aa63155ace0d4fa064b13fae2bbecffeac11d85c8",
+   "sha256": "30984981b778839c6348c358eaeca651333e67ce40737af4c48bd326723fd5c9",
    "variants": [
     "StrollerSilver"
    ]
@@ -2613,14 +2613,14 @@
    "bounds_cm": [
     -25.46,
     -20.5,
-    31.02,
+    30.94,
     27.39,
     20.5,
-    83.07
+    82.98
    ],
    "prop": "stroller",
    "part": "merged_seat",
-   "sha256": "530a0392848df369d5b80b3e39feec862d9e714e3e32f8bae48f83cd760dab95",
+   "sha256": "ff70fe977c0a3412fe44317919f538afecac092bd2a7a95463305a29d259a457",
    "variants": [
     "FabricGrey",
     "FabricOlive"
@@ -2657,14 +2657,14 @@
    "bounds_cm": [
     -22.65,
     -21.0,
-    65.0,
+    64.92,
     -3.0,
     21.0,
-    97.75
+    97.67
    ],
    "prop": "stroller",
    "part": "merged_canopy",
-   "sha256": "db38ce128eb0e24dff69836b99437efc6aa7c253e49aae591c9e0cac8c6184cf",
+   "sha256": "544b79ef0a52e4204d627bad9f59ce352972bbed2be4a04f92a8f12b27563f90",
    "variants": [
     "FabricBurgundy",
     "FabricSand"
@@ -2697,14 +2697,14 @@
    "bounds_cm": [
     -43.91,
     -30.5,
-    0.08,
+    0.0,
     39.42,
     30.5,
-    27.91
+    27.82
    ],
    "prop": "stroller",
    "part": "merged_wheels",
-   "sha256": "001422c6a4052e1cfa9995349cf58d210a035cca6ea9e0420062392454357fab"
+   "sha256": "7a49f7e4897d08118684e038ccea9517d8225c783f20c4add643f28aa9a29413"
   },
   {
    "file": "stroller_wheel_fr.obj",
@@ -4080,10 +4080,10 @@
    "bounds_cm": [
     -92.56,
     -27.5,
-    0.11,
+    0.0,
     90.49,
     27.51,
-    110.39
+    110.28
    ],
    "parts": {
     "tyres": {
@@ -4108,7 +4108,7 @@
      "center": [
       0,
       0,
-      55
+      54.89
      ],
      "size": [
       180,
@@ -4217,10 +4217,10 @@
    "bounds_cm": [
     -27.28,
     -33.64,
-    -5.01,
+    0.0,
     42.46,
     35.25,
-    67.52
+    72.53
    ],
    "parts": {
     "bags": {
@@ -4233,7 +4233,7 @@
      "center": [
       8,
       0,
-      30
+      35.01
      ],
      "size": [
       80,
@@ -4439,10 +4439,10 @@
    "bounds_cm": [
     -313.0,
     -3.66,
-    36.02,
+    0.0,
     313.0,
     4.2,
-    156.35
+    120.33
    ],
    "parts": {
     "pulleys": {
@@ -4478,12 +4478,12 @@
     "line_start_cm": [
      -300.0,
      0.0,
-     150
+     113.98
     ],
     "line_end_cm": [
      300.0,
      0.0,
-     150
+     113.98
     ]
    },
    "span_cm": 600,
@@ -4585,10 +4585,10 @@
    "bounds_cm": [
     -11.8,
     -46.0,
-    -0.78,
+    0.0,
     14.24,
     46.0,
-    40.64
+    41.42
    ],
    "parts": {
     "box": {
@@ -4625,10 +4625,10 @@
    "bounds_cm": [
     -31.53,
     -92.0,
-    -0.04,
+    0.0,
     29.6,
     92.0,
-    88.29
+    88.33
    ],
    "parts": {
     "ends": {
@@ -4645,7 +4645,7 @@
      "center": [
       0,
       0,
-      24
+      24.04
      ],
      "size": [
       56,
@@ -4657,7 +4657,7 @@
      "center": [
       -26,
       0,
-      66
+      66.04
      ],
      "size": [
       10,
@@ -4786,10 +4786,10 @@
    "bounds_cm": [
     -23.29,
     -8.69,
-    -18.99,
+    0.0,
     31.01,
     9.2,
-    42.2
+    42.59
    ],
    "parts": {
     "body": {
@@ -4798,7 +4798,7 @@
      "attach_cm": [
       0.0,
       0.0,
-      0.0
+      0.39
      ]
     },
     "merged_coat": {
@@ -4812,7 +4812,7 @@
      "attach_cm": [
       0.0,
       0.0,
-      0.0
+      0.39
      ]
     },
     "merged_collar": {
@@ -4826,7 +4826,7 @@
      "attach_cm": [
       15.12,
       0.0,
-      26.2
+      26.59
      ],
      "joint": {
       "axis_unreal": "Y",
@@ -4840,7 +4840,7 @@
      "attach_cm": [
       15.12,
       0.0,
-      26.2
+      26.59
      ]
     },
     "merged_dark": {
@@ -4854,7 +4854,7 @@
      "attach_cm": [
       12.6,
       -3.84,
-      17.65
+      18.04
      ],
      "joint": {
       "axis_unreal": "Y",
@@ -4868,7 +4868,7 @@
      "attach_cm": [
       12.6,
       3.84,
-      17.65
+      18.04
      ],
      "joint": {
       "axis_unreal": "Y",
@@ -4882,7 +4882,7 @@
      "attach_cm": [
       -12.6,
       -4.0,
-      18.6
+      18.99
      ],
      "joint": {
       "axis_unreal": "Y",
@@ -4896,7 +4896,7 @@
      "attach_cm": [
       -12.6,
       4.0,
-      18.6
+      18.99
      ],
      "joint": {
       "axis_unreal": "Y",
@@ -4910,7 +4910,7 @@
      "attach_cm": [
       -19.74,
       0.0,
-      25.25
+      25.64
      ],
      "joint": {
       "axis_unreal": "Z",
@@ -4922,7 +4922,7 @@
    "leash_collar_cm": [
     16.07,
     0.0,
-    20.31
+    20.7
    ],
    "trot": "swing legs about Unreal Y with diagonal pairs in phase (fl+rr, fr+rl); stride period about 0.45 s at walking pace",
    "dimensions": {
@@ -4939,10 +4939,10 @@
    "bounds_cm": [
     -47.8,
     -12.49,
-    -29.74,
+    0.0,
     43.17,
     13.2,
-    57.27
+    57.81
    ],
    "parts": {
     "body": {
@@ -4951,7 +4951,7 @@
      "attach_cm": [
       0.0,
       0.0,
-      0.0
+      0.54
      ]
     },
     "merged_coat": {
@@ -4965,7 +4965,7 @@
      "attach_cm": [
       0.0,
       0.0,
-      0.0
+      0.54
      ]
     },
     "merged_collar": {
@@ -4979,7 +4979,7 @@
      "attach_cm": [
       21.6,
       0.0,
-      40.4
+      40.94
      ],
      "joint": {
       "axis_unreal": "Y",
@@ -4993,7 +4993,7 @@
      "attach_cm": [
       21.6,
       0.0,
-      40.4
+      40.94
      ]
     },
     "merged_dark": {
@@ -5007,7 +5007,7 @@
      "attach_cm": [
       18.0,
       -5.76,
-      27.8
+      28.34
      ],
      "joint": {
       "axis_unreal": "Y",
@@ -5021,7 +5021,7 @@
      "attach_cm": [
       18.0,
       5.76,
-      27.8
+      28.34
      ],
      "joint": {
       "axis_unreal": "Y",
@@ -5035,7 +5035,7 @@
      "attach_cm": [
       -18.0,
       -6.0,
-      29.2
+      29.74
      ],
      "joint": {
       "axis_unreal": "Y",
@@ -5049,7 +5049,7 @@
      "attach_cm": [
       -18.0,
       6.0,
-      29.2
+      29.74
      ],
      "joint": {
       "axis_unreal": "Y",
@@ -5063,7 +5063,7 @@
      "attach_cm": [
       -28.2,
       0.0,
-      39.0
+      39.54
      ],
      "joint": {
       "axis_unreal": "Z",
@@ -5075,7 +5075,7 @@
    "leash_collar_cm": [
     23.0,
     0.0,
-    31.72
+    32.26
    ],
    "trot": "swing legs about Unreal Y with diagonal pairs in phase (fl+rr, fr+rl); stride period about 0.45 s at walking pace",
    "dimensions": {
@@ -5092,10 +5092,10 @@
    "bounds_cm": [
     -63.73,
     -16.4,
-    -38.52,
+    0.0,
     56.54,
     17.35,
-    75.11
+    75.83
    ],
    "parts": {
     "body": {
@@ -5104,7 +5104,7 @@
      "attach_cm": [
       0.0,
       0.0,
-      0.0
+      0.72
      ]
     },
     "merged_coat": {
@@ -5118,7 +5118,7 @@
      "attach_cm": [
       0.0,
       0.0,
-      0.0
+      0.72
      ]
     },
     "merged_collar": {
@@ -5132,7 +5132,7 @@
      "attach_cm": [
       28.8,
       0.0,
-      52.6
+      53.32
      ],
      "joint": {
       "axis_unreal": "Y",
@@ -5146,7 +5146,7 @@
      "attach_cm": [
       28.8,
       0.0,
-      52.6
+      53.32
      ]
     },
     "merged_dark": {
@@ -5160,7 +5160,7 @@
      "attach_cm": [
       24.0,
       -7.44,
-      35.95
+      36.67
      ],
      "joint": {
       "axis_unreal": "Y",
@@ -5174,7 +5174,7 @@
      "attach_cm": [
       24.0,
       7.44,
-      35.95
+      36.67
      ],
      "joint": {
       "axis_unreal": "Y",
@@ -5188,7 +5188,7 @@
      "attach_cm": [
       -24.0,
       -7.75,
-      37.8
+      38.52
      ],
      "joint": {
       "axis_unreal": "Y",
@@ -5202,7 +5202,7 @@
      "attach_cm": [
       -24.0,
       7.75,
-      37.8
+      38.52
      ],
      "joint": {
       "axis_unreal": "Y",
@@ -5216,7 +5216,7 @@
      "attach_cm": [
       -37.6,
       0.0,
-      50.75
+      51.47
      ],
      "joint": {
       "axis_unreal": "Z",
@@ -5228,7 +5228,7 @@
    "leash_collar_cm": [
     30.65,
     0.0,
-    41.13
+    41.85
    ],
    "trot": "swing legs about Unreal Y with diagonal pairs in phase (fl+rr, fr+rl); stride period about 0.45 s at walking pace",
    "dimensions": {
@@ -5245,10 +5245,10 @@
    "bounds_cm": [
     -47.88,
     -30.5,
-    -13.91,
+    0.0,
     39.42,
     30.5,
-    107.65
+    107.57
    ],
    "parts": {
     "frame": {
@@ -5257,7 +5257,7 @@
      "attach_cm": [
       0.0,
       0.0,
-      0.0
+      -0.08
      ]
     },
     "merged_frame": {
@@ -5271,7 +5271,7 @@
      "attach_cm": [
       0.0,
       0.0,
-      0.0
+      -0.08
      ]
     },
     "merged_seat": {
@@ -5285,7 +5285,7 @@
      "attach_cm": [
       0.0,
       0.0,
-      0.0
+      -0.08
      ]
     },
     "merged_canopy": {
@@ -5299,7 +5299,7 @@
      "attach_cm": [
       30.0,
       -21.0,
-      9.5
+      9.42
      ],
      "joint": {
       "axis_unreal": "Y",
@@ -5318,7 +5318,7 @@
      "attach_cm": [
       30.0,
       21.0,
-      9.5
+      9.42
      ],
      "joint": {
       "axis_unreal": "Y",
@@ -5332,7 +5332,7 @@
      "attach_cm": [
       -30.0,
       -27.5,
-      14.0
+      13.92
      ],
      "joint": {
       "axis_unreal": "Y",
@@ -5346,7 +5346,7 @@
      "attach_cm": [
       -30.0,
       27.5,
-      14.0
+      13.92
      ],
      "joint": {
       "axis_unreal": "Y",
@@ -5359,7 +5359,7 @@
     "hand_grip_cm": [
      -46,
      0.0,
-     106
+     105.92
     ]
    },
    "colliders_cm": [
@@ -5367,7 +5367,7 @@
      "center": [
       0,
       0,
-      55
+      54.92
      ],
      "size": [
       96,
@@ -5457,6 +5457,6 @@
   "triangles_all_meshes": 22090
  },
  "source_sha256": {
-  "Scripts/blender/plateau_props.py": "f91fe9d67399bcdf62c851bfcf7994558efbe6e7ec8f68d94e84ae461bb45902"
+  "Scripts/blender/plateau_props.py": "acd7a820b1c50ee7ce1a2a08ac6075f43d9b9a919f1038041570690d84532693"
  }
 }

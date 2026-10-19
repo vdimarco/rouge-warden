@@ -1476,12 +1476,48 @@ def material_entry(key):
     return entry
 
 
+POSITION_KEYS = ('center', 'center_cm', 'position_cm')
+
+
+def _shift_positions(node, dz, key=''):
+    """Shift every Unreal-local 3-vector stored under a position key (anchors, colliders, slots)."""
+    if isinstance(node, dict):
+        for k, v in node.items():
+            node[k] = _shift_positions(v, dz, k)
+        return node
+    if isinstance(node, list):
+        positional = key.endswith('_cm') or key in POSITION_KEYS
+        if positional and len(node) == 3 and all(isinstance(c, (int, float)) for c in node):
+            return [node[0], node[1], round(node[2] + dz, 2)]
+        return [_shift_positions(v, dz, key) for v in node]
+    return node
+
+
+def snap_to_ground(prop):
+    """Put the lowest point of the assembled prop exactly on z = 0 (the base-centre pivot)."""
+    merged = any(d.get('merged') for d in prop.parts.values())
+    zs = [v[2] for d in prop.parts.values() if d.get('merged') or not merged or d['attach'] is None
+          for v in d['geo'].v]
+    dz = -min(zs)
+    if abs(dz) < 1e-6:
+        return
+    for d in prop.parts.values():
+        if merged and not d.get('merged') and d['attach'] is not None:
+            d['attach'] = [d['attach'][0], d['attach'][1], round(d['attach'][2] + dz, 2)]
+        else:
+            d['geo'].v = [(x, y, z + dz) for x, y, z in d['geo'].v]
+    prop.anchors = _shift_positions(prop.anchors, dz)
+    prop.colliders = _shift_positions(prop.colliders, dz)
+    prop.extra = _shift_positions(prop.extra, dz)
+
+
 def build(only=None):
     props = []
     for builder in BUILDERS:
         prop = builder()
         if only and prop.key not in only:
             continue
+        snap_to_ground(prop)
         props.append(prop)
     return props
 
@@ -1522,7 +1558,9 @@ def export(props, out_dir):
         if merged_tris:
             assert merged_tris == prop_tris, (prop.key, merged_tris, prop_tris)
         tri_counts[prop.key] = prop_tris
-        all_v = [v for (k, _), f in finals.items() if k == prop.key for v in f[0]]
+        has_merged = any(d.get('merged') for d in prop.parts.values())
+        all_v = [v for (k, n), f in finals.items() if k == prop.key and
+                 (not has_merged or prop.parts[n].get('merged')) for v in f[0]]
         entry = {'kind': prop.kind, 'description': prop.description, 'pivot': prop.pivot,
                  'triangles': prop_tris, 'budget': BUDGETS.get(prop.key, DEFAULT_BUDGET),
                  'bounds_cm': bounds_ue(all_v), 'parts': parts_out}
@@ -1818,12 +1856,9 @@ def main(argv):
         print(f'{key:18s} {count:6d} tris  (budget {budget}){"  OVER" if count > budget else ""}')
     print(f'{len(batches)} meshes, {sum(b["triangles"] for b in batches)} triangles in all meshes -> {out}')
     if not args.no_render:
-        tmp = Path(args.out) / '.tiles'
-        tmp.mkdir(exist_ok=True)
-        render_sheet(props, finals, Path(args.sheet), tmp)
-        for f in tmp.glob('*.png'):
-            f.unlink()
-        tmp.rmdir()
+        import tempfile
+        with tempfile.TemporaryDirectory(prefix='plateau_props_tiles_') as tmp:
+            render_sheet(props, finals, Path(args.sheet), Path(tmp))
         print('contact sheet ->', args.sheet)
     over = [k for k, c in tri_counts.items() if c > BUDGETS.get(k, DEFAULT_BUDGET)]
     return 1 if over else 0
