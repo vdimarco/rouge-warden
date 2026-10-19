@@ -172,18 +172,28 @@ await check("sub-goals: grow (gather sparkles) and the Big Germ, each shown then
 
 // ---- the waves ----
 
-await check("the wave table: drifters, puffers, swarmer rings at 26, 31, 35, 40 and 45 s, the Big Germ at 48 s; no spawn in each 1 s calm", () => {
+await check("the wave table: drifters (in pairs from 24 s), puffers, swarmer rings at 26, 31, 35, 40 and 45 s, the Big Germ at 48 s; no spawn in each 1 s calm", () => {
   const st = turn.create(1, C0, { motherPhase: 0 });
   const rows = st.rows;
-  const count = (kind, a, b) => rows.filter((r) => r.kind === kind && r.at >= a && r.at < b).length;
+  const count = (kind, a, b) => rows.filter((r) => r.kind === kind && r.at >= a && r.at < b).reduce((n, r) => n + (r.n || 1), 0);
   assert.equal(count("drifter", 0, 12), 12);
   assert.equal(count("drifter", 12, 24), 15);
   assert.equal(count("puffer", 12, 24), 2);
-  assert.equal(count("drifter", 24, 36), 16);
+  assert.equal(count("drifter", 24, 36), 32);
   assert.equal(count("puffer", 24, 36), 2);
-  assert.equal(count("drifter", 36, 48), 22);
+  assert.equal(count("drifter", 36, 48), 38);
   assert.equal(count("puffer", 36, 48), 3);
-  assert.equal(count("drifter", 48, 60), 16);
+  assert.equal(count("drifter", 48, 60), 28);
+  assert.ok(rows.every((r) => r.kind !== "drifter" || r.n === (r.at < 24 ? 1 : 2)), "a pack of 2 from 24 s");
+  assert.equal(st.plan, rows.reduce((n, r) => n + (r.kind === "ring" ? TUNE.ringN : r.n || 1), 0), "the plan counts every germ");
+  // a pack comes in side by side from one place on the wall
+  const pk = turn.create(1, C0, { motherPhase: 0 });
+  pk.rows = [{ at: 0, kind: "drifter", n: 2 }];
+  pk.ri = 0;
+  turn.step(pk, makeIntents());
+  assert.equal(pk.A.foes.length, 2);
+  const [f1, f2] = pk.A.foes;
+  near(Math.hypot(f1.x - f2.x, f1.y - f2.y), TUNE.packGap, 0.5, "side by side");
   assert.deepEqual(rows.filter((r) => r.kind === "ring").map((r) => r.at), [26, 31, 35, 40, 45]);
   assert.deepEqual(rows.filter((r) => r.kind === "big").map((r) => r.at), [48]);
   for (const k of TUNE.calms) assert.deepEqual(rows.filter((r) => r.kind !== "big" && r.at >= k && r.at < k + 1), [], `the calm at ${k} s`);
@@ -223,6 +233,7 @@ await check("the grow meter: levels at 5, 14, 27, 44, 66 and 92 sparkles; each o
         assert.equal(new Set(ids).size, ids.length, "distinct");
         assert.equal(ids.length, 3);
         for (const id of ids) assert.ok((st.gifts[id] || 0) < 3, `${id} is not at its top level`);
+        if (TUNE.arms.some((id) => (st.gifts[id] || 0) < 3)) assert.ok(ids.some((id) => TUNE.arms.includes(id)), `an antibody pick in ${ids}`);
         for (const b of st.offer) assert.ok(Math.hypot(b.x, b.y) <= st.A.arena.r - TUNE.gift.bubbleR, "inside the wall");
         assert.ok(st.levelsDue >= 1);
       }

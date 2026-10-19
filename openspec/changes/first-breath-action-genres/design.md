@@ -1125,7 +1125,9 @@ germs clear, you turn head-down, and you rest while your song is hummed.
 | Big kick | "Kick" | kick knock-back ×2, cooldown −0.3 s | the same |
 | Grow | "Grow" | sparkle magnet +50% | the same |
 
-The bot's preference: Y darts, Tag ring, Clump, Beat, Snug, Big kick, Grow.
+The bot's preference: Y darts, Tag ring, Clump, Beat, Snug, Big kick, Grow. Built: while one of Y darts, Tag ring,
+Clump and Beat can still grow, each offer holds at least one of them (a few strong antibody picks, as 20 Minutes Till
+Dawn), so no level offers only Snug, Kick and Grow.
 
 **Waves** (seconds into `waves`; Assist ×0.75 counts):
 
@@ -1133,9 +1135,9 @@ The bot's preference: Y darts, Tag ring, Clump, Beat, Snug, Big kick, Grow.
 |---|---|
 | 0 to 12 s | a drifter every 1.0 s from the arena edge |
 | 12 to 24 s | a drifter every 0.75 s; a puffer every 6 s |
-| 24 to 36 s | a drifter every 0.7 s; a puffer every 6 s; a swarmer ring at 26, 31 and 35 s |
-| 36 to 48 s | a drifter every 0.5 s; a puffer every 4 s; a swarmer ring at 40 and 45 s |
-| 48 to 60 s | the Big Germ at 48 s from the far edge, with drifters every 0.7 s |
+| 24 to 36 s | a pair of drifters every 0.7 s (built: they come in side by side, 6 u apart); a puffer every 6 s; a swarmer ring at 26, 31 and 35 s |
+| 36 to 48 s | a pair of drifters every 0.6 s (built; was one every 0.5 s); a puffer every 4 s; a swarmer ring at 40 and 45 s |
+| 48 to 60 s | the Big Germ at 48 s from the far edge, with a pair of drifters every 0.8 s (built) |
 | 60 s | every germ left pops at once ("{Carer}'s antibodies clear them all."), and every sparkle is pulled to you (`vacuum`) |
 
 Each wave start (at 12, 24, 36 and 48 s) has a 1 s calm with a soft swell, where a fact may show.
@@ -1224,7 +1226,7 @@ Collect calm bubbles. After the 8th wave, the light.
 exposure 1 to 6 over 2.0 s, white 0 to 1 over 1.0 s, hold 0.5 s, the sound opens to 16 kHz. Folds stop at the end
 of wave 8, so the light is never framed by flaps.
 
-**Score** (not shown at the end of this stage, v1). Goal 3,000. Skill: 2,500 × folds passed without a bump / folds;
+**Score** (not shown at the end of this stage, v1; the HUD counts it live as you ride, with tags beside you). Goal 3,000. Skill: 2,500 × folds passed without a bump / folds;
 2,000 × gates you hit / 4; 1,500 × bubbles / bubbles offered. Flourish: 1,000 × min(1, best flow streak / 20 folds).
 
 **No knock-out.** A bump only slows you. Birth always happens on schedule.

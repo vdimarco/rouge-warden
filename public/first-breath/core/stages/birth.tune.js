@@ -26,12 +26,21 @@
 // - The flow streak counts every clean pass (folds and gates hit); a bump or a gate missed ends it. Its Flourish is
 //   1,000 × min(1, best streak / 20).
 // - After the 8th surge you keep its speed through the last rest and into the light: the last wave carries you out.
+// - The camera pulls back a little with the waves' planned speed (span 120 at rest, up to 134.4 in wave 8's surge,
+//   your seat with it), so a fast surge shows more of the way ahead, most of all in landscape; a bump never pumps it.
+// - Tight gaps telegraph as the game's closing ring: a dotted cream ring that closes in and brightens over the last
+//   1.2 s of travel, with two cut chevrons pointing in at the slot, and a soft glow as you slip through tucked.
+// - Tags (+100, +500, Flow, Nice tuck) and the feedback rings ride with you, beside you toward the channel's middle,
+//   so they never fly up into the HUD. The HUD score counts live in this stage (main.js; there is still no overlay).
+// - The 8th surge shakes and rings harder, and the light opens with a burst of paper flecks and a wide ring.
 // - Each item ahead is laid in a chain at its planned distance from the one before it, and placed 240 u ahead of you
 //   (past the screen's edge in every layout) when its planned time comes near. A bump makes you late for the items
 //   already laid, and the chain keeps their spacing, so nothing ever comes closer together after a bump; the next
 //   wave's first fold starts the chain again from you when you are less than about two bumps late.
 //
-// Bots (sim, 20 seeds; qa/first-breath/stage-birth.test.mjs and sim.test.mjs): every input takes 65.5 s.
+// Bots (sim, 20 seeds; qa/first-breath/stage-birth.test.mjs and sim.test.mjs): every input takes 65.5 s. Measured
+// (stage test, seeds 1 to 6): skill 1 about 10,000 (Glowing), 0.7 about 9,600, 0.5 about 9,000, idle about 5,700
+// (Good: the goal, the bubbles it rides into and about half the folds clean).
 export const TUNE = Object.freeze({
   // the clock
   leadS: 2.0,            // the first warning
@@ -94,7 +103,8 @@ export const TUNE = Object.freeze({
   tightOdds: 0.2,        // one fold in five
   tightW: 5,             // a tight gap's width: tucked (1.5 u) you pass within 1 u of its middle; untucked you bump
                          // (Assist widens it, but never to the untucked hitbox: 2.75 u a side at most)
-  tightGapS: 1.4,        // tight gaps (and the tuck and lift gates) at least this far apart, so the tuck is back
+  tightGapS: 1.4,
+  gapNearS: 1.2,         // a tight gap's ring closes in and brightens over the last 1.2 s of travel to it        // tight gaps (and the tuck and lift gates) at least this far apart, so the tuck is back
   quickS: 0.95,          // folds closer than this in time leave a lane within one of the last fold's open lanes
   // the patterns' weights by wave: [1-lane flaps, 2-lane flaps, both sides (middle open)]
   weights: Object.freeze([
@@ -127,7 +137,8 @@ export const TUNE = Object.freeze({
   shakeGate: 0.2,
   flowEvery: 5,          // a "Flow" tag at 5, 10, 15 ... clean passes in a row
   popS: 0.8,             // a tag rises 7 u over this long
-  popRise: 7,
+  popRise: 5,
+  popSide: 19,           // tags ride beside you, this far toward the channel's middle (clear of your body)
   burstS: 0.5,
 
   // Assist (design.md 5.8): surges 0.8× as fast, folds 1.4× further apart, gates and tight gaps 30% wider, a bump
@@ -161,6 +172,7 @@ export const TUNE = Object.freeze({
   // the view (fit: world up is screen up)
   span: 120,
   camOff: 32,
+  zoomK: 0.12,           // the camera pulls back up to 12% at the fastest surge (span 120 → 134.4; camOff with it)
   ringR: Object.freeze({ mother: 15, wave: Object.freeze([40, 22]) }),
   lean: 0.3,             // you lean into a lane move (radians at full sideways speed)
   turnRad: 0.35,         // the Turn gate tips you toward its side; Turn back brings you round

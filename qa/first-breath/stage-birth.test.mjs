@@ -386,7 +386,7 @@ await check("the light: the glow fills the screen, exposure 1 → 6 over 2.0 s, 
   assert.equal(runnerAt(LIGHT_AT + 0.5).bubbles.length, 0);
   for (const [t, v] of views) {
     const glow = v.marks.find((m) => m.kind === "light");
-    if (t >= LIGHT_AT + 2) near(glow.r, TUNE.lightR[2], 0.5, "the glow fills the screen");
+    if (t >= LIGHT_AT + 2) near(glow.r, (TUNE.lightR[2] * v.camera.span) / TUNE.span, 0.5, "the glow fills the screen");
     if (t >= LIGHT_AT) assert.equal(birth.prompt(st).gesture, "none");
   }
   // jump to the light: nothing left in the channel at once
@@ -469,8 +469,8 @@ await check("the anchor sits high on a portrait screen (the way ahead below you)
       st.events.length = 0;
       if (n % 15) continue;
       const v = birth.view(st);
-      near(v.anchor.y - v.camera.y, TUNE.camOff, 1e-9, "the camera rides with you");
-      const arrow = v.marks.find((m) => m.kind === "arrow");
+      near(v.anchor.y - v.camera.y, (TUNE.camOff * v.camera.span) / TUNE.span, 1e-9, "the camera rides with you");
+      assert.ok(v.camera.span >= TUNE.span - 1e-9 && v.camera.span <= TUNE.span * (1 + TUNE.zoomK) + 1e-9, "the camera pulls back a little");      const arrow = v.marks.find((m) => m.kind === "arrow");
       if (arrow) arrows++;
       if (st.moment === "waves") assert.ok((v.cue.x === v.anchor.x && v.cue.y === v.anchor.y) || (arrow && v.cue.x === arrow.x), "the cue");
     }

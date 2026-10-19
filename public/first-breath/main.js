@@ -51,8 +51,8 @@
 // - The prompt line names keys on a desktop (a fine pointer, or a mouse or key used last): the prompt's textKeys,
 //   else "<text>.keys" or "<text>Keys" when registered; a caption or sub-goal line takes its ".keys" form there too.
 //   In one-button mode a drag or drag-and-hold prompt takes "<text>.one" when registered (hold words, no arrows or
-//   mouse). The game switcher, while open, takes every key. In Birth the HUD score stays at the
-//   earlier stages' total (6.8: Birth's points show only on the run result). The ending's run time line takes run.ms
+//   mouse). The game switcher, while open, takes every key. In Birth the HUD score counts live,
+//   as in every stage (the runner's tags pop its points; 6.8's rule now only means no overlay). The ending's run time line takes run.ms
 //   (none in practice).
 // - A prompt with no gesture ("Wait here. The egg is coming.") shows its line too, with no icon. From 29 s into the
 //   ending, a tap in the play area or a quick Space or Enter goes on to the run result (6.9).
@@ -682,7 +682,7 @@ function liveScore() {
   const id = run.stageId;
   let total = runTotal(sum.stages.filter((s) => s.id !== id));
   const mine = sum.stages.find((s) => s.id === id);
-  if (id === "birth") return total;          // Birth's points show only on the run result (6.8)
+  // Birth (the runner, design.md 5.8) counts live like the other stages; it still has no stage-end overlay (6.8)
   if (run.screen === "stage" && run.mod && run.mod.meta.scored && run.state) {
     const r = run.result();
     const live = r && r.score && fin(r.score.total) ? r.score.total : 0;

@@ -26,7 +26,8 @@
 //   every move plays on its wave. The Turn gate's side is seeded; it writes turnDir, and Turn back is the other side.
 // - Score (never shown at the end of this stage): Goal 3,000; Skill 2,500 × clean folds / folds met, 500 a gate hit,
 //   100 a bubble up to 1,500; Flourish 1,000 × min(1, best flow / 20). Points events carry the gates and bubbles as
-//   they come and the rest at the end, so they add up to the total.
+//   they come and the rest at the end, so they add up to the total. While you ride, result() counts live for the HUD
+//   (each clean fold against the folds planned, the best flow so far); the end's share is never less.
 // - Captions: fact events { id, where: "caption" } at the times in TUNE.captions.
 // - Sound: sfx birth.warn, birth.swell (a surge, with dur, cutoffHz and rumbleHz), birth.breath (each surge's end),
 //   birth.tuck, birth.bump, birth.bubble, birth.gate, birth.flow (pitch: the streak's step) and birth.open.
@@ -323,6 +324,7 @@ function startTuck(st) {
   st.tuckAt = st.t;
   st.tuckT = T.tuckS + (st.assist ? T.assist.tuckSlackS : 0);
   st.tucks++;
+  addRing(st, st.x, st.d, 11, 4, 0.6);
   emit(st, "sfx", { id: "birth.tuck", pitch: 1, gain: 0.7 });
 }
 
@@ -398,8 +400,12 @@ function moveOn(st) {
 
 // ---- passing things
 
-function addPop(st, x, s, v, word = null, combo = 0) {
-  st.pops.push({ x, s, v, word, combo, t: st.t });
+// A tag rides with you (you carry it down the channel): beside you, toward the middle of the channel, rising a little;
+// a second tag within 0.3 s sits higher, so two never cover each other. Nothing goes above you, where the HUD is.
+function addPop(st, v, word = null, combo = 0) {
+  const side = st.x > 1 ? -1 : 1;
+  const stack = st.pops.filter((q) => st.t - q.t < 0.3).length;
+  st.pops.push({ x: st.x + side * T.popSide, rel: 4 - 4.5 * stack, v, word, combo, t: st.t });
   while (st.pops.length > 12) st.pops.shift();
 }
 function addBurst(st, x, s, r, kind) {
@@ -407,7 +413,7 @@ function addBurst(st, x, s, r, kind) {
   while (st.bursts.length > 16) st.bursts.shift();
 }
 function addRing(st, x, s, r0, r1, a, dashed = false) {
-  st.rings.push({ x, s, r0, r1, a, dashed, t: st.t });
+  st.rings.push({ x, rel: s - st.d, r0, r1, a, dashed, t: st.t });
   while (st.rings.length > 6) st.rings.shift();
 }
 function points(st, part, add) {
@@ -418,7 +424,7 @@ function flowUp(st, x, s) {
   st.flow++;
   if (st.flow > st.bestFlow) st.bestFlow = st.flow;
   if (st.flow % T.flowEvery === 0) {
-    addPop(st, x, s, 0, "birth.pop.flow", st.flow);
+    addPop(st, 0, "birth.pop.flow", st.flow);
     emit(st, "sfx", { id: "birth.flow", pitch: Math.min(5, st.flow / T.flowEvery), gain: 0.6 });
   }
 }
@@ -444,7 +450,7 @@ function passFold(st, o) {
   st.clean++;
   flowUp(st, st.x, st.d);
   if (o.tight) {
-    addPop(st, st.x, st.d + 4, 0, "birth.pop.tight");
+    addPop(st, 0, "birth.pop.tight");
     addBurst(st, st.x, st.d, 2.5, 2);
   }
 }
@@ -474,7 +480,7 @@ function settleGate(st, gi, hit, x, s) {
     st.gatesHit++;
     flowUp(st, x, s);
     points(st, "skill", T.gatePts);
-    addPop(st, x, s + 6, T.gatePts);
+    addPop(st, T.gatePts);
     addBurst(st, x, s, 6, 2);
     addBurst(st, x, s, 4, 0);
     addRing(st, x, s, 6, 30, 0.7);
@@ -502,7 +508,7 @@ function take(st, b) {
   const add = Math.max(0, Math.min(room, T.bubblePts));
   st.bubblePts += add;
   points(st, "skill", add);
-  addPop(st, b.x, b.s + 4, add);
+  addPop(st, add);
   addBurst(st, b.x, b.s, T.bubbleR, 2);
   emit(st, "sfx", { id: "birth.bubble", pitch: 1 + 0.06 * (st.got % 6), gain: 0.6 });
 }
@@ -546,8 +552,9 @@ function warnWave(st, w) {
 function surgeWave(st, w) {
   emit(st, "sfx", { id: "birth.swell", at: w.s, pitch: 1, gain: 0.7 + 0.04 * w.k, dur: T.surgeS, cutoffHz: T.filterHz,
     rumbleHz: T.rumbleHz.slice() });
-  st.shake = Math.min(1, st.shake + T.shakeSurge);
-  addRing(st, st.x, st.d, 10, 44, 0.35, true);
+  const last = w.k === T.waves - 1;              // the last wave pushes hardest
+  st.shake = Math.min(1, st.shake + T.shakeSurge * (last ? 1.8 : 1));
+  addRing(st, st.x, st.d, 10, last ? 60 : 44, last ? 0.55 : 0.35, true);
 }
 
 function endSurge(st, w) {
@@ -562,6 +569,9 @@ function startLight(st) {
   T.gates.forEach((g, gi) => { if (!st.gateSt[gi].done) settleGate(st, gi, false, st.x, st.d); });
   for (const o of st.obs) if (o.retract === null) o.retract = st.t;   // the folds fold back into the walls
   for (const b of st.bubbles) if (!b.taken) b.gone = true;
+  addBurst(st, st.x, st.d - 4, 7, 2);
+  addBurst(st, st.x, st.d - 4, 5, 0);
+  addRing(st, st.x, st.d, 8, 70, 0.6);
   emit(st, "moment", { id: "light" });
   emit(st, "sfx", { id: "birth.open", at: st.t, pitch: 1, gain: 1, fromHz: T.filterHz, toHz: T.openHz, seconds: T.openS });
 }
@@ -600,6 +610,8 @@ function timeline(st) {
 // ---- the score
 
 const foldPart = (st) => (st.folds > 0 ? Math.round((T.score.folds * st.clean) / st.folds) : 0);
+// while you ride, the HUD counts each clean fold against the folds planned (never more than the end's share)
+const liveFoldPart = (st) => Math.round((T.score.folds * st.clean) / Math.max(1, st.planFolds, st.folds));
 const flourishPart = (st) => Math.round(T.score.flourish * Math.min(1, st.bestFlow / T.score.flowFull));
 
 function finish(st, how) {
@@ -650,6 +662,7 @@ function init(st, base) {
   st.wavesEnd = base + WAVES_END_S;
   st.dn = makeDn(st);
   st.plan = planCourse(st);
+  st.planFolds = st.plan.filter((it) => it.kind === "fold").length;
   st.pi = 0;
   st.lastLaid = null;
   st.obs = [];
@@ -675,7 +688,7 @@ export function create(seed, carryIn, opts = {}) {
     id: meta.id, seed: seed >>> 0, t: 0, gaDay: meta.ga.start, fertilized: meta.fertilized,
     events: [], beats: null, subgoals: {}, moment: "waves",
     assist: !!o.assist, lag: fin(o.lag) ? o.lag : 0, oneButton: !!o.oneButton, carry,
-    base: 0, gen: 0, waves: [], wavesEnd: 0, dn: null, plan: [], pi: 0, lastLaid: null, obs: [], bubbles: [],
+    base: 0, gen: 0, waves: [], wavesEnd: 0, dn: null, plan: [], planFolds: 0, pi: 0, lastLaid: null, obs: [], bubbles: [],
     lightAt: null, capDone: [], gateSt: [], moveAt: [], gatePrompt: [], turnSide: 1, turnDir: 1,
     // you
     x: 0, lane: 1, d: 0, v: T.restV, vx: 0, engaged: 0, stick: 0, swipe: true, recover: false,
@@ -800,8 +813,11 @@ function runner(st, t, sv, inLight) {
     }
     for (const p of o.posts) if (posts.length < 8) posts.push({ x0: p[0], x1: p[1], y, h: H, a, bend, seed: (o.id * 5 + posts.length) % 97 });
     if (o.tight && !o.done) {
-      if (gate === "tuck") for (const j of [0, 1, 2]) { if (gaps.length < 8) gaps.push({ x: LANES[j], y, w: 2 * o.half, a }); }
-      else if (gaps.length < 8) gaps.push({ x: LANES[o.open[0]], y, w: 2 * o.half, a });
+      // how near it is (1 as you reach it, 0 from 1.2 s of travel out): its ring closes in and brightens
+      const near = clamp01(1 - rel / (T.gapNearS * Math.max(st.v, T.restV)));
+      const tucked = st.tuckT > 0 && Math.abs(rel) < H + T.hitR ? 1 : 0;
+      if (gate === "tuck") for (const j of [0, 1, 2]) { if (gaps.length < 8) gaps.push({ x: LANES[j], y, w: 2 * o.half, a, near, tucked }); }
+      else if (gaps.length < 8) gaps.push({ x: LANES[o.open[0]], y, w: 2 * o.half, a, near, tucked });
     }
     if (gate && hoops.length < 6) {
       const x = gate === "tuck" ? 0 : LANES[o.open[0]];
@@ -820,7 +836,7 @@ function runner(st, t, sv, inLight) {
   const press = inLight ? 0 : sv;
   return {
     kind: "runner", wallX: T.wallX, press, wallPress: T.wallPress, lanes: LANES.slice(), you: -st.d, v: st.v,
-    speed: inLight ? 1 : sv, flaps, posts, hoops, gaps, bubbles,
+    speed: inLight ? 1 : clamp01((st.v - T.restV) / (T.surgeV[0] + T.surgeV[1] * (T.waves - 1) - T.restV)), flaps, posts, hoops, gaps, bubbles,
   };
 }
 
@@ -830,8 +846,14 @@ export function view(st) {
   const t = st.t;
   const youY = -st.d;
   const mm = mmPerShortAxis(meta, st.gaDay);
-  const camY = youY - T.camOff;
-  d.camera = { x: 0, y: camY, span: T.span, rot: 0, orient: meta.orient, mmPerU: mm / T.span };
+  // the camera pulls back a little with the waves' speed (a planned speed, so a bump never pumps it): more of the
+  // way ahead in a fast surge, and you keep your place on screen
+  const vTop = T.surgeV[0] + T.surgeV[1] * (T.waves - 1);
+  const zk = 1 + T.zoomK * clamp01((vNom(st, t) - T.restV) / (vTop - T.restV));
+  const span = T.span * zk;
+  const camY = youY - T.camOff * zk;
+  // (the short axis still reads as the stage's real scale, so the scale bar keeps its length as the camera pulls back)
+  d.camera = { x: 0, y: camY, span, rot: 0, orient: meta.orient, mmPerU: mm / span };
   d.scale = { mm: bar(mm) };
 
   const inLight = st.moment === "light" || (st.done && st.lightAt !== null);
@@ -861,13 +883,13 @@ export function view(st) {
 
   // the opening: a glow along the whole bottom edge that grows with each wave, then fills the screen
   const [r0, r1, rFull] = T.lightR;
-  d.marks.push({ kind: "light", x: 0, y: camY - 70, r: inLight ? lerp(r1, rFull, ease(e)) : lerp(r0, r1, prog),
+  d.marks.push({ kind: "light", x: 0, y: camY - 70 * zk, r: zk * (inLight ? lerp(r1, rFull, ease(e)) : lerp(r0, r1, prog)),
     on: inLight ? 1 : lerp(T.lightOn0, 1, prog), pulse: inLight ? 0 : sv });
   // your soft light (it dims a little while a bump blinks you)
   if (!inLight) d.marks.push({ kind: "glow", x: st.x, y: youY, r: 11, on: st.blinkT > 0 ? 0.25 : 0.55 });
 
   // the gold arrows over the turn gates ahead
-  let cue = inLight ? { x: 0, y: camY - 70 } : { x: st.x, y: youY };
+  let cue = inLight ? { x: 0, y: camY - 70 * zk } : { x: st.x, y: youY };
   if (!inLight) {
     for (const o of st.obs) {
       if (o.kind !== "gate" || o.done || o.retract !== null) continue;
@@ -898,16 +920,16 @@ export function view(st) {
   for (const q of st.rings) {
     const u = clamp01((t - q.t) / 0.6);
     if (u >= 1) continue;
-    items.push({ x: q.x, y: -q.s, r: lerp(q.r0, q.r1, ease(u)), a: q.a * (1 - u), dashed: q.dashed });
+    items.push({ x: q.x, y: -(st.d + q.rel), r: lerp(q.r0, q.r1, ease(u)), a: q.a * (1 - u), dashed: q.dashed });
   }
   if (items.length) d.strips.push({ kind: "ripples", items });
-  rimSparks(d, st.carry.sparks, st.x, youY, 0.45 * me.size, { t, span: T.span });
+  rimSparks(d, st.carry.sparks, st.x, youY, 0.45 * me.size, { t, span });
 
   // tags and paper flecks (DOM tags, never canvas text)
   d.action = {
     pops: st.pops.map((q) => {
       const u = clamp01((t - q.t) / T.popS);
-      return { x: q.x, y: -q.s + T.popRise * u, v: q.v, a: 1 - u, combo: q.combo, word: q.word };
+      return { x: q.x, y: -(st.d + q.rel) + T.popRise * ease(u), v: q.v, a: 1 - u * u, combo: q.combo, word: q.word };
     }),
     bursts: st.bursts.map((q) => ({ x: q.x, y: -q.s, r: q.r, age: clamp01((t - q.t) / T.burstS), kind: q.kind, rot: q.rot })),
     shake: clamp01(st.shake),
@@ -1025,18 +1047,18 @@ export function probe() {
 export function result(st) {
   const ok = !!(st && Array.isArray(st.waves));
   const done = !!(ok && st.done);
-  const folds = ok ? foldPart(st) : 0;
+  const folds = ok ? (done ? foldPart(st) : liveFoldPart(st)) : 0;
   const gates = ok ? T.gatePts * st.gatesHit : 0;
   const bubbles = ok ? st.bubblePts : 0;
-  const flourish = ok && done ? flourishPart(st) : 0;
-  const score = clampScore({ goal: done ? T.score.goal : 0, skill: (done ? folds : 0) + gates + bubbles, flourish });
+  const flourish = ok ? flourishPart(st) : 0;
+  const score = clampScore({ goal: done ? T.score.goal : 0, skill: folds + gates + bubbles, flourish });
   return {
     done,
     goalMet: done,
     score,
     parts: [
       { id: "goal", label: "part.goal", value: score.goal, max: PARTS.goal },
-      { id: "folds", label: "birth.part.folds", value: done ? folds : 0, max: T.score.folds },
+      { id: "folds", label: "birth.part.folds", value: folds, max: T.score.folds },
       { id: "gates", label: "birth.part.gates", value: gates, max: T.score.gates },
       { id: "bubbles", label: "birth.part.bubbles", value: bubbles, max: T.score.bubbles },
       { id: "flourish", label: "birth.part.flow", value: score.flourish, max: PARTS.flourish },

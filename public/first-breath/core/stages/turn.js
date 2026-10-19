@@ -18,8 +18,11 @@
 //   bubbles show; her heartbeat, the gift timer and the cap run on the stage clock.
 // - While the bubbles show you move at full speed (the stage moves you between the world's quarter steps) and cannot
 //   kick; taking a gift gives 0.5 s of i-frames, so the world's return to full speed never lands a hit at once.
-// - A drifter wanders until you are within 40 u, then chases. A swarmer ring's members past the wall are left out
-//   (the wall is an escape gap). Germs wait for room under the cap of 40.
+// - A drifter wanders until you are within 40 u, then chases. From 24 s drifters come in pairs, side by side from one
+//   place on the wall, so the horde peaks near 30 germs. A swarmer ring's members past the wall are left out (the
+//   wall is an escape gap). Germs wait for room under the cap of 40.
+// - Each offer of three gifts holds at least one of Darts, Ring, Clump and Beat while one of them can still grow. While
+//   the bubbles show, the view shows their words and no number pops.
 // - The Big Germ: 72 hp; at half hp a second phase (its foe shots cleared, a hit-stop, a swell) sends its ring every
 //   2.2 s as two rings 0.3 s apart. It sheds 2 swarmers every 4 s. Popping it drops 12 sparkles (Flourish 1,000).
 // - Big kick: the kick's knock-back is 20 u × (1 + level) and its cooldown 1.4 s − 0.3 s a level.
@@ -108,8 +111,8 @@ function planRows(k) {
   for (const w of TUNE.waves) {
     for (const kind of ["drifter", "puffer"]) {
       if (!w[kind]) continue;
-      const every = w[kind] / k;
-      for (let t = w.from; t < w.to - EPS; t += every) rows.push({ at: t, kind });
+      const every = w[kind] / k, n = kind === "drifter" ? w.pack || 1 : 1;
+      for (let t = w.from; t < w.to - EPS; t += every) rows.push({ at: t, kind, n });
     }
     for (const at of w.rings || []) rows.push({ at, kind: "ring" });
   }
@@ -117,7 +120,7 @@ function planRows(k) {
   rows.sort((a, b) => a.at - b.at || (a.kind < b.kind ? -1 : a.kind > b.kind ? 1 : 0));
   return rows;
 }
-const planCount = (rows, k) => rows.reduce((a, r) => a + (r.kind === "ring" ? Math.ceil(TUNE.ringN * k) : 1), 0);
+const planCount = (rows, k) => rows.reduce((a, r) => a + (r.kind === "ring" ? Math.ceil(TUNE.ringN * k) : r.n || 1), 0);
 
 // ---- small helpers
 
@@ -192,8 +195,12 @@ function spawnRow(st, row) {
     sfx(st, "act.tell", p.x, p.y);
     return true;
   }
-  const a = st.rWave() * TAU, q = X.rimPoint(A, a, 4);
-  X.spawnFoe(A, { ...F[row.kind], x: q.x, y: q.y });
+  // a pack comes in from one place on the wall, side by side along it
+  const a = st.rWave() * TAU, n = row.n || 1;
+  for (let k = 0; k < n; k++) {
+    const q = X.rimPoint(A, a + (k - (n - 1) / 2) * (TUNE.packGap / A.arena.r), 4);
+    X.spawnFoe(A, { ...F[row.kind], x: q.x, y: q.y });
+  }
   return true;
 }
 
@@ -245,7 +252,11 @@ function offerOf(st) {
   const ids = TUNE.gifts.filter((g) => lvOf(st, g.id) < g.max).map((g) => g.id);
   const r = st.rGift;
   for (let i = ids.length - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); const t = ids[i]; ids[i] = ids[j]; ids[j] = t; }
-  return ids.slice(0, 3);
+  // a few strong antibody picks (20 Minutes Till Dawn): while one can still grow, each offer holds at least one of
+  // Darts, Ring, Clump and Beat
+  const out = ids.slice(0, 3), arms = ids.slice(3).filter((id) => TUNE.arms.includes(id));
+  if (out.length === 3 && arms.length && !out.some((id) => TUNE.arms.includes(id))) out[2] = arms[0];
+  return out;
 }
 
 function startOffer(st) {
@@ -986,11 +997,13 @@ export function view(st) {
       words.push({ x: b.x - G.bubbleR - 1, y: b.y + bob + G.bubbleR + 1, v: 0, a, combo: 0, word: "turn.gift." + b.id });
     });
   }
-  av.pops = [...av.pops.slice(-Math.max(0, 12 - words.length)), ...words.slice(-12)];
+  // while the bubbles show, only their words (and Grow!): no number pops over the gift tags
+  const nums = gifts.length ? [] : av.pops.slice(-Math.max(0, 12 - words.length));
+  av.pops = [...nums, ...words.slice(-12)];
   d.action = { ...av, arena: { ...A.arena }, gifts, ys: true };
 
   // rings (DOM): her beat round the disc; in the rest, the warm ring you hold
-  d.rings.push({ id: "mother", kind: "mother", x: disc.x, y: disc.y, r: disc.r + 3, progress: clamp01(st.beats.phase("mother", t)) });
+  d.rings.push({ id: "mother", kind: "mother", x: disc.x, y: disc.y, r: disc.r + V.disc.ringR, progress: clamp01(st.beats.phase("mother", t)) });
   // the grow meter: a cream sweep round you that fills with the sparkles you gather (full at the next level), with a
   // dotted track under it
   if (st.phase === "waves" && !A.ko && !st.offer && st.level < TUNE.levels.length) {
@@ -1034,8 +1047,9 @@ function pickFor(st, skill) {
 }
 
 // The action bot (core/lib/actionbot.js) at this skill: dodge and keep range while it kites round the womb at 60% of
-// its radius (sweeping up sparkles when it is calm), kick with 3 or more germs within 14 u, swim into its gift, drag
-// down at the turn, and hold its thumb down in the rest.
+// its radius (sweeping up sparkles when it is calm; the path flattened top to bottom, with a soft floor, so it keeps
+// to the middle band of a portrait screen), kick with 3 or more germs within 14 u, swim into its gift, drag down at
+// the turn, and hold its thumb down in the rest.
 export function botSteer(st, skill, r) {
   const zero = { steer: { x: 0, y: 0 }, dir: null, hold: false, dash: false };
   if (!st || st.done || !st.A) return zero;
@@ -1045,12 +1059,29 @@ export function botSteer(st, skill, r) {
   if (A.ko || st.phase !== "waves") return zero;
   if (st.offer) {
     const g = st.offer[pickFor(st, s)];
-    const a = goalSteer(A, actionSteer(A, s, r, { keep: false, picks: false }), g, s, r, { weight: B.giftWeight, slowR: 2 });
+    // the goal's lag runs on the world clock, which crawls while the bubbles show: the gift gets its own memory (in
+    // r.mem, fresh for each offer), so the bot heads for its bubble at once rather than for its old kite point
+    let rg = r;
+    if (typeof r === "function") {
+      if (!r.mem || typeof r.mem !== "object") r.mem = {};
+      if (r.mem.giftAt !== st.pickT0) { r.mem.giftAt = st.pickT0; r.mem.gift = {}; }
+      rg = () => r();
+      rg.mem = r.mem.gift;
+    }
+    const a = goalSteer(A, actionSteer(A, s, r, { keep: false, picks: false }), g, s, rg, { weight: B.giftWeight, slowR: 2 });
     return { steer: a.steer, dir: null, hold: false, dash: false };
   }
-  const th = Math.atan2(p.y, p.x) + B.lead, kr = B.kiteK * A.arena.r;
-  const goal = { x: Math.cos(th) * kr, y: Math.sin(th) * kr };
+  // the kite path is flattened top to bottom, so the bot keeps to the middle band of a portrait screen (clear of the
+  // HUD above and the thumb and the caption band below)
+  const th = Math.atan2(p.y / B.flatK, p.x) + B.lead, kr = B.kiteK * A.arena.r;
+  const goal = { x: Math.cos(th) * kr, y: Math.sin(th) * kr * B.flatK };
   const a = goalSteer(A, actionSteer(A, s, r), goal, s, r, { weight: B.weight });
+  // ... and it keeps off the bottom of the womb, a soft floor at 45% of the radius below the middle
+  const fy = -B.floorK * A.arena.r;
+  if (p.y < fy + 6) {
+    const sx = a.steer.x, sy = a.steer.y + B.floorW * Math.min(1, (fy + 6 - p.y) / 6), m = Math.hypot(sx, sy);
+    a.steer = m > 0.99 ? { x: (sx * 0.99) / m, y: (sy * 0.99) / m } : { x: sx, y: sy };
+  }
   let near = 0;
   for (const f of A.foes) if (f.in <= 0 && Math.hypot(f.x - p.x, f.y - p.y) < TUNE.kick.r + f.r) near++;
   const kickNow = near >= B.kickN && p.dashCd <= 0;

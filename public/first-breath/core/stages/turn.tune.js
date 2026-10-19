@@ -3,13 +3,15 @@
 // data, deep-frozen. World units (u), seconds, radians unless named in degrees. Wave times are seconds into `waves` on
 // the world clock (A.t, which holds still under a hit-stop and runs at 0.25× while the gift bubbles show).
 //
-// Measured (qa/first-breath/stage-turn.test.mjs, 10 seeds; sim.test.mjs, 20 seeds): skill 1 about 8,900, 0.7 about
-// 8,900, 0.5 about 8,800 with no knock-out in 20; idle knocked out at about 30 s. Changes from design.md 5.7 found in
-// play: the Big Germ has 72 hp (Assist 54) and a second phase at half hp (its ring comes every 2.2 s, as two rings
-// 0.3 s apart), so the climax lasts about 7 s and pops in about 2 of 3 good runs; the levels come sooner (5, 14, 27,
-// 44, 66 and 92 sparkles: the first gift at about 8 s, all six by about 55 s); the horde is thicker (drifters every
-// 1.0, 0.75, 0.7, 0.5 and 0.7 s; swarmer rings at 26, 31, 35, 40 and 45 s); a puffer leaves a heal 30% of the time,
-// so a weaker player can recover before the Big Germ; sparkles stay 14 s.
+// Measured (stage 7 alone, 20 seeds): skill 1 about 8,700 (Great or better in 20 of 20, no knock-out), 0.7 about
+// 8,800 (no knock-out), 0.5 about 8,000 (knocked out in 2 of 20, in the Big Germ wave); up to about 30 germs at once
+// with the bot; idle knocked out at about 30 s. Changes from design.md 5.7 found in play: the Big Germ has 72 hp
+// (Assist 54) and a second phase at half hp (its ring comes every 2.2 s, as two rings 0.3 s apart), so the climax lasts
+// about 7 s and pops in about 2 of 3 good runs; the levels come sooner (5, 14, 27, 44, 66 and 92 sparkles: the first
+// gift at about 8 s, all six by about 55 s); the horde is thicker (drifters every 1.0 and 0.75 s, then in pairs every
+// 0.7, 0.6 and 0.8 s; swarmer rings at 26, 31, 35, 40 and 45 s); each offer holds at least one antibody pick (Darts,
+// Ring, Clump or Beat) while one can grow; a puffer leaves a heal 30% of the time, so a weaker player can recover
+// before the Big Germ; sparkles stay 14 s.
 
 const deep = (o) => {
   for (const v of Object.values(o)) if (v && typeof v === "object") deep(v);
@@ -35,7 +37,8 @@ export const TUNE = deep({
                              // you stay above 60% of the height in portrait down to 360 × 640
     sizeU: [16, 18],         // your figure, head to bottom, over the waves (smaller than true: room to play)
     snugU: 40,               // ... and after the clear, filling the snug womb (closer to true)
-    disc: { r: 12, out: 0 }, // the placenta on the wall, where you nestled (carry nestleX), its lobes from treeSeed
+    disc: { r: 12, out: -3, ringR: 1.5 }, // the placenta on the wall (bulging in a little, so her beat's ring stays on
+                             // screen in landscape), where you nestled (carry nestleX), its lobes from treeSeed
     cordS: 1.2,              // an antibody bead rides the cord this long
     light: { level: 0.8, warm: 0.7, vignette: 0.04, snugK: 0.3 },   // the frames close in as the womb gets snug
     warp: 0.2,
@@ -80,10 +83,11 @@ export const TUNE = deep({
   waves: [
     { from: 0.5, to: 12, drifter: 1.0 },
     { from: 13, to: 24, drifter: 0.75, puffer: 6 },
-    { from: 25, to: 36, drifter: 0.7, puffer: 6, rings: [26, 31, 35] },
-    { from: 37, to: 48, drifter: 0.5, puffer: 4, rings: [40, 45] },
-    { from: 49, to: 60, drifter: 0.7 },
+    { from: 25, to: 36, drifter: 0.7, pack: 2, puffer: 6, rings: [26, 31, 35] },
+    { from: 37, to: 48, drifter: 0.6, pack: 2, puffer: 4, rings: [40, 45] },
+    { from: 49, to: 60, drifter: 0.8, pack: 2 },
   ],
+  packGap: 6,                // drifters in a pack (from 24 s) come in side by side this far apart along the wall
   bigAt: 48,
   calms: [12, 24, 36, 48],   // 1 s calms (a soft swell; a fact may show)
 
@@ -103,6 +107,7 @@ export const TUNE = deep({
     { id: "grow", icon: "magnet", max: 3 },
   ],
   prefer: ["darts", "ring", "clump", "beat", "snug", "kick", "grow"],
+  arms: ["darts", "ring", "clump", "beat"],                         // each offer holds at least one while one can grow
   darts: { addN: 1, rateK: 1.15 },                                   // each level after 1: +1 dart, volleys 15% faster
   ring: { n0: 2, r0: 16, nK: 1, rK: 2, w: 3.0, hitR: 1.8, perS: 0.4, dmg: 1, push: 8 },
   clump: { every: [3, 2.5, 2], range: 50, r: 12, dmg: 3, pullS: 0.35, pull: 34 },
@@ -115,6 +120,8 @@ export const TUNE = deep({
   // Flourish 1,000 if the Big Germ pops before 60 s
   score: { goal: 3000, popped: 2500, popTick: 2000, levels: 1500, pips: 1000, turn: 1000, flourish: 1000 },
 
-  // the bot (design.md 5.7): kite round at 60% of the arena's radius, kick with 3 or more germs within 14 u
-  bot: { kiteK: 0.6, lead: 0.7, weight: 0.8, kickN: 3, giftWeight: 2.5 },
+  // the bot (design.md 5.7): kite round at 60% of the arena's radius (its path flattened to 0.7 top to bottom, with a
+  // soft floor 45% of the radius below the middle, so it keeps to the middle band of a portrait screen: clear of the
+  // HUD above and of the caption band and the thumb below), kick with 3 or more germs within 14 u
+  bot: { kiteK: 0.6, flatK: 0.7, floorK: 0.45, floorW: 0.8, lead: 0.7, weight: 0.8, kickN: 3, giftWeight: 2.5 },
 });

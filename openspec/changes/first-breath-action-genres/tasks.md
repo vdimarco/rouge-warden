@@ -109,16 +109,17 @@ Keep everything `design.md` 5.2 lists under "What stays" (the arc and its contro
 - [x] 7.5 The knock-out with "You need a rest.", Go on to `turn`; score parts; facts; new facts `turn.antibody`, `turn.months`, `turn.frame`.
 - [x] 7.6 Antibodies drawn streaming from the placenta disc (`nestleX`, `treeSeed`).
 - [x] 7.7 `botSteer` (kite, sweep, kick, the turn); `stage-turn.test.mjs` rewritten, gates passing.
+- [x] 7.8 Play pass after the restart: drifters in pairs from 24 s (the horde peaks near 30 germs), an antibody pick in every offer, no number pops over the gift tags, the placenta disc a little in from the wall (its ring clear of the prompt in landscape); the bot's gift goal fresh for each offer and its kite kept to the middle band in portrait; the stage 7 sim gate also checks skill 0.7; layout, perf and smoke checks and screenshots at 390 × 844, 844 × 390 and 1440 × 900.
 
 ## 8. Stage 8, Birth (`birth`): endless runner
 
-- [ ] 8.1 The channel, three lanes, the camera (you at 25% in portrait), lane moves by drag and keys.
-- [ ] 8.2 Eight waves with surges and rests, the speed ramp, the tuck.
-- [ ] 8.3 The fold generator (always passable, spacing, tight gaps from wave 3), bumps that only slow you.
-- [ ] 8.4 The four gates (Tuck, Turn, Lift, Turn back) and `turnDir`; calm bubbles.
-- [ ] 8.5 The light as v1; folds stop at wave 8's end; no closed ring round the light.
-- [ ] 8.6 Score parts (not shown at the end), facts, one-button, Assist.
-- [ ] 8.7 `botSteer`; `stage-birth.test.mjs` rewritten, gates passing.
+- [x] 8.1 The channel, three lanes, the camera (you at 25% in portrait), lane moves by drag and keys.
+- [x] 8.2 Eight waves with surges and rests, the speed ramp, the tuck.
+- [x] 8.3 The fold generator (always passable, spacing, tight gaps from wave 3), bumps that only slow you.
+- [x] 8.4 The four gates (Tuck, Turn, Lift, Turn back) and `turnDir`; calm bubbles.
+- [x] 8.5 The light as v1; folds stop at wave 8's end; no closed ring round the light.
+- [x] 8.6 Score parts (not shown at the end), facts, one-button, Assist.
+- [x] 8.7 `botSteer`; `stage-birth.test.mjs` rewritten, gates passing.
 
 ## 9. Integration
 

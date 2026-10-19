@@ -149,12 +149,14 @@ await check("stage 4 (root): skill 1.0 is Great or better in at least 18 of 20 a
 
 // stage 7, the survivor stage (first-breath-action-genres, design.md 4.5 and 5.7): hp, a knock-out and Go on to the turn
 // and the rest
-await check("stage 7 (turn): skill 1.0 is Great or better in at least 18 of 20 and knocked out in at most 1; skill 0.5 is not knocked out in at least 16 of 20; idle is knocked out or completes, and the run goes on", () => {
+await check("stage 7 (turn): skill 1.0 is Great or better in at least 18 of 20 and knocked out in at most 1; skill 0.7 is not knocked out in at least 18 of 20, skill 0.5 in at least 16 of 20; idle is knocked out or completes, and the run goes on", () => {
   const n = of(1).length;
   const great = of(1).filter((r) => ["Great", "Glowing"].includes(stageOf(r, "turn").grade)).length;
   assert.ok(great >= Math.ceil(0.9 * n), `skill 1.0 Great or better in ${great} of ${n}`);
   const refKo = of(1).filter((r) => stageOf(r, "turn").ko).length;
   assert.ok(refKo <= Math.floor(n / 20), `skill 1.0 knocked out in ${refKo} of ${n}`);
+  const okKo = of(0.7).filter((r) => stageOf(r, "turn").ko).length;
+  assert.ok(of(0.7).length - okKo >= Math.ceil(0.9 * of(0.7).length), `skill 0.7 knocked out in ${okKo} of ${of(0.7).length}`);
   const midKo = of(0.5).filter((r) => stageOf(r, "turn").ko).length;
   assert.ok(of(0.5).length - midKo >= Math.ceil(0.8 * of(0.5).length), `skill 0.5 knocked out in ${midKo} of ${of(0.5).length}`);
   for (const r of of(0)) {

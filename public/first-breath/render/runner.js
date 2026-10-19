@@ -100,7 +100,7 @@ export function drawRunnerGround(F, st) {
       const w = 0.22 + 0.12 * (P.hash1(i, 95) + 1);
       P.path([X(x - w, y), Y(x - w, y), X(x + w, y), Y(x + w, y), X(x, y + len), Y(x, y + len)], true, lines);
     }
-    ctx.globalAlpha = ga * 0.16 * speed;
+    ctx.globalAlpha = ga * 0.24 * speed;
     ctx.fillStyle = T.cream;
     ctx.fill(lines);
     ctx.globalAlpha = ga;
@@ -176,16 +176,28 @@ export function drawRunnerItems(F, st) {
   const vis = (y) => y >= y0 && y <= y1;
   const X = F.X, Y = F.Y;
 
-  // 1. the tight gaps: a dotted cream ring where you tuck through
+  // 1. the tight gaps: a dotted cream ring where you tuck through, closing in and brightening as you near it (the
+  // game's closing-ring tell), with two cut chevrons pointing in at the slot ("get small"); a soft glow as you
+  // slip through it tucked
   for (const g of st.gaps || []) {
     if (!g || !vis(g.y)) continue;
-    const x = X(g.x, g.y), y = Y(g.x, g.y), R = Math.max(5 * hs, (g.w / 2 + 2.2) * k);
-    const p = new Path2D(), n = 10;
+    const near = clamp01(g.near), a0 = clamp01(g.a);
+    const x = X(g.x, g.y), y = Y(g.x, g.y), R = Math.max(5 * hs, (g.w / 2 + 2.2 + 5 * (1 - near)) * k);
+    if (g.tucked) paperGlow(F, x, y, R * 1.6, 0.5 * a0, T.cream);
+    const p = new Path2D(), n = 12, dot = Math.max(1.2, (0.55 + 0.25 * near) * hs);
     for (let i = 0; i < n; i++) {
-      const a = (i / n) * Math.PI * 2 + 0.3;
-      P.path(P.circle(x + Math.cos(a) * R, y + Math.sin(a) * R, Math.max(1.1, 0.55 * hs), { n: 6, amp: 0, jitter: 0 }), true, p);
+      const a = (i / n) * Math.PI * 2 + 0.3 + 0.6 * near;
+      P.path(P.circle(x + Math.cos(a) * R, y + Math.sin(a) * R, dot, { n: 6, amp: 0, jitter: 0 }), true, p);
     }
-    ctx.globalAlpha = ga * 0.8 * clamp01(g.a);
+    // the chevrons, just ahead of the slot (toward you), pointing in from each side
+    const cy = g.y + 4.6, cw = 2.4, ch = 2.0;
+    for (const sd of [-1, 1]) {
+      const tx = g.x + sd * (g.w / 2 + 1.2), bx = tx + sd * cw;
+      P.path([X(bx, cy + ch), Y(bx, cy + ch), X(tx, cy), Y(tx, cy), X(bx, cy - ch), Y(bx, cy - ch),
+        X(bx + sd * 1.0, cy - ch), Y(bx + sd * 1.0, cy - ch), X(tx + sd * 1.0, cy), Y(tx + sd * 1.0, cy),
+        X(bx + sd * 1.0, cy + ch), Y(bx + sd * 1.0, cy + ch)], true, p);
+    }
+    ctx.globalAlpha = ga * lerp(0.6, 1, near) * a0;
     ctx.fillStyle = T.cream;
     ctx.fill(p);
   }

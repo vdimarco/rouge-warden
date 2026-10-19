@@ -118,8 +118,8 @@ await check("families per stage (16.4): at most 2, 3 for egg, from steer, tap, h
     assert.deepEqual([...m.meta.families], want[m.meta.id], m.meta.id);
     assert.ok(m.meta.families.length <= 2);
     for (const f of m.meta.families) assert.ok(["steer", "tap", "hold", "rotate"].includes(f));
-    // the race can fail, and so can every action-layer stage (a knock-out; contract.md)
-    assert.equal(m.meta.canFail, m.meta.id === "swim" || !!m.meta.action, `${m.meta.id} canFail`);
+    // the race can fail, and so can every action-layer stage with hp (a knock-out; contract.md); not Birth (design.md 4.4)
+    assert.equal(m.meta.canFail, m.meta.id === "swim" || (!!m.meta.action && m.meta.id !== "birth"), `${m.meta.id} canFail`);
     assert.ok(Number.isFinite(m.meta.motherBpm) && m.meta.parS > 0 && m.meta.capS >= m.meta.parS, `${m.meta.id} meta numbers`);
   }
 });
