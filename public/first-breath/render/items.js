@@ -18,6 +18,8 @@
 import * as P from "./paper.js";
 import { SHARED, roleHex } from "./palette.js";
 import { glowDiscs } from "./low.js";
+// the action layer's items (arena, zone, telegraphs, pickups, foes, bullets, your hitbox, the hit flash)
+export * from "./action.js";
 
 const TAU = Math.PI * 2;
 const fin = (v) => typeof v === "number" && Number.isFinite(v);

@@ -77,6 +77,7 @@ import { createSound } from "./ui/sound.js";
 import { createRenderer } from "./render/renderer.js";
 import { makeCamera } from "./render/camera.js";
 import { createRings } from "./render/rings.js";
+import { createPops } from "./ui/pops.js";
 
 const LOOKAHEAD_S = 0.1;      // the sound scheduler looks this far ahead (11, "A tale of two clocks")
 const SOUND_TICK_MS = 25;
@@ -187,6 +188,7 @@ let vw = Math.max(1, window.innerWidth), vh = Math.max(1, window.innerHeight);
 const renderer = createRenderer(canvas, { gl: FLAGS.gl, q: Q.get("q"), res: FLAGS.res, probe: FLAGS.probe, motion });
 renderer.resize(vw, vh);
 const rings = createRings(svg);
+const pops = createPops(area);          // the action layer's number pops (DOM tags over the play area)
 const hud = createHud(hudRoot);
 const captions = createCaptions($("captions"), { on: () => settings.captions !== false });
 const screens = createScreens($("screens"), { act: (name, arg) => { uiAct(name, arg); }, settings: () => settings });
@@ -697,13 +699,13 @@ const keysForm = (id) => [id + ".keys", id + "Keys"].find((k) => has(k)) || null
 // The id a caption or sub-goal line shows: on a desktop its desktop form, when there is one (root.yours.keys).
 const sayForm = (id) => (device === "keys" && keysForm(id)) || id;
 
-// One-button mode (16.4): any key or touch is the button and the run steers, so a drag or drag-and-hold prompt says
+// One-button mode (16.4): any key or touch is the button and the run steers, so a drag, drag-and-hold or move prompt says
 // to hold, with no arrows, mouse or drag: the prompt's "<text>.one". Every drag or drag-and-hold prompt that names
 // a drag, an arrow or the mouse has one (prompts.test.mjs); the others ("Ride the waves.", "Rest.") keep their words,
 // as does a tap or hold prompt (Space is a key, and a tap is a touch).
 function promptText(p) {
   if (!p || !p.text) return null;
-  if (settings.oneButton && (p.gesture === "drag" || p.gesture === "dragHold") && has(p.text + ".one")) {
+  if (settings.oneButton && (p.gesture === "drag" || p.gesture === "dragHold" || p.gesture === "move") && has(p.text + ".one")) {
     return textOf(p.text + ".one");
   }
   if (device === "keys") {
@@ -742,6 +744,8 @@ function updateHud(view) {
     place: run.stageId === "swim" ? placeText : null,
     scale: mod && mod !== ENDING ? scaleBar(view) : "",
     prompt: promptLine(),
+    hp: PLAYING.has(run.screen) && view && view.action && view.action.hp
+      ? { ...view.action.hp, label: say("hud.hp", { n: view.action.hp.n, max: view.action.hp.max }, settings) } : null,
   };
   hud.set(v);
   // the words set the HUD's height: measure its bottom again when a line changes, or the score gets a digit (a wider
@@ -758,7 +762,7 @@ function updateHud(view) {
 function updateStick() {
   const s = input.stick;
   const g = input.live().gesture;
-  const show = s.on && run.screen === "stage" && !run.paused && (g === "drag" || g === "dragHold");
+  const show = s.on && run.screen === "stage" && !run.paused && (g === "drag" || g === "dragHold" || g === "move");
   if (stickEl.hidden !== !show) stickEl.hidden = !show;
   if (show) stickEl.style.transform = `translate(${s.ox.toFixed(1)}px, ${s.oy.toFixed(1)}px)`;
 }
@@ -796,6 +800,7 @@ function present(frameStart) {
   camera = makeCamera(vw, vh, view.camera);
   renderer.draw(view, fin(frameStart) ? { frameStart } : {});
   rings.draw(view.rings, camera, motion, view.stage, { lastTouch, device, safe });
+  pops.draw(PLAYING.has(run.screen) && view.action ? view.action.pops : null, camera);
   updateHud(view);
   updateStick();
   const sa = run.stageId || "title";

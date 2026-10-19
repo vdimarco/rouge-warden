@@ -29,9 +29,10 @@
 //   cutoff, except while an opening runs (open() or birth.open), which holds it until the next scene.
 // - sfx(id, at, opts): at is the context time. The ids are the stages' sfx ids (swim swell, whoom, swish; egg.surge,
 //   egg.pluck, egg.burst, egg.enter, egg.fifth; split sparkle, tone, toneEnd, pling, slip; root.link, root.linkBeat,
-//   root.hush, root.swell, root.tipOn, root.tipOff; grow bell, move; answer.hum, answer.thump, answer.hand; turn
+//   root.hush, root.swell, root.tipOn, root.tipOff; grow bell, move; answer.hum, answer.thump, answer.hand, answer.boom; turn
 //   headDown, roomy; birth.warn, birth.breath, birth.swell, birth.open; ending heartFar, heartClose, inhale, cry,
-//   breath) and the event cues of 11 (bump, place, ready, bounce, stick, loose, goldIn, enter, seal). opts is the
+//   breath), the action layer's act.<outcome> (shot, strike, clear, fire, tell, dash, ouch, ko, pick, up, heal, phase;
+//   core/lib/action.js emitOut) and the event cues of 11 (bump, place, ready, bounce, stick, loose, goldIn, enter, seal). opts is the
 //   event: pitch, gain, and the event's own fields (wave, angle, a, b, near, fromHz, toHz, seconds, dur, rumbleHz).
 //   A bump plays full when "you" is in it, 10 dB softer when opts.near is true (a rival pair within 40 u of you; the
 //   host decides), else not at all. Bumps, bounces and sticks share a limit of 6 a second. An unknown id is counted
@@ -481,6 +482,11 @@ export function createSound(ctx, { seed = 1, latencyS = null } = {}) {
         swell(at, hz, 0.18 * k, 0.4, 1.4); swell(at, hz * 1.5, 0.08 * k, 0.4, 1.2);
         return true;
       }
+      // the jump note: a soft boom from outside (a low sine bump under a falling low-passed rumble)
+      case "answer.boom":
+        swell(at, 49, 0.3 * k, 0.02, 1.1, { f1: 41, glideS: 0.6 });
+        noise(at, { type: "lowpass", f0: 260, f1: 70, glideS: 0.5, peak: 0.24 * k, attack: 0.006, tau: 0.22 });
+        return true;
 
       // stage 7, the third trimester
       case "headDown": tone(at, { f0: 65, f1: 82, glideS: 0.9, peak: 0.24 * k, attack: 0.4, tau: 0.4 }); return true;
@@ -508,6 +514,27 @@ export function createSound(ctx, { seed = 1, latencyS = null } = {}) {
       case "inhale": breath("inhale", at); return true;
       case "cry": breath("cry", at); return true;
       case "breath": breath("breath", at, p); return true;
+      // the action layer (core/lib/action.js emitOut: "act.<outcome>", already thinned in time), soft through the womb
+      case "act.shot": pluck(at, 330, 0.05 * k, 0.025); return true;
+      case "act.strike": noise(at, { type: "bandpass", f0: 520, q: 2.5, peak: 0.08 * k, attack: 0.002, tau: 0.02 }); return true;
+      case "act.clear": {
+        const steps = [0, 2, 4, 7, 9, 12, 14, 16, 19];
+        pluck(at, 196 * Math.pow(2, steps[Math.max(0, Math.min(8, (p | 0) - 1))] / 12), 0.2 * k, 0.1);
+        noise(at, { type: "bandpass", f0: 300, q: 1.5, peak: 0.1 * k, attack: 0.002, tau: 0.03 });
+        return true;
+      }
+      case "act.fire": pluck(at, 147, 0.07 * k, 0.04); return true;
+      case "act.tell": tone(at, { f0: 196, f1: 262, glideS: 0.3, peak: 0.05 * k, attack: 0.06, tau: 0.1 }); return true;
+      case "act.dash": noise(at, { type: "bandpass", f0: 260, f1: 900, glideS: 0.12, q: 1, peak: 0.13 * k, attack: 0.01, tau: 0.06 }); return true;
+      case "act.ouch":
+        tone(at, { f0: 196, f1: 98, glideS: 0.22, peak: 0.28 * k, attack: 0.004, tau: 0.12 });
+        noise(at, { type: "lowpass", f0: 260, peak: 0.2 * k, attack: 0.003, tau: 0.05 });
+        return true;
+      case "act.ko": swell(at, 98, 0.24 * k, 0.05, 1.2, { f1: 65, glideS: 1.0 }); return true;
+      case "act.pick": pluck(at, p ? 392 : 523, 0.06 * k, 0.04); return true;
+      case "act.up": pluck(at, 262, 0.18 * k, 0.12); pluck(at + 0.09, 392, 0.16 * k, 0.14); return true;
+      case "act.heal": swell(at, 262, 0.14 * k, 0.08, 0.6); swell(at, 392, 0.08 * k, 0.1, 0.6); return true;
+      case "act.phase": swell(at, 73, 0.3 * k, 0.04, 1.0); noise(at, { type: "lowpass", f0: 300, f1: 90, glideS: 0.6, peak: 0.22 * k, attack: 0.01, tau: 0.25 }); return true;
       default: return false;
     }
   }

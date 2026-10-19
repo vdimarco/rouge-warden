@@ -3,9 +3,10 @@
 // the stages give, and checks the words the host (main.js promptText) would show:
 // - on a desktop (".keys", "Keys" or textKeys): every prompt that names a touch (tap, drag, thumb, touch, screen)
 //   has a desktop form, and that form names a key (Space or an arrow) and no touch;
-// - in one-button mode (".one"): every drag or drag-and-hold prompt that names a drag, an arrow, the mouse or
-//   pointing has a one-button form, and that form names none of them (the run steers; any key or touch holds);
-// - a sub-goal line names no gesture without a desktop form (grow's move lines name none);
+// - in one-button mode (".one"): every drag, drag-and-hold or move (the action stages) prompt that names a drag, an
+//   arrow, the mouse or pointing has a one-button form, and that form names none of them (the run steers; any key
+//   or touch holds);
+// - a sub-goal line names no gesture without a desktop form;
 // - the stage 7 rest, a hold that needs a fresh touch, never asks to keep the thumb from the turn down;
 // - every new string keeps the tone rules: no em dash, no "they" for the carer, short sentences.
 // node qa/first-breath/prompts.test.mjs
@@ -70,7 +71,7 @@ await check("on a desktop every prompt that names a touch has a desktop form tha
 await check("in one-button mode every drag or drag-and-hold prompt that steers has a one-button form", () => {
   const bad = [];
   for (const p of one.prompts) {
-    if (p.gesture !== "drag" && p.gesture !== "dragHold") continue;
+    if (p.gesture !== "drag" && p.gesture !== "dragHold" && p.gesture !== "move") continue;
     const k = (p.textKeys && has(p.textKeys) && p.textKeys) || keysForm(p.text);
     const steers = STEERS.test(say(p.text)) || (k && STEERS.test(say(k)));
     if (!steers) continue;
@@ -84,13 +85,12 @@ await check("in one-button mode every drag or drag-and-hold prompt that steers h
   assert.equal(say("egg.guard.one"), "Hold to guard your shell.");
 });
 
-await check("a sub-goal line that names a gesture has a desktop form; grow's move lines name none", () => {
+await check("a sub-goal line that names a gesture has a desktop form", () => {
   const bad = [];
   for (const id of [...plain.subs, ...one.subs]) {
     if (/\b(tap|drag|touch)\b/i.test(say(id)) && !keysForm(id)) bad.push(`${id} ("${say(id)}")`);
   }
   assert.deepEqual([...new Set(bad)], []);
-  for (let w = 8; w <= 13; w++) assert.ok(!/\bdrag\b/i.test(say("grow.sub.move" + w)), `grow.sub.move${w}`);
 });
 
 await check("the stage 7 rest asks for a fresh touch, not the thumb kept from the turn", () => {

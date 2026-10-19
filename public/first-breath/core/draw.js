@@ -5,6 +5,7 @@
 //
 // Contract choices (16.5 gives the shape, not every range):
 // - validate(list) returns a list of problems as plain lines; an empty list means the draw list is fine.
+// - action (optional, null by default) is the action layer's part (validateAction, below; contract.md).
 // - Required: stage (a non-empty palette key), camera, scale, light, warp, caustics, the five arrays (points may be
 //   null), anchor; cue may be null. Optional fields are checked only when present: a mark's rim, on, pulse and ang
 //   (w is required for band and meet), a ring's progress, dashed, dotted and grade, and points.id.
@@ -25,15 +26,27 @@ export const LIMITS = Object.freeze({
   cordPts: 16,      // points in a cord strip
   coursePts: 32,    // points in one course strip
   treeNodes: 260,   // nodes in a tree strip
+  laneNotes: 24,    // notes on the stage 6 lanes
+  // the action layer (core/lib/action.js; contract.md): bullets and pickups are batched typed arrays
+  bullets: 640,
+  foes: 48,
+  pickups: 96,
+  tells: 16,
+  pops: 12,
+  bursts: 16,
+  hp: 12,
 });
 
-const STRIP_KINDS = new Set(["tails", "cilia", "tree", "cord", "chevrons", "ripples", "arc", "course"]);
+const STRIP_KINDS = new Set(["tails", "cilia", "tree", "cord", "chevrons", "ripples", "arc", "course", "lanes"]);
 const MARK_KINDS = new Set(["pool", "lake", "meet", "band", "warm", "cool", "glowwall", "spot", "glow", "hand", "arrow", "light"]);
 const RING_KINDS = new Set(["mother", "you", "approach", "hold", "breath", "wave", "prompt", "rest", "burrow"]);
 const RIMS = new Set(["solid", "dotted", "wavy"]);
 const TAIL_RINGS = new Set([null, "halo", "dashed"]);
 const TONES = new Set(["womb", "warm", "cool"]);
 const GRADES = new Set([null, "in", "close", "off", "miss"]);
+// the action layer's kinds (core/lib/action.js FOE_KINDS and TELLS; tones and pickups are ids 0..3 and 0..2)
+const FOE_KINDS = new Set(["germ", "blob", "spore", "ring", "boss", "rival", "cell", "drop", "guard"]);
+const TELL_KINDS = new Set(["line", "fan", "ring", "spot", "charge"]);
 
 export function emptyDraw(stage = "swim") {
   return {
@@ -50,6 +63,7 @@ export function emptyDraw(stage = "swim") {
     rings: [],
     anchor: { x: 0, y: 0 },
     cue: null,
+    action: null,
   };
 }
 
@@ -179,6 +193,23 @@ export function validate(list) {
           flatPts(st.pts, 0, `${wk}.pts`);
           nums(st, ["w", "phase"], wk);
           break;
+        case "lanes":
+          // stage 6's note highway: three lanes in a fan from y0 (centres gap0 apart, w0 wide) to the hit line y1 (gap1,
+          // w1); a: each lane's paper 0..1; notes ride them ({ lane 0..2 or -1 across all three, u 0 at the wall to 1
+          // at the line and on to tail, r, kind 0 heartbeat, 1 voice, 2 the jump band, 3 sing-along, state 0 coming,
+          // 1 missed, 2 held, a 0..1, hot 0..1 }); slots: each lane's ring 0..1; you: your lane 0..2 (sliding)
+          nums(st, ["y0", "y1", "gap0", "gap1", "w0", "w1", "tail", "you", "fever", "beat"], wk);
+          need(Array.isArray(st.a) && st.a.length === 3 && st.a.every((v) => fin(v) && v >= 0 && v <= 1), `${wk}.a is not 3 values 0..1`);
+          need(Array.isArray(st.slots) && st.slots.length === 3 && st.slots.every((v) => fin(v) && v >= 0 && v <= 1), `${wk}.slots is not 3 values 0..1`);
+          if (!Array.isArray(st.notes)) { bad.push(`${wk}.notes is not a list`); break; }
+          need(st.notes.length <= LIMITS.laneNotes, `${wk} has ${st.notes.length} notes (max ${LIMITS.laneNotes})`);
+          st.notes.forEach((q, j) => {
+            if (!isObj(q)) { bad.push(`${wk}.notes[${j}] is not an object`); return; }
+            nums(q, ["u", "r", "a"], `${wk}.notes[${j}]`);
+            need([-1, 0, 1, 2].includes(q.lane), `${wk}.notes[${j}].lane is ${q.lane}`);
+            need([0, 1, 2, 3].includes(q.kind), `${wk}.notes[${j}].kind is ${q.kind}`);
+          });
+          break;
         case "ripples":
           if (!Array.isArray(st.items)) { bad.push(`${wk}.items is not a list`); break; }
           st.items.forEach((it, j) => {
@@ -238,7 +269,126 @@ export function validate(list) {
     });
   }
 
+  if (list.action !== undefined && list.action !== null) validateAction(list.action, bad);
+
   need(isObj(list.anchor) && fin(list.anchor.x) && fin(list.anchor.y), "anchor is not { x, y }");
   need(list.cue === null || (isObj(list.cue) && fin(list.cue.x) && fin(list.cue.y)), "cue is neither null nor { x, y }");
   return bad;
+}
+
+// The action layer's part of the draw list (optional; null when a stage has none). Every field may be missing except
+// that, when present, it has this shape:
+//   bullets  { n, xy: Float32Array(2n), r: Float32Array(n), tone: Uint8Array(n), ang?: Float32Array(n) }  tone 0 yours,
+//            1 foe, 2 hot, 3 soft; ang (optional) is each one's heading (radians): your sparks draw as streaks along it
+//   foes     [{ kind, x, y, r, ang, hp 0..1, flash 0..1, born 0..1, charge 0..1 (a shot's wind-up), boss, phase }]
+//   pickups  { n, xy: Float32Array(2n), kind: Uint8Array(n) (0 food, 1 heal, 2 up), a: Float32Array(n) 0..1 }
+//   player   null | { x, y, r (hitbox), body, ang, inv 0..1, dash 0..1, ready 0..1 }
+//   arena    null | { x, y, r }          the round wall
+//   zone     null | { x, y, r, next: null | { x, y, r } }   a safe zone and where it is shrinking to
+//   tells    [{ kind, x, y, ang, r, len, w, p 0..1 }]
+//   pops     [{ x, y, v, a 0..1, combo }]   number pops (DOM, never canvas text)
+//   bursts   [{ x, y, r, age 0..1, kind (0 a foe cleared, 1 you were hit, 2 a pickup), rot }]   paper flecks
+//   hp       null | { n, max, shield? }   whole numbers, 0 <= n <= max <= LIMITS.hp, shield 0..2 (HUD pips)
+//   shake, flash   0..1
+function validateAction(a, bad) {
+  const need = (ok, msg) => { if (!ok) bad.push(msg); };
+  const unit = (v, where) => need(fin(v) && v >= 0 && v <= 1, `${where} is not in 0..1`);
+  const pt = (o, where) => need(isObj(o) && fin(o.x) && fin(o.y), `${where} is not { x, y }`);
+  if (!isObj(a)) { bad.push("action is neither null nor an object"); return; }
+  const batch = (b, where, max, extra) => {
+    if (b === undefined || b === null) return;
+    if (!isObj(b)) { bad.push(`${where} is not an object`); return; }
+    need(Number.isInteger(b.n) && b.n >= 0, `${where}.n is not a count`);
+    need(b.n <= max, `${where} has ${b.n} (max ${max})`);
+    need(b.xy instanceof Float32Array && b.xy.length >= 2 * b.n, `${where}.xy is not a Float32Array of 2n`);
+    if (b.xy instanceof Float32Array) for (let i = 0; i < Math.min(b.xy.length, 2 * b.n); i++) if (!fin(b.xy[i])) { bad.push(`${where}.xy[${i}] is not finite`); break; }
+    extra(b);
+  };
+  batch(a.bullets, "action.bullets", LIMITS.bullets, (b) => {
+    need(b.r instanceof Float32Array && b.r.length >= b.n, "action.bullets.r is not a Float32Array of n");
+    need(b.tone instanceof Uint8Array && b.tone.length >= b.n, "action.bullets.tone is not a Uint8Array of n");
+    if (b.ang !== undefined) need(b.ang instanceof Float32Array && b.ang.length >= b.n, "action.bullets.ang is not a Float32Array of n");
+    if (b.tone instanceof Uint8Array) for (let i = 0; i < b.n; i++) if (b.tone[i] > 3) { bad.push(`action.bullets.tone[${i}] is ${b.tone[i]}`); break; }
+    if (b.r instanceof Float32Array) for (let i = 0; i < b.n; i++) if (!(b.r[i] > 0)) { bad.push(`action.bullets.r[${i}] is not > 0`); break; }
+  });
+  batch(a.pickups, "action.pickups", LIMITS.pickups, (b) => {
+    need(b.kind instanceof Uint8Array && b.kind.length >= b.n, "action.pickups.kind is not a Uint8Array of n");
+    need(b.a instanceof Float32Array && b.a.length >= b.n, "action.pickups.a is not a Float32Array of n");
+    if (b.kind instanceof Uint8Array) for (let i = 0; i < b.n; i++) if (b.kind[i] > 2) { bad.push(`action.pickups.kind[${i}] is ${b.kind[i]}`); break; }
+  });
+  if (a.foes !== undefined) {
+    if (!Array.isArray(a.foes)) bad.push("action.foes is not a list");
+    else {
+      need(a.foes.length <= LIMITS.foes, `${a.foes.length} foes (max ${LIMITS.foes})`);
+      a.foes.forEach((f, i) => {
+        const w = `action.foes[${i}]`;
+        if (!isObj(f)) { bad.push(`${w} is not an object`); return; }
+        need(FOE_KINDS.has(f.kind), `${w}.kind is ${f.kind}`);
+        pt(f, w);
+        need(fin(f.r) && f.r > 0, `${w}.r is not > 0`);
+        for (const k of ["hp", "flash", "born", "charge"]) if (f[k] !== undefined) unit(f[k], `${w}.${k}`);
+        if (f.ang !== undefined) need(fin(f.ang), `${w}.ang is not finite`);
+      });
+    }
+  }
+  if (a.player !== undefined && a.player !== null) {
+    const p = a.player;
+    pt(p, "action.player");
+    if (isObj(p)) {
+      need(fin(p.r) && p.r > 0, "action.player.r is not > 0");
+      need(fin(p.body) && p.body > 0, "action.player.body is not > 0");
+      for (const k of ["inv", "dash", "ready"]) if (p[k] !== undefined) unit(p[k], `action.player.${k}`);
+    }
+  }
+  for (const k of ["arena", "zone"]) {
+    const z = a[k];
+    if (z === undefined || z === null) continue;
+    pt(z, `action.${k}`);
+    if (isObj(z)) need(fin(z.r) && z.r > 0, `action.${k}.r is not > 0`);
+    if (k === "zone" && isObj(z) && z.next !== undefined && z.next !== null) {
+      pt(z.next, "action.zone.next");
+      need(isObj(z.next) && fin(z.next.r) && z.next.r > 0, "action.zone.next.r is not > 0");
+    }
+  }
+  if (a.tells !== undefined) {
+    if (!Array.isArray(a.tells)) bad.push("action.tells is not a list");
+    else {
+      need(a.tells.length <= LIMITS.tells, `${a.tells.length} tells (max ${LIMITS.tells})`);
+      a.tells.forEach((t, i) => {
+        const w = `action.tells[${i}]`;
+        if (!isObj(t)) { bad.push(`${w} is not an object`); return; }
+        need(TELL_KINDS.has(t.kind), `${w}.kind is ${t.kind}`);
+        pt(t, w);
+        for (const k of ["ang", "r", "len", "w"]) if (t[k] !== undefined) need(fin(t[k]), `${w}.${k} is not finite`);
+        unit(t.p, `${w}.p`);
+      });
+    }
+  }
+  if (a.pops !== undefined) {
+    if (!Array.isArray(a.pops)) bad.push("action.pops is not a list");
+    else {
+      need(a.pops.length <= LIMITS.pops, `${a.pops.length} pops (max ${LIMITS.pops})`);
+      a.pops.forEach((q, i) => {
+        pt(q, `action.pops[${i}]`);
+        if (isObj(q)) { need(fin(q.v), `action.pops[${i}].v is not finite`); unit(q.a, `action.pops[${i}].a`); }
+      });
+    }
+  }
+  if (a.bursts !== undefined) {
+    if (!Array.isArray(a.bursts)) bad.push("action.bursts is not a list");
+    else {
+      need(a.bursts.length <= LIMITS.bursts, `${a.bursts.length} bursts (max ${LIMITS.bursts})`);
+      a.bursts.forEach((q, i) => {
+        pt(q, `action.bursts[${i}]`);
+        if (isObj(q)) { need(fin(q.r) && q.r > 0, `action.bursts[${i}].r is not > 0`); unit(q.age, `action.bursts[${i}].age`); }
+      });
+    }
+  }
+  if (a.hp !== undefined && a.hp !== null) {
+    const h = a.hp;
+    need(isObj(h) && Number.isInteger(h.n) && Number.isInteger(h.max) && h.n >= 0 && h.n <= h.max && h.max >= 1 && h.max <= LIMITS.hp,
+      "action.hp is not { n, max } with 0 <= n <= max <= " + LIMITS.hp);
+    if (isObj(h) && h.shield !== undefined) need(Number.isInteger(h.shield) && h.shield >= 0 && h.shield <= 2, "action.hp.shield is not 0, 1 or 2");
+  }
+  for (const k of ["shake", "flash"]) if (a[k] !== undefined) unit(a[k], `action.${k}`);
 }

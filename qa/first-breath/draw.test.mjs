@@ -60,7 +60,52 @@ function bad(mutate, pattern) {
 }
 
 await check("LIMITS are the 16.5 and 14.3 budgets", () => {
-  assert.deepEqual({ ...LIMITS }, { splats: 32, points: 600, strips: 6, marks: 24, rings: 8, tails: 25, cordPts: 16, coursePts: 32, treeNodes: 260 });
+  assert.deepEqual({ ...LIMITS }, { splats: 32, points: 600, strips: 6, marks: 24, rings: 8, tails: 25, cordPts: 16, coursePts: 32, treeNodes: 260,
+    laneNotes: 24, bullets: 640, foes: 48, pickups: 96, tells: 16, pops: 12, bursts: 16, hp: 12 });
+});
+
+// The action layer's part (contract.md): a full one inside every budget, and bad ones named.
+function fullAction() {
+  const nb = 640, nk = 96;
+  return {
+    bullets: { n: nb, xy: new Float32Array(2 * nb), r: new Float32Array(nb).fill(1.2), tone: new Uint8Array(nb).map((_, i) => i % 4) },
+    foes: Array.from({ length: 48 }, (_, i) => ({ kind: ["germ", "blob", "spore", "ring", "boss", "rival", "cell", "drop", "guard"][i % 9],
+      x: i, y: -i, r: 2 + (i % 3), ang: 0.1 * i, hp: (i % 5) / 4, flash: 0, born: 1, boss: i === 4, phase: 0 })),
+    pickups: { n: nk, xy: new Float32Array(2 * nk), kind: new Uint8Array(nk).map((_, i) => i % 3), a: new Float32Array(nk).fill(1) },
+    player: { x: 0, y: 0, r: 1.7, body: 3, ang: 0, inv: 0.5, dash: 0, ready: 1 },
+    arena: { x: 0, y: 0, r: 46 },
+    zone: { x: 0, y: 0, r: 30, next: { x: 2, y: 1, r: 12 } },
+    tells: ["line", "fan", "ring", "spot", "charge"].map((kind, i) => ({ kind, x: i, y: 0, ang: 0, r: 6, len: 40, w: 1.2, p: i / 4 })),
+    pops: Array.from({ length: 12 }, (_, i) => ({ x: i, y: 0, v: 10 * i, a: 1 - i / 12, combo: i })),
+    hp: { n: 3, max: 5 }, shake: 0.4, flash: 0.2,
+  };
+}
+await check("action: a full action part validates, and bad ones are named", () => {
+  const d = emptyDraw("grow");
+  assert.equal(d.action, null, "an empty list has no action part");
+  d.action = fullAction();
+  assert.deepEqual(validate(d), []);
+  const bad = (edit, want) => {
+    const x = emptyDraw("grow");
+    x.action = fullAction();
+    edit(x.action);
+    const got = validate(x);
+    assert.ok(got.some((m) => m.includes(want)), `${want}: ${JSON.stringify(got)}`);
+  };
+  bad((a) => { a.bullets = { n: 641, xy: new Float32Array(1282), r: new Float32Array(641).fill(1), tone: new Uint8Array(641) }; }, "641 (max 640)");
+  bad((a) => { a.bullets.tone[3] = 4; }, "tone[3] is 4");
+  bad((a) => { a.bullets.xy = new Float32Array(4); }, "action.bullets.xy is not a Float32Array of 2n");
+  bad((a) => { a.foes.push({ kind: "germ", x: 0, y: 0, r: 1 }); }, "49 foes (max 48)");
+  bad((a) => { a.foes[0].kind = "monster"; }, "action.foes[0].kind is monster");
+  bad((a) => { a.foes[1].hp = 2; }, "action.foes[1].hp is not in 0..1");
+  bad((a) => { a.pickups.kind[0] = 3; }, "action.pickups.kind[0] is 3");
+  bad((a) => { a.player.r = 0; }, "action.player.r is not > 0");
+  bad((a) => { a.zone.next.r = -1; }, "action.zone.next.r is not > 0");
+  bad((a) => { a.tells[0].kind = "laser"; }, "action.tells[0].kind is laser");
+  bad((a) => { a.tells[1].p = 1.5; }, "action.tells[1].p is not in 0..1");
+  bad((a) => { a.pops.push({ x: 0, y: 0, v: 1, a: 1 }); }, "13 pops (max 12)");
+  bad((a) => { a.hp = { n: 6, max: 5 }; }, "action.hp is not");
+  bad((a) => { a.shake = 2; }, "action.shake is not in 0..1");
 });
 
 await check("an empty list and a full list both validate", () => {

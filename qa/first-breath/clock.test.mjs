@@ -38,12 +38,12 @@ const MOMENTS = {
     { id: "heart", ga: [36, 36] },
     { id: "grow", ga: [36, 49], lenS: 7 },
   ],
+  // stage 5 on the action layer (openspec/changes/first-breath-action-genres): a wave a week (7.5 s and a 2.2 s
+  // rest), weeks 7 to 12, then the big germ (a 1.6 s tell and 16 s)
   grow: (() => {
     const out = [];
-    for (let n = 7; n <= 13; n++) {
-      out.push({ id: `beat${n}`, ga: [7 * n, 7 * n + 6], lenS: her(16, bpmYou(7 * n)), beats: true });
-      if (n >= 8) out.push({ id: `move${n}`, ga: [7 * n + 6, Math.min(7 * n + 7, 97)], lenS: 3 });
-    }
+    for (let n = 7; n <= 12; n++) out.push({ id: `wave${n}`, ga: [7 * n, 7 * n + 7], lenS: 9.7 });
+    out.push({ id: "boss", ga: [91, 97], lenS: 17.6 });
     return out;
   })(),
   answer: [

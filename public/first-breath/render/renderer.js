@@ -6,10 +6,12 @@
 //
 // Draw order (14.1, back to front): the back sheet and its light; the inner sheet (and the ending's room sheets,
 // which stand behind its two ovals); the dapple sheet (low on the back, under the bodies); the baked course tiles; the motes;
-// ground details (bands, pools, lakes, spots, paper glows, the egg's target rings); points; strips (tree, cilia, cord,
-// lane and chevrons); bodies with their shadows; the pack's tails; ripples; arcs; arrows; the subject (your sperm,
-// your heart); the renderer's frames (the front flats, darkest); the birth light; the cue sticker; the tint sheet;
-// the exposure and white sheets; the crossfade copy. DOM rings and tags sit above the canvas.
+// ground details (an action arena's wall, bands, pools, lakes, spots, paper glows, the egg's target rings); points; an
+// action safe zone, telegraphs and pickups; strips (tree, cilia, cord, lane and chevrons); bodies with their shadows
+// and action foes; the pack's tails; ripples; arcs; arrows; action bullets; the subject (your sperm, your heart) and
+// the action hitbox marker; the renderer's frames (the front flats, darkest); the birth light; the cue sticker; the
+// tint sheet; the exposure and white sheets; the action hit flash; the crossfade copy. DOM rings and tags sit above
+// the canvas. The action items are in render/action.js; its screen shake rides on the sway.
 //
 // Contract (16.2, read as 14.5 says): createRenderer(canvas, { gl = true, q = null, res = null, probe = false,
 // motion }) → { draw(drawList, { frameStart }), resize(cssW, cssH), perf, lum(), crossfade(seconds), dispose() }.
@@ -35,6 +37,8 @@ import { STAGES, ROLES, SHARED, roleHex, backOf } from "./palette.js";
 import * as P from "./paper.js";
 import * as B from "./bake.js";
 import * as I from "./items.js";
+import * as AX from "./action.js";
+import { drawLanes, drawLaneNotes } from "./lanes.js";
 import { tierOf } from "./low.js";
 import { createPerf, STEPS } from "./perf.js";
 import { TUNE as BT } from "../core/stages/birth.tune.js";
@@ -247,6 +251,9 @@ export function createRenderer(canvas, { gl = true, q = null, res = null, probe 
     const A = 3 * warp * hs * wa;
     const w = (2 * Math.PI) * 0.12;
     const sway = { x: A * (0.8 * Math.sin(w * t) + 0.3 * Math.sin(2 * w * t + 1.2)), y: A * 0.6 * Math.cos(w * t + 0.5) };
+    // the action layer's screen shake rides on the sway (each sheet moves by its depth); none with reduced motion
+    const shake = AX.shakeOffset(d, t, hs, !!(motion && motion.reduced));
+    sway.x += shake.x; sway.y += shake.y;
     const c = Math.cos(cam.theta), s = Math.sin(cam.theta), k = cam.pxPerU, sx = cam.subject.x, sy = cam.subject.y;
     const ccx = d.camera && fin(d.camera.x) ? d.camera.x : 0, ccy = d.camera && fin(d.camera.y) ? d.camera.y : 0;
     const F = {
@@ -301,8 +308,12 @@ export function createRenderer(canvas, { gl = true, q = null, res = null, probe 
     // 5. ground details
     at(0.3, () => {
       for (const st of d.strips || []) if (st && st.kind === "ripples") I.drawRipples(F, st, { big: true });
+      AX.drawArena(F);                 // the action layer's ground: its wall, the safe zone (render/action.js)
       I.drawGroundMarks(F);
       I.drawPoints(F, cache.atlas);
+      AX.drawZone(F);
+      AX.drawTells(F);
+      AX.drawPickups(F);
     });
 
     // 6. strips under the bodies
@@ -313,6 +324,7 @@ export function createRenderer(canvas, { gl = true, q = null, res = null, probe 
         else if (st.kind === "cilia") I.drawCilia(F, st);
         else if (st.kind === "cord") I.drawCord(F, st);
         else if (st.kind === "chevrons") I.drawChevrons(F, st);
+        else if (st.kind === "lanes") drawLanes(F, st);   // stage 6's note highway (render/lanes.js)
       }
     });
 
@@ -324,15 +336,20 @@ export function createRenderer(canvas, { gl = true, q = null, res = null, probe 
     const tails = (d.strips || []).filter((x) => x && x.kind === "tails");
     at(0.7, () => {
       I.drawBodies(F, bodies);
+      for (const st of d.strips || []) if (st && st.kind === "lanes") drawLaneNotes(F, st);   // a note lands on you
+      AX.drawFoes(F);
       for (const st of tails) I.drawTails(F, st, heads, { subject: false });
       for (const st of d.strips || []) if (st && st.kind === "ripples") I.drawRipples(F, st, { big: false });
     });
     at(0.9, () => {
       for (const st of d.strips || []) if (st && st.kind === "arc") I.drawArc(F, st);
       I.drawArrows(F);
+      AX.drawBursts(F);
+      AX.drawBullets(F);
       // 8. the subject on the highest sheet
       for (const st of tails) I.drawTails(F, st, heads, { subject: true });
       I.drawSubjects(F, bodies);
+      AX.drawPlayer(F);
     });
 
     // 9. the renderer's frames (front flats), closing in with the vignette
@@ -350,6 +367,7 @@ export function createRenderer(canvas, { gl = true, q = null, res = null, probe 
     const exposure = lightFade !== null ? 1 : fin(light.exposure) ? Math.max(1, Math.min(6, light.exposure)) : 1;
     if (exposure > 1) { ctx.globalAlpha = 0.85 * (exposure - 1) / 5; ctx.fillStyle = SHARED.glow; ctx.fillRect(0, 0, cssW, cssH); ctx.globalAlpha = 1; }
     if (white > 0) { ctx.globalAlpha = white; ctx.fillStyle = SHARED.white; ctx.fillRect(0, 0, cssW, cssH); ctx.globalAlpha = 1; }
+    AX.drawFlash(F, tintHex);          // the action layer's hit flash
 
     // 13. the crossfade copy
     if (fade) {

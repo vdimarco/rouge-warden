@@ -9,7 +9,8 @@
 // - the stage 1 race gate: skill 0.7 is in the top 3 at the meeting place in ≥ 90% of runs;
 // - skill 0.7 runs take 8 to 12 min of game time (core time from Play to the run result: stages, overlays, cards and
 //   the ending, no pause), every run;
-// - skill 0 never throws, ends every stage by its cap, and its stage 1 ends at the cap with no goal;
+// - skill 0 never throws, ends every stage by its cap, and its stage 1 ends at the cap with no goal; an action-layer
+//   stage (meta.action) may knock it out, and then Go on leads on with no grade word;
 // - the same seed and skill play the same run; skill 1.0 outscores 0.7, 0.7 outscores 0.5, and 0.5 outscores 0;
 // - the whole suite stays under 120 s of wall time.
 // The PASS line gives, per skill, the mean run total, game time and the stage 1 top-3 count.
@@ -29,6 +30,9 @@ async function check(name, fn) {
 const SKILLS = [1.0, 0.7, 0.5, 0];
 const SEEDS = Math.max(1, Number(process.env.FB_SIM_SEEDS) || 20);
 const IDS = STAGES.map((m) => m.meta.id);
+// the action-layer stages (meta.action; openspec/changes/first-breath-action-genres/contract.md): a knock-out ends one
+// with its goal unmet, the Almost card offers Try again or Go on, and the bot goes on
+const ACTION = new Set(STAGES.filter((m) => m.meta.action).map((m) => m.meta.id));
 const CAP = Object.fromEntries([...STAGES, ENDING].map((m) => [m.meta.id, m.meta.capS + (m.meta.id === "swim" ? 3 : 0)]));
 const GATE = { refMean: 8500, goalShare: 0.9, raceTop3: 0.9, minS: 8 * 60, maxS: 12 * 60, wallS: 120 };
 const wall0 = process.hrtime.bigint();
@@ -92,12 +96,18 @@ await check("skill 0.7 runs take 8 to 12 min of game time", () => {
   assert.deepEqual(out.map((r) => `seed ${r.seed}: ${(r.gameS / 60).toFixed(2)} min`), []);
 });
 
-await check("skill 0: stage 1 ends at its cap with no goal, and every later stage completes by itself", () => {
+await check("skill 0: stage 1 ends at its cap with no goal; every later stage completes by itself, or (an action stage) is knocked out and Go on leads on", () => {
   for (const r of of(0)) {
     const s = stageOf(r, "swim");
     assert.equal(s.goalMet, false, `seed ${r.seed}`);
     assert.equal(s.place, 20, `seed ${r.seed}: place ${s.place}`);
-    for (const id of IDS.slice(1)) assert.equal(stageOf(r, id).goalMet, true, `seed ${r.seed} ${id}`);
+    for (const id of IDS.slice(1)) {
+      const x = stageOf(r, id);
+      if (ACTION.has(id) && !x.goalMet) {
+        assert.equal(x.wentOn, true, `seed ${r.seed} ${id}: the Almost card came and Go on was taken`);
+        assert.equal(x.grade, null, `seed ${r.seed} ${id}: no grade word`);
+      } else assert.equal(x.goalMet, true, `seed ${r.seed} ${id}`);
+    }
   }
 });
 

@@ -319,7 +319,7 @@ function viewsOf(mod, every = 45) {
   out.push(mod.view(st));
   return out;
 }
-const STRIPK = ["tails", "cilia", "tree", "cord", "chevrons", "ripples", "arc", "course"];
+const STRIPK = ["tails", "cilia", "tree", "cord", "chevrons", "ripples", "arc", "course", "lanes"];
 const MARKK = ["pool", "lake", "meet", "band", "warm", "cool", "glowwall", "spot", "glow", "hand", "arrow", "light"];
 function drawCount(r, canvas, d) {
   const ctx = canvas.getContext();
@@ -341,6 +341,7 @@ const visible = {
   arc: (s) => Math.abs((s.a1 || 0) - (s.a0 || 0)) > 0.05,
   ripples: (s) => s.items && s.items.some((i) => i.a > 0.05),
   tails: (s) => s.items && s.items.length,
+  lanes: (s) => Array.isArray(s.a) && s.a.some((v) => v > 0.05),
 };
 const ALL = [...MODS, ENDING];
 const seen = { strips: new Set(), marks: new Set() };

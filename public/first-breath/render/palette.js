@@ -367,7 +367,9 @@ export const ROLES = Object.freeze({
     tree: "placenta2", beads: "poolRim", cord: "cord", cordBack: "cordBack", lights: "cordLights",
     lake: "placenta", lake2: "placenta2", pool: { mix: ["placenta2", "sac", 0.25] }, poolOn: "pools", poolRim: "poolRim",
     ripple: "poolRim", glow: "moveGlow", arrow: { token: "glow", sticker: false },
-    frames: { shape: "scallop", scallops: 12, tokens: ["frame3", "frame2", "frame1"], size: 0.5 },
+    // the action layer (render/action.js ACTION_TONES fills the rest): the sac's wall in the placenta's colour
+    action: { wall: { mix: ["frame3", "sac", 0.35] } },
+    frames: { shape: "scallop", scallops: 12, tokens: ["frame3", "frame2", "frame1"], size: 0.62 },
   },
   answer: {
     back: "wall", inner: "fluid",

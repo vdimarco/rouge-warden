@@ -22,4 +22,8 @@ export const FACTS = Object.freeze([
   F("grow.flow", 84, "Near week 12, more of {carer}'s blood flows into the placenta.", ["PMID 11106583", "PMID 12050279"], "A", "result"),
   F("grow.never", 84, "Your blood and {carer}'s blood never touch.", ["embryology.ch villi", "CC 22337"], "R", "result"),
   F("grow.w13", 91, "Some babies start to suck a thumb.", ["NHS week 13"], "R", "overlay"),
+  // the game framing (openspec/changes/first-breath-action-genres design.md 4.10): research-biology.md 5.13 supports it;
+  // it ships unchecked until the page itself is re-read, so it does not show yet
+  Object.freeze({ ...F("grow.frame", 49, "In the game you clear germs. In life, the placenta brings you food and oxygen.",
+    ["CC 22337"], "R", "result"), checked: false }),
 ]);

@@ -38,6 +38,9 @@ async function check(name, fn) {
 }
 const near = (a, b, tol, msg) => assert.ok(Math.abs(a - b) <= tol, `${msg}: ${a} vs ${b} (±${tol})`);
 const IDS = ["swim", "egg", "split", "root", "grow", "answer", "turn", "birth"];
+// the action-layer stages (meta.action; contract.md): no timed targets, a press is a dash, a knock-out can fail them
+const ACTION = new Set(STAGES.filter((m) => m.meta.action).map((m) => m.meta.id));
+const TIMED = (ids) => ids.filter((id) => !ACTION.has(id));
 const MAX_STEPS = 60 * 60 * 20;            // 20 game minutes
 const live = (run) => run.screen === "stage" || run.screen === "ending";
 
@@ -110,12 +113,13 @@ await check("the stage order and the screens of a whole run; no overlay after Bi
 
 await check("families per stage (16.4): at most 2, 3 for egg, from steer, tap, hold and rotate", () => {
   const want = { swim: ["steer"], egg: ["tap", "rotate", "hold"], split: ["tap", "hold"], root: ["steer", "tap"],
-    grow: ["tap", "steer"], answer: ["tap"], turn: ["hold", "rotate"], birth: ["hold"], ending: ["hold"] };
+    grow: ["steer", "tap"], answer: ["tap", "steer"], turn: ["hold", "rotate"], birth: ["hold"], ending: ["hold"] };
   for (const m of [...STAGES, ENDING]) {
     assert.deepEqual([...m.meta.families], want[m.meta.id], m.meta.id);
     assert.ok(m.meta.families.length <= (m.meta.id === "egg" ? 3 : 2));
     for (const f of m.meta.families) assert.ok(["steer", "tap", "hold", "rotate"].includes(f));
-    assert.equal(m.meta.canFail, m.meta.id === "swim", `${m.meta.id} canFail`);
+    // the race can fail, and so can every action-layer stage (a knock-out; contract.md)
+    assert.equal(m.meta.canFail, m.meta.id === "swim" || !!m.meta.action, `${m.meta.id} canFail`);
     assert.ok(Number.isFinite(m.meta.motherBpm) && m.meta.parS > 0 && m.meta.capS >= m.meta.parS, `${m.meta.id} meta numbers`);
   }
 });
@@ -288,7 +292,9 @@ await check("a press at stageStart + target.t (core time) is graded In time; raw
       if (!x) return makeIntents();
       const t = r.stageStart + x.t;
       pressed.set(r.stageId + ":" + x.id, { t, stage: r.stageId });
-      return makeIntents({ touching: true, presses: [{ t, raw: t + 0.09 }] });
+      // stage 6 notes have a lane: be in it (dir names the lane to be in, as the bot does)
+      const dir = Number.isInteger(x.lane) && x.lane >= 0 ? ["left", "up", "right"][x.lane] : null;
+      return makeIntents({ touching: true, presses: [{ t, raw: t + 0.09 }], dir });
     },
     each: (r, evs) => { for (const e of named(evs, "judge")) judged.set(e.stage + ":" + e.target, e); },
   });
@@ -303,7 +309,7 @@ await check("a press at stageStart + target.t (core time) is graded In time; raw
     near(j.t, p.t, 1e-6, `${key} judge time in core seconds`);
     stages.add(p.stage);
   }
-  assert.deepEqual([...stages].sort(), IDS.filter((id) => id !== "swim").sort(), "every stage with timed targets");
+  assert.deepEqual([...stages].sort(), IDS.filter((id) => id !== "swim" && !ACTION.has(id)).sort(), "every stage with timed targets");
 });
 
 await check("stage events reach the host in core seconds, tagged with their stage", () => {
@@ -507,13 +513,14 @@ await check("every run view validates (title, stage, overlay, Almost card, card,
 });
 
 await check("the shared bot (16.11): σ = 15 + 135 (1 − skill) ms, skip = 0.4 (1 − skill), skill 0 idle, its choices", () => {
-  const grow = STAGES.find((m) => m.meta.id === "grow"), answer = STAGES.find((m) => m.meta.id === "answer");
+  // a tap stage's presses (stage 6); the action stages have no timed targets
+  const answer = STAGES.find((m) => m.meta.id === "answer");
   // presses against the targets they aim at, played the 16.11 way (stage time, no run)
   const sample = (skill) => {
     const errs = [];
     let targets = 0;
-    for (let seed = 1; seed <= 6; seed++) {
-      for (const mod of [grow, answer]) {
+    for (let seed = 1; seed <= 14; seed++) {
+      for (const mod of [answer]) {
         const st = mod.create(seed, DEFAULT_CARRY, { assist: false, oneButton: false, motherPhase: 0 });
         const bot = createBot(skill, seed);
         const all = [];
@@ -666,14 +673,14 @@ function practise(id, { offsetMs = 0, late = 0, pauseAt = null, skip = null, see
 }
 
 await check("F1: with a +150 ms timing offset, presses 100 ms late that reach the page 150 ms later grade as with none", () => {
-  for (const id of ["egg", "split", "root", "grow", "answer", "turn", "birth"]) {
+  for (const id of TIMED(["egg", "split", "root", "grow", "answer", "turn", "birth"])) {
     const a = practise(id, { late: 0.1 }), b = practise(id, { offsetMs: 150, late: 0.1 });
     assert.ok(!a.grades.miss, `${id}: no miss with no offset (${JSON.stringify(a.grades)})`);
     assert.deepEqual(b.grades, a.grades, `${id}: the same grades with +150 ms`);
     assert.equal(b.total, a.total, `${id}: the same total with +150 ms`);
   }
   // an offset set in Settings while paused takes effect at Resume, on every track the stage holds
-  for (const id of ["egg", "split", "root", "grow", "answer", "turn", "birth"]) {
+  for (const id of TIMED(["egg", "split", "root", "grow", "answer", "turn", "birth"])) {
     const run = createRun({ seed: 7, settings: { offsetMs: 0 }, start: { practice: id } });
     for (let i = 0; i < 60; i++) run.step(makeIntents());
     run.act("pause");
@@ -691,7 +698,7 @@ await check("F1: with a +150 ms timing offset, presses 100 ms late that reach th
 });
 
 await check("F2: fair resume: resume 0.3 s before a target, then never press it, and the stage scores as if unpaused", () => {
-  for (const id of ["egg", "split", "root", "grow", "answer", "turn"]) {
+  for (const id of TIMED(["egg", "split", "root", "grow", "answer", "turn"])) {
     const a = practise(id);
     // the egg's opening taps come first (a missed one there costs Skill); elsewhere the 3rd target after 4 s
     const x = id === "egg" ? [...a.seen.values()].sort((p, q) => p.t - q.t)[0]
@@ -749,7 +756,10 @@ await check("F4: a practice result's total is the stage's own, with no Glowing b
 });
 
 await check("F5: rim sparks: every stage from 2 on draws carry.sparks round you, within the draw limits", () => {
-  const ripples = (d) => d.strips.filter((s) => s.kind === "ripples").reduce((a, s) => a + s.items.length, 0);
+  // the spark-sized ripples (0.008 × span): an action stage's own rings (a growth ring) are larger, and its sparks
+  // are also shield pips, so its runs with and without them part ways
+  const ripples = (d) => d.strips.filter((s) => s.kind === "ripples")
+    .reduce((a, s) => a + s.items.filter((it) => it.r <= 0.0081 * d.camera.span).length, 0);
   for (const m of [...STAGES.slice(1), ENDING]) {
     const mk = (n) => m.create(7, mergeCarry(DEFAULT_CARRY, { sparks: n }), { motherPhase: 0 });
     const a = mk(0), b = mk(5), c = mk(12);

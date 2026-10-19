@@ -15,10 +15,11 @@
 //   bar's round length at the camera's px per mm), drawn at that length (at least 6 px; never clamped shorter than
 //   its label, so on a desktop it can reach 30% of the short axis, about 270 px). A string draws a 24 px bar; a size line in
 //   stages 1 and 2 ("You: about …", not to scale) draws none.
-// - The tags are found in root by their data-hud names (stage, clock, score, place, scale, prompt) and made when
+// - hp (the action stages) is { n, max, label }: max pips under the score, n of them full (setHp).
+// - The tags are found in root by their data-hud names (stage, clock, score, place, hp, scale, prompt) and made when
 //   missing. root gets data-place="on" while the place slot shows (style.css keeps the right column tidy).
 
-const FIELDS = ["stage", "clock", "score", "place", "scale", "prompt"];
+const FIELDS = ["stage", "clock", "score", "place", "hp", "scale", "prompt"];
 const GESTURES = new Set(["tap", "hold", "drag", "dragHold"]);
 const fin = (v) => typeof v === "number" && Number.isFinite(v);
 
@@ -103,6 +104,37 @@ export function createHud(root) {
     lastScore = n;
   }
 
+  // The action layer's hp (contract.md): { n, max, shield, label } as max cut-paper pips, n of them full, after the
+  // shield pips (0 to 2); label (filled words,
+  // "Hits left: 3 of 5") goes on aria-label, so the tag shows no text of its own. null hides it.
+  function setHp(v) {
+    const e = tags.hp;
+    if (!e) return;
+    const ok = v && typeof v === "object" && fin(v.n) && fin(v.max) && v.max >= 1;
+    const sh = ok && fin(v.shield) ? Math.max(0, Math.min(2, Math.round(v.shield))) : 0;
+    const key = ok ? `${v.n}/${v.max}/${sh}` : "";
+    if (last.hp === key) return;
+    last.hp = key;
+    e.hidden = !ok;
+    e.textContent = "";
+    if (!ok) { e.removeAttribute("aria-label"); return; }
+    const n = Math.max(0, Math.min(v.max, Math.round(v.n))), max = Math.min(12, Math.round(v.max));
+    for (let i = 0; i < sh; i++) {                 // shield pips (from Glowing grades) come first: cream, cut square
+      const pip = document.createElement("span");
+      pip.className = "pip shield";
+      pip.setAttribute("aria-hidden", "true");
+      e.appendChild(pip);
+    }
+    for (let i = 0; i < max; i++) {
+      const pip = document.createElement("span");
+      pip.className = i < n ? "pip on" : "pip";
+      pip.setAttribute("aria-hidden", "true");
+      e.appendChild(pip);
+    }
+    if (v.label) e.setAttribute("aria-label", String(v.label)); else e.removeAttribute("aria-label");
+    e.setAttribute("role", "img");
+  }
+
   function set(v = {}) {
     if (!v || typeof v !== "object") return;
     if ("stageName" in v) setText("stage", v.stageName);
@@ -112,6 +144,7 @@ export function createHud(root) {
       setText("place", v.place);
       if (root) { if (v.place) root.dataset.place = "on"; else delete root.dataset.place; }
     }
+    if ("hp" in v) setHp(v.hp);
     if ("scale" in v) setScale(v.scale);
     if ("prompt" in v) setPrompt(v.prompt);
   }

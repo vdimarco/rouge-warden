@@ -322,7 +322,7 @@ for (const size of sizeList()) {
     check(`${tag}: the run result is on screen`, shown.result.length > 0, shown.result.slice(0, 80));
     // a fact caption, with its clock label in front: grow.fetus at week 10 (the captions queue a fact behind a line on
     // the wall clock, so this waits in real time with the run held still)
-    await F(page, () => { window.__fb.goto("grow"); window.__fb.jump("beat10"); window.__fb.step(30); });
+    await F(page, () => { window.__fb.goto("grow"); window.__fb.jump("wave10"); window.__fb.step(30); });
     const fetus = await page.waitForFunction(() => {
       const e = document.querySelector('#captions [data-fact="grow.fetus"], #captions [data-id="grow.fetus"]');
       return e && e.textContent.trim() ? e.textContent.trim() : false;

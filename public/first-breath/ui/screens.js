@@ -14,7 +14,7 @@
 //   write keeps it), and then act("setting", { key, value }) tells main.js, which may do more (the motion it gives the
 //   renderer). Sound is act("mute") (main.js writes arcade.sound).
 // - show(name, data) builds the panel again from data each time; data is the run's screen data (core/run.js):
-//   card { n, name, verb, label, facts, id }, overlay { grade, total, fact, id }, almost { place, of, capped }, result
+//   card { n, name, verb, label, facts, id }, overlay { grade, total, fact, id }, almost { place, of, capped, line }, result
 //   (run.summary()), pause { soundOn }, title { best, soundOn }, stages { save }, settings { save, settings, soundOn }
 //   (soundOn: the sound as heard; without it the Sound switch reads arcade.sound). main.js shows Settings again when
 //   M or C changes a switch under it.
@@ -192,7 +192,7 @@ export function createScreens(root, { act = () => {}, settings = null } = {}) {
     },
     almost(d = {}) {
       const place = Number.isFinite(d.place) ? ordinal(d.place) : null;
-      const line = place ? say(d.capped ? "almost.were" : "almost.came", { place, of: d.of ?? 20 }) : "";
+      const line = place ? say(d.capped ? "almost.were" : "almost.came", { place, of: d.of ?? 20 }) : d.line ? say(d.line) : "";
       return `<div class="panel almost">
         <h2>${esc(say("almost.title"))}</h2>
         ${line ? `<p class="place-line">${esc(line)}</p>` : ""}

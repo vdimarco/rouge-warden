@@ -1,10 +1,13 @@
-// First Breath: stage 2, The Egg (`egg`), its facts (design.md 15.1, 15.2, 6.2). Each entry: { id, stage, gaDay,
+// First Breath: stage 2, The Egg (`egg`), its facts (v1 design 15.1, 15.2, 6.2; action-genres design.md 4.10, 5.2). Each entry: { id, stage, gaDay,
 // fertilized, text, src: [keys of core/sources.js], access: "R" | "A", checked, where }. The texts and sources are the
 // 15.2 table's; every key is in the allow-list (core/sources.js, from research/research-biology.md section 12). When
 // a fact has sources of both kinds, `access` is the weaker one (A). In this stage only the facts shown once the nuclei
 // touch (egg.pronuclei, egg.place, egg.weeks) are fertilized, so each label matches the HUD ("Week 2" until then).
-// Six are captions, each with a quiet spot to show whole in real time (design.md 6.2, 12); the stage has no room for
-// the others, so they are "result" facts: the run result's "What was real" lists them with this stage's facts.
+// Seven are captions, sent in priority order at the calm points of the guard (the sweep, each wave's arrival, your
+// sperm coming in, the seal), each shown whole before the stage ends (v1 12); the stage has no room for the others,
+// so they are "result" facts: the run result's "What was real" lists them with this stage's facts. egg.caps is new
+// (design.md 4.10): its source line (research 2.2, Cleveland Clinic "sperm") was re-read on 2026-10-19: 'A cap
+// (acrosome) covers the head and contains enzymes.'
 // core/facts.js gathers this table through core/stages/index.js.
 const f = (id, text, src, access, where, fertilized = false) =>
   Object.freeze({ id, stage: "egg", gaDay: 14, fertilized, text, src: Object.freeze(src), access, checked: true, where });
@@ -15,6 +18,7 @@ export const FACTS = Object.freeze([
   f("egg.cilia", "The egg cannot swim. Tiny hairs called cilia sweep it into the tube.",
     ["embryology.ch migration", "CC 24346"], "R", "result"),
   f("egg.zona", "A clear shell called the zona pellucida protects the egg.", ["CC 22889 blastocyst", "TTUHSC"], "R", "caption"),
+  f("egg.caps", "A cap on each sperm's head holds enzymes.", ["CC sperm"], "R", "caption"),
   f("egg.corona", "A cloud of cells surrounds the egg. Sperm pass through the corona to reach the shell.",
     ["PMID 21412339", "TTUHSC"], "A", "caption"),
   f("egg.choice", "In one study, the fluid around eggs drew some men's sperm more than others.",
