@@ -31,10 +31,10 @@
  "source_sha256": {
   "Data/LaFontaine/osm.xml": "fe4410d45007a627bf6d9b9ddeeae329fa9cdd7492dfb5fa6beff851e7cf8f86",
   "Data/LaFontaine/layout.json": "4238d6ed45d5fb890e0f8dbcb672de0803c6dc7079b0b6a86b386d82ebbb4250",
-  "Scripts/plateau_replica.py": "83658d6512cea6afd8c515286e20f3fea631b30bd94156fb7a76a195d2983af2",
+  "Scripts/plateau_replica.py": "60b2f0ffffb9a6a7920542b2e1b593cee66441803989276c1fcd49e9d5854968",
   "Scripts/prepare_lafontaine.py": "e7b6e5f068a96ee7306b1fff247fa73158f5cf7c343dc5510ab8cce92ee3c924",
   "Data/Plateau/BaseGeometry/Marking.obj": "2d82cbca59041aa6af5e6f3fffaf6a01b2c3e672eea9732e8a5fecbb7cee35dd"
  },
- "placements_sha256": "b58fb494b1aa97b5f280eb0f5d6d824b68af3fa61d7cd740a7b4ba8f6e887989",
+ "placements_sha256": "cced9975402c9769ccc58bde1bbcd7eac1f6180b7af47aa1a720a4fee493b2ca",
  "props_manifest_sha256": "ea2a9befc950366fee28955a00dc3c419d3df5791e32ddd75ff538d3e7c7a735"
 }

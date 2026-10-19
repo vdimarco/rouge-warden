@@ -150,6 +150,10 @@ bool FQuebecJobsLifecycleTest::RunTest(const FString& Parameters)
     Fixture.World->TimeSeconds += AQuebecSideJobs::RetrySeconds + 1.;
     TestFalse(TEXT("R goes back to the campaign once the retry window closed"), QuebecJobs::HandleRecover(Fixture.Player));
     TestFalse(TEXT("No job runs after the window closed"), QuebecJobs::IsJobActive(Fixture.World));
+    // R never moves a downed player, even with no job and no retry window: the campaign checkpoint is skipped too.
+    Fixture.Stats->DownState = static_cast<uint8>(EQuebecDownState::KnockedOut);
+    TestTrue(TEXT("R from a downed player is held back even outside a job"), QuebecJobs::HandleRecover(Fixture.Player));
+    Fixture.Stats->DownState = 0;
 
     // A knock-out ends the job at once, and R does nothing while the player is down.
     TestTrue(TEXT("A second delivery starts"), Jobs->StartJob(0, Fixture.Player));
@@ -193,6 +197,16 @@ bool FQuebecJobsLifecycleTest::RunTest(const FString& Parameters)
     Jobs->FinishJob(true, TEXT("test"));
     TestTrue(TEXT("Success marks the job completed for the session"), Jobs->IsCompleted(2));
     TestEqual(TEXT("Success records the job's reward"), Jobs->LastReward, QuebecJobRules::Rewards[2]);
+
+    // A partner who is down at the start would lose a pistol at the respawn, so it comes once they stand up.
+    PartnerStats->OwnedWeapons = 1;
+    PartnerStats->DownState = static_cast<uint8>(EQuebecDownState::KnockedOut);
+    TestTrue(TEXT("The goon job starts while the partner is down"), Jobs->StartJob(2, Fixture.Player));
+    TestFalse(TEXT("A downed partner is not armed yet"), PartnerStats->HasWeapon(EQuebecWeapon::Pistol));
+    PartnerStats->DownState = 0;
+    Jobs->Tick(.1f);
+    TestTrue(TEXT("The partner is armed on standing up"), PartnerStats->HasWeapon(EQuebecWeapon::Pistol));
+    Jobs->FinishJob(false, TEXT("test"));
     return true;
 }
 
