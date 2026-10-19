@@ -1,4 +1,4 @@
-"""Plateau plex fronts on the plain OSM footprints: layer ReplicaGeometry/Plex.
+"""Plateau plex fronts and rears on the plain OSM footprints: layer ReplicaGeometry/Plex.
 
 Stdlib only, deterministic. Every plain building (not one of the 100 route fronts, the
 154 park-facing perimeter fronts, the tower or the school) gets a street-level Plateau
@@ -9,6 +9,12 @@ painted cornices with brackets, fausse-mansarde slate fronts and raised brick pa
 by construction era, and dépanneur ground floors at corners. The fronts are visual skins
 4-16 cm in front of the existing collision masses; stair treads, stoops and balcony
 decks form separate complex-collision batches.
+
+The yard side (build(..., rear=True), class Rear): every exposed back wall gets an opaque skin 16 cm proud
+of the mass (hiding the old OSM glass cards), the main rear wall gets doors and windows on every floor, a
+gallery on each upper floor with posts to the yard, and a straight wooden flight or a steel spiral from the
+yard to the top; yards close toward the ruelle (or the rear lot line) with a fence and gate, with seeded
+sheds, garages, hedges, cedars and creepers.
 
 Rules follow research-plateau.md §3-§6 and §9 (Plateau heritage sheets, Dec 2015) and the
 CGA split idea of Müller et al. 2006 (mass -> facade -> floors -> bays). Storeys come from
@@ -1259,7 +1265,7 @@ REAR_HEAD = 215.            # door and window heads line up on the rear walls
 REAR_PAINT = ('Wood_Grey', 'Wood_Grey', 'Trim', 'Wood_Cream', 'Wood_Green', 'Wood_Oak', 'Iron', 'Wood_Burgundy')
 REAR_DOORS = ('Trim', 'Trim', 'Wood_Oak', 'Wood_Grey', 'Wood_Green', 'Wood_Burgundy')
 SIDING = ('Wood_Cream', 'Wood_Grey', 'Trim', 'Wood_Cream', 'Wood_Green')
-COMMON_BRICK = ('Brick_Red', 'Brick_Red', 'Brick_RedDark', 'Brick_Brown', 'Brick_Orange')
+COMMON_BRICK = ('Brick_Red', 'Brick_Red', 'Brick_Brown')      # common brick; also keeps the 142.5 m batch tile
 FENCE_WOOD = ('Wood_Oak', 'Wood_Oak', 'Wood_Grey', 'Wood_Grey', 'Wood_Green', 'Wood_Burgundy', 'Wood_Cream')
 SHED_WALLS = ('Wood_Grey', 'Wood_Oak', 'Wood_Green', 'Wood_Cream', 'Iron', 'Wood_Burgundy')
 
@@ -1407,6 +1413,8 @@ class Rear:
         self.hedge_roll, self.tree_roll, self.vine_roll = rng.random(), rng.random(), rng.random()
         self.vine_mat = rng.choice(('Wood_Burgundy', 'Wood_Burgundy', 'Wood_Green'))   # autumn Virginia creeper, ivy
         self.tree_h, self.vine_f = rng.uniform(280, 420), rng.random()
+        if lot['storeys'] >= 5:
+            self.paint, self.roofed = 'Iron', False     # apartment blocks: steel fire-escape galleries
         self.counts = {}
         self.stack = None
         self.yard_plan = None
@@ -1430,8 +1438,23 @@ class Rear:
         bx1, by1 = max(p[0] for p in points) + margin, max(p[1] for p in points) + margin
         return [poly for poly, a0, b0, a1, b1 in self.obstacle_bounds if a0 <= bx1 and a1 >= bx0 and b0 <= by1 and b1 >= by0]
 
-    def blocked(self, point, near, occupancy):
-        return any(_inside(point, poly) for poly in near) or occupancy.hit(point)
+    def blocked(self, point, near, occupancy, roads=None):
+        """Inside a building or a planned structure; with `roads`, also too close to a drive, service or lane
+        centreline ((segment, clearance) pairs), so fences and sheds never stand on a driveway or a street."""
+        if any(_inside(point, poly) for poly in near) or occupancy.hit(point):
+            return True
+        return bool(roads) and any(_nearest(point, c, d)[0] < clearance for (c, d), clearance in roads)
+
+    def yard_roads(self, points, margin=400.):
+        """Road centrelines near `points` with the clearance a fence or shed keeps from them."""
+        bx0, by0 = min(p[0] for p in points) - margin, min(p[1] for p in points) - margin
+        bx1, by1 = max(p[0] for p in points) + margin, max(p[1] for p in points) + margin
+        # a ruelle: its 430 cm strip plus a verge; a named street: past its curb (>= 550 cm) and sidewalk;
+        # a driveway or parking aisle: its own width
+        return [((c, d), FENCE_FROM_ALLEY - 10 if alley else 650. if named else 250.)
+                for c, d, alley, named in self.lot.get('roads_near', ())
+                if min(c[0], d[0]) <= bx1 + 400 and max(c[0], d[0]) >= bx0 - 400
+                and min(c[1], d[1]) <= by1 + 400 and max(c[1], d[1]) >= by0 - 400]
 
     # ------------------------------------------------------------------ planning
     def yard(self, wall):
@@ -1444,15 +1467,18 @@ class Rear:
         return clear - 20, False
 
     def free(self, F, x0, x1, d0, d1, occupancy, roads=True):
-        """No building or planned structure on a sample grid of the rectangle; roads at least 300 cm away."""
+        """No building or planned structure on a sample grid of the rectangle. roads=True (collision): every road
+        centreline at least 300 cm away; roads=False (fences, sheds, plants): the yard road rule only."""
         corners = [F.p(x, d, 0)[:2] for x in (x0, x1) for d in (d0, d1)]
         bx0, by0 = min(p[0] for p in corners), min(p[1] for p in corners)
         bx1, by1 = max(p[0] for p in corners), max(p[1] for p in corners)
         near = self.near(corners)
+        yard_roads = None if roads else self.yard_roads(corners)
         nx, nd = max(2, math.ceil((x1 - x0) / 45) + 1), max(2, math.ceil((d1 - d0) / 45) + 1)
         for i in range(nx):
             for j in range(nd):
-                if self.blocked(F.p(x0 + (x1 - x0) * i / (nx - 1), d0 + (d1 - d0) * j / (nd - 1), 0)[:2], near, occupancy):
+                if self.blocked(F.p(x0 + (x1 - x0) * i / (nx - 1), d0 + (d1 - d0) * j / (nd - 1), 0)[:2], near,
+                                occupancy, yard_roads):
                     return False
         if roads:
             reach = TRAFFIC_CLEAR + 60
@@ -1540,6 +1566,7 @@ class Rear:
         plan['roof'] = roof if self.roofed and roof - 10 >= top_z + 215 else None
         for polygon in footprints:
             occupancy.add(polygon)
+        plan['footprints'] = footprints
         self.stack = plan
 
     def fence_wall(self):
@@ -1571,12 +1598,20 @@ class Rear:
         lx0, lx1 = min(x for x, _ in local), max(x for x, _ in local)
         if lx1 - lx0 < 250:
             return
-        # free samples along the fence line (buildings, galleries and sheds already placed)
+        if gate:
+            # a ruelle at a slant to the wall: measure it along the normal at both lot ends as well
+            lanes = [[c, d] for c, d, alley, _ in self.lot.get('roads_near', ()) if alley]
+            rays = [_outward_clearance(F.p(x, 0, 0)[:2], n, lanes) for x in (lx0 + 30, lx1 - 30)]
+            fd = min([fd] + [r - FENCE_FROM_ALLEY for r in rays if r < 1999])
+            if fd < extent + 40:
+                return
+        # free samples along the fence line (buildings, galleries and sheds already placed, roads)
         step = 40.
         count = max(2, math.ceil((lx1 - lx0) / step) + 1)
         xs = [lx0 + (lx1 - lx0) * i / (count - 1) for i in range(count)]
-        near = self.near([F.p(lx0, fd, 0), F.p(lx1, fd, 0)], 5)
-        free = [not self.blocked(F.p(x, fd, 0)[:2], near, occupancy) for x in xs]
+        ends = [F.p(lx0, fd, 0), F.p(lx1, fd, 0)]
+        near, roads = self.near(ends, 5), self.yard_roads(ends)
+        free = [not self.blocked(F.p(x, fd, 0)[:2], near, occupancy, roads) for x in xs]
         runs, start = [], None
         for i, ok in enumerate(free + [False]):
             if ok and start is None:
@@ -1603,7 +1638,11 @@ class Rear:
             for r0, r1 in runs:
                 if r1 - r0 < 130:
                     continue
-                gc = min(max(want, r0 + 60), r1 - 60)
+                gc = min(max(want, r0 + 50), r1 - 50)
+                if gc - 50 - r0 < 45:          # no sliver of fence beside the gate
+                    gc = r0 + 50
+                elif r1 - gc - 50 < 45:
+                    gc = r1 - 50
                 key = (abs(gc - want), gc)
                 if best is None or key < best[0]:
                     best = (key, gc)
@@ -1622,7 +1661,7 @@ class Rear:
         if kind:
             sw = min(sw, lx1 - lx0 - 170)
             if sw >= 180:
-                sx0, sx1 = (lx1 - 12 - sw, lx1 - 12) if far_right else (lx0 + 12, lx0 + 12 + sw)
+                sx0, sx1 = (lx1 - 3 - sw, lx1 - 3) if far_right else (lx0 + 3, lx0 + 3 + sw)   # against the side fence
                 if self.free(F, sx0, sx1, fd - sd, fd - 3, occupancy, roads=False):
                     plan['shed'] = {'kind': kind, 'x': (sx0, sx1), 'd': (fd - sd, fd)}
                     occupancy.add([F.p(x, d, 0)[:2] for x, d in ((sx0, fd - sd), (sx1, fd - sd), (sx1, fd), (sx0, fd))])
@@ -1650,8 +1689,8 @@ class Rear:
 
     # ------------------------------------------------------------------ authoring
     def author(self, mesh):
-        record = {'walls': [], 'galleries': 0, 'stair': None, 'flights': [], 'decks': [], 'fence': None,
-                  'shed': None, 'reason': self.reason}
+        record = {'walls': [], 'wall_top_cm': round(self.zt, 1), 'galleries': 0, 'stair': None, 'flights': [],
+                  'decks': [], 'fence': None, 'shed': None, 'reason': self.reason}
         for wall in self.lot.get('backs', []):
             if self.stack and wall is self.stack['wall']:
                 self._author_stack_wall(mesh, wall, record)
@@ -1711,6 +1750,19 @@ class Rear:
                     windows += 1
         self._skin_faces(F, wall, self.lot['raise'] if wall['kind'] in ('lane', 'street') else 0.)
         self.count('skins_' + wall['kind'])
+        if wall['kind'] == 'side' and W >= 300:
+            # Virginia creeper (vigne vierge) on some blank yard walls: autumn red, or green ivy
+            wr = random.Random(_seed('plex-rear-wall', self.lot['id'], wall['index']))
+            if wr.random() < .2:
+                w = min(W - 40, wr.uniform(180, 420))
+                x0 = 20 + (W - 40 - w) * wr.random()
+                h = min(self.zt - 40, wr.uniform(280, 720))
+                d = D_FACE + 1.5
+                p = F.p
+                blob = [p(x0 + 10, d, 0), p(x0 + w - 15, d, 0), p(x0 + w + 10, d, h * .45), p(x0 + w * .7, d, h),
+                        p(x0 + w * .25, d, h * .9), p(x0 - 10, d, h * .4)]
+                mesh.face(wr.choice(('Wood_Burgundy', 'Wood_Burgundy', 'Wood_Green')), blob, F.out(0, 1, 0))
+                self.count('creepers')
         record['walls'].append({'kind': wall['kind'], 'width_cm': round(W, 1), 'windows': windows, 'doors': 0,
                                 'galleries': 0})
 
@@ -1745,6 +1797,7 @@ class Rear:
         self._skin_faces(F, wall, self.lot['raise'])
         self.count('facades')
         record['stair'] = st['kind']
+        record['footprints'] = [[[round(v, 1) for v in p] for p in polygon] for polygon in st['footprints']]
         record['walls'].append({'kind': 'rear', 'width_cm': round(W, 1), 'windows': windows, 'doors': doors,
                                 'galleries': len(levels) * len(st['modules']), 'modules': len(st['modules'])})
 
@@ -1979,7 +2032,7 @@ class Rear:
         shed = plan['shed']
         if shed:
             self._shed(mesh, F, shed)
-            covered += shed['x'][1] - shed['x'][0]
+            covered += shed['x'][1] - shed['x'][0] + 3      # the side fence closes the 3 cm beside it
         # creeper on the lane side of the longest run
         if runs and self.vine_roll < .35:
             x0, x1 = max(runs, key=lambda r: (r[1] - r[0], r[0]))
@@ -2010,7 +2063,10 @@ class Rear:
         record['fence'] = {'kind': self.fence_kind, 'lane': plan['lane'], 'gate': plan['gate'] is not None,
                            'height_cm': h, 'distance_cm': round(fd, 1), 'lot_width_cm': round(span, 1),
                            'covered_cm': round(min(covered, span), 1),
-                           'line': [[round(v, 1) for v in F.p(lx0, fd, 0)[:2]], [round(v, 1) for v in F.p(lx1, fd, 0)[:2]]]}
+                           'line': [[round(v, 1) for v in F.p(lx0, fd, 0)[:2]], [round(v, 1) for v in F.p(lx1, fd, 0)[:2]]],
+                           'runs': [[round(x0 - lx0, 1), round(x1 - lx0, 1)] for x0, x1 in runs],
+                           'gate_at': None if plan['gate'] is None else round(plan['gate'] - lx0, 1),
+                           'shed_at': None if not shed else [round(shed['x'][0] - lx0, 1), round(shed['x'][1] - lx0, 1)]}
         if shed:
             record['shed'] = shed['kind']
 
@@ -2038,6 +2094,7 @@ class Rear:
 def build_rears(mesh, lots, tops):
     """Plan every lot's galleries first (so yards see their neighbours' structures), then fences, then author."""
     rears = [Rear(lot, tops[lot['id']]) for lot in lots]
+    mesh.rear_start = {material: len(faces) for material, faces in mesh.groups.items()}   # rear faces follow
     occupancy = Occupancy()
     for rear in rears:
         rear.plan_stack(occupancy)
@@ -2074,20 +2131,21 @@ def build_rears(mesh, lots, tops):
         a, b = fence['a'], fence['b']
         length = math.dist(a, b)
         steps = max(2, math.ceil(length / 40) + 1)
-        near = rear.near([a, b], 5)
+        near, roads = rear.near([a, b], 5), rear.yard_roads([a, b])
         pts = [(a[0] + (b[0] - a[0]) * i / (steps - 1), a[1] + (b[1] - a[1]) * i / (steps - 1)) for i in range(steps)]
-        ok = [not rear.blocked(p, near, occupancy) for p in pts]
+        ok = [not rear.blocked(p, near, occupancy, roads) for p in pts]
         start = None
         for i, flag in enumerate(ok + [False]):
             if flag and start is None:
                 start = i
             elif not flag and start is not None:
-                if i - 1 > start:
-                    fence_panel(mesh, fence['paint'], pts[start], pts[i - 1], fence['height'])
+                before = mesh.triangles()
+                if i - 1 > start and fence_panel(mesh, fence['paint'], pts[start], pts[i - 1], fence['height']):
                     side_count += 1
+                    records[fence['lot']]['triangles'] += mesh.triangles() - before
+                    records[fence['lot']].setdefault('side_fences', []).append(
+                        [[round(v, 1) for v in pts[start]], [round(v, 1) for v in pts[i - 1]]])
                 start = None
-        records[fence['lot']].setdefault('side_fences', 0)
-        records[fence['lot']]['side_fences'] += 1
     for rear in rears:
         for key, value in rear.counts.items():
             counts[key] = counts.get(key, 0) + value
@@ -2194,7 +2252,7 @@ def summary(records, skipped, lots):
     sources = Counter(r['storeys_source'] for r in records)
     streets = Counter(r['street'] for r in records)
     masonry = Counter(r['masonry'] for r in records)
-    return {
+    result = {
         'fronts': len(records),
         'corner_side_fronts': sum(len(r['sides']) for r in records),
         'types': dict(sorted(kinds.items())),
@@ -2211,9 +2269,32 @@ def summary(records, skipped, lots):
         'triangles_per_front': {'median': sorted(r['triangles'] for r in records)[len(records) // 2] if records else 0,
                                 'max': max((r['triangles'] for r in records), default=0)},
     }
+    if records and 'rear' in records[0]:
+        result['rear'] = _rear_summary([r['rear'] for r in records])
+    return result
 
 
-def prepare(directory=OUT, write=True):
+def _rear_summary(rears):
+    from collections import Counter
+    fences = [r['fence'] for r in rears if r['fence']]
+    with_galleries = [r for r in rears if r['galleries']]
+    return {
+        'back_walls': dict(sorted(Counter(w['kind'] for r in rears for w in r['walls']).items())),
+        'lots_with_galleries': len(with_galleries),
+        'galleries': sum(r['galleries'] for r in rears),
+        'stairs': dict(sorted(Counter(r['stair'] for r in with_galleries for w in r['walls'] if w['galleries']
+                                      for _ in range(w['modules'])).items())),
+        'flights': sum(len(r['flights']) for r in rears),
+        'no_gallery_reasons': dict(sorted(Counter(r['reason'] for r in rears if not r['galleries'] and r['reason']).items())),
+        'fences': {'lane': sum(f['lane'] for f in fences), 'rear_lot_line': sum(not f['lane'] for f in fences),
+                   'gates': sum(f['gate'] for f in fences), 'kinds': dict(sorted(Counter(f['kind'] for f in fences).items()))},
+        'outbuildings': dict(sorted(Counter(r['shed'] for r in rears if r['shed']).items())),
+        'triangles': sum(r['triangles'] for r in rears),
+    }
+
+
+def prepare(directory=OUT, write=True, keep=None):
+    """Build the layer; `keep` (a dict) receives the mesh and lots for the tests."""
     buildings, roads = geography()
     roll_data = json.loads(ROLL_JOIN.read_text()) if ROLL_JOIN.exists() else {'buildings': {}}
     _, shops = osm_points()
@@ -2222,6 +2303,8 @@ def prepare(directory=OUT, write=True):
     lod2 = lod2_heights(plain)
     lots, skipped = select_fronts(buildings, roads, skip, roll_data['buildings'], lod2, shops)
     mesh, records, counts = build(lots, rear=True)
+    if keep is not None:
+        keep.update(mesh=mesh, lots=lots)
     groups, tile = batches(mesh)
     directory = Path(directory)
     manifest_batches = []
@@ -2260,7 +2343,8 @@ def prepare(directory=OUT, write=True):
                      'max_batch_triangles': MAX_BATCH_TRIANGLES},
         'offsets_cm': {'glass_and_recess_back': D_BACK, 'masonry_face': D_FACE, 'osm_glass_cards': 3.0},
         'collision_note': "'complex' = use complex collision as simple on that batch (stair treads, stoops, "
-                          'balcony decks), as the existing *_Collision batches do; skins are NoCollision.',
+                          'balcony decks, rear gallery decks and rear stair treads), as the existing *_Collision batches '
+                          'do; skins, fences, sheds and plants are NoCollision.',
         'source_sha256': {name: hashlib.sha256((ROOT / name).read_bytes()).hexdigest() for name in sources},
         'geometry_sha256': hashes,
         'attribution': ['© OpenStreetMap contributors, ODbL 1.0',
@@ -2268,7 +2352,9 @@ def prepare(directory=OUT, write=True):
                         "Unités d'évaluation foncière (year built, storeys) joined by address"],
         'limits': 'Footprints, street edges, storeys and construction years are data-driven where available. '
                   'Brick colours, trim colours, door and window rhythm, stair shape and cornice details are '
-                  'rule-and-seed estimates after the Plateau heritage sheets, not surveys of individual buildings.',
+                  'rule-and-seed estimates after the Plateau heritage sheets, not surveys of individual buildings. '
+                  'Rear galleries, stairs, fences, gates, sheds and plants are rule-and-seed estimates too; lot lines '
+                  'are not mapped, so the rear lot line is taken at the ruelle or halfway to the next building.',
     }
     lots_out = {'layer': LAYER, 'fronts': records, 'skipped': dict(sorted(skipped.items()))}
     if write:
