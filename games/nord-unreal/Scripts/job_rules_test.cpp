@@ -84,7 +84,7 @@ namespace
         // 13 m/s average by car leaves slack in the time limit with every door bonus.
         const double Allowed = static_cast<double>(TimeLimits[0] + DoorBonusSeconds * static_cast<float>(DoorCount - 1));
         Expect(Route / 1300. < Allowed, "delivery route %.0f m cannot be driven in %.0f s", Route / 100., Allowed);
-        Expect(Distance2D(EscapeGarage, Markers[3]) > 50000., "garage is too close to the escape start");
+        Expect(Distance2D(EscapeGarage, Markers[3]) > 15000., "garage is too close to the escape start");
     }
 
     void TimerTests()

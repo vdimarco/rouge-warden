@@ -257,7 +257,7 @@ void AQuebecHUD::DrawStreetHUD(float UIScale, bool bTall, bool bTouch, float Rad
         DrawRect(Flash, ScreenW - Edge, Edge, Edge, ScreenH - 2.f * Edge);
     }
 
-    // Radar blips, in DrawHUD's radar transform: 250 m radius, screen up is +X... as MapPoint draws it.
+    // Radar blips use DrawHUD's MapPoint transform unchanged: 250 m radius, world +X to screen right, +Y to screen up.
     const FVector2D Centre(RadarX + RadarSize * .5f, RadarY + RadarSize * .5f);
     const float RadarRadius = RadarSize * .5f - 6.f * S;
     const auto RadarPoint = [Here, Centre, RadarRadius](const FVector& Where)
@@ -484,11 +484,13 @@ void AQuebecHUD::DrawStreetHUD(float UIScale, bool bTall, bool bTouch, float Rad
         Plate(Player->GameNoticeTitle, Player->GameNoticeDetail, Accent, ScreenW * .5f, BannerTop, Now - Player->GameNoticeStart,
             Player->GameNoticeUntil - Player->GameNoticeStart);
     }
-    else if (!bDown && Now - StarsChangedAt < 2.f && Now - StarsChangedAt >= 0.f)
+    else if (!bDown && Stars > 0 && Now - StarsChangedAt >= .6f && Now - StarsChangedAt < 2.4f &&
+        (!Player || Player->GameNoticeStart < StarsChangedAt - .3f))
     {
-        Plate(Stars > 0 ? FString(TEXT("RECHERCHÉ")) : FString(TEXT("POLICE SEMÉE")),
-            Stars > 0 ? FString::Printf(TEXT("%d étoile%s"), Stars, Stars > 1 ? TEXT("s") : TEXT("")) : FString(),
-            Stars > 0 ? Cop : CashTone, ScreenW * .5f, BannerTop, Now - StarsChangedAt, 2.f);
+        // The police announce most star changes with their own notice, and a respawn clears stars silently; this plate
+        // covers a rise they leave silent, after a short wait so the two never show back to back.
+        Plate(TEXT("RECHERCHÉ"), FString::Printf(TEXT("%d étoile%s"), Stars, Stars > 1 ? TEXT("s") : TEXT("")),
+            Cop, ScreenW * .5f, BannerTop, Now - StarsChangedAt - .6f, 1.8f);
     }
     if (bDown)
     {

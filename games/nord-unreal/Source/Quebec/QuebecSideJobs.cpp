@@ -165,17 +165,23 @@ void AQuebecSideJobs::BeginPlay()
 
 void AQuebecSideJobs::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
-    if (HasAuthority()) ClearJobContent();
-    if (HasAuthority() && IsValid(LoanCar) && !LoanCar->GetController()) LoanCar->Destroy();
+    // A world that ends removes every actor itself; only an explicit removal of this actor cleans up its job.
+    if (EndPlayReason == EEndPlayReason::Destroyed && HasAuthority())
+    {
+        ClearJobContent();
+        if (IsValid(LoanCar) && !LoanCar->GetController()) LoanCar->Destroy();
+    }
     Super::EndPlay(EndPlayReason);
 }
 
 FVector AQuebecSideJobs::GroundPoint(const FVector& Point, float Lift) const
 {
     // The surveyed district is flat; the trace finds the sidewalk or road and skips balconies and crowns above 3 m.
+    // Only static geometry counts, so a parked car or a player on the spot is never taken for the ground.
     FCollisionQueryParams Query(SCENE_QUERY_STAT(SideJobGround),false,this);
     FHitResult Floor;
-    if (GetWorld() && GetWorld()->LineTraceSingleByChannel(Floor,Point+FVector(0.,0.,300.),Point-FVector(0.,0.,600.),ECC_Visibility,Query))
+    if (GetWorld() && GetWorld()->LineTraceSingleByObjectType(Floor,Point+FVector(0.,0.,300.),Point-FVector(0.,0.,600.),
+        FCollisionObjectQueryParams(ECC_WorldStatic),Query))
         return Floor.ImpactPoint+FVector(0.,0.,Lift);
     return Point+FVector(0.,0.,Lift);
 }

@@ -3,6 +3,7 @@
 #include "QuebecGameplay.h"
 #include "QuebecJobRules.h"
 #include "QuebecPlayerState.h"
+#include "QuebecPolice.h"
 #include "LaFontaineMap.h"
 
 #if WITH_DEV_AUTOMATION_TESTS
@@ -90,6 +91,9 @@ bool FQuebecJobsClearanceTest::RunTest(const FString& Parameters)
         }
     AddInfo(FString::Printf(TEXT("NORD_SIDEJOB closest side-job point to a QA anchor: %.0f cm over %d points and %d anchors"), Closest, Points.Num(), Anchors.Num()));
     TestTrue(TEXT("Every marker, objective and spawn point is at least 15 m from every QA anchor"), Closest >= QuebecJobRules::MinClearance);
+    // The escape ends at the police garage; the engine-free table keeps the same point for the CPU test.
+    const double GarageGap = FVector::Dist2D(QuebecPolice::GarageLocation(), JobsTestVector(QuebecJobRules::EscapeGarage));
+    TestTrue(FString::Printf(TEXT("The escape garage matches the police garage (%.0f cm apart)"), GarageGap), GarageGap < 100.);
     return true;
 }
 

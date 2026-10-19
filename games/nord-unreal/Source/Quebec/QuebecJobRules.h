@@ -56,9 +56,11 @@ namespace QuebecJobRules
     inline constexpr int WaveSizes[WaveCount] = {3, 4, 5};
     inline constexpr int PistolRounds = 36;
 
-    // Cinq étoiles: three stars at the start; win by losing them or by pulling into the garage on Rue Dorion.
+    // Cinq étoiles: three stars at the start; win by losing them or by pulling into the police garage, the bay that
+    // QuebecPolice::GarageLocation() returns (midpoint of its street bay, 1.5 m to the right). Quebec.Jobs.MarkerClearance
+    // checks that the two stay together.
     inline constexpr int EscapeStars = 3;
-    inline constexpr FJobSpot EscapeGarage = {52404., 47000., 0.};
+    inline constexpr FJobSpot EscapeGarage = {50591., -17400., 0.};
     inline constexpr double GarageRadius = 700.;
 
     inline constexpr double MarkerRadius = 250.;
