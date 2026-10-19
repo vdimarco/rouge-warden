@@ -3,7 +3,7 @@
 import { BAT, RULES, clamp } from './rules.js';
 
 export function sampleSpeed(sample) {
-  return Math.hypot(Number(sample.alpha) || 0, Number(sample.beta) || 0);
+  return Math.max(Math.hypot(Number(sample.alpha) || 0, Number(sample.beta) || 0), Number(sample.linearSpeed) || 0);
 }
 
 export function smoothSpeed(samples) {
@@ -65,6 +65,7 @@ export function createSwingDetector() {
     tracking() {
       return open != null;
     },
+    reset() { samples = []; open = null; coolUntil = -Infinity; },
   };
 }
 
@@ -157,7 +158,9 @@ export function flickFromSamples(samples, now, viewWidth, windowSec = POINTER.wi
 // Portrait gamma is side tilt. In landscape the axes swap, same as Lawn Tennis.
 export function mapAxes(beta, gamma, angle) {
   const turn = ((Number(angle) || 0) % 360 + 360) % 360;
-  if (turn === 90 || turn === 270) return { beta: gamma, gamma: beta };
+  if (turn === 90) return { beta: -gamma, gamma: beta };
+  if (turn === 270) return { beta: gamma, gamma: -beta };
+  if (turn === 180) return { beta: -beta, gamma: -gamma };
   return { beta: Number(beta) || 0, gamma: Number(gamma) || 0 };
 }
 
@@ -295,5 +298,51 @@ export function batPresentation({ roll, tiltY, push, x }) {
     scaleY: Math.max(0.86, 1 - pitch * 0.12) * open,
     shear: -pitch * 0.32,
     pushZ: jab * RULES.swingPush,
+  };
+}
+
+// Heading is circular: crossing north must not send the bat across the table.
+export function headingDelta(alpha, neutral) {
+  if (!Number.isFinite(alpha) || !Number.isFinite(neutral)) return 0;
+  return ((alpha - neutral + 540) % 360 + 360) % 360 - 180;
+}
+
+// Screen right and horizontal forward, from gravity-free device acceleration.
+export function phoneAcceleration(sample, angle, pitch) {
+  if (!sample || ![sample.x, sample.y, sample.z].every(Number.isFinite)) return { x: 0, z: 0 };
+  const a = (Number(angle) || 0) * Math.PI / 180;
+  const b = (Number(pitch) || 0) * Math.PI / 180;
+  const x = sample.x * Math.cos(a) + sample.y * Math.sin(a);
+  const up = sample.y * Math.cos(a) - sample.x * Math.sin(a);
+  return { x, z: up * Math.cos(b) - sample.z * Math.sin(b) };
+}
+
+// Short strokes, not unbounded inertial navigation. A spring stops sensor drift.
+export function createPhoneTravel() {
+  let x = 0, z = 0, vx = 0, vz = 0, ax = 0, az = 0, at = -Infinity;
+  return {
+    sample(acceleration, angle, pitch, now) {
+      const a = phoneAcceleration(acceleration, angle, pitch);
+      ax = Math.abs(a.x) < 0.25 ? 0 : clamp(a.x, -18, 18);
+      az = Math.abs(a.z) < 0.25 ? 0 : clamp(a.z, -18, 18);
+      at = now;
+    },
+    step(dt, now) {
+      const elapsed = clamp(Number(dt) || 0, 0, 0.05);
+      const live = now - at < 0.1;
+      const n = Math.max(1, Math.ceil(elapsed / (1 / 120)));
+      const h = elapsed / n;
+      for (let i = 0; i < n; i++) {
+        vx += ((live ? ax * 2.8 : 0) - 16 * x - 8 * vx) * h;
+        vz += ((live ? az * 2.8 : 0) - 16 * z - 8 * vz) * h;
+        vx = clamp(vx, -2.5, 2.5); vz = clamp(vz, -2.5, 2.5);
+        x = clamp(x + vx * h, -0.45, 0.45);
+        z = clamp(z + vz * h, -0.32, 0.48);
+        if (Math.abs(x) >= 0.45 && Math.sign(vx) === Math.sign(x)) vx = 0;
+        if ((z <= -0.32 && vz < 0) || (z >= 0.48 && vz > 0)) vz = 0;
+      }
+      return { x, z };
+    },
+    reset() { x = z = vx = vz = ax = az = 0; at = -Infinity; },
   };
 }

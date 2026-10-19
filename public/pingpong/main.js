@@ -1,8 +1,8 @@
 // Boots the table, the gate, motion, swipe, mouse and the test hooks.
 
 import { desktopCourt, unlockCourt } from './gate.js';
-import { aimFromCanvas, assistX, batFromTilt, createSwingDetector, depthWithBounce, driftNeutral, flickFromSamples, leanFromCanvas, mapAxes, predictBounceZ, sideTarget, springStep, swipeToSwing, swingPush } from './motion.js';
-import { RULES, planFrame, readOptions } from './rules.js';
+import { aimFromCanvas, assistX, batFromTilt, createPhoneTravel, phoneAcceleration, headingDelta, createSwingDetector, depthWithBounce, driftNeutral, flickFromSamples, leanFromCanvas, mapAxes, predictBounceZ, sideTarget, springStep, swipeToSwing, swingPush } from './motion.js';
+import { BAT, RULES, planFrame, readOptions } from './rules.js';
 import { createMatch } from './sim.js';
 import { createSoundKit } from './audio.js';
 import { createView } from './render.js';
@@ -20,7 +20,12 @@ let flickSamples = [];
 let flickCool = -Infinity;
 let sideSpring = { x: 0, v: 0 };
 let leanSpring = { x: 0, v: 0 };
-let neutral = { beta: 0, gamma: 0 };
+let neutral = { beta: 0, gamma: 0, alpha: null };
+let latestOrientation = null;
+let yawSpring = { x: 0, v: 0 };
+const phoneTravel = createPhoneTravel();
+const detector = createSwingDetector();
+let travel = { x: 0, z: 0 };
 let filtered = { tiltX: 0, tiltY: 0 };
 let springX = { x: 0, v: 0 };
 let springY = { x: 0, v: 0 };
@@ -95,13 +100,14 @@ function commitPose(assist) {
   const mapped = batFromTilt(filtered.tiltX, filtered.tiltY);
   const live = match.state();
   const pull = assist && live.phase === 'incoming';
-  const x = pull ? assistX(mapped.x, live.ball.x, RULES.assist) : mapped.x;
+  const commandedX = Math.max(-BAT.sideReach, Math.min(BAT.sideReach, mapped.x + yawSpring.x + travel.x));
+  const x = pull ? assistX(commandedX, live.ball.x, RULES.assist) : commandedX;
   let depth = mapped.depth;
   if (pull) {
     const bounce = predictBounceZ(live.ball);
     if (bounce != null) depth = depthWithBounce(mapped.depth, bounce);
   }
-  match.setBat({ x, depth, roll: pose.roll });
+  match.setBat({ x, depth: depth + travel.z, roll: pose.roll });
 }
 
 function followAngle(targetX, targetY, dt) {
@@ -146,6 +152,11 @@ function loop(now) {
     requestAnimationFrame(loop);
     return;
   }
+  if (inputMode === 'motion' && !poseHold) {
+    const dt = Math.min(0.05, Math.max(0, (now - last) / 1000));
+    travel = phoneTravel.step(dt, now / 1000);
+    commitPose(true);
+  }
   if (inputMode === 'pointer' && !poseHold) {
     const pointerDt = pushAt ? Math.max(1 / 120, Math.min(0.05, (now - pushAt) / 1000)) : 1 / 60;
     followPointer(pointerDt);
@@ -157,7 +168,7 @@ function loop(now) {
   const dt = pushAt ? Math.max(1 / 120, Math.min(0.05, (now - pushAt) / 1000)) : 1 / 60;
   pushAt = now;
   const gyro = now - gyroAt > 90 ? 0 : pose.gyro;
-  pose.push = swingPush(pose.push, gyro, dt);
+  pose.push = inputMode === 'motion' ? 0 : swingPush(pose.push, gyro, dt);
   view.frame(match.state(), pose);
   paintScore();
   fpsFrames += 1;
@@ -211,13 +222,15 @@ function calibrateThenStart() {
   const samples = [];
   const onOrient = (e) => {
     if (!Number.isFinite(e.beta) || !Number.isFinite(e.gamma)) return;
-    samples.push(mapAxes(e.beta, e.gamma, screenAngle()));
+    samples.push({ ...mapAxes(e.beta, e.gamma, screenAngle()), alpha: e.alpha });
+    latestOrientation = { beta: e.beta, gamma: e.gamma, alpha: e.alpha };
   };
   window.addEventListener('deviceorientation', onOrient);
   window.setTimeout(() => {
     window.removeEventListener('deviceorientation', onOrient);
     if (samples.length) {
       neutral = {
+        alpha: Number.isFinite(samples[0].alpha) ? samples[0].alpha : null,
         beta: samples.reduce((sum, v) => sum + (Number(v.beta) || 0), 0) / samples.length,
         gamma: samples.reduce((sum, v) => sum + (Number(v.gamma) || 0), 0) / samples.length,
       };
@@ -276,7 +289,11 @@ function waitSensor(ms) {
       window.removeEventListener('devicemotion', onSample);
       resolve(ok);
     };
-    const onSample = () => finish(true);
+    const onSample = (e) => {
+      const rate = e.rotationRate || {};
+      const acceleration = e.acceleration || {};
+      if ([rate.alpha, rate.beta, rate.gamma, acceleration.x, acceleration.y, acceleration.z].some(Number.isFinite)) finish(true);
+    };
     window.addEventListener('devicemotion', onSample);
     window.setTimeout(() => finish(false), ms);
   });
@@ -286,14 +303,22 @@ function attachSensors() {
   if (sensorsOn) return;
   sensorsOn = true;
   window.addEventListener('deviceorientation', (e) => {
-    if (!Number.isFinite(e.beta) || !Number.isFinite(e.gamma)) return;
+    if (document.hidden || !Number.isFinite(e.beta) || !Number.isFinite(e.gamma)) return;
     const now = performance.now();
     const dt = orientAt ? Math.max(1 / 120, Math.min(0.08, (now - orientAt) / 1000)) : 1 / 60;
     orientAt = now;
+    const firstPose = latestOrientation == null;
+    latestOrientation = { beta: e.beta, gamma: e.gamma, alpha: e.alpha };
     const axes = mapAxes(e.beta, e.gamma, screenAngle());
+    if (firstPose) neutral = { ...axes, alpha: Number.isFinite(e.alpha) ? e.alpha : null };
+    if (neutral.alpha == null && Number.isFinite(e.alpha)) neutral.alpha = e.alpha;
+    const yaw = -headingDelta(e.alpha, neutral.alpha);
+    const yawX = Math.max(-BAT.sideReach, Math.min(BAT.sideReach, yaw / 35 * BAT.sideReach));
+    yawSpring = springStep(yawSpring, yawX, dt);
     const rate = now - gyroAt < 90 ? pose.gyro : 0;
     const held = match.state().bat;
     neutral = {
+      alpha: neutral.alpha,
       beta: driftNeutral(neutral.beta, axes.beta, rate, held.x, dt),
       gamma: driftNeutral(neutral.gamma, axes.gamma, rate, held.x, dt),
     };
@@ -301,8 +326,11 @@ function attachSensors() {
     poseHold = false;
     commitPose(true);
   });
-  const detector = createSwingDetector();
   window.addEventListener('devicemotion', (e) => {
+    if (document.hidden) return;
+    const axes = latestOrientation && mapAxes(latestOrientation.beta, latestOrientation.gamma, screenAngle());
+    phoneTravel.sample(e.acceleration, screenAngle(), axes ? axes.beta : 90, performance.now() / 1000);
+    const linear = phoneAcceleration(e.acceleration, screenAngle(), axes ? axes.beta : 90);
     const rate = e.rotationRate || {};
     const accel = e.accelerationIncludingGravity || {};
     const mag = Math.hypot(accel.x || 0, accel.y || 0, accel.z || 0);
@@ -310,7 +338,8 @@ function attachSensors() {
     gyroAt = performance.now();
     if (match.shock(mag)) return;
     const swing = detector.push({
-      alpha: rate.alpha || 0,
+      alpha: rate.alpha || -linear.x * 85,
+      linearSpeed: Math.hypot(linear.x, linear.z) * 85,
       beta: rate.beta || 0,
       gamma: rate.gamma || 0,
       accel: mag,
@@ -350,7 +379,11 @@ if (again) {
 const recenter = document.getElementById('recenter');
 if (recenter) {
   recenter.addEventListener('click', () => {
-    neutral = { beta: neutral.beta + filtered.tiltY, gamma: neutral.gamma + filtered.tiltX };
+    if (latestOrientation) {
+      const axes = mapAxes(latestOrientation.beta, latestOrientation.gamma, screenAngle());
+      neutral = { ...axes, alpha: latestOrientation.alpha };
+    } else neutral = { ...neutral, beta: neutral.beta + filtered.tiltY, gamma: neutral.gamma + filtered.tiltX };
+    phoneTravel.reset(); detector.reset(); travel = { x: 0, z: 0 }; yawSpring = { x: 0, v: 0 };
     filtered.tiltX = 0;
     filtered.tiltY = 0;
     springX = { x: 0, v: 0 };
@@ -359,6 +392,20 @@ if (recenter) {
     commitPose(false);
   });
 }
+
+function resetPhoneFrame() {
+  phoneTravel.reset(); detector.reset(); travel = { x: 0, z: 0 }; yawSpring = { x: 0, v: 0 };
+  pose.gyro = 0; gyroAt = 0; orientAt = 0;
+  if (latestOrientation) {
+    neutral = { ...mapAxes(latestOrientation.beta, latestOrientation.gamma, screenAngle()), alpha: latestOrientation.alpha };
+  }
+  filtered = { tiltX: 0, tiltY: 0 };
+  springX = { x: 0, v: 0 }; springY = { x: 0, v: 0 };
+}
+window.screen?.orientation?.addEventListener('change', resetPhoneFrame);
+window.addEventListener('orientationchange', resetPhoneFrame);
+window.addEventListener('blur', resetPhoneFrame);
+document.addEventListener('visibilitychange', () => { if (document.hidden) resetPhoneFrame(); });
 
 function onHud(e) {
   const target = e.target;

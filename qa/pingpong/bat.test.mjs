@@ -135,7 +135,7 @@ test('the face rolls with the phone, pitches with tilt, and the swing pushes for
   let back = push;
   for (let i = 0; i < 40; i++) back = swingPush(back, 0, 1 / 60);
   assert.ok(back < push * 0.25, back);
-  assert.deepEqual(mapAxes(10, 4, 90), { beta: 4, gamma: 10 });
+  assert.deepEqual(mapAxes(10, 4, 90), { beta: -4, gamma: 10 });
 });
 
 test('a hit uses the bat position and aim stays on the swing angle', () => {
