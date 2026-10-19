@@ -6,6 +6,7 @@ The Montréal map SHALL offer GTA-style side jobs that start from yellow markers
 #### Scenario: Start a job
 - **WHEN** a player presses E at a yellow job marker while no job is running
 - **THEN** the job starts for both players, the HUD shows its title, objective and timer, and the radar shows its target
+- **AND** when no job runs, the radar shows a job marker only within 100 m and a pickup only within 60 m
 
 #### Scenario: Delivery
 - **WHEN** the players run "Livraison chaude"
@@ -14,6 +15,7 @@ The Montréal map SHALL offer GTA-style side jobs that start from yellow markers
 #### Scenario: Car thief
 - **WHEN** the players run "Voleur de char"
 - **THEN** a thief car flees along the streets, and the job succeeds when ramming wrecks it
+- **AND** ramming the thief car adds no heat
 
 #### Scenario: Ink goons
 - **WHEN** the players run "L'encre déborde"
@@ -21,11 +23,13 @@ The Montréal map SHALL offer GTA-style side jobs that start from yellow markers
 
 #### Scenario: Escape
 - **WHEN** the players run "Cinq étoiles"
-- **THEN** the player gets three stars, and the job succeeds if the stars clear or the player reaches the garage within three minutes
+- **THEN** the player has at least three stars, and the job succeeds when the stars clear within three minutes, by losing the police or by driving into the garage while no unit sees the car
 
 #### Scenario: Fail and retry
 - **WHEN** the timer ends, a player is knocked out or arrested, or a required car is wrecked
-- **THEN** the HUD shows MISSION RATÉE, spawned job actors are removed, and R restarts the job rather than the campaign encounter
+- **THEN** the HUD shows MISSION RATÉE, after the K.-O. or ARRÊTÉ! screen when a player is down
+- **AND** goons are removed at once, and job cars are removed when no player can see them
+- **AND** for 30 s, R restarts the failed job from its marker; after that, R runs the campaign recovery again
 
 ### Requirement: The campaign is unchanged
 Side jobs SHALL not change the campaign, its save file or its checks.

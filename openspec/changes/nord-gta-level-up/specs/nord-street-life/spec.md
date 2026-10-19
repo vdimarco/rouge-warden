@@ -29,6 +29,7 @@ Traffic cars SHALL stop at stop signs, wait for people who cross and sometimes s
 #### Scenario: Curb stop
 - **WHEN** a traffic car makes one of its occasional curb stops
 - **THEN** it pulls to the curb on a straight stretch, blinks its hazard lights for 15–40 s and rejoins traffic, and it never stops inside a junction
+- **AND** no traffic car makes a curb stop in the first two minutes of a session
 
 ### Requirement: Play leaves traces
 Hard driving and crashes SHALL leave marks that stay for a while.
