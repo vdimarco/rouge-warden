@@ -28,7 +28,9 @@
 //   else null, and then the host fills {time} from run.ms (which stops counting when the ending starts).
 // - Sound: sfx events heartFar (gain 0.25, −12 dB) at 1.5 s and heartClose (gain 1) at skin-to-skin; inhale, cry and
 //   breath one-shots; one song event { notes, lit, clear: true, noteS } at the song.
-// - end.apgar is a "result" fact: the run result shows it; the ending emits no event for it.
+// - end.apgar and end.fluid are "result" facts: the run result shows them; the ending emits no event for them. Its
+//   lines (the breaths, her heartbeat, the song, the run time) leave room for three facts to show whole in real time
+//   (design.md 6.9, 12): end.breath, end.skin and end.voice (and end.seconds after a breath that came by itself).
 import { DT } from "./clock.js";
 import { makeBeats } from "./beat.js";
 import { emit } from "./events.js";
@@ -175,7 +177,6 @@ function cry(st) {
   schedule(st, b2, "caption", "ending.capBreathing");
   schedule(st, e2, "exhale");
   schedule(st, b3, "breath");
-  schedule(st, b3, "fact", "end.fluid");
   schedule(st, e3, "exhale");
   schedule(st, Math.max(TUNE.skinAt, e3 + TUNE.skinAfterBreathS), "skinStart");
 }

@@ -42,6 +42,7 @@ import { subgoal, doneBy, wrapAngle } from "../lib/goals.js";
 import { steerBody } from "../lib/steer.js";
 import { tubeFlow } from "../lib/flow.js";
 import { TUNE } from "./swim.tune.js";
+import { FACTS } from "./swim.facts.js";
 
 const T = TUNE;
 const mo = (id, from, to, lenS = null) => Object.freeze({ id, ga: Object.freeze([from, to]), lenS });
@@ -440,11 +441,16 @@ function say(st, kind, id, now = false) {
   st.said.push(id);
   if (now) st.queue.unshift({ kind, id }); else st.queue.push({ kind, id });
 }
+// The next queued line goes out once the last has had its time: SAY_GAP_S after a line, and after a fact its reading
+// time on screen (ui/captions.js: 1.5 s + 55 ms a letter, "Week 2: " included), so facts never pile up behind each
+// other and each shows whole (design.md 12).
+const FACT_READ_S = Object.fromEntries(FACTS.map((f) => [f.id, 1.5 + 0.055 * ("Week 2: ".length + f.text.length)]));
 function flushSay(st) {
-  if (!st.queue.length || !st.subgoals.goal || st.t - st.sayLast < T.SAY_GAP_S - 1e-9) return;
+  if (!st.queue.length || !st.subgoals.goal || st.t - st.sayLast < st.sayGap - 1e-9) return;
   const { kind, id } = st.queue.shift();
   emit(st, kind === "fact" ? "fact" : "caption", kind === "fact" ? { id } : { id, dir: null });
   st.sayLast = st.t;
+  st.sayGap = kind === "fact" ? Math.max(T.SAY_GAP_S, FACT_READ_S[id] || 0) : T.SAY_GAP_S;
 }
 function show(st, id, text) {
   if (subgoal(st, id, text)) st.sayLast = st.t;
@@ -500,7 +506,6 @@ function enter(st, id) {
   st.moment = id;
   emit(st, "moment", { id });
   syncPrompt(st);
-  if (id === "gate") say(st, "fact", "swim.few");
   if (id === "fork") { show(st, "warm", "swim.warmWay"); say(st, "fact", "swim.side"); }
   if (id === "tube") st.flags.tubeT = st.t;
 }
@@ -591,7 +596,6 @@ function story(st) {
     if (you.zone === "tube") {
       emit(st, "fork", { tube: "warm" });
       settle(st, "warm", "you", "swim.warmDone");
-      say(st, "fact", "swim.warm");
     } else if (you.zone === "loop") {
       emit(st, "fork", { tube: "cool" });
       say(st, "caption", "swim.cool");
@@ -599,7 +603,6 @@ function story(st) {
     st.lastZone = you.zone;
   }
   if (Number.isFinite(f.tubeT) && st.t >= f.tubeT + T.FLOW_AFTER_S) say(st, "fact", "swim.flow");
-  if (you.zone === "tube" && you.touch) say(st, "fact", "swim.walls");
   if (you.zone === "tube" && you.p >= T.GLOWS[0] - T.REST_SHOW && !st.subgoals.ready) {
     show(st, "ready", "swim.restGoal");
     say(st, "fact", "swim.rest", true);
@@ -616,11 +619,8 @@ function story(st) {
     if (you.readyHow === "glow") {
       settle(st, "ready", "you", "swim.readyDone");
       pay(st, "skill", 1000);
-      say(st, "fact", "swim.ready", true);
-      f.hyperT = st.t + T.HYPER_AFTER_S;
     }
   }
-  if (Number.isFinite(f.hyperT) && st.t >= f.hyperT) say(st, "fact", "swim.hyper", true);
   // a swish on a sharp turn
   if (!you.out && !you.arrived) {
     const d = Math.abs(wrapAngle(you.ang - st.swish.ang));
@@ -747,7 +747,7 @@ export function create(seed, carryIn, opts = {}) {
     placeNow: 0, place: 0, placeSince: 0, finalPlace: null, arrived: 0,
     racing: true, capped: false, goalMet: false, meet: null, carried: null,
     cam: { x: you.x, y: you.p }, contacts: [],
-    queue: [], said: [], sayLast: -1e9, flags: {}, lastZone: "path", lastPrompt: null,
+    queue: [], said: [], sayLast: -1e9, sayGap: T.SAY_GAP_S, flags: {}, lastZone: "path", lastPrompt: null,
     paid: { goal: 0, skill: 0, flourish: 0 }, paidWaves: 0, swish: { acc: 0, ang: you.ang, last: -1e9 },
   };
   st.beats = makeBeats(sd, [{ heart: "mother", from: 0, to: T.CAP_S + T.CARRIED_S + 10, bpm: meta.motherBpm, jitter: T.JITTER, first: phase }]);

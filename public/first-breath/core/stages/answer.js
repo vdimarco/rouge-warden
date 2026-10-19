@@ -46,6 +46,7 @@ import { subgoal, doneBy } from "../lib/goals.js";
 import { figure } from "../lib/figure.js";
 import { createTree, growTree } from "../lib/colonize.js";
 import { TUNE } from "./answer.tune.js";
+import { FACTS } from "./answer.facts.js";
 
 const BEAT_S = 60 / TUNE.bpm;
 const mo = (id, from, to, lenS = null) => Object.freeze({ id, ga: Object.freeze([from, to]), lenS });
@@ -71,8 +72,12 @@ const HEAR = 0, BEAT = 1, PHRASES = 2, EYES = 3, OUTRO = 4, LAST = OUTRO;
 const GESTURE = Object.freeze({ hear: "none", beat: "tap", phrases: "tap", eyes: "none", outro: "none" });
 const GROUP_MOMENT = Object.freeze({ beat: BEAT, answer: PHRASES });
 const NOTES = TUNE.patterns.join("").split("").filter((c) => c === "x").length;   // 16
-// the caption fact that opens each phrase (phrase 6 has none), and answer.feel at phrase 2's answer
-const PHRASE_FACT = Object.freeze(["answer.respond", "answer.w20", "answer.outside", "answer.low", "answer.hic", null]);
+// The caption facts (design.md 6.6, 12): each phrase's hum line and "{Carer} feels you." leave about 3 s of each
+// 7.7 s phrase free, so a fact opens every other phrase and reads in those gaps (phrases 1, 2 and 4); answer.feel
+// goes in the quiet beat moment as the clock reaches its week 16. answer.outside and answer.hic have no room: they
+// are "What was real" facts on the result.
+const PHRASE_FACT = Object.freeze(["answer.respond", "answer.w20", null, "answer.low", null, null]);
+const FEEL = FACTS.find((f) => f.id === "answer.feel");
 const NONE = Object.freeze({ gesture: "none", text: null, keys: "steer" });
 const S = TUNE.score;
 const V = TUNE.view;
@@ -187,12 +192,15 @@ function plan(st, from, t0) {
   const cues = [];
   const cue = (at, name, data) => cues.push({ at, name, data });
   if (from <= HEAR) cue(st.starts[HEAR], "fact", { id: "answer.hear", where: "caption" });
+  if (from <= BEAT && FEEL) {
+    const m = meta.moments[BEAT], [g0, g1] = m.ga;
+    cue(st.starts[BEAT] + m.lenS * (FEEL.gaDay - g0) / (g1 - g0), "fact", { id: "answer.feel", where: "caption" });
+  }
   if (from <= PHRASES) {
     for (const ph of st.phrases) {
       const fact = PHRASE_FACT[ph.p];
       if (fact) cue(ph.t0, "fact", { id: fact, where: "caption" });
       cue(ph.t0, "caption", { id: "answer.cap.hum" + Math.min(4, ph.notes.length), dir: "left" });
-      if (ph.p === 1) cue(ph.tAnswer, "fact", { id: "answer.feel", where: "caption" });
     }
     for (const c of st.calls) {
       cue(Math.max(st.starts[PHRASES], c.t - TUNE.humLeadS), "sfx",

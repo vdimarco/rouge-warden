@@ -530,7 +530,7 @@ await check("a rival that finishes burrowing is held in the cloud at 18 u and ne
   }
 });
 
-await check("goldIn at 27.0, 27.6 and 32.7 s into the guard for places 1, 3 and 20; egg.day and Let it in. as it comes", () => {
+await check("goldIn at 27.0, 27.6 and 32.7 s into the guard for places 1, 3 and 20; egg.fuse and Let it in. as it comes", () => {
   for (const [place, at] of [[1, 27], [3, 27.6], [20, 32.7]]) {
     for (const mk of [() => idle(), () => botDriver(1, 4)]) {
       const { evs, res } = play({ seed: 4, place, drive: mk() });
@@ -538,7 +538,7 @@ await check("goldIn at 27.0, 27.6 and 32.7 s into the guard for places 1, 3 and 
       assert.equal(gold.length, 1);
       near(gold[0].t - momentAt(evs, "guard"), at, 1e-9, `place ${place}`);
       near(res.metrics.goldIn, at, 1e-9, "metrics");
-      assert.ok(named(evs, "fact").some((e) => e.id === "egg.day" && Math.abs(e.t - gold[0].t) < 1e-9));
+      assert.ok(named(evs, "fact").some((e) => e.id === "egg.fuse" && Math.abs(e.t - gold[0].t) < 1e-9));
       assert.ok(named(evs, "subgoal").some((e) => e.id === "letIn" && e.state === "shown" && e.text === "egg.letIn"));
     }
   }
@@ -547,7 +547,8 @@ await check("goldIn at 27.0, 27.6 and 32.7 s into the guard for places 1, 3 and 
   const g = named(evs, "goldIn")[0].t, s = named(evs, "stick").find((e) => e.gold).t, e = named(evs, "enter")[0].t;
   near(s - g, 63.5 / 14, 2 * DT, "sticks after 4.5 s");
   near(e - s, 3.0, 2 * DT, "burrows for 3.0 s");
-  assert.ok(named(evs, "fact").some((f) => f.id === "egg.stick" && Math.abs(f.t - s) < 1e-9), "egg.stick on the gold's stick");
+  // egg.stick has no room to show whole while egg.fuse reads (design.md 6.2, 12): a "What was real" fact
+  assert.ok(!named(evs, "fact").some((f) => f.id === "egg.stick"), "no egg.stick caption");
 });
 
 await check("a gold angle is always found: never within 45° of world −y or 40° of world +y, never closer than 65° (80° Assist) to the arc", () => {
@@ -880,10 +881,11 @@ const words = (s) => s.trim().split(/\s+/).filter(Boolean);
 const sentences = (s) => s.split(/(?<=[.!?])\s+/).filter(Boolean);
 
 await check("facts (15.2): ids, where, (f) only once the nuclei touch, allow-listed sources read (R or A), ≤ 20 words", () => {
-  const want = { "egg.surge": "card", "egg.fimbriae": "caption", "egg.cilia": "caption", "egg.zona": "caption", "egg.corona": "caption",
-    "egg.choice": "caption", "egg.signal": "caption", "egg.size": "caption", "egg.day": "caption", "egg.stick": "caption",
-    "egg.fuse": "caption", "egg.wave": "caption", "egg.seal": "caption", "egg.block": "caption", "egg.pronuclei": "caption",
-    "egg.place": "caption", "egg.weeks": "overlay", "egg.frame": "result" };
+  // six captions with room to show whole in real time; the rest are "What was real" facts (design.md 6.2, 12)
+  const want = { "egg.surge": "card", "egg.fimbriae": "caption", "egg.cilia": "result", "egg.zona": "caption", "egg.corona": "caption",
+    "egg.choice": "caption", "egg.signal": "result", "egg.size": "result", "egg.day": "result", "egg.stick": "result",
+    "egg.fuse": "caption", "egg.wave": "result", "egg.seal": "result", "egg.block": "caption", "egg.pronuclei": "result",
+    "egg.place": "result", "egg.weeks": "overlay", "egg.frame": "result" };
   assert.deepEqual(FACTS.map((f) => f.id), Object.keys(want));
   for (const f of FACTS) {
     assert.equal(f.where, want[f.id], f.id);
@@ -904,8 +906,7 @@ await check("facts (15.2): ids, where, (f) only once the nuclei touch, allow-lis
 });
 
 await check("caption facts show once each, in order, each label matching the HUD's clock at that moment", () => {
-  const order = ["egg.fimbriae", "egg.cilia", "egg.zona", "egg.corona", "egg.choice", "egg.signal", "egg.size", "egg.day",
-    "egg.stick", "egg.fuse", "egg.wave", "egg.seal", "egg.block", "egg.pronuclei", "egg.place"];
+  const order = ["egg.fimbriae", "egg.zona", "egg.corona", "egg.choice", "egg.fuse", "egg.block"];
   for (const mk of [() => idle(), () => botDriver(1, 2)]) {
     const st = egg.create(2, DEFAULT_CARRY, { motherPhase: 0.1 });
     const got = [];

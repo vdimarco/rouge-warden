@@ -482,7 +482,7 @@ const words = (s) => s.split(/\s+/).filter((w) => /\w/.test(w));
 
 await check("facts (15.2): ids, gaDays, where, allow-listed sources read (R), no label in the text, ≤ 20 words", () => {
   const want = { "split.two": [15, "card"], "split.small": [16, "caption"], "split.carried": [16, "caption"],
-    "split.morula": [18, "caption"], "split.inner": [19, "caption"], "split.hatch": [20, "overlay"] };
+    "split.morula": [18, "caption"], "split.inner": [19, "result"], "split.hatch": [20, "overlay"] };
   assert.deepEqual(FACTS.map((f) => f.id), Object.keys(want));
   for (const f of FACTS) {
     assert.deepEqual([f.gaDay, f.where], want[f.id], f.id);
@@ -507,7 +507,8 @@ await check("caption facts show once each, in order, while the clock reads the f
       for (const e of st.events) if (e.name === "fact") got.push({ id: e.id, where: e.where, clock: label(st.gaDay), fact: factLabel(byId(e.id)) });
       st.events.length = 0;
     }
-    assert.deepEqual(got.map((g) => g.id), ["split.small", "split.carried", "split.morula", "split.inner"]);
+    // split.inner has no room to show whole before the stage ends (design.md 12): a "What was real" fact
+    assert.deepEqual(got.map((g) => g.id), ["split.small", "split.carried", "split.morula"]);
     for (const g of got) { assert.equal(g.where, "caption"); assert.equal(g.clock, g.fact, `${g.id} at ${g.clock}`); }
   }
 });

@@ -14,9 +14,11 @@
 //    simply waits (the miss of 6.4). The moment ends when all 8 are linked (gaDay jumps to 35).
 // 3. heart (Day 22, tap): a 1.5 s hush (sfx root.hush, light −10%) with root.heart. Your heart beats by itself at
 //    110 bpm from the end of the hush (milestone `heart`); at 3.5 s "This beat is yours. Tap with it."; 8 tap targets
-//    on your 7th to 14th beats (P = 0.545 s); then 3 s of both hearts together and root.tube.
+//    on your 7th to 14th beats (P = 0.545 s); then 3 s of both hearts together.
 // 4. grow (7 s, Day 22 to week 7, none): core/lib/figure.js buds grow from 2 to 10 mm, the camera pulls back, the tree
-//    thickens into a disc ("This will become your placenta."), root.size and root.buds. Carry out `treeSeed`.
+//    thickens into a disc ("This will become your placenta."). Carry out `treeSeed`.
+// Caption facts: root.hcg (roots) and root.heart (the hush); root.grows, root.glands, root.tube, root.size and
+// root.buds have no room to show whole in real time and are "What was real" facts on the result (design.md 12).
 //
 // Score (6.4): Goal 3,000; Skill 3,000 × pools you linked / 8 + 1,000 × on-beat links / 8 + 2,000 × heart accuracy;
 // Flourish 1,000 × heart taps In time / 8. The bot (botSteer) seeks the nearest spot, then the nearest unlinked pool,
@@ -316,7 +318,6 @@ function startMoment(st, i) {
     emit(st, "sfx", { id: "root.hush", at: h0, pitch: 1, gain: H.hushDb });
   } else if (st.moment === "grow") {
     prompt_(st, "root.shape");
-    fact(st, "root.size");
     emit(st, "sfx", { id: "root.swell", at: st.t, pitch: 1, gain: 1 });
     let cx = st.root.x, cy = st.root.y;
     for (const p of st.pools) { cx += p.x; cy += p.y; }
@@ -341,7 +342,7 @@ function endMoment(st) {
     for (let i = 0; i < st.pools.length; i++) if (!st.pools[i].linked) link(st, i, "auto", st.t, true);
     st.reaches = [];
     if (st.tip.moving) { st.tip.moving = false; emit(st, "sfx", { id: "root.tipOff", at: st.t, pitch: 1, gain: 1 }); }
-    for (const f of ["root.hcg", "root.grows", "root.glands"]) fact(st, f);
+    fact(st, "root.hcg");
     const you = st.counts.you >= S.youDone;
     doneBy(st, "pools", you ? "you" : "auto", you ? "root.poolsDone" : "root.poolsAuto");
   } else if (id === "heart") {
@@ -349,11 +350,9 @@ function endMoment(st) {
     fact(st, "root.heart");
     if (!st.said.heartFirst) { st.said.heartFirst = true; emit(st, "milestone", { id: "heart" }); }
     subgoal(st, "heart", "root.yours");
-    fact(st, "root.tube");
     const you = accuracy(st.track) >= S.heartDone;
     doneBy(st, "heart", you ? "you" : "auto", you ? "root.heartDone" : "root.heartAuto");
   } else if (id === "grow") {
-    fact(st, "root.buds");
     caption(st, "root.placenta");
   }
   st.gaDay = Math.max(st.gaDay, meta.moments[st.mi].ga[1]);
@@ -445,10 +444,9 @@ function stepRoots(st, it) {
     growTree(st.tree, { active, iterations: T.iters });
   }
 
-  // caption facts as the clock reaches them
+  // caption facts as the clock reaches them: root.hcg here and root.heart in the hush. The stage's lines leave room
+  // for only these two to show whole (design.md 6.4, 12); its other facts are "What was real" facts on the result.
   if (s1 >= 0.8) fact(st, "root.hcg");
-  if (s1 >= 4.5) fact(st, "root.grows");
-  if (gaAt(meta.moments[1], s1) >= 28) fact(st, "root.glands");
 }
 
 function stepHeart(st) {
@@ -463,12 +461,10 @@ function stepHeart(st) {
     prompt_(st, "root.tapHeart");
     subgoal(st, "heart", "root.yours");
   }
-  if (s1 >= LAST_TARGET_S + 0.6) fact(st, "root.tube");
 }
 
 function stepGrow(st) {
   const g = gaAt(meta.moments[3], st.t + DT - st.m0);
-  if (g >= 42) fact(st, "root.buds");
   if (g >= G.placentaGa) caption(st, "root.placenta");
 }
 

@@ -483,11 +483,13 @@ await check("facts: each shown fact is the ending's, allow-listed, R or A, short
     assert.ok(byId(f.id), `${f.id} reaches core/facts.js`);
   }
   assert.equal(FACTS.find((f) => f.id === "end.apgar").where, "result");
-  for (const f of FACTS.filter((x) => x.id !== "end.apgar")) assert.equal(f.where, "caption", f.id);
+  // end.fluid has no room to show whole in the ending (design.md 12): a "What was real" fact on the result
+  assert.equal(FACTS.find((f) => f.id === "end.fluid").where, "result");
+  for (const f of FACTS.filter((x) => x.id !== "end.apgar" && x.id !== "end.fluid")) assert.equal(f.where, "caption", f.id);
   const shown = new Set();
   for (const [, mk] of Object.entries(KINDS)) for (const e of named(play({ input: mk(1) }).evs, "fact")) shown.add(e.id);
-  for (const id of shown) assert.ok(ids.has(id) && id !== "end.apgar", `${id} shown`);
-  for (const id of ["end.breath", "end.fluid", "end.skin", "end.voice"]) assert.ok(shown.has(id), `${id} shows in every ending`);
+  for (const id of shown) assert.ok(ids.has(id) && id !== "end.apgar" && id !== "end.fluid", `${id} shown`);
+  for (const id of ["end.breath", "end.skin", "end.voice"]) assert.ok(shown.has(id), `${id} shows in every ending`);
   assert.ok(!FACTS.filter((f) => f.id !== "end.apgar").some((f) => /apgar/i.test(f.text)), "Apgar only in end.apgar");
 });
 

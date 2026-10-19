@@ -3,7 +3,8 @@
 // 26% in stage 2, above the egg; clear of the subject's body in stages 1, 3 to 8: just under it, to 60%, or 8 px
 // under the prompt line) and bottom centre in landscape and on desktop, so nothing to read sits in the portrait thumb
 // zone (the bottom 40%). A caption too long for its band shrinks to 16 px (18 px with Large text) and
-// then splits into pages, one after another, at sentence ends where it can and else between words. In portrait in
+// then splits into pages, one after another, at sentence ends where it can and else between words (with no short
+// last page: the words even out over the pages of a sentence split between words). In portrait in
 // stage 1, and in landscape in stage 2, every page is one line; a stage 1 page goes after 2.4 s.
 //
 // Contract choices (16.2 gives createCaptions(root, { on }) → { say(id, text, { dir, ms = 4000 }), clear() }):
@@ -114,7 +115,8 @@ export function createCaptions(root, { on = true, settings = null } = {}) {
     if (fits()) return [text];
     el.classList.add("fit");
     if (fits()) return [text];
-    const sentences = text.match(/[^.!?]+[.!?]+["')\]]*\s*|[^.!?]+$/g) || [text];
+    // sentence ends: a stop, ! or ? (and a closing quote or bracket) before a space, so "5.4 cm" stays whole
+    const sentences = text.split(/(?<=[.!?]["')\]]*)\s+/);
     const pages = [];
     let page = "";
     const tryAdd = (piece) => {
@@ -138,6 +140,21 @@ export function createCaptions(root, { on = true, settings = null } = {}) {
       }
     }
     if (page) pages.push(page);
+    // a sentence split between words leaves no short last page ("womb." alone): words move down to the next page
+    // while it stays the shorter one and still fits
+    for (let i = pages.length - 1; i > 0; i--) {
+      if (/[.!?]["')\]]*$/.test(pages[i - 1])) continue;
+      for (;;) {
+        const words = pages[i - 1].split(" ");
+        if (words.length < 2) break;
+        const a = words.slice(0, -1).join(" "), b = words[words.length - 1] + " " + pages[i];
+        if (b.length > a.length) break;
+        el.textContent = b;
+        if (!fits()) break;
+        pages[i - 1] = a;
+        pages[i] = b;
+      }
+    }
     return pages.length ? pages : [text];
   }
 

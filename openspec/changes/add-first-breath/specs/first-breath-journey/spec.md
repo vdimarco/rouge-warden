@@ -236,7 +236,7 @@ The run result SHALL show "Hello.", the run total and time, a grade chip for eac
 
 #### Scenario: What was real
 - **WHEN** the player scrolls to "What was real"
-- **THEN** each fact shown in the run is listed once with its label and a working link
+- **THEN** each fact shown in the run, and each "What was real" fact of the stages played, is listed once with its label and a working link
 - **CHECK** `qa/first-breath/facts.test.mjs`
 
 ### Requirement: Pause

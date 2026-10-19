@@ -93,9 +93,9 @@ const CAPTIONS = Object.freeze({
   beat9: [[0, "grow.peak"]],
   beat10: [[0, "grow.fetus"]],
   beat11: [[0, "grow.w11"]],
-  move11: [[0, "grow.w11kick"]],
-  beat12: [[0, "grow.w12"], [3, "grow.flow"]],
-  move12: [[0, "grow.never"]],
+  beat12: [[0, "grow.w12"]],
+  // grow.w11kick, grow.flow and grow.never have no room to show whole in real time: "What was real" facts on the
+  // result (design.md 6.5, 12)
 });
 const MILESTONES = Object.freeze({ beat10: "fetus" });
 

@@ -34,8 +34,8 @@ export const TUNE = Object.freeze({
     // the first two waves keep 25° apart inside their sectors with a smaller jitter
     sectorJitterDeg: 2.5,
   }),
-  // One fact per wave before your sperm comes (6.2).
-  waveFacts: Object.freeze(["egg.zona", "egg.corona", "egg.choice", "egg.signal", "egg.size"]),
+  // One fact on each of the first 3 waves (6.2, 12): each shows whole before your sperm comes.
+  waveFacts: Object.freeze(["egg.zona", "egg.corona", "egg.choice"]),
 
   bounce: Object.freeze({ speed: 14, spreadDeg: 20, removeR: 80, ringS: 0.4 }),
   stick: Object.freeze({ r: 11.5, burrowS: 4.0, burrowAssistS: 5.0, looseSpeed: 10, looseSpreadDeg: 12 }),
@@ -55,10 +55,10 @@ export const TUNE = Object.freeze({
   // drift off at driftSpeed.
   seal: Object.freeze({ afterS: 0.6, targetBeat: 3, autoBeat: 6, waveS: 1.2, driftSpeed: 12, ringR: 13 }),
   // Fusion: contents in (0 to inS), the bead (inS to beadS), the nuclei draw close and touch (beadS to fusionS).
-  // Captions: egg.wave at the start, egg.seal when the wave meets, egg.block once the others drift off.
-  fusion: Object.freeze({ s: 5, inS: 1.5, beadS: 2.5, sealFactS: 1.2, blockFactS: 2.5 }),
+  // Its caption: egg.block at the start, shown after "Your shell seals.".
+  fusion: Object.freeze({ s: 5, inS: 1.5, beadS: 2.5 }),
   outroS: 2,
-  sweepFacts: Object.freeze([["egg.fimbriae", 0], ["egg.cilia", 1.0]]),
+  sweepFacts: Object.freeze([["egg.fimbriae", 0]]),
 
   // Score (6.2, 7): Skill = open × accuracy (over at least openMin targets) + guard × credit + clean × (1 − nudges/3)
   // (only when the guard credit is above 0); Flourish = the seal release.

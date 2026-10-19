@@ -501,12 +501,14 @@ shown fact stays true.
 - **Carry out.** `sperm = { hue, place, glow }`: your gold tint, your place (at the finish, or by progress at the cap),
   and 1 if you became ready, else 0.5.
 - **Facts.** Card: none (Play starts the stage at once); `swim.half` is the first caption. Captions `swim.waves`
-  (womb), `swim.few` (gate), `swim.side` (fork), `swim.warm` (warm tube), `swim.flow` (tube), `swim.walls` (first wall
-  contact), `swim.rest` (first glow wall), `swim.ready` and `swim.hyper` (on your ready; at most 3 of the 20 sperm are
-  ever ready, you and the two front-runners, so the scene agrees with `swim.ready`). When the first rival rests far
-  behind: "Some sperm rest on the walls." Overlay `swim.wait`, also after Go on. Run result: `swim.frame`. In
-  portrait, stage 1 captions are one line and show for 2.5 s, so the band at 50 to 58% covers your tail and the pack
-  just behind you only briefly.
+  (womb), `swim.side` (fork), `swim.rest` (first glow wall) and `swim.flow` (tube). The stage queues its lines and
+  facts and sends the next one only once the last has had its time: 2.6 s after a line, and after a fact its reading
+  time (12), so the five facts never pile up and each shows whole. The race has no room for more: `swim.few`,
+  `swim.warm`, `swim.walls`, `swim.ready` and `swim.hyper` are "What was real" facts on the run result (where
+  `result`; at most 3 of the 20 sperm are ever ready, you and the two front-runners, so the scene agrees with
+  `swim.ready`). When the first rival rests far behind: "Some sperm rest on the walls." Overlay `swim.wait`, also after
+  Go on. Run result: `swim.frame`. In portrait, stage 1 captions are one line and show for 2.5 s, so the band at 50 to
+  58% covers your tail and the pack just behind you only briefly.
 - **Look and sound.** Plum wall sheets over a rose floor, a tunnel book (colour script row 1,
   `research/paper-cut/scenes/paper-race.js`). Rivals mauve `#967088`, each cut from one strip, with tails that beat by
   their own speed. You marigold `#ffc53d` on a cream card with an ink keyline, on the highest sheet with the deepest
@@ -601,13 +603,18 @@ first caption.
 - **Assist.** Arc half-width 50° (100° in all); `turn` keys 720°/s; rivals burrow for 5.0 s; windows ×1.6 for the
   taps and the seal.
 - **Carry in.** `sperm`: `hue` tints your gold sperm, `glow` sets its brightness, and `place` sets when it comes.
-- **Facts.** Card `egg.surge` after "Now you are the egg.". Captions: `egg.fimbriae` and `egg.cilia` (sweep); in the
-  guard, one general fact per wave before your sperm comes: `egg.zona` (wave 1), `egg.corona` (wave 2), `egg.choice`
-  (wave 3), `egg.signal` (wave 4) and `egg.size` (wave 5); `egg.day` when your sperm comes in; `egg.stick` when your
-  sperm sticks to the shell (the `stick` event with `gold: true`), since only it works its way through; `egg.fuse`
-  (enter); `egg.wave` and `egg.seal` (seal); `egg.block` (fusion start); `egg.pronuclei` (when the nuclei touch, as
-  the clock turns); `egg.place` (outro). Overlay `egg.weeks`. Run result: `egg.frame`. Up to `egg.block` the labels
-  read "Week 2", like the HUD; from `egg.pronuclei` on they read "Day 0 after fertilization (week 2)" (15.2).
+- **Facts.** Card `egg.surge` after "Now you are the egg.". Six captions, each in a quiet spot where it shows whole
+  in real time (12): `egg.fimbriae` (sent at the sweep; it shows once "Guard your shell. Only one may enter." has
+  gone, about 9 s in); in the guard, one general fact on each of the first 3 waves: `egg.zona` (wave 1), `egg.corona`
+  (wave 2) and `egg.choice` (wave 3), each done before your sperm comes; `egg.fuse` (Izumo1 meets Juno) with "Let it
+  in." as your sperm comes in, so it reads while your sperm swims in and works its way through, and is done as it
+  enters, before the seal's lines; `egg.block` at the seal, shown after "Your shell seals." in the 5 s before the
+  stage ends. The stage has no room to show more whole (about 86 s of fact reading against a 52 s stage with about 12
+  lines): `egg.cilia`, `egg.signal`, `egg.size`, `egg.day`, `egg.stick`, `egg.wave`, `egg.seal`, `egg.pronuclei` and
+  `egg.place` are "What was real" facts on the run result (where `result`), in the table's order with the stage's
+  other facts (all gaDay 14). Overlay `egg.weeks` (as the clock turns at the nuclei touching). Run result:
+  `egg.frame`. Every caption label reads "Week 2", like the HUD; the (f) facts read "Day 0 after fertilization (week
+  2)" (15.2).
 - **Game framing.** The guard is a game. Before fertilization the egg does not push sperm away, and many sperm can
   reach its cloud. The real block comes after one sperm fuses: cortical granules release their contents, and the
   shell changes so that other sperm cannot stick to it or get through (TTUHSC; `research/research-biology.md` 3.8).
@@ -656,8 +663,9 @@ first caption.
   per day with all 3 taps In time (max 1,000).
 - **Miss.** No sparkle on that split. The split still happens.
 - **One-button.** Already one button.
-- **Facts.** Card `split.two`. Captions `split.small`, `split.carried`, `split.morula`, `split.inner`. Overlay
-  `split.hatch`.
+- **Facts.** Card `split.two`. Captions `split.small`, `split.carried`, `split.morula`. Overlay `split.hatch`.
+  `split.inner` (Day 5) comes as the hollow fills, between "Fill your hollow." and "You hatch.", with no room to show
+  whole before the stage ends (12): a "What was real" fact on the run result.
 - **Look and sound.** Coral paper cells with pale cut edges inside a cream shell ring, on a violet-red sheet.
   Mitosis is two paper discs parting while a small bridge capsule shrinks. A glassy pling per split, one step higher each time; a soft rising tone while holding.
 - **Bot steering.** None needed.
@@ -684,7 +692,7 @@ first caption.
      heart beats by itself at 110 bpm. 8 targets on your beats (P = 0.545 s). Then both hearts play together.
   4. `grow` (7 s, Day 22 to week 7, live gesture `none`): your body takes shape. The `figure.js` buds grow from 2 mm
      to 10 mm, the camera pulls back to 30 mm, and the tree thickens into a disc: "This will become your placenta."
-     Captions `root.size` at the start and `root.buds` at week 6.
+     (`root.size` and `root.buds` are "What was real" facts, 12.)
 - **Tuning** (`root.tune.js`):
 
   | Name | Value |
@@ -713,7 +721,9 @@ first caption.
 - **Assist.** Pools radius ×1.3; auto-link from 8 s.
 - **Carry out.** `nestleX`, `treeSeed`.
 - **Facts.** Card `root.bury` (a span, labelled "Days 6 to 9 after fertilization (weeks 2 to 3)"). Captions
-  `root.hcg`, `root.grows`, `root.glands`, `root.heart`, `root.tube`, `root.size`, `root.buds`. Overlay `root.w7`.
+  `root.hcg` (roots) and `root.heart` (the hush). Overlay `root.w7`. The stage is about 34 s with six lines, and its
+  "Day N after fertilization (week M)" labels are long, so only these two show whole in real time (12): `root.grows`,
+  `root.glands`, `root.tube`, `root.size` and `root.buds` are "What was real" facts on the run result.
 - **Look and sound.** Deep red lining sheets, milk-white paper pools with rims of cut dots, a pale coral paper tree.
   Vessels pulse by arc length as cream beads riding the branches. A rising tone while growing, a bloom chime per link, then your own soft quick beat under hers, and a slow
   warm swell in the grow moment.
@@ -739,7 +749,7 @@ first caption.
      your fists open and close, 12 kick (down), 13 thumb to mouth (up). Week 7 has no move.
   - Events: week 10 (gaDay 70) `grow.fetus` with its label ("Week 10. From about now you are called a fetus. Sources
     differ, from week 8 to week 10."); week 12 (gaDay 84) the pools turn red, with wavy rims, and pulse with her
-    heart, with `grow.flow` and `grow.never`.
+    heart (`grow.flow` and `grow.never`, about the blood, are "What was real" facts, 12).
 - **Tuning.** About 45 targets. Your heart: 130 bpm at week 7, 170 at weeks 9 to 10, about 155 at week 13. Length about
   2 + 7 phrases × 6.5 s + 6 moves × up to 3 s + 3 s; moves end early when done. Cap 90 s.
 - **Score.** Goal 3,000. Skill: 4,500 × heart accuracy; 1,500 × moves you did / 6. Flourish: 1,000 × min(1, best
@@ -750,7 +760,8 @@ first caption.
 - **Assist.** Windows ×1.6; move cone 50°.
 - **Carry in.** `nestleX`, `treeSeed` for the disc.
 - **Facts.** Card `grow.w7` and `grow.tri`. Captions `grow.w8`, `grow.arms`, `grow.peak`, `grow.fetus`, `grow.w11`,
-  `grow.w11kick`, `grow.w12`, `grow.flow`, `grow.never`. Overlay `grow.w13`.
+  `grow.w12`. Overlay `grow.w13`. Each week's move and its line leave no room for more to show whole (12):
+  `grow.w11kick`, `grow.flow` and `grow.never` are "What was real" facts on the run result.
 - **Look and sound.** Rose sheets in a tunnel book (`research/paper-cut/scenes/paper-grow.js`, with the sac darkened
   to rose, 13.2). The baby figure is 10 to 12 splats on a 2D skeleton (section 14.4), drawn as a few rounded paper
   pieces. The cord lights are gold beads on a darker cord. From week 12 the pools are rose paper with a wavy pale rim,
@@ -768,7 +779,8 @@ first caption.
 - **Moments** (her 78 bpm, P_beat = 0.769 s):
   1. `hear` (week 15, 3 s): her heartbeat changes from felt to heard. Caption `answer.hear` with its label ("Week 15.
      You start to hear {carer}'s heartbeat.").
-  2. `beat` (weeks 15 to 18, 8 targets on her beats): "Tap with {carer}'s heartbeat."
+  2. `beat` (weeks 15 to 18, 8 targets on her beats): "Tap with {carer}'s heartbeat." Caption `answer.feel` as the
+     clock reaches week 16 (the start of the span it names), in the beat moment's quiet.
   3. `phrases` (weeks 19 to 24, 6 phrases): it opens with `answer.respond`. Each phrase: 4 beats of call (one note slot
      per beat; gold ripples show each note as it is hummed), 4 beats of answer (faint dashed ghost ripples show each
      slot to tap), 2 beats of gap. Patterns: `x...`, `x.x.`, `xx.x`, `x.xx`, `xxx.`, `xxxx` (16 notes). Notes in one
@@ -784,15 +796,20 @@ first caption.
   phrase with every note In time (max 1,000).
 - **One-button.** Already one button.
 - **Carry out.** `song = { notes: the 16 call notes, lit: a mask of notes answered Close or better }`.
-- **Facts.** Card `answer.card` and `answer.tri`. Captions `answer.hear`, `answer.respond`, `answer.w20`,
-  `answer.feel`, `answer.outside`, `answer.low`, `answer.hic`, `answer.jump`. Overlay `answer.eyes`.
+- **Facts.** Card `answer.card` and `answer.tri`. Captions `answer.hear` (hear), `answer.feel` (beat, week 16),
+  `answer.respond` (phrase 1), `answer.w20` (phrase 2), `answer.low` (phrase 4) and `answer.jump` (eyes). Overlay
+  `answer.eyes`. Each phrase's hum line ("♪ … hums, left: n notes", sent with the phrase) and "{Carer} feels you."
+  leave about 3 s of each 7.7 s phrase free, in two gaps, so a phrase fact reads over two phrases, coming back after
+  each line until it has had its whole reading time (12); one opens every other phrase. `answer.outside` and
+  `answer.hic` have no room to show whole: "What was real" facts on the run result.
 - **Look and sound.** Amber and honey sheets. The dapple sheet (the `caustics` field, 14.1) at 25%. The voice is a sine hum (a sine at F0 with a soft 2nd harmonic
   and a slow vibrato), through the womb filter, so only melody passes. Your answers are soft low thumps (70 Hz with a
   150 Hz click for phone speakers). The hand glow brings a warm low chord.
 - **Bot steering.** None needed.
 - **v1 builds.** `hear`, `beat`, 6 phrases with ripples and ghost ripples, and the eyes; plus the hand glow with
   "{Carer} feels you.". Deferred: repeats of a missed phrase (when they return, each note keeps its best credit across
-  attempts), the loud-sound jump, the hiccup animation (`answer.hic` and `answer.jump` still show as captions).
+  attempts), the loud-sound jump, the hiccup animation (`answer.jump` still shows as a caption, and `answer.hic` is in
+  "What was real").
 - **Floor.** `hear`, `beat`, and 4 phrases.
 
 ### 6.7 Stage 7, Third Trimester (`turn`): "Turn and breathe."
@@ -896,6 +913,11 @@ first caption.
 
 No points, no grade and no score line appear from the end of stage 8 until the run result.
 
+Facts: captions `end.breath` (1 s after the first cry), `end.skin` (13.5 s), `end.voice` (19 s), and `end.seconds`
+after a breath that came by itself. Its lines (the breaths, her heartbeat, "You know this heartbeat.", "Together.",
+the song and the run time at 29 s) leave room for these to show whole (12); `end.fluid` is a "What was real" fact on
+the run result, with `end.apgar` last.
+
 ## 7. Scoring
 
 - Per stage: **Goal** (3,000: the stage's goal; in stage 1, the top 3 at the meeting place; always met from stage 2
@@ -922,7 +944,7 @@ No points, no grade and no score line appear from the end of stage 8 until the r
 | Almost card (stage 1 only) | "Almost. Try again?", your place ("You came 5th of 20." after a finish, "You were 5th of 20." at the cap), "Your run and points are kept.", Try again (focused), Go on. It shows when you reach the meeting place outside the top 3, or at the 117 s cap. |
 | Pause | Resume, Try this stage again, Settings, Sound, Switch game, ‹ Arcade. Opens on Esc, P, the pause button, `visibilitychange` (hidden) and `pagehide`. |
 | Settings | Word for the one who carries you (mother, mum, mom, parent), Assist, One-button mode, Motion (Auto, Full, Reduced), Captions (on), Large text, Tap test, Timing offset (−150 to +150 ms), Sound, and the line "Weeks count from the first day of the last period. Midwives and doctors count this way." |
-| Run result | "Hello.", the run total and time, 8 grade chips (Good, Great, Glowing), the breakdown per stage, best, marks, sparks, Play again, Stages, ‹ Arcade, and the line "In this game, every baby is born well. The ending is the same for every score." Below a divider, "What was real": every fact shown this run with its clock label and link, with the two game-framing lines `swim.frame` and `egg.frame` after the stage 2 facts, ending with the Apgar fact. |
+| Run result | "Hello.", the run total and time, 8 grade chips (Good, Great, Glowing), the breakdown per stage, best, marks, sparks, Play again, Stages, ‹ Arcade, and the line "In this game, every baby is born well. The ending is the same for every score." Below a divider, "What was real": stage by stage, by gaDay (the table's order on a tie), every fact shown this run and each played stage's "What was real" facts (where `result`: those it has no room to show whole, 12), each with its clock label and link, with the two game-framing lines `swim.frame` and `egg.frame` after the stage 2 facts, ending with the Apgar fact. |
 | Stages | Each reached stage, with its best and grade, as a button. Plays that stage alone with the carry it last started with in a run (or defaults). Its score goes only to that stage's best. |
 | Sources | Every fact in the game with its clock label and its source links. |
 
@@ -1052,6 +1074,21 @@ No points, no grade and no score line appear from the end of stage 8 until the r
   once per stage ("~ the pack swims around you", "· sperm bounce off the arc"); each contact also shows a small soft
   ring. Your sperm entering and the seal have their own captions ("♪ your sperm comes in", "♪ a shimmer runs round
   your shell").
+- **Fact pacing.** Every caption fact a stage sends shows whole before the stage ends, in real time, in every layout:
+  each of its pages, for its reading time (1.5 s + 55 ms a letter, label included; one-line stage 1 pages in portrait
+  2.4 s each). `ui/captions.js` shows one caption at a time: a line replaces what is on screen, a fact waits behind a
+  line (which then stays only its reading time) and comes back after it, and a fact that waited 12 s gives way to a
+  newer one. So a stage sends only the facts its quiet moments can hold, each at a time with room after it: the stage
+  length less its lines (sub-goal lines, sound captions such as the stage 6 hum lines, "{Carer} feels you."). A fact
+  the stage has no room for is not dropped: its `where` is `result`, and the run result's "What was real" lists it
+  with its stage's facts, by gaDay, with its label and source (8, 15.1). The stage 2 and 6 lists are in
+  6.2 and 6.6; stages 1, 3, 4 and 5 and the ending list theirs too. A page splits only at a space after a sentence end
+  (so "5.4 cm" stays whole), and a sentence split between words evens its words over its pages, with no short last
+  page. `qa/first-breath/pacing.test.mjs` plays every stage in practice and in whole runs with the ref and mid bots
+  through the real captions in portrait, landscape and desktop, and fails when any fact sent is not shown whole; the
+  same is checked in the browser in real time by a probe that plays one stage with the bot and records every caption
+  line (the run behind the 6.2 and 6.6 numbers: before, stage 2 showed 6 of 15 facts whole and stage 6 5 of 8; after,
+  every fact sent in every stage shows whole). The reading time is the one `ui/captions.js` already gives a fact.
 - **Visual-only play**: every beat is a ring, every hummed note is a ripple, every answer note has a ghost ripple, and
   every target has a DOM ring in `svg#rings` before its time. Stages 2, 3, 5 and 6 play fully with sound off.
 - **Reduced motion** (follows `prefers-reduced-motion`; Settings can override): warp ×0.5 (the paper sheets sway half
@@ -1465,7 +1502,9 @@ change.
 
 - Every shown fact is one entry in a stage's `<id>.facts.js` (`export const FACTS = [...]`): `{ id, stage, gaDay,
   gaEnd?, fertilized?, text, src: [keys], access: "R" | "A", checked: true, where: "card" | "caption" | "overlay" |
-  "end" | "result" }`. `gaEnd` marks a span. `fertilized` is only needed at gaDay 14 (default: `gaDay > 14`).
+  "end" | "result" }`. `result` is a fact for the run result's "What was real" only: the two game-framing lines,
+  `end.apgar`, and the facts a stage has no room to show whole in real time (12). `gaEnd` marks a span.
+  `fertilized` is only needed at gaDay 14 (default: `gaDay > 14`).
 - `src` keys resolve in `core/sources.js`, an allow-list built from `research/research-biology.md` section 12 and its
   inline URLs.
 - `access` is R (the page was read) or A (the abstract was read). Any S fact fails the test.
@@ -1479,8 +1518,10 @@ change.
 
 ### 15.2 Fact table
 
-The gaDay column gives `gaDay`, or `gaDay` to `gaEnd` for a span. "(f)" marks `fertilized: true` at gaDay 14. In stage 2
-only the facts shown once the nuclei touch (`egg.pronuclei`, `egg.place`, `egg.weeks`) are (f), so every caption's label
+The gaDay column gives `gaDay`, or `gaDay` to `gaEnd` for a span. "(f)" marks `fertilized: true` at gaDay 14.
+"(What was real)" marks a fact its stage has no room to show whole in real time (12): `where: "result"`, listed on the
+run result with its stage's facts. In stage 2
+only the facts that belong after the nuclei touch (`egg.pronuclei`, `egg.place`, `egg.weeks`) are (f), so every caption's label
 matches the HUD, which reads "Week 2" until then.
 
 | Id | gaDay | Text | Sources (access) |
@@ -1488,47 +1529,47 @@ matches the HUD, which reads "Week 2" until then.
 | `swim.half` | 14 | "Half of your genes ride in this sperm cell. The other half are in an egg." | TTUHSC first week (R); PMID 33964210 (A) |
 | `swim.waves` | 14 | "In one study, waves carried sperm-sized particles to a tube in about a minute." | PMID 8671281 (A) |
 | `swim.side` | 14 | "The waves sent most of the particles toward the tube on the egg's side." | PMID 8671281 (A) |
-| `swim.few` | 14 | "Only a few thousand sperm reach the tubes. One study found about 250 there." | PMID 16272225 (A); PMID 8150897 (A) |
+| `swim.few` (What was real) | 14 | "Only a few thousand sperm reach the tubes. One study found about 250 there." | PMID 16272225 (A); PMID 8150897 (A) |
 | `swim.flow` | 14 | "Sperm turn to swim against a gentle flow." | PMID 23453951 (A) |
-| `swim.warm` | 14 | "Ready sperm swim toward warmer places." | PMID 22848657 (A) |
-| `swim.walls` | 14 | "Sperm that meet a wall tend to swim along it." | PMID 26183721 (A) |
+| `swim.warm` (What was real) | 14 | "Ready sperm swim toward warmer places." | PMID 22848657 (A) |
+| `swim.walls` (What was real) | 14 | "Sperm that meet a wall tend to swim along it." | PMID 26183721 (A) |
 | `swim.rest` | 14 | "In many mammals, sperm rest on the tube wall before the egg comes. Human data are less clear." | PMID 26183721 (A); PMID 8150897 (A) |
-| `swim.ready` | 14 | "In lab tests, only 2 to 14 in 100 sperm are ready at one time." | PMID 7479932 (A) |
-| `swim.hyper` | 14 | "Ready sperm swim harder. It helps a sperm push through to the egg." | PMID 16272225 (A) |
+| `swim.ready` (What was real) | 14 | "In lab tests, only 2 to 14 in 100 sperm are ready at one time." | PMID 7479932 (A) |
+| `swim.hyper` (What was real) | 14 | "Ready sperm swim harder. It helps a sperm push through to the egg." | PMID 16272225 (A) |
 | `swim.wait` | 14 | "Sperm can stay alive in the body for up to five days." | CC sperm (R) |
 | `swim.frame` (result only) | 14 | "In the game you race. In life, a sperm must be ready at the right time and place." | PMID 16607290 (A); PMID 7479932 (A) |
 | `egg.surge` | 14 | "A surge of a hormone called LH releases the egg." | CC 23439 ovulation (R) |
 | `egg.fimbriae` | 14 | "Finger-like ends of the tube move close and catch the egg." | CC 24346 fimbriae (R) |
-| `egg.cilia` | 14 | "The egg cannot swim. Tiny hairs called cilia sweep it into the tube." | embryology.ch migration (R); CC 24346 (R) |
+| `egg.cilia` (What was real) | 14 | "The egg cannot swim. Tiny hairs called cilia sweep it into the tube." | embryology.ch migration (R); CC 24346 (R) |
 | `egg.zona` | 14 | "A clear shell called the zona pellucida protects the egg." | CC 22889 blastocyst (R); TTUHSC (R) |
 | `egg.corona` | 14 | "A cloud of cells surrounds the egg. Sperm pass through the corona to reach the shell." | PMID 21412339 (A); TTUHSC (R) |
-| `egg.size` | 14 | "The egg is about 0.1 mm across, about two sperm lengths." | BioNumbers 111184 (R); PMID 22848657 (A) |
-| `egg.signal` | 14 | "Cells around the egg release a signal. It helps ready sperm find the egg." | PMID 21412339 (A) |
-| `egg.stick` | 14 | "A sperm passes the corona and sticks to the shell. Then it works its way through." | TTUHSC (R) |
+| `egg.size` (What was real) | 14 | "The egg is about 0.1 mm across, about two sperm lengths." | BioNumbers 111184 (R); PMID 22848657 (A) |
+| `egg.signal` (What was real) | 14 | "Cells around the egg release a signal. It helps ready sperm find the egg." | PMID 21412339 (A) |
+| `egg.stick` (What was real) | 14 | "A sperm passes the corona and sticks to the shell. Then it works its way through." | TTUHSC (R) |
 | `egg.choice` | 14 | "In one study, the fluid around eggs drew some men's sperm more than others." | PMID 32517615 (A) |
-| `egg.day` | 14 | "The egg can meet a sperm for about a day." | CC 23439 (R) |
-| `egg.fuse` | 14 | "A sperm protein called Izumo1 meets an egg protein called Juno." | PMID 24739963 (A) |
-| `egg.wave` | 14 | "A wave spreads through the egg from where the sperm entered." | TTUHSC (R) |
-| `egg.seal` | 14 | "Tiny granules in the egg release enzymes. These change the shell and harden it." | TTUHSC (R) |
+| `egg.day` (What was real) | 14 | "The egg can meet a sperm for about a day." | CC 23439 (R) |
+| `egg.fuse` | 14 | "A sperm protein, Izumo1, meets an egg protein, Juno." | PMID 24739963 (A) |
+| `egg.wave` (What was real) | 14 | "A wave spreads through the egg from where the sperm entered." | TTUHSC (R) |
+| `egg.seal` (What was real) | 14 | "Tiny granules in the egg release enzymes. These change the shell and harden it." | TTUHSC (R) |
 | `egg.block` | 14 | "Now no other sperm can stick to the shell or get through." | TTUHSC (R); PMID 24739963 (A) |
-| `egg.pronuclei` | 14 (f) | "The two nuclei touch but stay apart. The two sets join at the first split." | PMID 33964210 (A) |
-| `egg.place` | 14 (f) | "This usually happens in the wide outer part of the tube." | CC 11585 conception (R); PMID 16272225 (A) |
+| `egg.pronuclei` (What was real) | 14 (f) | "The two nuclei touch but stay apart. The two sets join at the first split." | PMID 33964210 (A) |
+| `egg.place` (What was real) | 14 (f) | "This usually happens in the wide outer part of the tube." | CC 11585 conception (R); PMID 16272225 (A) |
 | `egg.weeks` | 14 (f) | "Midwives and doctors already call this week 2. Weeks count from the first day of the last period." | NHS week 4 (R); CC 7247 (R) |
 | `egg.frame` (result only) | 14 | "In the game you guard your shell. In life, the shell changes only after one sperm joins." | TTUHSC (R); PMID 24739963 (A) |
 | `split.two` | 15 | "You are 2 cells." | embryology.ch migration (R) |
 | `split.small` | 16 | "You divide, but you do not grow. Your cells get smaller." | UNSW Carnegie table (R) |
 | `split.carried` | 16 | "Tiny hairs and gentle squeezes of the tube carry you toward the womb." | embryology.ch migration (R) |
 | `split.morula` | 18 | "You are a ball of 16 to 32 cells." | embryology.ch migration (R) |
-| `split.inner` | 19 | "Your inner cells become you. Your outer cells help make the placenta." | MedlinePlus 002398 (R); CC 22889 blastocyst (R) |
+| `split.inner` (What was real) | 19 | "Your inner cells become you. Your outer cells help make the placenta." | MedlinePlus 002398 (R); CC 22889 blastocyst (R) |
 | `split.hatch` | 20 | "You hatch from your clear shell." | embryology.ch migration (R) |
 | `root.bury` | 20 to 23 | "You bury yourself in the soft lining of the womb." | UNSW Week 2 (R); PMID 12050279 (A) |
 | `root.hcg` | 23 | "You start to send a signal called hCG. Pregnancy tests look for it." | UNSW Week 2 (R); CC 22489 hCG (R) |
-| `root.grows` | 25 | "The placenta grows from you. It has the same genes as you." | CC 22337 placenta (R) |
-| `root.glands` | 28 | "At first, glands in the lining feed you. Oxygen is low, and that is normal." | PMID 12050279 (A); PMID 11106583 (A) |
+| `root.grows` (What was real) | 25 | "The placenta grows from you. It has the same genes as you." | CC 22337 placenta (R) |
+| `root.glands` (What was real) | 28 | "At first, glands in the lining feed you. Oxygen is low, and that is normal." | PMID 12050279 (A); PMID 11106583 (A) |
 | `root.heart` | 36 | "Your heart beats for the first time." | UNSW heart (R) |
-| `root.tube` | 36 | "Your heart is a simple tube for now." | CC 7247 (R); UNSW heart (R) |
-| `root.size` | 36 | "About 2 mm long. The NHS compares this to a sesame seed." | NHS week 5 (R) |
-| `root.buds` | 42 | "About 6 mm long. Small buds appear that will become your arms and legs." | NHS week 6 (R) |
+| `root.tube` (What was real) | 36 | "Your heart is a simple tube for now." | CC 7247 (R); UNSW heart (R) |
+| `root.size` (What was real) | 36 | "About 2 mm long. The NHS compares this to a sesame seed." | NHS week 5 (R) |
+| `root.buds` (What was real) | 42 | "About 6 mm long. Small buds appear that will become your arms and legs." | NHS week 6 (R) |
 | `root.w7` | 49 | "About 10 mm long. Your eyelids start to form." | NHS week 7 (R) |
 | `grow.w7` | 49 | "Your brain grows faster than your body." | NHS week 7 (R) |
 | `grow.tri` | 49 | "First trimester: up to about week 13." | CC 9699 first trimester (R); NHS week 4 (R) |
@@ -1537,20 +1578,20 @@ matches the HUD, which reads "Week 2" until then.
 | `grow.peak` | 63 | "Your heart now beats about 170 times a minute." | NHS week 28 (R) |
 | `grow.fetus` | 70 | "From about now you are called a fetus. Sources differ, from week 8 to week 10." | NHS week 8 (R); MedlinePlus 002398 (R); UNSW Carnegie table (R) |
 | `grow.w11` | 77 | "You open and close your fists." | CC 7247 (R) |
-| `grow.w11kick` | 77 | "You kick, but {carer} cannot feel it yet." | NHS week 11 (R) |
+| `grow.w11kick` (What was real) | 77 | "You kick, but {carer} cannot feel it yet." | NHS week 11 (R) |
 | `grow.w12` | 84 | "About 5.4 cm, a plum, the NHS says. Your bones start to harden." | NHS week 12 (R) |
-| `grow.flow` | 84 | "Near week 12, more of {carer}'s blood flows into the placenta." | PMID 11106583 (A); PMID 12050279 (A) |
-| `grow.never` | 84 | "Your blood and {carer}'s blood never touch." | embryology.ch villi (R); CC 22337 (R) |
+| `grow.flow` (What was real) | 84 | "Near week 12, more of {carer}'s blood flows into the placenta." | PMID 11106583 (A); PMID 12050279 (A) |
+| `grow.never` (What was real) | 84 | "Your blood and {carer}'s blood never touch." | embryology.ch villi (R); CC 22337 (R) |
 | `grow.w13` | 91 | "Some babies start to suck a thumb." | NHS week 13 (R) |
 | `answer.card` | 98 | "About 8.5 cm, a kiwi fruit, the NHS says." | NHS week 14 (R) |
 | `answer.tri` | 98 | "Second trimester: about weeks 14 to 27." | CC 9699 (R); NHS week 28 (R) |
 | `answer.hear` | 105 | "You start to hear {carer}'s heartbeat." | NHS week 15 (R) |
 | `answer.respond` | 133 | "In one study, the first response to sound was to a low tone." | PMID 7979483 (A) |
 | `answer.w20` | 140 | "About 25.6 cm, a banana, the NHS says. From now, length is head to heel." | NHS week 20 (R) |
-| `answer.feel` | 140 | "{Carer} may first feel you move between about week 16 and week 24." | CC 22829 quickening (R); NHS week 17 (R) |
-| `answer.outside` | 147 | "By week 21, you can hear voices outside the womb." | NHS week 21 (R) |
+| `answer.feel` | 112 | "{Carer} may first feel you move between about week 16 and week 24." | CC 22829 quickening (R); NHS week 17 (R) |
+| `answer.outside` (What was real) | 147 | "By week 21, you can hear voices outside the womb." | NHS week 21 (R) |
 | `answer.low` | 154 | "Low sounds reach you first. High sounds come later." | PMID 7979483 (A) |
-| `answer.hic` | 161 | "You can get hiccups by about week 19." | CC 7247 (R) |
+| `answer.hic` (What was real) | 161 | "You can get hiccups by about week 19." | CC 7247 (R) |
 | `answer.jump` | 175 | "A loud noise can make you jump." | NHS week 25 (R) |
 | `answer.eyes` | 182 | "Your eyes open for the first time." | NHS week 26 (R) |
 | `turn.card` | 196 | "Third trimester: about week 28 to birth. About 37.6 cm long." | NHS week 28 (R) |
@@ -1571,7 +1612,7 @@ matches the HUD, which reads "Week 2" until then.
 | `birth.overlap` | 280 | "These moves overlap. Each one blends into the next." | PMID 34214716 (A) |
 | `end.seconds` | 280 | "It can take a few seconds. That is normal." | NHS week 39 (R) |
 | `end.breath` | 280 | "Babies take a first breath within about 10 seconds." | MedlinePlus 002395 (R) |
-| `end.fluid` | 280 | "Air fills your lungs. The fluid in your lungs clears." | MedlinePlus 002395 (R) |
+| `end.fluid` (What was real) | 280 | "Air fills your lungs. The fluid in your lungs clears." | MedlinePlus 002395 (R) |
 | `end.skin` | 280 | "Skin-to-skin contact helps your breathing and your heart rate." | NHS skin-to-skin (R) |
 | `end.voice` | 280 | "In one study, newborns preferred {carer}'s voice to a stranger's." | PMID 7375928 (A) |
 | `end.apgar` (result only) | 280 | "One minute after birth, a midwife or doctor checks five things. This is the Apgar score." | MedlinePlus 003402 (R) |
@@ -1700,7 +1741,7 @@ public/arcade/key/first-breath.svg
 qa/first-breath/
   purity.test.mjs  clock.test.mjs  beat.test.mjs  judge.test.mjs  track.test.mjs  draw.test.mjs  run.test.mjs
   save.test.mjs  facts.test.mjs  text.test.mjs  paper.test.mjs  perf.test.mjs  sim.test.mjs  input.test.mjs
-  captions.test.mjs  prompts.test.mjs
+  captions.test.mjs  prompts.test.mjs  pacing.test.mjs
   stage-swim.test.mjs  stage-egg.test.mjs  stage-split.test.mjs  stage-root.test.mjs
   stage-grow.test.mjs  stage-answer.test.mjs  stage-turn.test.mjs  stage-birth.test.mjs  ending.test.mjs
   bot.mjs  race-sim.mjs
@@ -1974,7 +2015,7 @@ Each event is `{ name, t, ...data }` pushed by `emit(state, name, data)`; `t` is
 | `fork` | `{ tube: "warm"|"cool" }` | captions, tests |
 | `arrive` | `{ id, place }` | tests (each sperm that reaches the meeting place) |
 | `bounce` | `{ id, angle, wave }` (`wave`: 1 to 8) | sound (a step higher per wave), contact ring, guard credit, tests |
-| `stick` | `{ id, angle, gold, wave }` (`wave`: 1 to 8, null for the gold) | sound, burrow ring, `egg.stick` on the gold's, tests |
+| `stick` | `{ id, angle, gold, wave }` (`wave`: 1 to 8, null for the gold) | sound, burrow ring, tests |
 | `loose` | `{ id }` | sound, tests |
 | `held` | `{ id }` | tests (a rival held in the cloud; it never enters) |
 | `goldIn` | `{ angle }` | sound, caption, tests (your gold sperm comes in, once per stage 2) |
@@ -2126,6 +2167,7 @@ in tasks.md.
 | The gold's path in portrait | stage 2 at 390 × 844 over 20 seeds and places 1, 3 and 20, idle and with the ref bot: from `goldIn` to `enter`, your sperm's screen point is never inside a caption box and never below 60% of the height | `layout.e2e.mjs` |
 | The arc follows the input | a touch drag turns the arc to the drag's screen angle within 10° in portrait and landscape; on desktop the arc faces the mouse within 10° once it moves more than 4 px, the right arrow turns it clockwise as seen at 540°/s, W, S and the up and down arrows leave it still, and with the cursor parked over the page a turn with D and its release leave the arc where D left it | `input.e2e.mjs` |
 | A hold needs a fresh press | stage 2 at 390 × 844 with the thumb held down from the guard drag through `enter`, and at 1440 × 900 in one-button mode with Space held from the guard: lifting after the seal prompt seals nothing; a new press and release does | `input.e2e.mjs` |
+| Fact pacing | in real time, every caption fact a stage sends shows whole before the stage ends, for the ref and mid bots, in portrait, landscape and desktop, in practice and in whole runs (12) | `pacing.test.mjs`; in the browser, the per-stage caption probe of 12 |
 | Layout | no horizontal scroll; HUD, prompt and captions inside the safe area with `?inset=47,0,34,0`; no overlap between HUD, prompt, captions and pause; captions inside 50 to 58% of the height in portrait (18 to 26% in stage 2); during play, no HUD, caption or overlay text below 60% of the height in portrait; the scale bar top left under the clock in portrait; every target ≥ 44 px on the shorter side; every screen fits | `layout.e2e.mjs` |
 | Muted cues | sound muted with M, stages 2 and 6: every target has a DOM ring in `svg#rings` at least its preview time (max(2 beats, 1.2 s)) before its `t` | `input.e2e.mjs` |
 | Sound | OfflineAudioContext, 6 s per scene: ≥ 90% of energy below 500 Hz before birth; > 20 dB more energy above 2 kHz after the opening than before; envelope peaks match the beat times within 5 ms; a second peak train from the stage 4 hinge; with `latencyS: 0.04`, each beat scheduled 40 ms early; across a card and a stage start, her peaks keep an even spacing with no extra or missing beat | `sound.e2e.mjs` |
@@ -2150,6 +2192,7 @@ in tasks.md.
 | `run.test.mjs` | the stage order; Try again recreates the stage at once and leaves earlier scores and carry unchanged; better attempt kept; Go on (`jump("carried")`) gives no Goal and no grade word; `goto` of every stage works with `DEFAULT_CARRY`; no overlay after Birth; a press at `stageStart + target.t` (core time) is graded In time; gaDay and `mmPerShortAxis` never decrease across a whole run (only a stage 1 retry restarts stage 1); her beats run on across overlays and cards with no gap and no jump; one-button sets steer and dir from `botSteer` in every stage, and clears `turn` and `aim`; families per stage; stage 1's `sperm.place` reaches stage 2 and sets when your sperm comes in; exactly one sperm enters in a whole run |
 | `save.test.mjs` | broken JSON, old versions, blocked storage; best only improves; tie → faster; `carryIn` per stage; `cabinetLine` cases (BEST, plain) |
 | `facts.test.mjs` | every fact has a gaDay, a computed label, allow-listed sources, access R or A; no S; `checked: false` facts are not shown; no text starts with "Week" or "Day"; spans never cross gaDay 42; size comparisons say "the NHS says" or "The NHS compares this to"; trimester cards say "about" |
+| `pacing.test.mjs` | fact pacing in real time (12): each stage and the ending, in practice and in whole runs, played by the ref bot (skill 1) and the mid bot (0.7) over seeds 1 to 3, with every event sent to the real `ui/captions.js` the way `main.js` sends it, on a virtual clock that runs with the core clock, laid out on a fake DOM sized from the real page in portrait 390 × 844, landscape 844 × 390 and desktop 1280 × 800: every caption fact the stage sends is shown whole (every page, for its reading time, less the 0.25 s a cut page may keep) before the stage ends, and every caption fact of the stage is sent in each run |
 | `text.test.mjs` | the banned words and pronouns (section 15.4, including invad…, invas…, attack…, destroy…, defeat…, conquer…, enem…, fight… and battle…) across all strings × all 4 carer words; no "fastest" or "winner", no whole word win, wins or won, and no "beat the" or "beats the" in stage 1 and 2 strings; sentence length; no "Apgar" outside `end.apgar` and Sources |
 | `palette.test.mjs` (as built: these checks are in `paper.test.mjs`) | the contrast rules of 13.2 (keyline, `under`, you over the rivals, the pairs); chromatic ending hues 0° to 50°; stage 5 pools at L ≥ 0.25; no rule on the back tokens rising (the frame means do that, in `visual.e2e.mjs`) |
 | `paper.test.mjs` | `render/paper.js` in node with a stub context: cut offsets come from world position only (two overlapping course windows give the same edge where they overlap); moving items' outlines do not depend on their order; the shadow offset is (0.42 h, h) in screen space for both orients |
