@@ -50,14 +50,36 @@ def read_obj(path):
     return header, verts, tris
 
 
-def signed_volume(verts, tris):
-    c = [sum(v[i] for v in verts) / len(verts) for i in range(3)]
-    total = 0.0
-    for a, b, d in tris:
-        p, q, r = ([verts[k][i] - c[i] for i in range(3)] for k in (a, b, d))
-        total += (p[0] * (q[1] * r[2] - q[2] * r[1]) - p[1] * (q[0] * r[2] - q[2] * r[0]) +
-                  p[2] * (q[0] * r[1] - q[1] * r[0])) / 6
-    return total
+def closed_volumes(verts, tris):
+    """Signed volume of every closed connected component (shared vertex indices)."""
+    parent = list(range(len(verts)))
+
+    def find(i):
+        while parent[i] != i:
+            parent[i] = parent[parent[i]]
+            i = parent[i]
+        return i
+    for a, b, c in tris:
+        for x, y in ((a, b), (b, c)):
+            parent[find(x)] = find(y)
+    groups = {}
+    for tri in tris:
+        groups.setdefault(find(tri[0]), []).append(tri)
+    out = []
+    for group in groups.values():
+        edges = {}
+        for a, b, c in group:
+            for x, y in ((a, b), (b, c), (c, a)):
+                edges[(x, y)] = edges.get((x, y), 0) + 1
+        if any(edges.get((y, x), 0) != n for (x, y), n in edges.items()):
+            continue
+        total = 0.0
+        for a, b, c in group:
+            p, q, r = verts[a], verts[b], verts[c]
+            total += (p[0] * (q[1] * r[2] - q[2] * r[1]) - p[1] * (q[0] * r[2] - q[2] * r[0]) +
+                      p[2] * (q[0] * r[1] - q[1] * r[0])) / 6
+        out.append(total)
+    return out
 
 
 def check(directory):
@@ -93,9 +115,10 @@ def check(directory):
         assert part['mesh'] == batch['mesh'] and part['material'] == batch['material']
         if not part.get('merged'):
             per_prop[batch['prop']] = per_prop.get(batch['prop'], 0) + len(tris)
-        volumes.append((signed_volume(verts, tris), batch['file']))
-    inverted = [(round(v, 1), f) for v, f in volumes if v < -1.0]
-    assert not inverted, f'inward-facing parts: {inverted}'
+        volumes += [(v, batch['file']) for v in closed_volumes(verts, tris)]
+    inverted = sorted({f for v, f in volumes if v < -.01})
+    assert not inverted, f'closed shells facing inward: {inverted}'
+    assert len(volumes) > 300, len(volumes)
     for key, entry in props.items():
         assert per_prop[key] == entry['triangles'] == manifest['counts']['triangles_per_prop'][key], key
         assert entry['triangles'] <= entry['budget'], (key, entry['triangles'])

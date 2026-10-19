@@ -2631,7 +2631,7 @@
    "mesh": "SM_Props_stroller_canopy",
    "material": "FabricCharcoal",
    "collision": "none",
-   "triangles": 70,
+   "triangles": 124,
    "bounds_cm": [
     -22.65,
     -21.0,
@@ -2642,7 +2642,7 @@
    ],
    "prop": "stroller",
    "part": "canopy",
-   "sha256": "0ec7ace5a5cc1b1effb26f1cccb1192c7b833df159b40ac27af0aa7b25f414ca",
+   "sha256": "608cde36b3a506807565a7b8a162cb46388192bd3bb3a98d21b719cae7d11447",
    "variants": [
     "FabricBurgundy",
     "FabricSand"
@@ -2653,7 +2653,7 @@
    "mesh": "SM_Props_stroller_merged_canopy",
    "material": "FabricCharcoal",
    "collision": "none",
-   "triangles": 70,
+   "triangles": 124,
    "bounds_cm": [
     -22.65,
     -21.0,
@@ -2664,7 +2664,7 @@
    ],
    "prop": "stroller",
    "part": "merged_canopy",
-   "sha256": "c4b48cbc26042fef9801b26e19c10535bb650caf0d9c5a96d5ff0652d42f49ca",
+   "sha256": "db38ce128eb0e24dff69836b99437efc6aa7c253e49aae591c9e0cac8c6184cf",
    "variants": [
     "FabricBurgundy",
     "FabricSand"
@@ -5240,7 +5240,7 @@
    "kind": "companion",
    "description": "City stroller: dark aluminium frame with handlebar, fabric seat and basket, folding canopy and four wheels (separate parts with axle pivots).",
    "pivot": "ground under the frame centre; pushed toward +X; handlebar at -X",
-   "triangles": 1322,
+   "triangles": 1376,
    "budget": 1500,
    "bounds_cm": [
     -47.88,
@@ -5451,12 +5451,12 @@
    "dog_small": 1028,
    "dog_medium": 1136,
    "dog_large": 1136,
-   "stroller": 1322,
+   "stroller": 1376,
    "grocery_bag": 320
   },
-  "triangles_all_meshes": 21982
+  "triangles_all_meshes": 22090
  },
  "source_sha256": {
-  "Scripts/blender/plateau_props.py": "86be80d3110f466c5cdf4c2a2b34a264186147926fea57a8ea9818e45bb52586"
+  "Scripts/blender/plateau_props.py": "f91fe9d67399bcdf62c851bfcf7994558efbe6e7ec8f68d94e84ae461bb45902"
  }
 }

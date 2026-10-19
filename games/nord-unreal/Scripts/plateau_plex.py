@@ -645,9 +645,11 @@ class Kit:
     def count(self, key, n=1):
         self.counts[key] = self.counts.get(key, 0) + n
 
-    def window(self, F, x0, x1, z0, z1, wall, lintel='stone', frame=None, curtain=None):
+    def window(self, F, x0, x1, z0, z1, wall, lintel='stone', frame=None, curtain=None, off=0.):
+        """Recessed window; `off` moves the whole opening forward (dormer faces)."""
         lot = self.lot
         frame = frame or lot['frame']
+        D_BACK, D_FACE = globals()['D_BACK'] + off, globals()['D_FACE'] + off
         F.quad_d('Glass', x0, x1, z0, z1, D_BACK + .5)
         if curtain is None:
             curtain = self.rng.random()
@@ -1112,11 +1114,12 @@ def author_front(mesh, lot, front, kit, primary=True, top_override=None):
             mesh.face('Slate', [p(x0, db, zb + 16), p(x1, db, zb + 16), p(x1, d_at(z_dorm0 - 8), z_dorm0 - 8), p(x0, d_at(z_dorm0 - 8), z_dorm0 - 8)], F.out(0, 1, slope))
             mesh.face('Slate', [p(x0, d_at(dz + 20), dz + 20), p(x1, d_at(dz + 20), dz + 20), p(x1, dt, zt), p(x0, dt, zt)], F.out(0, 1, slope))
             dd = d_at(z_dorm0 - 8)
-            F.quad_d(paint, x0, x1, z_dorm0 - 8, dz, dd)
+            for fx0, fx1, fz0, fz1 in _wall_rectangles(x1 - x0, dz - z_dorm0 + 8, [(18, 98, 8, z_dorm1 - z_dorm0 + 8)]):
+                F.quad_d(paint, x0 + fx0, x0 + fx1, z_dorm0 - 8 + fz0, z_dorm0 - 8 + fz1, dd)
             for side, x in ((-1, x0), (1, x1)):
                 mesh.face(paint, [p(x, dd, z_dorm0 - 8), p(x, dd, dz), p(x, d_at(dz + 20), dz + 20), p(x, d_at(z_dorm0 - 8), z_dorm0 - 8)], F.out(side, 0, 0))
             mesh.face('Slate', [p(x0 - 6, dd + 8, dz), p(x1 + 6, dd + 8, dz), p(x1 + 6, d_at(dz + 20) - 4, dz + 22), p(x0 - 6, d_at(dz + 20) - 4, dz + 22)], (0, 0, 1))
-            kit.window(F, c - 40, c + 40, z_dorm0, z_dorm1, paint, lintel='none', frame='Trim')
+            kit.window(F, c - 40, c + 40, z_dorm0, z_dorm1, paint, lintel='none', frame='Trim', off=dd - D_FACE)
             kit.count('dormers')
         for x, side in ((0, -1), (W, 1)):
             mesh.face(wall if wall != 'Stone' else 'Stone', [p(x, D_BACK, zb + 16), p(x, db, zb + 16), p(x, dt, zt), p(x, D_BACK, zt)], F.out(side, 0, 0))

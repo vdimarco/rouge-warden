@@ -142,6 +142,17 @@ def _orient_convex(verts, faces, centre=(0, 0, 0)):
     return out
 
 
+def outward(geo):
+    """Flip a closed primitive whose faces point inward (negative signed volume)."""
+    verts, faces, smooth = geo
+    vol = 0.0
+    for f in faces:
+        a = Vector(verts[f[0]])
+        for i in range(1, len(f) - 1):
+            vol += a.dot(Vector(verts[f[i]]).cross(Vector(verts[f[i + 1]])))
+    return (verts, [tuple(f[::-1]) for f in faces] if vol < 0 else faces, smooth)
+
+
 def _area2(outline):
     return sum(a[0] * b[1] - b[0] * a[1] for a, b in zip(outline, outline[1:] + outline[:1]))
 
@@ -1277,41 +1288,24 @@ def stroller():
     for side in (-1, 1):
         s.box('FabricNavy', (2, side * 19.5, 56), (34, 2, 14), bevel=.8, part='g')
     c = part('canopy', 'FabricCharcoal')
+    cx, cz, R, w, n = -14, 76, 22, 21, 7
+    hood = lambda a, rr: (cx - rr * math.cos(a) * .6 + rr * .2, cz + rr * math.sin(a))
     cv, cf = [], []
-    cx, cz, R, w = -14, 76, 22, 21
-    n = 7
     for i in range(n + 1):
         a = math.radians(-30 + 150 * i / n)
         for y in (-w, w):
             for rr in (R, R - 1.2):
-                cv.append((cx - rr * math.cos(a) * .6 + rr * .2, y, cz + rr * math.sin(a)))
+                x, z = hood(a, rr)
+                cv.append((x, y, z))
     for i in range(n):
         a0, a1 = 4 * i, 4 * (i + 1)
         cf += [(a0, a1, a1 + 2, a0 + 2), (a0 + 1, a0 + 3, a1 + 3, a1 + 1), (a0, a0 + 1, a1 + 1, a1),
                (a0 + 2, a1 + 2, a1 + 3, a0 + 3)]
-    cg = Part()
-    cg.add((cv, cf, True))
-    centre = Vector((cx + R * .2, 0, cz))
-    for k, face in enumerate(cg.f):
-        pts = [Vector(cg.v[i]) for i in face]
-        mid = sum(pts, Vector()) / len(pts)
-        nrm = _newell(pts)
-        kind = k % 4
-        ref = (mid - centre) if kind == 0 else -(mid - centre) if kind == 1 else Vector((0, mid.y, 0))
-        ref.y = 0 if kind < 2 else ref.y
-        if nrm.dot(ref) < 0:
-            cg.f[k] = face[::-1]
+    cf += [(0, 2, 3, 1), (4 * n, 4 * n + 1, 4 * n + 3, 4 * n + 2)]
+    c.part('g', 'FabricCharcoal').add(outward((cv, cf, True)))
+    sector = [(cx + R * .2, cz)] + [hood(math.radians(-30 + 150 * i / n), R - .6) for i in range(n + 1)]
     for side in (-1, 1):
-        sector = [(cx + R * .2, side * w, cz)]
-        for i in range(n + 1):
-            a = math.radians(-30 + 150 * i / n)
-            sector.append((cx - R * math.cos(a) * .6 + R * .2, side * w, cz + R * math.sin(a)))
-        base = len(cg.v)
-        cg.v.extend(sector)
-        face = tuple(range(base, base + len(sector)))
-        cg.f.append(face if side < 0 else face[::-1])
-        cg.s.append(False)
-    c.part('g', 'FabricCharcoal').merged(cg)
+        c.prism('FabricCharcoal', sector, 1.0, T((0, side * (w - .5), 0), (90, 0, 0)), part='g')
     wheels = {'wheel_fl': ((30, 21, 9.5), 9.5, 3.4), 'wheel_fr': ((30, -21, 9.5), 9.5, 3.4),
               'wheel_rl': ((-30, 27.5, 14), 14, 3.8), 'wheel_rr': ((-30, -27.5, 14), 14, 3.8)}
     attach = {'frame': Vector(), 'seat': Vector(), 'canopy': Vector()}
