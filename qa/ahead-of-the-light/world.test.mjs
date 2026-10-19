@@ -1,8 +1,7 @@
-// Ahead of the Light: the canyon. It is the same for the same seed; the floor of the canyon's middle is open to
-// fly; the bends never ask for more strafe than the ship has; every gate hangs in open air under the ceiling and
-// clear of spires; there are eight sectors.
-import { createWorld, SECTORS, SECTOR_LEN, COURSE_LEN, CEILING, GATE_R, GATE_EVERY } from '../../public/ahead-of-the-light/core/world.js';
-import { TUNE } from '../../public/ahead-of-the-light/core/flight.js';
+// Ahead of the Light: the tube of stars. It is the same for a seed; there are eight sectors; stars thicken toward
+// Earth; every ring sits inside the tube and clear of stars; and there is always a way through: at every slice some
+// point of the tube is clear of every star by more than the ship.
+import { createWorld, SECTORS, SECTOR_LEN, COURSE_LEN, TUBE, SHIP_R, RING_R, RING_EVERY, CELL } from '../../public/ahead-of-the-light/core/world.js';
 
 let pass = 0, fail = 0;
 const check = (ok, msg) => { if (ok) pass++; else { fail++; console.log('  FAIL', msg); } };
@@ -10,44 +9,33 @@ const check = (ok, msg) => { if (ok) pass++; else { fail++; console.log('  FAIL'
 check(SECTORS.length === 8 && COURSE_LEN === 8 * SECTOR_LEN, 'eight sectors make the course');
 for (const seed of [1, 2, 3, 77, 4242]) {
   const a = createWorld(seed), b = createWorld(seed);
-  let same = true;
-  for (let d = 0; d < COURSE_LEN; d += 97) for (const dx of [-60, 0, 33]) if (a.height(a.centre(d) + dx, d) !== b.height(b.centre(d) + dx, d)) same = false;
-  check(same, `seed ${seed}: the same seed makes the same ground`);
-  // the middle is open: low floor, no wall within 0.6 of the half width, unless a spire stands there
-  let open = true, worst = 0;
-  for (let d = 0; d < COURSE_LEN; d += 7) {
-    const c = a.centre(d), w = a.halfWidth(d);
-    for (const f of [-0.5, 0, 0.5]) {
-      const x = c + f * w;
-      const sp = [Math.floor(d / 60) - 1, Math.floor(d / 60), Math.floor(d / 60) + 1].map(a.spire).some((s) => s && Math.hypot(x - s.x, d - s.d) < s.r + 0.5);
-      const y = a.height(x, d);
-      if (!sp && y > 12) { open = false; worst = Math.max(worst, y); }
-    }
-  }
-  check(open, `seed ${seed}: the canyon's floor is open to fly (worst ${worst.toFixed(1)} m)`);
-  // the bends: the steepest change of the middle, against the strafe at the speed you fly there
-  let steep = 0, need = 0;
-  for (let d = 0; d < COURSE_LEN; d += 5) {
-    const slope = Math.abs(a.centre(d + 5) - a.centre(d)) / 5;
-    steep = Math.max(steep, slope);
-    const speed = TUNE.CRUISE + TUNE.CRUISE_HARD * (d / COURSE_LEN) + TUNE.BOOST;
-    need = Math.max(need, slope * speed / (TUNE.STRAFE + TUNE.STRAFE_K * speed));
-  }
-  check(need < 0.8, `seed ${seed}: following the bends at full boost takes ${(need * 100).toFixed(0)} % of your strafe (steepest ${steep.toFixed(2)})`);
-  // gates
+  check(JSON.stringify(a.starsBetween(3000, 3400)) === JSON.stringify(b.starsBetween(3000, 3400)), `seed ${seed}: the same seed makes the same stars`);
+  const first = a.starsBetween(0, 4800).length, last = a.starsBetween(COURSE_LEN - 4800, COURSE_LEN).length;
+  check(last > first * 1.4, `seed ${seed}: stars thicken toward Earth (${first} → ${last} per 4.8 km)`);
+  check(a.starsBetween(0, 200).length === 0, `seed ${seed}: the first 200 m are clear`);
+  // rings
   let n = 0, bad = [];
-  for (let i = 0; i * GATE_EVERY < COURSE_LEN; i++) {
-    const g = a.gate(i);
+  for (let i = 0; i * RING_EVERY < COURSE_LEN; i++) {
+    const g = a.ring(i);
     if (!g) continue;
     n++;
-    if (g.y + GATE_R > CEILING) bad.push(`${i} over the ceiling`);
-    for (let k = 0; k < 16; k++) {
-      const ang = (k / 16) * Math.PI * 2;
-      const x = g.x + Math.cos(ang) * GATE_R * 0.8, y = g.y + Math.sin(ang) * GATE_R * 0.8;
-      if (a.height(x, g.d) > y - 0.5) { bad.push(`${i} in the ground at d ${g.d.toFixed(0)}`); break; }
-    }
+    if (Math.hypot(g.x, g.y) + RING_R > TUBE) bad.push(`${i} outside the tube`);
+    for (const s of a.starsBetween(g.d - 12, g.d + 12)) if (Math.hypot(s.x - g.x, s.y - g.y) < s.r + RING_R * 0.8) bad.push(`${i} blocked at d ${g.d.toFixed(0)}`);
   }
-  check(n > 100 && bad.length === 0, `seed ${seed}: ${n} gates, all in open air (${bad.slice(0, 3).join('; ')})`);
+  check(n > 100 && bad.length === 0, `seed ${seed}: ${n} rings, all inside the tube and clear (${bad.slice(0, 3).join('; ')})`);
+  // a way through every slice: sample the tube on a grid and find a point clear of every star near that slice
+  let blocked = 0;
+  for (let c = 0; c * CELL < COURSE_LEN; c++) {
+    const near = a.starsBetween(c * CELL - 4, c * CELL + CELL + 4);
+    if (!near.length) continue;
+    let open = false;
+    for (let x = -TUBE + 1; x <= TUBE - 1 && !open; x += 1.5) for (let y = -TUBE + 1; y <= TUBE - 1 && !open; y += 1.5) {
+      if (Math.hypot(x, y) > TUBE - 1) continue;
+      if (near.every((s) => Math.hypot(x - s.x, y - s.y) > s.r + SHIP_R + 0.8)) open = true;
+    }
+    if (!open) blocked++;
+  }
+  check(blocked === 0, `seed ${seed}: every slice of the tube has a way through (${blocked} blocked)`);
 }
 console.log(`${fail ? 'FAIL' : 'ok'}: ${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

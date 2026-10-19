@@ -4,8 +4,7 @@
 // and piano; and the danger whine, the hum, the light's swell and the glare's whine); twelve are a pool of one-shots
 // (eight tones, four noises) that each new sound takes, the oldest first. The music is a cinematic build: each gear
 // of the run adds a layer and lifts the key on the next downbeat, and each sector sets the key and one colour. A skim
-// is a falling band of noise panned to its side; a gate plucks; sonar is a blip with two echoes; boost whooshes over a
-// thump. Mute is the arcade's shared switch, localStorage "arcade.sound".
+// is a falling band of noise panned to its side; a ring plucks; boost whooshes over a thump. Mute is the arcade's shared switch, localStorage "arcade.sound".
 
 // The chapter keys, copied from light-years-home's ui/sound/music.js (its ui/ folder is being replaced): the drone
 // chord (MIDI), the scale's root and its pentatonic steps. The closing melody plays at HOME.

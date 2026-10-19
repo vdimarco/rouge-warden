@@ -1,9 +1,9 @@
 // Ahead of the Light in a browser (the site served at 127.0.0.1:8765). At 1280 × 800, 800 × 600, 390 × 844,
-// 320 × 568 and 844 × 390: the title fits with no scroll and its buttons are 44 px or more; DEPLOY starts a run;
-// the HUD draws inside the screen and clear of the touch buttons; the keys (or a drag on a touch screen) steer;
-// SPACE or the SONAR button pings and marks gates; SHIFT or the BOOST button boosts; pause and resume; the light
-// catching you shows its card and R or FLY AGAIN starts a new run; the autopilot gets through a sector into the
-// next one's banner; a run past Earth shows HOME. No page errors. Shots go to /tmp/ahead-of-the-light-smoke.
+// 320 × 568 and 844 × 390: the title fits with no scroll, its logo is whole, and its buttons are 44 px or more;
+// FLY starts a run; the character grid fits the window; the keys (or a drag on a touch screen) steer; SHIFT, SPACE
+// or the BOOST button boosts; pause and resume; crossing into a sector shows its name; the light catching you shows
+// its card and R or FLY AGAIN starts a new run; a run past Earth shows HOME. No page errors. Shots go to
+// /tmp/ahead-of-the-light-smoke.
 import { createRequire } from 'node:module';
 import fs from 'node:fs';
 const require = createRequire(import.meta.url);
@@ -30,13 +30,15 @@ for (const [w, h, touch] of SIZES) {
   await p.waitForFunction(() => window.__race && __race.mode === 'title' && __race.attract);
   await p.waitForTimeout(800);
   const t = await p.evaluate(() => {
-    const panel = document.querySelector('#title .panel');
+    const col = document.querySelector('#title .col');
     const vis = (el) => el.getClientRects().length > 0 && getComputedStyle(el).visibility !== 'hidden';
     const btns = [...document.querySelectorAll('#title button, #title a')].filter(vis).map((b) => { const r = b.getBoundingClientRect(); return { t: b.textContent.trim().slice(0, 16), w: r.width, h: r.height, bottom: r.bottom, right: r.right }; });
-    return { over: panel.scrollHeight - panel.clientHeight, btns, input: document.documentElement.dataset.input, h1: document.querySelector('#title h1').getBoundingClientRect().width };
+    const cr = col.getBoundingClientRect(), lg = document.getElementById('logo').getBoundingClientRect();
+    return { over: Math.max(0, cr.bottom - innerHeight, -cr.top), logo: lg.right <= innerWidth + 0.5 && lg.left >= 0, btns, input: document.documentElement.dataset.input };
   });
-  check(t.over <= 1, `the title panel fits with no scroll (over by ${t.over})`);
-  check(t.btns.every((b) => Math.min(b.w, b.h) >= 44 && b.bottom <= h + 0.5 && b.right <= w + 0.5), `title buttons are 44 px or more and on screen: ${t.btns.map((b) => `${b.t} ${Math.round(b.w)}×${Math.round(b.h)}`).join(', ')}`);
+  check(t.over <= 1, `the title fits on screen (over by ${t.over.toFixed(0)})`);
+  check(t.logo, 'the logo is whole');
+  check(t.btns.every((b) => b.h >= 44 && b.bottom <= h + 0.5 && b.right <= w + 0.5), `title buttons are 44 px tall and on screen: ${t.btns.map((b) => `${b.t} ${Math.round(b.h)}`).join(', ')}`);
   check(t.input === (touch ? 'touch' : 'desk'), `controls shown for ${t.input}`);
   await p.screenshot({ path: `${OUT}/${w}x${h}-title.png` });
 
@@ -44,17 +46,16 @@ for (const [w, h, touch] of SIZES) {
   if (touch) await p.tap('#go'); else await p.click('#go');
   await p.waitForFunction(() => __race.mode === 'play');
   await p.waitForTimeout(700);
-  const d0 = await p.evaluate(() => ({ x: __race.run.ship.x, d: __race.run.ship.d, drawn: __race.drawn }));
-  check(d0.d > 5, `DEPLOY starts the run flying (${d0.d.toFixed(0)} m)`);
+  const d0 = await p.evaluate(() => { const c = document.getElementById('view').getBoundingClientRect(); return { d: __race.run.ship.d, drawn: __race.drawn, grid: __race.grid, cb: c.bottom, cw: c.width }; });
+  check(d0.d > 5, `FLY starts the run flying (${d0.d.toFixed(0)} m)`);
+  check(d0.cb <= h + 0.5 && Math.abs(d0.cw - w) < 1, `the ${d0.grid.cols} × ${d0.grid.rows} grid fits the window`);
+  check(d0.drawn.ship && d0.drawn.ship.r > 4 && d0.drawn.ship.r < d0.grid.rows - 4, 'the ship is drawn on screen');
   const boxes = await p.evaluate(() => [...document.querySelectorAll('#touch button')].filter((b) => b.getClientRects().length).map((b) => { const r = b.getBoundingClientRect(); return { id: b.id, x: r.x, y: r.y, w: r.width, h: r.height }; }));
-  const dr = d0.drawn;
-  const parts = ['tape', 'sector', 'light', 'bars', 'arcs'];
-  check(parts.every((k) => inside(dr[k], w, h)), `the HUD's parts are on screen: ${parts.filter((k) => !inside(dr[k], w, h)).join(', ') || 'all'}`);
   if (touch) {
-    check(boxes.length === 3 && boxes.every((b) => Math.min(b.w, b.h) >= 44), `touch buttons: ${boxes.map((b) => `${b.id} ${Math.round(b.w)}`).join(', ')}`);
-    const hits = [];
-    for (const b of boxes) for (const k of ['tape', 'sector', 'light', 'bars']) if (overlap(b, dr[k])) hits.push(`${b.id}/${k}`);
-    check(hits.length === 0, `touch buttons clear of the HUD ${hits.join(' ')}`);
+    check(boxes.length === 2 && boxes.every((b) => Math.min(b.w, b.h) >= 44 && inside(b, w, h)), `touch buttons on screen: ${boxes.map((b) => `${b.id} ${Math.round(b.w)}×${Math.round(b.h)}`).join(', ')}`);
+    const top = Math.min(...boxes.map((b) => b.y));
+    const cellH = h / d0.grid.rows;
+    check(top > cellH * 5, 'touch buttons are clear of the HUD lines at the top');
   }
   // steer
   if (touch) {
@@ -77,13 +78,8 @@ for (const [w, h, touch] of SIZES) {
     await p.keyboard.up('KeyW');
     check(vy > 8, `W climbs (vy ${vy.toFixed(1)})`);
   }
-  // sonar and boost
-  await p.evaluate(() => { __race.run.ping.cool = 0; __race.run.ship.charge = 1; });
-  if (touch) await p.tap('#sonar'); else await p.keyboard.press('Space');
-  await p.waitForTimeout(250);
-  const ping = await p.evaluate(() => ({ n: __race.run.stats.pings, marks: __race.run.marks.size }));
-  check(ping.n === 1 && ping.marks >= 1, `sonar pings and marks ${ping.marks} gates`);
-  await p.screenshot({ path: `${OUT}/${w}x${h}-ping.png` });
+  await p.evaluate(() => { __race.run.ship.charge = 1; });
+  await p.screenshot({ path: `${OUT}/${w}x${h}-fly.png` });
   if (touch) {
     const b = boxes.find((x) => x.id === 'boost');
     const cdp = await ctx.newCDPSession(p);
@@ -97,6 +93,11 @@ for (const [w, h, touch] of SIZES) {
     const boosting = await p.evaluate(() => __race.run.ship.boosting);
     await p.keyboard.up('ShiftLeft');
     check(boosting, 'SHIFT boosts');
+    await p.evaluate(() => { __race.run.ship.charge = 1; });
+    await p.keyboard.down('Space'); await p.waitForTimeout(300);
+    const b2 = await p.evaluate(() => __race.run.ship.boosting);
+    await p.keyboard.up('Space');
+    check(b2, 'SPACE boosts');
   }
   // pause
   if (touch) await p.tap('#pause'); else await p.keyboard.press('Escape');
@@ -114,12 +115,12 @@ for (const [w, h, touch] of SIZES) {
   await p.waitForFunction(() => __race.run.sector === 3 || __race.mode !== 'play', null, { timeout: 30000 });
   await p.waitForTimeout(400);
   const ban = await p.evaluate(() => ({ banner: __race.drawn.banner, sector: __race.run.sector }));
-  check(ban.sector === 3 && ban.banner === 'THE LOCAL GROUP', `crossing into sector 4 shows its name (${ban.banner})`);
+  check(ban.sector === 3 && ban.banner === 'THE LOCAL GROUP', `crossing into sector 4 shows its name in block letters (${ban.banner})`);
   await p.screenshot({ path: `${OUT}/${w}x${h}-sector.png` });
   // caught
   await p.evaluate(() => { __race.autopilot(null); const r = __race.run; r.light.d = r.ship.d - 30; });
   await p.waitForFunction(() => __race.mode === 'result', null, { timeout: 15000 });
-  const res = await p.evaluate(() => ({ title: document.getElementById('rTitle').textContent, over: (() => { const pn = document.querySelector('#result .panel').getBoundingClientRect(); return pn.top >= 0 && pn.bottom <= innerHeight + 0.5; })() }));
+  const res = await p.evaluate(() => ({ title: document.getElementById('rTitle').textContent, over: (() => { const pn = document.querySelector('#result .box').getBoundingClientRect(); return pn.top >= 0 && pn.bottom <= innerHeight + 0.5; })() }));
   check(/LIGHT CAUGHT YOU|HULL LOST/.test(res.title) && res.over, `the result card shows (${res.title}) and fits`);
   await p.screenshot({ path: `${OUT}/${w}x${h}-result.png` });
   if (touch) await p.tap('#again'); else await p.keyboard.press('KeyR');
@@ -135,8 +136,8 @@ for (const [w, h, touch] of SIZES) {
   await p.waitForFunction(() => __race.mode === 'title');
   const best = await p.evaluate(() => document.getElementById('best').textContent);
   check(/HOME 1×/.test(best), `the title shows the best run (${best})`);
-  const fm = await p.evaluate(() => __race.frameMs());
-  console.log(`  info  frame work p50 ${fm?.p50.toFixed(1)} ms, p95 ${fm?.p95.toFixed(1)} ms (CPU side, SwiftShader)`);
+  const fm = await p.evaluate(() => ({ sim: __race.frameMs(), draw: __race.drawMs() }));
+  console.log(`  info  simulation p50 ${fm.sim?.p50.toFixed(1)} ms; building the character frame p50 ${fm.draw?.p50.toFixed(1)} ms, p95 ${fm.draw?.p95.toFixed(1)} ms`);
   check(errs.length === 0, `no page errors ${errs.slice(0, 3).join(' | ')}`);
   await ctx.close();
 }
