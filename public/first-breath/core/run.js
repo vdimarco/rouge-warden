@@ -28,9 +28,11 @@
 //   the next stage's first frame (a preview state, made again with the real motherPhase when the card goes). Off the
 //   stage, view() swaps the rings for one ring on her run-clock beat.
 // - Attempts. An attempt closes when it reaches its overlay (or the ending), or at the Almost card on Try again; a
-//   Try again from pause (or mid-stage) recreates the stage at once and does not count the unfinished attempt. A
-//   closed attempt's score is kept when it beats the kept one (a tie keeps the earlier); the carry is always the
-//   latest closed attempt's. sparks = the number of kept Glowing grades, written into the carry. Marks
+//   Try again from pause (or mid-stage) recreates the stage at once and does not count the unfinished attempt. Try
+//   again from pause on the stage-end overlay or the card plays the stage that just ended again (its attempt is
+//   already closed), and in the ending plays the ending again. A closed attempt's score is kept when it beats the
+//   kept one (a tie keeps the earlier); the carry is always the latest closed attempt's. sparks = the number of kept
+//   Glowing grades, written into the carry. Marks
 //   ({ assist, oneButton }) are the kept attempt's: assist as the stage started, oneButton if it was on in any step.
 // - finish() ends the current stage with its result so far (goalMet stays the stage's own for a stage that can fail,
 //   else true with the full Goal), for the test hook; jump(moment) calls the stage's jump. Both are extras.
@@ -44,7 +46,12 @@
 // - The ending gets opts.runMs: the run time so far (run.ms, which stops when the ending starts), or 0 in practice,
 //   where the ending then leaves out its run time line.
 // - summary() → { total, ms, stages: [{ id, score: { goal, skill, flourish, total }, grade, parts, goalMet,
-//   attempts, marks }], marks, sparks, facts, done, practice }; done is true once a full run reaches its result.
+//   attempts, marks }], marks, sparks, facts, done, practice }; done is true once a full run reaches its result. In
+//   practice, total is the stage's own total, with no Glowing bonus.
+// - Timing offset and Resume (5.2): every stage gets opts.lag = max(0, settings.offsetMs) / 1000 (at most 0.15 s)
+//   when it starts (a press made on time reaches the page that late, so its misses wait that long). act("resume")
+//   sets the lag again from the settings (track.js relag), then calls the stage's resume(state), when it has one,
+//   which makes its targets of the next 1.2 s free.
 import { DT, label } from "./clock.js";
 import { stream } from "./rng.js";
 import { fnv1a } from "../../lab/kit/rng.js";
@@ -54,6 +61,7 @@ import { makeIntents, shiftIntents } from "./intent.js";
 import { emptyDraw } from "./draw.js";
 import { FACTS, byId, isShown as showable } from "./facts.js";
 import { STAGES, ENDING } from "./stages/index.js";
+import { lagOf, relag } from "./lib/track.js";
 
 export const TIMERS = Object.freeze({ overlayS: 2.5, cardSkipS: 1.0, cardS: 3.5, crossfadeS: 0.8, glideS: 1.0, endingSkipS: 29 });
 export const RUN_EVENTS = Object.freeze(["screen", "stageStart", "carryIn", "crossfade", "stageEnd", "runEnd"]);
@@ -148,6 +156,8 @@ export function createRun({ seed = 1, settings = {}, save = null, start = "new",
   // Only checked facts with access R or A are ever shown (15.1): a `checked: false` fact never reaches a screen.
   const factsFor = (id, where) => FACTS.filter((f) => f.stage === id && f.where === where && showable(f)).map((f) => f.id);
   const glowing = () => Object.values(kept).filter((e) => e.grade === "Glowing").length;
+  // the input's lag from the timing offset, read when a stage starts (as Assist is): its misses wait that long
+  const lagNow = () => lagOf(run.settings ? Number(run.settings.offsetMs) : 0);
 
   // Stage events go on to the host in core seconds.
   function drain() {
@@ -186,7 +196,7 @@ export function createRun({ seed = 1, settings = {}, save = null, start = "new",
     const assist = !!(run.settings && run.settings.assist), oneButton = !!(run.settings && run.settings.oneButton);
     mod = m; idx = i; ss = t;
     const extra = i === ENDING_INDEX ? { runMs: practice ? 0 : Math.round(msS * 1000) } : {};
-    st = m.create(sd, mergeCarry(carryIns[id], null), { ...(stageOpts || {}), ...extra, assist, oneButton, motherPhase });
+    st = m.create(sd, mergeCarry(carryIns[id], null), { ...(stageOpts || {}), ...extra, assist, oneButton, lag: lagNow(), motherPhase });
     clock = "stage";
     rOne = stream(sd, "oneButton");
     rOne.mem = {};
@@ -238,7 +248,8 @@ export function createRun({ seed = 1, settings = {}, save = null, start = "new",
     carryIns[id] = mergeCarry(carry, { sparks: glowing() });
     push("carryIn", { id, carry: mergeCarry(carryIns[id], null) });
     const preview = m.create(stageSeed(runSeed, id), mergeCarry(carryIns[id], null), { ...(stageOpts || {}),
-      assist: !!(run.settings && run.settings.assist), oneButton: !!(run.settings && run.settings.oneButton), motherPhase: 0 });
+      assist: !!(run.settings && run.settings.assist), oneButton: !!(run.settings && run.settings.oneButton), lag: lagNow(),
+      motherPhase: 0 });
     her.glideTo(m.meta.motherBpm, t, TIMERS.glideS);
     const cardFacts = factsFor(id, "card");
     for (const f of cardFacts) { noteFact(f); push("fact", { id: f, where: "card", stage: id }); }
@@ -356,6 +367,9 @@ export function createRun({ seed = 1, settings = {}, save = null, start = "new",
         case "retry":
           if (screen === "almost") { close(almost.res); begin(idx); paused = false; return true; }
           if (screen === "stage") { begin(idx); paused = false; return true; }
+          // the stage-end overlay and the next stage's card: the stage that just ended (the HUD's stage), whose
+          // attempt is already closed; the ending: the ending again
+          if (screen === "overlay" || screen === "card" || screen === "ending") { begin(idx); paused = false; return true; }
           return false;
         case "goOn": {
           if (screen !== "almost") return false;
@@ -391,6 +405,11 @@ export function createRun({ seed = 1, settings = {}, save = null, start = "new",
         case "resume":
           if (!paused) return false;
           paused = false;
+          if ((screen === "stage" || screen === "ending") && st) {
+            relag(st, lagNow());           // a timing offset changed in Settings while paused takes effect now
+            // Fair resume (5.2): the stage's targets of the next 1.2 s are free (its resume(state), when it has one)
+            if (typeof mod.resume === "function") { mod.resume(st); drain(); }
+          }
           return true;
         default:
           return false;
@@ -440,7 +459,9 @@ export function createRun({ seed = 1, settings = {}, save = null, start = "new",
         marks: { ...e.marks },
       }));
       const marks = { assist: stages.some((s) => s.marks.assist), oneButton: stages.some((s) => s.marks.oneButton) };
-      return { total: runTotal(stages), ms: run.ms, stages, marks, sparks: glowing(), facts: facts.slice(), done, practice };
+      // practice plays one stage: its total is that stage's, with no Glowing bonus (the bonus is the run's, 7)
+      const total = practice ? stages.reduce((a, s) => a + s.score.total, 0) : runTotal(stages);
+      return { total, ms: run.ms, stages, marks, sparks: glowing(), facts: facts.slice(), done, practice };
     },
   };
 

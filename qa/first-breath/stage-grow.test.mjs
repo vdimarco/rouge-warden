@@ -659,7 +659,10 @@ await check("strings: every id the stage emits is a string; no banned word, no p
       for (const x of sentences(text)) assert.ok(words(x) <= 16, `"${x}"`);
     }
   }
-  for (const id of Object.keys(TEXT)) if (!/^grow\.part\./.test(id)) assert.ok(ids.has(id) || /^grow\.sub\./.test(id), `${id} is used`);
+  // a desktop (".keys") or one-button (".one") form is used when its prompt is: main.js picks it (promptText)
+  for (const id of Object.keys(TEXT)) {
+    if (!/^grow\.part\./.test(id)) assert.ok(ids.has(id) || /^grow\.sub\./.test(id) || ids.has(id.replace(/\.(keys|one)$/, "")), `${id} is used`);
+  }
 });
 
 if (failed.length) {

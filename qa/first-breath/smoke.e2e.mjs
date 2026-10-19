@@ -14,6 +14,9 @@
 // - the low tier in every stage, with ?q=low and with its alias ?gl=0 (and ?probe=1): the tier is low, the mean
 //   frame luminance (lum()) is above 0.04, and in stages 1 to 8 the frame's luminance at targets().anchor is above
 //   its median (the ending is left out, as in visual.e2e.mjs: it is dark shapes on light paper, 13.2);
+// - the run's screens: a no-gesture prompt shows its line; Try this stage again from pause works on the overlay, the
+//   card and in the ending; a lingering overlay keeps lingering across a pause; a practice result shows "Stage total"
+//   with no Glowing bonus; in the ending a tap (and on the desktop a quick Space) goes on to the result from 29 s;
 // - in every page: no raw string id ("grow.fetus", "ui.next"), and no unfilled {var}, ever shows in a caption, the
 //   HUD or a screen (a MutationObserver keeps every text those three roots ever show), and no page error, console
 //   error or failed request.
@@ -356,6 +359,76 @@ for (const size of sizeList()) {
     const raw = await rawTexts(page);
     check(`${tag}: ?${q}: no raw id in shown text`, raw.bad.length === 0, raw.bad.slice(0, 4).join(" | "));
     check(`${tag}: ?${q}: no page or console errors`, errors.length === 0, errors.slice(0, 4).join(" || "));
+    await ctx.close();
+  }
+
+  // ---- 4. the run's screens (review F3, F4, F10, F14, F34)
+  {
+    const { ctx, page, errors } = await open(size, "?test=1&seed=3");
+    const W = SIZES[size].viewport.width, H = SIZES[size].viewport.height;
+    const now = () => F(page, () => {
+      const s = window.__fb.state();
+      const h = document.querySelector("#screens .screen:not([hidden]) .hint");
+      const p = document.querySelector('[data-hud="prompt"]');
+      return { screen: s.screen, stage: s.stageId, paused: s.paused, t: s.t, hint: h ? h.textContent : null,
+        prompt: p && !p.hidden ? p.textContent.trim() : "" };
+    });
+    // F10: a prompt with no gesture still shows its line ("Wait here. The egg is coming.", stage 1's meet)
+    await F(page, () => { window.__fb.goto(1); window.__fb.jump("meet"); window.__fb.step(10); });
+    const meet = await now();
+    check(`${tag}: a no-gesture prompt shows its line in the HUD`, meet.prompt === "Wait here. The egg is coming.", JSON.stringify(meet));
+    // F3: Try this stage again from pause works on the overlay, the card and in the ending
+    const toOverlay = () => F(page, () => {
+      window.__fb.act("play"); window.__fb.finish();
+      if (window.__fb.state().screen === "almost") window.__fb.act("goOn");
+      for (let n = 0; window.__fb.state().screen !== "overlay" && n < 600; n++) window.__fb.step(1);
+    });
+    for (const where of ["overlay", "card", "ending"]) {
+      if (where === "ending") await F(page, () => { window.__fb.goto("ending"); window.__fb.step(60); });
+      else await toOverlay();
+      if (where === "card") await F(page, () => window.__fb.act("next"));
+      const before = await now();
+      await F(page, () => window.__fb.act("pause"));
+      await press(page, size, "#pauseRetry");
+      const after = await now();
+      const ok = before.screen === where && !after.paused && after.t === 0
+        && (where === "ending" ? after.screen === "ending" : after.screen === "stage" && after.stage === "swim");
+      check(`${tag}: Try this stage again from pause on the ${where} starts it again`, ok, `${JSON.stringify(before)} → ${JSON.stringify(after)}`);
+    }
+    // F34: the overlay lingers after one tap, and still after a pause and Resume: the next tap goes on
+    await F(page, () => { window.__fb.goto(4); window.__fb.finish(); });
+    await page.mouse.click(W / 2, H * 0.15);
+    await F(page, () => { window.__fb.act("pause"); window.__fb.act("resume"); window.__fb.step(400); });
+    const linger = await now();
+    await page.mouse.click(W / 2, H * 0.15);
+    const on = await now();
+    check(`${tag}: a lingering overlay keeps "Tap again to go on." across a pause, and one tap goes on`,
+      linger.screen === "overlay" && linger.hint === "Tap again to go on." && on.screen === "result", `${JSON.stringify(linger)} → ${on.screen}`);
+    // F4: a practice result shows the stage's total with no Glowing bonus, and no sparks line
+    await F(page, () => { window.__fb.goto("answer"); window.__fb.bot(1); });
+    await F(page, () => { for (let n = 0; window.__fb.state().screen !== "result" && n < 200; n++) window.__fb.step(60); window.__fb.bot(false); });
+    const res = await F(page, () => ({ label: document.querySelector(".result .total span").textContent,
+      total: document.getElementById("runTotal").textContent, sparks: !!document.querySelector(".result .sparks"),
+      stage: window.__fb.result().stages[0].score.total }));
+    check(`${tag}: a practice result says "Stage total" with the stage's own total and no sparks line`,
+      res.label === "Stage total" && res.total === res.stage.toLocaleString("en-US") && !res.sparks, JSON.stringify(res));
+    // F14: in the ending a tap or a quick Space before 29 s does nothing; from 29 s it goes on to the run result
+    for (const how of ["tap", "Space"]) {
+      if (how === "Space" && touch) continue;
+      await F(page, () => { window.__fb.goto("ending"); for (let n = 0; window.__fb.state().t < 20 && n < 3000; n++) window.__fb.step(1); });
+      const go = async () => {
+        if (how === "tap") await (touch ? page.touchscreen.tap(W / 2, H / 2) : page.mouse.click(W / 2, H / 2));
+        else await page.keyboard.press("Space");
+        await F(page, () => window.__fb.step(2));
+        return now();
+      };
+      const early = await go();
+      await F(page, () => { for (let n = 0; window.__fb.state().t < 29.5 && n < 3000; n++) window.__fb.step(1); });
+      const late = await go();
+      check(`${tag}: in the ending a ${how} goes on to the run result from 29 s, not before`,
+        early.screen === "ending" && late.screen === "result", `at 20 s ${early.screen}, at 29.5 s ${late.screen}`);
+    }
+    check(`${tag}: no page or console errors (the run's screens)`, errors.length === 0, errors.slice(0, 4).join(" || "));
     await ctx.close();
   }
 }

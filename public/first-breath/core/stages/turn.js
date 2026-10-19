@@ -8,7 +8,8 @@
 //    out-breath: the last 2.5 s of every 6.0 s, so the first comes 3.5 s in) and 15°/s outside one. Stick right turns
 //    you clockwise as seen. Head-down = within 20° of straight down; the last degrees settle by themselves, and gaDay
 //    jumps to 252. At 30 s you turn by yourself over 3 s (the shorter way). Live gesture: drag.
-// 3. rest (259 → 280, 16 s, not scored): your song is hummed, muffled (a `song` event); holding warms your heart ring a
+// 3. rest (259 → 280, 16 s, not scored): your song is hummed, muffled (a `song` event, noteS = the note period of
+//    the ripples, 0.95 s); holding warms your heart ring a
 //    little. Nothing is judged. Live gesture: hold (a fresh press: a hold still down from before does not count).
 // 4. outro (280, 3 s): "You are ready." Live gesture: none.
 //
@@ -36,9 +37,10 @@ import { clampScore, PARTS } from "../score.js";
 import { mergeCarry } from "../carry.js";
 import { emptyDraw } from "../draw.js";
 import { stream } from "../rng.js";
-import { createTrack, feed, upcoming, accuracy, streak } from "../lib/track.js";
+import { createTrack, feed, upcoming, accuracy, streak, freeUntil, RESUME_FREE_S } from "../lib/track.js";
 import { subgoal, doneBy, wrapAngle } from "../lib/goals.js";
 import { figure } from "../lib/figure.js";
+import { rimSparks } from "../lib/sparks.js";
 import { TUNE } from "./turn.tune.js";
 
 const mo = (id, from, to, lenS = null) => Object.freeze({ id, ga: Object.freeze([from, to]), lenS });
@@ -190,9 +192,9 @@ export function create(seed, carryIn, opts) {
   const st = {
     id: meta.id, seed: s, t: 0, gaDay: meta.moments[0].ga[0], fertilized: true,
     events: [], beats, subgoals: {}, moment: IDS[0],
-    mi: 0, start: 0, assist: !!o.assist, oneButton: !!o.oneButton, carry,
+    mi: 0, start: 0, assist: !!o.assist, lag: Number.isFinite(o.lag) ? o.lag : 0, oneButton: !!o.oneButton, carry,
     breath: { b1, out, end: at(n), per },
-    track: createTrack(targets, { assist: !!o.assist }),
+    track: createTrack(targets, { assist: !!o.assist, lag: o.lag }),
     held: false, flash: null, ripple: null,
     turn: { t0: null, phase: "wait", ang: 0, prog: 0, roomy: 0, wasRoomy: false, roomyN: 0, by: null, doneAt: null,
       to: null, auto: null, turnS: null, milestone: false },
@@ -302,7 +304,8 @@ function enter(st, i) {
     st.rest.t0 = st.t;
     st.held = false;                     // a hold needs a fresh press (5.3)
     const song = st.carry.song;
-    emit(st, "song", { notes: song.notes.slice(), lit: song.lit, at: st.t + TUNE.rest.noteLeadS, gapS: TUNE.rest.noteGapS,
+    // noteS: the note period, start to start, the same one the ripples are drawn on (sound.hum spaces notes by it)
+    emit(st, "song", { notes: song.notes.slice(), lit: song.lit, at: st.t + TUNE.rest.noteLeadS, noteS: TUNE.rest.noteGapS,
       muffled: true });
     emit(st, "caption", { id: "turn.hum", dir: null });
     st.caps.lastT = st.t;
@@ -566,6 +569,7 @@ export function view(st) {
     const age = t - st.ripple.t;
     d.strips.push({ kind: "ripples", items: [{ x: 0, y: 0, r: ringR(bp.p) + 4 + 14 * age, a: clamp01(0.5 * (1 - age / 0.8)), dashed: false }] });
   }
+  rimSparks(d, st.carry.sparks, 0, 0, 0.55 * size, { t, span: v.span });       // rim sparks (5.5) round you
 
   // rings (DOM): her beat, your heart, then the breath ring and the next target, or the rest ring
   // her ring rounds you, just inside the breath ring (it stays off your body); yours sits on your heart
@@ -668,6 +672,14 @@ export function result(st) {
     },
     carryOut: {},
   };
+}
+
+// Fair resume (5.2): the open breath targets of the first 1.2 s after Resume are free (left out of accuracy).
+export function resume(st) {
+  if (!st || st.done || !st.track) return 0;
+  const n = freeUntil(st.track, st.t + RESUME_FREE_S);
+  if (n) st.parts.breaths = Math.round(TUNE.score.breaths * accuracy(st.track));
+  return n;
 }
 
 export function jump(st, id) {

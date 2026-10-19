@@ -2,11 +2,16 @@
 // banned words, no pronouns (the carer is always {carer} or {Carer}). core/text.js registers them through
 // core/stages/index.js. Prompts name the live gesture; sub-goal lines are shown, then confirmed (5.4).
 export const TEXT = Object.freeze({
-  // prompts (one live gesture per moment)
+  // prompts (one live gesture per moment; ".keys" is the desktop form, ".one" the one-button form)
   "root.drift": "Drag to drift.",
+  "root.drift.keys": "Drift with the arrow keys, or drag with the mouse.",
+  "root.drift.one": "Hold to drift.",
   "root.grow": "Drag to grow roots.",
+  "root.grow.keys": "Grow roots with the arrow keys, or drag with the mouse.",
+  "root.grow.one": "Hold to grow roots.",
   "root.listen": "Listen.",
   "root.tapHeart": "Tap with your heartbeat.",
+  "root.tapHeart.keys": "Press Space with your heartbeat.",
   "root.shape": "Your body takes shape.",
 
   // sub-goals: shown, then done by you or by itself
@@ -17,6 +22,7 @@ export const TEXT = Object.freeze({
   "root.poolsDone": "Every pool is linked.",
   "root.poolsAuto": "The roots reach the rest anyway.",
   "root.yours": "This beat is yours. Tap with it.",
+  "root.yours.keys": "This beat is yours. Press Space with it.",
   "root.heartDone": "Both hearts beat together now.",
   "root.heartAuto": "Your heart keeps its own beat.",
 

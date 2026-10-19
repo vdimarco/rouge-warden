@@ -89,6 +89,7 @@ const BASE = {
   "cue.bounce": "· sperm bounce off the arc",
   "cue.goldIn": "♪ your sperm comes in",
   "cue.seal": "♪ a shimmer runs round your shell",
+  "cue.surge": "~ a warm surge",
   "cue.wave": "~ wave",
   "cue.link": "♪ a soft note as a pool links",
   "cue.bell": "♪ a soft bell on each good tap",
@@ -106,6 +107,7 @@ const BASE = {
 
   "result.hello": "Hello.",
   "result.total": "Run total",
+  "result.stageTotal": "Stage total",
   "result.time": "Run time",
   "result.best": "Best",
   "result.marks": "Marks",
@@ -122,7 +124,7 @@ const BASE = {
 
   "sources.title": "Sources",
   "sources.note": "Every fact in the game, with where it comes from.",
-  "sources.list": "Where they come from",
+  "sources.list": "Where the facts come from",
 };
 
 // Each stage's TEXT table, in stage order, then the ending's.

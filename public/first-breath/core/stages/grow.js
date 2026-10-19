@@ -32,9 +32,10 @@ import { CREDIT } from "../judge.js";
 import { clampScore, PARTS } from "../score.js";
 import { mergeCarry } from "../carry.js";
 import { emptyDraw } from "../draw.js";
-import { createTrack, feed, upcoming, accuracy, streak } from "../lib/track.js";
+import { createTrack, feed, upcoming, accuracy, streak, freeUntil, RESUME_FREE_S } from "../lib/track.js";
 import { subgoal, doneBy } from "../lib/goals.js";
 import { figure } from "../lib/figure.js";
+import { rimSparks } from "../lib/sparks.js";
 import { createTree, growTree } from "../lib/colonize.js";
 import { TUNE } from "./grow.tune.js";
 
@@ -147,8 +148,9 @@ function addTargets(st, list, keepOpen = true) {
     if (r) res.set(x.id, r);
     if (r || keepOpen) keep.push(x);
   });
-  const track = createTrack([...keep, ...list], { assist: st.assist });
+  const track = createTrack([...keep, ...list], { assist: st.assist, lag: st.lag });
   track.targets.forEach((x, i) => { if (res.has(x.id)) track.results[i] = res.get(x.id); });
+  if (Number.isFinite(st.freeUntil)) freeUntil(track, st.freeUntil);   // laid inside a resume's 1.2 s: free too
   st.track = track;
 }
 
@@ -288,6 +290,13 @@ function advance(st) {
   enter(st, i + 1);
 }
 
+// The moment a time falls in: the current one, or one before it for a time before the current one began.
+function momentAt(st, t) {
+  let i = st.mi;
+  while (i > 0 && t < st.starts[i] - 1e-9) i--;
+  return i;
+}
+
 // ---- the Stage interface ----
 
 export function create(seed, carryIn, opts = {}) {
@@ -314,8 +323,8 @@ export function create(seed, carryIn, opts = {}) {
     id: meta.id, seed: s, t: 0, gaDay: meta.ga.start, fertilized: true,
     events: [], beats: null, subgoals: {}, moment: IDS[0],
     mi: 0, starts: [], ends: [], final: MOMENTS.map((m, i) => KIND[i].beat),
-    phase, assist: !!o.assist, oneButton: !!o.oneButton, carry,
-    track: createTrack([], { assist: !!o.assist }), gen: 0, lastT: -Infinity, nextIdx: -1, prevTs: [],
+    phase, assist: !!o.assist, lag: Number.isFinite(o.lag) ? o.lag : 0, oneButton: !!o.oneButton, carry,
+    track: createTrack([], { assist: !!o.assist, lag: o.lag }), gen: 0, lastT: -Infinity, nextIdx: -1, prevTs: [],
     rGap: stream(s, "gaps"),
     moves: {}, pc, attach, tree, side,
     capQ: [], lastJudge: null, ticked: 0, bells: 0,
@@ -360,8 +369,11 @@ export function step(st, intents) {
   if (st.done) { st.t += DT; return; }
   const t1 = st.t + DT;
   const beat = KIND[st.mi].beat;
-  // the live gesture: taps read presses only in a beat moment; a move reads only the stick
-  for (const r of feed(st.track, beat ? it : NO_PRESS, t1)) judged(st, r, t1);
+  // the live gesture: taps read presses only in a beat moment, the moment the press was made in (with a timing
+  // offset a press reaches the page up to 150 ms after its time, 5.2, so after a move has begun); a move reads only
+  // the stick
+  const presses = (Array.isArray(it.presses) ? it.presses : []).filter((p) => p && KIND[momentAt(st, p.t)].beat);
+  for (const r of feed(st.track, presses.length ? { presses, releases: [] } : NO_PRESS, t1)) judged(st, r, t1);
   if (!beat) aimStep(st, it, t1);
   st.t = t1;
   while (st.capQ.length && st.capQ[0].at <= st.t + 1e-9) caption(st, st.capQ.shift().id);
@@ -477,6 +489,7 @@ export function view(st) {
     ripples.push({ x: heart.x, y: heart.y, r: 4 + 14 * age, a: 0.7 * (1 - age / 0.5), dashed: false });
   }
   if (ripples.length) d.strips.push({ kind: "ripples", items: ripples });
+  rimSparks(d, st.carry.sparks, bx, by, 0.55 * S, { t, span: V.span });       // rim sparks (5.5) round you
 
   // marks: the placenta disc, its pools, the move's glow and arrow, the light entering your heart
   d.marks.push({ kind: "lake", x: pc.x, y: pc.y, r: pc.r, rim: "solid", on: false, pulse: 0.3 * her });
@@ -583,6 +596,13 @@ export function result(st) {
       movesAuto: p.auto, moment: st.moment, how: st.how, gaDay: st.gaDay },
     carryOut: {},
   };
+}
+
+// Fair resume (5.2): the open targets of the first 1.2 s after Resume are free, and so is any laid there later.
+export function resume(st) {
+  if (!st || st.done || !st.track) return 0;
+  st.freeUntil = st.t + RESUME_FREE_S;
+  return freeUntil(st.track, st.freeUntil);
 }
 
 // Skip to a named moment, starting now (for tests and the test hook): a move shown and not yet made plays by

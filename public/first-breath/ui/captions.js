@@ -11,9 +11,19 @@
 //   object or a function), gives the carer word for fact captions (else "mother").
 // - say(id, text, { dir, ms, kind, fact }): kind is "say" (a stage's caption or sub-goal line), "fact" (a fact
 //   caption; fact is its id) or "cue" (a sound's caption), as main.js sends them with their final text.
-// - Order: a caption (say) replaces what is on screen; a fact caption waits behind a caption and replaces a sound
-//   cue; a sound cue shows only when nothing else does. At most 3 wait; one that waited 8 s is dropped. The same id
-//   again within 6 s is ignored, so a stage that sends a fact as both `fact` and `caption` shows it once.
+// - Order: a caption (say) replaces what is on screen; a fact caption waits behind a caption or a fact, in order,
+//   and replaces a sound cue; a sound cue shows only when nothing else does. A fact page shows 1.5 s before a
+//   caption may cut it (the caption waits until then; a fact sent in the same step as a caption simply waits behind
+//   it). A fact a caption cuts is not lost: it waits at the front and comes back after it (the cut page again, for
+//   the time it had left but at least 1.5 s; a page with under 0.25 s left counts as read). Waiting facts show in
+//   order and are not dropped for the queue's length (up to 16) or for waiting 8 s; one that waited 12 s gives way
+//   only to a newer fact behind it, so what shows stays near its moment, and the last one waiting always shows
+//   (main.js sends each fact once per stage; stage(id) and clear() empty the queue). While a fact waits, a caption
+//   stays only for its reading time (1 s + 50 ms a letter, at least 2 s) instead of its full time, except stage 1's
+//   one-line pages. A waiting caption (none in practice) goes after 8 s. The same id again within 6 s is ignored,
+//   so a stage that sends a fact as both `fact` and `caption` shows it once.
+// - pause() stops the clocks (the page on screen, the queue's ages, the 6 s and 8 s memories) and resume() goes on
+//   from there, so a caption hidden under the pause screen is still there, with the time it had left, on resume.
 // - say(id, text) where text is the id itself (an id with no string) and id is a fact id shows that fact.
 // - dir ("left" | "right") goes on the line as data-dir (an arrow, style.css); the line carries data-id, and data-fact
 //   for a fact, for tests.
@@ -25,8 +35,11 @@ import { say as sayText, fill } from "../core/text.js";
 import { byId } from "../core/facts.js";
 
 const PRIO = { cue: 0, fact: 1, say: 2 };
-const QUEUE_MAX = 3, QUEUE_STALE_MS = 8000, SAME_MS = 6000, CUE_GAP_MS = 8000;
+const QUEUE_MAX = 16, QUEUE_STALE_MS = 8000, FACT_STALE_MS = 12000, SAME_MS = 6000, CUE_GAP_MS = 8000;
 const STAGE1_PAGE_MS = 2400;
+const RESUME_MIN_MS = 1500, READ_DONE_MS = 250;   // a cut fact page comes back for at least 1.5 s, unless read
+const UNSEEN_MS = 16;                             // a fact page on screen under a frame has not been seen yet
+const sayReadMs = (n) => Math.max(2000, 1000 + 50 * n);   // a caption's reading time, while a fact waits for it
 
 // Sound-cue captions (design.md 12) for cues with no string of their own in core/text.js. say() is tried first, so a
 // string registered there under the same id wins.
@@ -50,13 +63,15 @@ const CUE_OF = {
 };
 
 export function createCaptions(root, { on = true, settings = null } = {}) {
-  let line = null, timer = null, cur = null;      // cur: { id, prio, pages, i, pageMs }
+  let line = null, timer = null, cur = null;      // cur: { id, prio, pages, i, pageMs, base, shownAt, due, one, fit }
+  let paused = false, pausedAt = 0;
   const queue = [];
   const seen = new Map();                         // id → the time it last showed
   const cueSeen = new Set(), cueAt = new Map();
   const enabled = () => (typeof on === "function" ? !!on() : !!on);
   const S = () => (typeof settings === "function" ? settings() : settings) || {};
-  const nowMs = () => (typeof performance !== "undefined" ? performance.now() : Date.now());
+  const wallMs = () => (typeof performance !== "undefined" ? performance.now() : Date.now());
+  const nowMs = () => (paused ? pausedAt : wallMs());   // the captions' clock stands still while paused
 
   function stageId() {
     try { return document.documentElement.dataset.stage || ""; } catch (e) { return ""; }
@@ -126,22 +141,69 @@ export function createCaptions(root, { on = true, settings = null } = {}) {
     return pages.length ? pages : [text];
   }
 
+  // The timer of the page on screen: its end (cur.due), or sooner the moment a held caption may cut it (cur.cutAt).
+  // It waits while paused.
+  function schedule() {
+    if (timer) { clearTimeout(timer); timer = null; }
+    if (!cur || paused) return;
+    const at = cur.held ? Math.min(cur.due, cur.cutAt) : cur.due;
+    const me = cur;
+    timer = setTimeout(() => { timer = null; if (cur === me) tick(); }, Math.max(0, at - nowMs()));
+  }
+  // The page on screen ends ms from now.
+  function arm(ms) {
+    if (!cur) return;
+    cur.due = nowMs() + Math.max(0, ms);
+    schedule();
+  }
+  function tick() {
+    if (cur && cur.held) {                         // a held caption goes on now; the fact comes back after it
+      const h = cur.held;
+      cur.held = null;
+      setAside();
+      begin(h);
+      return;
+    }
+    nextPage();
+  }
+
   function showPage() {
     if (!cur || !root) return;
     const text = cur.pages[cur.i];
     if (!line) {
       line = document.createElement("p");
       line.className = "cap tag";
+      if (cur.fit) line.classList.add("fit");
       root.appendChild(line);
     }
     line.dataset.id = cur.id || "";
     if (cur.fact) line.dataset.fact = cur.fact; else delete line.dataset.fact;
     if (cur.dir) line.dataset.dir = cur.dir; else delete line.dataset.dir;
-    line.dataset.page = String(cur.i + 1);
+    line.dataset.page = String(cur.base + cur.i + 1);
     line.textContent = text;
-    const ms = cur.pageMs[cur.i];
-    const me = cur;
-    timer = setTimeout(() => { timer = null; if (cur === me) nextPage(); }, ms);
+    cur.shownAt = nowMs();
+    arm(cur.pageMs[cur.i]);
+    hurry();
+  }
+
+  // A caption on screen while a fact waits stays only for its reading time (stage 1's one-line pages keep 2.4 s).
+  function hurry() {
+    if (!cur || cur.prio !== PRIO.say || cur.one || !queue.some((q) => q.prio === PRIO.fact)) return;
+    const end = cur.shownAt + sayReadMs(cur.pages[cur.i].length);
+    if (cur.due > end + 1) arm(end - nowMs());
+  }
+
+  // The fact on screen, cut by a caption, waits at the front of the queue to come back: the cut page again for what
+  // it had left (at least 1.5 s), or the next page when under 0.25 s was left.
+  function setAside() {
+    if (!cur || cur.prio !== PRIO.fact) return;
+    const left = Math.max(0, cur.due - nowMs());
+    let i = cur.i;
+    const ms = cur.pageMs.slice(i);
+    if (left <= READ_DONE_MS) { i++; ms.shift(); } else ms[0] = Math.max(RESUME_MIN_MS, Math.min(ms[0], left));
+    if (i >= cur.pages.length) return;
+    queue.unshift({ id: cur.id, prio: cur.prio, text: cur.text, dir: cur.dir, fact: cur.fact, ms: cur.ms, at: cur.at,
+      pages: cur.pages.slice(i), pageMs: ms, base: cur.base + i, fit: cur.fit, one: cur.one });
   }
 
   function nextPage() {
@@ -152,7 +214,14 @@ export function createCaptions(root, { on = true, settings = null } = {}) {
     cur = null;
     while (queue.length) {
       const q = queue.shift();
-      if (nowMs() - q.at <= QUEUE_STALE_MS) { begin(q); return; }
+      const age = nowMs() - q.at;
+      if (q.prio === PRIO.fact) {
+        // a fact that has begun always comes back; one that waited 12 s gives way to a newer fact behind it, so
+        // what shows stays near its moment; the last one waiting always shows
+        if (q.pages || age <= FACT_STALE_MS || !queue.some((x) => x.prio === PRIO.fact)) { begin(q); return; }
+        continue;
+      }
+      if (age <= QUEUE_STALE_MS) { begin(q); return; }
     }
   }
 
@@ -162,12 +231,19 @@ export function createCaptions(root, { on = true, settings = null } = {}) {
     line.className = "cap tag";
     if (item.dir) line.dataset.dir = item.dir;
     root.appendChild(line);
-    const pages = paginate(line, item.text);
-    const one = oneLine() && stageId() === "swim";
-    const total = Math.max(item.ms, item.prio === PRIO.fact ? 1500 + 55 * item.text.length : 0);
-    const pageMs = pages.map((p) => (one ? STAGE1_PAGE_MS
-      : Math.max(1800, Math.round(total * (pages.length > 1 ? p.length / item.text.length : 1)))));
-    cur = { ...item, pages, i: 0, pageMs };
+    let { pages, pageMs } = item;
+    let one = !!item.one, fit = !!item.fit;
+    if (pages && pageMs) {                       // a fact coming back: its pages as they were laid out
+      if (fit) line.classList.add("fit");
+    } else {
+      pages = paginate(line, item.text);
+      fit = line.classList.contains("fit");
+      one = oneLine() && stageId() === "swim";
+      const total = Math.max(item.ms, item.prio === PRIO.fact ? 1500 + 55 * item.text.length : 0);
+      pageMs = pages.map((p) => (one ? STAGE1_PAGE_MS
+        : Math.max(1800, Math.round(total * (pages.length > 1 ? p.length / item.text.length : 1)))));
+    }
+    cur = { ...item, pages, i: 0, pageMs, base: item.base || 0, one, fit };
     seen.set(item.id, nowMs());
     showPage();
   }
@@ -179,11 +255,51 @@ export function createCaptions(root, { on = true, settings = null } = {}) {
     if (item.id && cur && cur.id === item.id) return false;
     if (item.id && queue.some((q) => q.id === item.id)) return false;
     item.at = t;
-    if (!cur || item.prio > cur.prio || (item.prio === PRIO.say && cur.prio === PRIO.say)) { begin(item); return true; }
+    if (!cur || item.prio > cur.prio || (item.prio === PRIO.say && cur.prio === PRIO.say)) {
+      if (item.prio === PRIO.say && cur && cur.prio === PRIO.fact && t >= cur.shownAt + UNSEEN_MS
+        && t < cur.shownAt + RESUME_MIN_MS) {
+        // a fact page shows 1.5 s before a caption may cut it: the caption (the latest one) waits for that moment.
+        // A fact sent with its caption in the same step (on screen under a frame, so not yet seen) waits behind it.
+        cur.held = item;
+        cur.cutAt = cur.shownAt + RESUME_MIN_MS;
+        schedule();
+        return true;
+      }
+      if (item.prio === PRIO.say) setAside();
+      begin(item);
+      return true;
+    }
     if (item.prio === PRIO.cue) return false;
     queue.push(item);
-    while (queue.length > QUEUE_MAX) queue.shift();
+    // past the limit (never reached in play), a waiting caption goes first, then the oldest fact
+    while (queue.length > QUEUE_MAX) {
+      const k = queue.findIndex((q) => q.prio !== PRIO.fact);
+      queue.splice(k >= 0 ? k : 0, 1);
+    }
+    hurry();
     return true;
+  }
+
+  // The pause screen: the clocks stand still, and go on from there on resume.
+  function pause() {
+    if (paused) return;
+    pausedAt = wallMs();
+    paused = true;
+    if (timer) { clearTimeout(timer); timer = null; }
+  }
+  function resume() {
+    if (!paused) return;
+    const d = wallMs() - pausedAt;
+    paused = false;
+    for (const q of queue) q.at += d;
+    for (const [k, v] of seen) seen.set(k, v + d);
+    for (const [k, v] of cueAt) cueAt.set(k, v + d);
+    if (cur) {
+      cur.shownAt += d;
+      cur.due += d;
+      if (cur.held) { cur.cutAt += d; cur.held.at += d; }
+      schedule();
+    }
   }
 
   function fact(id, { settings: st = null, ms = 4000, dir = null } = {}) {
@@ -224,5 +340,5 @@ export function createCaptions(root, { on = true, settings = null } = {}) {
     return ok;
   }
 
-  return { say, clear, fact, cue, stage: clear, current: () => (cur ? cur.id : null) };
+  return { say, clear, fact, cue, stage: clear, pause, resume, current: () => (cur ? cur.id : null) };
 }

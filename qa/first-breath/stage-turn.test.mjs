@@ -485,6 +485,9 @@ await check("the rest hums the song carried in (song event), and the ripples sho
   assert.equal(song.length, 1);
   assert.deepEqual(song[0].notes, notes);
   assert.equal(song[0].lit, 0b1010101010101010);
+  // the hum's note period (sound.hum: noteS + gapS, start to start) is the ripples' period, 0.95 s (it was 1.45 s)
+  assert.equal(song[0].noteS, TUNE.rest.noteGapS, "song.noteS is the drawn note period");
+  assert.ok(!song[0].gapS, `no extra gap between the hummed notes (gapS ${song[0].gapS})`);
   const rest = r.evs.find((e) => e.name === "moment" && e.id === "rest");
   near(song[0].t, rest.t, 1e-9, "at the rest's start");
   assert.equal(r.evs.filter((e) => e.name === "caption" && e.id === "turn.hum").length, 1);
@@ -681,7 +684,8 @@ await check("strings: every id the stage emits is a string; no banned word, no p
   }
   assert.equal(say("turn.breathe"), "Hold. Let go.");
   assert.equal(say("turn.turn"), "Drag to turn. Turn when it is roomy.");
-  assert.equal(say("turn.rest"), "Rest. Keep your thumb on the screen.");
+  // the rest is a hold and needs a fresh touch (5.3), so it never asks to keep the thumb from the turn down (F15)
+  assert.equal(say("turn.rest"), "Rest. Touch and hold if you like.");
   assert.equal(say("turn.goal.turnAuto"), "You turn now.");
 });
 

@@ -156,9 +156,46 @@ function lumenPoly(st, D, k, hs, seed, map) {
 // Bake one chunk. strips: this frame's course strips (world). The chunk is cut, shadowed and lit over a padded world
 // range (PAD u beyond each end) so shadows and lit edges run on across its edges; only its core is blitted.
 // Returns { cv, lx, ly, w, h (the core in chunk-local CSS px), sx, sy (the core's offset in the canvas, device px),
-// k, theta, j }.
+// k, theta, j, dpx and tier (the step and tier it was baked at) }.
 export const CHUNK_PAD = 12;
 export function bakeChunk(v, stage, strips, j, scratch, tier) {
+  const job = chunkJob(v, stage, strips, j, scratch, tier);
+  while (!job.step());
+  return job.result;
+}
+
+// The same bake as a job in slices, so the renderer can spread a chunk over frames: the floor dots and the sides,
+// then one wall sheet per slice (a wall sheet uses the scratch canvases only within its own slice, so jobs may take
+// turns). job.step() runs the next slice and returns true once the chunk is done (job.result, as bakeChunk returns).
+// Each slice ends by drawing the chunk into a 1 × 1 canvas: canvas 2D records its draws and rasters them at the
+// canvas's next use, so without it a chunk baked over frames would still raster all at once, at its first blit.
+// v, strips and the camera are those of the frame the job starts on (a complete chunk is the same in any window).
+// Source: none fit, our own (MDN, "Optimizing canvas", pre-render offscreen; the slices and the flush are ours).
+export function chunkJob(v, stage, strips, j, scratch, tier) {
+  const it = chunkSlices(v, stage, strips, j, scratch, tier);
+  const job = {
+    j, k: v.cam.pxPerU, theta: v.cam.theta, dpx: v.dpx, tier: tier.name, slices: 0, done: false, result: null,
+    step() {
+      if (job.done) return true;
+      const r = it.next();
+      job.slices++;
+      if (r.done) { job.done = true; job.result = r.value; }
+      return job.done;
+    },
+  };
+  return job;
+}
+
+// Make the browser raster a bake's draws now, in this frame (drawing it into a 1 × 1 canvas does; renderer.js uses it
+// for the stage paper it bakes over frames).
+let flushCv = null;
+export function rasterNow(v, cv) {
+  if (!flushCv) flushCv = v.makeCanvas(1, 1).getContext("2d");
+  flushCv.drawImage(cv, 0, 0, 1, 1, 0, 0, 1, 1);
+}
+const flush = rasterNow;
+
+function* chunkSlices(v, stage, strips, j, scratch, tier) {
   const role = ROLES[stage].course;
   const cam = v.cam, k = cam.pxPerU, hs = v.hs;
   const map = chunkMap(cam, j);
@@ -205,12 +242,15 @@ export function bakeChunk(v, stage, strips, j, scratch, tier) {
     const p = P.path(poly);
     P.sheet(c, p, roleHex(stage, tok), 2.2 * hs, flatOr(flat, { edge: 1, grain: tier.grain, pattern: v.pattern, ga: st.tone === "warm" ? 0.7 : 2.2, shadow: { alpha: 0.34 } }));
   }
+  flush(v, cv);
   // the wall sheets, inner to outer, each higher and darker: a layer with every lumen cut out (their union), its
   // soft shadow from offset copies of its silhouette, a paler copy toward the light for the lit edge, then the layer
-  const [L, S] = scratch(W, H);
-  const lc = L.getContext("2d"), sc = S.getContext("2d");
-  lc.__dpx = dpx;
-  role.walls.forEach((tok, i) => {
+  for (let i = 0; i < role.walls.length; i++) {
+    yield;
+    const tok = role.walls[i];
+    const [L, S] = scratch(W, H);
+    const lc = L.getContext("2d"), sc = S.getContext("2d");
+    lc.__dpx = dpx;
     const color = roleHex(stage, tok);
     const D = role.depth[i], hh = role.height[i] * hs;
     lc.setTransform(1, 0, 0, 1, 0, 0);
@@ -251,8 +291,9 @@ export function bakeChunk(v, stage, strips, j, scratch, tier) {
     c.drawImage(S, -P.LX * 1.1 * hs * dpx * 0.6, -P.LY * 1.1 * hs * dpx);
     c.drawImage(L, 0, 0);
     c.restore();
-  });
-  return { cv, lx: core.x, ly: core.y, w: core.w, h: core.h, sx: (core.x - lx) * dpx, sy: (core.y - ly) * dpx, k, theta: cam.theta, j };
+    flush(v, cv);
+  }
+  return { cv, lx: core.x, ly: core.y, w: core.w, h: core.h, sx: (core.x - lx) * dpx, sy: (core.y - ly) * dpx, k, theta: cam.theta, j, dpx, tier: tier.name };
 }
 
 // ---- the dot atlas: paper dots in 8 sizes per tone, each with its cheap shadow and lit edge baked in

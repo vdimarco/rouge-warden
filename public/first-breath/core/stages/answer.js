@@ -41,7 +41,7 @@ import { CREDIT } from "../judge.js";
 import { clampScore, PARTS } from "../score.js";
 import { mergeCarry } from "../carry.js";
 import { emptyDraw } from "../draw.js";
-import { createTrack, feed, upcoming } from "../lib/track.js";
+import { createTrack, feed, upcoming, freeUntil, RESUME_FREE_S } from "../lib/track.js";
 import { subgoal, doneBy } from "../lib/goals.js";
 import { figure } from "../lib/figure.js";
 import { createTree, growTree } from "../lib/colonize.js";
@@ -128,9 +128,9 @@ function plan(st, from, t0) {
     });
   }
   st.gen++;
-  if (from <= BEAT) { st.credit.beat = 0; st.judged.beat = 0; }
+  if (from <= BEAT) { st.credit.beat = 0; st.judged.beat = 0; st.free.beat = { n: 0, credit: 0 }; }
   if (from <= PHRASES) {
-    st.credit.answer = 0; st.judged.answer = 0; st.phrases = []; st.calls = [];
+    st.credit.answer = 0; st.judged.answer = 0; st.free.answer = { n: 0, credit: 0 }; st.phrases = []; st.calls = [];
     st.flourish = 0; st.matches = 0; st.perfect = 0; st.lit = 0; st.handT = -Infinity; st.litAt = {};
   }
   const add = [];
@@ -154,6 +154,7 @@ function plan(st, from, t0) {
         const ph = {
           p, pat, t0: beatTime(st, base), tAnswer: beatTime(st, base + TUNE.callBeats),
           t1: beatTime(st, base + TUNE.phraseBeats), notes: [], good: 0, inTime: 0, judged: 0, matched: null,
+          freeN: 0, freeGood: 0, freeIn: 0,
         };
         for (let k = 0; k < pat.length; k++) {
           if (pat[k] !== "x") continue;
@@ -175,7 +176,7 @@ function plan(st, from, t0) {
   // P: the seconds since the previous target, or the beat period for the first; floored at 0.5 s (5.2)
   const all = [...keep, ...add].sort((a, b) => a.t - b.t);
   all.forEach((x, i) => { if (!Number.isFinite(x.P)) x.P = Math.max(0.5, i ? x.t - all[i - 1].t : BEAT_S); });
-  st.track = createTrack(all, { assist: st.assist });
+  st.track = createTrack(all, { assist: st.assist, lag: st.lag });
   st.track.targets.forEach((x, i) => { if (kept.has(x.id)) st.track.results[i] = kept.get(x.id); });
   st.where = {};
   for (const x of st.track.targets) st.where[x.id] = x.group === "answer"
@@ -234,11 +235,20 @@ function enter(st, i) {
 
 // ---- judging ----
 
-const skillOf = (st) => Math.round((S.beat * st.credit.beat) / TUNE.beatTargets) + Math.round((S.answer * st.credit.answer) / NOTES);
+// A group's accuracy: Σ credit / its targets. A free target (after a resume, 5.2) is left out of both, unless every
+// target of the group is free.
+function accOf(st, group) {
+  const total = group === "beat" ? TUNE.beatTargets : NOTES;
+  const f = st.free[group];
+  const n = total - f.n;
+  if (n > 0) return st.credit[group] / n;
+  return total > 0 ? (st.credit[group] + f.credit) / total : 0;
+}
+const skillOf = (st) => Math.round(S.beat * accOf(st, "beat")) + Math.round(S.answer * accOf(st, "answer"));
 
 function settleBeat(st) {
   if (st.subgoals.beat !== "shown") return;
-  const you = st.credit.beat / TUNE.beatTargets >= TUNE.doneBeatK - 1e-9;
+  const you = accOf(st, "beat") >= TUNE.doneBeatK - 1e-9;
   doneBy(st, "beat", you ? "you" : "auto", you ? "answer.sub.beatDone" : "answer.sub.beatAuto");
 }
 
@@ -250,8 +260,11 @@ function settleAnswer(st) {
 
 // A phrase's last note is judged: the match, the hand glow from phrase 2, the Flourish.
 function settlePhrase(st, ph, t) {
-  const n = ph.notes.length;
-  ph.matched = n > 0 && ph.good / n >= TUNE.matchK - 1e-9;
+  // the notes that count: a free one (after a resume, 5.2) is left out, unless every note of the phrase is free
+  const n = ph.notes.length, all = (ph.freeN || 0) >= n;
+  const den = all ? n : n - ph.freeN;
+  const good = all ? ph.good + (ph.freeGood || 0) : ph.good, inT = all ? ph.inTime + (ph.freeIn || 0) : ph.inTime;
+  ph.matched = den > 0 && good / den >= TUNE.matchK - 1e-9;
   if (ph.matched) {
     st.matches++;
     emit(st, "caption", { id: "answer.feels", dir: null, t });
@@ -260,7 +273,7 @@ function settlePhrase(st, ph, t) {
       emit(st, "sfx", { id: "answer.hand", at: t, pitch: hz(st.song[ph.notes[0].song] - 24), gain: 0.8, t });
     }
   }
-  if (n > 0 && ph.inTime === n && st.flourish < S.flourishMax) {
+  if (den > 0 && inT === den && st.flourish < S.flourishMax) {
     const add = Math.min(S.flourishPer, S.flourishMax - st.flourish);
     st.flourish += add;
     st.perfect++;
@@ -277,8 +290,9 @@ function judged(st, r) {
   if (r.grade === "off") return;                          // Off changes nothing; the target stays open (5.2)
   const c = CREDIT[r.grade] || 0;
   const before = skillOf(st);
-  if (x.group === "beat") { st.credit.beat += c; st.judged.beat++; }
-  else if (x.group === "answer") { st.credit.answer += c; st.judged.answer++; }
+  const f = x.free ? st.free[x.group] : null;                 // a free target's credit is kept apart
+  if (x.group === "beat") { if (f) f.credit += c; else st.credit.beat += c; st.judged.beat++; }
+  else if (x.group === "answer") { if (f) f.credit += c; else st.credit.answer += c; st.judged.answer++; }
   const add = skillOf(st) - before;
   if (add > 0) emit(st, "points", { part: "skill", add, t: at });
   if (c > 0) emit(st, "sfx", { id: "answer.thump", at, pitch: 70, gain: c, t: at });
@@ -289,8 +303,8 @@ function judged(st, r) {
   }
   const ph = st.phrases[x.phrase];
   if (!ph) return;
-  if (c >= CREDIT.close) { st.lit |= 1 << x.song; st.litAt[x.id] = at; ph.good++; }
-  if (r.grade === "in") ph.inTime++;
+  if (c >= CREDIT.close) { st.lit |= 1 << x.song; st.litAt[x.id] = at; if (x.free) ph.freeGood++; else ph.good++; }
+  if (r.grade === "in") { if (x.free) ph.freeIn++; else ph.inTime++; }
   ph.judged++;
   if (ph.judged >= ph.notes.length && ph.matched === null) settlePhrase(st, ph, at);
 }
@@ -322,8 +336,9 @@ export function create(seed, carryIn, opts = {}) {
     mi: 0, starts: [0, 0, 0, 0, 0], end: 0, gen: 0, track: null, where: {}, cues: [], ci: 0,
     song: makeSong(sd), calls: [], phrases: [],
     credit: { beat: 0, answer: 0 }, judged: { beat: 0, answer: 0 },
+    free: { beat: { n: 0, credit: 0 }, answer: { n: 0, credit: 0 } },
     flourish: 0, matches: 0, perfect: 0, lit: 0, litAt: {}, handT: -Infinity, eyesT: null, fb: null,
-    done: false, how: null, assist: !!o.assist, oneButton: !!o.oneButton, carry, tree: null,
+    done: false, how: null, assist: !!o.assist, lag: Number.isFinite(o.lag) ? o.lag : 0, oneButton: !!o.oneButton, carry, tree: null,
   };
   st.beats = makeBeats(sd, [
     { heart: "mother", from: 0, to: TUNE.layAheadS, bpm: TUNE.bpm, jitter: 0, first: phase },
@@ -522,7 +537,7 @@ export function probe(st) {
 }
 
 export function result(st) {
-  const beatAcc = st.credit.beat / TUNE.beatTargets, answerAcc = st.credit.answer / NOTES;
+  const beatAcc = accOf(st, "beat"), answerAcc = accOf(st, "answer");
   const beatPts = Math.round(S.beat * beatAcc), answerPts = Math.round(S.answer * answerAcc);
   const goalMet = !!st.done;
   const score = clampScore({ goal: goalMet ? PARTS.goal : 0, skill: beatPts + answerPts, flourish: st.flourish });
@@ -542,6 +557,21 @@ export function result(st) {
     },
     carryOut: { song: { notes: st.song.slice(), lit: st.lit } },
   };
+}
+
+// Fair resume (5.2): the open targets of the first 1.2 s after Resume are free: left out of the beat and answer
+// accuracies, and of their phrase's match and Flourish.
+export function resume(st) {
+  if (!st || st.done || !st.track) return 0;
+  const was = st.track.targets.map((x) => !!x.free);
+  const n = freeUntil(st.track, st.t + RESUME_FREE_S);
+  st.track.targets.forEach((x, i) => {
+    if (!x.free || was[i]) return;
+    if (st.free[x.group]) st.free[x.group].n++;
+    const ph = x.group === "answer" ? st.phrases[x.phrase] : null;
+    if (ph) ph.freeN = (ph.freeN || 0) + 1;
+  });
+  return n;
 }
 
 export function jump(st, id) {

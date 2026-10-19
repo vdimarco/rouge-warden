@@ -6,7 +6,8 @@
    - Portrait: the HUD top left and top right, the prompt line under it; captions in a band at 50 to 58% of the height
      (18 to 26% in stage 2, above the egg; in other stages moved clear of the subject's body, see the captions rules);
      during play nothing to read sits in the bottom 40% (the thumb zone); the
-     in-world overlay and the Almost card sit between 24% and 60%; the scale bar top left under the clock.
+     in-world overlay and the Almost card sit between 24% and 60% (rising toward the HUD when taller, never cut off);
+     the scale bar top left under the clock.
    - Landscape and desktop: the prompt line between the HUD corners at the top; captions bottom centre, clear of the
      scale bar, which sits bottom left.
    Text is 16 px at the least (20 px with Large text; captions 18 px → 22 px). Every target is at least 44 px. */
@@ -223,28 +224,41 @@ button.pause svg { width: 18px; height: 18px; fill: var(--tag-ink); }
   padding: 3px 10px;
 }
 .cap.fit { font-size: var(--cap-min); }
-html[data-stage="egg"] #captions { top: 18%; align-items: flex-end; }
-/* In portrait a stage's band sits clear of its subject's body (design.md 9). Where the body reaches into 50 to 58%,
-   the band starts 8 px under the body's lowest point in that stage (rounded up to a whole percent) and ends at 60%,
-   if a line fits there (4% of the height); else the captions sit at the top, 8 px under the prompt line (--hud-b,
-   the HUD's bottom, from main.js), in an 8% band. Stage 2 keeps its band above the egg; the ending keeps 50 to 58%. */
+/* In portrait a stage's band sits clear of its subject's body (design.md 9). Where the body reaches into 50 to 58%
+   (stages 1, 3, 4 and 7), the band starts 8 px under the body's lowest point in that stage and ends at 60%: main.js
+   sets its top as --cap-top (52%, 53%, 55% and 53% at 390 × 844; lower on wider screens, where the body reaches
+   further, but always leaving one caption line above 60%). When that still covers the body (a tablet), main.js sets
+   html[data-capband="top"] and the captions sit at the top, 8 px under the prompt line (--hud-b, the HUD's bottom,
+   from main.js), in an 8% band, as in stages 5, 6 and 8 always. Stage 2's band sits
+   above the egg: from 18%, or 8 px under the HUD when that is lower (the clock wraps once the nuclei touch), to 26%,
+   and never into the egg's 28 u zone (45% of the height less 20% of the width); one line at the least. The ending
+   keeps 50 to 58%. */
 @media (orientation: portrait) {
-  html[data-stage="swim"] #captions { top: 52%; height: 8%; }
+  html[data-stage="egg"] #captions {
+    --egg-top: max(18%, calc(var(--hud-b, 0px) + 8px));
+    top: var(--egg-top);
+    height: max(calc(var(--cap) * 1.22 + 7px), min(calc(26% - var(--egg-top)), calc(45% - 20vw - 4px - var(--egg-top))));
+    align-items: flex-end;
+  }
+  html[data-stage="swim"] #captions { top: var(--cap-top, 52%); height: auto; bottom: 40%; }
   html[data-stage="split"] #captions,
-  html[data-stage="turn"] #captions { top: 53%; height: 7%; }
-  html[data-stage="root"] #captions { top: 55%; height: 5%; }
+  html[data-stage="turn"] #captions { top: var(--cap-top, 53%); height: auto; bottom: 40%; }
+  html[data-stage="root"] #captions { top: var(--cap-top, 55%); height: auto; bottom: 40%; }
   html[data-stage="grow"] #captions,
   html[data-stage="answer"] #captions,
-  html[data-stage="birth"] #captions { top: calc(var(--hud-b, 19%) + 8px); height: 8%; }
+  html[data-stage="birth"] #captions,
+  html[data-capband="top"] #captions { top: calc(var(--hud-b, 19%) + 8px); height: 8%; bottom: auto; }
 }
+/* Landscape and desktop: bottom centre, and clear of the scale tag at the bottom left (--scale-r, its right edge, from
+   main.js), with the same inset on the right so the band stays centred. */
 @media (orientation: landscape) {
   #captions,
   html[data-stage="egg"] #captions {
     top: auto;
     height: auto;
     bottom: calc(var(--safe-b) + 12px);
-    left: calc(var(--safe-l) + min(13.5em, 27vw));
-    right: calc(var(--safe-r) + min(13.5em, 27vw));
+    left: max(calc(var(--safe-l) + min(13.5em, 27vw)), calc(var(--scale-r, 0px) + 8px));
+    right: max(calc(var(--safe-r) + min(13.5em, 27vw)), calc(var(--scale-r, 0px) + 8px));
     align-items: flex-end;
   }
 }
@@ -253,6 +267,9 @@ html[data-stage="egg"] #captions { top: 18%; align-items: flex-end; }
 #screens { position: fixed; inset: 0; pointer-events: none; }
 /* captions wait under a screen (the overlay and the card show their own fact) */
 body:has(#screens:not([hidden])) #captions { visibility: hidden; }
+/* over the in-world overlay and Almost card the HUD stays in view, so its pause button takes taps there; the tags
+   keep pointer-events: none, so a tap anywhere else still reaches the screen */
+body:has(#screens .screen.inworld:not([hidden])) #hud { z-index: 1; }
 .screen {
   position: absolute;
   inset: 0;
@@ -327,9 +344,30 @@ body:has(#screens:not([hidden])) #captions { visibility: hidden; }
 .inworld .panel { max-width: 440px; padding: 16px 16px; gap: 10px; }
 .overlay .hint { opacity: 0.85; }
 .almost .place-line { font-weight: 700; font-size: 19px; }
+/* Portrait: the panel's box runs from under the HUD's corner tags (--hud-tags-b, from main.js; the HUD stays on top
+   here) to 60% of the height. A spacer sets the panel's top at 24% when it fits; a taller panel first rises toward
+   the HUD, and then only its fact (or the Almost card's words) shrinks and scrolls, so the grade, the buttons and the
+   hint stay whole, tappable and above 60%. Nothing is cut off. */
 @media (orientation: portrait) {
-  .screen.inworld { justify-content: flex-start; padding-top: 24vh; }
-  .screen.inworld > .panel { margin: 0; max-height: 36vh; overflow: hidden; }
+  .screen.inworld {
+    --iw-top: max(calc(var(--safe-t) + 16px), calc(var(--hud-tags-b, 0px) + 8px));
+    justify-content: flex-start;
+    padding-top: var(--iw-top);
+    padding-bottom: 40vh;
+    padding-bottom: 40dvh;
+  }
+  .screen.inworld::before {
+    content: "";
+    flex: 0 1000 max(0px, calc(24vh - var(--iw-top)));
+    flex: 0 1000 max(0px, calc(24dvh - var(--iw-top)));
+    min-height: 0;
+  }
+  .screen.inworld > .panel { margin: 0; flex: 0 1 auto; min-height: 0; }
+  .inworld .panel > .fact, .inworld .panel > .kept { min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+  /* still too tall (ui/screens.js marks it tight): the HUD's tags hide, the pause button stays, and the panel may
+     rise to just under it (the HUD's 4 px padding, the 48 px button, 8 px) */
+  .screen.inworld.tight { --iw-top: calc(var(--safe-t) + 60px); }
+  body:has(#screens .screen.inworld.tight:not([hidden])) #hud .tag { visibility: hidden; }
 }
 
 /* settings */
@@ -396,8 +434,14 @@ a.chip .n { text-decoration: none; font-weight: 800; min-width: 1.6em; }
 .links { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
 .result .hello { font-size: 34px; }
 .result .total b { font-size: 30px; color: var(--wine); font-variant-numeric: tabular-nums; }
-.result .chips { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+/* the grade chips wrap, never overflow: as many equal columns as fit a "8 Glowing" chip (6em, which grows with Large
+   text), at most four a row (22% each), so 8 chips sit 4 + 4 on a wide panel and 3 + 3 + 2 on a phone */
+.result .chips {
+  list-style: none; margin: 0; padding: 0; display: grid; gap: 6px;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, max(6em, 22%)), 1fr));
+}
 .result .chips li {
+  min-width: 0; white-space: nowrap;
   display: flex; align-items: center; justify-content: center; gap: 6px; min-height: 34px; padding: 2px 6px;
   border-radius: 8px; background: #ffe2c8; font-weight: 700;
 }
@@ -409,7 +453,6 @@ a.chip .n { text-decoration: none; font-weight: 800; min-width: 1.6em; }
 .breakdown .row-head { display: flex; justify-content: space-between; gap: 10px; font-weight: 700; }
 .breakdown .parts { opacity: 0.9; }
 .result .real { display: flex; flex-direction: column; gap: 12px; }
-@media (min-width: 700px) { .result .chips { grid-template-columns: repeat(8, 1fr); } }
 
 /* ---- buttons: wine paper with cream words; Play is marigold and 56 px; every target at least 44 px */
 .btn, button.pause {

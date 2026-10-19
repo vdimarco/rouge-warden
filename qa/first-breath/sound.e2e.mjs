@@ -10,7 +10,13 @@
 //   beat is scheduled 40 ms early (stats().times) and the peaks move 40 ms earlier (± 2 ms);
 // - from the stage 4 hinge your heart is a second peak train, at its own beat times;
 // - no node is made per beat or per sound: after start() the node count stays the same through 100 beats and every
-//   one-shot; every sfx id the stages emit (core/stages/*.js and core/ending.js) makes a sound, and an unknown id none.
+//   one-shot; every sfx id the stages emit (core/stages/*.js and core/ending.js) makes a sound, and an unknown id none;
+// - the ending's cry, sent live 0.4 s into the first inhale (a quick tap) or after it, leaves no breath hiss after it;
+// - stage 7's and the ending's songs, from the stages' own song events through hum() as main.js calls it, are hummed
+//   one note every 0.95 s and 0.75 s, as their notes are drawn, and stage 7's ends inside its 16 s rest; a new scene
+//   stops a hum's notes not yet sung;
+// - stage 4's heart levels (stats().levels): her heart the target at the start, yours (0 dB, hers −8 dB) from
+//   root.hush through the 8 taps, hers again at root.swell; stage 5 makes yours the target.
 // Live, in the game page (390 × 844 with touch, so a real tap):
 // - no AudioContext exists before Play (window.__quiet.contexts()), and the sound runs from the Play tap;
 // - her beats are scheduled, each once, at her rate, and across the stage end, the overlay, the stage card and the
@@ -20,7 +26,10 @@
 // - M mutes and writes arcade.sound (false, then true again), and ?mute=1 starts muted;
 // - a hidden page goes quiet: it pauses, the context is suspended, and it stays so until Resume;
 // - the womb bus cutoff follows the stage (150 Hz in stage 1, 250 to 450 Hz in stage 6) and opens to 16 kHz in the
-//   ending.
+//   ending;
+// - the output latency is read once the context has rendered (Chromium's outputLatency is 0 at new AudioContext()):
+//   __fb.sound.latencyS is the running context's outputLatency, and the Settings Tap test schedules each click that
+//   reading early.
 //   NODE_PATH=qa/browser/node_modules node qa/first-breath/sound.e2e.mjs
 import fs from "node:fs";
 import path from "node:path";
@@ -293,6 +302,123 @@ const browser = await pw.chromium.launch({
   await ctx.close();
 }
 
+// ---- offline: the ending's breath after a quick tap, the hummed song's note period, a hum that ends with its stage,
+// and which heart is the louder one in stage 4's heart taps
+{
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  const page = await ctx.newPage();
+  const errors = [];
+  page.on("pageerror", (e) => errors.push("pageerror: " + e.message));
+  await page.route(/\/api\//, (r) => r.fulfill({ status: 204, body: "" }));
+  await page.goto(BASE + "?test=1");
+  await page.waitForFunction(() => !!window.__fb);
+  const out = await page.evaluate(async () => {
+    const { createSound } = await import("/first-breath/ui/sound.js");
+    const turn = await import("/first-breath/core/stages/turn.js");
+    const ending = await import("/first-breath/core/ending.js");
+    const { TUNE: TT } = await import("/first-breath/core/stages/turn.tune.js");
+    const { TUNE: ET } = await import("/first-breath/core/ending.tune.js");
+    const { TUNE: RT } = await import("/first-breath/core/stages/root.tune.js");
+    const { DEFAULT_CARRY } = await import("/first-breath/core/carry.js");
+    const SR = 48000;
+    const R = {};
+    // the RMS of the first difference (a high-pass: the breath noise is 1 to 3 kHz) over [a, z] s
+    const hiRms = (x, a, z) => { let s = 0, n = 0; for (let i = Math.floor(a * SR) + 1; i < Math.floor(z * SR); i++) { const d = x[i] - x[i - 1]; s += d * d; n++; } return Math.sqrt(s / n); };
+    const rms = (x, a, z) => { let s = 0, n = 0; for (let i = Math.floor(a * SR); i < Math.floor(z * SR); i++) { s += x[i] * x[i]; n++; } return Math.sqrt(s / n); };
+
+    // 1. the ending: the first inhale at 0.1 s, the cry sent live (as the host does) at cryAt; the breath noise after it
+    async function breathRun(cryAt) {
+      const c = new OfflineAudioContext(1, Math.round(SR * 4.2), SR);
+      const s = createSound(c, { seed: 1, latencyS: 0 });
+      s.start();
+      s.setScene({ stage: "ending", cutoffHz: 300 });
+      s.open(0.05);
+      s.breath("inhale", 0.1);
+      if (cryAt !== null) c.suspend(cryAt).then(() => { s.breath("cry", cryAt + 0.003); c.resume(); });
+      const x = (await c.startRendering()).getChannelData(0);
+      return hiRms(x, 2.5, 4.0);
+    }
+    R.breath = { quick: await breathRun(0.5), auto: await breathRun(1.1), none: await breathRun(null) };
+
+    // 2. the hummed song, from the stages' own song events, through hum() as main.js calls it: the voice's note starts
+    const songOf = (mod, st, id) => { mod.jump(st, id); return st.events.find((e) => e.name === "song"); };
+    const songs = {
+      turn: { ev: songOf(turn, turn.create(2, DEFAULT_CARRY, { motherPhase: 0 }), "rest"), drawn: TT.rest.noteGapS },
+      ending: { ev: songOf(ending, ending.create(1, DEFAULT_CARRY, {}), "song"), drawn: ET.noteS },
+    };
+    const raw = AudioParam.prototype.setTargetAtTime;
+    R.hum = {};
+    for (const [k, { ev, drawn }] of Object.entries(songs)) {
+      const c = new OfflineAudioContext(1, SR, SR);
+      const s = createSound(c, { seed: 1, latencyS: 0 });
+      s.start();
+      const peak = ev.muffled ? 0.22 : ev.clear ? 0.36 : 0.3;
+      const starts = [];
+      AudioParam.prototype.setTargetAtTime = function (v, t, tc) { if (v === peak) starts.push(t); return raw.call(this, v, t, tc); };
+      try {
+        s.hum(ev.notes, 0, { clear: !!ev.clear, lit: ev.lit, noteS: ev.noteS, gapS: ev.gapS, muffled: !!ev.muffled, stage: ev.stage });
+      } finally { AudioParam.prototype.setTargetAtTime = raw; }
+      const gaps = starts.slice(1).map((t, i) => t - starts[i]);
+      R.hum[k] = { n: starts.length, notes: ev.notes.length, drawn, gaps: [Math.min(...gaps), Math.max(...gaps)], lead: (ev.at || 0) - (ev.t || 0), last: starts[starts.length - 1] };
+    }
+    R.hum.restS = TT.rest.s;
+
+    // 3. a new scene (a retry or a jump) stops a hum's notes not yet sung: A hum + setScene at 1 s, B no hum + the
+    // same setScene, C hum and no setScene; the voice is A − B (none) against C − B (the notes)
+    async function humRun(hum, scene) {
+      const c = new OfflineAudioContext(1, Math.round(SR * 3), SR);
+      const s = createSound(c, { seed: 4, latencyS: 0 });
+      s.start();
+      s.setScene({ stage: "turn", cutoffHz: 600 });
+      if (hum) s.hum([55, 57, 59, 62, 59, 57, 55, 57, 59, 62], 0.1, { noteS: 0.3, muffled: true });
+      if (scene) c.suspend(1.0).then(() => { s.setScene({ stage: "turn", cutoffHz: 600 }); c.resume(); });
+      return (await c.startRendering()).getChannelData(0);
+    }
+    const A = await humRun(true, true), B = await humRun(false, true), C = await humRun(true, false);
+    const diff = (x, y) => x.map((v, i) => v - y[i]);
+    R.cut = { after: rms(diff(A, B), 1.4, 3.0), kept: rms(diff(C, B), 1.4, 3.0), before: rms(diff(A, B), 0.2, 0.9) };
+
+    // 4. the heart levels in stage 4: her heart is the target until the hush, then yours (its 8 taps), then hers in
+    // the grow moment; and stage 5 makes yours the target
+    {
+      const c = new OfflineAudioContext(1, SR, SR);
+      const s = createSound(c, { seed: 1, latencyS: 0 });
+      s.start();
+      const L = {};
+      s.setScene({ stage: "root", cutoffHz: 150 }); L.root = s.stats().levels;
+      s.sfx("root.hush", 0, { id: "root.hush", pitch: 1, gain: RT.heart.hushDb }); L.hush = s.stats().levels;
+      s.sfx("root.swell", 0, { id: "root.swell", pitch: 1, gain: 1 }); L.swell = s.stats().levels;
+      s.setScene({ stage: "grow", cutoffHz: 150 }); L.grow = s.stats().levels;
+      R.levels = L;
+    }
+    return R;
+  });
+  if (process.env.VERBOSE) console.log(JSON.stringify(out));
+  const b = out.breath;
+  check("offline: a cry 0.4 s into the first inhale (a quick tap) leaves no breath hiss after it", b.quick <= 2 * b.none,
+    `${b.quick.toExponential(2)} against ${b.none.toExponential(2)} with no cry`);
+  check("offline: a cry after the inhale (the automatic breath) leaves no breath hiss after it", b.auto <= 2 * b.none,
+    `${b.auto.toExponential(2)} against ${b.none.toExponential(2)}`);
+  for (const k of ["turn", "ending"]) {
+    const h = out.hum[k];
+    check(`offline: the ${k} song is hummed one note every ${h.drawn} s, as its notes are drawn`,
+      h.n === h.notes && h.gaps[0] >= h.drawn - 1e-6 && h.gaps[1] <= h.drawn + 1e-6, JSON.stringify(h));
+  }
+  const ht = out.hum.turn;
+  check("offline: stage 7's hum ends inside its 16 s rest", ht.lead + ht.last + ht.drawn <= out.hum.restS + 1e-6,
+    `the last note starts ${(ht.lead + ht.last).toFixed(2)} s into the rest`);
+  check("offline: a new scene stops a hum's notes not yet sung", out.cut.kept > 1e-3 && out.cut.after < 0.05 * out.cut.kept && out.cut.before > 1e-3,
+    JSON.stringify(out.cut));
+  const L = out.levels, lv = (x) => x ? `[${x.mother}, ${x.you}]` : String(x);
+  const is = (x, m, y) => !!x && Math.abs(x.mother - m) < 0.05 && Math.abs(x.you - y) < 0.05;
+  check("offline: stage 4 starts with her heart the target (her 0 dB, yours −8 dB)", is(L.root, 0, -8), lv(L.root));
+  check("offline: in stage 4's heart taps your heart is the target (yours 0 dB, hers −8 dB)", is(L.hush, -8, 0), lv(L.hush));
+  check("offline: at the grow moment her heart is the target again", is(L.swell, 0, -8), lv(L.swell));
+  check("offline: stage 5 makes your heart the target", is(L.grow, -8, 0), lv(L.grow));
+  check("offline (2): no page errors", errors.length === 0, errors.join("; "));
+  await ctx.close();
+}
+
 // ---- live, in the page
 // No beat was lost at Play: the first beat scheduled comes at or after the stage's start, and so soon after it that
 // no beat at her spacing (the next interval, less 10% for her small jitter) fits between the start and it.
@@ -300,7 +426,7 @@ const firstBeatOk = (f) => Number.isFinite(f.ss) && f.beats.length >= 2 && f.bea
   && f.beats[0] - 0.9 * (f.beats[1] - f.beats[0]) < f.ss;
 const PORTRAIT = { viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true };
 const DESKTOP = { viewport: { width: 1440, height: 900 } };
-async function open(query = "", size = PORTRAIT) {
+async function open(query = "", size = PORTRAIT, init = null) {
   const ctx = await browser.newContext({ ...size });
   const page = await ctx.newPage();
   const errors = [];
@@ -308,6 +434,7 @@ async function open(query = "", size = PORTRAIT) {
   page.on("console", (m) => { if (m.type() === "error") errors.push("console: " + m.text()); });
   await page.route(/\/api\//, (r) => r.fulfill({ status: 204, body: "" }));
   await page.addInitScript(() => { try { if (!sessionStorage.getItem("fb-qa")) { localStorage.clear(); sessionStorage.setItem("fb-qa", "1"); } } catch (e) { /* off */ } });
+  if (init) await page.addInitScript(init);
   await page.goto(BASE + query);
   await page.waitForFunction(() => window.__fb && window.__fb.state().frames > 1);
   return { ctx, page, errors };
@@ -413,6 +540,64 @@ async function open(query = "", size = PORTRAIT) {
   const f = await page.evaluate(() => ({ ss: window.__fb.state().stageStart, beats: [...window.__beats].sort((a, b) => a - b), s: window.__fb.sound }));
   check("live: her first beat after the Play click is scheduled (1440 × 900)", f.s.state === "running" && firstBeatOk(f), JSON.stringify({ ss: f.ss, beats: f.beats }));
   check("live: no page errors (1440 × 900)", errors.length === 0, errors.slice(0, 3).join("; "));
+  await ctx.close();
+}
+
+// The output latency (5.2) is read once the context has rendered, not at new AudioContext() (Chromium reports
+// outputLatency 0 until then): in the game (__fb.sound.latencyS) and in the Settings Tap test, whose clicks are each
+// scheduled that reading early, so an offset found there suits the game.
+const TAP_LEAD_MS = 1500, TAP_PERIOD_MS = 750;             // ui/screens.js
+const watchAudio = () => {
+  window.__acs = [];
+  window.__starts = [];
+  const AC = window.AudioContext;
+  if (AC) {
+    window.AudioContext = class extends AC { constructor(...a) { super(...a); window.__acs.push(this); } };
+    const start = AudioScheduledSourceNode.prototype.start;
+    AudioScheduledSourceNode.prototype.start = function (when = 0, ...rest) {
+      const c = this.context;
+      if (c instanceof AC) window.__starts.push({ when, cur: c.currentTime, perf: performance.now(), out: c.outputLatency, base: c.baseLatency, ctx: window.__acs.indexOf(c) });
+      return start.call(this, when, ...rest);
+    };
+  }
+  window.addEventListener("click", (e) => { if (e.target && e.target.closest && e.target.closest("#tapStart")) window.__tapAt = performance.now(); }, true);
+};
+{
+  const { ctx, page, errors } = await open("?seed=2", DESKTOP, watchAudio);
+  await page.click("#play");
+  await wait(1500);
+  const g = await page.evaluate(() => {
+    const c = window.__acs[0];
+    return { game: window.__fb.sound.latencyS, out: c ? c.outputLatency : null, base: c ? c.baseLatency : null, state: c ? c.state : null };
+  });
+  const want = g.out > 0 ? g.out : g.base;
+  check("live: the game's sound latency is the running context's outputLatency, read after it has rendered",
+    g.state === "running" && Number.isFinite(g.game) && Math.abs(g.game - want) <= 0.0021, JSON.stringify(g));
+  check("live: no page errors (latency)", errors.length === 0, errors.slice(0, 3).join("; "));
+  await ctx.close();
+}
+{
+  const { ctx, page, errors } = await open("?seed=2", DESKTOP, watchAudio);
+  await page.evaluate(() => { window.__fb.act("settings"); window.__fb.act("tapTest"); });
+  await page.waitForSelector("#tapStart", { state: "visible" });
+  await page.click("#tapStart");
+  await wait(TAP_LEAD_MS + 3 * TAP_PERIOD_MS + 400);
+  const r = await page.evaluate(() => {
+    const i = window.__acs.length - 1, c = window.__acs[i];
+    return { tapAt: window.__tapAt, starts: window.__starts.filter((s) => s.ctx === i), out: c ? c.outputLatency : null, base: c ? c.baseLatency : null, state: c ? c.state : null };
+  });
+  const L = r.out > 0 ? r.out : r.base;
+  const t0 = r.tapAt + TAP_LEAD_MS;
+  // each click's lead: its beat on the context's clock (mapped at the click's own scheduling) less its start time
+  const leads = r.starts.map((s) => {
+    const k = Math.round(((s.when - s.cur) * 1000 + s.perf - t0) / TAP_PERIOD_MS);
+    return { k, lead: s.cur + (t0 + k * TAP_PERIOD_MS - s.perf) / 1000 - s.when };
+  });
+  const off = leads.filter((x) => Math.abs(x.lead - L) > 0.003);
+  check("live: the Tap test's clicks are each scheduled the running context's output latency early",
+    Number.isFinite(r.tapAt) && leads.length >= 3 && off.length === 0,
+    `latency ${L}, ${leads.length} clicks: ${leads.slice(0, 5).map((x) => `#${x.k} ${(x.lead * 1000).toFixed(1)} ms`).join(", ")}`);
+  check("live: no page errors (Tap test)", errors.length === 0, errors.slice(0, 3).join("; "));
   await ctx.close();
 }
 

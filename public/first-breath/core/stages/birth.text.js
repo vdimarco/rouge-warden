@@ -3,18 +3,23 @@
 // core/stages/index.js. Prompt and sub-goal text ids are these keys; fact captions use the ids in birth.facts.js.
 export const TEXT = Object.freeze({
   // prompts (the HUD prompt line); each ".keys" line is the desktop form, which the host shows when keys or a mouse
-  // were used last (an arrow held is a drag and hold; Space alone is a plain hold)
+  // were used last (an arrow held is a drag and hold; Space alone is a plain hold); ".one" is the one-button form,
+  // where any key or touch is the button and the run picks the move
   "birth.ride": "Ride the waves.",
   "birth.hold": "Hold through the wave.",
   "birth.hold.keys": "Hold Space through the wave.",
   "birth.tuck.do": "Tuck: drag down and hold.",
   "birth.tuck.do.keys": "Tuck: hold the down arrow.",
+  "birth.tuck.do.one": "Tuck: hold through the wave.",
   "birth.turn.do": "Turn: drag sideways and hold.",
   "birth.turn.do.keys": "Turn: hold the left or right arrow.",
+  "birth.turn.do.one": "Turn: hold through the wave.",
   "birth.lift.do": "Lift: drag up and hold.",
   "birth.lift.do.keys": "Lift: hold the up arrow.",
+  "birth.lift.do.one": "Lift: hold through the wave.",
   "birth.back.do": "Turn back: drag the other way and hold.",
   "birth.back.do.keys": "Turn back: hold the arrow the other way.",
+  "birth.back.do.one": "Turn back: hold through the wave.",
   "birth.rest": "Rest.",
   "birth.again": "Rest. Another wave will come.",
 

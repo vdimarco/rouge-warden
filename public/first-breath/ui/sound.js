@@ -15,7 +15,8 @@
 //
 // Timing (Chris Wilson, "A tale of two clocks", 2013): main.js runs the lookahead (a timer every 25 ms schedules the
 // next 100 ms from run.beats()) and hands each beat here once; each one is scheduled latencyS early (outputLatency,
-// else baseLatency, unless the caller pins latencyS), so the heard beat lands on the drawn one. A beat whose time has
+// else baseLatency, unless the caller pins latencyS), so the heard beat lands on the drawn one. The latency is read
+// at each use, not once: Chromium's outputLatency is 0 until the context has rendered. A beat whose time has
 // already passed by more than 20 ms is dropped, never played late.
 //
 // Contract choices (16.2 gives createSound(ctx, { seed, latencyS }) → { start, setMuted, setScene, schedule, sfx, hum,
@@ -23,8 +24,9 @@
 // - ctx may be null (no Web Audio): every call still works, counts what it was asked, and stats().state is "none".
 // - setScene({ stage, cutoffHz, hearing, motherDb, youDb, voice }): any subset. A call that names `stage` starts a new
 //   scene (main.js sends it at each stageStart): the levels go back to that stage's defaults (the target heart at
-//   0 dB, the other 8 dB quieter, 5.1: your heart leads in `grow`), and an opening from birth.open ends. cutoffHz sets
-//   the womb bus cutoff, except while an opening runs (open() or birth.open), which holds it until the next scene.
+//   0 dB, the other 8 dB quieter, 5.1: your heart leads in `grow`, and in `root` from root.hush, its 8 taps, to
+//   root.swell), an opening from birth.open ends, and a hum's notes not yet sung stop. cutoffHz sets the womb bus
+//   cutoff, except while an opening runs (open() or birth.open), which holds it until the next scene.
 // - sfx(id, at, opts): at is the context time. The ids are the stages' sfx ids (swim swell, whoom, swish; egg.surge,
 //   egg.pluck, egg.burst, egg.enter, egg.fifth; split sparkle, tone, toneEnd, pling, slip; root.link, root.linkBeat,
 //   root.hush, root.swell, root.tipOn, root.tipOff; grow bell, move; answer.hum, answer.thump, answer.hand; turn
@@ -34,10 +36,13 @@
 //   A bump plays full when "you" is in it, 10 dB softer when opts.near is true (a rival pair within 40 u of you; the
 //   host decides), else not at all. Bumps, bounces and sticks share a limit of 6 a second. An unknown id is counted
 //   and makes no sound.
-// - hum(notes, at, { clear, noteS = 0.5, gapS = 0.08, muffled }): MIDI notes (or Hz when a note is over 127) on the
-//   voice, one after another from `at`; a later hum replaces the notes of an earlier one that have not started.
+// - hum(notes, at, { clear, noteS = 0.5, gapS = 0, muffled }): MIDI notes (or Hz when a note is over 127) on the
+//   voice, one after another from `at`, one every noteS + gapS seconds: noteS is the note period, start to start, as
+//   the song event gives it and the stage draws it (stage 7: 0.95 s, the ending: 0.75 s); gapS an extra rest. A later
+//   hum replaces the notes of an earlier one that have not started.
 // - breath(kind, at, opts): "inhale" (the first breath; a second inhale within 0.4 s is the same one), "breath"
-//   (opts.pitch), "exhale", "cry". They play on the birth bus.
+//   (opts.pitch), "exhale", "cry". They play on the birth bus. The cry leaves the breath noise alone, so an inhale it
+//   cuts short (a quick tap in the ending) still fades out.
 // - open(seconds): the world opens (the ending): the womb bus cutoff glides 300 Hz → 16 kHz and the birth bus and
 //   the room tone come up over `seconds`.
 // - suspend() and resume() suspend and resume the context (quiet.js also suspends it while the page is hidden); the
@@ -45,7 +50,9 @@
 // - stats() → { state, cutoffHz, scheduled: { mother, you }, muted, voices, latencyS } plus extras for tests: built,
 //   stage, hearing, open (the opening's target, or null), sfx (one-shots asked for), played (one-shots that made a
 //   sound), dropped (beats too late to play), last ({ mother, you }: the last context time scheduled), times
-//   ({ mother, you }: the last 16 context times scheduled) and recent (the last 16 one-shots, { id, at }).
+//   ({ mother, you }: the last 16 context times scheduled), recent (the last 16 one-shots, { id, at }) and levels
+//   ({ mother, you }: each heart bus's target level in dB, root.hush and the ending's far heart included).
+//   latencyS is the reading in use now. Extra export: latencyOf(ctx), the same reading (the Tap test uses it).
 import { stream } from "../core/rng.js";
 
 const MASTER = 0.85;
@@ -57,6 +64,7 @@ const SPLIT_STEPS = [0, 2, 4, 7, 9, 12, 14, 16, 19];    // pentatonic steps (sem
 const fin = (v) => typeof v === "number" && Number.isFinite(v);
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 const dB = (x) => Math.pow(10, x / 20);
+const toDb = (g) => (g > 0 ? Math.round(200 * Math.log10(g)) / 10 : -Infinity);
 const midiHz = (m) => 440 * Math.pow(2, (m - 69) / 12);
 const noteHz = (n) => (n > 127 ? n : midiHz(n));
 const semi = (f, s) => f * Math.pow(2, s / 12);
@@ -64,9 +72,27 @@ const semi = (f, s) => f * Math.pow(2, s / 12);
 // The womb bus cutoff by stage when the host gives none (11); main.js sends the exact one from gaDay.
 const STAGE_CUTOFF = { swim: 150, egg: 150, split: 150, root: 150, grow: 150, answer: 250, turn: 450, birth: 300, ending: 300 };
 
+// A context's output latency (5.2): outputLatency once it reports one, else baseLatency, else 0. Chromium reports
+// outputLatency 0 until the context has rendered, so a value read at `new AudioContext()` is only baseLatency.
+export function latencyOf(ctx) {
+  if (!ctx) return 0;
+  if (fin(ctx.outputLatency) && ctx.outputLatency > 0) return ctx.outputLatency;
+  return fin(ctx.baseLatency) && ctx.baseLatency > 0 ? ctx.baseLatency : 0;
+}
+const LAT_STEP_S = 0.002;          // a new latency reading is taken when it moves by more than this
+
 export function createSound(ctx, { seed = 1, latencyS = null } = {}) {
-  const lat = fin(latencyS) ? Math.max(0, latencyS)
-    : ctx ? (fin(ctx.outputLatency) && ctx.outputLatency > 0 ? ctx.outputLatency : fin(ctx.baseLatency) ? ctx.baseLatency : 0) : 0;
+  // The latency is read at each use (a pinned latencyS wins): the first readings are only baseLatency, and a device
+  // change (a headset) moves it. It is kept steady between readings that differ by 2 ms or less, so beats laid a
+  // moment apart are not moved against each other by the reading's small wobble.
+  const pinned = fin(latencyS) ? Math.max(0, latencyS) : null;
+  let latNow = pinned !== null ? pinned : latencyOf(ctx);
+  const lat = () => {
+    if (pinned !== null || !ctx) return latNow;
+    const v = latencyOf(ctx);
+    if (Math.abs(v - latNow) > LAT_STEP_S) latNow = v;
+    return latNow;
+  };
   const scene = { stage: null, cutoffHz: 150, hearing: false, motherDb: 0, youDb: -8, voice: null };
   const scheduled = { mother: 0, you: 0 };
   const lastAt = { mother: null, you: null };
@@ -412,11 +438,15 @@ export function createSound(ctx, { seed = 1, latencyS = null } = {}) {
       case "root.link": pluck(at, 110 * p, 0.22 * k, 0.12); return true;
       case "root.linkBeat": pluck(at, 110 * p, 0.28 * k, 0.16); pluck(at, 220 * p, 0.08 * k, 0.1); return true;
       case "root.hush":
+        // your heart is the target from here (its 8 taps): yours at 0 dB, hers 8 dB quieter (5.1, 6.4)
         herDuck = dB(o && fin(o.gain) && o.gain < 0 ? o.gain : -8);
+        scene.youDb = 0;
         setLevels(0.4);
         return true;
       case "root.swell":
+        // the grow moment: her heart comes back and yours goes back to the stage's level, 8 dB under hers
         herDuck = 1;
+        scene.youDb = -8;
         setLevels(0.6);
         swell(at, 73, 0.26 * k, 1.2, 2.2); swell(at + 0.2, 110, 0.14 * k, 1.2, 2.0);
         return true;
@@ -513,7 +543,8 @@ export function createSound(ctx, { seed = 1, latencyS = null } = {}) {
     played++;
     const bf = G.breathF.frequency, bg = G.breathG.gain;
     quietly(() => {
-      bf.cancelScheduledValues(t); bg.cancelScheduledValues(t);
+      // The cry has its own voices and leaves the breath noise alone: the inhale's ramp and its fall run on. (Cancelling
+      // them under a quick tap, a cry before the inhale's ramp ends, held the noise at its level for seconds.)
       if (kind === "cry") {
         // a soft short cry: two sines at 450 and 900 Hz with a gentle fall, 1.2 s
         for (const [o, g, f0, pk] of [[G.cry1, G.cry1g, 450, 0.16], [G.cry2, G.cry2g, 900, 0.06]]) {
@@ -527,6 +558,7 @@ export function createSound(ctx, { seed = 1, latencyS = null } = {}) {
         G.cryG.gain.setValueAtTime(1, t);
         return;
       }
+      bf.cancelScheduledValues(t); bg.cancelScheduledValues(t);
       const f0 = kind === "exhale" ? 2200 : 1000 * pitch, f1 = kind === "exhale" ? 900 : 3000 * pitch;
       const len = kind === "inhale" ? 0.9 : kind === "exhale" ? 0.9 : 0.7;
       const pk = kind === "inhale" ? 0.32 : 0.2;
@@ -563,6 +595,7 @@ export function createSound(ctx, { seed = 1, latencyS = null } = {}) {
         });
         toneHeld = null;
         if (tipVoice) { const v = tipVoice; tipVoice = null; quietly(() => v.g.gain.setTargetAtTime(0, now(), 0.1)); }
+        voiceCancel(now());                  // a hum's notes not yet sung end with their stage (a retry, a jump)
         applyPan();
       }
       if (fin(s.motherDb)) scene.motherDb = s.motherDb;
@@ -581,9 +614,9 @@ export function createSound(ctx, { seed = 1, latencyS = null } = {}) {
     },
     schedule(heart, times_, toCtxTime) {
       const h = heart === "you" ? "you" : "mother";
-      const tooLate = now() - LATE_S;
+      const tooLate = now() - LATE_S, L = lat();
       for (const t of times_ || []) {
-        const at = (typeof toCtxTime === "function" ? toCtxTime(t) : t) - lat;
+        const at = (typeof toCtxTime === "function" ? toCtxTime(t) : t) - L;
         if (!fin(at)) continue;
         if (ctx && at < tooLate) { dropped++; continue; }
         lastAt[h] = at;
@@ -595,7 +628,7 @@ export function createSound(ctx, { seed = 1, latencyS = null } = {}) {
     sfx(id, at, opts = {}) {
       if (!id) return false;
       sfxCount++;
-      const t = (fin(at) ? at : now()) - lat;
+      const t = (fin(at) ? at : now()) - lat();
       push(recent, { id: String(id), at: t });
       if (!G) return false;
       let ok = false;
@@ -603,10 +636,10 @@ export function createSound(ctx, { seed = 1, latencyS = null } = {}) {
       if (ok) played++;
       return ok;
     },
-    hum(notes, at, { clear = false, noteS = 0.5, gapS = 0.08, muffled = false } = {}) {
+    hum(notes, at, { clear = false, noteS = 0.5, gapS = 0, muffled = false } = {}) {
       sfxCount++;
       const list = Array.isArray(notes) || (notes && typeof notes.length === "number") ? Array.from(notes).filter(fin) : [];
-      const t0 = Math.max((fin(at) ? at : now()) - lat, now());
+      const t0 = Math.max((fin(at) ? at : now()) - lat(), now());
       push(recent, { id: "hum", at: t0 });
       if (!G || !list.length) return;
       played++;
@@ -615,7 +648,7 @@ export function createSound(ctx, { seed = 1, latencyS = null } = {}) {
       const peak = muffled ? 0.22 : clear ? 0.36 : 0.3;
       list.slice(0, 32).forEach((n, i) => voiceNote(t0 + i * step, noteHz(n), step, peak));
     },
-    breath(kind, at, opts = {}) { breath(kind || "breath", fin(at) ? at - lat : now(), opts && fin(opts.pitch) && opts.pitch > 0 ? opts.pitch : 1); },
+    breath(kind, at, opts = {}) { breath(kind || "breath", fin(at) ? at - lat() : now(), opts && fin(opts.pitch) && opts.pitch > 0 ? opts.pitch : 1); },
     open(seconds = 1.5) {
       const s = fin(seconds) && seconds > 0 ? seconds : 1.5;
       openTo(OPEN_HZ, s, now(), 300, true);
@@ -643,10 +676,11 @@ export function createSound(ctx, { seed = 1, latencyS = null } = {}) {
         scheduled: { ...scheduled },
         muted,
         voices: G ? G.sources : 0,
-        latencyS: lat,
+        latencyS: lat(),
         built: !!G,
         stage: scene.stage,
         hearing: !!scene.hearing,
+        levels: { mother: toDb(levelHer()), you: toDb(levelYou()) },
         open: opening ? opening.toHz : null,
         sfx: sfxCount,
         played,

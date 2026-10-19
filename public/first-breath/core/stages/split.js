@@ -30,7 +30,7 @@ import { clampScore, PARTS } from "../score.js";
 import { mergeCarry } from "../carry.js";
 import { emptyDraw } from "../draw.js";
 import { stream } from "../rng.js";
-import { createTrack, feed, upcoming, accuracy } from "../lib/track.js";
+import { createTrack, feed, upcoming, accuracy, counted, freeUntil, RESUME_FREE_S } from "../lib/track.js";
 import { subgoal, doneBy } from "../lib/goals.js";
 import { TUNE } from "./split.tune.js";
 
@@ -142,8 +142,8 @@ function relay(st, from) {
   const tapList = from > 0 ? taps.map((e) => e.x) : tapTargets(st);
   const relList = [...rels.map((e) => e.x)];
   for (const mi of [1, 2]) if (mi >= from) relList.push(releaseTarget(st, mi));
-  st.track = createTrack(tapList, { assist: st.assist });
-  st.rel = createTrack(relList, { assist: st.assist });
+  st.track = createTrack(tapList, { assist: st.assist, lag: st.lag });
+  st.rel = createTrack(relList, { assist: st.assist, lag: st.lag });
   const put = (track, list) => list.forEach((e) => { const i = track.targets.findIndex((x) => x.id === e.x.id); if (i >= 0) track.results[i] = e.r; });
   put(st.track, taps);
   put(st.rel, rels);
@@ -235,15 +235,15 @@ export function create(seed, carryIn, opts = {}) {
     said: {},                   // caption facts already shown
     fx: [], fxN: 0,             // short-lived sparkles and grade rings
     shown: { skill: 0, flourish: 0 },
-    done: false, how: null, assist: !!o.assist, oneButton: !!o.oneButton, carry,
+    done: false, how: null, assist: !!o.assist, lag: Number.isFinite(o.lag) ? o.lag : 0, oneButton: !!o.oneButton, carry,
     lay: layouts(s),
     motes: null,
   };
   const rm = stream(s, "motes");
   st.motes = Array.from({ length: TUNE.motes }, () => ({ x: (rm() - 0.5) * (TUNE.tubeW - 10), y: rm() * 290, a: 0.25 + 0.35 * rm() }));
   plan(st, 0, 0);
-  st.track = createTrack(tapTargets(st), { assist: st.assist });
-  st.rel = createTrack([releaseTarget(st, 1), releaseTarget(st, 2)], { assist: st.assist });
+  st.track = createTrack(tapTargets(st), { assist: st.assist, lag: st.lag });
+  st.rel = createTrack([releaseTarget(st, 1), releaseTarget(st, 2)], { assist: st.assist, lag: st.lag });
   emit(st, "moment", { id: st.moment });
   emit(st, "prompt", promptOf(0));
   subgoal(st, "split", "split.goal.split");
@@ -276,7 +276,10 @@ function dayStats(st) {
       if (r && (r.grade === "in" || r.grade === "close")) hit++;
       if (r && r.grade === "in") inT++;
     });
-    out.push({ n, hit, inT, judged, all: n > 0 && inT === n });
+    // every tap of the day In time; a free one (after a resume, 5.2) is left out
+    const ci = n ? counted(st.track, (x) => x.day === d) : [];
+    const all = ci.length > 0 && ci.every((i) => st.track.results[i] && st.track.results[i].grade === "in");
+    out.push({ n, hit, inT, judged, all });
   }
   return out;
 }
@@ -284,7 +287,9 @@ function dayStats(st) {
 function parts(st) {
   const acc = st.track.targets.length ? accuracy(st.track) : 0;
   const rels = [relCredit(st, 1), relCredit(st, 2)];
-  const relMean = st.rel.targets.length ? (rels[0] + rels[1]) / 2 : 0;
+  // the mean over the release targets that count (a free one after a resume is left out, 5.2)
+  const ri = counted(st.rel).map((i) => IDS.indexOf(st.rel.targets[i].group)).filter((mi) => mi === 1 || mi === 2);
+  const relMean = ri.length ? ri.reduce((a, mi) => a + rels[mi - 1], 0) / ri.length : 0;
   const days = dayStats(st);
   const allDays = days.filter((d) => d.all).length;
   const splits = Math.round(TUNE.score.splits * acc);
@@ -725,6 +730,15 @@ export function result(st) {
     },
     carryOut: {},
   };
+}
+
+// Fair resume (5.2): the open tap and release targets of the first 1.2 s after Resume are free.
+export function resume(st) {
+  if (!st || st.done || !st.track || !st.rel) return 0;
+  const until = st.t + RESUME_FREE_S;
+  const n = freeUntil(st.track, until) + freeUntil(st.rel, until);
+  if (n) tick(st);
+  return n;
 }
 
 export function jump(st, id) {

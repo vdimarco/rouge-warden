@@ -15,7 +15,9 @@
 //   renderer). Sound is act("mute") (main.js writes arcade.sound).
 // - show(name, data) builds the panel again from data each time; data is the run's screen data (core/run.js):
 //   card { n, name, verb, label, facts, id }, overlay { grade, total, fact, id }, almost { place, of, capped }, result
-//   (run.summary()), pause { soundOn }, title { best, soundOn }, stages { save }, settings { save, settings }.
+//   (run.summary()), pause { soundOn }, title { best, soundOn }, stages { save }, settings { save, settings, soundOn }
+//   (soundOn: the sound as heard; without it the Sound switch reads arcade.sound). main.js shows Settings again when
+//   M or C changes a switch under it.
 // - The card: a tap on it (anywhere) skips, as do its Next button, Space and Enter (the run takes a skip from 1.0 s).
 //   The overlay: a first tap lingers, a second tap or Next goes on. The first button of a panel takes the focus (Try
 //   again on the Almost card, Resume on pause).
@@ -29,10 +31,11 @@ import { median } from "../core/judge.js";
 import { SAVE_KEY, parse } from "../core/save.js";
 import { STAGES, ENDING } from "../core/stages/index.js";
 import * as store from "./store.js";
+import { latencyOf } from "./sound.js";
 
 const NAMES = ["title", "card", "overlay", "almost", "pause", "settings", "tapTest", "stages", "sources", "result"];
 const INWORLD = new Set(["overlay", "almost"]);
-const TAPS = 8, TAP_PERIOD_MS = 750, TAP_LEAD_MS = 1500;
+const TAPS = 8, TAP_PERIOD_MS = 750, TAP_LEAD_MS = 1500, CLICK_AHEAD_MS = 250;
 
 function esc(s) {
   return String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
@@ -57,7 +60,7 @@ const ICON = {
 export function createScreens(root, { act = () => {}, settings = null } = {}) {
   const S = () => (typeof settings === "function" ? settings() : settings) || {};
   const panels = {};
-  let current = null, lastData = {}, overlayTaps = 0;
+  let current = null, lastData = {}, overlayTaps = 0, overlayOf = null;   // overlayOf: the overlay's data, its taps
   let tap = null;                                  // the Tap test while it runs
 
   const title = root ? root.querySelector("#title") : null;
@@ -69,7 +72,6 @@ export function createScreens(root, { act = () => {}, settings = null } = {}) {
     sec.className = "screen" + (INWORLD.has(name) ? " inworld" : "");
     sec.dataset.screen = name;
     sec.hidden = true;
-    sec.setAttribute("aria-label", name);
     root.appendChild(sec);
     panels[name] = sec;
     return sec;
@@ -176,9 +178,10 @@ export function createScreens(root, { act = () => {}, settings = null } = {}) {
       </div>`;
     },
     overlay(d = {}) {
-      overlayTaps = 0;
+      // the same overlay shown again (after a pause) keeps its taps: once it lingers, the next tap goes on
+      if (d !== overlayOf) { overlayOf = d; overlayTaps = 0; }
       const words = d.grade ? `${say("grade." + d.grade)} · ${fmt(d.total)}` : fmt(d.total);
-      const hint = say("overlay.hint");
+      const hint = say(overlayTaps ? "overlay.again" : "overlay.hint");
       return `<div class="panel overlay">
         <p class="grade">${esc(words)}</p>
         ${factP(d.fact)}
@@ -192,7 +195,7 @@ export function createScreens(root, { act = () => {}, settings = null } = {}) {
       return `<div class="panel almost">
         <h2>${esc(say("almost.title"))}</h2>
         ${line ? `<p class="place-line">${esc(line)}</p>` : ""}
-        <p>${esc(say("almost.kept"))}</p>
+        <p class="kept">${esc(say("almost.kept"))}</p>
         <div class="row">${btn("retry", say("almost.retry"), { id: "retry", cls: "btn play" })}${btn("goOn", say("almost.goOn"), { id: "goOn" })}</div>
       </div>`;
     },
@@ -215,7 +218,8 @@ export function createScreens(root, { act = () => {}, settings = null } = {}) {
         <div class="seg">${vals.map(([v, text]) => `<button type="button" class="btn seg-btn" data-set="${esc(key)}" data-val="${esc(v)}" aria-pressed="${String(st[key] === v || (st[key] === undefined && v === vals[0][0]))}">${esc(text)}</button>`).join("")}</div></div>`;
       const tog = (key, label, on) => `<button type="button" class="btn tog" role="switch" aria-checked="${on ? "true" : "false"}" data-set="${esc(key)}" data-val="${on ? "false" : "true"}"><span>${esc(label)}</span><b>${esc(say(on ? "ui.on" : "ui.off"))}</b></button>`;
       const off = Number.isFinite(st.offsetMs) ? st.offsetMs : 0;
-      const soundOn = store.soundOn() && !(lastData && lastData.soundOn === false);
+      // the sound as heard when main.js says (?mute=1 mutes the visit while arcade.sound stays on), else the store
+      const soundOn = lastData && typeof lastData.soundOn === "boolean" ? lastData.soundOn : store.soundOn();
       return `<div class="panel settings">
         <h2>${esc(say("settings.title"))}</h2>
         <div class="pair">
@@ -318,13 +322,13 @@ export function createScreens(root, { act = () => {}, settings = null } = {}) {
         : btn("again", say("result.again"), { id: "again", cls: "btn play" });
       return `<div class="panel result">
         ${head}
-        <p class="total"><span>${esc(say("result.total"))}</span> <b id="runTotal">${esc(fmt(d.total))}</b></p>
+        <p class="total"><span>${esc(say(practice ? "result.stageTotal" : "result.total"))}</span> <b id="runTotal">${esc(fmt(d.total))}</b></p>
         ${practice ? "" : `<p class="time"><span>${esc(say("result.time"))}</span> <b>${esc(minSec(d.ms))}</b></p>`}
         ${practice ? "" : best}
         <ul class="chips">${chips}</ul>
         <ul class="breakdown">${rows}</ul>
         ${marks.length ? `<p class="marks">${esc(say("result.marks"))}: ${esc(marks.join(", "))}</p>` : ""}
-        ${Number.isFinite(d.sparks) && d.sparks > 0 ? `<p class="sparks">${esc(say("result.sparks"))}: ${esc(d.sparks)}</p>` : ""}
+        ${!practice && Number.isFinite(d.sparks) && d.sparks > 0 ? `<p class="sparks">${esc(say("result.sparks"))}: ${esc(d.sparks)}</p>` : ""}
         <div class="row">${again}${btn("stages", say("result.stages"))}
           <a class="btn back" href="/">${esc(say("result.arcade"))}</a></div>
         <p class="same">${esc(say("result.same"))}</p>
@@ -351,25 +355,34 @@ export function createScreens(root, { act = () => {}, settings = null } = {}) {
     const t0 = performance.now() + TAP_LEAD_MS;
     const beats = [];
     for (let k = 0; k < TAPS + 4; k++) beats.push(t0 + k * TAP_PERIOD_MS);
-    tap = { pad, beats, errs: [], stop: false, raf: 0, ctx: null };
+    tap = { pad, beats, errs: [], stop: false, raf: 0, ctx: null, next: 0 };
     // the click: its own small context, made on this tap, quiet when the arcade's sound is off
     try {
       const AC = window.AudioContext || window.webkitAudioContext;
-      if (AC && store.soundOn()) {
-        const c = new AC();
-        const lat = (Number.isFinite(c.outputLatency) && c.outputLatency > 0 ? c.outputLatency : c.baseLatency || 0);
-        const base = c.currentTime - performance.now() / 1000;
-        for (const b of beats) {
-          const at = base + b / 1000 - lat;
+      if (AC && store.soundOn()) tap.ctx = new AC();
+    } catch (e) { tap.ctx = null; }
+    // Each click is laid just ahead (250 ms) from the frame loop, its output latency early, read then: Chromium's
+    // outputLatency is 0 until the context has rendered, so a reading taken at new AudioContext() is only
+    // baseLatency. The game's sound reads it the same way (ui/sound.js latencyOf), so an offset found here suits the
+    // game. A click already more than 20 ms late is dropped, never played late.
+    const click = () => {
+      const c = tap && tap.ctx;
+      if (!c || c.state !== "running") return;
+      const now = performance.now(), L = latencyOf(c), base = c.currentTime - now / 1000;
+      while (tap.next < tap.beats.length && tap.beats[tap.next] <= now + CLICK_AHEAD_MS) {
+        const at = base + tap.beats[tap.next++] / 1000 - L;
+        if (at < c.currentTime - 0.02) continue;
+        const t = Math.max(c.currentTime, at);
+        try {
           const o = c.createOscillator(), g = c.createGain();
           o.frequency.value = 1200; o.connect(g); g.connect(c.destination);
-          g.gain.setValueAtTime(0, Math.max(0, at)); g.gain.linearRampToValueAtTime(0.3, Math.max(0, at) + 0.002);
-          g.gain.setTargetAtTime(0, Math.max(0, at) + 0.002, 0.012);
-          o.start(Math.max(0, at)); o.stop(Math.max(0, at) + 0.12);
-        }
-        tap.ctx = c;
+          g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(0.3, t + 0.002);
+          g.gain.setTargetAtTime(0, t + 0.002, 0.012);
+          o.start(t); o.stop(t + 0.12);
+        } catch (e) { /* closed */ }
       }
-    } catch (e) { tap.ctx = null; }
+    };
+    click();
     const write = () => { if (count) count.textContent = `${tap ? tap.errs.length : TAPS} / ${TAPS}`; };
     write();
     const hit = (ts) => {
@@ -397,6 +410,7 @@ export function createScreens(root, { act = () => {}, settings = null } = {}) {
       const now = performance.now();
       const on = tap.beats.some((b) => now >= b && now < b + 120);
       if (flash) flash.classList.toggle("on", on);
+      click();
       if (now > tap.beats[tap.beats.length - 1] + 600) { if (count && tap.errs.length < TAPS) count.textContent = `${tap.errs.length} / ${TAPS}`; stopTap(); return; }
       tap.raf = requestAnimationFrame(frame);
     };
@@ -404,6 +418,43 @@ export function createScreens(root, { act = () => {}, settings = null } = {}) {
   }
 
   // ---------- show and hide ----------
+  // A screen's name for screen readers is its own heading (the card's with its kicker, "Stage 2 Guard the egg"), or
+  // the overlay's grade line: words from core/text.js, never the internal screen id.
+  function nameRegion(sec, name) {
+    const parts = [...sec.querySelectorAll(name === "card" ? ".panel > .kicker, .panel > h2" : ".panel > h2, .panel > .grade")].slice(0, 2);
+    const ids = parts.map((el, k) => { if (!el.id) el.id = `fb-${name}-name${k}`; return el.id; });
+    if (ids.length) sec.setAttribute("aria-labelledby", ids.join(" "));
+    else sec.removeAttribute("aria-labelledby");
+  }
+
+  // In portrait an in-world panel fits between the HUD's tags and 60% of the height (style.css). When it still does
+  // not (a small phone with Large text, where the clock wraps), the screen is "tight": the HUD's tags hide while it
+  // shows (the pause button stays) and the panel may rise to just under the pause button. It is checked when the
+  // panel shows (fresh) and again whenever the panel's size changes while it shows (the HUD's tags are measured a
+  // frame later, and a rotation or a Large text change moves them); a recheck only ever adds "tight", so it cannot
+  // flip back and forth.
+  const iwSeen = new WeakSet();
+  function fitInworld(sec, { fresh = true } = {}) {
+    if (!sec || !INWORLD.has(sec.dataset.screen)) return;
+    if (fresh) sec.classList.remove("tight");
+    else if (sec.classList.contains("tight")) return;
+    if (typeof window === "undefined" || window.innerHeight < window.innerWidth) return;
+    const p = sec.querySelector(".panel");
+    if (!p) return;
+    if (!iwSeen.has(sec) && typeof ResizeObserver === "function") {
+      iwSeen.add(sec);
+      new ResizeObserver(() => { if (!sec.hidden) fitInworld(sec, { fresh: false }); }).observe(sec, { box: "content-box" });
+    }
+    const pb = p.getBoundingClientRect().bottom;
+    const f = p.querySelector(":scope > .fact, :scope > .kept");
+    const lh = f ? parseFloat(getComputedStyle(f).lineHeight) || 22 : 0;
+    const cramped = !!f && f.clientHeight < Math.min(f.scrollHeight, 3 * lh) - 1;
+    if (cramped || [...p.children].some((c) => c.getBoundingClientRect().bottom > pb + 0.5)) sec.classList.add("tight");
+  }
+  if (typeof window !== "undefined") {
+    window.addEventListener("resize", () => { if (current && panels[current]) fitInworld(panels[current]); });
+  }
+
   function hideAll() {
     for (const p of Object.values(panels)) p.hidden = true;
     if (root) root.hidden = true;
@@ -430,10 +481,12 @@ export function createScreens(root, { act = () => {}, settings = null } = {}) {
     } else {
       sec = panel(name);
       sec.innerHTML = html[name](data || {});
-      sec.classList.remove("lingering");
+      nameRegion(sec, name);
+      sec.classList.toggle("lingering", name === "overlay" && overlayTaps > 0);
     }
     root.hidden = false;
     sec.hidden = false;
+    fitInworld(sec);
     sec.scrollTop = 0;
     current = name;
     if (typeof window !== "undefined" && window.GameSwitch && window.GameSwitch.wire) window.GameSwitch.wire();

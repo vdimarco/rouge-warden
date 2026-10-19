@@ -32,8 +32,9 @@ import { CREDIT } from "../judge.js";
 import { clampScore, PARTS } from "../score.js";
 import { mergeCarry } from "../carry.js";
 import { emptyDraw } from "../draw.js";
-import { createTrack, feed, upcoming, previewS } from "../lib/track.js";
+import { createTrack, feed, upcoming, previewS, freeUntil, RESUME_FREE_S } from "../lib/track.js";
 import { subgoal, doneBy, turnToward, wrapAngle } from "../lib/goals.js";
+import { rimSparks } from "../lib/sparks.js";
 import { stream, gauss } from "../rng.js";
 import { TUNE } from "./egg.tune.js";
 
@@ -144,8 +145,8 @@ export function create(seed, carryIn, opts = {}) {
   const st = {
     id: meta.id, seed: s, t: 0, gaDay: 14, fertilized: false, events: [], beats, subgoals: {}, moment: ORDER[0],
     mi: 0, mStart: 0, done: false, doneAt: null, how: null, capped: false, error: null,
-    assist, oneButton: !!o.oneButton, carry, place: carry.sperm.place, ob,
-    open: { track: createTrack(open, { assist }), good: 0, burstAt: null, by: null, presented: 0, acc: 0, fx: [] },
+    assist, lag: Number.isFinite(o.lag) ? o.lag : 0, oneButton: !!o.oneButton, carry, place: carry.sperm.place, ob,
+    open: { track: createTrack(open, { assist, lag: o.lag }), good: 0, burstAt: null, by: null, presented: 0, acc: 0, fx: [] },
     guard: {
       t0: null, half, arc: { a: stream(s, "arc")() * TAU - Math.PI, live: false },
       plan: wavePlan(s), order: goldOrder(s), si: 0, rivals: [], nextId: 0, simT: 0,
@@ -358,13 +359,16 @@ function burst(st, t, by) {
   }
   const keep = [], res = [];
   tr.targets.forEach((x, i) => { if (tr.results[i] !== null) { keep.push(x); res.push(tr.results[i]); } });
-  const next = createTrack(keep, { assist: st.assist });
+  const next = createTrack(keep, { assist: st.assist, lag: st.lag });
   next.results = res;
   O_.track = next;
   O_.presented = keep.length;
+  // a free target (after a resume, 5.2) is left out of the sum and of the count, unless every one is free
+  const nFree = keep.filter((x) => x.free).length, all = nFree === keep.length;
   let sum = 0;
-  for (const r of res) sum += CREDIT[r.grade] || 0;
-  O_.acc = sum / Math.max(SC.openMin, keep.length);
+  keep.forEach((x, k) => { if (all || !x.free) sum += CREDIT[res[k].grade] || 0; });
+  const den = Math.max(SC.openMin, keep.length) - (all ? 0 : nFree);
+  O_.acc = den > 0 ? sum / den : 0;
   st.parts.open = SC.open * O_.acc;
   if (st.parts.open > 0) emit(st, "points", { part: "skill", add: Math.round(st.parts.open), t });
   at(st, t, () => doneBy(st, "open", by === "you" ? "you" : "auto", by === "you" ? "egg.openDone" : "egg.openAuto"));
@@ -602,8 +606,9 @@ function laySeal(st, t) {
   const c = [st.beats.next("mother", t + SL.afterS - 1e-9)];
   for (let k = 1; k < SL.autoBeat; k++) c.push(st.beats.next("mother", c[k - 1] + 1e-6));
   const target = { id: "seal", t: c[SL.targetBeat - 1], P: Math.max(0.5, PERIOD), kind: "release", heart: "mother", group: "seal" };
-  st.seal = { prompt: t, c, track: createTrack([target], { assist: st.assist }), holding: false, pressAt: null,
+  st.seal = { prompt: t, c, track: createTrack([target], { assist: st.assist, lag: st.lag }), holding: false, pressAt: null,
     sealAt: null, grade: null, auto: false };
+  if (Number.isFinite(st.freeUntil)) freeUntil(st.seal.track, st.freeUntil);
 }
 
 function judgedSeal(st, r, t) {
@@ -850,6 +855,16 @@ export function result(st) {
   };
 }
 
+// Fair resume (5.2): the open targets of the first 1.2 s after Resume are free. The opening's taps are left out of
+// its accuracy; the seal's grade still sets its Flourish (it is no accuracy).
+export function resume(st) {
+  if (!st || st.done || !st.open) return 0;
+  st.freeUntil = st.t + RESUME_FREE_S;
+  let n = st.open.burstAt === null ? freeUntil(st.open.track, st.freeUntil) : 0;
+  if (st.seal && st.seal.sealAt === null) n += freeUntil(st.seal.track, st.freeUntil);
+  return n;
+}
+
 // Skip ahead to a named moment (tests and ?moment=): the moments between end now, by themselves.
 export function jump(st, id) {
   const i = ORDER.indexOf(id);
@@ -1001,6 +1016,7 @@ export function view(st) {
     if (dk >= 0 && dk < BO.ringS) rip.push({ x: f.x, y: f.y, r: 1.5 + 3 * (dk / BO.ringS), a: 0.9 * (1 - dk / BO.ringS), dashed: false });
   }
   strips.push({ kind: "ripples", items: rip });
+  rimSparks({ strips }, st.carry.sparks, 0, 0, SZ.shell + 1, { t, span });   // rim sparks (5.5): you are the egg
   if (mi >= 2) {
     const p = mi === 2 ? clamp01((t - st.mStart) / O.sweepS) : 1;
     const x = 70 - 16 * p, amp = mi === 2 ? 1 : 0.4;

@@ -21,7 +21,9 @@
 // (dir null). With keys "turn" (the stage 2 guard) the arrows and WASD set only `turn`: W, S and the up and down
 // arrows do nothing, and keys never steer (only a pointer drag does). Key repeats are ignored. One-button mode
 // (settings.oneButton): every key but the menu keys is a press on keydown and a release on keyup, keys never steer
-// or turn, and core/run.js sets steer and dir from the stage's botSteer while the button is held (16.4).
+// or turn, and core/run.js sets steer and dir from the stage's botSteer while the button is held (16.4). In a hold or
+// dragHold moment the keys and the pointer make one hold: the first one down is the press, a later one joins it (an
+// arrow added to a held Space sets dir), and only the last one up is the release.
 //
 // A hold needs a fresh press (5.3): when the live gesture becomes hold or dragHold, a pointer or key that is already
 // down cannot start the hold, and its release is dropped; the next touch-down or keydown is the press. "Already
@@ -41,12 +43,17 @@
 //   returns the current camera (render/camera.js); without one, the screen stick maps to world as portrait does.
 // - el is the play area: pointer events count only there (the HUD, the screens and their buttons sit outside it).
 //   Keys are read on window; Esc, P, M, C and Tab are menu keys (main.js), never a press. el may be null (node tests).
+//   While the game switcher (window.GameSwitch) is open, no key reaches the game. A repeated Space or Enter on a
+//   button does nothing, so a key held from play never clicks the button a new screen focuses; on the HUD's pause
+//   button Space and Enter are presses, not clicks, while you play (no screen is up; Esc and P pause).
 // - stick is one object updated in place: { on, ox, oy, x, y } with the origin and the finger in CSS px.
 // - dir comes from the pointer while it drags (the dominant axis of the finger from the stick origin, once past
 //   12 px), else from the last arrow or WASD key still held (never in keys "turn" or one-button mode).
 // - touching: the pointer is down (a stale one included), or a key that counts in the current mode is held.
-// - Extras: flush() drops every queued event (main.js calls it when play starts or resumes, so a menu key or tap
-//   never reaches a stage); pointer() gives the machine's state ("idle" | "pressed" | "dragging" | "holding");
+// - Extras: flush() drops every queued event (main.js calls it when play starts, so a menu key or tap never reaches a
+//   stage), and a key or pointer whose press it drops loses its release too; flush({ resume: true }) (Resume) keeps
+//   each release whose press a stage already took, so a hold let go while paused or hidden ends at the paused time;
+//   pointer() gives the machine's state ("idle" | "pressed" | "dragging" | "holding");
 //   live() gives { gesture, keys }; blur releases held keys (keyups that will never come).
 // - inject(events) feeds test events: { type: "press" | "release" | "tap", t, raw? } go straight to the queue (t is
 //   core seconds after the offset; raw defaults to t plus the offset); { type: "pointerdown" | "pointermove" |
@@ -94,21 +101,43 @@ export function createInput(el, { coreTime = (ms) => ms / 1000, camera = null, s
   let aimRef = null, aimOn = false;
   const stick = { on: false, ox: 0, oy: 0, x: 0, y: 0 };
 
-  function queue(type, raw, at = raw) {
+  // A queued press is its own token: intents() marks it sent when a step takes it. A release names the press it ends
+  // (`of`), so flush() can tell a release whose press a stage already has from one whose press never reached a stage.
+  function queue(type, raw, at = raw, of = null) {
     const t = at - offS();
     let i = q.length;
     while (i > 0 && q[i - 1].t > t) i--;
-    q.splice(i, 0, { type, t, raw });
+    const e = { type, t, raw, of, sent: false };
+    q.splice(i, 0, e);
+    return e;
+  }
+
+  // In a hold or dragHold moment the keys and the pointer make one hold: the first one down is the press, a later one
+  // joins it, and only the last one up is the release. The token of the hold that is on (a pointer or pressed key that
+  // is not stale, other than `except`), or null.
+  function holdOn(except = null) {
+    if (ptr && ptr !== except && !ptr.stale && ptr.tok) return ptr.tok;
+    for (const k of held.values()) if (k !== except && k.pressed && !k.stale && k.tok) return k.tok;
+    return null;
+  }
+  // Does another key or the pointer still hold the press `x` joined? Then x going up is no release (only the last one
+  // up is). Judged by the press itself, so a hold that began in a hold moment still ends once when the moment moves on.
+  function sharedHold(x) {
+    if (!x.tok) return false;
+    if (ptr && ptr !== x && !ptr.stale && ptr.tok === x.tok) return true;
+    for (const k of held.values()) if (k !== x && k.pressed && !k.stale && k.tok === x.tok) return true;
+    return false;
   }
 
   // ---- the pointer
   function down(id, kind, button, x, y, raw) {
     if (ptr) return;                             // only the first pointer counts
     if (kind === "mouse" && button !== 0) return;
-    ptr = { id, kind, x0: x, y0: y, ox: x, oy: y, x, y, t0: raw, t: raw - offS(), state: "pressed", stale: false, dir: null };
+    const on = HOLDS.has(gesture) ? holdOn() : null;
+    ptr = { id, kind, x0: x, y0: y, ox: x, oy: y, x, y, t0: raw, t: raw - offS(), state: "pressed", stale: false, dir: null, tok: null };
     if (kind === "mouse") { aimOn = false; mouse = null; }
     stick.on = true; stick.ox = x; stick.oy = y; stick.x = x; stick.y = y;
-    queue("press", raw);
+    ptr.tok = on || queue("press", raw);         // a key already holds: the finger joins its hold
   }
 
   function move(id, kind, buttons, x, y, raw) {
@@ -139,7 +168,7 @@ export function createInput(el, { coreTime = (ms) => ms / 1000, camera = null, s
     if (fin(x) && fin(y)) { p.x = x; p.y = y; }
     const quick = raw - p.t0 < PTR.tapS && Math.hypot(p.x - p.x0, p.y - p.y0) <= PTR.slopPx && p.state !== "dragging";
     if (quick) queue("tap", p.t0);
-    if (!p.stale) queue("release", raw);
+    if (!p.stale && !sharedHold(p)) queue("release", raw, raw, p.tok);
     if (p.kind === "mouse") { aimRef = { x: p.x, y: p.y }; aimOn = false; mouse = { x: p.x, y: p.y }; }
     ptr = null;
     stick.on = false;
@@ -156,7 +185,7 @@ export function createInput(el, { coreTime = (ms) => ms / 1000, camera = null, s
   function keyDown(code, repeat, raw) {
     if (!code || MENU_KEYS.has(code) || MODIFIERS.has(code)) return;
     if (repeat || held.has(code)) return;        // repeats are ignored
-    const k = { order: ++order, stale: false, pressed: false, raw, t: raw - offS() };
+    const k = { order: ++order, stale: false, pressed: false, raw, t: raw - offS(), tok: null };
     held.set(code, k);
     // a steer or turn key clears the aim (in keys "turn" only the turn keys count: W and S do nothing there)
     const steerKey = keysMode === "turn" ? TURN_L.has(code) || TURN_R.has(code) : code in KEY_VEC;
@@ -165,14 +194,17 @@ export function createInput(el, { coreTime = (ms) => ms / 1000, camera = null, s
     if (oneButton()) press = true;
     else if (ACTION.has(code)) press = true;
     else if (code in KEY_VEC && gesture === "dragHold" && keysMode === "steer") press = true;
-    if (press) { k.pressed = true; queue("press", raw); }
+    if (press) {
+      k.pressed = true;
+      k.tok = (HOLDS.has(gesture) ? holdOn(k) : null) || queue("press", raw);   // or it joins the hold that is on
+    }
   }
 
   function keyUp(code, raw) {
     const k = held.get(code);
     if (!k) return;
     held.delete(code);
-    if (k.pressed && !k.stale) queue("release", raw);
+    if (k.pressed && !k.stale && !sharedHold(k)) queue("release", raw, raw, k.tok);
   }
 
   function releaseAll(raw) {
@@ -192,7 +224,7 @@ export function createInput(el, { coreTime = (ms) => ms / 1000, camera = null, s
     // an arrow or WASD key that went down at or after `at` is the press of a new dragHold moment, with its own time
     if (next === "dragHold" && gesture !== "dragHold" && keys !== "turn" && !oneButton()) {
       for (const [code, k] of held) {
-        if (!k.pressed && k.t >= from && code in KEY_VEC) { k.pressed = true; queue("press", k.raw); }
+        if (!k.pressed && k.t >= from && code in KEY_VEC) { k.pressed = true; k.tok = holdOn(k) || queue("press", k.raw); }
       }
     }
     gesture = next;
@@ -251,7 +283,7 @@ export function createInput(el, { coreTime = (ms) => ms / 1000, camera = null, s
     const presses = [], releases = [], taps = [];
     while (q.length && q[0].t < tStepEnd) {
       const e = q.shift();
-      if (e.type === "press") presses.push({ t: e.t, raw: e.raw });
+      if (e.type === "press") { e.sent = true; presses.push({ t: e.t, raw: e.raw }); }
       else if (e.type === "release") releases.push({ t: e.t, raw: e.raw });
       else if (e.type === "tap") taps.push({ t: e.t });
     }
@@ -296,9 +328,20 @@ export function createInput(el, { coreTime = (ms) => ms / 1000, camera = null, s
   };
   const onMove = (e) => move(e.pointerId, e.pointerType || "mouse", e.buttons, e.clientX, e.clientY, raw(e));
   const onUp = (e) => up(e.pointerId, e.clientX, e.clientY, raw(e));
+  const switcherOpen = () => !!(typeof window !== "undefined" && window.GameSwitch && window.GameSwitch.isOpen);
   const onKeyDown = (e) => {
     if (editable(e.target)) return;
-    const onButton = e.target && e.target.closest && e.target.closest("button, a[href], [role=button]");
+    if (switcherOpen()) return;                  // the game switcher is a dialog: its keys are its own
+    const tg = e.target && e.target.closest ? e.target : null;
+    // While you play (no screen is up) the HUD's pause button is no menu: game keys stay game keys there. Over the
+    // overlay or the Almost card it is a button like theirs.
+    const inHud = !!(tg && tg.closest("#hud")) && !document.querySelector("#screens:not([hidden])");
+    const onButton = !!(tg && tg.closest("button, a[href], [role=button]")) && !inHud;
+    const activates = e.code === "Space" || e.code === "Enter" || e.code === "NumpadEnter";
+    // A key held from play never clicks the button a new screen focuses: its repeats do nothing on a button (Chromium
+    // clicks on a repeated Enter, and on the keyup after a repeated Space). On the pause button in play Space and Enter
+    // are presses (Esc and P pause).
+    if (activates && (inHud || (onButton && e.repeat))) e.preventDefault();
     if (e.code in KEY_VEC && !onButton) e.preventDefault();
     if (e.code === "Space" && !onButton) e.preventDefault();
     keyDown(e.code, e.repeat, raw(e));
@@ -318,6 +361,18 @@ export function createInput(el, { coreTime = (ms) => ms / 1000, camera = null, s
     window.addEventListener("keydown", onKeyDown);
     window.addEventListener("keyup", onKeyUp);
     window.addEventListener("blur", onBlur);
+  }
+
+  // Drop the queue. A press dropped here never reached a stage, so the key or pointer that made it is stale: its
+  // release is dropped too (Enter on Resume clicks on keydown, and its keyup comes after). With { resume: true }
+  // (main.js on Resume) a release whose press a stage already has is kept: a key or finger let go while paused or
+  // hidden still ends that hold, at the paused core time.
+  function flush({ resume = false } = {}) {
+    const keep = resume ? q.filter((e) => e.type === "release" && e.of && e.of.sent) : [];
+    q.length = 0;
+    q.push(...keep);
+    if (ptr && !(ptr.tok && ptr.tok.sent)) ptr.stale = true;
+    for (const k of held.values()) if (k.pressed && !(k.tok && k.tok.sent)) k.stale = true;
   }
 
   function dispose() {
@@ -345,7 +400,7 @@ export function createInput(el, { coreTime = (ms) => ms / 1000, camera = null, s
     stick,
     inject,
     dispose,
-    flush() { q.length = 0; },
+    flush,
     pointer() { return ptr ? ptr.state : "idle"; },
     live() { return { gesture, keys: keysMode }; },
   };

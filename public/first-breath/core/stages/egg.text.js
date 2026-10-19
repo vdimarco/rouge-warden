@@ -6,11 +6,14 @@ export const TEXT = Object.freeze({
   "egg.now": "Now you are the egg.",
   "egg.you": "0.1 mm",
 
-  // prompts (the live gesture)
+  // prompts (the live gesture). The desktop forms (".keys", "Keys") name keys; ".one" is the one-button form.
   "egg.tap": "Tap with the heartbeat.",
+  "egg.tap.keys": "Press Space with the heartbeat.",
   "egg.guard": "Drag to guard your shell.",
   "egg.guardKeys": "Turn with the arrow keys, or point with the mouse.",
+  "egg.guard.one": "Hold to guard your shell.",
   "egg.seal": "Seal your shell. Hold, then let go.",
+  "egg.seal.keys": "Seal your shell. Hold Space, then let go.",
 
   // sub-goals: shown, then done by you or by itself
   "egg.openGoal": "Three good taps open the follicle.",

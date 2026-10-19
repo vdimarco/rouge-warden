@@ -1639,6 +1639,10 @@ section.
 
 ### 16.1 File layout
 
+As built. The renderer is the paper-cut Canvas 2D renderer of section 14, so the WebGL files of the first plan
+(`gl.js`, `field.js`, `composite.js`, `overlay.js`, `flat.js` and the `strips/` folder) were never written. The
+`palette.test.mjs` checks live in `paper.test.mjs` (18).
+
 ```
 public/first-breath/
   index.html          quiet.js first in <head>; switch.js; canvas#view; svg#rings; DOM HUD and screens; analytics.js last
@@ -1669,8 +1673,10 @@ public/first-breath/
       flow.js         curl(), tubeFlow(), wallRamp()
       colonize.js     createTree(), growTree()                (caps built in)
       figure.js       figure(pose, sizeU, gaDay)
+      sparks.js       rimSparks(): the Glowing sparks on your rim (5.5, 10)
     stages/
-      index.js        STAGES = [swim, egg, split, root, grow, answer, turn, birth]   (static imports, written in wave 0)
+      index.js        STAGES = [swim, egg, split, root, grow, answer, turn, birth], ENDING, FACT_TABLES, TEXT_TABLES,
+                      TUNES, byId()                            (static imports, written in wave 0)
       swim.js   swim.tune.js   swim.facts.js   swim.text.js
       egg.js    egg.tune.js    egg.facts.js    egg.text.js
       split.js  split.tune.js  split.facts.js  split.text.js
@@ -1679,21 +1685,27 @@ public/first-breath/
       answer.js answer.tune.js answer.facts.js answer.text.js
       turn.js   turn.tune.js   turn.facts.js   turn.text.js
       birth.js  birth.tune.js  birth.facts.js  birth.text.js
-  render/
-    renderer.js       createRenderer(canvas, opts)            (a wave-0 stub that draws with debug.js; wave 1 fills it)
-    gl.js  field.js  composite.js  overlay.js  flat.js  camera.js  perf.js  palette.js  rings.js  debug.js
-    strips/  tails.js  cilia.js  tree.js  cord.js  chevrons.js  ripples.js  arc.js
+  render/             the paper-cut renderer, Canvas 2D (section 14)
+    renderer.js       createRenderer(canvas, opts): the draw order of 14.1, the two tiers, lum()
+    paper.js          the paper kit: cut edges, sheets, shadows, stickers, grain (13.1, 14.2)
+    bake.js           the bake cache: frames, course chunks, the atlas, the dapple sheet (14.1)
+    items.js          every draw-list item as paper, the strips included (14.1)
+    low.js            the full and low tiers (14.3)
+    perf.js           the frame cost, the scale steps and the tier switch (14.3)
+    camera.js  palette.js  rings.js  debug.js
   ui/
-    input.js  hud.js  captions.js  screens.js  sound.js  store.js   (hud, captions, screens, sound: wave-0 stubs)
+    input.js  hud.js  captions.js  screens.js  sound.js  store.js
 public/arcade/key/first-breath.svg
 
 qa/first-breath/
   purity.test.mjs  clock.test.mjs  beat.test.mjs  judge.test.mjs  track.test.mjs  draw.test.mjs  run.test.mjs
-  save.test.mjs  facts.test.mjs  text.test.mjs  palette.test.mjs  perf.test.mjs  sim.test.mjs
+  save.test.mjs  facts.test.mjs  text.test.mjs  paper.test.mjs  perf.test.mjs  sim.test.mjs  input.test.mjs
+  captions.test.mjs  prompts.test.mjs
   stage-swim.test.mjs  stage-egg.test.mjs  stage-split.test.mjs  stage-root.test.mjs
   stage-grow.test.mjs  stage-answer.test.mjs  stage-turn.test.mjs  stage-birth.test.mjs  ending.test.mjs
   bot.mjs  race-sim.mjs
-  smoke.e2e.mjs  layout.e2e.mjs  input.e2e.mjs  perf.e2e.mjs  visual.e2e.mjs  sound.e2e.mjs  shots.mjs
+  smoke.e2e.mjs  boot.e2e.mjs  layout.e2e.mjs  input.e2e.mjs  screens.e2e.mjs  perf.e2e.mjs  visual.e2e.mjs
+  sound.e2e.mjs  shots.mjs
 ```
 
 ### 16.2 Shared modules (wave 0) and their signatures
@@ -1779,11 +1791,13 @@ export function createInput(el, { coreTime /* wallMs → core s */, camera /* ()
 //       intents(tStepEnd) /* drains events up to tStepEnd, in core seconds */,
 //       stick /* {on, ox, oy, x, y} */, inject(events) /* tests */, dispose() }
 
-// render/renderer.js
-export function createRenderer(canvas, { gl = true, res = null, probe = false, motion })
+// render/renderer.js (as built: the paper renderer, 14.5)
+export function createRenderer(canvas, { gl = true, q = null, res = null, probe = false, motion = null })
+//   gl: true is the full paper tier, false the low tier; q "low" | "full" pins the tier (from ?q)
 //   → { draw(drawList), resize(cssW, cssH),
-//       perf /* {emaMs, p95Ms, scale, w, h, px, draws, splats, points, fallback} */,
-//       lum() /* mean luminance 0..1, with probe */, crossfade(seconds), dispose() }
+//       perf /* {emaMs, p95Ms, scale, w, h, px, draws, splats, points, fallback}, read as 14.3 */,
+//       lum() /* mean luminance 0..1, with probe; else null */, crossfade(seconds), dispose(),
+//       tier /* "full" | "low" */, lastCue, lastBodies, fade(), costs() /* read-only, for the browser checks */ }
 // render/camera.js
 export function makeCamera(viewW, viewH, cam /* draw.camera */)
 //   → { toScreen(x, y), toWorld(px, py), stickToWorld(vx, vy), orient, pxPerU }
@@ -1935,7 +1949,7 @@ straight on. Then `result()` is `{ done: true, goalMet: false }` with `score.goa
 ```
 
 `core/draw.js` exports `LIMITS` and `validate(list)`. `draw.test.mjs` validates every 30th view of each stage's ref and
-idle runs. Both the WebGL path and the 2D fallback draw only this list. (A `zoomAnchor` comes back with the deferred
+idle runs. Both tiers draw only this list. (A `zoomAnchor` comes back with the deferred
 zoom.) A stage sends only the visible part of its course, at most 32 points per `course` strip. The stage 1 camera
 span is 170 u in the womb and 150 u from the gate on; the stage 2 span is 140 u (6.1, 6.2).
 
@@ -2009,38 +2023,43 @@ run.summary()          // { total, ms, stages: [{ id, score, grade, parts }], ma
 
 ### 16.9 Test hook `window.__fb`
 
-Every time the hook takes or returns is in stage seconds.
+Every time the hook takes or returns is in stage seconds, unless a row says core seconds. As built in `main.js`, every
+hook call presents the frame at once, so the DOM matches the state it returns.
 
 | Member | Does |
 |---|---|
-| `state()` | `{ screen, stage, stageId, moment, t, gaDay, label, fertilized, score, runScore, grade, prompt, subgoals, paused, seed, settings, anchor /* screen px */, cue /* screen px */, ms, place /* stage 1: "3rd of 20", else null */ }` |
-| `goto(stage, { seed, carry, assist, oneButton })` | jump into stage 1 to 8 (index or id) or `"ending"`, skipping the card |
+| `state()` | `{ screen, stage, stageId, moment, t, gaDay, label, fertilized, score, runScore, grade, prompt, subgoals, paused, seed, settings, anchor /* screen px */, cue /* screen px */, ms, place /* stage 1: "3rd of 20", else null */ }`, plus `frames`, `realtime`, `practice`, `done`, `live` (the input's live gesture and keys), `judges` (the last 8 judge events, core seconds), `stageStart` (core seconds), `device` (`"keys"` or `"touch"`, the input used last) and `tier` (the `?q` pin or null). `prompt` carries `line`, the words the HUD shows for this device. |
+| `goto(stage, { seed, carry, assist, oneButton })` | start a practice run of stage 1 to 8 (index or id) or `"ending"`: no card, and after its overlay (none after Birth or the ending) the run result |
 | `jump(moment)` | jump to a named moment of the current stage |
 | `realtime(on)` | stop or restart the rAF clock |
-| `step(n, intents?)` | advance n fixed steps, with optional intents in stage seconds (else the held ones) |
+| `step(n, intents?)` | advance n fixed steps, with optional intents in stage seconds (else the held ones over the live input); its presses, releases and taps are queued once, its other fields hold for the n steps; under `?test=1` the n steps end with one draw |
 | `input(partialIntents)` | set held intents (`steer`, `touching`, `dir`, `turn`, `aim`) |
-| `tap({ errMs = 0 })`, `press()`, `release()` | inject a timed event at the next target's `t` ± errMs (stage time), or now |
+| `tap({ errMs = 0 })`, `press()`, `release()` | inject a timed event at the next target's `t` ± errMs (stage time), or now; a tap lifts 80 ms after its press; each returns `{ t, target }` or null off the stage |
 | `nextTarget()` | `{ t, P, kind, heart, id }` or null |
-| `bot(skill \| false)` | let the shared bot drive (also the attract mode) |
+| `bot(skill \| false)` | let the shared bot drive (also the attract mode), its run-level choices included; live input is dropped while it drives |
 | `finish()` | end the current stage with its points so far |
 | `retry()`, `skip()`, `act(name)` | the run's actions |
 | `result()` | the current stage result, or the run summary |
-| `targets()` | bounding boxes of every interactive DOM element, and the subject's and the cue's screen positions |
+| `targets()` | `{ boxes: [{ id, act, text, x, y, w, h }], anchor, cue }`: every visible button, link and control, and the subject's and the cue's screen positions |
 | `facts()` | fact ids shown this run |
 | `race()` | stage 1: `swim.probe(state)`, `{ place, placeNow, of, you: { progress, x, y, ready }, rivals: [{ id, skill, progress, x, y, state: "swim"|"rest"|"arrived", tube: "warm"|"cool"|null, ready }] }`, with `main.js` adding a `screen` point in px beside each world point; else null |
 | `guard()` | stage 2: `egg.probe(state)`, `{ arc: { angle, half }, egg: { x, y, r }, sperm: [{ id, state: "in"|"stuck"|"bounce"|"loose"|"held", angle, r, progress, x, y }], gold: { state, angle, r, nudges, x, y } | null, entered }` (angles in radians, world space), with `main.js` adding `screen` points in px and the arc's screen angle; else null |
-| `perf` | `{ emaMs, p95Ms, scale, w, h, px, draws, splats, points, fallback }` |
+| `perf` | `{ emaMs, p95Ms, scale, w, h, px, draws, splats, points, fallback }`, read as 14.3 (`draws` counts the main canvas's fills, strokes and blits; `fallback` is true in the low tier) |
 | `sound` | `{ state, cutoffHz, hearing, beats: { mother, you }, scheduled, muted, voices, latencyS }` |
-| `motion` | `{ reduced, warpAmp, bounce }` |
-| `lum()` | mean frame luminance (needs `?probe=1`) |
+| `motion` | `{ reduced, warpAmp, bounce }` (`warpAmp` is the sway in px, 14.1) |
+| `lum()` | mean frame luminance, from the canvas drawn down to 32 × 32 and read back (needs `?probe=1`, else null) |
 | `save()` | the parsed save |
 
 ### 16.10 URL flags
 
-`?seed=N` · `?stage=1..8|id|ending` · `?moment=name` · `?gl=0` · `?res=0.5` (pins the scale step) · `?freeze=1` (draw
-one frame and stop, for screenshots) · `?test=1` (realtime off; steps only through the hook) · `?assist=1` · `?one=1` ·
-`?rm=1` (reduced motion) · `?mute=1` · `?probe=1` (luminance probe and `gl.finish()` in the frame cost) ·
-`?inset=t,r,b,l` (px, added to the safe-area insets) · `?carer=mother|mum|mom|parent`.
+`?seed=N` · `?stage=1..8|id|ending` (starts a practice run of it, as `goto`) · `?moment=name` (then jumps to that
+moment, also after Play) · `?q=low|full` (pins the paper tier) · `?gl=0` (an alias for `?q=low`) · `?res=0.5` (pins
+the scale step) · `?freeze=1` (draw one frame and stop, for screenshots) · `?test=1` (realtime off; steps only
+through the hook, and each `__fb.step(n)` ends with one draw) · `?assist=1` · `?one=1` · `?rm=1` (reduced motion) ·
+`?mute=1` (mutes this visit; M writes `arcade.sound`) · `?probe=1` (each frame ends with a 1 px readback of the
+main canvas, so the frame cost includes the raster, and turns on `lum()`; there is no `gl.finish()`) ·
+`?inset=t,r,b,l` (px, added to the safe-area insets) · `?carer=mother|mum|mom|parent`. The settings set by `?assist`,
+`?one`, `?carer` and `?rm` hold for the visit and are not saved.
 
 ### 16.11 A stage played by a bot in node, with no DOM
 

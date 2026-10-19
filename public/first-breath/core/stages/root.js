@@ -36,10 +36,11 @@ import { CREDIT, windows } from "../judge.js";
 import { clampScore, PARTS } from "../score.js";
 import { mergeCarry } from "../carry.js";
 import { emptyDraw } from "../draw.js";
-import { createTrack, feed, upcoming, accuracy, previewS } from "../lib/track.js";
+import { createTrack, feed, upcoming, accuracy, previewS, counted, freeUntil, RESUME_FREE_S } from "../lib/track.js";
 import { subgoal, doneBy } from "../lib/goals.js";
 import { stream, gauss } from "../rng.js";
 import { figure } from "../lib/figure.js";
+import { rimSparks } from "../lib/sparks.js";
 import { createTree, growTree, addNode, nearestNode } from "../lib/colonize.js";
 import { steerBody } from "../lib/steer.js";
 import { TUNE } from "./root.tune.js";
@@ -310,7 +311,7 @@ function startMoment(st, i) {
       const t = yb[H.leadBeats + k];
       list.push({ id: "heart." + (k + 1), t, P: k ? t - list[k - 1].t : YOU_P, kind: "tap", heart: "you", group: "heart" });
     }
-    st.track = createTrack(list, { assist: st.assist });
+    st.track = createTrack(list, { assist: st.assist, lag: st.lag });
     prompt_(st, "root.listen");
     emit(st, "sfx", { id: "root.hush", at: h0, pitch: 1, gain: H.hushDb });
   } else if (st.moment === "grow") {
@@ -512,7 +513,7 @@ export function create(seed, carryIn, opts = {}) {
   const st = {
     id: meta.id, seed: s, t: 0, gaDay: meta.moments[0].ga[0], fertilized: meta.fertilized,
     events: [], beats: null, subgoals: {}, moment: "nestle",
-    mi: 0, m0: 0, done: false, how: null, err: null, assist: !!o.assist, oneButton: !!o.oneButton,
+    mi: 0, m0: 0, done: false, how: null, err: null, assist: !!o.assist, lag: Number.isFinite(o.lag) ? o.lag : 0, oneButton: !!o.oneButton,
     carry: mergeCarry(carryIn, null), phase, prompt: { ...NONE },
     spots: laySpots(s), glands: layGlands(s), poolOff: layPools(s),
     nest: { x: 0, y: 0, vx: 0, vy: N.slideUS, lastIn: 0, state: "drift", spot: -1, by: null, from: null, s0: 0, len: 0, p: 0 },
@@ -597,6 +598,7 @@ export function view(st) {
       const sp = st.spots[n.spot];
       d.rings.push({ id: "burrow", kind: "burrow", x: sp.x, y: sp.y, r: N.spotR + 6 * (1 - n.p), progress: n.p, dotted: true });
     }
+    rimSparks(d, st.carry.sparks, n.x, n.y, r + 1, { t, span: c.span });      // rim sparks (5.5) round you
     d.anchor = { x: n.x, y: n.y };
     const cue = st.spots[n.spot >= 0 ? n.spot : nearestSpot(st, n.x, n.y)];
     d.cue = { x: cue.x, y: cue.y };
@@ -622,6 +624,7 @@ export function view(st) {
   if (items.length) d.strips.push({ kind: "ripples", items });
 
   const f = figAt(st);
+  rimSparks(d, st.carry.sparks, f.x, f.y, 0.55 * f.s, { t, span: c.span });   // rim sparks (5.5) round you
   if (st.mi === 1) {
     d.splats.push(...figure("curl", f.s, st.gaDay, { x: f.x, y: f.y }));
     const tip = st.tip;
@@ -713,20 +716,28 @@ export function probe(st) {
   return null;
 }
 
+// In-time heart taps among the ones that count (a free one after a resume is left out, 5.2), and how many count.
 function inTimeCount(st) {
+  const idx = counted(st.track);
   let n = 0;
-  st.track.targets.forEach((x, i) => { const r = st.track.results[i]; if (r && r.grade === "in" && !x.free) n++; });
-  return n;
+  for (const i of idx) { const r = st.track.results[i]; if (r && r.grade === "in") n++; }
+  return { n, of: st.track.targets.length ? idx.length : H.targets };
+}
+
+// Fair resume (5.2): the open heart taps of the first 1.2 s after Resume are free.
+export function resume(st) {
+  if (!st || st.done || !st.track) return 0;
+  return freeUntil(st.track, st.t + RESUME_FREE_S);
 }
 
 export function result(st) {
   const acc = st.track.targets.length ? accuracy(st.track) : 0;
-  const inTime = inTimeCount(st);
+  const { n: inTime, of: inOf } = inTimeCount(st);
   const goalMet = st.done;
   const pools = (S.pools * st.counts.you) / R.pools;
   const onBeat = (S.onBeat * st.counts.onBeat) / R.pools;
   const heart = S.heart * acc;
-  const score = clampScore({ goal: goalMet ? PARTS.goal : 0, skill: pools + onBeat + heart, flourish: (S.inTime * inTime) / H.targets });
+  const score = clampScore({ goal: goalMet ? PARTS.goal : 0, skill: pools + onBeat + heart, flourish: inOf ? (S.inTime * inTime) / inOf : 0 });
   const nestleX = st.root ? Math.round(clamp(st.root.x / 50, -1, 1) * 100) / 100 : 0;
   const order = st.order.join(",");
   return {

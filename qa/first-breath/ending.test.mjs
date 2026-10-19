@@ -445,6 +445,7 @@ await check("the song comes from the carry, clear; answered notes shimmer; spark
   assert.equal(ev.lit, 0b1010101010101010);
   assert.equal(ev.clear, true);
   near(ev.noteS * notes.length, 12, 1e-9, "16 notes over 12 s");
+  assert.ok(!ev.gapS, "noteS is the whole note period (sound.hum: noteS + gapS), the dots' 0.75 s");
   for (let i = 0; i < 12.5 / DT; i++) E.step(st, makeIntents());
   const d = E.view(st);
   assert.equal(d.points.n, 16, "every hummed note is a dot");
@@ -501,7 +502,8 @@ await check("strings: every id used is registered; plain, short and gentle; no p
     }
   }
   for (const id of used) assert.ok(TEXT[id], `${id} is in ending.text.js`);
-  for (const id of Object.keys(TEXT)) assert.ok(used.has(id), `${id} is used`);
+  // a desktop (".keys") or one-button (".one") form is used when its prompt is: main.js picks it (promptText)
+  for (const id of Object.keys(TEXT)) assert.ok(used.has(id) || used.has(id.replace(/\.(keys|one)$/, "")), `${id} is used`);
   const mine = new Set(Object.keys(TEXT));
   assert.ok(allStrings().filter((s) => mine.has(s.id)).length === mine.size, "registered through core/text.js");
   const BANNED = /\b(die|dies|died|dying|dead|death|kill\w*|lose|loses|losing|lost|loser|fail\w*|miscarr\w*|abort\w*|sex\w*|pain\w*|hurt\w*|danger\w*|sick\w*|viab\w*|prematur\w*|nicu|invad\w*|invas\w*|attack\w*|destroy\w*|defeat\w*|conquer\w*|enem\w*|fight\w*|battle\w*|apgar)\b/i;

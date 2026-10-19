@@ -854,16 +854,22 @@ export function drawArrows(F) {
 
 // The birth light: a cream-white paper glow along the whole bottom edge that grows, never anatomy (13.1). Three
 // stacked translucent sheets with wavy cut tops, each the full width of the screen.
+// With reduced motion (F.rmBirth, from the renderer) it neither pulses with a swell nor ripples, and in the light
+// moment it keeps its size at the end of the waves (F.rmLightR) while the renderer fades the screen to white.
 export function drawBirthLight(F) {
   const ctx = F.ctx, hs = F.v.hs, k = F.k, W = F.v.W, H = F.v.H, ga = ctx.globalAlpha;
+  const still = !!F.rmBirth, inLight = still && F.lightFade !== null && F.lightFade !== undefined;
   for (const m of F.d.marks || []) {
     if (!m || m.kind !== "light") continue;
-    const on = onOf(m.on), pulse = clamp01(num(m.pulse, 0));
+    const on = onOf(m.on), pulse = still ? 0 : clamp01(num(m.pulse, 0));
     // its reach is a share of the screen's height (r is in u of the 100 u span: 96 u, the end of the waves, reaches
     // 28% of the height in every layout)
-    const reach = Math.max(14 * hs, (num(m.r, 40) / 100) * 0.29 * H) * (1 + 0.06 * pulse);
-    const white = clamp01(num(F.d.light && F.d.light.white, 0));
-    const color = P.mix(hexOf(F, "opening") || SHARED.glow, "#ffffff", clamp01(num(F.d.light && F.d.light.exposure, 1) - 1) / 5);
+    const r = inLight ? Math.min(num(m.r, 40), num(F.rmLightR, 96)) : num(m.r, 40);
+    const reach = Math.max(14 * hs, (r / 100) * 0.29 * H) * (1 + 0.06 * pulse);
+    const white = inLight ? 0 : clamp01(num(F.d.light && F.d.light.white, 0));
+    const ex = inLight ? 1 : num(F.d.light && F.d.light.exposure, 1);
+    const color = P.mix(hexOf(F, "opening") || SHARED.glow, "#ffffff", clamp01(ex - 1) / 5);
+    const tt = still ? 0 : F.t;
     // the innermost sheet, along the edge, is opaque cream: the brightest region of the frame touches the whole
     // bottom edge (13.3), over the side flats as much as between them
     const layers = F.tier.glowDiscs >= 3 ? [[1, 0.22], [0.62, 0.3], [0.3, 1]] : [[1, 0.28], [0.3, 1]];
@@ -871,7 +877,7 @@ export function drawBirthLight(F) {
     for (const [f, a] of layers) {
       const top = H - reach * f;
       const pts = [-10, H + 10];
-      for (let x = -10; x <= W + 10; x += 14) pts.push(x, top + 4 * hs * Math.sin(x * 0.021 + f * 5 + F.t * 0.4) * (1 - white));
+      for (let x = -10; x <= W + 10; x += 14) pts.push(x, top + 4 * hs * Math.sin(x * 0.021 + f * 5 + tt * 0.4) * (1 - white));
       pts.push(W + 10, H + 10);
       ctx.globalAlpha = ga * a * on;
       ctx.fill(P.path(pts));

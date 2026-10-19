@@ -1,13 +1,16 @@
 // First Breath: stage 7, Third Trimester (`turn`), its strings (design.md 1.3, 2, 6.7, 15.4). { stringId: "text" }, with
 // {carer} and {Carer}. core/text.js registers it through core/stages/index.js. Plain, short and tender; no pronoun for
-// the carer. The `.keys` lines are the desktop forms of the prompts, for the host to pick.
+// the carer. The `.keys` lines are the desktop forms of the prompts, and `.one` the one-button form, for the host to
+// pick.
 export const TEXT = Object.freeze({
   // prompts, one per moment
   "turn.breathe": "Hold. Let go.",
   "turn.breathe.keys": "Hold Space. Let go.",
   "turn.turn": "Drag to turn. Turn when it is roomy.",
   "turn.turn.keys": "Hold an arrow to turn. Turn when it is roomy.",
-  "turn.rest": "Rest. Keep your thumb on the screen.",
+  "turn.turn.one": "Hold to turn. Turn when it is roomy.",
+  // the rest is a hold, so it needs a fresh touch (5.3): a thumb kept down from the turn does not count
+  "turn.rest": "Rest. Touch and hold if you like.",
   "turn.rest.keys": "Rest. Hold Space if you like.",
   "turn.outro": "You are ready.",
 
