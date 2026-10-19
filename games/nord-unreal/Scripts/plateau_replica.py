@@ -1112,7 +1112,7 @@ def build_streets(world):
     surfaces = Surfaces()
     world.surfaces = surfaces
     counts = {k: 0 for k in (
-        'carriageway_quads', 'junction_polygons', 'sidewalk_pieces', 'concave_pieces', 'sidewalk_metres', 'curb_ramps',
+        'carriageway_quads', 'junction_polygons', 'sidewalk_pieces', 'concave_pieces', 'bowtie_pieces_dropped', 'sidewalk_metres', 'curb_ramps',
         'dropped_aprons', 'corner_pieces', 'yards', 'yard_square_metres', 'fence_metres', 'tree_pits',
         'stop_bars', 'stop_bars_signal', 'stop_bars_osm_stop', 'crosswalks_continental_white',
         'crosswalks_continental_yellow', 'crosswalks_lines_white', 'crosswalks_generated_at_stops',
@@ -1485,8 +1485,11 @@ def _sidewalk_strip(world, L, surfaces, strip, ramp_grid, ramp_points, counts):
         f0, f1 = k / pieces, (k + 1) / pieces
         c0, c1, o1, o0 = lerp(ca, cb, f0), lerp(ca, cb, f1), lerp(oa, ob, f1), lerp(oa, ob, f0)
         poly = [c0, c1, o1, o0]
-        if area(poly) < 50 or segments_cross(c0, c1, o1, o0) or segments_cross(c1, o1, o0, c0):
+        if segments_cross(c0, c1, o1, o0) or segments_cross(c1, o1, o0, c0):
+            counts['bowtie_pieces_dropped'] += 1
             continue   # only bow-tie slivers, where opposite edges cross; simple concave pieces stay
+        if area(poly) < 50:
+            continue
         concave = not convex(poly)
         mid = lerp(lerp(c0, c1, .5), lerp(o0, o1, .5), .5)
         if on_pavement(world, mid, strip['seg']['i']) or world.in_building(mid):
