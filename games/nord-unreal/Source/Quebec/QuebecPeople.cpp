@@ -703,13 +703,9 @@ void AQuebecCharacter::IgnoreCarBriefly(AActor* Car, float Seconds)
 {
     UWorld* World = GetWorld();
     if (!HasAuthority() || !World || !IsValid(Car)) return;
-    if (KnockIgnoredCar.IsValid() && KnockIgnoredCar.Get() != Car)
-    {
-        GetCapsuleComponent()->IgnoreActorWhenMoving(KnockIgnoredCar.Get(), false);
-        if (UPrimitiveComponent* Hull = Cast<UPrimitiveComponent>(KnockIgnoredCar->GetRootComponent())) Hull->IgnoreActorWhenMoving(this, false);
-    }
+    // Only the player's side: the car keeps its own list of people it passes through while they are down (QuebecDrive.cpp).
+    if (KnockIgnoredCar.IsValid() && KnockIgnoredCar.Get() != Car) GetCapsuleComponent()->IgnoreActorWhenMoving(KnockIgnoredCar.Get(), false);
     GetCapsuleComponent()->IgnoreActorWhenMoving(Car, true);
-    if (UPrimitiveComponent* Hull = Cast<UPrimitiveComponent>(Car->GetRootComponent())) Hull->IgnoreActorWhenMoving(this, true);
     KnockIgnoredCar = Car;
     KnockIgnoreUntil = World->GetTimeSeconds() + FMath::Clamp(Seconds, 0.f, 5.f);
     OnRep_Knock();
@@ -729,11 +725,10 @@ void AQuebecCharacter::ApplyKnockPose()
 {
     UWorld* World = GetWorld();
     if (!World) return;
-    // Server: the car that hit the player stops passing through it after a moment.
+    // Server: the flying player stops passing through the car that hit it after a moment.
     if (HasAuthority() && KnockIgnoredCar.IsValid() && World->GetTimeSeconds() >= KnockIgnoreUntil)
     {
         GetCapsuleComponent()->IgnoreActorWhenMoving(KnockIgnoredCar.Get(), false);
-        if (UPrimitiveComponent* Hull = Cast<UPrimitiveComponent>(KnockIgnoredCar->GetRootComponent())) Hull->IgnoreActorWhenMoving(this, false);
         KnockIgnoredCar.Reset();
     }
     const bool bKnocked = IsKnocked();
