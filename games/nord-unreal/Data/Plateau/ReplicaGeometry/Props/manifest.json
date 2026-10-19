@@ -1,0 +1,5462 @@
+{
+ "layer": "Props",
+ "generator": "Scripts/blender/plateau_props.py",
+ "frame": "x east, y north, cm, z up",
+ "local_frame": "prop-local, Unreal axes: X forward, Y right, Z up, cm; pivot at the base centre. OBJ files store (x, -y, z) of these coordinates with counter-clockwise outward winding, the Scripts/plateau_mesh.py file convention, so Unreal's OBJ import restores them. Yaw = atan2(dy, dx) of the game-frame facing direction.",
+ "blender": "5.1.2",
+ "unreal_destination": "/Game/Plateau/Replica/Props",
+ "batches": [
+  {
+   "file": "lamp_cobra_pole.obj",
+   "mesh": "SM_Props_lamp_cobra_pole",
+   "material": "PoleGalv",
+   "collision": "none",
+   "triangles": 258,
+   "bounds_cm": [
+    -16.0,
+    -15.22,
+    0.0,
+    175.1,
+    15.22,
+    812.2
+   ],
+   "prop": "lamp_cobra",
+   "part": "pole",
+   "sha256": "73f3d439720f49eee970f10a77234e556e1d93e68d61212493470d9de21f7973",
+   "variants": [
+    "PoleGrey"
+   ]
+  },
+  {
+   "file": "lamp_cobra_head.obj",
+   "mesh": "SM_Props_lamp_cobra_head",
+   "material": "LampHousing",
+   "collision": "none",
+   "triangles": 164,
+   "bounds_cm": [
+    165.0,
+    -12.36,
+    799.94,
+    240.0,
+    12.36,
+    816.06
+   ],
+   "prop": "lamp_cobra",
+   "part": "head",
+   "sha256": "84380ef0b54206a8556ec515b79c12b1ed914276e2f546eb7cf1d4d65ce3e828"
+  },
+  {
+   "file": "lamp_cobra_lens.obj",
+   "mesh": "SM_Props_lamp_cobra_lens",
+   "material": "LampLens3000K",
+   "collision": "none",
+   "triangles": 46,
+   "bounds_cm": [
+    174.0,
+    -10.5,
+    798.8,
+    236.0,
+    10.5,
+    800.8
+   ],
+   "prop": "lamp_cobra",
+   "part": "lens",
+   "sha256": "243b877df9c8185312ff97cd09d2296b86980e1150f181431d1ee9f41aeda7fc"
+  },
+  {
+   "file": "lamp_park_post.obj",
+   "mesh": "SM_Props_lamp_park_post",
+   "material": "IronBlack",
+   "collision": "none",
+   "triangles": 462,
+   "bounds_cm": [
+    -17.0,
+    -17.0,
+    0.0,
+    17.0,
+    17.0,
+    422.0
+   ],
+   "prop": "lamp_park",
+   "part": "post",
+   "sha256": "abfbc7197a0c85bde544addf63f8cb036fe0509d21a1f6d0f6dbe45a22adcc0e"
+  },
+  {
+   "file": "lamp_park_globe.obj",
+   "mesh": "SM_Props_lamp_park_globe",
+   "material": "GlobeWhite",
+   "collision": "none",
+   "triangles": 168,
+   "bounds_cm": [
+    -22.0,
+    -22.0,
+    366.0,
+    22.0,
+    22.0,
+    412.0
+   ],
+   "prop": "lamp_park",
+   "part": "globe",
+   "sha256": "9d05f1b2535792aae69dbc5a3ca8579fc261fec784602fe0c3f81168f6f424ba"
+  },
+  {
+   "file": "hydrant_body.obj",
+   "mesh": "SM_Props_hydrant_body",
+   "material": "HydrantRed",
+   "collision": "none",
+   "triangles": 436,
+   "bounds_cm": [
+    -15.24,
+    -25.0,
+    0.0,
+    24.5,
+    25.0,
+    78.5
+   ],
+   "prop": "hydrant",
+   "part": "body",
+   "sha256": "14c89bc914513f62e92dfc27d40b19cd197acc39796e9ab342f6a617f5479f90"
+  },
+  {
+   "file": "hydrant_flange.obj",
+   "mesh": "SM_Props_hydrant_flange",
+   "material": "HydrantIron",
+   "collision": "none",
+   "triangles": 38,
+   "bounds_cm": [
+    -13.86,
+    -13.86,
+    0.0,
+    13.86,
+    13.86,
+    3.5
+   ],
+   "prop": "hydrant",
+   "part": "flange",
+   "sha256": "e9c9a8cd77f7c1bfcd19c33f4f9fd838a108af8d11ba6f6bbae48d1c4ea49f69"
+  },
+  {
+   "file": "hydrant_marker.obj",
+   "mesh": "SM_Props_hydrant_marker",
+   "material": "HydrantRed",
+   "collision": "none",
+   "triangles": 12,
+   "bounds_cm": [
+    -18.5,
+    21.5,
+    0.0,
+    -13.5,
+    26.5,
+    150.0
+   ],
+   "prop": "hydrant",
+   "part": "marker",
+   "sha256": "bd03e01a2010fb6a95f517e1056449893c9499d0d5d5163e5edb5e563df3bbe8"
+  },
+  {
+   "file": "hydrant_marker_number.obj",
+   "mesh": "SM_Props_hydrant_marker_number",
+   "material": "LabelWhite",
+   "collision": "none",
+   "triangles": 12,
+   "bounds_cm": [
+    -13.55,
+    22.1,
+    113.0,
+    -13.25,
+    25.9,
+    127.0
+   ],
+   "prop": "hydrant",
+   "part": "marker_number",
+   "sha256": "199645c7412973363263cb5a5e1bcb51e8aecabc5d63ebd52c2a60a830623f20"
+  },
+  {
+   "file": "sign_stop_post.obj",
+   "mesh": "SM_Props_sign_stop_post",
+   "material": "PoleGalv",
+   "collision": "none",
+   "triangles": 24,
+   "bounds_cm": [
+    -3.3,
+    -3.3,
+    0.0,
+    3.3,
+    3.3,
+    250.8
+   ],
+   "prop": "sign_stop",
+   "part": "post",
+   "sha256": "5fcbd73a1b11cdb72a631486aa05022cf93bec1f7dbd44fee1ade62172394cba",
+   "variants": [
+    "PoleGrey"
+   ]
+  },
+  {
+   "file": "sign_stop_back.obj",
+   "mesh": "SM_Props_sign_stop_back",
+   "material": "SignBack",
+   "collision": "none",
+   "triangles": 46,
+   "bounds_cm": [
+    2.4,
+    -37.5,
+    172.5,
+    3.6,
+    37.5,
+    247.5
+   ],
+   "prop": "sign_stop",
+   "part": "back",
+   "sha256": "ebd5ca32cc35566346449509fa9f03b548e8c233955143f527c495685604d351"
+  },
+  {
+   "file": "sign_stop_face_white.obj",
+   "mesh": "SM_Props_sign_stop_face_white",
+   "material": "SignWhite",
+   "collision": "none",
+   "triangles": 108,
+   "bounds_cm": [
+    3.55,
+    -37.5,
+    172.5,
+    3.75,
+    37.5,
+    247.5
+   ],
+   "prop": "sign_stop",
+   "part": "face_white",
+   "sha256": "6e366747cf0293f3fd5e23577e582ab84fd4acec9de7a7c5a067611cd5f3fe75"
+  },
+  {
+   "file": "sign_stop_face_red.obj",
+   "mesh": "SM_Props_sign_stop_face_red",
+   "material": "SignRed",
+   "collision": "none",
+   "triangles": 6,
+   "bounds_cm": [
+    3.55,
+    -34.0,
+    176.0,
+    3.55,
+    34.0,
+    244.0
+   ],
+   "prop": "sign_stop",
+   "part": "face_red",
+   "sha256": "80fe3b29f1c591001835e6b53b7c570d33415db8a3f7038bdbe8f73b3748fa93"
+  },
+  {
+   "file": "sign_street_post.obj",
+   "mesh": "SM_Props_sign_street_post",
+   "material": "PoleGalv",
+   "collision": "none",
+   "triangles": 48,
+   "bounds_cm": [
+    -5.0,
+    -5.0,
+    0.0,
+    5.0,
+    5.0,
+    276.0
+   ],
+   "prop": "sign_street",
+   "part": "post",
+   "sha256": "8a8b3ee5a4a59e7167dcdba5a8afc13ee8f0cab7d3cc61ff7447822163b4358f",
+   "variants": [
+    "PoleGrey"
+   ]
+  },
+  {
+   "file": "sign_street_blade_b.obj",
+   "mesh": "SM_Props_sign_street_blade_b",
+   "material": "SignWhite",
+   "collision": "none",
+   "triangles": 44,
+   "bounds_cm": [
+    -50.0,
+    -0.25,
+    247.2,
+    50.0,
+    0.25,
+    271.2
+   ],
+   "prop": "sign_street",
+   "part": "blade_b",
+   "sha256": "c7812cf8abe60c17f719757bd67a31b57ee97db23dae110891b2e0529db080ea"
+  },
+  {
+   "file": "sign_street_blade_b_border.obj",
+   "mesh": "SM_Props_sign_street_blade_b_border",
+   "material": "SignBlack",
+   "collision": "none",
+   "triangles": 16,
+   "bounds_cm": [
+    -49.0,
+    -0.33,
+    248.2,
+    49.0,
+    0.33,
+    270.2
+   ],
+   "prop": "sign_street",
+   "part": "blade_b_border",
+   "sha256": "886db0fd8dd0c2d7775215ff7de86b21d2d86e13ef74a90b7a8f564e95db615e"
+  },
+  {
+   "file": "sign_street_blade_b_rosette.obj",
+   "mesh": "SM_Props_sign_street_blade_b_rosette",
+   "material": "SignRosette",
+   "collision": "none",
+   "triangles": 52,
+   "bounds_cm": [
+    -45.59,
+    -0.33,
+    253.11,
+    45.59,
+    0.33,
+    265.29
+   ],
+   "prop": "sign_street",
+   "part": "blade_b_rosette",
+   "sha256": "af5217f0b3234d1552dd999fd6cd30d3afce8838dbd3a04ca8e03b9ddc8c3fa2"
+  },
+  {
+   "file": "sign_street_blade_a.obj",
+   "mesh": "SM_Props_sign_street_blade_a",
+   "material": "SignWhite",
+   "collision": "none",
+   "triangles": 44,
+   "bounds_cm": [
+    -0.25,
+    -50.0,
+    276.0,
+    0.25,
+    50.0,
+    300.0
+   ],
+   "prop": "sign_street",
+   "part": "blade_a",
+   "sha256": "e8239a748e076dd8281d5945b1469284f06f49b7a943dce80db85354bd9cf066"
+  },
+  {
+   "file": "sign_street_blade_a_border.obj",
+   "mesh": "SM_Props_sign_street_blade_a_border",
+   "material": "SignBlack",
+   "collision": "none",
+   "triangles": 16,
+   "bounds_cm": [
+    -0.33,
+    -49.0,
+    277.0,
+    0.33,
+    49.0,
+    299.0
+   ],
+   "prop": "sign_street",
+   "part": "blade_a_border",
+   "sha256": "76a6ac208f847a398603b8bfe463de92bb3e3fea2b20080c324d368885b5f5f3"
+  },
+  {
+   "file": "sign_street_blade_a_rosette.obj",
+   "mesh": "SM_Props_sign_street_blade_a_rosette",
+   "material": "SignRosette",
+   "collision": "none",
+   "triangles": 52,
+   "bounds_cm": [
+    -0.33,
+    -45.59,
+    281.91,
+    0.33,
+    45.59,
+    294.09
+   ],
+   "prop": "sign_street",
+   "part": "blade_a_rosette",
+   "sha256": "37b018e826efd802b7a93c505b0e4cc450e4ae07a4fd5958a766aea9f0b209f0"
+  },
+  {
+   "file": "sign_oneway_post.obj",
+   "mesh": "SM_Props_sign_oneway_post",
+   "material": "PoleGalv",
+   "collision": "none",
+   "triangles": 24,
+   "bounds_cm": [
+    -3.3,
+    -3.3,
+    0.0,
+    3.3,
+    3.3,
+    240.8
+   ],
+   "prop": "sign_oneway",
+   "part": "post",
+   "sha256": "58a118eb37e96a2bc0216fdc3e70ad4709367d15ab53ceafe434a8958c194832",
+   "variants": [
+    "PoleGrey"
+   ]
+  },
+  {
+   "file": "sign_oneway_plate.obj",
+   "mesh": "SM_Props_sign_oneway_plate",
+   "material": "SignBack",
+   "collision": "none",
+   "triangles": 36,
+   "bounds_cm": [
+    2.4,
+    -45.0,
+    210.0,
+    3.85,
+    45.0,
+    240.0
+   ],
+   "prop": "sign_oneway",
+   "part": "plate",
+   "sha256": "be8037d8e05191e3a25414bfe08fbe549d6848d32e6906358c78547b9421ae12"
+  },
+  {
+   "file": "sign_oneway_face_black.obj",
+   "mesh": "SM_Props_sign_oneway_face_black",
+   "material": "SignBlack",
+   "collision": "none",
+   "triangles": 4,
+   "bounds_cm": [
+    3.27,
+    -42.5,
+    212.5,
+    3.93,
+    42.5,
+    237.5
+   ],
+   "prop": "sign_oneway",
+   "part": "face_black",
+   "sha256": "0d8145a7bbdb81c1e38ffdfa15d26443f0f10c842188422940b46da55ef5f3c6"
+  },
+  {
+   "file": "sign_oneway_face_white.obj",
+   "mesh": "SM_Props_sign_oneway_face_white",
+   "material": "SignWhite",
+   "collision": "none",
+   "triangles": 22,
+   "bounds_cm": [
+    3.12,
+    -44.0,
+    211.0,
+    4.08,
+    44.0,
+    239.0
+   ],
+   "prop": "sign_oneway",
+   "part": "face_white",
+   "sha256": "533b392783d5fea52e3f5512a72d651f1f1e2fd53e1f383866e4ee95d2160906"
+  },
+  {
+   "file": "sign_parking_post.obj",
+   "mesh": "SM_Props_sign_parking_post",
+   "material": "PoleGalv",
+   "collision": "none",
+   "triangles": 24,
+   "bounds_cm": [
+    -3.3,
+    -3.3,
+    0.0,
+    3.3,
+    3.3,
+    235.8
+   ],
+   "prop": "sign_parking",
+   "part": "post",
+   "sha256": "e431bfd86b7b62e11021b491cad6f171dfc81c1e61eec63203e82ada114d5c1f",
+   "variants": [
+    "PoleGrey"
+   ]
+  },
+  {
+   "file": "sign_parking_plate.obj",
+   "mesh": "SM_Props_sign_parking_plate",
+   "material": "SignBack",
+   "collision": "none",
+   "triangles": 36,
+   "bounds_cm": [
+    2.4,
+    -15.0,
+    177.5,
+    3.8,
+    15.0,
+    222.5
+   ],
+   "prop": "sign_parking",
+   "part": "plate",
+   "sha256": "720d462428a35fc4abeeed82ac432c953fa8876394a1303b647c05d56e5e6027"
+  },
+  {
+   "file": "sign_parking_face_white.obj",
+   "mesh": "SM_Props_sign_parking_face_white",
+   "material": "SignWhite",
+   "collision": "none",
+   "triangles": 2,
+   "bounds_cm": [
+    3.84,
+    -15.0,
+    177.5,
+    3.84,
+    15.0,
+    222.5
+   ],
+   "prop": "sign_parking",
+   "part": "face_white",
+   "sha256": "d3e40d1b62b2f1b697879cfa4a906e5168882f5f0e96aaa0ab6ed3bc448f8c9d"
+  },
+  {
+   "file": "sign_parking_face_black.obj",
+   "mesh": "SM_Props_sign_parking_face_black",
+   "material": "SignBlack",
+   "collision": "none",
+   "triangles": 265,
+   "bounds_cm": [
+    3.92,
+    -12.0,
+    180.6,
+    3.94,
+    12.0,
+    216.5
+   ],
+   "prop": "sign_parking",
+   "part": "face_black",
+   "sha256": "b046bc0e47c4048868c80496a163913ef9f8115f2bca6f85af78aba2ef420fa0"
+  },
+  {
+   "file": "sign_parking_face_red.obj",
+   "mesh": "SM_Props_sign_parking_face_red",
+   "material": "SignRed",
+   "collision": "none",
+   "triangles": 42,
+   "bounds_cm": [
+    3.97,
+    -7.6,
+    203.4,
+    4.0,
+    7.6,
+    218.6
+   ],
+   "prop": "sign_parking",
+   "part": "face_red",
+   "sha256": "c4d2980bf378653b74f9bde658407038c31944af6cd597e89ccc02cc3c8706ce"
+  },
+  {
+   "file": "bixi_dock_platform.obj",
+   "mesh": "SM_Props_bixi_dock_platform",
+   "material": "BixiDock",
+   "collision": "none",
+   "triangles": 44,
+   "bounds_cm": [
+    -35.0,
+    -260.0,
+    0.0,
+    35.0,
+    260.0,
+    8.0
+   ],
+   "prop": "bixi_dock",
+   "part": "platform",
+   "sha256": "7f1dc1e89232454b2d05583b6badaf40e2919c12db3501fd50ee6e0180f01ce6"
+  },
+  {
+   "file": "bixi_dock_platform_strip.obj",
+   "mesh": "SM_Props_bixi_dock_platform_strip",
+   "material": "BixiDark",
+   "collision": "none",
+   "triangles": 12,
+   "bounds_cm": [
+    -30.0,
+    -255.0,
+    8.0,
+    30.0,
+    255.0,
+    8.8
+   ],
+   "prop": "bixi_dock",
+   "part": "platform_strip",
+   "sha256": "449fab145c671e2ff37ca9e5869b2d54a0f5403056667a6407758ec1925e2f98"
+  },
+  {
+   "file": "bixi_dock_posts.obj",
+   "mesh": "SM_Props_bixi_dock_posts",
+   "material": "BixiDock",
+   "collision": "none",
+   "triangles": 264,
+   "bounds_cm": [
+    -35.07,
+    -227.5,
+    6.45,
+    -4.93,
+    187.5,
+    93.55
+   ],
+   "prop": "bixi_dock",
+   "part": "posts",
+   "sha256": "e60f948509e375e5cf5d5818cf7b2bc2fb21057dd650db50dd42d91147371eb7"
+  },
+  {
+   "file": "bixi_dock_locks.obj",
+   "mesh": "SM_Props_bixi_dock_locks",
+   "material": "BixiDark",
+   "collision": "none",
+   "triangles": 264,
+   "bounds_cm": [
+    -15.63,
+    -226.5,
+    75.81,
+    -6.37,
+    186.5,
+    92.19
+   ],
+   "prop": "bixi_dock",
+   "part": "locks",
+   "sha256": "f5fff2b576aad2118c4fc32542c0bded968e58940aecd345b5ecc267e007c4bd"
+  },
+  {
+   "file": "bixi_dock_lights.obj",
+   "mesh": "SM_Props_bixi_dock_lights",
+   "material": "BixiRed",
+   "collision": "none",
+   "triangles": 96,
+   "bounds_cm": [
+    -17.0,
+    -272.7,
+    86.8,
+    7.9,
+    182.5,
+    212.0
+   ],
+   "prop": "bixi_dock",
+   "part": "lights",
+   "sha256": "0876fd86bce1f30b2d7e15bdc530d61a956ea2d70cc6c7c94bbea882db077060"
+  },
+  {
+   "file": "bixi_dock_terminal.obj",
+   "mesh": "SM_Props_bixi_dock_terminal",
+   "material": "BixiDock",
+   "collision": "none",
+   "triangles": 44,
+   "bounds_cm": [
+    -27.0,
+    -271.0,
+    7.0,
+    7.0,
+    -209.0,
+    217.0
+   ],
+   "prop": "bixi_dock",
+   "part": "terminal",
+   "sha256": "d53f8eb3586a8dfbf76ab2af8c10525ba2f870239641131fc05f4ad3044bd6a3"
+  },
+  {
+   "file": "bixi_dock_terminal_header.obj",
+   "mesh": "SM_Props_bixi_dock_terminal_header",
+   "material": "BixiDark",
+   "collision": "none",
+   "triangles": 56,
+   "bounds_cm": [
+    -28.0,
+    -272.0,
+    98.0,
+    8.0,
+    -208.0,
+    218.0
+   ],
+   "prop": "bixi_dock",
+   "part": "terminal_header",
+   "sha256": "f470fbd2c854b12a92276b8f001e4e686a79488849c8923f8a5eff6bca9c0f47"
+  },
+  {
+   "file": "bixi_dock_screen.obj",
+   "mesh": "SM_Props_bixi_dock_screen",
+   "material": "BixiScreen",
+   "collision": "none",
+   "triangles": 12,
+   "bounds_cm": [
+    7.1,
+    -240.0,
+    129.0,
+    7.7,
+    -216.0,
+    147.0
+   ],
+   "prop": "bixi_dock",
+   "part": "screen",
+   "sha256": "7b2d4cbbf8b6a8848240fffbe9b09086f20a580aa5229e2094a8089c2ff79448"
+  },
+  {
+   "file": "bixi_dock_solar_pole.obj",
+   "mesh": "SM_Props_bixi_dock_solar_pole",
+   "material": "IronBlack",
+   "collision": "none",
+   "triangles": 48,
+   "bounds_cm": [
+    -28.0,
+    -292.0,
+    210.0,
+    -20.0,
+    -188.0,
+    346.73
+   ],
+   "prop": "bixi_dock",
+   "part": "solar_pole",
+   "sha256": "f2db2e2ac6e3b93510d32a2df0ba635ef4bee571bbd8d21f0f23ca365af8e6e6"
+  },
+  {
+   "file": "bixi_dock_solar_panels.obj",
+   "mesh": "SM_Props_bixi_dock_solar_panels",
+   "material": "SolarPanel",
+   "collision": "none",
+   "triangles": 88,
+   "bounds_cm": [
+    -48.48,
+    -297.5,
+    339.06,
+    0.48,
+    -182.5,
+    360.94
+   ],
+   "prop": "bixi_dock",
+   "part": "solar_panels",
+   "sha256": "a348c36a89de980de00502b25757e7b54e3540d3235dff218782b947d7ae2d7b"
+  },
+  {
+   "file": "bixi_bike_tyres.obj",
+   "mesh": "SM_Props_bixi_bike_tyres",
+   "material": "Rubber",
+   "collision": "none",
+   "triangles": 408,
+   "bounds_cm": [
+    -88.89,
+    -27.5,
+    0.0,
+    88.89,
+    27.51,
+    110.28
+   ],
+   "prop": "bixi_bike",
+   "part": "tyres",
+   "sha256": "7c410b21215cc3573861fb89e9eac3dfbd733dfb483bc7fe97649e9c5a2d112b"
+  },
+  {
+   "file": "bixi_bike_frame.obj",
+   "mesh": "SM_Props_bixi_bike_frame",
+   "material": "BixiFrame",
+   "collision": "none",
+   "triangles": 952,
+   "bounds_cm": [
+    -92.56,
+    -15.08,
+    3.59,
+    90.49,
+    15.08,
+    108.89
+   ],
+   "prop": "bixi_bike",
+   "part": "frame",
+   "sha256": "196a6edf8f947d4ac162de7c062d840fe6cdbad4d4458fbb2cc7dfb996b470bf"
+  },
+  {
+   "file": "bixi_bike_brand_red.obj",
+   "mesh": "SM_Props_bixi_bike_brand_red",
+   "material": "BixiRed",
+   "collision": "none",
+   "triangles": 56,
+   "bounds_cm": [
+    -63.0,
+    -15.0,
+    69.29,
+    77.25,
+    15.0,
+    103.39
+   ],
+   "prop": "bixi_bike",
+   "part": "brand_red",
+   "sha256": "99d673e88fad87af0ba16bcc589f5fe866b9e51c10682d0672ca72b193b67232"
+  },
+  {
+   "file": "bixi_bike_chain_guard.obj",
+   "mesh": "SM_Props_bixi_bike_chain_guard",
+   "material": "BixiDark",
+   "collision": "none",
+   "triangles": 56,
+   "bounds_cm": [
+    -53.0,
+    -10.5,
+    21.89,
+    0.5,
+    -5.0,
+    43.89
+   ],
+   "prop": "bixi_bike",
+   "part": "chain_guard",
+   "sha256": "63eabc8cbcd21e3316afbd4d4710db745cf1bb8d8e32e1d9be889af54b51b01b"
+  },
+  {
+   "file": "bin_recycling_body.obj",
+   "mesh": "SM_Props_bin_recycling_body",
+   "material": "BinBlue",
+   "collision": "none",
+   "triangles": 148,
+   "bounds_cm": [
+    -36.0,
+    -32.0,
+    3.0,
+    38.0,
+    32.0,
+    104.5
+   ],
+   "prop": "bin_recycling",
+   "part": "body",
+   "sha256": "681ad9c3cc939142b9ea6b70a27665ca857220bdbbc6837bb834ac1506d35d8c",
+   "variants": [
+    "BinBlueDark",
+    "BinBlueLight"
+   ]
+  },
+  {
+   "file": "bin_recycling_handle.obj",
+   "mesh": "SM_Props_bin_recycling_handle",
+   "material": "PlasticBlack",
+   "collision": "none",
+   "triangles": 44,
+   "bounds_cm": [
+    -42.55,
+    -23.8,
+    96.9,
+    -36.9,
+    23.8,
+    102.55
+   ],
+   "prop": "bin_recycling",
+   "part": "handle",
+   "sha256": "dc81b5e1c919b6aff123a78a31e1b9448e8689be87d77919319d6ed678900709"
+  },
+  {
+   "file": "bin_recycling_wheels.obj",
+   "mesh": "SM_Props_bin_recycling_wheels",
+   "material": "Rubber",
+   "collision": "none",
+   "triangles": 88,
+   "bounds_cm": [
+    -40.0,
+    -30.5,
+    -0.0,
+    -20.0,
+    30.5,
+    20.0
+   ],
+   "prop": "bin_recycling",
+   "part": "wheels",
+   "sha256": "fde81b62ab8b759fbcb6eacd87aadb96f8a99577db5e1ff4f3dd7438fc32c6e0"
+  },
+  {
+   "file": "bin_recycling_axle.obj",
+   "mesh": "SM_Props_bin_recycling_axle",
+   "material": "SteelDark",
+   "collision": "none",
+   "triangles": 20,
+   "bounds_cm": [
+    -31.2,
+    -31.0,
+    8.96,
+    -28.8,
+    31.0,
+    11.04
+   ],
+   "prop": "bin_recycling",
+   "part": "axle",
+   "sha256": "f63a7294de3a58c7791b658fb7df492b3a1492201362846cf5b7bf9302bab7c0"
+  },
+  {
+   "file": "bin_recycling_label.obj",
+   "mesh": "SM_Props_bin_recycling_label",
+   "material": "LabelWhite",
+   "collision": "none",
+   "triangles": 27,
+   "bounds_cm": [
+    30.83,
+    -8.39,
+    58.61,
+    31.99,
+    6.84,
+    73.1
+   ],
+   "prop": "bin_recycling",
+   "part": "label",
+   "sha256": "b51c2545315447d6deebbe7ed7467bf3dee2fd1adf2638b6b5b9c9eadb773b65"
+  },
+  {
+   "file": "bin_compost_body.obj",
+   "mesh": "SM_Props_bin_compost_body",
+   "material": "BinBrown",
+   "collision": "none",
+   "triangles": 256,
+   "bounds_cm": [
+    -22.0,
+    -25.15,
+    0.0,
+    23.9,
+    25.17,
+    53.73
+   ],
+   "prop": "bin_compost",
+   "part": "body",
+   "sha256": "e0dfba02872abaa28c4ff921a04221dc93868026a0cd6c7591d4a5349e2f4d17",
+   "variants": [
+    "BinBrownDark",
+    "BinBrownOlive"
+   ]
+  },
+  {
+   "file": "bin_compost_label.obj",
+   "mesh": "SM_Props_bin_compost_label",
+   "material": "LabelWhite",
+   "collision": "none",
+   "triangles": 12,
+   "bounds_cm": [
+    19.66,
+    -7.0,
+    21.5,
+    20.74,
+    7.0,
+    30.5
+   ],
+   "prop": "bin_compost",
+   "part": "label",
+   "sha256": "46e1095cf56cefd162002f12cb18ccceec5a42344e8dc1b4501476b4f32b1f38"
+  },
+  {
+   "file": "bin_garbage_bags.obj",
+   "mesh": "SM_Props_bin_garbage_bags",
+   "material": "BagBlack",
+   "collision": "none",
+   "triangles": 522,
+   "bounds_cm": [
+    -27.28,
+    -33.64,
+    0.0,
+    42.46,
+    35.25,
+    72.53
+   ],
+   "prop": "bin_garbage",
+   "part": "bags",
+   "sha256": "8cac208490ef1faefbf1d9a5d4abaacef06e82e0c31e51dd6969e0e3c7e68a21",
+   "variants": [
+    "BagGreen",
+    "BagGrey"
+   ]
+  },
+  {
+   "file": "cone_base.obj",
+   "mesh": "SM_Props_cone_base",
+   "material": "PlasticBlack",
+   "collision": "none",
+   "triangles": 44,
+   "bounds_cm": [
+    -19.0,
+    -19.0,
+    0.0,
+    19.0,
+    19.0,
+    3.2
+   ],
+   "prop": "cone",
+   "part": "base",
+   "sha256": "d228cda114e14bfd741afd0fe56fc9f0499f44780d16fff12b46ee9ed69de1ee"
+  },
+  {
+   "file": "cone_body.obj",
+   "mesh": "SM_Props_cone_body",
+   "material": "ConeOrange",
+   "collision": "none",
+   "triangles": 174,
+   "bounds_cm": [
+    -15.5,
+    -15.5,
+    3.0,
+    15.5,
+    15.5,
+    71.0
+   ],
+   "prop": "cone",
+   "part": "body",
+   "sha256": "634709cd8cf7a4c636fd8acfa760f9672c8dc77eeb31106a807754f2ea5f8929",
+   "variants": [
+    "ConeFaded"
+   ]
+  },
+  {
+   "file": "cone_bands.obj",
+   "mesh": "SM_Props_cone_bands",
+   "material": "ReflectWhite",
+   "collision": "none",
+   "triangles": 64,
+   "bounds_cm": [
+    -9.93,
+    -9.93,
+    30.0,
+    9.93,
+    9.93,
+    55.0
+   ],
+   "prop": "cone",
+   "part": "bands",
+   "sha256": "94f158af2750f2d0c914139df6315a32b5cc97efa5fc83f1947281c2622590dc"
+  },
+  {
+   "file": "barrier_chantier_feet.obj",
+   "mesh": "SM_Props_barrier_chantier_feet",
+   "material": "PlasticBlack",
+   "collision": "none",
+   "triangles": 100,
+   "bounds_cm": [
+    -35.0,
+    -102.0,
+    0.0,
+    35.0,
+    102.0,
+    115.0
+   ],
+   "prop": "barrier_chantier",
+   "part": "feet",
+   "sha256": "6cdc3346af49cbd71681bac03a223aa846d1af3d11f91360b609332abbdc8743"
+  },
+  {
+   "file": "barrier_chantier_frame.obj",
+   "mesh": "SM_Props_barrier_chantier_frame",
+   "material": "BarrierOrange",
+   "collision": "none",
+   "triangles": 112,
+   "bounds_cm": [
+    -3.0,
+    -98.0,
+    8.0,
+    3.0,
+    98.0,
+    108.0
+   ],
+   "prop": "barrier_chantier",
+   "part": "frame",
+   "sha256": "6d658c4893a6aabd160fe7244420754ab62bc4a094891b7bdaeea24233019d70"
+  },
+  {
+   "file": "barrier_chantier_stripes_orange.obj",
+   "mesh": "SM_Props_barrier_chantier_stripes_orange",
+   "material": "BarrierOrange",
+   "collision": "none",
+   "triangles": 48,
+   "bounds_cm": [
+    -1.4,
+    -86.05,
+    47.0,
+    1.4,
+    96.0,
+    103.0
+   ],
+   "prop": "barrier_chantier",
+   "part": "stripes_orange",
+   "sha256": "84d3c0aa69e8bd53593d6da8137746804b32ba6653c95da9060a167f1fe1433b"
+  },
+  {
+   "file": "barrier_chantier_stripes_white.obj",
+   "mesh": "SM_Props_barrier_chantier_stripes_white",
+   "material": "ReflectWhite",
+   "collision": "none",
+   "triangles": 48,
+   "bounds_cm": [
+    -1.4,
+    -96.0,
+    47.0,
+    1.4,
+    86.05,
+    103.0
+   ],
+   "prop": "barrier_chantier",
+   "part": "stripes_white",
+   "sha256": "1616537cf1cc494ff448f29ddea34c3ed00ff4527b51730ae62daf7815fb23ff"
+  },
+  {
+   "file": "barrier_chantier_flasher.obj",
+   "mesh": "SM_Props_barrier_chantier_flasher",
+   "material": "AmberLamp",
+   "collision": "none",
+   "triangles": 58,
+   "bounds_cm": [
+    -6.0,
+    -100.71,
+    115.0,
+    6.0,
+    -89.29,
+    120.5
+   ],
+   "prop": "barrier_chantier",
+   "part": "flasher",
+   "sha256": "3f0977f323cd6c81199ea0a2b30f3e9c72a17c9c3c3cd73d9fc1b58b099e0e11"
+  },
+  {
+   "file": "utility_pole_pole.obj",
+   "mesh": "SM_Props_utility_pole_pole",
+   "material": "WoodPole",
+   "collision": "none",
+   "triangles": 90,
+   "bounds_cm": [
+    -15.5,
+    -120.0,
+    0.0,
+    15.5,
+    120.0,
+    1053.0
+   ],
+   "prop": "utility_pole",
+   "part": "pole",
+   "sha256": "2a9cc0416ac745b34b8d4450f681814e910542e20a2a51507b9006e2db61db01",
+   "variants": [
+    "WoodPoleGrey",
+    "WoodPoleDark"
+   ]
+  },
+  {
+   "file": "utility_pole_hardware.obj",
+   "mesh": "SM_Props_utility_pole_hardware",
+   "material": "SteelDark",
+   "collision": "none",
+   "triangles": 124,
+   "bounds_cm": [
+    -4.8,
+    -108.95,
+    815.0,
+    14.0,
+    108.95,
+    991.5
+   ],
+   "prop": "utility_pole",
+   "part": "hardware",
+   "sha256": "fb6366e253557a8c1b17cf450e98a1cc581341527a1561228d9893a679c68659"
+  },
+  {
+   "file": "utility_pole_insulators.obj",
+   "mesh": "SM_Props_utility_pole_insulators",
+   "material": "Insulator",
+   "collision": "none",
+   "triangles": 312,
+   "bounds_cm": [
+    -5.6,
+    -113.6,
+    991.0,
+    5.6,
+    113.6,
+    1003.5
+   ],
+   "prop": "utility_pole",
+   "part": "insulators",
+   "sha256": "c18d16222fe8bbc0ed6dcac4bc8f0de0c6aaea60873bc246f5f525196b950ede",
+   "variants": [
+    "InsulatorWhite"
+   ]
+  },
+  {
+   "file": "utility_pole_spools.obj",
+   "mesh": "SM_Props_utility_pole_spools",
+   "material": "InsulatorWhite",
+   "collision": "none",
+   "triangles": 228,
+   "bounds_cm": [
+    12.5,
+    -3.0,
+    820.5,
+    21.5,
+    3.0,
+    879.5
+   ],
+   "prop": "utility_pole",
+   "part": "spools",
+   "sha256": "5a8e40b71e0c623e4f23331c60e5ccf36cc55c6dbea50209d6a436830f13edf7"
+  },
+  {
+   "file": "utility_pole_tag.obj",
+   "mesh": "SM_Props_utility_pole_tag",
+   "material": "LabelWhite",
+   "collision": "none",
+   "triangles": 12,
+   "bounds_cm": [
+    14.1,
+    -4.5,
+    184.0,
+    14.5,
+    4.5,
+    196.0
+   ],
+   "prop": "utility_pole",
+   "part": "tag",
+   "sha256": "0d4d1ce441dc103f51e946188f5a3a8b6e822b8f9a829a1a189aebd477e30f54"
+  },
+  {
+   "file": "laundry_line_pulleys.obj",
+   "mesh": "SM_Props_laundry_line_pulleys",
+   "material": "Chrome",
+   "collision": "none",
+   "triangles": 88,
+   "bounds_cm": [
+    -306.0,
+    -1.5,
+    107.98,
+    306.0,
+    1.5,
+    119.98
+   ],
+   "prop": "laundry_line",
+   "part": "pulleys",
+   "sha256": "efb6273e11e7793b44c3aea5c4862c7890bb1a3da8e2a1b63b1e1f74af56d81b"
+  },
+  {
+   "file": "laundry_line_pulleys_steelDark.obj",
+   "mesh": "SM_Props_laundry_line_pulleys_steelDark",
+   "material": "SteelDark",
+   "collision": "none",
+   "triangles": 24,
+   "bounds_cm": [
+    -313.0,
+    -1.5,
+    112.48,
+    313.0,
+    1.5,
+    115.48
+   ],
+   "prop": "laundry_line",
+   "part": "pulleys_steelDark",
+   "sha256": "c3dbd1dd91266fbc68a2112b759386c71d42a5672ccd724488fcae09f5d8e0c0"
+  },
+  {
+   "file": "laundry_line_rope.obj",
+   "mesh": "SM_Props_laundry_line_rope",
+   "material": "LaundryRope",
+   "collision": "none",
+   "triangles": 392,
+   "bounds_cm": [
+    -300.04,
+    -0.9,
+    84.75,
+    300.04,
+    0.9,
+    120.33
+   ],
+   "prop": "laundry_line",
+   "part": "rope",
+   "sha256": "a15ee91eff7390aa2aaee33d7fc9af191b98d52d7b0a848eca50b2c422cc26be"
+  },
+  {
+   "file": "laundry_line_cloth_a.obj",
+   "mesh": "SM_Props_laundry_line_cloth_a",
+   "material": "ClothWhite",
+   "collision": "none",
+   "triangles": 44,
+   "bounds_cm": [
+    -238.0,
+    -1.76,
+    0.0,
+    239.0,
+    2.87,
+    98.52
+   ],
+   "prop": "laundry_line",
+   "part": "cloth_a",
+   "sha256": "62bb2ea13d19bdf3934792d5a9be11d1f7394fa20897990c85f2f4c725a7396b",
+   "variants": [
+    "ClothGrey",
+    "ClothPink"
+   ]
+  },
+  {
+   "file": "laundry_line_cloth_b.obj",
+   "mesh": "SM_Props_laundry_line_cloth_b",
+   "material": "ClothBlue",
+   "collision": "none",
+   "triangles": 68,
+   "bounds_cm": [
+    -124.0,
+    -3.66,
+    8.36,
+    -17.0,
+    1.59,
+    88.66
+   ],
+   "prop": "laundry_line",
+   "part": "cloth_b",
+   "sha256": "1d4c8564804de74ef329882e39cbc7774b1a6c04eb8b3d267a3f3c2c24082500",
+   "variants": [
+    "ClothDenim",
+    "ClothGreen"
+   ]
+  },
+  {
+   "file": "laundry_line_cloth_c.obj",
+   "mesh": "SM_Props_laundry_line_cloth_c",
+   "material": "ClothOchre",
+   "collision": "none",
+   "triangles": 12,
+   "bounds_cm": [
+    6.0,
+    -0.2,
+    24.37,
+    54.0,
+    4.2,
+    86.27
+   ],
+   "prop": "laundry_line",
+   "part": "cloth_c",
+   "sha256": "4ea81b4d0d0bdba01891819cc00a95a8e95349c9ee7031be37b9991f4498ab1f",
+   "variants": [
+    "ClothRed",
+    "ClothPink"
+   ]
+  },
+  {
+   "file": "laundry_line_cloth_d.obj",
+   "mesh": "SM_Props_laundry_line_cloth_d",
+   "material": "ClothRed",
+   "collision": "none",
+   "triangles": 64,
+   "bounds_cm": [
+    66.0,
+    -1.92,
+    38.67,
+    170.0,
+    1.57,
+    93.1
+   ],
+   "prop": "laundry_line",
+   "part": "cloth_d",
+   "sha256": "270fc9088cc1cac888f282e1c4467a46c0a513c94cd47bf154eda0864e58dd74",
+   "variants": [
+    "ClothOchre",
+    "ClothGreen"
+   ]
+  },
+  {
+   "file": "bike_locked_tyres.obj",
+   "mesh": "SM_Props_bike_locked_tyres",
+   "material": "Rubber",
+   "collision": "none",
+   "triangles": 364,
+   "bounds_cm": [
+    -86.91,
+    -21.5,
+    -0.0,
+    86.91,
+    1.32,
+    97.35
+   ],
+   "prop": "bike_locked",
+   "part": "tyres",
+   "sha256": "123213d444f493df043e946922999d16bc51bf229b726fef0d1a962b6bb119f1"
+  },
+  {
+   "file": "bike_locked_spokes.obj",
+   "mesh": "SM_Props_bike_locked_spokes",
+   "material": "Chrome",
+   "collision": "none",
+   "triangles": 640,
+   "bounds_cm": [
+    -84.3,
+    -42.9,
+    2.67,
+    84.3,
+    10.39,
+    108.1
+   ],
+   "prop": "bike_locked",
+   "part": "spokes",
+   "sha256": "7381adc2d5e5eb8cc4ba12fccd61d43ff7c890c9aaf4b41f3c900aa1a2898140"
+  },
+  {
+   "file": "bike_locked_frame.obj",
+   "mesh": "SM_Props_bike_locked_frame",
+   "material": "BikeRed",
+   "collision": "none",
+   "triangles": 136,
+   "bounds_cm": [
+    -54.99,
+    -16.66,
+    28.35,
+    37.7,
+    0.96,
+    92.07
+   ],
+   "prop": "bike_locked",
+   "part": "frame",
+   "sha256": "2806f497d914904ba04295034c6ef446ffc90cdd5772a83dcee24fa61a5145ea",
+   "variants": [
+    "BikeTeal",
+    "BikeBlack",
+    "BikeCream"
+   ]
+  },
+  {
+   "file": "bike_locked_lock.obj",
+   "mesh": "SM_Props_bike_locked_lock",
+   "material": "LockYellow",
+   "collision": "none",
+   "triangles": 100,
+   "bounds_cm": [
+    -43.0,
+    -13.72,
+    47.25,
+    -29.0,
+    -3.77,
+    66.28
+   ],
+   "prop": "bike_locked",
+   "part": "lock",
+   "sha256": "43287367ca5e0eb690934b644514994f10febe5192adbe31178a30dfbd5d3813"
+  },
+  {
+   "file": "ac_unit_case.obj",
+   "mesh": "SM_Props_ac_unit_case",
+   "material": "AcBody",
+   "collision": "none",
+   "triangles": 296,
+   "bounds_cm": [
+    -22.2,
+    -46.09,
+    4.0,
+    31.75,
+    46.09,
+    40.0
+   ],
+   "prop": "ac_unit",
+   "part": "case",
+   "sha256": "c9953a1d9062e1c15fc1b20bf77a363c961e69f9b2da8237b66108ea3ebe146f",
+   "variants": [
+    "AcBeige",
+    "AcGrey"
+   ]
+  },
+  {
+   "file": "ac_unit_grille.obj",
+   "mesh": "SM_Props_ac_unit_grille",
+   "material": "AcGrille",
+   "collision": "none",
+   "triangles": 84,
+   "bounds_cm": [
+    -3.5,
+    -27.0,
+    8.0,
+    30.7,
+    27.0,
+    40.5
+   ],
+   "prop": "ac_unit",
+   "part": "grille",
+   "sha256": "f1b4beaafc8fd85798a2305fb2ffe7e6bec69e91656ab2cc831e5bc35905c570"
+  },
+  {
+   "file": "ac_unit_brackets.obj",
+   "mesh": "SM_Props_ac_unit_brackets",
+   "material": "SteelDark",
+   "collision": "none",
+   "triangles": 48,
+   "bounds_cm": [
+    -20.05,
+    -22.8,
+    0.0,
+    28.0,
+    22.8,
+    4.7
+   ],
+   "prop": "ac_unit",
+   "part": "brackets",
+   "sha256": "a9f560f0307ea6a076643d882d7d5d0af73365fd2e79eb1987c855879b6514ee"
+  },
+  {
+   "file": "flower_box_box.obj",
+   "mesh": "SM_Props_flower_box_box",
+   "material": "BoxWood",
+   "collision": "none",
+   "triangles": 88,
+   "bounds_cm": [
+    -11.0,
+    -46.0,
+    4.78,
+    12.4,
+    46.0,
+    22.78
+   ],
+   "prop": "flower_box",
+   "part": "box",
+   "sha256": "3b7d9b0cfe8fa87dc55decf0b89bf64d2515bea19bf509545ea648098f540908",
+   "variants": [
+    "BoxGreen",
+    "BoxWhite"
+   ]
+  },
+  {
+   "file": "flower_box_soil.obj",
+   "mesh": "SM_Props_flower_box_soil",
+   "material": "Soil",
+   "collision": "none",
+   "triangles": 12,
+   "bounds_cm": [
+    -9.0,
+    -43.0,
+    21.98,
+    9.0,
+    43.0,
+    22.78
+   ],
+   "prop": "flower_box",
+   "part": "soil",
+   "sha256": "2aeb0aa26ef3d25323922637a4f6d64bbc00199bf2ffeeb5743c2d5a8be3c687"
+  },
+  {
+   "file": "flower_box_brackets.obj",
+   "mesh": "SM_Props_flower_box_brackets",
+   "material": "IronBlack",
+   "collision": "none",
+   "triangles": 64,
+   "bounds_cm": [
+    -11.8,
+    -30.8,
+    0.0,
+    8.8,
+    30.8,
+    12.78
+   ],
+   "prop": "flower_box",
+   "part": "brackets",
+   "sha256": "b514bf372de48d45b2b8a16af22005bff79e55ee3c9cee97e3f9b98c4a8ee26e"
+  },
+  {
+   "file": "flower_box_leaves.obj",
+   "mesh": "SM_Props_flower_box_leaves",
+   "material": "Leaf",
+   "collision": "none",
+   "triangles": 604,
+   "bounds_cm": [
+    -10.34,
+    -44.73,
+    8.54,
+    14.24,
+    43.25,
+    36.93
+   ],
+   "prop": "flower_box",
+   "part": "leaves",
+   "sha256": "d80da7413139c8cab819c290dcacfb2d5a60288d1f2cf60ca04574d495c0d7e5"
+  },
+  {
+   "file": "flower_box_flowers.obj",
+   "mesh": "SM_Props_flower_box_flowers",
+   "material": "FlowerRed",
+   "collision": "none",
+   "triangles": 648,
+   "bounds_cm": [
+    -10.41,
+    -37.6,
+    29.52,
+    11.29,
+    42.65,
+    41.42
+   ],
+   "prop": "flower_box",
+   "part": "flowers",
+   "sha256": "f3ca60037e1947f94736f942e4328d2eb190dffdc1b97f3ea03f72cc0efe7e28",
+   "variants": [
+    "FlowerPink",
+    "FlowerWhite"
+   ]
+  },
+  {
+   "file": "bench_ends.obj",
+   "mesh": "SM_Props_bench_ends",
+   "material": "BenchIron",
+   "collision": "none",
+   "triangles": 280,
+   "bounds_cm": [
+    -31.53,
+    -83.5,
+    0.0,
+    29.6,
+    83.5,
+    88.33
+   ],
+   "prop": "bench",
+   "part": "ends",
+   "sha256": "1418937c3cd805c86cc401ae00c301fbf14a45dae01d96eabbf59208ebbbcd08"
+  },
+  {
+   "file": "bench_slats.obj",
+   "mesh": "SM_Props_bench_slats",
+   "material": "BenchWood",
+   "collision": "none",
+   "triangles": 308,
+   "bounds_cm": [
+    -30.84,
+    -92.0,
+    44.74,
+    24.75,
+    92.0,
+    86.65
+   ],
+   "prop": "bench",
+   "part": "slats",
+   "sha256": "eb98ad49d6379527f71f9f9be27de7d0b2eb9555984ef25789b3933157364827",
+   "variants": [
+    "BenchWoodLight",
+    "BenchGreen"
+   ]
+  },
+  {
+   "file": "mailbox_plinth.obj",
+   "mesh": "SM_Props_mailbox_plinth",
+   "material": "MailBlack",
+   "collision": "none",
+   "triangles": 68,
+   "bounds_cm": [
+    -24.0,
+    -28.0,
+    0.0,
+    24.0,
+    28.0,
+    94.5
+   ],
+   "prop": "mailbox",
+   "part": "plinth",
+   "sha256": "e645f7650b6148e83ed1ebf68d3bc0fbceda0439d1c3b6e98c5d34abd7b40c3c"
+  },
+  {
+   "file": "mailbox_body.obj",
+   "mesh": "SM_Props_mailbox_body",
+   "material": "MailRed",
+   "collision": "none",
+   "triangles": 124,
+   "bounds_cm": [
+    -22.0,
+    -26.0,
+    8.0,
+    25.59,
+    26.0,
+    114.8
+   ],
+   "prop": "mailbox",
+   "part": "body",
+   "sha256": "16dc9d779279e7de6b66207a5285a7b4105fe6a4af4a24358213725004825d9d"
+  },
+  {
+   "file": "mailbox_handle.obj",
+   "mesh": "SM_Props_mailbox_handle",
+   "material": "Chrome",
+   "collision": "none",
+   "triangles": 36,
+   "bounds_cm": [
+    25.0,
+    -8.49,
+    92.43,
+    26.92,
+    8.6,
+    93.57
+   ],
+   "prop": "mailbox",
+   "part": "handle",
+   "sha256": "4629d43f375bfa316723fb3c65c3fd0fc4563d46bd87fdaf275ae477c0bdf6a5"
+  },
+  {
+   "file": "mailbox_plate.obj",
+   "mesh": "SM_Props_mailbox_plate",
+   "material": "LabelWhite",
+   "collision": "none",
+   "triangles": 12,
+   "bounds_cm": [
+    22.0,
+    -11.0,
+    63.5,
+    22.4,
+    11.0,
+    76.5
+   ],
+   "prop": "mailbox",
+   "part": "plate",
+   "sha256": "20b024743dbec9f92de808e3269036b557de402a35c210e496955514a7a0fdd9"
+  },
+  {
+   "file": "police_lightbar_base.obj",
+   "mesh": "SM_Props_police_lightbar_base",
+   "material": "PlasticBlack",
+   "collision": "none",
+   "triangles": 68,
+   "bounds_cm": [
+    -13.0,
+    -62.0,
+    0.0,
+    13.0,
+    62.0,
+    8.0
+   ],
+   "prop": "police_lightbar",
+   "part": "base",
+   "sha256": "ba71664bf8daab783cfc684b9f79456a6d36a623df98f7eaa5a125cb74ba283a"
+  },
+  {
+   "file": "police_lightbar_lens_red.obj",
+   "mesh": "SM_Props_police_lightbar_lens_red",
+   "material": "LightbarRed",
+   "collision": "none",
+   "triangles": 88,
+   "bounds_cm": [
+    -12.0,
+    -55.75,
+    8.0,
+    12.0,
+    -11.75,
+    15.0
+   ],
+   "prop": "police_lightbar",
+   "part": "lens_red",
+   "sha256": "193dfdf9ddfa7adf059b570559303e1f301970cd598f71ee588355fd59254b79"
+  },
+  {
+   "file": "police_lightbar_lens_clear.obj",
+   "mesh": "SM_Props_police_lightbar_lens_clear",
+   "material": "LightbarClear",
+   "collision": "none",
+   "triangles": 44,
+   "bounds_cm": [
+    -12.0,
+    -10.75,
+    8.0,
+    12.0,
+    10.75,
+    15.0
+   ],
+   "prop": "police_lightbar",
+   "part": "lens_clear",
+   "sha256": "67920744f0e7114dbb8eb39a60ebd7998e08a57138587e59363c633569af3060"
+  },
+  {
+   "file": "police_lightbar_lens_blue.obj",
+   "mesh": "SM_Props_police_lightbar_lens_blue",
+   "material": "LightbarBlue",
+   "collision": "none",
+   "triangles": 88,
+   "bounds_cm": [
+    -12.0,
+    11.75,
+    8.0,
+    12.0,
+    55.75,
+    15.0
+   ],
+   "prop": "police_lightbar",
+   "part": "lens_blue",
+   "sha256": "00c4a1493a46d16f72b398d8f8c30609ab0ae203e92a06570552e3c2ef826526"
+  },
+  {
+   "file": "police_lightbar_end_caps.obj",
+   "mesh": "SM_Props_police_lightbar_end_caps",
+   "material": "Chrome",
+   "collision": "none",
+   "triangles": 88,
+   "bounds_cm": [
+    -11.0,
+    -62.1,
+    5.0,
+    11.0,
+    62.1,
+    13.0
+   ],
+   "prop": "police_lightbar",
+   "part": "end_caps",
+   "sha256": "857f8bef6b0f970015802490607cc6ad0eeb807566c409a709c99787059beb3a"
+  },
+  {
+   "file": "dog_small_body.obj",
+   "mesh": "SM_Props_dog_small_body",
+   "material": "DogCoatTan",
+   "collision": "none",
+   "triangles": 184,
+   "bounds_cm": [
+    -21.0,
+    -7.61,
+    11.48,
+    21.0,
+    7.61,
+    32.13
+   ],
+   "prop": "dog_small",
+   "part": "body",
+   "sha256": "f40d682f29550cc1cf5a465b95fb3f48a379a9a2710a3648ffbe45b2fcea517f",
+   "variants": [
+    "DogCoatWhite",
+    "DogCoatBlack"
+   ]
+  },
+  {
+   "file": "dog_small_merged_coat.obj",
+   "mesh": "SM_Props_dog_small_merged_coat",
+   "material": "DogCoatTan",
+   "collision": "none",
+   "triangles": 788,
+   "bounds_cm": [
+    -23.29,
+    -8.69,
+    0.0,
+    29.7,
+    9.2,
+    42.59
+   ],
+   "prop": "dog_small",
+   "part": "merged_coat",
+   "sha256": "121a4e6f9ded1aa2813e592bad4a5dbf47fd0cc711ccbb9c69fbde0cd3c31998",
+   "variants": [
+    "DogCoatWhite",
+    "DogCoatBlack"
+   ]
+  },
+  {
+   "file": "dog_small_collar.obj",
+   "mesh": "SM_Props_dog_small_collar",
+   "material": "CollarRed",
+   "collision": "none",
+   "triangles": 132,
+   "bounds_cm": [
+    12.63,
+    -6.37,
+    18.71,
+    17.27,
+    6.37,
+    32.54
+   ],
+   "prop": "dog_small",
+   "part": "collar",
+   "sha256": "ab399c069e907cd7c1bf2cf74cba42e4a074d122c0bae6750264cb1c84471eb8",
+   "variants": [
+    "CollarBlue",
+    "CollarGreen"
+   ]
+  },
+  {
+   "file": "dog_small_merged_collar.obj",
+   "mesh": "SM_Props_dog_small_merged_collar",
+   "material": "CollarRed",
+   "collision": "none",
+   "triangles": 132,
+   "bounds_cm": [
+    12.63,
+    -6.37,
+    19.1,
+    17.27,
+    6.37,
+    32.93
+   ],
+   "prop": "dog_small",
+   "part": "merged_collar",
+   "sha256": "b141bb2bc083afdeaae26c8d0305d6ccf01c0e79fb736d68dc1fec0e7105e533",
+   "variants": [
+    "CollarBlue",
+    "CollarGreen"
+   ]
+  },
+  {
+   "file": "dog_small_head.obj",
+   "mesh": "SM_Props_dog_small_head",
+   "material": "DogCoatTan",
+   "collision": "none",
+   "triangles": 184,
+   "bounds_cm": [
+    -5.31,
+    -6.71,
+    -2.81,
+    14.58,
+    6.71,
+    16.0
+   ],
+   "prop": "dog_small",
+   "part": "head",
+   "sha256": "fd16ee8ab63a328894d35083268b17526ae7badb7b029cb824d42828da7052d8",
+   "variants": [
+    "DogCoatWhite",
+    "DogCoatBlack"
+   ]
+  },
+  {
+   "file": "dog_small_head_dark.obj",
+   "mesh": "SM_Props_dog_small_head_dark",
+   "material": "DogDark",
+   "collision": "none",
+   "triangles": 108,
+   "bounds_cm": [
+    8.75,
+    -4.28,
+    0.67,
+    15.89,
+    4.28,
+    7.73
+   ],
+   "prop": "dog_small",
+   "part": "head_dark",
+   "sha256": "0adb02d07561d525bd6ef6e758b976f9e2d1f82796ddff06463f65c7ac244dcd"
+  },
+  {
+   "file": "dog_small_merged_dark.obj",
+   "mesh": "SM_Props_dog_small_merged_dark",
+   "material": "DogDark",
+   "collision": "none",
+   "triangles": 108,
+   "bounds_cm": [
+    23.87,
+    -4.28,
+    27.26,
+    31.01,
+    4.28,
+    34.32
+   ],
+   "prop": "dog_small",
+   "part": "merged_dark",
+   "sha256": "00fa3d4cbb109ae4499a4fb13c31c39377c8dd6c6a6a6d7826258242df435b68"
+  },
+  {
+   "file": "dog_small_leg_fl.obj",
+   "mesh": "SM_Props_dog_small_leg_fl",
+   "material": "DogCoatTan",
+   "collision": "none",
+   "triangles": 94,
+   "bounds_cm": [
+    -4.05,
+    -3.75,
+    -18.04,
+    6.26,
+    4.16,
+    2.63
+   ],
+   "prop": "dog_small",
+   "part": "leg_fl",
+   "sha256": "62aea30dfeb58c40b65a8d8ffcd7f378d86e774332f158ee60a7a5d7ce394d2c",
+   "variants": [
+    "DogCoatWhite",
+    "DogCoatBlack"
+   ]
+  },
+  {
+   "file": "dog_small_leg_fr.obj",
+   "mesh": "SM_Props_dog_small_leg_fr",
+   "material": "DogCoatTan",
+   "collision": "none",
+   "triangles": 94,
+   "bounds_cm": [
+    -4.05,
+    -3.75,
+    -18.04,
+    6.26,
+    4.16,
+    2.63
+   ],
+   "prop": "dog_small",
+   "part": "leg_fr",
+   "sha256": "f700d86d7808d3d5c5db99ac58aa2acf254ecf22c362ee44ba24d7f148130445",
+   "variants": [
+    "DogCoatWhite",
+    "DogCoatBlack"
+   ]
+  },
+  {
+   "file": "dog_small_leg_rl.obj",
+   "mesh": "SM_Props_dog_small_leg_rl",
+   "material": "DogCoatTan",
+   "collision": "none",
+   "triangles": 94,
+   "bounds_cm": [
+    -4.86,
+    -4.69,
+    -18.99,
+    6.34,
+    5.2,
+    4.31
+   ],
+   "prop": "dog_small",
+   "part": "leg_rl",
+   "sha256": "88bec0b459a695d7ff08ce600757c72c76e9c0d0d808ed7e80b6a36051603c9b",
+   "variants": [
+    "DogCoatWhite",
+    "DogCoatBlack"
+   ]
+  },
+  {
+   "file": "dog_small_leg_rr.obj",
+   "mesh": "SM_Props_dog_small_leg_rr",
+   "material": "DogCoatTan",
+   "collision": "none",
+   "triangles": 94,
+   "bounds_cm": [
+    -4.86,
+    -4.69,
+    -18.99,
+    6.34,
+    5.2,
+    4.31
+   ],
+   "prop": "dog_small",
+   "part": "leg_rr",
+   "sha256": "a4842d95b05221603916b298543e5eaf40ad9a76d5bc322826041cbf2c2f5b6c",
+   "variants": [
+    "DogCoatWhite",
+    "DogCoatBlack"
+   ]
+  },
+  {
+   "file": "dog_small_tail.obj",
+   "mesh": "SM_Props_dog_small_tail",
+   "material": "DogCoatTan",
+   "collision": "none",
+   "triangles": 44,
+   "bounds_cm": [
+    -3.55,
+    -1.9,
+    -0.87,
+    1.4,
+    1.9,
+    10.74
+   ],
+   "prop": "dog_small",
+   "part": "tail",
+   "sha256": "fba9f30556fb60497afbad543494a98be1e7bad10c06058ab9d412731a771a05",
+   "variants": [
+    "DogCoatWhite",
+    "DogCoatBlack"
+   ]
+  },
+  {
+   "file": "dog_medium_body.obj",
+   "mesh": "SM_Props_dog_medium_body",
+   "material": "DogCoatBrown",
+   "collision": "none",
+   "triangles": 184,
+   "bounds_cm": [
+    -30.0,
+    -11.41,
+    18.7,
+    30.05,
+    11.41,
+    48.32
+   ],
+   "prop": "dog_medium",
+   "part": "body",
+   "sha256": "858ce599d5d04e8d74de8e9f433ce251230767be7ac582921fec69b0297e6487",
+   "variants": [
+    "DogCoatBlack",
+    "DogCoatGrey"
+   ]
+  },
+  {
+   "file": "dog_medium_merged_coat.obj",
+   "mesh": "SM_Props_dog_medium_merged_coat",
+   "material": "DogCoatBrown",
+   "collision": "none",
+   "triangles": 896,
+   "bounds_cm": [
+    -47.8,
+    -12.49,
+    0.0,
+    41.4,
+    13.2,
+    57.81
+   ],
+   "prop": "dog_medium",
+   "part": "merged_coat",
+   "sha256": "eb9f904c7892acd9f8b59b459e014eb21daa1037d03e0e5682c8e169fe6a76d1",
+   "variants": [
+    "DogCoatBlack",
+    "DogCoatGrey"
+   ]
+  },
+  {
+   "file": "dog_medium_collar.obj",
+   "mesh": "SM_Props_dog_medium_collar",
+   "material": "CollarRed",
+   "collision": "none",
+   "triangles": 132,
+   "bounds_cm": [
+    17.93,
+    -9.38,
+    30.12,
+    24.43,
+    9.38,
+    49.74
+   ],
+   "prop": "dog_medium",
+   "part": "collar",
+   "sha256": "a81fe67331253d5d0fd6f6885626e36053d63fdf2109be1176ac2ee0b91de31d",
+   "variants": [
+    "CollarBlue",
+    "CollarGreen"
+   ]
+  },
+  {
+   "file": "dog_medium_merged_collar.obj",
+   "mesh": "SM_Props_dog_medium_merged_collar",
+   "material": "CollarRed",
+   "collision": "none",
+   "triangles": 132,
+   "bounds_cm": [
+    17.93,
+    -9.38,
+    30.66,
+    24.43,
+    9.38,
+    50.28
+   ],
+   "prop": "dog_medium",
+   "part": "merged_collar",
+   "sha256": "54e7fbaf830f15558b3a57b0409ff19951acb746a3288fb38bbb1b0deae870e8",
+   "variants": [
+    "CollarBlue",
+    "CollarGreen"
+   ]
+  },
+  {
+   "file": "dog_medium_head.obj",
+   "mesh": "SM_Props_dog_medium_head",
+   "material": "DogCoatBrown",
+   "collision": "none",
+   "triangles": 280,
+   "bounds_cm": [
+    -6.87,
+    -10.91,
+    -3.63,
+    19.8,
+    10.91,
+    15.73
+   ],
+   "prop": "dog_medium",
+   "part": "head",
+   "sha256": "daf311990f514b150042cccbfdfc889682f8d8641d530fa253b69825e4ac96de",
+   "variants": [
+    "DogCoatBlack",
+    "DogCoatGrey"
+   ]
+  },
+  {
+   "file": "dog_medium_head_dark.obj",
+   "mesh": "SM_Props_dog_medium_head_dark",
+   "material": "DogDark",
+   "collision": "none",
+   "triangles": 108,
+   "bounds_cm": [
+    11.33,
+    -5.54,
+    0.56,
+    21.57,
+    5.54,
+    10.01
+   ],
+   "prop": "dog_medium",
+   "part": "head_dark",
+   "sha256": "36b06101c69344bf75c50599b695e169f69cb7a5b5c72f464a48c5162297d241"
+  },
+  {
+   "file": "dog_medium_merged_dark.obj",
+   "mesh": "SM_Props_dog_medium_merged_dark",
+   "material": "DogDark",
+   "collision": "none",
+   "triangles": 108,
+   "bounds_cm": [
+    32.93,
+    -5.54,
+    41.5,
+    43.17,
+    5.54,
+    50.95
+   ],
+   "prop": "dog_medium",
+   "part": "merged_dark",
+   "sha256": "552319712e69a99f7e4b27ff3f3c123ce02650b7d70df47635045b3527821f85"
+  },
+  {
+   "file": "dog_medium_leg_fl.obj",
+   "mesh": "SM_Props_dog_medium_leg_fl",
+   "material": "DogCoatBrown",
+   "collision": "none",
+   "triangles": 94,
+   "bounds_cm": [
+    -5.6,
+    -5.19,
+    -28.34,
+    8.87,
+    5.76,
+    3.86
+   ],
+   "prop": "dog_medium",
+   "part": "leg_fl",
+   "sha256": "5afc33ef99acf4754ff45ebbc852b6b5c26bdbbe165d7c15fe33b9a5b81d718a",
+   "variants": [
+    "DogCoatBlack",
+    "DogCoatGrey"
+   ]
+  },
+  {
+   "file": "dog_medium_leg_fr.obj",
+   "mesh": "SM_Props_dog_medium_leg_fr",
+   "material": "DogCoatBrown",
+   "collision": "none",
+   "triangles": 94,
+   "bounds_cm": [
+    -5.6,
+    -5.19,
+    -28.34,
+    8.87,
+    5.76,
+    3.86
+   ],
+   "prop": "dog_medium",
+   "part": "leg_fr",
+   "sha256": "a5bea85b41155355bfe2b1b095cc9fceeee8e7a7b26bb75d8ad6d645625c6f30",
+   "variants": [
+    "DogCoatBlack",
+    "DogCoatGrey"
+   ]
+  },
+  {
+   "file": "dog_medium_leg_rl.obj",
+   "mesh": "SM_Props_dog_medium_leg_rl",
+   "material": "DogCoatBrown",
+   "collision": "none",
+   "triangles": 94,
+   "bounds_cm": [
+    -6.71,
+    -6.49,
+    -29.74,
+    9.34,
+    7.2,
+    6.25
+   ],
+   "prop": "dog_medium",
+   "part": "leg_rl",
+   "sha256": "82d925118192c3a1cce35f56356a81a27dae1da3a25dccbee24ed94ab6c88eb7",
+   "variants": [
+    "DogCoatBlack",
+    "DogCoatGrey"
+   ]
+  },
+  {
+   "file": "dog_medium_leg_rr.obj",
+   "mesh": "SM_Props_dog_medium_leg_rr",
+   "material": "DogCoatBrown",
+   "collision": "none",
+   "triangles": 94,
+   "bounds_cm": [
+    -6.71,
+    -6.49,
+    -29.74,
+    9.34,
+    7.2,
+    6.25
+   ],
+   "prop": "dog_medium",
+   "part": "leg_rr",
+   "sha256": "0c8e879f8ad1cb981c9fee5c1a156de69985a13c8c4c4fae6dc5d984915c4fb3",
+   "variants": [
+    "DogCoatBlack",
+    "DogCoatGrey"
+   ]
+  },
+  {
+   "file": "dog_medium_tail.obj",
+   "mesh": "SM_Props_dog_medium_tail",
+   "material": "DogCoatBrown",
+   "collision": "none",
+   "triangles": 56,
+   "bounds_cm": [
+    -19.6,
+    -2.8,
+    -2.17,
+    1.08,
+    2.8,
+    18.27
+   ],
+   "prop": "dog_medium",
+   "part": "tail",
+   "sha256": "260979b2b20bf59edcec5644ca4f3bd2ae261b65de2caa563ceb7bac7b701439",
+   "variants": [
+    "DogCoatBlack",
+    "DogCoatGrey"
+   ]
+  },
+  {
+   "file": "dog_large_body.obj",
+   "mesh": "SM_Props_dog_large_body",
+   "material": "DogCoatGolden",
+   "collision": "none",
+   "triangles": 184,
+   "bounds_cm": [
+    -40.0,
+    -14.74,
+    23.92,
+    40.0,
+    14.74,
+    62.45
+   ],
+   "prop": "dog_large",
+   "part": "body",
+   "sha256": "3a7d939981c0d9bc6038d1c115a626fa6052b634ac8e3294fec4e2aebc243127",
+   "variants": [
+    "DogCoatBlack",
+    "DogCoatChocolate"
+   ]
+  },
+  {
+   "file": "dog_large_merged_coat.obj",
+   "mesh": "SM_Props_dog_large_merged_coat",
+   "material": "DogCoatGolden",
+   "collision": "none",
+   "triangles": 896,
+   "bounds_cm": [
+    -63.73,
+    -16.4,
+    0.0,
+    54.42,
+    17.35,
+    75.83
+   ],
+   "prop": "dog_large",
+   "part": "merged_coat",
+   "sha256": "1dd54b30c4795ddaabc124657468576ee9555d91d4e0cfa51665877332d54794",
+   "variants": [
+    "DogCoatBlack",
+    "DogCoatChocolate"
+   ]
+  },
+  {
+   "file": "dog_large_collar.obj",
+   "mesh": "SM_Props_dog_large_collar",
+   "material": "CollarRed",
+   "collision": "none",
+   "triangles": 132,
+   "bounds_cm": [
+    23.95,
+    -12.39,
+    39.53,
+    32.54,
+    12.39,
+    64.95
+   ],
+   "prop": "dog_large",
+   "part": "collar",
+   "sha256": "9bd2f5e825c844fbeb7f18a64e8126063ea8f33375912e0dbc1a401950402f29",
+   "variants": [
+    "CollarBlue",
+    "CollarGreen"
+   ]
+  },
+  {
+   "file": "dog_large_merged_collar.obj",
+   "mesh": "SM_Props_dog_large_merged_collar",
+   "material": "CollarRed",
+   "collision": "none",
+   "triangles": 132,
+   "bounds_cm": [
+    23.95,
+    -12.39,
+    40.25,
+    32.54,
+    12.39,
+    65.67
+   ],
+   "prop": "dog_large",
+   "part": "merged_collar",
+   "sha256": "1ed897bf3d644fef0e043395d7a9a1f0c606ab6a1cf718ef2df5f6863f821438",
+   "variants": [
+    "CollarBlue",
+    "CollarGreen"
+   ]
+  },
+  {
+   "file": "dog_large_head.obj",
+   "mesh": "SM_Props_dog_large_head",
+   "material": "DogCoatGolden",
+   "collision": "none",
+   "triangles": 280,
+   "bounds_cm": [
+    -8.44,
+    -13.39,
+    -4.46,
+    25.62,
+    13.39,
+    19.31
+   ],
+   "prop": "dog_large",
+   "part": "head",
+   "sha256": "915e3b3c6a1ec93d874a8940e336ca8cba63971317fe34401f8ae56fd614e07b",
+   "variants": [
+    "DogCoatBlack",
+    "DogCoatChocolate"
+   ]
+  },
+  {
+   "file": "dog_large_head_dark.obj",
+   "mesh": "SM_Props_dog_large_head_dark",
+   "material": "DogDark",
+   "collision": "none",
+   "triangles": 108,
+   "bounds_cm": [
+    13.9,
+    -6.8,
+    0.39,
+    27.74,
+    6.8,
+    12.29
+   ],
+   "prop": "dog_large",
+   "part": "head_dark",
+   "sha256": "27ec81c821c540dc346ac039c3b0051fe3e528a8b4678daf43e6987d4b3cbceb"
+  },
+  {
+   "file": "dog_large_merged_dark.obj",
+   "mesh": "SM_Props_dog_large_merged_dark",
+   "material": "DogDark",
+   "collision": "none",
+   "triangles": 108,
+   "bounds_cm": [
+    42.7,
+    -6.8,
+    53.71,
+    56.54,
+    6.8,
+    65.61
+   ],
+   "prop": "dog_large",
+   "part": "merged_dark",
+   "sha256": "cf16ad1847e5040227d18dfbc4b3386138b56af153c6be659b28a3c0ee33928a"
+  },
+  {
+   "file": "dog_large_leg_fl.obj",
+   "mesh": "SM_Props_dog_large_leg_fl",
+   "material": "DogCoatGolden",
+   "collision": "none",
+   "triangles": 94,
+   "bounds_cm": [
+    -7.47,
+    -6.92,
+    -36.67,
+    11.76,
+    7.68,
+    5.1
+   ],
+   "prop": "dog_large",
+   "part": "leg_fl",
+   "sha256": "eb979d4c24f7d0fcf428731b5dd60cc2b6f47e869b1b8ba22e661ead48e8c7ad",
+   "variants": [
+    "DogCoatBlack",
+    "DogCoatChocolate"
+   ]
+  },
+  {
+   "file": "dog_large_leg_fr.obj",
+   "mesh": "SM_Props_dog_large_leg_fr",
+   "material": "DogCoatGolden",
+   "collision": "none",
+   "triangles": 94,
+   "bounds_cm": [
+    -7.47,
+    -6.92,
+    -36.67,
+    11.76,
+    7.68,
+    5.1
+   ],
+   "prop": "dog_large",
+   "part": "leg_fr",
+   "sha256": "d1fadc9cf0a49cee096ed59d42fec3f5c627d6c57e1ac7fef9ac96e9a967524e",
+   "variants": [
+    "DogCoatBlack",
+    "DogCoatChocolate"
+   ]
+  },
+  {
+   "file": "dog_large_leg_rl.obj",
+   "mesh": "SM_Props_dog_large_leg_rl",
+   "material": "DogCoatGolden",
+   "collision": "none",
+   "triangles": 94,
+   "bounds_cm": [
+    -8.96,
+    -8.65,
+    -38.52,
+    12.26,
+    9.6,
+    8.27
+   ],
+   "prop": "dog_large",
+   "part": "leg_rl",
+   "sha256": "154c0aecea9f5fd899a3a1baa89cda0bb3caf20abc83351e755b96aacd594be3",
+   "variants": [
+    "DogCoatBlack",
+    "DogCoatChocolate"
+   ]
+  },
+  {
+   "file": "dog_large_leg_rr.obj",
+   "mesh": "SM_Props_dog_large_leg_rr",
+   "material": "DogCoatGolden",
+   "collision": "none",
+   "triangles": 94,
+   "bounds_cm": [
+    -8.96,
+    -8.65,
+    -38.52,
+    12.26,
+    9.6,
+    8.27
+   ],
+   "prop": "dog_large",
+   "part": "leg_rr",
+   "sha256": "007c276c55d33807a2a2bbbf27ccb0a562e58a0ea49df6485b20a8c4b61a64aa",
+   "variants": [
+    "DogCoatBlack",
+    "DogCoatChocolate"
+   ]
+  },
+  {
+   "file": "dog_large_tail.obj",
+   "mesh": "SM_Props_dog_large_tail",
+   "material": "DogCoatGolden",
+   "collision": "none",
+   "triangles": 56,
+   "bounds_cm": [
+    -26.13,
+    -3.7,
+    -2.87,
+    1.43,
+    3.7,
+    24.36
+   ],
+   "prop": "dog_large",
+   "part": "tail",
+   "sha256": "1ac06cce9bb7dd4771e47832de79313e0d14655cbf529081f8bdb1024d357304",
+   "variants": [
+    "DogCoatBlack",
+    "DogCoatChocolate"
+   ]
+  },
+  {
+   "file": "stroller_frame.obj",
+   "mesh": "SM_Props_stroller_frame",
+   "material": "StrollerFrame",
+   "collision": "none",
+   "triangles": 360,
+   "bounds_cm": [
+    -47.88,
+    -27.5,
+    11.05,
+    30.95,
+    27.5,
+    107.65
+   ],
+   "prop": "stroller",
+   "part": "frame",
+   "sha256": "235d74a6635feb99536863ff77c1fbfe34075e45f9bd867b8c677dbe170d64ae",
+   "variants": [
+    "StrollerSilver"
+   ]
+  },
+  {
+   "file": "stroller_merged_frame.obj",
+   "mesh": "SM_Props_stroller_merged_frame",
+   "material": "StrollerFrame",
+   "collision": "none",
+   "triangles": 360,
+   "bounds_cm": [
+    -47.88,
+    -27.5,
+    10.96,
+    30.95,
+    27.5,
+    107.57
+   ],
+   "prop": "stroller",
+   "part": "merged_frame",
+   "sha256": "30984981b778839c6348c358eaeca651333e67ce40737af4c48bd326723fd5c9",
+   "variants": [
+    "StrollerSilver"
+   ]
+  },
+  {
+   "file": "stroller_seat.obj",
+   "mesh": "SM_Props_stroller_seat",
+   "material": "FabricNavy",
+   "collision": "none",
+   "triangles": 220,
+   "bounds_cm": [
+    -25.46,
+    -20.5,
+    31.02,
+    27.39,
+    20.5,
+    83.07
+   ],
+   "prop": "stroller",
+   "part": "seat",
+   "sha256": "69c1bf1687f1f627b7a00e0738632f56bbedb7615759dab1f4682b9f67d1b99c",
+   "variants": [
+    "FabricGrey",
+    "FabricOlive"
+   ]
+  },
+  {
+   "file": "stroller_merged_seat.obj",
+   "mesh": "SM_Props_stroller_merged_seat",
+   "material": "FabricNavy",
+   "collision": "none",
+   "triangles": 220,
+   "bounds_cm": [
+    -25.46,
+    -20.5,
+    30.94,
+    27.39,
+    20.5,
+    82.98
+   ],
+   "prop": "stroller",
+   "part": "merged_seat",
+   "sha256": "ff70fe977c0a3412fe44317919f538afecac092bd2a7a95463305a29d259a457",
+   "variants": [
+    "FabricGrey",
+    "FabricOlive"
+   ]
+  },
+  {
+   "file": "stroller_canopy.obj",
+   "mesh": "SM_Props_stroller_canopy",
+   "material": "FabricCharcoal",
+   "collision": "none",
+   "triangles": 124,
+   "bounds_cm": [
+    -22.65,
+    -21.0,
+    65.0,
+    -3.0,
+    21.0,
+    97.75
+   ],
+   "prop": "stroller",
+   "part": "canopy",
+   "sha256": "608cde36b3a506807565a7b8a162cb46388192bd3bb3a98d21b719cae7d11447",
+   "variants": [
+    "FabricBurgundy",
+    "FabricSand"
+   ]
+  },
+  {
+   "file": "stroller_merged_canopy.obj",
+   "mesh": "SM_Props_stroller_merged_canopy",
+   "material": "FabricCharcoal",
+   "collision": "none",
+   "triangles": 124,
+   "bounds_cm": [
+    -22.65,
+    -21.0,
+    64.92,
+    -3.0,
+    21.0,
+    97.67
+   ],
+   "prop": "stroller",
+   "part": "merged_canopy",
+   "sha256": "544b79ef0a52e4204d627bad9f59ce352972bbed2be4a04f92a8f12b27563f90",
+   "variants": [
+    "FabricBurgundy",
+    "FabricSand"
+   ]
+  },
+  {
+   "file": "stroller_wheel_fl.obj",
+   "mesh": "SM_Props_stroller_wheel_fl",
+   "material": "Rubber",
+   "collision": "none",
+   "triangles": 168,
+   "bounds_cm": [
+    -9.42,
+    -3.0,
+    -9.42,
+    9.42,
+    3.0,
+    9.42
+   ],
+   "prop": "stroller",
+   "part": "wheel_fl",
+   "sha256": "f624b54b68509e42333eea51a93fe6300e809060a94b4bb78c51c327f7969447"
+  },
+  {
+   "file": "stroller_merged_wheels.obj",
+   "mesh": "SM_Props_stroller_merged_wheels",
+   "material": "Rubber",
+   "collision": "none",
+   "triangles": 672,
+   "bounds_cm": [
+    -43.91,
+    -30.5,
+    0.0,
+    39.42,
+    30.5,
+    27.82
+   ],
+   "prop": "stroller",
+   "part": "merged_wheels",
+   "sha256": "7a49f7e4897d08118684e038ccea9517d8225c783f20c4add643f28aa9a29413"
+  },
+  {
+   "file": "stroller_wheel_fr.obj",
+   "mesh": "SM_Props_stroller_wheel_fr",
+   "material": "Rubber",
+   "collision": "none",
+   "triangles": 168,
+   "bounds_cm": [
+    -9.42,
+    -3.0,
+    -9.42,
+    9.42,
+    3.0,
+    9.42
+   ],
+   "prop": "stroller",
+   "part": "wheel_fr",
+   "sha256": "d1df88d4b07772f9a87af6a25e4f624888f7d42e168a002eb74ff0b0600e308b"
+  },
+  {
+   "file": "stroller_wheel_rl.obj",
+   "mesh": "SM_Props_stroller_wheel_rl",
+   "material": "Rubber",
+   "collision": "none",
+   "triangles": 168,
+   "bounds_cm": [
+    -13.91,
+    -3.0,
+    -13.91,
+    13.91,
+    3.0,
+    13.91
+   ],
+   "prop": "stroller",
+   "part": "wheel_rl",
+   "sha256": "8298890dc951dfd5e7a7e9752d1d1552e1d731c19007b1f348275a6fe1270d69"
+  },
+  {
+   "file": "stroller_wheel_rr.obj",
+   "mesh": "SM_Props_stroller_wheel_rr",
+   "material": "Rubber",
+   "collision": "none",
+   "triangles": 168,
+   "bounds_cm": [
+    -13.91,
+    -3.0,
+    -13.91,
+    13.91,
+    3.0,
+    13.91
+   ],
+   "prop": "stroller",
+   "part": "wheel_rr",
+   "sha256": "465cda5b48a49249b50bceda39f8c9153350b38df006e41183a564095059782c"
+  },
+  {
+   "file": "grocery_bag_bag.obj",
+   "mesh": "SM_Props_grocery_bag_bag",
+   "material": "Kraft",
+   "collision": "none",
+   "triangles": 140,
+   "bounds_cm": [
+    -9.2,
+    -15.3,
+    0.0,
+    9.2,
+    15.3,
+    43.45
+   ],
+   "prop": "grocery_bag",
+   "part": "bag",
+   "sha256": "972cbba59e8f933f983b54992d1da491a6a5adf4aa906b58616e18461711eeb1"
+  },
+  {
+   "file": "grocery_bag_bag_inner.obj",
+   "mesh": "SM_Props_grocery_bag_bag_inner",
+   "material": "KraftDark",
+   "collision": "none",
+   "triangles": 12,
+   "bounds_cm": [
+    -8.4,
+    -14.4,
+    27.2,
+    8.4,
+    14.4,
+    27.6
+   ],
+   "prop": "grocery_bag",
+   "part": "bag_inner",
+   "sha256": "fe5d1143697496dab7bc0f27766d2754d6b4e2434b36b733dc2fb42b156e5122"
+  },
+  {
+   "file": "grocery_bag_bread.obj",
+   "mesh": "SM_Props_grocery_bag_bread",
+   "material": "Bread",
+   "collision": "none",
+   "triangles": 64,
+   "bounds_cm": [
+    -16.24,
+    -7.89,
+    8.0,
+    -0.95,
+    11.33,
+    60.65
+   ],
+   "prop": "grocery_bag",
+   "part": "bread",
+   "sha256": "70e0daec4fc34c404dced9119d6faf9223688472fcc9db2542f3a7e3495d1f3a"
+  },
+  {
+   "file": "grocery_bag_leeks.obj",
+   "mesh": "SM_Props_grocery_bag_leeks",
+   "material": "LeekWhite",
+   "collision": "none",
+   "triangles": 40,
+   "bounds_cm": [
+    -1.31,
+    -0.44,
+    11.75,
+    5.88,
+    10.99,
+    30.95
+   ],
+   "prop": "grocery_bag",
+   "part": "leeks",
+   "sha256": "2de06057f9a5c68d18f146047744241970d762bce6e4952133370019c4e1fb8c"
+  },
+  {
+   "file": "grocery_bag_leaves.obj",
+   "mesh": "SM_Props_grocery_bag_leaves",
+   "material": "Leaf",
+   "collision": "none",
+   "triangles": 64,
+   "bounds_cm": [
+    -2.22,
+    -1.5,
+    30.45,
+    9.62,
+    12.89,
+    52.17
+   ],
+   "prop": "grocery_bag",
+   "part": "leaves",
+   "sha256": "0b50c8d975c6826bdd68f3684513343107d2cba0a80b7d9d4f2b71502b26f7fc"
+  }
+ ],
+ "materials": {
+  "PoleGalv": {
+   "base_color_srgb": "#8c9092",
+   "roughness": 0.45,
+   "metallic": 0.7
+  },
+  "PoleGrey": {
+   "base_color_srgb": "#6f7275",
+   "roughness": 0.5,
+   "metallic": 0.5
+  },
+  "IronBlack": {
+   "base_color_srgb": "#1e2424",
+   "roughness": 0.5,
+   "metallic": 0.6
+  },
+  "SteelDark": {
+   "base_color_srgb": "#2b2d30",
+   "roughness": 0.45,
+   "metallic": 0.7
+  },
+  "Chrome": {
+   "base_color_srgb": "#c8cccf",
+   "roughness": 0.25,
+   "metallic": 1.0
+  },
+  "Rubber": {
+   "base_color_srgb": "#151515",
+   "roughness": 0.85,
+   "metallic": 0
+  },
+  "PlasticBlack": {
+   "base_color_srgb": "#1c1c1c",
+   "roughness": 0.6,
+   "metallic": 0
+  },
+  "LampHousing": {
+   "base_color_srgb": "#6f7275",
+   "roughness": 0.45,
+   "metallic": 0.6
+  },
+  "LampLens3000K": {
+   "base_color_srgb": "#ffb46b",
+   "roughness": 0.3,
+   "metallic": 0,
+   "emissive_srgb": "#ffb46b",
+   "emissive_strength": 6
+  },
+  "GlobeWhite": {
+   "base_color_srgb": "#edede6",
+   "roughness": 0.2,
+   "metallic": 0,
+   "emissive_srgb": "#edede6",
+   "emissive_strength": 3
+  },
+  "HydrantRed": {
+   "base_color_srgb": "#bb1815",
+   "roughness": 0.45,
+   "metallic": 0.1
+  },
+  "HydrantIron": {
+   "base_color_srgb": "#2b2b2b",
+   "roughness": 0.6,
+   "metallic": 0.3
+  },
+  "SignRed": {
+   "base_color_srgb": "#c8102e",
+   "roughness": 0.4,
+   "metallic": 0
+  },
+  "SignWhite": {
+   "base_color_srgb": "#f4f4f0",
+   "roughness": 0.4,
+   "metallic": 0
+  },
+  "SignBlack": {
+   "base_color_srgb": "#111111",
+   "roughness": 0.5,
+   "metallic": 0
+  },
+  "SignRosette": {
+   "base_color_srgb": "#d52b1e",
+   "roughness": 0.4,
+   "metallic": 0
+  },
+  "SignBack": {
+   "base_color_srgb": "#a9adb0",
+   "roughness": 0.4,
+   "metallic": 0.8
+  },
+  "BixiDock": {
+   "base_color_srgb": "#8c9095",
+   "roughness": 0.45,
+   "metallic": 0.5
+  },
+  "BixiDark": {
+   "base_color_srgb": "#2a2d31",
+   "roughness": 0.5,
+   "metallic": 0.3
+  },
+  "BixiRed": {
+   "base_color_srgb": "#d52b1e",
+   "roughness": 0.4,
+   "metallic": 0
+  },
+  "BixiFrame": {
+   "base_color_srgb": "#a9adb0",
+   "roughness": 0.4,
+   "metallic": 0.6
+  },
+  "BixiScreen": {
+   "base_color_srgb": "#9fd3e6",
+   "roughness": 0.2,
+   "metallic": 0,
+   "emissive_srgb": "#9fd3e6",
+   "emissive_strength": 1.5
+  },
+  "SolarPanel": {
+   "base_color_srgb": "#1b2a44",
+   "roughness": 0.2,
+   "metallic": 0.3
+  },
+  "BinBlue": {
+   "base_color_srgb": "#1f5fae",
+   "roughness": 0.55,
+   "metallic": 0
+  },
+  "BinBlueDark": {
+   "base_color_srgb": "#1a4a86",
+   "roughness": 0.55,
+   "metallic": 0
+  },
+  "BinBlueLight": {
+   "base_color_srgb": "#2f78c4",
+   "roughness": 0.55,
+   "metallic": 0
+  },
+  "BinBrown": {
+   "base_color_srgb": "#5e4130",
+   "roughness": 0.55,
+   "metallic": 0
+  },
+  "BinBrownDark": {
+   "base_color_srgb": "#45301f",
+   "roughness": 0.55,
+   "metallic": 0
+  },
+  "BinBrownOlive": {
+   "base_color_srgb": "#5a4a2c",
+   "roughness": 0.55,
+   "metallic": 0
+  },
+  "LabelWhite": {
+   "base_color_srgb": "#f2f2ee",
+   "roughness": 0.5,
+   "metallic": 0
+  },
+  "BagBlack": {
+   "base_color_srgb": "#121314",
+   "roughness": 0.3,
+   "metallic": 0
+  },
+  "BagGreen": {
+   "base_color_srgb": "#1f3324",
+   "roughness": 0.3,
+   "metallic": 0
+  },
+  "BagGrey": {
+   "base_color_srgb": "#3a3d40",
+   "roughness": 0.3,
+   "metallic": 0
+  },
+  "ConeOrange": {
+   "base_color_srgb": "#f26a1b",
+   "roughness": 0.5,
+   "metallic": 0
+  },
+  "ConeFaded": {
+   "base_color_srgb": "#e0743a",
+   "roughness": 0.6,
+   "metallic": 0
+  },
+  "ReflectWhite": {
+   "base_color_srgb": "#f2f2ee",
+   "roughness": 0.35,
+   "metallic": 0
+  },
+  "BarrierOrange": {
+   "base_color_srgb": "#f07a1a",
+   "roughness": 0.5,
+   "metallic": 0
+  },
+  "AmberLamp": {
+   "base_color_srgb": "#ffb000",
+   "roughness": 0.3,
+   "metallic": 0,
+   "emissive_srgb": "#ffb000",
+   "emissive_strength": 4
+  },
+  "WoodPole": {
+   "base_color_srgb": "#6b5a47",
+   "roughness": 0.9,
+   "metallic": 0
+  },
+  "WoodPoleGrey": {
+   "base_color_srgb": "#7a7268",
+   "roughness": 0.9,
+   "metallic": 0
+  },
+  "WoodPoleDark": {
+   "base_color_srgb": "#4f4235",
+   "roughness": 0.9,
+   "metallic": 0
+  },
+  "Insulator": {
+   "base_color_srgb": "#5e8c7a",
+   "roughness": 0.15,
+   "metallic": 0
+  },
+  "InsulatorWhite": {
+   "base_color_srgb": "#d8d6cf",
+   "roughness": 0.3,
+   "metallic": 0
+  },
+  "LaundryRope": {
+   "base_color_srgb": "#d9d2c3",
+   "roughness": 0.9,
+   "metallic": 0
+  },
+  "ClothWhite": {
+   "base_color_srgb": "#e8e6df",
+   "roughness": 0.8,
+   "metallic": 0
+  },
+  "ClothBlue": {
+   "base_color_srgb": "#2f5d8c",
+   "roughness": 0.8,
+   "metallic": 0
+  },
+  "ClothOchre": {
+   "base_color_srgb": "#c9a227",
+   "roughness": 0.8,
+   "metallic": 0
+  },
+  "ClothRed": {
+   "base_color_srgb": "#a0403a",
+   "roughness": 0.8,
+   "metallic": 0
+  },
+  "ClothGreen": {
+   "base_color_srgb": "#4e7a5a",
+   "roughness": 0.8,
+   "metallic": 0
+  },
+  "ClothPink": {
+   "base_color_srgb": "#d88fa0",
+   "roughness": 0.8,
+   "metallic": 0
+  },
+  "ClothDenim": {
+   "base_color_srgb": "#3a4f6e",
+   "roughness": 0.85,
+   "metallic": 0
+  },
+  "ClothGrey": {
+   "base_color_srgb": "#8c8a86",
+   "roughness": 0.85,
+   "metallic": 0
+  },
+  "AcBody": {
+   "base_color_srgb": "#e3e0d6",
+   "roughness": 0.5,
+   "metallic": 0.1
+  },
+  "AcBeige": {
+   "base_color_srgb": "#d6cbb2",
+   "roughness": 0.5,
+   "metallic": 0.1
+  },
+  "AcGrey": {
+   "base_color_srgb": "#b9bcbc",
+   "roughness": 0.5,
+   "metallic": 0.2
+  },
+  "AcGrille": {
+   "base_color_srgb": "#55585a",
+   "roughness": 0.6,
+   "metallic": 0.3
+  },
+  "BoxWood": {
+   "base_color_srgb": "#7a5230",
+   "roughness": 0.8,
+   "metallic": 0
+  },
+  "BoxGreen": {
+   "base_color_srgb": "#2e4d3e",
+   "roughness": 0.7,
+   "metallic": 0
+  },
+  "BoxWhite": {
+   "base_color_srgb": "#e8e6df",
+   "roughness": 0.7,
+   "metallic": 0
+  },
+  "Soil": {
+   "base_color_srgb": "#3b2a1e",
+   "roughness": 1.0,
+   "metallic": 0
+  },
+  "Leaf": {
+   "base_color_srgb": "#4e7a3a",
+   "roughness": 0.7,
+   "metallic": 0
+  },
+  "FlowerRed": {
+   "base_color_srgb": "#d8344a",
+   "roughness": 0.6,
+   "metallic": 0
+  },
+  "FlowerPink": {
+   "base_color_srgb": "#e87ba8",
+   "roughness": 0.6,
+   "metallic": 0
+  },
+  "FlowerWhite": {
+   "base_color_srgb": "#f4f1e8",
+   "roughness": 0.6,
+   "metallic": 0
+  },
+  "BenchIron": {
+   "base_color_srgb": "#2a2622",
+   "roughness": 0.5,
+   "metallic": 0.5
+  },
+  "BenchWood": {
+   "base_color_srgb": "#5a3e2b",
+   "roughness": 0.8,
+   "metallic": 0
+  },
+  "BenchWoodLight": {
+   "base_color_srgb": "#8a6440",
+   "roughness": 0.8,
+   "metallic": 0
+  },
+  "BenchGreen": {
+   "base_color_srgb": "#2f4a3a",
+   "roughness": 0.7,
+   "metallic": 0
+  },
+  "MailRed": {
+   "base_color_srgb": "#da291c",
+   "roughness": 0.4,
+   "metallic": 0.1
+  },
+  "MailBlack": {
+   "base_color_srgb": "#1e1f1f",
+   "roughness": 0.5,
+   "metallic": 0.3
+  },
+  "LightbarRed": {
+   "base_color_srgb": "#e0161e",
+   "roughness": 0.2,
+   "metallic": 0,
+   "emissive_srgb": "#e0161e",
+   "emissive_strength": 5
+  },
+  "LightbarBlue": {
+   "base_color_srgb": "#1e4fe0",
+   "roughness": 0.2,
+   "metallic": 0,
+   "emissive_srgb": "#1e4fe0",
+   "emissive_strength": 5
+  },
+  "LightbarClear": {
+   "base_color_srgb": "#e8ecef",
+   "roughness": 0.15,
+   "metallic": 0
+  },
+  "BikeRed": {
+   "base_color_srgb": "#a23b2e",
+   "roughness": 0.4,
+   "metallic": 0.3
+  },
+  "BikeTeal": {
+   "base_color_srgb": "#3d7a84",
+   "roughness": 0.4,
+   "metallic": 0.3
+  },
+  "BikeBlack": {
+   "base_color_srgb": "#1e1f1f",
+   "roughness": 0.4,
+   "metallic": 0.3
+  },
+  "BikeCream": {
+   "base_color_srgb": "#d8cdb0",
+   "roughness": 0.4,
+   "metallic": 0.2
+  },
+  "LockYellow": {
+   "base_color_srgb": "#e8b70e",
+   "roughness": 0.4,
+   "metallic": 0.2
+  },
+  "DogCoatTan": {
+   "base_color_srgb": "#b98a55",
+   "roughness": 0.9,
+   "metallic": 0
+  },
+  "DogCoatBlack": {
+   "base_color_srgb": "#22201e",
+   "roughness": 0.85,
+   "metallic": 0
+  },
+  "DogCoatWhite": {
+   "base_color_srgb": "#e9e2d3",
+   "roughness": 0.9,
+   "metallic": 0
+  },
+  "DogCoatBrown": {
+   "base_color_srgb": "#6b4430",
+   "roughness": 0.9,
+   "metallic": 0
+  },
+  "DogCoatGolden": {
+   "base_color_srgb": "#d2a35e",
+   "roughness": 0.9,
+   "metallic": 0
+  },
+  "DogCoatGrey": {
+   "base_color_srgb": "#8c8a86",
+   "roughness": 0.9,
+   "metallic": 0
+  },
+  "DogCoatChocolate": {
+   "base_color_srgb": "#4a2f22",
+   "roughness": 0.9,
+   "metallic": 0
+  },
+  "DogDark": {
+   "base_color_srgb": "#121110",
+   "roughness": 0.3,
+   "metallic": 0
+  },
+  "CollarRed": {
+   "base_color_srgb": "#c8102e",
+   "roughness": 0.5,
+   "metallic": 0
+  },
+  "CollarBlue": {
+   "base_color_srgb": "#1f5fae",
+   "roughness": 0.5,
+   "metallic": 0
+  },
+  "CollarGreen": {
+   "base_color_srgb": "#2f7d46",
+   "roughness": 0.5,
+   "metallic": 0
+  },
+  "StrollerFrame": {
+   "base_color_srgb": "#2b2d30",
+   "roughness": 0.4,
+   "metallic": 0.6
+  },
+  "StrollerSilver": {
+   "base_color_srgb": "#a9adb0",
+   "roughness": 0.35,
+   "metallic": 0.8
+  },
+  "FabricNavy": {
+   "base_color_srgb": "#1f3a5f",
+   "roughness": 0.9,
+   "metallic": 0
+  },
+  "FabricGrey": {
+   "base_color_srgb": "#6f7275",
+   "roughness": 0.9,
+   "metallic": 0
+  },
+  "FabricOlive": {
+   "base_color_srgb": "#56624a",
+   "roughness": 0.9,
+   "metallic": 0
+  },
+  "FabricCharcoal": {
+   "base_color_srgb": "#2b2b2b",
+   "roughness": 0.9,
+   "metallic": 0
+  },
+  "FabricBurgundy": {
+   "base_color_srgb": "#6a1e2a",
+   "roughness": 0.9,
+   "metallic": 0
+  },
+  "FabricSand": {
+   "base_color_srgb": "#c4a27a",
+   "roughness": 0.9,
+   "metallic": 0
+  },
+  "Kraft": {
+   "base_color_srgb": "#b08a5a",
+   "roughness": 0.9,
+   "metallic": 0
+  },
+  "KraftDark": {
+   "base_color_srgb": "#5a4632",
+   "roughness": 1.0,
+   "metallic": 0
+  },
+  "Bread": {
+   "base_color_srgb": "#c88b45",
+   "roughness": 0.8,
+   "metallic": 0
+  },
+  "LeekWhite": {
+   "base_color_srgb": "#e5e3c9",
+   "roughness": 0.7,
+   "metallic": 0
+  }
+ },
+ "props": {
+  "lamp_cobra": {
+   "kind": "street",
+   "description": "Montréal residential cobra-head street light: galvanised tapered pole, davit arm over the roadway (+X), flat-lens 3000 K LED head, mounting height about 8.1 m.",
+   "pivot": "pole base centre; arm and head reach +X (toward the road)",
+   "triangles": 468,
+   "budget": 800,
+   "bounds_cm": [
+    -16.0,
+    -15.22,
+    0.0,
+    240.0,
+    15.22,
+    816.06
+   ],
+   "parts": {
+    "pole": {
+     "mesh": "SM_Props_lamp_cobra_pole",
+     "material": "PoleGalv"
+    },
+    "head": {
+     "mesh": "SM_Props_lamp_cobra_head",
+     "material": "LampHousing"
+    },
+    "lens": {
+     "mesh": "SM_Props_lamp_cobra_lens",
+     "material": "LampLens3000K"
+    }
+   },
+   "anchors": {
+    "light_cm": [
+     205,
+     0,
+     795
+    ]
+   },
+   "colliders_cm": [
+    {
+     "center": [
+      0,
+      0,
+      400
+     ],
+     "size": [
+      26,
+      26,
+      800
+     ]
+    }
+   ],
+   "light": {
+    "colour_temperature_k": 3000,
+    "colour_srgb": "#FFB46B",
+    "cone_deg": 120
+   }
+  },
+  "lamp_park": {
+   "kind": "park",
+   "description": "Parc La Fontaine path lamp: black cast base, fluted shaft, collar and a white globe, about 4.1 m.",
+   "pivot": "post base centre",
+   "triangles": 630,
+   "budget": 800,
+   "bounds_cm": [
+    -22.0,
+    -22.0,
+    0.0,
+    22.0,
+    22.0,
+    422.0
+   ],
+   "parts": {
+    "post": {
+     "mesh": "SM_Props_lamp_park_post",
+     "material": "IronBlack"
+    },
+    "globe": {
+     "mesh": "SM_Props_lamp_park_globe",
+     "material": "GlobeWhite"
+    }
+   },
+   "anchors": {
+    "light_cm": [
+     0,
+     0,
+     389
+    ]
+   },
+   "colliders_cm": [
+    {
+     "center": [
+      0,
+      0,
+      205
+     ],
+     "size": [
+      30,
+      30,
+      410
+     ]
+    }
+   ],
+   "light": {
+    "colour_temperature_k": 3000,
+    "colour_srgb": "#FFB46B",
+    "omni": true
+   }
+  },
+  "hydrant": {
+   "kind": "street",
+   "description": "Montréal fire hydrant (borne-fontaine): red octagonal barrel and bonnet, pentagon operating nut, two hose outlets and a front pumper outlet, with the red perforated marker post (separate part).",
+   "pivot": "barrel base centre; pumper outlet faces +X",
+   "triangles": 498,
+   "budget": 500,
+   "bounds_cm": [
+    -18.5,
+    -25.0,
+    0.0,
+    24.5,
+    26.5,
+    150.0
+   ],
+   "parts": {
+    "body": {
+     "mesh": "SM_Props_hydrant_body",
+     "material": "HydrantRed"
+    },
+    "flange": {
+     "mesh": "SM_Props_hydrant_flange",
+     "material": "HydrantIron"
+    },
+    "marker": {
+     "mesh": "SM_Props_hydrant_marker",
+     "material": "HydrantRed"
+    },
+    "marker_number": {
+     "mesh": "SM_Props_hydrant_marker_number",
+     "material": "LabelWhite"
+    }
+   },
+   "colliders_cm": [
+    {
+     "center": [
+      0,
+      0,
+      39
+     ],
+     "size": [
+      36,
+      36,
+      78
+     ]
+    },
+    {
+     "center": [
+      -16,
+      24,
+      75
+     ],
+     "size": [
+      5,
+      5,
+      150
+     ]
+    }
+   ],
+   "clear_radius_cm": 150,
+   "optional_parts": [
+    "marker",
+    "marker_number"
+   ]
+  },
+  "sign_stop": {
+   "kind": "street",
+   "description": "Québec ARRÊT stop sign: 75 cm red octagon with white border and white ARRÊT lettering on a galvanised square post; the face looks along +X.",
+   "pivot": "post base centre; sign face normal +X (toward approaching traffic)",
+   "triangles": 184,
+   "budget": 2500,
+   "bounds_cm": [
+    -3.3,
+    -37.5,
+    0.0,
+    3.75,
+    37.5,
+    250.8
+   ],
+   "parts": {
+    "post": {
+     "mesh": "SM_Props_sign_stop_post",
+     "material": "PoleGalv"
+    },
+    "back": {
+     "mesh": "SM_Props_sign_stop_back",
+     "material": "SignBack"
+    },
+    "face_white": {
+     "mesh": "SM_Props_sign_stop_face_white",
+     "material": "SignWhite"
+    },
+    "face_red": {
+     "mesh": "SM_Props_sign_stop_face_red",
+     "material": "SignRed"
+    }
+   },
+   "colliders_cm": [
+    {
+     "center": [
+      0,
+      0,
+      125
+     ],
+     "size": [
+      8,
+      8,
+      250
+     ]
+    }
+   ],
+   "face_size_cm": 75
+  },
+  "sign_street": {
+   "kind": "street",
+   "description": "Montréal street-name sign: white two-faced blades with a thin black border and a red rosette placeholder at the right end of each face, on a galvanised post. Blade A (along Y, read from ±X) sits above blade B (along X, read from ±Y). The text area is left blank; the apply step adds black text per corner (see text_slots).",
+   "pivot": "post base centre; blade A faces ±X, blade B faces ±Y",
+   "triangles": 272,
+   "budget": 2500,
+   "bounds_cm": [
+    -50.0,
+    -50.0,
+    0.0,
+    50.0,
+    50.0,
+    300.0
+   ],
+   "parts": {
+    "post": {
+     "mesh": "SM_Props_sign_street_post",
+     "material": "PoleGalv"
+    },
+    "blade_b": {
+     "mesh": "SM_Props_sign_street_blade_b",
+     "material": "SignWhite"
+    },
+    "blade_b_border": {
+     "mesh": "SM_Props_sign_street_blade_b_border",
+     "material": "SignBlack"
+    },
+    "blade_b_rosette": {
+     "mesh": "SM_Props_sign_street_blade_b_rosette",
+     "material": "SignRosette"
+    },
+    "blade_a": {
+     "mesh": "SM_Props_sign_street_blade_a",
+     "material": "SignWhite"
+    },
+    "blade_a_border": {
+     "mesh": "SM_Props_sign_street_blade_a_border",
+     "material": "SignBlack"
+    },
+    "blade_a_rosette": {
+     "mesh": "SM_Props_sign_street_blade_a_rosette",
+     "material": "SignRosette"
+    }
+   },
+   "colliders_cm": [
+    {
+     "center": [
+      0,
+      0,
+      122
+     ],
+     "size": [
+      8,
+      8,
+      244
+     ]
+    }
+   ],
+   "text_slots": {
+    "blade_a": [
+     {
+      "face_normal": [
+       1.0,
+       0.0,
+       0.0
+      ],
+      "right": [
+       0.0,
+       -1.0,
+       0.0
+      ],
+      "up": [
+       0,
+       0,
+       1
+      ],
+      "generic": {
+       "center_cm": [
+        0.33,
+        37.0,
+        293.8
+       ],
+       "size_cm": [
+        18,
+        5.5
+       ],
+       "example": "Rue"
+      },
+      "specific": {
+       "center_cm": [
+        0.33,
+        7.0,
+        285.6
+       ],
+       "size_cm": [
+        78.0,
+        11
+       ],
+       "example": "de Mentana"
+      }
+     },
+     {
+      "face_normal": [
+       -1.0,
+       0.0,
+       0.0
+      ],
+      "right": [
+       0.0,
+       1.0,
+       0.0
+      ],
+      "up": [
+       0,
+       0,
+       1
+      ],
+      "generic": {
+       "center_cm": [
+        -0.33,
+        -37.0,
+        293.8
+       ],
+       "size_cm": [
+        18,
+        5.5
+       ],
+       "example": "Rue"
+      },
+      "specific": {
+       "center_cm": [
+        -0.33,
+        -7.0,
+        285.6
+       ],
+       "size_cm": [
+        78.0,
+        11
+       ],
+       "example": "de Mentana"
+      }
+     }
+    ],
+    "blade_b": [
+     {
+      "face_normal": [
+       0.0,
+       -1.0,
+       0.0
+      ],
+      "right": [
+       -1.0,
+       0.0,
+       0.0
+      ],
+      "up": [
+       0,
+       0,
+       1
+      ],
+      "generic": {
+       "center_cm": [
+        37.0,
+        -0.33,
+        265.0
+       ],
+       "size_cm": [
+        18,
+        5.5
+       ],
+       "example": "Rue"
+      },
+      "specific": {
+       "center_cm": [
+        7.0,
+        -0.33,
+        256.8
+       ],
+       "size_cm": [
+        78.0,
+        11
+       ],
+       "example": "de Mentana"
+      }
+     },
+     {
+      "face_normal": [
+       0.0,
+       1.0,
+       0.0
+      ],
+      "right": [
+       1.0,
+       0.0,
+       0.0
+      ],
+      "up": [
+       0,
+       0,
+       1
+      ],
+      "generic": {
+       "center_cm": [
+        -37.0,
+        0.33,
+        265.0
+       ],
+       "size_cm": [
+        18,
+        5.5
+       ],
+       "example": "Rue"
+      },
+      "specific": {
+       "center_cm": [
+        -7.0,
+        0.33,
+        256.8
+       ],
+       "size_cm": [
+        78.0,
+        11
+       ],
+       "example": "de Mentana"
+      }
+     }
+    ]
+   },
+   "text_style": {
+    "colour_srgb": "#111111",
+    "font": "sans-serif bold (Clearview-like)",
+    "generic_cap_height_cm": 4.2,
+    "specific_cap_height_cm": 9.0,
+    "rule": "small generic (Rue, Avenue) above a large specific name; keep Est/Ouest; shrink the specific to fit its width"
+   }
+  },
+  "sign_oneway": {
+   "kind": "street",
+   "description": "Québec one-way sign: black two-faced plate with a white arrow and a thin white border, on a galvanised post. The arrow points along Unreal local +Y.",
+   "pivot": "post base centre; plate faces ±X; arrow toward Unreal +Y (yaw = traffic heading - 90°)",
+   "triangles": 86,
+   "budget": 2500,
+   "bounds_cm": [
+    -3.3,
+    -45.0,
+    0.0,
+    4.08,
+    45.0,
+    240.8
+   ],
+   "parts": {
+    "post": {
+     "mesh": "SM_Props_sign_oneway_post",
+     "material": "PoleGalv"
+    },
+    "plate": {
+     "mesh": "SM_Props_sign_oneway_plate",
+     "material": "SignBack"
+    },
+    "face_black": {
+     "mesh": "SM_Props_sign_oneway_face_black",
+     "material": "SignBlack"
+    },
+    "face_white": {
+     "mesh": "SM_Props_sign_oneway_face_white",
+     "material": "SignWhite"
+    }
+   },
+   "anchors": {
+    "arrow_direction_unreal": [
+     0,
+     1,
+     0
+    ]
+   },
+   "colliders_cm": [
+    {
+     "center": [
+      0,
+      0,
+      120
+     ],
+     "size": [
+      8,
+      8,
+      240
+     ]
+    }
+   ]
+  },
+  "sign_parking": {
+   "kind": "street",
+   "description": "Montréal parking sign (R-PF): white plate, red circle and slash over a black P, \"9h-23h / EXCEPTÉ S3R\" and a direction arrow, on a galvanised post.",
+   "pivot": "post base centre; plate faces +X",
+   "triangles": 369,
+   "budget": 2500,
+   "bounds_cm": [
+    -3.3,
+    -15.0,
+    0.0,
+    4.0,
+    15.0,
+    235.8
+   ],
+   "parts": {
+    "post": {
+     "mesh": "SM_Props_sign_parking_post",
+     "material": "PoleGalv"
+    },
+    "plate": {
+     "mesh": "SM_Props_sign_parking_plate",
+     "material": "SignBack"
+    },
+    "face_white": {
+     "mesh": "SM_Props_sign_parking_face_white",
+     "material": "SignWhite"
+    },
+    "face_black": {
+     "mesh": "SM_Props_sign_parking_face_black",
+     "material": "SignBlack"
+    },
+    "face_red": {
+     "mesh": "SM_Props_sign_parking_face_red",
+     "material": "SignRed"
+    }
+   },
+   "colliders_cm": [
+    {
+     "center": [
+      0,
+      0,
+      118
+     ],
+     "size": [
+      8,
+      8,
+      235
+     ]
+    }
+   ],
+   "text": "\\P 9h-23h EXCEPTE S3R (dataset code R-PF, the commonest Plateau parking sign)"
+  },
+  "bixi_dock": {
+   "kind": "street",
+   "description": "BIXI station segment: low grey platform with six docking posts, a tall pay terminal with a dark station-name header, screen and red mark, and a black solar pole with two panels. Bikes dock nose-first against the posts (see slots).",
+   "pivot": "platform centre on the ground; slots in a row along Y; bikes extend toward +X",
+   "triangles": 928,
+   "budget": 2500,
+   "bounds_cm": [
+    -48.48,
+    -297.5,
+    0.0,
+    35.0,
+    260.0,
+    360.94
+   ],
+   "parts": {
+    "platform": {
+     "mesh": "SM_Props_bixi_dock_platform",
+     "material": "BixiDock"
+    },
+    "platform_strip": {
+     "mesh": "SM_Props_bixi_dock_platform_strip",
+     "material": "BixiDark"
+    },
+    "posts": {
+     "mesh": "SM_Props_bixi_dock_posts",
+     "material": "BixiDock"
+    },
+    "locks": {
+     "mesh": "SM_Props_bixi_dock_locks",
+     "material": "BixiDark"
+    },
+    "lights": {
+     "mesh": "SM_Props_bixi_dock_lights",
+     "material": "BixiRed"
+    },
+    "terminal": {
+     "mesh": "SM_Props_bixi_dock_terminal",
+     "material": "BixiDock"
+    },
+    "terminal_header": {
+     "mesh": "SM_Props_bixi_dock_terminal_header",
+     "material": "BixiDark"
+    },
+    "screen": {
+     "mesh": "SM_Props_bixi_dock_screen",
+     "material": "BixiScreen"
+    },
+    "solar_pole": {
+     "mesh": "SM_Props_bixi_dock_solar_pole",
+     "material": "IronBlack"
+    },
+    "solar_panels": {
+     "mesh": "SM_Props_bixi_dock_solar_panels",
+     "material": "SolarPanel"
+    }
+   },
+   "colliders_cm": [
+    {
+     "center": [
+      0,
+      0,
+      45
+     ],
+     "size": [
+      70,
+      520,
+      90
+     ]
+    },
+    {
+     "center": [
+      -10,
+      -240.0,
+      112
+     ],
+     "size": [
+      36,
+      64,
+      224
+     ]
+    }
+   ],
+   "slots": [
+    {
+     "position_cm": [
+      72,
+      194.0,
+      0
+     ],
+     "yaw_deg": 180.0,
+     "occupied_default": true
+    },
+    {
+     "position_cm": [
+      72,
+      114.0,
+      0
+     ],
+     "yaw_deg": 180.0,
+     "occupied_default": true
+    },
+    {
+     "position_cm": [
+      72,
+      34.0,
+      0
+     ],
+     "yaw_deg": 180.0,
+     "occupied_default": false
+    },
+    {
+     "position_cm": [
+      72,
+      -46.0,
+      0
+     ],
+     "yaw_deg": 180.0,
+     "occupied_default": true
+    },
+    {
+     "position_cm": [
+      72,
+      -126.0,
+      0
+     ],
+     "yaw_deg": 180.0,
+     "occupied_default": true
+    },
+    {
+     "position_cm": [
+      72,
+      -206.0,
+      0
+     ],
+     "yaw_deg": 180.0,
+     "occupied_default": false
+    }
+   ],
+   "slot_mesh": "bixi_bike"
+  },
+  "bixi_bike": {
+   "kind": "street",
+   "description": "BIXI city bike: silver-grey step-through aluminium frame, front rack with a red BIXI panel, full fenders, chain guard and black tyres.",
+   "pivot": "midpoint between the tyre contact points; front wheel toward +X",
+   "triangles": 1472,
+   "budget": 2500,
+   "bounds_cm": [
+    -92.56,
+    -27.5,
+    0.0,
+    90.49,
+    27.51,
+    110.28
+   ],
+   "parts": {
+    "tyres": {
+     "mesh": "SM_Props_bixi_bike_tyres",
+     "material": "Rubber"
+    },
+    "frame": {
+     "mesh": "SM_Props_bixi_bike_frame",
+     "material": "BixiFrame"
+    },
+    "brand_red": {
+     "mesh": "SM_Props_bixi_bike_brand_red",
+     "material": "BixiRed"
+    },
+    "chain_guard": {
+     "mesh": "SM_Props_bixi_bike_chain_guard",
+     "material": "BixiDark"
+    }
+   },
+   "colliders_cm": [
+    {
+     "center": [
+      0,
+      0,
+      54.89
+     ],
+     "size": [
+      180,
+      30,
+      110
+     ]
+    }
+   ]
+  },
+  "bin_recycling": {
+   "kind": "street",
+   "description": "Montréal blue recycling wheelie bin (bac roulant bleu, 240 L): tapered body, hinged lid with front lip, rear wheels and handle, white recycling arrows.",
+   "pivot": "base centre; front with the arrows faces +X; wheels and handle at -X",
+   "triangles": 327,
+   "budget": 2500,
+   "bounds_cm": [
+    -42.55,
+    -32.0,
+    -0.0,
+    38.0,
+    32.0,
+    104.5
+   ],
+   "parts": {
+    "body": {
+     "mesh": "SM_Props_bin_recycling_body",
+     "material": "BinBlue"
+    },
+    "handle": {
+     "mesh": "SM_Props_bin_recycling_handle",
+     "material": "PlasticBlack"
+    },
+    "wheels": {
+     "mesh": "SM_Props_bin_recycling_wheels",
+     "material": "Rubber"
+    },
+    "axle": {
+     "mesh": "SM_Props_bin_recycling_axle",
+     "material": "SteelDark"
+    },
+    "label": {
+     "mesh": "SM_Props_bin_recycling_label",
+     "material": "LabelWhite"
+    }
+   },
+   "colliders_cm": [
+    {
+     "center": [
+      0,
+      0,
+      52
+     ],
+     "size": [
+      74,
+      64,
+      104
+     ]
+    }
+   ]
+  },
+  "bin_compost": {
+   "kind": "street",
+   "description": "Montréal brown organics bin (bac brun, 45 L): tapered body, lid with the locking carry handle across it and a front latch.",
+   "pivot": "base centre; latch faces +X",
+   "triangles": 268,
+   "budget": 2500,
+   "bounds_cm": [
+    -22.0,
+    -25.15,
+    0.0,
+    23.9,
+    25.17,
+    53.73
+   ],
+   "parts": {
+    "body": {
+     "mesh": "SM_Props_bin_compost_body",
+     "material": "BinBrown"
+    },
+    "label": {
+     "mesh": "SM_Props_bin_compost_label",
+     "material": "LabelWhite"
+    }
+   },
+   "colliders_cm": [
+    {
+     "center": [
+      0,
+      0,
+      26
+     ],
+     "size": [
+      46,
+      46,
+      52
+     ]
+    }
+   ]
+  },
+  "bin_garbage": {
+   "kind": "street",
+   "description": "Curbside pile of three tied black garbage bags.",
+   "pivot": "pile base centre",
+   "triangles": 522,
+   "budget": 2500,
+   "bounds_cm": [
+    -27.28,
+    -33.64,
+    0.0,
+    42.46,
+    35.25,
+    72.53
+   ],
+   "parts": {
+    "bags": {
+     "mesh": "SM_Props_bin_garbage_bags",
+     "material": "BagBlack"
+    }
+   },
+   "colliders_cm": [
+    {
+     "center": [
+      8,
+      0,
+      35.01
+     ],
+     "size": [
+      80,
+      80,
+      60
+     ]
+    }
+   ]
+  },
+  "cone": {
+   "kind": "works",
+   "description": "Montréal orange traffic cone, 71 cm, with two white reflective bands and a black square base.",
+   "pivot": "base centre",
+   "triangles": 282,
+   "budget": 2500,
+   "bounds_cm": [
+    -19.0,
+    -19.0,
+    0.0,
+    19.0,
+    19.0,
+    71.0
+   ],
+   "parts": {
+    "base": {
+     "mesh": "SM_Props_cone_base",
+     "material": "PlasticBlack"
+    },
+    "body": {
+     "mesh": "SM_Props_cone_body",
+     "material": "ConeOrange"
+    },
+    "bands": {
+     "mesh": "SM_Props_cone_bands",
+     "material": "ReflectWhite"
+    }
+   },
+   "colliders_cm": [
+    {
+     "center": [
+      0,
+      0,
+      36
+     ],
+     "size": [
+      38,
+      38,
+      72
+     ]
+    }
+   ],
+   "knockable": true
+  },
+  "barrier_chantier": {
+   "kind": "works",
+   "description": "Chantier barrier panel: 2 m orange frame on black rubber feet with orange-and-white diagonal striped boards and an amber flasher.",
+   "pivot": "base centre; boards span Y; faces ±X",
+   "triangles": 366,
+   "budget": 2500,
+   "bounds_cm": [
+    -35.0,
+    -102.0,
+    0.0,
+    35.0,
+    102.0,
+    120.5
+   ],
+   "parts": {
+    "feet": {
+     "mesh": "SM_Props_barrier_chantier_feet",
+     "material": "PlasticBlack"
+    },
+    "frame": {
+     "mesh": "SM_Props_barrier_chantier_frame",
+     "material": "BarrierOrange"
+    },
+    "stripes_orange": {
+     "mesh": "SM_Props_barrier_chantier_stripes_orange",
+     "material": "BarrierOrange"
+    },
+    "stripes_white": {
+     "mesh": "SM_Props_barrier_chantier_stripes_white",
+     "material": "ReflectWhite"
+    },
+    "flasher": {
+     "mesh": "SM_Props_barrier_chantier_flasher",
+     "material": "AmberLamp"
+    }
+   },
+   "colliders_cm": [
+    {
+     "center": [
+      0,
+      0,
+      55
+     ],
+     "size": [
+      70,
+      204,
+      110
+     ]
+    }
+   ],
+   "knockable": true
+  },
+  "utility_pole": {
+   "kind": "ruelle",
+   "description": "Wooden ruelle utility pole, 10.5 m, with a crossarm, braces, four green glass pin insulators, a secondary rack with spool insulators and an ID tag.",
+   "pivot": "pole base centre; crossarm along Y",
+   "triangles": 766,
+   "budget": 2500,
+   "bounds_cm": [
+    -15.5,
+    -120.0,
+    0.0,
+    21.5,
+    120.0,
+    1053.0
+   ],
+   "parts": {
+    "pole": {
+     "mesh": "SM_Props_utility_pole_pole",
+     "material": "WoodPole"
+    },
+    "hardware": {
+     "mesh": "SM_Props_utility_pole_hardware",
+     "material": "SteelDark"
+    },
+    "insulators": {
+     "mesh": "SM_Props_utility_pole_insulators",
+     "material": "Insulator"
+    },
+    "spools": {
+     "mesh": "SM_Props_utility_pole_spools",
+     "material": "InsulatorWhite"
+    },
+    "tag": {
+     "mesh": "SM_Props_utility_pole_tag",
+     "material": "LabelWhite"
+    }
+   },
+   "anchors": {
+    "wire_attach_cm": [
+     [
+      0,
+      108.0,
+      1002
+     ],
+     [
+      0,
+      45.0,
+      1002
+     ],
+     [
+      0,
+      -45.0,
+      1002
+     ],
+     [
+      0,
+      -108.0,
+      1002
+     ],
+     [
+      20,
+      0.0,
+      825
+     ],
+     [
+      20,
+      0.0,
+      850
+     ],
+     [
+      20,
+      0.0,
+      875
+     ]
+    ]
+   },
+   "colliders_cm": [
+    {
+     "center": [
+      0,
+      0,
+      520
+     ],
+     "size": [
+      30,
+      30,
+      1040
+     ]
+    }
+   ],
+   "wire_note": "sag wires 2-4 % of the span between neighbouring poles; galleries at 6-8 m"
+  },
+  "laundry_line": {
+   "kind": "ruelle",
+   "description": "Montréal pulley clothesline (corde à linge): two pulleys, a looped line 6 m long with gentle sag and garments pinned on the lower line (flat cards).",
+   "pivot": "bounding-box base centre; the line runs along X; anchors give the pulley axles",
+   "triangles": 692,
+   "budget": 2500,
+   "bounds_cm": [
+    -313.0,
+    -3.66,
+    0.0,
+    313.0,
+    4.2,
+    120.33
+   ],
+   "parts": {
+    "pulleys": {
+     "mesh": "SM_Props_laundry_line_pulleys",
+     "material": "Chrome"
+    },
+    "pulleys_steelDark": {
+     "mesh": "SM_Props_laundry_line_pulleys_steelDark",
+     "material": "SteelDark"
+    },
+    "rope": {
+     "mesh": "SM_Props_laundry_line_rope",
+     "material": "LaundryRope"
+    },
+    "cloth_a": {
+     "mesh": "SM_Props_laundry_line_cloth_a",
+     "material": "ClothWhite"
+    },
+    "cloth_b": {
+     "mesh": "SM_Props_laundry_line_cloth_b",
+     "material": "ClothBlue"
+    },
+    "cloth_c": {
+     "mesh": "SM_Props_laundry_line_cloth_c",
+     "material": "ClothOchre"
+    },
+    "cloth_d": {
+     "mesh": "SM_Props_laundry_line_cloth_d",
+     "material": "ClothRed"
+    }
+   },
+   "anchors": {
+    "line_start_cm": [
+     -300.0,
+     0.0,
+     113.98
+    ],
+    "line_end_cm": [
+     300.0,
+     0.0,
+     113.98
+    ]
+   },
+   "span_cm": 600,
+   "scale_note": "scale X by span/600 between 0.7 and 1.4; place anchors on a gallery post and a pole"
+  },
+  "bike_locked": {
+   "kind": "street",
+   "description": "City bike leaning 9° toward Unreal -Y (its left) against a post or railing, with a yellow U-lock through the frame and rear wheel.",
+   "pivot": "midpoint between the tyre contact points; front wheel +X; lean contact toward Unreal -Y",
+   "triangles": 1240,
+   "budget": 2500,
+   "bounds_cm": [
+    -86.91,
+    -42.9,
+    -0.0,
+    86.91,
+    10.39,
+    108.1
+   ],
+   "parts": {
+    "tyres": {
+     "mesh": "SM_Props_bike_locked_tyres",
+     "material": "Rubber"
+    },
+    "spokes": {
+     "mesh": "SM_Props_bike_locked_spokes",
+     "material": "Chrome"
+    },
+    "frame": {
+     "mesh": "SM_Props_bike_locked_frame",
+     "material": "BikeRed"
+    },
+    "lock": {
+     "mesh": "SM_Props_bike_locked_lock",
+     "material": "LockYellow"
+    }
+   },
+   "anchors": {
+    "lean_contact_cm": [
+     -10.0,
+     -34.24,
+     75.57
+    ]
+   },
+   "colliders_cm": [
+    {
+     "center": [
+      0,
+      8,
+      55
+     ],
+     "size": [
+      180,
+      34,
+      110
+     ]
+    }
+   ]
+  },
+  "ac_unit": {
+   "kind": "facade",
+   "description": "Window air conditioner: beige-white case, dark front grille with louvres, top vents, pleated side panels and two steel support brackets.",
+   "pivot": "bounding-box base centre; grille faces +X; the window plane is at anchors.wall_plane_x_cm",
+   "triangles": 428,
+   "budget": 2500,
+   "bounds_cm": [
+    -22.2,
+    -46.09,
+    0.0,
+    31.75,
+    46.09,
+    40.5
+   ],
+   "parts": {
+    "case": {
+     "mesh": "SM_Props_ac_unit_case",
+     "material": "AcBody"
+    },
+    "grille": {
+     "mesh": "SM_Props_ac_unit_grille",
+     "material": "AcGrille"
+    },
+    "brackets": {
+     "mesh": "SM_Props_ac_unit_brackets",
+     "material": "SteelDark"
+    }
+   },
+   "anchors": {
+    "wall_plane_x_cm": -18
+   },
+   "mount_note": "sits on the sill of an upper window; x < wall_plane is inside the window"
+  },
+  "flower_box": {
+   "kind": "facade",
+   "description": "Window flower box: painted wooden planter with soil, leaves and geranium-like flowers, on two iron brackets.",
+   "pivot": "bounding-box base centre; front +X; back against the wall at anchors.wall_plane_x_cm",
+   "triangles": 1416,
+   "budget": 2500,
+   "bounds_cm": [
+    -11.8,
+    -46.0,
+    0.0,
+    14.24,
+    46.0,
+    41.42
+   ],
+   "parts": {
+    "box": {
+     "mesh": "SM_Props_flower_box_box",
+     "material": "BoxWood"
+    },
+    "soil": {
+     "mesh": "SM_Props_flower_box_soil",
+     "material": "Soil"
+    },
+    "brackets": {
+     "mesh": "SM_Props_flower_box_brackets",
+     "material": "IronBlack"
+    },
+    "leaves": {
+     "mesh": "SM_Props_flower_box_leaves",
+     "material": "Leaf"
+    },
+    "flowers": {
+     "mesh": "SM_Props_flower_box_flowers",
+     "material": "FlowerRed"
+    }
+   },
+   "anchors": {
+    "wall_plane_x_cm": -11
+   }
+  },
+  "bench": {
+   "kind": "park",
+   "description": "Montréal park bench: dark cast-iron ends with armrests and wooden seat and back slats, 1.8 m.",
+   "pivot": "base centre; seat faces +X",
+   "triangles": 588,
+   "budget": 2500,
+   "bounds_cm": [
+    -31.53,
+    -92.0,
+    0.0,
+    29.6,
+    92.0,
+    88.33
+   ],
+   "parts": {
+    "ends": {
+     "mesh": "SM_Props_bench_ends",
+     "material": "BenchIron"
+    },
+    "slats": {
+     "mesh": "SM_Props_bench_slats",
+     "material": "BenchWood"
+    }
+   },
+   "colliders_cm": [
+    {
+     "center": [
+      0,
+      0,
+      24.04
+     ],
+     "size": [
+      56,
+      176,
+      48
+     ]
+    },
+    {
+     "center": [
+      -26,
+      0,
+      66.04
+     ],
+     "size": [
+      10,
+      176,
+      44
+     ]
+    }
+   ]
+  },
+  "mailbox": {
+   "kind": "street",
+   "description": "Generic red street letter box (Canada Post style, no logo): rounded top, front slot with a pull flap, white collection-times plate, black plinth.",
+   "pivot": "base centre; slot faces +X",
+   "triangles": 240,
+   "budget": 2500,
+   "bounds_cm": [
+    -24.0,
+    -28.0,
+    0.0,
+    26.92,
+    28.0,
+    114.8
+   ],
+   "parts": {
+    "plinth": {
+     "mesh": "SM_Props_mailbox_plinth",
+     "material": "MailBlack"
+    },
+    "body": {
+     "mesh": "SM_Props_mailbox_body",
+     "material": "MailRed"
+    },
+    "handle": {
+     "mesh": "SM_Props_mailbox_handle",
+     "material": "Chrome"
+    },
+    "plate": {
+     "mesh": "SM_Props_mailbox_plate",
+     "material": "LabelWhite"
+    }
+   },
+   "colliders_cm": [
+    {
+     "center": [
+      0,
+      0,
+      58
+     ],
+     "size": [
+      48,
+      56,
+      116
+     ]
+    }
+   ]
+  },
+  "police_lightbar": {
+   "kind": "vehicle",
+   "description": "Generic police light bar: black base, red lenses on the driver side (Unreal -Y, the car's left), blue on the right, clear centre module, roof feet.",
+   "pivot": "base centre on the roof; long axis Y; front +X",
+   "triangles": 376,
+   "budget": 2500,
+   "bounds_cm": [
+    -13.0,
+    -62.1,
+    0.0,
+    13.0,
+    62.1,
+    15.0
+   ],
+   "parts": {
+    "base": {
+     "mesh": "SM_Props_police_lightbar_base",
+     "material": "PlasticBlack"
+    },
+    "lens_red": {
+     "mesh": "SM_Props_police_lightbar_lens_red",
+     "material": "LightbarRed"
+    },
+    "lens_clear": {
+     "mesh": "SM_Props_police_lightbar_lens_clear",
+     "material": "LightbarClear"
+    },
+    "lens_blue": {
+     "mesh": "SM_Props_police_lightbar_lens_blue",
+     "material": "LightbarBlue"
+    },
+    "end_caps": {
+     "mesh": "SM_Props_police_lightbar_end_caps",
+     "material": "Chrome"
+    }
+   },
+   "anchors": {
+    "light_red_cm": [
+     [
+      0,
+      -45.0,
+      12
+     ],
+     [
+      0,
+      -22.5,
+      12
+     ]
+    ],
+    "light_blue_cm": [
+     [
+      0,
+      22.5,
+      12
+     ],
+     [
+      0,
+      45.0,
+      12
+     ]
+    ]
+   }
+  },
+  "dog_small": {
+   "kind": "companion",
+   "description": "Leashed dog, small terrier: articulated parts (body, head, four legs, tail) with joint pivots for procedural trot, plus merged meshes for static use.",
+   "pivot": "ground under the body centre; nose toward +X",
+   "triangles": 1028,
+   "budget": 1500,
+   "bounds_cm": [
+    -23.29,
+    -8.69,
+    0.0,
+    31.01,
+    9.2,
+    42.59
+   ],
+   "parts": {
+    "body": {
+     "mesh": "SM_Props_dog_small_body",
+     "material": "DogCoatTan",
+     "attach_cm": [
+      0.0,
+      0.0,
+      0.39
+     ]
+    },
+    "merged_coat": {
+     "mesh": "SM_Props_dog_small_merged_coat",
+     "material": "DogCoatTan",
+     "merged": true
+    },
+    "collar": {
+     "mesh": "SM_Props_dog_small_collar",
+     "material": "CollarRed",
+     "attach_cm": [
+      0.0,
+      0.0,
+      0.39
+     ]
+    },
+    "merged_collar": {
+     "mesh": "SM_Props_dog_small_merged_collar",
+     "material": "CollarRed",
+     "merged": true
+    },
+    "head": {
+     "mesh": "SM_Props_dog_small_head",
+     "material": "DogCoatTan",
+     "attach_cm": [
+      15.12,
+      0.0,
+      26.59
+     ],
+     "joint": {
+      "axis_unreal": "Y",
+      "amplitude_deg": 12,
+      "phase_cycles": 0.0
+     }
+    },
+    "head_dark": {
+     "mesh": "SM_Props_dog_small_head_dark",
+     "material": "DogDark",
+     "attach_cm": [
+      15.12,
+      0.0,
+      26.59
+     ]
+    },
+    "merged_dark": {
+     "mesh": "SM_Props_dog_small_merged_dark",
+     "material": "DogDark",
+     "merged": true
+    },
+    "leg_fl": {
+     "mesh": "SM_Props_dog_small_leg_fl",
+     "material": "DogCoatTan",
+     "attach_cm": [
+      12.6,
+      -3.84,
+      18.04
+     ],
+     "joint": {
+      "axis_unreal": "Y",
+      "amplitude_deg": 28,
+      "phase_cycles": 0.0
+     }
+    },
+    "leg_fr": {
+     "mesh": "SM_Props_dog_small_leg_fr",
+     "material": "DogCoatTan",
+     "attach_cm": [
+      12.6,
+      3.84,
+      18.04
+     ],
+     "joint": {
+      "axis_unreal": "Y",
+      "amplitude_deg": 28,
+      "phase_cycles": 0.5
+     }
+    },
+    "leg_rl": {
+     "mesh": "SM_Props_dog_small_leg_rl",
+     "material": "DogCoatTan",
+     "attach_cm": [
+      -12.6,
+      -4.0,
+      18.99
+     ],
+     "joint": {
+      "axis_unreal": "Y",
+      "amplitude_deg": 28,
+      "phase_cycles": 0.5
+     }
+    },
+    "leg_rr": {
+     "mesh": "SM_Props_dog_small_leg_rr",
+     "material": "DogCoatTan",
+     "attach_cm": [
+      -12.6,
+      4.0,
+      18.99
+     ],
+     "joint": {
+      "axis_unreal": "Y",
+      "amplitude_deg": 28,
+      "phase_cycles": 0.0
+     }
+    },
+    "tail": {
+     "mesh": "SM_Props_dog_small_tail",
+     "material": "DogCoatTan",
+     "attach_cm": [
+      -19.74,
+      0.0,
+      25.64
+     ],
+     "joint": {
+      "axis_unreal": "Z",
+      "amplitude_deg": 25,
+      "phase_cycles": 0.0
+     }
+    }
+   },
+   "leash_collar_cm": [
+    16.07,
+    0.0,
+    20.7
+   ],
+   "trot": "swing legs about Unreal Y with diagonal pairs in phase (fl+rr, fr+rl); stride period about 0.45 s at walking pace",
+   "dimensions": {
+    "withers_cm": 30,
+    "body_length_cm": 42
+   }
+  },
+  "dog_medium": {
+   "kind": "companion",
+   "description": "Leashed dog, medium beagle/collie type: articulated parts (body, head, four legs, tail) with joint pivots for procedural trot, plus merged meshes for static use.",
+   "pivot": "ground under the body centre; nose toward +X",
+   "triangles": 1136,
+   "budget": 1500,
+   "bounds_cm": [
+    -47.8,
+    -12.49,
+    0.0,
+    43.17,
+    13.2,
+    57.81
+   ],
+   "parts": {
+    "body": {
+     "mesh": "SM_Props_dog_medium_body",
+     "material": "DogCoatBrown",
+     "attach_cm": [
+      0.0,
+      0.0,
+      0.54
+     ]
+    },
+    "merged_coat": {
+     "mesh": "SM_Props_dog_medium_merged_coat",
+     "material": "DogCoatBrown",
+     "merged": true
+    },
+    "collar": {
+     "mesh": "SM_Props_dog_medium_collar",
+     "material": "CollarRed",
+     "attach_cm": [
+      0.0,
+      0.0,
+      0.54
+     ]
+    },
+    "merged_collar": {
+     "mesh": "SM_Props_dog_medium_merged_collar",
+     "material": "CollarRed",
+     "merged": true
+    },
+    "head": {
+     "mesh": "SM_Props_dog_medium_head",
+     "material": "DogCoatBrown",
+     "attach_cm": [
+      21.6,
+      0.0,
+      40.94
+     ],
+     "joint": {
+      "axis_unreal": "Y",
+      "amplitude_deg": 12,
+      "phase_cycles": 0.0
+     }
+    },
+    "head_dark": {
+     "mesh": "SM_Props_dog_medium_head_dark",
+     "material": "DogDark",
+     "attach_cm": [
+      21.6,
+      0.0,
+      40.94
+     ]
+    },
+    "merged_dark": {
+     "mesh": "SM_Props_dog_medium_merged_dark",
+     "material": "DogDark",
+     "merged": true
+    },
+    "leg_fl": {
+     "mesh": "SM_Props_dog_medium_leg_fl",
+     "material": "DogCoatBrown",
+     "attach_cm": [
+      18.0,
+      -5.76,
+      28.34
+     ],
+     "joint": {
+      "axis_unreal": "Y",
+      "amplitude_deg": 28,
+      "phase_cycles": 0.0
+     }
+    },
+    "leg_fr": {
+     "mesh": "SM_Props_dog_medium_leg_fr",
+     "material": "DogCoatBrown",
+     "attach_cm": [
+      18.0,
+      5.76,
+      28.34
+     ],
+     "joint": {
+      "axis_unreal": "Y",
+      "amplitude_deg": 28,
+      "phase_cycles": 0.5
+     }
+    },
+    "leg_rl": {
+     "mesh": "SM_Props_dog_medium_leg_rl",
+     "material": "DogCoatBrown",
+     "attach_cm": [
+      -18.0,
+      -6.0,
+      29.74
+     ],
+     "joint": {
+      "axis_unreal": "Y",
+      "amplitude_deg": 28,
+      "phase_cycles": 0.5
+     }
+    },
+    "leg_rr": {
+     "mesh": "SM_Props_dog_medium_leg_rr",
+     "material": "DogCoatBrown",
+     "attach_cm": [
+      -18.0,
+      6.0,
+      29.74
+     ],
+     "joint": {
+      "axis_unreal": "Y",
+      "amplitude_deg": 28,
+      "phase_cycles": 0.0
+     }
+    },
+    "tail": {
+     "mesh": "SM_Props_dog_medium_tail",
+     "material": "DogCoatBrown",
+     "attach_cm": [
+      -28.2,
+      0.0,
+      39.54
+     ],
+     "joint": {
+      "axis_unreal": "Z",
+      "amplitude_deg": 25,
+      "phase_cycles": 0.0
+     }
+    }
+   },
+   "leash_collar_cm": [
+    23.0,
+    0.0,
+    32.26
+   ],
+   "trot": "swing legs about Unreal Y with diagonal pairs in phase (fl+rr, fr+rl); stride period about 0.45 s at walking pace",
+   "dimensions": {
+    "withers_cm": 46,
+    "body_length_cm": 60
+   }
+  },
+  "dog_large": {
+   "kind": "companion",
+   "description": "Leashed dog, large retriever type: articulated parts (body, head, four legs, tail) with joint pivots for procedural trot, plus merged meshes for static use.",
+   "pivot": "ground under the body centre; nose toward +X",
+   "triangles": 1136,
+   "budget": 1500,
+   "bounds_cm": [
+    -63.73,
+    -16.4,
+    0.0,
+    56.54,
+    17.35,
+    75.83
+   ],
+   "parts": {
+    "body": {
+     "mesh": "SM_Props_dog_large_body",
+     "material": "DogCoatGolden",
+     "attach_cm": [
+      0.0,
+      0.0,
+      0.72
+     ]
+    },
+    "merged_coat": {
+     "mesh": "SM_Props_dog_large_merged_coat",
+     "material": "DogCoatGolden",
+     "merged": true
+    },
+    "collar": {
+     "mesh": "SM_Props_dog_large_collar",
+     "material": "CollarRed",
+     "attach_cm": [
+      0.0,
+      0.0,
+      0.72
+     ]
+    },
+    "merged_collar": {
+     "mesh": "SM_Props_dog_large_merged_collar",
+     "material": "CollarRed",
+     "merged": true
+    },
+    "head": {
+     "mesh": "SM_Props_dog_large_head",
+     "material": "DogCoatGolden",
+     "attach_cm": [
+      28.8,
+      0.0,
+      53.32
+     ],
+     "joint": {
+      "axis_unreal": "Y",
+      "amplitude_deg": 12,
+      "phase_cycles": 0.0
+     }
+    },
+    "head_dark": {
+     "mesh": "SM_Props_dog_large_head_dark",
+     "material": "DogDark",
+     "attach_cm": [
+      28.8,
+      0.0,
+      53.32
+     ]
+    },
+    "merged_dark": {
+     "mesh": "SM_Props_dog_large_merged_dark",
+     "material": "DogDark",
+     "merged": true
+    },
+    "leg_fl": {
+     "mesh": "SM_Props_dog_large_leg_fl",
+     "material": "DogCoatGolden",
+     "attach_cm": [
+      24.0,
+      -7.44,
+      36.67
+     ],
+     "joint": {
+      "axis_unreal": "Y",
+      "amplitude_deg": 28,
+      "phase_cycles": 0.0
+     }
+    },
+    "leg_fr": {
+     "mesh": "SM_Props_dog_large_leg_fr",
+     "material": "DogCoatGolden",
+     "attach_cm": [
+      24.0,
+      7.44,
+      36.67
+     ],
+     "joint": {
+      "axis_unreal": "Y",
+      "amplitude_deg": 28,
+      "phase_cycles": 0.5
+     }
+    },
+    "leg_rl": {
+     "mesh": "SM_Props_dog_large_leg_rl",
+     "material": "DogCoatGolden",
+     "attach_cm": [
+      -24.0,
+      -7.75,
+      38.52
+     ],
+     "joint": {
+      "axis_unreal": "Y",
+      "amplitude_deg": 28,
+      "phase_cycles": 0.5
+     }
+    },
+    "leg_rr": {
+     "mesh": "SM_Props_dog_large_leg_rr",
+     "material": "DogCoatGolden",
+     "attach_cm": [
+      -24.0,
+      7.75,
+      38.52
+     ],
+     "joint": {
+      "axis_unreal": "Y",
+      "amplitude_deg": 28,
+      "phase_cycles": 0.0
+     }
+    },
+    "tail": {
+     "mesh": "SM_Props_dog_large_tail",
+     "material": "DogCoatGolden",
+     "attach_cm": [
+      -37.6,
+      0.0,
+      51.47
+     ],
+     "joint": {
+      "axis_unreal": "Z",
+      "amplitude_deg": 25,
+      "phase_cycles": 0.0
+     }
+    }
+   },
+   "leash_collar_cm": [
+    30.65,
+    0.0,
+    41.85
+   ],
+   "trot": "swing legs about Unreal Y with diagonal pairs in phase (fl+rr, fr+rl); stride period about 0.45 s at walking pace",
+   "dimensions": {
+    "withers_cm": 60,
+    "body_length_cm": 80
+   }
+  },
+  "stroller": {
+   "kind": "companion",
+   "description": "City stroller: dark aluminium frame with handlebar, fabric seat and basket, folding canopy and four wheels (separate parts with axle pivots).",
+   "pivot": "ground under the frame centre; pushed toward +X; handlebar at -X",
+   "triangles": 1376,
+   "budget": 1500,
+   "bounds_cm": [
+    -47.88,
+    -30.5,
+    0.0,
+    39.42,
+    30.5,
+    107.57
+   ],
+   "parts": {
+    "frame": {
+     "mesh": "SM_Props_stroller_frame",
+     "material": "StrollerFrame",
+     "attach_cm": [
+      0.0,
+      0.0,
+      -0.08
+     ]
+    },
+    "merged_frame": {
+     "mesh": "SM_Props_stroller_merged_frame",
+     "material": "StrollerFrame",
+     "merged": true
+    },
+    "seat": {
+     "mesh": "SM_Props_stroller_seat",
+     "material": "FabricNavy",
+     "attach_cm": [
+      0.0,
+      0.0,
+      -0.08
+     ]
+    },
+    "merged_seat": {
+     "mesh": "SM_Props_stroller_merged_seat",
+     "material": "FabricNavy",
+     "merged": true
+    },
+    "canopy": {
+     "mesh": "SM_Props_stroller_canopy",
+     "material": "FabricCharcoal",
+     "attach_cm": [
+      0.0,
+      0.0,
+      -0.08
+     ]
+    },
+    "merged_canopy": {
+     "mesh": "SM_Props_stroller_merged_canopy",
+     "material": "FabricCharcoal",
+     "merged": true
+    },
+    "wheel_fl": {
+     "mesh": "SM_Props_stroller_wheel_fl",
+     "material": "Rubber",
+     "attach_cm": [
+      30.0,
+      -21.0,
+      9.42
+     ],
+     "joint": {
+      "axis_unreal": "Y",
+      "spin": true,
+      "radius_cm": 9.5
+     }
+    },
+    "merged_wheels": {
+     "mesh": "SM_Props_stroller_merged_wheels",
+     "material": "Rubber",
+     "merged": true
+    },
+    "wheel_fr": {
+     "mesh": "SM_Props_stroller_wheel_fr",
+     "material": "Rubber",
+     "attach_cm": [
+      30.0,
+      21.0,
+      9.42
+     ],
+     "joint": {
+      "axis_unreal": "Y",
+      "spin": true,
+      "radius_cm": 9.5
+     }
+    },
+    "wheel_rl": {
+     "mesh": "SM_Props_stroller_wheel_rl",
+     "material": "Rubber",
+     "attach_cm": [
+      -30.0,
+      -27.5,
+      13.92
+     ],
+     "joint": {
+      "axis_unreal": "Y",
+      "spin": true,
+      "radius_cm": 14
+     }
+    },
+    "wheel_rr": {
+     "mesh": "SM_Props_stroller_wheel_rr",
+     "material": "Rubber",
+     "attach_cm": [
+      -30.0,
+      27.5,
+      13.92
+     ],
+     "joint": {
+      "axis_unreal": "Y",
+      "spin": true,
+      "radius_cm": 14
+     }
+    }
+   },
+   "anchors": {
+    "hand_grip_cm": [
+     -46,
+     0.0,
+     105.92
+    ]
+   },
+   "colliders_cm": [
+    {
+     "center": [
+      0,
+      0,
+      54.92
+     ],
+     "size": [
+      96,
+      58,
+      110
+     ]
+    }
+   ]
+  },
+  "grocery_bag": {
+   "kind": "companion",
+   "description": "Kraft paper grocery bag with twisted handles, a baguette and leeks sticking out.",
+   "pivot": "base centre; carried by anchors.hand_grip_cm",
+   "triangles": 320,
+   "budget": 2500,
+   "bounds_cm": [
+    -16.24,
+    -15.3,
+    0.0,
+    9.62,
+    15.3,
+    60.65
+   ],
+   "parts": {
+    "bag": {
+     "mesh": "SM_Props_grocery_bag_bag",
+     "material": "Kraft"
+    },
+    "bag_inner": {
+     "mesh": "SM_Props_grocery_bag_bag_inner",
+     "material": "KraftDark"
+    },
+    "bread": {
+     "mesh": "SM_Props_grocery_bag_bread",
+     "material": "Bread"
+    },
+    "leeks": {
+     "mesh": "SM_Props_grocery_bag_leeks",
+     "material": "LeekWhite"
+    },
+    "leaves": {
+     "mesh": "SM_Props_grocery_bag_leaves",
+     "material": "Leaf"
+    }
+   },
+   "anchors": {
+    "hand_grip_cm": [
+     0,
+     0.0,
+     43
+    ]
+   }
+  }
+ },
+ "counts": {
+  "props": 27,
+  "meshes": 146,
+  "triangles_per_prop": {
+   "lamp_cobra": 468,
+   "lamp_park": 630,
+   "hydrant": 498,
+   "sign_stop": 184,
+   "sign_street": 272,
+   "sign_oneway": 86,
+   "sign_parking": 369,
+   "bixi_dock": 928,
+   "bixi_bike": 1472,
+   "bin_recycling": 327,
+   "bin_compost": 268,
+   "bin_garbage": 522,
+   "cone": 282,
+   "barrier_chantier": 366,
+   "utility_pole": 766,
+   "laundry_line": 692,
+   "bike_locked": 1240,
+   "ac_unit": 428,
+   "flower_box": 1416,
+   "bench": 588,
+   "mailbox": 240,
+   "police_lightbar": 376,
+   "dog_small": 1028,
+   "dog_medium": 1136,
+   "dog_large": 1136,
+   "stroller": 1376,
+   "grocery_bag": 320
+  },
+  "triangles_all_meshes": 22090
+ },
+ "source_sha256": {
+  "Scripts/blender/plateau_props.py": "acd7a820b1c50ee7ce1a2a08ac6075f43d9b9a919f1038041570690d84532693"
+ }
+}

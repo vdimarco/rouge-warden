@@ -1,5 +1,6 @@
 #include "QuebecCampaign.h"
 #include "QuebecGameplay.h"
+#include "QuebecGTA.h" // Side jobs: QuebecJobs::IsJobActive for the race gate guard (JOBS).
 #include "QuebecSky.h"
 
 #include "Components/BoxComponent.h"
@@ -497,6 +498,8 @@ void AQuebecCampaign::TickRace(float DeltaSeconds)
             return;
         }
     }
+    // Side jobs (JOBS): gate 0 does not start the race while a side job runs, so a job's drive cannot trigger it.
+    const bool bSideJob = Phase == EQuebecCampaignPhase::RaceReady && QuebecJobs::IsJobActive(GetWorld());
     for (TActorIterator<AQuebecCar> It(GetWorld()); It; ++It)
     {
         AQuebecCar* Car = *It;
@@ -513,7 +516,7 @@ void AQuebecCampaign::TickRace(float DeltaSeconds)
                 else if (FVector::Dist2D(Position,TrapLocation)>350.f) TrappedUntil.Remove(Car);
             }
         }
-        if (Previous && RaceGates.IsValidIndex(Index) && !bRaceTimedOut)
+        if (Previous && RaceGates.IsValidIndex(Index) && !bRaceTimedOut && !bSideJob)
         {
             const FVector Direction = RaceDirections[Index];
             const float Before = FVector::DotProduct(*Previous-RaceGates[Index],Direction);

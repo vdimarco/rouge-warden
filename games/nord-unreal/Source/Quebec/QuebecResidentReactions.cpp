@@ -1,5 +1,6 @@
 #include "QuebecGameplay.h"
 #include "QuebecCampaign.h"
+#include "QuebecPedestrian.h"
 
 #include "Components/SceneComponent.h"
 #include "Engine/World.h"
@@ -41,7 +42,8 @@ float AQuebecParkResident::RouteTime(float ServerTime) const
 
 bool AQuebecParkResident::Acknowledge(AActor* Player, bool bManual)
 {
-    if (!HasAuthority() || !IsValid(Player) || IsHidden() ||
+    // People: a resident knocked down, running or walking back never stops to greet.
+    if (!HasAuthority() || !IsValid(Player) || IsHidden() || Stride != 0 ||
         AQuebecCharacter::IsCrewTaken(GetWorld(),Style) ||
         FVector::DistSquared(Player->GetActorLocation(),GetActorLocation()) > FMath::Square(1200.f)) return false;
     const float Now = GetWorld()->GetTimeSeconds();
@@ -62,6 +64,24 @@ void AQuebecController::TickResidentGreetings(float DeltaTime)
     if (ResidentGreetingElapsed < .3f) return;
     ResidentGreetingElapsed = 0.f;
     const float Now = GetWorld()->GetTimeSeconds();
+    // People: everyone in the path of a fast player car dives aside at every scan; only the warning caption cools down.
+    if (AQuebecCar* Car = Cast<AQuebecCar>(GetPawn()); Car && Car->Occupant && Car->GetController() == this)
+    {
+        const FVector Velocity = Car->GetActorForwardVector()*Car->Speed+Car->GetActorRightVector()*Car->LateralSpeed;
+        const FVector Lane = FVector::CrossProduct(FVector::UpVector,Velocity.GetSafeNormal2D());
+        const auto DiveAside = [Car,&Velocity,&Lane](const FVector& Person, FVector& Source)
+        {
+            if (!CarApproachingResident(Person,Car->GetActorLocation(),Velocity)) return false;
+            // Run from a point beyond the car's path, so the person dives to the side they already stand on.
+            Source = Person-Lane*(FVector::DotProduct(Person-Car->GetActorLocation(),Lane) >= 0. ? 300. : -300.);
+            return true;
+        };
+        FVector Source;
+        for (TActorIterator<AQuebecParkResident> It(GetWorld()); It; ++It)
+            if (!It->IsHidden() && !It->IsAway() && DiveAside(It->GetActorLocation(),Source)) It->Flee(Source,1.6f);
+        for (TActorIterator<AQuebecPedestrian> It(GetWorld()); It; ++It)
+            if (DiveAside(It->GetActorLocation(),Source)) It->Flee(Source,1.6f);
+    }
     if (Now < NextResidentGreetingAt) return;
 
     if (AQuebecCar* Car = Cast<AQuebecCar>(GetPawn()))
@@ -72,14 +92,15 @@ void AQuebecController::TickResidentGreetings(float DeltaTime)
         double Best = FMath::Square(1200.f);
         for (TActorIterator<AQuebecParkResident> It(GetWorld()); It; ++It)
         {
-            if (It->IsHidden() || AQuebecCharacter::IsCrewTaken(GetWorld(),It->Style)) continue;
+            if (It->IsHidden() || It->IsKnockedDown() || AQuebecCharacter::IsCrewTaken(GetWorld(),It->Style)) continue;
             const double Distance = FVector::DistSquared(Car->GetActorLocation(),It->GetActorLocation());
             if (Distance > Best || !CarApproachingResident(It->GetActorLocation(),Car->GetActorLocation(),Velocity) ||
                 !ClearResidentView(GetWorld(),Car,*It)) continue;
             Best = Distance;
             Nearest = *It;
         }
-        if (Nearest && Nearest->Acknowledge(Car))
+        // People: the nearest one shouts a warning while diving aside, instead of stopping in the car's path.
+        if (Nearest)
         {
             const TCHAR* Warnings[] = {TEXT("Hé! Doucement, y'a du monde ici!"),
                 TEXT("Attention! Le parc, c'est pas une piste de course!"),TEXT("Oups! Lève le pied, mon ami!")};

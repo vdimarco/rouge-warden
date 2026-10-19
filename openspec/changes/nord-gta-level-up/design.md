@@ -1,0 +1,56 @@
+# Design
+
+## Constraints
+- The cloud container has no Unreal Engine and no GPU. Every native claim stays open until the host builds and runs it.
+- The host compiles with clang `-Wall -Werror -Wshadow`. PR #404 broke the Linux build with one local that shadowed a member. No local, parameter or lambda parameter may reuse a member name, own or inherited.
+- Tests call `ServerSetDrive`, `MoveForward`, `MoveRight` and `ServerInteract` through reflection with hand-built parameter structs. Their signatures stay unchanged.
+- Pinned checks stay true: exactly 14 + 96 residents, 16 traffic cars, one campaign actor, three feedback sounds, four music log lines, save version 1 with 0–2 missions, camera pitch −25…−5, Toronto with no crowd and one car, empty captions after a phase change.
+- The cloud cannot write `.uasset` or `.umap` files. Every gameplay feature works with engine basic shapes, existing assets and procedural sound. New art arrives through editor scripts that the host runs, and the code uses it when `LoadObject` finds it.
+
+## Shared contracts
+`Source/Quebec/QuebecGTA.h` holds the shared enums and the free-function namespaces: `QuebecPeople`, `QuebecCombat`, `QuebecCrime`, `QuebecJobs` and `QuebecNotice`. Each namespace has one source file. Systems call each other only through that header, so the files can grow in parallel.
+
+`AQuebecPlayerState` (new, `QuebecPlayerState.h/.cpp`) carries health, armour, down state, weapons, ammo, aim lock, heat, stars, search state and cash. A driver's character stops replicating while the car carries it, so this state cannot live on the character. It updates at 10 Hz, and the server forces an update on each change. `AQuebecGameMode` sets `PlayerStateClass`.
+
+Pure rules live in engine-free headers in the `QuebecSkyModel.h` style, so the container builds and runs them with g++ and clang++ under `-Wshadow -Werror`: `QuebecKnockModel.h` (tumble pose over time), `QuebecHeatModel.h` (heat, stars, search time), `QuebecAimModel.h` (target choice in a cone with hysteresis) and `QuebecSteerAssist.h` (lag-tolerant steering).
+
+## People and knockdowns
+Residents and pedestrians have no collision, and they must not get any: placement checks, traffic sweeps and `CanFitAt` would then treat them as walls. Car strikes use a server-side test instead. `AQuebecCar` keeps its transform before the move and calls `QuebecPeople::StrikeWithCar` after the move, for player-driven, police and shoved cars. The test checks each person's capsule against the car's swept box.
+
+The crew and civilian skeletons have no physics assets, so a ragdoll is not possible. A knockdown is a procedural comic tumble: a ballistic arc from a replicated start time, launch velocity and spin, then a lie-down, a dazed hold with circling stars, and a stand-up. Every peer computes the same pose from server time, so replication costs a few floats per knockdown. Residents hold their route clock while down, as `Acknowledge` already does. A player hit by a car is launched on the server, loses health and cannot move until standing.
+
+People flee from gunfire and fast cars. `QuebecPeople::Alarm` sends each civilian away from the source along a clear direction for a few seconds, then they return to their route.
+
+## Combat
+Weapons: fists, hockey stick, pistol, SMG and shotgun. Pickups are actors at fixed points and respawn after 60 s. Firing runs on the server. The client sends its aim; the server picks a target with `QuebecAimModel` (25° cone, 35° hysteresis, lock kept for 4 s) and checks line of sight against the world. People have no collision, so hits on people are cone tests plus one visibility trace. Tracers, muzzle flashes and impact words are multicast. Sounds are procedural `USoundWaveProcedural` bursts, like the car engine. Melee snaps the player's yaw up to 90° toward the target and hits during a short window.
+
+At zero health the player is knocked out (K.-O.). The pawn is never destroyed: it lies down, the banner shows for 4 s, and the player returns at the Hôpital Notre-Dame stop on Sherbrooke with full health. Cash stays; weapons and stars clear.
+
+## Police
+Crimes add heat when a police officer or car sees them (foot 55°/40 m, car 35°/70 m) or when two civilians are within 25 m. Thresholds for 1–5 stars: 10, 45, 100, 180, 300 heat. While any officer sees the player, a search circle follows the player. When none sees the player, the stars blink, and they drop after 15 s + 10 s per star.
+
+The dispatcher keeps police cars and officers up to a cap for the star level: 1★ one car; 2★ two cars; 3★ three cars and officers who shoot; 4★ and 5★ four cars and four officers in total. Two co-op viewers already share one GPU, so the cap stays low. Cars appear 120–200 m away on the road graph and out of every player's view. They pursue along road segments when far, and directly with a 1.2 s prediction when near. A police car is an `AQuebecCar` with `bPolice`: white with a blue band, a light bar and a procedural siren. It drives through an autopilot input on the player handling model, and the remote-input failsafe does not apply to it. Officers are a light character class that steers with `AddMovementInput` and needs no navmesh.
+
+An officer next to a slow player on foot holds for 2 s and arrests the player (ARRÊTÉ). The player returns at Poste de quartier 38 on Rachel. A garage on the map clears the stars when no officer sees the player enter.
+
+## Side jobs
+`AQuebecSideJobs` is a separate actor from the campaign. Its save data is separate too, so the campaign save version and story checks do not change. One job runs at a time, shared by both players. A player starts it with E at a yellow marker. Every marker is at least 15 m from each QA anchor. Jobs: a timed delivery, a car-thief takedown, ink goons at the Théâtre de Verdure, and a three-star escape. R inside a job runs the job's own retry, not the campaign retry. Race gate 0 starts the race only when no job is active. Side jobs are off in Toronto and under `-NordNoCampaign`.
+
+## Living street
+The 96 runtime residents stay 96. Some walkers get a companion: a leashed dog, a stroller or grocery bags, set by a replicated byte. The dog and the stroller are components of the resident, built from basic shapes or from the imported Blender meshes when the host has imported them. The dog trots with procedural leg swing and stops to sniff at trees. Traffic cars come to a full stop at junctions marked with ARRÊT signs. They wait for people on the crossing, and now and then they pull to the curb for a while with hazard lights on.
+
+## Lag-tolerant driving
+The phone wheel sends graded steering. New axis keys give ±0.33 and ±0.66 steering in `DefaultInput.ini`, so the browser can send three levels per side with no new transport. The wheel uses hysteresis, so a jittery thumb does not flicker between levels. On the server, `QuebecSteerAssist` applies a speed-based steering rate, a yaw damper and road-heading straightening near the centre of the wheel. It is active only on roads, so the driving fixtures at (0,0), 137 m from any road, keep their pinned numbers. Wall contact keeps sliding speed instead of stopping the car. Possessed cars update at 60 Hz.
+
+## Plateau streetscape
+`Scripts/plateau_replica.py` is a stdlib-only generator in the existing prepare/apply pattern. It writes OBJ batches and a manifest to `Data/Plateau/ReplicaGeometry/` (git-ignored, deterministic). `Scripts/apply_plateau_replica.py` imports them on the host as an additive layer.
+- Streets are cut to measured cross-sections (Rachel about 14 m curb to curb, Papineau 17.6 m, Sherbrooke 21.5 m, residential streets 9.8–12.5 m). The layer uses dark asphalt, yellow centre lines, white stop bars, crosswalks of the Québec kind and green bike-lane paint with bollards on Rachel.
+- Sidewalks are grey concrete with an 18 cm curb. The `SM_Concrete_Collision*` naming and the 17–25 cm curb top keep runtime curb parking working. The layer adds front parterres and tree pits at the 8.4 m street-tree spacing.
+- The 1,409 plain buildings get plex fronts with a cheaper street-level budget. Storeys and type come from tagged levels and the municipal heights; the lot module is 7.63 m. Fronts get brick in local colours, stone sills and lintels, painted cornices, balconies at each upper floor, straight or curved black iron stairs and paired doors.
+- Corners get white street-name signs with black text (Montréal's real design, not blue), ARRÊT signs at the 77 mapped stops, lamps at the 288 mapped points and red hydrants at the 200 mapped points. BIXI docks go at mapped stations.
+- The lived-in layer comes from the owner's reference article ("City building games have a Soul Problem pt.2", Radical Elements). It adds patched asphalt and potholes, leaves in gutters, weeds, soft grass edges, cones, a construction fence, laundry lines, utility poles and wires over ruelles, bins, locked bikes, rust streaks and murals, varied by a per-lot seed.
+
+Sources: the Plateau-Mont-Royal heritage sheets (December 2015) for dimensions; Müller et al., "Procedural Modeling of Buildings" (SIGGRAPH 2006) and the CityEngine `split` grammar for the façade rules; Ubisoft's Watch Dogs 2 talk on building kits for the idea of a few era kits. The team adapted the split grammar into the existing Python façade helpers. Unreal's PCG shape grammar was not used, because it needs the editor.
+
+## Known issue left for a follow-up: the world is mirrored
+The pipeline puts +X east and +Y north into Unreal's left-handed frame. The map is therefore a mirror image of the real Plateau: facing north on Papineau, the park is on the player's right instead of the left. The radar draws real north-up geography, so it turns against the view. A fix negates Y across every map layer, every gameplay coordinate header, the campaign positions, the saved actors and the QA scripts, and then needs the full host QA. That is too large to add without a host build. This change keeps the current frame, so its new geometry lines up with gameplay, and records the fix as the first follow-up.

@@ -53,6 +53,7 @@ namespace
 
 void AQuebecCharacter::Jump()
 {
+    if (IsInputLocked()) return; // People: no jumping while knocked down, K.-O. or arrested.
     if (GetCharacterMovement()->IsSwimming())
     {
         SwimStrokeUntil = GetWorld()->GetTimeSeconds() + .2f;

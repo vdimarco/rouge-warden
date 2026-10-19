@@ -1,0 +1,27 @@
+# Plex: Plateau plex fronts on the plain buildings
+
+`python3 Scripts/plateau_plex.py` writes this folder: 813 OBJ batches (git-ignored, rebuilt byte for byte), `manifest.json` (batches, materials, counts, source and geometry SHA-256), `summary.json` (fronts by type, stair shape, crown, storeys histogram and sources, streets covered) and `fronts.json` (one record per front, including each exterior stair's head and foot in map coordinates). `python3 Scripts/test_plateau_plex.py` checks it; `--quick` runs only the fixtures.
+
+## What it covers
+
+The 1,407 inside buildings that have no detailed front yet: everything except the 100 Panet/Visitation route fronts, the 154 park-facing perimeter fronts, the Le Neuville tower and École Le Plateau. 1,307 get a front facing their named street, plus 383 corner side fronts. 100 are skipped: 75 have no exposed edge facing a named street (yard and lane buildings), 11 are institutional buildings or outbuildings, 8 are towers over 24 m and 6 have footprints under 25 m². The classic plex streets are covered: Mentana 135, Saint-André 103, Cartier 83, Saint-Christophe 76, Fabre 66, Dorion 62, Garnier 59 and others.
+
+Each front is a visual skin. Glass, door leaves and recess backs sit 4 cm in front of the retained collision mass, 1 cm ahead of the old 3 cm `OSM Glass` cards. The masonry face sits 16 cm out, so the windows read as 12 cm recesses. Stair treads, stoops, porch decks and balcony decks (`Wood_Deck`) are a separate collision batch, `collision: complex`, which means complex-as-simple like the existing `*_Collision` batches. Every other batch has no collision. The masses keep their back and side walls. Where the plex front stands taller than its retained mass, a brick band and a flat cap close the gap above the mass top (`top_extensions`).
+
+## Rules and data
+
+- **Storeys:** OSM `building:levels` (597 fronts). Then the assessment roll joined by address, `assessment_roll_join.json` (468). Then the 2016 municipal LOD2 height as round((h − 4.9 m) / 3.26 m), an offset and increment measured from the LOD2-versus-levels medians (108). Otherwise 3 storeys (134). When the data storeys would leave more than 1.5 m of the retained 9.6 m mass showing above the crown, one storey is added (142 fronts, flagged in `storeys_source`).
+- **Era:** the roll's construction year (1,090 fronts), or a seeded draw from the roll's decade histogram. Era selects the crown (wood cornice before 1890; pressed-metal cornice or slate *fausse mansarde* 1890–1905; metal cornice or parapet 1906–1915; raised brick parapet with a cast-stone medallion 1916–1939; flat parapet after that), the masonry mix (research-plateau.md §9) and the lintels (painted wood, stone or cast stone).
+- **Front yard:** distance from the façade to the parallel OSM `footway=sidewalk` centreline, minus 1 m (1,207 fronts), or a road-width estimate. Exterior stairs need at least 1.05 m and stay entirely inside that yard. Curved stairs run along the wall and turn toward the street at the foot, for yards under 3 m. Straight stairs are used at 3 m and more. Lot-line fronts (yard under 1.05 m) get cantilevered balconies over the sidewalk and doors near grade. Stairs go to about 92% of 1885–1944 duplexes and triplexes, half of the 1880–1884 ones and a quarter of the 1870s ones. Among 1890–1930 residential fronts on the plex streets, 73% have one.
+- **Composition:** one plex per 7.63 m lot module (wide footprints are split). The ground floor is raised 75–105 cm over a stone base with basement vents. Storeys are 320–330 cm. The stair-head balcony on the 2nd floor carries paired doors with transoms. Each upper floor has a full-width wooden balcony, 1.1–1.5 m deep, with 86 cm iron or painted railings, on consoles or (1912–1939) on columns. Windows are double-hung or casement with a ⅓ transom, with stone sills and lintels. Corner buildings on arterials, and lots with a mapped shop node, get a dépanneur-style ground floor: shop windows, a sign band, an awning and a blade sign.
+- **Palette:** six brick colours, grey limestone and cast stone, white trim, black iron, five painted colours, grey deck paint, glass and slate, from research-plateau.md §9.
+
+## Budget
+
+2,140,589 triangles in 813 batches (median 1,504 triangles per front; largest batch 38,358). The base grid is 47.5 m. The 18 material slots need the tile widened to 142.5 m to stay under 860 batches.
+
+## Sources and limits
+
+Footprints and addresses: © OpenStreetMap contributors, ODbL 1.0 (`Data/LaFontaine/osm.xml`). Heights: Ville de Montréal *Bâtiments 3D 2016* LOD2, CC BY 4.0 (`Data/CityBuildings`). Year built and storeys: Ville de Montréal, *Unités d'évaluation foncière*, CC BY 4.0, joined to OSM addresses. Rebuild the join with `python3 Scripts/plateau_plex.py --join-roll <datastore dump.json>`, from the CKAN `datastore_search` rows for `NO_ARROND_ILE_CUM = REM21`. Dimensions come from the Plateau-Mont-Royal heritage sheets (December 2015). The façade grammar follows Müller et al., *Procedural Modeling of Buildings* (SIGGRAPH 2006), and the CityEngine `split` idea.
+
+Brick and paint colours, door and window rhythm, stair side and shape, and cornice details are rule-and-seed estimates. They are not surveys of individual buildings. Rear and lane façades are not treated. The geometry keeps the map's mirrored frame (x east, y north).
