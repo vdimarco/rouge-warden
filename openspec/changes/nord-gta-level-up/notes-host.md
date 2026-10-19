@@ -37,17 +37,17 @@ Each line is `"$cmd" "$uproject" /Game/Maps/LaFontaine <flags> -ExecutePythonScr
 Then the HUD captures: `test_compact_hud.py` and the story render checks at `-NordCaptureWidth=1280` and `1920`. The radar should match the accepted captures. Review them and accept again if the job markers or pickups show.
 
 ## 4. Map import
-Regenerate the git-ignored geometry, back up the map, then import:
+Regenerate the git-ignored geometry, back up the map, then import. Build Plex and Props before the replica test, because its apply-plan check needs every layer's OBJ files:
 ```bash
-python3 Scripts/plateau_replica.py && python3 Scripts/test_plateau_replica.py
 python3 Scripts/plateau_plex.py && python3 Scripts/test_plateau_plex.py
 <blender-python> Scripts/blender/plateau_props.py && python3 Scripts/test_plateau_props.py
+python3 Scripts/plateau_replica.py && python3 Scripts/test_plateau_replica.py
 python3 Scripts/apply_plateau_replica.py --dry-run
+backup="$(pwd)/Saved/Recovery/replica-$(date -u +%Y%m%dT%H%M%SZ)"
 "$cmd" "$uproject" /Game/Maps/LaFontaine -NullRHI -Unattended -NoP4 -NoSound \
-  -ExecutePythonScript="$(pwd)/Scripts/apply_plateau_replica.py" \
-  -NordPlateauReplicaBackup="$(pwd)/Saved/Recovery/replica-$(date -u +%Y%m%dT%H%M%SZ)"
+  -ExecutePythonScript="$(pwd)/Scripts/apply_plateau_replica.py" -NordPlateauReplicaBackup="$backup"
 "$cmd" "$uproject" /Game/Maps/LaFontaine -NullRHI -Unattended -NoP4 -NoSound \
-  -ExecutePythonScript="$(pwd)/Scripts/apply_plateau_replica.py" -NordPlateauReplicaVerify
+  -ExecutePythonScript="$(pwd)/Scripts/apply_plateau_replica.py" -NordPlateauReplicaBackup="$backup" -NordPlateauReplicaVerify
 ```
 The script is additive and refuses to run twice. The only change to an existing actor is that the `OSM Marking` dashes are hidden. Then rerun `car_collision_test.py`, `population_test.py` and `Scripts/verify_lafontaine.py` on the saved map. Capture the six reference views and run `python3 Scripts/profile_package.py` after packaging: each p95 must stay under 16.67 ms. Compare the captures with `Preview/Replica/`.
 
