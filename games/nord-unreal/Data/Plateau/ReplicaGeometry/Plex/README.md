@@ -1,6 +1,6 @@
 # Plex: Plateau plex fronts on the plain buildings
 
-`python3 Scripts/plateau_plex.py` writes this folder: 813 OBJ batches (git-ignored, rebuilt byte for byte), `manifest.json` (batches, materials, counts, source and geometry SHA-256), `summary.json` (fronts by type, stair shape, crown, storeys histogram and sources, streets covered) and `fronts.json` (one record per front, including each exterior stair's head and foot in map coordinates). `python3 Scripts/test_plateau_plex.py` checks it; `--quick` runs only the fixtures.
+`python3 Scripts/plateau_plex.py` writes this folder: 827 OBJ batches (git-ignored, rebuilt byte for byte), `manifest.json` (batches, materials, counts, source and geometry SHA-256), `summary.json` (fronts by type, stair shape, crown, storeys histogram and sources, streets covered) and `fronts.json` (one record per front, including each exterior stair's head and foot in map coordinates). `python3 Scripts/test_plateau_plex.py` checks it; `--quick` runs only the fixtures.
 
 ## What it covers
 
@@ -15,10 +15,11 @@ Each front is a visual skin. Glass, door leaves and recess backs sit 4 cm in fro
 - **Front yard:** distance from the façade to the parallel OSM `footway=sidewalk` centreline, minus 1 m (1,207 fronts), or a road-width estimate. Exterior stairs need at least 1.05 m and stay entirely inside that yard. Curved stairs run along the wall and turn toward the street at the foot, for yards under 3 m. Straight stairs are used at 3 m and more. Lot-line fronts (yard under 1.05 m) get cantilevered balconies over the sidewalk and doors near grade. Stairs go to about 92% of 1885–1944 duplexes and triplexes, half of the 1880–1884 ones and a quarter of the 1870s ones. Among 1890–1930 residential fronts on the plex streets, 73% have one.
 - **Composition:** one plex per 7.63 m lot module (wide footprints are split). The ground floor is raised 75–105 cm over a stone base with basement vents. Storeys are 320–330 cm. The stair-head balcony on the 2nd floor carries paired doors with transoms. Each upper floor has a full-width wooden balcony, 1.1–1.5 m deep, with 86 cm iron or painted railings, on consoles or (1912–1939) on columns. Windows are double-hung or casement with a ⅓ transom, with stone sills and lintels. Corner buildings on arterials, and lots with a mapped shop node, get a dépanneur-style ground floor: shop windows, a sign band, an awning and a blade sign.
 - **Palette:** six brick colours, grey limestone and cast stone, white trim, black iron, five painted colours, grey deck paint, glass and slate, from research-plateau.md §9.
+- **Masonry mix:** the §9 split read too red in the street previews (`Preview/Replica/`), so brown, buff and stone take a few points from red within each era. Before 1890: 15% limestone, then red, dark red, brown and orange in equal parts. 1890–1915: 32% limestone, 20% red, 6% dark red, 16% brown, 6% dark brown, 15% buff, 5% orange. 1916–1939: 30% brown, 15% dark brown, 18% red, 25% buff, 12% orange. District result: 333 limestone, 358 brown, 182 buff and 434 red or orange fronts (was 317, 241, 133 and 616).
 
 ## Budget
 
-2,140,589 triangles in 813 batches (median 1,504 triangles per front; largest batch 38,358). The base grid is 47.5 m. The 18 material slots need the tile widened to 142.5 m to stay under 860 batches.
+2,139,575 triangles in 827 batches (median 1,502 triangles per front; largest batch 38,358). The base grid is 47.5 m. The 18 material slots need the tile widened to 142.5 m to stay under 860 batches.
 
 ## Sources and limits
 

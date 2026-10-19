@@ -16,10 +16,10 @@
     -46395.51,
     7.05,
     -358.19,
-    -192.02,
+    -181.72,
     7.06
    ],
-   "sha256": "79859548c955f0ea73663890734fd0ef8424fd7f8bf6612a65f1bde37af2f281"
+   "sha256": "fd647341438effab700a14938780579b1dab0209707a5f4c58b0ad0be5865ebb"
   },
   {
    "file": "Soul_patch_dark_XM001_YP000.obj",
@@ -30,14 +30,14 @@
    "faces": 107,
    "tile_cm": 1000000,
    "bounds_cm": [
-    -43912.94,
+    -43904.45,
     414.12,
     7.05,
     -483.72,
     69358.96,
     7.06
    ],
-   "sha256": "8b4ffcca0bd5a6ed04ed2c1e5e90723cacb408e2d26f7f730d548b0442997cc0"
+   "sha256": "ce9b333053f18d1c34f669479395550133e0a6e0edbf3647c8a9ddf01b248dd0"
   },
   {
    "file": "Soul_patch_dark_XP000_YM001.obj",
@@ -49,31 +49,31 @@
    "tile_cm": 1000000,
    "bounds_cm": [
     -109.88,
-    -46502.46,
+    -46499.74,
     7.05,
     54570.6,
-    -404.38,
+    -399.36,
     7.06
    ],
-   "sha256": "743562e459eb82a79d5f78505a63546e6578da7d259ef4529c890ee3f1678b3a"
+   "sha256": "c701373414300076a44a27995f86fcad16db45f20e37988dd565c91b36742894"
   },
   {
    "file": "Soul_patch_dark_XP000_YP000.obj",
    "mesh": "SM_Soul_patch_dark_XP000_YP000",
    "material": "patch_dark",
    "collision": "none",
-   "triangles": 206,
-   "faces": 103,
+   "triangles": 208,
+   "faces": 104,
    "tile_cm": 1000000,
    "bounds_cm": [
     66.4,
-    1214.84,
+    1142.73,
     7.05,
     54718.05,
-    69100.75,
+    69100.6,
     7.06
    ],
-   "sha256": "0dd0ef3c7385298a8e134f2dcd6b4fbe40ce789b7acfad2f2ebff07d67795e1c"
+   "sha256": "f2d9b6239a62352d0ec8171e29d693a3bb2f80457b50344a3e26596c80e3c796"
   },
   {
    "file": "Soul_patch_light_XM001_YM001.obj",
@@ -88,10 +88,10 @@
     -46409.36,
     7.05,
     -545.47,
-    -517.1,
+    -510.69,
     7.07
    ],
-   "sha256": "13e51d96c88dcadf8af6427b33262e8f2edf1df412a7d7292abcdcb92a82f425"
+   "sha256": "7022dde95111d233df3427f5308471fc74bd55e82b390d875296aba62593c5f3"
   },
   {
    "file": "Soul_patch_light_XM001_YP000.obj",
@@ -102,14 +102,14 @@
    "faces": 96,
    "tile_cm": 1000000,
    "bounds_cm": [
-    -43384.28,
+    -43382.04,
     666.73,
     7.05,
     56.66,
-    68984.3,
+    68939.62,
     7.07
    ],
-   "sha256": "a32ebed61b9143f41c31c843defd9d8b1ba2824169c85b9a17df8ab00d958973"
+   "sha256": "d5a87008e23bc1e9b56e0079208da1db9798bcc6d9375725440615a8fd5e7ba0"
   },
   {
    "file": "Soul_patch_light_XP000_YM001.obj",
@@ -121,31 +121,31 @@
    "tile_cm": 1000000,
    "bounds_cm": [
     -19.26,
-    -46361.75,
+    -46350.66,
     7.05,
     55442.88,
-    20.38,
+    70.19,
     7.07
    ],
-   "sha256": "3905fbf33fe78361e99508ab89f1317eb98d0287a932a63298967d26d91aa3aa"
+   "sha256": "58b7fcca70db137f6e8d528922aeff0a730c64f17673b1a3ae8142e8998d0f6f"
   },
   {
    "file": "Soul_patch_light_XP000_YP000.obj",
    "mesh": "SM_Soul_patch_light_XP000_YP000",
    "material": "patch_light",
    "collision": "none",
-   "triangles": 300,
-   "faces": 87,
+   "triangles": 308,
+   "faces": 88,
    "tile_cm": 1000000,
    "bounds_cm": [
     127.44,
-    1545.5,
+    1559.56,
     7.05,
     55024.91,
     68652.69,
     7.07
    ],
-   "sha256": "70694d6baff57ce21d6fb4c9a3297199914adc6064134a6aeca8c79ab78e27e7"
+   "sha256": "d4e42d25d1d3755fea5228e0119d753f50bc3947f3c33dbe5c7203a9ca553d22"
   },
   {
    "file": "Soul_crack_seal_XM001_YM001.obj",
@@ -163,61 +163,61 @@
     8.31,
     7.08
    ],
-   "sha256": "97ae02b47178fb2daeef61abbe2f900379b27137e6db11c4fb5fc73adefd4db3"
+   "sha256": "696f01b75d51ece5b40198366460bf6bd267b2809fb5707c86dcef198bd90b37"
   },
   {
    "file": "Soul_crack_seal_XM001_YP000.obj",
    "mesh": "SM_Soul_crack_seal_XM001_YP000",
    "material": "crack_seal",
    "collision": "none",
-   "triangles": 3890,
-   "faces": 1945,
+   "triangles": 3888,
+   "faces": 1944,
    "tile_cm": 1000000,
    "bounds_cm": [
-    -43653.14,
+    -43614.97,
     5.99,
     7.08,
     -2.6,
     69092.6,
     7.08
    ],
-   "sha256": "06fc84d963601b8f5ec6166d191db74b4df37ec82e2501b3c321683ce714dd1c"
+   "sha256": "746c98facdeb58c2e5ea5840a7a555835c2989e5b7dbf3f05b74f28f5f184fb0"
   },
   {
    "file": "Soul_crack_seal_XP000_YM001.obj",
    "mesh": "SM_Soul_crack_seal_XP000_YM001",
    "material": "crack_seal",
    "collision": "none",
-   "triangles": 3534,
-   "faces": 1767,
+   "triangles": 3554,
+   "faces": 1777,
    "tile_cm": 1000000,
    "bounds_cm": [
     117.52,
-    -46609.69,
+    -46589.07,
     7.08,
     55235.0,
-    -1101.5,
+    -1142.04,
     7.08
    ],
-   "sha256": "62f64a70e25e14ca3bc80f1e0757cfdb8a4f9b9f094d5e66e125c867df8d3c08"
+   "sha256": "98cdc240cfa1bd8b2ebdf5ee64eb55ece4f1e33c111f6b8eb6843a78e8ec3880"
   },
   {
    "file": "Soul_crack_seal_XP000_YP000.obj",
    "mesh": "SM_Soul_crack_seal_XP000_YP000",
    "material": "crack_seal",
    "collision": "none",
-   "triangles": 3108,
-   "faces": 1554,
+   "triangles": 3052,
+   "faces": 1526,
    "tile_cm": 1000000,
    "bounds_cm": [
     -5.0,
-    590.19,
+    512.52,
     7.08,
-    55356.33,
+    55354.54,
     68536.0,
     7.08
    ],
-   "sha256": "08bc7017e4d0ec2923467b8785666a8469b686f16dcb84c28b2752f963f997ef"
+   "sha256": "49f5b7e1ea279b99ca0c50af9c752967222e46dd692e695c6fa65012c9e7da12"
   },
   {
    "file": "Soul_pothole_XM001_YM001.obj",
@@ -235,7 +235,7 @@
     -2802.16,
     7.09
    ],
-   "sha256": "9cae6f37e184dccf81a583d055666449b5c568fb0ac22bfcc3ce7638d40addde"
+   "sha256": "92078d9dc6add93f92d82330b1776914d8999f378a8224dd42436e6ad5dfb46a"
   },
   {
    "file": "Soul_pothole_XM001_YP000.obj",
@@ -246,14 +246,14 @@
    "faces": 16,
    "tile_cm": 1000000,
    "bounds_cm": [
-    -42251.08,
-    10233.12,
+    -42248.33,
+    10198.24,
     7.09,
-    -3938.85,
+    -3922.73,
     66333.06,
     7.09
    ],
-   "sha256": "d8103501e9cdc47fe4ef66d4daa64d8e41520a0dc2a0601d78bc5819fdac6994"
+   "sha256": "cc33f744218f8f80da5f4170bb73eb87a4764eced31da6b08cc77fbcb28d84fb"
   },
   {
    "file": "Soul_pothole_XP000_YM001.obj",
@@ -265,111 +265,111 @@
    "tile_cm": 1000000,
    "bounds_cm": [
     -3.4,
-    -46349.42,
+    -46338.33,
     7.09,
     55089.9,
     -16714.32,
     7.09
    ],
-   "sha256": "c50bcc99ead1571cccce0b0ea695e8a369c8b331c1eb91dd0d2145ee8c5f0a2e"
+   "sha256": "1c31836c85d44de15f08e9ecf5e499f14485d1e174aed04d7d5076f712da4bf7"
   },
   {
    "file": "Soul_pothole_XP000_YP000.obj",
    "mesh": "SM_Soul_pothole_XP000_YP000",
    "material": "pothole",
    "collision": "none",
-   "triangles": 168,
-   "faces": 21,
+   "triangles": 176,
+   "faces": 22,
    "tile_cm": 1000000,
    "bounds_cm": [
     934.23,
-    1972.02,
+    1892.01,
     7.09,
-    54152.89,
+    54148.46,
     68319.79,
     7.09
    ],
-   "sha256": "5020da3865b6eacdd237aafb727b334c74743949252bb503399380584e5cc8c6"
+   "sha256": "107d72e73af38e97a0b510a142f80b07cfa337114edbbd7539298bddc6968734"
   },
   {
    "file": "Soul_leaf_gold_XM001_YM001.obj",
    "mesh": "SM_Soul_leaf_gold_XM001_YM001",
    "material": "leaf_gold",
    "collision": "none",
-   "triangles": 3390,
-   "faces": 1663,
+   "triangles": 3386,
+   "faces": 1661,
    "tile_cm": 1000000,
    "bounds_cm": [
     -44236.09,
     -47011.47,
     7.23,
     28.23,
-    2.87,
+    13.65,
     18.4
    ],
-   "sha256": "58788cdb9d39a01c3c5792e57aeac925146f546533f9f901d733435740f152c2"
+   "sha256": "722df9c22a4361e56f8d70f2615a79819692d55b79a18c55cbb42fa75e2f8814"
   },
   {
    "file": "Soul_leaf_gold_XM001_YP000.obj",
    "mesh": "SM_Soul_leaf_gold_XM001_YP000",
    "material": "leaf_gold",
    "collision": "none",
-   "triangles": 4236,
-   "faces": 2034,
+   "triangles": 4446,
+   "faces": 2125,
    "tile_cm": 1000000,
    "bounds_cm": [
-    -44105.1,
-    -23.35,
+    -44096.69,
+    -18.76,
     7.23,
     22.61,
-    69290.22,
+    69320.24,
     18.4
    ],
-   "sha256": "a434dcb825001f9a2504b1246f8629a8fc29a1336d668b0d68757ff487dd5828"
+   "sha256": "d27cd0c85de5d1172ade78576c77924373b11017316891c865869a34eb22b9a1"
   },
   {
    "file": "Soul_leaf_gold_XP000_YM001.obj",
    "mesh": "SM_Soul_leaf_gold_XP000_YM001",
    "material": "leaf_gold",
    "collision": "none",
-   "triangles": 2130,
-   "faces": 1037,
+   "triangles": 2072,
+   "faces": 1006,
    "tile_cm": 1000000,
    "bounds_cm": [
     -3.34,
-    -47016.52,
+    -46861.91,
     7.23,
     54598.95,
-    -107.91,
+    -184.76,
     18.4
    ],
-   "sha256": "1b4186c18f41147180db55196722a05e5ddcf66a94745d25e5b1e7863139a9ef"
+   "sha256": "c9e601898788d7eec0f4090910902b8283916e732d8bacc9f60d9906f3ee4e31"
   },
   {
    "file": "Soul_leaf_gold_XP000_YP000.obj",
    "mesh": "SM_Soul_leaf_gold_XP000_YP000",
    "material": "leaf_gold",
    "collision": "none",
-   "triangles": 3166,
-   "faces": 1513,
+   "triangles": 3034,
+   "faces": 1463,
    "tile_cm": 1000000,
    "bounds_cm": [
     -29.0,
-    45.31,
+    104.1,
     7.23,
     55668.07,
     68943.22,
     18.4
    ],
-   "sha256": "a017db546229c35b21ef3e0000c34254e960453fc31de4e64161059b035e275a"
+   "sha256": "a6771e3557424860fb72f4b8ced24064a96aa30c2391af51ca323a307a07694d"
   },
   {
    "file": "Soul_leaf_rust_XM001_YM001.obj",
    "mesh": "SM_Soul_leaf_rust_XM001_YM001",
    "material": "leaf_rust",
    "collision": "none",
-   "triangles": 1450,
-   "faces": 677,
+   "triangles": 1436,
+   "faces": 672,
    "tile_cm": 1000000,
    "bounds_cm": [
     -43376.71,
@@ -379,69 +379,69 @@
     -422.66,
     18.4
    ],
-   "sha256": "9fd4dab625b53df38e6a19979cd3450216a6b9fc1ea0552514f29d9a98aceb35"
+   "sha256": "67185cfb5227d45195a72efd9ad9dce5e1eac44de4be0c2fe344d2609520dde2"
   },
   {
    "file": "Soul_leaf_rust_XM001_YP000.obj",
    "mesh": "SM_Soul_leaf_rust_XM001_YP000",
    "material": "leaf_rust",
    "collision": "none",
-   "triangles": 2366,
-   "faces": 1117,
+   "triangles": 2662,
+   "faces": 1237,
    "tile_cm": 1000000,
    "bounds_cm": [
-    -44140.12,
-    214.21,
+    -44087.9,
+    224.99,
     7.23,
     -39.76,
-    69261.89,
+    69306.93,
     18.4
    ],
-   "sha256": "af58fe89ab5bbf867725e1a122a279c43f231829401514ad313bea27d0c2574d"
+   "sha256": "9fd93e705116f7c5ceeb2d04601d96364f4781cc113826e9c7a921042ec12b5c"
   },
   {
    "file": "Soul_leaf_rust_XP000_YM001.obj",
    "mesh": "SM_Soul_leaf_rust_XP000_YM001",
    "material": "leaf_rust",
    "collision": "none",
-   "triangles": 1410,
-   "faces": 665,
+   "triangles": 1314,
+   "faces": 631,
    "tile_cm": 1000000,
    "bounds_cm": [
     193.34,
-    -47026.72,
+    -46903.31,
     7.23,
     54619.52,
-    -979.27,
+    -920.47,
     18.4
    ],
-   "sha256": "a56d4495ad9b8019163ff1da7765ae110f31d22962f35bf56a39303b37bc6b49"
+   "sha256": "10ce822cdba96223a0458782e0c62c5bac49a3d80fff88d2b3d4918aa0216925"
   },
   {
    "file": "Soul_leaf_rust_XP000_YP000.obj",
    "mesh": "SM_Soul_leaf_rust_XP000_YP000",
    "material": "leaf_rust",
    "collision": "none",
-   "triangles": 1970,
-   "faces": 957,
+   "triangles": 1846,
+   "faces": 899,
    "tile_cm": 1000000,
    "bounds_cm": [
     14.13,
-    702.71,
+    4907.96,
     7.23,
-    55643.87,
-    68715.37,
+    55552.61,
+    69520.61,
     18.4
    ],
-   "sha256": "d7b8421616b28d986c982a10faf7912ed7d0a664f610a24122c561de525768ca"
+   "sha256": "ace450717e3c480b4f685a1fc1e9b42da2d8283c6f80372c79bed2bb08bcd794"
   },
   {
    "file": "Soul_leaf_brown_XM001_YM001.obj",
    "mesh": "SM_Soul_leaf_brown_XM001_YM001",
    "material": "leaf_brown",
    "collision": "none",
-   "triangles": 1998,
-   "faces": 963,
+   "triangles": 1992,
+   "faces": 960,
    "tile_cm": 1000000,
    "bounds_cm": [
     -43901.3,
@@ -451,61 +451,61 @@
     -100.89,
     18.4
    ],
-   "sha256": "5831485648aa748c4d4bfb4abeb6ef78bd9c779c0744e57f788b7755e62517ef"
+   "sha256": "18f2f08b8ccc784552350c40dfa839601b81b1ef48052409e4c01d27fca92599"
   },
   {
    "file": "Soul_leaf_brown_XM001_YP000.obj",
    "mesh": "SM_Soul_leaf_brown_XM001_YP000",
    "material": "leaf_brown",
    "collision": "none",
-   "triangles": 2450,
-   "faces": 1127,
+   "triangles": 2634,
+   "faces": 1211,
    "tile_cm": 1000000,
    "bounds_cm": [
-    -43933.29,
+    -44004.99,
     1607.74,
     7.23,
     -164.85,
     69466.24,
     18.4
    ],
-   "sha256": "98c1f76f381cf12803bddb98c6fc9fb1df84c01b564112fa46f02c63a30bfba9"
+   "sha256": "93d9b9e54c0a3e2a2bbd765340868c992b1491ace383295ff83c48ec04dfcb2a"
   },
   {
    "file": "Soul_leaf_brown_XP000_YM001.obj",
    "mesh": "SM_Soul_leaf_brown_XP000_YM001",
    "material": "leaf_brown",
    "collision": "none",
-   "triangles": 1426,
-   "faces": 677,
+   "triangles": 1386,
+   "faces": 667,
    "tile_cm": 1000000,
    "bounds_cm": [
     104.86,
-    -46934.2,
+    -46883.85,
     7.23,
     55299.79,
-    -964.07,
+    -1531.24,
     18.4
    ],
-   "sha256": "e9ef887afcb44f15740f224bdc85c32814bd623078cfc65de1beac7cbd5c682b"
+   "sha256": "1172e101e6d9bc888530686c073b4cc2028a683266fb24de05a9769b65bae1a9"
   },
   {
    "file": "Soul_leaf_brown_XP000_YP000.obj",
    "mesh": "SM_Soul_leaf_brown_XP000_YP000",
    "material": "leaf_brown",
    "collision": "none",
-   "triangles": 1984,
-   "faces": 936,
+   "triangles": 1896,
+   "faces": 900,
    "tile_cm": 1000000,
    "bounds_cm": [
     229.69,
-    1207.2,
+    1130.35,
     7.23,
-    55604.94,
+    55561.1,
     69174.27,
     18.4
    ],
-   "sha256": "433183aa68d126a8bca75659f5ee05b573fb154864fb627b814a48224f820a90"
+   "sha256": "d8e8bea67adb9795f39a7968e29805c2d6881ca57cebacdd095bf25728754b65"
   },
   {
    "file": "Soul_weed_XM001_YM001.obj",
@@ -523,7 +523,7 @@
     -35.78,
     43.99
    ],
-   "sha256": "4d9a0ab2e7880ba85a542d5fc75e3a5f089578473db239d02e227e97d22429b4"
+   "sha256": "4b9ea29905b55165e04a16fac2c47fba4c8a8c9560b8efcecf6bf7c64cc6df4f"
   },
   {
    "file": "Soul_weed_XM001_YP000.obj",
@@ -534,22 +534,22 @@
    "faces": 15981,
    "tile_cm": 1000000,
    "bounds_cm": [
-    -44109.07,
+    -44100.76,
     7.19,
     0.0,
     -94.29,
-    69169.3,
+    69163.91,
     43.99
    ],
-   "sha256": "02610dc2545caf9a4617b3d5275390696da4a250e1c6cd6ab3138fd70d46de27"
+   "sha256": "4aca10b0364ea97cfd1dbf6f90fc2fdc18130372d9f5ffe68a16299d75f28f20"
   },
   {
    "file": "Soul_weed_XP000_YM001.obj",
    "mesh": "SM_Soul_weed_XP000_YM001",
    "material": "weed",
    "collision": "none",
-   "triangles": 10974,
-   "faces": 10974,
+   "triangles": 10983,
+   "faces": 10983,
    "tile_cm": 1000000,
    "bounds_cm": [
     46.45,
@@ -559,15 +559,15 @@
     -208.1,
     43.92
    ],
-   "sha256": "8bafc4f844f3a88f323e2663ab27d779fff1fb328be79040e749621151535880"
+   "sha256": "ba82a29d9c1ccf7dcce9d539097d2bf4e2cda0027f5d2ac82a1079abb96b069f"
   },
   {
    "file": "Soul_weed_XP000_YP000.obj",
    "mesh": "SM_Soul_weed_XP000_YP000",
    "material": "weed",
    "collision": "none",
-   "triangles": 11148,
-   "faces": 11148,
+   "triangles": 11157,
+   "faces": 11157,
    "tile_cm": 1000000,
    "bounds_cm": [
     32.19,
@@ -577,7 +577,7 @@
     68899.55,
     43.99
    ],
-   "sha256": "6749d48c43f71a86ed12a40b1966ea1b76c344dd3d07a192d1c647c059e06828"
+   "sha256": "5ade079494cdf348e5fb506fbb262158d69b72864fb1acf7e57ded7e69fb8aa5"
   },
   {
    "file": "Soul_rust_XM001_YM001.obj",
@@ -984,14 +984,14 @@
    "faces": 1,
    "tile_cm": 1000000,
    "bounds_cm": [
-    -15897.38,
-    51732.57,
+    -15936.6,
+    51704.3,
     7.25,
-    -14503.81,
-    52778.66,
+    -14543.03,
+    52750.39,
     7.25
    ],
-   "sha256": "4fa469c6482107c88af0445789aa1649966bcc3f780468bf214d865b240ed77a"
+   "sha256": "c4423325b92ffbd401e8671c602bc6fb3dad1d428d0b024d3465f24852a29092"
   },
   {
    "file": "Soul_steel_plate_XM001_YP000.obj",
@@ -1002,14 +1002,14 @@
    "faces": 5,
    "tile_cm": 1000000,
    "bounds_cm": [
-    -15208.77,
-    52056.32,
+    -15248.0,
+    52028.05,
     7.15,
-    -14925.86,
-    52314.02,
+    -14965.09,
+    52285.74,
     9.65
    ],
-   "sha256": "567c0e4ef1a19383f7de95e0c4e5f60f283d9471e463bcc5f375678b3320fcb0"
+   "sha256": "f0ae3f84a4b129d72436587f980b337a0222179c6120b9162d3c2948c06a7260"
   },
   {
    "file": "Soul_mural_1_XM001_YM001.obj",
@@ -1457,36 +1457,37 @@
   }
  },
  "counts": {
-  "asphalt_patches": 639,
+  "asphalt_patches": 640,
   "trench_patches": 46,
-  "crack_lines": 1058,
-  "potholes": 76,
-  "gutter_leaf_drifts": 1293,
-  "pit_leaf_covers": 311,
-  "loose_leaves": 3146,
-  "weed_tufts": 6652,
+  "crack_lines": 1055,
+  "potholes": 77,
+  "gutter_leaf_drifts": 1296,
+  "pit_leaf_covers": 310,
+  "loose_leaves": 3178,
+  "weed_tufts": 6654,
   "rust_streaks": 2031,
   "murals": 9,
   "chantier_zones": 1,
   "utility_poles": 151,
   "wire_spans": 79,
   "laundry_lines": 52,
-  "curb_bins": 1427,
-  "locked_bikes": 213,
-  "flower_boxes": 221,
+  "curb_bins": 1433,
+  "locked_bikes": 210,
+  "flower_boxes": 238,
   "ac_units": 0,
   "chantier_street": "Rue Fabre",
-  "placements": 2032,
+  "placements": 2052,
   "batches": 72,
-  "triangles": 132311
+  "triangles": 132437
  },
  "source_sha256": {
   "Data/LaFontaine/osm.xml": "fe4410d45007a627bf6d9b9ddeeae329fa9cdd7492dfb5fa6beff851e7cf8f86",
   "Data/LaFontaine/layout.json": "4238d6ed45d5fb890e0f8dbcb672de0803c6dc7079b0b6a86b386d82ebbb4250",
-  "Scripts/plateau_replica.py": "ea53868a6174ca6ecb2d66d34e34ccbadd8c88b4310bcd4080dd3345e9e0c2ca",
-  "Scripts/prepare_lafontaine.py": "e7b6e5f068a96ee7306b1fff247fa73158f5cf7c343dc5510ab8cce92ee3c924"
+  "Scripts/plateau_replica.py": "0075c83d1ba8a0237c52d7c2c3d29f0a7aa9fee2ae878a8cea1c9548e946eb99",
+  "Scripts/prepare_lafontaine.py": "e7b6e5f068a96ee7306b1fff247fa73158f5cf7c343dc5510ab8cce92ee3c924",
+  "Data/Plateau/BaseGeometry/Marking.obj": "2d82cbca59041aa6af5e6f3fffaf6a01b2c3e672eea9732e8a5fecbb7cee35dd"
  },
  "attribution": "© OpenStreetMap contributors, ODbL 1.0; authored street details and original murals",
  "placements": "placements.json",
- "placements_sha256": "fe54ae567f550142a5d96c6b9b5e9a1751a15837acb7871c64005b0f5da4075c"
+ "placements_sha256": "139f1ce194c68d6f5774012c004398d7ddb338f2b548b4f91d20d06202b2527d"
 }

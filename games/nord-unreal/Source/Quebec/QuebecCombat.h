@@ -79,7 +79,8 @@ private:
 
 /**
  * Local, unreplicated comic effects for one shot, swing or hit: tracers, a muzzle flash, an impact word and a
- * procedural bang. The multicasts on AQuebecCharacter spawn one on each peer; it removes itself after a moment.
+ * procedural bang. The multicasts on AQuebecCharacter (and the officers) use one on each peer. A small pool per world
+ * reuses them; past 120 m from the local camera only the bang plays, and past 150 m nothing does.
  */
 UCLASS(NotPlaceable, Transient)
 class QUEBEC_API AQuebecCombatFX : public AActor
@@ -104,13 +105,17 @@ private:
     UPROPERTY() TObjectPtr<UAudioComponent> Audio;
     UPROPERTY() TObjectPtr<USoundWaveProcedural> Wave;
     TArray<float> TracerLengths;
+    // Pooled: an idle effect is hidden with its tick off until Begin reuses it.
+    bool bBusy = false;
     float Age = 0.f;
     float FlashSeconds = 0.f;
-    float WordSize = 0.f;
     FVector WordAnchor = FVector::ZeroVector;
     bool bWordShown = false;
     static AQuebecCombatFX* Begin(UWorld* World, const FVector& Location);
+    void Restart(const FVector& Location);
+    void Finish();
     void ShowWord(const FVector& Point, const TCHAR* Text, const FColor& Color, float Size);
-    void PlayBang(int32 Slot, bool bImpact);
+    // BangIndex: a weapon slot, or 5 for a bullet landing. Volume falls off with distance from the local camera.
+    void PlayBang(int32 BangIndex, float Volume);
     void FaceLocalCamera();
 };

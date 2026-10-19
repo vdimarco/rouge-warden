@@ -1,0 +1,131 @@
+{
+ "generator": "Scripts/plateau_textures.py",
+ "rows": "image row 0 is the top of the tile",
+ "sets": {
+  "limestone": {
+   "layout": {
+    "courses_cm": [
+     32.25,
+     32.5,
+     36.0,
+     28.75,
+     33.0,
+     31.75,
+     30.75,
+     31.0
+    ],
+    "stones_per_course": [
+     3,
+     3,
+     3,
+     3,
+     3,
+     3,
+     4,
+     3
+    ]
+   },
+   "maps": {
+    "diff": {
+     "compression": "TC_DEFAULT",
+     "file": "T_Replica_Limestone_diff.png",
+     "raw_sha256": "07d73e6d261dfe53237bfc3a0e33ef11f357643c4141d178ce31973fc180ee3d",
+     "sampler": "SAMPLERTYPE_COLOR",
+     "sha256": "7a7a5c5b3b6ab9df6573cc47a02bf00b41e6ccb06b950737be299c6cbf1f284a",
+     "srgb": true
+    },
+    "nor_dx": {
+     "compression": "TC_NORMALMAP",
+     "file": "T_Replica_Limestone_nor_dx.png",
+     "raw_sha256": "b25ed79662d153166ed6c0369c94c1717500bfe17290de916a3296b738487aa0",
+     "sampler": "SAMPLERTYPE_NORMAL",
+     "sha256": "56b11bd5bd77734c73406ede90e5749f65ca0d4fc5b156cad170d6e1353b4112",
+     "srgb": false
+    },
+    "rough": {
+     "compression": "TC_DEFAULT",
+     "file": "T_Replica_Limestone_rough.png",
+     "raw_sha256": "ef26d899d64add32cfc9ff6baea614ce1fea837e00831e420b1d217e6a01fa8f",
+     "sampler": "SAMPLERTYPE_LINEAR_COLOR",
+     "sha256": "a8af478ae2a46839458c86388fcaa78bd3e17b71f6a1ebf986c73faa87fec86b",
+     "srgb": false
+    }
+   },
+   "mean_linear": [
+    0.2694,
+    0.2657,
+    0.243
+   ],
+   "roughness_mean": 0.871,
+   "size_px": [
+    1024,
+    1024
+   ],
+   "tile_m": [
+    2.56,
+    2.56
+   ],
+   "tiling": [
+    0.390625,
+    0.390625
+   ]
+  },
+  "slate": {
+   "layout": {
+    "exposure_cm": 12.5,
+    "fish_scale_rows": [
+     6,
+     7,
+     8
+    ],
+    "rows": 16,
+    "slate_width_cm": 20.0
+   },
+   "maps": {
+    "diff": {
+     "compression": "TC_DEFAULT",
+     "file": "T_Replica_Slate_diff.png",
+     "raw_sha256": "aa6c6b3d4024a199eb9f95da1a6b9893d0836911e622221c6433be22e0485b28",
+     "sampler": "SAMPLERTYPE_COLOR",
+     "sha256": "5dcc7a32b458b12edc5d35acdd9d365b2f466258000d651b9a1f488e6649b151",
+     "srgb": true
+    },
+    "nor_dx": {
+     "compression": "TC_NORMALMAP",
+     "file": "T_Replica_Slate_nor_dx.png",
+     "raw_sha256": "ae7d6328a988ab3fd104462d00f3ecd863e09dee88b4e5f762819ac9b20b9412",
+     "sampler": "SAMPLERTYPE_NORMAL",
+     "sha256": "f015f0df87cb4e975a3840f7981307e47fba8495ed3a1d9eaf4b594174d82743",
+     "srgb": false
+    },
+    "rough": {
+     "compression": "TC_DEFAULT",
+     "file": "T_Replica_Slate_rough.png",
+     "raw_sha256": "c5e7c1d008df1c0fcafae868cda1e3179f32f1c74c3fc3d0e4fc391e5a5e2ce9",
+     "sampler": "SAMPLERTYPE_LINEAR_COLOR",
+     "sha256": "c007e4539801ba9b25ff6de10e9edf2c9439a6a05d8476b8e836fd5fa1ba0739",
+     "srgb": false
+    }
+   },
+   "mean_linear": [
+    0.0735,
+    0.0789,
+    0.1011
+   ],
+   "roughness_mean": 0.5086,
+   "size_px": [
+    512,
+    1024
+   ],
+   "tile_m": [
+    1.0,
+    2.0
+   ],
+   "tiling": [
+    1.0,
+    0.5
+   ]
+  }
+ },
+ "uv": "OBJ UVs in metres (u along the face, v = z); material tiling = 1 / tile_m"
+}

@@ -165,6 +165,7 @@ private:
     UPROPERTY() TObjectPtr<USoundWaveProcedural> SirenWave;
     UPROPERTY() TObjectPtr<UMaterialInstanceDynamic> WhitePaint;
     UPROPERTY() TObjectPtr<UMaterialInterface> WhiteFallback;
+    UPROPERTY() TObjectPtr<UMaterialInterface> BandPaint;
     UPROPERTY() TObjectPtr<UMaterialInterface> RedOn;
     UPROPERTY() TObjectPtr<UMaterialInterface> BlueOn;
     UPROPERTY() TObjectPtr<UMaterialInterface> LampOff;
@@ -172,9 +173,9 @@ private:
     bool bBuilt = false;
     bool bLiveryShown = false;
     float RepaintClock = 0.f;
-    float SirenPhase = 0.f;
     float SirenClock = 0.f;
-    float ToneClock = 0.f;
+    // Read position in the precomputed 1.2 s siren loop.
+    int32 SirenCursor = 0;
     int32 LampPhase = -1;
 
     AQuebecCar* GetCar() const;
@@ -253,13 +254,15 @@ private:
     TArray<TWeakObjectPtr<AQuebecCar>> Wrecks;
     TArray<TWeakObjectPtr<AQuebecOfficer>> Officers;
     TArray<bool> RoadOpen;
+    // Closed roads are found a few sweeps per tick from BeginPlay; routes treat unscanned roads as open.
     bool bRoadsChecked = false;
+    int32 RoadScanNext = 0;
     float VisionClock = 0.f;
     float ManageClock = 0.f;
     uint32 SpawnSeed = 7919;
 
     void BuildGarage();
-    void PrepareRoads();
+    void ScanRoads(int32 Budget);
     FQuebecPoliceRecord& RecordFor(APlayerState* State);
     void TickPlayers(float Now, float DeltaSeconds, bool bVision);
     void ManageUnits(float Now, float Interval);

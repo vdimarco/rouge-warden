@@ -6,6 +6,10 @@ NullRHI to check ambient captions and capture the owning native viewport.
 Use -NordCaptureWidth=1280|1920 and a matching 16:9 native client viewport.
 Only authority player/car transforms arrange fixtures. Reaction fields, routes,
 cooldowns and drive speed are never written by this suite.
+A resident in a fast player car's body path freezes facing it (the replicated
+acknowledgement hold); one just beside the path dives away (Stride 2) and is not
+held still. The warning drive brakes at the first reaction, so nobody is struck;
+add -NordNoPolice if a stray strike must not raise stars.
 """
 import configparser
 import hashlib
@@ -207,12 +211,14 @@ def observe_motion():
         return
     point, stamp = resident.get_actor_location(), now()
     previous = STATE.get('motion_sample')
-    if previous:
+    # Knocked down, diving aside or walking back (Stride != 0) leaves the route pace by design.
+    away = resident.get_editor_property('Stride') != 0
+    if previous and not away:
         delta, travel = stamp-previous[0], distance(point, previous[1])
         assert travel <= resident.get_editor_property('Pace')*delta+8, 'Resident jumped along the route at a reaction boundary'
         REPORT['maximum_route_step_cm'] = max(REPORT.get('maximum_route_step_cm', 0), round(travel, 3))
     start, end = (resident.get_editor_property(key) for key in FIELDS[:2])
-    if start > STATE['reaction_before'] and start+.15 < stamp < end:
+    if not away and start > STATE['reaction_before'] and start+.15 < stamp < end:
         if 'hold_position' not in STATE:
             STATE['hold_position'] = point
         assert distance(STATE['hold_position'], point) < 3, 'Resident moved during the replicated acknowledgement hold'
@@ -382,7 +388,12 @@ def warned():
         assert distance(car.get_actor_location(), STATE['drive_start']) > 200, 'Warning needs actual swept drive displacement'
         STATE['client_pc'].get_controlled_pawn().call_method('MoveForward', (0.,))
         native(STATE['client_pc'].get_controlled_pawn(), 'ApplyHandbrake')
-    if not held_reaction():
+    assert STATE['target'].get_editor_property('Stride') != 1, 'The warning drive knocked the resident down'
+    # In the car's path the resident freezes facing it; just beside the path it dives away instead of holding still.
+    dived = STATE['target'].get_editor_property('Stride') == 2
+    if dived:
+        STATE['reaction_start'] = STATE['target'].get_editor_property('ReactionStartedAt')
+    elif not held_reaction():
         return False
     caption = STATE['client_pc'].get_editor_property('ResidentCaption')
     if RENDER and not any(text in caption for text in WARNINGS):
@@ -390,7 +401,7 @@ def warned():
     if RENDER:
         assert STATE['client_pc'].get_editor_property('ResidentCaptionUntil') > u.GameplayStatics.get_time_seconds(STATE['client']), 'Warning expired before rendered acceptance'
     assert STATE['host_pc'].get_editor_property('ResidentCaption') == STATE['host_caption'], 'Warning changed the other player caption'
-    REPORT['warning'] = {'native_speed_cm_s': STATE['warning_speed'], 'caption': caption,
+    REPORT['warning'] = {'native_speed_cm_s': STATE['warning_speed'], 'caption': caption, 'dived_aside': dived,
                          'caption_presentation_checked': RENDER, 'private_to_driver': True}
     STATE.pop('drive_input_disabled').enable_input(STATE['client_pc'])
     return True
@@ -416,7 +427,8 @@ step('wait for next native driver opportunity away from residents',
 step('native remote E enters an occupied car before warning drive', warning_fixture, car_entered)
 step('native swept throttle approach warns only the owning driver', drive, warned, 'ApproachingCar', timeout=10)
 step('warning cooldown holds without repeated reaction', lambda: None,
-     lambda: now() >= STATE['reaction_start']+5 and STATE['target'].get_editor_property('ReactionStartedAt') == STATE['reaction_start'])
+     lambda: now() >= STATE['reaction_start']+5 and STATE['target'].get_editor_property('ReactionStartedAt') == STATE['reaction_start']
+     and STATE['target'].get_editor_property('Stride') != 1)
 
 
 def queue_capture(label):

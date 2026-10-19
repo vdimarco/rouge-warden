@@ -1,5 +1,6 @@
 #include "QuebecGameplay.h"
 #include "QuebecCampaign.h"
+#include "QuebecKnockModel.h"
 #include "QuebecPedestrian.h"
 
 #include "Components/SceneComponent.h"
@@ -64,23 +65,34 @@ void AQuebecController::TickResidentGreetings(float DeltaTime)
     if (ResidentGreetingElapsed < .3f) return;
     ResidentGreetingElapsed = 0.f;
     const float Now = GetWorld()->GetTimeSeconds();
-    // People: everyone in the path of a fast player car dives aside at every scan; only the warning caption cools down.
+    // People: at every scan, people in a fast player car's body path freeze facing it, so an aimed hit lands; people
+    // beside the path dive away from it (QuebecKnock::CarReaction). Only the warning caption cools down.
     if (AQuebecCar* Car = Cast<AQuebecCar>(GetPawn()); Car && Car->Occupant && Car->GetController() == this)
     {
         const FVector Velocity = Car->GetActorForwardVector()*Car->Speed+Car->GetActorRightVector()*Car->LateralSpeed;
         const FVector Lane = FVector::CrossProduct(FVector::UpVector,Velocity.GetSafeNormal2D());
-        const auto DiveAside = [Car,&Velocity,&Lane](const FVector& Person, FVector& Source)
+        const auto React = [Car,&Velocity,&Lane](const FVector& Person, FVector& Source)
         {
-            if (!CarApproachingResident(Person,Car->GetActorLocation(),Velocity)) return false;
-            // Run from a point beyond the car's path, so the person dives to the side they already stand on.
-            Source = Person-Lane*(FVector::DotProduct(Person-Car->GetActorLocation(),Lane) >= 0. ? 300. : -300.);
-            return true;
+            if (!CarApproachingResident(Person,Car->GetActorLocation(),Velocity)) return QuebecKnock::ECarReaction::None;
+            const double Lateral = FVector::DotProduct(Person-Car->GetActorLocation(),Lane);
+            // A diver runs from a point beyond the car's path, toward the side they already stand on.
+            Source = Person-Lane*(Lateral >= 0. ? 300. : -300.);
+            return QuebecKnock::CarReaction(static_cast<float>(Lateral));
         };
         FVector Source;
         for (TActorIterator<AQuebecParkResident> It(GetWorld()); It; ++It)
-            if (!It->IsHidden() && !It->IsAway() && DiveAside(It->GetActorLocation(),Source)) It->Flee(Source,1.6f);
+        {
+            if (It->IsHidden() || It->IsAway()) continue;
+            const QuebecKnock::ECarReaction Reaction = React(It->GetActorLocation(),Source);
+            if (Reaction == QuebecKnock::ECarReaction::Dive) It->Flee(Source,1.6f);
+            else if (Reaction == QuebecKnock::ECarReaction::Flinch) It->Acknowledge(Car,true);
+        }
         for (TActorIterator<AQuebecPedestrian> It(GetWorld()); It; ++It)
-            if (DiveAside(It->GetActorLocation(),Source)) It->Flee(Source,1.6f);
+        {
+            const QuebecKnock::ECarReaction Reaction = React(It->GetActorLocation(),Source);
+            if (Reaction == QuebecKnock::ECarReaction::Dive) It->Flee(Source,1.6f);
+            else if (Reaction == QuebecKnock::ECarReaction::Flinch) It->Brace(Car->GetActorLocation(),1.2f);
+        }
     }
     if (Now < NextResidentGreetingAt) return;
 

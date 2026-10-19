@@ -246,6 +246,41 @@ int main(int ArgumentCount, char** Arguments)
     Expect(!SweptBoxHit(600.f, 600.f, 400.f, 400.f, HalfX, HalfY), "a diagonal approach that stops short is not hit");
     Expect(!SweptBoxHit(NaN, 0.f, 0.f, 0.f, HalfX, HalfY), "a broken position is never hit");
 
+    // Reactions to a fast car: people in the body path brace and are hit; people beside it dive clear.
+    Expect(CarReaction(0.f) == ECarReaction::Flinch && CarReaction(-InPathHalfWidth) == ECarReaction::Flinch, "people in the car's path freeze");
+    Expect(CarReaction(InPathHalfWidth + 1.f) == ECarReaction::Dive && CarReaction(-WarnHalfWidth) == ECarReaction::Dive, "people beside the path dive");
+    Expect(CarReaction(WarnHalfWidth + 1.f) == ECarReaction::None && CarReaction(NaN) == ECarReaction::None, "people well clear do nothing");
+    // A small kinematic run of the shipped rule: the car drives straight along +X at the person, the warning scan runs every
+    // 0.3 s from 12 m and 1.2 s out, and a diving person runs sideways at 380 cm/s.
+    for (float CarSpeed : {1000.f, 1500.f, 2000.f})
+    {
+        int InPathHit = 0, InPathCount = 0, BesideHit = 0, BesideCount = 0;
+        for (float Lateral = -250.f; Lateral <= 250.f; Lateral += 10.f)
+        {
+            const bool bInBody = std::fabs(Lateral) <= HalfY;
+            float PersonY = Lateral, CarX = -1500.f, Scan = 0.f;
+            bool bDiving = false, bHitPerson = false;
+            const float Step = 1.f / 60.f;
+            for (int Frame = 0; Frame < 240 && !bHitPerson; ++Frame)
+            {
+                const float NextX = CarX + CarSpeed * Step;
+                if ((Scan -= Step) <= 0.f)
+                {
+                    Scan = .3f;
+                    const float Ahead = -CarX;
+                    if (!bDiving && Ahead > 0.f && Ahead <= 1200.f && Ahead / CarSpeed <= 1.2f && CarReaction(PersonY) == ECarReaction::Dive) bDiving = true;
+                }
+                if (bDiving) PersonY += (PersonY < 0.f ? -380.f : 380.f) * Step;
+                bHitPerson = SweptBoxHit(-CarX, PersonY, -NextX, PersonY, HalfX, HalfY);
+                CarX = NextX;
+            }
+            (bInBody ? InPathCount : BesideCount) += 1;
+            (bInBody ? InPathHit : BesideHit) += bHitPerson ? 1 : 0;
+        }
+        Expect(InPathHit == InPathCount, "every person in the car body's path is hit at %.0f cm/s (%d of %d)", static_cast<double>(CarSpeed), InPathHit, InPathCount);
+        Expect(BesideHit == 0, "nobody beside the path is hit at %.0f cm/s (%d of %d)", static_cast<double>(CarSpeed), BesideHit, BesideCount);
+    }
+
     std::printf("car 1500 cm/s: flight %.3f s, bounce %.3f s, lying %.3f-%.3f s, done %.3f s, rest %.0f cm\n", static_cast<double>(Line.Flight),
         static_cast<double>(Line.Bounce), static_cast<double>(Line.Landed), static_cast<double>(Line.StandStarts), static_cast<double>(Line.Total),
         static_cast<double>(Line.RestForward));

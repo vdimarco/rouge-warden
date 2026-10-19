@@ -239,10 +239,21 @@ void AQuebecHUD::DrawStreetHUD(float UIScale, bool bTall, bool bTouch, float Rad
     const float Health = Stats ? Stats->Health : AQuebecPlayerState::MaxHealth;
     if (Health < LastHealth - .5f) HurtAt = Now;
     LastHealth = Health;
+    // A player who is down when a job ends sees its result once the K.-O. or ARRÊTÉ! overlay is over.
+    const bool bDownNow = Stats && Stats->IsDown();
     if (Jobs)
     {
-        if (LastJobSerial >= 0 && Jobs->ResultSerial != LastJobSerial) JobBannerAt = Now;
+        if (LastJobSerial >= 0 && Jobs->ResultSerial != LastJobSerial)
+        {
+            if (bDownNow) bJobBannerWaiting = true;
+            else JobBannerAt = Now;
+        }
         LastJobSerial = Jobs->ResultSerial;
+    }
+    if (bJobBannerWaiting && !bDownNow)
+    {
+        bJobBannerWaiting = false;
+        JobBannerAt = Now;
     }
 
     // A hit flashes the screen edges red for 0.3 s.
@@ -257,7 +268,7 @@ void AQuebecHUD::DrawStreetHUD(float UIScale, bool bTall, bool bTouch, float Rad
         DrawRect(Flash, ScreenW - Edge, Edge, Edge, ScreenH - 2.f * Edge);
     }
 
-    // Radar blips, in DrawHUD's radar transform: 250 m radius, screen up is +X... as MapPoint draws it.
+    // Radar blips use DrawHUD's MapPoint transform unchanged: 250 m radius, world +X to screen right, +Y to screen up.
     const FVector2D Centre(RadarX + RadarSize * .5f, RadarY + RadarSize * .5f);
     const float RadarRadius = RadarSize * .5f - 6.f * S;
     const auto RadarPoint = [Here, Centre, RadarRadius](const FVector& Where)
@@ -273,9 +284,13 @@ void AQuebecHUD::DrawStreetHUD(float UIScale, bool bTall, bool bTouch, float Rad
         return Centre + (Dot - Centre).GetClampedToMaxSize(RadarRadius - 8.f * S);
     };
     const bool bFlashRed = FMath::Fmod(Now * 4.f, 1.f) < .5f;
+    // A calm radar stays as it was: pickups show within 60 m and job markers within 100 m only. Every QA fixture and
+    // the race route are farther than that from both, so the accepted story and HUD captures do not change.
+    constexpr double PickupBlipRange = 6000.;
+    constexpr double MarkerBlipRange = 10000.;
     for (TActorIterator<AQuebecWeaponPickup> It(World); It; ++It)
     {
-        if (!It->IsAvailable()) continue;
+        if (!It->IsAvailable() || FVector::DistSquared2D(It->GetActorLocation(), Here) > FMath::Square(PickupBlipRange)) continue;
         const FVector2D Dot = RadarPoint(It->GetActorLocation());
         if (OnRadar(Dot)) DrawRect(Paper, Dot.X - 2.f * S, Dot.Y - 2.f * S, 4.f * S, 4.f * S);
     }
@@ -301,10 +316,11 @@ void AQuebecHUD::DrawStreetHUD(float UIScale, bool bTall, bool bTouch, float Rad
     }
     if (Jobs && !bJob)
     {
-        // Job markers stay on the radar rim when far, so a player can always find work.
+        // Job markers appear as a player comes near; only the running job's target sits on the rim when far.
         for (int32 Index = 0; Index < Jobs->NumMarkers(); ++Index)
         {
-            const FVector2D Dot = RadarEdge(RadarPoint(Jobs->GetMarker(Index)));
+            if (FVector::DistSquared2D(Jobs->GetMarker(Index), Here) > FMath::Square(MarkerBlipRange)) continue;
+            const FVector2D Dot = RadarPoint(Jobs->GetMarker(Index));
             const FLinearColor Tone = Jobs->IsCompleted(Index) ? JobYellow.CopyWithNewOpacity(.55f) : JobYellow;
             FCanvasNGonItem Rim(Dot, FVector2D(5.f * S), 12, Ink);
             Rim.BlendMode = SE_BLEND_Translucent;
@@ -476,7 +492,8 @@ void AQuebecHUD::DrawStreetHUD(float UIScale, bool bTall, bool bTouch, float Rad
     if (bJobBanner)
     {
         const FString Head = Jobs->bLastSucceeded ? TEXT("MISSION RÉUSSIE") : TEXT("MISSION RATÉE");
-        const FString Line = Jobs->bLastSucceeded ? FString::Printf(TEXT("+%d $  ·  %s"), Jobs->LastReward, *Jobs->LastResult) : Jobs->LastResult;
+        FString Line = Jobs->bLastSucceeded ? FString::Printf(TEXT("+%d $  ·  %s"), Jobs->LastReward, *Jobs->LastResult) : Jobs->LastResult;
+        if (!Jobs->bLastSucceeded && !bTouch && Jobs->RetryUntil > ServerNow) Line += TEXT("  ·  R réessaie");
         Plate(Head, Line, Jobs->bLastSucceeded ? Accent : Danger, ScreenW * .5f, BannerTop, JobAge, QuebecJobRules::ResultBannerSeconds);
     }
     else if (bNotice)
@@ -484,11 +501,13 @@ void AQuebecHUD::DrawStreetHUD(float UIScale, bool bTall, bool bTouch, float Rad
         Plate(Player->GameNoticeTitle, Player->GameNoticeDetail, Accent, ScreenW * .5f, BannerTop, Now - Player->GameNoticeStart,
             Player->GameNoticeUntil - Player->GameNoticeStart);
     }
-    else if (!bDown && Now - StarsChangedAt < 2.f && Now - StarsChangedAt >= 0.f)
+    else if (!bDown && Stars > 0 && Now - StarsChangedAt >= .6f && Now - StarsChangedAt < 2.4f &&
+        (!Player || Player->GameNoticeStart < StarsChangedAt - .3f))
     {
-        Plate(Stars > 0 ? FString(TEXT("RECHERCHÉ")) : FString(TEXT("POLICE SEMÉE")),
-            Stars > 0 ? FString::Printf(TEXT("%d étoile%s"), Stars, Stars > 1 ? TEXT("s") : TEXT("")) : FString(),
-            Stars > 0 ? Cop : CashTone, ScreenW * .5f, BannerTop, Now - StarsChangedAt, 2.f);
+        // The police announce most star changes with their own notice, and a respawn clears stars silently; this plate
+        // covers a rise they leave silent, after a short wait so the two never show back to back.
+        Plate(TEXT("RECHERCHÉ"), FString::Printf(TEXT("%d étoile%s"), Stars, Stars > 1 ? TEXT("s") : TEXT("")),
+            Cop, ScreenW * .5f, BannerTop, Now - StarsChangedAt - .6f, 1.8f);
     }
     if (bDown)
     {

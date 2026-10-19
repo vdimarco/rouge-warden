@@ -19,13 +19,13 @@
   "parapet": 250
  },
  "masonry": {
-  "Brick_Brown": 194,
-  "Brick_BrownDark": 47,
-  "Brick_Buff": 133,
-  "Brick_Orange": 108,
-  "Brick_Red": 392,
-  "Brick_RedDark": 116,
-  "Stone": 317
+  "Brick_Brown": 251,
+  "Brick_BrownDark": 107,
+  "Brick_Buff": 182,
+  "Brick_Orange": 104,
+  "Brick_Red": 239,
+  "Brick_RedDark": 91,
+  "Stone": 333
  },
  "commercial_ground_floors": 152,
  "storeys_histogram": {
@@ -95,7 +95,7 @@
   "tower over 24 m": 8
  },
  "triangles_per_front": {
-  "median": 1504,
+  "median": 1502,
   "max": 13728
  }
 }

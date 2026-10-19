@@ -239,6 +239,18 @@ namespace QuebecKnock
         return true;
     }
 
+    // What a person does when a fast car comes at them. Someone inside the car's body path (its half width, a person's
+    // radius and a small margin) freezes and braces, so an aimed hit lands; only people beside the path dive away from it.
+    // Beyond WarnHalfWidth the car is no threat. Lateral is the person's signed distance from the car's centre line.
+    enum class ECarReaction : uint8_t { None, Flinch, Dive };
+    inline constexpr float InPathHalfWidth = 90.f + 35.f + 20.f;
+    inline constexpr float WarnHalfWidth = 260.f;
+    inline ECarReaction CarReaction(float Lateral)
+    {
+        const float Offset = std::fabs(Detail::Finite(Lateral, WarnHalfWidth + 1.f));
+        return Offset <= InPathHalfWidth ? ECarReaction::Flinch : Offset <= WarnHalfWidth ? ECarReaction::Dive : ECarReaction::None;
+    }
+
     // Civilians: a car above CarKnockSpeed, any weapon (a shot or a swing), or a second punch knocks them down.
     // Strength is the car speed for EHit::Car and the damage otherwise; RecentPunches counts earlier punches still remembered.
     inline bool CivilianGoesDown(EHit Kind, float Strength, int RecentPunches)

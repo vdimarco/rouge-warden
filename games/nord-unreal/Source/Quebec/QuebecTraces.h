@@ -39,6 +39,10 @@ public:
     static constexpr int32 MaxProps = 60;
 
     AQuebecStreetProp();
+    // Props join their world's strike list when spawned (here and in SpawnProp, for worlds that have not begun play)
+    // and leave it when destroyed, so car strikes never scan the actor list.
+    virtual void PostInitializeComponents() override;
+    virtual void Destroyed() override;
     virtual void BeginPlay() override;
     virtual void Tick(float DeltaSeconds) override;
     virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
@@ -80,6 +84,7 @@ private:
     void ApplyPose(float ServerTime);
     float ServerNow() const;
     void ResetProp();
+    void RegisterStreetProp();
     UFUNCTION() void OnRep_Kind();
     UFUNCTION() void OnRep_Knock();
 };

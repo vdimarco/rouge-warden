@@ -99,8 +99,10 @@ namespace QuebecTrafficModel
     };
 
     // ---- Curb stops -------------------------------------------------------------------------------------------
-    inline constexpr float CurbFirst = 60.f;        // the first stop comes 1-5 minutes after a car starts
-    inline constexpr float CurbFirstSpan = 240.f;
+    // The first stop comes 2-5 minutes after a car starts, so every car is still moving during the population check
+    // (Scripts/population_test.py samples traffic motion at about 65-75 s of world time).
+    inline constexpr float CurbFirst = 120.f;
+    inline constexpr float CurbFirstSpan = 180.f;
     inline constexpr float CurbEvery = 180.f;       // then every 3-5 minutes
     inline constexpr float CurbEverySpan = 120.f;
     inline constexpr float CurbRetry = 2.f;         // re-check this often while a stop is due

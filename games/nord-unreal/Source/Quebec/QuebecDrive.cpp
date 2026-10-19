@@ -46,6 +46,10 @@ void AQuebecCar::SetAutopilot(float NewThrottle, float NewSteering, bool bNewHan
     if (!bAutopilot)
     {
         // The AI drives the player model every frame; a traffic car gives up its route and junction for good.
+        // ClearAutopilot returns to the resting interval this car had (a struck car's 0 is not a resting interval).
+        // A car re-engaged while still braking from the last release keeps the interval recorded then.
+        if (!bRestoreRestTick) AutopilotRestTick = GetActorTickInterval() > 0.f ? GetActorTickInterval() : (bTraffic ? .05f : .1f);
+        bRestoreRestTick = false;
         bTraffic = false;
         TrafficSegment = INDEX_NONE;
         bJunctionReserved = bJunctionEntered = false;
@@ -63,7 +67,22 @@ void AQuebecCar::ClearAutopilot()
     if (!HasAuthority() || !bAutopilot) return;
     bAutopilot = bAutopilotHandbrake = false;
     AutopilotThrottle = AutopilotSteering = 0.f;
-    if (!Controller) StopInput();
+    if (Controller) return;
+    StopInput();
+    // The released car brakes on every-frame ticks, so no peer sees it step at 10 Hz; FinishDriveTick restores
+    // the resting interval once it stands still.
+    bRestoreRestTick = true;
+    FinishAutopilotRelease();
+}
+
+void AQuebecCar::FinishAutopilotRelease()
+{
+    if (!bRestoreRestTick) return;
+    // A player or a new AI driver took over: their every-frame ticks stay.
+    if (Controller || bAutopilot) { bRestoreRestTick = false; return; }
+    if (KnockTime > 0.f || !FMath::IsNearlyZero(Speed,1.f) || !FMath::IsNearlyZero(LateralSpeed,1.f)) return;
+    bRestoreRestTick = false;
+    SetActorTickInterval(AutopilotRestTick);
 }
 
 void AQuebecCar::UnPossessed()
@@ -178,6 +197,9 @@ void AQuebecCar::OnCarImpact(AQuebecCar* Other, float Closing, const FVector& Wh
     }
     // Ramming a car with someone at the wheel is a crime; a parked car is only a dent.
     const bool bOtherDriven = Other->bPolice || Other->bTraffic || Other->bAutopilot || Other->Occupant || Other->GetController();
+    // Side jobs (JOBS): ramming the Voleur de char target is the job itself, not a crime.
+    static const FName SideJobTarget(TEXT("SideJobTarget"));
+    if (Other->Tags.Contains(SideJobTarget)) return;
     const float Now = GetWorld()->GetTimeSeconds();
     if (!Driver || !bOtherDriven || Closing < RamReportSpeed || Now < NextRamReportAt) return;
     NextRamReportAt = Now+1.f;
@@ -237,6 +259,7 @@ bool AQuebecCar::SlideAlongStep(const FVector& Before, const FVector& Travel)
 void AQuebecCar::FinishDriveTick(const FVector& From, bool bStriker, float DeltaSeconds)
 {
     const float Now = GetWorld()->GetTimeSeconds();
+    FinishAutopilotRelease();
     for (int32 I = PassedBodies.Num()-1; I >= 0; --I)
     {
         AActor* Body = PassedBodies[I].Get();
@@ -290,27 +313,20 @@ void AQuebecCar::UpdateDamageSmoke(float DeltaSeconds)
     if (BodyDamage != SmokeSeenDamage) { SmokeSeenDamage = BodyDamage; SmokeSince = Now; }
     // White steam from a battered car for half a minute after its last hit; black smoke from a wreck for longer.
     const bool bSmoking = BodyDamage >= SmokeDamage && Now-SmokeSince < (IsWrecked() ? 90.f : 30.f);
-    bool bPuffsLive = false;
     for (int32 I = 0; I < SmokePuffs.Num(); ++I)
     {
         UStaticMeshComponent* Puff = SmokePuffs[I];
         if (!Puff || !Puff->IsVisible()) continue;
         const float Age = Now-SmokePuffBorn[I];
         if (Age >= SmokePuffLife) { Puff->SetVisibility(false); continue; }
-        bPuffsLive = true;
         // Each puff swells as it rises, then shrinks away.
         const float Life = Age/SmokePuffLife;
         const float Swell = FMath::Lerp(.25f,1.1f,FMath::Min(1.f,Life*1.6f))*(Life > .7f ? 1.f-(Life-.7f)/.3f : 1.f);
         Puff->SetWorldScale3D(FVector(FMath::Max(.02f,Swell)));
         Puff->AddWorldOffset(FVector(-25.*DeltaSeconds,0.,140.*DeltaSeconds));
     }
-    // Parked and traffic cars tick slowly; smoke needs every frame until the last puff is gone.
-    if (bSmoking && GetActorTickInterval() > 0.f) { bSmokeTicking = true; SetActorTickInterval(0.f); }
-    if (!bSmoking && !bPuffsLive && bSmokeTicking)
-    {
-        bSmokeTicking = false;
-        SetActorTickInterval(Controller || bAutopilot || KnockTime > 0.f ? 0.f : (bTraffic ? .05f : .1f));
-    }
+    // Puffs move by DeltaSeconds on the car's own tick, so a parked wreck's smoke steps at its 10 Hz (traffic 20 Hz)
+    // instead of waking the whole car simulation every frame.
     if (!bSmoking || Now < NextSmokeAt || !WasRecentlyRendered(1.f)) return;
     NextSmokeAt = Now+(IsWrecked() ? .2f : .45f);
     int32 Slot = SmokePuffs.Num() < SmokePuffCount ? SmokePuffs.Num() : NextSmokePuff%SmokePuffCount;

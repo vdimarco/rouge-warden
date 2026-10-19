@@ -26,6 +26,7 @@ Combat SHALL stay playable with 80–200 ms of stream delay and touch input.
 #### Scenario: Not while driving or down
 - **WHEN** the player is driving, swimming, knocked down or arrested
 - **THEN** Fire does nothing
+- **AND** a Fire or Aim button held while the player gets into a car is released, so the player does not fire or aim on getting out
 
 ### Requirement: Health, armour and K.-O.
 Players SHALL have health and armour, and a knocked-out player SHALL return at the hospital.
@@ -33,6 +34,11 @@ Players SHALL have health and armour, and a knocked-out player SHALL return at t
 #### Scenario: Take damage
 - **WHEN** a player takes damage
 - **THEN** armour absorbs it first, then health drops, and the HUD bars show the change
+
+#### Scenario: Shot while driving
+- **WHEN** a player is shot or hit while driving
+- **THEN** the driver loses half of the damage and the car takes body damage
+- **AND** at zero health the driver lands beside the car and is knocked out
 
 #### Scenario: K.-O.
 - **WHEN** a player's health reaches zero

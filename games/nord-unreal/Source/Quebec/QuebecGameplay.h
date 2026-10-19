@@ -19,6 +19,7 @@ class UBoxComponent;
 class UCameraComponent;
 class UMaterialInterface;
 class USpringArmComponent;
+class UStaticMesh;
 class UStaticMeshComponent;
 class UTextRenderComponent;
 class UHierarchicalInstancedStaticMeshComponent;
@@ -183,7 +184,7 @@ public:
     bool IsInputLocked() const;
     // Every peer, after movement and network smoothing (UQuebecKnockPoser): tumbles the mesh about the hips.
     void ApplyKnockPose();
-    // Server: the car that knocked this player passes through it for Seconds.
+    // Server: the launched player's capsule passes through the car that hit it for Seconds.
     void IgnoreCarBriefly(AActor* Car, float Seconds);
 
 private:
@@ -227,6 +228,8 @@ private:
     bool bKnockPose = false;
     UFUNCTION() void OnRep_Knock();
     UFUNCTION(Client, Reliable) void ClientKnockLaunch(FVector Push);
+    // The owning client's capsule passes through the car too, so its predicted tumble is not pushed back.
+    UFUNCTION(Client, Reliable) void ClientIgnoreCar(AActor* Car, float Seconds);
 
     // Combat (QuebecCombat.cpp): weapons, aim assist and firing for a walking player.
 public:
@@ -260,6 +263,9 @@ private:
     float ShotKickAt = -100.f;
     float LastShotWordAt = -100.f;
     float AimBlend = 0.f;
+    // Mouse-wheel notches since the last ServerCycleWeapon; sent together at most every 0.15 s.
+    uint8 PendingWeaponCycles = 0;
+    float NextWeaponCycleAt = 0.f;
     void TickCombat(float DeltaSeconds);
     void TickCombatServer(float Now);
     void UpdateHeldWeapon();
@@ -274,9 +280,11 @@ private:
     UFUNCTION() void StopAim();
     UFUNCTION() void CycleWeapon();
     UFUNCTION() void TurnView(float Value);
+    // Fire press: one shot or swing now; the server keeps an automatic weapon firing until ServerStopFire.
     UFUNCTION(Server, Reliable) void ServerFire(FVector_NetQuantize AimOrigin, FVector_NetQuantizeNormal AimDirection);
+    UFUNCTION(Server, Reliable) void ServerStopFire();
     UFUNCTION(Server, Reliable) void ServerSetAim(bool bNewAiming);
-    UFUNCTION(Server, Reliable) void ServerNextWeapon();
+    UFUNCTION(Server, Reliable) void ServerCycleWeapon(uint8 Steps);
     UFUNCTION(NetMulticast, Unreliable) void MulticastShot(FVector_NetQuantize Muzzle, FVector_NetQuantize Impact, uint8 Slot, bool bHit, float Yaw);
     UFUNCTION(NetMulticast, Unreliable) void MulticastSwing(uint8 Slot, float Yaw);
     UFUNCTION(NetMulticast, Unreliable) void MulticastImpact(FVector_NetQuantize Point, uint8 Slot);
@@ -399,7 +407,10 @@ private:
     float SmokeSince = -1000.f;
     float NextSmokeAt = 0.f;
     int32 NextSmokePuff = 0;
-    bool bSmokeTicking = false;
+    // The tick interval the car rested at before SetAutopilot. ClearAutopilot restores it once the car is at rest;
+    // until then bRestoreRestTick is set and the car keeps every-frame ticks while it brakes.
+    float AutopilotRestTick = .1f;
+    bool bRestoreRestTick = false;
     void PrepareDriveAssist();
     float AssistedYawRate() const;
     bool PassStruckPerson(const FHitResult& Hit, const FVector& From, const FVector& Travel);
@@ -407,6 +418,7 @@ private:
     void OnWallImpact(const FVector& Normal, float Closing, float Step);
     bool SlideAlongStep(const FVector& Before, const FVector& Travel);
     void FinishDriveTick(const FVector& From, bool bStriker, float DeltaSeconds);
+    void FinishAutopilotRelease();
     void NudgeStuckCar();
     void UpdateDamageSmoke(float DeltaSeconds);
 
@@ -418,6 +430,11 @@ private:
     // QuebecTrafficModel::SignalOff, SignalLeft, SignalRight or SignalHazard. Every peer blinks the lamps from it.
     UPROPERTY(VisibleAnywhere, ReplicatedUsing=OnRep_TrafficSignal) uint8 TrafficSignal = 0;
     UPROPERTY() TArray<TObjectPtr<UStaticMeshComponent>> TrafficLamps;
+    // Amber lamp paint, re-applied whenever a lamp lights (the lamps carry the "NordOwnPaint" tag).
+    UPROPERTY() TObjectPtr<UMaterialInterface> TrafficLampPaint;
+    // People within 20 m, gathered at about 7 Hz; their live positions are tested on every traffic update.
+    TArray<TWeakObjectPtr<AActor>> TrafficPeopleNear;
+    float TrafficPeopleScanIn = 0.f;
     QuebecTrafficModel::FStopGate TrafficStop;
     QuebecTrafficModel::FYield TrafficYield;
     QuebecTrafficModel::FCurbStop TrafficCurb;
@@ -478,6 +495,8 @@ public:
     void TickResidentGreetings(float DeltaTime);
     bool IsComicStyle() const { return bComicStyle; }
     void ShowInteractionMessage(const FString& Message) { ClientInteractionMessage(Message); }
+    // Combat: a K.-O. or a respawn took the character out of its car without ExitCar.
+    void ForgetWalkingCharacter() { WalkingCharacter = nullptr; }
     // Console commands for the shared sky. The host applies them; they do nothing without a sky.
     UFUNCTION(Exec) void NordWeather(const FString& Weather);
     UFUNCTION(Exec) void NordTime(float Hours);
@@ -581,6 +600,7 @@ private:
     float CashChangedAt = -10.f;
     float LastHealth = 100.f;
     float HurtAt = -10.f;
+    bool bJobBannerWaiting = false;
 };
 
 UCLASS()

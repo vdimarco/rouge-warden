@@ -11,6 +11,10 @@ Crimes that police or civilians see SHALL give the offender wanted stars, from o
 - **WHEN** a player commits a minor crime with no officer in view and fewer than two civilians within 25 m
 - **THEN** no star is added
 
+#### Scenario: Shooting back
+- **WHEN** a player shoots at an ink goon, or at police who already chase that player, and no civilian is hit
+- **THEN** the shots add no gunfire heat; a civilian who is hit still counts as a crime
+
 #### Scenario: Escalation
 - **WHEN** a wanted player rams police cars and attacks officers
 - **THEN** heat rises through the thresholds 10, 45, 100, 180 and 300 to five stars

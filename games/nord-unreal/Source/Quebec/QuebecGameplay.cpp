@@ -9,6 +9,7 @@
 #include "QuebecPlayerState.h"
 #include "QuebecLife.h" // Living street: companion assignment for runtime walkers (PEOPLE).
 #include "QuebecSideJobs.h" // Side jobs: markers, E, R and the game mode spawn (JOBS).
+#include "QuebecPolice.h" // Police: the dispatcher spawned by the game mode (POLICE).
 #include "LaFontaineMap.h"
 #include "LaFontaineExtensionMap.h"
 #include "CollegeBathurstMap.h"
@@ -349,6 +350,8 @@ void AQuebecCharacter::OnRep_InVehicle()
     GetCharacterMovement()->SetMovementMode(bInVehicle ? MOVE_None : MOVE_Walking);
     GetCharacterMovement()->MaxWalkSpeed = 450.f;
     GetCharacterMovement()->MaxSwimSpeed = 260.f;
+    // Combat: the car takes the input, so a Fire or Aim held while getting in would never see its release.
+    ReleaseCombatInput();
 }
 
 void AQuebecCharacter::Tick(float DeltaSeconds)
@@ -638,7 +641,10 @@ void AQuebecParkResident::Tick(float DeltaSeconds)
         FVector::DotProduct(View,TowardLabel.GetSafeNormal()) > .99f);
     // People: drop a finished tumble pose even when hidden or far, so the body never keeps a stale offset.
     if (bKnockPose && !IsKnockActive(ServerTime)) ResetKnockPose();
-    if (IsHidden() || !bLocalView || FVector::DistSquared(Eye,GetActorLocation()) > FMath::Square(14000.f)) return;
+    const bool bPosed = !IsHidden() && bLocalView && FVector::DistSquared(Eye,GetActorLocation()) <= FMath::Square(14000.f);
+    // People: the absolute companion rig hides while unposed instead of standing where it was last posed.
+    if (CompanionRig) CompanionRig->SetShown(bPosed);
+    if (!bPosed) return;
     // People: tumbling and running residents pick their own clip and clock.
     UAnimSequence* StreetAnimation = nullptr;
     float StreetClock = 0.f;
@@ -798,7 +804,8 @@ void AQuebecCar::BeginPlay()
     }
     Collision->SetRelativeTransform(FTransform::Identity);
     GetComponents(Parts);
-    Parts.RemoveAll([this](const UStaticMeshComponent* Part) { return Part == Hull || Part->IsEditorOnly(); });
+    // Livery and lamp pieces added by the street systems keep their own materials (POLICE, TRAFFIC: tag NordOwnPaint).
+    Parts.RemoveAll([this](const UStaticMeshComponent* Part) { return Part == Hull || Part->IsEditorOnly() || Part->ComponentHasTag(TEXT("NordOwnPaint")); });
     for (UStaticMeshComponent* Part : Parts)
     {
         Part->SetCullDistance(20000.f);
@@ -906,6 +913,7 @@ void AQuebecCar::ApplyPaint()
         UMaterialInterface* Paint = LoadObject<UMaterialInterface>(nullptr,*PaintPath);
         for (UStaticMeshComponent* Part : Parts)
         {
+            if (Part->ComponentHasTag(TEXT("NordOwnPaint"))) continue; // Street livery and lamps (POLICE, TRAFFIC).
             const FString Name = Part->GetName();
             FString MeshName;
             if (Name == TEXT("Body")) MeshName = FString::Printf(TEXT("Car70Body%d"),Profile);
@@ -947,6 +955,7 @@ void AQuebecCar::ApplyPaint()
     const FVector CabinOffset = Profile == 1 ? FVector(18.,0.,1.35) : Profile == 2 ? FVector(-12.,0.,-.72) : FVector::ZeroVector;
     for (UStaticMeshComponent* Part : Parts)
     {
+        if (Part->ComponentHasTag(TEXT("NordOwnPaint"))) continue; // Street livery and lamps (POLICE, TRAFFIC).
         const FString Name = Part->GetName();
         if (Name == TEXT("Body") && Paint) Part->SetMaterial(0,Paint);
         if ((Name == TEXT("Glass") || Name == TEXT("Roof")) && Part->GetStaticMesh() &&
@@ -2498,6 +2507,9 @@ void AQuebecGameMode::BeginPlay()
         GetWorld()->SpawnActor<AQuebecSideJobs>();
     // Combat: weapon, vest and health pickups at street and park points, none near a QA anchor and no collision.
     if (!FParse::Param(FCommandLine::Get(), TEXT("NordNoCampaign"))) QuebecCombat::SpawnPickups(GetWorld());
+    // Police (POLICE): the dispatcher and its garage sign. Police cars and officers appear only while a player has stars.
+    if (!FParse::Param(FCommandLine::Get(), TEXT("NordNoCampaign")) && !FParse::Param(FCommandLine::Get(), TEXT("NordNoPolice")))
+        GetWorld()->SpawnActor<AQuebecPoliceDispatch>();
     static_assert(UE_ARRAY_COUNT(LaFontaine::RoadSegments) == UE_ARRAY_COUNT(LaFontaine::RoadSegmentWidths));
     static_assert(UE_ARRAY_COUNT(LaFontaine::RoadSegments) == UE_ARRAY_COUNT(LaFontaine::RoadParkingDirections));
     static_assert(UE_ARRAY_COUNT(LaFontaine::RoadSegments) == UE_ARRAY_COUNT(LaFontaine::RoadParkingSides));

@@ -10,7 +10,7 @@ A car that strikes a person at speed SHALL knock them down in a non-graphic comi
 
 #### Scenario: Slow contact
 - **WHEN** a car touches a person below 450 cm/s
-- **THEN** the person steps aside or reacts, and nobody falls
+- **THEN** the person steps out of the car's path, nobody falls, and no crime is reported
 
 #### Scenario: Car hits a walking player
 - **WHEN** a car strikes the other player while that player is on foot
@@ -26,3 +26,11 @@ Civilians SHALL run from gunfire and speeding cars.
 #### Scenario: Shots fired
 - **WHEN** a player fires a gun near civilians
 - **THEN** civilians within about 25 m run away from the shooter for a few seconds, then walk back to their routes
+
+#### Scenario: Car aimed at a person
+- **WHEN** a player drives at 1000–2000 cm/s straight at a person who stands in the car's path
+- **THEN** the person freezes facing the car and is knocked down when the car arrives
+
+#### Scenario: Car passing close by
+- **WHEN** a fast car will pass between about 1.5 m and 2.6 m from a person
+- **THEN** the person dives away from the car and stays on their feet

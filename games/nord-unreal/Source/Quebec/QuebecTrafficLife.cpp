@@ -28,6 +28,10 @@ namespace
     // At most this many cars stand at a curb at once, and never two within 40 m.
     constexpr int32 TrafficCurbStopCap = 3;
     constexpr float TrafficCurbSpacing = 4000.f;
+    // People are gathered per car at about 7 Hz within 20 m: the 13 m test reach plus what a car and a runner can
+    // close between scans. Their positions are read live on every 20 Hz traffic update.
+    constexpr float TrafficPeopleScanSeconds = .15f;
+    constexpr float TrafficPeopleRadius = 2000.f;
 
     bool TrafficRaceActive(UWorld* World)
     {
@@ -134,8 +138,21 @@ float AQuebecCar::UpdateTrafficLife(float DesiredSpeed, const FVector& Direction
     // People in the lane ahead: residents and pedestrians have no collision, so positions are tested directly.
     // Characters (players, officers) are included for the slow-down; the movement sweep still stops for them.
     float NearestGap = -1.f;
+    TrafficPeopleScanIn -= Elapsed;
     if (DesiredSpeed > 0.f && TrafficYield.IgnoreFor <= 0.f)
     {
+        if (TrafficPeopleScanIn <= 0.f)
+        {
+            TrafficPeopleScanIn = TrafficPeopleScanSeconds;
+            TrafficPeopleNear.Reset();
+            const auto Collect = [this,&CarAt](AActor* Person)
+            {
+                if (Person && FVector::DistSquared2D(Person->GetActorLocation(),CarAt) < FMath::Square(TrafficPeopleRadius)) TrafficPeopleNear.Add(Person);
+            };
+            for (TActorIterator<AQuebecParkResident> It(LifeWorld); It; ++It) Collect(*It);
+            for (TActorIterator<AQuebecPedestrian> It(LifeWorld); It; ++It) Collect(*It);
+            for (TActorIterator<ACharacter> It(LifeWorld); It; ++It) Collect(*It);
+        }
         const FVector CarForward = GetActorForwardVector().GetSafeNormal2D();
         const FVector CarRight = FVector::CrossProduct(FVector::UpVector,CarForward);
         const auto Consider = [&NearestGap,&CarAt,&CarForward,&CarRight](const AActor* Person)
@@ -146,9 +163,7 @@ float AQuebecCar::UpdateTrafficLife(float DesiredSpeed, const FVector& Direction
             const float Gap = LaneGap(float(FVector::DotProduct(ToPerson,CarForward)),float(FVector::DotProduct(ToPerson,CarRight)),float(ToPerson.Z));
             if (Gap >= 0.f && (NearestGap < 0.f || Gap < NearestGap)) NearestGap = Gap;
         };
-        for (TActorIterator<AQuebecParkResident> It(LifeWorld); It; ++It) Consider(*It);
-        for (TActorIterator<AQuebecPedestrian> It(LifeWorld); It; ++It) Consider(*It);
-        for (TActorIterator<ACharacter> It(LifeWorld); It; ++It) Consider(*It);
+        for (const TWeakObjectPtr<AActor>& Near : TrafficPeopleNear) Consider(Near.Get());
     }
     return TrafficYield.Update(NearestGap,Elapsed,DesiredSpeed);
 }
@@ -189,6 +204,7 @@ void AQuebecCar::OnRep_TrafficSignal()
         UMaterialInterface* LampBase = LoadObject<UMaterialInterface>(nullptr,TEXT("/Game/Materials/M_Light.M_Light"));
         UMaterialInstanceDynamic* Amber = LampBase ? UMaterialInstanceDynamic::Create(LampBase,this) : nullptr;
         if (Amber) Amber->SetVectorParameterValue(TEXT("Tint"),FLinearColor(1.f,.38f,.02f));
+        TrafficLampPaint = Amber ? Amber : LampBase;
         for (int32 I = 0; I < 4 && LampMesh; ++I)
         {
             UStaticMeshComponent* Lamp = NewObject<UStaticMeshComponent>(this,FName(*FString::Printf(TEXT("TrafficLamp%d"),I)));
@@ -201,7 +217,9 @@ void AQuebecCar::OnRep_TrafficSignal()
             Lamp->SetCanEverAffectNavigation(false);
             Lamp->SetCastShadow(false);
             Lamp->SetVisibility(false);
-            if (Amber) Lamp->SetMaterial(0,Amber);
+            // The car's BeginPlay and ApplyPaint leave components with this tag alone.
+            Lamp->ComponentTags.Add(TEXT("NordOwnPaint"));
+            if (TrafficLampPaint) Lamp->SetMaterial(0,TrafficLampPaint);
             Lamp->RegisterComponent();
             TrafficLamps.Add(Lamp);
         }
@@ -221,7 +239,12 @@ void AQuebecCar::BlinkTrafficSignal()
     for (int32 I = 0; I < TrafficLamps.Num(); ++I)
     {
         const bool bThisSide = Shown == QuebecTrafficModel::SignalHazard || (Shown == QuebecTrafficModel::SignalLeft) == (I%2 == 0);
-        if (TrafficLamps[I]) TrafficLamps[I]->SetVisibility(bTrafficLampsLit && bThisSide);
+        UStaticMeshComponent* Lamp = TrafficLamps[I];
+        if (!Lamp) continue;
+        const bool bLit = bTrafficLampsLit && bThisSide;
+        // Lamps built before BeginPlay on a client could be repainted with the body; restore the amber when lit.
+        if (bLit && TrafficLampPaint && Lamp->GetMaterial(0) != TrafficLampPaint.Get()) Lamp->SetMaterial(0,TrafficLampPaint);
+        Lamp->SetVisibility(bLit);
     }
     if (Shown == QuebecTrafficModel::SignalOff && GetWorld()) GetWorldTimerManager().ClearTimer(TrafficBlinkTimer);
 }

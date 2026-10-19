@@ -56,9 +56,11 @@ namespace QuebecJobRules
     inline constexpr int WaveSizes[WaveCount] = {3, 4, 5};
     inline constexpr int PistolRounds = 36;
 
-    // Cinq étoiles: three stars at the start; win by losing them or by pulling into the garage on Rue Dorion.
+    // Cinq étoiles: three stars at the start; win by losing them or by pulling into the police garage, the bay that
+    // QuebecPolice::GarageLocation() returns (midpoint of its street bay, 1.5 m to the right). Quebec.Jobs.MarkerClearance
+    // checks that the two stay together.
     inline constexpr int EscapeStars = 3;
-    inline constexpr FJobSpot EscapeGarage = {52404., 47000., 0.};
+    inline constexpr FJobSpot EscapeGarage = {50591., -17400., 0.};
     inline constexpr double GarageRadius = 700.;
 
     inline constexpr double MarkerRadius = 250.;
@@ -166,9 +168,12 @@ namespace QuebecJobRules
         return VelocityChange < 450.f ? 0.f : 10.f + VelocityChange / 50.f;
     }
 
-    // The escape is won at the garage, or once the stars that the job set have dropped to zero.
-    inline bool EscapeWon(bool bSawStars, int Stars, bool bAtGarage, float Elapsed)
+    // The escape is won when the stars the job set drop to zero: the police lost the player, or the garage cleared
+    // them, which it does only for a car that no unit sees. Without a police dispatcher the stars never show, and a
+    // car in the garage bay wins instead.
+    inline bool EscapeWon(bool bSawStars, int Stars, bool bCarAtGarage, float Elapsed)
     {
-        return bAtGarage || (bSawStars && Stars <= 0 && Elapsed >= 2.f);
+        if (Elapsed < 2.f) return false;
+        return bSawStars ? Stars <= 0 : bCarAtGarage;
     }
 }

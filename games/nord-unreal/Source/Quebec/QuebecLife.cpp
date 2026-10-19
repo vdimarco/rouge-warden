@@ -55,9 +55,16 @@ namespace
 
     // Optional Blender props (Data/Plateau/ReplicaGeometry/Props/manifest.json) that the host imports into
     // /Game/Plateau/Replica/Props. Absent packages are remembered, so 28 companions do not ask the file system again.
-    UStaticMesh* PropMesh(const TCHAR* Name)
+    UStaticMesh* PropMesh(const UWorld* World, const TCHAR* Name)
     {
+        // The cache lives for one world, so an import made between two editor play sessions is picked up.
+        static TWeakObjectPtr<const UWorld> MissingWorld;
         static TSet<FString> Missing;
+        if (MissingWorld.Get() != World)
+        {
+            Missing.Reset();
+            MissingWorld = World;
+        }
         const FString Package = FString::Printf(TEXT("/Game/Plateau/Replica/Props/%s"), Name);
         if (Missing.Contains(Package)) return nullptr;
         UStaticMesh* Mesh = FPackageName::DoesPackageExist(Package)
@@ -88,6 +95,8 @@ UStaticMeshComponent* UQuebecCompanionRig::AddPart(UStaticMesh* Mesh, UMaterialI
 {
     UStaticMeshComponent* Part = NewObject<UStaticMeshComponent>(GetOwner());
     Part->SetupAttachment(this);
+    // QA (smoke_test.py residents_ready) tells companion parts from the resident's hand prop by this tag.
+    Part->ComponentTags.Add(TEXT("NordCompanion"));
     Part->SetStaticMesh(Mesh);
     if (Material) Part->SetMaterial(0, Material);
     Part->SetCollisionEnabled(ECollisionEnabled::NoCollision);
@@ -114,6 +123,7 @@ void UQuebecCompanionRig::Build(uint8 NewKind, int32 Seed)
 {
     if (Parts.Num() || NewKind == 0 || !GetOwner()) return;
     Kind = NewKind;
+    const UWorld* World = GetWorld();
     const int32 Variant = FMath::Abs(Seed);
     UStaticMesh* Cube = BasicShape(TEXT("Cube"));
     UStaticMesh* Sphere = BasicShape(TEXT("Sphere"));
@@ -144,7 +154,7 @@ void UQuebecCompanionRig::Build(uint8 NewKind, int32 Seed)
         UStaticMesh* Props[ImportedCount];
         bool bImported = true;
         for (int32 I = 0; I < ImportedCount; ++I)
-            bImported &= (Props[I] = PropMesh(*FString::Printf(TEXT("SM_Props_dog_%s_%s"), SizeNames[SizeIndex], ImportedParts[I]))) != nullptr;
+            bImported &= (Props[I] = PropMesh(World, *FString::Printf(TEXT("SM_Props_dog_%s_%s"), SizeNames[SizeIndex], ImportedParts[I]))) != nullptr;
         const auto Prop = [&Attach, &PropScales, SizeIndex](int32 Index) { return FTransform(Attach[Index] * PropScales[SizeIndex]); };
         const auto Joint = [&Attach, &PropScales, SizeIndex](int32 Index) { return Attach[Index] * PropScales[SizeIndex]; };
         // Part order matches EDogPart: body, head, snout (eyes and nose), nose (collar), two ears, four legs, tail, leash.
@@ -181,7 +191,7 @@ void UQuebecCompanionRig::Build(uint8 NewKind, int32 Seed)
             TEXT("SM_Props_stroller_wheel_fl"), TEXT("SM_Props_stroller_wheel_fr"), TEXT("SM_Props_stroller_wheel_rl"), TEXT("SM_Props_stroller_wheel_rr")};
         UStaticMesh* Props[7];
         bool bImported = true;
-        for (int32 I = 0; I < 7; ++I) bImported &= (Props[I] = PropMesh(ImportedParts[I])) != nullptr;
+        for (int32 I = 0; I < 7; ++I) bImported &= (Props[I] = PropMesh(World, ImportedParts[I])) != nullptr;
         const FTransform Root(FVector(0.f, 0.f, -.08f));
         AddPart(bImported ? Props[0] : Cube, bImported ? nullptr : Fabric, bImported ? Root : Shape(FVector(0.f, 0.f, 58.f), FVector(.56f, .38f, .3f)), FVector::ZeroVector);
         AddPart(bImported ? Props[1] : Sphere, bImported ? nullptr : Fabric, bImported ? Root : Shape(FVector(-14.f, 0.f, 72.f), FVector(.42f, .4f, .4f)), FVector::ZeroVector);
@@ -200,22 +210,32 @@ void UQuebecCompanionRig::Build(uint8 NewKind, int32 Seed)
     else if (Kind == static_cast<uint8>(QuebecLife::ECompanion::Groceries))
     {
         // The host's Blender bag hangs from its 43 cm grip; extra imported parts follow the six basic ones.
-        UStaticMesh* Bag = PropMesh(TEXT("SM_Props_grocery_bag_bag"));
+        UStaticMesh* Bag = PropMesh(World, TEXT("SM_Props_grocery_bag_bag"));
         const FTransform Grip(FVector(0.f, 0.f, -43.f));
         AddPart(Bag ? Bag : Cube, Bag ? nullptr : ComicMaterial(TEXT("M_Paper")), Bag ? Grip : Shape(FVector(0.f, 0.f, -20.f), FVector(.26f, .16f, .32f)), FVector::ZeroVector);
-        UStaticMesh* Bread = Bag ? PropMesh(TEXT("SM_Props_grocery_bag_bread")) : nullptr;
+        UStaticMesh* Bread = Bag ? PropMesh(World, TEXT("SM_Props_grocery_bag_bread")) : nullptr;
         AddPart(Bread ? Bread : Cylinder, Bread ? nullptr : ComicMaterial(TEXT("M_Gold")),
             Bread ? Grip : Shape(FVector(4.f, 3.f, -2.f), FVector(.05f, .05f, .5f), FRotator(-14.f, 0.f, 8.f)), FVector::ZeroVector);
-        UStaticMesh* Leaves = Bag ? PropMesh(TEXT("SM_Props_grocery_bag_leaves")) : nullptr;
+        UStaticMesh* Leaves = Bag ? PropMesh(World, TEXT("SM_Props_grocery_bag_leaves")) : nullptr;
         AddPart(Leaves ? Leaves : Sphere, Leaves ? nullptr : ComicMaterial(TEXT("M_Lime")),
             Leaves ? Grip : Shape(FVector(-5.f, -2.f, -3.f), FVector(.13f, .11f, .1f)), FVector::ZeroVector);
         UMaterialInterface* Orange = ComicMaterial(TEXT("M_Orange"));
         for (int32 Fruit = 0; Fruit < 3; ++Fruit) AddPart(Sphere, Orange, Shape(FVector::ZeroVector, FVector(.08f)), FVector::ZeroVector)->SetVisibility(false);
         if (Bag)
             for (const TCHAR* Extra : {TEXT("SM_Props_grocery_bag_bag_inner"), TEXT("SM_Props_grocery_bag_leeks")})
-                if (UStaticMesh* Mesh = PropMesh(Extra)) AddPart(Mesh, nullptr, Grip, FVector::ZeroVector);
+                if (UStaticMesh* Mesh = PropMesh(World, Extra)) AddPart(Mesh, nullptr, Grip, FVector::ZeroVector);
     }
     LastPoseTime = -1.f;
+}
+
+void UQuebecCompanionRig::SetShown(bool bShown)
+{
+    if (bShownNow == bShown) return;
+    bShownNow = bShown;
+    // Hidden while the owner is hidden or far, instead of standing where it was last posed. Pose fixes the leash and
+    // fruit visibility again on the same frame it is shown.
+    SetVisibility(bShown, true);
+    if (bShown) LastPoseTime = -1.f;
 }
 
 void UQuebecCompanionRig::Pose(const FQuebecCompanionFrame& Frame)
@@ -306,7 +326,9 @@ void UQuebecCompanionRig::PoseDog(const FQuebecCompanionFrame& Frame)
         if (!Heading.IsNearlyZero(1.)) TargetYaw = Heading.Rotation().Yaw;
     }
     DogYaw = FRotator::NormalizeAxis(FMath::FInterpTo(DogYaw, DogYaw + FRotator::NormalizeAxis(TargetYaw - DogYaw), Delta, 6.f));
-    SetRelativeLocationAndRotation(DogPlace - FVector(0.f, 0.f, 7.f), FRotator(0.f, DogYaw, 0.f));
+    // The rig is absolute: place it in world space from the owner, only on frames the owner is posed.
+    SetWorldLocationAndRotation(OwnerFrame.TransformPosition(DogPlace - FVector(0.f, 0.f, 7.f)),
+        OwnerFrame.GetRotation() * FRotator(0.f, DogYaw, 0.f).Quaternion());
     // Trot: diagonal legs swing together, at a stride that matches the ground covered.
     LegPhase = FMath::Fmod(LegPhase + Travel / (24.f * S), 2.f * PI);
     const float Swing = FMath::Clamp(Pace / 120.f, 0.f, 1.f) * 30.f * FMath::Sin(LegPhase);

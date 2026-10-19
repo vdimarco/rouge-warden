@@ -139,9 +139,13 @@ AQuebecSideJobs::AQuebecSideJobs()
 
 AQuebecSideJobs* AQuebecSideJobs::Find(const UWorld* World)
 {
-    if (!World || QuebecDistrict::IsToronto(World)) return nullptr;
+    // The HUD asks several times a frame; the last answer is reused while it belongs to the same world.
+    static TWeakObjectPtr<AQuebecSideJobs> Cached;
+    if (!World) return nullptr;
+    if (AQuebecSideJobs* Known = Cached.Get(); Known && Known->GetWorld() == World) return Known;
+    if (QuebecDistrict::IsToronto(World)) return nullptr;
     for (TActorIterator<AQuebecSideJobs> It(const_cast<UWorld*>(World)); It; ++It)
-        if (IsValid(*It)) return *It;
+        if (IsValid(*It)) { Cached = *It; return *It; }
     return nullptr;
 }
 
@@ -165,17 +169,26 @@ void AQuebecSideJobs::BeginPlay()
 
 void AQuebecSideJobs::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
-    if (HasAuthority()) ClearJobContent();
-    if (HasAuthority() && IsValid(LoanCar) && !LoanCar->GetController()) LoanCar->Destroy();
+    // A world that ends removes every actor itself; only an explicit removal of this actor cleans up its job.
+    if (EndPlayReason == EEndPlayReason::Destroyed && HasAuthority())
+    {
+        ClearJobContent();
+        if (IsValid(LoanCar) && !LoanCar->GetController()) LoanCar->Destroy();
+        for (const TObjectPtr<AActor>& Entry : Leftovers)
+            if (const AQuebecCar* Car = Cast<AQuebecCar>(Entry.Get()); Car && !Car->GetController()) Entry->Destroy();
+        Leftovers.Reset();
+    }
     Super::EndPlay(EndPlayReason);
 }
 
 FVector AQuebecSideJobs::GroundPoint(const FVector& Point, float Lift) const
 {
     // The surveyed district is flat; the trace finds the sidewalk or road and skips balconies and crowns above 3 m.
+    // Only static geometry counts, so a parked car or a player on the spot is never taken for the ground.
     FCollisionQueryParams Query(SCENE_QUERY_STAT(SideJobGround),false,this);
     FHitResult Floor;
-    if (GetWorld() && GetWorld()->LineTraceSingleByChannel(Floor,Point+FVector(0.,0.,300.),Point-FVector(0.,0.,600.),ECC_Visibility,Query))
+    if (GetWorld() && GetWorld()->LineTraceSingleByObjectType(Floor,Point+FVector(0.,0.,300.),Point-FVector(0.,0.,600.),
+        FCollisionObjectQueryParams(ECC_WorldStatic),Query))
         return Floor.ImpactPoint+FVector(0.,0.,Lift);
     return Point+FVector(0.,0.,Lift);
 }
@@ -323,11 +336,12 @@ void AQuebecSideJobs::SetObjective(const FString& Words, const FVector& Location
     bHasTarget = bTarget;
 }
 
-bool AQuebecSideJobs::ReachedBy(const FVector& Point, double Radius, APlayerState** OutWho) const
+bool AQuebecSideJobs::ReachedBy(const FVector& Point, double Radius, APlayerState** OutWho, const APlayerState* Only) const
 {
     if (!GetWorld()) return false;
     for (TActorIterator<AQuebecController> It(GetWorld()); It; ++It)
     {
+        if (Only && It->PlayerState != Only) continue;
         const APawn* Body = It->GetPawn();
         if (!Body || FMath::Abs(Body->GetActorLocation().Z-Point.Z) > 400.) continue;
         const double Distance = FVector::Dist2D(Body->GetActorLocation(),Point);
@@ -379,8 +393,14 @@ bool AQuebecSideJobs::StartJob(int32 Index, AQuebecController* Player)
     StarterState = Player ? Player->PlayerState.Get() : nullptr;
     CarrierState = nullptr;
     OutsideSince = LostSince = NextWaveAt = -1.f;
-    NextTargetRefresh = 0.f;
+    NextTargetRefresh = NextTargetWrite = 0.f;
     bSawStars = false;
+    RetryUntil = 0.f;
+    // Someone already down (respawning) when the job begins does not fail it; a new K.-O. or arrest does.
+    DownAtStart.Reset();
+    if (GetWorld())
+        for (TActorIterator<AQuebecController> It(GetWorld()); It; ++It)
+            if (const AQuebecPlayerState* Stats = Cast<AQuebecPlayerState>(It->PlayerState); Stats && Stats->IsDown()) DownAtStart.Add(It->PlayerState.Get());
     BeginJobContent(Player);
     if (GetWorld())
         for (TActorIterator<AQuebecController> It(GetWorld()); It; ++It) It->PlayFeedback(EQuebecFeedbackCue::Dialogue);
@@ -448,26 +468,89 @@ void AQuebecSideJobs::BeginJobContent(AQuebecController* Player)
     }
     else if (JobIndex == SideJobGoons)
     {
-        // A pistol at the start if the player has no gun, so a phone player is not left with fists.
-        if (AQuebecPlayerState* Stats = Player ? Cast<AQuebecPlayerState>(Player->PlayerState) : nullptr)
-            if (!Stats->HasWeapon(EQuebecWeapon::Pistol) && !Stats->HasWeapon(EQuebecWeapon::SMG) && !Stats->HasWeapon(EQuebecWeapon::Shotgun))
-            {
-                const int32 Pistol = static_cast<int32>(EQuebecWeapon::Pistol);
-                Stats->OwnedWeapons |= 1 << Pistol;
-                if (Stats->Ammo.IsValidIndex(Pistol)) Stats->Ammo[Pistol] = FMath::Max(Stats->Ammo[Pistol],QuebecJobRules::PistolRounds);
-                Stats->Weapon = static_cast<uint8>(Pistol);
-                Stats->Changed();
-            }
+        GrantPistols();
         SetObjective(TEXT("Vague 1/3 : mets les sbires K.-O."),GroundPoint(SideJobVector(QuebecJobRules::GoonArena),0.f),true);
         SpawnWave(0);
     }
     else if (JobIndex == SideJobEscape)
     {
-        if (Player) QuebecCrime::SetStars(Player,QuebecJobRules::EscapeStars);
-        // The police garage clears stars; the job counts it as the way out. The table point is the fallback.
+        // At least three stars; a player who is already more wanted keeps the higher level.
+        if (Player) QuebecCrime::SetStars(Player,FMath::Max(QuebecCrime::Stars(Player),QuebecJobRules::EscapeStars));
+        // The way out is the police garage, which clears stars only for a car that no unit sees. The table point is the fallback.
         FVector Garage = QuebecPolice::GarageLocation();
         if (Garage.IsNearlyZero()) Garage = SideJobVector(QuebecJobRules::EscapeGarage);
         SetObjective(TEXT("Sème la police ou rejoins le garage"),GroundPoint(Garage,0.f),true);
+    }
+}
+
+void AQuebecSideJobs::GrantPistols()
+{
+    // Every player without a gun gets a pistol, so nobody faces the goons with bare fists on a phone.
+    if (!GetWorld()) return;
+    const int32 Pistol = static_cast<int32>(EQuebecWeapon::Pistol);
+    for (TActorIterator<AQuebecController> It(GetWorld()); It; ++It)
+    {
+        // A downed player would lose it at the respawn; TickJob arms them when they stand up.
+        AQuebecPlayerState* Stats = Cast<AQuebecPlayerState>(It->PlayerState);
+        if (!Stats || Stats->IsDown() || Stats->HasWeapon(EQuebecWeapon::Pistol) || Stats->HasWeapon(EQuebecWeapon::SMG) || Stats->HasWeapon(EQuebecWeapon::Shotgun)) continue;
+        Stats->OwnedWeapons |= 1 << Pistol;
+        if (Stats->Ammo.IsValidIndex(Pistol)) Stats->Ammo[Pistol] = FMath::Max(Stats->Ammo[Pistol],QuebecJobRules::PistolRounds);
+        Stats->Weapon = static_cast<uint8>(Pistol);
+        Stats->Changed();
+    }
+}
+
+bool AQuebecSideJobs::IsHeldByPolice(const AQuebecController* Player)
+{
+    const AQuebecPlayerState* Stats = Player ? Cast<AQuebecPlayerState>(Player->PlayerState) : nullptr;
+    if (Stats && Stats->IsDown()) return true;
+    const APawn* Body = Player ? Player->GetPawn() : nullptr;
+    UWorld* World = Player ? Player->GetWorld() : nullptr;
+    if (!Body || !Stats || Stats->Stars == 0 || !World) return false;
+    // The dispatcher's arrest hold is private; an officer on its feet within 2.5 m of a wanted player stands for it.
+    for (TActorIterator<AQuebecOfficer> It(World); It; ++It)
+        if (It->Faction == AQuebecOfficer::FactionPolice && !It->IsDown() &&
+            FVector::DistSquared2D(It->GetActorLocation(),Body->GetActorLocation()) < FMath::Square(250.f)) return true;
+    return false;
+}
+
+void AQuebecSideJobs::RetireActor(AActor* Actor)
+{
+    if (IsValid(Actor)) Leftovers.AddUnique(Actor);
+}
+
+void AQuebecSideJobs::TickLeftovers()
+{
+    // A job car leaves only when no player can see it: beyond 150 m, or out of every view cone and more than 25 m away.
+    if (!GetWorld()) return;
+    for (int32 Index = Leftovers.Num()-1; Index >= 0; --Index)
+    {
+        AActor* Leftover = Leftovers[Index];
+        const AQuebecCar* Car = Cast<AQuebecCar>(Leftover);
+        if (!IsValid(Leftover) || (Car && (Car->GetController() || Car->Occupant))) { Leftovers.RemoveAt(Index); continue; }
+        bool bSeen = false;
+        for (TActorIterator<AQuebecController> It(GetWorld()); It && !bSeen; ++It)
+        {
+            FVector Eye;
+            FRotator View;
+            It->GetPlayerViewPoint(Eye,View);
+            double ConeCosine = .35;
+            // A remote driver sends the server no camera updates, so assume the chase camera behind the car and a wider
+            // cone for free look, as AQuebecPoliceDispatch::InAnyView does.
+            if (!It->IsLocalController())
+                if (const AQuebecCar* Driven = Cast<AQuebecCar>(It->GetPawn()))
+                {
+                    View = Driven->GetActorRotation();
+                    Eye = Driven->GetActorLocation()-Driven->GetActorForwardVector()*700.+FVector(0.,0.,250.);
+                    ConeCosine = .17;
+                }
+            const FVector Offset = Leftover->GetActorLocation()-Eye;
+            const double Distance = Offset.Size();
+            bSeen = Distance < 2500. || (Distance < 15000. && FVector::DotProduct(Offset/FMath::Max(Distance,1.),View.Vector()) > ConeCosine);
+        }
+        if (bSeen) continue;
+        Leftover->Destroy();
+        Leftovers.RemoveAt(Index);
     }
 }
 
@@ -511,14 +594,14 @@ void AQuebecSideJobs::ClearJobContent()
 {
     if (IsValid(ThiefCar))
     {
-        // A player who took the thief's car keeps it; otherwise it leaves with the job.
-        if (ThiefCar->GetDriverController()) ThiefCar->ClearAutopilot();
-        else ThiefCar->Destroy();
+        // A player who took the thief's car keeps it; otherwise it stops and leaves once nobody sees it.
+        ThiefCar->ClearAutopilot();
+        if (!ThiefCar->GetDriverController()) RetireActor(ThiefCar);
     }
     ThiefCar = nullptr;
     TargetActor = nullptr;
-    // A loaner that a player drives stays until it is left empty (see Tick).
-    if (IsValid(LoanCar) && !LoanCar->GetController() && !LoanCar->Occupant) LoanCar->Destroy();
+    // A loaner that a player drives stays until it is left empty (see Tick); an empty one leaves unseen.
+    if (IsValid(LoanCar) && !LoanCar->GetController() && !LoanCar->Occupant) { RetireActor(LoanCar); LoanCar = nullptr; }
     if (!IsValid(LoanCar)) LoanCar = nullptr;
     for (const TObjectPtr<AActor>& Entry : Goons)
         if (IsValid(Entry)) Entry->Destroy();
@@ -549,6 +632,8 @@ void AQuebecSideJobs::FinishJob(bool bSucceeded, const FString& Reason)
     bLastSucceeded = bSucceeded;
     LastReward = Reward;
     LastResult = Reason;
+    // After MISSION RATÉE, R restarts the same job from its marker for a while instead of the campaign checkpoint.
+    RetryUntil = bSucceeded ? 0.f : GetServerNow()+RetrySeconds;
     ++ResultSerial;
     JobState = bSucceeded ? EQuebecJobState::Succeeded : EQuebecJobState::Failed;
     JobIndex = INDEX_NONE;
@@ -565,10 +650,16 @@ void AQuebecSideJobs::FinishJob(bool bSucceeded, const FString& Reason)
 
 bool AQuebecSideJobs::RequestRetry(AQuebecController* Player)
 {
-    if (!HasAuthority() || !Player || !IsActive()) return false;
-    // A downed player waits for the respawn; the K.-O. or arrest ends the job anyway.
-    if (const AQuebecPlayerState* Stats = Cast<AQuebecPlayerState>(Player->PlayerState); Stats && Stats->IsDown()) return true;
-    const int32 Index = JobIndex;
+    if (!HasAuthority() || !Player) return false;
+    const bool bRetryFailed = !IsActive() && !bLastSucceeded && LastJob >= 0 && LastJob < QuebecJobRules::JobCount &&
+        RetryUntil > 0.f && GetServerNow() < RetryUntil;
+    if (!IsActive() && !bRetryFailed) return false;
+    // A downed player waits for the respawn, and R never pulls a player out of an officer's arrest hold.
+    if (IsHeldByPolice(Player)) return true;
+    // The same guard as E: during the campaign race or while aiming the worklight, R belongs to the campaign.
+    for (TActorIterator<AQuebecCampaign> It(GetWorld()); It; ++It)
+        if (It->Phase == EQuebecCampaignPhase::RaceRunning || It->IsAimingLight(Player)) return false;
+    const int32 Index = IsActive() ? JobIndex : LastJob;
     MovePlayerToMarker(Player,Index);
     StartJob(Index,Player);
     UE_LOG(LogTemp,Display,TEXT("NORD_SIDEJOB retry job=%d by=%s"),Index,*GetNameSafe(Player));
@@ -628,7 +719,8 @@ void AQuebecSideJobs::Tick(float DeltaSeconds)
     if (HasAuthority())
     {
         if (IsActive()) TickJob(DeltaSeconds);
-        else if (IsValid(LoanCar) && !LoanCar->GetController() && !LoanCar->Occupant) { LoanCar->Destroy(); LoanCar = nullptr; }
+        else if (IsValid(LoanCar) && !LoanCar->GetController() && !LoanCar->Occupant) { RetireActor(LoanCar); LoanCar = nullptr; }
+        TickLeftovers();
     }
     // The thief's caption rides above its car every frame on every peer.
     if (ThiefCaption)
@@ -651,15 +743,34 @@ void AQuebecSideJobs::TickJob(float DeltaSeconds)
     AQuebecController* Starter = FindStarter();
     if (!Starter && GetWorld())
     {
-        // The starter left: the other player inherits the job.
+        // The starter left: the other player inherits the job. In the escape the stars belong to the new starter, who
+        // must be wanted and lose them again; the old starter's lost stars must not pay out.
         for (TActorIterator<AQuebecController> It(GetWorld()); It; ++It)
             if (It->PlayerState) { Starter = *It; StarterState = It->PlayerState; break; }
+        if (Starter && JobIndex == SideJobEscape)
+        {
+            bSawStars = false;
+            QuebecCrime::SetStars(Starter,FMath::Max(QuebecCrime::Stars(Starter),QuebecJobRules::EscapeStars));
+        }
     }
     if (!Starter) { FinishJob(false,TEXT("Mission abandonnée")); return; }
-    if (const AQuebecPlayerState* Stats = Cast<AQuebecPlayerState>(StarterState))
+    // The job is shared, so any player's new K.-O. or arrest fails it.
+    for (TActorIterator<AQuebecController> It(GetWorld()); It; ++It)
     {
-        if (Stats->GetDownState() == EQuebecDownState::KnockedOut) { FinishJob(false,TEXT("K.-O.")); return; }
-        if (Stats->GetDownState() == EQuebecDownState::Arrested) { FinishJob(false,TEXT("Arrêté par la police")); return; }
+        const AQuebecPlayerState* Stats = Cast<AQuebecPlayerState>(It->PlayerState);
+        if (!Stats) continue;
+        const int32 Waiting = DownAtStart.IndexOfByKey(TWeakObjectPtr<APlayerState>(It->PlayerState.Get()));
+        if (!Stats->IsDown())
+        {
+            if (Waiting == INDEX_NONE) continue;
+            DownAtStart.RemoveAt(Waiting);
+            // A partner who was down when the goon fight began is armed once standing.
+            if (JobIndex == SideJobGoons) GrantPistols();
+            continue;
+        }
+        if (Waiting != INDEX_NONE) continue;
+        FinishJob(false,Stats->GetDownState() == EQuebecDownState::Arrested ? TEXT("Arrêté par la police") : TEXT("K.-O."));
+        return;
     }
     if (DeadlineTime > 0.f && Now >= DeadlineTime) { FinishJob(false,TEXT("Temps écoulé")); return; }
     if (JobIndex == SideJobDelivery) TickDelivery();
@@ -682,15 +793,21 @@ void AQuebecSideJobs::TickDelivery()
         ForceNetUpdate();
         return;
     }
-    // The bag rides with whoever picked it up; a wrecked car spills it.
+    // The bag rides with whoever picked it up; a wrecked car spills it. If the carrier left, anyone may deliver.
+    bool bCarrierHere = false;
     for (TActorIterator<AQuebecController> It(GetWorld()); It; ++It)
         if (It->PlayerState == CarrierState)
+        {
+            bCarrierHere = true;
             if (const AQuebecCar* Car = Cast<AQuebecCar>(It->GetPawn()); Car && Car->IsWrecked())
             {
                 FinishJob(false,TEXT("La commande est écrasée"));
                 return;
             }
-    if (!ReachedBy(TargetLocation,0.,&Who) || (CarrierState && Who != CarrierState)) return;
+        }
+    if (!bCarrierHere) CarrierState = nullptr;
+    // Only the carrier's own arrival counts, so a partner standing at the door never hides it.
+    if (!ReachedBy(TargetLocation,0.,&Who,CarrierState)) return;
     const int32 Done = FMath::Clamp(JobStep,1,QuebecJobRules::DoorCount);
     JobProgress = static_cast<float>(Done)/QuebecJobRules::DoorCount;
     if (Done >= QuebecJobRules::DoorCount) { FinishJob(true,TEXT("Trois portes livrées, encore chaud")); return; }
@@ -734,7 +851,8 @@ void AQuebecSideJobs::TickThief(float Now, float DeltaSeconds)
         else if (Now-LostSince > QuebecJobRules::ThiefLostSeconds) { FinishJob(false,TEXT("Le voleur t'a semé")); return; }
     }
     else LostSince = -1.f;
-    TargetLocation = Car->GetActorLocation();
+    // Clients follow TargetActor; the replicated point is only a 4 Hz fallback, not a per-frame write.
+    if (Now >= NextTargetWrite) { TargetLocation = Car->GetActorLocation(); NextTargetWrite = Now+.25f; }
     DriveThief(Now);
 }
 
@@ -864,11 +982,11 @@ void AQuebecSideJobs::TickEscape(float Now)
     if (!Starter) return;
     const int32 Stars = QuebecCrime::Stars(Starter);
     if (Stars > 0) bSawStars = true;
+    // The police garage clears stars only for a car that no unit sees, so the job wins when the stars clear.
     const APawn* Body = Starter->GetPawn();
-    const bool bAtGarage = Body && FVector::Dist2D(Body->GetActorLocation(),TargetLocation) <= QuebecJobRules::GarageRadius;
-    if (!QuebecJobRules::EscapeWon(bSawStars,Stars,bAtGarage,Now-StartedAt)) return;
-    if (Stars > 0) QuebecCrime::SetStars(Starter,0);
-    FinishJob(true,bAtGarage ? TEXT("Planqué au garage") : TEXT("Police semée"));
+    const bool bCarAtGarage = Cast<AQuebecCar>(Body) && FVector::Dist2D(Body->GetActorLocation(),TargetLocation) <= QuebecJobRules::GarageRadius;
+    if (!QuebecJobRules::EscapeWon(bSawStars,Stars,bCarAtGarage,Now-StartedAt)) return;
+    FinishJob(true,bCarAtGarage ? TEXT("Planqué au garage") : TEXT("Police semée"));
 }
 
 void AQuebecSideJobs::OnRep_Job()
@@ -911,7 +1029,8 @@ void AQuebecSideJobs::UpdatePresentation()
         GoalCaption->SetRelativeLocation(TargetLocation+FVector(0.,0.,330.));
         const FString Label = JobIndex == SideJobDelivery ? (JobStep == 0 ? FString(TEXT("CAFE / COMMANDE")) : FString::Printf(TEXT("PORTE %d/3"),JobStep)) :
             JobIndex == SideJobGoons ? FString(TEXT("THEATRE")) : FString(TEXT("GARAGE"));
-        GoalCaption->SetText(FText::FromString(Label));
+        // SetText rebuilds the caption's glyphs, so it runs only when the label changes.
+        if (!Label.Equals(GoalLabel,ESearchCase::CaseSensitive)) { GoalLabel = Label; GoalCaption->SetText(FText::FromString(Label)); }
     }
     // Every sign faces the local camera, as the campaign's do.
     if (APlayerController* Local = GetWorld()->GetFirstPlayerController())
@@ -946,12 +1065,16 @@ void AQuebecSideJobs::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutL
     DOREPLIFETIME(AQuebecSideJobs,LastReward);
     DOREPLIFETIME(AQuebecSideJobs,LastResult);
     DOREPLIFETIME(AQuebecSideJobs,CompletedMask);
+    DOREPLIFETIME(AQuebecSideJobs,RetryUntil);
 }
 
 namespace QuebecJobs
 {
     bool HandleRecover(AQuebecController* Player)
     {
+        // R never moves a player who is down or held for arrest, with or without side jobs: the campaign checkpoint
+        // teleport is skipped too. A standing, unwanted player's R goes to the campaign when no job claims it.
+        if (Player && Player->HasAuthority() && AQuebecSideJobs::IsHeldByPolice(Player)) return true;
         AQuebecSideJobs* Jobs = Player ? AQuebecSideJobs::Find(Player->GetWorld()) : nullptr;
         return Jobs && Jobs->RequestRetry(Player);
     }

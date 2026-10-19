@@ -151,7 +151,7 @@ namespace
                 ParkMin = std::fmin(ParkMin, Park); ParkMax = std::fmax(ParkMax, Park);
             }
         }
-        Expect(FirstMin >= 60.f && FirstMax <= 300.f && FirstMax - FirstMin > 200.f, "first stops spread over 1-5 minutes");
+        Expect(FirstMin >= 120.f && FirstMax <= 300.f && FirstMax - FirstMin > 150.f, "first stops spread over 2-5 minutes, after the population motion check");
         Expect(EveryMin >= 180.f && EveryMax <= 300.f && EveryMax - EveryMin > 100.f, "later stops come every 3-5 minutes");
         Expect(ParkMin >= 15.f && ParkMax <= 40.f && ParkMax - ParkMin > 20.f, "stops last 15-40 s");
         Expect(CurbInterval(77U, 3U) == CurbInterval(77U, 3U) && CurbInterval(77U, 3U) != CurbInterval(78U, 3U), "the schedule is seeded per car");
@@ -162,7 +162,7 @@ namespace
         // A car on a 60 m segment decides to stop at 6 m along and runs the whole cycle.
         FCurbStop Curb;
         Curb.Advance(0.f, 1234U);
-        Expect(Curb.NextAt >= 60.f && !Curb.Due(5), "a new car is not due for a curb stop at once");
+        Expect(Curb.NextAt >= 120.f && !Curb.Due(5), "a new car is not due for a curb stop in its first two minutes");
         Curb.Clock = Curb.NextAt;
         Expect(Curb.Due(5), "the stop falls due on schedule");
         Curb.Retry(5, true);

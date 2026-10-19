@@ -84,7 +84,7 @@ namespace
         // 13 m/s average by car leaves slack in the time limit with every door bonus.
         const double Allowed = static_cast<double>(TimeLimits[0] + DoorBonusSeconds * static_cast<float>(DoorCount - 1));
         Expect(Route / 1300. < Allowed, "delivery route %.0f m cannot be driven in %.0f s", Route / 100., Allowed);
-        Expect(Distance2D(EscapeGarage, Markers[3]) > 50000., "garage is too close to the escape start");
+        Expect(Distance2D(EscapeGarage, Markers[3]) > 15000., "garage is too close to the escape start");
     }
 
     void TimerTests()
@@ -156,11 +156,14 @@ namespace
 
     void EscapeTests()
     {
-        Expect(EscapeWon(false, 3, true, 1.f), "the garage wins at once");
+        Expect(!EscapeWon(true, 3, true, 20.f), "standing in the garage while the police still see the player does not win");
+        Expect(EscapeWon(true, 0, true, 20.f), "the garage clearing the stars wins");
         Expect(!EscapeWon(false, 0, false, 30.f), "stars that never showed do not count as lost");
         Expect(!EscapeWon(true, 0, false, 1.f), "a zero reading right after the start does not count");
         Expect(EscapeWon(true, 0, false, 20.f), "losing the stars wins");
         Expect(!EscapeWon(true, 1, false, 60.f), "one star left is not an escape");
+        Expect(EscapeWon(false, 0, true, 20.f), "without police, a car in the garage bay wins");
+        Expect(!EscapeWon(false, 0, true, 1.f), "not in the first two seconds");
     }
 
     void PrintTable()

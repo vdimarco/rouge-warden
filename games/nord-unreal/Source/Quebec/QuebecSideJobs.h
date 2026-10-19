@@ -42,8 +42,12 @@ public:
 
     // Server: E from a walking player next to a marker. True when E was used here (a job started or a refusal shown).
     bool HandleInteract(AQuebecController* Player);
-    // Server: R while a job runs. Restarts the job from its marker and returns true; false when no job runs.
+    // Server: R while a job runs, or within RetrySeconds after one failed, restarts that job from its marker and returns
+    // true. R from a player who is down or in an officer's arrest hold is taken and ignored. False otherwise.
     bool RequestRetry(AQuebecController* Player);
+    static constexpr float RetrySeconds = 30.f;
+    // Down, or standing next to a police officer while wanted (the arrest hold). R must not move such a player.
+    static bool IsHeldByPolice(const AQuebecController* Player);
     // Server: starts job Index for Player. Ends any running job first.
     bool StartJob(int32 Index, AQuebecController* Player);
     // Server: ends the running job, removes what it spawned and pays the reward on success.
@@ -85,6 +89,8 @@ public:
     UPROPERTY(VisibleAnywhere, Replicated) FString LastResult;
     // One bit per job completed this session.
     UPROPERTY(VisibleAnywhere, Replicated) int32 CompletedMask = 0;
+    // Server time until which R restarts LastJob after MISSION RATÉE; 0 when no retry is offered.
+    UPROPERTY(VisibleAnywhere, Replicated) float RetryUntil = 0.f;
     // Ground-traced marker points, readable by QA.
     UPROPERTY(VisibleAnywhere) TArray<FVector> MarkerPoints;
 
@@ -107,6 +113,12 @@ private:
     UPROPERTY() TObjectPtr<AQuebecCar> LoanCar;
     UPROPERTY() TArray<TObjectPtr<AActor>> Goons;
     UPROPERTY() TObjectPtr<APlayerState> CarrierState;
+    // Job cars that outlived their job. Each goes once no player can see it (TickLeftovers).
+    UPROPERTY() TArray<TObjectPtr<AActor>> Leftovers;
+    // Players already down when the job began; only a new K.-O. or arrest fails the job.
+    TArray<TWeakObjectPtr<APlayerState>> DownAtStart;
+    FString GoalLabel;
+    float NextTargetWrite = 0.f;
     bool bBuilt = false;
     float LastPresentationTime = -1.f;
     // Server job bookkeeping.
@@ -131,7 +143,11 @@ private:
     APawn* NearestPlayerPawn(const FVector& Point, float* OutDistance = nullptr) const;
     void Say(const FString& Title, const FString& Detail, float Seconds = 3.f) const;
     void SetObjective(const FString& Words, const FVector& Location, bool bTarget);
-    bool ReachedBy(const FVector& Point, double Radius, APlayerState** OutWho) const;
+    // A player at Point (Radius 0 uses the walker/car arrival rule). Only, when set, limits the test to that player.
+    bool ReachedBy(const FVector& Point, double Radius, APlayerState** OutWho, const APlayerState* Only = nullptr) const;
+    void GrantPistols();
+    void RetireActor(AActor* Actor);
+    void TickLeftovers();
     void BeginJobContent(AQuebecController* Player);
     void ClearJobContent();
     void TickJob(float DeltaSeconds);

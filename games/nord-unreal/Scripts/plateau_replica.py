@@ -33,7 +33,8 @@ TRAFFIC = ROOT / 'Data/LaFontaine/layout.json'
 GENERATOR = 'Scripts/plateau_replica.py'
 FRAME = 'x east, y north, cm, z up'
 SOURCES = ('Data/LaFontaine/osm.xml', 'Data/LaFontaine/layout.json', GENERATOR,
-           'Scripts/prepare_lafontaine.py')
+           'Scripts/prepare_lafontaine.py', 'Data/Plateau/BaseGeometry/Marking.obj')
+LEGACY_MARKING = ROOT / 'Data/Plateau/BaseGeometry/Marking.obj'
 # The existing Panet/Visitation walking route already has detailed streets (plateau_streets.py).
 ROUTE = [(37400, -3280), (38405, -3924), (42703, -6819), (41685, -11320), (40636, -15933), (35500, -14300)]
 ROUTE_CLEAR = 6400.
@@ -52,8 +53,8 @@ SIDEWALK_W = {'primary': 320., 'secondary': 280., 'tertiary': 260., 'residential
 FALLBACK = {'primary': 1060., 'secondary': 840., 'tertiary': 720., 'residential': 520.,
             'unclassified': 520., 'living_street': 450.}
 # Upper bound on a measured offset: a park promenade or a set-back verge is not roadway.
-CAP = {'primary': 1150., 'secondary': 900., 'tertiary': 900., 'residential': 720., 'unclassified': 720.,
-       'living_street': 600.}
+CAP = {'primary': 1150., 'secondary': 900., 'tertiary': 900., 'residential': 625., 'unclassified': 625.,
+       'living_street': 600.}   # residential 2 x 6.25 m = the spec's 12.5 m upper bound (Fabre, Garnier)
 CAP_TWO_WAY_SECONDARY = 760.   # Rachel: about 14 m curb to curb including the 3 m cycle track
 
 STREETS_MATERIALS = {
@@ -67,6 +68,8 @@ STREETS_MATERIALS = {
     'paint_white': ('Streets_paint_white', '#f2f2ee', .6, 0., 'none', None),
     'paint_yellow': ('Streets_paint_yellow', '#f2b705', .6, 0., 'none', None),
     'paint_green': ('Streets_paint_green', '#2e9e5a', .65, 0., 'none', None),
+    # The live OSM Marking material M_LF_Marking (linear .85, .73, .39) for the re-authored route dashes.
+    'legacy_marking': ('Streets_legacy_marking', '#eddea8', .6, 0., 'none', None),
     'cast_iron': ('Streets_cast_iron', '#2e2d2b', .55, .6, 'none', None),
     'yard_grass': ('Streets_yard_grass', '#5e7a45', .95, 0., 'complex', None),
     'yard_soil': ('Streets_yard_soil', '#4e3b2b', .95, 0., 'complex', None),
@@ -127,9 +130,32 @@ def props_info():
         drops = [tuple(a) for a in anchors if a[2] <= 950]
         defaults['pole_drop'] = drops[len(drops) // 2] if drops else defaults['pole_drop']
         defaults['bike_contact'] = tuple(props['bike_locked']['anchors']['lean_contact_cm'][:2])
+        defaults['colliders'] = {k: [(c['center'], c['size']) for c in v.get('colliders_cm', [])]
+                                 for k, v in props.items()}
     except (OSError, KeyError, ValueError, IndexError):
         pass
     return defaults
+
+
+_PROPS_CACHE = {}
+
+
+def collider_polys(prop, p, yaw):
+    """World xy footprints of a prop's MAP-PROPS collision boxes (empty when it has none)."""
+    if 'info' not in _PROPS_CACHE:
+        _PROPS_CACHE['info'] = props_info()
+    out = []
+    for (cx, cy, _), (sx, sy, _) in _PROPS_CACHE['info'].get('colliders', {}).get(prop, []):
+        out.append([local_to_world(p, yaw, (cx + dx * sx / 2, cy + dy * sy / 2))
+                    for dx, dy in ((-1, -1), (1, -1), (1, 1), (-1, 1))])
+    return out
+
+
+def collision_clear(world, prop, p, yaw):
+    """A colliding prop keeps collision only if its point and every collider box clear the traffic band."""
+    if world.traffic_distance(p) < CLEAR + 40:
+        return False
+    return all(world.traffic_distance(poly) >= CLEAR for poly in collider_polys(prop, p, yaw))
 
 
 def local_to_world(p, yaw, local):
@@ -238,6 +264,12 @@ def add(p, v, k=1.):
 
 def lerp(a, b, t):
     return tuple(a[i] + (b[i] - a[i]) * t for i in range(len(a)))
+
+
+def quad_triangles(points):
+    """Split a simple CCW quad (2D or 3D points) into two triangles through its reflex vertex."""
+    r = next((i for i in range(4) if _cross(points[i - 1], points[i], points[(i + 1) % 4]) < 0), 0)
+    return [[points[r], points[(r + 1) % 4], points[(r + 2) % 4]], [points[r], points[(r + 2) % 4], points[(r + 3) % 4]]]
 
 
 def convex(poly):
@@ -1080,7 +1112,7 @@ def build_streets(world):
     surfaces = Surfaces()
     world.surfaces = surfaces
     counts = {k: 0 for k in (
-        'carriageway_quads', 'junction_polygons', 'sidewalk_pieces', 'sidewalk_metres', 'curb_ramps',
+        'carriageway_quads', 'junction_polygons', 'sidewalk_pieces', 'concave_pieces', 'bowtie_pieces_dropped', 'sidewalk_metres', 'curb_ramps',
         'dropped_aprons', 'corner_pieces', 'yards', 'yard_square_metres', 'fence_metres', 'tree_pits',
         'stop_bars', 'stop_bars_signal', 'stop_bars_osm_stop', 'crosswalks_continental_white',
         'crosswalks_continental_yellow', 'crosswalks_lines_white', 'crosswalks_generated_at_stops',
@@ -1308,6 +1340,7 @@ def build_streets(world):
     for row in world.corners:
         _corner(world, L, surfaces, row, counts)
     _ruelles(world, L, surfaces, counts)
+    _legacy_dashes(world, L, counts)
     world.pit_trees = pit_trees
     for k in ('sidewalk_metres', 'yard_square_metres', 'fence_metres', 'centre_line_metres', 'lane_line_metres',
               'parking_line_metres', 'bike_track_metres', 'ruelle_metres'):
@@ -1452,26 +1485,46 @@ def _sidewalk_strip(world, L, surfaces, strip, ramp_grid, ramp_points, counts):
         f0, f1 = k / pieces, (k + 1) / pieces
         c0, c1, o1, o0 = lerp(ca, cb, f0), lerp(ca, cb, f1), lerp(oa, ob, f1), lerp(oa, ob, f0)
         poly = [c0, c1, o1, o0]
+        if segments_cross(c0, c1, o1, o0) or segments_cross(c1, o1, o0, c0):
+            counts['bowtie_pieces_dropped'] += 1
+            continue   # only bow-tie slivers, where opposite edges cross; simple concave pieces stay
         if area(poly) < 50:
             continue
+        concave = not convex(poly)
         mid = lerp(lerp(c0, c1, .5), lerp(o0, o1, .5), .5)
         if on_pavement(world, mid, strip['seg']['i']) or world.in_building(mid):
             continue
         za, zb = zat(f0 * length), zat(f1 * length)
         clear = world.traffic_distance(poly) >= CLEAR
         if not clear:
-            L.flat('curb', poly, Z_DROP)
+            for tri in (quad_triangles(poly if area(poly) > 0 else poly[::-1]) if concave else [poly]):
+                L.flat('curb', tri, Z_DROP)
             surfaces.add(poly, Z_DROP, 'apron')
             counts['dropped_aprons'] += 1
             continue
-        L.face('sidewalk', [(c0[0], c0[1], za), (c1[0], c1[1], zb), (o1[0], o1[1], zb), (o0[0], o0[1], za)])
-        # Curb face toward the road and the back wall; end walls only at strip ends.
-        L.wall('sidewalk', c1, c0, 0., zb, 0., za)
-        L.wall('sidewalk', o0, o1, 0., za, 0., zb)
-        if k == 0:
-            L.wall('sidewalk', c0, o0, 0., za)
-        if k == pieces - 1:
-            L.wall('sidewalk', o1, c1, 0., zb)
+        top = [(c0[0], c0[1], za), (c1[0], c1[1], zb), (o1[0], o1[1], zb), (o0[0], o0[1], za)]
+        ccw = area(poly) > 0
+        top = top if ccw else top[::-1]
+        # A simple concave piece is two triangles split at its reflex vertex; the walls are unchanged.
+        for tri in (quad_triangles(top) if concave else [top]):
+            L.face('sidewalk', tri)
+        counts['concave_pieces'] += concave
+        # Outward walls (Layer.wall faces the right of a->b): the curb face toward the road, the back
+        # wall, and end walls only at strip ends. A CCW top walks c0->c1->o1->o0 with the inside on the left.
+        if ccw:
+            L.wall('sidewalk', c0, c1, 0., za, 0., zb)
+            L.wall('sidewalk', o1, o0, 0., zb, 0., za)
+            if k == 0:
+                L.wall('sidewalk', o0, c0, 0., za)
+            if k == pieces - 1:
+                L.wall('sidewalk', c1, o1, 0., zb)
+        else:
+            L.wall('sidewalk', c1, c0, 0., zb, 0., za)
+            L.wall('sidewalk', o0, o1, 0., za, 0., zb)
+            if k == 0:
+                L.wall('sidewalk', c0, o0, 0., za)
+            if k == pieces - 1:
+                L.wall('sidewalk', o1, c1, 0., zb)
         surfaces.add(poly, max(za, zb), 'sidewalk')
         counts['sidewalk_pieces'] += 1
         counts['sidewalk_metres'] += math.dist(c0, c1) / 100
@@ -1480,8 +1533,11 @@ def _sidewalk_strip(world, L, surfaces, strip, ramp_grid, ramp_points, counts):
         # Light curb top band (15 cm) and a saw-cut joint at the piece start.
         d = math.dist(c0, o0) or 1.
         band0, band1 = lerp(c0, o0, 15 / d), lerp(c1, o1, 15 / d)
-        L.face('curb', [(c0[0], c0[1], za + .1), (c1[0], c1[1], zb + .1), (band1[0], band1[1], zb + .1),
-                        (band0[0], band0[1], za + .1)])
+        band = [(c0[0], c0[1], za + .1), (c1[0], c1[1], zb + .1), (band1[0], band1[1], zb + .1),
+                (band0[0], band0[1], za + .1)]
+        band = band if area([p[:2] for p in band]) > 0 else band[::-1]
+        for tri in (quad_triangles(band) if not convex([p[:2] for p in band]) else [band]):
+            L.face('curb', tri)
         if k > 0 and za == Z_WALK:
             L.strip('joint', lerp(c0, o0, 16 / d), o0, 1.3, za + .12)
 
@@ -1512,11 +1568,11 @@ def _corner(world, L, surfaces, row, counts):
             surfaces.add(tri, Z_WALK, 'sidewalk')
         # Curb face along the arc (toward the road) and the back wall along the property line.
         if ccw:
-            L.wall('sidewalk', p1, p0, 0., Z_WALK)
-            L.wall('sidewalk', q0, q1, 0., Z_WALK)
-        else:
             L.wall('sidewalk', p0, p1, 0., Z_WALK)
             L.wall('sidewalk', q1, q0, 0., Z_WALK)
+        else:
+            L.wall('sidewalk', p1, p0, 0., Z_WALK)
+            L.wall('sidewalk', q0, q1, 0., Z_WALK)
         d0, d1 = math.dist(p0, q0) or 1., math.dist(p1, q1) or 1.
         for tri in ([p0, p1, lerp(p1, q1, 15 / d1)], [p0, lerp(p1, q1, 15 / d1), lerp(p0, q0, 15 / d0)]):
             L.flat('curb', tri, Z_WALK + .1)
@@ -1690,6 +1746,32 @@ def _fence(L, p0, p1, out, walk, rng, counts):
         counts['fence_metres'] += (s1 - s0) / 100
 
 
+def legacy_marking_faces():
+    """The 452 centre dashes of the live 'OSM Marking' actor, in the map frame."""
+    vs, faces = [], []
+    for line in LEGACY_MARKING.read_text().splitlines():
+        if line.startswith('v '):
+            _, x, y, z = line.split()
+            vs.append((float(x), -float(y), float(z)))
+        elif line.startswith('f '):
+            faces.append([vs[int(t.split('/')[0]) - 1] for t in line.split()[1:]])
+    return faces
+
+
+def _legacy_dashes(world, L, counts):
+    """apply_plateau_replica.py hides 'OSM Marking' because its dashes would poke through the new asphalt.
+    Re-author, unchanged, the dashes that no replica carriageway covers (the skipped Panet/Visitation
+    route roads), so nothing loses its centre line."""
+    kept = 0
+    for face in legacy_marking_faces():
+        c = (sum(p[0] for p in face) / len(face), sum(p[1] for p in face) / len(face))
+        if world.surfaces.at(c)[1] == 'road':
+            continue
+        if L.flat('legacy_marking', [p[:2] for p in face], face[0][2]):
+            kept += 1
+    counts['legacy_route_dashes'] = kept
+
+
 def _ruelles(world, L, surfaces, counts):
     world.alleys = []
     box = world.box
@@ -1775,8 +1857,8 @@ def build_furniture(world):
         moved = 0.
         if collides and allow_snap and (world.traffic_distance(p) < CLEAR or on_pavement(world, p)):
             p, moved = snap_to_sidewalk(world, p)
-        clear = world.traffic_distance(p) >= CLEAR + 40
-        row = placement(world, prop, p, yaw, collides and clear, parts, extra, z)
+        clear = collides and collision_clear(world, prop, p, yaw)
+        row = placement(world, prop, p, yaw, clear, parts, extra, z)
         if moved:
             row['snapped_cm'] = r2(moved)
         rows.append(row)
@@ -1931,8 +2013,8 @@ def build_soul(world):
                                         'curb_bins', 'locked_bikes', 'flower_boxes', 'ac_units')}
 
     def put(prop, p, yaw, collides, parts, extra=None, z=None):
-        clear = world.traffic_distance(p) >= CLEAR + 40
-        row = placement(world, prop, p, yaw, collides and clear, parts, extra, z)
+        clear = collides and collision_clear(world, prop, p, yaw)
+        row = placement(world, prop, p, yaw, clear, parts, extra, z)
         rows.append(row)
         return row
 

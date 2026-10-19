@@ -48,15 +48,22 @@ namespace
         Expect(Near(YawRateFor(900.f, 1.f, true), 66.7f * 1.4f, .3f), "handbrake turns 1.4x faster above 450 cm/s");
         Expect(YawRateFor(400.f, 1.f, true) == YawRateFor(400.f, 1.f, false), "handbrake does not boost below 450 cm/s");
         Expect(YawRateFor(800.f, 1.f, true) <= MaxYawRate, "yaw is clamped to 110 deg/s");
-        // Keyboard input is 0 or full: the new rate rule equals the old one for every keyboard case.
+        // Keyboard input is 0 or full: on a road too, the new rate rule equals the old one for every keyboard case.
         const float States[] = {-1.f, -.6f, -.2f, 0.f, .2f, .6f, 1.f};
         const float Keys[] = {-1.f, 0.f, 1.f};
         for (float Key : Keys)
             for (float Held : States)
-                Expect(TurnInRate(900.f, Key, Held, false) == LegacyTurnInRate(Key, Held),
+                Expect(TurnInRate(900.f, Key, Held, true) == LegacyTurnInRate(Key, Held),
                     "keyboard turn-in unchanged for input %.1f state %.1f", static_cast<double>(Key), static_cast<double>(Held));
+        // Off road the rule is today's for every input, analog included (Scripts/test_race_drive.py steers in between).
+        const float Analog[] = {-.9f, -.66f, -.33f, -.1f, 0.f, .05f, .25f, .33f, .5f, .66f, .9f};
+        for (float Wheel : Analog)
+            for (float Held : States)
+                Expect(TurnInRate(900.f, Wheel, Held, false) == LegacyTurnInRate(Wheel, Held),
+                    "off-road turn-in unchanged for input %.2f state %.1f", static_cast<double>(Wheel), static_cast<double>(Held));
         Expect(TurnInRate(900.f, .25f, 0.f, false) == HoldRate, "partial input still builds at 3.5/s");
-        Expect(TurnInRate(900.f, .33f, .66f, false) == ReleaseRate, "easing to a smaller graded level is quick");
+        Expect(TurnInRate(900.f, .33f, .66f, false) == HoldRate, "off road, easing to a smaller level keeps today's rate");
+        Expect(TurnInRate(900.f, .33f, .66f, true) == ReleaseRate, "on a road, easing to a smaller graded level is quick");
         Expect(TurnInRate(900.f, .66f, .2f, true) == HoldRate, "assist keeps city-speed turn-in");
         Expect(Near(TurnInRate(2600.f, .66f, .2f, true), FastHoldRate, 1.e-5f), "assist slows highway turn-in of a graded level");
         Expect(TurnInRate(2600.f, 1.f, .2f, true) == HoldRate, "full lock keeps today's turn-in on a road");

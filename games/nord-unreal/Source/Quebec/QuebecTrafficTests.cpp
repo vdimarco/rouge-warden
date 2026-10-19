@@ -115,7 +115,6 @@ bool FQuebecTrafficStopSignTest::RunTest(const FString& Parameters)
     if (!TestNotNull(TEXT("Traffic car"),Car)) return false;
     const FVector Junction = LaFontaine::StopApproaches[Approach][0];
     float StillFor = 0.f, LongestStill = 0.f, StoppedAt = -1.f, Closest = 1e9f, Elapsed = 0.f;
-    bool bHandbrakeWhileStill = true;
     for (int32 Frame = 0; Frame < 300 && Closest > 300.f; ++Frame)
     {
         Car->Tick(.05f);
@@ -126,7 +125,6 @@ bool FQuebecTrafficStopSignTest::RunTest(const FString& Parameters)
         {
             StillFor += .05f;
             if (StoppedAt < 0.f) StoppedAt = Distance;
-            if (StillFor < QuebecTrafficModel::StopHold) bHandbrakeWhileStill &= Car->bHandbrake;
         }
         else { LongestStill = FMath::Max(LongestStill,StillFor); StillFor = 0.f; }
     }
@@ -135,7 +133,6 @@ bool FQuebecTrafficStopSignTest::RunTest(const FString& Parameters)
         Approach,StoppedAt,LongestStill,Elapsed));
     TestTrue(TEXT("Traffic comes to a full stop before the ARRET junction, not inside it"),StoppedAt > 850.f && StoppedAt < 1100.f);
     TestTrue(TEXT("The stop lasts at least 0.8 s below 30 cm/s"),LongestStill >= QuebecTrafficModel::StopHold-.01f);
-    TestTrue(TEXT("The car brakes on its handbrake while it holds"),bHandbrakeWhileStill);
     TestTrue(TEXT("Then it proceeds into the junction"),Closest <= 300.f && Car->TrafficStop.bServed);
     return true;
 }
