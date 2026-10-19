@@ -342,6 +342,7 @@ export function createView(canvas) {
   let splatFade = 0;
   let splatSeen = -1;
   let splatFading = false;
+  let splatMarks = 0;
   let slash = null;
   const art = {};
   let neighbourSwing = null;
@@ -371,7 +372,10 @@ export function createView(canvas) {
   }
 
   function pixelRatio() {
-    return Math.min(RULES.dprCap, window.devicePixelRatio || 1, dprLimit);
+    const cssW = Math.max(1, canvas.clientWidth || 1);
+    const allowed = Math.min(RULES.dprCap, window.devicePixelRatio || 1, dprLimit);
+    // A 2560-wide view at device ratio 2 is an 8 megapixel blit. Cap the backing store.
+    return Math.min(allowed, 2560 / cssW);
   }
 
   function setDprCap(n) {
@@ -400,13 +404,15 @@ export function createView(canvas) {
     drawStatic(g, w, h, art);
     key = next;
     if (!splat || splatKey !== next) {
+      const seen = splatSeen;
       splat = document.createElement('canvas');
       splat.width = layer.width;
       splat.height = layer.height;
       splatKey = next;
       splatFade = 0;
-      splatSeen = -1;
+      splatSeen = seen;
       splatFading = false;
+      splatMarks = 0;
     }
   }
 
@@ -511,9 +517,9 @@ export function createView(canvas) {
       ctx.globalAlpha = 1;
     }
 
-    drawSlash(ctx, state, w, h);
     drawNeighbour(ctx, w, h, state);
     drawBat(ctx, w, h, state, pose);
+    drawSlash(ctx, state, w, h);
     drawSparks(ctx, state, w, h);
     drawHud(ctx, w, h, state);
     drawAim(ctx, pose);
@@ -536,20 +542,24 @@ export function createView(canvas) {
   function stampSplat(state, w, h, dpr) {
     const land = state.lastLanding;
     if (!splat || !land || land.t === splatSeen) return;
-    if (state.phase === 'pause' || state.phase === 'gameover') return;
-    splatSeen = land.t;
     const g = splat.getContext('2d');
+    if (splatFading) {
+      g.setTransform(1, 0, 0, 1, 0, 0);
+      g.clearRect(0, 0, splat.width, splat.height);
+      splatMarks = 0;
+      splatFading = false;
+    }
+    splatSeen = land.t;
     g.setTransform(dpr, 0, 0, dpr, 0, 0);
     const at = project(land.x, 0, land.z, w, h);
     const kind = state.lastShot && state.lastShot.kind;
+    g.globalAlpha = 1;
     g.fillStyle = kind === 'smash' ? EMBER : kind === 'push' ? SEA : kind === 'drive' ? OCHRE : INK;
-    g.globalAlpha = 0.22;
     g.beginPath();
     g.ellipse(at.x, at.y, Math.max(4, 8 * at.s), Math.max(2, 3.4 * at.s), 0.3, 0, Math.PI * 2);
     g.fill();
-    g.globalAlpha = 1;
     splatFade = 1;
-    splatFading = false;
+    splatMarks += 1;
   }
 
   function blitSplats(ctx, state, w, h, dpr) {
@@ -558,17 +568,18 @@ export function createView(canvas) {
     if (ending && splatFade > 0) splatFading = true;
     if (splatFading) {
       splatFade = Math.max(0, splatFade - (1 / 60) / 0.6);
-      if (splatFade === 0 && splat) {
+      if (splatFade < 1e-4 && splat) {
+        splatFade = 0;
         const g = splat.getContext('2d');
         g.setTransform(1, 0, 0, 1, 0, 0);
         g.clearRect(0, 0, splat.width, splat.height);
         splatFading = false;
-        splatSeen = -1;
+        splatMarks = 0;
       }
     }
     if (!(splatFade > 0) || !splat) return;
     ctx.save();
-    ctx.globalAlpha = splatFade;
+    ctx.globalAlpha = splatFade * 0.25;
     ctx.drawImage(splat, 0, 0, w, h);
     ctx.restore();
   }
@@ -581,6 +592,7 @@ export function createView(canvas) {
         slash = {
           id: shot.struckAt,
           t: shot.struckAt,
+          kind,
           perfect: shot.band === 'perfect',
           color: kind === 'push' ? SEA : kind === 'smash' ? EMBER : OCHRE,
           len: 26 + Math.min(36, (shot.speed || 8) * 1.4),
@@ -791,7 +803,28 @@ export function createView(canvas) {
     }
   }
 
-  return { frame, resize, setTrailCap, setDprCap, pixelRatio, ghostCount: () => ghostSeen };
+  function lastSlash() {
+    if (!slash) return null;
+    return {
+      kind: slash.kind,
+      color: slash.color,
+      len: slash.len,
+      dir: slash.dir,
+      perfect: !!slash.perfect,
+      t: slash.t,
+    };
+  }
+
+  return {
+    frame,
+    resize,
+    setTrailCap,
+    setDprCap,
+    pixelRatio,
+    ghostCount: () => ghostSeen,
+    lastSlash,
+    splatCount: () => splatMarks,
+  };
 }
 
 let glowSprite = null;

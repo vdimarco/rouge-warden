@@ -122,10 +122,12 @@ export function flickFromSamples(samples, now, viewWidth, windowSec = POINTER.wi
   const width = Math.max(1, Number(viewWidth) || 1);
   let oldest = null;
   let newest = null;
+  const windowed = [];
   const list = samples || [];
   for (let i = 0; i < list.length; i++) {
     const sample = list[i];
     if (!sample || t - sample.t > windowSec + 1e-6) continue;
+    windowed.push(sample);
     if (!oldest || sample.t < oldest.t) oldest = sample;
     if (!newest || sample.t >= newest.t) newest = sample;
   }
@@ -147,7 +149,20 @@ export function flickFromSamples(samples, now, viewWidth, windowSec = POINTER.wi
     degPerSec = RULES.driveMax + (widthsPerSec - POINTER.smash) * (RULES.swingStart / POINTER.push);
     if (degPerSec <= RULES.driveMax) degPerSec = RULES.driveMax + 1e-6;
   }
-  const bend = Math.atan2(-dy, Math.abs(dx)) * (180 / Math.PI);
+  // Spin is the change in heading across the stroke, not the first heading
+  // and not the chord from the first sample to the last. Screen y points down.
+  let startHeading = null;
+  let endHeading = null;
+  const ordered = windowed.slice().sort((a, b) => a.t - b.t);
+  for (let i = 1; i < ordered.length; i++) {
+    const sx = ordered[i].x - ordered[i - 1].x;
+    const sy = ordered[i].y - ordered[i - 1].y;
+    if (sx * sx + sy * sy < 1e-8) continue;
+    const heading = Math.atan2(-sy, Math.abs(sx)) * (180 / Math.PI);
+    if (startHeading == null) startHeading = heading;
+    endHeading = heading;
+  }
+  const bend = startHeading == null ? 0 : endHeading - startHeading;
   let rollDegPerSec = 0;
   if (bend + 1e-4 >= POINTER.bend) rollDegPerSec = 360;
   else if (bend - 1e-4 <= -POINTER.bend) rollDegPerSec = -360;

@@ -599,6 +599,8 @@ window.__test = {
     };
   },
   fps() { return { fps, ghosts: view.ghostCount(), dpr: view.pixelRatio() }; },
+  get lastSlash() { return view.lastSlash(); },
+  get splatCount() { return view.splatCount(); },
   trail(n) { view.setTrailCap(n); },
   freeze() {
     frozen = true;

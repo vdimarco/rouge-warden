@@ -16,3 +16,8 @@
 - [x] Pick smash from swing speed alone. Above 4.3 window widths per second, or above 1100 deg/s, is a smash on a low ball.
 - [x] Keep moves at 0.5, 1.0, and 1.19 window widths per second from swinging. 1.2 still swings.
 - [x] Keep a hit inside the timing window in play. 58 ms early pulls about 6 degrees, clears the net, and the casual Neighbour still wins 20 to 40 percent of points.
+- [ ] Fade splats to 0, clear them, and keep overlapping ink at or under 25% opacity.
+- [ ] Take flick spin from the change in heading across the stroke, 20 degrees or more.
+- [ ] Draw the ink slash above the bat, and expose `__test.lastSlash` and `__test.splatCount`.
+- [ ] Let `desktop.test.mjs` pick a free port and a temp or relative artifacts folder.
+- [ ] Cap a 2560-wide backing store at 2560 px and record the frame rate under 4x CPU throttle.

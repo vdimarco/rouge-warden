@@ -4,6 +4,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import http from 'node:http';
+import net from 'node:net';
 import os from 'node:os';
 import path from 'node:path';
 import { spawn } from 'node:child_process';
@@ -13,7 +15,71 @@ import { BAT, RULES, shotFromPeak, spinFromRoll } from '../../public/pingpong/ru
 import { POINTER, aimFromCanvas, batFromTilt, flickFromSamples, leanFromCanvas, sideTarget, springStep } from '../../public/pingpong/motion.js';
 
 const root = path.resolve(import.meta.dirname, '../..');
-const shots = '/opt/cursor/artifacts';
+const shots = process.env.PINGPONG_SHOTS
+  ? path.resolve(process.env.PINGPONG_SHOTS)
+  : fs.mkdtempSync(path.join(os.tmpdir(), 'pingpong-shots-'));
+
+function freePort() {
+  return new Promise((resolve, reject) => {
+    const srv = net.createServer();
+    srv.once('error', reject);
+    srv.listen(0, '127.0.0.1', () => {
+      const { port } = srv.address();
+      srv.close(() => resolve(port));
+    });
+  });
+}
+
+const types = {
+  '.html': 'text/html; charset=utf-8',
+  '.js': 'text/javascript; charset=utf-8',
+  '.mjs': 'text/javascript; charset=utf-8',
+  '.css': 'text/css; charset=utf-8',
+  '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.webp': 'image/webp',
+  '.svg': 'image/svg+xml',
+  '.json': 'application/json',
+  '.ogg': 'audio/ogg',
+  '.mp3': 'audio/mpeg',
+  '.wav': 'audio/wav',
+};
+
+function startArcade() {
+  const pub = path.join(root, 'public');
+  const server = http.createServer((req, res) => {
+    let rel = decodeURIComponent(new URL(req.url, 'http://127.0.0.1').pathname).replace(/^\/+/, '');
+    if (rel === '' || rel.endsWith('/')) rel += 'index.html';
+    const file = path.resolve(pub, rel);
+    if (file !== pub && !file.startsWith(pub + path.sep)) {
+      res.writeHead(403);
+      res.end();
+      return;
+    }
+    fs.readFile(file, (err, buf) => {
+      if (err) {
+        res.writeHead(404);
+        res.end();
+        return;
+      }
+      res.writeHead(200, { 'content-type': types[path.extname(file)] || 'application/octet-stream' });
+      res.end(buf);
+    });
+  });
+  return new Promise((resolve) => {
+    server.listen(0, '127.0.0.1', () => {
+      const { port } = server.address();
+      resolve({ server, origin: `http://127.0.0.1:${port}` });
+    });
+  });
+}
+
+let arcadeReady = null;
+function arcadeOrigin() {
+  if (!arcadeReady) arcadeReady = startArcade();
+  return arcadeReady;
+}
 
 function media(flags) {
   return {
@@ -65,6 +131,20 @@ function widthsFlick(widthsPerSec, width, bendDeg = 0) {
     dt,
     width,
   );
+}
+
+// Three samples. The first half is horizontal and the second half turns.
+// The chord stays under 20 degrees when the turn is 20, which is the case
+// a chord reading used to call "no spin".
+function curveFlick(widthsPerSec, width, curveDeg) {
+  const dt = POINTER.window;
+  const half = widthsPerSec * width * dt * 0.5;
+  const ang = (curveDeg * Math.PI) / 180;
+  return flickFromSamples([
+    { x: 0, y: 0, t: 0 },
+    { x: half, y: 0, t: dt * 0.5 },
+    { x: half + Math.cos(ang) * half, y: -Math.sin(ang) * half, t: dt },
+  ], dt, width);
 }
 
 test('a slow move never swings, and the bands match at 1280 and 2560', () => {
@@ -124,12 +204,20 @@ test('a slow move never swings, and the bands match at 1280 and 2560', () => {
   assert.equal(shotFromPeak(widthsFlick(linePx / 1280, 1280).degPerSec, 1).speed, 6);
   assert.equal(widthsFlick(linePx / 2560, 2560), null);
 
-  const top = widthsFlick(1.6, 1280, 20);
-  const flat = widthsFlick(1.6, 1280, 10);
-  const back = widthsFlick(1.6, 1280, -20);
+  const straight = widthsFlick(1.6, 1280, 20);
+  assert.equal(straight.rollDegPerSec, 0, 'a straight flick has no curve');
+  assert.ok(Math.abs(straight.bend) < 1e-6);
+  const top = curveFlick(1.6, 1280, 20);
+  const flat = curveFlick(1.6, 1280, 10);
+  const back = curveFlick(1.6, 1280, -20);
+  assert.ok(Math.abs(Math.atan2(40, 220) * (180 / Math.PI)) < 20);
   assert.equal(spinFromRoll(top.rollDegPerSec).type, 'top');
+  assert.ok(top.bend + 1e-4 >= 20, top.bend);
+  const chord = Math.atan2(Math.sin((20 * Math.PI) / 180), 1 + Math.cos((20 * Math.PI) / 180)) * (180 / Math.PI);
+  assert.ok(chord < 20, chord);
   assert.equal(flat.rollDegPerSec, 0);
   assert.equal(spinFromRoll(back.rollDegPerSec).type, 'back');
+  assert.ok(back.bend - 1e-4 <= -20, back.bend);
   assert.equal(widthsFlick(1.6, 1280, 0).dir, 'forehand');
   assert.equal(widthsFlick(1.6, 1280, 180).dir, 'backhand');
 
@@ -160,6 +248,8 @@ test('the desktop gate skips motion permission and the phone tap still asks', ()
   assert.match(main, /flickCool = t \+ RULES\.cooldown/);
   assert.match(main, /addEventListener\('mousemove'/);
   assert.match(main, /realMouseMove\(e\)/);
+  assert.match(main, /get lastSlash\(\)/);
+  assert.match(main, /get splatCount\(\)/);
 });
 
 function playwright() {
@@ -172,6 +262,7 @@ function playwright() {
 }
 
 test('a desktop mouse flick wins the opening point', { timeout: 90000 }, async () => {
+  const { origin } = await arcadeOrigin();
   const { chromium, devices } = playwright();
   fs.mkdirSync(shots, { recursive: true });
   const browser = await chromium.launch({ headless: true });
@@ -212,7 +303,7 @@ test('a desktop mouse flick wins the opening point', { timeout: 90000 }, async (
     page.on('console', (msg) => {
       if (msg.type() === 'error') errors.push(msg.text());
     });
-    await page.goto('http://127.0.0.1:8765/pingpong/', { waitUntil: 'domcontentloaded' });
+    await page.goto(`${origin}/pingpong/`, { waitUntil: 'domcontentloaded' });
     await page.waitForFunction(() => document.getElementById('gate-btn').textContent === 'Click to pick up your bat');
     const gate = await page.evaluate(() => ({
       button: document.getElementById('gate-btn').textContent,
@@ -319,6 +410,8 @@ test('a desktop mouse flick wins the opening point', { timeout: 90000 }, async (
         ball: { x: swung.ball.x, z: swung.ball.z },
         hint: document.getElementById('desk-hint').hidden,
         label: document.getElementById('score-you').textContent,
+        slash: window.__test.lastSlash,
+        splats: window.__test.splatCount,
       };
     });
     assert.equal(won.asked, 0, 'motion permission was requested');
@@ -326,6 +419,8 @@ test('a desktop mouse flick wins the opening point', { timeout: 90000 }, async (
     assert.equal(won.ready, true, JSON.stringify({ cross: won.cross, phase: won.phase, shot: won.shot }));
     assert.equal(won.you, 1, JSON.stringify(won));
     assert.equal(won.neighbour, 0);
+    assert.equal(won.slash.kind, 'drive', JSON.stringify(won.slash));
+    assert.equal(typeof won.splats, 'number');
     assert.match(won.label, /You 1/);
     assert.equal(won.hint, false);
     const placed = await page.evaluate(async () => {
@@ -409,7 +504,7 @@ test('a desktop mouse flick wins the opening point', { timeout: 90000 }, async (
     mobile.on('console', (msg) => {
       if (msg.type() === 'error') errors.push(msg.text());
     });
-    await mobile.goto('http://127.0.0.1:8765/pingpong/', { waitUntil: 'domcontentloaded' });
+    await mobile.goto(`${origin}/pingpong/`, { waitUntil: 'domcontentloaded' });
     await mobile.waitForFunction(() => document.getElementById('gate-btn').textContent.length > 0);
     const phoneGate = await mobile.evaluate(() => ({
       button: document.getElementById('gate-btn').textContent,
@@ -420,7 +515,7 @@ test('a desktop mouse flick wins the opening point', { timeout: 90000 }, async (
     }));
     await mobile.screenshot({ path: path.join(shots, 'pingpong-mobile-gate.png') });
     const portrait = await phone.newPage();
-    await portrait.goto('http://127.0.0.1:8765/pingpong/?input=swing&seed=1', { waitUntil: 'domcontentloaded' });
+    await portrait.goto(`${origin}/pingpong/?input=swing&seed=1`, { waitUntil: 'domcontentloaded' });
     await portrait.waitForFunction(() => {
       const live = window.__test && window.__test.state();
       if (!live || live.phase !== 'incoming') return false;
@@ -437,7 +532,7 @@ test('a desktop mouse flick wins the opening point', { timeout: 90000 }, async (
 
     const switched = await phone.newPage();
     switched.on('pageerror', (err) => errors.push(String(err)));
-    await switched.goto('http://127.0.0.1:8765/pingpong/', { waitUntil: 'domcontentloaded' });
+    await switched.goto(`${origin}/pingpong/`, { waitUntil: 'domcontentloaded' });
     await switched.waitForFunction(() => window.__test && document.getElementById('gate-btn').textContent === 'Tap to pick up your bat');
     await switched.mouse.move(40, 80);
     await switched.mouse.move(180, 240);
@@ -477,8 +572,9 @@ function waitForDebugPort(port) {
 }
 
 test('plain headless Chrome at 1280 shows the desktop gate', { timeout: 60000 }, async () => {
+  const { origin } = await arcadeOrigin();
   const { chromium } = playwright();
-  const port = 9333;
+  const port = await freePort();
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'pingpong-chrome-'));
   const proc = spawn('google-chrome', [
     '--headless=new',
@@ -503,7 +599,7 @@ test('plain headless Chrome at 1280 shows the desktop gate', { timeout: 60000 },
       deviceScaleFactor: 1,
       mobile: false,
     });
-    await page.goto('http://127.0.0.1:8765/pingpong/', { waitUntil: 'domcontentloaded' });
+    await page.goto(`${origin}/pingpong/`, { waitUntil: 'domcontentloaded' });
     await page.waitForFunction(() => window.__test && document.getElementById('gate-btn').textContent.length > 0);
     const gate = await page.evaluate(() => ({
       button: document.getElementById('gate-btn').textContent,
@@ -537,6 +633,7 @@ test('plain headless Chrome at 1280 shows the desktop gate', { timeout: 60000 },
   } finally {
     if (browser) await browser.close().catch(() => {});
     proc.kill('SIGKILL');
+    await new Promise((resolve) => setTimeout(resolve, 300));
     fs.rmSync(dir, { recursive: true, force: true });
   }
 });

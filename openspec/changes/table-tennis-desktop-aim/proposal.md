@@ -12,7 +12,7 @@ A desktop player was steering the bat by hand and swinging with the keyboard. Th
 - While the ball is coming in, the bat's sideways position eases onto the ball. The cursor's x aims the shot within ±30 degrees. The cursor's y sets the bat's depth.
 - A flick is pointer speed over 60 ms, in window widths per second. Under 1.2 does not swing. 1.2 through 2.3 is a push at 6 m/s, above 2.3 through 4.3 is a drive at 11 m/s, and above 4.3 is a smash at 17 m/s, high or low. The same speed reads the same at 1280 and at 2560. Samples come from pointermove and getCoalescedEvents. Cooldown stays 350 ms.
 - Contact stays inside ±120 ms, and ±40 ms stays perfect. The opening ±200 ms hook is unchanged.
-- A flick that bends at least 20 degrees upward is topspin. The same bend downward is backspin.
+- Spin is the change in direction across the flick. 20 degrees or more upward is topspin, and the same change downward is backspin. A straight flick adds none.
 - One click on the gate starts play and audio. The cursor becomes a small aim dot.
 - The hint line matches these controls.
 - A browser without a coarse pointer and without touch is a desktop, even when the pointer is none and DeviceMotionEvent exists. If the phone gate is already up, the first real mouse move switches it to the mouse copy.

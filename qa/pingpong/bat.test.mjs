@@ -167,6 +167,19 @@ test('a hit uses the bat position and aim stays on the swing angle', () => {
   assert.equal(gone.lastShot.reason, 'reach');
   assert.ok(Math.abs(gone.lastShot.batDepth - RULES.batInZ) < 1e-9);
 
+  const aside = feedAt(0.20, 0.30);
+  aside.setBat({ x: 0, depth: 0.30, roll: 0 });
+  aside.swing({ degPerSec: 700, dir: 'forehand', tiltX: 0, tiltY: 0, rollDegPerSec: 0, offsetMs: -9 });
+  const close = aside.state().lastShot;
+  assert.equal(close.offsetMs, -9);
+  assert.notEqual(close.band, 'miss');
+  assert.notEqual(close.reason, 'reach');
+
+  const over = feedAt(0.23, 0.30);
+  over.setBat({ x: 0, depth: 0.30, roll: 0 });
+  over.swing({ degPerSec: 700, dir: 'forehand', tiltX: 0, tiltY: 0, rollDegPerSec: 0, offsetMs: -9 });
+  assert.equal(over.state().lastShot.reason, 'reach');
+
   const early = feedAt(0, 0.9);
   early.setBat({ x: 0, depth: 0.55, roll: 0 });
   early.swing({ degPerSec: 640, dir: 'forehand', tiltX: 0, tiltY: 0, rollDegPerSec: 0, offsetMs: 0 });
