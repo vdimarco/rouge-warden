@@ -304,3 +304,6 @@ AGENTS.md asks for the source of every rendering technique.
 - **Physics honesty.** Aberration, Doppler, the light's (1 − β), time dilation and the rocket equation are real. The
   whip's geometry, the Shapiro push-back's size, STILL LIGHT, CHERENKOV in vacuum and 0.25 years a second are the game's,
   and the log says which is which.
+- **Falling stars on the title.** A thin white line with a fading gradient tail and a bright head dot, the usual 2D
+  canvas meteor. No outside source fit better. They start in the top fifth of the sky and live under a second, so they
+  stay clear of the title and buttons. Check: a title screenshot at 390x844 and 1280x800 shows a streak above the name.

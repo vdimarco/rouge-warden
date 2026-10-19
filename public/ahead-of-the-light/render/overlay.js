@@ -61,6 +61,7 @@ export function createOverlay({ canvas, tune = TUNE, reduced = false, fx = {} } 
     lastGraze: null, intro: -1, legKey: null, landmarkOn: false, gateOn: false, cardShown: {}, cardSeen: 0,
     patchSeen: false, ops: 0, labelsDrawn: [], wingsDrawn: null,
     markWay: {},                       // per landmark id: the way its label went last frame (kept while it is clear)
+    falls: [], fallAt: 0.6, fallN: 0,  // the title's falling stars
   };
   const shown = {};
   const count = (type) => { shown[type] = (shown[type] || 0) + 1; };
@@ -467,6 +468,7 @@ export function createOverlay({ canvas, tune = TUNE, reduced = false, fx = {} } 
       // the title: a faint ring only (kept clear of the name by the page)
       const R = opts.titleR ?? view.R;
       ctx.globalAlpha = 0.45; circle(cx, cy, R); stroke('#fff', 1); ctx.globalAlpha = 1;
+      out.falls = drawFalls(dt);
       ctx.restore();
       fxLayers(null, dt, T);
       out.ops = V.ops;
@@ -1312,6 +1314,36 @@ export function createOverlay({ canvas, tune = TUNE, reduced = false, fx = {} } 
   }
 
   // A fuel diamond: fill 0..1 rises from the bottom; flash: the dry click's blink.
+  // The title's falling stars: a thin white streak with a fading tail now and then, slanting down across the sky
+  // (fewer and slower with reduced motion). Each lives 0.6 to 1 s in the top of the sky, clear of the buttons. Returns how many are in the sky.
+  function drawFalls(dt) {
+    const { w, h } = V;
+    V.fallAt -= dt;
+    if (V.fallAt <= 0 && V.falls.length < 3) {
+      const r = (k) => hash01(++V.fallN * 13.37 + k);
+      const sp = (reduced ? 0.2 : 0.45) * h * (0.8 + 0.4 * r(1));
+      const ang = (0.55 + 0.35 * r(2)) * (r(3) < 0.5 ? 1 : -1);
+      V.falls.push({ x: w * (0.1 + 0.8 * r(4)), y: h * 0.2 * r(5), vx: Math.sin(ang) * sp, vy: Math.cos(ang) * sp,
+        life: 0.6 + 0.4 * r(6), t: 0 });
+      V.fallAt = (reduced ? 4 : 0.9) + (reduced ? 4 : 1.8) * r(7);
+    }
+    let n = 0;
+    for (let i = V.falls.length - 1; i >= 0; i--) {
+      const f = V.falls[i];
+      f.t += dt; f.x += f.vx * dt; f.y += f.vy * dt;
+      if (f.t >= f.life) { V.falls.splice(i, 1); continue; }
+      const a = Math.sin(Math.PI * f.t / f.life);
+      const tail = 0.3;
+      const g = ctx.createLinearGradient(f.x, f.y, f.x - f.vx * tail, f.y - f.vy * tail);
+      g.addColorStop(0, `rgba(255,255,255,${0.9 * a})`); g.addColorStop(1, 'rgba(255,255,255,0)');
+      ctx.beginPath(); V.ops++; ctx.moveTo(f.x, f.y); ctx.lineTo(f.x - f.vx * tail, f.y - f.vy * tail);
+      ctx.lineWidth = 1.8; ctx.strokeStyle = g; ctx.stroke();
+      ctx.globalAlpha = a; circle(f.x, f.y, 1.6); ctx.fillStyle = '#fff'; ctx.fill(); ctx.globalAlpha = 1;
+      n++;
+    }
+    return n;
+  }
+
   function diamond(x, y, half, fill = 1, alpha = 1, flash = 0, segs = false) {
     ctx.globalAlpha = alpha;
     ctx.beginPath(); V.ops++;

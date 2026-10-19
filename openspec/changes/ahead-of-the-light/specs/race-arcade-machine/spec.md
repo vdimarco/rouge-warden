@@ -91,7 +91,7 @@ When the save's unlocks hold `gold-frame` (the log's last unlock, at 84 pages), 
 - **CHECK** `qa/arcade/machines.mjs`
 
 ### Requirement: The title starts play in one tap
-The title SHALL show AHEAD OF THE LIGHT with LIGHT in orange over black space with white points, and TAP TO FLY (on desktop CLICK OR PRESS SPACE), the hangar chip, DAILY, PRACTICE and LOG once open, settings, a link back to the arcade and the game switcher button. The sky SHALL be built behind the title. The tap SHALL start play with the ship already moving, steerable within 1.5 s.
+The title SHALL show AHEAD OF THE LIGHT with LIGHT in orange over black space with white points, and TAP TO FLY (on desktop CLICK OR PRESS SPACE), the hangar chip, DAILY, PRACTICE and LOG once open, settings, a link back to the arcade and the game switcher button. The sky SHALL be built behind the title. Falling stars SHALL streak now and then across the top of the title sky, clear of the buttons, fewer and slower with reduced motion. The tap SHALL start play with the ship already moving, steerable within 1.5 s.
 
 #### Scenario: Three sizes
 - **WHEN** a player taps TAP TO FLY at 390 × 844 or 844 × 390, or presses Space at 1440 × 900
