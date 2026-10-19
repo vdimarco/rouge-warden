@@ -27,8 +27,18 @@
 //   fewer seeds);
 // - the ending's thumb ring: bottom centre at about 78% of the height in portrait; in landscape low in the corner,
 //   right with no touch and left after a touch on the left, inside the safe area;
-// - the same bands and overlaps with Large text (portrait and landscape, stages 1 and 2, the title and Settings).
-// SHOTS=<dir> saves a screenshot of every stage and screen at each size. ONLY=portrait,landscape,desktop picks sizes.
+// - the same bands and overlaps with Large text (portrait and landscape, stages 1 and 2, the title and Settings);
+// - other screens (review F25 to F31), with no inset: the Almost card and the stage 2, 3 and 7 overlays at 320 × 568,
+//   375 × 553 and 360 × 640, normal and Large text: every part inside the panel and above 60%, under no HUD tag,
+//   each button's centre takes a tap (a real tap on Go on goes on), and a fact that does not fit scrolls; the run
+//   result with every stage Glowing (?seed=3) at five sizes, normal and Large: the grade chips wrap inside the
+//   panel; the scale bar drawn at its label's true length at 390 × 844, 844 × 390 and 1440 × 900; tablets in portrait
+//   (768 × 1024, 600 × 960, 820 × 1180) and small phones: captions clear of the subject's body, the HUD and the
+//   bottom 40%; stage 2 on small phones: captions clear of the HUD and the prompt and above the egg's 28 u zone (not
+//   at 320 × 568 with Large text, where the HUD ends 16 px above that zone); small landscape phones (568 × 320 to
+//   667 × 375): captions clear of the scale tag and every HUD tag.
+// SHOTS=<dir> saves a screenshot of every stage and screen at each size. ONLY=portrait,landscape,desktop picks sizes
+// (ONLY=other runs only the other screens).
 //   NODE_PATH=qa/browser/node_modules node qa/first-breath/layout.e2e.mjs
 import fs from "node:fs";
 import path from "node:path";
@@ -59,12 +69,12 @@ const PX_PER_U = { portrait: 390 / 140, landscape: 390 / 140, desktop: 900 / 140
 const STAGES = ["swim", "egg", "split", "root", "grow", "answer", "turn", "birth", "ending"];
 const SHOTS = process.env.SHOTS ? path.resolve(process.env.SHOTS) : null;
 const GOLD_SEEDS = Math.max(1, Math.min(20, Number(process.env.GOLD_SEEDS) || 20));
-const sizeList = () => (process.env.ONLY ? process.env.ONLY.split(",") : Object.keys(SIZES));
+const sizeList = () => (process.env.ONLY ? process.env.ONLY.split(",").filter((s) => SIZES[s]) : Object.keys(SIZES));
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 if (SHOTS) fs.mkdirSync(SHOTS, { recursive: true });
 
 let passed = 0;
-const failed = [];
+const failed = [], notes = [];
 function check(name, ok, detail = "") {
   if (ok) passed++;
   else failed.push(`${name}${detail ? ` (${detail})` : ""}`);
@@ -268,7 +278,7 @@ function pageHelpers(inset) {
     if (!B) return A;
     return A.err <= B.err ? A : B;
   }
-  window.__lay = { rect, overlap, inside, hud, cap, frame, screen, fit };
+  window.__lay = { rect, overlap, inside, hud, cap, frame, screen, fit, subjectBox };
 }
 
 async function open(size, query = "", { large = false } = {}) {
@@ -564,8 +574,234 @@ for (const size of sizeList()) {
   }
 }
 
+// ---- other screens (review F25 to F31): small phones, tablets in portrait, small landscape phones. ONLY=other runs
+// just these; any other ONLY skips them.
+async function openAt(w, h, query = "", { touch = true, large = false, inset = false } = {}) {
+  const ctx = await browser.newContext({ viewport: { width: w, height: h }, ...(touch ? { hasTouch: true, isMobile: true } : {}) });
+  const page = await ctx.newPage();
+  const errors = [];
+  page.on("pageerror", (e) => errors.push("pageerror: " + (e.stack || e.message).split("\n").slice(0, 3).join(" | ")));
+  await page.route(/\/api\//, (r) => r.fulfill({ status: 204, body: "" }));
+  await page.addInitScript(({ large }) => {
+    try {
+      if (!sessionStorage.getItem("fb-qa")) {
+        localStorage.clear();
+        if (large) localStorage.setItem("first-breath.save.v1", JSON.stringify({ v: 1, settings: { largeText: true } }));
+        sessionStorage.setItem("fb-qa", "1");
+      }
+    } catch (e) { /* storage off */ }
+  }, { large });
+  await page.addInitScript(pageHelpers, inset ? INSET : { t: 0, r: 0, b: 0, l: 0 });
+  const sep = query.includes("?") ? "&" : "?";
+  await page.goto(BASE + query + (inset ? sep + INSET_Q : ""));
+  await page.waitForFunction(() => window.__fb && window.__fb.state && window.__fb.state().frames > 0 && window.__lay, null, { timeout: 60000 });
+  return { ctx, page, errors };
+}
+const runOther = !process.env.ONLY || process.env.ONLY.split(",").includes("other");
+
+// F25: the in-world overlay and the Almost card on small portrait phones, with and without Large text: every part of
+// the panel inside it and above 60%, the panel under no HUD tag, each button's centre takes a tap, a fact that does
+// not fit scrolls (and shows two lines at the least), and a real tap on Go on goes on
+if (runOther) {
+  for (const [w, h] of [[320, 568], [375, 553], [360, 640]]) for (const large of [false, true]) {
+    const tag = `${w}x${h}${large ? " Large" : ""}`;
+    const { ctx, page, errors } = await openAt(w, h, "?test=1&seed=1", { large });
+    const panelBad = () => page.evaluate(() => {
+      const sec = document.querySelector("#screens section.screen:not([hidden])");
+      if (!sec || !sec.classList.contains("inworld")) return [`no in-world screen (${window.__fb.state().screen})`];
+      const p = sec.querySelector(".panel"), pr = p.getBoundingClientRect(), bad = [], H = innerHeight;
+      if (pr.bottom > 0.6 * H + 0.5) bad.push(`panel ends at ${Math.round(pr.bottom)}, below 60%`);
+      for (const c of p.children) {
+        const r = c.getBoundingClientRect();
+        if (r.bottom > pr.bottom + 0.5 || r.top < pr.top - 0.5) bad.push(`"${c.textContent.trim().slice(0, 24)}" ${Math.round(r.top)}..${Math.round(r.bottom)} outside the panel ${Math.round(pr.top)}..${Math.round(pr.bottom)}`);
+      }
+      for (const b of p.querySelectorAll("button")) {
+        const r = b.getBoundingClientRect(), hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+        if (!(hit === b || b.contains(hit))) bad.push(`${b.id || b.dataset.act}: its centre does not take a tap`);
+      }
+      const f = p.querySelector(".fact, .kept");
+      if (f && f.scrollHeight > f.clientHeight + 1) {
+        const lh = parseFloat(getComputedStyle(f).lineHeight) || 22;
+        if (getComputedStyle(f).overflowY !== "auto") bad.push("a cut fact does not scroll");
+        if (f.clientHeight < 2 * lh - 1) bad.push(`the fact shows ${f.clientHeight} px, under two lines`);
+      }
+      for (const n of ["stage", "clock", "scale", "score", "place"]) {
+        const e = document.querySelector(`[data-hud="${n}"]`);
+        if (!e || e.hidden || getComputedStyle(e).visibility === "hidden") continue;
+        const r = e.getBoundingClientRect();
+        if (r.width && r.left < pr.right && r.right > pr.left && r.top < pr.bottom && r.bottom > pr.top) bad.push(`the panel is under the HUD ${n}`);
+      }
+      const pause = document.getElementById("pause").getBoundingClientRect();
+      if (pause.left < pr.right && pause.right > pr.left && pause.top < pr.bottom && pause.bottom > pr.top) bad.push("the panel is under the pause button");
+      return bad;
+    });
+    await page.evaluate(() => { const fb = window.__fb; fb.goto("swim", { seed: 1 }); fb.step(300); fb.finish(); });
+    const a = await panelBad();
+    check(`${tag}: the Almost card fits above 60% and every part takes a tap`, a.length === 0, list(a));
+    const box = await page.evaluate(() => { const r = document.getElementById("goOn").getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; });
+    await page.touchscreen.tap(box.x, box.y);
+    const on = await page.evaluate(() => { for (let i = 0; i < 60 && window.__fb.state().screen !== "overlay"; i++) window.__fb.step(10); return window.__fb.state().screen; });
+    check(`${tag}: a tap on Go on goes on`, on === "overlay", on);
+    for (const st of ["egg", "split", "turn"]) {
+      await page.evaluate((st) => {
+        const fb = window.__fb;
+        fb.goto(st, { seed: 1 }); fb.bot(3);
+        for (let i = 0; i < 400 && fb.state().screen === "stage"; i++) fb.step(30);
+        fb.bot(false);
+        if (fb.state().screen === "stage") fb.finish();
+      }, st);
+      const b = await panelBad();
+      check(`${tag}: the ${st} overlay fits above 60%, nothing cut off`, b.length === 0, list(b));
+    }
+    check(`${tag}: no page errors (in-world)`, errors.length === 0, list(errors));
+    await ctx.close();
+  }
+}
+
+// F26: the run result with every stage Glowing (?seed=3, the ref bot): at each size, normal and Large text, the
+// chips wrap: none leaves the chip row or the panel, none is cut, and nothing scrolls sideways
+if (runOther) {
+  const { ctx, page, errors } = await openAt(390, 844, "?test=1&seed=3");
+  await page.evaluate(() => { window.__fb.act("play"); window.__fb.bot(1); });
+  for (let i = 0; i < 400; i++) {
+    const s = await page.evaluate(() => { const fb = window.__fb; for (let k = 0; k < 10 && fb.state().screen !== "result"; k++) fb.step(120); return fb.state().screen; });
+    if (s === "result") break;
+  }
+  const grades = await page.evaluate(() => [...document.querySelectorAll('section[data-screen="result"] .chips li')].map((li) => li.textContent.trim()));
+  check(`the result shows 8 chips (${grades.join(", ")})`, grades.length === 8);
+  if (!grades.every((g) => /Glowing$/.test(g))) notes.push(`the seed 3 run was not Glowing in every stage: ${grades.join(", ")}`);
+  for (const [w, h] of [[390, 844], [360, 640], [320, 568], [844, 390], [1440, 900]]) for (const large of [false, true]) {
+    await page.setViewportSize({ width: w, height: h });
+    const bad = await page.evaluate((large) => {
+      document.documentElement.classList.toggle("large", large);
+      const sec = document.querySelector('section.screen[data-screen="result"]');
+      const ul = sec.querySelector(".chips").getBoundingClientRect(), pr = sec.querySelector(".panel").getBoundingClientRect();
+      const out = [];
+      if (sec.scrollWidth > sec.clientWidth + 1) out.push(`scrolls sideways ${sec.scrollWidth} > ${sec.clientWidth}`);
+      for (const li of sec.querySelectorAll(".chips li")) {
+        const r = li.getBoundingClientRect();
+        if (r.left < ul.left - 0.5 || r.right > ul.right + 0.5 || r.right > pr.right + 0.5) out.push(`"${li.textContent.trim()}" ${Math.round(r.left)}..${Math.round(r.right)} outside ${Math.round(ul.left)}..${Math.round(ul.right)}`);
+        if (li.scrollWidth > li.clientWidth + 1) out.push(`"${li.textContent.trim()}" is cut`);
+      }
+      return out;
+    }, large);
+    check(`${w}x${h}${large ? " Large" : ""}: the result's grade chips wrap inside the panel`, bad.length === 0, list(bad));
+  }
+  check("no page errors (result chips)", errors.length === 0, list(errors));
+  await ctx.close();
+}
+
+// F27: the scale bar is drawn at the true length of its label in every layout (desktop too: no 120 px cap)
+if (runOther) {
+  for (const [w, h, touch] of [[390, 844, true], [844, 390, true], [1440, 900, false]]) {
+    const { ctx, page, errors } = await openAt(w, h, "?test=1&seed=1", { touch });
+    const rows = await page.evaluate(async () => {
+      const { mmPerShortAxis } = await import("/first-breath/core/clock.js");
+      const { STAGES } = await import("/first-breath/core/stages/index.js");
+      const MM = { "0.1 mm": 0.1, "1 mm": 1, "1 cm": 10, "10 cm": 100, "1 m": 1000 };
+      const out = [];
+      for (const [st, s] of [["split", 14], ["root", 5], ["grow", 5], ["grow", 40], ["answer", 40], ["turn", 33], ["birth", 30]]) {
+        const fb = window.__fb;
+        fb.goto(st, { seed: 1 }); fb.bot(1); fb.step(Math.round(s * 60)); fb.bot(false);
+        const tag = document.querySelector('[data-hud="scale"]'), bar = tag && tag.querySelector(".bar");
+        const label = tag ? tag.textContent.trim() : "";
+        if (!bar || !(label in MM)) { out.push({ at: `${st}@${s}`, label, bad: "no bar" }); continue; }
+        const mm = mmPerShortAxis(STAGES.find((m) => m.meta.id === st).meta, fb.state().gaDay);
+        const want = (MM[label] / mm) * Math.min(innerWidth, innerHeight), got = bar.getBoundingClientRect().width;
+        out.push({ at: `${st}@${s}`, label, want: Math.round(want), got: Math.round(got), bad: Math.abs(want - got) > 1.5 ? "length" : null });
+      }
+      return out;
+    });
+    const bad = rows.filter((r) => r.bad).map((r) => `${r.at} "${r.label}" ${r.bad}: true ${r.want} px, drawn ${r.got} px`);
+    check(`${w}x${h}: the scale bar's length matches its label (${rows.length} samples)`, bad.length === 0, list(bad));
+    check(`${w}x${h}: no page errors (scale bar)`, errors.length === 0, list(errors));
+    await ctx.close();
+  }
+}
+
+// F29: tablets and other wide portrait screens: a caption never covers the subject's body, never sits below 60%, and
+// never covers the HUD (the band moves under the HUD when no line fits under the body)
+// F31: small portrait phones in stage 2: the caption never covers the HUD or the prompt line, and (but at 320 × 568
+// with Large text, where the HUD ends 16 px above the egg's zone) stays above the egg's 28 u zone
+if (runOther) {
+  const capCheck = (page, stages, { eggZone = false } = {}) => page.evaluate(({ stages, eggZone }) => {
+    const fb = window.__fb, bad = [], H = innerHeight;
+    let n = 0;
+    for (const st of stages) {
+      fb.goto(st, { seed: 1 }); fb.bot(1);
+      for (let i = 0; i < 300; i++) {
+        const s = fb.step(15);
+        if (s.screen !== "stage") break;
+        const c = window.__lay.cap();
+        if (!c) continue;
+        n++;
+        const at = `${st}@${s.t.toFixed(2)} "${c.text.slice(0, 24)}"`;
+        const h = window.__lay.hud();
+        for (const [k, b] of Object.entries(h)) if (b && window.__lay.overlap(c, b)) bad.push(`${at} covers the HUD ${k}`);
+        if (c.b > 0.6 * H + 0.5) bad.push(`${at} below 60% (${Math.round(c.b)})`);
+        const body = window.__lay.subjectBox ? window.__lay.subjectBox(s) : null;
+        if (body && window.__lay.overlap(c, body)) bad.push(`${at} covers the body ${Math.round(body.y)}..${Math.round(body.b)}`);
+        if (eggZone && st === "egg") {
+          const g = fb.guard();
+          if (g && c.b > g.egg.screen.y - 28 * (innerWidth / 140) + 0.5) bad.push(`${at} ends at ${Math.round(c.b)}, in the egg's zone`);
+        }
+      }
+      fb.bot(false);
+    }
+    return { bad, n };
+  }, { stages, eggZone });
+  for (const [w, h] of [[768, 1024], [600, 960], [820, 1180]]) {
+    const { ctx, page, errors } = await openAt(w, h, "?test=1&seed=1");
+    const r = await capCheck(page, ["swim", "split", "root", "turn"]);
+    check(`${w}x${h}: captions clear of the body, the HUD and the bottom 40% (${r.n} frames)`, r.bad.length === 0 && r.n > 0, list(r.bad));
+    check(`${w}x${h}: no page errors (tablet)`, errors.length === 0, list(errors));
+    await ctx.close();
+  }
+  for (const [w, h, large] of [[360, 640, false], [360, 640, true], [375, 553, true], [320, 568, true], [375, 667, true]]) {
+    const { ctx, page, errors } = await openAt(w, h, "?test=1&seed=1", { large });
+    const r = await capCheck(page, ["egg"], { eggZone: !(w === 320 && large) });
+    check(`${w}x${h}${large ? " Large" : ""}: stage 2's captions clear of the HUD and the prompt${w === 320 && large ? "" : ", above the egg"} (${r.n} frames)`,
+      r.bad.length === 0 && r.n > 0, list(r.bad));
+    const b = await capCheck(page, ["split", "root", "turn"]);
+    // with Large text on a small phone the HUD and the body can leave no free band (stage 4's end, stage 3 at
+    // 375 × 553): a note, not a fault
+    if (large) { if (b.bad.length) notes.push(`${w}x${h} Large: stages 3, 4 and 7: ${list(b.bad, 2)}`); }
+    else check(`${w}x${h}: stages 3, 4 and 7: captions clear of the body, the HUD and the bottom 40%`, b.bad.length === 0, list(b.bad));
+    check(`${w}x${h}: no page errors (small portrait)`, errors.length === 0, list(errors));
+    await ctx.close();
+  }
+}
+
+// F30: small landscape phones: a caption never covers the scale tag (or any HUD tag) at the bottom left
+if (runOther) {
+  for (const [w, h, large] of [[568, 320, false], [640, 360, false], [667, 375, false], [667, 375, true]]) {
+    const { ctx, page, errors } = await openAt(w, h, "?test=1&seed=1", { large });
+    const r = await page.evaluate(() => {
+      const fb = window.__fb, bad = [];
+      let n = 0;
+      for (const st of ["swim", "egg", "split", "root", "grow", "answer", "turn", "birth"]) {
+        fb.goto(st, { seed: 1 }); fb.bot(1);
+        for (let i = 0; i < 300; i++) {
+          const s = fb.step(15);
+          if (s.screen !== "stage") break;
+          const c = window.__lay.cap();
+          if (!c) continue;
+          n++;
+          for (const [k, b] of Object.entries(window.__lay.hud())) if (b && window.__lay.overlap(c, b)) bad.push(`${st}@${s.t.toFixed(2)} "${c.text.slice(0, 24)}" covers the HUD ${k}`);
+        }
+        fb.bot(false);
+      }
+      return { bad, n };
+    });
+    check(`${w}x${h}${large ? " Large" : ""}: landscape captions clear of the scale tag and the HUD (${r.n} frames)`, r.bad.length === 0 && r.n > 0, list(r.bad));
+    check(`${w}x${h}: no page errors (small landscape)`, errors.length === 0, list(errors));
+    await ctx.close();
+  }
+}
+
 await browser.close();
 if (server) server.kill();
+for (const n of notes) console.log(`NOTE ${n}`);
 if (failed.length) {
   console.log(`FAIL ${FILE}: ${failed.length} failed, ${passed} passed`);
   for (const f of failed) console.log("  - " + f);

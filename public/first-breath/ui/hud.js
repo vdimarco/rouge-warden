@@ -12,7 +12,8 @@
 // - score is a number (en-US grouping) or text; when the number grows, the tag gets the class "tick" for 240 ms (a
 //   brightness step only, no movement, so reduced motion needs nothing more).
 // - scale is a string ("1 cm", "You: about 0.05 mm") or { text, px }: px is the drawn length of the bar in CSS px (the
-//   bar's round length at the camera's px per mm), clamped to 6..120 px. A string draws a 24 px bar; a size line in
+//   bar's round length at the camera's px per mm), drawn at that length (at least 6 px; never clamped shorter than
+//   its label, so on a desktop it can reach 30% of the short axis, about 270 px). A string draws a 24 px bar; a size line in
 //   stages 1 and 2 ("You: about …", not to scale) draws none.
 // - The tags are found in root by their data-hud names (stage, clock, score, place, scale, prompt) and made when
 //   missing. root gets data-place="on" while the place slot shows (style.css keeps the right column tidy).
@@ -74,7 +75,9 @@ export function createHud(root) {
     const text = v && typeof v === "object" ? v.text : v;
     const s = text === null || text === undefined ? "" : String(text);
     const sized = /^you\b/i.test(s);
-    const px = v && typeof v === "object" && fin(v.px) ? Math.max(6, Math.min(120, v.px)) : sized ? 0 : 24;
+    // the bar is drawn at its true length, so it always matches its label (the stage picks a round length of at most
+    // 30% of the short axis, so it fits); only a bar under 6 px is drawn at 6 px
+    const px = v && typeof v === "object" && fin(v.px) ? Math.max(6, v.px) : sized ? 0 : 24;
     if (!put("scale", s, String(Math.round(px)))) return;
     const e = tags.scale;
     e.textContent = "";

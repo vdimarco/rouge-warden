@@ -10,7 +10,11 @@
 // a whole run; the overlay, card and crossfade timers; run.ms leaves out pause and the ending; the summary; every run
 // view validates; the same seed plays the same run. The host's contract: only shown facts (checked, R or A) reach
 // the host, the summary, the cards and the overlays; sound times (`at`) come in core seconds; the ending's run time
-// line carries run.ms (none in practice); track feed() takes odd intents.
+// line carries run.ms (none in practice); track feed() takes odd intents. Review fixes: with a +150 ms timing offset
+// a late press that reaches the page late grades as with none, and a new offset takes effect at Resume (F1); fair
+// resume, a target 0.3 s after Resume is left out of the score whatever the player does (F2); Try again from pause on
+// the overlay, the card and in the ending (F3); a practice total has no Glowing bonus (F4); rim sparks in every stage
+// from 2 on (F5).
 // node qa/first-breath/run.test.mjs
 import assert from "node:assert/strict";
 import { createRun, stageSeed, TIMERS, RUN_EVENTS } from "../../public/first-breath/core/run.js";
@@ -612,6 +616,155 @@ await check("feed() takes odd intents without throwing", () => {
     assert.doesNotThrow(() => feed(tr, odd, 0.5));
   }
   assert.deepEqual(feed(tr, { presses: [{ t: 1.01, raw: 1.01 }] }, 1.1).map((r) => r.grade), ["in"]);
+});
+
+// ---- review fixes (F1 to F5)
+
+// Practice one stage with the perfect bot. Each press and release is made `late` s after the bot's time and reaches
+// the page at its raw time (t + the offset) plus one frame, as in the page (ui/input.js stamps t = raw − offset).
+// pauseAt (stage s): pause there, two steps, resume; skip: the target id whose press (or release) is never made.
+function practise(id, { offsetMs = 0, late = 0, pauseAt = null, skip = null, seed = 7 } = {}) {
+  const run = createRun({ seed, settings: { offsetMs }, start: { practice: id } });
+  const bot = createBot(1, seed);
+  const offS = offsetMs / 1000, q = [], grades = {}, seen = new Map();
+  let paused = false;
+  for (let n = 0; run.screen !== "result" && n < MAX_STEPS; n++) {
+    const c = bot.choose(run.screen);
+    if (c) run.act(c);
+    let it = makeIntents();
+    if (live(run) && run.state) {
+      for (const x of run.mod.targets(run.state, 3) || []) if (!seen.has(x.id)) seen.set(x.id, { ...x });
+      if (pauseAt !== null && !paused && run.state.t >= pauseAt - 1e-9) {
+        assert.equal(run.act("pause"), true);
+        run.step(makeIntents()); run.step(makeIntents());
+        assert.equal(run.act("resume"), true);
+        paused = true;
+      }
+      const s = bot.intents(run.mod, run.state);
+      if (skip) {
+        const w = 0.45 * skip.P;
+        if (skip.kind === "release") s.releases = s.releases.filter((p) => Math.abs(p.t - skip.t) > w);
+        else s.presses = s.presses.filter((p) => Math.abs(p.t - skip.t) > w);
+      }
+      it = shiftIntents(s, -run.stageStart);
+      for (const k of ["presses", "releases"]) for (const p of it[k]) q.push({ k, t: p.t + late, raw: p.t + late + offS });
+      it.presses = []; it.releases = [];
+    }
+    const tEnd = run.t + DT;
+    for (let i = 0; i < q.length; i++) {
+      const e = q[i];
+      if (e.raw + DT <= tEnd && e.t < tEnd) { it[e.k].push({ t: e.t, raw: e.raw }); q.splice(i--, 1); }
+    }
+    it.presses.sort((a, b) => a.t - b.t);
+    it.releases.sort((a, b) => a.t - b.t);
+    run.step(it);
+    for (const ev of run.events.splice(0)) if (ev.name === "judge") grades[ev.grade] = (grades[ev.grade] || 0) + 1;
+  }
+  assert.equal(run.screen, "result", `${id} reaches its result`);
+  const s = run.summary().stages[0];
+  return { run, total: s.score.total, grade: s.grade, grades, seen };
+}
+
+await check("F1: with a +150 ms timing offset, presses 100 ms late that reach the page 150 ms later grade as with none", () => {
+  for (const id of ["egg", "split", "root", "grow", "answer", "turn", "birth"]) {
+    const a = practise(id, { late: 0.1 }), b = practise(id, { offsetMs: 150, late: 0.1 });
+    assert.ok(!a.grades.miss, `${id}: no miss with no offset (${JSON.stringify(a.grades)})`);
+    assert.deepEqual(b.grades, a.grades, `${id}: the same grades with +150 ms`);
+    assert.equal(b.total, a.total, `${id}: the same total with +150 ms`);
+  }
+  // an offset set in Settings while paused takes effect at Resume, on every track the stage holds
+  for (const id of ["egg", "split", "root", "grow", "answer", "turn", "birth"]) {
+    const run = createRun({ seed: 7, settings: { offsetMs: 0 }, start: { practice: id } });
+    for (let i = 0; i < 60; i++) run.step(makeIntents());
+    run.act("pause");
+    run.settings.offsetMs = 120;
+    run.act("resume");
+    const tracks = [];
+    for (const v of Object.values(run.state)) {
+      if (v && Array.isArray(v.targets) && Array.isArray(v.results)) tracks.push(v);
+      else if (v && typeof v === "object" && !Array.isArray(v)) for (const w of Object.values(v)) if (w && Array.isArray(w.targets) && Array.isArray(w.results)) tracks.push(w);
+    }
+    assert.ok(tracks.length >= 1, `${id} holds a track`);
+    for (const tr of tracks) near(tr.lag, 0.12, 1e-12, `${id}: a track's lag after Resume`);
+    near(run.state.lag, 0.12, 1e-12, `${id}: the stage's lag after Resume`);
+  }
+});
+
+await check("F2: fair resume: resume 0.3 s before a target, then never press it, and the stage scores as if unpaused", () => {
+  for (const id of ["egg", "split", "root", "grow", "answer", "turn"]) {
+    const a = practise(id);
+    // the egg's opening taps come first (a missed one there costs Skill); elsewhere the 3rd target after 4 s
+    const x = id === "egg" ? [...a.seen.values()].sort((p, q) => p.t - q.t)[0]
+      : [...a.seen.values()].filter((v) => v.t > 4).sort((p, q) => p.t - q.t)[2];
+    const b = practise(id, { pauseAt: x.t - 0.3, skip: x });
+    assert.equal(b.total, a.total, `${id}: ${x.id} (${x.kind} at ${x.t.toFixed(2)} s) is left out of accuracy`);
+    assert.ok(b.grades.miss >= 1, `${id}: the skipped target was missed (${JSON.stringify(b.grades)})`);
+    const c = practise(id, { pauseAt: x.t - 0.3 });
+    assert.equal(c.total, a.total, `${id}: pressed after the resume, it changes nothing either`);
+    const late = practise(id, { pauseAt: x.t - 1.5, skip: x });
+    assert.ok(late.total < a.total, `${id}: a target 1.5 s after the resume still counts (${late.total} vs ${a.total})`);
+  }
+});
+
+await check("F3: Try again from pause on the overlay and the card plays the stage that just ended; in the ending, the ending", () => {
+  const run = createRun({ seed: 3, start: "new" });
+  run.act("play");
+  const toOverlay = () => {
+    run.finish();
+    if (run.screen === "almost") run.act("goOn");
+    for (let n = 0; run.screen !== "overlay" && n < 600; n++) run.step(makeIntents());
+    assert.equal(run.screen, "overlay");
+  };
+  toOverlay();
+  const kept = run.summary().stages[0].score.total;
+  for (const where of ["overlay", "card"]) {
+    if (where === "card") { toOverlay(); run.act("next"); assert.equal(run.screen, "card"); }
+    assert.equal(run.act("pause"), true);
+    run.events.length = 0;
+    assert.equal(run.act("retry"), true, `retry on the ${where}`);
+    assert.equal(run.paused, false);
+    assert.equal(run.screen, "stage");
+    assert.equal(run.stageId, "swim", `the ${where}: the stage that just ended`);
+    assert.equal(run.state.t, 0);
+    const start = named(run.events, "stageStart")[0];
+    assert.ok(start && start.id === "swim" && start.attempt === (where === "overlay" ? 2 : 3), `a new attempt on the ${where}`);
+    assert.equal(run.summary().stages[0].score.total, kept, "the kept score stays");
+  }
+  const end = createRun({ seed: 3, start: { practice: "ending" } });
+  for (let i = 0; i < 120; i++) end.step(makeIntents());
+  end.act("pause");
+  assert.equal(end.act("retry"), true, "retry in the ending");
+  assert.equal(end.screen, "ending");
+  assert.equal(end.state.t, 0, "the ending starts again");
+  assert.equal(end.paused, false);
+});
+
+await check("F4: a practice result's total is the stage's own, with no Glowing bonus", () => {
+  const p = practise("answer");
+  assert.equal(p.grade, "Glowing");
+  const sum = p.run.summary();
+  assert.equal(sum.total, sum.stages[0].score.total, "no +500 in practice");
+  assert.ok(sum.total <= 10000);
+  assert.equal(REF.run.summary().total, runTotal(REF.run.summary().stages), "a run keeps its +500 per Glowing");
+});
+
+await check("F5: rim sparks: every stage from 2 on draws carry.sparks round you, within the draw limits", () => {
+  const ripples = (d) => d.strips.filter((s) => s.kind === "ripples").reduce((a, s) => a + s.items.length, 0);
+  for (const m of [...STAGES.slice(1), ENDING]) {
+    const mk = (n) => m.create(7, mergeCarry(DEFAULT_CARRY, { sparks: n }), { motherPhase: 0 });
+    const a = mk(0), b = mk(5), c = mk(12);
+    for (let i = 0; i < 30 / DT; i++) {
+      for (const s of [a, b, c]) { m.step(s, makeIntents()); s.events.length = 0; }
+      if (i % 60) continue;
+      const va = m.view(a), vb = m.view(b), vc = m.view(c);
+      assert.notEqual(JSON.stringify(vb), JSON.stringify(va), `${m.meta.id} at ${a.t.toFixed(1)} s: the sparks show`);
+      if (["egg", "root", "grow", "turn", "birth"].includes(m.meta.id)) {
+        assert.equal(ripples(vb) - ripples(va), 5, `${m.meta.id} at ${a.t.toFixed(1)} s: five sparks`);
+        assert.equal(ripples(vc) - ripples(va), 8, `${m.meta.id}: at most 8`);
+      }
+      assert.deepEqual(validate(vc), [], `${m.meta.id} at ${a.t.toFixed(1)} s with 12 sparks`);
+    }
+  }
 });
 
 await check("the same seed and bot play the same run", () => {

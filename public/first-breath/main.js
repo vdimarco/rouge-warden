@@ -44,16 +44,24 @@
 //   captions.say(id, text, { dir, ms, kind }) with its final text; kind is "say", "fact" (once per stage, text
 //   "<clock label>: <fact text>", no label in the ending, with fact, label and body beside it) or "cue" (a sound's
 //   caption, design.md 12: a stage's own "<stage>.sfx.<id>" string, else the shared cue.* string, once per stage). A
-//   stage 1 caption lasts 2.5 s. An unknown id shows nothing, never the id.
+//   stage 1 caption lasts 2.5 s. An unknown id shows nothing, never the id. The captions' clocks stop with the pause
+//   screen (captions.pause and resume). A sub-goal line the prompt line already shows is never also a caption. In
+//   portrait the caption band follows the subject's body (fitCapBand, steerCapBand); main.js also sets --hud-tags-b
+//   (the in-world panels) and --scale-r (the landscape band) for style.css.
 // - The prompt line names keys on a desktop (a fine pointer, or a mouse or key used last): the prompt's textKeys,
-//   else "<text>.keys" or "<text>Keys" when registered. In Birth the HUD score stays at the earlier stages' total
-//   (6.8: Birth's points show only on the run result). The ending's run time line takes run.ms (none in practice).
+//   else "<text>.keys" or "<text>Keys" when registered; a caption or sub-goal line takes its ".keys" form there too.
+//   In one-button mode a drag or drag-and-hold prompt takes "<text>.one" when registered (hold words, no arrows or
+//   mouse). The game switcher, while open, takes every key. In Birth the HUD score stays at the
+//   earlier stages' total (6.8: Birth's points show only on the run result). The ending's run time line takes run.ms
+//   (none in practice).
+// - A prompt with no gesture ("Wait here. The egg is coming.") shows its line too, with no icon. From 29 s into the
+//   ending, a tap in the play area or a quick Space or Enter goes on to the run result (6.9).
 // - ?q=low|full pins the tier and ?gl=0 is its alias (14.5): FLAGS.gl is false for the low tier.
 // - Settings changed through the URL (?assist, ?one, ?carer, ?rm) hold for the visit and are not saved; a key
 //   toggle (C) saves only its own field. M toggles and writes arcade.sound; ?mute=1 mutes the visit.
 import { DT, label as gaLabel } from "./core/clock.js";
 import { makeIntents, shiftIntents } from "./core/intent.js";
-import { createRun } from "./core/run.js";
+import { createRun, TIMERS } from "./core/run.js";
 import { createBot } from "./core/bots.js";
 import { SAVE_KEY, parse, recordStage, recordRun, recordCarryIn } from "./core/save.js";
 import { say, has, ordinal, minSec, CARERS } from "./core/text.js";
@@ -218,6 +226,7 @@ function newRun(start = "new", seed = newSeed()) {
   placeNum = null;
   menu = null;
   judges.length = 0;
+  captions.resume();                       // a new run is never paused
   input.flush();
   processEvents();
 }
@@ -302,6 +311,14 @@ function toggleMute() {
   setMuted(!on);
   if (screens.current === "pause") screens.show("pause", { soundOn: !muted });
   else if (screens.current === "title") screens.show("title", titleData());
+  else if (screens.current === "settings") showSettingsAgain();
+}
+
+// Settings shows the sound as heard (?mute=1 mutes the visit while arcade.sound stays on), and is drawn again,
+// focus kept, when M or C changes a switch under it.
+const menuData = () => ({ save, settings, soundOn: !muted });
+function showSettingsAgain() {
+  screens.show("settings", menuData(), { keep: document.activeElement });
 }
 
 // ---- events from the run (16.6, 16.8)
@@ -342,7 +359,7 @@ function factCaption(id, dir = null) {
 // A caption event: a registered string first (an id can be both, such as egg.seal), else a fact.
 function caption(id, vars = {}, dir = null, kind = "say") {
   if (!id) return false;
-  const text = textOf(id, vars);
+  const text = textOf(sayForm(id), vars);           // on a desktop, its desktop form when it has one
   if (text) return sayCaption(id, text, { dir, kind });
   if (factById(id)) return factCaption(id, dir);
   return false;
@@ -415,9 +432,9 @@ function onEvent(ev) {
       break;
     }
     case "subgoal":
-      // a sub-goal line that the prompt line already shows (birth's waves, stage 6's beat) is not said again as a
-      // caption
-      if (ev.text && !(ev.state === "shown" && promptShows(ev.text))) caption(ev.text);
+      // a sub-goal line that the prompt line already shows (birth's waves and its "Rest. Another wave will come.",
+      // stage 6's beat) is not said again as a caption, whatever its state: the prompt line (role="status") says it
+      if (ev.text && !promptShows(ev.text)) caption(ev.text);
       break;
     case "place": {
       // the place slot; the pluck only when you gain a place (11)
@@ -496,6 +513,7 @@ function pauseGame() {
   if (!run || run.paused || !PAUSABLE.has(run.screen)) return false;
   if (!run.act("pause")) return false;
   menu = null;
+  captions.pause();                        // a caption under the pause screen keeps the time it had left
   screens.show("pause", { soundOn: !muted });
   if (sound) sound.suspend();
   processEvents();
@@ -505,7 +523,8 @@ function pauseGame() {
 function resumeGame() {
   if (!run.act("resume")) return false;
   menu = null;
-  input.flush();
+  captions.resume();
+  input.flush({ resume: true });           // a hold let go while paused or hidden still ends (at the paused time)
   anchor();
   showRunScreen();
   syncLive();
@@ -534,11 +553,11 @@ function act(name, arg = null) {
     case "resume": ok = resumeGame(); break;
     case "retry":
       ok = run.act("retry");
-      if (ok) { menu = null; input.flush(); anchor(); if (sound) sound.resume(); }
+      if (ok) { menu = null; captions.resume(); input.flush(); anchor(); if (sound) sound.resume(); }
       break;
     case "settings": case "stages": case "sources": case "tapTest":
       menu = { name };
-      ok = screens.show(name, { save, settings });
+      ok = screens.show(name, menuData());
       break;
     case "back":
       menu = null;
@@ -551,9 +570,9 @@ function act(name, arg = null) {
       // ui/screens.js has set the live settings and written the save; the page follows what it owns
       const key = arg && arg.key;
       if (key === "motion") { updateMotion(); root.classList.toggle("reduced", motion.reduced); }
-      if (key === "largeText") root.classList.toggle("large", !!settings.largeText);
+      if (key === "largeText") { root.classList.toggle("large", !!settings.largeText); fitCapBand(); }
       if (key === "captions" && settings.captions === false) captions.clear();
-      if (key === "offsetMs") input.flush();
+      if (key === "offsetMs") input.flush({ resume: !!(run && run.paused) });   // a hold let go while paused still ends
       ok = true;
       break;
     }
@@ -600,9 +619,28 @@ function stepOnce(extra = null) {
     for (const k of HELD) if (held[k] !== undefined) it[k] = held[k];
     if (extra) for (const k of HELD) if (extra[k] !== undefined) it[k] = extra[k];
   }
+  // the ending goes on to the run result on a tap from 29 s (design 6.9): a quick touch or click in the play area
+  const skip = !botDriver && run.screen === "ending" && Array.isArray(it.taps)
+    && it.taps.some((p) => p && fin(p.t) && p.t - run.stageStart >= TIMERS.endingSkipS - 1e-9);
   run.step(it);
   processEvents();
+  if (skip) act("skip");
 }
+
+// ... or a quick Space or Enter (down and up within 0.25 s), taken at the key's release, so the key never reaches a
+// button of the result
+let endingKey = null;
+const ENDING_KEYS = new Set(["Space", "Enter", "NumpadEnter"]);
+window.addEventListener("keydown", (e) => {
+  if (ENDING_KEYS.has(e.code) && !e.repeat) endingKey = run && run.screen === "ending" ? { code: e.code, at: e.timeStamp } : null;
+}, true);
+window.addEventListener("keyup", (e) => {
+  const k = endingKey;
+  if (!k || k.code !== e.code) return;
+  endingKey = null;
+  if (!(e.timeStamp - k.at <= 250) || !run || run.paused || run.screen !== "ending" || !run.state) return;
+  if (run.state.t >= TIMERS.endingSkipS - 1e-9 && uiAct("skip")) e.preventDefault();
+}, true);
 
 // ---- the picture, the rings, the HUD
 const MM_TEXT = [[1000, "1 m"], [100, "10 cm"], [10, "1 cm"], [1, "1 mm"], [0.1, "0.1 mm"]];
@@ -654,10 +692,22 @@ window.addEventListener("pointerdown", (e) => {
 }, true);
 window.addEventListener("keydown", () => { device = "keys"; }, true);
 
+// A string id's desktop form, "<id>.keys" or "<id>Keys", when registered (else null).
+const keysForm = (id) => [id + ".keys", id + "Keys"].find((k) => has(k)) || null;
+// The id a caption or sub-goal line shows: on a desktop its desktop form, when there is one (root.yours.keys).
+const sayForm = (id) => (device === "keys" && keysForm(id)) || id;
+
+// One-button mode (16.4): any key or touch is the button and the run steers, so a drag or drag-and-hold prompt says
+// to hold, with no arrows, mouse or drag: the prompt's "<text>.one". Every drag or drag-and-hold prompt that names
+// a drag, an arrow or the mouse has one (prompts.test.mjs); the others ("Ride the waves.", "Rest.") keep their words,
+// as does a tap or hold prompt (Space is a key, and a tap is a touch).
 function promptText(p) {
   if (!p || !p.text) return null;
+  if (settings.oneButton && (p.gesture === "drag" || p.gesture === "dragHold") && has(p.text + ".one")) {
+    return textOf(p.text + ".one");
+  }
   if (device === "keys") {
-    const k = [p.textKeys, p.text + ".keys", p.text + "Keys"].find((id) => has(id));
+    const k = (has(p.textKeys) && p.textKeys) || keysForm(p.text);
     if (k) return textOf(k);
   }
   return textOf(p.text);
@@ -667,16 +717,16 @@ function promptText(p) {
 function promptShows(id) {
   if (!PLAYING.has(run.screen) || !run.state) return false;
   const p = run.mod.prompt(run.state) || {};
-  if (!p.text || p.gesture === "none") return false;
+  if (!p.text) return false;
   if (p.text === id || p.textKeys === id) return true;
-  const line = promptText(p), said = textOf(id);
+  const line = promptText(p), said = textOf(sayForm(id));
   return !!line && line === said;
 }
 
 function promptLine() {
   if (!PLAYING.has(run.screen) || !run.state) return null;
   const p = run.mod.prompt(run.state) || {};
-  if (!p.text || p.gesture === "none") return null;
+  if (!p.text) return null;                    // a line with no gesture ("Wait here. The egg is coming.") shows too
   const text = promptText(p);
   return text ? { text, gesture: p.gesture, keys: device === "keys" } : null;
 }
@@ -698,7 +748,9 @@ function updateHud(view) {
   // score narrows the left block, and the clock may wrap); the ResizeObserver also does, at the next frame, and this
   // keeps the caption band right in the same frame
   const sc = v.scale && typeof v.scale === "object" ? v.scale.text : v.scale;
-  const key = [run.stageId, hudRoot.hidden, v.stageName, v.clock, fmtLen(v.score), v.place, sc,
+  // in landscape the bar's length (to 8 px) too: the scale tag's right edge keeps the caption band clear of it
+  const scPx = vw > vh && v.scale && typeof v.scale === "object" && fin(v.scale.px) ? Math.round(v.scale.px / 8) : "";
+  const key = [run.stageId, hudRoot.hidden, v.stageName, v.clock, fmtLen(v.score), v.place, sc, scPx,
     v.prompt ? v.prompt.text : ""].join("|");
   if (key !== hudPromptKey) { hudPromptKey = key; trackHud(); }
 }
@@ -714,13 +766,26 @@ function updateStick() {
 // The HUD's bottom (CSS px) as --hud-b, for the portrait caption band under the prompt line (style.css). Within a
 // stage it only moves down, so a caption never jumps up when the prompt line hides between moments.
 let hudB = 0, hudBStage = null;
+// Two more for style.css: --hud-tags-b, the bottom of the HUD's corner blocks without the prompt line (the in-world
+// overlay and Almost card sit under it in portrait), and --scale-r, the right edge of the scale tag at the bottom left
+// in landscape (the caption band keeps clear of it; like --hud-b it only grows within a stage, so a caption never
+// jumps as the bar's length changes with the zoom).
+let scaleR = 0;
 function trackHud() {
   if (hudRoot.hidden) return;
   const b = Math.ceil(hudRoot.getBoundingClientRect().bottom);
   const stage = run ? run.stageId : null;
-  const next = stage === hudBStage ? Math.max(hudB, b) : b;
+  const same = stage === hudBStage;
+  const next = same ? Math.max(hudB, b) : b;
   hudBStage = stage;
   if (next !== hudB || !root.style.getPropertyValue("--hud-b")) { hudB = next; root.style.setProperty("--hud-b", hudB + "px"); }
+  let tags = 0;
+  for (const el of hudRoot.querySelectorAll(".hud-left, .hud-right")) tags = Math.max(tags, el.getBoundingClientRect().bottom);
+  root.style.setProperty("--hud-tags-b", Math.ceil(tags) + "px");
+  const sc = hudRoot.querySelector('[data-hud="scale"]');
+  const r = sc && !sc.hidden && getComputedStyle(sc).position === "fixed" ? Math.ceil(sc.getBoundingClientRect().right) : 0;
+  const nextR = same ? Math.max(scaleR, r) : r;
+  if (nextR !== scaleR || !root.style.getPropertyValue("--scale-r")) { scaleR = nextR; root.style.setProperty("--scale-r", scaleR + "px"); }
 }
 if (typeof ResizeObserver === "function") new ResizeObserver(trackHud).observe(hudRoot);
 
@@ -734,7 +799,72 @@ function present(frameStart) {
   updateHud(view);
   updateStick();
   const sa = run.stageId || "title";
-  if (sa !== stageAttr) { root.dataset.stage = sa; stageAttr = sa; }
+  if (sa !== stageAttr) { root.dataset.stage = sa; stageAttr = sa; fitCapBand(); }
+  steerCapBand(view);
+}
+
+// In portrait the caption band of stages 1, 3, 4 and 7 sits under the subject's body, to 60% (design.md 9, style.css
+// reads --cap-top). The body's reach from the subject point grows with the width (the camera fits its span across
+// it): BODY_REACH gives, per stage, the subject point's share of the height, the 390 × 844 band top, and the body's
+// greatest reach over the stage above and below the subject point as shares of the width (measured with the ref bot
+// at 320 × 568 to 820 × 1180). The band starts 8 px under the body, but never so low that one caption line no longer
+// fits above 60%. When that still covers the body by more than 12 px (a tablet) and the top band, 8 px under the HUD,
+// covers less of it, the captions move there: html[data-capband="top"]. Set at each stage change, resize and Large
+// text change.
+const BODY_REACH = {
+  swim: { at: 0.45, top: 0.52, up: 0.02, down: 0.127 },
+  split: { at: 0.45, top: 0.53, up: 0.152, down: 0.152 },
+  root: { at: 0.45, top: 0.55, up: 0.43, down: 0.187 },
+  turn: { at: 0.42, top: 0.53, up: 0.195, down: 0.215 },
+};
+const CAP_SLACK = 12;
+let capTopPx = null;
+function fitCapBand() {
+  if (root.dataset.capband) delete root.dataset.capband;
+  const b = BODY_REACH[stageAttr];
+  capTopPx = null;
+  if (!b || vh < vw) { root.style.removeProperty("--cap-top"); return; }
+  const cap = parseFloat(getComputedStyle(root).getPropertyValue("--cap")) || 18;
+  const line = cap * 1.22 + 7;
+  const want = Math.max(b.top * vh, b.at * vh + b.down * vw + 8);    // 8 px under the body's lowest point
+  const top = Math.min(want, 0.6 * vh - line);                        // one line still fits above 60%
+  capTopPx = Math.round(top);
+  root.style.setProperty("--cap-top", capTopPx + "px");
+  const under = want - top;                                           // how far a caption there reaches into the body
+  if (under <= CAP_SLACK) return;
+  const over = hudB + 8 + 0.08 * vh - (b.at * vh - b.up * vw);        // ... and a caption in the top band
+  if (over <= CAP_SLACK && over < under) root.dataset.capband = "top";
+}
+
+// ... and as the stage goes on: when the subject's body, as drawn this frame, reaches the band the captions are in
+// and the other band is clear of it, they move there (stage 4's body is tall in its roots and grows down by its
+// end). The body is your sperm's head and tail in stage 1, else the figure, the heart, the cells by the subject and
+// the disc that holds it (renderer.lastBodies).
+function bodyBox(view) {
+  const a = view && view.anchor && fin(view.anchor.x) ? camera.toScreen(view.anchor.x, view.anchor.y) : null;
+  if (!a) return null;
+  if (stageAttr === "swim") { const k = Math.min(vw, vh) / 150; return { t: a.y - 3 * k, b: a.y + 19 * k }; }
+  let t = Infinity, b = -Infinity;
+  for (const s of renderer.lastBodies || []) {
+    const d = Math.hypot(s.x - a.x, s.y - a.y);
+    if (s.kind === "figure" || s.kind === "heart" || (s.kind === "cells" && d < 70) || (s.kind === "solo" && d <= s.r + 2 && s.r < 80)) {
+      t = Math.min(t, s.y - s.r);
+      b = Math.max(b, s.y + s.r);
+    }
+  }
+  return b > t ? { t, b } : null;
+}
+function steerCapBand(view) {
+  if (capTopPx === null || !PLAYING.has(run.screen)) return;
+  const box = bodyBox(view);
+  if (!box) return;
+  const inTop = root.dataset.capband === "top";
+  const topBand = [hudB + 8, hudB + 8 + 0.08 * vh], lowBand = [capTopPx, 0.6 * vh];
+  const hits = ([y0, y1]) => Math.max(0, Math.min(y1, box.b) - Math.max(y0, box.t));
+  const here = inTop ? topBand : lowBand, there = inTop ? lowBand : topBand;
+  if (hits(here) > 4 && hits(there) < hits(here) - 4) {
+    if (inTop) delete root.dataset.capband; else root.dataset.capband = "top";
+  }
 }
 
 // ---- the loop: fixed steps with an accumulator, then one draw
@@ -757,6 +887,18 @@ function frame() {
 window.addEventListener("keydown", (e) => {
   if (e.repeat || !run) return;
   if (e.target && e.target.closest && e.target.closest("input, select, textarea")) return;
+  // The game switcher is a dialog over the title or pause: while it is open no game key acts (P would resume the run
+  // behind it), and Esc closes it, also when the focus has left it; the focus goes back to its Switch game button.
+  const gs = window.GameSwitch;
+  if (gs && gs.isOpen) {
+    if (e.code === "Escape") {
+      e.preventDefault();
+      gs.close();
+      const back = document.querySelector("#screens .screen:not([hidden]) [data-switch]");
+      if (back) { try { back.focus({ preventScroll: true }); } catch (err) { /* not focusable */ } }
+    }
+    return;
+  }
   if (e.code === "Escape" || e.code === "KeyP") {
     if (menu) uiAct("back");
     else if (run.paused) uiAct("resume");
@@ -769,6 +911,7 @@ window.addEventListener("keydown", (e) => {
     settings.captions = settings.captions === false;
     if (!settings.captions) captions.clear();
     saveSetting("captions");
+    if (screens.current === "settings") showSettingsAgain();
   }
 });
 pauseBtn.addEventListener("click", (e) => { e.stopPropagation(); if (pauseGame()) present(); });
@@ -782,6 +925,7 @@ window.addEventListener("resize", () => {
   renderer.resize(vw, vh);
   present();
   trackHud();
+  fitCapBand();
 });
 
 // ---- the test hook (16.9); every time it takes or returns is in stage seconds

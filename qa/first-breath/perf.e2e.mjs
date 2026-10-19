@@ -10,6 +10,9 @@
 //   measured here, task 3.7: the most a frame drew in these runs was about 310, in stage 2 with its 220 corona dots);
 // - adaptive scale and the tier switch: no ?res, no ?q, stage 2, after 6 s: the settled step ≥ 0.5 in portrait and
 //   landscape, ≥ 0.35 on desktop; once perf.fallback is true it stays true for the run.
+// - course chunk bakes (K1): at 1440 × 900 from a Play click, 30 s of stage 1 with the ref bot: after the stage's first
+//   frame no frame bakes a whole chunk, the rescale comes in, no frame takes 200 ms or more, and no heartbeat drops
+//   (CHUNKS=0 skips it).
 //   NODE_PATH=qa/browser/node_modules node qa/first-breath/perf.e2e.mjs        (ONLY=portrait,desktop TIERS=full)
 import fs from "node:fs";
 import path from "node:path";
@@ -107,6 +110,55 @@ for (const lay of only) {
   check(`${lay}: the settled step ≥ ${L.floor} after 6 s`, last.scale >= L.floor - 1e-9, `step ${last.scale}`);
   check(`${lay}: once the low tier is on it stays on`, !back);
   check(`${lay}: no page errors`, errors.length === 0, errors.slice(0, 3).join(" | "));
+  await ctx.close();
+}
+
+// Course chunk bakes (K1): at 1440 × 900, from a Play click in real time, the ref bot swims stage 1 for 30 s, through
+// the span's settle (its rescale). After the stage's first frame no frame bakes a whole course chunk (render/
+// renderer.js drawCourse bakes them ahead of need, in slices), the rescale comes in, no frame takes 200 ms or more
+// (a chunk baked whole took 60 to 150 ms, and the rescale of every chunk on screen 330 to 400 ms), and her beats keep
+// an even spacing: none is dropped by a stalled frame. CHUNKS=0 skips it.
+if (only.includes("desktop") && process.env.CHUNKS !== "0") {
+  const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  await ctx.addInitScript(() => { try { localStorage.clear(); } catch (e) { /* off */ } });
+  const page = await ctx.newPage();
+  const errors = [];
+  page.on("pageerror", (e) => errors.push((e.stack || e.message).split("\n")[0]));
+  await page.route(/\/api\//, (r) => r.fulfill({ status: 204, body: "" }));
+  await page.goto(BASE + "?mute=1&seed=1");
+  await page.waitForFunction(() => window.__fb && __fb.state().frames > 2, null, { timeout: 60000 });
+  await page.evaluate(() => {
+    window.__k1 = { frames: [], beats: new Set() };
+    let last = null;
+    const tick = (ts) => {
+      const s = __fb.state(), b = window.__fbPaper && __fbPaper.bakes;
+      window.__k1.frames.push({ gap: last === null ? 0 : ts - last, screen: s.screen, stage: s.stageId, t: s.t, whole: b ? b.frame.whole : null, rescaled: b ? b.rescaled : null, bakes: !!b });
+      last = ts;
+      requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+    setInterval(() => { for (const t of __fb.sound.beats.mother) window.__k1.beats.add(Math.round(t * 1e6) / 1e6); }, 40);
+  });
+  await page.click("#play");
+  await page.evaluate(() => __fb.bot(1));
+  await wait(30000);
+  const k1 = await page.evaluate(() => ({ frames: window.__k1.frames, beats: [...window.__k1.beats].sort((a, b) => a - b), ss: __fb.state().stageStart }));
+  const swim = k1.frames.filter((f) => f.screen === "stage" && f.stage === "swim");
+  const after = swim.slice(2);                         // the stage's first frame bakes what is on screen
+  const whole = after.filter((f) => !f.bakes || f.whole > 0);
+  const longest = Math.max(0, ...after.map((f) => f.gap));
+  const rescaled = swim.length ? swim[swim.length - 1].rescaled : null;
+  const beats = k1.beats.filter((t) => t >= k1.ss);
+  const iv = beats.slice(1).map((b, i) => b - beats[i]);
+  const odd = iv.map((d, i) => [i, d]).filter(([, d]) => d < 0.9 * 60 / 72 || d > 1.1 * 60 / 72);
+  rows.push(`desktop   chunks    ${swim.length} stage 1 frames, longest ${longest.toFixed(0)} ms, ${whole.length} with a whole chunk, ${rescaled} rescaled, ${beats.length} beats`);
+  check("desktop stage 1: after its first frame no frame bakes a whole course chunk", swim.length > 600 && whole.length === 0,
+    `${whole.length} of ${after.length}: ${whole.slice(0, 4).map((f) => (f.t || 0).toFixed(2) + " s").join(", ")}`);
+  check("desktop stage 1: the rescale after the span settles comes in", rescaled > 0, String(rescaled));
+  check("desktop stage 1: no frame takes 200 ms or more", longest < 200, `${longest.toFixed(0)} ms`);
+  check("desktop stage 1: her beats keep an even spacing (none dropped)", beats.length >= 30 && odd.length === 0,
+    `${beats.length} beats; ${odd.slice(0, 4).map(([i, d]) => `#${i}: ${(d * 1000).toFixed(0)} ms`).join(", ")}`);
+  check("desktop stage 1: no page errors", errors.length === 0, errors.slice(0, 3).join(" | "));
   await ctx.close();
 }
 

@@ -18,6 +18,9 @@
 //   tiers, draw with no error, no fillText or strokeText, no ctx.filter and no shadowBlur; for every strip and mark
 //   kind that a stage sends, removing that item lowers the frame's draw calls (the stage 1 cool mouth is drawn in the
 //   course tiles, so it is checked through its course strip); the low tier fills no grain pattern and draws no motes.
+// - the course bakes (K1), on the stub at 1440 × 900 with a fake clock: no frame of a 40 s stage 1 run but its first
+//   bakes a whole chunk and the rescale comes in; a stage change under the crossfade holds while stage 3 bakes; a
+//   new resolution step keeps the bakes in hand while the new ones bake.
 //   node qa/first-breath/paper.test.mjs
 import assert from "node:assert/strict";
 import { DT } from "../../public/first-breath/core/clock.js";
@@ -404,6 +407,73 @@ await check("every strip and mark kind of 16.5 appears in some stage and is mapp
   assert.deepEqual(STRIPK.filter((k) => !seen.strips.has(k)), [], "strip kinds no stage sent");
   assert.deepEqual(MARKK.filter((k) => !seen.marks.has(k)), [], "mark kinds no stage sent");
 });
+
+// ---- the course bakes (K1): no frame bakes a whole chunk except the stage's first, at 1440 × 900 (desktop). A chunk
+// is baked ahead of need in slices; the rescale once the span settles comes in whole; a stage change under the run's
+// crossfade bakes the new stage while the old picture holds; and a new resolution step keeps the bakes in hand while
+// the new ones bake. The clock is a fake one, 1/60 s a frame (40 ms a frame for the step change).
+{
+  const realNow = performance.now.bind(performance);
+  let fake = 0;
+  performance.now = () => fake;
+  const swim = MODS.find((m) => m.meta.id === "swim"), split = MODS.find((m) => m.meta.id === "split");
+  // one view per fixed step of a ref-bot run (the camera moves as in play)
+  const steps = (mod, n) => {
+    const st = mod.create(1, DEFAULT_CARRY, { assist: false, oneButton: false, motherPhase: 0 });
+    const bot = createBot(1, 1);
+    const out = [];
+    for (let i = 0; i < n && !mod.result(st).done; i++) { out.push(mod.view(st)); mod.step(st, bot.intents(mod, st)); st.events.length = 0; }
+    return out;
+  };
+  const SWIM = steps(swim, 40 * 60);
+  const frame = (r, d, ms = 1000 / 60) => { fake += ms; r.draw(d, { frameStart: fake }); return r.bakes ? { ...r.bakes.frame } : null; };
+  try {
+    await check("course bakes: after the stage's first frame no frame of a 40 s stage 1 run bakes a whole chunk, and the rescale comes in", () => {
+      const canvas = new CanvasStub(1440, 900);
+      const r = createRenderer(canvas, { gl: true, q: "full", motion: {} });
+      r.resize(1440, 900);
+      const first = frame(r, SWIM[0]);
+      assert.ok(first && first.whole > 0, "the first frame bakes the chunks on screen");
+      const whole = [];
+      SWIM.slice(1).forEach((d, i) => { const f = frame(r, d); if (!f || f.whole) whole.push(i + 1); });
+      assert.deepEqual(whole.slice(0, 6), [], `${whole.length} frames baked a whole chunk`);
+      assert.ok(r.bakes.slices > 20, `${r.bakes.slices} background slices`);
+      assert.ok(r.bakes.rescaled > 0, "the chunks are baked again at the settled scale");
+    });
+    await check("course bakes: a stage change under the crossfade holds the old picture while stage 3 bakes, then no whole chunk", () => {
+      const canvas = new CanvasStub(1440, 900);
+      const r = createRenderer(canvas, { gl: true, q: "full", motion: {} });
+      r.resize(1440, 900);
+      for (const d of SWIM.slice(0, 30)) frame(r, d);
+      const w0 = r.bakes.whole;
+      r.crossfade(0.8);
+      const SPLIT = steps(split, 120);
+      let ready = -1, fading = null;
+      SPLIT.forEach((d, i) => { frame(r, d); if (ready < 0 && r.held) { ready = i; fading = r.fade(); } });
+      assert.ok(r.held && r.held.chunks > 0, `the held bake took stage 3's chunks: ${JSON.stringify(r.held)}`);
+      assert.ok(fading && fading.s === 0.8, "the 0.8 s crossfade runs from the frame the new stage is ready");
+      assert.equal(r.bakes.whole, w0, "no whole chunk bake at the stage change");
+    });
+    await check("course bakes: a new resolution step keeps the bakes in hand (no whole chunk) and bakes the new ones", () => {
+      const canvas = new CanvasStub(1440, 900);
+      const r = createRenderer(canvas, { gl: true, q: "full", motion: {} });
+      r.resize(1440, 900);
+      const s0 = r.perf.scale, w = canvas.width;
+      frame(r, SWIM[0]);
+      const w0 = r.bakes.whole;
+      let i = 1;
+      // frames 40 ms apart: render/perf.js steps the resolution down
+      for (; i < 400 && r.perf.scale === s0; i++) frame(r, SWIM[Math.min(i, 200)], 40);
+      assert.ok(r.perf.scale < s0, `the step went down (${r.perf.scale})`);
+      for (let n = 0; n < 60; n++, i++) frame(r, SWIM[Math.min(i, 200)], 1000 / 60);
+      assert.ok(canvas.width < w, `the canvas is smaller (${canvas.width} from ${w})`);
+      assert.equal(r.bakes.whole, w0, "no whole chunk bake at the step change");
+      assert.ok(r.bakes.rescaled > 0, "the chunks are baked again at the new step");
+    });
+  } finally {
+    performance.now = realNow;
+  }
+}
 
 if (failed.length) {
   for (const f of failed) console.log(`FAIL ${f}`);

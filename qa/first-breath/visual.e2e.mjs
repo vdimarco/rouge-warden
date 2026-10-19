@@ -22,7 +22,8 @@
 //   shape "sides": each flat touches only the left or the right screen edge);
 // - ending warmth: a frozen ending frame (after the white): mean R > G > B;
 // - reduced motion: ?rm=1: motion.warpAmp ≤ 0.5 × the full value and bounce 0; the stage change crossfade is the
-//   same 0.8 s in both modes;
+//   same 0.8 s in both modes; stage 8's side flats keep one size through a wave (they press in with full motion);
+//   the birth light is a plain fade that never dims and is white (≥ 0.95) by 1.5 s;
 // - the low tier in every stage (?q=low, and ?gl=0 its alias in stage 1): mean luminance > 0.04, and the subject's
 //   sheet (the luminance at targets().anchor, the brightest pixel within 6 px) brighter than the frame's median.
 //   NODE_PATH=qa/browser/node_modules node qa/first-breath/visual.e2e.mjs
@@ -262,6 +263,36 @@ for (const tier of ["full", "low"]) {
     fades.push(s);
   }
   check("reduced motion: the stage change is the same 0.8 s crossfade", fades[0] === 0.8 && fades[1] === 0.8, JSON.stringify(fades));
+  // stage 8 (review F28): the side flats' blit (drawImage of a bitmap wider than 90% of the screen) keeps one size
+  // through the first wave with reduced motion, and presses in without it; the light is a plain fade, white by 1.5 s
+  const walls = [];
+  for (const q of ["", "&rm=1"]) {
+    await open(`test=1&seed=1&stage=birth${q}`);
+    walls.push(await page.evaluate(() => {
+      const cv = document.getElementById("view"), g = cv.getContext("2d"), d0 = g.drawImage, ws = [];
+      let rec = false;
+      g.drawImage = function (...a) { if (rec && a.length === 5 && a[3] > cv.clientWidth * 0.9) ws.push(a[3]); return d0.apply(this, a); };
+      for (let i = 0; i < 40; i++) { __fb.step(15); rec = true; __fb.step(0); rec = false; }
+      g.drawImage = d0;
+      return ws.length ? Math.max(...ws) - Math.min(...ws) : null;
+    }));
+  }
+  check("reduced motion: stage 8's walls keep still through a wave (and press in with full motion)",
+    walls[0] !== null && walls[0] > 10 && walls[1] !== null && walls[1] < 0.5, `full ${walls[0]} px, reduced ${walls[1]} px`);
+  const fadeAt = [];
+  for (const q of ["", "&rm=1"]) {
+    await open(`test=1&probe=1&seed=1&stage=birth${q}`);
+    fadeAt.push(await page.evaluate(() => {
+      __fb.bot(1); __fb.jump("light");
+      const out = [__fb.lum()];
+      for (let i = 0; i < 100; i++) { __fb.step(1); out.push(__fb.lum()); }
+      let drops = 0; for (let i = 1; i < out.length; i++) if (out[i] < out[i - 1] * 0.99) drops++;
+      return { at075: out[45], at15: out[92], drops };
+    }));
+  }
+  const [fl, rl] = fadeAt;
+  check("reduced motion: the birth light is a plain fade, white by 1.5 s, never dimming (full motion is not white yet)",
+    rl.drops === 0 && rl.at15 >= 0.95 && rl.at075 > 0.3 && rl.at075 < 0.85 && fl.at15 < 0.9, JSON.stringify(fadeAt));
 }
 
 // ---- 7. the low tier in every stage

@@ -38,9 +38,10 @@ import { clampScore, PARTS } from "../score.js";
 import { mergeCarry } from "../carry.js";
 import { emptyDraw } from "../draw.js";
 import { GRACE_S } from "../judge.js";
-import { createTrack, feed, upcoming, accuracy, previewS } from "../lib/track.js";
+import { createTrack, feed, upcoming, accuracy, previewS, freeUntil, RESUME_FREE_S } from "../lib/track.js";
 import { subgoal, doneBy } from "../lib/goals.js";
 import { figure } from "../lib/figure.js";
+import { rimSparks } from "../lib/sparks.js";
 import { TUNE as T } from "./birth.tune.js";
 
 const mo = (id) => Object.freeze({ id, ga: Object.freeze([280, 280]), lenS: null });
@@ -135,7 +136,7 @@ function init(st, base) {
   st.held = false;
   st.holdStart = null;
   st.dir = null;
-  st.track = createTrack(lay(st), { assist: st.assist });
+  st.track = createTrack(lay(st), { assist: st.assist, lag: st.lag });
 }
 
 // ---- input and the judge ----
@@ -173,7 +174,7 @@ function resolveEarly(st, start, firstRelease, fed, t1) {
   for (let i = 0; i < tr.targets.length; i++) {
     const x = tr.targets[i];
     if (x.kind !== "press" || tr.results[i] !== null) continue;
-    const dl = x.t + tr.wins[i].close + GRACE_S;
+    const dl = x.t + tr.wins[i].close + GRACE_S + (tr.lag || 0);   // a late press may still be on its way (lag)
     if (!(t1 > dl) || !(firstRelease > dl)) continue;
     if (!(start >= x.t - T.warnS - T.earlySlackS && start < x.t)) continue;
     if (fed.presses.some((p) => p.t <= dl)) continue;
@@ -182,19 +183,23 @@ function resolveEarly(st, start, firstRelease, fed, t1) {
   }
 }
 
-// Held time from a to b goes to each wave's swell (by direction) and rest window.
-function account(st, a, b) {
+// Held time from a to b goes to each wave's swell (by direction) and rest window; k = −1 takes it back.
+function account(st, a, b, k = 1) {
   if (!(b > a)) return;
   for (const w of st.waves) {
     const ov = span(a, b, w.s, w.e);
     if (ov > 0) {
-      w.heldS += ov;
-      if (st.dir) w.dirS[st.dir] += ov;
+      w.heldS = Math.max(0, w.heldS + k * ov);
+      if (st.dir) w.dirS[st.dir] = Math.max(0, w.dirS[st.dir] + k * ov);
     }
     const or = span(a, b, w.e, w.judgeEnd);
-    if (or > 0) w.restHeldS += or;
+    if (or > 0) w.restHeldS = Math.max(0, w.restHeldS + k * or);
   }
 }
+
+// How far back a press or release that reaches the page after its own time still moves the hold: a timing offset
+// delays it up to 150 ms (5.2), plus a frame or two.
+const LATE_S = 0.25;
 
 function readInput(st, it, t0, t1) {
   const evs = [];
@@ -209,13 +214,16 @@ function readInput(st, it, t0, t1) {
     const te = Math.max(cur, Math.min(t1, ev.t));
     if (st.held) account(st, cur, te);
     cur = te;
+    // an event that reached the page after its own time (a timing offset, 5.2) holds from, or lets go at, that time
+    const back = ev.t < te ? Math.max(ev.t, t0 - LATE_S) : te;
     if (ev.press) {
-      if (!st.held) { st.held = true; st.holdStart = ev.t; st.dir = it.dir; }
+      if (!st.held) { st.held = true; st.holdStart = ev.t; st.dir = it.dir; account(st, back, te); }
       else if (it.dir) st.dir = it.dir;
       if (isEarly(st, ev.t)) continue;
       fed.presses.push({ t: ev.t, raw: ev.raw });
     } else {
       if (ev.t < firstRelease) firstRelease = ev.t;
+      if (st.held) account(st, back, te, -1);
       st.held = false;
       st.holdStart = null;
       st.dir = null;
@@ -250,6 +258,13 @@ function endWave(st, w) {
   if (st.subgoals[id] === "shown") doneBy(st, id, you ? "you" : "auto", you ? DONE_TEXT[w.move || "plain"] : w.move ? "birth.anyway" : "birth.again");
   points(st, "skill", (T.overlapPts / T.waves) * w.overlap + movePts(w));
   if (w.overlap >= T.smoothAt - EPS) points(st, "flourish", T.flourishPts / T.waves);
+  breathOut(st, w);
+}
+
+// Her out-breath at the end of a swell, on time (the swell itself is judged the input's lag later).
+function breathOut(st, w) {
+  if (w.breathed) return;
+  w.breathed = true;
   emit(st, "sfx", { id: "birth.breath", at: w.e, pitch: 1, gain: 0.5 });
 }
 
@@ -272,7 +287,7 @@ function dropOpen(st) {
   const keep = [], res = new Map();
   tr.targets.forEach((x, i) => { if (tr.results[i] !== null) { keep.push(x); res.set(x.id, tr.results[i]); } });
   if (keep.length === tr.targets.length) return;
-  const next = createTrack(keep, { assist: st.assist });
+  const next = createTrack(keep, { assist: st.assist, lag: st.lag });
   next.targets.forEach((x, i) => { next.results[i] = res.get(x.id); });
   st.track = next;
 }
@@ -313,7 +328,9 @@ function timeline(st) {
         emit(st, "sfx", { id: "birth.swell", at: w.s, pitch: 1, gain: 0.7 + 0.04 * w.k, dur: T.swellS, cutoffHz: T.filterHz,
           rumbleHz: T.rumbleHz.slice() });
       }
-      if (!w.ended && t >= w.e - EPS) endWave(st, w);
+      if (!w.breathed && t >= w.e - EPS) breathOut(st, w);
+      // with a timing offset a release made at the swell's end reaches the page that much later (5.2)
+      if (!w.ended && t >= w.e + st.lag - EPS) endWave(st, w);
       if (w.ended && !w.restDone && t >= w.judgeEnd - EPS) endRest(st, w);
     }
     captions(st);
@@ -356,7 +373,7 @@ export function create(seed, carryIn, opts = {}) {
   const st = {
     id: meta.id, seed: seed >>> 0, t: 0, gaDay: meta.ga.start, fertilized: meta.fertilized,
     events: [], beats: null, subgoals: {}, moment: "waves",
-    assist: !!o.assist, oneButton: !!o.oneButton, carry,
+    assist: !!o.assist, lag: Number.isFinite(o.lag) ? o.lag : 0, oneButton: !!o.oneButton, carry,
     turnIn: carry.turnDir === -1 ? -1 : 1, turnDir: 1,
     base: 0, gen: 0, waves: [], wavesEnd: 0, lightAt: null, capDone: [],
     held: false, holdStart: null, dir: null, track: null,
@@ -440,7 +457,7 @@ function you(st, t, swell, prog) {
   if (lift > 0) { a = "tuck"; b = "lift"; q = lift; } else if (tuck > 0) { a = "headDown"; b = "tuck"; q = tuck; }
   const splats = q >= 1 ? figure(b, size, T.youGa, at)
     : q > 0 ? lerpSplats(figure(a, size, T.youGa, at), figure(b, size, T.youGa, at), q) : figure(a, size, T.youGa, at);
-  return { x, y, splats };
+  return { x, y, size, splats };
 }
 
 // The scale bar's round length: the largest of 0.1 mm, 1 mm, 1 cm, 10 cm and 1 m within 30% of the short axis.
@@ -536,6 +553,7 @@ export function view(st) {
     }
     d.strips.push({ kind: "ripples", items });
   }
+  rimSparks(d, st.carry.sparks, me.x, me.y, 0.55 * me.size, { t, span: T.span });   // rim sparks (5.5) round you
 
   d.anchor = { x: me.x, y: me.y };
   d.cue = cue;
@@ -616,6 +634,13 @@ export function result(st) {
     },
     carryOut: { turnDir: st && st.turnDir === -1 ? -1 : 1 },
   };
+}
+
+// Fair resume (5.2): the open targets of the first 1.2 s after Resume are free. Birth scores the holds, not these
+// targets, so only its accuracy metric changes.
+export function resume(st) {
+  if (!st || st.done || !st.track) return 0;
+  return freeUntil(st.track, st.t + RESUME_FREE_S);
 }
 
 // jump("waves") starts the 8 waves again from now (a test hook: fresh waves, sub-goals and targets); jump("light")

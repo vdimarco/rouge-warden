@@ -1,9 +1,11 @@
 // First Breath: stage 3, The Embryo: first cells (`split`), its strings (design.md 1.3, 6.3, 15.4). Plain, short and
 // tender; no carer pronouns, no banned words. core/text.js registers it through core/stages/index.js.
 export const TEXT = Object.freeze({
-  // prompts (one live gesture per moment)
+  // prompts (one live gesture per moment; ".keys" is the desktop form)
   "split.tap": "Tap as the ring closes.",
+  "split.tap.keys": "Press Space as the ring closes.",
   "split.hold": "Hold. Let go at the glow.",
+  "split.hold.keys": "Hold Space. Let go at the glow.",
   "split.outro": "You drift toward the soft lining.",
 
   // sub-goals: shown, then done by you or by itself (5.4)

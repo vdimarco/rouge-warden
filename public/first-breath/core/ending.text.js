@@ -3,6 +3,7 @@
 // ending.thumbKeys is the desktop form of ending.thumb (the prompt carries it as textKeys); ending.time takes {time}.
 export const TEXT = Object.freeze({
   "ending.breathe": "Breathe.",
+  "ending.breathe.keys": "Breathe. Hold Space, then let go.",
   "ending.capBreath": "first breath",
   "ending.capCry": "a soft cry",
   "ending.capBreathing": "soft breaths",

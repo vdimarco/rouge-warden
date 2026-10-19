@@ -3,9 +3,11 @@
 // and none names the carer with a pronoun. The prompt, sub-goal and caption ids are the ones swim.js emits; the
 // `part` ids label the score parts on the run result. core/text.js registers this table through the stage index.
 export const TEXT = Object.freeze({
-  // the prompt line (".keys" is its desktop form, which the host shows when keys or a mouse were used last)
+  // the prompt line (".keys" is its desktop form, which the host shows when keys or a mouse were used last; ".one"
+  // is its one-button form)
   "swim.prompt": "Drag to swim.",
   "swim.prompt.keys": "Swim with the arrow keys, or drag with the mouse.",
+  "swim.prompt.one": "Hold to swim.",
   "swim.meetLine": "Wait here. The egg is coming.",
   "swim.carried": "The waves carry you to the meeting place.",
 

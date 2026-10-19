@@ -2,14 +2,15 @@
 // a target is in view at least max(2 beats of its heart, 1.2 s) before its time; a press halfway between two
 // targets is free; errMs and rawMs differ by exactly the timing offset (with +90 ms, taps 90 ms late are In time,
 // raw near 90, error near 0); tap and press targets read presses and release targets releases; accuracy and the
-// In-time streak. Once core/stages/index.js exists, every stage's targets over 20 seeds (no input) are checked the
+// In-time streak; the input's lag from a positive timing offset pushes each miss back (review F1); freeUntil makes the
+// open targets of 1.2 s after Resume free (review F2). Once core/stages/index.js exists, every stage's targets over 20 seeds (no input) are checked the
 // same way (FB_SEEDS sets the seed count).
 // node qa/first-breath/track.test.mjs
 import assert from "node:assert/strict";
 import { existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { createTrack, feed, upcoming, accuracy, streak, check as checkTargets, previewS, SPACING_MIN_S, PREVIEW_MIN_S }
-  from "../../public/first-breath/core/lib/track.js";
+import { createTrack, feed, upcoming, accuracy, streak, check as checkTargets, previewS, SPACING_MIN_S, PREVIEW_MIN_S,
+  lagOf, LAG_MAX_S, missAt, freeUntil, counted, RESUME_FREE_S } from "../../public/first-breath/core/lib/track.js";
 import { holdOverlap } from "../../public/first-breath/core/lib/goals.js";
 import { makeIntents } from "../../public/first-breath/core/intent.js";
 import { DT } from "../../public/first-breath/core/clock.js";
@@ -131,6 +132,52 @@ await check("accuracy = Σ credit / targets, by group; free targets left out; st
   assert.deepEqual(streak(tr, "a"), { current: 2, best: 2 });
   assert.deepEqual(streak(tr), { current: 0, best: 2 });
   assert.equal(accuracy(createTrack([]), "x"), 0, "no targets: 0");
+});
+
+// Review F1: with a positive timing offset a press reaches the page offsetMs after its corrected time, so a target's
+// miss waits that long (lag = max(0, offsetMs) / 1000, at most 0.15 s); a late Close is still Close.
+await check("lag: a positive offset pushes each miss back by the offset, so a late Close that arrives late is Close", () => {
+  assert.equal(lagOf(150), 0.15);
+  assert.equal(lagOf(-150), 0, "a negative offset has no lag (its presses arrive before their time)");
+  assert.equal(lagOf(400), LAG_MAX_S, "at most the slider's 150 ms");
+  assert.equal(lagOf(NaN), 0);
+  const x = { id: "x", t: 2, P: 0.833, kind: "tap" };
+  // offset +150 ms: the press, 100 ms late (Close), reaches the page 150 ms (and a frame) after its corrected time
+  for (const [lag, want] of [[0, "miss"], [0.15, "close"]]) {
+    const tr = createTrack([x], { lag });
+    const press = x.t + 0.1;
+    const arrives = press + 0.15 + DT;
+    const out = [];
+    for (let t = 0; t < arrives - 1e-9; t += DT) out.push(...feed(tr, makeIntents(), t + DT));
+    out.push(...feed(tr, makeIntents({ presses: [{ t: press, raw: press + 0.15 }] }), arrives + DT));
+    assert.equal(out.length, 1, `lag ${lag}: one result`);
+    assert.equal(out[0].grade, want, `lag ${lag}: the press 100 ms late that arrives 150 ms after it`);
+    near(missAt(tr, tr.targets[0]), x.t + tr.wins[0].close + 0.05 + lag, 1e-12, `lag ${lag}: missAt`);
+  }
+});
+
+// Review F2: fair resume (5.2). freeUntil frees the open targets before its time; a free target is left out of
+// accuracy() and streak() whatever its grade, unless every target of the group is free.
+await check("freeUntil: open targets before the time are free and leave accuracy and streak alone", () => {
+  const list = targetsEvery(6, 2).map((x) => ({ ...x, group: "a" }));
+  const tr = createTrack(list);
+  const hit = (t) => feed(tr, makeIntents({ presses: [{ t, raw: t }] }), t + DT);
+  hit(tr.targets[0].t); hit(tr.targets[1].t);
+  // resume 0.3 s before target 2: it is free, target 0 (judged) is not, target 3 (later than 1.2 s) is not
+  const n = freeUntil(tr, tr.targets[2].t - 0.3 + RESUME_FREE_S);
+  assert.equal(RESUME_FREE_S, 1.2);
+  assert.equal(n, 1, "one open target in the 1.2 s");
+  assert.deepEqual(tr.targets.map((x) => !!x.free), [false, false, true, false, false, false]);
+  feed(tr, makeIntents(), tr.targets[3].t - 0.2);                // target 2 missed
+  for (const i of [3, 4, 5]) hit(tr.targets[i].t);
+  assert.equal(tr.results[2].grade, "miss");
+  assert.equal(accuracy(tr, "a"), 1, "the missed free target is left out");
+  assert.deepEqual(streak(tr, "a"), { current: 5, best: 5 }, "the streak runs through it");
+  assert.deepEqual(counted(tr, "a"), [0, 1, 3, 4, 5]);
+  const one = createTrack([{ id: "s", t: 1, P: 1, kind: "release", group: "seal" }]);
+  freeUntil(one, 3);
+  assert.deepEqual(counted(one, "seal"), [0], "a group that is all free still counts (no score from a pause)");
+  assert.equal(freeUntil(null, 3), 0);
 });
 
 await check("goals.holdOverlap: the share of a span held, overlaps once, a hold still down", () => {
