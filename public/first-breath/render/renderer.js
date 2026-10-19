@@ -450,9 +450,12 @@ export function createRenderer(canvas, { gl = true, q = null, res = null, probe 
     for (const j of [j1 + 1, j0 - 1, j1 + 2, j0 - 2]) if (!chunks.has(j) && !jobs.has(j) && complete(j)) start(j, "ahead");
 
     if (jobs.size && more()) {
-      const RANK = { upgrade: 0, rescale: 1, ahead: 2 };
+      // the two chunks next to the screen come on first, so their bakes go before an upgrade or a rescale: behind a
+      // rescale they could still be unfinished when they came on screen, and be finished whole in that frame
+      const RANK = { next: -1, upgrade: 0, rescale: 1, ahead: 2 };
+      const rank = (job) => RANK[job.kind === "ahead" && (job.j === j1 + 1 || job.j === j0 - 1) ? "next" : job.kind];
       const mid = (j0 + j1) / 2;
-      const order = [...jobs.values()].sort((a, b) => RANK[a.kind] - RANK[b.kind] || Math.abs(a.j - mid) - Math.abs(b.j - mid));
+      const order = [...jobs.values()].sort((a, b) => rank(a) - rank(b) || Math.abs(a.j - mid) - Math.abs(b.j - mid));
       for (const job of order) {
         while (!job.done && more()) slice(() => job.step());
         if (job.done) {
