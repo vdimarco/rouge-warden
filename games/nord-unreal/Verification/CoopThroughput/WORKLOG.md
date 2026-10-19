@@ -1,0 +1,17 @@
+# Co-op throughput — 2026-10-19
+
+Target: real30FPS for each simultaneous player, preserving accepted graphics, package, progress and solo60. No paid generation. Worktree: `/tmp/nord-easier-driving`, branch `codex/nord-coop-stream-throughput`; original source/art checkout remains untouched.
+
+Baseline60-v1 is a valid65-second settled comparison: native18.17/18.02 and decoded18.15/18.09FPS, fixed706×326VP8, zero steady freezes/drops/loss. GPU97%, graphics2715MHz, memory10251MHz, no reported throttle; per-process desktop attribution varies and cannot establish an exclusive compositor cause.
+
+AsyncComputeTrial-v1 acknowledged the one changed launch flag in both worlds, but regressed decoded rates to13.82/13.76FPS. Rejected; exact accepted60 service restored at PID3640696. Source243/package/container/protected-unit identities preserved. Full Saved equality remains false because narrow per-launch crash-report configuration and Guest CachedClientID writes are separately classified; gameplay saves/settings were not overwritten.
+
+The border-angle fixture failed when the runtime normalized disabled animation metadata. Captured true/60/linear/loop tuple and all other animation rows were restored; no gain claim. The loop restarts on normal focus updates; its actual phase was not independently verified.
+
+Next owned bounded test: capturefalse-only VP8 on current package. Previous combined H264/capturefalse stalls are retained, but were not a matched current-VP8 test. Do not keep a candidate on `passed` alone: require separate FPS target, pacing/loss checks, native errors, paired visual/control review and solo responsiveness. Every diagnostic restores accepted60; no candidate promoted yet.
+
+Capturefalse-only trial acknowledged the setting in both native logs but regressed browser delivery to4.69/4.71FPS despite native18.74/18.81. Buffers204.54/177.05ms, fixed706×326VP8, no steady loss/drops/freezes. Rejected; exact accepted60 restored PID3659080, all source/package/container/protected identities retained. Narrow Saved runtime writes classified, no gameplay/settings overwrite.
+
+OverlayMotion-v1 completed valid A/B/A on the same native processes: decoded18.00/18.22 →19.28/19.58 →16.41/16.80FPS. No phase reaches the target. Original disk payload reapplied with acknowledgement, exposed overlay statuses restored, user files/source/package/current Saved/service/container/tunnel identities unchanged. Full loaded state and animation phase have no independent getter. Follow-up found the ambience host renders the same two effects alongside legacy windows; scoped shell API lacks the raw panelLoaders lookup used by legacy suppression. The visibility diagnostic isolates legacy copies without touching the host.
+
+OverlayVisibility-v1 completed valid A/B/A (455s): legacy-only disable gives decoded19.87/20.22 and native19.82/20.17FPS, zero steady drops/loss/freezes at706×326. Target remains unmet. Captured runtime flags/exposed statuses restored, host status/settings/source/package/Saved/native/tunnel/container state preserved. Remapping may change layer order and animation phase; no exact-pixel/order claim. Root inspected private desktop images before/B/A2; intended ambience remains with duplicates disabled. Next final resource hypothesis pauses all Lacuna ambience temporarily, keeping game graphics and other apps untouched.

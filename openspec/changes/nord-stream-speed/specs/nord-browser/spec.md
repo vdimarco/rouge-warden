@@ -73,3 +73,17 @@ When the host launcher passes the stream budget flag, both game processes SHALL 
 - **THEN** with the flag, the street near the player is lit by lamps, rain streaks are visible and lit near lamps, and wet ground shines
 - **AND** the median GPU frame time of each process over 900 profiled frames is lower with the flag than without
 - **AND** paired streamed screenshots with and without the flag are recorded, and the user reviews the look.
+
+
+### Requirement: Both co-op streams sustain real 30 FPS
+Under the recorded supported host configuration, simultaneous NordHost and NordFriend1 playback SHALL sustain approximately 30 FPS in each real game world and decoded stream, retaining the accepted comic treatment, cast, map, controls and picture quality. A measurement that only repeats video frames SHALL NOT satisfy this requirement.
+
+#### Scenario: Settled simultaneous playback
+- **WHEN** both slots have a browser connected and frame-size adaptation has settled
+- **THEN** a common interval of at least 60 seconds records at least 29 native and decoded FPS for each slot, with stable negotiated dimensions and codec, and no new steady freezes, packet loss or dropped frames
+- **AND** raw startup and resize events remain available, paired game images retain the accepted look, solo responsiveness remains at its delivered level, and source/package/current progress/settings/relay identities are preserved.
+
+#### Scenario: An alternative fails calibration
+- **WHEN** a bounded scheduling, capture or resource-contention experiment misses the target or regresses delivery
+- **THEN** the prior accepted configuration is restored, and the report separates valid measurement and restoration from target achievement
+- **AND** any desktop diagnostic retains its observable restoration limits and does not persist unrelated user preferences.

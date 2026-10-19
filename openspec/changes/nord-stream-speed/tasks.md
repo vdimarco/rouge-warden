@@ -116,3 +116,14 @@ Keep the 12,000 MiB launch guard, the saves, the public tunnel and the TURN rela
   - Record results in `Verification/BrowserPerformance.md` and `.json`, and update `Browser/HOSTING.md`.
   - In `openspec/changes/nord-browser-streaming/tasks.md`, close each matching open item only when its own checks pass: "Establish acceptable sustained phone responsiveness …", "Rebuild the game package on the host, redeploy the player, and confirm on a physical phone that the map and the move stick no longer overlap.", "Confirm the comic controls, the fullscreen trailer and the automatic fullscreen on a physical phone.", "Host: rebuild and repackage …" and "Confirm the start screen, the tall game and the hidden move stick on a physical phone."
   - Archiving: `nord-browser-streaming` has other open items (Mission 2, external network, iOS, sound, trailer deploy). Ask the user to accept or move them. If it is archived, turn this change's overlapping requirement into a MODIFIED "Phone held upright plays a tall game", run `openspec validate nord-stream-speed --strict`, archive this change when every scenario has passed or the user accepts the open ones, and review `openspec/specs/nord-browser/spec.md`. If it stays open, leave this change open too, because both add the same capability.
+
+
+## Current co-op throughput pass — 2026-10-19
+
+User target: improve both simultaneous players to a real sustained 30 FPS. This bounded follow-up preserves the delivered solo60 configuration and current graphics, assets, handling, campaign/settings and relay identities. Older handoff tasks remain independently open.
+
+- [x] Inspect the live delivered package/configuration, recent aligned native/browser evidence and shared GPU consumers.
+- [x] Measure a settled common interval of at least60seconds for both native and decoded streams, retaining resize/startup events separately. Baseline60-v1: native18.17/18.02, decoded18.15/18.09FPS over65seconds, fixed706×326VP8, no steady loss/drops/freezes.
+- [ ] Test one scheduling or resource-contention hypothesis at a time with the strict resource guard, owned maintenance windows and exact current60 restoration.
+- [ ] Retain only a measured improvement with real native and decoded rates near30FPS on both peers, stable resolution, no new steady-state stalls and direct visual/control review. Preserve solo responsiveness.
+- [ ] Deliver verified source/operational changes, current operator recipes and a concise handoff; report physical-device/off-LAN and remaining throughput limits honestly.
