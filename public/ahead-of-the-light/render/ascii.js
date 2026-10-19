@@ -69,7 +69,7 @@ export function createAsciiView({ canvas, reduced = false, touch = false } = {})
     const n = cols * rows;
     V.lum = new Float32Array(n); V.hue = new Float32Array(n); V.hw = new Float32Array(n);
     V.ch = new Uint16Array(n); V.ci = new Int16Array(n);
-    seedStreaks(w < 600 ? 260 : 460);
+    seedStreaks(w < 600 ? 150 : 240);
     if (V.stop) V.stop();
     canvas.style.width = '100%';
     V.stop = mount(canvas, piece(), { fps: 40, motion: true });
@@ -129,26 +129,45 @@ export function createAsciiView({ canvas, reduced = false, touch = false } = {})
     const BACK = 7, UP = 1.7;
     const proj = (x, y, z) => ({ c: cx + (x / z) * F, r: cy - ((y / z) * F) / 2, s: F / z });
 
-    // the galaxy ahead (the library's piece), bigger as home nears
+    // Characters are written back to front (galaxy, tunnel, streaks, stars far to near, rings, ship): a nearer
+    // thing simply overwrites a farther one, so the frame stays crisp with no haze of half-lit cells.
+    const ink = (h, l) => hueIndex(h) * LEVELS + clamp(Math.round(l), 0, LEVELS - 1);
+    // the galaxy ahead: the library's piece in its own characters, dim, bigger as home nears
     const g = gal(V.t * 0.6).split('\n');
     const home = run ? progressOf(run) : 0.15;
-    const gw = Math.min(cols * 0.75, R * (0.9 + 0.5 * home)), gh = (gw / GC) * GR * 0.5 * 1.0;
-    for (let r = 0; r < GR; r++) for (let c = 0; c < GC; c++) galLum[r * GC + c] = Math.max(0, RAMP.indexOf(g[r]?.[c] ?? ' ')) / (RAMP.length - 1);
+    const gw = Math.min(cols * 0.75, R * (0.9 + 0.5 * home)), gh = (gw / GC) * GR * 0.5;
     const g0c = cx - gw / 2 - ship.x * 0.3, g0r = cy - gh * 0.55 + ship.y * 0.15;
     for (let r = Math.max(0, Math.floor(g0r)); r < Math.min(rows, g0r + gh); r++) {
       for (let c = Math.max(0, Math.floor(g0c)); c < Math.min(cols, g0c + gw); c++) {
         const gc = Math.floor(((c - g0c) / gw) * GC), gr = Math.floor(((r - g0r) / gh) * GR);
-        const l = galLum[gr * GC + gc] || 0;
-        if (l > 0) light(c, r, l * 0.38, 0.82);
+        const chr = g[gr]?.[gc] ?? ' ';
+        const k = RAMP.indexOf(chr);
+        if (k >= 3) mark(c, r, chr, ink(0.85, 0.5 + k * 0.45));
       }
     }
-    // the starbow's ring
-    for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
-      const rr = Math.hypot(c - cx, (r - cy) * 2) / R;
-      const band = Math.exp(-(((rr - 0.5) / 0.05) ** 2));
-      if (band > 0.02) light(c, r, band * 0.32 * (V.title ? 1 : 0.8), clamp(0.5 + (0.5 - rr) * 9, 0, 1));
+    // the tube: its rings every 40 m coming at you, and eight lines along its wall to the vanishing point
+    const STEP = 40;
+    for (let j = 0; j < 8; j++) {
+      const dd = Math.floor(ship.d / STEP) * STEP + j * STEP;
+      const z = dd - ship.d + BACK;
+      if (z < 3) continue;
+      const p = proj(-ship.x, -ship.y - UP, z), rc = 15 * p.s;
+      const near = clamp(1 - z / 320, 0, 1);
+      const steps = Math.round(clamp(rc * 3.2, 24, 320));
+      const chr = near > 0.85 ? ':' : near > 0.6 ? '.' : '·';
+      for (let k = 0; k < steps; k++) {
+        const a = (k / steps) * Math.PI * 2;
+        mark(p.c + Math.cos(a) * rc, p.r + (Math.sin(a) * rc) / 2, chr, ink(0.7, 2 + 5 * near));
+      }
     }
-    // the streaks
+    for (let k = 0; k < 8; k++) {
+      const a = (k / 8) * Math.PI * 2 + Math.PI / 8, wx = Math.cos(a) * 15 - ship.x, wy = Math.sin(a) * 15 - ship.y - UP;
+      for (let z = 6; z < 420; z *= 1.09) {
+        const p = proj(wx, wy, z);
+        mark(p.c, p.r, '.', ink(0.7, 1 + 3.5 * clamp(1 - z / 420, 0, 1)));
+      }
+    }
+    // the streaks: lines along their own direction, blue near the middle and red at the edges, a bright head
     const v = (ship.speed || 60) * (ship.boosting ? 1.5 : 1) * 3.2;
     const tail = reduced ? 0.02 : 0.05 + (ship.boosting ? 0.03 : 0);
     for (const s of V.streaks) {
@@ -158,36 +177,51 @@ export function createAsciiView({ canvas, reduced = false, touch = false } = {})
       const a = proj(x, y, s.z), b = proj(x, y, s.z + v * tail);
       if (a.c < -4 || a.c > cols + 4 || a.r < -4 || a.r > rows + 4) continue;
       const near = 1 - s.z / 320;
-      line(b.c, b.r, a.c, a.r, 0.12 + 0.55 * near * near, bowHue(a.c - cx, a.r - cy, R));
+      const h = bowHue(a.c - cx, a.r - cy, R);
+      const dx = a.c - b.c, dy = (a.r - b.r) * 2;
+      const chr = Math.abs(dx) > 2.4 * Math.abs(dy) ? '-' : Math.abs(dy) > 2.4 * Math.abs(dx) ? '|' : dx * dy > 0 ? '\\' : '/';
+      const len = Math.max(Math.abs(a.c - b.c), Math.abs(a.r - b.r));
+      if (len >= 1 && len < 120) for (let i = 0; i < len; i++) { const f = i / len; mark(b.c + (a.c - b.c) * f, b.r + (a.r - b.r) * f, chr, ink(h, 1 + 4 * near * f)); }
+      mark(a.c, a.r, near > 0.7 ? '*' : near > 0.35 ? '+' : '.', ink(h, 3 + 4 * near));
     }
-    // the stars in your path, far to near
+    // the stars in your path, far to near: lit balls, shaded from the upper left so they read as round
     const drawn = { stars: 0, threats: 0, rings: 0 };
+    const SHADE = '.:-=+*#%@';
+    const LX = -0.42, LY = -0.5, LZ = 0.76;
     if (run) {
       const list = run.world.starsBetween(ship.d - BACK + 2, ship.d + 520).sort((p, q) => q.d - p.d);
       for (const st of list) {
         const z = st.d - ship.d + BACK;
         if (z < 1.2) continue;
         const p = proj(st.x - ship.x, st.y - ship.y - UP, z);
-        const rc = st.r * p.s;
-        if (p.c < -rc * 4 - 4 || p.c > cols + rc * 4 + 4 || p.r < -rc * 2 - 4 || p.r > rows + rc * 2 + 4) continue;
+        // far stars are drawn a little larger so they read; from 60 m in, at their true size
+        const rc = st.r * p.s * (1 + 0.9 * clamp((z - 60) / 200, 0, 1));
+        if (p.c < -rc - 4 || p.c > cols + rc + 4 || p.r < -rc / 2 - 4 || p.r > rows + rc / 2 + 4) continue;
         const fade = clamp((520 - (st.d - ship.d)) / 160, 0, 1);
-        const reach = Math.max(1.2, rc * 3.2);
-        for (let r = Math.floor(p.r - reach / 2); r <= p.r + reach / 2; r++) for (let c = Math.floor(p.c - reach); c <= p.c + reach; c++) {
-          const dd = Math.hypot(c + 0.5 - p.c, (r + 0.5 - p.r) * 2) / Math.max(0.5, rc);
-          const l = dd < 1 ? 3 : Math.exp(-(dd - 1) * 1.4) * 1.3;
-          if (l > 0.04) light(c, r, l * fade, dd < 0.55 ? -1 : st.hue);
-        }
-        // a flare across and up
-        if (rc > 0.6) {
-          const len = Math.min(cols, rc * 7);
-          for (let i = 1; i < len; i++) { const l = (1 - i / len) * 0.6 * fade; light(p.c + i, p.r, l, st.hue); light(p.c - i, p.r, l, st.hue); }
-          for (let i = 1; i < len / 3; i++) { const l = (1 - (i * 3) / len) * 0.6 * fade; light(p.c, p.r + i, l, st.hue); light(p.c, p.r - i, l, st.hue); }
-        }
         drawn.stars++;
+        if (rc < 0.7) {
+          mark(p.c, p.r, rc < 0.3 ? '·' : rc < 0.5 ? '+' : '*', ink(st.hue, 2 + 5 * fade));
+          continue;
+        }
+        // a short flare across a big, close star, behind its ball
+        if (rc > 2) {
+          const len = Math.min(cols / 2, rc * 2.6);
+          for (let i = Math.ceil(rc); i < len; i++) { const lv = 2 + 3 * (1 - i / len); mark(p.c + i, p.r, '-', ink(st.hue, lv)); mark(p.c - i, p.r, '-', ink(st.hue, lv)); }
+          for (let i = Math.ceil(rc / 2); i < len / 3; i++) { const lv = 2 + 3 * (1 - (i * 3) / len); mark(p.c, p.r + i, '|', ink(st.hue, lv)); mark(p.c, p.r - i, '|', ink(st.hue, lv)); }
+        }
+        for (let r = Math.floor(p.r - rc / 2); r <= p.r + rc / 2; r++) for (let c = Math.floor(p.c - rc); c <= p.c + rc; c++) {
+          const nx = (c + 0.5 - p.c) / rc, ny = ((r + 0.5 - p.r) * 2) / rc, q = nx * nx + ny * ny;
+          if (q > 1) continue;
+          const nz = Math.sqrt(1 - q);
+          const b = clamp(nx * LX + ny * LY + nz * LZ, 0, 1);
+          const lit = 0.12 + 0.88 * b;
+          const chr = q > 0.86 ? (b > 0.3 ? 'o' : '.') : SHADE[Math.min(SHADE.length - 1, Math.floor(lit * SHADE.length))];
+          mark(c, r, chr, b > 0.92 ? WHITE0 + 3 : ink(st.hue, (1 + 6.5 * lit) * (0.5 + 0.5 * fade)));
+        }
         // one you would hit soon gets red brackets
         const ahead = st.d - ship.d, off = Math.hypot(ship.x - st.x, ship.y - st.y) - st.r - SHIP_R;
         if (ahead > 0 && ahead < ship.speed * 1.1 && off < 0.4) {
-          const w = Math.max(2, rc * 1.4 + 1);
+          const w = Math.max(2, rc + 1);
           mark(p.c - w - 1, p.r, '[', INK.alert); mark(p.c + w + 1, p.r, ']', INK.alert);
           drawn.threats++;
         }
