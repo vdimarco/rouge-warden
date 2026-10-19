@@ -1,14 +1,11 @@
-// Ahead of the Light: the sound (final.md 17), all made in code with Web Audio. The graph is built once on the first
-// tap and then only steered: 24 voices in all, every one an oscillator or a looping noise source that runs from the
-// start, shaped by gain and filter automation. Twelve are held voices (the leg's music: drone, sub, two pad notes,
-// kick, hats, bass, arpeggio; and the danger whine, the whip and draft hum, the light's swell and the glare's
-// whine); twelve are a pool of one-shots (eight tones, four noises) that each new sound takes, the oldest first.
-// The music is lab A's beat-locked bus in the leg's key: each gear adds a layer and lifts the key a whole tone on
-// the next downbeat; it keeps its own clock through slow motion and hit-stop and leans its tempo up to 3 % to
-// re-lock to the course's beats. Each leg adds one colour. A graze is a falling band of noise panned to its side
-// plus a pluck on the chain's pentatonic step, so a chain plays a tune (lab A); grabs pluck by the well's size,
-// releases chime up the scale and burns whoosh over a thump (lab B). Ported from public/light-years-home/lab/a/sound.js
-// and lab/b/sound.js. Mute is the arcade's shared switch, localStorage "arcade.sound" (ui/store.js keeps it).
+// Ahead of the Light: the sound, all made in code with Web Audio. The graph is built once on the first tap and then
+// only steered: 24 voices in all, every one an oscillator or a looping noise source that runs from the start, shaped
+// by gain and filter automation. Twelve are held voices (the music's drone, sub, two string notes, drum, cymbal, cello
+// and piano; and the danger whine, the hum, the light's swell and the glare's whine); twelve are a pool of one-shots
+// (eight tones, four noises) that each new sound takes, the oldest first. The music is a cinematic build: each gear
+// of the run adds a layer and lifts the key on the next downbeat, and each sector sets the key and one colour. A skim
+// is a falling band of noise panned to its side; a gate plucks; sonar is a blip with two echoes; boost whooshes over a
+// thump. Mute is the arcade's shared switch, localStorage "arcade.sound".
 
 // The chapter keys, copied from light-years-home's ui/sound/music.js (its ui/ folder is being replaced): the drone
 // chord (MIDI), the scale's root and its pentatonic steps. The closing melody plays at HOME.
@@ -219,26 +216,45 @@ export function createSound({ on = true, onToggle = null } = {}) {
     E.padB.o.frequency.setTargetAtTime(midi(S.key.chord[2] + shift()), t, k);
   }
 
+  // The music is a cinematic build, not a club beat: a piano ostinato from the first second, strings that swell with
+  // speed, a cello line from gear 1, a big low drum on the bar from gear 2, a cymbal swell into each bar from gear 3,
+  // and brass on the downbeat at gear 4. The same voices as before, given new parts.
   function sixteenth(sub, t) {
     const pos = ((sub % 16) + 16) % 16;
     if (pos === 0 && S.wantGear !== S.gear) { S.gear = S.wantGear; retune(t); }    // the key lifts on the downbeat
     const gear = S.gear;
     const root = S.key.root + shift();
-    if (pos % 8 === 0) hit(E.kick, t, 150, { to: 42, dur: 0.22, peak: 0.85 });
-    if (gear >= 1 && pos % 2 === 0) hat(t, pos % 4 === 2 ? 0.16 : 0.08, pos % 4 === 2 ? 0.05 : 0.025);
-    if (gear >= 2 && pos % 2 === 0) {
-      const pat = [0, 0, 12, 0, 7, 0, 10, 7];
-      hit(E.bass, t, midi(root - 24 + pat[(pos / 2) | 0]), { dur: 0.16, peak: 0.16 });
+    const third = S.key.scale.includes(3) ? 3 : 4;
+    // the piano: chord tones in eighths that ring; the bar's second half climbs, so it lifts toward the next bar
+    if (pos % 2 === 0) {
+      const bar = (sub >> 4) & 1;
+      const seq = bar ? [0, 7, 12, third + 12, 7, 12, 19, 12 + third] : [0, 7, 12, 7, third + 12, 12, 7, 12];
+      const plucks = S.colour === 'plucks';
+      hit(E.arp, t, midi(root + seq[(pos / 2) | 0]), { dur: plucks ? 0.3 : 0.9, peak: gear >= 3 ? 0.075 : 0.06,
+        type: plucks ? 'square' : 'triangle', attack: 0.003, pan: pos % 4 ? 0.25 : -0.25 });
     }
-    const plucks = S.colour === 'plucks' && pos % 4 === 0;
-    if (gear >= 3 || plucks) {
-      const seq = [0, 2, 4, 7, 9, 7, 4, 2];
-      const deg = seq[pos % 8];
-      const st = MINOR[deg % 7] + 12 * Math.floor(deg / 7);
-      hit(E.arp, t, midi(root + 12 + st), { dur: plucks && gear < 3 ? 0.18 : 0.09, peak: 0.07,
-        type: S.colour === 'plucks' ? 'square' : 'triangle', pan: pos % 2 ? 0.3 : -0.3 });
+    // the cello: a slow root and fifth under the piano
+    if (gear >= 1 && pos % 4 === 0) {
+      const pat = [0, 0, 7, 5];
+      hit(E.bass, t, midi(root - 24 + pat[(pos / 4) | 0]), { dur: 1.1, peak: 0.12, attack: 0.08 });
     }
-    if (gear >= 4 && pos === 0) tone(t, midi(root - 36), { type: 'sine', dur: 1.2, peak: 0.3, attack: 0.4 });
+    // the big drum: the bar's downbeat, and its pickup at gear 3 and up
+    if (gear >= 2 && (pos === 0 || (gear >= 3 && pos === 14))) {
+      hit(E.kick, t, pos === 0 ? 92 : 70, { to: 34, dur: pos === 0 ? 0.7 : 0.35, peak: pos === 0 ? 0.9 : 0.5 });
+    }
+    // the cymbal swell: rises through the bar's last quarter into the downbeat
+    if (gear >= 3 && pos === 12) {
+      const g = E.hat.g.gain, span = 4 / (4 * (S.bpm / 60));
+      g.cancelScheduledValues(t);
+      g.setValueAtTime(0, t);
+      g.linearRampToValueAtTime(0.09, t + span);
+      g.setTargetAtTime(0, t + span, 0.08);
+    }
+    // the brass: a low swell and the chord on the downbeat
+    if (gear >= 4 && pos === 0) {
+      tone(t, midi(root - 36), { type: 'sine', dur: 1.6, peak: 0.3, attack: 0.3 });
+      chord(t, [root - 12, root - 12 + third, root - 5], 0.035, 2.2, 0.18);
+    }
     if (S.colour === 'bells' && pos === 0 && (sub >> 4) % 2 === 0) {
       tone(t, midi(note(((sub >> 5) % 5) + 5)), { type: 'sine', dur: 1.6, peak: 0.07, pan: -0.4 });
     }
@@ -282,16 +298,19 @@ export function createSound({ on = true, onToggle = null } = {}) {
     E.drone.f.frequency.setTargetAtTime(600 * 10 ** within, now, 0.15);
     E.drone.g.gain.setTargetAtTime(live ? 0.16 : st.mode === 'title' ? 0.12 : 0.06, now, 0.3);
     E.sub.g.gain.setTargetAtTime(live ? (S.colour === 'sub' && (st.inWindow || st.whip) ? 0.45 : 0.22) : 0.08, now, 0.3);
-    const pad = live && (st.headlight || st.gear >= 4 || S.colour === 'pad' || S.colour === 'choir') ? 1 : 0;
-    const padK = st.gear >= 4 || st.headlight ? 0.06 : S.colour === 'choir' ? 0.05 : 0.025;
-    E.padA.g.gain.setTargetAtTime(pad * padK, now, 0.4);
-    E.padB.g.gain.setTargetAtTime(pad * padK * (S.colour === 'cluster' ? 1.4 : 1), now, 0.4);
+    // the strings: always there in a leg, swelling with each gear and fullest at HEADLIGHT and gear 4
+    const pad = live ? 1 : st.mode === 'title' ? 0.5 : 0;
+    const gearK = [0.02, 0.03, 0.04, 0.05, 0.065][clamp(st.gear | 0, 0, 4)];
+    const padK = st.headlight ? 0.065 : S.colour === 'choir' ? Math.max(gearK, 0.05) : gearK;
+    E.padA.g.gain.setTargetAtTime(pad * padK, now, 1.2);
+    E.padB.g.gain.setTargetAtTime(pad * padK * (S.colour === 'cluster' ? 1.4 : 1), now, 1.2);
+    E.padA.o.detune.setTargetAtTime(6 * Math.sin(now * 4.6), now, 0.05);
     if (S.colour === 'cluster') E.padB.o.detune.setTargetAtTime(-100, now, 0.2);
     else E.padB.o.detune.setTargetAtTime(S.colour === 'choir' ? 8 * Math.sin(now * 5) : 0, now, 0.05);
     // the low-pass: the slow world, the dust, the catch's card
     const slow = clamp(st.slow ?? 1, 0, 1);
     const cut = S.caught || st.mode === 'result' ? 700 : st.mode === 'paused' ? 400
-      : S.colour === 'dust' && playing ? 1400 : 600 + 17400 * slow ** 2;
+      : 600 + 17400 * slow ** 2;
     E.musicF.frequency.setTargetAtTime(cut, now, 0.12);
     // the hum: a well in reach rises; the whip follows its sweep (a growl in the red); the draft holds a tone
     if (playing && st.whip) {
@@ -569,6 +588,22 @@ export function createSound({ on = true, onToggle = null } = {}) {
           break;
         case 'glareIn':
           if (mine) { tone(t, 2800, { type: 'sine', dur: 0.4, peak: 0.06, attack: 0.1 }); count(e.type); }
+          break;
+        case 'ping':
+          // sonar: a clean blip and two fainter echoes
+          if (mine) {
+            for (const [dt, a] of [[0, 0.16], [0.32, 0.06], [0.62, 0.025]]) {
+              tone(t + dt, 1480, { type: 'sine', to: 1180, dur: 0.22, peak: a, attack: 0.002 });
+            }
+            count(e.type);
+          }
+          break;
+        case 'sector':
+          if (mine) {
+            hiss(t, { f: 300, to: 6000, q: 0.9, dur: 0.8, peak: 0.16, attack: 0.3 });
+            chord(t + 0.2, S.key.chord.map((nn) => nn + 12), 0.05, 2.0, 0.2);
+            count(e.type);
+          }
           break;
         case 'caught': case 'wreck':
           if (mine) {

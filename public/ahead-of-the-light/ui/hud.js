@@ -1,345 +1,223 @@
-// Ahead of the Light: the HUD (final.md 15.2, 15.3, 6.2). Top left, your speed with its nines ("0.9916c", the newest
-// 9 orange, big for a new best gear this run, grey for a moment when one is lost); top right, your place among the
-// named ships and the next one's gap ("2ND" over "HOUND +0.8 S"); on leg 8, the landing's need. And the one caption
-// line: bold capitals in karaoke chunks (light-years-home's core/captions.js: at most 3 words and 18 characters a
-// chunk, the current word orange), through a priority queue: a higher caption replaces a lower one at once, a lower
-// one never replaces a higher one in its first 0.6 s, and each waits only so long. captionsFor turns a frame's
-// events and the leg's cues into captions, each the first time it matters.
-import { chunk, timings, wordAt } from '../../light-years-home/core/captions.js';
-import { beatsPerS } from '../core/ringmath.js';
-import { GATE_NAMES } from '../core/chart.js';
-import { CARD } from '../core/cards.js';
-import { FACT } from '../core/route.js';
+// Ahead of the Light: the HUD, after Null Range's orange vector instruments. Drawn on a 2D canvas each frame:
+// a distance tape to Earth across the top, the sector box top left, the light's gap top right, a reticle with
+// SPD and ALT arcs round it, BOOST charge and SONAR arcs further out, HULL and SHIELD bars and the burst's rear
+// disc at the bottom, brackets on the gates, warnings, and the sector's name when you cross into it.
+import { SECTORS, SECTOR_LEN, COURSE_LEN, sectorAt, GATE_R } from '../core/world.js';
 
-const finite = (v) => typeof v === 'number' && Number.isFinite(v);
-const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+const OR = '#ffa31a', YEL = '#ffd21a', CY = '#7fe9ff', RED = '#ff5a3c', WHITE = '#ffffff';
+const COND = '"Barlow Condensed", "Arial Narrow", sans-serif-condensed, sans-serif';
+const MONO = 'ui-monospace, "SF Mono", Menlo, Consolas, monospace';
+const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+const pad2 = (n) => String(n).padStart(2, '0');
 
-// Caption priorities, high to low (15.3).
-export const PRI = Object.freeze({ end: 10, gear: 9, gate: 8, glare: 7, light: 6, act: 5, nemesis: 4, meter: 3,
-  teach: 2, bark: 1, fact: 0.5 });
-const HOLD_AFTER = 0.8;          // s a caption stays after its last word
-const GUARD = 0.6;               // s a higher caption is safe from a lower one
-
-// ---------------------------------------------------------------- speed and place
-
-// Speed as text with all its nines (lab B's speedText): { text: '0.9916c', nines }.
-export function speedText(eta) {
-  const b = Math.tanh(Math.max(0, finite(eta) ? eta : 0));
-  const n = b > 0 ? Math.max(0, Math.floor(-Math.log10(1 - b) + 1e-9)) : 0;
-  const dec = Math.max(4, n + 1);
-  const v = Math.floor(b * 10 ** dec) / 10 ** dec;
-  return { text: `${v.toFixed(dec)}c`, nines: n };
-}
-
-// The speed's HTML: the gear's newest 9 orange; `lost` (a gear just dropped) greys that digit.
-export function speedHtml(eta, gear, lost = -1) {
-  const { text } = speedText(eta);
-  const hot = gear > 0 ? 1 + gear : -1, grey = lost > 0 ? 1 + lost : -1;
-  let out = '';
-  for (let i = 0; i < text.length; i++) {
-    const ch = text[i];
-    if (i === hot && ch === '9') out += `<b>${ch}</b>`;
-    else if (i === grey && i !== hot) out += `<i>${ch}</i>`;
-    else out += ch;
+export function createHud(canvas) {
+  const ctx = canvas.getContext('2d');
+  const H = { w: 1, h: 1, dpr: 1, banner: null, pops: [], insets: { t: 0, r: 0, b: 0, l: 0 }, drawn: {} };
+  function resize(w, h, dpr = 1, insets = H.insets) {
+    H.w = w; H.h = h; H.dpr = Math.min(dpr, 2); H.insets = insets;
+    canvas.width = Math.round(w * H.dpr); canvas.height = Math.round(h * H.dpr);
   }
-  return out;
-}
-
-export const ordinal = (n) => {
-  const s = n % 100 >= 11 && n % 100 <= 13 ? 'TH' : ['TH', 'ST', 'ND', 'RD'][n % 10] || 'TH';
-  return `${n}${s}`;
-};
-
-// Your place among you and the named ships still flying, and the next named ship's gap in seconds ("HOUND +0.8 S":
-// the one just ahead, or just behind when you lead). → { place, next } or null with no named ships.
-export function placeOf(race, tune) {
-  if (!race) return null;
-  const you = race.ships[0];
-  const named = race.ships.filter((s) => s !== you && (s.kind === 'regular' || s.kind === 'boss')
-    && !s.caught && !s.wrecked);
-  if (!named.length) return null;
-  const bps = Math.max(1e-6, beatsPerS(you.eta, tune, you.lightspeed));
-  let place = 1, ahead = null, behind = null;
-  for (const s of named) {
-    const g = (s.dist - you.dist) / bps;
-    if (g > 0) { place++; if (!ahead || g < ahead.g) ahead = { s, g }; }
-    else if (!behind || g > behind.g) behind = { s, g };
-  }
-  const n = ahead || behind;
-  const g = Math.round(n.g * 10) / 10;
-  return { place, next: `${n.s.name || String(n.s.id).toUpperCase()} ${g >= 0 ? '+' : '−'}${Math.abs(g).toFixed(1)} S` };
-}
-
-// ---------------------------------------------------------------- the HUD
-
-export function createHud({ speed, place, land, captions, tune, slow = false } = {}) {
-  const H = { cur: null, queue: [], time: 0, slow, last: { speed: '', place: '', land: '', cap: '' },
-    lost: { gear: -1, until: 0 }, big: 0, gear: 0, counts: {} };
-
-  // ---------- captions ----------
-  // say(text, { pri, tag, wait (s it may wait to show), type (the event type it answers, for feedback) })
-  function say(text, { pri = PRI.teach, tag = null, wait = 2.5, type = null, hold = HOLD_AFTER } = {}) {
-    if (!text) return false;
-    const item = { text: String(text).toUpperCase(), pri, tag, until: H.time + wait, type, hold };
-    const cur = H.cur;
-    // a higher caption replaces the current one at once; any other waits until the current one's words are done (and
-    // never cuts it in its first GUARD s), then shows as it lingers
-    const age = cur ? H.time - cur.t0 : 0;
-    if (!cur || pri > cur.pri || (age >= Math.max(GUARD, cur.tm.total))) {
-      show(item);
-      return true;
+  function onEvents(events, run) {
+    for (const e of events) {
+      if (e.type === 'sector') H.banner = { t0: run.t, sector: e.sector };
+      if (e.type === 'grab') H.pops.push({ t0: run.t, text: e.chain > 1 ? `GATE ×${e.chain}` : 'GATE', color: OR });
+      if (e.type === 'hit') H.pops.push({ t0: run.t, text: 'IMPACT', color: RED });
+      if (e.type === 'shieldPop') H.pops.push({ t0: run.t, text: 'SHIELD DOWN', color: CY });
+      if (e.type === 'ping') H.pops.push({ t0: run.t, text: e.marked ? `SONAR · ${e.marked} GATES` : 'SONAR', color: CY });
     }
-    if (H.queue.some((q) => q.text === item.text)) return false;
-    H.queue.push(item);
-    if (H.queue.length > 6) H.queue.sort((a, b) => b.pri - a.pri).length = 6;
-    return true;
+    if (H.pops.length > 4) H.pops.splice(0, H.pops.length - 4);
   }
-  function show(item) {
-    // " · " joins two thoughts in one caption: each is chunked on its own, so no chunk ends on the dot
-    const chunks = item.text.split(/\s+·\s+/).flatMap((part) => chunk(part));
-    item.tm = timings(chunks, H.slow);
-    item.chunks = chunks;
-    item.t0 = H.time;
-    item.end = item.tm.total + item.hold;
-    H.cur = item;
-    if (item.type) H.counts[item.type] = (H.counts[item.type] || 0) + 1;
-    draw(true);
+  const font = (px, w = 700, fam = COND) => `${w} ${px}px ${fam}`;
+  function text(str, x, y, { px = 12, color = OR, align = 'left', base = 'middle', fam = COND, w = 700, alpha = 1 } = {}) {
+    ctx.globalAlpha = alpha;
+    ctx.font = font(px, w, fam); ctx.fillStyle = color; ctx.textAlign = align; ctx.textBaseline = base;
+    ctx.fillText(str, x, y);
+    ctx.globalAlpha = 1;
+    return ctx.measureText(str).width;
   }
-  function draw(force = false) {
-    const c = H.cur;
-    let html = '';
-    if (c) {
-      const at = wordAt(c.tm, H.time - c.t0);
-      const words = String(c.chunks[at.chunk] || '').split(/\s+/);
-      const tag = c.tag ? `<span class="tag">${esc(c.tag)}</span>` : '';
-      html = tag + words.map((w, i) => (i === at.word && !at.done ? `<span class="now">${esc(w)}</span>` : esc(w))).join(' ');
-      const key = `${c.t0}|${at.chunk}|${at.done ? -1 : at.word}`;
-      if (!force && key === H.last.cap) return;
-      H.last.cap = key;
-    } else {
-      if (!force && H.last.cap === '') return;
-      H.last.cap = '';
+  function box(x, y, w, h, color = OR) {
+    ctx.strokeStyle = color; ctx.lineWidth = 1;
+    ctx.strokeRect(Math.round(x) + 0.5, Math.round(y) + 0.5, Math.round(w), Math.round(h));
+    ctx.fillStyle = 'rgba(0,0,0,0.35)'; ctx.fillRect(x + 1, y + 1, w - 1, h - 1);
+  }
+  // A row of dots on an arc from a0 to a1 (radians, 0 = right, clockwise on screen), the first n lit.
+  function dotArc(cx, cy, r, a0, a1, count, lit, color, size = 2.2) {
+    for (let i = 0; i < count; i++) {
+      const a = a0 + (a1 - a0) * (i / (count - 1));
+      ctx.globalAlpha = i < lit ? 1 : 0.22;
+      ctx.fillStyle = color;
+      ctx.beginPath(); ctx.arc(cx + Math.cos(a) * r, cy + Math.sin(a) * r, size, 0, Math.PI * 2); ctx.fill();
     }
-    if (captions) {
-      captions.innerHTML = html;
-      captions.classList.toggle('on', Boolean(c));
-    }
+    ctx.globalAlpha = 1;
   }
-  function frame(dt) {
-    H.time += Math.max(0, dt || 0);
-    const c = H.cur;
-    if (c) H.queue = H.queue.filter((q) => q.until >= H.time);
-    const age = c ? H.time - c.t0 : 0;
-    if (c && (age >= c.end || (H.queue.length && age >= Math.max(GUARD, c.tm.total)))) {
-      H.cur = null;
-      if (H.queue.length) {
-        let k = 0;
-        for (let i = 1; i < H.queue.length; i++) if (H.queue[i].pri > H.queue[k].pri) k = i;
-        show(H.queue.splice(k, 1)[0]);
-        return;
+  function bars(x, y, w, h, frac, color, segs) {
+    const gapPx = 2, sw = (w - gapPx * (segs - 1)) / segs;
+    for (let i = 0; i < segs; i++) {
+      ctx.globalAlpha = (i + 0.5) / segs <= frac ? 1 : 0.18;
+      ctx.fillStyle = color;
+      ctx.fillRect(Math.round(x + i * (sw + gapPx)), y, Math.max(1, Math.floor(sw)), h);
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  // One frame. run: the run; view: render/view.js (for project); opts: { compact, controls } (controls: the touch
+  // buttons' boxes, kept clear).
+  function draw(run, view, dt, opts = {}) {
+    const { w, h } = H;
+    const I = H.insets;
+    ctx.setTransform(H.dpr, 0, 0, H.dpr, 0, 0);
+    ctx.clearRect(0, 0, w, h);
+    const s = run.ship, T = run.tune;
+    const small = Math.min(w, h) < 520;
+    const px = small ? 11 : 13;
+    const drawn = {};
+    const cx = w / 2, cy = h * (w < h ? 0.42 : 0.47);
+
+    // ---- the tape to Earth ----
+    const left = COURSE_LEN - s.d;
+    const tw = Math.min(small ? w - 40 : 460, w - (opts.touch ? 136 : 40)), tx = cx - tw / 2, ty = I.t + 14;
+    ctx.strokeStyle = OR; ctx.lineWidth = 1;
+    const per = small ? 22 : 28;       // px per 100 m
+    const first = Math.ceil((s.d - (tw / 2 / per) * 100) / 100) * 100;
+    for (let m = first; m <= s.d + (tw / 2 / per) * 100; m += 100) {
+      const x = cx + ((m - s.d) / 100) * per;
+      if (x < tx || x > tx + tw) continue;
+      const major = m % SECTOR_LEN === 0, mid = m % 500 === 0;
+      ctx.globalAlpha = 1 - Math.abs(x - cx) / (tw / 2) * 0.7;
+      ctx.beginPath(); ctx.moveTo(x + 0.5, ty); ctx.lineTo(x + 0.5, ty + (major ? 14 : mid ? 9 : 5)); ctx.stroke();
+      if (major && m > 0 && m <= COURSE_LEN) text(SECTORS[Math.min(SECTORS.length - 1, m / SECTOR_LEN)]?.id.toUpperCase() ?? '', x, ty + 22, { px: 9, fam: MONO, w: 600, align: 'center', alpha: ctx.globalAlpha });
+    }
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = OR;
+    ctx.beginPath(); ctx.moveTo(cx, ty - 1); ctx.lineTo(cx - 4, ty - 7); ctx.lineTo(cx + 4, ty - 7); ctx.fill();
+    text(`${(left / 1000).toFixed(1)} KM TO EARTH`, cx, ty + 36, { px: px - 1, fam: MONO, w: 600, align: 'center' });
+    drawn.tape = { x: tx, y: ty - 8, w: tw, h: 50 };
+
+    // ---- the sector box, top left; the light, top right ----
+    const sec = sectorAt(s.d);
+    const bw = small ? 128 : 190, bh = small ? 44 : 54, by = I.t + (small ? 62 : 16);
+    box(I.l + 10, by, bw, bh);
+    text(`SECTOR ${pad2(sec + 1)}/${pad2(SECTORS.length)}`, I.l + 18, by + 12, { px: 9, fam: MONO, w: 600 });
+    text(SECTORS[sec].name, I.l + 18, by + (small ? 29 : 33), { px: small ? 15 : 20 });
+    if (!small) text(`GATES ${run.stats.gates}  ·  CHAIN ×${run.gates.chain}`, I.l + 18, by + 47, { px: 9, fam: MONO, w: 600 });
+    drawn.sector = { x: I.l + 10, y: by, w: bw, h: bh };
+    const gap = Math.max(0, s.d - run.light.d);
+    const secs = gap / Math.max(1, run.light.speed - s.speed + 1e-6);
+    const closing = run.light.speed > s.speed;
+    const danger = gap < T.WARN_GAP;
+    const rx = w - I.r - 10 - bw;
+    box(rx, by, bw, bh, danger ? RED : OR);
+    text('BURST BEHIND', rx + 8, by + 12, { px: 9, fam: MONO, w: 600, color: danger ? RED : OR });
+    text(`${Math.round(gap)} M`, rx + 8, by + (small ? 29 : 33), { px: small ? 15 : 20, color: danger ? RED : OR });
+    if (!small) text(closing ? `CLOSING · ${secs < 99 ? secs.toFixed(1) : '99+'} S` : 'OPENING', rx + 8, by + 47, { px: 9, fam: MONO, w: 600, color: danger ? RED : OR });
+    drawn.light = { x: rx, y: by, w: bw, h: bh };
+
+    // ---- the reticle, SPD and ALT ----
+    const R = Math.min(w, h) * (small ? 0.16 : 0.13);
+    ctx.strokeStyle = OR; ctx.lineWidth = 1.2;
+    ctx.beginPath(); ctx.arc(cx, cy, 7, 0, Math.PI * 2); ctx.stroke();
+    for (const a of [0.25, 0.75, 1.25, 1.75]) {
+      const c = Math.cos(a * Math.PI), sn = Math.sin(a * Math.PI);
+      ctx.beginPath(); ctx.moveTo(cx + c * 11, cy + sn * 11); ctx.lineTo(cx + c * 22, cy + sn * 22); ctx.stroke();
+    }
+    // where you are heading: a small mark led by your strafe and climb
+    const vxp = clamp(s.vx / 60, -1, 1) * R * 0.7, vyp = clamp(-s.vy / 40, -1, 1) * R * 0.7;
+    ctx.beginPath(); ctx.arc(cx + vxp, cy + vyp, 3, 0, Math.PI * 2); ctx.stroke();
+    ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(cx, cy, R, Math.PI * 0.82, Math.PI * 1.18); ctx.stroke();
+    ctx.beginPath(); ctx.arc(cx, cy, R, -Math.PI * 0.18, Math.PI * 0.18); ctx.stroke();
+    const spdK = clamp((s.speed - 40) / 120, 0, 1);
+    dotArc(cx, cy, R - 7, Math.PI * 1.18, Math.PI * 0.82, 12, Math.round(spdK * 12), OR, 1.6);
+    text(s.speed.toFixed(0), cx - R - 6, cy - R * 0.62, { px: px + 1, align: 'right' });
+    text('SPD', cx - R, cy + R * 0.66, { px: 9, fam: MONO, w: 600, align: 'center' });
+    const alt = Math.max(0, s.alt);
+    text(alt.toFixed(1), cx + R + 6, cy - R * 0.62, { px: px + 1, color: alt < T.SKIM ? YEL : OR });
+    text('ALT', cx + R, cy + R * 0.66, { px: 9, fam: MONO, w: 600, align: 'center' });
+    if (alt < T.SKIM) text('SKIM', cx + R + 6, cy - R * 0.62 + 14, { px: 9, fam: MONO, w: 600, color: YEL });
+
+    // ---- BOOST and SONAR arcs ----
+    const R2 = R * (small ? 1.75 : 2.1);
+    const chg = Math.round(s.charge * 18);
+    dotArc(cx, cy, R2, Math.PI * 1.3, Math.PI * 0.7, 18, chg, s.boosting ? YEL : OR, small ? 2 : 2.5);
+    text(s.boosting ? 'BOOST ▲' : 'BOOST', cx - R2 * 0.82, cy + R2 * 0.66, { px: 9, fam: MONO, w: 600, align: 'center', color: s.boosting ? YEL : OR });
+    const ready = run.ping.cool <= 0;
+    const pingK = 1 - run.ping.cool / T.PING_COOL;
+    dotArc(cx, cy, R2, -Math.PI * 0.3, Math.PI * 0.3, 12, Math.round(pingK * 12), CY, small ? 2 : 2.5);
+    text(ready ? 'SONAR READY' : 'SONAR', cx + R2 * 0.82, cy + R2 * 0.66, { px: 9, fam: MONO, w: 600, align: 'center', color: CY });
+    drawn.arcs = { x: cx - R2 - 4, y: cy - R2 - 4, w: R2 * 2 + 8, h: R2 * 2 + 8 };
+
+    // ---- HULL, SHIELD and the burst's disc, at the bottom ----
+    const bwid = Math.min(small ? (w - 100) / 2 - 16 : 120, 140), bbH = small ? 10 : 14;
+    const bb = h - I.b - (opts.controlsBottom ? opts.controlsBottom : 0) - (small ? 26 : 34);
+    const discR = small ? 18 : 26;
+    bars(cx - discR - 10 - bwid, bb, bwid, bbH, s.hull / 100, s.hull < 35 ? RED : YEL, small ? 10 : 14);
+    text(`HULL: ${Math.round(s.hull)}%`, cx - discR - 10 - bwid / 2, bb + bbH + 9, { px: 9, fam: MONO, w: 600, align: 'center', color: YEL });
+    bars(cx + discR + 10, bb, bwid, bbH, s.shield / 100, CY, small ? 10 : 14);
+    text(`SHIELD: ${Math.round(s.shield)}%`, cx + discR + 10 + bwid / 2, bb + bbH + 9, { px: 9, fam: MONO, w: 600, align: 'center', color: CY });
+    const near = clamp(1 - gap / (T.START_GAP * 1.2), 0, 1);
+    const dy = bb + bbH / 2;
+    for (let i = 1; i <= 4; i++) {
+      ctx.strokeStyle = OR; ctx.globalAlpha = 0.25 + 0.15 * i; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.ellipse(cx, dy, discR * i / 4, discR * 0.62 * i / 4, 0, 0, Math.PI * 2); ctx.stroke();
+    }
+    ctx.globalAlpha = 0.25 + 0.75 * near; ctx.fillStyle = WHITE;
+    ctx.beginPath(); ctx.ellipse(cx, dy, discR * near, discR * 0.62 * near, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.globalAlpha = 1;
+    drawn.bars = { x: cx - discR - 10 - bwid, y: bb, w: 2 * (discR + 10 + bwid), h: bbH + 16 };
+
+    // ---- gate brackets ----
+    for (let i = run.gates.i, shown = 0; i < run.gates.i + 6 && shown < 3; i++) {
+      const g = run.world.gate(i);
+      if (!g) continue;
+      const ahead = g.d - s.d;
+      if (ahead > 800) break;
+      const marked = run.marks.has(i);
+      if (!marked && ahead > 260) continue;
+      const p = view.project(g.x, g.y, g.d);
+      if (!p.on) continue;
+      shown++;
+      const q = view.project(g.x + GATE_R, g.y, g.d);
+      const r = clamp(Math.abs(q.x - p.x) * 1.25, 6, 140);
+      const k = r * 0.35;
+      ctx.strokeStyle = marked ? OR : 'rgba(255,163,26,0.6)'; ctx.lineWidth = 1.4;
+      for (const [sx, sy] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) {
+        ctx.beginPath();
+        ctx.moveTo(p.x + sx * r, p.y + sy * (r - k)); ctx.lineTo(p.x + sx * r, p.y + sy * r); ctx.lineTo(p.x + sx * (r - k), p.y + sy * r);
+        ctx.stroke();
+      }
+      if (marked) text(`${Math.round(ahead)}`, p.x + r + 4, p.y - r, { px: 9, fam: MONO, w: 600 });
+    }
+
+    // ---- warnings, pops and the sector banner ----
+    let warn = null;
+    if (run.mode === 'fly') {
+      if (s.exposed) warn = ['EXPOSED · DIVE', RED];
+      else if (danger) warn = ['BURST CLOSING · BOOST', RED];
+      else if (s.vy < -8 && s.alt < 10) warn = ['PULL UP', YEL];
+    }
+    if (warn && Math.floor(run.t * 3) % 2 === 0) text(warn[0], cx, cy + R + (small ? 34 : 44), { px: px + 5, align: 'center', color: warn[1] });
+    drawn.warn = warn ? warn[0] : null;
+    let py = cy - R - (small ? 30 : 40);
+    for (let i = H.pops.length - 1; i >= 0; i--) {
+      const p = H.pops[i], age = run.t - p.t0;
+      if (age > 1.1 || age < 0) { H.pops.splice(i, 1); continue; }
+      text(p.text, cx, py - age * 16, { px: px + 2, align: 'center', color: p.color, alpha: 1 - age / 1.1 });
+      py -= 18;
+    }
+    if (H.banner) {
+      const age = run.t - H.banner.t0;
+      if (age > 3 || age < 0) H.banner = null;
+      else {
+        const a = Math.min(1, age * 3) * (1 - clamp((age - 2.2) / 0.8, 0, 1));
+        const by2 = h * 0.24;
+        text(`SECTOR ${pad2(H.banner.sector + 1)}`, cx, by2 - (small ? 18 : 26), { px: 10, fam: MONO, w: 600, align: 'center', alpha: a });
+        text(SECTORS[H.banner.sector].name, cx, by2, { px: small ? 30 : 46, align: 'center', alpha: a });
+        drawn.banner = SECTORS[H.banner.sector].name;
       }
     }
-    draw();
-    if (speed && H.big && H.time > H.big) { speed.classList.remove('big'); H.big = 0; }
+    H.drawn = drawn;
+    return drawn;
   }
-  function clearCaptions() { H.cur = null; H.queue = []; draw(true); }
-
-  // ---------- speed, place, the landing's need ----------
-  function update(race, { landText = null } = {}) {
-    if (!race) return;
-    const you = race.ships[0];
-    if (you.gear < H.gear) { H.lost = { gear: H.gear, until: H.time + 0.8 }; }
-    H.gear = you.gear;
-    const lost = H.time < H.lost.until ? H.lost.gear : -1;
-    const s = speedHtml(you.eta, you.gear, lost);
-    if (speed && s !== H.last.speed) { speed.innerHTML = s; H.last.speed = s; }
-    const p = placeOf(race, tune);
-    const ph = p ? `${ordinal(p.place)}<small>${esc(p.next)}</small>` : '';
-    if (place && ph !== H.last.place) { place.innerHTML = ph; H.last.place = ph; }
-    const lt = landText || '';
-    if (land && lt !== H.last.land) { land.textContent = lt; land.hidden = !lt; H.last.land = lt; }
-  }
-  // a new best gear this run: big digits for 0.9 s
-  function bigGear() {
-    if (!speed) return;
-    speed.classList.remove('big');
-    void speed.offsetWidth;
-    speed.classList.add('big');
-    H.big = H.time + 0.9;
-    H.counts.gearUp = (H.counts.gearUp || 0) + 1;
-  }
-  function reset() {
-    clearCaptions();
-    H.gear = 0; H.lost = { gear: -1, until: 0 };
-    H.last.speed = ''; H.last.place = ''; H.last.land = '';
-    if (land) { land.textContent = ''; land.hidden = true; }
-  }
-
-  return {
-    say, frame, update, reset, clearCaptions, bigGear,
-    setSlow(v) { H.slow = Boolean(v); },
-    get caption() { return H.cur ? { text: H.cur.text, pri: H.cur.pri, tag: H.cur.tag } : null; },
-    // s until the current caption's last word is done (0 with none, or with one under minPri)
-    wordsLeft(minPri = 0) {
-      const c = H.cur;
-      return c && c.pri >= minPri ? Math.max(0, c.tm.total - (H.time - c.t0)) : 0;
-    },
-    counts: () => ({ ...H.counts }),
-    state: H,
-  };
+  function clear() { ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, canvas.width, canvas.height); H.pops = []; H.banner = null; }
+  return { resize, draw, onEvents, clear, state: H };
 }
-
-// ---------------------------------------------------------------- what to say
-
-// The run's teaching and first-time memory (one object a run; leg holds the per-leg flags).
-export function createCaptionMemory() { return { run: {}, leg: {}, cuesSeen: new Set(), fires: 0 }; }
-export function newLegMemory(mem) { mem.leg = {}; mem.cuesSeen = new Set(); mem.fires = 0; }
-
-// The burn lesson's words: "the light is gaining" only while it is (a fast first leg can reach the cue with the light
-// minutes away). It outranks the other teaching lines and waits up to 6 s, so the whip's PRESS AS IT PASSES, HOLD and
-// TUCK IN BEHIND, which come at the same moment, can no longer drop it (playtest P0-2).
-const BURN_TTC = 12;
-function burnLesson(you, ctx, add) {
-  const near = Number.isFinite(you.ttc) && you.ttc < 60;
-  add(near ? (ctx.desk ? 'THE LIGHT IS GAINING · ↑ TO BURN' : 'THE LIGHT IS GAINING · FLICK UP TO BURN')
-    : (ctx.desk ? '↑ TO BURN FOR SPEED' : 'FLICK UP TO BURN FOR SPEED'), PRI.light, 'cue', { wait: 6 });
-}
-
-// Words for the leg's cues (11.5; WP8's list). first: only the first time in a run.
-const CUES = {
-  highway: { text: 'HIGHWAY' }, wallRide: { text: 'WALL RIDE' }, jet: { text: 'RIDE THE JET' },
-  jetEnd: { text: 'THE KNOTS LOOK FASTER THAN LIGHT', first: true },
-  crowd: { text: 'KEEP OUT OF THE CROWDED CENTRE' }, dust: { text: 'IN THE DUST, TRUST THE TICKS' },
-  oberth: { text: 'BURN AT THE BOTTOM · OBERTH × 2' }, voyagers: { text: 'THE VOYAGERS SWUNG ROUND JUPITER' },
-  land: { text: 'LAND BEFORE THE LIGHT', pri: PRI.gate }, beltRun: { text: 'BELT RUN' },
-  trapezium: { text: 'TRAPEZIUM' }, void: { text: 'NO GAS · NO DRAG · BURN IT ALL', pri: PRI.act },
-};
-
-// The captions a frame's events (and the cues you crossed) call for. ctx: { race, mem, runs (finished runs before
-// this one), desk, button, barks, toy, fires (cardFires(race)), prevDist }. Returns [{ text, pri, tag, wait, type }].
-export function captionsFor(events, ctx) {
-  const { race, mem } = ctx;
-  if (!race) return [];
-  const out = [];
-  const you = race.ships[0];
-  const first = ctx.runs === 0, teach = ctx.runs < 3;
-  const once = (scope, key) => { if (mem[scope][key]) return false; mem[scope][key] = true; return true; };
-  const add = (text, pri, type, extra = {}) => out.push({ text, pri, type, ...extra });
-  const nameOf = (id) => {
-    const s = race.ships.find((x) => x.id === id);
-    return s && s.name ? s.name : String(id || '').toUpperCase();
-  };
-  const gate = GATE_NAMES[race.legNo] || 'THE LANDMARK';
-
-  // the cues you crossed this frame
-  if (!ctx.toy) {
-    if (mem.cueLeg !== race.leg) { mem.cueLeg = race.leg; mem.cues = race.leg.items.filter((it) => it.kind === 'cue'); }
-    for (const it of mem.cues) {
-      if (mem.cuesSeen.has(it.id)) continue;
-      if (it.beat > you.dist) continue;
-      mem.cuesSeen.add(it.id);
-      if (it.beat < (ctx.prevDist ?? 0) - 2) continue;              // a leg resumed past it
-      const n = it.name, d = it.data || {};
-      if (n === 'steer' && first && once('run', 'steer')) add(ctx.desk ? '← → TO STEER' : 'DRAG TO STEER', PRI.teach, 'cue');
-      else if (n === 'burn' && first && once('run', 'burn')) burnLesson(you, ctx, add);
-      else if (n === 'ram' && first && once('run', 'ram')) add('RAM IT INTO THE KNOT', PRI.teach, 'cue');
-      // Earth's landing has only its DOOR (8.2): no thread and no dock to choose, so no THREAD OR DOCK there
-      else if (n === 'gateCall' && teach && race.leg.type !== 'earth') add('THREAD OR DOCK', PRI.gate, 'cue');
-      else if (CUES[n] && (!CUES[n].first || once('run', `cue:${n}`))) add(CUES[n].text, CUES[n].pri || PRI.teach, 'cue');
-      else if (n === 'fact' && FACT[d.fact] && once('run', `fact:${d.fact}`)) {
-        add(FACT[d.fact].text, PRI.fact, 'cue', { wait: 1.0 });
-      }
-    }
-  }
-
-  for (const e of events) {
-    const mine = e.ship === you.id;
-    switch (e.type) {
-      case 'caught': if (mine) add('CAUGHT', PRI.end, e.type); break;
-      case 'wreck': if (mine) add('WRECKED', PRI.end, e.type); break;
-      case 'land':
-        // a missed DOOR says so first: the loop round it cost margin (8.2)
-        if (mine) add(`${e.miss ? 'MISSED THE DOOR · ' : ''}${e.ok ? 'HOME' : 'CAUGHT ON THE DOORSTEP'}`, PRI.end, e.type);
-        break;
-      case 'lightspeed': if (mine) add('LIGHT SPEED', PRI.gear, e.type); break;
-      case 'headlight': if (mine && e.full) add('HEADLIGHT', PRI.gear, e.type); break;
-      case 'thread':
-        if (mine && !e.miss && !e.pair) add(`${gate} HOLDS THE LIGHT BACK`, PRI.gate, e.type);
-        break;
-      case 'glareIn':
-        if (mine && (e.first || once('leg', 'glare'))) {
-          mem.leg.glare = true;
-          add(first ? 'IN THE GLARE · ONE HIT AND IT HAS YOU' : 'IN THE GLARE', PRI.glare, e.type);
-        }
-        break;
-      case 'eaten': if (e.caption && e.line) add(e.line, PRI.light, e.type); break;
-      case 'scorch': if (mine) add('SCORCHED', PRI.act, e.type); break;
-      case 'takedown':
-        if (e.by === you.id) add(e.trapped ? 'TRAPPED' : 'TAKEDOWN', PRI.act, e.type);
-        break;
-      case 'nemesis': add(`${nameOf(e.id || e.ship)} IS YOUR NEMESIS`, PRI.nemesis, e.type); break;
-      case 'shieldPop': if (mine && once('leg', 'shield')) add('SHIELD DOWN', PRI.meter, e.type); break;
-      case 'lastHull': if (mine && once('run', 'lastHull')) add('LAST HULL', PRI.meter, e.type); break;
-      case 'redIn':
-        if (mine && once('run', 'red')) {
-          add(you.shield >= 1 ? 'THE RED ZONE COSTS YOUR SHIELD' : 'THE RED ZONE COSTS HULL', PRI.meter, e.type);
-        }
-        break;
-      case 'graze': case 'hair':
-        if (mine && first && !ctx.toy && once('run', 'skim')) add('SKIM FOR SPEED', PRI.teach, e.type);
-        break;
-      case 'push':
-        if (mine && first && !ctx.toy && mem.run.skim && race.t > 4 && once('run', 'holdLight')) {
-          add('SKIM TO HOLD THE LIGHT BACK', PRI.teach, e.type);
-        }
-        break;
-      case 'window':
-        if (mine && teach && !ctx.toy && once('run', 'press')) {
-          add(ctx.desk ? 'SPACE AS IT PASSES' : ctx.button ? 'TAP THE BUTTON AS IT PASSES' : 'PRESS AS IT PASSES',
-            PRI.teach, e.type);
-        }
-        break;
-      case 'grab': if (mine && first && !ctx.toy && once('run', 'hold')) add('HOLD', PRI.teach, e.type); break;
-      case 'wake':
-        if (mine && first && !ctx.toy && race.phase !== 'launch' && race.t > 8 && once('run', 'tuck')) {
-          add('TUCK IN BEHIND', PRI.teach, e.type);
-        }
-        break;
-      case 'draftFull': if (mine && first && !ctx.toy && once('run', 'pull')) add('PULL OUT', PRI.teach, e.type); break;
-      case 'slingshot': if (mine && teach && !ctx.toy && once('run', 'sling')) add('SLINGSHOT', PRI.teach, e.type); break;
-      case 'drafted':
-        if (mine && teach && once('run', 'drafted')) add(`${nameOf(e.by)} IS DRAFTING YOU · WEAVE`, PRI.teach, e.type);
-        break;
-      case 'bark':
-        if (ctx.barks !== false && e.text) {
-          add(e.text, PRI.bark, e.type, { tag: `${e.name || nameOf(e.ship)} ·`, wait: 1.0 });
-        }
-        break;
-      default:
-    }
-  }
-  // the burn lesson (playtest P0-2): on a first run it also fires as the light comes inside BURN_TTC with a whole cell
-  // to burn, and a burn of your own before it retires it
-  if (first && !ctx.toy && !mem.run.burn) {
-    if (events.some((e) => e.type === 'burn' && e.ship === you.id)) mem.run.burn = true;
-    else if (race.legNo === 0 && race.t > 3 && you.ttc < BURN_TTC && you.fuel >= 1 && once('run', 'burn')) {
-      burnLesson(you, ctx, add);
-    }
-  }
-  // a fusion's or legendary's first trigger this run takes the caption slot
-  const fires = ctx.fires || [];
-  for (let i = mem.fires; i < fires.length; i++) {
-    const c = CARD[fires[i].id];
-    if (c && (c.kind === 'fusion' || c.kind === 'legend') && once('run', `fire:${c.id}`)) add(c.name, PRI.act, 'cardFire');
-  }
-  mem.fires = fires.length;
-  // the first run: steering as the ring draws (25: 0:00.3), then the light, named early in leg 1
-  if (first && !ctx.toy && race.legNo === 0 && race.t > 0.25 && once('run', 'steer')) {
-    add(ctx.desk ? '← → TO STEER' : 'DRAG TO STEER', PRI.teach, 'cue');
-  }
-  if (first && !ctx.toy && race.legNo === 0 && race.t > 2.5 && once('run', 'burst')) {
-    add('A GAMMA-RAY BURST IS BEHIND YOU', PRI.teach, 'light');
-  }
-  return out;
-}
-

@@ -1,179 +1,145 @@
-// Ahead of the Light in a browser, at 390 × 844 touch, 844 × 390 touch and 1440 × 900 (final.md 22.1): the title, a
-// tap and steering within 1.5 s, a whole run by the mid bot through window.__race (sped up with advance, the picture
-// spot-checked every leg), every leg of the route by goto, the result card, AGAIN back to steering within 1.5 s, and
-// the home card, with no page error, console error, failed request, NaN or broken text anywhere.
-//   NODE_PATH=qa/browser/node_modules node qa/ahead-of-the-light/smoke.e2e.mjs      (the site served on 8765)
-import { launch, open, reporter, sizeList, S, R, wait, waitMode, synth, drag, holdKey, badText, overlayPixels,
-  layoutFaults, faultCount, faultText, botRun } from './e2e-lib.mjs';
+// Ahead of the Light in a browser (the site served at 127.0.0.1:8765). At 1280 × 800, 800 × 600, 390 × 844,
+// 320 × 568 and 844 × 390: the title fits with no scroll and its buttons are 44 px or more; DEPLOY starts a run;
+// the HUD draws inside the screen and clear of the touch buttons; the keys (or a drag on a touch screen) steer;
+// SPACE or the SONAR button pings and marks gates; SHIFT or the BOOST button boosts; pause and resume; the light
+// catching you shows its card and R or FLY AGAIN starts a new run; the autopilot gets through a sector into the
+// next one's banner; a run past Earth shows HOME. No page errors. Shots go to /tmp/ahead-of-the-light-smoke.
+import { createRequire } from 'node:module';
+import fs from 'node:fs';
+const require = createRequire(import.meta.url);
+const { chromium } = require('playwright');
+const URL = process.env.URL || 'http://127.0.0.1:8765/ahead-of-the-light/?seed=5';
+const OUT = '/tmp/ahead-of-the-light-smoke';
+fs.mkdirSync(OUT, { recursive: true });
+let pass = 0, fail = 0;
+const check = (ok, msg) => { if (ok) { pass++; console.log('  ok  ', msg); } else { fail++; console.log('  FAIL', msg); } };
+const exe = fs.existsSync('/opt/pw-browsers/chromium') ? '/opt/pw-browsers/chromium' : undefined;
+const browser = await chromium.launch({ executablePath: exe, args: ['--use-gl=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
+const SIZES = [[1280, 800, false], [800, 600, false], [390, 844, true], [320, 568, true], [844, 390, true]];
+const inside = (b, w, h) => b && b.x >= 0 && b.y >= 0 && b.x + b.w <= w + 0.5 && b.y + b.h <= h + 0.5;
+const overlap = (a, b) => a && b && a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
 
-const rep = reporter('Ahead of the Light: smoke');
-const { check } = rep;
-const LEGS = ['web', 'coma', 'virgo', 'local', 'milkyway', 'orion', 'neighbours', 'earth'];
+for (const [w, h, touch] of SIZES) {
+  console.log(`${w} × ${h}${touch ? ' touch' : ''}`);
+  const ctx = await browser.newContext({ viewport: { width: w, height: h }, hasTouch: touch, isMobile: touch });
+  const p = await ctx.newPage();
+  const errs = [];
+  p.on('pageerror', (e) => errs.push(String(e)));
+  p.on('console', (m) => { if (m.type() === 'error') errs.push(m.text()); });
+  await p.goto(URL);
+  await p.waitForFunction(() => window.__race && __race.mode === 'title' && __race.attract);
+  await p.waitForTimeout(800);
+  const t = await p.evaluate(() => {
+    const panel = document.querySelector('#title .panel');
+    const vis = (el) => el.getClientRects().length > 0 && getComputedStyle(el).visibility !== 'hidden';
+    const btns = [...document.querySelectorAll('#title button, #title a')].filter(vis).map((b) => { const r = b.getBoundingClientRect(); return { t: b.textContent.trim().slice(0, 16), w: r.width, h: r.height, bottom: r.bottom, right: r.right }; });
+    return { over: panel.scrollHeight - panel.clientHeight, btns, input: document.documentElement.dataset.input, h1: document.querySelector('#title h1').getBoundingClientRect().width };
+  });
+  check(t.over <= 1, `the title panel fits with no scroll (over by ${t.over})`);
+  check(t.btns.every((b) => Math.min(b.w, b.h) >= 44 && b.bottom <= h + 0.5 && b.right <= w + 0.5), `title buttons are 44 px or more and on screen: ${t.btns.map((b) => `${b.t} ${Math.round(b.w)}×${Math.round(b.h)}`).join(', ')}`);
+  check(t.input === (touch ? 'touch' : 'desk'), `controls shown for ${t.input}`);
+  await p.screenshot({ path: `${OUT}/${w}x${h}-title.png` });
 
-// The picture now: the scene's draw calls and points, the overlay's drawn pixels, and any NaN or broken text.
-async function spot(page, tag) {
-  await R(page, () => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
-  const p = await R(page, () => window.__race.perf());
-  const px = await overlayPixels(page);
-  const bad = await badText(page);
-  const ok = (p.fallback || (p.drawCalls > 0 && p.points > 1000)) && px > 200 && bad.length === 0;
-  return { ok, detail: `${tag}: ${p.drawCalls} calls, ${p.points} points, ${px} overlay px${bad.length ? ', ' + bad.join(' | ') : ''}` };
-}
-
-// Steer now with this layout's own input, and wait for the bearing to move. → ms from `from` (or null).
-async function steerNow(page, size, W, H, from) {
-  const b0 = (await S(page)).you.bearing;
-  if (size === 'desktop') await holdKey(page, 'ArrowLeft', 250);
-  else await synth(page, drag(W / 2, H * 0.78, -60, 0, { n: 6, gap: 20 }));
-  for (let i = 0; i < 40; i++) {
-    const s = await S(page);
-    if (s.you && Math.abs(s.you.bearing - b0) > 3) return Date.now() - from;
-    await wait(25);
+  // DEPLOY
+  if (touch) await p.tap('#go'); else await p.click('#go');
+  await p.waitForFunction(() => __race.mode === 'play');
+  await p.waitForTimeout(700);
+  const d0 = await p.evaluate(() => ({ x: __race.run.ship.x, d: __race.run.ship.d, drawn: __race.drawn }));
+  check(d0.d > 5, `DEPLOY starts the run flying (${d0.d.toFixed(0)} m)`);
+  const boxes = await p.evaluate(() => [...document.querySelectorAll('#touch button')].filter((b) => b.getClientRects().length).map((b) => { const r = b.getBoundingClientRect(); return { id: b.id, x: r.x, y: r.y, w: r.width, h: r.height }; }));
+  const dr = d0.drawn;
+  const parts = ['tape', 'sector', 'light', 'bars', 'arcs'];
+  check(parts.every((k) => inside(dr[k], w, h)), `the HUD's parts are on screen: ${parts.filter((k) => !inside(dr[k], w, h)).join(', ') || 'all'}`);
+  if (touch) {
+    check(boxes.length === 3 && boxes.every((b) => Math.min(b.w, b.h) >= 44), `touch buttons: ${boxes.map((b) => `${b.id} ${Math.round(b.w)}`).join(', ')}`);
+    const hits = [];
+    for (const b of boxes) for (const k of ['tape', 'sector', 'light', 'bars']) if (overlap(b, dr[k])) hits.push(`${b.id}/${k}`);
+    check(hits.length === 0, `touch buttons clear of the HUD ${hits.join(' ')}`);
   }
-  return null;
-}
-
-const browser = await launch();
-for (const size of sizeList()) {
-  rep.section(`${size}`);
-  const { page, errors, W, H, ctx } = await open(browser, size);
-  const desk = size === 'desktop';
-
-  // ---- the title
-  await wait(600);
-  const title = await R(page, () => {
-    const t = document.getElementById('title');
-    const h1 = t && t.querySelector('h1'), span = h1 && h1.querySelector('span');
-    const go = document.getElementById('go');
-    const shown = (el) => el && el.getBoundingClientRect().width > 0 && getComputedStyle(el).display !== 'none';
-    return { open: Boolean(t && !t.hidden), name: h1 ? h1.textContent.trim() : '', light: span ? getComputedStyle(span).color : '',
-      go: go ? [...go.querySelectorAll('span')].filter(shown).map((s) => s.textContent).join('') : '',
-      back: Boolean(document.querySelector('#title a.back[href="/"]')), sw: Boolean(document.querySelector('#title [data-switch]')),
-      mode: window.__race.state().mode, input: document.documentElement.dataset.input };
-  });
-  check(`${size}: the title shows AHEAD OF THE LIGHT with LIGHT in orange`, title.open && title.name === 'AHEAD OF THE LIGHT'
-    && title.light === 'rgb(240, 138, 44)', `${title.name}, ${title.light}`);
-  check(`${size}: the title says ${desk ? 'CLICK OR PRESS SPACE' : 'TAP TO FLY'}`, title.go === (desk ? 'CLICK OR PRESS SPACE' : 'TAP TO FLY'), title.go);
-  check(`${size}: the title has a back link to the arcade and the game switcher`, title.back && title.sw);
-  const st0 = await S(page);
-  check(`${size}: WebGL starts (tier ${st0.tier}), no stand-in`, !st0.fallback);
-
-  // ---- a tap, and steering within 1.5 s
-  const t0 = Date.now();
-  if (desk) await page.keyboard.press('Space');
-  else await page.touchscreen.tap(W / 2, H * 0.3);
-  await waitMode(page, 'play', 5000).catch(() => {});
-  const playMs = Date.now() - t0;
-  const steerMs = await steerNow(page, size, W, H, t0);
-  check(`${size}: ${desk ? 'Space' : 'a tap'} starts the run and you steer within 1.5 s`, steerMs !== null && steerMs <= 1500,
-    `play in ${playMs} ms, the bearing moved ${steerMs} ms after the ${desk ? 'key' : 'tap'}`);
-  let sp = await spot(page, 'first seconds');
-  check(`${size}: the first seconds draw the sky and the ring`, sp.ok, sp.detail);
-
-  // ---- a whole run by the mid bot, spot-checked at every leg
-  const spots = [];
-  const res = await botRun(page, { bot: 'mid', chunk: 3, onLeg: async (p, s) => {
-    await R(p, () => window.__race.advance(4));
-    if ((await S(p)).mode === 'play') spots.push(await spot(p, `leg ${s.leg + 1} ${s.type}`));
-  }, onBreak: async (p) => {
-    const f = await layoutFaults(p);
-    if (faultCount(f)) spots.push({ ok: false, detail: `break: ${faultText(f)}` });
-  } });
-  const bad = spots.filter((x) => !x.ok);
-  check(`${size}: the mid bot plays a whole run to its result card (${res.legs.map((l) => l.type).join(', ')}; ${res.phase})`,
-    res.mode === 'result' && (res.phase === 'caught' || res.phase === 'home'), `mode ${res.mode}`);
-  check(`${size}: every leg of that run draws (${spots.length} spot checks)`, spots.length >= res.legs.length && bad.length === 0,
-    bad.map((x) => x.detail).join('; ') || spots.map((x) => x.detail).join('; '));
-  await wait(1100);
-  const card = await R(page, () => {
-    const el = document.querySelector('#screens .s-result');
-    return el ? { text: el.innerText.replace(/\s+/g, ' ').slice(0, 160), again: Boolean(el.querySelector('[data-act="again"]')) } : null;
-  });
-  check(`${size}: the result card shows with AGAIN`, Boolean(card && card.again), card ? card.text : 'no card');
-  let f = await layoutFaults(page);
-  check(`${size}: the result card fits the screen (tap targets, text, overflow)`, faultCount(f) === 0, faultText(f));
-  check(`${size}: no NaN or broken text on the result card`, (await badText(page)).length === 0, (await badText(page)).join(' | '));
-
-  // ---- AGAIN: back to steering within 1.5 s
-  await R(page, () => window.__race.bot(null));
-  const t1 = Date.now();
-  if (desk) await page.keyboard.press('Enter');
-  else await page.touchscreen.tap(W / 2, H * 0.12);
-  await waitMode(page, 'play', 5000).catch(() => {});
-  const again = await steerNow(page, size, W, H, t1);
-  const retry = await R(page, () => window.__race.timing().lastRetryMs);
-  check(`${size}: AGAIN is back to steering within 1.5 s`, again !== null && again <= 1500, `steering ${again} ms after the ${desk ? 'key' : 'tap'}, first step ${Math.round(retry)} ms after AGAIN`);
-
-  // ---- every leg of the route by goto: 10 s of the mid bot each
-  const legBad = [];
-  for (let i = 0; i < LEGS.length; i++) {
-    await R(page, (i) => { window.__race.goto({ leg: i + 1, seed: 'SMOKE' + i }); window.__race.bot('mid'); }, i);
-    const L = await R(page, () => window.__race.leg());
-    await R(page, () => window.__race.advance(10));
-    const s = await S(page);
-    const x = s.mode === 'play' ? await spot(page, LEGS[i]) : { ok: s.mode === 'result', detail: `${LEGS[i]}: ${s.mode}` };
-    if (L.type !== LEGS[i] || !x.ok) legBad.push(`${LEGS[i]} (${L.type}): ${x.detail}`);
+  // steer
+  if (touch) {
+    const sx = w * 0.3, sy = h * 0.6;
+    const cdp = await ctx.newCDPSession(p);
+    const pt = (x, y) => [{ x, y, id: 1 }];
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: pt(sx, sy) });
+    for (let i = 1; i <= 6; i++) { await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: pt(sx + i * 12, sy) }); await p.waitForTimeout(30); }
+    await p.waitForTimeout(400);
+    const vx = await p.evaluate(() => __race.run.ship.vx);
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+    check(vx > 10, `a drag right strafes right (vx ${vx.toFixed(1)})`);
+  } else {
+    await p.keyboard.down('KeyD'); await p.waitForTimeout(400);
+    const vx = await p.evaluate(() => __race.run.ship.vx);
+    await p.keyboard.up('KeyD');
+    check(vx > 10, `D strafes right (vx ${vx.toFixed(1)})`);
+    await p.keyboard.down('KeyW'); await p.waitForTimeout(300);
+    const vy = await p.evaluate(() => __race.run.ship.vy);
+    await p.keyboard.up('KeyW');
+    check(vy > 8, `W climbs (vy ${vy.toFixed(1)})`);
   }
-  check(`${size}: every leg of the route builds and draws (goto, 10 s of the mid bot each)`, legBad.length === 0, legBad.join('; '));
-
-  // ---- home: Earth's last stretch with the mid bot, then the home card
-  await R(page, () => { window.__race.goto({ leg: 'earth', beat: 92, seed: 'SMOKEH' }); window.__race.bot('mid'); });
-  for (let i = 0; i < 80 && (await S(page)).mode === 'play'; i++) await R(page, () => window.__race.advance(1));
-  await waitMode(page, 'result', 20000).catch(() => {});
-  await wait(1100);
-  const run = await R(page, () => window.__race.run());
-  const home = await R(page, () => (document.querySelector('#screens .s-result') || {}).innerText || '');
-  check(`${size}: Earth's landing ends the run at the home card`, run && run.phase === 'home' && /HOME/.test(home),
-    `${run && run.phase}: ${home.replace(/\s+/g, ' ').slice(0, 120)}`);
-  f = await layoutFaults(page);
-  check(`${size}: the home card fits the screen`, faultCount(f) === 0, faultText(f));
-
-  // ---- the game switcher from the title (the arcade's own list), marked on this game
-  await R(page, () => window.__race.action('title'));
-  await wait(400);
-  await page.click('#title [data-switch]');
-  await page.waitForSelector('.gsw:not([hidden])', { timeout: 8000 }).catch(() => {});
-  await wait(300);
-  const sw = await R(page, () => {
-    const box = document.querySelector('.gsw:not([hidden])');
-    if (!box) return null;
-    const mine = [...box.querySelectorAll('.gsw-game')].find((g) => /Ahead of the Light/.test(g.textContent));
-    return { open: true, listed: Boolean(mine), here: Boolean(mine && mine.matches('.here')), mode: window.__race.state().mode };
-  });
-  check(`${size}: the title's switcher button opens the game switcher, Ahead of the Light marked as here, and no run starts behind it`,
-    Boolean(sw && sw.open && sw.listed && sw.here && sw.mode === 'title'), JSON.stringify(sw));
-  await page.keyboard.press('Escape');
-  await R(page, () => { if (window.GameSwitch) window.GameSwitch.close(); });
-  // and from the pause menu mid-leg: the switcher opens over a paused race
-  await R(page, () => { window.__race.goto({ leg: 1, seed: 'SMOKEP' }); window.__race.pause(); });
-  await wait(400);
-  await page.click('.s-pause [data-switch]', { timeout: 6000 }).catch(() => {});
-  await page.waitForSelector('.gsw:not([hidden])', { timeout: 8000 }).catch(() => {});
-  const ps = await R(page, () => ({ open: Boolean(document.querySelector('.gsw:not([hidden])')), paused: window.__race.state().paused,
-    mode: window.__race.state().mode }));
-  check(`${size}: the pause menu's switcher button opens the game switcher over the paused race`, ps.open && ps.paused && ps.mode === 'play', JSON.stringify(ps));
-  await R(page, () => { if (window.GameSwitch) window.GameSwitch.close(); });
-
-  check(`${size}: no page errors, console errors or failed requests`, errors.length === 0, errors.slice(0, 6).join(' | '));
-  await ctx.close();
-}
-
-// ---- the hook and the arcade's mute, once
-{
-  rep.section('the hook');
-  const { page, errors, W, H, ctx } = await open(browser, 'portrait', '?gapcap=6&seed=7', { store: { 'arcade.sound': 'false' } });
-  check('the arcade\'s mute carries in: the game starts muted', (await S(page)).sound === false, `sound ${(await S(page)).sound}`);
-  await page.touchscreen.tap(W / 2, H * 0.3);
-  await waitMode(page, 'play', 5000).catch(() => {});
-  const sv = await R(page, () => window.__race.survival());
-  const keys = ['gap', 'ttc', 'light', 'hull', 'hullMax', 'shield', 'shieldT', 'fuel', 'fuelCap', 'years', 'earth', 'cap', 'leg'];
-  check('?gapcap=6&seed=7: survival() has its 13 keys, the cap is 6 s, and the run is unranked',
-    sv && keys.every((k) => k in sv) && sv.cap === 6 && (await S(page)).ranked === false, JSON.stringify(sv));
-  const g = await R(page, () => { window.__race.goto({ leg: 'virgo', lane: 'M87', seed: 3 }); return { leg: window.__race.leg(), s: window.__race.state() }; });
-  check('goto({ leg: virgo, lane: M87, seed: 3 }) flies M87 at Virgo, unranked', g.leg.type === 'virgo' && g.leg.lane && g.leg.lane.name === 'M87' && g.s.ranked === false && g.s.mode === 'play',
-    `${g.leg.type} ${g.leg.lane && g.leg.lane.name} ranked ${g.s.ranked}`);
-  check('the hook pages: no page errors', errors.length === 0, errors.slice(0, 4).join(' | '));
+  // sonar and boost
+  await p.evaluate(() => { __race.run.ping.cool = 0; __race.run.ship.charge = 1; });
+  if (touch) await p.tap('#sonar'); else await p.keyboard.press('Space');
+  await p.waitForTimeout(250);
+  const ping = await p.evaluate(() => ({ n: __race.run.stats.pings, marks: __race.run.marks.size }));
+  check(ping.n === 1 && ping.marks >= 1, `sonar pings and marks ${ping.marks} gates`);
+  await p.screenshot({ path: `${OUT}/${w}x${h}-ping.png` });
+  if (touch) {
+    const b = boxes.find((x) => x.id === 'boost');
+    const cdp = await ctx.newCDPSession(p);
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: b.x + b.w / 2, y: b.y + b.h / 2, id: 2 }] });
+    await p.waitForTimeout(400);
+    const boosting = await p.evaluate(() => __race.run.ship.boosting);
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+    check(boosting, 'holding BOOST boosts');
+  } else {
+    await p.keyboard.down('ShiftLeft'); await p.waitForTimeout(400);
+    const boosting = await p.evaluate(() => __race.run.ship.boosting);
+    await p.keyboard.up('ShiftLeft');
+    check(boosting, 'SHIFT boosts');
+  }
+  // pause
+  if (touch) await p.tap('#pause'); else await p.keyboard.press('Escape');
+  await p.waitForTimeout(200);
+  const pd = await p.evaluate(() => ({ mode: __race.mode, d: __race.run.ship.d }));
+  await p.waitForTimeout(300);
+  const pd2 = await p.evaluate(() => __race.run.ship.d);
+  check(pd.mode === 'paused' && pd2 === pd.d, 'pause stops the run');
+  await p.screenshot({ path: `${OUT}/${w}x${h}-paused.png` });
+  if (touch) await p.tap('#resume'); else await p.keyboard.press('Escape');
+  await p.waitForTimeout(200);
+  check(await p.evaluate(() => __race.mode === 'play'), 'resume goes on');
+  // through a sector into the next
+  await p.evaluate(() => { __race.autopilot(0.9); __race.warp(__race.SECTOR_LEN * 3 - 250); });
+  await p.waitForFunction(() => __race.run.sector === 3 || __race.mode !== 'play', null, { timeout: 30000 });
+  await p.waitForTimeout(400);
+  const ban = await p.evaluate(() => ({ banner: __race.drawn.banner, sector: __race.run.sector }));
+  check(ban.sector === 3 && ban.banner === 'THE LOCAL GROUP', `crossing into sector 4 shows its name (${ban.banner})`);
+  await p.screenshot({ path: `${OUT}/${w}x${h}-sector.png` });
+  // caught
+  await p.evaluate(() => { __race.autopilot(null); const r = __race.run; r.light.d = r.ship.d - 30; });
+  await p.waitForFunction(() => __race.mode === 'result', null, { timeout: 15000 });
+  const res = await p.evaluate(() => ({ title: document.getElementById('rTitle').textContent, over: (() => { const pn = document.querySelector('#result .panel').getBoundingClientRect(); return pn.top >= 0 && pn.bottom <= innerHeight + 0.5; })() }));
+  check(/LIGHT CAUGHT YOU|HULL LOST/.test(res.title) && res.over, `the result card shows (${res.title}) and fits`);
+  await p.screenshot({ path: `${OUT}/${w}x${h}-result.png` });
+  if (touch) await p.tap('#again'); else await p.keyboard.press('KeyR');
+  await p.waitForFunction(() => __race.mode === 'play' && __race.run.ship.d < 200);
+  check(true, 'FLY AGAIN starts a new run');
+  // home
+  await p.evaluate(() => { __race.autopilot(0.9); __race.warp(__race.COURSE_LEN - 300); });
+  await p.waitForFunction(() => __race.mode === 'result', null, { timeout: 30000 });
+  const home = await p.evaluate(() => document.getElementById('rTitle').textContent);
+  check(home === 'HOME AHEAD OF THE LIGHT', `past Earth: ${home}`);
+  await p.screenshot({ path: `${OUT}/${w}x${h}-home.png` });
+  await p.click('#toTitle');
+  await p.waitForFunction(() => __race.mode === 'title');
+  const best = await p.evaluate(() => document.getElementById('best').textContent);
+  check(/HOME 1×/.test(best), `the title shows the best run (${best})`);
+  const fm = await p.evaluate(() => __race.frameMs());
+  console.log(`  info  frame work p50 ${fm?.p50.toFixed(1)} ms, p95 ${fm?.p95.toFixed(1)} ms (CPU side, SwiftShader)`);
+  check(errs.length === 0, `no page errors ${errs.slice(0, 3).join(' | ')}`);
   await ctx.close();
 }
 await browser.close();
-rep.done();
+console.log(`${fail ? 'FAIL' : 'ok'}: ${pass} passed, ${fail} failed · shots in ${OUT}`);
+process.exit(fail ? 1 : 0);
