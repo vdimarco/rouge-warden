@@ -126,8 +126,9 @@ def check(directory):
         for face in blade:
             n, r = face['face_normal'], face['right']
             cross_z = n[0] * r[1] - n[1] * r[0]
-            # Unreal is left-handed: looking along -normal, +right must be the viewer's right.
-            assert abs(sum(a * b for a, b in zip(n, r))) < 1e-6 and cross_z > 0, face
+            # Unreal is left-handed (yaw +90 turns X toward Y): a viewer looking along -normal has
+            # right = (n.y, -n.x), so text laid along +right reads left to right.
+            assert abs(sum(a * b for a, b in zip(n, r))) < 1e-6 and cross_z < 0, face
     assert len(props['bixi_dock']['slots']) == 6
     stop = props['sign_stop']['parts']
     assert {'face_red', 'face_white'} <= set(stop)

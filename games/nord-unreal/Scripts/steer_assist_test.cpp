@@ -57,8 +57,9 @@ namespace
                     "keyboard turn-in unchanged for input %.1f state %.1f", static_cast<double>(Key), static_cast<double>(Held));
         Expect(TurnInRate(900.f, .25f, 0.f, false) == HoldRate, "partial input still builds at 3.5/s");
         Expect(TurnInRate(900.f, .33f, .66f, false) == ReleaseRate, "easing to a smaller graded level is quick");
-        Expect(TurnInRate(900.f, 1.f, .2f, true) == HoldRate, "assist keeps city-speed turn-in");
-        Expect(Near(TurnInRate(2600.f, 1.f, .2f, true), FastHoldRate, 1.e-5f), "assist slows highway turn-in");
+        Expect(TurnInRate(900.f, .66f, .2f, true) == HoldRate, "assist keeps city-speed turn-in");
+        Expect(Near(TurnInRate(2600.f, .66f, .2f, true), FastHoldRate, 1.e-5f), "assist slows highway turn-in of a graded level");
+        Expect(TurnInRate(2600.f, 1.f, .2f, true) == HoldRate, "full lock keeps today's turn-in on a road");
         Expect(Near(MoveToward(0.f, 1.f, .1f, 3.5f), .35f, 1.e-6f) && MoveToward(.99999f, 1.f, .1f, 3.5f) == 1.f, "constant-rate approach");
         Expect(Near(DeltaAngle(170.f, -170.f), 20.f, 1.e-4f) && Near(DeltaAngle(-170.f, 170.f), -20.f, 1.e-4f), "shortest signed turn wraps");
     }

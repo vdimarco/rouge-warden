@@ -25,3 +25,7 @@ Data/GraphicNovel/Pilot/CurlyMetalhead/wardrobe/revisions/
 
 # PixelStreaming2 copies these UE server-download helpers during packaging.
 Samples/PixelStreaming2/WebServers/
+
+# Plateau replica layers: OBJ batches are rebuilt deterministically by their generators;
+# manifests and READMEs are committed.
+Data/Plateau/ReplicaGeometry/**/*.obj
