@@ -559,6 +559,7 @@ window.__test = {
     return play(match.state());
   },
   state() { return match.state(); },
+  phone() { return { inputMode, neutral: { ...neutral }, orientation: latestOrientation && { ...latestOrientation }, travel: { ...travel }, yaw: yawSpring.x, filtered: { ...filtered }, hidden: document.hidden }; },
   step(n = 1) {
     let lastSnap = null;
     for (let i = 0; i < n; i++) lastSnap = play(match.step());

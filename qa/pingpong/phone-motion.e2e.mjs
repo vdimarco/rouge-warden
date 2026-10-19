@@ -27,7 +27,7 @@ for(const angle of [0,90,270]){
   const home=await read();
   await page.evaluate(()=>{window.sensor.acceleration={x:0,y:0,z:-5};});
   await page.waitForTimeout(200);const forward=await read();
-  assert.ok(forward.depth>home.depth+0.12,JSON.stringify({angle,home,forward}));
+  assert.ok(forward.depth>home.depth+0.12,JSON.stringify({angle,home,forward,phone:await page.evaluate(()=>window.__test.phone())}));
   await page.screenshot({path:`test-results/phone-motion/forward-${angle}.png`});
   await page.evaluate(()=>{window.sensor.acceleration={x:0,y:0,z:0};});
   await page.getByRole('button',{name:'Center',exact:true}).click();
