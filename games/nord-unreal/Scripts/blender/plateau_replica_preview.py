@@ -73,6 +73,7 @@ TEXTURED = {  # name: (tint, texture, tiles per metre or 'world' metres)
 # Mean linear colour of each texture, as apply_plateau_replica.TEXTURE_MEAN.
 TEXTURE_MEAN = {'asphalt_02': (.1162, .1143, .1020), 'concrete_pavement': (.2170, .1790, .1372),
                 'brick_wall_001': (.1402, .0776, .0516), 'grass_ground': (.1593, .1198, .0498)}
+TINT_LIMIT = 8.  # apply_plateau_replica.TINT_LIMIT
 GREEN_TINT, GOLD_TINT = (.85, 1.35, .75), (1.8, 1.2, .5)
 TILE = re.compile(r'_X[MP]\d+_Y[MP]\d+(_P\d+)?$')
 
@@ -153,9 +154,9 @@ def views():
     s = load_streets()
     v = {}
     mentana = [w for w in s['Rue de Mentana'] if -43000 < w[0][0] < -42000 and len(w) > 20][0]
-    v['mentana'] = dict(title='Avenue/Rue de Mentana, plex street west of the park',
-                        camera=street_view(mentana, 5200, -690, 18., look_ahead=6000, yaw_deg=13, pitch_target=430),
-                        far=17000)
+    v['mentana'] = dict(title='Rue de Mentana, plex street west of the park, from the middle of the street',
+                        camera=street_view(mentana, 6000, -150, 7., look_ahead=6000, yaw_deg=-3, pitch_target=480),
+                        far=17000, sun=(250., 24.))
     fabre = [w for w in s['Rue Fabre'] if len(w) == 7][0]
     v['fabre'] = dict(title='Rue Fabre north of Rachel, with the chantier', far=17000,
                       camera=street_view(fabre, 4300, -640, 18., look_ahead=6000, yaw_deg=-5, pitch_target=430))
@@ -321,7 +322,7 @@ def material(name, color, rough=.8, metal=0., texture=None, tiling=1., tint_is_t
         tint = color
         if tint_is_target:
             mean = TEXTURE_MEAN[texture]
-            tint = tuple(min(4., c / mm) for c, mm in zip(color, mean))
+            tint = tuple(min(TINT_LIMIT, c / mm) for c, mm in zip(color, mean))
         tex = nt.nodes.new('ShaderNodeTexImage')
         tex.image = image(texture + '_diff.jpg')
         nor = nt.nodes.new('ShaderNodeTexImage')
@@ -457,15 +458,16 @@ def load_existing(idx, region, col, before):
     return count
 
 
-def load_replica(region, col, layers=('Streets', 'Plex', 'Soul')):
+def load_replica(region, col, layers=('Streets', 'Plex', 'Soul'), dirs=None):
     count = 0
     for layer in layers:
-        man = json.load(open(os.path.join(REPLICA, layer, 'manifest.json')))
+        folder = (dirs or {}).get(layer) or os.path.join(REPLICA, layer)
+        man = json.load(open(os.path.join(folder, 'manifest.json')))
         for batch in man['batches']:
             b = batch['bounds_cm']
             if not region.box(b):
                 continue
-            verts, polys, uvs = read_obj(os.path.join(REPLICA, layer, batch['file']), region)
+            verts, polys, uvs = read_obj(os.path.join(folder, batch['file']), region)
             if polys:
                 mat = replica_material(layer, batch['material'], man['materials'][batch['material']])
                 make_object(f'{layer}_{batch["file"][:-4]}', verts, polys, uvs, mat, col)
@@ -675,7 +677,7 @@ def render(name, spec, before=False, samples=40, threads=3, res=(1280, 720), out
     idx = index()
     tris = load_existing(idx, region, col, before)
     if not before:
-        tris += load_replica(region, col)
+        tris += load_replica(region, col, dirs={'Plex': spec.get('plex_dir')})
     # District ground (z 0) under everything.
     g = 60000
     make_object('DistrictGround', [(-g / 100, -g / 100, -.002), (g / 100, -g / 100, -.002), (g / 100, g / 100, -.002),
@@ -753,6 +755,7 @@ def main(argv):
     ap.add_argument('--fov', type=float)
     ap.add_argument('--sun', help='azimuth,elevation in degrees (real compass)')
     ap.add_argument('--exposure', type=float)
+    ap.add_argument('--plex-dir', help='render a Plex build from another folder (before/after checks)')
     a = ap.parse_args(argv)
     v = views()
     if a.list:
@@ -772,6 +775,8 @@ def main(argv):
             spec['sun'] = tuple(float(x) for x in a.sun.split(','))
         if a.exposure is not None:
             spec['exposure'] = a.exposure
+        if a.plex_dir:
+            spec['plex_dir'] = a.plex_dir
         render(name, spec, a.before, a.samples, a.threads, res, a.out)
 
 

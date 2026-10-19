@@ -55,6 +55,8 @@ public:
     // Builds the parts once for NewKind with a size and colour chosen by Seed. The rig must be registered first.
     void Build(uint8 NewKind, int32 Seed);
     void Pose(const FQuebecCompanionFrame& Frame);
+    // Shows or hides the whole companion; the owner hides it while it is not posed.
+    void SetShown(bool bShown);
     uint8 GetKind() const { return Kind; }
     int32 GetPartCount() const { return Parts.Num(); }
 
@@ -70,6 +72,7 @@ private:
     float CarryAlpha = 1.f;
     float LastPoseTime = -1.f;
     bool bHasDog = false;
+    bool bShownNow = true;
     bool bFreshPose = true;                   // first pose after a gap starts from rest
     FVector DogPlace = FVector::ZeroVector;   // dog root in owner space
     float DogYaw = 0.f;                       // relative to the owner

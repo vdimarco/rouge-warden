@@ -101,6 +101,10 @@ namespace QuebecCombatModel
 
     inline bool IsKnockedOut(const FVitals& Vitals) { return Vitals.Health <= 0.; }
 
+    // A player inside a car takes half of a hit; the car body takes 60% of it as body damage.
+    inline constexpr double DriverDamageScale = .5;
+    inline constexpr double DriverHitBodyScale = .6;
+
     // Pickups.
     enum class EPickupKind : unsigned char { HockeyStick, Pistol, SMG, Shotgun, Armor, Health, Count };
     inline constexpr double PickupRespawnSeconds = 60.;

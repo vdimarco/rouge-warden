@@ -183,6 +183,9 @@ void AQuebecCar::OnCarImpact(AQuebecCar* Other, float Closing, const FVector& Wh
     }
     // Ramming a car with someone at the wheel is a crime; a parked car is only a dent.
     const bool bOtherDriven = Other->bPolice || Other->bTraffic || Other->bAutopilot || Other->Occupant || Other->GetController();
+    // Side jobs (JOBS): ramming the Voleur de char target is the job itself, not a crime.
+    static const FName SideJobTarget(TEXT("SideJobTarget"));
+    if (Other->Tags.Contains(SideJobTarget)) return;
     const float Now = GetWorld()->GetTimeSeconds();
     if (!Driver || !bOtherDriven || Closing < RamReportSpeed || Now < NextRamReportAt) return;
     NextRamReportAt = Now+1.f;

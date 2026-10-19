@@ -38,6 +38,8 @@ public:
     bool Knock(const FVector& Push, const FVector& Cause, float LieSeconds = 1.6f);
     // Server: runs away from Source for Seconds, then resumes the patrol from wherever it stopped.
     bool Flee(const FVector& Source, float Seconds);
+    // Server: freezes facing Threat for Seconds, the way a person stares at a car about to hit them.
+    void Brace(const FVector& Threat, float Seconds);
     bool IsKnockedDown() const;
     FVector GetAimPoint() const;
 
@@ -53,6 +55,7 @@ private:
     FQuat KnockFacing = FQuat::Identity;
     FVector FleeSource = FVector::ZeroVector;
     float FleeUntil = 0.f;
+    float NextFleeSweep = 0.f;
     bool bTumbling = false;
     // Every peer: dazed stars; server: the tumble and the flight. True while they replace the patrol.
     bool TickStreetLife(float DeltaSeconds);

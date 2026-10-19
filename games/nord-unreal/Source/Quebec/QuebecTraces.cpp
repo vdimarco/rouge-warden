@@ -22,6 +22,8 @@ namespace
 {
     // One tyre-mark layer per game world on this peer.
     TMap<TWeakObjectPtr<UWorld>, TWeakObjectPtr<AQuebecTraceMarks>> TraceMarkLayers;
+    // Every street prop of each game world, filled as props are spawned, so strikes read a short list.
+    TMap<TWeakObjectPtr<UWorld>, TArray<TWeakObjectPtr<AQuebecStreetProp>>> StreetPropLists;
 
     // Prop sizes (cm): footprint radius for strikes, hop height, lift when lying on a side, and mass for knock distance.
     struct FTracePropShape { float Radius; float Apex; float Lift; float Mass; };
@@ -114,6 +116,17 @@ AQuebecStreetProp::AQuebecStreetProp()
     CubeMesh = Cube.Object;
     ConeMesh = Cone.Object;
     CylinderMesh = Cylinder.Object;
+}
+
+void AQuebecStreetProp::PostInitializeComponents()
+{
+    Super::PostInitializeComponents();
+    UWorld* PropWorld = GetWorld();
+    if (!PropWorld || !PropWorld->IsGameWorld()) return;
+    for (auto It = StreetPropLists.CreateIterator(); It; ++It) if (!It.Key().IsValid()) It.RemoveCurrent();
+    TArray<TWeakObjectPtr<AQuebecStreetProp>>& Props = StreetPropLists.FindOrAdd(PropWorld);
+    Props.RemoveAll([](const TWeakObjectPtr<AQuebecStreetProp>& Entry) { return !Entry.IsValid(); });
+    Props.AddUnique(this);
 }
 
 void AQuebecStreetProp::BeginPlay()
@@ -544,10 +557,14 @@ void QuebecTraces::StrikeProps(AQuebecCar* Car, const FVector& From, const FVect
     if (!Car || !Car->HasAuthority() || FMath::Abs(Speed) < 120.f) return;
     const FVector Forward = Car->GetActorForwardVector().GetSafeNormal2D();
     const FVector Velocity = Car->PlanarVelocity().IsNearlyZero() ? (To-From).GetSafeNormal2D()*Speed : Car->PlanarVelocity();
-    for (TActorIterator<AQuebecStreetProp> It(Car->GetWorld()); It; ++It)
+    const TArray<TWeakObjectPtr<AQuebecStreetProp>>* Listed = StreetPropLists.Find(Car->GetWorld());
+    if (!Listed) return;
+    // A copy: knocking a prop never spawns, but the list must not change under the loop.
+    const TArray<TWeakObjectPtr<AQuebecStreetProp>> Props = *Listed;
+    for (const TWeakObjectPtr<AQuebecStreetProp>& Entry : Props)
     {
-        AQuebecStreetProp* Prop = *It;
-        if (Prop->IsKnocked()) continue;
+        AQuebecStreetProp* Prop = Entry.Get();
+        if (!Prop || Prop->IsKnocked()) continue;
         const FVector Base = Prop->GetActorLocation();
         if (FVector::DistSquared2D(Base,To) > FMath::Square(800.) || FMath::Abs(To.Z-Base.Z) > 260.) continue;
         // The body box (4.6 x 2.0 m) swept over the step; positions relative to the prop's base.

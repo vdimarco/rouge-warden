@@ -139,11 +139,21 @@ bool FQuebecGradedSteeringTest::RunTest(const FString& Parameters)
     TestTrue(TEXT("A third of the wheel turns proportionally less than full lock"),Turns[0] > 1.f && Turns[0] < Turns[2]*.6f);
     TestTrue(TEXT("Two thirds of the wheel turns between a third and full lock"),Turns[1] > Turns[0]*1.3f && Turns[1] < Turns[2]*.9f);
 
+    // On a street, easing to a smaller level is as quick as a release; off road it keeps today's 3.5/s.
+    FVector Road;
+    float Street = 0.f;
+    if (!TestTrue(TEXT("A long straight surveyed street lies on the test floor"),FindStraightRoad(Fixture.World,Road,Street))) return false;
+    Fixture.Place(Road,Street,900.f);
+    Fixture.Input(TEXT("MoveRight"),.66f); Fixture.Advance(.3f);
+    Fixture.Input(TEXT("MoveRight"),.33f); Fixture.Advance(.05f);
+    const float RoadEased = VisualSteering->GetPropertyValue_InContainer(Car);
     Fixture.Place(FVector::ZeroVector,0.f,900.f);
     Fixture.Input(TEXT("MoveRight"),.66f); Fixture.Advance(.3f);
     Fixture.Input(TEXT("MoveRight"),.33f); Fixture.Advance(.05f);
-    AddInfo(FString::Printf(TEXT("Easing from two thirds to a third: steering after 50 ms=%.3f"),VisualSteering->GetPropertyValue_InContainer(Car)));
-    TestTrue(TEXT("Easing to a smaller level is as quick as a release"),VisualSteering->GetPropertyValue_InContainer(Car) < .341f);
+    const float OffRoadEased = VisualSteering->GetPropertyValue_InContainer(Car);
+    AddInfo(FString::Printf(TEXT("Easing from two thirds to a third: steering after 50 ms on road=%.3f off road=%.3f"),RoadEased,OffRoadEased));
+    TestTrue(TEXT("On a street, easing to a smaller level is as quick as a release"),RoadEased < .341f);
+    TestTrue(TEXT("Off road, easing keeps today's turn-in rate"),OffRoadEased > .45f && OffRoadEased < .52f);
 
     Fixture.Place(FVector::ZeroVector,0.f,0.f);
     struct FDrive { float Throttle; float Steering; bool Handbrake; } RemoteDrive{0.f,-.66f,false};
@@ -168,8 +178,10 @@ bool FQuebecAutopilotTest::RunTest(const FString& Parameters)
     TestNull(TEXT("The AI car has no controller"),Car->GetController());
 
     Car->bTraffic = true;
+    Car->SetActorTickInterval(.05f);
     Car->SetAutopilot(1.f,0.f,false);
     TestTrue(TEXT("Autopilot is engaged"),Car->HasAutopilot());
+    TestEqual(TEXT("An AI car ticks every frame"),Car->GetActorTickInterval(),0.f);
     TestFalse(TEXT("An AI car leaves the traffic model"),Car->bTraffic);
     TestNull(TEXT("An AI car has no player driver"),Car->GetDriverController());
     for (float Elapsed = 0.f; Elapsed < 1.5f-UE_SMALL_NUMBER; Elapsed += 1.f/60.f)
@@ -185,6 +197,7 @@ bool FQuebecAutopilotTest::RunTest(const FString& Parameters)
     Car->SetAutopilot(std::numeric_limits<float>::quiet_NaN(),0.f,true);
     TestTrue(TEXT("Nonfinite AI input is ignored"),Car->HasAutopilot() && FMath::IsFinite(Car->Speed));
     Car->ClearAutopilot();
+    TestEqual(TEXT("A released AI car returns to the tick interval it rested at"),Car->GetActorTickInterval(),.05f);
     Fixture.Advance(2.f);
     TestFalse(TEXT("Autopilot is released"),Car->HasAutopilot());
     TestTrue(TEXT("A released AI car brakes to a stop like any unoccupied car"),Car->Speed == 0.f && Car->LateralSpeed == 0.f);

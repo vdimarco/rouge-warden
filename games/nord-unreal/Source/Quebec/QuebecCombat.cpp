@@ -2,6 +2,7 @@
 #include "QuebecAimModel.h"
 #include "QuebecGameplay.h"
 #include "QuebecPlayerState.h"
+#include "QuebecPolice.h"
 
 #include "Camera/PlayerCameraManager.h"
 #include "Components/AudioComponent.h"
@@ -40,6 +41,14 @@ namespace
     constexpr float CombatSwingSeconds = .3f;
     constexpr float CombatMeleeLagSlack = 40.f;
     constexpr int32 CombatMaxEffects = 32;
+    // Beyond these distances from the local camera a shot shows no tracer, flash or word, and then makes no sound.
+    constexpr double CombatEffectRange = 12000.;
+    constexpr double CombatSoundRange = 15000.;
+    // Pickups spin only while rendered and this close to the local camera.
+    constexpr double CombatPickupSpinRange = 6000.;
+    // Police chasing the shooter are threats, but goons still win close calls with them.
+    constexpr double CombatPoliceThreatPenalty = .2;
+    constexpr float CombatWeaponCycleSeconds = .15f;
     const FVector CombatSocketOffset(0., 0., 55.);
     const FVector CombatAimSocketOffset(0., 70., 62.);
 
@@ -96,6 +105,8 @@ namespace
         Part->SetCollisionProfileName(TEXT("NoCollision"));
         Part->SetGenerateOverlapEvents(false);
         Part->SetCanEverAffectNavigation(false);
+        // Small moving parts: a shadow would invalidate cached shadow pages every frame for little gain.
+        Part->SetCastShadow(false);
         if (UMaterialInterface* Mat = CombatMaterial(Material)) Part->SetMaterial(0, Mat);
         Part->RegisterComponent();
         Parts.Add(Part);
@@ -119,6 +130,69 @@ namespace
     {
         if (Cast<AQuebecCar>(Target)) return Target->GetActorLocation() + FVector(0., 0., 60.);
         return QuebecPeople::AimPoint(Target);
+    }
+
+    // A civilian who can witness gunfire: not a player, not an officer and not a goon.
+    bool CombatIsCivilian(const AActor* Person)
+    {
+        return Person && QuebecPeople::IsPerson(Person) && !Cast<AQuebecCharacter>(Person) && !Cast<AQuebecOfficer>(Person);
+    }
+
+    // The local viewer's eye, on peers that render.
+    bool CombatLocalEye(const UWorld* World, FVector& Eye)
+    {
+        const APlayerController* Local = World ? World->GetFirstPlayerController() : nullptr;
+        if (!Local) return false;
+        FRotator View;
+        Local->GetPlayerViewPoint(Eye, View);
+        return true;
+    }
+
+    // Procedural bangs, like the car engine: a decaying low body plus filtered noise, peaks near 0.3. Every buffer
+    // is the same each time, so each is synthesised once and reused.
+    struct FCombatBang
+    {
+        float Seconds;
+        float Pitch;
+        float BodyGain;
+        float NoiseGain;
+        float Decay;
+        float Tone;
+    };
+    constexpr int32 CombatBangGunImpact = 5;
+    const FCombatBang CombatBangs[] = {
+        {.14f, 95.f, .20f, .07f, .030f, .20f},   // Fists: POW!
+        {.10f, 900.f, .10f, .14f, .012f, .90f},  // Stick: CLAC!
+        {.28f, 140.f, .12f, .20f, .035f, .55f},  // Pistol: PAN!
+        {.12f, 180.f, .08f, .16f, .020f, .60f},  // SMG: RA-TA-TA!
+        {.45f, 80.f, .14f, .18f, .070f, .35f},   // Shotgun: BOUM!
+        {.08f, 110.f, .10f, .04f, .020f, .30f},  // A bullet landing: a short thud.
+    };
+    static_assert(UE_ARRAY_COUNT(CombatBangs) == QuebecCombatModel::WeaponCount + 1, "One bang per weapon plus the bullet thud");
+
+    const TArray<int16>& CombatBangSamples(int32 Index)
+    {
+        static TArray<int16> Cache[UE_ARRAY_COUNT(CombatBangs)];
+        TArray<int16>& Samples = Cache[Index];
+        if (!Samples.IsEmpty()) return Samples;
+        const FCombatBang& Sound = CombatBangs[Index];
+        const int32 Frames = FMath::Max(1, static_cast<int32>(24000.f * Sound.Seconds));
+        Samples.SetNumUninitialized(Frames);
+        uint32 Noise = 0x2545f491u ^ (static_cast<uint32>(Index) * 2654435761u);
+        float Filtered = 0.f;
+        for (int32 Frame = 0; Frame < Frames; ++Frame)
+        {
+            const float Clock = static_cast<float>(Frame) / 24000.f;
+            Noise = Noise * 1664525u + 1013904223u;
+            const float White = static_cast<float>(Noise >> 8) / 8388607.5f - 1.f;
+            Filtered += (White - Filtered) * Sound.Tone;
+            const float Sweep = Sound.Pitch * Clock * (1.f - .4f * Clock / Sound.Seconds);
+            const float Body = FMath::Sin(2.f * PI * Sweep) * Sound.BodyGain * FMath::Exp(-Clock / (Sound.Decay * 2.f));
+            const float Hiss = Filtered * Sound.NoiseGain * FMath::Exp(-Clock / Sound.Decay);
+            const float Attack = FMath::Min(1.f, Clock / .002f);
+            Samples[Frame] = static_cast<int16>(FMath::Clamp((Body + Hiss) * Attack, -1.f, 1.f) * 32767.f);
+        }
+        return Samples;
     }
 
     FVector CombatMuzzle(const AQuebecCharacter* Shooter, float Yaw)
@@ -159,6 +233,7 @@ namespace
         Car->StopInput();
         if (!Player) return;
         if (Player->GetPawn() == Car) Player->Possess(Character);
+        Player->ForgetWalkingCharacter();
         Player->SetControlRotation(Facing);
         Player->ClientSetRotation(Facing);
     }
@@ -190,7 +265,7 @@ namespace
             Entry.Key = Candidate->GetUniqueID();
             Entry.bDown = CombatTargetDown(Candidate);
             Entry.bThreat = QuebecCrime::IsHostile(Candidate, Shooter);
-            Entry.Penalty = Penalty;
+            Entry.Penalty = Penalty + (Entry.bThreat && QuebecCrime::IsPolice(Candidate) ? CombatPoliceThreatPenalty : 0.);
             Actors.Add(Candidate);
             Targets.Add(Entry);
         };
@@ -320,11 +395,18 @@ void QuebecCombat::DamagePlayer(AQuebecCharacter* Victim, float Damage, AControl
     if (!Victim || !Victim->HasAuthority() || !FMath::IsFinite(Damage) || Damage <= 0.f) return;
     AQuebecPlayerState* Stats = State(Victim);
     if (!Stats || Stats->IsDown()) return;
-    const QuebecCombatModel::FVitals After = QuebecCombatModel::Absorb({Stats->Health, Stats->Armor}, Damage);
+    // A driver hit through the car (an officer's shot, a goon's ink) takes half; the car body takes the blow.
+    float Taken = Damage;
+    if (AQuebecCar* Car = CombatCarCarrying(Victim))
+    {
+        Car->AddBodyDamage(Damage * static_cast<float>(QuebecCombatModel::DriverHitBodyScale), Instigator);
+        Taken = Damage * static_cast<float>(QuebecCombatModel::DriverDamageScale);
+    }
+    const QuebecCombatModel::FVitals After = QuebecCombatModel::Absorb({Stats->Health, Stats->Armor}, Taken);
     Stats->Health = static_cast<float>(After.Health);
     Stats->Armor = static_cast<float>(After.Armor);
     UE_LOG(LogTemp, Display, TEXT("NORD_COMBAT damage player=%s amount=%.1f health=%.1f armor=%.1f"),
-        *GetNameSafe(Victim), Damage, Stats->Health, Stats->Armor);
+        *GetNameSafe(Victim), Taken, Stats->Health, Stats->Armor);
     if (!QuebecCombatModel::IsKnockedOut(After))
     {
         Stats->Changed();
@@ -495,11 +577,20 @@ bool AQuebecCharacter::CanUseWeapons() const
 
 void AQuebecCharacter::ReleaseCombatInput()
 {
+    // Runs on both peers (SetInVehicle and OnRep_InVehicle, K.-O., respawn, a lost browser), so the server's
+    // automatic fire stops without a call from a client that may no longer own this character.
     bFireHeld = false;
+    PendingWeaponCycles = 0;
     MeleeHitAt = -1.f;
     MeleeTarget = nullptr;
     SetCombatAiming(false);
     if (HasAuthority()) AimLock = nullptr;
+    if (AimBlend > 0.f && CameraArm)
+    {
+        AimBlend = 0.f;
+        CameraArm->TargetArmLength = CombatArmLength;
+        CameraArm->SocketOffset = CombatSocketOffset;
+    }
 }
 
 void AQuebecCharacter::SetCombatAiming(bool bNewAiming)
@@ -523,7 +614,12 @@ void AQuebecCharacter::StartFire()
     SendFire();
 }
 
-void AQuebecCharacter::StopFire() { bFireHeld = false; }
+void AQuebecCharacter::StopFire()
+{
+    const bool bWasHeld = bFireHeld;
+    bFireHeld = false;
+    if (bWasHeld) ServerStopFire();
+}
 
 void AQuebecCharacter::StartAim()
 {
@@ -539,7 +635,11 @@ void AQuebecCharacter::StopAim()
     if (bWasAiming) ServerSetAim(false);
 }
 
-void AQuebecCharacter::CycleWeapon() { ServerNextWeapon(); }
+void AQuebecCharacter::CycleWeapon()
+{
+    // Wheel notches pile up here and go to the server together (TickCombat).
+    PendingWeaponCycles = static_cast<uint8>(FMath::Min(PendingWeaponCycles + 1, QuebecCombatModel::WeaponCount - 1));
+}
 
 void AQuebecCharacter::TurnView(float Value)
 {
@@ -553,14 +653,18 @@ void AQuebecCharacter::SendFire()
     const AQuebecPlayerState* Stats = QuebecCombat::State(this);
     const float Now = static_cast<float>(GetWorld()->GetTimeSeconds());
     if (!Stats || Now < NextLocalFireAt) return;
-    NextLocalFireAt = Now + static_cast<float>(QuebecCombatModel::Weapon(Stats->Weapon).Interval);
+    // One reliable call per press; an automatic weapon keeps firing on the server until the release.
+    NextLocalFireAt = Now + .06f;
     ServerFire(GetActorLocation(), LocalAimDirection());
 }
 
 void AQuebecCharacter::ServerFire_Implementation(FVector_NetQuantize AimOrigin, FVector_NetQuantizeNormal AimDirection)
 {
+    bFireHeld = true;
     FireWeapon(AimOrigin, AimDirection);
 }
+
+void AQuebecCharacter::ServerStopFire_Implementation() { bFireHeld = false; }
 
 void AQuebecCharacter::ServerSetAim_Implementation(bool bNewAiming)
 {
@@ -568,13 +672,14 @@ void AQuebecCharacter::ServerSetAim_Implementation(bool bNewAiming)
     if (bCombatAiming) LastAimOrFireAt = static_cast<float>(GetWorld()->GetTimeSeconds());
 }
 
-void AQuebecCharacter::ServerNextWeapon_Implementation()
+void AQuebecCharacter::ServerCycleWeapon_Implementation(uint8 Steps)
 {
     AQuebecPlayerState* Stats = QuebecCombat::State(this);
     if (!Stats || Stats->IsDown()) return;
-    const uint8 Next = static_cast<uint8>(QuebecCombat::NextOwnedWeapon(Stats));
-    if (Next == Stats->Weapon) return;
-    Stats->Weapon = Next;
+    const uint8 Before = Stats->Weapon;
+    for (int32 Step = 0; Step < FMath::Clamp(static_cast<int32>(Steps), 1, QuebecCombatModel::WeaponCount - 1); ++Step)
+        Stats->Weapon = static_cast<uint8>(QuebecCombat::NextOwnedWeapon(Stats));
+    if (Stats->Weapon == Before) return;
     MeleeHitAt = -1.f;
     Stats->Changed();
 }
@@ -601,7 +706,8 @@ void AQuebecCharacter::FireWeapon(const FVector& AimOrigin, const FVector& AimDi
         Stats->Changed();
         return;
     }
-    NextServerFireAt = Now + static_cast<float>(Row.Interval);
+    // Keep the cadence of held automatic fire: the next shot is due one interval after the last one was due.
+    NextServerFireAt = (Now - NextServerFireAt < Row.Interval ? NextServerFireAt : Now) + static_cast<float>(Row.Interval);
     LastAimOrFireAt = Now;
     if (!Row.bMelee)
     {
@@ -635,12 +741,15 @@ void AQuebecCharacter::FireWeapon(const FVector& AimOrigin, const FVector& AimDi
     }
     else CombatClearLine(World, Muzzle, Muzzle + Aim * Row.Range, this, nullptr, Impact);
     MulticastShot(Muzzle, Impact, static_cast<uint8>(Slot), bHit, Yaw);
-    // A shot near people is a crime the police can hear about, and the street runs from it.
-    if (Now >= NextGunfireReportAt)
+    // A shot near civilians is a crime the police can hear about, and the street runs from it. Shots at goons, or
+    // at police already chasing the shooter, are not reported as gunfire; a civilian actually hit is reported by
+    // QuebecPeople::Hit as an attack.
+    const bool bAtHostile = Target && QuebecCrime::IsHostile(Target, this);
+    if (!bAtHostile && Now >= NextGunfireReportAt)
     {
         TArray<AActor*> Witnesses;
         QuebecPeople::Gather(World, Muzzle, static_cast<float>(QuebecCombatModel::GunfireWitnessRadius), Witnesses);
-        if (Witnesses.ContainsByPredicate([](const AActor* Person) { return Person && !Cast<AQuebecCharacter>(Person); }))
+        if (Witnesses.ContainsByPredicate([](const AActor* Person) { return CombatIsCivilian(Person); }))
         {
             QuebecCrime::Report(GetController(), EQuebecCrime::Gunfire, Muzzle);
             NextGunfireReportAt = Now + static_cast<float>(QuebecCombatModel::GunfireReportSeconds);
@@ -661,10 +770,11 @@ void AQuebecCharacter::TickCombat(float DeltaSeconds)
     if (IsLocallyControlled())
     {
         UpdateAimCamera(DeltaSeconds);
-        if (bFireHeld)
+        if (PendingWeaponCycles > 0 && Now >= NextWeaponCycleAt)
         {
-            const AQuebecPlayerState* Stats = QuebecCombat::State(this);
-            if (Stats && QuebecCombatModel::Weapon(Stats->Weapon).bAutomatic) SendFire();
+            ServerCycleWeapon(PendingWeaponCycles);
+            PendingWeaponCycles = 0;
+            NextWeaponCycleAt = Now + CombatWeaponCycleSeconds;
         }
     }
     if (GetNetMode() != NM_DedicatedServer)
@@ -706,6 +816,9 @@ void AQuebecCharacter::TickCombatServer(float Now)
             }
         }
     }
+    // Held Fire: an automatic weapon keeps firing here, so a burst costs the client two reliable calls.
+    if (bFireHeld && QuebecCombatModel::Weapon(Stats->Weapon).bAutomatic && Now >= NextServerFireAt)
+        FireWeapon(GetActorLocation(), LocalAimDirection());
     // While aiming, keep a lock for the HUD reticle; it drops a second after the player stops aiming and firing.
     if (bCombatAiming && Now >= AimLockRefreshAt && CanUseWeapons())
     {
@@ -903,7 +1016,10 @@ void AQuebecWeaponPickup::Tick(float DeltaSeconds)
 {
     Super::Tick(DeltaSeconds);
     UWorld* World = GetWorld();
-    if (bAvailable && GetNetMode() != NM_DedicatedServer)
+    // Spin only where someone can see it: rendered recently and within 60 m of the local camera.
+    FVector Eye;
+    if (bAvailable && GetNetMode() != NM_DedicatedServer && WasRecentlyRendered(.25f) && CombatLocalEye(World, Eye) &&
+        FVector::DistSquared(Eye, GetActorLocation()) < FMath::Square(CombatPickupSpinRange))
     {
         const float Clock = static_cast<float>(World->GetTimeSeconds());
         Spinner->SetRelativeLocationAndRotation(FVector(0., 0., 75. + 8. * FMath::Sin(Clock * 2.2f)),
@@ -963,9 +1079,12 @@ AQuebecCombatFX::AQuebecCombatFX()
 {
     PrimaryActorTick.bCanEverTick = true;
     bReplicates = false;
-    InitialLifeSpan = 1.5f;
     static ConstructorHelpers::FObjectFinder<UStaticMesh> CylinderAsset(TEXT("/Engine/BasicShapes/Cylinder.Cylinder"));
     static ConstructorHelpers::FObjectFinder<UStaticMesh> SphereAsset(TEXT("/Engine/BasicShapes/Sphere.Sphere"));
+    // Both folders are always cooked; the optional finders keep a missing asset from failing anything.
+    static ConstructorHelpers::FObjectFinderOptional<UMaterialInterface> GlowAsset(TEXT("/Game/Materials/M_Light.M_Light"));
+    static ConstructorHelpers::FObjectFinderOptional<UMaterialInterface> TextAsset(TEXT("/Game/ParkComic/M_Text.M_Text"));
+    UMaterialInterface* Glow = GlowAsset.Get();
     Base = CreateDefaultSubobject<USceneComponent>(TEXT("EffectBase"));
     SetRootComponent(Base);
     for (int32 Index = 0; Index < TracerCount; ++Index)
@@ -973,6 +1092,7 @@ AQuebecCombatFX::AQuebecCombatFX()
         UStaticMeshComponent* Tracer = CreateDefaultSubobject<UStaticMeshComponent>(*FString::Printf(TEXT("Tracer%d"), Index));
         Tracer->SetupAttachment(Base);
         Tracer->SetStaticMesh(CylinderAsset.Object);
+        if (Glow) Tracer->SetMaterial(0, Glow);
         Tracer->SetCollisionEnabled(ECollisionEnabled::NoCollision);
         Tracer->SetCastShadow(false);
         Tracer->SetVisibility(false);
@@ -981,6 +1101,7 @@ AQuebecCombatFX::AQuebecCombatFX()
     Flash = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("MuzzleFlash"));
     Flash->SetupAttachment(Base);
     Flash->SetStaticMesh(SphereAsset.Object);
+    if (Glow) Flash->SetMaterial(0, Glow);
     Flash->SetCollisionEnabled(ECollisionEnabled::NoCollision);
     Flash->SetCastShadow(false);
     Flash->SetVisibility(false);
@@ -996,6 +1117,7 @@ AQuebecCombatFX::AQuebecCombatFX()
     Word->SetupAttachment(Base);
     Word->SetHorizontalAlignment(EHTA_Center);
     Word->SetVerticalAlignment(EVRTA_TextCenter);
+    if (UMaterialInterface* TextMaterial = TextAsset.Get()) Word->SetTextMaterial(TextMaterial);
     Word->SetCollisionEnabled(ECollisionEnabled::NoCollision);
     Word->SetVisibility(false);
     Audio = CreateDefaultSubobject<UAudioComponent>(TEXT("Bang"));
@@ -1007,26 +1129,66 @@ AQuebecCombatFX::AQuebecCombatFX()
 AQuebecCombatFX* AQuebecCombatFX::Begin(UWorld* World, const FVector& Location)
 {
     if (!World || World->GetNetMode() == NM_DedicatedServer) return nullptr;
-    // An SMG burst from both players stays bounded.
+    // A pool per world: an idle effect is reused, and a burst from every gun on the map stays bounded.
     int32 Alive = 0;
     for (TActorIterator<AQuebecCombatFX> It(World); It; ++It)
-        if (++Alive >= CombatMaxEffects) return nullptr;
+    {
+        ++Alive;
+        if (It->bBusy) continue;
+        It->Restart(Location);
+        return *It;
+    }
+    if (Alive >= CombatMaxEffects) return nullptr;
     FActorSpawnParameters Parameters;
     Parameters.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
     Parameters.ObjectFlags |= RF_Transient;
-    return World->SpawnActor<AQuebecCombatFX>(Location, FRotator::ZeroRotator, Parameters);
+    AQuebecCombatFX* Effect = World->SpawnActor<AQuebecCombatFX>(Location, FRotator::ZeroRotator, Parameters);
+    if (Effect) Effect->Restart(Location);
+    return Effect;
+}
+
+void AQuebecCombatFX::Restart(const FVector& Location)
+{
+    SetActorLocation(Location);
+    Age = 0.f;
+    FlashSeconds = 0.f;
+    TracerLengths.Reset();
+    for (UStaticMeshComponent* Tracer : Tracers) Tracer->SetVisibility(false);
+    Flash->SetVisibility(false);
+    FlashLight->SetVisibility(false);
+    Word->SetVisibility(false);
+    Word->SetWorldScale3D(FVector::OneVector);
+    bWordShown = false;
+    bBusy = true;
+    SetActorTickEnabled(true);
+}
+
+void AQuebecCombatFX::Finish()
+{
+    for (UStaticMeshComponent* Tracer : Tracers) Tracer->SetVisibility(false);
+    Flash->SetVisibility(false);
+    FlashLight->SetVisibility(false);
+    Word->SetVisibility(false);
+    bWordShown = false;
+    bBusy = false;
+    SetActorTickEnabled(false);
 }
 
 void AQuebecCombatFX::PlayShot(UWorld* World, const FVector& Muzzle, const FVector& Impact, int32 Slot, bool bHit, bool bWord)
 {
+    // Far from the local camera a shot is only a quieter bang, and past 150 m nothing at all.
+    FVector Eye;
+    const double Distance = CombatLocalEye(World, Eye) ? FMath::Min(FVector::Dist(Eye, Muzzle), FVector::Dist(Eye, Impact)) : 0.;
+    if (Distance > CombatSoundRange) return;
     AQuebecCombatFX* Effect = Begin(World, Muzzle);
     if (!Effect) return;
     const int32 Safe = FMath::Clamp(Slot, 0, QuebecCombatModel::WeaponCount - 1);
+    Effect->PlayBang(Safe, static_cast<float>(1. - Distance / CombatSoundRange));
+    if (Distance > CombatEffectRange) return;
     const FVector Path = Impact - Muzzle;
     const double Length = FMath::Max(Path.Size(), 10.);
     const FVector Forward = Path.GetSafeNormal();
     const int32 Count = FMath::Min(QuebecCombatModel::Weapon(Safe).Pellets, TracerCount);
-    UMaterialInterface* Glow = CombatMaterial(CombatGlow);
     for (int32 Index = 0; Index < Count; ++Index)
     {
         // Thin stretched cylinders: the basic shape is 100 cm tall along Z.
@@ -1035,109 +1197,80 @@ void AQuebecCombatFX::PlayShot(UWorld* World, const FVector& Muzzle, const FVect
         UStaticMeshComponent* Tracer = Effect->Tracers[Index];
         Tracer->SetWorldLocationAndRotation(Muzzle + Direction * Length * .5, FRotationMatrix::MakeFromZ(Direction).Rotator());
         Tracer->SetWorldScale3D(FVector(.025, .025, Length / 100.));
-        if (Glow) Tracer->SetMaterial(0, Glow);
         Tracer->SetVisibility(true);
         Effect->TracerLengths.Add(static_cast<float>(Length));
     }
-    if (Glow) Effect->Flash->SetMaterial(0, Glow);
-    Effect->Flash->SetWorldScale3D(FVector(Safe == static_cast<int32>(EQuebecWeapon::Shotgun) ? .32 : .2));
+    const bool bShotgun = Safe == static_cast<int32>(EQuebecWeapon::Shotgun);
+    Effect->Flash->SetWorldScale3D(FVector(bShotgun ? .32 : .2));
     Effect->Flash->SetVisibility(true);
-    Effect->FlashLight->SetIntensity(Safe == static_cast<int32>(EQuebecWeapon::Shotgun) ? 1600.f : 900.f);
+    Effect->FlashLight->SetIntensity(bShotgun ? 1600.f : 900.f);
     Effect->FlashLight->SetVisibility(true);
     Effect->FlashSeconds = .06f;
     if (bWord)
         Effect->ShowWord(bHit ? Impact + FVector(0., 0., 55.) : Muzzle + FVector(0., 0., 45.), CombatWords[Safe], CombatWordColors[Safe],
             bHit ? 80.f : 55.f);
-    Effect->PlayBang(Safe, false);
 }
 
 void AQuebecCombatFX::PlayImpact(UWorld* World, const FVector& Point, int32 Slot)
 {
+    FVector Eye;
+    const double Distance = CombatLocalEye(World, Eye) ? FVector::Dist(Eye, Point) : 0.;
+    if (Distance > CombatSoundRange) return;
     AQuebecCombatFX* Effect = Begin(World, Point);
     if (!Effect) return;
     const int32 Safe = FMath::Clamp(Slot, 0, QuebecCombatModel::WeaponCount - 1);
-    Effect->ShowWord(Point + FVector(0., 0., 50.), CombatWords[Safe], CombatWordColors[Safe], 85.f);
-    Effect->PlayBang(Safe, true);
+    // Guns already banged at the muzzle; a bullet landing adds only a short thud.
+    Effect->PlayBang(Safe >= static_cast<int32>(EQuebecWeapon::Pistol) ? CombatBangGunImpact : Safe,
+        static_cast<float>(1. - Distance / CombatSoundRange));
+    if (Distance <= CombatEffectRange) Effect->ShowWord(Point + FVector(0., 0., 50.), CombatWords[Safe], CombatWordColors[Safe], 85.f);
 }
 
 void AQuebecCombatFX::ShowWord(const FVector& Point, const TCHAR* Text, const FColor& Color, float Size)
 {
     WordAnchor = Point;
-    WordSize = Size;
     bWordShown = true;
     Word->SetText(FText::FromString(Text));
     Word->SetTextRenderColor(Color);
+    // The glyph size is set once; the pop animates the transform scale, which does not rebuild the text mesh.
     Word->SetWorldSize(Size);
-    if (UMaterialInterface* Mat = CombatMaterial(TEXT("/Game/ParkComic/M_Text.M_Text"))) Word->SetTextMaterial(Mat);
     Word->SetWorldLocation(Point);
+    Word->SetWorldScale3D(FVector(.2));
     Word->SetVisibility(true);
     FaceLocalCamera();
 }
 
 void AQuebecCombatFX::FaceLocalCamera()
 {
-    if (APlayerController* Local = GetWorld()->GetFirstPlayerController())
-    {
-        FVector Eye;
-        FRotator View;
-        Local->GetPlayerViewPoint(Eye, View);
-        Word->SetWorldRotation((Eye - Word->GetComponentLocation()).Rotation());
-    }
+    FVector Eye;
+    if (CombatLocalEye(GetWorld(), Eye)) Word->SetWorldRotation((Eye - Word->GetComponentLocation()).Rotation());
 }
 
-void AQuebecCombatFX::PlayBang(int32 Slot, bool bImpact)
+void AQuebecCombatFX::PlayBang(int32 BangIndex, float Volume)
 {
     UWorld* World = GetWorld();
-    if (!World || !World->AllowAudioPlayback()) return;
-    // A procedural burst, like the car engine: a decaying low "body" plus filtered noise. Peaks stay near 0.3.
-    struct FBang { float Seconds, Pitch, BodyGain, NoiseGain, Decay, Tone; };
-    static const FBang Shots[] = {
-        {.14f, 95.f, .20f, .07f, .030f, .20f},   // Fists: POW!
-        {.10f, 900.f, .10f, .14f, .012f, .90f},  // Stick: CLAC!
-        {.28f, 140.f, .12f, .20f, .035f, .55f},  // Pistol: PAN!
-        {.12f, 180.f, .08f, .16f, .020f, .60f},  // SMG: RA-TA-TA!
-        {.45f, 80.f, .14f, .18f, .070f, .35f},   // Shotgun: BOUM!
-    };
-    // Guns hitting something add only a short thud; their bang played at the muzzle.
-    const FBang Sound = bImpact && Slot >= static_cast<int32>(EQuebecWeapon::Pistol) ? FBang{.08f, 110.f, .10f, .04f, .02f, .3f} : Shots[Slot];
-    float Volume = 1.f;
-    if (APlayerController* Local = World->GetFirstPlayerController())
+    if (!World || !World->AllowAudioPlayback() || Volume <= 0.f) return;
+    const int32 Safe = FMath::Clamp(BangIndex, 0, static_cast<int32>(UE_ARRAY_COUNT(CombatBangs)) - 1);
+    const TArray<int16>& Samples = CombatBangSamples(Safe);
+    if (!Wave)
     {
-        FVector Eye;
-        FRotator View;
-        Local->GetPlayerViewPoint(Eye, View);
-        Volume = FMath::Clamp(1.f - static_cast<float>(FVector::Dist(Eye, GetActorLocation())) / 6000.f, .08f, 1.f);
+        Wave = NewObject<USoundWaveProcedural>(this);
+        Wave->SetSampleRate(24000);
+        Wave->NumChannels = 1;
+        Audio->SetSound(Wave);
     }
-    const int32 Frames = FMath::Max(1, static_cast<int32>(24000.f * Sound.Seconds));
-    TArray<int16> PCM;
-    PCM.SetNumUninitialized(Frames);
-    uint32 Noise = 0x2545f491u ^ (static_cast<uint32>(Slot) * 2654435761u);
-    float Filtered = 0.f;
-    for (int32 Frame = 0; Frame < Frames; ++Frame)
-    {
-        const float Clock = static_cast<float>(Frame) / 24000.f;
-        Noise = Noise * 1664525u + 1013904223u;
-        const float White = static_cast<float>(Noise >> 8) / 8388607.5f - 1.f;
-        Filtered += (White - Filtered) * Sound.Tone;
-        const float Sweep = Sound.Pitch * Clock * (1.f - .4f * Clock / Sound.Seconds);
-        const float Body = FMath::Sin(2.f * PI * Sweep) * Sound.BodyGain * FMath::Exp(-Clock / (Sound.Decay * 2.f));
-        const float Hiss = Filtered * Sound.NoiseGain * FMath::Exp(-Clock / Sound.Decay);
-        const float Attack = FMath::Min(1.f, Clock / .002f);
-        PCM[Frame] = static_cast<int16>(FMath::Clamp((Body + Hiss) * Attack, -1.f, 1.f) * 32767.f);
-    }
-    Wave = NewObject<USoundWaveProcedural>(this);
-    Wave->SetSampleRate(24000);
-    Wave->NumChannels = 1;
-    Wave->Duration = Sound.Seconds + .05f;
-    Wave->QueueAudio(reinterpret_cast<const uint8*>(PCM.GetData()), PCM.Num() * static_cast<int32>(sizeof(int16)));
-    Audio->SetSound(Wave);
-    Audio->SetVolumeMultiplier(Volume);
+    // The pooled wave is rewound and refilled from the cached buffer: no synthesis and no new object per shot.
+    if (Audio->IsPlaying()) Audio->Stop();
+    Wave->ResetAudio();
+    Wave->Duration = CombatBangs[Safe].Seconds + .05f;
+    Wave->QueueAudio(reinterpret_cast<const uint8*>(Samples.GetData()), Samples.Num() * static_cast<int32>(sizeof(int16)));
+    Audio->SetVolumeMultiplier(FMath::Clamp(Volume, 0.f, 1.f));
     Audio->Play();
 }
 
 void AQuebecCombatFX::Tick(float DeltaSeconds)
 {
     Super::Tick(DeltaSeconds);
+    if (!bBusy) return;
     Age += DeltaSeconds;
     // Tracers thin out over 0.12 s, the flash lasts a few frames, the word pops, rises and goes.
     const float Thickness = .025f * FMath::Clamp(1.f - Age / .12f, 0.f, 1.f);
@@ -1146,7 +1279,8 @@ void AQuebecCombatFX::Tick(float DeltaSeconds)
         if (Thickness <= 0.f) Tracers[Index]->SetVisibility(false);
         else Tracers[Index]->SetWorldScale3D(FVector(Thickness, Thickness, TracerLengths[Index] / 100.f));
     }
-    if (Age > FlashSeconds)
+    if (Thickness <= 0.f) TracerLengths.Reset();
+    if (Age > FlashSeconds && Flash->IsVisible())
     {
         Flash->SetVisibility(false);
         FlashLight->SetVisibility(false);
@@ -1154,7 +1288,7 @@ void AQuebecCombatFX::Tick(float DeltaSeconds)
     if (bWordShown)
     {
         const float Pop = Age < .08f ? 1.3f * Age / .08f : FMath::Lerp(1.3f, 1.f, FMath::Clamp((Age - .08f) / .1f, 0.f, 1.f));
-        Word->SetWorldSize(WordSize * FMath::Max(Pop, .2f));
+        Word->SetWorldScale3D(FVector(FMath::Max(Pop, .2f)));
         Word->SetWorldLocation(WordAnchor + FVector(0., 0., 40. * Age));
         FaceLocalCamera();
         if (Age > .6f)
@@ -1163,5 +1297,5 @@ void AQuebecCombatFX::Tick(float DeltaSeconds)
             bWordShown = false;
         }
     }
-    if (Age > .9f) Destroy();
+    if (Age > .9f) Finish();
 }

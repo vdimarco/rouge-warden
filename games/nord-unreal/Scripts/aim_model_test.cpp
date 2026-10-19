@@ -242,6 +242,8 @@ namespace
         Vitals = Model::Absorb(Vitals, 200.);
         Expect(Near(Vitals.Health, 0.) && Model::IsKnockedOut(Vitals), "health stops at zero and the player is knocked out");
         Expect(Near(Model::KnockOutSeconds, 4.), "the K.-O. banner lasts 4 s");
+        // A driver shot through the car: an officer's 8-point shot takes 4 from the driver and 4.8 from the car body.
+        Expect(Near(8. * Model::DriverDamageScale, 4.) && Near(8. * Model::DriverHitBodyScale, 4.8), "a driver takes half a hit through the car");
     }
 
     void TestPickups()

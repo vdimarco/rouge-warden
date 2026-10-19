@@ -350,6 +350,8 @@ void AQuebecCharacter::OnRep_InVehicle()
     GetCharacterMovement()->SetMovementMode(bInVehicle ? MOVE_None : MOVE_Walking);
     GetCharacterMovement()->MaxWalkSpeed = 450.f;
     GetCharacterMovement()->MaxSwimSpeed = 260.f;
+    // Combat: the car takes the input, so a Fire or Aim held while getting in would never see its release.
+    ReleaseCombatInput();
 }
 
 void AQuebecCharacter::Tick(float DeltaSeconds)
@@ -639,7 +641,10 @@ void AQuebecParkResident::Tick(float DeltaSeconds)
         FVector::DotProduct(View,TowardLabel.GetSafeNormal()) > .99f);
     // People: drop a finished tumble pose even when hidden or far, so the body never keeps a stale offset.
     if (bKnockPose && !IsKnockActive(ServerTime)) ResetKnockPose();
-    if (IsHidden() || !bLocalView || FVector::DistSquared(Eye,GetActorLocation()) > FMath::Square(14000.f)) return;
+    const bool bPosed = !IsHidden() && bLocalView && FVector::DistSquared(Eye,GetActorLocation()) <= FMath::Square(14000.f);
+    // People: the absolute companion rig hides while unposed instead of standing where it was last posed.
+    if (CompanionRig) CompanionRig->SetShown(bPosed);
+    if (!bPosed) return;
     // People: tumbling and running residents pick their own clip and clock.
     UAnimSequence* StreetAnimation = nullptr;
     float StreetClock = 0.f;

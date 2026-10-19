@@ -19,21 +19,22 @@
   "sign_street": 53,
   "street_name_corners": 53,
   "sign_oneway": 154,
-  "sign_parking": 780,
-  "total": 1769,
+  "sign_parking": 782,
+  "total": 1771,
   "osm_lamps_inside": 266,
   "osm_hydrants_inside": 104,
   "osm_bixi_inside": 15,
   "osm_stops_inside": 26,
-  "collision_disabled_in_traffic_band": 28,
-  "snapped_out_of_carriageway": 56
+  "collision_disabled_in_traffic_band": 29,
+  "snapped_out_of_carriageway": 52
  },
  "source_sha256": {
   "Data/LaFontaine/osm.xml": "fe4410d45007a627bf6d9b9ddeeae329fa9cdd7492dfb5fa6beff851e7cf8f86",
   "Data/LaFontaine/layout.json": "4238d6ed45d5fb890e0f8dbcb672de0803c6dc7079b0b6a86b386d82ebbb4250",
-  "Scripts/plateau_replica.py": "ea53868a6174ca6ecb2d66d34e34ccbadd8c88b4310bcd4080dd3345e9e0c2ca",
-  "Scripts/prepare_lafontaine.py": "e7b6e5f068a96ee7306b1fff247fa73158f5cf7c343dc5510ab8cce92ee3c924"
+  "Scripts/plateau_replica.py": "83658d6512cea6afd8c515286e20f3fea631b30bd94156fb7a76a195d2983af2",
+  "Scripts/prepare_lafontaine.py": "e7b6e5f068a96ee7306b1fff247fa73158f5cf7c343dc5510ab8cce92ee3c924",
+  "Data/Plateau/BaseGeometry/Marking.obj": "2d82cbca59041aa6af5e6f3fffaf6a01b2c3e672eea9732e8a5fecbb7cee35dd"
  },
- "placements_sha256": "c553a189fff39835f3097b8e6588366819ba757a2faeea604e09878625fb9bda",
+ "placements_sha256": "b58fb494b1aa97b5f280eb0f5d6d824b68af3fa61d7cd740a7b4ba8f6e887989",
  "props_manifest_sha256": "ea2a9befc950366fee28955a00dc3c419d3df5791e32ddd75ff538d3e7c7a735"
 }

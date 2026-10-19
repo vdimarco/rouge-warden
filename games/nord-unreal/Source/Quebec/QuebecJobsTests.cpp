@@ -138,22 +138,56 @@ bool FQuebecJobsLifecycleTest::RunTest(const FString& Parameters)
     TestEqual(TEXT("The result banner is triggered once"), Jobs->ResultSerial, SerialBefore + 1);
     TestTrue(TEXT("The failure names the timeout"), Jobs->LastResult.Contains(TEXT("Temps")));
     TestEqual(TEXT("A failure pays nothing"), Jobs->LastReward, 0);
-    TestFalse(TEXT("R goes back to the campaign once the job ended"), QuebecJobs::HandleRecover(Fixture.Player));
     TestFalse(TEXT("The race gate guard releases once the job ended"), QuebecJobs::IsJobActive(Fixture.World));
+    // Spec: after MISSION RATÉE, R restarts the job rather than the campaign encounter, for a short window.
+    TestTrue(TEXT("A failure offers a retry for 30 s"), Jobs->RetryUntil > Jobs->GetServerNow() + AQuebecSideJobs::RetrySeconds - 1.f);
+    Fixture.World->TimeSeconds += 10.;
+    TestTrue(TEXT("R within 30 s of MISSION RATÉE is taken by the job"), QuebecJobs::HandleRecover(Fixture.Player));
+    TestTrue(TEXT("R after a failure restarts the failed job"), Jobs->IsActive() && Jobs->JobIndex == 0 && Jobs->JobStep == 0);
+    TestEqual(TEXT("The restarted job has its full time"), Jobs->GetRemainingSeconds(), 75.f, .01f);
+    TestEqual(TEXT("Starting a job closes the retry window"), Jobs->RetryUntil, 0.f);
+    Jobs->FinishJob(false, TEXT("test"));
+    Fixture.World->TimeSeconds += AQuebecSideJobs::RetrySeconds + 1.;
+    TestFalse(TEXT("R goes back to the campaign once the retry window closed"), QuebecJobs::HandleRecover(Fixture.Player));
+    TestFalse(TEXT("No job runs after the window closed"), QuebecJobs::IsJobActive(Fixture.World));
 
-    // A knock-out ends the job at once.
+    // A knock-out ends the job at once, and R does nothing while the player is down.
     TestTrue(TEXT("A second delivery starts"), Jobs->StartJob(0, Fixture.Player));
     Fixture.Stats->DownState = static_cast<uint8>(EQuebecDownState::KnockedOut);
     Jobs->Tick(.1f);
     TestTrue(TEXT("K.-O. fails the job"), Jobs->JobState == EQuebecJobState::Failed);
     TestTrue(TEXT("The failure names the K.-O."), Jobs->LastResult.Contains(TEXT("K.-O.")));
-    TestFalse(TEXT("A downed player's R is not consumed by a finished job"), QuebecJobs::HandleRecover(Fixture.Player));
+    TestTrue(TEXT("R from a downed player is taken"), QuebecJobs::HandleRecover(Fixture.Player));
+    TestFalse(TEXT("R from a downed player neither restarts the job nor moves the player"), Jobs->IsActive());
     Fixture.Stats->DownState = 0;
+    TestTrue(TEXT("Once standing, R restarts the failed job"), QuebecJobs::HandleRecover(Fixture.Player) && Jobs->IsActive());
+    Jobs->FinishJob(false, TEXT("test"));
 
-    // The goon job hands an unarmed player a pistol.
+    // The job is shared: a partner's new K.-O. fails it too, but a partner already down when it began does not.
+    FActorSpawnParameters Spawn;
+    Spawn.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+    AQuebecController* Partner = Fixture.World->SpawnActor<AQuebecController>(Spawn);
+    AQuebecPlayerState* PartnerStats = Fixture.World->SpawnActor<AQuebecPlayerState>(Spawn);
+    if (!TestTrue(TEXT("A second player joins"), Partner && PartnerStats)) return false;
+    Partner->PlayerState = PartnerStats;
+    PartnerStats->DownState = static_cast<uint8>(EQuebecDownState::Arrested);
+    TestTrue(TEXT("A delivery starts while the partner is still down"), Jobs->StartJob(0, Fixture.Player));
+    Jobs->Tick(.1f);
+    TestTrue(TEXT("A partner who was already down does not fail the job"), Jobs->IsActive());
+    PartnerStats->DownState = 0;
+    Jobs->Tick(.1f);
+    PartnerStats->DownState = static_cast<uint8>(EQuebecDownState::Arrested);
+    Jobs->Tick(.1f);
+    TestFalse(TEXT("The partner's new arrest fails the shared job"), Jobs->IsActive());
+    TestTrue(TEXT("The failure names the arrest"), Jobs->LastResult.Contains(TEXT("Arrêté")));
+    PartnerStats->DownState = 0;
+
+    // The goon job hands every unarmed player a pistol.
     Fixture.Stats->OwnedWeapons = 1;
+    PartnerStats->OwnedWeapons = 1;
     TestTrue(TEXT("The goon job starts"), Jobs->StartJob(2, Fixture.Player));
     TestTrue(TEXT("An unarmed player gets a pistol"), Fixture.Stats->HasWeapon(EQuebecWeapon::Pistol));
+    TestTrue(TEXT("The unarmed partner gets a pistol too"), PartnerStats->HasWeapon(EQuebecWeapon::Pistol));
     TestTrue(TEXT("The pistol comes loaded"), Fixture.Stats->AmmoFor(EQuebecWeapon::Pistol) >= QuebecJobRules::PistolRounds);
     TestTrue(TEXT("The pistol is in hand"), Fixture.Stats->CurrentWeapon() == EQuebecWeapon::Pistol);
     Jobs->FinishJob(true, TEXT("test"));
@@ -182,7 +216,9 @@ bool FQuebecJobsCleanupTest::RunTest(const FString& Parameters)
         TestTrue(TEXT("The thief drives on autopilot"), Thief->HasAutopilot());
     }
     Jobs->FinishJob(false, TEXT("test"));
-    TestFalse(TEXT("The thief's car leaves with the job"), Thief.IsValid());
+    // The car stays until no player can see it; this fixture's only view is 600 m away.
+    Jobs->Tick(.1f);
+    TestFalse(TEXT("The thief's car leaves with the job once out of sight"), Thief.IsValid());
     TestNull(TEXT("No radar target after the job"), Jobs->TargetActor.Get());
 
     TestTrue(TEXT("The goon job starts"), Jobs->StartJob(2, Fixture.Player));
@@ -201,6 +237,7 @@ bool FQuebecJobsCleanupTest::RunTest(const FString& Parameters)
     TestTrue(TEXT("The thief job starts again"), Jobs->StartJob(1, Fixture.Player));
     const TWeakObjectPtr<AQuebecCar> FirstThief = Jobs->ThiefCar.Get();
     TestTrue(TEXT("R restarts the thief job"), Jobs->RequestRetry(Fixture.Player));
+    Jobs->Tick(.1f);
     TestFalse(TEXT("The old thief car is removed on retry"), FirstThief.IsValid() && FirstThief.Get() != Jobs->ThiefCar.Get());
     int32 Thieves = 0;
     for (TActorIterator<AQuebecCar> It(Fixture.World); It; ++It)

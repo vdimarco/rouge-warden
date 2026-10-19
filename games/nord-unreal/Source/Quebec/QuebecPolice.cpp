@@ -104,6 +104,10 @@ namespace
     FQuebecPoliceRoads& PoliceRoadsFor(const UWorld* World)
     {
         static FQuebecPoliceRoads Roads;
+        // ForWorld builds map-name strings; the dispatcher asks every frame, so remember the answer per world.
+        static TWeakObjectPtr<UWorld> RoadsWorld;
+        if (Roads.Source && World && RoadsWorld.Get() == World) return Roads;
+        RoadsWorld = const_cast<UWorld*>(World);
         const QuebecDistrict::FSettings& Settings = QuebecDistrict::ForWorld(World);
         if (Roads.Source != Settings.RoadSegments)
         {
@@ -144,6 +148,30 @@ namespace
                 return Instance;
             }
         return FallbackPath ? PoliceMaterial(FallbackPath) : nullptr;
+    }
+
+    // One 1.2 s cycle of the two-tone hi-lo siren at 24 kHz, built once: 960 Hz for 0.6 s (576 whole cycles), then
+    // 770 Hz for 0.6 s (462 whole cycles), so the phase returns to zero and the loop repeats without a click.
+    // A soft square (fundamental plus a third harmonic) gives it a little bite.
+    const TArray<int16>& PoliceSirenLoop()
+    {
+        static const TArray<int16> Loop = []
+        {
+            constexpr int32 Rate = 24000;
+            constexpr int32 Half = Rate * 6 / 10;
+            TArray<int16> Samples;
+            Samples.SetNumUninitialized(Half * 2);
+            double Turn = 0.;
+            for (int32 Index = 0; Index < Samples.Num(); ++Index)
+            {
+                const double Wave = FMath::Sin(Turn * 2. * UE_DOUBLE_PI) + .3 * FMath::Sin(Turn * 6. * UE_DOUBLE_PI);
+                Samples[Index] = static_cast<int16>(FMath::Clamp(Wave * .09, -1., 1.) * 32767.);
+                Turn += (Index < Half ? 960. : 770.) / Rate;
+                Turn -= FMath::FloorToDouble(Turn);
+            }
+            return Samples;
+        }();
+        return Loop;
     }
 }
 
@@ -189,7 +217,13 @@ bool QuebecCrime::IsHostile(const AActor* Actor, const AActor* Player)
     const AQuebecPlayerState* Stats = QuebecCombat::State(Player);
     const bool bWanted = Stats && Stats->Stars > 0;
     if (const AQuebecOfficer* Officer = Cast<AQuebecOfficer>(Actor))
-        return !Officer->IsDown() && (Officer->Faction == AQuebecOfficer::FactionGoon || bWanted);
+    {
+        if (Officer->IsDown()) return false;
+        if (Officer->Faction == AQuebecOfficer::FactionGoon) return true;
+        // Police threaten only the wanted player they chase; an officer with no target yet chases any wanted player.
+        const AController* Chased = Officer->GetTargetController();
+        return bWanted && (!Chased || Chased == Cast<AController>(Stats->GetOwner()));
+    }
     const AQuebecCar* Car = Cast<AQuebecCar>(Actor);
     return Car && Car->bPolice && !Car->IsWrecked() && !Car->GetController() && bWanted;
 }
@@ -638,6 +672,14 @@ void AQuebecOfficer::Attack(APawn* Target, float Range, float Now)
     AQuebecCharacter* Walker = Cast<AQuebecCharacter>(Target);
     const FVector Aim = Target->GetActorLocation() + FVector(0., 0., Car ? 30. : 40.);
     const FVector Hand = GetActorLocation() + GetActorForwardVector() * 40. + GetActorRightVector() * 22. + FVector(0., 0., 35.);
+    // A driver is hurt through the car: aim at the car, and DamagePlayer shares a hit on an occupant between the
+    // driver and the body. An empty car only takes body damage.
+    AQuebecCharacter* Victim = Walker ? Walker : (Car ? Car->Occupant.Get() : nullptr);
+    const auto Land = [Car, Victim](float PlayerDamage, float CarDamage)
+    {
+        if (Victim) QuebecCombat::DamagePlayer(Victim, PlayerDamage, nullptr);
+        else if (Car) Car->AddBodyDamage(CarDamage, nullptr);
+    };
     if (Faction == FactionPolice)
     {
         // From three stars: a shot with a generous miss chance, so a player can run instead of being shredded.
@@ -646,8 +688,7 @@ void AQuebecOfficer::Attack(APawn* Target, float Range, float Now)
         const bool bHit = FMath::FRand() < Chance;
         FVector Impact = Aim;
         if (!bHit) Impact += FMath::VRand() * 140. + (Aim - Hand).GetSafeNormal() * 400.;
-        if (bHit && Car) Car->AddBodyDamage(5.f, nullptr);
-        else if (bHit && Walker) QuebecCombat::DamagePlayer(Walker, 8.f, nullptr);
+        if (bHit) Land(8.f, 5.f);
         MulticastAttack(Hand, Impact, 0, bHit);
         QuebecPeople::Alarm(GetWorld(), Hand, 2500.f);
         return;
@@ -655,8 +696,7 @@ void AQuebecOfficer::Attack(APawn* Target, float Range, float Now)
     if (Range < 170.f)
     {
         NextAttackAt = Now + 1.1f;
-        if (Car) Car->AddBodyDamage(3.f, nullptr);
-        else if (Walker) QuebecCombat::DamagePlayer(Walker, 10.f, nullptr);
+        Land(10.f, 3.f);
         MulticastAttack(Hand, Aim, 2, true);
         return;
     }
@@ -665,8 +705,7 @@ void AQuebecOfficer::Attack(APawn* Target, float Range, float Now)
     const bool bHit = FMath::FRand() < .45f;
     FVector Impact = Aim;
     if (!bHit) Impact += FMath::VRand() * 160. + (Aim - Hand).GetSafeNormal() * 250.;
-    if (bHit && Car) Car->AddBodyDamage(4.f, nullptr);
-    else if (bHit && Walker) QuebecCombat::DamagePlayer(Walker, 7.f, nullptr);
+    if (bHit) Land(7.f, 4.f);
     MulticastAttack(Hand, Impact, 1, bHit);
 }
 
@@ -803,6 +842,14 @@ void UQuebecPoliceLivery::Refresh()
     if (!bBuilt) Build();
     Fit();
     Repaint();
+    // On a client OnRep_Police can build the livery before the car's BeginPlay and ApplyPaint run; whatever they did,
+    // the livery's own materials come back here, and the lenses on the next tick.
+    if (BandLeft) BandLeft->SetMaterial(0, BandPaint.Get());
+    if (BandRight) BandRight->SetMaterial(0, BandPaint.Get());
+    if (BarBase) BarBase->SetMaterial(0, LampOff.Get());
+    if (RedLamp) RedLamp->SetMaterial(0, LampOff.Get());
+    if (BlueLamp) BlueLamp->SetMaterial(0, LampOff.Get());
+    LampPhase = -1;
     Show(Car->bPolice);
     SetComponentTickEnabled(true);
 }
@@ -824,6 +871,8 @@ void UQuebecPoliceLivery::Build()
         Part->SetMobility(EComponentMobility::Movable);
         Part->SetCollisionEnabled(ECollisionEnabled::NoCollision);
         Part->SetCastShadow(false);
+        // AQuebecCar::BeginPlay and ApplyPaint leave tagged pieces alone.
+        Part->ComponentTags.Add(TEXT("NordOwnPaint"));
         if (PieceMaterial) Part->SetMaterial(0, PieceMaterial);
         Car->AddInstanceComponent(Part);
         Part->RegisterComponent();
@@ -839,14 +888,14 @@ void UQuebecPoliceLivery::Build()
             WhitePaint = Instance;
         }
     WhiteFallback = PoliceMaterial(TEXT("/Game/ParkComic/M_White.M_White"));
-    UMaterialInterface* BandPaint = PoliceTint(this, PaintPath, FLinearColor(.02f, .12f, .58f), PoliceNavyPath);
+    BandPaint = PoliceTint(this, PaintPath, FLinearColor(.02f, .12f, .58f), PoliceNavyPath);
     RedOn = PoliceMaterial(TEXT("/Game/ParkComic/M_Car70_Red.M_Car70_Red"));
     if (!RedOn) RedOn = PoliceMaterial(TEXT("/Game/ParkComic/M_Red.M_Red"));
     BlueOn = PoliceTint(this, TEXT("/Game/ParkComic/M_Car70_Lens.M_Car70_Lens"), FLinearColor(.05f, .25f, 1.f), PoliceNavyPath);
     LampOff = PoliceMaterial(TEXT("/Game/ParkComic/M_Car70_Ink.M_Car70_Ink"));
     if (!LampOff) LampOff = PoliceMaterial(PoliceInkPath);
-    BandLeft = Piece(TEXT("PoliceBandLeft"), BandPaint);
-    BandRight = Piece(TEXT("PoliceBandRight"), BandPaint);
+    BandLeft = Piece(TEXT("PoliceBandLeft"), BandPaint.Get());
+    BandRight = Piece(TEXT("PoliceBandRight"), BandPaint.Get());
     BarBase = Piece(TEXT("PoliceLightBar"), LampOff);
     RedLamp = Piece(TEXT("PoliceRedLamp"), LampOff);
     BlueLamp = Piece(TEXT("PoliceBlueLamp"), LampOff);
@@ -862,6 +911,7 @@ void UQuebecPoliceLivery::Build()
         Word->SetVerticalAlignment(EVRTA_TextCenter);
         Word->SetTextRenderColor(FColor(10, 30, 125));
         Word->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+        Word->ComponentTags.Add(TEXT("NordOwnPaint"));
         if (TextMaterial) Word->SetTextMaterial(TextMaterial);
         Car->AddInstanceComponent(Word);
         Word->RegisterComponent();
@@ -1038,21 +1088,16 @@ void UQuebecPoliceLivery::UpdateSiren(float DeltaTime, bool bSounding)
         SirenAudio->SetSound(SirenWave);
     }
     SirenAudio->SetVolumeMultiplier(Volume * Volume);
-    const int32 Frames = FMath::Clamp(3600 - SirenWave->GetAvailableAudioByteCount() / 2, 0, 3600);
-    if (Frames > 0)
+    // Top the buffer up from the precomputed loop: a copy, no synthesis per frame.
+    const TArray<int16>& Loop = PoliceSirenLoop();
+    int32 Frames = FMath::Clamp(3600 - SirenWave->GetAvailableAudioByteCount() / 2, 0, 3600);
+    while (Frames > 0 && Loop.Num() > 0)
     {
-        // Two-tone hi-lo: 960 Hz and 770 Hz, 0.6 s each, a soft square for a little bite.
-        TArray<int16> PCM;
-        PCM.SetNumUninitialized(Frames);
-        for (int16& Sample : PCM)
-        {
-            ToneClock = FMath::Fmod(ToneClock + 1.f / 24000.f, 1.2f);
-            const float Pitch = ToneClock < .6f ? 960.f : 770.f;
-            SirenPhase = FMath::Fmod(SirenPhase + Pitch / 24000.f, 1.f);
-            const float Wave = FMath::Sin(SirenPhase * 2.f * PI) + .3f * FMath::Sin(SirenPhase * 6.f * PI);
-            Sample = static_cast<int16>(FMath::Clamp(Wave * .09f, -1.f, 1.f) * 32767.f);
-        }
-        SirenWave->QueueAudio(reinterpret_cast<const uint8*>(PCM.GetData()), PCM.Num() * static_cast<int32>(sizeof(int16)));
+        SirenCursor = SirenCursor % Loop.Num();
+        const int32 Chunk = FMath::Min(Frames, Loop.Num() - SirenCursor);
+        SirenWave->QueueAudio(reinterpret_cast<const uint8*>(Loop.GetData() + SirenCursor), Chunk * static_cast<int32>(sizeof(int16)));
+        SirenCursor += Chunk;
+        Frames -= Chunk;
     }
     if (!SirenAudio->IsPlaying()) SirenAudio->Play();
 }
@@ -1086,6 +1131,8 @@ void AQuebecPoliceDispatch::BeginPlay()
     Super::BeginPlay();
     BuildGarage();
     if (!HasAuthority()) { SetActorTickEnabled(false); return; }
+    RoadOpen.Init(true, PoliceRoadsFor(GetWorld()).Count);
+    RoadScanNext = 0;
     const FVector Garage = QuebecPolice::GarageLocation();
     UE_LOG(LogTemp, Display, TEXT("NORD_POLICE dispatcher garage_x=%.0f garage_y=%.0f"), Garage.X, Garage.Y);
 }
@@ -1159,32 +1206,37 @@ void AQuebecPoliceDispatch::BuildGarage()
     }
 }
 
-void AQuebecPoliceDispatch::PrepareRoads()
+void AQuebecPoliceDispatch::ScanRoads(int32 Budget)
 {
     if (bRoadsChecked) return;
-    bRoadsChecked = true;
     FQuebecPoliceRoads& Roads = PoliceRoadsFor(GetWorld());
-    RoadOpen.Init(true, Roads.Count);
-    // Some surveyed segments run through an estimated building or a tree. Close them to routing; the inset keeps
-    // corner buildings at junctions from closing whole streets.
+    if (RoadOpen.Num() != Roads.Count)
+    {
+        RoadOpen.Init(true, Roads.Count);
+        RoadScanNext = 0;
+    }
+    // Some surveyed segments run through an estimated building or a tree. Close them to routing, a few long sweeps per
+    // tick so the first star never stalls the host; the inset keeps corner buildings at junctions from closing streets.
     const FCollisionObjectQueryParams Statics(ECC_WorldStatic);
     FCollisionQueryParams Query(SCENE_QUERY_STAT(PoliceRoads), false);
-    int32 Closed = 0;
-    for (int32 Index = 0; Index < Roads.Count; ++Index)
+    for (int32 Swept = 0; RoadScanNext < Roads.Count && Swept < Budget; ++RoadScanNext)
     {
-        const FVector Start = Roads.Source[Index][0], End = Roads.Source[Index][1];
-        const FVector Direction = (End - Start).GetSafeNormal2D();
+        const FVector Start = Roads.Source[RoadScanNext][0], End = Roads.Source[RoadScanNext][1];
         if (FVector::Dist2D(Start, End) < 700.) continue;
+        ++Swept;
+        const FVector Direction = (End - Start).GetSafeNormal2D();
         const FVector Lift(0., 0., 100.);
         FHitResult Hit;
         if (GetWorld()->SweepSingleByObjectType(Hit, Start + Direction * 300. + Lift, End - Direction * 300. + Lift, Direction.Rotation().Quaternion(),
             Statics, FCollisionShape::MakeBox(FVector(100., 70., 50.)), Query))
-        {
-            RoadOpen[Index] = false;
-            ++Closed;
-        }
+            RoadOpen[RoadScanNext] = false;
     }
-    PoliceRoadsFor(GetWorld()).MaskOwner = nullptr;
+    if (RoadScanNext < Roads.Count) return;
+    bRoadsChecked = true;
+    // The next route applies the finished list.
+    Roads.MaskOwner = nullptr;
+    int32 Closed = 0;
+    for (const bool bOpen : RoadOpen) if (!bOpen) ++Closed;
     UE_LOG(LogTemp, Display, TEXT("NORD_POLICE roads=%d closed=%d"), Roads.Count, Closed);
 }
 
@@ -1230,11 +1282,21 @@ bool AQuebecPoliceDispatch::InAnyView(const FVector& Point, const AActor* Ignore
         FVector Eye;
         FRotator View;
         Player->GetPlayerViewPoint(Eye, View);
+        double ConeCosine = .5;
+        // A remote driver sends the server no camera updates (the car has no movement component to send them), so
+        // assume the chase camera behind the car and widen the cone to cover free look.
+        if (!Player->IsLocalController())
+            if (const AQuebecCar* Driven = Cast<AQuebecCar>(Player->GetPawn()))
+            {
+                View = Driven->GetActorRotation();
+                Eye = Driven->GetActorLocation() - Driven->GetActorForwardVector() * 700. + FVector(0., 0., 250.);
+                ConeCosine = .17;
+            }
         const FVector Toward = Point - Eye;
         const double Range = Toward.Size();
         if (Range > 30000.) continue;
-        // Inside a 60 degree cone around the view and not hidden behind the city.
-        if (Range > 300. && FVector::DotProduct(View.Vector(), Toward / Range) < .5) continue;
+        // Inside the cone around the view (60 degrees, 80 for a remote driver) and not hidden behind the city.
+        if (Range > 300. && FVector::DotProduct(View.Vector(), Toward / Range) < ConeCosine) continue;
         FHitResult Hit;
         FCollisionQueryParams Query(SCENE_QUERY_STAT(PoliceInView), false, Player->GetPawn());
         if (Ignore) Query.AddIgnoredActor(Ignore);
@@ -1307,10 +1369,7 @@ void AQuebecPoliceDispatch::ReportCrime(AController* Offender, EQuebecCrime Crim
     if (bPoliceSaw) Record.bSeen = true;
     UE_LOG(LogTemp, Display, TEXT("NORD_WANTED crime=%d heat=%.0f stars=%d police=%d"), Index, Wanted.Heat, Wanted.Stars, bPoliceSaw ? 1 : 0);
     if (Added > 0)
-    {
         QuebecNotice::Show(Offender, TEXT("RECHERCHÉ!"), FString::Printf(TEXT("%d étoile%s"), Wanted.Stars, Wanted.Stars > 1 ? TEXT("s") : TEXT("")), 2.5f);
-        PrepareRoads();
-    }
 }
 
 void AQuebecPoliceDispatch::ApplyStars(AController* Player, int32 NewStars)
@@ -1329,7 +1388,6 @@ void AQuebecPoliceDispatch::ApplyStars(AController* Player, int32 NewStars)
         if (const APawn* Pawn = Player->GetPawn()) Record.LastSeen = Pawn->GetActorLocation();
         Record.LastSeenVelocity = FVector::ZeroVector;
         Record.LastSeenAt = PoliceServerTime(GetWorld());
-        PrepareRoads();
     }
     UE_LOG(LogTemp, Display, TEXT("NORD_WANTED set_stars=%d before=%d"), Wanted.Stars, Before);
 }
@@ -1359,6 +1417,7 @@ void AQuebecPoliceDispatch::Tick(float DeltaSeconds)
     // Sight lines at 5 Hz, unit bookkeeping at 2 Hz, driving every frame.
     const bool bVision = VisionClock >= .2f;
     if (bVision) VisionClock = 0.f;
+    ScanRoads(4);
     TickPlayers(Now, DeltaSeconds, bVision);
     if (ManageClock >= .5f)
     {
@@ -1466,7 +1525,6 @@ bool AQuebecPoliceDispatch::TrySpawnCar(APlayerController* Player, float Now)
     APawn* Pawn = Player ? Player->GetPawn() : nullptr;
     AQuebecPlayerState* State = Player ? Player->GetPlayerState<AQuebecPlayerState>() : nullptr;
     if (!Pawn || !State) return false;
-    PrepareRoads();
     const FQuebecPoliceRecord& Record = RecordFor(State);
     // Units come toward what the police know: the last sighting or report.
     const FVector Focus = Now - Record.LastSeenAt < 120.f ? Record.LastSeen : Pawn->GetActorLocation();
@@ -1474,7 +1532,7 @@ bool AQuebecPoliceDispatch::TrySpawnCar(APlayerController* Player, float Now)
     TArray<int32> Candidates;
     for (int32 Index = 0; Index < Roads.Count; ++Index)
     {
-        if (!RoadOpen.IsValidIndex(Index) || !RoadOpen[Index]) continue;
+        if (RoadOpen.IsValidIndex(Index) && !RoadOpen[Index]) continue;
         const double Range = FVector::Dist2D((Roads.Source[Index][0] + Roads.Source[Index][1]) * .5, Focus);
         if (Range >= 12000. && Range <= 20000.) Candidates.Add(Index);
     }

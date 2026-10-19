@@ -39,6 +39,66 @@ def f32(v):
     return struct.unpack('f', struct.pack('f', v))[0]
 
 
+def _tri_contains(t, p):
+    d1, d2, d3 = (replica._cross(t[0], t[1], p), replica._cross(t[1], t[2], p), replica._cross(t[2], t[0], p))
+    return (d1 >= 0 and d2 >= 0 and d3 >= 0) or (d1 <= 0 and d2 <= 0 and d3 <= 0)
+
+
+class TriIndex:
+    def __init__(self, tris, cell=250.):
+        self.tris, self.grid = tris, replica.Grid(cell)
+        for i, t in enumerate(tris):
+            self.grid.add(i, replica.bbox(t))
+
+    def contains(self, p):
+        return any(_tri_contains(self.tris[i], p) for i in self.grid.query((p[0], p[1], p[0], p[1])))
+
+
+def _normal(t):
+    u = [t[1][j] - t[0][j] for j in range(3)]
+    v = [t[2][j] - t[0][j] for j in range(3)]
+    return (u[1] * v[2] - u[2] * v[1], u[2] * v[0] - u[0] * v[2], u[0] * v[1] - u[1] * v[0])
+
+
+def wall_orientation(directory, manifest):
+    """Every vertical sidewalk face must point out of its slab, and curb faces toward the road."""
+    road = []
+    for batch in manifest['batches']:
+        if batch['material'] == 'asphalt':
+            road += [[p[:2] for p in t] for t in parse_obj(directory / batch['file'])[1]]
+    road = TriIndex(road)
+    totals = {'walls': 0, 'out_of_slab': 0, 'into_slab': 0, 'curb_toward_road': 0, 'curb_away_from_road': 0}
+    for batch in manifest['batches']:
+        if batch['material'] != 'sidewalk':
+            continue
+        tris = parse_obj(directory / batch['file'])[1]
+        tops, walls = [], []
+        for t in tris:
+            (walls if abs(replica.area([p[:2] for p in t])) < .5 else tops).append(t)
+        # Writer convention: reversed fan plus mirrored y; recover the authored sign from the up-facing tops.
+        up = sum(1 for t in tops if _normal(t)[2] > 0)
+        assert min(up, len(tops) - up) == 0, f'{min(up, len(tops) - up)} sidewalk tops face down'
+        flip = 1 if up else -1
+        top_index = TriIndex([[p[:2] for p in t] for t in tops])
+        for t in walls:
+            n = [flip * v for v in _normal(t)]
+            length = math.hypot(n[0], n[1])
+            if length < 1e-9:
+                continue
+            n = (n[0] / length, n[1] / length)
+            c = (sum(p[0] for p in t) / 3, sum(p[1] for p in t) / 3)
+            out_p, in_p = (c[0] + 4 * n[0], c[1] + 4 * n[1]), (c[0] - 4 * n[0], c[1] - 4 * n[1])
+            totals['walls'] += 1
+            inside_out, inside_in = top_index.contains(out_p), top_index.contains(in_p)
+            totals['out_of_slab'] += inside_in and not inside_out
+            totals['into_slab'] += inside_out and not inside_in
+            if road.contains(out_p) and not inside_out:
+                totals['curb_toward_road'] += 1
+            elif road.contains(in_p) and not inside_in:
+                totals['curb_away_from_road'] += 1
+    return totals
+
+
 def check_schema(manifest, directory):
     for key in ('layer', 'generator', 'frame', 'batches', 'materials', 'counts', 'source_sha256'):
         assert key in manifest, key
@@ -147,12 +207,26 @@ def main():
             if s['traffic'] and not s['excluded']:
                 assert s['curbL'] >= 540 and s['curbR'] >= 540, (s['name'], s['curbL'], s['curbR'])
         report['clearance'] = {'min_collision_to_traffic_cm': round(worst, 1), 'collision_faces': len(collision_faces)}
+        walls = wall_orientation(out / 'Streets', streets)
+        assert walls['out_of_slab'] >= .9 * walls['walls'], walls
+        assert walls['into_slab'] <= .02 * walls['walls'], walls
+        assert walls['curb_toward_road'] >= .97 * (walls['curb_toward_road'] + walls['curb_away_from_road']), walls
+        report['walls'] = walls
+        # Route dashes: apply hides OSM Marking, so the dashes no replica asphalt covers are re-authored.
+        uncovered = [f for f in replica.legacy_marking_faces()
+                     if world.surfaces.at((sum(p[0] for p in f) / 4, sum(p[1] for p in f) / 4))[1] != 'road']
+        assert 0 < len(uncovered) < 120 and streets['counts']['legacy_route_dashes'] == len(uncovered), \
+            (len(uncovered), streets['counts'].get('legacy_route_dashes'))
+        report['legacy_route_dashes'] = len(uncovered)
         # Furniture and soul instances that keep collision are clear of the band too.
         for row in furniture['placements'] + soul_rows['placements']:
             assert row['prop'] in replica.PROP_KEYS, row['prop']
             assert all(math.isfinite(v) for v in row['position']) and 0 <= row['yaw'] < 360
             if row['collision']:
                 assert world.traffic_distance(row['position'][:2], 2000) >= replica.CLEAR, row
+                # Collider boxes (MAP-PROPS colliders_cm), not just the base point, clear the band.
+                for poly in replica.collider_polys(row['prop'], row['position'][:2], row['yaw']):
+                    assert world.traffic_distance(poly, 2000) >= replica.CLEAR, (row['prop'], row['position'])
 
         # Widths: curb-to-curb by street (medians over replica segments).
         widths = {}
@@ -161,8 +235,8 @@ def main():
                 widths.setdefault(s['name'], []).append(s['curbL'] + s['curbR'])
         median = {k: sorted(v)[len(v) // 2] / 100 for k, v in widths.items() if k}
         for name, lo, hi in (('Rue Rachel Est', 12.5, 16.5), ('Avenue Papineau', 15.5, 19.5),
-                             ('Rue Sherbrooke Est', 19.5, 23.5), ('Rue de Mentana', 10.5, 12.5),
-                             ('Rue Fabre', 11, 14), ('Rue Garnier', 11, 14)):
+                             ('Rue Sherbrooke Est', 19.5, 23.5), ('Rue de Mentana', 10, 12.5),
+                             ('Rue Fabre', 10, 12.5), ('Rue Garnier', 10, 12.5)):  # spec: plex streets 10-12.5 m
             assert lo <= median[name] <= hi, (name, median[name])
         report['curb_to_curb_m'] = {k: round(median[k], 2) for k in ('Rue Rachel Est', 'Avenue Papineau',
                                                                        'Rue Sherbrooke Est', 'Rue de Mentana',
@@ -239,6 +313,33 @@ def main():
                 want = replica.local_to_world(dock['position'][:2], dock['yaw'], (sx, sy))
                 assert math.dist(want, bike["position"][:2]) < .1, bike
             assert bikes and len({b['osm_node'] for b in bikes}) >= len({d['osm_node'] for d in docks}) - 2
+        mats = {m['asset']: m for m in the_plan['materials']}
+        meshes = {m['asset']: m for m in the_plan['meshes']}
+        for inst in the_plan['instances']:
+            assert inst['material'] in mats, inst['label']
+            if inst['collision']:
+                assert meshes[inst['mesh']]['colliders'], inst['label'] + ' collides without simple collision'
+        labels_i = [i['label'] for i in the_plan['instances']]
+        assert len(labels_i) == len(set(labels_i))
+        if props:
+            colliding = {r['prop'] for r in furniture_rows + soul_rows['placements'] if r['collision']}
+            assert colliding <= {k for k, v in props['props'].items() if v.get('colliders_cm')}, colliding
+            assert any(i['collision'] for i in the_plan['instances'])
+            assert the_plan['counts']['variant_materials_used'] > len({i['prop'] for i in the_plan['instances']})
+        for m in the_plan['materials']:
+            if m['key'] in ('asphalt', 'alley') and m['layer'] == 'Streets':
+                assert m['duplicate_of'].endswith('/M_Asphalt') and m['texture_mean'] == 'asphalt_02'
+            if m['texture_mean']:
+                need = max(c / t for c, t in zip(apply_replica.linear(m['base_color_srgb']),
+                                                 apply_replica.TEXTURE_MEAN[m['texture_mean']]))
+                assert need <= apply_replica.TINT_LIMIT, (m['asset'], need)
+        ini = (replica.ROOT / 'Config/DefaultGame.ini').read_text()
+        assert '+DirectoriesToAlwaysCook=(Path="/Game/Plateau/Replica/Props")' in ini, 'Props folder is not always cooked'
+        header = (replica.ROOT / 'Source/Quebec/QuebecReplicaInstances.h').read_text()
+        source = (replica.ROOT / 'Source/Quebec/QuebecReplicaInstances.cpp').read_text()
+        assert apply_replica.INSTANCES_CLASS == '/Script/Quebec.QuebecReplicaInstances'
+        assert 'class QUEBEC_API AQuebecReplicaInstances : public AActor' in header
+        assert 'SetMobility(EComponentMobility::Static)' in source and 'RootComponent = Instances' in source
         report['apply_plan'] = the_plan['counts']
     print(json.dumps(report, indent=1, ensure_ascii=False))
     print('Plateau replica checks passed')

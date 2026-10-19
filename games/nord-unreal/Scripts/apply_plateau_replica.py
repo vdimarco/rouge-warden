@@ -34,6 +34,9 @@ PREFIX = 'Plateau replica '
 FOLDER = 'Replica'
 LAYER_ORDER = ('Streets', 'Soul', 'Plex', 'Props')
 HIDE_LABELS = ('OSM Marking',)
+INSTANCES_CLASS = '/Script/Quebec.QuebecReplicaInstances'
+MARKER = 'NordSky'   # plateau_atmosphere.MARKER: wrapper nodes, never the authored tint
+TINT_LIMIT = 8.      # light buff brick (#CCB07F) needs about 5.6x the brick texture mean
 # Mean linear colour of the textures the duplicated materials multiply (measured from Data/Art).
 TEXTURE_MEAN = {'asphalt_02': (.1162, .1143, .1020), 'concrete_pavement': (.2170, .1790, .1372),
                 'brick_wall_001': (.1402, .0776, .0516), 'grass_ground': (.1593, .1198, .0498)}
@@ -90,6 +93,19 @@ def prop_key(batch, keys):
     return max(matches, key=len) if matches else None
 
 
+MAIN_PARTS = ('pole', 'post', 'body', 'barrel', 'frame', 'ends', 'dock', 'base', 'case', 'platform', 'bags')
+
+
+def main_part_mesh(batches):
+    """The part that carries a prop's collision boxes: a named structural part, else the largest."""
+    for name in MAIN_PARTS:
+        for batch in batches:
+            if batch.get('part') == name:
+                return batch['mesh']
+    volume = lambda b: math.prod(max(1., b['bounds_cm'][3 + i] - b['bounds_cm'][i]) for i in range(3))
+    return max(batches, key=volume)['mesh']
+
+
 def material_name(layer, key):
     return f'M_Replica_{layer}_{key}'
 
@@ -113,11 +129,15 @@ def plan(root=ROOT):
     manifests, placements = load_manifests(root)
     props = manifests.get('Props', {'batches': []})
     keys = sorted({row['prop'] for rows in placements.values() for row in rows})
+    props_meta = props.get('props', {})
+    keys = sorted(set(keys) | set(props_meta))
     parts = {}
     for batch in props.get('batches', []):
         key = prop_key(batch, keys)
         if key:
             parts.setdefault(key, []).append(batch)
+    colliders = {key: props_meta.get(key, {}).get('colliders_cm', []) for key in parts}
+    main_part = {key: main_part_mesh(batches) for key, batches in parts.items()}
     out = {'materials': [], 'meshes': [], 'actors': [], 'instances': [], 'texts': [], 'hide': list(HIDE_LABELS),
            'missing_props': []}
     for layer, manifest in manifests.items():
@@ -130,34 +150,47 @@ def plan(root=ROOT):
                                      'emissive_strength': spec.get('emissive_strength', 0.)})
         for batch in manifest.get('batches', []):
             mesh = f'{ASSETS}/{layer}/{batch["mesh"]}'
+            key = prop_key(batch, keys) if layer == 'Props' else None
             out['meshes'].append({'layer': layer, 'file': batch['file'], 'asset': mesh,
                                   'material': f'{MATERIALS}/{material_name(layer, batch["material"])}',
-                                  'collision': batch.get('collision', 'none'), 'triangles': batch['triangles']})
+                                  'collision': batch.get('collision', 'none'), 'triangles': batch['triangles'],
+                                  # Simple box collision from MAP-PROPS colliders_cm, on the prop's main part only.
+                                  'colliders': colliders.get(key, []) if key and main_part.get(key) == batch['mesh'] else []})
             if layer != 'Props':
                 out['actors'].append({'label': f'{PREFIX}{layer} {batch["mesh"][3:]}', 'mesh': mesh,
                                       'folder': f'{FOLDER}/{layer}', 'collision': batch.get('collision', 'none'),
                                       'shadow': not any(t in batch['material'] for t in SHADOWLESS)})
     for layer, rows in placements.items():
-        groups = {}
+        groups, missing = {}, {}
         for row in rows:
-            groups.setdefault((row['prop'], bool(row.get('collision'))), []).append(row)
-        for (key, collides), group in sorted(groups.items()):
+            key = row['prop']
             if key not in parts:
-                out['missing_props'].append({'layer': layer, 'prop': key, 'instances': len(group)})
-            for batch in parts.get(key, []) or [None]:
-                out['instances'].append({
-                    'label': f'{PREFIX}{layer} {key} {(batch["mesh"][3:] if batch else "missing")}'
-                             f'{" collision" if collides else ""}',
-                    'layer': layer, 'prop': key, 'mesh': f'{ASSETS}/Props/{batch["mesh"]}' if batch else None,
-                    'collision': collides, 'count': len(group),
-                    'transforms': [(r['position'], r['yaw'], r.get('scale', 1.)) for r in group]})
+                missing[key] = missing.get(key, 0) + 1
+                continue
+            for batch in parts[key]:
+                # Colour variants: one material key per placement, picked from its seed (Props/README.md).
+                options = [batch['material']] + list(batch.get('variants', []))
+                variant = options[row.get('variant_seed', 0) % len(options)]
+                collides = bool(row.get('collision')) and main_part[key] == batch['mesh'] and bool(colliders[key])
+                groups.setdefault((key, batch['mesh'], variant, collides), []).append(row)
             if key == 'sign_street':
-                for row in group:
-                    out['texts'].append(row)
+                out['texts'].append(row)
+        for key, count in sorted(missing.items()):
+            out['missing_props'].append({'layer': layer, 'prop': key, 'instances': count})
+        for (key, mesh, variant, collides), group in sorted(groups.items()):
+            out['instances'].append({
+                'label': f'{PREFIX}{layer} {key} {mesh[3:]} {variant}{" collision" if collides else ""}',
+                'layer': layer, 'prop': key, 'mesh': f'{ASSETS}/Props/{mesh}',
+                'material': f'{MATERIALS}/{material_name("Props", variant)}', 'variant': variant,
+                'collision': collides, 'count': len(group),
+                'transforms': [(r['position'], r['yaw'], r.get('scale', 1.)) for r in group]})
     out['counts'] = {'materials': len(out['materials']), 'meshes': len(out['meshes']), 'actors': len(out['actors']),
                      'emissive_materials': sum(1 for m in out['materials'] if m['emissive_srgb']),
                      'instance_components': len(out['instances']),
                      'instances': sum(i['count'] for i in out['instances'] if i['mesh']),
+                     'colliding_instance_components': sum(1 for i in out['instances'] if i['collision']),
+                     'meshes_with_box_collision': sum(1 for m in out['meshes'] if m['colliders']),
+                     'variant_materials_used': len({i['variant'] for i in out['instances']}),
                      'street_name_texts': len(street_name_texts(out, manifests)),
                      'missing_prop_instances': sum(m['instances'] for m in out['missing_props'])}
     return out
@@ -235,8 +268,9 @@ def preflight(u, root, backup, the_plan):
     assert not any(a.get_actor_label().startswith(PREFIX) for a in actors), 'Replica actors already exist: refusing to run twice'
     assert not assets.does_directory_exist(ASSETS), f'{ASSETS} already exists: refusing to run twice'
     for name in ('AssetImportTask', 'FbxImportUI', 'StaticMeshEditorSubsystem', 'MaterialEditingLibrary',
-                 'HierarchicalInstancedStaticMeshComponent', 'TextRenderActor', 'StaticMeshActor'):
+                 'HierarchicalInstancedStaticMeshComponent', 'TextRenderActor', 'StaticMeshActor', 'KBoxElem'):
         assert getattr(u, name, None) is not None, 'Missing Unreal API ' + name
+    assert u.load_class(None, INSTANCES_CLASS), 'Build the Quebec module first: ' + INSTANCES_CLASS + ' is missing'
     for row in the_plan['materials']:
         assert assets.does_asset_exist(row['duplicate_of']), 'Missing base material ' + row['duplicate_of']
     labels = [a.get_actor_label() for a in actors]
@@ -264,14 +298,14 @@ def make_material(u, row, spec):
     assets, lib = u.EditorAssetLibrary, u.MaterialEditingLibrary
     colour = linear(spec['base_color_srgb'])
     mat = assets.duplicate_asset(row['duplicate_of'], row['asset'])
-    tints = [n for n in lib.get_material_expressions(mat) if isinstance(n, u.MaterialExpressionConstant3Vector)] if mat else []
+    tints = authored_tints(u, mat) if mat else []
     if mat and len(tints) == 1:
         if row['texture_mean']:
             mean = TEXTURE_MEAN[row['texture_mean']]
-            colour = tuple(min(4., c / m) for c, m in zip(colour, mean))
+            colour = tuple(min(TINT_LIMIT, c / m) for c, m in zip(colour, mean))
         tints[0].set_editor_property('constant', u.LinearColor(*colour, 1))
         if spec.get('emissive_srgb'):
-            emissive_input(u, mat, spec)
+            emissive_input(u, mat, spec, tints[0])
     else:
         if mat:
             assets.delete_asset(row['asset'])
@@ -286,7 +320,7 @@ def make_material(u, row, spec):
             node.set_editor_property('r', value)
             lib.connect_material_property(node, '', prop)
         if spec.get('emissive_srgb'):
-            emissive_input(u, mat, spec)
+            emissive_input(u, mat, spec, tint)
     for usage in (u.MaterialUsage.MATUSAGE_NANITE, u.MaterialUsage.MATUSAGE_INSTANCED_STATIC_MESHES):
         lib.set_base_material_usage(mat, usage, True)
     lib.recompile_material(mat)
@@ -294,8 +328,19 @@ def make_material(u, row, spec):
     return mat
 
 
-def emissive_input(u, mat, spec):
-    """Emissive = emissive colour x EmissiveStrength (a scalar parameter on this duplicate only)."""
+def authored_tints(u, mat):
+    """Constant3Vector nodes that are not NordSky wrapper nodes (the rain pass adds a flat-normal one to M_Asphalt)."""
+    return [n for n in u.MaterialEditingLibrary.get_material_expressions(mat)
+            if isinstance(n, u.MaterialExpressionConstant3Vector) and str(n.get_editor_property('desc')) != MARKER]
+
+
+def emissive_input(u, mat, spec, tint):
+    """Emissive = colour x EmissiveStrength (scalar parameter), still x the NordSky WindowGlow night factor.
+
+    M_Glow's emissive runs tint -> NordSky Multiply(tint, WindowGlow) [-> other wrappers]. The new product
+    replaces the tint on that wrapper's A input, so the night behaviour is kept. A material without the
+    wrapper (the fresh-material fallback) gets plateau_atmosphere.night_window.
+    """
     lib = u.MaterialEditingLibrary
     colour = lib.create_material_expression(mat, u.MaterialExpressionConstant3Vector)
     colour.set_editor_property('constant', u.LinearColor(*linear(spec['emissive_srgb']), 1))
@@ -305,10 +350,46 @@ def emissive_input(u, mat, spec):
     product = lib.create_material_expression(mat, u.MaterialExpressionMultiply)
     assert lib.connect_material_expressions(colour, '', product, 'A')
     assert lib.connect_material_expressions(strength, '', product, 'B')
-    assert lib.connect_material_property(product, '', u.MaterialProperty.MP_EMISSIVE_COLOR)
+    node, wrapper = lib.get_material_property_input_node(mat, u.MaterialProperty.MP_EMISSIVE_COLOR), None
+    for _ in range(8):
+        if node is None or str(node.get_editor_property('desc')) != MARKER:
+            break
+        inputs = [n for n in lib.get_inputs_for_material_expression(mat, node) if n]
+        if any(n == tint for n in inputs):
+            wrapper = node
+            break
+        nested = [n for n in inputs if str(n.get_editor_property('desc')) == MARKER]
+        node = nested[0] if nested else None
+    if wrapper is not None:
+        assert lib.connect_material_expressions(product, '', wrapper, 'A')
+    else:
+        import plateau_atmosphere
+        assert lib.connect_material_property(product, '', u.MaterialProperty.MP_EMISSIVE_COLOR)
+        mpc = u.EditorAssetLibrary.load_asset(plateau_atmosphere.COLLECTION)
+        if mpc:
+            plateau_atmosphere.night_window(u, mat, mpc)
 
 
-def import_mesh(u, source, destination, name, material, collision):
+def add_box_collision(u, mesh, colliders):
+    """Simple box elements from MAP-PROPS colliders_cm (prop-local cm, Unreal axes), replacing any others."""
+    body = mesh.get_editor_property('body_setup')
+    geometry = body.get_editor_property('agg_geom')
+    boxes = []
+    for collider in colliders:
+        box = u.KBoxElem()
+        box.set_editor_property('center', u.Vector(*collider['center']))
+        sx, sy, sz = collider['size']
+        box.set_editor_property('x', float(sx))
+        box.set_editor_property('y', float(sy))
+        box.set_editor_property('z', float(sz))
+        boxes.append(box)
+    geometry.set_editor_property('box_elems', boxes)
+    body.set_editor_property('agg_geom', geometry)
+    body.set_editor_property('collision_trace_flag', u.CollisionTraceFlag.CTF_USE_DEFAULT)
+    assert len(body.get_editor_property('agg_geom').get_editor_property('box_elems')) == len(colliders), mesh.get_path_name()
+
+
+def import_mesh(u, source, destination, name, material, collision, colliders=()):
     task = u.AssetImportTask()
     task.filename, task.destination_path, task.destination_name = str(source), destination, name
     task.automated, task.save, task.replace_existing = True, False, False
@@ -331,6 +412,8 @@ def import_mesh(u, source, destination, name, material, collision):
     if collision != 'none':
         mesh.get_editor_property('body_setup').set_editor_property('collision_trace_flag',
                                                                    u.CollisionTraceFlag.CTF_USE_COMPLEX_AS_SIMPLE)
+    if colliders:
+        add_box_collision(u, mesh, colliders)
     settings = mesh.get_editor_property('nanite_settings')
     settings.set_editor_property('enabled', True)
     # Exact fallback keeps complex-as-simple collision identical to the authored curbs.
@@ -343,20 +426,13 @@ def import_mesh(u, source, destination, name, material, collision):
 
 
 def instanced_actor(u, editor, label, folder):
-    """A plain actor carrying one HISM component (added through the SubobjectDataSubsystem)."""
-    actor = editor.spawn_actor_from_class(u.Actor, u.Vector(0., 0., 0.), u.Rotator())
+    """An AQuebecReplicaInstances actor (Source/Quebec/QuebecReplicaInstances.h): its root is a static HISM."""
+    actor = editor.spawn_actor_from_class(u.load_class(None, INSTANCES_CLASS), u.Vector(0., 0., 0.), u.Rotator())
+    assert actor, INSTANCES_CLASS
     actor.set_actor_label(label)
     actor.set_folder_path(folder)
-    subsystem = u.get_engine_subsystem(u.SubobjectDataSubsystem)
-    handles = subsystem.k2_gather_subobject_data_for_instance(actor)
-    params = u.AddNewSubobjectParams(parent_handle=handles[0],
-                                     new_class=u.HierarchicalInstancedStaticMeshComponent, blueprint_context=None)
-    handle, fail = subsystem.add_new_subobject(params)
-    assert handle is not None and (not hasattr(fail, 'is_empty') or fail.is_empty()), \
-        'Could not add an HISM component: ' + str(fail)
-    data = u.SubobjectDataBlueprintFunctionLibrary.get_data(handle)
-    component = u.SubobjectDataBlueprintFunctionLibrary.get_object(data)
-    assert isinstance(component, u.HierarchicalInstancedStaticMeshComponent)
+    component = actor.get_component_by_class(u.HierarchicalInstancedStaticMeshComponent)
+    assert component is not None, label
     return actor, component
 
 
@@ -381,7 +457,8 @@ def apply(u, root, backup):
         for row in the_plan['meshes']:
             folder, name = row['asset'].rsplit('/', 1)
             source = root / 'Data/Plateau/ReplicaGeometry' / row['layer'] / row['file']
-            meshes[row['asset']] = import_mesh(u, source, folder, name, materials[row['material']], row['collision'])
+            meshes[row['asset']] = import_mesh(u, source, folder, name, materials[row['material']], row['collision'],
+                                               row['colliders'])
         by_mesh = {m['asset']: m for m in the_plan['meshes']}
         for row in the_plan['actors']:
             actor = editor.spawn_actor_from_class(u.StaticMeshActor, u.Vector(0., 0., 0.), u.Rotator())
@@ -399,6 +476,7 @@ def apply(u, root, backup):
                 continue
             actor, comp = instanced_actor(u, editor, row['label'], f'{FOLDER}/{row["layer"]} instances')
             comp.set_static_mesh(meshes[row['mesh']])
+            comp.set_material(0, materials[row['material']])
             comp.set_collision_profile_name('BlockAll' if row['collision'] else 'NoCollision')
             comp.set_cull_distances(9000, 12000)
             comp.set_cast_shadow(row['prop'] in ('lamp_cobra', 'lamp_park', 'utility_pole', 'bixi_dock', 'bench'))
@@ -444,8 +522,19 @@ def verify(u, root, backup):
     assert report['passed'], 'The apply step did not pass'
     the_plan = plan(root)
     assert the_plan['counts'] == report['plan_counts'], 'Manifests changed since the apply step'
-    actors = {a.get_actor_label(): a for a in u.get_editor_subsystem(u.EditorActorSubsystem).get_all_level_actors()}
+    level_actors = u.get_editor_subsystem(u.EditorActorSubsystem).get_all_level_actors()
+    actors = {a.get_actor_label(): a for a in level_actors}
     by_mesh = {m['asset']: m for m in the_plan['meshes']}
+    # Existing actors: only the hidden flag of HIDE_LABELS may differ from the pre-apply snapshot.
+    before = json.loads((backup / 'original-actors.json').read_text())
+    now = snapshot(level_actors)
+    for path, row in before.items():
+        assert path in now, 'An existing actor disappeared: ' + row['label']
+        changed = {k for k in row if now[path][k] != row[k]}
+        allowed = {'hidden'} if row['label'] in HIDE_LABELS else set()
+        assert changed <= allowed, f'Existing actor {row["label"]} changed: {sorted(changed)}'
+    added = [p for p in now if p not in before]
+    assert all(now[p]['label'].startswith(PREFIX) for p in added), 'Unexpected new actor outside the replica layer'
     checked = 0
     for row in the_plan['actors']:
         actor = actors.get(row['label'])
@@ -454,7 +543,9 @@ def verify(u, root, backup):
         mesh = c.static_mesh
         name = row['mesh'].rsplit('/', 1)[1]
         assert mesh.get_path_name() == f'{row["mesh"]}.{name}', row['label']
-        assert mesh.get_num_triangles(0) == by_mesh[row['mesh']]['triangles'], row['label']
+        # The CPU test rejects float32-degenerate triangles up front; allow a sliver of import-side welding.
+        planned = by_mesh[row['mesh']]['triangles']
+        assert abs(mesh.get_num_triangles(0) - planned) <= max(2, planned // 1000), row['label']
         assert mesh.get_editor_property('nanite_settings').enabled, row['label']
         expected = 'BlockAll' if row['collision'] != 'none' else 'NoCollision'
         assert str(c.get_collision_profile_name()) == expected, row['label']
@@ -470,6 +561,12 @@ def verify(u, root, backup):
         assert actor is not None, 'Missing instanced actor ' + row['label']
         comp = actor.get_component_by_class(u.HierarchicalInstancedStaticMeshComponent)
         assert comp and comp.get_instance_count() == row['count'], row['label']
+        assert comp.get_material(0).get_path_name().split('.')[0] == row['material'], row['label']
+        assert str(comp.get_collision_profile_name()) == ('BlockAll' if row['collision'] else 'NoCollision'), row['label']
+        if row['collision']:
+            boxes = comp.get_static_mesh().get_editor_property('body_setup').get_editor_property('agg_geom') \
+                .get_editor_property('box_elems')
+            assert len(boxes) == len(by_mesh[row['mesh']]['colliders']) > 0, row['label'] + ' has no simple collision'
         instances += row['count']
     assets = u.EditorAssetLibrary
     for row in the_plan['materials']:
@@ -480,6 +577,15 @@ def verify(u, root, backup):
                       if isinstance(n, u.MaterialExpressionScalarParameter)
                       and str(n.get_editor_property('parameter_name')) == 'EmissiveStrength']
             assert len(params) == 1 and abs(params[0].get_editor_property('default_value') - row['emissive_strength']) < 1e-3, row['asset']
+        nodes = u.MaterialEditingLibrary.get_material_expressions(mat)
+        collection = {str(n.get_editor_property('parameter_name')) for n in nodes
+                      if isinstance(n, u.MaterialExpressionCollectionParameter)}
+        if row['emissive_srgb']:
+            assert 'WindowGlow' in collection, row['asset'] + ' lost the NordSky night glow'
+        if row['texture_mean']:
+            assert any(isinstance(n, u.MaterialExpressionTextureSample) for n in nodes), row['asset'] + ' lost its texture'
+        if 'M_Asphalt' in row['duplicate_of'] or 'M_ConcreteDark' in row['duplicate_of']:
+            assert 'Wetness' in collection, row['asset'] + ' lost the NordSky wet-street wrapper'
     texts = sum(1 for label in actors if label.startswith(PREFIX + 'street name '))
     assert texts == report['texts'], 'Street-name text count changed'
     for label in HIDE_LABELS:

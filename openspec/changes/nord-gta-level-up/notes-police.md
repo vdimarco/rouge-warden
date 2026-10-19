@@ -28,18 +28,18 @@
 - `SetStars`. Without a dispatcher, as under `-NordNoPolice`, stars can only be cleared, because nothing would ever count a search down.
 - `Stars`.
 - `IsPolice`: officers of the police faction and cars with `bPolice`.
-- `IsHostile`: goons are always hostile. Police officers and cars are hostile only to a wanted player.
+- `IsHostile`: goons are always hostile. A police officer is hostile only to the wanted player it chases (or to any wanted player before it has a target); a police car only to a wanted player. COMBAT limits the aim-assist threat bonus to these.
 - `DecoratePoliceCar` builds the livery once per car and then only refreshes it. It can be called any number of times: from BeginPlay or ApplyPaint, and from `OnRep_Police`.
 
 #### `UQuebecPoliceLivery`
 - A scene component on the car, built on every peer.
-- Paint: white through a dynamic instance of the car's own `M_Car70_Paint` (`Tint`). It is applied to the `Paint` slot of the body and roof, or to the whole body on the older box body. A 0.5 s check re-applies it after a late `ApplyPaint`.
+- Paint: white through a dynamic instance of the car's own `M_Car70_Paint` (`Tint`). It is applied to the `Paint` slot of the body and roof, or to the whole body on the older box body. A 0.5 s check re-applies it after a late `ApplyPaint`. Every livery mesh and word carries the component tag `NordOwnPaint`; `AQuebecCar::BeginPlay` and `ApplyPaint` skip tagged components (shared with TRAFFIC's lamps), and `Refresh` re-applies the band, bar and lens materials. On a client `OnRep_Police` can build the livery before the car's deferred BeginPlay, which used to repaint the band in `M_CarBody`.
 - Markings:
   - A blue band along each flank. It is fitted from the generator's real door width (91–96 cm, `Scripts/prepare_seventies_cars.py`), because the body bounds include the mirrors.
   - "POLICE" in navy on both sides and the back. This is generic, with no real force's logo or colours.
   - A dark light bar with red and blue lenses on the roof, placed from the cabin bounds.
 - Lights: while `bSiren` is set, red and blue swap four times a second. Each lens swaps material and has a matching no-shadow point light of 900 cd. Material and intensity change only when the phase changes.
-- Siren: a procedural two-tone hi-lo at 960 and 770 Hz, 0.6 s each, a soft square wave on a 24 kHz `USoundWaveProcedural` (no asset). Like the car engine it is not spatialised; its volume falls to zero at 90 m from the local camera.
+- Siren: a procedural two-tone hi-lo at 960 and 770 Hz, 0.6 s each, a soft square wave on a 24 kHz `USoundWaveProcedural` (no asset). One 1.2 s loop (576 + 462 whole cycles, so it repeats without a click) is computed once and queued by copy; nothing is synthesised per frame. Like the car engine it is not spatialised; its volume falls to zero at 90 m from the local camera.
 
 #### `AQuebecOfficer` (contract 3)
 - Body:
@@ -53,14 +53,14 @@
 - Steering: `AddMovementInput` toward the goal. Every 0.2 s it probes a 140 cm sphere sweep at 0°, ±35°, ±70° and ±110° against static geometry, dynamic objects and pawns, and it keeps a little separation from other officers.
 - Police on foot head for what the dispatcher knows: the player while seen, otherwise the last sighting. They stop about 1 m from a player on foot and 3.5 m from a car.
 - Shooting: from 3 stars, at 5–25 m with line of sight, an officer stands and fires every 1.15–1.65 s using `ShotHitChance`.
-  - A hit is 8 damage through `QuebecCombat::DamagePlayer`, or 5 body damage to a car.
+  - A hit is 8 damage through `QuebecCombat::DamagePlayer`. Against a driving player the shot aims at the car and still calls `DamagePlayer` with the driver's character; COMBAT gives the driver 50% and the car 60% and puts a knocked-out driver beside the car. An empty car takes 5 body damage.
   - The tracer, flash, word and bang come from COMBAT's `AQuebecCombatFX::PlayShot` through `MulticastAttack`.
   - Each shot alarms civilians within 25 m.
 - Leaving: when the stars clear, or when the player drives more than 25 m away, an officer walks back to its car and is removed at the door. The car waits up to 8 s for the officer.
 - Goons (faction 1, 60 health) chase the target player, or the nearest player who is up.
   - A punch at 1.7 m does 10 damage every 1.1 s.
   - A thrown ink blob at 4.5–14 m does 7 damage with a 45% hit chance, every 2.6 s. The blob is a sphere that flies in a 0.35 s arc on every peer and lands with `PlayImpact`.
-  - Against a car they do body damage instead.
+  - Against a driving player they hurt the driver through the car the same way; an empty car takes body damage.
 - `ReceiveHit`:
   - A car, a hit of 25 damage or more, or zero health starts the comic tumble from PEOPLE's `QuebecKnockModel.h` (`CarLaunch`/`HitLaunch` and `Sample`).
   - The capsule is launched with `LaunchCharacter`, and the pose adds the pitch and roll about the hips. The start time and launch values are replicated, so every peer draws the same tumble. Three gold stars circle the head while the officer is dazed.
@@ -83,7 +83,7 @@
 - `ReportCrime` checks for a witness: the police themselves, a police unit that sees the spot, or two civilians (`QuebecPeople::Gather`, excluding players, officers and people who are down). A witnessed crime adds heat and tells the police where the player is. When stars rise it shows "RECHERCHÉ! / n étoiles".
 - Unit upkeep at 2 Hz:
   - At most one new car per pass, for the most wanted player who is short of cars, with 4 s between spawns per player.
-  - Spawn points are road segments 120–200 m from the last sighting. Each must be on the road surface, out of every player's view (outside a 60° cone around the view direction, or hidden by a visibility trace), clear for the hull, and at least 7 m from any car.
+  - Spawn points are road segments 120–200 m from the last sighting. Each must be on the road surface, out of every player's view (outside a 60° cone around the view direction, or hidden by a visibility trace; for a remote driver, whose camera the server never hears about, the view is taken from a chase camera 7 m behind the car with an 80° cone), clear for the hull, and at least 7 m from any car.
   - The car is spawned deferred like the population's cars, tagged `Police` (never CityParked or CityTraffic), then given `SetPolice(true)`, `bSiren` and the autopilot.
 - Driving every frame through `SetAutopilot`:
   - Within 40 m while the player is known, the car drives straight at the predicted point, which rams a car.
@@ -93,7 +93,7 @@
   - It slows for its own officers ahead.
   - A stuck car backs out with the wheel turned the other way, then replans.
 - Routing:
-  - Segments that run through static geometry are closed at the first crime, using a 2 × 1.4 m box swept 3 m in from each end.
+  - Segments that run through static geometry are closed using a 2 × 1.4 m box swept 3 m in from each end. The scan starts at the dispatcher's BeginPlay and runs 4 sweeps per server tick (about 450 sweeps, done in about 2 s), so the first star never stalls the host; until it finishes, unscanned roads count as open. The road lookup is cached per world, so `QuebecDistrict::ForWorld` is not called every frame.
   - The graph comes from `QuebecDistrict::ForWorld(World).RoadSegments`: the 806 radar segments on LaFontaine and the 663 original segments in synthetic worlds.
 - Endings:
   - When the stars clear, units call off the chase. A unit hands over to another wanted player if one is short of cars. Otherwise it turns the siren off, drives toward the nearby road point farthest from every player, and is removed once out of view, or after 60 s when more than 80 m away.
@@ -122,6 +122,7 @@ They cannot run here.
 | `Quebec.Police.ArrestTimer` | Arrest after 2 s; moving at 150 cm/s resets the hold |
 | `Quebec.Police.RoadsAndGarage` | The graph holds all 663 segments; the starter car routes to the garage; the bay is in a lane and more than 60 m from the spawn, the starter car and the legacy objectives |
 | `Quebec.Police.OfficerKnockdown` | Spawn on the floor and health per faction; `IsPolice` and `IsHostile`; a stagger, a knockdown and refusal while down; standing up; a car knocking a goon out |
+| `Quebec.Police.LiveryKeepsPaint` | Decorating before the car's BeginPlay (the client order) keeps the band's own material, tag and visibility through BeginPlay and repaint; decorating again builds nothing new |
 | `Quebec.Police.DispatchArrest` | In an isolated world with a possessed character, `SetStars`; an unwitnessed crime adds nothing; an attack on police gives 3 stars; the search starts at 45 s; the car cap holds; an arrest after 2 s beside an officer clears the stars; the player stands up after the banner |
 
 #### Shared file edits
@@ -149,13 +150,13 @@ No rendering technique is involved. The livery is made of basic shapes and exist
 
 ## Checks run here (2026-10-19)
 - `python3 Scripts/test_heat_model.py`: c++ and g++ 13.3.0 and clang++ 18.1.3 under `-std=c++20 -Wall -Wextra -Wshadow -Wconversion -Wdouble-promotion -Werror -O1`, plus a pass with the Unreal macro names poisoned. 77 checks pass, with identical output on all three. Prints `NORD_HEAT_MODEL_OK 3 compilers`.
-- `uestubs/check.sh --both` (stub UE headers, UHT-style generation, clang `-Wall -Werror -Wshadow`, game and editor configurations): 6/6 PASS for `QuebecPolice.cpp`, `QuebecPoliceTests.cpp` and `QuebecGameplay.cpp`, and 10/10 for the files that include `QuebecPolice.h` (`QuebecPeople.cpp`, `QuebecSideJobs.cpp`, `QuebecGameHUD.cpp`, `QuebecJobsTests.cpp`, `QuebecDrive.cpp`). A simulated unity file joining `QuebecGameplay.cpp`, `QuebecPolice.cpp`, `QuebecPoliceTests.cpp`, `QuebecPeople.cpp`, `QuebecSideJobs.cpp` and `QuebecDrive.cpp` also passes.
+- After the review fixes, from `games/nord-unreal`: `Tools/SyntaxCheck/check.sh --both` passes all 74 compiles (37 files × game and editor, stub UE headers, UHT-style generation, clang `-Wall -Werror -Wshadow`), and `Tools/SyntaxCheck/link.sh --both` reports every used game-module symbol defined in both configurations. Earlier, a simulated unity file joining `QuebecGameplay.cpp`, `QuebecPolice.cpp`, `QuebecPoliceTests.cpp`, `QuebecPeople.cpp`, `QuebecSideJobs.cpp` and `QuebecDrive.cpp` also passed.
 - Every function declared in `QuebecPolice.h`, the `QuebecCrime` namespace and `QuebecPolice::GarageLocation` has a definition. This was checked by a script.
 - Not run here: no Unreal build, no automation tests, no PIE, no rendering, no audio and no phone. No visual, audio or performance claim is made.
 
 ## Host checks still needed
 1. Build both targets: `QuebecEditor` and `Quebec`, Linux Development.
-2. `Automation RunTests Quebec.Police` (8 tests). Then the full `Quebec.` filter, including `Quebec.District.TorontoFreeRoamIsolation`.
+2. `Automation RunTests Quebec.Police` (9 tests). Then the full `Quebec.` filter, including `Quebec.District.TorontoFreeRoamIsolation`.
 3. Two-player PIE on LaFontaine. Each step below needs a rendered capture review.
    - Knock down a resident near two others: one star and RECHERCHÉ!.
    - The police car appears out of view, its lights flash and the siren is audible. Check the band and POLICE text on the Car70 bodies and the light-bar height.
@@ -177,7 +178,7 @@ No rendering technique is involved. The livery is made of basic shapes and exist
   - `AController::PlayerState` assigned directly in the dispatch test.
   - `UWorld::TimeSeconds` written by the tests.
   - `FConstPlayerControllerIterator`.
-  - `APlayerController::GetPlayerViewPoint` on the server for remote players. It depends on the client's camera updates, so the spawn-out-of-view test may use a slightly stale view for the friend.
+  - `APlayerController::GetPlayerViewPoint` on the server for remote players. On foot it depends on the client's camera updates. A remote driver sends none, because the car has no movement component to send them, so the view is estimated from the car (chase camera 7 m behind, 80° cone). A police car can still appear at the edge of the friend's view when the friend looks far to the side.
 - The Quaternius rigs face +X and stand with their feet at the bounds' minimum Z. This matches the pedestrian importer, but the officer's cap, mask and holster offsets are estimated from proportions and need a visual check.
 - `M_Text` may ignore the vertex colour used for the navy "POLICE" and the white garage words.
 - The ParkComic palette materials are not emissive, so the lenses flash by colour swap, and the point lights carry the glow at night.

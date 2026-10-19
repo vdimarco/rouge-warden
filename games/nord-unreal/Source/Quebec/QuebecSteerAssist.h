@@ -84,13 +84,15 @@ namespace QuebecSteer
 
     inline float LockDegrees(float Speed) { return Lerp(LockSlow, LockFast, SmoothStep(0.f, LockFadeSpeed, std::fabs(Speed))); }
 
-    // How fast the steering state follows the input. Easing to a smaller graded level is as quick as a release,
-    // which a keyboard never notices (its input is 0 or full). On a road a graded level turns in more calmly at
-    // highway speed; full lock (a keyboard key or the wheel's outer band) keeps today's turn-in.
+    // How fast the steering state follows the input. Off road (bAssist false) this is today's rule exactly, for any
+    // input. On a road, easing to a smaller level on the same side is as quick as a release, and a graded level turns
+    // in more calmly at highway speed; full lock (a keyboard key or the wheel's outer band) keeps today's turn-in.
     inline float TurnInRate(float Speed, float Input, float State, bool bAssist)
     {
-        if (std::fabs(Input) < .01f || Input * State < 0.f || std::fabs(Input) < std::fabs(State)) return ReleaseRate;
-        if (!bAssist || std::fabs(Input) > .99f) return HoldRate;
+        if (std::fabs(Input) < .01f || Input * State < 0.f) return ReleaseRate;
+        if (!bAssist) return HoldRate;
+        if (std::fabs(Input) < std::fabs(State)) return ReleaseRate;
+        if (std::fabs(Input) > .99f) return HoldRate;
         return Lerp(HoldRate, FastHoldRate, SmoothStep(FastHoldFrom, FastHoldTo, std::fabs(Speed)));
     }
 

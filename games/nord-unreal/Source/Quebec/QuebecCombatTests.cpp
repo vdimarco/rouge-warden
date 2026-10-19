@@ -154,6 +154,38 @@ bool FQuebecCombatKnockOutTest::RunTest(const FString& Parameters)
     return true;
 }
 
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FQuebecCombatDriverTest, "Quebec.Combat.DriverDamageAndEject",
+    EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+bool FQuebecCombatDriverTest::RunTest(const FString& Parameters)
+{
+    FCombatWorld Fixture;
+    if (!TestTrue(TEXT("A walking player with a street player state"), Fixture.Ready())) return false;
+    AQuebecPlayerState* Stats = Fixture.Stats;
+    AQuebecCharacter* Walker = Fixture.Walker;
+    FActorSpawnParameters Spawn;
+    Spawn.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+    AQuebecCar* Car = Fixture.World->SpawnActor<AQuebecCar>(FVector(0., 600., 102.), FRotator::ZeroRotator, Spawn);
+    if (!TestNotNull(TEXT("A car to drive"), Car)) return false;
+    // Seat the player the way AQuebecController::ServerInteract does.
+    Walker->SetInVehicle(true);
+    Walker->SetActorLocation(Car->GetActorLocation());
+    Walker->AttachToActor(Car, FAttachmentTransformRules::KeepWorldTransform);
+    Car->Occupant = Walker;
+    Fixture.Player->Possess(Car);
+    if (!TestTrue(TEXT("The driver's street state is found through the car"), QuebecCombat::State(Walker) == Stats)) return false;
+    QuebecCombat::DamagePlayer(Walker, 8.f, nullptr);
+    TestEqual(TEXT("A driver takes half of an officer's shot"), Stats->Health, 96.f);
+    TestEqual(TEXT("The car body takes the blow too"), Car->BodyDamage, 4.8f, .01f);
+    TestFalse(TEXT("A driver cannot fire"), Walker->CanUseWeapons());
+    Fixture.At(30.);
+    QuebecCombat::DamagePlayer(Walker, 400.f, nullptr);
+    TestTrue(TEXT("Zero health knocks the driver out"), Stats->GetDownState() == EQuebecDownState::KnockedOut);
+    TestTrue(TEXT("The knocked-out driver is put out of the car"), Car->Occupant == nullptr && Walker->GetAttachParentActor() == nullptr);
+    TestTrue(TEXT("The player controls the character again"), Fixture.Player->GetPawn() == Walker);
+    TestTrue(TEXT("The driver lands beside the car"), FVector::Dist2D(Walker->GetActorLocation(), Car->GetActorLocation()) < 500.);
+    return true;
+}
+
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(FQuebecCombatRespawnTest, "Quebec.Combat.RespawnKeepsCash",
     EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
 bool FQuebecCombatRespawnTest::RunTest(const FString& Parameters)

@@ -156,11 +156,14 @@ namespace
 
     void EscapeTests()
     {
-        Expect(EscapeWon(false, 3, true, 1.f), "the garage wins at once");
+        Expect(!EscapeWon(true, 3, true, 20.f), "standing in the garage while the police still see the player does not win");
+        Expect(EscapeWon(true, 0, true, 20.f), "the garage clearing the stars wins");
         Expect(!EscapeWon(false, 0, false, 30.f), "stars that never showed do not count as lost");
         Expect(!EscapeWon(true, 0, false, 1.f), "a zero reading right after the start does not count");
         Expect(EscapeWon(true, 0, false, 20.f), "losing the stars wins");
         Expect(!EscapeWon(true, 1, false, 60.f), "one star left is not an escape");
+        Expect(EscapeWon(false, 0, true, 20.f), "without police, a car in the garage bay wins");
+        Expect(!EscapeWon(false, 0, true, 1.f), "not in the first two seconds");
     }
 
     void PrintTable()

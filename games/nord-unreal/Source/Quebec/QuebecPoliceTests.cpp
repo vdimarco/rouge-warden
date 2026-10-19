@@ -7,7 +7,9 @@
 
 #if WITH_DEV_AUTOMATION_TESTS
 #include "Components/BoxComponent.h"
+#include "Components/StaticMeshComponent.h"
 #include "Engine/World.h"
+#include "Materials/MaterialInterface.h"
 #include "GameFramework/PlayerController.h"
 #include "Misc/AutomationTest.h"
 #include "Misc/ScopeExit.h"
@@ -246,6 +248,39 @@ bool FQuebecPoliceDispatchTest::RunTest(const FString& Parameters)
     TestEqual(TEXT("The player stands up after the banner"), static_cast<int32>(State->DownState), static_cast<int32>(EQuebecDownState::None));
     QuebecCrime::SetStars(Player, 0);
     TestEqual(TEXT("The garage path clears stars"), QuebecCrime::Stars(Player), 0);
+    return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FQuebecPoliceLiveryTest, "Quebec.Police.LiveryKeepsPaint",
+    EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+bool FQuebecPoliceLiveryTest::RunTest(const FString& Parameters)
+{
+    UWorld* World = PoliceTestWorld();
+    if (!TestNotNull(TEXT("Isolated police world"), World)) return false;
+    ON_SCOPE_EXIT { World->DestroyWorld(false); };
+    FActorSpawnParameters Spawn;
+    Spawn.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+    AQuebecCar* Car = World->SpawnActor<AQuebecCar>(FVector(0., 0., 102.), FRotator::ZeroRotator, Spawn);
+    if (!TestNotNull(TEXT("Police car spawns"), Car)) return false;
+    Car->BodyProfile = 1;
+    // A client sees bPolice before the car's BeginPlay: decorate first, as OnRep_Police does, then begin play.
+    Car->SetPolice(true);
+    const auto Band = [Car]() -> UStaticMeshComponent*
+    {
+        TArray<UStaticMeshComponent*> Pieces;
+        Car->GetComponents(Pieces);
+        for (UStaticMeshComponent* Piece : Pieces) if (Piece->GetName() == TEXT("PoliceBandLeft")) return Piece;
+        return nullptr;
+    };
+    UStaticMeshComponent* Left = Band();
+    if (!TestNotNull(TEXT("The livery has a side band"), Left)) return false;
+    TestTrue(TEXT("Livery pieces carry the NordOwnPaint tag"), Left->ComponentHasTag(TEXT("NordOwnPaint")));
+    const UMaterialInterface* BandPaint = Left->GetMaterial(0);
+    Car->DispatchBeginPlay();
+    TestSamePtr(TEXT("The car's BeginPlay and repaint keep the band's own paint"), Left->GetMaterial(0), BandPaint);
+    TestTrue(TEXT("The band stays visible"), Left->IsVisible());
+    QuebecCrime::DecoratePoliceCar(Car);
+    TestSamePtr(TEXT("Decorating again builds nothing new"), Band(), Left);
     return true;
 }
 

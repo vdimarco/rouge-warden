@@ -168,9 +168,12 @@ namespace QuebecJobRules
         return VelocityChange < 450.f ? 0.f : 10.f + VelocityChange / 50.f;
     }
 
-    // The escape is won at the garage, or once the stars that the job set have dropped to zero.
-    inline bool EscapeWon(bool bSawStars, int Stars, bool bAtGarage, float Elapsed)
+    // The escape is won when the stars the job set drop to zero: the police lost the player, or the garage cleared
+    // them, which it does only for a car that no unit sees. Without a police dispatcher the stars never show, and a
+    // car in the garage bay wins instead.
+    inline bool EscapeWon(bool bSawStars, int Stars, bool bCarAtGarage, float Elapsed)
     {
-        return bAtGarage || (bSawStars && Stars <= 0 && Elapsed >= 2.f);
+        if (Elapsed < 2.f) return false;
+        return bSawStars ? Stars <= 0 : bCarAtGarage;
     }
 }

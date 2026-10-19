@@ -39,6 +39,8 @@ public:
     static constexpr int32 MaxProps = 60;
 
     AQuebecStreetProp();
+    // Joins its world's prop list, so car strikes never scan the actor list.
+    virtual void PostInitializeComponents() override;
     virtual void BeginPlay() override;
     virtual void Tick(float DeltaSeconds) override;
     virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;

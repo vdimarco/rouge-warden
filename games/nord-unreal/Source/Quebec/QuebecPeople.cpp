@@ -43,6 +43,27 @@ namespace
         return Memory;
     }
 
+    // Residents away from their route this frame, counted once per frame and kept current as flights start.
+    struct FRunnerTally
+    {
+        TWeakObjectPtr<UWorld> World;
+        double At = -1.;
+        int32 Count = 0;
+    };
+
+    int32& RunningResidents(UWorld* World)
+    {
+        static FRunnerTally Tally;
+        if (Tally.World.Get() != World || Tally.At != World->GetTimeSeconds())
+        {
+            Tally.World = World;
+            Tally.At = World->GetTimeSeconds();
+            Tally.Count = 0;
+            for (TActorIterator<AQuebecParkResident> It(World); It; ++It) Tally.Count += It->IsAway() ? 1 : 0;
+        }
+        return Tally.Count;
+    }
+
     int32 RecentPunches(AActor* Target, float Now)
     {
         const FQuebecPunchMemory* Memory = Punches().Find(Target);
@@ -260,10 +281,9 @@ namespace QuebecPeople
     {
         if (!World || World->GetNetMode() == NM_Client || !FMath::IsFinite(Radius) || Radius <= 0.f || Source.ContainsNaN()) return;
         const double Reach = FMath::Square(static_cast<double>(Radius));
-        int32 Running = 0;
-        for (TActorIterator<AQuebecParkResident> It(World); It; ++It) Running += It->IsAway() ? 1 : 0;
-        for (TActorIterator<AQuebecParkResident> It(World); It && Running < MaxRunningResidents; ++It)
-            if (!It->IsAway() && FVector::DistSquared(It->GetActorLocation(), Source) <= Reach && It->Flee(Source, AlarmFleeSeconds)) ++Running;
+        // Flee itself refuses new runners beyond MaxRunningResidents.
+        for (TActorIterator<AQuebecParkResident> It(World); It; ++It)
+            if (!It->IsAway() && FVector::DistSquared(It->GetActorLocation(), Source) <= Reach) It->Flee(Source, AlarmFleeSeconds);
         for (TActorIterator<AQuebecPedestrian> It(World); It; ++It)
             if (FVector::DistSquared(It->GetActorLocation(), Source) <= Reach) It->Flee(Source, AlarmFleeSeconds);
     }
@@ -297,6 +317,7 @@ namespace QuebecPeople
             QuebecCombat::DamagePlayer(Player, Harm, Instigator);
             if (Instigator && Instigator != Player->GetController())
                 QuebecCrime::Report(Instigator, Kind == EQuebecHitKind::Car ? EQuebecCrime::HitPerson : EQuebecCrime::AttackPerson, Where);
+            Alarm(World, Where, 1500.f);
             return true;
         }
         const QuebecKnock::EHit Rule = Kind == EQuebecHitKind::Car ? QuebecKnock::EHit::Car : Kind == EQuebecHitKind::Melee ? QuebecKnock::EHit::Melee : QuebecKnock::EHit::Bullet;
@@ -327,7 +348,9 @@ namespace QuebecPeople
         UWorld* World = Car->GetWorld();
         const FVector Velocity = Car->PlanarVelocity();
         const float Impact = FMath::Max(FMath::IsFinite(Speed) ? FMath::Abs(Speed) : 0.f, static_cast<float>(Velocity.Size2D()));
-        if (!World || Impact <= QuebecKnock::CarKnockSpeed) return 0;
+        if (!World || Impact < 40.f) return 0;
+        // Slow contact nudges civilians aside; nobody falls below the knockdown speed.
+        const bool bNudge = Impact <= QuebecKnock::CarKnockSpeed;
         const FVector Travel = To - From;
         FVector Heading = Velocity.GetSafeNormal2D();
         if (Heading.IsNearlyZero()) Heading = Travel.GetSafeNormal2D();
@@ -356,6 +379,15 @@ namespace QuebecPeople
             // Only people in front of the travel get thrown; a car sliding past sideways brushes them.
             const FVector Toward = (Feet - To).GetSafeNormal2D();
             if (!Toward.IsNearlyZero() && FVector::DotProduct(Toward, Heading) < .2) continue;
+            if (bNudge)
+            {
+                // A short sidestep out of the car's path; capsules (players, officers) still just block the car.
+                const FVector Lane = FVector::CrossProduct(FVector::UpVector, Heading);
+                const FVector Source = Feet - Lane * (FVector::DotProduct(Feet - To, Lane) >= 0. ? 300. : -300.);
+                if (AQuebecParkResident* Resident = Cast<AQuebecParkResident>(Person)) Resident->Flee(Source, .6f);
+                else if (AQuebecPedestrian* Pedestrian = Cast<AQuebecPedestrian>(Person)) Pedestrian->Flee(Source, .6f);
+                continue;
+            }
             if (!Hit(Person, EQuebecHitKind::Car, CarDamage(Impact), Heading * Impact, Driver)) continue;
             ++Struck;
             if (Player) Player->IgnoreCarBriefly(Car, 1.6f);
@@ -444,10 +476,20 @@ bool AQuebecParkResident::Flee(const FVector& Source, float Seconds)
         AQuebecCharacter::IsCrewTaken(World, Style)) return false;
     const float Now = World->GetTimeSeconds();
     if (Stride == 1 || IsKnockActive(Now)) return false;
+    // At most MaxRunningResidents leave their routes at once, whoever asks (alarms, dives, slow nudges, punches).
+    int32& Running = RunningResidents(World);
+    if (Stride == 0)
+    {
+        if (Running >= MaxRunningResidents) return false;
+        ++Running;
+    }
     BeginAway(Now);
     FleeSource = Source;
     FleeUntil = FMath::Max(Stride == 2 ? FleeUntil : 0.f, Now + FMath::Clamp(Seconds, .5f, 10.f));
-    NextFleeProbe = 0.f;
+    // Head straight away at once; the swept probes start on a per-resident offset so a crowd never probes on one frame.
+    FleeHeading = (GetActorLocation() - Source).GetSafeNormal2D();
+    if (FleeHeading.IsNearlyZero()) FleeHeading = GetActorForwardVector().GetSafeNormal2D();
+    NextFleeProbe = Now + FMath::Fmod(FMath::Abs(Phase) * 1.37f, .25f);
     StreetGroundZ = GetActorLocation().Z;
     Stride = 2;
     ForceNetUpdate();
@@ -473,7 +515,9 @@ void AQuebecParkResident::TickAway(float ServerTime, float DeltaSeconds)
         // Up again: run away from whatever hit them for a moment.
         Stride = 2;
         FleeUntil = ServerTime + FleeAfterKnockSeconds;
-        NextFleeProbe = 0.f;
+        FleeHeading = (GetActorLocation() - FleeSource).GetSafeNormal2D();
+        if (FleeHeading.IsNearlyZero()) FleeHeading = GetActorForwardVector().GetSafeNormal2D();
+        NextFleeProbe = ServerTime + FMath::Fmod(FMath::Abs(Phase) * 1.37f, .25f);
         StreetGroundZ = GetActorLocation().Z;
         ForceNetUpdate();
     }
@@ -625,6 +669,11 @@ void AQuebecParkResident::RefreshCompanion()
     if (!Companion || CompanionRig || !GetWorld() || !GetRootComponent()) return;
     CompanionRig = NewObject<UQuebecCompanionRig>(this, TEXT("CompanionRig"));
     CompanionRig->SetupAttachment(GetRootComponent());
+    // Absolute, so moving the walker's root never drags the rig and its parts along; Pose places it in world space only
+    // while the resident itself is posed (visible and within 140 m).
+    CompanionRig->SetUsingAbsoluteLocation(true);
+    CompanionRig->SetUsingAbsoluteRotation(true);
+    CompanionRig->SetUsingAbsoluteScale(true);
     CompanionRig->RegisterComponent();
     CompanionRig->Build(Companion, FMath::RoundToInt(Phase * 10.f));
 }
@@ -709,6 +758,18 @@ void AQuebecCharacter::IgnoreCarBriefly(AActor* Car, float Seconds)
     KnockIgnoredCar = Car;
     KnockIgnoreUntil = World->GetTimeSeconds() + FMath::Clamp(Seconds, 0.f, 5.f);
     OnRep_Knock();
+    if (!IsLocallyControlled()) ClientIgnoreCar(Car, Seconds);
+}
+
+void AQuebecCharacter::ClientIgnoreCar_Implementation(AActor* Car, float Seconds)
+{
+    UWorld* World = GetWorld();
+    if (HasAuthority() || !World || !IsValid(Car) || !FMath::IsFinite(Seconds)) return;
+    if (KnockIgnoredCar.IsValid() && KnockIgnoredCar.Get() != Car) GetCapsuleComponent()->IgnoreActorWhenMoving(KnockIgnoredCar.Get(), false);
+    GetCapsuleComponent()->IgnoreActorWhenMoving(Car, true);
+    KnockIgnoredCar = Car;
+    KnockIgnoreUntil = World->GetTimeSeconds() + FMath::Clamp(Seconds, 0.f, 5.f);
+    OnRep_Knock();
 }
 
 void AQuebecCharacter::OnRep_Knock()
@@ -725,8 +786,8 @@ void AQuebecCharacter::ApplyKnockPose()
 {
     UWorld* World = GetWorld();
     if (!World) return;
-    // Server: the flying player stops passing through the car that hit it after a moment.
-    if (HasAuthority() && KnockIgnoredCar.IsValid() && World->GetTimeSeconds() >= KnockIgnoreUntil)
+    // Server and owning client: the flying player stops passing through the car that hit it after a moment.
+    if (KnockIgnoredCar.IsValid() && World->GetTimeSeconds() >= KnockIgnoreUntil)
     {
         GetCapsuleComponent()->IgnoreActorWhenMoving(KnockIgnoredCar.Get(), false);
         KnockIgnoredCar.Reset();
@@ -808,6 +869,7 @@ bool AQuebecPedestrian::Flee(const FVector& Source, float Seconds)
     if (!bFleeing)
     {
         bFleeing = true;
+        NextFleeSweep = 0.f;
         SetWalking(true);
         OnRep_Fleeing();
         ForceNetUpdate();
@@ -858,17 +920,34 @@ bool AQuebecPedestrian::TickStreetLife(float DeltaSeconds)
     const FVector Position = GetActorLocation();
     FVector Away = (Position - FleeSource).GetSafeNormal2D();
     if (Away.IsNearlyZero()) Away = GetActorForwardVector().GetSafeNormal2D();
-    const FVector Next = StepTowards(Position, Position + Away * 100., FMath::Max(WalkSpeed * 3.2f, 280.f), DeltaSeconds);
-    FHitResult Hit;
-    FCollisionQueryParams Query(SCENE_QUERY_STAT(PlateauResidentFlee), false, this);
-    const FVector Height(0., 0., 88.);
-    if (World->SweepSingleByChannel(Hit, Position + Height, Next + Height, FQuat::Identity, ECC_Pawn, FCollisionShape::MakeCapsule(27.f, 80.f), Query))
+    const float RunPace = FMath::Max(WalkSpeed * 3.2f, 280.f);
+    const FVector Next = StepTowards(Position, Position + Away * 100., RunPace, DeltaSeconds);
+    if (World->GetTimeSeconds() >= NextFleeSweep)
     {
-        FleeUntil = 0.f;
-        return true;
+        // Ten times a second, sweep the next 0.12 s of the run.
+        NextFleeSweep = World->GetTimeSeconds() + .1f;
+        FHitResult Hit;
+        FCollisionQueryParams Query(SCENE_QUERY_STAT(PlateauResidentFlee), false, this);
+        const FVector Height(0., 0., 88.);
+        if (World->SweepSingleByChannel(Hit, Position + Height, Position + Away * (RunPace * .12f) + Height, FQuat::Identity, ECC_Pawn,
+            FCollisionShape::MakeCapsule(27.f, 80.f), Query))
+        {
+            FleeUntil = 0.f;
+            return true;
+        }
     }
     SetActorLocationAndRotation(Next, FRotator(0.f, Away.Rotation().Yaw, 0.f));
     return true;
+}
+
+void AQuebecPedestrian::Brace(const FVector& Threat, float Seconds)
+{
+    if (!HasAuthority() || bTumbling || bFleeing || Threat.ContainsNaN() || !FMath::IsFinite(Seconds)) return;
+    // The patrol's own pause holds the pedestrian in place, facing the car.
+    PauseRemaining = FMath::Max(PauseRemaining, FMath::Clamp(Seconds, 0.f, 5.f));
+    SetWalking(false);
+    const FVector Toward = (Threat - GetActorLocation()).GetSafeNormal2D();
+    if (!Toward.IsNearlyZero()) SetActorRotation(FRotator(0.f, Toward.Rotation().Yaw, 0.f));
 }
 
 void AQuebecPedestrian::OnRep_Knock()

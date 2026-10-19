@@ -25,7 +25,12 @@
   - A finished tumble pose resets even when the resident is hidden or far away.
   - Resident ticks are not throttled.
 - **Greetings:** `Acknowledge` and `FindInteractableResident` ignore residents who are away.
-- **Fast player cars:** in `TickResidentGreetings`, every resident and pedestrian in a fast player car's path now dives aside, away from the side of the path it stands on, at every 0.3 s scan. Before, the nearest resident stopped and faced the car. Only the warning caption still cools down.
+- **Fast player cars:** `TickResidentGreetings` scans every 0.3 s and applies `QuebecKnock::CarReaction` to every resident and pedestrian the warning geometry catches (speed at least 900 cm/s, within 12 m and 1.2 s, at most 260 cm from the car's centre line).
+  - Inside the car's body path (up to 145 cm from the centre line: half width 90, radius 35, margin 20) the person freezes facing the car. Residents use the existing `Acknowledge` hold; pedestrians use `Brace`. So an aimed hit lands.
+  - Beside the path (145-260 cm) the person dives away from the side of the path it stands on.
+  - Only the warning caption still cools down.
+- **Slow contact:** below 450 cm/s, a striking car nudges civilians in its swept box with a 0.6 s sidestep out of its path. Nobody falls, and no crime is reported.
+- **Runner cap:** `Flee` refuses new runners beyond 32 residents away at once, whatever asks (alarms, dives, nudges, punches). Swept probes start on a per-resident offset, so a crowd does not probe on the same frame. A fleeing pedestrian sweeps 10 times a second.
 
 ### Pedestrians (`AQuebecPedestrian`)
 - **Server:** it runs the same model on its root, which replicates at 30 Hz. It stands up facing its old heading, runs from the cause, then resumes the patrol from where it stopped.
@@ -38,7 +43,7 @@
   - `bStayDown` is the K.-O. hold. `EndKnock` starts the 0.8 s stand-up now.
 - **Input lock:** while `IsInputLocked`, `MoveForward`, `MoveRight`, `Jump`, sprint, `ServerSetSprint` and `ServerInteract` do nothing.
 - **Mesh pose:** `UQuebecKnockPoser` is created on the first knock and ticks in `TG_PostPhysics`, after movement and remote mesh smoothing. It tips the mesh about the capsule centre and lowers it to the floor, then restores the mesh transform it saved. It skips swimming and driving players.
-- **Pass-through:** the launched player's capsule passes through the car that hit it for 1.6 s. The car side is left to `AQuebecCar::PassStruckPerson` in `QuebecDrive.cpp`.
+- **Pass-through:** the launched player's capsule passes through the car that hit it for 1.6 s, on the server and, through `ClientIgnoreCar`, on the owning client. The car side is left to `AQuebecCar::PassStruckPerson` in `QuebecDrive.cpp`.
 
 ### The `QuebecPeople` namespace (`QuebecPeople.cpp`)
 - **Coverage:** every function covers residents, pedestrians, players and officers. Officers go through the `AQuebecOfficer` contract.
@@ -49,7 +54,7 @@
   - Only people in front of the travel are thrown.
 - **`Hit`:**
   - Reports `HitPerson`, `AttackPerson`, `AttackPolice` or `DownPolice`, but only when there is an instigator. A player hitting itself is not reported.
-  - Alarms everyone within 15 m.
+  - Alarms civilians within 15 m, for player targets too.
   - Players lose health through `QuebecCombat::DamagePlayer`: 15 at 450 cm/s, rising to 70.
   - Players are knocked down only by cars. Weapons only cost them health.
 - **`Alarm`:** makes civilians flee for 4 s, with at most 32 residents running at once.
@@ -57,7 +62,9 @@
 
 ### Living companions (`QuebecLife.h/.cpp`)
 - **Assignment:** `QuebecLife::CompanionFor` gives a companion to some of the existing runtime walkers in `AQuebecGameMode::BeginPlay`. No actors are added. Of every 18 walkers, 3 get a dog, 2 a stroller and 2 grocery bags, which gives 12, 8 and 8 of the 72 walkers. A stroller slows its pusher to 85% pace, and that pace is set before the spawn point is sampled.
-- **Rig:** `UQuebecCompanionRig` is a scene component on the resident that never ticks. The resident poses it only when its own pose runs.
+- **Rig:** `UQuebecCompanionRig` is a scene component on the resident that never ticks. Its location, rotation and scale are absolute, so moving the walker's root never moves the rig or its parts. The resident places it in world space only when its own pose runs (visible and within 140 m), and hides it otherwise.
+  - Every part carries the component tag `NordCompanion`, so QA can tell companion parts from the resident's hand prop.
+  - The cache of missing imported props is kept per world, so an import made between two editor play sessions is used.
 - **Dog:**
   - Three sizes and five coats.
   - A trot with diagonal leg pairs at a stride that matches the ground covered, plus a tail wag.
@@ -69,19 +76,24 @@
 - **Imported props:** when the host has imported the Blender props, the rig uses `SM_Props_dog_<size>_<part>`, `SM_Props_stroller_<part>` and `SM_Props_grocery_bag_<part>` from `/Game/Plateau/Replica/Props`. Each part goes at its manifest `attach_cm` and pivots at its joint. Otherwise the rig builds the companion from engine basic shapes and always-cooked ParkComic materials.
 
 ## What was checked here
-- `python3 games/nord-unreal/Scripts/test_knock_model.py` passes 317,407 checks on c++ 13.3, g++ 13.3 and clang++ 18.1, with `-std=c++20 -Wall -Wextra -Wshadow -Wconversion -Wdouble-promotion -Werror`, plus a strict pass that poisons the Unreal macro names. All three compilers print the same pose table.
-- `scratchpad/uestubs/check.sh --both` passes all 70 module files in both the game and editor configurations. This is a syntax and warning check against stub headers only. It does not link and it does not use the real engine headers.
+- `python3 games/nord-unreal/Scripts/test_knock_model.py` passes 317,416 checks on c++ 13.3, g++ 13.3 and clang++ 18.1, with `-std=c++20 -Wall -Wextra -Wshadow -Wconversion -Wdouble-promotion -Werror`, plus a strict pass that poisons the Unreal macro names. All three compilers print the same pose table. It includes a small kinematic run of the car-reaction rule: at 1000, 1500 and 2000 cm/s every person in the car body's path is hit, and nobody beside it is.
+- From `games/nord-unreal`, `Tools/SyntaxCheck/check.sh --both` passes all 74 module files in the game and editor configurations, and `Tools/SyntaxCheck/link.sh --both` finds no used game symbol without a definition. Both run against stub headers, not the real engine.
 - Not checked here: nothing ran in Unreal. The engine build, the link, the automation tests, PIE, the look of the tumble and companions, and the network behaviour all wait for the host.
 
 ## Native tests (`QuebecPeopleTests.cpp`, host only)
 - `Quebec.People.KnockPose`: checks the phases, a continuous pose, the swept box and the civilian rules.
 - `Quebec.People.ResidentRouteHold`: knocks a resident down, then checks that the route clock holds until it is back. The route resumes exactly where it paused, and fleeing also holds the clock. A resident who is down does not greet, and a hidden one cannot be knocked down.
+- `Quebec.People.AimedCarHit`: a player drives straight at a resident at 1000, 1500 and 2000 cm/s through the real warning scan and car tick. The resident in the path is knocked down; one 190 cm beside the path dives and stays up.
 - `Quebec.People.CompanionCounts`: 96 runtime residents with 72 walkers give 12 dogs, 8 strollers and 8 grocery carriers. Joggers and social residents get none. A dog walker is still one actor.
 - `Quebec.People.PlayerKnock`: covers the knock, the input lock, standing up after the tumble, the K.-O. hold, and `EndKnock` followed by the 0.8 s stand-up.
 - `Quebec.People.PedestrianKnock`: the server moves the pedestrian through the throw, then it stands up upright and flees.
 
 ## Host checks still open
 - Build both targets, then run `Automation RunTests Quebec.People` and the existing `Quebec.Residents.*` tests. `HiddenVisuals` and `ReactionContinuity` must still pass.
+- QA scripts updated for this change:
+  - `Scripts/smoke_test.py` (`residents_ready`) now ignores static meshes tagged `NordCompanion` when it counts the one visible hand prop at `RightHand`.
+  - `Scripts/test_resident_feedback.py` skips the route-pace and hold-position checks while the target's `Stride` is not 0. The warning drive brakes at the first reaction and accepts either the freeze hold (the expected case, since the fixture aims at the resident) or a dive (`Stride` 2). It asserts that the drive never knocks the resident down. The cooldown step also checks that. Add `-NordNoPolice` if a stray strike must not raise stars.
+  - Neither script has run here; both need the host.
 - `Scripts/population_test.py` needs a carve-out. A resident whose `Stride` is not 0 runs at 380 cm/s and leaves its route, which breaks the "never teleports" pace limit and the social-drift check. Today that happens only after a knock, an alarm or a fast player car, so a run with idle players should still pass.
 - `smoke_test.py:653` needs every resident's tick interval to stay 0. This change keeps it at 0.
 - In PIE with two players:

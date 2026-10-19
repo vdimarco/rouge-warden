@@ -662,7 +662,8 @@ def residents_ready():
             body=a.get_component_by_class(u.SkeletalMeshComponent)
             assert body and body.get_editor_property('skeletal_mesh_asset') and body.is_visible()
             assert body.get_editor_property('skeletal_mesh_asset').get_editor_property('skeleton')
-            props=[c for c in a.get_components_by_class(u.StaticMeshComponent) if c.is_visible() and c.static_mesh is not None]
+            # A walker's dog, stroller or groceries are tagged NordCompanion; the one hand prop must still sit at RightHand.
+            props=[c for c in a.get_components_by_class(u.StaticMeshComponent) if c.is_visible() and c.static_mesh is not None and not c.component_has_tag('NordCompanion')]
             assert len(props)==1 and distance(props[0].get_world_location(),body.get_socket_location('RightHand'))<3
         else:
             assert sum(c.static_mesh is not None for c in a.get_components_by_class(u.StaticMeshComponent))==6

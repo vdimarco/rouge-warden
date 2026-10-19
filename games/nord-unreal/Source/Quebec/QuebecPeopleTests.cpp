@@ -5,6 +5,7 @@
 #include "QuebecPeople.h"
 
 #if WITH_DEV_AUTOMATION_TESTS
+#include "Components/BoxComponent.h"
 #include "Engine/World.h"
 #include "EngineUtils.h"
 #include "Misc/AutomationTest.h"
@@ -107,6 +108,58 @@ bool FQuebecPeopleResidentKnockTest::RunTest(const FString& Parameters)
     TestEqual(TEXT("Fleeing holds the route clock"), Resident->RouteTime(static_cast<float>(World->TimeSeconds) + 1.f), BeforeFlee, .001f);
     Resident->SetActorHiddenInGame(true);
     TestFalse(TEXT("A hidden resident cannot be knocked down"), Resident->Knock(FVector(800., 0., 400.), Hit));
+    return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FQuebecPeopleAimedCarHitTest, "Quebec.People.AimedCarHit",
+    EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+bool FQuebecPeopleAimedCarHitTest::RunTest(const FString& Parameters)
+{
+    // A player drives straight at a resident standing in the car's path: the warning scan makes it freeze, and the car hits.
+    // A resident just beside the path dives away instead and stays up.
+    for (float CarSpeed : {1000.f, 1500.f, 2000.f})
+    {
+        UWorld* World = MakePeopleWorld();
+        if (!TestNotNull(TEXT("Isolated aimed-hit world"), World)) return false;
+        ON_SCOPE_EXIT { World->DestroyWorld(false); };
+        AActor* Floor = World->SpawnActor<AActor>();
+        UBoxComponent* FloorBox = NewObject<UBoxComponent>(Floor);
+        Floor->SetRootComponent(FloorBox);
+        FloorBox->SetBoxExtent(FVector(100000., 100000., 20.));
+        FloorBox->SetCollisionProfileName(TEXT("BlockAll"));
+        FloorBox->RegisterComponent();
+        Floor->SetActorLocation(FVector(0., 0., -20.));
+        FActorSpawnParameters Spawn;
+        Spawn.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+        AQuebecCar* Car = World->SpawnActor<AQuebecCar>(FVector(0., 0., 102.), FRotator::ZeroRotator, Spawn);
+        AQuebecCharacter* Avatar = World->SpawnActor<AQuebecCharacter>(FVector(0., 5000., 102.), FRotator::ZeroRotator, Spawn);
+        AQuebecController* Driver = World->SpawnActor<AQuebecController>();
+        AQuebecParkResident* InPath = World->SpawnActor<AQuebecParkResident>(FVector(2400., 40., 7.), FRotator(0., 90., 0.), Spawn);
+        AQuebecParkResident* Beside = World->SpawnActor<AQuebecParkResident>(FVector(2400., -190., 7.), FRotator(0., 90., 0.), Spawn);
+        if (!Car || !Avatar || !Driver || !InPath || !Beside) return false;
+        Avatar->SetActorEnableCollision(false);
+        Car->Occupant = Avatar;
+        Driver->SetAsLocalPlayerController();
+        World->InitializeActorsForPlay(FURL());
+        Driver->Possess(Car);
+        if (!TestTrue(TEXT("The test car is driven by its player"), Car->GetController() == Driver && Car->HasAuthority())) return false;
+        const float Step = 1.f / 60.f;
+        bool bBesideDived = false;
+        for (int32 Frame = 0; Frame < 60 * 4 && !InPath->IsKnockedDown(); ++Frame)
+        {
+            World->TimeSeconds += Step;
+            Car->Speed = CarSpeed;
+            Car->LateralSpeed = 0.f;
+            Driver->TickResidentGreetings(Step);
+            Car->Tick(Step);
+            InPath->Tick(Step);
+            Beside->Tick(Step);
+            bBesideDived |= Beside->IsAway();
+        }
+        TestTrue(FString::Printf(TEXT("A resident in the car's path is knocked down at %.0f cm/s"), CarSpeed), InPath->IsKnockedDown());
+        TestTrue(FString::Printf(TEXT("A resident beside the path dives away at %.0f cm/s"), CarSpeed), bBesideDived);
+        TestFalse(FString::Printf(TEXT("The resident beside the path stays up at %.0f cm/s"), CarSpeed), Beside->IsKnockedDown());
+    }
     return true;
 }
 
