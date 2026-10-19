@@ -53,8 +53,8 @@ namespace
         return LoadObject<UMaterialInterface>(nullptr, *FString::Printf(TEXT("/Game/ParkComic/%s.%s"), Name, Name));
     }
 
-    // Optional Blender props imported by Scripts/apply_plateau_replica.py on the host. Absent packages are remembered,
-    // so 28 companions do not ask the file system again.
+    // Optional Blender props (Data/Plateau/ReplicaGeometry/Props/manifest.json) that the host imports into
+    // /Game/Plateau/Replica/Props. Absent packages are remembered, so 28 companions do not ask the file system again.
     UStaticMesh* PropMesh(const TCHAR* Name)
     {
         static TSet<FString> Missing;
@@ -122,45 +122,52 @@ void UQuebecCompanionRig::Build(uint8 NewKind, int32 Seed)
     if (Kind == static_cast<uint8>(QuebecLife::ECompanion::Dog))
     {
         // Three sizes and five coats, chosen by the walker's seed.
+        const int32 SizeIndex = Variant % 3;
         const float Sizes[] = {.6f, .85f, 1.1f};
         const TCHAR* Coats[] = {TEXT("M_Fur"), TEXT("M_Ink"), TEXT("M_Cream"), TEXT("M_White"), TEXT("M_Hair")};
-        SizeScale = Sizes[Variant % 3];
+        SizeScale = Sizes[SizeIndex];
         const int32 CoatIndex = Variant / 3 % 5;
         UMaterialInterface* Coat = ComicMaterial(Coats[CoatIndex]);
         UMaterialInterface* Accent = CoatIndex == 1 ? ComicMaterial(TEXT("M_Cream")) : Ink;
         const float S = SizeScale;
         const FVector Neck(28.f * S, 0.f, 58.f * S);
-        // Imported dog parts share the prop's base-centre origin; their joints come from their bounds.
-        constexpr int32 ImportedCount = 7;
-        const TCHAR* Imported[ImportedCount] = {TEXT("SM_Dog_Body"), TEXT("SM_Dog_Head"), TEXT("SM_Dog_LegFL"), TEXT("SM_Dog_LegFR"),
-            TEXT("SM_Dog_LegRL"), TEXT("SM_Dog_LegRR"), TEXT("SM_Dog_Tail")};
+        // The host's Blender dogs (Props manifest: SM_Props_dog_<size>_<part>) have each part's pivot at its joint, placed
+        // at the medium dog's attach points scaled by size. They keep their imported coats.
+        const TCHAR* SizeNames[] = {TEXT("small"), TEXT("medium"), TEXT("large")};
+        const float PropScales[] = {.7f, 1.f, 4.f / 3.f};
+        constexpr int32 ImportedCount = 9;
+        const TCHAR* ImportedParts[ImportedCount] = {TEXT("body"), TEXT("head"), TEXT("head_dark"), TEXT("collar"),
+            TEXT("leg_fl"), TEXT("leg_fr"), TEXT("leg_rl"), TEXT("leg_rr"), TEXT("tail")};
+        const FVector Attach[ImportedCount] = {FVector(0.f, 0.f, .54f), FVector(21.6f, 0.f, 40.94f), FVector(21.6f, 0.f, 40.94f),
+            FVector(0.f, 0.f, .54f), FVector(18.f, -5.76f, 28.34f), FVector(18.f, 5.76f, 28.34f), FVector(-18.f, -6.f, 29.74f),
+            FVector(-18.f, 6.f, 29.74f), FVector(-28.2f, 0.f, 39.54f)};
         UStaticMesh* Props[ImportedCount];
         bool bImported = true;
-        for (int32 I = 0; I < ImportedCount; ++I) bImported &= (Props[I] = PropMesh(Imported[I])) != nullptr;
-        const auto Top = [S](const UStaticMesh* Mesh, float X, float Z)
-        {
-            // Joint on the part's bounds: X and Z pick the side (0 min, .5 centre, 1 max).
-            const FBox Box = Mesh->GetBoundingBox();
-            return FVector(FMath::Lerp(Box.Min.X, Box.Max.X, X), FMath::Lerp(Box.Min.Y, Box.Max.Y, .5), FMath::Lerp(Box.Min.Z, Box.Max.Z, Z)) * S;
-        };
-        const FTransform PropShape(FQuat::Identity, FVector::ZeroVector, FVector(S));
-        AddPart(bImported ? Props[0] : Cube, Coat, bImported ? PropShape : Shape(FVector(0.f, 0.f, 46.f * S), FVector(.6f, .24f, .26f) * S), FVector::ZeroVector);
-        AddPart(bImported ? Props[1] : Cube, Coat, bImported ? PropShape : Shape(FVector(38.f * S, 0.f, 66.f * S), FVector(.22f, .18f, .19f) * S),
-            bImported ? Top(Props[1], 0.f, 0.f) : Neck);
-        AddPart(bImported ? nullptr : Cube, Coat, Shape(FVector(53.f * S, 0.f, 61.f * S), FVector(.13f, .11f, .09f) * S), Neck);
-        AddPart(bImported ? nullptr : Sphere, Ink, Shape(FVector(60.f * S, 0.f, 64.f * S), FVector(.05f) * S), Neck);
+        for (int32 I = 0; I < ImportedCount; ++I)
+            bImported &= (Props[I] = PropMesh(*FString::Printf(TEXT("SM_Props_dog_%s_%s"), SizeNames[SizeIndex], ImportedParts[I]))) != nullptr;
+        const auto Prop = [&Attach, &PropScales, SizeIndex](int32 Index) { return FTransform(Attach[Index] * PropScales[SizeIndex]); };
+        const auto Joint = [&Attach, &PropScales, SizeIndex](int32 Index) { return Attach[Index] * PropScales[SizeIndex]; };
+        // Part order matches EDogPart: body, head, snout (eyes and nose), nose (collar), two ears, four legs, tail, leash.
+        AddPart(bImported ? Props[0] : Cube, bImported ? nullptr : Coat, bImported ? Prop(0) : Shape(FVector(0.f, 0.f, 46.f * S), FVector(.6f, .24f, .26f) * S), FVector::ZeroVector);
+        AddPart(bImported ? Props[1] : Cube, bImported ? nullptr : Coat, bImported ? Prop(1) : Shape(FVector(38.f * S, 0.f, 66.f * S), FVector(.22f, .18f, .19f) * S),
+            bImported ? Joint(1) : Neck);
+        AddPart(bImported ? Props[2] : Cube, bImported ? nullptr : Coat, bImported ? Prop(2) : Shape(FVector(53.f * S, 0.f, 61.f * S), FVector(.13f, .11f, .09f) * S),
+            bImported ? Joint(2) : Neck);
+        // The imported collar sits at the neck joint, so nodding with the head barely moves it.
+        AddPart(bImported ? Props[3] : Sphere, bImported ? nullptr : Ink, bImported ? Prop(3) : Shape(FVector(60.f * S, 0.f, 64.f * S), FVector(.05f) * S),
+            bImported ? Joint(1) : Neck);
         for (float Side : {-1.f, 1.f})
             AddPart(bImported ? nullptr : Cube, Accent, Shape(FVector(32.f * S, Side * 8.f * S, 78.f * S), FVector(.05f, .07f, .1f) * S,
                 FRotator(0.f, 0.f, Side * 18.f)), Neck);
         for (int32 Leg = 0; Leg < 4; ++Leg)
         {
             const FVector Hip((Leg < 2 ? 22.f : -22.f) * S, (Leg % 2 ? 8.f : -8.f) * S, 36.f * S);
-            AddPart(bImported ? Props[2 + Leg] : Cylinder, Coat, bImported ? PropShape : Shape(Hip - FVector(0.f, 0.f, 18.f * S), FVector(.075f, .075f, .36f) * S),
-                bImported ? Top(Props[2 + Leg], .5f, 1.f) : Hip);
+            AddPart(bImported ? Props[4 + Leg] : Cylinder, bImported ? nullptr : Coat,
+                bImported ? Prop(4 + Leg) : Shape(Hip - FVector(0.f, 0.f, 18.f * S), FVector(.075f, .075f, .36f) * S), bImported ? Joint(4 + Leg) : Hip);
         }
         const FVector TailRoot(-30.f * S, 0.f, 55.f * S);
-        AddPart(bImported ? Props[6] : Cylinder, Coat, bImported ? PropShape : Shape(TailRoot + FVector(-9.2f, 0.f, 9.2f) * S, FVector(.04f, .04f, .26f) * S,
-            FRotator(45.f, 0.f, 0.f)), bImported ? Top(Props[6], 1.f, 0.f) : TailRoot);
+        AddPart(bImported ? Props[8] : Cylinder, bImported ? nullptr : Coat, bImported ? Prop(8) : Shape(TailRoot + FVector(-9.2f, 0.f, 9.2f) * S,
+            FVector(.04f, .04f, .26f) * S, FRotator(45.f, 0.f, 0.f)), bImported ? Joint(8) : TailRoot);
         UStaticMeshComponent* Leash = AddPart(Cylinder, ComicMaterial(TEXT("M_Red")), Shape(FVector::ZeroVector, FVector(.012f, .012f, 1.f)), FVector::ZeroVector);
         Leash->SetCastShadow(false);
         bHasDog = true;
@@ -169,29 +176,44 @@ void UQuebecCompanionRig::Build(uint8 NewKind, int32 Seed)
     {
         const TCHAR* Fabrics[] = {TEXT("M_Navy"), TEXT("M_Berry"), TEXT("M_Lime")};
         UMaterialInterface* Fabric = ComicMaterial(Fabrics[Variant % 3]);
-        // An imported stroller replaces the basket, hood and frame; the basic wheels still turn.
-        UStaticMesh* Imported = PropMesh(TEXT("SM_Stroller"));
-        AddPart(Imported ? Imported : Cube, Imported ? nullptr : Fabric, Imported ? FTransform::Identity : Shape(FVector(0.f, 0.f, 58.f), FVector(.56f, .38f, .3f)), FVector::ZeroVector);
-        AddPart(Imported ? nullptr : Sphere, Fabric, Shape(FVector(-14.f, 0.f, 72.f), FVector(.42f, .4f, .4f)), FVector::ZeroVector);
-        AddPart(Imported ? nullptr : Cube, Ink, Shape(FVector(0.f, 0.f, 27.f), FVector(.5f, .3f, .03f)), FVector::ZeroVector);
+        // The host's Blender stroller: frame, seat and canopy in root space, wheels pivoting on their axles.
+        const TCHAR* ImportedParts[] = {TEXT("SM_Props_stroller_frame"), TEXT("SM_Props_stroller_seat"), TEXT("SM_Props_stroller_canopy"),
+            TEXT("SM_Props_stroller_wheel_fl"), TEXT("SM_Props_stroller_wheel_fr"), TEXT("SM_Props_stroller_wheel_rl"), TEXT("SM_Props_stroller_wheel_rr")};
+        UStaticMesh* Props[7];
+        bool bImported = true;
+        for (int32 I = 0; I < 7; ++I) bImported &= (Props[I] = PropMesh(ImportedParts[I])) != nullptr;
+        const FTransform Root(FVector(0.f, 0.f, -.08f));
+        AddPart(bImported ? Props[0] : Cube, bImported ? nullptr : Fabric, bImported ? Root : Shape(FVector(0.f, 0.f, 58.f), FVector(.56f, .38f, .3f)), FVector::ZeroVector);
+        AddPart(bImported ? Props[1] : Sphere, bImported ? nullptr : Fabric, bImported ? Root : Shape(FVector(-14.f, 0.f, 72.f), FVector(.42f, .4f, .4f)), FVector::ZeroVector);
+        AddPart(bImported ? Props[2] : Cube, bImported ? nullptr : Ink, bImported ? Root : Shape(FVector(0.f, 0.f, 27.f), FVector(.5f, .3f, .03f)), FVector::ZeroVector);
         for (float Side : {-1.f, 1.f})
-            AddPart(Imported ? nullptr : Cube, Ink, Shape(FVector(-34.f, Side * 17.f, 80.f), FVector(.03f, .03f, .5f), FRotator(-40.f, 0.f, 0.f)), FVector::ZeroVector);
-        AddPart(Imported ? nullptr : Cylinder, Ink, Shape(FVector(-48.f, 0.f, 98.f), FVector(.03f, .03f, .4f), FRotator(0.f, 0.f, 90.f)), FVector::ZeroVector);
+            AddPart(bImported ? nullptr : Cube, Ink, Shape(FVector(-34.f, Side * 17.f, 80.f), FVector(.03f, .03f, .5f), FRotator(-40.f, 0.f, 0.f)), FVector::ZeroVector);
+        AddPart(bImported ? nullptr : Cylinder, Ink, Shape(FVector(-48.f, 0.f, 98.f), FVector(.03f, .03f, .4f), FRotator(0.f, 0.f, 90.f)), FVector::ZeroVector);
+        const FVector Axles[4] = {FVector(30.f, -21.f, 9.42f), FVector(30.f, 21.f, 9.42f), FVector(-30.f, -27.5f, 13.92f), FVector(-30.f, 27.5f, 13.92f)};
         for (int32 Wheel = 0; Wheel < 4; ++Wheel)
         {
             const FVector Hub(Wheel < 2 ? 22.f : -22.f, Wheel % 2 ? 18.f : -18.f, 11.f);
-            AddPart(Cylinder, Ink, Shape(Hub, FVector(.22f, .22f, .04f), FRotator(0.f, 0.f, 90.f)), Hub);
+            AddPart(bImported ? Props[3 + Wheel] : Cylinder, bImported ? nullptr : Ink,
+                bImported ? FTransform(Axles[Wheel]) : Shape(Hub, FVector(.22f, .22f, .04f), FRotator(0.f, 0.f, 90.f)), bImported ? Axles[Wheel] : Hub);
         }
     }
     else if (Kind == static_cast<uint8>(QuebecLife::ECompanion::Groceries))
     {
-        UStaticMesh* Imported = PropMesh(TEXT("SM_GroceryBag"));
-        AddPart(Imported ? Imported : Cube, Imported ? nullptr : ComicMaterial(TEXT("M_Paper")),
-            Imported ? FTransform(FQuat::Identity, FVector(0.f, 0.f, -36.f)) : Shape(FVector(0.f, 0.f, -20.f), FVector(.26f, .16f, .32f)), FVector::ZeroVector);
-        AddPart(Cylinder, ComicMaterial(TEXT("M_Gold")), Shape(FVector(4.f, 3.f, -2.f), FVector(.05f, .05f, .5f), FRotator(-14.f, 0.f, 8.f)), FVector::ZeroVector);
-        AddPart(Sphere, ComicMaterial(TEXT("M_Lime")), Shape(FVector(-5.f, -2.f, -3.f), FVector(.13f, .11f, .1f)), FVector::ZeroVector);
+        // The host's Blender bag hangs from its 43 cm grip; extra imported parts follow the six basic ones.
+        UStaticMesh* Bag = PropMesh(TEXT("SM_Props_grocery_bag_bag"));
+        const FTransform Grip(FVector(0.f, 0.f, -43.f));
+        AddPart(Bag ? Bag : Cube, Bag ? nullptr : ComicMaterial(TEXT("M_Paper")), Bag ? Grip : Shape(FVector(0.f, 0.f, -20.f), FVector(.26f, .16f, .32f)), FVector::ZeroVector);
+        UStaticMesh* Bread = Bag ? PropMesh(TEXT("SM_Props_grocery_bag_bread")) : nullptr;
+        AddPart(Bread ? Bread : Cylinder, Bread ? nullptr : ComicMaterial(TEXT("M_Gold")),
+            Bread ? Grip : Shape(FVector(4.f, 3.f, -2.f), FVector(.05f, .05f, .5f), FRotator(-14.f, 0.f, 8.f)), FVector::ZeroVector);
+        UStaticMesh* Leaves = Bag ? PropMesh(TEXT("SM_Props_grocery_bag_leaves")) : nullptr;
+        AddPart(Leaves ? Leaves : Sphere, Leaves ? nullptr : ComicMaterial(TEXT("M_Lime")),
+            Leaves ? Grip : Shape(FVector(-5.f, -2.f, -3.f), FVector(.13f, .11f, .1f)), FVector::ZeroVector);
         UMaterialInterface* Orange = ComicMaterial(TEXT("M_Orange"));
         for (int32 Fruit = 0; Fruit < 3; ++Fruit) AddPart(Sphere, Orange, Shape(FVector::ZeroVector, FVector(.08f)), FVector::ZeroVector)->SetVisibility(false);
+        if (Bag)
+            for (const TCHAR* Extra : {TEXT("SM_Props_grocery_bag_bag_inner"), TEXT("SM_Props_grocery_bag_leeks")})
+                if (UStaticMesh* Mesh = PropMesh(Extra)) AddPart(Mesh, nullptr, Grip, FVector::ZeroVector);
     }
     LastPoseTime = -1.f;
 }

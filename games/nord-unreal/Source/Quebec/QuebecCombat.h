@@ -32,7 +32,7 @@ namespace QuebecCombat
     QUEBEC_API EQuebecWeapon NextOwnedWeapon(const AQuebecPlayerState* Stats);
     // Server: the map's weapon, vest and health pickups. LaFontaine only; returns how many were spawned.
     QUEBEC_API int32 SpawnPickups(UWorld* World);
-    // Every peer: builds a weapon or pickup model from engine basic shapes under Parent. Returns the new parts.
+    // Every peer: builds a weapon model from engine basic shapes under Parent and appends its pieces to Parts.
     QUEBEC_API void BuildWeaponModel(AActor* Owner, USceneComponent* Parent, int32 Slot, float Scale,
         TArray<TObjectPtr<UStaticMeshComponent>>& Parts);
 }

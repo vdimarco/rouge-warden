@@ -871,7 +871,7 @@ void AQuebecWeaponPickup::BuildModel()
     ModelParts.Reset();
     const QuebecCombatModel::EPickupKind Which = GetKind();
     const int32 Slot = QuebecCombatModel::PickupWeaponSlot(Which);
-    if (Slot > 0) QuebecCombat::BuildWeaponModel(this, Spinner, Slot, Slot == static_cast<int32>(QuebecCombatModel::ESlot::HockeyStick) ? .6f : 1.7f, ModelParts);
+    if (Slot > 0) QuebecCombat::BuildWeaponModel(this, Spinner, Slot, Slot == static_cast<int32>(QuebecCombatModel::ESlot::HockeyStick) ? .5f : 1.7f, ModelParts);
     else CombatBuildSupplyModel(this, Spinner, Which, ModelParts);
     // A ring of glowing tiles on the ground: white-gold for weapons, lime for vests, red for health.
     Ring->ClearInstances();

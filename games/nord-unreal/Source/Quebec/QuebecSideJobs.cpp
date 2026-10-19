@@ -98,6 +98,13 @@ namespace
         return Roads;
     }
 
+    // Closest point on segment AB to Point in the ground plane, at A's height.
+    FVector SideJobClosest2D(const FVector& Point, const FVector& A, const FVector& B)
+    {
+        const FVector Flat(Point.X,Point.Y,A.Z);
+        return FMath::ClosestPointOnSegment(Flat,A,FVector(B.X,B.Y,A.Z));
+    }
+
     int32 SideJobNearestRoad(const FVector& Point)
     {
         const TArray<bool>& Roads = SideJobRoadMask();
@@ -106,7 +113,7 @@ namespace
         for (int32 I = 0; I < Roads.Num(); ++I)
         {
             if (!Roads[I]) continue;
-            const FVector Closest = FMath::ClosestPointOnSegment2D(Point,LaFontaine::RoadSegments[I][0],LaFontaine::RoadSegments[I][1]);
+            const FVector Closest = SideJobClosest2D(Point,LaFontaine::RoadSegments[I][0],LaFontaine::RoadSegments[I][1]);
             const double Distance = FVector::DistSquared2D(Closest,Point);
             if (Distance < BestDistance) { BestDistance = Distance; Best = I; }
         }
@@ -404,7 +411,7 @@ void AQuebecSideJobs::BeginJobContent(AQuebecController* Player)
             bThiefForward = FVector::DistSquared2D(B,From) >= FVector::DistSquared2D(A,From);
             const FVector Heading = ((bThiefForward ? B : A)-(bThiefForward ? A : B)).GetSafeNormal2D();
             const FVector Lane = SideJobRight(Heading)*(LaFontaine::RoadSegmentWidths[ThiefSegment]*.25f);
-            const FVector Base = FMath::ClosestPointOnSegment2D(Seed,A,B);
+            const FVector Base = SideJobClosest2D(Seed,A,B);
             for (const float Along : {0.f,900.f,-900.f,1800.f})
             {
                 ThiefCar = SpawnJobCar(Base+Heading*Along+Lane,Heading,3,TEXT("SideJobTarget"));
@@ -431,7 +438,7 @@ void AQuebecSideJobs::BeginJobContent(AQuebecController* Player)
         {
             const FVector A = LaFontaine::RoadSegments[Curb][0], B = LaFontaine::RoadSegments[Curb][1];
             const FVector Heading = (B-A).GetSafeNormal2D();
-            const FVector Base = FMath::ClosestPointOnSegment2D(MarkerPoint,A,B)+SideJobRight(Heading)*(LaFontaine::RoadSegmentWidths[Curb]*.4f);
+            const FVector Base = SideJobClosest2D(MarkerPoint,A,B)+SideJobRight(Heading)*(LaFontaine::RoadSegmentWidths[Curb]*.4f);
             for (const float Along : {0.f,700.f,-700.f})
             {
                 LoanCar = SpawnJobCar(Base+Heading*Along,Heading,1,TEXT("SideJobLoan"));
@@ -585,7 +592,7 @@ bool AQuebecSideJobs::MovePlayerToMarker(AQuebecController* Player, int32 Index)
         {
             const FVector A = LaFontaine::RoadSegments[Road][0], B = LaFontaine::RoadSegments[Road][1];
             const FVector Heading = (B-A).GetSafeNormal2D();
-            Base = FMath::ClosestPointOnSegment2D(Base,A,B)+SideJobRight(Heading)*(LaFontaine::RoadSegmentWidths[Road]*.25f);
+            Base = SideJobClosest2D(Base,A,B)+SideJobRight(Heading)*(LaFontaine::RoadSegmentWidths[Road]*.25f);
             Base.Z = MarkerPoints[Index].Z;
             Facing.Yaw = Heading.Rotation().Yaw;
         }
@@ -655,13 +662,13 @@ void AQuebecSideJobs::TickJob(float DeltaSeconds)
         if (Stats->GetDownState() == EQuebecDownState::Arrested) { FinishJob(false,TEXT("Arrêté par la police")); return; }
     }
     if (DeadlineTime > 0.f && Now >= DeadlineTime) { FinishJob(false,TEXT("Temps écoulé")); return; }
-    if (JobIndex == SideJobDelivery) TickDelivery(Now);
+    if (JobIndex == SideJobDelivery) TickDelivery();
     else if (JobIndex == SideJobThief) TickThief(Now,DeltaSeconds);
     else if (JobIndex == SideJobGoons) TickGoons(Now);
     else if (JobIndex == SideJobEscape) TickEscape(Now);
 }
 
-void AQuebecSideJobs::TickDelivery(float Now)
+void AQuebecSideJobs::TickDelivery()
 {
     APlayerState* Who = nullptr;
     if (JobStep == 0)

@@ -227,6 +227,59 @@ private:
     bool bKnockPose = false;
     UFUNCTION() void OnRep_Knock();
     UFUNCTION(Client, Reliable) void ClientKnockLaunch(FVector Push);
+
+    // Combat (QuebecCombat.cpp): weapons, aim assist and firing for a walking player.
+public:
+    bool IsAiming() const { return bCombatAiming; }
+    // Possessed, on foot, not swimming, not knocked, down or otherwise input-locked.
+    bool CanUseWeapons() const;
+    // Both peers: let go of Fire and Aim, for a disconnected browser, a K.-O. or a respawn.
+    void ReleaseCombatInput();
+    // Server: fire or swing the current weapon. Only the planar part of AimDirection picks the target.
+    void FireWeapon(const FVector& AimOrigin, const FVector& AimDirection);
+private:
+    UPROPERTY() TObjectPtr<USceneComponent> WeaponPivot;
+    UPROPERTY() TArray<TObjectPtr<UStaticMeshComponent>> WeaponParts;
+    UPROPERTY() TObjectPtr<UStaticMeshComponent> PunchFist;
+    TWeakObjectPtr<AActor> AimLock;
+    TWeakObjectPtr<AActor> MeleeTarget;
+    bool bFireHeld = false;
+    bool bCombatAiming = false;
+    uint8 ShownWeapon = 255;
+    uint8 MeleeWeapon = 0;
+    uint8 SwingWeapon = 0;
+    float AimLockSince = -100.f;
+    float AimLockRefreshAt = 0.f;
+    float LastAimOrFireAt = -100.f;
+    float NextLocalFireAt = 0.f;
+    float NextServerFireAt = 0.f;
+    float NextGunfireReportAt = 0.f;
+    float NextGunAlarmAt = 0.f;
+    float MeleeHitAt = -1.f;
+    float SwingStartedAt = -100.f;
+    float ShotKickAt = -100.f;
+    float LastShotWordAt = -100.f;
+    float AimBlend = 0.f;
+    void TickCombat(float DeltaSeconds);
+    void TickCombatServer(float Now);
+    void UpdateHeldWeapon();
+    void AnimateHeldWeapon(float Now);
+    void UpdateAimCamera(float DeltaSeconds);
+    void SetCombatAiming(bool bNewAiming);
+    void SendFire();
+    FVector LocalAimDirection() const;
+    UFUNCTION() void StartFire();
+    UFUNCTION() void StopFire();
+    UFUNCTION() void StartAim();
+    UFUNCTION() void StopAim();
+    UFUNCTION() void CycleWeapon();
+    UFUNCTION() void TurnView(float Value);
+    UFUNCTION(Server, Reliable) void ServerFire(FVector_NetQuantize AimOrigin, FVector_NetQuantizeNormal AimDirection);
+    UFUNCTION(Server, Reliable) void ServerSetAim(bool bNewAiming);
+    UFUNCTION(Server, Reliable) void ServerNextWeapon();
+    UFUNCTION(NetMulticast, Unreliable) void MulticastShot(FVector_NetQuantize Muzzle, FVector_NetQuantize Impact, uint8 Slot, bool bHit, float Yaw);
+    UFUNCTION(NetMulticast, Unreliable) void MulticastSwing(uint8 Slot, float Yaw);
+    UFUNCTION(NetMulticast, Unreliable) void MulticastImpact(FVector_NetQuantize Point, uint8 Slot);
 };
 
 UCLASS()
@@ -379,6 +432,9 @@ private:
     void SetTrafficSignal(uint8 NewSignal);
     void BlinkTrafficSignal();
     UFUNCTION() void OnRep_TrafficSignal();
+    // Server: forgets stop holds, yielding and any curb stop, and turns the lamps off. Runs by itself once a car stops
+    // being traffic (a player, an autopilot or a wreck takes it); any path that clears bTraffic may also call it.
+    void ClearTrafficLife();
 };
 
 UCLASS()
@@ -428,6 +484,21 @@ public:
     UFUNCTION(Exec) void NordSkyFreeze(int32 Frozen);
     UPROPERTY(VisibleAnywhere, Transient) FString ResidentCaption;
     UPROPERTY(VisibleAnywhere, Transient) float ResidentCaptionUntil = 0.f;
+    // Street notices (JOBS, QuebecGameHUD.cpp): a banner channel apart from ResidentCaption, so story captions,
+    // greetings and their QA checks are unaffected. QuebecNotice::Show sends it; the HUD draws GameNotice*.
+    UFUNCTION(Client, Reliable) void ClientGameNotice(const FString& Title, const FString& Detail, float Seconds);
+    // Client: a notice that arrived while another was fresh shows once that one has had a second on screen.
+    void TickGameNotice();
+    UPROPERTY(VisibleAnywhere, Transient) FString GameNoticeTitle;
+    UPROPERTY(VisibleAnywhere, Transient) FString GameNoticeDetail;
+    UPROPERTY(VisibleAnywhere, Transient) float GameNoticeStart = 0.f;
+    UPROPERTY(VisibleAnywhere, Transient) float GameNoticeUntil = 0.f;
+    FString PendingNoticeTitle;
+    FString PendingNoticeDetail;
+    float PendingNoticeSeconds = 0.f;
+    // Sender side: the same notice within 1.5 s is dropped.
+    FString LastNoticeKey;
+    float LastNoticeAt = -10.f;
 
 private:
     UPROPERTY() TArray<TObjectPtr<USoundBase>> FeedbackSounds;
@@ -495,6 +566,21 @@ private:
     bool bWasHandbrake = false;
     float LastCarSpeed = 0.f;
     void TriggerSoundWord(const TCHAR* Word);
+    // Street HUD (JOBS, QuebecGameHUD.cpp): wanted stars, vitals, weapon, cash and side-job column; centre banners;
+    // aim reticle; radar blips. DrawHUD passes its radar box and the top of the free view.
+    void DrawStreetHUD(float UIScale, bool bTall, bool bTouch, float RadarX, float RadarY, float RadarSize, float ViewTop);
+    // Width in UI units that the status column takes left of the radar, 0 while the street is calm.
+    float StreetColumnWidth() const;
+    // Side-job marker prompt for the local walker, empty elsewhere.
+    FString StreetPrompt() const;
+    int32 LastJobSerial = -1;
+    float JobBannerAt = -10.f;
+    int32 LastStars = 0;
+    float StarsChangedAt = -10.f;
+    int32 LastCash = -1;
+    float CashChangedAt = -10.f;
+    float LastHealth = 100.f;
+    float HurtAt = -10.f;
 };
 
 UCLASS()

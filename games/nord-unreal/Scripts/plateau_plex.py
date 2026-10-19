@@ -62,13 +62,13 @@ SHOP_AMENITY = ('restaurant', 'cafe', 'bar', 'pub', 'fast_food', 'pharmacy', 'ba
 
 # research-plateau.md §9 palette (sRGB); roughness/metallic are art-direction values.
 MATERIALS = {
-    'Brick_Red':       {'base_color_srgb': '#953F2F', 'roughness': .86, 'metallic': 0, 'texture': 'Data/Art/brick_wall_001'},
-    'Brick_RedDark':   {'base_color_srgb': '#7A3226', 'roughness': .88, 'metallic': 0, 'texture': 'Data/Art/brick_wall_001'},
-    'Brick_Orange':    {'base_color_srgb': '#AE5E3B', 'roughness': .86, 'metallic': 0, 'texture': 'Data/Art/brick_wall_001'},
-    'Brick_Brown':     {'base_color_srgb': '#6B4232', 'roughness': .88, 'metallic': 0, 'texture': 'Data/Art/brick_wall_001'},
-    'Brick_BrownDark': {'base_color_srgb': '#553428', 'roughness': .9, 'metallic': 0, 'texture': 'Data/Art/brick_wall_001'},
-    'Brick_Buff':      {'base_color_srgb': '#CCB07F', 'roughness': .84, 'metallic': 0, 'texture': 'Data/Art/brick_wall_001'},
-    'Stone':           {'base_color_srgb': '#8F8C85', 'roughness': .82, 'metallic': 0, 'texture': 'Data/Art/concrete_pavement'},
+    'Brick_Red':       {'base_color_srgb': '#953F2F', 'roughness': .86, 'metallic': 0, 'texture': '/Game/Art/Textures/brick_wall_001_diff'},
+    'Brick_RedDark':   {'base_color_srgb': '#7A3226', 'roughness': .88, 'metallic': 0, 'texture': '/Game/Art/Textures/brick_wall_001_diff'},
+    'Brick_Orange':    {'base_color_srgb': '#AE5E3B', 'roughness': .86, 'metallic': 0, 'texture': '/Game/Art/Textures/brick_wall_001_diff'},
+    'Brick_Brown':     {'base_color_srgb': '#6B4232', 'roughness': .88, 'metallic': 0, 'texture': '/Game/Art/Textures/brick_wall_001_diff'},
+    'Brick_BrownDark': {'base_color_srgb': '#553428', 'roughness': .9, 'metallic': 0, 'texture': '/Game/Art/Textures/brick_wall_001_diff'},
+    'Brick_Buff':      {'base_color_srgb': '#CCB07F', 'roughness': .84, 'metallic': 0, 'texture': '/Game/Art/Textures/brick_wall_001_diff'},
+    'Stone':           {'base_color_srgb': '#8F8C85', 'roughness': .82, 'metallic': 0, 'texture': '/Game/Art/Textures/concrete_pavement_diff'},
     'Stone_Cast':      {'base_color_srgb': '#BDB5A3', 'roughness': .8, 'metallic': 0},
     'Trim':            {'base_color_srgb': '#E8E6DF', 'roughness': .55, 'metallic': 0},
     'Iron':            {'base_color_srgb': '#1C1C1C', 'roughness': .45, 'metallic': .35},
@@ -127,6 +127,10 @@ class PlexMesh:
 
 
 def write_obj(path, name, faces):
+    Path(path).write_text(obj_text(name, faces))
+
+
+def obj_text(name, faces):
     """plateau_mesh.Mesh.write conventions (v x -y z, reversed fans), UVs in metres."""
     lines = ['o ' + name]
     index = 1
@@ -144,7 +148,7 @@ def write_obj(path, name, faces):
         for i in range(1, len(poly) - 1):
             lines.append(f'f {index + i + 1}/{index + i + 1} {index + i}/{index + i} {index}/{index}')
         index += len(poly)
-    Path(path).write_text('\n'.join(lines) + '\n')
+    return '\n'.join(lines) + '\n'
 
 
 class Frame:
@@ -890,7 +894,9 @@ def author_front(mesh, lot, front, kit, primary=True, top_override=None):
     modules = max(1, round(W / 763)) if W >= 1150 and primary else 1
     mw = W / modules
     stairs_built = 0
+    stair_records = []
     for m in range(modules):
+        curved_before = kit.counts.get('stair_curved', 0)
         mx0, mx1 = m * mw, (m + 1) * mw
         left = lot['stair_left'] ^ (m % 2 == 1)
         stair = lot['stair'] if primary and not commercial else None
@@ -915,6 +921,9 @@ def author_front(mesh, lot, front, kit, primary=True, top_override=None):
                 kit.stair(F, x_top, climb, z2, yard, stair == 'curved', run_limit)
                 stair_ok = True
                 stairs_built += 1
+                stair_records.append({'head': [round(v, 1) for v in F.p(x_top, D_FACE + 54, z2)],
+                                      'bottom': [round(v, 1) for v in F.p(extent, min(yard - 10, D_FACE + 120), 0)],
+                                      'shape': 'curved' if stair == 'curved' and kit.counts.get('stair_curved', 0) > curved_before else 'straight'})
         # ground floor composition
         doors_ground = []
         if not commercial and not primary:
@@ -1192,7 +1201,7 @@ def author_front(mesh, lot, front, kit, primary=True, top_override=None):
     record = {'a': [round(v, 2) for v in front['a']], 'b': [round(v, 2) for v in front['b']],
               'width_cm': round(W, 1), 'street': front['street'], 'yard_cm': front['yard'],
               'yard_source': front['yard_source'], 'top_cm': round(top, 1), 'modules': modules,
-              'exterior_stairs': stairs_built}
+              'exterior_stairs': stairs_built, 'stairs': stair_records}
     return record, top
 
 
@@ -1347,10 +1356,11 @@ def prepare(directory=OUT, write=True):
         directory.mkdir(parents=True, exist_ok=True)
         for old in directory.glob('*.obj'):
             old.unlink()
-        for key in sorted(groups):
-            path = directory / (key + '.obj')
-            write_obj(path, f'SM_{LAYER}_{key}', groups[key][1])
-            hashes[key + '.obj'] = hashlib.sha256(path.read_bytes()).hexdigest()
+    for key, batch in zip(sorted(groups), manifest_batches):
+        data = obj_text(f'SM_{LAYER}_{key}', groups[key][1]).encode()
+        hashes[key + '.obj'] = batch['sha256'] = hashlib.sha256(data).hexdigest()
+        if write:
+            (directory / (key + '.obj')).write_bytes(data)
     sources = ['Data/LaFontaine/osm.xml', 'Data/CityBuildings/manifest.json', 'Data/Plateau/layout.json',
                'Data/Plateau/PerimeterGeometry/perimeter.json', GENERATOR]
     if ROLL_JOIN.exists():

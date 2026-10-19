@@ -174,6 +174,8 @@ private:
     float RepaintClock = 0.f;
     float SirenPhase = 0.f;
     float SirenClock = 0.f;
+    float ToneClock = 0.f;
+    int32 LampPhase = -1;
 
     AQuebecCar* GetCar() const;
     void Build();

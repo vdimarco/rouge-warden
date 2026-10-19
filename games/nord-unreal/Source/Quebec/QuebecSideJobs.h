@@ -135,7 +135,7 @@ private:
     void BeginJobContent(AQuebecController* Player);
     void ClearJobContent();
     void TickJob(float DeltaSeconds);
-    void TickDelivery(float Now);
+    void TickDelivery();
     void TickThief(float Now, float DeltaSeconds);
     void TickGoons(float Now);
     void TickEscape(float Now);

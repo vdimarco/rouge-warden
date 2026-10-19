@@ -1,0 +1,101 @@
+{
+ "fronts": 1307,
+ "corner_side_fronts": 383,
+ "types": {
+  "conciergerie": 105,
+  "duplex": 223,
+  "triplex": 979
+ },
+ "stairs": {
+  "curved": 260,
+  "none": 656,
+  "straight": 391
+ },
+ "crowns": {
+  "cornice_metal": 549,
+  "cornice_wood": 222,
+  "flat": 103,
+  "mansard": 183,
+  "parapet": 250
+ },
+ "masonry": {
+  "Brick_Brown": 194,
+  "Brick_BrownDark": 47,
+  "Brick_Buff": 133,
+  "Brick_Orange": 108,
+  "Brick_Red": 392,
+  "Brick_RedDark": 116,
+  "Stone": 317
+ },
+ "commercial_ground_floors": 152,
+ "storeys_histogram": {
+  "2": 227,
+  "3": 1013,
+  "4": 55,
+  "5": 5,
+  "6": 2,
+  "8": 5
+ },
+ "storeys_sources": {
+  "OSM building:levels": 596,
+  "OSM building:levels +1 storey to cover the retained mass": 1,
+  "assessment roll": 354,
+  "assessment roll +1 storey to cover the retained mass": 114,
+  "default 3 storeys": 134,
+  "municipal LOD2 (h - 4.9 m) / 3.26 m": 81,
+  "municipal LOD2 (h - 4.9 m) / 3.26 m +1 storey to cover the retained mass": 27
+ },
+ "era_sources": {
+  "assessment roll": 1090,
+  "seeded from roll decade histogram": 217
+ },
+ "streets_covered": {
+  "Rue de Mentana": 135,
+  "Rue Saint-André": 103,
+  "Rue Cartier": 83,
+  "Rue Saint-Christophe": 76,
+  "Rue Fabre": 66,
+  "Rue Dorion": 62,
+  "Rue Garnier": 59,
+  "Avenue De Chateaubriand": 58,
+  "Rue Marie-Anne Est": 52,
+  "Rue De Lanaudière": 44,
+  "Rue de Brébeuf": 44,
+  "Rue Sherbrooke Est": 42,
+  "Avenue Duluth Est": 41,
+  "Rue Chambord": 41,
+  "Rue Marquette": 38,
+  "Rue De La Roche": 34,
+  "Rue Saint-Hubert": 33,
+  "Rue Berri": 32,
+  "Rue Gauthier": 32,
+  "Rue de Bordeaux": 30,
+  "Rue Napoléon": 24,
+  "Rue Cherrier": 20,
+  "Rue Roy Est": 20,
+  "Rue Beaudry": 19,
+  "Rue Montcalm": 19,
+  "Rue Rachel Est": 19,
+  "Rue Rivard": 19,
+  "Rue Wolfe": 15,
+  "Avenue Christophe-Colomb": 12,
+  "Avenue Papineau": 12,
+  "Rue De Champlain": 8,
+  "Rue de la Visitation": 7,
+  "Rue Atateken": 4,
+  "Avenue De Lorimier": 2,
+  "Avenue du Parc-La Fontaine": 1,
+  "Place du Pain-et-des-Roses": 1
+ },
+ "skipped_buildings": 100,
+ "skipped_reasons": {
+  "footprint under 25 m2": 6,
+  "institutional or outbuilding": 11,
+  "no exposed edge facing a named street": 75,
+  "tower over 24 m": 8
+ },
+ "triangles_per_front": {
+  "median": 1504,
+  "max": 13728
+ }
+}

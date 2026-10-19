@@ -96,6 +96,9 @@ def material_name(layer, key):
 
 def base_material(key, spec):
     texture = spec.get('texture') or ''
+    if spec.get('emissive_srgb'):
+        # Emissive-capable parent (constant tint wired to base colour and emissive); duplicated, never edited.
+        return '/Game/Plateau/Materials/M_Glow', None
     if 'asphalt' in texture:
         return '/Game/Plateau/Materials/M_Asphalt', 'asphalt_02'
     if 'brick' in texture:
@@ -122,7 +125,9 @@ def plan(root=ROOT):
             base, texture = base_material(key, spec)
             out['materials'].append({'layer': layer, 'key': key, 'asset': f'{MATERIALS}/{material_name(layer, key)}',
                                      'duplicate_of': base, 'texture_mean': texture,
-                                     'base_color_srgb': spec['base_color_srgb']})
+                                     'base_color_srgb': spec['base_color_srgb'],
+                                     'emissive_srgb': spec.get('emissive_srgb'),
+                                     'emissive_strength': spec.get('emissive_strength', 0.)})
         for batch in manifest.get('batches', []):
             mesh = f'{ASSETS}/{layer}/{batch["mesh"]}'
             out['meshes'].append({'layer': layer, 'file': batch['file'], 'asset': mesh,
@@ -150,11 +155,53 @@ def plan(root=ROOT):
                 for row in group:
                     out['texts'].append(row)
     out['counts'] = {'materials': len(out['materials']), 'meshes': len(out['meshes']), 'actors': len(out['actors']),
+                     'emissive_materials': sum(1 for m in out['materials'] if m['emissive_srgb']),
                      'instance_components': len(out['instances']),
                      'instances': sum(i['count'] for i in out['instances'] if i['mesh']),
-                     'street_name_texts': 2 * len(out['texts']),
+                     'street_name_texts': len(street_name_texts(out, manifests)),
                      'missing_prop_instances': sum(m['instances'] for m in out['missing_props'])}
     return out
+
+
+DEFAULT_TEXT_SLOTS = {
+    'blade_a': [{'face_normal': [1, 0, 0], 'generic': {'center_cm': [.33, 37., 293.8], 'size_cm': [18, 5.5]},
+                 'specific': {'center_cm': [.33, 7., 285.6], 'size_cm': [78., 11]}},
+                {'face_normal': [-1, 0, 0], 'generic': {'center_cm': [-.33, -37., 293.8], 'size_cm': [18, 5.5]},
+                 'specific': {'center_cm': [-.33, -7., 285.6], 'size_cm': [78., 11]}}],
+    'blade_b': [{'face_normal': [0, 1, 0], 'generic': {'center_cm': [37., -.33, 263.8], 'size_cm': [18, 5.5]},
+                 'specific': {'center_cm': [7., -.33, 255.6], 'size_cm': [78., 11]}},
+                {'face_normal': [0, -1, 0], 'generic': {'center_cm': [-37., .33, 263.8], 'size_cm': [18, 5.5]},
+                 'specific': {'center_cm': [-7., .33, 255.6], 'size_cm': [78., 11]}}]}
+
+
+def street_name_texts(the_plan, manifests):
+    """Black TextRender rows for each sign_street blade face, from MAP-PROPS text_slots (prop-local cm)."""
+    props = manifests.get('Props', {}).get('props', {})
+    slots = props.get('sign_street', {}).get('text_slots', DEFAULT_TEXT_SLOTS)
+    rows = []
+    for row in the_plan['texts']:
+        yaw = row['yaw']
+        c, s = math.cos(math.radians(yaw)), math.sin(math.radians(yaw))
+        for blade in ('blade_a', 'blade_b'):
+            names = row['text'].get(blade)
+            if not names:
+                continue
+            for face, slot in enumerate(slots.get(blade, [])):
+                n = slot['face_normal']
+                face_yaw = yaw + math.degrees(math.atan2(n[1], n[0]))
+                for part, size in (('generic', 4.2), ('specific', 9.)):
+                    text = names[part]
+                    if not text:
+                        continue
+                    if part == 'specific':
+                        size = min(size, slot[part]['size_cm'][0] / max(1, .62 * len(text)))
+                    x, y, z = slot[part]['center_cm']
+                    # Lift the text 0.3 cm off the blade face so it never z-fights the white plate.
+                    x, y = x + .3 * n[0], y + .3 * n[1]
+                    p = (row['position'][0] + x * c - y * s, row['position'][1] + x * s + y * c, row['position'][2] + z)
+                    label = f'{PREFIX}street name {row["variant_seed"]} {blade} {face} {part}'
+                    rows.append((row, label, p, face_yaw, text, round(size, 2)))
+    return rows
 
 
 # ------------------------------------------------------------------------------------------------
@@ -223,6 +270,8 @@ def make_material(u, row, spec):
             mean = TEXTURE_MEAN[row['texture_mean']]
             colour = tuple(min(4., c / m) for c, m in zip(colour, mean))
         tints[0].set_editor_property('constant', u.LinearColor(*colour, 1))
+        if spec.get('emissive_srgb'):
+            emissive_input(u, mat, spec)
     else:
         if mat:
             assets.delete_asset(row['asset'])
@@ -236,11 +285,27 @@ def make_material(u, row, spec):
             node = lib.create_material_expression(mat, u.MaterialExpressionConstant)
             node.set_editor_property('r', value)
             lib.connect_material_property(node, '', prop)
+        if spec.get('emissive_srgb'):
+            emissive_input(u, mat, spec)
     for usage in (u.MaterialUsage.MATUSAGE_NANITE, u.MaterialUsage.MATUSAGE_INSTANCED_STATIC_MESHES):
         lib.set_base_material_usage(mat, usage, True)
     lib.recompile_material(mat)
     assert assets.save_loaded_asset(mat, only_if_is_dirty=False)
     return mat
+
+
+def emissive_input(u, mat, spec):
+    """Emissive = emissive colour x EmissiveStrength (a scalar parameter on this duplicate only)."""
+    lib = u.MaterialEditingLibrary
+    colour = lib.create_material_expression(mat, u.MaterialExpressionConstant3Vector)
+    colour.set_editor_property('constant', u.LinearColor(*linear(spec['emissive_srgb']), 1))
+    strength = lib.create_material_expression(mat, u.MaterialExpressionScalarParameter)
+    strength.set_editor_property('parameter_name', 'EmissiveStrength')
+    strength.set_editor_property('default_value', float(spec.get('emissive_strength', 1.)))
+    product = lib.create_material_expression(mat, u.MaterialExpressionMultiply)
+    assert lib.connect_material_expressions(colour, '', product, 'A')
+    assert lib.connect_material_expressions(strength, '', product, 'B')
+    assert lib.connect_material_property(product, '', u.MaterialProperty.MP_EMISSIVE_COLOR)
 
 
 def import_mesh(u, source, destination, name, material, collision):
@@ -343,27 +408,19 @@ def apply(u, root, backup):
             assert comp.get_instance_count() == row['count'], row['label']
             report['instances'][row['label']] = {'actor': actor.get_path_name(), 'count': row['count']}
         black = u.EditorAssetLibrary.load_asset('/Engine/EngineMaterials/DefaultTextMaterialOpaque')
-        for row in the_plan['texts']:
-            # White blade (prop mesh) with black text on both faces: small generic over large specific.
-            yaw = row['yaw']
-            normal = (-math.sin(math.radians(yaw)), math.cos(math.radians(yaw)))
-            z = row['position'][2] + row.get('mount_height_cm', 300)
-            for side in (1, -1):
-                for text, size, dz in ((row['text']['generic'], 7., 5.), (row['text']['specific'].upper(), 11., -4.)):
-                    if not text:
-                        continue
-                    p = (row['position'][0] + normal[0] * 2.4 * side, row['position'][1] + normal[1] * 2.4 * side, z + dz)
-                    t = editor.spawn_actor_from_class(u.TextRenderActor, u.Vector(*p), u.Rotator(yaw=yaw + 90 * side))
-                    t.set_actor_label(f'{PREFIX}street name {row["text"]["full"]} {row["variant_seed"]} {side}')
-                    t.set_folder_path(f'{FOLDER}/Street names')
-                    comp = t.text_render
-                    comp.set_text(text)
-                    comp.set_world_size(size)
-                    comp.set_horizontal_alignment(u.HorizTextAligment.EHTA_CENTER)
-                    comp.set_text_render_color(u.Color(17, 17, 17, 255))
-                    if black:
-                        comp.set_text_material(black)
-                    report['texts'] += 1
+        for row, label, p, yaw, text, size in street_name_texts(the_plan, manifests):
+            t = editor.spawn_actor_from_class(u.TextRenderActor, u.Vector(*p), u.Rotator(roll=0., pitch=0., yaw=yaw))
+            t.set_actor_label(label)
+            t.set_folder_path(f'{FOLDER}/Street names')
+            comp = t.text_render
+            comp.set_text(text)
+            comp.set_world_size(size)
+            comp.set_horizontal_alignment(u.HorizTextAligment.EHTA_CENTER)
+            comp.set_vertical_alignment(u.VerticalTextAligment.EVRTA_TEXT_CENTER)
+            comp.set_text_render_color(u.Color(17, 17, 17, 255))
+            if black:
+                comp.set_text_material(black)
+            report['texts'] += 1
         for actor in editor.get_all_level_actors():
             if actor.get_actor_label() in HIDE_LABELS:
                 report['hidden'][actor.get_actor_label()] = {'path': actor.get_path_name(),
@@ -414,6 +471,15 @@ def verify(u, root, backup):
         comp = actor.get_component_by_class(u.HierarchicalInstancedStaticMeshComponent)
         assert comp and comp.get_instance_count() == row['count'], row['label']
         instances += row['count']
+    assets = u.EditorAssetLibrary
+    for row in the_plan['materials']:
+        mat = assets.load_asset(row['asset'])
+        assert mat, 'Missing material ' + row['asset']
+        if row['emissive_srgb']:
+            params = [n for n in u.MaterialEditingLibrary.get_material_expressions(mat)
+                      if isinstance(n, u.MaterialExpressionScalarParameter)
+                      and str(n.get_editor_property('parameter_name')) == 'EmissiveStrength']
+            assert len(params) == 1 and abs(params[0].get_editor_property('default_value') - row['emissive_strength']) < 1e-3, row['asset']
     texts = sum(1 for label in actors if label.startswith(PREFIX + 'street name '))
     assert texts == report['texts'], 'Street-name text count changed'
     for label in HIDE_LABELS:

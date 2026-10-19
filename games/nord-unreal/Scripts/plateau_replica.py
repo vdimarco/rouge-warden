@@ -51,6 +51,10 @@ SIDEWALK_W = {'primary': 320., 'secondary': 280., 'tertiary': 260., 'residential
 # Fallback curb offsets (centreline to curb) when no sidewalk is mapped; research-plateau §10.
 FALLBACK = {'primary': 1060., 'secondary': 840., 'tertiary': 720., 'residential': 520.,
             'unclassified': 520., 'living_street': 450.}
+# Upper bound on a measured offset: a park promenade or a set-back verge is not roadway.
+CAP = {'primary': 1150., 'secondary': 900., 'tertiary': 900., 'residential': 720., 'unclassified': 720.,
+       'living_street': 600.}
+CAP_TWO_WAY_SECONDARY = 760.   # Rachel: about 14 m curb to curb including the 3 m cycle track
 
 STREETS_MATERIALS = {
     # key: (prefix, sRGB, roughness, metallic, collision, texture)
@@ -105,6 +109,32 @@ PARKING_TEXTS = [('R-PF', '\\P 9h-23h EXCEPTÉ S3R'), ('AD-TT', '\\A EN TOUT TEM
                  ('SU-MA-A', '\\P 8h-9h MARDI 1 AVRIL AU 1 DÉC'), ('SD-TT', '\\P EN TOUT TEMPS'),
                  ('SU-ME-A', '\\P 9h-10h MERCREDI 1 AVRIL AU 1 DÉC'), ('R-PF', '\\P 9h-23h EXCEPTÉ S3R')]
 M64 = (1 << 64) - 1
+PROPS_MANIFEST = OUT / 'Props/manifest.json'
+
+
+def props_info():
+    """MAP-PROPS anchors (BIXI slots, pole wire anchors) when its manifest exists; agreed defaults otherwise."""
+    defaults = {'bixi_slots': [(72., y, 180.) for y in (194., 114., 34., -46., -126., -206.)], 'bixi_length': 558.,
+                'pole_wires': [(0., 108., 1002.), (0., 45., 1002.), (0., -45., 1002.), (0., -108., 1002.)],
+                'pole_drop': (20., 0., 850.), 'bike_contact': (-10., -34.24)}
+    try:
+        props = json.loads(PROPS_MANIFEST.read_text())['props']
+        dock = props['bixi_dock']
+        defaults['bixi_slots'] = [(sl['position_cm'][0], sl['position_cm'][1], sl['yaw_deg']) for sl in dock['slots']]
+        defaults['bixi_length'] = dock['bounds_cm'][4] - dock['bounds_cm'][1]
+        anchors = props['utility_pole']['anchors']['wire_attach_cm']
+        defaults['pole_wires'] = [tuple(a) for a in anchors if a[2] > 950]
+        drops = [tuple(a) for a in anchors if a[2] <= 950]
+        defaults['pole_drop'] = drops[len(drops) // 2] if drops else defaults['pole_drop']
+        defaults['bike_contact'] = tuple(props['bike_locked']['anchors']['lean_contact_cm'][:2])
+    except (OSError, KeyError, ValueError, IndexError):
+        pass
+    return defaults
+
+
+def local_to_world(p, yaw, local):
+    c, s = math.cos(math.radians(yaw)), math.sin(math.radians(yaw))
+    return (p[0] + local[0] * c - local[1] * s, p[1] + local[0] * s + local[1] * c)
 
 
 # ---------------------------------------------------------------------------------------------
@@ -738,13 +768,18 @@ def measure_curbs(world):
                 curb = FALLBACK.get(hw, 520.)
                 if hw in ('residential', 'unclassified') and t.get('oneway') not in ('yes', '-1'):
                     curb = 600.
+                if hw == 'secondary' and t.get('oneway') not in ('yes', '-1'):
+                    curb = 700.
                 stats['fallback_sides'] += 1
                 source = 'class_fallback'
             fvals = sorted(facade[side])
             fac = fvals[len(fvals) // 2] if fvals else None
+            cap = CAP.get(hw, 720.)
+            if hw == 'secondary' and t.get('oneway') not in ('yes', '-1'):
+                cap = CAP_TWO_WAY_SECONDARY
             for seg in run:
                 lo = CURB_MIN_TRAFFIC if seg['traffic'] else CURB_MIN_OTHER
-                c = max(lo, min(curb, 1250.))
+                c = max(lo, min(curb, cap))
                 w = width
                 if fac is not None and fac - c < w + 20:
                     w = max(150., fac - c - 20)
@@ -1767,19 +1802,21 @@ def build_furniture(world):
                 cap = int(t.get('capacity', '19'))
             except ValueError:
                 pass
-            street_yaw = yaw + 90
-            modules = max(1, min(4, math.ceil(cap / 6)))
-            u = (math.cos(math.radians(street_yaw)), math.sin(math.radians(street_yaw)))
+            info = props_info()
+            street = yaw + 90                     # along the street
+            dock_yaw = street - 90                # MAP-PROPS: slots run along the dock's +Y
+            modules = max(1, min(4, math.ceil(cap / len(info['bixi_slots']))))
+            u = (math.cos(math.radians(street)), math.sin(math.radians(street)))
             rng = Rng('bixi', n)
             for m in range(modules):
-                c = add(p, u, (m - (modules - 1) / 2) * 560)
-                put('bixi_dock', c, street_yaw, True, ('bixi', n, m),
-                    {'osm_node': n, 'name': t.get('name', ''), 'module': m, 'capacity': cap}, allow_snap=False)
-                for slot in range(6):
-                    if rng.chance(.55):
-                        b = add(c, u, (slot - 2.5) * 80)
-                        put('bixi_bike', b, street_yaw + 90, False, ('bixi_bike', n, m, slot),
-                            {'osm_node': n, 'module': m, 'slot': slot}, allow_snap=False)
+                c = add(p, u, (m - (modules - 1) / 2) * (info['bixi_length'] + 10))
+                dock = put('bixi_dock', c, dock_yaw, True, ('bixi', n, m),
+                           {'osm_node': n, 'name': t.get('name', ''), 'module': m, 'capacity': cap}, allow_snap=False)
+                for slot, (sx, sy, syaw) in enumerate(info['bixi_slots']):
+                    if rng.chance(.6):
+                        b = local_to_world(dock['position'], dock_yaw, (sx, sy))
+                        put('bixi_bike', b, dock_yaw + syaw, False, ('bixi_bike', n, m, slot),
+                            {'osm_node': n, 'module': m, 'slot': slot}, z=dock['position'][2], allow_snap=False)
         elif t.get('amenity') == 'bench' and not world.in_park(p):
             yaw, _ = facing_road(world, p)
             put('bench', p, yaw + 180, True, ('bench', n), {'osm_node': n})
@@ -1824,14 +1861,16 @@ def build_furniture(world):
                 mid_arc, mid_in = corner['arc'][len(corner['arc']) // 2], inner[len(inner) // 2]
                 d = math.dist(mid_arc, mid_in) or 1.
                 post = lerp(mid_arc, mid_in, min(.5, 45 / d))
-                for k, (nm, arm) in enumerate(names[:2]):
+                (name_a, arm_a), (name_b, _) = names[0], names[1]
+                # MAP-PROPS sign_street: blade A runs along the prop's +Y, blade B along +X.
+                yaw = math.degrees(math.atan2(arm_a['u'][1], arm_a['u'][0])) - 90
+                text = {}
+                for blade, nm in (('blade_a', name_a), ('blade_b', name_b)):
                     generic, specific = street_name_parts(nm)
-                    yaw = math.degrees(math.atan2(arm['u'][1], arm['u'][0]))
-                    put('sign_street', post, yaw, k == 0, ('street_sign', j['node'], ci, k),
-                        {'text': {'generic': generic, 'specific': specific, 'full': nm},
-                         'mount_height_cm': 300 + 32 * k, 'blade': k, 'junction_node': j['node'],
-                         'code': 'NR-U'}, allow_snap=False)
-                    counts['street_name_corners'] = counts.get('street_name_corners', 0) + (k == 0)
+                    text[blade] = {'generic': generic, 'specific': specific, 'full': nm}
+                put('sign_street', post, yaw, True, ('street_sign', j['node'], ci),
+                    {'text': text, 'junction_node': j['node'], 'code': 'NR-U'}, allow_snap=False)
+                counts['street_name_corners'] = counts.get('street_name_corners', 0) + 1
         for arm in j['arms']:
             s = arm['seg']
             if not s['oneway'] or not s['name']:
@@ -1844,9 +1883,10 @@ def build_furniture(world):
             d = math.dist(mid_arc, mid_in) or 1.
             post = lerp(mid_arc, mid_in, min(.6, 60 / d))
             travel = s['u'] if s['tags'].get('oneway') != '-1' else (-s['u'][0], -s['u'][1])
-            yaw = math.degrees(math.atan2(travel[1], travel[0]))
-            put('sign_oneway', post, yaw, True, ('oneway', j['node'], s['i']),
-                {'arrow_yaw': r2(yaw % 360), 'code': 'RN-A', 'street': s['name']}, allow_snap=False)
+            heading = math.degrees(math.atan2(travel[1], travel[0]))
+            # MAP-PROPS sign_oneway: the arrow points along the prop's +Y, so yaw = heading - 90.
+            put('sign_oneway', post, heading - 90, True, ('oneway', j['node'], s['i']),
+                {'traffic_heading': r2(heading % 360), 'code': 'RN-A', 'street': s['name']}, allow_snap=False)
 
     # Parking signs along residential and arterial curbs.
     for strip in world.sidewalk_strips:
@@ -2080,11 +2120,15 @@ def build_soul(world):
                     poles.append((p, row['position'][2], u, n, side))
                     counts['utility_poles'] += 1
                 x += rng.uniform(2600, 3600)
-        for (p, z0, u, n, side), (q, z1, _, _, _) in zip(poles, poles[1:]):
+        info = props_info()
+        for (p, z0, u, n, side), (q, z1, uq, _, _) in zip(poles, poles[1:]):
             if math.dist(p, q) > 4500:
                 continue
-            for k, h in enumerate((880, 840, 790)):
-                _catenary(S, 'wire', (p[0], p[1], z0 + h), (q[0], q[1], z1 + h), 30 + 12 * k, 1.1)
+            ya, yb = math.degrees(math.atan2(u[1], u[0])), math.degrees(math.atan2(uq[1], uq[0]))
+            for k, (ax, ay, az) in enumerate(info['pole_wires']):
+                a = local_to_world(p, ya, (ax, ay))
+                b = local_to_world(q, yb, (ax, ay))
+                _catenary(S, 'wire', (a[0], a[1], z0 + az), (b[0], b[1], z1 + az), 28 + 9 * k, 1.1)
             counts['wire_spans'] += 1
         for i, (p, z0, u, n, side) in enumerate(poles):
             if not rng.chance(.55):
@@ -2094,8 +2138,10 @@ def build_soul(world):
             if hit is None or hit < 400:
                 continue
             wall = add(p, (-n[0] * side, -n[1] * side), hit - 30)
-            h_pole, h_wall = rng.uniform(480, 620), rng.uniform(450, 700)
-            start, end = (p[0], p[1], z0 + h_pole), (wall[0], wall[1], h_wall)
+            drop = info['pole_drop']
+            anchor = local_to_world(p, math.degrees(math.atan2(u[1], u[0])), drop[:2])
+            h_wall = rng.uniform(450, 700)
+            start, end = (anchor[0], anchor[1], z0 + drop[2]), (wall[0], wall[1], h_wall)
             pts = _catenary(S, 'wire', start, end, 35, .7, segments=8)
             for k in range(2, len(pts) - 2):
                 if rng.chance(.75):
@@ -2131,10 +2177,13 @@ def build_soul(world):
                     put(kind, p, yaw_street + rng.uniform(-12, 12), False, ('curb-bin', s['i'], k, i))
                     counts['curb_bins'] += 1
             if lot.get('fence') and rng.chance(.09):
-                p = add(lot['p0'], lot['out'], -22)
-                p = add(p, u, rng.uniform(80, max(90., math.dist(lot['p0'], lot['p1']) - 80)))
-                put('bike_locked', p, math.degrees(math.atan2(u[1], u[0])) + (180 if rng.chance(.5) else 0), False,
-                    ('bike-fence', s['i'], k), {'locked_to': 'parterre_fence'})
+                contact = add(add(lot['p0'], lot['out'], 9), u, rng.uniform(80, max(90., math.dist(lot['p0'], lot['p1']) - 80)))
+                out_v = lot['out']
+                yaw = math.degrees(math.atan2(out_v[0], -out_v[1]))   # prop -Y (lean side) toward the fence
+                cx, cy = props_info()['bike_contact']
+                off = local_to_world((0., 0.), yaw, (cx, cy))
+                p = (contact[0] - off[0], contact[1] - off[1])
+                put('bike_locked', p, yaw, False, ('bike-fence', s['i'], k), {'locked_to': 'parterre_fence'})
                 counts['locked_bikes'] += 1
             if lot.get('depth', 0) >= 80 and rng.chance(.12):
                 p = add(add(lot['p0'], lot['out'], lot['depth'] - 30), u, rng.uniform(100, 300))
@@ -2154,10 +2203,12 @@ def lock_bikes_to_signs(world, furniture_rows, soul_rows, counts):
         rng = Rng('bike-sign', row['variant_seed'])
         if not rng.chance(.16):
             continue
-        yaw = row['yaw']
-        p = add(row['position'][:2], (math.cos(math.radians(yaw)), math.sin(math.radians(yaw))), 35)
-        soul_rows.append(placement(world, 'bike_locked', p, yaw + 90, False, ('bike-sign', row['variant_seed']),
-                                   {'locked_to': 'sign_parking'}))
+        yaw = row['yaw'] + 90
+        cx, cy = props_info()['bike_contact']
+        off = local_to_world((0., 0.), yaw, (cx, cy + 4))
+        p = (row['position'][0] - off[0], row['position'][1] - off[1])
+        soul_rows.append(placement(world, 'bike_locked', p, yaw, False, ('bike-sign', row['variant_seed']),
+                                   {'locked_to': 'sign_parking'}, z=row['position'][2]))
         counts['locked_bikes'] += 1
 
 
@@ -2318,7 +2369,8 @@ def prepare(directory=None):
     furn_manifest = {'layer': 'Furniture', 'generator': GENERATOR, 'frame': FRAME, 'batches': [], 'materials': {},
                      'placements': 'placements.json', 'counts': furniture_counts,
                      'source_sha256': {p: sha_file(ROOT / p) for p in SOURCES},
-                     'placements_sha256': sha_file(directory / 'Furniture/placements.json')}
+                     'placements_sha256': sha_file(directory / 'Furniture/placements.json'),
+                     'props_manifest_sha256': sha_file(PROPS_MANIFEST) if PROPS_MANIFEST.is_file() else None}
     (directory / 'Furniture/manifest.json').write_text(json.dumps(furn_manifest, ensure_ascii=False, indent=1) + '\n')
     soul_manifest = json.loads((directory / 'Soul/manifest.json').read_text())
     soul_manifest['placements'] = 'placements.json'

@@ -56,6 +56,8 @@ FVector AQuebecPedestrian::StepTowards(const FVector& Position, const FVector& T
 void AQuebecPedestrian::Tick(float DeltaSeconds)
 {
     Super::Tick(DeltaSeconds);
+    // People: a knockdown or a flight replaces the patrol until it ends (QuebecPeople.cpp).
+    if (TickStreetLife(DeltaSeconds)) return;
     if (!HasAuthority() || PatrolPoints.Num() < 2 || !IdleAnimation || !WalkAnimation)
     {
         return;
@@ -114,6 +116,8 @@ void AQuebecPedestrian::OnRep_Walking()
     if (Animation)
     {
         ResidentMesh->PlayAnimation(Animation, true);
+        // People: a fleeing pedestrian runs on a fast walk cycle.
+        ResidentMesh->SetPlayRate(bWalking && bFleeing ? 2.4f : 1.f);
     }
 }
 
@@ -121,6 +125,12 @@ void AQuebecPedestrian::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Ou
 {
     Super::GetLifetimeReplicatedProps(OutLifetimeProps);
     DOREPLIFETIME(AQuebecPedestrian, bWalking);
+    DOREPLIFETIME(AQuebecPedestrian, KnockStartedAt);
+    DOREPLIFETIME(AQuebecPedestrian, KnockOrigin);
+    DOREPLIFETIME(AQuebecPedestrian, KnockPush);
+    DOREPLIFETIME(AQuebecPedestrian, KnockLieSeconds);
+    DOREPLIFETIME(AQuebecPedestrian, KnockGround);
+    DOREPLIFETIME(AQuebecPedestrian, bFleeing);
 }
 
 #if WITH_DEV_AUTOMATION_TESTS

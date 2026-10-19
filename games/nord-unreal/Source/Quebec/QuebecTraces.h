@@ -10,6 +10,7 @@
 class AQuebecCar;
 class UInstancedStaticMeshComponent;
 class USceneComponent;
+class UStaticMesh;
 class UStaticMeshComponent;
 
 // Street geometry probes shared by curb stops and street props (QuebecTraces.cpp).
@@ -41,9 +42,9 @@ public:
     virtual void BeginPlay() override;
     virtual void Tick(float DeltaSeconds) override;
     virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
-    // Server: knocks the prop away from a car moving at CarVelocity whose centre is at CarCenter. False when it is
-    // already down.
-    bool Knock(const FVector& CarVelocity, const FVector& CarCenter);
+    // Server: knocks the prop away from a car moving at CarVelocity whose centre is at CarCenter; Striker, the car,
+    // does not stop the flight. False when it is already down.
+    bool Knock(const FVector& CarVelocity, const FVector& CarCenter, const AActor* Striker = nullptr);
     bool IsKnocked() const { return KnockedAt >= 0.f; }
     // Footprint radius used by the car strike test.
     float StrikeRadius() const;
@@ -68,6 +69,9 @@ public:
 private:
     UPROPERTY() TObjectPtr<USceneComponent> PropRoot;
     UPROPERTY() TArray<TObjectPtr<UStaticMeshComponent>> PropPieces;
+    UPROPERTY() TObjectPtr<UStaticMesh> CubeMesh;
+    UPROPERTY() TObjectPtr<UStaticMesh> ConeMesh;
+    UPROPERTY() TObjectPtr<UStaticMesh> CylinderMesh;
     FTimerHandle PropResetTimer;
     uint8 BuiltKind = 255;
     uint8 BuiltVariant = 255;
