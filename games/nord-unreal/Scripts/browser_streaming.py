@@ -27,7 +27,7 @@ QUALITY = ",".join("sg." + name + "Quality 2" for name in (
     "ViewDistance", "AntiAliasing", "Shadow", "GlobalIllumination", "Reflection",
     "PostProcess", "Texture", "Effects", "Foliage")) + (
     ",sg.GlobalIlluminationQuality 1,sg.ReflectionQuality 1,sg.ShadowQuality 1,"
-    "r.Shadow.Virtual.Enable 0,r.ScreenPercentage 75,t.MaxFPS 30")
+    "r.Shadow.Virtual.Enable 0,r.ScreenPercentage 75,t.MaxFPS 60")
 
 
 # The public host runs the live sky. A QA lifecycle may pin it, for example
@@ -182,7 +182,7 @@ def game_command(friend, log):
     arguments = [str(BINARY), "Quebec", "127.0.0.1:7791" if friend else "/Game/Maps/LaFontaine?listen",
                  "-RenderOffscreen", "-ForceRes", "-ResX=1280", "-ResY=720", "-AudioMixer", "-Unattended", "-NoDebugExecBindings",
                  "-PixelStreamingConnectionURL=ws://127.0.0.1:8888", "-PixelStreamingEncoderCodec=VP8",
-                 "-PixelStreamingWebRTCFps=30", f"-PixelStreamingWebRTCMaxBitrate={settings['max_bitrate']}",
+                 "-PixelStreamingWebRTCFps=60", f"-PixelStreamingWebRTCMaxBitrate={settings['max_bitrate']}",
                  f"-PixelStreamingWebRTCMinBitrate={settings['min_bitrate']}",
                  f"-PixelStreamingWebRTCStartBitrate={settings['start_bitrate']}", "-PixelStreamingKeyFilter=Tilde", "-PixelStreamingID=" + ("NordFriend1" if friend else "NordHost"),
                  "-ExecCmds=" + QUALITY + f",MediaIO.EnableExperimentalScheduling {settings['scheduling']}", "-abslog=" + str(log)]

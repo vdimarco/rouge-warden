@@ -1179,7 +1179,8 @@ void AQuebecCar::SimulateDrive(float Step, bool bFailsafe)
     else
     {
         DriveThrottle = FMath::FInterpConstantTo(DriveThrottle,Throttle,Step,5.f);
-        SteeringState = FMath::FInterpTo(SteeringState,Steering,Step,10.f);
+        const float SteeringRate = FMath::Abs(Steering)<.01f || Steering*SteeringState<0.f ? 10.f : 3.5f;
+        SteeringState = FMath::FInterpConstantTo(SteeringState,Steering,Step,SteeringRate);
         if (bFailsafe || bHandbrake)
             Speed = FMath::FInterpConstantTo(Speed,0.f,Step,bFailsafe ? 1600.f : 2300.f);
         else if (Throttle*Speed<0.f)
@@ -1190,12 +1191,19 @@ void AQuebecCar::SimulateDrive(float Step, bool bFailsafe)
         }
         else if (!FMath::IsNearlyZero(Throttle,.01f))
         {
-            const float Power = FMath::Lerp(1850.f,1000.f,FMath::Clamp(FMath::Abs(Speed)/3000.f,0.f,1.f));
-            const float RequestedPower = FMath::Max(0.f,DriveThrottle*FMath::Sign(Throttle))*FMath::Sign(Throttle);
-            Speed += RequestedPower*Power*Step;
-            Speed = FMath::FInterpConstantTo(Speed,0.f,Step,100.f+FMath::Square(Speed)*.000035f);
+            const float CornerSpeed = FMath::Lerp(2400.f,900.f,FMath::Clamp((FMath::Abs(SteeringState)-.2f)/.8f,0.f,1.f));
+            // Ease off power through tight forward turns; reverse and deliberate handbrake slides stay manual.
+            if (Throttle>0.f && FMath::Abs(SteeringState)>.2f && Speed>CornerSpeed)
+                Speed = FMath::FInterpConstantTo(Speed,CornerSpeed,Step,1200.f);
+            else
+            {
+                const float Power = FMath::Lerp(1050.f,700.f,FMath::Clamp(FMath::Abs(Speed)/3000.f,0.f,1.f));
+                const float RequestedPower = FMath::Max(0.f,DriveThrottle*FMath::Sign(Throttle))*FMath::Sign(Throttle);
+                Speed += RequestedPower*Power*Step;
+                Speed = FMath::FInterpConstantTo(Speed,0.f,Step,100.f+FMath::Square(Speed)*.000035f);
+            }
         }
-        else Speed = FMath::FInterpConstantTo(Speed,0.f,Step,170.f+FMath::Square(Speed)*.000035f);
+        else Speed = FMath::FInterpConstantTo(Speed,0.f,Step,360.f+FMath::Square(Speed)*.000035f);
         Speed = FMath::Clamp(Speed,-950.f,3000.f);
     }
     const FVector Momentum = GetActorForwardVector().GetSafeNormal2D()*Speed+GetActorRightVector().GetSafeNormal2D()*LateralSpeed;

@@ -1,0 +1,47 @@
+name: Table Tennis phone motion QA
+on:
+  pull_request:
+    paths: ['public/pingpong/**', 'qa/pingpong/**', '.github/workflows/pingpong-motion.yml']
+  push:
+    branches: [main]
+    paths: ['public/pingpong/**', 'qa/pingpong/**', '.github/workflows/pingpong-motion.yml']
+permissions:
+  contents: read
+jobs:
+  phone-motion:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /public/pingpong/
+            /public/arcade/
+            /public/breakthrough/fonts/
+            /public/icons/
+            /public/favicon.ico
+            /public/wild/index.html
+            /qa/pingpong/
+            /qa/browser/
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm ci --prefix qa/browser
+      - run: cd qa/browser && npx playwright install --with-deps chromium
+      - run: node --test qa/pingpong/phone-motion.test.mjs qa/pingpong/bat.test.mjs qa/pingpong/rules.test.mjs qa/pingpong/rally.test.mjs qa/pingpong/gate.test.mjs qa/pingpong/winrate.test.mjs qa/pingpong/art.test.mjs
+      - run: python3 -m http.server 8765 --directory public > /tmp/tennis-server.log 2>&1 &
+      - run: node qa/pingpong/phone-motion.e2e.mjs
+        env:
+          NODE_PATH: qa/browser/node_modules
+      - run: node --test qa/pingpong/desktop.test.mjs
+        env:
+          NODE_PATH: qa/browser/node_modules
+      - name: Server log
+        if: failure()
+        run: tail -60 /tmp/tennis-server.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: phone-motion-screenshots
+          path: test-results/phone-motion/
