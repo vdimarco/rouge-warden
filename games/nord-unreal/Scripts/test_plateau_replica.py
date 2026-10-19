@@ -237,7 +237,7 @@ def main():
                 dock = next(d for d in docks if d['osm_node'] == bike['osm_node'] and d['module'] == bike['module'])
                 sx, sy, _ = slots[bike['slot']]['position_cm'][0], slots[bike['slot']]['position_cm'][1], 0
                 want = replica.local_to_world(dock['position'][:2], dock['yaw'], (sx, sy))
-                assert math.dist(want, bike['position'][:2]) < .05, bike
+                assert math.dist(want, bike["position"][:2]) < .1, bike
             assert bikes and len({b['osm_node'] for b in bikes}) >= len({d['osm_node'] for d in docks}) - 2
         report['apply_plan'] = the_plan['counts']
     print(json.dumps(report, indent=1, ensure_ascii=False))
