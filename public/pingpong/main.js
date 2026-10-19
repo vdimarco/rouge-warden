@@ -399,6 +399,7 @@ function resetPhoneFrame() {
   if (latestOrientation) {
     neutral = { ...mapAxes(latestOrientation.beta, latestOrientation.gamma, screenAngle()), alpha: latestOrientation.alpha };
   }
+  latestOrientation = null; // The next sample calibrates the new screen/grip frame.
   filtered = { tiltX: 0, tiltY: 0 };
   springX = { x: 0, v: 0 }; springY = { x: 0, v: 0 };
 }

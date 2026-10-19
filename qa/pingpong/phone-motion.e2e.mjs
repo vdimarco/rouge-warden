@@ -10,6 +10,8 @@ for(const angle of [0,90,270]){
   const context=await browser.newContext({hasTouch:true,isMobile:true,viewport:angle?{width:844,height:390}:{width:390,height:844}});
   const page=await context.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));
   await page.addInitScript(({angle})=>{
+    // Keep native headless zero readings out of this deterministic sensor replay.
+    for(const type of ['deviceorientation','devicemotion']) window.addEventListener(type,e=>{if(e.isTrusted)e.stopImmediatePropagation();},true);
     Object.defineProperty(screen.orientation,'angle',{configurable:true,get:()=>angle});
     window.sensor={alpha:0,beta:angle===90?0:angle===270?0:75,gamma:angle===90?-75:angle===270?75:0,acceleration:{x:0,y:0,z:0}};
     setInterval(()=>{
@@ -19,29 +21,29 @@ for(const angle of [0,90,270]){
     },16);
   },{angle});
   await page.goto(base+'/pingpong/');
-  await page.getByRole('button',{name:'Tap to pick up your bat'}).click();
+  await page.getByRole('button',{name:'Tap to pick up your bat'}).tap();
   await page.locator('#gate').waitFor({state:'hidden'});
   await page.waitForTimeout(150);
   const read=()=>page.evaluate(()=>window.__test.bat);
-  await page.getByRole('button',{name:'Center',exact:true}).click();
+  await page.getByRole('button',{name:'Center',exact:true}).tap();
   const home=await read();
   await page.evaluate(()=>{window.sensor.acceleration={x:0,y:0,z:-5};});
   await page.waitForTimeout(200);const forward=await read();
   assert.ok(forward.depth>home.depth+0.12,JSON.stringify({angle,home,forward,phone:await page.evaluate(()=>window.__test.phone())}));
   await page.screenshot({path:`test-results/phone-motion/forward-${angle}.png`});
   await page.evaluate(()=>{window.sensor.acceleration={x:0,y:0,z:0};});
-  await page.getByRole('button',{name:'Center',exact:true}).click();
+  await page.getByRole('button',{name:'Center',exact:true}).tap();
   await page.evaluate(()=>{window.sensor.acceleration={x:0,y:0,z:5};});
   await page.waitForTimeout(200);const back=await read();
   assert.ok(back.depth<home.depth-0.1,JSON.stringify({angle,home,back}));
   await page.screenshot({path:`test-results/phone-motion/back-${angle}.png`});
   await page.evaluate(()=>{window.sensor.acceleration={x:0,y:0,z:0};});
-  await page.getByRole('button',{name:'Center',exact:true}).click();
+  await page.getByRole('button',{name:'Center',exact:true}).tap();
   await page.evaluate(()=>{window.sensor.alpha=335;});
   await page.waitForTimeout(160);const right=await read();assert.ok(right.x>0.4,JSON.stringify({angle,right}));
   await page.evaluate(()=>{window.sensor.alpha=25;});
   await page.waitForTimeout(160);const left=await read();assert.ok(left.x< -0.4,JSON.stringify({angle,left}));
-  await page.getByRole('button',{name:'Center',exact:true}).click();
+  await page.getByRole('button',{name:'Center',exact:true}).tap();
   await page.waitForTimeout(60);const centred=await read();assert.ok(Math.abs(centred.x)<0.06,JSON.stringify({angle,centred}));
   assert.deepEqual(errors,[]);
   console.log(`PASS phone ${angle}: real sensor events move forward/back, wrist sweeps both ways, Center clears motion`);

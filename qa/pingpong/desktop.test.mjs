@@ -421,7 +421,7 @@ test('a desktop mouse flick wins the opening point', { timeout: 90000 }, async (
     assert.equal(phoneGate.button, 'Tap to pick up your bat', JSON.stringify(phoneGate));
     assert.equal(phoneGate.hintHidden, true);
     assert.equal(phoneGate.lines.every((line) => !line.hidden), true);
-    assert.match(phoneGate.lines[0].text, /Hold your phone like a bat/);
+    assert.match(phoneGate.lines[0].text, /Move your phone left, right, forward, and back/);
 
     const switched = await phone.newPage();
     switched.on('pageerror', (err) => errors.push(String(err)));
