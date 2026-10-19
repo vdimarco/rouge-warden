@@ -12,3 +12,4 @@
 - [x] Check that path in plain headless Chrome at 1280, not only the Playwright fine-pointer context.
 - [x] Select mouse mode for a fine pointer, including when touch points are also reported, and on the first real mousemove. After start at 1280, `__test.state().inputMode` is `mouse`.
 - [x] Let the opening hook help only a flick of at least 1.2 window widths per second inside ±200 ms. A speed-0 miss 383 ms early, or no flick, loses or replays.
+- [x] Count a phone swing only above 300 deg/s, and a desktop swing only at 1.2 window widths per second or faster. A speed of 0 or a sub-threshold input does not win point 1 on either path.

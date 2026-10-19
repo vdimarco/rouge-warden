@@ -455,6 +455,7 @@ function firePointerSwing(swing) {
   const offsetMs = cross == null ? 0 : -(cross + age) * 1000;
   play(match.swing({
     degPerSec: swing.degPerSec,
+    widthsPerSec: swing.widthsPerSec,
     dir: pose.swingDir,
     tiltX: pose.tiltX,
     tiltY: pose.tiltY,

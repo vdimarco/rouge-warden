@@ -118,21 +118,53 @@ test('a speed-0 miss 383 ms early does not take the opening hook', () => {
   assert.equal(quiet.lastShot, null);
 
   assert.equal(widthsFlick(1.1), null);
-  const slow = openingPoint({ degPerSec: RULES.swingStart - 1, offsetMs: 0 });
-  assert.equal(slow.score.you, 0);
-  assert.equal(slow.lastShot.speed, 0);
-  assert.notEqual(slow.lastShot.kind, 'drive');
-
   const flick = widthsFlick(1.2);
   assert.ok(flick.widthsPerSec + 1e-9 >= 1.2);
-  assert.ok(flick.degPerSec + 1e-9 >= RULES.swingStart);
   for (const offsetMs of [-200, 0, 200]) {
-    const won = openingPoint({ degPerSec: flick.degPerSec, offsetMs });
+    const won = openingPoint({ degPerSec: flick.degPerSec, widthsPerSec: flick.widthsPerSec, offsetMs });
     assert.equal(won.score.you, 1, String(offsetMs));
     assert.equal(won.score.neighbour, 0, String(offsetMs));
     assert.equal(won.lastShot.hook, true, String(offsetMs));
     assert.equal(won.lastShot.kind, 'drive', String(offsetMs));
   }
+});
+
+test('a sub-threshold phone or desktop swing does not win point 1', () => {
+  for (const degPerSec of [0, RULES.swingStart - 1, RULES.swingStart]) {
+    const phone = openingPoint({ degPerSec, offsetMs: 0 });
+    assert.equal(phone.score.you, 0, `phone ${degPerSec}`);
+    assert.equal(phone.score.neighbour, 1, `phone ${degPerSec}`);
+    assert.equal(phone.lastShot.speed, 0, `phone ${degPerSec}`);
+    assert.notEqual(phone.lastShot.hook, true, `phone ${degPerSec}`);
+  }
+  const phoneHit = openingPoint({ degPerSec: RULES.swingStart + 1, offsetMs: 0 });
+  assert.equal(phoneHit.score.you, 1);
+  assert.equal(phoneHit.score.neighbour, 0);
+  assert.equal(phoneHit.lastShot.hook, true);
+
+  assert.equal(widthsFlick(0), null);
+  assert.equal(widthsFlick(1.1), null);
+  for (const widthsPerSec of [0, 1.1]) {
+    const desk = openingPoint({ degPerSec: 900, widthsPerSec, offsetMs: 0 });
+    assert.equal(desk.score.you, 0, `desktop ${widthsPerSec}`);
+    assert.equal(desk.score.neighbour, 1, `desktop ${widthsPerSec}`);
+    assert.equal(desk.lastShot.speed, 0, `desktop ${widthsPerSec}`);
+    assert.notEqual(desk.lastShot.kind, 'drive', `desktop ${widthsPerSec}`);
+  }
+  const earlyDesk = openingPoint({ degPerSec: 900, widthsPerSec: 0, offsetMs: -383 });
+  assert.equal(earlyDesk.score.you, 0);
+  assert.equal(earlyDesk.lastShot.speed, 0);
+
+  const flick = widthsFlick(POINTER.push);
+  const deskHit = openingPoint({
+    degPerSec: flick.degPerSec,
+    widthsPerSec: flick.widthsPerSec,
+    offsetMs: 0,
+  });
+  assert.equal(deskHit.score.you, 1);
+  assert.equal(deskHit.score.neighbour, 0);
+  assert.equal(deskHit.lastShot.hook, true);
+  assert.ok(flick.widthsPerSec + 1e-9 >= 1.2);
 });
 
 test('a hook swing outside 200 ms does not win the feed', () => {

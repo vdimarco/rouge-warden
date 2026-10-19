@@ -16,6 +16,7 @@ import {
   spinFromRoll,
   spinTimeScale,
 } from './rules.js';
+import { POINTER } from './motion.js';
 
 const SUB = 8;
 
@@ -264,13 +265,26 @@ export function createMatch(opts = {}) {
     hookLive = false;
   }
 
+  function openingSwingCounts(cmd) {
+    // Desktop reports window widths per second. Phone reports rotation rate.
+    // A speed of 0, or anything under that path's line, is not a swing.
+    if (cmd.widthsPerSec != null) {
+      const widths = Number(cmd.widthsPerSec);
+      return Number.isFinite(widths) && widths + 1e-8 >= POINTER.push;
+    }
+    return (Number(cmd.degPerSec) || 0) > RULES.swingStart;
+  }
+
   function applyStrike(cmd, offsetMs) {
-    // 1.2 window-widths per second maps to swingStart. A slower move is not a flick,
-    // and the opening hook must not turn it into the point.
-    const peak = Number(cmd.degPerSec) || 0;
-    const realFlick = peak + 1e-9 >= RULES.swingStart;
+    const onHookFeed = hookActive();
+    if (onHookFeed && !openingSwingCounts(cmd)) {
+      whiffed = true;
+      take('whoosh', { peak: cmd.degPerSec });
+      lastShot = { band: 'miss', speed: 0, kind: null, offsetMs, pullDeg: 0 };
+      return;
+    }
     const withinHook = Math.abs(Number(offsetMs) || 0) <= RULES.hookWindowMs + 1e-9;
-    const hook = hookActive() && realFlick && withinHook;
+    const hook = onHookFeed && withinHook;
     const timing = signedPull(offsetMs, cmd.dir || 'forehand', hook);
     if (timing.band === 'miss') {
       whiffed = true;
