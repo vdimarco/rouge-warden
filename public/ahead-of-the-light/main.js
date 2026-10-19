@@ -1,11 +1,11 @@
-// Ahead of the Light: the page. A fixed 120 Hz step of core/flight.js, drawn by render/view.js (the point-cloud
-// ground) and ui/hud.js (the orange instruments), with ui/sound.js's score. The title flies a bot down the canyon
-// behind its panel. Screens: title → run → result (or pause). window.__race is the hook the QA scripts use.
+// Ahead of the Light: the page. A fixed 120 Hz step of core/flight.js, drawn in characters by render/ascii.js (an
+// ascii.rest piece), with ui/sound.js's score. The title flies a bot down the starbow behind its menu. Screens:
+// title → run → result (or pause). window.__race is the hook the QA scripts use.
 import { newRun, step, gapOf, TUNE } from './core/flight.js';
 import { createBot } from './core/bot.js';
 import { SECTORS, SECTOR_LEN, COURSE_LEN, sectorAt } from './core/world.js';
-import { createView } from './render/view.js';
-import { createHud } from './ui/hud.js';
+import { createAsciiView } from './render/ascii.js';
+import { banner } from './vendor/ascii-rest/banner.js';
 import { createInput } from './ui/input.js';
 import { createSound } from './ui/sound.js';
 
@@ -22,86 +22,82 @@ function meta() {
   return m && typeof m === 'object' ? { runs: m.runs | 0, bestD: Number(m.bestD) || 0, home: m.home | 0, bestT: Number(m.bestT) || 0 }
     : { runs: 0, bestD: 0, home: 0, bestT: 0 };
 }
-// The homepage cabinet reads its line from the old save's records.best (legNo, or home with years): keep it fed.
+// The homepage cabinet reads its line from the old save's records.best.legNo: keep it fed.
 function feedCabinet(m) {
-  const legNo = clamp(sectorAt(m.bestD), 0, SECTORS.length - 1);
-  save(OLD_META, { records: { best: m.home ? { home: false, legNo: SECTORS.length - 1 } : { home: false, legNo } } });
+  const legNo = m.home ? SECTORS.length - 1 : clamp(sectorAt(m.bestD), 0, SECTORS.length - 1);
+  save(OLD_META, { records: { best: { home: false, legNo } } });
 }
 
-// ---- the page's layout and input kind ----
 const touch = matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window;
 document.documentElement.dataset.input = touch ? 'touch' : 'desk';
 const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
-const tier = params.get('tier') || (touch && ((navigator.deviceMemory || 4) < 4 || (navigator.hardwareConcurrency || 4) <= 4) ? 'low' : 'high');
 
 const G = { mode: 'title', run: null, attract: null, bot: null, acc: 0, last: 0, paused: false, autopilot: null,
-  hintGone: false, result: null, frames: 0, ms: [] };
+  hintGone: false, result: null, ms: [] };
 
-let view = null;
-try { view = createView({ canvas: $('view'), tier, reduced }); }
-catch (e) { view = null; }
-const hud = createHud($('hud'));
-const input = createInput({ surface: $('view'), boostBtn: $('boost'), pingBtn: $('sonar') });
+const view = createAsciiView({ canvas: $('view'), reduced, touch });
+const input = createInput({ surface: $('view'), boostBtn: $('boost') });
 const sound = createSound({ on: load(SOUND) !== false, onToggle: (on) => { save(SOUND, on); soundLabels(); } });
 function soundLabels() {
   for (const id of ['soundBtn', 'pSound']) {
     const b = $(id);
-    b.textContent = sound.isOn() ? 'SOUND ON' : 'SOUND OFF';
+    b.lastChild.textContent = sound.isOn() ? 'SOUND ON' : 'SOUND OFF';
     b.setAttribute('aria-pressed', String(sound.isOn()));
   }
 }
 soundLabels();
 
-function insets() {
-  const cs = getComputedStyle(document.documentElement);
-  const px = (v) => parseFloat(cs.getPropertyValue(v)) || 0;
-  return { t: px('--st'), r: px('--sr'), b: px('--sb'), l: px('--sl') };
+// ---- the logo: ascii.rest's block letters, LIGHT in the spectrum, sized to fit ----
+function blocks(text) { return banner(text, { effect: 'still' }).default()(0).split('\n'); }
+function logo() {
+  const tall = innerWidth / innerHeight < 0.8;
+  const lines = tall ? [['AHEAD', ''], ['OF THE', ''], ['LIGHT', 'light']] : [['AHEAD OF THE', ''], ['LIGHT', 'light']];
+  const art = lines.map(([t, cls]) => ({ rows: blocks(t), cls }));
+  const widest = Math.max(...art.map((a) => a.rows[0].length));
+  const avail = tall ? innerWidth - 40 : Math.min(innerWidth * 0.62, 900);
+  const px = clamp(Math.floor((avail / (widest * 0.6)) * 10) / 10, 4, 15);
+  const el = $('logo');
+  el.style.setProperty('--logo', `${px}px`);
+  el.innerHTML = art.map((a) => `<span class="${a.cls}">${a.rows.map((r) => r.replace(/&/g, '&amp;').replace(/</g, '&lt;')).join('\n')}</span>`).join('\n');
 }
-function resize() {
-  const w = innerWidth, h = innerHeight, dpr = devicePixelRatio || 1;
-  if (view) view.resize(w, h, dpr);
-  hud.resize(w, h, dpr, insets());
-}
-addEventListener('resize', resize);
-resize();
+addEventListener('resize', () => { view.resize(); if (G.mode === 'title') logo(); });
 
 // ---- screens ----
-const SCREENS = ['title', 'result', 'paused', 'nogl'];
+const SCREENS = ['title', 'result', 'paused'];
 function show(id) { for (const s of SCREENS) $(s).hidden = s !== id; }
+const fmtT = (t) => `${Math.floor(t / 60)}:${String(Math.floor(t % 60)).padStart(2, '0')}`;
 function bestLine(m) {
   if (m.home) return `HOME ${m.home}× · BEST ${fmtT(m.bestT)}`;
   if (m.bestD > 0) return `BEST: ${SECTORS[sectorAt(m.bestD)].name} · ${(m.bestD / 1000).toFixed(1)} KM`;
   return 'FIRST RUN';
 }
-const fmtT = (t) => `${Math.floor(t / 60)}:${String(Math.floor(t % 60)).padStart(2, '0')}`;
-
 function newAttract() {
   G.attract = newRun({ seed: 1 + Math.floor(Math.random() * 9999) });
   G.attract.light.d = -1e9;
-  G.bot = createBot(0.85, G.attract.seed);
+  G.bot = createBot(0.9, G.attract.seed);
 }
 function toTitle() {
   G.mode = 'title'; G.paused = false; G.run = null;
   $('touch').hidden = true;
-  hud.clear();
+  view.clear();
   $('best').textContent = bestLine(meta());
+  logo();
   show('title');
   if (!G.attract) newAttract();
   sound.setPaused(false);
 }
 function start() {
-  if (!view) return;
   sound.start();
   sound.ui('pick');
   sound.setLeg(0, 0);
   input.reset();
   G.run = newRun({ seed: params.has('seed') ? Number(params.get('seed')) | 0 : 1 + Math.floor(Math.random() * 99999) });
   G.mode = 'play'; G.paused = false; G.acc = 0; G.autopilot = null;
-  hud.clear();
+  view.clear();
   show(null);
   $('touch').hidden = !touch;
   $('steerHint').classList.toggle('gone', G.hintGone);
-  hud.onEvents([{ type: 'sector', sector: 0 }], G.run);
+  view.sectorBanner(0, G.run);
 }
 function finish() {
   const r = G.run, m = meta();
@@ -121,7 +117,8 @@ function finish() {
     ['DISTANCE', `${(Math.min(r.ship.d, COURSE_LEN) / 1000).toFixed(2)} / ${(COURSE_LEN / 1000).toFixed(1)} KM`],
     ['REACHED', SECTORS[sectorAt(r.ship.d)].name],
     ['TIME', fmtT(r.t)],
-    ['GATES', `${r.stats.gates} · BEST CHAIN ×${r.gates.best}`],
+    ['RINGS', `${r.stats.rings} · BEST ×${r.rings.best}`],
+    ['SKIMS', String(r.stats.grazes)],
     ['HITS', String(r.stats.hits)],
   ];
   $('rStats').innerHTML = rows.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('');
@@ -147,45 +144,45 @@ $('quit').addEventListener('click', toTitle);
 $('pause').addEventListener('click', () => pause(true));
 for (const id of ['soundBtn', 'pSound']) $(id).addEventListener('click', () => { sound.start(); sound.toggle(); });
 for (const b of document.querySelectorAll('.screen button')) b.addEventListener('pointerdown', () => { sound.start(); sound.ui('tap'); });
+// the menus: the line under the pointer lights
+for (const menu of document.querySelectorAll('.menu')) {
+  for (const it of menu.querySelectorAll('.item')) it.addEventListener('pointerenter', () => { for (const o of menu.querySelectorAll('.item')) o.classList.toggle('on', o === it); });
+}
 addEventListener('keydown', (e) => {
   if (e.repeat) return;
-  if (G.mode === 'title' && (e.code === 'Enter' || e.code === 'Space') && document.activeElement?.closest('.row') == null) { e.preventDefault(); start(); }
-  else if (G.mode === 'result' && (e.code === 'KeyR' || e.code === 'Enter')) { e.preventDefault(); start(); }
+  if (G.mode === 'title' && (e.code === 'Enter' || e.code === 'Space') && !document.activeElement?.closest('.menu')) { e.preventDefault(); start(); }
+  else if (G.mode === 'result' && (e.code === 'KeyR' || (e.code === 'Enter' && !document.activeElement?.closest('.menu')))) { e.preventDefault(); start(); }
   else if (G.mode === 'play' && (e.code === 'Escape' || e.code === 'KeyP')) pause(!G.paused);
-  else if (G.mode === 'play' && G.paused && e.code === 'Enter') pause(false);
 });
 document.addEventListener('visibilitychange', () => { if (document.hidden && G.mode === 'play' && !G.paused) pause(true); });
 
-// ---- feedback for one step's events ----
 function buzz(ms) { try { if (navigator.vibrate) navigator.vibrate(ms); } catch (e) { /* not on this phone */ } }
 function feedback(run, events) {
   if (!events.length) return;
   sound.onEvents(events, { you: 'you', race: null });
-  hud.onEvents(events, run);
-  if (view) view.onEvents(events);
+  view.onEvents(events, run);
   for (const e of events) {
     if (e.type === 'sector') sound.setLeg(e.sector, 0);
     if (e.type === 'hit') buzz(50);
-    else if (e.type === 'grab') buzz(12);
+    else if (e.type === 'grab' || e.type === 'hair') buzz(12);
     else if (e.type === 'caught' || e.type === 'wreck') buzz([160, 60, 260]);
   }
 }
 
-// ---- the loop ----
+// ---- the loop: the simulation here; ascii.rest's mount draws the piece at its own rate ----
 const DT = 1 / 120;
 function frame(now) {
   requestAnimationFrame(frame);
   const f0 = performance.now();
   const dt = clamp((now - (G.last || now)) / 1000, 0, 0.1);
   G.last = now;
-  if (!view) return;
   if (G.mode === 'title' || !G.run) {
     const a = G.attract;
     if (a) {
       G.acc += dt;
       while (G.acc >= DT) { step(a, G.bot(a), DT); G.acc -= DT; }
       if (a.mode !== 'fly' || a.ship.d > COURSE_LEN - 300) newAttract();
-      view.render(a, dt, { title: true });
+      view.show(G.attract, { title: true });
     }
     sound.frame({ mode: G.mode === 'title' ? 'title' : 'result', gear: 0, eta: 1 }, dt);
     return;
@@ -202,19 +199,15 @@ function frame(now) {
     }
     if (r.mode !== 'fly') { G.acc = 0; G.mode = 'ending'; setTimeout(() => { if (G.run === r && G.mode === 'ending') finish(); }, 900); }
   }
-  const out = view.render(r, G.paused ? 0 : dt);
-  $('edge').style.opacity = String(Math.round(clamp(out.white * 0.9, 0, 0.9) * 100) / 100);
-  if (G.mode === 'play' || G.mode === 'ending') hud.draw(r, view, dt, { controlsBottom: touch && innerWidth < 640 ? 112 : 0, touch });
+  view.show(r);
   $('boost').classList.toggle('on', r.ship.boosting);
   sound.frame({ mode: G.mode === 'play' && !G.paused ? 'play' : G.paused ? 'paused' : 'result', gear: r.gear,
     eta: 1 + r.ship.speed / 45, bpm: 108 }, dt);
-  G.frames++;
   G.ms.push(performance.now() - f0);
   if (G.ms.length > 240) G.ms.shift();
 }
-
-if (!view) show('nogl');
-else { toTitle(); requestAnimationFrame(frame); }
+toTitle();
+requestAnimationFrame(frame);
 
 // ---- the QA hook ----
 window.__race = {
@@ -222,21 +215,19 @@ window.__race = {
   get run() { return G.run; },
   get attract() { return G.attract; },
   get result() { return G.result; },
-  get drawn() { return hud.state.drawn; },
-  get tier() { return view ? view.tier : null; },
-  get points() { return view ? view.points : 0; },
+  get drawn() { return view.drawn; },
+  get grid() { return view.grid; },
   start, toTitle, pause,
-  // fly the run with the bot (skill 0..1), or null to hand it back
   autopilot(skill = 0.9) { G.autopilot = skill === null ? null : createBot(skill, 7); },
   // jump ahead to distance d with the light at the same gap
   warp(d) {
     const r = G.run; if (!r) return;
     const gap = gapOf(r);
     r.ship.d = d; r.light.d = d - gap;
-    r.ship.x = r.world.centre(d); r.ship.y = r.world.height(r.ship.x, d) + 14;
-    r.gates.i = Math.max(2, Math.floor(d / 170));
+    r.rings.i = Math.max(2, Math.floor(d / 170));
   },
+  drawMs: () => view.drawMs(),
   frameMs() { const a = [...G.ms].sort((x, y) => x - y); return a.length ? { p50: a[a.length >> 1], p95: a[Math.floor(a.length * 0.95)] } : null; },
-  sound: () => ({ on: sound.isOn(), played: sound.played(), voices: sound.voices ? sound.voices() : null, ctx: sound.context() }),
+  sound: () => ({ on: sound.isOn(), played: sound.played(), ctx: sound.context() }),
   tune: TUNE, SECTOR_LEN, COURSE_LEN,
 };
