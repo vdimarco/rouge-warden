@@ -121,6 +121,18 @@ AQuebecStreetProp::AQuebecStreetProp()
 void AQuebecStreetProp::PostInitializeComponents()
 {
     Super::PostInitializeComponents();
+    RegisterStreetProp();
+}
+
+void AQuebecStreetProp::Destroyed()
+{
+    if (TArray<TWeakObjectPtr<AQuebecStreetProp>>* Props = StreetPropLists.Find(GetWorld()))
+        Props->RemoveAll([this](const TWeakObjectPtr<AQuebecStreetProp>& Entry) { return !Entry.IsValid() || Entry.Get() == this; });
+    Super::Destroyed();
+}
+
+void AQuebecStreetProp::RegisterStreetProp()
+{
     UWorld* PropWorld = GetWorld();
     if (!PropWorld || !PropWorld->IsGameWorld()) return;
     for (auto It = StreetPropLists.CreateIterator(); It; ++It) if (!It.Key().IsValid()) It.RemoveCurrent();
@@ -321,6 +333,8 @@ AQuebecStreetProp* AQuebecStreetProp::SpawnProp(UWorld* World, uint8 NewKind, co
     Prop->HomeYaw = Yaw;
     Prop->Tags.Add(TEXT("StreetProp"));
     Prop->FinishSpawning(Placement);
+    // A world that has not begun play skips PostInitializeComponents; joining twice is harmless.
+    Prop->RegisterStreetProp();
     return Prop;
 }
 

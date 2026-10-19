@@ -47,7 +47,9 @@ void AQuebecCar::SetAutopilot(float NewThrottle, float NewSteering, bool bNewHan
     {
         // The AI drives the player model every frame; a traffic car gives up its route and junction for good.
         // ClearAutopilot returns to the resting interval this car had (a struck car's 0 is not a resting interval).
-        AutopilotRestTick = GetActorTickInterval() > 0.f ? GetActorTickInterval() : (bTraffic ? .05f : .1f);
+        // A car re-engaged while still braking from the last release keeps the interval recorded then.
+        if (!bRestoreRestTick) AutopilotRestTick = GetActorTickInterval() > 0.f ? GetActorTickInterval() : (bTraffic ? .05f : .1f);
+        bRestoreRestTick = false;
         bTraffic = false;
         TrafficSegment = INDEX_NONE;
         bJunctionReserved = bJunctionEntered = false;
@@ -67,8 +69,20 @@ void AQuebecCar::ClearAutopilot()
     AutopilotThrottle = AutopilotSteering = 0.f;
     if (Controller) return;
     StopInput();
-    // A sliding car keeps every-frame ticks; the end of its slide sets the resting interval itself.
-    if (KnockTime <= 0.f) SetActorTickInterval(AutopilotRestTick);
+    // The released car brakes on every-frame ticks, so no peer sees it step at 10 Hz; FinishDriveTick restores
+    // the resting interval once it stands still.
+    bRestoreRestTick = true;
+    FinishAutopilotRelease();
+}
+
+void AQuebecCar::FinishAutopilotRelease()
+{
+    if (!bRestoreRestTick) return;
+    // A player or a new AI driver took over: their every-frame ticks stay.
+    if (Controller || bAutopilot) { bRestoreRestTick = false; return; }
+    if (KnockTime > 0.f || !FMath::IsNearlyZero(Speed,1.f) || !FMath::IsNearlyZero(LateralSpeed,1.f)) return;
+    bRestoreRestTick = false;
+    SetActorTickInterval(AutopilotRestTick);
 }
 
 void AQuebecCar::UnPossessed()

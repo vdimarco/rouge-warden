@@ -536,8 +536,8 @@ void AQuebecParkResident::TickAway(float ServerTime, float DeltaSeconds)
         }
         if (ServerTime >= NextFleeProbe)
         {
-            // Four times a second: the clearest heading away from the threat, swept like the population's route checks.
-            // About four times a second, on a per-resident offset so a crowd that started together spreads its re-probes.
+            // The clearest heading away from the threat, swept like the population's route checks. Re-probes come about
+            // four times a second, on a per-resident offset so a crowd that started together spreads them out.
             NextFleeProbe = ServerTime + .2f + FMath::Fmod(FMath::Abs(Phase) * 1.37f, .1f);
             FVector Away = (Here - FleeSource).GetSafeNormal2D();
             if (Away.IsNearlyZero()) Away = GetActorForwardVector().GetSafeNormal2D();

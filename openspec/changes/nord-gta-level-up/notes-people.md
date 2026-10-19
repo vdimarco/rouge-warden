@@ -30,7 +30,7 @@
   - Beside the path (145-260 cm) the person dives away from the side of the path it stands on.
   - Only the warning caption still cools down.
 - **Slow contact:** below 450 cm/s, a striking car nudges civilians in its swept box with a 0.6 s sidestep out of its path. Nobody falls, and no crime is reported.
-- **Runner cap:** `Flee` refuses new runners beyond 32 residents away at once, whatever asks (alarms, dives, nudges, punches). Swept probes start on a per-resident offset, so a crowd does not probe on the same frame. A fleeing pedestrian sweeps 10 times a second.
+- **Runner cap:** `Flee` refuses new runners beyond 32 residents away at once, whatever asks (alarms, dives, nudges, punches). A new run probes its heading on its first tick; later re-probes come about every 0.25 s on a per-resident offset, so a crowd does not probe on the same frame. A resident already running keeps its heading and probe schedule when it is asked to flee again. A fleeing pedestrian sweeps 10 times a second.
 
 ### Pedestrians (`AQuebecPedestrian`)
 - **Server:** it runs the same model on its root, which replicates at 30 Hz. It stands up facing its old heading, runs from the cause, then resumes the patrol from where it stopped.

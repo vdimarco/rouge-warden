@@ -407,8 +407,10 @@ private:
     float SmokeSince = -1000.f;
     float NextSmokeAt = 0.f;
     int32 NextSmokePuff = 0;
-    // The tick interval the car rested at before SetAutopilot; ClearAutopilot restores it.
+    // The tick interval the car rested at before SetAutopilot. ClearAutopilot restores it once the car is at rest;
+    // until then bRestoreRestTick is set and the car keeps every-frame ticks while it brakes.
     float AutopilotRestTick = .1f;
+    bool bRestoreRestTick = false;
     void PrepareDriveAssist();
     float AssistedYawRate() const;
     bool PassStruckPerson(const FHitResult& Hit, const FVector& From, const FVector& Travel);
