@@ -421,6 +421,18 @@ test('double-tapped Sprint stays active with Move and vehicle/menu transitions c
   f.releaseAll();
 });
 
+test('driving pedal and Exit drags hold their actions without turning the camera', () => {
+  for (const [name, key] of [['gas', 87], ['brake', 83], ['use', 69]]) {
+    const f = fixture(); f.setEnabled(true); f.setDriving(true);
+    f.pointer('pointerdown', f.ui[name], 1, 40, 40);
+    f.pointer('pointermove', f.ui[name], 1, 60, 45);
+    assert.deepEqual(f.deltas, [], name);
+    assert.deepEqual(f.messages, [['KeyDown', key, 0]], `${name} stays held without camera input`);
+    f.pointer('pointerup', f.ui[name], 1, 60, 45);
+    assert.deepEqual(f.messages.at(-1), ['KeyUp', key], name);
+  }
+});
+
 test('dragging a held action looks without releasing it or stealing an existing look finger', () => {
   const f = fixture(); f.setEnabled(true); f.setDriving(false);
   f.pointer('pointerdown', f.ui.move, 1, 50, 0);
