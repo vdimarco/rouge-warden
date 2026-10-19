@@ -28,11 +28,11 @@ On foot, the browser SHALL present Sprint, Jump, Use/car and Menu in two bottom-
 - **THEN** all three inputs work and release cleanly
 
 ### Requirement: Mobile streaming prioritizes smooth playback
-The mobile player SHALL balance readable imagery and smooth playback with four recoverable profiles, retaining native scene graphics, controls and the 30 FPS cap.
+The mobile player SHALL balance readable imagery and smooth playback with four recoverable profiles, retaining native scene graphics, controls and an aligned 60 FPS native/WebRTC ceiling. The ceiling is not guaranteed delivered performance.
 
 #### Scenario: Phone stream negotiation
 - **WHEN** a touch player connects
-- **THEN** it starts with a 960×540 pixel budget shaped to the play area and a 2 Mbps ceiling, rising to a 1280×720 pixel budget/4 Mbps after sustained healthy playback; desktop stays 1280×720 at its existing ceiling.
+- **THEN** it starts with a 960×540 pixel budget shaped to the play area and a 2 Mbps ceiling, rising to a 1280×720 pixel budget/6 Mbps after sustained healthy playback; desktop stays 1280×720 at its existing ceiling.
 
 #### Scenario: Startup hiccup
 - **WHEN** playback starts, a profile changes, or a single freeze occurs
