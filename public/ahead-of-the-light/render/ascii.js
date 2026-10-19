@@ -27,9 +27,18 @@ for (const [r, g, b] of HUES) for (let l = 0; l < LEVELS; l++) {
 }
 const WHITE0 = PALETTE.length;              // 56..59: white, dim to full
 for (const k of [0.35, 0.55, 0.8, 1]) PALETTE.push(hex(255 * k, 255 * k, 255 * k));
-const INK = { text: WHITE0 + 3, dim: WHITE0 + 1, alert: PALETTE.push('#ff5a4a') - 1, gold: PALETTE.push('#ffd27a') - 1 };
+const INK = { text: WHITE0 + 3, dim: WHITE0 + 1, alert: PALETTE.push('#ff5a4a') - 1, gold: PALETTE.push('#ffd27a') - 1,
+  goldHot: PALETTE.push('#fff1b8') - 1, goldDim: PALETTE.push('#a8781e') - 1 };
 export { PALETTE, HUES };
 
+// The first runs' tips: [from s, to s, lines]. Short lines, so they fit a phone.
+const TIPS = (touch) => [
+  [1, 5.5, [touch ? 'DRAG TO STEER' : 'STEER  A D W S  OR  ARROWS', 'you fly through a tube of stars']],
+  [5.5, 11, ['FLY THROUGH THE GOLD RINGS', 'each one speeds you up']],
+  [11, 16.5, ['DODGE THE STARS', 'red [ ] = you will hit it']],
+  [16.5, 22, ['SKIM PAST A STAR TO CHARGE', touch ? 'then HOLD BOOST' : 'then HOLD SHIFT TO BOOST']],
+  [22, 28, ["THE BURST'S LIGHT IS BEHIND YOU", 'top right: keep the gap open']],
+];
 const hueIndex = (h) => clamp(Math.round(clamp(h, 0, 1) * (HUES.length - 1)), 0, HUES.length - 1);
 const CODE = (s) => s.charCodeAt(0);
 
@@ -37,7 +46,7 @@ const CODE = (s) => s.charCodeAt(0);
 export function createAsciiView({ canvas, reduced = false, touch = false } = {}) {
   const V = {
     cols: 0, rows: 0, lum: null, hue: null, hw: null, ch: null, ci: null, stop: null, run: null, title: false,
-    flash: 0, shake: 0, pops: [], banner: null, last: performance.now(), t: 0, streaks: [], drawn: {}, ms: [],
+    flash: 0, shake: 0, pops: [], banner: null, tips: false, last: performance.now(), t: 0, streaks: [], drawn: {}, ms: [],
   };
   const gal = galaxyPiece();
   const GC = galaxyMeta.cols, GR = galaxyMeta.rows;
@@ -226,21 +235,47 @@ export function createAsciiView({ canvas, reduced = false, touch = false } = {})
           drawn.threats++;
         }
       }
-      // the rings: a circle of o's in the colours of the spectrum
+      // the rings: solid glowing gold, your target. The next one pulses and wears +SPEED; far ones get ( ) so they
+      // stand out; when the next one is off screen an arrow at the edge points to it.
+      let next = null;
       for (let i = run.rings.i; i < run.rings.i + 4; i++) {
         const gr = run.world.ring(i);
         if (!gr) continue;
         const z = gr.d - ship.d + BACK;
         if (z < 1.5 || gr.d - ship.d > 600) continue;
         const p = proj(gr.x - ship.x, gr.y - ship.y - UP, z), rc = RING_R * p.s;
-        const steps = Math.max(12, Math.min(160, Math.round(rc * 7)));
+        const first = !next;
+        if (first) next = { p, rc, z, gr };
+        const pulse = first && Math.floor(V.t * 5) % 2 === 0;
+        const steps = Math.max(14, Math.min(200, Math.round(rc * 7)));
         const chr = rc > 6 ? 'O' : rc > 2.5 ? 'o' : '·';
         for (let k = 0; k < steps; k++) {
-          const a = (k / steps) * Math.PI * 2 + V.t * 0.8;
-          const c = p.c + Math.cos(a) * rc, r = p.r + (Math.sin(a) * rc) / 2;
-          mark(c, r, chr, hueIndex((k / steps + V.t * 0.15) % 1) * LEVELS + LEVELS - 2);
+          const a = (k / steps) * Math.PI * 2;
+          mark(p.c + Math.cos(a) * rc, p.r + (Math.sin(a) * rc) / 2, chr, first ? (pulse ? INK.goldHot : INK.gold) : INK.gold);
+          if (rc > 3) mark(p.c + Math.cos(a) * rc * 0.82, p.r + (Math.sin(a) * rc * 0.82) / 2, '·', INK.goldDim);
+        }
+        if (rc < 2.2) { mark(p.c - 2, p.r, '(', INK.gold); mark(p.c + 2, p.r, ')', INK.gold); }
+        if (first && rc > 1 && gr.d - ship.d < 320) {
+          const tag = '+SPEED';
+          for (let j = 0; j < tag.length; j++) mark(p.c - 3 + j, p.r - rc / 2 - 1.2, tag[j], INK.goldHot);
         }
         drawn.rings++;
+      }
+      if (next) {
+        const { p } = next;
+        const inside = p.c >= 1 && p.c <= cols - 2 && p.r >= 5 && p.r <= rows - 2;
+        drawn.nextRing = { c: Math.round(p.c), r: Math.round(p.r), inside };
+        if (!inside) {
+          const ec = clamp(p.c, 1, cols - 2), er = clamp(p.r, 5, rows - 2);
+          const dx = p.c - cx, dy = (p.r - cy) * 2;
+          const arrow = Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? '>' : '<') : dy > 0 ? 'v' : '^';
+          const blink = Math.floor(V.t * 4) % 2 === 0 ? INK.goldHot : INK.gold;
+          mark(ec, er, arrow, blink);
+          const lab = 'RING';
+          const lc = clamp(ec - (dx > 0 ? lab.length + 1 : -2), 0, cols - lab.length);
+          for (let j = 0; j < lab.length; j++) mark(lc + j, er, lab[j], blink);
+          drawn.arrow = arrow;
+        }
       }
       // the ship, from behind: it sits where the camera sees it, banked into a turn
       const sp = proj(0, -UP, BACK);
@@ -307,9 +342,12 @@ export function createAsciiView({ canvas, reduced = false, touch = false } = {})
     text(out, color, 0, 0, left, INK.text);
     text(out, color, cols - right.length, 0, right, danger && Math.floor(V.t * 3) % 2 === 0 ? INK.alert : danger ? INK.alert : INK.dim);
     text(out, color, 1, 1, beta, INK.dim);
-    const closing = run.light.speed > s.speed;
-    const cl = closing ? 'CLOSING' : 'FALLING BACK';
-    text(out, color, cols - cl.length - 1, 1, cl, danger ? INK.alert : INK.dim);
+    // the chase: the burst, the gap, and you
+    const mw = Math.max(8, Math.min(30, cols - 34));
+    const fill = Math.round(clamp(gap / T.START_GAP, 0, 1) * mw);
+    const meter = 'BURST ●' + '─'.repeat(fill) + '▶ YOU';
+    text(out, color, cols - meter.length - 1, 1, meter, (i) => (i < 6 ? INK.alert : i === 6 ? INK.text : i === meter.length - 5 ? INK.gold : danger ? INK.alert : INK.dim));
+    drawn.chase = fill;
     // hull, shield, boost
     const nb = small ? 6 : 10;
     const parts = [['HULL ', bar(s.hull / 100, nb), s.hull < 35 ? INK.alert : INK.gold], [' SHLD ', bar(s.shield / 100, nb, '▓', '░'), hueIndex(0.7) * LEVELS + 7],
@@ -332,8 +370,15 @@ export function createAsciiView({ canvas, reduced = false, touch = false } = {})
       text(out, color, Math.round(cols / 2 - p.text.length / 2), pr - k - Math.floor(age * 3), p.text, p.ink);
       k += 1;
     }
+    // the first run's tips, one line at a time
+    const tip = V.tips ? TIPS(touch).find(([t0, t1]) => run.t >= t0 && run.t < t1) : null;
+    if (tip) {
+      const lines = tip[2];
+      for (let i = 0; i < lines.length; i++) text(out, color, Math.round(cols / 2 - lines[i].length / 2), Math.round(V.rows * 0.72) + i, lines[i], i ? INK.dim : INK.goldHot);
+      drawn.tip = lines[0];
+    }
     // warnings
-    if (danger && Math.floor(V.t * 3) % 2 === 0) { const w = '!! THE BURST IS ON YOU · BOOST !!'; text(out, color, Math.round(cols / 2 - w.length / 2), Math.round(V.rows * 0.7), w, INK.alert); }
+    if (!tip && danger && Math.floor(V.t * 3) % 2 === 0) { const w = cols < 60 ? '!! LIGHT CLOSING · BOOST !!' : '!! THE LIGHT IS CLOSING · GRAB RINGS · BOOST !!'; text(out, color, Math.round(cols / 2 - w.length / 2), Math.round(V.rows * 0.7), w, INK.alert); }
     // the sector's name in the library's block letters
     if (V.banner) {
       const age = run.t - V.banner.t0;
@@ -390,5 +435,6 @@ export function createAsciiView({ canvas, reduced = false, touch = false } = {})
     get grid() { return { cols: V.cols, rows: V.rows }; },
     drawMs() { const a = [...V.ms].sort((x, y) => x - y); return a.length ? { p50: a[a.length >> 1], p95: a[Math.floor(a.length * 0.95)] } : null; },
     sectorBanner(sector, run) { V.banner = { t0: run.t, sector }; },
+    tips(on) { V.tips = Boolean(on); },
   };
 }

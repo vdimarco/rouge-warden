@@ -36,17 +36,34 @@ the tube SHALL keep a way through.
 - **CHECK** `qa/ahead-of-the-light/flight.test.mjs`
 
 ### Requirement: The light behind you
-The burst's light SHALL start 420 m behind and run faster than the ship cruises. When it reaches the ship the run
-SHALL end with THE LIGHT CAUGHT YOU. The HUD SHALL show the gap and whether it is closing, and the frame's edges SHALL
-whiten as it closes.
+The burst's light SHALL start 520 m behind. For the first 1.2 km it SHALL only keep pace with the ship's cruise, so a
+new pilot can learn; over the next 3.6 km it SHALL become faster than the cruise, and when far behind it SHALL close
+faster. When it reaches the ship the run SHALL end with THE LIGHT CAUGHT YOU. The HUD SHALL show the gap as a meter
+from BURST to YOU, and the frame's edges SHALL whiten as it closes.
+
+#### Scenario: A calm start
+- **WHEN** a pilot cruises the first kilometre without rings or boost
+- **THEN** the gap stays open
+- **CHECK** `qa/ahead-of-the-light/flight.test.mjs`
 
 #### Scenario: Flying well wins
 - **WHEN** a good bot flies eight seeds
-- **THEN** it gets home on at least six, a weak bot is caught on at least two, and a run home takes 150 to 260 s
+- **THEN** it gets home on at least six, a very weak bot is caught on at least four, and a run home takes 150 to 260 s
 - **CHECK** `qa/ahead-of-the-light/flight.test.mjs`
 
+### Requirement: Clear for a first-time player
+A player's first three runs SHALL show one tip at a time over the first 28 s: how to steer, to fly through the gold
+rings, to dodge stars (red brackets), to skim and boost, and where the light is. Rings SHALL be solid glowing gold;
+the next one SHALL pulse and wear +SPEED, and when it is off screen an arrow at the edge SHALL point to it. The result
+SHALL say why the run ended and what to do next time.
+
+#### Scenario: The first run
+- **WHEN** a new player starts a run
+- **THEN** the tips show in turn and the next ring is marked +SPEED in gold
+- **CHECK** `qa/ahead-of-the-light/smoke.e2e.mjs`
+
 ### Requirement: Rings and boost
-Spectral rings SHALL hang in the tube about every 170 m, clear of stars. Flying through one SHALL add 25 % charge and
+Gold rings SHALL hang in the tube about every 170 m, clear of stars. Flying through one SHALL add 25 % charge and
 a kick of speed, and chain. BOOST (SHIFT, SPACE, the held BOOST button, a gamepad's RT or A) SHALL spend charge for
 speed.
 

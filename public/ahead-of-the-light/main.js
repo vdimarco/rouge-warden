@@ -98,6 +98,8 @@ function start() {
   $('touch').hidden = !touch;
   $('steerHint').classList.toggle('gone', G.hintGone);
   view.sectorBanner(0, G.run);
+  // the tips for a player's first three runs (or ?tips)
+  view.tips(meta().runs < 3 || params.has('tips'));
 }
 function finish() {
   const r = G.run, m = meta();
@@ -122,6 +124,10 @@ function finish() {
     ['HITS', String(r.stats.hits)],
   ];
   $('rStats').innerHTML = rows.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('');
+  $('rWhy').textContent = home ? 'The burst never caught you.'
+    : r.mode === 'wreck' ? 'Too many stars hit you. Watch for red [ ] and steer round them.'
+    : r.stats.rings < (r.stats.rings + r.stats.missed) * 0.6 ? 'The light caught up: you missed most gold rings. Each one speeds you up.'
+    : 'The light caught up. Skim past stars to charge, then hold BOOST when the gap gets short.';
   $('rBest').textContent = newBest ? 'NEW BEST' : bestLine(m);
   show('result');
   $('again').focus({ preventScroll: true });

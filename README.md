@@ -510,9 +510,9 @@ The islands are drawn in code. The bumper, portal, star, pearl and flipper sprit
 
 Ahead of the Light (`/ahead-of-the-light/`) is a flight home at the edge of light speed, drawn in characters with [ascii.rest](https://github.com/bas3line/ascii) (MIT). At that speed the stars crowd ahead of you and turn blue, a ring of colour stands round the way ahead, and the sky at the edges reddens: the starbow. You fly a tube of stars toward Earth through eight sectors named for the route home: the cosmic web, Coma, Virgo, the Local Group, the Milky Way, the Orion Arm, the Sun's stars and Earth. A run is about 19 km and three minutes.
 
-- **The light** of a gamma-ray burst starts 420 m behind you and runs a little faster than you cruise. The HUD shows the gap and whether it is closing, and the edges of the frame whiten as it comes. When it reaches you, the run is over.
+- **The light** of a gamma-ray burst starts 520 m behind you. For the first kilometre it only keeps pace with you, then it grows faster than you cruise. The meter at the top right runs from BURST to YOU, and the edges of the frame whiten as the light comes. When it reaches you, the run is over, and the card says why and what to try. A player's first three runs show one tip at a time.
 - **Stars** in your path are hits: they take your shield, then your hull, and most of your speed. A star you would hit soon gets red brackets. Slip past one close (SKIM, or HAIRLINE) and it charges your boost.
-- **Rings** in the colours of the spectrum hang in the tube about every 170 m. Fly through one for charge and a kick of speed; rings in a row make a chain.
+- **Gold rings** hang in the tube about every 170 m: they are your target. Fly through one for charge and a kick of speed; rings in a row make a chain. The next one pulses and wears +SPEED, and an arrow at the edge points to it when it is off screen.
 - **Boost** spends charge for speed. Charge also trickles in on its own.
 - **Controls.** On a computer, A D W S or the arrows steer, Shift or Space boosts, and Esc or P pauses. A drag on the view also steers. On a phone, drag anywhere to steer and hold BOOST. A gamepad uses the left stick and RT or A.
 - **Your best** run stays in this browser, and the machine shows the furthest sector (BEST: VIRGO).

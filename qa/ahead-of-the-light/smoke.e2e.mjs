@@ -50,6 +50,9 @@ for (const [w, h, touch] of SIZES) {
   check(d0.d > 5, `FLY starts the run flying (${d0.d.toFixed(0)} m)`);
   check(d0.cb <= h + 0.5 && Math.abs(d0.cw - w) < 1, `the ${d0.grid.cols} × ${d0.grid.rows} grid fits the window`);
   check(d0.drawn.ship && d0.drawn.ship.r > 4 && d0.drawn.ship.r < d0.grid.rows - 4, 'the ship is drawn on screen');
+  const tipSeen = await p.evaluate(async () => { for (let i = 0; i < 40; i++) { if (__race.drawn.tip) return __race.drawn.tip; await new Promise((r) => setTimeout(r, 100)); } return null; });
+  check(Boolean(tipSeen), `a first run shows its tips (${tipSeen})`);
+  check(d0.drawn.chase > 0, 'the chase meter shows the gap');
   const boxes = await p.evaluate(() => [...document.querySelectorAll('#touch button')].filter((b) => b.getClientRects().length).map((b) => { const r = b.getBoundingClientRect(); return { id: b.id, x: r.x, y: r.y, w: r.width, h: r.height }; }));
   if (touch) {
     check(boxes.length === 2 && boxes.every((b) => Math.min(b.w, b.h) >= 44 && inside(b, w, h)), `touch buttons on screen: ${boxes.map((b) => `${b.id} ${Math.round(b.w)}×${Math.round(b.h)}`).join(', ')}`);
