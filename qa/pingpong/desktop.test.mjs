@@ -421,7 +421,7 @@ test('a desktop mouse flick wins the opening point', { timeout: 90000 }, async (
     assert.equal(phoneGate.button, 'Tap to pick up your bat', JSON.stringify(phoneGate));
     assert.equal(phoneGate.hintHidden, true);
     assert.equal(phoneGate.lines.every((line) => !line.hidden), true);
-    assert.match(phoneGate.lines[0].text, /Hold your phone like a bat/);
+    assert.match(phoneGate.lines[0].text, /Move your phone left, right, forward, and back/);
 
     const switched = await phone.newPage();
     switched.on('pageerror', (err) => errors.push(String(err)));
@@ -439,7 +439,7 @@ test('a desktop mouse flick wins the opening point', { timeout: 90000 }, async (
     assert.equal(afterMouse.button, 'Click to pick up your bat');
     assert.equal(afterMouse.hintHidden, false);
     assert.equal(afterMouse.phoneHidden, true);
-    assert.match(afterMouse.hold, /Hold your phone/);
+    assert.match(afterMouse.hold, /Move your phone/);
   } finally {
     await browser.close();
   }
@@ -451,10 +451,10 @@ function waitForDebugPort(port) {
     const tick = () => {
       fetch(`http://127.0.0.1:${port}/json/version`).then((res) => {
         if (res.ok) resolve();
-        else if (Date.now() - started > 8000) reject(new Error('chrome debug port failed'));
+        else if (Date.now() - started > 20000) reject(new Error('chrome debug port failed'));
         else setTimeout(tick, 100);
       }).catch(() => {
-        if (Date.now() - started > 8000) reject(new Error('chrome debug port did not open'));
+        if (Date.now() - started > 20000) reject(new Error('chrome debug port did not open'));
         else setTimeout(tick, 100);
       });
     };
@@ -516,7 +516,7 @@ test('plain headless Chrome at 1280 shows the desktop gate', { timeout: 60000 },
     assert.equal(gate.hintHidden, false);
     assert.equal(gate.hint, 'The bat follows the ball. Move the mouse to aim. Flick to swing.');
     assert.equal(gate.phoneHidden, true);
-    assert.match(gate.phone, /Hold your phone/);
+    assert.match(gate.phone, /Move your phone/);
   } finally {
     if (browser) await browser.close().catch(() => {});
     proc.kill('SIGKILL');
