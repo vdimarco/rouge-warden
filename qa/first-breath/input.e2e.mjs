@@ -12,9 +12,10 @@
 //   with touch) you settle on the lane the drag took, as with no pause, and a flick takes the next lane (review F9);
 // - in Birth on a desktop an arrow keydown moves one lane, held or not (Left held, then Right with Left let go), two
 //   quick arrows cross two lanes, and Space and the down arrow tuck (review F12);
-// - Tab to the HUD's pause button in play, then Space or Enter: no pause, and the press is the stage's; over the
-//   overlay, where it is a button like Next, Enter on it pauses (review F16);
-// - the prompt line names keys on a desktop (stage 3: "Press Space as the ring closes."), touch on a phone, and the
+// - Tab to the HUD's pause button in play, then Space or Enter: no pause, and the press is the stage's (in stage 3,
+//   one dash in __fb.result().metrics.dashes); over the overlay, where it is a button like Next, Enter on it pauses
+//   (review F16);
+// - the prompt line names keys on a desktop (stage 3: "WASD to move. Space to dash."), touch on a phone, and the
 //   button in one-button mode (stage 2 guard: "Hold to guard your shell."); the stage 7 rest asks for a touch, not
 //   the thumb kept from the turn (review F13, F15, F17).
 // - the three devices (tasks.md 5.5): at 390 × 844 and 844 × 390 with touch, a tap on Play starts the run, and at
@@ -321,21 +322,17 @@ for (const key of ["Space", "Enter"]) {
   await page.evaluate(() => window.__fb.step(30));
   await page.keyboard.press("Tab");
   const focus = await S(page);
-  // step to the next target, then press on it with the focus on the pause button
-  await page.evaluate(() => {
-    const x = window.__fb.nextTarget();
-    let n = 0;
-    while (x && window.__fb.state().t < x.t - 0.004 && n++ < 6000) window.__fb.step(1);
-  });
-  const before = await S(page);
+  // stage 3 (the roguelike): the press is the dash; count the dashes with the focus on the pause button
+  const dashes = () => page.evaluate(() => { const r = window.__fb.result(); return r && r.metrics ? r.metrics.dashes : null; });
+  const before = await dashes();
   await page.keyboard.press(key);
   await settle();
   await page.evaluate(() => window.__fb.step(20));
-  const after = await S(page);
+  const after = await S(page), dashed = await dashes();
   check(`desktop: Tab focuses the pause button, and ${key} there does not pause`, focus.active === "pause" && after.paused === false,
     JSON.stringify({ focus: focus.active, after }));
-  check(`desktop: ${key} on the focused pause button is the stage's press`, after.judges > before.judges,
-    JSON.stringify({ before: before.judges, after: after.judges }));
+  check(`desktop: ${key} on the focused pause button is the stage's press (a dash)`, before === 0 && dashed === 1,
+    JSON.stringify({ before, after: dashed }));
   if (after.paused) await page.keyboard.press("Escape");
   let clicked = true;
   try { await page.click("#pause", { timeout: 3000 }); } catch (e) { clicked = false; }   // the pause button still works by click
@@ -347,8 +344,8 @@ for (const key of ["Space", "Enter"]) {
 // ---- 7. the prompt words for each way to play (F13, F15, F17)
 {
   const words = [
-    ["desktop", "?test=1&stage=3", null, "Press Space as the ring closes."],
-    ["portrait", "?test=1&stage=3", null, "Tap as the ring closes."],
+    ["desktop", "?test=1&stage=3", null, "WASD to move. Space to dash."],
+    ["portrait", "?test=1&stage=3", null, "Drag to move. Tap to dash."],
     ["desktop", "?test=1&stage=4", null, "Drift with the arrow keys, or drag with the mouse."],
     ["desktop", "?test=1&one=1&stage=2", "guard", "Hold to guard your shell."],
     ["portrait", "?test=1&one=1&stage=2", "guard", "Hold to guard your shell."],

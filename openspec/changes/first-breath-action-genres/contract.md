@@ -18,7 +18,7 @@ Pure and seeded (`stream(seed, "action")` as `A.rnd`). World units, seconds, rad
 
 | Call | Does |
 |---|---|
-| `createWorld(seed, opts)` → `A` | `opts`: `arena` `{ x, y, r }` or `null` (default `{0, 0, 46}`); `player` (override of `ACT.player`, plus `x`, `y`, `fixed`, `shield`); `dash` (override of `ACT.dash`, or `null` for none); `fire` (override of `ACT.fire`, or `null` for no auto-fire); `pickup`, `combo`, `foe`, `juice` (overrides); `bulletK` (foe bullet speed factor); `bulletCap` (foe bullets at once); `keepOut` `[{ ang, half }]` (arcs of the wall where no foe spawns). |
+| `createWorld(seed, opts)` → `A` | `opts`: `arena` `{ x, y, r }` or `null` (default `{0, 0, 46}`); `player` (override of `ACT.player`, plus `x`, `y`, `fixed`, `shield`); `dash` (override of `ACT.dash`, or `null` for none); `fire` (override of `ACT.fire`, or `null` for no auto-fire); `pickup`, `combo`, `foe`, `juice` (overrides); `bulletK` (foe bullet speed factor); `bulletCap` (foe bullets at once); `keepOut` `[{ ang, half }]` (arcs of the wall where no foe spawns); `wallCull` (u past the arena's wall at which a bullet is removed: default 6, stage 7 uses 0). |
 | `stepWorld(A, intents)` → `moved` | One fixed step. Returns `false` under a hit-stop: the world holds still and `A.t` does not move; run your own step-counted timers only when it returns `true`. Fills `A.out` (below). |
 | `emitOut(A, st)` | Turns `A.out` into `sfx` events `act.<type>` on the stage state, thinned in time. Call once after each step. |
 | `actionView(A, { player = true })` → the draw list's `action` part | Fresh arrays; `A` is unchanged (view stays pure). Add `arena` yourself: `d.action = { ...X.actionView(A), arena: { ...A.arena } }`. |
@@ -216,15 +216,18 @@ no em dash, no pronoun for the carer, and none of the banned words (no "enemy", 
   world for 8 frames, shakes and swells (`act.phase`); its core and the boss bar change colour. Clearing it plays a
   1.4 s victory beat (the shots turn to sparkles, the germs left pop, more bursts, `act.win`, the thumb pose; you can
   still move), then the stage ends.
-- Foes: chasers (`germ`), wanderers (`spore`), shooters (`blob` aimed stack at 30 u/s, fan of 3, fan of 5; `drop`
+- Foes: chasers (`germ`), wanderers (`spore`), shooters (`blob` aimed stack of 3 from 32 u/s, fan of 4, fan of 6; `drop`
   wave), orbiters (`ring`). Spawns never come through the placenta (`keepOut`). Bullet cap 150. The fastest foe
-  shots of the run (the aimed stack's second shot 34 u/s; the big germ's fan 30 u/s).
-- Food grows your sparks (rate 6, spread 2, pierce 1, rate 7, spread 3, strength 1.5, rate 8, pierce 2) and your
+  shots of the run (the aimed stack's third shot 41 u/s; the big germ's fan 33 u/s).
+- Food grows your sparks (from rate 4: rate 5, spread 2, pierce 1, rate 6, spread 3, strength 1.5, rate 7, pierce 2) and your
   heart powers them: the fire rate is that rate × your heart's bpm / 150.
 - Sac to scale (meta.mm 30 to 150); you are drawn 9.5 to 15 u long, smaller than true.
-- Score: Goal 3,000; Skill 3,500 for germs cleared (combo score over the value × 1.75) and 2,500 for dodges (1 − hits
-  / 5); Flourish 1,000 × best combo / 25. Bots (10 seeds): skill 1 about 9,900, 0.7 about 9,600, 0.5 about 9,300 with
-  no knock-out; idle is knocked out in week 7 or 8 (about 12 s); one-button held completes. About 85 s; cap 120 s.
+- Score (the difficulty pass): Goal 3,000; Skill 1,200 for germs cleared (combo score over the value × 1.6) and 4,800
+  for dodges, less 1,600 a hit; Flourish 1,000 × best combo / 25. No hit is Glowing, 1 or 2 Great, 3 or more Good.
+  Bots (100 seeds): about 0.8 hits at skill 1 and 0.7, about 3 at 0.5, no knock-out; skill 1 Great or better in about
+  93, 0.7 mostly Great, 0.5 Good in about 65; idle is knocked out in week 7 or 8 (about 13 s); one-button held
+  completes. About 92 s; cap 120 s. The shots are faster and come sooner than first built (the aimed stack of 3 at 32
+  to 41 u/s; week 7's gentler blob0), and a hit gives 1.4 s of i-frames and clears shots within 12 u.
 - No `meta.goOn`: after a knock-out, Go on closes the stage at once (the clock and carry at the stage's end).
 - The facts are v1's; `grow.frame` ("In the game you clear germs. ...") is a result fact, `checked: false` until its
   page is re-read (research-biology.md 5.13 supports it).

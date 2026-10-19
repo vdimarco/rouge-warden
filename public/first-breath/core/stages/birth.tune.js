@@ -39,8 +39,9 @@
 //   wave's first fold starts the chain again from you when you are less than about two bumps late.
 //
 // Bots (sim, 20 seeds; qa/first-breath/stage-birth.test.mjs and sim.test.mjs): every input takes 65.5 s. Measured
-// (stage test, seeds 1 to 6): skill 1 about 10,000 (Glowing), 0.7 about 9,600, 0.5 about 9,000, idle about 5,700
-// (Good: the goal, the bubbles it rides into and about half the folds clean).
+// (40 seeds, the stage alone): skill 1 about 9,800 (Glowing, 0 to 2 bumps), 0.7 about 7,700 (mostly Great, about 5
+// bumps), 0.5 about 6,300 (mostly Good, about 8 bumps), idle about 4,100 (Good: the goal and the bubbles it rides
+// into).
 export const TUNE = Object.freeze({
   // the clock
   leadS: 2.0,            // the first warning
@@ -73,6 +74,7 @@ export const TUNE = Object.freeze({
   figureU: 16,           // head to bottom, drawn
   tuckSize: 0.74,        // the figure curls to this share of its size while you tuck
   tuckS: 0.5,
+  tuckLate: Object.freeze([0.44, 0.34]),   // the tuck is shorter in the late waves (5 to 8): a narrower window
   tuckCdS: 0.9,          // from the start of one tuck to the next
   tuckBufS: 0.15,        // a press this soon before the tuck is back is kept
   blinkS: 0.45,          // a bump blinks you this long (by brightness)
@@ -89,8 +91,12 @@ export const TUNE = Object.freeze({
   catchV: 30,            // ... up to 30 u/s more, so the folds stay with their surges
 
   // the folds: met during the surges, from 0.6 s in until 0.3 s before the end, one every 1.1 s (wave 1) down to
-  // 0.7 s (wave 8), a little seeded jitter, never closer than 0.7 s
+  // 0.7 s (wave 8), a little seeded jitter, never closer than 0.7 s; the late waves (5 to 8, from lateFrom) come
+  // denser: one every 0.7 s (wave 5) down to 0.58 s (wave 8), never closer than 0.55 s
   foldEvery: Object.freeze([1.1, 0.7]),
+  lateFrom: 4,
+  foldEveryLate: Object.freeze([0.7, 0.58]),
+  minGapLateS: 0.55,
   foldJitS: 0.08,
   foldLead: 0.6,
   foldTail: 0.3,
@@ -101,6 +107,7 @@ export const TUNE = Object.freeze({
   tip1: 9,               // a 1-lane flap ends 9 u from the middle of the channel (lane 0 or 2 blocked)
   tightFrom: 2,          // tight gaps from wave 3 (k = 2)
   tightOdds: 0.2,        // one fold in five
+  tightOddsLate: 0.3,    // ... and one in three or so in the late waves
   tightW: 5,             // a tight gap's width: tucked (1.5 u) you pass within 1 u of its middle; untucked you bump
                          // (Assist widens it, but never to the untucked hitbox: 2.75 u a side at most)
   tightGapS: 1.4,
@@ -123,7 +130,7 @@ export const TUNE = Object.freeze({
   gateAt: 2.5,
   gateHalf: 6,           // a turn gate takes you within 6 u of its lane's middle
   gateGapS: 0.8,         // no fold closer than this to a gate (the design's 1.0 s left wave 8 too bare)
-  gatePts: 500,
+  gatePts: 400,
 
   // calm bubbles
   bubbleR: 3,
@@ -145,9 +152,10 @@ export const TUNE = Object.freeze({
   // slows you for 0.3 s, and the tuck lasts 0.12 s longer
   assist: Object.freeze({ surgeK: 0.8, foldK: 1.4, wideK: 1.3, bumpS: 0.3, tuckSlackS: 0.12 }),
 
-  // the score (design.md 5.8, bubbles as above): Goal 3,000; Skill 2,500 × clean folds / folds, 2,000 × gates / 4,
-  // bubbles 100 each up to 1,500; Flourish 1,000 × min(1, best flow / 20)
-  score: Object.freeze({ goal: 3000, folds: 2500, gates: 2000, bubbles: 1500, flourish: 1000, flowFull: 20 }),
+  // the score (design.md 5.8, retuned so the grade follows the bumps): Goal 3,000; Skill: folds 3,500 less 400 a bump
+  // (none left from 9 bumps), 400 a gate (1,600), bubbles 100 each up to 900; Flourish 1,000 × min(1, best flow /
+  // 30). No bump is Glowing; about 4 to 7 bumps Great; 8 or more Good
+  score: Object.freeze({ goal: 3000, folds: 3500, perBump: 400, gates: 1600, bubbles: 900, flourish: 1000, flowFull: 30 }),
 
   // the squeeze: the vignette and the channel's walls press in on each surge (none with reduced motion)
   vignetteRest: 0.15,

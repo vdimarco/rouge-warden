@@ -24,10 +24,11 @@
 // - Gates: a sub-goal from the wave's warning, settled when you pass the gate (done by you, or auto with "The wave
 //   moves you on anyway."). Each move plays at the gate, or at its surge's end if you have not reached it yet, so
 //   every move plays on its wave. The Turn gate's side is seeded; it writes turnDir, and Turn back is the other side.
-// - Score (never shown at the end of this stage): Goal 3,000; Skill 2,500 × clean folds / folds met, 500 a gate hit,
-//   100 a bubble up to 1,500; Flourish 1,000 × min(1, best flow / 20). Points events carry the gates and bubbles as
-//   they come and the rest at the end, so they add up to the total. While you ride, result() counts live for the HUD
-//   (each clean fold against the folds planned, the best flow so far); the end's share is never less.
+// - Score (never shown at the end of this stage): Goal 3,000; Skill 3,500 for the folds less 400 a bump, 400 a gate
+//   hit, 100 a bubble up to 900; Flourish 1,000 × min(1, best flow / 30). Points events carry the gates and bubbles
+//   as they come and the rest at the end, so they add up to the total. While you ride, result() counts live for the
+//   HUD (each clean fold against the folds planned, less each bump so far, and the best flow so far); the end's share
+//   is never less.
 // - Captions: fact events { id, where: "caption" } at the times in TUNE.captions.
 // - Sound: sfx birth.warn, birth.swell (a surge, with dur, cutoffHz and rumbleHz), birth.breath (each surge's end),
 //   birth.tuck, birth.bump, birth.bubble, birth.gate, birth.flow (pitch: the streak's step) and birth.open.
@@ -137,7 +138,10 @@ function planCourse(st) {
     const k = w.k;
     const gi = T.gates.findIndex((g) => g.wave === k);
     const tg = gi >= 0 ? w.s + T.gateAt : null;
-    const every = lerp(T.foldEvery[0], T.foldEvery[1], k / (T.waves - 1)) * foldK;
+    const late = k >= T.lateFrom;
+    const every = (late ? lerp(T.foldEveryLate[0], T.foldEveryLate[1], (k - T.lateFrom) / Math.max(1, T.waves - 1 - T.lateFrom))
+      : lerp(T.foldEvery[0], T.foldEvery[1], k / (T.waves - 1))) * foldK;
+    const minGap = (late ? T.minGapLateS : T.minGapS) * foldK;
     const segs = tg === null ? [[w.s + T.foldLead, w.e - T.foldTail]]
       : [[w.s + T.foldLead, tg - T.gateGapS], [tg + T.gateGapS, w.e - T.foldTail]];
     const times = [];
@@ -145,10 +149,12 @@ function planCourse(st) {
       const len = b - a;
       if (len < -EPS) continue;
       let n = 1 + Math.max(0, Math.round(len / every));
-      while (n > 1 && len / (n - 1) < T.minGapS * foldK - EPS) n--;
+      while (n > 1 && len / (n - 1) < minGap - EPS) n--;
+      // the jitter never brings two folds closer than minGap
+      const jit = n > 1 ? Math.min(T.foldJitS, Math.max(0, (len / (n - 1) - minGap) / 2)) : 0;
       for (let q = 0; q < n; q++) {
         let tq = n > 1 ? a + (len * q) / (n - 1) : (a + b) / 2;
-        if (q > 0 && q < n - 1) tq += (r() * 2 - 1) * T.foldJitS;
+        if (q > 0 && q < n - 1) tq += (r() * 2 - 1) * jit;
         times.push(tq);
       }
     }
@@ -186,7 +192,7 @@ function planCourse(st) {
       && tightAt.every((tt) => Math.abs(tt - o.tm) >= T.tightGapS - EPS);
     const u = r(), pick = r(), side = r();
     let choice = null;
-    if (tightOk && u < T.tightOdds) {
+    if (tightOk && u < (o.wave >= T.lateFrom ? T.tightOddsLate : T.tightOdds)) {
       const lanes = [0, 1, 2].filter((j) => ok([j]));
       if (lanes.length) choice = { block: [0, 1, 2], open: [lanes[Math.min(lanes.length - 1, Math.floor(pick * lanes.length))]], tight: true };
     }
@@ -211,7 +217,7 @@ function planCourse(st) {
   for (const w of st.waves) {
     const mine = items.filter((o) => o.wave === w.k);
     const slots = [];
-    for (let i = 1; i < mine.length; i++) if (mine[i].tm - mine[i - 1].tm >= 0.6) slots.push([mine[i - 1], mine[i]]);
+    for (let i = 1; i < mine.length; i++) if (mine[i].tm - mine[i - 1].tm >= Math.min(0.6, T.minGapLateS) - EPS) slots.push([mine[i - 1], mine[i]]);
     for (let n = 0; n < T.bubblesSurge && slots.length; n++) {
       const [a, b] = slots.splice(Math.min(slots.length - 1, Math.floor(r() * slots.length)), 1)[0];
       const both = b.open.filter((j) => a.open.includes(j));
@@ -313,6 +319,14 @@ function sane(intents) {
   return { steer: { x: s.x * k, y: s.y * k }, presses: list(it.presses), taps: list(it.taps) };
 }
 
+// The tuck's length now: 0.5 s, shorter in the late waves (TUNE.tuckLate), plus Assist's slack.
+function tuckLen(st) {
+  let k = -1;
+  if (Array.isArray(st.waves)) for (let i = 0; i < st.waves.length; i++) if (st.t >= st.waves[i].warn - EPS) k = i;
+  const base = k >= T.lateFrom ? lerp(T.tuckLate[0], T.tuckLate[1], (k - T.lateFrom) / Math.max(1, T.waves - 1 - T.lateFrom)) : T.tuckS;
+  return base + (st.assist ? T.assist.tuckSlackS : 0);
+}
+
 function wantTuck(st) {
   const ready = st.tuckAt + T.tuckCdS;
   if (st.t >= ready - EPS) startTuck(st);
@@ -322,7 +336,7 @@ function wantTuck(st) {
 function startTuck(st) {
   st.tuckQ = false;
   st.tuckAt = st.t;
-  st.tuckT = T.tuckS + (st.assist ? T.assist.tuckSlackS : 0);
+  st.tuckT = tuckLen(st);
   st.tucks++;
   addRing(st, st.x, st.d, 11, 4, 0.6);
   emit(st, "sfx", { id: "birth.tuck", pitch: 1, gain: 0.7 });
@@ -508,7 +522,7 @@ function take(st, b) {
   const add = Math.max(0, Math.min(room, T.bubblePts));
   st.bubblePts += add;
   points(st, "skill", add);
-  addPop(st, add);
+  if (add > 0) addPop(st, add);
   addBurst(st, b.x, b.s, T.bubbleR, 2);
   emit(st, "sfx", { id: "birth.bubble", pitch: 1 + 0.06 * (st.got % 6), gain: 0.6 });
 }
@@ -609,9 +623,10 @@ function timeline(st) {
 
 // ---- the score
 
-const foldPart = (st) => (st.folds > 0 ? Math.round((T.score.folds * st.clean) / st.folds) : 0);
-// while you ride, the HUD counts each clean fold against the folds planned (never more than the end's share)
-const liveFoldPart = (st) => Math.round((T.score.folds * st.clean) / Math.max(1, st.planFolds, st.folds));
+const foldPart = (st) => (st.folds > 0 ? Math.max(0, T.score.folds - T.score.perBump * st.bumps) : 0);
+// while you ride, the HUD counts each clean fold against the folds planned, less each bump so far (never more than
+// the end's share)
+const liveFoldPart = (st) => Math.max(0, Math.round((T.score.folds * st.clean) / Math.max(1, st.planFolds, st.folds)) - T.score.perBump * st.bumps);
 const flourishPart = (st) => Math.round(T.score.flourish * Math.min(1, st.bestFlow / T.score.flowFull));
 
 function finish(st, how) {
@@ -1024,7 +1039,7 @@ export function botSteer(st, skill, r) {
     // the tuck, just before a tight gap or a tuck or lift gate (and while in its band)
     if (p1.tuck && !(wrong && o1.kind === "gate" && T.gates[o1.gate].kind === "tuck")) {
       const zone = 2 * (H + Math.sqrt(Math.max(0, T.hitR * T.hitR - (o1.half || 2.5) ** 2)));
-      const tuckS = T.tuckS + (st.assist ? T.assist.tuckSlackS : 0);
+      const tuckS = tuckLen(st);
       const lead = Math.max(0, Math.min(B.tuckLeadS, tuckS - zone / v - 0.04)) + (ju * 2 - 1) * B.tuckJitS * (1 - s);
       const tc = (rel1 - zone / 2) / v;
       if (tc <= lead && st.tuckT <= 0 && st.t >= st.tuckAt + T.tuckCdS - T.tuckBufS) tuck = true;

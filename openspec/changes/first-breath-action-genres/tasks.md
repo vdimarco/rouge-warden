@@ -130,6 +130,7 @@ Keep everything `design.md` 5.2 lists under "What stays" (the arc and its contro
 - [ ] 9.5 Text: every new string passes `text.test.mjs` (banned words, pronouns, the race words, sentence length).
 - [ ] 9.6 Facts: re-read each new fact's source and set `checked: true` only then; `facts.test.mjs` passes.
 - [ ] 9.7 Stage cards: verbs and gesture icons for the move gesture.
+- [x] 9.8 Difficulty and feel at the peaks: stages 5 and 8 grade by hits and bumps (skill 1.0 Great or better, 0.7 mostly Great, 0.5 mostly Good; the `sim.test.mjs` grade spread); stage 1's gate quotas 8, 5 and 4; stage 7's Beat gift lifts her heart, darts end at the wall, and the portrait caption band comes back down.
 
 ## 10. QA
 

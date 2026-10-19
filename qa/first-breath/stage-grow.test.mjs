@@ -107,19 +107,25 @@ await check("determinism: the same seed and input give the same events and resul
 
 // ---- the bots ----
 
-await check("the shared bot: skill 1 clears the big germ in every seed at a mean of Glowing; 0.7 Great; 0.5 completes", () => {
+await check("the shared bot: skill 1 clears the big germ in every seed, Great or better in at least 8 of 10 (sim.test.mjs holds the 18 of 20 gate); 0.7 a mean of Great; 0.5 completes, rarely Glowing", () => {
   const mean = (rs) => rs.reduce((a, r) => a + r.res.score.total, 0) / rs.length;
   for (const r of REF) {
     assert.deepEqual(r.bad, []);
     assert.equal(r.st.how, "boss", `seed ${r.st.seed}: ${r.st.how} at ${r.st.t.toFixed(1)} s`);
     assert.equal(r.res.goalMet, true);
-    assert.ok(gradeOf(r.res.score.total, true) !== "Good", `seed ${r.st.seed}: ${r.res.score.total}`);
   }
-  assert.ok(mean(REF) >= 8500, `ref mean ${mean(REF)}`);
+  const good1 = REF.filter((r) => gradeOf(r.res.score.total, true) === "Good").map((r) => `seed ${r.st.seed} ${r.res.score.total}`);
+  assert.ok(good1.length <= 2, `ref Good in ${good1.join(", ")}`);
+  assert.ok(mean(REF) >= 7500, `ref mean ${mean(REF)}`);
   assert.ok(mean(BOTS[0.7]) >= 6500, `0.7 mean ${mean(BOTS[0.7])}`);
+  // the peak of the run (design.md 3.2, 4.5): the hits decide the grade, so a weaker player rarely glows
+  const glow5 = BOTS[0.5].filter((r) => r.res.goalMet && gradeOf(r.res.score.total, true) === "Glowing").length;
+  assert.ok(glow5 <= 3, `0.5 Glowing in ${glow5} of 10`);
   assert.ok(BOTS[0.7].filter((r) => r.res.goalMet).length >= 9, "0.7 completes");
   assert.ok(BOTS[0.5].filter((r) => r.res.goalMet).length >= 9, `0.5 completes: ${BOTS[0.5].map((r) => r.st.how).join(", ")}`);
-  assert.ok(mean(REF) >= mean(BOTS[0.7]) && mean(BOTS[0.7]) >= mean(BOTS[0.5]), `more skill scores more: ${[1, 0.7, 0.5].map((k) => Math.round(mean(BOTS[k])))}`);
+  // the hits decide the grade, and the shared bot dodges about as well at 0.7 as at 1 here (over 100 seeds about 0.8
+  // hits each, 0.5 about 3), so 1 and 0.7 each outscore 0.5; the run's totals keep 1 over 0.7 (sim.test.mjs)
+  assert.ok(Math.min(mean(REF), mean(BOTS[0.7])) > mean(BOTS[0.5]), `more skill scores more: ${[1, 0.7, 0.5].map((k) => Math.round(mean(BOTS[k])))}`);
   // the stage runs 70 to 110 s for the ref bot
   for (const r of REF) assert.ok(r.st.t > 70 && r.st.t < 110, `ref ${r.st.t.toFixed(1)} s`);
 });
@@ -240,8 +246,9 @@ await check("growth: food passes its totals and each step changes the sparks in 
   const r = REF[0];
   assert.equal(r.st.grow, TUNE.growAt.length);
   const F = r.st.A.fire;
-  assert.deepEqual([r.st.rate, F.spread, F.pierce, F.dmg], [8, 3, 2, 1.5]);
-  near(F.rate, 8 * bpmYou(r.st.gaDay) / TUNE.heartBpm, 0.1, "your heart powers your sparks (set at the last step's start)");
+  const full = Object.assign({ rate: TUNE.fire.rate, spread: TUNE.fire.spread, pierce: TUNE.fire.pierce, dmg: TUNE.fire.dmg }, ...TUNE.grows);
+  assert.deepEqual([r.st.rate, F.spread, F.pierce, F.dmg], [full.rate, full.spread, full.pierce, full.dmg]);
+  near(F.rate, full.rate * bpmYou(r.st.gaDay) / TUNE.heartBpm, 0.1, "your heart powers your sparks (set at the last step's start)");
   assert.equal(named(r.evs, "sfx").filter((e) => e.id === "act.up").length, TUNE.growAt.length);
   // the cord's heal: in a rest with hp below full it heals 1
   const st = grow.create(5, DEFAULT_CARRY, { motherPhase: 0 });

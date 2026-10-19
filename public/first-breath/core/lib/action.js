@@ -90,7 +90,8 @@ function swapOut(P, keys, i) {
 // createWorld(seed, opts) → the world A. opts: { arena: { x, y, r } | null (a round wall; null for none), player:
 // { x, y, ...ACT.player }, dash: { ...ACT.dash } | null (no dash), fire: { ...ACT.fire } | null (no auto-fire),
 // pickup, combo, foe, juice (each a shallow override), bulletK (foe bullet speed factor, e.g. 0.75 with Assist),
-// bulletCap (foe bullets at once), keepOut: [{ ang, half }] (arcs of the arena's wall where no foe spawns) }.
+// bulletCap (foe bullets at once), keepOut: [{ ang, half }] (arcs of the arena's wall where no foe spawns), wallCull
+// (u past the arena's wall at which a bullet is removed: default 6; 0 removes it at the wall) }.
 export function createWorld(seed, opts = {}) {
   const o = opts || {};
   const P = { ...ACT.player, ...(o.player || {}) };
@@ -112,6 +113,7 @@ export function createWorld(seed, opts = {}) {
     juiceK: { ...ACT.juice, ...(o.juice || {}) },
     bulletK: num(o.bulletK, 1),
     bulletCap: Math.max(1, num(o.bulletCap, ACT.bulletCap) | 0),
+    wallCull: num(o.wallCull, 6),
     keepOut: Array.isArray(o.keepOut) ? o.keepOut.map((k) => ({ ang: num(k.ang, 0), half: Math.max(0, num(k.half, 0)) })) : [],
     foes: [],
     b: bulletPool(ACT.caps.bullets),
@@ -616,6 +618,7 @@ function stepFire(A) {
 
 function stepBullets(A) {
   const B = A.b, p = A.p, ar = A.arena, fs = A.foes;
+  const out = ar ? Math.max(0, ar.r + num(A.wallCull, 6)) : 0, out2 = out * out;   // the wall cull (createWorld wallCull)
   A.inBullets = true;
   for (let i = Math.min(B.n, B.cap) - 1; i >= 0; i--) {
     if (i >= B.n) continue;
@@ -634,7 +637,7 @@ function stepBullets(A) {
       mx += (-vy / s) * c; my += (vx / s) * c;
     }
     const x = (B.x[i] += mx * DT), y = (B.y[i] += my * DT);
-    if (ar) { const dx = x - ar.x, dy = y - ar.y; if (dx * dx + dy * dy > (ar.r + 6) * (ar.r + 6)) { swapOut(B, B_KEYS, i); continue; } }
+    if (ar) { const dx = x - ar.x, dy = y - ar.y; if (dx * dx + dy * dy > out2) { swapOut(B, B_KEYS, i); continue; } }
     const r = B.r[i];
     if (B.side[i] === 1) {
       let gone = false;

@@ -18,9 +18,10 @@
 //   ends with the goal met (you lasted); a knock-out ends it with the goal unmet (canFail), after a short rest
 //   (at least koS, and until the captions already sent are read).
 // - Wave times run on the world clock (A.t), which holds still under a hit-stop; the cap on the stage clock.
-// - The score (7): Goal 3,000; Skill: 3,500 × min(1, your combo score / (the whole value × 1.75)) for germs cleared,
-//   ticked to the HUD at each clear (each clear's pop shows those points), and 2,500 × (1 − hits / 5) for shots
-//   dodged, at the end; Flourish 1,000 × min(1, best combo / 25), at the end.
+// - The score (7): Goal 3,000; Skill: 1,200 × min(1, your combo score / (the whole value × 1.6)) for germs cleared,
+//   ticked to the HUD at each clear (each clear's pop shows those points), and 4,800 less 1,600 a hit for shots
+//   dodged (none from 3 hits), at the end; Flourish 1,000 × min(1, best combo / 25), at the end. So a stage with no
+//   hit is Glowing, 1 or 2 hits Great, 3 or more Good (design.md 4.5: the peak of the run).
 // - The camera holds the sac still (fit, span 112). The sac is to scale (meta.mm 30 to 150 mm across the short axis:
 //   about 25 mm across at week 7, 12 cm by week 13), and so is the scale bar; you are drawn smaller than your true
 //   length (9.5 to 15 u, growing with the NHS lengths), so there is room to play.
@@ -96,7 +97,7 @@ const MILESTONES = Object.freeze({ wave10: "fetus" });
 // ---- the score
 
 function clearPart(st) { return Math.round(TUNE.score.clear * Math.min(1, st.A.score / REF_SCORE)); }
-function dodgePart(st) { return Math.round(TUNE.score.dodge * Math.max(0, 1 - st.A.hits / TUNE.score.dodgeHits)); }
+function dodgePart(st) { return Math.max(0, TUNE.score.dodge - TUNE.score.perHit * st.A.hits); }
 function flourishPart(st) { return Math.round(TUNE.score.flourish * Math.min(1, st.A.bestCombo / TUNE.score.comboFull)); }
 
 // ---- small helpers

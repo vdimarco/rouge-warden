@@ -184,7 +184,7 @@ await check("every fold leaves an open lane or a tight gap; tight gaps need the 
   }
 });
 
-await check("the course's rhythm: spacing at least 0.7 s, close folds within a lane of each other, tight gaps 1.4 s apart, gates clear", () => {
+await check("the course's rhythm: spacing at least 0.7 s (0.55 s in waves 5 to 8), close folds within a lane of each other, tight gaps 1.4 s apart, gates clear", () => {
   for (const { seed, assist, plan } of PLANS) {
     const tag = `seed ${seed}${assist ? " assist" : ""}`;
     const obs = plan.filter((it) => it.kind !== "bubble");
@@ -194,7 +194,8 @@ await check("the course's rhythm: spacing at least 0.7 s, close folds within a l
       const o = obs[i], p = obs[i - 1];
       if (p && p.wave === o.wave) {
         const dt = o.tm - p.tm;
-        assert.ok(dt >= Math.min(TUNE.minGapS * foldK, TUNE.gateGapS) - 0.09, `${tag}: ${dt.toFixed(2)} s between ${p.id} and ${o.id}`);
+        const minGap = (o.wave >= TUNE.lateFrom ? TUNE.minGapLateS : TUNE.minGapS) * foldK;
+        assert.ok(dt >= Math.min(minGap, TUNE.gateGapS) - 0.09, `${tag}: ${dt.toFixed(2)} s between ${p.id} and ${o.id}`);
         const shift = dt < TUNE.quickS * foldK ? 1 : 2;
         assert.ok(p.open.some((a) => o.open.some((b) => Math.abs(a - b) <= shift)), `${tag}: ${o.id} reachable from ${p.id} in ${dt.toFixed(2)} s`);
         if (o.kind === "gate" || p.kind === "gate") assert.ok(dt >= TUNE.gateGapS - 0.09, `${tag}: a fold ${dt.toFixed(2)} s from a gate`);
@@ -238,7 +239,8 @@ await check("the waves speed up: rest 22 u/s, surges 50 rising 4 a wave to 78, r
   const s2 = birth.create(1, null, { motherPhase: 0 });
   for (let n = 0; n < MAX_STEPS && !birth.result(s2).done; n++) { birth.step(s2, makeIntents()); s2.events.length = 0; vi.push([s2.t, s2.v]); }
   const rests = vi.filter(([t]) => t > TUNE.leadS && [0, 1, 2, 3, 4, 5, 6].some((k) => t > E(k) + TUNE.rampS && t < S(k + 1)));
-  assert.ok(rests.every(([, v]) => v >= 22 - 1e-9 && v <= 22 + TUNE.catchV + 1e-9));
+  // (the catch-up starts while the planned speed is within 0.5 u/s of the rest's, as the ramp ends)
+  assert.ok(rests.every(([, v]) => v >= 22 - 1e-9 && v <= 22.5 + TUNE.catchV + 1e-9));
   assert.ok(rests.some(([, v]) => v > 23), "the late course catches up in a rest");
   // Assist: surges 0.8× as fast
   const a = birth.create(1, null, { assist: true, motherPhase: 0 });
@@ -358,13 +360,13 @@ await check("the four gates: Tuck, Turn, Lift and Turn back; the ref bot hits al
   }
 });
 
-await check("calm bubbles: 3 a wave, 100 each up to 1,500; a chime and a +100 tag", () => {
+await check("calm bubbles: 3 a wave, 100 each up to 900; a chime and a +100 tag", () => {
   for (const p of [REF, IDLE]) {
     assert.equal(p.res.metrics.offered, 23);
     assert.equal(sfx(p.evs, "birth.bubble").length, p.res.metrics.bubbles);
-    assert.equal(p.res.parts.find((x) => x.id === "bubbles").value, Math.min(1500, 100 * p.res.metrics.bubbles));
+    assert.equal(p.res.parts.find((x) => x.id === "bubbles").value, Math.min(TUNE.score.bubbles, 100 * p.res.metrics.bubbles));
   }
-  assert.ok(REF.res.metrics.bubbles >= 15, `the ref bot takes ${REF.res.metrics.bubbles}`);
+  assert.ok(REF.res.metrics.bubbles >= 9, `the ref bot takes ${REF.res.metrics.bubbles}`);
 });
 
 await check("the light: the glow fills the screen, exposure 1 → 6 over 2.0 s, white 0 → 1 over 1.0 s, a 0.5 s hold; no flap at the light; born", () => {
@@ -412,13 +414,13 @@ await check("no foe, bullet or hp: the action part holds only tags and flecks", 
   }
 });
 
-await check("score: Goal 3,000; folds 2,500 × clean / met; 500 a gate; bubbles to 1,500; Flourish by the best flow; the points add up", () => {
+await check("score: Goal 3,000; folds 3,500 less 400 a bump; 400 a gate; bubbles to 900; Flourish by the best flow; the points add up", () => {
   for (const p of [IDLE, ...RUNS[1], ...RUNS[0.5]]) {
     const m = p.res.metrics, part = (id) => p.res.parts.find((x) => x.id === id).value;
     assert.equal(part("goal"), 3000);
-    assert.equal(part("folds"), Math.round((2500 * m.clean) / m.folds));
-    assert.equal(part("gates"), 500 * m.gatesHit);
-    assert.equal(part("flourish"), Math.round(1000 * Math.min(1, m.bestFlow / 20)));
+    assert.equal(part("folds"), Math.max(0, 3500 - 400 * m.bumps));
+    assert.equal(part("gates"), 400 * m.gatesHit);
+    assert.equal(part("flourish"), Math.round(1000 * Math.min(1, m.bestFlow / 30)));
     const sum = named(p.evs, "points").reduce((a, e) => a + e.add, 0);
     assert.equal(sum, p.res.score.total, "the points events add up to the total");
   }

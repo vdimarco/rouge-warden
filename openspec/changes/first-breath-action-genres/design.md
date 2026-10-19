@@ -500,9 +500,12 @@ on straights at skill 0.4 or more. Every rival uses the same bot at its skill, w
 
 **As built** (the stage builder's notes; numbers in `swim.tune.js`). The ladder's middle is raised (rungs 3 to 10 from
 0.42 to 0.30 now 0.55 to 0.34) so the pack stays near a mid player and the gates bite: over 40 seeds the mid bot's
-race closes Gate 1 at about 28 s, Gate 2 at about 53 s and Gate 3 at about 65 s (the 18, 38 and 50 s targets need a
-faster pack than the mid bot's top 3 allows), the ref arrives 1st at about 49 s, the mid bot is in the top 3 in 39 of
-40 and one-button in 40 of 40. The tube is cut live (`render/race.js`), since the baked course tiles cannot turn with
+race closed Gate 1 at about 28 s, Gate 2 at about 53 s and Gate 3 at about 65 s with the quotas 14, 8 and 5. The
+difficulty pass lowered the quotas to 8, 5 and 4 (Assist 10, 7 and 5): the gates now close at about 22, 48 and 62 s.
+The 18, 38 and 50 s targets need a faster pack than the mid bot's top 3 allows: the mid bot passes the gates near
+the front at about 17, 43 and 56 s, so a gate that closed at 38 or 50 s would shut it out in about half the seeds
+(quotas 8, 4 and 4 already drop it to 35 of 40). The ref arrives 1st at about 49 s, the mid bot is in the top 3 in
+39 of 40 and one-button in 40 of 40. The tube is cut live (`render/race.js`), since the baked course tiles cannot turn with
 the camera. Captions: only four fit a strong race in portrait (`pacing.test.mjs`): `swim.half`, `swim.waves`,
 `swim.cells` and `swim.acid`; `swim.side`, `swim.flow`, `swim.hyper` and `swim.few` are result facts. The new facts'
 "They" became "sperm" and "These cells" (no shown fact may use that pronoun). When the third arrives every sperm still
@@ -974,8 +977,17 @@ the user's plan:
 - **A design idea for the builder** (optional, not a gate): let the fire rate follow your own heart's curve (130 bpm
   at week 7, 170 at weeks 9 to 10, about 155 at week 13), so the peak heart is the peak firepower.
 - **Facts.** v1 6.5's list in priority order, plus `grow.frame` on the run result.
-- **Length.** Six waves of about 9.7 s with their rests, then the boss and a 1.4 s victory beat: about 85 s for
+- **Length.** Six waves of about 9.7 s with their rests, then the boss and a 1.4 s victory beat: about 92 s for
   the ref and mid bots (as built). Cap 120 s.
+- **Difficulty pass (as built).** The bots maxed the old score in every seed, so the waves press harder and the hits
+  set the grade. Shooters fire sooner and faster (the aimed stack of 3 at 32 to 41 u/s every 1.1 s; week 7 keeps a
+  gentler blob of 2 at 28 u/s), they have a little more hp, week 11 adds a toxin waver, and your sparks start slower
+  and grow later, so the shooters live long enough to press you. A hit gives 1.4 s of i-frames and clears shots
+  within 12 u. Score: Goal 3,000; Skill 1,200 for germs cleared (combo score over the value × 1.6) and 4,800 for
+  dodging, less 1,600 a hit; Flourish 1,000 × best combo / 25. So no hit is Glowing, 1 or 2 hits Great, 3 or more
+  Good. Over 100 seeds the shared bot takes about 0.8 hits at skill 1 and at 0.7 (it dodges about as well at both
+  here) and about 3 at 0.5, with no knock-out: skill 1 Great or better in about 93, 0.7 mostly Great, 0.5 Good in
+  about 65. Check: `sim.test.mjs` (the grade spread) and `stage-grow.test.mjs`.
 
 ### 5.6 Stage 6, Second Trimester (`answer`): rhythm. "Listen. Then answer."
 
@@ -1169,10 +1181,14 @@ antibodies stream from it toward you as small paper Ys).
 
 **Look.** v1 row 7: ember orange sheets, the dapple at full. Antibodies are small cream paper Ys with an ink keyline.
 Sparkles are tiny cream stars. Germs as 4.8. The arena's wall is the snug wall sheet `#e8925a`, cut, closing in. The
-Big Germ is a large stacked paper construct.
+Big Germ is a large stacked paper construct. Darts and germ sparks end at the wall (as built: the action layer's
+`wallCull` 0 here; they flew up to 6 u past it before). In portrait the caption band follows your body as in stages
+1, 3 and 4: it moves to the top band when you go low in the womb, and back to its own band once your body has been
+clear of that band for 0.8 s; a caption too tall for the low band rises in it, so it still ends above 60%.
 
 **Sound.** The womb filter at about 600 Hz (v1). Soft plucks for pops; the level-up chime; her heartbeat louder when
-you take the Beat gift; the clear at 60 s is a warm swell; the turn a slow whoosh; the rest is v1's muffled hum.
+you take the Beat gift (as built: the stage sends `turn.beat` with the gift's level, and her heart bus rises 2.5 dB at
+level 1 up to 4.5 dB at level 3, with a warm thump, until the next stage); the clear at 60 s is a warm swell; the turn a slow whoosh; the rest is v1's muffled hum.
 
 **Bot steering.** `actionSteer` with goal pull: kite in a circle at 60% of the arena radius, keep 20 u from the
 nearest germ, sweep toward sparkle clusters when safe; kick when 3 or more germs are within 14 u; at the turn, steer
@@ -1215,8 +1231,8 @@ Collect calm bubbles. After the 8th wave, the light.
 | You | the baby figure, body 5 u, hitbox 3 u |
 | Waves | 8 waves from 2.0 s, one every 7.5 s: a 1.0 s warning ring, a 5.0 s surge, a 1.5 s rest. The last surge ends at 62.0 s |
 | Speed | rest 22 u/s; surge 50 u/s (wave 1) rising by 4 u/s a wave to 78 u/s (wave 8); ramps over 0.6 s |
-| Folds | soft plum flaps from a side flat that block 1 or 2 lanes; during surges, one every 1.1 s (wave 1) down to 0.7 s (wave 8); never closer than 0.7 s of travel to the last; at least one lane always open, or a tight gap |
-| Tight gaps | from wave 3, one in five folds leaves only a tight gap in one lane: pass it tucked, or bump |
+| Folds | soft plum flaps from a side flat that block 1 or 2 lanes; during surges, one every 1.1 s (wave 1) down to 0.7 s (wave 4's end of that ramp), then denser in waves 5 to 8: one every 0.7 s down to 0.58 s; never closer than 0.7 s of travel to the last (0.55 s in waves 5 to 8); at least one lane always open, or a tight gap |
+| Tight gaps | from wave 3, one in five folds leaves only a tight gap in one lane (one in three or so from wave 5): pass it tucked, or bump. The tuck is shorter late: 0.5 s to wave 4, then 0.44 s (wave 5) down to 0.34 s (wave 8), a narrower window |
 | Bump | touching a fold untucked (or a tight gap untucked): your speed drops to 22 u/s for 0.6 s, the flow streak ends, a soft boop. No hp. The next surge carries you on. |
 | Calm bubbles | 3 per wave in the open lanes, +100 points each, a small chime |
 | Gates | wave 2 **Tuck**: a tight gate across all three lanes, tuck through it. Wave 4 **Turn**: a turn gate in the left or right lane (seeded), marked by the marigold arrow; steer into it and you turn that way; it writes `turnDir`. Wave 6 **Lift**: a lift gate in the middle lane; tuck through it (you lift your head as you pass). Wave 8 **Turn back**: a turn gate on the other side from wave 4 (from `turnDir`). Each move plays on its wave either way ("The wave moves you on anyway."). |
@@ -1226,8 +1242,13 @@ Collect calm bubbles. After the 8th wave, the light.
 exposure 1 to 6 over 2.0 s, white 0 to 1 over 1.0 s, hold 0.5 s, the sound opens to 16 kHz. Folds stop at the end
 of wave 8, so the light is never framed by flaps.
 
-**Score** (not shown at the end of this stage, v1; the HUD counts it live as you ride, with tags beside you). Goal 3,000. Skill: 2,500 × folds passed without a bump / folds;
-2,000 × gates you hit / 4; 1,500 × bubbles / bubbles offered. Flourish: 1,000 × min(1, best flow streak / 20 folds).
+**Score** (not shown at the end of this stage, v1; the HUD counts it live as you ride, with tags beside you). Goal 3,000. Skill: 3,500 for
+the folds, less 400 a bump (none left from 9 bumps); 400 a gate you hit (1,600); bubbles 100 each up to 900. Flourish:
+1,000 × min(1, best flow streak / 30). Retuned so the grade follows your bumps (it was 2,500 × clean folds / folds,
+500 a gate, bubbles to 1,500 and a flow of 20, and even skill 0.5 glowed): no bump is Glowing, about 4 to 7 Great,
+8 or more Good. Over 40 seeds the shared bot bumps about 0.4 times at skill 1 (Glowing every seed), about 5 at 0.7
+(Great in 28 of 40) and about 8 at 0.5 (Good in 29 of 40); idle about 18 (Good). While you ride the HUD counts each
+clean fold against the folds planned less 400 a bump so far, so it dips at a bump; the end's share is never less.
 
 **No knock-out.** A bump only slows you. Birth always happens on schedule.
 

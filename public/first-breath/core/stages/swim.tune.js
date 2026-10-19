@@ -112,9 +112,10 @@ export const TUNE = Object.freeze({
   GOO_SAFE_S: 0.6, SPARKS_MAX: 8, GOO_MAX: 6,
   // white cells: 4 in the womb from 300 u, drifting across at 12 u/s; touching one spins you out (a shield takes it)
   CELL_N: 4, CELL_FROM: 330, CELL_GAP: 190, CELL_R: 7, CELL_SPEED: 12, CELL_SAFE_S: 1.2,
-  // knockout gates: [progress, how many go through, the latest it closes (s)]; the tag shows 3 s before it can close
-  GATES: Object.freeze([Object.freeze([1300, 14, 30]), Object.freeze([2800, 8, 60]), Object.freeze([4000, 5, 85])]),
-  GATE_WARN_S: 3, GATE_WARN_N: 3, ASSIST_QUOTAS: Object.freeze([16, 10, 6]),
+  // knockout gates: [progress, how many go through, the latest it closes (s)]; the tag shows 3 s before it can close.
+  // The design's 14, 8 and 5 go through became 8, 5 and 4 (Assist 10, 7 and 5), so the gates close nearer its pace
+  GATES: Object.freeze([Object.freeze([1300, 8, 30]), Object.freeze([2800, 5, 60]), Object.freeze([4000, 4, 85])]),
+  GATE_WARN_S: 3, GATE_WARN_N: 3, ASSIST_QUOTAS: Object.freeze([10, 7, 5]),
   // the cool tide: from 12 s it creeps up the course from the start at 25 u/s, rising to 50 u/s at 40 s; a gate that
   // closes floods it up to TIDE_BACK behind the gate at 120 u/s; Assist ×0.8
   TIDE_T0: 12, TIDE_V0: 25, TIDE_V1: 50, TIDE_T1: 40, TIDE_FROM: -20, TIDE_FLOOD: 120, TIDE_BACK: 6, ASSIST_TIDE: 0.8,
@@ -131,6 +132,10 @@ export const TUNE = Object.freeze({
 // TUNED (race-sim.mjs over seeds 1 to 40, Assist off): the one change to a v1 number is the ladder's middle (rungs 2 to
 // 9: 0.42, 0.39, 0.36, 0.33, 0.30, 0.27, 0.24, 0.22 became 0.55, 0.52, 0.49, 0.46, 0.43, 0.40, 0.37, 0.34; the rest
 // eased down to meet 0.04), so the pack stays near a mid player and the gates close on it. Results: the ref arrives
-// 1st in 40 of 40 at about 49 s (mean score about 9,200); the mid bot is in the top 3 in 39 of 40 at about 63 s, its
-// races closing Gate 1 at about 28 s, Gate 2 at about 53 s and Gate 3 at about 65 s; one-button held is in the top 3
-// in 40 of 40; idle is out by the cool tide at 13.7 s. The kart numbers are design.md 5.1's as written.
+// 1st in 40 of 40 at about 49 s (mean score about 9,200); the mid bot is in the top 3 in 39 of 40 at about 63 s;
+// one-button held is in the top 3 in 40 of 40; idle is out by the cool tide at 13.7 s. The gate quotas went from 14, 8
+// and 5 to 8, 5 and 4: the mid bot's races now close Gate 1 at about 22 s, Gate 2 at about 48 s and Gate 3 at about
+// 62 s (were 28, 53 and 65 s). The design's 18, 38 and 50 s need a faster pack than the mid bot's top 3 allows: the
+// mid bot itself passes the gates at about 17, 43 and 56 s, near the front, so a gate that closed at 38 or 50 s would
+// shut it out in about half the seeds (quotas 8, 4 and 4 already drop it to 35 of 40). The other kart numbers are
+// design.md 5.1's as written.

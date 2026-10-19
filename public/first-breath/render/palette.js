@@ -92,7 +92,7 @@ export const STAGES = Object.freeze({
     name: "The Embryo",
     tokens: {
       back: "#7a2c50",
-      frame1: "#3a1030", frame2: "#52183e", frame3: "#6a2448", tubeWalls: "#64224a",
+      frame1: "#521a44", frame2: "#662250", frame3: "#762c56", tubeWalls: "#64224a",
       cells: "#f07860", cellCore: "#fff0dc", shell: "#fbe3d0", hollow: "#ffd8b8",
       approachRing: "#ffc53d", holdRing: "#fff4e2", tint: "#ff9a7a",
     },
@@ -111,8 +111,8 @@ export const STAGES = Object.freeze({
   root: row({
     name: "The Placenta",
     tokens: {
-      lining: "#7a1e34", deepLining: "#5c1428",
-      frame1: "#2e0814", frame2: "#44101e", frame3: "#5a1628", thinLayer: "#ffd8c8",
+      lining: "#822238", deepLining: "#661830",
+      frame1: "#3e0e1e", frame2: "#521628", frame3: "#661c30", thinLayer: "#ffd8c8",
       tree: "#f4a890", beads: "#fff0dc", you: "#ffb8a0", softSpot: "#fff4e2",
       pools: "#f3eadf", poolRim: "#fff8ee", heartRing: "#fff4e2", tint: "#ff8a6a",
     },

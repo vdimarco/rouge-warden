@@ -8,8 +8,11 @@
 //   rings and tags included): the luminance at targets().cue (the brightest pixel within 3 px, the cue sticker's size
 //   at its smallest) is at or above the frame's 95th percentile (the ending
 //   is left out: its cue rings are dark on light paper, 13.2); stage 2 is taken in the guard with the arc as the cue;
-// - a paper cell: ?seed=1&freeze=1&stage=3: the brightest ring within 8 px of the cell's edge is its pale cut edge,
-//   and the pixels just below and right of the cell (its shadow) are darker than the back sheet;
+// - a paper cell: ?seed=1&freeze=1&stage=3: your ball (its cells in the paper shell, centred on __fb.state().anchor,
+//   the shell's outer edge at (ballR + shellW / 2) u, the px per u from a cell's body radius over its cellR): the
+//   brightest ring within 8 px of the shell's edge is its pale cut edge, and the pixels just below and right of it
+//   (its shadow) are darker than the back sheet (the stage 3 cells sit inside the shell, so the shell is what lies on
+//   the back);
 // - light rises: frozen frames of stages 1 to 7: each mean luminance ≥ 0.9 × the one before, stage 7 ≥ 2 × stage 1;
 // - the flash rule: ?test=1&probe=1, 300 frames (5 s) in stages 4, 5, 6 and 8 with the ref bot, each __fb.step(1)
 //   then lum(): at most 3 swings of ≥ 10% in any 60-frame window (a swing: luminance moving ≥ 10% away from the last
@@ -167,8 +170,13 @@ notes.push("the ending is left out of the brightest-cue row: its cue rings are d
   await wait(150);
   const cells = await page.evaluate(() => (window.__fbPaper ? __fbPaper.lastBodies.filter((b) => b.token === "cells" && b.k === "c") : []));
   if (check("a paper cell: the first frame has a cell", cells.length > 0)) {
-    // the bottom-right-most cell, so its shadow falls on the back
-    const c = cells.slice().sort((a, b) => (b.x + b.y) - (a.x + a.y))[0];
+    // your ball: the cells sit inside the shell, so the shell is the cut edge on the back; its radius in px from the
+    // stage's tune (the cells of the first frame have TUNE.cellR[log2 n] u)
+    const c = await page.evaluate(async (cells) => {
+      const { TUNE } = await import("/first-breath/core/stages/split.tune.js");
+      const a = __fb.state().anchor, k = cells[0].r / TUNE.cellR[Math.round(Math.log2(cells.length))];
+      return { x: a.x, y: a.y, r: (TUNE.ballR + TUNE.shellW / 2) * k };
+    }, cells);
     const res = await canvasPixels(`
       const { x, y, r, k } = arg;
       const ring = (rr) => { let s = 0, n = 0; for (let a = 0; a < 6.283; a += 0.05) { const px = Math.round((x + Math.cos(a) * rr) * k), py = Math.round((y + Math.sin(a) * rr) * k); if (px >= 0 && py >= 0 && px < W && py < H) { s += L[py * W + px]; n++; } } return n ? s / n : 0; };

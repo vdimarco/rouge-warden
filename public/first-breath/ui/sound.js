@@ -30,7 +30,7 @@
 // - sfx(id, at, opts): at is the context time. The ids are the stages' sfx ids (swim swell, whoom, swish; egg.surge,
 //   egg.pluck, egg.burst, egg.enter, egg.fifth; split sparkle, tone, toneEnd, pling, slip; root.link, root.linkBeat, root.dig, root.shoot, root.snap, root.ping,
 //   root.hush, root.swell, root.tipOn, root.tipOff; grow bell, move; answer.hum, answer.thump, answer.echo, answer.hand, answer.boom; turn
-//   headDown, roomy; birth.warn, birth.breath, birth.swell, birth.open; ending heartFar, heartClose, inhale, cry,
+//   headDown, roomy, turn.beat (her heart louder from the Beat gift: pitch is its level); birth.warn, birth.breath, birth.swell, birth.open; ending heartFar, heartClose, inhale, cry,
 //   breath), the action layer's act.<outcome> (shot, strike, clear, fire, tell, dash, ouch, ko, pick, up, heal, phase, win;
 //   core/lib/action.js emitOut) and the event cues of 11 (bump, place, ready, bounce, stick, loose, goldIn, enter, seal). opts is the
 //   event: pitch, gain, and the event's own fields (wave, angle, a, b, near, fromHz, toHz, seconds, dur, rumbleHz).
@@ -105,6 +105,7 @@ export function createSound(ctx, { seed = 1, latencyS = null } = {}) {
   let sfxCount = 0, played = 0, dropped = 0;
   let opening = null;               // { toHz, until } while an opening holds the cutoff
   let herDuck = 1, herFar = 1;      // root.hush; the ending's far heart
+  let herLift = 1;                  // turn.beat: her heart louder with the Beat gift
   let lastInhale = -Infinity, lastEnter = -Infinity;
   let toneHeld = null;              // split's hold tone: the voice it took
   let tipVoice = null;
@@ -226,7 +227,7 @@ export function createSound(ctx, { seed = 1, latencyS = null } = {}) {
   }
 
   // ---------- levels ----------
-  function levelHer() { return dB(fin(scene.motherDb) ? scene.motherDb : 0) * herDuck * herFar; }
+  function levelHer() { return dB(fin(scene.motherDb) ? scene.motherDb : 0) * herDuck * herFar * herLift; }
   function levelYou() { return dB(fin(scene.youDb) ? scene.youDb : -8); }
   function cutoffNow() { return opening ? opening.toHz : clamp(fin(scene.cutoffHz) ? scene.cutoffHz : 150, 40, 20000); }
   function setLevels(tau = 0.15) {
@@ -503,6 +504,13 @@ export function createSound(ctx, { seed = 1, latencyS = null } = {}) {
       // stage 7, the third trimester
       case "headDown": tone(at, { f0: 65, f1: 82, glideS: 0.9, peak: 0.24 * k, attack: 0.4, tau: 0.4 }); return true;
       case "roomy": noise(at, { f0: 180, f1: 320, glideS: 0.8, peak: 0.1 * k, attack: 0.4, tau: 0.3 }); return true;
+      case "turn.beat":
+        // {Carer}'s beat gift (design.md 5.7): her heartbeat louder, +2.5 dB at level 1 up to +4.5 dB at level 3, until
+        // the next scene; a warm thump as you take it
+        herLift = dB(clamp(1.5 + (fin(p) ? Math.round(p) : 1), 2.5, 4.5));
+        setLevels(0.4);
+        pluck(at, 55, 0.22 * k, 0.14); pluck(at + 0.24, 49, 0.14 * k, 0.12);
+        return true;
 
       // stage 8, birth
       case "birth.warn": swell(at, 55 * p, 0.22 * k, 0.3, 0.8); return true;
@@ -636,6 +644,7 @@ export function createSound(ctx, { seed = 1, latencyS = null } = {}) {
         opening = null;
         herDuck = 1;
         herFar = 1;
+        herLift = 1;
         scene.motherDb = s.stage === "grow" ? -8 : 0;
         scene.youDb = s.stage === "grow" ? 0 : -8;
         if (!("cutoffHz" in s) && STAGE_CUTOFF[s.stage]) scene.cutoffHz = STAGE_CUTOFF[s.stage];

@@ -287,6 +287,18 @@ await check("each gift's effect: Darts, Ring, Clump, Beat, Snug, Kick and Grow",
   assert.equal(st.A.foes.filter((x) => g.slice(0, 3).includes(x)).length, 0, "the group popped");
   assert.ok(st.A.foes.includes(g[3]), "the lone germ far off stays");
   assert.equal(st.clumps, 1);
+  // Beat: her heartbeat louder (design.md 5.7): taking it sends turn.beat with its level for ui/sound.js
+  {
+    const sb = turn.create(5, C0, { motherPhase: 0 });
+    sb.rows = [];
+    sb.levelsDue = 1;
+    sb.offer = [{ id: "beat", x: sb.A.p.x, y: sb.A.p.y, t0: sb.t }];
+    sb.events.length = 0;
+    turn.step(sb, makeIntents());
+    const lift = sb.events.filter((e) => e.name === "sfx" && e.id === "turn.beat");
+    assert.equal(lift.length, 1, "one turn.beat as the Beat gift is taken");
+    assert.equal(lift[0].pitch, 1, "its level");
+  }
   // Beat: every 4 of her beats, a 30 u pulse: 1 damage and a push back
   st = withGift("beat");
   st.A.fire = null;
@@ -309,6 +321,22 @@ await check("each gift's effect: Darts, Ring, Clump, Beat, Snug, Kick and Grow",
   near(st.A.pick.magnet, 27, 1e-9, "magnet");
   // a gift gives 0.5 s of i-frames as the world comes back to full speed
   assert.ok(st.A.p.inv > 0.3);
+});
+
+await check("darts and sparks end at the womb's wall: none flies past it", () => {
+  const st = turn.create(3, C0, { motherPhase: 0 });
+  st.rows = [];
+  const A = st.A;
+  // a dart from the middle straight at the wall, and a foe spark the same way
+  X.addBullet(A, 1, 0, 0, 90, 0, { r: 1.1, life: 3, tone: "you" });
+  X.addBullet(A, 2, 0, 0, 0, -30, { r: 1.4, life: 4, tone: "foe" });
+  let far = 0;
+  for (let i = 0; i < Math.round(2.5 / DT); i++) {
+    turn.step(st, makeIntents());
+    st.events.length = 0;
+    for (let j = 0; j < A.b.n; j++) far = Math.max(far, Math.hypot(A.b.x[j] - A.arena.x, A.b.y[j] - A.arena.y) - A.arena.r);
+  }
+  assert.ok(far <= 0 + 1e-9, `a shot ${far.toFixed(2)} u past the wall`);
 });
 
 await check("the bubbles slow the world to a quarter while you move at full speed, and you cannot kick then", () => {

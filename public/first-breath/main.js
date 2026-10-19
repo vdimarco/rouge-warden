@@ -838,7 +838,11 @@ const BODY_REACH = {
   turn: { at: 0.42, top: 0.53, up: 0.195, down: 0.215 },
 };
 const CAP_SLACK = 12;
+const CAP_BACK_S = 0.8;      // the body clear of the home band this long (game time) brings the captions back
 let capTopPx = null;
+let capLowPx = null;         // the low band's top as set: capTopPx, raised for a caption that would end below 60%
+let capHome = "low";         // the band fitCapBand chose for this stage and screen ("low" or "top")
+let capClearAt = null;
 function fitCapBand() {
   if (root.dataset.capband) delete root.dataset.capband;
   const b = BODY_REACH[stageAttr];
@@ -849,11 +853,14 @@ function fitCapBand() {
   const want = Math.max(b.top * vh, b.at * vh + b.down * vw + 8);    // 8 px under the body's lowest point
   const top = Math.min(want, 0.6 * vh - line);                        // one line still fits above 60%
   capTopPx = Math.round(top);
+  capLowPx = capTopPx;
   root.style.setProperty("--cap-top", capTopPx + "px");
   const under = want - top;                                           // how far a caption there reaches into the body
+  capHome = "low";
+  capClearAt = null;
   if (under <= CAP_SLACK) return;
   const over = hudB + 8 + 0.08 * vh - (b.at * vh - b.up * vw);        // ... and a caption in the top band
-  if (over <= CAP_SLACK && over < under) root.dataset.capband = "top";
+  if (over <= CAP_SLACK && over < under) { root.dataset.capband = "top"; capHome = "top"; }
 }
 
 // ... and as the stage goes on: when the subject's body, as drawn this frame, reaches the band the captions are in
@@ -876,15 +883,33 @@ function bodyBox(view) {
 }
 function steerCapBand(view) {
   if (capTopPx === null || !PLAYING.has(run.screen)) return;
+  // a caption taller than the low band rises in it (never above the stage's own band top), so it still ends above
+  // 60% (a two-line caption on a tablet, where the body's reach sets the band low)
+  const el = document.querySelector("#captions .cap"), reach = BODY_REACH[stageAttr];
+  const capH = el ? el.getBoundingClientRect().height : 0;
+  const low = Math.round(Math.max(reach ? reach.top * vh : 0, Math.min(capTopPx, 0.6 * vh - capH - 1)));
+  if (low !== capLowPx) { capLowPx = low; root.style.setProperty("--cap-top", low + "px"); }
   const box = bodyBox(view);
   if (!box) return;
   const inTop = root.dataset.capband === "top";
-  const topBand = [hudB + 8, hudB + 8 + 0.08 * vh], lowBand = [capTopPx, 0.6 * vh];
+  const topBand = [hudB + 8, hudB + 8 + 0.08 * vh], lowBand = [capLowPx, 0.6 * vh];
   const hits = ([y0, y1]) => Math.max(0, Math.min(y1, box.b) - Math.max(y0, box.t));
   const here = inTop ? topBand : lowBand, there = inTop ? lowBand : topBand;
   // a body that roams (stage 7's arena) may only graze the band: move off it as soon as the other band is clearer
   if (hits(here) > 0.5 && hits(there) < hits(here)) {
     if (inTop) delete root.dataset.capband; else root.dataset.capband = "top";
+    capClearAt = null;
+    return;
+  }
+  // ... and back to the stage's own band once the body has left it (12 px to spare) for CAP_BACK_S: a player who
+  // dips low in the womb and comes back up gets the captions back in their band
+  if ((capHome === "top") === inTop) { capClearAt = null; return; }
+  const home = capHome === "top" ? topBand : lowBand;
+  if (hits([home[0] - CAP_SLACK, home[1] + CAP_SLACK]) > 0) { capClearAt = null; return; }
+  if (capClearAt === null || capClearAt > run.t) capClearAt = run.t;
+  else if (run.t - capClearAt >= CAP_BACK_S) {
+    if (capHome === "top") root.dataset.capband = "top"; else delete root.dataset.capband;
+    capClearAt = null;
   }
 }
 

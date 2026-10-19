@@ -268,7 +268,8 @@ await check("the track: six bends (B3 a hairpin) that turn back to the start's h
   near(lineAt(trk, 4600).phi, Math.PI / 2, 1e-9, "the final straight runs +y");
   assert.equal(TUNE.TUBE_END, 4600);
   // gates and glow walls sit where design 5.1 puts them; glow walls on straights
-  assert.deepEqual(TUNE.GATES.map((g) => [...g]), [[1300, 14, 30], [2800, 8, 60], [4000, 5, 85]]);
+  // the gates (tuned from the design's 14, 8 and 5 to 8, 5 and 4, so they close nearer the pace of design.md 5.1)
+  assert.deepEqual(TUNE.GATES.map((g) => [...g]), [[1300, 8, 30], [2800, 5, 60], [4000, 4, 85]]);
   for (const g of TUNE.GLOWS) assert.ok(!trk.bends.some((b) => g >= b.p0 && g <= b.p1), `glow at ${g} on a straight`);
   // apart from the hairpin's two legs (2R apart), the centre line never comes within 120 u of itself
   const pts = [];
@@ -665,7 +666,7 @@ await check("the carry: your tint in, your place and glow out; Assist still lets
   assert.ok([0.5, 1].includes(r.res.carryOut.sperm.glow));
   const a = play(3, { skill: 1, opts: { ...OPTS, assist: true } });
   assert.equal(a.res.metrics.place, 1);
-  assert.deepEqual(a.st.gates.map((g) => g.quota), [16, 10, 6], "Assist quotas");
+  assert.deepEqual(a.st.gates.map((g) => g.quota), [...TUNE.ASSIST_QUOTAS], "Assist quotas");
 });
 
 await check("her beats start at motherPhase at 72 bpm; gaDay stays 14, before fertilization", () => {

@@ -3,7 +3,8 @@
 // bot.mjs playRun: Play, Go on at the Almost card, the card skipped from 1.0 s), and the gates:
 // - every run reaches its result without throwing, with its 8 stage scores, and every stage (and the ending) ends by
 //   its cap: stage 1 by 120 s (the 117 s cap plus the carried 3 s after Go on);
-// - skill 1.0: the mean total of every stage over the 20 runs is ≥ 8,500;
+// - skill 1.0: the mean total of every stage over the 20 runs is ≥ 7,500 (design.md 4.5; the peaks, stages 5 and 8,
+//   grade by your hits and bumps, so the ref bot is Great there in most seeds and Glowing in some);
 // - skill 0.5 reaches the goal in ≥ 90% of runs in each of stages 2 to 8; in stage 1 it may get the Almost card, and
 //   then Go on leads on with no grade word (and no Goal) and the run goes on to the result;
 // - the stage 1 race gate: skill 0.7 is in the top 3 at the meeting place in ≥ 90% of runs;
@@ -34,7 +35,7 @@ const IDS = STAGES.map((m) => m.meta.id);
 // with its goal unmet, the Almost card offers Try again or Go on, and the bot goes on
 const ACTION = new Set(STAGES.filter((m) => m.meta.action).map((m) => m.meta.id));
 const CAP = Object.fromEntries([...STAGES, ENDING].map((m) => [m.meta.id, m.meta.capS + (m.meta.id === "swim" ? 3 : 0)]));
-const GATE = { refMean: 8500, goalShare: 0.9, raceTop3: 0.9, minS: 8 * 60, maxS: 12 * 60, wallS: 120 };
+const GATE = { refMean: 7500, goalShare: 0.9, raceTop3: 0.9, minS: 8 * 60, maxS: 12 * 60, wallS: 120 };
 const wall0 = process.hrtime.bigint();
 
 const RUNS = [];
@@ -59,7 +60,7 @@ const of = (skill) => RUNS.filter((r) => r.skill === skill);
 const stageOf = (r, id) => r.stages.find((s) => s.id === id);
 const mean = (xs) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : NaN);
 
-await check("skill 1.0: every stage's mean total is at least 8,500", () => {
+await check("skill 1.0: every stage's mean total is at least 7,500", () => {
   const rs = of(1);
   assert.equal(rs.length, SEEDS);
   const low = IDS.map((id) => [id, mean(rs.map((r) => stageOf(r, id).total))]).filter(([, m]) => !(m >= GATE.refMean));
@@ -78,12 +79,14 @@ await check("stage 6 (answer): skill 1.0 is Great or better in at least 18 of 20
 });
 
 // stage 5, the shooter (first-breath-action-genres, design.md 4.5, contract.md 8): hp and a knock-out
-await check("stage 5 (grow): skill 1.0 is Great or better in at least 18 of 20 and knocked out in at most 1; skill 0.5 is not knocked out in at least 16 of 20; idle is knocked out or completes, and the run goes on", () => {
+await check("stage 5 (grow): skill 1.0 is Great or better in at least 18 of 20 and knocked out in at most 1; skill 0.7 is not knocked out in at least 18 of 20, skill 0.5 in at least 16 of 20; idle is knocked out or completes, and the run goes on", () => {
   const n = of(1).length;
   const great = of(1).filter((r) => ["Great", "Glowing"].includes(stageOf(r, "grow").grade)).length;
   assert.ok(great >= Math.ceil(0.9 * n), `skill 1.0 Great or better in ${great} of ${n}`);
   const refKo = of(1).filter((r) => stageOf(r, "grow").ko).length;
   assert.ok(refKo <= Math.floor(n / 20), `skill 1.0 knocked out in ${refKo} of ${n}`);
+  const okKo = of(0.7).filter((r) => stageOf(r, "grow").ko).length;
+  assert.ok(of(0.7).length - okKo >= Math.ceil(0.9 * of(0.7).length), `skill 0.7 knocked out in ${okKo} of ${of(0.7).length}`);
   const midKo = of(0.5).filter((r) => stageOf(r, "grow").ko).length;
   assert.ok(of(0.5).length - midKo >= Math.ceil(0.8 * of(0.5).length), `skill 0.5 knocked out in ${midKo} of ${of(0.5).length}`);
   for (const r of of(0)) {
@@ -93,6 +96,20 @@ await check("stage 5 (grow): skill 1.0 is Great or better in at least 18 of 20 a
   }
   assert.ok(mean(of(0.5).map((r) => stageOf(r, "grow").total)) > mean(of(0).map((r) => stageOf(r, "grow").total)), "skill 0.5 outscores idle");
 });
+
+// the grade spread at the peaks (stages 5 and 8): the hits (5) and bumps (8) set the grade, so skill 1.0 is Great or
+// better, 0.7 mostly Great and 0.5 mostly Good; a fair player feels the pressure
+for (const id of ["grow", "birth"]) {
+  await check(`stage ${id === "grow" ? 5 : 8} (${id}): the grade spread: 0.7 Great or better in at least 15 of 20 and Glowing in at most half; 0.5 Good in at least half and Glowing in at most 4`, () => {
+    const count = (skill, g) => of(skill).filter((r) => stageOf(r, id).grade === g).length;
+    const n7 = of(0.7).length, n5 = of(0.5).length;
+    const great7 = count(0.7, "Great") + count(0.7, "Glowing");
+    assert.ok(great7 >= Math.ceil(0.75 * n7), `skill 0.7 Great or better in ${great7} of ${n7}`);
+    assert.ok(count(0.7, "Glowing") <= Math.floor(n7 / 2), `skill 0.7 Glowing in ${count(0.7, "Glowing")} of ${n7}`);
+    assert.ok(count(0.5, "Good") >= Math.ceil(n5 / 2), `skill 0.5 Good in ${count(0.5, "Good")} of ${n5}`);
+    assert.ok(count(0.5, "Glowing") <= Math.floor(n5 / 5), `skill 0.5 Glowing in ${count(0.5, "Glowing")} of ${n5}`);
+  });
+}
 
 // stage 2, the brick breaker (first-breath-action-genres, design.md 4.5 and 5.2): shell pips, a knock-out and Go on to
 // your sperm's entry; exactly one enter in every run

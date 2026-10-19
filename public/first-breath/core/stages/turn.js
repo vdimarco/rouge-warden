@@ -307,6 +307,7 @@ function take(st, k, how) {
   fx(st, "ring", b.x, b.y, G.bubbleR, 0.5);
   tag(st, b.x - G.bubbleR - 1, b.y + G.bubbleR + 1, "turn.gift." + b.id, 1.2);
   sfx(st, "act.up", b.x, b.y);
+  if (b.id === "beat") sfx(st, "turn.beat", A.p.x, A.p.y, { pitch: lvOf(st, "beat") });   // her heartbeat louder (5.7)
   A.p.inv = Math.max(A.p.inv, 0.5);
   st.offer = null;
   st.nextOfferS = st.t + G.gapS;
@@ -720,6 +721,7 @@ export function create(seed, carryIn, opts = {}) {
     bulletK: assist ? As.bulletK : 1,
     bulletCap: TUNE.bulletCap,
     keepOut: [{ ang: dAng, half: TUNE.keepOut * TAU }],
+    wallCull: 0,                                   // darts and sparks end at the soft womb wall
   });
 
   // the placenta disc on the wall where you nestled; its lobes echo your root tree (treeSeed, else the stage seed)
