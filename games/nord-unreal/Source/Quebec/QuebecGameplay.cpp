@@ -9,6 +9,7 @@
 #include "QuebecPlayerState.h"
 #include "QuebecLife.h" // Living street: companion assignment for runtime walkers (PEOPLE).
 #include "QuebecSideJobs.h" // Side jobs: markers, E, R and the game mode spawn (JOBS).
+#include "QuebecPolice.h" // Police: the dispatcher spawned by the game mode (POLICE).
 #include "LaFontaineMap.h"
 #include "LaFontaineExtensionMap.h"
 #include "CollegeBathurstMap.h"
@@ -2498,6 +2499,9 @@ void AQuebecGameMode::BeginPlay()
         GetWorld()->SpawnActor<AQuebecSideJobs>();
     // Combat: weapon, vest and health pickups at street and park points, none near a QA anchor and no collision.
     if (!FParse::Param(FCommandLine::Get(), TEXT("NordNoCampaign"))) QuebecCombat::SpawnPickups(GetWorld());
+    // Police (POLICE): the dispatcher and its garage sign. Police cars and officers appear only while a player has stars.
+    if (!FParse::Param(FCommandLine::Get(), TEXT("NordNoCampaign")) && !FParse::Param(FCommandLine::Get(), TEXT("NordNoPolice")))
+        GetWorld()->SpawnActor<AQuebecPoliceDispatch>();
     static_assert(UE_ARRAY_COUNT(LaFontaine::RoadSegments) == UE_ARRAY_COUNT(LaFontaine::RoadSegmentWidths));
     static_assert(UE_ARRAY_COUNT(LaFontaine::RoadSegments) == UE_ARRAY_COUNT(LaFontaine::RoadParkingDirections));
     static_assert(UE_ARRAY_COUNT(LaFontaine::RoadSegments) == UE_ARRAY_COUNT(LaFontaine::RoadParkingSides));

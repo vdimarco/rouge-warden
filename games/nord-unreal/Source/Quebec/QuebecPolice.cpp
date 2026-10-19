@@ -751,10 +751,11 @@ void AQuebecOfficer::UpdateAnimation()
 {
     if (!Body->GetSkeletalMeshAsset()) return;
     const bool bGoon = Faction == FactionGoon;
-    UAnimSequence* WalkClip = bGoon ? GoonWalk : PoliceWalk;
+    UAnimSequence* WalkClip = bGoon ? GoonWalk.Get() : PoliceWalk.Get();
+    UAnimSequence* IdleClip = bGoon ? GoonIdle.Get() : PoliceIdle.Get();
     const bool bDown = IsDown();
     const float Pace = static_cast<float>(GetVelocity().Size2D());
-    UAnimSequence* Clip = Pace > 40.f && !bDown ? WalkClip : (bGoon ? GoonIdle : PoliceIdle);
+    UAnimSequence* Clip = Pace > 40.f && !bDown ? WalkClip : IdleClip;
     if (!Clip) return;
     if (Clip != CurrentClip)
     {
@@ -1277,7 +1278,7 @@ void AQuebecPoliceDispatch::ReportCrime(AController* Offender, EQuebecCrime Crim
     if (!State || State->IsDown()) return;
     const int32 Index = static_cast<int32>(Crime);
     if (Index < 0 || Index >= QuebecHeat::CrimeCount) return;
-    const float Now = static_cast<float>(GetWorld()->GetTimeSeconds());
+    const float Now = PoliceServerTime(GetWorld());
     FQuebecPoliceRecord& Record = RecordFor(State);
     const QuebecHeat::ECrime Kind = PoliceHeatCrime(Crime);
     if (!QuebecHeat::CrimeReady(Kind, Record.LastCrimeAt[Index], Now)) return;
@@ -1327,7 +1328,7 @@ void AQuebecPoliceDispatch::ApplyStars(AController* Player, int32 NewStars)
         // Dispatch knows where the player is now; unseen, the search starts from here.
         if (const APawn* Pawn = Player->GetPawn()) Record.LastSeen = Pawn->GetActorLocation();
         Record.LastSeenVelocity = FVector::ZeroVector;
-        Record.LastSeenAt = static_cast<float>(GetWorld()->GetTimeSeconds());
+        Record.LastSeenAt = PoliceServerTime(GetWorld());
         PrepareRoads();
     }
     UE_LOG(LogTemp, Display, TEXT("NORD_WANTED set_stars=%d before=%d"), Wanted.Stars, Before);
@@ -1352,7 +1353,7 @@ void AQuebecPoliceDispatch::Tick(float DeltaSeconds)
 {
     Super::Tick(DeltaSeconds);
     if (!HasAuthority() || !FMath::IsFinite(DeltaSeconds) || DeltaSeconds <= 0.f) return;
-    const float Now = static_cast<float>(GetWorld()->GetTimeSeconds());
+    const float Now = PoliceServerTime(GetWorld());
     VisionClock += DeltaSeconds;
     ManageClock += DeltaSeconds;
     // Sight lines at 5 Hz, unit bookkeeping at 2 Hz, driving every frame.

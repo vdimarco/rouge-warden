@@ -286,7 +286,7 @@ namespace QuebecPeople
         {
             if (!Officer->ReceiveHit(Kind, Kind == EQuebecHitKind::Car ? CarDamage(CarSpeed) : Harm, Launch, Instigator)) return false;
             if (Instigator && Officer->Faction == AQuebecOfficer::FactionPolice)
-                QuebecCrime::Report(Instigator, Officer->IsDown() ? EQuebecCrime::DownPolice : EQuebecCrime::AttackPolice, Where);
+                QuebecCrime::Report(Instigator, Officer->IsKnockedOut() ? EQuebecCrime::DownPolice : EQuebecCrime::AttackPolice, Where);
             Alarm(World, Where, 1500.f);
             return true;
         }

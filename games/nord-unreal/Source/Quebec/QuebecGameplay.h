@@ -183,7 +183,7 @@ public:
     bool IsInputLocked() const;
     // Every peer, after movement and network smoothing (UQuebecKnockPoser): tumbles the mesh about the hips.
     void ApplyKnockPose();
-    // Server: the car that knocked this player passes through it for Seconds.
+    // Server: the launched player's capsule passes through the car that hit it for Seconds.
     void IgnoreCarBriefly(AActor* Car, float Seconds);
 
 private:
