@@ -7,44 +7,95 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#000000">
 <title>Ahead of the Light · Race Home Before the Burst</title>
-<meta name="description" content="Race home ahead of a gamma-ray burst. Every near miss holds the light back.">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23000'/%3E%3Ccircle cx='16' cy='14' r='9' fill='none' stroke='%23fff' stroke-width='1.5'/%3E%3Ccircle cx='16' cy='14' r='14' fill='none' stroke='%23f08a2c' stroke-width='1'/%3E%3Cpath d='M16 20l-3 4h6z' fill='%23fff'/%3E%3C/svg%3E">
+<meta name="description" content="A gamma-ray burst went off behind you. Fly the dark canyon home to Earth before its light catches you.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23000'/%3E%3Cpath d='M4 24 L12 14 L16 19 L22 10 L28 24' fill='none' stroke='%237fe9ff' stroke-width='1.6' stroke-dasharray='1.5 1.5'/%3E%3Ccircle cx='16' cy='14' r='4' fill='none' stroke='%23ffa31a' stroke-width='1.6'/%3E%3C/svg%3E">
 <script type="importmap">{"imports":{"three":"/vr/lib/three.module.min.js"}}</script>
+<link rel="preload" href="/vr/fonts/barlow-condensed-800.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<!-- The world (WebGL) below, the ring and everything on it (2D) above. -->
-<canvas id="view" aria-label="Galaxies stream past a ship racing a ring of light"></canvas>
-<canvas id="overlay" aria-hidden="true"></canvas>
-<!-- The glare, the flash and the flood: composited layers whose opacity alone animates. -->
-<div id="fx" aria-hidden="true"><div id="fx-glare"></div><div id="fx-flash"></div><div id="fx-flood"></div></div>
+<!-- The world (WebGL: the ground as points), the HUD (2D) over it, then the screens. -->
+<canvas id="view" aria-label="A dark canyon drawn in points streams past as you fly it"></canvas>
+<canvas id="hud" aria-hidden="true"></canvas>
+<div id="edge" aria-hidden="true"></div>
 
-<!-- The HUD: speed top left (and the landing's need on leg 8), place top right, the pause button. -->
-<div id="hud" hidden>
-  <p id="speed" class="hud">0.7616c</p>
-  <p id="land" class="hud" hidden></p>
-  <p id="place" class="hud"></p>
-  <button id="pause" type="button" aria-label="Pause"><svg viewBox="0 0 16 16" aria-hidden="true">
-    <rect x="3" y="2" width="3.4" height="12" rx="0.8"/><rect x="9.6" y="2" width="3.4" height="12" rx="0.8"/></svg></button>
-  <div id="act" hidden aria-hidden="true"><span>GRAB</span></div>
+<!-- Touch: BOOST is held, SONAR is tapped; the pause button. Shown in a run on a touch screen. -->
+<div id="touch" hidden>
+  <button type="button" id="pause" class="tbtn small" aria-label="Pause"><svg viewBox="0 0 16 16" aria-hidden="true">
+    <rect x="3" y="2" width="3.4" height="12"/><rect x="9.6" y="2" width="3.4" height="12"/></svg></button>
+  <button type="button" id="sonar" class="tbtn">SONAR</button>
+  <button type="button" id="boost" class="tbtn big">BOOST</button>
+  <p id="steerHint">DRAG TO STEER</p>
 </div>
 
-<!-- One caption at a time, the current word in orange; and the one-line hints (HOLD TO GO ON, TAP TO SKIP). -->
-<div id="captions" aria-live="polite"></div>
-<p id="hint" hidden></p>
-
-<!-- Title, break, chart, result, pause, settings, log, hangar and practice. -->
 <div id="screens">
-  <section id="title" class="screen" aria-label="Title" data-act="fly" data-ui="1">
-    <a class="back" href="/">‹ Arcade</a>
-    <h1>AHEAD OF THE <span>LIGHT</span></h1>
-    <p class="sub">RACE HOME BEFORE THE BURST</p>
-    <button type="button" id="go" class="go" data-act="fly"><span class="touch">TAP TO FLY</span><span
-      class="desk">CLICK OR PRESS SPACE</span></button>
-    <div class="row"><button type="button" class="btn quiet" data-switch>Switch game</button></div>
+  <section id="title" class="screen" aria-label="Title">
+    <div class="feed">
+      <a class="back" href="/">‹ ARCADE</a>
+      <p>SYS.STAT /// <b id="sys">NOMINAL</b></p>
+      <p>BURST /// <b>GRB-0 · 4.2 GLY OUT</b></p>
+      <p>HEADING /// <b>EARTH</b></p>
+    </div>
+    <div class="panel">
+      <h1>AHEAD OF THE LIGHT</h1>
+      <p class="rule"><span>THE RUN</span></p>
+      <p class="brief">A gamma-ray burst went off behind you. Its light is coming. Fly the dark canyon home through eight
+        sectors. Ping the dark with sonar to find the gates. Each gate charges your boost.</p>
+      <p class="rule"><span>CONTROLS</span></p>
+      <ul class="keys desk">
+        <li><b>A D</b> STRAFE</li><li><b>W S</b> CLIMB · DIVE</li><li><b>SHIFT</b> BOOST</li><li><b>SPACE</b> SONAR</li>
+      </ul>
+      <ul class="keys touch">
+        <li><b>DRAG</b> STEER</li><li><b>HOLD</b> BOOST</li><li><b>TAP</b> SONAR</li>
+      </ul>
+      <p class="best" id="best">FIRST RUN</p>
+      <div class="go-row">
+        <button type="button" id="go" class="deploy">DEPLOY <span aria-hidden="true">→</span></button>
+      </div>
+      <div class="row">
+        <button type="button" class="btn" id="soundBtn" aria-pressed="true">SOUND ON</button>
+        <button type="button" class="btn" data-switch>SWITCH GAME</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="result" class="screen card" aria-label="Result" hidden>
+    <div class="panel">
+      <p class="kicker" id="rKicker">RUN OVER</p>
+      <h2 id="rTitle">THE LIGHT CAUGHT YOU</h2>
+      <dl id="rStats"></dl>
+      <p class="best" id="rBest"></p>
+      <div class="go-row">
+        <button type="button" id="again" class="deploy">FLY AGAIN <span aria-hidden="true">→</span></button>
+      </div>
+      <div class="row">
+        <button type="button" class="btn" id="toTitle">TITLE</button>
+        <button type="button" class="btn" data-switch>SWITCH GAME</button>
+      </div>
+      <p class="hint desk">R TO FLY AGAIN</p>
+    </div>
+  </section>
+
+  <section id="paused" class="screen card" aria-label="Paused" hidden>
+    <div class="panel">
+      <h2>PAUSED</h2>
+      <div class="go-row"><button type="button" id="resume" class="deploy">RESUME <span aria-hidden="true">→</span></button></div>
+      <div class="row">
+        <button type="button" class="btn" id="pSound" aria-pressed="true">SOUND ON</button>
+        <button type="button" class="btn" id="quit">TITLE</button>
+      </div>
+      <p class="hint desk">ESC TO RESUME</p>
+    </div>
+  </section>
+
+  <section id="nogl" class="screen card" aria-label="No WebGL" hidden>
+    <div class="panel">
+      <h2>NO 3D HERE</h2>
+      <p class="brief">This browser can't draw WebGL, so the canyon can't be drawn. Try another browser or device.</p>
+      <div class="row"><a class="btn" href="/">ARCADE</a></div>
+    </div>
   </section>
 </div>
-<p id="debug" hidden></p>
 
 <script type="module" src="./main.js"></script>
 <script src="/arcade/analytics.js" data-game="ahead-of-the-light"></script>

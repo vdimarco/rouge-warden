@@ -508,17 +508,17 @@ The islands are drawn in code. The bumper, portal, star, pearl and flipper sprit
 
 ## Ahead of the Light
 
-Ahead of the Light (`/ahead-of-the-light/`) is a survival race home at the speed of light. A star at the edge of the cosmic web blew up into a gamma-ray burst as you left, and its light is racing you home along the route of the video: the cosmic web, Coma, Virgo, the Local Group, the Milky Way, Orion, the Sun's neighbours and Earth. You fly down a tube with your ship at 6 o'clock on a thin white ring. Drag to steer round the ring, and skim past galaxies: each near miss speeds you up and holds the light back. A run is 8 legs and about 10 minutes, and your score is how many years you aged on the way.
+Ahead of the Light (`/ahead-of-the-light/`) is a flight home ahead of a gamma-ray burst, in the look of Null Range (nullrange.com): a first-person view over dark ground drawn as cyan points with contour lines, orange vector instruments, scanlines and a slight split of the colour channels. You fly a winding canyon toward Earth through eight sectors named for the route home: the cosmic web, Coma, Virgo, the Local Group, the Milky Way, the Orion Arm, the Sun's stars and Earth. A run is about 19 km and three and a half minutes.
 
-- **The light** is a white ring outside your ring, and it closes as you slow down. Above 0.99c it gains on you only a little each second, but every hit lets it in, two quick hits put you in its glare, and at a dock's slow launch it bites. Each leg holds it back only so far, so a fast leg does not buy a quiet next one. A hit outside the glare can put you in the glare, never past it. One hit in the glare and the light has you. The speed reads in nines: 0.9c, 0.99c (HEADLIGHT), 0.999c and 0.9999c (LIGHT SPEED).
-- **Hull and fuel.** Hull pips sit on the ring left of your ship and fuel diamonds right of it, with a shield bubble round it that comes back after a while. A hit breaks the shield, then a pip. Flick up to burn a fuel cell for speed. Fuel cells and patches sit off the safe line, and the landing at Earth spends what you saved.
-- **Wells.** Press as a big mass passes to grab it, hold to whip round it, and lift on an orange band to fling. The last 75° before the core is the red zone: it costs your shield, and it pays more.
-- **Rivals.** Three of HOUND, PIKE, REMORA and MOTH race you every run, with a few drifters. Tuck into a wake to draft, pull out to slingshot past, and slam a rival into a galaxy to take it down. The light eats the slow ones. Each act has a boss: the WHALE at Virgo, MAKO in Orion and MANTA at Earth.
-- **Gates and cards.** At each landmark, THREAD the gap between two giants for speed, DOCK for repairs, or fly past. Then pick 1 card of 3 (4 if you came first) and the next lane on a star chart. Every card changes a rule. Pairs of cards make fusions, and three of a family make its legendary. A dock sells repairs and fuel for seconds of lead.
-- **Controls.** On a phone, drag anywhere to steer, flick up to burn, and lift and press as a well passes to grab it. In landscape either thumb works, and the other thumb can grab while one steers. On a computer, ← → or A D steer, ↑, W or Shift burns, and Space holds a grab. The mouse steers with its left button held and burns with the right one. A gamepad uses the left stick, A, and RB or RT. Esc or P pauses and M mutes. `?toy=30` opens the 30-second toy that teaches the verbs.
-- **Your best** run stays in this browser, with the ship's log of pages, the unlocks and the ships you earn. The machine shows it: HOME IN 14.2 YR, FIRST HOME · 14.2 YR, or the furthest leg (BEST: VIRGO). A full log of 84 pages puts a gold frame round the machine's screen.
+- **The light** starts 420 m behind you and runs a little faster than you cruise. The top right box shows the gap and whether it is closing, and the ground and the screen's edge whiten as it comes. When it reaches you, the run is over.
+- **Gates.** Orange rings hang in the canyon about every 170 m. Fly through one for boost charge and a kick of speed; gates in a row make a chain.
+- **Sonar** lights the dark ground far ahead for a moment and marks the gates within 650 m with brackets and their distance. It needs 2.2 s to charge again.
+- **Boost** spends charge for speed. Charge also trickles in on its own and when you skim low over the ground.
+- **Damage.** The ground takes your shield, then your hull, and slows you. The shield comes back after 2 s. Above the canyon the burst's light burns you, so stay low.
+- **Controls.** On a computer, A D or ← → strafe, W S or ↑ ↓ climb and dive, Shift boosts and Space pings. A drag on the view also steers. On a phone, drag anywhere to steer, hold BOOST and tap SONAR. A gamepad uses the left stick, RT or A to boost and X or B to ping. Esc or P pauses.
+- **Your best** run stays in this browser, and the machine shows the furthest sector (BEST: VIRGO).
 
-The race is pure code in `core/` that node tests and bots play headless. The sky, the galaxies and the light use three.js r185 points, and the ring, the ships and every label are drawn on a 2D layer above them in the video's look.
+The run is pure code in `core/` that node tests and bots fly headless. The title flies a bot down the canyon behind its panel. The music is the cinematic score in `ui/sound.js`, built in code, which grows over the run.
 
 ## First Breath
 
@@ -640,11 +640,10 @@ The terminal draws the pinball table, the brick wall and the Lenia dish with hal
 | `public/fish/privacy.html` | The privacy policy. The web serves it, and the game shows it in Settings with no network |
 | `qa/fish/` | Tests for Reel It In (see below) |
 | `apps/fish/` | The iPhone and Android app: a Capacitor 8 project, the script that builds a self-contained `www/` from `public/fish/` and checks it, the native projects, the icons and the splash, and the store kit in `store/`. Its README has the release steps |
-| `public/ahead-of-the-light/index.html`, `style.css`, `main.js` | Ahead of the Light: the page, the screens and HUD styles, the fixed 120 Hz loop, the flow from the title through every leg, break and chart to the result card, the toy at `?toy=30`, and `window.__race` (the test hook) |
-| `public/ahead-of-the-light/core/` | Ahead of the Light's race, pure and node-tested: `race.js` (one step), `handle.js` (steering, skims, burns, the whip, drafting and contact), `survival.js` (the light, hull, shield, fuel, gates, docks and the landing), `rivals.js` and `bosses.js`, `run.js`, `cards.js`, `offer.js`, `chart.js`, `meta.js`, `save.js`, `log.js`, `route.js`, `bots.js`, `toy.js`, `tune.js` (every number), `ringmath.js`, and `course/` (the hazard kinds, the 8 legs and their pieces, the generator, the validator and the director) |
-| `public/ahead-of-the-light/render/`, `ui/` | Ahead of the Light's drawing (the three.js sky and hazards, the 2D ring layer, the landmarks, the vista and the chart) and its input, HUD, screens, sound, haptics and storage |
-| `public/ahead-of-the-light/dev/strip.html` | A tool that draws any leg, lane and seed as a strip, with a bot's line over it |
-| `public/arcade/key/ahead-of-the-light.webp` | The Ahead of the Light machine's screen, cut from a portrait frame of the game |
+| `public/ahead-of-the-light/index.html`, `style.css`, `main.js` | Ahead of the Light: the page, the title, pause and result screens, the fixed 120 Hz loop, the touch buttons and `window.__race` (the test hook: `autopilot`, `warp`, `frameMs`) |
+| `public/ahead-of-the-light/core/` | Ahead of the Light's run, pure and node-tested: `world.js` (the canyon, spires, gates and sectors for a seed), `flight.js` (one step: steering, boost, sonar, gates, damage and the light) and `bot.js` (a pilot for the title and the tests) |
+| `public/ahead-of-the-light/render/`, `ui/` | Ahead of the Light's view (`render/view.js`: the point-cloud ground, gates, sky and post pass in three.js) and its HUD, input and sound |
+| `public/arcade/key/ahead-of-the-light.webp` | The Ahead of the Light machine's screen, a frame of the canyon |
 | `public/arcade/key/light-years-home.webp` | The Light Years Home machine's screen, cut from a frame of the drop-out into Coma City |
 | `qa/ahead-of-the-light/` | Tests for Ahead of the Light (see below) |
 | `public/first-breath/index.html`, `style.css`, `main.js` | First Breath: the page, the paper-tag styles for the HUD and the screens, the 60 Hz fixed-step loop, the URL flags, and `window.__fb` (the test hook) |
@@ -773,13 +772,8 @@ Run these from the repo root. Each node test runs alone and exits with code 1 wh
 
 | Script | What it checks |
 | --- | --- |
-| `for f in qa/ahead-of-the-light/*.test.mjs; do node $f \|\| echo FAIL $f; done` | Every node test: the tuning table, the ring's geometry, the race's step order and shapes, handling, the light and the meters, rivals and bosses, the course on every leg (two big sweeps on worker threads), the run, cards and offers, saves, meta, the copied route data, the words in the game, the toy's bot pass, the purity of `core/`, the bots' whole-run targets (`sim.test.mjs` takes a few minutes) and the 20 % rule (`cards-drive.test.mjs`) |
-| `node qa/ahead-of-the-light/bot.mjs mid 200` | Bots of a preset play whole runs headless and report how far they get and why they stop |
-| `NODE_PATH=qa/browser/node_modules node qa/ahead-of-the-light/smoke.e2e.mjs` | At 390 × 844, 844 × 390 and 1440 × 900: the title, a tap and steering within 1.5 s, a whole run by the mid bot, every leg by `goto`, the result and home cards, and AGAIN back to steering within 1.5 s, with no errors or broken text |
-| `NODE_PATH=qa/browser/node_modules node qa/ahead-of-the-light/input.e2e.mjs` | Real touch: the drag's gain curve, a re-grip, two fingers, flicks alone and mid-drag, a grab on the press, the latch cancel, the re-grip in a window, HOLD TO GO ON after a blur and a hidden page, a second thumb in landscape, Space and ↑, and a mouse with no button; it counts accidental grabs in the toy |
-| `NODE_PATH=qa/browser/node_modules node qa/ahead-of-the-light/layout.e2e.mjs` | About 48 moments at each size (every gate and every signature among them) into a contact sheet (`SHOTS` keeps them), and frame by frame over the mid bot's legs: the light's arc, the wings clear of the HUD, rivals on screen, labels clear of landmarks, captions clear of gate lines and bands, the full wings, tap targets, card text and the safe area |
-| `NODE_PATH=qa/browser/node_modules node qa/ahead-of-the-light/perf.e2e.mjs` | At 390 × 844 with the CPU slowed 4 ×: frame times, draw calls (20 or fewer), points (22,000 or fewer), and the glare against no glare |
-| `NODE_PATH=qa/browser/node_modules node qa/ahead-of-the-light/feedback.e2e.mjs` | Every event with a sound, an effect or a haptic starts it on its own frame (through `__race.feedback()`) |
+| `for f in qa/ahead-of-the-light/*.test.mjs; do node $f \|\| echo FAIL $f; done` | The canyon (the same for a seed, an open floor, bends you can follow at full boost, gates in open air) and the run (doing nothing loses, cruising loses to the light, a good bot gets home on most seeds and a weak one is caught on some, hits, gates, boost, sonar, the ceiling, determinism and the end) |
+| `NODE_PATH=qa/browser/node_modules node qa/ahead-of-the-light/smoke.e2e.mjs` | At 1280 × 800, 800 × 600, 390 × 844, 320 × 568 and 844 × 390: the title fits, 44 px buttons, DEPLOY, the HUD on screen and clear of the touch buttons, steering by keys or drag, sonar, boost, pause, a sector's banner, the caught card and FLY AGAIN, home and the best line, with no page errors; shots in `/tmp/ahead-of-the-light-smoke` |
 
 ### First Breath tests
 

@@ -1,14 +1,11 @@
-// Ahead of the Light: the sound (final.md 17), all made in code with Web Audio. The graph is built once on the first
-// tap and then only steered: 24 voices in all, every one an oscillator or a looping noise source that runs from the
-// start, shaped by gain and filter automation. Twelve are held voices (the leg's music: drone, sub, two pad notes,
-// kick, hats, bass, arpeggio; and the danger whine, the whip and draft hum, the light's swell and the glare's
-// whine); twelve are a pool of one-shots (eight tones, four noises) that each new sound takes, the oldest first.
-// The music is lab A's beat-locked bus in the leg's key: each gear adds a layer and lifts the key a whole tone on
-// the next downbeat; it keeps its own clock through slow motion and hit-stop and leans its tempo up to 3 % to
-// re-lock to the course's beats. Each leg adds one colour. A graze is a falling band of noise panned to its side
-// plus a pluck on the chain's pentatonic step, so a chain plays a tune (lab A); grabs pluck by the well's size,
-// releases chime up the scale and burns whoosh over a thump (lab B). Ported from public/light-years-home/lab/a/sound.js
-// and lab/b/sound.js. Mute is the arcade's shared switch, localStorage "arcade.sound" (ui/store.js keeps it).
+// Ahead of the Light: the sound, all made in code with Web Audio. The graph is built once on the first tap and then
+// only steered: 24 voices in all, every one an oscillator or a looping noise source that runs from the start, shaped
+// by gain and filter automation. Twelve are held voices (the music's drone, sub, two string notes, drum, cymbal, cello
+// and piano; and the danger whine, the hum, the light's swell and the glare's whine); twelve are a pool of one-shots
+// (eight tones, four noises) that each new sound takes, the oldest first. The music is a cinematic build: each gear
+// of the run adds a layer and lifts the key on the next downbeat, and each sector sets the key and one colour. A skim
+// is a falling band of noise panned to its side; a gate plucks; sonar is a blip with two echoes; boost whooshes over a
+// thump. Mute is the arcade's shared switch, localStorage "arcade.sound".
 
 // The chapter keys, copied from light-years-home's ui/sound/music.js (its ui/ folder is being replaced): the drone
 // chord (MIDI), the scale's root and its pentatonic steps. The closing melody plays at HOME.
@@ -313,7 +310,7 @@ export function createSound({ on = true, onToggle = null } = {}) {
     // the low-pass: the slow world, the dust, the catch's card
     const slow = clamp(st.slow ?? 1, 0, 1);
     const cut = S.caught || st.mode === 'result' ? 700 : st.mode === 'paused' ? 400
-      : S.colour === 'dust' && playing ? 1400 : 600 + 17400 * slow ** 2;
+      : 600 + 17400 * slow ** 2;
     E.musicF.frequency.setTargetAtTime(cut, now, 0.12);
     // the hum: a well in reach rises; the whip follows its sweep (a growl in the red); the draft holds a tone
     if (playing && st.whip) {
@@ -591,6 +588,22 @@ export function createSound({ on = true, onToggle = null } = {}) {
           break;
         case 'glareIn':
           if (mine) { tone(t, 2800, { type: 'sine', dur: 0.4, peak: 0.06, attack: 0.1 }); count(e.type); }
+          break;
+        case 'ping':
+          // sonar: a clean blip and two fainter echoes
+          if (mine) {
+            for (const [dt, a] of [[0, 0.16], [0.32, 0.06], [0.62, 0.025]]) {
+              tone(t + dt, 1480, { type: 'sine', to: 1180, dur: 0.22, peak: a, attack: 0.002 });
+            }
+            count(e.type);
+          }
+          break;
+        case 'sector':
+          if (mine) {
+            hiss(t, { f: 300, to: 6000, q: 0.9, dur: 0.8, peak: 0.16, attack: 0.3 });
+            chord(t + 0.2, S.key.chord.map((nn) => nn + 12), 0.05, 2.0, 0.2);
+            count(e.type);
+          }
           break;
         case 'caught': case 'wreck':
           if (mine) {
