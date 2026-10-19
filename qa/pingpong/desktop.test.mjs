@@ -451,10 +451,10 @@ function waitForDebugPort(port) {
     const tick = () => {
       fetch(`http://127.0.0.1:${port}/json/version`).then((res) => {
         if (res.ok) resolve();
-        else if (Date.now() - started > 8000) reject(new Error('chrome debug port failed'));
+        else if (Date.now() - started > 20000) reject(new Error('chrome debug port failed'));
         else setTimeout(tick, 100);
       }).catch(() => {
-        if (Date.now() - started > 8000) reject(new Error('chrome debug port did not open'));
+        if (Date.now() - started > 20000) reject(new Error('chrome debug port did not open'));
         else setTimeout(tick, 100);
       });
     };
