@@ -3,6 +3,7 @@
 #include "QuebecCampaign.h"
 #include "QuebecGameplay.h"
 #include "QuebecPlayerState.h"
+#include "QuebecPolice.h"
 #include "LaFontaineMap.h"
 
 #if WITH_DEV_AUTOMATION_TESTS
@@ -303,6 +304,15 @@ bool FQuebecCombatFireRulesTest::RunTest(const FString& Parameters)
     TestTrue(TEXT("An empty gun is put away for the fists"), Stats->CurrentWeapon() == EQuebecWeapon::Fists);
     Walker->FireWeapon(Walker->GetActorLocation(), FVector(std::numeric_limits<double>::quiet_NaN(), 0., 0.));
     TestFalse(TEXT("A NaN aim never reaches the transform"), Walker->GetActorRotation().ContainsNaN());
+    // A double click after a pause: presses at 22.00, 22.65 and 22.71 s fire two pistol shots, not three.
+    Stats->Ammo[Slot] = 5;
+    Stats->Weapon = static_cast<uint8>(Slot);
+    for (const double Press : {22., 22.65, 22.71})
+    {
+        Fixture.At(Press);
+        Walker->FireWeapon(Walker->GetActorLocation(), FVector(1., 0., 0.));
+    }
+    TestEqual(TEXT("A double click 60 ms apart fires once, a full interval after the last shot"), Stats->AmmoFor(EQuebecWeapon::Pistol), 3);
     QuebecCombat::DamagePlayer(Walker, 200.f, nullptr);
     Stats->OwnedWeapons |= 1 << Slot;
     Stats->Ammo[Slot] = 5;
@@ -310,6 +320,40 @@ bool FQuebecCombatFireRulesTest::RunTest(const FString& Parameters)
     Fixture.At(30.);
     Walker->FireWeapon(Walker->GetActorLocation(), FVector(1., 0., 0.));
     TestEqual(TEXT("A knocked-out player cannot fire"), Stats->AmmoFor(EQuebecWeapon::Pistol), 5);
+    return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FQuebecCombatGoonGunfireTest, "Quebec.Combat.GoonFightIsNotGunfire",
+    EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+bool FQuebecCombatGoonGunfireTest::RunTest(const FString& Parameters)
+{
+    FCombatWorld Fixture;
+    if (!TestTrue(TEXT("A walking player with a street player state"), Fixture.Ready())) return false;
+    AQuebecPlayerState* Stats = Fixture.Stats;
+    AQuebecCharacter* Walker = Fixture.Walker;
+    // A goon 6 m ahead, two civilians beside the player, and a dispatcher that turns witnessed gunfire into heat.
+    AQuebecPoliceDispatch* Dispatch = Fixture.World->SpawnActor<AQuebecPoliceDispatch>();
+    AQuebecOfficer* Goon = AQuebecOfficer::SpawnOfficer(Fixture.World, FVector(600., 0., 100.), 180.f, AQuebecOfficer::FactionGoon);
+    FActorSpawnParameters Spawn;
+    Spawn.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+    AQuebecParkResident* Left = Fixture.World->SpawnActor<AQuebecParkResident>(FVector(0., 500., 7.), FRotator::ZeroRotator, Spawn);
+    AQuebecParkResident* Right = Fixture.World->SpawnActor<AQuebecParkResident>(FVector(0., -500., 7.), FRotator::ZeroRotator, Spawn);
+    if (!TestTrue(TEXT("Dispatcher, goon and civilians spawn"), Dispatch && Goon && Left && Right)) return false;
+    TestTrue(TEXT("A standing goon is hostile"), QuebecCrime::IsHostile(Goon, Walker));
+    const int32 Slot = static_cast<int32>(EQuebecWeapon::Pistol);
+    Stats->OwnedWeapons |= 1 << Slot;
+    Stats->Ammo[Slot] = 12;
+    Stats->Weapon = static_cast<uint8>(Slot);
+    Fixture.At(40.);
+    Walker->FireWeapon(Walker->GetActorLocation(), FVector(1., 0., 0.));
+    TestTrue(TEXT("The pistol round hits the goon"), Goon->Health < 100.f || Goon->IsDown());
+    TestEqual(TEXT("Shooting a goon near two civilians adds no gunfire heat"), Stats->Heat, 0.f);
+    TestEqual(TEXT("Shooting a goon gives no star"), static_cast<int32>(Stats->Stars), 0);
+    // The same street, a shot at nothing: the two civilians report it, so the check above is not vacuous.
+    Fixture.At(50.);
+    Walker->FireWeapon(Walker->GetActorLocation(), FVector(-1., 0., 0.));
+    TestTrue(TEXT("A shot at nothing beside two civilians is gunfire"), Stats->Heat > 0.f);
+    AddInfo(FString::Printf(TEXT("Heat after the control shot: %.1f"), Stats->Heat));
     return true;
 }
 
