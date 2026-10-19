@@ -46,6 +46,8 @@ public:
     // true. R from a player who is down or in an officer's arrest hold is taken and ignored. False otherwise.
     bool RequestRetry(AQuebecController* Player);
     static constexpr float RetrySeconds = 30.f;
+    // Down, or standing next to a police officer while wanted (the arrest hold). R must not move such a player.
+    static bool IsHeldByPolice(const AQuebecController* Player);
     // Server: starts job Index for Player. Ends any running job first.
     bool StartJob(int32 Index, AQuebecController* Player);
     // Server: ends the running job, removes what it spawned and pays the reward on success.
@@ -143,8 +145,6 @@ private:
     void SetObjective(const FString& Words, const FVector& Location, bool bTarget);
     // A player at Point (Radius 0 uses the walker/car arrival rule). Only, when set, limits the test to that player.
     bool ReachedBy(const FVector& Point, double Radius, APlayerState** OutWho, const APlayerState* Only = nullptr) const;
-    // Down, or standing next to an officer while wanted: the arrest hold. R must not move such a player.
-    bool IsHeldByPolice(const AQuebecController* Player) const;
     void GrantPistols();
     void RetireActor(AActor* Actor);
     void TickLeftovers();

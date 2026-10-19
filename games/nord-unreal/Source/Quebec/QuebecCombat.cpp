@@ -707,7 +707,10 @@ void AQuebecCharacter::FireWeapon(const FVector& AimOrigin, const FVector& AimDi
         return;
     }
     // Keep the cadence of held automatic fire: the next shot is due one interval after the last one was due.
-    NextServerFireAt = (Now - NextServerFireAt < Row.Interval ? NextServerFireAt : Now) + static_cast<float>(Row.Interval);
+    // Held automatic fire keeps its cadence (the next shot is due one interval after the last one was due). Every
+    // other press waits a full interval, so a double click cannot fire twice within the 30 ms acceptance slack.
+    const bool bKeepCadence = Row.bAutomatic && Now - NextServerFireAt < Row.Interval;
+    NextServerFireAt = (bKeepCadence ? NextServerFireAt : FMath::Max(Now, NextServerFireAt)) + static_cast<float>(Row.Interval);
     LastAimOrFireAt = Now;
     if (!Row.bMelee)
     {
@@ -715,6 +718,9 @@ void AQuebecCharacter::FireWeapon(const FVector& AimOrigin, const FVector& AimDi
         Stats->Changed();
     }
     AActor* Target = CombatChooseTarget(this, Row, Origin, Aim, AimLock, AimLockSince, Now);
+    // Whether the shot is aimed at a hostile, taken before the hit: a goon or an officer knocked down by this very
+    // shot is no longer hostile afterwards.
+    const bool bAtHostile = Target && QuebecCrime::IsHostile(Target, this);
     const FVector TargetPoint = Target ? CombatAimPoint(Target) : Origin + Aim * Row.Range;
     const float Yaw = static_cast<float>((Target ? (TargetPoint - Origin).GetSafeNormal2D() : Aim).Rotation().Yaw);
     // Snap the body toward the target: up to 90 degrees for melee, inside the 25 degree cone for guns.
@@ -744,7 +750,6 @@ void AQuebecCharacter::FireWeapon(const FVector& AimOrigin, const FVector& AimDi
     // A shot near civilians is a crime the police can hear about, and the street runs from it. Shots at goons, or
     // at police already chasing the shooter, are not reported as gunfire; a civilian actually hit is reported by
     // QuebecPeople::Hit as an attack.
-    const bool bAtHostile = Target && QuebecCrime::IsHostile(Target, this);
     if (!bAtHostile && Now >= NextGunfireReportAt)
     {
         TArray<AActor*> Witnesses;
@@ -1165,6 +1170,9 @@ void AQuebecCombatFX::Restart(const FVector& Location)
 
 void AQuebecCombatFX::Finish()
 {
+    // An idle effect holds no voice, and its wave is empty for the next Restart.
+    if (Audio->IsPlaying()) Audio->Stop();
+    if (Wave) Wave->ResetAudio();
     for (UStaticMeshComponent* Tracer : Tracers) Tracer->SetVisibility(false);
     Flash->SetVisibility(false);
     FlashLight->SetVisibility(false);

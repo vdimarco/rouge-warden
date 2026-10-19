@@ -197,10 +197,11 @@ bool FQuebecAutopilotTest::RunTest(const FString& Parameters)
     Car->SetAutopilot(std::numeric_limits<float>::quiet_NaN(),0.f,true);
     TestTrue(TEXT("Nonfinite AI input is ignored"),Car->HasAutopilot() && FMath::IsFinite(Car->Speed));
     Car->ClearAutopilot();
-    TestEqual(TEXT("A released AI car returns to the tick interval it rested at"),Car->GetActorTickInterval(),.05f);
+    TestTrue(TEXT("A released AI car still rolling keeps every-frame ticks"),Car->GetActorTickInterval() == 0.f && FMath::Abs(Car->Speed) > 100.f);
     Fixture.Advance(2.f);
     TestFalse(TEXT("Autopilot is released"),Car->HasAutopilot());
     TestTrue(TEXT("A released AI car brakes to a stop like any unoccupied car"),Car->Speed == 0.f && Car->LateralSpeed == 0.f);
+    TestEqual(TEXT("At rest the released car returns to the tick interval it rested at"),Car->GetActorTickInterval(),.05f);
 
     Car->SetAutopilot(1.f,0.f,false);
     Car->Occupant = Fixture.Avatar;

@@ -259,6 +259,7 @@ bool AQuebecCar::SlideAlongStep(const FVector& Before, const FVector& Travel)
 void AQuebecCar::FinishDriveTick(const FVector& From, bool bStriker, float DeltaSeconds)
 {
     const float Now = GetWorld()->GetTimeSeconds();
+    FinishAutopilotRelease();
     for (int32 I = PassedBodies.Num()-1; I >= 0; --I)
     {
         AActor* Body = PassedBodies[I].Get();

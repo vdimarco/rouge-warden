@@ -68,6 +68,8 @@ STREETS_MATERIALS = {
     'paint_white': ('Streets_paint_white', '#f2f2ee', .6, 0., 'none', None),
     'paint_yellow': ('Streets_paint_yellow', '#f2b705', .6, 0., 'none', None),
     'paint_green': ('Streets_paint_green', '#2e9e5a', .65, 0., 'none', None),
+    # The live OSM Marking material M_LF_Marking (linear .85, .73, .39) for the re-authored route dashes.
+    'legacy_marking': ('Streets_legacy_marking', '#eddea8', .6, 0., 'none', None),
     'cast_iron': ('Streets_cast_iron', '#2e2d2b', .55, .6, 'none', None),
     'yard_grass': ('Streets_yard_grass', '#5e7a45', .95, 0., 'complex', None),
     'yard_soil': ('Streets_yard_soil', '#4e3b2b', .95, 0., 'complex', None),
@@ -262,6 +264,12 @@ def add(p, v, k=1.):
 
 def lerp(a, b, t):
     return tuple(a[i] + (b[i] - a[i]) * t for i in range(len(a)))
+
+
+def quad_triangles(points):
+    """Split a simple CCW quad (2D or 3D points) into two triangles through its reflex vertex."""
+    r = next((i for i in range(4) if _cross(points[i - 1], points[i], points[(i + 1) % 4]) < 0), 0)
+    return [[points[r], points[(r + 1) % 4], points[(r + 2) % 4]], [points[r], points[(r + 2) % 4], points[(r + 3) % 4]]]
 
 
 def convex(poly):
@@ -1104,7 +1112,7 @@ def build_streets(world):
     surfaces = Surfaces()
     world.surfaces = surfaces
     counts = {k: 0 for k in (
-        'carriageway_quads', 'junction_polygons', 'sidewalk_pieces', 'sidewalk_metres', 'curb_ramps',
+        'carriageway_quads', 'junction_polygons', 'sidewalk_pieces', 'concave_pieces', 'sidewalk_metres', 'curb_ramps',
         'dropped_aprons', 'corner_pieces', 'yards', 'yard_square_metres', 'fence_metres', 'tree_pits',
         'stop_bars', 'stop_bars_signal', 'stop_bars_osm_stop', 'crosswalks_continental_white',
         'crosswalks_continental_yellow', 'crosswalks_lines_white', 'crosswalks_generated_at_stops',
@@ -1477,21 +1485,27 @@ def _sidewalk_strip(world, L, surfaces, strip, ramp_grid, ramp_points, counts):
         f0, f1 = k / pieces, (k + 1) / pieces
         c0, c1, o1, o0 = lerp(ca, cb, f0), lerp(ca, cb, f1), lerp(oa, ob, f1), lerp(oa, ob, f0)
         poly = [c0, c1, o1, o0]
-        if area(poly) < 50 or not convex(poly):
-            continue   # also drops rare bow-tie slivers where a short strip's curb and back lines cross
+        if area(poly) < 50 or segments_cross(c0, c1, o1, o0) or segments_cross(c1, o1, o0, c0):
+            continue   # only bow-tie slivers, where opposite edges cross; simple concave pieces stay
+        concave = not convex(poly)
         mid = lerp(lerp(c0, c1, .5), lerp(o0, o1, .5), .5)
         if on_pavement(world, mid, strip['seg']['i']) or world.in_building(mid):
             continue
         za, zb = zat(f0 * length), zat(f1 * length)
         clear = world.traffic_distance(poly) >= CLEAR
         if not clear:
-            L.flat('curb', poly, Z_DROP)
+            for tri in (quad_triangles(poly if area(poly) > 0 else poly[::-1]) if concave else [poly]):
+                L.flat('curb', tri, Z_DROP)
             surfaces.add(poly, Z_DROP, 'apron')
             counts['dropped_aprons'] += 1
             continue
         top = [(c0[0], c0[1], za), (c1[0], c1[1], zb), (o1[0], o1[1], zb), (o0[0], o0[1], za)]
         ccw = area(poly) > 0
-        L.face('sidewalk', top if ccw else top[::-1])
+        top = top if ccw else top[::-1]
+        # A simple concave piece is two triangles split at its reflex vertex; the walls are unchanged.
+        for tri in (quad_triangles(top) if concave else [top]):
+            L.face('sidewalk', tri)
+        counts['concave_pieces'] += concave
         # Outward walls (Layer.wall faces the right of a->b): the curb face toward the road, the back
         # wall, and end walls only at strip ends. A CCW top walks c0->c1->o1->o0 with the inside on the left.
         if ccw:
@@ -1516,8 +1530,11 @@ def _sidewalk_strip(world, L, surfaces, strip, ramp_grid, ramp_points, counts):
         # Light curb top band (15 cm) and a saw-cut joint at the piece start.
         d = math.dist(c0, o0) or 1.
         band0, band1 = lerp(c0, o0, 15 / d), lerp(c1, o1, 15 / d)
-        L.face('curb', [(c0[0], c0[1], za + .1), (c1[0], c1[1], zb + .1), (band1[0], band1[1], zb + .1),
-                        (band0[0], band0[1], za + .1)])
+        band = [(c0[0], c0[1], za + .1), (c1[0], c1[1], zb + .1), (band1[0], band1[1], zb + .1),
+                (band0[0], band0[1], za + .1)]
+        band = band if area([p[:2] for p in band]) > 0 else band[::-1]
+        for tri in (quad_triangles(band) if not convex([p[:2] for p in band]) else [band]):
+            L.face('curb', tri)
         if k > 0 and za == Z_WALK:
             L.strip('joint', lerp(c0, o0, 16 / d), o0, 1.3, za + .12)
 
@@ -1747,7 +1764,7 @@ def _legacy_dashes(world, L, counts):
         c = (sum(p[0] for p in face) / len(face), sum(p[1] for p in face) / len(face))
         if world.surfaces.at(c)[1] == 'road':
             continue
-        if L.flat('paint_white', [p[:2] for p in face], face[0][2]):
+        if L.flat('legacy_marking', [p[:2] for p in face], face[0][2]):
             kept += 1
     counts['legacy_route_dashes'] = kept
 

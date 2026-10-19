@@ -418,6 +418,7 @@ private:
     void OnWallImpact(const FVector& Normal, float Closing, float Step);
     bool SlideAlongStep(const FVector& Before, const FVector& Travel);
     void FinishDriveTick(const FVector& From, bool bStriker, float DeltaSeconds);
+    void FinishAutopilotRelease();
     void NudgeStuckCar();
     void UpdateDamageSmoke(float DeltaSeconds);
 
