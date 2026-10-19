@@ -102,13 +102,13 @@ Keep everything `design.md` 5.2 lists under "What stays" (the arc and its contro
 
 ## 7. Stage 7, Third Trimester (`turn`): survivor
 
-- [ ] 7.1 The arena easing from 54 to 38 u; you, the kick, Y darts at level 1.
-- [ ] 7.2 Foes and the wave table with swarmer rings and the Big Germ; the foe and spark caps.
-- [ ] 7.3 Sparkles, the grow meter, six levels, the seven antibody gifts with gift bubbles.
-- [ ] 7.4 The clear at 60 s, the turn (drag down or by itself at 6 s), the rest with the hum, the outro.
-- [ ] 7.5 The knock-out with "You need a rest.", Go on to `turn`; score parts; facts; new facts `turn.antibody`, `turn.months`, `turn.frame`.
-- [ ] 7.6 Antibodies drawn streaming from the placenta disc (`nestleX`, `treeSeed`).
-- [ ] 7.7 `botSteer` (kite, sweep, kick, the turn); `stage-turn.test.mjs` rewritten, gates passing.
+- [x] 7.1 The arena easing from 54 to 38 u; you, the kick, Y darts at level 1.
+- [x] 7.2 Foes and the wave table with swarmer rings and the Big Germ; the foe and spark caps.
+- [x] 7.3 Sparkles, the grow meter, six levels, the seven antibody gifts with gift bubbles.
+- [x] 7.4 The clear at 60 s, the turn (drag down or by itself at 6 s), the rest with the hum, the outro.
+- [x] 7.5 The knock-out with "You need a rest.", Go on to `turn`; score parts; facts; new facts `turn.antibody`, `turn.months`, `turn.frame`.
+- [x] 7.6 Antibodies drawn streaming from the placenta disc (`nestleX`, `treeSeed`).
+- [x] 7.7 `botSteer` (kite, sweep, kick, the turn); `stage-turn.test.mjs` rewritten, gates passing.
 
 ## 8. Stage 8, Birth (`birth`): endless runner
 

@@ -1,7 +1,7 @@
 // First Breath: stage 8, Birth (`birth`), its numbers: the endless-runner escape of the action change
 // (openspec/changes/first-breath-action-genres/design.md 5.8, 3.1, 4.2). Stage seconds throughout; the waves run from
-// `base` (0, or the time of a jump("waves")). World units: the channel runs down (world −y, toward the light); you
-// sit still on screen and the world slides up past you. Pure data.
+// `base` (0, or the time of a jump("waves")). World units: the channel runs down (world −y, toward the light); the
+// camera rides with you, so you keep your place on screen and the channel slides up past you. Pure data.
 //
 // The clock: 8 waves, one every 7.5 s from 2.0 s. Wave k (k = 0..7) warns at base + 2.0 + 7.5 k (a ring closes on
 // you for 1.0 s), surges for 5.0 s, then rests for 1.5 s. The last rest ends at base + 62.0; then the light: exposure
@@ -9,19 +9,29 @@
 //
 // Changes from design.md 5.8, recorded here (this file wins on the stage's numbers):
 // - The camera: one world offset for every layout (a stage never knows the layout): you sit 32 u above the camera's
-//   subject point, so about 29% down the screen in portrait (390 × 844) and 23% in landscape and on desktop (the
+//   subject point, so about 30% down the screen in portrait (390 × 844) and 23% in landscape and on desktop (the
 //   design's 25% and 30%). Landscape is short along the channel, so the higher seat gives it more of the way ahead.
 // - Calm bubbles: 2 in each surge (between folds) and 1 in the rest after it (none after wave 8, so nothing frames
 //   the light): 3 a wave, 23 in all. Each is 100 points and the bubble part stops at 1,500 (15 bubbles), so the
 //   "+100" a bubble pops is the score it adds (the design's 1,500 × bubbles / offered would pop 65).
-// - The tuck also comes from a quick drag down (a swipe down, as Subway Surfers rolls), and on desktop from S or the
-//   down arrow; the left and right arrows (A, D) move one lane a keydown (keys "lanes" in ui/input.js).
-// - The Lift gate sits in the middle lane between two flaps (lanes 0 and 2 blocked), so the tuck through it is the
-//   wave 6 test; the Turn and Turn back gates have a flap on the far outer lane, so the gate's lane is a choice.
+// - The tuck also comes from a quick drag down (a swipe down, as Subway Surfers rolls), from a single quick tap (the
+//   "move" gesture's quick second tap and second finger still tuck), and on desktop from S, W and the up and down
+//   arrows as well as Space, Enter and Z. The left and right arrows (A, D) move one lane a keydown (keys "lanes").
+// - A drag past the stick's engage point takes the next lane that way at once (a flick is one lane), and a drag
+//   held on slides on, taking each next lane 4 u past the last; let go and you settle on the lane you took.
+// - The Tuck gate is a cream row of posts across the channel with a tight opening in each lane; the Lift gate is a
+//   tight opening in the middle lane between two flaps; the Turn and Turn back gates are a dashed hoop in an outer
+//   lane under the gold arrow, with a flap on the far outer lane, so the gate's lane is a choice. A tuck or lift gate
+//   met untucked is a bump; a turn gate missed in the middle lane is only a miss.
+// - The flow streak counts every clean pass (folds and gates hit); a bump or a gate missed ends it. Its Flourish is
+//   1,000 × min(1, best streak / 20).
 // - After the 8th surge you keep its speed through the last rest and into the light: the last wave carries you out.
+// - Each item ahead is laid in a chain at its planned distance from the one before it, and placed 240 u ahead of you
+//   (past the screen's edge in every layout) when its planned time comes near. A bump makes you late for the items
+//   already laid, and the chain keeps their spacing, so nothing ever comes closer together after a bump; the next
+//   wave's first fold starts the chain again from you when you are less than about two bumps late.
 //
-// Bots (sim, 20 seeds): see qa/first-breath/stage-birth.test.mjs and sim.test.mjs; the measured numbers are in the
-// builder's report and design.md 3.1. Every input takes 65.5 s.
+// Bots (sim, 20 seeds; qa/first-breath/stage-birth.test.mjs and sim.test.mjs): every input takes 65.5 s.
 export const TUNE = Object.freeze({
   // the clock
   leadS: 2.0,            // the first warning
@@ -39,20 +49,25 @@ export const TUNE = Object.freeze({
   wallX: 30,
   lanes: Object.freeze([-18, 0, 18]),
   laneV: 70,             // sideways speed, u/s at full stick (and when you settle on a lane)
-  engage: 0.35,          // a stick past this (screen x) moves you; under it you settle on your lane
+  laneMin: 0.6,          // an engaged stick moves you at least this share of laneV
+  engage: 0.35,          // a stick past this (sideways, and more sideways than down) moves you; under it you settle
   passOn: 4,             // u past a lane before a held stick takes the next one as your lane
-  settleK: 14,           // the settle eases in over its last 70 u/s ÷ 14 = 5 u
+  settleK: 18,           // the settle eases in over its last 70 u/s ÷ 18 = 3.9 u
+  settleMin: 12,         // ... and never slower than this, so it lands
   swipeDown: 0.6,        // a drag this far down (and more down than sideways) is a tuck
+  swipeRearm: 0.3,       // ... and the next one needs the stick back above this first
 
-  // you
-  bodyR: 5,              // pickups and the drawing
+  // you (drawn smaller than to scale: a newborn is about 50 cm long, the channel here about 35 cm across)
+  bodyR: 5,              // bubbles and the drawing
   hitR: 3,               // folds and gates
   tuckR: 1.5,            // curled small
-  figureU: 14,           // head to bottom, drawn
+  figureU: 16,           // head to bottom, drawn
+  tuckSize: 0.74,        // the figure curls to this share of its size while you tuck
   tuckS: 0.5,
   tuckCdS: 0.9,          // from the start of one tuck to the next
   tuckBufS: 0.15,        // a press this soon before the tuck is back is kept
   blinkS: 0.45,          // a bump blinks you this long (by brightness)
+  graceS: 1.2,           // after Resume nothing bumps you for this long
 
   // speed
   restV: 22,
@@ -60,19 +75,26 @@ export const TUNE = Object.freeze({
   rampS: 0.6,            // rest ↔ surge
   bumpV: 22,
   bumpS: 0.6,
+  recoverA: 90,          // u/s² back up to speed after a bump
+  catchK: 0.5,           // in a rest, 0.5 u/s faster for each u the course is late (a bump makes it late) ...
+  catchV: 30,            // ... up to 30 u/s more, so the folds stay with their surges
 
   // the folds: met during the surges, from 0.6 s in until 0.3 s before the end, one every 1.1 s (wave 1) down to
-  // 0.7 s (wave 8); each is placed ahead so it meets you then (core/stages/birth.js plan)
+  // 0.7 s (wave 8), a little seeded jitter, never closer than 0.7 s
   foldEvery: Object.freeze([1.1, 0.7]),
+  foldJitS: 0.08,
   foldLead: 0.6,
   foldTail: 0.3,
-  aheadU: 240,           // a fold, gate or bubble is placed this far ahead of you (past the screen in every layout)
-  behindU: 110,          // and dropped this far behind
+  minGapS: 0.7,
+  aheadU: 240,           // an item is placed this far ahead of you (past the screen in every layout)
+  behindU: 90,           // and dropped this far behind
   flapW: 7,              // a flap's thickness along the channel
   tip1: 9,               // a 1-lane flap ends 9 u from the middle of the channel (lane 0 or 2 blocked)
   tightFrom: 2,          // tight gaps from wave 3 (k = 2)
   tightOdds: 0.2,        // one fold in five
   tightW: 5,             // a tight gap's width: tucked (1.5 u) you pass within 1 u of its middle; untucked you bump
+                         // (Assist widens it, but never to the untucked hitbox: 2.75 u a side at most)
+  tightGapS: 1.4,        // tight gaps (and the tuck and lift gates) at least this far apart, so the tuck is back
   quickS: 0.95,          // folds closer than this in time leave a lane within one of the last fold's open lanes
   // the patterns' weights by wave: [1-lane flaps, 2-lane flaps, both sides (middle open)]
   weights: Object.freeze([
@@ -90,21 +112,26 @@ export const TUNE = Object.freeze({
   ]),
   gateAt: 2.5,
   gateHalf: 6,           // a turn gate takes you within 6 u of its lane's middle
-  gateGapS: 1.0,         // no fold closer than this to a gate
+  gateGapS: 0.8,         // no fold closer than this to a gate (the design's 1.0 s left wave 8 too bare)
   gatePts: 500,
 
   // calm bubbles
-  bubbleR: 2.5,
+  bubbleR: 3,
   bubblesSurge: 2,
   bubbleRestS: 0.7,      // the rest's bubble meets you this long after the surge ends
   bubblePts: 100,
 
   // juice
   shakeBump: 0.35,
-  flowEvery: 5,          // a "Flow" tag at 5, 10, 15 ... clean folds in a row
+  shakeSurge: 0.3,
+  shakeGate: 0.2,
+  flowEvery: 5,          // a "Flow" tag at 5, 10, 15 ... clean passes in a row
+  popS: 0.8,             // a tag rises 7 u over this long
+  popRise: 7,
+  burstS: 0.5,
 
   // Assist (design.md 5.8): surges 0.8× as fast, folds 1.4× further apart, gates and tight gaps 30% wider, a bump
-  // slows you for 0.3 s
+  // slows you for 0.3 s, and the tuck lasts 0.12 s longer
   assist: Object.freeze({ surgeK: 0.8, foldK: 1.4, wideK: 1.3, bumpS: 0.3, tuckSlackS: 0.12 }),
 
   // the score (design.md 5.8, bubbles as above): Goal 3,000; Skill 2,500 × clean folds / folds, 2,000 × gates / 4,
@@ -116,7 +143,7 @@ export const TUNE = Object.freeze({
   vignettePeak: 0.35,
   wallPress: 2.5,        // u at a surge's peak
   warpRest: 0.1,
-  warpPeak: 0.35,
+  warpPeak: 0.3,
   filterHz: 300,
   rumbleHz: Object.freeze([40, 80]),
 
@@ -129,14 +156,16 @@ export const TUNE = Object.freeze({
   lightR: Object.freeze([30, 70, 220]),   // the bottom glow at the start, at the end of the waves, filling the screen
   lightOn0: 0.35,
   level: Object.freeze([0.35, 0.6]),
+  retractS: 0.3,         // folds still ahead when the light comes fold back into the walls this fast
 
   // the view (fit: world up is screen up)
   span: 120,
   camOff: 32,
-  ringR: Object.freeze({ mother: 15, you: 6, wave: Object.freeze([40, 22]) }),
+  ringR: Object.freeze({ mother: 15, wave: Object.freeze([40, 22]) }),
   lean: 0.3,             // you lean into a lane move (radians at full sideways speed)
   turnRad: 0.35,         // the Turn gate tips you toward its side; Turn back brings you round
   moveS: 0.7,            // a gate's move plays over this long
+  arrowAhead: 10,        // the gold arrow floats this far before its gate
 
   // captions: wave k's surge start + after, or its rest (the surge's end) + after, or a gate's crossing + after
   captions: Object.freeze([
@@ -151,5 +180,5 @@ export const TUNE = Object.freeze({
   // botSteer (design.md 5.8): the open lane of the next fold within 1.2 s, the gate's lane, a bubble when calm; a tuck
   // 0.15 s before a tight gap or a tuck gate. Below skill 1 it reacts 0.4 s × (1 − skill) late, takes a wrong lane
   // with chance 0.3 × (1 − skill) a fold, and its tuck wanders by 0.12 s × (1 − skill)
-  bot: Object.freeze({ lookS: 1.2, tuckLeadS: 0.15, lagS: 0.4, wrong: 0.3, tuckJitS: 0.12, slowR: 6 }),
+  bot: Object.freeze({ lookS: 1.2, tuckLeadS: 0.15, lagS: 0.4, wrong: 0.3, tuckJitS: 0.12, near: 2, k: 9 }),
 });

@@ -770,7 +770,7 @@ function updateHud(view) {
   // in landscape the bar's length (to 8 px) too: the scale tag's right edge keeps the caption band clear of it
   const scPx = vw > vh && v.scale && typeof v.scale === "object" && fin(v.scale.px) ? Math.round(v.scale.px / 8) : "";
   const key = [run.stageId, hudRoot.hidden, v.stageName, v.clock, fmtLen(v.score), v.place, sc, scPx,
-    v.prompt ? v.prompt.text : ""].join("|");
+    v.prompt ? v.prompt.text : "", v.boss ? "boss" : "", v.hp ? v.hp.max : ""].join("|");
   if (key !== hudPromptKey) { hudPromptKey = key; trackHud(); }
 }
 
@@ -882,7 +882,8 @@ function steerCapBand(view) {
   const topBand = [hudB + 8, hudB + 8 + 0.08 * vh], lowBand = [capTopPx, 0.6 * vh];
   const hits = ([y0, y1]) => Math.max(0, Math.min(y1, box.b) - Math.max(y0, box.t));
   const here = inTop ? topBand : lowBand, there = inTop ? lowBand : topBand;
-  if (hits(here) > 4 && hits(there) < hits(here) - 4) {
+  // a body that roams (stage 7's arena) may only graze the band: move off it as soon as the other band is clearer
+  if (hits(here) > 0.5 && hits(there) < hits(here)) {
     if (inTop) delete root.dataset.capband; else root.dataset.capband = "top";
   }
 }

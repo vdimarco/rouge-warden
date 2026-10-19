@@ -401,7 +401,7 @@ export const ROLES = Object.freeze({
     cord: { mix: ["frame3", "you", 0.35] }, cordBack: { mix: ["frame3", "frame2", 0.4] }, lights: "roomyGlow",
     snug: "snugWalls", arc: "breathRing", ripple: "breathRing", glow: "roomyGlow", dapple: "dapple",
     // the action layer (render/action.js): the snug wall closing in, her antibodies as cream paper Ys (design.md 5.7)
-    action: { wall: { mix: ["frame3", "snugWalls", 0.45] }, mine: "breathRing" },
+    action: { wall: { mix: ["snugWalls", "dapple", 0.3] }, mine: "breathRing" },
     frames: { shape: "oval", tokens: ["frame3", "frame2", "frame1"], size: 0.5 },
   },
   birth: {

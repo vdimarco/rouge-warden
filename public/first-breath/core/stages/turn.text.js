@@ -40,6 +40,7 @@ export const TEXT = Object.freeze({
   "turn.gift.kick": "Kick",
   "turn.gift.grow": "Grow",
   "turn.pop.level": "Grow!",
+  "turn.pop.heal": "Snug!",
 
   // score parts (the run result)
   "turn.part.popped": "Germs popped",

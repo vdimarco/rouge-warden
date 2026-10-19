@@ -113,7 +113,7 @@ await check("the stage order and the screens of a whole run; no overlay after Bi
 
 await check("families per stage (16.4): at most 2, 3 for egg, from steer, tap, hold and rotate", () => {
   const want = { swim: ["steer", "tap"], egg: ["rotate", "tap"], split: ["steer", "tap"], root: ["steer", "tap"],
-    grow: ["steer", "tap"], answer: ["tap", "steer"], turn: ["steer", "tap"], birth: ["hold"], ending: ["hold"] };
+    grow: ["steer", "tap"], answer: ["tap", "steer"], turn: ["steer", "tap"], birth: ["steer", "tap"], ending: ["hold"] };
   for (const m of [...STAGES, ENDING]) {
     assert.deepEqual([...m.meta.families], want[m.meta.id], m.meta.id);
     assert.ok(m.meta.families.length <= 2);
@@ -298,7 +298,8 @@ await check("a press at stageStart + target.t (core time) is graded In time; raw
     },
     each: (r, evs) => { for (const e of named(evs, "judge")) judged.set(e.stage + ":" + e.target, e); },
   });
-  assert.ok(pressed.size >= 40, `pressed ${pressed.size} targets`);
+  // (stage 8's 8 wave presses went with its drag-and-hold waves: the runner has no timed targets)
+  assert.ok(pressed.size >= 30, `pressed ${pressed.size} targets`);
   const stages = new Set();
   for (const [key, p] of pressed) {
     const j = judged.get(key);

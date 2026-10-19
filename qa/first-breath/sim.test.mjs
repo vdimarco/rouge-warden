@@ -165,6 +165,22 @@ await check("stage 7 (turn): skill 1.0 is Great or better in at least 18 of 20 a
   assert.ok(mean(of(0.5).map((r) => stageOf(r, "turn").total)) > mean(of(0).map((r) => stageOf(r, "turn").total)), "skill 0.5 outscores idle");
 });
 
+// stage 8, the runner (first-breath-action-genres, design.md 4.5 and 5.8): no hp, so every bot rides it to the light
+// in 65.5 s, and the run goes on to the ending
+await check("stage 8 (birth): skill 1.0 is Great or better in at least 18 of 20; skill 0.5 and idle complete every run with no knock-out, in 65.5 s, and the run goes on", () => {
+  const n = of(1).length;
+  const great = of(1).filter((r) => ["Great", "Glowing"].includes(stageOf(r, "birth").grade)).length;
+  assert.ok(great >= Math.ceil(0.9 * n), `skill 1.0 Great or better in ${great} of ${n}`);
+  for (const skill of [1, 0.5, 0]) {
+    for (const r of of(skill)) {
+      const s = stageOf(r, "birth");
+      assert.ok(s.goalMet && !s.ko && !s.wentOn, `skill ${skill} seed ${r.seed}: completes with no knock-out`);
+      assert.ok(Math.abs(s.timeS - 65.5) <= 2 * DT, `skill ${skill} seed ${r.seed}: ${s.timeS} s`);
+    }
+  }
+  assert.ok(mean(of(0.5).map((r) => stageOf(r, "birth").total)) > mean(of(0).map((r) => stageOf(r, "birth").total)), "skill 0.5 outscores idle");
+});
+
 await check("skill 0.5 reaches the goal in at least 90% of runs in each of stages 2 to 8", () => {
   const rs = of(0.5);
   assert.equal(rs.length, SEEDS);

@@ -3,9 +3,13 @@
 // data, deep-frozen. World units (u), seconds, radians unless named in degrees. Wave times are seconds into `waves` on
 // the world clock (A.t, which holds still under a hit-stop and runs at 0.25× while the gift bubbles show).
 //
-// Measured (qa/first-breath/stage-turn.test.mjs, 10 seeds; FB_VERBOSE=1 prints them): see the stage test's PASS line
-// and design.md 3.1. Changes from design.md 5.7 found in play: the Big Germ has 60 hp (Assist 45) and a second phase at
-// half hp (its ring comes every 2.2 s, as two rings 0.3 s apart), so the climax lasts; sparkles stay 14 s.
+// Measured (qa/first-breath/stage-turn.test.mjs, 10 seeds; sim.test.mjs, 20 seeds): skill 1 about 8,900, 0.7 about
+// 8,900, 0.5 about 8,800 with no knock-out in 20; idle knocked out at about 30 s. Changes from design.md 5.7 found in
+// play: the Big Germ has 72 hp (Assist 54) and a second phase at half hp (its ring comes every 2.2 s, as two rings
+// 0.3 s apart), so the climax lasts about 7 s and pops in about 2 of 3 good runs; the levels come sooner (5, 14, 27,
+// 44, 66 and 92 sparkles: the first gift at about 8 s, all six by about 55 s); the horde is thicker (drifters every
+// 1.0, 0.75, 0.7, 0.5 and 0.7 s; swarmer rings at 26, 31, 35, 40 and 45 s); a puffer leaves a heal 30% of the time,
+// so a weaker player can recover before the Big Germ; sparkles stay 14 s.
 
 const deep = (o) => {
   for (const v of Object.values(o)) if (v && typeof v === "object") deep(v);
@@ -54,15 +58,16 @@ export const TUNE = deep({
 
   // Assist (the shared rule, design.md 4.2): hp +3, foes ×0.75, foe sparks ×0.75 speed, the kick back 0.7× as soon;
   // the Big Germ 45 hp; levels at 0.8× the sparkles
-  assist: { hpPlus: 3, bulletK: 0.75, dashCdK: 0.7, foesK: 0.75, bigHp: 45, levelK: 0.8 },
+  assist: { hpPlus: 3, bulletK: 0.75, dashCdK: 0.7, foesK: 0.75, bigHp: 54, levelK: 0.8 },
 
-  // the germs (a spawnFoe spec each; `drops` are made by the stage: 1 sparkle a germ, the Big Germ 12)
+  // the germs (a spawnFoe spec each; the sparkles are dropped by the stage: 1 a germ, the Big Germ 12; a puffer leaves
+  // a heal 30% of the time, the layer's own drop)
   foes: {
     drifter: { kind: "germ", ai: "wander", r: 2.8, hp: 3, speed: 14, touch: 1, value: 10, mass: 1, chaseR: 40 },
     swarmer: { kind: "spore", ai: "chase", r: 2.0, hp: 1, speed: 22, touch: 1, value: 5, mass: 0.6, steer: 3 },
-    puffer: { kind: "blob", ai: "shooter", r: 3.6, hp: 6, speed: 9, touch: 1, value: 20, mass: 1.6, keep: 32,
+    puffer: { kind: "blob", ai: "shooter", r: 3.6, hp: 6, speed: 9, touch: 1, value: 20, mass: 1.6, keep: 32, drops: { heal: 0.3 },
       gun: { pattern: { kind: "fan", n: 3, arc: 0.32, speed: 22, tone: "foe", life: 4 }, every: 2.5, tellS: 0.6, first: 1.6, jitter: 0.12 } },
-    big: { kind: "boss", ai: "chase", boss: true, r: 10, hp: 60, speed: 8, touch: 1, value: 100, mass: 6, steer: 2,
+    big: { kind: "boss", ai: "chase", boss: true, r: 10, hp: 72, speed: 8, touch: 1, value: 100, mass: 6, steer: 2,
       spawnS: 1.2, sparkles: 12,
       gun: { pattern: { kind: "ring", n: 12, speed: 24, tone: "hot", r: 1.7, life: 4 }, every: 3, tellS: 0.7, first: 1.4, jitter: 0 } },
   },
@@ -73,17 +78,17 @@ export const TUNE = deep({
   // the waves, seconds into `waves`: each row spawns its kind every `every` s from `from` (after the 1 s calm at each
   // wave start) to `to`; rings and the Big Germ at their times
   waves: [
-    { from: 0.5, to: 12, drifter: 1.2 },
-    { from: 13, to: 24, drifter: 0.9, puffer: 6 },
-    { from: 25, to: 36, drifter: 0.9, puffer: 6, rings: [26, 34] },
-    { from: 37, to: 48, drifter: 0.6, puffer: 4, rings: [40] },
-    { from: 49, to: 60, drifter: 0.8 },
+    { from: 0.5, to: 12, drifter: 1.0 },
+    { from: 13, to: 24, drifter: 0.75, puffer: 6 },
+    { from: 25, to: 36, drifter: 0.7, puffer: 6, rings: [26, 31, 35] },
+    { from: 37, to: 48, drifter: 0.5, puffer: 4, rings: [40, 45] },
+    { from: 49, to: 60, drifter: 0.7 },
   ],
   bigAt: 48,
   calms: [12, 24, 36, 48],   // 1 s calms (a soft swell; a fact may show)
 
   // the grow meter: levels at these sparkle totals; each level offers 3 gifts
-  levels: [8, 20, 36, 56, 80, 108],
+  levels: [5, 14, 27, 44, 66, 92],
 
   // gift bubbles (design.md 4.6): 22 u round you, up-left, up, up-right; the world at 0.25× while they show; after 3 s
   // of stage time the middle one picks itself

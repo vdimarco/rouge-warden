@@ -507,6 +507,13 @@ export function createSound(ctx, { seed = 1, latencyS = null } = {}) {
       // stage 8, birth
       case "birth.warn": swell(at, 55 * p, 0.22 * k, 0.3, 0.8); return true;
       case "birth.breath": noise(at, { f0: 300, f1: 140, glideS: 1.1, peak: 0.12 * k, attack: 0.15, tau: 0.35 }); return true;
+      // the runner (first-breath-action-genres 5.8): a soft whoosh as you tuck, a soft boop on a bump, small chimes
+      // for calm bubbles and the flow streak, a warm chord at a gate; all low and soft through the womb bus
+      case "birth.tuck": noise(at, { type: "bandpass", f0: 240, f1: 600, glideS: 0.1, q: 1, peak: 0.11 * k, attack: 0.01, tau: 0.06 }); return true;
+      case "birth.bump": tone(at, { f0: 150, f1: 95, glideS: 0.12, peak: 0.24 * k, attack: 0.006, tau: 0.09 }); return true;
+      case "birth.bubble": pluck(at, 392 * p, 0.07 * k, 0.05); pluck(at + 0.05, 523 * p, 0.05 * k, 0.06); return true;
+      case "birth.flow": pluck(at, 262 * (1 + 0.12 * Math.min(5, p)), 0.12 * k, 0.1); return true;
+      case "birth.gate": swell(at, 196 * p, 0.16 * k, 0.04, 0.7); swell(at, 247 * p, 0.1 * k, 0.05, 0.7); swell(at, 294 * p, 0.08 * k, 0.06, 0.7); return true;
       case "birth.swell": {
         const dur = o && fin(o.dur) && o.dur > 0 ? o.dur : 5;
         const rum = o && Array.isArray(o.rumbleHz) && o.rumbleHz.length ? o.rumbleHz : [40, 80];

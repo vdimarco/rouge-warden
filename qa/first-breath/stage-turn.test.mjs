@@ -172,18 +172,19 @@ await check("sub-goals: grow (gather sparkles) and the Big Germ, each shown then
 
 // ---- the waves ----
 
-await check("the wave table: drifters, puffers, swarmer rings at 26, 34 and 40 s, the Big Germ at 48 s; no spawn in each 1 s calm", () => {
+await check("the wave table: drifters, puffers, swarmer rings at 26, 31, 35, 40 and 45 s, the Big Germ at 48 s; no spawn in each 1 s calm", () => {
   const st = turn.create(1, C0, { motherPhase: 0 });
   const rows = st.rows;
   const count = (kind, a, b) => rows.filter((r) => r.kind === kind && r.at >= a && r.at < b).length;
-  assert.equal(count("drifter", 0, 12), 10);
-  assert.equal(count("drifter", 12, 24), 13);
+  assert.equal(count("drifter", 0, 12), 12);
+  assert.equal(count("drifter", 12, 24), 15);
   assert.equal(count("puffer", 12, 24), 2);
+  assert.equal(count("drifter", 24, 36), 16);
   assert.equal(count("puffer", 24, 36), 2);
-  assert.equal(count("drifter", 36, 48), 19);
+  assert.equal(count("drifter", 36, 48), 22);
   assert.equal(count("puffer", 36, 48), 3);
-  assert.equal(count("drifter", 48, 60), 14);
-  assert.deepEqual(rows.filter((r) => r.kind === "ring").map((r) => r.at), [26, 34, 40]);
+  assert.equal(count("drifter", 48, 60), 16);
+  assert.deepEqual(rows.filter((r) => r.kind === "ring").map((r) => r.at), [26, 31, 35, 40, 45]);
   assert.deepEqual(rows.filter((r) => r.kind === "big").map((r) => r.at), [48]);
   for (const k of TUNE.calms) assert.deepEqual(rows.filter((r) => r.kind !== "big" && r.at >= k && r.at < k + 1), [], `the calm at ${k} s`);
   assert.ok(rows.every((r) => r.at < 60));
@@ -207,8 +208,8 @@ await check("the arena eases from 54 to 38 u between 20 and 55 s (It gets snug i
   for (const r of REF) assert.ok(Math.hypot(r.st.A.p.x, r.st.A.p.y) <= TUNE.arena.r1 + 1e-6);
 });
 
-await check("the grow meter: levels at 8, 20, 36, 56, 80 and 108 sparkles; each offers 3 distinct gifts, none at its top level; the middle one picks itself after 3 s", () => {
-  assert.deepEqual([...TUNE.levels], [8, 20, 36, 56, 80, 108]);
+await check("the grow meter: levels at 5, 14, 27, 44, 66 and 92 sparkles; each offers 3 distinct gifts, none at its top level; the middle one picks itself after 3 s", () => {
+  assert.deepEqual([...TUNE.levels], [5, 14, 27, 44, 66, 92]);
   let offers = 0;
   for (const r of [...REF.slice(0, 4), IDLE[0], ...BOTS[0.5].slice(0, 3)]) {
     const st = turn.create(r.st.seed, C0, { motherPhase: 0 });
@@ -349,11 +350,11 @@ await check("the Big Germ: from the far edge at 48 s with a 1.2 s tell; its ring
   st.A.fire = null;
   run(st, 0.1);
   const f = st.A.foes.find((x) => x.boss);
-  assert.ok(f && f.hp === 60 && Math.hypot(f.x - st.A.p.x, f.y - st.A.p.y) > 40, "far from you");
+  assert.ok(f && f.hp === 72 && Math.hypot(f.x - st.A.p.x, f.y - st.A.p.y) > 40, "far from you");
   run(st, 5.6);
   assert.ok(st.A.foes.filter((x) => x.kind === "spore").length >= 2, "its swarmers, 4 s after its tell");
   assert.ok(st.A.b.n > 0, "its ring");
-  X.damageFoe(st.A, f, 31, 0, 0);
+  X.damageFoe(st.A, f, 37, 0, 0);
   run(st, 0.3);
   assert.equal(f.phase, 1);
   assert.equal(f.gun.burst, 2);
@@ -538,7 +539,7 @@ await check("botSteer: steer under 1, a dash flag, memory only in r.mem, the sta
   assert.deepEqual(turn.botSteer(REF[0].st, 1, null), { steer: { x: 0, y: 0 }, dir: null, hold: false, dash: false });
 });
 
-await check("Assist: hp +3, foes 0.75×, foe sparks 0.75× as fast, the kick back 0.7× as soon, the Big Germ 45 hp, levels at 0.8×", () => {
+await check("Assist: hp +3, foes 0.75×, foe sparks 0.75× as fast, the kick back 0.7× as soon, the Big Germ 54 hp, levels at 0.8×", () => {
   const st = turn.create(1, C0, { motherPhase: 0, assist: true });
   const plain = turn.create(1, C0, { motherPhase: 0 });
   assert.deepEqual([st.A.p.hp, st.A.p.hpMax], [9, 9]);
@@ -548,11 +549,11 @@ await check("Assist: hp +3, foes 0.75×, foe sparks 0.75× as fast, the kick bac
   st.rows = st.rows.filter((r) => r.kind === "big").map((r) => ({ ...r, at: 0 }));
   st.A.p.inv = 1e9;
   run(st, 0.1);
-  assert.equal(st.A.foes.find((f) => f.boss).hp, 45);
-  st.sparkles = 7;
+  assert.equal(st.A.foes.find((f) => f.boss).hp, 54);
+  st.sparkles = 3;
   X.drop(st.A, "up", st.A.p.x, st.A.p.y, 1, 1);
   run(st, 0.5);
-  assert.equal(st.level, 1, "level 1 at ceil(8 × 0.8) = 7 sparkles");
+  assert.equal(st.level, 1, "level 1 at ceil(5 × 0.8) = 4 sparkles");
   const a = play({ seed: 1, opts: { assist: true }, bot: createBot(0.5, 1), every: 30 });
   assert.equal(a.res.goalMet, true);
 });
@@ -580,6 +581,34 @@ await check("jump: forward only; each moment starts now with the womb cleared; t
   run(st, 4);
   assert.equal(turn.result(st).done, true);
   assert.equal(turn.result(st).goalMet, true);
+});
+
+await check("the grow meter round you fills toward the next level; antibody Ys ride the cord; a puffer may leave a heal", () => {
+  const st = turn.create(1, C0, { motherPhase: 0 });
+  st.rows = [];
+  run(st, 0.5);
+  const ring = (v) => v.rings.find((g) => g.id === "grow");
+  assert.equal(ring(turn.view(st)).progress, 0, "empty at the start");
+  st.sparkles = 2;
+  near(ring(turn.view(st)).progress, 2 / TUNE.levels[0], 1e-9, "part full");
+  X.drop(st.A, "up", st.A.p.x, st.A.p.y, TUNE.levels[0] - 2, 1);
+  run(st, 0.5);
+  assert.equal(st.level, 1);
+  st.offer = null; st.levelsDue = 0;
+  assert.equal(ring(turn.view(st)).progress, 0, "a new level starts the meter again");
+  const v = turn.view(st);
+  assert.equal(v.rings.filter((g) => g.id === "grow" || g.id === "growTrack").length, 2);
+  assert.ok(v.rings.length <= 8);
+  // the cord's Ys: three of your own (tone 0) bullets, with no darts in flight
+  st.A.fire = null;
+  X.clearBullets(st.A, 0);
+  const b = turn.view(st).action.bullets;
+  let mine = 0;
+  for (let i = 0; i < b.n; i++) if (b.tone[i] === 0) mine++;
+  assert.equal(mine, 3);
+  assert.equal(TUNE.foes.puffer.drops.heal, 0.3);
+  const heals = REF.reduce((a, r) => a + named(r.evs, "sfx").filter((e) => e.id === "act.heal").length, 0);
+  assert.ok(heals > 0, "some heals picked up in the ref runs");
 });
 
 await check("carry in: the placenta disc sits on the side you nestled, its lobes from treeSeed; shield pips from the sparks; carry out is empty", () => {

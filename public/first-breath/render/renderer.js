@@ -41,6 +41,7 @@ import * as AX from "./action.js";
 import { drawLanes, drawLaneNotes } from "./lanes.js";
 import { drawRaceGround, drawRaceTop } from "./race.js";
 import { drawLiningFloor, drawLiningSheets, drawLiningMid, drawLiningTop } from "./lining.js";
+import { drawRunnerGround, drawRunnerItems } from "./runner.js";
 import { tierOf } from "./low.js";
 import { createPerf, STEPS } from "./perf.js";
 import { TUNE as BT } from "../core/stages/birth.tune.js";
@@ -308,6 +309,9 @@ export function createRenderer(canvas, { gl = true, q = null, res = null, probe 
     // stage 4's lining map (render/lining.js): the deep floor here, its tissue sheets over the pools below
     const lining = (d.strips || []).find((x) => x && x.kind === "lining");
     if (lining) at(0.2, () => drawLiningFloor(F, lining));
+    // stage 8's channel: the floor, its lane dashes and speed streaks, and the side walls (render/runner.js)
+    const runner = (d.strips || []).find((x) => x && x.kind === "runner");
+    if (runner) at(0.2, () => drawRunnerGround(F, runner));
     if (cache.re) { repaper(v, stage, role, tier0); baked = true; }
 
     // 4. motes at the back
@@ -335,6 +339,7 @@ export function createRenderer(canvas, { gl = true, q = null, res = null, probe 
         else if (st.kind === "chevrons") I.drawChevrons(F, st);
         else if (st.kind === "lanes") drawLanes(F, st);   // stage 6's note highway (render/lanes.js)
         else if (st.kind === "lining") drawLiningMid(F, st);   // stage 4's knots, tendril, pings and glows
+        else if (st.kind === "runner") drawRunnerItems(F, st);  // stage 8's folds, gates and calm bubbles
       }
     });
 

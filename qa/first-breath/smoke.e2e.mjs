@@ -266,9 +266,10 @@ for (const size of sizeList()) {
         check(`${tag}: stage 1's prompt names ${touch ? "the drag" : "the keys"}`, look.prompt === want, look.prompt);
       }
       if (id === "birth") {
-        // the first wave (from 2.0 s) and the Turn wave (from 26 s): the prompt in this device's words, said once
-        const waves = [[0, "Hold through the wave.", "Hold Space through the wave."],
-          [25.1, "Turn: drag sideways and hold.", "Turn: hold the left or right arrow."]];
+        // the runner (first-breath-action-genres 5.8): the first wave (from 2.0 s) names the lanes and the tuck, and
+        // the Turn wave (its gate prompt from its warning at 24.5 s): the prompt in this device's words, said once
+        const waves = [[0, "Drag to change lanes. Tap to tuck.", "Left and right arrows change lanes. Space tucks."],
+          [25.1, "Turn: steer into the gold arrow.", "Turn: steer into the gold arrow."]];
         for (const [more, onTouch, onKeys] of waves) {
           const want = touch ? onTouch : onKeys;
           if (more) await F(page, (n) => window.__fb.step(n), Math.round(more * 60));

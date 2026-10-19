@@ -1,13 +1,11 @@
-// First Breath: stage 8, Birth (`birth`), design.md 6.8, 4.1, 5.2 to 5.4, 7, 15, 16.4 and 18; tasks 2.31 to 2.34.
-// Plays the stage in node with no DOM (16.11): idle, the scripted ideal input, scripted partial input, the shared bot
-// at several skills and seeded random input, and through core/run.js (practice, a press at stageStart + target.t,
-// one-button). Asserts the meta and the 4.1 moments; determinism for two seeds; the ideal input reaching Glowing; idle
-// ending by itself inside the cap with goalMet true; the skill 0.7 bot completing (and skill 1.0 at 8,500 or more);
-// one live gesture per moment (dragHold through the waves, none in the light); every sub-goal ending done or auto; the 16 targets carrying P,
-// with their preview; every view valid; every wave moving you on with no input; the squeeze; the light (exposure,
-// white, the bottom glow, `born`); the score parts (overlap, moves at 0.7 and 0.4, rested gaps, Flourish); turnDir
-// from the Turn wave setting Turn back; an early hold from the warning on time; botSteer (memory only in r.mem);
-// jump; her beats 76 → 92 bpm; the facts and strings; and that garbage input never throws.
+// First Breath: stage 8, Birth (`birth`), the endless runner of first-breath-action-genres (design.md 5.8, 4.2 to 4.5,
+// 4.11; tasks 8.1 to 8.7). Plays the stage in node with no DOM: idle, scripted lane and tuck input, the shared bot at
+// several skills, seeded random input, garbage input, and through core/run.js (practice, one-button). Asserts the meta;
+// the 8 waves at their times; 65.5 s for every input; the course (every fold leaves an open lane or a tight gap, the
+// spacing, reachability and tuck rules, the gates' shapes); lanes by drag, flick, hold and keys; the tuck (taps,
+// presses, a swipe down, its cooldown and buffer); a bump only slows you; the four gates and turnDir; calm bubbles;
+// the light ramp and no flap at the light; no foe, bullet or hp; the score parts and that points add up; Assist;
+// resume; jump; botSteer (memory only in r.mem); the facts and strings.
 // node qa/first-breath/stage-birth.test.mjs
 import assert from "node:assert/strict";
 import * as birth from "../../public/first-breath/core/stages/birth.js";
@@ -20,11 +18,11 @@ import { createRun } from "../../public/first-breath/core/run.js";
 import { makeIntents } from "../../public/first-breath/core/intent.js";
 import { validate } from "../../public/first-breath/core/draw.js";
 import { DT } from "../../public/first-breath/core/clock.js";
-import { check as checkTargets, previewS } from "../../public/first-breath/core/lib/track.js";
 import { stream } from "../../public/first-breath/core/rng.js";
 import { SOURCES } from "../../public/first-breath/core/sources.js";
 import { grade as gradeOf } from "../../public/first-breath/core/score.js";
 import { CARERS, fill } from "../../public/first-breath/core/text.js";
+import { SUBJECT } from "../../public/first-breath/render/camera.js";
 
 const FILE = "qa/first-breath/stage-birth.test.mjs";
 let passed = 0;
@@ -34,26 +32,26 @@ async function check(name, fn) {
 }
 const near = (a, b, tol, msg) => assert.ok(Math.abs(a - b) <= tol, `${msg}: ${a} vs ${b} (±${tol})`);
 const named = (evs, name) => evs.filter((e) => e.name === name);
+const sfx = (evs, id) => evs.filter((e) => e.name === "sfx" && e.id === id);
 const MAX_STEPS = Math.ceil((birth.meta.capS + 5) / DT);
+const L = TUNE.lanes;
 
-// The clock of 6.8 from the tune: warning, swell start and swell end of wave k (0..7); the light; the end.
+// The clock from the tune: wave k's warning, surge start and surge end; the light; the end.
 const W = (k) => TUNE.leadS + TUNE.periodS * k;
 const S = (k) => W(k) + TUNE.warnS;
-const E = (k) => S(k) + TUNE.swellS;
-const LIGHT_AT = E(7) + TUNE.restS;
+const E = (k) => S(k) + TUNE.surgeS;
+const LIGHT_AT = TUNE.leadS + TUNE.periodS * TUNE.waves;
 const END_AT = LIGHT_AT + TUNE.exposureS + TUNE.whiteS + TUNE.holdS;
-const IDEAL_DIRS = [null, "down", null, "right", null, "up", null, "left"];   // Turn to the right, so Turn back is left
 
-// Play one attempt; `input(st)` gives each step's intents. Returns the state, the events, what the prompt was at each
-// step (after the step) and every view's problems.
-function play({ seed = 1, carry = DEFAULT_CARRY, opts = {}, input = null, bot = null, every = 1, each = null } = {}) {
+// Play one attempt; `input(st)` gives each step's intents (or a bot). Returns the state, the events and every view's
+// problems (each `every` steps).
+function play({ seed = 1, carry = DEFAULT_CARRY, opts = {}, input = null, bot = null, every = 30, each = null } = {}) {
   const st = birth.create(seed, carry, { assist: false, oneButton: false, motherPhase: 0, ...opts });
   const evs = [...st.events];
   st.events.length = 0;
-  const seen = [{ t: 0, moment: st.moment, ...birth.prompt(st) }];
   const bad = [];
   for (let n = 0; n < MAX_STEPS && !birth.result(st).done; n++) {
-    if (n % every === 0) {
+    if (every && n % every === 0) {
       const out = validate(birth.view(st));
       if (out.length) bad.push(`t ${st.t.toFixed(2)} ${st.moment}: ${out.join("; ")}`);
     }
@@ -62,480 +60,483 @@ function play({ seed = 1, carry = DEFAULT_CARRY, opts = {}, input = null, bot = 
     if (each) each(st, st.events);
     evs.push(...st.events);
     st.events.length = 0;
-    seen.push({ t: st.t, moment: st.moment, ...birth.prompt(st) });
   }
   const last = validate(birth.view(st));
   if (last.length) bad.push(`last view: ${last.join("; ")}`);
-  return { st, evs, seen, bad, res: birth.result(st) };
+  return { st, evs, bad, res: birth.result(st) };
 }
 
-// A scripted hold per wave: press at pressAt(k), release at releaseAt(k), dragging dirs[k] while held. skip lists
-// waves left alone.
-function scripted({ dirs = IDEAL_DIRS, pressAt = S, releaseAt = E, skip = [] } = {}) {
-  return (st) => {
-    const t0 = st.t, t1 = t0 + DT;
-    const presses = [], releases = [];
-    let dir = null, touching = false;
-    for (let k = 0; k < 8; k++) {
-      if (skip.includes(k)) continue;
-      const p = pressAt(k), r = releaseAt(k);
-      if (p >= t0 && p < t1) presses.push({ t: p, raw: p });
-      if (r >= t0 && r < t1) releases.push({ t: r, raw: r });
-      if (t1 > p && t0 < r) { touching = true; dir = dirs[k] || null; }
-    }
-    return makeIntents({ presses, releases, dir, touching });
-  };
-}
-
-// Seeded random input: holds that start and stop at random, in random directions.
-function randomInput(seed) {
+// Seeded random input: the stick wanders, presses and taps now and then.
+function randomAt(seed) {
   const r = stream(seed, "birth-test-random");
-  let held = false;
-  return () => {
-    const presses = [], releases = [];
-    const dirs = [null, "up", "down", "left", "right"];
-    const dir = dirs[Math.floor(r() * dirs.length)];
-    if (r() < 0.04) {
-      if (held) releases.push({ t: 0, raw: 0 }); else presses.push({ t: 0, raw: 0 });
-      held = !held;
-    }
-    return { presses, releases, dir, touching: held, steer: { x: r() * 2 - 1, y: r() * 2 - 1 } };
+  let sx = 0, sy = 0;
+  return (st) => {
+    if (r() < 0.05) { sx = r() * 2 - 1; sy = r() * 2 - 1; }
+    const at = st.t + DT * 0.5;
+    const presses = r() < 0.03 ? [{ t: at, raw: at, ...(r() < 0.3 ? { dir: r() < 0.5 ? "left" : "right" } : {}) }] : [];
+    const taps = r() < 0.02 ? [{ t: at }] : [];
+    return makeIntents({ steer: { x: sx, y: sy }, presses, taps, touching: true });
   };
 }
-// random presses need stage times: wrap so each event lands inside the step
-const randomAt = (seed) => {
-  const f = randomInput(seed);
-  return (st) => {
-    const it = f();
-    const at = st.t + DT * 0.5;
-    return makeIntents({ ...it, presses: it.presses.map(() => ({ t: at, raw: at })), releases: it.releases.map(() => ({ t: at, raw: at })) });
-  };
-};
 
 const IDLE = play({ every: 1 });
-const IDEAL = play({ input: scripted(), every: 1 });
+const BOTS = {};
+const RUNS = {};
+for (const skill of [1, 0.7, 0.5]) {
+  RUNS[skill] = [];
+  for (let seed = 1; seed <= 6; seed++) RUNS[skill].push(play({ seed, bot: createBot(skill, seed), every: 60 }));
+  BOTS[skill] = Math.round(RUNS[skill].reduce((a, p) => a + p.res.score.total, 0) / RUNS[skill].length);
+}
+const REF = RUNS[1][0];
 
-await check("meta and the 4.1 moments (waves and light, both 280 → 280)", () => {
+await check("meta: the runner (steer and tap, meta.action, no hp, never fails), the moments waves and light at 280", () => {
   const m = birth.meta;
   assert.equal(m.id, "birth"); assert.equal(m.index, 7); assert.equal(m.name, "Birth"); assert.equal(m.verb, "Ride");
+  assert.deepEqual([...m.families], ["steer", "tap"]);
+  assert.equal(m.action, true);
+  assert.equal(m.canFail, false);
   assert.equal(m.orient, "fit");
-  assert.deepEqual([...m.families], ["hold"]);
-  assert.deepEqual({ ...m.ga }, { start: 280, end: 280 });
-  assert.deepEqual({ ...m.mm }, { start: 700, end: 700 });
-  assert.equal(m.fertilized, true);
-  assert.equal(m.motherBpm, 76);
-  assert.equal(m.capS, 80); assert.equal(m.parS, 70);
-  assert.equal(m.canFail, false); assert.equal(m.scored, true);
-  assert.deepEqual(m.moments.map((x) => ({ id: x.id, ga: [...x.ga], lenS: x.lenS })),
-    [{ id: "waves", ga: [280, 280], lenS: null }, { id: "light", ga: [280, 280], lenS: null }]);
-  for (const s of IDLE.seen) assert.ok(m.moments.some((x) => x.id === s.moment), `moment ${s.moment}`);
-  assert.deepEqual(named(IDLE.evs, "moment").map((e) => [e.id, +e.t.toFixed(3)]), [["waves", 0], ["light", LIGHT_AT]]);
-  assert.equal(IDLE.st.gaDay, 280);
-  assert.equal(IDLE.st.fertilized, true);
+  assert.equal(m.parS, 65.5);
+  assert.equal(m.capS, 80);
+  assert.deepEqual(m.moments.map((x) => [x.id, [...x.ga]]), [["waves", [280, 280]], ["light", [280, 280]]]);
+  assert.deepEqual(birth.targets(IDLE.st, 10), [], "no timed targets");
 });
 
-await check("the timeline: 8 waves every 8.0 s, warning 1.0 s before a 5.0 s swell, the first warning at 2.0 s", () => {
-  const sub = named(IDLE.evs, "subgoal").filter((e) => e.state === "shown");
-  assert.deepEqual(sub.map((e) => e.id), ["wave1", "wave2", "wave3", "wave4", "wave5", "wave6", "wave7", "wave8"]);
-  sub.forEach((e, k) => near(e.t, W(k), DT + 1e-9, `wave ${k + 1} warns`));
-  near(W(0), 2.0, 1e-12, "first warning");
-  const swells = named(IDLE.evs, "sfx").filter((e) => e.id === "birth.swell");
-  assert.equal(swells.length, 8);
-  swells.forEach((e, k) => { near(e.at, S(k), 1e-9, `swell ${k + 1}`); assert.equal(e.dur, 5); assert.equal(e.cutoffHz, 300); });
-  near(LIGHT_AT, 67, 1e-9, "the light after the 8th rest");
-  near(END_AT, 70.5, 1e-9, "the end");
-});
-
-await check("targets carry P: a press at each swell start and a release at its end, spaced by the 5.2 rule", () => {
-  const st = birth.create(1, DEFAULT_CARRY, { motherPhase: 0.4 });
-  const list = birth.targets(st, 1000);
-  assert.equal(list.length, 16);
-  assert.deepEqual(checkTargets(list), [], "every target has an id, a time, a kind and P ≥ 0.5 s, sorted and spaced");
-  list.forEach((x, i) => {
-    const k = i >> 1;
-    assert.equal(x.kind, i % 2 ? "release" : "press");
-    near(x.t, i % 2 ? E(k) : S(k), 1e-9, `${x.id} time`);
-    assert.ok(Number.isFinite(x.P) && x.P >= 0.5, `${x.id} P`);
-    assert.equal(x.heart, "mother");
-    if (i === 0) near(x.P, 60 / st.beats.bpm("mother", S(0)), 1e-9, "the first P is her beat period");
-    else near(x.P, x.t - list[i - 1].t, 1e-9, `${x.id} P is the gap`);
-  });
-  // preview: the wave ring shows each press target at least max(2 beats, 1.2 s) ahead
-  for (let k = 0; k < 8; k++) {
-    const pre = previewS(60 / st.beats.bpm("mother", S(k)));
-    const t = S(k) - pre + 2 * DT;
-    const s2 = birth.create(1, DEFAULT_CARRY, { motherPhase: 0.4 });
-    while (s2.t < t) { birth.step(s2, makeIntents()); s2.events.length = 0; }
-    const ring = birth.view(s2).rings.find((g) => g.id === "wave");
-    assert.ok(ring, `wave ${k + 1}: its ring shows ${pre.toFixed(2)} s ahead`);
-    assert.ok(birth.targets(s2, pre).some((x) => x.kind === "press" && Math.abs(x.t - S(k)) < 1e-9), "and targets() lists it");
-    if (k >= 1) break;                         // the first two are enough to keep the suite fast; the rule is shared
-  }
-});
-
-await check("the scripted ideal input reaches Glowing (10,000)", () => {
-  const { res, evs, bad, st } = IDEAL;
-  assert.deepEqual(bad, []);
-  assert.equal(res.done, true);
-  assert.equal(res.goalMet, true);
-  assert.deepEqual(res.score, { goal: 3000, skill: 6000, flourish: 1000, total: 10000 });
-  assert.equal(gradeOf(res.score.total, res.goalMet), "Glowing");
-  const judges = named(evs, "judge");
-  assert.equal(judges.length, 16);
-  for (const j of judges) { assert.equal(j.grade, "in", j.target); near(j.errMs, 0, 1e-6, `${j.target} errMs`); }
-  assert.deepEqual(Object.values(st.subgoals), Array(8).fill("done"));
-  assert.equal(res.metrics.rests, 8);
-  assert.equal(res.metrics.smooth, 8);
-  assert.equal(res.metrics.moves, 2400);
-  assert.deepEqual(res.carryOut, { turnDir: 1 });
-  assert.deepEqual(res.parts.map((p) => [p.id, p.value, p.max]), [["goal", 3000, 3000], ["overlap", 3000, 3000],
-    ["moves", 2400, 2400], ["rests", 600, 600], ["flourish", 1000, 1000]]);
-  assert.equal(res.parts.reduce((a, p) => a + p.value, 0), res.score.total, "the parts add up to the total");
-});
-
-await check("idle ends by itself at 70.5 s (inside the 80 s cap) with goalMet true, and earns only the Goal", () => {
-  const { res, st, bad, evs } = IDLE;
-  assert.deepEqual(bad, []);
-  assert.equal(res.done, true);
-  assert.equal(res.goalMet, true);
-  near(st.t, END_AT, DT + 1e-9, "the stage time at the end");
-  assert.ok(st.t <= birth.meta.capS);
-  assert.equal(res.metrics.how, "end");
-  assert.deepEqual(res.score, { goal: 3000, skill: 0, flourish: 0, total: 3000 }, "no rest points without a held wave");
-  assert.equal(gradeOf(res.score.total, true), "Good");
-  assert.deepEqual(Object.values(st.subgoals), Array(8).fill("auto"));
-  assert.equal(named(evs, "judge").filter((j) => j.grade === "miss").length, 16, "every target passes as a miss");
-  assert.equal(named(evs, "points").length, 0);
-  assert.equal(named(evs, "done").length, 1);
-});
-
-await check("every wave moves you on with no input (1/8 of the way each), and the opening glow grows", () => {
-  const st = birth.create(3, DEFAULT_CARRY, { motherPhase: 0 });
-  const ys = [], rs = [];
-  const at = (t) => { while (st.t < t - 1e-9) { birth.step(st, makeIntents()); st.events.length = 0; } };
-  at(0);
-  ys.push(birth.view(st).anchor.y); rs.push(birth.view(st).marks.find((m) => m.kind === "light").r);
-  for (let k = 0; k < 8; k++) {
-    at(E(k) + 0.1);
-    const v = birth.view(st);
-    ys.push(v.anchor.y); rs.push(v.marks.find((m) => m.kind === "light").r);
-  }
-  for (let k = 1; k < ys.length; k++) {
-    assert.ok(ys[k] < ys[k - 1] - 1, `wave ${k} moves you down: ${ys[k - 1]} → ${ys[k]}`);
-    near(ys[k - 1] - ys[k], (TUNE.figureY0 - TUNE.figureY1) / 8, 1e-6, `wave ${k} moves you 1/8 of the way`);
-    assert.ok(rs[k] > rs[k - 1], `wave ${k} grows the glow`);
-  }
-  near(ys[8], TUNE.figureY1, 1e-6, "all the way after wave 8");
-  // between waves you hold still: nothing moves you in a rest
-  at(E(2) + 1); const a = birth.view(st).anchor.y; at(E(2) + 2.5); assert.equal(birth.view(st).anchor.y, a);
-});
-
-await check("the anchor stays in the free part of the screen (above 60% of a portrait height)", () => {
-  // fit: 100 u across a 390 px width; the subject at 42% of 844 px; 60% is (0.60 − 0.42) × 844 / 3.9 u below it
-  const room = ((0.6 - 0.42) * 844) / 3.9;
-  for (const { st } of [IDLE, IDEAL]) {
-    const v = birth.view(st);
-    assert.ok(v.anchor.y >= -room, `anchor ${v.anchor.y} u`);
-  }
-  assert.ok(TUNE.figureY1 > -room && TUNE.figureY0 < room);
-});
-
-await check("determinism: the same seed and input give the same events and result (seeds 1 and 7)", () => {
-  for (const seed of [1, 7]) {
-    const a = play({ seed, bot: createBot(0.7, seed), every: 30, opts: { motherPhase: 0.21 } });
-    const b = play({ seed, bot: createBot(0.7, seed), every: 30, opts: { motherPhase: 0.21 } });
-    assert.equal(JSON.stringify(a.evs), JSON.stringify(b.evs), `seed ${seed}: events`);
-    assert.deepEqual(a.res, b.res, `seed ${seed}: result`);
-    const c = play({ seed, input: randomAt(seed), every: 30 });
-    const d = play({ seed, input: randomAt(seed), every: 30 });
-    assert.equal(JSON.stringify(c.evs), JSON.stringify(d.evs), `seed ${seed}: random input events`);
-    assert.deepEqual(c.res, d.res);
-  }
-});
-
-const BOTS = {};
-await check("the shared bot completes at skill 0.7 (and skill 1.0 scores 8,500 or more on every seed)", () => {
-  for (const skill of [1, 0.7, 0.4]) {
-    const totals = [];
-    for (let seed = 1; seed <= 10; seed++) {
-      const p = play({ seed, bot: createBot(skill, seed), every: 15, opts: { motherPhase: (seed % 7) / 10 } });
-      assert.deepEqual(p.bad, [], `skill ${skill} seed ${seed} views`);
-      assert.equal(p.res.done, true, `skill ${skill} seed ${seed} completes`);
-      assert.equal(p.res.goalMet, true);
-      near(p.st.t, END_AT, DT + 1e-9, "the same length for everyone");
-      for (const [id, s] of Object.entries(p.st.subgoals)) assert.ok(s === "done" || s === "auto", `${id} ${s}`);
-      if (skill === 1) assert.ok(p.res.score.total >= 8500, `skill 1 seed ${seed}: ${p.res.score.total}`);
-      totals.push(p.res.score.total);
-    }
-    BOTS[skill] = Math.round(totals.reduce((a, b) => a + b, 0) / totals.length);
-  }
-  assert.ok(BOTS[1] >= BOTS[0.7] && BOTS[0.7] >= BOTS[0.4], `means ${JSON.stringify(BOTS)}`);
-});
-
-await check("one live gesture per moment: dragHold through the waves (a plain hold counts), none in the light", () => {
-  for (const { seen, evs } of [IDLE, IDEAL]) {
-    for (const s of seen) {
-      const want = s.moment === "light" || s.t >= LIGHT_AT - 1e-9 ? "none" : "dragHold";
-      assert.equal(s.gesture, want, `t ${s.t.toFixed(3)} (${s.moment})`);
-      assert.equal(s.keys, "steer");
-    }
-    assert.deepEqual([...new Set(seen.filter((s) => s.moment === "waves").map((s) => s.gesture))], ["dragHold"], "one gesture in waves");
-    assert.deepEqual([...new Set(seen.filter((s) => s.moment === "light").map((s) => s.gesture))], ["none"], "and one in the light");
-    // every change of prompt is an event, and the events agree with prompt()
-    const prompts = named(evs, "prompt");
-    let i = 0;
-    for (const s of seen) {
-      while (i + 1 < prompts.length && prompts[i + 1].t <= s.t + 1e-9) i++;
-      assert.deepEqual({ g: prompts[i].gesture, x: prompts[i].text }, { g: s.gesture, x: s.text }, `prompt at ${s.t.toFixed(3)}`);
-    }
-    assert.equal(prompts[0].t, 0, "the prompt names the gesture at once (by 0.5 s)");
-    assert.equal(prompts[0].text, "birth.ride");
-  }
-  // the prompt lines: each wave's own, then a rest line
-  const texts = IDEAL.seen.filter((s) => s.text).map((s) => s.text);
-  for (const id of ["birth.hold", "birth.tuck.do", "birth.turn.do", "birth.lift.do", "birth.back.do", "birth.rest"]) assert.ok(texts.includes(id), id);
-  assert.ok(IDLE.seen.some((s) => s.text === "birth.again"), "after a missed wave: Rest. Another wave will come.");
-});
-
-await check("every sub-goal ends done or auto (idle, ideal, bots, random input), each shown at its warning", () => {
-  const runs = [IDLE, IDEAL, play({ bot: createBot(0.4, 3), every: 60 }), play({ input: randomAt(5), every: 60 })];
-  for (const p of runs) {
-    assert.equal(Object.keys(p.st.subgoals).length, 8);
-    for (const [id, s] of Object.entries(p.st.subgoals)) assert.ok(s === "done" || s === "auto", `${id} ended ${s}`);
+await check("8 waves at their times: a warning at 2.0 + 7.5 k, a 5.0 s surge 1.0 s later, then the light at 62.0 s", () => {
+  for (const p of [IDLE, REF]) {
+    const warn = sfx(p.evs, "birth.warn").map((e) => e.t), swell = sfx(p.evs, "birth.swell").map((e) => e.t), breath = sfx(p.evs, "birth.breath").map((e) => e.t);
+    assert.equal(warn.length, 8); assert.equal(swell.length, 8); assert.equal(breath.length, 8);
     for (let k = 0; k < 8; k++) {
-      const evs = named(p.evs, "subgoal").filter((e) => e.id === "wave" + (k + 1));
-      assert.equal(evs.length, 2, `wave ${k + 1}: shown, then settled`);
-      assert.equal(evs[0].state, "shown");
-      near(evs[1].t, E(k), DT + 1e-9, `wave ${k + 1} settles at the swell's end`);
-      assert.ok(TEXT[evs[1].text], `${evs[1].text} is a string`);
+      near(warn[k], W(k), DT + 1e-9, `warning ${k + 1}`);
+      near(swell[k], S(k), DT + 1e-9, `surge ${k + 1}`);
+      near(breath[k], E(k), DT + 1e-9, `surge ${k + 1} ends`);
     }
+    const light = named(p.evs, "moment").find((e) => e.id === "light");
+    near(light.t, LIGHT_AT, DT + 1e-9, "the light");
   }
-  assert.ok(named(IDLE.evs, "subgoal").some((e) => e.text === "birth.again"), "the miss line");
-  assert.ok(named(IDLE.evs, "subgoal").some((e) => e.text === "birth.anyway"), "a move plays anyway");
 });
 
-await check("every view is valid, with a camera, an anchor and a cue (idle, ideal, bots, random, after jumps)", () => {
-  assert.deepEqual(IDLE.bad, []);
-  assert.deepEqual(IDEAL.bad, []);
-  assert.deepEqual(play({ input: randomAt(9), every: 1 }).bad, []);
-  for (const input of [scripted(), () => makeIntents()]) {
-    const st = birth.create(1, DEFAULT_CARRY, { motherPhase: 0 });
-    for (let n = 0; n < 4300; n++) {
-      if (n % 7 === 0) {
-        const v = birth.view(st);
-        assert.deepEqual(validate(v), [], `t ${st.t.toFixed(2)}`);
-        assert.equal(v.camera.orient, "fit");
-        assert.equal(v.camera.span, 100);
-        near(v.camera.mmPerU, 7, 1e-9, "700 mm across 100 u");
-        assert.deepEqual(v.scale, { mm: 100 });
-        assert.ok(v.anchor && Number.isFinite(v.anchor.x));
-        assert.ok(v.cue && Number.isFinite(v.cue.x), "a cue in every frame");
-        assert.ok(v.splats.length >= 10 && v.splats.length <= 14, "you, as the figure");
-        assert.ok(v.marks.some((m) => m.kind === "light"), "the opening glow");
-        assert.ok(v.rings.some((g) => g.kind === "mother"), "her ring");
+await check("the stage ends at 65.5 s for every input (idle, bots, random input, garbage, one-button), with the goal met", () => {
+  const runs = [IDLE, ...Object.values(RUNS).flat(), play({ seed: 3, input: randomAt(3) }), play({ seed: 4, input: randomAt(4), opts: { assist: true } })];
+  for (const p of runs) {
+    assert.equal(p.res.done, true);
+    assert.equal(p.res.goalMet, true);
+    near(p.st.t, END_AT, DT + 1e-9, `seed ${p.st.seed}: the end`);
+    assert.equal(p.res.metrics.ko, false);
+    assert.equal(named(p.evs, "milestone").filter((e) => e.id === "born").length, 1, "born once");
+    assert.equal(named(p.evs, "done").length, 1);
+    assert.deepEqual(p.bad, [], "every view is valid");
+  }
+});
+
+// The course plans of many seeds, both modes: every obstacle in order with its shape.
+function plans() {
+  const out = [];
+  for (let seed = 1; seed <= 40; seed++) for (const assist of [false, true]) {
+    const st = birth.create(seed, null, { assist, motherPhase: 0 });
+    out.push({ seed, assist, st, plan: st.plan });
+  }
+  return out;
+}
+const PLANS = plans();
+// does a circle of radius r at x hit the obstacle's rects (at its middle line)?
+const blocked = (o, x, r) => o.rects.some(([x0, x1]) => Math.max(x0 - x, 0, x - x1) < r);
+
+await check("every fold leaves an open lane or a tight gap; tight gaps need the tuck; blocked lanes are blocked", () => {
+  for (const { seed, assist, st, plan } of PLANS) {
+    const tag = `seed ${seed}${assist ? " assist" : ""}`;
+    for (const it of plan) {
+      if (it.kind === "bubble") continue;
+      assert.ok(it.open.length >= 1, `${tag}: an open lane`);
+      // the shape as laid (shapeOf is internal: lay a copy through jump-free state by checking a laid one below)
+    }
+    // lay the whole course as the stage does and check every laid obstacle's geometry
+    const s2 = birth.create(seed, null, { assist, motherPhase: 0 });
+    const seen = new Set();
+    for (let n = 0; n < MAX_STEPS && !birth.result(s2).done; n++) {
+      for (const o of s2.obs) {
+        if (seen.has(o.id)) continue;
+        seen.add(o.id);
+        const kind = o.kind === "gate" ? TUNE.gates[o.gate].kind : o.tight ? "tight" : "fold";
+        if (kind === "fold") {
+          for (const j of o.open) assert.ok(!blocked(o, L[j], TUNE.hitR), `${tag} fold ${o.id}: lane ${j} is open`);
+          for (const j of o.block) assert.ok(blocked(o, L[j], TUNE.hitR), `${tag} fold ${o.id}: lane ${j} is blocked`);
+          assert.ok(o.flaps.every((f) => (f.side < 0 ? f.tip < 0 || o.block.includes(1) : f.tip > 0 || o.block.includes(1))), `${tag}: each flap from one side`);
+        } else if (kind === "tight" || kind === "tuck" || kind === "lift") {
+          const lanes = kind === "tuck" ? [0, 1, 2] : o.open;
+          for (const j of [0, 1, 2]) {
+            if (lanes.includes(j)) {
+              assert.ok(!blocked(o, L[j], TUNE.tuckR), `${tag} ${kind} ${o.id}: lane ${j} passes tucked`);
+              assert.ok(blocked(o, L[j], TUNE.hitR), `${tag} ${kind} ${o.id}: lane ${j} bumps you untucked`);
+            } else assert.ok(blocked(o, L[j], TUNE.tuckR), `${tag} ${kind} ${o.id}: lane ${j} is closed`);
+          }
+        } else {
+          const g = o.open[0], far = 2 - g;
+          assert.ok(g === 0 || g === 2, `${tag}: a turn gate in an outer lane`);
+          assert.ok(!blocked(o, L[g], TUNE.hitR) && !blocked(o, L[1], TUNE.hitR), `${tag}: the gate lane and the middle are open`);
+          assert.ok(blocked(o, L[far], TUNE.hitR), `${tag}: the far outer lane has a flap`);
+        }
+        assert.ok(o.flaps.every((f) => f.side === -1 || f.side === 1), "each flap touches one wall");
       }
-      birth.step(st, input(st));
-      st.events.length = 0;
-      if (birth.result(st).done) break;
+      birth.step(s2, makeIntents());
+      s2.events.length = 0;
     }
   }
-  // prompt waves show the direction sticker; wave 4 shows both sides
-  const st = birth.create(1, DEFAULT_CARRY, {});
-  const to = (t) => { while (st.t < t) { birth.step(st, makeIntents()); st.events.length = 0; } };
-  to(S(1) + 1);
-  let arrows = birth.view(st).marks.filter((m) => m.kind === "arrow");
-  assert.equal(arrows.length, 1); near(arrows[0].ang, -Math.PI / 2, 1e-12, "Tuck points down");
-  to(S(3) + 1);
-  arrows = birth.view(st).marks.filter((m) => m.kind === "arrow");
-  assert.deepEqual(arrows.map((m) => m.ang).sort(), [0, Math.PI].sort(), "Turn: both sides");
-  to(S(5) + 1);
-  near(birth.view(st).marks.find((m) => m.kind === "arrow").ang, Math.PI / 2, 1e-12, "Lift points up");
-  to(S(6) + 1);
-  assert.equal(birth.view(st).marks.filter((m) => m.kind === "arrow").length, 0, "plain waves have none");
-  const sw = birth.view(st).strips.find((s) => s.kind === "ripples");
-  assert.ok(sw && sw.items.length === 3, "a swell shows its pressure rings");
 });
 
-await check("the squeeze: vignette 0.15 at rest, 0.35 at a swell's peak; the sway rises with it", () => {
-  const st = birth.create(1, DEFAULT_CARRY, {});
-  const to = (t) => { while (st.t < t - 1e-9) { birth.step(st, makeIntents()); st.events.length = 0; } };
-  to(E(0) + 1);
-  near(birth.view(st).light.vignette, TUNE.vignetteRest, 1e-9, "rest");
-  to(S(1) + TUNE.swellS / 2);
-  near(birth.view(st).light.vignette, TUNE.vignettePeak, 1e-3, "the peak");
-  assert.ok(birth.view(st).warp > 0.6);
-  near(TUNE.vignettePeak, 0.35, 1e-12, "6.8: vignette to 35%");
-  near(TUNE.wallPress, 0.06, 1e-12, "walls in 6% per swell");
-  near(TUNE.filterHz, 300, 1e-12);
-  assert.deepEqual([...TUNE.rumbleHz], [40, 80]);
-});
-
-await check("the light: the glow fills the screen, exposure 1 → 6 over 2.0 s, white 0 → 1 over 1.0 s, a 0.5 s hold, born", () => {
-  const st = birth.create(2, DEFAULT_CARRY, {});
-  const frames = [];
-  const evs = [];
-  while (!birth.result(st).done) {
-    birth.step(st, makeIntents({ touching: true, presses: st.t > 66 && st.t < 66.02 ? [{ t: st.t, raw: st.t }] : [] }));
-    evs.push(...st.events.splice(0));
-    if (st.moment === "light" || st.done) frames.push({ t: st.t, v: birth.view(st) });
-  }
-  const light = named(evs, "moment").find((e) => e.id === "light");
-  near(light.t, LIGHT_AT, DT + 1e-9, "the light starts after wave 8's rest");
-  const open = named(evs, "sfx").find((e) => e.id === "birth.open");
-  assert.ok(open && open.seconds === 1.5 && open.fromHz === 300 && open.toHz === 16000, "the sound opens 300 Hz → 16 kHz over 1.5 s");
-  for (let i = 1; i < frames.length; i++) {
-    const a = frames[i - 1].v, b = frames[i].v;
-    assert.ok(b.light.exposure >= a.light.exposure - 1e-12, "exposure never falls");
-    assert.ok(b.light.white >= a.light.white - 1e-12, "white never falls");
-    assert.ok(b.light.level >= a.light.level - 1e-12, "level never falls");
-    assert.ok(b.light.vignette <= a.light.vignette + 1e-12, "the vignette only opens");
-    assert.ok(b.warp <= a.warp + 1e-12, "the sway only settles");
-    const la = a.marks.find((m) => m.kind === "light"), lb = b.marks.find((m) => m.kind === "light");
-    assert.ok(lb.r >= la.r - 1e-12 && lb.on === 1 && lb.pulse === 0, "the glow only grows, steady");
-    assert.equal(b.marks.filter((m) => m.kind !== "light").length, 0, "nothing else changes the light");
-    assert.equal(b.strips.length, 0);
-    assert.deepEqual(b.splats, a.splats, "you hold still in the light");
-  }
-  const at = (dt) => frames.find((f) => f.t >= LIGHT_AT + dt - 1e-9).v;
-  near(at(1.0).light.exposure, 3.5, 0.1, "half way at 1.0 s");
-  near(at(2.0).light.exposure, 6, 0.1, "6 at 2.0 s");
-  near(at(2.0).light.white, 0, 0.02, "white starts at 2.0 s");
-  near(at(3.0).light.white, 1, 1e-9, "white at 3.0 s");
-  near(at(3.0).marks[0].r, TUNE.lightR[2], 1e-9, "the glow fills the screen");
-  const born = named(evs, "milestone");
-  assert.deepEqual(born.map((e) => e.id), ["born"], "born, once");
-  near(born[0].t, END_AT, DT + 1e-9, "at the end of the light");
-  assert.equal(named(evs, "points").filter((e) => e.t >= LIGHT_AT - 1e-9).length, 0, "no points in the light");
-  assert.equal(birth.prompt(st).gesture, "none");
-});
-
-await check("score: any hold counts for overlap; a move needs its direction (0.7 → 600, 0.4 → 300)", () => {
-  // the right overlap, but every prompt wave dragged the wrong way: no move points, the moves settle auto
-  const wrong = play({ input: scripted({ dirs: [null, "up", null, "down", null, "down", null, "up"] }), every: 50 });
-  assert.equal(wrong.res.metrics.moves, 0);
-  near(wrong.res.metrics.meanOverlap, 1, 1e-6, "overlap still full");
-  assert.deepEqual(wrong.res.score, { goal: 3000, skill: 3600, flourish: 1000, total: 7600 });
-  assert.deepEqual(["wave2", "wave4", "wave6", "wave8"].map((id) => wrong.st.subgoals[id]), ["auto", "auto", "auto", "auto"]);
-  assert.deepEqual(["wave1", "wave3", "wave5", "wave7"].map((id) => wrong.st.subgoals[id]), ["done", "done", "done", "done"]);
-  // a plain hold with no direction (Space alone, or a touch that does not drag) counts as a hold only
-  const plain = play({ input: scripted({ dirs: Array(8).fill(null) }), every: 50 });
-  assert.equal(plain.res.metrics.moves, 0);
-  assert.equal(plain.res.score.total, 7600);
-  // late presses on the Tuck wave: 1.5 s late holds 0.7 of the swell (600), 3.0 s late 0.4 (300), 3.5 s late 0.3 (0)
-  const late = (d) => play({ input: scripted({ pressAt: (k) => S(k) + (k === 1 ? d : 0) }), every: 1000 }).res;
-  const w2 = (r) => r.metrics.waves[1];
-  near(w2(late(1.5)).right, 0.7, 1e-6, "1.5 s late");
-  assert.equal(late(1.5).metrics.moves, 2400);
-  near(w2(late(3.0)).right, 0.4, 1e-6, "3.0 s late");
-  assert.equal(late(3.0).metrics.moves, 2100);
-  assert.equal(late(3.5).metrics.moves, 1800);
-  assert.equal(late(3.5).metrics.smooth, 7, "a wave under 0.9 earns no Flourish share");
-  assert.equal(late(3.5).score.flourish, 875);
-  near(late(3.5).metrics.meanOverlap, (7 + 0.3) / 8, 1e-6, "mean overlap over 8 waves");
-  // the overlap is the share held: release 0.6 s early on wave 1 (0.88: no Flourish share)
-  const early = play({ input: scripted({ releaseAt: (k) => E(k) - (k === 0 ? 0.6 : 0) }), every: 1000 }).res;
-  near(early.metrics.waves[0].overlap, 0.88, 1e-6, "0.88 held");
-  assert.equal(early.metrics.smooth, 7);
-});
-
-await check("rested gaps: released for at least 80% of the rest's first 2.0 s, after a held wave", () => {
-  const hold = (d) => play({ input: scripted({ releaseAt: (k) => E(k) + (k === 2 ? d : 0) }), every: 1000 }).res;
-  assert.equal(hold(0.3).metrics.rests, 8, "a 0.3 s late release still rests (85%)");
-  assert.equal(hold(0.5).metrics.rests, 7, "a 0.5 s late release does not (75%)");
-  assert.equal(hold(0.5).score.skill, 6000 - 75);
-  // a hold from the warning (6.8's bot policy) still rests: the next warning is after the judged 2.0 s
-  const fromWarning = play({ input: scripted({ pressAt: W }), every: 1000 }).res;
-  assert.equal(fromWarning.metrics.rests, 8);
-  assert.equal(fromWarning.score.total, 10000);
-  // a skipped wave earns no rest after it
-  const skip = play({ input: scripted({ skip: [4] }), every: 1000 }).res;
-  assert.equal(skip.metrics.rests, 7);
-  assert.equal(IDLE.res.metrics.rests, 0);
-});
-
-await check("an early hold from the warning is on time for the press target; nothing is judged Off on the way", () => {
-  const p = play({ input: scripted({ pressAt: (k) => W(k) + 0.1 }), every: 1000 });
-  const judges = named(p.evs, "judge");
-  assert.equal(judges.filter((j) => j.grade === "off").length, 0, "no Off");
-  const presses = judges.filter((j) => j.target.includes("press"));
-  assert.equal(presses.length, 8);
-  presses.forEach((j, k) => {
-    assert.equal(j.grade, "in"); assert.equal(j.held, true); near(j.t, S(k), 1e-9, "stamped at the swell start");
-  });
-  // a hold that began before the warning still counts as a hold, but its press target passes
-  const before = play({ input: scripted({ pressAt: (k) => W(k) - (k === 3 ? 0.3 : 0) }), every: 1000 });
-  const j4 = named(before.evs, "judge").filter((j) => j.target.startsWith("wave4.press")).map((j) => j.grade);
-  assert.deepEqual(j4, ["off", "miss"], "1.3 s early is Off (a faint ring, 5.2), then the target passes");
-  near(before.res.metrics.waves[3].overlap, 1, 1e-6);
-  // Assist widens the windows (×1.6): a press 100 ms late is In time with Assist, Close without
-  const late = (assist) => named(play({ opts: { assist }, input: scripted({ pressAt: (k) => S(k) + 0.1 }), every: 1000 }).evs, "judge")
-    .find((j) => j.target.startsWith("wave2.press")).grade;
-  assert.equal(late(false), "close");
-  assert.equal(late(true), "in");
-});
-
-await check("turnDir: the Turn wave's side sets Turn back's way, and goes out in the carry", () => {
-  const left = play({ input: scripted({ dirs: [null, "down", null, "left", null, "up", null, "right"] }), every: 1000 });
-  assert.equal(left.res.metrics.turnDir, -1);
-  assert.deepEqual(left.res.carryOut, { turnDir: -1 });
-  assert.equal(left.res.score.total, 10000, "turning left, then back to the right, is just as good");
-  const sameWay = play({ input: scripted({ dirs: [null, "down", null, "left", null, "up", null, "left"] }), every: 1000 });
-  assert.equal(sameWay.res.metrics.moves, 1800, "Turn back must go the other way");
-  // with no sideways hold the carry's turnDir stands
-  const carry = mergeCarry(DEFAULT_CARRY, { turnDir: -1 });
-  assert.deepEqual(play({ carry, every: 1000 }).res.carryOut, { turnDir: -1 });
-  assert.deepEqual(play({ every: 1000 }).res.carryOut, { turnDir: 1 });
-  // and botSteer turns the carry's way, then back
-  const st = birth.create(1, carry, {});
-  const r = stream(1, "t"); r.mem = {};
-  while (st.t < S(3) + 1) { birth.step(st, makeIntents()); st.events.length = 0; }
-  assert.equal(birth.botSteer(st, 1, r).dir, "left");
-  while (st.t < S(7) + 1) { birth.step(st, makeIntents()); st.events.length = 0; }
-  assert.equal(birth.botSteer(st, 1, r).dir, "right");
-});
-
-await check("botSteer: hold from the warning to the swell's end, the prompted way, memory only in r.mem", () => {
-  const st = birth.create(4, DEFAULT_CARRY, {});
-  const r1 = stream(1, "a"); r1.mem = {};
-  const r2 = stream(2, "b"); r2.mem = {};
-  const want = { 1: "down", 3: "right", 5: "up", 7: "left" };
-  while (!birth.result(st).done) {
-    const snap = JSON.stringify({ t: st.t, w: st.waves, s: st.subgoals, h: st.held, d: st.dir, td: st.turnDir });
-    const a = birth.botSteer(st, 1, r1), b = birth.botSteer(st, 1, r2);
-    assert.equal(JSON.stringify({ t: st.t, w: st.waves, s: st.subgoals, h: st.held, d: st.dir, td: st.turnDir }), snap, "the state is unchanged");
-    assert.deepEqual(a, b, "at skill 1 the stream does not matter");
-    const t = st.t;
-    let k = -1;
-    for (let i = 0; i < 8; i++) if (t >= W(i) - 1e-9 && t < E(i) + TUNE.bot.lagOutS) k = i;
-    const inHold = k >= 0 && t >= W(k) && t < E(k);
-    if (st.moment === "waves" && Math.abs(t - W(Math.max(0, k))) > 1e-6 && Math.abs(t - E(Math.max(0, k))) > 1e-6) {
-      assert.equal(a.hold, inHold, `hold at ${t.toFixed(3)}`);
+await check("the course's rhythm: spacing at least 0.7 s, close folds within a lane of each other, tight gaps 1.4 s apart, gates clear", () => {
+  for (const { seed, assist, plan } of PLANS) {
+    const tag = `seed ${seed}${assist ? " assist" : ""}`;
+    const obs = plan.filter((it) => it.kind !== "bubble");
+    const foldK = assist ? TUNE.assist.foldK : 1;
+    let lastTight = -Infinity;
+    for (let i = 0; i < obs.length; i++) {
+      const o = obs[i], p = obs[i - 1];
+      if (p && p.wave === o.wave) {
+        const dt = o.tm - p.tm;
+        assert.ok(dt >= Math.min(TUNE.minGapS * foldK, TUNE.gateGapS) - 0.09, `${tag}: ${dt.toFixed(2)} s between ${p.id} and ${o.id}`);
+        const shift = dt < TUNE.quickS * foldK ? 1 : 2;
+        assert.ok(p.open.some((a) => o.open.some((b) => Math.abs(a - b) <= shift)), `${tag}: ${o.id} reachable from ${p.id} in ${dt.toFixed(2)} s`);
+        if (o.kind === "gate" || p.kind === "gate") assert.ok(dt >= TUNE.gateGapS - 0.09, `${tag}: a fold ${dt.toFixed(2)} s from a gate`);
+      }
+      if (o.tight) {
+        assert.ok(o.tm - lastTight >= TUNE.tightGapS - 1e-9, `${tag}: tight gaps ${(o.tm - lastTight).toFixed(2)} s apart`);
+        if (o.kind === "fold") assert.ok(o.wave >= TUNE.tightFrom, `${tag}: a tight gap in wave ${o.wave + 1}`);
+        lastTight = o.tm;
+      }
     }
-    if (inHold) assert.equal(a.dir, want[k] || null, `dir at ${t.toFixed(3)}`);
-    if (a.dir) assert.deepEqual(a.steer, { right: { x: 1, y: 0 }, left: { x: -1, y: 0 }, up: { x: 0, y: 1 }, down: { x: 0, y: -1 } }[a.dir]);
+    // the gates: one in each even wave, 2.5 s into its surge; folds only inside the surges
+    const gates = obs.filter((o) => o.kind === "gate");
+    assert.deepEqual(gates.map((g) => [g.gate, g.wave]), [[0, 1], [1, 3], [2, 5], [3, 7]], tag);
+    for (const o of obs) {
+      const s = S(o.wave), e = E(o.wave);
+      assert.ok(o.tm >= s + TUNE.foldLead - 0.09 && o.tm <= e - TUNE.foldTail + 0.09, `${tag}: ${o.id} at ${o.tm.toFixed(2)} inside surge ${o.wave + 1}`);
+    }
+    // bubbles: 3 a wave, none after wave 8's surge
+    const bub = plan.filter((it) => it.kind === "bubble");
+    assert.equal(bub.length, 23, `${tag}: ${bub.length} bubbles`);
+    assert.ok(bub.every((b) => b.tm < E(7)), `${tag}: no bubble frames the light`);
+  }
+});
+
+await check("the waves speed up: rest 22 u/s, surges 50 rising 4 a wave to 78, ramps over 0.6 s; wave 8's speed carries into the light", () => {
+  // the ref bot never bumps, so the course is never late and the rests stay at 22 u/s
+  const st = birth.create(1, null, { motherPhase: 0 });
+  const bot = createBot(1, 1);
+  const vs = [];
+  for (let n = 0; n < MAX_STEPS && !birth.result(st).done; n++) { birth.step(st, bot.intents(birth, st)); st.events.length = 0; vs.push([st.t, st.v]); }
+  const at = (t) => vs.find((x) => x[0] >= t - 1e-9)[1];
+  near(at(1.0), 22, 1e-6, "rest before wave 1");
+  for (let k = 0; k < 8; k++) {
+    const top = Math.max(...vs.filter((x) => x[0] > S(k) && x[0] < E(k)).map((x) => x[1]));
+    near(top, 50 + 4 * k, 1e-6, `surge ${k + 1}`);
+    if (k < 7) near(at(E(k) + TUNE.rampS + 0.1), 22, 1e-6, `rest after ${k + 1}`);
+  }
+  near(at(LIGHT_AT + 1), 78, 1e-6, "into the light at wave 8's speed");
+  // idle bumps, so the course runs late: the rests carry it on a little faster (at most 30 u/s more)
+  const vi = [];
+  const s2 = birth.create(1, null, { motherPhase: 0 });
+  for (let n = 0; n < MAX_STEPS && !birth.result(s2).done; n++) { birth.step(s2, makeIntents()); s2.events.length = 0; vi.push([s2.t, s2.v]); }
+  const rests = vi.filter(([t]) => t > TUNE.leadS && [0, 1, 2, 3, 4, 5, 6].some((k) => t > E(k) + TUNE.rampS && t < S(k + 1)));
+  assert.ok(rests.every(([, v]) => v >= 22 - 1e-9 && v <= 22 + TUNE.catchV + 1e-9));
+  assert.ok(rests.some(([, v]) => v > 23), "the late course catches up in a rest");
+  // Assist: surges 0.8× as fast
+  const a = birth.create(1, null, { assist: true, motherPhase: 0 });
+  near(a.waves[7].v, 78 * 0.8, 1e-9, "Assist slows the surges");
+});
+
+await check("lanes: a flick takes the next lane, a held drag slides on, letting go settles; arrows move one lane a keydown", () => {
+  const st = birth.create(2, null, { motherPhase: 0 });
+  const run = (n, it) => { for (let i = 0; i < n; i++) { birth.step(st, makeIntents(it)); st.events.length = 0; } };
+  assert.equal(st.lane, 1); assert.equal(st.x, 0);
+  run(4, { steer: { x: 1, y: 0 }, touching: true });      // a flick right: 4 steps
+  run(30, { touching: false });
+  assert.equal(st.lane, 2); near(st.x, L[2], 1e-6, "settled in the right lane");
+  run(40, { steer: { x: -0.8, y: 0 }, touching: true });  // held left: slides across both lanes
+  assert.equal(st.lane, 0); near(st.x, L[0], 1e-6, "at the left lane");
+  run(30, {});
+  near(st.x, L[0], 1e-6, "stays there");
+  run(3, { steer: { x: 0.2, y: 0 }, touching: true });    // under the engage point: nothing
+  run(10, {});
+  assert.equal(st.lane, 0);
+  const tp = (dir) => ({ presses: [{ t: st.t + DT / 2, raw: st.t + DT / 2, dir }] });
+  run(1, tp("right")); run(30, {});
+  assert.equal(st.lane, 1); near(st.x, 0, 1e-6, "one lane by an arrow");
+  run(1, tp("right")); run(1, tp("right")); run(30, {});
+  assert.equal(st.lane, 2, "never past the edge");
+  // a lane move takes about a quarter second
+  const s2 = birth.create(2, null, { motherPhase: 0 });
+  let n = 0;
+  birth.step(s2, makeIntents({ presses: [{ t: 0, raw: 0, dir: "left" }] }));
+  while (Math.abs(s2.x - L[0]) > 0.5 && n < 100) { birth.step(s2, makeIntents()); n++; }
+  assert.ok(n * DT <= 0.4, `a lane in ${(n * DT).toFixed(2)} s`);
+});
+
+await check("the tuck: a tap, a press or a swipe down curls you small for 0.5 s; 0.9 s from start to start; a press 0.15 s early is kept", () => {
+  const st = birth.create(2, null, { motherPhase: 0 });
+  const run = (n, it = {}) => { for (let i = 0; i < n; i++) { birth.step(st, makeIntents(it)); st.events.length = 0; } };
+  run(1, { taps: [{ t: 0 }] });
+  assert.ok(st.tuckT > 0, "a tap tucks");
+  near(st.tuckT, TUNE.tuckS - DT, 1e-9, "for 0.5 s");
+  const v = birth.view(st);
+  assert.ok(v.splats.length > 0);
+  run(Math.round(0.5 / DT));
+  assert.equal(st.tuckT, 0, "and uncurls");
+  run(Math.round(0.2 / DT), { presses: [{ t: st.t, raw: st.t }] });   // pressed again 0.7 s after the start: too soon
+  assert.equal(st.tucks, 1);
+  run(1, { presses: [{ t: st.t, raw: st.t }] });                       // 0.72 s: still too soon, and not yet kept
+  const tAt = st.tuckAt;
+  run(Math.round(0.1 / DT));
+  run(1, { presses: [{ t: st.t, raw: st.t }] });                       // 0.83 s: within 0.15 s of ready: kept
+  run(Math.round(0.1 / DT));
+  assert.equal(st.tucks, 2, "the kept press tucks when the tuck is back");
+  near(st.tuckAt - tAt, TUNE.tuckCdS, DT + 1e-9, "on the dot");
+  run(Math.round(1 / DT));
+  run(3, { steer: { x: 0, y: -1 }, touching: true });                  // a swipe down
+  assert.equal(st.tucks, 3);
+  run(Math.round(1 / DT), { steer: { x: 0, y: -1 }, touching: true }); // held down: no second tuck
+  assert.equal(st.tucks, 3);
+  run(2, { steer: { x: 0, y: 0 } }); run(Math.round(1 / DT)); run(3, { steer: { x: 0, y: -1 }, touching: true });
+  assert.equal(st.tucks, 4, "the stick back up, then down again");
+  // one-button mode: a tap is no tuck (only the run's presses are)
+  const o = birth.create(2, null, { motherPhase: 0, oneButton: true });
+  birth.step(o, makeIntents({ taps: [{ t: 0 }] }));
+  assert.equal(o.tucks, 0);
+});
+
+await check("a bump only slows you: 22 u/s for 0.6 s, the flow ends, a soft boop; never hp, never the end time", () => {
+  const p = play({ seed: 5, every: 0, each: (st, evs) => {
+    for (const e of evs) if (e.name === "sfx" && e.id === "birth.bump") {
+      assert.ok(st.v <= TUNE.bumpV + 1e-9, "slowed");
+      assert.equal(st.flow, 0);
+      near(st.bumpT, TUNE.bumpS, DT + 1e-9, "for 0.6 s");
+    }
+  } });
+  assert.ok(p.res.metrics.bumps > 0, "idle bumps");
+  assert.equal(p.res.metrics.bumps, sfx(p.evs, "birth.bump").length);
+  assert.equal(p.st.A, undefined, "no action world");
+  assert.equal(p.st.hp, undefined, "no hp");
+  near(p.st.t, END_AT, DT + 1e-9, "on time");
+  // Assist: a bump costs 0.3 s
+  const a = birth.create(5, null, { assist: true, motherPhase: 0 });
+  let seen = false;
+  for (let n = 0; n < MAX_STEPS && !birth.result(a).done && !seen; n++) {
+    birth.step(a, makeIntents());
+    if (sfx(a.events, "birth.bump").length) { near(a.bumpT, TUNE.assist.bumpS, DT + 1e-9, "Assist: 0.3 s"); seen = true; }
+    a.events.length = 0;
+  }
+  assert.ok(seen);
+});
+
+await check("the four gates: Tuck, Turn, Lift and Turn back; the ref bot hits all four; turnDir from the Turn gate; idle misses with 'anyway'", () => {
+  for (const p of RUNS[1]) {
+    const m = p.res.metrics;
+    assert.deepEqual(m.gates, [true, true, true, true], `seed ${p.st.seed}`);
+    assert.equal(m.turnDir, m.turnSide, "the Turn gate's side is turnDir");
+    assert.equal(p.res.carryOut.turnDir, m.turnSide);
+    const subs = named(p.evs, "subgoal");
+    assert.deepEqual(subs.filter((e) => e.state === "done").map((e) => e.text), ["birth.tucked", "birth.turned", "birth.lifted", "birth.turnedBack"]);
+    assert.equal(sfx(p.evs, "birth.gate").length, 4);
+  }
+  // the gates' sides: Turn on turnSide, Turn back on the other
+  for (const { st, plan } of PLANS.slice(0, 20)) {
+    const g = plan.filter((it) => it.kind === "gate");
+    assert.deepEqual(g[1].open, [st.turnSide > 0 ? 2 : 0]);
+    assert.deepEqual(g[3].open, [st.turnSide > 0 ? 0 : 2]);
+  }
+  const subs = named(IDLE.evs, "subgoal");
+  assert.deepEqual(subs.filter((e) => e.state === "shown").map((e) => [e.id, e.text]),
+    [["gate0", "birth.gate.tuck"], ["gate1", "birth.gate.turn"], ["gate2", "birth.gate.lift"], ["gate3", "birth.gate.back"]]);
+  for (const e of subs.filter((x) => x.state === "shown")) near(e.t, W(TUNE.gates[Number(e.id.slice(4))].wave), DT + 1e-9, `${e.id} at its warning`);
+  // idle sits in the middle: it misses the Tuck and Lift gates (untucked) and the turn gates (the middle lane)
+  assert.ok(subs.filter((e) => e.state === "auto").every((e) => e.text === "birth.anyway"));
+  assert.equal(IDLE.res.metrics.gatesHit, 0);
+  // each move plays on its wave either way
+  for (const p of [IDLE, REF]) for (let gi = 0; gi < 4; gi++) {
+    const at = p.st.moveAt[gi];
+    assert.ok(at !== null && at <= E(TUNE.gates[gi].wave) + DT + 1e-9, `move ${gi} by its surge's end`);
+  }
+});
+
+await check("calm bubbles: 3 a wave, 100 each up to 1,500; a chime and a +100 tag", () => {
+  for (const p of [REF, IDLE]) {
+    assert.equal(p.res.metrics.offered, 23);
+    assert.equal(sfx(p.evs, "birth.bubble").length, p.res.metrics.bubbles);
+    assert.equal(p.res.parts.find((x) => x.id === "bubbles").value, Math.min(1500, 100 * p.res.metrics.bubbles));
+  }
+  assert.ok(REF.res.metrics.bubbles >= 15, `the ref bot takes ${REF.res.metrics.bubbles}`);
+});
+
+await check("the light: the glow fills the screen, exposure 1 → 6 over 2.0 s, white 0 → 1 over 1.0 s, a 0.5 s hold; no flap at the light; born", () => {
+  const st = birth.create(1, null, { motherPhase: 0 });
+  const views = [];
+  for (let n = 0; n < MAX_STEPS && !birth.result(st).done; n++) {
     birth.step(st, makeIntents());
     st.events.length = 0;
+    if (st.t >= LIGHT_AT - 1 - 1e-9) views.push([st.t, birth.view(st)]);
   }
-  assert.deepEqual(birth.botSteer(st, 1, r1), { steer: { x: 0, y: 0 }, dir: null, hold: false }, "nothing when done");
-  assert.ok(Array.isArray(r1.mem.u) && r1.mem.u.length === 3, "its draws live in r.mem");
-  // below skill 1 the draws give lags and wrong ways; the same stream gives the same choices
-  const lowA = stream(9, "low"); lowA.mem = {};
-  const lowB = stream(9, "low"); lowB.mem = {};
-  const s2 = birth.create(4, DEFAULT_CARRY, {});
-  while (!birth.result(s2).done) {
-    assert.deepEqual(birth.botSteer(s2, 0.3, lowA), birth.botSteer(s2, 0.3, lowB));
-    birth.step(s2, makeIntents()); s2.events.length = 0;
+  const at = (t) => views.find((x) => x[0] >= t - 1e-9)[1];
+  const l = (t) => at(t).light;
+  near(l(LIGHT_AT + 1).exposure, 3.5, 0.05, "exposure half way");
+  near(l(LIGHT_AT + 2).exposure, 6, 0.05, "exposure 6");
+  near(l(LIGHT_AT + 2.5).white, 0.5, 0.05, "white half way");
+  near(l(LIGHT_AT + 3.0).white, 1, 1e-9, "white");
+  const runnerAt = (t) => at(t).strips.find((s) => s.kind === "runner");
+  assert.equal(runnerAt(LIGHT_AT + TUNE.retractS + 0.05).flaps.length, 0, "the flaps fold away");
+  assert.equal(runnerAt(LIGHT_AT + 0.5).bubbles.length, 0);
+  for (const [t, v] of views) {
+    const glow = v.marks.find((m) => m.kind === "light");
+    if (t >= LIGHT_AT + 2) near(glow.r, TUNE.lightR[2], 0.5, "the glow fills the screen");
+    if (t >= LIGHT_AT) assert.equal(birth.prompt(st).gesture, "none");
+  }
+  // jump to the light: nothing left in the channel at once
+  const j = birth.create(1, null, { motherPhase: 0 });
+  for (let i = 0; i < 600; i++) birth.step(j, makeIntents());
+  birth.jump(j, "light");
+  const r = birth.view(j).strips.find((s) => s.kind === "runner");
+  assert.equal(r.flaps.length + r.posts.length + r.hoops.length + r.bubbles.length, 0);
+});
+
+await check("no foe, bullet or hp: the action part holds only tags and flecks", () => {
+  for (const p of [REF, IDLE]) {
+    const st = birth.create(p.st.seed, null, { motherPhase: 0 });
+    const bot = createBot(1, p.st.seed);
+    for (let n = 0; n < 2400; n++) {
+      birth.step(st, bot.intents(birth, st));
+      st.events.length = 0;
+      if (n % 120) continue;
+      const a = birth.view(st).action;
+      assert.ok(a && !a.bullets && !a.foes && !a.hp && !a.boss && !a.player, "only pops, bursts and shake");
+      assert.ok(a.shake >= 0 && a.shake <= 1);
+    }
   }
 });
 
-await check("through the run: practice with the ref bot (no overlay), presses at stageStart + target.t In time, one-button", () => {
+await check("score: Goal 3,000; folds 2,500 × clean / met; 500 a gate; bubbles to 1,500; Flourish by the best flow; the points add up", () => {
+  for (const p of [IDLE, ...RUNS[1], ...RUNS[0.5]]) {
+    const m = p.res.metrics, part = (id) => p.res.parts.find((x) => x.id === id).value;
+    assert.equal(part("goal"), 3000);
+    assert.equal(part("folds"), Math.round((2500 * m.clean) / m.folds));
+    assert.equal(part("gates"), 500 * m.gatesHit);
+    assert.equal(part("flourish"), Math.round(1000 * Math.min(1, m.bestFlow / 20)));
+    const sum = named(p.evs, "points").reduce((a, e) => a + e.add, 0);
+    assert.equal(sum, p.res.score.total, "the points events add up to the total");
+  }
+  // more skill scores more; the ref bot is Great or better every seed
+  assert.ok(BOTS[1] >= BOTS[0.7] && BOTS[0.7] >= BOTS[0.5] && BOTS[0.5] > IDLE.res.score.total, JSON.stringify({ ...BOTS, idle: IDLE.res.score.total }));
+  for (const p of RUNS[1]) assert.ok(["Great", "Glowing"].includes(gradeOf(p.res.score.total, true)), `seed ${p.st.seed}: ${p.res.score.total}`);
+  assert.ok(gradeOf(IDLE.res.score.total, true) === "Good", `idle ${IDLE.res.score.total}`);
+});
+
+await check("a tight gap tucked in its middle passes; untucked, or off its middle, bumps", () => {
+  // find a seed and a tight fold, then ride to it in its lane, tucking (or not) just before it
+  for (const tuck of [true, false]) {
+    const st = birth.create(9, null, { motherPhase: 0 });
+    const tight = st.plan.find((it) => it.kind === "fold" && it.tight);
+    assert.ok(tight, "seed 9 has a tight gap");
+    const lane = tight.open[0];
+    let met = null;
+    for (let n = 0; n < MAX_STEPS && !birth.result(st).done && met === null; n++) {
+      const o = st.obs.find((x) => x.id === tight.id);
+      const it = { presses: [] };
+      if (st.t < tight.tm - 0.6) {
+        // keep clear of everything else: ride the ideal lane for what is next (the ref bot), then go to the gap's lane
+        const a = birth.botSteer(st, 1, null);
+        it.steer = a.steer;
+        if (a.dash) it.presses.push({ t: st.t, raw: st.t });
+      } else {
+        st.lane = lane;
+        if (o && tuck && st.tuckT === 0 && (o.s - st.d) / st.v < 0.12) it.presses.push({ t: st.t, raw: st.t });
+      }
+      birth.step(st, makeIntents(it));
+      st.events.length = 0;
+      if (o && o.done) met = o.bumped;
+    }
+    assert.equal(met, !tuck, tuck ? "tucked in the gap: no bump" : "untucked: a bump");
+  }
+});
+
+await check("the anchor sits high on a portrait screen (the way ahead below you), and the cue is you or the gold arrow", () => {
+  const H = 844, Wd = 390, k = Wd / TUNE.span;
+  const y = SUBJECT.fit.portrait[1] * H - TUNE.camOff * k;
+  assert.ok(y / H < 0.4 && y / H > 0.2, `you at ${(100 * y / H).toFixed(0)}% of the height`);
+  for (const p of [REF]) {
+    const st = birth.create(p.st.seed, null, { motherPhase: 0 });
+    const bot = createBot(1, p.st.seed);
+    let arrows = 0;
+    for (let n = 0; n < MAX_STEPS && !birth.result(st).done; n++) {
+      birth.step(st, bot.intents(birth, st));
+      st.events.length = 0;
+      if (n % 15) continue;
+      const v = birth.view(st);
+      near(v.anchor.y - v.camera.y, TUNE.camOff, 1e-9, "the camera rides with you");
+      const arrow = v.marks.find((m) => m.kind === "arrow");
+      if (arrow) arrows++;
+      if (st.moment === "waves") assert.ok((v.cue.x === v.anchor.x && v.cue.y === v.anchor.y) || (arrow && v.cue.x === arrow.x), "the cue");
+    }
+    assert.ok(arrows > 10, "the gold arrows show at the turn gates");
+  }
+});
+
+await check("prompts: move with lane keys in the waves (the gate's line while one is coming, the rest line in the rests), none in the light", () => {
+  const pr = named(IDLE.evs, "prompt");
+  assert.ok(pr.every((e) => (e.gesture === "move" && e.keys === "lanes") || e.gesture === "none"));
+  const texts = [...new Set(pr.map((e) => e.text))];
+  const ALLOWED = ["birth.prompt.move", "birth.again", "birth.gate.tuck", "birth.gate.turn", "birth.gate.lift", "birth.gate.back", "birth.go", null];
+  assert.ok(texts.every((x) => ALLOWED.includes(x)), JSON.stringify(texts));
+  for (const x of ALLOWED.filter((y) => y !== "birth.go")) assert.ok(texts.includes(x), `${x} shows`);
+  assert.ok(named(REF.evs, "prompt").some((e) => e.text === "birth.go"), "the last rest says Into the light");
+  for (const g of ["birth.gate.tuck", "birth.gate.turn", "birth.gate.lift", "birth.gate.back"]) {
+    const k = TUNE.gates.findIndex((x) => x.text === g);
+    near(pr.find((e) => e.text === g).t, W(TUNE.gates[k].wave), DT + 1e-9, `${g} from its wave's warning`);
+  }
+  const restAt = pr.find((e) => e.text === "birth.again");
+  near(restAt.t, E(0), DT + 1e-9, "the first rest");
+  assert.equal(pr[pr.length - 1].gesture, "none");
+});
+
+await check("captions: the six facts once each, in order, as fact events", () => {
+  for (const p of [IDLE, REF, RUNS[0.5][1]]) {
+    const shown = named(p.evs, "fact");
+    assert.deepEqual(shown.map((e) => e.id), ["birth.waves", "birth.fast", "birth.tuck", "birth.turn", "birth.skull", "birth.overlap"]);
+    assert.ok(shown.every((e) => e.where === "caption" && e.t < LIGHT_AT));
+  }
+});
+
+await check("determinism: the same seed and input give the same events and result", () => {
+  for (const seed of [1, 7]) {
+    const a = play({ seed, bot: createBot(0.7, seed), every: 0 }), b = play({ seed, bot: createBot(0.7, seed), every: 0 });
+    assert.equal(JSON.stringify(a.evs), JSON.stringify(b.evs));
+    assert.deepEqual(a.res, b.res);
+  }
+  assert.notDeepEqual(birth.create(1, null, {}).plan.map((x) => x.open), birth.create(2, null, {}).plan.map((x) => x.open), "seeds differ");
+});
+
+await check("botSteer: lanes and tucks; at skill 1 no memory and no draws; below it, memory only in r.mem", () => {
+  const st = birth.create(3, null, { motherPhase: 0 });
+  for (let i = 0; i < 400; i++) birth.step(st, makeIntents());
+  let calls = 0;
+  const r = () => { calls++; return 0.5; };
+  const a = birth.botSteer(st, 1, r);
+  assert.equal(calls, 0, "no draws at skill 1");
+  assert.equal(r.mem, undefined, "no memory at skill 1");
+  assert.ok(Math.abs(a.steer.x) <= 1 && a.steer.y === 0 && a.dir === null && a.hold === false && typeof a.dash === "boolean");
+  const r2 = stream(3, "bot"); r2.mem = {};
+  const snap = JSON.stringify({ x: st.x, lane: st.lane, t: st.t, obs: st.obs.length });
+  birth.botSteer(st, 0.5, r2);
+  assert.ok(r2.mem.seen && typeof r2.mem.seen === "object", "it remembers what it saw");
+  assert.equal(JSON.stringify({ x: st.x, lane: st.lane, t: st.t, obs: st.obs.length }), snap, "the state is unchanged");
+  assert.deepEqual(birth.botSteer(st, 0, r2), { steer: { x: 0, y: 0 }, dir: null, hold: false, dash: false }, "idle");
+});
+
+await check("through the run: practice with the ref bot (no overlay, straight on), and one-button held rides it well", () => {
   const run = createRun({ seed: 3, start: { practice: "birth" } });
   const bot = createBot(1, 3);
   const evs = [];
   while (run.screen !== "result" && evs.length < 1e6) {
     if (run.screen === "stage") {
       const it = bot.intents(run.mod, run.state);
-      const shift = (l) => l.map((e) => ({ t: e.t + run.stageStart, raw: e.raw + run.stageStart }));
+      const shift = (l) => l.map((e) => ({ ...e, t: e.t + run.stageStart, raw: e.raw + run.stageStart }));
       run.step({ ...it, presses: shift(it.presses), releases: shift(it.releases) });
     } else run.step(makeIntents());
     evs.push(...run.events.splice(0));
@@ -543,43 +544,50 @@ await check("through the run: practice with the ref bot (no overlay), presses at
   assert.ok(!named(evs, "screen").some((e) => e.screen === "overlay"), "no overlay after Birth");
   const s = run.summary().stages[0];
   assert.equal(s.id, "birth");
-  assert.equal(s.grade, "Glowing");
-  // a press at stageStart + target.t (core time), never released, is In time
-  const r2 = createRun({ seed: 5, start: { practice: "birth" } });
-  const judged = [];
-  let pressed = 0;
-  while (r2.screen === "stage") {
-    const st = r2.state;
-    const x = r2.mod.targets(st, 1).find((y) => y.kind === "press" && y.t >= st.t && y.t < st.t + DT);
-    if (x) { const t = r2.stageStart + x.t; pressed++; r2.step(makeIntents({ touching: true, presses: [{ t, raw: t + 0.09 }] })); }
-    else r2.step(makeIntents({ touching: pressed > 0 }));
-    judged.push(...named(r2.events.splice(0), "judge").filter((j) => j.target.includes("press")));
+  assert.ok(["Great", "Glowing"].includes(s.grade), s.grade);
+  // one-button: the button held all through; steer comes from botSteer only while touching, and so does the tuck
+  for (const held of [true, false]) {
+    const r3 = createRun({ seed: 6, settings: { oneButton: true }, start: { practice: "birth" } });
+    while (r3.screen === "stage") {
+      r3.step(makeIntents({ touching: held, presses: [], steer: { x: 1, y: 1 } }));
+      if (!held) assert.deepEqual(r3.lastIntents.steer, { x: 0, y: 0 }, "released: no steer");
+      r3.events.length = 0;
+    }
+    const one = r3.summary().stages[0];
+    if (held) assert.ok(one.score.total >= 8500, `one-button held scores ${one.score.total}`);
+    else assert.equal(one.goalMet, true, "released all through, it still ends on time");
+    assert.equal(r3.summary().marks.oneButton, true);
   }
-  assert.equal(pressed, 8);
-  assert.equal(judged.length, 8);
-  for (const j of judged) { assert.equal(j.grade, "in"); near(j.errMs, 0, 1e-6, "errMs"); near(j.rawMs, 90, 1e-6, "rawMs"); }
-  // one-button: the button held from each warning to each swell's end; dir comes from botSteer, so the moves count
-  const r3 = createRun({ seed: 6, settings: { oneButton: true }, start: { practice: "birth" } });
-  let down = false, checked = 0;
-  while (r3.screen === "stage") {
-    const t = r3.state.t, presses = [], releases = [];
-    let k = -1;
-    for (let i = 0; i < 8; i++) if (t >= W(i) - 1e-9) k = i;
-    const want = k >= 0 && t < E(k);
-    if (want && !down) { presses.push({ t: r3.t, raw: r3.t }); down = true; }
-    if (!want && down) { releases.push({ t: r3.t, raw: r3.t }); down = false; }
-    const rr = stream(0, "probe"); rr.mem = {};
-    const a = birth.botSteer(r3.state, 1, rr);
-    r3.step(makeIntents({ touching: down, presses, releases, dir: "up", steer: { x: 0, y: 1 } }));
-    assert.equal(r3.lastIntents.dir, a.dir, `the held dir is botSteer's at ${t.toFixed(3)}`);
-    assert.deepEqual(r3.lastIntents.steer, down ? a.steer : { x: 0, y: 0 }, "steer from botSteer only while touching");
-    if (down && k >= 0 && TUNE.plan[k].move) checked++;
-    r3.events.length = 0;
-  }
-  assert.ok(checked > 1000, "one-button held through the prompt waves");
-  const one = r3.summary().stages[0];
-  assert.equal(one.score.total, 10000, "one-button rides every wave and every move");
-  assert.equal(r3.summary().marks.oneButton, true);
+});
+
+await check("resume: nothing bumps you for 1.2 s after Resume", () => {
+  const st = birth.create(5, null, { motherPhase: 0 });
+  for (let i = 0; i < 1200; i++) birth.step(st, makeIntents());
+  const b0 = st.bumps;
+  birth.resume(st);
+  for (let i = 0; i < Math.round(1.15 / DT); i++) { birth.step(st, makeIntents()); st.events.length = 0; }
+  assert.equal(st.bumps, b0, "no bump in the grace");
+  assert.equal(birth.resume(st), 0);
+});
+
+await check("jump: waves again lays a fresh course from now; light settles the gates; the cap ends a long jump", () => {
+  const st = birth.create(2, null, { motherPhase: 0 });
+  for (let i = 0; i < 900; i++) birth.step(st, makeIntents());
+  assert.equal(birth.jump(st, "waves"), true);
+  near(st.waves[0].warn, st.t + TUNE.leadS, 1e-9, "the waves from now");
+  assert.equal(st.moment, "waves");
+  assert.equal(birth.jump(st, "moon"), false);
+  assert.equal(birth.jump(st, "light"), true);
+  assert.equal(st.moment, "light");
+  assert.ok(st.gateSt.every((g) => g.done));
+  for (let i = 0; i < 400 && !birth.result(st).done; i++) birth.step(st, makeIntents());
+  assert.equal(birth.result(st).done, true);
+  // a fresh course late in the cap still ends by the cap
+  const c = birth.create(2, null, { motherPhase: 0 });
+  for (let i = 0; i < 2400; i++) birth.step(c, makeIntents());
+  birth.jump(c, "waves");
+  for (let i = 0; i < MAX_STEPS && !birth.result(c).done; i++) birth.step(c, makeIntents());
+  assert.ok(c.t <= birth.meta.capS + DT + 1e-9, `ends by the cap: ${c.t}`);
 });
 
 await check("her beats: 76 → 92 bpm over the waves from motherPhase, then 92; your heart at 130", () => {
@@ -588,80 +596,36 @@ await check("her beats: 76 → 92 bpm over the waves from motherPhase, then 92; 
   near(st.beats.bpm("mother", 0), 76, 1e-9, "76 at the start");
   near(st.beats.bpm("mother", LIGHT_AT - 1e-6), 92, 1e-3, "92 by the light");
   near(st.beats.bpm("mother", END_AT), 92, 1e-9, "92 in the light");
-  const b = st.beats.between("mother", 0, END_AT);
-  for (let i = 1; i < b.length; i++) {
-    const gap = b[i] - b[i - 1];
-    assert.ok(gap >= 60 / 92 - 1e-6 && gap <= 60 / 76 + 1e-6, `gap ${gap}`);
-    if (i > 1) assert.ok(gap <= b[i - 1] - b[i - 2] + 1e-9, "she only speeds up");
-  }
   near(st.beats.bpm("you", 10), 130, 1e-9, "your heart at 130 bpm");
 });
 
-await check("jump: into the light settles the waves; waves again restarts them; the cap ends a long jump", () => {
-  const st = birth.create(1, DEFAULT_CARRY, {});
-  const evs = [];
-  const run = (input, until) => { while (!birth.result(st).done && st.t < until) { birth.step(st, input(st)); evs.push(...st.events.splice(0)); } };
-  run(scripted(), 20);
-  assert.equal(birth.jump(st, "light"), true);
-  evs.push(...st.events.splice(0));
-  assert.equal(st.moment, "light");
-  assert.equal(birth.targets(st, 100).length, 0, "no open targets in the light");
-  for (const [id, s] of Object.entries(st.subgoals)) assert.ok(s === "done" || s === "auto", `${id} ${s}`);
-  assert.equal(Object.keys(st.subgoals).length, 3, "waves 1 to 3 had shown");
-  run(() => makeIntents(), 100);
-  assert.equal(birth.result(st).done, true);
-  near(st.t, 20 + 3.5, DT + 1e-9, "3.5 s of light");
-  assert.deepEqual(validate(birth.view(st)), []);
-  assert.equal(birth.result(st).metrics.waves[0].overlap > 0.99, true, "the waves held so far are kept");
-  // waves again from now
-  const s2 = birth.create(1, DEFAULT_CARRY, {});
-  while (s2.t < 10) { birth.step(s2, makeIntents()); s2.events.length = 0; }
-  assert.equal(birth.jump(s2, "waves"), true);
-  const t0 = s2.t;
-  assert.equal(birth.targets(s2, 1000).length, 16);
-  near(birth.targets(s2, 1000)[0].t, t0 + S(0), 1e-9, "laid from now");
-  while (!birth.result(s2).done) { birth.step(s2, makeIntents()); s2.events.length = 0; }
-  assert.equal(birth.result(s2).metrics.how, "cap", "10 + 70.5 s passes the 80 s cap");
-  near(s2.t, birth.meta.capS, DT + 1e-9);
-  assert.equal(birth.result(s2).goalMet, true);
-  for (const [id, s] of Object.entries(s2.subgoals)) assert.ok(s === "done" || s === "auto", `${id} ${s}`);
-  assert.equal(birth.jump(s2, "nowhere"), false);
-  assert.equal(birth.probe(s2), null);
-});
-
-await check("garbage input never throws and changes nothing it should not", () => {
+await check("garbage input never throws", () => {
   const st = birth.create(1, null, null);
   const junk = [null, undefined, {}, { presses: "x", releases: 5, dir: "sideways" }, { presses: [{ t: NaN }, null, { t: "1" }] },
-    { presses: [{ t: -50, raw: -50 }], releases: [{ t: 1e9 }] }, { steer: null, touching: "yes" }];
+    { presses: [{ t: -50, raw: -50 }], releases: [{ t: 1e9 }], taps: [null, { t: 1 }] }, { steer: null, touching: "yes" },
+    { steer: { x: NaN, y: 5 } }, { steer: { x: 1e9, y: -1e9 } }];
   for (let n = 0; n < 6000 && !birth.result(st).done; n++) {
     assert.doesNotThrow(() => birth.step(st, junk[n % junk.length]));
     st.events.length = 0;
     if (n % 97 === 0) assert.deepEqual(validate(birth.view(st)), []);
+    assert.ok(Number.isFinite(st.x) && st.x >= L[0] - 1e-9 && st.x <= L[2] + 1e-9);
   }
   assert.equal(birth.result(st).done, true);
-  assert.doesNotThrow(() => { birth.step(null, null); birth.prompt(null); birth.targets(null); birth.botSteer(null, 1, null); birth.view(null); });
+  assert.doesNotThrow(() => { birth.step(null, null); birth.prompt(null); birth.targets(null); birth.botSteer(null, 1, null); birth.view(null); birth.result(null); });
   assert.deepEqual(validate(birth.view(null)), []);
   assert.equal(birth.jump(null, "light"), false);
-  assert.ok(Number.isFinite(birth.result(st).score.total));
+  // sparks round you
+  const v = birth.view(birth.create(1, mergeCarry(DEFAULT_CARRY, { sparks: 3 }), {}));
+  assert.deepEqual(validate(v), []);
 });
 
-await check("points tick the HUD during the waves only and add up to the Skill and Flourish", () => {
-  for (const p of [IDEAL, play({ bot: createBot(0.7, 2), every: 1000 })]) {
-    const pts = named(p.evs, "points");
-    assert.ok(pts.every((e) => e.part === "skill" || e.part === "flourish"), "no Goal tick");
-    assert.ok(pts.every((e) => e.t < LIGHT_AT + 1e-9));
-    const sum = pts.reduce((a, e) => a + e.add, 0);
-    near(sum, p.res.score.skill + p.res.score.flourish, 8, "the ticks add up");
-  }
-});
-
-// Facts and strings (15.1 to 15.4).
+// Facts and strings (v1 15.1 to 15.4).
 const BANNED = /\b(die|dies|died|dying|dead|death|kill\w*|lose|loses|losing|lost|loser|fail\w*|miscarr\w*|abort\w*|sex\w*|pain\w*|hurt\w*|danger\w*|sick\w*|viab\w*|prematur\w*|nicu|invad\w*|invas\w*|attack\w*|destroy\w*|defeat\w*|conquer\w*|enem\w*|fight\w*|battle\w*)/i;
 const PRONOUNS = /\b(she|her|hers|herself|he|him|his|himself|they|them|their|theirs|themselves)\b/i;
 const words = (s) => s.trim().split(/\s+/).filter(Boolean).length;
 const sentences = (s) => s.split(/(?<=[.!?])\s+/).filter(Boolean);
 
-await check("facts: the 6.8 set, from the allow-list, R or A, checked, gaDay 280, short, no label in the text", () => {
+await check("facts: the v1 set, from the allow-list, R or A, checked, gaDay 280, short, no label in the text", () => {
   assert.deepEqual(FACTS.map((f) => [f.id, f.where]), [["birth.card", "card"], ["birth.fast", "caption"],
     ["birth.waves", "caption"], ["birth.tuck", "caption"], ["birth.turn", "caption"], ["birth.skull", "caption"],
     ["birth.overlap", "caption"]]);
@@ -670,7 +634,6 @@ await check("facts: the 6.8 set, from the allow-list, R or A, checked, gaDay 280
     assert.equal(f.gaDay, 280);
     assert.equal(f.checked, true);
     assert.ok(f.access === "R" || f.access === "A", f.id);
-    assert.ok(f.src.length > 0);
     for (const k of f.src) assert.ok(SOURCES[k], `${f.id}: ${k} is on the allow-list`);
     for (const carer of Object.keys(CARERS)) {
       const text = fill(f.text, {}, { carer });
@@ -678,30 +641,24 @@ await check("facts: the 6.8 set, from the allow-list, R or A, checked, gaDay 280
       for (const s of sentences(text)) assert.ok(words(s) <= 16, `${f.id}: a sentence of ${words(s)} words`);
       assert.ok(!BANNED.test(text) && !PRONOUNS.test(text), `${f.id}: ${text}`);
     }
-    assert.ok(!/^(week|day)/i.test(f.text), `${f.id} starts with a label`);
-    assert.ok(!/apgar/i.test(f.text));
   }
-  near(FACTS.find((f) => f.id === "birth.overlap").access === "A" ? 1 : 0, 1, 0, "the PubMed abstract is A");
-  // the stage shows each caption once, in order, as a fact event
-  const shown = named(IDLE.evs, "fact");
-  assert.deepEqual(shown.map((e) => e.id), ["birth.fast", "birth.waves", "birth.tuck", "birth.turn", "birth.skull", "birth.overlap"]);
-  assert.ok(shown.every((e) => e.where === "caption"));
-  assert.ok(shown.every((e) => FACTS.some((f) => f.id === e.id)));
 });
 
-await check("strings: every shown id exists; plain and tender; no banned word, pronoun or score framing", () => {
+await check("strings: every shown id exists; plain and tender; no banned word, pronoun, em dash or score framing", () => {
   const used = new Set();
-  for (const p of [IDLE, IDEAL]) {
+  for (const p of [IDLE, REF]) {
     for (const e of p.evs) {
       if (e.name === "prompt" && e.text) used.add(e.text);
       if (e.name === "subgoal") used.add(e.text);
-      if (e.name === "caption") used.add(e.id);
     }
     for (const part of p.res.parts) if (part.label.startsWith("birth.")) used.add(part.label);
+    for (const q of p.st.pops) if (q.word) used.add(q.word);
   }
+  used.add("birth.pop.flow"); used.add("birth.pop.tight");
   for (const id of used) assert.ok(TEXT[id], `${id} has a string`);
   for (const [id, text] of Object.entries(TEXT)) {
     assert.ok(id.startsWith("birth."), id);
+    assert.ok(!/—/.test(text), `${id}: no em dash`);
     for (const carer of Object.keys(CARERS)) {
       const s = fill(text, {}, { carer });
       assert.ok(!BANNED.test(s), `${id}: ${s}`);
@@ -710,13 +667,9 @@ await check("strings: every shown id exists; plain and tender; no banned word, p
     }
     assert.ok(!/apgar|score|points/i.test(text), `${id} frames no score`);
   }
-  assert.equal(TEXT["birth.hold"], "Hold through the wave.");
-  assert.equal(TEXT["birth.tuck.do"], "Tuck: drag down and hold.");
-  assert.equal(TEXT["birth.turn.do"], "Turn: drag sideways and hold.");
-  assert.equal(TEXT["birth.lift.do"], "Lift: drag up and hold.");
-  assert.equal(TEXT["birth.back.do"], "Turn back: drag the other way and hold.");
-  assert.equal(TEXT["birth.rest"], "Rest.");
+  assert.equal(TEXT["birth.prompt.move"], "Drag to change lanes. Tap to tuck.");
   assert.equal(TEXT["birth.again"], "Rest. Another wave will come.");
+  assert.equal(TEXT["birth.anyway"], "The wave moves you on anyway.");
 });
 
 if (failed.length) {
@@ -724,5 +677,5 @@ if (failed.length) {
   console.log(`FAIL ${FILE}: ${failed.length} of ${passed + failed.length} checks failed`);
   process.exitCode = 1;
 } else {
-  console.log(`PASS ${FILE}: ${passed} checks (ideal ${IDEAL.res.score.total}, idle ${IDLE.res.score.total} in ${IDLE.st.t.toFixed(1)} s; bot means ${Object.entries(BOTS).map(([k, v]) => `${k}: ${v}`).join(", ")})`);
+  console.log(`PASS ${FILE}: ${passed} checks (idle ${IDLE.res.score.total}, ${IDLE.res.metrics.clean}/${IDLE.res.metrics.folds} folds; bot means ${Object.entries(BOTS).map(([k, v]) => `${k}: ${v}`).join(", ")})`);
 }

@@ -20,9 +20,11 @@
 //   kick; taking a gift gives 0.5 s of i-frames, so the world's return to full speed never lands a hit at once.
 // - A drifter wanders until you are within 40 u, then chases. A swarmer ring's members past the wall are left out
 //   (the wall is an escape gap). Germs wait for room under the cap of 40.
-// - The Big Germ: 60 hp; at half hp a second phase (its foe shots cleared, a hit-stop, a swell) sends its ring every
+// - The Big Germ: 72 hp; at half hp a second phase (its foe shots cleared, a hit-stop, a swell) sends its ring every
 //   2.2 s as two rings 0.3 s apart. It sheds 2 swarmers every 4 s. Popping it drops 12 sparkles (Flourish 1,000).
 // - Big kick: the kick's knock-back is 20 u × (1 + level) and its cooldown 1.4 s − 0.3 s a level.
+// - The grow meter is a cream sweep round you (a DOM ring) that fills toward the next level; her antibodies stream
+//   down the cord to you as small paper Ys while the germs come. A puffer leaves a heal 30% of the time ("Snug!").
 // - Score: Goal 3,000; Skill 2,500 × germs you popped / germs that came (ticked at each pop at 2,000 / the planned
 //   count, the rest at 60 s), 250 a level (1,500 for 6), 1,000 × pips left at 60 s / your max pips, 1,000 if you turn
 //   yourself; Flourish 1,000 when the Big Germ pops before 60 s. The points events add up to the total. The rest is
@@ -145,6 +147,12 @@ function fx(st, kind, x, y, r, dur, extra = {}) {
 }
 const levelAt = (st, i) => Math.ceil(TUNE.levels[i] * (st.assist ? TUNE.assist.levelK : 1));
 const lvOf = (st, id) => st.gifts[id] || 0;
+// How full the grow meter is toward the next level (0 to 1; 1 once every level is reached).
+function growFill(st) {
+  if (st.level >= TUNE.levels.length) return 1;
+  const lo = st.level > 0 ? levelAt(st, st.level - 1) : 0, hi = levelAt(st, st.level);
+  return clamp01((st.sparkles - lo) / Math.max(1, hi - lo));
+}
 
 // The arena's radius at world time tw into the waves: 54 u, easing to 38 u from 20 to 55 s.
 function arenaR(tw) {
@@ -462,6 +470,9 @@ function outcomes(st) {
     } else if (o.type === "pick" && o.kind === "up") {
       st.sparkles += o.v;
       levelCheck(st);
+    } else if (o.type === "pick" && o.kind === "heal") {
+      sfx(st, "act.heal", o.x, o.y);
+      tag(st, o.x - 2, o.y + 4, "turn.pop.heal", 0.8);
     } else if (o.type === "dash") {
       kick(st);
     }
@@ -899,6 +910,16 @@ export function view(st) {
   }
   const flow = st.phase === "waves" ? 0.55 : 0.25;
   d.strips.push({ kind: "cord", pts, lights: [0, 1, 2, 3].map((k) => frac(k / 4 + flow * t)) });
+  // her antibodies stream down the cord to you as small paper Ys (design.md 5.7), while the germs come
+  const cordYs = [];
+  if ((st.phase === "waves" || st.phase === "clear") && !A.ko) {
+    for (let k = 0; k < 3; k++) {
+      const u = frac(t / V.cordS + k / 3), a = (1 - u) * (1 - u), b = 2 * u * (1 - u), c = u * u;
+      const x = a * p0x + b * cx + c * root.x, y = a * p0y + b * cy + c * root.y;
+      const tx = 2 * (1 - u) * (cx - p0x) + 2 * u * (root.x - cx), ty = 2 * (1 - u) * (cy - p0y) + 2 * u * (root.y - cy);
+      cordYs.push({ x, y, ang: Math.atan2(ty, tx), r: 1.1 });
+    }
+  }
 
   // ripples: her beat's pulse, your kick, a clump closing and popping, a level, a gift taken
   const items = [];
@@ -938,13 +959,13 @@ export function view(st) {
   // the action layer: the snug wall, germs, your antibodies (darts and the tag ring), sparkles, telegraphs, pops, hp
   const live = st.phase === "waves" || st.phase === "clear";
   const av = X.actionView(A, { player: live });
-  const ring = st.phase === "waves" && !A.ko ? ringSpots(st) : [];
+  const ring = [...(st.phase === "waves" && !A.ko ? ringSpots(st) : []), ...cordYs];
   if (ring.length) {
     const b = av.bullets, n = Math.min(b.n + ring.length, 640);
     const xy = new Float32Array(2 * n), r = new Float32Array(n), tone = new Uint8Array(n), ang = new Float32Array(n);
     xy.set(b.xy.subarray(0, 2 * b.n)); r.set(b.r.subarray(0, b.n)); tone.set(b.tone.subarray(0, b.n)); ang.set(b.ang.subarray(0, b.n));
     for (let i = b.n, k = 0; i < n; i++, k++) {
-      xy[2 * i] = ring[k].x; xy[2 * i + 1] = ring[k].y; r[i] = 1.6; tone[i] = 0; ang[i] = ring[k].ang;
+      xy[2 * i] = ring[k].x; xy[2 * i + 1] = ring[k].y; r[i] = ring[k].r || 1.6; tone[i] = 0; ang[i] = ring[k].ang;
     }
     av.bullets = { n, xy, r, tone, ang };
   }
@@ -970,6 +991,13 @@ export function view(st) {
 
   // rings (DOM): her beat round the disc; in the rest, the warm ring you hold
   d.rings.push({ id: "mother", kind: "mother", x: disc.x, y: disc.y, r: disc.r + 3, progress: clamp01(st.beats.phase("mother", t)) });
+  // the grow meter: a cream sweep round you that fills with the sparkles you gather (full at the next level), with a
+  // dotted track under it
+  if (st.phase === "waves" && !A.ko && !st.offer && st.level < TUNE.levels.length) {
+    const gr = 0.5 * S + 3;
+    d.rings.push({ id: "growTrack", kind: "burrow", x: p.x, y: p.y, r: gr, progress: 0.25 });
+    d.rings.push({ id: "grow", kind: "burrow", dashed: true, x: p.x, y: p.y, r: gr, progress: growFill(st) });
+  }
   let cue = { x: p.x, y: p.y };
   if (st.phase === "rest") {
     const rr = 0.55 * S + 4 * warm;

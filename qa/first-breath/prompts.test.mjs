@@ -51,7 +51,8 @@ const all = [...plain.prompts, ...one.prompts];
 
 await check("the run gives prompts in every stage's gestures", () => {
   const g = new Set(all.map((p) => p.gesture));
-  for (const want of ["drag", "tap", "hold", "dragHold"]) assert.ok(g.has(want), `no ${want} prompt`);
+  // (stage 8's drag-and-hold waves became the runner's "move" lanes: no stage asks for dragHold now)
+  for (const want of ["drag", "tap", "hold", "move"]) assert.ok(g.has(want), `no ${want} prompt`);
   assert.ok(all.length >= 20, `only ${all.length} prompts`);
 });
 

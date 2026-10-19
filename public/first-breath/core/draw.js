@@ -38,7 +38,7 @@ export const LIMITS = Object.freeze({
   gifts: 4,         // gift bubbles (stages 3 and 7)
 });
 
-const STRIP_KINDS = new Set(["tails", "cilia", "tree", "cord", "chevrons", "ripples", "arc", "course", "lanes", "race", "lining"]);
+const STRIP_KINDS = new Set(["tails", "cilia", "tree", "cord", "chevrons", "ripples", "arc", "course", "lanes", "race", "lining", "runner"]);
 const MARK_KINDS = new Set(["pool", "lake", "meet", "band", "warm", "cool", "glowwall", "spot", "glow", "hand", "arrow", "light"]);
 const RING_KINDS = new Set(["mother", "you", "approach", "hold", "breath", "wave", "prompt", "rest", "burrow"]);
 const RIMS = new Set(["solid", "dotted", "wavy"]);
@@ -264,6 +264,24 @@ export function validate(list) {
             list2.forEach((it, j) => { if (!isObj(it) || !fin(it.x) || !fin(it.y)) bad.push(`${wk}.${key}[${j}] is not { x, y }`); });
           }
           for (const key of ["aim", "tendril", "compass"]) if (st[key] !== null && !isObj(st[key])) bad.push(`${wk}.${key} is neither null nor an object`);
+          break;
+        }
+        case "runner": {
+          // stage 8's channel (render/runner.js): the side walls' inner edge at ±wallX (pressed in by press 0..1 ×
+          // wallPress u), three lanes, your world y and speed; flaps from a wall (side −1 or 1) to tip x, posts between
+          // lanes (x0 to x1), gate hoops (dashed lines across a lane), tight gaps to tuck through, and calm bubbles
+          nums(st, ["wallX", "press", "wallPress", "you", "v", "speed"], wk);
+          need(Array.isArray(st.lanes) && st.lanes.length === 3 && st.lanes.every(fin), `${wk}.lanes is not 3 numbers`);
+          for (const [key, max, want] of [["flaps", 24, ["y", "tip", "h", "a"]], ["posts", 8, ["x0", "x1", "y", "h", "a"]],
+            ["hoops", 6, ["x", "y", "w", "h", "a"]], ["gaps", 8, ["x", "y", "w", "a"]], ["bubbles", 12, ["x", "y", "r", "a"]]]) {
+            const list2 = st[key];
+            if (!Array.isArray(list2)) { bad.push(`${wk}.${key} is not a list`); continue; }
+            need(list2.length <= max, `${wk}.${key} has ${list2.length} (max ${max})`);
+            list2.forEach((it, j) => { if (!isObj(it)) bad.push(`${wk}.${key}[${j}] is not an object`); else nums(it, want, `${wk}.${key}[${j}]`); });
+          }
+          for (const [j, f] of (Array.isArray(st.flaps) ? st.flaps : []).entries()) {
+            if (isObj(f)) need(f.side === -1 || f.side === 1, `${wk}.flaps[${j}].side is ${f.side}`);
+          }
           break;
         }
       }

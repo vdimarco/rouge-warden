@@ -296,6 +296,11 @@ button.pause svg { width: 18px; height: 18px; fill: var(--tag-ink); }
 @media (orientation: landscape) and (max-height: 600px) {
   html[data-stage="egg"] #captions { left: calc(38vw + 34.3vh + 16px); right: calc(var(--safe-r) + 12px); }
 }
+/* Stage 8 in landscape and on desktop: the channel runs down the middle (60 u of the 120 u short axis, so 50vw ± 25vh)
+   and the way ahead comes up from the bottom edge, so the captions sit at the bottom right, clear of the channel. */
+@media (orientation: landscape) {
+  html[data-stage="birth"] #captions { left: calc(50vw + 25vh + 16px); right: calc(var(--safe-r) + 12px); }
+}
 
 /* ---- screens: cream paper cards on the scrim */
 #screens { position: fixed; inset: 0; pointer-events: none; }

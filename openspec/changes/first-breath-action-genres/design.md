@@ -85,7 +85,7 @@ stage has hp and a knock-out.
 | 4 | `root` | action-adventure | steer, tap | 20 to 49 | 0.6 to 30 mm | 52 s (measured: 41 s, the roots 25 s) | 62 s (measured: 43 s, the roots 27 s) | 79 s, or a KO first (measured: 79 s, no KO in 20 seeds) | 90 s | yes |
 | 5 | `grow` | twin-stick shooter | steer, tap | 49 to 97 | 30 to 150 mm (sac across) | 85 s | 85 s | a KO at about 12 s, then the Almost card | 120 s | yes (contract.md) |
 | 6 | `answer` | rhythm | tap, steer | 98 to 195 | 150 to 600 mm | 74 s | 74 s | 74 s | 90 s | no |
-| 7 | `turn` | survivor auto-shooter | steer, tap | 196 to 280 | 600 to 700 mm | 78 s | 78 s | about 30 s, then the Almost card | 100 s | yes |
+| 7 | `turn` | survivor auto-shooter | steer, tap | 196 to 280 | 600 to 700 mm | 79 s (measured) | 80 s (measured) | about 30 s (measured 28 to 30 s), then the Almost card | 100 s | yes |
 | 8 | `birth` | endless runner | steer, tap | 280 | 700 mm | 65.5 s | 65.5 s | 65.5 s | 80 s | no |
 | | `ending` | calm | hold (optional) | 280 | 2 m | 33 s | 33 s | 33 s | 40 s | no |
 
@@ -1109,8 +1109,8 @@ germs clear, you turn head-down, and you rest while your song is hummed.
 | Kick (dash) | 80 u/s for 0.2 s, cooldown 1.4 s; germs within 14 u are knocked back 20 u and take 1 damage |
 | Starting weapon | Y darts level 1: 1 dart every 0.6 s at the nearest germ within 60 u, 90 u/s, damage 2, passes through 1 |
 | Sparkles (`up`) | every popped germ drops 1 (the Big Germ 12); magnet 18 u |
-| Levels | the grow meter levels up at 8, 20, 36, 56, 80 and 108 sparkles (6 levels); each level offers 3 gifts |
-| Foes | drifter (`wander` then `chase` within 40 u, 14 u/s, 3 hp); swarmer (`chase` 22 u/s, 1 hp; comes as a ring of 12 round you at 50 u that closes in); puffer (`shooter`, 6 hp, a fan of 3 at 22 u/s every 2.5 s); the Big Germ (elite: `boss`, body 10 u, 40 hp, `chase` 8 u/s, a ring of 12 at 24 u/s every 3 s, 2 swarmers every 4 s). Contact 1 pip. |
+| Levels | the grow meter levels up at 5, 14, 27, 44, 66 and 92 sparkles (6 levels; built: the first gift at about 8 s); each level offers 3 gifts. The meter is a cream sweep round you that fills toward the next level |
+| Foes | drifter (`wander` then `chase` within 40 u, 14 u/s, 3 hp); swarmer (`chase` 22 u/s, 1 hp; comes as a ring of 12 round you at 50 u that closes in); puffer (`shooter`, 6 hp, a fan of 3 at 22 u/s every 2.5 s); the Big Germ (elite: `boss`, body 10 u, 72 hp (built; 40 popped too soon), `chase` 8 u/s, a ring of 12 at 24 u/s every 3 s, 2 swarmers every 4 s; at half hp two rings 0.3 s apart every 2.2 s). Contact 1 pip. A puffer leaves a heal 30% of the time (built). |
 | Foe cap | 40 on screen; at most 50 foe sparks |
 
 **Antibody gifts** (each up to level 3):
@@ -1131,11 +1131,11 @@ The bot's preference: Y darts, Tag ring, Clump, Beat, Snug, Big kick, Grow.
 
 | Time | Spawns |
 |---|---|
-| 0 to 12 s | a drifter every 1.2 s from the arena edge |
-| 12 to 24 s | a drifter every 0.9 s; a puffer every 6 s |
-| 24 to 36 s | as before, plus a swarmer ring at 26 s and 34 s |
-| 36 to 48 s | a drifter every 0.6 s; a puffer every 4 s; a swarmer ring at 40 s |
-| 48 to 60 s | the Big Germ at 48 s from the far edge, with drifters every 0.8 s |
+| 0 to 12 s | a drifter every 1.0 s from the arena edge |
+| 12 to 24 s | a drifter every 0.75 s; a puffer every 6 s |
+| 24 to 36 s | a drifter every 0.7 s; a puffer every 6 s; a swarmer ring at 26, 31 and 35 s |
+| 36 to 48 s | a drifter every 0.5 s; a puffer every 4 s; a swarmer ring at 40 and 45 s |
+| 48 to 60 s | the Big Germ at 48 s from the far edge, with drifters every 0.7 s |
 | 60 s | every germ left pops at once ("{Carer}'s antibodies clear them all."), and every sparkle is pulled to you (`vacuum`) |
 
 Each wave start (at 12, 24, 36 and 48 s) has a 1 s calm with a soft swell, where a fact may show.
@@ -1150,7 +1150,7 @@ at 60 s / your max pips; 1,000 if you turn yourself. Flourish: 1,000 if the Big 
 **Knock-out.** "You need a rest." The Almost card. Go on: "{Carer}'s antibodies clear them all.", then `turn` (by
 itself) and `rest`.
 
-**Assist.** Hp 9; foes ×0.75; sparks ×0.75 speed; the Big Germ 30 hp; levels at ×0.8 the sparkles.
+**Assist.** Hp 9; foes ×0.75; sparks ×0.75 speed; the Big Germ 54 hp (built); levels at ×0.8 the sparkles.
 
 **One-button.** Hold: the bot kites the horde in a wide circle and sweeps sparkles; it takes gifts in its order, and
 it drags down at the turn. Release: still (the antibodies keep firing).
