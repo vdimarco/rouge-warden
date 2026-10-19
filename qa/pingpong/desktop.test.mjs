@@ -85,6 +85,11 @@ test('a slow move never swings, and the bands match at 1280 and 2560', () => {
   const first = springStep(sprung, 0.42, dt);
   assert.ok(first.x > 0 && first.x < 0.21, first.x);
 
+  for (const width of [1280, 2560]) {
+    for (const speed of [0.5, 1, 1.19]) assert.equal(widthsFlick(speed, width), null, `${speed} @ ${width}`);
+    assert.ok(widthsFlick(1.2, width), width);
+  }
+
   const bands = [1.1, 1.2, 2.3, 2.4, 4.3, 4.4];
   const seen = {};
   for (const width of [1280, 2560]) {
@@ -99,7 +104,7 @@ test('a slow move never swings, and the bands match at 1280 and 2560', () => {
     assert.equal(shotFromPeak(drive.degPerSec, 1).speed, 11, width);
     assert.equal(shotFromPeak(driveTop.degPerSec, 1).speed, 11, width);
     assert.equal(shotFromPeak(smash.degPerSec, 1).speed, 17, width);
-    assert.equal(shotFromPeak(smash.degPerSec, 0.05).speed, 11, width);
+    assert.equal(shotFromPeak(smash.degPerSec, 0.05).speed, 17, width);
     assert.ok(Math.abs(push.widthsPerSec - 1.2) < 1e-6, push.widthsPerSec);
     assert.ok(Math.abs(driveTop.widthsPerSec - 4.3) < 1e-6, driveTop.widthsPerSec);
     seen[width] = bands.map((speed) => {

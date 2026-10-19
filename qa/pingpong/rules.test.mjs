@@ -26,9 +26,8 @@ test('swing bands and speeds', () => {
   assert.deepEqual(shotFromPeak(600, 0.2), { kind: 'push', speed: 6 });
   assert.deepEqual(shotFromPeak(601, 0.2), { kind: 'drive', speed: 11 });
   assert.deepEqual(shotFromPeak(1100, 0.2), { kind: 'drive', speed: 11 });
-  assert.deepEqual(shotFromPeak(1101, 0.2), { kind: 'drive', speed: 11 });
-  assert.deepEqual(shotFromPeak(1101, RULES.netHeight + RULES.smashClearance), { kind: 'smash', speed: 17 });
-  assert.equal(RULES.smashClearance, 0.15);
+  assert.deepEqual(shotFromPeak(1101, 0.05), { kind: 'smash', speed: 17 });
+  assert.deepEqual(shotFromPeak(1101, 0.2), { kind: 'smash', speed: 17 });
   assert.equal(RULES.netHeight, 0.1525);
 });
 
@@ -38,6 +37,10 @@ test('timing window, perfect band and 25 degrees', () => {
   assert.equal(timingFromOffset(0, false).band, 'perfect');
   assert.equal(timingFromOffset(40, false).band, 'perfect');
   assert.equal(timingFromOffset(-40, false).band, 'perfect');
+  assert.equal(timingFromOffset(-40, false).pullDeg, 0);
+  assert.equal(timingFromOffset(40, false).pullDeg, 0);
+  assert.ok(Math.abs(timingFromOffset(-58, false).pullDeg + 5.625) < 1e-9);
+  assert.ok(Math.abs(timingFromOffset(58, false).pullDeg - 5.625) < 1e-9);
   assert.equal(timingFromOffset(0, false).speedMul, 1.15);
   assert.equal(timingFromOffset(41, false).band, 'late');
   assert.equal(timingFromOffset(-41, false).band, 'early');

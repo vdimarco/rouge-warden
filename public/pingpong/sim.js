@@ -348,7 +348,8 @@ export function createMatch(opts = {}) {
       speed,
       kind,
       spin,
-      clearNet: kind === 'push' || hook,
+      // A hit inside the window stays in play. Early low drives used to clip the net.
+      clearNet: true,
     });
     ball.y = Math.max(ball.y, RULES.ballR + 0.02);
     ball.vx = flown.vx;
@@ -796,7 +797,8 @@ export function createAverageBot(seed) {
         } else {
           const roll = rng();
           const degPerSec = roll < 0.42 ? 480 : roll < 0.92 ? 860 : 1240;
-          const offsetMs = (rng() + rng() - 1) * 48;
+          // Triangular, ±180 ms. Swings outside ±120 ms miss. A hit inside the window stays in play.
+          const offsetMs = (rng() + rng() - 1) * 180;
           plan = {
             skip: false,
             sent: false,

@@ -23,16 +23,17 @@ While the ball is coming in, the bat SHALL ease sideways onto the ball on its ow
 - AND the aim is past 15 degrees toward that side
 
 ### Requirement: A flick is window widths per second
-A flick SHALL be pointer speed over 60 ms, using coalesced pointermove samples, in window widths per second. Under 1.2 SHALL NOT swing. 1.2 through 2.3 SHALL push at 6 m/s. Above 2.3 through 4.3 SHALL drive at 11 m/s. Above 4.3 SHALL smash at 17 m/s when the ball is high enough, and drive otherwise. The same speed in window widths per second SHALL pick the same shot at 1280 and at 2560. A swing SHALL cool down for 350 ms. Contact inside ±40 ms SHALL be perfect, and contact out to ±120 ms SHALL still hit. On the phone, a swing SHALL count only above 300 deg/s rotation rate. On the desktop, a swing SHALL count only at 1.2 window widths per second or faster. A flick that counts, within ±200 ms of the opening ball, SHALL win the point. A speed of 0, or any slower input on that path, SHALL NOT win point 1. A miss SHALL lose that point or replay it.
+A flick SHALL be pointer speed over 60 ms, using coalesced pointermove samples, in window widths per second. Under 1.2 SHALL NOT swing. 1.2 through 2.3 SHALL push at 6 m/s. Above 2.3 through 4.3 SHALL drive at 11 m/s. Above 4.3 SHALL smash at 17 m/s, high or low. The same speed in window widths per second SHALL pick the same shot at 1280 and at 2560. A swing SHALL cool down for 350 ms. Contact inside ±40 ms SHALL be perfect, with no aim pull. Contact out to ±120 ms SHALL still hit, pulling about 6 degrees at 58 ms and 25 degrees at the window edge, and that hit SHALL stay in play. On the phone, a swing SHALL count only above 300 deg/s rotation rate. On the desktop, a swing SHALL count only at 1.2 window widths per second or faster. A flick that counts, within ±200 ms of the opening ball, SHALL win the point. A speed of 0, or any slower input on that path, SHALL NOT win point 1. A miss SHALL lose that point or replay it.
 
 #### Scenario: A slow move never swings
-- WHEN the pointer moves at under 1.2 window widths per second
+- WHEN the pointer moves at 0.5, 1.0, or 1.19 window widths per second
 - THEN there is no swing at 1280 or at 2560
+- AND 1.2 window widths per second does swing
 
 #### Scenario: The bands match at both widths
 - WHEN the speed is 1.2, 2.3, 2.4, 4.3, or 4.4 window widths per second
-- THEN the shot is a push, a push, a drive, a drive, or a smash on a high ball
-- AND 4.4 on a low ball stays a drive
+- THEN the shot is a push, a push, a drive, a drive, or a smash
+- AND 4.4 on a low ball is a smash
 - AND each of those speeds picks the same shot at 1280 and at 2560
 
 #### Scenario: The opening flick wins

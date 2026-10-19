@@ -226,7 +226,6 @@ test('contact aim, pull, accel and a casual push clears the net', () => {
   assert.equal(early.lastShot.speed, 11);
 
   const late = incoming();
-  // The late window is 120 ms after the plane, so the feed starts high enough to still be a smash.
   late.placeBall({
     x: 0, y: 0.9, z: 0.7, vx: 0, vy: 0.2, vz: -2.4,
     hitter: 'neighbour', phase: 'incoming', bounces: 0, spinType: 'none', spinLevel: 0,
@@ -236,6 +235,48 @@ test('contact aim, pull, accel and a casual push clears the net', () => {
   assert.equal(smash.lastShot.kind, 'smash');
   assert.equal(smash.lastShot.speed, 17);
   assert.equal(smash.lastShot.pullDeg, 25);
+});
+
+test('a hit 58 ms early stays on the table', () => {
+  const match = createMatch({ seed: 4, input: 'swing' });
+  match.placeBall({
+    x: 0.1, y: 0.18, z: 0.62, vx: 0.2, vy: 1.2, vz: -3.2,
+    hitter: 'neighbour', phase: 'incoming', bounces: 1,
+  });
+  match.setBat({ x: 0.1, depth: 0.62, roll: 0 });
+  match.swing({ degPerSec: 860, dir: 'forehand', tiltX: 4, tiltY: 6, rollDegPerSec: 0, offsetMs: -58 });
+  let snap = match.state();
+  for (let i = 0; i < 180; i++) {
+    snap = match.step();
+    const types = snap.events.map((e) => e.type);
+    if (types.includes('net') || types.includes('floor') || types.includes('tik')) break;
+  }
+  assert.equal(snap.lastShot.band, 'early');
+  assert.equal(snap.lastShot.kind, 'drive');
+  assert.ok(Math.abs(snap.lastShot.pullDeg + 5.625) < 1e-9, snap.lastShot.pullDeg);
+  assert.equal(snap.events.some((e) => e.type === 'net'), false);
+  assert.equal(snap.lastLanding.call, 'in');
+  assert.equal(snap.score.neighbour, 0);
+  assert.ok(snap.lastShot.yNet >= RULES.netHeight + RULES.ballR, snap.lastShot.yNet);
+
+  const low = createMatch({ seed: 4, input: 'swing' });
+  low.placeBall({
+    x: 0, y: 0.08, z: 0.5, vx: 0, vy: 0.4, vz: -2.4,
+    hitter: 'neighbour', phase: 'incoming', bounces: 1,
+  });
+  low.setBat({ x: 0, depth: 0.5, roll: 0 });
+  low.swing({ degPerSec: 1200, dir: 'forehand', tiltX: 0, tiltY: 0, rollDegPerSec: 0, offsetMs: -58 });
+  let smashed = low.state();
+  for (let i = 0; i < 180; i++) {
+    smashed = low.step();
+    const types = smashed.events.map((e) => e.type);
+    if (types.includes('net') || types.includes('floor') || types.includes('tik')) break;
+  }
+  assert.equal(smashed.lastShot.kind, 'smash');
+  assert.equal(smashed.lastShot.speed, 17);
+  assert.equal(smashed.events.some((e) => e.type === 'net'), false);
+  assert.equal(smashed.lastLanding.call, 'in');
+  assert.equal(smashed.score.neighbour, 0);
 });
 
 test('level 3 topspin reaches the table 15 percent sooner', () => {
