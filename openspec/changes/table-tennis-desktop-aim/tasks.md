@@ -19,9 +19,8 @@
 - [x] Fade splats to 0, clear them, and keep overlapping ink at or under 25% opacity.
 - [x] Take flick spin from the change in heading across the stroke, 20 degrees or more.
 - [x] Draw the ink slash above the bat, and expose `__test.lastSlash` and `__test.splatCount`.
-- [x] Let `desktop.test.mjs` pick a free port and a temp or relative artifacts folder.
-- [x] Cap a 2560-wide backing store at 2560 px and record the frame rate under 4x CPU throttle.
+- [x] Read the page port from PINGPONG_PORT or PORT, and the screenshot folder from PINGPONG_SHOTS or ARTIFACTS. Fall back to an open port and a temp folder.
 - [x] Count a straight diagonal of 20 degrees as spin, and a 20 degree bend between the first 50 ms and the last 50 ms before peak speed.
 - [x] Connect every swing inside ±120 ms, and keep desktop auto-track inside the side reach.
-- [x] Fade splats to 0 across the next point without restoring them, and keep overlap under 25%.
-- [x] Draw the slash after the bat without enlarging the stroke. Lower the backing store on a slow frame rate and leave the trail alone.
+- [x] Fade each splat to 0 and remove it. A countdown wipes the table. One shared layer is blitted at 25%.
+- [x] Draw the slash after the bat, starting at the bat face. Push is a thin stroke, drive is a full slash, smash is a wider slash in #B5472E, and the fade stays 250 ms.

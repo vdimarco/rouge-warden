@@ -27,9 +27,11 @@ Spin compares the stroke direction in the first 50 ms with the last 50 ms before
 
 Any swing inside the ±120 ms window connects. A miss for reach inside that window is a tracking bug. Desktop auto-track eases toward the ball and is held inside the 0.22 m side reach, so a sudden sideways jump cannot leave the bat short of the ball. Swings 9 ms early and at the 120 ms edge connect, including when the ball is 0.20 m or 0.23 m aside.
 
-Table ink is one layer, drawn opaque and blitted at 24% times its fade, so overlapping marks stay under 25%. The fade runs for about four seconds, across the next point, and a new mark does not restore the old ink to full. At 0 the layer is cleared. The slash is drawn after the bat and is not drawn any larger. `__test.lastSlash` and `__test.splatCount` expose the latest slash and how many marks are still up.
+Table ink is one shared layer. Each splat fades to 0 over about 0.6 s and is then removed. The countdown clears the layer immediately. The layer is blitted once at 25% opacity, so two marks on the same pixel cannot go above 25%. `__test.splatCount` is how many marks are still up.
 
-A 2560-wide view caps the canvas backing store at 2560 px, so device pixel ratio 2 does not allocate an 8 megapixel frame. When the frame rate stays under 60 the backing-store cap can drop further. The trail and the other ink are left as they are. The static room is already cached. 390 and 1280 stay at the existing cap of 2 until that frame-rate cap applies.
+The slash is drawn after the bat and starts at the bat face. A push is a thin stroke. A drive is the full curved slash. A smash is a wider slash in #B5472E. It fades over 250 ms. `__test.lastSlash` is the latest slash.
+
+The 2560 backing-store cap is not part of this change. The canvas still uses the existing device-pixel cap of 2.
 
 ## Which machine is a desktop
 

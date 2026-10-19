@@ -55,21 +55,22 @@ Spin SHALL compare the stroke direction in the first 50 ms with the direction in
 - THEN the spin is topspin, none, backspin, topspin, none, and backspin
 
 ### Requirement: Ink clears and stays light
-A table splat SHALL fade to 0 across the next point and then be cleared. It SHALL NOT return to full opacity when the next countdown starts or when another mark is added. Overlapping splats SHALL stay under 25% opacity together, and marks SHALL be kept rather than wiped to reduce that overlap. The ink slash for a push, a drive, and a smash SHALL be drawn after the bat at the same stroke size as before. `__test.lastSlash` SHALL be the latest slash, and `__test.splatCount` SHALL be how many splat marks are still on the table.
+Each table splat SHALL fade to 0 and then be removed. A countdown SHALL wipe the table clean. Every splat SHALL be drawn on one shared layer, and that layer's opacity SHALL be set to 25% once, so overlap cannot rise above 25%. The slash SHALL be drawn after the bat and SHALL start at the bat face. A push SHALL be a thin stroke. A drive SHALL be a full slash. A smash SHALL be a wider slash in #B5472E. The slash SHALL fade over 250 ms. `__test.lastSlash` SHALL be the latest slash, and `__test.splatCount` SHALL be how many splat marks are still on the table.
 
-#### Scenario: Fade across the next point
-- WHEN a point ends and the next point is played
-- THEN the splat fades toward 0 through that point and does not jump back to full
-- AND once it reaches 0 the ink is clear
+#### Scenario: A splat fades, then the countdown clears the table
+- WHEN a ball lands and that splat fades to 0
+- THEN the mark is removed
+- AND when the next countdown starts, no splat remains
 
 #### Scenario: Two marks overlap
-- WHEN two splats cover the same pixel
-- THEN that pixel is under 25% opaque
+- WHEN two splats cover the same pixel on the shared layer
+- THEN that pixel is at 25% opacity, and no higher
 
 #### Scenario: Slash over the bat
 - WHEN the player hits a push, a drive, or a smash
-- THEN the slash is visible over the bat
-- AND the stroke is the same size as before the draw-order change
+- THEN the slash starts at the bat face and is drawn after the bat
+- AND the push is a thin stroke, the drive is a full slash, and the smash is a wider slash in #B5472E
+- AND the slash fades over 250 ms
 - AND `__test.lastSlash.kind` names that shot
 - AND `__test.splatCount` is 0 once the ink has cleared
 

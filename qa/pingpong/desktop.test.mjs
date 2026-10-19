@@ -15,9 +15,24 @@ import { BAT, RULES, shotFromPeak, spinFromRoll } from '../../public/pingpong/ru
 import { POINTER, aimFromCanvas, batFromTilt, flickFromSamples, leanFromCanvas, sideTarget, springStep, trackIncomingX } from '../../public/pingpong/motion.js';
 
 const root = path.resolve(import.meta.dirname, '../..');
-const shots = process.env.PINGPONG_SHOTS
-  ? path.resolve(process.env.PINGPONG_SHOTS)
-  : fs.mkdtempSync(path.join(os.tmpdir(), 'pingpong-shots-'));
+
+// PINGPONG_PORT or PORT picks the page server. Unset, the OS opens a free port.
+// PINGPONG_SHOTS or ARTIFACTS picks the screenshot folder. Unset, a temp folder.
+function shotsFolder() {
+  const raw = process.env.PINGPONG_SHOTS || process.env.ARTIFACTS || '';
+  if (raw) return path.resolve(raw);
+  return fs.mkdtempSync(path.join(os.tmpdir(), 'pingpong-shots-'));
+}
+
+function arcadePort() {
+  const raw = process.env.PINGPONG_PORT || process.env.PORT || '';
+  if (raw === '') return 0;
+  const n = Number(raw);
+  if (Number.isInteger(n) && n >= 0 && n < 65536) return n;
+  return 0;
+}
+
+const shots = shotsFolder();
 
 function freePort() {
   return new Promise((resolve, reject) => {
@@ -67,11 +82,14 @@ function startArcade() {
       res.end(buf);
     });
   });
-  return new Promise((resolve) => {
-    server.listen(0, '127.0.0.1', () => {
+  return new Promise((resolve, reject) => {
+    server.once('error', reject);
+    server.listen(arcadePort(), '127.0.0.1', () => {
       const { port } = server.address();
       server.unref();
-      resolve({ server, origin: `http://127.0.0.1:${port}` });
+      const origin = `http://127.0.0.1:${port}`;
+      console.log(`pingpong qa ${origin} shots ${shots}`);
+      resolve({ server, origin });
     });
   });
 }
@@ -256,6 +274,40 @@ test('the desktop gate skips motion permission and the phone tap still asks', ()
   assert.match(main, /get splatCount\(\)/);
 });
 
+{
+  const prevPort = process.env.PINGPONG_PORT;
+  const prevPlain = process.env.PORT;
+  const prevShots = process.env.PINGPONG_SHOTS;
+  const prevArtifacts = process.env.ARTIFACTS;
+  process.env.PINGPONG_PORT = '43210';
+  delete process.env.PORT;
+  assert.equal(arcadePort(), 43210);
+  delete process.env.PINGPONG_PORT;
+  process.env.PORT = '43211';
+  assert.equal(arcadePort(), 43211);
+  delete process.env.PORT;
+  assert.equal(arcadePort(), 0);
+  process.env.PINGPONG_SHOTS = '/tmp/pingpong-env-shots';
+  delete process.env.ARTIFACTS;
+  assert.equal(shotsFolder(), path.resolve('/tmp/pingpong-env-shots'));
+  delete process.env.PINGPONG_SHOTS;
+  process.env.ARTIFACTS = '/tmp/pingpong-artifacts';
+  assert.equal(shotsFolder(), path.resolve('/tmp/pingpong-artifacts'));
+  delete process.env.PINGPONG_SHOTS;
+  delete process.env.ARTIFACTS;
+  const fallback = shotsFolder();
+  assert.ok(fallback.startsWith(os.tmpdir()), fallback);
+  fs.rmSync(fallback, { recursive: true, force: true });
+  if (prevPort == null) delete process.env.PINGPONG_PORT;
+  else process.env.PINGPONG_PORT = prevPort;
+  if (prevPlain == null) delete process.env.PORT;
+  else process.env.PORT = prevPlain;
+  if (prevShots == null) delete process.env.PINGPONG_SHOTS;
+  else process.env.PINGPONG_SHOTS = prevShots;
+  if (prevArtifacts == null) delete process.env.ARTIFACTS;
+  else process.env.ARTIFACTS = prevArtifacts;
+}
+
 function playwright() {
   const require = createRequire(import.meta.url);
   try {
@@ -265,7 +317,7 @@ function playwright() {
   }
 }
 
-test('a desktop mouse flick wins the opening point', { timeout: 90000 }, async () => {
+test('a desktop mouse flick wins the opening point', { timeout: 120000 }, async () => {
   const { origin } = await arcadeOrigin();
   const { chromium, devices } = playwright();
   fs.mkdirSync(shots, { recursive: true });
@@ -495,6 +547,23 @@ test('a desktop mouse flick wins the opening point', { timeout: 90000 }, async (
     assert.ok(placed.aim > 15, JSON.stringify(placed));
     assert.deepEqual(errors, []);
     await context.close();
+
+    const wide = await browser.newContext({
+      viewport: { width: 2560, height: 1440 },
+      deviceScaleFactor: 1,
+      hasTouch: false,
+    });
+    const widePage = await wide.newPage();
+    widePage.on('pageerror', (err) => errors.push(String(err)));
+    await widePage.goto(`${origin}/pingpong/`, { waitUntil: 'domcontentloaded' });
+    await widePage.waitForFunction(() => document.getElementById('gate-btn').textContent === 'Click to pick up your bat');
+    await widePage.locator('#gate-btn').click();
+    await widePage.waitForFunction(() => {
+      const live = window.__test.state();
+      return live.phase === 'incoming' && live.ball.y > 0.25 && live.ball.z < 2.35 && live.ball.z > 1.05;
+    });
+    await widePage.screenshot({ path: path.join(shots, 'pingpong-w2560-rally.png') });
+    await wide.close();
 
     const phone = await browser.newContext({
       viewport: { width: 390, height: 844 },

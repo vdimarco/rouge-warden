@@ -181,7 +181,10 @@ function loop(now) {
     fpsStamp = now;
     if (fps > 0 && fps < 60) lowFps += 1;
     else lowFps = 0;
-    if (lowFps >= 3) view.setDprCap(1.5);
+    if (lowFps >= 3) {
+      view.setTrailCap(2);
+      view.setDprCap(1.5);
+    }
   }
   requestAnimationFrame(loop);
 }
