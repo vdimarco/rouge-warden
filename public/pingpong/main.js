@@ -1,7 +1,7 @@
 // Boots the table, the gate, motion, swipe, mouse and the test hooks.
 
 import { desktopCourt, unlockCourt } from './gate.js';
-import { aimFromCanvas, assistX, batFromTilt, createPhoneTravel, phoneAcceleration, headingDelta, createSwingDetector, depthWithBounce, driftNeutral, flickFromSamples, leanFromCanvas, mapAxes, predictBounceZ, sideTarget, springStep, swipeToSwing, swingPush } from './motion.js';
+import { aimFromCanvas, assistX, batFromTilt, createPhoneTravel, phoneAcceleration, headingDelta, createSwingDetector, depthWithBounce, driftNeutral, flickFromSamples, leanFromCanvas, mapAxes, predictBounceZ, springStep, swipeToSwing, swingPush, trackIncomingX } from './motion.js';
 import { BAT, RULES, planFrame, readOptions } from './rules.js';
 import { createMatch } from './sim.js';
 import { createSoundKit } from './audio.js';
@@ -121,7 +121,7 @@ function followAngle(targetX, targetY, dt) {
 
 function followPointer(dt) {
   const live = match.state();
-  sideSpring = springStep(sideSpring, sideTarget(live.phase, live.ball.x), dt);
+  sideSpring = trackIncomingX(sideSpring, live.ball.x, live.phase, dt);
   leanSpring = springStep(leanSpring, leanFromCanvas(aimV), dt);
   const depth = batFromTilt(0, leanSpring.x).depth;
   pose.tiltX = aimFromCanvas(aimU);
@@ -181,10 +181,7 @@ function loop(now) {
     fpsStamp = now;
     if (fps > 0 && fps < 60) lowFps += 1;
     else lowFps = 0;
-    if (lowFps >= 3) {
-      view.setTrailCap(2);
-      view.setDprCap(1.5);
-    }
+    if (lowFps >= 3) view.setDprCap(1.5);
   }
   requestAnimationFrame(loop);
 }

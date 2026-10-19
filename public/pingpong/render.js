@@ -543,12 +543,6 @@ export function createView(canvas) {
     const land = state.lastLanding;
     if (!splat || !land || land.t === splatSeen) return;
     const g = splat.getContext('2d');
-    if (splatFading) {
-      g.setTransform(1, 0, 0, 1, 0, 0);
-      g.clearRect(0, 0, splat.width, splat.height);
-      splatMarks = 0;
-      splatFading = false;
-    }
     splatSeen = land.t;
     g.setTransform(dpr, 0, 0, dpr, 0, 0);
     const at = project(land.x, 0, land.z, w, h);
@@ -558,7 +552,7 @@ export function createView(canvas) {
     g.beginPath();
     g.ellipse(at.x, at.y, Math.max(4, 8 * at.s), Math.max(2, 3.4 * at.s), 0.3, 0, Math.PI * 2);
     g.fill();
-    splatFade = 1;
+    if (!splatFading) splatFade = 1;
     splatMarks += 1;
   }
 
@@ -567,7 +561,8 @@ export function createView(canvas) {
     const ending = state.phase === 'pause' || state.phase === 'gameover';
     if (ending && splatFade > 0) splatFading = true;
     if (splatFading) {
-      splatFade = Math.max(0, splatFade - (1 / 60) / 0.6);
+      // Four seconds carries the ink through the next point, then it is gone.
+      splatFade = Math.max(0, splatFade - (1 / 60) / 4);
       if (splatFade < 1e-4 && splat) {
         splatFade = 0;
         const g = splat.getContext('2d');
@@ -579,7 +574,7 @@ export function createView(canvas) {
     }
     if (!(splatFade > 0) || !splat) return;
     ctx.save();
-    ctx.globalAlpha = splatFade * 0.25;
+    ctx.globalAlpha = splatFade * 0.24;
     ctx.drawImage(splat, 0, 0, w, h);
     ctx.restore();
   }
@@ -610,19 +605,15 @@ export function createView(canvas) {
     ctx.rotate(slash.dir * 0.5);
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
-    ctx.globalAlpha = alpha;
-    ctx.strokeStyle = INK;
-    ctx.lineWidth = 9;
-    brush(ctx, slash.len);
     if (slash.perfect) {
       ctx.globalAlpha = alpha * 0.95;
       ctx.strokeStyle = GOLD;
-      ctx.lineWidth = 6.5;
-      brush(ctx, slash.len);
+      ctx.lineWidth = 7;
+      brush(ctx, slash.len + 4);
     }
     ctx.globalAlpha = alpha;
     ctx.strokeStyle = slash.color;
-    ctx.lineWidth = 3.6;
+    ctx.lineWidth = 3.2;
     brush(ctx, slash.len);
     ctx.restore();
   }

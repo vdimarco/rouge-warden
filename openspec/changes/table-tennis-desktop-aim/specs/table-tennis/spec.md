@@ -48,36 +48,38 @@ A flick SHALL be pointer speed over 60 ms, using coalesced pointermove samples, 
 - AND a flick of at least 1.2 window widths per second inside ±200 ms still wins that point
 
 ### Requirement: Flick curve sets spin
-Spin SHALL come from the change in direction across the flick, not from the first heading and not from the chord between the first and last sample. A change of 20 degrees or more upward SHALL be topspin. The same change downward SHALL be backspin. A flatter change, including a straight flick, SHALL add no spin.
+Spin SHALL compare the stroke direction in the first 50 ms with the direction in the last 50 ms before peak speed. A bend of 20 degrees or more upward SHALL be topspin. The same bend downward SHALL be backspin. A straight diagonal flick of 20 degrees or more SHALL also count, upward as topspin and downward as backspin. A flatter bend and a flatter diagonal SHALL add no spin.
 
-#### Scenario: A curve, not the first heading
-- WHEN a flick's heading changes by 20 degrees up, 10 degrees up, or 20 degrees down, and a separate straight flick points 20 degrees up
-- THEN the spin is topspin, none, backspin, and none
+#### Scenario: A bend and a straight diagonal
+- WHEN a flick's heading changes by 20 degrees up, 10 degrees up, or 20 degrees down, and separate straight flicks point 20 degrees up, 10 degrees up, and 20 degrees down
+- THEN the spin is topspin, none, backspin, topspin, none, and backspin
 
 ### Requirement: Ink clears and stays light
-A table splat SHALL fade to 0 and then be cleared. The same mark SHALL NOT be drawn again when the next countdown starts. Overlapping splats SHALL stay at or under 25% opacity together. The ink slash for a push, a drive, and a smash SHALL be drawn above the bat. `__test.lastSlash` SHALL be the latest slash, and `__test.splatCount` SHALL be how many splat marks are still on the table.
+A table splat SHALL fade to 0 across the next point and then be cleared. It SHALL NOT return to full opacity when the next countdown starts or when another mark is added. Overlapping splats SHALL stay under 25% opacity together, and marks SHALL be kept rather than wiped to reduce that overlap. The ink slash for a push, a drive, and a smash SHALL be drawn after the bat at the same stroke size as before. `__test.lastSlash` SHALL be the latest slash, and `__test.splatCount` SHALL be how many splat marks are still on the table.
 
-#### Scenario: Fade out before the next point
-- WHEN a point ends and the countdown for the next point begins
-- THEN any splat has faded to 0 and the table ink is clear
-- AND a later landing does not bring the old mark back
+#### Scenario: Fade across the next point
+- WHEN a point ends and the next point is played
+- THEN the splat fades toward 0 through that point and does not jump back to full
+- AND once it reaches 0 the ink is clear
 
 #### Scenario: Two marks overlap
 - WHEN two splats cover the same pixel
-- THEN that pixel is at most 25% opaque
+- THEN that pixel is under 25% opaque
 
 #### Scenario: Slash over the bat
 - WHEN the player hits a push, a drive, or a smash
 - THEN the slash is visible over the bat
+- AND the stroke is the same size as before the draw-order change
 - AND `__test.lastSlash.kind` names that shot
 - AND `__test.splatCount` is 0 once the ink has cleared
 
-### Requirement: Side reach stays 0.22 m
-A ball whose centre is 0.20 m to the side of the bat SHALL still be in reach, including a swing 9 ms early. A centre 0.23 m to the side SHALL miss for reach. The depth reach stays 0.5 m.
+### Requirement: A swing inside the window connects
+Any swing inside the ±120 ms window SHALL connect. A miss for reach inside that window is a bug. Desktop auto-track SHALL keep the bat within the 0.22 m side reach of the incoming ball.
 
-#### Scenario: Just inside and just outside
-- WHEN the bat is at the middle and the ball is 0.20 m aside, then 0.23 m aside, and the swing is 9 ms early
-- THEN the first swing connects and the second misses for reach
+#### Scenario: Early and wide still meet
+- WHEN the swing is 9 ms early with the ball 0.20 m aside, and again 9 ms early with the ball 0.23 m aside, and again at 120 ms early
+- THEN each swing connects
+- AND auto-track stays inside the side reach when the ball jumps sideways
 
 ### Requirement: A browser without coarse touch is a desktop
 A fine pointer SHALL select mouse mode, including when the browser also reports touch points. A page with no coarse pointer and no touch points SHALL show the desktop gate, including when the pointer is none and DeviceMotionEvent exists. A coarse pointer, or touch with no fine pointer, SHALL keep the phone gate. The first trusted mouse move SHALL switch a phone gate to mouse mode. A touch-generated move SHALL NOT switch it. After the gate click at 1280, the test state SHALL report inputMode mouse.

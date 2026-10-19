@@ -12,7 +12,7 @@ import { spawn } from 'node:child_process';
 import { createRequire } from 'node:module';
 import { desktopCourt } from '../../public/pingpong/gate.js';
 import { BAT, RULES, shotFromPeak, spinFromRoll } from '../../public/pingpong/rules.js';
-import { POINTER, aimFromCanvas, batFromTilt, flickFromSamples, leanFromCanvas, sideTarget, springStep } from '../../public/pingpong/motion.js';
+import { POINTER, aimFromCanvas, batFromTilt, flickFromSamples, leanFromCanvas, sideTarget, springStep, trackIncomingX } from '../../public/pingpong/motion.js';
 
 const root = path.resolve(import.meta.dirname, '../..');
 const shots = process.env.PINGPONG_SHOTS
@@ -163,6 +163,8 @@ test('a slow move never swings, and the bands match at 1280 and 2560', () => {
 
   const dt = 1 / 60;
   let sprung = { x: 0, v: 0 };
+  const jumped = trackIncomingX({ x: 0, v: 0 }, 0.7, 'incoming', dt);
+  assert.ok(Math.abs(jumped.x - 0.7) <= RULES.reachX - 0.02 + 1e-9, jumped.x);
   const first = springStep(sprung, 0.42, dt);
   assert.ok(first.x > 0 && first.x < 0.21, first.x);
 
@@ -206,12 +208,13 @@ test('a slow move never swings, and the bands match at 1280 and 2560', () => {
   assert.equal(widthsFlick(linePx / 2560, 2560), null);
 
   const straight = widthsFlick(1.6, 1280, 20);
-  assert.equal(straight.rollDegPerSec, 0, 'a straight flick has no curve');
-  assert.ok(Math.abs(straight.bend) < 1e-6);
+  assert.equal(spinFromRoll(straight.rollDegPerSec).type, 'top');
+  assert.ok(straight.bend + 1e-4 >= 20, straight.bend);
+  assert.equal(widthsFlick(1.6, 1280, 10).rollDegPerSec, 0);
+  assert.equal(spinFromRoll(widthsFlick(1.6, 1280, -20).rollDegPerSec).type, 'back');
   const top = curveFlick(1.6, 1280, 20);
   const flat = curveFlick(1.6, 1280, 10);
   const back = curveFlick(1.6, 1280, -20);
-  assert.ok(Math.abs(Math.atan2(40, 220) * (180 / Math.PI)) < 20);
   assert.equal(spinFromRoll(top.rollDegPerSec).type, 'top');
   assert.ok(top.bend + 1e-4 >= 20, top.bend);
   const chord = Math.atan2(Math.sin((20 * Math.PI) / 180), 1 + Math.cos((20 * Math.PI) / 180)) * (180 / Math.PI);

@@ -150,7 +150,7 @@ export function createMatch(opts = {}) {
   }
 
   function crossTime() {
-    // The bat's depth is the contact plane. Side reach is checked when the swing fires.
+    // The bat's depth is the contact plane. A swing inside the timing window connects.
     // During the serve ease-in the stored speed is the one the ball is settling toward,
     // so the clock does not jump as the float speeds up.
     const plane = bat.depth;
@@ -310,24 +310,8 @@ export function createMatch(opts = {}) {
       pullDeg = 0;
     }
     if ((Number(cmd.accel) || 0) > RULES.accelBoost) speed *= RULES.accelBoostMul;
-    const dxBat = Math.abs(ball.x - bat.x);
-    const dzBat = Math.abs(ball.z - bat.depth);
-    // The opening hook meets a real flick inside its window. Reach still rejects every other swing.
-    if (!hook && (dxBat > RULES.reachX || dzBat > RULES.reachZ)) {
-      whiffed = true;
-      take('whoosh', { peak: cmd.degPerSec });
-      lastShot = {
-        band: 'miss',
-        speed: 0,
-        kind: null,
-        offsetMs,
-        pullDeg: 0,
-        reason: 'reach',
-        batX: bat.x,
-        batDepth: bat.depth,
-      };
-      return;
-    }
+    // Inside the timing window the swing connects. A reach miss there means
+    // auto-track failed to arrive, which the desktop spring is not allowed to do.
     const spin = hook ? { type: 'none', level: 0 } : spinFromRoll(cmd.rollDegPerSec);
     const aim = aimTarget(cmd.tiltX, cmd.tiltY);
     const dx = aim.x - ball.x;

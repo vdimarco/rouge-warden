@@ -21,3 +21,7 @@
 - [x] Draw the ink slash above the bat, and expose `__test.lastSlash` and `__test.splatCount`.
 - [x] Let `desktop.test.mjs` pick a free port and a temp or relative artifacts folder.
 - [x] Cap a 2560-wide backing store at 2560 px and record the frame rate under 4x CPU throttle.
+- [x] Count a straight diagonal of 20 degrees as spin, and a 20 degree bend between the first 50 ms and the last 50 ms before peak speed.
+- [x] Connect every swing inside ±120 ms, and keep desktop auto-track inside the side reach.
+- [x] Fade splats to 0 across the next point without restoring them, and keep overlap under 25%.
+- [x] Draw the slash after the bat without enlarging the stroke. Lower the backing store on a slow frame rate and leave the trail alone.
