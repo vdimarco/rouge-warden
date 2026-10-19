@@ -8,48 +8,64 @@
    "mesh": "SM_Plex_BrickBrownDark_XM001_YM002",
    "material": "Brick_BrownDark",
    "collision": "none",
-   "triangles": 178,
+   "triangles": 710,
    "bounds_cm": [
-    -13057.961,
-    -15621.39,
+    -14427.475,
+    -28843.012,
     0.0,
-    -11830.259,
+    -1619.864,
     -14297.941,
     1200.0
    ],
-   "sha256": "9090117389f9a7af31f3a0ef99f5a2a750be09ec8680dd1c592b3ed21e1ddc8c"
+   "sha256": "40db8cf1ecc82ee9625b9efc9d998601849c96d1fa79b0e8d2b5b3ad4ee646ac"
   },
   {
    "file": "BrickBrownDark_XM001_YM003.obj",
    "mesh": "SM_Plex_BrickBrownDark_XM001_YM003",
    "material": "Brick_BrownDark",
    "collision": "none",
-   "triangles": 354,
+   "triangles": 730,
    "bounds_cm": [
-    -10375.865,
-    -42385.965,
+    -14283.465,
+    -42749.44,
     0.0,
-    -7679.541,
-    -40372.34,
+    -4131.94,
+    -28642.636,
     1132.0
    ],
-   "sha256": "ed8cb9cf63b6b36ac72bc4182e85b629b3635bcf98f22bdea16c8a5f8dad7479"
+   "sha256": "b0e07b2b16574001b09ff341e8f309903b43d45247b732decc14c770c46fe059"
+  },
+  {
+   "file": "BrickBrownDark_XM001_YM004.obj",
+   "mesh": "SM_Plex_BrickBrownDark_XM001_YM004",
+   "material": "Brick_BrownDark",
+   "collision": "none",
+   "triangles": 20,
+   "bounds_cm": [
+    -14162.191,
+    -42839.211,
+    0.0,
+    -14010.403,
+    -42739.227,
+    1073.0
+   ],
+   "sha256": "05d8954de7208ab7cb8a96bbccedb7ec68bcea9a3e5a507634b0cebfab7a43b6"
   },
   {
    "file": "BrickBrownDark_XM001_YP003.obj",
    "mesh": "SM_Plex_BrickBrownDark_XM001_YP003",
    "material": "Brick_BrownDark",
    "collision": "none",
-   "triangles": 98,
+   "triangles": 204,
    "bounds_cm": [
-    -6930.242,
+    -9285.557,
     50908.723,
     0.0,
     -5251.105,
-    52576.436,
+    56587.265,
     1147.0
    ],
-   "sha256": "8920b57017ce37c18e4a074d0daedd2d207c73938481d374f02ab4c6c0b39733"
+   "sha256": "30d9cc77e3704b8c63673118fc931dcee21159956c1809f18dc24e3ed98be326"
   },
   {
    "file": "BrickBrownDark_XM001_YP004.obj",
@@ -72,144 +88,224 @@
    "mesh": "SM_Plex_BrickBrownDark_XM002_YM001",
    "material": "Brick_BrownDark",
    "collision": "none",
-   "triangles": 762,
+   "triangles": 1032,
    "bounds_cm": [
-    -23496.28,
+    -28537.529,
     -14139.832,
     0.0,
     -20770.448,
     -11286.751,
     1382.0
    ],
-   "sha256": "58f55a785de06859e1690b2feb727592a668ddb39a81415688e105c9a13e0569"
+   "sha256": "43b68adff4676be048a33c28ec411766b3ee9b271e434129179dab72ee8e9817"
   },
   {
    "file": "BrickBrownDark_XM002_YM002.obj",
    "mesh": "SM_Plex_BrickBrownDark_XM002_YM002",
    "material": "Brick_BrownDark",
    "collision": "none",
-   "triangles": 872,
+   "triangles": 1406,
    "bounds_cm": [
     -28501.751,
-    -26584.432,
+    -28600.334,
     0.0,
-    -17599.081,
-    -17710.904,
-    1362.0
+    -13992.911,
+    -16201.513,
+    1493.0
    ],
-   "sha256": "cc752a134fb1a557a979a21d3bdd95d2957e425ece8f4fae2f9d5b6e8e1c87c8"
+   "sha256": "657de93dab295f725f242ec94dee55ed5c9e85feafd1c71cfa95f5bc1b725dca"
   },
   {
    "file": "BrickBrownDark_XM002_YM003.obj",
    "mesh": "SM_Plex_BrickBrownDark_XM002_YM003",
    "material": "Brick_BrownDark",
    "collision": "none",
-   "triangles": 144,
+   "triangles": 1588,
    "bounds_cm": [
-    -19148.244,
-    -33135.511,
+    -28517.997,
+    -42839.211,
     0.0,
-    -17963.572,
-    -31918.633,
-    1382.0
+    -14010.403,
+    -28483.061,
+    1453.0
    ],
-   "sha256": "04ec740136009f5fd5cdb00f5405ae4b6c9d3c0b4ca0db7a88c0e48aed727775"
+   "sha256": "cba103d81d8db548de6ec984bf55c7051050f1706fd37d37fc739c884022782e"
+  },
+  {
+   "file": "BrickBrownDark_XM002_YM004.obj",
+   "mesh": "SM_Plex_BrickBrownDark_XM002_YM004",
+   "material": "Brick_BrownDark",
+   "collision": "none",
+   "triangles": 254,
+   "bounds_cm": [
+    -28661.534,
+    -46322.478,
+    0.0,
+    -14018.805,
+    -42455.222,
+    1134.0
+   ],
+   "sha256": "8d90cdfc14fbbc035780a51b663cd1653ee07a5ed2fc8966559352cd876d8a0d"
+  },
+  {
+   "file": "BrickBrownDark_XM002_YP002.obj",
+   "mesh": "SM_Plex_BrickBrownDark_XM002_YP002",
+   "material": "Brick_BrownDark",
+   "collision": "none",
+   "triangles": 320,
+   "bounds_cm": [
+    -28507.528,
+    38249.456,
+    0.0,
+    -21578.43,
+    42938.35,
+    1101.0
+   ],
+   "sha256": "c4eb3b4913fd7ad1c44d6af305cb454df860a20b3765391207004922ac171a75"
+  },
+  {
+   "file": "BrickBrownDark_XM002_YP003.obj",
+   "mesh": "SM_Plex_BrickBrownDark_XM002_YP003",
+   "material": "Brick_BrownDark",
+   "collision": "none",
+   "triangles": 824,
+   "bounds_cm": [
+    -27647.656,
+    42392.882,
+    0.0,
+    -14695.763,
+    56641.842,
+    1116.0
+   ],
+   "sha256": "98808e9c616398815de80d6a9d6eca33cd60dfa8f36d0ddbf00bdd0beba9f86b"
   },
   {
    "file": "BrickBrownDark_XM002_YP004.obj",
    "mesh": "SM_Plex_BrickBrownDark_XM002_YP004",
    "material": "Brick_BrownDark",
    "collision": "none",
-   "triangles": 638,
+   "triangles": 668,
    "bounds_cm": [
-    -17833.323,
+    -28535.166,
     58572.131,
     0.0,
     -13810.439,
     66240.966,
     1510.0
    ],
-   "sha256": "729d0e52cc45388caa42f58ac6ed9283f0b9ae529e0930b506304b5344678f28"
+   "sha256": "2b99e562a85328977185f4a3b0d791e840494079530f9ed68f044267fdfadc9d"
   },
   {
    "file": "BrickBrownDark_XM003_YM001.obj",
    "mesh": "SM_Plex_BrickBrownDark_XM003_YM001",
    "material": "Brick_BrownDark",
    "collision": "none",
-   "triangles": 440,
+   "triangles": 554,
    "bounds_cm": [
     -38091.482,
-    -4672.178,
+    -13809.246,
     0.0,
-    -34722.96,
+    -28202.949,
     -1800.044,
     1117.0
    ],
-   "sha256": "547c5cf24a3d76b3c2cfc2584cf809aa2d93cdae2741b6f5ad2ab29525df8fdd"
+   "sha256": "204a36a30adf00635530187c3a0c109ef9dd427c4100f2d36ccdc4ec300edbb1"
   },
   {
    "file": "BrickBrownDark_XM003_YM002.obj",
    "mesh": "SM_Plex_BrickBrownDark_XM003_YM002",
    "material": "Brick_BrownDark",
    "collision": "none",
-   "triangles": 346,
+   "triangles": 1126,
    "bounds_cm": [
-    -30249.327,
-    -18592.873,
+    -41439.777,
+    -28357.629,
     0.0,
     -28459.225,
     -16497.624,
-    1082.0
+    1540.0
    ],
-   "sha256": "b27e693439d2fda5e5911a0f8b306f7c9e23bea8097744a5aa5fe0935b438932"
+   "sha256": "bb51ca562b55d0cfc4b91072f17fc5a494a4ee2db1367a61a2d0272de20fcdb7"
   },
   {
    "file": "BrickBrownDark_XM003_YM003.obj",
    "mesh": "SM_Plex_BrickBrownDark_XM003_YM003",
    "material": "Brick_BrownDark",
    "collision": "none",
-   "triangles": 1404,
+   "triangles": 1578,
    "bounds_cm": [
     -39602.611,
-    -40656.29,
+    -41470.327,
     0.0,
-    -33507.088,
-    -31736.526,
+    -28511.003,
+    -29528.804,
     1200.0
    ],
-   "sha256": "c0128f643f8f4a99ae95dc35fec5a4fed79c9b8195bfd64eec510a0ca299e6b6"
+   "sha256": "3273b0435bed5375631269b3b71786979a41ea68b25bd6de1182575e5b9878ea"
+  },
+  {
+   "file": "BrickBrownDark_XM003_YM004.obj",
+   "mesh": "SM_Plex_BrickBrownDark_XM003_YM004",
+   "material": "Brick_BrownDark",
+   "collision": "none",
+   "triangles": 146,
+   "bounds_cm": [
+    -36530.945,
+    -46322.478,
+    0.0,
+    -28435.361,
+    -42695.673,
+    1124.0
+   ],
+   "sha256": "0cbc3d38ccbda5ed9a66feb7761802589dc8685d95c035e343b29e97402f52aa"
+  },
+  {
+   "file": "BrickBrownDark_XM003_YP000.obj",
+   "mesh": "SM_Plex_BrickBrownDark_XM003_YP000",
+   "material": "Brick_BrownDark",
+   "collision": "none",
+   "triangles": 142,
+   "bounds_cm": [
+    -37462.149,
+    12053.685,
+    0.0,
+    -35708.761,
+    14172.149,
+    1111.0
+   ],
+   "sha256": "f981c3b15df6180c969a05a41890a3955e8b4ed28fb5ed7e381dbad1a93e4fb1"
   },
   {
    "file": "BrickBrownDark_XM003_YP001.obj",
    "mesh": "SM_Plex_BrickBrownDark_XM003_YP001",
    "material": "Brick_BrownDark",
    "collision": "none",
-   "triangles": 412,
+   "triangles": 652,
    "bounds_cm": [
     -41583.791,
     15500.197,
     0.0,
-    -32320.8,
-    22913.183,
+    -28469.677,
+    28489.014,
     1493.0
    ],
-   "sha256": "ba8d39e86f6461778424ae80345dee4fa6f3bd0a6925d7575935df366b062a44"
+   "sha256": "c1ffd7563e8cc746c81e6f201afac0bd3559742bca56908e37fdf5ab11179896"
   },
   {
    "file": "BrickBrownDark_XM003_YP002.obj",
    "mesh": "SM_Plex_BrickBrownDark_XM003_YP002",
    "material": "Brick_BrownDark",
    "collision": "none",
-   "triangles": 140,
+   "triangles": 372,
    "bounds_cm": [
-    -42596.991,
-    34918.776,
+    -42751.296,
+    28330.94,
     0.0,
-    -41044.096,
-    36763.43,
-    1103.0
+    -28500.782,
+    41624.806,
+    1180.0
    ],
-   "sha256": "c1968f309ef184c8b825ec3ed920583883f90aba0c39b8d643e790ffb3b41dff"
+   "sha256": "166d74d603ef5ec2e82d17e0e32bd150608bf0abeb6feb9d47326e5754b18608"
   },
   {
    "file": "BrickBrownDark_XM003_YP003.obj",
@@ -232,16 +328,32 @@
    "mesh": "SM_Plex_BrickBrownDark_XM003_YP004",
    "material": "Brick_BrownDark",
    "collision": "none",
-   "triangles": 1734,
+   "triangles": 1800,
    "bounds_cm": [
     -42837.879,
     56998.953,
     0.0,
-    -33555.442,
+    -28338.127,
     67769.39,
     1230.0
    ],
-   "sha256": "79cd9a004b338c26e60168bfc9625478fc0e5a3bf385997767ab94cf34af95c0"
+   "sha256": "7cac57144efa712105951ae36a039a191907be8c3e91d783a21b04e4bec2b565"
+  },
+  {
+   "file": "BrickBrownDark_XM004_YP002.obj",
+   "mesh": "SM_Plex_BrickBrownDark_XM004_YP002",
+   "material": "Brick_BrownDark",
+   "collision": "none",
+   "triangles": 234,
+   "bounds_cm": [
+    -43288.021,
+    35317.568,
+    0.0,
+    -42353.007,
+    37228.592,
+    1180.0
+   ],
+   "sha256": "ebe136364e7737fa35f7ceeec2dc5b1e28ad705bdfc643cc5cbfa79de490f321"
   },
   {
    "file": "BrickBrownDark_XM004_YP003.obj",
@@ -276,36 +388,132 @@
    "sha256": "d05a8aa80740309afac01a1935d9d38ffaacaada95ec0648d196c7b39ae6dcb8"
   },
   {
+   "file": "BrickBrownDark_XP000_YM002.obj",
+   "mesh": "SM_Plex_BrickBrownDark_XP000_YM002",
+   "material": "Brick_BrownDark",
+   "collision": "none",
+   "triangles": 108,
+   "bounds_cm": [
+    266.191,
+    -28504.226,
+    0.0,
+    1851.001,
+    -27276.74,
+    1102.0
+   ],
+   "sha256": "9b629713b556e1df846b6866a5eda0bd366e472871cff960c5444be78fadc823"
+  },
+  {
    "file": "BrickBrownDark_XP000_YM003.obj",
    "mesh": "SM_Plex_BrickBrownDark_XP000_YM003",
    "material": "Brick_BrownDark",
    "collision": "none",
-   "triangles": 144,
+   "triangles": 494,
    "bounds_cm": [
-    7308.496,
-    -38625.814,
+    290.313,
+    -43094.198,
     0.0,
-    9219.393,
-    -35820.485,
+    10417.218,
+    -28271.94,
     1103.0
    ],
-   "sha256": "05dd76a47108759bb47748df7075135bcaf5d916c732d875105796660dd43382"
+   "sha256": "74d237bb9f1e57b713b6bab8ac8c88799ed65d7123ddaafd5af9ba31e439e66f"
   },
   {
    "file": "BrickBrownDark_XP000_YM004.obj",
    "mesh": "SM_Plex_BrickBrownDark_XP000_YM004",
    "material": "Brick_BrownDark",
    "collision": "none",
-   "triangles": 162,
+   "triangles": 168,
    "bounds_cm": [
-    11480.743,
+    2556.531,
     -45174.755,
     0.0,
     13481.449,
     -42737.974,
     1185.0
    ],
-   "sha256": "f7f6b3343aa0fa4f8b10f49c8c7807f465a95af21f9b9f68bb591d6729bf4f96"
+   "sha256": "8f82449b01a7b8e0b9cdac871778028e16707872b3d9c764f4d7daa353e236f5"
+  },
+  {
+   "file": "BrickBrownDark_XP001_YM003.obj",
+   "mesh": "SM_Plex_BrickBrownDark_XP001_YM003",
+   "material": "Brick_BrownDark",
+   "collision": "none",
+   "triangles": 108,
+   "bounds_cm": [
+    19989.762,
+    -37345.995,
+    0.0,
+    22319.871,
+    -35709.23,
+    1106.0
+   ],
+   "sha256": "08053ad3f63d3b44e7909f3f04ca4ecc72884b00540d40fec09b1a1a95480e56"
+  },
+  {
+   "file": "BrickBrownDark_XP001_YP003.obj",
+   "mesh": "SM_Plex_BrickBrownDark_XP001_YP003",
+   "material": "Brick_BrownDark",
+   "collision": "none",
+   "triangles": 444,
+   "bounds_cm": [
+    24200.581,
+    53487.034,
+    0.0,
+    27704.801,
+    56418.992,
+    1148.0
+   ],
+   "sha256": "a7c853e095cee9bbc7c294f8a1a9eef8d84dd609626c29861b1d4c93d23bbd86"
+  },
+  {
+   "file": "BrickBrownDark_XP002_YP003.obj",
+   "mesh": "SM_Plex_BrickBrownDark_XP002_YP003",
+   "material": "Brick_BrownDark",
+   "collision": "none",
+   "triangles": 238,
+   "bounds_cm": [
+    29473.415,
+    50086.208,
+    0.0,
+    33473.048,
+    53311.234,
+    1220.0
+   ],
+   "sha256": "8907b921102566168c16f85f1f7f2844d2b2c84ac95fc0c08a281279a72055a3"
+  },
+  {
+   "file": "BrickBrownDark_XP002_YP004.obj",
+   "mesh": "SM_Plex_BrickBrownDark_XP002_YP004",
+   "material": "Brick_BrownDark",
+   "collision": "none",
+   "triangles": 536,
+   "bounds_cm": [
+    29772.077,
+    62508.406,
+    0.0,
+    40276.669,
+    66951.188,
+    1128.0
+   ],
+   "sha256": "04c1e16726b8ca261f3b73ee0ce58c517a659d0291b8c330bf91214df34cfca5"
+  },
+  {
+   "file": "BrickBrownDark_XP003_YM003.obj",
+   "mesh": "SM_Plex_BrickBrownDark_XP003_YM003",
+   "material": "Brick_BrownDark",
+   "collision": "none",
+   "triangles": 558,
+   "bounds_cm": [
+    47525.763,
+    -36066.628,
+    0.0,
+    51819.354,
+    -30919.154,
+    1088.0
+   ],
+   "sha256": "c52757b4befeff48050a47670f588f649638f95ea9c37fb7e5adbb75c570f6b3"
   },
   {
    "file": "BrickBrownDark_XP003_YP001.obj",
@@ -344,176 +552,176 @@
    "mesh": "SM_Plex_BrickBrownDark_XP003_YP003",
    "material": "Brick_BrownDark",
    "collision": "none",
-   "triangles": 1414,
+   "triangles": 1704,
    "bounds_cm": [
-    45448.223,
+    43427.488,
     45223.699,
     0.0,
     54921.146,
     56676.05,
     1200.0
    ],
-   "sha256": "d7154d07674f8e9da1b43ee299e93d89a26b07ae72bb3ef22bc49a8aea27551f"
+   "sha256": "e3d52925d24d1120490a89440acefa99d1c35948f6e5bf1138d761447bf30d98"
   },
   {
    "file": "BrickBrownDark_XP003_YP004.obj",
    "mesh": "SM_Plex_BrickBrownDark_XP003_YP004",
    "material": "Brick_BrownDark",
    "collision": "none",
-   "triangles": 310,
+   "triangles": 398,
    "bounds_cm": [
-    48372.87,
-    59682.143,
+    43477.402,
+    57394.366,
     0.0,
     50801.577,
     61434.168,
     1117.0
    ],
-   "sha256": "2f0dc3c7118a1e9e4dc752a5d19102c580f989e72c673ecc4c13ca5be9077f45"
+   "sha256": "5448e31e14cf6a3ba932e3b88293f97a73258ca307574fb157b22352729eec12"
   },
   {
    "file": "BrickBrown_XM001_YM002.obj",
    "mesh": "SM_Plex_BrickBrown_XM001_YM002",
    "material": "Brick_Brown",
    "collision": "none",
-   "triangles": 1128,
+   "triangles": 1086,
    "bounds_cm": [
     -14673.925,
-    -28843.012,
+    -28642.636,
     0.0,
-    -1619.864,
-    -15579.364,
-    1336.0
+    -4151.814,
+    -14651.688,
+    1463.0
    ],
-   "sha256": "0ac0bf659c8401db82479ac42235cff59b63f7d16372cdc544417e9b60600efe"
+   "sha256": "aaced2b3ef8eccb94805721adbb97b8c332c1ed46862facc097b98bcd1aa1cc4"
   },
   {
    "file": "BrickBrown_XM001_YM003.obj",
    "mesh": "SM_Plex_BrickBrown_XM001_YM003",
    "material": "Brick_Brown",
    "collision": "none",
-   "triangles": 2152,
+   "triangles": 3242,
    "bounds_cm": [
-    -14283.465,
-    -42749.44,
+    -14447.158,
+    -42878.336,
     0.0,
-    0.0,
+    -25.326,
     -28367.676,
     1465.0
    ],
-   "sha256": "4cd59216cd50be36ab1b28f0a167c99f49afb9a1678edbadec53b7cbd4f50d42"
+   "sha256": "92d836875537d16779e4515b3a273be04ccd23ad74608eba91d5f2db29bf56c5"
   },
   {
    "file": "BrickBrown_XM001_YM004.obj",
    "mesh": "SM_Plex_BrickBrown_XM001_YM004",
    "material": "Brick_Brown",
    "collision": "none",
-   "triangles": 20,
+   "triangles": 348,
    "bounds_cm": [
-    -14162.191,
-    -42839.211,
+    -14716.82,
+    -46188.972,
     0.0,
-    -14010.403,
-    -42739.227,
-    1073.0
+    -1486.3,
+    -42762.579,
+    1083.0
    ],
-   "sha256": "df00053fbc3ce4a5562aaa1556e04fdb6a768fc33b0a46284c8f299bc37ed05e"
+   "sha256": "3614309b3353937c2a79b94154143686ffadb9b5b8d712a04f1e7046e7629d0c"
   },
   {
    "file": "BrickBrown_XM001_YP003.obj",
    "mesh": "SM_Plex_BrickBrown_XM001_YP003",
    "material": "Brick_Brown",
    "collision": "none",
-   "triangles": 244,
+   "triangles": 638,
    "bounds_cm": [
-    -9285.557,
-    54127.124,
+    -14274.213,
+    50634.927,
     0.0,
     -7435.317,
-    56587.265,
-    1086.0
+    57178.405,
+    1133.0
    ],
-   "sha256": "23c9c29de7b243da06044dc2ee14a7dc30e21ae37fa2d1994d2e559f71c6cf4f"
+   "sha256": "f8732d81d50656cd0d711d315910b882b9862cce89a71a20ce63423d6e47f0ea"
   },
   {
    "file": "BrickBrown_XM001_YP004.obj",
    "mesh": "SM_Plex_BrickBrown_XM001_YP004",
    "material": "Brick_Brown",
    "collision": "none",
-   "triangles": 756,
+   "triangles": 1616,
    "bounds_cm": [
-    -11901.029,
-    60107.23,
+    -14478.169,
+    56786.558,
     0.0,
-    -7015.861,
+    -2007.291,
     68500.865,
-    1131.0
+    1426.0
    ],
-   "sha256": "fce96cc30c6ab8aacbd262fb723a9a22a33ade2e6e49917ec86139824a17ecff"
+   "sha256": "46c0ddbf0c4a6ed1f56e24485e529d7e6c7a6e2399542be5796bf9913b3ee9cd"
   },
   {
    "file": "BrickBrown_XM002_YM001.obj",
    "mesh": "SM_Plex_BrickBrown_XM002_YM001",
    "material": "Brick_Brown",
    "collision": "none",
-   "triangles": 1226,
+   "triangles": 1620,
    "bounds_cm": [
-    -28537.529,
-    -13520.822,
+    -27925.031,
+    -11927.938,
     0.0,
     -20049.815,
-    -8669.754,
+    -7971.625,
     1428.0
    ],
-   "sha256": "e35c00e7ad787f8577da7a429e31ba0be6eea9db453fbf1176c7ed13c6e78062"
+   "sha256": "45f14c6d02ba13f88203b26173b0b3f13ef29b937d324dce4841176531e7a310"
   },
   {
    "file": "BrickBrown_XM002_YM002.obj",
    "mesh": "SM_Plex_BrickBrown_XM002_YM002",
    "material": "Brick_Brown",
    "collision": "none",
-   "triangles": 1260,
+   "triangles": 1738,
    "bounds_cm": [
     -28625.658,
-    -28896.793,
+    -29116.859,
     0.0,
-    -13992.911,
-    -16201.513,
-    1493.0
+    -14068.718,
+    -14900.231,
+    1346.0
    ],
-   "sha256": "db39e51f61aea04df47352807d834dd0c0a1508fc1cd744220093e7f3eef845f"
+   "sha256": "7d6589a154c0a4951c3dff2c7800ffc356ec4e7b8791be5583928c9d011f71d6"
   },
   {
    "file": "BrickBrown_XM002_YM003.obj",
    "mesh": "SM_Plex_BrickBrown_XM002_YM003",
    "material": "Brick_Brown",
    "collision": "none",
-   "triangles": 2062,
+   "triangles": 1680,
    "bounds_cm": [
-    -28517.997,
-    -42839.211,
+    -27185.546,
+    -43512.762,
     0.0,
-    -14010.403,
+    -14037.918,
     -28111.58,
-    1453.0
+    1410.0
    ],
-   "sha256": "e4c4600ff5370324c02b86289fdc06460d12f6ec99594f185f65d183fe866f5f"
+   "sha256": "33aa0b0cf0cf553f679e14e5635a2752e059c549b4d8144c8d679375be7fd8b6"
   },
   {
    "file": "BrickBrown_XM002_YM004.obj",
    "mesh": "SM_Plex_BrickBrown_XM002_YM004",
    "material": "Brick_Brown",
    "collision": "none",
-   "triangles": 458,
+   "triangles": 412,
    "bounds_cm": [
-    -28661.534,
-    -46322.478,
+    -25968.567,
+    -45868.0,
     0.0,
-    -14018.805,
-    -42455.222,
-    1134.0
+    -14230.908,
+    -42965.052,
+    1133.0
    ],
-   "sha256": "7d433e902c13be42b7f1263a40ba9f48e9114ca292dfc2276da44ddc20ecf6ab"
+   "sha256": "f85aebecb7225aa4028bf1428d60cfe7f911fa922cdcbfc403b45bb342215b2b"
   },
   {
    "file": "BrickBrown_XM002_YP001.obj",
@@ -536,192 +744,192 @@
    "mesh": "SM_Plex_BrickBrown_XM002_YP002",
    "material": "Brick_Brown",
    "collision": "none",
-   "triangles": 740,
+   "triangles": 692,
    "bounds_cm": [
-    -28507.528,
-    33053.055,
+    -28464.978,
+    31552.837,
     0.0,
     -18744.253,
-    42938.35,
+    41867.452,
     1185.0
    ],
-   "sha256": "a86afc23ef5774fd79c2dce9e8b8b8541cdced2f317cd1112192bd6379470f8e"
+   "sha256": "5724bf8ef6caf3e07a581e3b166205d80738757df31f059d9fb6144ce0998af4"
   },
   {
    "file": "BrickBrown_XM002_YP003.obj",
    "mesh": "SM_Plex_BrickBrown_XM002_YP003",
    "material": "Brick_Brown",
    "collision": "none",
-   "triangles": 1126,
+   "triangles": 1386,
    "bounds_cm": [
-    -27647.656,
-    42392.882,
+    -28726.266,
+    42854.86,
     0.0,
-    -14695.763,
+    -13957.972,
     57202.858,
-    1121.0
+    1230.0
    ],
-   "sha256": "a66714a5d834ec07656fb0028a0a54cd841ae30203c0ed5389199499e56d0732"
+   "sha256": "bc8817741421ed4ace5dd5f3db4be399914e399a3b1ef3b16f3bdf3df124848b"
   },
   {
    "file": "BrickBrown_XM002_YP004.obj",
    "mesh": "SM_Plex_BrickBrown_XM002_YP004",
    "material": "Brick_Brown",
    "collision": "none",
-   "triangles": 968,
+   "triangles": 1392,
    "bounds_cm": [
-    -28802.696,
-    56864.876,
+    -28613.179,
+    56534.975,
     0.0,
-    -16374.322,
-    66588.309,
-    1122.0
+    -14274.915,
+    66938.942,
+    1133.0
    ],
-   "sha256": "fa09954cd0c589ad0cbe8108dce59a1c95460ff0314e7b5a098e3eca69203f75"
+   "sha256": "6334f1be2cd8a69459def1681ed0548e941c9a5b2450cd12b0ae53498a6b2d37"
   },
   {
    "file": "BrickBrown_XM003_YM001.obj",
    "mesh": "SM_Plex_BrickBrown_XM003_YM001",
    "material": "Brick_Brown",
    "collision": "none",
-   "triangles": 2320,
+   "triangles": 2702,
    "bounds_cm": [
     -41753.952,
     -14739.881,
     0.0,
-    -28202.949,
+    -29520.99,
     -701.5,
     2697.0
    ],
-   "sha256": "da028d2da9354c723ef5614b514efe456f1b6366835b12665ba9a54c37f7b537"
+   "sha256": "d79d8820b4964aede3fbd2500aea0769652b1c656fcf227f8b85527342b6c0ad"
   },
   {
    "file": "BrickBrown_XM003_YM002.obj",
    "mesh": "SM_Plex_BrickBrown_XM003_YM002",
    "material": "Brick_Brown",
    "collision": "none",
-   "triangles": 2792,
+   "triangles": 3428,
    "bounds_cm": [
     -43052.569,
-    -28797.371,
+    -29086.803,
     0.0,
-    -28485.757,
-    -14282.373,
-    1540.0
+    -28067.245,
+    -13897.189,
+    1230.0
    ],
-   "sha256": "e3f5380552b67702bd2e7e472edc9e86f308917a9e33c257955ad642c3cabed0"
+   "sha256": "382db6a0a2e8cb3493f6e3994a687b7755ed5f3f232946be07f8cb036801f72c"
   },
   {
    "file": "BrickBrown_XM003_YM003.obj",
    "mesh": "SM_Plex_BrickBrown_XM003_YM003",
    "material": "Brick_Brown",
    "collision": "none",
-   "triangles": 1766,
+   "triangles": 3570,
    "bounds_cm": [
-    -41799.239,
-    -41953.211,
+    -42951.745,
+    -42876.011,
     0.0,
-    -28511.003,
-    -28303.11,
-    1150.0
+    -29612.964,
+    -28696.013,
+    1180.0
    ],
-   "sha256": "15b8d77f9d62c611a28217a9fd9c71478c5131ba2624b630b5f59be71977e095"
+   "sha256": "e700540e621bdf893443f90a6676329e773f23c6a888441a35259c0212d4de53"
   },
   {
    "file": "BrickBrown_XM003_YM004.obj",
    "mesh": "SM_Plex_BrickBrown_XM003_YM004",
    "material": "Brick_Brown",
    "collision": "none",
-   "triangles": 492,
+   "triangles": 588,
    "bounds_cm": [
-    -36530.945,
-    -46322.478,
+    -43148.281,
+    -45920.365,
     0.0,
-    -28435.361,
-    -42695.673,
-    1124.0
+    -30308.694,
+    -42371.732,
+    1118.0
    ],
-   "sha256": "4d90b445cff10ae81f79f19d3d5d64fa17bd4d8d6747d48f06a049e232fc2262"
+   "sha256": "33b97f09800dd391ecf7ed7e364c49c46447a459c446231af7d2cf2648ed3a52"
   },
   {
    "file": "BrickBrown_XM003_YP000.obj",
    "mesh": "SM_Plex_BrickBrown_XM003_YP000",
    "material": "Brick_Brown",
    "collision": "none",
-   "triangles": 738,
+   "triangles": 700,
    "bounds_cm": [
     -40055.458,
     -16.698,
     0.0,
     -34202.763,
-    14621.882,
+    14743.221,
     1473.0
    ],
-   "sha256": "a8fa714501c6998f0168decf7cea64b08deb75ba752dcee52a6e96b4383709d3"
+   "sha256": "6fb13e599d31a99aef932e77a73991958eb5e88af611e5e39a5fe0694c8838ab"
   },
   {
    "file": "BrickBrown_XM003_YP001.obj",
    "mesh": "SM_Plex_BrickBrown_XM003_YP001",
    "material": "Brick_Brown",
    "collision": "none",
-   "triangles": 1430,
+   "triangles": 1708,
    "bounds_cm": [
-    -42803.018,
+    -42734.162,
     13700.152,
     0.0,
-    -28469.677,
-    28489.014,
+    -29212.147,
+    28319.808,
     1465.0
    ],
-   "sha256": "03b4eb4e6cccc2b8d3df0df08baffe5ca262314a1d07bcf49e65aad2f9ecc12d"
+   "sha256": "83be858c27d3d95618187cd16e90e86de8b1a7ffd8326862aec9dcf12ce67c6b"
   },
   {
    "file": "BrickBrown_XM003_YP002.obj",
    "mesh": "SM_Plex_BrickBrown_XM003_YP002",
    "material": "Brick_Brown",
    "collision": "none",
-   "triangles": 1304,
+   "triangles": 808,
    "bounds_cm": [
     -42868.295,
-    28330.94,
+    30058.626,
     0.0,
-    -28500.782,
-    41624.806,
+    -28351.131,
+    42830.37,
     1200.0
    ],
-   "sha256": "47efd3e69786574ea5c43ab1a501282be6cc07cf6c00a5055572dd1ebd77a2c4"
+   "sha256": "6a00bd33973e5b2b214e01ac7aa6885af637be6a6341ced2be361efd644e3fc3"
   },
   {
    "file": "BrickBrown_XM003_YP003.obj",
    "mesh": "SM_Plex_BrickBrown_XM003_YP003",
    "material": "Brick_Brown",
    "collision": "none",
-   "triangles": 678,
+   "triangles": 1014,
    "bounds_cm": [
     -35299.289,
-    43213.359,
+    42346.128,
     0.0,
-    -29932.0,
-    57081.556,
+    -28585.103,
+    57269.737,
     1195.0
    ],
-   "sha256": "9e04c3a29c74f19dd0f7b7a8c2d9e76b88c74a73ce0d12cf7f93cc7d98b565f2"
+   "sha256": "52d8b74f68b1b8d2af72abfd1b6eb329673ff1b28f86a4889317066552f46ea6"
   },
   {
    "file": "BrickBrown_XM003_YP004.obj",
    "mesh": "SM_Plex_BrickBrown_XM003_YP004",
    "material": "Brick_Brown",
    "collision": "none",
-   "triangles": 1028,
+   "triangles": 976,
    "bounds_cm": [
     -42036.23,
-    56755.391,
+    56980.089,
     0.0,
-    -28180.332,
+    -31548.848,
     66795.34,
     1215.0
    ],
-   "sha256": "0a9de4f02b911c2f33aa863899ffd486291a4a1b4ef04168ff351a40f6b3c4d8"
+   "sha256": "3fd25b1de7d13ffa03520ef093b0ffea04cc76eeb0934d3cbf03fb36c2f0d374"
   },
   {
    "file": "BrickBrown_XM004_YM002.obj",
@@ -740,228 +948,260 @@
    "sha256": "cea94c7965048e0929519635e0f0af45d001f22ee6d1de1fbd3aae7c0b64b2a7"
   },
   {
+   "file": "BrickBrown_XM004_YM003.obj",
+   "mesh": "SM_Plex_BrickBrown_XM004_YM003",
+   "material": "Brick_Brown",
+   "collision": "none",
+   "triangles": 70,
+   "bounds_cm": [
+    -43454.004,
+    -42792.481,
+    0.0,
+    -42727.941,
+    -34665.252,
+    1066.0
+   ],
+   "sha256": "eb960722f99af797ba4e2e15ca7b99ff34d810cab736eab1cfb39de6f173f38e"
+  },
+  {
+   "file": "BrickBrown_XM004_YM004.obj",
+   "mesh": "SM_Plex_BrickBrown_XM004_YM004",
+   "material": "Brick_Brown",
+   "collision": "none",
+   "triangles": 86,
+   "bounds_cm": [
+    -43161.367,
+    -43105.255,
+    0.0,
+    -42776.418,
+    -42565.128,
+    1066.0
+   ],
+   "sha256": "a6af796a54c5f1e77bf117f282fa4b1a4d010ef424d5ed2ca1f3008d244689cd"
+  },
+  {
    "file": "BrickBrown_XM004_YP001.obj",
    "mesh": "SM_Plex_BrickBrown_XM004_YP001",
    "material": "Brick_Brown",
    "collision": "none",
-   "triangles": 14,
+   "triangles": 74,
    "bounds_cm": [
-    -42803.018,
-    26620.702,
+    -43314.542,
+    15766.587,
     0.0,
-    -42736.686,
-    26674.5,
-    1394.0
+    -42271.667,
+    17798.955,
+    1101.0
    ],
-   "sha256": "6d94d8842cd38697afb56f826cc567e220b856f33c2ddf32aee6593c2d9c29f2"
+   "sha256": "24dbc11483a578794e319559efaeeaa058160ec6666a42aa943b1a20708e2744"
   },
   {
    "file": "BrickBrown_XM004_YP002.obj",
    "mesh": "SM_Plex_BrickBrown_XM004_YP002",
    "material": "Brick_Brown",
    "collision": "none",
-   "triangles": 254,
+   "triangles": 20,
    "bounds_cm": [
     -43571.77,
     30392.586,
-    0.0,
-    -42353.007,
-    37228.592,
-    1180.0
+    960.0,
+    -42523.577,
+    32700.25,
+    1117.0
    ],
-   "sha256": "6df0274cfae3d8d824b77c6df4f5d8122e2f7297b0d7b886dbcb7e15e3b898a4"
+   "sha256": "1d49f347fa1ea2963ebcbdae31b4cacd9a3dc2c6df97f88e11b601307457c97e"
   },
   {
    "file": "BrickBrown_XP000_YM002.obj",
    "mesh": "SM_Plex_BrickBrown_XP000_YM002",
    "material": "Brick_Brown",
    "collision": "none",
-   "triangles": 346,
+   "triangles": 238,
    "bounds_cm": [
-    266.191,
-    -28504.226,
+    2045.552,
+    -28418.938,
     0.0,
     3588.343,
     -26736.838,
-    1102.0
+    1072.0
    ],
-   "sha256": "190d0f01bc30ed8ac040d1b07be547b08c8a4e6b631d40868bac70a9cdec0584"
+   "sha256": "74b6a5acdc56166872f7f25f908d69306b578966805cd9cbfb9270ef583e8a58"
   },
   {
    "file": "BrickBrown_XP000_YM003.obj",
    "mesh": "SM_Plex_BrickBrown_XP000_YM003",
    "material": "Brick_Brown",
    "collision": "none",
-   "triangles": 884,
+   "triangles": 2024,
    "bounds_cm": [
-    -32.141,
-    -43094.198,
+    72.449,
+    -43179.915,
     0.0,
-    13147.65,
-    -28271.94,
-    1398.0
+    13894.02,
+    -29406.291,
+    1195.0
    ],
-   "sha256": "5b27527099c83e0f526270d3d025925bf1837f98a537a112ba55a1508274256e"
+   "sha256": "baa10af9a85a2222633a35f600f04a6ba76e6603e5e02bf584ba01bd8df7ef78"
   },
   {
    "file": "BrickBrown_XP000_YM004.obj",
    "mesh": "SM_Plex_BrickBrown_XP000_YM004",
    "material": "Brick_Brown",
    "collision": "none",
-   "triangles": 214,
+   "triangles": 1254,
    "bounds_cm": [
-    2556.531,
-    -45610.05,
+    3280.899,
+    -45829.402,
     0.0,
-    14238.738,
-    -42592.145,
+    14280.853,
+    -42437.41,
     1116.0
    ],
-   "sha256": "8eb1ec8ab902e02621db79126fd9c459917355848c4ba907a7707fe053269d50"
+   "sha256": "62c9c6d3c485794b4ce6b2584bfb1b592792c7976091e4f5c9543df4c3225f6f"
   },
   {
    "file": "BrickBrown_XP000_YP004.obj",
    "mesh": "SM_Plex_BrickBrown_XP000_YP004",
    "material": "Brick_Brown",
    "collision": "none",
-   "triangles": 254,
+   "triangles": 562,
    "bounds_cm": [
     7037.796,
     64564.487,
     0.0,
-    8813.181,
-    66096.192,
+    14275.522,
+    67916.332,
     1185.0
    ],
-   "sha256": "edddc4a90e1788e7223bfb6155683ba686aba627dfee25db650629cc09bc7076"
+   "sha256": "487c3d9cf225aa47b17f3094412b99f4906901e07df24c6aba14f40c67dae319"
   },
   {
    "file": "BrickBrown_XP001_YM003.obj",
    "mesh": "SM_Plex_BrickBrown_XP001_YM003",
    "material": "Brick_Brown",
    "collision": "none",
-   "triangles": 108,
+   "triangles": 140,
    "bounds_cm": [
-    19989.762,
-    -37345.995,
+    18451.008,
+    -39721.079,
     0.0,
-    22319.871,
-    -35709.23,
-    1106.0
+    20761.985,
+    -37861.045,
+    1086.0
    ],
-   "sha256": "66408c0604aebda3eea6ba375666adf0ce0fdec6a4346efc188bf4702ad15afa"
+   "sha256": "6762ffc0e5b844462ef4b3d03b1934a872cad8a34ccb1565f34bfb14a6249958"
   },
   {
-   "file": "BrickBrown_XP001_YP003.obj",
-   "mesh": "SM_Plex_BrickBrown_XP001_YP003",
+   "file": "BrickBrown_XP001_YM004.obj",
+   "mesh": "SM_Plex_BrickBrown_XP001_YM004",
    "material": "Brick_Brown",
    "collision": "none",
-   "triangles": 472,
+   "triangles": 386,
    "bounds_cm": [
-    24200.581,
-    52417.248,
+    14229.913,
+    -46206.693,
     0.0,
-    28801.917,
-    56418.992,
-    1157.0
+    16587.902,
+    -44021.494,
+    1066.0
    ],
-   "sha256": "0e55474d8e5413303819e078140770f543fcd3892dc8f806140163441abb93a9"
+   "sha256": "cd3258d195f47a2427d606dd75907ccea71a2fd76769cdef67fe21894565ccd1"
   },
   {
    "file": "BrickBrown_XP001_YP004.obj",
    "mesh": "SM_Plex_BrickBrown_XP001_YP004",
    "material": "Brick_Brown",
    "collision": "none",
-   "triangles": 1104,
+   "triangles": 1110,
    "bounds_cm": [
-    21601.047,
-    57920.912,
+    13981.271,
+    59035.652,
     0.0,
-    28170.213,
-    67187.186,
-    1155.0
+    28862.749,
+    68067.727,
+    1170.0
    ],
-   "sha256": "d881c84b628ee9cbd5190dbd14377235e17180e761185badc3f5f61669b52334"
+   "sha256": "ad5f5c712ef33129e76fd0dccefe8f9ae82c3d21e7473e784c797ed16cfb42a3"
   },
   {
    "file": "BrickBrown_XP002_YM003.obj",
    "mesh": "SM_Plex_BrickBrown_XP002_YM003",
    "material": "Brick_Brown",
    "collision": "none",
-   "triangles": 64,
+   "triangles": 1094,
    "bounds_cm": [
-    42287.249,
-    -38339.897,
+    35698.604,
+    -38027.162,
     0.0,
     42889.353,
-    -37099.616,
-    1034.0
+    -30606.321,
+    2706.0
    ],
-   "sha256": "72d02ea4fdbdea895b6eca3ae4abb8fe91b5aee40f2af846ad7eb99625876ccb"
+   "sha256": "b1c409b4e5032b4ce904e7c6bde0a14ed63f45158c686e6c8f8db5e5f5d1f8c4"
   },
   {
    "file": "BrickBrown_XP002_YP003.obj",
    "mesh": "SM_Plex_BrickBrown_XP002_YP003",
    "material": "Brick_Brown",
    "collision": "none",
-   "triangles": 1412,
+   "triangles": 1242,
    "bounds_cm": [
-    28273.141,
-    46758.853,
+    28801.917,
+    46340.29,
     0.0,
     42844.118,
-    57482.308,
-    1220.0
+    56750.936,
+    1215.0
    ],
-   "sha256": "1ee106a0a04005be34a3f6eccb59d2017ebac257e76749ac8ccea14934545d6c"
+   "sha256": "8698634c360e0ca5829905dc7bbe1461dbf873ee3fc00a0f12721a4f1c1c3664"
   },
   {
    "file": "BrickBrown_XP002_YP004.obj",
    "mesh": "SM_Plex_BrickBrown_XP002_YP004",
    "material": "Brick_Brown",
    "collision": "none",
-   "triangles": 1490,
+   "triangles": 2106,
    "bounds_cm": [
-    29772.077,
-    56602.88,
+    28337.093,
+    57383.234,
     0.0,
     42974.073,
-    66991.099,
-    1230.0
+    67090.333,
+    1200.0
    ],
-   "sha256": "4c0c9d1751d74e5fce582b268b13c6e01b51edf7454e9d5f013ea4d6cad9b303"
+   "sha256": "d289a40defc3963eeb1014b2823f001f7bdc5a4c6b2783d61925b889ee3d0baf"
   },
   {
    "file": "BrickBrown_XP003_YM002.obj",
    "mesh": "SM_Plex_BrickBrown_XP003_YM002",
    "material": "Brick_Brown",
    "collision": "none",
-   "triangles": 2,
+   "triangles": 320,
    "bounds_cm": [
-    50996.472,
-    -28358.77,
-    960.0,
-    52283.317,
-    -27468.21,
+    45876.775,
+    -28488.901,
+    0.0,
+    52917.929,
+    -25041.652,
     1372.0
    ],
-   "sha256": "38f9b51a001f7097945e21dbc850aebd9ff757bbe933223ec21bdf28a99e6c0c"
+   "sha256": "e5fdf7b245e5605d9b4eebd545dcbfe74dbdd43349fbc7e673495bf1b2568737"
   },
   {
    "file": "BrickBrown_XP003_YM003.obj",
    "mesh": "SM_Plex_BrickBrown_XP003_YM003",
    "material": "Brick_Brown",
    "collision": "none",
-   "triangles": 1664,
+   "triangles": 2314,
    "bounds_cm": [
-    42311.564,
+    44194.699,
     -42773.308,
     0.0,
-    52558.568,
+    53698.066,
     -27468.21,
     1382.0
    ],
-   "sha256": "b2f97ddb3d39f6ba769c9b5c1ac11f5dac1e2d9a0e8452168ec75b449961ad63"
+   "sha256": "3887acfc03822975bfd4f5f954faf401db1e9eeb24dc69db39f1e8084bedcc54"
   },
   {
    "file": "BrickBrown_XP003_YM004.obj",
@@ -984,39 +1224,39 @@
    "mesh": "SM_Plex_BrickBrown_XP003_YP001",
    "material": "Brick_Brown",
    "collision": "none",
-   "triangles": 292,
+   "triangles": 184,
    "bounds_cm": [
     51375.506,
-    17787.253,
+    25075.943,
     0.0,
-    54267.397,
+    53369.045,
     27354.747,
     1170.0
    ],
-   "sha256": "ef56c47c09a3f749729ee2c9d278f53731f9b65ea565d1238942890b340ab915"
+   "sha256": "470b530f42c5f17bc98c82fa0d0cfd8362b250f1c68274b88a81682d774360f2"
   },
   {
    "file": "BrickBrown_XP003_YP002.obj",
    "mesh": "SM_Plex_BrickBrown_XP003_YP002",
    "material": "Brick_Brown",
    "collision": "none",
-   "triangles": 406,
+   "triangles": 582,
    "bounds_cm": [
     44292.403,
-    39814.551,
+    35394.194,
     0.0,
     52538.346,
     42746.533,
     1195.0
    ],
-   "sha256": "36ede9416295aa42442add64643a0fe188db3395d515929f3223e4c4004e8b4d"
+   "sha256": "695e4ca439a971cdcc764254417722de6c53f0d37cbbaefd6f08948c0b371cef"
   },
   {
    "file": "BrickBrown_XP003_YP003.obj",
    "mesh": "SM_Plex_BrickBrown_XP003_YP003",
    "material": "Brick_Brown",
    "collision": "none",
-   "triangles": 1366,
+   "triangles": 1476,
    "bounds_cm": [
     42789.525,
     42948.369,
@@ -1025,55 +1265,55 @@
     54227.312,
     1210.0
    ],
-   "sha256": "fa4e89cb2937fea79c424d95fceeebac91b6f73eb64b5923776ad5a10910e59b"
+   "sha256": "37c652d49c0d64ca07a4fc02b67026d8eac9c0502c75492dad03bc7a50d137fb"
   },
   {
    "file": "BrickBrown_XP003_YP004.obj",
    "mesh": "SM_Plex_BrickBrown_XP003_YP004",
    "material": "Brick_Brown",
    "collision": "none",
-   "triangles": 700,
+   "triangles": 612,
    "bounds_cm": [
     42698.145,
-    57394.366,
+    59787.701,
     0.0,
     55007.718,
     62833.501,
     1200.0
    ],
-   "sha256": "308ea12a6c5caaafdd1eef77fa1a4d50dea5002187dc60f2cfab1fd4cfd58bd8"
+   "sha256": "e5df0cb53540001f26ddfb8f3ecc7c68da8ae93a3bdb0a08a58bc0bc8d66ead4"
   },
   {
    "file": "BrickBuff_XM001_YM002.obj",
    "mesh": "SM_Plex_BrickBuff_XM001_YM002",
    "material": "Brick_Buff",
    "collision": "none",
-   "triangles": 808,
+   "triangles": 964,
    "bounds_cm": [
     -14252.776,
-    -27582.834,
+    -27796.693,
     0.0,
     -270.627,
     -17242.355,
     1190.0
    ],
-   "sha256": "970fcaafe809fdc3e9e8cfa060c9f9626ebd19486686b588fbe330f0d490ba16"
+   "sha256": "ed120cbf48e096b74d088032ec1f7cdeec2738b2eed96ff53e30fd731bcdcfb8"
   },
   {
    "file": "BrickBuff_XM001_YM003.obj",
    "mesh": "SM_Plex_BrickBuff_XM001_YM003",
    "material": "Brick_Buff",
    "collision": "none",
-   "triangles": 2686,
+   "triangles": 3240,
    "bounds_cm": [
     -13339.592,
     -43660.867,
     0.0,
-    -994.915,
+    0.0,
     -28677.292,
     1477.0
    ],
-   "sha256": "8fab7ef0f858c263bb1766f2a3fefa0a2e8691ec44400dbf2efd96bb0b87f5f0"
+   "sha256": "9023bec445a93eacfb177f2ba682ab7d50cd0002cdb99fcbdc9f634c89beed9f"
   },
   {
    "file": "BrickBuff_XM001_YM004.obj",
@@ -1160,16 +1400,16 @@
    "mesh": "SM_Plex_BrickBuff_XM002_YM002",
    "material": "Brick_Buff",
    "collision": "none",
-   "triangles": 1392,
+   "triangles": 1652,
    "bounds_cm": [
-    -26857.782,
+    -28759.022,
     -28332.053,
     0.0,
     -13617.933,
     -14040.792,
     1477.0
    ],
-   "sha256": "c6d8e3ef16bff36997ff0391171b5734f8da220001a37207e6530b1f38a1090d"
+   "sha256": "3b2d317eecbd6a4cb2cf50cf0067ffdd5a51024a1beaeae46ee6a130176328d7"
   },
   {
    "file": "BrickBuff_XM002_YM003.obj",
@@ -1208,23 +1448,23 @@
    "mesh": "SM_Plex_BrickBuff_XM002_YP002",
    "material": "Brick_Buff",
    "collision": "none",
-   "triangles": 840,
+   "triangles": 1014,
    "bounds_cm": [
     -28498.533,
-    33644.244,
+    33053.055,
     0.0,
     -14157.628,
     42894.936,
     1782.0
    ],
-   "sha256": "214520acdc677596047b093f7bdeaa0a2ead8d9e982a56c3a9b280170ba2af6a"
+   "sha256": "a1c265cc7e73529a7a7d2780dcd43089eb9299402aeedd056f7719943e454716"
   },
   {
    "file": "BrickBuff_XM002_YP003.obj",
    "mesh": "SM_Plex_BrickBuff_XM002_YP003",
    "material": "Brick_Buff",
    "collision": "none",
-   "triangles": 606,
+   "triangles": 820,
    "bounds_cm": [
     -28585.103,
     42830.37,
@@ -1233,23 +1473,23 @@
     53581.792,
     1118.0
    ],
-   "sha256": "2728f26ea25c6028e6e3729f422557e234c150c1be5dcce0f6f71bc57cc9d285"
+   "sha256": "c78bc3aa8e5e8aa819f3f3ae6f56f0c5e2c845aa094767d76e5e0d4b51e201b9"
   },
   {
    "file": "BrickBuff_XM002_YP004.obj",
    "mesh": "SM_Plex_BrickBuff_XM002_YP004",
    "material": "Brick_Buff",
    "collision": "none",
-   "triangles": 472,
+   "triangles": 826,
    "bounds_cm": [
-    -22809.952,
-    65487.33,
+    -28802.696,
+    60555.854,
     0.0,
     -16423.254,
     68882.564,
     1773.0
    ],
-   "sha256": "1ff70f2a6f721fb2ea06c60526bd069f5e40f182e33e00f357411fbba7166909"
+   "sha256": "876814f9622cc9b287e3ca52fa767d7893a07bee6ab41b3ee03de2eb1e05799b"
   },
   {
    "file": "BrickBuff_XM003_YM001.obj",
@@ -1272,48 +1512,48 @@
    "mesh": "SM_Plex_BrickBuff_XM003_YM002",
    "material": "Brick_Buff",
    "collision": "none",
-   "triangles": 2168,
+   "triangles": 2668,
    "bounds_cm": [
     -42866.736,
     -29075.671,
     0.0,
-    -29870.295,
-    -15592.624,
+    -28394.026,
+    -15564.762,
     1362.0
    ],
-   "sha256": "2cbc851171038d473993d0797434732eb98bc2026a767ef22dbe78e06e970d47"
+   "sha256": "5bbbf68ba047dea219af41320c3e58a0fe76619e0957cb74d4b354970b3d6b68"
   },
   {
    "file": "BrickBuff_XM003_YM003.obj",
    "mesh": "SM_Plex_BrickBuff_XM003_YM003",
    "material": "Brick_Buff",
    "collision": "none",
-   "triangles": 2400,
+   "triangles": 3102,
    "bounds_cm": [
-    -39717.476,
-    -41701.585,
+    -42786.561,
+    -42586.56,
     0.0,
     -28387.787,
-    -28578.07,
+    -28303.11,
     1210.0
    ],
-   "sha256": "9e96162da9649f547c23d659a36bd984040ce9b4e5f9123a63b4c1199e3b32c9"
+   "sha256": "e80cd1cedd79897b0d9933586db0e9eb213521e778543545535c9aca462d8672"
   },
   {
    "file": "BrickBuff_XM003_YM004.obj",
    "mesh": "SM_Plex_BrickBuff_XM003_YM004",
    "material": "Brick_Buff",
    "collision": "none",
-   "triangles": 228,
+   "triangles": 438,
    "bounds_cm": [
-    -35526.412,
+    -42773.147,
     -45979.613,
     0.0,
     -28354.916,
-    -43469.347,
+    -42574.334,
     1096.0
    ],
-   "sha256": "ed4d9634b8c2a1a1410d9ad3b8ee5c13011951943446e40b2220d89f526f11f3"
+   "sha256": "e8fcdc7abe56bb06e41f1c7d136c24d6d4252ef2e8f39000e906ada1e1461cea"
   },
   {
    "file": "BrickBuff_XM003_YP000.obj",
@@ -1336,64 +1576,64 @@
    "mesh": "SM_Plex_BrickBuff_XM003_YP001",
    "material": "Brick_Buff",
    "collision": "none",
-   "triangles": 794,
+   "triangles": 1150,
    "bounds_cm": [
-    -42600.148,
+    -42803.018,
     15349.682,
     0.0,
     -29755.557,
     28525.75,
     1437.0
    ],
-   "sha256": "714e94fd66a90bc7c3a53309380421126a9822176c65a11c89e46b5c9f641c66"
+   "sha256": "ab0bf726931940c84c67dae862b35a3075726f50a1a41c02fb91ff1193380fcd"
   },
   {
    "file": "BrickBuff_XM003_YP002.obj",
    "mesh": "SM_Plex_BrickBuff_XM003_YP002",
    "material": "Brick_Buff",
    "collision": "none",
-   "triangles": 1112,
+   "triangles": 1516,
    "bounds_cm": [
-    -42308.556,
+    -42709.195,
     28157.21,
     0.0,
     -28500.767,
     42830.37,
     1447.0
    ],
-   "sha256": "518ec84066266a4e0963308af012faa8d526f3cee20fdd6b26e37fd1df806286"
+   "sha256": "47d73bc69badc27516ff371168b35cad7e169a65883d07b87b4c9912d0d6bf35"
   },
   {
    "file": "BrickBuff_XM003_YP003.obj",
    "mesh": "SM_Plex_BrickBuff_XM003_YP003",
    "material": "Brick_Buff",
    "collision": "none",
-   "triangles": 1058,
+   "triangles": 1562,
    "bounds_cm": [
     -42920.97,
     42479.841,
     0.0,
     -28936.06,
-    53864.313,
+    57413.29,
     1362.0
    ],
-   "sha256": "60af852ed2e6181a050a055f5cea3701cfabcf28762b2af4de630c134f6692d0"
+   "sha256": "d57b4924656cb97ebf90ce3b62a458e11785c6ab49fed4d6e584164efb71313c"
   },
   {
    "file": "BrickBuff_XM003_YP004.obj",
    "mesh": "SM_Plex_BrickBuff_XM003_YP004",
    "material": "Brick_Buff",
    "collision": "none",
-   "triangles": 294,
+   "triangles": 882,
    "bounds_cm": [
     -42961.104,
-    60379.902,
+    56755.391,
     0.0,
-    -41129.106,
+    -28180.332,
     67944.058,
     1230.0
    ],
-   "sha256": "fd6ec42d569b668dfb06e59035413077aa57a5029c0ec2e27b13cbd4c1a99364"
+   "sha256": "e0da8408d687fde854eb87b4429d8db1ad2d61ea21272745f38ea8e42035edda"
   },
   {
    "file": "BrickBuff_XM004_YM002.obj",
@@ -1410,6 +1650,38 @@
     1150.0
    ],
    "sha256": "528098e180e84808d6d306a34fd41778fdbb9709686ceb4fd0d1133b15d66cbe"
+  },
+  {
+   "file": "BrickBuff_XM004_YM003.obj",
+   "mesh": "SM_Plex_BrickBuff_XM004_YM003",
+   "material": "Brick_Buff",
+   "collision": "none",
+   "triangles": 8,
+   "bounds_cm": [
+    -42786.561,
+    -42572.154,
+    0.0,
+    -42749.161,
+    -42508.081,
+    1102.0
+   ],
+   "sha256": "adbfa4d577ce3e4a07138c35af3bf0b67de896ef33b76f1c6d7415097d0e1ecc"
+  },
+  {
+   "file": "BrickBuff_XM004_YP001.obj",
+   "mesh": "SM_Plex_BrickBuff_XM004_YP001",
+   "material": "Brick_Buff",
+   "collision": "none",
+   "triangles": 14,
+   "bounds_cm": [
+    -42803.018,
+    26620.702,
+    0.0,
+    -42736.686,
+    26674.5,
+    1394.0
+   ],
+   "sha256": "95e82149e968dc8109e077bd8b78b275a5f2b0835bcbf676eb37ab07bb9baba1"
   },
   {
    "file": "BrickBuff_XM004_YP003.obj",
@@ -1448,32 +1720,32 @@
    "mesh": "SM_Plex_BrickBuff_XP000_YM003",
    "material": "Brick_Buff",
    "collision": "none",
-   "triangles": 356,
+   "triangles": 768,
    "bounds_cm": [
-    3508.796,
-    -42668.956,
+    -32.141,
+    -42815.898,
     0.0,
     14285.679,
-    -37714.103,
-    1200.0
+    -32808.23,
+    1398.0
    ],
-   "sha256": "3e3202d365bb7dccdc0967928058810d62ecbe88a609f17a58a3ced7e27b92a7"
+   "sha256": "9962b6e15faca4612e4828728e681420b2c6feced54d213b0f15c5f0d923ef23"
   },
   {
    "file": "BrickBuff_XP000_YM004.obj",
    "mesh": "SM_Plex_BrickBuff_XP000_YM004",
    "material": "Brick_Buff",
    "collision": "none",
-   "triangles": 246,
+   "triangles": 348,
    "bounds_cm": [
     5273.676,
     -46645.424,
     0.0,
-    6327.415,
-    -45545.344,
+    10910.1,
+    -42592.145,
     1140.0
    ],
-   "sha256": "639480eadf76b729299f5d6548f8d9168a7539197439faedcba534289f5885aa"
+   "sha256": "482b0b5c3bd9e4a3d8f79c1e2c7d5ed33a6d64467f83417a3a3ab9dbc75f4a54"
   },
   {
    "file": "BrickBuff_XP000_YP004.obj",
@@ -1512,96 +1784,112 @@
    "mesh": "SM_Plex_BrickBuff_XP001_YP003",
    "material": "Brick_Buff",
    "collision": "none",
-   "triangles": 150,
+   "triangles": 178,
    "bounds_cm": [
     26923.904,
-    53501.505,
+    52417.248,
     0.0,
-    28361.356,
+    28801.917,
     54971.022,
     1185.0
    ],
-   "sha256": "4757e8bd56dc14155c3ae35e13c04259559e1395b9966052abdfb9d73f7ed7cd"
+   "sha256": "4468cb0842ab63af1107a6dd3d503be9e618ca565c394161349003394aa9a2e3"
   },
   {
    "file": "BrickBuff_XP001_YP004.obj",
    "mesh": "SM_Plex_BrickBuff_XP001_YP004",
    "material": "Brick_Buff",
    "collision": "none",
-   "triangles": 638,
+   "triangles": 1060,
    "bounds_cm": [
     19006.301,
-    58740.224,
+    57920.912,
     0.0,
     28431.461,
     67866.285,
     1148.0
    ],
-   "sha256": "d5887882d3411f53dd18ceef57b43f903ca8f8f1d8a418998d59417dbae4b09d"
+   "sha256": "53cdee9df0e171f8b716ba8fa02deb14494572e432fe3960471212e0e55980bf"
   },
   {
    "file": "BrickBuff_XP002_YM003.obj",
    "mesh": "SM_Plex_BrickBuff_XP002_YM003",
    "material": "Brick_Buff",
    "collision": "none",
-   "triangles": 568,
+   "triangles": 632,
    "bounds_cm": [
     35830.079,
-    -31093.902,
+    -38339.897,
     0.0,
-    37798.749,
+    42889.353,
     -29123.291,
     1732.0
    ],
-   "sha256": "c4fc1e8380c12da13fc162c4026bd1da7dca98f39873fde02103444d712f4406"
+   "sha256": "ce021a2d94dd18bbdbdf2ead4ad22d278b4ee17871621ca0bb9a10797450981b"
+  },
+  {
+   "file": "BrickBuff_XP002_YP002.obj",
+   "mesh": "SM_Plex_BrickBuff_XP002_YP002",
+   "material": "Brick_Buff",
+   "collision": "none",
+   "triangles": 64,
+   "bounds_cm": [
+    42248.725,
+    36766.97,
+    0.0,
+    43067.951,
+    38334.155,
+    1117.0
+   ],
+   "sha256": "ed3ed5a5baa408781082aad10cb06ae8c088f618ec3d13b8fd7cf4f509b91c52"
   },
   {
    "file": "BrickBuff_XP002_YP003.obj",
    "mesh": "SM_Plex_BrickBuff_XP002_YP003",
    "material": "Brick_Buff",
    "collision": "none",
-   "triangles": 1134,
+   "triangles": 1772,
    "bounds_cm": [
-    28881.888,
-    47482.429,
+    28273.141,
+    46758.853,
     0.0,
     42826.902,
     57704.948,
-    1180.0
+    1215.0
    ],
-   "sha256": "ffa3d36f98d3c3d7e53252be6dc61ac37ef8d040ab86b0b9cb6f40417d6fb4f4"
+   "sha256": "bf1def150e643567832f56440036c01c88c0655753c3fd5f0202426d41cba201"
   },
   {
    "file": "BrickBuff_XP002_YP004.obj",
    "mesh": "SM_Plex_BrickBuff_XP002_YP004",
    "material": "Brick_Buff",
    "collision": "none",
-   "triangles": 756,
+   "triangles": 1084,
    "bounds_cm": [
     28890.826,
     56595.088,
     0.0,
     42004.16,
     68469.592,
-    1215.0
+    1230.0
    ],
-   "sha256": "fc8a57d7d85d7384b7b503b368521164fa507726c9676b8f954224a8508b0b97"
+   "sha256": "5c6d760849cce0f4352c2db84f610249317064e7283705723e90a74a15b6a071"
   },
   {
    "file": "BrickBuff_XP003_YM003.obj",
    "mesh": "SM_Plex_BrickBuff_XP003_YM003",
    "material": "Brick_Buff",
    "collision": "none",
-   "triangles": 744,
+   "triangles": 1098,
    "bounds_cm": [
-    45497.787,
+    42311.564,
     -42377.287,
     0.0,
     54025.772,
     -30255.858,
     1155.0
    ],
-   "sha256": "0bdc0fb51e0479577d7e14dddb83926dac4f060d59fe844e52ac5b646eb33c9c"
+   "sha256": "804ce23d4b45aea4bdd25aab26504ab4cf6ab3ab781bfaed28366b7862f31ca2"
   },
   {
    "file": "BrickBuff_XP003_YM004.obj",
@@ -1620,27 +1908,59 @@
    "sha256": "2139a4234c37aeaa9536dc0f09638be384aa4c298c8b869c78d1e6dd7778fc8d"
   },
   {
+   "file": "BrickBuff_XP003_YP001.obj",
+   "mesh": "SM_Plex_BrickBuff_XP003_YP001",
+   "material": "Brick_Buff",
+   "collision": "none",
+   "triangles": 108,
+   "bounds_cm": [
+    52819.25,
+    17787.253,
+    0.0,
+    54267.397,
+    19308.454,
+    1111.0
+   ],
+   "sha256": "d6f202c4f6048ce915e21647e6e50f483c655d22262bd50cd65895644c2300b3"
+  },
+  {
+   "file": "BrickBuff_XP003_YP002.obj",
+   "mesh": "SM_Plex_BrickBuff_XP003_YP002",
+   "material": "Brick_Buff",
+   "collision": "none",
+   "triangles": 418,
+   "bounds_cm": [
+    42248.725,
+    35420.976,
+    0.0,
+    45386.878,
+    38334.155,
+    1165.0
+   ],
+   "sha256": "8fc9154706e56ccf2b9645a5bdae767914467b94359265d49a2b6e7191dd21fe"
+  },
+  {
    "file": "BrickBuff_XP003_YP003.obj",
    "mesh": "SM_Plex_BrickBuff_XP003_YP003",
    "material": "Brick_Buff",
    "collision": "none",
-   "triangles": 500,
+   "triangles": 854,
    "bounds_cm": [
     42556.805,
-    47248.714,
+    44434.557,
     0.0,
     48755.457,
     56971.35,
     1180.0
    ],
-   "sha256": "4dfc58b86ccd954171abd426aa3cd2525b9e23113a73038f977e92a4a57599fd"
+   "sha256": "6a2dcf2f9f1db99166258d503c073f4eadb3f10b275cb2abeee7edb366ce02bb"
   },
   {
    "file": "BrickBuff_XP003_YP004.obj",
    "mesh": "SM_Plex_BrickBuff_XP003_YP004",
    "material": "Brick_Buff",
    "collision": "none",
-   "triangles": 402,
+   "triangles": 856,
    "bounds_cm": [
     42874.535,
     56547.22,
@@ -1649,7 +1969,7 @@
     69013.947,
     1200.0
    ],
-   "sha256": "8c0c307fee4ae72ebfb627e15e53843776badc1b1c32511f5f56805bbe67b6f6"
+   "sha256": "79745bc280b2ad37b98b119926706a16f2951bf875408b44fef23e30015d8bc0"
   },
   {
    "file": "BrickOrange_XM001_YM002.obj",
@@ -1672,16 +1992,16 @@
    "mesh": "SM_Plex_BrickOrange_XM001_YM003",
    "material": "Brick_Orange",
    "collision": "none",
-   "triangles": 1324,
+   "triangles": 1060,
    "bounds_cm": [
     -11602.657,
     -42962.852,
     0.0,
     -2088.343,
     -32515.439,
-    1200.0
+    1116.0
    ],
-   "sha256": "000f5b243e5a4865d333fe79d8c64b67e2a8efbc767a99c18438cdc96bde0e51"
+   "sha256": "325d74fcfc769d8576ae24163d517be76fe7e4db5d5c0a9b1b4dfe615fbfcee0"
   },
   {
    "file": "BrickOrange_XM001_YM004.obj",
@@ -1880,32 +2200,32 @@
    "mesh": "SM_Plex_BrickOrange_XM003_YM003",
    "material": "Brick_Orange",
    "collision": "none",
-   "triangles": 1478,
+   "triangles": 1206,
    "bounds_cm": [
-    -42786.561,
-    -42586.56,
+    -42639.003,
+    -41094.891,
     0.0,
     -28528.25,
     -33164.781,
     1155.0
    ],
-   "sha256": "ca99d083dec45dbf411adce1b9cda693421788b58d5f016afb9fe0eabd44eb40"
+   "sha256": "bd9ef7463c1b1820d7e3ea811ea17e9edc697c35ef04518cd9d8a4cf4e8ddec9"
   },
   {
    "file": "BrickOrange_XM003_YM004.obj",
    "mesh": "SM_Plex_BrickOrange_XM003_YM004",
    "material": "Brick_Orange",
    "collision": "none",
-   "triangles": 86,
+   "triangles": 82,
    "bounds_cm": [
     -43148.281,
     -44546.924,
     0.0,
-    -41460.566,
-    -42574.334,
+    -41878.535,
+    -43107.557,
     1150.0
    ],
-   "sha256": "6ab6fb300a6a0a3c9bdd2d43e1ac4de16b62f1b3460443a49a926c5bc0e837f9"
+   "sha256": "9c8de530fa2ee780eca3d6227aa59d14d7ca2bd653e7e33b249a63b496a9af19"
   },
   {
    "file": "BrickOrange_XM003_YP001.obj",
@@ -1944,32 +2264,32 @@
    "mesh": "SM_Plex_BrickOrange_XM003_YP003",
    "material": "Brick_Orange",
    "collision": "none",
-   "triangles": 656,
+   "triangles": 474,
    "bounds_cm": [
-    -41834.14,
+    -35545.697,
     45569.482,
     0.0,
     -30048.986,
     57114.952,
-    1200.0
+    1041.0
    ],
-   "sha256": "3726998e949359ece71a0a5165ad8b88703b03a960f0a4386392d8e265c06c3c"
+   "sha256": "e8c36ea07c3c37d47eb6528a77cfcbdccaa5dd27de51ac8afee842fa7d817cad"
   },
   {
    "file": "BrickOrange_XM003_YP004.obj",
    "mesh": "SM_Plex_BrickOrange_XM003_YP004",
    "material": "Brick_Orange",
    "collision": "none",
-   "triangles": 298,
+   "triangles": 184,
    "bounds_cm": [
-    -37405.179,
-    56882.225,
+    -36189.183,
+    61256.056,
     0.0,
     -34466.157,
     63362.239,
-    1185.0
+    1170.0
    ],
-   "sha256": "40f9e17944579ae64b7368ca26ebc4c3aa25ea37f59dfaecf04e73e588d9fc02"
+   "sha256": "39fc811f08dcd40eaf651dc8f9cd8114f2b8d82b0a23e93a5e4d0a198087b6f1"
   },
   {
    "file": "BrickOrange_XM004_YM002.obj",
@@ -1986,22 +2306,6 @@
     1101.0
    ],
    "sha256": "2d924b30731da7241bc1dd0eabda8f764540a9cb879aefecf82e6c3b54269802"
-  },
-  {
-   "file": "BrickOrange_XM004_YM003.obj",
-   "mesh": "SM_Plex_BrickOrange_XM004_YM003",
-   "material": "Brick_Orange",
-   "collision": "none",
-   "triangles": 8,
-   "bounds_cm": [
-    -42786.561,
-    -42572.154,
-    0.0,
-    -42749.161,
-    -42508.081,
-    1102.0
-   ],
-   "sha256": "436bb53189feb809112119552750d5627729ffd7d6789fe9be91177dbbb6574a"
   },
   {
    "file": "BrickOrange_XM004_YM004.obj",
@@ -2296,624 +2600,560 @@
    "mesh": "SM_Plex_BrickRedDark_XM001_YM002",
    "material": "Brick_RedDark",
    "collision": "none",
-   "triangles": 502,
+   "triangles": 796,
    "bounds_cm": [
-    -10521.053,
-    -21512.657,
+    -14562.399,
+    -28622.598,
     0.0,
-    -7661.793,
-    -14651.688,
-    1463.0
+    -4797.334,
+    -17202.575,
+    1101.0
    ],
-   "sha256": "3f6d3abdbda3237f636a37466d9aec85387cab3a5347c00172c7bd32aee811cf"
+   "sha256": "0605789a2e8f33e3dd7b738e59779a5d81b6be80d1463f861930d5c4d172fc7f"
   },
   {
    "file": "BrickRedDark_XM001_YM003.obj",
    "mesh": "SM_Plex_BrickRedDark_XM001_YM003",
    "material": "Brick_RedDark",
    "collision": "none",
-   "triangles": 700,
+   "triangles": 878,
    "bounds_cm": [
-    -14447.158,
-    -42878.336,
+    -12805.271,
+    -43100.939,
     0.0,
-    -3218.508,
-    -30357.477,
-    1086.0
+    -6530.93,
+    -30454.926,
+    1101.0
    ],
-   "sha256": "3b7cac57ffde09d02775471ba42693a32662e8f035d4b50a645af0c966b945d3"
+   "sha256": "3e2442812b5aff73e27d739d7c1cb767280aaa033441e8ff0b57755c5a52d21a"
   },
   {
    "file": "BrickRedDark_XM001_YM004.obj",
    "mesh": "SM_Plex_BrickRedDark_XM001_YM004",
    "material": "Brick_RedDark",
    "collision": "none",
-   "triangles": 246,
+   "triangles": 74,
    "bounds_cm": [
-    -4534.372,
-    -46188.972,
+    -9362.801,
+    -43100.939,
     0.0,
-    -1486.3,
-    -42762.579,
-    1083.0
+    -8522.809,
+    -42729.943,
+    1049.0
    ],
-   "sha256": "bcf1d66e4c26740fe839a2d81cfc4d3530e14693a6ca4ba2348f7187a299d246"
+   "sha256": "1c57639fd38d2b22dfb829dce7fbc4ecbd10d35d48cc928efacee3b5575da01c"
   },
   {
    "file": "BrickRedDark_XM001_YP003.obj",
    "mesh": "SM_Plex_BrickRedDark_XM001_YP003",
    "material": "Brick_RedDark",
    "collision": "none",
-   "triangles": 500,
+   "triangles": 260,
    "bounds_cm": [
-    -14274.213,
-    50634.927,
+    -14139.69,
+    47738.469,
     0.0,
-    -9063.274,
-    57178.405,
-    1133.0
+    -8614.631,
+    56867.836,
+    786.0
    ],
-   "sha256": "196466cfa5d647437d5b1ea41d163ee3b4229ea5cd11e530a4b9717ddb937466"
+   "sha256": "cf9a050a1b7335f95c06653fb039ea5b2c50c04a043f5d92daff573b97b75c00"
   },
   {
    "file": "BrickRedDark_XM001_YP004.obj",
    "mesh": "SM_Plex_BrickRedDark_XM001_YP004",
    "material": "Brick_RedDark",
    "collision": "none",
-   "triangles": 408,
+   "triangles": 160,
    "bounds_cm": [
-    -12986.989,
-    56786.558,
+    -7437.343,
+    57301.927,
     0.0,
-    -5322.12,
-    66071.934,
-    1426.0
+    -5482.737,
+    59409.258,
+    733.0
    ],
-   "sha256": "8a3836137a9358a79e04e7f0b9ff8ca961c85bf4f113537cdb8ef009f3b2d85a"
+   "sha256": "5817b1c38054672df6f8b5ad6d43c4b9b739662a0ba5ee571bc375b5f5e11b1b"
   },
   {
    "file": "BrickRedDark_XM002_YM001.obj",
    "mesh": "SM_Plex_BrickRedDark_XM002_YM001",
    "material": "Brick_RedDark",
    "collision": "none",
-   "triangles": 664,
+   "triangles": 80,
    "bounds_cm": [
-    -27925.031,
-    -11113.168,
+    -28787.994,
+    -11966.915,
     0.0,
-    -24349.167,
-    -7971.625,
-    1113.0
+    -27978.336,
+    -7742.306,
+    1121.0
    ],
-   "sha256": "c2c851c9b0bef6ca18e8e97f5bb78eacb79ea8e967376f1c1d6e9f240c983a61"
+   "sha256": "ef8ae3b27dec24536966af1de6b9bc86bf9e76d4710e0efba69598f4761ce860"
   },
   {
    "file": "BrickRedDark_XM002_YM002.obj",
    "mesh": "SM_Plex_BrickRedDark_XM002_YM002",
    "material": "Brick_RedDark",
    "collision": "none",
-   "triangles": 1002,
+   "triangles": 762,
    "bounds_cm": [
-    -28512.572,
-    -29116.859,
+    -28759.022,
+    -28404.516,
     0.0,
-    -18808.15,
-    -14900.231,
-    1190.0
+    -14055.46,
+    -16133.608,
+    1116.0
    ],
-   "sha256": "43e6e1ade0c23daf4be13f16ad42c99bd840a32333a97a7e1740f06d697a2b15"
+   "sha256": "7ef8ad92ba7c6f334e935984178ef3f246ad0e109ca565780f8aa04438a3e034"
   },
   {
    "file": "BrickRedDark_XM002_YM003.obj",
    "mesh": "SM_Plex_BrickRedDark_XM002_YM003",
    "material": "Brick_RedDark",
    "collision": "none",
-   "triangles": 704,
+   "triangles": 188,
    "bounds_cm": [
-    -25959.94,
-    -43512.762,
+    -23828.551,
+    -33226.794,
     0.0,
-    -14037.918,
-    -28318.695,
+    -21969.796,
+    -31171.992,
     1133.0
    ],
-   "sha256": "2834f975615319ee8cb912eef39bbba42300398fdaecc5009f826420989f3254"
+   "sha256": "4c0162c10c31e9a8cc9bdbd95ffe4f929ba77544637097e6cf1aa09a07798c97"
   },
   {
    "file": "BrickRedDark_XM002_YM004.obj",
    "mesh": "SM_Plex_BrickRedDark_XM002_YM004",
    "material": "Brick_RedDark",
    "collision": "none",
-   "triangles": 92,
+   "triangles": 108,
    "bounds_cm": [
-    -25968.567,
-    -43526.237,
+    -28290.298,
+    -46628.608,
     0.0,
-    -25348.311,
-    -43123.171,
-    1133.0
+    -26792.289,
+    -44851.386,
+    1086.0
    ],
-   "sha256": "e8beccc2eda592eb25476b747b761ee0d266b64ac9b0966e75223c662f965182"
+   "sha256": "6b366190626f44cd98565859e787dc87345379303e039e3f1949551cfa8d998b"
   },
   {
    "file": "BrickRedDark_XM002_YP002.obj",
    "mesh": "SM_Plex_BrickRedDark_XM002_YP002",
    "material": "Brick_RedDark",
    "collision": "none",
-   "triangles": 322,
+   "triangles": 642,
    "bounds_cm": [
-    -27342.161,
-    31552.837,
+    -28423.662,
+    28740.598,
     0.0,
-    -23888.511,
-    41867.452,
-    771.0
+    -16937.756,
+    42361.715,
+    1091.0
    ],
-   "sha256": "782f973b312ab822df09cecd35e3dc10fcb899db9893a8581f1e96875d03ebc8"
+   "sha256": "0db3fe9f08b7c3f4c75cf0ebccb04d0feec3ffadd28b52a821a797192258c996"
   },
   {
    "file": "BrickRedDark_XM002_YP003.obj",
    "mesh": "SM_Plex_BrickRedDark_XM002_YP003",
    "material": "Brick_RedDark",
    "collision": "none",
-   "triangles": 1010,
+   "triangles": 304,
    "bounds_cm": [
-    -28726.266,
-    42854.86,
+    -20051.855,
+    43167.747,
     0.0,
-    -13957.972,
-    57103.815,
-    1230.0
+    -14775.713,
+    57642.609,
+    1116.0
    ],
-   "sha256": "cbbe63eeeb6f382159ec88e325db190769a4001e26cc590795ce70a271270792"
+   "sha256": "69e7720c586fc39e7841983bc306c94ba79b00e85dd44b5a0b76f9929089cc08"
   },
   {
    "file": "BrickRedDark_XM002_YP004.obj",
    "mesh": "SM_Plex_BrickRedDark_XM002_YP004",
    "material": "Brick_RedDark",
    "collision": "none",
-   "triangles": 624,
+   "triangles": 638,
    "bounds_cm": [
-    -28613.179,
-    56534.975,
+    -27761.522,
+    56797.69,
     0.0,
-    -17499.956,
-    66938.942,
-    1133.0
+    -18596.851,
+    68191.256,
+    1113.0
    ],
-   "sha256": "1f405f5a73365663e0373c8703159b9b1c0ebf02bbb36f38dee61a3c38c24858"
+   "sha256": "eec12f446dae46ac57592c55b28022b4182b90ce7c3efea35befcd0a75276c87"
   },
   {
    "file": "BrickRedDark_XM003_YM001.obj",
    "mesh": "SM_Plex_BrickRedDark_XM003_YM001",
    "material": "Brick_RedDark",
    "collision": "none",
-   "triangles": 496,
+   "triangles": 592,
    "bounds_cm": [
-    -40492.703,
-    -14654.165,
+    -36434.853,
+    -13538.738,
     0.0,
-    -29520.99,
-    -4693.193,
-    1102.0
+    -28202.949,
+    -7056.575,
+    1121.0
    ],
-   "sha256": "80da82d00fa9058101b8cbb762e8361ee857adc0d3c53d5518f44f50425bf4ec"
+   "sha256": "b1d31888f1a52d3e6de88e4efaa5899c193d28b227500c93a7dbb52dbf411753"
   },
   {
    "file": "BrickRedDark_XM003_YM002.obj",
    "mesh": "SM_Plex_BrickRedDark_XM003_YM002",
    "material": "Brick_RedDark",
    "collision": "none",
-   "triangles": 1580,
+   "triangles": 334,
    "bounds_cm": [
-    -40696.085,
-    -29086.803,
+    -41269.489,
+    -26548.707,
     0.0,
-    -28067.245,
-    -13897.189,
-    1230.0
+    -28162.245,
+    -15925.439,
+    1087.0
    ],
-   "sha256": "092e9edd8bc0eedd654eac6f8aad5c20f5e59f911471775ae1d967dd9324f2d3"
+   "sha256": "b39ec72086030149fa6a0eaf66eccc04c1fa7b9470575c6a7ab20813f24225da"
   },
   {
    "file": "BrickRedDark_XM003_YM003.obj",
    "mesh": "SM_Plex_BrickRedDark_XM003_YM003",
    "material": "Brick_RedDark",
    "collision": "none",
-   "triangles": 1620,
+   "triangles": 1096,
    "bounds_cm": [
-    -42951.745,
-    -42702.361,
+    -41427.81,
+    -42926.105,
     0.0,
-    -29612.964,
-    -28696.013,
-    1180.0
+    -30194.859,
+    -29974.191,
+    1131.0
    ],
-   "sha256": "2dd1a6eeedfc85069d7961844b515be9d23c4398ae76ad5e400f4c755c2e1a54"
+   "sha256": "14e9827a72cad124eaa7f40b1ba31c9d8cc7d849eb2eb35a29d516246651c79c"
   },
   {
    "file": "BrickRedDark_XM003_YM004.obj",
    "mesh": "SM_Plex_BrickRedDark_XM003_YM004",
    "material": "Brick_RedDark",
    "collision": "none",
-   "triangles": 448,
+   "triangles": 234,
    "bounds_cm": [
-    -43148.281,
-    -45920.365,
+    -38685.146,
+    -43598.453,
     0.0,
-    -30308.694,
-    -42371.732,
-    1086.0
+    -37075.936,
+    -42695.673,
+    1041.0
    ],
-   "sha256": "5bbf868a964445de1829ec089ada85ae01c2a8076ac56d6d9c5a889d3977ddf4"
-  },
-  {
-   "file": "BrickRedDark_XM003_YP000.obj",
-   "mesh": "SM_Plex_BrickRedDark_XM003_YP000",
-   "material": "Brick_RedDark",
-   "collision": "none",
-   "triangles": 104,
-   "bounds_cm": [
-    -38134.38,
-    12408.59,
-    0.0,
-    -36240.657,
-    14743.221,
-    1081.0
-   ],
-   "sha256": "549cee796c49cb7b1ea1bb2561a4f0484b129b1e21f58fbbb5999f2537c69add"
+   "sha256": "287053f96cdcb0575c3dcb2d98a17be728f073435230a480535b791fe141b9e9"
   },
   {
    "file": "BrickRedDark_XM003_YP001.obj",
    "mesh": "SM_Plex_BrickRedDark_XM003_YP001",
    "material": "Brick_RedDark",
    "collision": "none",
-   "triangles": 806,
+   "triangles": 620,
    "bounds_cm": [
-    -42734.162,
-    14687.561,
+    -41940.987,
+    20046.506,
     0.0,
-    -29655.133,
-    27547.073,
-    1138.0
+    -31037.772,
+    28330.942,
+    1026.0
    ],
-   "sha256": "bcec22828123bccf6073c541814bf100c216378d44d3b44e02fab9b2b5d1683b"
+   "sha256": "c1f299b42bf53527068aa31b63a4bc7122ed50e76c09df1956e6dd586cbce940"
+  },
+  {
+   "file": "BrickRedDark_XM003_YP002.obj",
+   "mesh": "SM_Plex_BrickRedDark_XM003_YP002",
+   "material": "Brick_RedDark",
+   "collision": "none",
+   "triangles": 428,
+   "bounds_cm": [
+    -41646.574,
+    27916.83,
+    0.0,
+    -28450.959,
+    40566.192,
+    1081.0
+   ],
+   "sha256": "b59cbd435dbb5eea1745c3d59ff0ad9159471d7ea2b03c051414794d91cd59f8"
   },
   {
    "file": "BrickRedDark_XM003_YP003.obj",
    "mesh": "SM_Plex_BrickRedDark_XM003_YP003",
    "material": "Brick_RedDark",
    "collision": "none",
-   "triangles": 290,
+   "triangles": 314,
    "bounds_cm": [
-    -34223.134,
-    46843.456,
+    -32228.991,
+    43844.777,
     0.0,
-    -28647.495,
-    57269.737,
-    1071.0
+    -30841.37,
+    54115.673,
+    1072.0
    ],
-   "sha256": "254a2534ef1b765f95a73132f45c4503f8bccd39623eca7b837568dcceef15ee"
+   "sha256": "83fb9c7757af9ce089c927311382e65ecadbdd27174ca5679e3537e63c10564c"
   },
   {
    "file": "BrickRedDark_XM003_YP004.obj",
    "mesh": "SM_Plex_BrickRedDark_XM003_YP004",
    "material": "Brick_RedDark",
    "collision": "none",
-   "triangles": 192,
+   "triangles": 346,
    "bounds_cm": [
-    -33957.873,
-    56980.089,
+    -32061.142,
+    59122.243,
     0.0,
-    -31548.848,
-    59504.993,
-    1101.0
+    -30151.773,
+    61132.499,
+    1106.0
    ],
-   "sha256": "1f42566aaad6b604be28943a4a2332339b2087337852436de6e51b06e5190094"
-  },
-  {
-   "file": "BrickRedDark_XM004_YM003.obj",
-   "mesh": "SM_Plex_BrickRedDark_XM004_YM003",
-   "material": "Brick_RedDark",
-   "collision": "none",
-   "triangles": 70,
-   "bounds_cm": [
-    -43454.004,
-    -42792.481,
-    0.0,
-    -42727.941,
-    -34665.252,
-    1066.0
-   ],
-   "sha256": "3bf8e6db9789fc759aae06464df28a68d3e2a293ea4f2f950c902bf3c6266277"
-  },
-  {
-   "file": "BrickRedDark_XM004_YM004.obj",
-   "mesh": "SM_Plex_BrickRedDark_XM004_YM004",
-   "material": "Brick_RedDark",
-   "collision": "none",
-   "triangles": 86,
-   "bounds_cm": [
-    -43161.367,
-    -43105.255,
-    0.0,
-    -42776.418,
-    -42565.128,
-    1066.0
-   ],
-   "sha256": "e7bec7a3e3a53f212a9bf50e2c66f933799d3e2447f5af1e1e67f81aada0a53b"
-  },
-  {
-   "file": "BrickRedDark_XM004_YP001.obj",
-   "mesh": "SM_Plex_BrickRedDark_XM004_YP001",
-   "material": "Brick_RedDark",
-   "collision": "none",
-   "triangles": 74,
-   "bounds_cm": [
-    -43314.542,
-    15766.587,
-    0.0,
-    -42271.667,
-    17798.955,
-    1101.0
-   ],
-   "sha256": "2209de91a2945bfec25c7b738158e8a3a900733b0c64f1c52815f938901c1bc2"
+   "sha256": "803cb49ee47615c9baf86ad22560a60e1d515f3d408b2a30454338e78ef646ea"
   },
   {
    "file": "BrickRedDark_XP000_YM003.obj",
    "mesh": "SM_Plex_BrickRedDark_XP000_YM003",
    "material": "Brick_RedDark",
    "collision": "none",
-   "triangles": 1402,
+   "triangles": 1684,
    "bounds_cm": [
-    72.449,
-    -43179.915,
+    378.134,
+    -42762.519,
     0.0,
-    12751.424,
-    -29406.291,
-    1163.0
+    14432.155,
+    -32041.236,
+    1230.0
    ],
-   "sha256": "da25672664a1ff3c4373b4f89c63afa65e4a9d883f1441b1c021949bf2699b3e"
+   "sha256": "b82e7e261cf59e54946557c5eb3fc5faad2d87751917280147a3546ed29c5204"
   },
   {
    "file": "BrickRedDark_XP000_YM004.obj",
    "mesh": "SM_Plex_BrickRedDark_XP000_YM004",
    "material": "Brick_RedDark",
    "collision": "none",
-   "triangles": 1148,
+   "triangles": 462,
    "bounds_cm": [
-    3280.899,
-    -45829.402,
+    2611.759,
+    -46308.07,
     0.0,
-    14280.853,
-    -42437.41,
-    1116.0
+    8017.734,
+    -42752.46,
+    1081.0
    ],
-   "sha256": "32cb07929f24881846d280f93d12efa4cc32da5704693ded02ef81f57e563264"
+   "sha256": "4d3936f6939540d5628be4a7458927ba83eb2be5eeb1aa66843468862c9fcd40"
   },
   {
    "file": "BrickRedDark_XP000_YP004.obj",
    "mesh": "SM_Plex_BrickRedDark_XP000_YP004",
    "material": "Brick_RedDark",
    "collision": "none",
-   "triangles": 118,
+   "triangles": 168,
    "bounds_cm": [
-    7426.976,
-    65191.218,
+    10716.651,
+    67669.255,
     0.0,
-    9318.313,
-    66529.238,
-    1116.0
+    11831.169,
+    68761.252,
+    763.0
    ],
-   "sha256": "d5c6f2312eb789213e3642b952ceed41250d1c612ecb8650fa55d175706b410a"
+   "sha256": "85ec0a9e67c8ae58bd3d6981889db2385a07f714d84c559a1124ba565cd44cfa"
   },
   {
    "file": "BrickRedDark_XP001_YM003.obj",
    "mesh": "SM_Plex_BrickRedDark_XP001_YM003",
    "material": "Brick_RedDark",
    "collision": "none",
-   "triangles": 140,
+   "triangles": 774,
    "bounds_cm": [
-    18451.008,
-    -39721.079,
+    14261.116,
+    -43075.274,
     0.0,
-    20761.985,
-    -37861.045,
-    1086.0
+    26944.181,
+    -34534.804,
+    1116.0
    ],
-   "sha256": "b8c047ff667835da85ed10442477273ae6614ebf6559a5329e3131f929988e69"
+   "sha256": "718ca96820de5f0e20d3cb870dbf3c7f1e22069271c5bf57f255c0554ae2fe8c"
   },
   {
    "file": "BrickRedDark_XP001_YM004.obj",
    "mesh": "SM_Plex_BrickRedDark_XP001_YM004",
    "material": "Brick_RedDark",
    "collision": "none",
-   "triangles": 386,
+   "triangles": 2,
    "bounds_cm": [
-    14229.913,
-    -46206.693,
-    0.0,
-    16587.902,
-    -44021.494,
-    1066.0
+    25651.098,
+    -43075.274,
+    960.0,
+    26500.415,
+    -42578.787,
+    1076.0
    ],
-   "sha256": "9ebd12ef9d276a2574a0d184892dc20490c91935d95c3ddd9cad11abd7f658fd"
+   "sha256": "d3f03231085ffd1e2c565532e9a176352343b260020d93f5e4be77d936f5c29d"
+  },
+  {
+   "file": "BrickRedDark_XP001_YP003.obj",
+   "mesh": "SM_Plex_BrickRedDark_XP001_YP003",
+   "material": "Brick_RedDark",
+   "collision": "none",
+   "triangles": 254,
+   "bounds_cm": [
+    19741.752,
+    55195.841,
+    0.0,
+    21401.372,
+    56857.803,
+    1170.0
+   ],
+   "sha256": "55bd8b91ca2cad3f4c94e398a960d1c54cfd2b78edb1dd8cc85c94e54752be54"
   },
   {
    "file": "BrickRedDark_XP001_YP004.obj",
    "mesh": "SM_Plex_BrickRedDark_XP001_YP004",
    "material": "Brick_RedDark",
    "collision": "none",
-   "triangles": 174,
+   "triangles": 724,
    "bounds_cm": [
-    20999.981,
-    61279.957,
+    17577.113,
+    57430.253,
     0.0,
-    28862.749,
-    68067.727,
-    1081.0
+    27325.555,
+    68295.93,
+    1098.0
    ],
-   "sha256": "5e7f77d15672334a277a124e84073b2ad3ee13fef13fa25bbde0055a56701f35"
-  },
-  {
-   "file": "BrickRedDark_XP002_YM003.obj",
-   "mesh": "SM_Plex_BrickRedDark_XP002_YM003",
-   "material": "Brick_RedDark",
-   "collision": "none",
-   "triangles": 1094,
-   "bounds_cm": [
-    35698.604,
-    -38027.162,
-    0.0,
-    42889.353,
-    -30606.321,
-    2706.0
-   ],
-   "sha256": "ffc4f1260aced55b5ea8fc47418acc2753a5a57c01d329278f869ac2d620d735"
+   "sha256": "40d17800d58f05b5e98deae4c21858688cded4e7ae235d7d178755d6e01ba8ca"
   },
   {
    "file": "BrickRedDark_XP002_YP003.obj",
    "mesh": "SM_Plex_BrickRedDark_XP002_YP003",
    "material": "Brick_RedDark",
    "collision": "none",
-   "triangles": 278,
-   "bounds_cm": [
-    34068.62,
-    48936.272,
-    0.0,
-    40364.997,
-    54445.518,
-    1133.0
-   ],
-   "sha256": "c1eea822d717d3317b13a2742225525adc65bc51878e18f0b494d9d6bd932ffe"
-  },
-  {
-   "file": "BrickRedDark_XP002_YP004.obj",
-   "mesh": "SM_Plex_BrickRedDark_XP002_YP004",
-   "material": "Brick_RedDark",
-   "collision": "none",
    "triangles": 852,
    "bounds_cm": [
-    28497.954,
-    57906.481,
+    30800.035,
+    45893.896,
     0.0,
-    41296.005,
-    67090.333,
-    1133.0
+    41946.447,
+    56650.882,
+    1230.0
    ],
-   "sha256": "6bed45bc4101b61884487d4681635832c0336650cb75905fe02b9756e455108c"
-  },
-  {
-   "file": "BrickRedDark_XP003_YM002.obj",
-   "mesh": "SM_Plex_BrickRedDark_XP003_YM002",
-   "material": "Brick_RedDark",
-   "collision": "none",
-   "triangles": 138,
-   "bounds_cm": [
-    51552.545,
-    -26579.876,
-    0.0,
-    52917.929,
-    -25041.652,
-    1111.0
-   ],
-   "sha256": "fc6f43ad892722f81a119939852ce18fc91cb5c6263c87eb175256eeb35401a7"
+   "sha256": "0e05d86bbd7c1d057c08234cf1b817a1363eed8f5d075c71aa3f7cf689fd2917"
   },
   {
    "file": "BrickRedDark_XP003_YM003.obj",
    "mesh": "SM_Plex_BrickRedDark_XP003_YM003",
    "material": "Brick_RedDark",
    "collision": "none",
-   "triangles": 1316,
+   "triangles": 604,
    "bounds_cm": [
-    44194.699,
-    -40621.672,
+    42903.883,
+    -36060.091,
     0.0,
-    53698.066,
-    -31518.137,
-    1101.0
+    53505.73,
+    -30955.866,
+    1103.0
    ],
-   "sha256": "21f12c9d2d92d461ddf734daef735051d0ffd7abae2242ab26076a09578a6d06"
+   "sha256": "99cdee50e0875a6f392a9de572d45ab786d6c380987f728882ab148a06f68140"
   },
   {
-   "file": "BrickRedDark_XP003_YP002.obj",
-   "mesh": "SM_Plex_BrickRedDark_XP003_YP002",
+   "file": "BrickRedDark_XP003_YP001.obj",
+   "mesh": "SM_Plex_BrickRedDark_XP003_YP001",
    "material": "Brick_RedDark",
    "collision": "none",
-   "triangles": 176,
+   "triangles": 146,
    "bounds_cm": [
-    49368.835,
-    35394.194,
+    49145.983,
+    20259.951,
     0.0,
-    51467.535,
-    37231.308,
-    1118.0
+    50409.983,
+    21653.966,
+    1116.0
    ],
-   "sha256": "cb60f4e9d621f8c1cf1701be23d91b2a6ce4b41183ccbfff4bf6a7e77790ca5e"
+   "sha256": "1a630e92bafab928a31243bd0ddaecc5b851fa9bbfa2ad4cc334f24ab57b00ce"
   },
   {
    "file": "BrickRedDark_XP003_YP003.obj",
    "mesh": "SM_Plex_BrickRedDark_XP003_YP003",
    "material": "Brick_RedDark",
    "collision": "none",
-   "triangles": 142,
+   "triangles": 588,
    "bounds_cm": [
-    45161.998,
-    48220.484,
+    44170.738,
+    48276.989,
     0.0,
-    46722.936,
-    50244.202,
-    1111.0
+    48282.711,
+    57306.368,
+    1210.0
    ],
-   "sha256": "ecf691d41df3b615d27c2e22d6f71420592110342e6a3ac0a91977f2a2c658ad"
+   "sha256": "95c4227a42fd759ca3eaa4cc163496dd522e9fadc9f08bbc4076b8a4a9b8018d"
+  },
+  {
+   "file": "BrickRedDark_XP003_YP004.obj",
+   "mesh": "SM_Plex_BrickRedDark_XP003_YP004",
+   "material": "Brick_RedDark",
+   "collision": "none",
+   "triangles": 162,
+   "bounds_cm": [
+    45388.171,
+    56547.22,
+    0.0,
+    48128.264,
+    57657.057,
+    1056.0
+   ],
+   "sha256": "a740a8468aa03e5afbf55a8b5821f37914dfe464e1fbb872647d8ac8716f9c85"
   },
   {
    "file": "BrickRed_XM001_YM002.obj",
    "mesh": "SM_Plex_BrickRed_XM001_YM002",
    "material": "Brick_Red",
    "collision": "none",
-   "triangles": 2662,
+   "triangles": 1722,
    "bounds_cm": [
-    -14562.399,
+    -14351.044,
     -28843.012,
     0.0,
     249.57,
     -15297.594,
     1395.0
    ],
-   "sha256": "3b9be49ad62873d6b559939e2783440c607799a894dc16685b1d6aaf33ac0fa2"
+   "sha256": "a753bb06298b65c0ba0cd13b9059f2c0a9c1f43f858b1b85450521ece2a89efb"
   },
   {
    "file": "BrickRed_XM001_YM003.obj",
    "mesh": "SM_Plex_BrickRed_XM001_YM003",
    "material": "Brick_Red",
    "collision": "none",
-   "triangles": 4122,
+   "triangles": 2188,
    "bounds_cm": [
     -14267.594,
-    -43100.939,
+    -42877.076,
     0.0,
     1017.893,
     -28267.488,
     1467.0
    ],
-   "sha256": "bca121c535ee2e37ee794187b61cf8b89f9bfe79ec7c0f23ff8c8b0c40213424"
+   "sha256": "81426259ae7f012c3f7a53b35d879875e6bf128b5f9d7af5dae6955949d31604"
   },
   {
    "file": "BrickRed_XM001_YM004.obj",
    "mesh": "SM_Plex_BrickRed_XM001_YM004",
    "material": "Brick_Red",
    "collision": "none",
-   "triangles": 1036,
+   "triangles": 860,
    "bounds_cm": [
-    -14716.82,
+    -14688.743,
     -46230.396,
     0.0,
     106.847,
     -42503.089,
     1153.0
    ],
-   "sha256": "8a8050505bcc7140145bc57fa2f7e358db99255e67d2c0f54cb856a850536602"
+   "sha256": "d5ebc7e4866602d95609f595d9cb24a26e315a875e5e3200bc7a773ce8d60fa1"
   },
   {
    "file": "BrickRed_XM001_YP002.obj",
@@ -2936,71 +3176,71 @@
    "mesh": "SM_Plex_BrickRed_XM001_YP003",
    "material": "Brick_Red",
    "collision": "none",
-   "triangles": 432,
+   "triangles": 172,
    "bounds_cm": [
     -14680.944,
     42265.978,
     0.0,
-    -8614.631,
+    -10322.052,
     57192.876,
     1441.0
    ],
-   "sha256": "f2a0744f456f68c7cb3c77bb2c0d530998c52f18d367120f0c2ce5a063c16237"
+   "sha256": "13a448c3772c9f88cc4bb005e0e47ddfc1c417e34510aaf8a5bc1113efef0ec4"
   },
   {
    "file": "BrickRed_XM001_YP004.obj",
    "mesh": "SM_Plex_BrickRed_XM001_YP004",
    "material": "Brick_Red",
    "collision": "none",
-   "triangles": 1580,
+   "triangles": 836,
    "bounds_cm": [
     -14478.169,
     56786.558,
     0.0,
-    -2007.291,
+    -3882.384,
     66899.834,
     1441.0
    ],
-   "sha256": "b28c83941ac26eb6c9214dd55d6d7dd0beefd67e99a72e1b72a6021b05e7c9bf"
+   "sha256": "c625eefca4ce61cc539486edca4632ec3d6dbdcbd771b5d76d5a5c0db73f0f4a"
   },
   {
    "file": "BrickRed_XM002_YM001.obj",
    "mesh": "SM_Plex_BrickRed_XM002_YM001",
    "material": "Brick_Red",
    "collision": "none",
-   "triangles": 726,
+   "triangles": 646,
    "bounds_cm": [
-    -28787.994,
+    -28606.94,
     -14687.561,
     0.0,
     -16842.063,
     -6828.369,
     1417.0
    ],
-   "sha256": "87a0d4201b4669dc83997915321449c14717ac747df1fc8589776078a5882b74"
+   "sha256": "44627aa959f831f2672bc0713774c95cfe3c1d12f0e6a977b4f7f395e620596f"
   },
   {
    "file": "BrickRed_XM002_YM002.obj",
    "mesh": "SM_Plex_BrickRed_XM002_YM002",
    "material": "Brick_Red",
    "collision": "none",
-   "triangles": 3758,
+   "triangles": 2726,
    "bounds_cm": [
-    -28759.022,
+    -28656.854,
     -28807.39,
     0.0,
     -13617.933,
     -13536.512,
     1427.0
    ],
-   "sha256": "929c631afe09018836063a8ebfb925b7003d75031d076ded5a1d0e31a0b5ff8d"
+   "sha256": "f2841e0b51c43afd16f43adcdb2946bf6c172440c1b0a045c7350740c7c7a6e2"
   },
   {
    "file": "BrickRed_XM002_YM003.obj",
    "mesh": "SM_Plex_BrickRed_XM002_YM003",
    "material": "Brick_Red",
    "collision": "none",
-   "triangles": 2646,
+   "triangles": 2100,
    "bounds_cm": [
     -28645.156,
     -43512.762,
@@ -3009,23 +3249,23 @@
     -27735.378,
     1200.0
    ],
-   "sha256": "bf7e1c7088fe9a343d961de81006e0851e364be42a616e7bd6b541a4306950e1"
+   "sha256": "2ece9a120ab876872ca38a7f015d711812cfa52dc11383a67231127de58a923a"
   },
   {
    "file": "BrickRed_XM002_YM004.obj",
    "mesh": "SM_Plex_BrickRed_XM002_YM004",
    "material": "Brick_Red",
    "collision": "none",
-   "triangles": 678,
+   "triangles": 454,
    "bounds_cm": [
-    -28290.298,
-    -46628.608,
+    -24680.895,
+    -46409.151,
     0.0,
     -14018.805,
     -41691.566,
     1121.0
    ],
-   "sha256": "a6585a55781ce8b3f602b85036ddcb898289078dc6bc1bc2f38b4bc88ec83882"
+   "sha256": "5a4f5a23fb3567a2c6706a3dfff8e5c76c079a80c16e290ef116f6fc91a8cb9c"
   },
   {
    "file": "BrickRed_XM002_YP001.obj",
@@ -3048,7 +3288,7 @@
    "mesh": "SM_Plex_BrickRed_XM002_YP002",
    "material": "Brick_Red",
    "collision": "none",
-   "triangles": 1728,
+   "triangles": 688,
    "bounds_cm": [
     -28617.542,
     28329.827,
@@ -3057,14 +3297,14 @@
     42886.03,
     1441.0
    ],
-   "sha256": "4e80d7a6ef1f2d5c02c266cc5cb467e07b4e952870119ceb00a44e9d2c87ae4f"
+   "sha256": "2cb98e75e7d8d79fff2f974fec48bfeca41e19e151bdce689ca1b1d40cd3a3e1"
   },
   {
    "file": "BrickRed_XM002_YP003.obj",
    "mesh": "SM_Plex_BrickRed_XM002_YP003",
    "material": "Brick_Red",
    "collision": "none",
-   "triangles": 2380,
+   "triangles": 1524,
    "bounds_cm": [
     -29233.204,
     42392.882,
@@ -3073,62 +3313,62 @@
     57642.609,
     1441.0
    ],
-   "sha256": "12e4b7b86d94c7d38acc94f0b014379d7511172026a4da7d2ef9c26e803d8373"
+   "sha256": "38c82a391af92503406d7e279056ac59af7f381d2f4855d77b66d206549c8df5"
   },
   {
    "file": "BrickRed_XM002_YP004.obj",
    "mesh": "SM_Plex_BrickRed_XM002_YP004",
    "material": "Brick_Red",
    "collision": "none",
-   "triangles": 2250,
+   "triangles": 1332,
    "bounds_cm": [
     -28847.931,
     56755.389,
     0.0,
-    -14274.915,
-    68191.256,
+    -14390.82,
+    67748.239,
     1157.0
    ],
-   "sha256": "2678c28427bd566c43b817870747eab9301429425d7b264a386509b8a95a764a"
+   "sha256": "ed7938d764afca2b8e33974d5b5c9df85ed886d910bb3c231d80aaaa0a9e29d1"
   },
   {
    "file": "BrickRed_XM003_YM001.obj",
    "mesh": "SM_Plex_BrickRed_XM003_YM001",
    "material": "Brick_Red",
    "collision": "none",
-   "triangles": 1966,
+   "triangles": 1374,
    "bounds_cm": [
     -42911.19,
     -13931.765,
     0.0,
-    -28202.949,
+    -29568.564,
     456.214,
     2802.0
    ],
-   "sha256": "6beb4ba69795d65ddace883ea14a271928628c829703ced0cdff742dd50e3f51"
+   "sha256": "599d728d60f642f361a450fff31817328cb80fe872fe9cc60d95b9eec15ebe31"
   },
   {
    "file": "BrickRed_XM003_YM002.obj",
    "mesh": "SM_Plex_BrickRed_XM003_YM002",
    "material": "Brick_Red",
    "collision": "none",
-   "triangles": 2746,
+   "triangles": 1946,
    "bounds_cm": [
-    -42206.396,
+    -40522.339,
     -29086.803,
     0.0,
     -28067.245,
     -13897.189,
-    1165.0
+    1142.0
    ],
-   "sha256": "1f0488119f53feffb54072bcf440e5145f7b71ae094851b6e5de3d54ee4882a8"
+   "sha256": "564b4163ce867bfc7e224df5641c6ea4cddf79b0a31e3a245d3c00134f711105"
   },
   {
    "file": "BrickRed_XM003_YM003.obj",
    "mesh": "SM_Plex_BrickRed_XM003_YM003",
    "material": "Brick_Red",
    "collision": "none",
-   "triangles": 4608,
+   "triangles": 2724,
    "bounds_cm": [
     -42951.745,
     -42926.105,
@@ -3137,14 +3377,14 @@
     -28433.354,
     1180.0
    ],
-   "sha256": "22a8d86678a59bd5971da3bf3fe1e69a787a8d4c955e9dcd5652655e0248ec22"
+   "sha256": "f6ad5a4746a83130791588690b26fd614ad04317d17de9551fac527b6098667e"
   },
   {
    "file": "BrickRed_XM003_YM004.obj",
    "mesh": "SM_Plex_BrickRed_XM003_YM004",
    "material": "Brick_Red",
    "collision": "none",
-   "triangles": 622,
+   "triangles": 256,
    "bounds_cm": [
     -41363.857,
     -46754.4,
@@ -3153,14 +3393,14 @@
     -42371.732,
     1143.0
    ],
-   "sha256": "9257b8614bfa3d195f65c015f30877eac79ad6b03605487b94b51233f6a5e8ba"
+   "sha256": "911167a3f4db694014d4a2ba81d2009f469a6eb4970a0425cfcab7c52126de62"
   },
   {
    "file": "BrickRed_XM003_YP000.obj",
    "mesh": "SM_Plex_BrickRed_XM003_YP000",
    "material": "Brick_Red",
    "collision": "none",
-   "triangles": 2244,
+   "triangles": 2116,
    "bounds_cm": [
     -40343.585,
     -16.98,
@@ -3169,71 +3409,71 @@
     14687.561,
     2078.0
    ],
-   "sha256": "68826174d3a4fa2b4dbfd0800ba55bf9d02a1c427b2f22d59e452c5ad08a3715"
+   "sha256": "7c9b580208f1323b172d367eddfbb7441138a17a6712abc3da51ded8ec147d6e"
   },
   {
    "file": "BrickRed_XM003_YP001.obj",
    "mesh": "SM_Plex_BrickRed_XM003_YP001",
    "material": "Brick_Red",
    "collision": "none",
-   "triangles": 2520,
+   "triangles": 1832,
    "bounds_cm": [
-    -42645.242,
+    -42630.619,
     13700.152,
     0.0,
     -28121.695,
     28682.797,
     1682.0
    ],
-   "sha256": "a0d77ad367330ffd9e3144c666685ccfdd49ecab3c00a4e2895432b5e043af12"
+   "sha256": "4ff044a82366244f2dd3125a7f5460dc47e4c9cc96f874cfa2420d3eb3cc89f2"
   },
   {
    "file": "BrickRed_XM003_YP002.obj",
    "mesh": "SM_Plex_BrickRed_XM003_YP002",
    "material": "Brick_Red",
    "collision": "none",
-   "triangles": 2028,
+   "triangles": 1328,
    "bounds_cm": [
     -41896.909,
-    27916.83,
+    28361.559,
     0.0,
     -28237.265,
     42847.068,
     1180.0
    ],
-   "sha256": "26c324f050101cd4a8febe731ae565de1c7ef71d9ecf6087c76407afdb0fabc8"
+   "sha256": "565b9be44b6bcaa8681d66233f2d2d34ccda1836dab8e54600f38f2e4bc88ac3"
   },
   {
    "file": "BrickRed_XM003_YP003.obj",
    "mesh": "SM_Plex_BrickRed_XM003_YP003",
    "material": "Brick_Red",
    "collision": "none",
-   "triangles": 2588,
+   "triangles": 1632,
    "bounds_cm": [
-    -42910.41,
+    -42805.903,
     42346.128,
     0.0,
     -28490.734,
-    57413.29,
+    57227.386,
     1560.0
    ],
-   "sha256": "70ee9995395175dc64ab1d6839ad4d3069e8799bbd3112d47c102626e88906af"
+   "sha256": "cbb5383b39662f7b52e85d2c38c3c191dd9fd9b44509042931078f99525d63b1"
   },
   {
    "file": "BrickRed_XM003_YP004.obj",
    "mesh": "SM_Plex_BrickRed_XM003_YP004",
    "material": "Brick_Red",
    "collision": "none",
-   "triangles": 1890,
+   "triangles": 1248,
    "bounds_cm": [
-    -42001.912,
-    56999.149,
+    -41515.159,
+    57227.386,
     0.0,
     -28124.958,
     67238.393,
     1230.0
    ],
-   "sha256": "e4d4d5dca1529abd3b175380c24b51a5d6b0c0c816cb4c00cb8dc4d44f4368b2"
+   "sha256": "c570d27e9b4ca634333ad64e86783c9e3d720b01f23079b731a02530eaa2c934"
   },
   {
    "file": "BrickRed_XM004_YM003.obj",
@@ -3320,103 +3560,103 @@
    "mesh": "SM_Plex_BrickRed_XP000_YM003",
    "material": "Brick_Red",
    "collision": "none",
-   "triangles": 4992,
+   "triangles": 2808,
    "bounds_cm": [
     -239.193,
     -43179.915,
     0.0,
-    14432.155,
+    14369.874,
     -28271.94,
-    1230.0
+    1148.0
    ],
-   "sha256": "9e468a0cdb0fb4f905d5fa073e325b1351f713d54b9fdeb2b37ad1ea015831a7"
+   "sha256": "cf1e0bafcac12807674adc11c559d05ea7fc1047b20bb2f2024249c64756ea3e"
   },
   {
    "file": "BrickRed_XP000_YM004.obj",
    "mesh": "SM_Plex_BrickRed_XP000_YM004",
    "material": "Brick_Red",
    "collision": "none",
-   "triangles": 1020,
+   "triangles": 558,
    "bounds_cm": [
     50.694,
-    -46308.07,
+    -46213.351,
     0.0,
     8603.422,
     -42437.41,
     1088.0
    ],
-   "sha256": "deb59c4877ab6af10f8214ff97e6e09613135967c552e702c49ef40f686d4c98"
+   "sha256": "cad49bae023e028d442cbe6fe052bba3ef57ed83f51a3ce2ec3a3db4b23e5161"
   },
   {
    "file": "BrickRed_XP000_YP004.obj",
    "mesh": "SM_Plex_BrickRed_XP000_YP004",
    "material": "Brick_Red",
    "collision": "none",
-   "triangles": 752,
+   "triangles": 254,
    "bounds_cm": [
     5332.995,
     62187.805,
     0.0,
-    14275.522,
+    14248.506,
     68777.949,
-    1215.0
+    1170.0
    ],
-   "sha256": "6ba83b7663578d88bd096701a9b60c4e4a0aad0e02971b0e00cd1735ad156cf0"
+   "sha256": "73635ba4df9da4359c4ff134b949423bbb2eafadaf81e226230d26837c5071cf"
   },
   {
    "file": "BrickRed_XP001_YM003.obj",
    "mesh": "SM_Plex_BrickRed_XP001_YM003",
    "material": "Brick_Red",
    "collision": "none",
-   "triangles": 2782,
+   "triangles": 2008,
    "bounds_cm": [
     14066.19,
     -43297.914,
     0.0,
     28708.426,
-    -34534.804,
+    -36342.64,
     2767.0
    ],
-   "sha256": "947e57c94a27f785a96f763a1aeeaae1e5e83aa1b9e323a8d103d996aa71698f"
+   "sha256": "41f60db2483ddf0fd8953d24cd0566cceceffe671bb0ee5e96f448a646368675"
   },
   {
    "file": "BrickRed_XP001_YM004.obj",
    "mesh": "SM_Plex_BrickRed_XP001_YM004",
    "material": "Brick_Red",
    "collision": "none",
-   "triangles": 466,
+   "triangles": 464,
    "bounds_cm": [
     15081.816,
     -46275.724,
     0.0,
-    26500.415,
+    25651.098,
     -42338.336,
     1138.0
    ],
-   "sha256": "72e2bf275452e972aab2c66c48a7010b58507542a6763abf08ec292d441f9e1f"
+   "sha256": "018c882edefee92124bacb0f1b5377cf272574051cbdd9f3be014f8ed0bbcaeb"
   },
   {
    "file": "BrickRed_XP001_YP003.obj",
    "mesh": "SM_Plex_BrickRed_XP001_YP003",
    "material": "Brick_Red",
    "collision": "none",
-   "triangles": 678,
+   "triangles": 424,
    "bounds_cm": [
-    19741.752,
+    20396.093,
     54127.124,
     0.0,
     28775.698,
     57086.029,
     1195.0
    ],
-   "sha256": "69dfcfc2426ef5bff1c9568735c3d5f44a9ea61bc2a0b7b284d3463b27243514"
+   "sha256": "fe8710128f97f8d5e271930c96b9f91f933c7023d9590eb4a1c5448c054c3836"
   },
   {
    "file": "BrickRed_XP001_YP004.obj",
    "mesh": "SM_Plex_BrickRed_XP001_YP004",
    "material": "Brick_Red",
    "collision": "none",
-   "triangles": 3188,
+   "triangles": 2210,
    "bounds_cm": [
     13939.254,
     56693.05,
@@ -3425,7 +3665,7 @@
     69005.042,
     1200.0
    ],
-   "sha256": "4bb4b2450922cb2e665c821d6936885e6b6f80724a5c4f627c95b5781948bc0d"
+   "sha256": "97f6e58038eac3f650a7397e1c71b9a73f3161e90c912396860799fd42308de0"
   },
   {
    "file": "BrickRed_XP002_YM003.obj",
@@ -3460,43 +3700,27 @@
    "sha256": "b5762ac67b962a869435397cbcfc7b0ed5fd0048de0f147b003622a86d78fed6"
   },
   {
-   "file": "BrickRed_XP002_YP002.obj",
-   "mesh": "SM_Plex_BrickRed_XP002_YP002",
-   "material": "Brick_Red",
-   "collision": "none",
-   "triangles": 64,
-   "bounds_cm": [
-    42248.725,
-    36766.97,
-    0.0,
-    43067.951,
-    38334.155,
-    1117.0
-   ],
-   "sha256": "85d1ec286e4d2ef59c1839cb5ac7e5486cb20158a73db6b7b17ba74171b87e60"
-  },
-  {
    "file": "BrickRed_XP002_YP003.obj",
    "mesh": "SM_Plex_BrickRed_XP002_YP003",
    "material": "Brick_Red",
    "collision": "none",
-   "triangles": 2802,
+   "triangles": 1522,
    "bounds_cm": [
     28120.801,
     43396.989,
     0.0,
     43072.631,
     57704.948,
-    1230.0
+    1215.0
    ],
-   "sha256": "c6c12fd946860f00d27fa4889e88629aa70892adab861a13022d86d7910ab3f3"
+   "sha256": "583471188954d69bbe3515a02666f478847c87eef3cc547e0a24f93ea7e36350"
   },
   {
    "file": "BrickRed_XP002_YP004.obj",
    "mesh": "SM_Plex_BrickRed_XP002_YP004",
    "material": "Brick_Red",
    "collision": "none",
-   "triangles": 1376,
+   "triangles": 608,
    "bounds_cm": [
     28215.428,
     56595.088,
@@ -3505,14 +3729,14 @@
     68464.026,
     1200.0
    ],
-   "sha256": "4b51e8bbbdbbe7ad5d5fc180ae1b3aa9be3466e624d7aadc87ecc09d5d9b464a"
+   "sha256": "54ca5d9cc640177fd532130c82a928dcc53b6f8afb8fb4e1020f6cfd91a83cc1"
   },
   {
    "file": "BrickRed_XP003_YM002.obj",
    "mesh": "SM_Plex_BrickRed_XP003_YM002",
    "material": "Brick_Red",
    "collision": "none",
-   "triangles": 770,
+   "triangles": 590,
    "bounds_cm": [
     43297.896,
     -28502.371,
@@ -3521,14 +3745,14 @@
     -23415.224,
     1423.0
    ],
-   "sha256": "4268ac96beed89febc2b9b9469f790dda678ac4a907336b3a8e6faee07214c30"
+   "sha256": "785b79eebdca514f585fb70754cb405da8a41051ab2645885d7c1764121373e0"
   },
   {
    "file": "BrickRed_XP003_YM003.obj",
    "mesh": "SM_Plex_BrickRed_XP003_YM003",
    "material": "Brick_Red",
    "collision": "none",
-   "triangles": 3948,
+   "triangles": 3098,
    "bounds_cm": [
     42113.971,
     -42715.71,
@@ -3537,7 +3761,7 @@
     -28340.959,
     1666.0
    ],
-   "sha256": "41a05e9b4b7d8b315187d972754918add9950a967e0066c500368f2f2e606996"
+   "sha256": "40675a1cf536fe0d00403e4298db689655196ee0ceafd21293933522369e086b"
   },
   {
    "file": "BrickRed_XP003_YM004.obj",
@@ -3560,7 +3784,7 @@
    "mesh": "SM_Plex_BrickRed_XP003_YP001",
    "material": "Brick_Red",
    "collision": "none",
-   "triangles": 436,
+   "triangles": 290,
    "bounds_cm": [
     46178.215,
     18607.138,
@@ -3569,55 +3793,55 @@
     28434.514,
     1396.0
    ],
-   "sha256": "dfbed0611b7130211163369e512604e94d5311a3f51542d5072a87afce3d340e"
+   "sha256": "25a5f26d42b8cbdc5748a25e3920dddeae9adb5710cc622812508c80aff52d00"
   },
   {
    "file": "BrickRed_XP003_YP002.obj",
    "mesh": "SM_Plex_BrickRed_XP003_YP002",
    "material": "Brick_Red",
    "collision": "none",
-   "triangles": 1462,
+   "triangles": 1044,
    "bounds_cm": [
-    42248.725,
+    43459.464,
     31210.69,
     0.0,
     53392.343,
     42992.897,
     2103.0
    ],
-   "sha256": "db25eeb1fe78a5dec9c4674fae250ae1b54c02a729be602c985546a607e3e732"
+   "sha256": "cb840a7102866234c15ce911c3fdd7fbd41c24cfda20d8f365419027b3784698"
   },
   {
    "file": "BrickRed_XP003_YP003.obj",
    "mesh": "SM_Plex_BrickRed_XP003_YP003",
    "material": "Brick_Red",
    "collision": "none",
-   "triangles": 2600,
+   "triangles": 1400,
    "bounds_cm": [
     42450.872,
     42608.843,
     0.0,
     55194.174,
-    57306.368,
+    56519.39,
     1386.0
    ],
-   "sha256": "522d1c71b51d4ecd76c3eb6154c82c4b7bc72a1ab9fd0928d6722d0f61559179"
+   "sha256": "c6cd3469669aea606343492656f4cb419501de469f5212c96e79b73104c33f98"
   },
   {
    "file": "BrickRed_XP003_YP004.obj",
    "mesh": "SM_Plex_BrickRed_XP003_YP004",
    "material": "Brick_Red",
    "collision": "none",
-   "triangles": 1102,
+   "triangles": 486,
    "bounds_cm": [
     42874.535,
-    56547.22,
+    57360.97,
     0.0,
     52769.978,
     68490.743,
     1185.0
    ],
-   "sha256": "da5329639c2548d38b84ae34f736b38e891a3b84fe2fa954e9ed8524bd95be14"
+   "sha256": "4c5592f0e9e36fe90a9f996e6a74c8bb760af7082250c5eaed0b839f159e5ebf"
   },
   {
    "file": "Glass_XM001_YM002.obj",
@@ -6152,16 +6376,16 @@
    "mesh": "SM_Plex_StoneCast_XM001_YP004",
    "material": "Stone_Cast",
    "collision": "none",
-   "triangles": 1448,
+   "triangles": 1508,
    "bounds_cm": [
     -14181.506,
     57033.967,
-    122.0,
+    95.0,
     -3210.954,
     68488.734,
     1462.0
    ],
-   "sha256": "256a917ef1d3134204237f218c8fa1b7259f6526317b7f9875ed2e14ee405e1c"
+   "sha256": "bbc578e43b90afd8e010df243551a23f8f314cc8e4a261795c4b5a4fceba0c31"
   },
   {
    "file": "StoneCast_XM002_YM001.obj",
@@ -6248,7 +6472,7 @@
    "mesh": "SM_Plex_StoneCast_XM002_YP002",
    "material": "Stone_Cast",
    "collision": "none",
-   "triangles": 1366,
+   "triangles": 1486,
    "bounds_cm": [
     -28499.748,
     30352.563,
@@ -6257,14 +6481,14 @@
     42236.435,
     1704.0
    ],
-   "sha256": "b91de81a5f563ef3bf407df6733f2724c535d155ee62f6b41ada532fd08a759c"
+   "sha256": "1529b15733dc9bc8b479525c61a8cab28fa0da9a0fe68495c52424242e31ab6b"
   },
   {
    "file": "StoneCast_XM002_YP003.obj",
    "mesh": "SM_Plex_StoneCast_XM002_YP003",
    "material": "Stone_Cast",
    "collision": "none",
-   "triangles": 890,
+   "triangles": 1010,
    "bounds_cm": [
     -28460.05,
     44418.073,
@@ -6273,14 +6497,14 @@
     56714.839,
     1242.0
    ],
-   "sha256": "eda4c71f9738a4c110e0374f2e09933406def8ed575113507838dcf4d5a6483c"
+   "sha256": "66af4d71eb7e959f8ee1cf1ebcbaec065d8fe14fd678b14541f2f27ffbeaac8f"
   },
   {
    "file": "StoneCast_XM002_YP004.obj",
    "mesh": "SM_Plex_StoneCast_XM002_YP004",
    "material": "Stone_Cast",
    "collision": "none",
-   "triangles": 2710,
+   "triangles": 2750,
    "bounds_cm": [
     -28246.739,
     57241.841,
@@ -6289,7 +6513,7 @@
     68815.59,
     1522.0
    ],
-   "sha256": "88d0c808ac15f2778c76ddc49cc4bed7027a973332d4f07ec1f1a10faf5f79d3"
+   "sha256": "a0a5848a83983cf713e396aa9d8dfc3bb72ad6ee255b660eaf1e8458772254ee"
   },
   {
    "file": "StoneCast_XM003_YM001.obj",
@@ -6312,7 +6536,7 @@
    "mesh": "SM_Plex_StoneCast_XM003_YM002",
    "material": "Stone_Cast",
    "collision": "none",
-   "triangles": 6882,
+   "triangles": 6942,
    "bounds_cm": [
     -43056.152,
     -28582.112,
@@ -6321,7 +6545,7 @@
     -14322.578,
     1552.0
    ],
-   "sha256": "f12aaa21d2162ae9036af6b5634985584f283bcb7130fe24376f5394ca802e1f"
+   "sha256": "826af01614378b022bec53d0cd3132922d808bb038737c8810e2d5894001386d"
   },
   {
    "file": "StoneCast_XM003_YM003.obj",
@@ -6344,7 +6568,7 @@
    "mesh": "SM_Plex_StoneCast_XM003_YM004",
    "material": "Stone_Cast",
    "collision": "none",
-   "triangles": 880,
+   "triangles": 940,
    "bounds_cm": [
     -42166.282,
     -46476.187,
@@ -6353,14 +6577,14 @@
     -42741.609,
     1162.0
    ],
-   "sha256": "bb89d69763d6bbf02152a7fe9568fca10b8cfbbbbe64231ba1e90b6359cd4532"
+   "sha256": "e13538100a585e7e9bb4842c2606593a9a80537c26b0cfbf31f6d294134a9585"
   },
   {
    "file": "StoneCast_XM003_YP000.obj",
    "mesh": "SM_Plex_StoneCast_XM003_YP000",
    "material": "Stone_Cast",
    "collision": "none",
-   "triangles": 1678,
+   "triangles": 1718,
    "bounds_cm": [
     -42713.921,
     98.933,
@@ -6369,7 +6593,7 @@
     14233.302,
     1483.0
    ],
-   "sha256": "045cc8d2526bab369be74c6319516156f61117c5e508daeaebca1b34d9907aaa"
+   "sha256": "c39667d03959150a3b76c445330a333efc77feabe2955c64efad69918ec93c91"
   },
   {
    "file": "StoneCast_XM003_YP001.obj",
@@ -6392,7 +6616,7 @@
    "mesh": "SM_Plex_StoneCast_XM003_YP002",
    "material": "Stone_Cast",
    "collision": "none",
-   "triangles": 2906,
+   "triangles": 2966,
    "bounds_cm": [
     -42761.232,
     28577.456,
@@ -6401,14 +6625,14 @@
     42725.913,
     1369.0
    ],
-   "sha256": "e0c47f5390d0e9f2cae9219f1efe09f3538cdb659b312207b968e90dd1919673"
+   "sha256": "66c526a30a881f63a7aa534130cd1cd660030f654bb7ca9e53cecfbc3383b917"
   },
   {
    "file": "StoneCast_XM003_YP003.obj",
    "mesh": "SM_Plex_StoneCast_XM003_YP003",
    "material": "Stone_Cast",
    "collision": "none",
-   "triangles": 5448,
+   "triangles": 5568,
    "bounds_cm": [
     -42658.065,
     42717.885,
@@ -6417,7 +6641,7 @@
     57012.811,
     1572.0
    ],
-   "sha256": "2fda17cf8209a3203b6dd1e7bd7e213df8591fe0cfbf32228c3e5ece85d5e2f2"
+   "sha256": "29bba58ab4d716c1f71d08c5e6a002f5979c57ff5bcb563c9cfbfc7abe02f17f"
   },
   {
    "file": "StoneCast_XM003_YP004.obj",
@@ -6616,7 +6840,7 @@
    "mesh": "SM_Plex_StoneCast_XP000_YP004",
    "material": "Stone_Cast",
    "collision": "none",
-   "triangles": 1542,
+   "triangles": 1602,
    "bounds_cm": [
     5349.733,
     63532.207,
@@ -6625,7 +6849,7 @@
     67900.964,
     1227.0
    ],
-   "sha256": "af2be3c9b5206d3c82814d8998155a32bf175567b7651c70c411363216734f94"
+   "sha256": "10a7e8fbd70c1afe061662f05d2118b63b42c3044bed32be1e1180d247294dd7"
   },
   {
    "file": "StoneCast_XP001_YM003.obj",
@@ -6760,7 +6984,7 @@
    "mesh": "SM_Plex_StoneCast_XP002_YP004",
    "material": "Stone_Cast",
    "collision": "none",
-   "triangles": 4904,
+   "triangles": 4964,
    "bounds_cm": [
     28519.977,
     57016.863,
@@ -6769,7 +6993,7 @@
     68244.092,
     1242.0
    ],
-   "sha256": "ab611f1e1c6abfdafd51199b3426da99ff8b4caeb8957ed392c2a46db8d2282f"
+   "sha256": "a5f9408511d7d0d3cef7891b53aeea79d1b3cc7cf48dc5104a9a4d7ebcb76db3"
   },
   {
    "file": "StoneCast_XP003_YM002.obj",
@@ -6968,7 +7192,7 @@
    "mesh": "SM_Plex_Stone_XM001_YP004",
    "material": "Stone",
    "collision": "none",
-   "triangles": 4962,
+   "triangles": 4934,
    "bounds_cm": [
     -14381.783,
     56954.745,
@@ -6977,7 +7201,7 @@
     68524.933,
     1150.0
    ],
-   "sha256": "4f826a5edc6fa97bb2e08cb4afcba13556b244ec7dfa0de4f5f7c747b99bbb46"
+   "sha256": "a2475d4553b427fb94e3419f1fe7d4078ccd8a88e74b276cc807dbcc7cbae840"
   },
   {
    "file": "Stone_XM002_YM001.obj",
@@ -7064,7 +7288,7 @@
    "mesh": "SM_Plex_Stone_XM002_YP002",
    "material": "Stone",
    "collision": "none",
-   "triangles": 8056,
+   "triangles": 8020,
    "bounds_cm": [
     -28727.714,
     29379.59,
@@ -7073,14 +7297,14 @@
     42899.394,
     1480.0
    ],
-   "sha256": "917455761c72335d91512954a9ba89858eafa3df8616eb60765d99000f91899c"
+   "sha256": "451e4b94faadfa9a42e5fe58953f5ffae87550815ae695ecf3ed716301266ba3"
   },
   {
    "file": "Stone_XM002_YP003.obj",
    "mesh": "SM_Plex_Stone_XM002_YP003",
    "material": "Stone",
    "collision": "none",
-   "triangles": 11584,
+   "triangles": 11568,
    "bounds_cm": [
     -28618.221,
     42707.045,
@@ -7089,7 +7313,7 @@
     57202.858,
     1195.0
    ],
-   "sha256": "72a32584f92e8c98c95a2a269cd0d860e4d940c00d475df58cba124c1f6b4fea"
+   "sha256": "265671f23ef392c03e6164e65da7fd5066cbb008f68c4764efa5da7168039517"
   },
   {
    "file": "Stone_XM002_YP004.obj",
@@ -7105,7 +7329,7 @@
     68882.564,
     1683.0
    ],
-   "sha256": "1b9d97a2d5ec62be28bb4b215c99df932535d6478bfd214ed28a1107364eea7d"
+   "sha256": "5cb1ecdff6bc1ce9e11c5b9c3e71505e0702e058062a9f672ba74d256caaa00b"
   },
   {
    "file": "Stone_XM003_YM001.obj",
@@ -7128,7 +7352,7 @@
    "mesh": "SM_Plex_Stone_XM003_YM002",
    "material": "Stone",
    "collision": "none",
-   "triangles": 15516,
+   "triangles": 15586,
    "bounds_cm": [
     -43052.569,
     -28498.315,
@@ -7137,7 +7361,7 @@
     -14241.109,
     1373.0
    ],
-   "sha256": "ef9a20e8252e68797c128fb32724583dc7d884d2c91a09d264ed2f0836b4d97b"
+   "sha256": "1157e134f5b4d1c453cbec8d6ed395ee7badc30916d551a1bc01ccfec8908d10"
   },
   {
    "file": "Stone_XM003_YM003.obj",
@@ -7160,7 +7384,7 @@
    "mesh": "SM_Plex_Stone_XM003_YM004",
    "material": "Stone",
    "collision": "none",
-   "triangles": 4344,
+   "triangles": 4316,
    "bounds_cm": [
     -42156.181,
     -46767.048,
@@ -7169,14 +7393,14 @@
     -42737.258,
     1153.0
    ],
-   "sha256": "abdcc57773bf7a7fbefb92e57ea423bd3b91e2ee5958237ff350a0935498492f"
+   "sha256": "13c7f4a7f1142b6c8ed5ad32d61ddbcd891c773d04e75306c6e77989e5ed0d5e"
   },
   {
    "file": "Stone_XM003_YP000.obj",
    "mesh": "SM_Plex_Stone_XM003_YP000",
    "material": "Stone",
    "collision": "none",
-   "triangles": 5770,
+   "triangles": 5850,
    "bounds_cm": [
     -43107.096,
     -16.98,
@@ -7185,7 +7409,7 @@
     14237.801,
     1978.0
    ],
-   "sha256": "fc30f0ddf62b5d7a146fbce494026dcf39593e97130406f3b3cfccfc87634938"
+   "sha256": "73f1aa4303ab51c89dd1fbe8e0969b2b63d1d80edb86d60de1ed4c410d26f1a6"
   },
   {
    "file": "Stone_XM003_YP001.obj",
@@ -7208,7 +7432,7 @@
    "mesh": "SM_Plex_Stone_XM003_YP002",
    "material": "Stone",
    "collision": "none",
-   "triangles": 10290,
+   "triangles": 10282,
    "bounds_cm": [
     -42762.112,
     28157.21,
@@ -7217,14 +7441,14 @@
     42775.58,
     1364.0
    ],
-   "sha256": "68e94398b5509b3a8052b914139d517536430fa9f200c0c78efef29ae9f0aea5"
+   "sha256": "58f158ba91584d94545aa0035d38f3dfe5eafd16ab65bc9c90941e4cd3bc2282"
   },
   {
    "file": "Stone_XM003_YP003.obj",
    "mesh": "SM_Plex_Stone_XM003_YP003",
    "material": "Stone",
    "collision": "none",
-   "triangles": 10824,
+   "triangles": 10818,
    "bounds_cm": [
     -42920.97,
     42479.841,
@@ -7233,7 +7457,7 @@
     57263.206,
     1170.0
    ],
-   "sha256": "ae428ea0ac60f739e67b89050a41a12a1f3b106de62c1b89b27828e40688e70a"
+   "sha256": "865c9a5df9eee52c6f367ea2687da8b6235fbd68dcabec5bb3361fdbb3aa8f49"
   },
   {
    "file": "Stone_XM003_YP004.obj",
@@ -7455,9 +7679,9 @@
     0.0,
     14275.522,
     68763.479,
-    1170.0
+    1215.0
    ],
-   "sha256": "2683c5060ee93a582b736dd6817c9f6018a6829ffc397140262b831097054c96"
+   "sha256": "e80e08cb90f65bfef4e8b7d4f6c8e76b56c44abaa60db3da7a91631bf15b081f"
   },
   {
    "file": "Stone_XP001_YM003.obj",
@@ -7601,7 +7825,7 @@
     68348.169,
     1210.0
    ],
-   "sha256": "44f6579dc2a2946d7aceafaaffeae7f4923be3e48e578ba1e4ae6aa6ad00d298"
+   "sha256": "037bfaa2bd9692030b14071c708aca036c4016596daeec0a73245ab499b6bdaf"
   },
   {
    "file": "Stone_XP003_YM002.obj",
@@ -13115,7 +13339,7 @@
   "awnings": 93,
   "balconies": 2504,
   "basement_vents": 1773,
-  "batches": 813,
+  "batches": 827,
   "corner_side_fronts": 383,
   "cornices": 771,
   "doors": 5210,
@@ -13140,7 +13364,7 @@
   "stair_straight": 447,
   "storefronts": 152,
   "top_extensions": 1300,
-  "triangles": 2140589,
+  "triangles": 2139575,
   "windows": 9012
  },
  "batching": {
@@ -13160,115 +13384,135 @@
   "Data/CityBuildings/manifest.json": "277b4ad324d1d4ee8ca539c7cb61c42eefb2af81ac47172f3940334f57c9b8e7",
   "Data/Plateau/layout.json": "819756930647bac5c66eef73dbac02e383b24fa6f8a14ff4de18b9237e6b2765",
   "Data/Plateau/PerimeterGeometry/perimeter.json": "abb1a46217d5ecf7512b91e6d0cbc70179d39e074713d9e299ac758983613e82",
-  "Scripts/plateau_plex.py": "71de578ed79bcc3e81252240a7bf31121a591e5724d994eea9535594a88da401",
+  "Scripts/plateau_plex.py": "e4bd16cbd9117aab1105cc0c11900fdffeebc832e038a57aeec82f39cb520647",
   "Data/Plateau/ReplicaGeometry/Plex/assessment_roll_join.json": "a45fbc3a5ee02801feb034da9b30ed37212ba2b0872ca1c7b70ac34f9c17fe26"
  },
  "geometry_sha256": {
-  "BrickBrownDark_XM001_YM002.obj": "9090117389f9a7af31f3a0ef99f5a2a750be09ec8680dd1c592b3ed21e1ddc8c",
-  "BrickBrownDark_XM001_YM003.obj": "ed8cb9cf63b6b36ac72bc4182e85b629b3635bcf98f22bdea16c8a5f8dad7479",
-  "BrickBrownDark_XM001_YP003.obj": "8920b57017ce37c18e4a074d0daedd2d207c73938481d374f02ab4c6c0b39733",
+  "BrickBrownDark_XM001_YM002.obj": "40db8cf1ecc82ee9625b9efc9d998601849c96d1fa79b0e8d2b5b3ad4ee646ac",
+  "BrickBrownDark_XM001_YM003.obj": "b0e07b2b16574001b09ff341e8f309903b43d45247b732decc14c770c46fe059",
+  "BrickBrownDark_XM001_YM004.obj": "05d8954de7208ab7cb8a96bbccedb7ec68bcea9a3e5a507634b0cebfab7a43b6",
+  "BrickBrownDark_XM001_YP003.obj": "30d9cc77e3704b8c63673118fc931dcee21159956c1809f18dc24e3ed98be326",
   "BrickBrownDark_XM001_YP004.obj": "890cbd46787870e04f167bf01aef9dafe95d26f772a1a3604666e8bd09720597",
-  "BrickBrownDark_XM002_YM001.obj": "58f55a785de06859e1690b2feb727592a668ddb39a81415688e105c9a13e0569",
-  "BrickBrownDark_XM002_YM002.obj": "cc752a134fb1a557a979a21d3bdd95d2957e425ece8f4fae2f9d5b6e8e1c87c8",
-  "BrickBrownDark_XM002_YM003.obj": "04ec740136009f5fd5cdb00f5405ae4b6c9d3c0b4ca0db7a88c0e48aed727775",
-  "BrickBrownDark_XM002_YP004.obj": "729d0e52cc45388caa42f58ac6ed9283f0b9ae529e0930b506304b5344678f28",
-  "BrickBrownDark_XM003_YM001.obj": "547c5cf24a3d76b3c2cfc2584cf809aa2d93cdae2741b6f5ad2ab29525df8fdd",
-  "BrickBrownDark_XM003_YM002.obj": "b27e693439d2fda5e5911a0f8b306f7c9e23bea8097744a5aa5fe0935b438932",
-  "BrickBrownDark_XM003_YM003.obj": "c0128f643f8f4a99ae95dc35fec5a4fed79c9b8195bfd64eec510a0ca299e6b6",
-  "BrickBrownDark_XM003_YP001.obj": "ba8d39e86f6461778424ae80345dee4fa6f3bd0a6925d7575935df366b062a44",
-  "BrickBrownDark_XM003_YP002.obj": "c1968f309ef184c8b825ec3ed920583883f90aba0c39b8d643e790ffb3b41dff",
+  "BrickBrownDark_XM002_YM001.obj": "43b68adff4676be048a33c28ec411766b3ee9b271e434129179dab72ee8e9817",
+  "BrickBrownDark_XM002_YM002.obj": "657de93dab295f725f242ec94dee55ed5c9e85feafd1c71cfa95f5bc1b725dca",
+  "BrickBrownDark_XM002_YM003.obj": "cba103d81d8db548de6ec984bf55c7051050f1706fd37d37fc739c884022782e",
+  "BrickBrownDark_XM002_YM004.obj": "8d90cdfc14fbbc035780a51b663cd1653ee07a5ed2fc8966559352cd876d8a0d",
+  "BrickBrownDark_XM002_YP002.obj": "c4eb3b4913fd7ad1c44d6af305cb454df860a20b3765391207004922ac171a75",
+  "BrickBrownDark_XM002_YP003.obj": "98808e9c616398815de80d6a9d6eca33cd60dfa8f36d0ddbf00bdd0beba9f86b",
+  "BrickBrownDark_XM002_YP004.obj": "2b99e562a85328977185f4a3b0d791e840494079530f9ed68f044267fdfadc9d",
+  "BrickBrownDark_XM003_YM001.obj": "204a36a30adf00635530187c3a0c109ef9dd427c4100f2d36ccdc4ec300edbb1",
+  "BrickBrownDark_XM003_YM002.obj": "bb51ca562b55d0cfc4b91072f17fc5a494a4ee2db1367a61a2d0272de20fcdb7",
+  "BrickBrownDark_XM003_YM003.obj": "3273b0435bed5375631269b3b71786979a41ea68b25bd6de1182575e5b9878ea",
+  "BrickBrownDark_XM003_YM004.obj": "0cbc3d38ccbda5ed9a66feb7761802589dc8685d95c035e343b29e97402f52aa",
+  "BrickBrownDark_XM003_YP000.obj": "f981c3b15df6180c969a05a41890a3955e8b4ed28fb5ed7e381dbad1a93e4fb1",
+  "BrickBrownDark_XM003_YP001.obj": "c1ffd7563e8cc746c81e6f201afac0bd3559742bca56908e37fdf5ab11179896",
+  "BrickBrownDark_XM003_YP002.obj": "166d74d603ef5ec2e82d17e0e32bd150608bf0abeb6feb9d47326e5754b18608",
   "BrickBrownDark_XM003_YP003.obj": "bd91ebe4caf445389e8e0003926bcb785e9d6fa1403acc148cbd9d3613c9cfff",
-  "BrickBrownDark_XM003_YP004.obj": "79cd9a004b338c26e60168bfc9625478fc0e5a3bf385997767ab94cf34af95c0",
+  "BrickBrownDark_XM003_YP004.obj": "7cac57144efa712105951ae36a039a191907be8c3e91d783a21b04e4bec2b565",
+  "BrickBrownDark_XM004_YP002.obj": "ebe136364e7737fa35f7ceeec2dc5b1e28ad705bdfc643cc5cbfa79de490f321",
   "BrickBrownDark_XM004_YP003.obj": "8f4e565a71ea2c19414979d56f761a7e105884a049c011c7f14cfc6d23f71352",
   "BrickBrownDark_XM004_YP004.obj": "d05a8aa80740309afac01a1935d9d38ffaacaada95ec0648d196c7b39ae6dcb8",
-  "BrickBrownDark_XP000_YM003.obj": "05dd76a47108759bb47748df7075135bcaf5d916c732d875105796660dd43382",
-  "BrickBrownDark_XP000_YM004.obj": "f7f6b3343aa0fa4f8b10f49c8c7807f465a95af21f9b9f68bb591d6729bf4f96",
+  "BrickBrownDark_XP000_YM002.obj": "9b629713b556e1df846b6866a5eda0bd366e472871cff960c5444be78fadc823",
+  "BrickBrownDark_XP000_YM003.obj": "74d237bb9f1e57b713b6bab8ac8c88799ed65d7123ddaafd5af9ba31e439e66f",
+  "BrickBrownDark_XP000_YM004.obj": "8f82449b01a7b8e0b9cdac871778028e16707872b3d9c764f4d7daa353e236f5",
+  "BrickBrownDark_XP001_YM003.obj": "08053ad3f63d3b44e7909f3f04ca4ecc72884b00540d40fec09b1a1a95480e56",
+  "BrickBrownDark_XP001_YP003.obj": "a7c853e095cee9bbc7c294f8a1a9eef8d84dd609626c29861b1d4c93d23bbd86",
+  "BrickBrownDark_XP002_YP003.obj": "8907b921102566168c16f85f1f7f2844d2b2c84ac95fc0c08a281279a72055a3",
+  "BrickBrownDark_XP002_YP004.obj": "04c1e16726b8ca261f3b73ee0ce58c517a659d0291b8c330bf91214df34cfca5",
+  "BrickBrownDark_XP003_YM003.obj": "c52757b4befeff48050a47670f588f649638f95ea9c37fb7e5adbb75c570f6b3",
   "BrickBrownDark_XP003_YP001.obj": "36a669ea27e8439163870ffe2a4e662e3fd9517ca6ede1607de05fb69a756785",
   "BrickBrownDark_XP003_YP002.obj": "7060995811a11579e7864a0773a3dcbb627d606501a98dc576c73b92712e3c5e",
-  "BrickBrownDark_XP003_YP003.obj": "d7154d07674f8e9da1b43ee299e93d89a26b07ae72bb3ef22bc49a8aea27551f",
-  "BrickBrownDark_XP003_YP004.obj": "2f0dc3c7118a1e9e4dc752a5d19102c580f989e72c673ecc4c13ca5be9077f45",
-  "BrickBrown_XM001_YM002.obj": "0ac0bf659c8401db82479ac42235cff59b63f7d16372cdc544417e9b60600efe",
-  "BrickBrown_XM001_YM003.obj": "4cd59216cd50be36ab1b28f0a167c99f49afb9a1678edbadec53b7cbd4f50d42",
-  "BrickBrown_XM001_YM004.obj": "df00053fbc3ce4a5562aaa1556e04fdb6a768fc33b0a46284c8f299bc37ed05e",
-  "BrickBrown_XM001_YP003.obj": "23c9c29de7b243da06044dc2ee14a7dc30e21ae37fa2d1994d2e559f71c6cf4f",
-  "BrickBrown_XM001_YP004.obj": "fce96cc30c6ab8aacbd262fb723a9a22a33ade2e6e49917ec86139824a17ecff",
-  "BrickBrown_XM002_YM001.obj": "e35c00e7ad787f8577da7a429e31ba0be6eea9db453fbf1176c7ed13c6e78062",
-  "BrickBrown_XM002_YM002.obj": "db39e51f61aea04df47352807d834dd0c0a1508fc1cd744220093e7f3eef845f",
-  "BrickBrown_XM002_YM003.obj": "e4c4600ff5370324c02b86289fdc06460d12f6ec99594f185f65d183fe866f5f",
-  "BrickBrown_XM002_YM004.obj": "7d433e902c13be42b7f1263a40ba9f48e9114ca292dfc2276da44ddc20ecf6ab",
+  "BrickBrownDark_XP003_YP003.obj": "e3d52925d24d1120490a89440acefa99d1c35948f6e5bf1138d761447bf30d98",
+  "BrickBrownDark_XP003_YP004.obj": "5448e31e14cf6a3ba932e3b88293f97a73258ca307574fb157b22352729eec12",
+  "BrickBrown_XM001_YM002.obj": "aaced2b3ef8eccb94805721adbb97b8c332c1ed46862facc097b98bcd1aa1cc4",
+  "BrickBrown_XM001_YM003.obj": "92d836875537d16779e4515b3a273be04ccd23ad74608eba91d5f2db29bf56c5",
+  "BrickBrown_XM001_YM004.obj": "3614309b3353937c2a79b94154143686ffadb9b5b8d712a04f1e7046e7629d0c",
+  "BrickBrown_XM001_YP003.obj": "f8732d81d50656cd0d711d315910b882b9862cce89a71a20ce63423d6e47f0ea",
+  "BrickBrown_XM001_YP004.obj": "46c0ddbf0c4a6ed1f56e24485e529d7e6c7a6e2399542be5796bf9913b3ee9cd",
+  "BrickBrown_XM002_YM001.obj": "45f14c6d02ba13f88203b26173b0b3f13ef29b937d324dce4841176531e7a310",
+  "BrickBrown_XM002_YM002.obj": "7d6589a154c0a4951c3dff2c7800ffc356ec4e7b8791be5583928c9d011f71d6",
+  "BrickBrown_XM002_YM003.obj": "33aa0b0cf0cf553f679e14e5635a2752e059c549b4d8144c8d679375be7fd8b6",
+  "BrickBrown_XM002_YM004.obj": "f85aebecb7225aa4028bf1428d60cfe7f911fa922cdcbfc403b45bb342215b2b",
   "BrickBrown_XM002_YP001.obj": "6a3b22020833432ad6ebe0d21987c06e1cc01fb28f87a6b713296ce412da48af",
-  "BrickBrown_XM002_YP002.obj": "a86afc23ef5774fd79c2dce9e8b8b8541cdced2f317cd1112192bd6379470f8e",
-  "BrickBrown_XM002_YP003.obj": "a66714a5d834ec07656fb0028a0a54cd841ae30203c0ed5389199499e56d0732",
-  "BrickBrown_XM002_YP004.obj": "fa09954cd0c589ad0cbe8108dce59a1c95460ff0314e7b5a098e3eca69203f75",
-  "BrickBrown_XM003_YM001.obj": "da028d2da9354c723ef5614b514efe456f1b6366835b12665ba9a54c37f7b537",
-  "BrickBrown_XM003_YM002.obj": "e3f5380552b67702bd2e7e472edc9e86f308917a9e33c257955ad642c3cabed0",
-  "BrickBrown_XM003_YM003.obj": "15b8d77f9d62c611a28217a9fd9c71478c5131ba2624b630b5f59be71977e095",
-  "BrickBrown_XM003_YM004.obj": "4d90b445cff10ae81f79f19d3d5d64fa17bd4d8d6747d48f06a049e232fc2262",
-  "BrickBrown_XM003_YP000.obj": "a8fa714501c6998f0168decf7cea64b08deb75ba752dcee52a6e96b4383709d3",
-  "BrickBrown_XM003_YP001.obj": "03b4eb4e6cccc2b8d3df0df08baffe5ca262314a1d07bcf49e65aad2f9ecc12d",
-  "BrickBrown_XM003_YP002.obj": "47efd3e69786574ea5c43ab1a501282be6cc07cf6c00a5055572dd1ebd77a2c4",
-  "BrickBrown_XM003_YP003.obj": "9e04c3a29c74f19dd0f7b7a8c2d9e76b88c74a73ce0d12cf7f93cc7d98b565f2",
-  "BrickBrown_XM003_YP004.obj": "0a9de4f02b911c2f33aa863899ffd486291a4a1b4ef04168ff351a40f6b3c4d8",
+  "BrickBrown_XM002_YP002.obj": "5724bf8ef6caf3e07a581e3b166205d80738757df31f059d9fb6144ce0998af4",
+  "BrickBrown_XM002_YP003.obj": "bc8817741421ed4ace5dd5f3db4be399914e399a3b1ef3b16f3bdf3df124848b",
+  "BrickBrown_XM002_YP004.obj": "6334f1be2cd8a69459def1681ed0548e941c9a5b2450cd12b0ae53498a6b2d37",
+  "BrickBrown_XM003_YM001.obj": "d79d8820b4964aede3fbd2500aea0769652b1c656fcf227f8b85527342b6c0ad",
+  "BrickBrown_XM003_YM002.obj": "382db6a0a2e8cb3493f6e3994a687b7755ed5f3f232946be07f8cb036801f72c",
+  "BrickBrown_XM003_YM003.obj": "e700540e621bdf893443f90a6676329e773f23c6a888441a35259c0212d4de53",
+  "BrickBrown_XM003_YM004.obj": "33b97f09800dd391ecf7ed7e364c49c46447a459c446231af7d2cf2648ed3a52",
+  "BrickBrown_XM003_YP000.obj": "6fb13e599d31a99aef932e77a73991958eb5e88af611e5e39a5fe0694c8838ab",
+  "BrickBrown_XM003_YP001.obj": "83be858c27d3d95618187cd16e90e86de8b1a7ffd8326862aec9dcf12ce67c6b",
+  "BrickBrown_XM003_YP002.obj": "6a00bd33973e5b2b214e01ac7aa6885af637be6a6341ced2be361efd644e3fc3",
+  "BrickBrown_XM003_YP003.obj": "52d8b74f68b1b8d2af72abfd1b6eb329673ff1b28f86a4889317066552f46ea6",
+  "BrickBrown_XM003_YP004.obj": "3fd25b1de7d13ffa03520ef093b0ffea04cc76eeb0934d3cbf03fb36c2f0d374",
   "BrickBrown_XM004_YM002.obj": "cea94c7965048e0929519635e0f0af45d001f22ee6d1de1fbd3aae7c0b64b2a7",
-  "BrickBrown_XM004_YP001.obj": "6d94d8842cd38697afb56f826cc567e220b856f33c2ddf32aee6593c2d9c29f2",
-  "BrickBrown_XM004_YP002.obj": "6df0274cfae3d8d824b77c6df4f5d8122e2f7297b0d7b886dbcb7e15e3b898a4",
-  "BrickBrown_XP000_YM002.obj": "190d0f01bc30ed8ac040d1b07be547b08c8a4e6b631d40868bac70a9cdec0584",
-  "BrickBrown_XP000_YM003.obj": "5b27527099c83e0f526270d3d025925bf1837f98a537a112ba55a1508274256e",
-  "BrickBrown_XP000_YM004.obj": "8eb1ec8ab902e02621db79126fd9c459917355848c4ba907a7707fe053269d50",
-  "BrickBrown_XP000_YP004.obj": "edddc4a90e1788e7223bfb6155683ba686aba627dfee25db650629cc09bc7076",
-  "BrickBrown_XP001_YM003.obj": "66408c0604aebda3eea6ba375666adf0ce0fdec6a4346efc188bf4702ad15afa",
-  "BrickBrown_XP001_YP003.obj": "0e55474d8e5413303819e078140770f543fcd3892dc8f806140163441abb93a9",
-  "BrickBrown_XP001_YP004.obj": "d881c84b628ee9cbd5190dbd14377235e17180e761185badc3f5f61669b52334",
-  "BrickBrown_XP002_YM003.obj": "72d02ea4fdbdea895b6eca3ae4abb8fe91b5aee40f2af846ad7eb99625876ccb",
-  "BrickBrown_XP002_YP003.obj": "1ee106a0a04005be34a3f6eccb59d2017ebac257e76749ac8ccea14934545d6c",
-  "BrickBrown_XP002_YP004.obj": "4c0c9d1751d74e5fce582b268b13c6e01b51edf7454e9d5f013ea4d6cad9b303",
-  "BrickBrown_XP003_YM002.obj": "38f9b51a001f7097945e21dbc850aebd9ff757bbe933223ec21bdf28a99e6c0c",
-  "BrickBrown_XP003_YM003.obj": "b2f97ddb3d39f6ba769c9b5c1ac11f5dac1e2d9a0e8452168ec75b449961ad63",
+  "BrickBrown_XM004_YM003.obj": "eb960722f99af797ba4e2e15ca7b99ff34d810cab736eab1cfb39de6f173f38e",
+  "BrickBrown_XM004_YM004.obj": "a6af796a54c5f1e77bf117f282fa4b1a4d010ef424d5ed2ca1f3008d244689cd",
+  "BrickBrown_XM004_YP001.obj": "24dbc11483a578794e319559efaeeaa058160ec6666a42aa943b1a20708e2744",
+  "BrickBrown_XM004_YP002.obj": "1d49f347fa1ea2963ebcbdae31b4cacd9a3dc2c6df97f88e11b601307457c97e",
+  "BrickBrown_XP000_YM002.obj": "74b6a5acdc56166872f7f25f908d69306b578966805cd9cbfb9270ef583e8a58",
+  "BrickBrown_XP000_YM003.obj": "baa10af9a85a2222633a35f600f04a6ba76e6603e5e02bf584ba01bd8df7ef78",
+  "BrickBrown_XP000_YM004.obj": "62c9c6d3c485794b4ce6b2584bfb1b592792c7976091e4f5c9543df4c3225f6f",
+  "BrickBrown_XP000_YP004.obj": "487c3d9cf225aa47b17f3094412b99f4906901e07df24c6aba14f40c67dae319",
+  "BrickBrown_XP001_YM003.obj": "6762ffc0e5b844462ef4b3d03b1934a872cad8a34ccb1565f34bfb14a6249958",
+  "BrickBrown_XP001_YM004.obj": "cd3258d195f47a2427d606dd75907ccea71a2fd76769cdef67fe21894565ccd1",
+  "BrickBrown_XP001_YP004.obj": "ad5f5c712ef33129e76fd0dccefe8f9ae82c3d21e7473e784c797ed16cfb42a3",
+  "BrickBrown_XP002_YM003.obj": "b1c409b4e5032b4ce904e7c6bde0a14ed63f45158c686e6c8f8db5e5f5d1f8c4",
+  "BrickBrown_XP002_YP003.obj": "8698634c360e0ca5829905dc7bbe1461dbf873ee3fc00a0f12721a4f1c1c3664",
+  "BrickBrown_XP002_YP004.obj": "d289a40defc3963eeb1014b2823f001f7bdc5a4c6b2783d61925b889ee3d0baf",
+  "BrickBrown_XP003_YM002.obj": "e5fdf7b245e5605d9b4eebd545dcbfe74dbdd43349fbc7e673495bf1b2568737",
+  "BrickBrown_XP003_YM003.obj": "3887acfc03822975bfd4f5f954faf401db1e9eeb24dc69db39f1e8084bedcc54",
   "BrickBrown_XP003_YM004.obj": "448e85763376b14cbc106d7886f7cd3f5aac51b1e103f2ea5b4630ad05a40d3c",
-  "BrickBrown_XP003_YP001.obj": "ef56c47c09a3f749729ee2c9d278f53731f9b65ea565d1238942890b340ab915",
-  "BrickBrown_XP003_YP002.obj": "36ede9416295aa42442add64643a0fe188db3395d515929f3223e4c4004e8b4d",
-  "BrickBrown_XP003_YP003.obj": "fa4e89cb2937fea79c424d95fceeebac91b6f73eb64b5923776ad5a10910e59b",
-  "BrickBrown_XP003_YP004.obj": "308ea12a6c5caaafdd1eef77fa1a4d50dea5002187dc60f2cfab1fd4cfd58bd8",
-  "BrickBuff_XM001_YM002.obj": "970fcaafe809fdc3e9e8cfa060c9f9626ebd19486686b588fbe330f0d490ba16",
-  "BrickBuff_XM001_YM003.obj": "8fab7ef0f858c263bb1766f2a3fefa0a2e8691ec44400dbf2efd96bb0b87f5f0",
+  "BrickBrown_XP003_YP001.obj": "470b530f42c5f17bc98c82fa0d0cfd8362b250f1c68274b88a81682d774360f2",
+  "BrickBrown_XP003_YP002.obj": "695e4ca439a971cdcc764254417722de6c53f0d37cbbaefd6f08948c0b371cef",
+  "BrickBrown_XP003_YP003.obj": "37c652d49c0d64ca07a4fc02b67026d8eac9c0502c75492dad03bc7a50d137fb",
+  "BrickBrown_XP003_YP004.obj": "e5df0cb53540001f26ddfb8f3ecc7c68da8ae93a3bdb0a08a58bc0bc8d66ead4",
+  "BrickBuff_XM001_YM002.obj": "ed120cbf48e096b74d088032ec1f7cdeec2738b2eed96ff53e30fd731bcdcfb8",
+  "BrickBuff_XM001_YM003.obj": "9023bec445a93eacfb177f2ba682ab7d50cd0002cdb99fcbdc9f634c89beed9f",
   "BrickBuff_XM001_YM004.obj": "1ec30d18dde9ff1b5b867b80622c02b61a329989dfd73e34b320af41f04fb2b4",
   "BrickBuff_XM001_YP002.obj": "35c71edf470e177712e62bd4667bf95a0bdb30310d6da9b7ebf8e1e16ce85bdd",
   "BrickBuff_XM001_YP003.obj": "e664701896b61d8a63fe9e91585d2914ec95f85748608a90112d98daa20df850",
   "BrickBuff_XM001_YP004.obj": "28e8efec8c4ff58dc4e15c5354985e5a6b9eddfccc533282410933a862b4dec6",
   "BrickBuff_XM002_YM001.obj": "afadb51da68e1cc3104f56f9647ed59cb82f32d3a7ac1b8db1c6c400df247d16",
-  "BrickBuff_XM002_YM002.obj": "c6d8e3ef16bff36997ff0391171b5734f8da220001a37207e6530b1f38a1090d",
+  "BrickBuff_XM002_YM002.obj": "3b2d317eecbd6a4cb2cf50cf0067ffdd5a51024a1beaeae46ee6a130176328d7",
   "BrickBuff_XM002_YM003.obj": "a25628eb558b2e98d0c9b86701ca4f0aa32df1a30155b6f71bc206a3884b1d57",
   "BrickBuff_XM002_YM004.obj": "29404acb6524234091f0b518b667b797877cd4571e12a89d421dfc5f8ad4718f",
-  "BrickBuff_XM002_YP002.obj": "214520acdc677596047b093f7bdeaa0a2ead8d9e982a56c3a9b280170ba2af6a",
-  "BrickBuff_XM002_YP003.obj": "2728f26ea25c6028e6e3729f422557e234c150c1be5dcce0f6f71bc57cc9d285",
-  "BrickBuff_XM002_YP004.obj": "1ff70f2a6f721fb2ea06c60526bd069f5e40f182e33e00f357411fbba7166909",
+  "BrickBuff_XM002_YP002.obj": "a1c265cc7e73529a7a7d2780dcd43089eb9299402aeedd056f7719943e454716",
+  "BrickBuff_XM002_YP003.obj": "c78bc3aa8e5e8aa819f3f3ae6f56f0c5e2c845aa094767d76e5e0d4b51e201b9",
+  "BrickBuff_XM002_YP004.obj": "876814f9622cc9b287e3ca52fa767d7893a07bee6ab41b3ee03de2eb1e05799b",
   "BrickBuff_XM003_YM001.obj": "37a10eef75653706f47dd2c15a3bfb3feb88de086a952b251e7cba7cedc5d8f6",
-  "BrickBuff_XM003_YM002.obj": "2cbc851171038d473993d0797434732eb98bc2026a767ef22dbe78e06e970d47",
-  "BrickBuff_XM003_YM003.obj": "9e96162da9649f547c23d659a36bd984040ce9b4e5f9123a63b4c1199e3b32c9",
-  "BrickBuff_XM003_YM004.obj": "ed4d9634b8c2a1a1410d9ad3b8ee5c13011951943446e40b2220d89f526f11f3",
+  "BrickBuff_XM003_YM002.obj": "5bbbf68ba047dea219af41320c3e58a0fe76619e0957cb74d4b354970b3d6b68",
+  "BrickBuff_XM003_YM003.obj": "e80cd1cedd79897b0d9933586db0e9eb213521e778543545535c9aca462d8672",
+  "BrickBuff_XM003_YM004.obj": "e8fcdc7abe56bb06e41f1c7d136c24d6d4252ef2e8f39000e906ada1e1461cea",
   "BrickBuff_XM003_YP000.obj": "76fb9d4097b22d133388c2b9d82f5eae30990a02a6b4d8e90e495171ea3afcaf",
-  "BrickBuff_XM003_YP001.obj": "714e94fd66a90bc7c3a53309380421126a9822176c65a11c89e46b5c9f641c66",
-  "BrickBuff_XM003_YP002.obj": "518ec84066266a4e0963308af012faa8d526f3cee20fdd6b26e37fd1df806286",
-  "BrickBuff_XM003_YP003.obj": "60af852ed2e6181a050a055f5cea3701cfabcf28762b2af4de630c134f6692d0",
-  "BrickBuff_XM003_YP004.obj": "fd6ec42d569b668dfb06e59035413077aa57a5029c0ec2e27b13cbd4c1a99364",
+  "BrickBuff_XM003_YP001.obj": "ab0bf726931940c84c67dae862b35a3075726f50a1a41c02fb91ff1193380fcd",
+  "BrickBuff_XM003_YP002.obj": "47d73bc69badc27516ff371168b35cad7e169a65883d07b87b4c9912d0d6bf35",
+  "BrickBuff_XM003_YP003.obj": "d57b4924656cb97ebf90ce3b62a458e11785c6ab49fed4d6e584164efb71313c",
+  "BrickBuff_XM003_YP004.obj": "e0da8408d687fde854eb87b4429d8db1ad2d61ea21272745f38ea8e42035edda",
   "BrickBuff_XM004_YM002.obj": "528098e180e84808d6d306a34fd41778fdbb9709686ceb4fd0d1133b15d66cbe",
+  "BrickBuff_XM004_YM003.obj": "adbfa4d577ce3e4a07138c35af3bf0b67de896ef33b76f1c6d7415097d0e1ecc",
+  "BrickBuff_XM004_YP001.obj": "95e82149e968dc8109e077bd8b78b275a5f2b0835bcbf676eb37ab07bb9baba1",
   "BrickBuff_XM004_YP003.obj": "fdf0bf807db400f94c9720e0042d11fc46f8530f59f9860a32d34e6438b5047e",
   "BrickBuff_XM004_YP004.obj": "66a1b3542d2afb4e4434475fd370f5060f20ceade8fb18de6e2385aaf001ae9a",
-  "BrickBuff_XP000_YM003.obj": "3e3202d365bb7dccdc0967928058810d62ecbe88a609f17a58a3ced7e27b92a7",
-  "BrickBuff_XP000_YM004.obj": "639480eadf76b729299f5d6548f8d9168a7539197439faedcba534289f5885aa",
+  "BrickBuff_XP000_YM003.obj": "9962b6e15faca4612e4828728e681420b2c6feced54d213b0f15c5f0d923ef23",
+  "BrickBuff_XP000_YM004.obj": "482b0b5c3bd9e4a3d8f79c1e2c7d5ed33a6d64467f83417a3a3ab9dbc75f4a54",
   "BrickBuff_XP000_YP004.obj": "bdaf78ff18018e3f53e5c34ebc9603eea25ae1661ec5139abcd12330dfa67a0b",
   "BrickBuff_XP001_YM003.obj": "67e6446afb14878c8d7587c7277244f8cbf99b2c13b3761e73f252c816541ea8",
-  "BrickBuff_XP001_YP003.obj": "4757e8bd56dc14155c3ae35e13c04259559e1395b9966052abdfb9d73f7ed7cd",
-  "BrickBuff_XP001_YP004.obj": "d5887882d3411f53dd18ceef57b43f903ca8f8f1d8a418998d59417dbae4b09d",
-  "BrickBuff_XP002_YM003.obj": "c4fc1e8380c12da13fc162c4026bd1da7dca98f39873fde02103444d712f4406",
-  "BrickBuff_XP002_YP003.obj": "ffa3d36f98d3c3d7e53252be6dc61ac37ef8d040ab86b0b9cb6f40417d6fb4f4",
-  "BrickBuff_XP002_YP004.obj": "fc8a57d7d85d7384b7b503b368521164fa507726c9676b8f954224a8508b0b97",
-  "BrickBuff_XP003_YM003.obj": "0bdc0fb51e0479577d7e14dddb83926dac4f060d59fe844e52ac5b646eb33c9c",
+  "BrickBuff_XP001_YP003.obj": "4468cb0842ab63af1107a6dd3d503be9e618ca565c394161349003394aa9a2e3",
+  "BrickBuff_XP001_YP004.obj": "53cdee9df0e171f8b716ba8fa02deb14494572e432fe3960471212e0e55980bf",
+  "BrickBuff_XP002_YM003.obj": "ce021a2d94dd18bbdbdf2ead4ad22d278b4ee17871621ca0bb9a10797450981b",
+  "BrickBuff_XP002_YP002.obj": "ed3ed5a5baa408781082aad10cb06ae8c088f618ec3d13b8fd7cf4f509b91c52",
+  "BrickBuff_XP002_YP003.obj": "bf1def150e643567832f56440036c01c88c0655753c3fd5f0202426d41cba201",
+  "BrickBuff_XP002_YP004.obj": "5c6d760849cce0f4352c2db84f610249317064e7283705723e90a74a15b6a071",
+  "BrickBuff_XP003_YM003.obj": "804ce23d4b45aea4bdd25aab26504ab4cf6ab3ab781bfaed28366b7862f31ca2",
   "BrickBuff_XP003_YM004.obj": "2139a4234c37aeaa9536dc0f09638be384aa4c298c8b869c78d1e6dd7778fc8d",
-  "BrickBuff_XP003_YP003.obj": "4dfc58b86ccd954171abd426aa3cd2525b9e23113a73038f977e92a4a57599fd",
-  "BrickBuff_XP003_YP004.obj": "8c0c307fee4ae72ebfb627e15e53843776badc1b1c32511f5f56805bbe67b6f6",
+  "BrickBuff_XP003_YP001.obj": "d6f202c4f6048ce915e21647e6e50f483c655d22262bd50cd65895644c2300b3",
+  "BrickBuff_XP003_YP002.obj": "8fc9154706e56ccf2b9645a5bdae767914467b94359265d49a2b6e7191dd21fe",
+  "BrickBuff_XP003_YP003.obj": "6a2dcf2f9f1db99166258d503c073f4eadb3f10b275cb2abeee7edb366ce02bb",
+  "BrickBuff_XP003_YP004.obj": "79745bc280b2ad37b98b119926706a16f2951bf875408b44fef23e30015d8bc0",
   "BrickOrange_XM001_YM002.obj": "a5a3bdb9b8cf1a5d81911e8b3c0bb1821d1faf45fd04290dfcb2bc8ee5af46bf",
-  "BrickOrange_XM001_YM003.obj": "000f5b243e5a4865d333fe79d8c64b67e2a8efbc767a99c18438cdc96bde0e51",
+  "BrickOrange_XM001_YM003.obj": "325d74fcfc769d8576ae24163d517be76fe7e4db5d5c0a9b1b4dfe615fbfcee0",
   "BrickOrange_XM001_YM004.obj": "e30edf7b331794d56a3482b28993113148ae4a5a9b78d4ac0e7878dc10581397",
   "BrickOrange_XM001_YP003.obj": "5ee892a25595362112b6e9b49a479ddabea2ce5aa9186cbddb4c1c3e64119cf2",
   "BrickOrange_XM001_YP004.obj": "797aa3dda355e65c09f90abe4ac4d3554dfda9e19bfc709fcd9d351cf60b8e3a",
@@ -13281,14 +13525,13 @@
   "BrickOrange_XM002_YP004.obj": "e47cd5d0650921dec9cc4a569959110346dd5144a2dad555ab800bbe94cf2f57",
   "BrickOrange_XM003_YM001.obj": "460eee3977726628b2a9a5b6528c53f2072b9d264d54ebbaf4e5f40e84bc56a2",
   "BrickOrange_XM003_YM002.obj": "ecfe06d6bf023bba106e001527e4d8a30aca7e29c5132579e6652a96f5d54cba",
-  "BrickOrange_XM003_YM003.obj": "ca99d083dec45dbf411adce1b9cda693421788b58d5f016afb9fe0eabd44eb40",
-  "BrickOrange_XM003_YM004.obj": "6ab6fb300a6a0a3c9bdd2d43e1ac4de16b62f1b3460443a49a926c5bc0e837f9",
+  "BrickOrange_XM003_YM003.obj": "bd9ef7463c1b1820d7e3ea811ea17e9edc697c35ef04518cd9d8a4cf4e8ddec9",
+  "BrickOrange_XM003_YM004.obj": "9c8de530fa2ee780eca3d6227aa59d14d7ca2bd653e7e33b249a63b496a9af19",
   "BrickOrange_XM003_YP001.obj": "54dcc0e053554003bb20ef0bd1032682bbb9a2dc3230113e719603eeadfefdbf",
   "BrickOrange_XM003_YP002.obj": "d2316c82cc47ca80c3ca372170d3efeefef7f6a7fb83358244f10a4331252290",
-  "BrickOrange_XM003_YP003.obj": "3726998e949359ece71a0a5165ad8b88703b03a960f0a4386392d8e265c06c3c",
-  "BrickOrange_XM003_YP004.obj": "40f9e17944579ae64b7368ca26ebc4c3aa25ea37f59dfaecf04e73e588d9fc02",
+  "BrickOrange_XM003_YP003.obj": "e8c36ea07c3c37d47eb6528a77cfcbdccaa5dd27de51ac8afee842fa7d817cad",
+  "BrickOrange_XM003_YP004.obj": "39fc811f08dcd40eaf651dc8f9cd8114f2b8d82b0a23e93a5e4d0a198087b6f1",
   "BrickOrange_XM004_YM002.obj": "2d924b30731da7241bc1dd0eabda8f764540a9cb879aefecf82e6c3b54269802",
-  "BrickOrange_XM004_YM003.obj": "436bb53189feb809112119552750d5627729ffd7d6789fe9be91177dbbb6574a",
   "BrickOrange_XM004_YM004.obj": "cab6b35be34cf2be0654f53b71de507690b72e8a7936804d45f3013e87203142",
   "BrickOrange_XM004_YP001.obj": "9b07029c0ec56d8a195d20a353e417094fd9e03c70e95e9e234f0518d46190bf",
   "BrickOrange_XP000_YM002.obj": "f4a3b93a327ab070c995f70cef814e4acfe4b2c26b3e15f99c8d402a06180597",
@@ -13307,89 +13550,84 @@
   "BrickOrange_XP003_YP002.obj": "90b3ada34de7cda68d87b8f1b6f46ba49d36db4b6b28a01e22989004b2ed3516",
   "BrickOrange_XP003_YP003.obj": "5d8fc3f9125146d43fa9795ec7985c8136a72552a741367d7f0fcd8c41936f25",
   "BrickOrange_XP003_YP004.obj": "0790cbe9887e9c589157055804a5618bd5229ac0de9645e46e982f23ddacd8e0",
-  "BrickRedDark_XM001_YM002.obj": "3f6d3abdbda3237f636a37466d9aec85387cab3a5347c00172c7bd32aee811cf",
-  "BrickRedDark_XM001_YM003.obj": "3b7cac57ffde09d02775471ba42693a32662e8f035d4b50a645af0c966b945d3",
-  "BrickRedDark_XM001_YM004.obj": "bcf1d66e4c26740fe839a2d81cfc4d3530e14693a6ca4ba2348f7187a299d246",
-  "BrickRedDark_XM001_YP003.obj": "196466cfa5d647437d5b1ea41d163ee3b4229ea5cd11e530a4b9717ddb937466",
-  "BrickRedDark_XM001_YP004.obj": "8a3836137a9358a79e04e7f0b9ff8ca961c85bf4f113537cdb8ef009f3b2d85a",
-  "BrickRedDark_XM002_YM001.obj": "c2c851c9b0bef6ca18e8e97f5bb78eacb79ea8e967376f1c1d6e9f240c983a61",
-  "BrickRedDark_XM002_YM002.obj": "43e6e1ade0c23daf4be13f16ad42c99bd840a32333a97a7e1740f06d697a2b15",
-  "BrickRedDark_XM002_YM003.obj": "2834f975615319ee8cb912eef39bbba42300398fdaecc5009f826420989f3254",
-  "BrickRedDark_XM002_YM004.obj": "e8beccc2eda592eb25476b747b761ee0d266b64ac9b0966e75223c662f965182",
-  "BrickRedDark_XM002_YP002.obj": "782f973b312ab822df09cecd35e3dc10fcb899db9893a8581f1e96875d03ebc8",
-  "BrickRedDark_XM002_YP003.obj": "cbbe63eeeb6f382159ec88e325db190769a4001e26cc590795ce70a271270792",
-  "BrickRedDark_XM002_YP004.obj": "1f405f5a73365663e0373c8703159b9b1c0ebf02bbb36f38dee61a3c38c24858",
-  "BrickRedDark_XM003_YM001.obj": "80da82d00fa9058101b8cbb762e8361ee857adc0d3c53d5518f44f50425bf4ec",
-  "BrickRedDark_XM003_YM002.obj": "092e9edd8bc0eedd654eac6f8aad5c20f5e59f911471775ae1d967dd9324f2d3",
-  "BrickRedDark_XM003_YM003.obj": "2dd1a6eeedfc85069d7961844b515be9d23c4398ae76ad5e400f4c755c2e1a54",
-  "BrickRedDark_XM003_YM004.obj": "5bbf868a964445de1829ec089ada85ae01c2a8076ac56d6d9c5a889d3977ddf4",
-  "BrickRedDark_XM003_YP000.obj": "549cee796c49cb7b1ea1bb2561a4f0484b129b1e21f58fbbb5999f2537c69add",
-  "BrickRedDark_XM003_YP001.obj": "bcec22828123bccf6073c541814bf100c216378d44d3b44e02fab9b2b5d1683b",
-  "BrickRedDark_XM003_YP003.obj": "254a2534ef1b765f95a73132f45c4503f8bccd39623eca7b837568dcceef15ee",
-  "BrickRedDark_XM003_YP004.obj": "1f42566aaad6b604be28943a4a2332339b2087337852436de6e51b06e5190094",
-  "BrickRedDark_XM004_YM003.obj": "3bf8e6db9789fc759aae06464df28a68d3e2a293ea4f2f950c902bf3c6266277",
-  "BrickRedDark_XM004_YM004.obj": "e7bec7a3e3a53f212a9bf50e2c66f933799d3e2447f5af1e1e67f81aada0a53b",
-  "BrickRedDark_XM004_YP001.obj": "2209de91a2945bfec25c7b738158e8a3a900733b0c64f1c52815f938901c1bc2",
-  "BrickRedDark_XP000_YM003.obj": "da25672664a1ff3c4373b4f89c63afa65e4a9d883f1441b1c021949bf2699b3e",
-  "BrickRedDark_XP000_YM004.obj": "32cb07929f24881846d280f93d12efa4cc32da5704693ded02ef81f57e563264",
-  "BrickRedDark_XP000_YP004.obj": "d5c6f2312eb789213e3642b952ceed41250d1c612ecb8650fa55d175706b410a",
-  "BrickRedDark_XP001_YM003.obj": "b8c047ff667835da85ed10442477273ae6614ebf6559a5329e3131f929988e69",
-  "BrickRedDark_XP001_YM004.obj": "9ebd12ef9d276a2574a0d184892dc20490c91935d95c3ddd9cad11abd7f658fd",
-  "BrickRedDark_XP001_YP004.obj": "5e7f77d15672334a277a124e84073b2ad3ee13fef13fa25bbde0055a56701f35",
-  "BrickRedDark_XP002_YM003.obj": "ffc4f1260aced55b5ea8fc47418acc2753a5a57c01d329278f869ac2d620d735",
-  "BrickRedDark_XP002_YP003.obj": "c1eea822d717d3317b13a2742225525adc65bc51878e18f0b494d9d6bd932ffe",
-  "BrickRedDark_XP002_YP004.obj": "6bed45bc4101b61884487d4681635832c0336650cb75905fe02b9756e455108c",
-  "BrickRedDark_XP003_YM002.obj": "fc6f43ad892722f81a119939852ce18fc91cb5c6263c87eb175256eeb35401a7",
-  "BrickRedDark_XP003_YM003.obj": "21f12c9d2d92d461ddf734daef735051d0ffd7abae2242ab26076a09578a6d06",
-  "BrickRedDark_XP003_YP002.obj": "cb60f4e9d621f8c1cf1701be23d91b2a6ce4b41183ccbfff4bf6a7e77790ca5e",
-  "BrickRedDark_XP003_YP003.obj": "ecf691d41df3b615d27c2e22d6f71420592110342e6a3ac0a91977f2a2c658ad",
-  "BrickRed_XM001_YM002.obj": "3b9be49ad62873d6b559939e2783440c607799a894dc16685b1d6aaf33ac0fa2",
-  "BrickRed_XM001_YM003.obj": "bca121c535ee2e37ee794187b61cf8b89f9bfe79ec7c0f23ff8c8b0c40213424",
-  "BrickRed_XM001_YM004.obj": "8a8050505bcc7140145bc57fa2f7e358db99255e67d2c0f54cb856a850536602",
+  "BrickRedDark_XM001_YM002.obj": "0605789a2e8f33e3dd7b738e59779a5d81b6be80d1463f861930d5c4d172fc7f",
+  "BrickRedDark_XM001_YM003.obj": "3e2442812b5aff73e27d739d7c1cb767280aaa033441e8ff0b57755c5a52d21a",
+  "BrickRedDark_XM001_YM004.obj": "1c57639fd38d2b22dfb829dce7fbc4ecbd10d35d48cc928efacee3b5575da01c",
+  "BrickRedDark_XM001_YP003.obj": "cf9a050a1b7335f95c06653fb039ea5b2c50c04a043f5d92daff573b97b75c00",
+  "BrickRedDark_XM001_YP004.obj": "5817b1c38054672df6f8b5ad6d43c4b9b739662a0ba5ee571bc375b5f5e11b1b",
+  "BrickRedDark_XM002_YM001.obj": "ef8ae3b27dec24536966af1de6b9bc86bf9e76d4710e0efba69598f4761ce860",
+  "BrickRedDark_XM002_YM002.obj": "7ef8ad92ba7c6f334e935984178ef3f246ad0e109ca565780f8aa04438a3e034",
+  "BrickRedDark_XM002_YM003.obj": "4c0162c10c31e9a8cc9bdbd95ffe4f929ba77544637097e6cf1aa09a07798c97",
+  "BrickRedDark_XM002_YM004.obj": "6b366190626f44cd98565859e787dc87345379303e039e3f1949551cfa8d998b",
+  "BrickRedDark_XM002_YP002.obj": "0db3fe9f08b7c3f4c75cf0ebccb04d0feec3ffadd28b52a821a797192258c996",
+  "BrickRedDark_XM002_YP003.obj": "69e7720c586fc39e7841983bc306c94ba79b00e85dd44b5a0b76f9929089cc08",
+  "BrickRedDark_XM002_YP004.obj": "eec12f446dae46ac57592c55b28022b4182b90ce7c3efea35befcd0a75276c87",
+  "BrickRedDark_XM003_YM001.obj": "b1d31888f1a52d3e6de88e4efaa5899c193d28b227500c93a7dbb52dbf411753",
+  "BrickRedDark_XM003_YM002.obj": "b39ec72086030149fa6a0eaf66eccc04c1fa7b9470575c6a7ab20813f24225da",
+  "BrickRedDark_XM003_YM003.obj": "14e9827a72cad124eaa7f40b1ba31c9d8cc7d849eb2eb35a29d516246651c79c",
+  "BrickRedDark_XM003_YM004.obj": "287053f96cdcb0575c3dcb2d98a17be728f073435230a480535b791fe141b9e9",
+  "BrickRedDark_XM003_YP001.obj": "c1f299b42bf53527068aa31b63a4bc7122ed50e76c09df1956e6dd586cbce940",
+  "BrickRedDark_XM003_YP002.obj": "b59cbd435dbb5eea1745c3d59ff0ad9159471d7ea2b03c051414794d91cd59f8",
+  "BrickRedDark_XM003_YP003.obj": "83fb9c7757af9ce089c927311382e65ecadbdd27174ca5679e3537e63c10564c",
+  "BrickRedDark_XM003_YP004.obj": "803cb49ee47615c9baf86ad22560a60e1d515f3d408b2a30454338e78ef646ea",
+  "BrickRedDark_XP000_YM003.obj": "b82e7e261cf59e54946557c5eb3fc5faad2d87751917280147a3546ed29c5204",
+  "BrickRedDark_XP000_YM004.obj": "4d3936f6939540d5628be4a7458927ba83eb2be5eeb1aa66843468862c9fcd40",
+  "BrickRedDark_XP000_YP004.obj": "85ec0a9e67c8ae58bd3d6981889db2385a07f714d84c559a1124ba565cd44cfa",
+  "BrickRedDark_XP001_YM003.obj": "718ca96820de5f0e20d3cb870dbf3c7f1e22069271c5bf57f255c0554ae2fe8c",
+  "BrickRedDark_XP001_YM004.obj": "d3f03231085ffd1e2c565532e9a176352343b260020d93f5e4be77d936f5c29d",
+  "BrickRedDark_XP001_YP003.obj": "55bd8b91ca2cad3f4c94e398a960d1c54cfd2b78edb1dd8cc85c94e54752be54",
+  "BrickRedDark_XP001_YP004.obj": "40d17800d58f05b5e98deae4c21858688cded4e7ae235d7d178755d6e01ba8ca",
+  "BrickRedDark_XP002_YP003.obj": "0e05d86bbd7c1d057c08234cf1b817a1363eed8f5d075c71aa3f7cf689fd2917",
+  "BrickRedDark_XP003_YM003.obj": "99cdee50e0875a6f392a9de572d45ab786d6c380987f728882ab148a06f68140",
+  "BrickRedDark_XP003_YP001.obj": "1a630e92bafab928a31243bd0ddaecc5b851fa9bbfa2ad4cc334f24ab57b00ce",
+  "BrickRedDark_XP003_YP003.obj": "95c4227a42fd759ca3eaa4cc163496dd522e9fadc9f08bbc4076b8a4a9b8018d",
+  "BrickRedDark_XP003_YP004.obj": "a740a8468aa03e5afbf55a8b5821f37914dfe464e1fbb872647d8ac8716f9c85",
+  "BrickRed_XM001_YM002.obj": "a753bb06298b65c0ba0cd13b9059f2c0a9c1f43f858b1b85450521ece2a89efb",
+  "BrickRed_XM001_YM003.obj": "81426259ae7f012c3f7a53b35d879875e6bf128b5f9d7af5dae6955949d31604",
+  "BrickRed_XM001_YM004.obj": "d5ebc7e4866602d95609f595d9cb24a26e315a875e5e3200bc7a773ce8d60fa1",
   "BrickRed_XM001_YP002.obj": "e8422d0daa7de326a1adb2d8f973affe1766487f4fbc7b81180127ab349f0ff8",
-  "BrickRed_XM001_YP003.obj": "f2a0744f456f68c7cb3c77bb2c0d530998c52f18d367120f0c2ce5a063c16237",
-  "BrickRed_XM001_YP004.obj": "b28c83941ac26eb6c9214dd55d6d7dd0beefd67e99a72e1b72a6021b05e7c9bf",
-  "BrickRed_XM002_YM001.obj": "87a0d4201b4669dc83997915321449c14717ac747df1fc8589776078a5882b74",
-  "BrickRed_XM002_YM002.obj": "929c631afe09018836063a8ebfb925b7003d75031d076ded5a1d0e31a0b5ff8d",
-  "BrickRed_XM002_YM003.obj": "bf7e1c7088fe9a343d961de81006e0851e364be42a616e7bd6b541a4306950e1",
-  "BrickRed_XM002_YM004.obj": "a6585a55781ce8b3f602b85036ddcb898289078dc6bc1bc2f38b4bc88ec83882",
+  "BrickRed_XM001_YP003.obj": "13a448c3772c9f88cc4bb005e0e47ddfc1c417e34510aaf8a5bc1113efef0ec4",
+  "BrickRed_XM001_YP004.obj": "c625eefca4ce61cc539486edca4632ec3d6dbdcbd771b5d76d5a5c0db73f0f4a",
+  "BrickRed_XM002_YM001.obj": "44627aa959f831f2672bc0713774c95cfe3c1d12f0e6a977b4f7f395e620596f",
+  "BrickRed_XM002_YM002.obj": "f2841e0b51c43afd16f43adcdb2946bf6c172440c1b0a045c7350740c7c7a6e2",
+  "BrickRed_XM002_YM003.obj": "2ece9a120ab876872ca38a7f015d711812cfa52dc11383a67231127de58a923a",
+  "BrickRed_XM002_YM004.obj": "5a4f5a23fb3567a2c6706a3dfff8e5c76c079a80c16e290ef116f6fc91a8cb9c",
   "BrickRed_XM002_YP001.obj": "703498b3abde9912a90f5ae5788c56fd30006c67cbd0ee96c5d9f0c762b1632b",
-  "BrickRed_XM002_YP002.obj": "4e80d7a6ef1f2d5c02c266cc5cb467e07b4e952870119ceb00a44e9d2c87ae4f",
-  "BrickRed_XM002_YP003.obj": "12e4b7b86d94c7d38acc94f0b014379d7511172026a4da7d2ef9c26e803d8373",
-  "BrickRed_XM002_YP004.obj": "2678c28427bd566c43b817870747eab9301429425d7b264a386509b8a95a764a",
-  "BrickRed_XM003_YM001.obj": "6beb4ba69795d65ddace883ea14a271928628c829703ced0cdff742dd50e3f51",
-  "BrickRed_XM003_YM002.obj": "1f0488119f53feffb54072bcf440e5145f7b71ae094851b6e5de3d54ee4882a8",
-  "BrickRed_XM003_YM003.obj": "22a8d86678a59bd5971da3bf3fe1e69a787a8d4c955e9dcd5652655e0248ec22",
-  "BrickRed_XM003_YM004.obj": "9257b8614bfa3d195f65c015f30877eac79ad6b03605487b94b51233f6a5e8ba",
-  "BrickRed_XM003_YP000.obj": "68826174d3a4fa2b4dbfd0800ba55bf9d02a1c427b2f22d59e452c5ad08a3715",
-  "BrickRed_XM003_YP001.obj": "a0d77ad367330ffd9e3144c666685ccfdd49ecab3c00a4e2895432b5e043af12",
-  "BrickRed_XM003_YP002.obj": "26c324f050101cd4a8febe731ae565de1c7ef71d9ecf6087c76407afdb0fabc8",
-  "BrickRed_XM003_YP003.obj": "70ee9995395175dc64ab1d6839ad4d3069e8799bbd3112d47c102626e88906af",
-  "BrickRed_XM003_YP004.obj": "e4d4d5dca1529abd3b175380c24b51a5d6b0c0c816cb4c00cb8dc4d44f4368b2",
+  "BrickRed_XM002_YP002.obj": "2cb98e75e7d8d79fff2f974fec48bfeca41e19e151bdce689ca1b1d40cd3a3e1",
+  "BrickRed_XM002_YP003.obj": "38c82a391af92503406d7e279056ac59af7f381d2f4855d77b66d206549c8df5",
+  "BrickRed_XM002_YP004.obj": "ed7938d764afca2b8e33974d5b5c9df85ed886d910bb3c231d80aaaa0a9e29d1",
+  "BrickRed_XM003_YM001.obj": "599d728d60f642f361a450fff31817328cb80fe872fe9cc60d95b9eec15ebe31",
+  "BrickRed_XM003_YM002.obj": "564b4163ce867bfc7e224df5641c6ea4cddf79b0a31e3a245d3c00134f711105",
+  "BrickRed_XM003_YM003.obj": "f6ad5a4746a83130791588690b26fd614ad04317d17de9551fac527b6098667e",
+  "BrickRed_XM003_YM004.obj": "911167a3f4db694014d4a2ba81d2009f469a6eb4970a0425cfcab7c52126de62",
+  "BrickRed_XM003_YP000.obj": "7c9b580208f1323b172d367eddfbb7441138a17a6712abc3da51ded8ec147d6e",
+  "BrickRed_XM003_YP001.obj": "4ff044a82366244f2dd3125a7f5460dc47e4c9cc96f874cfa2420d3eb3cc89f2",
+  "BrickRed_XM003_YP002.obj": "565b9be44b6bcaa8681d66233f2d2d34ccda1836dab8e54600f38f2e4bc88ac3",
+  "BrickRed_XM003_YP003.obj": "cbb5383b39662f7b52e85d2c38c3c191dd9fd9b44509042931078f99525d63b1",
+  "BrickRed_XM003_YP004.obj": "c570d27e9b4ca634333ad64e86783c9e3d720b01f23079b731a02530eaa2c934",
   "BrickRed_XM004_YM003.obj": "cc3d1130b92eb48e55328e4e21e2e48b490135be3bb7a342d7e5561fb4255551",
   "BrickRed_XM004_YP000.obj": "ce87575d3a1543395afb3fffedca53d278ae63102b6e3370fe69f5f931932177",
   "BrickRed_XM004_YP001.obj": "8c111c61b5bb1feec5f0da80abfaffe0e730015f4a91dcf5b9bd03c2b5c827b9",
   "BrickRed_XM004_YP003.obj": "8cdb207147a13d09ca5dc67dc8bf5e29976b1e5ead2951994197894631a7fa80",
   "BrickRed_XP000_YM002.obj": "401ae0977f69f11fbced19068266aa7d73b4cf5134ff1de52e1d9e09903ce377",
-  "BrickRed_XP000_YM003.obj": "9e468a0cdb0fb4f905d5fa073e325b1351f713d54b9fdeb2b37ad1ea015831a7",
-  "BrickRed_XP000_YM004.obj": "deb59c4877ab6af10f8214ff97e6e09613135967c552e702c49ef40f686d4c98",
-  "BrickRed_XP000_YP004.obj": "6ba83b7663578d88bd096701a9b60c4e4a0aad0e02971b0e00cd1735ad156cf0",
-  "BrickRed_XP001_YM003.obj": "947e57c94a27f785a96f763a1aeeaae1e5e83aa1b9e323a8d103d996aa71698f",
-  "BrickRed_XP001_YM004.obj": "72e2bf275452e972aab2c66c48a7010b58507542a6763abf08ec292d441f9e1f",
-  "BrickRed_XP001_YP003.obj": "69dfcfc2426ef5bff1c9568735c3d5f44a9ea61bc2a0b7b284d3463b27243514",
-  "BrickRed_XP001_YP004.obj": "4bb4b2450922cb2e665c821d6936885e6b6f80724a5c4f627c95b5781948bc0d",
+  "BrickRed_XP000_YM003.obj": "cf1e0bafcac12807674adc11c559d05ea7fc1047b20bb2f2024249c64756ea3e",
+  "BrickRed_XP000_YM004.obj": "cad49bae023e028d442cbe6fe052bba3ef57ed83f51a3ce2ec3a3db4b23e5161",
+  "BrickRed_XP000_YP004.obj": "73635ba4df9da4359c4ff134b949423bbb2eafadaf81e226230d26837c5071cf",
+  "BrickRed_XP001_YM003.obj": "41f60db2483ddf0fd8953d24cd0566cceceffe671bb0ee5e96f448a646368675",
+  "BrickRed_XP001_YM004.obj": "018c882edefee92124bacb0f1b5377cf272574051cbdd9f3be014f8ed0bbcaeb",
+  "BrickRed_XP001_YP003.obj": "fe8710128f97f8d5e271930c96b9f91f933c7023d9590eb4a1c5448c054c3836",
+  "BrickRed_XP001_YP004.obj": "97f6e58038eac3f650a7397e1c71b9a73f3161e90c912396860799fd42308de0",
   "BrickRed_XP002_YM003.obj": "b8e18ae93ed15c43f0009c1540223d63d1bc31ca41b8d339a96e5f9773ca21ad",
   "BrickRed_XP002_YM004.obj": "b5762ac67b962a869435397cbcfc7b0ed5fd0048de0f147b003622a86d78fed6",
-  "BrickRed_XP002_YP002.obj": "85d1ec286e4d2ef59c1839cb5ac7e5486cb20158a73db6b7b17ba74171b87e60",
-  "BrickRed_XP002_YP003.obj": "c6c12fd946860f00d27fa4889e88629aa70892adab861a13022d86d7910ab3f3",
-  "BrickRed_XP002_YP004.obj": "4b51e8bbbdbbe7ad5d5fc180ae1b3aa9be3466e624d7aadc87ecc09d5d9b464a",
-  "BrickRed_XP003_YM002.obj": "4268ac96beed89febc2b9b9469f790dda678ac4a907336b3a8e6faee07214c30",
-  "BrickRed_XP003_YM003.obj": "41a05e9b4b7d8b315187d972754918add9950a967e0066c500368f2f2e606996",
+  "BrickRed_XP002_YP003.obj": "583471188954d69bbe3515a02666f478847c87eef3cc547e0a24f93ea7e36350",
+  "BrickRed_XP002_YP004.obj": "54ca5d9cc640177fd532130c82a928dcc53b6f8afb8fb4e1020f6cfd91a83cc1",
+  "BrickRed_XP003_YM002.obj": "785b79eebdca514f585fb70754cb405da8a41051ab2645885d7c1764121373e0",
+  "BrickRed_XP003_YM003.obj": "40675a1cf536fe0d00403e4298db689655196ee0ceafd21293933522369e086b",
   "BrickRed_XP003_YM004.obj": "22de0f158d47f964c863a9396475f750a776cb679be999f544a7a6ae20d10c0d",
-  "BrickRed_XP003_YP001.obj": "dfbed0611b7130211163369e512604e94d5311a3f51542d5072a87afce3d340e",
-  "BrickRed_XP003_YP002.obj": "db25eeb1fe78a5dec9c4674fae250ae1b54c02a729be602c985546a607e3e732",
-  "BrickRed_XP003_YP003.obj": "522d1c71b51d4ecd76c3eb6154c82c4b7bc72a1ab9fd0928d6722d0f61559179",
-  "BrickRed_XP003_YP004.obj": "da5329639c2548d38b84ae34f736b38e891a3b84fe2fa954e9ed8524bd95be14",
+  "BrickRed_XP003_YP001.obj": "25a5f26d42b8cbdc5748a25e3920dddeae9adb5710cc622812508c80aff52d00",
+  "BrickRed_XP003_YP002.obj": "cb840a7102866234c15ce911c3fdd7fbd41c24cfda20d8f365419027b3784698",
+  "BrickRed_XP003_YP003.obj": "c6cd3469669aea606343492656f4cb419501de469f5212c96e79b73104c33f98",
+  "BrickRed_XP003_YP004.obj": "4c5592f0e9e36fe90a9f996e6a74c8bb760af7082250c5eaed0b839f159e5ebf",
   "Glass_XM001_YM002.obj": "2cd81dd5d5c2406a86c22642c8cf74775b5427bf5ec48185b001966c3462969b",
   "Glass_XM001_YM003.obj": "e969b354eb7da89d863974b42907ccf3ac880edf0368bbdbe6cf9bb602f26235",
   "Glass_XM001_YM004.obj": "27aa8fc6508ca00387815e9325a2bad94bcb64ae72b243f3bce102cbf137338a",
@@ -13548,23 +13786,23 @@
   "StoneCast_XM001_YM004.obj": "e97d864e3d24623767f7b3cf4c0b34c45bec231011eb8e636be3f96e43899df7",
   "StoneCast_XM001_YP002.obj": "b69e67747114a2a48add4c1be72f3085ae909f9749477934f380b5c8d499713a",
   "StoneCast_XM001_YP003.obj": "6315e2f83cc5f4f28afb598565c20c3123cba412b4fc75b806d9edb2b248afe5",
-  "StoneCast_XM001_YP004.obj": "256a917ef1d3134204237f218c8fa1b7259f6526317b7f9875ed2e14ee405e1c",
+  "StoneCast_XM001_YP004.obj": "bbc578e43b90afd8e010df243551a23f8f314cc8e4a261795c4b5a4fceba0c31",
   "StoneCast_XM002_YM001.obj": "d5e31e7dcea733c3e7a638f20febbb3d3e9e84595551ac78912479cb10643206",
   "StoneCast_XM002_YM002.obj": "1dd99257f93e9752058c804fdac81cb46b4b1163e562a04a148dc94f32a8bd91",
   "StoneCast_XM002_YM003.obj": "18bf1d4b391469332b8abbcff72ad86f47ecf8c5c6f7db755c44201a24d94604",
   "StoneCast_XM002_YM004.obj": "6099d05334a10ad4a84f2c8e7ad6fc297ca0a9bea54a7a9530a16653fc2b494c",
   "StoneCast_XM002_YP001.obj": "16bb93d1a71807bffffee6554396ad2662ac5bfa9bcf832aaff14602dbe82bb5",
-  "StoneCast_XM002_YP002.obj": "b91de81a5f563ef3bf407df6733f2724c535d155ee62f6b41ada532fd08a759c",
-  "StoneCast_XM002_YP003.obj": "eda4c71f9738a4c110e0374f2e09933406def8ed575113507838dcf4d5a6483c",
-  "StoneCast_XM002_YP004.obj": "88d0c808ac15f2778c76ddc49cc4bed7027a973332d4f07ec1f1a10faf5f79d3",
+  "StoneCast_XM002_YP002.obj": "1529b15733dc9bc8b479525c61a8cab28fa0da9a0fe68495c52424242e31ab6b",
+  "StoneCast_XM002_YP003.obj": "66af4d71eb7e959f8ee1cf1ebcbaec065d8fe14fd678b14541f2f27ffbeaac8f",
+  "StoneCast_XM002_YP004.obj": "a0a5848a83983cf713e396aa9d8dfc3bb72ad6ee255b660eaf1e8458772254ee",
   "StoneCast_XM003_YM001.obj": "689d26a20185ea0b074aefdc19ab88c1477a88d65973dd31e7ea7d253c4e2165",
-  "StoneCast_XM003_YM002.obj": "f12aaa21d2162ae9036af6b5634985584f283bcb7130fe24376f5394ca802e1f",
+  "StoneCast_XM003_YM002.obj": "826af01614378b022bec53d0cd3132922d808bb038737c8810e2d5894001386d",
   "StoneCast_XM003_YM003.obj": "a865ca5a28776c755b970edb8a758f3b2ffbb01ad5df192ce49bd72168af9912",
-  "StoneCast_XM003_YM004.obj": "bb89d69763d6bbf02152a7fe9568fca10b8cfbbbbe64231ba1e90b6359cd4532",
-  "StoneCast_XM003_YP000.obj": "045cc8d2526bab369be74c6319516156f61117c5e508daeaebca1b34d9907aaa",
+  "StoneCast_XM003_YM004.obj": "e13538100a585e7e9bb4842c2606593a9a80537c26b0cfbf31f6d294134a9585",
+  "StoneCast_XM003_YP000.obj": "c39667d03959150a3b76c445330a333efc77feabe2955c64efad69918ec93c91",
   "StoneCast_XM003_YP001.obj": "3e63249310912352bbe6617700278406b62eafc7f12aca3ea477530bbfb7ed8b",
-  "StoneCast_XM003_YP002.obj": "e0c47f5390d0e9f2cae9219f1efe09f3538cdb659b312207b968e90dd1919673",
-  "StoneCast_XM003_YP003.obj": "2fda17cf8209a3203b6dd1e7bd7e213df8591fe0cfbf32228c3e5ece85d5e2f2",
+  "StoneCast_XM003_YP002.obj": "66c526a30a881f63a7aa534130cd1cd660030f654bb7ca9e53cecfbc3383b917",
+  "StoneCast_XM003_YP003.obj": "29bba58ab4d716c1f71d08c5e6a002f5979c57ff5bcb563c9cfbfc7abe02f17f",
   "StoneCast_XM003_YP004.obj": "8afc8296be028ece86fdb544130006d04bddc730e2d3a0546e1b376dda3d5e58",
   "StoneCast_XM004_YM001.obj": "77f105dfd1e765d53a74e90fe22be89a51d76cda7a0d7eecd24e4a650789222b",
   "StoneCast_XM004_YM002.obj": "f4c08c7a794b022aef868746c1713a45854e8e5e7fb9fabb0491bb35631f7b95",
@@ -13577,7 +13815,7 @@
   "StoneCast_XP000_YM002.obj": "39b97a31f6d08bac2554e20df498b44d9357d27b1063eaad87cab590a4c1ba94",
   "StoneCast_XP000_YM003.obj": "ac3c915306663327607ac81c4298c59afb27fd0d1677dbbc10be0d0bcb032fe9",
   "StoneCast_XP000_YM004.obj": "9d02a02e51973b7426af85723bd49091edde885f291c3e0f06ec6db71ff8bfe2",
-  "StoneCast_XP000_YP004.obj": "af2be3c9b5206d3c82814d8998155a32bf175567b7651c70c411363216734f94",
+  "StoneCast_XP000_YP004.obj": "10a7e8fbd70c1afe061662f05d2118b63b42c3044bed32be1e1180d247294dd7",
   "StoneCast_XP001_YM003.obj": "16f121807fd8840642eb467662054fe2a0c2cb02a20c078e2eb8ec99787a1886",
   "StoneCast_XP001_YM004.obj": "a781b5af42d1bb8c4d41a319ef49e4abbbb05c5a17532868db5082fdaa4a4aa4",
   "StoneCast_XP001_YP003.obj": "8f349e712d9557849719ee7a1253944a154f03275c0750968b246c76210eaa45",
@@ -13586,7 +13824,7 @@
   "StoneCast_XP002_YM004.obj": "3846be7fdf247d7dfd3a6bd739fe8d31562e8d90d45fdd5b2750303aeca75e3f",
   "StoneCast_XP002_YP002.obj": "fa508468ede217dfef5969bf4eb7178a3f883a8a98a9a69941e08fcc6fda22aa",
   "StoneCast_XP002_YP003.obj": "827396478461403357752da601eff66b53a7443f81e6aa6f73afc4d352f99749",
-  "StoneCast_XP002_YP004.obj": "ab611f1e1c6abfdafd51199b3426da99ff8b4caeb8957ed392c2a46db8d2282f",
+  "StoneCast_XP002_YP004.obj": "a5f9408511d7d0d3cef7891b53aeea79d1b3cc7cf48dc5104a9a4d7ebcb76db3",
   "StoneCast_XP003_YM002.obj": "0d5b90eceb3656a4fe4f30373310daaa8798f9e436d53ee2341e6e802330ffd2",
   "StoneCast_XP003_YM003.obj": "a36642d795bdb5b4caae091fb6557408e4f864c743bac7e4107df8083916f68e",
   "StoneCast_XP003_YM004.obj": "2378d66fe82068feb3760122c5350af7558cba0171b5b9c5315b5bf1d6aa605a",
@@ -13599,23 +13837,23 @@
   "Stone_XM001_YM004.obj": "7ce8693857f30861970bc973536927279162e1252ee78f4f85fd9c39f7de0ede",
   "Stone_XM001_YP002.obj": "546e7f5c228650dbb5cbb11ca216628d6642720be5637b601c088333da7727c6",
   "Stone_XM001_YP003.obj": "a4691dcadd9967fdfdc5b19dbb94803ddeea07b2f2f93821982d1b1cce34efb5",
-  "Stone_XM001_YP004.obj": "4f826a5edc6fa97bb2e08cb4afcba13556b244ec7dfa0de4f5f7c747b99bbb46",
+  "Stone_XM001_YP004.obj": "a2475d4553b427fb94e3419f1fe7d4078ccd8a88e74b276cc807dbcc7cbae840",
   "Stone_XM002_YM001.obj": "526d3bec6ca06ef08c70f966d948f0f930db57bdf528c8d04e7331fe261ab915",
   "Stone_XM002_YM002.obj": "e89ec30c65dbe92f87d1df98cf84e1c5d41ae528176156d6e98297991ed103cb",
   "Stone_XM002_YM003.obj": "f103a1fc842bf3d963dfa42b4097e4e50389bb8df5a80b095b2c3a97bc44a974",
   "Stone_XM002_YM004.obj": "e440b459c082e3d35e63a2ff912ed098c97c8eb021f80ce363d1e0fb1e679053",
   "Stone_XM002_YP001.obj": "363deafca7bac659278a376924b187b9683d8280e563d6a277acf3749c80c4f0",
-  "Stone_XM002_YP002.obj": "917455761c72335d91512954a9ba89858eafa3df8616eb60765d99000f91899c",
-  "Stone_XM002_YP003.obj": "72a32584f92e8c98c95a2a269cd0d860e4d940c00d475df58cba124c1f6b4fea",
-  "Stone_XM002_YP004.obj": "1b9d97a2d5ec62be28bb4b215c99df932535d6478bfd214ed28a1107364eea7d",
+  "Stone_XM002_YP002.obj": "451e4b94faadfa9a42e5fe58953f5ffae87550815ae695ecf3ed716301266ba3",
+  "Stone_XM002_YP003.obj": "265671f23ef392c03e6164e65da7fd5066cbb008f68c4764efa5da7168039517",
+  "Stone_XM002_YP004.obj": "5cb1ecdff6bc1ce9e11c5b9c3e71505e0702e058062a9f672ba74d256caaa00b",
   "Stone_XM003_YM001.obj": "fc9c20f7e0dc015333ff0c9368b77b6b8d2baa45d5a6e38e56e0b4778dc4ef1a",
-  "Stone_XM003_YM002.obj": "ef9a20e8252e68797c128fb32724583dc7d884d2c91a09d264ed2f0836b4d97b",
+  "Stone_XM003_YM002.obj": "1157e134f5b4d1c453cbec8d6ed395ee7badc30916d551a1bc01ccfec8908d10",
   "Stone_XM003_YM003.obj": "a2a838d98c64fe02deb28a0b95cbb8978ca39a1ef11af10b45d45866990efd65",
-  "Stone_XM003_YM004.obj": "abdcc57773bf7a7fbefb92e57ea423bd3b91e2ee5958237ff350a0935498492f",
-  "Stone_XM003_YP000.obj": "fc30f0ddf62b5d7a146fbce494026dcf39593e97130406f3b3cfccfc87634938",
+  "Stone_XM003_YM004.obj": "13c7f4a7f1142b6c8ed5ad32d61ddbcd891c773d04e75306c6e77989e5ed0d5e",
+  "Stone_XM003_YP000.obj": "73f1aa4303ab51c89dd1fbe8e0969b2b63d1d80edb86d60de1ed4c410d26f1a6",
   "Stone_XM003_YP001.obj": "54237243fda0483b1dc1f4641eddde78ecb9852074691a32e21754eb350df3d5",
-  "Stone_XM003_YP002.obj": "68e94398b5509b3a8052b914139d517536430fa9f200c0c78efef29ae9f0aea5",
-  "Stone_XM003_YP003.obj": "ae428ea0ac60f739e67b89050a41a12a1f3b106de62c1b89b27828e40688e70a",
+  "Stone_XM003_YP002.obj": "58f158ba91584d94545aa0035d38f3dfe5eafd16ab65bc9c90941e4cd3bc2282",
+  "Stone_XM003_YP003.obj": "865c9a5df9eee52c6f367ea2687da8b6235fbd68dcabec5bb3361fdbb3aa8f49",
   "Stone_XM003_YP004.obj": "854b236f803e8498b17b9ecf58426dbb7be529e4f67b7bd802a07845418cf74a",
   "Stone_XM004_YM001.obj": "cc51a6c30ace4d4d83823463a6953222b5d89d9471b5f1ae2e9fc6a0bec890b5",
   "Stone_XM004_YM002.obj": "b94e0f519ddb5b0164949199ab08f0619f817f17dcf7d0da99a0cd5a1b52d459",
@@ -13629,7 +13867,7 @@
   "Stone_XP000_YM002.obj": "3d160ee0783e03d52566329efecfae839e975b5be3cfe3559aa94b4a2519fbdb",
   "Stone_XP000_YM003.obj": "11df37d0a8df2b66386c7329cd7daee573688004f8604208c226982143213282",
   "Stone_XP000_YM004.obj": "462a086b21f4647f7611df1d479893ecbbc632c74b0501e06a2ecc2e2ce5dc89",
-  "Stone_XP000_YP004.obj": "2683c5060ee93a582b736dd6817c9f6018a6829ffc397140262b831097054c96",
+  "Stone_XP000_YP004.obj": "e80e08cb90f65bfef4e8b7d4f6c8e76b56c44abaa60db3da7a91631bf15b081f",
   "Stone_XP001_YM003.obj": "8821a3a5056a1afd2e8d0621244e8ce488d34a3468472fbb017c5f2234003a5f",
   "Stone_XP001_YM004.obj": "5d21040f9cfbdfb4f3343d4507488c9109a4be36763370c5edb24d4c1d89269d",
   "Stone_XP001_YP003.obj": "96897a1de2e33ded7a61aee84857eebf56eb497e22c68d380d6ea67ede55f091",
@@ -13638,7 +13876,7 @@
   "Stone_XP002_YM004.obj": "008d1d12ba9f3e9dce2ef1a93069f29214396f733762a77012dcc937856914ef",
   "Stone_XP002_YP002.obj": "7ba46e2a7a0efa2f8a735ee9b164fcda2a7978c9043db28adabc3c6adc9e4bee",
   "Stone_XP002_YP003.obj": "696c94f03aa88256eb65cd708c18862706844a5b26efe8525545daeca2fb7b08",
-  "Stone_XP002_YP004.obj": "44f6579dc2a2946d7aceafaaffeae7f4923be3e48e578ba1e4ae6aa6ad00d298",
+  "Stone_XP002_YP004.obj": "037bfaa2bd9692030b14071c708aca036c4016596daeec0a73245ab499b6bdaf",
   "Stone_XP003_YM002.obj": "dd9d838af41847a4c4d1db9e99d5cf17f11d6e0e1b8d238cdfa5819e97873e2b",
   "Stone_XP003_YM003.obj": "9dd43ee7239843a7716e3a2b3d8d6cd637e7af567aab8e9c3050996b54268a99",
   "Stone_XP003_YM004.obj": "7386cbdc3a3d3fffe53b8f2b0fb307a9ea38568ad667730aac00f196cfa93162",

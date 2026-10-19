@@ -584,14 +584,18 @@ def _lot(building, points, primary, sides, roll, lod2, shops):
         crown = 'cornice_metal'
     # research §9 masonry mix by era
     roll_pick = rng.random()
+    # Red clay dominates only the 1880s; pressed brick (1890s on) adds brown, buff and beige, and greystone
+    # fronts are common on the plex streets. The previews read too red with the plain §9 split, so brown,
+    # buff and stone take a few points from red within each era.
     if year < 1890:
-        masonry = 'Stone' if roll_pick < .15 else rng.choice(('Brick_Red', 'Brick_Red', 'Brick_RedDark', 'Brick_Orange'))
+        masonry = 'Stone' if roll_pick < .15 else rng.choice(('Brick_Red', 'Brick_RedDark', 'Brick_Brown', 'Brick_Orange'))
     elif year < 1916:
-        masonry = ('Stone' if roll_pick < .3 else 'Brick_Red' if roll_pick < .62 else 'Brick_RedDark' if roll_pick < .7
-                   else 'Brick_Brown' if roll_pick < .85 else 'Brick_Buff' if roll_pick < .95 else 'Brick_Orange')
+        masonry = ('Stone' if roll_pick < .32 else 'Brick_Red' if roll_pick < .52 else 'Brick_RedDark' if roll_pick < .58
+                   else 'Brick_Brown' if roll_pick < .74 else 'Brick_BrownDark' if roll_pick < .8
+                   else 'Brick_Buff' if roll_pick < .95 else 'Brick_Orange')
     elif year < 1940:
-        masonry = ('Brick_Brown' if roll_pick < .3 else 'Brick_BrownDark' if roll_pick < .45 else 'Brick_Red' if roll_pick < .7
-                   else 'Brick_Buff' if roll_pick < .85 else 'Brick_Orange')
+        masonry = ('Brick_Brown' if roll_pick < .3 else 'Brick_BrownDark' if roll_pick < .45 else 'Brick_Red' if roll_pick < .63
+                   else 'Brick_Buff' if roll_pick < .88 else 'Brick_Orange')
     else:
         masonry = rng.choice(('Brick_Buff', 'Brick_Brown', 'Brick_Red', 'Brick_BrownDark'))
     if primary['street'] in ('Avenue du Parc-La Fontaine', 'Rue Sherbrooke Est') and rng.random() < .25:

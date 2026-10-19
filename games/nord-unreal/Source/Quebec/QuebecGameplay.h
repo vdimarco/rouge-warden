@@ -400,7 +400,8 @@ private:
     float SmokeSince = -1000.f;
     float NextSmokeAt = 0.f;
     int32 NextSmokePuff = 0;
-    bool bSmokeTicking = false;
+    // The tick interval the car rested at before SetAutopilot; ClearAutopilot restores it.
+    float AutopilotRestTick = .1f;
     void PrepareDriveAssist();
     float AssistedYawRate() const;
     bool PassStruckPerson(const FHitResult& Hit, const FVector& From, const FVector& Travel);
@@ -419,6 +420,11 @@ private:
     // QuebecTrafficModel::SignalOff, SignalLeft, SignalRight or SignalHazard. Every peer blinks the lamps from it.
     UPROPERTY(VisibleAnywhere, ReplicatedUsing=OnRep_TrafficSignal) uint8 TrafficSignal = 0;
     UPROPERTY() TArray<TObjectPtr<UStaticMeshComponent>> TrafficLamps;
+    // Amber lamp paint, re-applied whenever a lamp lights (the lamps carry the "NordOwnPaint" tag).
+    UPROPERTY() TObjectPtr<UMaterialInterface> TrafficLampPaint;
+    // People within 20 m, gathered at about 7 Hz; their live positions are tested on every traffic update.
+    TArray<TWeakObjectPtr<AActor>> TrafficPeopleNear;
+    float TrafficPeopleScanIn = 0.f;
     QuebecTrafficModel::FStopGate TrafficStop;
     QuebecTrafficModel::FYield TrafficYield;
     QuebecTrafficModel::FCurbStop TrafficCurb;

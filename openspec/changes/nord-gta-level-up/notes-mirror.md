@@ -18,4 +18,4 @@ The radar draws real north-up geography (`QuebecGameplay.cpp:2154`, `FVector2D(P
 Mirror only the radar so it agrees with the 3D world: about two lines. Navigation becomes consistent, but the radar then shows mirrored geography. It does not make the streets match Montréal.
 
 ## Recommendation
-Do the full fix as its own change after this PR lands, with an editor script for the saved map and a generator flag for the headers. Then rerun every host suite. The new replica layer in this change uses the current frame, so the same actor-mirroring step also fixes it.
+Do the full fix as its own change after this PR lands, with an editor script for the saved map and a generator flag for the headers. Then rerun every host suite. The new replica layer in this change uses the current frame, so the same pass also fixes it, with one rule. Mesh batches that hold world-space vertices (streets, plex fronts, soul) take the negative Y scale. Prop instances and the 424 street-name texts take only position Y → −Y and yaw → −yaw, never a negative scale, or their lettering would read backwards and the light-bar colours would swap (see `Data/Plateau/ReplicaGeometry/Props/README.md`).

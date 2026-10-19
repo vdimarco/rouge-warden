@@ -799,7 +799,8 @@ void AQuebecCar::BeginPlay()
     }
     Collision->SetRelativeTransform(FTransform::Identity);
     GetComponents(Parts);
-    Parts.RemoveAll([this](const UStaticMeshComponent* Part) { return Part == Hull || Part->IsEditorOnly(); });
+    // Livery and lamp pieces added by the street systems keep their own materials (POLICE, TRAFFIC: tag NordOwnPaint).
+    Parts.RemoveAll([this](const UStaticMeshComponent* Part) { return Part == Hull || Part->IsEditorOnly() || Part->ComponentHasTag(TEXT("NordOwnPaint")); });
     for (UStaticMeshComponent* Part : Parts)
     {
         Part->SetCullDistance(20000.f);
@@ -907,6 +908,7 @@ void AQuebecCar::ApplyPaint()
         UMaterialInterface* Paint = LoadObject<UMaterialInterface>(nullptr,*PaintPath);
         for (UStaticMeshComponent* Part : Parts)
         {
+            if (Part->ComponentHasTag(TEXT("NordOwnPaint"))) continue; // Street livery and lamps (POLICE, TRAFFIC).
             const FString Name = Part->GetName();
             FString MeshName;
             if (Name == TEXT("Body")) MeshName = FString::Printf(TEXT("Car70Body%d"),Profile);
@@ -948,6 +950,7 @@ void AQuebecCar::ApplyPaint()
     const FVector CabinOffset = Profile == 1 ? FVector(18.,0.,1.35) : Profile == 2 ? FVector(-12.,0.,-.72) : FVector::ZeroVector;
     for (UStaticMeshComponent* Part : Parts)
     {
+        if (Part->ComponentHasTag(TEXT("NordOwnPaint"))) continue; // Street livery and lamps (POLICE, TRAFFIC).
         const FString Name = Part->GetName();
         if (Name == TEXT("Body") && Paint) Part->SetMaterial(0,Paint);
         if ((Name == TEXT("Glass") || Name == TEXT("Roof")) && Part->GetStaticMesh() &&
