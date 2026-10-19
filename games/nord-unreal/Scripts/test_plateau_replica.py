@@ -277,6 +277,15 @@ def main():
         assert 0 < len(uncovered) < 120 and streets['counts']['legacy_route_dashes'] == len(uncovered), \
             (len(uncovered), streets['counts'].get('legacy_route_dashes'))
         report['legacy_route_dashes'] = len(uncovered)
+        # They keep the live M_LF_Marking pale yellow (linear .85, .73, .39), not the new white paint.
+        legacy = [b for b in streets['batches'] if b['material'] == 'legacy_marking']
+        assert legacy and sum(b['triangles'] for b in legacy) == 2 * len(uncovered), legacy
+        assert streets['materials']['legacy_marking']['base_color_srgb'] == '#eddea8'
+        # Simple concave sidewalk pieces stay (as two triangles); only bow-tie slivers are dropped.
+        assert streets['counts']['concave_pieces'] >= 1 and streets['counts']['bowtie_pieces_dropped'] < 40
+        quad = [(0, 0), (100, 0), (40, 30), (0, 100)]          # reflex vertex at index 2
+        tris = replica.quad_triangles(quad)
+        assert all(replica.area(t) > 0 for t in tris) and abs(sum(replica.area(t) for t in tris) - replica.area(quad)) < 1e-6
         # Furniture and soul instances that keep collision are clear of the band too.
         for row in furniture['placements'] + soul_rows['placements']:
             assert row['prop'] in replica.PROP_KEYS, row['prop']
