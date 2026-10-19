@@ -85,3 +85,5 @@ kbd { font: 400 11px var(--mono); letter-spacing: 0.18em; border: 1px solid rgba
   #rStats { grid-template-columns: auto 1fr auto 1fr; }
 }
 #logo .light { display: inline-block; background: var(--spectrum); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.why { margin: 10px 0 0; font-size: 13px; color: #ffd27a; }
+.gold { color: #ffd27a; font-weight: 700; }

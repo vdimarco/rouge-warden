@@ -6,15 +6,16 @@
 import { createWorld, sectorAt, hardAt, COURSE_LEN, TUBE, SHIP_R, RING_R, RING_EVERY } from './world.js';
 
 export const TUNE = Object.freeze({
-  START_GAP: 420,                 // m between you and the light at the launch
+  START_GAP: 520,                 // m between you and the light at the launch
+  CALM: 1200, RAMP: 3600, CATCH_UP: 0.05,         // the light only matches your cruise for the first CALM m, then gains over RAMP m
   CRUISE: 60, CRUISE_HARD: 26,    // your cruise speed, plus this much by Earth
-  LIGHT_OVER: 26, LIGHT_HARD: 14, // the light's speed over your cruise, plus this much by Earth
+  LIGHT_OVER: 29, LIGHT_HARD: 14, // the light's speed over your cruise, plus this much by Earth
   BOOST: 42, BOOST_DRAIN: 0.3, CHARGE_IN: 0.035,
-  RING_CHARGE: 0.25, RING_KICK: 14, KICK_DECAY: 7,
+  RING_CHARGE: 0.25, RING_KICK: 22, KICK_DECAY: 7,
   GRAZE: 1.8, GRAZE_CHARGE: 0.08,  // a pass this close to a star's edge charges you
   STRAFE: 16, STRAFE_K: 0.05, RESPOND: 6,
-  HIT: 34, HIT_SLOW: 0.5, SLOW_BACK: 0.45,
-  SHIELD_BACK: 12, SHIELD_WAIT: 2,
+  HIT: 26, HIT_SLOW: 0.62, SLOW_BACK: 0.5,
+  SHIELD_BACK: 16, SHIELD_WAIT: 1.6,
   WARN_GAP: 120,
 });
 
@@ -128,7 +129,11 @@ export function step(run, input, dt) {
     run.rings.i++;
   }
   // the light
-  run.light.speed = cruise + T.LIGHT_OVER + T.LIGHT_HARD * hard;
+  // at first the light only keeps pace with your cruise, so a new pilot can learn; then it gains
+  const ramp = clamp((s.d - T.CALM) / T.RAMP, 0, 1);
+  // and when it is far behind it closes faster, so a lead counts but never lasts the whole run
+  const far = Math.max(0, gapOf(run) - T.START_GAP) * T.CATCH_UP;
+  run.light.speed = cruise + (T.LIGHT_OVER + T.LIGHT_HARD * hard) * ramp + far;
   run.light.d += run.light.speed * dt;
   const gap = gapOf(run);
   run.stats.closest = Math.min(run.stats.closest, gap);
