@@ -14,11 +14,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          sparse-checkout-cone-mode: false
           sparse-checkout: |
-            public/pingpong
-            public/arcade
-            qa/pingpong
-            qa/browser
+            /public/pingpong/
+            /public/arcade/
+            /public/breakthrough/fonts/
+            /public/icons/
+            /public/favicon.ico
+            /public/wild/index.html
+            /qa/pingpong/
+            /qa/browser/
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
@@ -32,6 +37,9 @@ jobs:
       - run: node --test qa/pingpong/desktop.test.mjs
         env:
           NODE_PATH: qa/browser/node_modules
+      - name: Server log
+        if: failure()
+        run: tail -60 /tmp/tennis-server.log
       - uses: actions/upload-artifact@v4
         if: always()
         with:
