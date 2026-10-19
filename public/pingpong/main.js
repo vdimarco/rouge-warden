@@ -1,7 +1,7 @@
 // Boots the table, the gate, motion, swipe, mouse and the test hooks.
 
 import { desktopCourt, unlockCourt } from './gate.js';
-import { aimFromCanvas, assistX, batFromTilt, createPhoneTravel, phoneAcceleration, headingDelta, createSwingDetector, depthWithBounce, driftNeutral, flickFromSamples, leanFromCanvas, mapAxes, predictBounceZ, sideTarget, springStep, swipeToSwing, swingPush } from './motion.js';
+import { aimFromCanvas, assistX, batFromTilt, createPhoneTravel, phoneAcceleration, headingDelta, createSwingDetector, depthWithBounce, driftNeutral, flickFromSamples, leanFromCanvas, mapAxes, predictBounceZ, springStep, swipeToSwing, swingPush, trackIncomingX } from './motion.js';
 import { BAT, RULES, planFrame, readOptions } from './rules.js';
 import { createMatch } from './sim.js';
 import { createSoundKit } from './audio.js';
@@ -46,12 +46,14 @@ function gateOpen() {
 }
 
 function armPointerCourt() {
-  inputMode = 'pointer';
+  const playing = inputMode !== 'mouse' && gate && gate.hidden;
+  inputMode = 'mouse';
   if (gateBtn) gateBtn.textContent = 'Click to pick up your bat';
   const hint = document.getElementById('desk-hint');
   if (hint) hint.hidden = false;
   document.querySelectorAll('[data-phone]').forEach((el) => { el.hidden = true; });
   if (canvas) canvas.setAttribute('aria-label', 'Table tennis. The mouse aims the shot.');
+  if (playing && canvas) canvas.style.cursor = 'none';
 }
 
 if (opts.input === 'pointer' || (inputMode === 'motion' && desktopCourt(window))) armPointerCourt();
@@ -119,7 +121,7 @@ function followAngle(targetX, targetY, dt) {
 
 function followPointer(dt) {
   const live = match.state();
-  sideSpring = springStep(sideSpring, sideTarget(live.phase, live.ball.x), dt);
+  sideSpring = trackIncomingX(sideSpring, live.ball.x, live.phase, dt);
   leanSpring = springStep(leanSpring, leanFromCanvas(aimV), dt);
   const depth = batFromTilt(0, leanSpring.x).depth;
   pose.tiltX = aimFromCanvas(aimU);
@@ -157,7 +159,7 @@ function loop(now) {
     travel = phoneTravel.step(dt, now / 1000);
     commitPose(true);
   }
-  if (inputMode === 'pointer' && !poseHold) {
+  if (inputMode === 'mouse' && !poseHold) {
     const pointerDt = pushAt ? Math.max(1 / 120, Math.min(0.05, (now - pushAt) / 1000)) : 1 / 60;
     followPointer(pointerDt);
   } else if (inputMode === 'swipe' && !poseHold) followSwipe();
@@ -213,7 +215,7 @@ function unlockFromTap() {
 
 function beginPlay() {
   if (gate) gate.hidden = true;
-  if (inputMode === 'pointer' && canvas) canvas.style.cursor = 'none';
+  if (inputMode === 'mouse' && canvas) canvas.style.cursor = 'none';
   match.start();
   if (inputMode === 'motion') attachSensors();
 }
@@ -240,7 +242,7 @@ function calibrateThenStart() {
 }
 
 function onGateTap() {
-  if (inputMode === 'pointer') {
+  if (inputMode === 'mouse') {
     unlockAudio();
     beginPlay();
     return;
@@ -303,7 +305,7 @@ function attachSensors() {
   if (sensorsOn) return;
   sensorsOn = true;
   window.addEventListener('deviceorientation', (e) => {
-    if (document.hidden || !Number.isFinite(e.beta) || !Number.isFinite(e.gamma)) return;
+    if (inputMode !== 'motion' || document.hidden || !Number.isFinite(e.beta) || !Number.isFinite(e.gamma)) return;
     const now = performance.now();
     const dt = orientAt ? Math.max(1 / 120, Math.min(0.08, (now - orientAt) / 1000)) : 1 / 60;
     orientAt = now;
@@ -327,7 +329,7 @@ function attachSensors() {
     commitPose(true);
   });
   window.addEventListener('devicemotion', (e) => {
-    if (document.hidden) return;
+    if (inputMode !== 'motion' || document.hidden) return;
     const axes = latestOrientation && mapAxes(latestOrientation.beta, latestOrientation.gamma, screenAngle());
     phoneTravel.sample(e.acceleration, screenAngle(), axes ? axes.beta : 90, performance.now() / 1000);
     const linear = phoneAcceleration(e.acceleration, screenAngle(), axes ? axes.beta : 90);
@@ -364,7 +366,7 @@ function attachSensors() {
 if (gateBtn) {
   gateBtn.addEventListener('click', (e) => {
     onGateTap();
-    if (inputMode === 'pointer' && !gateOpen()) placeAim(e);
+    if (inputMode === 'mouse' && !gateOpen()) placeAim(e);
   });
 }
 
@@ -453,6 +455,7 @@ function firePointerSwing(swing) {
   const offsetMs = cross == null ? 0 : -(cross + age) * 1000;
   play(match.swing({
     degPerSec: swing.degPerSec,
+    widthsPerSec: swing.widthsPerSec,
     dir: pose.swingDir,
     tiltX: pose.tiltX,
     tiltY: pose.tiltY,
@@ -504,11 +507,11 @@ function realMouseMove(e) {
 }
 
 window.addEventListener('mousemove', (e) => {
-  if (inputMode !== 'motion' || !gateOpen() || !realMouseMove(e)) return;
+  if (inputMode !== 'motion' || !realMouseMove(e)) return;
   armPointerCourt();
 });
 window.addEventListener('pointermove', (e) => {
-  if (inputMode !== 'pointer') return;
+  if (inputMode !== 'mouse') return;
   notePointer(e);
 });
 
@@ -559,7 +562,7 @@ window.__test = {
     match.swing(cmd);
     return play(match.state());
   },
-  state() { return match.state(); },
+  state() { return { ...match.state(), inputMode }; },
   phone() { return { inputMode, neutral: { ...neutral }, orientation: latestOrientation && { ...latestOrientation }, travel: { ...travel }, yaw: yawSpring.x, filtered: { ...filtered }, hidden: document.hidden }; },
   step(n = 1) {
     let lastSnap = null;
@@ -596,6 +599,8 @@ window.__test = {
     };
   },
   fps() { return { fps, ghosts: view.ghostCount(), dpr: view.pixelRatio() }; },
+  get lastSlash() { return view.lastSlash(); },
+  get splatCount() { return view.splatCount(); },
   trail(n) { view.setTrailCap(n); },
   freeze() {
     frozen = true;

@@ -109,6 +109,51 @@ export function leanFromCanvas(v) {
   return (0.5 - y) * 2 * BAT.fullLean;
 }
 
+function headingBetween(a, b) {
+  const sx = b.x - a.x;
+  const sy = b.y - a.y;
+  if (sx * sx + sy * sy < 1e-8) return null;
+  return Math.atan2(-sy, Math.abs(sx)) * (180 / Math.PI);
+}
+
+function headingInSpan(ordered, t0, t1) {
+  let first = null;
+  let last = null;
+  for (let i = 0; i < ordered.length; i++) {
+    const sample = ordered[i];
+    if (sample.t < t0 - 1e-9 || sample.t > t1 + 1e-9) continue;
+    if (!first) first = sample;
+    last = sample;
+  }
+  if (!first || first === last) return null;
+  return headingBetween(first, last);
+}
+
+// The bend is the later heading minus the earlier one. When that change is
+// under 20 degrees, a straight diagonal of 20 degrees or more still spins.
+export function flickBend(ordered, diagonalDeg) {
+  if (!ordered || ordered.length < 2) return Number(diagonalDeg) || 0;
+  let peakAt = ordered[ordered.length - 1].t;
+  let peakV = -1;
+  for (let i = 1; i < ordered.length; i++) {
+    const dt = ordered[i].t - ordered[i - 1].t;
+    if (!(dt > 1e-6)) continue;
+    const v = Math.hypot(ordered[i].x - ordered[i - 1].x, ordered[i].y - ordered[i - 1].y) / dt;
+    if (v >= peakV) {
+      peakV = v;
+      peakAt = ordered[i].t;
+    }
+  }
+  const start = ordered[0].t;
+  const span = 0.05;
+  const early = headingInSpan(ordered, start, start + span);
+  const late = headingInSpan(ordered, peakAt - span, peakAt);
+  const curve = early == null || late == null ? 0 : late - early;
+  const diagonal = Number(diagonalDeg) || 0;
+  if (Math.abs(curve) + 1e-4 >= POINTER.bend) return curve;
+  return diagonal;
+}
+
 // While the ball is coming in, the bat's sideways target is the ball.
 // Any other phase rests at the middle.
 export function sideTarget(phase, ballX) {
@@ -122,10 +167,12 @@ export function flickFromSamples(samples, now, viewWidth, windowSec = POINTER.wi
   const width = Math.max(1, Number(viewWidth) || 1);
   let oldest = null;
   let newest = null;
+  const windowed = [];
   const list = samples || [];
   for (let i = 0; i < list.length; i++) {
     const sample = list[i];
     if (!sample || t - sample.t > windowSec + 1e-6) continue;
+    windowed.push(sample);
     if (!oldest || sample.t < oldest.t) oldest = sample;
     if (!newest || sample.t >= newest.t) newest = sample;
   }
@@ -147,7 +194,15 @@ export function flickFromSamples(samples, now, viewWidth, windowSec = POINTER.wi
     degPerSec = RULES.driveMax + (widthsPerSec - POINTER.smash) * (RULES.swingStart / POINTER.push);
     if (degPerSec <= RULES.driveMax) degPerSec = RULES.driveMax + 1e-6;
   }
-  const bend = Math.atan2(-dy, Math.abs(dx)) * (180 / Math.PI);
+  // Compare the first 50 ms of the stroke with the last 50 ms before the
+  // speed peaks. Screen y points down, so upward is a positive heading.
+  // A straight diagonal of 20 degrees or more counts as well.
+  const ordered = [];
+  for (let i = 0; i < list.length; i++) {
+    if (list[i]) ordered.push(list[i]);
+  }
+  ordered.sort((a, b) => a.t - b.t);
+  const bend = flickBend(ordered, Math.atan2(-dy, Math.abs(dx)) * (180 / Math.PI));
   let rollDegPerSec = 0;
   if (bend + 1e-4 >= POINTER.bend) rollDegPerSec = 360;
   else if (bend - 1e-4 <= -POINTER.bend) rollDegPerSec = -360;
@@ -249,6 +304,18 @@ export function springStep(state, target, dt, w = BAT.springW) {
   const y = (y0 + b * step) * e;
   const vn = (b - w * y0 - w * b * step) * e;
   return { x: dest + y, v: vn };
+}
+
+// Desktop auto-track. The spring eases toward the ball, and it is not allowed
+// to fall outside the side reach while the ball is coming in.
+export function trackIncomingX(spring, ballX, phase, dt) {
+  const target = sideTarget(phase, ballX);
+  const next = springStep(spring, target, dt);
+  if (phase !== 'incoming') return next;
+  const limit = Math.max(0, RULES.reachX - 0.02);
+  const dx = next.x - target;
+  if (!(Math.abs(dx) > limit)) return next;
+  return { x: target + Math.sign(dx) * limit, v: next.v };
 }
 
 // A still phone, with the bat already near the middle, lets the neutral pose

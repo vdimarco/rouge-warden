@@ -19,9 +19,10 @@ export function unlockCourt(env) {
   return { asked, audio, resume };
 }
 
-// Desktop is anything that is not a coarse touch phone. Headless Chrome reports
-// pointer:none and still has DeviceMotionEvent, so a missing fine pointer is not a phone.
-// A coarse pointer, or any touch points, keeps the tilt path and the swipe fallback.
+// A fine pointer is a mouse, even when the browser also reports touch points.
+// Headless Chrome often reports pointer:none and still has DeviceMotionEvent, so
+// a missing fine pointer is not a phone. A coarse pointer, or touch with no fine
+// pointer, keeps the tilt path and the swipe fallback.
 export function desktopCourt(env) {
   const match = (query) => {
     try {
@@ -31,6 +32,7 @@ export function desktopCourt(env) {
       return false;
     }
   };
+  if (match('(pointer: fine)')) return true;
   if (match('(pointer: coarse)')) return false;
   const touches = Number(env && env.navigator && env.navigator.maxTouchPoints) || 0;
   if (touches > 0) return false;

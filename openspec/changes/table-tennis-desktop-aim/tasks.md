@@ -10,3 +10,17 @@
 - [x] Treat a browser without a coarse pointer and without touch as desktop, including pointer none with DeviceMotionEvent.
 - [x] Switch the phone gate to the mouse on the first real mousemove.
 - [x] Check that path in plain headless Chrome at 1280, not only the Playwright fine-pointer context.
+- [x] Select mouse mode for a fine pointer, including when touch points are also reported, and on the first real mousemove. After start at 1280, `__test.state().inputMode` is `mouse`.
+- [x] Let the opening hook help only a flick of at least 1.2 window widths per second inside ±200 ms. A speed-0 miss 383 ms early, or no flick, loses or replays.
+- [x] Count a phone swing only above 300 deg/s, and a desktop swing only at 1.2 window widths per second or faster. A speed of 0 or a sub-threshold input does not win point 1 on either path.
+- [x] Pick smash from swing speed alone. Above 4.3 window widths per second, or above 1100 deg/s, is a smash on a low ball.
+- [x] Keep moves at 0.5, 1.0, and 1.19 window widths per second from swinging. 1.2 still swings.
+- [x] Keep a hit inside the timing window in play. 58 ms early pulls about 6 degrees, clears the net, and the casual Neighbour still wins 20 to 40 percent of points.
+- [x] Fade splats to 0, clear them, and keep overlapping ink at or under 25% opacity.
+- [x] Take flick spin from the change in heading across the stroke, 20 degrees or more.
+- [x] Draw the ink slash above the bat, and expose `__test.lastSlash` and `__test.splatCount`.
+- [x] Read the page port from PINGPONG_PORT or PORT, and the screenshot folder from PINGPONG_SHOTS or ARTIFACTS. Fall back to an open port and a temp folder.
+- [x] Count a straight diagonal of 20 degrees as spin, and a 20 degree bend between the first 50 ms and the last 50 ms before peak speed.
+- [x] Connect every swing inside ±120 ms, and keep desktop auto-track inside the side reach.
+- [x] Fade each splat to 0 and remove it. A countdown wipes the table. One shared layer is blitted at 25%.
+- [x] Draw the slash after the bat, starting at the bat face. Push is a thin stroke, drive is a full slash, smash is a wider slash in #B5472E, and the fade stays 250 ms.

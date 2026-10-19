@@ -12,17 +12,17 @@ The room, floor planks, lamp glow, table and net are drawn once into an offscree
 
 ## Shot model
 
-Swing speed is the magnitude of yaw rate and pitch rate. A swing starts when the 3-sample average is over 300 deg/s. The fastest sample inside the next 150 ms is the shot. 300 to 600 deg/s is a push at 6 m/s, above 600 through 1100 is a drive at 11 m/s, and above 1100 is a smash at 17 m/s only when the ball is at least 15 cm above the net. Otherwise that swing stays a drive.
+Swing speed is the magnitude of yaw rate and pitch rate. A swing starts when the 3-sample average is over 300 deg/s. The fastest sample inside the next 150 ms is the shot. 300 to 600 deg/s is a push at 6 m/s, above 600 through 1100 is a drive at 11 m/s, and above 1100 is a smash at 17 m/s, high or low.
 
-The hit plane is 0.3 m in front of the player's end. Inside +/-40 ms the shot is perfect: no aim pull and 1.15 times speed. Out to +/-120 ms, early pulls the ball off the aim line and late pushes it the other way, reaching 25 degrees at the edge. Forehand early goes left. Backhand mirrors that. Outside the window the swing whooshes and does not touch the ball.
+The hit plane is 0.3 m in front of the player's end. Inside +/-40 ms the shot is perfect: no aim pull and 1.15 times speed. Out to +/-120 ms, early pulls the ball off the aim line and late pushes it the other way, reaching 25 degrees at the edge, about 6 degrees at 58 ms. Forehand early goes left. Backhand mirrors that. Outside the window the swing whooshes and does not touch the ball. A hit inside the window stays in play. The same loft used for a push raises the arc until the ball clears the net, which is what was sending a low drive 58 ms early into the net.
 
 Gamma of +/-30 degrees maps to +/-0.7 m across the table. Beta of +20 degrees (open face) lands 0.3 m past the net. Beta of -20 degrees lands on the far baseline. Wrist roll past 200 deg/s is topspin when the roll is upward and backspin when it is downward. Level 3 topspin reaches the table in 85% of the no-spin time. The path is the same shape. Backspin takes longer and sits up. A peak acceleration over 12 m/s2 adds 10% speed. Over 40 m/s2 pauses for a drop.
 
-Casual forgiveness is 8.0 cm, measured with `<=`. A ball 7.9 cm long is nudged in. A ball 8.1 cm long is out. The same band applies wide of the sideline. A casual push is solved on a higher arc until it clears the 15.25 cm net. A clip of the tape is lifted over. A deeper net hit is a fault.
+Casual forgiveness is 8.0 cm, measured with `<=`. A ball 7.9 cm long is nudged in. A ball 8.1 cm long is out. The same band applies wide of the sideline. A shot struck inside the timing window is solved on a higher arc until it clears the 15.25 cm net. A clip of the tape is lifted over.
 
 ## Neighbour and the average bot
 
-The Neighbour waits 260 ms, misses 18% of the returns he swings at, and sends 6 to 9 m/s with light topspin toward the middle, plus or minus 0.3 m. Drives that arrive before he is ready are winners. The average bot mixes pushes and drives, mistimes some balls, and misses some. The sim keeps his point share between 20% and 40%, so the Neighbour loses most games to 11.
+The Neighbour waits 260 ms, misses 18% of the returns he swings at, and sends 6 to 9 m/s with light topspin toward the middle, plus or minus 0.3 m. Drives that arrive before he is ready are winners. The average bot mixes pushes and drives. Its timing is a triangular spread of +/-180 ms, so some swings miss the 120 ms window, and a hit inside that window still lands in. The sim keeps his point share between 20% and 40%, so the Neighbour loses most games to 11.
 
 The opening point is a 5 m/s high feed. Any swing over 300 deg/s inside +/-200 ms becomes a perfect drive, and that point is won.
 
