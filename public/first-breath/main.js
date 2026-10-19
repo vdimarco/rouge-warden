@@ -51,8 +51,8 @@
 // - The prompt line names keys on a desktop (a fine pointer, or a mouse or key used last): the prompt's textKeys,
 //   else "<text>.keys" or "<text>Keys" when registered; a caption or sub-goal line takes its ".keys" form there too.
 //   In one-button mode a drag or drag-and-hold prompt takes "<text>.one" when registered (hold words, no arrows or
-//   mouse). The game switcher, while open, takes every key. In Birth the HUD score stays at the
-//   earlier stages' total (6.8: Birth's points show only on the run result). The ending's run time line takes run.ms
+//   mouse). The game switcher, while open, takes every key. In Birth the HUD score counts live,
+//   as in every stage (the runner's tags pop its points; 6.8's rule now only means no overlay). The ending's run time line takes run.ms
 //   (none in practice).
 // - A prompt with no gesture ("Wait here. The egg is coming.") shows its line too, with no icon. From 29 s into the
 //   ending, a tap in the play area or a quick Space or Enter goes on to the run result (6.9).
@@ -77,6 +77,7 @@ import { createSound } from "./ui/sound.js";
 import { createRenderer } from "./render/renderer.js";
 import { makeCamera } from "./render/camera.js";
 import { createRings } from "./render/rings.js";
+import { createPops } from "./ui/pops.js";
 
 const LOOKAHEAD_S = 0.1;      // the sound scheduler looks this far ahead (11, "A tale of two clocks")
 const SOUND_TICK_MS = 25;
@@ -187,6 +188,7 @@ let vw = Math.max(1, window.innerWidth), vh = Math.max(1, window.innerHeight);
 const renderer = createRenderer(canvas, { gl: FLAGS.gl, q: Q.get("q"), res: FLAGS.res, probe: FLAGS.probe, motion });
 renderer.resize(vw, vh);
 const rings = createRings(svg);
+const pops = createPops(area);          // the action layer's number pops (DOM tags over the play area)
 const hud = createHud(hudRoot);
 const captions = createCaptions($("captions"), { on: () => settings.captions !== false });
 const screens = createScreens($("screens"), { act: (name, arg) => { uiAct(name, arg); }, settings: () => settings });
@@ -200,7 +202,7 @@ let lastScreen = { name: "title", data: null };
 let menu = null;                  // a menu opened over the title, the result or pause: { name }
 let botDriver = null;
 let held = {};
-let placeText = null, placeNum = null;
+let placeText = null, placeNum = null, raceText = null;
 let momentPending = FLAGS.moment;
 let frames = 0, stopped = false;
 let audioCtx = null, sound = null, hearing = false;
@@ -224,6 +226,7 @@ function newRun(start = "new", seed = newSeed()) {
   lastBeat.mother = lastBeat.you = -Infinity;
   placeText = null;
   placeNum = null;
+  raceText = null;
   menu = null;
   judges.length = 0;
   captions.resume();                       // a new run is never paused
@@ -408,6 +411,7 @@ function onEvent(ev) {
     case "stageStart":
       placeText = null;
       placeNum = null;
+      raceText = null;
       hearing = false;
       capSeen.clear();
       captions.clear();
@@ -441,6 +445,15 @@ function onEvent(ev) {
       const gained = fin(ev.place) && fin(placeNum) && ev.place < placeNum;
       if (fin(ev.place)) { placeText = say("hud.place", { place: ordinal(ev.place), of: fin(ev.of) ? ev.of : 20 }); placeNum = ev.place; }
       if (sound && gained) sound.sfx("place", soundAt(ev), ev);
+      break;
+    }
+    case "race": {
+      // stage 1's tags under the place slot: how many still race (once the first sperm rests), the next gate's call,
+      // the item you hold; nothing to say hides the tag, so the portrait prompt line keeps its place
+      const bits = [fin(ev.racing) && ev.racing < (fin(ev.of) ? ev.of : 20) ? say("swim.tag.racing", { n: ev.racing }) : null,
+        ev.gate && fin(ev.gate.n) ? say("swim.tag.gate", { n: ev.gate.n, first: ev.gate.first }) : null,
+        ev.item ? say("swim.item." + ev.item) : ev.rolling ? say("swim.tag.rolling") : null];
+      raceText = bits.filter(Boolean).join(" · ") || null;
       break;
     }
     case "judge":
@@ -669,7 +682,7 @@ function liveScore() {
   const id = run.stageId;
   let total = runTotal(sum.stages.filter((s) => s.id !== id));
   const mine = sum.stages.find((s) => s.id === id);
-  if (id === "birth") return total;          // Birth's points show only on the run result (6.8)
+  // Birth (the runner, design.md 5.8) counts live like the other stages; it still has no stage-end overlay (6.8)
   if (run.screen === "stage" && run.mod && run.mod.meta.scored && run.state) {
     const r = run.result();
     const live = r && r.score && fin(r.score.total) ? r.score.total : 0;
@@ -697,13 +710,13 @@ const keysForm = (id) => [id + ".keys", id + "Keys"].find((k) => has(k)) || null
 // The id a caption or sub-goal line shows: on a desktop its desktop form, when there is one (root.yours.keys).
 const sayForm = (id) => (device === "keys" && keysForm(id)) || id;
 
-// One-button mode (16.4): any key or touch is the button and the run steers, so a drag or drag-and-hold prompt says
+// One-button mode (16.4): any key or touch is the button and the run steers, so a drag, drag-and-hold or move prompt says
 // to hold, with no arrows, mouse or drag: the prompt's "<text>.one". Every drag or drag-and-hold prompt that names
 // a drag, an arrow or the mouse has one (prompts.test.mjs); the others ("Ride the waves.", "Rest.") keep their words,
 // as does a tap or hold prompt (Space is a key, and a tap is a touch).
 function promptText(p) {
   if (!p || !p.text) return null;
-  if (settings.oneButton && (p.gesture === "drag" || p.gesture === "dragHold") && has(p.text + ".one")) {
+  if (settings.oneButton && (p.gesture === "drag" || p.gesture === "dragHold" || p.gesture === "move") && has(p.text + ".one")) {
     return textOf(p.text + ".one");
   }
   if (device === "keys") {
@@ -740,8 +753,14 @@ function updateHud(view) {
     clock: st && mod !== ENDING ? gaLabel(st.gaDay, { fertilized: !!st.fertilized }) : "",
     score: mod && mod.meta.scored ? liveScore() : "",
     place: run.stageId === "swim" ? placeText : null,
+    race: run.stageId === "swim" && PLAYING.has(run.screen) ? raceText : null,
     scale: mod && mod !== ENDING ? scaleBar(view) : "",
     prompt: promptLine(),
+    hp: PLAYING.has(run.screen) && view && view.action && view.action.hp
+      ? { ...view.action.hp, label: say("hud.hp", { n: view.action.hp.n, max: view.action.hp.max }, settings) } : null,
+    // the boss bar: the stage's label id (its aria-label) or the shared one, with the share left in whole percent
+    boss: PLAYING.has(run.screen) && view && view.action && view.action.boss
+      ? { ...view.action.boss, label: say(view.action.boss.label || "hud.boss", { n: Math.round(100 * view.action.boss.hp) }, settings) } : null,
   };
   hud.set(v);
   // the words set the HUD's height: measure its bottom again when a line changes, or the score gets a digit (a wider
@@ -751,14 +770,14 @@ function updateHud(view) {
   // in landscape the bar's length (to 8 px) too: the scale tag's right edge keeps the caption band clear of it
   const scPx = vw > vh && v.scale && typeof v.scale === "object" && fin(v.scale.px) ? Math.round(v.scale.px / 8) : "";
   const key = [run.stageId, hudRoot.hidden, v.stageName, v.clock, fmtLen(v.score), v.place, sc, scPx,
-    v.prompt ? v.prompt.text : ""].join("|");
+    v.prompt ? v.prompt.text : "", v.boss ? "boss" : "", v.hp ? v.hp.max : ""].join("|");
   if (key !== hudPromptKey) { hudPromptKey = key; trackHud(); }
 }
 
 function updateStick() {
   const s = input.stick;
   const g = input.live().gesture;
-  const show = s.on && run.screen === "stage" && !run.paused && (g === "drag" || g === "dragHold");
+  const show = s.on && run.screen === "stage" && !run.paused && (g === "drag" || g === "dragHold" || g === "move");
   if (stickEl.hidden !== !show) stickEl.hidden = !show;
   if (show) stickEl.style.transform = `translate(${s.ox.toFixed(1)}px, ${s.oy.toFixed(1)}px)`;
 }
@@ -796,6 +815,7 @@ function present(frameStart) {
   camera = makeCamera(vw, vh, view.camera);
   renderer.draw(view, fin(frameStart) ? { frameStart } : {});
   rings.draw(view.rings, camera, motion, view.stage, { lastTouch, device, safe });
+  pops.draw(PLAYING.has(run.screen) && view.action ? view.action.pops : null, camera);
   updateHud(view);
   updateStick();
   const sa = run.stageId || "title";
@@ -818,7 +838,11 @@ const BODY_REACH = {
   turn: { at: 0.42, top: 0.53, up: 0.195, down: 0.215 },
 };
 const CAP_SLACK = 12;
+const CAP_BACK_S = 0.8;      // the body clear of the home band this long (game time) brings the captions back
 let capTopPx = null;
+let capLowPx = null;         // the low band's top as set: capTopPx, raised for a caption that would end below 60%
+let capHome = "low";         // the band fitCapBand chose for this stage and screen ("low" or "top")
+let capClearAt = null;
 function fitCapBand() {
   if (root.dataset.capband) delete root.dataset.capband;
   const b = BODY_REACH[stageAttr];
@@ -829,11 +853,14 @@ function fitCapBand() {
   const want = Math.max(b.top * vh, b.at * vh + b.down * vw + 8);    // 8 px under the body's lowest point
   const top = Math.min(want, 0.6 * vh - line);                        // one line still fits above 60%
   capTopPx = Math.round(top);
+  capLowPx = capTopPx;
   root.style.setProperty("--cap-top", capTopPx + "px");
   const under = want - top;                                           // how far a caption there reaches into the body
+  capHome = "low";
+  capClearAt = null;
   if (under <= CAP_SLACK) return;
   const over = hudB + 8 + 0.08 * vh - (b.at * vh - b.up * vw);        // ... and a caption in the top band
-  if (over <= CAP_SLACK && over < under) root.dataset.capband = "top";
+  if (over <= CAP_SLACK && over < under) { root.dataset.capband = "top"; capHome = "top"; }
 }
 
 // ... and as the stage goes on: when the subject's body, as drawn this frame, reaches the band the captions are in
@@ -856,14 +883,33 @@ function bodyBox(view) {
 }
 function steerCapBand(view) {
   if (capTopPx === null || !PLAYING.has(run.screen)) return;
+  // a caption taller than the low band rises in it (never above the stage's own band top), so it still ends above
+  // 60% (a two-line caption on a tablet, where the body's reach sets the band low)
+  const el = document.querySelector("#captions .cap"), reach = BODY_REACH[stageAttr];
+  const capH = el ? el.getBoundingClientRect().height : 0;
+  const low = Math.round(Math.max(reach ? reach.top * vh : 0, Math.min(capTopPx, 0.6 * vh - capH - 1)));
+  if (low !== capLowPx) { capLowPx = low; root.style.setProperty("--cap-top", low + "px"); }
   const box = bodyBox(view);
   if (!box) return;
   const inTop = root.dataset.capband === "top";
-  const topBand = [hudB + 8, hudB + 8 + 0.08 * vh], lowBand = [capTopPx, 0.6 * vh];
+  const topBand = [hudB + 8, hudB + 8 + 0.08 * vh], lowBand = [capLowPx, 0.6 * vh];
   const hits = ([y0, y1]) => Math.max(0, Math.min(y1, box.b) - Math.max(y0, box.t));
   const here = inTop ? topBand : lowBand, there = inTop ? lowBand : topBand;
-  if (hits(here) > 4 && hits(there) < hits(here) - 4) {
+  // a body that roams (stage 7's arena) may only graze the band: move off it as soon as the other band is clearer
+  if (hits(here) > 0.5 && hits(there) < hits(here)) {
     if (inTop) delete root.dataset.capband; else root.dataset.capband = "top";
+    capClearAt = null;
+    return;
+  }
+  // ... and back to the stage's own band once the body has left it (12 px to spare) for CAP_BACK_S: a player who
+  // dips low in the womb and comes back up gets the captions back in their band
+  if ((capHome === "top") === inTop) { capClearAt = null; return; }
+  const home = capHome === "top" ? topBand : lowBand;
+  if (hits([home[0] - CAP_SLACK, home[1] + CAP_SLACK]) > 0) { capClearAt = null; return; }
+  if (capClearAt === null || capClearAt > run.t) capClearAt = run.t;
+  else if (run.t - capClearAt >= CAP_BACK_S) {
+    if (capHome === "top") root.dataset.capband = "top"; else delete root.dataset.capband;
+    capClearAt = null;
   }
 }
 

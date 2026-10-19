@@ -264,6 +264,66 @@ await check("blur ends a two-key hold with one release", () => {
   assert.deepEqual(times(input.intents(2.1).releases), [2]);
 });
 
+// ---- the "move" gesture (the action stages, contract.md)
+const finger = (type, id, t, x = 100, y = 400) => ({ type, id, kind: "touch", x, y, t });
+
+await check("move: a drag anywhere steers with no press; a second finger's touch-down is one dash press", () => {
+  const input = createInput(null, { settings: {} });
+  input.setLive("move");
+  input.inject(finger("pointerdown", 1, 1.0, 100, 400));
+  input.inject(finger("pointermove", 1, 1.05, 160, 400));         // 60 px right: full deflection
+  let it = input.intents(1.1);
+  assert.deepEqual(it.presses, [], "the touch-down is the stick, not a press");
+  assert.ok(it.steer.x > 0.99 && Math.abs(it.steer.y) < 1e-9, `steer ${JSON.stringify(it.steer)}`);
+  assert.equal(it.touching, true);
+  input.inject(finger("pointerdown", 2, 1.2, 300, 200));          // a second finger taps
+  input.inject(finger("pointerup", 2, 1.25, 300, 200));
+  it = input.intents(1.3);
+  assert.deepEqual(times(it.presses), [1.2], "the second finger dashes");
+  assert.deepEqual(it.releases, [], "its lift is no release");
+  assert.ok(it.steer.x > 0.99, "the first finger still steers");
+  input.inject(finger("pointerup", 1, 1.5, 160, 400));
+  it = input.intents(1.6);
+  assert.deepEqual(it.presses, []);
+  assert.deepEqual(it.releases, [], "the stick's lift is no release");
+  assert.deepEqual(it.steer, { x: 0, y: 0 });
+});
+
+await check("move: a quick second tap near the first dashes; a slow one or a far one does not", () => {
+  for (const [gap, dx, want] of [[0.2, 10, 1], [0.45, 10, 0], [0.2, 120, 0]]) {
+    const input = createInput(null, { settings: {} });
+    input.setLive("move");
+    input.inject(finger("pointerdown", 1, 1.0));
+    input.inject(finger("pointerup", 1, 1.08));                   // a tap
+    input.inject(finger("pointerdown", 1, 1.08 + gap, 100 + dx, 400));
+    const it = input.intents(2.0);
+    assert.equal(it.presses.length, want, `gap ${gap} s, ${dx} px`);
+  }
+});
+
+await check("move: Space, Enter and Z dash; WASD and the arrows steer", () => {
+  const input = createInput(null, { settings: {} });
+  input.setLive("move");
+  input.inject({ type: "keydown", code: "KeyD", t: 1.0 });
+  let it = null;
+  for (let k = 0; k <= 12; k++) it = input.intents(1.0 + k / 60);        // the key stick eases in over 0.12 s
+  assert.ok(it.steer.x > 0.9, `D steers right: ${JSON.stringify(it.steer)}`);
+  assert.deepEqual(it.presses, [], "a steer key is no press");
+  input.inject({ type: "keydown", code: "Space", t: 1.3 });
+  input.inject({ type: "keyup", code: "Space", t: 1.35 });
+  input.inject({ type: "keydown", code: "KeyZ", t: 1.4 });
+  it = input.intents(1.5);
+  assert.deepEqual(times(it.presses), [1.3, 1.4]);
+});
+
+await check("move does not change the other gestures: in tap a touch-down is still a press, and a second finger nothing", () => {
+  const input = make();
+  input.inject(finger("pointerdown", 1, 1.0));
+  input.inject(finger("pointerdown", 2, 1.1));
+  const it = input.intents(1.2);
+  assert.deepEqual(times(it.presses), [1.0]);
+});
+
 if (failed.length) {
   for (const f of failed) console.log(`FAIL ${f}`);
   console.log(`FAIL ${FILE}: ${failed.length} of ${passed + failed.length} checks failed`);

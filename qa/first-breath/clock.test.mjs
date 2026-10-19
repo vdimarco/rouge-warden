@@ -26,38 +26,47 @@ const her = (beats, bpm) => (beats * 60) / bpm;
 const MOMENTS = {
   swim: ["womb", "gate", "fork", "tube", "meet", "carried"].map((id) => ({ id, ga: [14, 14] })),
   egg: ["surge", "open", "sweep", "guard", "enter", "seal", "fusion", "outro"].map((id) => ({ id, ga: [14, 14] })),
+  // stage 3 as the roguelike (first-breath-action-genres, design.md 5.3): a day a room (its 10 s timer, the 0.6 s
+  // clear, the 1.2 s split and the 3 s pick), the Knot's room (it drifts off at 18 s), the hatch and the outro
   split: [
-    { id: "split", ga: [15, 19], lenS: her(24, 72), beats: true },
-    { id: "bloom", ga: [19, 20], lenS: her(6, 72), beats: true },
-    { id: "hatch", ga: [20, 20] },
-    { id: "outro", ga: [20, 20] },
+    ...["day1", "day2", "day3", "day4"].map((id, i) => ({ id, ga: [15 + i, 16 + i], lenS: 14.8 })),
+    { id: "bloom", ga: [19, 20], lenS: 18 },
+    { id: "hatch", ga: [20, 20], lenS: 3 },
+    { id: "outro", ga: [20, 20], lenS: 2 },
   ],
+  // stage 4 as the action-adventure (first-breath-action-genres, design.md 5.4): nestle up to 8 s, the lining map up
+  // to 58 s, the 6 s heart, the 7 s grow
   root: [
-    { id: "nestle", ga: [20, 23], lenS: 12 },
-    { id: "roots", ga: [25, 35], lenS: 40 },
-    { id: "heart", ga: [36, 36] },
+    { id: "nestle", ga: [20, 23], lenS: 8 },
+    { id: "roots", ga: [25, 35], lenS: 58 },
+    { id: "heart", ga: [36, 36], lenS: 6 },
     { id: "grow", ga: [36, 49], lenS: 7 },
   ],
+  // stage 5 on the action layer (openspec/changes/first-breath-action-genres): a wave a week (7.5 s and a 2.2 s
+  // rest), weeks 7 to 12, then the big germ (a 1.6 s tell and 16 s)
   grow: (() => {
     const out = [];
-    for (let n = 7; n <= 13; n++) {
-      out.push({ id: `beat${n}`, ga: [7 * n, 7 * n + 6], lenS: her(16, bpmYou(7 * n)), beats: true });
-      if (n >= 8) out.push({ id: `move${n}`, ga: [7 * n + 6, Math.min(7 * n + 7, 97)], lenS: 3 });
-    }
+    for (let n = 7; n <= 12; n++) out.push({ id: `wave${n}`, ga: [7 * n, 7 * n + 7], lenS: 9.7 });
+    out.push({ id: "boss", ga: [91, 97], lenS: 17.6 });
     return out;
   })(),
   answer: [
     { id: "hear", ga: [105, 105] },
-    { id: "beat", ga: [105, 126], lenS: her(8, 78), beats: true },
-    { id: "phrases", ga: [133, 175], lenS: her(60, 78), beats: true },
+    // stage 6 as the rhythm stage (first-breath-action-genres, design.md 5.6): 6 kicks every 2nd beat, 6 phrases of 9
+    // beats, the sing-along of 16 notes and the jump note
+    { id: "beat", ga: [105, 126], lenS: her(12, 78), beats: true },
+    { id: "phrases", ga: [133, 168], lenS: her(54, 78), beats: true },
+    { id: "song", ga: [168, 175], lenS: her(17, 78), beats: true },
     { id: "eyes", ga: [175, 182], lenS: 4 },
     { id: "outro", ga: [189, 195], lenS: 3 },
   ],
+  // stage 7 as the survivor stage (first-breath-action-genres, design.md 5.7): 60 s of waves, the turn up to 6 s, the
+  // 10 s rest and the 3 s outro
   turn: [
-    { id: "breathe", ga: [196, 231], lenS: her(32, 72), beats: true },
-    { id: "turn", ga: [231, 252], lenS: 30 },
-    { id: "rest", ga: [259, 280], lenS: 16 },
-    { id: "outro", ga: [280, 280] },
+    { id: "waves", ga: [196, 245], lenS: 60 },
+    { id: "turn", ga: [245, 252], lenS: 6 },
+    { id: "rest", ga: [259, 280], lenS: 10 },
+    { id: "outro", ga: [280, 280], lenS: 3 },
   ],
   birth: [{ id: "waves", ga: [280, 280] }, { id: "light", ga: [280, 280] }],
 };
@@ -159,7 +168,7 @@ await check("gaAt follows each 4.1 moment and holds at its ends", () => {
     }
   }
   near(gaAt({ ga: [20, 23], lenS: 12 }, 4), 21, 1e-12, "nestle at 4 s");
-  near(MOMENTS.split[0].lenS, 20, 1e-9, "24 of her beats at 72 bpm");
+  near(MOMENTS.split[0].lenS, 14.8, 1e-9, "a day: room, clear, split and pick");
 });
 
 await check("gaDay never runs back: each moment starts at or after the last one's end, across stages too", () => {

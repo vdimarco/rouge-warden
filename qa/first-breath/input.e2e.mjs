@@ -8,13 +8,14 @@
 //   touch and at 1440 × 900, while a tap on a HUD tag still reaches the screen under it (review F6);
 // - with the game switcher open over Pause, a click on its heading (the focus leaves it) and then P or Esc never
 //   resumes the run: P does nothing, Esc closes the switcher, and the run stays paused (review F8);
-// - Space let go while paused, or while the page is hidden, still ends the hold at Resume: Birth's first wave is the
-//   same as with no pause (review F9);
-// - in Birth on a desktop many keys make one hold: Left then Right (Left let go) holds the turn wave all through,
-//   and Space then Down (Space let go) holds the tuck wave with the tuck (review F12);
-// - Tab to the HUD's pause button in play, then Space or Enter: no pause, and the press is the stage's; over the
-//   overlay, where it is a button like Next, Enter on it pauses (review F16);
-// - the prompt line names keys on a desktop (stage 3: "Press Space as the ring closes."), touch on a phone, and the
+// - a drag let go while paused, or while the page is hidden, still ends at Resume: in Birth (the runner, at 390 × 844
+//   with touch) you settle on the lane the drag took, as with no pause, and a flick takes the next lane (review F9);
+// - in Birth on a desktop an arrow keydown moves one lane, held or not (Left held, then Right with Left let go), two
+//   quick arrows cross two lanes, and Space and the down arrow tuck (review F12);
+// - Tab to the HUD's pause button in play, then Space or Enter: no pause, and the press is the stage's (in stage 3,
+//   one dash in __fb.result().metrics.dashes); over the overlay, where it is a button like Next, Enter on it pauses
+//   (review F16);
+// - the prompt line names keys on a desktop (stage 3: "WASD to move. Space to dash."), touch on a phone, and the
 //   button in one-button mode (stage 2 guard: "Hold to guard your shell."); the stage 7 rest asks for a touch, not
 //   the thumb kept from the turn (review F13, F15, F17).
 // - the three devices (tasks.md 5.5): at 390 × 844 and 844 × 390 with touch, a tap on Play starts the run, and at
@@ -94,7 +95,6 @@ const S = (page) => page.evaluate(() => {
 });
 const stepTo = (page, t) => page.evaluate((t) => { let n = 0; while (window.__fb.state().t < t - 1e-6 && n++ < 20000) window.__fb.step(1); }, t);
 const stepWhile = (page, screen) => page.evaluate((screen) => { let n = 0; while (window.__fb.state().screen === screen && n++ < 6000) window.__fb.step(1); }, screen);
-const wave = (page, n) => page.evaluate((n) => window.__fb.result().metrics.waves[n - 1], n);
 const settle = () => wait(60);
 const hidden = (page, on) => page.evaluate((on) => {
   Object.defineProperty(document, "visibilityState", { configurable: true, get: () => (on ? "hidden" : "visible") });
@@ -230,71 +230,89 @@ for (const size of Object.keys(SIZES)) {
   await ctx.close();
 }
 
-// ---- 4. a release made while paused or hidden still ends the hold (F9)
+// ---- 4. a release made while paused or hidden still ends the drag (F9; Birth's runner, design.md 5.8)
 {
   const runs = {};
+  const W = 390, H = 844;
   for (const mode of ["none", "pause", "hidden"]) {
-    const { ctx, page, errors } = await open("desktop", "?test=1&stage=8&mute=1");
-    await stepTo(page, 3.0);
-    await page.keyboard.down("Space");
-    await stepTo(page, 4.0);
+    const { ctx, page, errors } = await open("portrait", "?test=1&stage=8&mute=1");
+    const cdp = await ctx.newCDPSession(page);
+    const pt = (x, y) => [{ x: Math.round(x), y: Math.round(y), id: 1, radiusX: 4, radiusY: 4, force: 1 }];
+    const T = {
+      down: (x, y) => cdp.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: pt(x, y) }),
+      move: (x, y) => cdp.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: pt(x, y) }),
+      up: () => cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] }),
+    };
+    // a flick left to the left lane, then a drag right held: it takes the middle lane at once and slides on
+    // (anchors are screen px: a lane is 18 u, at 120 u across the short side before the first surge)
+    await stepTo(page, 0.5);
+    const mid = (await page.evaluate(() => window.__fb.state().anchor)).x, lane = (18 * Math.min(W, H)) / 120;
+    await T.down(W / 2, H / 2); await T.move(W / 2 - 30, H / 2); await T.move(W / 2 - 70, H / 2);
+    await stepTo(page, 0.6); await T.up();
+    await stepTo(page, 1.4);
+    const left = (await page.evaluate(() => window.__fb.state().anchor)).x;
+    await T.down(W / 2, H / 2); await T.move(W / 2 + 30, H / 2); await T.move(W / 2 + 70, H / 2);
+    await stepTo(page, 1.5);
     let wasPaused = true, resumed = true;
-    if (mode === "none") await page.keyboard.up("Space");
+    if (mode === "none") await T.up();
     else {
       if (mode === "pause") await page.keyboard.press("Escape");
       else await hidden(page, true);
       wasPaused = (await S(page)).paused;
-      await page.keyboard.up("Space");
+      await T.up();
       if (mode === "hidden") await hidden(page, false);
       await page.keyboard.press("Escape");
       resumed = !(await S(page)).paused;
     }
-    await stepTo(page, 11.5);
-    runs[mode] = { w: await wave(page, 1), wasPaused, resumed, errors };
+    await stepTo(page, 2.8);
+    const x = (await page.evaluate(() => window.__fb.state().anchor)).x;
+    runs[mode] = { left: (left - mid) / lane, x: (x - mid) / lane, wasPaused, resumed, errors };
     await ctx.close();
   }
-  const base = runs.none.w;
+  check("portrait: in Birth a flick takes the next lane, and a drag let go settles on the lane it took",
+    Math.abs(runs.none.left + 1) < 0.01 && Math.abs(runs.none.x) < 0.01, JSON.stringify(runs.none));
   for (const mode of ["pause", "hidden"]) {
     const r = runs[mode];
-    check(`desktop: Space let go while ${mode === "pause" ? "paused" : "the page is hidden"} still ends Birth's first hold`,
-      r.wasPaused && r.resumed && r.w && base && r.w.rested === base.rested && Math.abs(r.w.overlap - base.overlap) < 0.05,
-      JSON.stringify({ base, got: r.w, wasPaused: r.wasPaused, resumed: r.resumed }));
+    check(`portrait: a drag let go while ${mode === "pause" ? "paused" : "the page is hidden"} still ends in Birth: you settle on its lane`,
+      r.wasPaused && r.resumed && Math.abs(r.x - runs.none.x) < 0.01, JSON.stringify({ base: runs.none.x, got: r.x, wasPaused: r.wasPaused, resumed: r.resumed }));
   }
   const errs = [...runs.none.errors, ...runs.pause.errors, ...runs.hidden.errors];
-  check("desktop: no page errors (pause and release)", errs.length === 0, errs.slice(0, 3).join(" || "));
+  check("portrait: no page errors (pause and release)", errs.length === 0, errs.slice(0, 3).join(" || "));
 }
 
-// ---- 5. one hold from many keys in a drag-and-hold moment (F12)
-for (const mode of ["left-right", "space-down"]) {
+// ---- 5. Birth's lane keys and the tuck on a desktop (F12; the runner, design.md 5.8): Left held moves one lane (no
+// slide on), Right while Left is held moves one lane back, two quick Rights cross two lanes; Space and Down each tuck
+{
   const { ctx, page, errors } = await open("desktop", "?test=1&stage=8&mute=1");
-  const wn = mode === "space-down" ? 2 : 4;
-  const sw = 3 + 8 * (wn - 1);                    // the swell of wave n
-  await stepTo(page, sw - 0.1);
-  if (mode === "left-right") {
-    await page.keyboard.down("ArrowLeft");
-    await stepTo(page, sw + 2.4);
-    await page.keyboard.down("ArrowRight");
-    await page.keyboard.up("ArrowLeft");
-    await stepTo(page, sw + 5.1);
-    await page.keyboard.up("ArrowRight");
-  } else {
-    await page.keyboard.down("Space");
-    await stepTo(page, sw + 1.0);
-    await page.keyboard.down("ArrowDown");
-    await page.keyboard.up("Space");
-    await stepTo(page, sw + 5.1);
-    await page.keyboard.up("ArrowDown");
-  }
-  await stepTo(page, sw + 6);
-  const w = await wave(page, wn);
-  if (mode === "left-right") {
-    check("desktop: Birth's turn wave held with Left, then Right (Left let go), is held all through",
-      w && w.move === "turn" && w.overlap > 0.95 && w.right > 0.95, JSON.stringify(w));
-  } else {
-    check("desktop: Birth's tuck wave held with Space, then Down (Space let go), is held all through with the tuck",
-      w && w.move === "tuck" && w.overlap > 0.95 && w.right > 0.7, JSON.stringify(w));
-  }
-  check(`desktop: no page errors (${mode})`, errors.length === 0, errors.slice(0, 3).join(" || "));
+  const px = () => page.evaluate(() => window.__fb.state().anchor.x);
+  const tucks = () => page.evaluate(() => window.__fb.result().metrics.tucks);
+  await stepTo(page, 0.5);
+  const mid = await px(), lane = (18 * 900) / 120;           // screen px; 18 u lanes, 120 u across 900 px at rest
+  const x = async () => ((await px()) - mid) / lane;
+  await page.keyboard.down("ArrowLeft");
+  await stepTo(page, 1.3);
+  const held = await x();
+  await page.keyboard.down("ArrowRight");
+  await page.keyboard.up("ArrowLeft");
+  await stepTo(page, 1.8);
+  await page.keyboard.up("ArrowRight");
+  const back = await x();
+  await page.keyboard.press("ArrowLeft");
+  await stepTo(page, 2.2);
+  await page.keyboard.press("ArrowRight"); await page.keyboard.press("ArrowRight");
+  await stepTo(page, 2.8);
+  const two = await x();
+  check("desktop: in Birth an arrow keydown moves one lane, held or not, and two quick arrows cross two lanes",
+    Math.abs(held + 1) < 0.01 && Math.abs(back) < 0.01 && Math.abs(two - 1) < 0.01, JSON.stringify({ held, back, two }));
+  const n0 = await tucks();
+  await page.keyboard.press("Space");
+  await stepTo(page, 3.8);
+  const n1 = await tucks();
+  await page.keyboard.press("ArrowDown");
+  await stepTo(page, 4.8);
+  const n2 = await tucks();
+  check("desktop: in Birth Space tucks, and so does the down arrow", n1 === n0 + 1 && n2 === n1 + 1, JSON.stringify({ n0, n1, n2 }));
+  check("desktop: no page errors (Birth's keys)", errors.length === 0, errors.slice(0, 3).join(" || "));
   await ctx.close();
 }
 
@@ -304,21 +322,17 @@ for (const key of ["Space", "Enter"]) {
   await page.evaluate(() => window.__fb.step(30));
   await page.keyboard.press("Tab");
   const focus = await S(page);
-  // step to the next target, then press on it with the focus on the pause button
-  await page.evaluate(() => {
-    const x = window.__fb.nextTarget();
-    let n = 0;
-    while (x && window.__fb.state().t < x.t - 0.004 && n++ < 6000) window.__fb.step(1);
-  });
-  const before = await S(page);
+  // stage 3 (the roguelike): the press is the dash; count the dashes with the focus on the pause button
+  const dashes = () => page.evaluate(() => { const r = window.__fb.result(); return r && r.metrics ? r.metrics.dashes : null; });
+  const before = await dashes();
   await page.keyboard.press(key);
   await settle();
   await page.evaluate(() => window.__fb.step(20));
-  const after = await S(page);
+  const after = await S(page), dashed = await dashes();
   check(`desktop: Tab focuses the pause button, and ${key} there does not pause`, focus.active === "pause" && after.paused === false,
     JSON.stringify({ focus: focus.active, after }));
-  check(`desktop: ${key} on the focused pause button is the stage's press`, after.judges > before.judges,
-    JSON.stringify({ before: before.judges, after: after.judges }));
+  check(`desktop: ${key} on the focused pause button is the stage's press (a dash)`, before === 0 && dashed === 1,
+    JSON.stringify({ before, after: dashed }));
   if (after.paused) await page.keyboard.press("Escape");
   let clicked = true;
   try { await page.click("#pause", { timeout: 3000 }); } catch (e) { clicked = false; }   // the pause button still works by click
@@ -330,8 +344,8 @@ for (const key of ["Space", "Enter"]) {
 // ---- 7. the prompt words for each way to play (F13, F15, F17)
 {
   const words = [
-    ["desktop", "?test=1&stage=3", null, "Press Space as the ring closes."],
-    ["portrait", "?test=1&stage=3", null, "Tap as the ring closes."],
+    ["desktop", "?test=1&stage=3", null, "WASD to move. Space to dash."],
+    ["portrait", "?test=1&stage=3", null, "Drag to move. Tap to dash."],
     ["desktop", "?test=1&stage=4", null, "Drift with the arrow keys, or drag with the mouse."],
     ["desktop", "?test=1&one=1&stage=2", "guard", "Hold to guard your shell."],
     ["portrait", "?test=1&one=1&stage=2", "guard", "Hold to guard your shell."],
@@ -397,7 +411,7 @@ for (const key of ["Space", "Enter"]) {
       else await page.keyboard.down(key);
     };
     const up = async () => { if (dry) return; if (how === "touch") await T.up(); else if (how === "mouse") await page.mouse.up(); else await page.keyboard.up(key); };
-    if (at.gesture === "drag") {
+    if (at.gesture === "drag" || at.gesture === "move") {     // "move" (the action stages, stage 1): drag to move
       if (how === "keys") {
         const ks = at.keys === "turn" ? ["ArrowRight"] : ["ArrowUp", "ArrowRight"];
         for (const k of ks) if (!dry) await page.keyboard.down(k);
@@ -464,6 +478,49 @@ for (const key of ["Space", "Enter"]) {
       check(`${size}: two idle twins of each stage are the same (the control)`, same.length === 0, `stages ${same.join(", ")} differ`);
     }
     check(`${size}: no page errors (each stage's gesture)`, errors.length === 0, errors.slice(0, 3).join(" || "));
+    await ctx.close();
+  }
+  // stage 6, the rhythm stage (design.md 5.6): on desktop an arrow keydown moves one lane and is the kick, in the new
+  // lane (two quick arrows cross two lanes); on a phone a tap kicks in the lane's column (low, where a thumb rests),
+  // and a touch-down on the beat with a drag past 24 px inside 0.12 s counts in the lane it slides to
+  for (const size of ["desktop", "portrait"]) {
+    const touch = !!SIZES[size].hasTouch;
+    const { ctx, page, errors } = await open(size, "?test=1&mute=1");
+    const T = touch ? await touchOf(page) : null;
+    const W = SIZES[size].viewport.width, H = SIZES[size].viewport.height;
+    await page.evaluate(() => { window.__fb.goto("answer", { seed: 4 }); window.__fb.jump("phrases"); window.__fb.step(1); });
+    const toNote = () => page.evaluate(() => {
+      let n = 0, x = window.__fb.nextTarget();
+      while (x && x.t - window.__fb.state().t > 1 / 60 - 1e-6 && n++ < 3000) { window.__fb.step(1); x = window.__fb.nextTarget(); }
+      return x;
+    });
+    const gradeOf = (id) => page.evaluate((id) => { window.__fb.step(12); const j = window.__fb.state().judges.filter((e) => e.target === id); return j.length ? j[j.length - 1].grade : null; }, id);
+    const LANES = "MLRLMR";                                   // the first six answer notes' lanes (phrases 1 to 3)
+    const got = [];
+    let lane = "M";
+    for (let k = 0; k < LANES.length; k++) {
+      const x = await toNote();
+      const want = LANES[k], d = "LMR".indexOf(want) - "LMR".indexOf(lane);
+      const { y: ay, x: mx } = await page.evaluate(() => window.__fb.state().anchor);
+      if (!touch) {
+        if (Math.abs(d) === 2) await page.keyboard.press(d > 0 ? "ArrowRight" : "ArrowLeft");
+        await page.keyboard.press(d > 0 ? "ArrowRight" : d < 0 ? "ArrowLeft" : "ArrowUp");
+      } else if (k % 2 === 0) {
+        // a tap in the note's lane column, below your ring (your ring is at mx; lanes are 20 u apart at the line)
+        const cx = W / 2 + ("LMR".indexOf(want) - 1) * 0.2 * W;
+        await T.down(cx, Math.min(H - 20, ay + 0.12 * H)); await T.up();
+      } else {
+        // a touch-down where you are on the beat, then a flick past 24 px toward the note's lane within 0.12 s
+        await T.down(mx, ay + 0.1 * H);
+        for (let i = 1; i <= 3; i++) { await T.move(mx + Math.sign(d) * 14 * i * Math.abs(d), ay + 0.1 * H); await page.evaluate(() => window.__fb.step(1)); }
+        await T.up();
+      }
+      lane = want;
+      got.push(await gradeOf(x.id));
+    }
+    check(`${size}: stage 6 ${touch ? "lane taps and flicks" : "arrows"} kick each answer note in its lane, In time (${got.join(" ")})`,
+      got.length === 6 && got.every((g) => g === "in"), got);
+    check(`${size}: no page errors (stage 6 lanes)`, errors.length === 0, errors.slice(0, 3).join(" || "));
     await ctx.close();
   }
   // one-button mode completes a stage: stage 1 with one key or one touch held from the start, top 3 at the meeting place

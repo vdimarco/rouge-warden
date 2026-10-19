@@ -34,6 +34,8 @@
 //   kept one (a tie keeps the earlier); the carry is always the latest closed attempt's. sparks = the number of kept
 //   Glowing grades, written into the carry. Marks
 //   ({ assist, oneButton }) are the kept attempt's: assist as the stage started, oneButton if it was on in any step.
+// - The Almost card's data takes the stage's metrics.almost (a string id) as `line`: an action stage's knock-out
+//   says why there ("You need a rest. Try again, or go on."); a race says its place instead.
 // - finish() ends the current stage with its result so far (goalMet stays the stage's own for a stage that can fail,
 //   else true with the full Goal), for the test hook; jump(moment) calls the stage's jump. Both are extras.
 // - Events (run.events, drained by the host): every stage event, with t in core seconds and `stage` (its id) added;
@@ -48,6 +50,8 @@
 // - summary() → { total, ms, stages: [{ id, score: { goal, skill, flourish, total }, grade, parts, goalMet,
 //   attempts, marks }], marks, sparks, facts, done, practice }; done is true once a full run reaches its result. In
 //   practice, total is the stage's own total, with no Glowing bonus.
+// - One-button mode in an action stage (meta.action): the button's presses are dropped and botSteer's dash, while the
+//   button is held, is the press (contract.md).
 // - Timing offset and Resume (5.2): every stage gets opts.lag = max(0, settings.offsetMs) / 1000 (at most 0.15 s)
 //   when it starts (a press made on time reaches the page that late, so its misses wait that long). act("resume")
 //   sets the lag again from the settings (track.js relag), then calls the stage's resume(state), when it has one,
@@ -279,7 +283,7 @@ export function createRun({ seed = 1, settings = {}, save = null, start = "new",
     if (mod.meta.canFail && !res.goalMet && !attempt.wentOn) {
       almost = { res };
       const mt = res.metrics || {};
-      show("almost", { id: mod.meta.id, place: mt.place ?? null, of: mt.of ?? null, capped: !!mt.capped });
+      show("almost", { id: mod.meta.id, place: mt.place ?? null, of: mt.of ?? null, capped: !!mt.capped, line: mt.almost || null });
       return;
     }
     close(res);
@@ -343,6 +347,8 @@ export function createRun({ seed = 1, settings = {}, save = null, start = "new",
           local.dir = makeIntents({ dir: a.dir }).dir;
           local.turn = 0;
           local.aim = null;
+          // an action stage (meta.action): the button's own presses are no dash; while it is held the bot dashes
+          if (mod.meta.action) local.presses = a.dash && local.touching ? [{ t: st.t, raw: st.t }] : [];
           lastOne = a;
           attempt.marks.oneButton = true;
         } else lastOne = null;
@@ -376,7 +382,11 @@ export function createRun({ seed = 1, settings = {}, save = null, start = "new",
           const res = almost.res;
           almost = null;
           attempt.wentOn = true;
-          if (res.metrics && res.metrics.capped && mod.jump(st, "carried") !== false) {
+          // the stage plays on: stage 1's carried finish, or an action stage's meta.goOn moment after a knock-out
+          // (design.md 4.4: it plays out by itself and ends with its goal unmet; wentOn closes it with no grade word)
+          const mt = res.metrics || {};
+          const goOnId = mt.capped ? "carried" : mt.ko && typeof mod.meta.goOn === "string" ? mod.meta.goOn : null;
+          if (goOnId && typeof mod.jump === "function" && mod.jump(st, goOnId) !== false) {
             ss = t - st.t;                 // the stage resumes: its time base moves on by the card's time
             screen = "stage";
             push("screen", { screen, data: { id: mod.meta.id, index: idx, carried: true } });

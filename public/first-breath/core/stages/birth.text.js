@@ -1,38 +1,44 @@
-// First Breath: stage 8, Birth (`birth`), its strings (design.md 6.8, 1.3, 15.4). Plain, short and tender; no
-// pronoun for the one who carries you, no banned word, one idea per sentence. core/text.js registers them through
-// core/stages/index.js. Prompt and sub-goal text ids are these keys; fact captions use the ids in birth.facts.js.
+// First Breath: stage 8, Birth (`birth`), its strings (the runner of first-breath-action-genres, design.md 5.8; v1 15.4
+// for the words). Plain, short and tender; no pronoun for the one who carries you, no banned word, one idea per
+// sentence. core/text.js registers them through core/stages/index.js. Prompt and sub-goal text ids are these keys; fact
+// captions use the ids in birth.facts.js. A ".keys" line is the desktop form (main.js shows it when keys were used
+// last); a ".one" line is the one-button form, where the run steers and tucks while the button is held.
 export const TEXT = Object.freeze({
-  // prompts (the HUD prompt line); each ".keys" line is the desktop form, which the host shows when keys or a mouse
-  // were used last (an arrow held is a drag and hold; Space alone is a plain hold); ".one" is the one-button form,
-  // where any key or touch is the button and the run picks the move
+  // prompts (the HUD prompt line)
   "birth.ride": "Ride the waves.",
-  "birth.hold": "Hold through the wave.",
-  "birth.hold.keys": "Hold Space through the wave.",
-  "birth.tuck.do": "Tuck: drag down and hold.",
-  "birth.tuck.do.keys": "Tuck: hold the down arrow.",
-  "birth.tuck.do.one": "Tuck: hold through the wave.",
-  "birth.turn.do": "Turn: drag sideways and hold.",
-  "birth.turn.do.keys": "Turn: hold the left or right arrow.",
-  "birth.turn.do.one": "Turn: hold through the wave.",
-  "birth.lift.do": "Lift: drag up and hold.",
-  "birth.lift.do.keys": "Lift: hold the up arrow.",
-  "birth.lift.do.one": "Lift: hold through the wave.",
-  "birth.back.do": "Turn back: drag the other way and hold.",
-  "birth.back.do.keys": "Turn back: hold the arrow the other way.",
-  "birth.back.do.one": "Turn back: hold through the wave.",
-  "birth.rest": "Rest.",
+  "birth.prompt.move": "Drag to change lanes. Tap to tuck.",
+  "birth.prompt.move.keys": "Left and right arrows change lanes. Space tucks.",
+  "birth.prompt.move.one": "Hold to ride the waves. You tuck by yourself.",
   "birth.again": "Rest. Another wave will come.",
+  "birth.go": "Into the light.",
 
-  // sub-goals confirmed (by you, or by themselves: the wave moves you on either way)
-  "birth.rode": "You rode the wave.",
+  // the gates of the birth moves: the prompt line and its sub-goal, then the line when you pass it
+  "birth.gate.tuck": "Tuck through the gate.",
+  "birth.gate.tuck.keys": "Press Space to tuck through the gate.",
+  "birth.gate.turn": "Turn: steer into the gold arrow.",
+  "birth.gate.turn.one": "Turn: hold, and you steer in.",
+  "birth.gate.lift": "Lift: tuck through the middle.",
+  "birth.gate.lift.keys": "Lift: press Space in the middle lane.",
+  "birth.gate.back": "Turn back: steer into the gold arrow.",
+  "birth.gate.back.one": "Turn back: hold, and you steer in.",
   "birth.tucked": "Chin tucked.",
   "birth.turned": "You turned to fit.",
   "birth.lifted": "Head lifted.",
   "birth.turnedBack": "You turned back.",
   "birth.anyway": "The wave moves you on anyway.",
 
+  // word tags over the play area (ui/pops.js)
+  "birth.pop.flow": "Flow",
+  "birth.pop.tight": "Nice tuck",
+
+  // sound captions, once each (main.js finds "birth.sfx.<id>" for an sfx "birth.<id>")
+  "birth.sfx.tuck": "~ you tuck",
+  "birth.sfx.bump": "~ a soft bump",
+  "birth.sfx.bubble": "· a calm bubble",
+
   // score parts on the run result (the score is never shown at the end of this stage)
-  "birth.part.overlap": "Holding the waves",
-  "birth.part.moves": "Moves",
-  "birth.part.rests": "Rests",
+  "birth.part.folds": "Folds passed",
+  "birth.part.gates": "Gates",
+  "birth.part.bubbles": "Calm bubbles",
+  "birth.part.flow": "Flow",
 });

@@ -28,10 +28,11 @@
 //   root.swell), an opening from birth.open ends, and a hum's notes not yet sung stop. cutoffHz sets the womb bus
 //   cutoff, except while an opening runs (open() or birth.open), which holds it until the next scene.
 // - sfx(id, at, opts): at is the context time. The ids are the stages' sfx ids (swim swell, whoom, swish; egg.surge,
-//   egg.pluck, egg.burst, egg.enter, egg.fifth; split sparkle, tone, toneEnd, pling, slip; root.link, root.linkBeat,
-//   root.hush, root.swell, root.tipOn, root.tipOff; grow bell, move; answer.hum, answer.thump, answer.hand; turn
-//   headDown, roomy; birth.warn, birth.breath, birth.swell, birth.open; ending heartFar, heartClose, inhale, cry,
-//   breath) and the event cues of 11 (bump, place, ready, bounce, stick, loose, goldIn, enter, seal). opts is the
+//   egg.pluck, egg.burst, egg.enter, egg.fifth; split sparkle, tone, toneEnd, pling, slip; root.link, root.linkBeat, root.dig, root.shoot, root.snap, root.ping,
+//   root.hush, root.swell, root.tipOn, root.tipOff; grow bell, move; answer.hum, answer.thump, answer.echo, answer.hand, answer.boom; turn
+//   headDown, roomy, turn.beat (her heart louder from the Beat gift: pitch is its level); birth.warn, birth.breath, birth.swell, birth.open; ending heartFar, heartClose, inhale, cry,
+//   breath), the action layer's act.<outcome> (shot, strike, clear, fire, tell, dash, ouch, ko, pick, up, heal, phase, win;
+//   core/lib/action.js emitOut) and the event cues of 11 (bump, place, ready, bounce, stick, loose, goldIn, enter, seal). opts is the
 //   event: pitch, gain, and the event's own fields (wave, angle, a, b, near, fromHz, toHz, seconds, dur, rumbleHz).
 //   A bump plays full when "you" is in it, 10 dB softer when opts.near is true (a rival pair within 40 u of you; the
 //   host decides), else not at all. Bumps, bounces and sticks share a limit of 6 a second. An unknown id is counted
@@ -104,6 +105,7 @@ export function createSound(ctx, { seed = 1, latencyS = null } = {}) {
   let sfxCount = 0, played = 0, dropped = 0;
   let opening = null;               // { toHz, until } while an opening holds the cutoff
   let herDuck = 1, herFar = 1;      // root.hush; the ending's far heart
+  let herLift = 1;                  // turn.beat: her heart louder with the Beat gift
   let lastInhale = -Infinity, lastEnter = -Infinity;
   let toneHeld = null;              // split's hold tone: the voice it took
   let tipVoice = null;
@@ -225,7 +227,7 @@ export function createSound(ctx, { seed = 1, latencyS = null } = {}) {
   }
 
   // ---------- levels ----------
-  function levelHer() { return dB(fin(scene.motherDb) ? scene.motherDb : 0) * herDuck * herFar; }
+  function levelHer() { return dB(fin(scene.motherDb) ? scene.motherDb : 0) * herDuck * herFar * herLift; }
   function levelYou() { return dB(fin(scene.youDb) ? scene.youDb : -8); }
   function cutoffNow() { return opening ? opening.toHz : clamp(fin(scene.cutoffHz) ? scene.cutoffHz : 150, 40, 20000); }
   function setLevels(tau = 0.15) {
@@ -460,6 +462,12 @@ export function createSound(ctx, { seed = 1, latencyS = null } = {}) {
           quietly(() => { const t = Math.max(at, now()); v.g.gain.cancelScheduledValues(t); v.g.gain.setTargetAtTime(0, t, 0.15); });
         }
         return true;
+      // the lining map (first-breath-action-genres 5.4): a soft crunch as you tunnel (firmer through firm tissue), the
+      // tendril's flick, its springy snap, the compass ping
+      case "root.dig": noise(at, { type: "bandpass", f0: p >= 1 ? 420 : 260, f1: p >= 1 ? 300 : 180, glideS: 0.08, q: 1.6, peak: 0.07 * k, attack: 0.005, tau: 0.05 }); return true;
+      case "root.shoot": noise(at, { type: "bandpass", f0: 700, f1: 1400, glideS: 0.08, q: 2, peak: 0.05 * k, attack: 0.004, tau: 0.04 }); return true;
+      case "root.snap": pluck(at, p >= 1 ? 196 : 131, 0.16 * k, 0.09); pluck(at + 0.03, p >= 1 ? 294 : 165, 0.08 * k, 0.07); return true;
+      case "root.ping": pluck(at, 523, 0.07 * k, 0.18); pluck(at + 0.12, 784, 0.04 * k, 0.16); return true;
 
       // stage 5, the first trimester
       case "bell": {
@@ -476,19 +484,44 @@ export function createSound(ctx, { seed = 1, latencyS = null } = {}) {
         return true;
       }
       case "answer.thump": pluck(at, o && fin(o.pitch) && o.pitch > 20 ? o.pitch : 70, 0.4 * clamp(k, 0.2, 1), 0.035); return true;
+      // your kick plays her note back: a soft pluck at the note's pitch with a quiet octave above
+      case "answer.echo": {
+        const hz = o && fin(o.pitch) && o.pitch > 20 ? o.pitch : 420;
+        pluck(at, hz, 0.12 * clamp(k, 0.2, 1), 0.22); pluck(at, hz * 2, 0.03 * clamp(k, 0.2, 1), 0.12);
+        return true;
+      }
       case "answer.hand": {
         const hz = o && fin(o.pitch) && o.pitch > 20 ? o.pitch : 110;
         swell(at, hz, 0.18 * k, 0.4, 1.4); swell(at, hz * 1.5, 0.08 * k, 0.4, 1.2);
         return true;
       }
+      // the jump note: a soft boom from outside (a low sine bump under a falling low-passed rumble)
+      case "answer.boom":
+        swell(at, 49, 0.3 * k, 0.02, 1.1, { f1: 41, glideS: 0.6 });
+        noise(at, { type: "lowpass", f0: 260, f1: 70, glideS: 0.5, peak: 0.24 * k, attack: 0.006, tau: 0.22 });
+        return true;
 
       // stage 7, the third trimester
       case "headDown": tone(at, { f0: 65, f1: 82, glideS: 0.9, peak: 0.24 * k, attack: 0.4, tau: 0.4 }); return true;
       case "roomy": noise(at, { f0: 180, f1: 320, glideS: 0.8, peak: 0.1 * k, attack: 0.4, tau: 0.3 }); return true;
+      case "turn.beat":
+        // {Carer}'s beat gift (design.md 5.7): her heartbeat louder, +2.5 dB at level 1 up to +4.5 dB at level 3, until
+        // the next scene; a warm thump as you take it
+        herLift = dB(clamp(1.5 + (fin(p) ? Math.round(p) : 1), 2.5, 4.5));
+        setLevels(0.4);
+        pluck(at, 55, 0.22 * k, 0.14); pluck(at + 0.24, 49, 0.14 * k, 0.12);
+        return true;
 
       // stage 8, birth
       case "birth.warn": swell(at, 55 * p, 0.22 * k, 0.3, 0.8); return true;
       case "birth.breath": noise(at, { f0: 300, f1: 140, glideS: 1.1, peak: 0.12 * k, attack: 0.15, tau: 0.35 }); return true;
+      // the runner (first-breath-action-genres 5.8): a soft whoosh as you tuck, a soft boop on a bump, small chimes
+      // for calm bubbles and the flow streak, a warm chord at a gate; all low and soft through the womb bus
+      case "birth.tuck": noise(at, { type: "bandpass", f0: 240, f1: 600, glideS: 0.1, q: 1, peak: 0.11 * k, attack: 0.01, tau: 0.06 }); return true;
+      case "birth.bump": tone(at, { f0: 150, f1: 95, glideS: 0.12, peak: 0.24 * k, attack: 0.006, tau: 0.09 }); return true;
+      case "birth.bubble": pluck(at, 392 * p, 0.07 * k, 0.05); pluck(at + 0.05, 523 * p, 0.05 * k, 0.06); return true;
+      case "birth.flow": pluck(at, 262 * (1 + 0.12 * Math.min(5, p)), 0.12 * k, 0.1); return true;
+      case "birth.gate": swell(at, 196 * p, 0.16 * k, 0.04, 0.7); swell(at, 247 * p, 0.1 * k, 0.05, 0.7); swell(at, 294 * p, 0.08 * k, 0.06, 0.7); return true;
       case "birth.swell": {
         const dur = o && fin(o.dur) && o.dur > 0 ? o.dur : 5;
         const rum = o && Array.isArray(o.rumbleHz) && o.rumbleHz.length ? o.rumbleHz : [40, 80];
@@ -508,6 +541,32 @@ export function createSound(ctx, { seed = 1, latencyS = null } = {}) {
       case "inhale": breath("inhale", at); return true;
       case "cry": breath("cry", at); return true;
       case "breath": breath("breath", at, p); return true;
+      // the action layer (core/lib/action.js emitOut: "act.<outcome>", already thinned in time), soft through the womb
+      case "act.shot": pluck(at, 330, 0.05 * k, 0.025); return true;
+      case "act.strike": noise(at, { type: "bandpass", f0: 520, q: 2.5, peak: 0.08 * k, attack: 0.002, tau: 0.02 }); return true;
+      case "act.clear": {
+        const steps = [0, 2, 4, 7, 9, 12, 14, 16, 19];
+        pluck(at, 196 * Math.pow(2, steps[Math.max(0, Math.min(8, (p | 0) - 1))] / 12), 0.2 * k, 0.1);
+        noise(at, { type: "bandpass", f0: 300, q: 1.5, peak: 0.1 * k, attack: 0.002, tau: 0.03 });
+        return true;
+      }
+      case "act.fire": pluck(at, 147, 0.07 * k, 0.04); return true;
+      case "act.tell": tone(at, { f0: 196, f1: 262, glideS: 0.3, peak: 0.05 * k, attack: 0.06, tau: 0.1 }); return true;
+      case "act.dash": noise(at, { type: "bandpass", f0: 260, f1: 900, glideS: 0.12, q: 1, peak: 0.13 * k, attack: 0.01, tau: 0.06 }); return true;
+      case "act.ouch":
+        tone(at, { f0: 196, f1: 98, glideS: 0.22, peak: 0.28 * k, attack: 0.004, tau: 0.12 });
+        noise(at, { type: "lowpass", f0: 260, peak: 0.2 * k, attack: 0.003, tau: 0.05 });
+        return true;
+      case "act.ko": swell(at, 98, 0.24 * k, 0.05, 1.2, { f1: 65, glideS: 1.0 }); return true;
+      case "act.pick": pluck(at, p ? 392 : 523, 0.06 * k, 0.04); return true;
+      case "act.up": pluck(at, 262, 0.18 * k, 0.12); pluck(at + 0.09, 392, 0.16 * k, 0.14); return true;
+      case "act.heal": swell(at, 262, 0.14 * k, 0.08, 0.6); swell(at, 392, 0.08 * k, 0.1, 0.6); return true;
+      case "act.phase": swell(at, 73, 0.3 * k, 0.04, 1.0); noise(at, { type: "lowpass", f0: 300, f1: 90, glideS: 0.6, peak: 0.22 * k, attack: 0.01, tau: 0.25 }); return true;
+      // a boss or a swarm cleared: a warm rising arpeggio over a low swell (no fanfare, no sting)
+      case "act.win":
+        [262, 330, 392, 523].forEach((f, i) => pluck(at + 0.09 * i, f, 0.16 * k, 0.18));
+        swell(at, 131, 0.16 * k, 0.1, 1.4);
+        return true;
       default: return false;
     }
   }
@@ -585,6 +644,7 @@ export function createSound(ctx, { seed = 1, latencyS = null } = {}) {
         opening = null;
         herDuck = 1;
         herFar = 1;
+        herLift = 1;
         scene.motherDb = s.stage === "grow" ? -8 : 0;
         scene.youDb = s.stage === "grow" ? 0 : -8;
         if (!("cutoffHz" in s) && STAGE_CUTOFF[s.stage]) scene.cutoffHz = STAGE_CUTOFF[s.stage];

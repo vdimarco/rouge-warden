@@ -15,11 +15,19 @@
 // nothing. A mouse over the page with no button down sets `aim` (its world point) once it has moved more than 4 px;
 // any steer or turn key clears it until the mouse moves more than 4 px again. Touch and pen never set it.
 //
+// The "move" gesture (the action stages, contract.md): drag anywhere to move (the floating stick above is the move
+// vector); the touch-down itself is no press. A dash is a press: a second finger's touch-down while the first one
+// steers, a quick second tap (a touch-down within 0.3 s and 60 px of a tap's end), or Space, Enter or Z. WASD or the
+// arrows move (keys "steer").
+//
 // Keys: arrows or WASD steer (8-way, smoothed over 0.12 s) and the left and right ones (A, D) also set `turn` (−1 is
 // anticlockwise as seen, +1 clockwise). Space, Enter or Z presses on keydown and releases on keyup. In a `dragHold`
 // moment an arrow or WASD keydown is a press with its dir and its keyup the release; Space alone is a plain hold
 // (dir null). With keys "turn" (the stage 2 guard) the arrows and WASD set only `turn`: W, S and the up and down
-// arrows do nothing, and keys never steer (only a pointer drag does). Key repeats are ignored. One-button mode
+// arrows do nothing, and keys never steer (only a pointer drag does). With keys "lanes" (stage 6's kicks) every arrow
+// or WASD keydown is a press that carries its dir (left and right move a lane and kick; up and down kick in place),
+// keys never steer, and intents.dir stays null (a drag's dir too: the stage reads the stick). Every pointer press
+// carries its world point { x, y } (camera().toWorld), so stage 6 kicks in the lane you tap. Key repeats are ignored. One-button mode
 // (settings.oneButton): every key but the menu keys is a press on keydown and a release on keyup, keys never steer
 // or turn, and core/run.js sets steer and dir from the stage's botSteer while the button is held (16.4). In a hold or
 // dragHold moment the keys and the pointer make one hold: the first one down is the press, a later one joins it (an
@@ -61,7 +69,8 @@
 //   repeat, t } run through the same machine (their t is raw core seconds).
 import { makeIntents } from "../core/intent.js";
 
-export const PTR = Object.freeze({ tapS: 0.22, slopPx: 12, deadPx: 8, fullPx: 56, trailPx: 80, aimPx: 4, keySmoothS: 0.12 });
+export const PTR = Object.freeze({ tapS: 0.22, slopPx: 12, deadPx: 8, fullPx: 56, trailPx: 80, aimPx: 4, keySmoothS: 0.12,
+  dashTapS: 0.3, dashTapPx: 60 });
 
 const KEY_VEC = {
   ArrowUp: [0, -1], KeyW: [0, -1], ArrowDown: [0, 1], KeyS: [0, 1],
@@ -78,7 +87,9 @@ export const MENU_KEYS = new Set(["Escape", "KeyP", "KeyM", "KeyC", "Tab"]);
 const MODIFIERS = new Set(["ShiftLeft", "ShiftRight", "ControlLeft", "ControlRight", "AltLeft", "AltRight",
   "MetaLeft", "MetaRight", "CapsLock", "Fn"]);
 const HOLDS = new Set(["hold", "dragHold"]);
-const GESTURES = new Set(["drag", "tap", "hold", "dragHold", "none"]);
+const GESTURES = new Set(["drag", "tap", "hold", "dragHold", "move", "none"]);
+// "move": E or Shift press with `item: true` (stage 1 uses the item you hold; design.md 5.1 of the action change)
+const ITEM_KEYS = new Set(["KeyE", "ShiftLeft", "ShiftRight"]);
 
 const fin = (v) => typeof v === "number" && Number.isFinite(v);
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
@@ -100,14 +111,16 @@ export function createInput(el, { coreTime = (ms) => ms / 1000, camera = null, s
   let mouse = null;                              // { x, y } of a mouse with no button down
   let aimRef = null, aimOn = false;
   const stick = { on: false, ox: 0, oy: 0, x: 0, y: 0 };
+  let lastTap = null;                            // the last quick tap's end { t, x, y } (raw), for a "move" double tap
+  const extra = new Set();                       // "move": other pointers down (each was a dash), ignored till they lift
 
   // A queued press is its own token: intents() marks it sent when a step takes it. A release names the press it ends
   // (`of`), so flush() can tell a release whose press a stage already has from one whose press never reached a stage.
-  function queue(type, raw, at = raw, of = null) {
+  function queue(type, raw, at = raw, of = null, info = null) {
     const t = at - offS();
     let i = q.length;
     while (i > 0 && q[i - 1].t > t) i--;
-    const e = { type, t, raw, of, sent: false };
+    const e = { type, t, raw, of, sent: false, info };
     q.splice(i, 0, e);
     return e;
   }
@@ -131,13 +144,26 @@ export function createInput(el, { coreTime = (ms) => ms / 1000, camera = null, s
 
   // ---- the pointer
   function down(id, kind, button, x, y, raw) {
-    if (ptr) return;                             // only the first pointer counts
+    if (ptr) {
+      // "move": a second finger's touch-down is a dash (a press); it steers nothing and its lift is ignored
+      if (gesture === "move" && id !== ptr.id && !extra.has(id)) { extra.add(id); queue("press", raw); }
+      return;                                    // otherwise only the first pointer counts
+    }
     if (kind === "mouse" && button !== 0) return;
     const on = HOLDS.has(gesture) ? holdOn() : null;
     ptr = { id, kind, x0: x, y0: y, ox: x, oy: y, x, y, t0: raw, t: raw - offS(), state: "pressed", stale: false, dir: null, tok: null };
     if (kind === "mouse") { aimOn = false; mouse = null; }
     stick.on = true; stick.ox = x; stick.oy = y; stick.x = x; stick.y = y;
-    ptr.tok = on || queue("press", raw);         // a key already holds: the finger joins its hold
+    if (gesture === "move") {
+      // "move": the touch-down is the stick, not a press; a quick second tap (down soon after a tap, near it) dashes
+      const dbl = lastTap && raw - lastTap.t <= PTR.dashTapS && Math.hypot(x - lastTap.x, y - lastTap.y) <= PTR.dashTapPx;
+      lastTap = null;
+      ptr.tok = dbl ? queue("press", raw) : null;
+      return;
+    }
+    // a key already holds: the finger joins its hold; a press carries its world point (stage 6 kicks in the lane tapped)
+    const c = cam(), at = c && typeof c.toWorld === "function" ? c.toWorld(x, y) : null;
+    ptr.tok = on || queue("press", raw, raw, null, at && Number.isFinite(at.x) && Number.isFinite(at.y) ? { x: at.x, y: at.y } : null);
   }
 
   function move(id, kind, buttons, x, y, raw) {
@@ -163,11 +189,14 @@ export function createInput(el, { coreTime = (ms) => ms / 1000, camera = null, s
   }
 
   function up(id, x, y, raw) {
+    if (extra.delete(id)) return;                // a "move" dash finger lifts
     if (!ptr || id !== ptr.id) return;
     const p = ptr;
     if (fin(x) && fin(y)) { p.x = x; p.y = y; }
     const quick = raw - p.t0 < PTR.tapS && Math.hypot(p.x - p.x0, p.y - p.y0) <= PTR.slopPx && p.state !== "dragging";
     if (quick) queue("tap", p.t0);
+    lastTap = quick && !p.tok ? { t: raw, x: p.x, y: p.y } : null;
+    if (gesture === "move" && !p.tok) { if (p.kind === "mouse") { aimRef = { x: p.x, y: p.y }; aimOn = false; mouse = { x: p.x, y: p.y }; } ptr = null; stick.on = false; return; }
     if (!p.stale && !sharedHold(p)) queue("release", raw, raw, p.tok);
     if (p.kind === "mouse") { aimRef = { x: p.x, y: p.y }; aimOn = false; mouse = { x: p.x, y: p.y }; }
     ptr = null;
@@ -179,11 +208,13 @@ export function createInput(el, { coreTime = (ms) => ms / 1000, camera = null, s
     if (oneButton()) return true;
     if (ACTION.has(code)) return true;
     if (keysMode === "turn") return TURN_L.has(code) || TURN_R.has(code);
+    if (keysMode === "lanes") return code in KEY_VEC;
     return code in KEY_VEC;
   };
 
   function keyDown(code, repeat, raw) {
-    if (!code || MENU_KEYS.has(code) || MODIFIERS.has(code)) return;
+    const itemKey = gesture === "move" && ITEM_KEYS.has(code) && !oneButton();
+    if (!code || MENU_KEYS.has(code) || (MODIFIERS.has(code) && !itemKey)) return;
     if (repeat || held.has(code)) return;        // repeats are ignored
     const k = { order: ++order, stale: false, pressed: false, raw, t: raw - offS(), tok: null };
     held.set(code, k);
@@ -194,9 +225,12 @@ export function createInput(el, { coreTime = (ms) => ms / 1000, camera = null, s
     if (oneButton()) press = true;
     else if (ACTION.has(code)) press = true;
     else if (code in KEY_VEC && gesture === "dragHold" && keysMode === "steer") press = true;
+    else if (code in KEY_VEC && keysMode === "lanes") press = true;     // stage 6: an arrow kicks, with its dir
+    else if (itemKey) press = true;
     if (press) {
       k.pressed = true;
-      k.tok = (HOLDS.has(gesture) ? holdOn(k) : null) || queue("press", raw);   // or it joins the hold that is on
+      const info = itemKey ? { item: true } : keysMode === "lanes" && !oneButton() && KEY_DIR[code] ? { dir: KEY_DIR[code] } : null;
+      k.tok = (HOLDS.has(gesture) ? holdOn(k) : null) || queue("press", raw, raw, null, info);   // or it joins the hold that is on
     }
   }
 
@@ -228,7 +262,7 @@ export function createInput(el, { coreTime = (ms) => ms / 1000, camera = null, s
       }
     }
     gesture = next;
-    keysMode = keys === "turn" ? "turn" : "steer";
+    keysMode = keys === "turn" ? "turn" : keys === "lanes" ? "lanes" : "steer";
   }
 
   // The world steer: the pointer's stick, else (keys "steer", not one-button) the smoothed key stick.
@@ -260,7 +294,7 @@ export function createInput(el, { coreTime = (ms) => ms / 1000, camera = null, s
   }
 
   function keyDir() {
-    if (oneButton() || keysMode === "turn") return null;
+    if (oneButton() || keysMode === "turn" || keysMode === "lanes") return null;
     let best = null, bestOrder = -1;
     for (const [code, k] of held) if (KEY_DIR[code] && k.order > bestOrder) { best = KEY_DIR[code]; bestOrder = k.order; }
     return best;
@@ -283,7 +317,7 @@ export function createInput(el, { coreTime = (ms) => ms / 1000, camera = null, s
     const presses = [], releases = [], taps = [];
     while (q.length && q[0].t < tStepEnd) {
       const e = q.shift();
-      if (e.type === "press") { e.sent = true; presses.push({ t: e.t, raw: e.raw }); }
+      if (e.type === "press") { e.sent = true; presses.push(e.info ? { t: e.t, raw: e.raw, ...e.info } : { t: e.t, raw: e.raw }); }
       else if (e.type === "release") releases.push({ t: e.t, raw: e.raw });
       else if (e.type === "tap") taps.push({ t: e.t });
     }
@@ -291,7 +325,7 @@ export function createInput(el, { coreTime = (ms) => ms / 1000, camera = null, s
     for (const code of held.keys()) if (counts(code)) { touching = true; break; }
     const c = cam();
     const aim = !ptr && aimOn && mouse && c && typeof c.toWorld === "function" ? c.toWorld(mouse.x, mouse.y) : null;
-    const dir = ptr && ptr.state === "dragging" && !oneButton() ? ptr.dir : keyDir();
+    const dir = ptr && ptr.state === "dragging" && !oneButton() && keysMode !== "lanes" ? ptr.dir : keyDir();
     return makeIntents({ steer: steerNow(), touching, presses, releases, taps, dir, turn: turnNow(), aim });
   }
 
@@ -321,7 +355,10 @@ export function createInput(el, { coreTime = (ms) => ms / 1000, camera = null, s
   const raw = (e) => coreTime(e.timeStamp);
   const editable = (t) => !!(t && t.closest && t.closest("input, select, textarea"));
   const onDown = (e) => {
-    if (ptr) return;
+    if (ptr) {
+      if (gesture === "move") { down(e.pointerId, e.pointerType || "mouse", e.button, e.clientX, e.clientY, raw(e)); if (e.cancelable) e.preventDefault(); }
+      return;
+    }
     down(e.pointerId, e.pointerType || "mouse", e.button, e.clientX, e.clientY, raw(e));
     if (ptr && ptr.id === e.pointerId && el && el.setPointerCapture) { try { el.setPointerCapture(e.pointerId); } catch (err) { /* gone */ } }
     if (e.cancelable) e.preventDefault();
@@ -390,6 +427,7 @@ export function createInput(el, { coreTime = (ms) => ms / 1000, camera = null, s
     }
     q.length = 0;
     held.clear();
+    extra.clear();
     ptr = null;
     stick.on = false;
   }

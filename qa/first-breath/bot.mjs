@@ -22,7 +22,7 @@ const CREDIT = { in: 1, close: 0.5, miss: 0 };
 
 // One whole run, played step by step to its result. → { run, summary, stages, gameS, runMs, steps, longest, evs }
 // stages: one row per stage in run order (the kept attempt's score, the last attempt's time and accuracy):
-//   { id, timeS, total, grade, accuracy, judged, goalMet, place, of, attempts, wentOn }
+//   { id, timeS, total, grade, accuracy, judged, goalMet, place, of, attempts, wentOn, ko (an action stage knocked out) }
 // longest: the longest stage time any attempt of each stage (and the ending) reached, in stage seconds.
 // evs: the run's stageStart, stageEnd and screen events, for the determinism check.
 export function playRun(skill, seed, { settings = {}, keepEvents = true } = {}) {
@@ -52,6 +52,7 @@ export function playRun(skill, seed, { settings = {}, keepEvents = true } = {}) 
         r.timeS = e.t - r.t0;
         r.goalMet = !!(e.result && e.result.goalMet);
         if (Number.isFinite(m.place)) { r.place = m.place; r.of = m.of; }
+        if (m.ko) r.ko = true;                       // an action stage's knock-out (contract.md), in any attempt
       }
       if (keepEvents && (e.name === "stageStart" || e.name === "stageEnd" || e.name === "screen")) evs.push(e);
     }
@@ -65,6 +66,7 @@ export function playRun(skill, seed, { settings = {}, keepEvents = true } = {}) 
       id, timeS: r.timeS ?? null, total: k ? k.score.total : null, grade: k ? k.grade : null,
       accuracy: r.judged ? r.credit / r.judged : null, judged: r.judged, goalMet: k ? k.goalMet : !!r.goalMet,
       place: r.place ?? null, of: r.of ?? null, attempts: r.attempts || 1, wentOn: !!r.almost && !(k && k.goalMet),
+      ko: !!r.ko,
     };
   });
   const gameS = playAt === null ? 0 : run.t - playAt;

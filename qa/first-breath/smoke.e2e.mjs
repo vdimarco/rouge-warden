@@ -3,7 +3,7 @@
 // Chromium with --disable-gpu (design.md 14.3; no SwiftShader flags), at 390 × 844 and 844 × 390 with touch and at
 // 1440 × 900, it checks:
 // - the first 10 seconds, in real time: Play shows the stage 1 prompt line (a drag) by 0.5 s with steering live; and
-//   goto(2) has its first target by 2.7 s and the guard's prompt (keys "turn") by 9.0 s;
+//   goto(2) has no target and the guard's prompt (keys "turn") by 4.8 s;
 // - every stage by goto (and the ending) steps 120 frames, draws, shows its stage name, clock and prompt as words,
 //   and its finish leads on;
 // - the ending's thumb prompt names keys on the desktop ("Rest here. Hold Space if you like.") and the thumb on
@@ -198,19 +198,19 @@ for (const size of sizeList()) {
     const first0 = await F(page, () => window.__fbFirst);
     const s = await S(page);
     check(`${tag}: Play shows the stage 1 prompt line by 0.5 s`, !!first0 && s.stageId === "swim" && first0.t !== null && first0.t <= 0.5
-      && first0.prompt.gesture === "drag", JSON.stringify(first0));
-    check(`${tag}: steering is live by 0.5 s`, !!first0 && first0.live && first0.live.gesture === "drag" && first0.t <= 0.5,
+      && first0.prompt.gesture === "move", JSON.stringify(first0));     // stage 1 steers with the action "move" gesture
+    check(`${tag}: steering is live by 0.5 s`, !!first0 && first0.live && first0.live.gesture === "move" && first0.t <= 0.5,
       JSON.stringify(first0 && first0.live));
     check(`${tag}: the rAF clock runs (real time)`, s.realtime === true);
-    // goto(2) in real time: the first target by 2.7 s, the guard's prompt by 9.0 s
+    // goto(2) in real time: no target (the follicle opens by itself; first-breath-action-genres design.md 5.2), the
+    // guard's prompt by 4.8 s
     await F(page, () => window.__fb.goto(2, { seed: 1 }));
     const first = await F(page, () => ({ s: window.__fb.state(), next: window.__fb.nextTarget() }));
-    check(`${tag}: goto(2) has its first target by 2.7 s`, first.s.stageId === "egg" && first.next && first.next.t <= 2.7,
-      JSON.stringify(first.next));
-    await page.waitForFunction(() => { const s = window.__fb.state(); return (s.prompt && s.prompt.keys === "turn") || s.t > 9.5; },
+    check(`${tag}: goto(2) starts stage 2 with no target`, first.s.stageId === "egg" && !first.next, JSON.stringify(first.next));
+    await page.waitForFunction(() => { const s = window.__fb.state(); return (s.prompt && s.prompt.keys === "turn") || s.t > 6; },
       null, { timeout: 15000, polling: 50 }).catch(() => null);
     const g = await S(page);
-    check(`${tag}: the guard's prompt shows by 9.0 s`, g.prompt && g.prompt.keys === "turn" && g.t <= 9.0 + 0.1 && !!g.prompt.line,
+    check(`${tag}: the guard's prompt shows by 4.8 s`, g.prompt && g.prompt.keys === "turn" && g.t <= 4.8 + 0.1 && !!g.prompt.line,
       `t=${g.t} ${JSON.stringify(g.prompt)}`);
     // a hidden page pauses (visibilitychange), and so does pagehide; Resume plays on
     const hid = await F(page, () => {
@@ -266,9 +266,10 @@ for (const size of sizeList()) {
         check(`${tag}: stage 1's prompt names ${touch ? "the drag" : "the keys"}`, look.prompt === want, look.prompt);
       }
       if (id === "birth") {
-        // the first wave (from 2.0 s) and the Turn wave (from 26 s): the prompt in this device's words, said once
-        const waves = [[0, "Hold through the wave.", "Hold Space through the wave."],
-          [25.1, "Turn: drag sideways and hold.", "Turn: hold the left or right arrow."]];
+        // the runner (first-breath-action-genres 5.8): the first wave (from 2.0 s) names the lanes and the tuck, and
+        // the Turn wave (its gate prompt from its warning at 24.5 s): the prompt in this device's words, said once
+        const waves = [[0, "Drag to change lanes. Tap to tuck.", "Left and right arrows change lanes. Space tucks."],
+          [25.1, "Turn: steer into the gold arrow.", "Turn: steer into the gold arrow."]];
         for (const [more, onTouch, onKeys] of waves) {
           const want = touch ? onTouch : onKeys;
           if (more) await F(page, (n) => window.__fb.step(n), Math.round(more * 60));
@@ -322,7 +323,7 @@ for (const size of sizeList()) {
     check(`${tag}: the run result is on screen`, shown.result.length > 0, shown.result.slice(0, 80));
     // a fact caption, with its clock label in front: grow.fetus at week 10 (the captions queue a fact behind a line on
     // the wall clock, so this waits in real time with the run held still)
-    await F(page, () => { window.__fb.goto("grow"); window.__fb.jump("beat10"); window.__fb.step(30); });
+    await F(page, () => { window.__fb.goto("grow"); window.__fb.jump("wave10"); window.__fb.step(30); });
     const fetus = await page.waitForFunction(() => {
       const e = document.querySelector('#captions [data-fact="grow.fetus"], #captions [data-id="grow.fetus"]');
       return e && e.textContent.trim() ? e.textContent.trim() : false;
@@ -395,8 +396,9 @@ for (const size of sizeList()) {
         && (where === "ending" ? after.screen === "ending" : after.screen === "stage" && after.stage === "swim");
       check(`${tag}: Try this stage again from pause on the ${where} starts it again`, ok, `${JSON.stringify(before)} → ${JSON.stringify(after)}`);
     }
-    // F34: the overlay lingers after one tap, and still after a pause and Resume: the next tap goes on
-    await F(page, () => { window.__fb.goto(4); window.__fb.finish(); });
+    // F34: the overlay lingers after one tap, and still after a pause and Resume: the next tap goes on (stage 6: it
+    // cannot fail, so a forced finish shows the overlay; stage 4 now can, and would show the Almost card)
+    await F(page, () => { window.__fb.goto(6); window.__fb.finish(); });
     await page.mouse.click(W / 2, H * 0.15);
     await F(page, () => { window.__fb.act("pause"); window.__fb.act("resume"); window.__fb.step(400); });
     const linger = await now();

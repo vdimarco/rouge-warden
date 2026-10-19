@@ -1,38 +1,40 @@
-// First Breath: stage 4, The Placenta (`root`), its strings (design.md 1.3, 6.4, 15.4). Plain, short and tender; no
-// banned words, no pronouns (the carer is always {carer} or {Carer}). core/text.js registers them through
-// core/stages/index.js. Prompts name the live gesture; sub-goal lines are shown, then confirmed (5.4).
+// First Breath: stage 4, The Placenta (`root`), its strings (first-breath-action-genres design.md 5.4; v1 15.4). Plain,
+// short and tender; no banned words, no pronouns (the carer is always {carer} or {Carer}). core/text.js registers them
+// through core/stages/index.js. Prompts name the live gesture (".keys" the desktop form, ".one" the one-button form).
 export const TEXT = Object.freeze({
-  // prompts (one live gesture per moment; ".keys" is the desktop form, ".one" the one-button form)
+  // prompts
   "root.drift": "Drag to drift.",
   "root.drift.keys": "Drift with the arrow keys, or drag with the mouse.",
   "root.drift.one": "Hold to drift.",
-  "root.grow": "Drag to grow roots.",
-  "root.grow.keys": "Grow roots with the arrow keys, or drag with the mouse.",
-  "root.grow.one": "Hold to grow roots.",
+  "root.move": "Drag to move. Tap to grapple.",
+  "root.move.keys": "WASD to move. Space to grapple.",
+  "root.move.one": "Hold to move. You grapple by yourself.",
   "root.listen": "Listen.",
-  "root.tapHeart": "Tap with your heartbeat.",
-  "root.tapHeart.keys": "Press Space with your heartbeat.",
   "root.shape": "Your body takes shape.",
 
   // sub-goals: shown, then done by you or by itself
   "root.goalSpot": "Find a soft spot to settle in.",
   "root.nestled": "You bury yourself in the lining.",
   "root.nestledAuto": "A soft spot draws you in. You bury yourself in the lining.",
-  "root.goalPools": "Reach the pools. Arrive as each one swells.",
+  "root.goalPools": "Find 8 pools. Follow the ping.",
   "root.poolsDone": "Every pool is linked.",
   "root.poolsAuto": "The roots reach the rest anyway.",
-  "root.yours": "This beat is yours. Tap with it.",
-  "root.yours.keys": "This beat is yours. Press Space with it.",
-  "root.heartDone": "Both hearts beat together now.",
-  "root.heartAuto": "Your heart keeps its own beat.",
+  "root.rest": "You need a rest.",
 
   // captions
   "root.anyway": "The roots reach it anyway.",
+  "root.anywayAll": "The roots reach every pool anyway.",
+  "root.yours": "This beat is yours.",
   "root.placenta": "This will become your placenta.",
 
+  // word pops by you
+  "root.plusRoot": "+1 root",
+  "root.reachPop": "Longer reach",
+  "root.strongPop": "Strong roots",
+
   // result parts
-  "root.part.pools": "Pools you reached",
-  "root.part.onBeat": "Pools on the beat",
-  "root.part.heart": "Taps with your heart",
-  "root.part.inTime": "Taps in time",
+  "root.part.pools": "Pools you found",
+  "root.part.hidden": "Hidden pools",
+  "root.part.pips": "Pips at the heartbeat",
+  "root.part.quick": "All 8 by 40 s",
 });

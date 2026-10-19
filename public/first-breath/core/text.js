@@ -70,6 +70,7 @@ const BASE = {
   "almost.retry": "Try again",
   "almost.goOn": "Go on",
   "almost.carried": "The waves carry you on.",
+  "almost.ko": "Your body keeps growing.",
 
   "pause.title": "Paused",
   "pause.resume": "Resume",
@@ -80,6 +81,12 @@ const BASE = {
   "pause.arcade": "‹ Arcade",
 
   "hud.place": "{place} of {of}",
+  "hud.hp": "Hits left: {n} of {max}",
+  "hud.boss": "Still to clear: {n} in 100",
+  // the action layer's sound captions, once per stage (main.js cueOf finds "act.sfx.<id>" for an sfx "act.<id>")
+  "act.sfx.shot": "· sparks fly",
+  "act.sfx.clear": "· germs pop",
+  "act.sfx.dash": "~ you dash",
   "hud.you": "You: about {size}",
   "hud.pause": "Pause",
 

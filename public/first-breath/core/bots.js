@@ -18,7 +18,8 @@
 //   go first and presses on the next step, so the press is a fresh one (5.3), as for the stage 2 seal.
 // - botSteer's { steer, dir, hold } go straight into the intents; hold: true presses (and holds) while no target hold
 //   is under way, and hold: false lets that hold go. touching is true while anything is held or the stick is off
-//   centre.
+//   centre. An action stage's botSteer may add dash: true (core/lib/actionbot.js): a tap (a press, lifted 80 ms
+//   later), which the "move" gesture reads as a dash.
 // - choose(screen) → "play" on the title, "goOn" at the Almost card, "skip" on a card (the run takes it from 1.0 s),
 //   null elsewhere: the overlay and the ending run their own course.
 // - Extra exports: SIGMA_MS(skill), SKIP(skill), and playStep(run, bot), one fixed step of a whole run driven by the
@@ -112,6 +113,8 @@ export function createBot(skill, seed) {
       if (a.hold && !m.hold) { press(t0); m.hold = "steer"; }
       else if (!a.hold && m.hold === "steer") { release(t0); m.hold = null; }
     }
+    // an action stage's dash (core/lib/actionbot.js): a quick tap, as a second finger or Space gives
+    if (a.dash && !m.hold && !m.repress && m.lift === null) { press(t0); m.lift = t0 + TAP_LIFT_S; }
     const touching = !!m.hold || !!m.repress || m.lift !== null || Math.hypot(steer.x, steer.y) > 0.01;
     return makeIntents({ steer, touching, presses, releases, dir: a.dir || null });
   }

@@ -1,587 +1,707 @@
-// First Breath: stage 3, The Embryo: first cells (`split`) (design.md 6.3, 4.1, 5.2 to 5.4, 7, 15, 16.4, 18; tasks 2.11
-// to 2.14). The same seed and input give the same run; the scripted ideal input reaches Glowing; idle ends by the cap
-// with the goal met; the shared bot at 0.7 completes (and at 1.0 glows); one live gesture per moment; every sub-goal
-// ends done or auto; every target carries P and is shown at least its preview before; the moments match 4.1; every
-// view is valid. Stage checks: 12 taps on her beats 2, 4 and 6 of Days 1 to 4; the split plays on beat 6 by itself;
-// bloom and hatch release credits (In time 1, Close 0.5, a held Off release 0.25, never pressed 0, no mash, a fresh
-// press); Off taps never reset a count; 250 per day all In time; the facts, sources and strings.
+// First Breath: stage 3, The Embryo: first cells (`split`), rebuilt as a roguelike on the shared action layer
+// (core/lib/action.js; openspec/changes/first-breath-action-genres/design.md 5.3, contract.md). Plays the stage in node
+// with no DOM (16.11): idle, the shared bot at skills 1, 0.7 and 0.5, and seeded random input. Asserts the meta and
+// the moments (four day rooms, the Knot, the hatch, the outro); determinism; the splits at each room's end for any
+// input with the ball's drawn size unchanged; shots per volley by the cell count; three distinct seeded gifts per
+// pick, never one at its top level; a check per gift; a pick by swimming and a pick left alone; the room timer always
+// opening the exit; the Knot's phases at 60% and 24% of its hp (each with a tell, a swell and the foe spores
+// cleared) and its drift-off at 18 s; the hatch and the clock to Day 6; a knock-out with Go on reaching the hatch;
+// one live gesture with its prompts; every sub-goal shown and settled; the points events adding up to the score;
+// valid views; botSteer (its memory only in r.mem, the state untouched); Assist; the fair resume; the carry in;
+// garbage input never throwing; the facts and strings; and the bot gates (design.md 4.5).
 // node qa/first-breath/stage-split.test.mjs
 import assert from "node:assert/strict";
 import * as split from "../../public/first-breath/core/stages/split.js";
 import { TUNE } from "../../public/first-breath/core/stages/split.tune.js";
 import { FACTS } from "../../public/first-breath/core/stages/split.facts.js";
 import { TEXT } from "../../public/first-breath/core/stages/split.text.js";
-import { DEFAULT_CARRY } from "../../public/first-breath/core/carry.js";
+import { DEFAULT_CARRY, mergeCarry } from "../../public/first-breath/core/carry.js";
 import { createBot } from "../../public/first-breath/core/bots.js";
 import { makeIntents } from "../../public/first-breath/core/intent.js";
-import { validate, LIMITS } from "../../public/first-breath/core/draw.js";
-import { DT, label } from "../../public/first-breath/core/clock.js";
-import { grade as gradeOf } from "../../public/first-breath/core/score.js";
-import { check as checkTargets, previewS } from "../../public/first-breath/core/lib/track.js";
-import { SOURCES } from "../../public/first-breath/core/sources.js";
-import { say } from "../../public/first-breath/core/text.js";
-import { label as factLabel, byId } from "../../public/first-breath/core/facts.js";
+import { validate } from "../../public/first-breath/core/draw.js";
+import { DT, label as clockLabel } from "../../public/first-breath/core/clock.js";
 import { stream } from "../../public/first-breath/core/rng.js";
+import { SOURCES } from "../../public/first-breath/core/sources.js";
+import { grade as gradeOf } from "../../public/first-breath/core/score.js";
+import * as X from "../../public/first-breath/core/lib/action.js";
 
 const FILE = "qa/first-breath/stage-split.test.mjs";
 let passed = 0;
 const failed = [];
 async function check(name, fn) {
-  try { await fn(); passed++; } catch (e) { failed.push(`${name}\n     ${String(e.stack || e.message).split("\n").slice(0, 10).join("\n     ")}`); }
+  try { await fn(); passed++; } catch (e) { failed.push(`${name}\n     ${String(e.stack || e.message).split("\n").slice(0, 8).join("\n     ")}`); }
 }
 const near = (a, b, tol, msg) => assert.ok(Math.abs(a - b) <= tol, `${msg}: ${a} vs ${b} (±${tol})`);
-const PB = 60 / 72;
-const PHASES = [0, 0.31, 0.8];
-const MAX_STEPS = Math.ceil((split.meta.capS + 2) / DT);
+const MAX_STEPS = Math.ceil((split.meta.capS + 5) / DT);
+const named = (evs, name) => evs.filter((e) => e.name === name);
+const IDS = ["day1", "day2", "day3", "day4", "bloom", "hatch", "outro"];
+const total = (r) => r.score.goal + r.score.skill + r.score.flourish;
+const OPTS = { assist: false, oneButton: false, motherPhase: 0 };
 
-// Beat n of the stage, read straight from her laid beats: beat 1 is her first beat at or after 1.0 s.
-function beatOf(st, n) {
-  const M = st.beats.mother;
-  let i1 = 0;
-  while (M[i1] < 1.0 - 1e-9) i1++;
-  return M[i1 + n - 1];
-}
-
-// ---- drivers: each returns the intents for the step [st.t, st.t + DT) ----
-
-const idle = () => () => makeIntents();
-
-// Every tap on its time; each release target held from 2 s before and let go on its time.
-function ideal({ tapErr = () => 0, holdLead = 2, relErr = () => 0, extra = null } = {}) {
-  const mem = { pressed: {}, released: {}, lift: [] };
-  return (st) => {
-    const t0 = st.t, t1 = t0 + DT;
-    const presses = [], releases = [];
-    for (const x of split.targets(st, 3)) {
-      if (x.kind === "tap") {
-        const at = x.t + tapErr(x);
-        if (!mem.pressed[x.id] && at < t1) { mem.pressed[x.id] = true; presses.push({ t: Math.max(at, t0), raw: Math.max(at, t0) }); mem.lift.push(Math.max(at, t0) + 0.08); }
-      } else {
-        if (!mem.pressed[x.id] && x.t - holdLead < t1 && split.prompt(st).gesture === "hold") {
-          mem.pressed[x.id] = true; presses.push({ t: Math.max(t0, x.t - holdLead), raw: Math.max(t0, x.t - holdLead) });
-        }
-        const at = x.t + relErr(x);
-        if (mem.pressed[x.id] && !mem.released[x.id] && at < t1) { mem.released[x.id] = true; releases.push({ t: Math.max(at, t0), raw: Math.max(at, t0) }); }
+// Play one attempt and record what a test needs: every event (with the gaDay, phase and world time after its step),
+// the prompt at each step, every view's problems, the drawn shell, the splits by phase and the gaDay after each step.
+function play({ seed = 1, carry = DEFAULT_CARRY, opts = {}, input = null, bot = null, every = 1, before = null, until = null } = {}) {
+  const st = split.create(seed, carry, { ...OPTS, ...opts });
+  const evs = st.events.map((e) => ({ ...e, ga: st.gaDay, at: st.A.t, phase: st.phase }));
+  st.events.length = 0;
+  const seen = [], bad = [], ga = [], shells = [], phases = [];
+  let n = 0;
+  for (; n < MAX_STEPS && !split.result(st).done && !(until && until(st)); n++) {
+    if (n % every === 0) {
+      const d = split.view(st);
+      const out = validate(d);
+      if (out.length) bad.push(`t ${st.t.toFixed(2)} ${st.moment}: ${out.join("; ")}`);
+      const arc = d.strips.find((s) => s.kind === "arc");
+      if (arc && !st.cracked) shells.push(arc.r);
+    }
+    if (before) before(st);
+    seen.push({ moment: st.moment, phase: st.phase, prompt: split.prompt(st), t: st.t });
+    const it = bot ? bot.intents(split, st) : input ? input(st) : makeIntents();
+    split.step(st, it);
+    for (const e of st.events) {
+      evs.push({ ...e, ga: st.gaDay, at: st.A.t, phase: st.phase });
+      if (e.name === "sfx" && e.id === "act.phase") {
+        let foeShots = 0;
+        for (let i = 0; i < st.A.b.n; i++) if (st.A.b.side[i] === 2) foeShots++;
+        const f = st.A.foes.find((g) => g.boss);
+        phases.push({ phase: e.pitch, t: st.t, bullets: foeShots, share: f ? f.hp / f.hpMax : null, tells: st.A.tells.map((x) => x.kind) });
       }
     }
-    mem.lift = mem.lift.filter((l) => { if (l < t1) { releases.push({ t: l, raw: l }); return false; } return true; });
-    if (extra) extra(st, presses, releases, t0, t1);
-    return makeIntents({ presses, releases, touching: presses.length > 0 });
-  };
-}
-
-// A scripted list of { t, up } events (stage seconds), each delivered in its step.
-function script(list) {
-  const evs = list.slice().sort((a, b) => a.t - b.t);
-  return (st) => {
-    const t0 = st.t, t1 = t0 + DT;
-    const presses = [], releases = [];
-    for (const e of evs) if (e.t >= t0 && e.t < t1) (e.up ? releases : presses).push({ t: e.t, raw: e.t });
-    return makeIntents({ presses, releases });
-  };
-}
-
-function botDriver(skill, seed) {
-  const bot = createBot(skill, seed);
-  return (st) => bot.intents(split, st);
-}
-
-// Random presses and releases (seeded): a stress input.
-function randomDriver(seed) {
-  const r = stream(seed, "test-random");
-  let down = false;
-  return (st) => {
-    const presses = [], releases = [];
-    if (r() < 0.06) { const t = st.t + r() * DT; if (down) releases.push({ t, raw: t }); else presses.push({ t, raw: t }); down = !down; }
-    return makeIntents({ presses, releases });
-  };
-}
-
-// Play one stage to its end. `each(st, i)` sees the state after each step.
-function play({ seed = 1, phase = 0, drive = idle(), assist = false, carry = DEFAULT_CARRY, each = null, viewsEvery = 0 } = {}) {
-  const st = split.create(seed, carry, { assist, oneButton: false, motherPhase: phase });
-  const evs = st.events.splice(0);
-  const gestures = {};
-  const note = () => { (gestures[st.moment] = gestures[st.moment] || new Set()).add(split.prompt(st).gesture); };
-  note();
-  const views = [];
-  let i = 0;
-  for (; i < MAX_STEPS && !split.result(st).done; i++) {
-    if (viewsEvery && i % viewsEvery === 0) views.push({ t: st.t, moment: st.moment, v: split.view(st) });
-    split.step(st, drive(st));
-    for (const e of st.events) evs.push(e);
     st.events.length = 0;
-    if (!split.result(st).done) note();
-    if (each) each(st, i);
+    ga.push({ t: st.t, gaDay: st.gaDay, moment: st.moment, phase: st.phase, done: st.done });
   }
-  return { st, evs, gestures, views, res: split.result(st), steps: i };
+  const last = validate(split.view(st));
+  if (last.length) bad.push(`last view: ${last.join("; ")}`);
+  return { st, evs, seen, bad, ga, shells, phases, res: split.result(st), steps: n };
 }
 
-const named = (evs, n) => evs.filter((e) => e.name === n);
-const dayOf = (x) => Number(String(x.id).split(".")[2]);     // tap ids are split.<gen>.<day>.<beat>
+// Step a state with idle input until a test says stop (or the stage ends).
+function run(st, until, input = () => makeIntents(), max = MAX_STEPS) {
+  for (let i = 0; i < max && !st.done && !until(st); i++) { split.step(st, input(st)); st.events.length = 0; }
+  return st;
+}
 
-// ---- meta and the clock ----
+const IDLE = [1, 2, 3, 4, 5, 6].map((seed) => play({ seed, every: 3 }));
+const BOTS = {};
+for (const skill of [1, 0.7, 0.5]) BOTS[skill] = Array.from({ length: 10 }, (_, i) => play({ seed: i + 1, bot: createBot(skill, i + 1), every: 6 }));
+const REF = BOTS[1];
 
-await check("meta: the 4.1 moments (24 and 6 of her beats), the 3.1 row and the Stage interface", () => {
+await check("meta: stage 3, long, steer and tap, gaDay 15 to 20, 0.45 mm, her 72 bpm, cap 100 s, an action stage that can fail, Go on to the hatch", () => {
   const m = split.meta;
-  assert.deepEqual(m.moments.map((x) => x.id), ["split", "bloom", "hatch", "outro"]);
-  assert.deepEqual(m.moments.map((x) => [...x.ga]), [[15, 19], [19, 20], [20, 20], [20, 20]]);
-  near(m.moments[0].lenS, 24 * PB, 1e-9, "split lenS");
-  near(m.moments[1].lenS, 6 * PB, 1e-9, "bloom lenS");
-  assert.equal(m.moments[2].lenS, null);
-  assert.equal(m.moments[3].lenS, null);
-  assert.deepEqual([...m.families], ["tap", "hold"]);
-  assert.deepEqual([m.id, m.index, m.orient, m.motherBpm, m.capS, m.parS, m.canFail, m.scored, m.fertilized],
-    ["split", 2, "long", 72, 50, 34, false, true, true]);
+  assert.equal(m.id, "split");
+  assert.equal(m.index, 2);
+  assert.equal(m.name, "The Embryo: first cells");
+  assert.equal(m.orient, "long");
+  assert.deepEqual([...m.families], ["steer", "tap"]);
   assert.deepEqual({ ...m.ga }, { start: 15, end: 20 });
   assert.deepEqual({ ...m.mm }, { start: 0.45, end: 0.45 });
-  for (const f of ["create", "step", "view", "prompt", "targets", "botSteer", "probe", "result", "jump"]) assert.equal(typeof split[f], "function", f);
+  assert.equal(m.motherBpm, 72);
+  assert.equal(m.capS, 100);
+  assert.equal(m.canFail, true);
+  assert.equal(m.action, true);
+  assert.equal(m.goOn, "hatch");
+  assert.deepEqual(m.moments.map((x) => x.id), IDS);
+  assert.deepEqual(m.moments.map((x) => [...x.ga]), [[15, 16], [16, 17], [17, 18], [18, 19], [19, 20], [20, 20], [20, 20]]);
+  assert.deepEqual(split.targets(split.create(1, DEFAULT_CARRY, OPTS)), [], "no timed targets");
 });
 
-await check("the length is about 34 s for every input (less than one beat of phase), well under the 50 s cap", () => {
-  for (const phase of PHASES) {
-    for (const drive of [idle(), ideal(), botDriver(0.7, 3)]) {
-      const { st, res } = play({ phase, drive });
-      assert.equal(res.done, true);
-      assert.ok(st.t >= 33.4 && st.t <= 34.6, `phase ${phase}: ${st.t.toFixed(2)} s`);
-      assert.equal(st.how, "end");
-    }
+await check("determinism: the same seed and input give the same events and result, for two seeds", () => {
+  for (const seed of [3, 8]) {
+    const a = play({ seed, bot: createBot(0.7, seed), every: 30 }), b = play({ seed, bot: createBot(0.7, seed), every: 30 });
+    assert.equal(JSON.stringify(a.evs), JSON.stringify(b.evs), `seed ${seed}`);
+    assert.deepEqual(a.res, b.res);
+  }
+  const c = play({ seed: 4, bot: createBot(0.7, 4), every: 30 });
+  assert.notEqual(JSON.stringify(c.evs), JSON.stringify(play({ seed: 5, bot: createBot(0.7, 5), every: 30 }).evs), "another seed plays another run");
+});
+
+await check("views: every view of every run is a valid draw list, with the action part and no arena", () => {
+  const all = [...IDLE, ...REF, ...BOTS[0.5]];
+  const bad = all.flatMap((p) => p.bad);
+  assert.deepEqual(bad.slice(0, 5), []);
+  const d = split.view(split.create(1, DEFAULT_CARRY, OPTS));
+  assert.ok(d.action && d.action.arena === null && Array.isArray(d.action.gifts));
+  assert.ok(d.strips.some((s) => s.kind === "course"), "the tube's course");
+});
+
+await check("the splits: at the end of rooms 1 to 3 for any input (2, 4, 8, then 16 cells; Day 4 packs), and the ball's drawn size never changes", () => {
+  const rnd = stream(77, "input");
+  const random = play({ seed: 2, input: () => makeIntents({ steer: { x: rnd() * 2 - 1, y: rnd() * 2 - 1 }, presses: rnd() < 0.05 ? [{ t: 0 }] : [] }), every: 2 });
+  for (const p of [...IDLE.slice(0, 3), REF[0], random]) {
+    const at = (moment) => p.ga.find((g) => g.moment === moment);
+    if (p.res.metrics.ko) continue;
+    const plings = named(p.evs, "sfx").filter((e) => e.id === "pling");
+    assert.ok(plings.length >= 3, `${plings.length} splits`);
+    assert.equal(p.res.metrics.splits, 3, "three splits");
+    assert.equal(p.res.metrics.cells, 16);
+    assert.deepEqual(plings.slice(0, 4).map((e) => e.pitch), [1, 2, 3, 4], "a pling a day, one step higher");
+    assert.ok(at("bloom"), "it reaches the Knot");
+    const sizes = new Set(p.shells.map((r) => r.toFixed(3)));
+    assert.deepEqual([...sizes], [TUNE.ballR.toFixed(3)], "the shell ring keeps its size");
+  }
+  // the cells always fit inside the ball, whatever their number
+  const st = split.create(1, DEFAULT_CARRY, OPTS);
+  for (const k of [0, 1, 2, 3]) {
+    st.splits = k;
+    const d = split.view(st);
+    const cells = d.splats.filter((s) => s.hue === 0.02);
+    assert.equal(cells.length, 2 ** (k + 1), `${2 ** (k + 1)} cells`);
+    for (const c of cells) assert.ok(Math.hypot(c.x - st.A.p.x, c.y - st.A.p.y) + c.r <= TUNE.ballR + 0.01, "inside the shell");
   }
 });
 
-await check("gaDay never decreases; Days 1 to 6 in order; 19 when bloom starts, 20 from hatch; each day turns half a beat after its split", () => {
-  for (const phase of PHASES) {
-    let prev = -Infinity, labels = [];
-    const at = {};
-    const { st } = play({ phase, each: (s) => {
-      assert.ok(s.gaDay >= prev - 1e-12, `gaDay went back at ${s.t.toFixed(3)}`);
-      prev = s.gaDay;
-      const l = label(s.gaDay);
-      if (labels[labels.length - 1] !== l) labels.push(l);
-      if (!(s.moment in at)) at[s.moment] = s.gaDay;
-    } });
-    assert.deepEqual(labels.map((l) => l.split(" after")[0]), ["Day 1", "Day 2", "Day 3", "Day 4", "Day 5", "Day 6"]);
-    assert.ok(labels.every((l) => /after fertilization \(week 2\)$/.test(l)), labels.join(" | "));
-    near(at.bloom, 19, 0.01, "bloom starts at gaDay 19");
-    assert.equal(at.hatch, 20);
-    assert.equal(st.gaDay, 20);
-    for (let d = 1; d <= 4; d++) {
-      const s2 = split.create(1, DEFAULT_CARRY, { motherPhase: phase });
-      const t6 = beatOf(s2, 6 * d);
-      while (s2.t < t6) split.step(s2, makeIntents());
-      assert.equal(Math.floor(s2.gaDay), 14 + d, `day ${d} still on its beat 6`);
-      while (s2.t < t6 + PB / 2 + DT) split.step(s2, makeIntents());
-      assert.equal(Math.floor(s2.gaDay), 15 + d, `day ${d + 1} half a beat later`);
-    }
+await check("shots per volley follow the cells: 1, 2, 3 and 4 at 2, 4, 8 and 16 cells (no gifts), 10° apart", () => {
+  for (let day = 0; day < 4; day++) {
+    const st = split.create(1, DEFAULT_CARRY, OPTS);
+    split.jump(st, IDS[day]);
+    st.gifts = {};
+    let made = null;
+    run(st, (s) => {
+      const shot = s.A.out.some((o) => o.type === "shot");
+      if (shot) { made = 0; for (let i = 0; i < s.A.b.n; i++) if (s.A.b.side[i] === 1 && s.A.b.age[i] <= DT + 1e-9) made++; }
+      return shot || s.phase !== "room";
+    });
+    assert.equal(made, TUNE.shots[day], `day ${day + 1}`);
+    assert.equal(st.A.fire.spread, TUNE.shots[day]);
+    near(st.A.fire.arc, (10 * Math.PI) / 180, 1e-9, "10° apart");
   }
 });
 
-// ---- targets ----
-
-await check("12 taps on her beats 2, 4 and 6 of Days 1 to 4, two releases on beat 6 of bloom and hatch; each carries P", () => {
-  for (const phase of PHASES) {
-    const st = split.create(5, DEFAULT_CARRY, { motherPhase: phase });
-    const all = split.targets(st, 99);
-    assert.deepEqual(checkTargets(all), [], "sorted, P ≥ 0.5 s, spaced ≥ 0.5 s");
-    const taps = all.filter((x) => x.kind === "tap"), rels = all.filter((x) => x.kind === "release");
-    assert.equal(taps.length, 12);
-    assert.equal(rels.length, 2);
-    const want = [];
-    for (let d = 1; d <= 4; d++) for (const k of [2, 4, 6]) want.push(beatOf(st, 6 * (d - 1) + k));
-    assert.deepEqual(taps.map((x) => x.t), want, "on her laid beats exactly");
-    assert.ok(beatOf(st, 1) >= 1.0 && beatOf(st, 1) < 1.0 + PB, "beat 1 is her first beat at or after 1.0 s");
-    assert.deepEqual(rels.map((x) => x.t), [beatOf(st, 30), beatOf(st, 36)]);
-    assert.deepEqual(rels.map((x) => x.group), ["bloom", "hatch"]);
-    near(taps[0].P, PB, 1e-9, "the first target's P is her beat period");
-    for (const x of taps.slice(1)) near(x.P, 2 * PB, 1e-9, "2 beats apart");
-    for (const x of rels) near(x.P, 6 * PB, 1e-9, "6 beats after the target before");
-    for (const x of all) { assert.equal(x.heart, "mother"); assert.ok(Number.isFinite(x.P) && x.P >= 0.5); assert.ok(typeof x.id === "string"); }
-    assert.ok(taps.every((x) => x.group === "split"));
+await check("gifts: three distinct a pick, never one at its top level, seeded by the stage seed", () => {
+  const offers = (seed, maxed = {}) => {
+    const st = split.create(seed, DEFAULT_CARRY, OPTS);
+    st.gifts = { ...maxed };
+    run(st, (s) => s.phase === "pick");
+    return st.offer.map((b) => b.id);
+  };
+  for (const seed of [1, 2, 3, 4, 5, 6]) {
+    const o = offers(seed);
+    assert.equal(o.length, 3);
+    assert.equal(new Set(o).size, 3, `seed ${seed}: distinct ${o}`);
+    assert.deepEqual(offers(seed), o, "the same seed offers the same");
   }
-});
-
-await check("every target is drawn at least max(2 beats, 1.2 s) before its time (approach and hold rings)", () => {
-  for (const phase of PHASES) {
-    const st = split.create(2, DEFAULT_CARRY, { motherPhase: phase });
-    const all = split.targets(st, 99);
-    const firstRing = {};
-    for (let i = 0; i < MAX_STEPS && !split.result(st).done; i++) {
-      for (const g of split.view(st).rings) {
-        const id = String(g.id).replace(/^[th]:/, "");
-        if (/^[th]:/.test(g.id) && !(id in firstRing)) firstRing[id] = st.t;
-      }
-      split.step(st, makeIntents());
-      st.events.length = 0;
-    }
-    for (const x of all) {
-      assert.ok(x.t - firstRing[x.id] >= previewS(PB) - 1e-9, `${x.id} drawn ${(x.t - firstRing[x.id]).toFixed(3)} s before`);
-    }
-  }
-});
-
-// ---- determinism ----
-
-await check("the same seed and input give the same run (two seeds, the bot, random input, the ideal script)", () => {
-  for (const seed of [1, 2]) {
-    for (const mk of [() => botDriver(0.7, seed), () => randomDriver(seed), () => ideal()]) {
-      const a = play({ seed, phase: 0.37, drive: mk(), viewsEvery: 45 });
-      const b = play({ seed, phase: 0.37, drive: mk(), viewsEvery: 45 });
-      assert.equal(JSON.stringify(a.evs), JSON.stringify(b.evs));
-      assert.deepEqual(a.res, b.res);
-      assert.equal(JSON.stringify(a.views.map((x) => x.v), (k, v) => (v instanceof Float32Array ? Array.from(v) : v)),
-        JSON.stringify(b.views.map((x) => x.v), (k, v) => (v instanceof Float32Array ? Array.from(v) : v)));
-    }
-  }
-  const v1 = split.view(split.create(1, DEFAULT_CARRY, { motherPhase: 0 })), v2 = split.view(split.create(2, DEFAULT_CARRY, { motherPhase: 0 }));
-  assert.equal(v1.splats.length, 1, "one cell at the start");
-  const late = (seed) => { const s = split.create(seed, DEFAULT_CARRY, { motherPhase: 0 }); while (s.t < 22) split.step(s, makeIntents()); return split.view(s).splats; };
-  assert.notDeepEqual(late(1), late(2), "the seed sets the cleavage axes");
-  assert.deepEqual(v1.rings, v2.rings, "the schedule follows her beat, not the seed");
-});
-
-// ---- the goal, scores and grades ----
-
-await check("the scripted ideal input reaches Glowing (10,000) at every phase, and every sub-goal is done by you", () => {
-  for (const seed of [1, 2]) for (const phase of PHASES) {
-    const { res, st, evs } = play({ seed, phase, drive: ideal() });
-    assert.equal(res.goalMet, true);
-    assert.deepEqual(res.score, { goal: 3000, skill: 6000, flourish: 1000, total: 10000 });
-    assert.equal(gradeOf(res.score.total, res.goalMet), "Glowing");
-    assert.deepEqual(st.subgoals, { split: "done", bloom: "done", hatch: "done" });
-    assert.equal(res.metrics.daysInTime, 4);
-    assert.deepEqual(res.metrics.release, [1, 1]);
-    assert.equal(res.parts.reduce((a, p) => a + p.value, 0), res.score.total, "the parts add up");
-    const pts = named(evs, "points");
-    assert.equal(pts.reduce((a, e) => a + e.add, 0), res.score.total, "the HUD ticks add up to the total");
-    assert.equal(named(evs, "judge").filter((e) => e.grade === "in").length, 14);
-  }
-});
-
-await check("idle ends by the cap with the goal met: every split, the hollow and the hatch happen by themselves", () => {
-  for (const phase of PHASES) {
-    const { res, st, evs } = play({ seed: 4, phase, drive: idle() });
-    assert.equal(res.done, true);
-    assert.equal(res.goalMet, true);
-    assert.ok(st.t <= split.meta.capS);
-    assert.deepEqual(res.score, { goal: 3000, skill: 0, flourish: 0, total: 3000 });
-    assert.equal(gradeOf(res.score.total, true), "Good");
-    assert.deepEqual(st.subgoals, { split: "auto", bloom: "auto", hatch: "auto" });
-    assert.equal(res.metrics.cells, 16);
-    assert.equal(st.fill, 1);
-    assert.equal(st.slipped, true);
-    const pl = named(evs, "sfx").filter((e) => e.id === "pling");
-    assert.deepEqual(pl.map((e) => e.pitch), [1, 2, 3, 4], "a pling per split, one step higher each time");
-    pl.forEach((e, i) => near(e.at, beatOf(st, 6 * (i + 1)), 1e-9, `split ${i + 1} on beat 6 of its day`));
-    assert.equal(named(evs, "judge").filter((e) => e.grade === "miss").length, 14);
-    assert.equal(named(evs, "done").length, 1);
-  }
-});
-
-await check("the cells: 1, then 2, 4, 8 and 16 on beat 6 of each day; the ball keeps its size while the cells get smaller", () => {
-  const st = split.create(3, DEFAULT_CARRY, { motherPhase: 0.2 });
-  const cellsOf = () => split.view(st).splats.filter((s) => s.k === "c" && s.hue === 0.02);
-  assert.equal(cellsOf().length, 1);
-  let lastR = Infinity;
-  for (let d = 1; d <= 4; d++) {
-    const t6 = beatOf(st, 6 * d);
-    while (st.t < t6 + 0.05) split.step(st, makeIntents());
-    assert.equal(split.result(st).metrics.cells, 2 ** d);
-    const cs = cellsOf();
-    assert.equal(cs.length, 2 ** d, `day ${d}`);
-    const r = Math.max(...cs.map((c) => c.r));
-    assert.ok(r < lastR, "smaller cells");
-    lastR = r;
-    const a = split.view(st).anchor;
-    const reach = Math.max(...cs.map((c) => Math.hypot(c.x - a.x, c.y - a.y) + c.r));
-    assert.ok(reach <= TUNE.ballR + 1.5, `day ${d}: the ball stays ${reach.toFixed(2)} u`);
-  }
-  // mid-pinch: two discs parting and a bridge capsule
-  const s2 = split.create(3, DEFAULT_CARRY, { motherPhase: 0.2 });
-  const t6 = beatOf(s2, 6);
-  while (s2.t < t6 - PB / 2) split.step(s2, makeIntents());
-  const sp = split.view(s2).splats;
-  assert.equal(sp.filter((s) => s.k === "c").length, 2);
-  assert.equal(sp.filter((s) => s.k === "s").length, 1, "the bridge capsule");
-});
-
-await check("the shared bot: skill 0.7 completes every one of 20 seeds (mostly Great); skill 1.0 glows in every seed", () => {
-  const totals = [];
-  for (let seed = 1; seed <= 20; seed++) {
-    const { res, st } = play({ seed, phase: (seed * 0.137) % PB, drive: botDriver(0.7, seed) });
-    assert.equal(res.done, true);
-    assert.equal(res.goalMet, true);
-    assert.notEqual(st.how, "error");
-    for (const v of Object.values(st.subgoals)) assert.ok(v === "done" || v === "auto");
-    totals.push(res.score.total);
-    const ref = play({ seed, phase: (seed * 0.137) % PB, drive: botDriver(1, seed) }).res;
-    assert.ok(ref.score.total >= 8500, `skill 1.0 seed ${seed}: ${ref.score.total}`);
-  }
-  const mean = totals.reduce((a, b) => a + b, 0) / totals.length;
-  assert.ok(mean >= 6500, `skill 0.7 mean ${mean.toFixed(0)}`);
-  assert.ok(totals.filter((x) => x >= 6500).length >= 12, `Great or better in ${totals.filter((x) => x >= 6500).length} of 20`);
-});
-
-// ---- gestures and sub-goals ----
-
-await check("one live gesture per moment: tap, hold, hold, none; prompts name it from 0 s; a gesture per prompt event", () => {
-  const want = { split: "tap", bloom: "hold", hatch: "hold", outro: "none" };
-  for (const drive of [idle(), ideal(), botDriver(0.7, 9), randomDriver(9)]) {
-    const { gestures, evs } = play({ seed: 9, phase: 0.5, drive });
-    assert.deepEqual(Object.keys(gestures), Object.keys(want));
-    for (const [m, set] of Object.entries(gestures)) assert.deepEqual([...set], [want[m]], m);
-    const prompts = named(evs, "prompt");
-    assert.equal(prompts[0].t, 0);
-    assert.equal(prompts[0].gesture, "tap");
-    assert.deepEqual(prompts.map((p) => p.gesture), ["tap", "hold", "hold", "none", "none"]);
-    for (const p of prompts) { assert.equal(p.keys, "steer"); if (p.text) assert.notEqual(say(p.text), p.text, `${p.text} is a string`); }
-  }
-});
-
-await check("every sub-goal is shown, then ends done or auto, for every input", () => {
-  for (const drive of [idle(), ideal(), botDriver(0.4, 2), randomDriver(3)]) {
-    const { st, evs } = play({ seed: 2, drive });
-    assert.deepEqual(Object.keys(st.subgoals).sort(), ["bloom", "hatch", "split"]);
-    for (const v of Object.values(st.subgoals)) assert.ok(v === "done" || v === "auto", v);
-    for (const id of Object.keys(st.subgoals)) {
-      const seq = named(evs, "subgoal").filter((e) => e.id === id).map((e) => e.state);
-      assert.equal(seq[0], "shown", id);
-      assert.equal(seq.length, 2, id);
-    }
-    for (const e of named(evs, "subgoal")) assert.notEqual(say(e.text), e.text, `${e.text} is a string`);
-  }
-});
-
-// ---- the release credit ----
-
-// Play to the end with scripted events relative to the bloom (k = 0) or hatch (k = 1) release target.
-function releaseRun(events, { phase = 0.25, assist = false } = {}) {
-  const st0 = split.create(1, DEFAULT_CARRY, { motherPhase: phase });
-  const T = [beatOf(st0, 30), beatOf(st0, 36)];
-  const B = (n) => beatOf(st0, n);
-  return play({ phase, assist, drive: script(events(T, B)) });
-}
-
-await check("bloom and hatch: In time 1, Close 0.5, a held Off release 0.25, never pressed 0", () => {
-  const cases = [
-    ["in", (T, B) => [{ t: B(25) }, { t: T[0], up: true }, { t: B(31) }, { t: T[1] + 0.03, up: true }], [1, 1]],
-    ["close", (T, B) => [{ t: B(26) }, { t: T[0] + 0.12, up: true }, { t: B(32) }, { t: T[1] - 0.15, up: true }], [0.5, 0.5]],
-    ["held off", (T, B) => [{ t: B(25) }, { t: T[0] - 1.0, up: true }, { t: B(31) }, { t: T[1] + 0.3, up: true }], [0.25, 0.25]],
-    ["held off, then in", (T, B) => [{ t: B(25) }, { t: T[0] - 1.6, up: true }, { t: T[0] - 1.2 }, { t: T[0], up: true }], [1, 0]],
-    ["held past the end of bloom, released on the hatch glow", (T, B) => [{ t: B(25) }, { t: T[1], up: true }], [0.25, 1]],
-    ["never pressed", () => [], [0, 0]],
-  ];
-  for (const [name, evs, want] of cases) {
-    const { res } = releaseRun(evs);
-    assert.deepEqual(res.metrics.release, want, name);
-  }
-});
-
-await check("no mash: a release after a hold under 1 beat counts for nothing, also on the glow", () => {
-  const { res, evs } = releaseRun((T) => {
-    const out = [];
-    for (let k = -8; k <= 4; k++) { out.push({ t: T[0] + k * 0.15 }); out.push({ t: T[0] + k * 0.15 + 0.1, up: true }); }
-    out.push({ t: T[1] - 0.3 }, { t: T[1], up: true });               // 0.3 s on the hatch glow
-    return out;
+  const all = new Set([1, 2, 3, 4, 5, 6, 7, 8].map((s) => offers(s).join()));
+  assert.ok(all.size >= 4, "seeds differ");
+  const maxed = { quick: 2, spread: 2, bounce: 2, sticky: 1, shell: 3, dash: 2 };
+  for (const seed of [1, 2, 3]) assert.deepEqual(offers(seed, maxed).slice().sort(), ["chain", "magnet", "orbit"], "never a gift at its top level");
+  // the bubbles: up-left, up and up-right of you, 22 u away
+  const st = split.create(1, DEFAULT_CARRY, OPTS);
+  run(st, (s) => s.phase === "pick");
+  const p = st.A.p;
+  st.offer.forEach((b, k) => {
+    near(Math.hypot(b.x - p.x, b.y - p.y), 22, 1e-6, "22 u away");
+    assert.ok(b.y > p.y, "above you (world forward)");
+    assert.ok(k === 1 ? Math.abs(b.x - p.x) < 1e-6 : (k === 0) === (b.x < p.x), "left, middle, right");
   });
-  assert.deepEqual(res.metrics.release, [0, 0]);
-  assert.equal(named(evs, "judge").filter((e) => e.target.startsWith("bloom") || e.target.startsWith("hatch")).every((e) => e.grade === "miss"), true);
 });
 
-await check("a hold needs a fresh press: a press from the tap moment held into bloom counts for nothing", () => {
-  const { res } = releaseRun((T, B) => [{ t: B(24) + 0.3 }, { t: T[0], up: true }]);
-  assert.deepEqual(res.metrics.release, [0, 0]);
-  const again = releaseRun((T, B) => [{ t: B(24) + 0.3 }, { t: B(25) + PB / 2, up: true }, { t: B(26) }, { t: T[0], up: true }]);
-  assert.deepEqual(again.res.metrics.release, [1, 0], "a fresh press after letting go counts");
-  const lost = releaseRun((T, B) => [{ t: B(24) + 0.3 }, { t: B(26) }, { t: T[0], up: true }]);
-  assert.deepEqual(lost.res.metrics.release, [1, 0], "a stale press whose release input.js dropped never blocks the next hold");
-});
-
-await check("the hollow fills while you hold, and by itself from bloom beat 2; you slip out on hatch beat 6 by itself", () => {
-  const st0 = split.create(1, DEFAULT_CARRY, { motherPhase: 0 });
-  const b25 = beatOf(st0, 25), b26 = beatOf(st0, 26), b36 = beatOf(st0, 36);
-  const fillAt = (drive, t) => { const st = split.create(1, DEFAULT_CARRY, { motherPhase: 0 }); while (st.t < t) split.step(st, drive(st)); return st; };
-  assert.ok(fillAt(idle(), b26).fill < 0.01, "nothing before beat 2 by itself");
-  const held = fillAt(script([{ t: b25 - 0.3 }]), b26);
-  assert.ok(held.fill > 0.3, `holding fills it: ${held.fill.toFixed(2)}`);
-  const late = fillAt(idle(), b36 + 0.1);
-  assert.equal(late.slipped, true);
-  assert.ok(split.view(late).strips.some((s) => s.kind === "arc" && s.a1 - s.a0 < Math.PI * 2 - 1e-6), "the shell opens");
-});
-
-// ---- the taps ----
-
-await check("Off taps never reset a count: an Off press before each target, then an In-time press, scores as the ideal", () => {
-  const { res, evs } = play({ seed: 6, phase: 0.4, drive: ideal({ extra: (st, presses, releases, t0, t1) => {
-    for (const x of split.targets(st, 3)) {
-      if (x.kind !== "tap") continue;
-      const at = x.t - 0.3;
-      if (at >= t0 && at < t1) presses.push({ t: at, raw: at });
-    }
-  } }) });
-  assert.equal(named(evs, "judge").filter((e) => e.grade === "off").length, 12, "12 Off presses, each shown");
-  assert.deepEqual(res.score, { goal: 3000, skill: 6000, flourish: 1000, total: 10000 });
-  assert.equal(res.metrics.cells, 16);
-  assert.equal(res.metrics.daysInTime, 4);
-  // Off presses alone: no credit, and nothing else changes
-  const offOnly = play({ seed: 6, phase: 0.4, drive: ideal({ tapErr: () => -0.3 }) });
-  assert.equal(offOnly.res.metrics.accuracy, 0);
-  assert.equal(offOnly.res.metrics.taps.miss, 12);
-  assert.equal(offOnly.res.metrics.cells, 16);
-});
-
-await check("Flourish: 250 for each day with all 3 taps In time; a Close tap costs only its day", () => {
-  const { res } = play({ seed: 6, drive: ideal({ tapErr: (x) => (dayOf(x) === 2 && x.id.endsWith(".4") ? 0.12 : 0) }) });
-  assert.equal(res.score.flourish, 750);
-  assert.equal(res.metrics.daysInTime, 3);
-  assert.equal(res.parts.find((p) => p.id === "splits").value, Math.round(4000 * (11.5 / 12)));
-  const missDay = play({ seed: 6, drive: ideal({ tapErr: (x) => (dayOf(x) === 4 ? 0.5 : 0) }) });
-  assert.equal(missDay.res.score.flourish, 750);
-  assert.equal(missDay.res.metrics.cells, 16, "the split still happens");
-  const sparkles = named(missDay.evs, "sfx").filter((e) => e.id === "sparkle");
-  assert.equal(sparkles.length, 9, "no sparkle for the missed day's taps");
-});
-
-await check("Assist widens the windows 1.6 times: a tap 200 ms late is Close with Assist, and missed without", () => {
-  const late = () => ideal({ tapErr: () => 0.2 });
-  assert.equal(play({ drive: late() }).res.metrics.accuracy, 0);
-  assert.equal(play({ drive: late(), assist: true }).res.metrics.accuracy, 0.5);
-});
-
-// ---- views ----
-
-await check("every view is valid (every step of idle, ideal, bot and random runs), with an anchor, a cue and the limits", () => {
-  for (const drive of [idle(), ideal(), botDriver(0.7, 4), randomDriver(4)]) {
-    let cues = 0, n = 0;
-    play({ seed: 4, phase: 0.6, drive, carry: { ...DEFAULT_CARRY, sparks: 3 }, each: (st) => {
-      const v = split.view(st);
-      assert.deepEqual(validate(v), [], `t ${st.t.toFixed(2)} ${st.moment}`);
-      assert.ok(v.splats.length <= LIMITS.splats && v.rings.length <= LIMITS.rings && v.marks.length <= LIMITS.marks);
-      assert.equal(v.stage, "split");
-      assert.equal(v.camera.orient, "long");
-      near(v.camera.mmPerU, 0.45 / 100, 1e-12, "0.45 mm across the short axis");
-      assert.deepEqual(v.anchor, { x: v.camera.x, y: v.camera.y }, "you are the subject");
-      if (v.cue) cues++;
-      n++;
-    } });
-    assert.ok(cues > n * 0.3, `a cue in ${cues} of ${n} views`);
+await check("a pick by swimming takes that bubble; a pick left alone takes the middle one after 3.0 s with its line", () => {
+  // swim toward the left bubble
+  const st = split.create(2, DEFAULT_CARRY, OPTS);
+  run(st, (s) => s.phase === "pick");
+  const want = st.offer[0].id, t0 = st.t;
+  const evs = [];
+  for (let i = 0; i < 600 && st.phase === "pick"; i++) {
+    const b = st.offer[0], p = st.A.p;
+    split.step(st, makeIntents({ steer: { x: b.x - p.x, y: b.y - p.y } }));
+    evs.push(...st.events); st.events.length = 0;
   }
-  const st = split.create(1, { ...DEFAULT_CARRY, sparks: 3 }, { motherPhase: 0 });
-  const v = split.view(st);
-  assert.equal(v.strips.find((s) => s.kind === "ripples").items.length, 3, "a rim spark per Glowing so far");
-  for (const k of ["course", "cilia", "arc"]) assert.ok(v.strips.some((s) => s.kind === k), k);
-  assert.ok(v.points && v.points.n > 0, "motes flow past");
-  assert.deepEqual(split.view(st), split.view(st), "view is pure");
+  assert.equal(st.taken[0].id, want);
+  assert.equal(st.taken[0].how, "you");
+  assert.ok(st.t - t0 < 1.5, `taken in ${(st.t - t0).toFixed(2)} s`);
+  assert.equal(st.gifts[want], 1);
+  assert.ok(evs.some((e) => e.name === "subgoal" && e.id === "gift" && e.state === "done"));
+  assert.ok(evs.some((e) => e.name === "sfx" && e.id === "act.up"), "a warm chime");
+  // left alone
+  const p = IDLE[0];
+  const picks = named(p.evs, "subgoal").filter((e) => e.text === "split.sub.giftAuto");
+  assert.ok(picks.length >= 3, `${picks.length} lines`);
+  assert.ok(p.st.taken.every((x) => x.how === "auto"), "every pick by itself");
+  const pickT = p.seen.filter((x) => x.phase === "pick");
+  const spans = [];
+  for (let i = 0; i < pickT.length; i++) if (i === 0 || pickT[i].t - pickT[i - 1].t > DT * 1.5) spans.push([pickT[i].t, pickT[i].t]); else spans[spans.length - 1][1] = pickT[i].t;
+  for (const [a, b] of spans) near(b - a + DT, TUNE.pickS, 2 * DT, "3.0 s");
+  const st2 = split.create(1, DEFAULT_CARRY, OPTS);
+  run(st2, (s) => s.phase === "pick");
+  const mid = st2.offer[1].id;
+  run(st2, (s) => s.phase !== "pick");
+  assert.equal(st2.taken[0].id, mid, "the middle one");
 });
 
-// ---- facts and strings ----
-
-const BANNED = /\b(die|dies|died|dying|dead|death|kill\w*|lose|loses|losing|lost|loser|fail\w*|miscarr\w*|abort\w*|sex\w*|pain\w*|hurt\w*|danger\w*|sick\w*|viab\w*|prematur\w*|NICU|invad\w*|invas\w*|attack\w*|destroy\w*|defeat\w*|conquer\w*|enem\w*|fight\w*|battle\w*)/i;
-const PRONOUN = /\b(she|her|hers|herself|he|him|his|himself|they|them|their|theirs|themselves)\b/i;
-const sentences = (s) => s.split(/(?<=[.!?])\s+/).filter(Boolean);
-const words = (s) => s.split(/\s+/).filter((w) => /\w/.test(w));
-
-await check("facts (15.2): ids, gaDays, where, allow-listed sources read (R), no label in the text, ≤ 20 words", () => {
-  const want = { "split.two": [15, "card"], "split.small": [16, "caption"], "split.carried": [16, "caption"],
-    "split.morula": [18, "caption"], "split.inner": [19, "result"], "split.hatch": [20, "overlay"] };
-  assert.deepEqual(FACTS.map((f) => f.id), Object.keys(want));
-  for (const f of FACTS) {
-    assert.deepEqual([f.gaDay, f.where], want[f.id], f.id);
-    assert.equal(f.stage, "split");
-    assert.equal(f.checked, true);
-    assert.ok(f.access === "R" || f.access === "A", f.id);
-    assert.ok(f.src.length > 0 && f.src.every((k) => SOURCES[k]), `${f.id} sources ${f.src}`);
-    assert.ok(!/^(Week|Day)/.test(f.text), f.id);
-    assert.ok(words(f.text).length <= 20, f.id);
-    for (const s of sentences(f.text)) assert.ok(words(s).length <= 16, `${f.id}: ${s}`);
-    assert.ok(!BANNED.test(f.text) && !PRONOUN.test(f.text), f.id);
-    assert.ok(byId(f.id), `${f.id} is gathered by core/facts.js`);
-  }
-});
-
-await check("caption facts show once each, in order, while the clock reads the fact's own day", () => {
-  for (const phase of PHASES) {
-    const st = split.create(1, DEFAULT_CARRY, { motherPhase: phase });
-    const got = [];
-    while (!split.result(st).done) {
-      split.step(st, makeIntents());
-      for (const e of st.events) if (e.name === "fact") got.push({ id: e.id, where: e.where, clock: label(st.gaDay), fact: factLabel(byId(e.id)) });
-      st.events.length = 0;
-    }
-    // split.inner has no room to show whole before the stage ends (design.md 12): a "What was real" fact
-    assert.deepEqual(got.map((g) => g.id), ["split.small", "split.carried", "split.morula"]);
-    for (const g of got) { assert.equal(g.where, "caption"); assert.equal(g.clock, g.fact, `${g.id} at ${g.clock}`); }
-  }
-});
-
-await check("strings: every id the stage shows exists; no banned words or carer pronouns; sentences ≤ 16 words", () => {
-  for (const [id, text] of Object.entries(TEXT)) {
-    assert.ok(id.startsWith("split."), id);
-    assert.ok(!BANNED.test(text), `${id}: ${text}`);
-    assert.ok(!PRONOUN.test(text), `${id}: ${text}`);
-    for (const s of sentences(text)) assert.ok(words(s).length <= 16, `${id}: ${s}`);
-    for (const carer of ["mother", "mum", "mom", "parent"]) assert.ok(!PRONOUN.test(say(id, {}, { carer })));
-  }
-  const { res } = play({ drive: ideal() });
-  for (const p of res.parts) assert.notEqual(say(p.label), p.label, p.label);
-  for (const id of ["pling", "sparkle", "tone", "slip"]) assert.ok(TEXT[`split.sfx.${id}`], id);
-});
-
-// ---- robustness, probe, botSteer, jump ----
-
-await check("never throws: garbage intents, odd times and no intents at all; it still ends by the cap", () => {
-  const junk = [null, undefined, 5, {}, { presses: 5 }, { presses: [null, { t: NaN }, { t: Infinity }] }, { releases: [{ t: -50 }, {}] },
-    { presses: [{ t: 1e9 }], releases: [{ t: -1e9 }] }, makeIntents({ touching: true })];
-  const st = split.create(1, null, { motherPhase: NaN });
-  let i = 0;
-  assert.doesNotThrow(() => { for (; i < MAX_STEPS && !split.result(st).done; i++) split.step(st, junk[i % junk.length]); });
-  assert.equal(split.result(st).done, true);
-  assert.equal(split.result(st).goalMet, true);
-  assert.notEqual(st.how, "error");
-  assert.deepEqual(validate(split.view(st)), []);
-  const s2 = split.create(2, undefined, undefined);
-  assert.doesNotThrow(() => { for (let k = 0; k < 120; k++) split.step(s2); });
-  assert.deepEqual(validate(split.view(s2)), []);
-});
-
-await check("probe is null; botSteer is still and never touches r.mem; the carry out is empty", () => {
-  const st = split.create(1, DEFAULT_CARRY, { motherPhase: 0 });
-  assert.equal(split.probe(st), null);
-  const r = stream(1, "x");
-  r.mem = {};
-  assert.deepEqual(split.botSteer(st, 1, r), { steer: { x: 0, y: 0 }, dir: null, hold: false });
-  assert.deepEqual(r.mem, {});
-  assert.deepEqual(play({ drive: idle() }).res.carryOut, {});
-});
-
-await check("jump(moment) starts each moment now on her beat grid, lays its targets and plays on to the end", () => {
-  for (const m of ["split", "bloom", "hatch", "outro"]) {
-    const st = split.create(1, DEFAULT_CARRY, { motherPhase: 0.2 });
-    for (let k = 0; k < 90; k++) split.step(st, makeIntents());
+// Give a gift through the stage's own path: a pick with every bubble on top of you (one step).
+function give(st, id, lv = 1) {
+  for (let k = 0; k < lv; k++) {
+    const day = st.day;
+    st.phase = "pick";
+    st.A.p.x = TUNE.pickTo.x; st.A.p.y = st.roomY + TUNE.pickTo.y;
+    st.offer = [0, 1, 2].map(() => ({ id, x: st.A.p.x, y: st.A.p.y, t0: st.t }));
+    split.step(st, makeIntents());
     st.events.length = 0;
-    const t = st.t;
-    assert.equal(split.jump(st, m), true);
-    assert.equal(st.moment, m);
-    assert.equal(st.t, t, "stage time does not move");
-    assert.ok(named(st.events, "moment").some((e) => e.id === m));
-    assert.equal(split.prompt(st).gesture, { split: "tap", bloom: "hold", hatch: "hold", outro: "none" }[m]);
-    const upcoming = split.targets(st, 99);
-    assert.deepEqual(checkTargets(upcoming), []);
-    assert.ok(upcoming.every((x) => x.t >= t), "no target left behind");
-    if (m === "bloom") assert.deepEqual(upcoming.map((x) => x.group), ["bloom", "hatch"]);
-    if (m === "outro") assert.equal(upcoming.length, 0);
-    if (m !== "split") assert.equal(split.result(st).metrics.cells, 16);
-    let n = 0;
-    for (; n < MAX_STEPS && !split.result(st).done; n++) { split.step(st, makeIntents()); assert.deepEqual(validate(split.view(st)), []); }
-    assert.equal(split.result(st).done, true, m);
-    for (const v of Object.values(st.subgoals)) assert.ok(v === "done" || v === "auto", `${m}: ${v}`);
+    if (k < lv - 1) { st.day = day; }
   }
-  assert.equal(split.jump(split.create(1, DEFAULT_CARRY, {}), "nowhere"), false);
+  return st;
+}
+const fresh = (day = 1, seed = 1) => { const st = split.create(seed, DEFAULT_CARRY, OPTS); split.jump(st, IDS[day]); st.events.length = 0; return st; };
+
+await check("gift Quick: volleys +30% a second a level (2 levels)", () => {
+  const st = give(fresh(0), "quick");
+  near(st.A.fire.rate, TUNE.fire.rate * 1.3, 1e-9, "level 1");
+  give(st, "quick");
+  near(st.A.fire.rate, TUNE.fire.rate * 1.6, 1e-9, "level 2");
+});
+
+await check("gift Spread: +2 shots in the fan a level", () => {
+  const st = give(fresh(0), "spread");
+  assert.equal(st.A.fire.spread, TUNE.shots[Math.min(3, st.splits)] + 2);
+  give(st, "spread");
+  assert.equal(st.A.fire.spread, TUNE.shots[Math.min(3, st.splits)] + 4);
+});
+
+await check("gift Bounce: your sparks bounce off a wall once (twice at level 2); without it they are spent there", () => {
+  // through the stage's own step: a spark fired at the right wall with Bounce 1 comes back once
+  const st = fresh(1);
+  give(st, "bounce", 1);
+  for (const f of st.A.foes.slice()) X.removeFoe(st.A, f.id);
+  st.rows = [];
+  const A = st.A;
+  A.fire.rate = 0.001; A.fire.cool = 99;
+  X.addBullet(A, 1, TUNE.room.x1 - 2, st.roomY + 10, 110, 0, { r: 1, life: 5 });
+  const vx = [];
+  for (let i = 0; i < 120; i++) {
+    split.step(st, makeIntents());
+    st.events.length = 0;
+    const k = [...Array(A.b.n).keys()].find((j) => A.b.side[j] === 1);
+    vx.push(k === undefined ? null : Math.sign(A.b.vx[k]));
+  }
+  const firstBack = vx.indexOf(-1);
+  assert.ok(firstBack > 0, "it comes back off the wall");
+  assert.ok(vx.slice(firstBack).every((v) => v !== 1), "never forward again after its one bounce");
+  assert.ok(vx.includes(null), "spent at the far wall");
+  // and without the gift: spent at the first wall
+  const st0 = fresh(1);
+  for (const f of st0.A.foes.slice()) X.removeFoe(st0.A, f.id);
+  st0.rows = [];
+  st0.A.fire.cool = 99;
+  X.addBullet(st0.A, 1, TUNE.room.x1 - 2, st0.roomY + 10, 110, 0, { r: 1, life: 5 });
+  const back = [];
+  for (let i = 0; i < 30; i++) { split.step(st0, makeIntents()); st0.events.length = 0; for (let j = 0; j < st0.A.b.n; j++) if (st0.A.b.side[j] === 1) back.push(Math.sign(st0.A.b.vx[j])); }
+  assert.ok(!back.includes(-1), "no bounce without the gift");
+});
+
+await check("gift Sticky: a hit slows a germ to ×0.6 for 1 s", () => {
+  const st = give(fresh(0), "sticky");
+  const A = st.A;
+  run(st, (s) => s.A.foes.some((f) => f.in <= 0 && f.key === "drifter"));
+  const f = A.foes.find((g) => g.in <= 0 && g.key === "drifter");
+  // drive it directly: a strike in A.out marks it slowed for 1 s and its speed is 0.6 of its own
+  f.slowT = A.t + TUNE.gift.stickyS;
+  split.step(st, makeIntents()); st.events.length = 0;
+  near(f.speed, f.base * TUNE.gift.stickyK, 1e-9, "slowed");
+  run(st, (s) => s.A.t > f.slowT + 0.05 || !s.A.foes.includes(f));
+  if (A.foes.includes(f)) { split.step(st, makeIntents()); near(f.speed, f.base, 1e-9, "back to its speed"); }
+  // and a real hit marks it
+  const st2 = give(fresh(0, 3), "sticky");
+  let marked = false;
+  run(st2, (s) => { marked = s.A.foes.some((g) => g.slowT > s.A.t); return marked || s.phase !== "room"; });
+  assert.ok(marked, "a spark's hit slows a germ");
+});
+
+await check("gift Shell: +1 pip and heal 1 (3 levels)", () => {
+  const st = fresh(1);
+  st.A.p.hp = 2;
+  give(st, "shell");
+  assert.equal(st.A.p.hpMax, TUNE.player.hp + 1);
+  assert.equal(st.A.p.hp, 3);
+});
+
+await check("gift Dash: +40% far and the cooldown 0.25 s shorter a level", () => {
+  const st = give(fresh(0), "dash");
+  near(st.A.dash.s, TUNE.dash.s * 1.4, 1e-9, "farther");
+  near(st.A.dash.cdS, TUNE.dash.cdS - 0.25, 1e-9, "back sooner");
+  give(st, "dash");
+  near(st.A.dash.s, TUNE.dash.s * 1.8, 1e-9, "level 2");
+  near(st.A.dash.cdS, TUNE.dash.cdS - 0.5, 1e-9, "level 2");
+});
+
+await check("gift Orbit: 2 cells (4 at level 2) circle you at 12 u and pop what they touch, 1 a hit, once per 0.4 s a germ", () => {
+  const st = give(fresh(1), "orbit");
+  const A = st.A;
+  for (const f of A.foes.slice()) X.removeFoe(A, f.id);
+  st.rows = [];
+  A.fire.rate = 0.001; A.fire.cool = 99;
+  const f = X.spawnFoe(A, { kind: "germ", ai: "still", r: 3, hp: 50, x: A.p.x + 12, y: A.p.y, spawnS: 0, anywhere: true });
+  f.base = 0; f.key = "test";
+  const hits = [];
+  for (let i = 0; i < 120; i++) {
+    A.p.x = 0; A.p.y = st.roomY;
+    f.x = 12; f.y = st.roomY; f.vx = 0; f.vy = 0;
+    const hp = f.hp;
+    split.step(st, makeIntents()); st.events.length = 0;
+    if (f.hp < hp) hits.push(A.t);
+  }
+  assert.ok(hits.length >= 2, `${hits.length} hits in 2 s`);
+  for (let i = 1; i < hits.length; i++) assert.ok(hits[i] - hits[i - 1] >= TUNE.gift.orbitEvery - 1e-6, "at most once per 0.4 s");
+  const d = split.view(st);
+  assert.equal(d.splats.filter((s) => s.r === TUNE.gift.orbitCellR).length, 2, "2 orbit cells drawn");
+  give(st, "orbit");
+  assert.equal(split.view(st).splats.filter((s) => s.r === TUNE.gift.orbitCellR).length, 4, "4 at level 2");
+});
+
+await check("gift Chain: a popped germ bursts into 4 sparks (8 at level 2) that hit others", () => {
+  for (const lv of [1, 2]) {
+    const st = give(fresh(1), "chain", lv);
+    const A = st.A;
+    for (const f of A.foes.slice()) X.removeFoe(A, f.id);
+    st.rows = [];
+    A.fire.cool = 99;
+    const f = X.spawnFoe(A, { kind: "germ", ai: "still", r: 3, hp: 1, x: 20, y: st.roomY + 30, spawnS: 0, anywhere: true });
+    f.base = 0;
+    let made = 0;
+    // one spark of yours pops it; the stage turns that clear into chain sparks after the world step
+    X.addBullet(A, 1, f.x - 2, f.y, 60, 0, { r: 1, life: 1 });
+    for (let i = 0; i < 6 && A.foes.includes(f); i++) { split.step(st, makeIntents()); st.events.length = 0; }
+    for (let i = 0; i < A.b.n; i++) if (A.b.side[i] === 1) made++;
+    assert.ok(made >= 4 * lv, `level ${lv}: ${made} sparks`);
+  }
+});
+
+await check("gift Magnet: sparkles drift to you from 30 u (60 u at level 2)", () => {
+  const st = give(fresh(1), "magnet");
+  assert.equal(st.A.pick.magnet, 30);
+  give(st, "magnet");
+  assert.equal(st.A.pick.magnet, 60);
+});
+
+await check("rooms: each day's rows spawn at least 30 u from you; a room ends cleared (\"Clear!\", +300) or at its 10 s timer, which always opens the exit", () => {
+  // the timer: no sparks, so nothing is popped, and the exit opens at 10 s with the germs left drifting off
+  const st = split.create(4, DEFAULT_CARRY, OPTS);
+  st.A.fire = null;
+  st.A.p.hp = st.A.p.hpMax = 99;
+  const t0 = st.A.t;
+  const evs = [];
+  for (let i = 0; i < 2000 && st.phase === "room"; i++) {
+    split.step(st, makeIntents());
+    evs.push(...st.events); st.events.length = 0;
+    for (const f of st.A.foes) if (f.age < DT * 1.5 && f.key !== "kid") assert.ok(Math.hypot(f.x - st.A.p.x, f.y - st.A.p.y) >= 24, "no spawn near you");
+  }
+  assert.equal(st.phase, "clear");
+  near(st.A.t - t0, TUNE.roomS, 2 * DT, "at the timer");
+  assert.equal(st.carried, true);
+  assert.equal(st.A.foes.length, 0, "what was left drifts off");
+  run(st, (s) => s.phase !== "clear");
+  assert.equal(split.prompt(st).text, "split.prompt.carried");
+  assert.equal(st.exitOpen, 1, "the exit is open");
+  // a clear: the ref bot clears its rooms before their timers, each with +300 and "Clear!"
+  for (const p of REF.slice(0, 3)) {
+    assert.ok(p.res.metrics.roomsClear >= 4, `seed ${p.st.seed}: ${p.res.metrics.roomsClear} rooms cleared`);
+    const words = p.evs.filter((e) => e.name === "points" && e.add === 300);
+    assert.ok(words.length >= 4);
+  }
+  // each room's spawns, Assist with fewer
+  const sta = split.create(1, DEFAULT_CARRY, { ...OPTS, assist: true });
+  for (let d = 0; d < 4; d++) {
+    split.jump(sta, IDS[d]);
+    assert.equal(sta.rows.reduce((a, r) => a + r.n, 0), TUNE.rooms[d].reduce((a, r) => a + Math.ceil(r[2] * 0.75), 0), `Assist day ${d + 1}`);
+  }
+});
+
+await check("chasers wobble with a line tell, then lunge along it; splitters pop into two small chasers; puffers fire sticky spores", () => {
+  const st = split.create(3, DEFAULT_CARRY, OPTS);
+  split.jump(st, "day3");
+  st.A.fire = null;
+  const A = st.A;
+  A.p.hp = A.p.hpMax = 99;
+  let lineTells = 0, lunged = false, spores = 0, slowing = false;
+  for (let i = 0; i < 600; i++) {
+    split.step(st, makeIntents());
+    st.events.length = 0;
+    for (const o of A.out) if (o.type === "tell" && o.kind === "line") lineTells++;
+    if (A.foes.some((f) => f.lunge && f.lp === 2 && Math.hypot(f.vx, f.vy) > 30)) lunged = true;
+    for (let j = 0; j < A.b.n; j++) if (A.b.side[j] === 2 && A.b.tone[j] === 3) { spores++; if (A.b.acc[j] < 0) slowing = true; }
+    if (st.phase !== "room") break;
+  }
+  assert.ok(lineTells > 0, "a line tell before a lunge");
+  assert.ok(lunged, "a lunge");
+  assert.ok(spores > 0 && slowing, "sticky spores that slow");
+  // a splitter pops into two kids
+  const s2 = fresh(2);
+  run(s2, (s) => s.A.foes.some((f) => f.key === "splitter" && f.in <= 0));
+  const f = s2.A.foes.find((g) => g.key === "splitter" && g.in <= 0);
+  const came = s2.came;
+  f.hp = 0.5;
+  X.addBullet(s2.A, 1, f.x - 2, f.y, 60, 0, { r: 1, life: 1 });
+  for (let i = 0; i < 6 && s2.A.foes.includes(f); i++) { split.step(s2, makeIntents()); s2.events.length = 0; }
+  assert.equal(s2.A.foes.filter((g) => g.key === "kid").length, 2);
+  assert.equal(s2.came, came + 2, "the kids came too");
+});
+
+await check("the Knot: phases at 60% and 24% of its hp, each with a tell, a swell, a hit-stop and the spores cleared; the boss bar; the hollow fills", () => {
+  const st = split.create(1, DEFAULT_CARRY, OPTS);
+  split.jump(st, "bloom");
+  const A = st.A;
+  A.fire = null;
+  run(st, (s) => { const f = s.A.foes.find((g) => g.boss); return f && f.in <= 0 && s.A.t - s.k0 > 3; });
+  const f = A.foes.find((g) => g.boss);
+  assert.equal(f.hpMax, TUNE.knot.spec.hp);
+  near(f.y, st.roomY + TUNE.knot.at.y, 3, "at the tube's end");
+  assert.ok(split.view(st).action.boss, "the boss bar shows");
+  assert.ok(foeShots(A) > 0, "phase 1 fires its rings");
+  const evs = [];
+  const hit = (share) => { X.damageFoe(A, f, f.hp - share * f.hpMax + 0.01, 0, 0); for (let i = 0; i < 30; i++) { split.step(st, makeIntents()); evs.push(...st.events.map((e) => ({ ...e, at: A.t }))); st.events.length = 0; } };
+  hit(0.6);
+  assert.equal(st.knot.phase, 1, "phase 2 below 60%");
+  assert.equal(f.phase, 1);
+  hit(0.24);
+  assert.equal(st.knot.phase, 2, "phase 3 below 24%");
+  const sw = evs.filter((e) => e.name === "sfx" && e.id === "act.phase");
+  assert.deepEqual(sw.map((e) => e.pitch), [1, 2], "a low swell at each change");
+  assert.ok(st.fill > 0, "the hollow fills as you play");
+  // the ref bot: the phases come in order, each with a tell and no foe spores left over
+  for (const p of REF.slice(0, 5)) {
+    assert.deepEqual(p.phases.map((x) => x.phase), [1, 2], `seed ${p.st.seed}`);
+    for (const x of p.phases) {
+      assert.equal(x.bullets, 0, "the spores cleared");
+      assert.ok(x.tells.includes(x.phase === 1 ? "ring" : "charge"), "a tell");
+    }
+    assert.ok(p.phases[0].share <= 0.6 && p.phases[1].share <= 0.24);
+    assert.equal(p.res.metrics.knot, "popped", `seed ${p.st.seed}: the ref bot pops it`);
+  }
+});
+const srcKnown = (s) => Object.prototype.hasOwnProperty.call(SOURCES, s);
+function foeShots(A) { let n = 0; for (let i = 0; i < A.b.n; i++) if (A.b.side[i] === 2) n++; return n; }
+
+await check("the Knot drifts off at 18 s by itself (\"The tube carries you past.\"), and the stage goes on to the hatch", () => {
+  const st = split.create(2, DEFAULT_CARRY, OPTS);
+  split.jump(st, "bloom");
+  st.A.fire = null;
+  st.A.p.hp = 99; st.A.p.hpMax = 99;
+  const evs = [];
+  const k0 = st.A.t;
+  for (let i = 0; i < 3000 && st.phase !== "hatch"; i++) { split.step(st, makeIntents()); evs.push(...st.events.map((e) => ({ ...e, at: st.A.t }))); st.events.length = 0; }
+  assert.equal(st.knotLeft, true);
+  const line = evs.find((e) => e.name === "subgoal" && e.text === "split.sub.knotAuto");
+  assert.ok(line, "its line");
+  near(line.at - k0, TUNE.knot.leaveS, 2 * DT, "at 18 s");
+  assert.equal(st.phase, "hatch");
+});
+
+await check("the hatch: the shell cracks into paper pieces, \"You hatch.\", the clock reads Day 6, then the outro, and the stage ends with its goal", () => {
+  for (const p of [REF[0], REF[1], BOTS[0.5][0]]) {
+    assert.equal(p.res.done, true);
+    assert.equal(p.res.goalMet, true);
+    assert.equal(p.st.how, "hatch");
+    const hatch = p.evs.find((e) => e.name === "moment" && e.id === "hatch");
+    assert.ok(hatch);
+    assert.ok(p.evs.some((e) => e.name === "subgoal" && e.text === "split.sub.hatched"), "You hatch.");
+    assert.ok(p.evs.some((e) => e.name === "sfx" && e.id === "slip"), "a soft crack");
+    assert.ok(p.evs.some((e) => e.name === "sfx" && e.id === "tone"), "a rising tone");
+    const h = p.ga.find((g) => g.moment === "hatch");
+    assert.equal(Math.floor(h.gaDay), 20);
+    assert.equal(clockLabel(20), "Day 6 after fertilization (week 2)");
+    assert.ok(p.evs.some((e) => e.name === "moment" && e.id === "outro"));
+  }
+  const st = split.create(1, DEFAULT_CARRY, OPTS);
+  split.jump(st, "hatch");
+  run(st, (s) => s.cracked);
+  const d = split.view(st);
+  assert.ok(d.action.bursts.length >= 6, "paper pieces fall away");
+  run(st, (s) => s.A.t - s.crackT > 0.4);
+  const arc = split.view(st).strips.find((s) => s.kind === "arc");
+  assert.ok(arc && arc.a1 - arc.a0 < 2 * Math.PI, "the shell opens");
+});
+
+await check("the clock: never back, inside each moment's span, Day 1 to Day 6; each pick's caption fact on its day", () => {
+  for (const p of [...REF.slice(0, 3), ...IDLE.slice(0, 3)]) {
+    let prev = 0;
+    for (const g of p.ga) {
+      assert.ok(g.gaDay >= prev - 1e-12, `back at ${g.t.toFixed(2)}`);
+      prev = g.gaDay;
+      const m = split.meta.moments.find((x) => x.id === g.moment);
+      if (!g.done) assert.ok(g.gaDay >= m.ga[0] - 1e-9 && g.gaDay <= m.ga[1] + 1e-9, `${g.moment} ${g.gaDay}`);
+    }
+    assert.equal(p.st.gaDay, 20);
+    for (const e of named(p.evs, "fact")) {
+      const f = FACTS.find((x) => x.id === e.id);
+      assert.ok(f && f.where === "caption", e.id);
+      assert.ok(e.ga >= f.gaDay - 1e-9, `${e.id} at ${e.ga}`);
+    }
+  }
+  const order = named(REF[0].evs, "fact").map((e) => e.id);
+  assert.deepEqual(order, ["split.small", "split.carried", "split.morula", "split.inner"]);
+});
+
+await check("the shared bot: skill 1 is Great or better in at least 9 of 10 and knocked out in at most 1; 0.7 and 0.5 are not knocked out in at least 8 of 10; more skill scores more", () => {
+  const great = REF.filter((p) => ["Great", "Glowing"].includes(gradeOf(total(p.res), p.res.goalMet))).length;
+  assert.ok(great >= 9, `Great or better in ${great} of 10`);
+  assert.ok(REF.filter((p) => p.res.metrics.ko).length <= 1);
+  for (const s of [0.7, 0.5]) assert.ok(BOTS[s].filter((p) => !p.res.metrics.ko).length >= 8, `skill ${s}: knocked out in ${BOTS[s].filter((p) => p.res.metrics.ko).length}`);
+  const mean = (ps) => ps.reduce((a, p) => a + total(p.res), 0) / ps.length;
+  assert.ok(mean(REF) >= mean(BOTS[0.5]) && mean(BOTS[0.5]) > mean(IDLE), `${mean(REF)} ${mean(BOTS[0.5])} ${mean(IDLE)}`);
+  const t = REF.map((p) => p.st.t);
+  assert.ok(Math.max(...t) < split.meta.capS && Math.min(...t) > 40, `ref lengths ${t.map((x) => x.toFixed(0))}`);
+});
+
+await check("idle: knocked out (the rest line, goal unmet, the Almost line) or it lasts; never stuck; the points events add up", () => {
+  let kos = 0;
+  for (const p of IDLE) {
+    assert.equal(p.res.done, true);
+    const sum = named(p.evs, "points").reduce((a, e) => a + e.add, 0);
+    assert.equal(sum, total(p.res), `seed ${p.st.seed}: points ${sum} vs ${total(p.res)}`);
+    if (!p.res.metrics.ko) { assert.equal(p.res.goalMet, true); continue; }
+    kos++;
+    assert.equal(p.res.goalMet, false);
+    assert.equal(p.res.score.goal, 0);
+    assert.equal(p.res.metrics.almost, "almost.ko");
+    assert.ok(Number.isFinite(p.res.metrics.koAt));
+    assert.ok(p.evs.some((e) => e.name === "subgoal" && e.text === "split.sub.rest"), "Your cells need a rest.");
+    assert.equal(p.st.gaDay, 20, "the clock at the stage's end");
+  }
+  assert.ok(kos >= 2, `idle knocked out in ${kos} of ${IDLE.length}`);
+  for (const p of [...REF, ...BOTS[0.5]]) assert.equal(named(p.evs, "points").reduce((a, e) => a + e.add, 0), total(p.res), "the points add up");
+});
+
+await check("a knock-out with Go on: the splits left play, the hollow fills, you hatch, and it ends with no goal (input none)", () => {
+  const ko = IDLE.find((p) => p.res.metrics.ko);
+  assert.ok(ko, "an idle knock-out");
+  const st = split.create(ko.st.seed, DEFAULT_CARRY, OPTS);
+  run(st, () => false);
+  assert.equal(split.result(st).metrics.ko, true);
+  const before = total(split.result(st)), splits = st.splits;
+  assert.equal(split.jump(st, split.meta.goOn), true);
+  assert.equal(st.done, false);
+  assert.equal(split.prompt(st).gesture, "none");
+  const evs = [];
+  const rnd = stream(5, "garbage");
+  for (let i = 0; i < 1200 && !st.done; i++) { split.step(st, makeIntents({ steer: { x: rnd() - 0.5, y: rnd() - 0.5 }, presses: [{ t: 0 }] })); evs.push(...st.events); st.events.length = 0; }
+  const r = split.result(st);
+  assert.equal(r.done, true);
+  assert.equal(r.goalMet, false);
+  assert.equal(r.metrics.ko, true);
+  assert.equal(st.splits, 3, "every split played");
+  assert.equal(evs.filter((e) => e.name === "sfx" && e.id === "pling").length, 3 - splits);
+  assert.ok(evs.some((e) => e.name === "moment" && e.id === "hatch"));
+  assert.ok(evs.some((e) => e.name === "subgoal" && e.text === "split.sub.hatched"));
+  assert.equal(named(evs, "points").length, 0, "no more points");
+  assert.equal(total(r), before);
+  assert.equal(st.how, "goOn");
+});
+
+await check("one live gesture: move in rooms, picks and the Knot (with their prompts), none in a split, the hatch and the outro, none once done", () => {
+  const p = REF[0];
+  const by = {};
+  for (const x of p.seen) (by[x.phase] = by[x.phase] || new Set()).add(`${x.prompt.gesture}|${x.prompt.text}`);
+  assert.deepEqual([...by.room], ["move|split.prompt.move"]);
+  assert.deepEqual([...by.pick], ["move|split.prompt.gift"]);
+  assert.deepEqual([...by.knot], ["move|split.prompt.knot"]);
+  for (const ph of ["split", "hatch", "outro"]) for (const s of by[ph]) assert.equal(s.split("|")[0], "none", ph);
+  assert.equal(split.prompt(p.st).gesture, "none");
+  for (const e of named(p.evs, "prompt")) if (e.text) assert.ok(TEXT[e.text], e.text);
+});
+
+await check("every sub-goal is shown, then ends done or auto (rooms, gift, the Knot, the hatch)", () => {
+  for (const p of [REF[0], IDLE[0], IDLE[1]]) {
+    const subs = named(p.evs, "subgoal");
+    const ids = [...new Set(subs.map((e) => e.id))];
+    for (const id of ids) {
+      const states = subs.filter((e) => e.id === id).map((e) => e.state);
+      assert.equal(states[0], "shown", id);
+      assert.ok(states.length === 2 && ["done", "auto"].includes(states[1]), `${id}: ${states}`);
+    }
+    for (const id of ["rooms", "gift"]) assert.ok(ids.includes(id), id);
+    if (!p.res.metrics.ko) for (const id of ["knot", "hatch"]) assert.ok(ids.includes(id), id);
+    for (const e of subs) assert.ok(TEXT[e.text], e.text);
+  }
+});
+
+await check("botSteer: dodges with a dash, takes its first preferred gift (the middle one below skill 0.5), keeps memory only in r.mem and never changes the state", () => {
+  const st = split.create(1, DEFAULT_CARRY, OPTS);
+  run(st, (s) => s.phase === "pick");
+  const snap = JSON.stringify(split.view(st));
+  const r = stream(1, "x"); r.mem = {};
+  const a = split.botSteer(st, 1, r), b = split.botSteer(st, 1, r);
+  assert.deepEqual(a, b, "skill 1 is the same each call");
+  assert.deepEqual(Object.keys(r.mem), [], "no memory at skill 1");
+  assert.equal(JSON.stringify(split.view(st)), snap, "the state is untouched");
+  assert.ok(Math.hypot(a.steer.x, a.steer.y) < 1);
+  const pref = TUNE.prefer.find((id) => st.offer.some((o) => o.id === id));
+  const want = st.offer.find((o) => o.id === pref), p = st.A.p;
+  assert.ok(a.steer.x * (want.x - p.x) + a.steer.y * (want.y - p.y) > 0, "toward its preferred gift");
+  const low = split.botSteer(st, 0.3, Object.assign(stream(2, "y"), { mem: {} }));
+  const mid = st.offer[1];
+  assert.ok(low.steer.x * (mid.x - p.x) + low.steer.y * (mid.y - p.y) >= 0, "the middle one below 0.5");
+  // the ref bot's picks follow its preference
+  for (const q of REF.slice(0, 4)) for (const x of q.st.taken) assert.equal(x.how, "you");
+  assert.ok(REF.some((q) => q.res.metrics.dashes > 0), "it dashes");
+  const done = split.create(1, DEFAULT_CARRY, OPTS); done.done = true;
+  assert.deepEqual(split.botSteer(done, 1, r).steer, { x: 0, y: 0 });
+});
+
+await check("Assist: 7 pips, spores 0.75 as fast, 0.75 of the germs, the Knot 114 hp, the dash back 0.7 as soon", () => {
+  const st = split.create(1, DEFAULT_CARRY, { ...OPTS, assist: true });
+  assert.equal(st.A.p.hp, 7);
+  assert.equal(st.A.bulletK, 0.75);
+  near(st.A.dash.cdS, TUNE.dash.cdS * 0.7, 1e-9, "dash");
+  split.jump(st, "bloom");
+  run(st, (s) => s.A.foes.some((f) => f.boss));
+  assert.equal(st.A.foes.find((f) => f.boss).hpMax, Math.round(TUNE.knot.spec.hp * 0.76));
+  const p = play({ seed: 1, opts: { assist: true }, every: 30 });
+  assert.equal(p.res.done, true);
+});
+
+await check("carry in: Glowing sparks are shield pips (at most 2) that take the first hits; nothing carries out", () => {
+  const st = split.create(1, mergeCarry(DEFAULT_CARRY, { sparks: 3 }), OPTS);
+  assert.equal(st.A.p.shield, 2);
+  const d = split.view(st);
+  assert.equal(d.action.hp.shield, 2);
+  X.hitPlayer(st.A, 1, "test", 0, 0);
+  assert.equal(st.A.p.hp, TUNE.player.hp, "the shield took it");
+  assert.deepEqual(split.result(REF[0].st).carryOut, {});
+});
+
+await check("the fair resume: 1.2 s you cannot be hit; garbage input never throws", () => {
+  const st = split.create(1, DEFAULT_CARRY, OPTS);
+  run(st, (s) => s.A.t > 3);
+  split.resume(st);
+  assert.ok(st.A.p.inv >= 1.2);
+  const rnd = stream(9, "junk");
+  const junk = [null, undefined, {}, { steer: null }, { steer: { x: NaN, y: Infinity } }, { presses: "x" }, makeIntents({ steer: { x: 9, y: -9 } })];
+  const s2 = split.create(5, DEFAULT_CARRY, OPTS);
+  assert.doesNotThrow(() => { for (let i = 0; i < 4000 && !s2.done; i++) { split.step(s2, junk[Math.floor(rnd() * junk.length)]); s2.events.length = 0; } });
+  assert.doesNotThrow(() => { for (const id of [...IDS, "nope"]) split.jump(split.create(1, DEFAULT_CARRY, OPTS), id); });
+  assert.equal(split.jump(split.create(1, DEFAULT_CARRY, OPTS), "nope"), false);
+});
+
+await check("facts: shown ones checked with sources on the allow-list; split.frame on the result; the captions fit the run", () => {
+  for (const f of FACTS) {
+    assert.equal(f.stage, "split");
+    for (const s of f.src) assert.ok(srcKnown(s), s);
+    assert.ok(["card", "caption", "overlay", "result"].includes(f.where));
+    assert.ok(!/—/.test(f.text), "no em dash");
+  }
+  const frame = FACTS.find((f) => f.id === "split.frame");
+  assert.ok(frame && frame.where === "result");
+  assert.deepEqual(FACTS.filter((f) => f.where === "caption").map((f) => f.id), ["split.small", "split.carried", "split.morula", "split.inner"]);
+});
+
+await check("strings: every text id the stage names exists, short plain sentences, no em dash, no banned words", () => {
+  const BANNED = /\b(enemy|enemies|attack|fight|battle|kill|hurt|danger|lose|sick|brick|break|boss)\b/i;
+  for (const [id, s] of Object.entries(TEXT)) {
+    assert.ok(!/—/.test(s), `${id}: em dash`);
+    assert.ok(!BANNED.test(s), `${id}: ${s}`);
+    for (const sent of s.split(/[.!?]/)) assert.ok(sent.trim().split(/\s+/).length <= 12, `${id}: a long sentence`);
+  }
+  for (const g of TUNE.gifts) assert.ok(TEXT["split.gift." + g.id], g.id);
+  for (const k of ["split.prompt.move", "split.prompt.move.keys", "split.prompt.move.one"]) assert.ok(TEXT[k], k);
+  assert.ok(/Space/.test(TEXT["split.prompt.move.keys"]));
+  assert.ok(/Hold/.test(TEXT["split.prompt.move.one"]) && !/drag/i.test(TEXT["split.prompt.move.one"]));
 });
 
 if (failed.length) {
-  for (const f of failed) console.log(`FAIL ${f}`);
+  for (const f of failed) console.log(`FAIL ${FILE}: ${f}`);
   console.log(`FAIL ${FILE}: ${failed.length} of ${passed + failed.length} checks failed`);
   process.exitCode = 1;
 } else {
-  console.log(`PASS ${FILE}: ${passed} checks`);
+  const m = (ps) => Math.round(ps.reduce((a, p) => a + total(p.res), 0) / ps.length);
+  const ko = (ps) => ps.filter((p) => p.res.metrics.ko).length;
+  console.log(`PASS ${FILE}: ${passed} checks (10 seeds: skill 1 mean ${m(REF)}, ${ko(REF)} out; 0.7 mean ${m(BOTS[0.7])}, ${ko(BOTS[0.7])} out; 0.5 mean ${m(BOTS[0.5])}, ${ko(BOTS[0.5])} out; idle ${ko(IDLE)} of ${IDLE.length} out)`);
 }

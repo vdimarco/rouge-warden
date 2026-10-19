@@ -319,7 +319,8 @@ function viewsOf(mod, every = 45) {
   out.push(mod.view(st));
   return out;
 }
-const STRIPK = ["tails", "cilia", "tree", "cord", "chevrons", "ripples", "arc", "course"];
+// "chevrons" is no longer sent: stage 1 draws its lane and chevrons inside its live "race" strip (render/race.js)
+const STRIPK = ["tails", "cilia", "tree", "cord", "race", "ripples", "arc", "course", "lanes"];
 const MARKK = ["pool", "lake", "meet", "band", "warm", "cool", "glowwall", "spot", "glow", "hand", "arrow", "light"];
 function drawCount(r, canvas, d) {
   const ctx = canvas.getContext();
@@ -341,6 +342,8 @@ const visible = {
   arc: (s) => Math.abs((s.a1 || 0) - (s.a0 || 0)) > 0.05,
   ripples: (s) => s.items && s.items.some((i) => i.a > 0.05),
   tails: (s) => s.items && s.items.length,
+  lanes: (s) => Array.isArray(s.a) && s.a.some((v) => v > 0.05),
+  race: (s) => Array.isArray(s.parts) && s.parts.length > 0,
 };
 const ALL = [...MODS, ENDING];
 const seen = { strips: new Set(), marks: new Set() };
@@ -418,17 +421,26 @@ await check("every strip and mark kind of 16.5 appears in some stage and is mapp
   performance.now = () => fake;
   const swim = MODS.find((m) => m.meta.id === "swim"), split = MODS.find((m) => m.meta.id === "split");
   // one view per fixed step of a ref-bot run (the camera moves as in play)
-  const steps = (mod, n) => {
+  const steps = (mod, n, skill = 1) => {
     const st = mod.create(1, DEFAULT_CARRY, { assist: false, oneButton: false, motherPhase: 0 });
-    const bot = createBot(1, 1);
+    const bot = createBot(skill, 1);
     const out = [];
     for (let i = 0; i < n && !mod.result(st).done; i++) { out.push(mod.view(st)); mod.step(st, bot.intents(mod, st)); st.events.length = 0; }
     return out;
   };
-  const SWIM = steps(swim, 40 * 60);
+  // stage 1 now cuts its bending course live (render/race.js), so its straight womb, sent here as course strips with a
+  // straight camera, drives these bake checks: the first 18 s of a ref run (the span eases from 170 to 150 u there)
+  const asCourse = (d) => {
+    const race = d.strips.find((s) => s.kind === "race");
+    const rest = d.strips.filter((s) => s.kind !== "race");
+    const course = race ? race.parts.map((q) => ({ kind: "course", pts: q.pts, w: q.w, tone: q.tone })) : [];
+    return { ...d, camera: { ...d.camera, rot: 0 }, strips: [...course, ...rest] };
+  };
+  // (the mid bot: the ref's boosts on the waves now outrun a desktop's background baking, which stage 1 no longer uses)
+  const SWIM = steps(swim, 18 * 60, 0.7).map(asCourse);
   const frame = (r, d, ms = 1000 / 60) => { fake += ms; r.draw(d, { frameStart: fake }); return r.bakes ? { ...r.bakes.frame } : null; };
   try {
-    await check("course bakes: after the stage's first frame no frame of a 40 s stage 1 run bakes a whole chunk, and the rescale comes in", () => {
+    await check("course bakes: after the stage's first frame no frame of an 18 s stage 1 womb run bakes a whole chunk, and the rescale comes in", () => {
       const canvas = new CanvasStub(1440, 900);
       const r = createRenderer(canvas, { gl: true, q: "full", motion: {} });
       r.resize(1440, 900);

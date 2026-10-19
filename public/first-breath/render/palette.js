@@ -92,7 +92,7 @@ export const STAGES = Object.freeze({
     name: "The Embryo",
     tokens: {
       back: "#7a2c50",
-      frame1: "#3a1030", frame2: "#52183e", frame3: "#6a2448", tubeWalls: "#64224a",
+      frame1: "#521a44", frame2: "#662250", frame3: "#762c56", tubeWalls: "#64224a",
       cells: "#f07860", cellCore: "#fff0dc", shell: "#fbe3d0", hollow: "#ffd8b8",
       approachRing: "#ffc53d", holdRing: "#fff4e2", tint: "#ff9a7a",
     },
@@ -111,8 +111,8 @@ export const STAGES = Object.freeze({
   root: row({
     name: "The Placenta",
     tokens: {
-      lining: "#7a1e34", deepLining: "#5c1428",
-      frame1: "#2e0814", frame2: "#44101e", frame3: "#5a1628", thinLayer: "#ffd8c8",
+      lining: "#822238", deepLining: "#661830",
+      frame1: "#3e0e1e", frame2: "#521628", frame3: "#661c30", thinLayer: "#ffd8c8",
       tree: "#f4a890", beads: "#fff0dc", you: "#ffb8a0", softSpot: "#fff4e2",
       pools: "#f3eadf", poolRim: "#fff8ee", heartRing: "#fff4e2", tint: "#ff8a6a",
     },
@@ -322,6 +322,9 @@ export const ROLES = Object.freeze({
     dots: ["corona1", "corona2", "corona3"], dotsDim: "pathDots", dotR: [1.3, 0.5],
     tails: { rival: "rival", rivalBack: "rivalBack", you: "you", youBack: "youBack", dashes: "cutDashes" },
     ripple: "glow", rippleBig: "ripples", cilia: "cilia", arc: "arc", arcSmall: "sealWave", glow: "glow",
+    // the action layer (render/action.js): the glow and your returned sparks are cream like the arc (marigold stays
+    // your gold sperm); the gifts are cream stars
+    action: { mine: "arc", up: "cutDashes" },
     frames: null,
   },
   split: {
@@ -338,6 +341,8 @@ export const ROLES = Object.freeze({
     dots: [{ mix: ["back", "glow", 0.4] }], dotR: [1.2, 0.35],
     cilia: { mix: ["tubeWalls", "glow", 0.32] }, arc: "shell", ripple: "glow",
     band: { mix: ["back", "tubeWalls", 0.55] }, glow: "glow",
+    // the action layer (render/action.js ACTION_TONES fills the rest): germs in teal and sage (design.md 4.8)
+    action: { foe: "#6f9a8e", foe2: "#9fae7e" },
     frames: { shape: "oval", tokens: ["frame3", "frame2", "frame1"], size: 0.64 },
   },
   root: {
@@ -367,7 +372,9 @@ export const ROLES = Object.freeze({
     tree: "placenta2", beads: "poolRim", cord: "cord", cordBack: "cordBack", lights: "cordLights",
     lake: "placenta", lake2: "placenta2", pool: { mix: ["placenta2", "sac", 0.25] }, poolOn: "pools", poolRim: "poolRim",
     ripple: "poolRim", glow: "moveGlow", arrow: { token: "glow", sticker: false },
-    frames: { shape: "scallop", scallops: 12, tokens: ["frame3", "frame2", "frame1"], size: 0.5 },
+    // the action layer (render/action.js ACTION_TONES fills the rest): the sac's wall in the placenta's colour
+    action: { wall: { mix: ["frame3", "sac", 0.35] } },
+    frames: { shape: "scallop", scallops: 12, tokens: ["frame3", "frame2", "frame1"], size: 0.62 },
   },
   answer: {
     back: "wall", inner: "fluid",
@@ -383,16 +390,18 @@ export const ROLES = Object.freeze({
     frames: { shape: "scallop", scallops: 9, depthK: 1.5, tokens: ["frame3", "frame2", "frame1"], size: 0.52 },
   },
   turn: {
-    back: "back", inner: { mix: ["back", "snugWalls", 0.62] },
+    back: "back", inner: { mix: ["back", "frame3", 0.4] },     // a deeper ember floor, so you and the germs stand out
     splats: [
       { hue: [-0.001, 0.005], token: "turnDisc", h: 3, group: "solo" },
       { hue: [0.005, 0.015], token: "turnDisc2", h: 3.5, group: "solo" },
       ...FIG("you", { mix: ["you", "dapple", 0.3] }, { mix: ["you", "frame3", 0.2] }),
-      { hue: [0.97, 0.99], token: { mix: ["you", "frame3", 0.35] }, h: 5, group: "heart" },
+      { hue: [0.97, 0.99], token: { mix: ["you", "frame3", 0.35] }, h: 5, group: "heart", sticker: true },
       { hue: [0.015, 0.025], token: { mix: ["frame3", "you", 0.4] }, h: 4, group: "solo" },
     ],
     cord: { mix: ["frame3", "you", 0.35] }, cordBack: { mix: ["frame3", "frame2", 0.4] }, lights: "roomyGlow",
     snug: "snugWalls", arc: "breathRing", ripple: "breathRing", glow: "roomyGlow", dapple: "dapple",
+    // the action layer (render/action.js): the snug wall closing in, her antibodies as cream paper Ys (design.md 5.7)
+    action: { wall: { mix: ["snugWalls", "dapple", 0.3] }, mine: "breathRing" },
     frames: { shape: "oval", tokens: ["frame3", "frame2", "frame1"], size: 0.5 },
   },
   birth: {

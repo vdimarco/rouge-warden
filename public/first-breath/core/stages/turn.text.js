@@ -1,33 +1,55 @@
-// First Breath: stage 7, Third Trimester (`turn`), its strings (design.md 1.3, 2, 6.7, 15.4). { stringId: "text" }, with
+// First Breath: stage 7, Third Trimester (`turn`), its strings (design.md 1.3, 2, 5.7, 15.4). { stringId: "text" }, with
 // {carer} and {Carer}. core/text.js registers it through core/stages/index.js. Plain, short and tender; no pronoun for
-// the carer. The `.keys` lines are the desktop forms of the prompts, and `.one` the one-button form, for the host to
-// pick.
+// the carer, none of the banned words. The `.keys` lines are the desktop forms of the prompts, and `.one` the
+// one-button form, for the host to pick. The Almost card's line after a knock-out is the shared "almost.ko".
 export const TEXT = Object.freeze({
-  // prompts, one per moment
-  "turn.breathe": "Hold. Let go.",
-  "turn.breathe.keys": "Hold Space. Let go.",
-  "turn.turn": "Drag to turn. Turn when it is roomy.",
-  "turn.turn.keys": "Hold an arrow to turn. Turn when it is roomy.",
-  "turn.turn.one": "Hold to turn. Turn when it is roomy.",
+  // prompts, one per phase
+  "turn.prompt.move": "Drag to move. Tap to kick.",
+  "turn.prompt.move.keys": "WASD to move. Space to kick.",
+  "turn.prompt.move.one": "Hold to move. You kick by yourself.",
+  "turn.prompt.gift": "Swim into a gift.",
+  "turn.prompt.gift.keys": "Use the arrows to swim into a gift.",
+  "turn.prompt.gift.one": "Hold. You swim to a gift.",
+  "turn.turn": "Drag down to turn head-down.",
+  "turn.turn.keys": "Hold S or the down arrow to turn head-down.",
+  "turn.turn.one": "Hold to turn head-down.",
   // the rest is a hold, so it needs a fresh touch (5.3): a thumb kept down from the turn does not count
   "turn.rest": "Rest. Touch and hold if you like.",
   "turn.rest.keys": "Rest. Hold Space if you like.",
-  "turn.outro": "You are ready.",
+  "turn.outro": "Week 40. You are ready.",
 
-  // sub-goals: shown, then done by you or by itself
-  "turn.goal.breaths": "Four practice breaths. Hold as the ring grows.",
-  "turn.goal.breathsDone": "Your practice breaths kept the rhythm.",
-  "turn.goal.breathsAuto": "The ring kept the rhythm for you.",
-  "turn.goal.turn": "Turn head-down.",
-  "turn.goal.turnDone": "Head-down. You turned by yourself.",
-  "turn.goal.turnAuto": "You turn now.",
+  // sub-goals: shown, then done by you or settled by itself
+  "turn.sub.grow": "Gather sparkles to grow.",
+  "turn.sub.growDone": "You grow stronger.",
+  "turn.sub.growAuto": "{Carer}'s antibodies keep you safe.",
+  "turn.sub.big": "Pop the Big Germ.",
+  "turn.sub.bigDone": "The Big Germ pops.",
+  "turn.sub.rest": "You need a rest.",
 
-  // captions
-  "turn.roomy": "It is roomy now.",
-  "turn.hum": "Your song, hummed soft and low.",
+  // caption lines
+  "turn.snug": "It gets snug in here.",
+  "turn.clear": "{Carer}'s antibodies clear every germ.",
+  "turn.auto": "You turn now.",
+
+  // the gift bubbles' tags (DOM)
+  "turn.gift.darts": "Darts",
+  "turn.gift.ring": "Ring",
+  "turn.gift.clump": "Clump",
+  "turn.gift.beat": "Beat",
+  "turn.gift.snug": "Snug",
+  "turn.gift.kick": "Kick",
+  "turn.gift.grow": "Grow",
+  "turn.pop.level": "Grow!",
+  "turn.pop.heal": "Snug!",
 
   // score parts (the run result)
-  "turn.part.breaths": "Practice breaths",
-  "turn.part.turn": "Turning when roomy",
-  "turn.part.flourish": "Turned by yourself",
+  "turn.part.popped": "Germs popped",
+  "turn.part.levels": "Levels",
+  "turn.part.pips": "Pips kept",
+  "turn.part.turn": "Turned by yourself",
+  "turn.part.big": "The Big Germ, in time",
+
+  // sound captions (section 12), for the sfx ids this stage emits
+  "turn.sfx.sparkle": "♪ a soft sparkle",
+  "turn.sfx.headDown": "~ you turn slowly",
 });

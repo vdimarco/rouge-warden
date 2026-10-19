@@ -452,36 +452,44 @@ for (const size of sizeList()) {
 
   // ---- stage 2: the egg, its arc and the sperm in the free part of the screen
   {
+    // the guard played by the ref bot (first-breath-action-genres design.md 5.2): every half second until your sperm
+    // enters, the field's rim, every rival in a ring, every stuck or held one and your sperm inside the rim
     const { ctx, page } = await open(size, "?test=1&seed=1&stage=2&moment=guard");
     const r = await page.evaluate(({ inset, subject, ppu }) => {
       const fb = window.__fb;
-      fb.step(33 * 60);
-      const g = fb.guard();
       const W = innerWidth, H = innerHeight;
-      if (!g) return { bad: ["no guard probe"] };
       const bad = [];
-      const e = g.egg.screen;
-      if (!(Math.abs(e.x - subject[0] * W) <= 4 && Math.abs(e.y - subject[1] * H) <= 4)) bad.push(`egg centre at ${Math.round(e.x)},${Math.round(e.y)}, wanted ${Math.round(subject[0] * W)},${Math.round(subject[1] * H)}`);
-      const m = window.__lay.fit([...g.sperm, ...(g.gold ? [g.gold] : []), g.egg]);
-      if (!m) bad.push("no map");
-      else if (Math.abs(m.scale - ppu) / ppu > 0.03) bad.push(`scale ${m.scale.toFixed(2)} px/u, wanted ${ppu.toFixed(2)} (140 u span)`);
-      const h = window.__lay.hud(), c = window.__lay.cap();
-      const boxes = [h.stage, h.clock, h.scale, h.score, h.prompt, h.pause, c].filter(Boolean);
-      const pts = [];
-      for (const sp of g.sperm) if (sp.state === "stuck" || sp.state === "held") {
-        pts.push([sp.id, sp.screen]);
-        if (m) { const k = (sp.r + 10) / Math.max(1e-6, Math.hypot(sp.x, sp.y)); pts.push([sp.id + " tail", m.map(sp.x * k, sp.y * k)]); }
+      let n = 0, gold = null, frames = 0, swarm = false;
+      fb.bot(1);
+      for (let k = 0; k < 120; k++) {
+        fb.step(30);
+        const g = fb.guard();
+        if (!g || g.entered) break;
+        frames++;
+        const e = g.egg.screen;
+        if (k === 0 && !(Math.abs(e.x - subject[0] * W) <= 4 && Math.abs(e.y - subject[1] * H) <= 4)) bad.push(`egg centre at ${Math.round(e.x)},${Math.round(e.y)}, wanted ${Math.round(subject[0] * W)},${Math.round(subject[1] * H)}`);
+        const m = window.__lay.fit([...g.sperm, ...(g.gold ? [g.gold] : []), g.egg]);
+        if (!m) { bad.push("no map"); continue; }
+        if (k === 0 && Math.abs(m.scale - ppu) / ppu > 0.03) bad.push(`scale ${m.scale.toFixed(2)} px/u, wanted ${ppu.toFixed(2)} (140 u span)`);
+        const h = window.__lay.hud(), c = window.__lay.cap();
+        const boxes = [h.stage, h.clock, h.scale, h.score, h.prompt, h.pause, c].filter(Boolean);
+        const pts = [];
+        for (let a = 0; a < 16; a++) pts.push([`the rim at ${a * 22.5}°`, m.map(g.rim * Math.cos((a * Math.PI) / 8), g.rim * Math.sin((a * Math.PI) / 8))]);
+        for (const sp of g.sperm) if (["ring", "stuck", "held"].includes(sp.state) && sp.r <= g.rim + 1) pts.push([`a rival (${sp.state})`, sp.screen]);
+        if (g.gold && g.gold.screen && g.gold.r <= g.rim) { pts.push(["your sperm", g.gold.screen]); gold = g.gold.state; }
+        if (g.sperm.some((sp) => sp.state === "ring" && sp.r > 40)) swarm = true;
+        for (const [id, q] of pts) {
+          if (!(q.x >= inset.l && q.x <= W - inset.r && q.y >= inset.t && q.y <= H - inset.b)) bad.push(`${id} outside the safe area`);
+          for (const b of boxes) if (q.x >= b.x && q.x <= b.r && q.y >= b.y && q.y <= b.b) bad.push(`${id} under a HUD, prompt or caption box`);
+        }
+        n += pts.length;
       }
-      if (g.gold && g.gold.screen) pts.push(["your sperm", g.gold.screen]);
-      for (const [id, q] of pts) {
-        if (!(q.x >= inset.l && q.x <= W - inset.r && q.y >= inset.t && q.y <= H - inset.b)) bad.push(`${id} outside the safe area`);
-        for (const b of boxes) if (q.x >= b.x && q.x <= b.r && q.y >= b.y && q.y <= b.b) bad.push(`${id} under a HUD, prompt or caption box`);
-      }
-      return { bad, n: pts.length, gold: g.gold ? g.gold.state : null };
+      fb.bot(false);
+      return { bad: [...new Set(bad)], n, gold, frames, swarm };
     }, { inset: INSET, subject: SUBJECT[size], ppu: PX_PER_U[size] });
-    check(`${tag}: egg: the egg at the subject point at 140 u, every stuck sperm and yours in the free screen (${r.n} points, gold ${r.gold})`,
-      r.bad.length === 0 && r.n > 0, list(r.bad));
-    await shot(page, size, "egg-guard-33s");
+    check(`${tag}: egg: the egg at the subject point at 140 u; the rim, every rival in a ring or stuck and yours in the free screen (${r.frames} frames, ${r.n} points, gold ${r.gold})`,
+      r.bad.length === 0 && r.n > 0 && r.swarm && r.gold !== null, list(r.bad));
+    await shot(page, size, "egg-guard-rush");
     await ctx.close();
   }
 
@@ -500,7 +508,8 @@ for (const size of sizeList()) {
             if (bot !== null) fb.bot(bot);
             const bad = [];
             let g = fb.guard();
-            for (let i = 0; i < 60 * 2 && !(g && g.gold); i++) { fb.step(30); g = fb.guard(); }
+            // idle: the shell needs a rest (a knock-out), and Go on brings your sperm in alone
+            for (let i = 0; i < 60 * 2 && !(g && g.gold); i++) { fb.step(30); if (fb.state().screen === "almost") fb.act("goOn"); g = fb.guard(); }
             let n = 0;
             for (let i = 0; i < 60 * 12 && g && g.gold && !g.entered; i++) {
               fb.step(3);
@@ -795,6 +804,37 @@ if (runOther) {
     });
     check(`${w}x${h}${large ? " Large" : ""}: landscape captions clear of the scale tag and the HUD (${r.n} frames)`, r.bad.length === 0 && r.n > 0, list(r.bad));
     check(`${w}x${h}: no page errors (small landscape)`, errors.length === 0, list(errors));
+    await ctx.close();
+  }
+}
+
+// stage 3's gift bubbles (first-breath-action-genres, design.md 4.6 and 5.3): at a pick left alone (seed 1, after
+// Day 1), at 390 × 844 with the safe-area inset, 844 × 390 and 1440 × 900, the three one-word tags show inside the
+// safe area, whole (not cut), clear of each other, of the HUD's tags and of the prompt line
+if (runOther) {
+  for (const [w, h, touch, ins] of [[390, 844, true, true], [844, 390, true, false], [1440, 900, false, false]]) {
+    const { ctx, page, errors } = await openAt(w, h, `?test=1&seed=1${ins ? "&" + INSET_Q : ""}`, { touch, inset: ins });
+    const r = await page.evaluate((inset) => {
+      const fb = window.__fb;
+      fb.goto("split", { seed: 1 });
+      const NAMES = new Set(["Quick", "Spread", "Bounce", "Sticky", "Shell", "Dash", "Orbit", "Chain", "Magnet"]);
+      const tags = () => [...document.querySelectorAll("#pops .pop")].filter((e) => !e.hidden && NAMES.has(e.textContent.trim()) && Number(e.style.opacity || 1) > 0.9);
+      for (let i = 0; i < 160 && tags().length < 3; i++) fb.step(10);
+      const W = innerWidth, H = innerHeight, bad = [];
+      const list = tags().map((e) => ({ text: e.textContent.trim(), r: e.getBoundingClientRect(), cut: e.scrollWidth > e.clientWidth + 1 }));
+      if (list.length !== 3) return { bad: [`${list.length} gift tags`], n: list.length };
+      const hit = (a, b) => a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
+      const others = [...document.querySelectorAll("[data-hud]")].filter((e) => !e.hidden && e.getBoundingClientRect().width > 0 && e.textContent.trim()).map((e) => ({ k: e.dataset.hud, r: e.getBoundingClientRect() }));
+      list.forEach((t, i) => {
+        if (t.r.left < inset.l - 0.5 || t.r.right > W - inset.r + 0.5 || t.r.top < inset.t - 0.5 || t.r.bottom > H - inset.b + 0.5) bad.push(`"${t.text}" outside the safe area`);
+        if (t.cut) bad.push(`"${t.text}" is cut`);
+        for (let j = i + 1; j < list.length; j++) if (hit(t.r, list[j].r)) bad.push(`"${t.text}" over "${list[j].text}"`);
+        for (const o of others) if (hit(t.r, o.r)) bad.push(`"${t.text}" under the HUD ${o.k}`);
+      });
+      return { bad, n: list.length };
+    }, ins ? INSET : { t: 0, r: 0, b: 0, l: 0 });
+    check(`${w}x${h}: stage 3's gift tags show whole inside the safe area, clear of the HUD and each other`, r.bad.length === 0 && r.n === 3, list(r.bad));
+    check(`${w}x${h}: no page errors (stage 3 gifts)`, errors.length === 0, list(errors));
     await ctx.close();
   }
 }

@@ -4,7 +4,8 @@
 //
 //   steer     { x, y }       world space, |steer| ≤ 1 (camera.stickToWorld maps the screen stick)
 //   touching  boolean        a pointer, an arrow, WASD or an action key is down
-//   presses   [{ t, raw }]   each touch-down, action keydown or (in dragHold) arrow keydown in this step
+//   presses   [{ t, raw }]   each touch-down, action keydown or (in dragHold) arrow keydown in this step; in stage 6
+//                            a touch-down also carries its world point x, y and (keys "lanes") an arrow press its dir
 //   releases  [{ t, raw }]   each release in this step
 //   taps      [{ t }]        classified taps, for menus only; no stage reads them
 //   dir       null | "up" | "down" | "left" | "right"   screen axes, once a drag passes 12 px, or from an arrow key
@@ -27,9 +28,18 @@ export const EMPTY_INTENTS = Object.freeze({
 });
 
 const DIRS = new Set(["up", "down", "left", "right"]);
+// A press or release keeps t and raw, and (stage 6's lanes, ui/input.js) the world point { x, y } of a pointer's
+// touch-down and the dir of an arrow key's press when it has them.
 const times = (list, keepRaw) => (Array.isArray(list) ? list : [])
   .filter((e) => e && Number.isFinite(e.t))
-  .map((e) => (keepRaw ? { t: e.t, raw: Number.isFinite(e.raw) ? e.raw : e.t } : { t: e.t }));
+  .map((e) => {
+    if (!keepRaw) return { t: e.t };
+    const o = { t: e.t, raw: Number.isFinite(e.raw) ? e.raw : e.t };
+    if (Number.isFinite(e.x) && Number.isFinite(e.y)) { o.x = e.x; o.y = e.y; }
+    if (DIRS.has(e.dir)) o.dir = e.dir;
+    if (e.item === true) o.item = true;          // stage 1: E or Shift uses the item (ui/input.js "move")
+    return o;
+  });
 
 export function makeIntents(partial = {}) {
   const p = partial || {};
