@@ -1,5 +1,5 @@
 // First Breath: fact pacing in real time (design.md 12, 15.1; stages spec "Every caption fact shows whole"). Each
-// stage and the ending is played by the reference bot (skill 1) and the mid bot (skill 0.7), seeds 1 to 3, in
+// stage and the ending is played by the reference bot (skill 1), the mid bot (skill 0.7) and a still player (0), seeds 1 to 3, in
 // practice (as the Stages menu plays it) and in whole runs (with the cards, the carry from stage to stage and the
 // ending's run time line), through core/run.js. Every event goes to the real ui/captions.js the way main.js sends it
 // (a caption line, a sub-goal line the prompt line does not already show, a fact caption once per stage, a sound's
@@ -118,7 +118,7 @@ const { STAGES } = await import(pathToFileURL(path.join(PUB, "core/stages/index.
 
 const PLAYING = new Set(["stage", "ending"]);
 const STAGE_IDS = [...STAGES.map((m) => m.meta.id), "ending"];
-const SKILLS = [1, 0.7];
+const SKILLS = [1, 0.7, 0];   // 0 is a still player: lines a still player gets must not crowd out a fact
 const SEEDS = [1, 2, 3];
 const readMs = (text) => 1500 + 55 * text.length;
 const FACTS_OF = (stage) => FACTS.filter((f) => f.stage === stage && f.where === "caption" && isShown(f)).map((f) => f.id);
@@ -328,7 +328,7 @@ for (const stage of STAGE_IDS) {
   check(`${stage}: every caption fact of the stage is sent in each of those runs`, () => {
     const want = FACTS_OF(stage).filter((id) => id !== "end.seconds");
     const bad = [];
-    for (const mode of MODES) for (const skill of SKILLS) for (const seed of SEEDS) {
+    for (const mode of MODES) for (const skill of SKILLS.filter((s) => s > 0)) for (const seed of SEEDS) {
       const { rows } = replay(recs.get(`${stage}|${skill}|${seed}|${mode}`), stage, "portrait");
       const sent = new Set(rows.map((r) => r.id));
       const miss = want.filter((id) => !sent.has(id));

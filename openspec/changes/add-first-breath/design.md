@@ -664,8 +664,9 @@ first caption.
 - **Miss.** No sparkle on that split. The split still happens.
 - **One-button.** Already one button.
 - **Facts.** Card `split.two`. Captions `split.small`, `split.carried`, `split.morula`. Overlay `split.hatch`.
-  `split.inner` (Day 5) comes as the hollow fills, between "Fill your hollow." and "You hatch.", with no room to show
-  whole before the stage ends (12): a "What was real" fact on the run result.
+  `split.inner` (Day 5) belongs where the hollow fills, between "Fill your hollow." and "You hatch.", but there is no
+  room to show it whole before the stage ends (12). It is not sent as a caption: it is a "What was real" fact on the
+  run result.
 - **Look and sound.** Coral paper cells with pale cut edges inside a cream shell ring, on a violet-red sheet.
   Mitosis is two paper discs parting while a small bridge capsule shrinks. A glassy pling per split, one step higher each time; a soft rising tone while holding.
 - **Bot steering.** None needed.
@@ -913,8 +914,9 @@ first caption.
 
 No points, no grade and no score line appear from the end of stage 8 until the run result.
 
-Facts: captions `end.breath` (1 s after the first cry), `end.skin` (13.5 s), `end.voice` (19 s), and `end.seconds`
-after a breath that came by itself. Its lines (the breaths, her heartbeat, "You know this heartbeat.", "Together.",
+Facts: captions `end.breath` (1 s after the first cry), `end.skin` (13.5 s) and `end.voice` (19 s). `end.seconds`
+("It can take a few seconds.") is a "What was real" fact: as a caption after a breath that came by itself, it cut
+`end.voice` short for a still player. Its lines (the breaths, her heartbeat, "You know this heartbeat.", "Together.",
 the song and the run time at 29 s) leave room for these to show whole (12); `end.fluid` is a "What was real" fact on
 the run result, with `end.apgar` last.
 

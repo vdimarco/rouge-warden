@@ -133,7 +133,7 @@ await check("determinism: the same seed and input give the same ending, for seed
   assert.notDeepEqual(one.st.breaths, two.st.breaths);
 });
 
-await check("the breath comes by itself 3.0 s after the prompt, with the caption end.seconds", () => {
+await check("the breath comes by itself 3.0 s after the prompt, with no end.seconds caption (a result fact)", () => {
   for (const motherPhase of [0, 0.31, 0.78]) {
     for (let seed = 1; seed <= 5; seed++) {
       const { evs } = play({ seed, opts: { motherPhase } });
@@ -144,9 +144,8 @@ await check("the breath comes by itself 3.0 s after the prompt, with the caption
       const m = named(evs, "milestone").filter((e) => e.id === "breath");
       assert.equal(m.length, 1, "one first breath");
       near(m[0].t, p.t + 3.0, 1e-9, "the breath by itself");
-      const f = named(evs, "fact").find((e) => e.id === "end.seconds");
-      assert.ok(f, "end.seconds shows");
-      near(f.t, p.t + 3.0, 1e-9, "its caption at the same time");
+      // end.seconds is a "What was real" fact: as a caption it cut end.voice short for a still player
+      assert.ok(!named(evs, "fact").some((e) => e.id === "end.seconds"), "end.seconds is not sent as a caption");
       const sg = named(evs, "subgoal").find((e) => e.id === "breath" && e.state === "auto");
       near(sg.t, p.t + 3.0, 1e-9, "the breath sub-goal settles by itself");
       const cry = named(evs, "caption").find((e) => e.id === "ending.capCry");
@@ -483,9 +482,10 @@ await check("facts: each shown fact is the ending's, allow-listed, R or A, short
     assert.ok(byId(f.id), `${f.id} reaches core/facts.js`);
   }
   assert.equal(FACTS.find((f) => f.id === "end.apgar").where, "result");
-  // end.fluid has no room to show whole in the ending (design.md 12): a "What was real" fact on the result
+  // end.fluid and end.seconds have no room to show whole in the ending (design.md 12): "What was real" facts
   assert.equal(FACTS.find((f) => f.id === "end.fluid").where, "result");
-  for (const f of FACTS.filter((x) => x.id !== "end.apgar" && x.id !== "end.fluid")) assert.equal(f.where, "caption", f.id);
+  assert.equal(FACTS.find((f) => f.id === "end.seconds").where, "result");
+  for (const f of FACTS.filter((x) => !["end.apgar", "end.fluid", "end.seconds"].includes(x.id))) assert.equal(f.where, "caption", f.id);
   const shown = new Set();
   for (const [, mk] of Object.entries(KINDS)) for (const e of named(play({ input: mk(1) }).evs, "fact")) shown.add(e.id);
   for (const id of shown) assert.ok(ids.has(id) && id !== "end.apgar" && id !== "end.fluid", `${id} shown`);

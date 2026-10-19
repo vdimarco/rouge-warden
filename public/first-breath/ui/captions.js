@@ -39,7 +39,7 @@ const PRIO = { cue: 0, fact: 1, say: 2 };
 const QUEUE_MAX = 16, QUEUE_STALE_MS = 8000, FACT_STALE_MS = 12000, SAME_MS = 6000, CUE_GAP_MS = 8000;
 const STAGE1_PAGE_MS = 2400;
 const RESUME_MIN_MS = 1500, READ_DONE_MS = 250;   // a cut fact page comes back for at least 1.5 s, unless read
-const UNSEEN_MS = 16;                             // a fact page on screen under a frame has not been seen yet
+const UNSEEN_MS = 4;                              // a fact page sent in the same step as a caption, not yet painted
 const sayReadMs = (n) => Math.max(2000, 1000 + 50 * n);   // a caption's reading time, while a fact waits for it
 
 // Sound-cue captions (design.md 12) for cues with no string of their own in core/text.js. say() is tried first, so a

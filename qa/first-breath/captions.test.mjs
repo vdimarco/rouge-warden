@@ -119,6 +119,24 @@ await check("a fact cut by a caption comes back after it, for the time its page 
   assert.equal(spans[1].text, F1, "the cut page comes back whole");
 });
 
+await check("a fact that starts a frame before a caption is not flashed: the caption waits its turn", () => {
+  // review of the fact pacing: "It opens." is cut to its reading time because a fact waits, the fact starts, and the
+  // guard line comes in the next frame. The fact must not show for one frame and vanish.
+  const FF = "Week 2: Finger-like fimbriae sweep the egg into the tube.";
+  for (const gap of [6, 10, 15, 20]) {
+    const c = setup("egg");
+    c.at(0, () => c.line("egg.open", "It opens.", 4000));
+    c.at(100, () => c.fact("egg.fimbriae", FF));
+    let t = 100;
+    while (!c.log.some((x) => x.id === "egg.fimbriae") && t < 10000) c.run(++t);
+    c.at(clock + gap, () => c.line("egg.guard", "Guard your shell. Only one may enter."));
+    c.run(30000);
+    const spans = c.log.filter((x) => x.id === "egg.fimbriae").map((x) => x.to - x.from);
+    assert.ok(spans.every((d) => d === 0 || d >= 1400), `a line ${gap} ms after the fact began: the fact showed for ${spans.join(", ")} ms`);
+    assert.ok(c.shown("egg.fimbriae") >= readMs(FF) - 1, `a line ${gap} ms after: the fact showed ${c.shown("egg.fimbriae")} of ${readMs(FF)} ms`);
+  }
+});
+
 await check("a fact page with almost no time left counts as read: the next page comes back", () => {
   const c = setup("answer");
   const long = "Week 2: In many mammals, sperm rest on the tube wall before the egg comes. Human data are less clear about it.";
