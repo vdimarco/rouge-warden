@@ -3,6 +3,8 @@
 #include "QuebecCampaign.h"
 #include "QuebecSky.h"
 #include "QuebecCrewAnimation.h"
+#include "QuebecGTA.h" // AQuebecCar: street traces each frame (DRIVE).
+#include "QuebecTraces.h" // Street traces: knockable street props spawned by the game mode (TRAFFIC).
 #include "LaFontaineMap.h"
 #include "LaFontaineExtensionMap.h"
 #include "CollegeBathurstMap.h"
@@ -789,6 +791,9 @@ void AQuebecCar::PossessedBy(AController* NewController)
     SetActorTickInterval(0.f);
     LastDriveInputTime = GetWorld()->GetTimeSeconds();
     LateralSpeed = DriveThrottle = SteeringState = 0.f;
+    // Lag-tolerant driving: a player takes over from any AI driver, and the driven car updates at 60 Hz.
+    ClearAutopilot();
+    SetNetUpdateFrequency(60.f);
     // Server-only driving needs movement replication for the owning client too.
     SetAutonomousProxy(false);
     NewController->SetControlRotation(GetActorRotation() + FRotator(-12., 0., 0.));
@@ -880,6 +885,8 @@ void AQuebecCar::ApplyPaint()
                     Part->SetMaterial(I,Paint && Materials[I].MaterialSlotName == TEXT("Paint") ? Paint : Mesh->GetMaterial(I));
             }
         }
+        // A repaint must not wash out the police livery (street contract).
+        if (bPolice) QuebecCrime::DecoratePoliceCar(this);
         return;
     }
     const FString Path = PaintStyle > 0
@@ -901,6 +908,7 @@ void AQuebecCar::ApplyPaint()
             Part->SetRelativeLocation(CabinOffset);
         }
     }
+    if (bPolice) QuebecCrime::DecoratePoliceCar(this);
 }
 
 namespace
@@ -1053,10 +1061,13 @@ void AQuebecCar::UpdateTraffic()
     const float Projection = FVector::DotProduct(GetActorLocation()-LaneStart,Direction);
     const float LookAhead = 450.f+FMath::Abs(Speed)*.3f;
     const float Along = FMath::Clamp(Projection+LookAhead,0.f,float(FVector::DotProduct(End-LaneStart,Direction)));
-    Target = LaneStart+Direction*Along;
+    // Traffic street life: a curb stop slides the steering target toward the curb and back; zero while cruising.
+    Target = LaneStart+Direction*Along+FVector::CrossProduct(FVector::UpVector,Direction)*TrafficCurbShift(Along);
     const float Error = FMath::FindDeltaAngleDegrees(GetActorRotation().Yaw, (Target - GetActorLocation()).Rotation().Yaw);
     Steering = FMath::Clamp(Error / 35.f, -1.f, 1.f);
     float DesiredSpeed = bWaitForJunction ? 0.f : (FMath::Abs(Error) > 35.f ? 230.f : 570.f+40.f*(FMath::Abs(PaintStyle)%4));
+    // Traffic street life: full stops at ARRÊT junctions, people in the lane ahead, curb stops (QuebecTrafficLife.cpp).
+    DesiredSpeed = UpdateTrafficLife(DesiredSpeed,Direction,Projection);
     FCollisionQueryParams Query(SCENE_QUERY_STAT(TrafficYield), false, this);
     FHitResult Ahead;
     for (int32 Attempt = 0; Attempt < 4; ++Attempt)
@@ -1120,11 +1131,22 @@ void AQuebecCar::Tick(float DeltaSeconds)
     }
     KeepCharacterInView(CameraArm, GetViewRotation());
     UpdateDriveAudio(DeltaSeconds);
+    // Street traces: tyre marks on every peer while the car moves, and smoke from a battered car.
+    if (!FMath::IsNearlyZero(Speed,1.f) || !FMath::IsNearlyZero(LateralSpeed,1.f)) QuebecTraces::TickCar(this,DeltaSeconds);
+    UpdateDamageSmoke(DeltaSeconds);
     if (!HasAuthority()) return;
     if (bTraffic && !Controller) UpdateTraffic();
+    // An AI driver (police, side jobs) writes the same inputs a player would.
+    const bool bAIDriver = bAutopilot && !Controller;
+    if (bAIDriver) { Throttle = AutopilotThrottle; Steering = AutopilotSteering; bHandbrake = bAutopilotHandbrake; }
     // Lost input/disconnected occupancy brakes safely instead of retaining throttle.
-    const bool bFailsafe = !bTraffic && (!Controller || (!IsLocallyControlled() && GetWorld()->GetTimeSeconds()-LastDriveInputTime>.5f));
+    const bool bFailsafe = !bTraffic && !bAIDriver && (!Controller || (!IsLocallyControlled() && GetWorld()->GetTimeSeconds()-LastDriveInputTime>.5f));
     if (bFailsafe) StopInput();
+    // A wreck ignores throttle; steering, brakes and the handbrake still work.
+    if (IsWrecked()) Throttle = DriveThrottle = 0.f;
+    PrepareDriveAssist();
+    const FVector StrikeFrom = GetActorLocation();
+    const bool bStriker = Controller || bAIDriver || KnockTime > 0.f;
     if (bTraffic)
     {
         // Keep the already-tested route follower and junction timing unchanged.
@@ -1142,6 +1164,8 @@ void AQuebecCar::Tick(float DeltaSeconds)
         }
     }
     VisualSteering = bTraffic ? Steering : SteeringState;
+    // Street contract: strikes on people and props, passed bodies and the stuck nudge.
+    FinishDriveTick(StrikeFrom,bStriker,DeltaSeconds);
 }
 
 void AQuebecCar::SimulateDrive(float Step, bool bFailsafe)
@@ -1162,7 +1186,8 @@ void AQuebecCar::SimulateDrive(float Step, bool bFailsafe)
         if (KnockTime <= 0.f || (FMath::Abs(Speed)<20.f && FMath::Abs(LateralSpeed)<20.f && FMath::Abs(YawRate)<5.f))
         {
             KnockTime = YawRate = 0.f;
-            if (!Controller) { Speed = LateralSpeed = 0.f; SetActorTickInterval(bTraffic ? .05f : .1f); }
+            // An AI driver (autopilot) drives on after a shove, like a player.
+            if (!Controller && !bAutopilot) { Speed = LateralSpeed = 0.f; SetActorTickInterval(bTraffic ? .05f : .1f); }
         }
         return;
     }
@@ -1179,7 +1204,8 @@ void AQuebecCar::SimulateDrive(float Step, bool bFailsafe)
     else
     {
         DriveThrottle = FMath::FInterpConstantTo(DriveThrottle,Throttle,Step,5.f);
-        const float SteeringRate = FMath::Abs(Steering)<.01f || Steering*SteeringState<0.f ? 10.f : 3.5f;
+        // Lag-tolerant driving: graded levels ease back as fast as a release, and on roads high-speed turn-in is calmer.
+        const float SteeringRate = QuebecSteer::TurnInRate(Speed,Steering,SteeringState,bSteerAssist);
         SteeringState = FMath::FInterpConstantTo(SteeringState,Steering,Step,SteeringRate);
         if (bFailsafe || bHandbrake)
             Speed = FMath::FInterpConstantTo(Speed,0.f,Step,bFailsafe ? 1600.f : 2300.f);
@@ -1216,9 +1242,17 @@ void AQuebecCar::SimulateDrive(float Step, bool bFailsafe)
             float SteeringYawRate = FMath::RadiansToDegrees(Speed/310.f*FMath::Tan(FMath::DegreesToRadians(SteeringState*Lock)));
             if (bHandbrake && FMath::Abs(Speed)>450.f) SteeringYawRate *= 1.4f;
             Turn = FMath::Clamp(SteeringYawRate,-110.f,110.f)*Step;
+            // On a road a player car damps leftover yaw and straightens along the street near the wheel's centre.
+            if (bSteerAssist) Turn = AssistedYawRate()*Step;
         }
         const FQuat Rotation = (GetActorRotation()+FRotator(0.,Turn,0.)).Quaternion();
         if (CanFitAt(GetActorLocation(),Rotation)) SetActorRotation(Rotation);
+        else if (bSteerAssist)
+        {
+            // Against a wall, a partial turn still lets the driver steer away instead of feeling stuck.
+            const FQuat Partial = (GetActorRotation()+FRotator(0.,Turn*.4f,0.)).Quaternion();
+            if (CanFitAt(GetActorLocation(),Partial)) SetActorRotation(Partial);
+        }
     }
     if (!bTraffic)
     {
@@ -1290,6 +1324,8 @@ bool AQuebecCar::CanFitAt(const FVector& Point, const FQuat& Rotation, const AAc
     FComponentQueryParams Query(SCENE_QUERY_STAT(CarHullFit),this);
     if (Ignore) Query.AddIgnoredActor(Ignore);
     if (Occupant) Query.AddIgnoredActor(Occupant);
+    // People this car knocked down do not block it while they tumble (street contract).
+    for (const TWeakObjectPtr<AActor>& Passed : PassedBodies) if (Passed.IsValid()) Query.AddIgnoredActor(Passed.Get());
     Hull->ComponentOverlapMulti(Hits,GetWorld(),Point,Rotation,ECC_Pawn,Query);
     for (const FOverlapResult& Hit : Hits) if (Hit.bBlockingHit) return false;
     return true;
@@ -1326,6 +1362,13 @@ void AQuebecCar::MoveWithCollision(float Step, const FVector& Travel)
     const FVector Before = GetActorLocation();
     FHitResult Hit;
     AddActorWorldOffset(Travel,true,&Hit);
+    // Street contract: a striking car knocks down the player or officer it meets and drives on past them.
+    FVector Unswept = Travel;
+    if (Hit.bBlockingHit && HasAuthority() && PassStruckPerson(Hit,Before,Travel))
+    {
+        Unswept = Travel*(1.-Hit.Time);
+        AddActorWorldOffset(Unswept,true,&Hit);
+    }
     if (Hit.bBlockingHit)
     {
         const FVector Normal = Hit.Normal.GetSafeNormal2D();
@@ -1339,6 +1382,8 @@ void AQuebecCar::MoveWithCollision(float Step, const FVector& Travel)
                 Hit.ImpactPoint-GetActorLocation(),Hit.ImpactPoint-Other->GetActorLocation());
             if (Impact.bImpact)
             {
+                // Dents both bodies and reports a player's ram on a driven car (street contract).
+                OnCarImpact(Other,static_cast<float>(-FVector::DotProduct(Velocity-OtherVelocity,Normal)),Hit.ImpactPoint);
                 Velocity += Impact.DeltaA;
                 YawRate = FMath::Clamp(YawRate+Impact.SpinA,-240.f,240.f);
                 if (!FMath::IsNearlyZero(Impact.SpinA,2.f)) KnockTime = FMath::Max(KnockTime,Controller ? .35f : 1.5f);
@@ -1347,10 +1392,15 @@ void AQuebecCar::MoveWithCollision(float Step, const FVector& Travel)
             // Only the closing speed relative to the other car is lost, so a pushing car keeps pace behind it.
             Velocity -= Normal*FMath::Min(0.,FVector::DotProduct(Velocity-Other->PlanarVelocity(),Normal));
         }
-        else Velocity -= Normal*FMath::Min(0.,FVector::DotProduct(Velocity,Normal));
+        else
+        {
+            // Walls keep the sliding speed. Hard hits dent the body; on a road a glancing scrape turns the nose along.
+            if (!(Hit.GetActor() && QuebecPeople::IsPerson(Hit.GetActor()))) OnWallImpact(Normal,static_cast<float>(-FVector::DotProduct(Velocity,Normal)),Step);
+            Velocity -= Normal*FMath::Min(0.,FVector::DotProduct(Velocity,Normal));
+        }
         Speed = FVector::DotProduct(Velocity,GetActorForwardVector().GetSafeNormal2D());
         LateralSpeed = FVector::DotProduct(Velocity,GetActorRightVector().GetSafeNormal2D());
-        AddActorWorldOffset(FVector::VectorPlaneProject(Travel*(1.-Hit.Time),Normal),true);
+        AddActorWorldOffset(FVector::VectorPlaneProject(Unswept*(1.-Hit.Time),Normal),true);
     }
     FRotator SupportRotation = GetActorRotation();
     double SupportZ;
@@ -1359,8 +1409,9 @@ void AQuebecCar::MoveWithCollision(float Step, const FVector& Travel)
     if (bTooHigh)
     {
         SetActorLocation(Before);
-        Speed = LateralSpeed = 0.f;
-        bGrounded = WheelSupport(Before,SupportRotation,SupportZ,bTooHigh);
+        // A step too high to climb stops only the speed into its face; the car keeps sliding along it.
+        if (!SlideAlongStep(Before,Travel)) Speed = LateralSpeed = 0.f;
+        bGrounded = WheelSupport(GetActorLocation(),SupportRotation,SupportZ,bTooHigh);
     }
     if (bGrounded && SupportZ >= GetActorLocation().Z-4.)
     {
@@ -1445,6 +1496,12 @@ void AQuebecCar::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifeti
     DOREPLIFETIME(AQuebecCar, PaintStyle);
     DOREPLIFETIME(AQuebecCar, BodyProfile);
     DOREPLIFETIME(AQuebecCar, bTraffic);
+    // Street contract.
+    DOREPLIFETIME(AQuebecCar, bPolice);
+    DOREPLIFETIME(AQuebecCar, bSiren);
+    DOREPLIFETIME(AQuebecCar, BodyDamage);
+    // Traffic street life: turn signals and hazard lights.
+    DOREPLIFETIME(AQuebecCar, TrafficSignal);
 }
 
 bool AQuebecGameState::CanAdvanceMission(int32 Index, const FVector& Position)
@@ -2823,6 +2880,8 @@ void AQuebecGameMode::BeginPlay()
     UE_LOG(LogTemp,Display,TEXT("NORD_POPULATION social=%d mobile=%d"),SocialCount,MobileIndex);
     if (Parked < ParkedGoal || Traffic < TrafficGoal || ParkCrowd < ParkCrowdGoal || StreetCrowd < StreetCrowdGoal)
         UE_LOG(LogTemp,Warning,TEXT("NORD_POPULATION some placements were blocked by world collision"));
+    // Street traces: knockable cones around two work zones and bins at the curb, placed after the parked cars.
+    AQuebecStreetProp::SpawnStreetProps(GetWorld());
 }
 
 #if WITH_DEV_AUTOMATION_TESTS
