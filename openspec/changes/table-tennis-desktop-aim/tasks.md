@@ -10,3 +10,5 @@
 - [x] Treat a browser without a coarse pointer and without touch as desktop, including pointer none with DeviceMotionEvent.
 - [x] Switch the phone gate to the mouse on the first real mousemove.
 - [x] Check that path in plain headless Chrome at 1280, not only the Playwright fine-pointer context.
+- [x] Select mouse mode for a fine pointer, including when touch points are also reported, and on the first real mousemove. After start at 1280, `__test.state().inputMode` is `mouse`.
+- [x] Let the opening hook help only a flick of at least 1.2 window widths per second inside ±200 ms. A speed-0 miss 383 ms early, or no flick, loses or replays.

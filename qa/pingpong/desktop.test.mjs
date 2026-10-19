@@ -28,6 +28,11 @@ test('a fine pointer is the desktop court, and a coarse phone stays on tilt', ()
   motion.requestPermission = () => Promise.resolve('granted');
   assert.equal(desktopCourt({ ...media({ '(pointer: fine)': true }), DeviceMotionEvent: motion }), true);
   assert.equal(desktopCourt({
+    ...media({ '(pointer: fine)': true, '(pointer: coarse)': true }),
+    DeviceMotionEvent: motion,
+    navigator: { maxTouchPoints: 10 },
+  }), true);
+  assert.equal(desktopCourt({
     ...media({ '(pointer: none)': true }),
     DeviceMotionEvent: motion,
     navigator: { maxTouchPoints: 0 },
@@ -137,7 +142,7 @@ test('the desktop gate skips motion permission and the phone tap still asks', ()
   const start = main.indexOf('function onGateTap()');
   const end = main.indexOf('async function settleGate');
   const body = main.slice(start, end);
-  assert.match(body, /inputMode === 'pointer'/);
+  assert.match(body, /inputMode === 'mouse'/);
   assert.match(body, /unlockAudio\(\)/);
   assert.equal(body.includes('requestPermission'), false);
   assert.ok(body.indexOf('unlockFromTap(') < body.indexOf('settleGate('));
@@ -229,7 +234,9 @@ test('a desktop mouse flick wins the opening point', { timeout: 90000 }, async (
     const started = await page.evaluate(() => ({
       cursor: getComputedStyle(document.getElementById('table')).cursor,
       dot: window.__test.aim().dot,
+      inputMode: window.__test.state().inputMode,
     }));
+    assert.equal(started.inputMode, 'mouse');
     assert.equal(started.cursor, 'none');
     assert.ok(started.dot && Number.isFinite(started.dot.x) && Number.isFinite(started.dot.y));
 
@@ -435,7 +442,9 @@ test('a desktop mouse flick wins the opening point', { timeout: 90000 }, async (
       hintHidden: document.getElementById('desk-hint').hidden,
       phoneHidden: [...document.querySelectorAll('[data-phone]')].every((el) => el.hidden),
       hold: document.querySelector('[data-phone]').textContent,
+      inputMode: window.__test.state().inputMode,
     }));
+    assert.equal(afterMouse.inputMode, 'mouse');
     assert.equal(afterMouse.button, 'Click to pick up your bat');
     assert.equal(afterMouse.hintHidden, false);
     assert.equal(afterMouse.phoneHidden, true);
@@ -512,6 +521,9 @@ test('plain headless Chrome at 1280 shows the desktop gate', { timeout: 60000 },
     assert.equal(gate.motion, 'function', JSON.stringify(gate));
     assert.equal(gate.w, 1280, JSON.stringify(gate));
     assert.equal(gate.h, 800, JSON.stringify(gate));
+    await page.locator('#gate-btn').click();
+    const started = await page.evaluate(() => window.__test.state().inputMode);
+    assert.equal(started, 'mouse', JSON.stringify(gate));
     assert.equal(gate.button, 'Click to pick up your bat', JSON.stringify(gate));
     assert.equal(gate.hintHidden, false);
     assert.equal(gate.hint, 'The bat follows the ball. Move the mouse to aim. Flick to swing.');

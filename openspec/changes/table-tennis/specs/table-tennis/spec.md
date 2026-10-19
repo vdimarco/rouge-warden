@@ -34,7 +34,7 @@ A swing SHALL start over 300 deg/s. The peak in the next 150 ms SHALL choose the
 - AND a landing 8.1 cm past the end line is out
 
 ### Requirement: Opening point inside five seconds
-The first point SHALL be a 5 m/s high ball with no spin. Any swing over 300 deg/s inside +/-200 ms SHALL return it as a perfect drive and win the point. From the start of play, that chance SHALL arrive in under five seconds.
+The first point SHALL be a 5 m/s high ball with no spin. A swing over 300 deg/s inside +/-200 ms SHALL return it as a perfect drive and win the point. A slower swing, or a swing outside that window, SHALL NOT win that point. From the start of play, that chance SHALL arrive in under five seconds.
 
 #### Scenario: Swing at the feed
 - WHEN the player swings at 400 deg/s on the opening feed

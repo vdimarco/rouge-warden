@@ -3,6 +3,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createMatch } from '../../public/pingpong/sim.js';
 import { RULES, judgeLanding, spinTimeScale, spinFromRoll } from '../../public/pingpong/rules.js';
+import { POINTER, flickFromSamples } from '../../public/pingpong/motion.js';
 
 function incoming() {
   const match = createMatch({ seed: 4, input: 'swing' });
@@ -81,6 +82,57 @@ test('the opening feed is won by about seven seconds', () => {
   assert.equal(snap.lastShot.kind, 'drive');
   assert.equal(snap.lastShot.band, 'perfect');
   assert.ok(Math.abs(snap.lastShot.speed - 11 * 1.15) < 1e-9);
+});
+
+function widthsFlick(widthsPerSec) {
+  const width = 1280;
+  const dt = POINTER.window;
+  const dist = widthsPerSec * width * dt;
+  return flickFromSamples(
+    [{ x: 0, y: 0, t: 0 }, { x: dist, y: 0, t: dt }],
+    dt,
+    width,
+  );
+}
+
+function openingPoint(swing) {
+  const match = createMatch({ seed: 1, input: 'swing' });
+  throughCount(match);
+  if (swing) match.swing({ dir: 'forehand', tiltX: 0, tiltY: 0, rollDegPerSec: 0, ...swing });
+  let snap = match.state();
+  for (let i = 0; i < 60 * 8 && snap.score.you === 0 && snap.score.neighbour === 0; i++) snap = match.step();
+  return snap;
+}
+
+test('a speed-0 miss 383 ms early does not take the opening hook', () => {
+  const missed = openingPoint({ degPerSec: 0, offsetMs: -383 });
+  assert.equal(missed.score.you, 0);
+  assert.equal(missed.score.neighbour, 1);
+  assert.equal(missed.lastShot.band, 'miss');
+  assert.equal(missed.lastShot.speed, 0);
+  assert.notEqual(missed.lastShot.hook, true);
+
+  const quiet = openingPoint(null);
+  assert.equal(quiet.score.you, 0);
+  assert.equal(quiet.score.neighbour, 1);
+  assert.equal(quiet.lastShot, null);
+
+  assert.equal(widthsFlick(1.1), null);
+  const slow = openingPoint({ degPerSec: RULES.swingStart - 1, offsetMs: 0 });
+  assert.equal(slow.score.you, 0);
+  assert.equal(slow.lastShot.speed, 0);
+  assert.notEqual(slow.lastShot.kind, 'drive');
+
+  const flick = widthsFlick(1.2);
+  assert.ok(flick.widthsPerSec + 1e-9 >= 1.2);
+  assert.ok(flick.degPerSec + 1e-9 >= RULES.swingStart);
+  for (const offsetMs of [-200, 0, 200]) {
+    const won = openingPoint({ degPerSec: flick.degPerSec, offsetMs });
+    assert.equal(won.score.you, 1, String(offsetMs));
+    assert.equal(won.score.neighbour, 0, String(offsetMs));
+    assert.equal(won.lastShot.hook, true, String(offsetMs));
+    assert.equal(won.lastShot.kind, 'drive', String(offsetMs));
+  }
 });
 
 test('a hook swing outside 200 ms does not win the feed', () => {

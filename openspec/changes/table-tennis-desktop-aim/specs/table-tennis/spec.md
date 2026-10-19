@@ -23,7 +23,7 @@ While the ball is coming in, the bat SHALL ease sideways onto the ball on its ow
 - AND the aim is past 15 degrees toward that side
 
 ### Requirement: A flick is window widths per second
-A flick SHALL be pointer speed over 60 ms, using coalesced pointermove samples, in window widths per second. Under 1.2 SHALL NOT swing. 1.2 through 2.3 SHALL push at 6 m/s. Above 2.3 through 4.3 SHALL drive at 11 m/s. Above 4.3 SHALL smash at 17 m/s when the ball is high enough, and drive otherwise. The same speed in window widths per second SHALL pick the same shot at 1280 and at 2560. A swing SHALL cool down for 350 ms. Contact inside ±40 ms SHALL be perfect, and contact out to ±120 ms SHALL still hit. A flick within ±200 ms of the opening ball SHALL win the point.
+A flick SHALL be pointer speed over 60 ms, using coalesced pointermove samples, in window widths per second. Under 1.2 SHALL NOT swing. 1.2 through 2.3 SHALL push at 6 m/s. Above 2.3 through 4.3 SHALL drive at 11 m/s. Above 4.3 SHALL smash at 17 m/s when the ball is high enough, and drive otherwise. The same speed in window widths per second SHALL pick the same shot at 1280 and at 2560. A swing SHALL cool down for 350 ms. Contact inside ±40 ms SHALL be perfect, and contact out to ±120 ms SHALL still hit. A flick of at least 1.2 window widths per second within ±200 ms of the opening ball SHALL win the point. A miss, or a move under 1.2, SHALL lose that point or replay it.
 
 #### Scenario: A slow move never swings
 - WHEN the pointer moves at under 1.2 window widths per second
@@ -41,6 +41,11 @@ A flick SHALL be pointer speed over 60 ms, using coalesced pointermove samples, 
 - AND the count 3, 2, 1 happened before the serve
 - AND the page reports no console errors
 
+#### Scenario: A speed-0 miss does not take the hook
+- WHEN the opening feed is missed 383 ms early with no flick
+- THEN the score does not become 1 to 0
+- AND a flick of at least 1.2 window widths per second inside ±200 ms still wins that point
+
 ### Requirement: Flick bend sets spin
 A flick that bends at least 20 degrees upward SHALL be topspin. A flick that bends at least 20 degrees downward SHALL be backspin. A flatter flick SHALL add no spin.
 
@@ -49,7 +54,7 @@ A flick that bends at least 20 degrees upward SHALL be topspin. A flick that ben
 - THEN the spin is topspin, none, or backspin
 
 ### Requirement: A browser without coarse touch is a desktop
-A page with no coarse pointer and no touch points SHALL show the desktop gate, including when the pointer is none and DeviceMotionEvent exists. A coarse pointer or any touch points SHALL keep the phone gate. A trusted mouse move while that phone gate is still up SHALL switch it to the desktop copy. A touch-generated move SHALL NOT switch it.
+A fine pointer SHALL select mouse mode, including when the browser also reports touch points. A page with no coarse pointer and no touch points SHALL show the desktop gate, including when the pointer is none and DeviceMotionEvent exists. A coarse pointer, or touch with no fine pointer, SHALL keep the phone gate. The first trusted mouse move SHALL switch a phone gate to mouse mode. A touch-generated move SHALL NOT switch it. After the gate click at 1280, the test state SHALL report inputMode mouse.
 
 #### Scenario: Headless pointer none
 - WHEN the page loads at 1280 wide with pointer none, no touch points, and DeviceMotionEvent
@@ -62,6 +67,10 @@ A page with no coarse pointer and no touch points SHALL show the desktop gate, i
 - THEN the gate button reads "Click to pick up your bat"
 - AND the desktop hint is visible
 - AND the phone lines are hidden
+
+#### Scenario: Fine pointer after start
+- WHEN a fine pointer starts the game at 1280
+- THEN the test state reports inputMode mouse
 
 ### Requirement: The phone gate stays
 A coarse phone SHALL keep the tilt gate and the phone instructions. The desktop hint SHALL stay hidden there.

@@ -265,7 +265,12 @@ export function createMatch(opts = {}) {
   }
 
   function applyStrike(cmd, offsetMs) {
-    const hook = hookActive();
+    // 1.2 window-widths per second maps to swingStart. A slower move is not a flick,
+    // and the opening hook must not turn it into the point.
+    const peak = Number(cmd.degPerSec) || 0;
+    const realFlick = peak + 1e-9 >= RULES.swingStart;
+    const withinHook = Math.abs(Number(offsetMs) || 0) <= RULES.hookWindowMs + 1e-9;
+    const hook = hookActive() && realFlick && withinHook;
     const timing = signedPull(offsetMs, cmd.dir || 'forehand', hook);
     if (timing.band === 'miss') {
       whiffed = true;
@@ -275,7 +280,9 @@ export function createMatch(opts = {}) {
     }
     let picked = shotFromPeak(cmd.degPerSec, ball.y);
     if (!picked.kind) {
+      whiffed = true;
       take('whoosh', { peak: cmd.degPerSec });
+      lastShot = { band: 'miss', speed: 0, kind: null, offsetMs, pullDeg: 0 };
       return;
     }
     let speed = picked.speed * timing.speedMul;
@@ -291,7 +298,8 @@ export function createMatch(opts = {}) {
     if ((Number(cmd.accel) || 0) > RULES.accelBoost) speed *= RULES.accelBoostMul;
     const dxBat = Math.abs(ball.x - bat.x);
     const dzBat = Math.abs(ball.z - bat.depth);
-    if (dxBat > RULES.reachX || dzBat > RULES.reachZ) {
+    // The opening hook meets a real flick inside its window. Reach still rejects every other swing.
+    if (!hook && (dxBat > RULES.reachX || dzBat > RULES.reachZ)) {
       whiffed = true;
       take('whoosh', { peak: cmd.degPerSec });
       lastShot = {
