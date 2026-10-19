@@ -1,4 +1,26 @@
-## ADDED Requirements
+# first-breath-stages Specification
+
+## Purpose
+What each of the eight First Breath stages and the ending asks of the player, how each one always completes, and the facts each one shows.
+
+## Requirements
+
+### Requirement: Every caption fact shows whole
+In real time, every caption fact a stage or the ending sends SHALL show whole before the stage ends: each of its pages, for its reading time in all. A stage SHALL send a caption fact only where its quiet moments leave room for it after its lines.
+
+#### Scenario: Every stage in real time
+- **WHEN** each stage and the ending play in real time, in practice and in a whole run, with the reference bot and with the mid bot, in portrait (390 × 844), landscape (844 × 390) and desktop
+- **THEN** every caption fact the stage sends shows whole before the stage ends: each page on screen, for 1.5 s and 55 ms a letter in all, its label included (2.4 s a one-line page in stage 1 in portrait)
+- **AND** every caption fact of the stage is sent
+- **CHECK** `qa/first-breath/pacing.test.mjs`
+
+### Requirement: A fact with no room is kept
+A fact a stage has no room to show whole SHALL NOT be dropped: it SHALL be a "What was real" fact, listed on the run result with that stage's facts, with its label and its source.
+
+#### Scenario: No room in the stage
+- **WHEN** a whole run reaches the run result
+- **THEN** "What was real" lists, with each stage's facts, the facts that stage had no room to show whole, each once with its label and link
+- **CHECK** `qa/first-breath/facts.test.mjs`
 
 ### Requirement: Stage 1, The Race
 Stage 1 SHALL make the player one sperm cell racing 19 rivals along a course: the wide womb with waves that speed a sperm swimming with them, a narrow gate, a fork where the egg's side glows warm and the cool side loops back to the fork within a few seconds, then a tube with a gentle current, a warm lane that is clearly faster than the walls, and glow walls, to the meeting place. Steering SHALL be analog with the drag gesture.
@@ -184,7 +206,7 @@ The arc SHALL be over a sperm when the angle between them is within the arc's ha
 - **CHECK** `qa/first-breath/stage-egg.test.mjs`
 
 ### Requirement: Only your sperm enters
-The player's sperm from stage 1 SHALL come to the egg in gold, with "Let it in." The arc SHALL only nudge it back, at most 3 times, and it SHALL always return, burrow and enter by itself. Exactly one sperm SHALL enter in stage 2: the player's. No input SHALL take it into the egg. As it enters, Izumo1 SHALL meet Juno.
+The player's sperm from stage 1 SHALL come to the egg in gold, with "Let it in." The arc SHALL only nudge it back, at most 3 times, and it SHALL always return, burrow and enter by itself. Exactly one sperm SHALL enter in stage 2: the player's. No input SHALL take it into the egg. As it comes in and works its way through the shell, a caption SHALL say that Izumo1 meets Juno, and it SHALL be done by the time the sperm enters.
 
 #### Scenario: It always gets in
 - **WHEN** the player holds the arc on the gold sperm the whole time
@@ -245,18 +267,22 @@ Only a press made after the seal prompt SHALL count toward the seal. A thumb or 
 - **CHECK** `qa/first-breath/input.e2e.mjs`, `qa/first-breath/stage-egg.test.mjs`
 
 ### Requirement: Fertilization needs no input
-After the seal, fusion SHALL play for 5 s with input ignored: the egg takes in the sperm's contents, and the two nuclei draw close and touch but stay apart. No push, drill or hold mechanic SHALL take the sperm into the egg. Captions SHALL keep the real order: Izumo1 meets Juno as the sperm enters, the shell changes at the seal, and the nuclei touch at fusion.
+After the seal, fusion SHALL play for 5 s with input ignored: the egg takes in the sperm's contents, and the two nuclei draw close and touch but stay apart. No push, drill or hold mechanic SHALL take the sperm into the egg.
 
 #### Scenario: Fusion needs no input
 - **WHEN** the seal ends
 - **THEN** fusion plays for 5 s with input ignored, and the prompt shows no gesture
 - **CHECK** `qa/first-breath/stage-egg.test.mjs`
 
+### Requirement: Stage 2 captions keep the real order
+Captions SHALL keep the real order: Izumo1 meets Juno as the sperm comes in and enters, and after the seal no other sperm can get through. The stage has no room to show more facts whole, so the wave, the shell changing and the nuclei touching but staying apart SHALL be listed in "What was real" with the stage 2 facts.
+
 #### Scenario: The steps in order
-- **WHEN** stage 2 runs from the entry to the end of fusion
-- **THEN** captions name, in order, Izumo1 meeting Juno, the wave and the shell changing, no other sperm getting through, and the two nuclei touching but staying apart
-- **AND** each caption's label matches the HUD clock, "Week 2" until the nuclei touch
-- **CHECK** `qa/first-breath/stage-egg.test.mjs`
+- **WHEN** stage 2 runs in real time from the gold sperm coming in to the end of the stage, with the reference bot or the mid bot, in portrait, landscape or desktop
+- **THEN** captions name, in order, Izumo1 meeting Juno, shown whole before the sperm enters, and no other sperm getting through, shown whole after "Your shell seals." and before the stage ends
+- **AND** each caption's label matches the HUD clock, "Week 2"
+- **AND** the run result's "What was real" lists the wave, the shell changing, and the two nuclei touching but staying apart with the stage 2 facts
+- **CHECK** `qa/first-breath/stage-egg.test.mjs`, `qa/first-breath/pacing.test.mjs`, `qa/first-breath/facts.test.mjs`
 
 ### Requirement: Stage 3, The Embryo: first cells
 Stage 3 SHALL be named "The Embryo: first cells". It SHALL show the cell splitting into 2, 4, 8 and 16 cells on Days 1 to 4 after fertilization, each split on schedule, while the ball keeps its size. An approach ring SHALL close over 2 beats before each of the 12 tap targets. The hollow SHALL fill and the embryo SHALL hatch with hold-and-release targets released at a marked glow. No mash input SHALL be used.
@@ -382,6 +408,12 @@ Stage 6 SHALL turn the mother's heartbeat from felt to heard at week 15 and ask 
 - **WHEN** stage 6 runs with any input
 - **THEN** no phrase starts before gaDay 133, and the first phrase opens with "In one study, the first response to sound was to a low tone."
 - **CHECK** `qa/first-breath/stage-answer.test.mjs`
+
+#### Scenario: Stage 6 facts read between the hum lines
+- **WHEN** stage 6 runs in real time with the reference bot or the mid bot, in portrait, landscape or desktop
+- **THEN** "Week 16: {Carer} may first feel you move between about week 16 and week 24." shows as the clock reaches week 16 in the beat moment, and it and the facts that open phrases 1, 2 and 4 each show whole, coming back after each hum line and "{Carer} feels you." until they have had their reading time
+- **AND** "By week 21, you can hear voices outside the womb." and "You can get hiccups by about week 19." are listed in "What was real"
+- **CHECK** `qa/first-breath/pacing.test.mjs`, `qa/first-breath/stage-answer.test.mjs`
 
 #### Scenario: Sound off
 - **GIVEN** the sound muted

@@ -26,7 +26,7 @@
 // - The title is the section #title already in root; the others are made here, as section.screen[data-screen].
 // - current is the name on screen, or null. New [data-switch] buttons are wired with window.GameSwitch.wire().
 import { say, fill, ordinal, minSec, CARERS } from "../core/text.js";
-import { byId, label as factLabel, shown as shownFacts } from "../core/facts.js";
+import { FACTS as ALL_FACTS, byId, label as factLabel, shown as shownFacts } from "../core/facts.js";
 import { median } from "../core/judge.js";
 import { SAVE_KEY, parse } from "../core/save.js";
 import { STAGES, ENDING } from "../core/stages/index.js";
@@ -47,6 +47,7 @@ const btn = (act, text, { id = null, arg = null, cls = "btn" } = {}) =>
 const fmt = (n) => (Number.isFinite(n) ? Math.round(n).toLocaleString("en-US") : "0");
 const metaOf = (id) => (id === ENDING.meta.id ? ENDING.meta : (STAGES.find((m) => m.meta.id === id) || { meta: null }).meta);
 const okFact = (f) => !!f && f.checked === true && (f.access === "R" || f.access === "A");
+const FRAMES = ["swim.frame", "egg.frame"];       // the two game-framing lines, after the stage 2 facts
 
 // Small cut-paper icons for the gestures and the feel families.
 const SVG = (inner) => `<svg class="ico" viewBox="0 0 24 24" aria-hidden="true">${inner}</svg>`;
@@ -307,12 +308,23 @@ export function createScreens(root, { act = () => {}, settings = null } = {}) {
       const marks = [];
       if (d.marks && d.marks.assist) marks.push(say("mark.assist"));
       if (d.marks && d.marks.oneButton) marks.push(say("mark.oneButton"));
-      // "What was real": the facts shown this run, swim.frame and egg.frame after the stage 2 facts, end.apgar last
-      const ids = (d.facts || []).filter((id) => { const f = byId(id); return okFact(f) && f.where !== "result"; });
-      let at = -1;
-      ids.forEach((id, i) => { const f = byId(id); if (f.stage === "swim" || f.stage === "egg") at = i; });
-      const frames = ["swim.frame", "egg.frame"].filter((id) => okFact(byId(id)) && (practice ? practice === byId(id).stage : true));
-      const real = [...ids.slice(0, at + 1), ...frames, ...ids.slice(at + 1)];
+      // "What was real": stage by stage, by gaDay, the facts shown this run and the played stages'
+      // "What was real" facts (where "result": those the stage had no room to show whole, design.md 12);
+      // swim.frame and egg.frame after the stage 2 facts, end.apgar last
+      const shownIds = new Set((d.facts || []).filter((id) => { const f = byId(id); return okFact(f) && f.where !== "result"; }));
+      const played = new Set([...stages.map((x) => x.id), ...(practice ? [practice] : []), ...[...shownIds].map((id) => byId(id).stage)]);
+      const frames = FRAMES.filter((id) => okFact(byId(id)) && (practice ? practice === byId(id).stage : true));
+      const framesAfter = played.has("egg") ? "egg" : "swim";
+      const real = [];
+      for (const sid of [...STAGES.map((m) => m.meta.id), ENDING.meta.id]) {
+        if (played.has(sid)) {
+          // by gaDay, in the table's order on a tie, so the labels run forward
+          const own = ALL_FACTS.filter((f) => f.stage === sid && okFact(f) && !FRAMES.includes(f.id) && f.id !== "end.apgar"
+            && (shownIds.has(f.id) || f.where === "result"));
+          for (const f of own.map((x, i) => [x, i]).sort((a, b) => a[0].gaDay - b[0].gaDay || a[1] - b[1])) real.push(f[0].id);
+        }
+        if (sid === framesAfter) real.push(...frames);
+      }
       if (okFact(byId("end.apgar")) && (!practice || practice === "ending" || stages.length)) real.push("end.apgar");
       const realHtml = real.map((id) => factP(id, { links: true })).join("");
       const best = save.best && save.best.done ? `<p class="best">${esc(say("result.best"))} <b>${esc(fmt(save.best.score))}</b> · ${esc(minSec(save.best.ms))}</p>` : "";

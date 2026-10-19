@@ -123,7 +123,7 @@ for (const { id } of JSON.parse(read("higgsfield/arcade-key-art.json")).art) {
   const b = fs.existsSync(f) ? fs.readFileSync(f) : Buffer.alloc(0);
   check(b.length > 0 && b.length < 100 * 1024 && b.toString("latin1", 0, 4) === "RIFF" && b.toString("latin1", 8, 12) === "WEBP", `arcade/key/${id}.webp is a WebP under 100 KB (${(b.length / 1024).toFixed(1)} KB)`);
 }
-/* ---------------- First Breath's machine (openspec/changes/add-first-breath, design.md 10) ---------------- */
+/* ---------------- First Breath's machine (openspec/changes/archive/2026-10-19-add-first-breath, design.md 10) ---------------- */
 {
   const articleOf = (id) => (html.match(new RegExp(`<article class="cab ${id}"[\\s\\S]*?</article>`)) || [""])[0];
   const fb = articleOf("first-breath"), aotl = articleOf("ahead-of-the-light");
@@ -604,7 +604,7 @@ if (chromium) {
   }
 
   await relaunch();
-  /* ----- First Breath (openspec/changes/add-first-breath, task 4.4b): the last machine of Action at the sizes AGENTS.md names ----- */
+  /* ----- First Breath (openspec/changes/archive/2026-10-19-add-first-breath, task 4.4b): the last machine of Action at the sizes AGENTS.md names ----- */
   const ACTION = ["olympus", "crimson", "tidebreak", "moonwell", "primordia", "river-rush", "ahead-of-the-light", "light-years-home", "first-breath"];
   // the other groups as they stood before First Breath was added: adding it leaves them alone
   const OTHERS = {

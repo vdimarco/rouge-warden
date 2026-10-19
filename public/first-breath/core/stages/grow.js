@@ -93,9 +93,9 @@ const CAPTIONS = Object.freeze({
   beat9: [[0, "grow.peak"]],
   beat10: [[0, "grow.fetus"]],
   beat11: [[0, "grow.w11"]],
-  move11: [[0, "grow.w11kick"]],
-  beat12: [[0, "grow.w12"], [3, "grow.flow"]],
-  move12: [[0, "grow.never"]],
+  beat12: [[0, "grow.w12"]],
+  // grow.w11kick, grow.flow and grow.never have no room to show whole in real time: "What was real" facts on the
+  // result (design.md 6.5, 12)
 });
 const MILESTONES = Object.freeze({ beat10: "fetus" });
 
@@ -230,12 +230,20 @@ function enter(st, i) {
   if (!KIND[i].beat) subgoal(st, "move" + KIND[i].week, "grow.sub.move" + KIND[i].week);
 }
 
+// "Your body makes the move by itself." shows once a stage: said for every move a still player leaves, it kept a
+// waiting fact back until the 12 s rule dropped it (grow.w11)
+function autoLine(st) {
+  if (st.autoSaid) return null;
+  st.autoSaid = true;
+  return "grow.sub.auto";
+}
+
 function play(st, i, how, at) {
   const mv = st.moves[i];
   if (!mv || mv.played) return;
   mv.played = { how, t0: at };
   const w = KIND[i].week;
-  doneBy(st, "move" + w, how, how === "you" ? "grow.sub.done" + w : "grow.sub.auto");
+  doneBy(st, "move" + w, how, how === "you" ? "grow.sub.done" + w : autoLine(st));
   emit(st, "sfx", { id: "move", at, pitch: 0, gain: how === "you" ? 0.6 : 0.4 });
   if (how === "you") {
     const add = TUNE.score.moves / 6;
@@ -266,7 +274,7 @@ function finish(st, how) {
     if (!mv || mv.played || st.subgoals["move" + KIND[i].week] !== "shown") continue;
     mv.played = { how: "auto", t0: st.t };
     st.final[i] = true;
-    doneBy(st, "move" + KIND[i].week, "auto", "grow.sub.auto");
+    doneBy(st, "move" + KIND[i].week, "auto", autoLine(st));
   }
   for (const r of feed(st.track, NO_PRESS, st.t + 3600)) judged(st, r, st.t);
   st.done = true;

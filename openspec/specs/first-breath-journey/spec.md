@@ -1,4 +1,9 @@
-## ADDED Requirements
+# first-breath-journey Specification
+
+## Purpose
+The run through First Breath from the title to the result: the eight stages and the ending in order, pause and resume, practice, the score and the save.
+
+## Requirements
 
 ### Requirement: Play starts the first stage at once
 The title SHALL start the audio and stage 1 (The Race) in the same tap, click or key press on Play (`#play`), with no card or screen between them. The prompt "Drag to swim." SHALL show by 0.5 s after Play, and steering SHALL respond by 0.5 s.
@@ -236,7 +241,7 @@ The run result SHALL show "Hello.", the run total and time, a grade chip for eac
 
 #### Scenario: What was real
 - **WHEN** the player scrolls to "What was real"
-- **THEN** each fact shown in the run is listed once with its label and a working link
+- **THEN** each fact shown in the run, and each "What was real" fact of the stages played, is listed once with its label and a working link
 - **CHECK** `qa/first-breath/facts.test.mjs`
 
 ### Requirement: Pause

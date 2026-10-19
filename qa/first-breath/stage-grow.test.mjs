@@ -367,7 +367,7 @@ await check("the pools turn red (wavy rim, the linked colour, her pulse) only fr
   }
 });
 
-await check("week 10: milestone fetus once with the fetus line at gaDay 70; week 12: grow.w12, grow.flow, grow.never; captions on their weeks", () => {
+await check("week 10: milestone fetus once with the fetus line at gaDay 70; week 12: grow.w12; captions on their weeks", () => {
   const capFacts = FACTS.filter((f) => f.where === "caption");
   for (const r of [IDEAL[0], IDLE[0], BOTS[0.7][1]]) {
     const ms = named(r.evs, "milestone");
@@ -383,7 +383,9 @@ await check("week 10: milestone fetus once with the fetus line at gaDay 70; week
       const i = r.evs.indexOf(c);
       assert.ok(r.evs[i - 1].name === "fact" && r.evs[i - 1].id === c.id, `${c.id}: a fact event goes with it`);
     }
-    for (const id of ["grow.w12", "grow.flow", "grow.never"]) assert.ok(caps.find((c) => c.id === id).ga >= 84, id);
+    assert.ok(caps.find((c) => c.id === "grow.w12").ga >= 84, "grow.w12");
+    // grow.w11kick, grow.flow and grow.never have no room to show whole (design.md 12): "What was real" facts
+    for (const id of ["grow.w11kick", "grow.flow", "grow.never"]) assert.ok(!caps.some((c) => c.id === id), `${id} is not a caption`);
   }
 });
 
@@ -624,7 +626,8 @@ await check("facts: the 15.2 rows, allow-listed sources, access R or A, checked,
     assert.ok(f.src.length && f.src.every((k) => SOURCES[k]), `${f.id}: ${f.src}`);
     assert.ok(f.access === "R" || f.access === "A", f.id);
     assert.equal(f.checked, true);
-    assert.ok(["card", "caption", "overlay"].includes(f.where), f.id);
+    assert.equal(f.where, ["grow.w11kick", "grow.flow", "grow.never"].includes(f.id) ? "result"
+      : ["card", "caption", "overlay"].includes(f.where) ? f.where : "card, caption or overlay", f.id);
     assert.ok(!/^(Week|Day)\b/.test(f.text), f.id);
     for (const c of Object.keys(CARERS)) {
       const text = fill(f.text, {}, { carer: c });

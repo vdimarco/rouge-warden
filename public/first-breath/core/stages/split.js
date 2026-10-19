@@ -394,7 +394,7 @@ function captions(st) {
     ["split.small", splitT(st, 1) + 0.5],           // just after the first split: Day 2
     ["split.carried", B(st, 11) + 0.4],             // later on Day 2
     ["split.morula", splitT(st, 4) + 0.05],         // the ball of 16 cells, still Day 4
-    ["split.inner", B(st, SPLIT_END + 5)],          // the hollow nearly full: Day 5
+    // split.inner (Day 5) has no room to show whole before the stage ends: a "What was real" fact (design.md 6.3, 12)
   ];
 }
 

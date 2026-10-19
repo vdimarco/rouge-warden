@@ -8,7 +8,9 @@
 // - each fact is at most 20 words and each sentence at most 16, with every carer word; no em dash;
 // - a size comparison names the NHS ("a plum, the NHS says" or "The NHS compares this to") and cites an NHS page;
 //   cells (stages 1 to 3) get no object comparison; the trimester cards say "about";
-// - swim.frame, egg.frame and end.apgar are run result facts, and the run result screen names them;
+// - swim.frame, egg.frame and end.apgar are run result facts, and the run result screen names them; the facts a stage
+//   has no room to show whole in real time (design.md 12, qa/first-breath/pacing.test.mjs) are result facts too, and
+//   the run result's "What was real" lists each played stage's;
 // - every fact id the stages, the ending, the run and the screens name resolves: a scan of the code's string
 //   literals, and the fact events of every stage played by the bot at skills 1, 0.7, 0.5 and 0 (each such event names
 //   a shown caption fact of its own stage); every caption fact is shown by some bot run, and every card and overlay
@@ -150,7 +152,13 @@ check("swim.frame, egg.frame and end.apgar are shown run result facts, and the r
     assert.equal(f.where, "result", `${id}: where`);
     assert.ok(screens.includes(`"${id}"`), `ui/screens.js names ${id}`);
   }
-  assert.deepEqual(ALL.filter((f) => f.where === "result").map((f) => f.id).sort(), ["egg.frame", "end.apgar", "swim.frame"]);
+  // the facts with no room to show whole in their stage (design.md 12): "What was real" lists them with their stage
+  const more = ALL.filter((f) => f.where === "result" && !["egg.frame", "end.apgar", "swim.frame"].includes(f.id)).map((f) => f.id);
+  assert.deepEqual(more.sort(), ["answer.hic", "answer.outside", "egg.cilia", "egg.day", "egg.place",
+    "egg.pronuclei", "egg.seal", "egg.signal", "egg.size", "egg.stick", "egg.wave", "end.fluid", "end.seconds", "grow.flow", "grow.never",
+    "grow.w11kick", "root.buds", "root.glands", "root.grows", "root.size", "root.tube", "split.inner", "swim.few",
+    "swim.hyper", "swim.ready", "swim.walls", "swim.warm"]);
+  assert.ok(screens.includes('f.where === "result"'), "the run result lists the played stages' result facts");
 });
 
 // ---- every fact id the code names

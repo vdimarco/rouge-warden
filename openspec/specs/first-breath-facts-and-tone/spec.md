@@ -1,4 +1,9 @@
-## ADDED Requirements
+# first-breath-facts-and-tone Specification
+
+## Purpose
+The facts First Breath shows about life before birth: each has a checked source, plain words and a calm tone, and each shows whole at its moment or on the run result.
+
+## Requirements
 
 ### Requirement: Every fact is sourced and checked
 Every fact shown in the game SHALL be one entry with an id, a stage, a gaDay (and a gaEnd for a span), its text, one or more source keys from an allow-list built from the research in this change, and an access tag of R (the page was read) or A (the abstract was read). A fact with only search-result access SHALL NOT ship. A fact marked `checked: false`, such as the WHO weights until the 2017 and 2021 corrections are reviewed, SHALL NOT be shown.
@@ -145,7 +150,7 @@ The score, the grades, the cabinet line and the run result SHALL NOT be named af
 - **CHECK** `qa/first-breath/text.test.mjs`
 
 ### Requirement: The Sources screen
-The Sources screen SHALL list every fact in the game with its clock label and its source links. The run result's "What was real" SHALL list every fact shown in that run in the same way.
+The Sources screen SHALL list every fact in the game with its clock label and its source links. The run result's "What was real" SHALL list every fact shown in that run in the same way, and with them each played stage's "What was real" facts: those the stage has no room to show whole in real time.
 
 #### Scenario: Open Sources
 - **WHEN** the player opens Sources from the title

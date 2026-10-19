@@ -1,5 +1,5 @@
 // First Breath: the source allow-list (design.md 15.1, 15.3). A fact's `src` keys must be keys of SOURCES; each entry
-// is { name, url } for the Sources screen and "What was real". Built from openspec/changes/add-first-breath/research/
+// is { name, url } for the Sources screen and "What was real". Built from openspec/changes/archive/2026-10-19-add-first-breath/research/
 // research-biology.md section 12 and the URLs written inline beside its facts, plus the sources named in design.md
 // 15.3. Pure data.
 //

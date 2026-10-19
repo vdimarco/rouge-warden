@@ -539,7 +539,7 @@ First Breath (`/first-breath/`) is a baby's journey to birth, seen from the baby
 - **Facts.** Each stage shows short facts, each with its week or day. Each fact has a source, and Sources on the title lists them all. The run result says what was real and what is the game's.
 - **Your best** run stays in this browser, and the machine shows it (BEST 61,240). With no finished run, the machine shows RACE · GUARD · CRY.
 
-The game is pure code in `core/` that node tests and bots play headless. A Canvas 2D renderer in `render/` draws it as paper, and its low tier keeps the paper look on a slow phone. The sound is made in code in `ui/sound.js`. The plan, the facts table and the sources are in `openspec/changes/add-first-breath/`.
+The game is pure code in `core/` that node tests and bots play headless. A Canvas 2D renderer in `render/` draws it as paper, and its low tier keeps the paper look on a slow phone. The sound is made in code in `ui/sound.js`. The plan, the facts table and the sources are in `openspec/changes/archive/2026-10-19-add-first-breath/`.
 
 ## The lab
 

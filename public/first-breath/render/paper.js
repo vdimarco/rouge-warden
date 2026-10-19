@@ -1,5 +1,5 @@
 // First Breath: the paper kit (design.md 13.1, 14.1, 14.2). An ES-module port of the reference helpers in
-// openspec/changes/add-first-breath/research/paper-cut/kit.src.js: hand-cut edges, the soft shadow from widening
+// openspec/changes/archive/2026-10-19-add-first-breath/research/paper-cut/kit.src.js: hand-cut edges, the soft shadow from widening
 // clipped strokes, the paper sheet (lit edge, flat colour, pale cut core, grain), the sticker's margin and keyline,
 // the grain tile, and bitmap blits. Node imports it for paper.test.mjs: nothing here touches the DOM at load time;
 // the grain tile takes a canvas factory, and paths use the global Path2D.

@@ -6,8 +6,7 @@
 //   0.0  white       White. The warm room fades in from the white over 1.5 s. Her heart is silent (the one gap, 5.1).
 //   1.5  breathe     "Breathe." (live hold, optional). Her heart comes back soft and far. A fresh press starts the
 //                    inhale (your glow fills); its release, at least 0.4 s in (it lets go by itself at 2.5 s), gives
-//                    a soft first cry. With no press the breath comes by itself 3.0 s after the prompt (4.5 s), with
-//                    the caption end.seconds.
+//                    a soft first cry. With no press the breath comes by itself 3.0 s after the prompt (4.5 s).
 //   cry  breaths     Two more breaths come by themselves at about 6 to 9 s, a little uneven. Your glow warms.
 //   ~9   skin        Skin-to-skin: a big warm oval rises under you in a circle of cream light. Her heart comes close
 //                    and clear: "[{Carer}'s heartbeat, clear now]", "You know this heartbeat."
@@ -28,7 +27,9 @@
 //   else null, and then the host fills {time} from run.ms (which stops counting when the ending starts).
 // - Sound: sfx events heartFar (gain 0.25, −12 dB) at 1.5 s and heartClose (gain 1) at skin-to-skin; inhale, cry and
 //   breath one-shots; one song event { notes, lit, clear: true, noteS } at the song.
-// - end.apgar is a "result" fact: the run result shows it; the ending emits no event for it.
+// - end.apgar, end.fluid and end.seconds are "result" facts: the run result shows them; the ending emits no event for them. Its
+//   lines (the breaths, her heartbeat, the song, the run time) leave room for three facts to show whole in real time
+//   (design.md 6.9, 12): end.breath, end.skin and end.voice. (end.seconds, said after a breath that came by itself, cut end.voice short.)
 import { DT } from "./clock.js";
 import { makeBeats } from "./beat.js";
 import { emit } from "./events.js";
@@ -148,7 +149,6 @@ function inhale(st, by) {
     schedule(st, t + TUNE.maxHoldS, "letGo");
   } else {
     doneBy(st, "breath", "auto", "ending.capBreath");
-    emit(st, "fact", { id: "end.seconds", where: "caption" });
     schedule(st, t + TUNE.autoInhaleS, "letGo");
   }
 }
@@ -175,7 +175,6 @@ function cry(st) {
   schedule(st, b2, "caption", "ending.capBreathing");
   schedule(st, e2, "exhale");
   schedule(st, b3, "breath");
-  schedule(st, b3, "fact", "end.fluid");
   schedule(st, e3, "exhale");
   schedule(st, Math.max(TUNE.skinAt, e3 + TUNE.skinAfterBreathS), "skinStart");
 }

@@ -21,8 +21,12 @@
 // - On the auto burst at beat 8, a beat 8 target still open is counted as missed at once, so the opening ends on beat
 //   8 for every input (by 8.9 s). A release graded Off, or a free one before the target, does not seal; you press
 //   again. A release after the target has passed seals with no Flourish (seal grade "miss").
-// - The seal facts are spread out so no two captions land together: egg.wave as the wave starts (fusion start),
-//   egg.seal when it meets on the far side (1.2 s), egg.block once the others drift off (2.5 s).
+// - Fact pacing (design.md 12): each caption fact has a quiet spot to show whole. egg.fimbriae (sweep) shows once the
+//   guard's first line has gone; one fact on each of waves 1 to 3 (egg.zona, egg.corona, egg.choice) follows it;
+//   egg.fuse goes with "Let it in." and reads while your sperm comes in, so it is done as it enters; egg.block goes at
+//   the seal and shows after "Your shell seals.". The stage has no room for its other facts (egg.cilia, egg.signal,
+//   egg.size, egg.day, egg.stick, egg.wave, egg.seal, egg.pronuclei, egg.place): they are "What was real" facts on
+//   the result (where "result").
 // - probe() reports a rival drifting off after the seal as "loose" (16.9 has no other state for it).
 import { DT, mmPerShortAxis } from "../clock.js";
 import { makeBeats } from "../beat.js";
@@ -260,7 +264,6 @@ function startMoment(st, i, t) {
       TUNE.waveFacts.forEach((fid, k) => later(st, t + W.at[k], "guard", "fact", { id: fid, where: "caption" }));
       break;
     case "enter":
-      fact(st, "egg.fuse", t);
       break;
     case "seal":
       laySeal(st, t);
@@ -268,13 +271,10 @@ function startMoment(st, i, t) {
       break;
     case "fusion":
       st.fusionAt = t;
-      fact(st, "egg.wave", t);
-      later(st, t + FU.sealFactS, "fusion", "fact", { id: "egg.seal", where: "caption" });
-      later(st, t + FU.blockFactS, "fusion", "fact", { id: "egg.block", where: "caption" });
+      fact(st, "egg.block", t);           // after "Your shell seals.", in the 5 s before the stage ends
       sfx(st, "egg.fifth", t, 1, 0.8);
       break;
     case "outro":
-      fact(st, "egg.place", t);
       break;
   }
 }
@@ -316,7 +316,6 @@ function fertilize(st, t) {
   if (st.fertilized) return;
   st.fertilized = true;
   emit(st, "milestone", { id: "fertilized", t });
-  fact(st, "egg.pronuclei", t);
 }
 
 // ---- the opening: the follicle taps and the burst ----
@@ -514,7 +513,6 @@ function moveGold(st, g, dt, now, live) {
         g.r = SK.r;
         g.state = "stuck";
         emit(st, "stick", { id: "gold", angle: g.theta, gold: true, wave: null, t: now });
-        fact(st, "egg.stick", now);
       }
       break;
     case "stuck":
@@ -566,7 +564,9 @@ function spawnGold(st, t) {
   G.gold = { id: "gold", state: "in", theta, r: W.ring, born: t, p: 0, nudges: 0, prev: "in", r0: 0, nk: 0, back: false, x: 0, y: 0 };
   setPos(G.gold);
   emit(st, "goldIn", { angle: theta, t });
-  fact(st, "egg.day", t);
+  // Izumo1 meets Juno (egg.fuse) as your sperm comes in and works its way through: after "Let it in.", it reads
+  // while your sperm swims in and burrows, and is done as it enters, before the seal lines come
+  fact(st, "egg.fuse", t);
   at(st, t, () => subgoal(st, "letIn", "egg.letIn"));
 }
 

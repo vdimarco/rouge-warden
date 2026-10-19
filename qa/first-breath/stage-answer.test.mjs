@@ -436,7 +436,8 @@ const sentences = (s) => s.split(/(?<=[.!?])\s+/).filter(Boolean);
 await check("facts: the 6.6 ids with 15.2 sources from the allow-list, R or A, checked, short, labels that match the clock", () => {
   assert.deepEqual(FACTS.map((f) => f.id), ["answer.card", "answer.tri", "answer.hear", "answer.respond", "answer.w20",
     "answer.feel", "answer.outside", "answer.low", "answer.hic", "answer.jump", "answer.eyes"]);
-  const where = { card: ["answer.card", "answer.tri"], overlay: ["answer.eyes"] };
+  // answer.outside and answer.hic have no room to show whole in the stage (design.md 6.6, 12): "What was real" facts
+  const where = { card: ["answer.card", "answer.tri"], overlay: ["answer.eyes"], result: ["answer.outside", "answer.hic"] };
   for (const f of FACTS) {
     assert.equal(f.stage, "answer");
     assert.equal(f.checked, true);
