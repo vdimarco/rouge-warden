@@ -1,0 +1,92 @@
+// Offline UE 5.x API stub: GameFramework/GameModeBase.h
+#pragma once
+#include "GameFramework/Info.h"
+#include "GameFramework/PlayerController.h"
+class AController;
+class AGameSession;
+class AGameStateBase;
+class AHUD;
+class APawn;
+class APlayerController;
+class APlayerState;
+class ASpectatorPawn;
+class AServerStatReplicator;
+class UNetConnection;
+class UPlayer;
+struct FUniqueNetIdRepl;
+class AGameModeBase : public AInfo
+{
+    UESTUB_UCLASS_BODY(AGameModeBase, AInfo)
+    AGameModeBase(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
+    FString OptionsString;
+    TSubclassOf<AGameSession> GameSessionClass;
+    TSubclassOf<AGameStateBase> GameStateClass;
+    TSubclassOf<APlayerController> PlayerControllerClass;
+    TSubclassOf<APlayerState> PlayerStateClass;
+    TSubclassOf<AHUD> HUDClass;
+    TSubclassOf<APawn> DefaultPawnClass;
+    TSubclassOf<ASpectatorPawn> SpectatorClass;
+    TSubclassOf<APlayerController> ReplaySpectatorPlayerControllerClass;
+    TSubclassOf<AServerStatReplicator> ServerStatReplicatorClass;
+    TObjectPtr<AGameSession> GameSession;
+    TObjectPtr<AGameStateBase> GameState;
+    FText DefaultPlayerName;
+    uint32 bUseSeamlessTravel : 1;
+    uint32 bStartPlayersAsSpectators : 1;
+    uint32 bPauseable : 1;
+    template <class T> T* GetGameState() const { return Cast<T>(GameState); }
+    virtual void InitGame(const FString& MapName, const FString& Options, FString& ErrorMessage);
+    virtual void InitGameState();
+    virtual void StartPlay();
+    virtual bool HasMatchStarted() const;
+    virtual bool HasMatchEnded() const;
+    virtual void PreLogin(const FString& Options, const FString& Address, const FUniqueNetIdRepl& UniqueId, FString& ErrorMessage);
+    virtual APlayerController* Login(UPlayer* NewPlayer, ENetRole InRemoteRole, const FString& Portal, const FString& Options, const FUniqueNetIdRepl& UniqueId, FString& ErrorMessage);
+    virtual void PostLogin(APlayerController* NewPlayer);
+    virtual void Logout(AController* Exiting);
+    virtual void GenericPlayerInitialization(AController* C);
+    virtual void RestartPlayer(AController* NewPlayer);
+    virtual void RestartPlayerAtPlayerStart(AController* NewPlayer, AActor* StartSpot);
+    virtual void RestartPlayerAtTransform(AController* NewPlayer, const FTransform& SpawnTransform);
+    virtual void FinishRestartPlayer(AController* NewPlayer, const FRotator& StartRotation);
+    virtual void FailedToRestartPlayer(AController* NewPlayer);
+    virtual void SetPlayerDefaults(APawn* PlayerPawn);
+    AActor* ChoosePlayerStart(AController* Player);
+    virtual AActor* ChoosePlayerStart_Implementation(AController* Player);
+    AActor* FindPlayerStart(AController* Player, const FString& IncomingName = TEXT(""));
+    virtual AActor* FindPlayerStart_Implementation(AController* Player, const FString& IncomingName);
+    AActor* K2_FindPlayerStart(AController* Player, const FString& IncomingName = TEXT(""));
+    bool PlayerCanRestart(APlayerController* Player);
+    virtual bool PlayerCanRestart_Implementation(APlayerController* Player);
+    bool ShouldSpawnAtStartSpot(AController* Player);
+    virtual bool ShouldSpawnAtStartSpot_Implementation(AController* Player);
+    APawn* SpawnDefaultPawnFor(AController* NewPlayer, AActor* StartSpot);
+    virtual APawn* SpawnDefaultPawnFor_Implementation(AController* NewPlayer, AActor* StartSpot);
+    APawn* SpawnDefaultPawnAtTransform(AController* NewPlayer, const FTransform& SpawnTransform);
+    virtual APawn* SpawnDefaultPawnAtTransform_Implementation(AController* NewPlayer, const FTransform& SpawnTransform);
+    UClass* GetDefaultPawnClassForController(AController* InController);
+    virtual UClass* GetDefaultPawnClassForController_Implementation(AController* InController);
+    void HandleStartingNewPlayer(APlayerController* NewPlayer);
+    virtual void HandleStartingNewPlayer_Implementation(APlayerController* NewPlayer);
+    void InitStartSpot(AActor* StartSpot, AController* NewPlayer);
+    virtual void InitStartSpot_Implementation(AActor* StartSpot, AController* NewPlayer);
+    bool MustSpectate(APlayerController* NewPlayerController) const;
+    virtual bool MustSpectate_Implementation(APlayerController* NewPlayerController) const;
+    bool CanSpectate(APlayerController* Viewer, APlayerState* ViewTarget);
+    virtual bool CanSpectate_Implementation(APlayerController* Viewer, APlayerState* ViewTarget);
+    virtual int32 GetNumPlayers();
+    virtual int32 GetNumSpectators();
+    virtual void ResetLevel();
+    virtual void ReturnToMainMenuHost();
+    virtual bool AllowCheats(APlayerController* P);
+    virtual bool IsPaused() const;
+    virtual bool SetPause(APlayerController* PC, FCanUnpause CanUnpauseDelegate = FCanUnpause());
+    virtual bool ClearPause();
+    virtual void ChangeName(AController* Controller, const FString& NewName, bool bNameChange);
+    virtual void SwapPlayerControllers(APlayerController* OldPC, APlayerController* NewPC);
+    virtual void StartToLeaveMap();
+    virtual void ProcessServerTravel(const FString& URL, bool bAbsolute = false);
+    virtual FString InitNewPlayer(APlayerController* NewPlayerController, const FUniqueNetIdRepl& UniqueId, const FString& Options, const FString& Portal = TEXT(""));
+    virtual void PreInitializeComponents() override;
+    virtual void Reset() override;
+};

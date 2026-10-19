@@ -19,6 +19,7 @@ class UBoxComponent;
 class UCameraComponent;
 class UMaterialInterface;
 class USpringArmComponent;
+class UStaticMesh;
 class UStaticMeshComponent;
 class UTextRenderComponent;
 class UHierarchicalInstancedStaticMeshComponent;
