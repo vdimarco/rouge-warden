@@ -18,15 +18,21 @@ The game SHALL play one casual game to 11, win by 2. The Neighbour SHALL serve e
 - AND from 10-10 the named server changes every point
 
 ### Requirement: Swing bands, timing, aim and spin
-A swing SHALL start over 300 deg/s. The peak in the next 150 ms SHALL choose the shot: 300 to 600 deg/s pushes at 6 m/s, above 600 through 1100 drives at 11 m/s, and above 1100 smashes at 17 m/s only when the ball is at least 15 cm above the net. Contact inside +/-40 ms SHALL add 15% speed and no aim pull. Contact out to +/-120 ms SHALL pull the shot up to 25 degrees off the aim line at the window edge. Gamma of +/-30 degrees SHALL map to +/-0.7 m. Beta of +/-20 degrees SHALL map from 0.3 m past the net to the far baseline. Wrist roll over 200 deg/s SHALL add topspin or backspin. Level 3 topspin SHALL reach the table 15% sooner than the same shot with no spin. A swing SHALL cool down for 350 ms. A swing while the ball is going away SHALL be ignored.
+A swing SHALL start over 300 deg/s. The peak in the next 150 ms SHALL choose the shot: 300 to 600 deg/s pushes at 6 m/s, above 600 through 1100 drives at 11 m/s, and above 1100 smashes at 17 m/s whether the ball is high or low. Contact inside +/-40 ms SHALL add 15% speed and no aim pull. Contact out to +/-120 ms SHALL pull the shot up to 25 degrees off the aim line at the window edge, about 6 degrees at 58 ms. A hit inside that window SHALL stay in play: the shot lofts until it clears the net, and a landing within 8 cm is nudged in. Gamma of +/-30 degrees SHALL map to +/-0.7 m. Beta of +/-20 degrees SHALL map from 0.3 m past the net to the far baseline. Wrist roll over 200 deg/s SHALL add topspin or backspin. Level 3 topspin SHALL reach the table 15% sooner than the same shot with no spin. A swing SHALL cool down for 350 ms. A swing while the ball is going away SHALL be ignored.
 
 #### Scenario: Bands and the window
 - WHEN the peak is 300, 600, 601, 1100 or 1101 deg/s
-- THEN the shot is push, push, drive, drive, or smash on a high ball
-- AND a low ball over 1100 deg/s stays a drive
-- AND offsets of 0 and 40 ms are perfect
+- THEN the shot is push, push, drive, drive, or smash
+- AND a low ball over 1100 deg/s is a smash
+- AND offsets of 0 and 40 ms are perfect, with no aim pull
+- AND an offset of 58 ms early pulls about 6 degrees
 - AND offsets of -120 and 120 ms pull 25 degrees
 - AND an offset of 121 ms does not hit the ball
+
+#### Scenario: Early contact stays in play
+- WHEN a drive meets the ball 58 ms early
+- THEN the ball clears the net and the first bounce is on the table
+- AND the Neighbour has not scored from that contact
 
 #### Scenario: Eight centimetres long
 - WHEN a casual shot lands 7.9 cm past the end line
@@ -34,7 +40,7 @@ A swing SHALL start over 300 deg/s. The peak in the next 150 ms SHALL choose the
 - AND a landing 8.1 cm past the end line is out
 
 ### Requirement: Opening point inside five seconds
-The first point SHALL be a 5 m/s high ball with no spin. Any swing over 300 deg/s inside +/-200 ms SHALL return it as a perfect drive and win the point. From the start of play, that chance SHALL arrive in under five seconds.
+The first point SHALL be a 5 m/s high ball with no spin. On the phone, a swing SHALL count only above 300 deg/s. On the desktop, a swing SHALL count only at 1.2 window widths per second or faster. A counted swing inside +/-200 ms SHALL return the feed as a perfect drive and win the point. A speed of 0, a slower swing on that input, or a swing outside that window, SHALL NOT win that point. From the start of play, that chance SHALL arrive in under five seconds.
 
 #### Scenario: Swing at the feed
 - WHEN the player swings at 400 deg/s on the opening feed

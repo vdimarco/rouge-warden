@@ -1,0 +1,1492 @@
+{
+ "layer": "Soul",
+ "generator": "Scripts/plateau_replica.py",
+ "frame": "x east, y north, cm, z up",
+ "batches": [
+  {
+   "file": "Soul_patch_dark_XM001_YM001.obj",
+   "mesh": "SM_Soul_patch_dark_XM001_YM001",
+   "material": "patch_dark",
+   "collision": "none",
+   "triangles": 208,
+   "faces": 104,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    -43848.7,
+    -46395.51,
+    7.05,
+    -358.19,
+    -192.02,
+    7.06
+   ],
+   "sha256": "79859548c955f0ea73663890734fd0ef8424fd7f8bf6612a65f1bde37af2f281"
+  },
+  {
+   "file": "Soul_patch_dark_XM001_YP000.obj",
+   "mesh": "SM_Soul_patch_dark_XM001_YP000",
+   "material": "patch_dark",
+   "collision": "none",
+   "triangles": 214,
+   "faces": 107,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    -43912.94,
+    414.12,
+    7.05,
+    -483.72,
+    69358.96,
+    7.06
+   ],
+   "sha256": "8b4ffcca0bd5a6ed04ed2c1e5e90723cacb408e2d26f7f730d548b0442997cc0"
+  },
+  {
+   "file": "Soul_patch_dark_XP000_YM001.obj",
+   "mesh": "SM_Soul_patch_dark_XP000_YM001",
+   "material": "patch_dark",
+   "collision": "none",
+   "triangles": 168,
+   "faces": 84,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    -109.88,
+    -46502.46,
+    7.05,
+    54570.6,
+    -404.38,
+    7.06
+   ],
+   "sha256": "743562e459eb82a79d5f78505a63546e6578da7d259ef4529c890ee3f1678b3a"
+  },
+  {
+   "file": "Soul_patch_dark_XP000_YP000.obj",
+   "mesh": "SM_Soul_patch_dark_XP000_YP000",
+   "material": "patch_dark",
+   "collision": "none",
+   "triangles": 206,
+   "faces": 103,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    66.4,
+    1214.84,
+    7.05,
+    54718.05,
+    69100.75,
+    7.06
+   ],
+   "sha256": "0dd0ef3c7385298a8e134f2dcd6b4fbe40ce789b7acfad2f2ebff07d67795e1c"
+  },
+  {
+   "file": "Soul_patch_light_XM001_YM001.obj",
+   "mesh": "SM_Soul_patch_light_XM001_YM001",
+   "material": "patch_light",
+   "collision": "none",
+   "triangles": 360,
+   "faces": 105,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    -42590.24,
+    -46409.36,
+    7.05,
+    -545.47,
+    -517.1,
+    7.07
+   ],
+   "sha256": "13e51d96c88dcadf8af6427b33262e8f2edf1df412a7d7292abcdcb92a82f425"
+  },
+  {
+   "file": "Soul_patch_light_XM001_YP000.obj",
+   "mesh": "SM_Soul_patch_light_XM001_YP000",
+   "material": "patch_light",
+   "collision": "none",
+   "triangles": 288,
+   "faces": 96,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    -43384.28,
+    666.73,
+    7.05,
+    56.66,
+    68984.3,
+    7.07
+   ],
+   "sha256": "a32ebed61b9143f41c31c843defd9d8b1ba2824169c85b9a17df8ab00d958973"
+  },
+  {
+   "file": "Soul_patch_light_XP000_YM001.obj",
+   "mesh": "SM_Soul_patch_light_XP000_YM001",
+   "material": "patch_light",
+   "collision": "none",
+   "triangles": 234,
+   "faces": 75,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    -19.26,
+    -46361.75,
+    7.05,
+    55442.88,
+    20.38,
+    7.07
+   ],
+   "sha256": "3905fbf33fe78361e99508ab89f1317eb98d0287a932a63298967d26d91aa3aa"
+  },
+  {
+   "file": "Soul_patch_light_XP000_YP000.obj",
+   "mesh": "SM_Soul_patch_light_XP000_YP000",
+   "material": "patch_light",
+   "collision": "none",
+   "triangles": 300,
+   "faces": 87,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    127.44,
+    1545.5,
+    7.05,
+    55024.91,
+    68652.69,
+    7.07
+   ],
+   "sha256": "70694d6baff57ce21d6fb4c9a3297199914adc6064134a6aeca8c79ab78e27e7"
+  },
+  {
+   "file": "Soul_crack_seal_XM001_YM001.obj",
+   "mesh": "SM_Soul_crack_seal_XM001_YM001",
+   "material": "crack_seal",
+   "collision": "none",
+   "triangles": 4744,
+   "faces": 2372,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    -43611.66,
+    -46344.46,
+    7.08,
+    -15.22,
+    8.31,
+    7.08
+   ],
+   "sha256": "97ae02b47178fb2daeef61abbe2f900379b27137e6db11c4fb5fc73adefd4db3"
+  },
+  {
+   "file": "Soul_crack_seal_XM001_YP000.obj",
+   "mesh": "SM_Soul_crack_seal_XM001_YP000",
+   "material": "crack_seal",
+   "collision": "none",
+   "triangles": 3890,
+   "faces": 1945,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    -43653.14,
+    5.99,
+    7.08,
+    -2.6,
+    69092.6,
+    7.08
+   ],
+   "sha256": "06fc84d963601b8f5ec6166d191db74b4df37ec82e2501b3c321683ce714dd1c"
+  },
+  {
+   "file": "Soul_crack_seal_XP000_YM001.obj",
+   "mesh": "SM_Soul_crack_seal_XP000_YM001",
+   "material": "crack_seal",
+   "collision": "none",
+   "triangles": 3534,
+   "faces": 1767,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    117.52,
+    -46609.69,
+    7.08,
+    55235.0,
+    -1101.5,
+    7.08
+   ],
+   "sha256": "62f64a70e25e14ca3bc80f1e0757cfdb8a4f9b9f094d5e66e125c867df8d3c08"
+  },
+  {
+   "file": "Soul_crack_seal_XP000_YP000.obj",
+   "mesh": "SM_Soul_crack_seal_XP000_YP000",
+   "material": "crack_seal",
+   "collision": "none",
+   "triangles": 3108,
+   "faces": 1554,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    -5.0,
+    590.19,
+    7.08,
+    55356.33,
+    68536.0,
+    7.08
+   ],
+   "sha256": "08bc7017e4d0ec2923467b8785666a8469b686f16dcb84c28b2752f963f997ef"
+  },
+  {
+   "file": "Soul_pothole_XM001_YM001.obj",
+   "mesh": "SM_Soul_pothole_XM001_YM001",
+   "material": "pothole",
+   "collision": "none",
+   "triangles": 200,
+   "faces": 25,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    -42019.04,
+    -44419.25,
+    7.09,
+    -3430.55,
+    -2802.16,
+    7.09
+   ],
+   "sha256": "9cae6f37e184dccf81a583d055666449b5c568fb0ac22bfcc3ce7638d40addde"
+  },
+  {
+   "file": "Soul_pothole_XM001_YP000.obj",
+   "mesh": "SM_Soul_pothole_XM001_YP000",
+   "material": "pothole",
+   "collision": "none",
+   "triangles": 128,
+   "faces": 16,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    -42251.08,
+    10233.12,
+    7.09,
+    -3938.85,
+    66333.06,
+    7.09
+   ],
+   "sha256": "d8103501e9cdc47fe4ef66d4daa64d8e41520a0dc2a0601d78bc5819fdac6994"
+  },
+  {
+   "file": "Soul_pothole_XP000_YM001.obj",
+   "mesh": "SM_Soul_pothole_XP000_YM001",
+   "material": "pothole",
+   "collision": "none",
+   "triangles": 112,
+   "faces": 14,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    -3.4,
+    -46349.42,
+    7.09,
+    55089.9,
+    -16714.32,
+    7.09
+   ],
+   "sha256": "c50bcc99ead1571cccce0b0ea695e8a369c8b331c1eb91dd0d2145ee8c5f0a2e"
+  },
+  {
+   "file": "Soul_pothole_XP000_YP000.obj",
+   "mesh": "SM_Soul_pothole_XP000_YP000",
+   "material": "pothole",
+   "collision": "none",
+   "triangles": 168,
+   "faces": 21,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    934.23,
+    1972.02,
+    7.09,
+    54152.89,
+    68319.79,
+    7.09
+   ],
+   "sha256": "5020da3865b6eacdd237aafb727b334c74743949252bb503399380584e5cc8c6"
+  },
+  {
+   "file": "Soul_leaf_gold_XM001_YM001.obj",
+   "mesh": "SM_Soul_leaf_gold_XM001_YM001",
+   "material": "leaf_gold",
+   "collision": "none",
+   "triangles": 3390,
+   "faces": 1663,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    -44236.09,
+    -47011.47,
+    7.23,
+    28.23,
+    2.87,
+    18.4
+   ],
+   "sha256": "58788cdb9d39a01c3c5792e57aeac925146f546533f9f901d733435740f152c2"
+  },
+  {
+   "file": "Soul_leaf_gold_XM001_YP000.obj",
+   "mesh": "SM_Soul_leaf_gold_XM001_YP000",
+   "material": "leaf_gold",
+   "collision": "none",
+   "triangles": 4236,
+   "faces": 2034,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    -44105.1,
+    -23.35,
+    7.23,
+    22.61,
+    69290.22,
+    18.4
+   ],
+   "sha256": "a434dcb825001f9a2504b1246f8629a8fc29a1336d668b0d68757ff487dd5828"
+  },
+  {
+   "file": "Soul_leaf_gold_XP000_YM001.obj",
+   "mesh": "SM_Soul_leaf_gold_XP000_YM001",
+   "material": "leaf_gold",
+   "collision": "none",
+   "triangles": 2130,
+   "faces": 1037,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    -3.34,
+    -47016.52,
+    7.23,
+    54598.95,
+    -107.91,
+    18.4
+   ],
+   "sha256": "1b4186c18f41147180db55196722a05e5ddcf66a94745d25e5b1e7863139a9ef"
+  },
+  {
+   "file": "Soul_leaf_gold_XP000_YP000.obj",
+   "mesh": "SM_Soul_leaf_gold_XP000_YP000",
+   "material": "leaf_gold",
+   "collision": "none",
+   "triangles": 3166,
+   "faces": 1513,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    -29.0,
+    45.31,
+    7.23,
+    55668.07,
+    68943.22,
+    18.4
+   ],
+   "sha256": "a017db546229c35b21ef3e0000c34254e960453fc31de4e64161059b035e275a"
+  },
+  {
+   "file": "Soul_leaf_rust_XM001_YM001.obj",
+   "mesh": "SM_Soul_leaf_rust_XM001_YM001",
+   "material": "leaf_rust",
+   "collision": "none",
+   "triangles": 1450,
+   "faces": 677,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    -43376.71,
+    -45349.19,
+    7.23,
+    -543.97,
+    -422.66,
+    18.4
+   ],
+   "sha256": "9fd4dab625b53df38e6a19979cd3450216a6b9fc1ea0552514f29d9a98aceb35"
+  },
+  {
+   "file": "Soul_leaf_rust_XM001_YP000.obj",
+   "mesh": "SM_Soul_leaf_rust_XM001_YP000",
+   "material": "leaf_rust",
+   "collision": "none",
+   "triangles": 2366,
+   "faces": 1117,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    -44140.12,
+    214.21,
+    7.23,
+    -39.76,
+    69261.89,
+    18.4
+   ],
+   "sha256": "af58fe89ab5bbf867725e1a122a279c43f231829401514ad313bea27d0c2574d"
+  },
+  {
+   "file": "Soul_leaf_rust_XP000_YM001.obj",
+   "mesh": "SM_Soul_leaf_rust_XP000_YM001",
+   "material": "leaf_rust",
+   "collision": "none",
+   "triangles": 1410,
+   "faces": 665,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    193.34,
+    -47026.72,
+    7.23,
+    54619.52,
+    -979.27,
+    18.4
+   ],
+   "sha256": "a56d4495ad9b8019163ff1da7765ae110f31d22962f35bf56a39303b37bc6b49"
+  },
+  {
+   "file": "Soul_leaf_rust_XP000_YP000.obj",
+   "mesh": "SM_Soul_leaf_rust_XP000_YP000",
+   "material": "leaf_rust",
+   "collision": "none",
+   "triangles": 1970,
+   "faces": 957,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    14.13,
+    702.71,
+    7.23,
+    55643.87,
+    68715.37,
+    18.4
+   ],
+   "sha256": "d7b8421616b28d986c982a10faf7912ed7d0a664f610a24122c561de525768ca"
+  },
+  {
+   "file": "Soul_leaf_brown_XM001_YM001.obj",
+   "mesh": "SM_Soul_leaf_brown_XM001_YM001",
+   "material": "leaf_brown",
+   "collision": "none",
+   "triangles": 1998,
+   "faces": 963,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    -43901.3,
+    -46687.66,
+    7.23,
+    -799.19,
+    -100.89,
+    18.4
+   ],
+   "sha256": "5831485648aa748c4d4bfb4abeb6ef78bd9c779c0744e57f788b7755e62517ef"
+  },
+  {
+   "file": "Soul_leaf_brown_XM001_YP000.obj",
+   "mesh": "SM_Soul_leaf_brown_XM001_YP000",
+   "material": "leaf_brown",
+   "collision": "none",
+   "triangles": 2450,
+   "faces": 1127,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    -43933.29,
+    1607.74,
+    7.23,
+    -164.85,
+    69466.24,
+    18.4
+   ],
+   "sha256": "98c1f76f381cf12803bddb98c6fc9fb1df84c01b564112fa46f02c63a30bfba9"
+  },
+  {
+   "file": "Soul_leaf_brown_XP000_YM001.obj",
+   "mesh": "SM_Soul_leaf_brown_XP000_YM001",
+   "material": "leaf_brown",
+   "collision": "none",
+   "triangles": 1426,
+   "faces": 677,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    104.86,
+    -46934.2,
+    7.23,
+    55299.79,
+    -964.07,
+    18.4
+   ],
+   "sha256": "e9ef887afcb44f15740f224bdc85c32814bd623078cfc65de1beac7cbd5c682b"
+  },
+  {
+   "file": "Soul_leaf_brown_XP000_YP000.obj",
+   "mesh": "SM_Soul_leaf_brown_XP000_YP000",
+   "material": "leaf_brown",
+   "collision": "none",
+   "triangles": 1984,
+   "faces": 936,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    229.69,
+    1207.2,
+    7.23,
+    55604.94,
+    69174.27,
+    18.4
+   ],
+   "sha256": "433183aa68d126a8bca75659f5ee05b573fb154864fb627b814a48224f820a90"
+  },
+  {
+   "file": "Soul_weed_XM001_YM001.obj",
+   "mesh": "SM_Soul_weed_XM001_YM001",
+   "material": "weed",
+   "collision": "none",
+   "triangles": 21732,
+   "faces": 21732,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    -43826.91,
+    -47334.82,
+    0.0,
+    -14.33,
+    -35.78,
+    43.99
+   ],
+   "sha256": "4d9a0ab2e7880ba85a542d5fc75e3a5f089578473db239d02e227e97d22429b4"
+  },
+  {
+   "file": "Soul_weed_XM001_YP000.obj",
+   "mesh": "SM_Soul_weed_XM001_YP000",
+   "material": "weed",
+   "collision": "none",
+   "triangles": 15981,
+   "faces": 15981,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    -44109.07,
+    7.19,
+    0.0,
+    -94.29,
+    69169.3,
+    43.99
+   ],
+   "sha256": "02610dc2545caf9a4617b3d5275390696da4a250e1c6cd6ab3138fd70d46de27"
+  },
+  {
+   "file": "Soul_weed_XP000_YM001.obj",
+   "mesh": "SM_Soul_weed_XP000_YM001",
+   "material": "weed",
+   "collision": "none",
+   "triangles": 10974,
+   "faces": 10974,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    46.45,
+    -46927.7,
+    0.0,
+    55560.8,
+    -208.1,
+    43.92
+   ],
+   "sha256": "8bafc4f844f3a88f323e2663ab27d779fff1fb328be79040e749621151535880"
+  },
+  {
+   "file": "Soul_weed_XP000_YP000.obj",
+   "mesh": "SM_Soul_weed_XP000_YP000",
+   "material": "weed",
+   "collision": "none",
+   "triangles": 11148,
+   "faces": 11148,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    32.19,
+    794.21,
+    0.0,
+    55497.2,
+    68899.55,
+    43.99
+   ],
+   "sha256": "6749d48c43f71a86ed12a40b1966ea1b76c344dd3d07a192d1c647c059e06828"
+  },
+  {
+   "file": "Soul_rust_XM001_YM001.obj",
+   "mesh": "SM_Soul_rust_XM001_YM001",
+   "material": "rust",
+   "collision": "none",
+   "triangles": 1342,
+   "faces": 671,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    -43498.08,
+    -45706.82,
+    40.2,
+    -126.07,
+    -645.72,
+    429.69
+   ],
+   "sha256": "d15cdfa24e5f9b3d8dd7c32670017f8e0ce52088e86296b625669bc3aa74f5f8"
+  },
+  {
+   "file": "Soul_rust_XM001_YP000.obj",
+   "mesh": "SM_Soul_rust_XM001_YP000",
+   "material": "rust",
+   "collision": "none",
+   "triangles": 1224,
+   "faces": 612,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    -43305.17,
+    14.37,
+    40.0,
+    -72.46,
+    68743.15,
+    429.22
+   ],
+   "sha256": "d67ca9935d577215e0981938444a3c674676aea6baadbcb58fa70844b0112187"
+  },
+  {
+   "file": "Soul_rust_XP000_YM001.obj",
+   "mesh": "SM_Soul_rust_XP000_YM001",
+   "material": "rust",
+   "collision": "none",
+   "triangles": 696,
+   "faces": 348,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    251.13,
+    -46593.61,
+    40.42,
+    55024.44,
+    -257.15,
+    429.85
+   ],
+   "sha256": "0faa03343aad78a894ec1c25fc2f95f22096f2df3b803970b1b55f210f58f05e"
+  },
+  {
+   "file": "Soul_rust_XP000_YP000.obj",
+   "mesh": "SM_Soul_rust_XP000_YP000",
+   "material": "rust",
+   "collision": "none",
+   "triangles": 800,
+   "faces": 400,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    5098.75,
+    6792.8,
+    40.07,
+    54800.1,
+    68617.26,
+    429.7
+   ],
+   "sha256": "27aa20bee976d5ad4cd6ff2d905483559c31711e3f7cab047ea66e433be05d47"
+  },
+  {
+   "file": "Soul_wire_XM001_YM001.obj",
+   "mesh": "SM_Soul_wire_XM001_YM001",
+   "material": "wire",
+   "collision": "none",
+   "triangles": 4272,
+   "faces": 2136,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    -42377.55,
+    -46887.68,
+    452.52,
+    41.24,
+    -827.84,
+    1002.95
+   ],
+   "sha256": "4efba194dc758a7e8d057dafd7ec384d58eec3edf0f9bafac291501ccdfb562a"
+  },
+  {
+   "file": "Soul_wire_XM001_YP000.obj",
+   "mesh": "SM_Soul_wire_XM001_YP000",
+   "material": "wire",
+   "collision": "none",
+   "triangles": 10176,
+   "faces": 5088,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    -43400.06,
+    6690.71,
+    457.75,
+    -2346.64,
+    68684.22,
+    1002.95
+   ],
+   "sha256": "d64be93fb3d69285ab942850915d30ca6a88193ff5b0e6d2f5991fd4d4ce4bd9"
+  },
+  {
+   "file": "Soul_wire_XP000_YM001.obj",
+   "mesh": "SM_Soul_wire_XP000_YM001",
+   "material": "wire",
+   "collision": "none",
+   "triangles": 672,
+   "faces": 336,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    -76.85,
+    -44445.66,
+    517.7,
+    25931.99,
+    -23838.45,
+    1002.95
+   ],
+   "sha256": "f084c02dae4ef8243c3f7cca1b636a46f80b2390bcd59f0de1ed376e22a8c549"
+  },
+  {
+   "file": "Soul_wire_XP000_YP000.obj",
+   "mesh": "SM_Soul_wire_XP000_YP000",
+   "material": "wire",
+   "collision": "none",
+   "triangles": 6336,
+   "faces": 3168,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    9690.85,
+    21564.41,
+    458.12,
+    55056.87,
+    68963.5,
+    1002.95
+   ],
+   "sha256": "fa156562401543ce062958fb8c4acc9e698cbbc2b7b145656865cbc22d05afdf"
+  },
+  {
+   "file": "Soul_cloth_a_XM001_YM001.obj",
+   "mesh": "SM_Soul_cloth_a_XM001_YM001",
+   "material": "cloth_a",
+   "collision": "none",
+   "triangles": 52,
+   "faces": 26,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    -42316.27,
+    -46289.34,
+    443.54,
+    -10040.67,
+    -2656.51,
+    753.11
+   ],
+   "sha256": "7fc3655792ee0a8c94e50f382b7a7adc753aca2c5336f24da42e437b56f5d583"
+  },
+  {
+   "file": "Soul_cloth_a_XM001_YP000.obj",
+   "mesh": "SM_Soul_cloth_a_XM001_YP000",
+   "material": "cloth_a",
+   "collision": "none",
+   "triangles": 128,
+   "faces": 64,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    -42489.01,
+    20109.84,
+    435.16,
+    -2778.3,
+    66575.22,
+    781.73
+   ],
+   "sha256": "2f6800cd1e04b848d6d554f816ab0e56529e2ff09f9e06301d9ae7e1a3f7b50c"
+  },
+  {
+   "file": "Soul_cloth_a_XP000_YM001.obj",
+   "mesh": "SM_Soul_cloth_a_XP000_YM001",
+   "material": "cloth_a",
+   "collision": "none",
+   "triangles": 12,
+   "faces": 6,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    15855.16,
+    -44253.71,
+    551.92,
+    25661.58,
+    -34270.33,
+    755.25
+   ],
+   "sha256": "86f42b56f26339540565e52cb0048366ada1e4f4471b67f9211cae62a0118efe"
+  },
+  {
+   "file": "Soul_cloth_a_XP000_YP000.obj",
+   "mesh": "SM_Soul_cloth_a_XP000_YP000",
+   "material": "cloth_a",
+   "collision": "none",
+   "triangles": 96,
+   "faces": 48,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    14351.76,
+    43245.86,
+    489.67,
+    54331.01,
+    68383.23,
+    780.72
+   ],
+   "sha256": "76c98eec076ad2fa2d7cd428e1d869e61c0f5edb0ca64e39e95b4c45b865b631"
+  },
+  {
+   "file": "Soul_cloth_b_XM001_YM001.obj",
+   "mesh": "SM_Soul_cloth_b_XM001_YM001",
+   "material": "cloth_b",
+   "collision": "none",
+   "triangles": 28,
+   "faces": 14,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    -42287.64,
+    -45335.2,
+    480.87,
+    -10078.53,
+    -11289.69,
+    769.21
+   ],
+   "sha256": "454910402a01ab6a88757461f82c228e41452fc796a080324bcc5b983dd0010d"
+  },
+  {
+   "file": "Soul_cloth_b_XM001_YP000.obj",
+   "mesh": "SM_Soul_cloth_b_XM001_YP000",
+   "material": "cloth_b",
+   "collision": "none",
+   "triangles": 60,
+   "faces": 30,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    -42434.27,
+    6939.32,
+    493.37,
+    -2562.59,
+    62113.57,
+    750.63
+   ],
+   "sha256": "8cce0e0e59fd6ddb72dc0273fd539f384020aed2b28656c142e35ab15128876d"
+  },
+  {
+   "file": "Soul_cloth_b_XP000_YP000.obj",
+   "mesh": "SM_Soul_cloth_b_XP000_YP000",
+   "material": "cloth_b",
+   "collision": "none",
+   "triangles": 84,
+   "faces": 42,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    14192.15,
+    43137.43,
+    436.75,
+    48415.53,
+    68615.62,
+    776.26
+   ],
+   "sha256": "1c572174709abb3b481b73938a9cd6c012dde872a4597a7d8875ea1eed275423"
+  },
+  {
+   "file": "Soul_cloth_c_XM001_YM001.obj",
+   "mesh": "SM_Soul_cloth_c_XM001_YM001",
+   "material": "cloth_c",
+   "collision": "none",
+   "triangles": 56,
+   "faces": 28,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    -42344.91,
+    -46530.2,
+    509.48,
+    -10002.8,
+    -8125.51,
+    779.6
+   ],
+   "sha256": "34ab537f3ae7faf1434cb6a0a87878998887b5845a184673f3a5af958e3b97af"
+  },
+  {
+   "file": "Soul_cloth_c_XM001_YP000.obj",
+   "mesh": "SM_Soul_cloth_c_XM001_YP000",
+   "material": "cloth_c",
+   "collision": "none",
+   "triangles": 56,
+   "faces": 28,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    -42063.65,
+    6794.0,
+    458.67,
+    -2616.52,
+    66528.31,
+    756.63
+   ],
+   "sha256": "bc4df64c0f80b8acb4d1229bba07949879873798517859eda4a9c98499d2119f"
+  },
+  {
+   "file": "Soul_cloth_c_XP000_YP000.obj",
+   "mesh": "SM_Soul_cloth_c_XP000_YP000",
+   "material": "cloth_c",
+   "collision": "none",
+   "triangles": 28,
+   "faces": 14,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    36944.41,
+    46394.19,
+    469.63,
+    54683.29,
+    59785.7,
+    745.04
+   ],
+   "sha256": "769f1d27a964433a76f3322efd8e618e3df8144bb33e7b27a4615dc16fc7ea13"
+  },
+  {
+   "file": "Soul_cloth_d_XM001_YM001.obj",
+   "mesh": "SM_Soul_cloth_d_XM001_YM001",
+   "material": "cloth_d",
+   "collision": "none",
+   "triangles": 48,
+   "faces": 24,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    -39543.33,
+    -46168.9,
+    444.64,
+    -10154.26,
+    -2601.77,
+    770.77
+   ],
+   "sha256": "136f7f9cfa75c1c0784a7acbc82d4d5bc6f9804dced06863ff6ecb9cd7489ad8"
+  },
+  {
+   "file": "Soul_cloth_d_XM001_YP000.obj",
+   "mesh": "SM_Soul_cloth_d_XM001_YP000",
+   "material": "cloth_d",
+   "collision": "none",
+   "triangles": 92,
+   "faces": 46,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    -42270.02,
+    6745.57,
+    428.32,
+    -2670.45,
+    68601.83,
+    782.29
+   ],
+   "sha256": "7aa48895d58efc782347ac4a722bc09fa91f71493deb8704faa9154db2f2d72f"
+  },
+  {
+   "file": "Soul_cloth_d_XP000_YM001.obj",
+   "mesh": "SM_Soul_cloth_d_XP000_YM001",
+   "material": "cloth_d",
+   "collision": "none",
+   "triangles": 8,
+   "faces": 4,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    15818.37,
+    -44163.36,
+    602.53,
+    25534.21,
+    -34331.23,
+    733.82
+   ],
+   "sha256": "7f2f579cd04f7c3ab27b5f3072dc786d1cf3da513facae0300b8d62cd0d1da52"
+  },
+  {
+   "file": "Soul_cloth_d_XP000_YP000.obj",
+   "mesh": "SM_Soul_cloth_d_XP000_YP000",
+   "material": "cloth_d",
+   "collision": "none",
+   "triangles": 44,
+   "faces": 22,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    14431.57,
+    42920.58,
+    485.74,
+    48208.9,
+    68499.42,
+    753.46
+   ],
+   "sha256": "461ac463b95ee6f9ab8d7c84b71718305485fec28a1dfa6199b1891b9b3cbe27"
+  },
+  {
+   "file": "Soul_chantier_dirt_XM001_YP000.obj",
+   "mesh": "SM_Soul_chantier_dirt_XM001_YP000",
+   "material": "chantier_dirt",
+   "collision": "none",
+   "triangles": 2,
+   "faces": 1,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    -15897.38,
+    51732.57,
+    7.25,
+    -14503.81,
+    52778.66,
+    7.25
+   ],
+   "sha256": "4fa469c6482107c88af0445789aa1649966bcc3f780468bf214d865b240ed77a"
+  },
+  {
+   "file": "Soul_steel_plate_XM001_YP000.obj",
+   "mesh": "SM_Soul_steel_plate_XM001_YP000",
+   "material": "steel_plate",
+   "collision": "none",
+   "triangles": 10,
+   "faces": 5,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    -15208.77,
+    52056.32,
+    7.15,
+    -14925.86,
+    52314.02,
+    9.65
+   ],
+   "sha256": "567c0e4ef1a19383f7de95e0c4e5f60f283d9471e463bcc5f375678b3320fcb0"
+  },
+  {
+   "file": "Soul_mural_1_XM001_YM001.obj",
+   "mesh": "SM_Soul_mural_1_XM001_YM001",
+   "material": "mural_1",
+   "collision": "none",
+   "triangles": 31,
+   "faces": 9,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    -23623.3,
+    -43726.66,
+    130.0,
+    -17633.92,
+    -24819.33,
+    870.0
+   ],
+   "sha256": "be97001a2d619d68e3dfa363050fccaeef56a2ff3cef6eb176550bd30701e704"
+  },
+  {
+   "file": "Soul_mural_1_XP000_YM001.obj",
+   "mesh": "SM_Soul_mural_1_XP000_YM001",
+   "material": "mural_1",
+   "collision": "none",
+   "triangles": 6,
+   "faces": 3,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    889.48,
+    -39688.37,
+    130.0,
+    28775.5,
+    -34183.84,
+    870.0
+   ],
+   "sha256": "2de8a18b298e8977d821dcf144d2ba515d78286c02ef325a0730289773f5ce68"
+  },
+  {
+   "file": "Soul_mural_1_XP000_YP000.obj",
+   "mesh": "SM_Soul_mural_1_XP000_YP000",
+   "material": "mural_1",
+   "collision": "none",
+   "triangles": 3,
+   "faces": 2,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    45376.56,
+    53479.53,
+    130.0,
+    45998.55,
+    54405.51,
+    870.0
+   ],
+   "sha256": "4f8f83f2af578114198eaf5489730529d6c6daf7f2bc2bdabb6b7c2ca84e9798"
+  },
+  {
+   "file": "Soul_mural_2_XM001_YM001.obj",
+   "mesh": "SM_Soul_mural_2_XM001_YM001",
+   "material": "mural_2",
+   "collision": "none",
+   "triangles": 20,
+   "faces": 12,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    -43518.0,
+    -44272.61,
+    130.0,
+    -22995.68,
+    -16757.54,
+    870.0
+   ],
+   "sha256": "2ca951093f1a9f05d54f20cc0fc7267515affecd7b92ab8db73e9f7d5a7475fa"
+  },
+  {
+   "file": "Soul_mural_2_XP000_YM001.obj",
+   "mesh": "SM_Soul_mural_2_XP000_YM001",
+   "material": "mural_2",
+   "collision": "none",
+   "triangles": 13,
+   "faces": 7,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    889.48,
+    -44793.65,
+    130.0,
+    53028.5,
+    -34183.84,
+    870.0
+   ],
+   "sha256": "b7cd698201bea5f1d6f39aea3df4f856d0837d87d587511eb3096e4d048dd54d"
+  },
+  {
+   "file": "Soul_mural_2_XP000_YP000.obj",
+   "mesh": "SM_Soul_mural_2_XP000_YP000",
+   "material": "mural_2",
+   "collision": "none",
+   "triangles": 8,
+   "faces": 5,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    19788.37,
+    53665.44,
+    130.0,
+    46134.18,
+    55825.47,
+    870.0
+   ],
+   "sha256": "bbf28d87ee9f0daf554eb182867c152fca099ec7a780b4f5144f4f995128b2e7"
+  },
+  {
+   "file": "Soul_mural_3_XM001_YM001.obj",
+   "mesh": "SM_Soul_mural_3_XM001_YM001",
+   "material": "mural_3",
+   "collision": "none",
+   "triangles": 40,
+   "faces": 5,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    -43328.85,
+    -44165.12,
+    130.0,
+    -17723.83,
+    -25017.05,
+    870.0
+   ],
+   "sha256": "4ef51da8d91b5c0c2818c52a0b9fafb6acf247ea37758bd24b2f9310d941321b"
+  },
+  {
+   "file": "Soul_mural_3_XP000_YM001.obj",
+   "mesh": "SM_Soul_mural_3_XP000_YM001",
+   "material": "mural_3",
+   "collision": "none",
+   "triangles": 24,
+   "faces": 5,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    889.48,
+    -39513.94,
+    130.0,
+    28526.66,
+    -34183.84,
+    870.0
+   ],
+   "sha256": "940365cb9325bcd910f9886c4ef4577c38b8c5d82467c34d79a607cf7e5f9a76"
+  },
+  {
+   "file": "Soul_mural_3_XP000_YP000.obj",
+   "mesh": "SM_Soul_mural_3_XP000_YP000",
+   "material": "mural_3",
+   "collision": "none",
+   "triangles": 3,
+   "faces": 2,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    19962.62,
+    55302.17,
+    199.3,
+    20572.63,
+    55709.44,
+    870.0
+   ],
+   "sha256": "1249536c3eeb260738f0b454ee10cc0de0631c9cd1995cfa848a64911d2df0b9"
+  },
+  {
+   "file": "Soul_mural_4_XM001_YM001.obj",
+   "mesh": "SM_Soul_mural_4_XM001_YM001",
+   "material": "mural_4",
+   "collision": "none",
+   "triangles": 16,
+   "faces": 8,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    -38748.47,
+    -26128.41,
+    130.0,
+    -22729.35,
+    -16478.33,
+    870.0
+   ],
+   "sha256": "633c537c0dba826e5c3183c8a367c3ed41b535a5de67323a6a2da0d4e631eeb2"
+  },
+  {
+   "file": "Soul_mural_4_XP000_YM001.obj",
+   "mesh": "SM_Soul_mural_4_XP000_YM001",
+   "material": "mural_4",
+   "collision": "none",
+   "triangles": 24,
+   "faces": 4,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    52495.6,
+    -44793.65,
+    130.0,
+    53028.5,
+    -43968.1,
+    730.94
+   ],
+   "sha256": "07e0e12254ede46526d1f7744a90efe10e2c285f332b1dcbaedc41994c5a5ecb"
+  },
+  {
+   "file": "Soul_mural_5_XM001_YM001.obj",
+   "mesh": "SM_Soul_mural_5_XM001_YM001",
+   "material": "mural_5",
+   "collision": "none",
+   "triangles": 31,
+   "faces": 8,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    -42882.56,
+    -44519.61,
+    130.0,
+    -38166.81,
+    -16478.33,
+    870.0
+   ],
+   "sha256": "4f365b9383cf87a99ab1d8fe9468669a35c412cd42ce9098fd788833d157968a"
+  },
+  {
+   "file": "Soul_mural_5_XP000_YM001.obj",
+   "mesh": "SM_Soul_mural_5_XP000_YM001",
+   "material": "mural_5",
+   "collision": "none",
+   "triangles": 38,
+   "faces": 14,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    28348.55,
+    -44793.65,
+    130.0,
+    53106.69,
+    -38913.65,
+    870.0
+   ],
+   "sha256": "d2dd33e767f3733d080eee845e644d71d00b4cf6d67894b2e3a763df12cfa6de"
+  },
+  {
+   "file": "Soul_mural_5_XP000_YP000.obj",
+   "mesh": "SM_Soul_mural_5_XP000_YP000",
+   "material": "mural_5",
+   "collision": "none",
+   "triangles": 43,
+   "faces": 6,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    19879.32,
+    53281.94,
+    130.0,
+    46074.5,
+    55764.19,
+    870.0
+   ],
+   "sha256": "ede0f417fbe6171737704e137453510b3f669d43636e35a259f42e41bee1be09"
+  },
+  {
+   "file": "Soul_mural_6_XM001_YM001.obj",
+   "mesh": "SM_Soul_mural_6_XM001_YM001",
+   "material": "mural_6",
+   "collision": "none",
+   "triangles": 14,
+   "faces": 8,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    -38748.47,
+    -43586.69,
+    130.0,
+    -17634.67,
+    -17019.15,
+    870.0
+   ],
+   "sha256": "0a5273268461c8aa3515de97987bb04d236d5eee47d17bff6f3f98432223e57b"
+  },
+  {
+   "file": "Soul_mural_6_XP000_YM001.obj",
+   "mesh": "SM_Soul_mural_6_XP000_YM001",
+   "material": "mural_6",
+   "collision": "none",
+   "triangles": 2,
+   "faces": 1,
+   "tile_cm": 1000000,
+   "bounds_cm": [
+    53028.5,
+    -43968.1,
+    363.78,
+    53106.69,
+    -43846.95,
+    870.0
+   ],
+   "sha256": "022b6dff6da97ab7ae3c28208c5aae12125cad4f6798b0009b4a7583f05f5d0b"
+  }
+ ],
+ "materials": {
+  "patch_dark": {
+   "base_color_srgb": "#2c2d31",
+   "roughness": 0.9,
+   "metallic": 0.0,
+   "batch_prefix": "Soul_patch_dark",
+   "collision": "none"
+  },
+  "patch_light": {
+   "base_color_srgb": "#5e5f62",
+   "roughness": 0.95,
+   "metallic": 0.0,
+   "batch_prefix": "Soul_patch_light",
+   "collision": "none"
+  },
+  "crack_seal": {
+   "base_color_srgb": "#151617",
+   "roughness": 0.35,
+   "metallic": 0.0,
+   "batch_prefix": "Soul_crack_seal",
+   "collision": "none"
+  },
+  "pothole": {
+   "base_color_srgb": "#1f1d1b",
+   "roughness": 0.3,
+   "metallic": 0.0,
+   "batch_prefix": "Soul_pothole",
+   "collision": "none"
+  },
+  "leaf_gold": {
+   "base_color_srgb": "#c9932c",
+   "roughness": 0.9,
+   "metallic": 0.0,
+   "batch_prefix": "Soul_leaf_gold",
+   "collision": "none"
+  },
+  "leaf_rust": {
+   "base_color_srgb": "#9a4422",
+   "roughness": 0.9,
+   "metallic": 0.0,
+   "batch_prefix": "Soul_leaf_rust",
+   "collision": "none"
+  },
+  "leaf_brown": {
+   "base_color_srgb": "#6b4a2b",
+   "roughness": 0.9,
+   "metallic": 0.0,
+   "batch_prefix": "Soul_leaf_brown",
+   "collision": "none"
+  },
+  "weed": {
+   "base_color_srgb": "#4f6b2f",
+   "roughness": 0.95,
+   "metallic": 0.0,
+   "batch_prefix": "Soul_weed",
+   "collision": "none"
+  },
+  "rust": {
+   "base_color_srgb": "#7a3e1d",
+   "roughness": 0.9,
+   "metallic": 0.0,
+   "batch_prefix": "Soul_rust",
+   "collision": "none"
+  },
+  "wire": {
+   "base_color_srgb": "#121212",
+   "roughness": 0.5,
+   "metallic": 0.3,
+   "batch_prefix": "Soul_wire",
+   "collision": "none"
+  },
+  "cloth_a": {
+   "base_color_srgb": "#e8e6df",
+   "roughness": 0.95,
+   "metallic": 0.0,
+   "batch_prefix": "Soul_cloth_a",
+   "collision": "none"
+  },
+  "cloth_b": {
+   "base_color_srgb": "#3d7a84",
+   "roughness": 0.95,
+   "metallic": 0.0,
+   "batch_prefix": "Soul_cloth_b",
+   "collision": "none"
+  },
+  "cloth_c": {
+   "base_color_srgb": "#c9a227",
+   "roughness": 0.95,
+   "metallic": 0.0,
+   "batch_prefix": "Soul_cloth_c",
+   "collision": "none"
+  },
+  "cloth_d": {
+   "base_color_srgb": "#a03a36",
+   "roughness": 0.95,
+   "metallic": 0.0,
+   "batch_prefix": "Soul_cloth_d",
+   "collision": "none"
+  },
+  "chantier_dirt": {
+   "base_color_srgb": "#6e5a43",
+   "roughness": 0.95,
+   "metallic": 0.0,
+   "batch_prefix": "Soul_chantier_dirt",
+   "collision": "none"
+  },
+  "steel_plate": {
+   "base_color_srgb": "#55595b",
+   "roughness": 0.45,
+   "metallic": 0.8,
+   "batch_prefix": "Soul_steel_plate",
+   "collision": "none"
+  },
+  "mural_1": {
+   "base_color_srgb": "#e4572e",
+   "roughness": 0.85,
+   "metallic": 0.0,
+   "batch_prefix": "Soul_mural_1",
+   "collision": "none"
+  },
+  "mural_2": {
+   "base_color_srgb": "#f3a712",
+   "roughness": 0.85,
+   "metallic": 0.0,
+   "batch_prefix": "Soul_mural_2",
+   "collision": "none"
+  },
+  "mural_3": {
+   "base_color_srgb": "#29335c",
+   "roughness": 0.85,
+   "metallic": 0.0,
+   "batch_prefix": "Soul_mural_3",
+   "collision": "none"
+  },
+  "mural_4": {
+   "base_color_srgb": "#669bbc",
+   "roughness": 0.85,
+   "metallic": 0.0,
+   "batch_prefix": "Soul_mural_4",
+   "collision": "none"
+  },
+  "mural_5": {
+   "base_color_srgb": "#f0ece2",
+   "roughness": 0.85,
+   "metallic": 0.0,
+   "batch_prefix": "Soul_mural_5",
+   "collision": "none"
+  },
+  "mural_6": {
+   "base_color_srgb": "#2a9d8f",
+   "roughness": 0.85,
+   "metallic": 0.0,
+   "batch_prefix": "Soul_mural_6",
+   "collision": "none"
+  }
+ },
+ "counts": {
+  "asphalt_patches": 639,
+  "trench_patches": 46,
+  "crack_lines": 1058,
+  "potholes": 76,
+  "gutter_leaf_drifts": 1293,
+  "pit_leaf_covers": 311,
+  "loose_leaves": 3146,
+  "weed_tufts": 6652,
+  "rust_streaks": 2031,
+  "murals": 9,
+  "chantier_zones": 1,
+  "utility_poles": 151,
+  "wire_spans": 79,
+  "laundry_lines": 52,
+  "curb_bins": 1427,
+  "locked_bikes": 213,
+  "flower_boxes": 221,
+  "ac_units": 0,
+  "chantier_street": "Rue Fabre",
+  "placements": 2032,
+  "batches": 72,
+  "triangles": 132311
+ },
+ "source_sha256": {
+  "Data/LaFontaine/osm.xml": "fe4410d45007a627bf6d9b9ddeeae329fa9cdd7492dfb5fa6beff851e7cf8f86",
+  "Data/LaFontaine/layout.json": "4238d6ed45d5fb890e0f8dbcb672de0803c6dc7079b0b6a86b386d82ebbb4250",
+  "Scripts/plateau_replica.py": "ea53868a6174ca6ecb2d66d34e34ccbadd8c88b4310bcd4080dd3345e9e0c2ca",
+  "Scripts/prepare_lafontaine.py": "e7b6e5f068a96ee7306b1fff247fa73158f5cf7c343dc5510ab8cce92ee3c924"
+ },
+ "attribution": "© OpenStreetMap contributors, ODbL 1.0; authored street details and original murals",
+ "placements": "placements.json",
+ "placements_sha256": "fe54ae567f550142a5d96c6b9b5e9a1751a15837acb7871c64005b0f5da4075c"
+}

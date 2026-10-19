@@ -6,6 +6,7 @@
 
 class UAnimSequence;
 class USkeletalMeshComponent;
+class UStaticMeshComponent;
 
 /** Background residents follow authored, collision-checked paths on the server. */
 UCLASS()
@@ -32,7 +33,32 @@ public:
     /** Shared by movement and its overshoot regression test. */
     static FVector StepTowards(const FVector& Position, const FVector& Target, float Speed, float DeltaSeconds);
 
+    // People: knockdown and flight (QuebecPeople.cpp). Server: tumble along Push (cm/s) from Cause, then run from it.
+    // False when already down. The server moves the root through the tumble; it replicates at 30 Hz like the patrol.
+    bool Knock(const FVector& Push, const FVector& Cause, float LieSeconds = 1.6f);
+    // Server: runs away from Source for Seconds, then resumes the patrol from wherever it stopped.
+    bool Flee(const FVector& Source, float Seconds);
+    bool IsKnockedDown() const;
+    FVector GetAimPoint() const;
+
 private:
+    friend class FQuebecPeoplePedestrianKnockTest;
+    UPROPERTY(VisibleAnywhere, ReplicatedUsing=OnRep_Knock) float KnockStartedAt = -1000.f;
+    UPROPERTY(VisibleAnywhere, Replicated) FVector KnockOrigin = FVector::ZeroVector;
+    UPROPERTY(VisibleAnywhere, Replicated) FVector KnockPush = FVector::ZeroVector;
+    UPROPERTY(VisibleAnywhere, Replicated) float KnockLieSeconds = 0.f;
+    UPROPERTY(VisibleAnywhere, Replicated) float KnockGround = 0.f;
+    UPROPERTY(VisibleAnywhere, ReplicatedUsing=OnRep_Fleeing) bool bFleeing = false;
+    UPROPERTY() TArray<TObjectPtr<UStaticMeshComponent>> DazedStars;
+    FQuat KnockFacing = FQuat::Identity;
+    FVector FleeSource = FVector::ZeroVector;
+    float FleeUntil = 0.f;
+    bool bTumbling = false;
+    // Every peer: dazed stars; server: the tumble and the flight. True while they replace the patrol.
+    bool TickStreetLife(float DeltaSeconds);
+    UFUNCTION() void OnRep_Knock();
+    UFUNCTION() void OnRep_Fleeing();
+
     int32 TargetIndex = 1;
     int32 Direction = 1;
     float PauseRemaining = 0.f;

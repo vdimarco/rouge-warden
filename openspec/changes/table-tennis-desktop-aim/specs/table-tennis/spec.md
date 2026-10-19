@@ -23,16 +23,17 @@ While the ball is coming in, the bat SHALL ease sideways onto the ball on its ow
 - AND the aim is past 15 degrees toward that side
 
 ### Requirement: A flick is window widths per second
-A flick SHALL be pointer speed over 60 ms, using coalesced pointermove samples, in window widths per second. Under 1.2 SHALL NOT swing. 1.2 through 2.3 SHALL push at 6 m/s. Above 2.3 through 4.3 SHALL drive at 11 m/s. Above 4.3 SHALL smash at 17 m/s when the ball is high enough, and drive otherwise. The same speed in window widths per second SHALL pick the same shot at 1280 and at 2560. A swing SHALL cool down for 350 ms. Contact inside ±40 ms SHALL be perfect, and contact out to ±120 ms SHALL still hit. A flick within ±200 ms of the opening ball SHALL win the point.
+A flick SHALL be pointer speed over 60 ms, using coalesced pointermove samples, in window widths per second. Under 1.2 SHALL NOT swing. 1.2 through 2.3 SHALL push at 6 m/s. Above 2.3 through 4.3 SHALL drive at 11 m/s. Above 4.3 SHALL smash at 17 m/s, high or low. The same speed in window widths per second SHALL pick the same shot at 1280 and at 2560. A swing SHALL cool down for 350 ms. Contact inside ±40 ms SHALL be perfect, with no aim pull. Contact out to ±120 ms SHALL still hit, pulling about 6 degrees at 58 ms and 25 degrees at the window edge, and that hit SHALL stay in play. On the phone, a swing SHALL count only above 300 deg/s rotation rate. On the desktop, a swing SHALL count only at 1.2 window widths per second or faster. A flick that counts, within ±200 ms of the opening ball, SHALL win the point. A speed of 0, or any slower input on that path, SHALL NOT win point 1. A miss SHALL lose that point or replay it.
 
 #### Scenario: A slow move never swings
-- WHEN the pointer moves at under 1.2 window widths per second
+- WHEN the pointer moves at 0.5, 1.0, or 1.19 window widths per second
 - THEN there is no swing at 1280 or at 2560
+- AND 1.2 window widths per second does swing
 
 #### Scenario: The bands match at both widths
 - WHEN the speed is 1.2, 2.3, 2.4, 4.3, or 4.4 window widths per second
-- THEN the shot is a push, a push, a drive, a drive, or a smash on a high ball
-- AND 4.4 on a low ball stays a drive
+- THEN the shot is a push, a push, a drive, a drive, or a smash
+- AND 4.4 on a low ball is a smash
 - AND each of those speeds picks the same shot at 1280 and at 2560
 
 #### Scenario: The opening flick wins
@@ -41,15 +42,48 @@ A flick SHALL be pointer speed over 60 ms, using coalesced pointermove samples, 
 - AND the count 3, 2, 1 happened before the serve
 - AND the page reports no console errors
 
-### Requirement: Flick bend sets spin
-A flick that bends at least 20 degrees upward SHALL be topspin. A flick that bends at least 20 degrees downward SHALL be backspin. A flatter flick SHALL add no spin.
+#### Scenario: A speed-0 miss does not take the hook
+- WHEN the opening feed is missed 383 ms early with no flick
+- THEN the score does not become 1 to 0
+- AND a flick of at least 1.2 window widths per second inside ±200 ms still wins that point
 
-#### Scenario: Up and down
-- WHEN a flick bends 20 degrees up, 10 degrees up, or 20 degrees down
-- THEN the spin is topspin, none, or backspin
+### Requirement: Flick curve sets spin
+Spin SHALL compare the stroke direction in the first 50 ms with the direction in the last 50 ms before peak speed. A bend of 20 degrees or more upward SHALL be topspin. The same bend downward SHALL be backspin. A straight diagonal flick of 20 degrees or more SHALL also count, upward as topspin and downward as backspin. A flatter bend and a flatter diagonal SHALL add no spin.
+
+#### Scenario: A bend and a straight diagonal
+- WHEN a flick's heading changes by 20 degrees up, 10 degrees up, or 20 degrees down, and separate straight flicks point 20 degrees up, 10 degrees up, and 20 degrees down
+- THEN the spin is topspin, none, backspin, topspin, none, and backspin
+
+### Requirement: Ink clears and stays light
+Each table splat SHALL fade to 0 and then be removed. A countdown SHALL wipe the table clean. Every splat SHALL be drawn on one shared layer, and that layer's opacity SHALL be set to 25% once, so overlap cannot rise above 25%. The slash SHALL be drawn after the bat and SHALL start at the bat face. A push SHALL be a thin stroke. A drive SHALL be a full slash. A smash SHALL be a wider slash in #B5472E. The slash SHALL fade over 250 ms. `__test.lastSlash` SHALL be the latest slash, and `__test.splatCount` SHALL be how many splat marks are still on the table.
+
+#### Scenario: A splat fades, then the countdown clears the table
+- WHEN a ball lands and that splat fades to 0
+- THEN the mark is removed
+- AND when the next countdown starts, no splat remains
+
+#### Scenario: Two marks overlap
+- WHEN two splats cover the same pixel on the shared layer
+- THEN that pixel is at 25% opacity, and no higher
+
+#### Scenario: Slash over the bat
+- WHEN the player hits a push, a drive, or a smash
+- THEN the slash starts at the bat face and is drawn after the bat
+- AND the push is a thin stroke, the drive is a full slash, and the smash is a wider slash in #B5472E
+- AND the slash fades over 250 ms
+- AND `__test.lastSlash.kind` names that shot
+- AND `__test.splatCount` is 0 once the ink has cleared
+
+### Requirement: A swing inside the window connects
+Any swing inside the ±120 ms window SHALL connect. A miss for reach inside that window is a bug. Desktop auto-track SHALL keep the bat within the 0.22 m side reach of the incoming ball.
+
+#### Scenario: Early and wide still meet
+- WHEN the swing is 9 ms early with the ball 0.20 m aside, and again 9 ms early with the ball 0.23 m aside, and again at 120 ms early
+- THEN each swing connects
+- AND auto-track stays inside the side reach when the ball jumps sideways
 
 ### Requirement: A browser without coarse touch is a desktop
-A page with no coarse pointer and no touch points SHALL show the desktop gate, including when the pointer is none and DeviceMotionEvent exists. A coarse pointer or any touch points SHALL keep the phone gate. A trusted mouse move while that phone gate is still up SHALL switch it to the desktop copy. A touch-generated move SHALL NOT switch it.
+A fine pointer SHALL select mouse mode, including when the browser also reports touch points. A page with no coarse pointer and no touch points SHALL show the desktop gate, including when the pointer is none and DeviceMotionEvent exists. A coarse pointer, or touch with no fine pointer, SHALL keep the phone gate. The first trusted mouse move SHALL switch a phone gate to mouse mode. A touch-generated move SHALL NOT switch it. After the gate click at 1280, the test state SHALL report inputMode mouse.
 
 #### Scenario: Headless pointer none
 - WHEN the page loads at 1280 wide with pointer none, no touch points, and DeviceMotionEvent
@@ -62,6 +96,10 @@ A page with no coarse pointer and no touch points SHALL show the desktop gate, i
 - THEN the gate button reads "Click to pick up your bat"
 - AND the desktop hint is visible
 - AND the phone lines are hidden
+
+#### Scenario: Fine pointer after start
+- WHEN a fine pointer starts the game at 1280
+- THEN the test state reports inputMode mouse
 
 ### Requirement: The phone gate stays
 A coarse phone SHALL keep the tilt gate and the phone instructions. The desktop hint SHALL stay hidden there.

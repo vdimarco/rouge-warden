@@ -16,6 +16,7 @@ import {
   spinFromRoll,
   spinTimeScale,
 } from './rules.js';
+import { POINTER } from './motion.js';
 
 const SUB = 8;
 
@@ -149,7 +150,7 @@ export function createMatch(opts = {}) {
   }
 
   function crossTime() {
-    // The bat's depth is the contact plane. Side reach is checked when the swing fires.
+    // The bat's depth is the contact plane. A swing inside the timing window connects.
     // During the serve ease-in the stored speed is the one the ball is settling toward,
     // so the clock does not jump as the float speeds up.
     const plane = bat.depth;
@@ -264,8 +265,26 @@ export function createMatch(opts = {}) {
     hookLive = false;
   }
 
+  function openingSwingCounts(cmd) {
+    // Desktop reports window widths per second. Phone reports rotation rate.
+    // A speed of 0, or anything under that path's line, is not a swing.
+    if (cmd.widthsPerSec != null) {
+      const widths = Number(cmd.widthsPerSec);
+      return Number.isFinite(widths) && widths + 1e-8 >= POINTER.push;
+    }
+    return (Number(cmd.degPerSec) || 0) > RULES.swingStart;
+  }
+
   function applyStrike(cmd, offsetMs) {
-    const hook = hookActive();
+    const onHookFeed = hookActive();
+    if (onHookFeed && !openingSwingCounts(cmd)) {
+      whiffed = true;
+      take('whoosh', { peak: cmd.degPerSec });
+      lastShot = { band: 'miss', speed: 0, kind: null, offsetMs, pullDeg: 0 };
+      return;
+    }
+    const withinHook = Math.abs(Number(offsetMs) || 0) <= RULES.hookWindowMs + 1e-9;
+    const hook = onHookFeed && withinHook;
     const timing = signedPull(offsetMs, cmd.dir || 'forehand', hook);
     if (timing.band === 'miss') {
       whiffed = true;
@@ -275,7 +294,9 @@ export function createMatch(opts = {}) {
     }
     let picked = shotFromPeak(cmd.degPerSec, ball.y);
     if (!picked.kind) {
+      whiffed = true;
       take('whoosh', { peak: cmd.degPerSec });
+      lastShot = { band: 'miss', speed: 0, kind: null, offsetMs, pullDeg: 0 };
       return;
     }
     let speed = picked.speed * timing.speedMul;
@@ -289,23 +310,8 @@ export function createMatch(opts = {}) {
       pullDeg = 0;
     }
     if ((Number(cmd.accel) || 0) > RULES.accelBoost) speed *= RULES.accelBoostMul;
-    const dxBat = Math.abs(ball.x - bat.x);
-    const dzBat = Math.abs(ball.z - bat.depth);
-    if (dxBat > RULES.reachX || dzBat > RULES.reachZ) {
-      whiffed = true;
-      take('whoosh', { peak: cmd.degPerSec });
-      lastShot = {
-        band: 'miss',
-        speed: 0,
-        kind: null,
-        offsetMs,
-        pullDeg: 0,
-        reason: 'reach',
-        batX: bat.x,
-        batDepth: bat.depth,
-      };
-      return;
-    }
+    // Inside the timing window the swing connects. A reach miss there means
+    // auto-track failed to arrive, which the desktop spring is not allowed to do.
     const spin = hook ? { type: 'none', level: 0 } : spinFromRoll(cmd.rollDegPerSec);
     const aim = aimTarget(cmd.tiltX, cmd.tiltY);
     const dx = aim.x - ball.x;
@@ -326,7 +332,8 @@ export function createMatch(opts = {}) {
       speed,
       kind,
       spin,
-      clearNet: kind === 'push' || hook,
+      // A hit inside the window stays in play. Early low drives used to clip the net.
+      clearNet: true,
     });
     ball.y = Math.max(ball.y, RULES.ballR + 0.02);
     ball.vx = flown.vx;
@@ -774,7 +781,8 @@ export function createAverageBot(seed) {
         } else {
           const roll = rng();
           const degPerSec = roll < 0.42 ? 480 : roll < 0.92 ? 860 : 1240;
-          const offsetMs = (rng() + rng() - 1) * 48;
+          // Triangular, ±180 ms. Swings outside ±120 ms miss. A hit inside the window stays in play.
+          const offsetMs = (rng() + rng() - 1) * 180;
           plan = {
             skip: false,
             sent: false,

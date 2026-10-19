@@ -3,6 +3,12 @@
 #include "QuebecCampaign.h"
 #include "QuebecSky.h"
 #include "QuebecCrewAnimation.h"
+#include "QuebecGTA.h" // AQuebecCar: street traces each frame (DRIVE).
+#include "QuebecTraces.h" // Street traces: knockable street props spawned by the game mode (TRAFFIC).
+#include "QuebecCombat.h" // Combat: pickups and the player state class (COMBAT).
+#include "QuebecPlayerState.h"
+#include "QuebecLife.h" // Living street: companion assignment for runtime walkers (PEOPLE).
+#include "QuebecSideJobs.h" // Side jobs: markers, E, R and the game mode spawn (JOBS).
 #include "LaFontaineMap.h"
 #include "LaFontaineExtensionMap.h"
 #include "CollegeBathurstMap.h"
@@ -124,6 +130,7 @@ namespace
             Walker->GetCharacterMovement()->MaxWalkSpeed = 450.f;
             Walker->GetCharacterMovement()->MaxSwimSpeed = 260.f;
             Walker->GetCharacterMovement()->StopMovementImmediately();
+            Walker->ReleaseCombatInput(); // Combat: a held Fire or Aim must not outlive the browser.
         }
         else if (AQuebecCar* Car = Cast<AQuebecCar>(Pawn)) Car->StopInput();
     }
@@ -280,28 +287,36 @@ void AQuebecCharacter::SetupPlayerInputComponent(UInputComponent* Input)
     Super::SetupPlayerInputComponent(Input);
     Input->BindAxis(TEXT("MoveForward"), this, &AQuebecCharacter::MoveForward);
     Input->BindAxis(TEXT("MoveRight"), this, &AQuebecCharacter::MoveRight);
-    Input->BindAxis(TEXT("Turn"), this, &APawn::AddControllerYawInput);
+    Input->BindAxis(TEXT("Turn"), this, &AQuebecCharacter::TurnView); // Combat: slower turn while aiming.
     Input->BindAxis(TEXT("LookUp"), this, &APawn::AddControllerPitchInput);
     Input->BindAction(TEXT("Jump"), IE_Pressed, this, &ACharacter::Jump);
     Input->BindAction(TEXT("Jump"), IE_Released, this, &ACharacter::StopJumping);
     Input->BindAction(TEXT("Sprint"), IE_Pressed, this, &AQuebecCharacter::StartSprint);
     Input->BindAction(TEXT("Sprint"), IE_Released, this, &AQuebecCharacter::StopSprint);
+    // Combat (QuebecCombat.cpp): hold Fire for the SMG, tap for the rest; hold Aim for the shoulder camera.
+    Input->BindAction(TEXT("Fire"), IE_Pressed, this, &AQuebecCharacter::StartFire);
+    Input->BindAction(TEXT("Fire"), IE_Released, this, &AQuebecCharacter::StopFire);
+    Input->BindAction(TEXT("Aim"), IE_Pressed, this, &AQuebecCharacter::StartAim);
+    Input->BindAction(TEXT("Aim"), IE_Released, this, &AQuebecCharacter::StopAim);
+    Input->BindAction(TEXT("NextWeapon"), IE_Pressed, this, &AQuebecCharacter::CycleWeapon);
 }
 
 void AQuebecCharacter::MoveForward(float Value)
 {
-    if (Controller && Value != 0.f && !bInVehicle)
+    // People: a knocked-down, K.-O. or arrested player cannot walk.
+    if (Controller && Value != 0.f && !bInVehicle && !IsInputLocked())
         AddMovementInput(FRotationMatrix(FRotator(0., Controller->GetControlRotation().Yaw, 0.)).GetUnitAxis(EAxis::X), Value);
 }
 
 void AQuebecCharacter::MoveRight(float Value)
 {
-    if (Controller && Value != 0.f && !bInVehicle)
+    if (Controller && Value != 0.f && !bInVehicle && !IsInputLocked())
         AddMovementInput(FRotationMatrix(FRotator(0., Controller->GetControlRotation().Yaw, 0.)).GetUnitAxis(EAxis::Y), Value);
 }
 
 void AQuebecCharacter::StartSprint()
 {
+    if (IsInputLocked()) return; // People: no sprint while down.
     GetCharacterMovement()->MaxWalkSpeed = 800.f;
     GetCharacterMovement()->MaxSwimSpeed = 390.f;
     ServerSetSprint(true);
@@ -314,8 +329,9 @@ void AQuebecCharacter::StopSprint()
 }
 void AQuebecCharacter::ServerSetSprint_Implementation(bool bSprint)
 {
-    GetCharacterMovement()->MaxWalkSpeed = bSprint && !bInVehicle ? 800.f : 450.f;
-    GetCharacterMovement()->MaxSwimSpeed = bSprint && !bInVehicle ? 390.f : 260.f;
+    const bool bCanSprint = bSprint && !bInVehicle && !IsInputLocked(); // People: no sprint while down.
+    GetCharacterMovement()->MaxWalkSpeed = bCanSprint ? 800.f : 450.f;
+    GetCharacterMovement()->MaxSwimSpeed = bCanSprint ? 390.f : 260.f;
 }
 
 void AQuebecCharacter::SetInVehicle(bool bNewInVehicle)
@@ -340,6 +356,7 @@ void AQuebecCharacter::Tick(float DeltaSeconds)
     UpdateSwimming(DeltaSeconds);
     Super::Tick(DeltaSeconds);
     KeepCharacterInView(CameraArm, GetViewRotation());
+    TickCombat(DeltaSeconds); // Combat: held weapon, aim camera, autofire, melee hits and the K.-O. respawn.
     if (!bInVehicle && CrewIdle && !Cast<UQuebecCrewAnimInstance>(GetMesh()->GetAnimInstance()))
     {
         const float Speed = GetVelocity().Size2D();
@@ -392,6 +409,11 @@ void AQuebecCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
     Super::GetLifetimeReplicatedProps(OutLifetimeProps);
     DOREPLIFETIME(AQuebecCharacter, bInVehicle);
     DOREPLIFETIME(AQuebecCharacter, CrewStyle);
+    // People: knockdown.
+    DOREPLIFETIME(AQuebecCharacter, KnockStartedAt);
+    DOREPLIFETIME(AQuebecCharacter, KnockPush);
+    DOREPLIFETIME(AQuebecCharacter, KnockLieSeconds);
+    DOREPLIFETIME(AQuebecCharacter, bKnockStayDown);
 }
 
 AQuebecParkInstances::AQuebecParkInstances()
@@ -539,6 +561,8 @@ void AQuebecParkResident::ApplyAppearance()
     WalkAnimation = GeneratedMesh ? LoadObject<UAnimSequence>(nullptr, *(Folder + TEXT("A_Walk.A_Walk"))) : nullptr;
     IdleAnimation = GeneratedMesh ? LoadObject<UAnimSequence>(nullptr, *(Folder + TEXT("A_Idle.A_Idle"))) : nullptr;
     RunAnimation = GeneratedMesh ? LoadObject<UAnimSequence>(nullptr, *(Folder + TEXT("A_Run.A_Run"))) : nullptr;
+    // People: the crew jump clip's airborne frames pose a knocked-down resident in flight.
+    JumpAnimation = GeneratedMesh ? LoadObject<UAnimSequence>(nullptr, *(Folder + TEXT("A_Jump.A_Jump")), nullptr, LOAD_NoWarn | LOAD_Quiet) : nullptr;
     CurrentAnimation = nullptr;
     const TCHAR* PropPath = Style == 8 ? TEXT("/Game/ParkComic/Crew/SM_PVCTube.SM_PVCTube") : TEXT("/Game/ParkComic/Crew/SM_Plunger.SM_Plunger");
     HandProp->SetStaticMesh(GeneratedMesh ? LoadObject<UStaticMesh>(nullptr, PropPath) : nullptr);
@@ -558,6 +582,10 @@ void AQuebecParkResident::BeginPlay()
     GeneratedBody->SetCullDistance(14000.f);
     HandProp->SetCullDistance(14000.f);
     for (UStaticMeshComponent* Piece : Pieces) Piece->SetCullDistance(14000.f);
+    // People: mascot pivots to restore after a tumble, and the walker's dog, stroller or groceries.
+    PiecePivots.Reset();
+    for (UStaticMeshComponent* Piece : Pieces) PiecePivots.Add(Piece->GetRelativeLocation());
+    RefreshCompanion();
 }
 
 void AQuebecParkResident::UpdateRouteLength()
@@ -584,7 +612,10 @@ void AQuebecParkResident::Tick(float DeltaSeconds)
     const bool bReacting = ServerTime >= ReactionStartedAt && ServerTime < ReactionUntil;
     const FResidentTravel Travel = SampleResidentTravel(Time,RouteLength,Pace,PauseSeconds);
     const bool bWalking = !bReacting && Activity != 2 && Route.Num() > 1 && Travel.bMoving;
-    if (Activity != 2 && Route.Num() > 1 && HasAuthority())
+    // People: a knockdown or a flight moves the root itself while the route clock holds (QuebecPeople.cpp).
+    const bool bAway = Stride != 0;
+    if (bAway && HasAuthority()) TickAway(ServerTime, DeltaSeconds);
+    if (Activity != 2 && Route.Num() > 1 && HasAuthority() && !bAway)
     {
         FVector Direction;
         SetActorLocation(ResidentPointOnRoute(Route,Travel.Distance,Direction));
@@ -594,7 +625,7 @@ void AQuebecParkResident::Tick(float DeltaSeconds)
             SetActorRotation(FMath::RInterpTo(GetActorRotation(),Facing,DeltaSeconds,6.f));
         }
     }
-    if (bReacting && HasAuthority())
+    if (bReacting && HasAuthority() && !bAway)
         SetActorRotation(FMath::RInterpTo(GetActorRotation(),FRotator(0.f,ReactionYaw,0.f),DeltaSeconds,6.f));
     APlayerController* Player = GetWorld()->GetFirstPlayerController();
     const bool bLocalView = Player && Player->IsLocalController() && Player->PlayerCameraManager;
@@ -605,13 +636,21 @@ void AQuebecParkResident::Tick(float DeltaSeconds)
     const FVector View = bLocalView ? Player->PlayerCameraManager->GetCameraRotation().Vector() : FVector::ZeroVector;
     Label->SetVisibility(bLocalView && TowardLabel.SizeSquared() < FMath::Square(900.f) &&
         FVector::DotProduct(View,TowardLabel.GetSafeNormal()) > .99f);
+    // People: drop a finished tumble pose even when hidden or far, so the body never keeps a stale offset.
+    if (bKnockPose && !IsKnockActive(ServerTime)) ResetKnockPose();
     if (IsHidden() || !bLocalView || FVector::DistSquared(Eye,GetActorLocation()) > FMath::Square(14000.f)) return;
-    const float AnimationClock = bReacting || Activity == 2 ? ServerTime + Phase :
+    // People: tumbling and running residents pick their own clip and clock.
+    UAnimSequence* StreetAnimation = nullptr;
+    float StreetClock = 0.f;
+    const bool bStreetLife = StreetLifeAnimation(ServerTime, StreetAnimation, StreetClock);
+    const bool bLimbsSwing = bWalking || (bStreetLife && Stride >= 2);
+    const float AnimationClock = bStreetLife ? StreetClock : bReacting || Activity == 2 ? ServerTime + Phase :
         Travel.AnimationTime*(bWalking ? Pace/(Activity == 1 ? 260.f : 120.f) : 1.f)+Phase;
     const float Pose = AnimationClock;
     if (GeneratedBody->GetSkeletalMeshAsset())
     {
         UAnimSequence* Animation = bWalking ? (Activity == 1 && RunAnimation ? RunAnimation : WalkAnimation) : IdleAnimation;
+        if (bStreetLife) Animation = StreetAnimation;
         if (Animation)
         {
             if (CurrentAnimation != Animation)
@@ -625,10 +664,12 @@ void AQuebecParkResident::Tick(float DeltaSeconds)
             HandProp->UpdateComponentToWorld();
         }
     }
-    const float Swing = FMath::Sin(Pose * 6.f) * (bWalking ? 24.f : 5.f);
-    Pieces[0]->SetRelativeLocation(FVector(0.,0.,bWalking ? FMath::Abs(FMath::Sin(Pose*6.f))*3.f : 0.f));
+    const float Swing = FMath::Sin(Pose * 6.f) * (bLimbsSwing ? 24.f : 5.f);
+    Pieces[0]->SetRelativeLocation(FVector(0.,0.,bLimbsSwing ? FMath::Abs(FMath::Sin(Pose*6.f))*3.f : 0.f));
     Pieces[1]->SetRelativeRotation(FRotator(FMath::Sin(Pose*2.f)*5.f,FMath::Sin(Pose*.8f)*12.f,0.));
     for (int32 I = 2; I < 6; ++I) Pieces[I]->SetRelativeRotation(FRotator(Swing * (I%2 ? 1.f : -1.f) * (I<4 ? -1.f : 1.f),0.,0.));
+    // People: the tumble, dazed stars and the companion, posed only here, like the body.
+    PoseStreetLife(ServerTime, bWalking, !bWalking && Activity != 2, Travel.bReturn, Travel.bMoving ? 0.f : Travel.AnimationTime, AnimationClock);
     Label->SetWorldRotation((Eye-Label->GetComponentLocation()).Rotation());
 }
 
@@ -645,6 +686,15 @@ void AQuebecParkResident::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& 
     DOREPLIFETIME(AQuebecParkResident, ReactionUntil);
     DOREPLIFETIME(AQuebecParkResident, RouteDelay);
     DOREPLIFETIME(AQuebecParkResident, ReactionYaw);
+    // People: knockdowns, flight and companions.
+    DOREPLIFETIME(AQuebecParkResident, Companion);
+    DOREPLIFETIME(AQuebecParkResident, Stride);
+    DOREPLIFETIME(AQuebecParkResident, KnockStartedAt);
+    DOREPLIFETIME(AQuebecParkResident, KnockOrigin);
+    DOREPLIFETIME(AQuebecParkResident, KnockPush);
+    DOREPLIFETIME(AQuebecParkResident, KnockLieSeconds);
+    DOREPLIFETIME(AQuebecParkResident, KnockGround);
+    DOREPLIFETIME(AQuebecParkResident, KnockYaw);
 }
 
 AQuebecCar::AQuebecCar()
@@ -789,6 +839,9 @@ void AQuebecCar::PossessedBy(AController* NewController)
     SetActorTickInterval(0.f);
     LastDriveInputTime = GetWorld()->GetTimeSeconds();
     LateralSpeed = DriveThrottle = SteeringState = 0.f;
+    // Lag-tolerant driving: a player takes over from any AI driver, and the driven car updates at 60 Hz.
+    ClearAutopilot();
+    SetNetUpdateFrequency(60.f);
     // Server-only driving needs movement replication for the owning client too.
     SetAutonomousProxy(false);
     NewController->SetControlRotation(GetActorRotation() + FRotator(-12., 0., 0.));
@@ -880,6 +933,8 @@ void AQuebecCar::ApplyPaint()
                     Part->SetMaterial(I,Paint && Materials[I].MaterialSlotName == TEXT("Paint") ? Paint : Mesh->GetMaterial(I));
             }
         }
+        // A repaint must not wash out the police livery (street contract).
+        if (bPolice) QuebecCrime::DecoratePoliceCar(this);
         return;
     }
     const FString Path = PaintStyle > 0
@@ -901,6 +956,7 @@ void AQuebecCar::ApplyPaint()
             Part->SetRelativeLocation(CabinOffset);
         }
     }
+    if (bPolice) QuebecCrime::DecoratePoliceCar(this);
 }
 
 namespace
@@ -1053,10 +1109,13 @@ void AQuebecCar::UpdateTraffic()
     const float Projection = FVector::DotProduct(GetActorLocation()-LaneStart,Direction);
     const float LookAhead = 450.f+FMath::Abs(Speed)*.3f;
     const float Along = FMath::Clamp(Projection+LookAhead,0.f,float(FVector::DotProduct(End-LaneStart,Direction)));
-    Target = LaneStart+Direction*Along;
+    // Traffic street life: a curb stop slides the steering target toward the curb and back; zero while cruising.
+    Target = LaneStart+Direction*Along+FVector::CrossProduct(FVector::UpVector,Direction)*TrafficCurbShift(Along);
     const float Error = FMath::FindDeltaAngleDegrees(GetActorRotation().Yaw, (Target - GetActorLocation()).Rotation().Yaw);
     Steering = FMath::Clamp(Error / 35.f, -1.f, 1.f);
     float DesiredSpeed = bWaitForJunction ? 0.f : (FMath::Abs(Error) > 35.f ? 230.f : 570.f+40.f*(FMath::Abs(PaintStyle)%4));
+    // Traffic street life: full stops at ARRÊT junctions, people in the lane ahead, curb stops (QuebecTrafficLife.cpp).
+    DesiredSpeed = UpdateTrafficLife(DesiredSpeed,Direction,Projection);
     FCollisionQueryParams Query(SCENE_QUERY_STAT(TrafficYield), false, this);
     FHitResult Ahead;
     for (int32 Attempt = 0; Attempt < 4; ++Attempt)
@@ -1120,11 +1179,22 @@ void AQuebecCar::Tick(float DeltaSeconds)
     }
     KeepCharacterInView(CameraArm, GetViewRotation());
     UpdateDriveAudio(DeltaSeconds);
+    // Street traces: tyre marks on every peer while the car moves, and smoke from a battered car.
+    if (!FMath::IsNearlyZero(Speed,1.f) || !FMath::IsNearlyZero(LateralSpeed,1.f)) QuebecTraces::TickCar(this,DeltaSeconds);
+    UpdateDamageSmoke(DeltaSeconds);
     if (!HasAuthority()) return;
     if (bTraffic && !Controller) UpdateTraffic();
+    // An AI driver (police, side jobs) writes the same inputs a player would.
+    const bool bAIDriver = bAutopilot && !Controller;
+    if (bAIDriver) { Throttle = AutopilotThrottle; Steering = AutopilotSteering; bHandbrake = bAutopilotHandbrake; }
     // Lost input/disconnected occupancy brakes safely instead of retaining throttle.
-    const bool bFailsafe = !bTraffic && (!Controller || (!IsLocallyControlled() && GetWorld()->GetTimeSeconds()-LastDriveInputTime>.5f));
+    const bool bFailsafe = !bTraffic && !bAIDriver && (!Controller || (!IsLocallyControlled() && GetWorld()->GetTimeSeconds()-LastDriveInputTime>.5f));
     if (bFailsafe) StopInput();
+    // A wreck ignores throttle; steering, brakes and the handbrake still work.
+    if (IsWrecked()) Throttle = DriveThrottle = 0.f;
+    PrepareDriveAssist();
+    const FVector StrikeFrom = GetActorLocation();
+    const bool bStriker = Controller || bAIDriver || KnockTime > 0.f;
     if (bTraffic)
     {
         // Keep the already-tested route follower and junction timing unchanged.
@@ -1142,6 +1212,8 @@ void AQuebecCar::Tick(float DeltaSeconds)
         }
     }
     VisualSteering = bTraffic ? Steering : SteeringState;
+    // Street contract: strikes on people and props, passed bodies and the stuck nudge.
+    FinishDriveTick(StrikeFrom,bStriker,DeltaSeconds);
 }
 
 void AQuebecCar::SimulateDrive(float Step, bool bFailsafe)
@@ -1162,7 +1234,8 @@ void AQuebecCar::SimulateDrive(float Step, bool bFailsafe)
         if (KnockTime <= 0.f || (FMath::Abs(Speed)<20.f && FMath::Abs(LateralSpeed)<20.f && FMath::Abs(YawRate)<5.f))
         {
             KnockTime = YawRate = 0.f;
-            if (!Controller) { Speed = LateralSpeed = 0.f; SetActorTickInterval(bTraffic ? .05f : .1f); }
+            // An AI driver (autopilot) drives on after a shove, like a player.
+            if (!Controller && !bAutopilot) { Speed = LateralSpeed = 0.f; SetActorTickInterval(bTraffic ? .05f : .1f); }
         }
         return;
     }
@@ -1179,7 +1252,8 @@ void AQuebecCar::SimulateDrive(float Step, bool bFailsafe)
     else
     {
         DriveThrottle = FMath::FInterpConstantTo(DriveThrottle,Throttle,Step,5.f);
-        const float SteeringRate = FMath::Abs(Steering)<.01f || Steering*SteeringState<0.f ? 10.f : 3.5f;
+        // Lag-tolerant driving: graded levels ease back as fast as a release, and on roads high-speed turn-in is calmer.
+        const float SteeringRate = QuebecSteer::TurnInRate(Speed,Steering,SteeringState,bSteerAssist);
         SteeringState = FMath::FInterpConstantTo(SteeringState,Steering,Step,SteeringRate);
         if (bFailsafe || bHandbrake)
             Speed = FMath::FInterpConstantTo(Speed,0.f,Step,bFailsafe ? 1600.f : 2300.f);
@@ -1216,9 +1290,17 @@ void AQuebecCar::SimulateDrive(float Step, bool bFailsafe)
             float SteeringYawRate = FMath::RadiansToDegrees(Speed/310.f*FMath::Tan(FMath::DegreesToRadians(SteeringState*Lock)));
             if (bHandbrake && FMath::Abs(Speed)>450.f) SteeringYawRate *= 1.4f;
             Turn = FMath::Clamp(SteeringYawRate,-110.f,110.f)*Step;
+            // On a road a player car damps leftover yaw and straightens along the street near the wheel's centre.
+            if (bSteerAssist) Turn = AssistedYawRate()*Step;
         }
         const FQuat Rotation = (GetActorRotation()+FRotator(0.,Turn,0.)).Quaternion();
         if (CanFitAt(GetActorLocation(),Rotation)) SetActorRotation(Rotation);
+        else if (bSteerAssist)
+        {
+            // Against a wall, a partial turn still lets the driver steer away instead of feeling stuck.
+            const FQuat Partial = (GetActorRotation()+FRotator(0.,Turn*.4f,0.)).Quaternion();
+            if (CanFitAt(GetActorLocation(),Partial)) SetActorRotation(Partial);
+        }
     }
     if (!bTraffic)
     {
@@ -1290,6 +1372,8 @@ bool AQuebecCar::CanFitAt(const FVector& Point, const FQuat& Rotation, const AAc
     FComponentQueryParams Query(SCENE_QUERY_STAT(CarHullFit),this);
     if (Ignore) Query.AddIgnoredActor(Ignore);
     if (Occupant) Query.AddIgnoredActor(Occupant);
+    // People this car knocked down do not block it while they tumble (street contract).
+    for (const TWeakObjectPtr<AActor>& Passed : PassedBodies) if (Passed.IsValid()) Query.AddIgnoredActor(Passed.Get());
     Hull->ComponentOverlapMulti(Hits,GetWorld(),Point,Rotation,ECC_Pawn,Query);
     for (const FOverlapResult& Hit : Hits) if (Hit.bBlockingHit) return false;
     return true;
@@ -1326,6 +1410,13 @@ void AQuebecCar::MoveWithCollision(float Step, const FVector& Travel)
     const FVector Before = GetActorLocation();
     FHitResult Hit;
     AddActorWorldOffset(Travel,true,&Hit);
+    // Street contract: a striking car knocks down the player or officer it meets and drives on past them.
+    FVector Unswept = Travel;
+    if (Hit.bBlockingHit && HasAuthority() && PassStruckPerson(Hit,Before,Travel))
+    {
+        Unswept = Travel*(1.-Hit.Time);
+        AddActorWorldOffset(Unswept,true,&Hit);
+    }
     if (Hit.bBlockingHit)
     {
         const FVector Normal = Hit.Normal.GetSafeNormal2D();
@@ -1339,6 +1430,8 @@ void AQuebecCar::MoveWithCollision(float Step, const FVector& Travel)
                 Hit.ImpactPoint-GetActorLocation(),Hit.ImpactPoint-Other->GetActorLocation());
             if (Impact.bImpact)
             {
+                // Dents both bodies and reports a player's ram on a driven car (street contract).
+                OnCarImpact(Other,static_cast<float>(-FVector::DotProduct(Velocity-OtherVelocity,Normal)),Hit.ImpactPoint);
                 Velocity += Impact.DeltaA;
                 YawRate = FMath::Clamp(YawRate+Impact.SpinA,-240.f,240.f);
                 if (!FMath::IsNearlyZero(Impact.SpinA,2.f)) KnockTime = FMath::Max(KnockTime,Controller ? .35f : 1.5f);
@@ -1347,10 +1440,15 @@ void AQuebecCar::MoveWithCollision(float Step, const FVector& Travel)
             // Only the closing speed relative to the other car is lost, so a pushing car keeps pace behind it.
             Velocity -= Normal*FMath::Min(0.,FVector::DotProduct(Velocity-Other->PlanarVelocity(),Normal));
         }
-        else Velocity -= Normal*FMath::Min(0.,FVector::DotProduct(Velocity,Normal));
+        else
+        {
+            // Walls keep the sliding speed. Hard hits dent the body; on a road a glancing scrape turns the nose along.
+            if (!(Hit.GetActor() && QuebecPeople::IsPerson(Hit.GetActor()))) OnWallImpact(Normal,static_cast<float>(-FVector::DotProduct(Velocity,Normal)),Step);
+            Velocity -= Normal*FMath::Min(0.,FVector::DotProduct(Velocity,Normal));
+        }
         Speed = FVector::DotProduct(Velocity,GetActorForwardVector().GetSafeNormal2D());
         LateralSpeed = FVector::DotProduct(Velocity,GetActorRightVector().GetSafeNormal2D());
-        AddActorWorldOffset(FVector::VectorPlaneProject(Travel*(1.-Hit.Time),Normal),true);
+        AddActorWorldOffset(FVector::VectorPlaneProject(Unswept*(1.-Hit.Time),Normal),true);
     }
     FRotator SupportRotation = GetActorRotation();
     double SupportZ;
@@ -1359,8 +1457,9 @@ void AQuebecCar::MoveWithCollision(float Step, const FVector& Travel)
     if (bTooHigh)
     {
         SetActorLocation(Before);
-        Speed = LateralSpeed = 0.f;
-        bGrounded = WheelSupport(Before,SupportRotation,SupportZ,bTooHigh);
+        // A step too high to climb stops only the speed into its face; the car keeps sliding along it.
+        if (!SlideAlongStep(Before,Travel)) Speed = LateralSpeed = 0.f;
+        bGrounded = WheelSupport(GetActorLocation(),SupportRotation,SupportZ,bTooHigh);
     }
     if (bGrounded && SupportZ >= GetActorLocation().Z-4.)
     {
@@ -1445,6 +1544,12 @@ void AQuebecCar::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifeti
     DOREPLIFETIME(AQuebecCar, PaintStyle);
     DOREPLIFETIME(AQuebecCar, BodyProfile);
     DOREPLIFETIME(AQuebecCar, bTraffic);
+    // Street contract.
+    DOREPLIFETIME(AQuebecCar, bPolice);
+    DOREPLIFETIME(AQuebecCar, bSiren);
+    DOREPLIFETIME(AQuebecCar, BodyDamage);
+    // Traffic street life: turn signals and hazard lights.
+    DOREPLIFETIME(AQuebecCar, TrafficSignal);
 }
 
 bool AQuebecGameState::CanAdvanceMission(int32 Index, const FVector& Position)
@@ -1586,6 +1691,8 @@ void AQuebecController::RetryCampaign() { ServerRetryCampaign(); }
 void AQuebecController::ReplayCampaign() { ServerReplayCampaign(); }
 void AQuebecController::ServerRetryCampaign_Implementation()
 {
+    // Side jobs (JOBS): R inside a running job restarts the job instead of the campaign checkpoint.
+    if (QuebecJobs::HandleRecover(this)) return;
     if (AQuebecCampaign* Campaign = CampaignFor(GetWorld())) Campaign->RequestRetry(this);
 }
 void AQuebecController::ServerReplayCampaign_Implementation()
@@ -1830,7 +1937,7 @@ AQuebecParkResident* AQuebecController::FindInteractableResident() const
     double Best = FMath::Square(450.f);
     for (TActorIterator<AQuebecParkResident> It(GetWorld()); It; ++It)
     {
-        if (It->IsHidden()) continue;
+        if (It->IsHidden() || It->IsAway()) continue; // People: nobody chats while knocked down or running.
         const double Distance = FVector::DistSquared(Character->GetActorLocation(),It->GetActorLocation()+FVector(0.,0.,100.));
         if (Distance > Best) continue;
         FHitResult Hit;
@@ -1858,7 +1965,7 @@ void AQuebecController::ServerInteract_Implementation()
         return;
     }
     AQuebecCharacter* Character = Cast<AQuebecCharacter>(GetPawn());
-    if (!Character) return;
+    if (!Character || Character->IsInputLocked()) return; // People: no E while knocked down, K.-O. or arrested.
     if (AQuebecCar* NearestCar = FindInteractableCar())
     {
         ClientInteractionMessage(TEXT(""));
@@ -1877,6 +1984,8 @@ void AQuebecController::ServerInteract_Implementation()
     }
     else if (AQuebecGameState* State = GetWorld()->GetGameState<AQuebecGameState>())
         if (State->AdvanceMissionNear(Character->GetActorLocation())) return;
+    // Side jobs (JOBS): E at a yellow marker starts a job, after car and campaign interactions.
+    if (AQuebecSideJobs* Jobs = AQuebecSideJobs::Find(GetWorld()); Jobs && Jobs->HandleInteract(this)) return;
     if (AQuebecParkResident* Resident = FindInteractableResident())
     {
         Resident->Acknowledge(Character, true);
@@ -2080,7 +2189,8 @@ void AQuebecHUD::DrawHUD()
     const float MapBlock = MapHeight + 4.f * Scale + SkyStep + 3.f * CreditStep;
     // Touch controls reserve the lower corners; the mission sits beside the radar.
     const float MissionWidth = bPortrait ? MapX - Margin - 12.f * Scale : 460.f * Scale;
-    const float MissionX = bPortrait ? Margin : bTouchControls ? MapX - MissionWidth - 18.f * Scale : Right - MissionWidth;
+    // With touch controls the street status column (JOBS) takes the strip left of the radar, so the card moves left of it.
+    const float MissionX = bPortrait ? Margin : bTouchControls ? MapX - MissionWidth - (18.f + StreetColumnWidth()) * Scale : Right - MissionWidth;
     const TArray<FString> Titles = WrappedLines(Title, MissionWidth - 24.f * Scale, .9f);
     const TArray<FString> Actions = WrappedLines(Action, MissionWidth - 24.f * Scale, 1.15f);
     const TArray<FString> Statuses = WrappedLines(Status, MissionWidth - 24.f * Scale, .9f);
@@ -2098,6 +2208,7 @@ void AQuebecHUD::DrawHUD()
     else if (Controller)
     {
         if (Campaign) Prompt = Campaign->GetInteractionPrompt(Controller);
+        if (Prompt.IsEmpty()) Prompt = StreetPrompt(); // Side-job marker (JOBS).
         if (Prompt.IsEmpty())
             if (AQuebecParkResident* Resident = Controller->FindInteractableResident())
                 Prompt = FString(TEXT("E  /  Talk to ")) + AQuebecParkResident::NameForStyle(Resident->Style);
@@ -2322,6 +2433,8 @@ void AQuebecHUD::DrawHUD()
             Text(Together, Paper.CopyWithNewOpacity(Alpha), Canvas->SizeX * .5f - W * .5f, Y + 46.f * Scale, .83f);
         }
     }
+    // Street HUD (JOBS): status column, radar blips, reticle and banners, drawn last so the banners sit on top.
+    DrawStreetHUD(Scale, bPortrait, bTouchControls, MapX, MapY, MapWidth, ViewTop);
 }
 
 void AQuebecHUD::TriggerSoundWord(const TCHAR* Word)
@@ -2336,6 +2449,7 @@ AQuebecGameMode::AQuebecGameMode()
     PlayerControllerClass = AQuebecController::StaticClass();
     GameStateClass = AQuebecGameState::StaticClass();
     HUDClass = AQuebecHUD::StaticClass();
+    PlayerStateClass = AQuebecPlayerState::StaticClass(); // Street state: health, weapons, stars, cash (COMBAT).
 }
 
 AActor* AQuebecGameMode::ChoosePlayerStart_Implementation(AController* Player)
@@ -2379,6 +2493,11 @@ void AQuebecGameMode::BeginPlay()
                 Material && Material->GetName().Contains(TEXT("Beacon")))
                 It->SetActorHiddenInGame(true);
     }
+    // Side jobs (JOBS): four yellow markers, one shared job at a time. No cars spawn here, so population is unchanged.
+    if (!FParse::Param(FCommandLine::Get(), TEXT("NordNoCampaign")) && !FParse::Param(FCommandLine::Get(), TEXT("NordNoSideJobs")))
+        GetWorld()->SpawnActor<AQuebecSideJobs>();
+    // Combat: weapon, vest and health pickups at street and park points, none near a QA anchor and no collision.
+    if (!FParse::Param(FCommandLine::Get(), TEXT("NordNoCampaign"))) QuebecCombat::SpawnPickups(GetWorld());
     static_assert(UE_ARRAY_COUNT(LaFontaine::RoadSegments) == UE_ARRAY_COUNT(LaFontaine::RoadSegmentWidths));
     static_assert(UE_ARRAY_COUNT(LaFontaine::RoadSegments) == UE_ARRAY_COUNT(LaFontaine::RoadParkingDirections));
     static_assert(UE_ARRAY_COUNT(LaFontaine::RoadSegments) == UE_ARRAY_COUNT(LaFontaine::RoadParkingSides));
@@ -2645,7 +2764,9 @@ void AQuebecGameMode::BeginPlay()
     {
         const int32 Index = ResidentIndex;
         const int32 Activity = bSocial ? 2 : (MobileIndex%11 < 2 ? 1 : 0);
-        const float Pace = Activity == 1 ? 185.f+12.f*(Index%5) : 78.f+8.f*(Index%6);
+        // Living street: some walkers bring a dog, a stroller or groceries; a stroller slows its pusher. Counts stay 14 + 96.
+        const uint8 Companion = QuebecLife::CompanionFor(MobileIndex,Activity);
+        const float Pace = QuebecLife::CompanionPace(Companion,Activity == 1 ? 185.f+12.f*(Index%5) : 78.f+8.f*(Index%6));
         const float Pause = 2.f+.7f*(Index%8);
         const float Phase = Index*7.91f;
         float Length = 0.f;
@@ -2664,6 +2785,7 @@ void AQuebecGameMode::BeginPlay()
         Resident->Activity = Activity;
         Resident->Pace = Pace;
         Resident->PauseSeconds = Pause;
+        Resident->Companion = Companion;
         Resident->Tags.Add(TEXT("CityCrowd"));
         Resident->Tags.Add(Activity == 2 ? TEXT("CitySocial") : Activity == 1 ? TEXT("CityJog") : TEXT("CityWalk"));
         if (!Hub.IsNone()) Resident->Tags.Add(Hub);
@@ -2823,6 +2945,8 @@ void AQuebecGameMode::BeginPlay()
     UE_LOG(LogTemp,Display,TEXT("NORD_POPULATION social=%d mobile=%d"),SocialCount,MobileIndex);
     if (Parked < ParkedGoal || Traffic < TrafficGoal || ParkCrowd < ParkCrowdGoal || StreetCrowd < StreetCrowdGoal)
         UE_LOG(LogTemp,Warning,TEXT("NORD_POPULATION some placements were blocked by world collision"));
+    // Street traces: knockable cones around two work zones and bins at the curb, placed after the parked cars.
+    AQuebecStreetProp::SpawnStreetProps(GetWorld());
 }
 
 #if WITH_DEV_AUTOMATION_TESTS

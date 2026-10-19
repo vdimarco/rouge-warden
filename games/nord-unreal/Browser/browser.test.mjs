@@ -158,7 +158,7 @@ async function installNudgeChecks(browser, errors) {
       assert.equal(await target.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
       await target.screenshot({ path: `/tmp/nord-install-nudge-${width}.png`, fullPage: true });
       if (mobile) {
-        for (const control of await target.locator('.move-stick:visible, .touch-primary button:visible, #touch-menu:visible').all()) {
+        for (const control of await target.locator('.move-stick:visible, .touch-primary button:visible, .touch-combat button:visible, #touch-menu:visible').all()) {
           const touch = await control.boundingBox();
           const overlap = Math.min(box.x + box.width, touch.x + touch.width) > Math.max(box.x, touch.x)
             && Math.min(box.y + box.height, touch.y + touch.height) > Math.max(box.y, touch.y);
@@ -465,6 +465,21 @@ try {
   assert.ok(buttons[0].left > 390 * .45 && Math.abs(buttons[1].right - (390 - 16)) <= 1, 'bottom-right grid');
   assert.ok(buttons[1].left - buttons[0].right >= 12 && buttons[2].top - buttons[0].top - buttons[0].height >= 12, '12 px thumb clearance');
   assert.ok(buttons[3].top === buttons[2].top && Math.abs(buttons[3].right - (390 - 16)) <= 1, 'Menu fills the bottom-right corner');
+  // On foot, Weapon, Aim and Fire form one row of smaller round buttons above the action grid; Auto gas shows only in a car.
+  const combat = await phonePage.locator('.touch-combat button').evaluateAll(elements => elements.map(button => {
+    const box = button.getBoundingClientRect();
+    return { id: button.id, top: box.top, right: box.right, bottom: box.bottom, width: box.width, height: box.height,
+      radius: parseFloat(getComputedStyle(button).borderTopLeftRadius), icon: button.querySelector('svg')?.getBoundingClientRect().height };
+  }));
+  assert.deepEqual(combat.map(button => button.id), ['touch-weapon', 'touch-aim', 'touch-fire'], 'Weapon, Aim and Fire');
+  assert.equal(new Set(combat.map(button => button.top)).size, 1, 'one combat row');
+  for (const button of combat) {
+    assert.ok(button.width >= 44 && button.height >= 44, '44 px combat targets');
+    assert.ok(button.radius >= 50 && button.icon >= 20, 'round combat faces with icons');
+    assert.ok(button.bottom + 8 <= buttons[0].top, 'the combat row clears the action grid');
+  }
+  assert.ok(Math.abs(combat[2].right - (390 - 16)) <= 1, 'Fire sits at the right edge, nearest the thumb');
+  assert.equal(await phonePage.locator('#touch-auto').isHidden(), true, 'Auto gas hides on foot');
   assert.equal(await phonePage.locator('[data-stick="look"]').count(), 0, 'image drag replaces the look pad');
   for (const [width, height] of [[390, 844], [844, 390]]) {
     await phonePage.setViewportSize({ width, height });
@@ -487,6 +502,7 @@ try {
   assert.equal(await phonePage.locator('#menu').isHidden(), true);
   const crewBounds = await phonePage.locator('#crew-picker').boundingBox();
   assert.ok(crewBounds.y + crewBounds.height + 16 <= buttons[0].top, 'crew list clears the larger action grid');
+  assert.ok(crewBounds.y + crewBounds.height + 16 <= combat[0].top, 'crew list clears the combat row');
   await phonePage.locator('#crew-close').click();
   assert.equal(await phonePage.locator('#crew-picker').isHidden(), true, 'Close shuts the crew list');
   await phonePage.evaluate(() => {

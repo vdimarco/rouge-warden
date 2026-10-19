@@ -3,6 +3,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createMatch } from '../../public/pingpong/sim.js';
 import { RULES, judgeLanding, spinTimeScale, spinFromRoll } from '../../public/pingpong/rules.js';
+import { POINTER, flickFromSamples } from '../../public/pingpong/motion.js';
 
 function incoming() {
   const match = createMatch({ seed: 4, input: 'swing' });
@@ -83,6 +84,89 @@ test('the opening feed is won by about seven seconds', () => {
   assert.ok(Math.abs(snap.lastShot.speed - 11 * 1.15) < 1e-9);
 });
 
+function widthsFlick(widthsPerSec) {
+  const width = 1280;
+  const dt = POINTER.window;
+  const dist = widthsPerSec * width * dt;
+  return flickFromSamples(
+    [{ x: 0, y: 0, t: 0 }, { x: dist, y: 0, t: dt }],
+    dt,
+    width,
+  );
+}
+
+function openingPoint(swing) {
+  const match = createMatch({ seed: 1, input: 'swing' });
+  throughCount(match);
+  if (swing) match.swing({ dir: 'forehand', tiltX: 0, tiltY: 0, rollDegPerSec: 0, ...swing });
+  let snap = match.state();
+  for (let i = 0; i < 60 * 8 && snap.score.you === 0 && snap.score.neighbour === 0; i++) snap = match.step();
+  return snap;
+}
+
+test('a speed-0 miss 383 ms early does not take the opening hook', () => {
+  const missed = openingPoint({ degPerSec: 0, offsetMs: -383 });
+  assert.equal(missed.score.you, 0);
+  assert.equal(missed.score.neighbour, 1);
+  assert.equal(missed.lastShot.band, 'miss');
+  assert.equal(missed.lastShot.speed, 0);
+  assert.notEqual(missed.lastShot.hook, true);
+
+  const quiet = openingPoint(null);
+  assert.equal(quiet.score.you, 0);
+  assert.equal(quiet.score.neighbour, 1);
+  assert.equal(quiet.lastShot, null);
+
+  assert.equal(widthsFlick(1.1), null);
+  const flick = widthsFlick(1.2);
+  assert.ok(flick.widthsPerSec + 1e-9 >= 1.2);
+  for (const offsetMs of [-200, 0, 200]) {
+    const won = openingPoint({ degPerSec: flick.degPerSec, widthsPerSec: flick.widthsPerSec, offsetMs });
+    assert.equal(won.score.you, 1, String(offsetMs));
+    assert.equal(won.score.neighbour, 0, String(offsetMs));
+    assert.equal(won.lastShot.hook, true, String(offsetMs));
+    assert.equal(won.lastShot.kind, 'drive', String(offsetMs));
+  }
+});
+
+test('a sub-threshold phone or desktop swing does not win point 1', () => {
+  for (const degPerSec of [0, RULES.swingStart - 1, RULES.swingStart]) {
+    const phone = openingPoint({ degPerSec, offsetMs: 0 });
+    assert.equal(phone.score.you, 0, `phone ${degPerSec}`);
+    assert.equal(phone.score.neighbour, 1, `phone ${degPerSec}`);
+    assert.equal(phone.lastShot.speed, 0, `phone ${degPerSec}`);
+    assert.notEqual(phone.lastShot.hook, true, `phone ${degPerSec}`);
+  }
+  const phoneHit = openingPoint({ degPerSec: RULES.swingStart + 1, offsetMs: 0 });
+  assert.equal(phoneHit.score.you, 1);
+  assert.equal(phoneHit.score.neighbour, 0);
+  assert.equal(phoneHit.lastShot.hook, true);
+
+  assert.equal(widthsFlick(0), null);
+  assert.equal(widthsFlick(1.1), null);
+  for (const widthsPerSec of [0, 1.1]) {
+    const desk = openingPoint({ degPerSec: 900, widthsPerSec, offsetMs: 0 });
+    assert.equal(desk.score.you, 0, `desktop ${widthsPerSec}`);
+    assert.equal(desk.score.neighbour, 1, `desktop ${widthsPerSec}`);
+    assert.equal(desk.lastShot.speed, 0, `desktop ${widthsPerSec}`);
+    assert.notEqual(desk.lastShot.kind, 'drive', `desktop ${widthsPerSec}`);
+  }
+  const earlyDesk = openingPoint({ degPerSec: 900, widthsPerSec: 0, offsetMs: -383 });
+  assert.equal(earlyDesk.score.you, 0);
+  assert.equal(earlyDesk.lastShot.speed, 0);
+
+  const flick = widthsFlick(POINTER.push);
+  const deskHit = openingPoint({
+    degPerSec: flick.degPerSec,
+    widthsPerSec: flick.widthsPerSec,
+    offsetMs: 0,
+  });
+  assert.equal(deskHit.score.you, 1);
+  assert.equal(deskHit.score.neighbour, 0);
+  assert.equal(deskHit.lastShot.hook, true);
+  assert.ok(flick.widthsPerSec + 1e-9 >= 1.2);
+});
+
 test('a hook swing outside 200 ms does not win the feed', () => {
   const match = createMatch({ seed: 1, input: 'swing' });
   throughCount(match);
@@ -142,7 +226,6 @@ test('contact aim, pull, accel and a casual push clears the net', () => {
   assert.equal(early.lastShot.speed, 11);
 
   const late = incoming();
-  // The late window is 120 ms after the plane, so the feed starts high enough to still be a smash.
   late.placeBall({
     x: 0, y: 0.9, z: 0.7, vx: 0, vy: 0.2, vz: -2.4,
     hitter: 'neighbour', phase: 'incoming', bounces: 0, spinType: 'none', spinLevel: 0,
@@ -152,6 +235,48 @@ test('contact aim, pull, accel and a casual push clears the net', () => {
   assert.equal(smash.lastShot.kind, 'smash');
   assert.equal(smash.lastShot.speed, 17);
   assert.equal(smash.lastShot.pullDeg, 25);
+});
+
+test('a hit 58 ms early stays on the table', () => {
+  const match = createMatch({ seed: 4, input: 'swing' });
+  match.placeBall({
+    x: 0.1, y: 0.18, z: 0.62, vx: 0.2, vy: 1.2, vz: -3.2,
+    hitter: 'neighbour', phase: 'incoming', bounces: 1,
+  });
+  match.setBat({ x: 0.1, depth: 0.62, roll: 0 });
+  match.swing({ degPerSec: 860, dir: 'forehand', tiltX: 4, tiltY: 6, rollDegPerSec: 0, offsetMs: -58 });
+  let snap = match.state();
+  for (let i = 0; i < 180; i++) {
+    snap = match.step();
+    const types = snap.events.map((e) => e.type);
+    if (types.includes('net') || types.includes('floor') || types.includes('tik')) break;
+  }
+  assert.equal(snap.lastShot.band, 'early');
+  assert.equal(snap.lastShot.kind, 'drive');
+  assert.ok(Math.abs(snap.lastShot.pullDeg + 5.625) < 1e-9, snap.lastShot.pullDeg);
+  assert.equal(snap.events.some((e) => e.type === 'net'), false);
+  assert.equal(snap.lastLanding.call, 'in');
+  assert.equal(snap.score.neighbour, 0);
+  assert.ok(snap.lastShot.yNet >= RULES.netHeight + RULES.ballR, snap.lastShot.yNet);
+
+  const low = createMatch({ seed: 4, input: 'swing' });
+  low.placeBall({
+    x: 0, y: 0.08, z: 0.5, vx: 0, vy: 0.4, vz: -2.4,
+    hitter: 'neighbour', phase: 'incoming', bounces: 1,
+  });
+  low.setBat({ x: 0, depth: 0.5, roll: 0 });
+  low.swing({ degPerSec: 1200, dir: 'forehand', tiltX: 0, tiltY: 0, rollDegPerSec: 0, offsetMs: -58 });
+  let smashed = low.state();
+  for (let i = 0; i < 180; i++) {
+    smashed = low.step();
+    const types = smashed.events.map((e) => e.type);
+    if (types.includes('net') || types.includes('floor') || types.includes('tik')) break;
+  }
+  assert.equal(smashed.lastShot.kind, 'smash');
+  assert.equal(smashed.lastShot.speed, 17);
+  assert.equal(smashed.events.some((e) => e.type === 'net'), false);
+  assert.equal(smashed.lastLanding.call, 'in');
+  assert.equal(smashed.score.neighbour, 0);
 });
 
 test('level 3 topspin reaches the table 15 percent sooner', () => {

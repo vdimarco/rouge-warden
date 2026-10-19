@@ -77,6 +77,23 @@
             <b>Menu</b><span>Options</span>
           </button>
         </div>
+        <!-- On foot: Fire holds F, Aim holds the right mouse button, Weapon taps Q (the native Fire, Aim and NextWeapon bindings). -->
+        <div class="touch-combat" role="group" aria-label="Combat">
+          <button id="touch-weapon" data-key="81" aria-label="Next weapon">
+            <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M6 13a10 10 0 0 1 18-4M26 19a10 10 0 0 1-18 4M24 3v6h-6M8 29v-6h6"/></svg>
+            <b>Weapon</b>
+          </button>
+          <button id="touch-aim" data-mouse="2" aria-label="Hold to aim">
+            <svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="9"/><path d="M16 3v7m0 12v7M3 16h7m12 0h7"/></svg>
+            <b>Aim</b>
+          </button>
+          <button id="touch-fire" data-key="70" aria-label="Hold to fire or punch">
+            <svg viewBox="0 0 32 32" aria-hidden="true"><path d="m16 3 3 7 7-3-3 7 6 3-7 2 1 8-6-5-6 5 1-8-7-2 6-3-3-7 7 3Z"/></svg>
+            <b>Fire</b>
+          </button>
+        </div>
+        <!-- In a car: Auto holds Gas until Brake is touched or Auto is tapped again. -->
+        <button id="touch-auto" class="touch-auto" type="button" data-toggle="auto" aria-pressed="false" aria-label="Auto gas: keep accelerating until you brake" hidden><b>Auto</b><span>Gas</span></button>
       </div>
       <section id="overlay" aria-labelledby="status-title">
         <!-- In fullscreen the header is out of view; this button keeps the menu reachable. -->
@@ -194,7 +211,7 @@
     </dialog>
     <footer>
       <p id="input-note">Keyboard, mouse and touch supported. The host PC must stay online.</p>
-      <p class="controls"><b>WASD</b> Move / drive &nbsp; <b>Mouse</b> Look &nbsp; <b>Shift</b> Sprint &nbsp; <b>Space</b> Jump / handbrake &nbsp; <b>E</b> Interact / car &nbsp; <b>1–8</b> Choose crew &nbsp; <b>C</b> Next crew &nbsp; <b>F2</b> Comic &nbsp; <b>R</b> Recover &nbsp; <b>T</b> Race replay &nbsp; <b>Esc</b> Release mouse</p>
+      <p class="controls"><b>WASD</b> Move / drive &nbsp; <b>Mouse</b> Look &nbsp; <b>Shift</b> Sprint &nbsp; <b>Space</b> Jump / handbrake &nbsp; <b>E</b> Interact / car &nbsp; <b>F</b> Fire &nbsp; <b>Right-click</b> Aim &nbsp; <b>Q</b> Weapon &nbsp; <b>1–8</b> Choose crew &nbsp; <b>C</b> Next crew &nbsp; <b>F2</b> Comic &nbsp; <b>R</b> Recover &nbsp; <b>T</b> Race replay &nbsp; <b>Esc</b> Release mouse</p>
     </footer>
   </body>
 </html>

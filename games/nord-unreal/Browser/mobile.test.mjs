@@ -125,7 +125,8 @@ function frameDifference(before, after) {
 async function layout(name) {
   const geometry = await page.evaluate(() => {
     const names = [...(document.querySelector('#touch-controls').dataset.driving === 'true'
-      ? ['.touch-steering [data-key="65"]', '.touch-steering [data-key="68"]'] : ['[data-stick="move"]']),
+      ? ['.touch-steering [data-key="65"]', '.touch-steering [data-key="68"]', '#touch-auto']
+      : ['[data-stick="move"]', '#touch-weapon', '#touch-aim', '#touch-fire']),
       '#touch-menu', '#touch-gas', '#touch-brake', '#touch-use'];
     return {
       viewport: { width: innerWidth, height: innerHeight }, overflowX: document.documentElement.scrollWidth > innerWidth,
@@ -139,7 +140,7 @@ async function layout(name) {
     };
   });
   assert.equal(await page.locator('[data-stick="look"]').count(), 0, 'look pad is removed');
-  const actions = geometry.targets.filter(target => target.selector.startsWith('#touch-'));
+  const actions = geometry.targets.filter(target => ['#touch-menu', '#touch-gas', '#touch-brake', '#touch-use'].includes(target.selector));
   assert.equal(new Set(actions.map(target => target.y)).size, 2, 'actions occupy two rows');
   assert.equal(new Set(actions.map(target => target.x)).size, 2, 'actions occupy two columns');
   for (const target of actions) assert.ok(target.width >= 72 && target.height >= 72, 'large square action targets');
@@ -168,7 +169,8 @@ async function fullscreenClearance(name) {
       return { x, y, width, height };
     };
     const selectors = [...(document.querySelector('#touch-controls').dataset.driving === 'true'
-      ? ['.touch-steering [data-key="65"]', '.touch-steering [data-key="68"]'] : ['[data-stick="move"]']),
+      ? ['.touch-steering [data-key="65"]', '.touch-steering [data-key="68"]', '#touch-auto']
+      : ['[data-stick="move"]', '#touch-weapon', '#touch-aim', '#touch-fire']),
       '#touch-menu', '#touch-gas', '#touch-brake', '#touch-use'];
     const video = document.querySelector('#video video');
     const image = bounds(video);
@@ -417,7 +419,8 @@ try {
         const box = selector => document.querySelector(selector).getBoundingClientRect();
         const video = document.querySelector('#video video');
         const frame = box('#frame');
-        const controls = ['[data-stick="move"]', '#touch-menu', '[data-key="16"]', '[data-key="32"]', '[data-key="69"]']
+        const controls = ['[data-stick="move"]', '#touch-menu', '[data-key="16"]', '[data-key="32"]', '[data-key="69"]',
+          '#touch-weapon', '#touch-aim', '#touch-fire']
           .map(selector => ({ selector, top: box(selector).top }));
         return { portraitStream: document.body.classList.contains('portrait-stream'), width: video.videoWidth, height: video.videoHeight,
           frame: { top: frame.top, height: frame.height }, video: box('#video').height, controls };
@@ -483,10 +486,16 @@ try {
       await touch('touchStart', [gas]);
       await touch('touchStart', [gas, left]);
       await waitForPacket(60, 87, since);
-      await waitForPacket(60, 65, since);
+      await waitForPacket(60, 97, since); // NumPad1: MoveRight -0.33
       await page.waitForTimeout(700);
+      const fullLock = (await sends()).length;
+      const leftFar = finger(2, await center('.touch-steering', -70, 0));
+      await touch('touchMove', [gas, leftFar]);
+      await waitForPacket(61, 97, fullLock);
+      await waitForPacket(60, 65, fullLock); // A: full lock
+      await page.waitForTimeout(400);
       const steerReleased = (await sends()).length;
-      await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [left] });
+      await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [leftFar] });
       await waitForPacket(61, 65, steerReleased);
       assert.equal((await sends()).slice(steerReleased).some(record => record.id === 61 && record.bytes[1] === 87), false,
         'releasing steering must keep Gas held');
@@ -497,6 +506,18 @@ try {
       await waitForPacket(60, 83, brakeStart);
       await page.waitForTimeout(700);
       await page.screenshot({ path: resolve(output, 'driving-brake-held.png') });
+      await releaseAllTouches();
+      const autoStart = (await sends()).length;
+      await page.locator('#touch-auto').tap();
+      await waitForPacket(60, 87, autoStart);
+      assert.equal(await page.locator('#touch-auto').getAttribute('aria-pressed'), 'true');
+      await page.waitForTimeout(500);
+      const autoBrake = (await sends()).length;
+      await touch('touchStart', [finger(4, await center('#touch-brake'))]);
+      await waitForPacket(61, 87, autoBrake);
+      await waitForPacket(60, 83, autoBrake);
+      assert.equal(await page.locator('#touch-auto').getAttribute('aria-pressed'), 'false', 'Brake turns Auto gas off');
+      await page.waitForTimeout(700);
       await releaseAllTouches();
       assert.ok(frameDifference(before, await framePixels()) > 1, 'actual car video changes while driving');
       await page.setViewportSize({ width: 800, height: 360 });
@@ -556,6 +577,24 @@ try {
       await page.waitForTimeout(200);
       assert.equal((await sends()).slice(afterCancel).some(record => record.id === 60 && [87, 32].includes(record.bytes[1])), false,
         'cancelled touch must not reassert held movement or jump');
+    });
+    await check('combat buttons send Fire, Aim and Weapon through the native data channel', async () => {
+      const since = (await sends()).length;
+      const aim = finger(31, await center('#touch-aim'));
+      const fire = finger(32, await center('#touch-fire'));
+      await touch('touchStart', [aim]);
+      await waitForPacket(72, 2, since); // MouseDown, right button
+      await touch('touchStart', [aim, fire]);
+      await waitForPacket(60, 70, since); // F
+      await page.waitForTimeout(400);
+      const released = (await sends()).length;
+      await releaseAllTouches();
+      await waitForPacket(73, 2, released); // MouseUp, right button
+      await waitForPacket(61, 70, released);
+      const weapon = (await sends()).length;
+      await page.locator('#touch-weapon').tap();
+      await waitForPacket(60, 81, weapon); // Q
+      await waitForPacket(61, 81, weapon);
     });
     await check('drag anywhere changes the real view while another finger moves', async () => {
       const before = await framePixels();
