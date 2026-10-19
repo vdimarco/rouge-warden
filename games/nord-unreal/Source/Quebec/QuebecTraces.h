@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "Engine/NetSerialization.h"
+#include "Engine/TimerHandle.h"
 #include "GameFramework/Actor.h"
 #include "QuebecTrafficModel.h"
 #include "QuebecTraces.generated.h"

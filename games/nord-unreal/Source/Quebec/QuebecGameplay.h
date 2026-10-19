@@ -8,6 +8,7 @@
 #include "GameFramework/Pawn.h"
 #include "GameFramework/PlayerController.h"
 #include "QuebecSteerAssist.h" // Lag-tolerant driving: AQuebecCar keeps a QuebecSteer::FAssistState.
+#include "Engine/TimerHandle.h" // Traffic street life: AQuebecCar blinks its signal lamps on a timer.
 #include "QuebecTrafficModel.h" // Traffic street life: ARRÊT stops, yielding and curb stops.
 #include "QuebecGameplay.generated.h"
 

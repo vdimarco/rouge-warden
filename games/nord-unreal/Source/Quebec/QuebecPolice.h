@@ -78,17 +78,13 @@ public:
     UFUNCTION(NetMulticast, Unreliable) void MulticastAttack(FVector_NetQuantize From, FVector_NetQuantize To, uint8 Kind, bool bHit);
 
 private:
+    // GetMesh() stays empty so movement smoothing moves it; Pose hangs under it at hip height and carries the tumble.
     UPROPERTY(VisibleAnywhere) TObjectPtr<USceneComponent> Pose;
     UPROPERTY(VisibleAnywhere) TObjectPtr<USkeletalMeshComponent> Body;
     UPROPERTY() TArray<TObjectPtr<UStaticMeshComponent>> Shapes;
     UPROPERTY() TArray<TObjectPtr<UStaticMeshComponent>> FallbackBody;
     UPROPERTY() TArray<TObjectPtr<UStaticMeshComponent>> DazedStars;
-    UPROPERTY() TObjectPtr<UStaticMeshComponent> Tracer;
     UPROPERTY() TObjectPtr<UStaticMeshComponent> Blob;
-    UPROPERTY() TObjectPtr<UPointLightComponent> MuzzleLight;
-    UPROPERTY() TObjectPtr<UTextRenderComponent> Word;
-    UPROPERTY() TObjectPtr<UAudioComponent> AttackAudio;
-    UPROPERTY() TObjectPtr<USoundWaveProcedural> AttackWave;
     UPROPERTY() TObjectPtr<UStaticMesh> CubeMesh;
     UPROPERTY() TObjectPtr<UStaticMesh> SphereMesh;
     UPROPERTY() TObjectPtr<UStaticMesh> CylinderMesh;
@@ -100,8 +96,11 @@ private:
     UPROPERTY() TObjectPtr<UAnimSequence> GoonIdle;
     UPROPERTY() TObjectPtr<UAnimSequence> CurrentClip;
 
-    // Knockdown, replicated as server times so every peer draws the same tumble.
+    // Knockdown, replicated as a server start time and the QuebecKnock launch so every peer draws the same tumble.
     UPROPERTY(Replicated) float KnockStartedAt = -100.f;
+    UPROPERTY(Replicated) float KnockForward = 0.f;
+    UPROPERTY(Replicated) float KnockUp = 0.f;
+    UPROPERTY(Replicated) float KnockSpin = 0.f;
     UPROPERTY(Replicated) float KnockLieSeconds = 0.f;
     UPROPERTY(Replicated) bool bKnockedOut = false;
 
@@ -111,11 +110,9 @@ private:
     FVector Goal = FVector::ZeroVector;
     float GoalAt = -100.f;
     bool bLeaving = false;
-    bool bLookApplied = false;
     bool bPoseApplied = false;
-    bool bOrientRestored = true;
+    bool bKnockMoving = false;
     float BodyHeight = 182.f;
-    float HeadLocalZ = 170.f;
     float NextAttackAt = 0.f;
     float NextThrowAt = 0.f;
     float StaggerUntil = 0.f;
@@ -123,26 +120,22 @@ private:
     FVector SteerDirection = FVector::ZeroVector;
     float NextSightAt = 0.f;
     bool bSight = false;
-    float TracerUntil = 0.f;
-    float FlashUntil = 0.f;
-    float WordUntil = 0.f;
     float BlobStartedAt = -10.f;
+    bool bBlobHit = false;
     FVector BlobFrom = FVector::ZeroVector;
     FVector BlobTo = FVector::ZeroVector;
-    float AudioStopAt = 0.f;
-    uint32 AudioNoise = 0x2f6b1d37;
 
     void ApplyLook();
     UStaticMeshComponent* AddShape(FName Name, UStaticMesh* Mesh, USceneComponent* Parent, const FVector& Location, const FVector& Size, UMaterialInterface* Material);
     float ServerTime() const;
+    float KnockEndsAt() const;
     void Think(float DeltaSeconds, float Now);
     FVector Steer(const FVector& Point, const AActor* Ignore, float Now);
     bool CanSee(const AActor* Target, float Now);
     void Attack(APawn* Target, float Range, float Now);
     void UpdatePose(float Now);
     void UpdateAnimation();
-    void UpdateEffects(float LocalNow);
-    void PlayBurst(uint8 Kind);
+    void UpdateBlob(float LocalNow);
 };
 
 /** Paint, light bar and siren on a police car. Added by QuebecCrime::DecoratePoliceCar on every peer. */

@@ -767,7 +767,7 @@ def _side_of_end(end, away_side):
 
 def build_junctions(world):
     """Curb and sidewalk-outer points for every segment end, plus junction pavement and corners."""
-    world.ends, world.junctions, world.corners = {}, [], []
+    world.ends, world.junctions, world.corners, world.box_t = {}, [], [], {}
     for node, arms in world.graph.items():
         p0 = world.nodes.get(node)
         info = []
@@ -802,6 +802,7 @@ def build_junctions(world):
             oa = (add(origin, a['n'], a['L'] + max(a['wL'], 1.)), a['u'])
             ob = (add(origin, b['n'], -(b['R'] + max(b['wR'], 1.))), b['u'])
             row = {'node': node, 'a': a, 'b': b, 'deg': deg}
+            box_t = world.box_t
             if deg < 168:
                 hit = line_isect(la[0], la[1], lb[0], lb[1])
                 ta, tb = hit if hit else (0., 0.)
@@ -850,6 +851,9 @@ def build_junctions(world):
                             inner.append((C[0] + r * math.cos(a0 + sweep * f), C[1] + r * math.sin(a0 + sweep * f)))
                     world.ends[(a['seg']['i'], a['end'], a['left'])] = (Ta, inner[0], ta + dt, Q, 0.)
                     world.ends[(b['seg']['i'], b['end'], b['right'])] = (Tb, inner[-1], tb + dt, Q, .3)
+                    for arm, tt in ((a, ta), (b, tb)):
+                        key = (arm['seg']['i'], arm['end'])
+                        box_t[key] = max(box_t.get(key, 0.), tt)
                     polygon.extend(arc)
                     row.update(kind='fillet', P=P, C=C, rc=rc, arc=arc, inner=inner, Q=Q)
             elif deg <= 192:
@@ -891,6 +895,7 @@ def build_junctions(world):
         for end in ('a', 'b'):
             vals = [world.ends[(s['i'], end, side)][2] for side in ('L', 'R') if (s['i'], end, side) in world.ends]
             s['mouth_' + end] = max([0.] + vals)
+            s['box_' + end] = world.box_t.get((s['i'], end), 0.)
 
 
 def seg_point(s, along, lateral):
@@ -991,6 +996,13 @@ def crossing_records(world):
                 if not hit:
                     continue
                 along = hit[0]
+                # Keep the 3 m band outside the junction box so arms' crosswalks never overlap.
+                lo_a, hi_a = s['box_a'] + 165, s['len'] - s['box_b'] - 165
+                if lo_a < hi_a:
+                    if along < s['len'] / 2:
+                        along = max(along, lo_a) if along < lo_a + 600 else along
+                    else:
+                        along = min(along, hi_a) if along > hi_a - 600 else along
                 p = seg_point(s, along, 0)
                 c, m = t.get('crossing', ''), t.get('crossing:markings', '')
                 stop = any(math.dist(p, q) < 2500 for _, q in stop_nodes)
@@ -1143,11 +1155,13 @@ def build_streets(world):
             paint_crosswalk(L, s, cw, 'continental_white', counts)
             for side in (s['curbL'], -s['curbR']):
                 ramp_points.append(seg_point(s, cw, side))
+    done = []
     for c in world.crossings:
         key = (c['way'], c['seg'])
-        if key in painted_crossings:
+        if key in painted_crossings or any(si == c['seg'] and abs(al - c['along']) < 350 for si, al in done):
             continue
         painted_crossings.add(key)
+        done.append((c['seg'], c['along']))
         paint_crosswalk(L, world.segs[c['seg']], c['along'], c['style'], counts)
 
     # Centre lines, lane lines, parking edge lines, manholes and drains on straight sections.
@@ -1521,9 +1535,9 @@ def _yards(world, L, surfaces, strip, counts):
     out = ((oa[0] - ca[0]) / w0, (oa[1] - ca[1]) / w0)
     # Yards reach the sharp property corner at fillet corners; the later arm sits 3 mm higher.
     qa, qb = strip['corner_q']
-    if qa is not None and math.dist(qa, oa) < 1200:
+    if qa is not None and math.dist(qa, oa) < 600:
         oa = qa
-    if qb is not None and math.dist(qb, ob) < 1200:
+    if qb is not None and math.dist(qb, ob) < 600:
         ob = qb
     olen = math.dist(oa, ob)
     if olen < 200:
