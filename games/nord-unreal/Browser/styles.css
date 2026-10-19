@@ -41,13 +41,13 @@ footer p { margin: 0; }
 #touch-controls button span { display: block; margin-top: 2px; font-size: 8.5px; letter-spacing: .08em; color: var(--cyan); }
 #touch-controls button[data-pressed="true"] span { color: var(--ink); }
 /* Floating game buttons keep full thumb-sized faces without obscuring the world. */
-#touch-controls :is(.touch-primary, .touch-steering) button { width: var(--action-size); height: var(--action-size); padding: 8px; border: 2px solid #fffaf0b3; border-radius: 50%; background: #0b0a16c9; color: var(--paper); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; font: 700 12px/1.1 Arial, sans-serif; letter-spacing: 0; box-shadow: 0 4px 0 #0009, inset 0 1px 0 #fff3; text-shadow: 0 1px 2px #000; }
+#touch-controls :is(.touch-primary, .touch-steering, .touch-combat) button { width: var(--action-size); height: var(--action-size); padding: 8px; border: 2px solid #fffaf0b3; border-radius: 50%; background: #0b0a16c9; color: var(--paper); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; font: 700 12px/1.1 Arial, sans-serif; letter-spacing: 0; box-shadow: 0 4px 0 #0009, inset 0 1px 0 #fff3; text-shadow: 0 1px 2px #000; }
 #touch-controls #touch-brake { border-color: var(--cyan); }
 #touch-controls #touch-use { border-color: var(--yellow); }
-#touch-controls :is(.touch-primary, .touch-steering) svg { width: 28px; height: 28px; flex-shrink: 0; fill: none; stroke: currentColor; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; pointer-events: none; }
-#touch-controls :is(.touch-primary, .touch-steering) button span { margin: 0; font: 700 10px/1 Arial, sans-serif; letter-spacing: .02em; color: inherit; }
-#touch-controls :is(.touch-primary, .touch-steering) button:is(:active, [data-pressed="true"], [aria-expanded="true"]) { background: var(--yellow); color: var(--ink); border-color: var(--paper); box-shadow: 0 1px 0 #0009, inset 0 2px 4px #0004; text-shadow: none; transform: translateY(3px); }
-#touch-controls :is(.touch-primary, .touch-steering) button:focus-visible { outline: 3px solid var(--cyan); outline-offset: 3px; }
+#touch-controls :is(.touch-primary, .touch-steering, .touch-combat) svg { width: 28px; height: 28px; flex-shrink: 0; fill: none; stroke: currentColor; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; pointer-events: none; }
+#touch-controls :is(.touch-primary, .touch-steering, .touch-combat) button span { margin: 0; font: 700 10px/1 Arial, sans-serif; letter-spacing: .02em; color: inherit; }
+#touch-controls :is(.touch-primary, .touch-steering, .touch-combat) button:is(:active, [data-pressed="true"], [aria-expanded="true"]) { background: var(--yellow); color: var(--ink); border-color: var(--paper); box-shadow: 0 1px 0 #0009, inset 0 2px 4px #0004; text-shadow: none; transform: translateY(3px); }
+#touch-controls :is(.touch-primary, .touch-steering, .touch-combat) button:focus-visible { outline: 3px solid var(--cyan); outline-offset: 3px; }
 /* Sticks: a paper ring inside an ink ring around a halftone-dot fill. */
 .touch-stick { position: absolute; width: 96px; height: 96px; border: 2px solid var(--paper); border-radius: 50%; display: grid; place-items: center;
   background: radial-gradient(circle, #fffaf03d 0 1.1px, transparent 1.6px) 0 0 / 6px 6px, #0b0a1673;
@@ -102,7 +102,7 @@ footer p { margin: 0; }
 /* The open crew list sits above the sticks so they cannot take its taps. */
 .touch-input.portrait-stream .crew-picker { top: auto; bottom: calc(2 * var(--action-size) + 32px + max(16px, env(safe-area-inset-bottom))); }
 
-#touch-controls :is(.touch-primary, .touch-steering) b { font: inherit; }
+#touch-controls :is(.touch-primary, .touch-steering, .touch-combat) b { font: inherit; }
 #touch-controls[data-driving="true"] #touch-gas { border-color: var(--cyan); }
 #touch-controls[data-driving="true"] #touch-brake { border-color: var(--yellow); }
 
@@ -118,9 +118,30 @@ footer p { margin: 0; }
   #touch-controls .touch-primary svg { width: 22px; height: 22px; }
 }
 
-#touch-controls :is(.touch-primary, .touch-steering) button :is(b, span) { white-space: nowrap; flex-shrink: 0; }
+#touch-controls :is(.touch-primary, .touch-steering, .touch-combat) button :is(b, span) { white-space: nowrap; flex-shrink: 0; }
 #touch-controls .touch-steering b { background: var(--ink); padding: 1px 3px; border-radius: 2px; color: var(--paper); }
 
 
 /* The move stick (on foot) or the wheel (in a car) jumps under the thumb that lands anywhere on the game. */
 #touch-controls :is(.move-stick, .touch-steering)[data-floating="true"] { left: var(--float-x) !important; top: var(--float-y) !important; bottom: auto !important; translate: -50% -50%; transition: none; }
+
+/* Combat buttons on foot (Weapon, Aim, Fire) and the Auto gas toggle in a car sit beside the action grid. Upright, they sit above it,
+   inside the bottom 40% the portrait HUD keeps clear. Sideways, they sit to its left and above the speed and prompt text, whose tops are
+   at most 100/720 of the frame height (under 14dvh). */
+#touch-controls { --action-gap: 12px; --combat-size: clamp(44px, calc(40dvh - 2 * var(--action-size) - var(--action-gap) - max(16px, env(safe-area-inset-bottom)) - 10px), 56px); }
+@media (max-width: 360px) { #touch-controls { --action-gap: 8px; } }
+.touch-combat { position: absolute; right: max(16px, env(safe-area-inset-right)); bottom: calc(max(16px, env(safe-area-inset-bottom)) + 2 * var(--action-size) + var(--action-gap) + 10px); display: flex; gap: 8px; }
+#touch-controls .touch-combat button { width: var(--combat-size); height: var(--combat-size); padding: 4px; gap: 1px; font-size: 9.5px; }
+#touch-controls .touch-combat svg { width: 20px; height: 20px; }
+#touch-controls #touch-fire { border-color: #ff5a5a; }
+#touch-controls .touch-auto { position: absolute; width: 52px; height: 44px; padding: 4px;
+  right: calc(max(16px, env(safe-area-inset-right)) + var(--action-size) + var(--action-gap) + (var(--action-size) - 52px) / 2);
+  bottom: calc(max(16px, env(safe-area-inset-bottom)) + 2 * var(--action-size) + var(--action-gap) + 10px); }
+#touch-controls .touch-auto[aria-pressed="true"] { background: var(--yellow); color: var(--ink); border-color: var(--ink); box-shadow: 1px 1px 0 #c2185b; }
+#touch-controls .touch-auto[aria-pressed="true"] span { color: var(--ink); }
+@media (orientation: landscape) {
+  #touch-controls { --combat-size: 52px; }
+  .touch-combat { right: calc(max(16px, env(safe-area-inset-right)) + 2 * var(--action-size) + var(--action-gap) + 12px); bottom: calc(14dvh + 8px); }
+  #touch-controls .touch-auto { right: calc(max(16px, env(safe-area-inset-right)) + 2 * var(--action-size) + var(--action-gap) + 12px);
+    bottom: calc(max(16px, env(safe-area-inset-bottom)) + var(--action-size) + var(--action-gap) + (var(--action-size) - 44px) / 2); }
+}
