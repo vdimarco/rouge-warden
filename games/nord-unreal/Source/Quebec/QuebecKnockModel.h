@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
+#include <utility>
 
 namespace QuebecKnock
 {
@@ -184,6 +185,12 @@ namespace QuebecKnock
         return std::max(0.f, Detail::Finite(Elapsed, 0.f) - Timeline(NoLie).Landed);
     }
 
+    // Tumble rate for a planar launch speed, so peers that know only the replicated push agree on it.
+    inline float SpinFor(float Forward)
+    {
+        return std::clamp(240.f + 1.1f * std::max(0.f, Detail::Finite(Forward, 0.f)), 420.f, 900.f);
+    }
+
     // A car strike: the person flies along the car's travel, farther and higher for a faster car.
     inline FLaunch CarLaunch(float ImpactSpeed)
     {
@@ -191,7 +198,7 @@ namespace QuebecKnock
         FLaunch Launch;
         Launch.Forward = std::clamp(.35f * Impact, 220.f, 600.f);
         Launch.Up = std::clamp(260.f + .1f * Impact, 330.f, 500.f);
-        Launch.Spin = std::clamp(300.f + .22f * Impact, 420.f, 900.f);
+        Launch.Spin = SpinFor(Launch.Forward);
         Launch.LieSeconds = 1.6f;
         return Launch;
     }
@@ -203,9 +210,33 @@ namespace QuebecKnock
         FLaunch Launch;
         Launch.Forward = 160.f + 5.f * Hit;
         Launch.Up = 300.f + 2.f * Hit;
-        Launch.Spin = 360.f + 4.f * Hit;
+        Launch.Spin = SpinFor(Launch.Forward);
         Launch.LieSeconds = 1.4f + .02f * Hit;
         return Launch;
+    }
+
+    // Car contact in the car's frame: does a point moving from (FromX, FromY) to (ToX, ToY) relative to the car pass
+    // through the box with half extents HalfX, HalfY (already grown by the person's radius)? A slab test on the whole
+    // segment, so a fast step never tunnels past a thin person.
+    inline bool SweptBoxHit(float FromX, float FromY, float ToX, float ToY, float HalfX, float HalfY)
+    {
+        if (!std::isfinite(FromX) || !std::isfinite(FromY) || !std::isfinite(ToX) || !std::isfinite(ToY)) return false;
+        float Enter = 0.f, Leave = 1.f;
+        const float Starts[2] = {FromX, FromY}, Moves[2] = {ToX - FromX, ToY - FromY}, Halves[2] = {HalfX, HalfY};
+        for (int Axis = 0; Axis < 2; ++Axis)
+        {
+            if (std::fabs(Moves[Axis]) < 1e-6f)
+            {
+                if (std::fabs(Starts[Axis]) > Halves[Axis]) return false;
+                continue;
+            }
+            float Near = (-Halves[Axis] - Starts[Axis]) / Moves[Axis], Far = (Halves[Axis] - Starts[Axis]) / Moves[Axis];
+            if (Near > Far) std::swap(Near, Far);
+            Enter = std::max(Enter, Near);
+            Leave = std::min(Leave, Far);
+            if (Enter > Leave) return false;
+        }
+        return true;
     }
 
     // Civilians: a car above CarKnockSpeed, any weapon (a shot or a swing), or a second punch knocks them down.

@@ -1760,7 +1760,7 @@ def render_sheet(props, finals, sheet_path, tmp_dir):
         items = []
         for key, (x, y), yaw in corner:
             items += placements(key, T((x / 100, y / 100, 0), (0, 0, yaw)))
-        tiles.append(('street corner', items, (((-150, -420, 0), (250, 380, 330)), -8, 7)))
+        tiles.append(('street corner', items, (((-120, -420, 0), (230, 120, 260)), -62, 9)))
     tiles = tiles[:cols * rows]
     sheet = np.full((th * rows, tw * cols, 4), .3, dtype=np.float32)
     for idx, (label, items, view) in enumerate(tiles):

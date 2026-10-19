@@ -91,19 +91,32 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(FQuebecGradedSteeringTest,"Quebec.Driving.Grade
 bool FQuebecGradedSteeringTest::RunTest(const FString& Parameters)
 {
     // The phone wheel's graded levels are axis keys; none may collide with another mapping.
-    const TArray<FInputAxisKeyMapping>& Mappings = GetDefault<UInputSettings>()->GetAxisMappings();
+    const UInputSettings* Settings = GetDefault<UInputSettings>();
     const FKey GradedKeys[] = {EKeys::NumPadOne, EKeys::NumPadTwo, EKeys::NumPadFour, EKeys::NumPadFive};
     const float GradedScales[] = {-.33f, -.66f, .33f, .66f};
+    TArray<FInputAxisKeyMapping> Steering;
+    Settings->GetAxisMappingByName(TEXT("MoveRight"),Steering);
     for (int32 Level = 0; Level < 4; ++Level)
     {
         int32 Uses = 0;
         bool bSteers = false;
-        for (const FInputAxisKeyMapping& Mapping : Mappings)
-            if (Mapping.Key == GradedKeys[Level])
-            {
-                ++Uses;
-                bSteers |= Mapping.AxisName == TEXT("MoveRight") && FMath::IsNearlyEqual(Mapping.Scale,GradedScales[Level],.001f);
-            }
+        for (const FInputAxisKeyMapping& Mapping : Steering)
+            if (Mapping.Key == GradedKeys[Level]) { ++Uses; bSteers |= FMath::IsNearlyEqual(Mapping.Scale,GradedScales[Level],.001f); }
+        const TCHAR* Axes[] = {TEXT("MoveForward"), TEXT("Turn"), TEXT("LookUp")};
+        for (const TCHAR* Axis : Axes)
+        {
+            TArray<FInputAxisKeyMapping> Others;
+            Settings->GetAxisMappingByName(Axis,Others);
+            for (const FInputAxisKeyMapping& Mapping : Others) Uses += Mapping.Key == GradedKeys[Level] ? 1 : 0;
+        }
+        const TCHAR* Actions[] = {TEXT("Jump"), TEXT("Sprint"), TEXT("Interact"), TEXT("Handbrake"), TEXT("ComicStyle"), TEXT("NextCharacter"),
+            TEXT("RetryCampaign"), TEXT("ReplayCampaign"), TEXT("Fire"), TEXT("Aim"), TEXT("NextWeapon")};
+        for (const TCHAR* Action : Actions)
+        {
+            TArray<FInputActionKeyMapping> Others;
+            Settings->GetActionMappingByName(Action,Others);
+            for (const FInputActionKeyMapping& Mapping : Others) Uses += Mapping.Key == GradedKeys[Level] ? 1 : 0;
+        }
         TestTrue(FString::Printf(TEXT("%s steers by %.2f and has no other mapping"),*GradedKeys[Level].ToString(),GradedScales[Level]),bSteers && Uses == 1);
     }
 

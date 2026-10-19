@@ -229,6 +229,22 @@ int main(int ArgumentCount, char** Arguments)
     Expect(CivilianGoesDown(EHit::Melee, 30.f, 0), "a hockey stick knocks a civilian down");
     Expect(!CivilianGoesDown(EHit::Melee, 12.f, 0) && CivilianGoesDown(EHit::Melee, 12.f, 1), "the second punch knocks a civilian down");
     Expect(!CivilianGoesDown(EHit::Car, NaN, 0), "a broken speed does not knock down");
+    Expect(SpinFor(0.f) == 420.f && SpinFor(10000.f) == 900.f && SpinFor(300.f) < SpinFor(500.f), "tumble rate grows with the launch and stays bounded");
+    Expect(CarLaunch(1500.f).Spin == SpinFor(CarLaunch(1500.f).Forward), "peers rebuild the car tumble rate from the replicated push");
+
+    // Swept car box: the car's half extents grown by a 35 cm person.
+    const float HalfX = 220.f + 35.f, HalfY = 90.f + 35.f;
+    Expect(SweptBoxHit(400.f, 0.f, 200.f, 0.f, HalfX, HalfY), "a person ahead that the car reaches is hit");
+    Expect(!SweptBoxHit(400.f, 0.f, 300.f, 0.f, HalfX, HalfY), "a person still ahead after the step is not hit");
+    Expect(SweptBoxHit(300.f, 0.f, -300.f, 0.f, HalfX, HalfY), "a 6 m step at 120 m/s cannot tunnel past a person");
+    Expect(SweptBoxHit(270.f, 10.f, 150.f, 10.f, HalfX, HalfY), "a 1.2 m traffic step catches a person at the bumper");
+    Expect(!SweptBoxHit(300.f, 126.f, -300.f, 126.f, HalfX, HalfY), "a person just beside the car's path is missed");
+    Expect(SweptBoxHit(300.f, 125.f, -300.f, 125.f, HalfX, HalfY), "the side boundary still touches");
+    Expect(SweptBoxHit(0.f, 0.f, 0.f, 0.f, HalfX, HalfY), "a person inside the box is hit");
+    Expect(!SweptBoxHit(0.f, 300.f, 0.f, 300.f, HalfX, HalfY), "a still person beside a still car is not hit");
+    Expect(SweptBoxHit(600.f, 600.f, 0.f, 0.f, HalfX, HalfY), "a diagonal approach that ends inside is hit");
+    Expect(!SweptBoxHit(600.f, 600.f, 400.f, 400.f, HalfX, HalfY), "a diagonal approach that stops short is not hit");
+    Expect(!SweptBoxHit(NaN, 0.f, 0.f, 0.f, HalfX, HalfY), "a broken position is never hit");
 
     std::printf("car 1500 cm/s: flight %.3f s, bounce %.3f s, lying %.3f-%.3f s, done %.3f s, rest %.0f cm\n", static_cast<double>(Line.Flight),
         static_cast<double>(Line.Bounce), static_cast<double>(Line.Landed), static_cast<double>(Line.StandStarts), static_cast<double>(Line.Total),
