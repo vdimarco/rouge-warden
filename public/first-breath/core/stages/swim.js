@@ -781,8 +781,53 @@ function move(st, sp) {
   const mth = wrapAngle(HALF_PI - sp.vang);
   const p0 = sp.p, k = kOf(st, sp);
   const g = k ? 1 / Math.max(0.3, 1 + k * (sp.x - st.xc)) : 1;
-  sp.x += along * Math.sin(mth) * DT;
-  const dp = (along * Math.cos(mth) - cur) * DT * g;
+  let vx = along * Math.sin(mth);
+  let vp = (along * Math.cos(mth) - cur) * g;
+  // Walls slide. Subtract the part of the step that enters a wall before adding it, and at a kink do every wall
+  // that meets there: the mouth opens at the fork, so the corner does not stop a push toward the warm lane.
+  if (sp.zone === "path") {
+    const R = T.HEAD_R;
+    const slope = (p) => p >= T.WOMB_END && p < T.GATE_END ? (T.GATE_HALF - T.WOMB_HALF) / (T.GATE_END - T.WOMB_END)
+      : p >= T.FORK && p < T.SPLIT ? (T.MOUTH - T.GATE_HALF) / (T.SPLIT - T.FORK) : 0;
+    const hiOf = (p) => halfAt(p) - R;
+    const x1 = sp.x + vx * DT, p1 = sp.p + vp * DT;
+    if (Math.abs(x1) > hiOf(p1) + 1e-4) {
+      const ns = [];
+      const add = (p, side) => {
+        const s = slope(p), L = Math.hypot(1, s);
+        const n = [side / L, -s / L];
+        if (!ns.some((q) => q[0] === n[0] && q[1] === n[1])) ns.push(n);
+      };
+      const see = (p) => {
+        const h = hiOf(p);
+        if (sp.x >= h - 0.4 || x1 >= h) add(p, 1);
+        if (sp.x <= -h + 0.4 || x1 <= -h) add(p, -1);
+      };
+      see(sp.p); see(p1);
+      for (const q of [T.WOMB_END, T.GATE_END, T.FORK]) {
+        if (Math.abs(sp.p - q) < 2 || (sp.p - q) * (p1 - q) < 0) { see(q - 1e-4); see(q + 1e-4); }
+      }
+      if (ns.some((n) => n[1] !== 0)) {
+        let best = null, bs = -1;
+        const lists = [ns];
+        for (const n of ns) lists.push([n]);
+        for (const list of lists) {
+          let x = vx, y = vp;
+          for (let pass = 0; pass < 2; pass++) for (const n of list) {
+            const d = x * n[0] + y * n[1];
+            if (d > 0) { x -= n[0] * d; y -= n[1] * d; }
+          }
+          if (Math.abs(sp.x + x * DT) <= hiOf(sp.p + y * DT) + 0.05) {
+            const s2 = x * x + y * y;
+            if (s2 > bs) { bs = s2; best = [x, y]; }
+          }
+        }
+        if (best) { vx = best[0]; vp = best[1]; }
+      }
+    }
+  }
+  sp.x += vx * DT;
+  const dp = vp * DT;
   sp.p += dp;
   if (k) { sp.ang = wrapAngle(sp.ang - k * dp); sp.vang = wrapAngle(sp.vang - k * dp); }
   // the split: the side of the head picks the tube
