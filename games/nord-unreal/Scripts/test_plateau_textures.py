@@ -1,11 +1,12 @@
 """CPU checks for the replica surface textures (Scripts/plateau_textures.py).
 
 Run from games/nord-unreal:  python3 Scripts/test_plateau_textures.py
-Builds the textures twice into temporary directories (about 40 s on four cores), then checks byte-identical
+Builds the textures twice into temporary directories (about a minute on four cores), then checks byte-identical
 output (also against a build in this process), the PNG structure, seamless tiling, the ashlar, slate, siding,
-herringbone and card layouts, the cut-out alpha (coverage, anti-aliased edges, guard openings), the normal
-maps, colour and roughness means, the shared material keys, the tints the apply step will need, and that
-the committed folder matches the generator.
+herringbone, buff-brick and card layouts, the cut-out alpha (coverage, anti-aliased edges, guard openings), the
+normal maps, colour and roughness means, the large-scale variation of the gravel, ballast and tar tiles, the macro
+mask, the shared material keys, the tints the apply step will need, and that the committed folder matches the
+generator.
 """
 import hashlib
 import json
@@ -21,7 +22,7 @@ import apply_plateau_replica as apply_replica  # noqa: E402
 # The shared material keys of the rear pass (plateau_plex.py and the apply step use exactly these names).
 SHARED_KEYS = ('Roof_Membrane', 'Roof_Gravel', 'Roof_Tar', 'Sheet_Metal', 'Siding_Lap_Cream', 'Siding_Lap_Grey',
                'Parged', 'Rail_Baluster', 'Rail_Lattice', 'Fence_Boards', 'Leaf_Creeper', 'Yard_Grass', 'Yard_Pavers',
-               'Yard_Soil', 'Yard_Gravel')
+               'Yard_Soil', 'Yard_Gravel', 'Brick_Buff_Even')
 CUTOUT_KEYS = ('Rail_Baluster', 'Rail_Lattice', 'Fence_Boards')
 
 
@@ -152,6 +153,107 @@ def check_slate_gaps(rows, spec):
     assert all(cavity[x] < 30 for x in middles), 'Cavity in the middle of a slate'
 
 
+def luminance(rows, x, y):
+    lin = T.SRGB_TO_LINEAR
+    r = rows[y]
+    return .2126 * lin[r[3 * x]] + .7152 * lin[r[3 * x + 1]] + .0722 * lin[r[3 * x + 2]]
+
+
+def check_buff_brick(spec, diff, rough):
+    """Even buff brick: 24 bed joints and 8 head joints per course where the layout puts them, grey mortar darker
+    than the yellow-tan brick so the grid reads, and an even shade from brick to brick."""
+    L = T.brick_layout(spec)
+    width, height = spec['size_px']
+    px = L['px']
+    mx, my = L['module_cm']
+    assert abs(mx - 20.) < 1e-9 and abs(3 * my - 20.) < 1e-9 and L['joint_cm'] >= .8, 'Brick module or joint'
+    cavity = [r[2::3] for r in rough]
+    for c in range(L['courses']):
+        # The bed joint on top of course c, and the middle of course c (rows from the layout's roll).
+        joint_y = int(((c * my - L['roll_cm'][1]) % L['size_cm'][1]) * px)
+        mid_y = int(((c * my + my / 2. - L['roll_cm'][1]) % L['size_cm'][1]) * px)
+        assert sum(1 for v in cavity[joint_y] if v > 200) > .95 * width, f'Bed joint over course {c} is not mortar'
+        heads = runs(cavity[mid_y], 128, opaque=True)
+        assert len(heads) == L['per_course'], (c, heads)
+        assert all(4 <= h <= 2 * L['joint_cm'] * px for h in heads), f'Head joints of course {c}: {heads}'
+    bricks, mortar, brick_lum = {}, [], []
+    for y in range(0, height, 2):
+        for x in range(0, width, 2):
+            v = cavity[y][x]
+            if v > 230:
+                mortar.append(luminance(diff, x, y))
+            elif v < 10:
+                lum = luminance(diff, x, y)
+                brick_lum.append(lum)
+                r, k = T.brick_at(L, (x + .5) / px, (y + .5) / px)[:2]
+                bricks.setdefault((r, k), []).append(lum)
+    assert len(bricks) == L['courses'] * L['per_course'], len(bricks)
+    m_brick, m_mortar = sum(brick_lum) / len(brick_lum), sum(mortar) / len(mortar)
+    assert m_mortar < .88 * m_brick, ('the mortar grid must read darker than the brick', m_mortar, m_brick)
+    means = [sum(v) / len(v) for v in bricks.values()]
+    mean = sum(means) / len(means)
+    spread = (sum((v - mean) ** 2 for v in means) / len(means)) ** .5 / mean
+    assert spread < .05, ('even buff brick: per-brick shade varies too much', spread)
+    share = sum(1 for r in cavity for v in r if v >= 128) / (width * height)
+    assert .12 < share < .26, ('mortar share of the face', share)
+    return {'mortar_to_brick_luminance': round(m_mortar / m_brick, 3), 'brick_shade_spread': round(spread, 4),
+            'mortar_share': round(share, 4)}
+
+
+def block_variation(rows, channels, px, block_cm):
+    """Coefficient of variation of the mean luminance of square blocks of block_cm: large-scale variation."""
+    lin = T.SRGB_TO_LINEAR
+    width, height = len(rows[0]) // channels, len(rows)
+    b = max(1, round(block_cm * px))
+    nx, ny = width // b, height // b
+    sums = [0.] * (nx * ny)
+    for y in range(ny * b):
+        r = rows[y]
+        for x in range(nx * b):
+            o = channels * x
+            sums[(y // b) * nx + x // b] += .2126 * lin[r[o]] + .7152 * lin[r[o + 1]] + .0722 * lin[r[o + 2]]
+    vals = [v / (b * b) for v in sums]
+    mean = sum(vals) / len(vals)
+    return (sum((v - mean) ** 2 for v in vals) / len(vals)) ** .5 / mean
+
+
+def check_macro(index, data):
+    """The macro mask: tileable, three full-range channels near 0.5 that do not follow each other, and tiles that
+    are not a whole multiple of any set's tile, so the macro and the detail never line up."""
+    entry = index['macro']
+    assert entry['file'] == T.macro_file() and entry['tile_m'] == list(T.MACRO['tile_m'])
+    assert (entry['srgb'], entry['compression'], entry['sampler']) == (False, 'TC_MASKS', 'SAMPLERTYPE_MASKS')
+    assert hashlib.sha256(data).hexdigest() == entry['sha256']
+    assert hashlib.sha256(T.read_png(data)[2]).hexdigest() == entry['raw_sha256']
+    width, height, channels, rows = pixels(data)
+    assert [width, height] == entry['size_px'] and channels == 3
+    sx, sy = seam_ratio(width, height, rows)
+    assert sx < 1.6 and sy < 1.6, ('macro mask seam', sx, sy)
+    values = [[r[c::3] for r in rows] for c in range(3)]
+    flat = [[v for r in ch for v in r] for ch in values]
+    for c, v in enumerate(flat):
+        ordered = sorted(v)
+        assert .4 < sum(v) / len(v) / 255. < .6 and ordered[len(v) // 50] < 30 and ordered[-len(v) // 50] > 225, c
+    for a in range(3):
+        for b in range(a + 1, 3):
+            ma, mb = sum(flat[a]) / len(flat[a]), sum(flat[b]) / len(flat[b])
+            cov = sum((p - ma) * (q - mb) for p, q in zip(flat[a], flat[b]))
+            corr = cov / (sum((p - ma) ** 2 for p in flat[a]) * sum((q - mb) ** 2 for q in flat[b])) ** .5
+            assert abs(corr) < .3, ('macro channels follow each other', a, b, corr)
+    for key, spec in T.SETS.items():
+        for tile in spec['tile_m']:
+            for m in T.MACRO['tile_m']:
+                ratio = m / tile
+                assert abs(ratio - round(ratio)) > .05, (key, m, tile, 'macro tile lines up with the detail tile')
+    users = sorted(k for k, s in T.SETS.items() if 'macro' in s)
+    for key in users:
+        macro = index['sets'][key]['macro']
+        assert macro['file'] == entry['file'] and macro['tile_m'] == entry['tile_m'] and macro['channels'] == ['R', 'G']
+        s = T.SETS[key]['macro']
+        assert macro['strength'] == [s, round(s * T.MACRO['second_scale'], 6)] and 0. < s <= .2, key
+    return {'means': entry['mean'], 'tile_m': entry['tile_m'], 'sets': users}
+
+
 def row_at(spec, z_cm):
     """Image row of a card at z_cm above the card's bottom edge."""
     height = spec['size_px'][1]
@@ -213,8 +315,10 @@ EXPECT = {
     'slate': lambda m, r: sum(m) / 3 < .12 and m[2] > m[0] and m[2] > m[1] and .44 <= r <= .56,
     'membrane': lambda m, r: sum(m) / 3 > .55 and max(m) / min(m) < 1.1 and .35 <= r <= .6,
     'ballast': lambda m, r: .3 < sum(m) / 3 < .6 and max(m) / min(m) < 1.2 and .75 <= r <= .95,
-    'tar': lambda m, r: sum(m) / 3 < .15 and .4 <= r <= .7,
-    'sheet_metal': lambda m, r: .2 < sum(m) / 3 < .45 and m[2] >= m[0] and max(m) / min(m) < 1.15 and .3 <= r <= .55,
+    # Tar and gravel reads dark grey from above, about #4A4744 (linear .0685, .0648, .0595), not black.
+    'tar': lambda m, r: all(abs(v / t - 1.) < .12 for v, t in zip(m, (.0685, .0648, .0595))) and .5 <= r <= .75,
+    # Weathered galvanised sheet: light grey and dull (roughness about .6), not a mirror.
+    'sheet_metal': lambda m, r: .25 < sum(m) / 3 < .45 and m[2] >= m[0] and max(m) / min(m) < 1.15 and .52 <= r <= .68,
     'siding': lambda m, r: sum(m) / 3 > .55 and max(m) / min(m) < 1.1 and .4 <= r <= .6,
     'parging': lambda m, r: .2 < sum(m) / 3 < .4 and max(m) / min(m) < 1.2 and .75 <= r <= .92,
     'balusters': lambda m, r: sum(m) / 3 > .4 and max(m) / min(m) < 1.25 and .55 <= r <= .75,
@@ -225,7 +329,13 @@ EXPECT = {
     'pavers': lambda m, r: .15 < sum(m) / 3 < .35 and max(m) / min(m) < 1.35 and .75 <= r <= .85,
     'soil': lambda m, r: sum(m) / 3 < .1 and m[0] > m[1] > m[2] and .8 <= r <= .95,
     'crushed_stone': lambda m, r: .15 < sum(m) / 3 < .3 and max(m) / min(m) < 1.2 and .8 <= r <= .92,
+    # Even buff brick: yellow-tan (red over green over blue, blue well under red), light, matte.
+    'buff_brick': lambda m, r: .3 < sum(m) / 3 < .5 and m[0] > m[1] > m[2] and m[2] / m[0] < .5 and .8 <= r <= .92,
 }
+# Sets whose tile must not read as a grid on a large roof or yard: 2 m tiles with 25 cm to 1 m zones. Minimum
+# coefficient of variation of the mean luminance of 25 cm and 50 cm blocks (the 1 m tiles of the last pass had
+# .04 and .01 to .016).
+LARGE_SCALE = {'ballast': (.08, .05), 'tar': (.15, .1), 'crushed_stone': (.07, .05)}
 
 
 def check_shared_keys(index):
@@ -259,12 +369,13 @@ def main():
         fa, fb = files(a), files(b)
         assert fa.keys() == fb.keys() and all(fa[k] == fb[k] for k in fa), \
             'Non-deterministic output: ' + str([k for k in fa if fa.get(k) != fb.get(k)])
-        assert len(fa) == 1 + 3 * len(T.SETS)
+        assert len(fa) == 2 + 3 * len(T.SETS), 'textures.json, the macro mask and three maps per set'
         # A set built in this process (no worker pool) gives the same pixels as the pooled build.
         _, solo = T.build('lattice')
         assert all(solo['maps'][r]['raw_sha256'] == index['sets']['lattice']['maps'][r]['raw_sha256'] for r in T.ROLES)
         report['determinism'] = f'{len(fa)} files byte-identical across two builds and an in-process rebuild'
         report['shared_keys'] = check_shared_keys(index)
+        report['macro'] = check_macro(index, fa[T.macro_file()])
         plex = apply_replica.ROOT / 'Data/Plateau/ReplicaGeometry/Plex/manifest.json'
         plex_materials = json.loads(plex.read_text())['materials'] if plex.is_file() else {}
         summary, sets = {}, {}
@@ -307,10 +418,19 @@ def main():
                          'roughness_mean': entry['roughness_mean'], 'surface': entry['surface']}
             if key == 'slate':
                 check_slate_gaps(maps['rough'], spec)
+            if key == 'buff_brick':
+                sets[key].update(check_buff_brick(spec, maps['diff'], maps['rough']))
+            if key in LARGE_SCALE:
+                # Large-scale variation: the tile is 2 m, and 25 cm and 50 cm blocks differ in tone (zones).
+                assert spec['tile_m'] == (2., 2.) and spec['size_px'] == (1024, 1024), key
+                px = spec['size_px'][0] / (spec['tile_m'][0] * 100.)
+                cv = [block_variation(maps['diff'], 3, px, c) for c in (25., 50.)]
+                assert all(v >= lo for v, lo in zip(cv, LARGE_SCALE[key])), (key, 'too even at large scale', cv)
+                sets[key]['block_variation_25_50cm'] = [round(v, 4) for v in cv]
             if entry['alpha']:
                 sets[key].update(check_cutout(key, spec, entry, maps['diff']))
             if key == 'sheet_metal':
-                assert entry['metallic'] == T.SETS['sheet_metal']['metallic']
+                assert entry['metallic'] == T.SETS['sheet_metal']['metallic'] <= .35, 'galvanised sheet reads grey'
             # Tints the apply step derives from the Plex colours stay in range and keep the texture's contrast.
             for name, spec_m in plex_materials.items():
                 if apply_replica.texture_set(name, spec_m) == key:
@@ -338,6 +458,9 @@ def main():
                     assert hashlib.sha256(raw).hexdigest() == m['raw_sha256'], f'{m["file"]} is stale'
                 assert stored['sets'][key]['mean_linear'] == index['sets'][key]['mean_linear']
                 assert stored['sets'][key]['material'] == index['sets'][key]['material']
+            assert stored['macro']['raw_sha256'] == index['macro']['raw_sha256'], 'rerun python3 Scripts/plateau_textures.py'
+            raw = T.read_png((T.OUT / stored['macro']['file']).read_bytes())[2]
+            assert hashlib.sha256(raw).hexdigest() == stored['macro']['raw_sha256'], 'The macro mask is stale'
             report['committed'] = 'Data/Plateau/ReplicaGeometry/Textures matches the generator'
     print(json.dumps(report, indent=1))
     print('Plateau texture checks passed')

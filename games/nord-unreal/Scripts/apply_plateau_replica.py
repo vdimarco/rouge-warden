@@ -2,13 +2,15 @@
 
 Additive and refuses to run twice. Reads every Data/Plateau/ReplicaGeometry/<Layer>/manifest.json
 (Streets, Soul, Plex, Props...), checks the OBJ hashes, imports the texture sets of
-Scripts/plateau_textures.py that the manifests use (greystone, slate, and the rear pass's roofs, siding,
-parging, cut-out guards and fences, creeper and yard ground), builds the masked two-sided parent the cut-out
-keys need, duplicates materials (never rebuilds an
+Scripts/plateau_textures.py that the manifests use (greystone, slate, even buff brick, and the rear pass's roofs,
+siding, parging, cut-out guards and fences, creeper and yard ground) and the macro-variation mask, builds the
+masked two-sided parent the cut-out keys need, duplicates materials (never rebuilds an
 existing M_*; see the wet-street gotcha in plateau_atmosphere.py), imports each batch with the
-upgrade_plateau.import_mesh semantics, enables Nanite, spawns labelled actors under the 'Replica'
-folder, instances Furniture/Soul placements of the MAP-PROPS meshes on HISM components, and instances the
-Plex yard trees (Plex/yard_trees.json, when present) on the mapped trees' mesh.
+upgrade_plateau.import_mesh semantics, enables Nanite (Preserve Area on masked batches), spawns labelled actors
+under the 'Replica' folder (Collision_Only batches on actors hidden in game that block pawns and ignore the camera
+and visibility), instances Furniture/Soul placements of the MAP-PROPS meshes on HISM components, and instances
+the Plex yard trees (Plex/yard_trees.json, when present): on one imported mesh per species when
+Trees/manifest.json exists, else on the mapped trees' mesh.
 The only change to an existing actor: the visual 'OSM Marking' dashes are hidden (collision and
 transform unchanged) because they would poke through the new asphalt.
 
@@ -23,6 +25,7 @@ import hashlib
 import json
 import math
 from pathlib import Path
+import re
 import shlex
 import shutil
 import sys
@@ -56,6 +59,11 @@ TEXTURES = 'Textures'                      # folder under Data/Plateau/ReplicaGe
 TEXTURE_INDEX = 'textures.json'
 TEXTURE_ASSETS = ASSETS + '/Textures'
 TEXTURE_ROLES = ('diff', 'nor_dx', 'rough')
+MACRO_ROLE = 'mask'                        # T_Replica_Macro_mask: the macro-variation mask (plateau_textures.MACRO)
+MACRO_DESC = 'Replica macro'               # desc of the nodes add_macro adds, so verify can find them
+# Card sets (u along the run, v 0..1 up the card) clamp V: the top row of a baluster card is opaque and the bottom
+# row (the drain gap) clear, and with the default wrap the lower mips would blend the two into a dashed line.
+CARD_ADDRESS_Y = 'TA_CLAMP'
 TEXTURED_PARENT = '/Game/Plateau/Materials/M_BrickRed'
 WET_PARENT = '/Game/Plateau/Materials/M_Gravel'
 CUTOUT_PARENT = MATERIALS + '/M_Replica_CutoutParent'
@@ -74,12 +82,29 @@ SHARED_TEXTURE_KEYS = {key: name for name, spec in plateau_textures.SETS.items()
 # crown of the shared mesh (scale x value on X and Y, scale on Z) so the kinds do not read as clones.
 YARD_TREES = 'Plex/yard_trees.json'
 TREE_MESH = '/Game/Art/Tree/tree_small_02/StaticMeshes/tree_small_02'
-TREE_KINDS = {'maple': 1.15, 'ash': .9, 'elm': 1.05, 'small': 1.}
+TREE_MESH_HEIGHT_CM = 455.                 # the shared mesh at scale 1; a row's scale is a multiple of this height
+# Fallback crown factors (X and Y) per kind on the shared mesh; the old kinds come first, as plateau_plex wrote them.
+TREE_KINDS = {'maple': 1.15, 'ash': .9, 'elm': 1.05, 'small': 1., 'norway_maple': 1.15, 'silver_maple': 1.2,
+              'honey_locust': 1.1, 'linden': 1.05}
 TREE_CULL_CM = (40000, 65000)              # QuebecVegetation's cull distances for the mapped trees
+# Species meshes (Trees/manifest.json, from the Blender tree generator): when present, each yard tree uses its
+# species' own mesh, uniformly scaled to the row's height, instead of the shared mesh with a crown factor.
+TREES = 'Trees'
+TREE_SPECIES = ('norway_maple', 'silver_maple', 'honey_locust', 'linden', 'ash', 'small')
+TREE_ALIASES = {'maple': 'norway_maple', 'elm': 'linden'}
+TREE_SLOTS = ('bark', 'leaves')
+PRESERVE_AREA = 'PRESERVE_AREA'            # Nanite shape preservation for masked cards, creeper and tree leaves
+COLLISION_ONLY = 'Collision_Only'          # invisible walls (gallery guards): collide, never render
 GROUND_KEYS = ('sidewalk', 'curb', 'joint', 'alley_gutter', 'yard_soil', 'yard_path', 'soil', 'patch', 'chantier',
                'pothole', 'crack')
+# Material keys whose batches cast no shadow (flat decals and ground), matched as a whole key or a prefix before '_'
+# (rust, rust_streak), never as a substring: the ruelle-verte plant_rust plants cast shadows like every plant_*.
 SHADOWLESS = ('paint', 'joint', 'curb', 'patch', 'crack', 'pothole', 'leaf', 'grass_edge', 'soil', 'rust',
-              'mural', 'chantier', 'alley', 'asphalt', 'cast_iron')
+              'mural', 'chantier', 'alley', 'asphalt', 'cast_iron', COLLISION_ONLY)
+
+
+def casts_shadow(key):
+    return not any(key == t or key.startswith(t + '_') for t in SHADOWLESS)
 
 
 def sha(path):
@@ -94,7 +119,8 @@ def linear(hex_colour):
 def load_manifests(root=ROOT, check=True):
     """Every layer manifest present, in a fixed order, with OBJ and placement hashes verified."""
     data = Path(root) / 'Data/Plateau/ReplicaGeometry'
-    found = sorted(p.parent.name for p in data.glob('*/manifest.json'))
+    # Trees/manifest.json describes species meshes, not a layer of batches (load_tree_kinds reads it).
+    found = sorted(p.parent.name for p in data.glob('*/manifest.json') if p.parent.name != TREES)
     order = [n for n in LAYER_ORDER if n in found] + [n for n in found if n not in LAYER_ORDER]
     manifests = {}
     for name in order:
@@ -208,6 +234,25 @@ def load_textures(root=ROOT):
     return sets
 
 
+def load_macro(root=ROOT):
+    """The macro-variation mask of textures.json (plateau_textures.MACRO), its image stream checked; None when the
+    folder or an older index has none."""
+    import plateau_textures
+    folder = Path(root) / 'Data/Plateau/ReplicaGeometry' / TEXTURES
+    if not (folder / TEXTURE_INDEX).is_file():
+        return None
+    entry = json.loads((folder / TEXTURE_INDEX).read_text()).get('macro')
+    if not entry:
+        return None
+    path = folder / entry['file']
+    assert path.is_file(), f'Missing {path}; run python3 Scripts/plateau_textures.py'
+    data = path.read_bytes()
+    width, height, raw = plateau_textures.read_png(data)
+    assert [width, height] == entry['size_px'], f'Wrong size {path}'
+    assert hashlib.sha256(raw).hexdigest() == entry['raw_sha256'], f'Stale texture {path}'
+    return dict(entry, file_sha256=hashlib.sha256(data).hexdigest())
+
+
 def set_material(name, entry):
     """Plan fields of a replica texture set: its maps, tiling, mean colour and how its material is built.
 
@@ -216,19 +261,26 @@ def set_material(name, entry):
     """
     surface = entry.get('surface') or plateau_textures.SETS[name]['surface']
     material = entry.get('material') or plateau_textures.SURFACES[surface]
-    return {'texture_set': name, 'surface': surface, 'mean_linear': entry['mean_linear'], 'tiling': entry['tiling'],
-            'uv': entry.get('uv', 'metres'),
-            'textures': {role: f'{TEXTURE_ASSETS}/{Path(entry["maps"][role]["file"]).stem}' for role in TEXTURE_ROLES},
-            'blend_mode': material['blend_mode'], 'two_sided': bool(material['two_sided']),
-            'shading_model': material['shading_model'], 'opacity_mask_clip': material.get('opacity_mask_clip')}
+    out = {'texture_set': name, 'surface': surface, 'mean_linear': entry['mean_linear'], 'tiling': entry['tiling'],
+           'uv': entry.get('uv', 'metres'),
+           'textures': {role: f'{TEXTURE_ASSETS}/{Path(entry["maps"][role]["file"]).stem}' for role in TEXTURE_ROLES},
+           'blend_mode': material['blend_mode'], 'two_sided': bool(material['two_sided']),
+           'shading_model': material['shading_model'], 'opacity_mask_clip': material.get('opacity_mask_clip')}
+    macro = entry.get('macro')
+    if macro:
+        # Macro variation: the tint x lerp(1 - s, 1 + s, R) at the first macro tile x lerp(...) of G at the second.
+        out['macro'] = {'texture': f'{TEXTURE_ASSETS}/{Path(macro["file"]).stem}', 'strength': list(macro['strength']),
+                        'tiling': [[round(1. / t, 6)] * 2 for t in macro['tile_m']], 'channels': list(macro['channels'])}
+    return out
 
 
 def load_yard_trees(root=ROOT):
     """Rows of Plex/yard_trees.json, checked; None when plateau_plex.py has not written the file yet.
 
     Each row is {x, y, z, yaw, scale, kind}: replica frame (x east, y north, z up, cm), yaw in degrees, scale on
-    the shared tree mesh (about 4.55 m tall and 3 to 4.3 m across at 1), kind one of TREE_KINDS. A file holding
-    {"trees": [...]} is read the same way.
+    the shared tree mesh (about 4.55 m tall and 3 to 4.3 m across at 1), kind one of TREE_KINDS (the old maple and
+    elm stand for norway_maple and linden), and optionally height_cm (else scale x 4.55 m). A file holding
+    {"trees": [...]} is read the same way. Each row also carries its species and target height.
     """
     path = Path(root) / 'Data/Plateau/ReplicaGeometry' / YARD_TREES
     if not path.is_file():
@@ -243,24 +295,99 @@ def load_yard_trees(root=ROOT):
         x, y, z, yaw, scale = (float(row[k]) for k in ('x', 'y', 'z', 'yaw', 'scale'))
         assert all(math.isfinite(v) for v in (x, y, z, yaw, scale)), f'{YARD_TREES} row {n}: {row}'
         assert 0. < scale <= 6. and abs(z) < 2000., f'{YARD_TREES} row {n}: scale {scale}, z {z}'
-        out.append({'kind': kind, 'position': (x, y, z), 'yaw': yaw % 360., 'scale': scale})
+        height = float(row.get('height_cm', scale * TREE_MESH_HEIGHT_CM))
+        assert math.isfinite(height) and 100. <= height <= 3500., f'{YARD_TREES} row {n}: height {height}'
+        out.append({'kind': kind, 'species': TREE_ALIASES.get(kind, kind), 'position': (x, y, z), 'yaw': yaw % 360.,
+                    'scale': scale, 'height_cm': height})
     return out
 
 
-def plan_trees(rows):
-    """One NoCollision instanced actor per tree kind, in TREE_KINDS order, with each tree's transform."""
+def load_tree_kinds(root=ROOT):
+    """Trees/manifest.json (the Blender tree generator): {species: {obj, materials {bark, leaves}, height_cm,
+    trunk_cm}}, under "kinds" or at the top level, with an optional top-level "materials" table. Checked; None
+    when the file does not exist, and the yard trees then keep the shared mesh.
+
+    A slot's material is a spec ({base_color_srgb, roughness, metallic, optional texture as for any layer key,
+    optional foliage}), the name of a spec in the top-level "materials" table, or an existing /Game/ material.
+    """
+    folder = Path(root) / 'Data/Plateau/ReplicaGeometry' / TREES
+    path = folder / 'manifest.json'
+    if not path.is_file():
+        return None
+    manifest = json.loads(path.read_text())
+    wrapped = 'kinds' in manifest
+    kinds = manifest['kinds'] if wrapped else manifest
+    table = manifest.get('materials', {}) if isinstance(manifest.get('materials'), dict) else {}
+    out = {}
+    for species in sorted(kinds):
+        spec = kinds[species]
+        if species not in TREE_SPECIES:
+            assert not wrapped, f'{TREES}/manifest.json: unknown tree kind {species!r}'
+            continue
+        obj = folder / spec['obj'] if (folder / spec['obj']).is_file() else folder.parent / spec['obj']
+        assert obj.is_file(), f'Missing {obj}; run the tree generator first'
+        digest = sha(obj)
+        if 'sha256' in spec:
+            assert spec['sha256'] == digest, f'Stale tree mesh {obj}'
+        height, trunk = float(spec['height_cm']), float(spec['trunk_cm'])
+        assert math.isfinite(height) and math.isfinite(trunk) and 200. <= height <= 4000. and 2. <= trunk <= 300., \
+            f'{species}: height {height} cm, trunk {trunk} cm'
+        slots = spec['materials']
+        assert sorted(slots) == sorted(TREE_SLOTS), f'{species}: material slots {sorted(slots)}, want {list(TREE_SLOTS)}'
+        refs = {}
+        for slot in TREE_SLOTS:
+            value = slots[slot]
+            if isinstance(value, str) and value.startswith('/Game/'):
+                refs[slot] = {'existing': value.split('.')[0]}
+            else:
+                key, mat = (value, table.get(value)) if isinstance(value, str) else (f'{species}_{slot}', value)
+                assert isinstance(mat, dict) and re.match(r'^#[0-9A-Fa-f]{6}$', mat.get('base_color_srgb', '')), \
+                    f'{species} {slot}: material {value!r} is not a spec with base_color_srgb'
+                refs[slot] = {'key': key, 'spec': mat}
+        out[species] = {'obj': obj.relative_to(folder.parent).as_posix(), 'sha256': digest, 'height_cm': height,
+                        'trunk_cm': trunk, 'materials': refs}
+    assert out, f'{TREES}/manifest.json lists no tree kinds'
+    return out
+
+
+def tree_mesh_asset(species):
+    return f'{ASSETS}/{TREES}/SM_Tree_{species}'
+
+
+def plan_trees(rows, kinds=None):
+    """One NoCollision instanced actor per tree kind, with each tree's transform.
+
+    Without species meshes (kinds None): the shared mesh, one actor per kind in TREE_KINDS order, scale x crown on
+    X and Y. With them (load_tree_kinds): one actor per species in TREE_SPECIES order on that species' mesh, scaled
+    uniformly so the tree stands at the row's height (a trunk scales with its tree, as the generator drew it).
+    """
+    out = []
+    if kinds is None:
+        groups = {}
+        for row in rows:
+            groups.setdefault(row['kind'], []).append(row)
+        for kind, crown in TREE_KINDS.items():
+            if kind not in groups:
+                continue
+            out.append({'label': f'{PREFIX}Plex yard trees {kind}', 'kind': kind, 'mesh': TREE_MESH,
+                        'folder': f'{FOLDER}/Plex yard trees', 'collision': False, 'cast_shadow': True,
+                        'cull_cm': list(TREE_CULL_CM), 'crown': crown, 'count': len(groups[kind]),
+                        'transforms': [(r['position'], r['yaw'], (r['scale'] * crown, r['scale'] * crown, r['scale']))
+                                       for r in groups[kind]]})
+        return out
     groups = {}
     for row in rows:
-        groups.setdefault(row['kind'], []).append(row)
-    out = []
-    for kind, crown in TREE_KINDS.items():
-        if kind not in groups:
+        assert row['species'] in kinds, f'{YARD_TREES}: no {TREES} mesh for {row["kind"]} ({row["species"]})'
+        groups.setdefault(row['species'], []).append(row)
+    for species in TREE_SPECIES:
+        if species not in groups:
             continue
-        out.append({'label': f'{PREFIX}Plex yard trees {kind}', 'kind': kind, 'mesh': TREE_MESH,
+        height = kinds[species]['height_cm']
+        out.append({'label': f'{PREFIX}Plex yard trees {species}', 'kind': species, 'mesh': tree_mesh_asset(species),
                     'folder': f'{FOLDER}/Plex yard trees', 'collision': False, 'cast_shadow': True,
-                    'cull_cm': list(TREE_CULL_CM), 'crown': crown, 'count': len(groups[kind]),
-                    'transforms': [(r['position'], r['yaw'], (r['scale'] * crown, r['scale'] * crown, r['scale']))
-                                   for r in groups[kind]]})
+                    'cull_cm': list(TREE_CULL_CM), 'crown': 1., 'count': len(groups[species]),
+                    'mesh_height_cm': height,
+                    'transforms': [(r['position'], r['yaw'], (r['height_cm'] / height,) * 3) for r in groups[species]]})
     return out
 
 
@@ -277,8 +404,80 @@ def shared_key_plan(root=ROOT):
             row.update({k: fields[k] for k in ('blend_mode', 'two_sided', 'shading_model', 'opacity_mask_clip',
                                                 'tiling', 'uv')})
             row['texture_base_color_srgb'] = sets[name].get('base_color_srgb')
+            if fields.get('macro'):
+                row['macro_strength'] = fields['macro']['strength']
+            if fields['uv'] == 'card':
+                row['address_y'] = CARD_ADDRESS_Y
         out[key] = row
     return out
+
+
+def material_row(layer, key, spec, texture_sets, used_sets):
+    """The plan row of one material key: the parent it duplicates, its tint basis and, for a replica texture set,
+    the set's maps, tiling, blend mode, macro variation and the manifest's metallic."""
+    base, texture = base_material(key, spec)
+    row = {'layer': layer, 'key': key, 'asset': f'{MATERIALS}/{material_name(layer, key)}',
+           'duplicate_of': base, 'texture_mean': texture,
+           'mean_linear': list(TEXTURE_MEAN[texture]) if texture in TEXTURE_MEAN else None,
+           'base_color_srgb': spec['base_color_srgb'],
+           'emissive_srgb': spec.get('emissive_srgb'),
+           'emissive_strength': spec.get('emissive_strength', 0.)}
+    if texture and texture.startswith('replica_'):
+        name = texture[len('replica_'):]
+        assert name in texture_sets, f'{layer} {key} needs the {name} textures; run python3 Scripts/plateau_textures.py'
+        used_sets.add(name)
+        row.update(set_material(name, texture_sets[name]))
+        row['metallic'] = float(spec.get('metallic', 0.))
+        row['wet'] = base == WET_PARENT
+    return row
+
+
+def texture_rows(name, entry):
+    """Import rows of a set's three maps: colour space, compression, sampler, hashes, alpha mips, V addressing."""
+    clip = set_material(name, entry)['opacity_mask_clip']
+    rows = []
+    for role in TEXTURE_ROLES:
+        m = entry['maps'][role]
+        alpha = bool(m.get('alpha'))
+        rows.append({'set': name, 'role': role, 'file': f'{TEXTURES}/{m["file"]}',
+                     'asset': f'{TEXTURE_ASSETS}/{Path(m["file"]).stem}', 'size_px': entry['size_px'],
+                     'srgb': m['srgb'], 'compression': m['compression'], 'sampler': m['sampler'],
+                     'sha256': m['file_sha256'], 'raw_sha256': m['raw_sha256'], 'alpha': alpha,
+                     # Mips keep the clip coverage (Castano), so thin balusters do not fade away.
+                     'alpha_coverage_threshold': clip if alpha else None,
+                     # Cards span their texture once in V: clamp, so no mip blends the top row into the bottom.
+                     'address_y': CARD_ADDRESS_Y if entry.get('uv') == 'card' else 'TA_WRAP'})
+    return rows
+
+
+def plan_tree_assets(kinds, species_used, texture_sets, used_sets):
+    """Material rows (layer 'Trees') and mesh rows of the species meshes the yard trees use."""
+    materials, meshes, seen = [], [], {}
+    for species in TREE_SPECIES:
+        if species not in species_used:
+            continue
+        kind = kinds[species]
+        slots = {}
+        for slot in TREE_SLOTS:
+            ref = kind['materials'][slot]
+            if 'existing' in ref:
+                slots[slot] = ref['existing']
+                continue
+            key, spec = ref['key'], ref['spec']
+            if key in seen:
+                assert seen[key][0] == spec and seen[key][1] == slot, f'{TREES} material {key} differs between kinds'
+            else:
+                row = material_row(TREES, key, spec, texture_sets, used_sets)
+                # Leaves without a masked foliage texture set still light as foliage: two-sided, with transmission.
+                row['foliage'] = slot == 'leaves' and bool(spec.get('foliage', True)) and not row.get('texture_set')
+                row['spec'] = spec
+                materials.append(row)
+                seen[key] = (spec, slot)
+            slots[slot] = f'{MATERIALS}/{material_name(TREES, key)}'
+        meshes.append({'species': species, 'file': kind['obj'], 'asset': tree_mesh_asset(species),
+                       'sha256': kind['sha256'], 'height_cm': kind['height_cm'], 'trunk_cm': kind['trunk_cm'],
+                       'materials': slots, 'collision': 'none', 'nanite_shape_preservation': PRESERVE_AREA})
+    return materials, meshes
 
 
 def plan(root=ROOT):
@@ -296,26 +495,23 @@ def plan(root=ROOT):
     colliders = {key: props_meta.get(key, {}).get('colliders_cm', []) for key in parts}
     main_part = {key: main_part_mesh(batches) for key, batches in parts.items()}
     out = {'materials': [], 'meshes': [], 'actors': [], 'instances': [], 'texts': [], 'hide': list(HIDE_LABELS),
-           'missing_props': [], 'textures': []}
+           'missing_props': [], 'textures': [], 'tree_meshes': []}
     texture_sets, used_sets = load_textures(root), set()
     for layer, manifest in manifests.items():
         for key, spec in sorted(manifest.get('materials', {}).items()):
-            base, texture = base_material(key, spec)
-            row = {'layer': layer, 'key': key, 'asset': f'{MATERIALS}/{material_name(layer, key)}',
-                   'duplicate_of': base, 'texture_mean': texture,
-                   'mean_linear': list(TEXTURE_MEAN[texture]) if texture in TEXTURE_MEAN else None,
-                   'base_color_srgb': spec['base_color_srgb'],
-                   'emissive_srgb': spec.get('emissive_srgb'),
-                   'emissive_strength': spec.get('emissive_strength', 0.)}
-            if texture and texture.startswith('replica_'):
-                name = texture[len('replica_'):]
-                assert name in texture_sets, f'{layer} {key} needs the {name} textures; run python3 Scripts/plateau_textures.py'
-                entry = texture_sets[name]
-                used_sets.add(name)
-                row.update(set_material(name, entry))
-                row['metallic'] = float(spec.get('metallic', 0.))
-                row['wet'] = base == WET_PARENT
-            out['materials'].append(row)
+            out['materials'].append(material_row(layer, key, spec, texture_sets, used_sets))
+    yard = load_yard_trees(root)
+    kinds = load_tree_kinds(root) if yard else None
+    out['trees'] = plan_trees(yard or [], kinds)
+    if kinds:
+        tree_materials, out['tree_meshes'] = plan_tree_assets(kinds, {t['kind'] for t in out['trees']}, texture_sets,
+                                                              used_sets)
+        out['materials'] += tree_materials
+    out['yard_trees'] = {'file': YARD_TREES, 'present': yard is not None,
+                         'mode': 'species meshes' if kinds else 'shared mesh',
+                         'mesh': TREE_MESH if not kinds else None,
+                         'species_meshes': {m['species']: m['asset'] for m in out['tree_meshes']},
+                         'aliases': dict(TREE_ALIASES)}
     parents = {}
     for m in out['materials']:
         if m['duplicate_of'] in BUILT_PARENTS and m['duplicate_of'] not in parents:
@@ -325,33 +521,36 @@ def plan(root=ROOT):
                                                                'opacity_mask_clip', 'tiling', 'textures')}}
     out['parents'] = [parents[a] for a in sorted(parents)]
     for name in sorted(used_sets):
-        entry = texture_sets[name]
-        clip = set_material(name, entry)['opacity_mask_clip']
-        for role in TEXTURE_ROLES:
-            m = entry['maps'][role]
-            alpha = bool(m.get('alpha'))
-            out['textures'].append({'set': name, 'role': role, 'file': f'{TEXTURES}/{m["file"]}',
-                                    'asset': f'{TEXTURE_ASSETS}/{Path(m["file"]).stem}', 'size_px': entry['size_px'],
-                                    'srgb': m['srgb'], 'compression': m['compression'], 'sampler': m['sampler'],
-                                    'sha256': m['file_sha256'], 'raw_sha256': m['raw_sha256'], 'alpha': alpha,
-                                    # Mips keep the clip coverage (Castaño), so thin balusters do not fade away.
-                                    'alpha_coverage_threshold': clip if alpha else None})
-    yard = load_yard_trees(root)
-    out['yard_trees'] = {'file': YARD_TREES, 'present': yard is not None, 'mesh': TREE_MESH}
-    out['trees'] = plan_trees(yard or [])
+        out['textures'] += texture_rows(name, texture_sets[name])
+    if any(m.get('macro') for m in out['materials']):
+        macro = load_macro(root)
+        assert macro, 'A material needs the macro mask; run python3 Scripts/plateau_textures.py'
+        out['textures'].append({'set': 'macro', 'role': MACRO_ROLE, 'file': f'{TEXTURES}/{macro["file"]}',
+                                'asset': f'{TEXTURE_ASSETS}/{Path(macro["file"]).stem}', 'size_px': macro['size_px'],
+                                'srgb': macro['srgb'], 'compression': macro['compression'], 'sampler': macro['sampler'],
+                                'sha256': macro['file_sha256'], 'raw_sha256': macro['raw_sha256'], 'alpha': False,
+                                'alpha_coverage_threshold': None, 'address_y': 'TA_WRAP'})
+    by_material = {m['asset']: m for m in out['materials']}
     for layer, manifest in manifests.items():
         for batch in manifest.get('batches', []):
             mesh = f'{ASSETS}/{layer}/{batch["mesh"]}'
             key = prop_key(batch, keys) if layer == 'Props' else None
-            out['meshes'].append({'layer': layer, 'file': batch['file'], 'asset': mesh,
-                                  'material': f'{MATERIALS}/{material_name(layer, batch["material"])}',
+            material = f'{MATERIALS}/{material_name(layer, batch["material"])}'
+            masked = by_material.get(material, {}).get('blend_mode') == 'masked'
+            out['meshes'].append({'layer': layer, 'file': batch['file'], 'asset': mesh, 'material': material,
                                   'collision': batch.get('collision', 'none'), 'triangles': batch['triangles'],
+                                  # Masked cards and creeper: Nanite keeps their area at a distance.
+                                  'nanite_shape_preservation': PRESERVE_AREA if masked else None,
                                   # Simple box collision from MAP-PROPS colliders_cm, on the prop's main part only.
                                   'colliders': colliders.get(key, []) if key and main_part.get(key) == batch['mesh'] else []})
             if layer != 'Props':
+                invisible = batch['material'] == COLLISION_ONLY
+                assert not invisible or batch.get('collision', 'none') != 'none', f'{batch["file"]}: a wall that never collides'
                 out['actors'].append({'label': f'{PREFIX}{layer} {batch["mesh"][3:]}', 'mesh': mesh,
                                       'folder': f'{FOLDER}/{layer}', 'collision': batch.get('collision', 'none'),
-                                      'shadow': not any(t in batch['material'] for t in SHADOWLESS)})
+                                      'shadow': casts_shadow(batch['material']),
+                                      # Gallery guards: block pawns, ignore the camera and visibility, never render.
+                                      'collision_only': invisible, 'hidden_in_game': invisible})
     for layer, rows in placements.items():
         groups, missing = {}, {}
         for row in rows:
@@ -379,9 +578,16 @@ def plan(root=ROOT):
     out['counts'] = {'materials': len(out['materials']), 'meshes': len(out['meshes']), 'actors': len(out['actors']),
                      'emissive_materials': sum(1 for m in out['materials'] if m['emissive_srgb']),
                      'textures': len(out['textures']),
+                     'clamped_textures': sum(1 for t in out['textures'] if t['address_y'] == 'TA_CLAMP'),
                      'textured_replica_materials': sum(1 for m in out['materials'] if m.get('texture_set')),
                      'masked_materials': sum(1 for m in out['materials'] if m.get('blend_mode') == 'masked'),
+                     'macro_materials': sum(1 for m in out['materials'] if m.get('macro')),
                      'built_parents': len(out['parents']),
+                     'preserve_area_meshes': sum(1 for m in out['meshes'] if m['nanite_shape_preservation']),
+                     'hidden_collision_actors': sum(1 for a in out['actors'] if a['collision_only']),
+                     'shadowless_actors': sum(1 for a in out['actors'] if not a['shadow']),
+                     'tree_meshes': len(out['tree_meshes']),
+                     'tree_materials': sum(1 for m in out['materials'] if m['layer'] == TREES),
                      'yard_tree_actors': len(out['trees']),
                      'yard_tree_instances': sum(t['count'] for t in out['trees']),
                      'instance_components': len(out['instances']),
@@ -473,6 +679,14 @@ def preflight(u, root, backup, the_plan):
     for row in the_plan['textures']:
         assert getattr(u.TextureCompressionSettings, row['compression'], None) is not None, row['compression']
         assert getattr(u.MaterialSamplerType, row['sampler'], None) is not None, row['sampler']
+        assert getattr(u.TextureAddress, row['address_y'], None) is not None, row['address_y']
+    if any(m['nanite_shape_preservation'] for m in the_plan['meshes'] + the_plan['tree_meshes']):
+        assert getattr(u.NaniteShapePreservation, PRESERVE_AREA, None) is not None, 'Missing Unreal API ' + PRESERVE_AREA
+    if any(a['collision_only'] for a in the_plan['actors']):
+        for name in ('ECC_CAMERA', 'ECC_VISIBILITY', 'ECC_PAWN'):
+            assert getattr(u.CollisionChannel, name, None) is not None, 'Missing Unreal API ' + name
+    if any(m.get('macro') for m in the_plan['materials']):
+        assert getattr(u, 'MaterialExpressionLinearInterpolate', None) is not None, 'Missing Unreal API Lerp'
     if the_plan['parents']:
         for owner, name in ((u.BlendMode, 'BLEND_MASKED'), (u.MaterialShadingModel, 'MSM_TWO_SIDED_FOLIAGE'),
                             (u.MaterialProperty, 'MP_OPACITY_MASK'), (u.MaterialProperty, 'MP_SUBSURFACE_COLOR')):
@@ -483,7 +697,11 @@ def preflight(u, root, backup, the_plan):
             assert not assets.does_asset_exist(row['duplicate_of']), row['duplicate_of'] + ' already exists'
         else:
             assert assets.does_asset_exist(row['duplicate_of']), 'Missing base material ' + row['duplicate_of']
-    if the_plan['trees']:
+    for row in the_plan['tree_meshes']:
+        for slot, material in row['materials'].items():
+            assert material.startswith(MATERIALS) or assets.does_asset_exist(material), \
+                f'{row["species"]} {slot}: missing material {material}'
+    if the_plan['trees'] and not the_plan['tree_meshes']:
         tree = assets.load_asset(TREE_MESH)
         assert isinstance(tree, u.StaticMesh), 'Missing the mapped tree mesh ' + TREE_MESH
         for slot in tree.get_editor_property('static_materials'):
@@ -529,6 +747,9 @@ def import_texture(u, root, row):
                     None)
     if group is not None:
         texture.set_editor_property('lod_group', group)
+    if row.get('address_y', 'TA_WRAP') != 'TA_WRAP':
+        # Cards span their texture once in V: clamp, so the lower mips never blend the top row into the bottom one.
+        texture.set_editor_property('address_y', getattr(u.TextureAddress, row['address_y']))
     if row.get('alpha'):
         # Cut-out diffuse (RGBA): keep the alpha (BC3), and scale each mip's alpha so the share of texels over the
         # material's clip stays that of the top mip (Castaño, "Computing Alpha Mipmaps"); without it, balusters
@@ -543,14 +764,31 @@ def import_texture(u, root, row):
 def texture_role(texture):
     """'diff', 'nor_dx' or 'rough' from a texture asset name (brick_wall_001_diff, T_Replica_Slate_rough...)."""
     name = texture.get_name() if texture else ''
-    return next((r for r in TEXTURE_ROLES if name.endswith('_' + r)), None)
+    return next((r for r in TEXTURE_ROLES + (MACRO_ROLE,) if name.endswith('_' + r)), None)
 
 
-def retexture(u, mat, row, textures):
-    """Swap the brick parent's three samples for the replica set and set the metre tiling.
+def tint_product(u, mat, diff, tint):
+    """(node, pin) of the Multiply that takes the diffuse sample and the tint (diff.RGB x tint in the brick and
+    gravel parents), or None."""
+    lib = u.MaterialEditingLibrary
+    for n in lib.get_material_expressions(mat):
+        if not isinstance(n, u.MaterialExpressionMultiply) or str(n.get_editor_property('desc')) == MARKER:
+            continue
+        inputs = list(lib.get_inputs_for_material_expression(mat, n))[:2]
+        if len(inputs) == 2 and inputs[0] == diff and inputs[1] == tint:
+            return n, 'B'
+        if len(inputs) == 2 and inputs[0] == tint and inputs[1] == diff:
+            return n, 'A'
+    return None
+
+
+def retexture(u, mat, row, textures, tint=None):
+    """Swap the brick parent's three samples for the replica set, set the metre tiling and, for sets with macro
+    variation, multiply the tint by the macro mask (add_macro).
 
     Returns False, changing nothing, unless the duplicate has exactly one authored texture coordinate
-    and one sample per role (diff, nor_dx, rough), as upgrade_plateau.material() authors M_BrickRed.
+    and one sample per role (diff, nor_dx, rough), as upgrade_plateau.material() authors M_BrickRed, and, for a
+    macro set, a Multiply of the diffuse sample and the tint.
     """
     nodes = [n for n in u.MaterialEditingLibrary.get_material_expressions(mat)
              if str(n.get_editor_property('desc')) != MARKER]
@@ -561,13 +799,59 @@ def retexture(u, mat, row, textures):
             samples.setdefault(texture_role(n.get_editor_property('texture')), []).append(n)
     if len(coords) != 1 or sorted(samples) != sorted(TEXTURE_ROLES) or any(len(v) != 1 for v in samples.values()):
         return False
+    product = tint_product(u, mat, samples['diff'][0], tint) if row.get('macro') else None
+    if row.get('macro') and product is None:
+        return False
     samplers = {t['role']: t['sampler'] for t in textures.values()}
     for role, (node,) in samples.items():
         node.set_editor_property('texture', textures[row['textures'][role]]['object'])
         node.set_editor_property('sampler_type', getattr(u.MaterialSamplerType, samplers[role]))
     coords[0].set_editor_property('u_tiling', float(row['tiling'][0]))
     coords[0].set_editor_property('v_tiling', float(row['tiling'][1]))
+    if product:
+        add_macro(u, mat, row, textures, tint, *product)
     return True
+
+
+def add_macro(u, mat, row, textures, tint, product, pin):
+    """Macro variation: the tint x lerp(1 - s1, 1 + s1, mask.R at the first macro tile) x lerp(1 - s2, 1 + s2,
+    mask.G at the second) into the product's tint pin. The two tiles (17.3 m, 5.3 m) are not multiples of any
+    set's tile, so a large roof shows no grid (the Kite demo / T_MacroVariation approach, on a generated mask)."""
+    lib = u.MaterialEditingLibrary
+    macro = row['macro']
+    mask = textures[macro['texture']]
+    factor = tint
+    for tiling, strength, channel in zip(macro['tiling'], macro['strength'], macro['channels']):
+        coords = lib.create_material_expression(mat, u.MaterialExpressionTextureCoordinate)
+        coords.set_editor_property('u_tiling', float(tiling[0]))
+        coords.set_editor_property('v_tiling', float(tiling[1]))
+        sample = lib.create_material_expression(mat, u.MaterialExpressionTextureSample)
+        sample.set_editor_property('texture', mask['object'])
+        sample.set_editor_property('sampler_type', getattr(u.MaterialSamplerType, mask['sampler']))
+        lerp = lib.create_material_expression(mat, u.MaterialExpressionLinearInterpolate)
+        lerp.set_editor_property('const_a', 1. - float(strength))
+        lerp.set_editor_property('const_b', 1. + float(strength))
+        multiply = lib.create_material_expression(mat, u.MaterialExpressionMultiply)
+        for node in (coords, sample, lerp, multiply):
+            node.set_editor_property('desc', MACRO_DESC)
+        assert lib.connect_material_expressions(coords, '', sample, '')
+        assert lib.connect_material_expressions(sample, channel, lerp, 'Alpha')
+        assert lib.connect_material_expressions(factor, '', multiply, 'A')
+        assert lib.connect_material_expressions(lerp, '', multiply, 'B')
+        factor = multiply
+    assert lib.connect_material_expressions(factor, '', product, pin)
+
+
+def foliage_mode(u, mat, tint):
+    """Leaves with no masked texture set (a tree generator's leaf geometry): two-sided foliage shading, both faces,
+    SubsurfaceColor = colour x .65 as the mapped trees' leaves."""
+    lib = u.MaterialEditingLibrary
+    mat.set_editor_property('two_sided', True)
+    mat.set_editor_property('shading_model', u.MaterialShadingModel.MSM_TWO_SIDED_FOLIAGE)
+    transmission = lib.create_material_expression(mat, u.MaterialExpressionMultiply)
+    transmission.set_editor_property('const_b', FOLIAGE_SUBSURFACE)
+    assert lib.connect_material_expressions(tint, '', transmission, 'A')
+    assert lib.connect_material_property(transmission, '', u.MaterialProperty.MP_SUBSURFACE_COLOR)
 
 
 def textured_graph(u, mat, row, textures, tint, spec):
@@ -591,6 +875,8 @@ def textured_graph(u, mat, row, textures, tint, spec):
     product = lib.create_material_expression(mat, u.MaterialExpressionMultiply)
     assert lib.connect_material_expressions(samples['diff'], 'RGB', product, 'A')
     assert lib.connect_material_expressions(tint, '', product, 'B')
+    if row.get('macro'):
+        add_macro(u, mat, row, textures, tint, product, 'B')
     assert lib.connect_material_property(product, '', u.MaterialProperty.MP_BASE_COLOR)
     assert lib.connect_material_property(samples['nor_dx'], 'RGB', u.MaterialProperty.MP_NORMAL)
     assert lib.connect_material_property(samples['rough'], 'R', u.MaterialProperty.MP_ROUGHNESS)
@@ -658,7 +944,8 @@ def make_material(u, row, spec, textures=None):
         textured_colour = tuple(min(TINT_LIMIT, c / m) for c, m in zip(colour, row['mean_linear']))
     mat = assets.duplicate_asset(row['duplicate_of'], row['asset'])
     tints = authored_tints(u, mat) if mat else []
-    duplicated = bool(mat) and len(tints) == 1 and (not row.get('textures') or retexture(u, mat, row, textures))
+    duplicated = bool(mat) and len(tints) == 1 and (not row.get('textures') or
+                                                    retexture(u, mat, row, textures, tints[0]))
     if duplicated:
         if row['texture_mean']:
             colour = textured_colour
@@ -668,6 +955,8 @@ def make_material(u, row, spec, textures=None):
         if row.get('texture_set'):
             material_mode(u, mat, row)
             set_metallic(u, mat, row['metallic'])
+        if row.get('foliage'):
+            foliage_mode(u, mat, tints[0])
     else:
         if mat:
             assets.delete_asset(row['asset'])
@@ -692,6 +981,8 @@ def make_material(u, row, spec, textures=None):
                 node = lib.create_material_expression(mat, u.MaterialExpressionConstant)
                 node.set_editor_property('r', value)
                 lib.connect_material_property(node, '', prop)
+            if row.get('foliage'):
+                foliage_mode(u, mat, tint)
         if spec.get('emissive_srgb'):
             emissive_input(u, mat, spec, tint)
     for usage in (u.MaterialUsage.MATUSAGE_NANITE, u.MaterialUsage.MATUSAGE_INSTANCED_STATIC_MESHES):
@@ -762,7 +1053,10 @@ def add_box_collision(u, mesh, colliders):
     assert len(body.get_editor_property('agg_geom').get_editor_property('box_elems')) == len(colliders), mesh.get_path_name()
 
 
-def import_mesh(u, source, destination, name, material, collision, colliders=()):
+def import_mesh(u, source, destination, name, material, collision, colliders=(), shape_preservation=None):
+    """Import one OBJ batch as a Nanite static mesh (upgrade_plateau.import_mesh semantics). material None leaves
+    the slots to the caller (tree meshes: assign_tree_slots); shape_preservation PRESERVE_AREA keeps masked cards,
+    creeper and leaves from thinning out at a distance."""
     task = u.AssetImportTask()
     task.filename, task.destination_path, task.destination_name = str(source), destination, name
     task.automated, task.save, task.replace_existing = True, False, False
@@ -776,7 +1070,8 @@ def import_mesh(u, source, destination, name, material, collision, colliders=())
     assert task.imported_object_paths, str(source)
     mesh = u.EditorAssetLibrary.load_asset(task.imported_object_paths[0])
     assert isinstance(mesh, u.StaticMesh), str(source)
-    mesh.set_material(0, material)
+    if material is not None:
+        mesh.set_material(0, material)
     subsystem = u.get_editor_subsystem(u.StaticMeshEditorSubsystem)
     build = subsystem.get_lod_build_settings(mesh, 0)
     build.set_editor_property('max_lumen_mesh_cards', 64)
@@ -793,6 +1088,8 @@ def import_mesh(u, source, destination, name, material, collision, colliders=())
     settings.set_editor_property('fallback_target', u.NaniteFallbackTarget.PERCENT_TRIANGLES)
     settings.set_editor_property('fallback_percent_triangles', 1.)
     settings.set_editor_property('fallback_relative_error', 0.)
+    if shape_preservation:
+        settings.set_editor_property('shape_preservation', getattr(u.NaniteShapePreservation, shape_preservation))
     subsystem.set_nanite_settings(mesh, settings, True)
     assert u.EditorAssetLibrary.save_loaded_asset(mesh, only_if_is_dirty=False)
     return mesh
@@ -809,14 +1106,120 @@ def instanced_actor(u, editor, label, folder):
     return actor, component
 
 
-def spawn_yard_trees(u, editor, rows):
-    """One AQuebecReplicaInstances actor per tree kind on the mapped trees' mesh and materials, untouched;
-    NoCollision like the mapped trees, which cast shadows and cull at QuebecVegetation's distances."""
+def spawn_layer_actor(u, editor, row, mesh, material):
+    """One StaticMeshActor at the origin for a layer batch. Collision_Only batches (gallery guards) become invisible
+    walls: hidden in game, no shadow or distance-field lighting, BlockAll for pawns and cars, but the camera spring
+    arm and visibility traces pass through them (the profile turns Custom)."""
+    actor = editor.spawn_actor_from_class(u.StaticMeshActor, u.Vector(0., 0., 0.), u.Rotator())
+    actor.set_actor_label(row['label'])
+    actor.set_folder_path(row['folder'])
+    c = actor.static_mesh_component
+    c.set_static_mesh(mesh)
+    c.set_material(0, material)
+    # Asphalt stays NoCollision here; QuebecGameplay promotes SM_Asphalt* to Visibility-only at BeginPlay.
+    c.set_collision_profile_name('BlockAll' if row['collision'] != 'none' else 'NoCollision')
+    if row.get('collision_only'):
+        c.set_collision_response_to_channel(u.CollisionChannel.ECC_CAMERA, u.CollisionResponseType.ECR_IGNORE)
+        c.set_collision_response_to_channel(u.CollisionChannel.ECC_VISIBILITY, u.CollisionResponseType.ECR_IGNORE)
+        c.set_editor_property('affect_distance_field_lighting', False)
+        c.set_editor_property('affect_dynamic_indirect_lighting', False)
+    if row.get('hidden_in_game'):
+        actor.set_actor_hidden_in_game(True)
+    c.set_cast_shadow(row['shadow'])
+    return actor
+
+
+def check_layer_actor(u, actor, row, mesh_row):
+    """verify: one layer actor's mesh, triangles, Nanite (and Preserve Area on masked batches), material, collision
+    (invisible walls: hidden in game, blocking pawns, ignoring camera and visibility), shadow and origin."""
+    assert actor is not None, 'Missing actor ' + row['label']
+    c = actor.static_mesh_component
+    mesh = c.static_mesh
+    name = row['mesh'].rsplit('/', 1)[1]
+    assert mesh.get_path_name() == f'{row["mesh"]}.{name}', row['label']
+    # The CPU test rejects float32-degenerate triangles up front; allow a sliver of import-side welding.
+    planned = mesh_row['triangles']
+    assert abs(mesh.get_num_triangles(0) - planned) <= max(2, planned // 1000), row['label']
+    nanite = mesh.get_editor_property('nanite_settings')
+    assert nanite.enabled, row['label']
+    if mesh_row.get('nanite_shape_preservation'):
+        assert nanite.get_editor_property('shape_preservation') == \
+            getattr(u.NaniteShapePreservation, mesh_row['nanite_shape_preservation']), row['label'] + ' thins out'
+    assert c.get_material(0).get_path_name().split('.')[0] == mesh_row['material'], row['label']
+    if row.get('collision_only'):
+        responses = {name: c.get_collision_response_to_channel(getattr(u.CollisionChannel, name))
+                     for name in ('ECC_PAWN', 'ECC_CAMERA', 'ECC_VISIBILITY')}
+        assert responses['ECC_PAWN'] == u.CollisionResponseType.ECR_BLOCK, row['label'] + ' lets players through'
+        assert responses['ECC_CAMERA'] == responses['ECC_VISIBILITY'] == u.CollisionResponseType.ECR_IGNORE, \
+            row['label'] + ' blocks the camera or visibility'
+        assert actor.get_editor_property('hidden'), row['label'] + ' renders in game'
+        assert not c.get_editor_property('affect_distance_field_lighting'), row['label'] + ' shades Lumen'
+    else:
+        expected = 'BlockAll' if row['collision'] != 'none' else 'NoCollision'
+        assert str(c.get_collision_profile_name()) == expected, row['label']
+        assert bool(actor.get_editor_property('hidden')) == bool(row.get('hidden_in_game')), row['label'] + ' hidden'
+    assert bool(c.get_editor_property('cast_shadow')) == row['shadow'], row['label'] + ' shadow'
+    assert actor.get_actor_location().length() < .1
+    return True
+
+
+def tree_slot(name):
+    """'bark' or 'leaves' from an imported material slot name (the OBJ's usemtl), else None."""
+    n = str(name).lower()
+    if any(w in n for w in ('leaf', 'leaves', 'foliage', 'crown')):
+        return 'leaves'
+    if any(w in n for w in ('bark', 'trunk', 'branch', 'wood')):
+        return 'bark'
+    return None
+
+
+def assign_tree_slots(u, mesh, materials):
+    """Each material slot of an imported species mesh gets its bark or leaves material, by slot name."""
+    slots = mesh.get_editor_property('static_materials')
+    names = [str(slot.get_editor_property('material_slot_name')) for slot in slots]
+    kinds = [tree_slot(n) for n in names]
+    assert len(slots) >= 2 and None not in kinds and set(kinds) == set(TREE_SLOTS), \
+        f'{mesh.get_path_name()}: slots {names} must name the bark and the leaves'
+    for index, kind in enumerate(kinds):
+        mesh.set_material(index, materials[kind])
+    return dict(zip(names, kinds))
+
+
+def import_tree_mesh(u, root, row, materials):
+    """A species mesh of Trees/manifest.json: Nanite with Preserve Area (leaves keep their area at a distance), no
+    collision (as the mapped trees), its bark and leaves slots set by name."""
+    folder, name = row['asset'].rsplit('/', 1)
+    source = Path(root) / 'Data/Plateau/ReplicaGeometry' / row['file']
+    mesh = import_mesh(u, source, folder, name, None, 'none', (), row['nanite_shape_preservation'])
+    assign_tree_slots(u, mesh, materials)
+    assert u.EditorAssetLibrary.save_loaded_asset(mesh, only_if_is_dirty=False)
+    return mesh
+
+
+def check_tree_mesh(u, mesh, row):
+    """verify: a species mesh exists, is Nanite with Preserve Area, and its slots carry the planned materials."""
+    assert isinstance(mesh, u.StaticMesh), 'Missing tree mesh ' + row['asset']
+    nanite = mesh.get_editor_property('nanite_settings')
+    assert nanite.enabled and nanite.get_editor_property('shape_preservation') == \
+        getattr(u.NaniteShapePreservation, row['nanite_shape_preservation']), row['asset'] + ' Nanite'
+    for index, slot in enumerate(mesh.get_editor_property('static_materials')):
+        kind = tree_slot(slot.get_editor_property('material_slot_name'))
+        assert kind in row['materials'], row['asset'] + ' slot'
+        assert mesh.get_material(index).get_path_name().split('.')[0] == row['materials'][kind], \
+            f'{row["asset"]} {kind} material'
+
+
+def spawn_yard_trees(u, editor, rows, meshes=None):
+    """One AQuebecReplicaInstances actor per tree kind: on the species meshes when Trees/manifest.json exists
+    (meshes, by asset path), else on the mapped trees' mesh and materials, untouched; NoCollision like the mapped
+    trees, which cast shadows and cull at QuebecVegetation's distances."""
     placed = {}
-    tree = u.EditorAssetLibrary.load_asset(TREE_MESH) if rows else None
+    meshes = dict(meshes or {})
     for row in rows:
+        if row['mesh'] not in meshes:
+            meshes[row['mesh']] = u.EditorAssetLibrary.load_asset(row['mesh'])
         actor, comp = instanced_actor(u, editor, row['label'], row['folder'])
-        comp.set_static_mesh(tree)
+        comp.set_static_mesh(meshes[row['mesh']])
         comp.set_collision_profile_name('NoCollision')
         comp.set_cull_distances(*row['cull_cm'])
         comp.set_cast_shadow(row['cast_shadow'])
@@ -831,11 +1234,11 @@ def spawn_yard_trees(u, editor, rows):
 def check_yard_trees_placed(u, actors, rows):
     """verify: each kind's actor, its mesh, count, NoCollision, cull distance and first and last transforms."""
     count = 0
-    tree_mesh = f'{TREE_MESH}.{TREE_MESH.rsplit("/", 1)[1]}'
     for row in rows:
         actor = actors.get(row['label'])
         assert actor is not None, 'Missing yard trees ' + row['label']
         comp = actor.get_component_by_class(u.HierarchicalInstancedStaticMeshComponent)
+        tree_mesh = f'{row["mesh"]}.{row["mesh"].rsplit("/", 1)[1]}'
         assert comp and comp.static_mesh and comp.static_mesh.get_path_name() == tree_mesh, row['label'] + ' mesh'
         assert comp.get_instance_count() == row['count'], row['label']
         assert str(comp.get_collision_profile_name()) == 'NoCollision', row['label'] + ' collides'
@@ -856,12 +1259,44 @@ def check_texture(u, texture, row):
     assert texture.get_editor_property('compression_settings') == \
         getattr(u.TextureCompressionSettings, row['compression']), row['asset'] + ' has the wrong compression'
     assert [texture.blueprint_get_size_x(), texture.blueprint_get_size_y()] == row['size_px'], row['asset']
+    assert texture.get_editor_property('address_y') == getattr(u.TextureAddress, row.get('address_y', 'TA_WRAP')), \
+        row['asset'] + ' V addressing (cards clamp, so the mips do not wrap the top row into the bottom)'
     if row['alpha']:
         assert not texture.get_editor_property('compression_no_alpha'), row['asset'] + ' dropped its alpha'
         assert texture.get_editor_property('do_scale_mips_for_alpha_coverage'), row['asset'] + ' mips lose coverage'
         thresholds = texture.get_editor_property('alpha_coverage_thresholds')
         assert abs(thresholds.w - row['alpha_coverage_threshold']) < 1e-4 and thresholds.x == thresholds.y == \
             thresholds.z == 0., row['asset'] + ' alpha coverage threshold'
+
+
+def check_macro_nodes(u, mat, row):
+    """verify: a macro set's two mask samples at the planned tiles and its lerp strengths; no macro nodes on any
+    other material."""
+    nodes = [n for n in u.MaterialEditingLibrary.get_material_expressions(mat)
+             if str(n.get_editor_property('desc')) == MACRO_DESC]
+    macro = row.get('macro')
+    if not macro:
+        assert not nodes, row['asset'] + ' has macro nodes it should not'
+        return 0
+    samples = [n for n in nodes if isinstance(n, u.MaterialExpressionTextureSample)]
+    assert len(samples) == len(macro['tiling']) and all(
+        n.get_editor_property('texture').get_path_name().split('.')[0] == macro['texture'] for n in samples), \
+        row['asset'] + ' macro samples'
+    tilings = sorted([round(n.get_editor_property('u_tiling'), 6), round(n.get_editor_property('v_tiling'), 6)]
+                     for n in nodes if isinstance(n, u.MaterialExpressionTextureCoordinate))
+    assert tilings == sorted(macro['tiling']), row['asset'] + f' macro tiles {tilings}'
+    lerps = sorted((round(n.get_editor_property('const_a'), 6), round(n.get_editor_property('const_b'), 6))
+                   for n in nodes if isinstance(n, u.MaterialExpressionLinearInterpolate))
+    assert lerps == sorted((round(1. - s, 6), round(1. + s, 6)) for s in macro['strength']), row['asset'] + ' strength'
+    return len(samples)
+
+
+def check_foliage(u, mat, row):
+    """verify: an untextured leaves material is two-sided foliage with transmission."""
+    assert bool(mat.get_editor_property('two_sided')), row['asset'] + ' is one-sided'
+    assert mat.get_editor_property('shading_model') == u.MaterialShadingModel.MSM_TWO_SIDED_FOLIAGE, row['asset']
+    assert u.MaterialEditingLibrary.get_material_property_input_node(mat, u.MaterialProperty.MP_SUBSURFACE_COLOR), \
+        row['asset'] + ' has no transmission'
 
 
 def check_material_mode(u, mat, row):
@@ -901,9 +1336,12 @@ def apply(u, root, backup):
     editor = u.get_editor_subsystem(u.EditorActorSubsystem)
     report = {'passed': False, 'map': MAP, 'backup': str(backup.relative_to(root)), 'map_package_files': map_files,
               'plan_counts': the_plan['counts'], 'textures': {}, 'materials': {}, 'fresh_materials': [],
-              'parents': {}, 'actors': {}, 'instances': {}, 'trees': {}, 'texts': 0,
+              'parents': {}, 'actors': {}, 'instances': {}, 'trees': {}, 'tree_meshes': {}, 'texts': 0,
               'hidden': {}, 'missing_props': the_plan['missing_props'],
               'manifest_sha256': {n: sha(root / 'Data/Plateau/ReplicaGeometry' / n / 'manifest.json') for n in manifests}}
+    trees_manifest = root / 'Data/Plateau/ReplicaGeometry' / TREES / 'manifest.json'
+    if the_plan['tree_meshes']:
+        report['manifest_sha256'][TREES] = sha(trees_manifest)
     try:
         textures = {}
         for row in the_plan['textures']:
@@ -913,7 +1351,7 @@ def apply(u, root, backup):
             report['parents'][row['asset']] = build_parent(u, row, textures).get_path_name()
         materials = {}
         for row in the_plan['materials']:
-            spec = manifests[row['layer']]['materials'][row['key']]
+            spec = row['spec'] if row['layer'] == TREES else manifests[row['layer']]['materials'][row['key']]
             materials[row['asset']], fresh = make_material(u, row, spec, textures)
             report['materials'][row['asset']] = row['duplicate_of']
             if fresh:
@@ -923,18 +1361,15 @@ def apply(u, root, backup):
             folder, name = row['asset'].rsplit('/', 1)
             source = root / 'Data/Plateau/ReplicaGeometry' / row['layer'] / row['file']
             meshes[row['asset']] = import_mesh(u, source, folder, name, materials[row['material']], row['collision'],
-                                               row['colliders'])
+                                               row['colliders'], row['nanite_shape_preservation'])
+        for row in the_plan['tree_meshes']:
+            slots = {slot: materials[a] if a in materials else u.EditorAssetLibrary.load_asset(a)
+                     for slot, a in row['materials'].items()}
+            meshes[row['asset']] = import_tree_mesh(u, root, row, slots)
+            report['tree_meshes'][row['asset']] = row['sha256']
         by_mesh = {m['asset']: m for m in the_plan['meshes']}
         for row in the_plan['actors']:
-            actor = editor.spawn_actor_from_class(u.StaticMeshActor, u.Vector(0., 0., 0.), u.Rotator())
-            actor.set_actor_label(row['label'])
-            actor.set_folder_path(row['folder'])
-            c = actor.static_mesh_component
-            c.set_static_mesh(meshes[row['mesh']])
-            c.set_material(0, materials[by_mesh[row['mesh']]['material']])
-            # Asphalt stays NoCollision here; QuebecGameplay promotes SM_Asphalt* to Visibility-only at BeginPlay.
-            c.set_collision_profile_name('BlockAll' if row['collision'] != 'none' else 'NoCollision')
-            c.set_cast_shadow(row['shadow'])
+            actor = spawn_layer_actor(u, editor, row, meshes[row['mesh']], materials[by_mesh[row['mesh']]['material']])
             report['actors'][row['label']] = actor.get_path_name()
         for row in the_plan['instances']:
             if not row['mesh']:
@@ -953,7 +1388,7 @@ def apply(u, root, backup):
             comp.add_instances(transforms, False, True, False)
             assert comp.get_instance_count() == row['count'], row['label']
             report['instances'][row['label']] = {'actor': actor.get_path_name(), 'count': row['count']}
-        report['trees'] = spawn_yard_trees(u, editor, the_plan['trees'])
+        report['trees'] = spawn_yard_trees(u, editor, the_plan['trees'], meshes)
         black = u.EditorAssetLibrary.load_asset('/Engine/EngineMaterials/DefaultTextMaterialOpaque')
         for row, label, p, yaw, text, size in street_name_texts(the_plan, manifests):
             t = editor.spawn_actor_from_class(u.TextRenderActor, u.Vector(*p), u.Rotator(roll=0., pitch=0., yaw=yaw))
@@ -1006,22 +1441,7 @@ def verify(u, root, backup):
     assert all(now[p]['label'].startswith(PREFIX) for p in added), 'Unexpected new actor outside the replica layer'
     checked = 0
     for row in the_plan['actors']:
-        actor = actors.get(row['label'])
-        assert actor is not None, 'Missing actor ' + row['label']
-        c = actor.static_mesh_component
-        mesh = c.static_mesh
-        name = row['mesh'].rsplit('/', 1)[1]
-        assert mesh.get_path_name() == f'{row["mesh"]}.{name}', row['label']
-        # The CPU test rejects float32-degenerate triangles up front; allow a sliver of import-side welding.
-        planned = by_mesh[row['mesh']]['triangles']
-        assert abs(mesh.get_num_triangles(0) - planned) <= max(2, planned // 1000), row['label']
-        assert mesh.get_editor_property('nanite_settings').enabled, row['label']
-        expected = 'BlockAll' if row['collision'] != 'none' else 'NoCollision'
-        assert str(c.get_collision_profile_name()) == expected, row['label']
-        material = by_mesh[row['mesh']]['material']
-        assert c.get_material(0).get_path_name().split('.')[0] == material, row['label']
-        assert actor.get_actor_location().length() < .1
-        checked += 1
+        checked += check_layer_actor(u, actors.get(row['label']), row, by_mesh[row['mesh']])
     instances = 0
     for row in the_plan['instances']:
         if not row['mesh']:
@@ -1045,6 +1465,8 @@ def verify(u, root, backup):
     assets = u.EditorAssetLibrary
     for row in the_plan['textures']:
         check_texture(u, assets.load_asset(row['asset']), row)
+    for row in the_plan['tree_meshes']:
+        check_tree_mesh(u, assets.load_asset(row['asset']), row)
     samplers = {t['role']: getattr(u.MaterialSamplerType, t['sampler']) for t in the_plan['textures']}
     parents = {}
 
@@ -1074,10 +1496,14 @@ def verify(u, root, backup):
             assert any(isinstance(n, u.MaterialExpressionTextureSample) for n in nodes), row['asset'] + ' lost its texture'
         if any(p in row['duplicate_of'] for p in WET_PARENTS):
             assert 'Wetness' in collection, row['asset'] + ' lost the NordSky wet-street wrapper'
+        if row.get('foliage'):
+            check_foliage(u, mat, row)
+        check_macro_nodes(u, mat, row)
         if row.get('textures'):
             # Replica texture sets: exactly the three maps of the set, the right samplers, the tiling, and the
             # same NordSky wrappers (Wetness on the ground parent, none on the brick one) as their parent.
-            samples = [n for n in nodes if isinstance(n, u.MaterialExpressionTextureSample)]
+            samples = [n for n in nodes if isinstance(n, u.MaterialExpressionTextureSample)
+                       and str(n.get_editor_property('desc')) != MACRO_DESC]
             used = sorted(n.get_editor_property('texture').get_path_name().split('.')[0] for n in samples
                           if n.get_editor_property('texture'))
             assert used == sorted(row['textures'].values()), row['asset'] + f' samples {used}'
@@ -1086,7 +1512,7 @@ def verify(u, root, backup):
                 assert role in samplers and n.get_editor_property('sampler_type') == samplers[role], \
                     f'{row["asset"]} sampler {role}'
             coords = [n for n in nodes if isinstance(n, u.MaterialExpressionTextureCoordinate)
-                      and str(n.get_editor_property('desc')) != MARKER]
+                      and str(n.get_editor_property('desc')) not in (MARKER, MACRO_DESC)]
             assert any(abs(c.get_editor_property('u_tiling') - row['tiling'][0]) < 1e-4
                        and abs(c.get_editor_property('v_tiling') - row['tiling'][1]) < 1e-4 for c in coords), \
                 row['asset'] + ' lost its metre tiling'
@@ -1105,6 +1531,11 @@ def verify(u, root, backup):
     result = {'passed': True, 'actors': checked, 'instances': instances, 'texts': texts,
               'textures': len(the_plan['textures']), 'textured_materials': the_plan['counts']['textured_replica_materials'],
               'masked_materials': the_plan['counts']['masked_materials'], 'built_parents': len(the_plan['parents']),
+              'macro_materials': the_plan['counts']['macro_materials'],
+              'clamped_textures': the_plan['counts']['clamped_textures'],
+              'preserve_area_meshes': the_plan['counts']['preserve_area_meshes'],
+              'hidden_collision_actors': the_plan['counts']['hidden_collision_actors'],
+              'tree_meshes': len(the_plan['tree_meshes']), 'yard_tree_mode': the_plan['yard_trees']['mode'],
               'yard_trees': trees, 'missing_props': report['missing_props']}
     (backup / 'verify-report.json').write_text(json.dumps(result, indent=1) + '\n')
     return result
@@ -1113,6 +1544,7 @@ def verify(u, root, backup):
 def main():
     if '--dry-run' in sys.argv:
         the_plan = plan(ROOT)
+        meshes = {m['asset']: m for m in the_plan['meshes']}
         print(json.dumps({'counts': the_plan['counts'], 'missing_props': the_plan['missing_props'],
                           'hide': the_plan['hide'],
                           'textures': {t['asset']: t['sha256'] for t in the_plan['textures']},
@@ -1124,9 +1556,19 @@ def main():
                                                                       'shading_model', 'opacity_mask_clip')}
                                       for p in the_plan['parents']},
                           'shared_keys': shared_key_plan(ROOT),
+                          'clamped_textures': sorted(t['asset'] for t in the_plan['textures'] if t['address_y'] == 'TA_CLAMP'),
+                          'macro': {m['asset']: m['macro']['strength'] for m in the_plan['materials'] if m.get('macro')},
+                          'preserve_area_meshes': sorted({m['material'] for m in the_plan['meshes']
+                                                          if m['nanite_shape_preservation']}),
+                          'hidden_collision_actors': [a['label'] for a in the_plan['actors'] if a['collision_only']],
+                          'shadowless_materials': sorted({meshes[a['mesh']]['material'].rsplit('/', 1)[1]
+                                                          for a in the_plan['actors'] if not a['shadow']}),
+                          'tree_meshes': {m['species']: {'file': m['file'], 'height_cm': m['height_cm'],
+                                                         'materials': m['materials']} for m in the_plan['tree_meshes']},
                           'yard_trees': dict(the_plan['yard_trees'],
                                              actors={t['label']: {'count': t['count'], 'crown': t['crown'],
-                                                                  'collision': t['collision'], 'cull_cm': t['cull_cm']}
+                                                                  'mesh': t['mesh'], 'collision': t['collision'],
+                                                                  'cull_cm': t['cull_cm']}
                                                      for t in the_plan['trees']})}, indent=1))
         return
     import unreal as u

@@ -63,6 +63,28 @@ FALLBACK = {'primary': 1060., 'secondary': 840., 'tertiary': 720., 'residential'
 CAP = {'primary': 1150., 'secondary': 900., 'tertiary': 900., 'residential': 625., 'unclassified': 625.,
        'living_street': 600.}   # residential 2 x 6.25 m = the spec's 12.5 m upper bound (Fabre, Garnier)
 CAP_TWO_WAY_SECONDARY = 760.   # Rachel: about 14 m curb to curb including the 3 m cycle track
+# Front yards (parterres) reach the building line, sampled along each 7.6 m lot (see _yards).
+FRONT_MAX = 1500.         # a parterre reaches a building this far behind the sidewalk, no farther
+OPEN_YARD = 250.          # with no building that close: a 2.5 m parterre (open lot, car park, square)
+YARD_STEP = 60.           # the building line is sampled this often along a lot
+# Mapped street trees that the measured curbs left on the carriageway get a curb extension (saillie) round the
+# trunk; see curb_extensions. The trees stay where the map saved them (plateau_rendering.tree_positions).
+BUMP_REACH = 300.         # a trunk this far from the curb or less gets an extension; farther ones go to the host
+CURB_HUG = 45.            # ...and so does one on the sidewalk this close to the curb with no pit of its own
+PIT_L, PIT_D = 110., 100.  # tree pit along and across the curb (as _tree_pits)
+BUMP_MARGIN = 25.         # concrete between the pit and the extension's edge: the 15 cm curb band and 10 cm
+BUMP_MIN = 90.            # shallowest extension
+BUMP_TAPER = .8           # taper length per cm of depth (a chamfer: these sit in the parking lane), at most...
+BUMP_TAPER_MAX = 90.
+PARK_GAP = 540.           # clear curb between two extensions that still takes a parked car; closer ones merge
+RAISED_MIN = 30.          # a raised part shallower than this is laid flush instead (a dropped apron)
+VERGE_BACK = 40.          # an extension on a side with no sidewalk reaches this far behind the carriageway edge
+CORNER_BACK = 30.         # one on a corner arc overlaps the corner sidewalk by this much
+# Ruelles are paved from fence to fence (or wall to wall where nearer), in pieces of 20 m or less.
+ALLEY_PAVE = 290.         # plateau_plex.FENCE_FROM_ALLEY: the yard fences stand this far from the centreline
+PAVE_PIECE = 2000.
+PAVE_STEP = 100.          # the wall-to-wall reach is sampled every metre
+TEXTURES_PATH = '/Game/Plateau/Replica/Textures/T_Replica_'   # a manifest texture naming a replica set picks it
 
 STREETS_MATERIALS = {
     # key: (prefix, sRGB, roughness, metallic, collision, texture)
@@ -78,11 +100,15 @@ STREETS_MATERIALS = {
     # The live OSM Marking material M_LF_Marking (linear .85, .73, .39) for the re-authored route dashes.
     'legacy_marking': ('Streets_legacy_marking', '#eddea8', .6, 0., 'none', None),
     'cast_iron': ('Streets_cast_iron', '#2e2d2b', .55, .6, 'none', None),
-    'yard_grass': ('Streets_yard_grass', '#5e7a45', .95, 0., 'complex', None),
-    'yard_soil': ('Streets_yard_soil', '#4e3b2b', .95, 0., 'complex', None),
+    # Front lawns and beds on the shared rear-pass keys (textured lawn and soil, colours at the texture means, as
+    # in Plex and Soul); they collide like the sidewalk. The grass spill, lawn in the traffic band, the ruelle
+    # verge and the tree-pit soil take the same lawn and soil sets through their texture path, without collision.
+    'Yard_Grass': ('Streets_Yard_Grass', '#606a31', .9, 0., 'complex', None),
+    'Yard_Soil': ('Streets_Yard_Soil', '#453526', .88, 0., 'complex', None),
     'yard_path': ('Streets_yard_path', '#9e9c97', .85, 0., 'complex', None),
-    'grass_edge': ('Streets_grass_edge', '#6b8a4e', .95, 0., 'none', None),
-    'soil': ('Streets_soil', '#3e2f24', .95, 0., 'none', None),
+    'grass_edge': ('Streets_grass_edge', '#606a31', .9, 0., 'none', TEXTURES_PATH + 'Lawn_diff'),
+    'soil': ('Streets_soil', '#3e2f24', .9, 0., 'none', TEXTURES_PATH + 'Soil_diff'),
+    'Yard_Gravel': ('Streets_Yard_Gravel', '#827f7b', .88, 0., 'none', None),   # weedy crushed stone at fence feet
     'iron': ('Streets_iron', '#1c1c1c', .5, .7, 'none', None),
     'bollard_green': ('Streets_bollard_green', '#2f7d46', .5, .2, 'none', None),
 }
@@ -126,11 +152,14 @@ SOUL_MATERIALS = {
     'bed_edge': ('Soul_bed_edge', '#5f5142', .85, 0., 'none', None),
     'arch_wood': ('Soul_arch_wood', '#8a6a48', .75, 0., 'none', None),
     'arch_green': ('Soul_arch_green', '#3f5b3c', .7, 0., 'none', None),
-    'plant_green': ('Soul_plant_green', '#4b6532', .9, 0., 'none', None),
-    'plant_gold': ('Soul_plant_gold', '#b38c3b', .9, 0., 'none', None),
-    'plant_rust': ('Soul_plant_rust', '#8f4a2b', .9, 0., 'none', None),
-    'plant_purple': ('Soul_plant_purple', '#5f4a72', .9, 0., 'none', None),
-    'plant_red': ('Soul_plant_red', '#a3312b', .9, 0., 'none', None),
+    # Perennials and shrubs are crossed foliage cards on the creeper's cut-out leaf set (its texture path picks the
+    # set and the masked two-sided foliage parent), tinted per key; each colour stays within the 8x tint limit of
+    # the set's red mean.
+    'plant_green': ('Soul_plant_green', '#4b6532', .6, 0., 'none', TEXTURES_PATH + 'Creeper_diff'),
+    'plant_gold': ('Soul_plant_gold', '#a07d2e', .6, 0., 'none', TEXTURES_PATH + 'Creeper_diff'),
+    'plant_rust': ('Soul_plant_rust', '#8f4a2b', .6, 0., 'none', TEXTURES_PATH + 'Creeper_diff'),
+    'plant_purple': ('Soul_plant_purple', '#5c4860', .6, 0., 'none', TEXTURES_PATH + 'Creeper_diff'),
+    'plant_red': ('Soul_plant_red', '#a3312b', .6, 0., 'none', TEXTURES_PATH + 'Creeper_diff'),
     'plant_straw': ('Soul_plant_straw', '#b9a26a', .95, 0., 'none', None),
     # Tags (spray paint) on lane fences, sheds and garage doors
     'tag_black': ('Soul_tag_black', '#151515', .6, 0., 'none', None),
@@ -1090,10 +1119,14 @@ class Surfaces:
 
     def __init__(self):
         self.items, self.grid = [], Grid(2000.)
+        self.kinds = {}            # kind -> (polygons, Grid(1000)) for has()
 
     def add(self, poly, z, kind):
         self.grid.add(len(self.items), bbox(poly))
         self.items.append((poly, z, kind))
+        polys, grid = self.kinds.setdefault(kind, ([], Grid(1000.)))
+        grid.add(len(polys), bbox(poly))
+        polys.append(poly)
 
     def at(self, p):
         best = (0., 'ground')
@@ -1102,6 +1135,14 @@ class Surfaces:
             if point_in(p, poly) and z >= best[0]:
                 best = (z, kind)
         return best
+
+    def has(self, p, kind):
+        """Whether a surface of this kind lies under p, whatever covers it."""
+        if kind not in self.kinds:
+            return False
+        polys, grid = self.kinds[kind]
+        cell = grid.cells.get((math.floor(p[0] / grid.cell), math.floor(p[1] / grid.cell)), ())
+        return any(point_in(p, polys[i]) for i in cell)
 
 
 def crossing_records(world):
@@ -1189,7 +1230,12 @@ def build_streets(world):
         'crosswalks_continental_yellow', 'crosswalks_lines_white', 'crosswalks_generated_at_stops',
         'centre_line_metres', 'lane_line_metres', 'parking_line_metres', 'bike_track_metres', 'bollards',
         'bike_pictograms', 'green_conflict_zones', 'manholes', 'storm_drains', 'ruelle_metres',
-        'skipped_route_segments', 'stop_nodes_off_network')}
+        'skipped_route_segments', 'stop_nodes_off_network', 'yard_slabs', 'yard_slabs_in_traffic_band',
+        'ruelle_square_metres', 'ruelle_pieces', 'ruelle_edge_metres', 'ruelle_joint_wedges',
+        'mapped_trees', 'mapped_trees_on_carriageway', 'curb_extensions', 'curb_extension_trees',
+        'curb_extensions_merged', 'curb_extensions_flush', 'curb_extensions_part_flush', 'curb_extension_metres',
+        'curb_extensions_on_verges', 'curb_extensions_on_corners', 'mapped_trees_for_host',
+        'yard_slabs_past_ruelle_mouths', 'curb_extension_trees_at_curb')}
     # Carriageway asphalt.
     for s in world.segs:
         if s['excluded']:
@@ -1404,17 +1450,27 @@ def build_streets(world):
             corner_z = (ea[4] if len(ea) > 4 else 0., eb[4] if len(eb) > 4 else 0.)
             strip = {'seg': s, 'side': side, 'curb': (ca, cb), 'outer': (oa, ob), 'len': length,
                      'corner_q': corner_q, 'corner_z': corner_z}
+            strip['ramps'] = _strip_ramps(strip, ramp_grid, ramp_points)
             world.sidewalk_strips.append(strip)
-            _sidewalk_strip(world, L, surfaces, strip, ramp_grid, ramp_points, counts)
-            _tree_pits(world, L, strip, trees, tree_grid, pit_trees, counts)
-            _yards(world, L, surfaces, strip, counts)
+    # The ruelles first (the parterres stop at their paving), then the curb extensions round the mapped trees
+    # the carriageway covers (each strip's curb band gives way to them), then the sidewalks, corners and yards.
+    _ruelles(world, L, surfaces, counts)
+    for strip in world.sidewalk_strips:
+        _tree_pits(world, L, strip, trees, tree_grid, pit_trees, counts)
+    extensions = curb_extensions(world, counts, {trees[i] for i in pit_trees})
+    for strip in world.sidewalk_strips:
+        _sidewalk_strip(world, L, surfaces, strip, counts)
     for row in world.corners:
         _corner(world, L, surfaces, row, counts)
-    _ruelles(world, L, surfaces, counts)
+    barriers = YardBarriers(world)
+    for strip in world.sidewalk_strips:
+        _yards(world, L, surfaces, strip, counts, barriers)
+    _draw_extensions(world, L, surfaces, extensions, counts)
     _legacy_dashes(world, L, counts)
     world.pit_trees = pit_trees
     for k in ('sidewalk_metres', 'yard_square_metres', 'fence_metres', 'centre_line_metres', 'lane_line_metres',
-              'parking_line_metres', 'bike_track_metres', 'ruelle_metres'):
+              'parking_line_metres', 'bike_track_metres', 'ruelle_metres', 'ruelle_square_metres',
+              'ruelle_edge_metres', 'curb_extension_metres'):
         counts[k] = round(counts[k])
     counts['curb_measurement'] = world.curb_stats
     counts['osm_stop_nodes_inside'] = len(world.stop_nodes)
@@ -1528,10 +1584,9 @@ def _bike_pictogram(L, c, u, z):
     L.strip('paint_white', add(c, u, 10), add(c, u, 55), 6, z + .02)
 
 
-def _sidewalk_strip(world, L, surfaces, strip, ramp_grid, ramp_points, counts):
-    (ca, cb), (oa, ob), length = strip['curb'], strip['outer'], strip['len']
-    pieces = max(1, round(length / 150))
-    # Crossing points along this curb line -> ramp profile.
+def _strip_ramps(strip, ramp_grid, ramp_points):
+    """Crossing points along a strip's curb line (cm from its start): the ramp profile."""
+    (ca, cb), length = strip['curb'], strip['len']
     stops = []
     for i in ramp_grid.query(bbox([ca, cb], 300)):
         p = ramp_points[i]
@@ -1540,6 +1595,14 @@ def _sidewalk_strip(world, L, surfaces, strip, ramp_grid, ramp_points, counts):
             t = ((p[0] - ca[0]) * (cb[0] - ca[0]) + (p[1] - ca[1]) * (cb[1] - ca[1])) / (length * length)
             if -.05 <= t <= 1.05:
                 stops.append(t * length)
+    return stops
+
+
+def _sidewalk_strip(world, L, surfaces, strip, counts):
+    (ca, cb), (oa, ob), length = strip['curb'], strip['outer'], strip['len']
+    pieces = max(1, round(length / 150))
+    stops = strip['ramps']
+    cuts = strip.get('bump_cuts', [])     # the curb band gives way to the curb extensions
 
     def zat(x):
         d = min([abs(x - c) for c in stops], default=1e9)
@@ -1561,8 +1624,21 @@ def _sidewalk_strip(world, L, surfaces, strip, ramp_grid, ramp_points, counts):
             continue   # only bow-tie slivers, where opposite edges cross; simple concave pieces stay
         if area(poly) < 50:
             continue
-        concave = not convex(poly)
         mid = lerp(lerp(c0, c1, .5), lerp(o0, o1, .5), .5)
+        if world.in_building(mid) and not world.in_building(c0) and not world.in_building(c1):
+            # a building stands in the sidewalk band (narrow streets): the piece runs from the curb to its wall
+            reach = []
+            for c, o in ((c0, o0), (c1, o1)):
+                w = math.dist(c, o)
+                hit = world.building_ray(c, ((o[0] - c[0]) / w, (o[1] - c[1]) / w), w) if w > 1 else None
+                reach.append(lerp(c, o, max(0., min(1., ((hit if hit is not None else w) - 3.) / w))) if w > 1 else o)
+            o0, o1 = reach
+            poly = [c0, c1, o1, o0]
+            if area(poly) < 50 or segments_cross(c0, c1, o1, o0) or segments_cross(c1, o1, o0, c0):
+                continue
+            mid = lerp(lerp(c0, c1, .5), lerp(o0, o1, .5), .5)
+            counts['sidewalk_pieces_to_walls'] = counts.get('sidewalk_pieces_to_walls', 0) + 1
+        concave = not convex(poly)
         if on_pavement(world, mid, strip['seg']['i']) or world.in_building(mid):
             continue
         za, zb = zat(f0 * length), zat(f1 * length)
@@ -1601,14 +1677,22 @@ def _sidewalk_strip(world, L, surfaces, strip, ramp_grid, ramp_points, counts):
         counts['sidewalk_metres'] += math.dist(c0, c1) / 100
         if min(za, zb) < Z_WALK - .01 and max(za, zb) >= Z_WALK - .01:
             counts['curb_ramps'] += 1
-        # Light curb top band (15 cm) and a saw-cut joint at the piece start.
+        # Light curb top band (15 cm), except where a curb extension carries the curb out into the road, and a
+        # saw-cut joint at the piece start.
         d = math.dist(c0, o0) or 1.
-        band0, band1 = lerp(c0, o0, 15 / d), lerp(c1, o1, 15 / d)
-        band = [(c0[0], c0[1], za + .1), (c1[0], c1[1], zb + .1), (band1[0], band1[1], zb + .1),
-                (band0[0], band0[1], za + .1)]
-        band = band if area([p[:2] for p in band]) > 0 else band[::-1]
-        for tri in (quad_triangles(band) if not convex([p[:2] for p in band]) else [band]):
-            L.face('curb', tri)
+        d1 = math.dist(c1, o1) or 1.
+        x0, x1 = f0 * length, f1 * length
+        for g0, g1 in subtract((x0, x1), cuts):
+            if g1 - g0 < 1.:
+                continue
+            t0, t1 = (g0 - x0) / (x1 - x0), (g1 - x0) / (x1 - x0)
+            e0, e1 = lerp(c0, c1, t0), lerp(c0, c1, t1)
+            b0, b1 = lerp(lerp(c0, o0, 15 / d), lerp(c1, o1, 15 / d1), t0), lerp(lerp(c0, o0, 15 / d), lerp(c1, o1, 15 / d1), t1)
+            z0, z1 = za + (zb - za) * t0 + .1, za + (zb - za) * t1 + .1
+            band = [(e0[0], e0[1], z0), (e1[0], e1[1], z1), (b1[0], b1[1], z1), (b0[0], b0[1], z0)]
+            band = band if area([p[:2] for p in band]) > 0 else band[::-1]
+            for tri in (quad_triangles(band) if not convex([p[:2] for p in band]) else [band]):
+                L.face('curb', tri)
         if k > 0 and za == Z_WALK:
             L.strip('joint', lerp(c0, o0, 16 / d), o0, 1.3, za + .12)
 
@@ -1689,12 +1773,104 @@ def _tree_pits(world, L, strip, trees, tree_grid, pit_trees, counts):
         strip.setdefault('pits', []).append((along, c, yaw))
 
 
-def _yards(world, L, surfaces, strip, counts):
-    """Parterres between the sidewalk and the façade line, one piece per ~7.6 m lot."""
+def _straight(run, g1, row):
+    """Whether a parterre run (g0, g1, mat, [near0, far0, near1, far1], joints) extended to g1 with the interval
+    `row` keeps straight near and far edges through every joint (2 cm)."""
+    g0, _, _, (n0, f0, _, _), joints = run
+    if abs(run[3][2] - row[0]) > 2. or abs(run[3][3] - row[1]) > 2.:
+        return False
+    for g, n, f in joints + [(run[1], row[0], row[1])]:
+        t = (g - g0) / (g1 - g0)
+        if abs(n0 + (row[2] - n0) * t - n) > 2. or abs(f0 + (row[3] - f0) * t - f) > 2.:
+            return False
+    return True
+
+
+class YardBarriers:
+    """Lines a parterre stops at besides buildings: the carriageways, the ruelle paving, every sidewalk strip and
+    corner ring (curb and back lines) and the park edge, for rays cast from a sidewalk's back line."""
+
+    def __init__(self, world):
+        self.segs, self.grid = [], Grid(1000.)
+
+        def add_line(points, closed):
+            for a, b in zip(points, points[1:] + (points[:1] if closed else [])):
+                if math.dist(a, b) > .5:
+                    self.grid.add(len(self.segs), bbox([a, b]))
+                    self.segs.append((a, b))
+        for poly, z, kind in world.surfaces.items:
+            if kind in ('road', 'alley'):
+                add_line(list(poly), True)
+        for strip in world.sidewalk_strips:
+            add_line(list(strip['curb']), False)
+            add_line(list(strip['outer']), False)
+        for row in world.corners:
+            if row['kind'] == 'fillet':
+                add_line(list(row['inner']), False)
+            elif row['kind'] == 'bend':
+                add_line(list(row['outer']), False)
+        if world.park:
+            add_line(list(world.park), True)
+
+    def ray(self, origin, direction, limit):
+        end = add(origin, direction, limit)
+        best = None
+        for i in self.grid.query(bbox([origin, end])):
+            a, b = self.segs[i]
+            t = ray_seg(origin, direction, a, b)
+            if t is not None and t <= limit and (best is None or t < best):
+                best = t
+        return best
+
+
+def _yard_depths(world, barriers, q, out):
+    """Parterre depth behind the sidewalk at q (out: away from the road) and what ends it: ('building', d) up to
+    the building line within FRONT_MAX, ('barrier', d) at a street, ruelle, other sidewalk or the park,
+    ('open', OPEN_YARD) with nothing near, or None where q is in the park."""
+    start = add(q, out, 2.)
+    if world.in_park(add(q, out, 20.)):
+        return None
+    if world.surfaces.has(start, 'alley') or world.surfaces.has(start, 'road'):
+        # a ruelle mouth or a carriageway behind the sidewalk; past a ruelle met at a slant, the ground between
+        # its paving and the next building is parterre too: (exit, end) along the ray
+        x = 10.
+        while x < FRONT_MAX and (world.surfaces.has(add(start, out, x), 'alley') or world.surfaces.has(add(start, out, x), 'road')):
+            x += 10.
+        if x >= FRONT_MAX or world.surfaces.has(add(start, out, x), 'road') or world.in_building(add(start, out, x)):
+            return 'mouth', 0.
+        lo, hi = x - 10., x
+        for _ in range(6):
+            mid = (lo + hi) / 2
+            lo, hi = (mid, hi) if world.surfaces.has(add(start, out, mid), 'alley') else (lo, mid)
+        exit_ = add(start, out, hi)
+        building = world.building_ray(exit_, out, FRONT_MAX - hi)
+        other = barriers.ray(add(exit_, out, 1.), out, FRONT_MAX - hi)
+        if building is None or (other is not None and other + 1. < building):
+            return 'mouth', 0.
+        return 'mouth', 0., (hi + 2., hi + 2. + building - 3.)
+    if world.in_building(start):
+        return 'building', 0.         # the sidewalk runs to the wall here
+    building = world.building_ray(start, out, FRONT_MAX)
+    other = barriers.ray(start, out, FRONT_MAX)
+    if building is not None and (other is None or building <= other):
+        return 'building', max(0., building + 2. - 3.)
+    if other is not None and (building is not None or other < OPEN_YARD + 3):
+        return 'barrier', max(0., other + 2. - 3.)
+    return 'open', OPEN_YARD
+
+
+def _yards(world, L, surfaces, strip, counts, barriers):
+    """Parterres between the sidewalk and the building line, one per ~7.6 m lot: a lawn or bed, often a walk to
+    the stoop and a low iron fence. The building line is sampled every 60 cm, so a lot's parterre follows a
+    stepped façade, a deep setback or a passage; it stops at a street, a ruelle's paving, another sidewalk or the
+    park, and past a ruelle met at a slant it fills the ground up to the next wall. A slab in the 300 cm traffic
+    band is laid without collision (textured lawn or soil; a walk as curb)."""
     s = strip['seg']
-    (ca, cb), (oa, ob), length = strip['curb'], strip['outer'], strip['len']
-    w0 = math.dist(ca, oa) or 1.
-    out = ((oa[0] - ca[0]) / w0, (oa[1] - ca[1]) / w0)
+    (ca, cb), (oa, ob) = strip['curb'], strip['outer']
+    # away from the road, square to the curb (a mitred strip end's outer point lies off the square)
+    u, _ = unit(ca, cb)
+    out = (-u[1], u[0]) if (oa[0] - ca[0]) * -u[1] + (oa[1] - ca[1]) * u[0] > 0 else (u[1], -u[0])
+    back = (oa, (ob[0] - oa[0], ob[1] - oa[1]))    # the sidewalk's back line
     # Yards reach the sharp property corner at fillet corners; the later arm sits 3 mm higher.
     qa, qb = strip['corner_q']
     if qa is not None and math.dist(qa, oa) < 600:
@@ -1702,75 +1878,156 @@ def _yards(world, L, surfaces, strip, counts):
     if qb is not None and math.dist(qb, ob) < 600:
         ob = qb
     olen = math.dist(oa, ob)
+    strip['lots'] = []
     if olen < 200:
         return
     plex = s['hw'] in ('residential', 'unclassified', 'living_street')
-    fac = s['facade' + strip['side']]
-    curb = s['curb' + strip['side']]
-    max_depth = 900. if fac is None else max(0., min(900., fac - curb - w0 + 120))
     lots = max(1, round(olen / 760))
-    strip['lots'] = []
+
+    def near(q):
+        """How far behind q the sidewalk's back line runs (the lot line toward a corner can cut into it)."""
+        hit = line_isect(q, out, back[0], back[1])
+        return max(0., hit[0]) if hit else 0.
+
     for k in range(lots):
         f0, f1 = k / lots, (k + 1) / lots
         p0, p1 = lerp(oa, ob, f0), lerp(oa, ob, f1)
         zoff = strip['corner_z'][0] if k == 0 else strip['corner_z'][1] if k == lots - 1 else 0.
-        hits = []
-        for f in (.08, .5, .92):
-            hit = world.building_ray(lerp(p0, p1, f), out, 1500)
-            hits.append(hit)
-        found = [h for h in hits if h is not None]
-        rng = Rng('yard', s['way'], s['i'], strip['side'], k)
-        if found:
-            depth = min(min(found) - 3, max_depth if max_depth > 60 else min(found) - 3)
-        else:
-            mid = lerp(p0, p1, .5)
-            if world.in_park(add(mid, out, 150)):
-                continue
-            depth = min(250., max_depth) if max_depth > 0 else 250.
-        if depth < 50:
-            strip['lots'].append({'p0': p0, 'p1': p1, 'depth': 0, 'out': out})
-            continue
-        q0, q1 = add(p0, out, depth), add(p1, out, depth)
-        poly = [p0, p1, q1, q0]
-        if area(poly) < 0:
-            poly = [p1, p0, q0, q1]
-        centre = lerp(lerp(p0, p1, .5), lerp(q0, q1, .5), .5)
-        if any(on_pavement(world, p) for p in (centre, lerp(p0, q0, .5), lerp(p1, q1, .5))) or world.in_building(centre):
-            continue
-        if world.traffic_distance(poly) < CLEAR or world.in_park(centre):
-            continue
         lot_len = math.dist(p0, p1)
-        walk = plex and depth >= 120 and lot_len > 420 and rng.chance(.8)
+        rng = Rng('yard', s['way'], s['i'], strip['side'], k)
+
+        def sample(f):
+            q = lerp(p0, p1, f)
+            n = near(q)
+            return n, _yard_depths(world, barriers, add(q, out, n), out)
+        steps = max(2, math.ceil(lot_len / YARD_STEP))
+        fs = [i / steps for i in range(steps + 1)]
+        samples = [sample(f) for f in fs]
+
+        def state(smp):
+            """None off a ruelle mouth; on one, whether ground lies between its paving and the next wall."""
+            return None if smp[1] is None or smp[1][0] != 'mouth' else len(smp[1]) > 2
+        # beside a ruelle mouth, the parterre starts where the paving ends (found to 1 cm), not a sample later
+        i = 0
+        while i < len(fs) - 1:
+            sa, sb = state(samples[i]), state(samples[i + 1])
+            if sa != sb and (fs[i + 1] - fs[i]) * lot_len > 2.:
+                lo, hi = fs[i], fs[i + 1]
+                for _ in range(8):
+                    mid = (lo + hi) / 2
+                    lo, hi = (mid, hi) if state(sample(mid)) == sa else (lo, mid)
+                fs.insert(i + 1, hi)
+                samples.insert(i + 1, sample(hi))
+            i += 1
+        # (near, far) offsets at the start and end of each interval: the deeper side wins (past a building corner
+        # the rest lies under the building; beside an open lot the parterre reaches a building the rays only just
+        # meet), but next to a street, a ruelle or another sidewalk the far edge runs straight from one sample to
+        # the next, so it follows a line met at a slant instead of stepping over it or short of it
+        spans = []
+        for (na, a), (nb, b) in zip(samples, samples[1:]):
+            if a is None or b is None:
+                spans.append((na, na, nb, nb))
+                continue
+            (ka, da), (kb, db) = a[:2], b[:2]
+            if ka in ('barrier', 'mouth') or kb in ('barrier', 'mouth'):
+                spans.append((na, na + da, nb, nb + db))
+            else:
+                spans.append((na, na + max(da, db), nb, nb + max(da, db)))
+        walk = plex and lot_len > 420 and rng.chance(.8)
         walk_at = rng.uniform(.18, .82)
-        kind = 'yard_grass' if rng.chance(.68) else 'yard_soil'
-        pieces = []
+        kind = 'Yard_Grass' if rng.chance(.68) else 'Yard_Soil'
         if walk:
             a = max(0., walk_at - 55 / lot_len)
             b = min(1., walk_at + 55 / lot_len)
-            pieces = [(0., a, kind), (a, b, 'yard_path'), (b, 1., kind if rng.chance(.7) else 'yard_soil')]
+            pieces = [(0., a, kind), (a, b, 'yard_path'), (b, 1., kind if rng.chance(.7) else 'Yard_Soil')]
         else:
             pieces = [(0., 1., kind)]
-        for g0, g1, mat in pieces:
-            if g1 - g0 < .02:
+        # intervals between the sample and piece breakpoints, merged where material and offsets agree
+        marks = sorted(set(fs) | {g for piece in pieces for g in piece[:2]})
+        runs = []
+        for g0, g1 in zip(marks, marks[1:]):
+            if g1 - g0 < 1e-6:
                 continue
-            e0, e1 = lerp(p0, p1, g0), lerp(p0, p1, g1)
-            e2, e3 = add(e1, out, depth), add(e0, out, depth)
+            mid = (g0 + g1) / 2
+            i = max(i for i in range(len(fs) - 1) if fs[i] <= mid)
+            na, fa, nb, fb = spans[i]
+            t0, t1 = (g0 - fs[i]) / (fs[i + 1] - fs[i]), (g1 - fs[i]) / (fs[i + 1] - fs[i])
+            row = [na + (nb - na) * t0, fa + (fb - fa) * t0, na + (nb - na) * t1, fa + (fb - fa) * t1]
+            mat = next(m for a, b, m in pieces if a <= mid <= b)
+            if runs and runs[-1][2] == mat and runs[-1][1] == g0 and _straight(runs[-1], g1, row):
+                runs[-1][1] = g1
+                runs[-1][3] = [runs[-1][3][0], runs[-1][3][1], row[2], row[3]]
+                runs[-1][4].append((g0, row[0], row[1]))
+            else:
+                runs.append([g0, g1, mat, row, []])
+        laid, depths, front, inset = 0, [], [], False
+        kept = [r for r in runs if min(r[3][1] - r[3][0], r[3][3] - r[3][2]) >= 3]
+        for j, (g0, g1, mat, (n0, d0, n1, d1), _) in enumerate(kept):
+            q0, q1 = lerp(p0, p1, g0), lerp(p0, p1, g1)
+            e0, e1, e2, e3 = add(q0, out, n0), add(q1, out, n1), add(q1, out, d1), add(q0, out, d0)
             pp = [e0, e1, e2, e3]
-            if area(pp) < 0:
-                pp = pp[::-1]
-            L.flat(mat, pp, Z_WALK + zoff)
+            if abs(area(pp)) < 50:
+                continue
+            key = mat
+            if world.traffic_distance(pp) < CLEAR:
+                key = {'Yard_Grass': 'grass_edge', 'Yard_Soil': 'soil', 'yard_path': 'curb'}[mat]
+                counts['yard_slabs_in_traffic_band'] += 1
+            L.flat(key, pp, Z_WALK + zoff)
+            # walls on the far edge, and on a side only where no parterre of the same depth carries on (the near
+            # edge meets the sidewalk at the same height)
+            ccw = area(pp) > 0
+            prev = kept[j - 1] if j and abs(kept[j - 1][1] - g0) < 1e-9 else None
+            nxt = kept[j + 1] if j + 1 < len(kept) and abs(kept[j + 1][0] - g1) < 1e-9 else None
+            sides = [(e2, e3)]
+            if nxt is None or abs(nxt[3][1] - d1) > 1. or abs(nxt[3][0] - n1) > 1.:
+                sides.append((e1, e2))
+            if prev is None or abs(prev[3][3] - d0) > 1. or abs(prev[3][2] - n0) > 1.:
+                sides.append((e3, e0))
+            for x, y in sides:
+                L.wall(key, x, y, 0., Z_WALK + zoff) if ccw else L.wall(key, y, x, 0., Z_WALK + zoff)
+            surfaces.add(pp if ccw else pp[::-1], Z_WALK, 'yard')
+            if mat == 'Yard_Grass' and key == mat:
+                _soft_edge(L, e0, e1, out, Rng('edge', s['way'], s['i'], strip['side'], k, round(g0, 4)), zoff)
+            counts['yard_slabs'] += 1
+            counts['yard_square_metres'] += abs(area(pp)) / 10000
+            laid += 1
+            depths.append(min(d0 - n0, d1 - n1))
+            inset |= max(n0, n1) > 1.
+            if front and abs(front[-1][1] - g0 * lot_len) < 1.:
+                front[-1][1] = g1 * lot_len
+            else:
+                front.append([g0 * lot_len, g1 * lot_len])
+        # past a ruelle met at a slant: the ground between its paving and the next wall
+        for i in range(len(fs) - 1):
+            (na, a), (nb, b) = samples[i], samples[i + 1]
+            if a is None or b is None or len(a) < 3 or len(b) < 3:
+                continue
+            (xa, ea), (xb, eb) = a[2], b[2]
+            q0, q1 = lerp(p0, p1, fs[i]), lerp(p0, p1, fs[i + 1])
+            pp = [add(q0, out, na + xa), add(q1, out, nb + xb), add(q1, out, nb + eb), add(q0, out, na + ea)]
+            if min(ea - xa, eb - xb) < 3 or abs(area(pp)) < 50:
+                continue
+            key = kind if world.traffic_distance(pp) >= CLEAR else {'Yard_Grass': 'grass_edge', 'Yard_Soil': 'soil'}[kind]
+            counts['yard_slabs_in_traffic_band'] += key != kind
+            L.flat(key, pp, Z_WALK + zoff)
             for x, y in zip(pp, pp[1:] + pp[:1]):
-                L.wall(mat, x, y, 0., Z_WALK + zoff)
+                L.wall(key, x, y, 0., Z_WALK + zoff)
             surfaces.add(pp, Z_WALK, 'yard')
-            if mat == 'yard_grass':
-                _soft_edge(L, e0, e1, out, Rng('edge', s['way'], s['i'], strip['side'], k, g0), zoff)
+            counts['yard_slabs_past_ruelle_mouths'] += 1
+            counts['yard_square_metres'] += abs(area(pp)) / 10000
+        if not laid:
+            strip['lots'].append({'p0': p0, 'p1': p1, 'depth': 0, 'out': out})
+            continue
         counts['yards'] += 1
-        counts['yard_square_metres'] += lot_len * depth / 10000
+        depth = min(depths)
         lot = {'p0': p0, 'p1': p1, 'depth': depth, 'out': out, 'walk': walk_at if walk else None,
                'fence': False, 'kind': kind, 'plex': plex}
-        if plex and depth >= 100 and rng.chance(.72):
-            _fence(L, p0, p1, out, walk_at if walk else None, rng, counts)
+        if plex and depth >= 100 and not inset and rng.chance(.72):
+            # along the parterre only: never across a ruelle mouth or a passage the parterre stops short of
+            _fence(L, p0, p1, out, walk_at if walk else None, rng, counts, [(max(a, 10.), min(b, lot_len - 10.))
+                                                                          for a, b in front])
             lot['fence'] = True
+            lot['fence_spans'] = [[r2(a), r2(b)] for a, b in front]
         strip['lots'].append(lot)
 
 
@@ -1790,15 +2047,17 @@ def _soft_edge(L, a, b, out, rng, zoff=0.):
         L.flat('grass_edge', poly, Z_WALK + .14 + zoff)
 
 
-def _fence(L, p0, p1, out, walk, rng, counts):
+def _fence(L, p0, p1, out, walk, rng, counts, runs=None):
+    """A low iron fence 9 cm behind the sidewalk along runs (cm from p0; the whole lot by default), open at the
+    walk."""
     length = math.dist(p0, p1)
     u = ((p1[0] - p0[0]) / length, (p1[1] - p0[1]) / length)
     a, b = add(p0, out, 9), add(p1, out, 9)
     h = rng.choice((62., 72., 80.))
-    spans = [(10., length - 10.)]
+    spans = runs if runs is not None else [(10., length - 10.)]
     if walk is not None:
         g0, g1 = walk * length - 62, walk * length + 62
-        spans = [(10., g0), (g1, length - 10.)]
+        spans = [piece for span in spans for piece in subtract(span, [(g0, g1)])]
     for s0, s1 in spans:
         if s1 - s0 < 40:
             continue
@@ -1836,14 +2095,67 @@ def _legacy_dashes(world, L, counts):
     kept = 0
     for face in legacy_marking_faces():
         c = (sum(p[0] for p in face) / len(face), sum(p[1] for p in face) / len(face))
-        if world.surfaces.at(c)[1] == 'road':
+        if world.surfaces.has(c, 'road'):
             continue
         if L.flat('legacy_marking', [p[:2] for p in face], face[0][2]):
             kept += 1
     counts['legacy_route_dashes'] = kept
 
 
+def _alley_profile(world, pa, pb):
+    """Paving reach either side of a ruelle segment, sampled every metre: the yard fence line (ALLEY_PAVE) or the
+    nearest wall, never inside the 430 cm lane strip. Returns the sample distances and reaches {1: left, -1: right}
+    (left of pa->pb)."""
+    u, length = unit(pa, pb)
+    n = (-u[1], u[0])
+    steps = max(1, math.ceil(length / PAVE_STEP))
+    ts = [length * i / steps for i in range(steps + 1)]
+    reach, under = {1: [], -1: []}, []
+    for t in ts:
+        c = add(pa, u, t)
+        inside = world.in_building(c)
+        under.append(inside)
+        for k in (1, -1):
+            if inside:
+                reach[k].append(ALLEY_HALF)
+                continue
+            hit = world.building_ray(c, (n[0] * k, n[1] * k), ALLEY_PAVE)
+            reach[k].append(ALLEY_PAVE if hit is None else max(ALLEY_HALF, min(ALLEY_PAVE, hit)))
+    # at a building corner between two samples the wider reach holds over the interval (the rest runs under the
+    # building), so no bare wedge opens where a wall ends
+    for k in (1, -1):
+        r = reach[k]
+        reach[k] = [r[i] if under[i] else max(r[max(0, i - 1):i + 2]) for i in range(len(r))]
+    return {'t': ts, 1: reach[1], -1: reach[-1]}
+
+
+def _pave_runs(profile):
+    """Sample index runs (i, j) along which both reaches vary linearly (within 1.5 cm), each 20 m or shorter."""
+    ts, runs, i = profile['t'], [], 0
+    last = len(ts) - 1
+
+    def linear(i, j):
+        for k in (1, -1):
+            r = profile[k]
+            for m in range(i + 1, j):
+                f = (ts[m] - ts[i]) / (ts[j] - ts[i])
+                if abs(r[m] - (r[i] + (r[j] - r[i]) * f)) > 1.5:
+                    return False
+        return True
+    while i < last:
+        j = i + 1
+        while j < last and ts[j + 1] - ts[i] <= PAVE_PIECE and linear(i, j + 1):
+            j += 1
+        runs.append((i, j))
+        i = j
+    return runs
+
+
 def _ruelles(world, L, surfaces, counts):
+    """Ruelles paved from fence to fence: asphalt from the centreline out to the yard fence line (290 cm, where
+    plateau_plex stands the lane fences) or to a wall where one stands nearer, sampled every metre and laid in
+    pieces of 20 m or less, with a concrete centre gutter, wedges on the outside of the bends and, at the fence
+    foot, a thin weedy edge of crushed stone or grass (mostly grass on the ruelles vertes)."""
     world.alleys = []
     box = world.box
     for w in world.ways:
@@ -1851,7 +2163,7 @@ def _ruelles(world, L, surfaces, counts):
         if t.get('highway') != 'service' or t.get('service') != 'alley':
             continue
         pts = [world.nodes[r] for r in w['refs']]
-        segs = []
+        segs, profiles = [], []
         for a, b in zip(pts, pts[1:]):
             clip = clip_param(a, b, box)
             if clip is None:
@@ -1860,14 +2172,416 @@ def _ruelles(world, L, surfaces, counts):
             if math.dist(pa, pb) < 100 or world.route_near(lerp(pa, pb, .5)):
                 continue
             segs.append((pa, pb))
-            L.strip('alley', pa, pb, 430, Z_ALLEY)
-            L.strip('alley_gutter', pa, pb, 36, Z_ALLEY + .1)
-            for cap in (pa, pb):
-                _disc(L, 'alley', cap, 215, Z_ALLEY - .05, 10)
-            counts['ruelle_metres'] += math.dist(pa, pb) / 100
-        if segs:
-            world.alleys.append({'id': w['id'], 'segments': segs, 'traffic': all(inside(world.latlon[r]) for r in w['refs']),
-                                 'name': t.get('name', '')})
+            profiles.append(_alley_profile(world, pa, pb))
+        if not segs:
+            continue
+        joints = set()
+        for k, ((pa, pb), profile) in enumerate(zip(segs, profiles)):
+            u, length = unit(pa, pb)
+            n = (-u[1], u[0])
+            ts = profile['t']
+            for i, j in _pave_runs(profile):
+                poly = [add(add(pa, u, ts[i]), n, -profile[-1][i]), add(add(pa, u, ts[j]), n, -profile[-1][j]),
+                        add(add(pa, u, ts[j]), n, profile[1][j]), add(add(pa, u, ts[i]), n, profile[1][i])]
+                if L.flat('alley', poly, Z_ALLEY):
+                    surfaces.add(poly, Z_ALLEY, 'alley')
+                    counts['ruelle_pieces'] += 1
+                    counts['ruelle_square_metres'] += abs(area(poly)) / 10000
+            pieces = max(1, math.ceil(length / PAVE_PIECE))
+            for g in range(pieces):
+                L.strip('alley_gutter', lerp(pa, pb, g / pieces), lerp(pa, pb, (g + 1) / pieces), 36, Z_ALLEY + .1)
+            counts['ruelle_metres'] += length / 100
+            # the next segment of the way: an outer wedge where the two pavings part
+            if k + 1 < len(segs) and math.dist(pb, segs[k + 1][0]) < 1.:
+                joints.add(k)
+                v, _ = unit(*segs[k + 1])
+                turn = math.atan2(u[0] * v[1] - u[1] * v[0], u[0] * v[0] + u[1] * v[1])
+                if abs(turn) > math.radians(2):
+                    side = -1 if turn > 0 else 1          # turning left opens the right side
+                    radius = min(profile[side][-1], profiles[k + 1][side][0])
+                    a0 = math.atan2(n[1] * side, n[0] * side)
+                    sweep = turn
+                    steps = max(1, math.ceil(abs(math.degrees(sweep)) / 15))
+                    wedge = [pb] + [add(pb, (math.cos(a0 + sweep * s / steps), math.sin(a0 + sweep * s / steps)), radius)
+                                    for s in range(steps + 1)]
+                    if L.flat('alley', wedge, Z_ALLEY - .05):
+                        surfaces.add(wedge, Z_ALLEY, 'alley')
+                        counts['ruelle_joint_wedges'] += 1
+        # free ends keep the old round cap of the lane strip
+        for k, (pa, pb) in enumerate(segs):
+            for cap, free in ((pa, k == 0 or (k - 1) not in joints), (pb, k not in joints)):
+                if free:
+                    _disc(L, 'alley', cap, ALLEY_HALF, Z_ALLEY - .05, 10)
+        world.alleys.append({'id': w['id'], 'segments': segs, 'traffic': all(inside(world.latlon[r]) for r in w['refs']),
+                             'name': t.get('name', ''), 'reach': profiles})
+    # The weedy edge at the fence foot (not where a wall stands nearer, never over a carriageway).
+    green = green_alleys(world, load_ruelles_vertes())[0]
+    world.alley_edges = []
+    lanes, lane_grid = [], Grid(2000.)
+    for alley in world.alleys:
+        for k, (pa, pb) in enumerate(alley['segments']):
+            lane_grid.add(len(lanes), bbox([pa, pb], ALLEY_PAVE))
+            lanes.append((alley['id'], k, pa, pb))
+
+    def crossing_lane(q, alley_id, k):
+        """Inside another ruelle's lane strip (a crossing or a T), where no fence stands."""
+        return any(seg_dist(q, a, b) < ALLEY_HALF + 20 for i in lane_grid.query(bbox([q]))
+                   for other, j, a, b in (lanes[i],) if other != alley_id or abs(j - k) > 1)
+    for alley in world.alleys:
+        for k, ((pa, pb), profile) in enumerate(zip(alley['segments'], alley['reach'])):
+            u, _ = unit(pa, pb)
+            n = (-u[1], u[0])
+            ts = profile['t']
+            for side in (1, -1):
+                rng = Rng('ruelle-edge', alley['id'], round(pa[0]), round(pa[1]), side)
+                widths = [rng.uniform(12., 32.) for _ in ts]
+                foot = [add(add(pa, u, ts[i]), n, side * (ALLEY_PAVE - 20)) for i in range(len(ts))]
+                ok = [profile[side][i] >= ALLEY_PAVE - 1 and not surfaces.has(foot[i], 'road') and
+                      not crossing_lane(foot[i], alley['id'], k) for i in range(len(ts))]
+                runs, cur = [], []
+                for i in range(len(ts)):
+                    if not ok[i]:
+                        if len(cur) > 1:
+                            runs.append(cur)
+                        cur = []
+                        continue
+                    if cur and ts[i] - ts[cur[0]] > PAVE_PIECE:
+                        runs.append(cur)
+                        cur = [cur[-1]]
+                    cur.append(i)
+                if len(cur) > 1:
+                    runs.append(cur)
+                for run in runs:
+                    key = 'grass_edge' if rng.chance(.75 if alley['id'] in green else .3) else 'Yard_Gravel'
+                    for i, j in zip(run, run[1:]):
+                        quad = [add(add(pa, u, ts[i]), n, side * (ALLEY_PAVE - 1)),
+                                add(add(pa, u, ts[j]), n, side * (ALLEY_PAVE - 1)),
+                                add(add(pa, u, ts[j]), n, side * (ALLEY_PAVE - widths[j])),
+                                add(add(pa, u, ts[i]), n, side * (ALLEY_PAVE - widths[i]))]
+                        if L.flat(key, quad, Z_ALLEY + .25):
+                            counts['ruelle_edge_metres'] += (ts[j] - ts[i]) / 100
+                    world.alley_edges.append({'alley': alley['id'], 'a': pa, 'b': pb, 'side': side,
+                                              't0': ts[run[0]], 't1': ts[run[-1]], 'key': key})
+
+
+def alley_paving_z(world, p):
+    """Ground height at p on a ruelle's paving, else None."""
+    return Z_ALLEY if world.surfaces.has(p, 'alley') else None
+
+
+# ---------------------------------------------------------------------------------------------
+# Curb extensions (saillies) round the mapped street trees that the measured curbs left on the carriageway
+#
+# The saved map instances 4,571 trees at their OSM nodes (plateau_rendering.tree_positions) and they stay there.
+# Where the carriageway, cut to the curbs measured from the mapped sidewalks and pushed out to 550 cm on traffic
+# streets, covers a trunk within 3 m of its curb, the sidewalk comes out round it: a trapezoid from the curb, the
+# tree pit (110 x 100 cm, as _tree_pits) and 25 cm of concrete in front, with short chamfered tapers, an 18 cm curb
+# face and the light curb band. Extensions whose clear curb between them would not take a parked car (5.4 m)
+# merge into one; elsewhere the parking spaces between them stay. Any part in the 300 cm traffic band is laid
+# flush at the dropped-curb height without collision, as the sidewalk's own dropped aprons are, and so is an
+# extension across a crossing ramp. On a side with no sidewalk the extension is a raised lawn verge; on a corner
+# arc it follows the arc piece nearest the trunk. Trunks farther out are listed for the host.
+# Adapted from the City of Minneapolis Street Design Guide, "Curb extensions" (mid-block extensions in the parking
+# lane for greening; tapers of 3:1 to 5:1 where they guide traffic, so these short ones only chamfer), and the
+# Ville de Montréal's "Saillies de trottoir" (mid-block and planted saillies).
+
+def mapped_trees(world):
+    """The trees the saved map instances (plateau_rendering.tree_positions): OSM natural=tree nodes inside the
+    district, in file order, as (node id, xy)."""
+    return [(n, world.nodes[n]) for n, t in world.node_tags.items()
+            if t.get('natural') == 'tree' and n in world.nodes and inside(world.latlon[n])]
+
+
+def curb_edges(world):
+    """Curb lines with their road side n: each sidewalk strip's curb, each piece of a corner fillet or bend arc,
+    and the carriageway edge of a side with no sidewalk (a verge). back: how far an extension reaches behind it."""
+    edges = []
+    for strip in world.sidewalk_strips:
+        (ca, cb), (oa, _) = strip['curb'], strip['outer']
+        u, length = unit(ca, cb)
+        n = (-u[1], u[0])
+        if (oa[0] - ca[0]) * n[0] + (oa[1] - ca[1]) * n[1] > 0:
+            n = (-n[0], -n[1])
+        edges.append({'kind': 'strip', 'a': ca, 'u': u, 'n': n, 'len': length, 'back': 0., 'strip': strip})
+    for row in world.corners:
+        if row['kind'] not in ('fillet', 'bend') or world.route_near(row['a']['o']) or row['a']['wL'] <= 0 or \
+                row['b']['wR'] <= 0:
+            continue
+        centre = row['C'] if row['kind'] == 'fillet' else row['a']['o']
+        for p, q in zip(row['arc'], row['arc'][1:]):
+            if math.dist(p, q) < 1:
+                continue
+            u, length = unit(p, q)
+            n = (-u[1], u[0])
+            m = lerp(p, q, .5)
+            away = (m[0] - centre[0]) * n[0] + (m[1] - centre[1]) * n[1] > 0
+            if (row['kind'] == 'fillet') != away:          # a fillet's road lies outside its circle
+                n = (-n[0], -n[1])
+            edges.append({'kind': 'corner', 'a': p, 'u': u, 'n': n, 'len': length, 'back': CORNER_BACK})
+    for s in world.segs:
+        if s['excluded'] or not s['quad']:
+            continue
+        for side in ('L', 'R'):
+            if s['w' + side] > 0:
+                continue
+            ea, eb = world.ends[(s['i'], 'a', side)][0], world.ends[(s['i'], 'b', side)][0]
+            if math.dist(ea, eb) < 60:
+                continue
+            u, length = unit(ea, eb)
+            n = (-s['n'][0], -s['n'][1]) if side == 'L' else s['n']
+            edges.append({'kind': 'verge', 'a': ea, 'u': u, 'n': n, 'len': length, 'back': VERGE_BACK, 'seg': s})
+    return edges
+
+
+def _envelope(group, A):
+    """Breakpoints (x, depth) of an extension's front: each tree's flat top over its pit and tapers, bridged to the
+    next tree where they merged."""
+    xs = set()
+    traps = [(t['s'], t['D'], t['taper']) for t in group]
+    bridges = []
+    for (s0, d0, _), (s1, d1, _) in zip(traps, traps[1:]):
+        if s1 - A > s0 + A:
+            bridges.append((s0 + A, d0, s1 - A, d1))
+    for s, d, tau in traps:
+        xs |= {s - A - tau, s - A, s + A, s + A + tau}
+    for x0, _, x1, _ in bridges:
+        xs |= {x0, x1}
+
+    def f(x):
+        best = 0.
+        for s, d, tau in traps:
+            off = abs(x - s)
+            if off <= A:
+                best = max(best, d)
+            elif off < A + tau:
+                best = max(best, d * (A + tau - off) / tau)
+        for x0, d0, x1, d1 in bridges:
+            if x0 <= x <= x1:
+                best = max(best, d0 + (d1 - d0) * (x - x0) / (x1 - x0))
+        return best
+    return sorted(xs), f
+
+
+def curb_extensions(world, counts, pitted=()):
+    """Plan the curb extensions (see above) and the host list; marks each strip's curb band cuts. A trunk on the
+    sidewalk within CURB_HUG of a strip's curb and in no sidewalk pit (`pitted`: their positions) leans over the
+    gutter, so it gets one too."""
+    edges = curb_edges(world)
+    grid = Grid(1500.)
+    for i, e in enumerate(edges):
+        grid.add(i, bbox([e['a'], add(e['a'], e['u'], e['len'])], BUMP_REACH + 100))
+    A = PIT_L / 2 + BUMP_MARGIN
+    trees = mapped_trees(world)
+    counts['mapped_trees'] = len(trees)
+    host, by_edge = [], {}
+    for node, p in trees:
+        on_road = world.surfaces.has(p, 'road')
+        if not on_road:
+            if p in pitted or world.in_building(p):
+                continue
+            hug = None
+            for i in grid.query(bbox([p])):
+                e = edges[i]
+                rel = (p[0] - e['a'][0], p[1] - e['a'][1])
+                s, d = rel[0] * e['u'][0] + rel[1] * e['u'][1], rel[0] * e['n'][0] + rel[1] * e['n'][1]
+                if e['kind'] == 'strip' and 0 <= s <= e['len'] and -CURB_HUG <= d < 0 and (hug is None or d > hug[0]):
+                    hug = (d, i, s)
+            if hug is None:
+                continue
+            d, i, s = hug
+            D = max(BUMP_MIN, d + PIT_D / 2 + BUMP_MARGIN)
+            by_edge.setdefault(i, []).append({'node': node, 'p': p, 's': s, 'd': d, 'D': D, 'at_curb': True,
+                                              'taper': min(BUMP_TAPER_MAX, BUMP_TAPER * D),
+                                              'street': edges[i]['strip']['seg']['name']})
+            counts['curb_extension_trees_at_curb'] += 1
+            continue
+        counts['mapped_trees_on_carriageway'] += 1
+        best = None
+        for i in grid.query(bbox([p])):
+            e = edges[i]
+            rel = (p[0] - e['a'][0], p[1] - e['a'][1])
+            s, d = rel[0] * e['u'][0] + rel[1] * e['u'][1], rel[0] * e['n'][0] + rel[1] * e['n'][1]
+            if -40 <= s <= e['len'] + 40 and d >= -5 and (best is None or d < best[0]):
+                best = (d, i, s)
+        near = nearest_seg(world, p)
+        street = near[1]['name'] if near else ''
+        if best is None or best[0] > BUMP_REACH:
+            host.append({'osm_node': node, 'position': [r2(p[0]), r2(p[1])], 'street': street,
+                         'from_curb_cm': r2(best[0]) if best else None,
+                         'traffic_centreline_cm': r2(world.traffic_distance(p, 2000)),
+                         'reason': 'more than 3 m from the curb' if best else 'no curb edge faces it'})
+            continue
+        d, i, s = best
+        D = max(BUMP_MIN, d + PIT_D / 2 + BUMP_MARGIN)
+        by_edge.setdefault(i, []).append({'node': node, 'p': p, 's': s, 'd': max(0., d), 'D': D, 'at_curb': False,
+                                          'taper': min(BUMP_TAPER_MAX, BUMP_TAPER * D), 'street': street})
+    counts['mapped_trees_for_host'] = len(host)
+    extensions = []
+    for i in sorted(by_edge):
+        e = edges[i]
+        rows = sorted(by_edge[i], key=lambda t: (t['s'], t['node']))
+        groups = [[rows[0]]]
+        for t in rows[1:]:
+            end = max(g['s'] + A + g['taper'] for g in groups[-1])
+            if t['s'] - A - t['taper'] - end < PARK_GAP:
+                groups[-1].append(t)
+            else:
+                groups.append([t])
+        for group in groups:
+            xs, f = _envelope(group, A)
+            lo, hi = xs[0], xs[-1]
+            if e['kind'] != 'corner':
+                lo, hi = max(0., lo), min(e['len'], hi)
+            xs = sorted({x for x in xs if lo <= x <= hi} | {lo, hi})
+            front = [(x, f(x)) for x in xs]
+            deepest = max(dd for _, dd in front)
+            ext = {'edge': e, 'trees': group, 'x': (lo, hi), 'front': front, 'deepest': deepest, 'reason': None}
+            ramps = e['strip']['ramps'] if e['kind'] == 'strip' else []
+            if any(lo - 150 < r < hi + 150 for r in ramps):
+                raised, ext['reason'] = 0., 'crossing ramp'
+            else:
+                raised = _raised_depth(world, e, front, deepest)
+                if raised < deepest:
+                    ext['reason'] = 'traffic band'
+            # no pit straddles the step between the raised part and the flush part
+            changed = True
+            while changed and raised > 0:
+                changed = False
+                for t in group:
+                    if t['d'] - PIT_D / 2 - 15 < raised < t['d'] + PIT_D / 2 + 15:
+                        raised, changed = t['d'] - PIT_D / 2 - 15, True
+            if raised < RAISED_MIN:
+                raised = 0.
+            ext['raised'] = raised
+            extensions.append(ext)
+            if e['kind'] == 'strip' and raised > 0:
+                e['strip'].setdefault('bump_cuts', []).append((lo, hi))
+    world.tree_host = host
+    return extensions
+
+
+def _local(e, x, n):
+    return (e['a'][0] + e['u'][0] * x + e['n'][0] * n, e['a'][1] + e['u'][1] * x + e['n'][1] * n)
+
+
+def _raised_depth(world, e, front, deepest):
+    """How deep the raised (colliding) part of an extension may reach and stay out of the traffic band."""
+    def clear(h):
+        for (x0, d0), (x1, d1) in zip(*(lambda f: (f, f[1:]))(_with_crossings(front, h))):
+            if x1 - x0 < .5:
+                continue
+            poly = [_local(e, x0, -e['back']), _local(e, x1, -e['back']), _local(e, x1, min(d1, h)),
+                    _local(e, x0, min(d0, h))]
+            if world.traffic_distance(dedupe(poly)) < CLEAR:
+                return False
+        return True
+    if clear(deepest):
+        return deepest
+    lo, hi = 0., deepest
+    if not clear(lo):
+        return 0.
+    for _ in range(14):
+        mid = (lo + hi) / 2
+        lo, hi = (mid, hi) if clear(mid) else (lo, mid)
+    return lo
+
+
+def _with_crossings(front, level):
+    """The front polyline with a vertex wherever it crosses depth `level`."""
+    out = [front[0]]
+    for (x0, d0), (x1, d1) in zip(front, front[1:]):
+        if (d0 - level) * (d1 - level) < 0:
+            x = x0 + (x1 - x0) * (level - d0) / (d1 - d0)
+            out.append((x, level))
+        out.append((x1, d1))
+    return out
+
+
+def _draw_extensions(world, L, surfaces, extensions, counts):
+    """The curb extensions planned by curb_extensions, their tree pits, and the Streets/street_trees.json rows."""
+    rows = []
+    world.extension_pits = []
+    A = PIT_L / 2 + BUMP_MARGIN
+    for ext in extensions:
+        e, raised, back = ext['edge'], ext['raised'], ext['edge']['back']
+        top_key = 'Yard_Grass' if e['kind'] == 'verge' else 'sidewalk'
+        front = ext['front']
+        lo, hi = ext['x']
+        if raised > 0:
+            pts = [(x, min(d, raised)) for x, d in _with_crossings(front, raised)]
+            for (x0, t0), (x1, t1) in zip(pts, pts[1:]):
+                if x1 - x0 < .5:
+                    continue
+                poly = [_local(e, x0, -back), _local(e, x1, -back), _local(e, x1, t1), _local(e, x0, t0)]
+                if L.flat(top_key, poly, Z_WALK):
+                    surfaces.add(dedupe(poly), Z_WALK, 'yard' if e['kind'] == 'verge' else 'sidewalk')
+
+            def top(x):
+                for (x0, t0), (x1, t1) in zip(pts, pts[1:]):
+                    if x0 <= x <= x1 and x1 > x0:
+                        return t0 + (t1 - t0) * (x - x0) / (x1 - x0)
+                return None
+
+            def inside_raised(x, n):
+                t = top(x)
+                return t is not None and lo - 1e-6 <= x <= hi + 1e-6 and -back - 1e-6 <= n <= t
+            outline = [(lo, 0.)] + pts + [(hi, 0.)]
+            if e['kind'] == 'verge':
+                outline = [(lo, -back)] + pts + [(hi, -back), (lo, -back)]
+            for (x0, n0), (x1, n1) in zip(outline, outline[1:]):
+                length = math.hypot(x1 - x0, n1 - n0)
+                if length < 1.:
+                    continue
+                cand = ((n1 - n0) / length, -(x1 - x0) / length)        # a normal of the edge, local frame
+                mx, mn = (x0 + x1) / 2, (n0 + n1) / 2
+                outward = cand if not inside_raised(mx + 2 * cand[0], mn + 2 * cand[1]) else (-cand[0], -cand[1])
+                P, Q = _local(e, x0, n0), _local(e, x1, n1)
+                ow = (e['u'][0] * outward[0] + e['n'][0] * outward[1], e['u'][1] * outward[0] + e['n'][1] * outward[1])
+                if (Q[1] - P[1]) * ow[0] - (Q[0] - P[0]) * ow[1] < 0:
+                    P, Q = Q, P
+                L.wall(top_key, P, Q, 0., Z_WALK)
+                if n0 == n1 == -back and e['kind'] == 'verge':
+                    continue                                       # no curb band along a verge's back
+                band = [(x0, n0), (x1, n1), (x1 - 15 * outward[0], n1 - 15 * outward[1]),
+                        (x0 - 15 * outward[0], n0 - 15 * outward[1])]
+                L.flat('curb', [_local(e, x, n) for x, n in band], Z_WALK + .1)
+        # the flush part: in the traffic band, across a ramp, or the whole extension
+        level = raised if raised > 0 else -back
+        flush = [(x, d) for x, d in _with_crossings(front, level)]
+        for (x0, d0), (x1, d1) in zip(flush, flush[1:]):
+            if x1 - x0 < .5 or max(d0, d1) <= level + .5 or min(d0, d1) < level - .5:
+                continue
+            poly = [_local(e, x0, level), _local(e, x1, level), _local(e, x1, d1), _local(e, x0, d0)]
+            if L.flat('curb', poly, Z_DROP):
+                surfaces.add(dedupe(poly), Z_DROP, 'apron')
+        yaw = math.degrees(math.atan2(e['u'][1], e['u'][0]))
+        for t in ext['trees']:
+            z = Z_WALK if t['d'] + PIT_D / 2 + 15 <= raised else Z_DROP
+            q = lambda x, y: _local(e, t['s'] + x, t['d'] + y)        # noqa: E731
+            L.flat('soil', [q(-PIT_L / 2, -PIT_D / 2), q(PIT_L / 2, -PIT_D / 2), q(PIT_L / 2, PIT_D / 2),
+                            q(-PIT_L / 2, PIT_D / 2)], z + .15)
+            for x0, y0, x1, y1 in ((-55, -50, 55, -50), (55, -50, 55, 50), (55, 50, -55, 50), (-55, 50, -55, -50)):
+                L.rod('iron', (*q(x0, y0), z + 2), (*q(x1, y1), z + 2), 1.6, 4)
+            world.extension_pits.append((t['node'], t['p'], yaw, z))
+            counts['tree_pits'] += 1
+            counts['curb_extension_trees'] += 1
+        counts['curb_extensions'] += 1
+        counts['curb_extensions_merged'] += len(ext['trees']) > 1
+        counts['curb_extensions_flush'] += raised == 0
+        counts['curb_extensions_part_flush'] += 0 < raised < ext['deepest']
+        counts['curb_extension_metres'] += (hi - lo) / 100
+        counts['curb_extensions_on_verges'] += e['kind'] == 'verge'
+        counts['curb_extensions_on_corners'] += e['kind'] == 'corner'
+        rows.append({'trees': [t['node'] for t in ext['trees']], 'edge': e['kind'],
+                     'on_sidewalk_at_curb': [t['node'] for t in ext['trees'] if t['at_curb']],
+                     'street': ext['trees'][0]['street'],
+                     'curb': [[r2(v) for v in _local(e, lo, 0.)], [r2(v) for v in _local(e, hi, 0.)]],
+                     'road_normal': [round(e['n'][0], 4), round(e['n'][1], 4)],
+                     'from_curb_cm': [r2(t['d']) for t in ext['trees']], 'depth_cm': r2(ext['deepest']),
+                     'raised_cm': r2(raised), 'flush_reason': ext['reason'] if raised < ext['deepest'] else None,
+                     'pits': [[r2(t['p'][0]), r2(t['p'][1]), r2(Z_WALK if t['d'] + PIT_D / 2 + 15 <= raised else Z_DROP)]
+                              for t in ext['trees']]})
+    world.extension_rows = rows
 
 
 # ---------------------------------------------------------------------------------------------
@@ -2173,19 +2887,41 @@ def build_soul(world):
                 counts['pit_leaf_covers'] += 1
             for _ in range(rng.randint(4, 14)):
                 p = (c[0] + rng.uniform(-150, 150), c[1] + rng.uniform(-150, 150))
-                if world.surfaces.at(p)[1] not in ('sidewalk', 'yard'):
+                ground = world.surfaces.at(p)
+                if ground[1] not in ('sidewalk', 'yard'):
                     continue
-                _leaf(S, p, rng, Z_WALK + .35)
+                _leaf(S, p, rng, ground[0] + .35)
                 counts['loose_leaves'] += 1
         (ca, cb), length = strip['curb'], strip['len']
         rng = Rng('curb-weeds', s['i'], strip['side'])
+        cuts = strip.get('bump_cuts', [])
         x = rng.uniform(100, 900)
         while x < length - 100:
             p = lerp(ca, cb, x / length)
-            if rng.chance(.5):
+            if rng.chance(.5) and not any(a <= x <= b for a, b in cuts):
                 _tuft(S, (p[0], p[1], Z_ROAD), rng, .7)
                 counts['weed_tufts'] += 1
             x += rng.uniform(300, 1500)
+    # Leaves on and round the pits of the curb extensions (at the pit's own height, raised or flush).
+    for node, c, yaw, z in getattr(world, 'extension_pits', []):
+        rng = Rng('extension-leaves', node)
+        if rng.chance(.7):
+            key = rng.choice(('leaf_gold', 'leaf_rust', 'leaf_brown'))
+            S.flat(key, [(c[0] + rng.uniform(30, 50) * math.cos(i * math.tau / 8 + .3),
+                          c[1] + rng.uniform(30, 47) * math.sin(i * math.tau / 8 + .3)) for i in range(8)], z + .3)
+            counts['pit_leaf_covers'] += 1
+    # Weeds at the ruelle fence feet, along the weedy edge.
+    for edge in getattr(world, 'alley_edges', []):
+        u, _ = unit(edge['a'], edge['b'])
+        n = (-u[1], u[0])
+        rng = Rng('ruelle-weeds', edge['alley'], round(edge['a'][0]), round(edge['a'][1]), edge['side'], round(edge['t0']))
+        x = edge['t0'] + rng.uniform(50, 400)
+        while x < edge['t1'] - 30:
+            p = add(add(edge['a'], u, x), n, edge['side'] * (ALLEY_PAVE - rng.uniform(6, 16)))
+            _tuft(S, (p[0], p[1], Z_ALLEY + .25), rng, rng.uniform(.8, 1.3))
+            counts['weed_tufts'] += 1
+            counts['ruelle_fence_weeds'] = counts.get('ruelle_fence_weeds', 0) + 1
+            x += rng.uniform(250, 900)
 
     # Weeds at wall bases, rust streaks under stairs/balconies, murals on blank side walls.
     street_edges = _street_walls(world)
@@ -3050,8 +3786,7 @@ def _gate_spot(world, plex, alleys, lot, kind, c, where, fence, obstacles):
             return None
         z = _yard_z(lot, *F.local(p))
     else:
-        near = alleys.nearest(p, 400)
-        z = Z_ALLEY if near and near[0] < ALLEY_HALF else 0.
+        z = Z_ALLEY if world.surfaces.has(p, 'alley') else 0.
     if kind == 'flower_box':
         z = max(30., fence['height_cm'] - 58.) + (0. if where == 'lane' else _yard_z(lot, *F.local(p)))
     return p, yaw, z, poly
@@ -3181,50 +3916,45 @@ def lane_green(world, plex, S, lane, counts):
 
 
 def _plant(S, p, z, rng, counts):
-    """One clump in a bed or planter, in October: a perennial mound (green, gold, rust or aster purple), an
-    ornamental grass gone to straw, a shrub (a burning bush gone scarlet: a mound with two crossed Leaf_Creeper
-    foliage cards round it, or a green one) or a low ground cover. Mounds, not cones: a cone reads as a pylon."""
+    """One clump in a bed or planter, in October: a perennial (green, gold, rust or aster purple), an ornamental
+    grass gone to straw, a shrub (a burning bush gone scarlet, or a green one) or a low ground cover. Perennials,
+    shrubs and covers are crossed vertical foliage cards on the creeper's cut-out leaf set, the crossed-quad clumps
+    of real-time vegetation (Pelzer, "Rendering Countless Blades of Waving Grass", GPU Gems ch. 7), so they read as
+    leaves from every side instead of faceted mounds; a cover adds a flat leaf card on the soil."""
     kind = rng.choice(('perennial', 'perennial', 'perennial', 'grass', 'shrub', 'cover'))
     if kind == 'perennial':
-        _mound(S, rng.choice(('plant_green', 'plant_green', 'plant_gold', 'plant_rust', 'plant_purple')), p, z,
-               rng.uniform(15, 26), rng.uniform(20, 42), rng)
+        _cards(S, rng.choice(('plant_green', 'plant_green', 'plant_gold', 'plant_rust', 'plant_purple')), p, z,
+               rng.uniform(15, 26), rng.uniform(25, 48), 2, rng)
     elif kind == 'grass':
-        key = rng.choice(('plant_straw', 'plant_straw', 'plant_gold'))
+        key = 'plant_straw'
         for _ in range(4):
             S.cone(key, (p[0] + rng.uniform(-9, 9), p[1] + rng.uniform(-9, 9), z), rng.uniform(3, 5), rng.uniform(45, 85),
                    3, rng.uniform(0, math.tau))
     elif kind == 'shrub':
-        red = rng.chance(.6)
-        r, h = rng.uniform(26, 36), rng.uniform(55, 85)
-        _mound(S, 'plant_red' if red else 'plant_green', p, z, r * .8, h * .85, rng)
-        if red:
-            a = rng.uniform(0, math.pi)
-            for k in range(2):
-                c, s = math.cos(a + k * math.pi / 2), math.sin(a + k * math.pi / 2)
-                w = r * 2.3
-                pts = [(-.35, 0.), (.35, 0.), (.5, .55), (.25, 1.), (-.25, 1.), (-.5, .55)]
-                S.face('Leaf_Creeper', [(p[0] + c * w * x, p[1] + s * w * x, z + h * y) for x, y in pts])
+        _cards(S, 'plant_red' if rng.chance(.6) else 'plant_green', p, z, rng.uniform(26, 36), rng.uniform(55, 85), 3, rng)
     else:
-        _mound(S, rng.choice(('plant_green', 'plant_rust')), p, z, rng.uniform(25, 40), rng.uniform(7, 12), rng)
+        key = rng.choice(('plant_green', 'plant_rust'))
+        r = rng.uniform(25, 40)
+        _cards(S, key, p, z, r, rng.uniform(10, 16), 2, rng)
+        phase = rng.uniform(0, math.tau)
+        S.face(key, [(p[0] + r * rng.uniform(.75, 1.) * math.cos(phase + i * math.tau / 6),
+                      p[1] + r * rng.uniform(.75, 1.) * math.sin(phase + i * math.tau / 6), z + 2.5) for i in range(6)])
     counts['green_plants'] += 1
 
 
-def _mound(S, key, p, z, r, h, rng, sides=5):
-    """A low lumpy dome on the ground at z: a jittered base ring, a narrower ring at about 55% of the height and an
-    apex (15 triangles for five sides), every face facing out."""
-    phase = rng.uniform(0, math.tau)
-    zm = z + h * rng.uniform(.5, .6)
-    ring0, ring1 = [], []
-    for i in range(sides):
-        a = phase + i * math.tau / sides
-        r0, r1 = r * rng.uniform(.85, 1.1), r * rng.uniform(.6, .8)
-        ring0.append((p[0] + r0 * math.cos(a), p[1] + r0 * math.sin(a), z))
-        ring1.append((p[0] + r1 * math.cos(a + .2), p[1] + r1 * math.sin(a + .2), zm))
-    apex = (p[0] + rng.uniform(-.1, .1) * r, p[1] + rng.uniform(-.1, .1) * r, z + h)
-    for i in range(sides):
-        j = (i + 1) % sides
-        S.face(key, [ring0[i], ring0[j], ring1[j], ring1[i]])
-        S.face(key, [ring1[i], ring1[j], apex])
+PLANT_CARD = ((-.35, 0.), (.35, 0.), (.5, .55), (.25, 1.), (-.25, 1.), (-.5, .55))   # a clump's ragged outline
+
+
+def _cards(S, key, p, z, r, h, count, rng):
+    """`count` vertical foliage cards crossed at the clump's centre (2 make an X, 3 a star), each the ragged
+    hexagon PLANT_CARD about 2r wide and h tall (each card sized on its own); the masked material is two-sided, so
+    one face. The bottom edge comes first, so the writer maps u along the card and v = z (the set's 2 m tile)."""
+    phase = rng.uniform(0, math.pi)
+    for k in range(count):
+        a = phase + k * math.pi / count
+        c, s = math.cos(a), math.sin(a)
+        w, hh = 2 * r * rng.uniform(.85, 1.1), h * rng.uniform(.85, 1.05)
+        S.face(key, [(p[0] + c * w * x, p[1] + s * w * x, z + hh * y) for x, y in PLANT_CARD])
 
 
 def _creeper(S, F, x0, x1, d, height, rng):
@@ -3380,7 +4110,7 @@ def _green_grass(world, S, lane, counts, green, by_id):
                  if r.get('circulation') == 'Fermée' and r.get('recouvrement') in ('Végétalisée', 'Gazonnée')]
         if not rings:
             continue
-        for a, b in by_id[alley_id]['segments']:
+        for (a, b), profile in zip(by_id[alley_id]['segments'], by_id[alley_id]['reach']):
             u, length = unit(a, b)
             n = (-u[1], u[0])
             steps = max(1, int(length / 100))
@@ -3399,9 +4129,11 @@ def _green_grass(world, S, lane, counts, green, by_id):
                 t0, t1 = i / steps * length, j / steps * length
                 if t1 - t0 >= 200:
                     for k in (1, -1):
+                        # out to the paving's edge (the fence or a wall), as the open data's grass is
+                        reach = min(r for t, r in zip(profile['t'], profile[k]) if t0 - 100 <= t <= t1 + 100) - 8
                         S.flat('Yard_Grass', [add(add(a, u, t0), n, k * 70), add(add(a, u, t1), n, k * 70),
-                                              add(add(a, u, t1), n, k * (ALLEY_HALF - 10)),
-                                              add(add(a, u, t0), n, k * (ALLEY_HALF - 10))], Z_ALLEY + .6)
+                                              add(add(a, u, t1), n, k * reach),
+                                              add(add(a, u, t0), n, k * reach)], Z_ALLEY + .6)
                     lane['ruelles_vertes']['grass'].append({'osm_way': alley_id, 'from': [r2(v) for v in add(a, u, t0)],
                                                             'to': [r2(v) for v in add(a, u, t1)]})
                     counts['green_grass_metres'] += (t1 - t0) / 100
@@ -3721,6 +4453,30 @@ def prepare(directory=None):
         'Soul': write_layer(soul, directory / 'Soul', soul_counts),
     }
     write_placements(directory / 'Soul', 'Soul', soul_rows, soul_counts)
+    # The mapped street trees the carriageway covers: their curb extensions, and the ones left for the host.
+    trees_doc = {'layer': 'Streets', 'generator': GENERATOR, 'frame': FRAME,
+                 'note': 'Mapped street trees (plateau_rendering.tree_positions: OSM natural=tree inside the district) '
+                         'whose trunk the replica carriageway covers, and those on the sidewalk within 45 cm of the '
+                         'curb with no pit (on_sidewalk_at_curb). Each within 3 m of its curb gets a curb extension '
+                         '(raised 18 cm and colliding where clear of the 300 cm traffic band, else flush at 9 cm '
+                         'without collision); host_review lists the trunks farther out, which the host should check '
+                         'against the street (the trees were not moved).',
+                 'counts': {k: street_counts[k] for k in ('mapped_trees', 'mapped_trees_on_carriageway',
+                                                          'curb_extensions', 'curb_extension_trees',
+                                                          'curb_extension_trees_at_curb',
+                                                          'curb_extensions_merged', 'curb_extensions_flush',
+                                                          'curb_extensions_part_flush', 'curb_extensions_on_verges',
+                                                          'curb_extensions_on_corners', 'mapped_trees_for_host')},
+                 'rules_cm': {'reach': BUMP_REACH, 'curb_hug': CURB_HUG, 'pit': [PIT_L, PIT_D], 'margin': BUMP_MARGIN,
+                              'park_gap': PARK_GAP,
+                              'traffic_clear': CLEAR, 'raised_top': Z_WALK, 'flush_top': Z_DROP},
+                 'extensions': world.extension_rows, 'host_review': world.tree_host}
+    (directory / 'Streets/street_trees.json').write_text(json.dumps(trees_doc, ensure_ascii=False, indent=1) + '\n')
+    streets_manifest = json.loads((directory / 'Streets/manifest.json').read_text())
+    streets_manifest['street_trees'] = 'street_trees.json'
+    streets_manifest['street_trees_sha256'] = sha_file(directory / 'Streets/street_trees.json')
+    (directory / 'Streets/manifest.json').write_text(json.dumps(streets_manifest, ensure_ascii=False, indent=1) + '\n')
+    results['Streets'] = streets_manifest
     # The Furniture layer also gets a manifest (no batches) so the apply step can treat layers uniformly.
     furn_manifest = {'layer': 'Furniture', 'generator': GENERATOR, 'frame': FRAME, 'batches': [], 'materials': {},
                      'placements': 'placements.json', 'counts': furniture_counts,

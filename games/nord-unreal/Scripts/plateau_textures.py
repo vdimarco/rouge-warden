@@ -4,7 +4,7 @@ Run from games/nord-unreal:
   python3 Scripts/plateau_textures.py           # writes Data/Plateau/ReplicaGeometry/Textures/
   python3 Scripts/plateau_textures.py --check   # rebuilds in memory and compares with textures.json
 
-Sixteen sets, three PNG maps each:
+Seventeen sets, three PNG maps each, and one macro-variation mask (T_Replica_Macro_mask, see MACRO):
   T_Replica_<Set>_diff    sRGB base colour; the material multiplies it by target colour / mean_linear. The
                           cut-out sets (balusters, lattice, fence boards, creeper) are RGBA: A is the opacity
                           mask, and the colour under transparent texels is the surface colour, so filtering
@@ -26,15 +26,20 @@ and `card_height_m` is the height the texture was drawn for.
   half-bond, with a band of three fish-scale (half-round butt) rows. Each row covers the top of the
   row below, so a butt steps down by the slate thickness and shades the slate under it.
 - membrane, ballast, tar: flat roofs. A white single-ply sheet with a lap seam, board joints showing
-  through and ponding stains; white gravel ballast; black tar with gravel sunk into it.
-- sheet_metal: corrugated galvanised steel with spangle, fasteners and rust runs.
+  through and ponding stains; white gravel ballast; dusty grey pea gravel sunk in black tar (mean about
+  #4A4744). Ballast, tar and crushed stone tile at 2 m with large-scale zones (scour, grime, bare tar).
+- sheet_metal: corrugated weathered galvanised steel: faded spangle, light-grey patina, fasteners, rust runs.
+- buff_brick: even yellow-tan brick in running bond with 1 cm concave grey mortar joints (Brick_Buff_Even).
 - siding, parging: lap siding with 10 cm laps and staggered butt joints; parged concrete with trowel
   arcs and hairline cracks.
 - balusters, lattice, fence_boards (cut-out cards) and creeper (cut-out Virginia creeper, tiling).
 - lawn, pavers, soil, crushed_stone: yard ground.
 
 Methods. Greystone and slate follow Larry Gritz's RenderMan shader stone.sl (staggered courses, per-stone
-colour from the stone index, noise-perturbed joint edges, a groove profile for the relief). Gravel, tar
+colour from the stone index, noise-perturbed joint edges, a groove profile for the relief); buff brick is the
+classic procedural brick (Peachey's brick shader in Texturing and Modeling; Blender's Brick Texture node): folded
+module coordinates, half-brick row offset, a colour per brick. The macro mask follows the macro-variation approach
+of Epic's landscape materials (T_MacroVariation sampled at large, unrelated scales). Gravel, tar
 and crushed stone are splatted stones kept by the highest height at each texel, the way Substance
 Designer's Tile Sampler / Shape Splatter stacks pebbles; spangle and tar cracks are Worley cellular noise
 (F1 cells, F2 - F1 borders). Siding is the sawtooth band profile of Blender's Wave Texture (one wedge per
@@ -87,13 +92,13 @@ SETS = {
     'slate': {'name': 'Slate', 'size_px': (512, 1024), 'tile_m': (1.0, 2.0), 'seed': 1895,
               'surface': 'wall', 'keys': ()},
     'membrane': {'name': 'Membrane', 'size_px': (512, 512), 'tile_m': (2.44, 2.44), 'seed': 2010,
-                 'surface': 'ground', 'keys': ('Roof_Membrane',)},
-    'ballast': {'name': 'Ballast', 'size_px': (512, 512), 'tile_m': (1.0, 1.0), 'seed': 1962,
-                'surface': 'ground', 'keys': ('Roof_Gravel',)},
-    'tar': {'name': 'TarGravel', 'size_px': (512, 512), 'tile_m': (1.0, 1.0), 'seed': 1931,
-            'surface': 'ground', 'keys': ('Roof_Tar',), 'tint_floor': .1},
+                 'surface': 'ground', 'keys': ('Roof_Membrane',), 'macro': .07},
+    'ballast': {'name': 'Ballast', 'size_px': (1024, 1024), 'tile_m': (2.0, 2.0), 'seed': 1962,
+                'surface': 'ground', 'keys': ('Roof_Gravel',), 'macro': .14},
+    'tar': {'name': 'TarGravel', 'size_px': (1024, 1024), 'tile_m': (2.0, 2.0), 'seed': 1931,
+            'surface': 'ground', 'keys': ('Roof_Tar',), 'macro': .16},
     'sheet_metal': {'name': 'SheetMetal', 'size_px': (512, 512), 'tile_m': (1.0, 1.0), 'seed': 1920,
-                    'surface': 'wall', 'keys': ('Sheet_Metal',), 'metallic': .85, 'tint_floor': .02},
+                    'surface': 'wall', 'keys': ('Sheet_Metal',), 'metallic': .3, 'tint_floor': .02},
     'siding': {'name': 'Siding', 'size_px': (1024, 512), 'tile_m': (2.4, 1.2), 'seed': 1958,
                'surface': 'wall', 'keys': ('Siding_Lap_Cream', 'Siding_Lap_Grey'), 'tint_floor': .02},
     'parging': {'name': 'Parging', 'size_px': (512, 512), 'tile_m': (2.0, 2.0), 'seed': 1949,
@@ -112,9 +117,16 @@ SETS = {
                'surface': 'ground', 'keys': ('Yard_Pavers',), 'tint_floor': .02},
     'soil': {'name': 'Soil', 'size_px': (512, 512), 'tile_m': (2.0, 2.0), 'seed': 1905,
              'surface': 'ground', 'keys': ('Yard_Soil',)},
-    'crushed_stone': {'name': 'CrushedStone', 'size_px': (512, 512), 'tile_m': (1.0, 1.0), 'seed': 1999,
-                      'surface': 'ground', 'keys': ('Yard_Gravel',)},
+    'crushed_stone': {'name': 'CrushedStone', 'size_px': (1024, 1024), 'tile_m': (2.0, 2.0), 'seed': 1999,
+                      'surface': 'ground', 'keys': ('Yard_Gravel',), 'macro': .12},
+    'buff_brick': {'name': 'BuffBrick', 'size_px': (1024, 1024), 'tile_m': (1.6, 1.6), 'seed': 1956,
+                   'surface': 'wall', 'keys': ('Brick_Buff_Even',), 'macro': .05},
 }
+# Macro variation (the Kite demo / Starter Content T_MacroVariation approach): one small tileable mask of three
+# independent low-frequency noises. The apply step samples it twice, R at MACRO['tile_m'][0] and G at [1] (metres,
+# both non-commensurate with every set's tile), and multiplies the tint by lerp(1 - s, 1 + s, R) x
+# lerp(1 - .6 s, 1 + .6 s, G), with s the set's 'macro' strength, so a 49 m roof no longer shows its tile grid.
+MACRO = {'name': 'Macro', 'size_px': (512, 512), 'tile_m': (17.3, 5.3), 'seed': 2026, 'second_scale': .6}
 CARDS = tuple(k for k, s in SETS.items() if 'card_height_m' in s)
 ALPHA = tuple(k for k, s in SETS.items() if SURFACES[s['surface']]['blend_mode'] == 'masked')
 # Limestone layout (cm).
@@ -164,6 +176,13 @@ FENCE_RAILS_CM = ((22., 30.9), (149., 157.9))
 PAVER_CM = 10.
 PAVER_JOINT_CM = .15
 PAVER_CHAMFER_CM = .7
+# Even buff brick in running bond: a 20 x 6.67 cm module (three courses to 20 cm, Canadian modular), 1 cm
+# concave (tooled) joints of grey mortar, so the joint grid reads from the street; 8 bricks by 24 courses a tile.
+BRICK_MODULE_CM = (20., 20. / 3.)
+BRICK_JOINT_CM = 1.
+BRICK_COURSES = 24
+BRICK_COLOUR = (210., 181., 126.)          # yellow-tan (BrickYellow #D0B27A, buff #C9AE84 in research-plateau.md)
+BRICK_MORTAR = (171., 167., 157.)          # natural grey mortar (#A9A49A)
 
 
 # ------------------------------------------------------------------------------------------------
@@ -893,11 +912,17 @@ def membrane(spec):
                               'seam_u': round(seam / W, 4)})
 
 
-def gravel_stones(seed, W, H, px, layers, palette, round_stones=True):
-    """Stone list for splat_round or splat_angular from (cell_cm, prob, r_cm range, base_cm, top ratio) layers."""
+def gravel_stones(seed, W, H, px, layers, palette, round_stones=True, keep=None, shade=None):
+    """Stone list for splat_round or splat_angular from (cell_cm, prob, r_cm range, base_cm, top ratio) layers.
+
+    keep(layer, x, y) -> probability and shade(x, y) -> (r, g, b) factors vary the stones over the tile (thin,
+    scoured patches; grimy or clean lots); without them every stone is drawn as before.
+    """
     stones, colours, roughs = [], [], []
     for layer, (cell_cm, prob, (r0, r1), base, top) in enumerate(layers):
         for cx, cy, key in scatter(seed, W, H, cell_cm * px, prob, layer):
+            if keep is not None and unit(seed, 59, *key) >= keep(layer, cx, cy):
+                continue
             u = [unit(seed, 50 + n, *key) for n in range(10)]
             r = (r0 + (r1 - r0) * u[0]) * px
             if round_stones:
@@ -914,49 +939,107 @@ def gravel_stones(seed, W, H, px, layers, palette, round_stones=True):
                                r * (.5 + .2 * u[5]), (u[6] - .5) * .4 / px, (u[7] - .5) * .4 / px))
             c = pick(palette, u[8])
             tone = .93 + .14 * u[9]
-            colours.append((c[0] * tone, c[1] * tone, c[2] * tone))
+            k = (tone, tone, tone) if shade is None else tuple(tone * f for f in shade(cx, cy))
+            colours.append((c[0] * k[0], c[1] * k[1], c[2] * k[2]))
             roughs.append(.76 + .1 * unit(seed, 72, *key))
     return stones, colours, roughs
 
 
+def zone_field(seed, W, H, cells, gains):
+    """A tileable low-frequency Fbm stretched to about [0, 1] (mean 0.5): large-scale zones within a tile."""
+    values = field(Fbm(seed, W, H, cells, gains), H)
+    mean = sum(values) / len(values)
+    spread = max(abs(v - mean) for v in values) or 1.
+    return [min(1., max(0., .5 + .5 * (v - mean) / spread)) for v in values]
+
+
+def sampler(values, W, H):
+    """Nearest lookup of a flat W x H field at a pixel position (wrapping)."""
+    return lambda x, y: values[(floor(y) % H) * W + floor(x) % W]
+
+
 def ballast(spec):
-    """White gravel ballast: two layers of rounded white and grey stones, 1.6 to 3 cm, over dark grit."""
+    """White gravel ballast: two layers of rounded white and grey stones, 1.6 to 3 cm, over dark grit.
+
+    Large-scale variation inside the 2 m tile: scoured patches where the wind and foot traffic thin the second
+    layer and the grit shows (wear), and older, greyer and grimier lots next to cleaner ones (grime), each a
+    low-frequency zone field of 25 cm to 1 m features. The apply step's macro mask breaks the tile further.
+    """
     W, H = spec['size_px']
     seed = spec['seed']
     px = W / (spec['tile_m'][0] * 100.)
+    per_m = spec['tile_m'][0]                      # noise cells scale with the tile, so features keep their size
     palette = ((.6, (234., 232., 226.)), (.2, (202., 201., 197.)), (.11, (222., 212., 192.)),
                (.06, (158., 158., 155.)), (.03, (178., 152., 122.)))
     layers = ((2.1, 1., (.85, 1.55), 0., .52), (2.6, .9, (.8, 1.45), .5, .48))
-    stones, colours, roughs = gravel_stones(seed, W, H, px, layers, palette)
+    wear = zone_field(seed + 21, W, H, ((2, 2), (4, 4), (8, 8)), (.5, .32, .18))
+    grime = zone_field(seed + 22, W, H, ((3, 3), (6, 6), (12, 12)), (.5, .3, .2))
+    at_wear, at_grime = sampler(wear, W, H), sampler(grime, W, H)
+
+    def keep(layer, x, y):
+        w = smooth(.55, .85, at_wear(x, y))
+        return 1. - (.25 if layer == 0 else .7) * w
+
+    def shade(x, y):
+        g = smooth(.5, .85, at_grime(x, y))
+        clean = 1. - smooth(.15, .4, at_grime(x, y))
+        return (1. - .13 * g + .03 * clean, 1. - .145 * g + .03 * clean, 1. - .18 * g + .03 * clean)
+
+    stones, colours, roughs = gravel_stones(seed, W, H, px, layers, palette, keep=keep, shade=shade)
     cv = Canvas(W, H, (112., 109., 103.), 0., .95)
-    fine = field(Noise(seed + 4, W, H, 256, 256), H)
-    for i, v in enumerate(field(Noise(seed + 5, W, H, 64, 64), H)):
+    fine = field(Noise(seed + 4, W, H, round(256 * per_m), round(256 * per_m)), H)
+    for i, v in enumerate(field(Noise(seed + 5, W, H, round(64 * per_m), round(64 * per_m)), H)):
         cv.height[i] = .15 * v
     owner, prof = [-1] * (W * H), [0.] * (W * H)
     splat_round(W, H, stones, cv.height, owner, prof)
-    dirt = field(Fbm(seed + 2, W, H, ((4, 4), (8, 8), (16, 16)), (.5, .3, .2)), H)
+    dirt = field(Fbm(seed + 2, W, H, tuple((round(c * per_m),) * 2 for c in (4, 8, 16)), (.5, .3, .2)), H)
     stones_colour(cv, owner, prof, colours, (112., 109., 103.), .95, fine, dirt, roughs, ao=.4, dirt_amount=.1)
+    # Grit between the stones darkens with the grime too (soot and dust settle where the ballast is old).
+    for i, o in enumerate(owner):
+        if o < 0:
+            k = 1. - .2 * smooth(.5, .85, grime[i])
+            cv.r[i], cv.g[i], cv.b[i] = cv.r[i] * k, cv.g[i] * k, cv.b[i] * k
     cover = sum(1 for o in owner if o >= 0) / len(owner)
-    return cv.result(px, px, {'stones': len(stones), 'stone_cm': [1.6, 3.0], 'stone_cover': round(cover, 4)})
+    return cv.result(px, px, {'stones': len(stones), 'stone_cm': [1.6, 3.0], 'stone_cover': round(cover, 4),
+                              'zones_cm': [25, 100]})
 
 
 def tar(spec):
-    """Tar and gravel: black, slightly glossy tar with small mixed gravel sunk into it, dust and old cracks."""
+    """Tar and gravel (built-up roof): pea gravel sunk in a black flood coat, dusty and dark grey from above.
+
+    About two thirds of the surface is weathered grey, tan and dark gravel; scoured patches of bare tar with old
+    shrinkage cracks show where wind and foot traffic moved the gravel, and grimier lots sit beside cleaner ones
+    (zones of 25 cm to 1 m inside the 2 m tile). The mean is about #4A4744, so the manifest colour of a tar roof
+    can sit near it and the gravel keeps its own contrast instead of being multiplied down to black.
+    """
     W, H = spec['size_px']
     seed = spec['seed']
     px = W / (spec['tile_m'][0] * 100.)
-    palette = ((.35, (138., 138., 135.)), (.25, (205., 202., 194.)), (.2, (158., 134., 100.)), (.2, (72., 70., 68.)))
-    layers = ((1.3, .85, (.35, .9), -.25, .9),)
-    stones, colours, roughs = gravel_stones(seed, W, H, px, layers, palette)
-    cv = Canvas(W, H, (22., 21., 20.), 0., .45)
-    bumps = field(Fbm(seed + 5, W, H, ((16, 16), (64, 64)), (.6, .4)), H)
+    per_m = spec['tile_m'][0]
+    palette = ((.36, (104., 103., 99.)), (.22, (141., 138., 132.)), (.16, (109., 100., 86.)), (.26, (63., 61., 59.)))
+    layers = ((1.2, .95, (.38, .8), -.06, .8), (1.6, .75, (.4, .85), .02, .75))
+    wear = zone_field(seed + 21, W, H, ((2, 2), (4, 4), (8, 8)), (.5, .32, .18))
+    grime = zone_field(seed + 22, W, H, ((3, 3), (6, 6), (12, 12)), (.5, .3, .2))
+    at_wear, at_grime = sampler(wear, W, H), sampler(grime, W, H)
+
+    def keep(layer, x, y):
+        return 1. - .9 * smooth(.6, .78, at_wear(x, y))
+
+    def shade(x, y):
+        g = smooth(.4, .85, at_grime(x, y))
+        return (1. - .22 * g, 1. - .23 * g, 1. - .25 * g)
+
+    stones, colours, roughs = gravel_stones(seed, W, H, px, layers, palette, keep=keep, shade=shade)
+    tar_colour = (20., 19., 18.)
+    cv = Canvas(W, H, tar_colour, 0., .45)
+    bumps = field(Fbm(seed + 5, W, H, ((round(16 * per_m),) * 2, (round(64 * per_m),) * 2), (.6, .4)), H)
     for i, v in enumerate(bumps):
         cv.height[i] = .08 * (v - .5)
     owner, prof = [-1] * (W * H), [0.] * (W * H)
     splat_round(W, H, stones, cv.height, owner, prof)
-    fine = field(Noise(seed + 4, W, H, 256, 256), H)
-    dust = field(Fbm(seed + 2, W, H, ((3, 3), (6, 6), (12, 12), (24, 24)), (.4, .3, .2, .1)), H)
-    stones_colour(cv, owner, prof, colours, (22., 21., 20.), .45, fine, dust, roughs, ao=.15, dirt_amount=0.,
+    fine = field(Noise(seed + 4, W, H, round(256 * per_m), round(256 * per_m)), H)
+    dust = field(Fbm(seed + 2, W, H, tuple((round(c * per_m),) * 2 for c in (3, 6, 12, 24)), (.4, .3, .2, .1)), H)
+    stones_colour(cv, owner, prof, colours, tar_colour, .45, fine, dust, roughs, ao=.15, dirt_amount=0.,
                   floor_cavity=.6)
     _, crack, _ = cells(seed + 9, W, H, 18. * px, .9)
     R, G, B, RO, CA, HT = cv.r, cv.g, cv.b, cv.rough, cv.cavity, cv.height
@@ -966,21 +1049,24 @@ def tar(spec):
             p = prof[i]
             if p < .35:                                # tar film creeping up the stone
                 f = .75 * (1. - p / .35)
-                R[i] += (22. - R[i]) * f
-                G[i] += (21. - G[i]) * f
-                B[i] += (20. - B[i]) * f
+                R[i] += (tar_colour[0] - R[i]) * f
+                G[i] += (tar_colour[1] - G[i]) * f
+                B[i] += (tar_colour[2] - B[i]) * f
                 RO[i] += (.45 - RO[i]) * f
+            k = 1. + .25 * dusty                       # dust on the stones lifts them toward grey
+            R[i], G[i], B[i] = R[i] * k, G[i] * k, B[i] * k * .98
             continue
         RO[i] = .38 + .14 * fine[i] + .4 * dusty
         k = 1. + 1.6 * dusty
         R[i], G[i], B[i] = R[i] * k, G[i] * k, B[i] * k * .97
-        if crack[i] < 1.:
-            f = 1. - crack[i]
+        bare = smooth(.55, .72, wear[i])               # shrinkage cracks open where the gravel is gone
+        if crack[i] < 1. and bare > 0.:
+            f = (1. - crack[i]) * bare
             R[i], G[i], B[i] = R[i] * (1. - .5 * f), G[i] * (1. - .5 * f), B[i] * (1. - .5 * f)
-            CA[i], HT[i] = 1., HT[i] - .05 * f
+            CA[i], HT[i] = max(CA[i], f), HT[i] - .05 * f
     cover = sum(1 for o in owner if o >= 0) / len(owner)
-    return cv.result(px, px, {'stones': len(stones), 'stone_cm': [.6, 1.6], 'stone_cover': round(cover, 4),
-                              'crack_cell_cm': 18.})
+    return cv.result(px, px, {'stones': len(stones), 'stone_cm': [.76, 1.7], 'stone_cover': round(cover, 4),
+                              'crack_cell_cm': 18., 'zones_cm': [25, 100]})
 
 
 def sheet_metal(spec):
@@ -1011,16 +1097,18 @@ def sheet_metal(spec):
             e = wrap_delta(x + .5, lap_edge, W)
             if -pitch < e < 0.:
                 h += .12
+            # Weathered galvanising: the spangle has faded under a dull, light-grey zinc patina, so the sheet reads
+            # light grey and diffuse rather than mirror-like (roughness about 0.6).
             sp = spangle[ids[i]] - .5
-            dull = smooth(.5, .78, patina[i])
-            k = (1. + .16 * sp) * (1. - .14 * dull) * (.82 + .18 * (c + 1.) * .5) * (1. + .04 * (fine[i] - .5))
+            dull = smooth(.42, .72, patina[i])
+            k = (1. + .1 * sp) * (1. - .08 * dull) * (.86 + .14 * (c + 1.) * .5) * (1. + .04 * (fine[i] - .5))
             k *= 1. - .1 * (1. - smooth(0., .8, border[i]))
-            rough = .36 + .12 * (spangle_r[ids[i]] - .5) + .26 * dull
+            rough = .5 + .1 * (spangle_r[ids[i]] - .5) + .18 * dull
             col = (176., 180., 182.)
             wr = smooth(.74, .86, white[i])
             if wr > 0.:
                 col = tuple(v + (214. - v) * .55 * wr for v in col)
-                rough += .3 * wr
+                rough += .22 * wr
             cav = 0.
             if -1. < e < 1.:
                 k *= .55
@@ -1210,6 +1298,93 @@ def parging(spec):
                     R[i], G[i], B[i] = R[i] * .78, G[i] * .78, B[i] * .78
                     HT[i], CA[i], RO[i] = HT[i] - .12, 1., .95
     return cv.result(px, px, {'trowel_strokes': strokes, 'cracks': cracks, 'patches': len(patches)})
+
+
+def brick_layout(spec):
+    """Running-bond layout of the buff brick tile: module and joint (cm), bricks per course, the roll that puts
+    the tile edges through bricks rather than along joints, and px per cm."""
+    W, H = spec['size_px']
+    mx, my = BRICK_MODULE_CM
+    width_cm, height_cm = spec['tile_m'][0] * 100., spec['tile_m'][1] * 100.
+    per_course = round(width_cm / mx)
+    assert abs(per_course * mx - width_cm) < 1e-6 and abs(BRICK_COURSES * my - height_cm) < 1e-6
+    assert BRICK_COURSES % 2 == 0, 'Running bond wraps vertically only with an even course count'
+    return {'px': W / width_cm, 'module_cm': (mx, my), 'joint_cm': BRICK_JOINT_CM, 'per_course': per_course,
+            'courses': BRICK_COURSES, 'roll_cm': (mx / 4., my / 2.), 'size_cm': (width_cm, height_cm)}
+
+
+def brick_at(L, xc, yc):
+    """(course, brick, distance to the nearest joint centreline, distance below the brick above) at a point (cm)."""
+    mx, my = L['module_cm']
+    width_cm, height_cm = L['size_cm']
+    yl = (yc + L['roll_cm'][1]) % height_cm
+    r = min(int(yl // my), L['courses'] - 1)
+    fy = yl - r * my
+    xl = (xc - L['roll_cm'][0] - (mx / 2. if r % 2 else 0.)) % width_cm
+    k = min(int(xl // mx), L['per_course'] - 1)
+    fx = xl - k * mx
+    return r, k, min(fx, mx - fx, fy, my - fy), min(fx, mx - fx), min(fy, my - fy), fy
+
+
+def buff_brick(spec):
+    """Even buff brick in running bond: yellow-tan bricks of one even shade with a fine sand face, rounded
+    arrises and grey mortar in 1 cm concave joints whose upper edge sits in the shadow of the brick above, so the
+    joint grid reads from the street. Per-brick tone varies by only about 3%."""
+    W, H = spec['size_px']
+    seed = spec['seed']
+    L = brick_layout(spec)
+    px = L['px']
+    half = L['joint_cm'] / 2.
+    my = L['module_cm'][1]
+    bricks = {}
+    for r in range(L['courses']):
+        for k in range(L['per_course']):
+            u = [unit(seed, 110 + n, r, k) for n in range(3)]
+            shift = (5., 1., -4.) if u[1] < .22 else (3., 4., 6.) if u[1] > .84 else (0., 0., 0.)
+            bricks[r, k] = {'tone': .97 + .06 * u[0], 'shift': shift, 'rough': .82 + .05 * u[2]}
+    sand = field(Noise(seed + 1, W, H, 512, 512), H)
+    cloud = field(Fbm(seed + 2, W, H, ((16, 48), (32, 96)), (.6, .4)), H)
+    speck = field(Noise(seed + 3, W, H, 384, 384), H)
+    ragged = field(Fbm(seed + 4, W, H, ((96, 96), (192, 192)), (.7, .3)), H)
+    cv = Canvas(W, H, BRICK_COLOUR, 1., .84)
+    R, G, B, HT, RO, CA = cv.r, cv.g, cv.b, cv.height, cv.rough, cv.cavity
+    aa = .5 / px                                       # half a texel, for an anti-aliased joint edge
+    mortar_texels = 0
+    for y in range(H):
+        yc = (y + .5) / px
+        for x in range(W):
+            i = y * W + x
+            r, k, e, ex, ey, fy = brick_at(L, (x + .5) / px, yc)
+            e -= .06 * (ragged[i] - .5) * 2.           # slightly irregular arrises
+            m = 1. - smooth(half - aa, half + aa, e)
+            b = bricks[r, k]
+            # Brick face: one even shade per brick, sand grain, faint firing clouds, rare iron specks, arris shade.
+            kb = b['tone'] * (1. + .07 * (sand[i] - .5)) * (1. + .05 * (cloud[i] - .5))
+            if speck[i] > .93:
+                kb *= .86
+            kb *= .88 + .12 * smooth(half, half + .35, e)
+            bc = [(BRICK_COLOUR[n] + b['shift'][n]) * kb for n in range(3)]
+            hb = 1. - .25 * (1. - smooth(half, half + .35, e)) + .04 * (sand[i] - .5)
+            # Mortar: concave tooled joint, lowest on the centreline; the top of a bed joint is shaded by the
+            # brick above it (light from above), which is what draws the grid at a distance.
+            km = (.95 + .1 * (sand[i] - .5))
+            if ey <= ex and fy > my - half:            # upper half of the bed joint under course r
+                km *= .76 + .24 * smooth(0., .7 * L['joint_cm'], fy - (my - half))
+            elif ex < ey:
+                km *= .9                               # head joints: a little ambient occlusion
+            mc = [BRICK_MORTAR[n] * km for n in range(3)]
+            hm = .55 + .25 * min(1., e / half) ** 2
+            R[i] = bc[0] + (mc[0] - bc[0]) * m
+            G[i] = bc[1] + (mc[1] - bc[1]) * m
+            B[i] = bc[2] + (mc[2] - bc[2]) * m
+            HT[i] = hb + (hm - hb) * m
+            RO[i] = b['rough'] + .04 * (sand[i] - .5) + (.93 - b['rough']) * m
+            CA[i] = m
+            mortar_texels += m >= .5
+    return cv.result(px, px, {'module_cm': [round(v, 4) for v in L['module_cm']], 'joint_cm': L['joint_cm'],
+                              'bricks_per_course': L['per_course'], 'courses': L['courses'],
+                              'roll_cm': [round(v, 4) for v in L['roll_cm']],
+                              'mortar_share': round(mortar_texels / (W * H), 4)})
 
 
 # ------------------------------------------------------------------------------------------------
@@ -1654,29 +1829,108 @@ def soil(spec):
 
 
 def crushed_stone(spec):
-    """Grey crushed limestone (3/4 in net): angular chips of 1.4 to 2.6 cm in two layers over dusty fines."""
+    """Grey crushed limestone (3/4 in net): angular chips of 1.4 to 2.6 cm in two layers over dusty fines.
+
+    Large-scale variation inside the 2 m tile: compacted patches where the chips are pressed apart and the pale
+    fines show (wear), and damp or oily lots that are darker (grime), as on a used parking pad.
+    """
     W, H = spec['size_px']
     seed = spec['seed']
     px = W / (spec['tile_m'][0] * 100.)
+    per_m = spec['tile_m'][0]
     palette = ((.35, (150., 150., 148.)), (.25, (126., 128., 130.)), (.2, (176., 174., 168.)),
                (.12, (104., 106., 110.)), (.08, (160., 150., 136.)))
     layers = ((1.9, 1., (.7, 1.3), 0., .5), (2.3, .8, (.7, 1.2), .3, .45))
-    stones, colours, roughs = gravel_stones(seed, W, H, px, layers, palette, round_stones=False)
-    cv = Canvas(W, H, (124., 118., 108.), 0., .95)
-    fine = field(Noise(seed + 4, W, H, 256, 256), H)
-    for i, v in enumerate(field(Noise(seed + 5, W, H, 64, 64), H)):
+    wear = zone_field(seed + 21, W, H, ((2, 2), (4, 4), (8, 8)), (.5, .32, .18))
+    grime = zone_field(seed + 22, W, H, ((3, 3), (6, 6), (12, 12)), (.5, .3, .2))
+    at_wear, at_grime = sampler(wear, W, H), sampler(grime, W, H)
+
+    def keep(layer, x, y):
+        return 1. - (.35 if layer == 0 else .9) * smooth(.55, .82, at_wear(x, y))
+
+    def shade(x, y):
+        g = smooth(.5, .85, at_grime(x, y))
+        return (1. - .2 * g, 1. - .2 * g, 1. - .18 * g)
+
+    stones, colours, roughs = gravel_stones(seed, W, H, px, layers, palette, round_stones=False, keep=keep,
+                                            shade=shade)
+    fines = (124., 118., 108.)
+    cv = Canvas(W, H, fines, 0., .95)
+    fine = field(Noise(seed + 4, W, H, round(256 * per_m), round(256 * per_m)), H)
+    for i, v in enumerate(field(Noise(seed + 5, W, H, round(64 * per_m), round(64 * per_m)), H)):
         cv.height[i] = .15 * v
     owner, prof = [-1] * (W * H), [0.] * (W * H)
     splat_angular(W, H, stones, cv.height, owner, prof)
-    dirt = field(Fbm(seed + 2, W, H, ((4, 4), (8, 8), (16, 16)), (.5, .3, .2)), H)
-    stones_colour(cv, owner, prof, colours, (124., 118., 108.), .95, fine, dirt, roughs, ao=.22, dirt_amount=.1)
+    dirt = field(Fbm(seed + 2, W, H, tuple((round(c * per_m),) * 2 for c in (4, 8, 16)), (.5, .3, .2)), H)
+    stones_colour(cv, owner, prof, colours, fines, .95, fine, dirt, roughs, ao=.22, dirt_amount=.1)
+    for i, o in enumerate(owner):
+        if o < 0:                                      # compacted fines are paler, damp lots darker
+            k = (1. + .12 * smooth(.55, .85, wear[i])) * (1. - .22 * smooth(.5, .85, grime[i]))
+            cv.r[i], cv.g[i], cv.b[i] = cv.r[i] * k, cv.g[i] * k, cv.b[i] * k
     cover = sum(1 for o in owner if o >= 0) / len(owner)
-    return cv.result(px, px, {'stones': len(stones), 'stone_cm': [1.4, 2.6], 'stone_cover': round(cover, 4)})
+    return cv.result(px, px, {'stones': len(stones), 'stone_cm': [1.4, 2.6], 'stone_cover': round(cover, 4),
+                              'zones_cm': [25, 100]})
 
 
 GENERATORS = {'membrane': membrane, 'ballast': ballast, 'tar': tar, 'sheet_metal': sheet_metal, 'siding': siding,
               'parging': parging, 'balusters': balusters, 'lattice': lattice, 'fence_boards': fence_boards,
-              'creeper': creeper, 'lawn': lawn, 'pavers': pavers, 'soil': soil, 'crushed_stone': crushed_stone}
+              'creeper': creeper, 'lawn': lawn, 'pavers': pavers, 'soil': soil, 'crushed_stone': crushed_stone,
+              'buff_brick': buff_brick}
+
+
+# ------------------------------------------------------------------------------------------------
+# Macro variation mask
+
+def stretched(values, lo_q=.02, hi_q=.98):
+    """values mapped so their 2nd and 98th percentiles land on 0 and 1 (clamped): a full-range mask."""
+    ordered = sorted(values)
+    lo, hi = ordered[int(lo_q * (len(ordered) - 1))], ordered[int(hi_q * (len(ordered) - 1))]
+    span = (hi - lo) or 1.
+    return [min(1., max(0., (v - lo) / span)) for v in values]
+
+
+def macro_rows():
+    """RGB rows of the macro mask: three independent tileable noises (features of about a fifth to a sixteenth
+    of the tile), each stretched to the full range. The apply step reads R at MACRO tile_m[0], G at tile_m[1]."""
+    W, H = MACRO['size_px']
+    seed = MACRO['seed']
+    raw = []
+    for n in range(3):
+        values = field(Fbm(seed + 10 * n, W, H, ((2, 2), (4, 4), (8, 8), (16, 16)), (.45, .28, .17, .1)), H)
+        mean = sum(values) / len(values)
+        values = [v - mean for v in values]
+        # With only a few large cells per tile, two noises can follow each other by chance; take out the part of
+        # each channel that follows the ones before it (Gram-Schmidt), so R and G vary independently.
+        for prev in raw:
+            k = sum(a * b for a, b in zip(values, prev)) / sum(b * b for b in prev)
+            values = [a - k * b for a, b in zip(values, prev)]
+        raw.append(values)
+    channels = [stretched(values) for values in raw]
+    rows = []
+    for y in range(H):
+        row = bytearray(3 * W)
+        for n in range(3):
+            row[n::3] = bytes(byte(v * 255.) for v in channels[n][y * W:(y + 1) * W])
+        rows.append(bytes(row))
+    return rows
+
+
+def macro_file():
+    return f'T_Replica_{MACRO["name"]}_mask.png'
+
+
+def build_macro():
+    """{file name: png bytes} and the index entry of the macro mask (linear masks, wraps both ways)."""
+    W, H = MACRO['size_px']
+    rows = macro_rows()
+    raw = raw_stream(rows)
+    data = png(W, H, raw)
+    means = [round(channel_mean(rows, c), 4) for c in range(3)]
+    entry = {'file': macro_file(), 'size_px': [W, H], 'tile_m': list(MACRO['tile_m']),
+             'second_scale': MACRO['second_scale'], 'channels': {'R': MACRO['tile_m'][0], 'G': MACRO['tile_m'][1]},
+             'mean': means, 'srgb': False, 'compression': 'TC_MASKS', 'sampler': 'SAMPLERTYPE_MASKS',
+             'sha256': hashlib.sha256(data).hexdigest(), 'raw_sha256': hashlib.sha256(raw).hexdigest()}
+    return {entry['file']: data}, entry
 
 
 def generate(key):
@@ -1848,6 +2102,9 @@ def build(key):
         entry['coverage'] = round(sum(sum(1 for v in a if v >= 128) for a in alpha) / (width * height), 4)
     if 'metallic' in spec:
         entry['metallic'] = spec['metallic']
+    if 'macro' in spec:
+        entry['macro'] = {'strength': [spec['macro'], round(spec['macro'] * MACRO['second_scale'], 6)],
+                          'tile_m': list(MACRO['tile_m']), 'channels': ['R', 'G'], 'file': macro_file()}
     files = {}
     for role in ROLES:
         raw = raw_stream(maps[role])
@@ -1888,6 +2145,10 @@ def prepare(out=OUT, jobs=None):
         for name, data in files.items():
             (out / name).write_bytes(data)
         index['sets'][key] = entry
+    files, entry = build_macro()
+    for name, data in files.items():
+        (out / name).write_bytes(data)
+    index['macro'] = entry
     (out / INDEX).write_text(json.dumps(index, indent=1, sort_keys=True) + '\n')
     return index
 
@@ -1895,6 +2156,10 @@ def prepare(out=OUT, jobs=None):
 def check(out=OUT):
     """The committed index and PNGs match a fresh build (pixel streams; file bytes may differ by zlib build)."""
     index = json.loads((Path(out) / INDEX).read_text())
+    _, macro = build_macro()
+    assert index.get('macro', {}).get('raw_sha256') == macro['raw_sha256'], 'Macro mask changed; rerun plateau_textures.py'
+    _, _, raw = read_png((Path(out) / macro['file']).read_bytes())
+    assert hashlib.sha256(raw).hexdigest() == macro['raw_sha256'], f'{macro["file"]} is stale'
     for key, (_, entry) in build_all().items():
         assert key in index['sets'], f'{key}: missing from {INDEX}; rerun plateau_textures.py'
         stored = index['sets'][key]
