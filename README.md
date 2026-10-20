@@ -795,6 +795,18 @@ Run these from the repo root. Each node test runs alone and exits with code 1 wh
 | `NODE_PATH=qa/browser/node_modules node qa/first-breath/music-demo.mjs` | Renders every cue (each level, and the boss) and every stinger to mp3 with ffmpeg in `DEMO` (default the system temp folder), so a person can listen |
 | `SHOTS=<folder> NODE_PATH=qa/browser/node_modules node qa/first-breath/shots.mjs` | Screenshots of every stage at the three sizes in both tiers, the birth light, and a 1 s strip of stage 1 at `?res=0.5` to review the sway |
 
+### Table Tennis tests
+
+Run these from the repo root. The desktop checks open Chromium through the Playwright package in `qa/browser`. Install that package, then install Chromium with `npx playwright install chromium` in `qa/browser`:
+
+```sh
+npm ci --prefix qa/browser
+(cd qa/browser && npx playwright install chromium)
+node --test qa/pingpong/*.test.mjs
+```
+
+The 48 checks cover the rules, the rally, the bat, the gate, phone motion, the desktop court, and the win rate.
+
 ### Arcade tests
 
 Serve `public/` (for example `cd public && python3 -m http.server 8765`), then run the script from the repo root with Playwright on `NODE_PATH` (for example `NODE_PATH=$(npm root -g)`). Set `ARCADE_URL` to test another address of the same tree, `SHOTS` to a folder to save screenshots, and `PARTS` (`gta`, `walk`, `layout`, `marquee`, `switcher`, `saves`, `credits`, `focus`, `backlinks`) to run only some of the browser parts. `quiet.mjs` reads `QUIET_URL` instead (default `http://localhost:8912`, so serve on 8912 or set `QUIET_URL=http://localhost:8765`), and takes `--old`, `--only=`, `--skip=` and `--modes=`. The whole run takes a few minutes, because the page is slow in a headless browser. It exits with code 1 when something fails.

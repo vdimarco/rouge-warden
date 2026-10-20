@@ -49,6 +49,7 @@ test('the table is drawn in code, with a static blit and a device pixel cap of 2
   assert.match(render, /createElement\('canvas'\)/);
   assert.match(render, /drawImage\(layer/);
   assert.match(render, /Math\.min\(RULES\.dprCap, window\.devicePixelRatio/);
+  assert.match(render, /const scale = Math\.min\(window\.devicePixelRatio \|\| 1, 1920 \/ cssWidth\)/);
   assert.match(render, /function drawStatic/);
 
   const audio = fs.readFileSync(path.join(dir, 'audio.js'), 'utf8');
