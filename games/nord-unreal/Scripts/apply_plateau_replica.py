@@ -679,6 +679,14 @@ def preflight(u, root, backup, the_plan):
     for row in the_plan['textures']:
         assert getattr(u.TextureCompressionSettings, row['compression'], None) is not None, row['compression']
         assert getattr(u.MaterialSamplerType, row['sampler'], None) is not None, row['sampler']
+        assert getattr(u.TextureAddress, row['address_y'], None) is not None, row['address_y']
+    if any(m['nanite_shape_preservation'] for m in the_plan['meshes'] + the_plan['tree_meshes']):
+        assert getattr(u.NaniteShapePreservation, PRESERVE_AREA, None) is not None, 'Missing Unreal API ' + PRESERVE_AREA
+    if any(a['collision_only'] for a in the_plan['actors']):
+        for name in ('ECC_CAMERA', 'ECC_VISIBILITY', 'ECC_PAWN'):
+            assert getattr(u.CollisionChannel, name, None) is not None, 'Missing Unreal API ' + name
+    if any(m.get('macro') for m in the_plan['materials']):
+        assert getattr(u, 'MaterialExpressionLinearInterpolate', None) is not None, 'Missing Unreal API Lerp'
     if the_plan['parents']:
         for owner, name in ((u.BlendMode, 'BLEND_MASKED'), (u.MaterialShadingModel, 'MSM_TWO_SIDED_FOLIAGE'),
                             (u.MaterialProperty, 'MP_OPACITY_MASK'), (u.MaterialProperty, 'MP_SUBSURFACE_COLOR')):
@@ -689,7 +697,11 @@ def preflight(u, root, backup, the_plan):
             assert not assets.does_asset_exist(row['duplicate_of']), row['duplicate_of'] + ' already exists'
         else:
             assert assets.does_asset_exist(row['duplicate_of']), 'Missing base material ' + row['duplicate_of']
-    if the_plan['trees']:
+    for row in the_plan['tree_meshes']:
+        for slot, material in row['materials'].items():
+            assert material.startswith(MATERIALS) or assets.does_asset_exist(material), \
+                f'{row["species"]} {slot}: missing material {material}'
+    if the_plan['trees'] and not the_plan['tree_meshes']:
         tree = assets.load_asset(TREE_MESH)
         assert isinstance(tree, u.StaticMesh), 'Missing the mapped tree mesh ' + TREE_MESH
         for slot in tree.get_editor_property('static_materials'):
@@ -735,6 +747,9 @@ def import_texture(u, root, row):
                     None)
     if group is not None:
         texture.set_editor_property('lod_group', group)
+    if row.get('address_y', 'TA_WRAP') != 'TA_WRAP':
+        # Cards span their texture once in V: clamp, so the lower mips never blend the top row into the bottom one.
+        texture.set_editor_property('address_y', getattr(u.TextureAddress, row['address_y']))
     if row.get('alpha'):
         # Cut-out diffuse (RGBA): keep the alpha (BC3), and scale each mip's alpha so the share of texels over the
         # material's clip stays that of the top mip (Castaño, "Computing Alpha Mipmaps"); without it, balusters
@@ -749,14 +764,31 @@ def import_texture(u, root, row):
 def texture_role(texture):
     """'diff', 'nor_dx' or 'rough' from a texture asset name (brick_wall_001_diff, T_Replica_Slate_rough...)."""
     name = texture.get_name() if texture else ''
-    return next((r for r in TEXTURE_ROLES if name.endswith('_' + r)), None)
+    return next((r for r in TEXTURE_ROLES + (MACRO_ROLE,) if name.endswith('_' + r)), None)
 
 
-def retexture(u, mat, row, textures):
-    """Swap the brick parent's three samples for the replica set and set the metre tiling.
+def tint_product(u, mat, diff, tint):
+    """(node, pin) of the Multiply that takes the diffuse sample and the tint (diff.RGB x tint in the brick and
+    gravel parents), or None."""
+    lib = u.MaterialEditingLibrary
+    for n in lib.get_material_expressions(mat):
+        if not isinstance(n, u.MaterialExpressionMultiply) or str(n.get_editor_property('desc')) == MARKER:
+            continue
+        inputs = list(lib.get_inputs_for_material_expression(mat, n))[:2]
+        if len(inputs) == 2 and inputs[0] == diff and inputs[1] == tint:
+            return n, 'B'
+        if len(inputs) == 2 and inputs[0] == tint and inputs[1] == diff:
+            return n, 'A'
+    return None
+
+
+def retexture(u, mat, row, textures, tint=None):
+    """Swap the brick parent's three samples for the replica set, set the metre tiling and, for sets with macro
+    variation, multiply the tint by the macro mask (add_macro).
 
     Returns False, changing nothing, unless the duplicate has exactly one authored texture coordinate
-    and one sample per role (diff, nor_dx, rough), as upgrade_plateau.material() authors M_BrickRed.
+    and one sample per role (diff, nor_dx, rough), as upgrade_plateau.material() authors M_BrickRed, and, for a
+    macro set, a Multiply of the diffuse sample and the tint.
     """
     nodes = [n for n in u.MaterialEditingLibrary.get_material_expressions(mat)
              if str(n.get_editor_property('desc')) != MARKER]
@@ -767,13 +799,59 @@ def retexture(u, mat, row, textures):
             samples.setdefault(texture_role(n.get_editor_property('texture')), []).append(n)
     if len(coords) != 1 or sorted(samples) != sorted(TEXTURE_ROLES) or any(len(v) != 1 for v in samples.values()):
         return False
+    product = tint_product(u, mat, samples['diff'][0], tint) if row.get('macro') else None
+    if row.get('macro') and product is None:
+        return False
     samplers = {t['role']: t['sampler'] for t in textures.values()}
     for role, (node,) in samples.items():
         node.set_editor_property('texture', textures[row['textures'][role]]['object'])
         node.set_editor_property('sampler_type', getattr(u.MaterialSamplerType, samplers[role]))
     coords[0].set_editor_property('u_tiling', float(row['tiling'][0]))
     coords[0].set_editor_property('v_tiling', float(row['tiling'][1]))
+    if product:
+        add_macro(u, mat, row, textures, tint, *product)
     return True
+
+
+def add_macro(u, mat, row, textures, tint, product, pin):
+    """Macro variation: the tint x lerp(1 - s1, 1 + s1, mask.R at the first macro tile) x lerp(1 - s2, 1 + s2,
+    mask.G at the second) into the product's tint pin. The two tiles (17.3 m, 5.3 m) are not multiples of any
+    set's tile, so a large roof shows no grid (the Kite demo / T_MacroVariation approach, on a generated mask)."""
+    lib = u.MaterialEditingLibrary
+    macro = row['macro']
+    mask = textures[macro['texture']]
+    factor = tint
+    for tiling, strength, channel in zip(macro['tiling'], macro['strength'], macro['channels']):
+        coords = lib.create_material_expression(mat, u.MaterialExpressionTextureCoordinate)
+        coords.set_editor_property('u_tiling', float(tiling[0]))
+        coords.set_editor_property('v_tiling', float(tiling[1]))
+        sample = lib.create_material_expression(mat, u.MaterialExpressionTextureSample)
+        sample.set_editor_property('texture', mask['object'])
+        sample.set_editor_property('sampler_type', getattr(u.MaterialSamplerType, mask['sampler']))
+        lerp = lib.create_material_expression(mat, u.MaterialExpressionLinearInterpolate)
+        lerp.set_editor_property('const_a', 1. - float(strength))
+        lerp.set_editor_property('const_b', 1. + float(strength))
+        multiply = lib.create_material_expression(mat, u.MaterialExpressionMultiply)
+        for node in (coords, sample, lerp, multiply):
+            node.set_editor_property('desc', MACRO_DESC)
+        assert lib.connect_material_expressions(coords, '', sample, '')
+        assert lib.connect_material_expressions(sample, channel, lerp, 'Alpha')
+        assert lib.connect_material_expressions(factor, '', multiply, 'A')
+        assert lib.connect_material_expressions(lerp, '', multiply, 'B')
+        factor = multiply
+    assert lib.connect_material_expressions(factor, '', product, pin)
+
+
+def foliage_mode(u, mat, tint):
+    """Leaves with no masked texture set (a tree generator's leaf geometry): two-sided foliage shading, both faces,
+    SubsurfaceColor = colour x .65 as the mapped trees' leaves."""
+    lib = u.MaterialEditingLibrary
+    mat.set_editor_property('two_sided', True)
+    mat.set_editor_property('shading_model', u.MaterialShadingModel.MSM_TWO_SIDED_FOLIAGE)
+    transmission = lib.create_material_expression(mat, u.MaterialExpressionMultiply)
+    transmission.set_editor_property('const_b', FOLIAGE_SUBSURFACE)
+    assert lib.connect_material_expressions(tint, '', transmission, 'A')
+    assert lib.connect_material_property(transmission, '', u.MaterialProperty.MP_SUBSURFACE_COLOR)
 
 
 def textured_graph(u, mat, row, textures, tint, spec):
@@ -797,6 +875,8 @@ def textured_graph(u, mat, row, textures, tint, spec):
     product = lib.create_material_expression(mat, u.MaterialExpressionMultiply)
     assert lib.connect_material_expressions(samples['diff'], 'RGB', product, 'A')
     assert lib.connect_material_expressions(tint, '', product, 'B')
+    if row.get('macro'):
+        add_macro(u, mat, row, textures, tint, product, 'B')
     assert lib.connect_material_property(product, '', u.MaterialProperty.MP_BASE_COLOR)
     assert lib.connect_material_property(samples['nor_dx'], 'RGB', u.MaterialProperty.MP_NORMAL)
     assert lib.connect_material_property(samples['rough'], 'R', u.MaterialProperty.MP_ROUGHNESS)
@@ -864,7 +944,8 @@ def make_material(u, row, spec, textures=None):
         textured_colour = tuple(min(TINT_LIMIT, c / m) for c, m in zip(colour, row['mean_linear']))
     mat = assets.duplicate_asset(row['duplicate_of'], row['asset'])
     tints = authored_tints(u, mat) if mat else []
-    duplicated = bool(mat) and len(tints) == 1 and (not row.get('textures') or retexture(u, mat, row, textures))
+    duplicated = bool(mat) and len(tints) == 1 and (not row.get('textures') or
+                                                    retexture(u, mat, row, textures, tints[0]))
     if duplicated:
         if row['texture_mean']:
             colour = textured_colour
@@ -874,6 +955,8 @@ def make_material(u, row, spec, textures=None):
         if row.get('texture_set'):
             material_mode(u, mat, row)
             set_metallic(u, mat, row['metallic'])
+        if row.get('foliage'):
+            foliage_mode(u, mat, tints[0])
     else:
         if mat:
             assets.delete_asset(row['asset'])
@@ -898,6 +981,8 @@ def make_material(u, row, spec, textures=None):
                 node = lib.create_material_expression(mat, u.MaterialExpressionConstant)
                 node.set_editor_property('r', value)
                 lib.connect_material_property(node, '', prop)
+            if row.get('foliage'):
+                foliage_mode(u, mat, tint)
         if spec.get('emissive_srgb'):
             emissive_input(u, mat, spec, tint)
     for usage in (u.MaterialUsage.MATUSAGE_NANITE, u.MaterialUsage.MATUSAGE_INSTANCED_STATIC_MESHES):
@@ -968,7 +1053,10 @@ def add_box_collision(u, mesh, colliders):
     assert len(body.get_editor_property('agg_geom').get_editor_property('box_elems')) == len(colliders), mesh.get_path_name()
 
 
-def import_mesh(u, source, destination, name, material, collision, colliders=()):
+def import_mesh(u, source, destination, name, material, collision, colliders=(), shape_preservation=None):
+    """Import one OBJ batch as a Nanite static mesh (upgrade_plateau.import_mesh semantics). material None leaves
+    the slots to the caller (tree meshes: assign_tree_slots); shape_preservation PRESERVE_AREA keeps masked cards,
+    creeper and leaves from thinning out at a distance."""
     task = u.AssetImportTask()
     task.filename, task.destination_path, task.destination_name = str(source), destination, name
     task.automated, task.save, task.replace_existing = True, False, False
@@ -982,7 +1070,8 @@ def import_mesh(u, source, destination, name, material, collision, colliders=())
     assert task.imported_object_paths, str(source)
     mesh = u.EditorAssetLibrary.load_asset(task.imported_object_paths[0])
     assert isinstance(mesh, u.StaticMesh), str(source)
-    mesh.set_material(0, material)
+    if material is not None:
+        mesh.set_material(0, material)
     subsystem = u.get_editor_subsystem(u.StaticMeshEditorSubsystem)
     build = subsystem.get_lod_build_settings(mesh, 0)
     build.set_editor_property('max_lumen_mesh_cards', 64)
@@ -999,6 +1088,8 @@ def import_mesh(u, source, destination, name, material, collision, colliders=())
     settings.set_editor_property('fallback_target', u.NaniteFallbackTarget.PERCENT_TRIANGLES)
     settings.set_editor_property('fallback_percent_triangles', 1.)
     settings.set_editor_property('fallback_relative_error', 0.)
+    if shape_preservation:
+        settings.set_editor_property('shape_preservation', getattr(u.NaniteShapePreservation, shape_preservation))
     subsystem.set_nanite_settings(mesh, settings, True)
     assert u.EditorAssetLibrary.save_loaded_asset(mesh, only_if_is_dirty=False)
     return mesh
