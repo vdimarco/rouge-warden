@@ -30,6 +30,41 @@ test("no blow lands while the hero rolls or drives (safe)", () => {
   for (let i = 0; i < 6 / DT; i++) C.update(DT, h);
   assert.equal(C.hp, FIGHT.hp);
 });
+test("a goon on the street goes round a block corner to the hero, not into the wall", () => {
+  // the goon and the hero on the sidewalks of two streets that meet, with the block's corner building between them
+  const open = (x, z) => !city.isWater(x, z) && !city.collideSphere(x, 0.9, z, 0.32) && !city.topBelow(x, 0.6, z, 0.25);
+  const clear = (x0, z0, x1, z1) => { const n = Math.ceil(Math.hypot(x1 - x0, z1 - z0)); for (let i = 1; i <= n; i++) if (!open(x0 + ((x1 - x0) * i) / n, z0 + ((z1 - z0) * i) / n)) return false; return true; };
+  const cases = [];
+  for (const x of city.streets.xs) for (const z of city.streets.zs) {
+    const g = { x: x - 8, z: z - 22 }, h = { x: x - 22, z: z - 8 };
+    if (open(g.x, g.z) && open(h.x, h.z) && !clear(g.x, g.z, h.x, h.z)) cases.push({ g, h });
+  }
+  assert.ok(cases.length >= 20, "corners " + cases.length);
+  for (const k of [0, Math.floor(cases.length / 2), cases.length - 1]) {
+    const { g: s, h: at } = cases[k];
+    const C = createCombat(city), h = hero(at.x, 0, at.z);
+    const g = C.spawn(s.x, 0, s.z, "t"); g.aggro = true;
+    let hit = false;
+    for (let i = 0; i < 12 / DT && !hit; i++) {
+      C.update(DT, h);
+      if (C.events.some((e) => e.type === "hurt")) hit = true;
+      C.events.length = 0;
+      assert.ok(open(g.x, g.z), "inside a wall at " + g.x.toFixed(1) + ", " + g.z.toFixed(1));
+    }
+    assert.ok(hit, "reached and punched from " + s.x + ", " + s.z + "; stopped at " + g.x.toFixed(1) + ", " + g.z.toFixed(1));
+  }
+});
+test("a goon whose straight way a post blocks slides past it", () => {
+  // a post 3 m in front of the goon, a little to one side of his line to the hero
+  const C = createCombat(city), h = hero(street.x, 0, street.z);
+  const g = C.spawn(street.x - 12, 0, street.z, "t"); g.aggro = true;
+  const real = city.collideSphere;
+  city.collideSphere = (x, y, z, r, o) => Math.hypot(x - (street.x - 9), z - (street.z + 0.2)) < r + 0.3 || real(x, y, z, r, o);
+  try {
+    for (let i = 0; i < 6 / DT; i++) { C.update(DT, h); C.events.length = 0; }
+  } finally { city.collideSphere = real; }
+  assert.ok(Math.hypot(g.x - h.x, g.z - h.z) < FIGHT.reach, "got past: " + g.x.toFixed(2) + ", " + g.z.toFixed(2));
+});
 test("punch, punch, kick: the combo knocks a goon down, and he sinks away", () => {
   const C = createCombat(city), h = hero(street.x, 0, street.z, { safe: true });
   const g = C.spawn(street.x - 1.4, 0, street.z, "t");
