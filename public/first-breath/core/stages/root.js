@@ -1320,8 +1320,10 @@ export function resume(st) {
 
 // The score's mood (openspec/changes/first-breath-score/contract.md, "Mood"): in the roots, 2 when your hp is low (2
 // pips or fewer of 3 or more, or 1 pip), 1 while you fight (a germ within 45 u of you, or a germ's shot about), 0 while
-// you explore; the nestle, the heart's hush and taps and a knock-out are 0, the grow 1. Pure and cheap (main.js reads
-// it every 100 ms); it changes nothing.
+// you explore; the nestle, the heart's hush and taps and a knock-out are 0, the grow 1. These thresholds (1 pip, 2 of 3
+// pips, 45 u) stay here as literals on purpose: they set only the music, so they sit beside the state they read and
+// not in root.tune.js (first-breath-score design 4). Pure and cheap (main.js reads it every 100 ms); it changes
+// nothing.
 export function mood(st) {
   const A = st && st.A;
   if (!A || st.done || st.phase === "ko" || A.ko) return { level: 0 };

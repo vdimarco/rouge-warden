@@ -60,7 +60,8 @@ through the womb filter, which is 150 Hz in the early stages. Every stage sounds
 - Checks: new `qa/first-breath/music.test.mjs`, `music.e2e.mjs` and `music-demo.mjs`; updates to `text.test.mjs`,
   `pacing.test.mjs`, `save.test.mjs`, `layout.e2e.mjs`, `screens.e2e.mjs` and `perf.e2e.mjs`. The existing checks
   and `qa/arcade/quiet.mjs` must still pass.
-- Size: about 1.5 MB of samples, fetched only after Play; about 190 KB of score and engine code. Decoded, the samples
-  take about 42 MB of memory at 44.1 kHz.
+- Size: about 1.5 MB of samples, fetched only after Play; about 184 KB of score and engine code (`core/music/` and
+  `ui/music.js` as built, 183,781 bytes; about 65 KB gzipped file by file). Decoded, the samples take about 42 MB of memory at
+  44.1 kHz.
 - No new game, so the homepage cabinet, its row and the switcher entry stay as they are.
 - A person must still listen on a phone and on speakers before this ships. The pull request says so.

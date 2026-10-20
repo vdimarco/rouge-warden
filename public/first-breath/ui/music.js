@@ -616,6 +616,10 @@ export function createMusic(ctx, { dest = null, base = "audio/score/", fetchFn =
           st.anchorT = st.T0 = nowT() + lat() + 0.01;
         }
         st.announce = false;
+        // nothing of it is laid yet, so it starts at the mood as it is now: a cue asked for while stopped (a stage
+        // begun with Music off) kept the mood from when it was asked, and its first bar played that level
+        st.mood = { ...mood };
+        if (st.cue.sync !== "mother") st.spb = spbOf(st);
         push(changes, { kind: "cue", id: st.id, at: st.anchorT - lat() });
         barLine(st, true);
       }

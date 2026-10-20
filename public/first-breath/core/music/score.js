@@ -1,8 +1,9 @@
 // First Breath: the score (openspec/changes/first-breath-score/contract.md). Pure data and pure functions: no DOM, no
 // clocks, no randomness. Everything is computed once, here, at module load, from the cue files in ./cues/.
 //
-// THE STYLE. An original score in the idiom of Walter Murphy's Family Guy music ("Emission Impossible"): a theatrical
-// studio orchestra with a big band inside it, played completely straight, as if the baby were the hero of a film.
+// THE STYLE. An original score in the idiom of the Family Guy scores (Walter Murphy's theme and underscores, and Ron
+// Jones, who scored "Emission Impossible"): a theatrical studio orchestra with a big band inside it, played completely
+// straight, as if the baby were the hero of a film.
 // Brass voiced in close harmony with the lead trumpet on top, stabs on the "and" of the beat, rips and falls, timpani
 // rolls into new sections, harp glissandos for wonder, swing for the caper and the show number, a "button" at the end.
 // No existing melody is quoted; only the idiom is borrowed. music.test.mjs screens every tune against famous themes.

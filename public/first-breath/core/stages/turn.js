@@ -1097,8 +1097,9 @@ export function probe() {
 
 // The score's mood (openspec/changes/first-breath-score/contract.md, "Mood"), by the swarm's size in the waves: 0
 // under 8 germs, 1 from 8, 2 from 20; the Big Germ is 2 and the boss while it lives; the clear is 1; the turn, the
-// rest (your song is hummed), the outro and a knock-out are 0. Pure and cheap (main.js reads it every 100 ms); it
-// changes nothing.
+// rest (your song is hummed), the outro and a knock-out are 0. These thresholds (8 and 20 germs) stay here as
+// literals on purpose: they set only the music, so they sit beside the state they read and not in turn.tune.js
+// (first-breath-score design 4). Pure and cheap (main.js reads it every 100 ms); it changes nothing.
 export function mood(st) {
   const A = st && st.A;
   if (!A || st.done || st.phase === "ko" || A.ko) return { level: 0 };

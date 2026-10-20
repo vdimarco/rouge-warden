@@ -16,12 +16,12 @@ The game SHALL play an original orchestral score in the idiom of Family Guy's un
 - **CHECK** `qa/first-breath/music-demo.mjs`, then a person listens (tasks 8)
 
 ### Requirement: A cue for every screen and stage
-Each stage, the title screens and the ending SHALL have their own cue: an overture, a spy chase, a siege march, a sneaky caper, an expedition, a full-orchestra battle, a big-band show number, a last stand, a great escape and a lullaby. A stage's cue SHALL start at the stage start, and a change of cue SHALL land on a bar line after the old cue's button. Through each overlay and card the cue SHALL play on at its lowest level, so no gap is longer than 1 s.
+Each stage, the title screens and the ending SHALL have their own cue: an overture, a spy chase, a siege march, a sneaky caper, an expedition, a full-orchestra battle, a big-band show number, a last stand, a great escape and a lullaby. The old cue's button SHALL play at the stage's end, and the next stage's cue SHALL come in on a bar line within two bars of its start. Through each overlay and card the cue SHALL play on at its lowest level, so no gap is longer than 1 s.
 
 #### Scenario: The cue follows the stage
 - **GIVEN** a run played by the reference bot with Music on
 - **WHEN** each stage starts
-- **THEN** the score's `stats().cue` is that stage's cue (`swim`, `egg`, `split`, `root`, `grow`, `answer`, `turn`, `birth`) within one bar, and the old cue's button played on the bar line where the new cue began
+- **THEN** the score's `stats().cue` is that stage's cue (`swim`, `egg`, `split`, `root`, `grow`, `answer`, `turn`, `birth`) within two bars, starting on a bar line of the old cue (stage 6's on her first beat after it), and the old cue's button played once, on a beat at its stage's overlay, and not again where the new cue began
 - **CHECK** `qa/first-breath/music.e2e.mjs`
 
 #### Scenario: No silence between stages
@@ -70,12 +70,12 @@ Every stage cue SHALL have three layers that join as the stage's mood rises: lev
 - **CHECK** `qa/first-breath/music.e2e.mjs`
 
 ### Requirement: Stingers mark the big moments
-Short stingers SHALL mark the big moments, on the playing cue's next beat and in its key: the grade fanfare after a stage's button (Good, Great and Glowing, each grander), a brass stab and a timpani roll as a boss arrives, a harp and bell flourish for a gift picked or a pool found, two bright brass notes at a gate passed, and a short brass rip for an item used. The cue SHALL duck under each stinger, and no stinger SHALL be dropped.
+Short stingers SHALL mark the big moments, on the playing cue's next beat and in its key: the grade fanfare after a stage's button (Good, Great and Glowing, each grander), a brass stab and a timpani roll as a boss arrives, a harp and bell flourish for a gift picked, for the first pool you link and for the last pool when you link it, two bright brass notes at a gate passed, and a short brass rip for an item used. The cue SHALL duck under each stinger, and no stinger SHALL be dropped.
 
 #### Scenario: A grade at the stage end
 - **GIVEN** stage 3 ending with Great
 - **WHEN** the overlay shows
-- **THEN** the caper's button plays on its bar line, and the Great fanfare follows it in the caper's key
+- **THEN** the caper's button plays on its next beat, and the Great fanfare follows it in the caper's key
 - **CHECK** `qa/first-breath/music.e2e.mjs`
 
 #### Scenario: A gate passed
@@ -97,7 +97,7 @@ A knock-out SHALL never get a sad sting. As you curl up and rest, the score SHAL
 - **GIVEN** stage 5 with the score at level 2
 - **WHEN** your last pip goes
 - **THEN** the knock-out chord plays on the next beat with no drum in it, and behind the Almost card the cue plays at level 0
-- **CHECK** `qa/first-breath/music.e2e.mjs`
+- **CHECK** `qa/first-breath/music.e2e.mjs`, `qa/first-breath/music.test.mjs` (no drum in the chord)
 
 #### Scenario: The chord is soft
 - **GIVEN** the knock-out stinger
@@ -157,7 +157,7 @@ The ending SHALL stay tender, slow and soft. No score note SHALL sound from the 
 - **CHECK** `qa/first-breath/music.test.mjs`
 
 ### Requirement: Music captions
-With captions and Music on, a caption SHALL name the music once per stage when its cue starts, in plain words, such as "♪ spy-chase music". Music captions SHALL follow the banned words, so a working name such as "Battle" is never shown. A music caption SHALL NOT cut a fact or a sub-goal line. Stingers SHALL need no caption, since each marks a moment the screen already shows.
+With captions and Music on, a caption SHALL name the music once per stage when its cue starts, in plain words, such as "♪ spy-chase music", waiting its turn when the caption line is busy. Music captions SHALL follow the banned words, so a working name such as "Battle" is never shown. A music caption SHALL NOT cut a fact or a sub-goal line. Stingers SHALL need no caption, since each marks a moment the screen already shows.
 
 #### Scenario: One line per stage
 - **GIVEN** stage 1 with captions and Music on at 390 × 844
@@ -177,6 +177,12 @@ With captions and Music on, a caption SHALL name the music once per stage when i
 - **THEN** every fact sent still shows whole
 - **CHECK** `qa/first-breath/pacing.test.mjs`
 
+#### Scenario: Every stage names its music
+- **GIVEN** every stage but the ending, played by the bots through the real captions, with the music caption offered as its cue starts
+- **WHEN** the captions are recorded in portrait, landscape and desktop
+- **THEN** the stage's music caption shows once, for at least 1.2 s, within 12 s of its cue's start, even when the stage's lines and facts fill the caption line
+- **CHECK** `qa/first-breath/pacing.test.mjs`
+
 ### Requirement: The score loads after Play
 The page SHALL fetch no score file before Play. The samples, at most 2 MB, SHALL load after the first stage has started, and the score SHALL play at once on a synth stand-in until they are ready. An instrument whose samples fail SHALL stay on the synth, with no error shown and no gap in the music.
 
@@ -184,7 +190,7 @@ The page SHALL fetch no score file before Play. The samples, at most 2 MB, SHALL
 - **GIVEN** a fresh visit to `/first-breath/`
 - **WHEN** the title shows and the player waits 5 s without tapping Play
 - **THEN** no request has gone to `audio/score/`
-- **CHECK** `qa/first-breath/music.e2e.mjs`, `qa/first-breath/boot.e2e.mjs`
+- **CHECK** `qa/first-breath/music.e2e.mjs`
 
 #### Scenario: The samples are blocked
 - **GIVEN** every request under `audio/score/` blocked
@@ -205,7 +211,7 @@ With the score playing, every stage SHALL keep its frame budgets. The score SHAL
 - **GIVEN** stage 5 at level 2 with the boss layer, at 390 × 844 with `?probe=1`
 - **WHEN** 120 frames are measured after 3 s
 - **THEN** the frame budgets hold, the score never has more than 48 live voices, no held note was cut, and the tick averages 0.5 ms or less
-- **CHECK** `qa/first-breath/perf.e2e.mjs`, `qa/first-breath/music.e2e.mjs`
+- **CHECK** `qa/first-breath/perf.e2e.mjs`
 
 ## MODIFIED Requirements
 

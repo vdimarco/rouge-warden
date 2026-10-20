@@ -13,4 +13,4 @@ The game SHALL start its AudioContext on the Play tap, use `navigator.audioSessi
 - **GIVEN** `arcade.sound` set to off
 - **WHEN** the player opens First Breath and taps Play
 - **THEN** the game starts muted with no score heard, and captions and rings still show every cue
-- **CHECK** `qa/first-breath/smoke.e2e.mjs`
+- **CHECK** `qa/first-breath/music.e2e.mjs`

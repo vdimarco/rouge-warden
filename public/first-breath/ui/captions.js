@@ -10,8 +10,9 @@
 // Contract choices (16.2 gives createCaptions(root, { on }) → { say(id, text, { dir, ms = 4000 }), clear() }):
 // - on is a boolean or a function read at each say(); when it is false nothing shows. An extra option, settings (an
 //   object or a function), gives the carer word for fact captions (else "mother").
-// - say(id, text, { dir, ms, kind, fact }): kind is "say" (a stage's caption or sub-goal line), "fact" (a fact
-//   caption; fact is its id) or "cue" (a sound's caption), as main.js sends them with their final text.
+// - say(id, text, { dir, ms, kind, fact, wait }): kind is "say" (a stage's caption or sub-goal line), "fact" (a fact
+//   caption; fact is its id) or "cue" (a sound's caption), as main.js sends them with their final text. wait: true
+//   makes a sound's caption one that must show (the stage's music caption, "♪ spy-chase music").
 // - Order: a caption (say) replaces what is on screen; a fact caption waits behind a caption or a fact, in order,
 //   and replaces a sound cue; a sound cue shows only when nothing else does. A fact page shows 1.5 s before a
 //   caption may cut it (the caption waits until then; a fact sent in the same step as a caption simply waits behind
@@ -23,6 +24,13 @@
 //   stays only for its reading time (1 s + 50 ms a letter, at least 2 s) instead of its full time, except stage 1's
 //   one-line pages. A waiting caption (none in practice) goes after 8 s. The same id again within 6 s is ignored,
 //   so a stage that sends a fact as both `fact` and `caption` shows it once.
+// - A sound's caption that must show (wait) never cuts anything and is never dropped for a busy line: it shows at
+//   once on a free line, else it waits its turn in the queue, in order, like a fact. On screen it keeps its place like
+//   a fact page: a fact waits behind it, and a caption cuts it only once it has shown 1.2 s (a caption in the step it
+//   began, before it is seen, sends it back to the front to show whole after). Once seen it is done: it never comes
+//   back for a second showing. While a fact waits behind it, it stays 1.2 s (else its own time), so it delays the facts
+//   behind it by 1.2 s at most. It does not shorten a caption on screen while it waits (only a fact does), and waiting
+//   facts never give way to it.
 // - pause() stops the clocks (the page on screen, the queue's ages, the 6 s and 8 s memories) and resume() goes on
 //   from there, so a caption hidden under the pause screen is still there, with the time it had left, on resume.
 // - say(id, text) where text is the id itself (an id with no string) and id is a fact id shows that fact.
@@ -31,14 +39,21 @@
 // - Extras: fact(id, { settings, ms }) shows a fact caption (its text, filled for the carer word; the HUD already shows
 //   the clock label); cue(ev, settings) shows the caption for a sound cue event (16.6: sfx, bump, bounce, goldIn, seal,
 //   …; design.md 12), the frequent contact sounds once per stage, the others at most once every 8 s; current() → the
-//   id on screen or null; stage(id) tells it a new stage began (clears the queue and the once-per-stage memory).
+//   id on screen or null; stage(id) tells it a new stage began (clears the queue and the once-per-stage memory);
+//   drop(id) takes an item off the queue or the screen (the music caption once Music or the sound is turned off).
 import { say as sayText, fill } from "../core/text.js";
 import { byId } from "../core/facts.js";
 
 const PRIO = { cue: 0, fact: 1, say: 2 };
+// a fact, not a sound's caption that waits in the facts' place (say(…, { kind: "cue", wait: true }))
+const isFact = (q) => q.prio === PRIO.fact && !q.wait;
 const QUEUE_MAX = 16, QUEUE_STALE_MS = 8000, FACT_STALE_MS = 12000, SAME_MS = 6000, CUE_GAP_MS = 8000;
 const STAGE1_PAGE_MS = 2400;
 const RESUME_MIN_MS = 1500, READ_DONE_MS = 250;   // a cut fact page comes back for at least 1.5 s, unless read
+// A sound's caption that must show (two or three words, "♪ march music") stays at least this long before a caption
+// may cut it or a waiting fact take its place. Subtitle guides allow less: Netflix's Timed Text Style Guide sets the
+// floor at 5/6 s an event, and the BBC's subtitle guidelines time text at 160 to 180 words a minute.
+const MUST_MIN_MS = 1200;
 const UNSEEN_MS = 4;                              // a fact page sent in the same step as a caption, not yet painted
 const sayReadMs = (n) => Math.max(2000, 1000 + 50 * n);   // a caption's reading time, while a fact waits for it
 
@@ -204,16 +219,28 @@ export function createCaptions(root, { on = true, settings = null } = {}) {
   }
 
   // A caption on screen while a fact waits stays only for its reading time (stage 1's one-line pages keep 2.4 s).
+  // A sound's caption that must show stays MUST_MIN_MS then.
   function hurry() {
-    if (!cur || cur.prio !== PRIO.say || cur.one || !queue.some((q) => q.prio === PRIO.fact)) return;
-    const end = cur.shownAt + sayReadMs(cur.pages[cur.i].length);
+    if (!cur || !queue.some(isFact)) return;
+    let end;
+    if (cur.wait) end = cur.shownAt + MUST_MIN_MS;
+    else if (cur.prio === PRIO.say && !cur.one) end = cur.shownAt + sayReadMs(cur.pages[cur.i].length);
+    else return;
     if (cur.due > end + 1) arm(end - nowMs());
   }
 
   // The fact on screen, cut by a caption, waits at the front of the queue to come back: the cut page again for what
   // it had left (at least 1.5 s), or the next page when under 0.25 s was left.
+  // A sound's caption that must show comes back only when it was cut before it was seen (whole, at the front).
   function setAside() {
     if (!cur || cur.prio !== PRIO.fact) return;
+    if (cur.wait) {
+      if (nowMs() < cur.shownAt + UNSEEN_MS && cur.i === 0) {
+        queue.unshift({ id: cur.id, prio: cur.prio, wait: true, text: cur.text, dir: cur.dir, fact: null, ms: cur.ms,
+          at: cur.at, pages: cur.pages, pageMs: cur.pageMs, base: 0, fit: cur.fit, one: cur.one });
+      }
+      return;
+    }
     const left = Math.max(0, cur.due - nowMs());
     let i = cur.i;
     const ms = cur.pageMs.slice(i);
@@ -235,7 +262,7 @@ export function createCaptions(root, { on = true, settings = null } = {}) {
       if (q.prio === PRIO.fact) {
         // a fact that has begun always comes back; one that waited 12 s gives way to a newer fact behind it, so
         // what shows stays near its moment; the last one waiting always shows
-        if (q.pages || age <= FACT_STALE_MS || !queue.some((x) => x.prio === PRIO.fact)) { begin(q); return; }
+        if (q.pages || age <= FACT_STALE_MS || !queue.some(isFact)) { begin(q); return; }
         continue;
       }
       if (age <= QUEUE_STALE_MS) { begin(q); return; }
@@ -256,7 +283,7 @@ export function createCaptions(root, { on = true, settings = null } = {}) {
       pages = paginate(line, item.text);
       fit = line.classList.contains("fit");
       one = oneLine() && stageId() === "swim";
-      const total = Math.max(item.ms, item.prio === PRIO.fact ? 1500 + 55 * item.text.length : 0);
+      const total = Math.max(item.ms, isFact(item) ? 1500 + 55 * item.text.length : 0);
       pageMs = pages.map((p) => (one ? STAGE1_PAGE_MS
         : Math.max(1800, Math.round(total * (pages.length > 1 ? p.length / item.text.length : 1)))));
     }
@@ -272,13 +299,21 @@ export function createCaptions(root, { on = true, settings = null } = {}) {
     if (item.id && cur && cur.id === item.id) return false;
     if (item.id && queue.some((q) => q.id === item.id)) return false;
     item.at = t;
+    if (item.wait && cur) {
+      // a sound's caption that must show waits its turn, behind what shows and what waits
+      queue.push(item);
+      trim();
+      return true;
+    }
     if (!cur || item.prio > cur.prio || (item.prio === PRIO.say && cur.prio === PRIO.say)) {
+      const least = cur && cur.wait ? MUST_MIN_MS : RESUME_MIN_MS;
       if (item.prio === PRIO.say && cur && cur.prio === PRIO.fact && t >= cur.shownAt + UNSEEN_MS
-        && t < cur.shownAt + RESUME_MIN_MS) {
-        // a fact page shows 1.5 s before a caption may cut it: the caption (the latest one) waits for that moment.
-        // A fact sent with its caption in the same step (on screen under a frame, so not yet seen) waits behind it.
+        && t < cur.shownAt + least) {
+        // a fact page shows 1.5 s before a caption may cut it (a sound's caption that must show, 1.2 s): the caption
+        // (the latest one) waits for that moment. A fact sent with its caption in the same step (on screen under a
+        // frame, so not yet seen) waits behind it.
         cur.held = item;
-        cur.cutAt = cur.shownAt + RESUME_MIN_MS;
+        cur.cutAt = cur.shownAt + least;
         schedule();
         return true;
       }
@@ -288,13 +323,27 @@ export function createCaptions(root, { on = true, settings = null } = {}) {
     }
     if (item.prio === PRIO.cue) return false;
     queue.push(item);
-    // past the limit (never reached in play), a waiting caption goes first, then the oldest fact
-    while (queue.length > QUEUE_MAX) {
-      const k = queue.findIndex((q) => q.prio !== PRIO.fact);
-      queue.splice(k >= 0 ? k : 0, 1);
-    }
+    trim();
     hurry();
     return true;
+  }
+  // past the limit (never reached in play), a waiting caption or sound's caption goes first, then the oldest fact
+  function trim() {
+    while (queue.length > QUEUE_MAX) {
+      const k = queue.findIndex((q) => !isFact(q));
+      queue.splice(k >= 0 ? k : 0, 1);
+    }
+  }
+
+  // An item goes, waiting or on screen (on screen: the next one in the queue shows, or a caption held for it).
+  function drop(id) {
+    if (!id) return;
+    for (let i = queue.length - 1; i >= 0; i--) if (queue[i].id === id) queue.splice(i, 1);
+    if (!cur || cur.id !== id) return;
+    const h = cur.held;
+    if (h) { removeLine(); cur = null; begin(h); return; }
+    cur.i = cur.pages.length - 1;
+    nextPage();
   }
 
   // The pause screen: the clocks stand still, and go on from there on resume.
@@ -325,12 +374,15 @@ export function createCaptions(root, { on = true, settings = null } = {}) {
     return offer({ id, fact: id, prio: PRIO.fact, text: fill(f.text, {}, st || S()), dir, ms: Number(ms) || 4000 });
   }
 
-  function say(id, text, { dir = null, ms = 4000, kind = "say", fact: factId = null } = {}) {
+  function say(id, text, { dir = null, ms = 4000, kind = "say", fact: factId = null, wait = false } = {}) {
     if (text === null || text === undefined || text === "") return false;
     const s = String(text);
     if (id && s === id && byId(id)) return fact(id, { dir, ms });
-    const prio = PRIO[kind] ?? PRIO.say;
-    return offer({ id: id || s, prio, text: s, dir, fact: kind === "fact" ? factId || id : null, ms: Math.max(500, Number(ms) || 4000) });
+    // a sound's caption that must show keeps its place in the queue and on screen as a fact does (see offer)
+    const w = kind === "cue" && !!wait;
+    const prio = w ? PRIO.fact : PRIO[kind] ?? PRIO.say;
+    return offer({ id: id || s, prio, wait: w, text: s, dir, fact: kind === "fact" ? factId || id : null,
+      ms: Math.max(500, Number(ms) || 4000) });
   }
 
   // The caption for a sound cue event (16.6), when it has one.
@@ -357,5 +409,5 @@ export function createCaptions(root, { on = true, settings = null } = {}) {
     return ok;
   }
 
-  return { say, clear, fact, cue, stage: clear, pause, resume, current: () => (cur ? cur.id : null) };
+  return { say, clear, fact, cue, drop, stage: clear, pause, resume, current: () => (cur ? cur.id : null) };
 }

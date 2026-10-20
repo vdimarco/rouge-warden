@@ -12,7 +12,13 @@
 //   stage starts, and the overlay, the result or the next stage covers or clears the captions): each of its pages on
 //   screen, for its whole reading time in all (1.5 s + 55 ms a letter; 2.4 s a one-line page in stage 1 in portrait),
 //   less the 0.25 s a cut page may keep (and a frame);
-// - every caption fact of the stage is sent in each of those runs, so none is silently left out.
+// - every caption fact of the stage is sent in each of those runs, so none is silently left out;
+// - the stage's music caption ("♪ march music", music.<cue>; every stage but the ending) shows once, for at least
+//   1.2 s, in each of those runs and layouts, within 12 s of its cue's start: main.js offers it as its cue starts, a
+//   sound's caption that waits its turn (ui/captions.js, `wait`), here at the stage's start and one bar of the last cue
+//   later (the longest a cue change waits: the title's bar, 2.14 s, and the 150 ms lookahead). The facts' checks above
+//   run at both offer times too. On the old captions (CAPTIONS_JS, a sound's caption shown only on a free line) stages
+//   2 and 4 never show theirs, and stage 1's is cut by a fact after 0.2 s.
 //   node qa/first-breath/pacing.test.mjs            the check
 //   node qa/first-breath/pacing.test.mjs report     also prints each stage's sends, fact reading time and misses (seed 1)
 //   TIMELINE=egg:portrait:1 [TSEED=1] [TMODE=practice|run] node qa/first-breath/pacing.test.mjs
@@ -123,6 +129,10 @@ const SEEDS = [1, 2, 3];
 const readMs = (text) => 1500 + 55 * text.length;
 const FACTS_OF = (stage) => FACTS.filter((f) => f.stage === stage && f.where === "caption" && isShown(f)).map((f) => f.id);
 const CUT_SLACK_MS = 300;    // a cut page with under 0.25 s left counts as read (ui/captions.js), and a frame
+// when main.js offers the stage's music caption: at once, and one bar of the last cue later (the title's 4 beats at
+// 112 bpm, the longest bar before a stage's cue, and the 150 ms lookahead)
+const MUSIC_AFTER_MS = [0, Math.round(4 * 60000 / 112 + 150)];
+const MUSIC_MIN_MS = 1200;   // a sound's caption that must show stays at least this long (ui/captions.js MUST_MIN_MS)
 
 // ---- a practice stage or a whole run played by the bot: per step, its core time, screen, events and the prompt
 // line's ids then
@@ -146,7 +156,7 @@ const CUE_OF = {
   "swim:swell": "cue.wave", "birth:birth.swell": "cue.wave", "root:root.link": "cue.link", "root:root.linkBeat": "cue.link",
   "grow:bell": "cue.bell", "grow:move": "cue.move", "birth:birth.open": "cue.open",
 };
-function replay(steps, stage, layout) {
+function replay(steps, stage, layout, musicAfterMs = 0) {
   L = LAYOUTS[layout];
   clock = 0;
   timers.clear();
@@ -162,8 +172,9 @@ function replay(steps, stage, layout) {
   const capSeen = new Set();
   const sent = [];                       // [{ id, text, at }] every fact caption handed to the captions
   let prompt = {}, screen = "title", visible = false, endAt = null;
-  // the stage's music caption ("♪ spy-chase music", music.<cue>): main.js offers it as a sound's caption once its cue
-  // starts, until the line is free, for up to 12 s (a sound's caption never holds back a line or a fact)
+  // the stage's music caption ("♪ spy-chase music", music.<cue>): main.js offers it once its cue starts (musicAfterMs
+  // after the stage's start here: the last cue's bar runs out first), within 12 s, as a sound's caption that must
+  // show; it waits its turn on a busy line (ui/captions.js)
   let musicCap = null;
 
   const sayCaption = (id, text, extra = {}) => (text ? cap.say(id, text, { kind: "say", ms: capMs(), ...extra, dir: extra.dir || null }) : false);
@@ -264,9 +275,9 @@ function replay(steps, stage, layout) {
       }
       look();
     }
-    if (musicCap) {
+    if (musicCap && clock - musicCap.at >= musicAfterMs) {
       if (!visible || clock - musicCap.at > 12000) musicCap = null;
-      else if (cap.say(musicCap.id, say(musicCap.id), { kind: "cue", ms: 2500 })) { musicCap = null; look(); }
+      else if (cap.say(musicCap.id, say(musicCap.id), { kind: "cue", wait: true, ms: 2500 })) { musicCap = null; look(); }
     }
     if (endAt !== null) break;
   }
@@ -312,22 +323,23 @@ const MODES = ["practice", "run"];
 for (const stage of STAGE_IDS) {
   check(`${stage}: every caption fact it sends shows whole before it ends (ref and mid bot, 3 layouts, practice and whole runs, seeds 1 to 3)`, () => {
     const bad = [];
-    for (const mode of MODES) for (const skill of SKILLS) for (const seed of SEEDS) for (const layout of Object.keys(LAYOUTS)) {
+    for (const mode of MODES) for (const skill of SKILLS) for (const seed of SEEDS) for (const layout of Object.keys(LAYOUTS)) for (const after of MUSIC_AFTER_MS) {
       const steps = recs.get(`${stage}|${skill}|${seed}|${mode}`);
       assert.ok(steps && steps.length, `${mode} skill ${skill} seed ${seed}: the stage never started`);
-      const { rows, endAt, t0, log } = replay(steps, stage, layout);
+      const { rows, endAt, t0, log } = replay(steps, stage, layout, after);
       const miss = rows.filter((r) => !r.whole);
-      if (TIMELINE === `${stage}:${layout}:${skill}` && seed === Number(process.env.TSEED || 1) && mode === (process.env.TMODE || "practice")) {
+      if (TIMELINE === `${stage}:${layout}:${skill}` && seed === Number(process.env.TSEED || 1) && mode === (process.env.TMODE || "practice")
+        && after === MUSIC_AFTER_MS[Number(process.env.TAFTER || 0)]) {
         for (const x of log) console.log(`${(((x.from - t0) / 1000).toFixed(2)).padStart(6)} ${String(Math.round((x.to ?? endAt) - x.from)).padStart(5)} ms ${x.vis ? " " : "h"} ${x.fact ? "FACT" : "    "} ${String(x.id).padEnd(22)} p${x.page} ${x.text}`);
         console.log(`end ${((endAt - t0) / 1000).toFixed(2)}`);
       }
       const reading = rows.reduce((a, r) => a + readMs(r.text), 0);
-      if (REPORT && seed === 1) {
+      if (REPORT && seed === 1 && after === 0) {
         console.log(`${stage} ${mode} skill ${skill} ${layout}: stage ${((endAt - t0) / 1000).toFixed(1)} s, ${rows.length} facts sent, ` +
           `${(reading / 1000).toFixed(1)} s of fact reading, ${rows.length - miss.length} whole` +
           (miss.length ? `; not whole: ${miss.map((r) => `${r.id} (${r.why})`).join(", ")}` : ""));
       }
-      for (const r of miss) bad.push(`${mode} skill ${skill} seed ${seed} ${layout}: ${r.id} sent at ${((r.at - t0) / 1000).toFixed(1)} s, ${r.why}`);
+      for (const r of miss) bad.push(`${mode} skill ${skill} seed ${seed} ${layout} (music caption at +${after} ms): ${r.id} sent at ${((r.at - t0) / 1000).toFixed(1)} s, ${r.why}`);
     }
     assert.equal(bad.length, 0, `${bad.length} facts not shown whole:\n${bad.slice(0, 20).join("\n")}`);
   });
@@ -343,6 +355,19 @@ for (const stage of STAGE_IDS) {
       if (miss.length) bad.push(`${mode} skill ${skill} seed ${seed}: ${miss.join(", ")}`);
     }
     assert.equal(bad.length, 0, bad.join("\n"));
+  });
+  // and the stage's music caption shows once, whole, near its start (the ending has none: its score is one chord)
+  if (stage !== "ending") check(`${stage}: its music caption shows once, for 1.2 s or more, within 12 s of its cue's start, in every run and layout`, () => {
+    const id = "music." + stage, bad = [];
+    for (const mode of MODES) for (const skill of SKILLS) for (const seed of SEEDS) for (const layout of Object.keys(LAYOUTS)) for (const after of MUSIC_AFTER_MS) {
+      const { log, endAt, t0 } = replay(recs.get(`${stage}|${skill}|${seed}|${mode}`), stage, layout, after);
+      const spans = log.filter((x) => x.id === id && x.vis && x.from < endAt)
+        .map((x) => ({ from: x.from - t0, ms: Math.min(x.to ?? endAt, endAt) - x.from })).filter((x) => x.ms > 16);
+      const where = `${mode} skill ${skill} seed ${seed} ${layout} (offered at +${after} ms)`;
+      if (spans.length !== 1) bad.push(`${where}: shown ${spans.length} times${spans.length ? ` (${spans.map((x) => `${(x.from / 1000).toFixed(1)} s for ${Math.round(x.ms)} ms`).join(", ")})` : ""}`);
+      else if (spans[0].ms < MUSIC_MIN_MS - 1 || spans[0].from - after > 12000) bad.push(`${where}: at ${(spans[0].from / 1000).toFixed(1)} s for ${Math.round(spans[0].ms)} ms`);
+    }
+    assert.equal(bad.length, 0, `${bad.length} runs:\n${bad.slice(0, 20).join("\n")}`);
   });
 }
 

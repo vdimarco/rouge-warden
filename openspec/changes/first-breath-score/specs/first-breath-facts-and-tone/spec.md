@@ -6,7 +6,7 @@ The Sources screen SHALL list every fact in the game with its clock label and it
 #### Scenario: Open Sources
 - **WHEN** the player opens Sources from the title
 - **THEN** every fact shows once with its label and a link that opens its source
-- **CHECK** `qa/first-breath/smoke.e2e.mjs`
+- **CHECK** `qa/first-breath/screens.e2e.mjs`
 
 #### Scenario: The music credit
 - **GIVEN** the title at 390 × 844
