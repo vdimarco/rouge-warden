@@ -2423,5 +2423,7 @@
     300
    ]
   }
- ]
+ ],
+ "street_trees": "street_trees.json",
+ "street_trees_sha256": "3c97a696fd8897d3290d2633b0920bf3eb6ae4ebc22c73eba757b95b4320d3a5"
 }
