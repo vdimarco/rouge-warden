@@ -954,24 +954,49 @@ def sampler(values, W, H):
 
 
 def ballast(spec):
-    """White gravel ballast: two layers of rounded white and grey stones, 1.6 to 3 cm, over dark grit."""
+    """White gravel ballast: two layers of rounded white and grey stones, 1.6 to 3 cm, over dark grit.
+
+    Large-scale variation inside the 2 m tile: scoured patches where the wind and foot traffic thin the second
+    layer and the grit shows (wear), and older, greyer and grimier lots next to cleaner ones (grime), each a
+    low-frequency zone field of 25 cm to 1 m features. The apply step's macro mask breaks the tile further.
+    """
     W, H = spec['size_px']
     seed = spec['seed']
     px = W / (spec['tile_m'][0] * 100.)
+    per_m = spec['tile_m'][0]                      # noise cells scale with the tile, so features keep their size
     palette = ((.6, (234., 232., 226.)), (.2, (202., 201., 197.)), (.11, (222., 212., 192.)),
                (.06, (158., 158., 155.)), (.03, (178., 152., 122.)))
     layers = ((2.1, 1., (.85, 1.55), 0., .52), (2.6, .9, (.8, 1.45), .5, .48))
-    stones, colours, roughs = gravel_stones(seed, W, H, px, layers, palette)
+    wear = zone_field(seed + 21, W, H, ((2, 2), (4, 4), (8, 8)), (.5, .32, .18))
+    grime = zone_field(seed + 22, W, H, ((3, 3), (6, 6), (12, 12)), (.5, .3, .2))
+    at_wear, at_grime = sampler(wear, W, H), sampler(grime, W, H)
+
+    def keep(layer, x, y):
+        w = smooth(.55, .85, at_wear(x, y))
+        return 1. - (.3 if layer == 0 else .85) * w
+
+    def shade(x, y):
+        g = smooth(.45, .85, at_grime(x, y))
+        clean = 1. - smooth(.15, .4, at_grime(x, y))
+        return (1. - .2 * g + .03 * clean, 1. - .22 * g + .03 * clean, 1. - .27 * g + .03 * clean)
+
+    stones, colours, roughs = gravel_stones(seed, W, H, px, layers, palette, keep=keep, shade=shade)
     cv = Canvas(W, H, (112., 109., 103.), 0., .95)
-    fine = field(Noise(seed + 4, W, H, 256, 256), H)
-    for i, v in enumerate(field(Noise(seed + 5, W, H, 64, 64), H)):
+    fine = field(Noise(seed + 4, W, H, round(256 * per_m), round(256 * per_m)), H)
+    for i, v in enumerate(field(Noise(seed + 5, W, H, round(64 * per_m), round(64 * per_m)), H)):
         cv.height[i] = .15 * v
     owner, prof = [-1] * (W * H), [0.] * (W * H)
     splat_round(W, H, stones, cv.height, owner, prof)
-    dirt = field(Fbm(seed + 2, W, H, ((4, 4), (8, 8), (16, 16)), (.5, .3, .2)), H)
+    dirt = field(Fbm(seed + 2, W, H, tuple((round(c * per_m),) * 2 for c in (4, 8, 16)), (.5, .3, .2)), H)
     stones_colour(cv, owner, prof, colours, (112., 109., 103.), .95, fine, dirt, roughs, ao=.4, dirt_amount=.1)
+    # Grit between the stones darkens with the grime too (soot and dust settle where the ballast is old).
+    for i, o in enumerate(owner):
+        if o < 0:
+            k = 1. - .25 * smooth(.45, .85, grime[i])
+            cv.r[i], cv.g[i], cv.b[i] = cv.r[i] * k, cv.g[i] * k, cv.b[i] * k
     cover = sum(1 for o in owner if o >= 0) / len(owner)
-    return cv.result(px, px, {'stones': len(stones), 'stone_cm': [1.6, 3.0], 'stone_cover': round(cover, 4)})
+    return cv.result(px, px, {'stones': len(stones), 'stone_cm': [1.6, 3.0], 'stone_cover': round(cover, 4),
+                              'zones_cm': [25, 100]})
 
 
 def tar(spec):
