@@ -1,11 +1,12 @@
 """CPU checks for the replica surface textures (Scripts/plateau_textures.py).
 
 Run from games/nord-unreal:  python3 Scripts/test_plateau_textures.py
-Builds the textures twice into temporary directories (about 40 s on four cores), then checks byte-identical
+Builds the textures twice into temporary directories (about a minute on four cores), then checks byte-identical
 output (also against a build in this process), the PNG structure, seamless tiling, the ashlar, slate, siding,
-herringbone and card layouts, the cut-out alpha (coverage, anti-aliased edges, guard openings), the normal
-maps, colour and roughness means, the shared material keys, the tints the apply step will need, and that
-the committed folder matches the generator.
+herringbone, buff-brick and card layouts, the cut-out alpha (coverage, anti-aliased edges, guard openings), the
+normal maps, colour and roughness means, the large-scale variation of the gravel, ballast and tar tiles, the macro
+mask, the shared material keys, the tints the apply step will need, and that the committed folder matches the
+generator.
 """
 import hashlib
 import json
@@ -21,7 +22,7 @@ import apply_plateau_replica as apply_replica  # noqa: E402
 # The shared material keys of the rear pass (plateau_plex.py and the apply step use exactly these names).
 SHARED_KEYS = ('Roof_Membrane', 'Roof_Gravel', 'Roof_Tar', 'Sheet_Metal', 'Siding_Lap_Cream', 'Siding_Lap_Grey',
                'Parged', 'Rail_Baluster', 'Rail_Lattice', 'Fence_Boards', 'Leaf_Creeper', 'Yard_Grass', 'Yard_Pavers',
-               'Yard_Soil', 'Yard_Gravel')
+               'Yard_Soil', 'Yard_Gravel', 'Brick_Buff_Even')
 CUTOUT_KEYS = ('Rail_Baluster', 'Rail_Lattice', 'Fence_Boards')
 
 
@@ -213,8 +214,10 @@ EXPECT = {
     'slate': lambda m, r: sum(m) / 3 < .12 and m[2] > m[0] and m[2] > m[1] and .44 <= r <= .56,
     'membrane': lambda m, r: sum(m) / 3 > .55 and max(m) / min(m) < 1.1 and .35 <= r <= .6,
     'ballast': lambda m, r: .3 < sum(m) / 3 < .6 and max(m) / min(m) < 1.2 and .75 <= r <= .95,
-    'tar': lambda m, r: sum(m) / 3 < .15 and .4 <= r <= .7,
-    'sheet_metal': lambda m, r: .2 < sum(m) / 3 < .45 and m[2] >= m[0] and max(m) / min(m) < 1.15 and .3 <= r <= .55,
+    # Tar and gravel reads dark grey from above, about #4A4744 (linear .0685, .0648, .0595), not black.
+    'tar': lambda m, r: all(abs(v / t - 1.) < .12 for v, t in zip(m, (.0685, .0648, .0595))) and .5 <= r <= .75,
+    # Weathered galvanised sheet: light grey and dull (roughness about .6), not a mirror.
+    'sheet_metal': lambda m, r: .25 < sum(m) / 3 < .45 and m[2] >= m[0] and max(m) / min(m) < 1.15 and .52 <= r <= .68,
     'siding': lambda m, r: sum(m) / 3 > .55 and max(m) / min(m) < 1.1 and .4 <= r <= .6,
     'parging': lambda m, r: .2 < sum(m) / 3 < .4 and max(m) / min(m) < 1.2 and .75 <= r <= .92,
     'balusters': lambda m, r: sum(m) / 3 > .4 and max(m) / min(m) < 1.25 and .55 <= r <= .75,
@@ -225,7 +228,13 @@ EXPECT = {
     'pavers': lambda m, r: .15 < sum(m) / 3 < .35 and max(m) / min(m) < 1.35 and .75 <= r <= .85,
     'soil': lambda m, r: sum(m) / 3 < .1 and m[0] > m[1] > m[2] and .8 <= r <= .95,
     'crushed_stone': lambda m, r: .15 < sum(m) / 3 < .3 and max(m) / min(m) < 1.2 and .8 <= r <= .92,
+    # Even buff brick: yellow-tan (red over green over blue, blue well under red), light, matte.
+    'buff_brick': lambda m, r: .3 < sum(m) / 3 < .5 and m[0] > m[1] > m[2] and m[2] / m[0] < .5 and .8 <= r <= .92,
 }
+# Sets whose tile must not read as a grid on a large roof or yard: 2 m tiles with 25 cm to 1 m zones. Minimum
+# coefficient of variation of the mean luminance of 25 cm and 50 cm blocks (the 1 m tiles of the last pass had
+# .04 and .01 to .016).
+LARGE_SCALE = {'ballast': (.08, .05), 'tar': (.15, .1), 'crushed_stone': (.07, .05)}
 
 
 def check_shared_keys(index):
