@@ -725,32 +725,38 @@ corrections hold instead:
 
 ## 11. How each requirement is checked
 
-The states are from the builders' runs: `music.test.mjs` 24 checks, `music-engine.test.mjs` 15, `purity.test.mjs` 26,
-every other First Breath node test including `sim.test.mjs` (98), `music.e2e.mjs` 53, `sound.e2e.mjs` 51,
-`boot.e2e.mjs` 264, `smoke.e2e.mjs` 226, `screens.e2e.mjs` 24, `layout.e2e.mjs` 190, `input.e2e.mjs` 102,
-`visual.e2e.mjs` 88, `perf.e2e.mjs` 175, and `qa/arcade/quiet.mjs --only=first-breath --skip=scan,unit,silent` 35.
+Every scenario's CHECK line names a check that tests it, except "A person listens" (tasks 6.7). The checks agent
+added the missing ones and moved three CHECK lines to the checks that really test them ("Muted in the arcade" to
+`music.e2e.mjs`, "Open Sources" to `screens.e2e.mjs`, "The busiest moment" to `perf.e2e.mjs` alone; "The boot
+fetches nothing" now names `music.e2e.mjs` alone, since `boot.e2e.mjs` never looks at score requests). The final
+verifier aligned "The cue follows the stage" and "A grade at the stage end" with the design (9.1.6) and their checks
+with them, and added "Every stage names its music" (5.21).
 
-| Requirement (spec) | Check | State |
+The states are the final verifier's run on the combined tree (tasks 6.8), each browser check in Chromium with
+`--disable-gpu`, at most two at a time, a timing failure rerun once alone before it counts:
+every First Breath node test passes (30 files, including `music.test.mjs`, `music-engine.test.mjs` 18, `pacing.test.mjs` 26, `captions.test.mjs` 9, `purity.test.mjs` 26 and `sim.test.mjs`); `music.e2e.mjs` 111 (110 in the full run, then the shout chorus check fixed and its part passing alone, 28; the node and offline parts 29 after the 1 kHz floor change); `sound.e2e.mjs` 51; `boot.e2e.mjs` 264; `smoke.e2e.mjs` 226; `layout.e2e.mjs` 199; `screens.e2e.mjs` 32; `input.e2e.mjs` 102; `visual.e2e.mjs` 88; `perf.e2e.mjs` 181 (alone; next to `visual.e2e.mjs` one stage 1 frame took 217 ms against its 200 ms limit); and `qa/arcade/quiet.mjs --only=first-breath --skip=scan,unit,silent` 35.
+
+| Requirement (spec) | Scenario: check | State |
 |---|---|---|
-| An original score (presentation) | `music.test.mjs` (first 8 notes, the originality screen, the leitmotif); `music-demo.mjs` and a person listening | node passes; demo renders made; listening open |
-| A cue for every screen and stage | `music.test.mjs` (cues, `cueFor`); `music.e2e.mjs` (stage 1, stage 6, birth, the result's lullaby, Stages' overture) | passes; a cue per stage in one run and the 1 s gap through an overlay are in no repository check yet (the verifier's real-time runs saw each stage's cue) |
-| The music rises with the action | `music.test.mjs` (levels nest, bass and harmony kept); `music.e2e.mjs` (a mood change on a bar line, 0.00 ms); `music-engine.test.mjs` (birth's tempo on a bar line) | passes; the big germ arriving and birth's live tempo are not checked in the page yet |
-| Stingers mark the big moments | `music.test.mjs` (ranges in every key, grades grow); `music-engine.test.mjs` (next beat, duck, queue); `music.e2e.mjs` (end stinger then grade) | passes; a gate passed in the page is not checked yet |
-| A knock-out settles softly | `music.test.mjs` (no drums, velocity ≤ 0.35) | passes; the knock-out in the page is not checked yet |
-| The heart stays audible | `music.e2e.mjs` (peaks, her heart detectable at level 2); `music.test.mjs` (stage 6 register) | passes; the 6 LU at level 1 is not checked, and the mix puts it at about 5 to 6 LU (10) |
-| Stage 6 plays on her beat | `music.e2e.mjs` (0 ms offline, 5.87 ms live); `music-engine.test.mjs` (after a new run and a Try again) | passes; the shout chorus on a combo is not checked yet |
-| The ending stays calm | `music.test.mjs` (lullaby soft, no drums, warm); `music.e2e.mjs` (silent white to cry, then the warm chord's 13 notes) | passes |
-| Music captions | `music.e2e.mjs` (stage 1's caption once); `text.test.mjs`; `pacing.test.mjs` | passes; egg and root often miss in real time (10) |
-| The score loads after Play | `music.e2e.mjs` (boot fetch, Music off, blocked samples); `boot.e2e.mjs` | passes; the folder size and README are checked only when `fetch-score-samples.mjs` rebuilds |
-| The score costs little | `music-engine.test.mjs` (voice cap, tick cost); `perf.e2e.mjs` | engine passes; `perf.e2e.mjs`'s stage measures open stages by URL with no Play tap, so no score plays in them yet |
-| Womb sound (modified) | `sound.e2e.mjs` (womb bus alone); `music.e2e.mjs` (the score skips it) | passes |
-| The Music setting (journey) | `music.e2e.mjs` (next to Sound, on by default, saved, after a reload, M); `layout.e2e.mjs` (every Settings control 44 px and reachable at three sizes) | passes; `layout.e2e.mjs` does not find the switch by name, check it sits next to Sound or check its focus ring |
-| The score pauses with the game | `music.e2e.mjs` (a hidden page in a stage and on the result); `qa/arcade/quiet.mjs` | passes; Esc on desktop is not checked yet |
-| Sound follows the arcade (modified) | `qa/arcade/quiet.mjs`; `smoke.e2e.mjs` | passes |
-| The Sources screen (modified) | `smoke.e2e.mjs`; `text.test.mjs` (the credit's words); `screens.e2e.mjs` | `screens.e2e.mjs` does not find the credit or its links yet |
+| An original score (presentation) | Every cue has its own tune: `music.test.mjs` (first 8 notes, the originality screen, the leitmotif). A person listens: `music-demo.mjs`, then a person (tasks 8) | node passes; demos rendered; listening open |
+| A cue for every screen and stage | The cue follows the stage: `music.e2e.mjs`, a whole run with the reference bot (seed 1), each stage stepped quickly and real time from each stage's end to 3.5 s into the next. No silence between stages: `music.e2e.mjs`, seed 6 with a 0.4 bot in stage 3 so it ends Great. Back on the title screens: `music.e2e.mjs`, the overture on the lullaby's next bar line after a real tap on Stages. A cue for every id: `music.test.mjs` | passes |
+| The music rises with the action | A gate closing ahead: `music.e2e.mjs`, offline (a level 2 render against a level 0 one: the first level 2 note on the next bar line, 0.0 ms) and live (seed 12, a 0.3 bot; a node replay says the rise comes from the gate). Layers nest: `music.test.mjs`. The big germ arrives: `music.e2e.mjs` (the boss stinger and the boss timpani on the next beat, the choir in that bar, no cue horn or trumpet while the boss is on). The waves of birth speed up: `music.e2e.mjs` (176 to 197.1 bpm, only on bar lines) | passes |
+| Stingers mark the big moments | A grade at the stage end: `music.e2e.mjs` (stage 3 Great: the button on the next beat, then the Great fanfare, every note in G). A gate passed: `music.e2e.mjs` (seed 13: all 10 notes on the next beat, the duck to 0.5 for exactly the stinger's 727 ms). Grades grow and every key fits: `music.test.mjs`. The gift and win rules: `music-engine.test.mjs`, bot runs of stages 4 and 7 through `wiring.js` | passes |
+| A knock-out settles softly | Knocked out in the shooter: `music.e2e.mjs` (all 11 notes on the next beat, level 0 behind the Almost card) and `music.test.mjs` (no drum). The chord is soft: `music.test.mjs` | passes |
+| The heart stays audible over the score | Her heart in the busiest moment: `music.e2e.mjs` (onsets within 0.7 ms of her heart's own, true peak −3.6 dBTP). Loudness at level 1: `music.e2e.mjs` (EBU R128 in stereo, within 0.25 dB of ffmpeg: 7.8 LU under). Also her heart over every cue at level 2 (10.4 dB at least) and the mix peak. The hum's register: `music.test.mjs` | passes |
+| Stage 6 plays on her beat | Downbeats on her beat: `music.e2e.mjs` (20 s offline with her beats given only 0.5 s ahead; live through `main.js`) and `music-engine.test.mjs` (after a new run and a Try again). The shout chorus: `music.e2e.mjs` (joins and leaves on bar lines) | passes |
+| The ending stays calm | The first breath in quiet: `music.e2e.mjs` (nothing from the white to the cry, the warm chord once, nothing more until the run result). The lullaby: `music.test.mjs` | passes |
+| Music captions | One line per stage: `music.e2e.mjs` (stage 1, 30 s, the caption band). Gentle words: `text.test.mjs`. Facts still show whole and Every stage names its music: `pacing.test.mjs` (26 checks), with `captions.test.mjs` (the waiting caption and `drop()`) | passes |
+| The score loads after Play | The boot fetches nothing: `music.e2e.mjs` (5 s on the title). The samples are blocked: `music.e2e.mjs` (10 s on the synth, no 1 s gap, no console error but the browser's own failed-load lines). The size and the license: `music.e2e.mjs` (1,517,968 bytes; the README) | passes |
+| The score costs little | The busiest moment: `perf.e2e.mjs` (stage 5 with the boss and the score: p95 frame, at most 48 voices, no held note cut, the sound timer). `music-engine.test.mjs` (the voice cap, the tick's cost) | passes |
+| Womb sound (modified) | Inside the womb, Two hearts, Across a stage change: `sound.e2e.mjs`. The score skips the womb filter: `music.e2e.mjs` (the mix above 1 kHz at least 30 dB over the womb bus alone, and at least 0.25% of the mix; the womb bus alone 90% under 500 Hz). Mute silences the score: `music.e2e.mjs` | passes |
+| The Music setting (journey) | Turn the music off, Turn it back on: `music.e2e.mjs`, stage 2 with real taps (silent within 0.35 s, her heart plays on, back on the next bar line at the level the mood gives, also when Music was off from the stage's start; still off after a reload). The switch in every layout: `layout.e2e.mjs` (by role and name, right after Sound, 44 px, overlapping nothing, Tab's focus ring like Sound's). M silences the score: `music.e2e.mjs` | passes |
+| The score pauses with the game (journey) | Hidden, then resumed: `music.e2e.mjs` (stage 4 at level 1, hidden 5 s, a real tap on Resume) and `qa/arcade/quiet.mjs`. Esc on desktop: `music.e2e.mjs` (stage 7 at level 2) | passes |
+| Sound follows the arcade (modified) | Hidden page: `qa/arcade/quiet.mjs`. Muted in the arcade: `music.e2e.mjs` | passes |
+| The Sources screen (modified) | Open Sources and The music credit: `screens.e2e.mjs` (every fact once with its label and links; the credit's links open in a new tab and answer online) and `text.test.mjs` | passes |
 
-`music.e2e.mjs` runs in Chromium with `--disable-gpu`, with an OfflineAudioContext where it fits; timing checks are
-noisy on a shared machine, so a timing failure is rerun once alone before it counts.
+`music.e2e.mjs` runs in parts (`ONLY=node,offline,live,stage2,run,moods`). Its live checks run in real time, so they
+are noisy on a shared machine; a timing failure is rerun once alone before it counts.
 
 ## 12. Sources
 

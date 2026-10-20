@@ -91,6 +91,7 @@ work and its checks are done.
 - [x] 7.1 The engine builder's listening renders of every cue (8 s at level 0, 10 s at 1, 10 s at 2 with the boss) and the stingers, in the scratch folder (before the last gain changes).
 - [x] 7.2 The composer's demo renders on an additive synth, the leitmotif solos and spectrograms, in the scratch folder.
 - [x] 7.3 `qa/first-breath/music-demo.mjs` renders every cue (10 s at level 0, 15 s at 1, 15 s at 2, 12 s of the boss in `egg` and `grow`, birth's last 8 s at 1.12), the stage cues with her heart, and every stinger, through the real engine and samples to mp3 in `DEMO`; `MIX=0` renders the score alone. The critic's renders, after the mix, are the latest, in the scratch folder.
+- [x] 7.4 The final demos on the combined tree (the 2.5 dB trim in): `music-demo.mjs` renders all 22 files.
 
 ## 8. Listening by a person
 
