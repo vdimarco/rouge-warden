@@ -18,9 +18,9 @@ First Breath design still sets: the one clock, the two hearts, the sound graph a
 | How it plays | `ui/music.js`: FluidR3_GM samples, drums made in code, a synth stand-in, a lookahead scheduler |
 | Where it goes | a score input in `ui/sound.js` after the mute, outside the womb filters |
 | How it adapts | vertical layers (levels 0, 1, 2, boss; the title 0 and 1) and horizontal sections, both changed on bar lines; stingers |
-| Size | 165 mp3 files, 1,473 KB (1.52 MB with the manifest and README); about 180 KB of score and engine code, loaded with the page |
-| Who built it | the composer, the engine builder and the integrator (`contract.md`); a verifier who fixed 10 faults after integration (9.1); a music critic who rewrote six tunes and set the mix (1.4, 3.2); then the lead (8, 9.3) |
-| Status | built, wired, verified and mixed; every First Breath check passes in the builders' runs (11); nobody has listened yet |
+| Size | 165 mp3 files, 1,473 KB (1.52 MB with the manifest and README); about 184 KB of score and engine code (183,781 bytes, about 65 KB gzipped), loaded with the page |
+| Who built it | the composer, the engine builder and the integrator (`contract.md`); a verifier who fixed 10 faults after integration (9.1); a music critic who rewrote six tunes and set the mix (1.4, 3.2); then the lead (8, 9.3); then two agents who closed the gaps, one in the game (the score trim, the music caption, the stingers' wiring) and one in the checks; then a final verifier (9.1.19, 11) |
+| Status | built, wired, verified and mixed; every First Breath check passes on the combined tree in the final verifier's run (11); nobody has listened yet |
 
 ## 1. The style
 
@@ -134,15 +134,38 @@ a bright film score over it. The mute still silences both, because `scoreIn` sit
 
 The cost of that choice is loudness:
 
-- The engine's bus runs at 0.8 into `scoreIn`, which feeds the master (0.85) and its limiter.
+- The engine's bus runs at 0.8 into `scoreIn`, which trims the score by `SCORE_DB` (−2.5 dB, below) and feeds the
+  master (0.85) and its limiter.
 - The integrator added a 1 dB trim (gain 0.89) after the limiter. The limiter's own makeup gain lets her heart alone
   peak at about −2.0 dBFS, and with the score at level 2 the mix reached −0.7 dBFS. Turning the score down barely
-  helped: even at 0.55, the egg's boss still peaked at −1.05 dBFS. With the trim, the mix peaks at −2.0 to
-  −2.9 dBFS, and `sound.e2e.mjs` still passes.
-- After the critic's mix (3.2), a stage cue at level 1 measures −24.2 to −25.4 LUFS, and her heart about −19. That
-  puts the score about 5 to 6 LU under her heart. The spec asks for at least 6 LU, and no check measures it yet
-  (10; tasks 4.5 and 6.7).
-- Her heartbeat stays clear over every cue at level 2 in `music.e2e.mjs` (5.3).
+  helped: even at 0.55, the egg's boss still peaked at −1.05 dBFS. With the trim, the mix peaked at −2.0 to
+  −2.9 dBFS; with the score's trim below, it peaks at −2.3 to −3.3 dBFS. `sound.e2e.mjs` still passes.
+- After the critic's mix (3.2), a stage cue at level 1 measured −24.2 to −25.4 LUFS over its whole loop. Her heart
+  alone in each stage's scene measures −19.8 to −20.2 LUFS, not the −19 first noted, because the 1 dB trim after the
+  limiter lowers her heart too. Your heart, which leads in `grow`, measures −19.5. So the score sat only 4.3 to
+  5.5 LU under the heart that leads, where the spec asks for at least 6.
+- The fix (tasks 4.5) is one trim at the score's only input: `SCORE_DB = −2.5` in `ui/sound.js`. The mix between
+  cues and levels in `mix.js` keeps its shape, and no note velocity changes. A 1.5 dB trim would have left `swim`,
+  `egg` and `turn` under 6.5 LU, and 2.3 dB put `turn` at exactly 6.5, so we took 2.5. A stage cue at level 1 now
+  sits 6.7 to 8.0 LU under the heart that leads (the table below). In the page, `music.e2e.mjs` measures stage 1 at
+  level 1: 7.8 LU under.
+- Her heartbeat stays clear over every cue at level 2 in `music.e2e.mjs`, with 10.4 dB of room or more (5.3).
+
+Each cue's whole level 1 loop, the score alone through the chain `music-demo.mjs` uses, and the leading heart alone
+in that stage's scene, measured with ffmpeg's `ebur128` (the game-fixes agent's scratch script). `grow` is compared
+with your heart (−19.5 LUFS), which leads there: her heart is ducked 8 dB in `grow` by design, so it would be only
+1.2 LU over the cue before the trim and 3.7 after.
+
+| Cue at level 1 | Before the trim (LUFS / LU under) | After (LUFS / LU under) |
+|---|---|---|
+| swim | −24.2 / 4.4 | −26.7 / 6.9 |
+| egg | −24.2 / 4.4 | −26.7 / 6.9 |
+| split | −25.3 / 5.5 | −27.8 / 8.0 |
+| root | −24.5 / 4.7 | −27.0 / 7.2 |
+| grow (your heart) | −24.4 / 4.9 | −26.9 / 7.4 |
+| answer | −25.4 / 5.4 | −27.8 / 7.8 |
+| turn | −24.5 / 4.3 | −26.9 / 6.7 |
+| birth | −24.3 / 4.5 | −26.7 / 6.9 |
 
 The score leaves the hum's register free in stage 6 (2.4).
 
@@ -173,7 +196,10 @@ point. We use both halves:
   `off: "boss"` rests while a boss is on, so the tunes make way for the boss riff in stages 2 and 5. The title has
   levels 0 and 1 only, and the lullaby one level (1.4).
 - **Horizontal re-sequencing.** A cue plays its intro (`A0`) once, then loops its sections (for example A B A2 C).
-  A cue change plays the old cue's `button` and starts the new cue on the same bar line. Stingers are the patent's
+  A cue change plays the old cue's `button` and starts the new cue on the same bar line. In play, though, `main.js`
+  plays the button as the stage ends, at the overlay, with the grade after it. So by the next stage's start the old
+  cue has had its button, and it fades out over the bar before the change instead; the new cue comes in on a bar
+  line within two bars of the stage start (stage 6's on her first beat after it; 9.1.6). Stingers are the patent's
   "trumpet fanfare when a punch has landed".
 - **Decision points are bar lines.** A level change and a cue change land on the next bar line not yet scheduled; a
   boss arriving lands on the next beat; stage 8's tempo rises at a bar line. A stinger lands on the next beat, in the
@@ -244,6 +270,9 @@ A note more than 20 ms late is dropped, never played late. Three rules keep that
   the notes scheduled ahead are cancelled and the cue comes back on a new bar line. A cue change asked for while
   stopped lands at once on that bar line, with no end stinger and no bar of the old cue. Before, turning Music back on
   after two stages played a bar of the cue from two stages back, then its button, then the right cue.
+- **The mood at the start.** A cue takes the mood as it is when its first bar is laid, not as it was when the cue was
+  asked for. A stage begun with Music off kept the mood of its first moment, so when Music came on, the first bar
+  played level 0 where the stage's mood gave 1 (the final verifier; `music-engine.test.mjs` and `music.e2e.mjs`).
 
 A few notes still drop under main-thread stalls longer than the lookahead: one at `root`'s overlay in one real-time
 run, two in the middle of `root` in another (10).
@@ -268,8 +297,9 @@ the Music gain, then `scoreDest()`.
 
 ### 2.9 Loading
 
-- `main.js` imports `ui/music.js` and `core/music/score.js` statically, so the boot parses about 180 KB more code
-  (about 164 KB at integration; the critic's `mix.js` and rewrites added the rest). The planned `import()` on the Play
+- `main.js` imports `ui/music.js`, `core/music/score.js` and `core/music/wiring.js` statically, so the boot parses
+  about 184 KB more code (183,781 bytes; about 164 KB at integration; the critic's `mix.js` and rewrites added most of
+  the rest). The planned `import()` on the Play
   tap was not used. The boot still fetches no score file and builds no music, and `boot.e2e.mjs` passes.
 - `score.js` builds each cue only the first time it is read (2 to 13 ms in node), so importing it is cheap. At each
   card, `main.js` reads the next stage's cue, so its first frame does not pay for it.
@@ -315,7 +345,8 @@ ends on `button`; birth ends on `light`, the ending on `warm`.
 Written in C and moved to the playing cue's tonic (−6 to +5 semitones), every note kept in range in every key. The
 critic changed only their levels, through their velocities (`mix.js` `louder`), not their notes. The grand ones
 (`win`, `glowing`) had sat 7 LU over a cue at level 1, and the gift's harp and bells 7 LU under it; now they are about
-4 LU over and 2 LU under. LUFS is each stinger rendered alone in C.
+4 LU over and 2 LU under. LUFS is each stinger rendered alone in C, before the score's 2.5 dB trim (2.1), which lowers
+the stingers and the cues alike.
 
 | Stinger | Length | What it is | When, as wired | LUFS |
 |---|---|---|---|---|
@@ -324,15 +355,20 @@ critic changed only their levels, through their velocities (`mix.js` `louder`), 
 | `great` | 1.5 s | flat VI, flat VII, I in the full brass, timpani falling under it | grade Great, the same way | −20.7 |
 | `glowing` | 2.3 s | the same cadence, grander, with harp, bells, a timpani roll and a crash | grade Glowing, the same way | −20.2 |
 | `boss` | 2.0 s | a dark brass stab, a timpani roll, a second stab | a stage's mood turns boss: the egg's swarm, the Knot (3), the big germ (5), the Big Germ (7) | −21.5 |
-| `gift` | 1.5 s | a pentatonic harp glissando and glockenspiel | a gift taken (3, `act.up`); a pool you link (4, `root.link` at gain 1), about 8 times a run | −26.9 |
+| `gift` | 1.5 s | a pentatonic harp glissando and glockenspiel | a gift taken (3, `act.up`); in stage 4 the first pool you link, and the last of the pools when you link it (`root.link` at gain 1): twice a stage at most. The pools between and those the roots reach by themselves play none | −26.9 |
 | `gate` | 0.7 s | two bright brass notes | a gate passed (1): its `place` sound, since there is no gate-pass event | −24.2 |
 | `item` | 0.4 s | a short brass rip | an item used (1) | −24.7 |
-| `win` | 1.8 s | the "ta-da" | `act.win`: the egg's swarm drifts off, the Knot pops, the big germ pops, the Big Germ pops and stage 7 is clear (so stage 7 plays it twice) | −19.8 |
+| `win` | 1.8 s | the "ta-da" | `act.win`: the egg's swarm drifts off, the Knot pops, the big germ pops, the Big Germ pops. Stage 7 plays it once, at the Big Germ's pop, and none at its clear, which comes just before its button and grade; when the Big Germ is not popped, stage 7 plays no win | −19.8 |
 | `button` | 1.0 s | flat VI to I, short-short | the end of a stage cue, at the overlay | −23.0 |
 | `light` | 7.5 s | the choir and a held chord | birth's light (added) | −23.4 |
 | `warm` | 5.0 s | one soft warm chord | 0.9 s after the cry (added) | −33.6 |
 
 `light` and `warm` are two more than the contract's ten (section 9). Knock-outs and Go on get no grade stinger.
+
+The mapping from the run's events to stingers is `core/music/wiring.js`: `stingsFor(ev, memory, state)`, with a
+memory for each stage attempt (`stingMemory()`, made fresh at each stage start). It is pure. `main.js` plays what it
+returns, and `music-engine.test.mjs` replays bot runs of stages 4 and 7 through it, so the check reads the game's own
+mapping (tasks 5.22, 5.23). The `boss` stinger stays in `main.js`, since it comes from the mood, not from an event.
 
 ### 3.2 The mix (`mix.js`)
 
@@ -380,6 +416,8 @@ Measured, LUFS, before → after:
 - **Steps:** level 0 to 1 was 2.1 to 8.4 LU and is now 3.7 to 4.3; level 1 to 2 was 0.3 to 2.6 and is now 1.2 to 2.2.
 - **Kept:** `music.test.mjs` holds the shape with a loudness estimate made from the notes, which tracks the renders
   within 1.8 dB.
+- **Then the score's trim:** these targets and numbers are before the 2.5 dB trim at the score's input (2.1, tasks
+  4.5), which lowers every cue and level alike. In the game a stage cue at level 1 measures −26.7 to −27.8 LUFS.
 
 ## 4. The mood signals
 
@@ -395,8 +433,8 @@ check). `main.js` reads it every 100 ms and smooths it:
 - A stage with no `mood` plays level 1.
 - When a stage's mood turns boss, `main.js` plays the `boss` stinger. Only `egg` and `grow` have boss layers.
 
-The thresholds as built are literals in each `mood()`, described in the comment above it. The plan to record them in
-each stage's tune file was not carried out (tasks 5.20).
+The thresholds stay literals in each `mood()`, on purpose: they set only the music, so they sit beside the state they
+read and not in the stage's tune file. The comment above each `mood()` names them (tasks 5.20).
 
 | Stage | Level 0 | Level 1 | Level 2 | Boss | Tempo |
 |---|---|---|---|---|---|
@@ -443,19 +481,20 @@ check or the verifier's real-time runs.
 | Swing 0.33 | the off-beat lands at 0.665 of the beat |
 | Changes | a mood change exactly on a bar line (0.00 ms in `music.e2e.mjs`); boss on the next beat; a tempo change (120 to 132, and birth's 1.12 in `music-engine.test.mjs`) on the bar line |
 | Stingers | quantized to the next beat; the cue ducks −6.6 dB under it; transposed notes match `stingerNotes`; all 12 play; a big stinger loses none of its notes to the voice cap (`music-engine.test.mjs`) |
-| Cue changes | `button` and the new cue on the same bar line; `cue(null)` fades over the bar before its stop; a cue that has not sounded yet is replaced at once (`music-engine.test.mjs`) |
+| Cue changes | `button` and the new cue on the same bar line; `cue(null)` fades over the bar before its stop; a cue that has not sounded yet is replaced at once; a cue asked for with Music off starts at the mood given since (`music-engine.test.mjs`). In a whole run the button plays at each overlay, and each stage's cue comes in within two bars, on a bar line of the old cue (`music.e2e.mjs`) |
 | Drums | all seven sound; spectral centroids: kick 78 Hz, snare 5.3 kHz, hat 12.6 kHz, ride 10.3 kHz, crash 12 kHz |
 | Reverb tail | −36 dB at 0.5 s, −52 dB at 0.9 s, −77 dB at 1.5 s after a note |
 | Stage 6 sync | 2.4 |
 | Fallback | with the sample files blocked, all 14 instruments play on the synth, in tune, at about the samples' level (also live in `music.e2e.mjs`) |
 | Live AudioContext | the synth plays until the samples load, then the samples take over; nothing is scheduled while hidden, suspended or with Music off; each resumes on a new bar line; in `music.e2e.mjs` Music off falls 46 dB within 0.35 s and Sound off goes to −240 dBFS |
-| Through `sound.js` | in stage 1's scene (the womb bus at 150 Hz) the mix has energy above 1 kHz 49.7 dB over her heart alone (`music.e2e.mjs`); mute silences it; a 40 ms latency moves notes 40 ms earlier |
-| Peaks | with her heart, through `sound.js` and its 1 dB trim, the loudest cues at level 2 under two stingers: −2.0 to −2.9 dBFS (`music.e2e.mjs`; −0.7 dBFS before the trim) |
-| Loudness (EBU R128) | her heart about −19 LUFS; the score per cue and level in 3.2 |
-| Her heart over the score | at level 2 in every stage's scene, the heart band over the first 80 ms of each beat: 7.9 dB or more over the score (lowest: `grow` with the boss), medians 16 to 30 dB; the check needs 3 dB for 90% of her beats (`music.e2e.mjs`). The minimum was 6.5 dB at integration and 3.9 dB after the verifier's fixes, before the mix. |
+| Through `sound.js` | in stage 1's scene (the womb bus at 150 Hz) the mix has energy above 1 kHz 49.7 dB over her heart alone (`music.e2e.mjs`); mute silences it; a 40 ms latency moves notes 40 ms earlier. After the score's trim, the share of the mix above 1 kHz fell from 1.8% to 1.047%, close to that check's 1% floor (a fixed offline render, so it does not flake) |
+| Peaks | with her heart, through `sound.js`, its 1 dB trim and the score's 2.5 dB trim, the loudest cues at level 2 under two stingers: −2.3 to −3.3 dBFS (`music.e2e.mjs`; −2.0 to −2.9 before the score's trim, −0.7 dBFS before the 1 dB trim) |
+| Loudness (EBU R128) | her heart alone −19.8 to −20.2 LUFS in each stage's scene (your heart −19.5 in `grow`); a stage cue at level 1, its whole loop, −26.7 to −27.8 LUFS, 6.7 to 8.0 LU under the heart that leads (2.1); in the page, stage 1 at level 1 measures 7.8 LU under (`music.e2e.mjs`: 10 s of the loop after the intro, in stereo, within 0.25 dB of ffmpeg; with the intro the score is 2.1 dB quieter still); the score per cue and level before the trim in 3.2 |
+| Her heart over the score | at level 2 in every stage's scene, the heart band over the first 80 ms of each beat: 10.4 dB or more over the score (lowest: `grow` with the boss; `egg` 11.1, every other stage 12.5 or more); the check needs 3 dB for 90% of her beats (`music.e2e.mjs`). The minimum was 7.9 dB before the score's trim (medians 16 to 30 dB then), 6.5 dB at integration and 3.9 dB after the verifier's fixes, before the mix. |
+| Her heart in the busiest moment | stage 5 at level 2 with the boss, 10 s of the whole mix rendered: each of her onsets within 0.7 ms of its own onset (which sits a fixed 18 ms after its scheduled time), true peak −3.6 dBTP (`music.e2e.mjs`; your heart left out, so it measures the room the score leaves) |
 | Voices | at most 48 sounding with every cue at level 2, stingers and a fade; no node let go while it sounds; every voice let go once its sources end (`music-engine.test.mjs`) |
 | Dropped notes | none of the cue's opening at the Play tap at 1440 × 900 (`music.e2e.mjs`; 2 at 1280 × 800 before the late-start rule); 1 or 2 per real-time run, in `root`, from main-thread stalls |
-| Cost | `tick()` averages 0.09 ms live, at most 2 ms; with every cue at level 2, p99 at most 2 ms and mean under 0.3 ms (`music-engine.test.mjs`) |
+| Cost | `tick()` averages 0.09 ms live, at most 2 ms; with every cue at level 2, p99 at most 2 ms and mean under 0.3 ms (`music-engine.test.mjs`); stage 5 with the boss and the score playing at 390 × 844: p95 frame 4.4 ms, at most 47 voices, 14 released by the voice cap and none of them held, the sound timer 0.151 ms on average (`perf.e2e.mjs`) |
 | Real-time runs (verifier) | two whole bot runs (reference skill seed 1, skill 0.5 seed 2) with a real AudioContext: each stage played its own cue, changing once per stage; the result played the lullaby; every stinger fired; nothing sounded from birth's light to the cry; live audio nodes 42 to 164 (49 at the end); the JS heap 30 to 73 MB and not growing; no page error from the game |
 | Score data (node) | the busiest beat holds 23 notes; seams within 3 dB with no dips; the level steps after the mix are in 3.2 |
 
@@ -473,8 +512,8 @@ As built, all in `main.js` unless noted:
    no new caption. The title, and Stages, Settings and Sources opened over the title or the run result, play the
    overture at level 1; the run result plays the lullaby. A new run fades the last run's music over 0.5 s.
 5. **Mood:** section 4.
-6. **Stingers:** section 3.1. At the overlay, the cue's `end`, then the grade's; the queue plays them one after the
-   other.
+6. **Stingers:** section 3.1, from `core/music/wiring.js` `stingsFor()`. At the overlay, the cue's `end`, then the
+   grade's; the queue plays them one after the other.
 7. **Stage 6:** section 2.4.
 8. **The ending:** section 2.5.
 9. **Settings.** A Music switch right after Sound, on by default. `core/save.js` keeps only its own fields, so
@@ -485,8 +524,8 @@ As built, all in `main.js` unless noted:
 11. **Test hook.** `__fb.music` gives the engine's `stats()` plus `want` (the cue `main.js` asked for) and `setting`;
     `__fb.sound.times` gives the context times her beats were scheduled at. `stats().bars[].at` and
     `changes[].at` are context times. To test the fallback, block `**/audio/score/**`.
-12. **`ui/sound.js`:** the `scoreIn` gain and `scoreDest()` (the engine builder), and the 1 dB trim after the limiter
-    (the integrator, 2.1).
+12. **`ui/sound.js`:** the `scoreIn` gain and `scoreDest()` (the engine builder), the 1 dB trim after the limiter
+    (the integrator) and the score's −2.5 dB trim at `scoreIn`, `SCORE_DB` (tasks 4.5; 2.1).
 
 On a first visit the title is silent. The AudioContext starts on Play (the journey and arcade specs), so the overture
 greets the player on the title screens only after a run has started.
@@ -494,9 +533,22 @@ greets the player on the title screens only after a run has started.
 ## 7. Captions and words
 
 With captions and Music on, one caption names the music when a stage's cue starts, once per stage, from
-`music.<cue>` in `core/text.js`. `main.js` offers it as a sound's caption (`kind: "cue"`, 2.5 s) once that cue is
-playing, within 12 s of the stage's start, and only when no other line shows, so it never cuts a fact or a sub-goal
-line. A Try again shows none.
+`music.<cue>` in `core/text.js`. `main.js` offers it once that cue is playing, within 12 s of the stage's start, as a
+sound's caption that must show: `captions.say(id, text, { kind: "cue", wait: true, ms: 2500 })`. A Try again shows
+none. In `ui/captions.js` it behaves like this (tasks 5.21):
+
+- On a free line it shows at once, for its 2.5 s. On a busy line it waits its turn in the queue, in order, like a
+  fact, instead of being dropped as a plain sound's caption is. It never cuts anything.
+- On screen it keeps its place like a fact page. A fact waits behind it, and while one does it stays 1.2 s
+  (`MUST_MIN_MS`). A caption that comes while it shows waits until it has shown 1.2 s. If a caption cuts it in the
+  step it began, before it was seen, it comes back once, whole. Once seen it never comes back.
+- Waiting facts never give way to it, so it delays the facts behind it by 1.2 s at most.
+- `drop(id)` takes it off the queue or the screen. `main.js` uses it when Music or the sound goes off.
+
+Why 1.2 s: with 2.5 s or 1.8 s, a still player's last egg fact (`egg.block`) ran past the stage end in landscape,
+where that run has only about 1.4 s of slack. Subtitle guides allow less (Netflix's Timed Text Style Guide sets a
+floor of 5/6 s an event). The cost: in real time in `egg`, "It opens." is held about 1.2 s and then shows about 1 s
+before the next line replaces it.
 
 | Cue | Caption |
 |---|---|
@@ -513,11 +565,16 @@ line. A Try again shows none.
 
 - `music.title` and `music.ending` are written but never shown: captions show only in a stage, and the ending's score
   is the warm chord alone.
-- In the verifier's two real-time runs the egg and root captions never showed: the line was busy for all 12 s. So 6 of
-  8 stages named their music (tasks 5.21).
+- Before this, in the verifier's two real-time runs, the egg and root captions never showed: the line was busy for
+  all 12 s, so 6 of 8 stages named their music. Now, in a real-time browser run with the bot, every stage showed its
+  caption once: swim at 0.1 s, egg 2.4, split 2.2, root 5.0, grow 7.1, answer 4.3, turn 0.0 and birth 0.0.
+- `pacing.test.mjs` sends the music caption the way `main.js` does, at the stage start and one bar of the last cue
+  later. For every stage but the ending, every bot, seed, layout and mode, the caption shows once, for at least 1.2 s,
+  within 12 s of its cue's start (counted from the cue's start: turn's can wait behind a three-page fact and show at
+  12.5 s of the stage), and every fact still shows whole. On the old `captions.js` it fails in swim, egg, root, grow
+  and turn. `captions.test.mjs` checks the waiting caption and `drop()` on their own.
 - `text.test.mjs` scans every registered string, these and the Music label and credit among them, for banned words,
-  pronouns, em dashes and sentence length. `pacing.test.mjs` sends the music caption the way `main.js` does, and every
-  fact still shows whole.
+  pronouns, em dashes and sentence length.
 
 The working names in section 3 ("Battle", "Siege march", "Last stand") are never shown: "battle" is on the banned word
 list, and the others are not the game's tone. Stingers get no caption: each marks a moment the screen already shows
@@ -555,7 +612,12 @@ list, and the others are not the game's tone. Stingers get no caption: each mark
 4. An OfflineAudioContext counts as running while it renders (it reads "suspended" at each suspend point).
 5. `cue()` with the cue already playing only updates the mood, and cancels a pending stop.
 6. When a cue changes, its `end` stinger plays unless `sting(end)` was already called during that cue; then the old
-   cue fades out instead.
+   cue fades out instead, and the change slips one more bar when less than 0.45 of a bar is left. In play `main.js`
+   plays every stage cue's button at the overlay, so every stage change fades, and the new cue comes in within about
+   1.45 bars of the stage start, plus the lookahead. The final verifier changed two scenarios to say so ("The cue
+   follows the stage": within two bars, on a bar line of the old cue, the button once at the overlay; "A grade at the
+   stage end": the button on the next beat), since they had asked for the button on the bar line where the new cue
+   began, which this design never does.
 7. Stingers queue and are never dropped. A new one waits for a sounding one to end, at most 1.5 s, then plays over it.
 8. A mother cue waits up to 2 s for her first beat.
 9. `createMusic` also takes `level` (default 0.8) and `score` (tests). `stats()` adds `held`, `section`, `samples`,
@@ -579,6 +641,8 @@ list, and the others are not the game's tone. Stingers get no caption: each mark
     sources end; the crash's metal loops (the verifier, 2.8).
 18. Cancelling a fade (the same cue asked for again during its fade) rises back from where the fade had got to, not
     straight to full (the verifier; no dedicated check).
+19. A cue takes the mood when its first bar is laid, not when it was asked for; before, a cue asked for while stopped
+    played its first bar at the old level (the final verifier, 2.7).
 
 ### 9.2 Score
 
@@ -602,9 +666,8 @@ corrections hold instead:
 
 1. "Its score is Walter Murphy's": the episode's cue is credited to Ron Jones (La-La Land Records, *Family Guy:
    Movement I*, track 17). Murphy wrote the theme and writes the show's underscores; both write in the same idiom
-   (1.1). The header comment in `core/music/score.js` still repeats the contract's wording ("Walter Murphy's Family
-   Guy music"); the critic edited that file but not that line. It is a code comment, not shown, and can be corrected
-   when that file is next edited.
+   (1.1). The header comment in `core/music/score.js` now names both: "the Family Guy scores (Walter Murphy's theme
+   and underscores, and Ron Jones, who scored "Emission Impossible")".
 2. "The arcade `credits` field names the samples": it is a boolean, and the switcher stays as on main (8).
 3. "FluidR3_GM (CC BY 3.0, Frank Wen)": the files are CC BY 3.0 as gleitz distributes them; the soundfont is MIT by
    Frank Wen (8).
@@ -615,13 +678,15 @@ corrections hold instead:
    its own fields. So `save.test.mjs` cannot check it; `music.e2e.mjs` checks it survives a reload. The journey spec's
    "The Music setting" says so.
 2. A lower mood level waits 2.5 s of stage time, not about 4 s (4).
-3. The mood thresholds are literals in each `mood()`, not in the stage's tune file (4; tasks 5.20).
+3. The mood thresholds stay literals in each `mood()`, on purpose, not in the stage's tune file (4; tasks 5.20).
 4. `main.js` imports the engine and the score statically, not with `import()` (2.9).
-5. `ui/sound.js`, the engine builder's file, got a 1 dB trim after the limiter (2.1).
+5. `ui/sound.js`, the engine builder's file, got a 1 dB trim after the limiter and a −2.5 dB trim at the score's
+   input, `SCORE_DB` (2.1; tasks 4.5).
 6. Stinger sources (3.1): `gate` comes from stage 1's `place` sound, since there is no gate-pass event; `gift` plays
-   for a pool you link, not a pool found; `boss` plays in stages 3 and 7 too, from their mood's boss flag, though
-   their cues have no boss layer.
-7. The cue's caption waits for a free line within 12 s (7).
+   for the first pool you link and the last of the pools, not a pool found; stage 7 plays `win` at the Big Germ's pop
+   only; `boss` plays in stages 3 and 7 too, from their mood's boss flag, though their cues have no boss layer. The
+   mapping is `core/music/wiring.js`, outside `main.js`, so a node check can replay it.
+7. The cue's caption is a sound's caption that must show: it waits its turn on a busy line (7).
 8. The samples load only with Music on (2.9).
 
 ## 10. Risks and open items
@@ -629,24 +694,26 @@ corrections hold instead:
 - **Nobody has listened yet.** The latest renders are the critic's, made with `music-demo.mjs` through the real
   engine and samples, with her heart. A person must listen to every cue, level and stinger on a phone speaker and on
   speakers or headphones (tasks 8). The pull request says so.
-- **Loudness at level 1.** The spec asks for a cue at least 6 LU under her heart at level 1. After the mix, stage cues
-  at level 1 measure −24.2 to −25.4 LUFS against her heart's −19: about 5 to 6 LU. No check measures it yet. Either
-  lower level 1 by about 1 dB, or change the number after listening (tasks 4.5, 6.7).
-- **Her heart under `grow`'s boss.** The lowest margin of all: 7.9 dB at least after the mix (6.5 dB at integration,
-  3.9 dB after the verifier's fixes). If listening says her beat blurs there, lower `grow`'s boss and level 2 layers
-  (tasks 4.5).
-- **Music captions in stages 2 and 4** often do not show, because the caption line is busy for the whole 12 s
-  (tasks 5.21).
-- **Stingers that may come too often.** `root` plays `gift` about 8 times a run, once for each pool you link. `turn`
-  plays `win` twice, at the Big Germ's pop and at the clear, shortly before its button and grade (tasks 5.22, 5.23).
+- **Loudness at level 1.** Settled by the score's 2.5 dB trim (2.1, tasks 4.5): stage cues at level 1 sit 6.7 to
+  8.0 LU under the heart that leads, and `music.e2e.mjs` measures 7.8 LU in stage 1. Listening may still move it
+  (tasks 8.5).
+- **Her heart under `grow`'s boss.** Still the lowest margin of all: 10.4 dB at least after the trim (7.9 dB before it,
+  6.5 dB at integration, 3.9 dB after the verifier's fixes). If listening says her beat blurs there, lower `grow`'s
+  boss and level 2 layers.
+- **The 1 kHz check sits near its floor.** After the trim, 1.047% of stage 1's mix lies above 1 kHz, against the
+  check's 1%. It is a fixed offline render, so it will not flake, but a later cut to the score's level would fail it;
+  lower that floor then, if listening agrees.
+- **Stingers.** `root` plays `gift` twice a stage at most and `turn` plays `win` once at most (3.1; tasks 5.22, 5.23).
+  Listening may still change them (tasks 8.5).
 - **Dropped notes.** A few notes still drop under main-thread stalls longer than the lookahead (2.7). That is the
   design: a late note sounds worse than a missing one. Watch for it on an old phone (tasks 8.6).
 - **Memory.** About 42 to 46 MB of decoded samples. If an old phone struggles, decode at 22.05 kHz or decode each
   instrument on first use (tasks 8.6).
 - **The voice cap** applies as each note starts, so notes laid ahead can push the count above 48 for a moment (2.8).
-- **Boot code.** The boot parses about 180 KB more JavaScript (2.9). `boot.e2e.mjs` passes; `import()` could defer it.
-- **Checks that do not yet test their scenario.** Several spec scenarios name a check that does not test them yet
-  (11; tasks 6.4, 6.7).
+- **Boot code.** The boot parses about 184 KB more JavaScript (2.9). `boot.e2e.mjs` passes; `import()` could defer it.
+- **Checks.** Every spec scenario now names a check that tests it, except "A person listens" (11; tasks 6.4, 6.7).
+  Timing checks in a real-time browser run are noisy on a shared machine; a timing failure is rerun once alone before
+  it counts.
 - **The title on a first visit** is silent until Play, because the AudioContext starts on Play. Starting it on any
   first tap would change "Play starts the first stage at once" and "Sound follows the arcade"; not part of this change.
 - **iOS.** `navigator.audioSession.type = "playback"` lets the score play with the ring switch on silent where it

@@ -4,8 +4,10 @@ Owners are in `contract.md` ("Files"). The composer owns `core/music/` and `qa/f
 builder owns `ui/music.js`, `audio/score/`, the `ui/sound.js` hook and `qa/first-breath/fetch-score-samples.mjs`; the
 integrator owns `main.js`, `ui/screens.js`, `ui/captions.js`, `core/text.js`, each stage's `mood`, the Sources credit,
 `qa/first-breath/music.e2e.mjs` and `qa/first-breath/music-demo.mjs`. After integration a verifier fixed faults in
-`ui/music.js`, `main.js` and the checks, and a music critic worked in `core/music/` and `music.test.mjs`. Section
-numbers refer to `design.md`. A task is ticked only when its work and its checks are done.
+`ui/music.js`, `main.js` and the checks, and a music critic worked in `core/music/` and `music.test.mjs`. Then two
+agents closed the gaps in parallel (the game fixes: 4.5, 5.20 to 5.23; the checks: 6.4, 6.7), and a final verifier
+checked the combined tree (1.5, 3.13, 6.8, 7.4). Section numbers refer to `design.md`. A task is ticked only when its
+work and its checks are done.
 
 ## 1. Contract and plan
 
@@ -13,6 +15,7 @@ numbers refer to `design.md`. A task is ticked only when its work and its checks
 - [x] 1.2 `proposal.md`, `design.md`, `tasks.md` and the spec deltas; `openspec validate first-breath-score --strict` passes.
 - [x] 1.3 The lead decided: `contract.md` stays as the record the builders worked from, and its three wrong facts (the episode's composer credit, the arcade `credits` field, the FluidR3 license) are corrected in design 9.3 only.
 - [x] 1.4 `design.md` and `tasks.md` brought in line with the code as built, after the verifier and the critic. The journey spec's Music setting now says "saved for the next visit" and names `music.e2e.mjs` alone, since Music is saved outside `core/save.js` (design 9.4).
+- [x] 1.5 The spec brought in line with the design as built (the final verifier): "The cue follows the stage" (within two bars, on a bar line of the old cue, the old cue's button once at the overlay) and "A grade at the stage end" (the button on the next beat), since the button plays at the overlay (design 9.1.6); the stingers requirement's gift rule (5.22); a new scenario, "Every stage names its music" (5.21). `design.md` updated for the trim, the loudness, the caption, the gift and win rules and the checks.
 
 ## 2. Samples
 
@@ -35,6 +38,7 @@ numbers refer to `design.md`. A task is ticked only when its work and its checks
 - [x] 3.10 `ui/sound.js`: the `scoreIn` gain after the mute and pause, outside the womb filters; `sound.scoreDest()`. The integrator added a 1 dB trim after the limiter, so the mix peaks under −1 dBFS (design 2.1).
 - [x] 3.11 A short hush for the ending: `fadeOut(seconds)` stops the cue at once and fades every voice, the stingers' too (design 2.5, 9.1).
 - [x] 3.12 The verifier's fixes, each with a check in `music-engine.test.mjs` (15 checks) or `music.e2e.mjs`: the voice cap counts only sounding voices; nodes are freed only when all of a voice's sources end, and the crash's metal loops; one 1e-9 window edge; a resync when Music comes back on; a cue that has not sounded yet is replaced at once; `sync(times, from, to)`; the late start for a cue whose downbeat passed; the samples load only with Music on; a cancelled fade rises from where it was (design 2.7, 2.8, 9.1).
+- [x] 3.13 A cue asked for while stopped (a stage begun with Music off) takes the mood when its first bar is laid, so its first bar plays the level the stage's mood gives, not the one from when it was asked (the final verifier; a check in `music-engine.test.mjs`, 18 checks, that fails on the old engine, and the live check in `music.e2e.mjs`; design 2.7, 9.1.19).
 
 ## 4. Composition (`core/music/`)
 
@@ -42,7 +46,7 @@ numbers refer to `design.md`. A task is ticked only when its work and its checks
 - [x] 4.2 Ten cues (design 3) with intros, loops, levels 0 to 2 (the title 0 and 1), boss layers in `egg` and `grow`, `sync: "mother"` for `answer`, and keys, tempos and ducks.
 - [x] 4.3 Twelve stingers: the contract's ten, plus `light` and `warm` (design 3.1).
 - [x] 4.4 `qa/first-breath/music.test.mjs` passes (18 checks from the composer, 24 after the critic); `purity.test.mjs` passes 26.
-- [ ] 4.5 Balance after listening (section 8). At level 1 the stage cues sit about 5 to 6 LU under her heart, where the spec asks for at least 6: lower level 1 by about 1 dB in `mix.js`, or change the spec's number. Under `grow`'s boss her heart has the least room (7.9 dB at the lowest): lower `grow`'s boss and level 2 layers if her beat blurs there (design 10).
+- [x] 4.5 The heart rule: one trim at the score's input, `SCORE_DB = −2.5` in `ui/sound.js`, so `mix.js` keeps its shape. Her heart alone measures −19.8 to −20.2 LUFS (not −19), so the cues sat only 4.3 to 5.5 LU under; with the trim, 6.7 to 8.0 LU (design 2.1), and `music.e2e.mjs` measures 7.8 LU in stage 1. Her heart's room over the score at level 2 is now 10.4 dB at least (`grow` with the boss). Any change after listening is 8.5.
 - [x] 4.6 The critic's pass: six tunes rewritten for originality, more of the idiom's gestures, `closeChord` keeping the top note asked for, the title on levels 0 and 1 only, and the mix in `mix.js`, with six more checks in `music.test.mjs` (design 1.4, 3.2).
 
 ## 5. Integration (`main.js` and the rest)
@@ -66,20 +70,21 @@ numbers refer to `design.md`. A task is ticked only when its work and its checks
 - [x] 5.17 Music captions: `music.<cue>` strings in `core/text.js` (design 7), offered once per stage within 12 s of its start when the caption line is free, so they never cut a fact.
 - [x] 5.18 The music credit at the end of the Sources screen, with its links (design 8). `public/arcade/switch.js` and `qa/arcade/machines.mjs` are as on main: the lead reverted the integrator's credit string and the verifier's matching check change.
 - [x] 5.19 `window.__fb.music` exposes the music's `stats()` plus `want` and `setting`, and `__fb.sound.times` her scheduled beats, for the browser checks.
-- [ ] 5.20 The mood thresholds: the plan put them in each stage's tune file. They are literals in each `mood()`, described in its comment and in design 4. Move them into the tune files, or record that they stay where they are.
-- [ ] 5.21 Music captions in stages 2 and 4: in both real-time runs the caption line was busy for the whole 12 s, so "♪ march music" and "♪ adventure music" never showed, and the spec's "once per stage" is not met there. Let the caption show in every stage without cutting a fact (for example with a longer window), and check all eight stages.
-- [ ] 5.22 `root` plays `gift` about 8 times a run, once for each pool you link. After listening (8), keep it or play it less often, for example on the first link only.
-- [ ] 5.23 `turn` plays `win` twice: at the Big Germ's pop and at the clear, shortly before its button and grade. Drop the clear's, unless listening says both read well.
+- [x] 5.20 The mood thresholds stay literals in each `mood()`, on purpose: they set only the music, so they sit beside the state they read. Each `mood()` comment names them (design 4, 9.4).
+- [x] 5.21 The music caption is a sound's caption that must show (`captions.say(…, { kind: "cue", wait: true })`): on a busy line it waits its turn instead of being dropped, cuts nothing, stays 1.2 s while a fact waits and 2.5 s on a free line, and `drop(id)` removes it when Music or the sound goes off (design 7). `pacing.test.mjs` (26 checks) checks every stage but the ending in every bot, seed, layout and mode; `captions.test.mjs` (9) checks the waiting caption and `drop()`. In a real-time browser run every stage showed its caption once.
+- [x] 5.22 `root` plays `gift` on the first pool you link and on the last of the pools when you link it, from the new pure `core/music/wiring.js` (`stingsFor`, `stingMemory`), which `main.js` now calls; `music-engine.test.mjs` counts it over bot runs (design 3.1). Listening may still change it (8.5).
+- [x] 5.23 `turn` plays `win` once, at the Big Germ's pop, and none at the clear (none at all when the Big Germ is not popped), from `wiring.js`; `music-engine.test.mjs` counts it over bot runs (design 3.1).
 
 ## 6. Checks
 
 - [x] 6.1 Before integration, with the score, engine and samples in the tree: every `qa/first-breath/*.test.mjs` passes (engine builder's run), `sound.e2e.mjs` passes 51 checks and `boot.e2e.mjs` 264.
 - [x] 6.2 The engine measurements of design 5.3, in Chromium with an OfflineAudioContext and a live context, from scratch scripts.
 - [x] 6.3 `qa/first-breath/music.e2e.mjs` passes 53 checks: the score skips the womb filter; a mood change on a bar line within 5 ms; stage 6's downbeats within 10 ms offline and live; Sound off and Music off silence the score; the mix peak below −1 dBFS; her heartbeat detectable over every cue at level 2; the boot fetches no score file, nor the Play tap with Music off; blocked samples play the synth; a hidden page schedules nothing; the cue's opening kept at the Play tap; the Music switch next to Sound, on by default, saved and still off after a reload; the end stinger, then the grade; stage 1's caption once; the ending silent from the white to the cry, then the warm chord; the lullaby on the result and the overture over it. What it does not check yet is in 6.7.
-- [ ] 6.4 Updates to existing checks. Done: `text.test.mjs` scans the music captions, the Music label and the credit (its scan covers every registered string, so it needed no edit), and `pacing.test.mjs` sends the music captions. Not done: `layout.e2e.mjs` checks every Settings control at 44 px and reachable at three sizes, but does not find the Music switch by name, check that it sits next to Sound or check its focus ring; `screens.e2e.mjs` does not find the credit or its links; `perf.e2e.mjs` measures each stage opened by URL with no Play tap, so no score plays in it. `save.test.mjs` needs no change, since Music is saved outside `core/save.js` (design 9.4).
+- [x] 6.4 Updates to existing checks. `text.test.mjs` scans the music captions, the Music label and the credit (its scan covers every registered string); `pacing.test.mjs` sends the music captions and checks each stage shows its own (5.21). `layout.e2e.mjs` finds the Music switch by role and name at all three sizes, right after Sound, at least 44 px, overlapping nothing, with Tab's focus ring the same as Sound's (199 checks). `screens.e2e.mjs` checks Open Sources and the music credit, whose links open in a new tab and answer online (32). `perf.e2e.mjs` measures stage 5 with the boss and the score playing (181). `save.test.mjs` needs no change, since Music is saved outside `core/save.js` (design 9.4).
 - [x] 6.5 After integration, all pass in the builders' runs: every node test (`sim.test.mjs` 98), and `sound` 51, `smoke` 226, `boot` 264, `perf` 175, `input` 102, `layout` 190, `screens` 24, `visual` 88 and `music` 53 in the browser, and `qa/arcade/quiet.mjs` 35 for First Breath. `qa/arcade/machines.mjs`: `switch.js` and `machines.mjs` are as on main again, and the verifier's partial runs found only failures that main has too (the switcher shows 27 of 38 tiles, `/lab/plunge/` and `/echo/` unmarked, a `createPattern` page error in Crimson's credits at 1280 × 720), outside this change.
 - [x] 6.6 `openspec validate first-breath-score --strict` passes again after the spec change in 1.4.
-- [ ] 6.7 Spec scenarios whose named check does not test them yet. Add each to `music.e2e.mjs` (or the check the scenario names), or change its CHECK line: the score 6 LU under her heart at level 1 (about 5 to 6 LU now, 4.5); the sample folder at 2 MB or less and its README (only `fetch-score-samples.mjs` checks the size, on a rebuild); a cue per stage in one run and no gap over 1 s through an overlay and card; the big germ's boss stinger and boss layer on the next beat; birth's tempo in the page; a gate passed, with the duck; a knock-out in stage 5, with the cue at level 0 behind the Almost card; the shout chorus joining and leaving on the combo; Esc on desktop in stage 7; stage 5's boss in `perf.e2e.mjs` with the score playing; the music credit in `screens.e2e.mjs`.
+- [x] 6.7 Every spec scenario names a check that tests it, except "A person listens" (8). New in `music.e2e.mjs` (it runs in parts with `ONLY=node,offline,live,stage2,run,moods`): the score 7.8 LU under her heart at level 1; the sample folder (1,517,968 bytes) and its README; a cue per stage in one run and no gap over 1 s through an overlay and card; the big germ's boss stinger and boss layer; birth's tempo in the page; a gate passed, with the duck; a knock-out in stage 5 with the cue at level 0 behind the Almost card; the shout chorus; Esc on desktop in stage 7; Music off and on with real taps; muted in the arcade. The CHECK lines that named a check which never tested them now name the one that does (presentation, arcade-machine and facts-and-tone specs).
+- [x] 6.8 The final verification on the combined tree (design 11): every node test, `music`, `sound`, `boot`, `smoke`, `layout`, `screens`, `input`, `perf` and `visual` in the browser, and `qa/arcade/quiet.mjs` for First Breath, all pass. Fixes it made: 3.13; the spec text in 1.5 and the matching `music.e2e.mjs` checks (stage 6's beats read from her laid beats and its own notes, its cue on her first beat after the old cue's bar line).
 
 ## 7. Demos
 
@@ -93,7 +98,7 @@ numbers refer to `design.md`. A task is ticked only when its work and its checks
 - [ ] 8.2 On speakers or headphones: the balance, the reverb, seamless loops, clean level changes, no clicks.
 - [ ] 8.3 No cue or stinger sounds like a known theme (the list in contract rule 1 and the screen in design 12, with the Family Guy theme, Get Smart and Fantastic Voyage, which the screen could not compare).
 - [ ] 8.4 The ending feels calm, and the knock-out chord does not sound sad.
-- [ ] 8.5 Record what was heard in `design.md` 10, adjust the gains (4.5) and decide 5.22 and 5.23.
+- [ ] 8.5 Record what was heard in `design.md` 10, and change the score's trim (4.5), the gift (5.22) or the win (5.23) if listening says so.
 - [ ] 8.6 On an older phone, a whole run plays through without the tab reloading and without audible gaps (decoded samples take about 42 to 46 MB, and a few notes drop under long main-thread stalls; design 10).
 
 ## 9. Pull request

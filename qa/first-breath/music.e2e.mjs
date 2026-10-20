@@ -47,8 +47,9 @@
 //   (the same practice replayed in node), both after the cue had played and when Music was off from the stage's
 //   start; after a reload Music is still off;
 // - a run played by the reference bot (?test=1&seed=1: each stage stepped quickly, real time from each stage's end to
-//   3.5 s into the next): each stage's cue within one bar of its start, and the old cue's button on the bar line where
-//   the new one began; a run (?seed=6) whose stage 3 ends Great: the caper's button on its bar line, the Great fanfare
+//   3.5 s into the next): each stage's cue within two bars of its start, on a bar line of the old cue (which fades out
+//   over the bar before), and the old cue's button once, on a beat at its stage's overlay, not again at the change; a
+//   run (?seed=6) whose stage 3 ends Great: the caper's button on its next beat after the overlay, the Great fanfare
 //   after it in G, and no gap over 1 s from its last second, through its overlay and card, to stage 4's first bar;
 // - stage 1 (?seed=13): Gate 1 passed at level 1 plays the gate stinger (all its notes, in D) on the next beat, with
 //   the cue ducked to 1 - ducks for the stinger's length; "♪ spy-chase music" shows once in the caption band in 30 s;
@@ -720,7 +721,7 @@ const NOTES = () => {
     try { if (tc === 0.015 || tc === 0.12) { if (!pid.has(this)) pid.set(this, ++np); window.__params.push([pid.get(this), v, t, tc]); } } catch (e) { /* */ }
     return rawST.call(this, v, t, tc);
   };
-  window.__ml = { bars: {}, changes: {}, stings: {}, cues: [], trans: [], ts: [] };
+  window.__ml = { bars: {}, changes: {}, stings: {}, cues: [], trans: [], ts: [], her: {} };
   let lastK = "", lastCue;
   setInterval(() => {
     const fb = window.__fb, ml = window.__ml, c = window.__ctx;
@@ -732,6 +733,10 @@ const NOTES = () => {
       for (const x of m.changes) ml.changes[[x.kind, x.at.toFixed(4), x.id, x.level, x.boss, x.tempo].join("|")] = x;
       for (const x of m.stings) ml.stings[x.id + "|" + x.at.toFixed(4)] = x;
       if (m.cue !== lastCue) { lastCue = m.cue; ml.cues.push({ cue: m.cue, at: c ? c.currentTime : null }); }
+      // her beats as scheduled (stage 6's cue lays two music beats to each of hers)
+      let her = null;
+      try { her = fb.sound.times; } catch (e) { her = null; }
+      if (her && her.mother) for (const t of her.mother) ml.her[t.toFixed(4)] = t;
     }
     if (window.__mlState) {
       let st = null;
@@ -805,6 +810,7 @@ const LOG = (page) => page.evaluate(() => ({
   changes: Object.values(window.__ml.changes).sort((a, b) => a.at - b.at),
   stings: Object.values(window.__ml.stings).sort((a, b) => a.at - b.at),
   cues: window.__ml.cues.slice(), trans: window.__ml.trans.slice(), ts: window.__ml.ts.slice(),
+  her: Object.values(window.__ml.her).sort((a, b) => a - b),
   latencyS: window.__fb.music ? window.__fb.music.latencyS : 0,
 }));
 // the cue playing at context time t (the last cue change at or before it), from a LOG
@@ -818,6 +824,16 @@ function ctxOfStage(log, id, t) {
   return null;
 }
 // the longest stretch with no score note starting in [a, b] (context time), counting from a and to b
+// how far heard time t (less the latency, as the LOG's times) is from her nearest scheduled beat, or from the half way
+// between two of them (stage 6's cue lays two music beats to each of hers, its grid set by her laid beats)
+function herOff(her, t, halves = true) {
+  let best = Infinity;
+  for (let i = 0; i < her.length; i++) {
+    best = Math.min(best, Math.abs(t - her[i]));
+    if (halves && i && her[i] - her[i - 1] < 1.2) best = Math.min(best, Math.abs(t - (her[i] + her[i - 1]) / 2));
+  }
+  return best;
+}
 function longestGap(notes, a, b) {
   const ts = notes.map((n) => n[0]).filter((t) => t >= a && t <= b).sort((x, y) => x - y);
   let g = 0, prev = a, at = a;
@@ -1250,6 +1266,7 @@ if (part("run")) {
   await wait(300);
   const log = await LOG(page);
   const rows = [], bad1 = [], bad2 = [];
+  const cueN = cueNotes(log);                          // the score's notes that belong to no stinger
   ORDER.forEach((id, i) => {
     const tr = log.trans.find((x) => x.screen === "stage" && x.stageId === id);
     const S = tr ? tr.at : null;
@@ -1261,8 +1278,12 @@ if (part("run")) {
     const d = seen && S !== null ? seen.at - S : Infinity;
     // the new cue begins on one of the old cue's bar lines (one bar after the last one laid), within two of its bars:
     // the button played at the overlay, so the old cue fades out over the bar before the change (design 9.1.6)
-    // (stage 6's bars follow her beats, with their natural jitter)
-    const onOld = !old || (!!ob && !!ch && Math.abs(ch.at - ob.at - barS) <= (SCORE_CUES[old].sync === "mother" ? 0.04 : 0.005));
+    // (stage 6's bars follow her beats, with their natural jitter; stage 6's own cue starts on her first beat after
+    // that bar line: design 2.4)
+    const toBar = ob && ch ? ch.at - ob.at - barS : NaN;
+    const onOld = !old || (SCORE_CUES[id].sync === "mother"
+      ? toBar >= -0.005 && toBar <= 0.9 && herOff(log.her, ch.at, false) <= 0.01
+      : Math.abs(toBar) <= (SCORE_CUES[old].sync === "mother" ? 0.04 : 0.005));
     if (!(d <= 2 * barS) || !onOld) bad1.push(`${id} ${f1(1000 * d)} ms (a bar is ${f1(1000 * barS)})${onOld ? "" : `, ${ch && ob ? f1(1000 * (ch.at - ob.at)) + " ms after the old cue's last bar line" : "no bar line of the old cue"}`}`);
     if (old) {
       // the old cue's button: once, at its stage's overlay, on a beat of the old cue (the next one, or after a stinger
@@ -1274,10 +1295,12 @@ if (part("run")) {
       const b0 = btn.length ? barsOf(log, old).filter((b) => b.at <= btn[0].at + 1e-6).pop() : null;
       const spb = b0 ? 60 / b0.bpm : 60 / SCORE_CUES[old].bpm;
       const k = b0 ? (btn[0].at - b0.at) / spb : NaN;
-      const off = Math.abs(k - Math.round(k)) * spb;
-      // stage 6's cue follows her beats, which carry her natural jitter, so its beats inside a bar may sit a little off
-      // the grid of the bar's start
-      const tol = SCORE_CUES[old].sync === "mother" ? 0.04 : 0.005;
+      // stage 6's cue follows her beats (two to each of hers), re-anchored on each of them, so its beat grid is read from
+      // its own notes: a note of the cue (its walking bass plays every beat) starts with the button
+      const mother = SCORE_CUES[old].sync === "mother";
+      const off = mother ? (btn.length ? Math.min(Infinity, ...cueN.filter((n) => Math.abs(n[0] - btn[0].at) <= 0.05).map((n) => Math.abs(n[0] - btn[0].at))) : Infinity)
+        : Math.abs(k - Math.round(k)) * spb;
+      const tol = mother ? 0.002 : 0.005;
       const ok = btn.length === 1 && off <= tol && btn[0].at - O <= spb + 1.5 + 0.2 + log.latencyS && (!ch || Math.abs(btn[0].at - ch.at) > 0.005);
       if (!ok) bad2.push(`${old}→${id}: ${end} ${btn.length ? btn.map((x) => f1(1000 * (x.at - O)) + " ms").join(", ") + ` after the overlay, ${f1(1000 * off)} ms off the beat` : "none"} (the new cue at ${ch && O !== null ? f1(1000 * (ch.at - O)) + " ms" : "?"})`);
     }

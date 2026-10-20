@@ -16,12 +16,12 @@ The game SHALL play an original orchestral score in the idiom of Family Guy's un
 - **CHECK** `qa/first-breath/music-demo.mjs`, then a person listens (tasks 8)
 
 ### Requirement: A cue for every screen and stage
-Each stage, the title screens and the ending SHALL have their own cue: an overture, a spy chase, a siege march, a sneaky caper, an expedition, a full-orchestra battle, a big-band show number, a last stand, a great escape and a lullaby. A stage's cue SHALL start at the stage start, and a change of cue SHALL land on a bar line after the old cue's button. Through each overlay and card the cue SHALL play on at its lowest level, so no gap is longer than 1 s.
+Each stage, the title screens and the ending SHALL have their own cue: an overture, a spy chase, a siege march, a sneaky caper, an expedition, a full-orchestra battle, a big-band show number, a last stand, a great escape and a lullaby. The old cue's button SHALL play at the stage's end, and the next stage's cue SHALL come in on a bar line within two bars of its start. Through each overlay and card the cue SHALL play on at its lowest level, so no gap is longer than 1 s.
 
 #### Scenario: The cue follows the stage
 - **GIVEN** a run played by the reference bot with Music on
 - **WHEN** each stage starts
-- **THEN** the score's `stats().cue` is that stage's cue (`swim`, `egg`, `split`, `root`, `grow`, `answer`, `turn`, `birth`) within one bar, and the old cue's button played on the bar line where the new cue began
+- **THEN** the score's `stats().cue` is that stage's cue (`swim`, `egg`, `split`, `root`, `grow`, `answer`, `turn`, `birth`) within two bars, starting on a bar line of the old cue, and the old cue's button played once, on a beat at its stage's overlay, and not again where the new cue began
 - **CHECK** `qa/first-breath/music.e2e.mjs`
 
 #### Scenario: No silence between stages
@@ -70,12 +70,12 @@ Every stage cue SHALL have three layers that join as the stage's mood rises: lev
 - **CHECK** `qa/first-breath/music.e2e.mjs`
 
 ### Requirement: Stingers mark the big moments
-Short stingers SHALL mark the big moments, on the playing cue's next beat and in its key: the grade fanfare after a stage's button (Good, Great and Glowing, each grander), a brass stab and a timpani roll as a boss arrives, a harp and bell flourish for a gift picked or a pool found, two bright brass notes at a gate passed, and a short brass rip for an item used. The cue SHALL duck under each stinger, and no stinger SHALL be dropped.
+Short stingers SHALL mark the big moments, on the playing cue's next beat and in its key: the grade fanfare after a stage's button (Good, Great and Glowing, each grander), a brass stab and a timpani roll as a boss arrives, a harp and bell flourish for a gift picked, for the first pool you link and for the last pool when you link it, two bright brass notes at a gate passed, and a short brass rip for an item used. The cue SHALL duck under each stinger, and no stinger SHALL be dropped.
 
 #### Scenario: A grade at the stage end
 - **GIVEN** stage 3 ending with Great
 - **WHEN** the overlay shows
-- **THEN** the caper's button plays on its bar line, and the Great fanfare follows it in the caper's key
+- **THEN** the caper's button plays on its next beat, and the Great fanfare follows it in the caper's key
 - **CHECK** `qa/first-breath/music.e2e.mjs`
 
 #### Scenario: A gate passed
@@ -175,6 +175,12 @@ With captions and Music on, a caption SHALL name the music once per stage when i
 - **GIVEN** every stage played by the reference bot through the real captions, with the music captions sent
 - **WHEN** the captions are recorded in portrait, landscape and desktop
 - **THEN** every fact sent still shows whole
+- **CHECK** `qa/first-breath/pacing.test.mjs`
+
+#### Scenario: Every stage names its music
+- **GIVEN** every stage but the ending, played by the bots through the real captions, with the music caption offered as its cue starts
+- **WHEN** the captions are recorded in portrait, landscape and desktop
+- **THEN** the stage's music caption shows once, for at least 1.2 s, within 12 s of its cue's start, even when the stage's lines and facts fill the caption line
 - **CHECK** `qa/first-breath/pacing.test.mjs`
 
 ### Requirement: The score loads after Play
