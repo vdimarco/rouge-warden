@@ -2260,7 +2260,6 @@ def _ruelles(world, L, surfaces, counts):
                             counts['ruelle_edge_metres'] += (ts[j] - ts[i]) / 100
                     world.alley_edges.append({'alley': alley['id'], 'a': pa, 'b': pb, 'side': side,
                                               't0': ts[run[0]], 't1': ts[run[-1]], 'key': key})
-    world.alley_green = green
 
 
 def alley_paving_z(world, p):
