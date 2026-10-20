@@ -372,7 +372,9 @@ export function createView(canvas) {
   }
 
   function pixelRatio() {
-    return Math.min(RULES.dprCap, window.devicePixelRatio || 1, dprLimit);
+    const cssWidth = Math.max(1, canvas.clientWidth || 1);
+    const scale = Math.min(window.devicePixelRatio || 1, 1920 / cssWidth);
+    return Math.min(RULES.dprCap, window.devicePixelRatio || 1, dprLimit, scale);
   }
 
   function setDprCap(n) {
