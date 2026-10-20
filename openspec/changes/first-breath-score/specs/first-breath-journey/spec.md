@@ -1,13 +1,13 @@
 ## ADDED Requirements
 
 ### Requirement: The Music setting
-Settings SHALL have a Music switch next to Sound, on by default and kept in the save. Music off SHALL silence the score within 0.35 s and schedule no more of it, while her heartbeat and every other sound play on. Music on SHALL bring the score back on the next bar line. Sound off, by the arcade mute or M, SHALL silence the score too, whatever the Music switch says.
+Settings SHALL have a Music switch next to Sound, on by default and saved for the next visit. Music off SHALL silence the score within 0.35 s and schedule no more of it, while her heartbeat and every other sound play on. Music on SHALL bring the score back on the next bar line. Sound off, by the arcade mute or M, SHALL silence the score too, whatever the Music switch says.
 
 #### Scenario: Turn the music off
 - **GIVEN** stage 2 in play at 390 × 844
 - **WHEN** the player pauses, turns Music off in Settings and resumes
 - **THEN** the score is silent within 0.35 s, her heartbeat still plays, and after a reload Music is still off
-- **CHECK** `qa/first-breath/music.e2e.mjs`, `qa/first-breath/save.test.mjs`
+- **CHECK** `qa/first-breath/music.e2e.mjs`
 
 #### Scenario: Turn it back on
 - **GIVEN** stage 2 with Music off
