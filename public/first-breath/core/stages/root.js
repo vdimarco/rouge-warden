@@ -1318,6 +1318,21 @@ export function resume(st) {
   return 0;
 }
 
+// The score's mood (openspec/changes/first-breath-score/contract.md, "Mood"): in the roots, 2 when your hp is low (2
+// pips or fewer of 3 or more, or 1 pip), 1 while you fight (a germ within 45 u of you, or a germ's shot about), 0 while
+// you explore; the nestle, the heart's hush and taps and a knock-out are 0, the grow 1. Pure and cheap (main.js reads
+// it every 100 ms); it changes nothing.
+export function mood(st) {
+  const A = st && st.A;
+  if (!A || st.done || st.phase === "ko" || A.ko) return { level: 0 };
+  if (st.moment === "grow") return { level: 1 };
+  if (st.moment !== "roots") return { level: 0 };
+  const p = A.p;
+  if (p.hp <= 1 || (p.hp <= 2 && p.hpMax >= 3)) return { level: 2 };
+  for (const f of A.foes) if (hyp(f.x - p.x, f.y - p.y) < 45) return { level: 1 };
+  return { level: X.foeBullets(A) > 0 ? 1 : 0 };
+}
+
 export function result(st) {
   const A = st.A;
   const goalMet = st.done && st.goalMet;

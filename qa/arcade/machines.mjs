@@ -144,9 +144,11 @@ for (const { id } of JSON.parse(read("higgsfield/arcade-key-art.json")).art) {
   check(html.includes(".cab.ahead-of-the-light { --c1: #0b0b14; --c2: #f08a2c; --glow: rgba(240, 138, 44, 0.45); }\n.cab.first-breath { --c1: #5e1c34; --c2: #ffc53d; --glow: rgba(255, 197, 61, 0.45); }"), ".cab.first-breath sets the wine board and the marigold accent (--c1 #5e1c34, --c2 #ffc53d, --glow rgba(255, 197, 61, 0.45)) next to the Ahead of the Light rule");
   check(/\{ id: "action", label: "Action", games: \["olympus", "crimson", "tidebreak", "moonwell", "primordia", "river-rush", "ahead-of-the-light", "light-years-home", "first-breath"\]/.test(html), 'the Action group lists "first-breath" last of its nine games');
   check(html.includes('localStorage.getItem("first-breath.save.v1")'), "the arcade page reads First Breath's save first-breath.save.v1 for the cabinet line");
-  const entry = '{ id: "first-breath", name: "First Breath", sub: "A baby\'s journey to birth", url: "/first-breath/", art: "/arcade/key/first-breath.svg", color: "#ffc53d" },';
+  // its fields, then the end of the entry or more optional fields (its credits line names the score's instrument sounds)
+  const entry = '{ id: "first-breath", name: "First Breath", sub: "A baby\'s journey to birth", url: "/first-breath/", art: "/arcade/key/first-breath.svg", color: "#ffc53d"';
   const gamesText = sw.slice(sw.indexOf("const GAMES")).split("];")[0], lines = gamesText.split("\n").map((l) => l.trim());
-  check(lines.indexOf(entry) > 0 && lines[lines.indexOf(entry) - 1].startsWith('{ id: "ahead-of-the-light",'), "switch.js GAMES has the First Breath entry right after Ahead of the Light, with the marigold #ffc53d");
+  const fbAt = lines.findIndex((l) => l.startsWith(entry + " }") || l.startsWith(entry + ","));
+  check(fbAt > 0 && lines[fbAt - 1].startsWith('{ id: "ahead-of-the-light",'), "switch.js GAMES has the First Breath entry right after Ahead of the Light, with the marigold #ffc53d");
   // the screen: hand-drawn cut paper, small and self-contained (no script, no outside reference, no filter, no text)
   const f = path.join(PUB, "arcade/key/first-breath.svg"), b = fs.existsSync(f) ? fs.readFileSync(f) : Buffer.alloc(0), t = b.toString("utf8");
   const refs = [...t.matchAll(/\b(?:xlink:)?href\s*=\s*["']([^"']*)["']|url\(\s*["']?([^"')]*)/g)].map((m) => m[1] ?? m[2]).filter((u) => !u.startsWith("#"));

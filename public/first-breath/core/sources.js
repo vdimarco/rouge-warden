@@ -107,3 +107,16 @@ add("DOI 10.1098/rspb.2020.0805", "Fitzpatrick et al. 2020, Proc. R. Soc. B", "h
 add("DOI 10.1086/494680", "Martin 1991, Signs 16(3)", "https://doi.org/10.1086/494680");
 
 export const SOURCES = Object.freeze(list);
+
+// The score's instrument samples (openspec/changes/first-breath-score/design.md 8): not a fact source, but credited on
+// the Sources screen in plain words (core/text.js sources.musicCredit), with links to where the files come from and to
+// both licenses: the mp3 renders are CC BY 3.0, the FluidR3_GM soundfont itself (Frank Wen) MIT (audio/score/README.md
+// has the details).
+export const MUSIC_CREDIT = Object.freeze({
+  text: "sources.musicCredit",
+  links: Object.freeze([
+    Object.freeze({ name: "gleitz/midi-js-soundfonts", url: "https://github.com/gleitz/midi-js-soundfonts" }),
+    Object.freeze({ name: "CC BY 3.0", url: "https://creativecommons.org/licenses/by/3.0/" }),
+    Object.freeze({ name: "MIT license", url: "https://opensource.org/license/mit" }),
+  ]),
+});
