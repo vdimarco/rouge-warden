@@ -1,8 +1,514 @@
 {
+ "cards": "uv \"card\": u metres along the run, v 0..1 from the bottom to the top of the card",
  "generator": "Scripts/plateau_textures.py",
  "rows": "image row 0 is the top of the tile",
  "sets": {
+  "ballast": {
+   "alpha": false,
+   "base_color_srgb": "#B5B3AD",
+   "keys": [
+    "Roof_Gravel"
+   ],
+   "layout": {
+    "stone_cm": [
+     1.6,
+     3.0
+    ],
+    "stone_cover": 0.8065,
+    "stones": 3592
+   },
+   "maps": {
+    "diff": {
+     "compression": "TC_DEFAULT",
+     "file": "T_Replica_Ballast_diff.png",
+     "raw_sha256": "2b6807ac21b3fcf4d10c14704b11813dc1cfb5c5e12211259703eea61c21dc51",
+     "sampler": "SAMPLERTYPE_COLOR",
+     "sha256": "484556bbe0f20803e1dd4701608c3d036553b7380e0d5e9ad6f7face009aa631",
+     "srgb": true
+    },
+    "nor_dx": {
+     "compression": "TC_NORMALMAP",
+     "file": "T_Replica_Ballast_nor_dx.png",
+     "raw_sha256": "276f2fa5f95b89dad8ebf2050ea02c0c088fb2a92b203b9253827b8a363f5318",
+     "sampler": "SAMPLERTYPE_NORMAL",
+     "sha256": "83409ec039c9d5d4fc1b9cf6a032c2dab53722df3b2736d942b9512c8717f128",
+     "srgb": false
+    },
+    "rough": {
+     "compression": "TC_DEFAULT",
+     "file": "T_Replica_Ballast_rough.png",
+     "raw_sha256": "1c5970e7ec46799259a31c378af3f2e8c04bba40086f4c9be9a602cdbf753c57",
+     "sampler": "SAMPLERTYPE_LINEAR_COLOR",
+     "sha256": "fdcf343c13776cf12f74e7c838269482298dc8c41f01a4dfaa40f7c42a5e2faf",
+     "srgb": false
+    }
+   },
+   "material": {
+    "blend_mode": "opaque",
+    "shading_model": "default_lit",
+    "two_sided": false
+   },
+   "mean_linear": [
+    0.4643,
+    0.4496,
+    0.4161
+   ],
+   "roughness_mean": 0.8557,
+   "size_px": [
+    512,
+    512
+   ],
+   "surface": "ground",
+   "tile_m": [
+    1.0,
+    1.0
+   ],
+   "tiling": [
+    1.0,
+    1.0
+   ],
+   "uv": "metres"
+  },
+  "balusters": {
+   "alpha": true,
+   "base_color_srgb": "#D1CCC4",
+   "card_height_m": 1.07,
+   "coverage": 0.4375,
+   "keys": [
+    "Rail_Baluster"
+   ],
+   "layout": {
+    "baluster_cm": 3.8,
+    "balusters_per_m": 8,
+    "bands_cm": {
+     "balusters": [
+      13.9,
+      94.3
+     ],
+     "bottom_rail": [
+      5.0,
+      13.9
+     ],
+     "cap": [
+      103.2,
+      107.0
+     ],
+     "gap": [
+      0.0,
+      5.0
+     ],
+     "top_rail": [
+      94.3,
+      103.2
+     ]
+    },
+    "card_height_cm": 107.0,
+    "clear_gap_cm": 8.7
+   },
+   "maps": {
+    "diff": {
+     "alpha": true,
+     "compression": "TC_DEFAULT",
+     "file": "T_Replica_Balusters_diff.png",
+     "raw_sha256": "4b3f7b5f4b814843e4e42270d95ec729378cf73f6ffe637825b02b9487036dcd",
+     "sampler": "SAMPLERTYPE_COLOR",
+     "sha256": "496220a4764ad27806176a3f601008490d89f8607cee64634fc461f55c68029f",
+     "srgb": true
+    },
+    "nor_dx": {
+     "compression": "TC_NORMALMAP",
+     "file": "T_Replica_Balusters_nor_dx.png",
+     "raw_sha256": "8c877acb7daee73754cafd465634fd450dde8b0fbcda4916aa2b22a036d8f79a",
+     "sampler": "SAMPLERTYPE_NORMAL",
+     "sha256": "d8ba1ac9a4bbeb2c0e7ebd33b5149a82dfd259b239dc0f63ccb565b974953dfe",
+     "srgb": false
+    },
+    "rough": {
+     "compression": "TC_DEFAULT",
+     "file": "T_Replica_Balusters_rough.png",
+     "raw_sha256": "62d4eae5a13dda848a7b1179b5ed0ba47c74d8d5674e75d41db46cdd1cb34ed9",
+     "sampler": "SAMPLERTYPE_LINEAR_COLOR",
+     "sha256": "3bddf73765f3cf042cfca049ece49530bfa8b72edf687e00c9c7c58839c1f91c",
+     "srgb": false
+    }
+   },
+   "material": {
+    "blend_mode": "masked",
+    "opacity_mask_clip": 0.5,
+    "shading_model": "default_lit",
+    "two_sided": true
+   },
+   "mean_linear": [
+    0.6349,
+    0.6066,
+    0.5545
+   ],
+   "roughness_mean": 0.6537,
+   "size_px": [
+    512,
+    512
+   ],
+   "surface": "cutout",
+   "tile_m": [
+    1.0,
+    1.0
+   ],
+   "tiling": [
+    1.0,
+    1.0
+   ],
+   "uv": "card"
+  },
+  "creeper": {
+   "alpha": true,
+   "base_color_srgb": "#8F3321",
+   "coverage": 0.7998,
+   "keys": [
+    "Leaf_Creeper"
+   ],
+   "layout": {
+    "cover": 0.7998,
+    "leaflet_cm": [
+     6.0,
+     11.0
+    ],
+    "leaves": 899,
+    "vines": 7
+   },
+   "maps": {
+    "diff": {
+     "alpha": true,
+     "compression": "TC_DEFAULT",
+     "file": "T_Replica_Creeper_diff.png",
+     "raw_sha256": "829a0da27e5ee2a363fe4cea5c17de26b2edf492a09eae8b2e8c76ab8a4a915e",
+     "sampler": "SAMPLERTYPE_COLOR",
+     "sha256": "9bb36ad02dba7bb7755d0c5d9c249f5fa52f07355fcb3e10eb5f6bff7b0997a6",
+     "srgb": true
+    },
+    "nor_dx": {
+     "compression": "TC_NORMALMAP",
+     "file": "T_Replica_Creeper_nor_dx.png",
+     "raw_sha256": "214307a652ed0a6f967b959347ad8caabdf48a4d418c2b0e054deea53c320a1a",
+     "sampler": "SAMPLERTYPE_NORMAL",
+     "sha256": "3fe86bbf69d8aed319ea96b1112f91e1fcd3eb123ec08313d1baa689c8db91ce",
+     "srgb": false
+    },
+    "rough": {
+     "compression": "TC_DEFAULT",
+     "file": "T_Replica_Creeper_rough.png",
+     "raw_sha256": "9205a9582d888b5d0364ec2a65066b8f544682ae1e2deeb089e7273d91c303ae",
+     "sampler": "SAMPLERTYPE_LINEAR_COLOR",
+     "sha256": "64c55b16e2f366ff35b58bf97f30d1be411a63bfd3be6089babda5e59c2fa602",
+     "srgb": false
+    }
+   },
+   "material": {
+    "blend_mode": "masked",
+    "opacity_mask_clip": 0.5,
+    "shading_model": "two_sided_foliage",
+    "two_sided": true
+   },
+   "mean_linear": [
+    0.2758,
+    0.033,
+    0.0152
+   ],
+   "roughness_mean": 0.5763,
+   "size_px": [
+    1024,
+    1024
+   ],
+   "surface": "foliage",
+   "tile_m": [
+    2.0,
+    2.0
+   ],
+   "tiling": [
+    0.5,
+    0.5
+   ],
+   "uv": "metres"
+  },
+  "crushed_stone": {
+   "alpha": false,
+   "base_color_srgb": "#827F7B",
+   "keys": [
+    "Yard_Gravel"
+   ],
+   "layout": {
+    "stone_cm": [
+     1.4,
+     2.6
+    ],
+    "stone_cover": 0.6358,
+    "stones": 4295
+   },
+   "maps": {
+    "diff": {
+     "compression": "TC_DEFAULT",
+     "file": "T_Replica_CrushedStone_diff.png",
+     "raw_sha256": "78e2baf7f6627f056eec04c7ffc5e68b7635c7ea8cfbf0f8ad850823ff7b3c7c",
+     "sampler": "SAMPLERTYPE_COLOR",
+     "sha256": "15d715ff6a30d580f533a87c8071a669aa901b34469d6fe975156d5741964af6",
+     "srgb": true
+    },
+    "nor_dx": {
+     "compression": "TC_NORMALMAP",
+     "file": "T_Replica_CrushedStone_nor_dx.png",
+     "raw_sha256": "9ef57a85a4af69af0678626119d2068b5fb0ac07adeead83e7f5349fef715641",
+     "sampler": "SAMPLERTYPE_NORMAL",
+     "sha256": "fb93d5c4955a8a3b7f60a1db2611b855d4186cde61ab5ab60791467824769f90",
+     "srgb": false
+    },
+    "rough": {
+     "compression": "TC_DEFAULT",
+     "file": "T_Replica_CrushedStone_rough.png",
+     "raw_sha256": "6ae6e32c9adb12155998f9ca6063f682c3f530e8c06ca285901e1defc10de78d",
+     "sampler": "SAMPLERTYPE_LINEAR_COLOR",
+     "sha256": "fe408edd35ec20f912887fe73632de23f7ec62076be7b359ec8f36c1bb37b033",
+     "srgb": false
+    }
+   },
+   "material": {
+    "blend_mode": "opaque",
+    "shading_model": "default_lit",
+    "two_sided": false
+   },
+   "mean_linear": [
+    0.2224,
+    0.2134,
+    0.1968
+   ],
+   "roughness_mean": 0.8762,
+   "size_px": [
+    512,
+    512
+   ],
+   "surface": "ground",
+   "tile_m": [
+    1.0,
+    1.0
+   ],
+   "tiling": [
+    1.0,
+    1.0
+   ],
+   "uv": "metres"
+  },
+  "fence_boards": {
+   "alpha": true,
+   "base_color_srgb": "#A89884",
+   "card_height_m": 1.8,
+   "coverage": 0.8673,
+   "keys": [
+    "Fence_Boards"
+   ],
+   "layout": {
+    "board_cm": 14.6,
+    "boards": 12,
+    "card_height_cm": 180.0,
+    "pitch_cm": 16.667,
+    "rails_cm": [
+     [
+      22.0,
+      30.9
+     ],
+     [
+      149.0,
+      157.9
+     ]
+    ]
+   },
+   "maps": {
+    "diff": {
+     "alpha": true,
+     "compression": "TC_DEFAULT",
+     "file": "T_Replica_FenceBoards_diff.png",
+     "raw_sha256": "e429f11a0d2cb73c26aa1ab3517dfd7d4e393290147d62486e784910d300e8f6",
+     "sampler": "SAMPLERTYPE_COLOR",
+     "sha256": "dd5b51dc33aa77c18714266fab0a219feec900025c10bfc99c2652ec4421ce48",
+     "srgb": true
+    },
+    "nor_dx": {
+     "compression": "TC_NORMALMAP",
+     "file": "T_Replica_FenceBoards_nor_dx.png",
+     "raw_sha256": "7331f49d181bb83d32647a3a45db11fe0c5cdcf520a70a3be7e7f6faa7841939",
+     "sampler": "SAMPLERTYPE_NORMAL",
+     "sha256": "3b909d7ac2269fac65f6f2b55fabfca6cf60229dc79866b9854d4eeefa94d7b4",
+     "srgb": false
+    },
+    "rough": {
+     "compression": "TC_DEFAULT",
+     "file": "T_Replica_FenceBoards_rough.png",
+     "raw_sha256": "43540c6ff81ad999edd5e306608ece09e4100537c7dcd149ac11bec42965a4ea",
+     "sampler": "SAMPLERTYPE_LINEAR_COLOR",
+     "sha256": "f68b8f3c61013436c01913445340c8a8dd369ee8aa3115012ad0bbd25ce0906a",
+     "srgb": false
+    }
+   },
+   "material": {
+    "blend_mode": "masked",
+    "opacity_mask_clip": 0.5,
+    "shading_model": "default_lit",
+    "two_sided": true
+   },
+   "mean_linear": [
+    0.3894,
+    0.3123,
+    0.2293
+   ],
+   "roughness_mean": 0.8005,
+   "size_px": [
+    1024,
+    512
+   ],
+   "surface": "cutout",
+   "tile_m": [
+    2.0,
+    1.0
+   ],
+   "tiling": [
+    0.5,
+    1.0
+   ],
+   "uv": "card"
+  },
+  "lattice": {
+   "alpha": true,
+   "base_color_srgb": "#C5BEB3",
+   "card_height_m": 1.0,
+   "coverage": 0.7455,
+   "keys": [
+    "Rail_Lattice"
+   ],
+   "layout": {
+    "card_height_cm": 100.0,
+    "frame_cm": 5.0,
+    "lath_cm": 3.8,
+    "laths_per_m": 9,
+    "opening_cm": 4.06
+   },
+   "maps": {
+    "diff": {
+     "alpha": true,
+     "compression": "TC_DEFAULT",
+     "file": "T_Replica_Lattice_diff.png",
+     "raw_sha256": "d9c7ff1c90e3cbf3626568036cc6595f64352d4dfd72d2d01c0aeb1196eead4a",
+     "sampler": "SAMPLERTYPE_COLOR",
+     "sha256": "eb3d8e062c659b42ae13105f4b9809c7f9b5fee6c741b8d22f2ac9090c080a87",
+     "srgb": true
+    },
+    "nor_dx": {
+     "compression": "TC_NORMALMAP",
+     "file": "T_Replica_Lattice_nor_dx.png",
+     "raw_sha256": "730156f07bf7b5822402121c27105b28ebcbd27656c5262982a6798e950e067c",
+     "sampler": "SAMPLERTYPE_NORMAL",
+     "sha256": "9cfc4f0fac223905b5755b73a40ff8aef74da80167437aa8be1633faa3150f1d",
+     "srgb": false
+    },
+    "rough": {
+     "compression": "TC_DEFAULT",
+     "file": "T_Replica_Lattice_rough.png",
+     "raw_sha256": "5c8fce63de88d7b03868a485b77907c655551542bd5a800c38434b72fe23f629",
+     "sampler": "SAMPLERTYPE_LINEAR_COLOR",
+     "sha256": "ea4b8148a44b15741a77ee8d201cc8f37fe85da91c1a76a1af4ad97c60c0dc34",
+     "srgb": false
+    }
+   },
+   "material": {
+    "blend_mode": "masked",
+    "opacity_mask_clip": 0.5,
+    "shading_model": "default_lit",
+    "two_sided": true
+   },
+   "mean_linear": [
+    0.5594,
+    0.5176,
+    0.4502
+   ],
+   "roughness_mean": 0.702,
+   "size_px": [
+    512,
+    512
+   ],
+   "surface": "cutout",
+   "tile_m": [
+    1.0,
+    1.0
+   ],
+   "tiling": [
+    1.0,
+    1.0
+   ],
+   "uv": "card"
+  },
+  "lawn": {
+   "alpha": false,
+   "base_color_srgb": "#606A31",
+   "keys": [
+    "Yard_Grass"
+   ],
+   "layout": {
+    "blade_strokes": 87381,
+    "clover_patches": 6,
+    "fallen_leaves": 34
+   },
+   "maps": {
+    "diff": {
+     "compression": "TC_DEFAULT",
+     "file": "T_Replica_Lawn_diff.png",
+     "raw_sha256": "5151c6817189f18758688e34980a00069d337d55a007cfac60f42c35bc498e1e",
+     "sampler": "SAMPLERTYPE_COLOR",
+     "sha256": "79c4f6c7807b7e212916fe7ca6f773ae4451d2e4fb7724ee3587b812502d6399",
+     "srgb": true
+    },
+    "nor_dx": {
+     "compression": "TC_NORMALMAP",
+     "file": "T_Replica_Lawn_nor_dx.png",
+     "raw_sha256": "5b7e9724c810bbd30a429198e410a9649cfdcc66ea5150ca43028e903d97f6df",
+     "sampler": "SAMPLERTYPE_NORMAL",
+     "sha256": "3ff4bef8c3822da3f1ecbca62b4deb21356c85b016168ba682a79d582bc5690e",
+     "srgb": false
+    },
+    "rough": {
+     "compression": "TC_DEFAULT",
+     "file": "T_Replica_Lawn_rough.png",
+     "raw_sha256": "2b732333fa35e5bfc6894420662caa1ac9f1c60404662cd723a87d500648c5e7",
+     "sampler": "SAMPLERTYPE_LINEAR_COLOR",
+     "sha256": "4ec71d0c01a19fff60d85578e4ad031dbf0ae97382ebdd76225445eb1874aa9a",
+     "srgb": false
+    }
+   },
+   "material": {
+    "blend_mode": "opaque",
+    "shading_model": "default_lit",
+    "two_sided": false
+   },
+   "mean_linear": [
+    0.1178,
+    0.1433,
+    0.0312
+   ],
+   "roughness_mean": 0.9019,
+   "size_px": [
+    512,
+    512
+   ],
+   "surface": "ground",
+   "tile_m": [
+    2.0,
+    2.0
+   ],
+   "tiling": [
+    0.5,
+    0.5
+   ],
+   "uv": "metres"
+  },
   "limestone": {
+   "alpha": false,
+   "base_color_srgb": "#8E8D87",
+   "keys": [],
    "layout": {
     "courses_cm": [
      32.25,
@@ -51,6 +557,11 @@
      "srgb": false
     }
    },
+   "material": {
+    "blend_mode": "opaque",
+    "shading_model": "default_lit",
+    "two_sided": false
+   },
    "mean_linear": [
     0.2694,
     0.2657,
@@ -61,6 +572,7 @@
     1024,
     1024
    ],
+   "surface": "wall",
    "tile_m": [
     2.56,
     2.56
@@ -68,9 +580,363 @@
    "tiling": [
     0.390625,
     0.390625
-   ]
+   ],
+   "uv": "metres"
+  },
+  "membrane": {
+   "alpha": false,
+   "base_color_srgb": "#D9DBD9",
+   "keys": [
+    "Roof_Membrane"
+   ],
+   "layout": {
+    "board_cm": [
+     122.0,
+     244.0
+    ],
+    "lap_cm": 10.0,
+    "seam_u": 0.2067,
+    "sheet_cm": 244.0,
+    "weld_cm": 4.0
+   },
+   "maps": {
+    "diff": {
+     "compression": "TC_DEFAULT",
+     "file": "T_Replica_Membrane_diff.png",
+     "raw_sha256": "99110fb432249c4f5a87101542a872128bde7905075f60cbf7a4bb36e2b182f5",
+     "sampler": "SAMPLERTYPE_COLOR",
+     "sha256": "e69ac9647b64f5920d02605f30023bd28e087142df3f4c484bd48514519359b6",
+     "srgb": true
+    },
+    "nor_dx": {
+     "compression": "TC_NORMALMAP",
+     "file": "T_Replica_Membrane_nor_dx.png",
+     "raw_sha256": "b442db2c5a2a156ea340629d48ccce13bf5285f35d805922476c758a0b5aa907",
+     "sampler": "SAMPLERTYPE_NORMAL",
+     "sha256": "6c87b5d6e123ee95eba656683a57442b398d8a11613a3cc589a1d685774c9eba",
+     "srgb": false
+    },
+    "rough": {
+     "compression": "TC_DEFAULT",
+     "file": "T_Replica_Membrane_rough.png",
+     "raw_sha256": "50b39146504c65b1a5a9cacbcf74d6404224414e20aa9fb4646faaa3af38da2c",
+     "sampler": "SAMPLERTYPE_LINEAR_COLOR",
+     "sha256": "8c1b60b10cac7c5e53bd0a87fcebff78fc20a276bd66d44880c06a705406bb3d",
+     "srgb": false
+    }
+   },
+   "material": {
+    "blend_mode": "opaque",
+    "shading_model": "default_lit",
+    "two_sided": false
+   },
+   "mean_linear": [
+    0.6949,
+    0.712,
+    0.6937
+   ],
+   "roughness_mean": 0.4576,
+   "size_px": [
+    512,
+    512
+   ],
+   "surface": "ground",
+   "tile_m": [
+    2.44,
+    2.44
+   ],
+   "tiling": [
+    0.409836,
+    0.409836
+   ],
+   "uv": "metres"
+  },
+  "parging": {
+   "alpha": false,
+   "base_color_srgb": "#999791",
+   "keys": [
+    "Parged"
+   ],
+   "layout": {
+    "cracks": 6,
+    "patches": 3,
+    "trowel_strokes": 70
+   },
+   "maps": {
+    "diff": {
+     "compression": "TC_DEFAULT",
+     "file": "T_Replica_Parging_diff.png",
+     "raw_sha256": "45af54f2d2baa003843927bb4ba1957f5611401df9e98ce4315858a1db1baed1",
+     "sampler": "SAMPLERTYPE_COLOR",
+     "sha256": "359a1fbb662bb50b2e90d9932cd87bc5cebb4fb6361bb6a7729d4005389ee3b0",
+     "srgb": true
+    },
+    "nor_dx": {
+     "compression": "TC_NORMALMAP",
+     "file": "T_Replica_Parging_nor_dx.png",
+     "raw_sha256": "48989332326d03c57d2eeca0bb259dbd2fb967d9dc597b656debed8a2cc15e8d",
+     "sampler": "SAMPLERTYPE_NORMAL",
+     "sha256": "2fbfd5db25ee4fd4b3b6da2844aacd1c16af3f26b5f9d64586c8faed910237b5",
+     "srgb": false
+    },
+    "rough": {
+     "compression": "TC_DEFAULT",
+     "file": "T_Replica_Parging_rough.png",
+     "raw_sha256": "3755d85db6cdc359a678b895988ddd56255be34e8a5d6267e7ed557730ef0240",
+     "sampler": "SAMPLERTYPE_LINEAR_COLOR",
+     "sha256": "cf08ba8b371109161a8c0cce6af772e1dfee283be3663275b918efe11dcb274b",
+     "srgb": false
+    }
+   },
+   "material": {
+    "blend_mode": "opaque",
+    "shading_model": "default_lit",
+    "two_sided": false
+   },
+   "mean_linear": [
+    0.3207,
+    0.3116,
+    0.2849
+   ],
+   "roughness_mean": 0.8168,
+   "size_px": [
+    512,
+    512
+   ],
+   "surface": "wall",
+   "tile_m": [
+    2.0,
+    2.0
+   ],
+   "tiling": [
+    0.5,
+    0.5
+   ],
+   "uv": "metres"
+  },
+  "pavers": {
+   "alpha": false,
+   "base_color_srgb": "#89847B",
+   "keys": [
+    "Yard_Pavers"
+   ],
+   "layout": {
+    "chamfer_cm": 0.7,
+    "joint_cm": 0.3,
+    "pattern": "herringbone 90 degrees",
+    "paver_cm": [
+     10.0,
+     20.0
+    ],
+    "pavers": 72
+   },
+   "maps": {
+    "diff": {
+     "compression": "TC_DEFAULT",
+     "file": "T_Replica_Pavers_diff.png",
+     "raw_sha256": "dcf2bec59ce67ad924e364494a4afb3b1f562d6b01b504c2e29a8670403eab54",
+     "sampler": "SAMPLERTYPE_COLOR",
+     "sha256": "0f912e6065c552e15a6c7bfeacab4af52c16d21982ac00335eba34911a843f11",
+     "srgb": true
+    },
+    "nor_dx": {
+     "compression": "TC_NORMALMAP",
+     "file": "T_Replica_Pavers_nor_dx.png",
+     "raw_sha256": "e6112c192d00eb527073e694b4e3a67b5f843ca458d22decb9b3b588dd8f60cd",
+     "sampler": "SAMPLERTYPE_NORMAL",
+     "sha256": "c8ff982d35f97268ca18ad82bd5f65d7b020986537298615f3a855a64bb4ad88",
+     "srgb": false
+    },
+    "rough": {
+     "compression": "TC_DEFAULT",
+     "file": "T_Replica_Pavers_rough.png",
+     "raw_sha256": "f57382da4cea3e669884d42c63eb136b217c423db2d08997416c27bc71c295a8",
+     "sampler": "SAMPLERTYPE_LINEAR_COLOR",
+     "sha256": "f2fa9ba3b4ca901fee4431c89350a49b4e5f32daaacc0553971cc1fea8c5ad7f",
+     "srgb": false
+    }
+   },
+   "material": {
+    "blend_mode": "opaque",
+    "shading_model": "default_lit",
+    "two_sided": false
+   },
+   "mean_linear": [
+    0.2493,
+    0.2315,
+    0.197
+   ],
+   "roughness_mean": 0.8066,
+   "size_px": [
+    512,
+    512
+   ],
+   "surface": "ground",
+   "tile_m": [
+    1.2,
+    1.2
+   ],
+   "tiling": [
+    0.833333,
+    0.833333
+   ],
+   "uv": "metres"
+  },
+  "sheet_metal": {
+   "alpha": false,
+   "base_color_srgb": "#999C9E",
+   "keys": [
+    "Sheet_Metal"
+   ],
+   "layout": {
+    "corrugations_per_m": 14,
+    "crests_along": "v",
+    "depth_cm": 1.27,
+    "purlins_v": [
+     0.22,
+     0.72
+    ],
+    "screws": 14
+   },
+   "maps": {
+    "diff": {
+     "compression": "TC_DEFAULT",
+     "file": "T_Replica_SheetMetal_diff.png",
+     "raw_sha256": "3869006ac83eee64ef7730d69fc9b9b86f247f91f1af807383c5698feea8f70e",
+     "sampler": "SAMPLERTYPE_COLOR",
+     "sha256": "4e52b124ac3cf7deb0d0302de2ce65432ad89d5b8212a99a9b5ffa34fb2e0734",
+     "srgb": true
+    },
+    "nor_dx": {
+     "compression": "TC_NORMALMAP",
+     "file": "T_Replica_SheetMetal_nor_dx.png",
+     "raw_sha256": "602575f29592b7a3a5b36d5eefdd206516727443a5506997ce09e40a5f60e470",
+     "sampler": "SAMPLERTYPE_NORMAL",
+     "sha256": "c433c10b7c29c113543fa8d1276e26a9bbc3f0a802547b2459244183f30168ee",
+     "srgb": false
+    },
+    "rough": {
+     "compression": "TC_DEFAULT",
+     "file": "T_Replica_SheetMetal_rough.png",
+     "raw_sha256": "e955a0c51a164acb09bf26175bba6a183391ecf4d8d612f9080c903e71c8f7b3",
+     "sampler": "SAMPLERTYPE_LINEAR_COLOR",
+     "sha256": "a6020239053c6230ac672141808c6b6eea05ddc369818729c7baf423f47729c8",
+     "srgb": false
+    }
+   },
+   "material": {
+    "blend_mode": "opaque",
+    "shading_model": "default_lit",
+    "two_sided": false
+   },
+   "mean_linear": [
+    0.3176,
+    0.3329,
+    0.3407
+   ],
+   "metallic": 0.85,
+   "roughness_mean": 0.4439,
+   "size_px": [
+    512,
+    512
+   ],
+   "surface": "wall",
+   "tile_m": [
+    1.0,
+    1.0
+   ],
+   "tiling": [
+    1.0,
+    1.0
+   ],
+   "uv": "metres"
+  },
+  "siding": {
+   "alpha": false,
+   "base_color_srgb": "#DAD8D4",
+   "keys": [
+    "Siding_Lap_Cream",
+    "Siding_Lap_Grey"
+   ],
+   "layout": {
+    "butt_joints_cm": [
+     61.1,
+     221.42,
+     134.92,
+     10.4,
+     111.62,
+     69.07,
+     173.41,
+     97.56,
+     155.72,
+     211.76,
+     78.34,
+     223.2
+    ],
+    "courses": 12,
+    "exposure_cm": 10.0,
+    "lap_cm": [
+     0.3,
+     1.2
+    ],
+    "roll_cm": 5.0
+   },
+   "maps": {
+    "diff": {
+     "compression": "TC_DEFAULT",
+     "file": "T_Replica_Siding_diff.png",
+     "raw_sha256": "495f1530f03d4a30daa3fee4dc2f10e79c0b85992ea9317f7014d4e40fdd163b",
+     "sampler": "SAMPLERTYPE_COLOR",
+     "sha256": "d58a1df1615c55bfd0a82e1fd5ce03a2e93bda0e36a98127d38d9a12898cdfa6",
+     "srgb": true
+    },
+    "nor_dx": {
+     "compression": "TC_NORMALMAP",
+     "file": "T_Replica_Siding_nor_dx.png",
+     "raw_sha256": "fa9262a5597c98478afd9e756f250b3d74d59cac6635bc259061b5f047121bbe",
+     "sampler": "SAMPLERTYPE_NORMAL",
+     "sha256": "0f86c21cd9eefb2ddecb775b4f601c3ce6dcc9151ca6f83ae83ebad822aebcf3",
+     "srgb": false
+    },
+    "rough": {
+     "compression": "TC_DEFAULT",
+     "file": "T_Replica_Siding_rough.png",
+     "raw_sha256": "6f8e5e29f0ce222c71c3dfa4657fe5a463cb14895298f9ec2a96fd4f6cfd5a90",
+     "sampler": "SAMPLERTYPE_LINEAR_COLOR",
+     "sha256": "66a78a44c8bce540b1aa37d0a04fa29607190ae89399f5703e4d510e8b8b6351",
+     "srgb": false
+    }
+   },
+   "material": {
+    "blend_mode": "opaque",
+    "shading_model": "default_lit",
+    "two_sided": false
+   },
+   "mean_linear": [
+    0.7014,
+    0.688,
+    0.6554
+   ],
+   "roughness_mean": 0.5081,
+   "size_px": [
+    1024,
+    512
+   ],
+   "surface": "wall",
+   "tile_m": [
+    2.4,
+    1.2
+   ],
+   "tiling": [
+    0.416667,
+    0.833333
+   ],
+   "uv": "metres"
   },
   "slate": {
+   "alpha": false,
+   "base_color_srgb": "#4D4F5A",
+   "keys": [],
    "layout": {
     "exposure_cm": 12.5,
     "fish_scale_rows": [
@@ -107,6 +973,11 @@
      "srgb": false
     }
    },
+   "material": {
+    "blend_mode": "opaque",
+    "shading_model": "default_lit",
+    "two_sided": false
+   },
    "mean_linear": [
     0.0735,
     0.0789,
@@ -117,6 +988,7 @@
     512,
     1024
    ],
+   "surface": "wall",
    "tile_m": [
     1.0,
     2.0
@@ -124,7 +996,139 @@
    "tiling": [
     1.0,
     0.5
-   ]
+   ],
+   "uv": "metres"
+  },
+  "soil": {
+   "alpha": false,
+   "base_color_srgb": "#453526",
+   "keys": [
+    "Yard_Soil"
+   ],
+   "layout": {
+    "clods": 5904,
+    "fallen_leaves": 9,
+    "pebbles": 241,
+    "straws": 450
+   },
+   "maps": {
+    "diff": {
+     "compression": "TC_DEFAULT",
+     "file": "T_Replica_Soil_diff.png",
+     "raw_sha256": "c212fdc55ac042ee44e4dadac7b8fd0d008bfcdf94406b36b1ee58c0f942ce12",
+     "sampler": "SAMPLERTYPE_COLOR",
+     "sha256": "5e0d8ac326075a7eb48b0028f9ae060af1d1c78118775ccbc538a15456286680",
+     "srgb": true
+    },
+    "nor_dx": {
+     "compression": "TC_NORMALMAP",
+     "file": "T_Replica_Soil_nor_dx.png",
+     "raw_sha256": "8ed202fc0f2e42882e70a1336e4174f32958253373a155d46991e44bce1354a5",
+     "sampler": "SAMPLERTYPE_NORMAL",
+     "sha256": "a4c975d5e43b9ea87a8ec24268cee7500cfc62c2d3a72524ab7af82d38d782e0",
+     "srgb": false
+    },
+    "rough": {
+     "compression": "TC_DEFAULT",
+     "file": "T_Replica_Soil_rough.png",
+     "raw_sha256": "9aa476a27d257380bb7924fca5e0e1113620f198fd3f9dca5d0ae4ad00390134",
+     "sampler": "SAMPLERTYPE_LINEAR_COLOR",
+     "sha256": "9e4071cd81b9516d1e18d77ac755bc53ea9d5578503edd9c5946aef3cddebcd6",
+     "srgb": false
+    }
+   },
+   "material": {
+    "blend_mode": "opaque",
+    "shading_model": "default_lit",
+    "two_sided": false
+   },
+   "mean_linear": [
+    0.0599,
+    0.0352,
+    0.0196
+   ],
+   "roughness_mean": 0.8754,
+   "size_px": [
+    512,
+    512
+   ],
+   "surface": "ground",
+   "tile_m": [
+    2.0,
+    2.0
+   ],
+   "tiling": [
+    0.5,
+    0.5
+   ],
+   "uv": "metres"
+  },
+  "tar": {
+   "alpha": false,
+   "base_color_srgb": "#605C56",
+   "keys": [
+    "Roof_Tar"
+   ],
+   "layout": {
+    "crack_cell_cm": 18.0,
+    "stone_cm": [
+     0.6,
+     1.6
+    ],
+    "stone_cover": 0.4094,
+    "stones": 5069
+   },
+   "maps": {
+    "diff": {
+     "compression": "TC_DEFAULT",
+     "file": "T_Replica_TarGravel_diff.png",
+     "raw_sha256": "729942ad4c55715c591ae032f48458efc2b995eb05a4d0a5c2c8e1556ae7938c",
+     "sampler": "SAMPLERTYPE_COLOR",
+     "sha256": "cd878d968a35be9ce7f381cee965584eb69bd44c2267af09606ed51ccea17690",
+     "srgb": true
+    },
+    "nor_dx": {
+     "compression": "TC_NORMALMAP",
+     "file": "T_Replica_TarGravel_nor_dx.png",
+     "raw_sha256": "7d86bdb0df93e7325a5c251c9762a81d8a2b7aebd0215183516627139eaf49a2",
+     "sampler": "SAMPLERTYPE_NORMAL",
+     "sha256": "5acb060ab6bd81e57443e67232568af1feec59d20ce0d124d38b97c9a523c4dd",
+     "srgb": false
+    },
+    "rough": {
+     "compression": "TC_DEFAULT",
+     "file": "T_Replica_TarGravel_rough.png",
+     "raw_sha256": "5949c99e801c2a9adaf06425f6bd03221368330b09eb41aced36ce6034dd6cf9",
+     "sampler": "SAMPLERTYPE_LINEAR_COLOR",
+     "sha256": "a841b58405b577f036082829fd84a3cdfa0c6b25b57e1f50e5ddf551517f68ea",
+     "srgb": false
+    }
+   },
+   "material": {
+    "blend_mode": "opaque",
+    "shading_model": "default_lit",
+    "two_sided": false
+   },
+   "mean_linear": [
+    0.1173,
+    0.1076,
+    0.0931
+   ],
+   "roughness_mean": 0.6059,
+   "size_px": [
+    512,
+    512
+   ],
+   "surface": "ground",
+   "tile_m": [
+    1.0,
+    1.0
+   ],
+   "tiling": [
+    1.0,
+    1.0
+   ],
+   "uv": "metres"
   }
  },
  "uv": "OBJ UVs in metres (u along the face, v = z); material tiling = 1 / tile_m"

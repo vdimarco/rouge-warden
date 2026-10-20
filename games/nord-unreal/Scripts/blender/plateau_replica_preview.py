@@ -18,8 +18,19 @@ Prop instances use the file coordinates of their meshes, position (x, -y, z) and
 
 These are previews of generated geometry, not Unreal captures. Colours come from the layer manifests
 and from the colours `upgrade_plateau.py` gives the existing materials; the four Poly Haven textures in
-Data/Art are used the way the game materials use them, and the greystone and slate maps in
-ReplicaGeometry/Textures the way apply_plateau_replica.py uses them (same keys, tint and tiling).
+Data/Art are used the way the game materials use them, and every replica texture set in
+ReplicaGeometry/Textures the way apply_plateau_replica.py uses it: the same keys, tint and tiling, the
+DirectX normal map, roughness from R, and for the masked sets (Rail_Baluster, Rail_Lattice, Fence_Boards,
+Leaf_Creeper) the diffuse alpha clipped at the set's opacity_mask_clip, two-sided, with the creeper's
+two-sided foliage transmission (base colour x .65). The yard trees of Plex/yard_trees.json are instanced
+on the mapped trees' model with the apply step's transforms (apply_plateau_replica.plan_trees).
+
+    <blender-python> Scripts/blender/plateau_replica_preview.py --view ruelle_mentana --probe 640,360 990,60
+
+--probe builds the view and, instead of rendering, casts a camera ray through each pixel (x,y from the
+top left of the 1280 x 720 frame, or of --res) and prints what it hits: the batch, material, game-frame
+point (cm), normal and whether the face is seen from behind. Rays pass through the clear texels of the
+masked cards, as the clipped material does.
 """
 import argparse
 import json
@@ -39,7 +50,8 @@ ART = os.path.join(ROOT, 'Data', 'Art')
 CACHE = os.path.join(ROOT, 'Saved', 'ReplicaPreview')
 OUT = os.path.join(ROOT, 'Preview', 'Replica')
 sys.path.insert(0, os.path.join(ROOT, 'Scripts'))
-from apply_plateau_replica import base_material  # noqa: E402  the apply step's material rules
+# The apply step's material rules and yard-tree plan.
+from apply_plateau_replica import FOLIAGE_SUBSURFACE, base_material, load_yard_trees, plan_trees  # noqa: E402
 
 # Labels hidden in the game: the OSM masses keep collision only, the old canopies are replaced by the
 # mapped trees, and the replica apply step hides OSM Marking.
@@ -78,7 +90,7 @@ TEXTURED = {  # name: (tint, texture, tiles per metre or 'world' metres)
 TEXTURE_MEAN = {'asphalt_02': (.1162, .1143, .1020), 'concrete_pavement': (.2170, .1790, .1372),
                 'brick_wall_001': (.1402, .0776, .0516), 'grass_ground': (.1593, .1198, .0498)}
 TINT_LIMIT = 8.  # apply_plateau_replica.TINT_LIMIT
-TEXTURES = os.path.join(REPLICA, 'Textures')  # Scripts/plateau_textures.py: greystone and slate
+TEXTURES = os.path.join(REPLICA, 'Textures')  # Scripts/plateau_textures.py: every replica texture set
 GREEN_TINT, GOLD_TINT = (.85, 1.35, .75), (1.8, 1.2, .5)
 TILE = re.compile(r'_X[MP]\d+_Y[MP]\d+(_P\d+)?$')
 
@@ -393,17 +405,34 @@ def existing_material(layer, base):
     return material('E_' + name, color, rough, metal, emission=emission, emission_strength=.4 if emission else 0.)
 
 
+TEXTURE_INDEX = {}
+MASKED = {}  # material name -> (diff image, (u tiling, v tiling), clip): what --probe needs to see through cards
+
+
+def texture_sets():
+    if not TEXTURE_INDEX:
+        TEXTURE_INDEX.update(json.load(open(os.path.join(TEXTURES, 'textures.json')))['sets'])
+    return TEXTURE_INDEX
+
+
 def replica_set_material(name, color, set_name, metal=0.):
-    """A greystone or slate key as the apply step builds it: the M_BrickRed graph with the replica maps,
-    UV tiling 1 / tile_m, base colour = diff x (colour / mean_linear) capped at TINT_LIMIT, normal from
-    the DirectX-convention map and roughness from the R of the rough map."""
+    """A replica texture-set key as the apply step builds it (apply_plateau_replica.textured_graph): the maps of
+    the set, UV tiling from textures.json (1 / tile_m on metre UVs; 1 / tile_u by 1 on card UVs), base colour =
+    diff x (colour / mean_linear) capped at TINT_LIMIT, normal from the DirectX-convention map, roughness from
+    the R of the rough map and the manifest's metallic. A masked set (the cut-out cards and the creeper) keeps
+    only the texels whose diffuse alpha reaches its opacity_mask_clip and shows both faces; the two-sided
+    foliage set also transmits base colour x FOLIAGE_SUBSURFACE, as the foliage parent's SubsurfaceColor."""
     if name in MATS:
         return MATS[name]
-    entry = json.load(open(os.path.join(TEXTURES, 'textures.json')))['sets'][set_name]
+    entry = texture_sets()[set_name]
+    mode = entry.get('material') or {}
+    masked = mode.get('blend_mode') == 'masked'
+    foliage = mode.get('shading_model') == 'two_sided_foliage'
     tint = tuple(min(TINT_LIMIT, c / m) for c, m in zip(color, entry['mean_linear']))
     m = bpy.data.materials.new(name)
     nt = m.node_tree
     bsdf = nt.nodes['Principled BSDF']
+    out = [x for x in nt.nodes if x.type == 'OUTPUT_MATERIAL'][0]
     bsdf.inputs['Metallic'].default_value = metal
     coord = nt.nodes.new('ShaderNodeTexCoord')
     mapping = nt.nodes.new('ShaderNodeMapping')
@@ -414,6 +443,10 @@ def replica_set_material(name, color, set_name, metal=0.):
         node = nt.nodes.new('ShaderNodeTexImage')
         node.image = image(entry['maps'][role]['file'], TEXTURES)
         node.image.colorspace_settings.name = 'sRGB' if entry['maps'][role]['srgb'] else 'Non-Color'
+        if role == 'diff' and entry.get('alpha'):
+            # Colour and mask are independent channels: the colour under a hole is the surface's own, so
+            # nothing is premultiplied or darkened at the clip edge (Textures/README.md).
+            node.image.alpha_mode = 'CHANNEL_PACKED'
         nt.links.new(mapping.outputs['Vector'], node.inputs['Vector'])
         tex[role] = node
     mul = nt.nodes.new('ShaderNodeMix')
@@ -431,6 +464,35 @@ def replica_set_material(name, color, set_name, metal=0.):
     rough = nt.nodes.new('ShaderNodeSeparateColor')
     nt.links.new(tex['rough'].outputs['Color'], rough.inputs['Color'])
     nt.links.new(rough.outputs['Red'], bsdf.inputs['Roughness'])
+    shader = bsdf.outputs['BSDF']
+    if foliage:
+        transmit = nt.nodes.new('ShaderNodeMix')
+        transmit.data_type = 'RGBA'
+        transmit.blend_type = 'MULTIPLY'
+        sock(transmit.inputs, 'Factor', 'VALUE').default_value = 1.
+        nt.links.new(sock(mul.outputs, 'Result'), sock(transmit.inputs, 'A'))
+        sock(transmit.inputs, 'B').default_value = (FOLIAGE_SUBSURFACE,) * 3 + (1,)
+        translucent = nt.nodes.new('ShaderNodeBsdfTranslucent')
+        nt.links.new(sock(transmit.outputs, 'Result'), translucent.inputs['Color'])
+        nt.links.new(nmap.outputs['Normal'], translucent.inputs['Normal'])
+        add = nt.nodes.new('ShaderNodeAddShader')
+        nt.links.new(shader, add.inputs[0])
+        nt.links.new(translucent.outputs['BSDF'], add.inputs[1])
+        shader = add.outputs['Shader']
+    if masked:
+        clip = float(mode.get('opacity_mask_clip', .5))
+        keep = nt.nodes.new('ShaderNodeMath')  # Unreal keeps a texel when its mask is at or over the clip
+        keep.operation = 'GREATER_THAN'
+        keep.inputs[1].default_value = clip - 1 / 1024
+        nt.links.new(tex['diff'].outputs['Alpha'], keep.inputs[0])
+        clear = nt.nodes.new('ShaderNodeBsdfTransparent')
+        mix = nt.nodes.new('ShaderNodeMixShader')
+        nt.links.new(keep.outputs['Value'], mix.inputs['Fac'])
+        nt.links.new(clear.outputs['BSDF'], mix.inputs[1])
+        nt.links.new(shader, mix.inputs[2])
+        shader = mix.outputs['Shader']
+        MASKED[name] = (tex['diff'].image, tuple(entry['tiling']), clip)
+    nt.links.new(shader, out.inputs['Surface'])
     MATS[name] = m
     return m
 
@@ -611,7 +673,18 @@ def street_name_text(rows, man, col):
     return n
 
 
+TREE = {}
+
+
 def tree_template():
+    """The mapped trees' model (Poly Haven tree_small_02, 4.55 m tall) with the game's leaf material, loaded once
+    per scene; the mapped trees and the yard trees both instance it, as the game does."""
+    if 'coll' not in TREE:
+        TREE['coll'], TREE['height'] = load_tree_template()
+    return TREE['coll'], TREE['height']
+
+
+def load_tree_template():
     path = os.path.join(CACHE, 'tree.blend')
     if not os.path.exists(path):
         before = set(bpy.data.objects)
@@ -699,6 +772,30 @@ def place_trees(trees, region, col):
     return n
 
 
+def place_yard_trees(region, col):
+    """The Plex yard trees as the apply step instances them: one group per kind on the mapped trees' mesh, each
+    tree at its position and yaw with scale (scale x crown, scale x crown, scale) from plan_trees, so the kinds
+    widen or narrow the crown of the same model. Positions and yaw go into the file frame as (x, -y, z), -yaw."""
+    rows = load_yard_trees(ROOT)
+    if not rows:
+        return 0
+    coll, _ = tree_template()
+    n = 0
+    for group in plan_trees(rows):
+        for (x, y, z), yaw, scale in group['transforms']:
+            if not region.keep(x, y):
+                continue
+            e = bpy.data.objects.new(f'YardTree_{group["kind"]}_{n}', None)
+            e.instance_type = 'COLLECTION'
+            e.instance_collection = coll
+            e.location = (x / 100, -y / 100, z / 100)
+            e.rotation_euler = (0, 0, -math.radians(yaw))
+            e.scale = scale
+            col.objects.link(e)
+            n += 1
+    return n
+
+
 def setup_world(scene, sun_azimuth=215., sun_elevation=31.):
     world = bpy.data.worlds.new('Sky')
     scene.world = world
@@ -722,10 +819,13 @@ def setup_world(scene, sun_azimuth=215., sun_elevation=31.):
     scene.collection.objects.link(sun)
 
 
-def render(name, spec, before=False, samples=40, threads=3, res=(1280, 720), out=None):
+def build(name, spec, before=False, res=(1280, 720)):
+    """The view's scene: loaded geometry, trees, props, camera and sky. Returns (scene, a summary line)."""
     t0 = time.time()
     bpy.ops.wm.read_factory_settings(use_empty=True)
     MATS.clear()
+    MASKED.clear()
+    TREE.clear()
     scene = bpy.context.scene
     scene.unit_settings.scale_length = 1.
     cam_pos, target = spec['camera']
@@ -742,6 +842,7 @@ def render(name, spec, before=False, samples=40, threads=3, res=(1280, 720), out
     make_object('DistrictGround', [(-g / 100, -g / 100, -.002), (g / 100, -g / 100, -.002), (g / 100, g / 100, -.002),
                                    (-g / 100, g / 100, -.002)], [[0, 1, 2, 3]], [], existing_material('Ground', 'Gravel'), col)
     trees = place_trees(idx['__trees__'], region, col)
+    yard_trees = 0 if before else place_yard_trees(region, col)
     texts = 0
     placed = []
     if not before:
@@ -759,6 +860,15 @@ def render(name, spec, before=False, samples=40, threads=3, res=(1280, 720), out
     cam.data.clip_start, cam.data.clip_end = .05, 2000.
     scene.camera = cam
     setup_world(scene, *spec.get('sun', (215., 31.)))
+    scene.render.resolution_x, scene.render.resolution_y = res
+    scene.render.resolution_percentage = 100
+    summary = (f'PREVIEW {name} before={before} loaded {tris} faces, {trees} trees, {yard_trees} yard trees, '
+               f'{len(placed)} props, {texts} texts in {time.time() - t0:.0f}s')
+    return scene, summary
+
+
+def render(name, spec, before=False, samples=40, threads=3, res=(1280, 720), out=None):
+    scene, summary = build(name, spec, before, res)
     scene.render.engine = 'CYCLES'
     scene.cycles.device = 'CPU'
     scene.cycles.samples = samples
@@ -774,8 +884,6 @@ def render(name, spec, before=False, samples=40, threads=3, res=(1280, 720), out
     scene.cycles.caustics_reflective = scene.cycles.caustics_refractive = False
     scene.render.threads_mode = 'FIXED'
     scene.render.threads = threads
-    scene.render.resolution_x, scene.render.resolution_y = res
-    scene.render.resolution_percentage = 100
     scene.view_settings.view_transform = 'AgX'
     scene.view_settings.exposure = spec.get('exposure', .5)
     try:
@@ -788,11 +896,89 @@ def render(name, spec, before=False, samples=40, threads=3, res=(1280, 720), out
     os.makedirs(os.path.dirname(out), exist_ok=True)
     scene.render.filepath = out
     t1 = time.time()
-    print(f'PREVIEW {name} before={before} loaded {tris} faces, {trees} trees, {len(placed)} props, {texts} texts '
-          f'in {t1 - t0:.0f}s', flush=True)
+    print(summary, flush=True)
     bpy.ops.render.render(write_still=True)
     print(f'PREVIEW {name} rendered {out} in {time.time() - t1:.0f}s', flush=True)
     return out
+
+
+# ------------------------------------------------------------------------------------------------
+# Probe: what a pixel shows
+
+PIXELS = {}
+
+
+def pixel_alpha(img, u, v):
+    """Diffuse alpha of a cut-out map at UV (u, v), tiled; Blender stores image rows bottom up, as UV v runs."""
+    import numpy as np
+    key = img.name
+    if key not in PIXELS:
+        w, h = img.size
+        buf = np.empty(w * h * 4, dtype=np.float32)
+        img.pixels.foreach_get(buf)
+        PIXELS[key] = buf.reshape(h, w, 4)
+    a = PIXELS[key]
+    h, w = a.shape[:2]
+    return float(a[int((v % 1.) * h) % h, int((u % 1.) * w) % w, 3])
+
+
+def face_uv(ob, index, local):
+    """UV at a local point on polygon `index` of a mesh object, from the triangle fan that contains it."""
+    from mathutils.geometry import barycentric_transform, intersect_point_tri
+    me = ob.data
+    poly = me.polygons[index]
+    layer = me.uv_layers.active
+    if layer is None:
+        return None
+    loops = list(poly.loop_indices)
+    co = [me.vertices[me.loops[i].vertex_index].co for i in loops]
+    uv = [Vector((*layer.data[i].uv, 0.)) for i in loops]
+    best = None
+    for k in range(1, len(loops) - 1):
+        tri = (co[0], co[k], co[k + 1])
+        p = intersect_point_tri(local, *tri)
+        if p is not None or best is None:
+            best = barycentric_transform(local, *tri, uv[0], uv[k], uv[k + 1])
+            if p is not None:
+                break
+    return best
+
+
+def probe(scene, pixels):
+    """Cast a camera ray through each pixel and print the first face it shows, passing through clear card texels."""
+    deps = bpy.context.evaluated_depsgraph_get()
+    cam = scene.camera
+    w, h = scene.render.resolution_x, scene.render.resolution_y
+    tr, br, bl, tl = [cam.matrix_world @ c for c in cam.data.view_frame(scene=scene)]
+    origin0 = cam.matrix_world.translation
+    rows = []
+    for px, py in pixels:
+        fx, fy = (px + .5) / w, (py + .5) / h
+        top = tl.lerp(tr, fx)
+        bottom = bl.lerp(br, fx)
+        direction = (top.lerp(bottom, fy) - origin0).normalized()
+        origin, travelled, passes = origin0.copy(), 0., 0
+        row = {'pixel': (px, py), 'hit': None}
+        while passes < 16:
+            ok, loc, nrm, index, ob, mat = scene.ray_cast(deps, origin, direction)
+            if not ok:
+                break
+            travelled += (loc - origin).length
+            material = ob.material_slots[0].material.name if ob.material_slots and ob.material_slots[0].material else ''
+            cut = MASKED.get(material)
+            if cut and ob.type == 'MESH':
+                uv = face_uv(ob, index, mat.inverted() @ loc)
+                if uv is not None and pixel_alpha(cut[0], uv.x * cut[1][0], uv.y * cut[1][1]) < cut[2]:
+                    origin, passes = loc + direction * .002, passes + 1
+                    continue
+            row['hit'] = {'object': ob.name, 'material': material, 'distance_m': round(travelled, 2),
+                          'game_cm': [round(loc.x * 100, 1), round(-loc.y * 100, 1), round(loc.z * 100, 1)],
+                          'normal_game': [round(nrm.x, 3), round(-nrm.y, 3), round(nrm.z, 3)],
+                          'seen_from_behind': nrm.dot(direction) > 0, 'card_passes': passes}
+            break
+        rows.append(row)
+        print('PROBE', json.dumps(row), flush=True)
+    return rows
 
 
 def main(argv):
@@ -809,6 +995,8 @@ def main(argv):
     ap.add_argument('--sun', help='azimuth,elevation in degrees (real compass)')
     ap.add_argument('--exposure', type=float)
     ap.add_argument('--plex-dir', help='render a Plex build from another folder (before/after checks)')
+    ap.add_argument('--probe', nargs='+', metavar='X,Y',
+                    help='print what these pixels show (ray casts from the camera) instead of rendering')
     a = ap.parse_args(argv)
     v = views()
     if a.list:
@@ -830,6 +1018,11 @@ def main(argv):
             spec['exposure'] = a.exposure
         if a.plex_dir:
             spec['plex_dir'] = a.plex_dir
+        if a.probe:
+            scene, summary = build(name, spec, a.before, res)
+            print(summary, flush=True)
+            probe(scene, [tuple(int(float(c)) for c in p.split(',')) for p in a.probe])
+            continue
         render(name, spec, a.before, a.samples, a.threads, res, a.out)
 
 

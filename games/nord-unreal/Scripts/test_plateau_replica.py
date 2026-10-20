@@ -4,7 +4,9 @@ Run from games/nord-unreal:  python3 Scripts/test_plateau_replica.py
 Builds the layers twice into temporary directories (the committed Data folder is not touched),
 then checks determinism, manifest schema, runtime naming, curb heights, the 300 cm traffic band,
 paint heights, OSM parity of stops/crossings/lamps/hydrants, budgets and the apply plan, including the
-greystone and slate textures (Scripts/plateau_textures.py) and their textured materials.
+texture sets (Scripts/plateau_textures.py) and their textured materials, the shared rear-pass keys on a
+synthetic Plex layer (texture set, parent, masked and two-sided cards, built parents, alpha mips), and the
+yard-tree actors from Plex/yard_trees.json.
 """
 import hashlib
 import json
@@ -159,13 +161,20 @@ def check_textures(the_plan):
                                                    and 'asphalt' not in (spec.get('texture') or '')), m['asset']
     for m in textured:
         entry = index['sets'][m['texture_set']]
-        assert m['duplicate_of'] == A.TEXTURED_PARENT and m['texture_mean'] == 'replica_' + m['texture_set']
+        surface = plateau_textures.SETS[m['texture_set']]['surface']
+        assert m['duplicate_of'] == A.SURFACE_PARENTS[surface] and m['texture_mean'] == 'replica_' + m['texture_set']
+        assert (m['blend_mode'], m['two_sided']) == (entry['material']['blend_mode'], entry['material']['two_sided'])
+        assert m['wet'] == (surface == 'ground') and m['metallic'] == specs[m['layer']][m['key']].get('metallic', 0.)
         assert sorted(m['textures']) == sorted(A.TEXTURE_ROLES) and all(a in textures for a in m['textures'].values())
         assert all(textures[a]['set'] == m['texture_set'] and textures[a]['role'] == r for r, a in m['textures'].items())
         assert m['mean_linear'] == entry['mean_linear'] and m['tiling'] == entry['tiling']
         assert all(abs(t * s - 1) < 1e-6 for t, s in zip(m['tiling'], entry['tile_m'])), m['asset']
     used = {t['set'] for t in the_plan['textures']}
     assert used == {m['texture_set'] for m in textured}
+    for t in the_plan['textures']:
+        # The cut-out diffuse maps carry alpha, and their mips keep the clip coverage.
+        alpha = t['role'] == 'diff' and index['sets'][t['set']]['alpha']
+        assert t['alpha'] == alpha and (t['alpha_coverage_threshold'] == .5 if alpha else t['alpha_coverage_threshold'] is None)
     plex = replica.OUT / 'Plex/manifest.json'
     if plex.is_file():
         keys = {m['key']: m for m in the_plan['materials'] if m['layer'] == 'Plex'}
@@ -174,14 +183,741 @@ def check_textures(the_plan):
         stone_meshes = [mesh for mesh in the_plan['meshes'] if mesh['material'] == keys['Stone']['asset']]
         slate_meshes = [mesh for mesh in the_plan['meshes'] if mesh['material'] == keys['Slate']['asset']]
         assert stone_meshes and slate_meshes, 'No Plex batch uses the textured stone or slate material'
+        for key, name in A.SHARED_TEXTURE_KEYS.items():
+            if key in keys:
+                assert keys[key].get('texture_set') == name, (key, keys[key].get('texture_set'))
     return {'textures': {t['asset'].rsplit('/', 1)[1]: {'size_px': t['size_px'], 'sha256': t['sha256'][:16],
                                                         'raw_sha256': t['raw_sha256'][:16]} for t in the_plan['textures']},
             'materials': {m['asset'].rsplit('/', 1)[1]: {'set': m['texture_set'], 'tiling': m['tiling'],
-                                                         'duplicate_of': m['duplicate_of'].rsplit('/', 1)[1]}
+                                                         'duplicate_of': m['duplicate_of'].rsplit('/', 1)[1],
+                                                         'blend_mode': m['blend_mode'], 'two_sided': m['two_sided']}
                           for m in textured}}
 
 
+def synthetic_plex(root, keys, trees=None):
+    """A minimal Plex layer under root: one one-triangle batch per material key, the committed Textures folder,
+    and optionally Plex/yard_trees.json, so the apply plan can be checked before plateau_plex.py writes the keys."""
+    A = apply_replica
+    data = Path(root) / 'Data/Plateau/ReplicaGeometry'
+    (data / 'Plex').mkdir(parents=True, exist_ok=True)
+    try:
+        (data / A.TEXTURES).symlink_to(replica.OUT / A.TEXTURES, target_is_directory=True)
+    except OSError:
+        import shutil
+        shutil.copytree(replica.OUT / A.TEXTURES, data / A.TEXTURES)
+    index = json.loads((replica.OUT / A.TEXTURES / A.TEXTURE_INDEX).read_text())['sets']
+    batches, materials = [], {}
+    for key in keys:
+        name = f'{key}_XP000_YP000.obj'
+        body = b'v 0 0 0\nv 100 0 0\nv 0 0 100\nvt 0 0\nvt 1 0\nvt 0 1\nf 1/1 2/2 3/3\n'
+        (data / 'Plex' / name).write_bytes(body)
+        batches.append({'file': name, 'mesh': 'SM_' + name[:-4], 'material': key, 'collision': 'none', 'triangles': 1,
+                        'bounds_cm': [0, 0, 0, 100, 0, 100], 'sha256': hashlib.sha256(body).hexdigest()})
+        entry = index[A.SHARED_TEXTURE_KEYS[key]]
+        materials[key] = {'base_color_srgb': entry['base_color_srgb'], 'roughness': entry['roughness_mean'],
+                          'metallic': entry.get('metallic', 0.)}
+    (data / 'Plex/manifest.json').write_text(json.dumps({
+        'layer': 'Plex', 'generator': 'test', 'frame': 'x east, y north, cm, z up', 'batches': batches,
+        'materials': materials, 'counts': {}, 'source_sha256': {}}))
+    if trees is not None:
+        (data / A.YARD_TREES).write_text(json.dumps(trees))
+    return index
+
+
+def check_shared_plan():
+    """Every shared key of the rear pass, as plateau_plex.py will write it, through the apply plan: its texture set,
+    parent, blend mode and sidedness, tiling, built masked parents, alpha textures; and the yard-tree actors."""
+    A = apply_replica
+    keys = sorted(A.SHARED_TEXTURE_KEYS)
+    assert keys == sorted(['Roof_Membrane', 'Roof_Gravel', 'Roof_Tar', 'Sheet_Metal', 'Siding_Lap_Cream',
+                           'Siding_Lap_Grey', 'Parged', 'Rail_Baluster', 'Rail_Lattice', 'Fence_Boards', 'Leaf_Creeper',
+                           'Yard_Grass', 'Yard_Pavers', 'Yard_Soil', 'Yard_Gravel'])
+    masked = {'Rail_Baluster', 'Rail_Lattice', 'Fence_Boards', 'Leaf_Creeper'}
+    ground = {'Roof_Membrane', 'Roof_Gravel', 'Roof_Tar', 'Yard_Grass', 'Yard_Pavers', 'Yard_Soil', 'Yard_Gravel'}
+    out = {}
+    with tempfile.TemporaryDirectory() as tmp:
+        index = synthetic_plex(tmp, keys)
+        the_plan = A.plan(tmp)
+        rows = {m['key']: m for m in the_plan['materials']}
+        assert sorted(rows) == keys
+        for key, m in rows.items():
+            name = A.SHARED_TEXTURE_KEYS[key]
+            entry = index[name]
+            assert m['texture_set'] == name and m['texture_mean'] == 'replica_' + name, key
+            assert m['asset'] == f'{A.MATERIALS}/M_Replica_Plex_{key}'
+            want_parent = (A.FOLIAGE_PARENT if key == 'Leaf_Creeper' else A.CUTOUT_PARENT if key in masked
+                           else A.WET_PARENT if key in ground else A.TEXTURED_PARENT)
+            assert m['duplicate_of'] == want_parent, (key, m['duplicate_of'])
+            assert (m['blend_mode'] == 'masked') == (key in masked) and m['two_sided'] == (key in masked), key
+            assert m['shading_model'] == ('two_sided_foliage' if key == 'Leaf_Creeper' else 'default_lit'), key
+            assert m['opacity_mask_clip'] == (.5 if key in masked else None) and m['wet'] == (key in ground), key
+            assert m['tiling'] == entry['tiling'] and m['uv'] == ('card' if key in masked - {'Leaf_Creeper'} else 'metres')
+            if m['uv'] == 'card':
+                assert m['tiling'][1] == 1., key            # v runs 0..1 up the card once
+            assert m['metallic'] == entry.get('metallic', 0.), key
+            # The test colours are the texture means, so the tint is about 1 in every channel.
+            tint = [c / mm for c, mm in zip(A.linear(m['base_color_srgb']), m['mean_linear'])]
+            assert all(.97 < t < 1.03 for t in tint), (key, tint)
+            out[key] = {'set': name, 'parent': m['duplicate_of'].rsplit('/', 1)[1], 'blend_mode': m['blend_mode'],
+                        'two_sided': m['two_sided'], 'tiling': m['tiling']}
+        assert rows['Siding_Lap_Cream']['textures'] == rows['Siding_Lap_Grey']['textures'], 'Both sidings share one set'
+        parents = {p['asset']: p for p in the_plan['parents']}
+        assert sorted(parents) == sorted(A.BUILT_PARENTS)
+        assert parents[A.FOLIAGE_PARENT]['shading_model'] == 'two_sided_foliage'
+        assert all(p['blend_mode'] == 'masked' and p['two_sided'] and p['opacity_mask_clip'] == .5 for p in parents.values())
+        assert parents[A.CUTOUT_PARENT]['textures'] == rows[min(masked - {'Leaf_Creeper'})]['textures']
+        sets = {A.SHARED_TEXTURE_KEYS[k] for k in keys}
+        assert len(the_plan['textures']) == 3 * len(sets) == the_plan['counts']['textures']
+        alpha = sorted(t['set'] for t in the_plan['textures'] if t['alpha'])
+        assert alpha == sorted(['balusters', 'lattice', 'fence_boards', 'creeper'])
+        assert the_plan['counts']['masked_materials'] == 4 and the_plan['counts']['built_parents'] == 2
+        assert the_plan['trees'] == [] and not the_plan['yard_trees']['present']
+        assert the_plan['counts']['yard_tree_actors'] == the_plan['counts']['yard_tree_instances'] == 0
+        assert sorted(A.shared_key_plan(tmp)) == keys
+    # Yard trees: grouped by kind in a fixed order, the shared crown factor on X and Y only, no collision.
+    trees = [{'x': 100. * n, 'y': -50. * n, 'z': 12., 'yaw': 400. + n, 'scale': 1.5 + .1 * n, 'kind': kind}
+             for n, kind in enumerate(['elm', 'maple', 'maple', 'small', 'ash', 'maple', 'elm'])]
+    with tempfile.TemporaryDirectory() as tmp:
+        synthetic_plex(tmp, ['Yard_Grass'], {'trees': trees})
+        the_plan = A.plan(tmp)
+        assert the_plan['yard_trees']['present'] and the_plan['yard_trees']['mesh'] == A.TREE_MESH
+        assert [t['kind'] for t in the_plan['trees']] == ['maple', 'ash', 'elm', 'small']
+        assert [t['count'] for t in the_plan['trees']] == [3, 1, 2, 1] and the_plan['counts']['yard_tree_instances'] == 7
+        for t in the_plan['trees']:
+            assert t['label'] == f'{A.PREFIX}Plex yard trees {t["kind"]}' and not t['collision']
+            assert t['mesh'] == A.TREE_MESH and t['cull_cm'] == list(A.TREE_CULL_CM)
+            src = [r for r in trees if r['kind'] == t['kind']]
+            for (p, yaw, scale), r in zip(t['transforms'], src):
+                assert p == (r['x'], r['y'], r['z']) and yaw == r['yaw'] % 360.
+                assert scale == (r['scale'] * A.TREE_KINDS[r['kind']], r['scale'] * A.TREE_KINDS[r['kind']], r['scale'])
+        labels = [t['label'] for t in the_plan['trees']]
+        assert len(set(labels)) == len(labels)
+        out['yard_trees'] = {t['kind']: t['count'] for t in the_plan['trees']}
+    for bad in ({'x': 0, 'y': 0, 'z': 0, 'yaw': 0, 'scale': 1, 'kind': 'oak'},
+                {'x': float('nan'), 'y': 0, 'z': 0, 'yaw': 0, 'scale': 1, 'kind': 'ash'},
+                {'x': 0, 'y': 0, 'z': 0, 'yaw': 0, 'scale': 0, 'kind': 'ash'}):
+        with tempfile.TemporaryDirectory() as tmp:
+            synthetic_plex(tmp, ['Yard_Grass'], [bad])
+            try:
+                A.plan(tmp)
+            except (AssertionError, ValueError):
+                continue
+            raise AssertionError(f'A bad yard tree was accepted: {bad}')
+    return out
+
+
+def check_yard_trees(the_plan):
+    """Plex/yard_trees.json as plateau_plex.py wrote it: kinds, counts and positions inside the Plex layer."""
+    A = apply_replica
+    rows = A.load_yard_trees(replica.ROOT)
+    assert the_plan['yard_trees']['present'] == (rows is not None)
+    assert (replica.ROOT / 'Content/Art/Tree/tree_small_02/StaticMeshes/tree_small_02.uasset').is_file(), A.TREE_MESH
+    if rows is None:
+        return {'present': False, 'note': 'Plex/yard_trees.json not written yet; the apply step skips yard trees'}
+    plex = json.loads((replica.OUT / 'Plex/manifest.json').read_text())
+    lo = [min(b['bounds_cm'][i] for b in plex['batches']) for i in range(2)]
+    hi = [max(b['bounds_cm'][3 + i] for b in plex['batches']) for i in range(2)]
+    for r in rows:
+        assert all(lo[i] - 500 <= r['position'][i] <= hi[i] + 500 for i in range(2)), r
+        assert -50. <= r['position'][2] <= 300. and .3 <= r['scale'] <= 4., r
+    assert sum(t['count'] for t in the_plan['trees']) == len(rows)
+    return {'present': True, 'trees': {t['kind']: t['count'] for t in the_plan['trees']}}
+
+
+# ------------------------------------------------------------------------------------------------
+# The editor-side material and tree code against a small fake of the unreal module
+
+class FakeObj:
+    defaults = {}
+
+    def __init__(self, **props):
+        self.props = dict(self.defaults)
+        self.props.update(props)
+
+    def set_editor_property(self, name, value):
+        self.props[name] = value
+
+    def get_editor_property(self, name):
+        return self.props[name]
+
+
+class FakeExpr(FakeObj):
+    defaults = {'desc': ''}
+
+    def __init__(self, **props):
+        super().__init__(**props)
+        self.links, self.mat = {}, None
+
+
+class FakeCoords(FakeExpr):
+    defaults = {'desc': '', 'u_tiling': 1., 'v_tiling': 1.}
+
+
+class FakeSample(FakeExpr):
+    defaults = {'desc': '', 'texture': None, 'sampler_type': 'SAMPLERTYPE_COLOR'}
+
+
+class FakeVector3(FakeExpr):
+    defaults = {'desc': '', 'constant': (1., 1., 1., 1.)}
+
+
+class FakeConstant(FakeExpr):
+    defaults = {'desc': '', 'r': 0.}
+
+
+class FakeMultiply(FakeExpr):
+    defaults = {'desc': '', 'const_a': 0., 'const_b': 1.}
+
+
+class FakeScalar(FakeExpr):
+    defaults = {'desc': '', 'parameter_name': '', 'default_value': 0.}
+
+
+class FakeCollection(FakeExpr):
+    defaults = {'desc': '', 'parameter_name': ''}
+
+
+class FakeVector4:
+    def __init__(self, x, y, z, w):
+        self.x, self.y, self.z, self.w = x, y, z, w
+
+
+class FakeAsset(FakeObj):
+    def __init__(self, path, **props):
+        super().__init__(**props)
+        self.path = path
+
+    def get_name(self):
+        return self.path.rsplit('/', 1)[1]
+
+    def get_path_name(self):
+        return f'{self.path}.{self.get_name()}'
+
+
+class FakeMaterial(FakeAsset):
+    defaults = {'blend_mode': 'BLEND_OPAQUE', 'two_sided': False, 'opacity_mask_clip_value': 1. / 3.,
+                'shading_model': 'MSM_DEFAULT_LIT'}
+
+    def __init__(self, path):
+        super().__init__(path)
+        self.nodes, self.inputs, self.usages = [], {}, set()
+
+
+class FakeTexture(FakeAsset):
+    defaults = {'srgb': True, 'compression_settings': 'TC_DEFAULT', 'lod_group': None, 'compression_no_alpha': False,
+                'do_scale_mips_for_alpha_coverage': False, 'alpha_coverage_thresholds': FakeVector4(0., 0., 0., 0.)}
+
+    def __init__(self, path, size=(512, 512)):
+        super().__init__(path)
+        self.size = size
+
+    def blueprint_get_size_x(self):
+        return self.size[0]
+
+    def blueprint_get_size_y(self):
+        return self.size[1]
+
+
+class FakeLibrary:
+    @staticmethod
+    def create_material_expression(mat, cls):
+        node = cls()
+        node.mat = mat
+        mat.nodes.append(node)
+        return node
+
+    @staticmethod
+    def connect_material_expressions(a, output, b, name):
+        assert a.mat is b.mat
+        b.links[name] = (a, output)
+        return True
+
+    @staticmethod
+    def connect_material_property(node, output, prop):
+        node.mat.inputs[prop] = (node, output)
+        return True
+
+    @staticmethod
+    def get_material_property_input_node(mat, prop):
+        return mat.inputs.get(prop, (None, ''))[0]
+
+    @staticmethod
+    def get_material_expressions(mat):
+        return list(mat.nodes)
+
+    @staticmethod
+    def set_base_material_usage(mat, usage, flag):
+        mat.usages.add(usage)
+
+    @staticmethod
+    def has_material_usage(mat, usage):
+        return usage in mat.usages
+
+    @staticmethod
+    def recompile_material(mat):
+        pass
+
+
+class FakeAssets:
+    def __init__(self):
+        self.registry = {}
+
+    def load_asset(self, path):
+        return self.registry.get(path.split('.')[0])
+
+    def does_asset_exist(self, path):
+        return path.split('.')[0] in self.registry
+
+    def duplicate_asset(self, source, target):
+        import copy
+        if source not in self.registry:
+            return None
+        new = copy.deepcopy(self.registry[source])
+        new.path = target
+        self.registry[target] = new
+        return new
+
+    def delete_asset(self, path):
+        self.registry.pop(path, None)
+        return True
+
+    def save_loaded_asset(self, asset, only_if_is_dirty=True):
+        return True
+
+
+class FakeImportTask:
+    def __init__(self):
+        self.filename = self.destination_path = self.destination_name = None
+        self.imported_object_paths = []
+
+
+class FakeTools:
+    def __init__(self, assets):
+        self.assets = assets
+
+    def create_asset(self, name, folder, cls, factory):
+        asset = cls(f'{folder}/{name}')
+        self.assets.registry[asset.path] = asset
+        return asset
+
+    def import_asset_tasks(self, tasks):
+        for task in tasks:
+            width, height, _, _ = plateau_textures.read_png_channels(Path(task.filename).read_bytes())
+            texture = FakeTexture(f'{task.destination_path}/{task.destination_name}', (width, height))
+            self.assets.registry[texture.path] = texture
+            task.imported_object_paths = [texture.get_path_name()]
+
+
+class FakeTransform:
+    def __init__(self, location, rotation, scale):
+        self.translation, self.rotation, self.scale3d = location, rotation, scale
+
+
+class FakeHism(FakeObj):
+    defaults = {'instance_start_cull_distance': 0, 'instance_end_cull_distance': 0}
+
+    def __init__(self):
+        super().__init__()
+        self.static_mesh, self.profile, self.transforms, self.shadow = None, 'NoCollision', [], False
+
+    def set_static_mesh(self, mesh):
+        self.static_mesh = mesh
+        return True
+
+    def set_collision_profile_name(self, name):
+        self.profile = name
+
+    def get_collision_profile_name(self):
+        return self.profile
+
+    def set_cull_distances(self, start, end):
+        self.props.update(instance_start_cull_distance=start, instance_end_cull_distance=end)
+
+    def set_cast_shadow(self, value):
+        self.shadow = value
+
+    def add_instances(self, transforms, return_indices, world_space, update_navigation):
+        self.transforms += transforms
+
+    def get_instance_count(self):
+        return len(self.transforms)
+
+    def get_instance_transform(self, index, world_space):
+        return self.transforms[index]
+
+
+class FakeActor:
+    def __init__(self):
+        self.label, self.folder, self.component = None, None, FakeHism()
+
+    def set_actor_label(self, label):
+        self.label = label
+
+    def set_folder_path(self, folder):
+        self.folder = folder
+
+    def get_component_by_class(self, cls):
+        return self.component
+
+    def get_path_name(self):
+        return '/Game/Maps/LaFontaine.LaFontaine:PersistentLevel.' + (self.label or '').replace(' ', '_')
+
+
+class FakeEditor:
+    def __init__(self):
+        self.actors = []
+
+    def spawn_actor_from_class(self, cls, location, rotation):
+        assert cls == apply_replica.INSTANCES_CLASS
+        actor = FakeActor()
+        self.actors.append(actor)
+        return actor
+
+
+def fake_unreal():
+    """The slice of the unreal module that the apply step's texture, material and tree code calls."""
+    from types import SimpleNamespace as NS
+    names = lambda *n: NS(**{k: k for k in n})  # noqa: E731
+    assets = FakeAssets()
+    tools = FakeTools(assets)
+    vector = lambda x=0., y=0., z=0.: NS(x=x, y=y, z=z)  # noqa: E731
+    return NS(
+        EditorAssetLibrary=assets, MaterialEditingLibrary=FakeLibrary,
+        AssetToolsHelpers=NS(get_asset_tools=lambda: tools), AssetImportTask=FakeImportTask,
+        Material=FakeMaterial, Texture2D=FakeTexture, MaterialFactoryNew=lambda: None,
+        MaterialExpressionTextureCoordinate=FakeCoords, MaterialExpressionTextureSample=FakeSample,
+        MaterialExpressionConstant3Vector=FakeVector3, MaterialExpressionConstant=FakeConstant,
+        MaterialExpressionMultiply=FakeMultiply, MaterialExpressionScalarParameter=FakeScalar,
+        MaterialExpressionCollectionParameter=FakeCollection, HierarchicalInstancedStaticMeshComponent=FakeHism,
+        LinearColor=lambda r, g, b, a: (r, g, b, a), Vector4=FakeVector4, Vector=vector,
+        Rotator=lambda roll=0., pitch=0., yaw=0.: NS(roll=roll, pitch=pitch, yaw=yaw), Transform=FakeTransform,
+        load_class=lambda outer, path: path,
+        BlendMode=names('BLEND_OPAQUE', 'BLEND_MASKED'),
+        MaterialShadingModel=names('MSM_DEFAULT_LIT', 'MSM_TWO_SIDED_FOLIAGE'),
+        MaterialProperty=names('MP_BASE_COLOR', 'MP_NORMAL', 'MP_ROUGHNESS', 'MP_METALLIC', 'MP_OPACITY_MASK',
+                               'MP_SUBSURFACE_COLOR', 'MP_EMISSIVE_COLOR'),
+        MaterialSamplerType=names('SAMPLERTYPE_COLOR', 'SAMPLERTYPE_NORMAL', 'SAMPLERTYPE_LINEAR_COLOR'),
+        TextureCompressionSettings=names('TC_DEFAULT', 'TC_NORMALMAP'),
+        TextureGroup=names('TEXTUREGROUP_WORLD', 'TEXTUREGROUP_WORLD_NORMAL_MAP'),
+        MaterialUsage=names('MATUSAGE_NANITE', 'MATUSAGE_INSTANCED_STATIC_MESHES'))
+
+
+def fake_parent(u, path, texture, wet=False):
+    """A Content parent as upgrade_plateau.material() authors it (tint, one coordinate node, three samples, metallic
+    constant), with the NordSky wet-ground wrapper nodes plateau_atmosphere adds to M_Gravel."""
+    mat = FakeMaterial(path)
+    u.EditorAssetLibrary.registry[path] = mat
+    L, P = u.MaterialEditingLibrary, u.MaterialProperty
+    tint = L.create_material_expression(mat, FakeVector3)
+    tint.set_editor_property('constant', (1.05, .8, .66, 1.))
+    coords = L.create_material_expression(mat, FakeCoords)
+    coords.props.update(u_tiling=1.5, v_tiling=1.5)
+    samples = {}
+    for role in apply_replica.TEXTURE_ROLES:
+        node = L.create_material_expression(mat, FakeSample)
+        node.set_editor_property('texture', FakeTexture(f'/Game/Art/Textures/{texture}_{role}'))
+        L.connect_material_expressions(coords, '', node, '')
+        samples[role] = node
+    product = L.create_material_expression(mat, FakeMultiply)
+    L.connect_material_expressions(samples['diff'], 'RGB', product, 'A')
+    L.connect_material_expressions(tint, '', product, 'B')
+    L.connect_material_property(product, '', P.MP_BASE_COLOR)
+    L.connect_material_property(samples['nor_dx'], 'RGB', P.MP_NORMAL)
+    L.connect_material_property(samples['rough'], 'R', P.MP_ROUGHNESS)
+    L.connect_material_property(L.create_material_expression(mat, FakeConstant), '', P.MP_METALLIC)
+    if wet:
+        for name in ('Wetness', 'Wetness', 'Puddles'):
+            L.create_material_expression(mat, FakeCollection).props.update(desc=apply_replica.MARKER, parameter_name=name)
+        L.create_material_expression(mat, FakeVector3).props.update(desc=apply_replica.MARKER, constant=(0., 0., 1., 1.))
+    return mat
+
+
+def expect_rejected(action, message):
+    try:
+        action()
+    except AssertionError:
+        return
+    raise AssertionError('Accepted ' + message)
+
+
+def check_editor_side():
+    """Run the apply step's texture import, masked-parent build, material duplication (and its fresh fallback),
+    yard-tree spawning and the matching verify checks against a fake unreal module, for every shared key."""
+    A = apply_replica
+    keys = sorted(A.SHARED_TEXTURE_KEYS)
+    trees = [{'x': 300. * n, 'y': 200. * n, 'z': 5., 'yaw': 30. * n, 'scale': 1.6 + .2 * (n % 3), 'kind': kind}
+             for n, kind in enumerate(['maple', 'elm', 'maple', 'ash', 'small', 'maple'])]
+    out = {}
+    with tempfile.TemporaryDirectory() as tmp:
+        synthetic_plex(tmp, keys, trees)
+        the_plan = A.plan(tmp)
+        specs = json.loads((Path(tmp) / 'Data/Plateau/ReplicaGeometry/Plex/manifest.json').read_text())['materials']
+        u = fake_unreal()
+        registry = u.EditorAssetLibrary.registry
+        fake_parent(u, A.TEXTURED_PARENT, 'brick_wall_001')
+        fake_parent(u, A.WET_PARENT, 'concrete_pavement', wet=True)
+        textures = {}
+        for row in the_plan['textures']:
+            textures[row['asset']] = dict(row, object=A.import_texture(u, Path(tmp), row))
+            A.check_texture(u, registry[row['asset']], row)
+        alpha = [t for t in textures.values() if t['alpha']]
+        assert len(alpha) == 4 and all(t['object'].get_editor_property('alpha_coverage_thresholds').w == .5 for t in alpha)
+        for row in the_plan['parents']:
+            mat = A.build_parent(u, row, textures)
+            A.check_material_mode(u, mat, row)
+            assert len(A.authored_tints(u, mat)) == 1 and FakeLibrary.has_material_usage(mat, 'MATUSAGE_NANITE')
+        for row in the_plan['materials']:
+            spec = specs[row['key']]
+            mat, fresh = A.make_material(u, row, spec, textures)
+            assert not fresh, row['key'] + ' fell back to a fresh material: its parent graph did not retexture'
+            A.check_material_mode(u, mat, row)
+            used = sorted(n.get_editor_property('texture').path for n in mat.nodes if isinstance(n, FakeSample))
+            assert used == sorted(row['textures'].values()), (row['key'], used)
+            coords = [n for n in mat.nodes if isinstance(n, FakeCoords)]
+            assert len(coords) == 1 and [coords[0].get_editor_property(k) for k in ('u_tiling', 'v_tiling')] == row['tiling']
+            (tint,) = A.authored_tints(u, mat)
+            want = [min(A.TINT_LIMIT, c / m) for c, m in zip(A.linear(spec['base_color_srgb']), row['mean_linear'])]
+            assert all(abs(a - b) < 1e-9 for a, b in zip(tint.get_editor_property('constant')[:3], want)), row['key']
+            wet = [n.get_editor_property('parameter_name') for n in mat.nodes if isinstance(n, FakeCollection)]
+            assert ('Wetness' in wet) == row['wet'], row['key']
+            if row['shading_model'] == 'two_sided_foliage':
+                assert FakeLibrary.get_material_property_input_node(mat, 'MP_SUBSURFACE_COLOR') is not None
+            out[row['key']] = {'parent': row['duplicate_of'].rsplit('/', 1)[1],
+                               'blend_mode': mat.get_editor_property('blend_mode'),
+                               'two_sided': mat.get_editor_property('two_sided')}
+        rows = {m['key']: m for m in the_plan['materials']}
+        # The fresh-material fallback keeps the mask, sidedness and foliage shading.
+        for key in ('Rail_Lattice', 'Leaf_Creeper', 'Siding_Lap_Grey'):
+            row = dict(rows[key], asset=rows[key]['asset'] + '_Fresh', duplicate_of='/Game/Plateau/Materials/M_Missing')
+            mat, fresh = A.make_material(u, row, specs[key], textures)
+            assert fresh
+            A.check_material_mode(u, mat, dict(row, duplicate_of=None))
+        # verify rejects a card that lost its mask, its two sides, its own alpha or its metallic.
+        baluster = rows['Rail_Baluster']
+        broken = registry[baluster['asset']]
+        broken.set_editor_property('blend_mode', 'BLEND_OPAQUE')
+        expect_rejected(lambda: A.check_material_mode(u, broken, baluster), 'an opaque baluster card')
+        broken.set_editor_property('blend_mode', 'BLEND_MASKED')
+        broken.set_editor_property('two_sided', False)
+        expect_rejected(lambda: A.check_material_mode(u, broken, baluster), 'a one-sided baluster card')
+        broken.set_editor_property('two_sided', True)
+        rough = next(n for n in broken.nodes
+                     if isinstance(n, FakeSample) and n.get_editor_property('texture').path.endswith('_rough'))
+        diff_link = broken.inputs['MP_OPACITY_MASK']
+        broken.inputs['MP_OPACITY_MASK'] = (rough, 'A')
+        expect_rejected(lambda: A.check_material_mode(u, broken, baluster), 'an OpacityMask from the wrong map')
+        broken.inputs['MP_OPACITY_MASK'] = diff_link
+        A.check_material_mode(u, broken, baluster)
+        sheet = rows['Sheet_Metal']
+        expect_rejected(lambda: A.check_material_mode(u, registry[sheet['asset']], dict(sheet, metallic=0.)),
+                        'galvanised sheet with the wrong metallic')
+        cutout = next(t for t in alpha if t['set'] == 'balusters')
+        cutout['object'].set_editor_property('do_scale_mips_for_alpha_coverage', False)
+        expect_rejected(lambda: A.check_texture(u, cutout['object'], cutout), 'cut-out mips without alpha coverage')
+        # Yard trees on the mapped trees' mesh, one actor per kind, no collision.
+        registry[A.TREE_MESH] = FakeAsset(A.TREE_MESH)
+        editor = FakeEditor()
+        placed = A.spawn_yard_trees(u, editor, the_plan['trees'])
+        actors = {a.label: a for a in editor.actors}
+        assert sorted(placed) == sorted(actors) and A.check_yard_trees_placed(u, actors, the_plan['trees']) == len(trees)
+        assert all(a.component.profile == 'NoCollision' and a.component.shadow for a in editor.actors)
+        maple = actors[f'{A.PREFIX}Plex yard trees maple'].component
+        maple.transforms.pop()
+        expect_rejected(lambda: A.check_yard_trees_placed(u, actors, the_plan['trees']), 'a missing yard tree')
+        out['yard_tree_actors'] = {label: placed[label]['count'] for label in sorted(placed)}
+        out['fresh_fallback'] = 'masked, foliage and opaque fallbacks keep their mode'
+    return out
+
+
+# ------------------------------------------------------------------------------------------------
+# Lane life (Soul): laundry from the galleries, gate props, ruelles vertes, tags, murals
+
+def _outward(face, facing):
+    n = replica.newell([tuple(p) for p in face])
+    return n[0] * facing[0] + n[1] * facing[1] + n[2] * facing[2] > 0
+
+
+def check_lane_fixtures():
+    """Small synthetic checks of the lane-life helpers, independent of the map."""
+    R = replica
+    # A mural faces out of its wall (right of a->b); the first version was wound inward and culled.
+    S = R.Layer('Soul', R.SOUL_MATERIALS)
+    assert R._mural(S, {'a': (0., 0.), 'b': (1000., 0.)}, {'height': 1200.}, R.Rng('fixture'), off=R.PLEX_D_FACE + .9)
+    faces = [f for k, fs in S.faces.items() if k.startswith('mural_') for f in fs]
+    assert faces and all(_outward(f, (0., -1., 0.)) for f in faces), 'a mural face points into its wall'
+    assert all(-17.31 <= p[1] <= -16.89 for f in faces for p in f), 'a mural left the Plex skin face (16.9-17.3 cm)'
+    assert all(0 <= p[0] <= 1000 and 130 <= p[2] <= 1110 for f in faces for p in f)
+    # A fence mural: low and narrow, still facing the lane, still on the fence.
+    S = R.Layer('Soul', R.SOUL_MATERIALS)
+    assert R._mural(S, {'a': (0., 0.), 'b': (0., 400.)}, {'height': 180. + 82.}, R.Rng('fence'), off=1.2, z0=15.,
+                    margin=15., min_h=120., min_w=250.)
+    faces = [f for k, fs in S.faces.items() if k.startswith('mural_') for f in fs]
+    assert all(_outward(f, (1., 0., 0.)) for f in faces) and all(15 <= p[2] <= 172 for f in faces for p in f)
+    # Card UVs: u in metres along the run, v 0..1 up the card, whatever the facing.
+    S = R.Layer('Soul', R.SOUL_MATERIALS)
+    S.card('Rail_Lattice', (0., 0.), (40., 0.), 30., 130., (0., 1.))
+    S.card('Rail_Lattice', (0., 0.), (40., 0.), 130., 230., (0., -1.))
+    text = R.obj_text('t', S.faces['Rail_Lattice'])
+    vts = [tuple(map(float, line.split()[1:])) for line in text.splitlines() if line.startswith('vt ')]
+    assert sorted({v for _, v in vts}) == [0., 1.] and sorted({u for u, _ in vts}) == [0., .4], vts
+    assert _outward(S.faces['Rail_Lattice'][0], (0., 1., 0.)) and _outward(S.faces['Rail_Lattice'][1], (0., -1., 0.))
+    # A tag stays inside its rectangle on the fence plane and faces the lane.
+    F = R.Frame2((0., 0.), (1., 0.), (0., 1.), 300., 500.)
+    for n in range(12):
+        S = R.Layer('Soul', R.SOUL_MATERIALS)
+        tris, kind = R._tag(S, F, 20., 220., 32., 150., 501.2, R.Rng('tag-fixture', n))
+        faces = [f for k, fs in S.faces.items() if k.startswith('tag_') for f in fs]
+        assert tris > 0 and faces and kind in ('tag', 'throw-up')
+        assert all(_outward(f, (0., 1., 0.)) for f in faces), 'a tag face points into the fence'
+        assert all(501.1 <= p[1] <= 501.6 for f in faces for p in f)
+        assert all(16. <= p[0] <= 224. and 28. <= p[2] <= 154. for f in faces for p in f), kind
+    # Interval subtraction, used for beds and murals around gates and sheds.
+    assert R.subtract((0., 100.), [(20., 30.), (25., 50.)]) == [(0., 20.), (50., 100.)]
+    assert R.subtract((0., 100.), [(40., 60.)], 5.) == [(0., 35.), (65., 100.)]
+    # Without the open-data clip a seeded share (about 30%) of the ruelles is green, the same on every run.
+    fake = type('W', (), {'alleys': [{'id': str(i), 'segments': [((0., 0.), (100., 0.))]} for i in range(400)]})()
+    first, source = R.green_alleys(fake, None)
+    assert first == R.green_alleys(fake, None)[0] and 'seeded' in source and 90 <= len(first) <= 150, len(first)
+    return {'murals_face_out': True, 'card_uv': 'u metres, v 0..1', 'tags_on_plane': 12, 'seeded_green_share': len(first) / 400}
+
+
+def check_lane_life(world, out, soul, soul_rows):
+    """Laundry, gate props, ruelles vertes and tags against the Plex records they were built from."""
+    R = replica
+    lane = json.loads((out / 'Soul/lane_life.json').read_text())
+    assert soul['lane_life'] == 'lane_life.json' and soul['lane_life_sha256'] == R.sha_file(out / 'Soul/lane_life.json')
+    assert lane['counts'] == {k: soul['counts'][k] for k in R.LANE_COUNTS}
+    for rel in ('Data/Plateau/ReplicaGeometry/Plex/fronts.json', 'Data/Plateau/ReplicaGeometry/Soul/ruelles_vertes_clip.json'):
+        assert rel in soul['source_sha256'], rel
+    plex = R.PlexYards.load(world)
+    lots = {lot['id']: lot for lot in plex.lots}
+    poles = [r['position'][:2] for r in soul_rows if r['prop'] == 'utility_pole']
+    edges = R.Grid(1000.)
+    for i, (a, b, _) in enumerate(world.building_edges):
+        edges.add(i, R.bbox([a, b]))
+
+    def wall_distance(p, limit=300.):
+        return min([limit] + [R.seg_dist(p, *world.building_edges[i][:2]) for i in edges.query(R.bbox([p], limit))])
+
+    # Laundry: from a gallery guard at deck height out over the lot's own yard to its clothesline pole.
+    laundry = lane['laundry']
+    lines, pole_rows = laundry['lines'], laundry['poles']
+    assert len(lines) >= 150 and len(pole_rows) >= 100, (len(lines), len(pole_rows))
+    assert sum(l['garments'] for l in lines) == soul['counts']['garments'] >= 300
+    for line in lines:
+        lot = lots[line['lot']]
+        rear, F = lot['rear'], lot['frame']
+        guard = rear['guards'][line['guard']]
+        a, e = line['anchor'], line['end']
+        assert any(abs(dk['z'] - line['deck_z']) < .01 for dk in rear['decks']) and abs(guard['z0'] - line['deck_z']) < 1
+        assert R.seg_dist(a[:2], guard['a'], guard['b']) <= 6., ('laundry anchor off its guard', line)
+        assert guard['z0'] + 94 <= a[2] <= guard['z1'], ('laundry anchor not at the guard rail', line)
+        pole = pole_rows[line['pole']]
+        assert pole['lot'] == line['lot'] and math.dist(pole['position'], e[:2]) <= 12. and e[2] < pole['height_cm']
+        rect = rear['yard']['rect']
+        assert R.point_in(pole['position'], rect) and R.point_in(a[:2], [F.world(0, -400), F.world(F.W, -400),
+                                                                          F.world(F.W, F.D), F.world(0, F.D)])
+        # private land: the pole stands in the yard, so the line never crosses the fence or the ruelle
+        assert all(R.point_in(R.lerp(a[:2], e[:2], t / 10), rect) or t == 0 for t in range(1, 11)), line
+        assert world.traffic_distance(pole['position']) >= R.CLEAR
+        assert all(math.dist(pole['position'], q) >= 100 for q in poles), 'a clothesline on a utility pole'
+        # it runs out from the gallery, never to the mass wall behind it
+        assert R.wall_clearance(world, a[:2], e[:2]) >= R.LINE_WALL - .5, line
+        assert min(wall_distance(R.lerp(a[:2], e[:2], t / 20)) for t in range(21)) >= R.LINE_WALL - .5, line
+        assert 250 <= line['span_cm'] and a[2] <= R.LINE_TOP
+    for pole in pole_rows:
+        F = lots[pole['lot']]['frame']
+        assert not world.in_building(pole['position'], 40) and 330 <= pole['height_cm'] <= R.LINE_TOP + R.POLE_TOP
+    # Gate props: blue and brown bins, flower boxes and bikes at the gates, never in the traffic band, a gate's
+    # swing or another prop.
+    gates = [r for r in soul_rows if 'gate_of' in r]
+    kinds = {k: sum(1 for r in gates if r['prop'] == k) for k, _ in R.GATE_PROPS}
+    assert all(v > 0 for v in kinds.values()) and len(gates) == len(lane['gates']), kinds
+    assert kinds['bin_recycling'] >= 150 and kinds['bin_compost'] >= 100, kinds
+    keep = R.Grid(1000.)
+    for i, (poly, kind, _) in enumerate(plex.keepout):
+        keep.add(i, R.bbox(poly))
+    taken = []
+    for row, rec in zip(gates, lane['gates']):
+        assert not row['collision'] and row['prop'] == rec['prop'] and row['side'] in ('lane', 'yard')
+        poly = R._prop_poly(row['prop'], row['position'][:2], row['yaw'])
+        assert world.traffic_distance(poly, 2000) >= R.CLEAR, ('gate prop in the traffic band', row)
+        assert not any(world.in_building(q) for q in poly)
+        for i in keep.query(R.bbox(poly)):
+            other, kind, owner = plex.keepout[i]
+            if kind == 'gate':
+                assert not any(R.point_in(q, other) for q in poly) and not any(R.point_in(q, poly) for q in other) and \
+                    min(R.poly_seg_dist(other, *e) for e in zip(poly, poly[1:] + poly[:1])) > 0, ('blocks a gate', row)
+        F = lots[row['gate_of']]['frame']
+        g = lots[row['gate_of']]['rear']['fence']['gate_at']
+        assert abs(rec['along_cm'] - g) >= R.GATE_KEEP and math.dist(F.world(rec['along_cm'], F.D), row['position'][:2]) < 130
+        taken.append(poly)
+    grid = R.Grid(1000.)
+    for i, poly in enumerate(taken):
+        for j in grid.query(R.bbox(poly)):
+            other = taken[j]
+            assert not any(R.point_in(q, other) for q in poly) and not any(R.point_in(q, poly) for q in other), 'props overlap'
+        grid.add(i, R.bbox(poly))
+    # Ruelles vertes: matched from the city's open data, with beds, plants, arches, planters and murals.
+    clip = json.loads(R.RUELLES_VERTES.read_text())
+    assert clip['source']['licence'] == 'CC BY 4.0' and clip['source']['dataset'].startswith('https://donnees.montreal.ca')
+    assert clip['source']['borough_ruelles'] >= 80 and len(clip['polygons']) >= 20
+    rv = lane['ruelles_vertes']
+    assert rv['source'] == 'Ville de Montréal open data' and len(rv['alleys']) >= 15
+    assert len({r for a in rv['alleys'] for r in a['ruelles']}) >= 10
+    alley_ids = {a['id'] for a in world.alleys}
+    assert all(a['osm_way'] in alley_ids for a in rv['alleys'])
+    assert soul['counts']['green_bed_metres'] >= 1000 and soul['counts']['green_plants'] >= 2000
+    assert len(rv['arches']) >= 8 and len(rv['planters']) == 2 * len(rv['arches'])
+    for arch in rv['arches']:
+        u = arch['axis']
+        n = (-u[1], u[0])
+        posts = [R.add(R.add(arch['position'], n, h * k), u, f) for h, k in zip(arch['half_cm'], (1, -1)) for f in (-25, 25)]
+        assert not world.in_building(arch['position']) and not any(world.in_building(q, 14) for q in posts), arch
+        assert all(R.ALLEY_HALF + 13 <= h <= 255 for h in arch['half_cm']), arch
+        assert not R.on_pavement(world, arch['position']) and min(math.dist(q, pole) for q in posts for pole in poles) >= 59
+    painted = [m for m in rv['murals'] if m.get('host')]
+    assert len(painted) >= .7 * len({r for a in rv['alleys'] for r in a['ruelles']}), rv['murals']
+    for m in painted:
+        assert m['offset_cm'] in (1.2, R.PLEX_D_FACE + .9)
+    for key in ('Yard_Soil', 'Leaf_Creeper', 'Rail_Lattice', 'bed_edge', 'line_rope', 'pulley', 'clothes_pole'):
+        assert key in soul['materials'], key
+    for batch in soul['batches']:
+        if batch['material'] == 'Rail_Lattice':
+            vs = {float(line.split()[2]) for line in (out / 'Soul' / batch['file']).read_text().splitlines()
+                  if line.startswith('vt ')}
+            assert vs <= {0., 1.}, ('lattice cards lost their card UVs', vs)
+    # Street murals sit on a bare wall (6 cm) or on a blank Plex skin (16.9 cm), never over windows.
+    for m in lane['murals']:
+        assert m['offset_cm'] in (6., R.PLEX_D_FACE + .9)
+        assert R.PlexYards.mural_spot(plex, m['a'], m['b']) is not None
+    # Tags on lane fences (between posts) and on shed and garage doors, facing the ruelle.
+    tags = lane['tags']
+    assert sum(1 for t in tags if t['on'] == 'fence') >= 15 and sum(1 for t in tags if t['on'] != 'fence') >= 5
+    assert any(t['on'] == 'garage door' for t in tags) and any(t['kind'] == 'throw-up' for t in tags)
+    for tag in tags:
+        lot = lots[tag['lot']]
+        F = lot['frame']
+        assert lot['rear']['fence']['lane'] and tag['facing'] == [round(F.n[0], 2), round(F.n[1], 2)]
+        x0, d0 = F.local(tag['plane'][0])
+        if tag['on'] == 'fence':
+            assert abs(d0 - F.D - 1.2) < .15
+            assert not any(a < tag['x_cm'][1] and b > tag['x_cm'][0] for a, b in [(g - 160, g + 160) for g in
+                           [lot['rear']['fence']['gate_at']] if g is not None])
+        else:
+            assert abs(d0 - lot['door'][2] - 1.6) < .15 and lot['door'][0] <= tag['x_cm'][0] < tag['x_cm'][1] <= lot['door'][1]
+    return {'laundry_lines': len(lines), 'laundry_poles': len(pole_rows), 'garments': soul['counts']['garments'],
+            'gate_props': kinds, 'gate_sides': {s: sum(1 for r in gates if r['side'] == s) for s in ('lane', 'yard')},
+            'ruelles_vertes': {'osm_ways': len(rv['alleys']), 'ids': len({r for a in rv['alleys'] for r in a['ruelles']}),
+                               'bed_metres': soul['counts']['green_bed_metres'], 'arches': len(rv['arches']),
+                               'planters': len(rv['planters']), 'murals': {h: sum(1 for m in painted if m['host'] == h)
+                                                                          for h in ('wall', 'fence')}},
+            'tags': {k: sum(1 for t in tags if t['on'] == k) for k in ('fence', 'shed door', 'garage door')},
+            'street_murals': len(lane['murals'])}
+
+
 def main():
+    report = {'lane_fixtures': check_lane_fixtures()}
     with tempfile.TemporaryDirectory() as a, tempfile.TemporaryDirectory() as b:
         world, results = replica.prepare(a)
         replica.prepare(b)
@@ -189,7 +925,7 @@ def main():
         assert fa.keys() == fb.keys() and all(fa[k] == fb[k] for k in fa), \
             'Non-deterministic output: ' + str([k for k in fa if fa.get(k) != fb.get(k)][:5])
         out = Path(a)
-        report = {'determinism': f'{len(fa)} files byte-identical across two builds'}
+        report['determinism'] = f'{len(fa)} files byte-identical across two builds'
 
         streets = json.loads((out / 'Streets/manifest.json').read_text())
         soul = json.loads((out / 'Soul/manifest.json').read_text())
@@ -341,8 +1077,11 @@ def main():
         so = soul['counts']
         for key in ('asphalt_patches', 'crack_lines', 'potholes', 'gutter_leaf_drifts', 'weed_tufts', 'rust_streaks',
                     'murals', 'chantier_zones', 'utility_poles', 'wire_spans', 'laundry_lines', 'curb_bins',
-                    'locked_bikes'):
+                    'locked_bikes', 'laundry_poles', 'garments', 'gate_bin_recycling', 'gate_bin_compost',
+                    'gate_flower_box', 'gate_bike_locked', 'green_bed_metres', 'green_plants', 'green_arches',
+                    'green_planters', 'green_murals', 'tags_fences', 'tags_doors'):
             assert so[key] > 0, key
+        report['lane_life'] = check_lane_life(world, out, soul, soul_rows['placements'])
         bins = {}
         for row in soul_rows['placements']:
             if row['prop'].startswith('bin_'):
@@ -365,7 +1104,9 @@ def main():
         labels = [a['label'] for a in the_plan['actors']]
         assert len(labels) == len(set(labels)) and all(l.startswith(apply_replica.PREFIX) for l in labels)
         assert all(m['asset'].startswith(apply_replica.MATERIALS + '/M_Replica_') for m in the_plan['materials'])
-        assert all(m['duplicate_of'].startswith('/Game/Plateau/Materials/M_') for m in the_plan['materials'])
+        assert all(m['duplicate_of'].startswith('/Game/Plateau/Materials/M_') or m['duplicate_of'] in apply_replica.BUILT_PARENTS
+                   for m in the_plan['materials'])
+        assert all(p['asset'] in apply_replica.BUILT_PARENTS for p in the_plan['parents'])
         props = json.loads((replica.OUT / 'Props/manifest.json').read_text()) if (replica.OUT / 'Props/manifest.json').is_file() else None
         if props:
             glowing = {k for k, v in props['materials'].items() if v.get('emissive_srgb')}
@@ -401,6 +1142,9 @@ def main():
                 need = max(c / t for c, t in zip(apply_replica.linear(m['base_color_srgb']), m['mean_linear']))
                 assert need <= apply_replica.TINT_LIMIT, (m['asset'], need)
         report['textures'] = check_textures(the_plan)
+        report['shared_keys'] = check_shared_plan()
+        report['yard_trees'] = check_yard_trees(the_plan)
+        report['editor_side'] = check_editor_side()
         ini = (replica.ROOT / 'Config/DefaultGame.ini').read_text()
         assert '+DirectoriesToAlwaysCook=(Path="/Game/Plateau/Replica/Props")' in ini, 'Props folder is not always cooked'
         header = (replica.ROOT / 'Source/Quebec/QuebecReplicaInstances.h').read_text()

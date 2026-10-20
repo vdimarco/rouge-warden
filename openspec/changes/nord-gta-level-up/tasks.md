@@ -16,8 +16,12 @@
 - [x] Streetscape: streets, furniture placements and lived-in layer generator, apply script, tests.
 - [x] Plex fronts for the plain buildings, with tests.
 - [x] Blender props and companions, contact sheet, street previews.
-- [ ] Rear façades for plex lots on yards and ruelles: windows and doors, galleries with posts, rear stairs, fences, sheds.
-- [ ] Textured greystone and slate materials in the apply step, with previews re-rendered.
+- [x] Rear façades for plex lots on yards and ruelles: windows and doors, galleries with posts, rear stairs, fences, sheds.
+- [x] Textured greystone and slate materials in the apply step, with previews re-rendered.
+- [x] Roofs (membrane, gravel, tar, copings, chimneys, hatches), windowed long walls, skins on background backs, solid front steps.
+- [x] Yards (ground cover, creepers, Canopée yard trees), gallery balusters, board fences, denser spirals, 15 textured material keys.
+- [x] Lane life: laundry from galleries, bins and bikes at gates, ruelles vertes from open data, tags.
+- [ ] Third pass: porch collision outside the traffic band, gallery guard collision, street trees off the asphalt, ruelle edges paved to the fences, the Habitations De Mentana block, the Fabre front yard and sidewalk, gallery life, rear surfaces, brick and tower walls, background roofs, front planting.
 
 ## Cloud verification
 - [x] Every new and changed `.cpp` passes the stub-header syntax check with UE's Linux warnings.

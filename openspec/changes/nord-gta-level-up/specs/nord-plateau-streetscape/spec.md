@@ -30,7 +30,7 @@ Buildings that today show plain extruded boxes SHALL show Plateau plex fronts on
 
 #### Scenario: Frame budget
 - **WHEN** the host profiles the six reference views at Epic quality after import
-- **THEN** each p95 frame time stays under 16.67 ms on the reference RTX 4090, and the plex layer stays under about 2.5 million triangles
+- **THEN** each p95 frame time stays under 16.67 ms on the reference RTX 4090, and the plex layer, rear work included, stays under 2.95 million triangles in at most 1,200 batches
 
 ### Requirement: A lived-in Plateau
 The streetscape SHALL carry seeded signs of life and wear, as the owner's reference article asks.
@@ -42,7 +42,22 @@ The streetscape SHALL carry seeded signs of life and wear, as the owner's refere
 
 #### Scenario: Walk a ruelle
 - **WHEN** a player walks a mapped ruelle
-- **THEN** laundry lines, wooden utility poles and sagging wires cross overhead
+- **THEN** wooden utility poles and sagging wires cross overhead, and laundry hangs from the galleries over the yards, never from a utility pole or across the lane, as the city's clothesline rules require
+- **AND** blue and brown bins, flower boxes and locked bikes stand at the gates
+
+#### Scenario: Look at the back of a block
+- **WHEN** a player looks at the yard side of a plex block from a ruelle or from above
+- **THEN** each rear wall has doors and windows, every upper floor has a wooden or steel gallery on posts with balusters or boards, and a straight or spiral stair reaches each gallery from the yard
+- **AND** yards hold lawns, patios, garden beds or parking pads behind board fences with gates, some with sheds or garages, and mature backyard trees rise above the roofs where the city's canopy data shows them
+- **AND** no window card floats on a blank wall
+
+#### Scenario: Walk a ruelle verte
+- **WHEN** a player walks a ruelle that the city's open data lists as a ruelle verte
+- **THEN** planted beds run along the fences and walls, an arch with planters marks the entry, and most such ruelles carry a mural
+
+#### Scenario: See the roofs from above
+- **WHEN** a player sees the plex blocks from above
+- **THEN** most flat roofs are white membrane or white gravel, a few are tar and gravel, parapets carry metal copings that step at party walls, and each lot has a chimney and a roof hatch; only mansards are slate
 
 ### Requirement: Checkable without the engine
 The streetscape generators SHALL be deterministic and checkable without Unreal.
