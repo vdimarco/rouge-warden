@@ -1106,14 +1106,120 @@ def instanced_actor(u, editor, label, folder):
     return actor, component
 
 
-def spawn_yard_trees(u, editor, rows):
-    """One AQuebecReplicaInstances actor per tree kind on the mapped trees' mesh and materials, untouched;
-    NoCollision like the mapped trees, which cast shadows and cull at QuebecVegetation's distances."""
+def spawn_layer_actor(u, editor, row, mesh, material):
+    """One StaticMeshActor at the origin for a layer batch. Collision_Only batches (gallery guards) become invisible
+    walls: hidden in game, no shadow or distance-field lighting, BlockAll for pawns and cars, but the camera spring
+    arm and visibility traces pass through them (the profile turns Custom)."""
+    actor = editor.spawn_actor_from_class(u.StaticMeshActor, u.Vector(0., 0., 0.), u.Rotator())
+    actor.set_actor_label(row['label'])
+    actor.set_folder_path(row['folder'])
+    c = actor.static_mesh_component
+    c.set_static_mesh(mesh)
+    c.set_material(0, material)
+    # Asphalt stays NoCollision here; QuebecGameplay promotes SM_Asphalt* to Visibility-only at BeginPlay.
+    c.set_collision_profile_name('BlockAll' if row['collision'] != 'none' else 'NoCollision')
+    if row.get('collision_only'):
+        c.set_collision_response_to_channel(u.CollisionChannel.ECC_CAMERA, u.CollisionResponseType.ECR_IGNORE)
+        c.set_collision_response_to_channel(u.CollisionChannel.ECC_VISIBILITY, u.CollisionResponseType.ECR_IGNORE)
+        c.set_editor_property('affect_distance_field_lighting', False)
+        c.set_editor_property('affect_dynamic_indirect_lighting', False)
+    if row.get('hidden_in_game'):
+        actor.set_actor_hidden_in_game(True)
+    c.set_cast_shadow(row['shadow'])
+    return actor
+
+
+def check_layer_actor(u, actor, row, mesh_row):
+    """verify: one layer actor's mesh, triangles, Nanite (and Preserve Area on masked batches), material, collision
+    (invisible walls: hidden in game, blocking pawns, ignoring camera and visibility), shadow and origin."""
+    assert actor is not None, 'Missing actor ' + row['label']
+    c = actor.static_mesh_component
+    mesh = c.static_mesh
+    name = row['mesh'].rsplit('/', 1)[1]
+    assert mesh.get_path_name() == f'{row["mesh"]}.{name}', row['label']
+    # The CPU test rejects float32-degenerate triangles up front; allow a sliver of import-side welding.
+    planned = mesh_row['triangles']
+    assert abs(mesh.get_num_triangles(0) - planned) <= max(2, planned // 1000), row['label']
+    nanite = mesh.get_editor_property('nanite_settings')
+    assert nanite.enabled, row['label']
+    if mesh_row.get('nanite_shape_preservation'):
+        assert nanite.get_editor_property('shape_preservation') == \
+            getattr(u.NaniteShapePreservation, mesh_row['nanite_shape_preservation']), row['label'] + ' thins out'
+    assert c.get_material(0).get_path_name().split('.')[0] == mesh_row['material'], row['label']
+    if row.get('collision_only'):
+        responses = {name: c.get_collision_response_to_channel(getattr(u.CollisionChannel, name))
+                     for name in ('ECC_PAWN', 'ECC_CAMERA', 'ECC_VISIBILITY')}
+        assert responses['ECC_PAWN'] == u.CollisionResponseType.ECR_BLOCK, row['label'] + ' lets players through'
+        assert responses['ECC_CAMERA'] == responses['ECC_VISIBILITY'] == u.CollisionResponseType.ECR_IGNORE, \
+            row['label'] + ' blocks the camera or visibility'
+        assert actor.get_editor_property('hidden'), row['label'] + ' renders in game'
+        assert not c.get_editor_property('affect_distance_field_lighting'), row['label'] + ' shades Lumen'
+    else:
+        expected = 'BlockAll' if row['collision'] != 'none' else 'NoCollision'
+        assert str(c.get_collision_profile_name()) == expected, row['label']
+        assert bool(actor.get_editor_property('hidden')) == bool(row.get('hidden_in_game')), row['label'] + ' hidden'
+    assert bool(c.get_editor_property('cast_shadow')) == row['shadow'], row['label'] + ' shadow'
+    assert actor.get_actor_location().length() < .1
+    return True
+
+
+def tree_slot(name):
+    """'bark' or 'leaves' from an imported material slot name (the OBJ's usemtl), else None."""
+    n = str(name).lower()
+    if any(w in n for w in ('leaf', 'leaves', 'foliage', 'crown')):
+        return 'leaves'
+    if any(w in n for w in ('bark', 'trunk', 'branch', 'wood')):
+        return 'bark'
+    return None
+
+
+def assign_tree_slots(u, mesh, materials):
+    """Each material slot of an imported species mesh gets its bark or leaves material, by slot name."""
+    slots = mesh.get_editor_property('static_materials')
+    names = [str(slot.get_editor_property('material_slot_name')) for slot in slots]
+    kinds = [tree_slot(n) for n in names]
+    assert len(slots) >= 2 and None not in kinds and set(kinds) == set(TREE_SLOTS), \
+        f'{mesh.get_path_name()}: slots {names} must name the bark and the leaves'
+    for index, kind in enumerate(kinds):
+        mesh.set_material(index, materials[kind])
+    return dict(zip(names, kinds))
+
+
+def import_tree_mesh(u, root, row, materials):
+    """A species mesh of Trees/manifest.json: Nanite with Preserve Area (leaves keep their area at a distance), no
+    collision (as the mapped trees), its bark and leaves slots set by name."""
+    folder, name = row['asset'].rsplit('/', 1)
+    source = Path(root) / 'Data/Plateau/ReplicaGeometry' / row['file']
+    mesh = import_mesh(u, source, folder, name, None, 'none', (), row['nanite_shape_preservation'])
+    assign_tree_slots(u, mesh, materials)
+    assert u.EditorAssetLibrary.save_loaded_asset(mesh, only_if_is_dirty=False)
+    return mesh
+
+
+def check_tree_mesh(u, mesh, row):
+    """verify: a species mesh exists, is Nanite with Preserve Area, and its slots carry the planned materials."""
+    assert isinstance(mesh, u.StaticMesh), 'Missing tree mesh ' + row['asset']
+    nanite = mesh.get_editor_property('nanite_settings')
+    assert nanite.enabled and nanite.get_editor_property('shape_preservation') == \
+        getattr(u.NaniteShapePreservation, row['nanite_shape_preservation']), row['asset'] + ' Nanite'
+    for index, slot in enumerate(mesh.get_editor_property('static_materials')):
+        kind = tree_slot(slot.get_editor_property('material_slot_name'))
+        assert kind in row['materials'], row['asset'] + ' slot'
+        assert mesh.get_material(index).get_path_name().split('.')[0] == row['materials'][kind], \
+            f'{row["asset"]} {kind} material'
+
+
+def spawn_yard_trees(u, editor, rows, meshes=None):
+    """One AQuebecReplicaInstances actor per tree kind: on the species meshes when Trees/manifest.json exists
+    (meshes, by asset path), else on the mapped trees' mesh and materials, untouched; NoCollision like the mapped
+    trees, which cast shadows and cull at QuebecVegetation's distances."""
     placed = {}
-    tree = u.EditorAssetLibrary.load_asset(TREE_MESH) if rows else None
+    meshes = dict(meshes or {})
     for row in rows:
+        if row['mesh'] not in meshes:
+            meshes[row['mesh']] = u.EditorAssetLibrary.load_asset(row['mesh'])
         actor, comp = instanced_actor(u, editor, row['label'], row['folder'])
-        comp.set_static_mesh(tree)
+        comp.set_static_mesh(meshes[row['mesh']])
         comp.set_collision_profile_name('NoCollision')
         comp.set_cull_distances(*row['cull_cm'])
         comp.set_cast_shadow(row['cast_shadow'])
@@ -1128,11 +1234,11 @@ def spawn_yard_trees(u, editor, rows):
 def check_yard_trees_placed(u, actors, rows):
     """verify: each kind's actor, its mesh, count, NoCollision, cull distance and first and last transforms."""
     count = 0
-    tree_mesh = f'{TREE_MESH}.{TREE_MESH.rsplit("/", 1)[1]}'
     for row in rows:
         actor = actors.get(row['label'])
         assert actor is not None, 'Missing yard trees ' + row['label']
         comp = actor.get_component_by_class(u.HierarchicalInstancedStaticMeshComponent)
+        tree_mesh = f'{row["mesh"]}.{row["mesh"].rsplit("/", 1)[1]}'
         assert comp and comp.static_mesh and comp.static_mesh.get_path_name() == tree_mesh, row['label'] + ' mesh'
         assert comp.get_instance_count() == row['count'], row['label']
         assert str(comp.get_collision_profile_name()) == 'NoCollision', row['label'] + ' collides'
@@ -1153,12 +1259,44 @@ def check_texture(u, texture, row):
     assert texture.get_editor_property('compression_settings') == \
         getattr(u.TextureCompressionSettings, row['compression']), row['asset'] + ' has the wrong compression'
     assert [texture.blueprint_get_size_x(), texture.blueprint_get_size_y()] == row['size_px'], row['asset']
+    assert texture.get_editor_property('address_y') == getattr(u.TextureAddress, row.get('address_y', 'TA_WRAP')), \
+        row['asset'] + ' V addressing (cards clamp, so the mips do not wrap the top row into the bottom)'
     if row['alpha']:
         assert not texture.get_editor_property('compression_no_alpha'), row['asset'] + ' dropped its alpha'
         assert texture.get_editor_property('do_scale_mips_for_alpha_coverage'), row['asset'] + ' mips lose coverage'
         thresholds = texture.get_editor_property('alpha_coverage_thresholds')
         assert abs(thresholds.w - row['alpha_coverage_threshold']) < 1e-4 and thresholds.x == thresholds.y == \
             thresholds.z == 0., row['asset'] + ' alpha coverage threshold'
+
+
+def check_macro_nodes(u, mat, row):
+    """verify: a macro set's two mask samples at the planned tiles and its lerp strengths; no macro nodes on any
+    other material."""
+    nodes = [n for n in u.MaterialEditingLibrary.get_material_expressions(mat)
+             if str(n.get_editor_property('desc')) == MACRO_DESC]
+    macro = row.get('macro')
+    if not macro:
+        assert not nodes, row['asset'] + ' has macro nodes it should not'
+        return 0
+    samples = [n for n in nodes if isinstance(n, u.MaterialExpressionTextureSample)]
+    assert len(samples) == len(macro['tiling']) and all(
+        n.get_editor_property('texture').get_path_name().split('.')[0] == macro['texture'] for n in samples), \
+        row['asset'] + ' macro samples'
+    tilings = sorted([round(n.get_editor_property('u_tiling'), 6), round(n.get_editor_property('v_tiling'), 6)]
+                     for n in nodes if isinstance(n, u.MaterialExpressionTextureCoordinate))
+    assert tilings == sorted(macro['tiling']), row['asset'] + f' macro tiles {tilings}'
+    lerps = sorted((round(n.get_editor_property('const_a'), 6), round(n.get_editor_property('const_b'), 6))
+                   for n in nodes if isinstance(n, u.MaterialExpressionLinearInterpolate))
+    assert lerps == sorted((round(1. - s, 6), round(1. + s, 6)) for s in macro['strength']), row['asset'] + ' strength'
+    return len(samples)
+
+
+def check_foliage(u, mat, row):
+    """verify: an untextured leaves material is two-sided foliage with transmission."""
+    assert bool(mat.get_editor_property('two_sided')), row['asset'] + ' is one-sided'
+    assert mat.get_editor_property('shading_model') == u.MaterialShadingModel.MSM_TWO_SIDED_FOLIAGE, row['asset']
+    assert u.MaterialEditingLibrary.get_material_property_input_node(mat, u.MaterialProperty.MP_SUBSURFACE_COLOR), \
+        row['asset'] + ' has no transmission'
 
 
 def check_material_mode(u, mat, row):
