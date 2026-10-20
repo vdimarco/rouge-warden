@@ -369,12 +369,13 @@ def main():
         fa, fb = files(a), files(b)
         assert fa.keys() == fb.keys() and all(fa[k] == fb[k] for k in fa), \
             'Non-deterministic output: ' + str([k for k in fa if fa.get(k) != fb.get(k)])
-        assert len(fa) == 1 + 3 * len(T.SETS)
+        assert len(fa) == 2 + 3 * len(T.SETS), 'textures.json, the macro mask and three maps per set'
         # A set built in this process (no worker pool) gives the same pixels as the pooled build.
         _, solo = T.build('lattice')
         assert all(solo['maps'][r]['raw_sha256'] == index['sets']['lattice']['maps'][r]['raw_sha256'] for r in T.ROLES)
         report['determinism'] = f'{len(fa)} files byte-identical across two builds and an in-process rebuild'
         report['shared_keys'] = check_shared_keys(index)
+        report['macro'] = check_macro(index, fa[T.macro_file()])
         plex = apply_replica.ROOT / 'Data/Plateau/ReplicaGeometry/Plex/manifest.json'
         plex_materials = json.loads(plex.read_text())['materials'] if plex.is_file() else {}
         summary, sets = {}, {}
@@ -417,10 +418,19 @@ def main():
                          'roughness_mean': entry['roughness_mean'], 'surface': entry['surface']}
             if key == 'slate':
                 check_slate_gaps(maps['rough'], spec)
+            if key == 'buff_brick':
+                sets[key].update(check_buff_brick(spec, maps['diff'], maps['rough']))
+            if key in LARGE_SCALE:
+                # Large-scale variation: the tile is 2 m, and 25 cm and 50 cm blocks differ in tone (zones).
+                assert spec['tile_m'] == (2., 2.) and spec['size_px'] == (1024, 1024), key
+                px = spec['size_px'][0] / (spec['tile_m'][0] * 100.)
+                cv = [block_variation(maps['diff'], 3, px, c) for c in (25., 50.)]
+                assert all(v >= lo for v, lo in zip(cv, LARGE_SCALE[key])), (key, 'too even at large scale', cv)
+                sets[key]['block_variation_25_50cm'] = [round(v, 4) for v in cv]
             if entry['alpha']:
                 sets[key].update(check_cutout(key, spec, entry, maps['diff']))
             if key == 'sheet_metal':
-                assert entry['metallic'] == T.SETS['sheet_metal']['metallic']
+                assert entry['metallic'] == T.SETS['sheet_metal']['metallic'] <= .35, 'galvanised sheet reads grey'
             # Tints the apply step derives from the Plex colours stay in range and keep the texture's contrast.
             for name, spec_m in plex_materials.items():
                 if apply_replica.texture_set(name, spec_m) == key:
@@ -448,6 +458,9 @@ def main():
                     assert hashlib.sha256(raw).hexdigest() == m['raw_sha256'], f'{m["file"]} is stale'
                 assert stored['sets'][key]['mean_linear'] == index['sets'][key]['mean_linear']
                 assert stored['sets'][key]['material'] == index['sets'][key]['material']
+            assert stored['macro']['raw_sha256'] == index['macro']['raw_sha256'], 'rerun python3 Scripts/plateau_textures.py'
+            raw = T.read_png((T.OUT / stored['macro']['file']).read_bytes())[2]
+            assert hashlib.sha256(raw).hexdigest() == stored['macro']['raw_sha256'], 'The macro mask is stale'
             report['committed'] = 'Data/Plateau/ReplicaGeometry/Textures matches the generator'
     print(json.dumps(report, indent=1))
     print('Plateau texture checks passed')
