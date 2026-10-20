@@ -29,10 +29,10 @@
  "source_sha256": {
   "Data/LaFontaine/osm.xml": "fe4410d45007a627bf6d9b9ddeeae329fa9cdd7492dfb5fa6beff851e7cf8f86",
   "Data/LaFontaine/layout.json": "4238d6ed45d5fb890e0f8dbcb672de0803c6dc7079b0b6a86b386d82ebbb4250",
-  "Scripts/plateau_replica.py": "f0a28940470f02e180f2d67c8053b2340e32002b1c24db43c6cbfccc7cc95b81",
+  "Scripts/plateau_replica.py": "8018bd10d4f8a21bcf91643d0c8e1e0683cc4812729111851d5c1b6412c7f3db",
   "Scripts/prepare_lafontaine.py": "e7b6e5f068a96ee7306b1fff247fa73158f5cf7c343dc5510ab8cce92ee3c924",
   "Data/Plateau/BaseGeometry/Marking.obj": "2d82cbca59041aa6af5e6f3fffaf6a01b2c3e672eea9732e8a5fecbb7cee35dd",
-  "Data/Plateau/ReplicaGeometry/Plex/fronts.json": "0bdac58607f918b7ca11706a4f9c1317687093ab2528e9adeef558ccee7febe9",
+  "Data/Plateau/ReplicaGeometry/Plex/fronts.json": "590fa600e6f2be5b3fd53dca206d93701c18528c17a84050b60bfa6920ef6953",
   "Data/Plateau/ReplicaGeometry/Soul/ruelles_vertes_clip.json": "6ca991f5b585f4f0567baed799c37db2d3476f451e0b88fdb315a959e2d7d216"
  },
  "placements": [
@@ -489,13 +489,13 @@
    "position": [
     52603.08,
     -19684.72,
-    18.0
+    0.0
    ],
    "yaw": 334.7,
    "scale": 1.0,
    "variant_seed": 859953,
    "collision": true,
-   "ground": "yard",
+   "ground": "ground",
    "osm_node": "4852243150"
   },
   {
@@ -588,13 +588,13 @@
    "position": [
     43252.79,
     8013.93,
-    18.0
+    0.0
    ],
    "yaw": 167.44,
    "scale": 1.0,
    "variant_seed": 941531,
    "collision": true,
-   "ground": "yard",
+   "ground": "ground",
    "osm_node": "9380555704"
   },
   {
@@ -871,13 +871,13 @@
    "position": [
     43069.51,
     6685.88,
-    18.0
+    0.0
    ],
    "yaw": 347.44,
    "scale": 1.0,
    "variant_seed": 322812,
    "collision": true,
-   "ground": "yard",
+   "ground": "ground",
    "osm_node": "9380555781"
   },
   {
@@ -1041,13 +1041,13 @@
    "position": [
     42695.94,
     6356.37,
-    0.0
+    18.0
    ],
    "yaw": 347.44,
    "scale": 1.0,
    "variant_seed": 637516,
    "collision": true,
-   "ground": "ground",
+   "ground": "yard",
    "osm_node": "9380555806"
   },
   {
@@ -1127,13 +1127,13 @@
    "position": [
     44091.19,
     14356.94,
-    18.0
+    0.0
    ],
    "yaw": 347.44,
    "scale": 1.0,
    "variant_seed": 790413,
    "collision": true,
-   "ground": "yard",
+   "ground": "ground",
    "osm_node": "9380555900"
   },
   {
@@ -1225,13 +1225,13 @@
    "position": [
     45746.93,
     18489.14,
-    18.0
+    0.0
    ],
    "yaw": 347.44,
    "scale": 1.0,
    "variant_seed": 878482,
    "collision": true,
-   "ground": "yard",
+   "ground": "ground",
    "osm_node": "9380555966"
   },
   {
@@ -1441,13 +1441,13 @@
    "position": [
     29400.88,
     739.16,
-    18.0
+    0.0
    ],
    "yaw": 57.37,
    "scale": 1.0,
    "variant_seed": 152753,
    "collision": false,
-   "ground": "yard",
+   "ground": "ground",
    "osm_node": "11666274376"
   },
   {
@@ -2158,13 +2158,13 @@
    "position": [
     -27192.19,
     60566.99,
-    18.0
+    0.0
    ],
    "yaw": 236.43,
    "scale": 1.0,
    "variant_seed": 724859,
    "collision": true,
-   "ground": "yard",
+   "ground": "ground",
    "osm_node": "11666295491"
   },
   {
@@ -5713,13 +5713,13 @@
    "position": [
     4807.34,
     58963.98,
-    18.0
+    0.0
    ],
    "yaw": 56.14,
    "scale": 1.0,
    "variant_seed": 135129,
    "collision": false,
-   "ground": "yard",
+   "ground": "ground",
    "osm_node": "12032291857",
    "osm": "amenity=waste_basket"
   },
@@ -5728,13 +5728,13 @@
    "position": [
     4858.81,
     58938.37,
-    18.0
+    0.0
    ],
    "yaw": 56.14,
    "scale": 1.0,
    "variant_seed": 16516,
    "collision": false,
-   "ground": "yard",
+   "ground": "ground",
    "osm_node": "12032291858"
   },
   {
@@ -11952,7 +11952,7 @@
    "scale": 1.0,
    "variant_seed": 103990,
    "collision": true,
-   "ground": "yard",
+   "ground": "sidewalk",
    "text": {
     "blade_a": {
      "generic": "Rue",
@@ -11979,7 +11979,7 @@
    "scale": 1.0,
    "variant_seed": 86149,
    "collision": true,
-   "ground": "yard",
+   "ground": "sidewalk",
    "traffic_heading": 146.86,
    "code": "RN-A",
    "street": "Rue Beaudry"
@@ -16080,13 +16080,13 @@
    "position": [
     239.55,
     -35028.93,
-    18.0
+    0.0
    ],
    "yaw": 236.65,
    "scale": 1.0,
    "variant_seed": 613564,
    "collision": true,
-   "ground": "sidewalk",
+   "ground": "ground",
    "code": "SD-TT",
    "text": "\\P EN TOUT TEMPS",
    "arrow": "right"
@@ -17392,13 +17392,13 @@
    "position": [
     -9181.86,
     -14192.25,
-    18.0
+    0.0
    ],
    "yaw": 57.32,
    "scale": 1.0,
    "variant_seed": 410019,
    "collision": true,
-   "ground": "sidewalk",
+   "ground": "ground",
    "code": "SU-ME-A",
    "text": "\\P 9h-10h MERCREDI 1 AVRIL AU 1 DÉC",
    "arrow": "right"
@@ -17408,13 +17408,13 @@
    "position": [
     -10416.78,
     -16117.16,
-    18.0
+    0.0
    ],
    "yaw": 57.32,
    "scale": 1.0,
    "variant_seed": 281957,
    "collision": true,
-   "ground": "sidewalk",
+   "ground": "ground",
    "code": "AD-TT",
    "text": "\\A EN TOUT TEMPS",
    "arrow": "left"
@@ -17824,13 +17824,13 @@
    "position": [
     -8580.95,
     -26160.01,
-    18.0
+    0.0
    ],
    "yaw": 56.96,
    "scale": 1.0,
    "variant_seed": 749335,
    "collision": true,
-   "ground": "sidewalk",
+   "ground": "ground",
    "code": "R-PF",
    "text": "\\P 9h-23h EXCEPTÉ S3R",
    "arrow": "right"
@@ -24720,13 +24720,13 @@
    "position": [
     -25031.85,
     -26188.75,
-    18.0
+    0.0
    ],
    "yaw": 144.58,
    "scale": 1.0,
    "variant_seed": 618605,
    "collision": true,
-   "ground": "sidewalk",
+   "ground": "ground",
    "code": "SU-MA-A",
    "text": "\\P 8h-9h MARDI 1 AVRIL AU 1 DÉC",
    "arrow": "both"
@@ -25248,13 +25248,13 @@
    "position": [
     -10152.16,
     -37450.45,
-    18.0
+    0.0
    ],
    "yaw": 147.44,
    "scale": 1.0,
    "variant_seed": 81858,
    "collision": true,
-   "ground": "sidewalk",
+   "ground": "ground",
    "code": "SU-ME-A",
    "text": "\\P 9h-10h MERCREDI 1 AVRIL AU 1 DÉC",
    "arrow": "left"
@@ -25264,13 +25264,13 @@
    "position": [
     -12227.12,
     -36125.29,
-    18.0
+    0.0
    ],
    "yaw": 327.44,
    "scale": 1.0,
    "variant_seed": 344711,
    "collision": true,
-   "ground": "sidewalk",
+   "ground": "ground",
    "code": "AD-TT",
    "text": "\\A EN TOUT TEMPS",
    "arrow": "both"
@@ -26128,13 +26128,13 @@
    "position": [
     -39174.06,
     -34700.74,
-    18.0
+    0.0
    ],
    "yaw": 237.5,
    "scale": 1.0,
    "variant_seed": 679703,
    "collision": true,
-   "ground": "sidewalk",
+   "ground": "ground",
    "code": "SU-ME-A",
    "text": "\\P 9h-10h MERCREDI 1 AVRIL AU 1 DÉC",
    "arrow": "both"
@@ -26432,13 +26432,13 @@
    "position": [
     -16551.69,
     -36141.08,
-    18.0
+    0.0
    ],
    "yaw": 236.6,
    "scale": 1.0,
    "variant_seed": 43805,
    "collision": true,
-   "ground": "sidewalk",
+   "ground": "ground",
    "code": "SU-MA-A",
    "text": "\\P 8h-9h MARDI 1 AVRIL AU 1 DÉC",
    "arrow": "right"
@@ -27078,7 +27078,7 @@
    "scale": 1.0,
    "variant_seed": 684019,
    "collision": true,
-   "ground": "yard",
+   "ground": "sidewalk",
    "code": "AD-TT",
    "text": "\\A EN TOUT TEMPS",
    "arrow": "both"
@@ -27312,13 +27312,13 @@
    "position": [
     47897.35,
     49449.14,
-    18.0
+    0.0
    ],
    "yaw": 145.08,
    "scale": 1.0,
    "variant_seed": 93742,
    "collision": true,
-   "ground": "sidewalk",
+   "ground": "ground",
    "code": "SU-ME-A",
    "text": "\\P 9h-10h MERCREDI 1 AVRIL AU 1 DÉC",
    "arrow": "right"
