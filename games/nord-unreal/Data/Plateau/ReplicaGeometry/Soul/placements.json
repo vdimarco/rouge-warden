@@ -51,7 +51,7 @@
  "source_sha256": {
   "Data/LaFontaine/osm.xml": "fe4410d45007a627bf6d9b9ddeeae329fa9cdd7492dfb5fa6beff851e7cf8f86",
   "Data/LaFontaine/layout.json": "4238d6ed45d5fb890e0f8dbcb672de0803c6dc7079b0b6a86b386d82ebbb4250",
-  "Scripts/plateau_replica.py": "f0a28940470f02e180f2d67c8053b2340e32002b1c24db43c6cbfccc7cc95b81",
+  "Scripts/plateau_replica.py": "519ff042a775c912d96059134c93cadca8b13df2d9406520bda8082a04843339",
   "Scripts/prepare_lafontaine.py": "e7b6e5f068a96ee7306b1fff247fa73158f5cf7c343dc5510ab8cce92ee3c924",
   "Data/Plateau/BaseGeometry/Marking.obj": "2d82cbca59041aa6af5e6f3fffaf6a01b2c3e672eea9732e8a5fecbb7cee35dd",
   "Data/Plateau/ReplicaGeometry/Plex/fronts.json": "0bdac58607f918b7ca11706a4f9c1317687093ab2528e9adeef558ccee7febe9",
