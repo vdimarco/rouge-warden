@@ -87,13 +87,13 @@ SETS = {
     'slate': {'name': 'Slate', 'size_px': (512, 1024), 'tile_m': (1.0, 2.0), 'seed': 1895,
               'surface': 'wall', 'keys': ()},
     'membrane': {'name': 'Membrane', 'size_px': (512, 512), 'tile_m': (2.44, 2.44), 'seed': 2010,
-                 'surface': 'ground', 'keys': ('Roof_Membrane',)},
-    'ballast': {'name': 'Ballast', 'size_px': (512, 512), 'tile_m': (1.0, 1.0), 'seed': 1962,
-                'surface': 'ground', 'keys': ('Roof_Gravel',)},
-    'tar': {'name': 'TarGravel', 'size_px': (512, 512), 'tile_m': (1.0, 1.0), 'seed': 1931,
-            'surface': 'ground', 'keys': ('Roof_Tar',), 'tint_floor': .1},
+                 'surface': 'ground', 'keys': ('Roof_Membrane',), 'macro': .07},
+    'ballast': {'name': 'Ballast', 'size_px': (1024, 1024), 'tile_m': (2.0, 2.0), 'seed': 1962,
+                'surface': 'ground', 'keys': ('Roof_Gravel',), 'macro': .14},
+    'tar': {'name': 'TarGravel', 'size_px': (1024, 1024), 'tile_m': (2.0, 2.0), 'seed': 1931,
+            'surface': 'ground', 'keys': ('Roof_Tar',), 'macro': .16},
     'sheet_metal': {'name': 'SheetMetal', 'size_px': (512, 512), 'tile_m': (1.0, 1.0), 'seed': 1920,
-                    'surface': 'wall', 'keys': ('Sheet_Metal',), 'metallic': .85, 'tint_floor': .02},
+                    'surface': 'wall', 'keys': ('Sheet_Metal',), 'metallic': .3, 'tint_floor': .02},
     'siding': {'name': 'Siding', 'size_px': (1024, 512), 'tile_m': (2.4, 1.2), 'seed': 1958,
                'surface': 'wall', 'keys': ('Siding_Lap_Cream', 'Siding_Lap_Grey'), 'tint_floor': .02},
     'parging': {'name': 'Parging', 'size_px': (512, 512), 'tile_m': (2.0, 2.0), 'seed': 1949,
@@ -112,9 +112,16 @@ SETS = {
                'surface': 'ground', 'keys': ('Yard_Pavers',), 'tint_floor': .02},
     'soil': {'name': 'Soil', 'size_px': (512, 512), 'tile_m': (2.0, 2.0), 'seed': 1905,
              'surface': 'ground', 'keys': ('Yard_Soil',)},
-    'crushed_stone': {'name': 'CrushedStone', 'size_px': (512, 512), 'tile_m': (1.0, 1.0), 'seed': 1999,
-                      'surface': 'ground', 'keys': ('Yard_Gravel',)},
+    'crushed_stone': {'name': 'CrushedStone', 'size_px': (1024, 1024), 'tile_m': (2.0, 2.0), 'seed': 1999,
+                      'surface': 'ground', 'keys': ('Yard_Gravel',), 'macro': .12},
+    'buff_brick': {'name': 'BuffBrick', 'size_px': (1024, 1024), 'tile_m': (1.6, 1.6), 'seed': 1956,
+                   'surface': 'wall', 'keys': ('Brick_Buff_Even',), 'macro': .05},
 }
+# Macro variation (the Kite demo / Starter Content T_MacroVariation approach): one small tileable mask of three
+# independent low-frequency noises. The apply step samples it twice, R at MACRO['tile_m'][0] and G at [1] (metres,
+# both non-commensurate with every set's tile), and multiplies the tint by lerp(1 - s, 1 + s, R) x
+# lerp(1 - .6 s, 1 + .6 s, G), with s the set's 'macro' strength, so a 49 m roof no longer shows its tile grid.
+MACRO = {'name': 'Macro', 'size_px': (512, 512), 'tile_m': (17.3, 5.3), 'seed': 2026, 'second_scale': .6}
 CARDS = tuple(k for k, s in SETS.items() if 'card_height_m' in s)
 ALPHA = tuple(k for k, s in SETS.items() if SURFACES[s['surface']]['blend_mode'] == 'masked')
 # Limestone layout (cm).
@@ -164,6 +171,13 @@ FENCE_RAILS_CM = ((22., 30.9), (149., 157.9))
 PAVER_CM = 10.
 PAVER_JOINT_CM = .15
 PAVER_CHAMFER_CM = .7
+# Even buff brick in running bond: a 20 x 6.67 cm module (three courses to 20 cm, Canadian modular), 1 cm
+# concave (tooled) joints of grey mortar, so the joint grid reads from the street; 8 bricks by 24 courses a tile.
+BRICK_MODULE_CM = (20., 20. / 3.)
+BRICK_JOINT_CM = 1.
+BRICK_COURSES = 24
+BRICK_COLOUR = (210., 181., 126.)          # yellow-tan (BrickYellow #D0B27A, buff #C9AE84 in research-plateau.md)
+BRICK_MORTAR = (171., 167., 157.)          # natural grey mortar (#A9A49A)
 
 
 # ------------------------------------------------------------------------------------------------
@@ -893,11 +907,17 @@ def membrane(spec):
                               'seam_u': round(seam / W, 4)})
 
 
-def gravel_stones(seed, W, H, px, layers, palette, round_stones=True):
-    """Stone list for splat_round or splat_angular from (cell_cm, prob, r_cm range, base_cm, top ratio) layers."""
+def gravel_stones(seed, W, H, px, layers, palette, round_stones=True, keep=None, shade=None):
+    """Stone list for splat_round or splat_angular from (cell_cm, prob, r_cm range, base_cm, top ratio) layers.
+
+    keep(layer, x, y) -> probability and shade(x, y) -> (r, g, b) factors vary the stones over the tile (thin,
+    scoured patches; grimy or clean lots); without them every stone is drawn as before.
+    """
     stones, colours, roughs = [], [], []
     for layer, (cell_cm, prob, (r0, r1), base, top) in enumerate(layers):
         for cx, cy, key in scatter(seed, W, H, cell_cm * px, prob, layer):
+            if keep is not None and unit(seed, 59, *key) >= keep(layer, cx, cy):
+                continue
             u = [unit(seed, 50 + n, *key) for n in range(10)]
             r = (r0 + (r1 - r0) * u[0]) * px
             if round_stones:
@@ -914,9 +934,23 @@ def gravel_stones(seed, W, H, px, layers, palette, round_stones=True):
                                r * (.5 + .2 * u[5]), (u[6] - .5) * .4 / px, (u[7] - .5) * .4 / px))
             c = pick(palette, u[8])
             tone = .93 + .14 * u[9]
-            colours.append((c[0] * tone, c[1] * tone, c[2] * tone))
+            k = (tone, tone, tone) if shade is None else tuple(tone * f for f in shade(cx, cy))
+            colours.append((c[0] * k[0], c[1] * k[1], c[2] * k[2]))
             roughs.append(.76 + .1 * unit(seed, 72, *key))
     return stones, colours, roughs
+
+
+def zone_field(seed, W, H, cells, gains):
+    """A tileable low-frequency Fbm stretched to about [0, 1] (mean 0.5): large-scale zones within a tile."""
+    values = field(Fbm(seed, W, H, cells, gains), H)
+    mean = sum(values) / len(values)
+    spread = max(abs(v - mean) for v in values) or 1.
+    return [min(1., max(0., .5 + .5 * (v - mean) / spread)) for v in values]
+
+
+def sampler(values, W, H):
+    """Nearest lookup of a flat W x H field at a pixel position (wrapping)."""
+    return lambda x, y: values[(floor(y) % H) * W + floor(x) % W]
 
 
 def ballast(spec):

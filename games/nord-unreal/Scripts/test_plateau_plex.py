@@ -466,7 +466,7 @@ def test_rear_wall_materials_and_long_walls():
 def test_street_wall_brick_lintels_and_cornice_return():
     # a street wall touching the front corner: front brick, stone sills and lintels, the cornice returning one bay
     _, _, lots, mesh, records, _ = _rear_fixture(alley_from_wall=1100, year=1898)
-    lot = dict(lots[0], crown='cornice_metal', masonry='Brick_Buff', year=1898)
+    lot = dict(lots[0], crown='cornice_metal', masonry='Brick_Buff_Even', year=1898)
     rear = P.Rear(lot, records[0]['front']['top_cm'])
     a = lot['primary']['b']                         # the front's corner, the wall runs back from it
     wall = {'index': 99, 'a': a, 'b': (a[0], a[1] + 1500.), 'width': 1500., 'normal': (1., 0.), 'kind': 'street',
@@ -475,7 +475,7 @@ def test_street_wall_brick_lintels_and_cornice_return():
     record = {'walls': []}
     rear._author_skin(m, wall, record)
     w = record['walls'][0]
-    assert w['material'] == 'Brick_Buff' and w['base'] == 'Stone' and w['windows'] == 3 * 3, w
+    assert w['material'] == 'Brick_Buff_Even' and w['base'] == 'Stone' and w['windows'] == 3 * 3, w
     assert rear.counts['cornice_returns'] == 1
     zc = P._floor_levels(lot)[-1] + 12
     tops = [f for f in m.groups[lot['paint']] if _horizontal(f, zc + 20)]
@@ -900,6 +900,389 @@ def test_canopy_raster_and_projection():
     assert abs(min(xs)) < 5 and abs(min(ys)) < 5 and 1150 < max(xs) < 1250 and 850 < max(ys) < 950, (xs, ys)
 
 
+# ------------------------------------------------------------------------------------------ walls and collision pass
+CAPSULE_R = 42.             # the player capsule (QuebecGameplay.cpp: InitCapsuleSize(42, 96))
+
+
+def _collision_faces(mesh):
+    """Faces that keep collision: Wood_Deck outside the Visual set, and every Collision_Only face."""
+    out = []
+    for material in P.COLLISION:
+        for i, face in enumerate(mesh.groups.get(material, [])):
+            if (material, i) not in mesh.visual:
+                out.append((material, face))
+    return out
+
+
+def _guard_planes(mesh):
+    """Collision_Only faces as (midpoint xy, z0, z1, half length) for matching against guard records."""
+    out = []
+    for face in mesh.groups.get('Collision_Only', []):
+        xs, ys = [p[0] for p in face], [p[1] for p in face]
+        out.append(((sum(xs) / 4, sum(ys) / 4), min(p[2] for p in face), max(p[2] for p in face),
+                    math.dist(face[0][:2], face[1][:2]) / 2))
+    return out
+
+
+def _deck_reachability(rear, step=10.):
+    """On every gallery deck a capsule of CAPSULE_R, kept that far from the mass wall and from every guard of that
+    deck (guards collide now), walks from the head of the flight arriving there to the gallery door, and from the
+    door to the foot of the flight leaving it. Walkable: the deck quad, and 1 m round each head and foot (landings,
+    spiral bays, flight ends); each flight end counts on the nearest deck of its level (one per module). Returns the
+    failures as (z, what)."""
+    failures = []
+
+    def owner(point, z):
+        """The deck (one per module and level) a flight end belongs to: the nearest at its level."""
+        level = [d for d in rear['decks'] if abs(d['z'] - z) < 1]
+        return min(level, key=lambda d: _poly_dist(point[:2], d['quad'])) if level else None
+    for deck in rear['decks']:
+        z = deck['z']
+        q = [tuple(p) for p in deck['quad']]
+        length = math.dist(q[0], q[1])
+        u = ((q[1][0] - q[0][0]) / length, (q[1][1] - q[0][1]) / length)
+        depth = math.dist(q[0], q[3])
+        n = ((q[3][0] - q[0][0]) / depth, (q[3][1] - q[0][1]) / depth)
+        o = (q[0][0] - n[0] * P.D_FACE, q[0][1] - n[1] * P.D_FACE)          # the mass wall line, d = 0
+
+        def local(p):
+            return ((p[0] - o[0]) * u[0] + (p[1] - o[1]) * u[1], (p[0] - o[0]) * n[0] + (p[1] - o[1]) * n[1])
+        # a flight's head point lies a half tread past its top tread, which on the narrowest straight stacks is just
+        # past the gallery's end: the capsule meets it at the gallery end
+        heads = [(min(max(h[0], 0.), length), h[1]) for h in
+                 (local(f['head']) for f in rear['flights'] if abs(f['z1'] - z) < 1 and owner(f['head'], z) is deck)]
+        feet = [local(f['foot']) for f in rear['flights'] if f['foot'] and abs(f['z0'] - z) < 1
+                and owner(f['foot'], z) is deck]
+        door = local(deck['door'])
+        guards = [(local(g['a']), local(g['b'])) for g in rear['guards'] if abs(g['z0'] - z) < 1]
+        x0 = min([0.] + [p[0] for p in heads + feet]) - 110
+        x1 = max([length] + [p[0] for p in heads + feet]) + 110
+        d1 = max([P.D_FACE + depth] + [p[1] for p in heads + feet]) + 110
+        nx, nd = int((x1 - x0) / step) + 1, int(d1 / step) + 1
+
+        def free(i, j):
+            x, d = x0 + i * step, j * step
+            inside = 0 <= x <= length and P.D_FACE <= d <= P.D_FACE + depth
+            if not inside and not any(math.dist((x, d), p) <= 100 for p in heads + feet):
+                return False
+            if d < CAPSULE_R:
+                return False
+            for a, b in guards:
+                if min(a[0], b[0]) - CAPSULE_R <= x <= max(a[0], b[0]) + CAPSULE_R and \
+                        min(a[1], b[1]) - CAPSULE_R <= d <= max(a[1], b[1]) + CAPSULE_R and \
+                        _seg_dist((x, d), a, b) < CAPSULE_R - 1:
+                    return False
+            return True
+        cells = {(i, j) for i in range(nx) for j in range(nd) if free(i, j)}
+
+        def nearest(p, reach):
+            best = min(cells, key=lambda c: (math.dist((x0 + c[0] * step, c[1] * step), p), c), default=None)
+            return best if best and math.dist((x0 + best[0] * step, best[1] * step), p) <= reach else None
+        start = nearest(door, 15.)
+        if start is None:
+            failures.append((z, 'no room in front of the door'))
+            continue
+        seen, todo = {start}, [start]
+        while todo:
+            i, j = todo.pop()
+            for c in ((i + 1, j), (i - 1, j), (i, j + 1), (i, j - 1)):
+                if c in cells and c not in seen:
+                    seen.add(c)
+                    todo.append(c)
+        for what, points in (('head', heads), ('foot', feet)):
+            for p in points:
+                # a capsule's reach: at a short landing the top tread lies within a radius of the end guard
+                cell = nearest(p, CAPSULE_R + 5)
+                if cell is None or cell not in seen:
+                    failures.append((z, what))
+    return failures
+
+
+def test_traffic_band_takes_whole_units_out_of_collision():
+    # a traffic centreline through the front yards: the porch steps and each straight stair, with the stair-head
+    # balcony it reaches, come within 300 cm, so those units go to no-collision Visual batches whole; the upper
+    # balconies farther from the traffic keep collision; nothing that collides stays inside the band
+    buildings = _row(4, 760, levels='3')
+    roads = _roads(-(380 + 100 + 350), 380)
+    lots, _ = P.select_fronts(buildings, roads, set(), {str(i): [1905, 3, 3, 1] for i in range(1, 5)}, {}, ())
+    traffic = [((-3000., -420.), (9000., -420.))]
+    mesh, records, counts = P.build(lots, rear=True, traffic=traffic)
+    assert counts['traffic_band_units'] >= 8 and counts['traffic_band_visual_faces'] > 0, counts
+    for material, face in _collision_faces(mesh):
+        assert min(P._poly_seg([p[:2] for p in face], a, b) for a, b in traffic) >= P.TRAFFIC_CLEAR - .01, (material, face)
+    kinds = {}
+    for unit, faces in mesh.unit_faces.items():
+        decks = {f in mesh.visual for f in faces if f[0] == 'Wood_Deck'}
+        assert len(decks) <= 1, ('half a unit out of collision', unit)
+        kinds.setdefault(unit[-1] if unit[0] == 'front' and unit[-1] in ('stair', 'porch') else 'other', set()).update(decks)
+        if unit[0] == 'front' and unit[-1] == 'stair' and decks == {True}:
+            # the head balcony and its rail collision went with the stair
+            assert any(mesh.groups['Wood_Deck'][i][0][2] > 300 for m, i in faces if m == 'Wood_Deck')
+    assert kinds['stair'] == {True} and kinds['porch'] == {True}, kinds
+    assert False in kinds['other'], 'the upper balconies and the rear keep their collision'
+    # batching: the visual faces sit in WoodDeckVisual batches that report no collision
+    groups, _ = P.batches(mesh)
+    visual = [k for k in groups if k.startswith('WoodDeck' + P.VISUAL)]
+    assert visual and all(P.batch_collision(k, groups[k][0]) == 'none' for k in visual)
+    assert sum(len(groups[k][1]) for k in visual) == len(mesh.visual)
+    assert all(P.batch_collision(k, m) == 'complex' for k, (m, _) in groups.items() if m in P.COLLISION and k not in visual)
+    # with no traffic nothing moves
+    mesh2, _, counts2 = P.build(lots, rear=True)
+    assert not mesh2.visual and 'traffic_band_units' not in counts2
+
+
+def test_gallery_guards_collide_and_exits_stay_open():
+    # every guard run (outer edges, ends, landings, opening edges, ground galleries) has an invisible Collision_Only
+    # wall as high as the guard; each inner flight's open side has a sloped one; and on narrow lots, where the top
+    # landing is short, the opening guard stops short, so a player still gets from every flight head to the door
+    for width, count, levels in ((760, 40, '3'), (470, 24, '3'), (520, 16, '4')):
+        buildings = _row(count, width, levels=levels)
+        roads = _roads(-(230 + 100 + 350), 230)
+        for road in roads:
+            road['points'] = [(-3000, road['points'][0][1]), (count * width + 3000, road['points'][0][1])]
+        roads.append(_alley(1600 + 2000., -3000, count * width + 3000))
+        lots, _ = P.select_fronts(buildings, roads, set(), {str(i): [1905, int(levels), 3, 1] for i in range(1, count + 1)}, {}, ())
+        mesh, records, counts = P.build(lots, rear=True)
+        planes = _guard_planes(mesh)
+        grid = P.Grid(500)
+        for plane in planes:
+            grid.add(plane, [plane[0][0]], [plane[0][1]])
+        guards = [g for r in records for g in r['rear']['guards']]
+        assert guards and counts['rear_guard_collision_runs'] == len(guards), (counts.get('rear_guard_collision_runs'), len(guards))
+        for g in guards:
+            mid = ((g['a'][0] + g['b'][0]) / 2, (g['a'][1] + g['b'][1]) / 2)
+            match = [pl for pl in grid.near(mid[0], mid[1], 10) if math.dist(pl[0], mid) < 2
+                     and abs(pl[1] - g['z0']) < .06 and abs(pl[2] - g['z1']) < .06]
+            assert len(match) == 2, ('a guard without its two collision faces', g, len(match))
+        straight = [r for r in records if r['rear']['stair'] == 'straight']
+        inner = sum(1 for r in straight for f in r['rear']['flights'] if f['kind'] == 'straight' and f['z0'] > 0)
+        assert counts.get('rear_flight_collision_runs', 0) == inner, (counts.get('rear_flight_collision_runs'), inner)
+        failures = [(r['id'], f) for r in records if r['rear']['galleries'] for f in _deck_reachability(r['rear'])]
+        assert not failures, failures[:10]
+        if width == 470:
+            assert straight, 'the narrow lots must exercise the short top landing'
+    # front stair-head balconies: their rails collide on the closed sides
+    _, lots, _, mesh, records, counts = _fixture(yard=380, roll={str(i): [1905, 3, 3, 1] for i in range(1, 5)})
+    assert counts.get('rail_collision_runs', 0) == 2 * counts['stair_straight'], counts
+
+
+def _mentana_block(storeys='', year=1885, bid='356220851', alley=True):
+    """The deep Mentana block (14 x 49 m, apartments, the roll's 9 storeys checked against its 32 m LOD2 roof), its
+    back on a neighbour, a ruelle 10 m off its east long wall and open ground to the west."""
+    block = {'id': bid, 'height': 960., 'tags': {'building': 'apartments'},
+             'points': [(0., 0.), (1407., 0.), (1407., 4900.), (0., 4900.)]}
+    behind = {'id': '900', 'height': 960., 'tags': {'building': 'residential'},
+              'points': [(-300., 4900.), (1700., 4900.), (1700., 6400.), (-300., 6400.)]}
+    roads = _roads(-(367 + 100 + 350), 367, street='Rue de Mentana')
+    if alley:
+        roads.append({'id': 'al', 'name': '', 'width': 430, 'tags': {'highway': 'service', 'service': 'alley'},
+                      'points': [(1407. + 1015., -200.), (1407. + 1015., 4800.)]})
+    roll = {bid: [year, 9, 158, 2]}
+    lots, _ = P.select_fronts([block, behind], roads, {'900'}, roll, {}, (),
+                              {bid: {'roof_cm': 3219.8, 'city_id': 'G', 'cover': .97}})
+    mesh, records, counts = P.build(lots, rear=True)
+    return [block, behind], roads, lots, mesh, records, counts
+
+
+def test_build_year_override_and_post1945_kit():
+    # OSM way 356220851 is the OMHM's Habitations De Mentana (in operation since 1974), not an 1885 building: the
+    # override table gives it 1974 and red brick, so it takes the post-1945 kit: a balcony slab with a steel guard and
+    # a patio door on every bay of every upper floor, wall panels under the windows, a parapet over a lowered roof
+    # with a metal coping, a lift penthouse and roof vents, and no siding anywhere
+    assert P.BUILD_YEAR_OVERRIDES['356220851']['year'] == 1974 and 'omhm.qc.ca' in P.BUILD_YEAR_OVERRIDES['356220851']['source']
+    buildings, roads, lots, mesh, records, counts = _mentana_block()
+    lot, record = lots[0], records[0]
+    assert lot['year'] == 1974 and lot['era_source'].startswith('override: OMHM') and lot['masonry'] == 'Brick_Red'
+    assert lot['modern'] and lot['storeys'] == 9 and record['kit'] == 'post-1945 apartment' and record['year_override']
+    bays = max(1, round(lot['primary']['width'] / P.MODERN_BAY))
+    sides = sum(max(1, round(s['width'] / P.MODERN_BAY)) for s in lot['sides'])
+    assert counts['modern_fronts'] == 1 and counts['modern_balconies'] == bays * 8, (counts['modern_balconies'], bays)
+    assert counts['patio_doors'] == counts['modern_balconies'] and counts['wall_panels'] == counts['modern_windows'] > 0
+    assert counts.get('side_modern_balconies', 0) == sides * 8 and counts['modern_entrances'] == 1
+    # the long walls carry balconies too, the rear gets no wooden galleries, and nothing is lap siding
+    walls = record['rear']['walls']
+    longs = [w for w in walls if w['kind'] == 'long']
+    assert len(longs) == 2 and all(w['balconies'] == round(w['width_cm'] / P.MODERN_BAY) * 8 for w in longs), longs
+    assert record['rear']['galleries'] == 0 and record['rear']['reason'].startswith('post-1945')
+    assert all(w['material'] == 'Brick_Red' for w in walls) and not any(mesh.groups.get(k) for k in P.SIDING)
+    # slabs: 15 cm concrete, 1.3 m deep, one per balcony; the parapet stands 80 cm over the roof under a coping
+    slabs = [f for f in mesh.groups['Stone_Cast'] if _horizontal(f) and _newell(f)[2] < 0 and _area_xy(f) > P.BALCONY_D * 200]
+    assert len(slabs) >= counts['modern_balconies'] + counts['rear_modern_balconies'], len(slabs)
+    top = record['front']['top_cm']
+    assert abs(record['roof']['z_cm'] - (top - P.MODERN_PARAPET)) < .01
+    assert all(abs(w['top_cm'] - top) < .01 for w in walls)
+    copings = [f for f in mesh.groups['Sheet_Metal'] if _horizontal(f, top + 4)]
+    assert len(copings) >= 1 + len(walls), len(copings)
+    roof = record['roof']
+    assert roof['penthouses'] == 2 and 1 <= roof['vents'] <= 5 and not roof['chimney'] and not roof['hatch'], roof
+    # the same block on its roll year alone stays an old flat-parapet conciergerie, with no kit
+    _, _, lots2, _, records2, counts2 = _mentana_block(bid='1')
+    assert lots2[0]['year'] == 1885 and not lots2[0]['modern'] and 'kit' not in records2[0] and not counts2.get('modern_fronts')
+
+
+def test_lap_siding_stays_low():
+    # lap siding never above the second storey (brick above it, recorded on the wall), and never on a block of
+    # five storeys or more
+    _, _, lots, mesh, records, counts = _yard_row(40, levels='3')
+    rear = _rear_faces(mesh)
+    sided = [(lot, r) for lot, r in zip(lots, records) if P.Rear(lot, r['front']['top_cm']).siding]
+    assert sided and any(w.get('upper') for _, r in sided for w in r['rear']['walls'])
+    tops = {}
+    for lot, record in sided:
+        for w in record['rear']['walls']:
+            if w['material'] in P.SIDING:
+                assert w['upper'] in P.BRICKS and abs(w['siding_top_cm'] - P._floor_levels(lot)[2]) < .1, w
+                tops[record['id']] = w['siding_top_cm']
+    for key in P.SIDING:
+        for face in rear.get(key, []):
+            assert max(p[2] for p in face) <= max(tops.values()) + .01, face
+    _, _, lots5, mesh5, records5, _ = _yard_row(20, levels='5')
+    assert any(P.Rear(lot, r['front']['top_cm']).siding is False for lot, r in zip(lots5, records5))
+    assert not any(mesh5.groups.get(k) for k in P.SIDING), 'no siding on a block over four storeys'
+
+
+def test_open_ground_for_yardless_lots():
+    # a lot with no yard (the Mentana block: its back on a neighbour) gets ground cover on its open walls: a lawn along
+    # each, and asphalt parking with painted stalls where the ruelle lets cars in; never on a building, the ruelle's
+    # clearance, another patch or a yard
+    buildings, roads, lots, mesh, records, counts = _mentana_block()
+    rear = records[0]['rear']
+    assert rear['yard'] is None and rear['open_ground'], rear.get('yard_reason')
+    ground = rear['open_ground']
+    assert ground['area_m2'].get('Yard_Grass', 0) > 50 and ground['area_m2'].get('Asphalt_Lot', 0) > 50, ground['area_m2']
+    assert ground['stall_lines'] >= 10 and counts['rear_parking_stall_lines'] == ground['stall_lines']
+    alley = roads[-1]['points']
+    cells = [[tuple(p) for p in c[1:]] for c in ground['cells']]
+    for cell in cells:
+        centre = (sum(p[0] for p in cell) / 4, sum(p[1] for p in cell) / 4)
+        for b in buildings:
+            assert not any(P._inside(p, b['points']) for p in cell + [centre]), cell
+        assert min(_seg_dist(p, *alley) for p in cell) >= P.FENCE_FROM_ALLEY - .5, cell
+    for i, a in enumerate(cells):
+        for b in cells[i + 1:]:
+            ca = (sum(p[0] for p in a) / 4, sum(p[1] for p in a) / 4)
+            assert not P._inside(ca, b), ('patches overlap', a, b)
+    asphalt = mesh.groups['Asphalt_Lot']
+    assert asphalt and all(_horizontal(f, P.GROUND_Z['Asphalt_Lot']) and _newell(f)[2] > 0 for f in asphalt)
+    lines = [f for f in mesh.groups['Trim'] if _horizontal(f, P.GROUND_Z['Asphalt_Lot'] + .3)]
+    assert len(lines) == ground['stall_lines']
+    # with no ruelle the strip toward the neighbour stays lawn; open ground to the west still parks cars
+    _, _, _, _, records2, _ = _mentana_block(alley=False)
+    assert records2[0]['rear']['open_ground']['area_m2'].get('Yard_Grass', 0) > 0
+
+
+def test_towers_buff_or_brown_with_three_metre_bays():
+    # towers (over 24 m) are buff or brown brick, never red, with the post-1945 kit: a window bay about every 3 m on
+    # every floor, a balcony on every second bay, and a parapet over the mass roof; the other background skins get
+    # a window per 3 m bay instead of 4.5 m
+    assert set(P.TOWER_BRICK) <= {'Brick_Brown', 'Brick_BrownDark', 'Brick_Buff_Even'}
+    buildings, cards = _glass_fixture()
+    tower = dict(buildings[0], id='950', height=3200.)
+    tower_cards = []
+    pts = tower['points']
+    for a, b in zip(pts, pts[1:] + pts[:1]):
+        length = math.dist(a, b)
+        n = ((b[1] - a[1]) / length, -(b[0] - a[0]) / length)
+        for z in range(180, 3000, 320):
+            for d in range(100, int(length) - 180, 300):
+                c = (a[0] + (b[0] - a[0]) * (d + 65) / length + n[0] * 3, a[1] + (b[1] - a[1]) * (d + 65) / length + n[1] * 3)
+                tower_cards.append((c, float(z), float(z + 160)))
+    owners = P.card_walls(tower_cards, [tower])
+    masses = P.background_masses([tower], [], set(), {'950': 'tower over 24 m'}, tower_cards, owners)
+    mass = masses[0]
+    assert mass['modern'] and mass['skin_wall'] in P.TOWER_BRICK and mass['parapet_from'] == 3200.
+    mesh = P.PlexMesh()
+    records, counts = P.build_background(mesh, masses, {})
+    record = records[0]
+    assert record['kit'] == 'post-1945 apartment' and record['brick'] in P.TOWER_BRICK
+    floors = sum(1 for z in P._floor_levels(mass)[:-1] if z + 215 <= mass['wall_top'] - 10)
+    for w in record['walls']:
+        bays = max(1, round(w['width_cm'] / P.MODERN_BAY))
+        assert w['material'] == record['brick'] and w['windows'] == bays * floors, (w, bays, floors)
+        assert w['balconies'] == w['doors'] == (bays + 1) // 2 * (floors - 1), w
+        assert abs(w['top_cm'] - (3200. + P.TOWER_PARAPET)) < .01
+    assert not P.glass_audit(tower_cards, owners, [tower], [], records, {})[1], 'no card floats'
+    # an ordinary background mass: one window per 3 m bay and floor
+    owners = P.card_walls(cards, buildings)
+    masses = P.background_masses(buildings, [], set(), {'900': 'no exposed edge facing a named street'}, cards, owners)
+    records, _ = P.build_background(P.PlexMesh(), masses, {})
+    floors = sum(1 for z in P._floor_levels(masses[0])[:-1] if z + P.REAR_HEAD <= masses[0]['wall_top'] - 10)
+    for w in records[0]['walls']:
+        assert w['windows'] == max(1, round(w['width_cm'] / P.BACKGROUND_BAY)) * floors, w
+
+
+def _check_collision_district(manifest, fronts, groups, keep):
+    """Every Plex batch that collides, read back from its OBJ text (y negated), keeps 300 cm from every traffic
+    centreline, measured with the replica test's own World().traffic_distance; and every guard collides."""
+    import plateau_replica
+    world = plateau_replica.World()
+    worst, faces = math.inf, 0
+    for batch in manifest['batches']:
+        if batch['collision'] == 'none':
+            continue
+        key = batch['file'][:-4]
+        material, polys = groups[key]
+        vs = []
+        for line in P.obj_text(batch['mesh'], polys, material).splitlines():
+            if line.startswith('v '):
+                x, y, z = (float(v) for v in line.split()[1:4])
+                vs.append((x, -y, z))
+            elif line.startswith('f '):
+                face = [vs[int(t.split('/')[0]) - 1] for t in line.split()[1:]]
+                worst = min(worst, world.traffic_distance([p[:2] for p in face], 2000))
+                faces += 1
+    assert worst >= plateau_replica.CLEAR - .01, f'Plex collision {worst:.1f} cm from a traffic centreline'
+    counts = manifest['counts']
+    guards = sum(len(r['rear']['guards']) for r in fronts['fronts'])
+    assert counts['rear_guard_collision_runs'] == guards and 'Collision_Only' in manifest['materials']
+    assert all(b['collision'] == 'complex' for b in manifest['batches'] if b['material'] == 'Collision_Only')
+    failures = [(r['id'], f) for r in fronts['fronts'] if r['rear']['galleries'] for f in _deck_reachability(r['rear'], 12.)]
+    assert not failures, failures[:10]
+    return {'collision_triangles_checked': faces, 'min_collision_to_traffic_cm': round(worst, 1),
+            'traffic_band_units': counts.get('traffic_band_units', 0), 'guard_collision_runs': guards}
+
+
+def _check_kit_district(manifest, stats, fronts, keep):
+    """The walls pass over the district: the Mentana override, the post-1945 kit, siding kept low, ground cover on
+    the yardless lots, the towers' brick and windows, and buff brick on its even key."""
+    counts = manifest['counts']
+    records = fronts['fronts']
+    block = next(r for r in records if r['id'] == '356220851')
+    assert block['year'] == 1974 and block['era_source'].startswith('override: OMHM') and block['masonry'] == 'Brick_Red'
+    assert block['kit'] == 'post-1945 apartment' and block['roof']['penthouses'] >= 1 and not block['roof']['chimney']
+    assert block['rear']['open_ground'] and not any(w['material'] in P.SIDING for w in block['rear']['walls'])
+    modern = [r for r in records if r.get('kit')]
+    assert all(r['storeys'] >= P.MODERN_STOREYS and r['year'] >= P.MODERN_YEAR for r in modern)
+    assert len(modern) == sum(1 for lot in keep['lots'] if lot['storeys'] >= 5 and lot['year'] >= 1945) >= 5
+    assert counts['modern_fronts'] == len(modern) and counts['modern_balconies'] > 0 and counts['rear_modern_balconies'] > 0
+    # siding: never on a block over four storeys, never above the second storey
+    for record in records + fronts['background']:
+        walls = record['rear']['walls'] if 'rear' in record else record['walls']
+        storeys = record['storeys']
+        for w in walls:
+            if w['material'] in P.SIDING:
+                assert storeys <= P.SIDING_MAX_STOREYS and 'kit' not in record, (record['id'], w)
+                if storeys > P.SIDING_STOREYS:
+                    assert w['upper'] in P.BRICKS and w['siding_top_cm'] < w['top_cm'], (record['id'], w)
+    # ground cover on the lots with no yard: lawn everywhere, parking where a ruelle or open ground lets cars in
+    yardless = [r for r in records if not r['rear']['yard'] and r['rear'].get('yard_reason')]
+    covered = [r for r in yardless if r['rear'].get('open_ground')]
+    assert len(covered) >= .5 * len(yardless) and counts['rear_open_ground_lots'] == len(covered), (len(covered), len(yardless))
+    assert sum(r['rear']['open_ground']['area_m2'].get('Asphalt_Lot', 0) for r in covered) > 100
+    assert counts['rear_parking_stall_lines'] > 0 and 'Asphalt_Lot' in manifest['materials']
+    # towers: buff or brown, the kit with balconies, windows about every 3 m; buff brick is the even key everywhere
+    towers = [m for m in fronts['background'] if m.get('kit')]
+    assert len(towers) == 8 and all(m['brick'] in P.TOWER_BRICK for m in towers), [m.get('brick') for m in towers]
+    assert all(sum(w['balconies'] for w in m['walls']) > 0 for m in towers)
+    assert 'Brick_Buff' not in manifest['materials'] and 'Brick_Buff_Even' in manifest['materials']
+    assert 'texture' not in manifest['materials']['Brick_Buff_Even']
+    assert counts['background_windows'] >= 1.1 * 6137, counts['background_windows']
+    return {'modern_lots': len(modern), 'yardless_lots_with_ground': len(covered), 'towers': len(towers),
+            'background_windows': counts['background_windows'],
+            'balconies': counts['modern_balconies'] + counts.get('side_modern_balconies', 0)
+            + counts['rear_modern_balconies'] + counts.get('background_modern_balconies', 0)}
+
+
 def _check_yards_district(manifest, stats, fronts, keep):
     """The yards pass over the whole district: ground cover, lane edges, guards, spirals, creepers and yard trees."""
     counts = manifest['counts']
@@ -1088,12 +1471,14 @@ def _glass_floating(fronts, buildings):
 def _check_walls_roofs_district(manifest, stats, fronts, keep):
     counts = manifest['counts']
     records = fronts['fronts']
-    # Caps raised within the agreed ceilings of 3.0 million triangles and 1,200 batches. Walls-and-roofs pass: roofs,
+    # Caps raised within the agreed ceilings of 3.5 million triangles and 1,400 batches. Walls-and-roofs pass: roofs,
     # windowed long and street walls and 252 background masses added ~210,000 triangles (cap 2.75 million), and 8 new
     # material keys needed ~1,250 batches at the 142.5 m tile, so the tile widened to 190 m (cap 1,200). Yards pass:
     # guard rails, caps and rim boards, fence posts and cap rails, spiral pans, stringers, rails and balusters, ground
     # cover and creeper cards add ~270,000 triangles (cap 2.95 million); 7 more keys stay under 1,200 batches at 190 m.
-    assert P.TRIANGLE_BUDGET <= 2950000 and P.MAX_BATCHES <= 1200
+    # Walls-and-collision pass (cap 3.15 million): the post-1945 kit on 6 blocks and 8 towers, the denser background
+    # window grid and the invisible guard walls add ~160,000 triangles; its 3 keys stay under 1,200 batches at 190 m.
+    assert P.TRIANGLE_BUDGET <= 3150000 and P.MAX_BATCHES <= 1200
     # roofs: every lot has one; mostly white membrane, some white gravel, a few tar (the borough's white-roof rule)
     mix = stats['roofs']['materials']
     share = {key: mix.get(key, 0) / len(records) for key in P.ROOFS}
@@ -1118,17 +1503,19 @@ def _check_walls_roofs_district(manifest, stats, fronts, keep):
             if wall['kind'] in ('street', 'lane', 'long'):
                 assert wall['material'] in P.BRICKS + ('Stone_Cast',), (record['id'], wall)
             assert wall['base'] in ('Parged', 'Stone_Cast') or (wall['kind'] == 'street' and wall['base'] == 'Stone'), wall
-            if lot and wall['kind'] == 'long' and not wall['galleries']:
+            if lot and not lot.get('modern') and wall['kind'] == 'long' and not wall['galleries']:
                 floors = P._floor_levels(lot)
                 rows = sum(1 for k in range(lot['storeys']) if floors[k] + P.REAR_HEAD <= wall['top_cm'] - 10)
                 assert wall['windows'] == rows * max(1, int(wall['width_cm'] // 450)), (record['id'], wall)
                 long_windows += wall['windows']
     assert long_windows >= 2500, long_windows
-    # the Mentana block: 9 storeys from the roll, checked against its 32 m LOD2 roof, windows on both long walls
+    # the Mentana block: 9 storeys from the roll, checked against its 32 m LOD2 roof; built 1974 (OMHM), so the
+    # post-1945 kit puts a window per 3 m bay on every floor of both long walls, with a balcony on each upper bay
     block = next(r for r in records if r['id'] == '356220851')
     assert block['storeys'] == 9 and block['storeys_source'].startswith('assessment roll, checked'), block['storeys_source']
     longs = [w for w in block['rear']['walls'] if w['kind'] == 'long']
-    assert len(longs) == 2 and all(w['windows'] == 9 * int(w['width_cm'] // 450) for w in longs), longs
+    assert len(longs) == 2 and all(w['windows'] == 9 * round(w['width_cm'] / P.MODERN_BAY) for w in longs), longs
+    assert all(w['balconies'] == 8 * round(w['width_cm'] / P.MODERN_BAY) for w in longs), longs
     # background masses: the park-perimeter row and the skipped buildings with cards are skinned and windowed
     kinds = stats['background']['kinds']
     assert kinds.get('perimeter') == 154 and stats['background']['windows'] >= 5000, stats['background']
@@ -1158,7 +1545,8 @@ def test_district():
         assert set(batch) == {'file', 'mesh', 'material', 'collision', 'triangles', 'bounds_cm', 'sha256'}
         assert batch['sha256'] == manifest['geometry_sha256'][batch['file']]
         assert batch['mesh'] == 'SM_Plex_' + batch['file'][:-4] and batch['material'] in manifest['materials']
-        assert batch['collision'] == ('complex' if batch['material'] == 'Wood_Deck' else 'none')
+        visual = batch['file'].startswith('WoodDeck' + P.VISUAL + '_')
+        assert batch['collision'] == ('complex' if batch['material'] in P.COLLISION and not visual else 'none'), batch
         assert 0 < batch['triangles'] <= 65000 and len(batch['bounds_cm']) == 6
         span = max(batch['bounds_cm'][3] - batch['bounds_cm'][0], batch['bounds_cm'][4] - batch['bounds_cm'][1])
         assert span <= manifest['batching']['tile_cm'] + 3000, (batch['file'], span)
@@ -1194,9 +1582,12 @@ def test_district():
     rear = _check_rear_district(manifest, fronts, keep)
     walls_roofs = _check_walls_roofs_district(manifest, stats, fronts, keep)
     yards = _check_yards_district(manifest, stats, fronts, keep)
+    collision = _check_collision_district(manifest, fronts, groups, keep)
+    kit = _check_kit_district(manifest, stats, fronts, keep)
     print('district', json.dumps({'fronts': stats['fronts'], 'triangles': total, 'batches': len(manifest['batches']),
                                   'tile_cm': manifest['batching']['tile_cm'], 'stair_share_1890_1930': round(share, 3),
-                                  'rear': rear, 'walls_roofs': walls_roofs, 'yards': yards}))
+                                  'rear': rear, 'walls_roofs': walls_roofs, 'yards': yards, 'collision': collision,
+                                  'kit': kit}))
 
 
 if __name__ == '__main__':
@@ -1211,7 +1602,9 @@ if __name__ == '__main__':
              test_guards_cut_where_flights_pass, test_ground_galleries_on_lattice_skirts,
              test_spiral_treads_stringer_rail_balusters, test_fences_posts_cards_gates_and_open_lanes,
              test_yard_ground_cover, test_creepers_are_cutout_cards, test_yard_trees_from_the_canopy,
-             test_canopy_raster_and_projection]
+             test_canopy_raster_and_projection, test_traffic_band_takes_whole_units_out_of_collision,
+             test_gallery_guards_collide_and_exits_stay_open, test_build_year_override_and_post1945_kit,
+             test_lap_siding_stays_low, test_open_ground_for_yardless_lots, test_towers_buff_or_brown_with_three_metre_bays]
     if '--quick' not in sys.argv:
         tests.append(test_district)
     for test in tests:

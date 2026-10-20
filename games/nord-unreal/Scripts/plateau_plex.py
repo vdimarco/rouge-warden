@@ -24,6 +24,13 @@ that step with the neighbours, a brick skin on any party wall left above a lower
 chimney box and a few deck terraces. Background masses (background_masses): the park-perimeter row and the
 skipped buildings get the same back-wall skin and windows wherever their old glass cards would show.
 
+Walls and collision: blocks of 5 storeys or more built from 1945 on (BUILD_YEAR_OVERRIDES corrects roll years, e.g.
+the OMHM's Habitations De Mentana, 1974) and the towers take a post-1945 apartment kit (modern_bays: 3 m bays,
+balcony slabs with steel guards, patio doors, wall panels, a parapet over a lowered roof, a lift penthouse); lap siding
+never rises above the 2nd storey or onto a block over 4; lots with no yard get lawn and parking (plan_open_ground).
+Gallery guards, inner flights' open sides and stair-head balcony rails get invisible Collision_Only walls, and
+clear_traffic_band takes every collision unit that comes within 300 cm of a traffic centreline out of collision.
+
 Rules follow research-plateau.md §3-§6 and §9 (Plateau heritage sheets, Dec 2015) and the
 CGA split idea of Müller et al. 2006 (mass -> facade -> floors -> bays). Storeys come from
 OSM building:levels, then the municipal assessment roll joined by address, then the 2016
@@ -69,8 +76,11 @@ MAX_BATCH_TRIANGLES = 60000
 # Raised from 2.5 million to 2.75 million: roofs (membrane skins, party parapets, chimneys, hatches), windowed long and
 # street walls and the skins and windows on 252 background masses add about 210,000 triangles. Raised to 2.95 million:
 # the yards pass (guard rails, caps and rim boards, fence posts and cap rails, spiral pans, stringers, rails and
-# balusters, ground cover, creeper cards) adds about 270,000 triangles.
-TRIANGLE_BUDGET = 2950000
+# balusters, ground cover, creeper cards) adds about 270,000 triangles. Raised to 3.15 million (the agreed ceiling is
+# 3.5 million): the walls-and-collision pass adds about 160,000, mostly the post-1945 kit's balcony slabs, guards,
+# patio doors and panels on 6 blocks and 8 towers, the 3 m window grid on the background skins, and the invisible
+# guard walls (two faces per guard run).
+TRIANGLE_BUDGET = 3150000
 
 D_BACK = 4.0              # glass, door leaves and recess backs: 1 cm ahead of the 3 cm OSM glass cards
 REVEAL = 12.0
@@ -92,7 +102,9 @@ MATERIALS = {
     'Brick_Orange':    {'base_color_srgb': '#AE5E3B', 'roughness': .86, 'metallic': 0, 'texture': '/Game/Art/Textures/brick_wall_001_diff'},
     'Brick_Brown':     {'base_color_srgb': '#6B4232', 'roughness': .88, 'metallic': 0, 'texture': '/Game/Art/Textures/brick_wall_001_diff'},
     'Brick_BrownDark': {'base_color_srgb': '#553428', 'roughness': .9, 'metallic': 0, 'texture': '/Game/Art/Textures/brick_wall_001_diff'},
-    'Brick_Buff':      {'base_color_srgb': '#CCB07F', 'roughness': .84, 'metallic': 0, 'texture': '/Game/Art/Textures/brick_wall_001_diff'},
+    # Buff brick takes the shared key the apply step maps to its own even buff-brick set (no 'texture' field, so it
+    # never falls back to the red brick photo tinted up to 8x, which read as a cream, olive and red speckle).
+    'Brick_Buff_Even': {'base_color_srgb': '#CCB07F', 'roughness': .84, 'metallic': 0},
     'Stone':           {'base_color_srgb': '#8F8C85', 'roughness': .82, 'metallic': 0, 'texture': '/Game/Art/Textures/concrete_pavement_diff'},
     'Stone_Cast':      {'base_color_srgb': '#BDB5A3', 'roughness': .8, 'metallic': 0},
     'Trim':            {'base_color_srgb': '#E8E6DF', 'roughness': .55, 'metallic': 0},
@@ -123,18 +135,52 @@ MATERIALS = {
     'Yard_Pavers':     {'base_color_srgb': '#89847B', 'roughness': .81, 'metallic': 0},    # concrete pavers (pavé uni)
     'Yard_Soil':       {'base_color_srgb': '#453526', 'roughness': .88, 'metallic': 0},    # garden-bed soil
     'Yard_Gravel':     {'base_color_srgb': '#827F7B', 'roughness': .88, 'metallic': 0},    # crushed-stone parking pad
+    # Parking on lots with no yard: the street asphalt photo (the apply step duplicates M_Asphalt for an 'asphalt'
+    # texture), a lighter, older grey than the carriageway's #3a3b40.
+    'Asphalt_Lot':     {'base_color_srgb': '#4C4D50', 'roughness': .9, 'metallic': 0, 'texture': '/Game/Art/Textures/asphalt_02_diff'},
+    # Shared key: geometry that collides but never renders (gallery guards, stair-opening edges, balcony rails). The
+    # apply step spawns these batches on actors hidden in game that block pawns and ignore the camera and visibility.
+    'Collision_Only':  {'base_color_srgb': '#FF00FF', 'roughness': 1., 'metallic': 0},
 }
-COLLISION = {'Wood_Deck': 'complex'}       # complex-as-simple per batch, like the existing *_Collision batches
+# complex-as-simple per batch, like the existing *_Collision batches. A Wood_Deck face inside the 300 cm traffic band
+# goes to a 'Visual' batch with no collision instead (clear_traffic_band), and a Collision_Only face there is dropped.
+COLLISION = {'Wood_Deck': 'complex', 'Collision_Only': 'complex'}
+VISUAL = 'Visual'           # batch-name marker of the no-collision Wood_Deck batches
 # Alpha-masked cut-out cards: u along the run in metres, v 0..1 from the bottom to the top of the card.
 CARD_UV = ('Rail_Baluster', 'Rail_Lattice', 'Fence_Boards')
 YARD_GROUND = ('Yard_Grass', 'Yard_Pavers', 'Yard_Soil', 'Yard_Gravel')
 ROOFS = ('Roof_Membrane', 'Roof_Gravel', 'Roof_Tar')
-BRICKS = ('Brick_Red', 'Brick_RedDark', 'Brick_Orange', 'Brick_Brown', 'Brick_BrownDark', 'Brick_Buff')
+BRICKS = ('Brick_Red', 'Brick_RedDark', 'Brick_Orange', 'Brick_Brown', 'Brick_BrownDark', 'Brick_Buff_Even')
 PAINT = ('Iron', 'Wood_Green', 'Wood_Burgundy', 'Wood_Grey', 'Wood_Cream')
 DOORS = ('Wood_Green', 'Wood_Burgundy', 'Iron', 'Wood_Green', 'Wood_Oak', 'Wood_Oak', 'Wood_Grey')
 FRAMES = ('Trim', 'Trim', 'Trim', 'Iron', 'Wood_Green', 'Wood_Oak')
 # Decade histogram of the matched roll (research §4) for lots without a roll year.
 ERA_WEIGHTS = ((1885, 487), (1895, 46), (1905, 653), (1913, 421), (1925, 182), (1935, 48), (1950, 69), (1970, 130))
+# Lots whose assessment-roll year is not the year of the building that stands there (the roll keeps the oldest unit
+# year on the lot). Each entry gives the year, optionally the brick, and the source.
+BUILD_YEAR_OVERRIDES = {
+    # OSM way 356220851, 4110-4118 rue De Mentana and 4077-4105 rue Saint-André: the OMHM's Habitations De Mentana,
+    # 158 social-housing units in two buildings with lifts. The roll's 1885 put a 19th-century front on it.
+    '356220851': {'year': 1974, 'masonry': 'Brick_Red',
+                  'source': "OMHM, Habitations De Mentana: in operation since 1974 (https://omhm.qc.ca/en/node/15296); "
+                            'red brick, concrete balcony slabs with painted guards, patio doors and wall panels under '
+                            'the windows (OMHM Infochantier De Mentana, October 2008, '
+                            'https://www.omhm.qc.ca/sites/default/files/infochantier/DeMentanav210.08.pdf)'},
+}
+# Post-1945 apartment kit (blocks of 5 storeys or more built from 1945 on; the OMHM notice above lists the parts):
+# window bays about every 3 m, a concrete balcony slab with a painted steel guard on every bay of every upper floor,
+# patio doors, painted wall panels under the windows, concrete floor edges, a brick parapet with a metal coping that
+# stands over a lowered roof, and a lift penthouse with roof vents instead of the plex chimney and hatch.
+MODERN_YEAR, MODERN_STOREYS = 1945, 5
+MODERN_BAY = 300.           # window bay; mid-century towers (La Rochelle, 1565 Rachel Est) and walk-ups alike
+MODERN_PARAPET = 80.        # roof this far under the front's coping: a parapet you can see over the roof line
+MODERN_RAISE = 15.          # ground floor near grade, one step up
+BALCONY_D, SLAB_T = 130., 15.
+MODERN_GUARD = 100.         # steel guard height over the slab
+BALCONY_CLEAR = 300.        # a wall needs this much room in front of it for balconies
+GUARD_PAINT = ('Iron', 'Iron', 'Wood_Grey', 'Trim', 'Wood_Green')
+PANEL_PAINT = ('Wood_Cream', 'Wood_Grey', 'Wood_Green', 'Wood_Burgundy', 'Stone_Cast')
+SIDING_STOREYS, SIDING_MAX_STOREYS = 2, 4   # lap siding never above the 2nd storey, never on a block over 4
 
 
 def _seed(*parts):
@@ -152,6 +198,11 @@ class PlexMesh:
     def __init__(self):
         self.groups = {}
         self.count = 0
+        # Collision faces are grouped in units (a front stair with its head balcony, a porch with its steps, a
+        # balcony, a lot's rear stack): clear_traffic_band takes a whole unit out of collision, never half a stair.
+        self.unit = None
+        self.unit_faces = {}
+        self.visual = set()         # (material, index) of Wood_Deck faces kept visible with no collision
 
     def face(self, material, points, out):
         assert material in MATERIALS, material
@@ -166,8 +217,11 @@ class PlexMesh:
             points.reverse()
         if nx * nx + ny * ny + nz * nz < 1e-6:
             return
-        self.groups.setdefault(material, []).append(points)
+        group = self.groups.setdefault(material, [])
+        group.append(points)
         self.count += len(points) - 2
+        if self.unit is not None and material in COLLISION:
+            self.unit_faces.setdefault(self.unit, []).append((material, len(group) - 1))
 
     def triangles(self):
         return self.count
@@ -294,6 +348,26 @@ def cutout(mesh, mat, a, b, z0, z1):
     assert mat in CARD_UV + ('Leaf_Creeper',), mat
     side = (b[1] - a[1], -(b[0] - a[0]), 0.)
     mesh.face(mat, [(a[0], a[1], z0), (b[0], b[1], z0), (b[0], b[1], z1), (a[0], a[1], z1)], side)
+    return 1
+
+
+def collision_plane(mesh, a, b, z0, z1, zb0=None, zb1=None, half=1.5):
+    """An invisible wall from world point a to b (Collision_Only: collides, never renders), as two faces back to back
+    `half` either side of the line, so a capsule meets it from either side whatever the engine's face culling. Bottom
+    z0 and top z1 at a; zb0 and zb1 give the bottom and top at b for a sloped run beside a flight (default level)."""
+    length = math.dist(a[:2], b[:2])
+    if length < 8:
+        return 0
+    zb0 = z0 if zb0 is None else zb0
+    zb1 = z1 if zb1 is None else zb1
+    if min(z1 - z0, zb1 - zb0) < 5:
+        return 0
+    n = ((b[1] - a[1]) / length, -(b[0] - a[0]) / length)
+    for side in (1, -1):
+        o = (n[0] * half * side, n[1] * half * side)
+        mesh.face('Collision_Only', [(a[0] + o[0], a[1] + o[1], z0), (b[0] + o[0], b[1] + o[1], zb0),
+                                     (b[0] + o[0], b[1] + o[1], zb1), (a[0] + o[0], a[1] + o[1], z1)],
+                  (n[0] * side, n[1] * side, 0.))
     return 1
 
 
@@ -855,6 +929,9 @@ def _lot(building, points, primary, sides, roll, lod2, shops, roof_check=None):
             and abs((roof_check['roof_cm'] - 490) / 326 - roll[1]) <= 1.5:
         storeys, source = roll[1], f"assessment roll, checked against the LOD2 roof ({roof_check['roof_cm'] / 100:.1f} m)"
     year, era_source = _era(rng, roll[0] if roll else None)
+    override = BUILD_YEAR_OVERRIDES.get(bid)
+    if override:                    # after the draw above, so every other lot's draws stay put
+        year, era_source = override['year'], 'override: ' + override['source']
     dwellings = (roll[2] if roll and roll[2] else None)
     width = primary['width']
     apartments = t.get('building') == 'apartments' and (storeys >= 4 or width > 1300)
@@ -895,14 +972,16 @@ def _lot(building, points, primary, sides, roll, lod2, shops, roof_check=None):
     elif year < 1916:
         masonry = ('Stone' if roll_pick < .32 else 'Brick_Red' if roll_pick < .52 else 'Brick_RedDark' if roll_pick < .58
                    else 'Brick_Brown' if roll_pick < .74 else 'Brick_BrownDark' if roll_pick < .8
-                   else 'Brick_Buff' if roll_pick < .95 else 'Brick_Orange')
+                   else 'Brick_Buff_Even' if roll_pick < .95 else 'Brick_Orange')
     elif year < 1940:
         masonry = ('Brick_Brown' if roll_pick < .3 else 'Brick_BrownDark' if roll_pick < .45 else 'Brick_Red' if roll_pick < .63
-                   else 'Brick_Buff' if roll_pick < .88 else 'Brick_Orange')
+                   else 'Brick_Buff_Even' if roll_pick < .88 else 'Brick_Orange')
     else:
-        masonry = rng.choice(('Brick_Buff', 'Brick_Brown', 'Brick_Red', 'Brick_BrownDark'))
+        masonry = rng.choice(('Brick_Buff_Even', 'Brick_Brown', 'Brick_Red', 'Brick_BrownDark'))
     if primary['street'] in ('Avenue du Parc-La Fontaine', 'Rue Sherbrooke Est') and rng.random() < .25:
         masonry = 'Stone'
+    if override and override.get('masonry'):
+        masonry = override['masonry']
     yard = primary['yard']
     stair = None
     # research §3/§6: exterior stairs belong to most 1890-1930 plexes; 1880s row houses more often have
@@ -932,7 +1011,13 @@ def _lot(building, points, primary, sides, roll, lod2, shops, roof_check=None):
             kind = 'duplex'
     balconies = kind != 'single' and not (kind == 'conciergerie' and rng.random() < .4)
     columns = balconies and 1912 <= year < 1940 and rng.random() < .55 and yard >= 120
-    return {
+    # a post-1945 block of 5 storeys or more takes the apartment kit (author_modern_front, Rear), its ground floor
+    # near grade; set after every draw, so the lot's other draws stay put
+    modern = storeys >= MODERN_STOREYS and year >= MODERN_YEAR
+    if modern:
+        raise_cm = MODERN_RAISE
+    lot = {
+        'modern': modern, 'year_override': override['source'] if override else None,
         'id': bid, 'points': points, 'height_cm': building['height'], 'storeys': storeys, 'storeys_source': source,
         'year': year, 'era_source': era_source, 'dwellings': dwellings, 'kind': kind, 'crown': crown,
         'masonry': masonry, 'paint': rng.choice(PAINT), 'door': rng.choice(DOORS), 'frame': rng.choice(FRAMES),
@@ -944,6 +1029,15 @@ def _lot(building, points, primary, sides, roll, lod2, shops, roof_check=None):
         'bands': masonry != 'Stone' and 1890 <= year < 1916 and rng.random() < .35,
         'curtains': rng.random(), 'lod2': lod2, 'roll': roll, 'roof_check': roof_check,
     }
+    if modern:
+        _modern_paint(lot, bid)
+    return lot
+
+
+def _modern_paint(lot, bid):
+    """Guard and wall-panel paint of a post-1945 block, from a seed of its own (front, rear and towers agree)."""
+    mr = random.Random(_seed('plex-modern', bid))
+    lot['guard_paint'], lot['panel_paint'] = mr.choice(GUARD_PAINT), mr.choice(PANEL_PAINT)
 
 
 # -------------------------------------------------------------------------------- authoring
@@ -1040,8 +1134,9 @@ class Kit:
             for p in (a, b):
                 beam(mesh, mat, (p[0], p[1], z), (p[0], p[1], z + height + 4), 7, 7)
 
-    def balcony(self, F, x0, x1, z, depth, rail_mat, open_side=None, brackets=True, posts_to=None):
-        """Cantilevered wood balcony, deck top at z; open_side 'l'/'r' leaves the stair arrival open."""
+    def balcony(self, F, x0, x1, z, depth, rail_mat, open_side=None, brackets=True, posts_to=None, guard=False):
+        """Cantilevered wood balcony, deck top at z; open_side 'l'/'r' leaves the stair arrival open. With `guard`
+        (the stair-head balcony a player reaches), the rails get Collision_Only planes as high as the rail."""
         self.count('balconies')
         F.box('Wood_Deck', x0, x1, D_FACE - 2, depth, z - 9, z)
         F.box(self.lot['paint'], x0 - 1, x1 + 1, depth, depth + 4, z - 24, z + 1, skip='k')
@@ -1059,6 +1154,11 @@ class Kit:
             self.rail(p(x0 + 3, D_FACE, 0), front_a, z, 86, rail_mat, posts=False)
         if open_side != 'r':
             self.rail(p(x1 - 3, D_FACE, 0), front_b, z, 86, rail_mat, posts=False)
+        if guard:
+            runs = [(front_a, front_b)] + ([(p(x0 + 3, D_FACE, 0), front_a)] if open_side != 'l' else []) \
+                + ([(p(x1 - 3, D_FACE, 0), front_b)] if open_side != 'r' else [])
+            for a, b in runs:
+                self.count('rail_collision_runs', collision_plane(self.mesh, a, b, z, z + 86 + 4))
 
     def stair(self, F, x_top, climb, z_top, yard, curved, run_limit):
         """Iron stair with grey wood treads from the parterre to a deck at z_top.
@@ -1167,6 +1267,8 @@ def _layout_bays(width, door_count):
 
 def author_front(mesh, lot, front, kit, primary=True, top_override=None):
     """Author one street front; returns its record (heights, features, bounds)."""
+    if lot.get('modern'):
+        return author_modern_front(mesh, lot, front, kit, primary, top_override)
     F = Frame(mesh, front['a'], front['b'])
     W = front['width']
     rng = kit.rng
@@ -1225,7 +1327,9 @@ def author_front(mesh, lot, front, kit, primary=True, top_override=None):
             ok, extent = Kit(trial, lot).stair(Frame(trial, front['a'], front['b']), x_top, climb, z2, yard,
                                                stair == 'curved', run_limit)
             if ok and (extent >= mx0 + 7 if left else extent <= mx1 - 7):
+                mesh.unit = ('front', lot['id'], tuple(front['a']), m, 'stair')
                 kit.stair(F, x_top, climb, z2, yard, stair == 'curved', run_limit)
+                mesh.unit = None
                 stair_ok = True
                 stairs_built += 1
                 stair_records.append({'head': [round(v, 1) for v in F.p(x_top, D_FACE + 54, z2)],
@@ -1285,6 +1389,7 @@ def author_front(mesh, lot, front, kit, primary=True, top_override=None):
                     steps_dir = 'none'
                 else:
                     steps_dir = 'out'
+                mesh.unit = ('front', lot['id'], tuple(front['a']), m, 'porch')
                 F.box('Wood_Deck', px0, px1, D_FACE - 2, pd, raise_cm - 10, raise_cm)
                 F.box('Stone', px0 + 4, px1 - 4, D_FACE - 2, pd - 6, 0, raise_cm - 10, skip='kt')
                 if steps_dir == 'out':
@@ -1310,6 +1415,7 @@ def author_front(mesh, lot, front, kit, primary=True, top_override=None):
                     kit.rail(F.p(px0 + 3, pd - 3, 0), F.p(sx0 if steps_dir == 'out' else px1 - 3, pd - 3, 0), raise_cm, 80, 'Iron', posts=True)
                     if steps_dir == 'out':
                         kit.rail(F.p(sx1, pd - 3, 0), F.p(px1 - 3, pd - 3, 0), raise_cm, 80, 'Iron', posts=True)
+                mesh.unit = None
                 kit.count('porches')
             elif raise_cm < 40:
                 for x0, x1 in doors_ground:
@@ -1351,8 +1457,11 @@ def author_front(mesh, lot, front, kit, primary=True, top_override=None):
             if is_head:
                 hx0, hx1 = (x_top, mx1 - 10) if left else (mx0 + 10, x_top)
                 depth = D_FACE + max(118., 120. + rng.choice((0, 10, 20)))
+                # the stair-head balcony is the stair's unit, and its rails collide (the arrival side stays open)
+                mesh.unit = ('front', lot['id'], tuple(front['a']), m, 'stair')
                 kit.balcony(F, hx0, hx1, z, depth, 'Iron' if rng.random() < .6 else lot['paint'],
-                            open_side='l' if left else 'r')
+                            open_side='l' if left else 'r', guard=True)
+                mesh.unit = None
             elif lot['balconies'] and front['width'] >= 300:
                 depth = D_FACE + (min(150., max(110., yard + 30)) if yard > 60 else 110.)
                 partial = lot['year'] < 1890 and rng.random() < .4
@@ -1362,8 +1471,10 @@ def author_front(mesh, lot, front, kit, primary=True, top_override=None):
                 below = None
                 if lot['columns'] and not stair_ok and depth <= yard + D_FACE - 10:
                     below = floor_z[level - 1] if level >= 2 else 0.
+                mesh.unit = ('front', lot['id'], tuple(front['a']), m, 'balcony', level)
                 kit.balcony(F, bx0, bx1, z, depth, 'Iron' if lot['year'] < 1912 or rng.random() < .5 else lot['paint'],
                             posts_to=below)
+                mesh.unit = None
     # commercial ground floor (dépanneur style)
     if commercial:
         sign = rng.choice(('Wood_Green', 'Wood_Burgundy', 'Wood_Cream', 'Iron'))
@@ -1521,10 +1632,108 @@ def author_front(mesh, lot, front, kit, primary=True, top_override=None):
     return record, top
 
 
+def modern_bays(mesh, F, W, floors, zt, paints, counts, balconies=True, every=1, entrance=False):
+    """The post-1945 apartment kit on one wall plane in frame F (x from 0 to W along the wall, the brick face at
+    D_FACE): bays of about MODERN_BAY. On each upper floor a balcony bay (every `every`-th bay when `balconies`) has a
+    patio door and a concrete slab with a painted steel guard (a cap rail over a panel, on three sides), with a
+    window beside the door; the other bays a wide window. Every window has a painted wall panel under it, and each
+    floor line a concrete edge. The ground floor takes windows, and with `entrance` a glazed entrance under a canopy
+    in the middle bay. `floors` are the floor heights (ground first); a storey whose window head would pass zt - 10 is
+    left out. paints = (frame, guard, panel). Returns (windows, doors, balconies)."""
+    frame, guard, panel = paints
+    n = max(1, round(W / MODERN_BAY))
+    bw = W / n
+    windows = doors = slabs = 0
+
+    def window(xa, xb, z):
+        nonlocal windows
+        F.quad_d(frame, xa, xb, z + 90, z + 210, D_FACE + 1)
+        F.quad_d('Glass', xa + 5, xb - 5, z + 95, z + 205, D_FACE + 2.5)
+        F.quad_d(frame, (xa + xb) / 2 - 2, (xa + xb) / 2 + 2, z + 95, z + 205, D_FACE + 3.5)   # sliding sash
+        F.quad_d(panel, xa, xb, z + 12, z + 86, D_FACE + 1)                                     # wall panel
+        windows += 1
+
+    def door(xa, xb, z, height=210, patio=True):
+        nonlocal doors
+        F.quad_d(frame, xa, xb, z, z + height, D_FACE + 1)
+        F.quad_d('Glass', xa + 5, xb - 5, z + 3, z + height - 5, D_FACE + 2.5)
+        F.quad_d(frame, (xa + xb) / 2 - 2.5, (xa + xb) / 2 + 2.5, z + 3, z + height - 5, D_FACE + 3.5)
+        doors += patio
+
+    def balcony(x0, x1, z):
+        nonlocal slabs
+        dg = D_FACE + BALCONY_D - 3
+        F.box('Stone_Cast', x0, x1, D_FACE, D_FACE + BALCONY_D, z - SLAB_T, z, skip='k')
+        gt = z + MODERN_GUARD
+        F.box(guard, x0 + 1, x1 - 1, dg - 2.5, dg + 2.5, gt - 8, gt, skip='blr')         # front cap rail
+        F.box(guard, x0 + 1, x1 - 1, dg - 1, dg + 1, z + 10, gt - 8, skip='tblr')         # front panel
+        for x in (x0 + 3, x1 - 3):
+            F.box(guard, x - 2.5, x + 2.5, D_FACE, dg - 2.5, gt - 8, gt, skip='bfk')     # side cap rails
+            F.box(guard, x - 1, x + 1, D_FACE, dg - 1, z + 10, gt - 8, skip='tbfk')      # side panels
+        slabs += 1
+
+    for k, z in enumerate(floors[:-1]):
+        if z + 215 > zt - 10:
+            break
+        if k:
+            F.quad_d('Stone_Cast', 0, W, z - 20, z - 4, D_FACE + .5)                      # concrete floor edge
+        for i in range(n):
+            bx0 = i * bw
+            if k == 0:
+                if entrance and i == n // 2:
+                    c = bx0 + bw / 2
+                    hw = min(100., bw / 2 - 15)
+                    door(c - hw, c + hw, z, 235, patio=False)
+                    F.box('Stone_Cast', c - hw - 40, c + hw + 40, D_FACE, D_FACE + 160, z + 250, z + 266, skip='k')
+                    F.box('Stone_Cast', c - hw - 20, c + hw + 20, D_FACE - 2, D_FACE + 110, 0, z, skip='kb')
+                    counts['modern_entrances'] = counts.get('modern_entrances', 0) + 1
+                else:
+                    window(bx0 + .2 * bw, bx0 + .8 * bw, z)
+            elif balconies and i % every == 0:
+                door(bx0 + .1 * bw, bx0 + .56 * bw, z)
+                window(bx0 + .66 * bw, bx0 + .9 * bw, z)
+                balcony(bx0 + 4, bx0 + bw - 4, z)
+            else:
+                window(bx0 + .2 * bw, bx0 + .8 * bw, z)
+    for key, value in (('modern_windows', windows), ('patio_doors', doors), ('modern_balconies', slabs),
+                       ('wall_panels', windows)):
+        counts[key] = counts.get(key, 0) + value
+    return windows, doors, slabs
+
+
+def author_modern_front(mesh, lot, front, kit, primary=True, top_override=None):
+    """A street front of the post-1945 apartment kit (modern_bays): flat brick on a concrete base, a balcony with a
+    patio door on every bay of every upper floor, a glazed entrance under a canopy on the main front, and a brick
+    parapet with a metal coping MODERN_PARAPET over the roof. Same record as author_front."""
+    F = Frame(mesh, front['a'], front['b'])
+    W = front['width']
+    wall = lot['masonry'] if lot['masonry'] != 'Stone' else 'Brick_Brown'
+    floors = _floor_levels(lot)
+    top = max(floors[-1] + 12 + 100, lot['height_cm'] + 15)
+    if top_override:
+        top = max(top, top_override)
+    base = lot['raise'] + 10
+    F.quad_d('Stone_Cast', 0, W, 0, base, D_FACE)
+    F.quad_d(wall, 0, W, base, top, D_FACE)
+    for x, side in ((0, -1), (W, 1)):
+        F.quad_x(wall, x, D_BACK, D_FACE, 0, top, side)
+    modern_bays(mesh, F, W, floors, top, ('Sheet_Metal', lot['guard_paint'], lot['panel_paint']), kit.counts,
+                entrance=primary)
+    F.box('Sheet_Metal', 0, W, -18, D_FACE + 3, top, top + 4, skip='b')
+    if top > lot['height_cm']:
+        F.quad_d(wall, 0, W, lot['height_cm'], top, D_BACK, -1)
+    kit.count('modern_fronts')
+    record = {'a': [round(v, 2) for v in front['a']], 'b': [round(v, 2) for v in front['b']],
+              'width_cm': round(W, 1), 'street': front['street'], 'yard_cm': front['yard'],
+              'yard_source': front['yard_source'], 'top_cm': round(top, 1), 'modules': 1,
+              'exterior_stairs': 0, 'stairs': [], 'kit': 'post-1945 apartment'}
+    return record, top
+
+
 def _extension(mesh, lot, top, skin_edges, roof='Roof_Membrane'):
     """Close the band between the retained mass top and the taller plex front, and cap it with the roof."""
     points = lot['points']
-    z0, z1 = lot['height_cm'], top - 10
+    z0, z1 = lot['height_cm'], roof_level(lot, top)      # top - 10, or lower under a post-1945 parapet
     if z1 - z0 < 10:
         return 0
     n = len(points)
@@ -1559,30 +1768,36 @@ TERRACE_SHARE = .09
 
 
 def roof_level(lot, top):
-    """Roof surface height: the extension cap (top - 10) or a skin just over the retained mass top."""
+    """Roof surface height: the extension cap (top - 10) or a skin just over the retained mass top. A post-1945 block
+    keeps its roof MODERN_PARAPET under the front's coping, behind a parapet, where the mass allows it."""
+    if lot.get('modern') and top - MODERN_PARAPET - lot['height_cm'] >= 10:
+        return top - MODERN_PARAPET
     return top - 10 if top - 10 - lot['height_cm'] >= 10 else lot['height_cm'] + ROOF_SKIN
 
 
-def _parapet(R, top):
-    return min(R + PARAPET, top)
+def _parapet(R, top, modern=False):
+    """Top of a party parapet (under its 4 cm coping): PARAPET over the roof, or level with the front's coping on a
+    post-1945 block."""
+    return min(R + (MODERN_PARAPET - 4 if modern else PARAPET), top)
 
 
-def _party_plan(lot, levels, tops):
+def _party_plan(lot, levels, tops, modern=()):
     """Per party edge: the neighbour's roof (a plex lot's roof level, else its mass top) and, where this lot stands
-    30 cm or more above it, the height from which the party wall shows and gets a brick skin."""
+    30 cm or more above it, the height from which the party wall shows and gets a brick skin. `modern`: the ids of
+    the post-1945 blocks, whose parapets stand higher."""
     R = levels[lot['id']]
     plans = []
     for edge in lot.get('party', ()):
         neighbour = edge['neighbour']
         plex = neighbour in levels
         below = levels[neighbour] if plex else edge['neighbour_height']
-        neighbour_top = _parapet(below, tops[neighbour]) + 4 if plex else below
+        neighbour_top = _parapet(below, tops[neighbour], neighbour in modern) + 4 if plex else below
         exposed = R - below >= 30
         plans.append(dict(edge, roof_below=below, neighbour_top=neighbour_top, skin=exposed))
     return plans
 
 
-def author_roof(mesh, lot, top, levels, skins, counts, tops):
+def author_roof(mesh, lot, top, levels, skins, counts, tops, modern=()):
     """The roof of one lot: membrane, gravel or tar over the mass (or the extension cap), party parapets with a
     metal coping, a hatch, a brick chimney box and, on a few, a terrace with a rail. Returns (record, extended)."""
     rng = random.Random(_seed('plex-roof', lot['id']))
@@ -1591,12 +1806,12 @@ def author_roof(mesh, lot, top, levels, skins, counts, tops):
     terrace_roll, terrace_w, terrace_t = rng.random(), rng.uniform(320., 480.), rng.uniform(300., 420.)
     roof = next(key for limit, key in ROOF_MIX if pick < limit)
     R = levels[lot['id']]
-    P = _parapet(R, top)
+    P = _parapet(R, top, bool(lot.get('modern')))
     masonry = lot['masonry'] if lot['masonry'] != 'Stone' else 'Brick_Red'
 
     def count(key, n=1):
         counts[key] = counts.get(key, 0) + n
-    party = _party_plan(lot, levels, tops)
+    party = _party_plan(lot, levels, tops, modern)
     extended = _extension(mesh, lot, top, skins + [(e['a'], e['b']) for e in party if e['skin']], roof)
     points = lot['points']
     if not extended:
@@ -1647,10 +1862,12 @@ def author_roof(mesh, lot, top, levels, skins, counts, tops):
         Ff.box(mat, x0, x1, -t1, -t0, z0, z1, skip)
     record = {'material': roof, 'z_cm': round(R, 1), 'party': party_records, 'chimney': False, 'hatch': False,
               'terrace': False}
-    # chimney box against a party side, a third of the way back, with a cast-stone cap
+    modern = bool(lot.get('modern'))
+    # chimney box against a party side, a third of the way back, with a cast-stone cap (a post-1945 block has a lift
+    # penthouse and roof vents instead, below)
     tc = chimney_t * depth
     for x, tc in [(x, t) for t in (tc, depth * .5, depth * .3) for x in ((70., W - 70.) if chimney_left else (W - 70., 70.)) + (W / 2,)]:
-        if W >= 160 and fits(x - 30, x + 30, tc - 22, tc + 22, 25):
+        if not modern and W >= 160 and fits(x - 30, x + 30, tc - 22, tc + 22, 25):
             box(masonry, x - 30, x + 30, tc - 22, tc + 22, R, R + chimney_h)
             box('Stone_Cast', x - 35, x + 35, tc - 27, tc + 27, R + chimney_h, R + chimney_h + 6)
             placed.append((x - 35, x + 35, tc - 27, tc + 27))
@@ -1678,7 +1895,7 @@ def author_roof(mesh, lot, top, levels, skins, counts, tops):
         placed.append((x0, x1, t0 - 230, t1))
         record['terrace'] = True
         count('roof_terraces')
-    else:
+    elif not modern:
         # roof hatch: a galvanised curb and lid
         for xh, th in ((W * (.35 + .3 * hatch_f), hatch_t * depth), (W / 2, depth * .5), (W / 2, depth * .3),
                        (W / 2, depth * .7), (W * .3, depth * .5), (W * .7, depth * .5)):
@@ -1687,7 +1904,39 @@ def author_roof(mesh, lot, top, levels, skins, counts, tops):
                 record['hatch'] = True
                 count('roof_hatches')
                 break
+    if modern:
+        _modern_roof(lot, record, W, depth, R, masonry, box, fits, free, placed, count)
     return record, extended
+
+
+def _modern_roof(lot, record, W, depth, R, masonry, box, fits, free, placed, count):
+    """The roof of a post-1945 block: a brick lift penthouse (machine room and stair head) with a metal coping near
+    the middle, two on a block over 30 m deep, and a few galvanised mushroom vents. Own seed, after the roof draws."""
+    mr = random.Random(_seed('plex-modern-roof', lot['id']))
+    pw, pd = min(600., W * .45), min(420., depth * .3)
+    heights = [mr.uniform(280., 340.) for _ in range(2)]
+    record['penthouses'] = 0
+    for k, t in enumerate((depth * .5,) if depth < 3000 else (depth * .3, depth * .7)):
+        for xc, tc in ((W / 2, t), (W / 2, t - depth * .1), (W / 2, t + depth * .1), (W * .35, t), (W * .65, t)):
+            x0, x1, t0, t1 = xc - pw / 2, xc + pw / 2, tc - pd / 2, tc + pd / 2
+            if pw >= 250 and pd >= 250 and fits(x0, x1, t0, t1) and free(x0, x1, t0, t1):
+                ph = heights[k]
+                box(masonry, x0, x1, t0, t1, R, R + ph)
+                box('Sheet_Metal', x0 - 4, x1 + 4, t0 - 4, t1 + 4, R + ph, R + ph + 6)
+                placed.append((x0 - 4, x1 + 4, t0 - 4, t1 + 4))
+                record['penthouses'] += 1
+                count('roof_penthouses')
+                break
+    vents = 0
+    for _ in range(10):
+        xv, tv = mr.uniform(80., W - 80.), mr.uniform(120., depth - 120.)
+        if vents < 5 and W >= 240 and fits(xv - 22, xv + 22, tv - 22, tv + 22, 20) and free(xv - 22, xv + 22, tv - 22, tv + 22):
+            box('Sheet_Metal', xv - 12, xv + 12, tv - 12, tv + 12, R, R + 55)
+            box('Sheet_Metal', xv - 22, xv + 22, tv - 22, tv + 22, R + 55, R + 70)
+            placed.append((xv - 22, xv + 22, tv - 22, tv + 22))
+            vents += 1
+    record['vents'] = vents
+    count('roof_vents', vents)
 
 
 # ----------------------------------------------------------------------------- rear of the lot
@@ -1701,6 +1950,8 @@ def author_roof(mesh, lot, top, levels, skins, counts, tops):
 FENCE_FROM_ALLEY = 290.     # fence line from the ruelle centreline: the 430 cm lane strip plus a verge
 TRAFFIC_CLEAR = 300.        # Streets layer rule: no collision within 300 cm of a drive or service centreline
 GUARD_H = 107.              # guards over 1.89 m above grade are 1070 mm (MRC de Coaticook SARP gallery sheet)
+HEAD_EXIT = 110.            # clear way from a gallery's end guard to the opening guard at a flight head: the 84 cm
+                            # player capsule (QuebecGameplay.cpp, radius 42) plus room to turn
 STAIR_W = 90.
 REAR_RISE = 22.5            # steep rear flights (research §6: about 45-50 degrees, risers 20-23 cm)
 GOING_MAX, GOING_MIN = 24., 20.
@@ -1881,7 +2132,9 @@ def _floor_levels(lot):
 
 
 def _rear_wall_top(lot, top):
-    return top - 10 if top - 10 - lot['height_cm'] >= 10 else lot['height_cm']
+    if top - 10 - lot['height_cm'] < 10:
+        return lot['height_cm']
+    return top if lot.get('modern') else top - 10      # a post-1945 parapet meets the front's coping
 
 
 def _subtract(interval, cuts, minimum=20.):
@@ -1914,7 +2167,15 @@ class Occupancy:
         return any(_inside(point, polygon) for polygon in self.grid.near(point[0], point[1], 1))
 
 
-GROUND_Z = {'Yard_Grass': 1.0, 'Yard_Soil': 1.4, 'Yard_Pavers': 1.8, 'Yard_Gravel': 2.0}   # cm over the floor
+GROUND_Z = {'Yard_Grass': 1.0, 'Yard_Soil': 1.4, 'Yard_Pavers': 1.8, 'Yard_Gravel': 2.0,   # cm over the floor
+            'Asphalt_Lot': 1.6}
+# Ground cover of a lot with no yard (no rear wall to hang a yard on: wings, lane buildings, the deep blocks): a lawn
+# along each open wall and, where the strip is deep enough, asphalt parking with painted stalls at its far edge,
+# where a car comes in from the ruelle or the court (the OMHM notice above lists a parking area at De Mentana).
+OPEN_LAWN_D = 250.          # lawn band along the wall
+OPEN_PARK_D = 500.          # stall depth; a strip 1 m deeper, with a ruelle or open ground at its edge, parks cars
+STALL_W = 260.              # painted stall width
+OPEN_CELL = 400.            # cells along the wall, so a neighbour's yard or a building cuts off only a short piece
 
 
 def creeper(mesh, F, x0, x1, d, height, rng, top):
@@ -2000,6 +2261,19 @@ class Rear:
             self.wall = self.brick = self.street_brick = lot['skin_wall']
             self.siding = False
             self.sill = 'Stone_Cast'
+        # lap siding never on a block over four storeys (after every draw above, so they stay put); on the others it
+        # stops at the top of the second storey, with the lot's brick above it (_skin_faces)
+        self.modern = bool(lot.get('modern'))
+        if self.siding and (lot['storeys'] > SIDING_MAX_STOREYS or self.modern):
+            self.siding, self.wall, self.sill = False, brick, 'Stone_Cast'
+        self.siding_top = self.floor_z[SIDING_STOREYS] if lot['storeys'] > SIDING_STOREYS else math.inf
+        if self.modern:
+            if lot['masonry'] == 'Stone':
+                self.brick = self.street_brick = 'Brick_Brown'
+            if not lot.get('skin_wall'):
+                self.wall = self.street_brick = self.brick = lot['masonry'] if lot['masonry'] in BRICKS else self.brick
+        # the roof under a parapet: the skins rise over it with an inner face and a metal coping
+        self.parapet_from = lot.get('parapet_from')
         self.background = bool(lot.get('background'))
         self.counts = {}
         self.stack = None
@@ -2114,6 +2388,9 @@ class Rear:
     def plan_stack(self, occupancy):
         """Galleries on every upper floor of the main rear wall, with a stair from the yard to the top."""
         wall = self.main
+        if self.modern:
+            self.reason = 'post-1945 apartment block: a balcony on every bay, no rear galleries'
+            return
         if wall is None:
             longs = any(w['kind'] == 'long' for w in self.lot.get('backs', ()))
             self.reason = ('no rear wall of 3 m or more; long walls carry galleries up to 4 storeys only' if longs
@@ -2447,18 +2724,32 @@ class Rear:
 
     def _skin_faces(self, F, wall, base, mat, base_mat):
         """One opaque plane 16 cm proud of the retained wall (hiding its old glass cards), a foundation band,
-        sheet-metal flashing on top, and returns at free ends."""
+        sheet-metal flashing on top, and returns at free ends. Lap siding stops at the top of the second storey,
+        with the lot's brick above. Over a parapet roof the skin shows an inner face down to the roof and wears a
+        metal coping instead of the flat flashing. Returns the material above the siding, or None."""
         W, zt = wall['width'], self.zt
         x_start = -D_FACE if wall['ext0'] else 0.
         x_end = W + D_FACE if wall['ext1'] else W
+        upper = None
+        split = zt
+        if mat in SIDING and self.siding_top < zt - 20:
+            upper, split = self.brick if self.brick not in SIDING else 'Brick_Red', self.siding_top
         if base > 0:
             F.quad_d(base_mat, x_start, x_end, 0, base, D_FACE)
-        F.quad_d(mat, x_start, x_end, base, zt, D_FACE)
-        F.quad_z('Sheet_Metal', x_start, x_end, 0, D_FACE, zt, 1)
-        if not wall['ext0']:
-            F.quad_x(mat, 0, 0, D_FACE, 0, zt, -1)
-        if not wall['ext1']:
-            F.quad_x(mat, W, 0, D_FACE, 0, zt, 1)
+        F.quad_d(mat, x_start, x_end, base, split, D_FACE)
+        if upper:
+            F.quad_d(upper, x_start, x_end, split, zt, D_FACE)
+        if self.parapet_from is not None and zt - self.parapet_from >= 20:
+            F.quad_d(upper or mat, x_start, x_end, self.parapet_from, zt, 0, -1)
+            F.box('Sheet_Metal', x_start, x_end, -3, D_FACE + 3, zt, zt + 4, skip='b')
+        else:
+            F.quad_z('Sheet_Metal', x_start, x_end, 0, D_FACE, zt, 1)
+        for x, ext, side in ((0, wall['ext0'], -1), (W, wall['ext1'], 1)):
+            if not ext:
+                F.quad_x(mat, x, 0, D_FACE, 0, split, side)
+                if upper:
+                    F.quad_x(upper, x, 0, D_FACE, split, zt, side)
+        return upper
 
     def _window(self, F, x0, x1, z0, z1, rail=True, sill=None, lintel=None):
         """Applied window: frame field, glass, meeting rail and a proud sill (the wall is not cut). A street wall
@@ -2523,14 +2814,24 @@ class Rear:
         F = Frame(mesh, wall['a'], wall['b'])
         W = wall['width']
         kind = wall['kind']
-        windows = 0
+        windows = doors = balconies = 0
         if self.background:
-            windowed, bays = W >= 250 and wall['clear'] >= LONG_CLEAR, max(1, int(W // 450))
+            # a denser grid than the old 4.5 m bay, which left the background walls reading as blank boxes
+            windowed, bays = W >= 250 and wall['clear'] >= LONG_CLEAR, max(1, round(W / BACKGROUND_BAY))
         else:
             windowed = kind in ('lane', 'street', 'long') and W >= 250 or kind == 'rear' and W >= 300
             bays = 1 if kind == 'rear' else max(1, int(W // 450))
         street = kind == 'street' and not self.background
         FH = self.lot['floor_height']
+        if self.modern:
+            # the post-1945 kit: bays about every 3 m on every wall with room in front of it, and a balcony on every
+            # bay (every second bay on the towers) where the wall is long and open enough
+            if W >= 250 and wall['clear'] >= LONG_CLEAR:
+                balc = W >= 450 and wall['clear'] >= BALCONY_CLEAR and not wall['piece']
+                windows, doors, balconies = modern_bays(
+                    mesh, F, W, self.floor_z, self.zt, ('Sheet_Metal', self.lot['guard_paint'], self.lot['panel_paint']),
+                    self.counts, balconies=balc, every=2 if self.background else 1)
+            windowed, street = False, False
         if windowed:
             for k in range(self.lot['storeys']):
                 z = self.floor_z[k]
@@ -2551,7 +2852,7 @@ class Rear:
                     windows += 1
         base, base_mat = self.base_of(wall)
         mat = self.wall_mat(wall)
-        self._skin_faces(F, wall, base, mat, base_mat)
+        upper = self._skin_faces(F, wall, base, mat, base_mat)
         if street:
             self._cornice_return(F, wall)
         self.count('skins_' + kind)
@@ -2566,8 +2867,13 @@ class Rear:
                 strips = creeper(mesh, F, x0, x0 + w, D_FACE + 1.5, h, wr, self.zt - 30)
                 self.count('creepers')
                 self.count('creeper_strips', strips)
-        record['walls'].append({'kind': kind, 'width_cm': round(W, 1), 'windows': windows, 'doors': 0,
-                                'galleries': 0, 'material': mat, 'base': base_mat, **_wall_span(wall, self.zt)})
+        record['walls'].append({'kind': kind, 'width_cm': round(W, 1), 'windows': windows, 'doors': doors,
+                                'galleries': 0, 'balconies': balconies, 'material': mat, 'base': base_mat,
+                                **self._siding_record(upper), **_wall_span(wall, self.zt)})
+
+    def _siding_record(self, upper):
+        """Where lap siding stops and what stands over it (only on a wall that has both)."""
+        return {'upper': upper, 'siding_top_cm': round(self.siding_top, 1)} if upper else {}
 
     def _author_stack_wall(self, mesh, wall, record):
         """The rear façade: per module a door column and one or two windows on each floor, galleries, stair."""
@@ -2597,7 +2903,9 @@ class Rear:
                     windows += 1
             if not st.get('ground'):
                 self._stoop(F, c, mx0, mx1, xd)
+            mesh.unit = ('rear', self.lot['id'])       # the stack goes out of collision as one, never in part
             self._gallery_module(mesh, F, module, record)
+            mesh.unit = None
         if wall['kind'] == 'long':
             # the rest of a long wall keeps its window per 4.5 m bay and floor
             used0, used1 = min(m['mx0'] for m in st['modules']), max(m['mx1'] for m in st['modules'])
@@ -2615,13 +2923,14 @@ class Rear:
                         windows += 1
         base, base_mat = self.base_of(wall)
         mat = self.wall_mat(wall)
-        self._skin_faces(F, wall, base, mat, base_mat)
+        upper = self._skin_faces(F, wall, base, mat, base_mat)
         self.count('facades')
         record['stair'] = st['kind']
         record['footprints'] = [[[round(v, 1) for v in p] for p in polygon] for polygon in st['footprints']]
         record['walls'].append({'kind': wall['kind'], 'width_cm': round(W, 1), 'windows': windows, 'doors': doors,
                                 'galleries': len(levels) * len(st['modules']), 'modules': len(st['modules']),
-                                'material': mat, 'base': base_mat, **_wall_span(wall, self.zt)})
+                                'material': mat, 'base': base_mat, **self._siding_record(upper),
+                                **_wall_span(wall, self.zt)})
 
     def _stoop(self, F, c, mx0, mx1, xd):
         """Concrete stoop and side steps at the ground-floor back door (module coordinates, mirrored when c < 0)."""
@@ -2660,6 +2969,9 @@ class Rear:
         # no hidden faces: the bottom rail shows its two sides, the cap rail its sides and top
         G.box(paint, 0, length, -1.9, 1.9, z + RAIL_LOW[0], z + RAIL_LOW[1], 'tblr')
         G.box(paint, 0, length, -CAP_W / 2, CAP_W / 2, z + top - CAP_H, z + top, 'blr')
+        # the guard collides (Collision_Only: hidden in game), as high as it stands, so a player cannot walk off the
+        # gallery or into a stair opening; a jump still clears it, as it would a real 107 cm guard
+        self.count('guard_collision_runs', collision_plane(mesh, pa, pb, z, z + top))
         if kind == 'balusters':
             cutout(mesh, 'Rail_Baluster', pa[:2], pb[:2], z, z + top)
         elif kind == 'iron':
@@ -2730,8 +3042,11 @@ class Rear:
                 # the rim board runs on across the stair opening, so the flight's soffit never shows through the edge
                 fascia(gx0, gx1, dF, z)
                 # guard round the opening: along its inner side, and across its high end, where the flight from this
-                # deck to the next passes overhead: that end is cut down to clear the flight's underside
-                guard(max(gx0, xo0), bi - 2, xo1 + 2 + corner, bi - 2, z, F.out(0, -1, 0))
+                # deck to the next passes overhead: that end is cut down to clear the flight's underside. The inner
+                # guard starts HEAD_EXIT from the end guard, so a short landing still lets a player step off the top
+                # of the flight toward the door (the opening edge left open there drops at most about 1 m)
+                inner0 = max(gx0, xo0) if xo0 - gx0 >= HEAD_EXIT else gx0 + HEAD_EXIT
+                guard(inner0, bi - 2, xo1 + 2 + corner, bi - 2, z, F.out(0, -1, 0))
                 top = GUARD_H
                 if i < len(zs) - 1:
                     rise2 = (zs[i + 1] - z) / n2
@@ -2742,7 +3057,9 @@ class Rear:
                 box('Wood_Deck', gx0, deck_end, D_FACE - 2, dF - FASCIA_T, z - DECK_T, z, 'k')
                 fascia(gx0, xh if straight else deck_end, dF, z)
             corners = [P(gx0, D_FACE, z), P(deck_end, D_FACE, z), P(deck_end, dF, z), P(gx0, dF, z)]
-            record['decks'].append({'z': round(z, 1), 'quad': [[round(p[0], 1), round(p[1], 1)] for p in corners]})
+            door = P(module['xd'], D_FACE + 45, z)       # where a player stands in front of the gallery door
+            record['decks'].append({'z': round(z, 1), 'quad': [[round(p[0], 1), round(p[1], 1)] for p in corners],
+                                    'door': [round(door[0], 1), round(door[1], 1)]})
             # the outer guard, open where the first flight lands
             gaps = [(xh - 2, gx1 + 1)] if straight and i == 0 else []
             for a0, a1 in _subtract((gx0, gx1), gaps):
@@ -2841,6 +3158,12 @@ class Rear:
                 beam(mesh, paint, P(xh + going2 * .5, d, za + 2), P(xh - run2, d, zb - 22), 5, 24, bottom=False)
             self._soffit(mesh, P, xh - run2, xh, s0 + 3, s1 - 3, zb - rise2 - 5, za - 5)
             beam(mesh, paint, P(xh, s0 + 4, za + rise2 + 88), P(xh - run2, s0 + 4, zb + 88), 5, 6, bottom=False)
+            # the flight's open outer side rises over the deck's outer guard toward the gallery edge: an invisible
+            # sloped guard on that guard's line carries it up to the next deck's guard (it starts where the first
+            # deck's guard stops for the landing, so the landing stays open)
+            self.count('flight_collision_runs', collision_plane(
+                mesh, P(xh - 2, dF - 3, 0), P(xh - run2, dF - 3, 0), za, za + GUARD_H + rise2,
+                zb - rise2 - 5, zb - 5 + GUARD_H))
             record['flights'].append({'kind': 'straight', 'z0': round(za, 1), 'z1': round(zb, 1), 'treads': n2 - 1,
                                       'foot': [round(v, 1) for v in P(xh - going2 / 2, (s0 + s1) / 2, za + rise2)],
                                       'head': [round(v, 1) for v in P(xh - run2 - going2 / 2, (s0 + s1) / 2, zb)]})
@@ -3023,6 +3346,88 @@ class Rear:
             'shed_at': None if not shed else [round(shed['x'][0] - lx0, 1), round(shed['x'][1] - lx0, 1)]}
         if shed:
             record['shed'] = shed['kind']
+
+    def plan_open_ground(self, occupancy, taken):
+        """Ground cover for a lot with no yard: on every open back wall (not a street wall) a lawn band and, where a
+        ruelle or open ground lets a car in and the strip is OPEN_PARK_D + 1 m deep with 5 m along the wall, asphalt
+        parking out to the strip's far edge (the ruelle verge, or a usual lot depth). Cells of at most OPEN_CELL
+        along the wall; one that meets a building, a structure, another lot's yard or ground, or a road's clearance
+        is split and the blocked parts dropped (the yard's own CGA split). `taken` is a Grid of placed polygons."""
+        self.open_plan = []
+        for wall in self.lot.get('backs', ()):
+            W = wall['width']
+            if wall['kind'] == 'street' or W < 200 or wall['clear'] < 150:
+                continue
+            if wall['alley'] is not None:
+                fd = wall['alley'] - FENCE_FROM_ALLEY
+            elif wall['clear'] < 1990:
+                fd = wall['clear'] / 2
+            else:
+                fd = min(wall['clear'] / 2, OPEN_YARD_D)
+            d0 = D_FACE + 2
+            if fd - d0 < 100:
+                continue
+            F = Frame(None, wall['a'], wall['b'])
+            # parking only where a car gets in: a ruelle or open ground at the strip's far edge
+            access = wall['alley'] is not None or wall['clear'] >= 1990
+            park = access and fd - d0 >= OPEN_PARK_D + 100 and W >= 500
+            lawn = min(OPEN_LAWN_D, fd - d0 - OPEN_PARK_D) if park else fd - d0
+            bands = [('Yard_Grass', d0, d0 + lawn), ('Asphalt_Lot', d0 + lawn, fd)] if park else [('Yard_Grass', d0, fd)]
+            corners = [F.p(x, d, 0)[:2] for x in (0, W) for d in (d0, fd)]
+            near, roads = self.near(corners, 5), self.yard_roads(corners)
+            pieces = max(1, math.ceil(W / OPEN_CELL))
+            cells = []
+
+            def blocked(x, d):
+                q = F.p(x, d, 0)[:2]
+                return self.blocked(q, near, occupancy, roads) or any(_inside(q, poly) for poly in taken.near(q[0], q[1], 1))
+
+            def keep(mat, xa, xb, da, db, depth):
+                nx, nd = max(2, math.ceil((xb - xa) / 60) + 1), max(2, math.ceil((db - da) / 60) + 1)
+                hits = sum(blocked(xa + (xb - xa) * i / (nx - 1), da + (db - da) * j / (nd - 1))
+                           for i in range(nx) for j in range(nd))
+                if not hits:
+                    cells.append((mat, xa, xb, da, db))
+                elif hits < nx * nd and depth and min(xb - xa, db - da) >= 60:
+                    xm, dm = (xa + xb) / 2, (da + db) / 2
+                    for x0, x1, e0, e1 in ((xa, xm, da, dm), (xm, xb, da, dm), (xa, xm, dm, db), (xm, xb, dm, db)):
+                        keep(mat, x0, x1, e0, e1, depth - 1)
+            for mat, da, db in bands:
+                for k in range(pieces):
+                    keep(mat, W * k / pieces, W * (k + 1) / pieces, da, db, 3)
+            for mat, xa, xb, da, db in cells:
+                poly = [F.p(x, d, 0)[:2] for x, d in ((xa, da), (xb, da), (xb, db), (xa, db))]
+                taken.add(poly, [q[0] for q in poly], [q[1] for q in poly])
+            if cells:
+                self.open_plan.append({'wall': wall, 'fd': fd, 'park': park, 'cells': cells})
+
+    def author_open_ground(self, mesh, record):
+        """Lay the planned open ground: flat patches (lawn under the parking's z) and white stall lines across the
+        asphalt's last OPEN_PARK_D, every STALL_W along the wall."""
+        areas, stalls, out = {}, 0, []
+        for plan in self.open_plan:
+            wall, fd = plan['wall'], plan['fd']
+            F = Frame(mesh, wall['a'], wall['b'])
+            for mat, xa, xb, da, db in plan['cells']:
+                F.quad_z(mat, xa, xb, da, db, GROUND_Z[mat], 1)
+                areas[mat] = areas.get(mat, 0.) + (xb - xa) * (db - da) / 1e4
+                out.append([mat] + [[round(v, 1) for v in F.p(x, d, 0)[:2]] for x, d in ((xa, da), (xb, da), (xb, db), (xa, db))])
+                self.count('open_ground_patches')
+                if mat != 'Asphalt_Lot':
+                    continue
+                l0, l1 = max(da, fd - OPEN_PARK_D - 20), min(db, fd - 20)
+                if l1 - l0 < 100:
+                    continue
+                for k in range(1, int(wall['width'] // STALL_W) + 1):
+                    x = k * STALL_W
+                    if xa + 5 <= x - 5 and x + 5 <= xb - 5:
+                        F.quad_z('Trim', x - 5, x + 5, l0, l1, GROUND_Z[mat] + .3, 1)
+                        stalls += 1
+        if out:
+            record['open_ground'] = {'cells': out, 'area_m2': {m: round(v, 2) for m, v in sorted(areas.items())},
+                                     'stall_lines': stalls}
+            self.count('open_ground_lots')
+            self.count('parking_stall_lines', stalls)
 
     def _fence_run(self, mesh, a, b, kind, height, skip=(False, False)):
         """One straight fence run from world point a to b; returns its post count. Board fences: the weathered
@@ -3283,6 +3688,19 @@ def build_rears(mesh, lots, tops, canopy=None, traffic=(), mapped=()):
         record = rear.author(mesh)
         record['triangles'] = mesh.triangles() - before
         records[rear.lot['id']] = record
+    # lots with no yard: lawn and parking on their open walls, clear of every yard and of each other
+    taken = Grid(2000)
+    for record in records.values():
+        rect = (record.get('yard') or {}).get('rect')
+        if rect:
+            poly = [tuple(q) for q in rect]
+            taken.add(poly, [q[0] for q in poly], [q[1] for q in poly])
+    for rear in rears:
+        if rear.yard_plan is None and not rear.background:
+            before = mesh.triangles()
+            rear.plan_open_ground(occupancy, taken)
+            rear.author_open_ground(mesh, records[rear.lot['id']])
+            records[rear.lot['id']]['triangles'] += mesh.triangles() - before
     # side fences: one per party line (the longer of two neighbours' candidates), cut around buildings and structures
     side_fences.sort(key=lambda f: (-math.dist(f['a'], f['b']), f['lot'], f['side']))
     kept = []
@@ -3351,7 +3769,12 @@ def build_rears(mesh, lots, tops, canopy=None, traffic=(), mapped=()):
 GLASS = 'Data/Plateau/BaseGeometry/Glass.obj'
 GLASS_REMOVED = (plateau_tower.OSM_ID, plateau_school.OSM_ID)   # plateau_landmark_visuals drops their cards
 GLASS_ENCLOSED = (plateau_landmarks.STAGE_ID,)                    # inside the Théâtre de Verdure envelope
-DETAIL_MASONRY = {'BrickRed': 'Brick_Red', 'BrickBrown': 'Brick_Brown', 'BrickOchre': 'Brick_Buff', 'Limestone': 'Stone'}
+DETAIL_MASONRY = {'BrickRed': 'Brick_Red', 'BrickBrown': 'Brick_Brown', 'BrickOchre': 'Brick_Buff_Even', 'Limestone': 'Stone'}
+# Mid-century towers are buff or brown brick (the red ones read as a flat orange-red box); four entries, one draw,
+# as before, so every tower's later draws stay put.
+TOWER_BRICK = ('Brick_Brown', 'Brick_Buff_Even', 'Brick_Buff_Even', 'Brick_BrownDark')
+BACKGROUND_BAY = 300.      # window bay on the background skins (was 450: the walls read as blank boxes)
+TOWER_PARAPET = 60.        # a tower's skin rises this far over its mass roof as a parapet with a metal coping
 PARK_STRUCTURES = ('pavilion', 'kiosk', 'hut')
 
 
@@ -3494,18 +3917,24 @@ def background_masses(buildings, roads, lot_ids, skipped, cards, owners):
         rng = random.Random(_seed('plex-background', bid))
         skin_wall = None
         if height > 2400:
-            skin_wall = rng.choice(('Brick_Brown', 'Brick_Buff', 'Brick_Red', 'Brick_BrownDark'))
+            skin_wall = rng.choice(TOWER_BRICK)
         elif t.get('building') in PARK_STRUCTURES or t.get('building') in ('government', 'school') or t.get('amenity') == 'school':
             skin_wall = 'Stone_Cast' if t.get('building') in PARK_STRUCTURES + ('government',) else 'Brick_Red'
         backs = _back_walls(points, own_fronts, obstacles, shared, roads_near,
                             own_fronts[0]['normal'] if own_fronts else None)
-        # the card generator's top row can stand up to 10 cm over a low mass's roof: the skin rises over it
+        # the card generator's top row can stand up to 10 cm over a low mass's roof: the skin rises over it. A tower
+        # (over 24 m, all mid-century apartment blocks here) takes the post-1945 kit, with balconies on every second
+        # bay and a parapet TOWER_PARAPET over its roof.
+        tower = height > 2400
         mass = {'id': bid, 'points': points, 'height_cm': height, 'storeys': storeys, 'raise': raise_cm,
-                'wall_top': max(height, card_top.get(bid, 0.) + 2),
+                'wall_top': max(height, card_top.get(bid, 0.) + 2) + (TOWER_PARAPET if tower else 0.),
                 'floor_height': max(270., min(340., (height - raise_cm - 40) / storeys)), 'commercial': False,
                 'masonry': masonry, 'skin_wall': skin_wall, 'background': True, 'kind': kind, 'cards': showing[bid],
-                'backs': backs, 'obstacles': obstacles, 'roads_near': roads_near, 'year': 1900, 'paint': 'Wood_Grey',
-                'crown': 'flat', 'sash': 'double_hung', 'primary': None, 'sides': []}
+                'backs': backs, 'obstacles': obstacles, 'roads_near': roads_near, 'year': 1965 if tower else 1900,
+                'paint': 'Wood_Grey', 'crown': 'flat', 'sash': 'double_hung', 'primary': None, 'sides': [],
+                'modern': tower, 'parapet_from': height if tower else None}
+        if tower:
+            _modern_paint(mass, bid)
         mass['party'] = _party_edges(points, bid, own_fronts, backs, owners_by_edge, near, heights)
         masses.append(mass)
     return masses
@@ -3540,7 +3969,8 @@ def build_background(mesh, masses, levels):
             counts[key] = counts.get(key, 0) + value
         records.append({'id': mass['id'], 'kind': mass['kind'], 'storeys': mass['storeys'],
                         'mass_height_cm': round(mass['height_cm'], 1), 'cards_showing': mass['cards'],
-                        'walls': record['walls'], 'party': party, 'triangles': mesh.triangles() - before})
+                        'walls': record['walls'], 'party': party, 'triangles': mesh.triangles() - before,
+                        **({'kit': 'post-1945 apartment', 'brick': rear.brick} if mass.get('modern') else {})})
     counts['masses'] = len(records)
     counts['triangles'] = sum(r['triangles'] for r in records)
     return records, counts
@@ -3633,11 +4063,21 @@ def build(lots, rear=False, canopy=None, traffic=(), mapped=()):
         })
         if lot.get('roof_check'):
             records[-1]['lod2_roof'] = lot['roof_check']
+        if lot.get('year_override'):
+            records[-1]['year_override'] = lot['year_override']
+        if lot.get('modern'):
+            records[-1]['kit'] = 'post-1945 apartment'
         tops[lot['id']] = top
     levels = {lot['id']: roof_level(lot, tops[lot['id']]) for lot in lots}
+    modern = {lot['id'] for lot in lots if lot.get('modern')}
+    for lot in lots:
+        # a post-1945 block's back walls rise past its lowered roof as a parapet (Rear._skin_faces)
+        zt = _rear_wall_top(lot, tops[lot['id']])
+        lot['parapet_from'] = levels[lot['id']] if lot['id'] in modern and zt - levels[lot['id']] >= 20 else None
     for lot, record in zip(lots, records):
         before = mesh.triangles()
-        record['roof'], extended = author_roof(mesh, lot, tops[lot['id']], levels, lot_skins[lot['id']], counts, tops)
+        record['roof'], extended = author_roof(mesh, lot, tops[lot['id']], levels, lot_skins[lot['id']], counts, tops,
+                                               modern)
         record['top_extension'] = bool(extended)
         record['roof']['triangles'] = mesh.triangles() - before
         record['triangles'] += mesh.triangles() - before
@@ -3647,6 +4087,8 @@ def build(lots, rear=False, canopy=None, traffic=(), mapped=()):
             record['rear'] = rear_records[record['id']]
         for key, value in rear_counts.items():
             counts['rear_' + key] = value
+    # no collision within 300 cm of a traffic centreline (the background masses that follow add none)
+    counts.update(clear_traffic_band(mesh, traffic))
     return mesh, records, counts
 
 
@@ -3655,33 +4097,102 @@ def batches(mesh, tile=TILE_CM, max_batches=MAX_BATCHES, cap=MAX_BATCH_TRIANGLES
     """Group faces by material and grid tile; widen the tile in whole 47.5 m steps only when
     the batch cap needs it, then split any batch over `cap` triangles on the base grid."""
     source = []
+    visual = getattr(mesh, 'visual', set())
     for material in sorted(mesh.groups):
-        for face in mesh.groups[material]:
+        for index, face in enumerate(mesh.groups[material]):
             cx = sum(p[0] for p in face) / len(face)
             cy = sum(p[1] for p in face) / len(face)
-            source.append((material, face, cx, cy))
+            source.append((material, (material, index) in visual, face, cx, cy))
     for factor in range(1, 9):
         size = tile * factor
         buckets = {}
-        for material, face, cx, cy in source:
-            buckets.setdefault((material, math.floor(cx / size), math.floor(cy / size)), []).append((face, cx, cy))
+        for material, seen, face, cx, cy in source:
+            buckets.setdefault((material, seen, math.floor(cx / size), math.floor(cy / size)), []).append((face, cx, cy))
         if len(buckets) <= max_batches:
             break
     output = {}
-    def name(material, i, j, suffix=''):
+    def name(material, seen, i, j, suffix=''):
         c = lambda v: ('M' if v < 0 else 'P') + f'{abs(v):03d}'
-        return f'{material.replace("_", "")}_X{c(i)}_Y{c(j)}{suffix}'
-    for (material, i, j), faces in sorted(buckets.items()):
+        return f'{material.replace("_", "")}{VISUAL if seen else ""}_X{c(i)}_Y{c(j)}{suffix}'
+    for (material, seen, i, j), faces in sorted(buckets.items()):
         triangles = sum(len(f) - 2 for f, _, _ in faces)
         if triangles <= cap:
-            output[name(material, i, j)] = (material, [f for f, _, _ in faces])
+            output[name(material, seen, i, j)] = (material, [f for f, _, _ in faces])
             continue
         parts = {}
         for f, cx, cy in faces:
             parts.setdefault((math.floor(cx / tile), math.floor(cy / tile)), []).append(f)
         for (si, sj), part in sorted(parts.items()):
-            output[name(material, i, j, f'_S{si - i * factor:01d}{sj - j * factor:01d}')] = (material, part)
+            output[name(material, seen, i, j, f'_S{si - i * factor:01d}{sj - j * factor:01d}')] = (material, part)
     return output, size
+
+
+def batch_collision(name, material):
+    """The manifest collision of a batch: 'none' for the Visual Wood_Deck batches (faces in the traffic band)."""
+    if name.split('_')[0] == material.replace('_', '') + VISUAL:
+        return 'none'
+    return COLLISION.get(material, 'none')
+
+
+def _poly_seg(poly, a, b):
+    """Distance between a polygon's xy outline and the segment ab: 0 when they touch or the segment is inside (the
+    replica's poly_seg_dist, so the band test here and the replica test measure alike)."""
+    if _inside(a, poly) or _inside(b, poly):
+        return 0.
+    best = math.inf
+    for p, q in zip(poly, poly[1:] + poly[:1]):
+        d1 = (b[0] - a[0]) * (p[1] - a[1]) - (b[1] - a[1]) * (p[0] - a[0])
+        d2 = (b[0] - a[0]) * (q[1] - a[1]) - (b[1] - a[1]) * (q[0] - a[0])
+        d3 = (q[0] - p[0]) * (a[1] - p[1]) - (q[1] - p[1]) * (a[0] - p[0])
+        d4 = (q[0] - p[0]) * (b[1] - p[1]) - (q[1] - p[1]) * (b[0] - p[0])
+        if (d1 > 0) != (d2 > 0) and (d3 > 0) != (d4 > 0):
+            return 0.
+        best = min(best, _nearest(p, a, b)[0], _nearest(q, a, b)[0], _nearest(a, p, q)[0], _nearest(b, p, q)[0])
+    return best
+
+
+def clear_traffic_band(mesh, traffic, clear=TRAFFIC_CLEAR):
+    """No collision within `clear` of a traffic centreline (the Streets layer rule and the spec): every collision face
+    whose outline comes nearer takes its whole unit out of collision. Wood_Deck faces of such a unit stay visible in
+    Visual batches with no collision; Collision_Only faces there are dropped (they draw nothing). Returns counts."""
+    mesh.visual = set()
+    if not traffic:
+        return {}
+    grid = Grid(2000)
+    for a, b in traffic:
+        grid.add((a, b), [a[0], b[0]], [a[1], b[1]])
+    face_unit = {f: unit for unit, faces in mesh.unit_faces.items() for f in faces}
+    units, loose = set(), set()
+    for material in sorted(COLLISION):
+        for index, face in enumerate(mesh.groups.get(material, ())):
+            xs, ys = [p[0] for p in face], [p[1] for p in face]
+            x0, y0, x1, y1 = min(xs) - clear, min(ys) - clear, max(xs) + clear, max(ys) + clear
+            near = [(a, b) for a, b in grid.near((x0 + x1) / 2, (y0 + y1) / 2, max(x1 - x0, y1 - y0) / 2)
+                    if min(a[0], b[0]) <= x1 and max(a[0], b[0]) >= x0 and min(a[1], b[1]) <= y1 and max(a[1], b[1]) >= y0]
+            if not near:
+                continue
+            poly = [p[:2] for p in face]
+            if min(_poly_seg(poly, a, b) for a, b in near) < clear:
+                unit = face_unit.get((material, index))
+                if unit is None:
+                    loose.add((material, index))
+                else:
+                    units.add(unit)
+    flagged = loose | {f for unit in units for f in mesh.unit_faces[unit]}
+    mesh.visual = {f for f in flagged if f[0] != 'Collision_Only'}
+    dropped = sorted(i for m, i in flagged if m == 'Collision_Only')
+    if dropped:
+        faces = mesh.groups['Collision_Only']
+        gone = set(dropped)
+        mesh.groups['Collision_Only'] = [f for i, f in enumerate(faces) if i not in gone]
+        mesh.count -= sum(len(faces[i]) - 2 for i in dropped)
+        for marker in ('rear_start', 'background_start'):
+            start = getattr(mesh, marker, None)
+            if start and 'Collision_Only' in start:
+                start['Collision_Only'] -= sum(1 for i in dropped if i < start['Collision_Only'])
+    return {'traffic_band_units': len(units), 'traffic_band_loose_faces': len(loose),
+            'traffic_band_visual_faces': len(mesh.visual), 'traffic_band_dropped_collision_faces': len(dropped),
+            'traffic_band_lots': len({unit[1] for unit in units})}
 
 
 def _bounds(faces):
@@ -3798,7 +4309,7 @@ def prepare(directory=OUT, write=True, keep=None):
     for key in sorted(groups):
         material, faces = groups[key]
         manifest_batches.append({'file': key + '.obj', 'mesh': f'SM_{LAYER}_{key}', 'material': material,
-                                 'collision': COLLISION.get(material, 'none'),
+                                 'collision': batch_collision(key, material),
                                  'triangles': sum(len(f) - 2 for f in faces), 'bounds_cm': _bounds(faces)})
     total = sum(b['triangles'] for b in manifest_batches)
     assert total == mesh.triangles()
@@ -3834,6 +4345,22 @@ def prepare(directory=OUT, write=True, keep=None):
                            'party_skins': sum(len(r['party']) for r in background),
                            'triangles': sum(r['triangles'] for r in background)}
     stats['glass_cards'] = {'status': audit, 'floating_on': floating}
+    stats['walls_pass'] = {
+        'year_overrides': {r['id']: r['year'] for r in records if r.get('year_override')},
+        'post_1945_kit': {'lots': sorted(r['id'] for r in records if r.get('kit')),
+                          'towers': sorted(r['id'] for r in background if r.get('kit')),
+                          'balconies': sum(counts.get(k, 0) for k in ('modern_balconies', 'side_modern_balconies',
+                                                                      'rear_modern_balconies', 'background_modern_balconies'))},
+        'open_ground': {'lots': sum(1 for r in records if r['rear'].get('open_ground')),
+                        'area_m2': {m: round(sum(r['rear']['open_ground']['area_m2'].get(m, 0.) for r in records
+                                                 if r['rear'].get('open_ground')), 1) for m in ('Yard_Grass', 'Asphalt_Lot')},
+                        'stall_lines': counts.get('rear_parking_stall_lines', 0)},
+        'collision': {'guard_runs': counts.get('rear_guard_collision_runs', 0),
+                      'flight_runs': counts.get('rear_flight_collision_runs', 0),
+                      'balcony_rail_runs': counts.get('rail_collision_runs', 0),
+                      'traffic_band_units': counts.get('traffic_band_units', 0),
+                      'traffic_band_lots': counts.get('traffic_band_lots', 0),
+                      'traffic_band_visual_faces': counts.get('traffic_band_visual_faces', 0)}}
     manifest = {
         'layer': LAYER, 'generator': GENERATOR, 'frame': 'x east, y north, cm, z up',
         'batches': manifest_batches,
@@ -3847,7 +4374,12 @@ def prepare(directory=OUT, write=True, keep=None):
         'offsets_cm': {'glass_and_recess_back': D_BACK, 'masonry_face': D_FACE, 'osm_glass_cards': 3.0},
         'collision_note': "'complex' = use complex collision as simple on that batch (stair treads, stoops, "
                           'balcony decks, rear gallery decks and rear stair treads), as the existing *_Collision batches '
-                          'do; skins, fences, sheds and plants are NoCollision.',
+                          "do; skins, fences, sheds and plants are NoCollision. Collision_Only batches collide but never "
+                          'render (gallery guards, stair-opening edges, balcony rails): the apply step spawns them '
+                          'hidden in game, blocking pawns and ignoring the camera and visibility. No collision face '
+                          'comes within 300 cm of a traffic centreline: a unit (a front stair with its head balcony, a '
+                          "porch, a balcony, a rear stack) that would goes to the 'WoodDeckVisual' batches, which have "
+                          'none.',
         'source_sha256': {name: hashlib.sha256((ROOT / name).read_bytes()).hexdigest() for name in sources},
         'geometry_sha256': hashes,
         'yard_trees': {'file': YARD_TREES.name, 'count': len(trees['trees']), 'sha256': hashlib.sha256(tree_bytes).hexdigest(),
