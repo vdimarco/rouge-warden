@@ -4467,7 +4467,8 @@ def prepare(directory=None):
                                                           'curb_extensions_merged', 'curb_extensions_flush',
                                                           'curb_extensions_part_flush', 'curb_extensions_on_verges',
                                                           'curb_extensions_on_corners', 'mapped_trees_for_host')},
-                 'rules_cm': {'reach': BUMP_REACH, 'pit': [PIT_L, PIT_D], 'margin': BUMP_MARGIN, 'park_gap': PARK_GAP,
+                 'rules_cm': {'reach': BUMP_REACH, 'curb_hug': CURB_HUG, 'pit': [PIT_L, PIT_D], 'margin': BUMP_MARGIN,
+                              'park_gap': PARK_GAP,
                               'traffic_clear': CLEAR, 'raised_top': Z_WALK, 'flush_top': Z_DROP},
                  'extensions': world.extension_rows, 'host_review': world.tree_host}
     (directory / 'Streets/street_trees.json').write_text(json.dumps(trees_doc, ensure_ascii=False, indent=1) + '\n')

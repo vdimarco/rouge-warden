@@ -1429,10 +1429,13 @@ def check_street_trees(world, out, streets):
     assert on == doc['counts']['mapped_trees_on_carriageway'] == streets['counts']['mapped_trees_on_carriageway']
     assert sorted(left) == sorted(host), ('mapped trunks on carriageway asphalt', sorted(set(left) - set(host))[:10])
     assert len(host) <= 25 and all(r['from_curb_cm'] is None or r['from_curb_cm'] > R.BUMP_REACH for r in host.values())
-    assert doc['counts']['curb_extension_trees'] + len(host) == on
+    at_curb = doc['counts']['curb_extension_trees_at_curb']
+    assert doc['counts']['curb_extension_trees'] - at_curb + len(host) == on
+    hugging = {n for ext in doc['extensions'] for n in ext['on_sidewalk_at_curb']}
+    assert len(hugging) == at_curb and not hugging & {n for n, p in mine if asphalt.contains(p)}
     A = R.PIT_L / 2 + R.BUMP_MARGIN
     for ext in doc['extensions']:
-        assert all(0 <= d <= R.BUMP_REACH for d in ext['from_curb_cm'])
+        assert all(-R.CURB_HUG <= d <= R.BUMP_REACH for d in ext['from_curb_cm'])
         assert ext['depth_cm'] <= R.BUMP_REACH + R.PIT_D / 2 + R.BUMP_MARGIN + .01
         assert ext['raised_cm'] == 0 or ext['raised_cm'] >= R.RAISED_MIN
         assert all(pit[2] in (R.Z_WALK, R.Z_DROP) for pit in ext['pits'])
@@ -1462,7 +1465,8 @@ def check_street_trees(world, out, streets):
                 for x0, x1 in strip.get('bump_cuts', []))
     assert taken < .15 * parking, (taken, parking)          # about a tenth of the parking curb gives way to trees
     return {'mapped_trees': len(mine), 'on_carriageway': on, 'extensions': doc['counts']['curb_extensions'],
-            'extension_trees': doc['counts']['curb_extension_trees'], 'merged': doc['counts']['curb_extensions_merged'],
+            'extension_trees': doc['counts']['curb_extension_trees'], 'at_curb_on_sidewalk': at_curb,
+            'merged': doc['counts']['curb_extensions_merged'],
             'flush': doc['counts']['curb_extensions_flush'], 'part_flush': doc['counts']['curb_extensions_part_flush'],
             'host_review': len(host), 'parking_curb_taken': round(taken / parking, 4)}
 
