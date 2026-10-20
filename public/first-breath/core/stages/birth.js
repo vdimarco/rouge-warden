@@ -1059,6 +1059,20 @@ export function probe() {
   return null;
 }
 
+// The score's mood (openspec/changes/first-breath-score/contract.md, "Mood"), by wave from its warning: 0 for waves 1
+// and 2, 1 for waves 3 to 5, 2 for waves 6 to 8, and the tempo rises from 1 to 1.12 over the 8 waves (the engine moves
+// it at a bar line); the light is 0 at the last tempo, under the light stinger's choir. Pure and cheap (main.js reads
+// it every 100 ms); it changes nothing.
+export function mood(st) {
+  if (!st || !Array.isArray(st.waves) || !st.waves.length) return { level: 0 };
+  const n = st.waves.length;
+  if (st.moment === "light" || st.done) return { level: 0, tempo: 1.12 };
+  let k = -1;
+  for (let i = 0; i < n; i++) if (st.t >= st.waves[i].warn - EPS) k = i;
+  const tempo = 1 + 0.12 * Math.max(0, k) / Math.max(1, n - 1);
+  return { level: k >= 5 ? 2 : k >= 2 ? 1 : 0, tempo: Math.round(tempo * 1000) / 1000 };
+}
+
 export function result(st) {
   const ok = !!(st && Array.isArray(st.waves));
   const done = !!(ok && st.done);

@@ -12,7 +12,9 @@
 //   Large text (the `large` class on <html>), the timing offset (the slider, or the Tap test's median). Each change
 //   is written into the save (core/save.js through ui/store.js, and into the save object main.js passed, so its next
 //   write keeps it), and then act("setting", { key, value }) tells main.js, which may do more (the motion it gives the
-//   renderer). Sound is act("mute") (main.js writes arcade.sound).
+//   renderer). Sound is act("mute") (main.js writes arcade.sound). Music (the score, on by default) is applied here
+//   like the others and saved by main.js under its own key, first-breath.music, since core/save.js keeps only its own
+//   settings fields.
 // - show(name, data) builds the panel again from data each time; data is the run's screen data (core/run.js):
 //   card { n, name, verb, label, facts, id }, overlay { grade, total, fact, id }, almost { place, of, capped, line }, result
 //   (run.summary()), pause { soundOn }, title { best, soundOn }, stages { save }, settings { save, settings, soundOn }
@@ -30,6 +32,7 @@ import { FACTS as ALL_FACTS, byId, label as factLabel, shown as shownFacts } fro
 import { median } from "../core/judge.js";
 import { SAVE_KEY, parse } from "../core/save.js";
 import { STAGES, ENDING } from "../core/stages/index.js";
+import { MUSIC_CREDIT } from "../core/sources.js";
 import * as store from "./store.js";
 import { latencyOf } from "./sound.js";
 
@@ -233,6 +236,7 @@ export function createScreens(root, { act = () => {}, settings = null } = {}) {
           ${tog("captions", say("settings.captions"), st.captions !== false)}
           ${tog("largeText", say("settings.largeText"), !!st.largeText)}
           ${tog("sound", say("settings.sound"), soundOn)}
+          ${tog("music", say("settings.music"), st.music !== false)}
         </div>
         <div class="opt offset"><label class="opt-name" for="offset">${esc(say("settings.offset"))}: <output data-offset-out>${esc(say("settings.offsetValue", { ms: off > 0 ? "+" + off : String(off) }))}</output></label>
           <div class="offset-row"><input id="offset" type="range" min="-150" max="150" step="10" value="${esc(off)}" data-set="offsetMs">
@@ -285,6 +289,9 @@ export function createScreens(root, { act = () => {}, settings = null } = {}) {
         ${body}
         <h3>${esc(say("sources.list"))}</h3>
         <ol class="refs-list">${list}</ol>
+        <h3>${esc(say("sources.music"))}</h3>
+        <p class="credit" data-credit="music">${esc(say(MUSIC_CREDIT.text))}</p>
+        <ul class="refs-list credit-links">${MUSIC_CREDIT.links.map((l) => `<li><a class="chip" href="${esc(l.url)}" target="_blank" rel="noopener">${esc(l.name)}</a></li>`).join("")}</ul>
         ${btn("back", say("ui.back"), { id: "back2" })}
       </div>`;
     },

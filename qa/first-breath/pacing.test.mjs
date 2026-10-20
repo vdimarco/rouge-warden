@@ -3,7 +3,7 @@
 // practice (as the Stages menu plays it) and in whole runs (with the cards, the carry from stage to stage and the
 // ending's run time line), through core/run.js. Every event goes to the real ui/captions.js the way main.js sends it
 // (a caption line, a sub-goal line the prompt line does not already show, a fact caption once per stage, a sound's
-// caption), at the time main.js would (after the step it came in), on a virtual clock that runs with the core clock,
+// caption, the stage's music caption), at the time main.js would (after the step it came in), on a virtual clock that runs with the core clock,
 // as real-time play does. The captions lay their pages out on a small fake DOM sized from the real page in portrait
 // (390 × 844), landscape (844 × 390) and desktop (1280 × 800, with the desktop forms of the lines): each band's width
 // and height, the 18 px (16 px fit) and desktop 20 px (18 px fit) type and its glyph widths, 3 % wider so a page never
@@ -162,6 +162,9 @@ function replay(steps, stage, layout) {
   const capSeen = new Set();
   const sent = [];                       // [{ id, text, at }] every fact caption handed to the captions
   let prompt = {}, screen = "title", visible = false, endAt = null;
+  // the stage's music caption ("♪ spy-chase music", music.<cue>): main.js offers it as a sound's caption once its cue
+  // starts, until the line is free, for up to 12 s (a sound's caption never holds back a line or a fact)
+  let musicCap = null;
 
   const sayCaption = (id, text, extra = {}) => (text ? cap.say(id, text, { kind: "say", ms: capMs(), ...extra, dir: extra.dir || null }) : false);
   function factCaption(id, dir = null) {
@@ -245,6 +248,7 @@ function replay(steps, stage, layout) {
           if (t0 !== null) { if (endAt === null) endAt = clock; break; }
           t0 = clock; capSeen.clear(); cap.clear();
           if (ev.index === 0 && ev.attempt === 1 && !ev.practice) cueCaption("cue.mother");   // at Play: her heartbeat
+          if (ev.id !== "ending" && has("music." + ev.id)) musicCap = { id: "music." + ev.id, at: clock };
           break;
         case "caption":
           if (ev.id === "ending.time") { if (ev.vars && ev.vars.time) caption(ev.id, ev.vars, ev.dir); }
@@ -259,6 +263,10 @@ function replay(steps, stage, layout) {
         default: { const c = cueOf(ev); if (c) cueCaption(c); }
       }
       look();
+    }
+    if (musicCap) {
+      if (!visible || clock - musicCap.at > 12000) musicCap = null;
+      else if (cap.say(musicCap.id, say(musicCap.id), { kind: "cue", ms: 2500 })) { musicCap = null; look(); }
     }
     if (endAt !== null) break;
   }

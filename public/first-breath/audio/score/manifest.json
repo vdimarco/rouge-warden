@@ -1,0 +1,246 @@
+{
+ "source": "FluidR3_GM by Frank Wen, rendered by gleitz/midi-js-soundfonts",
+ "license": "Files: CC BY 3.0 (https://creativecommons.org/licenses/by/3.0/us/), as rendered by gleitz/midi-js-soundfonts. Soundfont: MIT, Copyright (c) 2000-2002, 2008 Frank Wen (see README.md).",
+ "instruments": {
+  "trumpet": {
+   "notes": {
+    "54": "trumpet/54.mp3",
+    "58": "trumpet/58.mp3",
+    "62": "trumpet/62.mp3",
+    "66": "trumpet/66.mp3",
+    "70": "trumpet/70.mp3",
+    "74": "trumpet/74.mp3",
+    "78": "trumpet/78.mp3",
+    "82": "trumpet/82.mp3",
+    "84": "trumpet/84.mp3"
+   },
+   "gain": 0.638
+  },
+  "trombone": {
+   "notes": {
+    "40": "trombone/40.mp3",
+    "44": "trombone/44.mp3",
+    "48": "trombone/48.mp3",
+    "52": "trombone/52.mp3",
+    "56": "trombone/56.mp3",
+    "60": "trombone/60.mp3",
+    "64": "trombone/64.mp3",
+    "68": "trombone/68.mp3",
+    "72": "trombone/72.mp3"
+   },
+   "gain": 0.49
+  },
+  "horn": {
+   "notes": {
+    "41": "horn/41.mp3",
+    "45": "horn/45.mp3",
+    "49": "horn/49.mp3",
+    "53": "horn/53.mp3",
+    "57": "horn/57.mp3",
+    "61": "horn/61.mp3",
+    "65": "horn/65.mp3",
+    "69": "horn/69.mp3",
+    "73": "horn/73.mp3",
+    "77": "horn/77.mp3"
+   },
+   "gain": 0.47
+  },
+  "tuba": {
+   "notes": {
+    "28": "tuba/28.mp3",
+    "32": "tuba/32.mp3",
+    "36": "tuba/36.mp3",
+    "40": "tuba/40.mp3",
+    "44": "tuba/44.mp3",
+    "48": "tuba/48.mp3",
+    "52": "tuba/52.mp3",
+    "56": "tuba/56.mp3",
+    "58": "tuba/58.mp3"
+   },
+   "gain": 0.507
+  },
+  "strings": {
+   "notes": {
+    "28": "strings/28.mp3",
+    "32": "strings/32.mp3",
+    "36": "strings/36.mp3",
+    "40": "strings/40.mp3",
+    "44": "strings/44.mp3",
+    "48": "strings/48.mp3",
+    "52": "strings/52.mp3",
+    "56": "strings/56.mp3",
+    "60": "strings/60.mp3",
+    "64": "strings/64.mp3",
+    "68": "strings/68.mp3",
+    "72": "strings/72.mp3",
+    "76": "strings/76.mp3",
+    "80": "strings/80.mp3",
+    "84": "strings/84.mp3",
+    "88": "strings/88.mp3",
+    "92": "strings/92.mp3",
+    "96": "strings/96.mp3"
+   },
+   "gain": 0.473
+  },
+  "pizz": {
+   "notes": {
+    "28": "pizz/28.mp3",
+    "32": "pizz/32.mp3",
+    "36": "pizz/36.mp3",
+    "40": "pizz/40.mp3",
+    "44": "pizz/44.mp3",
+    "48": "pizz/48.mp3",
+    "52": "pizz/52.mp3",
+    "56": "pizz/56.mp3",
+    "60": "pizz/60.mp3",
+    "64": "pizz/64.mp3",
+    "68": "pizz/68.mp3",
+    "72": "pizz/72.mp3",
+    "76": "pizz/76.mp3",
+    "80": "pizz/80.mp3",
+    "84": "pizz/84.mp3"
+   },
+   "gain": 0.729
+  },
+  "contrabass": {
+   "notes": {
+    "28": "contrabass/28.mp3",
+    "32": "contrabass/32.mp3",
+    "36": "contrabass/36.mp3",
+    "40": "contrabass/40.mp3",
+    "44": "contrabass/44.mp3",
+    "48": "contrabass/48.mp3",
+    "52": "contrabass/52.mp3",
+    "55": "contrabass/55.mp3"
+   },
+   "gain": 0.414
+  },
+  "harp": {
+   "notes": {
+    "36": "harp/36.mp3",
+    "40": "harp/40.mp3",
+    "44": "harp/44.mp3",
+    "48": "harp/48.mp3",
+    "52": "harp/52.mp3",
+    "56": "harp/56.mp3",
+    "60": "harp/60.mp3",
+    "64": "harp/64.mp3",
+    "68": "harp/68.mp3",
+    "72": "harp/72.mp3",
+    "76": "harp/76.mp3",
+    "80": "harp/80.mp3",
+    "84": "harp/84.mp3",
+    "88": "harp/88.mp3",
+    "92": "harp/92.mp3",
+    "96": "harp/96.mp3"
+   },
+   "gain": 0.818
+  },
+  "glock": {
+   "notes": {
+    "72": "glock/72.mp3",
+    "76": "glock/76.mp3",
+    "80": "glock/80.mp3",
+    "84": "glock/84.mp3",
+    "88": "glock/88.mp3",
+    "92": "glock/92.mp3",
+    "96": "glock/96.mp3",
+    "100": "glock/100.mp3",
+    "104": "glock/104.mp3",
+    "108": "glock/108.mp3"
+   },
+   "gain": 0.606
+  },
+  "clarinet": {
+   "notes": {
+    "50": "clarinet/50.mp3",
+    "54": "clarinet/54.mp3",
+    "58": "clarinet/58.mp3",
+    "62": "clarinet/62.mp3",
+    "66": "clarinet/66.mp3",
+    "70": "clarinet/70.mp3",
+    "74": "clarinet/74.mp3",
+    "78": "clarinet/78.mp3",
+    "82": "clarinet/82.mp3",
+    "86": "clarinet/86.mp3",
+    "90": "clarinet/90.mp3",
+    "91": "clarinet/91.mp3"
+   },
+   "gain": 0.311
+  },
+  "flute": {
+   "notes": {
+    "60": "flute/60.mp3",
+    "64": "flute/64.mp3",
+    "68": "flute/68.mp3",
+    "72": "flute/72.mp3",
+    "76": "flute/76.mp3",
+    "80": "flute/80.mp3",
+    "84": "flute/84.mp3",
+    "88": "flute/88.mp3",
+    "92": "flute/92.mp3",
+    "96": "flute/96.mp3"
+   },
+   "gain": 0.351
+  },
+  "piano": {
+   "notes": {
+    "36": "piano/36.mp3",
+    "40": "piano/40.mp3",
+    "44": "piano/44.mp3",
+    "48": "piano/48.mp3",
+    "52": "piano/52.mp3",
+    "56": "piano/56.mp3",
+    "60": "piano/60.mp3",
+    "64": "piano/64.mp3",
+    "68": "piano/68.mp3",
+    "72": "piano/72.mp3",
+    "76": "piano/76.mp3",
+    "80": "piano/80.mp3",
+    "84": "piano/84.mp3",
+    "88": "piano/88.mp3",
+    "92": "piano/92.mp3",
+    "96": "piano/96.mp3"
+   },
+   "gain": 0.708
+  },
+  "choir": {
+   "notes": {
+    "48": "choir/48.mp3",
+    "52": "choir/52.mp3",
+    "56": "choir/56.mp3",
+    "60": "choir/60.mp3",
+    "64": "choir/64.mp3",
+    "68": "choir/68.mp3",
+    "72": "choir/72.mp3",
+    "76": "choir/76.mp3",
+    "79": "choir/79.mp3"
+   },
+   "gain": 0.55
+  },
+  "timpani": {
+   "notes": {
+    "40": "timpani/40.mp3",
+    "44": "timpani/44.mp3",
+    "48": "timpani/48.mp3",
+    "52": "timpani/52.mp3",
+    "56": "timpani/56.mp3",
+    "57": "timpani/57.mp3"
+   },
+   "gain": 0.961
+  },
+  "upright": {
+   "notes": {
+    "28": "upright/28.mp3",
+    "32": "upright/32.mp3",
+    "36": "upright/36.mp3",
+    "40": "upright/40.mp3",
+    "44": "upright/44.mp3",
+    "48": "upright/48.mp3",
+    "52": "upright/52.mp3",
+    "55": "upright/55.mp3"
+   },
+   "gain": 0.585
+  }
+ }
+}

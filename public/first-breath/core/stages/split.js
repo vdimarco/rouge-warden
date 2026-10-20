@@ -1148,6 +1148,20 @@ export function probe() {
   return null;
 }
 
+// The score's mood (openspec/changes/first-breath-score/contract.md, "Mood"): in a room, 0 before its germs come, 1
+// while you fight them, 2 with 6 or more germs or 16 or more of their shots about; the Knot is 2 and the boss while it
+// lives; a cleared room, the split, the gift pick, the hatch, the outro and a knock-out are 0, the pop of the Knot 1.
+// Pure and cheap (main.js reads it every 100 ms); it changes nothing.
+export function mood(st) {
+  const A = st && st.A;
+  if (!A || st.done || A.ko) return { level: 0 };
+  if (st.phase === "knot") return { level: 2, boss: !!knotOf(st) };
+  if (st.phase === "win") return { level: 1 };
+  if (st.phase !== "room") return { level: 0 };
+  const n = A.foes.length;
+  return { level: n >= 6 || X.foeBullets(A) >= 16 ? 2 : n > 0 ? 1 : 0 };
+}
+
 export function result(st) {
   const A = st.A;
   const goalMet = st.done && st.goalMet;

@@ -12,6 +12,8 @@
 //   one-shots   a pool of 12 tone voices and 4 noise voices, the oldest taken first (16 in all)
 //   womb bus    two low-pass filters in series → a compressor → the master; the cutoff follows the stage (11)
 //   birth bus   room tone, breaths and the cry; silent until open() (the ending) or birth.open
+//   score in    one gain into the master (after mute and pause, not through the womb filters): ui/music.js plays the
+//               score into it; scoreDest() gives it (null before start() or with no context)
 //
 // Timing (Chris Wilson, "A tale of two clocks", 2013): main.js runs the lookahead (a timer every 25 ms schedules the
 // next 100 ms from run.beats()) and hands each beat here once; each one is scheduled latencyS early (outputLatency,
@@ -134,11 +136,14 @@ export function createSound(ctx, { seed = 1, latencyS = null } = {}) {
       return o;
     };
 
-    // the end of the chain: a gentle limiter, then the master (mute, pause)
+    // the end of the chain: a gentle limiter, then the master (mute, pause). A 1 dB trim after the limiter: its
+    // automatic makeup gain lets her heart with the score at level 2 peak at about -0.7 dBFS; trimmed, under -1 dBFS
     const limit = c.createDynamicsCompressor();
     limit.threshold.value = -6; limit.knee.value = 6; limit.ratio.value = 8; limit.attack.value = 0.003; limit.release.value = 0.25;
-    limit.connect(c.destination);
+    limit.connect(gain(0.89, c.destination));
     const master = gain(muted || suspended ? 0 : MASTER, limit);
+    // the score in (ui/music.js): straight into the master, so mute silences it and the womb filters do not touch it
+    const scoreIn = gain(1, master);
 
     // the womb bus: two low-pass filters in series, then a compressor
     const comp = c.createDynamicsCompressor();
@@ -220,7 +225,7 @@ export function createSound(ctx, { seed = 1, latencyS = null } = {}) {
     const cry1g = gain(0, cryG), cry2g = gain(0, cryG);
     const cry1 = osc("sine", 450, cry1g), cry2 = osc("sine", 900, cry2g);
 
-    G = { master, womb, lp1, lp2, birth, her, s1, s2, s1g, s2g, souffleG, souffle, you, yo, yg, voice, voicePan, vo, vg, lfo,
+    G = { master, scoreIn, womb, lp1, lp2, birth, her, s1, s2, s1g, s2g, souffleG, souffle, you, yo, yg, voice, voicePan, vo, vg, lfo,
       tones, noises, ti: 0, ni: 0, roomG, room, breathG, breathF, breathSrc, cryG, cry1, cry2, cry1g, cry2g,
       sources: 2 + 1 + 1 + 2 + TONES + NOISES + 3 + 2 };
     applyPan();
@@ -632,6 +637,7 @@ export function createSound(ctx, { seed = 1, latencyS = null } = {}) {
       if (ctx && !G) { try { build(); } catch (e) { G = null; } }
       if (ctx && ctx.state === "suspended" && !suspended && typeof ctx.resume === "function") quietly(() => ctx.resume());
     },
+    scoreDest() { return G ? G.scoreIn : null; },
     setMuted(b) {
       muted = !!b;
       masterTo(muted || suspended ? 0 : MASTER);

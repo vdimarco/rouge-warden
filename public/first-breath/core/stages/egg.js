@@ -1766,6 +1766,21 @@ export function probe(st) {
   };
 }
 
+// The score's mood (openspec/changes/first-breath-score/contract.md, "Mood"), by pattern density: in the guard, 2
+// with 12 or more enzyme sparks in the air, 1 while rivals or sparks are about, 0 in a lull; the swarm (the hardest
+// pattern) is the boss; the rush and your sperm coming in are 1; the surge, the opening, the seal, the fusion and a
+// knock-out are 0. Pure and cheap (main.js reads it every 100 ms); it changes nothing.
+export function mood(st) {
+  const G = st && st.guard, A = st && st.A;
+  if (!G || !A || st.done || st.phase === "ko") return { level: 0 };
+  if (st.moment === "enter") return { level: 1 };
+  if (st.moment !== "guard") return { level: 0 };
+  if (G.swarm && !G.swarm.off) return { level: 2, boss: true };
+  if (G.rushT !== null) return { level: 1 };
+  const n = X.foeBullets(A);
+  return { level: n >= 12 ? 2 : n > 0 || liveCount(G) > 0 ? 1 : 0 };
+}
+
 export function result(st) {
   const G = st.guard, S = st.score, A = st.A;
   const done = !!st.done;

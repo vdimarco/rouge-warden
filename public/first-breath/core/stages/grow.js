@@ -621,6 +621,18 @@ export function probe() {
   return null;
 }
 
+// The score's mood (openspec/changes/first-breath-score/contract.md, "Mood"): a wave is 1, and 2 from week 10 on or
+// with 12 or more germs or 24 or more of their shots about; the big germ is 2 and the boss while it lives; a rest and a
+// knock-out are 0, the victory beat 1. Pure and cheap (main.js reads it every 100 ms); it changes nothing.
+export function mood(st) {
+  const A = st && st.A;
+  if (!A || st.done || st.phase === "ko" || A.ko) return { level: 0 };
+  if (st.phase === "boss") return { level: 2, boss: !st.bossCleared };
+  if (st.phase === "outro") return { level: 1 };
+  if (st.phase !== "wave") return { level: 0 };
+  return { level: st.mi >= 3 || A.foes.length >= 12 || X.foeBullets(A) >= 24 ? 2 : 1 };
+}
+
 export function result(st) {
   const A = st.A;
   const goalMet = st.done && st.goalMet;

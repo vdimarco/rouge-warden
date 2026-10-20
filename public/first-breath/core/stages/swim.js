@@ -1757,6 +1757,26 @@ export function probe(st) {
   };
 }
 
+// The score's mood (openspec/changes/first-breath-score/contract.md, "Mood"): level 2 while the next gate you have
+// not passed closes within about 6 s (its time, or 2 places left in its quota) or the tide is within 120 u behind
+// you; 1 while 3 or more racers swim within 25 u of you (the pack); else 0, and 0 once you rest or arrive. Pure and
+// cheap (main.js reads it every 100 ms); it changes nothing in the race.
+export function mood(st) {
+  const you = st && st.you;
+  if (!you || st.done || you.out || you.arrived || !st.racing) return { level: 0 };
+  const p = progOf(you);
+  for (let i = 0; i < st.gates.length; i++) {
+    const g = st.gates[i];
+    if (g.closed || you.passed[i]) continue;
+    if (g.at - st.t <= 6 || g.quota - g.n <= 2) return { level: 2 };
+    break;
+  }
+  if (st.t >= T.TIDE_T0 && p - st.tide.front < 120) return { level: 2 };
+  let n = 0;
+  for (const sp of st.rivals) if (!sp.out && !sp.arrived && Math.abs(progOf(sp) - p) < 25 && Math.abs(sp.x - you.x) < 25) n++;
+  return { level: n >= 3 ? 1 : 0 };
+}
+
 export function result(st) {
   const you = st.you, p = parts(st), score = scoreOf(st);
   const goalMet = st.done && st.goalMet && st.how !== "carried" && st.how !== "cap" && st.how !== "out";

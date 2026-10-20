@@ -874,6 +874,17 @@ export function probe(st) {
   return null;
 }
 
+// The score's mood (openspec/changes/first-breath-score/contract.md, "Mood"), by combo while notes ride the lanes: 0
+// under 4 kicks in a row, 1 from 4, 2 (the shout chorus) from 12 or while the fever is lit; the hearing, the eyes and
+// the outro are 0. Pure and cheap (main.js reads it every 100 ms); it changes nothing.
+export function mood(st) {
+  if (!st || st.done) return { level: 0 };
+  const i = IDS.indexOf(st.moment);
+  if (i < BEAT || i > SONG) return { level: 0 };
+  const c = Number.isFinite(st.combo) ? st.combo : 0;
+  return { level: st.fever || c >= 12 ? 2 : c >= 4 ? 1 : 0 };
+}
+
 export function result(st) {
   const beatAcc = accOf(st, "beat"), answerAcc = accOf(st, "answer"), songAcc = accOf(st, "song");
   const beatPts = partOf(st, "beat"), answerPts = partOf(st, "answer"), songPts = partOf(st, "song");

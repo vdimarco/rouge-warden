@@ -45,6 +45,7 @@ const BASE = {
   "settings.offset": "Timing offset",
   "settings.offsetValue": "{ms} ms",
   "settings.sound": "Sound",
+  "settings.music": "Music",
   "settings.weeks": "Weeks count from the first day of the last period. Midwives and doctors count this way.",
 
   "tap.title": "Tap test",
@@ -132,6 +133,20 @@ const BASE = {
   "sources.title": "Sources",
   "sources.note": "Every fact in the game, with where it comes from.",
   "sources.list": "Where the facts come from",
+  "sources.music": "Music",
+  "sources.musicCredit": "Music: an original score for this game. Instrument sounds: FluidR3_GM by Frank Wen (MIT license), from gleitz/midi-js-soundfonts (CC BY 3.0).",
+
+  // the score's captions (main.js): one line when a stage's music starts, once per stage
+  "music.title": "♪ grand march music",
+  "music.swim": "♪ spy-chase music",
+  "music.egg": "♪ march music",
+  "music.split": "♪ sneaky music",
+  "music.root": "♪ adventure music",
+  "music.grow": "♪ big orchestra music",
+  "music.answer": "♪ a big band plays",
+  "music.turn": "♪ rising music",
+  "music.birth": "♪ escape music",
+  "music.ending": "♪ a soft lullaby",
 };
 
 // Each stage's TEXT table, in stage order, then the ending's.
