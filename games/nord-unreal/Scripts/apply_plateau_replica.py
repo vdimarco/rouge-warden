@@ -25,6 +25,7 @@ import hashlib
 import json
 import math
 from pathlib import Path
+import re
 import shlex
 import shutil
 import sys
@@ -233,6 +234,25 @@ def load_textures(root=ROOT):
     return sets
 
 
+def load_macro(root=ROOT):
+    """The macro-variation mask of textures.json (plateau_textures.MACRO), its image stream checked; None when the
+    folder or an older index has none."""
+    import plateau_textures
+    folder = Path(root) / 'Data/Plateau/ReplicaGeometry' / TEXTURES
+    if not (folder / TEXTURE_INDEX).is_file():
+        return None
+    entry = json.loads((folder / TEXTURE_INDEX).read_text()).get('macro')
+    if not entry:
+        return None
+    path = folder / entry['file']
+    assert path.is_file(), f'Missing {path}; run python3 Scripts/plateau_textures.py'
+    data = path.read_bytes()
+    width, height, raw = plateau_textures.read_png(data)
+    assert [width, height] == entry['size_px'], f'Wrong size {path}'
+    assert hashlib.sha256(raw).hexdigest() == entry['raw_sha256'], f'Stale texture {path}'
+    return dict(entry, file_sha256=hashlib.sha256(data).hexdigest())
+
+
 def set_material(name, entry):
     """Plan fields of a replica texture set: its maps, tiling, mean colour and how its material is built.
 
@@ -241,19 +261,26 @@ def set_material(name, entry):
     """
     surface = entry.get('surface') or plateau_textures.SETS[name]['surface']
     material = entry.get('material') or plateau_textures.SURFACES[surface]
-    return {'texture_set': name, 'surface': surface, 'mean_linear': entry['mean_linear'], 'tiling': entry['tiling'],
-            'uv': entry.get('uv', 'metres'),
-            'textures': {role: f'{TEXTURE_ASSETS}/{Path(entry["maps"][role]["file"]).stem}' for role in TEXTURE_ROLES},
-            'blend_mode': material['blend_mode'], 'two_sided': bool(material['two_sided']),
-            'shading_model': material['shading_model'], 'opacity_mask_clip': material.get('opacity_mask_clip')}
+    out = {'texture_set': name, 'surface': surface, 'mean_linear': entry['mean_linear'], 'tiling': entry['tiling'],
+           'uv': entry.get('uv', 'metres'),
+           'textures': {role: f'{TEXTURE_ASSETS}/{Path(entry["maps"][role]["file"]).stem}' for role in TEXTURE_ROLES},
+           'blend_mode': material['blend_mode'], 'two_sided': bool(material['two_sided']),
+           'shading_model': material['shading_model'], 'opacity_mask_clip': material.get('opacity_mask_clip')}
+    macro = entry.get('macro')
+    if macro:
+        # Macro variation: the tint x lerp(1 - s, 1 + s, R) at the first macro tile x lerp(...) of G at the second.
+        out['macro'] = {'texture': f'{TEXTURE_ASSETS}/{Path(macro["file"]).stem}', 'strength': list(macro['strength']),
+                        'tiling': [[round(1. / t, 6)] * 2 for t in macro['tile_m']], 'channels': list(macro['channels'])}
+    return out
 
 
 def load_yard_trees(root=ROOT):
     """Rows of Plex/yard_trees.json, checked; None when plateau_plex.py has not written the file yet.
 
     Each row is {x, y, z, yaw, scale, kind}: replica frame (x east, y north, z up, cm), yaw in degrees, scale on
-    the shared tree mesh (about 4.55 m tall and 3 to 4.3 m across at 1), kind one of TREE_KINDS. A file holding
-    {"trees": [...]} is read the same way.
+    the shared tree mesh (about 4.55 m tall and 3 to 4.3 m across at 1), kind one of TREE_KINDS (the old maple and
+    elm stand for norway_maple and linden), and optionally height_cm (else scale x 4.55 m). A file holding
+    {"trees": [...]} is read the same way. Each row also carries its species and target height.
     """
     path = Path(root) / 'Data/Plateau/ReplicaGeometry' / YARD_TREES
     if not path.is_file():
@@ -268,24 +295,99 @@ def load_yard_trees(root=ROOT):
         x, y, z, yaw, scale = (float(row[k]) for k in ('x', 'y', 'z', 'yaw', 'scale'))
         assert all(math.isfinite(v) for v in (x, y, z, yaw, scale)), f'{YARD_TREES} row {n}: {row}'
         assert 0. < scale <= 6. and abs(z) < 2000., f'{YARD_TREES} row {n}: scale {scale}, z {z}'
-        out.append({'kind': kind, 'position': (x, y, z), 'yaw': yaw % 360., 'scale': scale})
+        height = float(row.get('height_cm', scale * TREE_MESH_HEIGHT_CM))
+        assert math.isfinite(height) and 100. <= height <= 3500., f'{YARD_TREES} row {n}: height {height}'
+        out.append({'kind': kind, 'species': TREE_ALIASES.get(kind, kind), 'position': (x, y, z), 'yaw': yaw % 360.,
+                    'scale': scale, 'height_cm': height})
     return out
 
 
-def plan_trees(rows):
-    """One NoCollision instanced actor per tree kind, in TREE_KINDS order, with each tree's transform."""
+def load_tree_kinds(root=ROOT):
+    """Trees/manifest.json (the Blender tree generator): {species: {obj, materials {bark, leaves}, height_cm,
+    trunk_cm}}, under "kinds" or at the top level, with an optional top-level "materials" table. Checked; None
+    when the file does not exist, and the yard trees then keep the shared mesh.
+
+    A slot's material is a spec ({base_color_srgb, roughness, metallic, optional texture as for any layer key,
+    optional foliage}), the name of a spec in the top-level "materials" table, or an existing /Game/ material.
+    """
+    folder = Path(root) / 'Data/Plateau/ReplicaGeometry' / TREES
+    path = folder / 'manifest.json'
+    if not path.is_file():
+        return None
+    manifest = json.loads(path.read_text())
+    wrapped = 'kinds' in manifest
+    kinds = manifest['kinds'] if wrapped else manifest
+    table = manifest.get('materials', {}) if isinstance(manifest.get('materials'), dict) else {}
+    out = {}
+    for species in sorted(kinds):
+        spec = kinds[species]
+        if species not in TREE_SPECIES:
+            assert not wrapped, f'{TREES}/manifest.json: unknown tree kind {species!r}'
+            continue
+        obj = folder / spec['obj'] if (folder / spec['obj']).is_file() else folder.parent / spec['obj']
+        assert obj.is_file(), f'Missing {obj}; run the tree generator first'
+        digest = sha(obj)
+        if 'sha256' in spec:
+            assert spec['sha256'] == digest, f'Stale tree mesh {obj}'
+        height, trunk = float(spec['height_cm']), float(spec['trunk_cm'])
+        assert math.isfinite(height) and math.isfinite(trunk) and 200. <= height <= 4000. and 2. <= trunk <= 300., \
+            f'{species}: height {height} cm, trunk {trunk} cm'
+        slots = spec['materials']
+        assert sorted(slots) == sorted(TREE_SLOTS), f'{species}: material slots {sorted(slots)}, want {list(TREE_SLOTS)}'
+        refs = {}
+        for slot in TREE_SLOTS:
+            value = slots[slot]
+            if isinstance(value, str) and value.startswith('/Game/'):
+                refs[slot] = {'existing': value.split('.')[0]}
+            else:
+                key, mat = (value, table.get(value)) if isinstance(value, str) else (f'{species}_{slot}', value)
+                assert isinstance(mat, dict) and re.match(r'^#[0-9A-Fa-f]{6}$', mat.get('base_color_srgb', '')), \
+                    f'{species} {slot}: material {value!r} is not a spec with base_color_srgb'
+                refs[slot] = {'key': key, 'spec': mat}
+        out[species] = {'obj': obj.relative_to(folder.parent).as_posix(), 'sha256': digest, 'height_cm': height,
+                        'trunk_cm': trunk, 'materials': refs}
+    assert out, f'{TREES}/manifest.json lists no tree kinds'
+    return out
+
+
+def tree_mesh_asset(species):
+    return f'{ASSETS}/{TREES}/SM_Tree_{species}'
+
+
+def plan_trees(rows, kinds=None):
+    """One NoCollision instanced actor per tree kind, with each tree's transform.
+
+    Without species meshes (kinds None): the shared mesh, one actor per kind in TREE_KINDS order, scale x crown on
+    X and Y. With them (load_tree_kinds): one actor per species in TREE_SPECIES order on that species' mesh, scaled
+    uniformly so the tree stands at the row's height (a trunk scales with its tree, as the generator drew it).
+    """
+    out = []
+    if kinds is None:
+        groups = {}
+        for row in rows:
+            groups.setdefault(row['kind'], []).append(row)
+        for kind, crown in TREE_KINDS.items():
+            if kind not in groups:
+                continue
+            out.append({'label': f'{PREFIX}Plex yard trees {kind}', 'kind': kind, 'mesh': TREE_MESH,
+                        'folder': f'{FOLDER}/Plex yard trees', 'collision': False, 'cast_shadow': True,
+                        'cull_cm': list(TREE_CULL_CM), 'crown': crown, 'count': len(groups[kind]),
+                        'transforms': [(r['position'], r['yaw'], (r['scale'] * crown, r['scale'] * crown, r['scale']))
+                                       for r in groups[kind]]})
+        return out
     groups = {}
     for row in rows:
-        groups.setdefault(row['kind'], []).append(row)
-    out = []
-    for kind, crown in TREE_KINDS.items():
-        if kind not in groups:
+        assert row['species'] in kinds, f'{YARD_TREES}: no {TREES} mesh for {row["kind"]} ({row["species"]})'
+        groups.setdefault(row['species'], []).append(row)
+    for species in TREE_SPECIES:
+        if species not in groups:
             continue
-        out.append({'label': f'{PREFIX}Plex yard trees {kind}', 'kind': kind, 'mesh': TREE_MESH,
+        height = kinds[species]['height_cm']
+        out.append({'label': f'{PREFIX}Plex yard trees {species}', 'kind': species, 'mesh': tree_mesh_asset(species),
                     'folder': f'{FOLDER}/Plex yard trees', 'collision': False, 'cast_shadow': True,
-                    'cull_cm': list(TREE_CULL_CM), 'crown': crown, 'count': len(groups[kind]),
-                    'transforms': [(r['position'], r['yaw'], (r['scale'] * crown, r['scale'] * crown, r['scale']))
-                                   for r in groups[kind]]})
+                    'cull_cm': list(TREE_CULL_CM), 'crown': 1., 'count': len(groups[species]),
+                    'mesh_height_cm': height,
+                    'transforms': [(r['position'], r['yaw'], (r['height_cm'] / height,) * 3) for r in groups[species]]})
     return out
 
 

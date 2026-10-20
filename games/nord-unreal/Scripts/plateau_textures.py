@@ -1889,8 +1889,18 @@ def macro_rows():
     of the tile), each stretched to the full range. The apply step reads R at MACRO tile_m[0], G at tile_m[1]."""
     W, H = MACRO['size_px']
     seed = MACRO['seed']
-    channels = [stretched(field(Fbm(seed + 10 * n, W, H, ((2, 2), (4, 4), (8, 8), (16, 16)), (.45, .28, .17, .1)), H))
-                for n in range(3)]
+    raw = []
+    for n in range(3):
+        values = field(Fbm(seed + 10 * n, W, H, ((2, 2), (4, 4), (8, 8), (16, 16)), (.45, .28, .17, .1)), H)
+        mean = sum(values) / len(values)
+        values = [v - mean for v in values]
+        # With only a few large cells per tile, two noises can follow each other by chance; take out the part of
+        # each channel that follows the ones before it (Gram-Schmidt), so R and G vary independently.
+        for prev in raw:
+            k = sum(a * b for a, b in zip(values, prev)) / sum(b * b for b in prev)
+            values = [a - k * b for a, b in zip(values, prev)]
+        raw.append(values)
+    channels = [stretched(values) for values in raw]
     rows = []
     for y in range(H):
         row = bytearray(3 * W)
