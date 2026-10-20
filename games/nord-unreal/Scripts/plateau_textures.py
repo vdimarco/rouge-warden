@@ -1092,16 +1092,18 @@ def sheet_metal(spec):
             e = wrap_delta(x + .5, lap_edge, W)
             if -pitch < e < 0.:
                 h += .12
+            # Weathered galvanising: the spangle has faded under a dull, light-grey zinc patina, so the sheet reads
+            # light grey and diffuse rather than mirror-like (roughness about 0.6).
             sp = spangle[ids[i]] - .5
-            dull = smooth(.5, .78, patina[i])
-            k = (1. + .16 * sp) * (1. - .14 * dull) * (.82 + .18 * (c + 1.) * .5) * (1. + .04 * (fine[i] - .5))
+            dull = smooth(.42, .72, patina[i])
+            k = (1. + .1 * sp) * (1. - .08 * dull) * (.86 + .14 * (c + 1.) * .5) * (1. + .04 * (fine[i] - .5))
             k *= 1. - .1 * (1. - smooth(0., .8, border[i]))
-            rough = .36 + .12 * (spangle_r[ids[i]] - .5) + .26 * dull
+            rough = .5 + .1 * (spangle_r[ids[i]] - .5) + .18 * dull
             col = (176., 180., 182.)
             wr = smooth(.74, .86, white[i])
             if wr > 0.:
                 col = tuple(v + (214. - v) * .55 * wr for v in col)
-                rough += .3 * wr
+                rough += .22 * wr
             cav = 0.
             if -1. < e < 1.:
                 k *= .55
