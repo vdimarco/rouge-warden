@@ -1295,6 +1295,93 @@ def parging(spec):
     return cv.result(px, px, {'trowel_strokes': strokes, 'cracks': cracks, 'patches': len(patches)})
 
 
+def brick_layout(spec):
+    """Running-bond layout of the buff brick tile: module and joint (cm), bricks per course, the roll that puts
+    the tile edges through bricks rather than along joints, and px per cm."""
+    W, H = spec['size_px']
+    mx, my = BRICK_MODULE_CM
+    width_cm, height_cm = spec['tile_m'][0] * 100., spec['tile_m'][1] * 100.
+    per_course = round(width_cm / mx)
+    assert abs(per_course * mx - width_cm) < 1e-6 and abs(BRICK_COURSES * my - height_cm) < 1e-6
+    assert BRICK_COURSES % 2 == 0, 'Running bond wraps vertically only with an even course count'
+    return {'px': W / width_cm, 'module_cm': (mx, my), 'joint_cm': BRICK_JOINT_CM, 'per_course': per_course,
+            'courses': BRICK_COURSES, 'roll_cm': (mx / 4., my / 2.), 'size_cm': (width_cm, height_cm)}
+
+
+def brick_at(L, xc, yc):
+    """(course, brick, distance to the nearest joint centreline, distance below the brick above) at a point (cm)."""
+    mx, my = L['module_cm']
+    width_cm, height_cm = L['size_cm']
+    yl = (yc + L['roll_cm'][1]) % height_cm
+    r = min(int(yl // my), L['courses'] - 1)
+    fy = yl - r * my
+    xl = (xc - L['roll_cm'][0] - (mx / 2. if r % 2 else 0.)) % width_cm
+    k = min(int(xl // mx), L['per_course'] - 1)
+    fx = xl - k * mx
+    return r, k, min(fx, mx - fx, fy, my - fy), min(fx, mx - fx), min(fy, my - fy), fy
+
+
+def buff_brick(spec):
+    """Even buff brick in running bond: yellow-tan bricks of one even shade with a fine sand face, rounded
+    arrises and grey mortar in 1 cm concave joints whose upper edge sits in the shadow of the brick above, so the
+    joint grid reads from the street. Per-brick tone varies by only about 4%."""
+    W, H = spec['size_px']
+    seed = spec['seed']
+    L = brick_layout(spec)
+    px = L['px']
+    half = L['joint_cm'] / 2.
+    my = L['module_cm'][1]
+    bricks = {}
+    for r in range(L['courses']):
+        for k in range(L['per_course']):
+            u = [unit(seed, 110 + n, r, k) for n in range(3)]
+            shift = (5., 1., -4.) if u[1] < .22 else (3., 4., 6.) if u[1] > .84 else (0., 0., 0.)
+            bricks[r, k] = {'tone': .955 + .09 * u[0], 'shift': shift, 'rough': .82 + .05 * u[2]}
+    sand = field(Noise(seed + 1, W, H, 512, 512), H)
+    cloud = field(Fbm(seed + 2, W, H, ((16, 48), (32, 96)), (.6, .4)), H)
+    speck = field(Noise(seed + 3, W, H, 384, 384), H)
+    ragged = field(Fbm(seed + 4, W, H, ((96, 96), (192, 192)), (.7, .3)), H)
+    cv = Canvas(W, H, BRICK_COLOUR, 1., .84)
+    R, G, B, HT, RO, CA = cv.r, cv.g, cv.b, cv.height, cv.rough, cv.cavity
+    aa = .5 / px                                       # half a texel, for an anti-aliased joint edge
+    mortar_texels = 0
+    for y in range(H):
+        yc = (y + .5) / px
+        for x in range(W):
+            i = y * W + x
+            r, k, e, ex, ey, fy = brick_at(L, (x + .5) / px, yc)
+            e -= .06 * (ragged[i] - .5) * 2.           # slightly irregular arrises
+            m = 1. - smooth(half - aa, half + aa, e)
+            b = bricks[r, k]
+            # Brick face: one even shade per brick, sand grain, faint firing clouds, rare iron specks, arris shade.
+            kb = b['tone'] * (1. + .07 * (sand[i] - .5)) * (1. + .05 * (cloud[i] - .5))
+            if speck[i] > .9:
+                kb *= .82
+            kb *= .88 + .12 * smooth(half, half + .35, e)
+            bc = [(BRICK_COLOUR[n] + b['shift'][n]) * kb for n in range(3)]
+            hb = 1. - .25 * (1. - smooth(half, half + .35, e)) + .04 * (sand[i] - .5)
+            # Mortar: concave tooled joint, lowest on the centreline; the top of a bed joint is shaded by the
+            # brick above it (light from above), which is what draws the grid at a distance.
+            km = (.95 + .1 * (sand[i] - .5))
+            if ey <= ex and fy > my - half:            # upper half of the bed joint under course r
+                km *= .76 + .24 * smooth(0., .7 * L['joint_cm'], fy - (my - half))
+            elif ex < ey:
+                km *= .9                               # head joints: a little ambient occlusion
+            mc = [BRICK_MORTAR[n] * km for n in range(3)]
+            hm = .55 + .25 * min(1., e / half) ** 2
+            R[i] = bc[0] + (mc[0] - bc[0]) * m
+            G[i] = bc[1] + (mc[1] - bc[1]) * m
+            B[i] = bc[2] + (mc[2] - bc[2]) * m
+            HT[i] = hb + (hm - hb) * m
+            RO[i] = b['rough'] + .04 * (sand[i] - .5) + (.93 - b['rough']) * m
+            CA[i] = m
+            mortar_texels += m >= .5
+    return cv.result(px, px, {'module_cm': [round(v, 4) for v in L['module_cm']], 'joint_cm': L['joint_cm'],
+                              'bricks_per_course': L['per_course'], 'courses': L['courses'],
+                              'roll_cm': [round(v, 4) for v in L['roll_cm']],
+                              'mortar_share': round(mortar_texels / (W * H), 4)})
+
+
 # ------------------------------------------------------------------------------------------------
 # Cut-out cards: u metres along the run, v 0..1 from the bottom of the card to its top
 
@@ -1782,7 +1869,53 @@ def crushed_stone(spec):
 
 GENERATORS = {'membrane': membrane, 'ballast': ballast, 'tar': tar, 'sheet_metal': sheet_metal, 'siding': siding,
               'parging': parging, 'balusters': balusters, 'lattice': lattice, 'fence_boards': fence_boards,
-              'creeper': creeper, 'lawn': lawn, 'pavers': pavers, 'soil': soil, 'crushed_stone': crushed_stone}
+              'creeper': creeper, 'lawn': lawn, 'pavers': pavers, 'soil': soil, 'crushed_stone': crushed_stone,
+              'buff_brick': buff_brick}
+
+
+# ------------------------------------------------------------------------------------------------
+# Macro variation mask
+
+def stretched(values, lo_q=.02, hi_q=.98):
+    """values mapped so their 2nd and 98th percentiles land on 0 and 1 (clamped): a full-range mask."""
+    ordered = sorted(values)
+    lo, hi = ordered[int(lo_q * (len(ordered) - 1))], ordered[int(hi_q * (len(ordered) - 1))]
+    span = (hi - lo) or 1.
+    return [min(1., max(0., (v - lo) / span)) for v in values]
+
+
+def macro_rows():
+    """RGB rows of the macro mask: three independent tileable noises (features of about a fifth to a sixteenth
+    of the tile), each stretched to the full range. The apply step reads R at MACRO tile_m[0], G at tile_m[1]."""
+    W, H = MACRO['size_px']
+    seed = MACRO['seed']
+    channels = [stretched(field(Fbm(seed + 10 * n, W, H, ((2, 2), (4, 4), (8, 8), (16, 16)), (.45, .28, .17, .1)), H))
+                for n in range(3)]
+    rows = []
+    for y in range(H):
+        row = bytearray(3 * W)
+        for n in range(3):
+            row[n::3] = bytes(byte(v * 255.) for v in channels[n][y * W:(y + 1) * W])
+        rows.append(bytes(row))
+    return rows
+
+
+def macro_file():
+    return f'T_Replica_{MACRO["name"]}_mask.png'
+
+
+def build_macro():
+    """{file name: png bytes} and the index entry of the macro mask (linear masks, wraps both ways)."""
+    W, H = MACRO['size_px']
+    rows = macro_rows()
+    raw = raw_stream(rows)
+    data = png(W, H, raw)
+    means = [round(channel_mean(rows, c), 4) for c in range(3)]
+    entry = {'file': macro_file(), 'size_px': [W, H], 'tile_m': list(MACRO['tile_m']),
+             'second_scale': MACRO['second_scale'], 'channels': {'R': MACRO['tile_m'][0], 'G': MACRO['tile_m'][1]},
+             'mean': means, 'srgb': False, 'compression': 'TC_MASKS', 'sampler': 'SAMPLERTYPE_MASKS',
+             'sha256': hashlib.sha256(data).hexdigest(), 'raw_sha256': hashlib.sha256(raw).hexdigest()}
+    return {entry['file']: data}, entry
 
 
 def generate(key):
@@ -1954,6 +2087,9 @@ def build(key):
         entry['coverage'] = round(sum(sum(1 for v in a if v >= 128) for a in alpha) / (width * height), 4)
     if 'metallic' in spec:
         entry['metallic'] = spec['metallic']
+    if 'macro' in spec:
+        entry['macro'] = {'strength': [spec['macro'], round(spec['macro'] * MACRO['second_scale'], 6)],
+                          'tile_m': list(MACRO['tile_m']), 'channels': ['R', 'G'], 'file': macro_file()}
     files = {}
     for role in ROLES:
         raw = raw_stream(maps[role])
@@ -1994,6 +2130,10 @@ def prepare(out=OUT, jobs=None):
         for name, data in files.items():
             (out / name).write_bytes(data)
         index['sets'][key] = entry
+    files, entry = build_macro()
+    for name, data in files.items():
+        (out / name).write_bytes(data)
+    index['macro'] = entry
     (out / INDEX).write_text(json.dumps(index, indent=1, sort_keys=True) + '\n')
     return index
 
@@ -2001,6 +2141,10 @@ def prepare(out=OUT, jobs=None):
 def check(out=OUT):
     """The committed index and PNGs match a fresh build (pixel streams; file bytes may differ by zlib build)."""
     index = json.loads((Path(out) / INDEX).read_text())
+    _, macro = build_macro()
+    assert index.get('macro', {}).get('raw_sha256') == macro['raw_sha256'], 'Macro mask changed; rerun plateau_textures.py'
+    _, _, raw = read_png((Path(out) / macro['file']).read_bytes())
+    assert hashlib.sha256(raw).hexdigest() == macro['raw_sha256'], f'{macro["file"]} is stale'
     for key, (_, entry) in build_all().items():
         assert key in index['sets'], f'{key}: missing from {INDEX}; rerun plateau_textures.py'
         stored = index['sets'][key]
