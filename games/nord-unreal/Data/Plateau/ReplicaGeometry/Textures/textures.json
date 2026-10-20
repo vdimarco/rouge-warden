@@ -10,13 +10,13 @@
   "file": "T_Replica_Macro_mask.png",
   "mean": [
    0.5274,
-   0.4793,
-   0.4365
+   0.4603,
+   0.4206
   ],
-  "raw_sha256": "f6ebe09327a894b6d65c25cec0265c777894168319bc16b4e9cdf9220ba6449b",
+  "raw_sha256": "b6b71a2c05cfd5bc07c653a83a88336d040d36e3b6afd443578763b19655b18d",
   "sampler": "SAMPLERTYPE_MASKS",
   "second_scale": 0.6,
-  "sha256": "2a6b11ca10383bd8e2c70d2a6dd7a5e15eb99e19db6c537283d1ace8d173ff69",
+  "sha256": "019367ef90af2a61a65c20624fd6c4903684a6159d3ad17bd6ab6d681e844504",
   "size_px": [
    512,
    512

@@ -404,8 +404,80 @@ def shared_key_plan(root=ROOT):
             row.update({k: fields[k] for k in ('blend_mode', 'two_sided', 'shading_model', 'opacity_mask_clip',
                                                 'tiling', 'uv')})
             row['texture_base_color_srgb'] = sets[name].get('base_color_srgb')
+            if fields.get('macro'):
+                row['macro_strength'] = fields['macro']['strength']
+            if fields['uv'] == 'card':
+                row['address_y'] = CARD_ADDRESS_Y
         out[key] = row
     return out
+
+
+def material_row(layer, key, spec, texture_sets, used_sets):
+    """The plan row of one material key: the parent it duplicates, its tint basis and, for a replica texture set,
+    the set's maps, tiling, blend mode, macro variation and the manifest's metallic."""
+    base, texture = base_material(key, spec)
+    row = {'layer': layer, 'key': key, 'asset': f'{MATERIALS}/{material_name(layer, key)}',
+           'duplicate_of': base, 'texture_mean': texture,
+           'mean_linear': list(TEXTURE_MEAN[texture]) if texture in TEXTURE_MEAN else None,
+           'base_color_srgb': spec['base_color_srgb'],
+           'emissive_srgb': spec.get('emissive_srgb'),
+           'emissive_strength': spec.get('emissive_strength', 0.)}
+    if texture and texture.startswith('replica_'):
+        name = texture[len('replica_'):]
+        assert name in texture_sets, f'{layer} {key} needs the {name} textures; run python3 Scripts/plateau_textures.py'
+        used_sets.add(name)
+        row.update(set_material(name, texture_sets[name]))
+        row['metallic'] = float(spec.get('metallic', 0.))
+        row['wet'] = base == WET_PARENT
+    return row
+
+
+def texture_rows(name, entry):
+    """Import rows of a set's three maps: colour space, compression, sampler, hashes, alpha mips, V addressing."""
+    clip = set_material(name, entry)['opacity_mask_clip']
+    rows = []
+    for role in TEXTURE_ROLES:
+        m = entry['maps'][role]
+        alpha = bool(m.get('alpha'))
+        rows.append({'set': name, 'role': role, 'file': f'{TEXTURES}/{m["file"]}',
+                     'asset': f'{TEXTURE_ASSETS}/{Path(m["file"]).stem}', 'size_px': entry['size_px'],
+                     'srgb': m['srgb'], 'compression': m['compression'], 'sampler': m['sampler'],
+                     'sha256': m['file_sha256'], 'raw_sha256': m['raw_sha256'], 'alpha': alpha,
+                     # Mips keep the clip coverage (Castano), so thin balusters do not fade away.
+                     'alpha_coverage_threshold': clip if alpha else None,
+                     # Cards span their texture once in V: clamp, so no mip blends the top row into the bottom.
+                     'address_y': CARD_ADDRESS_Y if entry.get('uv') == 'card' else 'TA_WRAP'})
+    return rows
+
+
+def plan_tree_assets(kinds, species_used, texture_sets, used_sets):
+    """Material rows (layer 'Trees') and mesh rows of the species meshes the yard trees use."""
+    materials, meshes, seen = [], [], {}
+    for species in TREE_SPECIES:
+        if species not in species_used:
+            continue
+        kind = kinds[species]
+        slots = {}
+        for slot in TREE_SLOTS:
+            ref = kind['materials'][slot]
+            if 'existing' in ref:
+                slots[slot] = ref['existing']
+                continue
+            key, spec = ref['key'], ref['spec']
+            if key in seen:
+                assert seen[key][0] == spec and seen[key][1] == slot, f'{TREES} material {key} differs between kinds'
+            else:
+                row = material_row(TREES, key, spec, texture_sets, used_sets)
+                # Leaves without a masked foliage texture set still light as foliage: two-sided, with transmission.
+                row['foliage'] = slot == 'leaves' and bool(spec.get('foliage', True)) and not row.get('texture_set')
+                row['spec'] = spec
+                materials.append(row)
+                seen[key] = (spec, slot)
+            slots[slot] = f'{MATERIALS}/{material_name(TREES, key)}'
+        meshes.append({'species': species, 'file': kind['obj'], 'asset': tree_mesh_asset(species),
+                       'sha256': kind['sha256'], 'height_cm': kind['height_cm'], 'trunk_cm': kind['trunk_cm'],
+                       'materials': slots, 'collision': 'none', 'nanite_shape_preservation': PRESERVE_AREA})
+    return materials, meshes
 
 
 def plan(root=ROOT):
@@ -423,26 +495,23 @@ def plan(root=ROOT):
     colliders = {key: props_meta.get(key, {}).get('colliders_cm', []) for key in parts}
     main_part = {key: main_part_mesh(batches) for key, batches in parts.items()}
     out = {'materials': [], 'meshes': [], 'actors': [], 'instances': [], 'texts': [], 'hide': list(HIDE_LABELS),
-           'missing_props': [], 'textures': []}
+           'missing_props': [], 'textures': [], 'tree_meshes': []}
     texture_sets, used_sets = load_textures(root), set()
     for layer, manifest in manifests.items():
         for key, spec in sorted(manifest.get('materials', {}).items()):
-            base, texture = base_material(key, spec)
-            row = {'layer': layer, 'key': key, 'asset': f'{MATERIALS}/{material_name(layer, key)}',
-                   'duplicate_of': base, 'texture_mean': texture,
-                   'mean_linear': list(TEXTURE_MEAN[texture]) if texture in TEXTURE_MEAN else None,
-                   'base_color_srgb': spec['base_color_srgb'],
-                   'emissive_srgb': spec.get('emissive_srgb'),
-                   'emissive_strength': spec.get('emissive_strength', 0.)}
-            if texture and texture.startswith('replica_'):
-                name = texture[len('replica_'):]
-                assert name in texture_sets, f'{layer} {key} needs the {name} textures; run python3 Scripts/plateau_textures.py'
-                entry = texture_sets[name]
-                used_sets.add(name)
-                row.update(set_material(name, entry))
-                row['metallic'] = float(spec.get('metallic', 0.))
-                row['wet'] = base == WET_PARENT
-            out['materials'].append(row)
+            out['materials'].append(material_row(layer, key, spec, texture_sets, used_sets))
+    yard = load_yard_trees(root)
+    kinds = load_tree_kinds(root) if yard else None
+    out['trees'] = plan_trees(yard or [], kinds)
+    if kinds:
+        tree_materials, out['tree_meshes'] = plan_tree_assets(kinds, {t['kind'] for t in out['trees']}, texture_sets,
+                                                              used_sets)
+        out['materials'] += tree_materials
+    out['yard_trees'] = {'file': YARD_TREES, 'present': yard is not None,
+                         'mode': 'species meshes' if kinds else 'shared mesh',
+                         'mesh': TREE_MESH if not kinds else None,
+                         'species_meshes': {m['species']: m['asset'] for m in out['tree_meshes']},
+                         'aliases': dict(TREE_ALIASES)}
     parents = {}
     for m in out['materials']:
         if m['duplicate_of'] in BUILT_PARENTS and m['duplicate_of'] not in parents:
@@ -452,33 +521,36 @@ def plan(root=ROOT):
                                                                'opacity_mask_clip', 'tiling', 'textures')}}
     out['parents'] = [parents[a] for a in sorted(parents)]
     for name in sorted(used_sets):
-        entry = texture_sets[name]
-        clip = set_material(name, entry)['opacity_mask_clip']
-        for role in TEXTURE_ROLES:
-            m = entry['maps'][role]
-            alpha = bool(m.get('alpha'))
-            out['textures'].append({'set': name, 'role': role, 'file': f'{TEXTURES}/{m["file"]}',
-                                    'asset': f'{TEXTURE_ASSETS}/{Path(m["file"]).stem}', 'size_px': entry['size_px'],
-                                    'srgb': m['srgb'], 'compression': m['compression'], 'sampler': m['sampler'],
-                                    'sha256': m['file_sha256'], 'raw_sha256': m['raw_sha256'], 'alpha': alpha,
-                                    # Mips keep the clip coverage (Castaño), so thin balusters do not fade away.
-                                    'alpha_coverage_threshold': clip if alpha else None})
-    yard = load_yard_trees(root)
-    out['yard_trees'] = {'file': YARD_TREES, 'present': yard is not None, 'mesh': TREE_MESH}
-    out['trees'] = plan_trees(yard or [])
+        out['textures'] += texture_rows(name, texture_sets[name])
+    if any(m.get('macro') for m in out['materials']):
+        macro = load_macro(root)
+        assert macro, 'A material needs the macro mask; run python3 Scripts/plateau_textures.py'
+        out['textures'].append({'set': 'macro', 'role': MACRO_ROLE, 'file': f'{TEXTURES}/{macro["file"]}',
+                                'asset': f'{TEXTURE_ASSETS}/{Path(macro["file"]).stem}', 'size_px': macro['size_px'],
+                                'srgb': macro['srgb'], 'compression': macro['compression'], 'sampler': macro['sampler'],
+                                'sha256': macro['file_sha256'], 'raw_sha256': macro['raw_sha256'], 'alpha': False,
+                                'alpha_coverage_threshold': None, 'address_y': 'TA_WRAP'})
+    by_material = {m['asset']: m for m in out['materials']}
     for layer, manifest in manifests.items():
         for batch in manifest.get('batches', []):
             mesh = f'{ASSETS}/{layer}/{batch["mesh"]}'
             key = prop_key(batch, keys) if layer == 'Props' else None
-            out['meshes'].append({'layer': layer, 'file': batch['file'], 'asset': mesh,
-                                  'material': f'{MATERIALS}/{material_name(layer, batch["material"])}',
+            material = f'{MATERIALS}/{material_name(layer, batch["material"])}'
+            masked = by_material.get(material, {}).get('blend_mode') == 'masked'
+            out['meshes'].append({'layer': layer, 'file': batch['file'], 'asset': mesh, 'material': material,
                                   'collision': batch.get('collision', 'none'), 'triangles': batch['triangles'],
+                                  # Masked cards and creeper: Nanite keeps their area at a distance.
+                                  'nanite_shape_preservation': PRESERVE_AREA if masked else None,
                                   # Simple box collision from MAP-PROPS colliders_cm, on the prop's main part only.
                                   'colliders': colliders.get(key, []) if key and main_part.get(key) == batch['mesh'] else []})
             if layer != 'Props':
+                invisible = batch['material'] == COLLISION_ONLY
+                assert not invisible or batch.get('collision', 'none') != 'none', f'{batch["file"]}: a wall that never collides'
                 out['actors'].append({'label': f'{PREFIX}{layer} {batch["mesh"][3:]}', 'mesh': mesh,
                                       'folder': f'{FOLDER}/{layer}', 'collision': batch.get('collision', 'none'),
-                                      'shadow': not any(t in batch['material'] for t in SHADOWLESS)})
+                                      'shadow': casts_shadow(batch['material']),
+                                      # Gallery guards: block pawns, ignore the camera and visibility, never render.
+                                      'collision_only': invisible, 'hidden_in_game': invisible})
     for layer, rows in placements.items():
         groups, missing = {}, {}
         for row in rows:
@@ -506,9 +578,16 @@ def plan(root=ROOT):
     out['counts'] = {'materials': len(out['materials']), 'meshes': len(out['meshes']), 'actors': len(out['actors']),
                      'emissive_materials': sum(1 for m in out['materials'] if m['emissive_srgb']),
                      'textures': len(out['textures']),
+                     'clamped_textures': sum(1 for t in out['textures'] if t['address_y'] == 'TA_CLAMP'),
                      'textured_replica_materials': sum(1 for m in out['materials'] if m.get('texture_set')),
                      'masked_materials': sum(1 for m in out['materials'] if m.get('blend_mode') == 'masked'),
+                     'macro_materials': sum(1 for m in out['materials'] if m.get('macro')),
                      'built_parents': len(out['parents']),
+                     'preserve_area_meshes': sum(1 for m in out['meshes'] if m['nanite_shape_preservation']),
+                     'hidden_collision_actors': sum(1 for a in out['actors'] if a['collision_only']),
+                     'shadowless_actors': sum(1 for a in out['actors'] if not a['shadow']),
+                     'tree_meshes': len(out['tree_meshes']),
+                     'tree_materials': sum(1 for m in out['materials'] if m['layer'] == TREES),
                      'yard_tree_actors': len(out['trees']),
                      'yard_tree_instances': sum(t['count'] for t in out['trees']),
                      'instance_components': len(out['instances']),
