@@ -621,9 +621,11 @@ export function probe() {
   return null;
 }
 
-// The score's mood (openspec/changes/first-breath-score/contract.md, "Mood"): a wave is 1, and 2 from week 10 on or
-// with 12 or more germs or 24 or more of their shots about; the big germ is 2 and the boss while it lives; a rest and a
-// knock-out are 0, the victory beat 1. Pure and cheap (main.js reads it every 100 ms); it changes nothing.
+// The score's mood (openspec/changes/first-breath-score/contract.md, "Mood"): a wave is 1, and 2 from week 10 on (the
+// fourth moment, mi 3) or with 12 or more germs or 24 or more of their shots about; the big germ is 2 and the boss
+// while it lives; a rest and a knock-out are 0, the victory beat 1. These thresholds (mi 3, 12 germs, 24 shots) stay
+// here as literals on purpose: they set only the music, so they sit beside the state they read and not in
+// grow.tune.js (first-breath-score design 4). Pure and cheap (main.js reads it every 100 ms); it changes nothing.
 export function mood(st) {
   const A = st && st.A;
   if (!A || st.done || st.phase === "ko" || A.ko) return { level: 0 };

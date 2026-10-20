@@ -1758,9 +1758,11 @@ export function probe(st) {
 }
 
 // The score's mood (openspec/changes/first-breath-score/contract.md, "Mood"): level 2 while the next gate you have
-// not passed closes within about 6 s (its time, or 2 places left in its quota) or the tide is within 120 u behind
-// you; 1 while 3 or more racers swim within 25 u of you (the pack); else 0, and 0 once you rest or arrive. Pure and
-// cheap (main.js reads it every 100 ms); it changes nothing in the race.
+// not passed closes within 6 s (its time, or 2 places left in its quota) or, from the tide's start (T.TIDE_T0, 12 s),
+// the tide is within 120 u behind you; 1 while 3 or more racers swim within 25 u of you (the pack); else 0, and 0 once
+// you rest or arrive. These thresholds (6 s, 2 places, 120 u, 3 racers, 25 u) stay here as literals on purpose: they
+// set only the music, so they sit beside the state they read and not in swim.tune.js (first-breath-score design 4).
+// Pure and cheap (main.js reads it every 100 ms); it changes nothing in the race.
 export function mood(st) {
   const you = st && st.you;
   if (!you || st.done || you.out || you.arrived || !st.racing) return { level: 0 };

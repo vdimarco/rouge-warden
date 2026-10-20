@@ -97,7 +97,7 @@ A knock-out SHALL never get a sad sting. As you curl up and rest, the score SHAL
 - **GIVEN** stage 5 with the score at level 2
 - **WHEN** your last pip goes
 - **THEN** the knock-out chord plays on the next beat with no drum in it, and behind the Almost card the cue plays at level 0
-- **CHECK** `qa/first-breath/music.e2e.mjs`
+- **CHECK** `qa/first-breath/music.e2e.mjs`, `qa/first-breath/music.test.mjs` (no drum in the chord)
 
 #### Scenario: The chord is soft
 - **GIVEN** the knock-out stinger
@@ -184,7 +184,7 @@ The page SHALL fetch no score file before Play. The samples, at most 2 MB, SHALL
 - **GIVEN** a fresh visit to `/first-breath/`
 - **WHEN** the title shows and the player waits 5 s without tapping Play
 - **THEN** no request has gone to `audio/score/`
-- **CHECK** `qa/first-breath/music.e2e.mjs`, `qa/first-breath/boot.e2e.mjs`
+- **CHECK** `qa/first-breath/music.e2e.mjs`
 
 #### Scenario: The samples are blocked
 - **GIVEN** every request under `audio/score/` blocked
@@ -205,7 +205,7 @@ With the score playing, every stage SHALL keep its frame budgets. The score SHAL
 - **GIVEN** stage 5 at level 2 with the boss layer, at 390 × 844 with `?probe=1`
 - **WHEN** 120 frames are measured after 3 s
 - **THEN** the frame budgets hold, the score never has more than 48 live voices, no held note was cut, and the tick averages 0.5 ms or less
-- **CHECK** `qa/first-breath/perf.e2e.mjs`, `qa/first-breath/music.e2e.mjs`
+- **CHECK** `qa/first-breath/perf.e2e.mjs`
 
 ## MODIFIED Requirements
 

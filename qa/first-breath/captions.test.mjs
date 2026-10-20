@@ -9,7 +9,11 @@
 //   being sent, and each hum line shows within 1.5 s (a fact page shows 1.5 s before a caption may cut it);
 // - while a fact waits, a caption stays only for its reading time; stage 1's one-line pages keep 2.4 s;
 // - pause() and resume(): a caption under the pause screen is still there on resume with the time it had left, and a
-//   fact that waited through a long pause still shows.
+//   fact that waited through a long pause still shows;
+// - a sound's caption that must show (the stage's music caption, say(…, { kind: "cue", wait: true })): on a busy line
+//   it waits its turn instead of being dropped (a plain sound's caption still is), it shows once, for 1.2 s while a fact
+//   waits behind it and its whole time when none does, a caption in the step it begins sends it back to show whole
+//   after, a caption later waits until it has shown 1.2 s, it never comes back once seen, and drop() takes it away.
 // CAPTIONS_JS=<path> runs it against another copy of the module (to show a fault on old code).
 // node qa/first-breath/captions.test.mjs
 import assert from "node:assert/strict";
@@ -242,6 +246,51 @@ await check("pause and resume: a caption keeps the time it had left, and a waiti
   const shownMs = m.to - m.from - 10000;
   assert.ok(Math.abs(shownMs - Math.max(2000, 1000 + 50 * "♥ your mother's heartbeat".length)) <= 1, `shown ${shownMs} ms outside the pause`);
   assert.ok(c.shown("root.size") >= readMs("Week 6: You are about 4 mm long, the size of a lentil.") - 1, "the waiting fact shows whole");
+});
+
+await check("a sound's caption that must show waits its turn on a busy line, shows once for 1.2 s or more, and can be dropped", () => {
+  const MUSIC = "♪ march music";
+  const music = (c, ms = 2500) => c.cap.say("music.egg", MUSIC, { kind: "cue", wait: true, ms });
+  // a busy line: the stage's lines and a fact; the plain sound's caption is dropped, the music caption waits
+  const c = setup("egg");
+  c.at(0, () => c.line("egg.now", "Now you are the egg.", 2500));
+  c.at(100, () => assert.equal(c.cap.say("cue.seal", "♪ a shimmer runs round your shell", { kind: "cue" }), false, "a plain sound's caption on a busy line"));
+  c.at(200, () => assert.equal(music(c), true, "the music caption is taken"));
+  c.at(300, () => c.fact("egg.zona", "Week 2: A clear shell called the zona pellucida protects the egg."));
+  c.run(30000);
+  const ids = c.log.map((x) => x.id);
+  assert.deepEqual(ids, ["egg.now", "music.egg", "egg.zona"], `in order: ${ids.join(", ")}`);
+  const m = c.log[1];
+  assert.equal(m.to - m.from, 1200, "1.2 s while a fact waits behind it");
+  // a free line: its whole time
+  const f = setup("egg");
+  f.at(0, () => music(f));
+  f.run(30000);
+  assert.equal(f.log.length, 1);
+  assert.equal(f.log[0].to - f.log[0].from, 2500, "its whole time on a free line");
+  // a caption in the step it begins sends it back, whole; a caption once it is seen waits for its 1.2 s; never twice
+  const g = setup("egg");
+  g.at(0, () => g.line("egg.opens", "It opens.", 2000));
+  g.at(100, () => music(g));
+  g.at(2000, () => g.line("egg.guardGoal", "Bounce the glow off your arc.", 2500));   // the music caption began at 2000
+  g.at(4600, () => g.line("egg.chargeGoal", "Tap to seal. It clears the sparks.", 2500));
+  g.run(30000);
+  const spans = g.log.filter((x) => x.id === "music.egg").map((x) => [x.from, x.to - x.from]);
+  assert.deepEqual(spans, [[2000, 0], [4500, 1200]], `the music caption: ${JSON.stringify(spans)}`);
+  const charge = g.log.find((x) => x.id === "egg.chargeGoal");
+  assert.equal(charge.from, 5700, "the caption waited for the music caption's 1.2 s");
+  // drop(): off the queue, and off the screen
+  const d = setup("egg");
+  d.at(0, () => d.line("egg.now", "Now you are the egg.", 2500));
+  d.at(100, () => music(d));
+  d.at(200, () => d.cap.drop("music.egg"));
+  d.run(30000);
+  assert.ok(!d.log.some((x) => x.id === "music.egg"), "dropped while it waits");
+  const e = setup("egg");
+  e.at(0, () => music(e));
+  e.at(500, () => e.cap.drop("music.egg"));
+  e.run(30000);
+  assert.equal(e.log[0].to - e.log[0].from, 500, "dropped while it shows");
 });
 
 if (failed.length) {

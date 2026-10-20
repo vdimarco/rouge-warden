@@ -9,6 +9,7 @@
 //   then, whole: no note dropped;
 // - a change asked for while Music is off (two stages go by) lands as Music comes on: the right cue at once, with no
 //   end stinger and no bar of the old cue;
+// - a cue asked for while Music is off starts, once Music is on, at the mood set since: its first bar too;
 // - a cue that has not sounded yet (stage 6's cue waiting for her first beat) is replaced at once by the next cue;
 // - stage 6 after a new run, and after a Try again that lays her beats at another phase: every downbeat on one of her
 //   new beats within 1 ms (the beats laid before are dropped);
@@ -21,11 +22,18 @@
 // - fadeOut: every voice ends within 1.25 × its seconds, and a voice laid ahead never sounds;
 // - nothing is scheduled while the context is suspended, the page hidden or Music off, and the cue goes on from a new
 //   bar line after;
-// - tick() costs at most 2 ms at p99 (mean under 0.3 ms) with every cue at level 2.
+// - tick() costs at most 2 ms at p99 (mean under 0.3 ms) with every cue at level 2;
+// - the stingers main.js plays for the run's events (core/music/wiring.js, the mapping main.js itself uses), over bot
+//   runs of stages 4 and 7 in practice (skills 1, 0.7 and 0, seeds 1 to 3): stage 4 plays the gift on the first pool
+//   you link and on the last of the 8 only (it played on each pool you linked, up to 8 a run), and stage 7 plays win
+//   once, at the Big Germ's pop, and none at the clear (it played at both).
 // node qa/first-breath/music-engine.test.mjs
 import assert from "node:assert/strict";
 import { createMusic, VOICE_CAP } from "../../public/first-breath/ui/music.js";
 import * as SCORE from "../../public/first-breath/core/music/score.js";
+import { stingsFor, stingMemory } from "../../public/first-breath/core/music/wiring.js";
+import { createRun } from "../../public/first-breath/core/run.js";
+import { createBot, playStep } from "../../public/first-breath/core/bots.js";
 
 const { CUES, CUE_ORDER, STINGERS } = SCORE;
 const FILE = "qa/first-breath/music-engine.test.mjs";
@@ -207,6 +215,20 @@ await check("Music off while two stages go by: on again, the right cue plays at 
   assert.equal(st.stings.length, 0, `stingers: ${JSON.stringify(st.stings)}`);
   assert.ok(st.bars.filter((b) => b.at > 29).every((b) => b.bpm === CUES.split.bpm), JSON.stringify(st.bars.slice(-4)));
   assert.ok(starts().length > n0, "nothing plays after Music on");
+});
+
+await check("a cue asked for with Music off starts, once Music is on, at the mood given since (its first bar too)", () => {
+  const { m, run } = rig();
+  m.setEnabled(false);
+  m.cue("egg", 0.1, { level: 0 });             // a stage begun with Music off, its mood 0 then
+  run(3);
+  m.setMood({ level: 1 });                      // the mood rises while Music is off
+  run(5);
+  m.setEnabled(true);
+  run(9);
+  const st = m.stats();
+  assert.equal(st.cue, "egg");
+  assert.ok(st.bars.length >= 2 && st.bars.every((b) => b.level === 1), `bar levels: ${st.bars.map((b) => b.level).join(", ")}`);
 });
 
 await check("a cue whose first downbeat goes by before the first tick (the Play tap's stalled first frame) starts then, whole", () => {
@@ -400,6 +422,79 @@ await check("tick() costs at most 2 ms at p99 (mean under 0.3 ms) with every cue
   ms.sort((a, b) => a - b);
   const p99 = ms[Math.floor(ms.length * 0.99)], mean = ms.reduce((s, x) => s + x, 0) / ms.length;
   assert.ok(p99 <= 2 && mean <= 0.3, `p99 ${p99.toFixed(3)} ms, mean ${mean.toFixed(3)} ms`);
+});
+
+// ---- the stingers the run's events play, as main.js plays them (core/music/wiring.js)
+// A practice stage played by the bot: per attempt, the sounds that could play a stinger and the stingers played, with
+// the stage state as main.js has it when it handles the step's events.
+function stingRun(stage, skill, seed) {
+  const run = createRun({ seed, start: { practice: stage } });
+  const bot = createBot(skill, seed);
+  const tries = [];
+  let mem = stingMemory(), a = null, popped = false, cleared = false;
+  for (let i = 0; i < 60 * 60 * 20 && run.screen !== "result"; i++) {
+    playStep(run, bot);
+    const st = run.state;
+    const popNow = !popped && !!(st && st.bigPopped), clearNow = !cleared && !!(st && st.phase === "clear");
+    for (const ev of run.events) {
+      if (ev.name === "stageStart") {
+        mem = stingMemory();
+        a = ev.id === stage ? { links: [], pop: null, clear: null, stings: [] } : null;
+        if (a) tries.push(a);
+        popped = cleared = false;
+      }
+      if (!a) continue;
+      if (ev.name === "sfx" && ev.id === "root.link") a.links.push(ev.gain >= 1 ? "you" : "auto");
+      // stage 7's two act.win sounds: the step the Big Germ popped in, and the step the clear began in
+      if (ev.name === "sfx" && ev.id === "act.win" && popNow && a.pop === null) a.pop = ev.t;
+      else if (ev.name === "sfx" && ev.id === "act.win" && clearNow && a.clear === null) a.clear = ev.t;
+      for (const s of stingsFor(ev, mem, st)) a.stings.push({ ...s, link: a.links.length });
+    }
+    popped = popped || popNow;
+    cleared = cleared || clearNow;
+    run.events.length = 0;
+  }
+  return tries;
+}
+
+await check("stage 4 plays the gift on the first pool you link and on the last of the pools only (core/music/wiring.js)", () => {
+  const bad = [];
+  let before = 0, after = 0, both = 0;
+  for (const skill of [1, 0.7, 0]) for (const seed of [1, 2, 3]) {
+    const tries = stingRun("root", skill, seed);
+    if (!tries.length) { bad.push(`skill ${skill} seed ${seed}: stage 4 never started`); continue; }
+    for (const a of tries) {
+      const yours = a.links.map((w, i) => (w === "you" ? i + 1 : 0)).filter(Boolean);
+      const want = yours.filter((n, k) => k === 0 || n === 8);
+      const got = a.stings.filter((s) => s.id === "gift").map((s) => s.link);
+      before += yours.length;
+      after += got.length;
+      if (got.length === 2) both++;
+      if (JSON.stringify(got) !== JSON.stringify(want)) bad.push(`skill ${skill} seed ${seed}: links ${a.links.join(",")}; the gift at links ${got.join(",") || "none"}, wanted ${want.join(",") || "none"}`);
+    }
+  }
+  assert.deepEqual(bad, []);
+  // the runs did link pools themselves, so the old rule (one gift each) would have played many more
+  assert.ok(before >= 3 * after && both >= 3, `${before} pools you linked, ${after} gifts, ${both} attempts with both`);
+});
+
+await check("stage 7 plays win once, at the Big Germ's pop, and none at the clear (core/music/wiring.js)", () => {
+  const bad = [];
+  let pops = 0, clears = 0;
+  for (const skill of [1, 0.7, 0]) for (const seed of [1, 2, 3]) {
+    const tries = stingRun("turn", skill, seed);
+    if (!tries.length) { bad.push(`skill ${skill} seed ${seed}: stage 7 never started`); continue; }
+    for (const a of tries) {
+      const wins = a.stings.filter((s) => s.id === "win").map((s) => s.at);
+      const want = a.pop !== null ? [a.pop] : [];
+      if (a.pop !== null) pops++;
+      if (a.clear !== null) clears++;
+      if (JSON.stringify(wins) !== JSON.stringify(want)) bad.push(`skill ${skill} seed ${seed}: pop ${a.pop}, clear ${a.clear}; win at ${wins.join(",") || "none"}`);
+    }
+  }
+  assert.deepEqual(bad, []);
+  // both cases came up: an attempt with the pop and the clear, and one with the clear alone
+  assert.ok(pops >= 1 && clears > pops, `${pops} attempts popped the Big Germ, ${clears} reached the clear`);
 });
 
 if (failed.length) {

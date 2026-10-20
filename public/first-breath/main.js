@@ -64,16 +64,19 @@
 //   stage starts (with Music off, once it is turned on); the boot fetches no score file. The 25 ms sound timer ticks it (the title too). Each stage's cue
 //   starts at its stageStart with the stage's mood(state), read every 100 ms after that (a lower level waits 2.5 s, so
 //   the music does not flicker); the overlay, the Almost card and the card keep the cue going at level 0; a new run
-//   fades the last one's music. At the overlay: the cue's end stinger, then the grade's. The stingers: ko at a
-//   knock-out (act.ko; stage 1's out), boss as a stage's mood turns boss, gate at a gate passed (stage 1's place
-//   sfx), item at an item used, gift at a gift taken (stage 3) and a pool you link (stage 4), win at act.win, light
-//   as birth's light comes; then the score fades out over 1 s, done before the light ends, so no score note sounds from
-//   the ending's white to the cry. The ending plays only the warm chord, 0.9 s after the cry; the run result plays the
-//   lullaby (cueFor("result")); the title, and Stages, Settings and Sources opened over it or the result, the
-//   overture (on a first visit the title is silent: the AudioContext starts on Play).
+//   fades the last one's music. Which stingers the run's events play is core/music/wiring.js stingsFor(), with a
+//   memory for each stage attempt: at the overlay the cue's end stinger, then the grade's; ko at a knock-out (act.ko;
+//   stage 1's out); gate at a gate passed (stage 1's place sfx); item at an item used; gift at a gift taken (stage 3)
+//   and at the first pool you link and the last of the pools (stage 4); win at act.win (stage 7: the Big Germ's pop
+//   only, none at its clear); light as birth's light comes, then the score fades out over 1 s, done before the light
+//   ends, so no score note sounds from the ending's white to the cry; the warm chord 0.9 s after the cry. boss plays
+//   here, as a stage's mood turns boss. The run result plays the lullaby (cueFor("result")); the title, and Stages,
+//   Settings and Sources opened over it or the result, the overture (on a first visit the title is silent: the
+//   AudioContext starts on Play).
 //   Stage 6's cue follows her laid beats (run.beats(…, "mother") → music.sync). Music (Settings, next to Sound) is on
 //   by default and saved under first-breath.music. A cue's caption ("♪ spy-chase music", music.<cue>) shows once
-//   when it starts in a stage, as a sound's caption (only when no other line shows, within 12 s).
+//   when it starts in a stage: a sound's caption that must show (captions.say(…, { kind: "cue", wait: true })), so it
+//   waits its turn behind a busy line instead of being dropped, cuts nothing, and goes if Music or the sound goes off.
 import { DT, label as gaLabel } from "./core/clock.js";
 import { makeIntents, shiftIntents } from "./core/intent.js";
 import { createRun, TIMERS } from "./core/run.js";
@@ -91,6 +94,7 @@ import { createScreens } from "./ui/screens.js";
 import { createSound } from "./ui/sound.js";
 import { createMusic } from "./ui/music.js";
 import { CUES as SCORE, cueFor } from "./core/music/score.js";
+import { stingsFor, stingMemory } from "./core/music/wiring.js";
 import { createRenderer } from "./render/renderer.js";
 import { makeCamera } from "./render/camera.js";
 import { createRings } from "./render/rings.js";
@@ -111,12 +115,11 @@ const PAUSABLE = new Set(["stage", "ending", "overlay", "almost", "card"]);
 const MUSIC_KEY = "first-breath.music";   // the Music setting, saved on its own (core/save.js keeps only its fields)
 const MOOD_EVERY_MS = 100;                // the stage's mood is read this often
 const MOOD_HOLD_S = 2.5;                  // a lower music level waits this long (core s), so it does not flicker
-const MUSIC_CAP_S = 12;                   // a cue's caption shows within this long of its stage's start, or not at all
+const MUSIC_CAP_S = 12;                   // a cue's caption is offered within this long of its stage's start, or never
 const ENDING_FADE_S = 1.0;                // the ending fades whatever score is left (none after birth's light)
 const LIGHT_FADE_S = 1.0;                 // birth's light: its stinger and the cue fade out over this, ending this long
 const LIGHT_LEAD_S = 1.5;                 // ... before the light ends, so no score note sounds in the ending's white
 const BIRTH_LIGHT_S = (({ exposureS, whiteS, holdS }) => exposureS + whiteS + holdS)(TUNES.birth);   // birth.js LIGHT_S
-const WARM_AFTER_CRY_S = 0.9;             // ... and the warm chord comes this long after the cry starts
 const NEW_RUN_FADE_S = 0.5;               // a new run (Play again, a practice stage) fades the last run's music
 const fin = (v) => typeof v === "number" && Number.isFinite(v);
 const clamp01 = (v) => Math.max(0, Math.min(1, v));
@@ -236,7 +239,9 @@ let frames = 0, stopped = false;
 let audioCtx = null, sound = null, hearing = false;
 let music = null;                 // the score (ui/music.js), built with the sound
 let musicCue = null;              // the cue main.js last asked for
-let musicCap = null;              // { id, cue, t }: a stage's music caption waiting for the line to be free
+let musicCap = null;              // { id, cue, t }: a stage's music caption waiting for its cue to start
+let musicCapId = null;            // the music caption handed to the captions (it may wait there for its turn)
+let stingMem = stingMemory();     // what this stage attempt's stingers remember (core/music/wiring.js)
 let moodAt = -Infinity, moodKey = "";
 let lightFade = null;             // core time: birth's light fades the score out then
 const moodLv = { level: 0, since: null, boss: false };
@@ -383,8 +388,9 @@ function musicMood() {
   if (key !== moodKey) { moodKey = key; music.setMood(m); }
 }
 
-// A stage's cue caption ("♪ spy-chase music"), once, when its music has started and no other line shows (a sound's
-// caption gives way to every other line), within MUSIC_CAP_S of the stage's start; never with the music off or muted.
+// A stage's cue caption ("♪ spy-chase music"), once, when its music has started, within MUSIC_CAP_S of the stage's
+// start; never with the music off or muted. It is a sound's caption that must show: on a busy line it waits its turn
+// (ui/captions.js), so a stage whose lines and facts fill its first seconds (stages 2 and 4) still names its music.
 function musicCaption() {
   const c = musicCap;
   if (!c) return;
@@ -395,7 +401,17 @@ function musicCaption() {
   if (music.stats().cue !== c.cue) return;           // the last cue's bar still runs out
   const text = textOf(c.id);
   if (!text) { musicCap = null; return; }
-  if (captions.say(c.id, text, { kind: "cue", ms: 2500 })) { capSeen.add("music:" + c.cue); musicCap = null; }
+  if (captions.say(c.id, text, { kind: "cue", wait: true, ms: 2500 })) {
+    capSeen.add("music:" + c.cue);
+    musicCap = null;
+    musicCapId = c.id;
+  }
+}
+// Music or the sound turned off: the music caption goes, waiting or on screen.
+function dropMusicCaption() {
+  musicCap = null;
+  if (musicCapId) captions.drop(musicCapId);
+  musicCapId = null;
 }
 
 // From the 25 ms sound timer: the mood, stage 6's sync to her laid beats (1 s ahead), then the scheduler.
@@ -428,6 +444,8 @@ function musicOn(ev) {
       moodLv.level = 0;                             // a new attempt takes its own level at once
       moodLv.since = null;
       lightFade = null;
+      stingMem = stingMemory();
+      musicCapId = null;                            // the captions clear at each stage start
       if (ev.id === "ending") {
         // the ending stays calm: birth's light has faded the score out already (a practice ending or a Try again fades
         // what is left); only the warm chord comes, after the cry
@@ -449,36 +467,18 @@ function musicOn(ev) {
       break;
     }
     case "screen":
-      if (ev.screen === "overlay" && ev.data) {
-        // the stage's end: its cue's end stinger, then the grade's (the stinger queue plays them one after the other)
-        const at = toCtx(ev.t), cue = SCORE[cueFor(ev.data.id)];
-        if (cue && cue.end) music.sting(cue.end, at);
-        if (ev.data.grade) music.sting(String(ev.data.grade).toLowerCase(), at);
-      } else if (ev.screen === "card" && ev.data && cueFor(ev.data.id)) {
+      if (ev.screen === "card" && ev.data && cueFor(ev.data.id)) {
         void SCORE[cueFor(ev.data.id)];             // build the next cue now (a few ms), not on its stage's first frame
       }
       break;
     case "moment":
-      // birth's light: its end stinger (the choir), then the score fades out before the light ends (design.md 2.5)
-      if (ev.stage === "birth" && ev.id === "light") {
-        music.sting("light", soundAt(ev));
-        lightFade = ev.t + Math.max(0, BIRTH_LIGHT_S - LIGHT_LEAD_S);
-      }
+      // birth's light: its end stinger (the choir, below), then the score fades out before the light ends (design 2.5)
+      if (ev.stage === "birth" && ev.id === "light") lightFade = ev.t + Math.max(0, BIRTH_LIGHT_S - LIGHT_LEAD_S);
       break;
-    case "out": music.sting("ko", soundAt(ev)); break;              // stage 1: you rest (a gate closed, or the tide)
-    case "item": if (ev.kind === "use") music.sting("item", soundAt(ev)); break;
-    case "sfx": {
-      const id = ev.id, at = soundAt(ev);
-      if (id === "act.ko") music.sting("ko", at);
-      else if (id === "act.win") music.sting("win", at);
-      else if (ev.stage === "swim" && id === "place") music.sting("gate", at);                       // a gate passed
-      else if (ev.stage === "split" && id === "act.up") music.sting("gift", at);                     // a gift taken
-      else if (ev.stage === "root" && id === "root.link" && ev.gain >= 1) music.sting("gift", at);   // a pool you link
-      else if (ev.stage === "ending" && id === "cry") music.sting("warm", at + WARM_AFTER_CRY_S);
-      break;
-    }
     default: break;
   }
+  // the stingers this event plays (core/music/wiring.js); the stinger queue plays an end and a grade one after another
+  for (const s of stingsFor(ev, stingMem, run.state)) music.sting(s.id, toCtx(s.at));
 }
 
 // The samples load once a run has started (the boot fetches no score file); the synth plays until they do. With Music
@@ -491,6 +491,7 @@ function musicLoad() {
 function setMuted(m) {
   muted = !!m;
   if (sound) sound.setMuted(muted);
+  if (muted) dropMusicCaption();
 }
 function toggleMute() {
   const on = muted;                 // muted now → sound goes on
@@ -774,7 +775,7 @@ function act(name, arg = null) {
       if (key === "music") {
         store.set(MUSIC_KEY, settings.music !== false);
         if (music) music.setEnabled(settings.music !== false);
-        if (settings.music === false) musicCap = null;
+        if (settings.music === false) dropMusicCaption();
         else musicLoad();          // the samples it waited for (music exists only once Play has been tapped)
       }
       ok = true;
