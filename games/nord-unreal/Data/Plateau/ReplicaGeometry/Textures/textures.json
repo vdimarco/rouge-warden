@@ -243,9 +243,9 @@
     "diff": {
      "compression": "TC_DEFAULT",
      "file": "T_Replica_BuffBrick_diff.png",
-     "raw_sha256": "14d5623c669d92bd67db531113f48e9509c40f229aa0568488c03db317744d8e",
+     "raw_sha256": "41cccae14cbb09d753d8205da9420aefd5f35960bd14f33fc79997bf724f678b",
      "sampler": "SAMPLERTYPE_COLOR",
-     "sha256": "5066b3cc25cc33424c648367087338f1fe5a3621328c90ead45a594845343b73",
+     "sha256": "28b985eeaf5110bac65e02898ecfa14c41e0302e5a237451681669d6e1fcdb44",
      "srgb": true
     },
     "nor_dx": {
@@ -271,9 +271,9 @@
     "two_sided": false
    },
    "mean_linear": [
-    0.5756,
-    0.4247,
-    0.2143
+    0.5754,
+    0.4245,
+    0.2142
    ],
    "roughness_mean": 0.8611,
    "size_px": [
