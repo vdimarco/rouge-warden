@@ -1118,10 +1118,14 @@ class Surfaces:
 
     def __init__(self):
         self.items, self.grid = [], Grid(2000.)
+        self.kinds = {}            # kind -> (polygons, Grid(1000)) for has()
 
     def add(self, poly, z, kind):
         self.grid.add(len(self.items), bbox(poly))
         self.items.append((poly, z, kind))
+        polys, grid = self.kinds.setdefault(kind, ([], Grid(1000.)))
+        grid.add(len(polys), bbox(poly))
+        polys.append(poly)
 
     def at(self, p):
         best = (0., 'ground')
@@ -1133,8 +1137,11 @@ class Surfaces:
 
     def has(self, p, kind):
         """Whether a surface of this kind lies under p, whatever covers it."""
-        return any(self.items[i][2] == kind and point_in(p, self.items[i][0])
-                   for i in self.grid.query((p[0], p[1], p[0], p[1])))
+        if kind not in self.kinds:
+            return False
+        polys, grid = self.kinds[kind]
+        cell = grid.cells.get((math.floor(p[0] / grid.cell), math.floor(p[1] / grid.cell)), ())
+        return any(point_in(p, polys[i]) for i in cell)
 
 
 def crossing_records(world):
