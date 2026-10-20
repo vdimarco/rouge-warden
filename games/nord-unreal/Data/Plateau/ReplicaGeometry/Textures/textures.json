@@ -1,11 +1,37 @@
 {
  "cards": "uv \"card\": u metres along the run, v 0..1 from the bottom to the top of the card",
  "generator": "Scripts/plateau_textures.py",
+ "macro": {
+  "channels": {
+   "G": 5.3,
+   "R": 17.3
+  },
+  "compression": "TC_MASKS",
+  "file": "T_Replica_Macro_mask.png",
+  "mean": [
+   0.5274,
+   0.4793,
+   0.4365
+  ],
+  "raw_sha256": "f6ebe09327a894b6d65c25cec0265c777894168319bc16b4e9cdf9220ba6449b",
+  "sampler": "SAMPLERTYPE_MASKS",
+  "second_scale": 0.6,
+  "sha256": "2a6b11ca10383bd8e2c70d2a6dd7a5e15eb99e19db6c537283d1ace8d173ff69",
+  "size_px": [
+   512,
+   512
+  ],
+  "srgb": false,
+  "tile_m": [
+   17.3,
+   5.3
+  ]
+ },
  "rows": "image row 0 is the top of the tile",
  "sets": {
   "ballast": {
    "alpha": false,
-   "base_color_srgb": "#B5B3AD",
+   "base_color_srgb": "#ADAAA3",
    "keys": [
     "Roof_Gravel"
    ],
@@ -14,32 +40,51 @@
      1.6,
      3.0
     ],
-    "stone_cover": 0.8065,
-    "stones": 3592
+    "stone_cover": 0.7589,
+    "stones": 12935,
+    "zones_cm": [
+     25,
+     100
+    ]
+   },
+   "macro": {
+    "channels": [
+     "R",
+     "G"
+    ],
+    "file": "T_Replica_Macro_mask.png",
+    "strength": [
+     0.14,
+     0.084
+    ],
+    "tile_m": [
+     17.3,
+     5.3
+    ]
    },
    "maps": {
     "diff": {
      "compression": "TC_DEFAULT",
      "file": "T_Replica_Ballast_diff.png",
-     "raw_sha256": "2b6807ac21b3fcf4d10c14704b11813dc1cfb5c5e12211259703eea61c21dc51",
+     "raw_sha256": "626a283e4769e437a121449a40df452987cfc697fee19a3fdb6d91bed440ac83",
      "sampler": "SAMPLERTYPE_COLOR",
-     "sha256": "484556bbe0f20803e1dd4701608c3d036553b7380e0d5e9ad6f7face009aa631",
+     "sha256": "f87eb979f9e531f2b751b52a91164154db8a28f4a8e7e4c418ee8776d18bf5dc",
      "srgb": true
     },
     "nor_dx": {
      "compression": "TC_NORMALMAP",
      "file": "T_Replica_Ballast_nor_dx.png",
-     "raw_sha256": "276f2fa5f95b89dad8ebf2050ea02c0c088fb2a92b203b9253827b8a363f5318",
+     "raw_sha256": "d3875cb9de5448819b0c2403979b0313da4010249054dcb6c871faad147cef46",
      "sampler": "SAMPLERTYPE_NORMAL",
-     "sha256": "83409ec039c9d5d4fc1b9cf6a032c2dab53722df3b2736d942b9512c8717f128",
+     "sha256": "aa57834934e25aba375dda78a4465793b6cb7605c4e43e4099d0ea70f985113e",
      "srgb": false
     },
     "rough": {
      "compression": "TC_DEFAULT",
      "file": "T_Replica_Ballast_rough.png",
-     "raw_sha256": "1c5970e7ec46799259a31c378af3f2e8c04bba40086f4c9be9a602cdbf753c57",
+     "raw_sha256": "c90d1cab4fbc4490ba3807c6e6fd02b80cf9a6ea6e5ca234e0907151467b7f08",
      "sampler": "SAMPLERTYPE_LINEAR_COLOR",
-     "sha256": "fdcf343c13776cf12f74e7c838269482298dc8c41f01a4dfaa40f7c42a5e2faf",
+     "sha256": "8785cdad0875eeca5edd9b9c561aa7cda063aa756b5e97584aa64404338661c7",
      "srgb": false
     }
    },
@@ -49,23 +94,23 @@
     "two_sided": false
    },
    "mean_linear": [
-    0.4643,
-    0.4496,
-    0.4161
+    0.4172,
+    0.4015,
+    0.3665
    ],
-   "roughness_mean": 0.8557,
+   "roughness_mean": 0.861,
    "size_px": [
-    512,
-    512
+    1024,
+    1024
    ],
    "surface": "ground",
    "tile_m": [
-    1.0,
-    1.0
+    2.0,
+    2.0
    ],
    "tiling": [
-    1.0,
-    1.0
+    0.5,
+    0.5
    ],
    "uv": "metres"
   },
@@ -159,6 +204,93 @@
    ],
    "uv": "card"
   },
+  "buff_brick": {
+   "alpha": false,
+   "base_color_srgb": "#C8AE80",
+   "keys": [
+    "Brick_Buff_Even"
+   ],
+   "layout": {
+    "bricks_per_course": 8,
+    "courses": 24,
+    "joint_cm": 1.0,
+    "module_cm": [
+     20.0,
+     6.6667
+    ],
+    "mortar_share": 0.19,
+    "roll_cm": [
+     5.0,
+     3.3333
+    ]
+   },
+   "macro": {
+    "channels": [
+     "R",
+     "G"
+    ],
+    "file": "T_Replica_Macro_mask.png",
+    "strength": [
+     0.05,
+     0.03
+    ],
+    "tile_m": [
+     17.3,
+     5.3
+    ]
+   },
+   "maps": {
+    "diff": {
+     "compression": "TC_DEFAULT",
+     "file": "T_Replica_BuffBrick_diff.png",
+     "raw_sha256": "14d5623c669d92bd67db531113f48e9509c40f229aa0568488c03db317744d8e",
+     "sampler": "SAMPLERTYPE_COLOR",
+     "sha256": "5066b3cc25cc33424c648367087338f1fe5a3621328c90ead45a594845343b73",
+     "srgb": true
+    },
+    "nor_dx": {
+     "compression": "TC_NORMALMAP",
+     "file": "T_Replica_BuffBrick_nor_dx.png",
+     "raw_sha256": "05d055f394903bbe60bb2b5993235685190db3a07776438de5da6b0e111859b8",
+     "sampler": "SAMPLERTYPE_NORMAL",
+     "sha256": "ddfb5dc9198f43e0566f3ae1e08562921a32198430cb28343a6b2fd997d088cb",
+     "srgb": false
+    },
+    "rough": {
+     "compression": "TC_DEFAULT",
+     "file": "T_Replica_BuffBrick_rough.png",
+     "raw_sha256": "f7f291f508e1662fc511a98b5e4358a58d06fb2c573b8c58e775d1f88f994779",
+     "sampler": "SAMPLERTYPE_LINEAR_COLOR",
+     "sha256": "73991c94d09b70a5088ec0b14092ad43f87737360683a0a0edb887816247434a",
+     "srgb": false
+    }
+   },
+   "material": {
+    "blend_mode": "opaque",
+    "shading_model": "default_lit",
+    "two_sided": false
+   },
+   "mean_linear": [
+    0.5756,
+    0.4247,
+    0.2143
+   ],
+   "roughness_mean": 0.8611,
+   "size_px": [
+    1024,
+    1024
+   ],
+   "surface": "wall",
+   "tile_m": [
+    1.6,
+    1.6
+   ],
+   "tiling": [
+    0.625,
+    0.625
+   ],
+   "uv": "metres"
+  },
   "creeper": {
    "alpha": true,
    "base_color_srgb": "#8F3321",
@@ -231,7 +363,7 @@
   },
   "crushed_stone": {
    "alpha": false,
-   "base_color_srgb": "#827F7B",
+   "base_color_srgb": "#7D7B76",
    "keys": [
     "Yard_Gravel"
    ],
@@ -240,32 +372,51 @@
      1.4,
      2.6
     ],
-    "stone_cover": 0.6358,
-    "stones": 4295
+    "stone_cover": 0.5905,
+    "stones": 15790,
+    "zones_cm": [
+     25,
+     100
+    ]
+   },
+   "macro": {
+    "channels": [
+     "R",
+     "G"
+    ],
+    "file": "T_Replica_Macro_mask.png",
+    "strength": [
+     0.12,
+     0.072
+    ],
+    "tile_m": [
+     17.3,
+     5.3
+    ]
    },
    "maps": {
     "diff": {
      "compression": "TC_DEFAULT",
      "file": "T_Replica_CrushedStone_diff.png",
-     "raw_sha256": "78e2baf7f6627f056eec04c7ffc5e68b7635c7ea8cfbf0f8ad850823ff7b3c7c",
+     "raw_sha256": "8fa538ffaba6e26b6456b090399febc5761833469de67c0f72a15e404173085f",
      "sampler": "SAMPLERTYPE_COLOR",
-     "sha256": "15d715ff6a30d580f533a87c8071a669aa901b34469d6fe975156d5741964af6",
+     "sha256": "240216efe68b74cfdd05a2c01ce2789db7828b394158997deac843e1dba62fe5",
      "srgb": true
     },
     "nor_dx": {
      "compression": "TC_NORMALMAP",
      "file": "T_Replica_CrushedStone_nor_dx.png",
-     "raw_sha256": "9ef57a85a4af69af0678626119d2068b5fb0ac07adeead83e7f5349fef715641",
+     "raw_sha256": "a56b0b10c48c524bb09d871e9864061f2951b00393a54872f1b411ba97df6061",
      "sampler": "SAMPLERTYPE_NORMAL",
-     "sha256": "fb93d5c4955a8a3b7f60a1db2611b855d4186cde61ab5ab60791467824769f90",
+     "sha256": "2bbde2935c397231a47000653e4f8dd4f4d0271bae72c15877bca76f94c33bf3",
      "srgb": false
     },
     "rough": {
      "compression": "TC_DEFAULT",
      "file": "T_Replica_CrushedStone_rough.png",
-     "raw_sha256": "6ae6e32c9adb12155998f9ca6063f682c3f530e8c06ca285901e1defc10de78d",
+     "raw_sha256": "a4343d1590f087bcb4d304a12fe4042cdbe66966877c37dcc51d91aca27b3a71",
      "sampler": "SAMPLERTYPE_LINEAR_COLOR",
-     "sha256": "fe408edd35ec20f912887fe73632de23f7ec62076be7b359ec8f36c1bb37b033",
+     "sha256": "4da2936d4c19a3cd7c0e7e06bf6b02c9365ae41e1c1af274d0ce418a3bc48d6a",
      "srgb": false
     }
    },
@@ -275,23 +426,23 @@
     "two_sided": false
    },
    "mean_linear": [
-    0.2224,
-    0.2134,
-    0.1968
+    0.2058,
+    0.1967,
+    0.1812
    ],
-   "roughness_mean": 0.8762,
+   "roughness_mean": 0.8819,
    "size_px": [
-    512,
-    512
+    1024,
+    1024
    ],
    "surface": "ground",
    "tile_m": [
-    1.0,
-    1.0
+    2.0,
+    2.0
    ],
    "tiling": [
-    1.0,
-    1.0
+    0.5,
+    0.5
    ],
    "uv": "metres"
   },
@@ -599,6 +750,21 @@
     "sheet_cm": 244.0,
     "weld_cm": 4.0
    },
+   "macro": {
+    "channels": [
+     "R",
+     "G"
+    ],
+    "file": "T_Replica_Macro_mask.png",
+    "strength": [
+     0.07,
+     0.042
+    ],
+    "tile_m": [
+     17.3,
+     5.3
+    ]
+   },
    "maps": {
     "diff": {
      "compression": "TC_DEFAULT",
@@ -784,7 +950,7 @@
   },
   "sheet_metal": {
    "alpha": false,
-   "base_color_srgb": "#999C9E",
+   "base_color_srgb": "#9CA0A1",
    "keys": [
     "Sheet_Metal"
    ],
@@ -802,9 +968,9 @@
     "diff": {
      "compression": "TC_DEFAULT",
      "file": "T_Replica_SheetMetal_diff.png",
-     "raw_sha256": "3869006ac83eee64ef7730d69fc9b9b86f247f91f1af807383c5698feea8f70e",
+     "raw_sha256": "65cab91fcf93114900ff7ad107b90cd59e35c3852238c6c870d9528855deeaef",
      "sampler": "SAMPLERTYPE_COLOR",
-     "sha256": "4e52b124ac3cf7deb0d0302de2ce65432ad89d5b8212a99a9b5ffa34fb2e0734",
+     "sha256": "417f4a545478f930d7ed0bb8637b09fc09fbb4eb95378692ca7469e631dd81ad",
      "srgb": true
     },
     "nor_dx": {
@@ -818,9 +984,9 @@
     "rough": {
      "compression": "TC_DEFAULT",
      "file": "T_Replica_SheetMetal_rough.png",
-     "raw_sha256": "e955a0c51a164acb09bf26175bba6a183391ecf4d8d612f9080c903e71c8f7b3",
+     "raw_sha256": "330b77d4bafdc575e32c1de3545483a1c7f5fb4fd46aa4452df3e17b499d91d6",
      "sampler": "SAMPLERTYPE_LINEAR_COLOR",
-     "sha256": "a6020239053c6230ac672141808c6b6eea05ddc369818729c7baf423f47729c8",
+     "sha256": "d9ffbc6cbbaff755a0b4efe0463c1ce9d19419ebd1c73d4e84ed5436b20d7777",
      "srgb": false
     }
    },
@@ -830,12 +996,12 @@
     "two_sided": false
    },
    "mean_linear": [
-    0.3176,
-    0.3329,
-    0.3407
+    0.3333,
+    0.3493,
+    0.3575
    ],
-   "metallic": 0.85,
-   "roughness_mean": 0.4439,
+   "metallic": 0.3,
+   "roughness_mean": 0.59,
    "size_px": [
     512,
     512
@@ -1065,42 +1231,61 @@
   },
   "tar": {
    "alpha": false,
-   "base_color_srgb": "#605C56",
+   "base_color_srgb": "#494741",
    "keys": [
     "Roof_Tar"
    ],
    "layout": {
     "crack_cell_cm": 18.0,
     "stone_cm": [
-     0.6,
-     1.6
+     0.76,
+     1.7
     ],
-    "stone_cover": 0.4094,
-    "stones": 5069
+    "stone_cover": 0.5729,
+    "stones": 32354,
+    "zones_cm": [
+     25,
+     100
+    ]
+   },
+   "macro": {
+    "channels": [
+     "R",
+     "G"
+    ],
+    "file": "T_Replica_Macro_mask.png",
+    "strength": [
+     0.16,
+     0.096
+    ],
+    "tile_m": [
+     17.3,
+     5.3
+    ]
    },
    "maps": {
     "diff": {
      "compression": "TC_DEFAULT",
      "file": "T_Replica_TarGravel_diff.png",
-     "raw_sha256": "729942ad4c55715c591ae032f48458efc2b995eb05a4d0a5c2c8e1556ae7938c",
+     "raw_sha256": "07c1de1e57d411ba3ad033475d2dbf2fa36ff51e775b481c09a5413b34090c4b",
      "sampler": "SAMPLERTYPE_COLOR",
-     "sha256": "cd878d968a35be9ce7f381cee965584eb69bd44c2267af09606ed51ccea17690",
+     "sha256": "4765aefe5602ecc53f5393b434c54ba7f317ded4a1d6f3dffe458c0f490e833b",
      "srgb": true
     },
     "nor_dx": {
      "compression": "TC_NORMALMAP",
      "file": "T_Replica_TarGravel_nor_dx.png",
-     "raw_sha256": "7d86bdb0df93e7325a5c251c9762a81d8a2b7aebd0215183516627139eaf49a2",
+     "raw_sha256": "6d51d86ef7554c58ab3b0754ac95d45893ff8ecd5afcfd2522a6bab7ddf2c643",
      "sampler": "SAMPLERTYPE_NORMAL",
-     "sha256": "5acb060ab6bd81e57443e67232568af1feec59d20ce0d124d38b97c9a523c4dd",
+     "sha256": "78a7ebf2085280cd326ca60f297abba42f2d445ff3abd937246f8dc832282e26",
      "srgb": false
     },
     "rough": {
      "compression": "TC_DEFAULT",
      "file": "T_Replica_TarGravel_rough.png",
-     "raw_sha256": "5949c99e801c2a9adaf06425f6bd03221368330b09eb41aced36ce6034dd6cf9",
+     "raw_sha256": "a7b51af29561670c127edaf02ac359f50effe9abbc1c4323cfff46e6d954148f",
      "sampler": "SAMPLERTYPE_LINEAR_COLOR",
-     "sha256": "a841b58405b577f036082829fd84a3cdfa0c6b25b57e1f50e5ddf551517f68ea",
+     "sha256": "217f4ba5608aeb14882c0a177613a61ffbb3a070adad390daf1f5189a45c36d8",
      "srgb": false
     }
    },
@@ -1110,23 +1295,23 @@
     "two_sided": false
    },
    "mean_linear": [
-    0.1173,
-    0.1076,
-    0.0931
+    0.0668,
+    0.0625,
+    0.0529
    ],
-   "roughness_mean": 0.6059,
+   "roughness_mean": 0.6603,
    "size_px": [
-    512,
-    512
+    1024,
+    1024
    ],
    "surface": "ground",
    "tile_m": [
-    1.0,
-    1.0
+    2.0,
+    2.0
    ],
    "tiling": [
-    1.0,
-    1.0
+    0.5,
+    0.5
    ],
    "uv": "metres"
   }
