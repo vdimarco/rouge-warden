@@ -13,8 +13,8 @@
  },
  "crowns": {
   "cornice_metal": 549,
-  "cornice_wood": 222,
-  "flat": 103,
+  "cornice_wood": 221,
+  "flat": 104,
   "mansard": 183,
   "parapet": 250
  },
@@ -30,18 +30,20 @@
  "commercial_ground_floors": 152,
  "storeys_histogram": {
   "2": 227,
-  "3": 1013,
+  "3": 1012,
   "4": 55,
   "5": 5,
   "6": 2,
-  "8": 5
+  "8": 5,
+  "9": 1
  },
  "storeys_sources": {
   "OSM building:levels": 596,
   "OSM building:levels +1 storey to cover the retained mass": 1,
   "assessment roll": 354,
   "assessment roll +1 storey to cover the retained mass": 114,
-  "default 3 storeys": 134,
+  "assessment roll, checked against the LOD2 roof (32.2 m)": 1,
+  "default 3 storeys": 133,
   "municipal LOD2 (h - 4.9 m) / 3.26 m": 81,
   "municipal LOD2 (h - 4.9 m) / 3.26 m +1 storey to cover the retained mass": 27
  },
@@ -95,41 +97,123 @@
   "tower over 24 m": 8
  },
  "triangles_per_front": {
-  "median": 1496,
-  "max": 13724
+  "median": 1556,
+  "max": 13700
+ },
+ "roofs": {
+  "materials": {
+   "Roof_Gravel": 364,
+   "Roof_Membrane": 811,
+   "Roof_Tar": 132
+  },
+  "chimneys": 1307,
+  "hatches": 1272,
+  "terraces": 33,
+  "party_copings": 2345,
+  "party_skins": 659,
+  "triangles": 89986
  },
  "rear": {
   "back_walls": {
    "lane": 311,
+   "long": 460,
    "rear": 1708,
-   "side": 2195,
+   "side": 1757,
    "street": 283
   },
-  "lots_with_galleries": 749,
-  "galleries": 1566,
+  "lots_with_galleries": 833,
+  "galleries": 1741,
   "stairs": {
-   "spiral": 435,
-   "straight": 380
+   "spiral": 494,
+   "straight": 405
   },
-  "flights": 1566,
+  "flights": 1741,
   "no_gallery_reasons": {
-   "a building, structure or traffic lane behind the wall": 93,
-   "no rear wall of 3 m or more": 377,
-   "yard too shallow or lot too narrow for a gallery and stair": 88
+   "a building, structure or traffic lane behind the wall": 116,
+   "no rear wall of 3 m or more and no long wall": 224,
+   "no rear wall of 3 m or more; long walls carry galleries up to 4 storeys only": 4,
+   "yard too shallow or lot too narrow for a gallery and stair": 130
   },
   "fences": {
-   "lane": 621,
-   "rear_lot_line": 258,
-   "gates": 620,
+   "lane": 538,
+   "rear_lot_line": 414,
+   "gates": 537,
    "kinds": {
-    "boards": 591,
-    "slats": 288
+    "boards": 551,
+    "low": 163,
+    "slats": 238
    }
   },
   "outbuildings": {
-   "garage": 10,
-   "shed": 134
+   "garage": 6,
+   "shed": 129
   },
-  "triangles": 313908
+  "yards": {
+   "lots": 1079,
+   "mixes": {
+    "garden": 184,
+    "gravel": 99,
+    "lawn": 380,
+    "patio": 251,
+    "paved": 165
+   },
+   "lane_edges": {
+    "fence": 789,
+    "low": 163,
+    "none": 47,
+    "open": 80
+   },
+   "parking_pads": 80,
+   "area_m2": {
+    "Yard_Grass": 21975.6,
+    "Yard_Gravel": 5905.4,
+    "Yard_Pavers": 22334.9,
+    "Yard_Soil": 9626.9
+   },
+   "ground_decks": 71,
+   "trees": {
+    "ash": 103,
+    "elm": 40,
+    "maple": 198,
+    "small": 232
+   },
+   "tree_height_m": {
+    "min": 7.5,
+    "median": 12.53,
+    "max": 18.0
+   }
+  },
+  "triangles": 649725
+ },
+ "background": {
+  "masses": 252,
+  "kinds": {
+   "perimeter": 154,
+   "skipped: footprint under 25 m2": 6,
+   "skipped: institutional or outbuilding": 10,
+   "skipped: no exposed edge facing a named street": 74,
+   "skipped: tower over 24 m": 8
+  },
+  "walls": {
+   "lane": 140,
+   "long": 202,
+   "rear": 264,
+   "side": 613,
+   "street": 126
+  },
+  "windows": 6137,
+  "party_skins": 26,
+  "triangles": 61010
+ },
+ "glass_cards": {
+  "status": {
+   "detail": 4493,
+   "hidden": 31088,
+   "landmark_enclosed": 87,
+   "landmark_removed": 393,
+   "plex_front": 11718,
+   "skin": 27560
+  },
+  "floating_on": []
  }
 }
