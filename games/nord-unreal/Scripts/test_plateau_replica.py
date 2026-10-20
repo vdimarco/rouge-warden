@@ -6,7 +6,9 @@ then checks determinism, manifest schema, runtime naming, curb heights, the 300 
 paint heights, OSM parity of stops/crossings/lamps/hydrants, budgets and the apply plan, including the
 texture sets (Scripts/plateau_textures.py) and their textured materials, the shared rear-pass keys on a
 synthetic Plex layer (texture set, parent, masked and two-sided cards, built parents, alpha mips), and the
-yard-tree actors from Plex/yard_trees.json.
+yard-tree actors from Plex/yard_trees.json; and the third streets pass: no mapped trunk on carriageway asphalt
+(curb extensions, the host list), ruelles paved to the fences, curb-to-building coverage on the capture streets,
+textured front lawns and card plants.
 """
 import hashlib
 import json
@@ -916,6 +918,209 @@ def check_lane_life(world, out, soul, soul_rows):
             'street_murals': len(lane['murals'])}
 
 
+# ------------------------------------------------------------------------------------------------
+# Streets, third pass: mapped trees off the carriageway, ruelles paved to the fences, curb-to-building coverage on
+# the capture streets, textured front lawns and card plants
+
+CAPTURE_STREETS = ('Rue de Mentana', 'Rue Fabre', 'Rue Rachel Est', 'Avenue Papineau', 'Rue Sherbrooke Est',
+                   'Rue Napoléon')     # the streets of the reference views (Preview/Replica, the cameras)
+
+
+def ground_tris(directory, manifest, keep):
+    """Ground triangles (xy; flat or sloped, not walls) of the batches whose material passes keep(material, z)."""
+    out = []
+    for batch in manifest['batches']:
+        for face in parse_obj(directory / batch['file'])[1]:
+            xy = [p[:2] for p in face]
+            if abs(replica.area(xy)) > 1. and keep(batch['material'], min(p[2] for p in face)):
+                out.append(xy)
+    return TriIndex(out)
+
+
+def covered(index, p, tol=1.):
+    """p lies on the index, or within tol of it (a point on the seam between two pieces)."""
+    return any(index.contains((p[0] + dx, p[1] + dy)) for dx, dy in ((0, 0), (tol, 0), (-tol, 0), (0, tol), (0, -tol)))
+
+
+def check_street_trees(world, out, streets):
+    """No mapped trunk stands on carriageway asphalt: every one the carriageway covers within 3 m of its curb has
+    a curb extension over it (raised and colliding only outside the traffic band), the rest are listed for the
+    host; extensions merge only where no parked car would fit between them."""
+    R = replica
+    from plateau_rendering import tree_positions
+    saved = tree_positions()
+    mine = R.mapped_trees(world)
+    assert [int(n) for n, _ in mine] == [t[2] for t in saved] and \
+        all(math.dist(p, t[:2]) < .01 for (_, p), t in zip(mine, saved)), 'mapped trees differ from the saved layer'
+    doc = json.loads((out / 'Streets/street_trees.json').read_text())
+    assert streets['street_trees'] == 'street_trees.json'
+    assert streets['street_trees_sha256'] == R.sha_file(out / 'Streets/street_trees.json')
+    asphalt = ground_tris(out / 'Streets', streets, lambda m, z: m == 'asphalt')
+    cover = ground_tris(out / 'Streets', streets, lambda m, z: m in ('sidewalk', 'curb', 'soil', 'Yard_Grass')
+                        and z >= R.Z_DROP - .01)
+    host = {r['osm_node']: r for r in doc['host_review']}
+    on, left = 0, []
+    for node, p in mine:
+        if asphalt.contains(p):
+            on += 1
+            if not cover.contains(p):
+                left.append(node)
+    assert on == doc['counts']['mapped_trees_on_carriageway'] == streets['counts']['mapped_trees_on_carriageway']
+    assert sorted(left) == sorted(host), ('mapped trunks on carriageway asphalt', sorted(set(left) - set(host))[:10])
+    assert len(host) <= 25 and all(r['from_curb_cm'] is None or r['from_curb_cm'] > R.BUMP_REACH for r in host.values())
+    assert doc['counts']['curb_extension_trees'] + len(host) == on
+    A = R.PIT_L / 2 + R.BUMP_MARGIN
+    for ext in doc['extensions']:
+        assert all(0 <= d <= R.BUMP_REACH for d in ext['from_curb_cm'])
+        assert ext['depth_cm'] <= R.BUMP_REACH + R.PIT_D / 2 + R.BUMP_MARGIN + .01
+        assert ext['raised_cm'] == 0 or ext['raised_cm'] >= R.RAISED_MIN
+        assert all(pit[2] in (R.Z_WALK, R.Z_DROP) for pit in ext['pits'])
+        assert (ext['raised_cm'] < ext['depth_cm'] - .01) == bool(ext['flush_reason']), ext
+        if ext['edge'] != 'strip':
+            continue
+        a, b = ext['curb']
+        u = R.unit(a, b)[0] if math.dist(a, b) > 1 else (1., 0.)
+        spans = []
+        for d, pit in zip(ext['from_curb_cm'], ext['pits']):
+            s = (pit[0] - a[0]) * u[0] + (pit[1] - a[1]) * u[1]
+            D = max(R.BUMP_MIN, d + R.PIT_D / 2 + R.BUMP_MARGIN)
+            tau = min(R.BUMP_TAPER_MAX, R.BUMP_TAPER * D)
+            spans.append((s - A - tau, s + A + tau))
+        spans.sort()
+        reach = spans[0][1]
+        for x0, x1 in spans[1:]:
+            assert x0 - reach < R.PARK_GAP, ('extensions merged across a parking space', ext['trees'])
+            reach = max(reach, x1)
+    # separate extensions on one curb leave at least a parked car's length between them
+    for strip in world.sidewalk_strips:
+        cuts = sorted(strip.get('bump_cuts', []))
+        for (x0, x1), (y0, y1) in zip(cuts, cuts[1:]):
+            assert y0 - x1 >= R.PARK_GAP - 1, ('two extensions closer than a parking space', strip['seg']['name'])
+    parking = sum(strip['len'] for strip in world.sidewalk_strips if any(R._parking_sides(strip['seg']).values()))
+    taken = sum(x1 - x0 for strip in world.sidewalk_strips if any(R._parking_sides(strip['seg']).values())
+                for x0, x1 in strip.get('bump_cuts', []))
+    assert taken < .1 * parking, (taken, parking)
+    return {'mapped_trees': len(mine), 'on_carriageway': on, 'extensions': doc['counts']['curb_extensions'],
+            'extension_trees': doc['counts']['curb_extension_trees'], 'merged': doc['counts']['curb_extensions_merged'],
+            'flush': doc['counts']['curb_extensions_flush'], 'part_flush': doc['counts']['curb_extensions_part_flush'],
+            'host_review': len(host), 'parking_curb_taken': round(taken / parking, 4)}
+
+
+def check_ruelle_paving(world, out, streets, soul_rows):
+    """Every ruelle is paved from fence to fence (or wall to wall): nothing bare 2.55 m off any centreline, the
+    paving reaches the 2.9 m fence line wherever no wall stands nearer, no piece runs more than 20 m along its lane,
+    a weedy edge lines most of the fence feet, and props on the lane side stand on the paving."""
+    R = replica
+    paved = ground_tris(out / 'Streets', streets, lambda m, z: True)
+    total = bare = fence_total = fence_bare = 0
+    misses = []
+    for alley in world.alleys:
+        for pa, pb in alley['segments']:
+            u, length = R.unit(pa, pb)
+            n = (-u[1], u[0])
+            for i in range(int(length // 200) + 1):
+                c = R.add(pa, u, min(length, i * 200.))
+                for k in (1, -1):
+                    p = R.add(c, n, 255. * k)
+                    if world.in_building(p):
+                        continue
+                    total += 1
+                    if not covered(paved, p):
+                        bare += 1
+                        misses.append([round(v) for v in p])
+                    q = R.add(c, n, (R.ALLEY_PAVE - 5) * k)
+                    if world.building_ray(c, (n[0] * k, n[1] * k), R.ALLEY_PAVE) is None and \
+                            not world.in_building(c) and not world.in_building(q):
+                        fence_total += 1
+                        fence_bare += not covered(paved, q)
+    assert total > 5000 and bare == 0, ('bare ground 2.55 m off a ruelle', bare, total, misses[:8])
+    assert fence_bare <= .01 * fence_total, (fence_bare, fence_total)
+    lanes = R.AlleyIndex(world)
+    longest = 0.
+    for batch in streets['batches']:
+        if batch['material'] in ('alley', 'alley_gutter', 'Yard_Gravel'):
+            for face in parse_obj(out / 'Streets' / batch['file'])[1]:
+                near = lanes.nearest((sum(p[0] for p in face) / 3, sum(p[1] for p in face) / 3), 700)
+                if near is not None:
+                    u = R.unit(near[2], near[3])[0]
+                    along = [p[0] * u[0] + p[1] * u[1] for p in face]
+                    longest = max(longest, max(along) - min(along))
+    assert longest <= R.PAVE_PIECE + 1, ('a ruelle piece over 20 m', longest)
+    c = streets['counts']
+    assert c['ruelle_edge_metres'] >= .5 * c['ruelle_metres'] and c['ruelle_square_metres'] >= 5 * c['ruelle_metres']
+    for row in soul_rows:
+        if row.get('side') == 'lane' and world.surfaces.has(row['position'][:2], 'alley') and row['prop'] != 'flower_box':
+            assert row['position'][2] == R.Z_ALLEY, ('a lane-side prop sunk in the paving', row)
+    return {'samples_2_55m': total, 'bare_2_55m': bare, 'fence_line_samples': fence_total, 'fence_line_bare': fence_bare,
+            'longest_piece_cm': round(longest), 'paved_m2': c['ruelle_square_metres'], 'edge_m': c['ruelle_edge_metres']}
+
+
+def check_capture_coverage(world, out, streets):
+    """From the curb to the building line on the capture streets, every point (20 cm steps, every metre of curb)
+    has sidewalk, parterre, walk or ruelle paving: no taupe floor. A building line counts up to 15 m behind the
+    sidewalk; a sample on another carriageway ends the ray."""
+    R = replica
+    cover = ground_tris(out / 'Streets', streets, lambda m, z: m != 'asphalt' and z >= R.Z_ALLEY - .1)
+    road = ground_tris(out / 'Streets', streets, lambda m, z: m == 'asphalt')
+    stats, misses = {}, []
+    for strip in world.sidewalk_strips:
+        s = strip['seg']
+        if s['name'] not in CAPTURE_STREETS:
+            continue
+        (ca, cb), (oa, _) = strip['curb'], strip['outer']
+        u, length = R.unit(ca, cb)
+        out_n = (-u[1], u[0])
+        if (oa[0] - ca[0]) * out_n[0] + (oa[1] - ca[1]) * out_n[1] < 0:
+            out_n = (-out_n[0], -out_n[1])
+        w0 = math.dist(ca, oa)
+        x = 100.
+        while x < length - 100:
+            c = R.add(ca, u, x)
+            line = world.building_ray(c, out_n, w0 + R.FRONT_MAX - 100)
+            d = 10.
+            while line is not None and d < line - 10:
+                p = R.add(c, out_n, d)
+                if world.in_building(p) or world.in_park(p) or (not covered(cover, p) and road.contains(p)):
+                    break
+                st = stats.setdefault(s['name'], [0, 0])
+                st[0] += 1
+                if not covered(cover, p):
+                    st[1] += 1
+                    misses.append((s['name'], [round(v) for v in p], round(d), round(line)))
+                d += 20.
+            x += 100.
+    assert set(stats) == set(CAPTURE_STREETS), sorted(stats)
+    for name, (n, m) in stats.items():
+        assert n > 2000 and m <= .001 * n, (name, n, m, [mm for mm in misses if mm[0] == name][:6])
+    assert len(misses) <= 30, misses
+    return {name: {'samples': n, 'bare': m} for name, (n, m) in sorted(stats.items())}
+
+
+def check_planting(out, streets, soul):
+    """Front lawns and beds take the shared textured lawn and soil keys; the ruelle-verte perennials and shrubs are
+    crossed cut-out foliage cards (vertical cards and a flat leaf card), not faceted mounds."""
+    A = apply_replica
+    keys = set(streets['materials'])
+    assert {'Yard_Grass', 'Yard_Soil'} <= keys and not {'yard_grass', 'yard_soil'} & keys
+    for key, want in (('Yard_Grass', 'lawn'), ('Yard_Soil', 'soil'), ('grass_edge', 'lawn'), ('soil', 'soil'),
+                      ('Yard_Gravel', 'crushed_stone')):
+        assert A.texture_set(key, streets['materials'][key]) == want, key
+    cards = ('plant_green', 'plant_gold', 'plant_rust', 'plant_purple', 'plant_red')
+    faces = 0
+    for batch in soul['batches']:
+        if batch['material'] not in cards:
+            continue
+        assert A.texture_set(batch['material'], soul['materials'][batch['material']]) == 'creeper'
+        for face in parse_obj(out / 'Soul' / batch['file'])[1]:
+            zs = [p[2] for p in face]
+            n = replica.newell([tuple(p) for p in face])
+            vertical = abs(n[2]) < 1e-3 * math.sqrt(sum(v * v for v in n))
+            assert max(zs) - min(zs) < .01 or vertical, ('a slanted plant facet', batch['material'], face)
+            faces += 1
+    assert faces > 1000, faces
+    return {'card_triangles': faces}
+
+
 def main():
     report = {'lane_fixtures': check_lane_fixtures()}
     with tempfile.TemporaryDirectory() as a, tempfile.TemporaryDirectory() as b:
@@ -944,7 +1149,7 @@ def main():
             if batch['material'] == 'sidewalk':
                 assert batch['mesh'].startswith('SM_Concrete_Collision') and batch['collision'] == 'complex'
             if batch['collision'] != 'none':
-                assert batch['material'] in ('sidewalk', 'yard_grass', 'yard_soil', 'yard_path'), batch
+                assert batch['material'] in ('sidewalk', 'Yard_Grass', 'Yard_Soil', 'yard_path'), batch
         assert all(b['collision'] == 'none' for b in soul['batches'])
 
         # Geometry: float32-safe faces, curb tops, paint heights, traffic clearance.
@@ -1009,7 +1214,7 @@ def main():
         report['walls'] = walls
         # Route dashes: apply hides OSM Marking, so the dashes no replica asphalt covers are re-authored.
         uncovered = [f for f in replica.legacy_marking_faces()
-                     if world.surfaces.at((sum(p[0] for p in f) / 4, sum(p[1] for p in f) / 4))[1] != 'road']
+                     if not world.surfaces.has((sum(p[0] for p in f) / 4, sum(p[1] for p in f) / 4), 'road')]
         assert 0 < len(uncovered) < 120 and streets['counts']['legacy_route_dashes'] == len(uncovered), \
             (len(uncovered), streets['counts'].get('legacy_route_dashes'))
         report['legacy_route_dashes'] = len(uncovered)
@@ -1082,6 +1287,10 @@ def main():
                     'green_planters', 'green_murals', 'tags_fences', 'tags_doors'):
             assert so[key] > 0, key
         report['lane_life'] = check_lane_life(world, out, soul, soul_rows['placements'])
+        report['street_trees'] = check_street_trees(world, out, streets)
+        report['ruelle_paving'] = check_ruelle_paving(world, out, streets, soul_rows['placements'])
+        report['capture_coverage'] = check_capture_coverage(world, out, streets)
+        report['planting'] = check_planting(out, streets, soul)
         bins = {}
         for row in soul_rows['placements']:
             if row['prop'].startswith('bin_'):
