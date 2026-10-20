@@ -1309,9 +1309,14 @@ if (part("run")) {
   const kept = sum && sum.stages ? sum.stages.split : null;
   check("live (a run, ?seed=6): stage 3 ends with Great", done && !!ov && !!kept && kept.grade === "Great", JSON.stringify({ done, overlay: !!ov, kept }));
   const sb = barsOf(log, "split");
-  const onBar = !!B && sb.some((b) => Math.abs(b.at - B.at) <= 0.005);
-  check("live (stage 3 ending Great): the caper's button plays on its bar line", onBar,
-    B ? `the button ${f1(1000 * (B.at - end))} ms after the overlay; the nearest caper bar line ${f1(1000 * Math.min(...sb.map((b) => Math.abs(b.at - B.at))))} ms away` : "no button");
+  // the button on the caper's next beat after the overlay (a stinger lands on the next beat; the beats are unswung)
+  const spbS = 60 / SCORE_CUES.split.bpm;
+  const bb = B ? sb.filter((b) => b.at <= B.at + 1e-6).pop() : null;
+  const kB = bb ? (B.at - bb.at) / spbS : NaN, offB = Math.abs(kB - Math.round(kB)) * spbS;
+  const bKey = B ? stingerFound(log.notes, "button", SCORE_CUES.split.tonic, B.at) : null;
+  const onBeat = !!B && !!bb && offB <= 0.005 && B.at - end <= spbS + 0.2 + log.latencyS && bKey.miss === 0;
+  check("live (stage 3 ending Great): the caper's button plays on its next beat after the overlay, every note of it in G", onBeat,
+    B ? `the button ${f1(1000 * (B.at - end))} ms after the overlay (a beat is ${f1(1000 * spbS)} ms), ${f1(1000 * offB)} ms off the caper's beat; ${bKey.want - bKey.miss} of ${bKey.want} notes` : "no button");
   const span = (id) => Math.max(...SCORE_STINGERS[id].notes.map((n) => n[0] + n[1])) * 60 / SCORE_STINGERS[id].bpm;
   const key = G ? stingerFound(log.notes, "great", SCORE_CUES.split.tonic, G.at) : null;
   check("live (stage 3 ending Great): then the Great fanfare follows the button, in the caper's key (every pitched note of it, in G)",
