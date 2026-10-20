@@ -1324,7 +1324,7 @@ def brick_at(L, xc, yc):
 def buff_brick(spec):
     """Even buff brick in running bond: yellow-tan bricks of one even shade with a fine sand face, rounded
     arrises and grey mortar in 1 cm concave joints whose upper edge sits in the shadow of the brick above, so the
-    joint grid reads from the street. Per-brick tone varies by only about 4%."""
+    joint grid reads from the street. Per-brick tone varies by only about 3%."""
     W, H = spec['size_px']
     seed = spec['seed']
     L = brick_layout(spec)
@@ -1336,7 +1336,7 @@ def buff_brick(spec):
         for k in range(L['per_course']):
             u = [unit(seed, 110 + n, r, k) for n in range(3)]
             shift = (5., 1., -4.) if u[1] < .22 else (3., 4., 6.) if u[1] > .84 else (0., 0., 0.)
-            bricks[r, k] = {'tone': .955 + .09 * u[0], 'shift': shift, 'rough': .82 + .05 * u[2]}
+            bricks[r, k] = {'tone': .97 + .06 * u[0], 'shift': shift, 'rough': .82 + .05 * u[2]}
     sand = field(Noise(seed + 1, W, H, 512, 512), H)
     cloud = field(Fbm(seed + 2, W, H, ((16, 48), (32, 96)), (.6, .4)), H)
     speck = field(Noise(seed + 3, W, H, 384, 384), H)

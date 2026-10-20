@@ -1336,7 +1336,7 @@ def apply(u, root, backup):
     editor = u.get_editor_subsystem(u.EditorActorSubsystem)
     report = {'passed': False, 'map': MAP, 'backup': str(backup.relative_to(root)), 'map_package_files': map_files,
               'plan_counts': the_plan['counts'], 'textures': {}, 'materials': {}, 'fresh_materials': [],
-              'parents': {}, 'actors': {}, 'instances': {}, 'trees': {}, 'texts': 0,
+              'parents': {}, 'actors': {}, 'instances': {}, 'trees': {}, 'tree_meshes': {}, 'texts': 0,
               'hidden': {}, 'missing_props': the_plan['missing_props'],
               'manifest_sha256': {n: sha(root / 'Data/Plateau/ReplicaGeometry' / n / 'manifest.json') for n in manifests}}
     try:
@@ -1348,7 +1348,7 @@ def apply(u, root, backup):
             report['parents'][row['asset']] = build_parent(u, row, textures).get_path_name()
         materials = {}
         for row in the_plan['materials']:
-            spec = manifests[row['layer']]['materials'][row['key']]
+            spec = row['spec'] if row['layer'] == TREES else manifests[row['layer']]['materials'][row['key']]
             materials[row['asset']], fresh = make_material(u, row, spec, textures)
             report['materials'][row['asset']] = row['duplicate_of']
             if fresh:
@@ -1358,18 +1358,15 @@ def apply(u, root, backup):
             folder, name = row['asset'].rsplit('/', 1)
             source = root / 'Data/Plateau/ReplicaGeometry' / row['layer'] / row['file']
             meshes[row['asset']] = import_mesh(u, source, folder, name, materials[row['material']], row['collision'],
-                                               row['colliders'])
+                                               row['colliders'], row['nanite_shape_preservation'])
+        for row in the_plan['tree_meshes']:
+            slots = {slot: materials[a] if a in materials else u.EditorAssetLibrary.load_asset(a)
+                     for slot, a in row['materials'].items()}
+            meshes[row['asset']] = import_tree_mesh(u, root, row, slots)
+            report['tree_meshes'][row['asset']] = row['sha256']
         by_mesh = {m['asset']: m for m in the_plan['meshes']}
         for row in the_plan['actors']:
-            actor = editor.spawn_actor_from_class(u.StaticMeshActor, u.Vector(0., 0., 0.), u.Rotator())
-            actor.set_actor_label(row['label'])
-            actor.set_folder_path(row['folder'])
-            c = actor.static_mesh_component
-            c.set_static_mesh(meshes[row['mesh']])
-            c.set_material(0, materials[by_mesh[row['mesh']]['material']])
-            # Asphalt stays NoCollision here; QuebecGameplay promotes SM_Asphalt* to Visibility-only at BeginPlay.
-            c.set_collision_profile_name('BlockAll' if row['collision'] != 'none' else 'NoCollision')
-            c.set_cast_shadow(row['shadow'])
+            actor = spawn_layer_actor(u, editor, row, meshes[row['mesh']], materials[by_mesh[row['mesh']]['material']])
             report['actors'][row['label']] = actor.get_path_name()
         for row in the_plan['instances']:
             if not row['mesh']:
@@ -1388,7 +1385,7 @@ def apply(u, root, backup):
             comp.add_instances(transforms, False, True, False)
             assert comp.get_instance_count() == row['count'], row['label']
             report['instances'][row['label']] = {'actor': actor.get_path_name(), 'count': row['count']}
-        report['trees'] = spawn_yard_trees(u, editor, the_plan['trees'])
+        report['trees'] = spawn_yard_trees(u, editor, the_plan['trees'], meshes)
         black = u.EditorAssetLibrary.load_asset('/Engine/EngineMaterials/DefaultTextMaterialOpaque')
         for row, label, p, yaw, text, size in street_name_texts(the_plan, manifests):
             t = editor.spawn_actor_from_class(u.TextRenderActor, u.Vector(*p), u.Rotator(roll=0., pitch=0., yaw=yaw))
@@ -1441,22 +1438,7 @@ def verify(u, root, backup):
     assert all(now[p]['label'].startswith(PREFIX) for p in added), 'Unexpected new actor outside the replica layer'
     checked = 0
     for row in the_plan['actors']:
-        actor = actors.get(row['label'])
-        assert actor is not None, 'Missing actor ' + row['label']
-        c = actor.static_mesh_component
-        mesh = c.static_mesh
-        name = row['mesh'].rsplit('/', 1)[1]
-        assert mesh.get_path_name() == f'{row["mesh"]}.{name}', row['label']
-        # The CPU test rejects float32-degenerate triangles up front; allow a sliver of import-side welding.
-        planned = by_mesh[row['mesh']]['triangles']
-        assert abs(mesh.get_num_triangles(0) - planned) <= max(2, planned // 1000), row['label']
-        assert mesh.get_editor_property('nanite_settings').enabled, row['label']
-        expected = 'BlockAll' if row['collision'] != 'none' else 'NoCollision'
-        assert str(c.get_collision_profile_name()) == expected, row['label']
-        material = by_mesh[row['mesh']]['material']
-        assert c.get_material(0).get_path_name().split('.')[0] == material, row['label']
-        assert actor.get_actor_location().length() < .1
-        checked += 1
+        checked += check_layer_actor(u, actors.get(row['label']), row, by_mesh[row['mesh']])
     instances = 0
     for row in the_plan['instances']:
         if not row['mesh']:
@@ -1480,6 +1462,8 @@ def verify(u, root, backup):
     assets = u.EditorAssetLibrary
     for row in the_plan['textures']:
         check_texture(u, assets.load_asset(row['asset']), row)
+    for row in the_plan['tree_meshes']:
+        check_tree_mesh(u, assets.load_asset(row['asset']), row)
     samplers = {t['role']: getattr(u.MaterialSamplerType, t['sampler']) for t in the_plan['textures']}
     parents = {}
 
@@ -1509,10 +1493,14 @@ def verify(u, root, backup):
             assert any(isinstance(n, u.MaterialExpressionTextureSample) for n in nodes), row['asset'] + ' lost its texture'
         if any(p in row['duplicate_of'] for p in WET_PARENTS):
             assert 'Wetness' in collection, row['asset'] + ' lost the NordSky wet-street wrapper'
+        if row.get('foliage'):
+            check_foliage(u, mat, row)
+        check_macro_nodes(u, mat, row)
         if row.get('textures'):
             # Replica texture sets: exactly the three maps of the set, the right samplers, the tiling, and the
             # same NordSky wrappers (Wetness on the ground parent, none on the brick one) as their parent.
-            samples = [n for n in nodes if isinstance(n, u.MaterialExpressionTextureSample)]
+            samples = [n for n in nodes if isinstance(n, u.MaterialExpressionTextureSample)
+                       and str(n.get_editor_property('desc')) != MACRO_DESC]
             used = sorted(n.get_editor_property('texture').get_path_name().split('.')[0] for n in samples
                           if n.get_editor_property('texture'))
             assert used == sorted(row['textures'].values()), row['asset'] + f' samples {used}'
@@ -1521,7 +1509,7 @@ def verify(u, root, backup):
                 assert role in samplers and n.get_editor_property('sampler_type') == samplers[role], \
                     f'{row["asset"]} sampler {role}'
             coords = [n for n in nodes if isinstance(n, u.MaterialExpressionTextureCoordinate)
-                      and str(n.get_editor_property('desc')) != MARKER]
+                      and str(n.get_editor_property('desc')) not in (MARKER, MACRO_DESC)]
             assert any(abs(c.get_editor_property('u_tiling') - row['tiling'][0]) < 1e-4
                        and abs(c.get_editor_property('v_tiling') - row['tiling'][1]) < 1e-4 for c in coords), \
                 row['asset'] + ' lost its metre tiling'
@@ -1540,6 +1528,11 @@ def verify(u, root, backup):
     result = {'passed': True, 'actors': checked, 'instances': instances, 'texts': texts,
               'textures': len(the_plan['textures']), 'textured_materials': the_plan['counts']['textured_replica_materials'],
               'masked_materials': the_plan['counts']['masked_materials'], 'built_parents': len(the_plan['parents']),
+              'macro_materials': the_plan['counts']['macro_materials'],
+              'clamped_textures': the_plan['counts']['clamped_textures'],
+              'preserve_area_meshes': the_plan['counts']['preserve_area_meshes'],
+              'hidden_collision_actors': the_plan['counts']['hidden_collision_actors'],
+              'tree_meshes': len(the_plan['tree_meshes']), 'yard_tree_mode': the_plan['yard_trees']['mode'],
               'yard_trees': trees, 'missing_props': report['missing_props']}
     (backup / 'verify-report.json').write_text(json.dumps(result, indent=1) + '\n')
     return result
@@ -1548,6 +1541,7 @@ def verify(u, root, backup):
 def main():
     if '--dry-run' in sys.argv:
         the_plan = plan(ROOT)
+        meshes = {m['asset']: m for m in the_plan['meshes']}
         print(json.dumps({'counts': the_plan['counts'], 'missing_props': the_plan['missing_props'],
                           'hide': the_plan['hide'],
                           'textures': {t['asset']: t['sha256'] for t in the_plan['textures']},
@@ -1559,9 +1553,19 @@ def main():
                                                                       'shading_model', 'opacity_mask_clip')}
                                       for p in the_plan['parents']},
                           'shared_keys': shared_key_plan(ROOT),
+                          'clamped_textures': sorted(t['asset'] for t in the_plan['textures'] if t['address_y'] == 'TA_CLAMP'),
+                          'macro': {m['asset']: m['macro']['strength'] for m in the_plan['materials'] if m.get('macro')},
+                          'preserve_area_meshes': sorted({m['material'] for m in the_plan['meshes']
+                                                          if m['nanite_shape_preservation']}),
+                          'hidden_collision_actors': [a['label'] for a in the_plan['actors'] if a['collision_only']],
+                          'shadowless_materials': sorted({meshes[a['mesh']]['material'].rsplit('/', 1)[1]
+                                                          for a in the_plan['actors'] if not a['shadow']}),
+                          'tree_meshes': {m['species']: {'file': m['file'], 'height_cm': m['height_cm'],
+                                                         'materials': m['materials']} for m in the_plan['tree_meshes']},
                           'yard_trees': dict(the_plan['yard_trees'],
                                              actors={t['label']: {'count': t['count'], 'crown': t['crown'],
-                                                                  'collision': t['collision'], 'cull_cm': t['cull_cm']}
+                                                                  'mesh': t['mesh'], 'collision': t['collision'],
+                                                                  'cull_cm': t['cull_cm']}
                                                      for t in the_plan['trees']})}, indent=1))
         return
     import unreal as u
