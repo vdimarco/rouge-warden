@@ -1339,6 +1339,9 @@ def apply(u, root, backup):
               'parents': {}, 'actors': {}, 'instances': {}, 'trees': {}, 'tree_meshes': {}, 'texts': 0,
               'hidden': {}, 'missing_props': the_plan['missing_props'],
               'manifest_sha256': {n: sha(root / 'Data/Plateau/ReplicaGeometry' / n / 'manifest.json') for n in manifests}}
+    trees_manifest = root / 'Data/Plateau/ReplicaGeometry' / TREES / 'manifest.json'
+    if the_plan['tree_meshes']:
+        report['manifest_sha256'][TREES] = sha(trees_manifest)
     try:
         textures = {}
         for row in the_plan['textures']:

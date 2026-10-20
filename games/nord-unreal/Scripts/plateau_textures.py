@@ -4,7 +4,7 @@ Run from games/nord-unreal:
   python3 Scripts/plateau_textures.py           # writes Data/Plateau/ReplicaGeometry/Textures/
   python3 Scripts/plateau_textures.py --check   # rebuilds in memory and compares with textures.json
 
-Sixteen sets, three PNG maps each:
+Seventeen sets, three PNG maps each, and one macro-variation mask (T_Replica_Macro_mask, see MACRO):
   T_Replica_<Set>_diff    sRGB base colour; the material multiplies it by target colour / mean_linear. The
                           cut-out sets (balusters, lattice, fence boards, creeper) are RGBA: A is the opacity
                           mask, and the colour under transparent texels is the surface colour, so filtering
@@ -26,15 +26,20 @@ and `card_height_m` is the height the texture was drawn for.
   half-bond, with a band of three fish-scale (half-round butt) rows. Each row covers the top of the
   row below, so a butt steps down by the slate thickness and shades the slate under it.
 - membrane, ballast, tar: flat roofs. A white single-ply sheet with a lap seam, board joints showing
-  through and ponding stains; white gravel ballast; black tar with gravel sunk into it.
-- sheet_metal: corrugated galvanised steel with spangle, fasteners and rust runs.
+  through and ponding stains; white gravel ballast; dusty grey pea gravel sunk in black tar (mean about
+  #4A4744). Ballast, tar and crushed stone tile at 2 m with large-scale zones (scour, grime, bare tar).
+- sheet_metal: corrugated weathered galvanised steel: faded spangle, light-grey patina, fasteners, rust runs.
+- buff_brick: even yellow-tan brick in running bond with 1 cm concave grey mortar joints (Brick_Buff_Even).
 - siding, parging: lap siding with 10 cm laps and staggered butt joints; parged concrete with trowel
   arcs and hairline cracks.
 - balusters, lattice, fence_boards (cut-out cards) and creeper (cut-out Virginia creeper, tiling).
 - lawn, pavers, soil, crushed_stone: yard ground.
 
 Methods. Greystone and slate follow Larry Gritz's RenderMan shader stone.sl (staggered courses, per-stone
-colour from the stone index, noise-perturbed joint edges, a groove profile for the relief). Gravel, tar
+colour from the stone index, noise-perturbed joint edges, a groove profile for the relief); buff brick is the
+classic procedural brick (Peachey's brick shader in Texturing and Modeling; Blender's Brick Texture node): folded
+module coordinates, half-brick row offset, a colour per brick. The macro mask follows the macro-variation approach
+of Epic's landscape materials (T_MacroVariation sampled at large, unrelated scales). Gravel, tar
 and crushed stone are splatted stones kept by the highest height at each texel, the way Substance
 Designer's Tile Sampler / Shape Splatter stacks pebbles; spangle and tar cracks are Worley cellular noise
 (F1 cells, F2 - F1 borders). Siding is the sawtooth band profile of Blender's Wave Texture (one wedge per

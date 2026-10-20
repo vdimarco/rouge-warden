@@ -70,6 +70,7 @@ YARD_STEP = 60.           # the building line is sampled this often along a lot
 # Mapped street trees that the measured curbs left on the carriageway get a curb extension (saillie) round the
 # trunk; see curb_extensions. The trees stay where the map saved them (plateau_rendering.tree_positions).
 BUMP_REACH = 300.         # a trunk this far from the curb or less gets an extension; farther ones go to the host
+CURB_HUG = 45.            # ...and so does one on the sidewalk this close to the curb with no pit of its own
 PIT_L, PIT_D = 110., 100.  # tree pit along and across the curb (as _tree_pits)
 BUMP_MARGIN = 25.         # concrete between the pit and the extension's edge: the 15 cm curb band and 10 cm
 BUMP_MIN = 90.            # shallowest extension
@@ -1234,7 +1235,7 @@ def build_streets(world):
         'mapped_trees', 'mapped_trees_on_carriageway', 'curb_extensions', 'curb_extension_trees',
         'curb_extensions_merged', 'curb_extensions_flush', 'curb_extensions_part_flush', 'curb_extension_metres',
         'curb_extensions_on_verges', 'curb_extensions_on_corners', 'mapped_trees_for_host',
-        'yard_slabs_past_ruelle_mouths')}
+        'yard_slabs_past_ruelle_mouths', 'curb_extension_trees_at_curb')}
     # Carriageway asphalt.
     for s in world.segs:
         if s['excluded']:
@@ -1454,10 +1455,11 @@ def build_streets(world):
     # The ruelles first (the parterres stop at their paving), then the curb extensions round the mapped trees
     # the carriageway covers (each strip's curb band gives way to them), then the sidewalks, corners and yards.
     _ruelles(world, L, surfaces, counts)
-    extensions = curb_extensions(world, counts)
+    for strip in world.sidewalk_strips:
+        _tree_pits(world, L, strip, trees, tree_grid, pit_trees, counts)
+    extensions = curb_extensions(world, counts, {trees[i] for i in pit_trees})
     for strip in world.sidewalk_strips:
         _sidewalk_strip(world, L, surfaces, strip, counts)
-        _tree_pits(world, L, strip, trees, tree_grid, pit_trees, counts)
     for row in world.corners:
         _corner(world, L, surfaces, row, counts)
     barriers = YardBarriers(world)
@@ -2360,8 +2362,10 @@ def _envelope(group, A):
     return sorted(xs), f
 
 
-def curb_extensions(world, counts):
-    """Plan the curb extensions (see above) and the host list; marks each strip's curb band cuts."""
+def curb_extensions(world, counts, pitted=()):
+    """Plan the curb extensions (see above) and the host list; marks each strip's curb band cuts. A trunk on the
+    sidewalk within CURB_HUG of a strip's curb and in no sidewalk pit (`pitted`: their positions) leans over the
+    gutter, so it gets one too."""
     edges = curb_edges(world)
     grid = Grid(1500.)
     for i, e in enumerate(edges):
@@ -2371,7 +2375,25 @@ def curb_extensions(world, counts):
     counts['mapped_trees'] = len(trees)
     host, by_edge = [], {}
     for node, p in trees:
-        if not world.surfaces.has(p, 'road'):
+        on_road = world.surfaces.has(p, 'road')
+        if not on_road:
+            if p in pitted or world.in_building(p):
+                continue
+            hug = None
+            for i in grid.query(bbox([p])):
+                e = edges[i]
+                rel = (p[0] - e['a'][0], p[1] - e['a'][1])
+                s, d = rel[0] * e['u'][0] + rel[1] * e['u'][1], rel[0] * e['n'][0] + rel[1] * e['n'][1]
+                if e['kind'] == 'strip' and 0 <= s <= e['len'] and -CURB_HUG <= d < 0 and (hug is None or d > hug[0]):
+                    hug = (d, i, s)
+            if hug is None:
+                continue
+            d, i, s = hug
+            D = max(BUMP_MIN, d + PIT_D / 2 + BUMP_MARGIN)
+            by_edge.setdefault(i, []).append({'node': node, 'p': p, 's': s, 'd': d, 'D': D, 'at_curb': True,
+                                              'taper': min(BUMP_TAPER_MAX, BUMP_TAPER * D),
+                                              'street': edges[i]['strip']['seg']['name']})
+            counts['curb_extension_trees_at_curb'] += 1
             continue
         counts['mapped_trees_on_carriageway'] += 1
         best = None
@@ -2391,7 +2413,7 @@ def curb_extensions(world, counts):
             continue
         d, i, s = best
         D = max(BUMP_MIN, d + PIT_D / 2 + BUMP_MARGIN)
-        by_edge.setdefault(i, []).append({'node': node, 'p': p, 's': s, 'd': max(0., d), 'D': D,
+        by_edge.setdefault(i, []).append({'node': node, 'p': p, 's': s, 'd': max(0., d), 'D': D, 'at_curb': False,
                                           'taper': min(BUMP_TAPER_MAX, BUMP_TAPER * D), 'street': street})
     counts['mapped_trees_for_host'] = len(host)
     extensions = []
@@ -2551,6 +2573,7 @@ def _draw_extensions(world, L, surfaces, extensions, counts):
         counts['curb_extensions_on_verges'] += e['kind'] == 'verge'
         counts['curb_extensions_on_corners'] += e['kind'] == 'corner'
         rows.append({'trees': [t['node'] for t in ext['trees']], 'edge': e['kind'],
+                     'on_sidewalk_at_curb': [t['node'] for t in ext['trees'] if t['at_curb']],
                      'street': ext['trees'][0]['street'],
                      'curb': [[r2(v) for v in _local(e, lo, 0.)], [r2(v) for v in _local(e, hi, 0.)]],
                      'road_normal': [round(e['n'][0], 4), round(e['n'][1], 4)],
@@ -4433,12 +4456,14 @@ def prepare(directory=None):
     # The mapped street trees the carriageway covers: their curb extensions, and the ones left for the host.
     trees_doc = {'layer': 'Streets', 'generator': GENERATOR, 'frame': FRAME,
                  'note': 'Mapped street trees (plateau_rendering.tree_positions: OSM natural=tree inside the district) '
-                         'whose trunk the replica carriageway covers. Each within 3 m of its curb gets a curb extension '
+                         'whose trunk the replica carriageway covers, and those on the sidewalk within 45 cm of the '
+                         'curb with no pit (on_sidewalk_at_curb). Each within 3 m of its curb gets a curb extension '
                          '(raised 18 cm and colliding where clear of the 300 cm traffic band, else flush at 9 cm '
                          'without collision); host_review lists the trunks farther out, which the host should check '
                          'against the street (the trees were not moved).',
                  'counts': {k: street_counts[k] for k in ('mapped_trees', 'mapped_trees_on_carriageway',
                                                           'curb_extensions', 'curb_extension_trees',
+                                                          'curb_extension_trees_at_curb',
                                                           'curb_extensions_merged', 'curb_extensions_flush',
                                                           'curb_extensions_part_flush', 'curb_extensions_on_verges',
                                                           'curb_extensions_on_corners', 'mapped_trees_for_host')},
