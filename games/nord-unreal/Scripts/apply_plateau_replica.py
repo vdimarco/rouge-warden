@@ -2,13 +2,15 @@
 
 Additive and refuses to run twice. Reads every Data/Plateau/ReplicaGeometry/<Layer>/manifest.json
 (Streets, Soul, Plex, Props...), checks the OBJ hashes, imports the texture sets of
-Scripts/plateau_textures.py that the manifests use (greystone, slate, and the rear pass's roofs, siding,
-parging, cut-out guards and fences, creeper and yard ground), builds the masked two-sided parent the cut-out
-keys need, duplicates materials (never rebuilds an
+Scripts/plateau_textures.py that the manifests use (greystone, slate, even buff brick, and the rear pass's roofs,
+siding, parging, cut-out guards and fences, creeper and yard ground) and the macro-variation mask, builds the
+masked two-sided parent the cut-out keys need, duplicates materials (never rebuilds an
 existing M_*; see the wet-street gotcha in plateau_atmosphere.py), imports each batch with the
-upgrade_plateau.import_mesh semantics, enables Nanite, spawns labelled actors under the 'Replica'
-folder, instances Furniture/Soul placements of the MAP-PROPS meshes on HISM components, and instances the
-Plex yard trees (Plex/yard_trees.json, when present) on the mapped trees' mesh.
+upgrade_plateau.import_mesh semantics, enables Nanite (Preserve Area on masked batches), spawns labelled actors
+under the 'Replica' folder (Collision_Only batches on actors hidden in game that block pawns and ignore the camera
+and visibility), instances Furniture/Soul placements of the MAP-PROPS meshes on HISM components, and instances
+the Plex yard trees (Plex/yard_trees.json, when present): on one imported mesh per species when
+Trees/manifest.json exists, else on the mapped trees' mesh.
 The only change to an existing actor: the visual 'OSM Marking' dashes are hidden (collision and
 transform unchanged) because they would poke through the new asphalt.
 
@@ -56,6 +58,11 @@ TEXTURES = 'Textures'                      # folder under Data/Plateau/ReplicaGe
 TEXTURE_INDEX = 'textures.json'
 TEXTURE_ASSETS = ASSETS + '/Textures'
 TEXTURE_ROLES = ('diff', 'nor_dx', 'rough')
+MACRO_ROLE = 'mask'                        # T_Replica_Macro_mask: the macro-variation mask (plateau_textures.MACRO)
+MACRO_DESC = 'Replica macro'               # desc of the nodes add_macro adds, so verify can find them
+# Card sets (u along the run, v 0..1 up the card) clamp V: the top row of a baluster card is opaque and the bottom
+# row (the drain gap) clear, and with the default wrap the lower mips would blend the two into a dashed line.
+CARD_ADDRESS_Y = 'TA_CLAMP'
 TEXTURED_PARENT = '/Game/Plateau/Materials/M_BrickRed'
 WET_PARENT = '/Game/Plateau/Materials/M_Gravel'
 CUTOUT_PARENT = MATERIALS + '/M_Replica_CutoutParent'
@@ -74,12 +81,29 @@ SHARED_TEXTURE_KEYS = {key: name for name, spec in plateau_textures.SETS.items()
 # crown of the shared mesh (scale x value on X and Y, scale on Z) so the kinds do not read as clones.
 YARD_TREES = 'Plex/yard_trees.json'
 TREE_MESH = '/Game/Art/Tree/tree_small_02/StaticMeshes/tree_small_02'
-TREE_KINDS = {'maple': 1.15, 'ash': .9, 'elm': 1.05, 'small': 1.}
+TREE_MESH_HEIGHT_CM = 455.                 # the shared mesh at scale 1; a row's scale is a multiple of this height
+# Fallback crown factors (X and Y) per kind on the shared mesh; the old kinds come first, as plateau_plex wrote them.
+TREE_KINDS = {'maple': 1.15, 'ash': .9, 'elm': 1.05, 'small': 1., 'norway_maple': 1.15, 'silver_maple': 1.2,
+              'honey_locust': 1.1, 'linden': 1.05}
 TREE_CULL_CM = (40000, 65000)              # QuebecVegetation's cull distances for the mapped trees
+# Species meshes (Trees/manifest.json, from the Blender tree generator): when present, each yard tree uses its
+# species' own mesh, uniformly scaled to the row's height, instead of the shared mesh with a crown factor.
+TREES = 'Trees'
+TREE_SPECIES = ('norway_maple', 'silver_maple', 'honey_locust', 'linden', 'ash', 'small')
+TREE_ALIASES = {'maple': 'norway_maple', 'elm': 'linden'}
+TREE_SLOTS = ('bark', 'leaves')
+PRESERVE_AREA = 'PRESERVE_AREA'            # Nanite shape preservation for masked cards, creeper and tree leaves
+COLLISION_ONLY = 'Collision_Only'          # invisible walls (gallery guards): collide, never render
 GROUND_KEYS = ('sidewalk', 'curb', 'joint', 'alley_gutter', 'yard_soil', 'yard_path', 'soil', 'patch', 'chantier',
                'pothole', 'crack')
+# Material keys whose batches cast no shadow (flat decals and ground), matched as a whole key or a prefix before '_'
+# (rust, rust_streak), never as a substring: the ruelle-verte plant_rust plants cast shadows like every plant_*.
 SHADOWLESS = ('paint', 'joint', 'curb', 'patch', 'crack', 'pothole', 'leaf', 'grass_edge', 'soil', 'rust',
-              'mural', 'chantier', 'alley', 'asphalt', 'cast_iron')
+              'mural', 'chantier', 'alley', 'asphalt', 'cast_iron', COLLISION_ONLY)
+
+
+def casts_shadow(key):
+    return not any(key == t or key.startswith(t + '_') for t in SHADOWLESS)
 
 
 def sha(path):
@@ -94,7 +118,8 @@ def linear(hex_colour):
 def load_manifests(root=ROOT, check=True):
     """Every layer manifest present, in a fixed order, with OBJ and placement hashes verified."""
     data = Path(root) / 'Data/Plateau/ReplicaGeometry'
-    found = sorted(p.parent.name for p in data.glob('*/manifest.json'))
+    # Trees/manifest.json describes species meshes, not a layer of batches (load_tree_kinds reads it).
+    found = sorted(p.parent.name for p in data.glob('*/manifest.json') if p.parent.name != TREES)
     order = [n for n in LAYER_ORDER if n in found] + [n for n in found if n not in LAYER_ORDER]
     manifests = {}
     for name in order:
