@@ -1018,7 +1018,7 @@ def tar(spec):
     at_wear, at_grime = sampler(wear, W, H), sampler(grime, W, H)
 
     def keep(layer, x, y):
-        return 1. - .9 * smooth(.56, .76, at_wear(x, y))
+        return 1. - .9 * smooth(.6, .78, at_wear(x, y))
 
     def shade(x, y):
         g = smooth(.4, .85, at_grime(x, y))
@@ -1054,13 +1054,13 @@ def tar(spec):
         RO[i] = .38 + .14 * fine[i] + .4 * dusty
         k = 1. + 1.6 * dusty
         R[i], G[i], B[i] = R[i] * k, G[i] * k, B[i] * k * .97
-        bare = smooth(.5, .7, wear[i])                 # shrinkage cracks open where the gravel is gone
+        bare = smooth(.55, .72, wear[i])               # shrinkage cracks open where the gravel is gone
         if crack[i] < 1. and bare > 0.:
             f = (1. - crack[i]) * bare
             R[i], G[i], B[i] = R[i] * (1. - .5 * f), G[i] * (1. - .5 * f), B[i] * (1. - .5 * f)
             CA[i], HT[i] = max(CA[i], f), HT[i] - .05 * f
     cover = sum(1 for o in owner if o >= 0) / len(owner)
-    return cv.result(px, px, {'stones': len(stones), 'stone_cm': [.6, 1.5], 'stone_cover': round(cover, 4),
+    return cv.result(px, px, {'stones': len(stones), 'stone_cm': [.76, 1.7], 'stone_cover': round(cover, 4),
                               'crack_cell_cm': 18., 'zones_cm': [25, 100]})
 
 
@@ -1355,8 +1355,8 @@ def buff_brick(spec):
             b = bricks[r, k]
             # Brick face: one even shade per brick, sand grain, faint firing clouds, rare iron specks, arris shade.
             kb = b['tone'] * (1. + .07 * (sand[i] - .5)) * (1. + .05 * (cloud[i] - .5))
-            if speck[i] > .9:
-                kb *= .82
+            if speck[i] > .93:
+                kb *= .86
             kb *= .88 + .12 * smooth(half, half + .35, e)
             bc = [(BRICK_COLOUR[n] + b['shift'][n]) * kb for n in range(3)]
             hb = 1. - .25 * (1. - smooth(half, half + .35, e)) + .04 * (sand[i] - .5)
