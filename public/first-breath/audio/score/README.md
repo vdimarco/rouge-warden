@@ -8,8 +8,26 @@ The instrument samples that `ui/music.js` plays the score with.
 - Rendered to one mp3 per note by **gleitz/midi-js-soundfonts**
   (https://github.com/gleitz/midi-js-soundfonts, files from
   https://gleitz.github.io/midi-js-soundfonts/FluidR3_GM/).
-- License: **Creative Commons Attribution 3.0** (CC BY 3.0),
-  https://creativecommons.org/licenses/by/3.0/
+- License of the rendered files: **Creative Commons Attribution 3.0** (CC BY 3.0), as gleitz distributes them,
+  https://creativecommons.org/licenses/by/3.0/us/
+- License of the soundfont: **MIT**, by Frank Wen ("I hereby release Fluid under the MIT license, as described in
+  COPYING", from its README, as packaged by Debian: https://sources.debian.org/src/fluid-soundfont/3.1-5.3/debian/copyright/).
+  The notice:
+
+> Copyright © 2000-2002, 2008 Frank Wen
+>
+> Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
+> documentation files (the "Software"), to deal in the Software without restriction, including without limitation the
+> rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit
+> persons to whom the Software is furnished to do so, subject to the following conditions:
+>
+> The above copyright notice and this permission notice shall be included in all copies or substantial portions of the
+> Software.
+>
+> THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+> WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+> COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+> OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 ## What was changed
 

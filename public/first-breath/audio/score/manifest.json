@@ -1,6 +1,6 @@
 {
  "source": "FluidR3_GM by Frank Wen, rendered by gleitz/midi-js-soundfonts",
- "license": "CC BY 3.0, https://creativecommons.org/licenses/by/3.0/",
+ "license": "Files: CC BY 3.0 (https://creativecommons.org/licenses/by/3.0/us/), as rendered by gleitz/midi-js-soundfonts. Soundfont: MIT, Copyright (c) 2000-2002, 2008 Frank Wen (see README.md).",
  "instruments": {
   "trumpet": {
    "notes": {
