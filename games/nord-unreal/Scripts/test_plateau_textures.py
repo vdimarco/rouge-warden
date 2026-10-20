@@ -153,6 +153,107 @@ def check_slate_gaps(rows, spec):
     assert all(cavity[x] < 30 for x in middles), 'Cavity in the middle of a slate'
 
 
+def luminance(rows, x, y):
+    lin = T.SRGB_TO_LINEAR
+    r = rows[y]
+    return .2126 * lin[r[3 * x]] + .7152 * lin[r[3 * x + 1]] + .0722 * lin[r[3 * x + 2]]
+
+
+def check_buff_brick(spec, diff, rough):
+    """Even buff brick: 24 bed joints and 8 head joints per course where the layout puts them, grey mortar darker
+    than the yellow-tan brick so the grid reads, and an even shade from brick to brick."""
+    L = T.brick_layout(spec)
+    width, height = spec['size_px']
+    px = L['px']
+    mx, my = L['module_cm']
+    assert abs(mx - 20.) < 1e-9 and abs(3 * my - 20.) < 1e-9 and L['joint_cm'] >= .8, 'Brick module or joint'
+    cavity = [r[2::3] for r in rough]
+    for c in range(L['courses']):
+        # The bed joint on top of course c, and the middle of course c (rows from the layout's roll).
+        joint_y = int(((c * my - L['roll_cm'][1]) % L['size_cm'][1]) * px)
+        mid_y = int(((c * my + my / 2. - L['roll_cm'][1]) % L['size_cm'][1]) * px)
+        assert sum(1 for v in cavity[joint_y] if v > 200) > .95 * width, f'Bed joint over course {c} is not mortar'
+        heads = runs(cavity[mid_y], 128, opaque=True)
+        assert len(heads) == L['per_course'], (c, heads)
+        assert all(4 <= h <= 2 * L['joint_cm'] * px for h in heads), f'Head joints of course {c}: {heads}'
+    bricks, mortar, brick_lum = {}, [], []
+    for y in range(0, height, 2):
+        for x in range(0, width, 2):
+            v = cavity[y][x]
+            if v > 230:
+                mortar.append(luminance(diff, x, y))
+            elif v < 10:
+                lum = luminance(diff, x, y)
+                brick_lum.append(lum)
+                r, k = T.brick_at(L, (x + .5) / px, (y + .5) / px)[:2]
+                bricks.setdefault((r, k), []).append(lum)
+    assert len(bricks) == L['courses'] * L['per_course'], len(bricks)
+    m_brick, m_mortar = sum(brick_lum) / len(brick_lum), sum(mortar) / len(mortar)
+    assert m_mortar < .88 * m_brick, ('the mortar grid must read darker than the brick', m_mortar, m_brick)
+    means = [sum(v) / len(v) for v in bricks.values()]
+    mean = sum(means) / len(means)
+    spread = (sum((v - mean) ** 2 for v in means) / len(means)) ** .5 / mean
+    assert spread < .05, ('even buff brick: per-brick shade varies too much', spread)
+    share = sum(1 for r in cavity for v in r if v >= 128) / (width * height)
+    assert .12 < share < .26, ('mortar share of the face', share)
+    return {'mortar_to_brick_luminance': round(m_mortar / m_brick, 3), 'brick_shade_spread': round(spread, 4),
+            'mortar_share': round(share, 4)}
+
+
+def block_variation(rows, channels, px, block_cm):
+    """Coefficient of variation of the mean luminance of square blocks of block_cm: large-scale variation."""
+    lin = T.SRGB_TO_LINEAR
+    width, height = len(rows[0]) // channels, len(rows)
+    b = max(1, round(block_cm * px))
+    nx, ny = width // b, height // b
+    sums = [0.] * (nx * ny)
+    for y in range(ny * b):
+        r = rows[y]
+        for x in range(nx * b):
+            o = channels * x
+            sums[(y // b) * nx + x // b] += .2126 * lin[r[o]] + .7152 * lin[r[o + 1]] + .0722 * lin[r[o + 2]]
+    vals = [v / (b * b) for v in sums]
+    mean = sum(vals) / len(vals)
+    return (sum((v - mean) ** 2 for v in vals) / len(vals)) ** .5 / mean
+
+
+def check_macro(index, data):
+    """The macro mask: tileable, three full-range channels near 0.5 that do not follow each other, and tiles that
+    are not a whole multiple of any set's tile, so the macro and the detail never line up."""
+    entry = index['macro']
+    assert entry['file'] == T.macro_file() and entry['tile_m'] == list(T.MACRO['tile_m'])
+    assert (entry['srgb'], entry['compression'], entry['sampler']) == (False, 'TC_MASKS', 'SAMPLERTYPE_MASKS')
+    assert hashlib.sha256(data).hexdigest() == entry['sha256']
+    assert hashlib.sha256(T.read_png(data)[2]).hexdigest() == entry['raw_sha256']
+    width, height, channels, rows = pixels(data)
+    assert [width, height] == entry['size_px'] and channels == 3
+    sx, sy = seam_ratio(width, height, rows)
+    assert sx < 1.6 and sy < 1.6, ('macro mask seam', sx, sy)
+    values = [[r[c::3] for r in rows] for c in range(3)]
+    flat = [[v for r in ch for v in r] for ch in values]
+    for c, v in enumerate(flat):
+        ordered = sorted(v)
+        assert .4 < sum(v) / len(v) / 255. < .6 and ordered[len(v) // 50] < 30 and ordered[-len(v) // 50] > 225, c
+    for a in range(3):
+        for b in range(a + 1, 3):
+            ma, mb = sum(flat[a]) / len(flat[a]), sum(flat[b]) / len(flat[b])
+            cov = sum((p - ma) * (q - mb) for p, q in zip(flat[a], flat[b]))
+            corr = cov / (sum((p - ma) ** 2 for p in flat[a]) * sum((q - mb) ** 2 for q in flat[b])) ** .5
+            assert abs(corr) < .3, ('macro channels follow each other', a, b, corr)
+    for key, spec in T.SETS.items():
+        for tile in spec['tile_m']:
+            for m in T.MACRO['tile_m']:
+                ratio = m / tile
+                assert abs(ratio - round(ratio)) > .05, (key, m, tile, 'macro tile lines up with the detail tile')
+    users = sorted(k for k, s in T.SETS.items() if 'macro' in s)
+    for key in users:
+        macro = index['sets'][key]['macro']
+        assert macro['file'] == entry['file'] and macro['tile_m'] == entry['tile_m'] and macro['channels'] == ['R', 'G']
+        s = T.SETS[key]['macro']
+        assert macro['strength'] == [s, round(s * T.MACRO['second_scale'], 6)] and 0. < s <= .2, key
+    return {'means': entry['mean'], 'tile_m': entry['tile_m'], 'sets': users}
+
+
 def row_at(spec, z_cm):
     """Image row of a card at z_cm above the card's bottom edge."""
     height = spec['size_px'][1]
