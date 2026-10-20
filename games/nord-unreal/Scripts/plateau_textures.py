@@ -973,12 +973,12 @@ def ballast(spec):
 
     def keep(layer, x, y):
         w = smooth(.55, .85, at_wear(x, y))
-        return 1. - (.3 if layer == 0 else .85) * w
+        return 1. - (.25 if layer == 0 else .7) * w
 
     def shade(x, y):
-        g = smooth(.45, .85, at_grime(x, y))
+        g = smooth(.5, .85, at_grime(x, y))
         clean = 1. - smooth(.15, .4, at_grime(x, y))
-        return (1. - .2 * g + .03 * clean, 1. - .22 * g + .03 * clean, 1. - .27 * g + .03 * clean)
+        return (1. - .13 * g + .03 * clean, 1. - .145 * g + .03 * clean, 1. - .18 * g + .03 * clean)
 
     stones, colours, roughs = gravel_stones(seed, W, H, px, layers, palette, keep=keep, shade=shade)
     cv = Canvas(W, H, (112., 109., 103.), 0., .95)
@@ -992,7 +992,7 @@ def ballast(spec):
     # Grit between the stones darkens with the grime too (soot and dust settle where the ballast is old).
     for i, o in enumerate(owner):
         if o < 0:
-            k = 1. - .25 * smooth(.45, .85, grime[i])
+            k = 1. - .2 * smooth(.5, .85, grime[i])
             cv.r[i], cv.g[i], cv.b[i] = cv.r[i] * k, cv.g[i] * k, cv.b[i] * k
     cover = sum(1 for o in owner if o >= 0) / len(owner)
     return cv.result(px, px, {'stones': len(stones), 'stone_cm': [1.6, 3.0], 'stone_cover': round(cover, 4),
@@ -1011,8 +1011,8 @@ def tar(spec):
     seed = spec['seed']
     px = W / (spec['tile_m'][0] * 100.)
     per_m = spec['tile_m'][0]
-    palette = ((.34, (112., 110., 106.)), (.2, (150., 146., 138.)), (.22, (122., 106., 84.)), (.24, (62., 60., 58.)))
-    layers = ((1.25, .92, (.3, .7), -.2, .8), (1.7, .55, (.35, .75), -.1, .75))
+    palette = ((.36, (116., 114., 110.)), (.22, (156., 152., 146.)), (.16, (120., 110., 94.)), (.26, (70., 68., 66.)))
+    layers = ((1.25, .92, (.3, .7), -.08, .8), (1.7, .55, (.35, .75), 0., .75))
     wear = zone_field(seed + 21, W, H, ((2, 2), (4, 4), (8, 8)), (.5, .32, .18))
     grime = zone_field(seed + 22, W, H, ((3, 3), (6, 6), (12, 12)), (.5, .3, .2))
     at_wear, at_grime = sampler(wear, W, H), sampler(grime, W, H)
