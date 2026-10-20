@@ -7,8 +7,8 @@
 // Offline: the score and her heart rendered into an OfflineAudioContext (44.1 kHz, stereo), ui/music.js's tick() driven
 // every 25 ms from suspend points, with the real samples (each file fetched once and kept for every render):
 // - the score bypasses the womb filter: in stage 1's scene (the womb bus at 150 Hz, her heart at 72 bpm, the spy chase
-//   at level 1) the mix has energy above 1 kHz (at least 1% of it, and 30 dB more than her heart alone has there),
-//   while the womb bus alone keeps 90% of its energy below 500 Hz;
+//   at level 1) the mix has energy above 1 kHz (30 dB more than the womb bus alone, her heart, has there, and at least
+//   0.25% of the mix), while the womb bus alone keeps 90% of its energy below 500 Hz;
 // - a mood change (stage 1, level 0 to 2) lands on the next bar line within 5 ms: on the grid laid from the cue's first
 //   downbeat at its tempo, on a bar line in the engine's own bar list; and the first note the level 2 render has that
 //   the same render kept at level 0 does not (the first level 2 note) starts on that bar line, within 5 ms;
@@ -440,9 +440,13 @@ if (part("offline")) {
     const a = bandEnergy(mix.x, SR, 2, 8, 1000, 22050), b = bandEnergy(only.x, SR, 2, 8, 1000, 22050);
     check("offline: the samples load for the renders (no fallback)", mix.load && mix.load.samples >= 150 && mix.load.fallback.length === 0,
       JSON.stringify(mix.load && { samples: mix.load.samples, fallback: mix.load.fallback }));
-    check("offline: in stage 1's scene (womb bus at 150 Hz) the score puts energy above 1 kHz: at least 1% of the mix, 30 dB over her heart alone",
-      a.band / a.all >= 0.01 && db(a.band) - db(b.band) >= 30,
-      `${(100 * a.band / a.all).toFixed(1)}% of the mix, ${f1(db(a.band) - db(b.band))} dB over the heart alone`);
+    // The proof is the comparison with the womb bus alone (the same scene with no score): through the womb's two 150 Hz
+    // low-pass filters the score would lose about 60 dB or more at 1 kHz. The share of the mix is a floor for "clear
+    // energy" only, set 6 dB under the 1.05% the score gives after its 2.5 dB trim (design 2.1), so a trim moved by
+    // listening (tasks 8.5) does not fail it; it was 1%, 0.2 dB from failing.
+    check("offline: in stage 1's scene (womb bus at 150 Hz) the score puts energy above 1 kHz: 30 dB over the womb bus alone (her heart), at least 0.25% of the mix",
+      a.band / a.all >= 0.0025 && db(a.band) - db(b.band) >= 30,
+      `${(100 * a.band / a.all).toFixed(2)}% of the mix, ${f1(db(a.band) - db(b.band))} dB over the womb bus alone`);
     // ... while the womb bus alone (the same 6 s, no score) keeps at least 90% of its energy below 500 Hz
     const w = bandEnergy(only.x, SR, 2, 8, 0, 500);
     check("offline: the womb bus alone keeps at least 90% of its energy below 500 Hz over those 6 s", w.band / w.all >= 0.9,
@@ -823,7 +827,6 @@ function ctxOfStage(log, id, t) {
   for (let i = 1; i < xs.length; i++) if (xs[i][1] >= t) { const [, t0, c0] = xs[i - 1], [, t1, c1] = xs[i]; return t1 > t0 ? c0 + ((t - t0) * (c1 - c0)) / (t1 - t0) : c1; }
   return null;
 }
-// the longest stretch with no score note starting in [a, b] (context time), counting from a and to b
 // how far heard time t (less the latency, as the LOG's times) is from her nearest scheduled beat, or from the half way
 // between two of them (stage 6's cue lays two music beats to each of hers, its grid set by her laid beats)
 function herOff(her, t, halves = true) {
@@ -834,6 +837,7 @@ function herOff(her, t, halves = true) {
   }
   return best;
 }
+// the longest stretch with no score note starting in [a, b] (context time), counting from a and to b
 function longestGap(notes, a, b) {
   const ts = notes.map((n) => n[0]).filter((t) => t >= a && t <= b).sort((x, y) => x - y);
   let g = 0, prev = a, at = a;
@@ -1539,7 +1543,10 @@ if (part("moods")) {
     const near = (c) => (c ? Math.min(...ab.map((b) => Math.abs(b.at - c.at))) : Infinity);
     const onBar = (c) => near(c) <= 0.010;
     const barAt = (t) => { const b = ab.filter((x) => x.at <= t + 1e-6).pop(); return b ? 4 * 60 / b.bpm : 4 * 60 / 156; };
-    const tpt = (a, b) => log.notes.filter((n) => n[2] === "sample" && n[3] === "trumpet" && n[0] >= a && n[0] < b).length;
+    // the cue's own trumpets: a stinger's are left out (the title's button, played on the bar line before stage 6's cue
+    // starts on her first beat after it, can still sound its last trumpet notes after that start)
+    const own = cueNotes(log);
+    const tpt = (a, b) => own.filter((n) => n[2] === "sample" && n[3] === "trumpet" && n[0] >= a && n[0] < b).length;
     check("live (stage 6): the combo reaches the level 2 mark (12) and the score rises to 2", up && !!L2 && rep.firstAt !== null, `the replay: level 2 at ${rep.firstAt} s`);
     check("live (stage 6): the three-trumpet shout chorus joins on the next bar line (none before it, trumpets in that bar)",
       onBar(L2) && c12 !== null && L2.at >= c12 - 0.01 && L2.at - c12 <= 0.1 + 0.15 + log.latencyS + barAt(L2.at) + 0.05 && tpt(start.at, L2.at - 0.001) === 0 && tpt(L2.at - 0.001, L2.at + barAt(L2.at)) > 0,

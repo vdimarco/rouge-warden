@@ -487,7 +487,7 @@ check or the verifier's real-time runs.
 | Stage 6 sync | 2.4 |
 | Fallback | with the sample files blocked, all 14 instruments play on the synth, in tune, at about the samples' level (also live in `music.e2e.mjs`) |
 | Live AudioContext | the synth plays until the samples load, then the samples take over; nothing is scheduled while hidden, suspended or with Music off; each resumes on a new bar line; in `music.e2e.mjs` Music off falls 46 dB within 0.35 s and Sound off goes to −240 dBFS |
-| Through `sound.js` | in stage 1's scene (the womb bus at 150 Hz) the mix has energy above 1 kHz 49.7 dB over her heart alone (`music.e2e.mjs`); mute silences it; a 40 ms latency moves notes 40 ms earlier. After the score's trim, the share of the mix above 1 kHz fell from 1.8% to 1.047%, close to that check's 1% floor (a fixed offline render, so it does not flake) |
+| Through `sound.js` | in stage 1's scene (the womb bus at 150 Hz) the mix has energy above 1 kHz 49.7 dB over her heart alone (`music.e2e.mjs`); mute silences it; a 40 ms latency moves notes 40 ms earlier. After the score's trim, the share of the mix above 1 kHz fell from 1.8% to 1.05%, 0.2 dB over that check's 1% floor; the final verifier set the floor to 0.25% (11) |
 | Peaks | with her heart, through `sound.js`, its 1 dB trim and the score's 2.5 dB trim, the loudest cues at level 2 under two stingers: −2.3 to −3.3 dBFS (`music.e2e.mjs`; −2.0 to −2.9 before the score's trim, −0.7 dBFS before the 1 dB trim) |
 | Loudness (EBU R128) | her heart alone −19.8 to −20.2 LUFS in each stage's scene (your heart −19.5 in `grow`); a stage cue at level 1, its whole loop, −26.7 to −27.8 LUFS, 6.7 to 8.0 LU under the heart that leads (2.1); in the page, stage 1 at level 1 measures 7.8 LU under (`music.e2e.mjs`: 10 s of the loop after the intro, in stereo, within 0.25 dB of ffmpeg; with the intro the score is 2.1 dB quieter still); the score per cue and level before the trim in 3.2 |
 | Her heart over the score | at level 2 in every stage's scene, the heart band over the first 80 ms of each beat: 10.4 dB or more over the score (lowest: `grow` with the boss; `egg` 11.1, every other stage 12.5 or more); the check needs 3 dB for 90% of her beats (`music.e2e.mjs`). The minimum was 7.9 dB before the score's trim (medians 16 to 30 dB then), 6.5 dB at integration and 3.9 dB after the verifier's fixes, before the mix. |
@@ -614,10 +614,12 @@ list, and the others are not the game's tone. Stingers get no caption: each mark
 6. When a cue changes, its `end` stinger plays unless `sting(end)` was already called during that cue; then the old
    cue fades out instead, and the change slips one more bar when less than 0.45 of a bar is left. In play `main.js`
    plays every stage cue's button at the overlay, so every stage change fades, and the new cue comes in within about
-   1.45 bars of the stage start, plus the lookahead. The final verifier changed two scenarios to say so ("The cue
-   follows the stage": within two bars, on a bar line of the old cue, the button once at the overlay; "A grade at the
-   stage end": the button on the next beat), since they had asked for the button on the bar line where the new cue
-   began, which this design never does.
+   1.45 bars of the stage start, plus the lookahead. Stage 6's cue then starts on her first beat after that bar line
+   (2.4, 9.1.8). The final verifier changed the requirement and two scenarios to say so ("The cue follows
+   the stage": within two bars, on a bar line of the old cue, stage 6's on her first beat after it, the button once at
+   the overlay on a beat and not again at the change; "A grade at the stage end": the button on the next beat, as every
+   stinger lands, 9.1.7), since they had asked for the button on the bar line where the new cue began, which this
+   design never does. `music.e2e.mjs` checks the scenarios as now written.
 7. Stingers queue and are never dropped. A new one waits for a sounding one to end, at most 1.5 s, then plays over it.
 8. A mother cue waits up to 2 s for her first beat.
 9. `createMusic` also takes `level` (default 0.8) and `score` (tests). `stats()` adds `held`, `section`, `samples`,
@@ -700,9 +702,11 @@ corrections hold instead:
 - **Her heart under `grow`'s boss.** Still the lowest margin of all: 10.4 dB at least after the trim (7.9 dB before it,
   6.5 dB at integration, 3.9 dB after the verifier's fixes). If listening says her beat blurs there, lower `grow`'s
   boss and level 2 layers.
-- **The 1 kHz check sits near its floor.** After the trim, 1.047% of stage 1's mix lies above 1 kHz, against the
-  check's 1%. It is a fixed offline render, so it will not flake, but a later cut to the score's level would fail it;
-  lower that floor then, if listening agrees.
+- **The 1 kHz check's floor.** After the trim, 1.05% of stage 1's mix lies above 1 kHz, 0.2 dB over the check's old
+  1% floor, so any trim listening asks for (tasks 8.5) would have failed it. The final verifier set the share's floor
+  to 0.25% (6 dB of room). What proves the score skips the womb filter is the other half of the check: the mix's
+  energy above 1 kHz at least 30 dB over the womb bus alone (her heart, the same scene with no score), where the score
+  through the womb's two 150 Hz low-pass filters would lose about 60 dB or more.
 - **Stingers.** `root` plays `gift` twice a stage at most and `turn` plays `win` once at most (3.1; tasks 5.22, 5.23).
   Listening may still change them (tasks 8.5).
 - **Dropped notes.** A few notes still drop under main-thread stalls longer than the lookahead (2.7). That is the

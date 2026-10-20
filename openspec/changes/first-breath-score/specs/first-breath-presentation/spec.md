@@ -21,7 +21,7 @@ Each stage, the title screens and the ending SHALL have their own cue: an overtu
 #### Scenario: The cue follows the stage
 - **GIVEN** a run played by the reference bot with Music on
 - **WHEN** each stage starts
-- **THEN** the score's `stats().cue` is that stage's cue (`swim`, `egg`, `split`, `root`, `grow`, `answer`, `turn`, `birth`) within two bars, starting on a bar line of the old cue, and the old cue's button played once, on a beat at its stage's overlay, and not again where the new cue began
+- **THEN** the score's `stats().cue` is that stage's cue (`swim`, `egg`, `split`, `root`, `grow`, `answer`, `turn`, `birth`) within two bars, starting on a bar line of the old cue (stage 6's on her first beat after it), and the old cue's button played once, on a beat at its stage's overlay, and not again where the new cue began
 - **CHECK** `qa/first-breath/music.e2e.mjs`
 
 #### Scenario: No silence between stages
@@ -157,7 +157,7 @@ The ending SHALL stay tender, slow and soft. No score note SHALL sound from the 
 - **CHECK** `qa/first-breath/music.test.mjs`
 
 ### Requirement: Music captions
-With captions and Music on, a caption SHALL name the music once per stage when its cue starts, in plain words, such as "♪ spy-chase music". Music captions SHALL follow the banned words, so a working name such as "Battle" is never shown. A music caption SHALL NOT cut a fact or a sub-goal line. Stingers SHALL need no caption, since each marks a moment the screen already shows.
+With captions and Music on, a caption SHALL name the music once per stage when its cue starts, in plain words, such as "♪ spy-chase music", waiting its turn when the caption line is busy. Music captions SHALL follow the banned words, so a working name such as "Battle" is never shown. A music caption SHALL NOT cut a fact or a sub-goal line. Stingers SHALL need no caption, since each marks a moment the screen already shows.
 
 #### Scenario: One line per stage
 - **GIVEN** stage 1 with captions and Music on at 390 × 844
