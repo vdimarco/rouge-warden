@@ -4,7 +4,7 @@ A masonry wall still reads as one cel tone. The unit tint is shaded by the cel a
 
 ## What changes
 
-Brick, stone and panel faces keep a second tone, printed after the grade. Neighbouring units stay different colours, and each course keeps a light crest and a dark bed until the course is only a few pixels tall. Glass, windows and awnings stay as they are. No new mesh and no new draw.
+Brick, stone and panel faces keep a second tone, printed after the grade. Neighbouring units stay different colours, and each course keeps a light crest until the course is only a few pixels tall. The bed stays at the unit clay, so a shade face does not drop under the ink. Glass, windows and awnings stay as they are. No new mesh and no new draw.
 
 ## Capabilities
 

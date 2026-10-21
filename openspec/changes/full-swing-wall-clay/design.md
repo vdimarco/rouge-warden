@@ -8,5 +8,5 @@ Pascal Barla, Joëlle Thollot and Lee Markosian, "X-Toon: An Extended Toon Shade
 
 - The print runs only on masonry styles (brick, stone, concrete, loft). Glass towers are left alone. Window pixels, room interiors, rails and fire escapes multiply the print back out.
 - The print is a clay, stone or panel mix of the unit and the coarser batch. Up close the unit leads. Farther away the batch remains, then the print fades, so a distant wall stays the flat comic tone.
-- A course crest (light on the top of the unit, dark on the bed) holds until the course is only a few pixels. It fades later than the unit tint, which already drops out while a course is still readable.
+- A light course crest holds until the course is only a few pixels. It fades later than the unit tint, which already drops out while a course is still readable. The bed is not darkened. A dark bed, and a clay under 1, pushed shade faces under the ink test (max channel below 46) and flooded the canyon rows. Every clay channel stays at or above 1, so the print shifts hue without adding ink.
 - The grade function is not edited. The print is a multiply after `gradeInk` on the facade fragment only. Awnings still replace that colour where the cloth is.
