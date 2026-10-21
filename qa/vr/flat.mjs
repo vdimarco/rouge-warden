@@ -59,7 +59,7 @@ const FAKE = () => {
     flyIn() {
       const B = window.__B, z = (B.minZ + B.maxZ) / 2;
       G.test.teleport(B.maxX + 3, B.maxY / 2, z); G.rigYaw = Math.PI / 2; G.flatcam.reset(Math.PI / 2);
-      G.P.vel.x = -8; __f.step(30);
+      G.P.vel.x = -6; __f.step(30); // under 4 body-heights a second: a cling, not a wall run
       return !!G.P.wall;
     },
     // a spot on a clog's roof with a clear line from the head to the bowl

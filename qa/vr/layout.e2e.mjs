@@ -135,7 +135,7 @@ function install() {
       return !C.isWater(c.maxX + 1, z) && C.groundY(c.maxX + 1, z) < 0.5;
     });
     if (!B) return false;
-    G.test.teleport(B.maxX + 3, B.maxY / 2, (B.minZ + B.maxZ) / 2); G.rigYaw = Math.PI / 2; G.desktop.level(0); G.P.vel.x = -8; G.test.step(1 / 60, 30);
+    G.test.teleport(B.maxX + 3, B.maxY / 2, (B.minZ + B.maxZ) / 2); G.rigYaw = Math.PI / 2; G.desktop.level(0); G.P.vel.x = -6; G.test.step(1 / 60, 30);
     return !!G.P.wall;
   }
   // The look hint with its shadow, and its opacity (it fades out while the spoken line or the toast is over its place). null when the game does not show it.

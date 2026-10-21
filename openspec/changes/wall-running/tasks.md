@@ -5,5 +5,5 @@
 - [x] Swipe up jumps in `mobile.js`. No new button. The JUMP pad stays.
 - [x] `window.__test.wall` from `publishWall` in `main.js`.
 - [x] `qa/vr/physics.test.mjs`: up, along, kick, vault, slide, timer, and a standing run onto an 18 m roof in under 3 s.
+- [x] Browser: a run up a wall at 390×844 and 1280×800. Frame time at both widths, 0 page errors. Climb and spider-world browser checks pass.
 - [ ] `openspec validate` — the CLI is not installed in this environment, so this check did not run.
-- [ ] Browser: a run up a wall at 390×844 and 1280×800. Frame time at both widths, 0 page errors. Existing `qa/vr` tests still pass.

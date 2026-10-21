@@ -85,7 +85,7 @@ try {
   const r5 = await page.evaluate(() => {
     const B = __t.B, z = (B.minZ + B.maxZ) / 2;
     G.test.teleport(B.maxX + 3, B.maxY / 2, z); G.rigYaw = Math.PI / 2; G.desktop.level(0);
-    G.P.vel.x = -8; __t.step(30);
+    G.P.vel.x = -6; __t.step(30); // under 4 body-heights a second: a cling, not a wall run
     const on = !!G.P.wall;
     __t.key('KeyW', true); const n = __t.until(() => __t.done('climb'), 240); __t.key('KeyW', false);
     __t.key('Space', true); __t.step(2); __t.key('Space', false); __t.step(10);

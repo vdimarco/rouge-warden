@@ -160,7 +160,7 @@ function wallSetup() {
   });
   window.QA = {
     B, z: B && (B.minZ + B.maxZ) / 2,
-    flyIn() { G.test.teleport(B.maxX + 3, B.maxY / 2, QA.z); G.rigYaw = Math.PI / 2; G.desktop.level(0); G.P.vel.x = -8; G.test.step(1 / 60, 30); return !!G.P.wall; },
+    flyIn() { G.test.teleport(B.maxX + 3, B.maxY / 2, QA.z); G.rigYaw = Math.PI / 2; G.desktop.level(0); G.P.vel.x = -6; G.test.step(1 / 60, 30); return !!G.P.wall; },
   };
   return !!B;
 }
