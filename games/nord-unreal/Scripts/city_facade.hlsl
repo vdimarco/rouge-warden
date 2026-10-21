@@ -25,6 +25,15 @@ float BrickNoise = frac(sin(dot(floor(float2(UV.x * 8.0 + floor(Z / 28.0) * 0.5,
 Color *= lerp(0.86, 1.12, BrickNoise);
 float Grain = frac(sin(dot(floor(float2(UV.x * 32.0, Z / 6.0)), float2(12.9898, 78.233))) * 43758.5453);
 Color *= lerp(0.93, 1.06, Grain);
+// The fine grain is a couple of pixels at street scale. Three bands inside each unit, a chipped
+// brick corner, and a stone pit are large enough to read. A height-field normal does not fit here.
+float2 BrickId = floor(float2(UV.x * 8.0 + floor(Z / 28.0) * 0.5, Z / 28.0));
+float2 Face = frac(float2(UV.x * 8.0 + floor(Z / 28.0) * 0.5, Z / 28.0));
+float Mottle = frac(sin((BrickId.x + floor(Face.y * 3.0) * 0.37) * 12.9898 + BrickId.y * 78.233) * 43758.5453);
+Color *= lerp(0.78, 1.16, Mottle);
+float Chip = step(0.80, BrickNoise) * step(0.48, Face.x) * step(Face.y, 0.40) * (1.0 - Stone);
+float Pit = step(0.62, BrickNoise) * step(0.30, Face.x) * step(Face.x, 0.72) * step(0.35, Face.y) * step(Face.y, 0.70) * Stone;
+Color = lerp(Color, Color * float3(0.58, 0.54, 0.50), max(Chip, Pit));
 // The joint is its own pale bed. The top of each course catches the afternoon sun.
 float3 Mortar = lerp(float3(0.50, 0.46, 0.40), float3(0.64, 0.60, 0.52), Stone);
 float Arris = step(0.86, Along) * step(0.045, Across);
