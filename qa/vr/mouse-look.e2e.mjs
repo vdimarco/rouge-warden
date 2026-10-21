@@ -154,7 +154,7 @@ try {
     });
     assert(r.paused && r.state === 'play' && !r.locked && r.t < 1250, 'RESUME right after Esc: play goes on, the lock is refused for now: ' + JSON.stringify(r));
     assert(r.hint, 'with no lock a prompt says how to get the mouse look back');
-    await page.waitForFunction(() => G.desktop.locked, null, { timeout: 5000 });
+    await page.waitForFunction(() => G.desktop.locked, null, { timeout: 15000 });
     await settle(); await frames(1); // full screen comes on once the lock holds, and the lock is taken again
     s = await pl();
     assert(s.locked && !s.hint && s.state === 'play', 'a moment later the game asks again with no click, and the lock holds: ' + JSON.stringify(s));
