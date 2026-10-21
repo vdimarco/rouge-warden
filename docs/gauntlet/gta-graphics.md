@@ -353,3 +353,38 @@ Unreal is not available in this environment, so in-engine frames are the last co
 - Playability raw: 39 / 10 dimensions, index 39
 - Total: 84 / 200
 - Delta vs last round: +1
+
+### Round 11 — 2026-10-21 — rubric v1
+
+- What changed: the comic post process adds a pale grazing rim on crew pixels, (1 − n·v)^4. The city is left alone. The material updates when `apply_comic_style.py` runs in the editor.
+- Why it helped: Character models were tied at 4. The half-lambert lights the crown and leaves the shadow side against the street. An upward-only rim sat inside that crown. A rim around the whole silhouette is what separates the figure.
+- Screenshots: before `docs/gauntlet/gta-graphics/round-11/before-rim.png`, after `docs/gauntlet/gta-graphics/round-11/after-rim.png`. These are ellipses with the crew shading, not an Unreal capture and not the shipped mesh. `Scripts/test_plateau_trees.py` passed. `GET /gta/` returned 200.
+- Next target: particles and VFX (tied at 4 with composition). Animation smoothness stays at 3 and is skipped until a pose can be drawn.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 5 | Window lamps and the key are unchanged. The rim is an edge on the crew, not a city light. |
+| Color palette | 5 | The rim is a pale sky white. |
+| Detail density | 5 | Rails and doors are unchanged. |
+| Texture and material quality | 5 | Mortar beds are unchanged. |
+| Composition and camera | 4 | Unchanged gameplay camera. |
+| Atmosphere | 5 | The depth fade is unchanged. |
+| Character models | 5 | A pale edge outlines the figure and the centre keeps the half-lambert. The preview is ellipses, not the shipped mesh. |
+| Animation smoothness | 3 | Skipped. The blend space still cannot be posed here. |
+| Particles and VFX | 4 | Rain streaks are unchanged. |
+| UI polish | 5 | Untouched. |
+| Responsiveness and input latency | 4 | Not measured this round. |
+| Controls feel | 4 | Not played. |
+| Mission clarity | 5 | Unchanged objective card. |
+| Pacing | 4 | Unchanged mission slice. |
+| Fun factor | 3 | Not played. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 4 | No new juice. |
+| Sound design | 3 | Not listened to. |
+| Variety | 3 | One district. The rim is the same edge on every crew pixel. |
+| Performance stability | 5 | The comic source test passed. The rim is extra arithmetic, no samples. Frame time was not remeasured. |
+
+- Aesthetics raw: 46 / 10 dimensions, index 46
+- Playability raw: 39 / 10 dimensions, index 39
+- Total: 85 / 200
+- Delta vs last round: +1

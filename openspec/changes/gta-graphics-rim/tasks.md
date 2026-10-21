@@ -1,0 +1,4 @@
+- [x] Add a grazing rim on crew pixels in `apply_comic_style.py`
+- [x] Shade a stand-in figure before and after
+- [x] Run `Scripts/test_plateau_trees.py`
+- [ ] Apply the comic post process in Unreal (editor not available here)

@@ -99,6 +99,14 @@ float Half = saturate(dot(NormalC, ToSun) * 0.5 + 0.5);
 Half *= Half;
 float3 Key = lerp(float3(0.62, 0.70, 0.86), float3(1.16, 1.06, 0.94), Half);
 Color = lerp(Color, saturate(Color * Key), PrintedCrew);
+// Broad grazing rim from the same paper. The upward-only term sat inside the key
+// and did not separate the figure, so the edge follows (1 - n·v)^4 around the silhouette.
+float3 ToEye = -normalize(View.ViewForward);
+float Grazing = saturate(1.0 - dot(NormalC, ToEye));
+float Fresnel = Grazing * Grazing;
+Fresnel *= Fresnel;
+float3 Rim = float3(0.90, 0.94, 1.0) * Fresnel;
+Color = lerp(Color, saturate(Color + Rim), PrintedCrew);
 
 Color = lerp(Color, float3(0.025, 0.015, 0.05), saturate(Ink) * (Sky ? 0.0 : 1.0));
 
