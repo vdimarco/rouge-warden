@@ -185,3 +185,40 @@ Playability was scored from a flat boot and the city render check, not a full pl
 
 Playability was scored from a flat boot and the city render check, not a full playthrough. OpenSpec CLI validation was not run; the `openspec` command is not installed.
 
+### Round 6 — 2026-10-21 — rubric v1
+
+- What changed: The height fog keeps its 110 m layer and gains a second layer with an 18 m scale height. It starts past 28 m, sits on the walks and the lower floors, and thins out by the roofs. The four print steps still snap the amount. The colour is still this game's sky haze. The same integral is in the short prop kit. The split follows Carsten Wenzel, "Real-Time Atmospheric Effects in Games" (SIGGRAPH 2006 course): only the denser air near the ground, not the scattering shader.
+- Why it helped: The avenue was sharp from the kerb to the far crossing, because the thin veil never crossed a print step. The lower floors down the block now sit in air, and the near bollard stays crisp. The needle is high enough that this layer does not reach it.
+- Screenshots: before `docs/gauntlet/shots/r06-before-street.png`, after `docs/gauntlet/shots/r06-after-street.png`. Needle, unchanged at this height: `docs/gauntlet/shots/r06-before-needle.png`, `docs/gauntlet/shots/r06-after-needle.png`.
+- Next target: Composition and camera (4), tied with character models, animation smoothness, particles and VFX, and UI. The views are still fixed cameras, which is the gap these frames still show once the avenue has air.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 5 | Unchanged. The haze uses the existing sky colour. |
+| Color palette | 5 | Unchanged. The veil is the dusk violet already in the sky. |
+| Detail density | 5 | Unchanged. Bins, bollards, and hydrants from round 5. |
+| Texture and material quality | 5 | Unchanged. Courses and fresnel from round 4. |
+| Composition and camera | 4 | Unchanged. Fixed cameras. The haze sits in the street frame. |
+| Atmosphere | 5 | The lower avenue carries a haze the near kerb and the roofs do not. Fog is still four steps, and there is no weather. |
+| Character models | 4 | Unchanged. Hair, shoulders, and a rim from round 3. |
+| Animation smoothness | 4 | Unchanged. Stills only. |
+| Particles and VFX | 4 | Unchanged. One occluded sun shaft. The haze is fog, not particles. |
+| UI polish | 4 | Unchanged. The shots hide the page. |
+| Responsiveness and input latency | 6 | Unchanged. The layer is a few arithmetic ops in the fog both shaders already run. No input timing was measured. |
+| Controls feel | 5 | Unchanged. |
+| Mission clarity | 4 | Unchanged. Not played. |
+| Pacing | 4 | Unchanged. |
+| Fun factor | 4 | Unchanged. Not played as a session. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 5 | Unchanged. |
+| Sound design | 4 | Unchanged. |
+| Variety | 4 | Unchanged. |
+| Performance stability | 6 | `qa/vr/render.mjs` passed, including flat play and the lit-sphere cel check. Street draws stayed at 54. Street mean moved from 53 to 54. |
+
+- Aesthetics raw: 45 / 10 dimensions, index 45
+- Playability raw: 46 / 10 dimensions, index 46
+- Total: 91 / 200
+- Delta vs last round: +1 (90 → 91). Atmosphere 4 → 5. Playability unchanged.
+
+Playability was scored from a flat boot and the city render check, not a full playthrough. OpenSpec CLI validation was not run; the `openspec` command is not installed.
+

@@ -93,6 +93,10 @@ float fogAmount(vec3 wp) {
   float dy = yc - yp;
   float hf = abs(dy) < 1.0 ? exp(-0.5 * (yc + yp) / H) : H * (exp(-yp / H) - exp(-yc / H)) / dy;
   float f = 1.0 - exp(-uFog.y * max(d - uFog.x, 0.0) * hf);
+  // a shorter layer: street air on the walks and the lower floors, gone by the roofs (Wenzel 2006, the height split only)
+  float Hs = 18.0;
+  float hs = abs(dy) < 1.0 ? exp(-0.5 * (yc + yp) / Hs) : Hs * (exp(-yp / Hs) - exp(-yc / Hs)) / dy;
+  f = max(f, (1.0 - exp(-0.012 * max(d - 28.0, 0.0))) * hs * 0.40);
   return max(f, 0.06 * smoothstep(12.0, uFog.x, d));
 }
 // Metres under the shadow surface at a point (the map's shadow height minus its height): above 0 in another tower's shadow
