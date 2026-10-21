@@ -6,6 +6,7 @@
 #include "QuebecRouteLine.h"
 #include "QuebecCourtRules.h"
 #include "QuebecCourtTone.h"
+#include "QuebecRankTone.h"
 #include "QuebecStoryBed.h"
 #include "QuebecBarks.h"
 #include "QuebecPondRules.h"
@@ -1658,6 +1659,10 @@ AQuebecController::AQuebecController()
     CourtRaspAudio->bAutoActivate = false;
     CourtRaspAudio->bAllowSpatialization = false;
     CourtRaspAudio->VolumeMultiplier = .5f;
+    RankAudio = CreateDefaultSubobject<UAudioComponent>(TEXT("RankAudio"));
+    RankAudio->bAutoActivate = false;
+    RankAudio->bAllowSpatialization = false;
+    RankAudio->VolumeMultiplier = .55f;
     StoryBedAudio = CreateDefaultSubobject<UAudioComponent>(TEXT("StoryBedAudio"));
     StoryBedAudio->bAutoActivate = false;
     StoryBedAudio->bAllowSpatialization = false;
@@ -1913,6 +1918,39 @@ void AQuebecController::TickShowPage()
     const int32 Step = (IsLocalController() && Campaign) ? Campaign->ShowStep : -1;
     if (Step == QuebecShowRules::StepBanked && ShowHeardStep == QuebecShowRules::StepCue) PlayShowPage();
     ShowHeardStep = (IsLocalController() && Campaign) ? Step : -1;
+}
+
+void AQuebecController::PlayRank(int32 ChainAfter, bool bWasSpoiled)
+{
+    ClientPlayRank(ChainAfter, bWasSpoiled);
+}
+
+void AQuebecController::ClientPlayRank_Implementation(int32 ChainAfter, bool bWasSpoiled)
+{
+    PlayRankTone(ChainAfter, bWasSpoiled);
+}
+
+void AQuebecController::PlayRankTone(int32 ChainAfter, bool bWasSpoiled)
+{
+    if (!RankAudio || !GetWorld() || !GetWorld()->AllowAudioPlayback()) return;
+    const int32 Hz = QuebecRankTone::RankHz(static_cast<int>(ChainAfter), bWasSpoiled);
+    if (!RankWave)
+    {
+        RankWave = NewObject<USoundWaveProcedural>(this);
+        RankWave->SetSampleRate(static_cast<uint32>(QuebecRankTone::SampleRate));
+        RankWave->NumChannels = 1;
+        RankWave->Duration = static_cast<float>(QuebecRankTone::Frames) / static_cast<float>(QuebecRankTone::SampleRate);
+        RankAudio->SetSound(RankWave);
+    }
+    RankWave->ResetAudio();
+    int16 Pcm[QuebecRankTone::Frames];
+    for (int32 Frame = 0; Frame < QuebecRankTone::Frames; ++Frame)
+    {
+        const float Sample = FMath::Clamp(static_cast<float>(QuebecRankTone::SampleAt(Frame, Hz)), -1.f, 1.f);
+        Pcm[Frame] = static_cast<int16>(Sample * 32767.f);
+    }
+    RankWave->QueueAudio(reinterpret_cast<const uint8*>(Pcm), QuebecRankTone::Frames * static_cast<int32>(sizeof(int16)));
+    RankAudio->Play();
 }
 
 void AQuebecController::PlayCourtWave(UAudioComponent* Audio, TObjectPtr<USoundWaveProcedural>& Wave, int32 Frames, bool bWhistle)

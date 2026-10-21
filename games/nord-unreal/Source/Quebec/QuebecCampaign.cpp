@@ -1203,7 +1203,10 @@ void AQuebecCampaign::TickRace(float DeltaSeconds)
                             {
                                 const FString Pay = ChainHitText(LastChainPay, Chain, bWasSpoiled, TEXT("Lap in.  "));
                                 for (TActorIterator<AQuebecController> Player(GetWorld()); Player; ++Player)
+                                {
                                     Player->ShowInteractionMessage(Pay);
+                                    Player->PlayRank(Chain, bWasSpoiled);
+                                }
                             }
                         }
                     }
@@ -1489,6 +1492,7 @@ void AQuebecCampaign::ShowStepMessage(AQuebecController* Who, const TCHAR* Messa
     if (bFinished && LastChainPay > 0)
     {
         Who->ShowInteractionMessage(FString(Message) + ChainHitText(LastChainPay, Chain, bWasSpoiled, TEXT("  ")));
+        Who->PlayRank(Chain, bWasSpoiled);
         return;
     }
     Who->ShowInteractionMessage(Message);

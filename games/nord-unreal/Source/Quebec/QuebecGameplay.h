@@ -485,6 +485,7 @@ class QUEBEC_API AQuebecController : public APlayerController
 public:
     AQuebecController();
     void PlayFeedback(EQuebecFeedbackCue Cue);
+    void PlayRank(int32 ChainAfter, bool bWasSpoiled);
     virtual void BeginPlay() override;
     virtual void SetupInputComponent() override;
     virtual void PlayerTick(float DeltaTime) override;
@@ -590,6 +591,10 @@ private:
     UFUNCTION(Client, Reliable) void ClientInteractionMessage(const FString& Message);
     UFUNCTION(Client, Reliable) void ClientResidentGreeting(const FString& Message);
     UFUNCTION(Client, Reliable) void ClientPlayBark(int32 Style);
+    UFUNCTION(Client, Reliable) void ClientPlayRank(int32 ChainAfter, bool bWasSpoiled);
+    void PlayRankTone(int32 ChainAfter, bool bWasSpoiled);
+    UPROPERTY() TObjectPtr<class UAudioComponent> RankAudio;
+    UPROPERTY() TObjectPtr<class USoundWaveProcedural> RankWave;
     void ExitCar(AQuebecCar* Car);
 };
 
