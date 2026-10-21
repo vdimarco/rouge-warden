@@ -1122,20 +1122,22 @@ void AQuebecSideJobs::TickFare(float DeltaSeconds)
         FinishJob(true, TEXT("Passager déposé"));
         return;
     }
-    if (Previous == QuebecJobRules::FareWait && Next.Step == QuebecJobRules::FareAboard)
+    const bool bBoarded = Previous == QuebecJobRules::FareWait && Next.Step == QuebecJobRules::FareAboard;
+    if (bBoarded)
     {
         JobProgress = 0.5f;
         Say(TEXT("MONTE"), TEXT("Reste dans le char."), 2.5f);
-        SetObjective(TEXT("Dépose-le, sans quitter le char"), Drop, true);
         for (TActorIterator<AQuebecController> It(GetWorld()); It; ++It) It->PlayFeedback(EQuebecFeedbackCue::Checkpoint);
-        ForceNetUpdate();
-        return;
     }
     if (Next.Step != QuebecJobRules::FareAboard) return;
+    // On foot, the post stands on the loaner so the four seconds point at a car. In a car, it stands on the quay.
+    const bool bLoanWaiting = IsValid(LoanCar) && !LoanCar->Occupant && !LoanCar->GetController();
+    const int32 Aim = QuebecJobRules::FareAim(Next.Step, bDriving, bLoanWaiting);
+    const FVector Where = Aim == QuebecJobRules::FareAimLoan ? LoanCar->GetActorLocation() : Drop;
     const FString Words = bDriving ? FString(TEXT("Dépose-le, sans quitter le char"))
         : FString::Printf(TEXT("Reviens dans le char, %d s"), QuebecJobRules::FareSecondsLeft(Next.OnFoot));
-    if (ObjectiveText.Equals(Words, ESearchCase::CaseSensitive)) return;
-    SetObjective(Words, Drop, true);
+    if (ObjectiveText.Equals(Words, ESearchCase::CaseSensitive) && FVector::DistSquared2D(TargetLocation, Where) <= 1.) return;
+    SetObjective(Words, Where, true);
     ForceNetUpdate();
 }
 
@@ -1177,10 +1179,15 @@ void AQuebecSideJobs::UpdatePresentation()
         GoalColumn->SetRelativeLocation(TargetLocation+FVector(0.,0.,450.));
         GoalBag->SetRelativeLocation(TargetLocation+FVector(0.,0.,22.+6.*FMath::Sin(Clock*3.f)));
         GoalCaption->SetRelativeLocation(TargetLocation+FVector(0.,0.,330.));
+        const int32 FareCap = QuebecJobRules::FareCaption(
+            FVector::Dist2D(TargetLocation, GroundPoint(SideJobVector(QuebecJobRules::Markers[SideJobFare]), 0.f)) <= QuebecJobRules::FarePlaceRadius,
+            FVector::Dist2D(TargetLocation, GroundPoint(SideJobVector(QuebecJobRules::FareDrop), 0.f)) <= QuebecJobRules::FarePlaceRadius);
+        const FString FareWord = FareCap == QuebecJobRules::FareAimLoan ? FString(TEXT("CHAR")) :
+            FareCap == QuebecJobRules::FareAimPickup ? FString(TEXT("PASSAGER")) : FString(TEXT("QUAI"));
         const FString Label = JobIndex == SideJobDelivery ? (JobStep == 0 ? FString(TEXT("CAFE / COMMANDE")) : FString::Printf(TEXT("PORTE %d/3"),JobStep)) :
             JobIndex == SideJobGoons ? FString(TEXT("THEATRE")) :
             JobIndex == SideJobPosters ? FString::Printf(TEXT("AFFICHE %d/3"), FMath::Min(QuebecJobRules::PosterBits(JobStep) + 1, QuebecJobRules::PosterCount)) :
-            JobIndex == SideJobFare ? (JobStep <= 0 ? FString(TEXT("PASSAGER")) : FString(TEXT("QUAI"))) :
+            JobIndex == SideJobFare ? FareWord :
             FString(TEXT("GARAGE"));
         // SetText rebuilds the caption's glyphs, so it runs only when the label changes.
         if (!Label.Equals(GoalLabel,ESearchCase::CaseSensitive)) { GoalLabel = Label; GoalCaption->SetText(FText::FromString(Label)); }

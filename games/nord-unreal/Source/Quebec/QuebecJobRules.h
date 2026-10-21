@@ -196,6 +196,30 @@ namespace QuebecJobRules
         return true;
     }
 
+    // Where the fare marker stands. On foot with a loaner waiting, it stands on that car.
+    // Driving, or on foot with no loaner, it stands on the quay. Before boarding it stands on the pickup.
+    inline constexpr int FareAimPickup = 0;
+    inline constexpr int FareAimLoan = 1;
+    inline constexpr int FareAimDrop = 2;
+    // A post this close to the pickup or the quay uses that place's word. The loaner spawns farther along the lane.
+    inline constexpr double FarePlaceRadius = 80.;
+
+    inline int FareAim(int Step, bool bDriving, bool bLoanWaiting)
+    {
+        if (Step == FareWait) return FareAimPickup;
+        if (Step == FareAboard && !bDriving && bLoanWaiting) return FareAimLoan;
+        return FareAimDrop;
+    }
+
+    // The post's word follows the place. A post on the pickup says the passenger. A post on the quay says the quay.
+    // Anywhere else is the loaner.
+    inline int FareCaption(bool bAtPickup, bool bAtDrop)
+    {
+        if (bAtPickup) return FareAimPickup;
+        if (bAtDrop) return FareAimDrop;
+        return FareAimLoan;
+    }
+
     inline int PosterBits(int Mask)
     {
         int Count = 0;

@@ -244,6 +244,16 @@ namespace
         Expect(!FareCarIsFree(false, false, true, false, false, 0.f), "a police car counts as a ride");
         Expect(!FareCarIsFree(false, false, false, true, false, 0.f), "a wreck counts as a ride");
         Expect(FareTakeSpeed == 120.f, "the door speed drifted from the traffic car a player can enter");
+        Expect(FareAim(FareWait, false, true) == FareAimPickup, "the pickup post jumps to the loaner before anyone boards");
+        Expect(FareAim(FareAboard, false, true) == FareAimLoan, "on foot the post stays on the quay while the loaner waits");
+        Expect(FareAim(FareAboard, true, true) == FareAimDrop, "a driver is sent back to the empty loaner");
+        Expect(FareAim(FareAboard, false, false) == FareAimDrop, "on foot with no loaner the post hunts a car that is not there");
+        Expect(FareAim(FareDone, false, true) == FareAimDrop, "a finished fare points at the loaner");
+        Expect(FareCaption(true, false) == FareAimPickup, "the pickup post says the quay");
+        Expect(FareCaption(false, true) == FareAimDrop, "the quay post says the car");
+        Expect(FareCaption(false, false) == FareAimLoan, "a post on the loaner says the quay");
+        Expect(FareCaption(true, true) == FareAimPickup, "a post on both places prefers the quay");
+        Expect(FarePlaceRadius == 80., "the place word reaches the loaner");
     }
 
     void GuideTests()
