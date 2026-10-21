@@ -948,3 +948,38 @@ Unreal is not available in this environment, so in-engine frames are the last co
 - Playability raw: 39 / 10 dimensions, index 39
 - Total: 101 / 200
 - Delta vs last round: +1
+
+### Round 28 — 2026-10-21 — rubric v1
+
+- What changed: the comic post process in `Scripts/apply_comic_style.py` paints a night grade after the clearcoat. A sky pixel toward a fixed moon direction takes the authored moon colour `(0.62, 0.72, 1)` plus a white disc. Sixteen taps of the post-process input spill warm windows and white headlights onto neighbouring pixels. `NightFactor` comes from `MPC_NordAtmosphere`. At 0 the mix returns the colour unchanged. `NightOffset` −9, `WindowGlow`, and the lamp switch stay in the sky model.
+- Why it helped: Atmosphere was at 7. The midnight plate was flat rectangles on a black sky. The moon and the spill make a lit night. The darkness, the lamp switch, and the window glow were already the sky model.
+- Screenshots: before `docs/gauntlet/gta-graphics/round-28/before-night.png`, after `docs/gauntlet/gta-graphics/round-28/after-night.png`. Both are the same walking-camera night plate (arm 420, socket Y 70, socket Z 110, pitch −12, horizontal FOV 90). The coupe is a box stand-in, not the seventies mesh. Not an Unreal capture. Mean absolute delta is 0.052 and the max is 0.92. The lower street, which is already black, stays at delta 0. The node runs after tonemapping, so a pixel whose peak is under about 0.20 is not re-crushed and does not become neon. `Scripts/test_night.py` passed. `Scripts/test_coat.py` passed. `Scripts/test_cloud.py` passed. `Scripts/test_horizon_haze.py` passed. `Scripts/test_plateau_trees.py` passed. `Scripts/test_crew_colour.py` passed. `Scripts/test_contact.py` passed. `GET /gta/` returned 200. OpenSpec CLI is not installed, so the change files were not validated with `openspec`.
+- Next target: color palette, by reflecting these neon lights on the street. Animation smoothness stays at 3 and is skipped until a pose can be drawn.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 7 | The bloom is a post halo on lights the sky model already turns on. Exposure is unchanged. |
+| Color palette | 6 | The neon sits in the existing orange windows and white headlights. |
+| Detail density | 7 | The English bond and the street props are unchanged. |
+| Texture and material quality | 8 | The clearcoat is unchanged. The grade does not retouch a surface. |
+| Composition and camera | 6 | The walking socket is unchanged. |
+| Atmosphere | 8 | The midnight sky now has a moon and the windows spill. It is sixteen point taps, not a bloom pyramid. |
+| Character models | 6 | The crew hue grade is unchanged. |
+| Animation smoothness | 3 | Skipped. The blend space still cannot be posed here. |
+| Particles and VFX | 6 | Rain rings are unchanged. The spill is a post gather, not a particle. |
+| UI polish | 6 | The paper rule is unchanged. |
+| Responsiveness and input latency | 4 | Not measured this round. |
+| Controls feel | 4 | Not played. |
+| Mission clarity | 5 | The objective words are unchanged. |
+| Pacing | 4 | Unchanged mission slice. |
+| Fun factor | 3 | Not played. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 4 | No new juice. |
+| Sound design | 3 | Not listened to. |
+| Variety | 3 | One district, one midnight plate. The clear-day frame is the same shader with NightFactor 0. |
+| Performance stability | 5 | The comic source tests passed. The grade adds sixteen scene-colour taps. Frame time was not remeasured. |
+
+- Aesthetics raw: 63 / 10 dimensions, index 63
+- Playability raw: 39 / 10 dimensions, index 39
+- Total: 102 / 200
+- Delta vs last round: +1

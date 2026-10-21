@@ -227,6 +227,53 @@ float CoatNdV = saturate(dot(NormalC, -Ray));
 float CoatEdge = pow(1.0 - CoatNdV, 5.0);
 float Coat = Clear * (0.62 + 0.38 * CoatEdge) * SkyHit;
 Color = lerp(Color, SkyRefl, Coat);
+
+// Night grade. Masaki Kawase, "Frame Buffer Postprocessing Effects in
+// DOUBLE-S.T.E.A.L (Wreckless)" (GDC 2003), gathers bloom from wide taps.
+// A pyramid does not fit this node, so sixteen taps are the gather. The moon
+// disc uses the authored moon colour. Night exposure, window glow and the lamp
+// switch stay in the sky model. NightFactor 0 returns the clear-day colour.
+float3 MoonDir = normalize(float3(0.90, 0.22, 0.25));
+float MoonDot = saturate(dot(Ray, MoonDir));
+float MoonDisc = pow(MoonDot, 900.0);
+float MoonHalo = pow(MoonDot, 5.0);
+float3 MoonCol = float3(0.62, 0.72, 1.0);
+float HaloMix = saturate(MoonHalo * 0.65);
+float3 NightSky = Color * (1.0 - HaloMix) + MoonCol * HaloMix;
+NightSky = NightSky * (1.0 - MoonDisc) + float3(0.93, 0.95, 1.0) * MoonDisc;
+
+float3 Here = SceneTextureLookup(ColorUV, 14, false).rgb;
+float HerePeak = max(Here.r, max(Here.g, Here.b));
+float HereWarm = saturate((Here.r - Here.b) / max(HerePeak, 1.0e-3));
+float HereHot = smoothstep(0.20, 0.48, HerePeak) * smoothstep(0.34, 0.60, HereWarm);
+float HereWhite = smoothstep(0.62, 0.88, HerePeak) * (1.0 - smoothstep(0.25, 0.45, HereWarm));
+float3 HereNeon = saturate(float3(HerePeak * 1.2, HerePeak * 0.40, HerePeak * 0.16));
+float3 HereLamp = saturate(float3(HerePeak, HerePeak * 0.96, HerePeak * 0.82));
+
+const float2 NightTap[16] = {
+    float2(6, 0), float2(4, 4), float2(0, 6), float2(-4, 4),
+    float2(-6, 0), float2(-4, -4), float2(0, -6), float2(4, -4),
+    float2(14, 0), float2(10, 10), float2(0, 14), float2(-10, 10),
+    float2(-14, 0), float2(-10, -10), float2(0, -14), float2(10, -10)
+};
+float3 Bloom = float3(0, 0, 0);
+for (int NightI = 0; NightI < 16; NightI++)
+{
+    float3 TapRgb = SceneTextureLookup(ColorUV + NightTap[NightI] * Texel, 14, false).rgb;
+    float TapPeak = max(TapRgb.r, max(TapRgb.g, TapRgb.b));
+    float TapWarm = saturate((TapRgb.r - TapRgb.b) / max(TapPeak, 1.0e-3));
+    float TapHot = smoothstep(0.20, 0.48, TapPeak) * smoothstep(0.34, 0.60, TapWarm);
+    float TapWhite = smoothstep(0.62, 0.88, TapPeak) * (1.0 - smoothstep(0.25, 0.45, TapWarm));
+    float3 TapNeon = saturate(float3(TapPeak * 1.2, TapPeak * 0.40, TapPeak * 0.16));
+    float3 TapLamp = saturate(float3(TapPeak, TapPeak * 0.96, TapPeak * 0.82));
+    Bloom += TapNeon * TapHot + TapLamp * TapWhite;
+}
+Bloom *= (1.0 / 16.0);
+float3 NightBody = saturate(Color + Bloom * 1.6);
+NightBody = lerp(NightBody, max(NightBody, HereNeon), step(0.5, HereHot));
+NightBody = lerp(NightBody, max(NightBody, HereLamp), step(0.5, HereWhite));
+float3 NightCol = Sky ? NightSky : NightBody;
+Color = lerp(Color, NightCol, saturate(NightFactor));
 return Color;
 '''
 
@@ -253,7 +300,7 @@ mat.set_editor_property('material_domain', u.MaterialDomain.MD_POST_PROCESS)
 mat.set_editor_property('blendable_location', u.BlendableLocation.BL_SCENE_COLOR_AFTER_TONEMAPPING)
 
 custom = node(mat, u.MaterialExpressionCustom, code=HLSL, output_type=u.CustomMaterialOutputType.CMOT_FLOAT3, description='ComicInk')
-names = ['UV', 'Center', 'Depth', 'Normal', 'StencilInput', 'CrewDepthInput', 'FoliageInput', 'RoughnessInput', 'InkWidth', 'Misregistration', 'Bands', 'Saturation', 'DotSize']
+names = ['UV', 'Center', 'Depth', 'Normal', 'StencilInput', 'CrewDepthInput', 'FoliageInput', 'RoughnessInput', 'InkWidth', 'Misregistration', 'Bands', 'Saturation', 'DotSize', 'NightFactor']
 inputs = []
 for name in names:
     entry = u.CustomInput()
@@ -272,6 +319,14 @@ link(scene(u.SceneTextureId.PPI_SHADING_MODEL_ID), 'Color', custom, 'FoliageInpu
 link(scene(u.SceneTextureId.PPI_ROUGHNESS), 'Color', custom, 'RoughnessInput')
 for name, value in [('InkWidth', 1.0), ('Misregistration', 0.10), ('Bands', 5.0), ('Saturation', 1.05), ('DotSize', 5.0)]:
     link(node(mat, u.MaterialExpressionScalarParameter, parameter_name=name, default_value=value), '', custom, name)
+# The sky writes NightFactor on this collection (default 0). A scalar on the comic
+# material would stay at day, so the grade only goes night when the collection exists.
+mpc_path = '/Game/Art/Atmosphere/MPC_NordAtmosphere'
+if assets.does_asset_exist(mpc_path):
+    mpc = assets.load_asset(mpc_path)
+    link(node(mat, u.MaterialExpressionCollectionParameter, collection=mpc, parameter_name='NightFactor'), '', custom, 'NightFactor')
+else:
+    link(node(mat, u.MaterialExpressionConstant, r=0.0), '', custom, 'NightFactor')
 M.connect_material_property(custom, '', u.MaterialProperty.MP_EMISSIVE_COLOR)
 M.recompile_material(mat)
 assets.save_loaded_asset(mat)
