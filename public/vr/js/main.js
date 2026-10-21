@@ -406,6 +406,8 @@ function streetFrame(dt, inPlay) {
 /* ---------------- the city action: sprint, fights, cars and jobs (flat play) ---------------- */
 // The action runs in flat play once the game has started; a headset keeps its swinging game.
 let sprinting = false, energy = 1, energyWait = 0, driving = false, fightHints = 0, sludgeRetry = -1, routeRetry = -1;
+// a won job hangs on a big word before the next mission card (winHold seconds, winCard on the pill, winStory after)
+let winHold = 0, winCard = null, winStory = null, lastWin = null;
 // A test can run the story route under ?nocut. Real play runs it only after Mission 1, and the tests leave it off.
 let routeForce = false;
 // The fall into the lake after the toilet erupts (flat screen): { t, sludge } while it lasts. The splash fishes the hero out on the
@@ -665,8 +667,18 @@ function actionFrame(dt, inp) {
   syncRopeTargets();
   if (lakeDrop && ((lakeDrop.t += dt) > LAKE_DROP.max || (lakeDrop.t > 0.5 && P.onGround && !respawning))) endLakeDrop();
   if (sludgeRetry > 0 && (sludgeRetry -= dt) <= 0) { sludgeRetry = -1; startSludge(); }
-  if (routing && !jobs.active && routeRetry < 0) routeRetry = 0.8;
-  if (routeRetry > 0 && (routeRetry -= dt) <= 0) startStoryStep();
+  // the win hangs in play. The next mission, and its card, wait until that moment is over.
+  if (winHold > 0) {
+    winHold -= dt;
+    if (winHold <= 0) {
+      winHold = 0; winCard = null;
+      if (winStory) { const name = winStory; winStory = null; story(name); }
+      if (routeOpen() && !jobs.active && routeRetry < 0) routeRetry = 0.35;
+    }
+  } else {
+    if (routing && !jobs.active && routeRetry < 0) routeRetry = 0.8;
+    if (routeRetry > 0 && (routeRetry -= dt) <= 0) startStoryStep();
+  }
   hudFrame(dt, inp);
 }
 // two goons on each clogged roof near the hero, once (they come back after a reload)
@@ -704,6 +716,34 @@ function combatEvent(e) {
     case "windup": if (fightHints < 1 && !G.input.easySwing) { fightHints++; ui.say("A goon! Get close and press " + (G.input.kind === "pad" ? "RT" : "the left mouse button") + " to punch. When he winds up, press " + (G.input.kind === "pad" ? "A" : "Space") + " to dodge.", 4); } break;
   }
 }
+// A won job, in this game's own words. The sheet has no new title, so a flush and a kasplash carry the moment.
+function winWord(job) { return job === "sludge" ? "FLUSH" : "KASPLASH"; }
+const WIN_HIT = { t: 0 };
+// In front of the camera, short of the first wall, so the word sits in the view and not inside a block.
+function winSpot(out) {
+  camera.getWorldDirection(FXD);
+  if (FXD.lengthSq() < 1e-8) FXD.set(0, 0, -1); else FXD.normalize();
+  // in the gap between the camera and the hero, so the word is a title and the city does not cover it
+  let dist = 2.8;
+  const hit = city.raycast(camera.position.x, camera.position.y, camera.position.z, FXD.x, FXD.y, FXD.z, 8, WIN_HIT);
+  if (hit && WIN_HIT.t < dist + 0.3) dist = Math.max(1.45, WIN_HIT.t * 0.5);
+  return out.copy(camera.position).addScaledVector(FXD, dist);
+}
+// The payoff: a comic word wider than a finisher, a cheer, and a short slow moment. The next card waits.
+function winPayoff(e) {
+  const word = winWord(e.job);
+  const at = winSpot(FXP);
+  const wide = flatOn && !isXR();
+  const shown = !!fx.word(word, at, { scale: 2.4, size: wide ? screenWide(at, 0.62) : 0, life: 3.2 });
+  audio.sfx("trialEnd");
+  audio.sfx("cheer", { vol: 1.1 });
+  haptic(0, 1, 160); haptic(1, 1, 160);
+  if (!REDUCED) { impact({ stop: 0.14, shake: 0.55, frame: true }); slowT = Math.max(slowT, 0.55); }
+  lastWin = { job: e.job, word, shown };
+  winCard = { title: "GOT IT", detail: (JOB_NAMES[e.job] || "Job") + " done. +" + (e.reward || 0) + " Loonies", short: "GOT IT", n: 0, of: 0, tag: "win", goal: null };
+  winHold = 1.35;
+  winStory = null;
+}
 const FAIL_LINES = {
   drain: "The Market drain blew! Sludge everywhere. Try again!",
   time: "Out of time!", dumpster: "Ouch! A dumpster broke the fall. They are fine, but you missed.",
@@ -723,24 +763,21 @@ function jobEvent(e) {
     case "seal": fx.word("SPLORT", FXP.set(e.x, e.y + 0.6, e.z), { scale: 1.3 }); audio.sfx("pump"); if (e.n >= e.of) ui.toast("Leak sealed!"); break;
     case "caught": audio.sfx("unlock"); haptic(1, 0.6, 50); break;
     case "done": {
-      audio.sfx("trialEnd");
       game.reward(e.reward);
+      winPayoff(e);
       if (e.job === "sludge") {
         save.jobs.sludge = true;
         if (!Number.isInteger(save.jobs.route)) save.jobs.route = 0;
         syncStory();
         ui.toast("Bomb defused! +" + e.reward + " Loonies");
-        if (routeOpen()) { story(STORY_ROUTE[0].scene); routeRetry = 0.6; }
+        if (routeOpen()) winStory = STORY_ROUTE[0].scene;
       } else {
         syncStory();
         const adv = routeOpen() ? jobs.storyAdvance(e.job) : null;
         if (adv && adv.ok) {
           save.jobs.route = jobs.story.route;
-          if (adv.next) {
-            ui.toast(JOB_NAMES[e.job] + " done! +" + e.reward + " Loonies");
-            story(adv.next.scene);
-            routeRetry = 0.6;
-          } else ui.toast(JOB_NAMES[e.job] + " done! +" + e.reward + " Loonies. The districts are still clogged. Flush them to wake the King.");
+          ui.toast(JOB_NAMES[e.job] + " done! +" + e.reward + " Loonies" + (adv.next ? "" : ". The districts are still clogged. Flush them to wake the King."));
+          if (adv.next) winStory = adv.next.scene;
         } else ui.toast(JOB_NAMES[e.job] + " done! +" + e.reward + " Loonies");
       }
       save.jobs.done[e.job] = (save.jobs.done[e.job] || 0) + 1;
@@ -772,6 +809,7 @@ function routeOpen() {
   return !!jobs.storyNext();
 }
 function routeCard() {
+  if (winHold > 0 && winCard) return winCard;
   if (jobs.active || !routeOpen()) return null;
   const step = jobs.storyNext();
   if (!step) return null;
@@ -2365,7 +2403,7 @@ G.test = {
   // tune the Verse numbers for a test (VERSE in main.js): verse({ lines: 0 }); returns a copy of them all
   verse(o) { if (o) Object.assign(VERSE, o); return { ...VERSE }; },
   // the city action (flat play): fights, cars, jobs, the moves, and the screen bits
-  action: () => ({ on: actionOn(), driving, sprinting, energy, roll: P.roll || 0, combat: combat.info(), cars: cars.info(), jobs: jobs.info(), hud: actHud.info(), view: actionView.info(), figures: figures.info(), save: JSON.parse(JSON.stringify(save.jobs)), ropeTargets: [...ropeIds], cueAir: cueAir.slice(), slowT, hero: G.hero.info().pose, zip: zip ? { ...zip } : null, hitStop: hitStopT,
+  action: () => ({ on: actionOn(), driving, sprinting, energy, roll: P.roll || 0, combat: combat.info(), cars: cars.info(), jobs: jobs.info(), hud: actHud.info(), view: actionView.info(), figures: figures.info(), save: JSON.parse(JSON.stringify(save.jobs)), ropeTargets: [...ropeIds], cueAir: cueAir.slice(), slowT, hero: G.hero.info().pose, zip: zip ? { ...zip } : null, hitStop: hitStopT, win: lastWin ? { ...lastWin, hold: winHold } : null,
     verse: { mode: verseMode(), impact: impactT, sense: senseAmt, twos: G.hero.info().twos, plate: VS.plate, mood: VS.mood, moodHurt, moodFight, smear: G.hero.info().smear, cam: flatcam.info() } }),
   // the goon as the figures draw him (on threes in flat play)
   goonView(id) { const g = combat.goons.find((q) => q.id === id); if (!g) return null; const v = goonOnThrees(g); return { phase: v.phase, poseT: v.poseT, pose: v.pose, x: v.x, z: v.z }; },
@@ -2399,6 +2437,22 @@ G.test = {
   enterCar(id) { const c = id == null ? cars.near(P.pos.x, P.pos.y, P.pos.z) : cars.cars.find((q) => q.id === id && q.on); if (c) enterCar(c); return driving; },
   exitCar() { if (driving) exitCar(); return !driving; },
   attack() { return tryAttack(); },
+  // End the live job on the next update: the runner, the crew, or a catch already in hand. The copy from action() is not the live one.
+  finishJob() {
+    const A = jobs.active;
+    if (!A || !A.data) return false;
+    const D = A.data;
+    const down = (g) => { if (g) { g.hp = 0; g.state = "down"; g.on = false; } };
+    if (A.type === "thief") down(D.runner);
+    else if (A.type === "sludge") { D.crew = true; D.hold = false; down(D.runner); for (const g of combat.group("job")) down(g); }
+    else if (A.type === "brawl" || A.type === "mugging") { if (A.type === "brawl") D.wave = 2; for (const g of combat.group("job")) down(g); }
+    else if (A.type === "getaway") { D.stopped = true; D.crew = true; for (const g of combat.group("job")) down(g); }
+    else if (A.type === "tanker") { D.seals = 99; for (const g of combat.group("job")) down(g); }
+    else if (A.type === "catch") { D.falling = true; D.caught = true; }
+    else if (A.type === "washer") D.caught = true;
+    else return false;
+    return true;
+  },
   sample: (points) => new Promise((resolve, reject) => samples.push({ points, resolve, reject })),
 };
 
