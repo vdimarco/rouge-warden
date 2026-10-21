@@ -189,7 +189,8 @@ AQuebecCharacter::AQuebecCharacter()
     CameraArm->TargetArmLength = 420.f;
     // The aim pose already sits 70 cm to the figure's right. Idle uses that same shoulder,
     // so the street stays open beside them and aiming does not slide the frame sideways.
-    CameraArm->SocketOffset = FVector(0., 70., 55.);
+    // Raising the socket drops the figure in the frame, so the street ahead is the picture.
+    CameraArm->SocketOffset = FVector(0., 70., 110.);
     CameraArm->bUsePawnControlRotation = false;
     CameraArm->SetUsingAbsoluteRotation(true);
     Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));

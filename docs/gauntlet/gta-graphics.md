@@ -668,3 +668,38 @@ Unreal is not available in this environment, so in-engine frames are the last co
 - Playability raw: 39 / 10 dimensions, index 39
 - Total: 93 / 200
 - Delta vs last round: +1
+
+### Round 20 — 2026-10-21 — rubric v1
+
+- What changed: the walking socket and the combat socket rise from 55 cm to 110 cm. Aim keeps a 7 cm lift, at 117 cm. The 70 cm shoulder, the pitch clamps, the car socket, and `TargetOffset.Z` stay. The camera updates when the pawn is constructed in the editor.
+- Why it helped: Composition was tied at 5. The shoulder already opened the right side, and the figure still sat in the middle of the frame.
+- Screenshots: before `docs/gauntlet/gta-graphics/round-20/before-frame.png`, after `docs/gauntlet/gta-graphics/round-20/after-frame.png`. These are a perspective shade of the walking camera at pitch −12, not an Unreal capture. `Scripts/test_camera_shoulder.py` passed (worst framing 0.853, inside 0.95). `Quebec.Camera.LookBounds` did not run. `GET /gta/` returned 200. OpenSpec CLI is not installed, so the change files were not validated with `openspec`.
+- Next target: character models. The rim is unchanged, and a clothing break has to come from source colour because the blend space still cannot be posed. Animation smoothness stays at 3 and is skipped until a pose can be drawn.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 6 | The window apron is unchanged. The camera does not cast. |
+| Color palette | 6 | Brick and stone hues are unchanged. |
+| Detail density | 6 | Troughs, rails, and doors are unchanged. |
+| Texture and material quality | 6 | The mottled face is unchanged. |
+| Composition and camera | 6 | The figure sits lower and the street ahead fills more of the frame. The shoulder offset stays. It is still a spring arm on a stand-in figure. |
+| Atmosphere | 6 | The horizon fade is unchanged. |
+| Character models | 5 | The crew rim is unchanged. The shaded figure is a capsule. |
+| Animation smoothness | 3 | Skipped. The blend space still cannot be posed here. |
+| Particles and VFX | 6 | Rain rings are unchanged. |
+| UI polish | 5 | Untouched. |
+| Responsiveness and input latency | 4 | Not measured this round. |
+| Controls feel | 4 | Not played. |
+| Mission clarity | 5 | Unchanged objective card. |
+| Pacing | 4 | Unchanged mission slice. |
+| Fun factor | 3 | Not played. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 4 | No new juice. |
+| Sound design | 3 | Not listened to. |
+| Variety | 3 | One district. |
+| Performance stability | 5 | The camera port passed. The socket is a constant. Frame time was not remeasured. |
+
+- Aesthetics raw: 55 / 10 dimensions, index 55
+- Playability raw: 39 / 10 dimensions, index 39
+- Total: 94 / 200
+- Delta vs last round: +1
