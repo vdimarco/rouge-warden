@@ -519,12 +519,12 @@ vec3 wallColor(int k, float shop, float sd, float salt, float h1, float h2, floa
     // is printed after the grade so that grade cannot pull every brick back to one hue. The course crest holds
     // until the course is only a few pixels, past the point where the unit tint itself fades.
     float grain = mix(batch, unit, unitNear);
-    vec3 loC = st == 3 ? vec3(0.74, 0.76, 0.80) : st == 4 ? vec3(0.72, 0.78, 0.88) : vec3(0.68, 0.55, 0.48);
-    vec3 hiC = st == 3 ? vec3(1.16, 1.12, 1.02) : st == 4 ? vec3(1.10, 1.08, 1.02) : vec3(1.24, 1.02, 0.82);
+    vec3 loC = st == 3 ? vec3(0.62, 0.64, 0.70) : st == 4 ? vec3(0.60, 0.66, 0.78) : vec3(0.50, 0.36, 0.30);
+    vec3 hiC = st == 3 ? vec3(1.28, 1.22, 1.08) : st == 4 ? vec3(1.22, 1.16, 1.06) : vec3(1.45, 1.12, 0.78);
     clayPrint = mix(loC, hiC, grain);
     float courseHold = 1.0 - smoothstep(0.30, 0.80, max(wy, wx));
-    clayPrint *= mix(1.0, mix(0.70, 1.16, up) * mix(1.0, 0.78, down), courseHold);
-    clayOn = max(unitNear, batchNear * 0.9) * (1.0 - joint);
+    clayPrint *= mix(1.0, mix(0.55, 1.35, up) * mix(1.0, 0.62, down), courseHold);
+    clayOn = max(unitNear, batchNear) * (1.0 - joint * 0.65);
   }
   vec3 celWall = comicCelX(wallP, band, LITMUL, LITADD);
   vec3 green = vec3(0.5, 0.9, 0.25);
