@@ -1483,8 +1483,10 @@ function tick(dt, frame, time) {
   if (resumeGrace > 0 && !paused) resumeGrace -= dt;
   // 8. the opening (it may place the rig: then the world poses follow at once)
   if (G.state === "intro") { portal.update(dt, G.time, G.frame, inp); toWorld(inp); }
-  // 9. aim and fire
+  // 9. aim and fire. A held mouse or pad button that has seen the GO cue lets that rope go before physics,
+  // so the let-go is the one the cue showed, and the next frame can catch the building ahead.
   if (!paused && (G.state === "play" || G.state === "intro")) aimAndFire(dt, inp);
+  if (!paused && G.state === "play") holdChainRelease(dt, inp);
   // 10. the body follows the head, then the physics substeps
   if (G.state === "intro") {
     P.pos.x = inp.head.pos.x; P.pos.y = city.start.y; P.pos.z = inp.head.pos.z;
@@ -1553,6 +1555,10 @@ function couple(inp) {
 // still fires if a target shows up within SWING.fireHold; with none it is a dry fire along the view. A test aim override on a hand
 // wins: for that hand ropes.aim decides, as before.
 const latch = [false, false], realWait = [false, false], swingCool = [0, 0];
+// A held swing lets go after the GO cue has been readable, then catches the next building. chainArm is that catch.
+// chainFrom is the building just left, so the next web does not grab it again. cueHold is how long this rope's cue has shown.
+const CHAIN_SEE = 0.33;
+const chainArm = [false, false], chainFrom = [null, null], cueHold = [0, 0];
 let noneAt = -99;
 const PICK_OPTS = { avoidBid: -1 }; // reused: the options of the second pick when both swing inputs go down in one frame
 const PHONE_DIR = new THREE.Vector3(), PROJ = { x: 0, y: 0, depth: 0, behind: false, inView: false };
@@ -1619,6 +1625,15 @@ function aimAndFire(dt, inp) {
       continue;
     }
     latch[i] = false; // an idle rope has nothing to keep
+    // A held button, after the GO cue let the last rope go, catches the next building. It does not dry-fire while none is ahead.
+    if (useEasy && chainArm[i] && h.holding && !h.triggerDown && settings.hold !== "toggle") {
+      if (swingCool[i] > 0) { lastAim[i] = null; continue; }
+      const next = playerEasy();
+      lastAim[i] = next;
+      const building = next && next.valid && !next.sky && next.tag === "building" && next.id !== chainFrom[i] && !ui.blocking(i);
+      if (building) { realWait[i] = true; shoot(i, h, next); }
+      continue;
+    }
     // easy swing only looks for an anchor on the press. The rest of the time the old ray stays for a headset and for G.test.aimAt.
     if (useEasy && !h.triggerDown && fireWait[i] <= 0) { lastAim[i] = null; continue; }
     const pk = pickerOn && !ov.aim[i] && !useEasy;
@@ -1647,6 +1662,31 @@ function aimAndFire(dt, inp) {
         fireWait[i] = 0; realWait[i] = false;
       }
     }
+  }
+}
+// Mouse and pad, flat play: a building rope that has shown the GO cue lets go while the button stays down, and the
+// next frame catches the building ahead. The cue stays long enough to read. A clog, a pipe, the crack and a phone rope stay.
+function holdChainRelease(dt, inp) {
+  if (driving || !flatOn || isXR() || inp.easySwing || settings.hold === "toggle") {
+    cueHold[0] = cueHold[1] = 0;
+    return;
+  }
+  for (let i = 0; i < 2; i++) {
+    const h = inp.hands[i], r = P.ropes[i];
+    if (!h.holding) { chainArm[i] = false; cueHold[i] = 0; continue; }
+    const building = r.state === "attached" && r.easy && !r.sticky && r.target && !SPECIAL_TAGS[r.target.tag];
+    const live = building && !P.onGround && !P.wall && releaseWindow(P, r, 0);
+    if (live && cueAir[i]) {
+      cueHold[i] += dt;
+      if (cueHold[i] < CHAIN_SEE) continue;
+    } else if (!(cueHold[i] > 0 && building && !P.onGround && !P.wall && cueAir[i] && !live)) {
+      cueHold[i] = 0;
+      continue;
+    }
+    chainFrom[i] = r.target.id;
+    chainArm[i] = true;
+    cueHold[i] = 0;
+    release(P, i);
   }
 }
 // a phone tap on side i (0 the left half of the screen, 1 the right) this frame
