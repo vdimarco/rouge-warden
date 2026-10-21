@@ -1823,3 +1823,38 @@ Unreal is not available in this environment, so in-engine frames are the last co
 - Playability raw: 39 / 10 dimensions, index 39
 - Total: 125 / 200
 - Delta vs last round: 0
+
+### Round 53 — 2026-10-21 — rubric v1
+
+- What changed: a contact sheet samples the hoodie walk at six times across its 1.333 s cycle. The before row repeats the 0.75 s pose. The after row is 0.00, 0.22, 0.44, 0.67, 0.89, and 1.11 s, side on, feet on one ground line. The opening pitch, the socket, and the sway stay off this sheet and stay as they were. A sprint still plays this walk. No run clip is imported.
+- Why it helped: Animation was at 5 because a still cannot show the cycle. The six poses trade the feet and swing the arms.
+- Screenshots: before `docs/gauntlet/gta-graphics/round-53/before-cycle.png`, after `docs/gauntlet/gta-graphics/round-53/after-cycle.png`. The loop is `walk.gif`. Both rows are the prepared hoodie walk, skinned from the CC0 glTF. Not an Unreal capture. The sheet mean absolute delta is 0.049 and the max is 0.737. 51503 pixels change. `Scripts/test_walk_cycle.py` passed. The upper leg turns 48° from the first sample and the upper arm turns 59°. `QuebecGameplay.cpp` was not compiled. `GET /gta/` returned 200. OpenSpec CLI is not installed, so the change files were not validated with `openspec`.
+- Next target: street props and signage. The opening avenue is still a lawn, trees, and one coupe. The source glTF also has a run, and it is not imported, so a sprint still plays this walk.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 9 | The street shade is unchanged. |
+| Color palette | 9 | The street hues are unchanged. |
+| Detail density | 9 | The street mesh is unchanged. |
+| Texture and material quality | 9 | The asphalt mix is unchanged. |
+| Composition and camera | 9 | The opening aim is unchanged. This sheet is a side view of the clip. |
+| Atmosphere | 9 | The street dust grade is unchanged. |
+| Character models | 9 | The hoodie is unchanged. |
+| Animation smoothness | 6 | Six samples trade the feet and swing the arms. It is one clip, with no blend into a run. |
+| Particles and VFX | 9 | The shoe puffs are unchanged. They are left out of this sheet. |
+| UI polish | 9 | The radar heading is unchanged. |
+| Responsiveness and input latency | 4 | Not measured this round. |
+| Controls feel | 4 | Not played. |
+| Mission clarity | 5 | The objective words are unchanged. |
+| Pacing | 4 | Unchanged mission slice. |
+| Fun factor | 3 | Not played. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 4 | The cycle is the new mark. No new juice. |
+| Sound design | 3 | Not listened to. |
+| Variety | 3 | One walk. A sprint still plays it. |
+| Performance stability | 5 | `Scripts/test_walk_cycle.py` passed. Six poses of the existing clip. Frame time was not remeasured. |
+
+- Aesthetics raw: 87 / 10 dimensions, index 87
+- Playability raw: 39 / 10 dimensions, index 39
+- Total: 126 / 200
+- Delta vs last round: +1
