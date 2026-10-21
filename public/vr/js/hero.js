@@ -318,6 +318,29 @@ export function createHero(scene, renderer) {
   tilt.add(smear);
   smear.add(holder);
   scene.add(root);
+  // Wall-run dust: four reused smog puffs, drawn in code (no sprite). #8A8378, one every other step.
+  const PUFF_LIFE = 0.4, puffGeo = new THREE.SphereGeometry(0.12, 6, 4), puffs = [];
+  let puffSlot = 0;
+  for (let i = 0; i < 4; i++) {
+    const mat = new THREE.MeshBasicMaterial({ color: 0x8A8378, transparent: true, opacity: 0, depthWrite: false });
+    const m = new THREE.Mesh(puffGeo, mat);
+    m.visible = false; m.frustumCulled = false; scene.add(m);
+    puffs.push({ m, t: PUFF_LIFE });
+  }
+  function puffTick(dt) {
+    for (const p of puffs) {
+      if (p.t >= PUFF_LIFE) { if (p.m.visible) p.m.visible = false; continue; }
+      p.t += dt;
+      const k = Math.min(1, p.t / PUFF_LIFE);
+      p.m.material.opacity = 0.8 * (1 - k);
+      p.m.scale.setScalar(1 + 0.7 * k);
+    }
+  }
+  function puffAt(x, y, z) {
+    const p = puffs[puffSlot]; puffSlot = (puffSlot + 1) % puffs.length;
+    p.t = 0; p.m.visible = true; p.m.scale.setScalar(1); p.m.material.opacity = 0.8;
+    p.m.position.set(x, y, z);
+  }
 
   let rig = null, visible = false, opacity = 1, chestH = 1.25; // hidden until main shows it (flat play)
   const handPos = [new THREE.Vector3(), new THREE.Vector3()], headPos = new THREE.Vector3(), footPos = [new THREE.Vector3(), new THREE.Vector3()];
@@ -328,7 +351,7 @@ export function createHero(scene, renderer) {
     yaw: 0, inited: false, time: 0, phase: 0,
     run: 0, air: 0, rise: 0, swing: 0, land: 0, crouch: 0, dive: 0, diveAgo: 9,
     roll: -1, rollDur: 0.62, atk: null, atkT: 0, hitT: 9, hitX: 0, hitZ: 0, carry: 0, carryOn: false, hidden: false,
-    reach: [0, 0], yank: [0, 0], prevYank: [0, 0], prevGround: true, prevVy: 0, cling: 0, prevWall: false,
+    reach: [0, 0], yank: [0, 0], prevYank: [0, 0], prevGround: true, prevVy: 0, cling: 0, prevWall: false, puffStep: null,
     tiltQ: new THREE.Quaternion(), headYaw: 0, headPitch: 0,
     twos: 0, stepAcc: 0, posed: false, poseNow: false,
     smearOn: false, smear: 0, // the smear is allowed; how far the body stretches now (0 none, 0.3 = 30 % longer)
@@ -763,6 +786,7 @@ export function createHero(scene, renderer) {
   /* ---- the frame ---- */
   H.update = function update(dt, P, ropes, input) {
     dt = clamp(dt || 0, 0, 0.1);
+    puffTick(dt);
     chestH = P.chest || 1.25;
     const pos = P.pos, vel = P.vel;
     // On twos (the film's 12 poses a second): between poses the body slides with the player, but the pose and the facing hold.
@@ -796,6 +820,7 @@ export function createHero(scene, renderer) {
     const t = S.time;
     const hs = Math.hypot(vel.x, vel.z), speed = Math.hypot(hs, vel.y), ground = !!P.onGround;
     const wall = P.wall, cling = !!wall; // holding a wall (flat-play climbing): face it, hands on it, no air pose
+    const wallRun = !!(P.wallRun && P.wallRun.mode); // a fast run: the run cycle, feet on the wall, not the climb holds
 
     /* -- events read from the state: a hard landing, a yank -- */
     if (ground && !S.prevGround && !S.prevWall && S.prevVy < -3 && S.roll < 0) S.land = clamp(-S.prevVy / 13, 0.3, 1);
@@ -810,11 +835,11 @@ export function createHero(scene, renderer) {
       S.yank[i] = Math.max(0, S.yank[i] - dt * 3.6);
     }
     S.prevGround = ground; S.prevVy = vel.y; S.prevWall = cling;
-    S.cling += ((cling ? 1 : 0) - S.cling) * ease(dt, 14);
+    S.cling += (((cling && !wallRun) ? 1 : 0) - S.cling) * ease(dt, 14);
 
-    /* -- the wall climb: holds and the gait (world), or the mantle over the top -- */
-    if (cling) climbStep(dt, P, pos, vel, wall);
-    else climbOff(P, pos, ground);
+    /* -- the wall climb: holds and the gait (world), or the mantle over the top. A wall run keeps the run cycle. -- */
+    if (cling && !wallRun) climbStep(dt, P, pos, vel, wall);
+    else if (!wallRun) climbOff(P, pos, ground);
     CL.off.set(0, 0, 0);
     if (CL.mantle > 0) {
       // the body is already on the roof: draw it from the wall, pulling up on the edge first, then in over it
@@ -824,7 +849,7 @@ export function createHero(scene, renderer) {
     }
     // wC blends the climbing body in and out; the hands and feet are fully on their holds (wL) once the grab's reach is done,
     // which starts from where they were drawn. The hands press on the edge over the top while the arms can reach it.
-    const wC = CL.used ? S.cling : 0, wL = CL.on ? Math.max(wC, smooth(0, 0.22, CL.grabT)) : wC;
+    const wC = wallRun ? 0 : (CL.used ? S.cling : 0), wL = wallRun ? 0 : (CL.on ? Math.max(wC, smooth(0, 0.22, CL.grabT)) : wC);
     const wM = CL.mantle > 0 ? 1 - smooth(0.3, 0.55, 1 - CL.mantle) : 0;
 
     /* -- the ropes: which arm reaches, and where the anchors are -- */
@@ -872,7 +897,7 @@ export function createHero(scene, renderer) {
     /* -- pose weights -- */
     const fall = smooth(1.5, -2.5, vel.y);          // 0 rising .. 1 falling
     S.air += ((ground || cling ? 0 : 1) - S.air) * ease(dt, 14);
-    S.run += ((ground ? smooth(0.35, 1.6, hs) : 0) - S.run) * ease(dt, 10);
+    S.run += (((ground || wallRun) ? (wallRun ? 1 : smooth(0.35, 1.6, hs)) : 0) - S.run) * ease(dt, wallRun ? 22 : 10);
     S.swing += (((!ground && !cling && nAtt) ? 1 : 0) - S.swing) * ease(dt, 6);
     S.rise += (fall - S.rise) * ease(dt, 12);
     // the dive: no rope, not on a wall, falling fast with time to spare before the floor below. It comes in over a fifth of a
@@ -897,6 +922,18 @@ export function createHero(scene, renderer) {
     S.carry += ((S.carryOn ? 1 : 0) - S.carry) * ease(dt, 10);
     const freq = clamp(0.7 + 0.25 * (cling ? speed : hs), 0.7, 2.4); // on a wall the climb speed sets the hands' pace
     S.phase = (S.phase + dt * freq * TAU) % (TAU * 100);
+    // a step is half a cycle. On a wall run, every other step drops a smog puff at the feet, just off the wall.
+    const stepNow = Math.floor(S.phase / Math.PI);
+    if (wallRun && wall) {
+      if (S.puffStep !== stepNow) {
+        const emit = S.puffStep != null && (stepNow & 1) === 0;
+        S.puffStep = stepNow;
+        if (emit) {
+          const s = ((stepNow >> 1) & 1) ? 0.18 : -0.18;
+          puffAt(pos.x + wall.nx * 0.22 + wall.nz * s, pos.y + 0.06, pos.z + wall.nz * 0.22 - wall.nx * s);
+        }
+      }
+    } else S.puffStep = null;
 
     /* -- body orientation: the up axis leans toward the rope and into the velocity -- */
     V.u.set(0, 1, 0);
@@ -930,6 +967,8 @@ export function createHero(scene, renderer) {
     }
     // a hit: the body rocks back from the blow
     if (S.hitT < 0.4) { const k = Math.sin(Math.PI * S.hitT / 0.4) * 0.35; QA.setFromAxisAngle(XAX, k); S.tiltQ.multiply(QA); }
+    // feet (−Y) onto the wall (−Z, the facing). The run stride, which was forward, now goes up the wall.
+    if (wallRun) { QA.setFromAxisAngle(XAX, Math.PI / 2); S.tiltQ.copy(QA); }
     root.position.set(pos.x + CL.off.x, pos.y + CL.off.y, pos.z + CL.off.z);
     root.rotation.set(0, S.yaw, 0);
     tilt.position.set(0, chestH - (chestH - ROLL_PIVOT) * tuck, 0);
@@ -976,15 +1015,16 @@ export function createHero(scene, renderer) {
     }
     // run: a two-beat cycle, the arms against the legs
     if (wR > 0.001) {
-      const ph = S.phase, lift = 0.05 + 0.13 * clamp(hs / 3.5, 0.3, 1);
+      const rh = wallRun ? 8 : hs, amp = wallRun ? 0.22 : ampR;
+      const ph = S.phase, lift = 0.05 + 0.13 * clamp(rh / 3.5, 0.3, 1);
       hipsDy = (-0.02 - 0.02 * wR - 0.03 * wR * (0.5 + 0.5 * Math.cos(2 * ph))) * 1 + hipsDy * (1 - wR);
-      lean = lean * (1 - wR) + (0.08 + 0.14 * clamp(hs / 4, 0, 1)) * wR;
+      lean = lean * (1 - wR) + (0.08 + 0.14 * clamp(rh / 4, 0, 1)) * wR;
       hipTw += 0.16 * wR * Math.sin(ph); twist += -0.2 * wR * Math.sin(ph);
       for (let sd = 0; sd < 2; sd++) {
         const sx = sd === 0 ? 1 : -1, th = ph + (sd ? Math.PI : 0);
-        foot[sd].p.z += wR * ampR * Math.sin(th);
+        foot[sd].p.z += wR * amp * Math.sin(th);
         foot[sd].p.y += wR * lift * Math.max(0, Math.cos(th));
-        const psi = 0.8 * wR * Math.sin(th + Math.PI) * clamp(hs / 3, 0.3, 1);
+        const psi = 0.8 * wR * Math.sin(th + Math.PI) * clamp(rh / 3, 0.3, 1);
         V.a.set(sx * 0.12, -Math.cos(psi), Math.sin(psi)).normalize();
         V.b.set(sx * 0.1, -Math.cos(psi + 0.8 + 0.4 * wR), Math.sin(psi + 0.8 + 0.4 * wR)).normalize();
         arm[sd].up.lerp(V.a, wR).normalize(); arm[sd].fore.lerp(V.b, wR).normalize();
@@ -1213,7 +1253,7 @@ export function createHero(scene, renderer) {
 
     /* -- a name for the tests -- */
     const yk = Math.max(S.yank[0], S.yank[1]);
-    H.pose = S.roll >= 0 ? (S.flip ? "flip" : "roll") : S.atk ? S.atk.kind : S.carry > 0.5 && ground ? "carry" : yk > 0.35 ? "yank" : S.crouch > 0.15 ? "land" : cling ? "cling" : ground ? (wR > 0.5 ? "run" : "idle") : nAtt ? "swing" : S.dive > 0.5 ? (S.glideOn ? "glide" : "dive") : vel.y > 1 ? "jump" : "fall";
+    H.pose = S.roll >= 0 ? (S.flip ? "flip" : "roll") : S.atk ? S.atk.kind : S.carry > 0.5 && ground ? "carry" : yk > 0.35 ? "yank" : S.crouch > 0.15 ? "land" : wallRun ? "run" : cling ? "cling" : ground ? (wR > 0.5 ? "run" : "idle") : nAtt ? "swing" : S.dive > 0.5 ? (S.glideOn ? "glide" : "dive") : vel.y > 1 ? "jump" : "fall";
     H.yaw = S.yaw;
     S.posed = true;
   };

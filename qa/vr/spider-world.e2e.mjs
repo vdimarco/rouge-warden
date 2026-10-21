@@ -1,5 +1,5 @@
 // The second set of Spider-Man moves in flat play, in the browser: Space held in the air glides; a fast jump at a wall with W held
-// runs up it and Space leaps off; G throws a lid at a goon; a rope pull drags a group into a heap; crimes start near the hero
+// runs up it and Space kicks off away from the wall; G throws a lid at a goon; a rope pull drags a group into a heap; crimes start near the hero
 // (a getaway car stopped by a rope, a tanker's leak sealed by three ropes); the music adds its fight layer; a phone shows GLIDE
 // and THROW. Run from the repo root: NODE_PATH=/opt/node22/lib/node_modules node qa/vr/spider-world.e2e.mjs
 import { mkdir } from "node:fs/promises";
@@ -64,13 +64,13 @@ try {
     const running = !!G.P.wallRun;
     QA.key("KeyW", false);
     QA.tap("Space");
-    const leap = G.P.vel.y;
+    const kick = { up: G.P.vel.y, out: Math.hypot(G.P.vel.x, G.P.vel.z) };
     QA.step(30);
-    return { wall: wz, ev, rate, running, leap };
+    return { wall: wz, ev, rate, running, kick };
   });
   check(wr.wall != null && wr.ev.includes("wallrun"), "W held and a fast jump at a wall: a wall run", wr);
   check(wr.rate > 8, "the run climbs fast: " + (wr.rate || 0).toFixed(1) + " m/s", wr);
-  check(wr.leap > 7, "Space off the run leaps " + (wr.leap || 0).toFixed(1) + " m/s up", wr);
+  check(wr.kick && wr.kick.out > 14 && wr.kick.up < 1, "Space off the run kicks " + (wr.kick ? wr.kick.out.toFixed(1) : "-") + " m/s away from the wall", wr);
 
   /* ---- throw and group pull ---- */
   const thr = await page.evaluate(() => {

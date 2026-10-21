@@ -2172,6 +2172,7 @@ function after(dt, inp, yawDelta) {
   audio.update(dt);
   drawWeb(dt);
   publishSwing();
+  publishWall();
 }
 
 // The easy web, drawn in CSS pixels over the view. Ink #2B2A33, 2 px, a slight sag that pulls
@@ -2284,6 +2285,17 @@ function drawWeb(dt) {
       ctx.globalAlpha = 1;
     }
   }
+}
+const WALL_VIEW = { onWall: false, face: { x: 0, z: 0 }, timer: 0, mode: "off" };
+function publishWall() {
+  window.__test = window.__test || {};
+  window.__test.wall = WALL_VIEW;
+  const w = P && P.wall, run = P && P.wallRun;
+  WALL_VIEW.onWall = !!w;
+  WALL_VIEW.face.x = w ? w.nx : 0;
+  WALL_VIEW.face.z = w ? w.nz : 0;
+  WALL_VIEW.timer = run ? run.timer : 0;
+  WALL_VIEW.mode = run && run.mode ? run.mode : (w ? "cling" : "off");
 }
 function publishSwing() {
   window.__test = window.__test || {};

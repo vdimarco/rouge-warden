@@ -445,15 +445,15 @@ section("Wall climbing");
     check(!P.wall && P.onGround && P.ground === B && Math.abs(P.pos.y - B.maxY) < 1e-6 && P.events.some((e) => e.type === "mantle"), `at the top you step on to the roof (${f2(P.pos.y)} m, ${f2(topT * h)} s more climbing)`);
     // back on the wall at mid height, from the air: you fly into it and it holds you
     teleport(P, B.maxX + 3, B.maxY / 2, z);
-    P.vel.x = -8;
+    P.vel.x = -6; // under 4 body-heights a second: a cling, which holds still
     run(P, 120, () => (P.wall ? climbIn(0) : inp({ hands: [hand({ holding: false }), hand({ holding: false })] })), { watch: false });
-    check(!!P.wall && !P.onGround, "flying into a wall grabs it in the air");
+    check(!!P.wall && !P.onGround && !P.wallRun, "flying into a wall grabs it in the air");
     // down to the street: stand there
     run(P, 1200, () => climbIn(P.wall ? -1 : 0), { watch: false });
     check(!P.wall && P.onGround && Math.abs(P.pos.y - gy) < 1e-6, "S climbs down to the street and you stand there");
     // jump off: out and up, and no grab again at once
     teleport(P, B.maxX + 3, B.maxY / 2, z);
-    P.vel.x = -8;
+    P.vel.x = -6; // under 4 body-heights a second, so this is a cling, not a wall run
     run(P, 120, () => (P.wall ? climbIn(0) : inp({ hands: [hand({ holding: false }), hand({ holding: false })] })), { watch: false });
     run(P, 1, () => climbIn(0, 0, 0, { jump: true }), { watch: false });
     check(!P.wall && P.vel.x >= CLIMB.jump.out - 0.2 && P.vel.y > CLIMB.jump.up - 0.5, `Space jumps off the wall (vel ${f2(P.vel.x)} out, ${f2(P.vel.y)} up)`);
@@ -475,7 +475,7 @@ section("Wall climbing");
     }
     // a rope from the wall swings you off it
     teleport(P, B.maxX + 3, B.maxY / 2, z);
-    P.vel.x = -8;
+    P.vel.x = -6;
     run(P, 120, () => (P.wall ? climbIn(0) : inp({ hands: [hand({ holding: false }), hand({ holding: false })] })), { watch: false });
     const was = !!P.wall;
     fire(P, 1, chestOf(P), { x: B.maxX + 30, y: B.maxY + 20, z, nx: -1, ny: 0, nz: 0, tag: "building", id: 1 });
@@ -554,21 +554,73 @@ section("Glide and wall run");
     run(W, 30, () => inp({ climb: { up: 0, x: 0, z: 0 }, hands: free }), { watch: false });
     const rate = (W.pos.y - y0) / (30 * h);
     check(rate > CLIMB.speed + 2, `the run climbs at ${f2(rate)} m/s (the climb is ${CLIMB.speed})`);
-    // a jump off the run: a big leap
+    // a jump off the run kicks straight away from the wall, at 8 body-heights a second
     run(W, 1, () => inp({ jump: true, hands: free }), { watch: false });
-    check(!W.wall && W.vel.y > CLIMB.jump.up + 1, `a jump off the run leaps ${f2(W.vel.y)} m/s up (a plain jump is ${CLIMB.jump.up})`);
+    const kick = RN.kick * SWING.bodyH;
+    check(!W.wall && W.vel.x > kick - 0.5 && Math.abs(W.vel.y) < 0.5, `a jump off the run kicks ${f2(W.vel.x)} m/s out (${f2(kick)}), ${f2(W.vel.y)} up`);
     // a slow touch still clings
     const S2 = createPlayer(city, FLAT);
     teleport(S2, B.maxX + 2, 6, z); S2.vel.x = -5;
     run(S2, 60, () => inp({ hands: free }), { watch: false });
     check(S2.wall && !S2.wallRun, "a slow touch still clings, with no run");
-    // a run that reaches the top fast leaps off it
+    // a run that reaches the top vaults onto the roof
     const T = createPlayer(city, FLAT);
     teleport(T, B.maxX + 4, B.maxY - 6, z); T.vel.x = -20; T.vel.y = 2;
-    run(T, 120, (P2) => inp({ move: { x: -1, z: 0 }, hands: free }), { watch: false });
-    const leap = T.events.find((e) => e.type === "leap");
-    check(!!leap && leap.speed > 6, `a fast run off the top of the wall leaps up (${leap ? f2(leap.speed) : "-"} m/s)`);
+    run(T, 120, () => inp({ move: { x: -1, z: 0 }, hands: free }), { watch: false });
+    check(T.onGround && T.ground === B && !T.wall && T.events.some((e) => e.type === "mantle") && !T.events.some((e) => e.type === "leap"),
+      `a fast run off the top vaults onto the roof (${f2(T.pos.y)} m, roof ${f2(B.maxY)})`);
+    // sideways along the wall, at 7 body-heights a second
+    const A = createPlayer(city, FLAT);
+    teleport(A, B.maxX + 2, 8, z); A.vel.x = -12;
+    run(A, 40, () => inp({ move: { x: -1, z: 0 }, hands: free }), { watch: false });
+    if (A.wallRun) {
+      const z1 = A.pos.z;
+      run(A, 30, () => inp({ climb: { up: 0, x: 0, z: 1 }, hands: free }), { watch: false });
+      const along = Math.abs(A.pos.z - z1) / (30 * h);
+      check(A.wallRun && A.wallRun.mode === "along" && along > RN.along * SWING.bodyH - 0.4, `sideways runs along the wall at ${f2(along)} m/s`);
+    } else check(false, "a wall to run along");
+    // three seconds on the wall, then a slide down. A landing clears the timer; a kick off does not.
+    const SL = createPlayer(city, FLAT);
+    teleport(SL, B.maxX + 2, 4, z); SL.vel.x = -12;
+    run(SL, 30, () => inp({ move: { x: -1, z: 0 }, hands: free }), { watch: false });
+    run(SL, Math.ceil(3.15 / h), () => inp({ climb: { up: 0, x: 0, z: 0 }, hands: free }), { watch: false });
+    check(!!SL.wallRun && SL.wallRun.mode === "slide" && SL.wallRun.timer >= RN.time && SL.wall, `after ${f2(SL.wallRun ? SL.wallRun.timer : 0)} s the run slides`);
+    const y1 = SL.pos.y;
+    run(SL, 30, () => inp({ climb: { up: 0, x: 0, z: 0 }, hands: free }), { watch: false });
+    const down = (y1 - SL.pos.y) / (30 * h);
+    check(down > RN.slide * SWING.bodyH - 0.3, `the slide goes down at ${f2(down)} m/s`);
+    const kept = SL.wallBudget;
+    run(SL, 1, () => inp({ jump: true, hands: free }), { watch: false });
+    check(!SL.wall && SL.wallBudget === kept && kept > RN.time, "kicking off the wall keeps the timer");
+    run(SL, 800, () => inp({ hands: free }), { watch: false });
+    check(SL.onGround && SL.wallBudget === 0, `landing resets the timer (feet at ${f2(SL.pos.y)} m)`);
   } else check(false, "a building for the wall run");
+
+  // a standing sprint into a wall reaches a 10-body-height roof in under 3 s
+  const roofH = 10 * SWING.bodyH;
+  const roofs = city.colliders.filter((c) => c.type === "box" && c.tag === "building" && c.minY <= 0.2 && Math.abs(c.maxY - roofH) < 0.05);
+  const Rbox = roofs.find((c) => {
+    const zz = (c.minZ + c.maxZ) / 2;
+    if (city.isWater(c.maxX + 1, zz) || city.groundY(c.maxX + 1, zz) > 0.5) return false;
+    for (let y = 0.5; y < c.maxY + 2; y += 1) if (city.collideSphere(c.maxX + 1.6, y, zz, 1.1)) return false;
+    return true;
+  });
+  check(!!Rbox, "a clear street face on a 10-body-height roof" + (Rbox ? ` (${f2(Rbox.maxY)} m)` : ""));
+  if (Rbox) {
+    const zz = (Rbox.minZ + Rbox.maxZ) / 2, gy = city.groundY(Rbox.maxX + 1, zz), R = createPlayer(city, FLAT);
+    teleport(R, Rbox.maxX + 0.7, gy, zz);
+    R.vel.x = -(RN.min * SWING.bodyH + 1); // already running, on the street, just short of the wall
+    let roofAt = -1, stuck = false;
+    const limit = Math.ceil(3 / h);
+    run(R, limit, (P2, i) => {
+      if (P2.wallRun) stuck = true;
+      if (roofAt < 0 && P2.onGround && !P2.wall && Math.abs(P2.pos.y - Rbox.maxY) < 0.05) roofAt = i;
+      return P2.wall
+        ? inp({ climb: { up: 0, x: 0, z: 0 }, hands: free })
+        : inp({ move: { x: -1, z: 0 }, sprint: true, hands: free });
+    }, { watch: false });
+    check(stuck && roofAt >= 0 && roofAt * h < 3, `a standing run into the wall reaches the ${f2(Rbox.maxY)} m roof in ${roofAt < 0 ? "—" : f2(roofAt * h)} s (under 3 s)`);
+  }
 }
 
 /* ---------------- invariants ---------------- */

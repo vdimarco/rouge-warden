@@ -193,6 +193,11 @@ export function createMobile(canvas, active, opts = {}) {
     if (mover && ev.pointerId === mover.id) { if (active()) stickMove(ev.clientX, ev.clientY); return; }
     const d = drags.get(ev.pointerId);
     if (!d || !active()) return;
+    // on a wall, a swipe up on the right half jumps off. It is not a rope and not a new button.
+    if (onWall && !d.thrown) {
+      const up = d.y0 - ev.clientY, across = Math.abs(ev.clientX - d.x0);
+      if (up > 56 && up > across) { state.jump = true; d.thrown = true; }
+    }
     const dx = ev.clientX - d.x, dy = ev.clientY - d.y;
     // A finger that stays within SLOP px of where it went down is still a tap: a thumb that rocks as the other thumb lands looks nowhere.
     if (!d.look && Math.hypot(ev.clientX - d.x0, ev.clientY - d.y0) > SLOP) d.look = true;

@@ -54,7 +54,7 @@ export function createPlayer(city, cfg = SWING) {
     pullVel: v3(), quietT: 0, airT: 0, bumpCool: 0, stepSpeed: 0,
     // wall climbing (only with cfg.climb): the wall you hold { nx, nz } or null, the time before you can grab again,
     // and this step's chest contact with a wall
-    wall: null, wallCool: 0, wallRun: null, gliding: false, touch: { on: false, nx: 0, nz: 0, into: 0, speed: 0 },
+    wall: null, wallCool: 0, wallRun: null, wallBudget: 0, gliding: false, touch: { on: false, nx: 0, nz: 0, into: 0, speed: 0 },
   };
   settle(P);
   return P;
@@ -66,7 +66,7 @@ export function teleport(P, x, y, z) {
   P.vel.x = P.vel.y = P.vel.z = 0;
   P.pullVel.x = P.pullVel.y = P.pullVel.z = 0;
   for (const r of P.ropes) idle(r);
-  P.dead = null; P.quietT = 0; P.airT = 0; P.stepSpeed = 0; P.wall = null; P.wallCool = 0; P.roll = 0; P.wallRun = null; P.gliding = false;
+  P.dead = null; P.quietT = 0; P.airT = 0; P.stepSpeed = 0; P.wall = null; P.wallCool = 0; P.roll = 0; P.wallRun = null; P.wallBudget = 0; P.gliding = false;
   settle(P);
   P.events.push({ type: "respawn" });
 }
@@ -178,21 +178,29 @@ function leaveWall(P, push, why) {
 // to the roof; at the bottom it stands; past a corner it stops.
 function climb(P, h, inp) {
   const cc = P.cfg.climb, w = P.wall, pos = P.pos, city = P.city, rad = P.cfg.chestRadius;
-  const run = P.wallRun, RN = cc.run;
+  const run = P.wallRun, RN = cc.run, H = P.cfg.bodyH || 1.8;
   if (inp && inp.jump) {
-    // off a wall run: a big leap, more the faster the run
-    if (run) { const sp = run.speed; leaveWall(P, { out: RN.jump.out, up: Math.min(RN.jump.max, 6 + RN.jump.k * sp) }, "leap"); }
+    // a wall run kicks straight off the wall. A climb still jumps out and up.
+    if (run && run.mode) leaveWall(P, { out: RN.kick * H, up: 0 }, "leap");
     else leaveWall(P, cc.jump, "jump");
     P.stepSpeed = 0; return;
   }
   const cl = inp && inp.climb;
   let up = cl ? clamp(cl.up || 0, -1, 1) : 0, side = cl ? clamp((cl.x || 0) * -w.nz + (cl.z || 0) * w.nx, -1, 1) : 0;
   let spd = cc.speed;
-  if (run) {
-    // the run keeps its way (up or down) and slows to the climb speed; the move input the other way stops it
-    run.speed -= RN.decay * h;
-    if (run.speed <= cc.speed || up * run.dir < -0.5) P.wallRun = null;
-    else { up = run.dir; side = 0; spd = run.speed; }
+  if (run && run.mode) {
+    // forward runs up, sideways runs along, until the budget is spent and the hero slides
+    P.wallBudget = (P.wallBudget || 0) + h;
+    run.timer = P.wallBudget;
+    if (run.timer >= RN.time) run.mode = "slide";
+    if (run.mode === "slide") { up = -1; side = 0; spd = RN.slide * H; }
+    else if (Math.abs(side) > 0.35 && Math.abs(side) >= Math.abs(up)) {
+      run.mode = "along"; run.side = Math.sign(side) || run.side || 1;
+      up = 0; side = run.side; spd = RN.along * H;
+    } else if (up > 0.2) { run.mode = "up"; up = 1; side = 0; spd = RN.up * H; }
+    else if (up < -0.2) { up = -1; side = 0; spd = RN.up * H; }
+    else if (run.mode === "along") { up = 0; side = run.side || 1; spd = RN.along * H; }
+    else { run.mode = "up"; up = 1; side = 0; spd = RN.up * H; }
   }
   const l = len2(up, side);
   if (l > 1) { up /= l; side /= l; }
@@ -213,20 +221,9 @@ function climb(P, h, inp) {
     // past the top edge: step on to the roof if there is one close over the chest
     const fx = nx - w.nx * (rad + cc.inset), fz = nz - w.nz * (rad + cc.inset);
     const tb = city.topBelow(fx, ny + P.chest + cc.mantle, fz, FOOT_R);
-    if (tb && tb.y > ny - 0.5 && P.wallRun && P.wallRun.speed >= RN.top) {
-      // a fast run off the top of a wall (a spire, a parapet): up into the air, a little over the roof
-      const sp = P.wallRun.speed;
-      P.wall = null; P.wallRun = null; P.wallCool = cc.regrab;
-      pos.x = x0; pos.y = y0; pos.z = z0; // (no step this frame: the leap starts from where the run reached)
-      P.vel.x = -w.nx * 2.5; P.vel.y = sp * RN.leap; P.vel.z = -w.nz * 2.5;
-      P.pullVel.x = P.pullVel.y = P.pullVel.z = 0;
-      P.stepSpeed = sp; P.airT = 0;
-      P.events.push({ type: "leap", speed: P.vel.y });
-      return;
-    }
     if (tb && tb.y > ny - 0.5) {
       pos.x = fx; pos.y = tb.y; pos.z = fz;
-      P.wallRun = null;
+      P.wallRun = null; P.wallBudget = 0;
       const col = tb.collider;
       P.wall = null; P.wallCool = cc.regrab;
       P.vel.x = P.vel.y = P.vel.z = 0;
@@ -245,7 +242,7 @@ function climb(P, h, inp) {
   if (ny < top) ny = top;
   if (up < 0 && ny <= top) {
     ny = top;
-    P.wall = null; P.wallRun = null; P.wallCool = cc.regrab;
+    P.wall = null; P.wallRun = null; P.wallBudget = 0; P.wallCool = cc.regrab;
     P.onGround = true; P.ground = col;
     P.events.push({ type: "unclimb", why: "ground" });
   }
@@ -572,11 +569,18 @@ export function step(P, h, inp) {
     // in the air: a wall you fly at holds you, a wall you only brush at speed does not stop the swing
     const air = t.speed < cc.brushSpeed || t.into >= cc.headOn * t.speed;
     // a fast wall met with the move input toward it, or head-on, and no rope holding: a wall run
-    const RN = cc.run, full = len3(vx, vy, vz), runIt = RN && !P.onGround && !attached && full >= RN.min && (into > 0.3 || (t.speed >= RN.min && t.into >= cc.headOn * t.speed));
+    const RN = cc.run, H = c.bodyH || 1.8;
+    // t.speed and t.into are the contact before the bounce takes the speed into the wall.
+    // A side met at 4 body-heights a second, with at least half of that going into the wall, sticks. A brush does not.
+    const runIt = RN && !attached && t.speed >= RN.min * H && t.into >= RN.min * H * 0.5;
     if (runIt) {
-      const dir = vy < -RN.down ? -1 : 1, sp = clamp(full * RN.keep, RN.min, RN.max);
+      const nl = len2(t.nx, t.nz) || 1, along = vx * (t.nz / nl) - vz * (t.nx / nl);
       grab(P);
-      if (P.wall) { P.wallRun = { speed: sp, dir }; P.events.push({ type: "wallrun", speed: sp, dir }); }
+      if (P.wall) {
+        const mode = Math.abs(along) > t.into ? "along" : "up";
+        P.wallRun = { mode, timer: P.wallBudget || 0, side: along >= 0 ? 1 : -1 };
+        P.events.push({ type: "wallrun", speed: (mode === "along" ? RN.along : RN.up) * H, dir: mode === "up" ? 1 : 0 });
+      }
       return;
     }
     if (P.onGround ? into > 0.5 : air) { grab(P); return; }
@@ -628,6 +632,7 @@ function land(P, top, col, speed) {
   }
   // a hop of a few centimetres on a taut rope is not a landing worth a sound
   if (P.airT > 0.15 || speed > 2) P.events.push({ type: "land", speed, roll: P.roll > 0 });
+  P.wallBudget = 0;
 }
 
 // Push one body sphere out of the city and take away the speed into the wall (10 % comes back).
