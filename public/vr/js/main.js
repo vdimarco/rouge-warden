@@ -813,7 +813,7 @@ const FAIL_LINES = {
 };
 function jobEvent(e) {
   switch (e.type) {
-    case "start": ui.toast(e.line); audio.sfx("trialStart"); break;
+    case "start": ui.toast(e.line); audio.sfx(e.mission ? "beat" : "trialStart"); break;
     case "say": ui.say(e.line, 2.5); break;
     // a crime near the hero: the hero's shout, and a marker (actionview draws the offer)
     case "crime": ui.say(e.line, 3); ui.toast("Crime: " + JOB_NAMES[e.job] + ". Swing over there!"); audio.sfx("trialStart"); break;

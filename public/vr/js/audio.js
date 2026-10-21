@@ -478,6 +478,12 @@ const SFX = {
     mallet(e, t + 0.06, 2093, 0.13, 0.7);
     return hiss(e, t, { type: "highpass", f: 7000, dur: 0.3, peak: 0.04, send: 0.2 });
   },
+  // a mission takes the card: one short brass stab. A trial still counts in with trialStart.
+  beat(e, t) {
+    brass(e, t, 659.3, 0.14, 0.16);
+    brass(e, t + 0.06, 1046.5, 0.18, 0.12);
+    return hiss(e, t, { type: "highpass", f: 5000, dur: 0.08, att: 0.001, peak: 0.08 });
+  },
   // a trial starts: three blips, then go
   trialStart(e, t) {
     for (const at of [0, 0.35, 0.7]) tone(e, t + at, { type: "triangle", f: 784, dur: 0.12, peak: 0.16 });

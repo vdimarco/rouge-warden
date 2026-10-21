@@ -296,7 +296,7 @@ export function createJobs({ city, combat, cars = null, seed = 4711 }) {
       const d = Math.hypot(A.data.p.x - h.x, A.data.p.z - h.z);
       A.timer = Math.max(A.timer, d / 14 + 6);
     }
-    emit({ type: "start", job: type, line: JOB_LINES[type] });
+    emit({ type: "start", job: type, line: JOB_LINES[type], mission: A.mission });
     return A;
   };
   function end(ok, why, quiet) {
