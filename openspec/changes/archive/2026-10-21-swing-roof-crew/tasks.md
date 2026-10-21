@@ -1,0 +1,3 @@
+- [x] The ninth flush keeps the clog card
+- [x] The tenth flush starts a rooftop brawl and the card does not say to flush the clogs
+- [x] The King still sleeps after that fight, and the eleventh flush is the clog card

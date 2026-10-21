@@ -149,6 +149,17 @@ try {
 
   const nine = await page.evaluate(() => {
     G.test.finishJob();
+    // The carry ends on the street. The test hero is still up on a roof, so stand where the ground is the street.
+    const S = G.city.start;
+    let spot = null;
+    for (let z = S.z - 90; z <= S.z + 90 && !spot; z += 6) {
+      for (let x = S.x - 90; x <= S.x + 90; x += 6) {
+        const g = G.city.groundY(x, z);
+        const tb = G.city.topBelow(x, 80, z, 0.4);
+        if (g < 1 && (!tb || tb.y < 1) && !G.city.isWater(x, z)) { spot = { x, y: g + 0.05, z }; break; }
+      }
+    }
+    if (spot) { G.test.teleport(spot.x, spot.y, spot.z); G.P.onGround = true; }
     let back = 0;
     for (; back < 240; back++) {
       G.test.step(1 / 60, 1);
@@ -164,7 +175,7 @@ try {
       if (ob && ob.n === 9 && /FLUSH THE CLOGS/.test(ob.title || "") && !G.test.action().jobs.active) break;
     }
     const ob = G.game.progress.objective;
-    return { back, n, title: ob && ob.title, count: ob && ob.n, job: G.test.action().jobs.active && G.test.action().jobs.active.type, king: G.game.progress.king };
+    return { back, n, spot: !!spot, title: ob && ob.title, count: ob && ob.n, job: G.test.action().jobs.active && G.test.action().jobs.active.type, king: G.game.progress.king };
   });
   check(nine.title === "FLUSH THE CLOGS" && nine.count === 9 && !nine.job && nine.king !== "awake", "nine flushes are still the clog card", nine);
 

@@ -798,3 +798,40 @@ Loop: missions, playability, controls, feel, UX, pacing and fun for In Full Swin
 - Delta vs last round: +1 (round 20 was 122). Controls feel 8 → 9. Every other score held.
 
 ![The first web hangs from a building](fullswing-r21/building.png)
+
+### Round 22 — 2026-10-21 — rubric v1
+
+- What changed: The tenth flush starts a rooftop brawl. The card says ROOF CREW and names the wave. The ninth flush stays on the clog card. After the fight, the eleventh flush is the clog card again. The King still sleeps. He still roars only at the fourth and the eighth, and he still wakes at twelve. The balloon, the pizza, and the 36 second washer are unchanged.
+- Why it helped: After the washer, three flushes in a row were the same pump before the King. Spider-Man 2 breaks a repeated objective before it runs into a boss. A 1280×800 play flushed through eleven clogs. Nine read FLUSH THE CLOGS 9/12. Ten read ROOF CREW, ROOFTOP BRAWL, Wave 1 of 2. Eleven read FLUSH THE CLOGS 11/12, and the King was still asleep.
+- Screenshots: `docs/gauntlet/fullswing-r22/roof.png`.
+- Next target: performance stability (6), the lowest playability score. This machine has no real GPU to time, so that score is not the next implementation round. Sound design (7) was not listened to and is not the next implementation round either.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 5 | Held. Golden-hour sun and ink shadows. |
+| Color palette | 6 | Held. Yellow, red and sludge green still separate the HUD from the blocks. |
+| Detail density | 4 | Held. Open blocks more than a dressed borough. |
+| Texture and material quality | 3 | Held. Flat fills. |
+| Composition and camera | 4 | Held. The chase camera still sits behind the hero. This frame is the card. |
+| Atmosphere | 5 | Held. The dusk skyline has a mood. The street under the card does not. |
+| Character models | 3 | Held. Simple comic figures. |
+| Animation smoothness | 4 | Scored from still frames in software GL. Continuous motion was not watched. |
+| Particles and VFX | 5 | Held. No new effect. The card is the change. |
+| UI polish | 6 | Held. The same ink pill names the fight. |
+| Responsiveness and input latency | 8 | Held. The clog card still rewrites its metres every frame. |
+| Controls feel | 9 | Held. The first web still hangs from a building at the real rope length. |
+| Mission clarity | 8 | Held. The compass still names the district on the clog card. The fight card names the wave. |
+| Pacing | 8 | The tenth flush is a roof fight, so nine and eleven are single pumps before the King. Eight of the twelve are still the same pump, so this is not a new point against Spider-Man 2. |
+| Fun factor | 8 | Held. A win still hops the hero. This round changes the job before the King, not the finish. |
+| Difficulty curve | 8 | Held. The eighth flush still counts from 36 s. An odd-job washer still has the minute. |
+| Feedback | 8 | Held. A chase that is pulling away still turns the card hot. |
+| Sound design | 7 | Held. Not listened to. |
+| Variety | 8 | Held. The brawl was already Mission 4. This round places that fight inside the clog run. |
+| Performance stability | 6 | The 1280×800 play passed with no page errors. Frame time on a real GPU was not measured. |
+
+- Aesthetics raw: 45 / 10 dimensions, index 45
+- Playability raw: 78 / 10 dimensions, index 78
+- Total: 123 / 200
+- Delta vs last round: 0 (round 21 was 123). The tenth flush breaks the three pumps before the King, and eight clogs are still the same pump, so pacing stays at 8.
+
+![The tenth flush is a roof fight](fullswing-r22/roof.png)
