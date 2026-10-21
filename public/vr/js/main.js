@@ -1381,6 +1381,7 @@ function aimAndFire(dt, inp) {
     // aims (the building under the finger). A finger that holds the right half does not. First person
     // keeps the crosshair. A headset and G.test.aimAt keep the old ray.
     const useEasy = flatOn && !isXR() && G.state === "play" && !ov.aim[i] && !P.wall
+      && !(pickerOn && picker.result()?.special)
       && !(flatcam && flatcam.firstPerson)
       && !(inp.easySwing && !(inp.phoneHeld && inp.phoneHeld[i]));
     // phone: a tap on a side with that side's rope out moves it to the tapped building, or the next one ahead: one tap, one swing,
