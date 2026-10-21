@@ -145,6 +145,58 @@ float Horizon = pow(saturate(1.0 - Elevation), 3.0);
 float Aerial = smoothstep(2500.0, 14000.0, DepthC);
 float Haze = Aerial * lerp(0.25, 1.0, Horizon);
 Color = lerp(Color, float3(0.62, 0.70, 0.80), Haze * 0.85 * (Sky ? 0.0 : 1.0));
+
+// Afternoon cumulus on sky pixels. Schneider, "The Real-Time Volumetric Cloudscapes
+// of Horizon: Zero Dawn" (SIGGRAPH 2015), marches a cloud layer. This node has no
+// volume, so only the layer remains: the view ray projects onto a plane above the
+// camera, two octaves of value noise set the coverage, and the afternoon sun tints
+// the thinner edge. The weather cover scalar stays 0.15. The haze mix above is unchanged,
+// and a street pixel multiplies the paint by zero.
+float2 CloudUv = Ray.xy / max(Ray.z, 0.07);
+float WarpN = 0.0;
+float LowN = 0.0;
+float HighN = 0.0;
+float SlopeN = 0.0;
+for (int Octave = 0; Octave < 4; Octave++)
+{
+    float2 CloudP = CloudUv * 0.28 + float2(2.0, 7.0);
+    if (Octave > 0)
+    {
+        float2 Uv2 = CloudUv * 0.55 + float2(WarpN, WarpN * 0.65) * 1.6;
+        if (Octave == 1) CloudP = Uv2;
+        if (Octave == 2) CloudP = CloudUv * 1.265 + float2(3.2, 8.4);
+        if (Octave == 3) CloudP = Uv2 + float2(0.18, 0.0);
+    }
+    float2 Pi = floor(CloudP);
+    float2 Pf = frac(CloudP);
+    Pf = Pf * Pf * (float2(3.0, 3.0) - Pf * 2.0);
+    float N = 0.0;
+    for (int Corner = 0; Corner < 4; Corner++)
+    {
+        float SX = (Corner == 1 || Corner == 3) ? 1.0 : 0.0;
+        float SY = (Corner >= 2) ? 1.0 : 0.0;
+        float WX = (SX > 0.5) ? Pf.x : (1.0 - Pf.x);
+        float WY = (SY > 0.5) ? Pf.y : (1.0 - Pf.y);
+        N += WX * WY * frac(sin((Pi.x + SX) * 127.1 + (Pi.y + SY) * 311.7) * 43758.5453);
+    }
+    if (Octave == 0) WarpN = N;
+    if (Octave == 1) LowN = N;
+    if (Octave == 2) HighN = N;
+    if (Octave == 3) SlopeN = N;
+}
+float Field = LowN * 0.75 + HighN * 0.25;
+float Cover = smoothstep(0.52, 0.68, Field);
+float Skirt = smoothstep(0.45, 0.54, Field) * 0.50;
+float Body = max(Cover, Skirt);
+float Lift = smoothstep(0.04, 0.13, Ray.z);
+float Thick = saturate((Field - 0.48) / 0.24);
+float SunX = normalize(float2(-0.62, -0.48)).x;
+float Face = saturate((SlopeN - LowN) / 0.18 * SunX * 4.0 + 0.5);
+float CloudShade = (1.0 - Thick) * Face;
+float3 CloudCol = lerp(float3(0.48, 0.54, 0.64), float3(0.98, 0.98, 0.96), Thick);
+CloudCol = lerp(CloudCol, float3(0.96, 0.82, 0.64), CloudShade);
+float CloudMask = saturate(Body * Lift);
+Color = lerp(Color, CloudCol, CloudMask * (Sky ? 1.0 : 0.0));
 return Color;
 '''
 

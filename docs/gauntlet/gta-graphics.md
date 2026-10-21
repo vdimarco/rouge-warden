@@ -878,3 +878,38 @@ Unreal is not available in this environment, so in-engine frames are the last co
 - Playability raw: 39 / 10 dimensions, index 39
 - Total: 99 / 200
 - Delta vs last round: +1
+
+### Round 26 — 2026-10-21 — rubric v1
+
+- What changed: sky pixels in `Scripts/apply_comic_style.py` take a cumulus paint. The view ray projects onto a layer above the camera, two octaves of value noise set the coverage, and the thicker samples go white while the thinner edge stays blue-grey with a warm sun-side tint. The street multiplies that paint by zero. The horizon haze mix, the weather cover scalar, and the crew masks stay.
+- Why it helped: Atmosphere was at 6. The sky slot over the street was a clear gradient. Separate cloud masses now sit in that slot, with blue left between them.
+- Screenshots: before `docs/gauntlet/gta-graphics/round-26/before-clouds.png`, after `docs/gauntlet/gta-graphics/round-26/after-clouds.png`. These are the walking camera (arm 420, socket Y 70, socket Z 110, pitch −12, horizontal FOV 90) with the cloud function on rays that miss the street. Not an Unreal capture. About 7.2% of the pixels moved, all of them sky. The street delta is 0. The sky is 11% of this frame. `Scripts/test_cloud.py` passed. `Scripts/test_horizon_haze.py` passed. `Scripts/test_plateau_trees.py` passed. `Scripts/test_crew_colour.py` passed. `Scripts/test_contact.py` passed. `GET /gta/` returned 200. OpenSpec CLI is not installed, so the change files were not validated with `openspec`.
+- Next target: vehicles. A clearcoat on the seventies body can be shaded from the existing meshes, and it fills the street in a way the sky slot does not. Animation smoothness stays at 3 and is skipped until a pose can be drawn.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 7 | The contact darkening is unchanged. The cloud tint is a sky paint, not a new street light. |
+| Color palette | 6 | Brick, stone, and the crew hues are unchanged. The clouds sit in the existing blue-white range. |
+| Detail density | 7 | The English bond is unchanged. The clouds are large masses, not new street detail. |
+| Texture and material quality | 7 | The salt crust is unchanged. |
+| Composition and camera | 6 | The walking socket is unchanged. The sky is still the slot above the roofs. |
+| Atmosphere | 7 | The sky slot holds separate cumulus with blue between them. It is a paint on the post process, not a marched volume, and this camera hides most of the sky. |
+| Character models | 6 | The crew hue grade is unchanged. |
+| Animation smoothness | 3 | Skipped. The blend space still cannot be posed here. |
+| Particles and VFX | 6 | Rain rings are unchanged. |
+| UI polish | 6 | The paper rule is unchanged. |
+| Responsiveness and input latency | 4 | Not measured this round. |
+| Controls feel | 4 | Not played. |
+| Mission clarity | 5 | The objective words are unchanged. |
+| Pacing | 4 | Unchanged mission slice. |
+| Fun factor | 3 | Not played. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 4 | No new juice. |
+| Sound design | 3 | Not listened to. |
+| Variety | 3 | One district. The cloud field repeats with the view. |
+| Performance stability | 5 | The comic source tests passed. The paint is sixteen sine samples on the existing ray. Frame time was not remeasured. |
+
+- Aesthetics raw: 61 / 10 dimensions, index 61
+- Playability raw: 39 / 10 dimensions, index 39
+- Total: 100 / 200
+- Delta vs last round: +1
