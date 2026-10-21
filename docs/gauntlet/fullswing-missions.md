@@ -1390,3 +1390,40 @@ Loop: missions, playability, controls, feel, UX, pacing and fun for In Full Swin
 - Delta vs last round: 0 (round 36 was 132). The grab is a sixth King attack. No score moved.
 
 ![The card says to get back](fullswing-r37/grab.png)
+
+### Round 38 — 2026-10-21 — rubric v1
+
+- What changed: flat map destinations show whole-metre horizontal distance below their names. The map labels this as distance across the map; ordering and travel actions stay the same.
+- Why it helped: a player can compare nearby trials and other travel destinations without interpreting only the pins. Reopening at another location refreshes the distances.
+- Screenshots: `docs/gauntlet/fullswing-r38/before-960.png`, `after-960.png`, `before-390.png`, `after-390.png`.
+- Next target: a new evidenced navigation or mission-feedback weakness after outstanding reviews clear; preserve Tab-to-close.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 5 | Carried mission-track baseline; not independently re-scored in this map-only round. |
+| Color palette | 6 | Carried mission-track baseline; not independently re-scored in this map-only round. |
+| Detail density | 4 | Carried mission-track baseline; not independently re-scored in this map-only round. |
+| Texture and material quality | 3 | Carried mission-track baseline; not independently re-scored in this map-only round. |
+| Composition and camera | 4 | Carried mission-track baseline; not independently re-scored in this map-only round. |
+| Atmosphere | 5 | Carried mission-track baseline; not independently re-scored in this map-only round. |
+| Character models | 3 | Carried mission-track baseline; not independently re-scored in this map-only round. |
+| Animation smoothness | 4 | Carried mission-track baseline; not independently re-scored in this map-only round. |
+| Particles and VFX | 5 | Carried mission-track baseline; not independently re-scored in this map-only round. |
+| UI polish | 6 | Carried mission-track baseline; not independently re-scored in this map-only round. |
+| Responsiveness and input latency | 9 | Carried mission-track baseline; not independently re-scored in this map-only round. |
+| Controls feel | 9 | Carried mission-track baseline; not independently re-scored in this map-only round. |
+| Mission clarity | 9 | Destination distance is now explicit and refreshes after movement; overall clarity score held. |
+| Pacing | 9 | Carried mission-track baseline; not independently re-scored in this map-only round. |
+| Fun factor | 9 | Carried mission-track baseline; not independently re-scored in this map-only round. |
+| Difficulty curve | 9 | Carried mission-track baseline; not independently re-scored in this map-only round. |
+| Feedback | 9 | Carried mission-track baseline; not independently re-scored in this map-only round. |
+| Sound design | 9 | Carried mission-track baseline; not independently re-scored in this map-only round. |
+| Variety | 9 | Carried mission-track baseline; not independently re-scored in this map-only round. |
+| Performance stability | 6 | Carried mission-track baseline; not independently re-scored in this map-only round. |
+
+- Aesthetics raw: 45 / 10 dimensions, index 45
+- Playability raw: 87 / 10 dimensions, index 87
+- Total: 132 / 200
+- Delta vs last round: 0. Existing mission-track scores are explicitly carried baselines, not a fresh full-playthrough evaluation or a reconciled graphics-track score.
+
+Validation: all 16 new browser checks pass at 960×540 and 390×844, covering two player positions, zero distance, refresh, sideways overflow and unchanged travel. The original build failed the eight distance expectations while its other eight checks passed. The existing `qa/vr/rings-map.e2e.mjs` also passes: trials, compass, map hover and travel. Physical devices, audio listening, hardware performance and OpenSpec CLI validation were not run.
