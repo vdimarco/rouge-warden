@@ -12,15 +12,15 @@ After the tail is lost, the card SHALL ask the player to walk up, cross a shorte
 - **THEN** the crossing burns and the south dark does not open until they return to the pocket
 
 #### Scenario: The page
-- **WHEN** the player sprints the page on foot
+- **WHEN** the player sprints the page on foot, including from the south edge of the case or the north edge
 - **THEN** the cut opens
-- **WHEN** the player walks the page
+- **WHEN** the player walks the page, including from the south edge of the case
 - **THEN** the page is back and the beat does not pay
 
 #### Scenario: The grass
-- **WHEN** the player sprints the grass
+- **WHEN** the player sprints the grass, including from the south edge of the line or the north edge
 - **THEN** the seat opens
-- **WHEN** the player walks the grass, or sprints their road
+- **WHEN** the player walks the grass, including from the south edge of the line, or sprints their road
 - **THEN** the line is back
 
 #### Scenario: The last drive

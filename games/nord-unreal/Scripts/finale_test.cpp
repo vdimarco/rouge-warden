@@ -144,8 +144,8 @@ namespace
 int main()
 {
     Expect(StepMeet == 0 && StepDark == 1 && StepPage == 2 && StepCut == 3 && StepChase == 4 && StepBanked == 5, "the stages drifted");
-    Expect(Pay == 800 && FootReach == 450. && CarReach == 1100. && Catch == 600. && Window == 6. && Slice == 0.25, "the purse or a radius drifted");
-    Expect(TailCmPerSecond == 1100. && RivalCmPerSecond == 900. && RivalCmPerSecond > QuebecPace::SprintCmPerSecond, "the last car is no faster than the short-way runner");
+    Expect(Pay == 800 && FootReach == 450. && CarReach == 1100. && Catch == 600. && Window == 5. && Slice == 0.25, "the purse or a radius drifted");
+    Expect(TailCmPerSecond == 1100. && RivalCmPerSecond == 1100. && RivalCmPerSecond > QuebecPace::SprintCmPerSecond, "the grass runner is no faster than a sprint");
     Expect(CountsAsCar(0) && !CountsAsCar(1) && !CountsAsCar(QuebecCycle::BikeKind) && !CountsAsCar(QuebecScoot::ScootKind), "a bike counted as the car");
     Expect(ColumnX > 20000. && MeetY > 0. && FinishY > 0., "the lawn sits on the pond side");
 
@@ -187,10 +187,17 @@ int main()
     Expect(InLamp(ColumnX, LampAY) && !InLamp(Pocket().X, Pocket().Y) && !InLamp(Far().X, Far().Y), "the straight dark is not the lit line");
     Expect(!InLamp(DarkWestX, DarkWestY), "the west side is lit");
     const double PageRun = Apart(Case().X, Case().Y, Drop().X, Drop().Y);
+    const double PageSouth = PageRun - FootReach * 2.;
     Expect(PageRun / QuebecPace::SprintCmPerSecond < Window && PageRun / QuebecPace::WalkCmPerSecond > Window, "the page window does not split a sprint from a walk");
-    Expect(Grass() / QuebecPace::SprintCmPerSecond < Road() / RivalCmPerSecond, "a grass sprint does not beat them");
-    Expect(Grass() / QuebecPace::WalkCmPerSecond > Road() / RivalCmPerSecond, "a grass walk beats them");
-    Expect(Road() / QuebecPace::SprintCmPerSecond > Road() / RivalCmPerSecond, "a sprint on their road beats them");
+    Expect(PageSouth / QuebecPace::WalkCmPerSecond > Window, "a walk from the south edge of the page still makes it");
+    Expect(PageSouth / QuebecPace::SprintCmPerSecond < Window, "a sprint from the south edge of the page misses it");
+    const double RivalTime = Road() / RivalCmPerSecond;
+    const double GrassSouth = Grass() - FootReach * 2.;
+    Expect(Grass() / QuebecPace::SprintCmPerSecond < RivalTime, "a grass sprint does not beat them");
+    Expect(Grass() / QuebecPace::WalkCmPerSecond > RivalTime, "a grass walk beats them");
+    Expect(GrassSouth / QuebecPace::WalkCmPerSecond > RivalTime, "a walk from the south edge of the line still beats them");
+    Expect(GrassSouth / QuebecPace::SprintCmPerSecond < RivalTime, "a sprint from the south edge of the line loses");
+    Expect(Road() / QuebecPace::SprintCmPerSecond > RivalTime, "a sprint on their road beats them");
     Expect(Road() > Grass(), "their road is the short way");
 
     Expect(!Offers(false, StepMeet), "the day offered before the tail was lost");
@@ -225,6 +232,12 @@ int main()
     Expect(Sprinted.Step == StepCut && Purse(StepPage, Sprinted.Step) == 0, "a sprint missed the page");
     const FDay Walked = RunLine(StepPage, QuebecPace::WalkCmPerSecond, Case().X, Case().Y, Drop().X, Drop().Y);
     Expect(Walked.Step == StepPage && !Walked.bHolding && Purse(StepPage, Walked.Step) == 0, "a walk made the page");
+    const FDay SouthWalk = RunLine(StepPage, QuebecPace::WalkCmPerSecond, Case().X, Case().Y - FootReach, Drop().X, Drop().Y + FootReach);
+    Expect(SouthWalk.Step == StepPage && !SouthWalk.bHolding, "a walk from the south edge of the page made the drop");
+    const FDay SouthSprint = RunLine(StepPage, QuebecPace::SprintCmPerSecond, Case().X, Case().Y - FootReach, Drop().X, Drop().Y + FootReach);
+    Expect(SouthSprint.Step == StepCut, "a sprint from the south edge of the page missed the drop");
+    const FDay NorthSprint = RunLine(StepPage, QuebecPace::SprintCmPerSecond, Case().X, Case().Y + FootReach, Drop().X, Drop().Y + FootReach);
+    Expect(NorthSprint.Step == StepCut, "a sprint from the north edge of the page missed the drop");
     FDay Holding;
     Holding.Step = StepPage;
     Holding.bHolding = true;
@@ -248,6 +261,12 @@ int main()
     Expect(GrassSprint.Step == StepChase && !GrassSprint.bTailing && Purse(StepCut, GrassSprint.Step) == 0, "a grass sprint lost the cut");
     const FDay GrassWalk = RunLine(StepCut, QuebecPace::WalkCmPerSecond, Line().X, Line().Y, Finish().X, Finish().Y);
     Expect(GrassWalk.Step == StepCut && !GrassWalk.bRacing, "a grass walk beat them");
+    const FDay EdgeWalk = RunLine(StepCut, QuebecPace::WalkCmPerSecond, Line().X, Line().Y - FootReach, Finish().X, Finish().Y + FootReach);
+    Expect(EdgeWalk.Step == StepCut && !EdgeWalk.bRacing, "a walk from the south edge of the line beat them");
+    const FDay EdgeSprint = RunLine(StepCut, QuebecPace::SprintCmPerSecond, Line().X, Line().Y - FootReach, Finish().X, Finish().Y + FootReach);
+    Expect(EdgeSprint.Step == StepChase, "a sprint from the south edge of the line lost");
+    const FDay FarSprint = RunLine(StepCut, QuebecPace::SprintCmPerSecond, Line().X, Line().Y + FootReach, Finish().X, Finish().Y + FootReach);
+    Expect(FarSprint.Step == StepChase, "a sprint from the north edge of the line lost");
     FDay Racing;
     Racing.Step = StepCut;
     Racing.bRacing = true;

@@ -37,9 +37,13 @@ namespace QuebecFinale
     inline constexpr double FootReach = 450.;
     inline constexpr double Lamp = 650.;
     inline constexpr double RecoverNorth = 700.;
-    inline constexpr double Window = 6.;
+    // The clock starts anywhere in the circle, including the south edge.
+    // Five seconds still loses a walk from that edge and still beats a sprint from the north edge.
+    inline constexpr double Window = 5.;
     inline constexpr double Slice = 0.25;
-    inline constexpr double RivalCmPerSecond = 900.;
+    // Faster than a sprint. Their time still loses a walk from the south edge of the line
+    // and still loses to a sprint from the north edge of the line.
+    inline constexpr double RivalCmPerSecond = 1100.;
 
     // A different surveyed edge from mission 15. Seat, park, and hide sit on it.
     inline constexpr double RoadWestX = 36384.939;

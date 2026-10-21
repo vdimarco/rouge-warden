@@ -2020,7 +2020,7 @@ void AQuebecCampaign::TickFinale(float DeltaSeconds)
     {
         const TCHAR* Message = TEXT("The day is yours. Once more, and it held.");
         if (After.Step == QuebecFinale::StepDark) Message = TEXT("They are waiting in the dark.");
-        else if (After.Step == QuebecFinale::StepPage) Message = TEXT("The dark held. Six seconds on the page.");
+        else if (After.Step == QuebecFinale::StepPage) Message = TEXT("The dark held. Five seconds on the page.");
         else if (After.Step == QuebecFinale::StepCut) Message = TEXT("The page is down. They took the road.");
         else if (After.Step == QuebecFinale::StepChase) Message = TEXT("You beat them. A car is the last of it.");
         AdvanceFinale(After.Step, Who, Message, After.Step == QuebecFinale::StepBanked);
@@ -2035,7 +2035,7 @@ void AQuebecCampaign::TickFinale(float DeltaSeconds)
         const TCHAR* Message = TEXT("");
         if (bBurnFlip && After.bBurned) Message = TEXT("A lamp saw you. The pocket covers you.");
         else if (bBurnFlip) Message = TEXT("The pocket covers you. The south dark is open.");
-        else if (bHoldFlip && After.bHolding) Message = TEXT("Six seconds. South. Stay on foot.");
+        else if (bHoldFlip && After.bHolding) Message = TEXT("Five seconds. South. Stay on foot.");
         else if (bHoldFlip) Message = TEXT("The window shut. The page is back.");
         else if (bRaceFlip && After.bRacing) Message = TEXT("They took the road. Sprint the grass.");
         else if (bRaceFlip) Message = TEXT("They got there first. The line is back.");
@@ -3024,8 +3024,8 @@ FString AQuebecCampaign::GetBriefingText() const
                 : TEXT("MEMPHIS: Two lamps. The straight line is lit. The west side is dark. The south pocket is the page.");
         if (FinaleStep == QuebecFinale::StepPage)
             return bFinaleHolding
-                ? TEXT("MEMPHIS: Six seconds. South. On foot. If it shuts, the page is back.")
-                : TEXT("MEMPHIS: The page is on the lawn. Take it on foot. You get six seconds.");
+                ? TEXT("MEMPHIS: Five seconds. South. On foot. If it shuts, the page is back.")
+                : TEXT("MEMPHIS: The page is on the lawn. Take it on foot. You get five seconds.");
         if (FinaleStep == QuebecFinale::StepCut)
             return bFinaleRacing
                 ? TEXT("MEMPHIS: They took the road. Sprint the grass. If they arrive, the line is back.")
