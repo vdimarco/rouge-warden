@@ -241,6 +241,8 @@ export function createPiBackend({ env = {}, spawn: spawnFn = defaultSpawn, log =
       if (error.code === "ENOENT") throw fail("pi is not installed");
       throw fail(error.message || "pi failed to start");
     }
+    let startError = null;
+    proc.on?.("error", (error) => { startError = error; });
     const onAbort = () => { try { proc.kill(); } catch { /* already gone */ } };
     turn.signal?.addEventListener("abort", onAbort, { once: true });
     try {
@@ -251,6 +253,9 @@ export function createPiBackend({ env = {}, spawn: spawnFn = defaultSpawn, log =
         const delta = textDelta(record);
         if (delta) yield delta;
         if (record.type === "agent_settled" || record.type === "agent_end") return;
+      }
+      if (startError) {
+        throw fail(startError.code === "ENOENT" ? "pi is not installed" : (startError.message || "pi failed to start"));
       }
     } finally {
       turn.signal?.removeEventListener("abort", onAbort);

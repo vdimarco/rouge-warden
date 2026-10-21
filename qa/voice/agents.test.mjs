@@ -13,7 +13,7 @@ const require = createRequire(new URL("../../voice/package.json", import.meta.ur
 const WebSocket = require("ws");
 import { createCallServer } from "../../voice/call-server.mjs";
 import { FOOD_INSTRUCTIONS, VOICE_INSTRUCTIONS } from "../../voice/watch-call.mjs";
-import { pickAgent, promptMessage, textDelta } from "../../voice/agents.mjs";
+import { createPiBackend, pickAgent, promptMessage, textDelta } from "../../voice/agents.mjs";
 import { createMemory, withFacts } from "../../voice/memory.mjs";
 
 const results = [];
@@ -62,6 +62,16 @@ await test("an ask prefix selects the agent and drops the prefix", () => {
     assistantMessageEvent: { type: "text_delta", delta: "Hi" },
   }), "Hi");
   assert.equal(withFacts("Speak plainly.", []), "Speak plainly.");
+});
+
+await test("JSON-mode Pi handles an actual asynchronous spawn error", async () => {
+  const missing = join(mkdtempSync(join(tmpdir(), "hermes-pi-missing-")), "pi");
+  const backend = createPiBackend({ env: { PI_MODE: "json", PI_BIN: missing } });
+  await assert.rejects(async () => {
+    for await (const delta of backend.stream({ input: "hello", instructions: "Speak plainly." })) {
+      assert.fail("A missing binary must not yield text");
+    }
+  }, (error) => error.status === 502 && error.message === "pi is not installed");
 });
 
 await test("memory recalls an overlapping fact and skips an unrelated one", () => {
