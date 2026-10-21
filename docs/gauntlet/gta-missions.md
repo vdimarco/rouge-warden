@@ -2517,3 +2517,48 @@ Unreal is not available here, so the native diamond was not captured. The title 
 ![Play client at 1280, host offline](gta-missions/r55-play-1280.png)
 
 ![Menu on a 390-wide screen, Recover visible](gta-missions/r55-play-menu-390.png)
+
+### Round 56 — 2026-10-21 — rubric v1
+
+- What changed: After the case is in, a faster runner waits on a line north of the lawn. Step on it and they take the long road. The grass to the finish is shorter. A sprint on the grass beats them. A walk does not. A sprint on their road does not, because they are faster than a sprint and the road is longer. A rider cannot start it or take the finish. If they arrive first, the line is back and nothing is paid. The finish pays 600 once. The seven banks stay seven. The lap ghost stays on the race route. The slot is now version 7. Version 6 still loads and starts this race over. Version 1 still loads and starts the pond over. Version 2 stays unread and is not overwritten. Their clock stays in the session, so a reload during the race puts them back on the line and keeps the step.
+- Why it helped: The window is a clock on one line. The lap already rides a ghost that does not care which way you go. Nothing in the park was a person you had to beat by taking the shorter grass.
+- Screenshots: title `docs/gauntlet/gta-missions/r56-title-1280.png`, `r56-title-390.png`, `r56-title-320.png`. Play client, host offline, `r56-play-1280.png`. Menu with Recover `r56-play-menu-390.png`. The title loaded with no page errors. The raw play page still logs the missing `@epicgames-ps/lib-pixelstreamingfrontend-ue5.8` specifier; the shell and Recover still draw. The race was not run in Unreal. `Scripts/test_cut.py` reports 206 assertions, 0 failures, on c++, g++, and clang++. `Scripts/test_story_save.py` reports 98 assertions, 0 failures, on the same three. Syntax check `--both` passed for `QuebecCampaign.cpp`, `QuebecCampaignSaveTests.cpp`, `QuebecGameplay.cpp`, and `QuebecFeedbackTests.cpp`. OpenSpec CLI is not installed, so `openspec validate` did not run.
+- Next target: keep adding a way to play that is not a follower, not a lit path, not a single clock, and not a second copy of this race or the lap. The playable scores that can still move are capped offline, so the score stays. Mission clarity stays at 7 and stays out of reach offline. Responsiveness stays at 3 and stays out of scope. Performance stays at 4 and is not measurable here.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 3 | Unchanged. |
+| Color palette | 5 | Unchanged. |
+| Detail density | 3 | Unchanged. |
+| Texture and material quality | 3 | Unchanged. |
+| Composition and camera | 4 | Unchanged. |
+| Atmosphere | 4 | Unchanged. |
+| Character models | 3 | Unchanged. |
+| Animation smoothness | 3 | Unchanged. |
+| Particles and VFX | 2 | Unchanged. |
+| UI polish | 4 | Unchanged. The native card was not seen, and French and English still share the screen. |
+| Responsiveness and input latency | 3 | Unchanged. Still a lagged stream. Out of scope for this loop. |
+| Controls feel | 9 | Unchanged. Getting out faster than a walk still keeps that pace. |
+| Mission clarity | 7 | Unchanged. The fare post still moves from the loaner to the quay. The native card was not seen, and this score stays out of reach offline. |
+| Pacing | 9 | Unchanged. Four seconds on foot after boarding still loses the passenger. |
+| Fun factor | 9 | Unchanged. Chez Lise still sells a kit, a vest, or one star. A race that was not run is not a new thing to do. |
+| Difficulty curve | 9 | Unchanged. Selling the last page ends it for 200 and does not bank the chain. A wreck still costs more than the goon pay. |
+| Feedback | 9 | Unchanged. A failed side job still plays the falling sting. The sting was not heard. |
+| Sound design | 9 | Unchanged. The dent thud still marks a scrape as quiet. Nobody is voiced, so this is not the reference's city. |
+| Variety | 9 | Unchanged. A runner who was not raced is not a new way across the park that was seen. |
+| Performance stability | 4 | Unchanged. Not measurable in this container. |
+
+- Aesthetics raw: 34 / 10 dimensions, index 34
+- Playability raw: 77 / 10 dimensions, index 77
+- Total: 111 / 200
+- Delta vs last round: 0 (round 55 was 111). The race was not run in Unreal, so every score held.
+
+![GTA title at 1280](gta-missions/r56-title-1280.png)
+
+![GTA title at 390](gta-missions/r56-title-390.png)
+
+![GTA title at 320](gta-missions/r56-title-320.png)
+
+![Play client at 1280, host offline](gta-missions/r56-play-1280.png)
+
+![Menu on a 390-wide screen, Recover visible](gta-missions/r56-play-menu-390.png)
