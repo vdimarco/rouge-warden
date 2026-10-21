@@ -843,3 +843,38 @@ Unreal is not available in this environment, so in-engine frames are the last co
 - Playability raw: 39 / 10 dimensions, index 39
 - Total: 98 / 200
 - Delta vs last round: +1
+
+### Round 25 — 2026-10-21 — rubric v1
+
+- What changed: odd courses become headers. A second vertical joint splits the stretcher, and each half takes its own tint. Even courses stay one unit wide. The salt crust, the glass, and the lamp apron stay.
+- Why it helped: Detail density was at 6. The wall was one running bond of stretchers.
+- Screenshots: before `docs/gauntlet/gta-graphics/round-25/before-bond.png`, after `docs/gauntlet/gta-graphics/round-25/after-bond.png`. These are a straight elevation of the facade shader. Not an Unreal capture. About 19% of the pixels moved. `Scripts/test_facade_bond.py` passed. `Scripts/test_facade_crust.py` passed. `Scripts/test_facade_face.py` passed. `Scripts/test_facade_trough.py` passed. `Scripts/test_facade_palette.py` passed. `Scripts/test_facade_spill.py` passed. `Scripts/test_environment_refresh.py` passed. `GET /gta/` returned 200. OpenSpec CLI is not installed, so the change files were not validated with `openspec`.
+- Next target: color palette. The glass is still one tint, and a second pane colour can be shaded on this elevation. Animation smoothness stays at 3 and is skipped until a pose can be drawn.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 7 | The contact darkening is unchanged. The bond does not cast. |
+| Color palette | 6 | Brick, stone, and the crust hues are unchanged. |
+| Detail density | 7 | Odd courses read as short headers against the stretchers. The units are still flat marks. |
+| Texture and material quality | 7 | The salt crust is unchanged. |
+| Composition and camera | 6 | The walking socket is unchanged. |
+| Atmosphere | 6 | The horizon fade is unchanged. |
+| Character models | 6 | The crew hue grade is unchanged. |
+| Animation smoothness | 3 | Skipped. The blend space still cannot be posed here. |
+| Particles and VFX | 6 | Rain rings are unchanged. |
+| UI polish | 6 | The paper rule is unchanged. |
+| Responsiveness and input latency | 4 | Not measured this round. |
+| Controls feel | 4 | Not played. |
+| Mission clarity | 5 | The objective words are unchanged. |
+| Pacing | 4 | Unchanged mission slice. |
+| Fun factor | 3 | Not played. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 4 | No new juice. |
+| Sound design | 3 | Not listened to. |
+| Variety | 3 | One district. The bond repeats every other course. |
+| Performance stability | 5 | The facade source tests passed. The bond is a joint and a tint on the existing courses. Frame time was not remeasured. |
+
+- Aesthetics raw: 60 / 10 dimensions, index 60
+- Playability raw: 39 / 10 dimensions, index 39
+- Total: 99 / 200
+- Delta vs last round: +1

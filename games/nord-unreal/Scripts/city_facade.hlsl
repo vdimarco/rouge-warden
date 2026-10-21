@@ -19,6 +19,11 @@ float Glass = step(P.x, WindowWidth - 0.039) * step(P.y, 0.275) * Wall;
 float Along = frac(Z / 28.0);
 float Across = frac(UV.x * 4.0 + floor(Z / 28.0) * 0.5);
 float Course = max(step(Along, 0.07), step(Across, 0.045));
+// English bond: odd courses are headers, so a second joint splits the stretcher.
+float CourseId = floor(Z / 28.0);
+float HeaderCourse = step(0.5, frac(CourseId * 0.5));
+float HeaderJoint = step(abs(Across - 0.52), 0.045) * HeaderCourse;
+Course = max(Course, HeaderJoint);
 float3 Color = Paper;
 // Each brick or stone unit shifts so a wall is not one flat paper colour.
 float BrickNoise = frac(sin(dot(floor(float2(UV.x * 8.0 + floor(Z / 28.0) * 0.5, Z / 28.0)), float2(12.9898, 78.233))) * 43758.5453);
@@ -40,6 +45,10 @@ float BloomId = frac(sin(BrickId.x * 17.13 + BrickId.y * 45.32) * 43758.5453);
 float Crust = (1.0 - Stone) * step(0.64, BloomId) * step(0.08, Face.y) * step(Face.y, 0.62) * step(0.10, Face.x) * step(Face.x, 0.90);
 float Streak = step(0.42, frac(sin(floor(Face.x * 5.0) * 12.9 + BrickId.x) * 43758.5453));
 Color = lerp(Color, float3(0.84, 0.82, 0.76), Crust * lerp(0.55, 1.0, Streak));
+// Each header is its own unit, so the two halves of the stretcher do not share a tint.
+float Half = step(0.5, Face.x);
+float HeaderBreak = frac(sin((BrickId.x + Half) * 9.13 + BrickId.y * 4.7) * 43758.5453);
+Color *= lerp(1.0, lerp(0.72, 1.25, HeaderBreak), HeaderCourse);
 // The joint is its own pale bed. The top of each course catches the afternoon sun.
 float3 Mortar = lerp(float3(0.50, 0.46, 0.40), float3(0.64, 0.60, 0.52), Stone);
 float Arris = step(0.86, Along) * step(0.045, Across);
