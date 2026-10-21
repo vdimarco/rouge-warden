@@ -1632,6 +1632,12 @@ export function createGame({ scene, city, view, ropes, hands, ui, audio, P, save
       P.pos.x += (dx / dist) * step;
       P.pos.z += (dz / dist) * step;
       P.vel.x = P.vel.y = P.vel.z = 0;
+      // A cling would keep the old wall at the new spot, so the drag lets go of it.
+      if (P.wall) {
+        P.wall = null; P.wallRun = null;
+        P.wallCool = (P.cfg && P.cfg.climb && P.cfg.climb.regrab) || 0.4;
+        P.pullVel.x = P.pullVel.y = P.pullVel.z = 0;
+      }
     }
     const after = Math.hypot(P.pos.x - perch.x, P.pos.z - perch.z);
     const hit = drag && after <= KING.pullRadius;

@@ -100,7 +100,7 @@ While every pipe is still on, the King SHALL only throw. After a pipe is off, an
 - **THEN** a hero on the deck loses a heart, and a hero in the air does not
 
 ### Requirement: The King pulls you in
-After a pipe is off, the attack after a stomp SHALL be a pull. During that wind-up the mission card SHALL say he is pulling and to shoot a web. A hero in the air with no rope attached SHALL be dragged 14 m toward him. That drag SHALL take a heart when it leaves the hero within 16 m, and SHALL NOT take a heart when the hero is still farther than 16 m. A hero on the ground SHALL NOT be pulled and SHALL NOT lose a heart. A hero in the air with a rope attached SHALL NOT be pulled and SHALL NOT lose a heart.
+After a pipe is off, the attack after a stomp SHALL be a pull. During that wind-up the mission card SHALL say he is pulling and to shoot a web. A hero in the air with no rope attached SHALL be dragged 14 m toward him. That drag SHALL take a heart when it leaves the hero within 16 m, and SHALL NOT take a heart when the hero is still farther than 16 m. A hero clinging to a wall SHALL be dragged the same way and SHALL let go of the wall. A hero on the ground SHALL NOT be pulled and SHALL NOT lose a heart. A hero in the air with a rope attached SHALL NOT be pulled and SHALL NOT lose a heart.
 
 #### Scenario: A stomp, then a pull
 - **WHEN** one pipe is off and the King finishes a stomp
@@ -121,6 +121,10 @@ After a pipe is off, the attack after a stomp SHALL be a pull. During that wind-
 #### Scenario: A web holds
 - **WHEN** that pull lands on a hero in the air with a rope attached
 - **THEN** the hero stays put and does not lose a heart
+
+#### Scenario: A wall lets go
+- **WHEN** that pull lands on a hero clinging to a wall, in the air, with no rope, 20 m away
+- **THEN** the hero is dragged toward him, is no longer on the wall, and loses a heart
 
 ### Requirement: The King belches on a spot
 After a pipe is off, the attack after a pull SHALL be a belch. During that wind-up the mission card SHALL say he is belching and to leave the spot. The spot SHALL be the hero's place when the wind-up begins, and it SHALL NOT follow the hero. A hero still on the ground within 8 m of that spot when the belch lands SHALL lose a heart. A hero on the ground farther than 8 m SHALL NOT lose a heart. A hero in the air SHALL NOT lose a heart.
