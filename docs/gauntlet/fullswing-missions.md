@@ -1279,3 +1279,40 @@ Loop: missions, playability, controls, feel, UX, pacing and fun for In Full Swin
 - Delta vs last round: 0 (round 33 was 132). The pull is a third King attack. No score moved.
 
 ![The card says to shoot a web](fullswing-r34/pull.png)
+
+### Round 35 — 2026-10-21 — rubric v1
+
+- What changed: After a pipe comes off, the King throws, then stomps, then pulls, then belches, and then throws again. With every pipe on he only throws. During the belch he paints the spot under the hero, and the card says "He's belching. Leave the spot". The spot does not follow. Still standing on the ground within 8 m of it takes a heart. A step outside that circle, or being in the air, keeps the heart.
+- Why it helped: After the pull the fight was the same three attacks again. Spider-Man 2 gives a boss a ground tell you leave before it lands. A 1280×800 play watched a throw while every pipe was on, then one pipe came off and the attacks ran throw, stomp, pull, belch. The belch card said to leave the spot. Standing on it took a heart. Twelve metres out on the deck, and in the air over the spot, it took none.
+- Screenshots: `docs/gauntlet/fullswing-r35/belch.png`.
+- Next target: another King answer. Performance stability stays at 6. This machine has no real GPU to time, so that score is not the next implementation round.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 5 | Held. Golden-hour sun and ink shadows. |
+| Color palette | 6 | Held. Yellow, red and sludge green still separate the HUD from the blocks. |
+| Detail density | 4 | Held. Open blocks more than a dressed borough. |
+| Texture and material quality | 3 | Held. Flat fills. |
+| Composition and camera | 4 | Held. The chase camera still sits behind the hero, off to his right. This frame is the belch card. |
+| Atmosphere | 5 | Held. The dusk skyline has a mood. The street under the card does not. |
+| Character models | 3 | Held. Simple comic figures. The King is still the same model. |
+| Animation smoothness | 4 | Scored from still frames in software GL. Continuous motion was not watched. |
+| Particles and VFX | 5 | Held. The belch uses the ring and the comic words that were already there. |
+| UI polish | 6 | Held. The card is still the ink pill. It names the belch for that wind-up. |
+| Responsiveness and input latency | 9 | Held. One frame after a clock drop, the pill still matches the objective. |
+| Controls feel | 9 | Held. The first web still hangs from a building at the real rope length. A rope that is still attached holds against the pull. |
+| Mission clarity | 9 | Held. During a belch the card says to leave the spot. The rest of the time it still names the nearest pipe. |
+| Pacing | 9 | Held. Nine of the twelve flushes are a different job. The first and the third are still the clog card, and the pump never runs three times in a row. Nine different jobs is not a 2023 mission list, so the score stays. |
+| Fun factor | 9 | Held. The roof fight still launches at 14 m/s and a chase still launches at 8. The King now has a fourth attack, and the fight is still one boss. |
+| Difficulty curve | 9 | Held. The ninth-flush car still cruises at 24 m/s. An odd-job getaway stays at 17 m/s. |
+| Feedback | 9 | Held. Seven seconds left still turns the card hot on that same frame. |
+| Sound design | 9 | Held. A flush, a fight, a dash and a lift are still different stings, and the ring fanfare is still the trial. |
+| Variety | 9 | Held. The King now belches after a pull, once a pipe is off, and with every pipe on he only throws. Four attacks on one boss is not the spread of a 2023 boss fight, so the score stays. |
+| Performance stability | 6 | The 1280×800 play passed with no page errors. Frame time on a real GPU was not measured. |
+
+- Aesthetics raw: 45 / 10 dimensions, index 45
+- Playability raw: 87 / 10 dimensions, index 87
+- Total: 132 / 200
+- Delta vs last round: 0 (round 34 was 132). The belch is a fourth King attack. No score moved.
+
+![The card says to leave the spot](fullswing-r35/belch.png)
