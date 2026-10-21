@@ -210,7 +210,11 @@ def check_first_and_second_run():
         opacity = library.get_material_property_input_node(rain, 'MP_OPACITY')
         interpolator = opacity.links['B'][0]
         assert type(interpolator).KIND == 'VertexInterpolator' and interpolator.links['VS'][0].get_editor_property('a')
-        assert library.get_material_property_input_node(rain, 'MP_BASE_COLOR').get_editor_property('constant') == (.7, .74, .78, 1)
+        tint = library.get_material_property_input_node(rain, 'MP_BASE_COLOR')
+        assert type(tint).KIND == 'LinearInterpolate'
+        assert tint.links['A'][0].get_editor_property('constant') == (.55, .64, .74, 1)
+        assert tint.links['B'][0].get_editor_property('constant') == (.96, .97, 1, 1)
+        assert tint.links['Alpha'][0] is not None
 
         counts = {path: len(assets.store[path].expressions) for path in atmosphere.TOUCHED[2:]}
         saves = len(assets.saves)

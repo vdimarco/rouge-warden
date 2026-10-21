@@ -73,3 +73,38 @@ Unreal is not available in this environment, so in-engine frames are the last co
 - Playability raw: 39 / 10 dimensions, index 39
 - Total: 74 / 200
 - Delta vs last round: +3
+
+### Round 3 — 2026-10-21 — rubric v1
+
+- What changed: `plateau_atmosphere.rain_material` keeps the Tariq displacement and visibility mask, and shades each quad with a tight core, a soft skirt, and a knot at the leading end. The core lerps the streak from mist `(0.55, 0.64, 0.74)` to near-white. `rain_streak.hlsl` is unchanged. The material updates when the atmosphere apply runs in the editor.
+- Why it helped: Particles and VFX was the lowest aesthetics score. A flat grey ribbon at 0.35 opacity does not read as a drop. A bright core and a leading knot are the first streak shape the existing graph can carry.
+- Screenshots: before `docs/gauntlet/gta-graphics/round-03/before-rain.png`, after `docs/gauntlet/gta-graphics/round-03/after-rain.png`. These are a direct port of the streak mask, not an Unreal capture. The public page `GET /gta/` returned 200. `Scripts/test_plateau_atmosphere.py` passed.
+- Next target: lighting (tied at 3 with detail density, character models, and animation smoothness). Lighting is the remaining graphics gap on the sky. The clear 15:00 authored multipliers stay locked.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 3 | Still one hard sun. This round did not change lights. |
+| Color palette | 5 | The streak moves from cool mist to white. The city palette is unchanged. |
+| Detail density | 3 | Same streak count. The street is still thin on props. |
+| Texture and material quality | 4 | Facades keep their course grain. Rain is a mask, not a new surface. |
+| Composition and camera | 4 | Unchanged gameplay camera. |
+| Atmosphere | 4 | The streak now reads as weather. There is still no fog volume or time-of-day shift. |
+| Character models | 3 | Untouched. |
+| Animation smoothness | 3 | No motion reviewed. |
+| Particles and VFX | 4 | Streaks have a core, a skirt, and a leading knot. No splash, sheet, or exhaust. |
+| UI polish | 5 | Untouched. |
+| Responsiveness and input latency | 4 | Not measured this round. |
+| Controls feel | 4 | Not played. |
+| Mission clarity | 5 | Unchanged objective card. |
+| Pacing | 4 | Unchanged two-mission slice. |
+| Fun factor | 3 | Not played. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 4 | No new juice. |
+| Sound design | 3 | Not listened to. |
+| Variety | 3 | One rain look, still one district. |
+| Performance stability | 5 | Atmosphere source test passed. The streak graph adds no texture samples. Frame time was not remeasured. |
+
+- Aesthetics raw: 38 / 10 dimensions, index 38
+- Playability raw: 39 / 10 dimensions, index 39
+- Total: 77 / 200
+- Delta vs last round: +3
