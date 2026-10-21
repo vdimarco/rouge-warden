@@ -143,3 +143,38 @@ Unreal is not available in this environment, so in-engine frames are the last co
 - Playability raw: 39 / 10 dimensions, index 39
 - Total: 78 / 200
 - Delta vs last round: +1
+
+### Round 5 — 2026-10-21 — rubric v1
+
+- What changed: `city_facade.hlsl` turns every fourth ground-floor bay into a door with a transom, a panel, a knob, and steps up from the street. The windows above that bay stay. The map material updates when `apply_city_comic_style.py` runs in the editor.
+- Why it helped: Detail density was tied for the lowest aesthetics score. A window grid with no entrance reads as a pattern, not a street. A door and steps are the first way in the shader can show.
+- Screenshots: before `docs/gauntlet/gta-graphics/round-05/before-doors.png`, after `docs/gauntlet/gta-graphics/round-05/after-doors.png`. These are a direct port of the facade shader, not an Unreal capture. `Scripts/test_environment_refresh.py` passed. `GET /gta/` returned 200.
+- Next target: character models (tied at 3 with animation smoothness).
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 4 | Unchanged sky wash. Still one hard sun. |
+| Color palette | 5 | The door is a dark wood in the existing masonry colours. |
+| Detail density | 4 | Ground floors now have a door and steps. The street is still thin on signs and clutter. |
+| Texture and material quality | 4 | The entrance is flat colour, like the rest of the facade. |
+| Composition and camera | 4 | Unchanged gameplay camera. |
+| Atmosphere | 4 | Weather streaks are unchanged. |
+| Character models | 3 | Untouched. |
+| Animation smoothness | 3 | No motion reviewed. |
+| Particles and VFX | 4 | Rain streaks are unchanged. |
+| UI polish | 5 | Untouched. |
+| Responsiveness and input latency | 4 | Not measured this round. |
+| Controls feel | 4 | Not played. |
+| Mission clarity | 5 | Unchanged objective card. |
+| Pacing | 4 | Unchanged two-mission slice. |
+| Fun factor | 3 | Not played. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 4 | No new juice. |
+| Sound design | 3 | Not listened to. |
+| Variety | 3 | One district. Entrances repeat on the same bay rhythm. |
+| Performance stability | 5 | The facade source test passed. The door is extra arithmetic, no samples. Frame time was not remeasured. |
+
+- Aesthetics raw: 40 / 10 dimensions, index 40
+- Playability raw: 39 / 10 dimensions, index 39
+- Total: 79 / 200
+- Delta vs last round: +1
