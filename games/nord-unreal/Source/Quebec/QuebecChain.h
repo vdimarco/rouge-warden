@@ -108,4 +108,13 @@ namespace QuebecChain
         if (ChainAfter < 7) return "HEAT";
         return "MAX";
     }
+
+    // Extra pay for a bank in the first slice of a clear window. A spoil pays nothing. The story bank is unchanged.
+    inline int ClosePay(int Chain, bool bSpoiled, bool bClose)
+    {
+        if (!bClose || bSpoiled) return 0;
+        if (Chain < 0) Chain = 0;
+        if (Chain > 6) Chain = 6;
+        return 50 * (Chain + 1);
+    }
 }

@@ -89,6 +89,10 @@ int main()
     Expect(ClearSeconds(4) < ClearSeconds(0) && ClearSeconds(6) > 0.35, "the gap shrinks and still exists");
     Expect(!PartVisible(StepGap, PartBeam, 1.5, 0) && PartVisible(StepGap, PartBeam, 1.5, 4),
         "the beam mark does not grow with the chain");
+    Expect(CloseCall(1.1, 0) && !CloseCall(1.5, 0), "the 1.5 s pull is a close call");
+    Expect(!CloseCall(0.4, 0), "the paint counts as a close call");
+    Expect(CloseCall(DangerSeconds(4) + 0.1, 4) && !CloseCall(1.5, 4), "a held chain leaves 1.5 s as a close call");
+    Expect(Apply(StepGap, EAct::Pull, 1.1, 0) == StepInvert, "a close pull at chain zero stalls the feed");
     Expect(Apply(StepGap, EAct::Pull, 2.9) == StepInvert, "the warning refuses a pull that can still land");
     Expect(Apply(StepGap, EAct::Use, 1.5) == StepGap, "using the bay skips the pull");
     Expect(Apply(StepInvert, EAct::Use, 0.) == StepEscape, "inverting the plate does not isolate the escape");

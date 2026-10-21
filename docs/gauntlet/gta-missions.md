@@ -938,3 +938,48 @@ Unreal is not available here, so the native diamond was not captured. The title 
 ![Play client at 1280, host offline](gta-missions/r20-play-1280.png)
 
 ![Menu on a 390-wide screen, Recover visible](gta-missions/r20-play-menu-390.png)
+
+### Round 21 — 2026-10-21 — rubric v1
+
+- What changed: A close call pays on top of the chain. On the court it is the first quarter-second the ball spends on the middle panel, once the ink is clear. On the convoy it is the first quarter-second after the beam. The bonus is 50 times one more than the chain held, and it stops at a chain of six. A spoil pays nothing. A long chain pushes the ink over the taught court sample, so that sample stops being a close call, and a later clear bank still lands. The 1.5 second convoy pull still banks and is not a close call. The card names the bonus on the return and on the gap. The story bank's own pay does not change.
+- Why it helped: Fun was a 6 because the chain paid the same amount whether the bank was early or late in the clear window.
+- Screenshots: title `docs/gauntlet/gta-missions/r21-title-1280.png`, `r21-title-390.png`, `r21-title-320.png`. Play client, host offline, `r21-play-1280.png`. Menu with Recover `r21-play-menu-390.png`. The title loaded with no page errors. The raw play page still logs the missing `@epicgames-ps/lib-pixelstreamingfrontend-ue5.8` specifier; the shell and Recover still draw. The close call was not played in Unreal. `Scripts/test_court_rules.py` reports 158 assertions, `Scripts/test_convoy_rules.py` reports 102 assertions, and `Scripts/test_chain.py` reports 92 assertions, 0 failures, on c++, g++ and clang++. Syntax check `--both` passed for the campaign and the HUD. OpenSpec CLI is not installed, so `openspec validate` did not run.
+- Next target: pacing (5), tied with controls feel. Fun, difficulty, and feedback are now 7. Variety stays at 9. Performance stays at 4 and is not measurable here. Responsiveness stays at 3 and stays out of scope. The close bonus is proven by the rules. It was not played, so the fun score waits at 7. The next round should keep to a change the tests can prove, and should not add a chapter or touch the stream.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 3 | Unchanged. |
+| Color palette | 5 | Unchanged. |
+| Detail density | 3 | Unchanged. |
+| Texture and material quality | 3 | Unchanged. |
+| Composition and camera | 4 | Unchanged. |
+| Atmosphere | 4 | Unchanged. |
+| Character models | 3 | Unchanged. |
+| Animation smoothness | 3 | Unchanged. |
+| Particles and VFX | 2 | Unchanged. |
+| UI polish | 4 | The close offer shares the status line. The native card was not seen, and French and English still share the screen. |
+| Responsiveness and input latency | 3 | Unchanged. Still a lagged stream. Out of scope for this loop. |
+| Controls feel | 5 | Unchanged. Arrow keys still walk and drive on the same axes as WASD. |
+| Mission clarity | 7 | Unchanged. |
+| Pacing | 5 | Unchanged. The card still states the stop and the walk. |
+| Fun factor | 7 | A close call pays 50 times one more than the chain, and a spoil pays nothing. The taught court sample is that call at chain 0 and ink at chain 6. A later clear bank still lands. The 1.5 second convoy pull banks and is not a close call. It was not played. |
+| Difficulty curve | 7 | Unchanged. The court ink and the convoy beam still grow with the chain. The close slice sits inside the window that was already there. |
+| Feedback | 7 | Unchanged. A bank still names its rank. The close line is the bonus, not a new rank. |
+| Sound design | 6 | Unchanged. |
+| Variety | 9 | Unchanged. Eight of eight story missions, plus the four side jobs. |
+| Performance stability | 4 | Unchanged. Not measurable in this container. |
+
+- Aesthetics raw: 34 / 10 dimensions, index 34
+- Playability raw: 60 / 10 dimensions, index 60
+- Total: 94 / 200
+- Delta vs last round: +1 (round 20 was 93). Fun factor 6 → 7. Every other score held.
+
+![GTA title at 1280](gta-missions/r21-title-1280.png)
+
+![GTA title at 390](gta-missions/r21-title-390.png)
+
+![GTA title at 320](gta-missions/r21-title-320.png)
+
+![Play client at 1280, host offline](gta-missions/r21-play-1280.png)
+
+![Menu on a 390-wide screen, Recover visible](gta-missions/r21-play-menu-390.png)

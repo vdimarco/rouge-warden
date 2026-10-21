@@ -121,6 +121,14 @@ int main()
     Expect(std::strcmp(Callout(Capped.Chain, false), "MAX") == 0 && Capped.Pay == 300 * LinkCount, "a capped job stays MAX and keeps the top pay");
     Expect(std::strcmp(Callout(SpoiledJob.Chain, true), "SCRAPE") == 0 && SpoiledJob.Pay == 300, "a spoiled job stays SCRAPE and pays flat");
 
+    Expect(ClosePay(0, false, true) == 50, "a fresh close call pays fifty");
+    Expect(ClosePay(4, false, true) == 250, "a chain of four pays two hundred fifty for a close call");
+    Expect(ClosePay(6, false, true) == 350, "a chain of six pays three hundred fifty for a close call");
+    Expect(ClosePay(9, false, true) == 350, "the close bonus grows past a chain of six");
+    Expect(ClosePay(4, true, true) == 0, "a spoiled close call still pays");
+    Expect(ClosePay(4, false, false) == 0, "a wide bank pays a close bonus");
+    Expect(ClosePay(-2, false, true) == 50, "a negative chain does not pay the fresh close bonus");
+
     std::printf("%d assertions, %d failures\n", Assertions, Failures);
     return Failures == 0 ? 0 : 1;
 }

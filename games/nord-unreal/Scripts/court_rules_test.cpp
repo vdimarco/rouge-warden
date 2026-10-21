@@ -180,6 +180,11 @@ int main()
     Expect(Apply(StepRedirect, EAct::Bank, BankPanel, OnMiddle, 6) == StepRedirect, "a full chain refuses the taught bank sample");
     Expect(!PartVisible(StepRedirect, PartInk, OnMiddle, 0) && PartVisible(StepRedirect, PartInk, OnMiddle, 6),
         "the ink mark does not grow with the chain");
+    Expect(CloseCall(OnMiddle, 0), "the taught bank sample misses the close call");
+    Expect(!CloseCall(OnMiddle, 6), "a full chain still pays the close call on the taught sample");
+    Expect(!CloseCall(2.0, 0), "a later bank on the middle panel is a close call");
+    Expect(Apply(StepRedirect, EAct::Bank, BankPanel, 2.0, 0) == StepPull, "a later clear bank misses");
+    Expect(Apply(StepRedirect, EAct::Bank, BankPanel, 2.0, 6) == StepPull, "a full chain refuses a later clear bank");
 
     std::printf("%d assertions, %d failures\n", Assertions, Failures);
     return Failures == 0 ? 0 : 1;

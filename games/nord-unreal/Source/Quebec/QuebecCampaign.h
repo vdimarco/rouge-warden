@@ -67,6 +67,8 @@ public:
     bool GetChainStake(int32& OutChain, int32& OutPay, bool& bOutBroken) const;
     // Tenths of a second still clear on the court return or the convoy gap. False on every other step.
     bool GetClearWindow(int32& OutTenths) const;
+    // What a close call pays on the court return or the convoy gap. False on every other step.
+    bool GetCloseOffer(int32& OutPay) const;
     int32 JobStake(int32 BasePay) const;
     // A side job pays on the same chain. Failure breaks it. The story mask stays.
     int32 ApplyJobChain(int32 BasePay, bool bSucceeded);
@@ -208,6 +210,7 @@ private:
     bool bSaveBlocked = false;
     void RecordRaceResult();
     void BankChain(int32 Link);
+    void GrantCash(int32 Amount);
     void BreakChain();
     void ShowStepMessage(AQuebecController* Who, const TCHAR* Message, bool bFinished, int32 Link);
     int32 LastChainPay = 0;

@@ -25,6 +25,12 @@ static_assert(QuebecConvoyRules::StepBanked == AQuebecCampaign::ConvoyBankedStep
 static_assert(QuebecBlankRules::StepBanked == AQuebecCampaign::BlankBankedStep,
     "mission 8 banks in the session only; the campaign and the rules share one banked index");
 
+static FString WithClose(const TCHAR* Line, int32 Bonus)
+{
+    if (Bonus <= 0 || !Line) return FString(Line);
+    return FString(Line) + FString::Printf(TEXT(" Close +$%d."), Bonus);
+}
+
 static FString ChainHitText(int32 Pay, int32 ChainNow, bool bWasSpoiled, const TCHAR* Prefix)
 {
     const TCHAR* Rank = ANSI_TO_TCHAR(QuebecChain::Callout(static_cast<int>(ChainNow), bWasSpoiled));
@@ -746,7 +752,9 @@ bool AQuebecCampaign::HandleInteract(AQuebecController* Controller)
                         : TEXT("Wait until the ball crosses the middle panel.")) + TEXT(" The chain breaks."));
                     return true;
                 }
-                AdvanceCourt(Next, Controller, TEXT("The bank goes in. The referee calls a penalty on the light."), false);
+                const int32 Bonus = QuebecChain::ClosePay(Chain, bChainSpoiled, QuebecCourtRules::CloseCall(CourtTime, Chain));
+                if (Bonus > 0) GrantCash(Bonus);
+                AdvanceCourt(Next, Controller, *WithClose(TEXT("The bank goes in. The referee calls a penalty on the light."), Bonus), false);
                 return true;
             }
             return false;
@@ -860,7 +868,9 @@ bool AQuebecCampaign::HandleInteract(AQuebecController* Controller)
                 Controller->ShowInteractionMessage(TEXT("The beam is still painting. Wait for the gap. The chain breaks."));
                 return true;
             }
-            AdvanceConvoy(Next, Controller, TEXT("The feed stalls. The projector car is sitting alone."), false);
+            const int32 Bonus = QuebecChain::ClosePay(Chain, bChainSpoiled, QuebecConvoyRules::CloseCall(ConvoyTime, Chain));
+            if (Bonus > 0) GrantCash(Bonus);
+            AdvanceConvoy(Next, Controller, *WithClose(TEXT("The feed stalls. The projector car is sitting alone."), Bonus), false);
             return true;
         }
         if (ConvoyStep == QuebecConvoyRules::StepInvert && NearConvoy(Controller, QuebecConvoyRules::Projector.X, QuebecConvoyRules::Projector.Y))
@@ -1433,6 +1443,18 @@ void AQuebecCampaign::RequestReplay(AQuebecController* Controller)
     Controller->ShowInteractionMessage(TEXT("Race replay ready. The banked scenes stay banked."));
 }
 
+void AQuebecCampaign::GrantCash(int32 Amount)
+{
+    if (Amount <= 0) return;
+    if (const AGameStateBase* Game = GetWorld() ? GetWorld()->GetGameState() : nullptr)
+        for (APlayerState* Each : Game->PlayerArray)
+            if (AQuebecPlayerState* Stats = Cast<AQuebecPlayerState>(Each))
+            {
+                Stats->Cash += Amount;
+                Stats->Changed();
+            }
+}
+
 void AQuebecCampaign::BankChain(int32 Link)
 {
     const QuebecChain::FBank Bank = QuebecChain::Bank(Chain, ChainMask, bChainSpoiled, Link);
@@ -1470,6 +1492,15 @@ void AQuebecCampaign::ShowStepMessage(AQuebecController* Who, const TCHAR* Messa
         return;
     }
     Who->ShowInteractionMessage(Message);
+}
+
+bool AQuebecCampaign::GetCloseOffer(int32& OutPay) const
+{
+    const bool bTimed = (IsCourtOpen() && CourtStep == QuebecCourtRules::StepRedirect)
+        || (IsConvoyOpen() && ConvoyStep == QuebecConvoyRules::StepGap);
+    if (!bTimed) return false;
+    OutPay = QuebecChain::ClosePay(static_cast<int>(Chain), bChainSpoiled, true);
+    return OutPay > 0;
 }
 
 bool AQuebecCampaign::GetClearWindow(int32& OutTenths) const

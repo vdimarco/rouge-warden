@@ -132,6 +132,18 @@ namespace QuebecCourtRules
         return SweepPhase(Time) > SweepPeriod - SweepTelegraphSeconds;
     }
 
+    // The first quarter-second the ball spends on the middle panel, once the ink is clear.
+    // A long chain pushes the ink over that slice. The later part of the panel still banks.
+    inline constexpr double CloseSeconds = 0.25;
+
+    inline bool CloseCall(double Time, int Chain)
+    {
+        const double Wrapped = Wrap(Time, PanelPeriod * 3.);
+        if (Wrapped < PanelPeriod || Wrapped >= PanelPeriod * 2.) return false;
+        if (Wrapped - PanelPeriod >= CloseSeconds) return false;
+        return !SweepDanger(Time, Chain) && !SweepTelegraph(Time);
+    }
+
     inline int Apply(int Step, EAct Action, int Panel, double Time, int Chain = 0)
     {
         if (Step == StepArrive && Action == EAct::Walk) return StepRally;

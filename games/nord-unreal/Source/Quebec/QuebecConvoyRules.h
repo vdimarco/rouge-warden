@@ -89,6 +89,16 @@ namespace QuebecConvoyRules
         return BeamPhase(Time) > BeamPeriod - BeamTelegraphSeconds;
     }
 
+    // The first quarter-second after the beam. The 1.5 s pull sits later in the gap.
+    inline constexpr double CloseSeconds = 0.25;
+
+    inline bool CloseCall(double Time, int Chain)
+    {
+        const double Phase = BeamPhase(Time);
+        const double Start = DangerSeconds(Chain);
+        return Phase >= Start && Phase < Start + CloseSeconds;
+    }
+
     inline int Apply(int Step, EAct Action, double Time, int Chain = 0)
     {
         if (Step == StepArrive && Action == EAct::Walk) return StepGap;

@@ -2488,6 +2488,9 @@ void AQuebecHUD::DrawHUD()
         int32 ClearTenths = 0;
         if (Campaign->GetClearWindow(ClearTenths))
             Status += FString::Printf(TEXT(" · %d.%ds clear"), ClearTenths / 10, ClearTenths % 10);
+        int32 CloseOffer = 0;
+        if (Campaign->GetCloseOffer(CloseOffer))
+            Status += FString::Printf(TEXT(" · close +$%d"), CloseOffer);
     }
     else if (State && State->MissionIndex >= 0 && State->MissionIndex < AQuebecGameState::MissionCount)
     {
