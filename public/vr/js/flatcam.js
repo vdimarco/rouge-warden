@@ -182,10 +182,30 @@ export function createFlatCam(camera, city) {
       S.dist = Math.min(arm, S.room);
       POS.copy(T).addScaledVector(BACK, S.dist);
       if (S.blend < 1) POS.lerpVectors(EYE, POS, S.blend);
+      FC.dist = Math.hypot(POS.x - T.x, POS.y - T.y, POS.z - T.z);
+      // Framing, not a new rig: the arm length and the pitch stay. The camera slides onto the hero's right
+      // and a little higher, so the body sits left of centre and the street ahead keeps the middle.
+      // Mark Haigh-Hutchinson, Real-Time Cameras (2009): lead room, and the subject off the centre line.
+      // The slide stops at a wall. It eases out in first person with the blend.
+      if (S.blend > 0.2) {
+        const rx = Math.cos(S.yaw), rz = -Math.sin(S.yaw);
+        let side = 0.95 * S.blend;
+        const wall = city.raycast(POS.x, POS.y + 0.3, POS.z, rx, 0, rz, side + 0.35, HIT);
+        if (wall) side = Math.max(0, wall.t - 0.35);
+        // A small lift at the default chase. It fades once the arm is already down by the head
+        // (looking up), where more height would push the head off the bottom of the frame.
+        let lift = 0.22 * S.blend * Math.max(0, Math.min(1, (POS.y - EYE.y - 0.7) / 0.5));
+        const ceil = city.raycast(POS.x + rx * side, POS.y, POS.z + rz * side, 0, 1, 0, lift + 0.25, HIT);
+        if (ceil) lift = Math.max(0, ceil.t - 0.25);
+        for (let k = 0; k < 3; k++) {
+          if (!city.collideSphere(POS.x + rx * side, POS.y + lift, POS.z + rz * side, 0.28, SPH)) break;
+          side *= 0.55; lift *= 0.55;
+        }
+        POS.x += rx * side; POS.z += rz * side; POS.y += lift;
+      }
       camera.position.copy(POS);
       E.set(S.pitch, S.yaw, 0);
       camera.quaternion.setFromEuler(E);
-      FC.dist = Math.hypot(POS.x - T.x, POS.y - T.y, POS.z - T.z);
       FC.opacity = smooth(FADE_TO, FADE_FROM, FC.dist);
 
       // the view widens with speed, eased; the two views have their own range, and the blend moves between them
