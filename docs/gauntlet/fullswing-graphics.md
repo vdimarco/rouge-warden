@@ -296,3 +296,40 @@ Playability was scored from a flat boot and the city render check, not a full pl
 
 Playability was scored from a flat boot and the city render check, not a full playthrough. OpenSpec CLI validation was not run; the `openspec` command is not installed.
 
+### Round 9 — 2026-10-21 — rubric v1
+
+- What changed: The hero keeps 30 percent of the painted colour map under the cel bands, and samples that map one mip sharper. A hair crown, a brow fringe, and a light collar follow the head bone, in metres, as one extra mesh plus its ink hull. The skinned crew mesh stays at 12,468 triangles. The forms hide once the close fade drops below 0.9. The paint mix follows Jason Mitchell, Moby Francke, and Dhabih Eng, "Illustrative Rendering in Team Fortress 2" (2007). The hair and collar are original forms.
+- Why it helped: At chase distance the painted face was one red block. The head now carries a dark hair mass and a collar, and a close view still shows the eyes, the zipper, and the shoes. It is still a comic figure, not Spider-Man 2's hero.
+- Screenshots: before `docs/gauntlet/shots/r09-before-play.png`, after `docs/gauntlet/shots/r09-after-play.png`. Close portraits: `docs/gauntlet/shots/r09-before-close.png`, `docs/gauntlet/shots/r09-after-close.png`.
+- Next target: Animation smoothness (4), tied with UI polish. The idle is still a small sway, and a still cannot show a step.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 5 | Unchanged. The forms use the existing cel bands. |
+| Color palette | 5 | Unchanged. Hair is the dark brown already on the fallback figure. The collar is the existing cream. |
+| Detail density | 5 | Unchanged. Bins, bollards, and hydrants from round 5. |
+| Texture and material quality | 5 | Unchanged. Courses and fresnel from round 4. The hero map is sharper, and the city materials are the same. |
+| Composition and camera | 5 | Unchanged. The chase offset from round 7. Reported distance stayed 4.5 m and pitch stayed −0.349. |
+| Atmosphere | 5 | Unchanged. The 18 m haze from round 6. |
+| Character models | 5 | The chase head has a dark hair mass and a light collar. A close view still shows the painted face. The body is still a block. |
+| Animation smoothness | 4 | Unchanged. The shot is a still of the idle pose. |
+| Particles and VFX | 5 | Unchanged. Sidewalk steam from round 8. |
+| UI polish | 4 | Unchanged. The play frame shows the existing comic HUD. |
+| Responsiveness and input latency | 6 | Unchanged. The hero stays at four draws. No input timing was measured. |
+| Controls feel | 5 | Unchanged. |
+| Mission clarity | 4 | Unchanged. Not played. |
+| Pacing | 4 | Unchanged. |
+| Fun factor | 4 | Unchanged. Not played as a session. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 5 | Unchanged. |
+| Sound design | 4 | Unchanged. |
+| Variety | 4 | Unchanged. |
+| Performance stability | 6 | `qa/vr/render.mjs` passed, including flat play and the lit-sphere cel check. Street mean stayed 65.4. Hero draws stayed at 4. Skinned triangles stayed at 12,468. |
+
+- Aesthetics raw: 48 / 10 dimensions, index 48
+- Playability raw: 46 / 10 dimensions, index 46
+- Total: 94 / 200
+- Delta vs last round: +1 (93 → 94). Character models 4 → 5. Playability unchanged.
+
+Playability was scored from a flat boot and the city render check, not a full playthrough. OpenSpec CLI validation was not run; the `openspec` command is not installed.
+
