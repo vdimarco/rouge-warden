@@ -64,11 +64,12 @@ public:
     int32 GetCompletedMissionCount() const { return CompletedMissions; }
     bool IsCampaignComplete() const { return Phase == EQuebecCampaignPhase::Complete; }
     // Banked indexes from the rules headers. Kept here so the save header stays free of those headers.
-    // A boundary-2 save offers mission 3 again each session. PondStep, CourtStep, ShowStep and RescueMask are not written to the slot.
+    // A boundary-2 save offers mission 3 again each session. PondStep, CourtStep, ShowStep, RescueMask and ConvoyStep are not written to the slot.
     static constexpr int32 PondBankedStep = 6;
     static constexpr int32 CourtBankedStep = 4;
     static constexpr int32 ShowBankedStep = 5;
     static constexpr int32 RescueDone = 7;
+    static constexpr int32 ConvoyBankedStep = 4;
     bool IsPondOpen() const { return Phase == EQuebecCampaignPhase::Complete && PondStep < PondBankedStep; }
     bool IsCourtOpen() const { return Phase == EQuebecCampaignPhase::Complete && PondStep >= PondBankedStep && CourtStep < CourtBankedStep; }
     bool IsShowOpen() const { return Phase == EQuebecCampaignPhase::Complete && PondStep >= PondBankedStep && CourtStep >= CourtBankedStep && ShowStep < ShowBankedStep; }
@@ -77,7 +78,12 @@ public:
         return Phase == EQuebecCampaignPhase::Complete && PondStep >= PondBankedStep && CourtStep >= CourtBankedStep
             && ShowStep >= ShowBankedStep && RescueMask >= 0 && RescueMask < RescueDone;
     }
-    bool IsStoryBeatOpen() const { return IsPondOpen() || IsCourtOpen() || IsShowOpen() || IsRescueOpen(); }
+    bool IsConvoyOpen() const
+    {
+        return Phase == EQuebecCampaignPhase::Complete && PondStep >= PondBankedStep && CourtStep >= CourtBankedStep
+            && ShowStep >= ShowBankedStep && RescueMask >= RescueDone && ConvoyStep >= 0 && ConvoyStep < ConvoyBankedStep;
+    }
+    bool IsStoryBeatOpen() const { return IsPondOpen() || IsCourtOpen() || IsShowOpen() || IsRescueOpen() || IsConvoyOpen(); }
 
     UPROPERTY(VisibleAnywhere, ReplicatedUsing=UpdatePresentation) EQuebecCampaignPhase Phase = EQuebecCampaignPhase::AimWorklight;
     UPROPERTY(VisibleAnywhere, Replicated) int32 CompletedMissions = 0;
@@ -88,6 +94,8 @@ public:
     UPROPERTY(VisibleAnywhere, ReplicatedUsing=UpdatePresentation) int32 ShowStep = 0;
     // Session-only bitfield. Bits 0–2 are the terrace, the pond and the court. 7 means every group is out. Not written to the v1 slot.
     UPROPERTY(VisibleAnywhere, ReplicatedUsing=UpdatePresentation) int32 RescueMask = 0;
+    // Session-only. 0 walk-up, 1 beam gap, 2 invert the plate, 3 escape gate, 4 banked. Not written to the v1 slot.
+    UPROPERTY(VisibleAnywhere, ReplicatedUsing=UpdatePresentation) int32 ConvoyStep = 0;
     UPROPERTY(VisibleAnywhere, Replicated) TObjectPtr<APlayerState> LightOperator;
     UPROPERTY(VisibleAnywhere, Replicated) float LightYaw = 0.f;
     UPROPERTY(VisibleAnywhere, Replicated) float LightPitch = 0.f;
@@ -151,6 +159,8 @@ private:
     UPROPERTY() TArray<TObjectPtr<UTextRenderComponent>> ShowCaptions;
     UPROPERTY() TArray<TObjectPtr<UStaticMeshComponent>> RescueParts;
     UPROPERTY() TArray<TObjectPtr<UTextRenderComponent>> RescueCaptions;
+    UPROPERTY() TArray<TObjectPtr<UStaticMeshComponent>> ConvoyParts;
+    UPROPERTY() TArray<TObjectPtr<UTextRenderComponent>> ConvoyCaptions;
     UPROPERTY() TObjectPtr<UStaticMesh> Cube;
     UPROPERTY() TObjectPtr<UStaticMesh> Sphere;
     UPROPERTY() TObjectPtr<UStaticMesh> Cylinder;
@@ -189,6 +199,9 @@ private:
     bool NearShow(const AQuebecController* Controller, double X, double Y) const;
     void AdvanceRescue(int32 Next, AQuebecController* Who, const TCHAR* Message, bool bFinished);
     bool NearRescue(const AQuebecController* Controller, double X, double Y) const;
+    void TickConvoy();
+    void AdvanceConvoy(int32 Next, AQuebecController* Who, const TCHAR* Message, bool bFinished);
+    bool NearConvoy(const AQuebecController* Controller, double X, double Y) const;
     void ChangePhase(EQuebecCampaignPhase Next, bool bFeedback = true);
     void StopAiming();
     void SaveBoundary();

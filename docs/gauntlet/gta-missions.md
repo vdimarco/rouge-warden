@@ -353,3 +353,48 @@ Unreal is not available here, so the native diamond was not captured. The title 
 ![Play client at 1280, host offline](gta-missions/r7-play-1280.png)
 
 ![Menu on a 390-wide screen, Recover visible](gta-missions/r7-play-menu-390.png)
+
+### Round 8 — 2026-10-21 — rubric v1
+
+- What changed: After every group is out, mission 7 Can't Tow Tomorrow leads along the street ring. Walk to the ink feeder, pull its clamp in the beam's gap, invert the projector plate, then take the escape gate. A pull while the beam is painting stays on that step. A pull during the warning still lands. The step is session state. The v1 save still stores CompletedMissions 0–2. Side jobs and T wait until the escape. R restores the current stop and does not rewind a disruption. The recover points step off the carriageway, away from the race gates.
+- Why it helped: Fun was the tied target, and the story still stopped while the border was being drawn. The gap is a second timing read after the court's ink window. The moving wagons and the drive stay out of this round.
+- Screenshots: title `docs/gauntlet/gta-missions/r8-title-1280.png`, `r8-title-390.png`, `r8-title-320.png`. Play client, host offline, `r8-play-1280.png`. Menu with Recover `r8-play-menu-390.png`. The title loaded with no page errors. The raw play page still logs the missing `@epicgames-ps/lib-pixelstreamingfrontend-ue5.8` specifier; the shell and Recover still draw. No native convoy capture: Unreal is not in this container. `Scripts/test_convoy_rules.py` reports 94 assertions, 0 failures, on c++, g++ and clang++. Rescue, show, court, pond and job rule tests still pass. Syntax check `--both` passed for the campaign, the controller and the race-result test. OpenSpec CLI is not installed, so `openspec validate` did not run.
+- Next target: fun factor (4), still tied with controls, mission clarity, pacing, sound and performance. Responsiveness stays at 3 and stays out of scope. The gap was not played, so the feel score waits. The next round should open mission 8 rather than touch the stream.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 3 | Unchanged. Sky and worklight only. |
+| Color palette | 5 | Unchanged. The convoy posts use the same berry, gold, lime and cream. |
+| Detail density | 3 | Unchanged. The new posts are a feeder, a beam bar, a projector and a gate. |
+| Texture and material quality | 3 | Unchanged. |
+| Composition and camera | 4 | Unchanged. The diamond is the one the story already used. |
+| Atmosphere | 4 | Unchanged. The border copy is in the card; the gap was not played. |
+| Character models | 3 | Unchanged. |
+| Animation smoothness | 3 | Unchanged. The beam is a bar appearing. |
+| Particles and VFX | 2 | Unchanged. No new effect. |
+| UI polish | 4 | The card names mission 7, and touch says Menu · Recover. French and English still share the screen. |
+| Responsiveness and input latency | 3 | Unchanged. Still a lagged stream. Out of scope for this loop. |
+| Controls feel | 4 | Unchanged. The pull is still E. There is no drive. |
+| Mission clarity | 4 | The card names the gap and then the plate. The native card was not seen, and there is still no route line. |
+| Pacing | 4 | Unchanged. A seventh beat exists on paper between the groups and the side jobs. Its length was not played. |
+| Fun factor | 4 | The beam gap and the borrowed route line are written. They were not played, so the feel score stays. |
+| Difficulty curve | 6 | The paint refuses the pull. The warning still lets it land. The rules prove both. It was not played. |
+| Feedback | 6 | Unchanged. A painted pull uses the dialogue cue. The gap and the escape reuse checkpoint and complete. |
+| Sound design | 4 | Unchanged. The city still has two loops. Nobody is voiced. |
+| Variety | 8 | Seven of eight story missions are now in the build, plus the four side jobs. The convoy was not played in Unreal. |
+| Performance stability | 4 | Unchanged. |
+
+- Aesthetics raw: 34 / 10 dimensions, index 34
+- Playability raw: 47 / 10 dimensions, index 47
+- Total: 81 / 200
+- Delta vs last round: +2 (round 7 was 79). Difficulty curve 5 → 6. Variety 7 → 8. Every other score held.
+
+![GTA title at 1280](gta-missions/r8-title-1280.png)
+
+![GTA title at 390](gta-missions/r8-title-390.png)
+
+![GTA title at 320](gta-missions/r8-title-320.png)
+
+![Play client at 1280, host offline](gta-missions/r8-play-1280.png)
+
+![Menu on a 390-wide screen, Recover visible](gta-missions/r8-play-menu-390.png)

@@ -1,6 +1,7 @@
 #include "QuebecCampaign.h"
 #include "QuebecGameplay.h"
 #include "QuebecGTA.h" // Side jobs: QuebecJobs::IsJobActive for the race gate guard (JOBS).
+#include "QuebecConvoyRules.h"
 #include "QuebecCourtRules.h"
 #include "QuebecPondRules.h"
 #include "QuebecRescueRules.h"
@@ -15,6 +16,8 @@ static_assert(QuebecShowRules::StepBanked == AQuebecCampaign::ShowBankedStep,
     "mission 5 banks in the session only; the campaign and the rules share one banked index");
 static_assert(QuebecRescueRules::Done == AQuebecCampaign::RescueDone,
     "mission 6 banks in the session only; the campaign and the rules share one done mask");
+static_assert(QuebecConvoyRules::StepBanked == AQuebecCampaign::ConvoyBankedStep,
+    "mission 7 banks in the session only; the campaign and the rules share one banked index");
 
 #include "Components/BoxComponent.h"
 #include "Components/CapsuleComponent.h"
@@ -403,6 +406,22 @@ void AQuebecCampaign::BuildEncounter()
         RescueCaptions.Add(AddCaption(*FString::Printf(TEXT("RescueCaption%d"), Group),
             RescueAt(QuebecRescueRules::Posts[Group], 200.), RescueLabels[Group], 18.f));
     }
+
+    // Mission 7 posts. Hidden until every group is out. Order matches QuebecConvoyRules part indexes.
+    const auto ConvoyAt = [](const QuebecConvoyRules::FSpot& Spot, double Height)
+    {
+        return FVector(Spot.X, Spot.Y, Height);
+    };
+    ConvoyParts.Add(AddPart(TEXT("ConvoyFeeder"), Cylinder, ConvoyAt(QuebecConvoyRules::Feeder, 80.), FVector(40., 40., 160.), Berry));
+    ConvoyCaptions.Add(AddCaption(TEXT("ConvoyFeederCaption"), ConvoyAt(QuebecConvoyRules::Feeder, 200.), TEXT("FEEDER"), 18.f));
+    ConvoyParts.Add(AddPart(TEXT("ConvoyBeam"), Cube, ConvoyAt(QuebecConvoyRules::Feeder, 40.), FVector(420., 16., 10.), Berry));
+    ConvoyCaptions.Add(AddCaption(TEXT("ConvoyBeamCaption"), ConvoyAt(QuebecConvoyRules::Feeder, 80.), TEXT("BEAM"), 16.f));
+    ConvoyParts.Add(AddPart(TEXT("ConvoyProjector"), Cube, ConvoyAt(QuebecConvoyRules::Projector, 90.), FVector(180., 70., 80.), Gold));
+    ConvoyCaptions.Add(AddCaption(TEXT("ConvoyProjectorCaption"), ConvoyAt(QuebecConvoyRules::Projector, 200.), TEXT("PROJECTOR"), 18.f));
+    ConvoyParts.Add(AddPart(TEXT("ConvoyEscape"), Cube, ConvoyAt(QuebecConvoyRules::Escape, 110.), FVector(36., 36., 220.), Lime));
+    ConvoyCaptions.Add(AddCaption(TEXT("ConvoyEscapeCaption"), ConvoyAt(QuebecConvoyRules::Escape, 250.), TEXT("ESCAPE"), 18.f));
+    ConvoyParts.Add(AddPart(TEXT("ConvoyPlate"), Sphere, ConvoyAt(QuebecConvoyRules::Escape, 80.), FVector(48., 48., 48.), Cream));
+    ConvoyCaptions.Add(AddCaption(TEXT("ConvoyPlateCaption"), ConvoyAt(QuebecConvoyRules::Escape, 180.), TEXT("BLANK PLATE"), 18.f));
 }
 
 void AQuebecCampaign::Tick(float DeltaSeconds)
@@ -419,6 +438,7 @@ void AQuebecCampaign::Tick(float DeltaSeconds)
             TickPond();
             TickCourt();
             TickShow();
+            TickConvoy();
         }
     }
     if (GetWorld()->GetTimeSeconds()-LastPresentationTime >= .1f)
@@ -788,6 +808,39 @@ bool AQuebecCampaign::HandleInteract(AQuebecController* Controller)
         }
         return false;
     }
+    if (IsConvoyOpen())
+    {
+        const AGameStateBase* ConvoyState = GetWorld()->GetGameState();
+        const double ConvoyTime = static_cast<double>(ConvoyState ? ConvoyState->GetServerWorldTimeSeconds() : GetWorld()->GetTimeSeconds());
+        if (ConvoyStep == QuebecConvoyRules::StepGap && NearConvoy(Controller, QuebecConvoyRules::Feeder.X, QuebecConvoyRules::Feeder.Y))
+        {
+            const int32 Next = QuebecConvoyRules::Apply(ConvoyStep, QuebecConvoyRules::EAct::Pull, ConvoyTime);
+            if (Next == ConvoyStep)
+            {
+                Controller->PlayFeedback(EQuebecFeedbackCue::Dialogue);
+                Controller->ShowInteractionMessage(TEXT("The beam is still painting. Wait for the gap."));
+                return true;
+            }
+            AdvanceConvoy(Next, Controller, TEXT("The feed stalls. The projector car is sitting alone."), false);
+            return true;
+        }
+        if (ConvoyStep == QuebecConvoyRules::StepInvert && NearConvoy(Controller, QuebecConvoyRules::Projector.X, QuebecConvoyRules::Projector.Y))
+        {
+            AdvanceConvoy(QuebecConvoyRules::Apply(ConvoyStep, QuebecConvoyRules::EAct::Use, ConvoyTime), Controller,
+                TEXT("The plate is inverted. Blank panels. Take the escape gate."), false);
+            return true;
+        }
+        if (ConvoyStep == QuebecConvoyRules::StepEscape && NearConvoy(Controller, QuebecConvoyRules::Escape.X, QuebecConvoyRules::Escape.Y))
+        {
+            PlungerPoint = FVector(QuebecConvoyRules::Escape.X, QuebecConvoyRules::Escape.Y, 130.);
+            PlungerPullTime = GetWorld()->GetTimeSeconds();
+            // The convoy is session state. CompletedMissions stays 2 and the v1 slot is not rewritten.
+            AdvanceConvoy(QuebecConvoyRules::Apply(ConvoyStep, QuebecConvoyRules::EAct::Use, ConvoyTime), Controller,
+                TEXT("GREEN CAP: That route was fine. TOPKNOT: This one is better. The border has a gap."), true);
+            return true;
+        }
+        return false;
+    }
     return false;
 }
 
@@ -945,6 +998,39 @@ bool AQuebecCampaign::NearRescue(const AQuebecController* Controller, double X, 
     const FVector Position = Character->GetActorLocation();
     if (FMath::Abs(Position.Z) > 400.) return false;
     return FVector::Dist2D(Position, FVector(X, Y, 0.)) <= QuebecRescueRules::Reach;
+}
+
+void AQuebecCampaign::TickConvoy()
+{
+    if (!IsConvoyOpen() || ConvoyStep != QuebecConvoyRules::StepArrive) return;
+    for (TActorIterator<AQuebecController> It(GetWorld()); It; ++It)
+    {
+        if (!NearConvoy(*It, QuebecConvoyRules::Feeder.X, QuebecConvoyRules::Feeder.Y)) continue;
+        const int32 Next = QuebecConvoyRules::Apply(ConvoyStep, QuebecConvoyRules::EAct::Walk, 0.);
+        if (Next != ConvoyStep)
+            AdvanceConvoy(Next, *It, TEXT("The beam paints the border, then leaves a gap. The feeder's clamp is in that bay."), false);
+        break;
+    }
+}
+
+void AQuebecCampaign::AdvanceConvoy(int32 Next, AQuebecController* Who, const TCHAR* Message, bool bFinished)
+{
+    if (Next == ConvoyStep) return;
+    ConvoyStep = Next;
+    if (Who && Message) Who->ShowInteractionMessage(Message);
+    for (TActorIterator<AQuebecController> It(GetWorld()); It; ++It)
+        It->PlayFeedback(bFinished ? EQuebecFeedbackCue::Complete : EQuebecFeedbackCue::Checkpoint);
+    UpdatePresentation();
+    ForceNetUpdate();
+}
+
+bool AQuebecCampaign::NearConvoy(const AQuebecController* Controller, double X, double Y) const
+{
+    const AQuebecCharacter* Character = Controller ? Cast<AQuebecCharacter>(Controller->GetPawn()) : nullptr;
+    if (!Character) return false;
+    const FVector Position = Character->GetActorLocation();
+    if (FMath::Abs(Position.Z) > 400.) return false;
+    return FVector::Dist2D(Position, FVector(X, Y, 0.)) <= QuebecConvoyRules::Reach;
 }
 
 void AQuebecCampaign::TickRace(float DeltaSeconds)
@@ -1133,7 +1219,14 @@ void AQuebecCampaign::RequestRetry(AQuebecController* Controller)
                 Controller->ShowInteractionMessage(TEXT("This group restored. The groups you freed stay out."));
             return;
         }
-        Controller->ShowInteractionMessage(TEXT("The groups are out. T replays the race."));
+        if (IsConvoyOpen())
+        {
+            const QuebecConvoyRules::FSpot Spot = QuebecConvoyRules::RecoverAt(ConvoyStep);
+            if (MoveToSafeCheckpoint(Controller, FVector(Spot.X, Spot.Y, 100.), FRotator(0., 90., 0.)))
+                Controller->ShowInteractionMessage(TEXT("This wagon restored. The disruptions you finished stay banked."));
+            return;
+        }
+        Controller->ShowInteractionMessage(TEXT("The border has a gap. T replays the race."));
         return;
     }
     if (Phase <= EQuebecCampaignPhase::ReleaseTable)
@@ -1208,7 +1301,12 @@ void AQuebecCampaign::RequestReplay(AQuebecController* Controller)
         Controller->ShowInteractionMessage(TEXT("People are still in the picture. T replays the race after the last group is out."));
         return;
     }
-    // A race replay does not rewind PondStep, CourtStep, ShowStep or RescueMask. Banked scenes stay banked for this session.
+    if (IsConvoyOpen())
+    {
+        Controller->ShowInteractionMessage(TEXT("The convoy is still drawing the border. T replays the race after the escape."));
+        return;
+    }
+    // A race replay does not rewind PondStep, CourtStep, ShowStep, RescueMask or ConvoyStep. Banked scenes stay banked for this session.
     RaceGateIndex = 0;
     RaceElapsed = 0.f;
     bRaceRetried = false;
@@ -1292,6 +1390,16 @@ FString AQuebecCampaign::GetInteractionPrompt(const AQuebecController* Controlle
         }
         return FString();
     }
+    if (IsConvoyOpen())
+    {
+        if (ConvoyStep == QuebecConvoyRules::StepGap && NearConvoy(Controller, QuebecConvoyRules::Feeder.X, QuebecConvoyRules::Feeder.Y))
+            return TEXT("E: pull the feeder clamp");
+        if (ConvoyStep == QuebecConvoyRules::StepInvert && NearConvoy(Controller, QuebecConvoyRules::Projector.X, QuebecConvoyRules::Projector.Y))
+            return TEXT("E: invert the plate");
+        if (ConvoyStep == QuebecConvoyRules::StepEscape && NearConvoy(Controller, QuebecConvoyRules::Escape.X, QuebecConvoyRules::Escape.Y))
+            return TEXT("E: take the escape gate");
+        return FString();
+    }
     if (Phase == EQuebecCampaignPhase::AimWorklight && CanReach(Controller,WorklightLocation,LightRadius))
         return IsAimingLight(Controller) ? TEXT("Mouse: aim / E: release worklight") : LightOperator ? TEXT("Friend aiming the worklight") : TEXT("E: aim worklight at gold seam");
     if (Phase == EQuebecCampaignPhase::PullClamp && CanReach(Controller,FirstClampLocation,ClampRadius))
@@ -1307,6 +1415,7 @@ FString AQuebecCampaign::GetMissionTitle() const
     if (IsCourtOpen()) return TEXT("04 / MATCH POINTLESS");
     if (IsShowOpen()) return TEXT("05 / STANDING OVATION");
     if (IsRescueOpen()) return TEXT("06 / NOBODY LEFT IN THE PICTURE");
+    if (IsConvoyOpen()) return TEXT("07 / CAN'T TOW TOMORROW");
     if (Phase == EQuebecCampaignPhase::Complete) return TEXT("THE PARK IS OPEN");
     return Phase <= EQuebecCampaignPhase::ReleaseTable ? TEXT("01 / A TABLE FOR ETERNITY") : TEXT("02 / NO SUCH THING AS A QUIET LAP");
 }
@@ -1362,7 +1471,18 @@ FString AQuebecCampaign::GetObjectiveText() const
         if (bPond) return TEXT("Free the pond.");
         if (bCourt) return TEXT("Free the court.");
     }
-    if (Phase == EQuebecCampaignPhase::Complete) return TEXT("The groups are out / T: replay the race");
+    if (IsConvoyOpen())
+    {
+        switch (ConvoyStep)
+        {
+        case QuebecConvoyRules::StepArrive: return TEXT("Walk to the ink feeder's bay");
+        case QuebecConvoyRules::StepGap: return TEXT("Pull the feeder clamp when the beam gap is open");
+        case QuebecConvoyRules::StepInvert: return TEXT("Invert the projector plate");
+        case QuebecConvoyRules::StepEscape: return TEXT("Take the escape gate");
+        default: break;
+        }
+    }
+    if (Phase == EQuebecCampaignPhase::Complete) return TEXT("The border has a gap / T: replay the race");
     switch (Phase)
     {
     case EQuebecCampaignPhase::AimWorklight: return TEXT("Aim the worklight at the gold seam");
@@ -1423,8 +1543,19 @@ FString AQuebecCampaign::GetBriefingText() const
         if (Open == 2) return TEXT("WHITE CAP: Two groups are still in the pictures. The ones you freed stay out.");
         return TEXT("WHITE CAP: One group left. MEMPHIS: Then we get our park back.");
     }
-    if (Phase == EQuebecCampaignPhase::Complete && PondStep >= PondBankedStep && CourtStep >= CourtBankedStep && ShowStep >= ShowBankedStep && RescueMask >= RescueDone)
-        return TEXT("The groups are out. WHITE CAP: That's the list. MEMPHIS: Okay. Now we get our park back.");
+    if (IsConvoyOpen())
+    {
+        switch (ConvoyStep)
+        {
+        case QuebecConvoyRules::StepArrive: return TEXT("GREEN CAP: One wagon lays the border, one feeds it ink, one carries the projector. Walk to the feeder.");
+        case QuebecConvoyRules::StepGap: return TEXT("The beam paints, then leaves a gap. Pull the clamp in the gap. The warning still lets the pull land.");
+        case QuebecConvoyRules::StepInvert: return TEXT("The feed is stalled. Invert the plate. Blank panels are the opening.");
+        case QuebecConvoyRules::StepEscape: return TEXT("GREEN CAP: Take the gate I called. TOPKNOT: Or the one that is actually clear.");
+        default: break;
+        }
+    }
+    if (Phase == EQuebecCampaignPhase::Complete && PondStep >= PondBankedStep && CourtStep >= CourtBankedStep && ShowStep >= ShowBankedStep && RescueMask >= RescueDone && ConvoyStep >= ConvoyBankedStep)
+        return TEXT("The border has a gap. GREEN CAP: That route was fine. TOPKNOT: This one is better.");
     switch (Phase)
     {
     case EQuebecCampaignPhase::AimWorklight: return TEXT("CURATOR: A moment this lovely should never move. LIME JACKET: The chairs disagree. Strongly. Find the seam in that picnic press.");
@@ -1445,6 +1576,7 @@ FString AQuebecCampaign::GetStatusText() const
     if (IsCourtOpen()) return TEXT("R recovers this rally");
     if (IsShowOpen()) return TEXT("R recovers this cue");
     if (IsRescueOpen()) return TEXT("R recovers this group");
+    if (IsConvoyOpen()) return TEXT("R recovers this wagon");
     if (Phase == EQuebecCampaignPhase::AimWorklight) return FString::Printf(TEXT("Alignment %d%% / hold %d%%"),FMath::RoundToInt(LightAlignment*100.f),FMath::RoundToInt(LightHoldProgress*100.f));
     if (Phase == EQuebecCampaignPhase::CrossCable) return FString::Printf(TEXT("Sprint %s / jump %s / R: recover"),bSprintSeen?TEXT("banked"):TEXT("needed"),bJumpSeen?TEXT("banked"):TEXT("needed"));
     if (Phase == EQuebecCampaignPhase::PullClamp || Phase == EQuebecCampaignPhase::ReleaseTable) return bClampOpen ? TEXT("GREEN BEAT / pull now / R: recover") : TEXT("Press squeezing / wait for green / R: recover");
@@ -1479,6 +1611,11 @@ FVector AQuebecCampaign::GetObjectiveLocation() const
     if (IsRescueOpen())
     {
         const QuebecRescueRules::FSpot Spot = QuebecRescueRules::Objective(RescueMask);
+        return FVector(Spot.X, Spot.Y, 100.);
+    }
+    if (IsConvoyOpen())
+    {
+        const QuebecConvoyRules::FSpot Spot = QuebecConvoyRules::Objective(ConvoyStep);
         return FVector(Spot.X, Spot.Y, 100.);
     }
     switch (Phase)
@@ -1595,6 +1732,19 @@ void AQuebecCampaign::UpdatePresentation()
             if (RescueCaptions.IsValidIndex(Index)) RescueCaptions[Index]->SetVisibility(bShow);
         }
     }
+    if (ConvoyParts.Num() == QuebecConvoyRules::PartCount)
+    {
+        const AGameStateBase* ConvoyState = GetWorld()->GetGameState();
+        const double ConvoyTime = static_cast<double>(ConvoyState ? ConvoyState->GetServerWorldTimeSeconds() : GetWorld()->GetTimeSeconds());
+        const bool bConvoyWorld = Phase == EQuebecCampaignPhase::Complete && PondStep >= PondBankedStep
+            && CourtStep >= CourtBankedStep && ShowStep >= ShowBankedStep && RescueMask >= RescueDone;
+        for (int32 Index = 0; Index < ConvoyParts.Num(); ++Index)
+        {
+            const bool bShow = bConvoyWorld && QuebecConvoyRules::PartVisible(ConvoyStep, Index, ConvoyTime);
+            ConvoyParts[Index]->SetVisibility(bShow);
+            if (ConvoyCaptions.IsValidIndex(Index)) ConvoyCaptions[Index]->SetVisibility(bShow);
+        }
+    }
     // Every sign faces the local camera; the shared objective itself remains authoritative.
     if (APlayerController* Local = GetWorld()->GetFirstPlayerController())
     {
@@ -1621,6 +1771,7 @@ void AQuebecCampaign::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutL
     DOREPLIFETIME(AQuebecCampaign,CourtMisses);
     DOREPLIFETIME(AQuebecCampaign,ShowStep);
     DOREPLIFETIME(AQuebecCampaign,RescueMask);
+    DOREPLIFETIME(AQuebecCampaign,ConvoyStep);
     DOREPLIFETIME(AQuebecCampaign,LightOperator);
     DOREPLIFETIME(AQuebecCampaign,LightYaw);
     DOREPLIFETIME(AQuebecCampaign,LightPitch);
