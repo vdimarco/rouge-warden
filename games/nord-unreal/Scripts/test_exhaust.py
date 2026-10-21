@@ -43,6 +43,7 @@ class ExhaustTests(unittest.TestCase):
         self.assertFalse(running(400.0, 1.0, True))
         self.assertFalse(running(200.0, 1.0, False, ride=1))
         self.assertFalse(running(200.0, 1.0, False, ride=2))
+        self.assertFalse(running(200.0, 1.0, False, ride=3))
 
     def test_the_column_leaves_the_tail_and_rises(self):
         # Car at the origin, facing +X. Age in seconds. Side index 0, 1, 2.

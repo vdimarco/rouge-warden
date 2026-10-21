@@ -210,8 +210,8 @@ void AQuebecCar::OnCarImpact(AQuebecCar* Other, float Closing, const FVector& Wh
     const float Damage = QuebecSteer::ImpactDamage(Closing,false);
     if (Damage > 0.f)
     {
-        if (!IsPedalo() && !IsBike()) AddBodyDamage(Damage,Other->GetDriverController());
-        if (!Other->IsPedalo() && !Other->IsBike()) Other->AddBodyDamage(Damage,Driver);
+        if (!IsPedalo() && !IsBike() && !IsScoot()) AddBodyDamage(Damage,Other->GetDriverController());
+        if (!Other->IsPedalo() && !Other->IsBike() && !Other->IsScoot()) Other->AddBodyDamage(Damage,Driver);
     }
     // Ramming a car with someone at the wheel is a crime; a parked car is only a dent.
     const bool bOtherDriven = Other->bPolice || Other->bTraffic || Other->bAutopilot || Other->Occupant || Other->GetController();
@@ -230,7 +230,7 @@ void AQuebecCar::OnWallImpact(const FVector& Normal, float Closing, float Step)
     PlayImpactThud(Closing, true);
     LastWallNormal = Normal;
     const float Damage = QuebecSteer::ImpactDamage(Closing,true);
-    if (Damage > 0.f && !bTraffic && !IsPedalo() && !IsBike()) AddBodyDamage(Damage,GetDriverController());
+    if (Damage > 0.f && !bTraffic && !IsPedalo() && !IsBike() && !IsScoot()) AddBodyDamage(Damage,GetDriverController());
     if (!bSteerAssist || KnockTime > 0.f) return;
     // A glancing scrape along a street wall turns the nose along it instead of grinding the bumper into it.
     const FVector Forward = GetActorForwardVector().GetSafeNormal2D();
