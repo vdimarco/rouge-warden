@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { setTimeout as wait } from 'node:timers/promises';
-import { setupTouchControls, gradedLevel, steerKeys, pedalEdges } from './touch-controls.js';
+import { setupTouchControls, gradedLevel, steerKeys, pedalEdges, walkKey, walkKeys } from './touch-controls.js';
 
 function fixture() {
   const window = new EventTarget();
@@ -623,6 +623,15 @@ test('graded steering has three levels per side at 0.18, 0.45 and 0.75 of the wh
   }
   for (const value of [NaN, Infinity, undefined]) assert.equal(gradedLevel(value, 2), 0);
   assert.deepEqual([-3, -2, -1, 1, 2, 3].map(level => steerKeys.get(level)), [65, 98, 97, 100, 101, 68]);
+  assert.deepEqual([1, 2, 3].map(level => walkKey('y', level)), [104, 105, 87]);
+  assert.deepEqual([1, 2, 3].map(level => walkKey('y', -level)), [99, 102, 83]);
+  assert.deepEqual([1, 2, 3].map(level => walkKey('x', -level)), [103, 96, 65]);
+  assert.deepEqual([1, 2, 3].map(level => walkKey('x', level)), [106, 107, 68]);
+  assert.equal(walkKey('x', 0), 0);
+  const steerCodes = new Set(steerKeys.values());
+  for (const table of Object.values(walkKeys))
+    for (const [level, code] of table)
+      if (level < 3) assert.equal(steerCodes.has(code), false, code);
   assert.equal(steerKeys.has(0), false, 'the centre holds no steering key');
 });
 
@@ -802,4 +811,32 @@ test('Aim and Fire release on every interruption and keyboard activation pulses 
   assert.deepEqual(f.messages, [['MouseEnter'], ['MouseDown', 2, 32768, 32768], ['KeyDown', 81, 0]]);
   await wait(150);
   assert.deepEqual(f.messages.slice(3), [['MouseUp', 2, 32768, 32768], ['KeyUp', 81]]);
+});
+
+test('on foot a short push walks, a longer push strides, and the edge still runs', () => {
+  const f = fixture();
+  const move = f.control({ stick: 'move' });
+  f.setEnabled(true);
+  f.pointer('pointerdown', move);
+  f.pointer('pointermove', move, 1, 65, 35);
+  assert.deepEqual(f.messages, [['KeyDown', 106, 0], ['KeyDown', 104, 0]], 'a short diagonal is a third, not full lock');
+  f.pointer('pointermove', move, 1, 75, 25);
+  assert.deepEqual(f.messages.slice(2), [['KeyUp', 106], ['KeyUp', 104], ['KeyDown', 107, 0], ['KeyDown', 105, 0]], 'the middle step is two thirds');
+  f.pointer('pointermove', move, 1, 90, 10);
+  assert.deepEqual(f.messages.slice(6), [['KeyUp', 107], ['KeyUp', 105], ['KeyDown', 68, 0], ['KeyDown', 87, 0]], 'the edge stays WASD');
+  f.pointer('pointerup', move);
+});
+
+test('a latched sprint waits for a full step', () => {
+  const f = fixture();
+  f.setEnabled(true);
+  f.setDriving(false);
+  f.pointer('pointerdown', f.surface, 1, 300, 400, 100);
+  f.pointer('pointerup', f.surface, 1, 300, 400, 150);
+  f.pointer('pointerdown', f.surface, 1, 300, 400, 300);
+  f.pointer('pointermove', f.surface, 1, 315, 385, 320);
+  assert.equal(f.messages.some(message => message[1] === 16), false, 'a third of a step does not sprint');
+  assert.ok(f.messages.some(message => message[0] === 'KeyDown' && message[1] === 104));
+  f.pointer('pointermove', f.surface, 1, 300, 340, 360);
+  assert.ok(f.messages.some(message => message[0] === 'KeyDown' && message[1] === 16), 'a full step still sprints');
 });

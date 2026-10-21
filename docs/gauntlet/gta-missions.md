@@ -1028,3 +1028,48 @@ Unreal is not available here, so the native diamond was not captured. The title 
 ![Play client at 1280, host offline](gta-missions/r22-play-1280.png)
 
 ![Menu on a 390-wide screen, Recover visible](gta-missions/r22-play-menu-390.png)
+
+### Round 23 — 2026-10-21 — rubric v1
+
+- What changed: The on-foot stick walks in three steps, on the same edges as the wheel. A short push is a third of full speed. A longer push is two thirds. The edge stays full speed, on W, A, S and D. WASD and the arrow keys stay full lock. A latched sprint waits for that full step.
+- Why it helped: Controls feel was a 5 because the arrows already matched WASD, and the on-foot stick was still full speed once the thumb left a dead zone.
+- Screenshots: title `docs/gauntlet/gta-missions/r23-title-1280.png`, `r23-title-390.png`, `r23-title-320.png`. Play client, host offline, `r23-play-1280.png`. Menu with Recover `r23-play-menu-390.png`. The title loaded with no page errors. The raw play page still logs the missing `@epicgames-ps/lib-pixelstreamingfrontend-ue5.8` specifier; the shell and Recover still draw. The steps were not played in Unreal. `node --test touch-controls.test.mjs` reports 39 tests, 0 failures. `Scripts/test_move_keys.py` reports 22 axis mappings and that the arrows still match WASD. OpenSpec CLI is not installed, so `openspec validate` did not run.
+- Next target: sound design (6), tied with pacing. Controls feel is now 6. Performance stays at 4 and is not measurable here. Responsiveness stays at 3 and stays out of scope. The steps are proven by the stick and the input map. They were not played, so the controls score waits at 6. The next round should keep to a change the tests can prove, and should not add a chapter or touch the stream.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 3 | Unchanged. |
+| Color palette | 5 | Unchanged. |
+| Detail density | 3 | Unchanged. |
+| Texture and material quality | 3 | Unchanged. |
+| Composition and camera | 4 | Unchanged. |
+| Atmosphere | 4 | Unchanged. |
+| Character models | 3 | Unchanged. |
+| Animation smoothness | 3 | Unchanged. |
+| Particles and VFX | 2 | Unchanged. |
+| UI polish | 4 | Unchanged. The native card was not seen, and French and English still share the screen. |
+| Responsiveness and input latency | 3 | Unchanged. Still a lagged stream. Out of scope for this loop. |
+| Controls feel | 6 | The on-foot stick walks in three steps, on the same edges as the wheel. A short push is a third, a longer push is two thirds, and the edge stays WASD. Arrows stay full lock. A latched sprint waits for the full step. It was not played. |
+| Mission clarity | 7 | Unchanged. |
+| Pacing | 6 | Unchanged. A long leg still names a sprint shorter than its walk. |
+| Fun factor | 7 | Unchanged. A close call still pays on the front of a clear window. |
+| Difficulty curve | 7 | Unchanged. The court ink and the convoy beam still grow with the chain. |
+| Feedback | 7 | Unchanged. A bank still names its rank. |
+| Sound design | 6 | Unchanged. |
+| Variety | 9 | Unchanged. Eight of eight story missions, plus the four side jobs. |
+| Performance stability | 4 | Unchanged. Not measurable in this container. |
+
+- Aesthetics raw: 34 / 10 dimensions, index 34
+- Playability raw: 62 / 10 dimensions, index 62
+- Total: 96 / 200
+- Delta vs last round: +1 (round 22 was 95). Controls feel 5 → 6. Every other score held.
+
+![GTA title at 1280](gta-missions/r23-title-1280.png)
+
+![GTA title at 390](gta-missions/r23-title-390.png)
+
+![GTA title at 320](gta-missions/r23-title-320.png)
+
+![Play client at 1280, host offline](gta-missions/r23-play-1280.png)
+
+![Menu on a 390-wide screen, Recover visible](gta-missions/r23-play-menu-390.png)

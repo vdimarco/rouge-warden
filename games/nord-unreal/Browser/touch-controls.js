@@ -2,6 +2,21 @@
 // MoveRight -0.33/-0.66 and NumPad 4/5 to +0.33/+0.66 (JavaScript key codes 97, 98, 100, 101); A and D stay full lock.
 export const steerKeys = new Map([[-3, 65], [-2, 98], [-1, 97], [1, 100], [2, 101], [3, 68]]);
 const steeringKeys = new Set(steerKeys.values());
+// On-foot stick: the same three steps. WASD stay full lock. The shorter steps use numpad keys the wheel does not.
+export const walkKeys = {
+  forward: new Map([[1, 104], [2, 105], [3, 87]]),
+  back: new Map([[1, 99], [2, 102], [3, 83]]),
+  left: new Map([[1, 103], [2, 96], [3, 65]]),
+  right: new Map([[1, 106], [2, 107], [3, 68]])
+};
+export function walkKey(axis, level) {
+  const size = Math.abs(level);
+  if (!size) return 0;
+  const table = axis === 'x'
+    ? (level < 0 ? walkKeys.left : walkKeys.right)
+    : (level < 0 ? walkKeys.back : walkKeys.forward);
+  return table.get(size) || 0;
+}
 // Wheel deflection, as a fraction of its drag reach, where each steering level and the pedals engage.
 export const steerEdges = [.18, .45, .75];
 export const pedalEdges = [.28];
@@ -209,7 +224,9 @@ export function setupTouchControls({ root, surface, stream }) {
       const centerY = pointer.originY ?? bounds.top + bounds.height / 2;
       const x = (event.clientX - centerX) / radius;
       const y = (event.clientY - centerY) / radius;
-      pointer.keys = [x < -.28 && 65, x > .28 && 68, y < -.28 && 87, y > .28 && 83].filter(Boolean);
+      pointer.side = gradedLevel(x, pointer.side);
+      pointer.forward = gradedLevel(-y, pointer.forward);
+      pointer.keys = [walkKey('x', pointer.side), walkKey('y', pointer.forward)].filter(Boolean);
       const scale = radius * .55 / Math.max(1, Math.hypot(x, y));
       pointer.target.style.setProperty('--stick-x', `${x * scale}px`);
       pointer.target.style.setProperty('--stick-y', `${y * scale}px`);

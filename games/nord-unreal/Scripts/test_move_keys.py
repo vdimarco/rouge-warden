@@ -37,6 +37,22 @@ for key, expected in graded.items():
     uses = [(name, value) for name, value, mapped in axes if mapped == key]
     assert uses == [("MoveRight", f"{expected:.6f}")], uses
 
+walk = {
+    ("MoveForward", "NumPadEight"): 0.33,
+    ("MoveForward", "NumPadNine"): 0.66,
+    ("MoveForward", "NumPadThree"): -0.33,
+    ("MoveForward", "NumPadSix"): -0.66,
+    ("MoveRight", "NumPadSeven"): -0.33,
+    ("MoveRight", "NumPadZero"): -0.66,
+    ("MoveRight", "Multiply"): 0.33,
+    ("MoveRight", "Add"): 0.66,
+}
+for (name, key), expected in walk.items():
+    assert abs(scale[(name, key)] - expected) < 1e-6, (name, key)
+    uses = [(axis, value) for axis, value, mapped in axes if mapped == key]
+    assert len(uses) == 1, uses
+assert scale[("MoveForward", "W")] == 1.0 and scale[("MoveRight", "D")] == 1.0
+
 assert "WASD or arrows  Drive / steer" in HUD
 assert "WASD</b> or arrows Move / drive" in PAGE
 print(f"{len(axes)} axis mappings, arrows match WASD, 0 failures")
