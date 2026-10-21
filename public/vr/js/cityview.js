@@ -843,6 +843,11 @@ vec3 wallColor(int k, float shop, float sd, float salt, float h1, float h2, floa
   }
   // above the last window row, and the parapet: plain wall
   if (y > top) col = comicCel(mix(wallAlb, vec3(0.62, 0.6, 0.64), 0.4), band);
+  // Shaded wall under the street air takes a warm bounce from the avenue. The lit band stays the sun,
+  // and a lit window (em) keeps its own light. The height is the 18 m street layer, faded out by the roofs.
+  float shade = 1.0 - smoothstep(0.25, 1.15, band);
+  float low = 1.0 - smoothstep(8.0, 20.0, y);
+  col = mix(col, col * vec3(1.7, 1.05, 0.5) + vec3(0.08, 0.02, 0.0), shade * low * (1.0 - em) * 0.85);
   return col;
 }
 vec3 roofColor(int k, float h1, float h2, vec3 N) {
