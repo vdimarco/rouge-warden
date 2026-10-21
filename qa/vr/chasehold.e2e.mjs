@@ -64,7 +64,9 @@ try {
     const g0 = G.test.action().combat.list.find((g) => g.runner);
     G.test.step(1 / 60, 90);
     const g1 = G.test.action().combat.list.find((g) => g.runner);
+    G.test.step(1 / 60, 8);
     const ob = G.game.progress.objective;
+    const dom = document.querySelector("[data-k=mission]").innerText.replace(/\s+/g, " ");
     return {
       n,
       tut: G.game.progress.tutorial,
@@ -72,11 +74,12 @@ try {
       dropped: t0 - G.jobs.active.timer,
       moved: Math.hypot(g1.x - g0.x, g1.z - g0.z),
       detail: ob && ob.detail,
+      dom,
     };
   });
   check(ran.n >= 0 && ran.tut !== 0 && ran.hold === false, "a rope on the gold ring ends the wait", ran);
   check(ran.dropped > 1 && ran.moved > 2, "the clock counts down and the runner runs", ran);
-  check(/catch the runner/i.test(ran.detail), "the card is the chase again", ran.detail);
+  check(/catch the runner/i.test(ran.detail) && /catch the runner/i.test(ran.dom), "the card on screen is the chase again", ran);
   await page.screenshot({ path: out + "/clock-runs.png" });
   check(page.errors.length === 0, "no page errors", page.errors);
 } catch (e) {

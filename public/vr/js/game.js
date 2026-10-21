@@ -2058,7 +2058,12 @@ export function createGame({ scene, city, view, ropes, hands, ui, audio, P, save
     skipTutorial() { tutFinish(true); },
     // jobs.js: Loonies for a job done, and the mission card while a job runs ({ title, detail, short, n, of, goal } or null)
     reward(n) { addBonus(n); setBank(); },
-    setJob(card) { if (!!card !== !!jobCard) objT = 0; jobCard = card || null; },
+    setJob(card) {
+      const next = card || null;
+      // a new sentence (the wait ending, the crew arriving) shows on the card at once; the distance can change every frame
+      if (!next !== !jobCard || (next && jobCard && next.detail !== jobCard.detail)) objT = 0;
+      jobCard = next;
+    },
     onStory(fn) { storyFn = fn; },
     // the line of the row or step you are on, again (after a scene covered it)
     resay() { if (train.on && progress.training && progress.training.now >= 0) trainSay(train.items[progress.training.now]); else if (tut.step >= 0) say("tutorial", tut.step); },

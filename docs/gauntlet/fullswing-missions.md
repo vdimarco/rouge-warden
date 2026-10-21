@@ -42,3 +42,44 @@ Loop: missions, playability, controls, feel, UX, pacing and fun for In Full Swin
 ![RUNNER 38 m, CLOSING, on the runner](fullswing-r1/runner-closing.png)
 
 ![Turned away, the sticker sits on the left edge and points left](fullswing-r1/runner-offscreen.png)
+
+### Round 2 — 2026-10-21 — rubric v1
+
+- What changed: On a first lesson (the gold-ring row, or the spoken tutorial's first line), the Sludge Run runner stands and the bomb clock does not count. The card keeps the time and says "Swing first. He waits until you do." A rope, or the end of that lesson, starts the run and the clock. A retry after the lesson runs at once. The eight training rows stay.
+- Why it helped: A play at 1280×800 had "SLUDGE RUN 75 s" and "Catch the runner, 38 m" while training still said "Swing at the gold ring". Three seconds later the clock read 72 s and the runner had moved 17 m. Spider-Man 2 teaches the swing inside the opening chase and does not burn the fail timer during that beat. After the change the clock stayed at 76 s for three seconds, a rope on the gold ring ticked the first row, and the card became "Catch the runner, 32 m" with the clock at 74 s.
+- Screenshots: before `docs/gauntlet/fullswing-r2/before-lesson.png`. After `docs/gauntlet/fullswing-r2/clock-waits.png` and `docs/gauntlet/fullswing-r2/clock-runs.png`.
+- Next target: sound design (4). It is the lowest playability score. It stays at 4 until a round listens to the chase.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 5 | Unchanged. Golden-hour sun and ink shadows, not a filmed city at dusk. |
+| Color palette | 6 | Unchanged. Yellow, red and sludge green still separate the HUD from the blocks. |
+| Detail density | 4 | Unchanged. The swing still reads as open space more than a dressed borough. |
+| Texture and material quality | 3 | Unchanged. Flat fills. |
+| Composition and camera | 4 | Unchanged. The chase camera still watches the skyline, and the runner leaves the bottom of the frame once he runs. |
+| Atmosphere | 5 | Unchanged. The dusk skyline has a mood. The street under the chase does not. |
+| Character models | 3 | Unchanged. Simple comic figures at this distance. |
+| Animation smoothness | 4 | Scored from still frames in software GL. The rope pose is there. Continuous motion was not watched. |
+| Particles and VFX | 4 | The second frame shows the rope line. No hit, trail or blast. |
+| UI polish | 6 | The wait sentence fits the mission pill beside the training card, in the same ink and yellow. |
+| Responsiveness and input latency | 7 | The card switches to the chase on the swing, and the stepped tests show the clock and the runner on that frame. |
+| Controls feel | 5 | Unchanged. Swing is still hold-forward plus the mouse. The lesson no longer races the bomb, and the swing itself is the same. |
+| Mission clarity | 7 | The card says to swing first while the gold-ring row is open, then names the runner and the distance. The gold ring is still a second place to look. |
+| Pacing | 6 | The bomb and the runner wait out the first swing, so the lesson is not a fail timer. After that, Mission 2 is still twelve of the same clog. |
+| Fun factor | 6 | The first minute is a swing and then a chase. The opening no longer splits the bomb and the lesson. |
+| Difficulty curve | 6 | Standing on the roof to learn the swing no longer loses the runner. Once he runs he is still the same 5.4 m/s jog, with a toast and a retry. |
+| Feedback | 6 | Unchanged. CLOSING, the GO cue and the hit-stop are the juice. The new sentence is the card, not a new hit. |
+| Sound design | 4 | Not listened to. The playtest ran with audio disabled. No chase bed was judged. |
+| Variety | 5 | Unchanged. Odd jobs cover chase, carry, drive and fight. The story after Mission 1 does not. |
+| Performance stability | 6 | The first-run play and the job tests passed with no page errors. Frame time on a real GPU was not measured. |
+
+- Aesthetics raw: 44 / 10 dimensions, index 44
+- Playability raw: 58 / 10 dimensions, index 58
+- Total: 102 / 200
+- Delta vs last round: +5 (round 1 was 97). Pacing 4 → 6, mission clarity 6 → 7, fun factor 5 → 6, difficulty curve 5 → 6. Every other score held.
+
+![Before: the bomb clock and the gold-ring lesson run together](fullswing-r2/before-lesson.png)
+
+![The clock stays at 76 s and the card says to swing first](fullswing-r2/clock-waits.png)
+
+![After the rope, the card is the chase and the clock has moved to 74 s](fullswing-r2/clock-runs.png)
