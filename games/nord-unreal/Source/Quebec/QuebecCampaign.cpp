@@ -663,6 +663,8 @@ bool AQuebecCampaign::HandleInteract(AQuebecController* Controller)
                 const int32 Next = QuebecCourtRules::Apply(CourtStep, QuebecCourtRules::EAct::Bank, QuebecCourtRules::BankPanel, CourtTime);
                 if (Next == CourtStep)
                 {
+                    ++CourtMisses;
+                    ForceNetUpdate();
                     Controller->ShowInteractionMessage(QuebecCourtRules::SweepDanger(CourtTime)
                         ? TEXT("Ink on the line. Let it pass.")
                         : TEXT("Wait until the ball crosses the middle panel."));
@@ -1469,6 +1471,7 @@ void AQuebecCampaign::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutL
     DOREPLIFETIME(AQuebecCampaign,CompletedMissions);
     DOREPLIFETIME(AQuebecCampaign,PondStep);
     DOREPLIFETIME(AQuebecCampaign,CourtStep);
+    DOREPLIFETIME(AQuebecCampaign,CourtMisses);
     DOREPLIFETIME(AQuebecCampaign,ShowStep);
     DOREPLIFETIME(AQuebecCampaign,LightOperator);
     DOREPLIFETIME(AQuebecCampaign,LightYaw);

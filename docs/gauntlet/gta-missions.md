@@ -263,3 +263,48 @@ Unreal is not available here, so the native diamond was not captured. The title 
 ![Play client at 1280, host offline](gta-missions/r5-play-1280.png)
 
 ![Menu on a 390-wide screen, Recover visible](gta-missions/r5-play-menu-390.png)
+
+### Round 6 — 2026-10-21 — rubric v1
+
+- What changed: A clear bank on mission 4 plays a short original whistle when the step moves from the return gate to the clamp. A bank spoiled by the ink, or taken before the ball is on the middle panel, stays on that step, increments a session-only miss count, and the local player hears a rasp. The miss count is not in the v1 save. The cooked cues, the pond tick, the page, and the music loops are unchanged.
+- Why it helped: The bank was the mission's joke, and it answered with the same checkpoint cue as a walk-up. The whistle marks the shot that lands. The rasp marks the one the ink takes.
+- Screenshots: title `docs/gauntlet/gta-missions/r6-title-1280.png`, `r6-title-390.png`, `r6-title-320.png`. Play client, host offline, `r6-play-1280.png`. Menu with Recover `r6-play-menu-390.png`. The title loaded with no page errors. The raw play page still logs the missing `@epicgames-ps/lib-pixelstreamingfrontend-ue5.8` specifier; the shell and Recover still draw. The whistle and the rasp were not heard: Unreal is not in this container. `Scripts/test_court_rules.py` reports 144 assertions, 0 failures, on c++, g++ and clang++. Syntax check `--both` passed for the campaign, the controller, the race-result test and the music tests. OpenSpec CLI is not installed, so `openspec validate` did not run.
+- Next target: fun factor (4), still tied with controls, mission clarity, pacing, sound and performance. Responsiveness stays at 3 and stays out of scope. The whistle was not played, so the feel score waits. The next round should open mission 6 rather than touch the stream.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 3 | Unchanged. |
+| Color palette | 5 | Unchanged. |
+| Detail density | 3 | Unchanged. |
+| Texture and material quality | 3 | Unchanged. |
+| Composition and camera | 4 | Unchanged. |
+| Atmosphere | 4 | Unchanged. The court was not played. |
+| Character models | 3 | Unchanged. |
+| Animation smoothness | 3 | Unchanged. |
+| Particles and VFX | 2 | Unchanged. |
+| UI polish | 4 | Unchanged. |
+| Responsiveness and input latency | 3 | Unchanged. Still a lagged stream. Out of scope for this loop. |
+| Controls feel | 4 | Unchanged. The bank is still E at the gate. |
+| Mission clarity | 4 | Unchanged. The card already named the gate. The sounds were not heard in play. |
+| Pacing | 4 | Unchanged. |
+| Fun factor | 4 | The penalty on the light now has a whistle on paper. It was not played, so the feel score stays. |
+| Difficulty curve | 5 | Unchanged. The ink window was already there. The rasp names a miss; it does not change the window. |
+| Feedback | 6 | A clear bank whistles and a spoiled bank rasps. Those are not the checkpoint cue, the pond tick, or the page. They were not heard in Unreal. |
+| Sound design | 4 | Unchanged. The city still has two loops. The whistle and the rasp are short blips, and nobody is voiced. |
+| Variety | 6 | Unchanged. Five of eight story missions. |
+| Performance stability | 4 | Unchanged. |
+
+- Aesthetics raw: 34 / 10 dimensions, index 34
+- Playability raw: 44 / 10 dimensions, index 44
+- Total: 78 / 200
+- Delta vs last round: +1 (round 5 was 77). Feedback 5 → 6. Every other score held.
+
+![GTA title at 1280](gta-missions/r6-title-1280.png)
+
+![GTA title at 390](gta-missions/r6-title-390.png)
+
+![GTA title at 320](gta-missions/r6-title-320.png)
+
+![Play client at 1280, host offline](gta-missions/r6-play-1280.png)
+
+![Menu on a 390-wide screen, Recover visible](gta-missions/r6-play-menu-390.png)

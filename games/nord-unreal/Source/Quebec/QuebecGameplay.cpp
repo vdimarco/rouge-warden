@@ -1,6 +1,8 @@
 #include "QuebecGameplay.h"
 #include "Misc/PackageName.h"
 #include "QuebecCampaign.h"
+#include "QuebecCourtRules.h"
+#include "QuebecCourtTone.h"
 #include "QuebecPondRules.h"
 #include "QuebecPondTone.h"
 #include "QuebecShowRules.h"
@@ -1627,6 +1629,14 @@ AQuebecController::AQuebecController()
     ShowPageAudio->bAutoActivate = false;
     ShowPageAudio->bAllowSpatialization = false;
     ShowPageAudio->VolumeMultiplier = .6f;
+    CourtWhistleAudio = CreateDefaultSubobject<UAudioComponent>(TEXT("CourtWhistleAudio"));
+    CourtWhistleAudio->bAutoActivate = false;
+    CourtWhistleAudio->bAllowSpatialization = false;
+    CourtWhistleAudio->VolumeMultiplier = .6f;
+    CourtRaspAudio = CreateDefaultSubobject<UAudioComponent>(TEXT("CourtRaspAudio"));
+    CourtRaspAudio->bAutoActivate = false;
+    CourtRaspAudio->bAllowSpatialization = false;
+    CourtRaspAudio->VolumeMultiplier = .5f;
 }
 
 void AQuebecController::PlayFeedback(EQuebecFeedbackCue Cue)
@@ -1797,6 +1807,47 @@ void AQuebecController::TickShowPage()
     ShowHeardStep = (IsLocalController() && Campaign) ? Step : -1;
 }
 
+void AQuebecController::PlayCourtWave(UAudioComponent* Audio, TObjectPtr<USoundWaveProcedural>& Wave, int32 Frames, bool bWhistle)
+{
+    if (!Audio || !GetWorld() || !GetWorld()->AllowAudioPlayback()) return;
+    if (!Wave)
+    {
+        Wave = NewObject<USoundWaveProcedural>(this);
+        Wave->SetSampleRate(static_cast<uint32>(QuebecCourtTone::SampleRate));
+        Wave->NumChannels = 1;
+        Wave->Duration = static_cast<float>(Frames) / static_cast<float>(QuebecCourtTone::SampleRate);
+        Audio->SetSound(Wave);
+    }
+    Wave->ResetAudio();
+    TArray<int16> Pcm;
+    Pcm.SetNumUninitialized(Frames);
+    for (int32 Frame = 0; Frame < Frames; ++Frame)
+    {
+        const double Raw = bWhistle ? QuebecCourtTone::WhistleAt(Frame) : QuebecCourtTone::RaspAt(Frame);
+        const float Sample = FMath::Clamp(static_cast<float>(Raw), -1.f, 1.f);
+        Pcm[Frame] = static_cast<int16>(Sample * 32767.f);
+    }
+    Wave->QueueAudio(reinterpret_cast<const uint8*>(Pcm.GetData()), Frames * static_cast<int32>(sizeof(int16)));
+    Audio->Play();
+}
+
+void AQuebecController::TickCourtFeel()
+{
+    const AQuebecCampaign* Campaign = CampaignFor(GetWorld());
+    if (!IsLocalController() || !Campaign)
+    {
+        CourtHeardStep = -1;
+        CourtHeardMisses = -1;
+        return;
+    }
+    if (Campaign->CourtStep == QuebecCourtRules::StepPull && CourtHeardStep == QuebecCourtRules::StepRedirect)
+        PlayCourtWave(CourtWhistleAudio, CourtWhistleWave, QuebecCourtTone::WhistleFrames, true);
+    if (CourtHeardMisses >= 0 && Campaign->CourtMisses != CourtHeardMisses)
+        PlayCourtWave(CourtRaspAudio, CourtRaspWave, QuebecCourtTone::RaspFrames, false);
+    CourtHeardStep = Campaign->CourtStep;
+    CourtHeardMisses = Campaign->CourtMisses;
+}
+
 void AQuebecController::TickPondBlink()
 {
     const AQuebecCampaign* Campaign = CampaignFor(GetWorld());
@@ -1821,6 +1872,7 @@ void AQuebecController::PlayerTick(float DeltaTime)
     UpdateMusic(Campaign && Campaign->Phase == EQuebecCampaignPhase::RaceRunning);
     TickPondBlink();
     TickShowPage();
+    TickCourtFeel();
     BrowserStateElapsed += DeltaTime;
     if (BrowserStateElapsed >= .5f && !BrowserStreamerId.IsEmpty() && IPixelStreaming2Module::IsAvailable())
     {

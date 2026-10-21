@@ -6,10 +6,14 @@
 #pragma GCC poison PI HALF_PI TWO_PI INV_PI UE_PI check checkf checkSlow verify verifyf ensure ensureMsgf TEXT SMALL_NUMBER KINDA_SMALL_NUMBER BIG_NUMBER DELTA FORCEINLINE UE_LOG FVector FString TArray
 #endif
 #include "../Source/Quebec/QuebecCourtRules.h"
+#include "../Source/Quebec/QuebecCourtTone.h"
+#include "../Source/Quebec/QuebecPondTone.h"
+#include "../Source/Quebec/QuebecShowTone.h"
 #include "../Source/Quebec/QuebecPondRules.h"
 #include "../Source/Quebec/QuebecJobRules.h"
 
 #include <cstdarg>
+#include <cmath>
 #include <cstdio>
 
 using namespace QuebecCourtRules;
@@ -135,6 +139,36 @@ int main()
     Expect(!GuidesAfterCourt(true, true, StepPull), "side jobs lead while the match is looping");
     Expect(GuidesAfterCourt(true, true, StepBanked), "a banked court did not return the side-job guide");
     Expect(!GuidesAfterCourt(true, false, StepBanked), "side jobs lead before the picnic is banked");
+
+    Expect(QuebecCourtTone::WhistleHz != QuebecPondTone::Frequency, "the bank whistle uses the pond tick");
+    Expect(QuebecCourtTone::WhistleHz != QuebecShowTone::ThumpHz && QuebecCourtTone::WhistleOverHz != QuebecShowTone::FlutterHz,
+        "the bank whistle uses the page");
+    Expect(QuebecCourtTone::RaspHz != QuebecCourtTone::WhistleHz, "the ink rasp is the whistle");
+    Expect(QuebecCourtTone::WhistleFrames < QuebecShowTone::PageFrames, "the whistle is as long as the page");
+    double WhistlePeak = 0.;
+    for (int Frame = 0; Frame < QuebecCourtTone::WhistleFrames; ++Frame)
+        WhistlePeak = std::fmax(WhistlePeak, std::fabs(QuebecCourtTone::WhistleAt(Frame)));
+    Expect(WhistlePeak > 0.02 && WhistlePeak <= QuebecCourtTone::WhistlePeak + 1e-9, "the whistle is silent or too hot");
+    Expect(std::fabs(QuebecCourtTone::WhistleAt(QuebecCourtTone::WhistleFrames - 1)) < 0.02, "the whistle tail is still loud");
+    Expect(QuebecCourtTone::WhistleAt(-1) == 0. && QuebecCourtTone::WhistleAt(QuebecCourtTone::WhistleFrames) == 0.,
+        "the whistle plays outside its window");
+    double RaspPeak = 0.;
+    for (int Frame = 0; Frame < QuebecCourtTone::RaspFrames; ++Frame)
+        RaspPeak = std::fmax(RaspPeak, std::fabs(QuebecCourtTone::RaspAt(Frame)));
+    Expect(RaspPeak > 0.01 && RaspPeak <= QuebecCourtTone::RaspPeak + 1e-9, "the rasp is silent or too hot");
+    Expect(std::fabs(QuebecCourtTone::RaspAt(QuebecCourtTone::RaspFrames - 1)) < 0.02, "the rasp tail is still loud");
+    Expect(QuebecCourtTone::RaspAt(-1) == 0. && QuebecCourtTone::RaspAt(QuebecCourtTone::RaspFrames) == 0.,
+        "the rasp plays outside its window");
+    bool bWhistleDistinct = false;
+    for (int Frame = 0; Frame < QuebecPondTone::TickFrames && Frame < QuebecCourtTone::WhistleFrames; ++Frame)
+    {
+        if (std::fabs(QuebecCourtTone::WhistleAt(Frame) - QuebecPondTone::SampleAt(Frame)) > 0.01)
+        {
+            bWhistleDistinct = true;
+            break;
+        }
+    }
+    Expect(bWhistleDistinct, "the whistle matches the pond tick");
 
     std::printf("%d assertions, %d failures\n", Assertions, Failures);
     return Failures == 0 ? 0 : 1;

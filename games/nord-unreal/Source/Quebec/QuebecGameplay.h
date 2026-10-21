@@ -535,6 +535,14 @@ private:
     UPROPERTY() TObjectPtr<class UAudioComponent> ShowPageAudio;
     UPROPERTY() TObjectPtr<class USoundWaveProcedural> ShowPageWave;
     int32 ShowHeardStep = -1;
+    void TickCourtFeel();
+    void PlayCourtWave(class UAudioComponent* Audio, TObjectPtr<class USoundWaveProcedural>& Wave, int32 Frames, bool bWhistle);
+    UPROPERTY() TObjectPtr<class UAudioComponent> CourtWhistleAudio;
+    UPROPERTY() TObjectPtr<class USoundWaveProcedural> CourtWhistleWave;
+    UPROPERTY() TObjectPtr<class UAudioComponent> CourtRaspAudio;
+    UPROPERTY() TObjectPtr<class USoundWaveProcedural> CourtRaspWave;
+    int32 CourtHeardStep = -1;
+    int32 CourtHeardMisses = -1;
     UPROPERTY() TObjectPtr<AQuebecCharacter> WalkingCharacter;
     UPROPERTY() TObjectPtr<UMaterialInterface> ComicMaterial;
     bool bComicStyle = false;

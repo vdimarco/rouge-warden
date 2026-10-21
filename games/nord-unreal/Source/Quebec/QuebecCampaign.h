@@ -77,6 +77,8 @@ public:
     UPROPERTY(VisibleAnywhere, Replicated) int32 CompletedMissions = 0;
     UPROPERTY(VisibleAnywhere, ReplicatedUsing=UpdatePresentation) int32 PondStep = 0;
     UPROPERTY(VisibleAnywhere, ReplicatedUsing=UpdatePresentation) int32 CourtStep = 0;
+    // Session-only. A spoiled bank increments it so the local rasp can hear the miss. Not written to the v1 slot.
+    UPROPERTY(VisibleAnywhere, Replicated) int32 CourtMisses = 0;
     UPROPERTY(VisibleAnywhere, ReplicatedUsing=UpdatePresentation) int32 ShowStep = 0;
     UPROPERTY(VisibleAnywhere, Replicated) TObjectPtr<APlayerState> LightOperator;
     UPROPERTY(VisibleAnywhere, Replicated) float LightYaw = 0.f;
