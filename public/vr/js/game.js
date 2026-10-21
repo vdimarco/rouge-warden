@@ -1634,8 +1634,14 @@ export function createGame({ scene, city, view, ropes, hands, ui, audio, P, save
     const drag = !P.onGround && !held && dist > 0.05;
     if (drag) {
       const step = Math.min(KING.pullDrag, dist);
-      P.pos.x += (dx / dist) * step;
-      P.pos.z += (dz / dist) * step;
+      let go = step;
+      const rad = (P.cfg && P.cfg.chestRadius) || 0.35;
+      const cy = P.pos.y + (P.chest || 0);
+      const wall = city.raycast(P.pos.x, cy, P.pos.z, dx, 0, dz, step + rad, HIT);
+      // Stop short of the Needle. A straight drag would leave the hero inside the pod, and the next step would snap them out.
+      if (wall && wall.t < step + rad) go = Math.max(0, wall.t - rad - 0.2);
+      P.pos.x += (dx / dist) * go;
+      P.pos.z += (dz / dist) * go;
       P.vel.x = P.vel.y = P.vel.z = 0;
       // A cling would keep the old wall at the new spot, so the drag lets go of it.
       if (P.wall) {

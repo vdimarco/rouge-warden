@@ -186,26 +186,34 @@ try {
         wall: G.P.wall, run: G.P.wallRun,
       };
     };
-    place(20, d.y + 12, false, false);
+    place(20, m[1] + 1, false, false);
     const close = release();
-    place(40, d.y + 12, false, false);
+    place(40, m[1] + 1, false, false);
     const far = release();
     place(8, d.y, true, false);
     const decked = release();
-    place(8, d.y + 12, false, true);
+    place(20, m[1] + 1, false, true);
     const held = release();
-    place(20, d.y + 12, false, false);
+    place(20, m[1] + 1, false, false);
     G.P.wall = { nx: 1, nz: 0 };
     G.P.wallRun = { dir: 1, speed: 6 };
     G.game.progress.hearts = 3;
     const clung = release();
-    return { close, far, decked, held, clung };
+    place(24, d.y + 8, false, false);
+    G.game.progress.hearts = 3;
+    const hull = release();
+    G.P.frozen = false;
+    const x0 = G.P.pos.x, z0 = G.P.pos.z;
+    G.test.step(1 / 60, 8);
+    hull.snap = Math.hypot(G.P.pos.x - x0, G.P.pos.z - z0);
+    return { close, far, decked, held, clung, hull };
   });
   check(yanked.close.pulls > yanked.close.was && yanked.close.moved > 13 && yanked.close.moved < 15 && yanked.close.dist < yanked.close.from && yanked.close.dist <= 16 && yanked.close.hearts === yanked.close.before - 1, "a pull in the air with no web drags you in and takes a heart inside 16 m", yanked.close);
   check(yanked.far.pulls > yanked.far.was && yanked.far.moved > 13 && yanked.far.moved < 15 && yanked.far.dist > 16 && yanked.far.hearts === yanked.far.before, "the same pull from farther away still drags you, and takes no heart past 16 m", yanked.far);
   check(yanked.decked.ground && yanked.decked.moved < 0.05 && yanked.decked.hearts === yanked.decked.before, "a pull on the ground leaves you where you are", yanked.decked);
   check(yanked.held.rope === "attached" && yanked.held.moved < 0.05 && yanked.held.hearts === yanked.held.before, "a rope holds against the pull", yanked.held);
   check(yanked.clung.pulls > yanked.clung.was && yanked.clung.moved > 13 && yanked.clung.moved < 15 && yanked.clung.wall == null && yanked.clung.run == null && yanked.clung.hearts === yanked.clung.before - 1, "a pull lets go of a wall and still drags you in", yanked.clung);
+  check(yanked.hull.moved > 0.5 && yanked.hull.moved < 12 && yanked.hull.dist > 14 && yanked.hull.hearts === yanked.hull.before && yanked.hull.snap < 1, "a pull beside the pod stops at the tower", yanked.hull);
 
   const spat = await page.evaluate(() => {
     const d = G.game.info().deck;
