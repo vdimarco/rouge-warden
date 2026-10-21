@@ -495,6 +495,12 @@ const SFX = {
     tone(e, hold, { f: 98, f2: 86, dur: 0.8, peak: 0.25 });
     return hiss(e, hold, { type: "highpass", f: 6500, dur: 1.2, att: 0.01, peak: 0.06, send: 0.3 });
   },
+  // a miss: two low notes falling. The win is the rising brass; this is the other way.
+  miss(e, t) {
+    tone(e, t, { type: "triangle", f: 220, f2: 180, dur: 0.22, peak: 0.22 });
+    tone(e, t + 0.18, { type: "triangle", f: 146, f2: 110, dur: 0.45, peak: 0.26 });
+    return tone(e, t + 0.18, { f: 73, f2: 55, dur: 0.5, peak: 0.2 });
+  },
   // the wall cracks: sharp crackles that come faster, and a low groan in the plaster
   crack(e, t) {
     let end = tone(e, t, { type: "sawtooth", f: 55, f2: 42, dur: 0.7, att: 0.1, peak: 0.1, lp: 300 });
@@ -1216,7 +1222,7 @@ export function createAudio(settings) {
     // the fight layer of the groove: driving kicks, a stab on the off-beat and toms into each bar while goons fight the hero
     fight(v) { st.fight = !!v; },
     get fightOn() { return st.fight; },
-    // 0..1 on a chase: 0 while closing or off the chase, about 0.4 while the distance holds, 1 while falling behind
+    // 0..1 on a chase: 0 while closing or off the chase, about 0.4 while the distance holds, 1 while falling behind or the runner is pulling away
     chase(v) { st.chase = clamp(num(v), 0, 1); },
     get chaseOn() { return st.chase; },
     // a one-shot. pos (world, {x, y, z}) makes it spatial; vol 0..2; pitch 0.25..4 (1 = as designed)
