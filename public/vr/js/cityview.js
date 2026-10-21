@@ -82,7 +82,11 @@ vec3 skyHaze(vec3 d) {
   vec3 h = vec3(d.x, clamp(d.y, 0.0, 0.1) * length(d.xz) * 10.0, d.z);
   vec3 c = uHaveSky > 0.5 ? textureLod(uSky, skyUV(h), 3.0).rgb : skyRamp(skyT(h));
   // far things go violet, like the far shore in the key art: darker than the sky behind them
-  return mix(c, vec3(0.3, 0.16, 0.5), 0.42);
+  c = mix(c, vec3(0.3, 0.16, 0.5), 0.42);
+  // street dust: level air takes the avenue's warm light. Above that it stays the sky.
+  // The height split is the 18 m layer below (Wenzel, SIGGRAPH 2006, the height only).
+  float level = 1.0 - smoothstep(0.02, 0.22, normalize(d).y);
+  return mix(c, vec3(0.78, 0.42, 0.26), level * 0.78);
 }
 // Haze toward the sky colour behind the point. It is thick near the ground and thin up high (height fog), so the Needle
 // and the aerial view keep their shapes. The fragment stage snaps it to four print-like steps.
@@ -96,7 +100,7 @@ float fogAmount(vec3 wp) {
   // a shorter layer: street air on the walks and the lower floors, gone by the roofs (Wenzel 2006, the height split only)
   float Hs = 18.0;
   float hs = abs(dy) < 1.0 ? exp(-0.5 * (yc + yp) / Hs) : Hs * (exp(-yp / Hs) - exp(-yc / Hs)) / dy;
-  f = max(f, (1.0 - exp(-0.012 * max(d - 28.0, 0.0))) * hs * 0.40);
+  f = max(f, (1.0 - exp(-0.022 * max(d - 28.0, 0.0))) * hs * 0.70);
   return max(f, 0.06 * smoothstep(12.0, uFog.x, d));
 }
 // Metres under the shadow surface at a point (the map's shadow height minus its height): above 0 in another tower's shadow
@@ -176,7 +180,7 @@ vec3 gradeInk(vec3 c) {
 // Haze in four print-like steps toward the sky's own colour in that direction
 vec3 fogMix(vec3 col, vec3 wp, float maxF) {
   vec3 v = normalize(wp - cameraPosition);
-  return gradeInk(mix(col, skyHaze(v), comicPoster(fogAmount(wp) * maxF, 4.0)));
+  return mix(gradeInk(col), skyHaze(v), comicPoster(fogAmount(wp) * maxF, 4.0));
 }
 `;
 
@@ -958,7 +962,7 @@ void main() {
   col += vec3(1.0, 0.72, 0.39) * fold * foldSun * 0.22;
   if (lineY > 0.0) ink = max(ink, comicInk(abs(vW.y - lineY), wpx * 0.8));
   col = mix(col, INKC, ink);
-  gl_FragColor = vec4(gradeInk(mix(col, vFog.rgb, comicPoster(vFog.a, 4.0))), 1.0);
+  gl_FragColor = vec4(mix(gradeInk(col), vFog.rgb, comicPoster(vFog.a, 4.0)), 1.0);
 }`;
 
 // The Needle, the Dome, the expressway and the King's perch: one mesh, a kind per vertex.
@@ -1492,7 +1496,7 @@ void main() {
   vec3 col = band < 1.0 ? mix(shd, mid, band) : mix(mid, lit, band - 1.0);
   float dw = 1.0 - clamp(band - 1.0, 0.0, 1.0);
   col = mix(col, DOTC, comicDots(vW.xz + vW.y * 0.5, 0.4, mix(0.6, 0.3, clamp(band, 0.0, 1.0))) * dw * 0.45);
-  gl_FragColor = vec4(gradeInk(mix(col, vFog.rgb, comicPoster(vFog.a, 4.0))), 1.0);
+  gl_FragColor = vec4(mix(gradeInk(col), vFog.rgb, comicPoster(vFog.a, 4.0)), 1.0);
 }`;
 
 // Cars and streetcars: they drive their lanes in the vertex shader, from uTime, with head and tail lights and an ink hull.
@@ -1587,7 +1591,7 @@ void main() {
   float front = step(0.5, vLN.x), back = step(0.5, -vLN.x);
   col = mix(col, vec3(1.0, 0.95, 0.7), light * front);
   col = mix(col, vec3(1.0, 0.1, 0.08), light * back);
-  gl_FragColor = vec4(gradeInk(mix(col, vFog.rgb, comicPoster(vFog.a, 4.0))), 1.0);
+  gl_FragColor = vec4(mix(gradeInk(col), vFog.rgb, comicPoster(vFog.a, 4.0)), 1.0);
 }`;
 
 // Roof props and curb furniture. aPart: 0 plain, 2 fan top, 3 wood staves, 4 leaves, 5 metal,
@@ -1705,7 +1709,7 @@ void main() {
   // thin things (masts, poles, tower legs, curb posts) take a dark rim where they turn away from the eye
   float rim = part == 5 || part == 7 || part >= 8 ? 1.0 - smoothstep(0.2, 0.5, abs(dot(N, normalize(cameraPosition - vW)))) : 0.0;
   col = mix(col, INKC, clamp(max(ink, rim * 0.8), 0.0, 1.0));
-  gl_FragColor = vec4(gradeInk(mix(col, vFog.rgb, comicPoster(vFog.a, 4.0))), 1.0);
+  gl_FragColor = vec4(mix(gradeInk(col), vFog.rgb, comicPoster(vFog.a, 4.0)), 1.0);
 }`;
 
 // Sidewalk steam. aP: x, y, z, phase. aS: size, rise, cycles per second, which puff.
@@ -1821,7 +1825,7 @@ void main() {
   } else {
     col = comicCelX(vec3(0.24, 0.24, 0.42), band, vec3(1.4, 1.1, 0.8), vec3(0.06, 0.025, 0.0));
   }
-  gl_FragColor = vec4(gradeInk(mix(col, vFog.rgb, min(comicPoster(vFog.a, 4.0), 0.75))), 1.0);
+  gl_FragColor = vec4(mix(gradeInk(col), vFog.rgb, min(comicPoster(vFog.a, 4.0), 0.75)), 1.0);
 }`;
 
 /* ---------------- the diorama (spec §9: shared geometry, a simple unlit material, no fog) ---------------- */

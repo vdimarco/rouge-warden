@@ -58,14 +58,16 @@ float fogAmt(vec3 wp) {
   float f = 1.0 - exp(-${FOG_K} * max(d - ${FOG_N}, 0.0) * hf);
   float Hs = 18.0;
   float hs = abs(dy) < 1.0 ? exp(-0.5 * (yc + yp) / Hs) : Hs * (exp(-yp / Hs) - exp(-yc / Hs)) / dy;
-  f = max(f, (1.0 - exp(-0.012 * max(d - 28.0, 0.0))) * hs * 0.40);
+  f = max(f, (1.0 - exp(-0.022 * max(d - 28.0, 0.0))) * hs * 0.70);
   return max(f, 0.06 * smoothstep(12.0, ${FOG_N}, d));
 }
 vec3 fogCol(vec3 wp) {
   vec3 v = normalize(wp - cameraPosition);
   vec3 h = normalize(vec3(v.x, clamp(v.y, 0.0, 0.1) * length(v.xz) * 10.0, v.z));
   vec3 c = uHaveSky > 0.5 ? textureLod(uSky, vec2(atan(-h.x, h.z) * 0.15915494 + uSkyU, clamp(asin(h.y) * 0.7958, 0.0, 1.0)), 3.0).rgb : skyEnv(vec3(v.x, clamp(v.y, 0.0, 0.1), v.z));
-  return mix(c, vec3(0.3, 0.16, 0.5), 0.42);
+  c = mix(c, vec3(0.3, 0.16, 0.5), 0.42);
+  float level = 1.0 - smoothstep(0.02, 0.22, v.y);
+  return mix(c, vec3(0.78, 0.42, 0.26), level * 0.78);
 }
 vec3 fogMix(vec3 col, vec3 wp, float k) { return mix(col, fogCol(wp), comicPoster(fogAmt(wp) * k, 4.0)); }
 `;
