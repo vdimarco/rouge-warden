@@ -125,9 +125,9 @@ The input kind SHALL be "pad" once a button is pressed or a stick moves out of i
 
 #### Scenario: Pad first line
 - **WHEN** a pad player starts the tutorial
-- **THEN** the first line reads "Look at the gold ring. Hold the left stick up and the right trigger."
-- **AND** the hint strip reads HOLD LEFT STICK UP AND RIGHT TRIGGER: SWING. LET GO WHEN THE RING SAYS GO. RIGHT STICK: LOOK.
-- **AND** from the start roof, holding the left stick up and RT puts the hero in the air within 4 s (measured: 3.1 to 3.3 s)
+- **THEN** the first line reads "Look at the gold ring. Hold the right trigger."
+- **AND** the hint strip reads RIGHT TRIGGER: SWING. LET GO WHEN THE RING SAYS GO. RIGHT STICK: LOOK.
+- **AND** from the start roof, RT alone puts the hero in the air within 4 s, and holding the left stick up with RT still does
 
 #### Scenario: Pad wall line
 - **WHEN** a pad player first holds a wall

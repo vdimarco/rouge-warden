@@ -19,6 +19,17 @@ sprint.
 - **WHEN** the player sprints for more than 5 s
 - **THEN** the sprint ends at walking pace, and the gauge fills again after the player lets go
 
+### Requirement: One button starts a swing
+On the ground, holding a swing input on a building with no move input SHALL walk the hero toward that web at walking speed, so the swing leaves the roof without a forward hold. A rope on a clog, a pipe, or the crack SHALL NOT walk the hero. A move input SHALL still steer.
+
+#### Scenario: The swing button on the start roof
+- **WHEN** the player holds only the swing button, aimed at the gold ring, from the start roof
+- **THEN** the hero leaves the roof within 4 seconds with the rope attached
+
+#### Scenario: A clog stays put
+- **WHEN** the player ropes a clog and does not steer
+- **THEN** the hero does not walk toward it
+
 ### Requirement: A dive lands in a roll
 In flat play, a landing from a dive, or a landing faster than 13 m/s down, SHALL be a forward roll of about 0.6 s: the hero tucks
 and turns once over, keeps at least 6 m/s along the ground, and then runs on. The landing crouch SHALL not play for a roll. The

@@ -555,9 +555,9 @@ body.keyhints .fs-sub,body.keyhints .fs-toast{margin-bottom:52px}
   };
   // the first-minute strip at the bottom of the screen, for a mouse or a pad. It lifts the spoken line and the toast with it.
   const HINTS = {
-    // the first swing from the start roof needs the hero to walk (W, or the stick) while the rope pulls, so the first item says both
-    mouse: ["<b>HOLD W AND LEFT MOUSE (OR E)</b>: SWING.", "LET GO WHEN THE RING SAYS <b>GO</b>.", "<b>MOUSE</b>: LOOK."],
-    pad: ["<b>HOLD LEFT STICK UP AND RIGHT TRIGGER</b>: SWING.", "LET GO WHEN THE RING SAYS <b>GO</b>.", "<b>RIGHT STICK</b>: LOOK."],
+    // one button starts the swing: the rope walks you off the roof. W and the left stick still steer when you hold them.
+    mouse: ["<b>LEFT MOUSE (OR E)</b>: SWING.", "LET GO WHEN THE RING SAYS <b>GO</b>.", "<b>MOUSE</b>: LOOK."],
+    pad: ["<b>RIGHT TRIGGER</b>: SWING.", "LET GO WHEN THE RING SAYS <b>GO</b>.", "<b>RIGHT STICK</b>: LOOK."],
   };
   D.hints = (on) => {
     const kind = on ? (inp.kind === "pad" ? "pad" : inp.kind === "mouse" ? "mouse" : "") : "";
