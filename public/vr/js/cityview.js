@@ -1532,8 +1532,8 @@ void main() {
   gl_FragColor = vec4(mix(col, vFog.rgb, comicPoster(vFog.a, 4.0)), 1.0);
 }`;
 
-// Roof props: boxes (plant rooms and air conditioners), water towers, masts and gardens. aPart: 0 plain, 2 fan top,
-// 3 wood staves, 4 leaves, 5 metal, 6 lamp head, 7 lamp pole.
+// Roof props and curb furniture. aPart: 0 plain, 2 fan top, 3 wood staves, 4 leaves, 5 metal,
+// 6 lamp head, 7 lamp pole, 8 bin, 9 bollard, 10 hydrant.
 const PROP_VS = /* glsl */ `
 ${VERTEX_FOG}
 varying float vDepth;
@@ -1549,15 +1549,26 @@ varying vec3 vS;
 varying vec3 vLN;
 varying float vPart;
 varying float vHash;
+varying float vKeep;
 void main() {
   float c = cos(aP.w), s = sin(aP.w);
   vec3 p = position * aS.xyz;
+  float dist = length(aP.xyz - cameraPosition);
+  float keep = 1.0;
   // street lamps shrink away in the distance: a thin pole far off would only flicker
-  if (aPart > 5.5) p *= 1.0 - smoothstep(170.0, 240.0, length(aP.xyz - cameraPosition));
+  if (aPart > 5.5 && aPart < 7.5) p *= 1.0 - smoothstep(170.0, 240.0, dist);
+  // one mesh holds the bin, the bollard and the hydrant; the hash keeps one and drops the rest
+  if (aPart > 7.5) {
+    float kind = aS.w < 0.34 ? 8.0 : (aS.w < 0.67 ? 9.0 : 10.0);
+    float match = 1.0 - step(0.5, abs(aPart - kind));
+    float fade = 1.0 - smoothstep(70.0, 110.0, dist);
+    keep = match * step(0.04, fade);
+    p *= match * fade;
+  }
   p = vec3(p.x * c + p.z * s, p.y, -p.x * s + p.z * c);
   vec3 n = vec3(normal.x * c + normal.z * s, normal.y, -normal.x * s + normal.z * c);
   vec4 w = modelMatrix * vec4(aP.xyz + p, 1.0);
-  vW = w.xyz; vN = n; vL = position; vC = aCol; vPart = aPart; vHash = aS.w; vS = aS.xyz; vLN = normal;
+  vW = w.xyz; vN = n; vL = position; vC = aCol; vPart = aPart; vHash = aS.w; vS = aS.xyz; vLN = normal; vKeep = keep;
   vDepth = shadowDepthAt(w.xyz + vec3(n.x, 0.0, n.z));
   fogVertex(w.xyz);
   gl_Position = projectionMatrix * viewMatrix * w;
@@ -1574,7 +1585,9 @@ varying vec3 vS;
 varying vec3 vLN;
 varying float vPart;
 varying float vHash;
+varying float vKeep;
 void main() {
+  if (vKeep < 0.5) discard;
   vec3 N = normalize(vN);
   vec3 alb = vC * mix(vec3(0.9), vec3(1.1), vHash);
   int part = int(vPart + 0.5);
@@ -1615,12 +1628,24 @@ void main() {
     alb = mix(vec3(0.55, 0.36, 0.25) * (0.85 + 0.2 * st), vec3(0.16, 0.12, 0.2), hoop * (1.0 - smoothstep(0.2, 0.5, fp * 2.2)));
   } else if (part == 4) {
     alb = vC * (0.8 + 0.4 * step(0.5, vnoise(vW.xz * 2.0 + vW.y)));
+  } else if (part == 8) {
+    alb = vec3(0.16, 0.28, 0.26);
+    alb *= mix(0.85, 1.05, step(0.98, vL.y));
+  } else if (part == 9) {
+    alb = vec3(0.18, 0.19, 0.22);
+    float bandY = 1.0 - smoothstep(0.035, 0.035 + fp, abs(vL.y - 0.62));
+    alb = mix(alb, vec3(0.86, 0.82, 0.72), bandY);
+  } else if (part == 10) {
+    alb = vec3(0.72, 0.16, 0.13);
+    alb = mix(alb, vec3(0.42, 0.1, 0.1), step(0.6, vL.y));
   }
   vec3 col = comicCel(alb, band);
   // a lamp head: its glass glows warm underneath
   if (part == 6) col = mix(col, vec3(1.0, 0.82, 0.4), step(vLN.y, -0.5));
-  // thin things (masts, poles, tower legs) take a dark rim where they turn away from the eye
-  float rim = part == 5 || part == 7 ? 1.0 - smoothstep(0.2, 0.5, abs(dot(N, normalize(cameraPosition - vW)))) : 0.0;
+  // the bollard band is painted after the cel, or the three bands swallow it
+  if (part == 9) col = mix(col, vec3(0.93, 0.9, 0.82), 1.0 - smoothstep(0.045, 0.045 + fp, abs(vL.y - 0.62)));
+  // thin things (masts, poles, tower legs, curb posts) take a dark rim where they turn away from the eye
+  float rim = part == 5 || part == 7 || part >= 8 ? 1.0 - smoothstep(0.2, 0.5, abs(dot(N, normalize(cameraPosition - vW)))) : 0.0;
   col = mix(col, INKC, clamp(max(ink, rim * 0.8), 0.0, 1.0));
   gl_FragColor = vec4(mix(col, vFog.rgb, comicPoster(vFog.a, 4.0)), 1.0);
 }`;
@@ -2396,7 +2421,7 @@ export function createCityView(renderer, scene, city, opts = {}) {
   /* ---------------- 5. chunks of buildings, with their props and trees ---------------- */
   const nxC = Math.ceil((B.maxX - B.minX) / CHUNK), nzC = Math.ceil((city.shoreZ - B.minZ) / CHUNK);
   const chunkList = [];
-  for (let k = 0; k < nzC; k++) for (let i = 0; i < nxC; i++) chunkList.push({ i, k, x0: B.minX + i * CHUNK, z0: B.minZ + k * CHUNK, buildings: [], trees: [], lamps: [], mesh: null });
+  for (let k = 0; k < nzC; k++) for (let i = 0; i < nxC; i++) chunkList.push({ i, k, x0: B.minX + i * CHUNK, z0: B.minZ + k * CHUNK, buildings: [], trees: [], lamps: [], curbs: [], mesh: null });
   const chunkOf = (x, z) => chunkList[clamp(Math.floor((z - B.minZ) / CHUNK), 0, nzC - 1) * nxC + clamp(Math.floor((x - B.minX) / CHUNK), 0, nxC - 1)];
   for (const b of city.buildings) chunkOf(b.x, b.z).buildings.push(b);
   // start view first: the chunks in front of the start roof, near to far, then the rest by distance
@@ -2512,8 +2537,8 @@ export function createCityView(renderer, scene, city, opts = {}) {
   }
 
   /* ---- roof props ---- */
-  const PROP_TYPES = ["box", "tower", "mast", "garden", "lamp"];
-  const PROP_MAX = { box: 6000, tower: 500, mast: 900, garden: 1400, lamp: 2400 };
+  const PROP_TYPES = ["box", "tower", "mast", "garden", "lamp", "curb"];
+  const PROP_MAX = { box: 6000, tower: 500, mast: 900, garden: 1400, lamp: 2400, curb: 4200 };
   const props = {};
   const BEACON_MAX = 900;
   let beaconMesh = null;
@@ -2537,6 +2562,16 @@ export function createCityView(renderer, scene, city, opts = {}) {
       addGeo(b, new THREE.CylinderGeometry(0.06, 0.09, 6.6, 6, 1, true), M.makeTranslation(0, 3.3, 0), 7, { aCol: dark });
       addGeo(b, new THREE.BoxGeometry(1.5, 0.08, 0.08), M.makeTranslation(0.72, 6.55, 0), 7, { aCol: dark });
       addGeo(b, new THREE.BoxGeometry(0.62, 0.16, 0.3), M.makeTranslation(1.4, 6.5, 0), 6, { aCol: dark });
+    } else if (type === "curb") {
+      // one mesh, three kinds: the instance hash keeps one. Local +x faces the road.
+      const bin = () => [0.16, 0.28, 0.26], metal = () => [0.18, 0.19, 0.22], red = () => [0.72, 0.16, 0.13];
+      addGeo(b, new THREE.BoxGeometry(0.72, 1.05, 0.52), M.makeTranslation(0, 0.525, 0), 8, { aCol: bin });
+      addGeo(b, new THREE.BoxGeometry(0.78, 0.1, 0.58), M.makeTranslation(0, 1.08, 0), 8, { aCol: bin });
+      addGeo(b, new THREE.CylinderGeometry(0.11, 0.13, 0.9, 6), M.makeTranslation(0, 0.45, 0), 9, { aCol: metal });
+      addGeo(b, new THREE.CylinderGeometry(0.14, 0.14, 0.06, 6), M.makeTranslation(0, 0.9, 0), 9, { aCol: metal });
+      addGeo(b, new THREE.CylinderGeometry(0.16, 0.18, 0.62, 6), M.makeTranslation(0, 0.31, 0), 10, { aCol: red });
+      addGeo(b, new THREE.CylinderGeometry(0.2, 0.16, 0.16, 6), M.makeTranslation(0, 0.68, 0), 10, { aCol: red });
+      addGeo(b, new THREE.BoxGeometry(0.28, 0.12, 0.12), M.makeTranslation(0.2, 0.42, 0), 10, { aCol: red });
     } else {
       addGeo(b, new THREE.BoxGeometry(1, 0.45, 1), M.makeTranslation(0, 0.225, 0), 0, { aCol: () => [0.42, 0.34, 0.28] });
       for (const [x, z, s] of [[-0.22, -0.2, 0.36], [0.24, 0.1, 0.32], [-0.05, 0.28, 0.26]]) {
@@ -2715,8 +2750,28 @@ export function createCityView(renderer, scene, city, opts = {}) {
         chunkOf(x, z).lamps.push(x, z, axis === "x" ? (side > 0 ? Math.PI : 0) : (side * Math.PI) / 2);
       }
     };
+    // bins, bollards and hydrants on both walks, further in than the lamp, off the carriageway
+    const roadHalf = (q) => q.w / 2 - walkW(q.w) + 1.2;
+    const curbs = (axis, l, from, to) => {
+      const inset = l.w / 2 - walkW(l.w) + 1.15;
+      let k = 0;
+      for (const side of [-1, 1]) {
+        const yaw = axis === "x" ? (side > 0 ? Math.PI : 0) : (side * Math.PI) / 2;
+        for (let s = from + 16 + (side > 0 ? 9 : 0); s < to - 8; s += 18, k++) {
+          const x = axis === "x" ? l.at + side * inset : s, z = axis === "x" ? s : l.at + side * inset;
+          if (hAt(x, z) > 0.5 || inPark(x, z, 1)) continue;
+          const across = axis === "x" ? z : x;
+          if ((axis === "x" ? lines.z : lines.x).some((q) => Math.abs(across - q.at) < roadHalf(q))) continue;
+          if (partial.some((q) => q.axis !== axis && across > q.from && across < q.to && Math.abs(across - q.at) < roadHalf(q))) continue;
+          if (Math.hypot(x - N0.x, z - N0.z) < 36 || Math.hypot(x - D0.x, z - D0.z) < D0.r + 9) continue;
+          const kind = k % 3;
+          chunkOf(x, z).curbs.push(x, z, yaw, kind === 0 ? 0.1 : kind === 1 ? 0.5 : 0.85);
+        }
+      }
+    };
     const along = (axis, l, from, to, step) => {
       lamps(axis, l, from, to);
+      curbs(axis, l, from, to);
       const hw = l.w / 2, curb = hw - walkW(l.w) + 0.9;
       for (const side of [-1, 1]) {
         for (let s = from + r() * step; s < to; s += step * lerp(0.85, 1.2, r())) {
@@ -2765,6 +2820,15 @@ export function createCityView(renderer, scene, city, opts = {}) {
       const i = slot(I);
       if (i < 0) break;
       put(I, "aP", i, l[o], 0, l[o + 1], l[o + 2]); put(I, "aS", i, 1, 1, 1, 0.5);
+    }
+  }
+  // curbs: runs of 4 numbers (x, z, turn, hash)
+  function addCurbs(c) {
+    const l = c.curbs, I = props.curb;
+    for (let o = 0; o < l.length; o += 4) {
+      const i = slot(I);
+      if (i < 0) break;
+      put(I, "aP", i, l[o], 0, l[o + 1], l[o + 2]); put(I, "aS", i, 1, 1, 1, l[o + 3]);
     }
   }
   // a chunk's trees are flat runs of 8 numbers: x, y, z, scale, r, g, b, turn
@@ -2904,6 +2968,7 @@ export function createCityView(renderer, scene, city, opts = {}) {
     chunkGroup.push(m);
     addTrees(c);
     addLamps(c);
+    addCurbs(c);
     for (const t of PROP_TYPES) flush(props[t]);
     flush(trees);
     for (const dio of dioramas) dio.addChunk(m);
