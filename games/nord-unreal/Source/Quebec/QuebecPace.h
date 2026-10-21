@@ -3,6 +3,8 @@
 // Engine-independent beat length. No Unreal includes, so Scripts/test_beat_pace.py can build this.
 // The card says which stop this is, and about how long the next leg is at a walk.
 // A sprint is faster. The card names that shorter time when rounding makes it shorter.
+// On foot, the clock the player sees is the time left to the diamond, not that next leg.
+// Inside the widest step reach the diamond is the work, so the clock drops.
 
 #include "QuebecBlankRules.h"
 #include "QuebecConvoyRules.h"
@@ -43,6 +45,20 @@ namespace QuebecPace
     inline int SprintSeconds(double DistanceCm)
     {
         return SecondsAt(DistanceCm, SprintCmPerSecond);
+    }
+
+    // Time left from where you stand to the diamond you are walking toward.
+    // The stored leg on FBeat stays the distance from this post to the next one.
+    inline void TimeLeft(double DistanceCm, int& OutWalk, int& OutSprint)
+    {
+        if (!(DistanceCm > QuebecPondRules::Reach))
+        {
+            OutWalk = 0;
+            OutSprint = 0;
+            return;
+        }
+        OutWalk = WalkSeconds(DistanceCm);
+        OutSprint = SprintSeconds(DistanceCm);
     }
 
     template <typename ObjectiveFn>

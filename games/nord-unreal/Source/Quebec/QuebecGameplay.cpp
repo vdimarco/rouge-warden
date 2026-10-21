@@ -2526,6 +2526,16 @@ void AQuebecHUD::DrawHUD()
         if (Campaign->GetBeatPace(PaceIndex, PaceCount, PaceWalk, PaceSprint))
         {
             Status += FString::Printf(TEXT(" · %d of %d"), PaceIndex, PaceCount);
+            // On foot the clock is the time left to this diamond. A car keeps the stored leg,
+            // which is zero on the drive, so the card does not invent a walk.
+            if (bHasObjective && !Car)
+            {
+                int LeftWalk = 0;
+                int LeftSprint = 0;
+                QuebecPace::TimeLeft(static_cast<double>(FVector::Dist2D(Here, Target)), LeftWalk, LeftSprint);
+                PaceWalk = LeftWalk;
+                PaceSprint = LeftSprint;
+            }
             if (PaceWalk > 0) Status += FString::Printf(TEXT(" · ~%ds walk"), PaceWalk);
             if (PaceSprint > 0 && PaceSprint < PaceWalk) Status += FString::Printf(TEXT(" · ~%ds sprint"), PaceSprint);
         }

@@ -1118,3 +1118,48 @@ Unreal is not available here, so the native diamond was not captured. The title 
 ![Play client at 1280, host offline](gta-missions/r24-play-1280.png)
 
 ![Menu on a 390-wide screen, Recover visible](gta-missions/r24-play-menu-390.png)
+
+### Round 25 — 2026-10-21 — rubric v1
+
+- What changed: On foot, the card names the walk and the sprint left to the diamond you are following. Inside the widest step reach the clock drops. The last approach and a rescue group, which used to stay silent, get that clock. In a car the card keeps the stored leg, which is already zero on the drive.
+- Why it helped: Pacing was a 6 because the card quoted the next leg between posts and left that number in place. The last approach, and every rescue group, named no time at all.
+- Screenshots: title `docs/gauntlet/gta-missions/r25-title-1280.png`, `r25-title-390.png`, `r25-title-320.png`. Play client, host offline, `r25-play-1280.png`. Menu with Recover `r25-play-menu-390.png`. The title loaded with no page errors. The raw play page still logs the missing `@epicgames-ps/lib-pixelstreamingfrontend-ue5.8` specifier; the shell and Recover still draw. The native card was not seen. `Scripts/test_beat_pace.py` reports 32 assertions, 0 failures, on c++, g++, and clang++. Syntax check `--both` passed for `QuebecGameplay.cpp`. OpenSpec CLI is not installed, so `openspec validate` did not run.
+- Next target: controls feel (6). Pacing is now 7. Performance stays at 4 and is not measurable here. Responsiveness stays at 3 and stays out of scope. The clock is proven by the rules. It was not seen on the native card, so the pacing score waits at 7. The next round should keep to a change the tests can prove, and should not add a chapter or touch the stream.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 3 | Unchanged. |
+| Color palette | 5 | Unchanged. |
+| Detail density | 3 | Unchanged. |
+| Texture and material quality | 3 | Unchanged. |
+| Composition and camera | 4 | Unchanged. |
+| Atmosphere | 4 | Unchanged. |
+| Character models | 3 | Unchanged. |
+| Animation smoothness | 3 | Unchanged. |
+| Particles and VFX | 2 | Unchanged. |
+| UI polish | 4 | Unchanged. The native card was not seen, and French and English still share the screen. |
+| Responsiveness and input latency | 3 | Unchanged. Still a lagged stream. Out of scope for this loop. |
+| Controls feel | 6 | Unchanged. The on-foot stick still walks in three steps, and WASD stays full lock. |
+| Mission clarity | 7 | Unchanged. |
+| Pacing | 7 | On foot the card names the time left to the diamond. Inside the step reach the clock drops. The last approach and a rescue group now have a walk and a shorter sprint. A car keeps the stored leg. It was not seen. |
+| Fun factor | 7 | Unchanged. A close call still pays on the front of a clear window. |
+| Difficulty curve | 7 | Unchanged. The court ink and the convoy beam still grow with the chain. |
+| Feedback | 7 | Unchanged. A bank still names its rank. |
+| Sound design | 7 | Unchanged. A bank still plays a pitch for its rank. |
+| Variety | 9 | Unchanged. Eight of eight story missions, plus the four side jobs. |
+| Performance stability | 4 | Unchanged. Not measurable in this container. |
+
+- Aesthetics raw: 34 / 10 dimensions, index 34
+- Playability raw: 64 / 10 dimensions, index 64
+- Total: 98 / 200
+- Delta vs last round: +1 (round 24 was 97). Pacing 6 → 7. Every other score held.
+
+![GTA title at 1280](gta-missions/r25-title-1280.png)
+
+![GTA title at 390](gta-missions/r25-title-390.png)
+
+![GTA title at 320](gta-missions/r25-title-320.png)
+
+![Play client at 1280, host offline](gta-missions/r25-play-1280.png)
+
+![Menu on a 390-wide screen, Recover visible](gta-missions/r25-play-menu-390.png)

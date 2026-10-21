@@ -52,8 +52,26 @@ int main()
             "the pond opening splits the walk and the sprint");
         Expect(Pond.SprintSeconds < Pond.WalkSeconds, "the pond opening sprint is not shorter than the walk");
     }
+    int FarWalk = 0, FarSprint = 0;
+    TimeLeft(1800., FarWalk, FarSprint);
+    Expect(FarWalk == 4 && FarSprint == 2, "eighteen metres is not a four-second walk");
+    Expect(FarWalk != Pond.WalkSeconds, "the time left copies the next leg");
+    int OnItWalk = 1, OnItSprint = 1;
+    TimeLeft(QuebecPondRules::Reach, OnItWalk, OnItSprint);
+    Expect(OnItWalk == 0 && OnItSprint == 0, "the clock talks over a pull");
+    TimeLeft(0., OnItWalk, OnItSprint);
+    Expect(OnItWalk == 0 && OnItSprint == 0, "standing on the diamond still names a walk");
     const FBeat PondEnd = Linear(QuebecPondRules::StepPull, QuebecPondRules::StepBanked, QuebecPondRules::Objective);
     Expect(PondEnd.Index == 6 && PondEnd.Count == 6 && PondEnd.WalkSeconds == 0, "the picnic clamp invents a walk after the beat");
+    {
+        const auto From = QuebecPondRules::Objective(QuebecPondRules::StepDash);
+        const auto Picnic = QuebecPondRules::Objective(QuebecPondRules::StepPull);
+        const double Distance = std::hypot(Picnic.X - From.X, Picnic.Y - From.Y);
+        int Walk = 0, Sprint = 0;
+        TimeLeft(Distance, Walk, Sprint);
+        Expect(Distance > QuebecPondRules::Reach && Walk > 0 && Sprint > 0 && Sprint < Walk,
+            "the last approach stays silent");
+    }
 
     const FBeat Court = Linear(QuebecCourtRules::StepArrive, QuebecCourtRules::StepBanked, QuebecCourtRules::Objective);
     Expect(Court.Index == 1 && Court.Count == 4 && Court.WalkSeconds > 0, "the court does not open as stop 1 of 4");
@@ -73,6 +91,9 @@ int main()
 
     const FBeat Groups = Rescue(0);
     Expect(Groups.Index == 1 && Groups.Count == 3 && Groups.WalkSeconds == 0, "the first rescue group is not 1 of 3");
+    int GroupWalk = 0, GroupSprint = 0;
+    TimeLeft(900., GroupWalk, GroupSprint);
+    Expect(GroupWalk == 2 && GroupSprint == 1, "a rescue approach stays silent");
     const FBeat OneOut = Rescue(QuebecRescueRules::BitTerrace);
     Expect(OneOut.Index == 2 && OneOut.Count == 3, "freeing the terrace does not advance the count");
     Expect(Rescue(QuebecRescueRules::Done).Count == 0, "a finished rescue still has a pace");
