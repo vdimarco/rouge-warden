@@ -47,6 +47,7 @@
 #include "LaFontaineExtensionMap.h"
 #include "CollegeBathurstMap.h"
 #include "QuebecStreetLook.h"
+#include "QuebecSway.h"
 
 #include "Animation/AnimInstance.h"
 #include "Animation/AnimSequence.h"
@@ -481,6 +482,37 @@ void AQuebecCharacter::OnRep_InVehicle()
     ReleaseCombatInput();
 }
 
+void AQuebecCharacter::RestoreStreetSway()
+{
+    const float Yaw = GetMesh()->GetRelativeRotation().Yaw;
+    GetMesh()->SetRelativeLocation(FVector(0., 0., -96.));
+    GetMesh()->SetRelativeRotation(FRotator(0., Yaw, 0.));
+    CasualStand->SetRelativeLocation(FVector(0., 0., -96.));
+    CasualStand->SetRelativeRotation(FRotator::ZeroRotator);
+    bSwayApplied = false;
+}
+
+void AQuebecCharacter::ApplyStreetSway(float DeltaSeconds)
+{
+    // The crew blend space already poses the body. A second rock would stack on it.
+    // Swimming and a knockdown own the mesh rotation. A fall holds the rest pose.
+    const bool bHeld = bInVehicle || IsKnocked() || !GetCharacterMovement() || GetCharacterMovement()->IsSwimming()
+        || Cast<UQuebecCrewAnimInstance>(GetMesh()->GetAnimInstance());
+    if (bHeld || GetCharacterMovement()->IsFalling())
+    {
+        if (bSwayApplied) RestoreStreetSway();
+        return;
+    }
+    SwayTime += DeltaSeconds;
+    const QuebecSway::FPose Sway = QuebecSway::Pose(SwayTime, GetVelocity().Size2D());
+    const float Yaw = GetMesh()->GetRelativeRotation().Yaw;
+    GetMesh()->SetRelativeLocation(FVector(0., Sway.Side, -96. + Sway.Bob));
+    GetMesh()->SetRelativeRotation(FRotator(Sway.Pitch, Yaw, Sway.Roll));
+    CasualStand->SetRelativeLocation(FVector(0., Sway.Side, -96. + Sway.Bob));
+    CasualStand->SetRelativeRotation(FRotator(Sway.Pitch, 0., Sway.Roll));
+    bSwayApplied = true;
+}
+
 void AQuebecCharacter::Tick(float DeltaSeconds)
 {
     UpdateSwimming(DeltaSeconds);
@@ -528,6 +560,7 @@ void AQuebecCharacter::Tick(float DeltaSeconds)
             }
         }
     }
+    ApplyStreetSway(DeltaSeconds);
     if (HasAuthority() && !bInVehicle && GetActorLocation().Z < -1500.)
     {
         GetCharacterMovement()->StopMovementImmediately();

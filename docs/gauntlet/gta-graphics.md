@@ -1613,3 +1613,38 @@ Unreal is not available in this environment, so in-engine frames are the last co
 - Playability raw: 39 / 10 dimensions, index 39
 - Total: 120 / 200
 - Delta vs last round: +1
+
+### Round 47 — 2026-10-21 — rubric v1
+
+- What changed: on foot, when the crew anim instance is absent, the body rocks with time and planar speed. A walk leans 12° and shifts 4 cm at the side peak. An idle is 0.34 of that. The mesh keeps its yaw. A swim, a knockdown, a fall, a vehicle, and the crew blend space leave the mesh alone. The feet do not step.
+- Why it helped: Animation smoothness was at 3. The blend space still cannot be posed, and the stand-in was rigid.
+- Screenshots: before `docs/gauntlet/gta-graphics/round-47/before-frame.png`, after `docs/gauntlet/gta-graphics/round-47/after-frame.png`. Crops are `before-sway.png` and `after-sway.png`. The before frame is the rest pose. The after frame is the walk peak. Both use the opening walk camera (arm 420, socket Y 70, socket Z 110, pitch −16, yaw about 110°, horizontal FOV 90) at the surveyed sidewalk spawn. Not an Unreal capture. The figure crop mean absolute delta is 0.034 and the max is 0.319. The full-frame mean is 0.0020 and the max is 0.319. 7035 pixels change. `Scripts/test_sway.py` and `Scripts/test_street_aim.py` passed. `QuebecGameplay.cpp` was not compiled. `GET /gta/` returned 200. OpenSpec CLI is not installed, so the change files were not validated with `openspec`.
+- Next target: animation smoothness, still the lowest aesthetics score at 4. The rock is in. A step needs a pose the blend space cannot give here.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 9 | The street shade is unchanged. |
+| Color palette | 9 | The figure uses the same stand-in colours. |
+| Detail density | 9 | The street mesh is unchanged. |
+| Texture and material quality | 9 | The asphalt mix is unchanged. |
+| Composition and camera | 8 | The opening aim is unchanged. |
+| Atmosphere | 9 | The street dust is unchanged. |
+| Character models | 8 | The figure is the same stand-in, leaned. |
+| Animation smoothness | 4 | The body rocks to the side while walking, and the idle rock is smaller. The feet do not step. The crew blend space still cannot be posed here. |
+| Particles and VFX | 8 | The leaf cards are unchanged. Rain rings are unchanged. |
+| UI polish | 9 | The radar heading is unchanged. |
+| Responsiveness and input latency | 4 | Not measured this round. |
+| Controls feel | 4 | Not played. |
+| Mission clarity | 5 | The objective words are unchanged. |
+| Pacing | 4 | Unchanged mission slice. |
+| Fun factor | 3 | Not played. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 4 | The lean is the new mark. No new juice. |
+| Sound design | 3 | Not listened to. |
+| Variety | 3 | One rock, walk and idle. |
+| Performance stability | 5 | `Scripts/test_sway.py` passed. The sway is one sine. Frame time was not remeasured. |
+
+- Aesthetics raw: 82 / 10 dimensions, index 82
+- Playability raw: 39 / 10 dimensions, index 39
+- Total: 121 / 200
+- Delta vs last round: +1

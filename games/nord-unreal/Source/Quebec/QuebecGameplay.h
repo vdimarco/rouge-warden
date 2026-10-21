@@ -212,6 +212,10 @@ private:
     float CrewLandingTime = 1.f;
     float CrewAnimationTime = 0.f;
     float CrewPoseElapsed = 0.f;
+    float SwayTime = 0.f;
+    bool bSwayApplied = false;
+    void ApplyStreetSway(float DeltaSeconds);
+    void RestoreStreetSway();
     UPROPERTY() TObjectPtr<UAnimSequence> CrewAnimation;
     UPROPERTY() TObjectPtr<APhysicsVolume> SwimVolume;
     UPROPERTY() TArray<TObjectPtr<AActor>> SwimFloors;
