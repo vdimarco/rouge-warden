@@ -1344,7 +1344,7 @@ function couple(inp) {
 // target and both hands aim at it: a mouse or pad press fires at it, and a phone tap goes through the tap rules. A held press
 // still fires if a target shows up within SWING.fireHold; with none it is a dry fire along the view. A test aim override on a hand
 // wins: for that hand ropes.aim decides, as before.
-const latch = [false, false], realWait = [false, false], swingCool = [0, 0], wasEasy = [false, false];
+const latch = [false, false], realWait = [false, false], swingCool = [0, 0];
 let noneAt = -99;
 const PICK_OPTS = { avoidBid: -1 }; // reused: the options of the second pick when both swing inputs go down in one frame
 const PHONE_DIR = new THREE.Vector3(), PROJ = { x: 0, y: 0, depth: 0, behind: false, inView: false };
@@ -1468,7 +1468,7 @@ function shoot(i, h, a) {
   if (flatOn && pickerOn && P.wall && flatcam.opacity > 0.5 && (phone || real)) turnToSwing(a); // before fire: it lets go of the wall
   firePerch[i] = heroFight().perch; // a rope fired from a roof or a wall: the takedown is judged from here, not where the cup lands
   fire(P, i, h.aimPos, a);
-  if (a.easy) { armEasy(P.ropes[i], a.easyH); wasEasy[i] = true; }
+  if (a.easy) armEasy(P.ropes[i], a.easyH);
   toggled[i] = true;
   if (phone) { firedAt[i] = G.time; handoffT[i] = -1; firedPair[i] = !!(G.input.phonePair && G.input.phonePair[i]); } // a rope thrown again is not the one that lets go
   latch[i] = real; // a real press keeps the cup in flight, and earns the kick
@@ -1707,7 +1707,7 @@ function feedback(ev) {
       catchFeedback(i, "attach");
       break;
     case "detach":
-      if (wasEasy[i]) { easyBoost(P); wasEasy[i] = false; swingCool[i] = 0.15; }
+      if (ev.easy) { easyBoost(P); swingCool[i] = 0.15; }
       audio.sfx("release", { pos: G.input.hands[i].gripPos }); if (latch[i]) releaseBoost(i); latch[i] = false; break;
     case "yank":
       audio.sfx(ev.pump ? "pump" : "yank", { pos: G.input.hands[i].gripPos }); haptic(i, 0.6, 40);

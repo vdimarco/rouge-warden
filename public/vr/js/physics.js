@@ -142,9 +142,9 @@ export function easyBoost(P) {
 
 // Let go of a rope. Always works, even on a sticky one (the portal calls it at the burst).
 export function release(P, side) {
-  const r = P.ropes[sideIndex(side)], was = r.state;
+  const r = P.ropes[sideIndex(side)], was = r.state, easy = r.easy;
   idle(r);
-  if (was === "attached") P.events.push({ type: "detach", side: r.side, speed: len3(P.vel.x, P.vel.y, P.vel.z) });
+  if (was === "attached") P.events.push({ type: "detach", side: r.side, speed: len3(P.vel.x, P.vel.y, P.vel.z), easy });
 }
 
 /* ---------------- wall climbing ---------------- */
