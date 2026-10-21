@@ -17,8 +17,8 @@ namespace QuebecJobRules
         double Z = 0.;
     };
 
-    enum class EJob : uint8_t { Delivery, Thief, Goons, Escape, Posters };
-    inline constexpr int JobCount = 5;
+    enum class EJob : uint8_t { Delivery, Thief, Goons, Escape, Posters, Fare };
+    inline constexpr int JobCount = 6;
 
     // Yellow 'M' markers, all on sidewalks or park paths. Sources: OSM centrelines in Data/LaFontaine/osm.xml.
     // Delivery: Rue Rachel Est sidewalk, 25 m from the Maison des cyclistes café. Thief: park-side Sherbrooke
@@ -26,11 +26,11 @@ namespace QuebecJobRules
     // Sherbrooke sidewalk at Avenue du Parc-La Fontaine / Rue Atateken.
     inline constexpr FJobSpot Markers[JobCount] = {
         {-22296., 25268., 0.}, {44747., 29578., 0.}, {-14333., 3740., 0.}, {34714., -38068., 0.},
-        {18031., 49813., 0.}
+        {18031., 49813., 0.}, {-1683., -36868., 0.}
     };
-    // Base time limit in seconds. A delivery earns DoorBonusSeconds at each door. The poster tour does not.
-    inline constexpr float TimeLimits[JobCount] = {75.f, 150.f, 150.f, 180.f, 120.f};
-    inline constexpr int Rewards[JobCount] = {250, 400, 300, 500, 350};
+    // Base time limit in seconds. A delivery earns DoorBonusSeconds at each door. The poster tour and the fare do not.
+    inline constexpr float TimeLimits[JobCount] = {75.f, 150.f, 150.f, 180.f, 120.f, 100.f};
+    inline constexpr int Rewards[JobCount] = {250, 400, 300, 500, 350, 450};
 
     // Livraison chaude: pick up at the café, then three doors in order.
     inline constexpr FJobSpot DeliveryCafe = {-23677., 23184., 0.};
@@ -69,6 +69,23 @@ namespace QuebecJobRules
     inline constexpr int PosterCount = 3;
     inline constexpr FJobSpot PosterBoards[PosterCount] = {
         {18922., 51143., 0.}, {23957., 58660., 0.}, {27489., 63934., 0.}
+    };
+
+    // La course: the marker is the pickup, on a mapped road south of the park. The drop is a quay road
+    // west of the terrace. The passenger boards at the pickup and stays only while someone is in a car.
+    // Four seconds on foot after boarding, and they get out. The clock does not grow. A drop counts only
+    // for a car that has slowed to CarArrivalSpeed.
+    inline constexpr FJobSpot FareDrop = {-31212., 18782., 0.};
+    inline constexpr int FareWait = 0;
+    inline constexpr int FareAboard = 1;
+    inline constexpr int FareDone = 2;
+    inline constexpr int FareLost = 3;
+    inline constexpr float FareGraceSeconds = 4.f;
+
+    struct FFare
+    {
+        int Step = FareWait;
+        double OnFoot = 0.;
     };
 
     inline constexpr double MarkerRadius = 250.;
@@ -122,6 +139,42 @@ namespace QuebecJobRules
     inline bool Arrived(double Distance, bool bInCar, float Speed)
     {
         return bInCar ? Distance <= CarArrivalRadius && std::fabs(Speed) <= CarArrivalSpeed : Distance <= WalkerArrivalRadius;
+    }
+
+    // One step of the fare. Boarding does not spend the grace: the next tick starts the four seconds.
+    // A car at the drop that is still fast stays aboard. A walker at the drop does not count as the drop.
+    // Done and Lost stay as they are. A negative tick is treated as zero.
+    inline FFare AdvanceFare(int Step, double OnFoot, bool bAtPickup, bool bCarAtDrop, bool bDriving, float Speed, double Dt)
+    {
+        FFare Result;
+        Result.Step = Step;
+        Result.OnFoot = OnFoot;
+        if (Step != FareWait && Step != FareAboard) return Result;
+        if (Dt < 0.) Dt = 0.;
+        if (Step == FareWait)
+        {
+            if (!bAtPickup) return Result;
+            Result.Step = FareAboard;
+            Result.OnFoot = 0.;
+            return Result;
+        }
+        if (bDriving)
+        {
+            Result.OnFoot = 0.;
+            if (bCarAtDrop && std::fabs(static_cast<double>(Speed)) <= static_cast<double>(CarArrivalSpeed)) Result.Step = FareDone;
+            return Result;
+        }
+        Result.OnFoot += Dt;
+        if (Result.OnFoot > static_cast<double>(FareGraceSeconds)) Result.Step = FareLost;
+        return Result;
+    }
+
+    // Whole seconds still left in the grace, rounded up. 0 once the grace is spent.
+    inline int FareSecondsLeft(double OnFoot)
+    {
+        const double Left = static_cast<double>(FareGraceSeconds) - OnFoot;
+        if (Left <= 0.) return 0;
+        return static_cast<int>(std::ceil(Left));
     }
 
     inline int PosterBits(int Mask)

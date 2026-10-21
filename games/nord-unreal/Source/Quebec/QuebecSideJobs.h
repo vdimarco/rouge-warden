@@ -71,7 +71,7 @@ public:
 
     UPROPERTY(VisibleAnywhere, ReplicatedUsing=OnRep_Job) int32 JobIndex = INDEX_NONE;
     UPROPERTY(VisibleAnywhere, ReplicatedUsing=OnRep_Job) EQuebecJobState JobState = EQuebecJobState::Idle;
-    // Delivery: 0 café, 1-3 doors. Goons: wave 0-2. Others stay 0.
+    // Delivery: 0 café, 1-3 doors. Goons: wave 0-2. Fare: 0 waiting, 1 aboard. Others stay 0.
     UPROPERTY(VisibleAnywhere, ReplicatedUsing=OnRep_Job) int32 JobStep = 0;
     // Server times. DeadlineTime 0 means untimed; clients subtract their server-time reading, so the timer stays smooth.
     UPROPERTY(VisibleAnywhere, Replicated) float StartedAt = 0.f;
@@ -127,6 +127,8 @@ private:
     // Server job bookkeeping.
     float OutsideSince = -1.f;
     float LostSince = -1.f;
+    // Seconds the fare's passenger has been without a driver. Reset when someone is in a car.
+    float FareOnFoot = 0.f;
     float NextTargetRefresh = 0.f;
     float NextWaveAt = -1.f;
     bool bSawStars = false;
@@ -159,6 +161,7 @@ private:
     void TickGoons(float Now);
     void TickEscape(float Now);
     void TickPosters();
+    void TickFare(float DeltaSeconds);
     AQuebecCar* SpawnJobCar(const FVector& Point, const FVector& Heading, int32 Paint, FName Tag) const;
     void SpawnWave(int32 Wave);
     void DriveThief(float Now);
