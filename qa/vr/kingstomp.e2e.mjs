@@ -1,4 +1,4 @@
-// After a pipe is off, the King stomps the deck between throws. On the ground it costs a heart. In the air it does not.
+// After a pipe is off, the King throws, then stomps the deck, then pulls. A stomp costs a heart on the ground and none in the air. A pull drags an airborne hero with no rope, and costs a heart inside 16 m. A rope or the ground holds.
 import { mkdir } from "node:fs/promises";
 import { newPage, open, close, enterXR, checker, watchdog } from "./lib.mjs";
 
@@ -61,10 +61,31 @@ try {
       if (kind === "stomp" && wind > 0 && /stomping/i.test(detail) && /stomping/i.test(dom)) break;
     }
     G.test.render(0);
-    return { threw, afterThrow, kind, wind, detail, dom, ripped: G.game.info().pipes[0].ripped, alt: G.game.info().king.alt };
+    return { threw, afterThrow, kind, wind, detail, dom, ripped: G.game.info().pipes[0].ripped, turn: G.game.info().king.turn };
   });
   await page.screenshot({ path: out + "/stomp.png" });
   check(stomp.ripped && stomp.afterThrow > stomp.threw && stomp.kind === "stomp" && /stomping/i.test(stomp.detail) && stomp.dom === stomp.detail, "the attack after that throw is a stomp, and the card says so", stomp);
+
+  const pull = await page.evaluate(() => {
+    G.test.step(1 / 60, 70);
+    const stomps = G.game.info().king.stomps;
+    G.game.kingReady();
+    let kind = "", wind = 0, detail = "", dom = "";
+    for (let i = 0; i < 10; i++) {
+      G.test.step(1 / 60, 1);
+      const k = G.game.info().king;
+      kind = k.kind; wind = k.windT;
+      const ob = G.game.progress.objective;
+      detail = ob ? ob.detail : "";
+      const sm = document.querySelector(".fs-mission small");
+      dom = sm ? sm.textContent : "";
+      if (kind === "pull" && wind > 0 && /pulling/i.test(detail) && /web/i.test(dom)) break;
+    }
+    G.test.render(0);
+    return { stomps, kind, wind, detail, dom, turn: G.game.info().king.turn };
+  });
+  await page.screenshot({ path: out + "/pull.png" });
+  check(pull.stomps > 0 && pull.kind === "pull" && /pulling/i.test(pull.detail) && /web/i.test(pull.detail) && pull.dom === pull.detail, "the attack after that stomp is a pull, and the card says to shoot a web", pull);
 
   const ground = await page.evaluate(() => {
     const m = G.game.info().king.mouth, d = G.game.info().deck;
@@ -91,6 +112,43 @@ try {
     return { before, hearts: G.game.progress.hearts, air: !G.P.onGround, stomps: G.game.info().king.stomps };
   });
   check(air.air && air.hearts === air.before && air.stomps > ground.stomps, "the same stomp in the air takes no heart", air);
+
+  const yanked = await page.evaluate(() => {
+    const m = G.game.info().king.perch, d = G.game.info().deck;
+    const place = (x, y, ground, rope) => {
+      G.test.teleport(m[0] + x, y, m[2]);
+      G.P.frozen = true;
+      G.P.onGround = ground;
+      if (rope) G.P.ropes[0].state = "attached";
+    };
+    const release = () => {
+      const before = { hearts: G.game.progress.hearts, x: G.P.pos.x, z: G.P.pos.z, pulls: G.game.info().king.pulls };
+      G.game.kingWind("pull");
+      G.test.step(1 / 60, 70);
+      const pos = G.P.pos;
+      return {
+        before: before.hearts, hearts: G.game.progress.hearts,
+        pulls: G.game.info().king.pulls, was: before.pulls,
+        moved: Math.hypot(pos.x - before.x, pos.z - before.z),
+        from: Math.hypot(before.x - m[0], before.z - m[2]),
+        dist: Math.hypot(pos.x - m[0], pos.z - m[2]),
+        rope: G.P.ropes[0].state, ground: G.P.onGround,
+      };
+    };
+    place(20, d.y + 12, false, false);
+    const close = release();
+    place(40, d.y + 12, false, false);
+    const far = release();
+    place(8, d.y, true, false);
+    const decked = release();
+    place(8, d.y + 12, false, true);
+    const held = release();
+    return { close, far, decked, held };
+  });
+  check(yanked.close.pulls > yanked.close.was && yanked.close.moved > 13 && yanked.close.moved < 15 && yanked.close.dist < yanked.close.from && yanked.close.dist <= 16 && yanked.close.hearts === yanked.close.before - 1, "a pull in the air with no web drags you in and takes a heart inside 16 m", yanked.close);
+  check(yanked.far.pulls > yanked.far.was && yanked.far.moved > 13 && yanked.far.moved < 15 && yanked.far.dist > 16 && yanked.far.hearts === yanked.far.before, "the same pull from farther away still drags you, and takes no heart past 16 m", yanked.far);
+  check(yanked.decked.ground && yanked.decked.moved < 0.05 && yanked.decked.hearts === yanked.decked.before, "a pull on the ground leaves you where you are", yanked.decked);
+  check(yanked.held.rope === "attached" && yanked.held.moved < 0.05 && yanked.held.hearts === yanked.held.before, "a rope holds against the pull", yanked.held);
 
   check(!page.errors.length, "no page errors", page.errors);
 } finally {
