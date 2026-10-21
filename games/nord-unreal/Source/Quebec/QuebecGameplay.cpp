@@ -34,6 +34,8 @@
 #include "QuebecLap.h"
 #include "QuebecWadeMark.h" // The south-pond float. One wade pays session cash once.
 #include "QuebecWade.h"
+#include "QuebecTrioMark.h" // Three sidewalk posts. One walker, in order, paid once.
+#include "QuebecTrio.h"
 #include "QuebecPolice.h" // Police: the dispatcher spawned by the game mode (POLICE).
 #include "LaFontaineMap.h"
 #include "LaFontaineExtensionMap.h"
@@ -3108,9 +3110,15 @@ void AQuebecHUD::DrawHUD()
         Text(TEXT("WASD or arrows  Drive / steer"), Muted, X, Y + 42.f * Scale, .85f);
         Text(Car->IsPedalo() ? PedaloLandscape : (Car->bHandbrake ? TEXT("SPACE  HANDBRAKE ON") : TEXT("SPACE  Handbrake")), Car->IsPedalo() || Car->bHandbrake ? Accent : Muted, X, Y + 59.f * Scale, .85f);
     }
-    else if (!bPortrait && !bTouchControls && Now - FirstHUDTime < 10.f)
+    else if (!bPortrait && !bTouchControls)
     {
-        Text(TEXT("SPACE  Jump   /   SHIFT  Sprint"), Muted, LowerLeft, Canvas->SizeY - Margin - 68.f * Scale, .9f);
+        if (const AQuebecTrio* Trio = AQuebecTrio::Find(GetWorld()))
+        {
+            const FString TrioLine = Trio->WalkLine();
+            if (!TrioLine.IsEmpty()) Text(TrioLine, Accent, LowerLeft, Canvas->SizeY - Margin - 90.f * Scale, .9f);
+        }
+        if (Now - FirstHUDTime < 10.f)
+            Text(TEXT("SPACE  Jump   /   SHIFT  Sprint"), Muted, LowerLeft, Canvas->SizeY - Margin - 68.f * Scale, .9f);
     }
 
     bool bFalling = false;
@@ -3265,6 +3273,7 @@ void AQuebecGameMode::BeginPlay()
         }
         GetWorld()->SpawnActor<AQuebecBuoy>(FVector(QuebecLap::BuoyX, QuebecLap::BuoyY, 0.), FRotator::ZeroRotator);
         GetWorld()->SpawnActor<AQuebecWade>(FVector(QuebecWade::BuoyX, QuebecWade::BuoyY, 0.), FRotator::ZeroRotator);
+        GetWorld()->SpawnActor<AQuebecTrio>(FVector(QuebecTrio::Stops[0].X, QuebecTrio::Stops[0].Y, 0.), FRotator::ZeroRotator);
     }
     // Combat: weapon, vest and health pickups at street and park points, none near a QA anchor and no collision.
     if (!FParse::Param(FCommandLine::Get(), TEXT("NordNoCampaign"))) QuebecCombat::SpawnPickups(GetWorld());
