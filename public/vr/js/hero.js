@@ -436,12 +436,29 @@ export function createHero(scene, renderer) {
     // the close fade dissolves the body into dots; these solid forms leave with it
     if (readMesh) readMesh.visible = on && opacity > 0.9;
   }
-  function placeRead() {
+  // Follow-through: the hair arrives after the head. Lasseter, "Principles of Traditional Animation Applied to
+  // 3D Computer Animation" (SIGGRAPH 1987). The position stays on the skull; the turn and a short sideways drag lag.
+  const READ_Q = new THREE.Quaternion(), READ_P = new THREE.Vector3(), READ_A = new THREE.Vector3();
+  let readReady = false;
+  function placeRead(dt) {
     if (!readMesh || !rig) return;
     const b = rig.I.Head.b;
     b.updateWorldMatrix(true, false);
-    b.getWorldPosition(readMesh.position);
-    b.getWorldQuaternion(readMesh.quaternion);
+    b.getWorldPosition(READ_P);
+    b.getWorldQuaternion(TQ);
+    const jump = !readReady || READ_P.distanceToSquared(readMesh.position) > 0.5;
+    if (jump) READ_Q.copy(TQ);
+    else READ_Q.slerp(TQ, 1 - Math.exp(-(dt || 1 / 60) * 1));
+    readReady = true;
+    READ_A.set(0, 0, 1).applyQuaternion(TQ);
+    const headYaw = Math.atan2(READ_A.x, READ_A.z);
+    READ_A.set(0, 0, 1).applyQuaternion(READ_Q);
+    let err = headYaw - Math.atan2(READ_A.x, READ_A.z);
+    err = Math.atan2(Math.sin(err), Math.cos(err));
+    const drag = Math.max(-0.12, Math.min(0.12, -err * 0.85));
+    READ_A.set(1, 0, 0).applyQuaternion(TQ);
+    readMesh.position.copy(READ_P).addScaledVector(READ_A, drag);
+    readMesh.quaternion.copy(READ_Q);
   }
 
   /* ---- scratch ---- */
@@ -1186,7 +1203,7 @@ export function createHero(scene, renderer) {
     }
     I.Head.b.getWorldPosition(headPos);
     headPos.y += 0.09;
-    placeRead();
+    placeRead(dt);
     for (let sd = 0; sd < 2; sd++) { CL.palm[sd].copy(handPos[sd]); I[sd === 0 ? "LeftFoot" : "RightFoot"].b.getWorldPosition(footPos[sd]); }
 
     /* -- a name for the tests -- */
