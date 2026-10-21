@@ -111,10 +111,18 @@ Color = lerp(Color, saturate(Color + Rim), PrintedCrew);
 Color = lerp(Color, float3(0.025, 0.015, 0.05), saturate(Ink) * (Sky ? 0.0 : 1.0));
 
 // Aerial perspective: distant surfaces take the afternoon sky. Near the camera the street stays.
-// Hoffman and Preetham, "Rendering Outdoor Light Scattering in Real-Time" (2002), reduced to a
-// depth fade because the clear-day fog multipliers stay at 1.
+// Hoffman and Preetham, "Rendering Outdoor Light Scattering in Real-Time" (2002). A horizontal
+// ray spends more of its path in the haze than a steep ray at the same depth. The clear-day fog
+// multipliers stay at 1, and this node still has no fog volume, so the extra path is the ray's
+// elevation. ColorUV is the post-process viewport, origin at the top left.
+float2 Ndc = ColorUV * float2(2.0, -2.0) + float2(-1.0, 1.0);
+float2 TanHalf = View.TanAndInvTanHalfFOV.xy;
+float3 Ray = normalize(View.ViewForward + View.ViewRight * Ndc.x * TanHalf.x + View.ViewUp * Ndc.y * TanHalf.y);
+float Elevation = abs(Ray.z);
+float Horizon = pow(saturate(1.0 - Elevation), 3.0);
 float Aerial = smoothstep(2500.0, 14000.0, DepthC);
-Color = lerp(Color, float3(0.62, 0.70, 0.80), Aerial * 0.5 * (Sky ? 0.0 : 1.0));
+float Haze = Aerial * lerp(0.25, 1.0, Horizon);
+Color = lerp(Color, float3(0.62, 0.70, 0.80), Haze * 0.85 * (Sky ? 0.0 : 1.0));
 return Color;
 '''
 

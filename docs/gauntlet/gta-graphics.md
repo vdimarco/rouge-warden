@@ -528,3 +528,38 @@ Unreal is not available in this environment, so in-engine frames are the last co
 - Playability raw: 39 / 10 dimensions, index 39
 - Total: 89 / 200
 - Delta vs last round: +1
+
+### Round 16 — 2026-10-21 — rubric v1
+
+- What changed: the comic aerial fade weights the existing 25 m–140 m depth term by view-ray elevation. A horizontal ray mixes farther toward the afternoon sky than a steep ray at the same depth. `QuebecSkyModel` clear-day fog scales stay at 1. The material updates when the comic script runs in the editor.
+- Why it helped: Atmosphere was tied at 5. The old mix was halfway to the sky for every distant surface, so the vanishing point did not read as a longer path through the air.
+- Screenshots: before `docs/gauntlet/gta-graphics/round-16/before-horizon.png`, after `docs/gauntlet/gta-graphics/round-16/after-horizon.png`. These are a perspective shade of the aerial mix on a street longer than 140 m, not an Unreal capture. `Scripts/test_horizon_haze.py` passed. `Scripts/test_plateau_trees.py` passed. `GET /gta/` returned 200. OpenSpec CLI is not installed, so the change files were not validated with `openspec`.
+- Next target: color palette. The ink grade is still one saturation curve, and a warm-brick / cool-shadow split can be shaded offline. Animation smoothness stays at 3 and is skipped until a pose can be drawn.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 6 | The window apron is unchanged. Haze does not cast. |
+| Color palette | 5 | The sky mix colour is the same afternoon blue. The horizon only uses more of it. |
+| Detail density | 5 | Rails and doors are unchanged. |
+| Texture and material quality | 5 | Brick grain and mortar are unchanged. |
+| Composition and camera | 5 | The shoulder camera is unchanged. |
+| Atmosphere | 6 | The vanishing point takes more of the afternoon sky than a steep view at the same depth. The near street stays. It is still a post-process lerp, not a fog volume. |
+| Character models | 5 | The crew rim is unchanged. |
+| Animation smoothness | 3 | Skipped. The blend space still cannot be posed here. |
+| Particles and VFX | 6 | Rain rings are unchanged. |
+| UI polish | 5 | Untouched. |
+| Responsiveness and input latency | 4 | Not measured this round. |
+| Controls feel | 4 | Not played. |
+| Mission clarity | 5 | Unchanged objective card. |
+| Pacing | 4 | Unchanged mission slice. |
+| Fun factor | 3 | Not played. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 4 | No new juice. |
+| Sound design | 3 | Not listened to. |
+| Variety | 3 | One district. |
+| Performance stability | 5 | The comic source tests passed. The ray is a few arithmetic ops on the existing fade. Frame time was not remeasured. |
+
+- Aesthetics raw: 51 / 10 dimensions, index 51
+- Playability raw: 39 / 10 dimensions, index 39
+- Total: 90 / 200
+- Delta vs last round: +1
