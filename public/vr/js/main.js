@@ -1571,7 +1571,8 @@ function couple(inp) {
 // target and both hands aim at it: a mouse or pad press fires at it, and a phone tap goes through the tap rules. A held press
 // still fires if a target shows up within SWING.fireHold; with none it is a dry fire along the view. A test aim override on a hand
 // wins: for that hand ropes.aim decides, as before.
-const latch = [false, false], realWait = [false, false], swingCool = [0, 0];
+const latch = [false, false], realWait = [false, false], swingCool = [0, 0], otherHeld = [false, false];
+let easyAvoid = -1;
 // A held swing lets go after the GO cue has been readable, then catches the next building. chainArm is that catch.
 // chainFrom is the building just left, so the next web does not grab it again. cueHold is how long this rope's cue has shown.
 const CHAIN_SEE = 0.33;
@@ -1608,46 +1609,64 @@ function canHang(a) {
   const gy = city.isWater(P.pos.x, P.pos.z) ? 0 : city.groundY(P.pos.x, P.pos.z);
   return d <= a.y - P.chest - (gy + 1.5 * H);
 }
-function playerEasy() {
+function playerEasy(avoid) {
   easyDir();
-  const tries = [undefined, { up: 8, ahead: 20, reach: 10 }, { up: 4, ahead: 34, reach: 16 }];
+  const tries = [{}, { up: 8, ahead: 20, reach: 10 }, { up: 4, ahead: 34, reach: 16 }];
   let sky = null;
   for (let t = 0; t < tries.length; t++) {
-    const a = easyAnchor(P, easyDx, easyDz, tries[t]);
+    const opt = avoid != null && avoid >= 0 ? { ...tries[t], avoid } : (t ? tries[t] : undefined);
+    const a = easyAnchor(P, easyDx, easyDz, opt);
     if (!a || a.sky) { if (a && a.sky && !sky) sky = aimCopy(a); continue; }
-    if (canHang(a)) return aimCopy(a);
+    if (canHang(a) && !(avoid != null && a.bid === avoid)) return aimCopy(a);
   }
-  if (!sky) sky = aimCopy(easyAnchor(P, easyDx, easyDz));
+  // The point ahead is the building already held. The lock-on knows another one; take it only when the hero can hang under it.
+  // A point past the ground-clearance cap would attach short and pull the hero in, so that shot goes to the sky instead.
+  if (avoid != null && avoid >= 0 && pickerOn) {
+    const res = picker.pick(TCTX, { avoidBid: avoid });
+    if (res && res.valid && res.tag === "building" && res.bid !== avoid) {
+      const copy = aimCopy(res);
+      if (copy.easyH == null) copy.easyH = (P.cfg && P.cfg.bodyH) || SWING.bodyH;
+      if (canHang(copy)) return copy;
+    }
+  }
+  if (!sky) sky = aimCopy(easyAnchor(P, easyDx, easyDz, avoid != null && avoid >= 0 ? { avoid } : undefined));
   if (sky.sky) { fillCam(); for (let n = 0; n < 8 && project(CAM, sky.x, sky.y, sky.z, PROJ).inView; n++) sky.y += sky.easyH * 3; }
   return sky;
 }
+// The building the other rope already holds, or the one this frame's first shot just took.
+function otherWeb(i) {
+  const held = ropeBid(P.ropes[1 - i]);
+  if (held != null && held >= 0) return held;
+  return i === 1 && easyAvoid >= 0 ? easyAvoid : undefined;
+}
 function aimAndFire(dt, inp) {
   if (driving) return;
+  easyAvoid = -1;
   for (let i = 0; i < 2; i++) {
     if (swingCool[i] > 0) swingCool[i] = Math.max(0, swingCool[i] - dt);
     const h = inp.hands[i], r = P.ropes[i];
     // a goon in reach: the swing input punches (punch, punch, kick) instead of firing a rope
     const tap = tapped(inp, i);
     if (actionOn() && G.state === "play" && (inp.easySwing ? tap : h.triggerDown) && tryAttack()) { h.triggerDown = false; fireWait[i] = 0; continue; }
-    // Chase view, no test aim, not on a wall: a held swing takes the auto anchor. A phone tap still
-    // aims (the building under the finger). A finger that holds the right half does not. First person
-    // keeps the crosshair. A headset and G.test.aimAt keep the old ray.
+    // Chase view, no test aim, not on a wall: a held mouse or pad swing takes the auto anchor.
+    // A phone finger aims at the building under it, tap or hold. First person keeps the crosshair.
+    // A headset and G.test.aimAt keep the old ray.
     const useEasy = flatOn && !isXR() && G.state === "play" && !ov.aim[i] && !P.wall
       && !(pickerOn && picker.result()?.special)
       && !(flatcam && flatcam.firstPerson)
-      && !(inp.easySwing && !(inp.phoneHeld && inp.phoneHeld[i]));
+      && !inp.easySwing;
     // phone: a tap on a side with that side's rope out moves it to the tapped building, or the next one ahead: one tap, one swing,
     // with no let-go between. With nothing new in reach the rope stays. A tap while the cup still flies (0.3 s at most) does
     // nothing: a new shot would cancel the cup before it lands.
     if (tap && r.state !== "idle") {
       if (r.state === "flying") continue;
-      const next = useEasy ? playerEasy() : phoneAim(i, h, inp);
+      const next = useEasy ? playerEasy(otherWeb(i)) : phoneAim(i, h, inp);
       if (next?.valid && !next.same && !ui.blocking(i) && !(next.easy && swingCool[i] > 0)) shoot(i, h, next);
       else D.mobile.miss(i, true);
       continue;
     }
     if (tap && h.connected && !ui.blocking(i)) {
-      const a = (lastAim[i] = useEasy ? playerEasy() : phoneAim(i, h, inp));
+      const a = (lastAim[i] = useEasy ? playerEasy(otherWeb(i)) : phoneAim(i, h, inp));
       D.mobile.target(!!a?.valid && !a.same, false);
       // only the building the other rope holds is in reach: that rope stays, and this plunger stays home.
       // an easy web that just let go waits out its 150 ms before the next one
@@ -1675,7 +1694,7 @@ function aimAndFire(dt, inp) {
     if (useEasy && !h.triggerDown && fireWait[i] <= 0) { lastAim[i] = null; continue; }
     const pk = pickerOn && !ov.aim[i] && !useEasy;
     let a;
-    if (useEasy) a = playerEasy();
+    if (useEasy) a = playerEasy(otherWeb(i));
     else if (pk) { ropes.aim(i, h.aimPos, h.aimDir, P.vel); a = picker.result(); } // the reticle follows the aim; the picker decides
     else a = ropes.aim(i, h.aimPos, h.aimDir, P.vel);
     lastAim[i] = a;
@@ -1688,6 +1707,8 @@ function aimAndFire(dt, inp) {
         shoot(i, h, a);
         // The other hand fires in this same frame (two swing inputs went down together). The picker learns of this rope only next
         // frame, so ask it again for a building that does not hold it. pick() rewrites the result in place: after shoot, never in it.
+        // An easy web has the same rule: the second shot this frame skips the building the first just took.
+        if (useEasy && i === 0 && bid >= 0) easyAvoid = bid;
         if (pk && i === 0 && bid >= 0 && inp.hands[1].triggerDown && P.ropes[1].state === "idle") { PICK_OPTS.avoidBid = bid; picker.pick(TCTX, PICK_OPTS); }
       } else { fireWait[i] = SWING.fireHold; realWait[i] = !!h.swingDown; }
     } else if (fireWait[i] > 0) {
@@ -1781,6 +1802,7 @@ function shoot(i, h, a) {
   realWait[i] = false;
   if (flatOn && pickerOn && P.wall && flatcam.opacity > 0.5 && (phone || real)) turnToSwing(a); // before fire: it lets go of the wall
   firePerch[i] = heroFight().perch; // a rope fired from a roof or a wall: the takedown is judged from here, not where the cup lands
+  otherHeld[i] = P.ropes[1 - i].state === "attached";
   fire(P, i, h.aimPos, a);
   if (a.easy) armEasy(P.ropes[i], a.easyH);
   toggled[i] = true;
@@ -2019,7 +2041,7 @@ function feedback(ev) {
       // the rope can already be gone in the same step (the chest grabbed a wall and let go of the ropes): no kick then
       if (G.state === "play" && r.state === "attached" && !SPECIAL_TAGS[r.target.tag] && !r.sticky) {
         if (G.input.easySwing) { phoneRopeT[i] = 0; phoneCatch(r); boost(i, PHONE.attachSpeed); phoneHandoff(i); }
-        else if (latch[i] && flatOn) boost(i, DESKTOP.attachSpeed); // a real press only: a test hook gets no kick
+        else if (latch[i] && flatOn && !otherHeld[i]) boost(i, DESKTOP.attachSpeed); // a real press only, and not a second web: a test hook gets no kick
       }
       catchFeedback(i, "attach");
       break;
