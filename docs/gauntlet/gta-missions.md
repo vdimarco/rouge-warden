@@ -1662,3 +1662,48 @@ Unreal is not available here, so the native diamond was not captured. The title 
 ![Play client at 1280, host offline](gta-missions/r36-play-1280.png)
 
 ![Menu on a 390-wide screen, Recover visible](gta-missions/r36-play-menu-390.png)
+
+### Round 37 — 2026-10-21 — rubric v1
+
+- What changed: La course leaves a loaner at the curb when the starter is on foot and no free car is within 30 metres. The first spawn tries seven metres along the lane, then the other side, then farther, then the road point, so the car is not sitting on the marker. Paint is the second style and the tag is the existing loan tag. A driver does not get a second car. A free car already nearby is not joined by a loaner. Boarding on foot is unchanged: the four-second grace still starts on the next tick. An empty loaner is retired the same way the thief's loaner is. A player who is driving it keeps it.
+- Why it helped: The passenger boards a walker at the pickup, then gives four seconds on foot. Without a car at the curb that clock expired while they hunted. The loaner makes the existing clock a choice.
+- Screenshots: title `docs/gauntlet/gta-missions/r37-title-1280.png`, `r37-title-390.png`, `r37-title-320.png`. Play client, host offline, `r37-play-1280.png`. Menu with Recover `r37-play-menu-390.png`. The title loaded with no page errors. The raw play page still logs the missing `@epicgames-ps/lib-pixelstreamingfrontend-ue5.8` specifier; the shell and Recover still draw. The loaner was not entered in a car. `Scripts/test_job_rules.py` reports 194 assertions, 0 failures, on c++, g++, and clang++. Syntax check `--both` passed for `QuebecSideJobs.cpp`. OpenSpec CLI is not installed, so `openspec validate` did not run. Already-merged GTA pull requests from this loop had no posted Vercel review comments to address. Four older reviews were closed after counting suggestions and before publishing the text, so there was nothing to apply.
+- Next target: mission clarity, still the remaining 7. The native card was not seen, so the score waits. Responsiveness stays at 3 and stays out of scope. Performance stays at 4 and is not measurable here. Fun, difficulty, variety, and pacing stay at 9. The four-second clock already moved pacing. A curb car makes that clock playable and does not add a new scored step.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 3 | Unchanged. |
+| Color palette | 5 | Unchanged. |
+| Detail density | 3 | Unchanged. |
+| Texture and material quality | 3 | Unchanged. |
+| Composition and camera | 4 | Unchanged. |
+| Atmosphere | 4 | Unchanged. |
+| Character models | 3 | Unchanged. |
+| Animation smoothness | 3 | Unchanged. |
+| Particles and VFX | 2 | Unchanged. |
+| UI polish | 4 | Unchanged. The native card was not seen, and French and English still share the screen. |
+| Responsiveness and input latency | 3 | Unchanged. Still a lagged stream. Out of scope for this loop. |
+| Controls feel | 8 | Unchanged. Lock still holds Space while driving. |
+| Mission clarity | 7 | Unchanged. The fare names the passenger and the quay. The native card was not seen. |
+| Pacing | 9 | Unchanged. Four seconds on foot after boarding still loses the passenger. The loaner makes that clock a choice, and the clock already scored this. |
+| Fun factor | 9 | Unchanged. Chez Lise still sells a kit, a vest, or one star. A curb car is not the reference's spread of things to do. |
+| Difficulty curve | 9 | Unchanged. Selling the last page ends it for 200 and does not bank the chain. A wreck still costs more than the goon pay. |
+| Feedback | 8 | Unchanged. Boarding still uses the checkpoint cue the jobs already play. |
+| Sound design | 8 | Unchanged. The lock still chirps. The loaner adds no new tone. |
+| Variety | 9 | Unchanged. La course is still a sixth job in the same district. |
+| Performance stability | 4 | Unchanged. Not measurable in this container. |
+
+- Aesthetics raw: 34 / 10 dimensions, index 34
+- Playability raw: 74 / 10 dimensions, index 74
+- Total: 108 / 200
+- Delta vs last round: 0 (round 36 was 108). The curb car is new, and no playability score had room to move by one honest step.
+
+![GTA title at 1280](gta-missions/r37-title-1280.png)
+
+![GTA title at 390](gta-missions/r37-title-390.png)
+
+![GTA title at 320](gta-missions/r37-title-320.png)
+
+![Play client at 1280, host offline](gta-missions/r37-play-1280.png)
+
+![Menu on a 390-wide screen, Recover visible](gta-missions/r37-play-menu-390.png)
