@@ -33,9 +33,13 @@ try {
       G.test.step(1 / 60, 1);
       if (G.P.ropes[0].state === "attached") { attached = true; break; }
     }
-    // leave the GO window if the attach frame was already in it, then fall across the rope.
-    // Do not step after that: a held easy rope turns a fall into a rise in one frame.
-    for (let c = 0; c < 40 && G.test.action().cueAir[0]; c++) G.test.step(1 / 60, 1);
+    // A held button lets go once the GO cue has been up, so this early let-go leaves that cue first.
+    // One step with the fall aimed back at the anchor: the rope stays, and the cue clears.
+    if (attached && G.test.action().cueAir[0] && G.P.ropes[0].state === "attached") {
+      const B = G.P.ropes[0].anchor, bx = G.P.pos.x - B.x, bz = G.P.pos.z - B.z, bd = Math.hypot(bx, bz) || 1;
+      G.P.vel.x = -(bx / bd) * 12; G.P.vel.z = -(bz / bd) * 12; G.P.vel.y = -6; G.P.onGround = false;
+      G.test.step(1 / 60, 1);
+    }
     const A = G.P.ropes[0].anchor, cx = G.P.pos.x - A.x, cz = G.P.pos.z - A.z, d = Math.hypot(cx, cz) || 1;
     G.P.vel.x = -cz / d * 14; G.P.vel.z = cx / d * 14; G.P.vel.y = -8; G.P.onGround = false;
     const cue = !!G.test.action().cueAir[0];
@@ -73,7 +77,11 @@ try {
   await page.mouse.down();
   await page.evaluate(() => {
     for (let n = 0; n < 90 && G.P.ropes[0].state !== "attached"; n++) G.test.step(1 / 60, 1);
-    for (let c = 0; c < 40 && G.test.action().cueAir[0]; c++) G.test.step(1 / 60, 1);
+    if (G.P.ropes[0].state === "attached" && G.test.action().cueAir[0]) {
+      const B = G.P.ropes[0].anchor, bx = G.P.pos.x - B.x, bz = G.P.pos.z - B.z, bd = Math.hypot(bx, bz) || 1;
+      G.P.vel.x = -(bx / bd) * 12; G.P.vel.z = -(bz / bd) * 12; G.P.vel.y = -6; G.P.onGround = false;
+      G.test.step(1 / 60, 1);
+    }
     // a held rope speeds up in one frame, so the slow drop is set and let go without another held step
     G.P.vel.x = G.P.vel.z = 0; G.P.vel.y = -2; G.P.onGround = false;
   });

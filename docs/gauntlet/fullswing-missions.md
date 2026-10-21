@@ -648,3 +648,40 @@ Loop: missions, playability, controls, feel, UX, pacing and fun for In Full Swin
 - Delta vs last round: +1 (round 16 was 120). Responsiveness 7 → 8. Every other score held.
 
 ![The clog card reads 28 m after the move](fullswing-r17/closer.png)
+
+### Round 18 — 2026-10-21 — rubric v1
+
+- What changed: Holding the swing button through the GO cue lets that rope go and catches the next building without a new press. The cue stays readable for a third of a second. Letting the button up still lets the rope go and does not fire another web.
+- Why it helped: On a mouse, the next web only started on a fresh press, so a swing that let go with the button still down fell. Spider-Man 2 chains the next web from a held swing. A 1280×800 play held E in the air. The rope let go on the cue at frame 492 and attached to a different building (id 783) 10 frames later. There was no trigger-up and no dry fire. Letting E up left both ropes idle.
+- Screenshots: `docs/gauntlet/fullswing-r18/chain.png`.
+- Next target: performance stability (6), the lowest playability score. This machine has no real GPU to time, so that score is not the next implementation round. Sound design (7) was not listened to and is not the next implementation round either.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 5 | Held. Golden-hour sun and ink shadows. |
+| Color palette | 6 | Held. Yellow, red and sludge green still separate the HUD from the blocks. |
+| Detail density | 4 | Held. Open blocks more than a dressed borough. |
+| Texture and material quality | 3 | Held. Flat fills. |
+| Composition and camera | 4 | Held. The chase camera still sits behind the hero. This frame is the swing. |
+| Atmosphere | 5 | Held. The dusk skyline has a mood. The street under the swing does not. |
+| Character models | 3 | Held. Simple comic figures. |
+| Animation smoothness | 4 | Scored from still frames in software GL. Continuous motion was not watched. |
+| Particles and VFX | 5 | Held. No new effect. The rope is the one already in the swing. |
+| UI polish | 6 | Held. The GO cue is the same caption, left up long enough to read. |
+| Responsiveness and input latency | 8 | Held. The clog card still rewrites its metres every frame. |
+| Controls feel | 8 | Holding through the cue let the rope go and attached to a different building 10 frames later, with no new press. Letting the button up left the ropes idle. |
+| Mission clarity | 8 | Held. The compass still names the district on the card. |
+| Pacing | 8 | Held. The fourth flush is still the balloon and the eighth is still the carry. |
+| Fun factor | 8 | Held. A win still hops the hero. This round changes the next web, not the payoff. |
+| Difficulty curve | 8 | Held. The eighth flush still counts from 36 s. An odd-job washer still has the minute. |
+| Feedback | 8 | Held. A chase that is pulling away still turns the card hot. The chain uses the cue that was already there. |
+| Sound design | 7 | Held. Not listened to. |
+| Variety | 8 | Held. The jobs are unchanged. |
+| Performance stability | 6 | The 1280×800 play passed with no page errors. Frame time on a real GPU was not measured. |
+
+- Aesthetics raw: 45 / 10 dimensions, index 45
+- Playability raw: 77 / 10 dimensions, index 77
+- Total: 122 / 200
+- Delta vs last round: +1 (round 17 was 121). Controls feel 7 → 8. Every other score held.
+
+![A held swing on the next building](fullswing-r18/chain.png)

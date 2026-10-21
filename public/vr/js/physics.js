@@ -109,11 +109,13 @@ export function armEasy(r, hgt) {
 const EASY_OUT = { x: 0, y: 0, z: 0, nx: 0, ny: -1, nz: 0, tag: "sky", id: "sky", easy: true, easyH: 1.8, sky: true, valid: true, same: false, special: false };
 const EASY_DIRS = [];
 for (let y = -1; y <= 1; y++) for (let x = -1; x <= 1; x++) for (let z = -1; z <= 1; z++) if (x || y || z) EASY_DIRS.push(x, y, z);
-export function easyAnchor(P, dx, dz) {
+export function easyAnchor(P, dx, dz, opt) {
   const H = (P.cfg && P.cfg.bodyH) || SWING.bodyH;
   const hl = len2(dx, dz) || 1;
   dx /= hl; dz /= hl;
-  const ax = P.pos.x + dx * 12 * H, ay = P.pos.y + 14 * H, az = P.pos.z + dz * 12 * H, R = 6 * H;
+  const ahead = opt && opt.ahead != null ? opt.ahead : 12, up = opt && opt.up != null ? opt.up : 14, reach = opt && opt.reach != null ? opt.reach : 6;
+  const avoid = opt ? opt.avoid : undefined;
+  const ax = P.pos.x + dx * ahead * H, ay = P.pos.y + up * H, az = P.pos.z + dz * ahead * H, R = reach * H;
   const o = EASY_OUT;
   o.easy = true; o.easyH = H; o.valid = true; o.same = false; o.special = false; o.sky = true;
   o.x = ax; o.y = ay; o.z = az; o.nx = 0; o.ny = -1; o.nz = 0; o.tag = "sky"; o.id = "sky";
@@ -122,7 +124,7 @@ export function easyAnchor(P, dx, dz) {
     let bt = R + 1, bx = 0, by = 0, bz = 0, bnx = 0, bny = 1, bnz = 0, bid = 0, hit = false;
     for (let i = 0; i < EASY_DIRS.length; i += 3) {
       const h = city.raycast(ax, ay, az, EASY_DIRS[i], EASY_DIRS[i + 1], EASY_DIRS[i + 2], R, HIT);
-      if (h && h.t <= R && h.t < bt && h.collider) {
+      if (h && h.t <= R && h.t < bt && h.collider && h.collider.id !== avoid) {
         bt = h.t; bx = h.x; by = h.y; bz = h.z; bnx = h.nx; bny = h.ny; bnz = h.nz; bid = h.collider.id; hit = true;
       }
     }
