@@ -518,6 +518,7 @@ export function createHero(scene, renderer) {
   const setArm = (i, ux, uy, uz, fx, fy, fz) => { arm[i].up.set(ux, uy, uz).normalize(); arm[i].fore.set(fx, fy, fz).normalize(); };
   const POLE = [new THREE.Vector3(0.1, 0, 1), new THREE.Vector3(-0.1, 0, 1)];
   const pole = [new THREE.Vector3(), new THREE.Vector3()]; // this frame's knee poles (POLE, or out wide on a wall)
+  const kneeRest = [null, null]; // the knee's rest local position, so a run can step it out and the next pose puts it back
   const ikArm = [0, 1].map(() => ({ up: new THREE.Vector3(), fore: new THREE.Vector3() }));
   const hipW = [new THREE.Vector3(), new THREE.Vector3()]; // the hip joints where the posed hips put them (model frame)
 
@@ -766,6 +767,9 @@ export function createHero(scene, renderer) {
       else if (/UpLeg|Leg|Foot|ToeBase/.test(n)) w = legW;
       else if (side >= 0) w = bodyW * (1 - S.reach[side]) * (side === 0 ? 1 - S.carry : 1); // a rope arm keeps reaching for its anchor (its yank is part of the reach); the carrying arm holds on
       else w = bodyW;
+      // At a full run the captured loop foreshortens to a stand from behind the chase. Keep the opened stride instead.
+      // Walk and jog stay on the clip. Lasseter 1987, exaggeration.
+      if (MC.w[3] > 0.45 && n !== "Head" && n !== "neck") w *= 1 - MC.w[3];
       // a bone the code-built pose leaves alone (the neck, the shoulders, the hands, the toes) has no turn of its own there
       const own = d.q;
       if (n === "neck" || /Shoulder|Hand$|ToeBase/.test(n)) own.identity();
@@ -773,7 +777,7 @@ export function createHero(scene, renderer) {
       d.D.copy(p < 0 ? TQ.identity() : I[BONES[p]].D).multiply(own);
       setBone(d, own);
     }
-    WP.set(hx, hy, hz).lerp(MC.hips, legW);
+    WP.set(hx, hy, hz).lerp(MC.hips, legW * (1 - MC.w[3]));
     rig.hips.position.copy(rig.hipsRest).add(WP.applyMatrix3(rig.armInv));
   }
 
@@ -982,7 +986,7 @@ export function createHero(scene, renderer) {
 
     /* -- the pose, layer by layer -- */
     const I = rig.I, wR = S.run, wA = S.air, wS = S.swing, cr = S.crouch;
-    const ampR = clamp(hs * 0.085, 0.05, 0.3);
+    for (let sd = 0; sd < 2; sd++) if (kneeRest[sd]) I[(sd ? "Right" : "Left") + "Leg"].b.position.copy(kneeRest[sd]);
     let hipsDx = 0, hipsDy = -0.02 + Math.sin(t * 1.9) * 0.004, hipsDz = 0, lean = 0.02 + Math.sin(t * 1.9 + 0.4) * 0.01, twist = 0, bank = 0, hipTw = 0;
     const stanceX = 0.12, ay = rig.ankleY, az = -0.05;
     for (let sd = 0; sd < 2; sd++) {
@@ -991,19 +995,25 @@ export function createHero(scene, renderer) {
       foot[sd].p.set(sx * stanceX, ay, az); foot[sd].pitch = 0; foot[sd].yaw = 0; pole[sd].copy(POLE[sd]);
       setArm(sd, sx * 0.1, -1, 0.05, sx * 0.14, -1, 0.42);
     }
-    // run: a two-beat cycle, the arms against the legs
+    // run: a two-beat cycle, the arms against the legs. The chase camera sits behind the facing, so a stride
+    // along z foreshortens to a stand. The lifted foot and its knee step out to the side, where the frame can see them.
     if (wR > 0.001) {
-      const ph = S.phase, lift = 0.05 + 0.13 * clamp(hs / 3.5, 0.3, 1);
-      hipsDy = (-0.02 - 0.02 * wR - 0.03 * wR * (0.5 + 0.5 * Math.cos(2 * ph))) * 1 + hipsDy * (1 - wR);
-      lean = lean * (1 - wR) + (0.08 + 0.14 * clamp(hs / 4, 0, 1)) * wR;
-      hipTw += 0.16 * wR * Math.sin(ph); twist += -0.2 * wR * Math.sin(ph);
+      const ph = S.phase, lift = 0.62 * clamp(hs / 3.5, 0.55, 1);
+      hipsDy = (-0.04 - 0.06 * wR) + hipsDy * (1 - wR);
+      lean = lean * (1 - wR) + 0.22 * wR;
+      hipTw += 0.2 * wR * Math.sin(ph); twist += -0.28 * wR * Math.sin(ph);
       for (let sd = 0; sd < 2; sd++) {
-        const sx = sd === 0 ? 1 : -1, th = ph + (sd ? Math.PI : 0);
-        foot[sd].p.z += wR * ampR * Math.sin(th);
-        foot[sd].p.y += wR * lift * Math.max(0, Math.cos(th));
-        const psi = 0.8 * wR * Math.sin(th + Math.PI) * clamp(hs / 3, 0.3, 1);
-        V.a.set(sx * 0.12, -Math.cos(psi), Math.sin(psi)).normalize();
-        V.b.set(sx * 0.1, -Math.cos(psi + 0.8 + 0.4 * wR), Math.sin(psi + 0.8 + 0.4 * wR)).normalize();
+        const sx = sd === 0 ? 1 : -1, th = ph + (sd ? Math.PI : 0), n = sd === 0 ? "Left" : "Right";
+        const s = Math.sin(th), up = Math.max(0, Math.cos(th));
+        foot[sd].p.set(sx * (0.12 + 0.38 * up * wR), ay + lift * up * wR, az + 0.5 * s * wR);
+        pole[sd].set(sx * (0.25 + 1.05 * up), 0.25 + 0.2 * up, 0.35);
+        // The knee joint itself steps out. A rotation alone stays inside the silhouette from behind the chase.
+        const knee = I[n + "Leg"].b;
+        if (!kneeRest[sd]) kneeRest[sd] = knee.position.clone();
+        if (up > 0.2 && wR > 0.55) knee.position.x += sx * 0.22 * up * wR;
+        const psi = (s > 0 ? -0.9 : 0.7) * wR;
+        V.a.set(sx * (0.15 + 0.55 * (s > 0 ? 1 : 0.2)), -Math.cos(psi), Math.sin(psi)).normalize();
+        V.b.set(sx * 0.2, -Math.cos(psi + 0.6), Math.sin(psi + 0.6)).normalize();
         arm[sd].up.lerp(V.a, wR).normalize(); arm[sd].fore.lerp(V.b, wR).normalize();
       }
     }
@@ -1106,19 +1116,22 @@ export function createHero(scene, renderer) {
       for (let sd = 0; sd < 2; sd++) {
         const sx = sd === 0 ? 1 : -1;
         const yH = ay + (sd === 0 ? 0.36 : 0.2), zH = az - (sd === 0 ? 0.3 : 0.44);
-        const yT = ay + (sd === 0 ? 0.22 : 0.42), zT = az - (sd === 0 ? 0.52 : 0.28);
+        // The chase is behind the facing, so the trail also steps out to the side. One heel stays low and wide, the other lifts.
+        const yT = ay + (sd === 0 ? 0.06 : 0.62), zT = az - (sd === 0 ? 0.72 : 0.48);
         const yK = ay + (sd === 0 ? 0.62 : 0.5), zK = az + (sd === 0 ? 0.62 : 0.42);
-        V.k.set(sx * 0.14, yH * hw + yT * tw + yK * kw, zH * hw + zT * tw + zK * kw);
+        const xSwing = sx * (0.14 * hw + (sd === 0 ? 0.48 : 0.2) * tw + 0.12 * kw);
+        V.k.set(xSwing, yH * hw + yT * tw + yK * kw, zH * hw + zT * tw + zK * kw);
         foot[sd].p.lerp(V.k, wS);
         foot[sd].pitch += (0.4 * hw + 0.95 * tw + 0.25 * kw) * wS;
         pole[sd].lerp(V.a.set(sx * 0.2, tw > kw ? -0.25 : 0.35, tw > kw ? -1 : 1), wS);
-        const ax = sx * (0.8 * hw + 0.55 * tw + 0.4 * kw), ayA = -0.1 * hw + 0.05 * tw + 0.45 * kw, azA = -0.3 * hw - 0.8 * tw + 0.55 * kw;
+        const ax = sx * (0.8 * hw + 0.95 * tw + 0.4 * kw), ayA = -0.1 * hw + 0.05 * tw + 0.45 * kw, azA = -0.3 * hw - 0.85 * tw + 0.55 * kw;
         V.a.set(ax, ayA, azA).normalize(); V.b.set(ax * 0.85, ayA + 0.15, azA * 0.65).normalize();
         arm[sd].up.lerp(V.a, wS).normalize(); arm[sd].fore.lerp(V.b, wS).normalize();
       }
-      hipsDy = hipsDy * (1 - wS) + (-0.06 * hw - 0.1 * tw - 0.02 * kw) * wS;
-      hipsDz += (0.08 * tw - 0.03 * kw) * wS;
-      lean = lean * (1 - wS) + (0.12 * hw + 0.55 * tw - 0.06 * kw) * wS;
+      hipsDy = hipsDy * (1 - wS) + (-0.06 * hw - 0.12 * tw - 0.02 * kw) * wS;
+      hipsDz += (0.1 * tw - 0.03 * kw) * wS;
+      lean = lean * (1 - wS) + (0.12 * hw + 0.72 * tw - 0.06 * kw) * wS;
+      bank += 0.28 * tw * wS;
     }
     // land: a crouch, arms out, a forward lean
     if (cr > 0.001) {
