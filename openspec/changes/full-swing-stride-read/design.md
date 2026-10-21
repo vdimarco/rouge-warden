@@ -6,6 +6,6 @@ John Lasseter, "Principles of Traditional Animation Applied to 3D Computer Anima
 
 ## Decisions
 
-- Walk and jog stay on the captured loop. At a full run that loop foreshortens to a stand from behind the chase, so the body keeps an opened stride: the lifted knee steps out to the side and the arms swing against the legs. A rope arm still reaches its anchor.
+- Walk and jog stay on the captured loop. At a full run that loop foreshortens to a stand from behind the chase, so the body keeps an opened stride: the lifted knee steps out to the side and the arms swing against the legs. The knee step uses the run clip's weight, the same band as the blend that leaves the loop (above about 2.9 m/s). At a jog the shin stays on the clip. When the clips never load, the same speed band is the gate, so the fallback figure's jog is not shoved sideways. A rope arm still reaches its anchor.
 - At the bottom of a swing one leg steps out to the side of the trail and the free arm opens. A quiet hang keeps the previous mild trail, and the tuck on the way up stays. The rope hand stays on the line to the anchor.
 - Pose names, the twelve poses a second, the chase arm, and the chase pitch stay as they are. No new draw, and the skinned triangle count stays where it is.

@@ -1008,9 +1008,12 @@ export function createHero(scene, renderer) {
         foot[sd].p.set(sx * (0.12 + 0.38 * up * wR), ay + lift * up * wR, az + 0.5 * s * wR);
         pole[sd].set(sx * (0.25 + 1.05 * up), 0.25 + 0.2 * up, 0.35);
         // The knee joint itself steps out. A rotation alone stays inside the silhouette from behind the chase.
+        // Walk and jog stay on the captured loop (or the code pose, when the clips never loaded). The step waits
+        // for the run band, the same 2.9–3.3 m/s the run clip uses, so a jog does not shove the shin out by 22 cm.
         const knee = I[n + "Leg"].b;
         if (!kneeRest[sd]) kneeRest[sd] = knee.position.clone();
-        if (up > 0.2 && wR > 0.55) knee.position.x += sx * 0.22 * up * wR;
+        const runOpen = MC.data ? MC.w[3] : smooth(2.9, 3.3, hs);
+        if (up > 0.2 && runOpen > 0.45) knee.position.x += sx * 0.22 * up * runOpen;
         const psi = (s > 0 ? -0.9 : 0.7) * wR;
         V.a.set(sx * (0.15 + 0.55 * (s > 0 ? 1 : 0.2)), -Math.cos(psi), Math.sin(psi)).normalize();
         V.b.set(sx * 0.2, -Math.cos(psi + 0.6), Math.sin(psi + 0.6)).normalize();
