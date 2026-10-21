@@ -106,6 +106,10 @@ public:
     UPROPERTY(VisibleAnywhere, ReplicatedUsing=UpdatePresentation) EQuebecCampaignPhase Phase = EQuebecCampaignPhase::AimWorklight;
     UPROPERTY(VisibleAnywhere, Replicated) int32 CompletedMissions = 0;
     UPROPERTY(VisibleAnywhere, ReplicatedUsing=UpdatePresentation) int32 PondStep = 0;
+    // Session-only clock for the steady beam. Not written to the v1 slot.
+    UPROPERTY(VisibleAnywhere, Replicated) bool bPondTagHolding = false;
+    UPROPERTY(VisibleAnywhere, Replicated) float PondTagInside = 0.f;
+    UPROPERTY(VisibleAnywhere, Replicated) float PondTagOutside = 0.f;
     UPROPERTY(VisibleAnywhere, ReplicatedUsing=UpdatePresentation) int32 CourtStep = 0;
     // Session-only. A spoiled bank increments it so the local rasp can hear the miss. Not written to the v1 slot.
     UPROPERTY(VisibleAnywhere, Replicated) int32 CourtMisses = 0;
@@ -219,7 +223,7 @@ private:
     void SetupRaceRoute();
     void TickTerrace(float DeltaSeconds);
     void TickRace(float DeltaSeconds);
-    void TickPond();
+    void TickPond(float DeltaSeconds);
     void AdvancePond(int32 Next, AQuebecController* Who, const TCHAR* Message, bool bFinished);
     bool NearPond(const AQuebecController* Controller, double X, double Y) const;
     void TickCourt();

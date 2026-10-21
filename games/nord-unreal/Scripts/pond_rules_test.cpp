@@ -199,6 +199,28 @@ int main()
     Expect(Loudest > 0.05, "the tick is silent");
     Expect(std::fabs(QuebecPondTone::SampleAt(QuebecPondTone::TickFrames - 1)) < 0.02, "the tick does not decay");
 
+    Expect(StepBanked == 6, "the hold moved the banked step");
+    Expect(Apply(StepTag, EAct::Tag, FalseBeam, false) == StepNear, "a postcard tag no longer opens the near lock");
+    Expect(!TagInside(0) && TagInside(FalseBeam) && !TagInside(2), "a blinking beam counts as the postcard");
+    const FTagHold Short = AdvanceTag(0., 0., true, 3.9);
+    Expect(!Short.bDone && Short.Inside == 3.9 && Short.Outside == 0., "three seconds finishes the postcard");
+    const FTagHold Full = AdvanceTag(0., 0., true, 4.);
+    Expect(Full.bDone && Full.Inside == 4., "four seconds leaves the postcard open");
+    const FTagHold Finish = AdvanceTag(3.9, 0., true, 0.1);
+    Expect(Finish.bDone, "the last tenth does not finish the postcard");
+    const FTagHold Pause = AdvanceTag(2., 0., false, 1.);
+    Expect(!Pause.bDropped && Pause.Inside == 2. && Pause.Outside == 1., "one second outside drops the postcard");
+    const FTagHold Drop = AdvanceTag(2., 0., false, 1.01);
+    Expect(Drop.bDropped && Drop.Inside == 2., "more than a second outside keeps the postcard");
+    const FTagHold Back = AdvanceTag(2., 0.4, true, 0.5);
+    Expect(!Back.bDone && Back.Inside == 2.5 && Back.Outside == 0., "stepping back does not clear the outside clock");
+    const FTagHold Still = AdvanceTag(2., 0.4, true, 0.);
+    Expect(!Still.bDone && Still.Inside == 2. && Still.Outside == 0., "a frozen clock advances the postcard");
+    const FTagHold Backward = AdvanceTag(2., 0.4, false, -1.);
+    Expect(!Backward.bDropped && Backward.Inside == 2. && Backward.Outside == 0.4, "a backwards clock drops the postcard");
+    Expect(SecondsLeft(0.) == 4 && SecondsLeft(0.1) == 4 && SecondsLeft(3.1) == 1 && SecondsLeft(4.) == 0 && SecondsLeft(5.) == 0,
+        "the postcard clock names the wrong seconds");
+
     std::printf("%d assertions, %d failures\n", Assertions, Failures);
     return Failures == 0 ? 0 : 1;
 }

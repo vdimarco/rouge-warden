@@ -143,6 +143,51 @@ namespace QuebecPondRules
         return false;
     }
 
+    // Stay on the postcard. The decoys blink, and this beam does not. Leaving for more than a second drops it.
+    inline constexpr int TagHoldSeconds = 4;
+    inline constexpr double TagGraceSeconds = 1.;
+
+    struct FTagHold
+    {
+        double Inside = 0.;
+        double Outside = 0.;
+        bool bDone = false;
+        bool bDropped = false;
+    };
+
+    inline bool TagInside(int Beam)
+    {
+        return Beam == FalseBeam;
+    }
+
+    // The clock runs only on the postcard. A blinking beam is not an inside sample.
+    inline FTagHold AdvanceTag(double Inside, double Outside, bool bInside, double Dt)
+    {
+        FTagHold Out;
+        if (!(Dt > 0.)) Dt = 0.;
+        if (bInside)
+        {
+            Out.Inside = Inside + Dt;
+            Out.Outside = 0.;
+            Out.bDone = Out.Inside >= static_cast<double>(TagHoldSeconds);
+        }
+        else
+        {
+            Out.Inside = Inside;
+            Out.Outside = Outside + Dt;
+            Out.bDropped = Out.Outside > TagGraceSeconds;
+        }
+        return Out;
+    }
+
+    inline int SecondsLeft(double Inside)
+    {
+        if (!(Inside > 0.)) return TagHoldSeconds;
+        const double Left = static_cast<double>(TagHoldSeconds) - Inside;
+        if (!(Left > 0.)) return 0;
+        return static_cast<int>(std::ceil(Left));
+    }
+
     // True when the decoy beams change state between two samples. Callers sample faster than
     // BlinkOn, so one campaign tick crosses at most one edge. A backwards or equal clock does not tick.
     inline bool BlinkEdge(double PreviousTime, double Time)

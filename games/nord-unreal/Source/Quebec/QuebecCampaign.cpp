@@ -476,7 +476,7 @@ void AQuebecCampaign::Tick(float DeltaSeconds)
         if (Phase == EQuebecCampaignPhase::RaceReady || Phase == EQuebecCampaignPhase::RaceRunning) TickRace(DeltaSeconds);
         if (Phase == EQuebecCampaignPhase::Complete)
         {
-            TickPond();
+            TickPond(DeltaSeconds);
             TickCourt();
             TickShow();
             TickConvoy();
@@ -658,15 +658,25 @@ bool AQuebecCampaign::HandleInteract(AQuebecController* Controller)
                 if (Distance < BestDistance) { BestDistance = Distance; BestBeam = Beam; }
             }
             if (BestBeam < 0) return false;
-            const int32 Next = QuebecPondRules::Apply(PondStep, QuebecPondRules::EAct::Tag, BestBeam, false);
-            if (Next == PondStep)
+            if (BestBeam != QuebecPondRules::FalseBeam)
             {
+                bPondTagHolding = false;
+                PondTagInside = 0.f;
+                PondTagOutside = 0.f;
                 Controller->PlayFeedback(EQuebecFeedbackCue::Dialogue);
                 BreakChain();
                 Controller->ShowInteractionMessage(TEXT("That beam blinks with the sky. The postcard does not. The chain breaks."));
                 return true;
             }
-            AdvancePond(Next, Controller, TEXT("Worklight onto the near lock. The sheet is peeling."), false);
+            if (!bPondTagHolding)
+            {
+                bPondTagHolding = true;
+                PondTagInside = 0.f;
+                PondTagOutside = 0.f;
+                Controller->PlayFeedback(EQuebecFeedbackCue::Dialogue);
+                Controller->ShowInteractionMessage(TEXT("Stay in the postcard. The other two keep blinking."));
+                ForceNetUpdate();
+            }
             return true;
         }
         const QuebecPondRules::FSpot* UseSpot = nullptr;
@@ -921,7 +931,7 @@ bool AQuebecCampaign::HandleInteract(AQuebecController* Controller)
     return false;
 }
 
-void AQuebecCampaign::TickPond()
+void AQuebecCampaign::TickPond(float DeltaSeconds)
 {
     if (!IsPondOpen()) return;
     int32 Next = PondStep;
@@ -941,7 +951,7 @@ void AQuebecCampaign::TickPond()
         {
             Next = QuebecPondRules::Apply(PondStep, QuebecPondRules::EAct::Arrive, -1, false);
             Who = *It;
-            Message = TEXT("The postcard is on. Tag the beam that never blinks.");
+            Message = TEXT("The postcard is on. Stay in the beam that never blinks.");
         }
         else if (PondStep == QuebecPondRules::StepDash && Sample.bSeen)
         {
@@ -967,13 +977,52 @@ void AQuebecCampaign::TickPond()
         if (Next != PondStep) break;
     }
     for (auto It = PondSamples.CreateIterator(); It; ++It) if (!It.Key().IsValid()) It.RemoveCurrent();
-    if (Next != PondStep) AdvancePond(Next, Who, Message, false);
+    if (Next != PondStep)
+    {
+        AdvancePond(Next, Who, Message, false);
+        return;
+    }
+    if (PondStep != QuebecPondRules::StepTag || !bPondTagHolding) return;
+    bool bInside = false;
+    AQuebecController* Holder = nullptr;
+    const QuebecPondRules::FSpot& Postcard = QuebecPondRules::Beams[QuebecPondRules::FalseBeam];
+    for (TActorIterator<AQuebecController> It(GetWorld()); It; ++It)
+    {
+        if (!NearPond(*It, Postcard.X, Postcard.Y)) continue;
+        bInside = true;
+        Holder = *It;
+        break;
+    }
+    const QuebecPondRules::FTagHold Hold = QuebecPondRules::AdvanceTag(
+        static_cast<double>(PondTagInside), static_cast<double>(PondTagOutside), bInside, static_cast<double>(DeltaSeconds));
+    if (Hold.bDropped)
+    {
+        bPondTagHolding = false;
+        PondTagInside = 0.f;
+        PondTagOutside = 0.f;
+        for (TActorIterator<AQuebecController> It(GetWorld()); It; ++It)
+            It->ShowInteractionMessage(TEXT("You left the postcard. Tag it again."));
+        ForceNetUpdate();
+        return;
+    }
+    PondTagInside = static_cast<float>(Hold.Inside);
+    PondTagOutside = static_cast<float>(Hold.Outside);
+    if (Hold.bDone)
+    {
+        const int32 Tagged = QuebecPondRules::Apply(PondStep, QuebecPondRules::EAct::Tag, QuebecPondRules::FalseBeam, false);
+        AdvancePond(Tagged, Holder, TEXT("Worklight onto the near lock. The sheet is peeling."), false);
+        return;
+    }
+    ForceNetUpdate();
 }
 
 void AQuebecCampaign::AdvancePond(int32 Next, AQuebecController* Who, const TCHAR* Message, bool bFinished)
 {
     if (Next == PondStep) return;
     PondStep = Next;
+    bPondTagHolding = false;
+    PondTagInside = 0.f;
+    PondTagOutside = 0.f;
     PondSamples.Reset();
     ShowStepMessage(Who, Message, bFinished, QuebecChain::LinkPond);
     for (TActorIterator<AQuebecController> It(GetWorld()); It; ++It)
@@ -1585,8 +1634,14 @@ FString AQuebecCampaign::GetInteractionPrompt(const AQuebecController* Controlle
         if (PondStep == QuebecPondRules::StepTag)
         {
             for (int32 Beam = 0; Beam < QuebecPondRules::BeamCount; ++Beam)
-                if (NearPond(Controller, QuebecPondRules::Beams[Beam].X, QuebecPondRules::Beams[Beam].Y))
-                    return TEXT("E: tag this beam");
+            {
+                if (!NearPond(Controller, QuebecPondRules::Beams[Beam].X, QuebecPondRules::Beams[Beam].Y)) continue;
+                if (Beam == QuebecPondRules::FalseBeam && bPondTagHolding)
+                    return FString::Printf(TEXT("Hold %d s"), QuebecPondRules::SecondsLeft(static_cast<double>(PondTagInside)));
+                if (Beam == QuebecPondRules::FalseBeam) return TEXT("E: stay on the postcard");
+                return TEXT("E: tag this beam");
+            }
+            if (bPondTagHolding && PondTagOutside > 0.f) return TEXT("Back into the postcard");
         }
         else if (PondStep == QuebecPondRules::StepNear && NearPond(Controller, QuebecPondRules::NearLock.X, QuebecPondRules::NearLock.Y))
             return TEXT("E: set the worklight");
@@ -1688,7 +1743,7 @@ FString AQuebecCampaign::GetObjectiveText() const
         switch (PondStep)
         {
         case QuebecPondRules::StepShore: return TEXT("Walk to the north shore lookout");
-        case QuebecPondRules::StepTag: return TEXT("Tag the beam that never blinks");
+        case QuebecPondRules::StepTag: return TEXT("Hold the beam that never blinks");
         case QuebecPondRules::StepNear: return TEXT("Set the worklight on the near lock");
         case QuebecPondRules::StepFar: return TEXT("Set the worklight on the far lock");
         case QuebecPondRules::StepDash: return TEXT("Sprint the exposed path");
@@ -1775,7 +1830,7 @@ FString AQuebecCampaign::GetBriefingText() const
         switch (PondStep)
         {
         case QuebecPondRules::StepShore: return TEXT("CURATOR: Every summer, held still. LIME JACKET: The pond is a postcard. Walk the north shore and watch it.");
-        case QuebecPondRules::StepTag: return TEXT("SKULL SHIRT: Two of those beams blink with the sky. The postcard does not. Tag the one that stays.");
+        case QuebecPondRules::StepTag: return TEXT("SKULL SHIRT: Two of those beams blink with the sky. The postcard does not. Stay in the one that stays.");
         case QuebecPondRules::StepNear: return TEXT("LIME JACKET: Worklight on the near lock. That perfect sheet should peel.");
         case QuebecPondRules::StepFar: return TEXT("WHITE CAP: It peeled east. The far lock is on the new path. Check the people before you chase anyone.");
         case QuebecPondRules::StepDash: return TEXT("TOPKNOT: Sprint. Walking leaves you in the picture with the toast.");
@@ -2167,6 +2222,9 @@ void AQuebecCampaign::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutL
     DOREPLIFETIME(AQuebecCampaign,Phase);
     DOREPLIFETIME(AQuebecCampaign,CompletedMissions);
     DOREPLIFETIME(AQuebecCampaign,PondStep);
+    DOREPLIFETIME(AQuebecCampaign,bPondTagHolding);
+    DOREPLIFETIME(AQuebecCampaign,PondTagInside);
+    DOREPLIFETIME(AQuebecCampaign,PondTagOutside);
     DOREPLIFETIME(AQuebecCampaign,CourtStep);
     DOREPLIFETIME(AQuebecCampaign,CourtMisses);
     DOREPLIFETIME(AQuebecCampaign,Chain);
