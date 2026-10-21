@@ -1,0 +1,4 @@
+- [ ] Catching the purse snatcher launches at 8 m/s and the card stays the shorter moment
+- [ ] The roof fight launches at 14 m/s and the card stays longer
+- [ ] The hero is higher after the roof fight than after the chase
+- [ ] The roof fight's slow moment is longer
