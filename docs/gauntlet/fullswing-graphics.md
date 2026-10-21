@@ -111,3 +111,40 @@ Playability was scored from a flat boot and the city render check, not a full pl
 
 Playability was scored from a flat boot and the city render check, not a full playthrough. OpenSpec CLI validation was not run; the `openspec` command is not installed.
 
+### Round 4 — 2026-10-21 — rubric v1
+
+- What changed: Brick, stone, concrete, and loft walls get a darkened masonry joint that fades out once a course is smaller than a pixel. Glass towers are left plain between the windows. On those towers the sky mix follows a Schlick fresnel (1994): less sky head-on, more where the view skims the pane, with a small sun glint. Lit rooms stay lamps. No brick paper fit a three-band comic wall, so the joint is original.
+- Why it helped: The near wall in the street view was one flat violet. Courses make it read as masonry. The avenue looks north, away from the sun, so the glass fresnel barely shows in that frame. The towers still carry the sky mix.
+- Screenshots: before `docs/gauntlet/shots/r04-before-street.png`, after `docs/gauntlet/shots/r04-after-street.png`. Also the needle, where the sun is in front and the courses are far: `docs/gauntlet/shots/r04-before-needle.png`, `docs/gauntlet/shots/r04-after-needle.png`.
+- Next target: Detail density (4), tied with several others. The street is still thin on props, which is the gap these views still show once the walls have a joint.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 5 | Unchanged. The glint is a glass edge, not a new city light. |
+| Color palette | 5 | Unchanged. The joints sit in the existing inks. |
+| Detail density | 4 | Unchanged. The city is still thin on props. |
+| Texture and material quality | 5 | Near walls show masonry courses. Tower glass takes a fresnel. Both are still comic bands, not Spider-Man 2 materials. |
+| Composition and camera | 4 | Unchanged. Fixed cameras. The courses read in the street view. |
+| Atmosphere | 4 | Unchanged. One shaft, stepped fog, no weather. |
+| Character models | 4 | Unchanged. Hair, shoulders, and a rim from round 3. |
+| Animation smoothness | 4 | Unchanged. Stills only. |
+| Particles and VFX | 4 | Unchanged. One occluded sun shaft. |
+| UI polish | 4 | Unchanged. The shots hide the page. |
+| Responsiveness and input latency | 6 | Unchanged. The joints are arithmetic in the wall shader. No input timing was measured. |
+| Controls feel | 5 | Unchanged. |
+| Mission clarity | 4 | Unchanged. Not played. |
+| Pacing | 4 | Unchanged. |
+| Fun factor | 4 | Unchanged. Not played as a session. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 5 | Unchanged. |
+| Sound design | 4 | Unchanged. |
+| Variety | 4 | Unchanged. |
+| Performance stability | 6 | `qa/vr/render.mjs` passed, including flat play. Street and needle means stayed in band. |
+
+- Aesthetics raw: 43 / 10 dimensions, index 43
+- Playability raw: 46 / 10 dimensions, index 46
+- Total: 89 / 200
+- Delta vs last round: +1 (88 → 89). Texture and material quality 4 → 5. Playability unchanged.
+
+Playability was scored from a flat boot and the city render check, not a full playthrough. OpenSpec CLI validation was not run; the `openspec` command is not installed.
+
