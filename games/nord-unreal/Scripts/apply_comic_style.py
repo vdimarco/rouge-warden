@@ -246,6 +246,17 @@ float DayKept = dot(DayGraded, float3(0.299, 0.587, 0.114));
 DayGraded *= DayLum / max(DayKept, 1.0e-3);
 Color = lerp(Color, saturate(DayGraded), DayShare);
 
+// Directional shade on that same clear day. Mitchell, Francke and Eng,
+// "Illustrative Rendering in Team Fortress 2" (2007), the half-lambert
+// already used for the crew. The hue above keeps its luminance. This term
+// is the value: shade goes darker, and a surface toward the sun stays at 1
+// so the clear-day exposure does not move. Gloss, the sky and the printed
+// crew stay. NightFactor 1 leaves the colour for the night grade.
+float KeyOpen = smoothstep(0.12, 0.48, Half);
+float KeyShade = lerp(0.58, 1.0, KeyOpen);
+float KeyShare = DayMatte * (1.0 - saturate(NightFactor)) * (Sky ? 0.0 : 1.0) * (1.0 - PrintedCrew);
+Color *= lerp(1.0, KeyShade, KeyShare);
+
 // Night grade. Masaki Kawase, "Frame Buffer Postprocessing Effects in
 // DOUBLE-S.T.E.A.L (Wreckless)" (GDC 2003), gathers bloom from wide taps.
 // A pyramid does not fit this node, so sixteen taps are the gather. The moon

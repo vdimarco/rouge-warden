@@ -1368,3 +1368,38 @@ Unreal is not available in this environment, so in-engine frames are the last co
 - Playability raw: 39 / 10 dimensions, index 39
 - Total: 113 / 200
 - Delta vs last round: +1
+
+### Round 40 — 2026-10-21 — rubric v1
+
+- What changed: After the clear-day hue grade and before the night grade, a matte surface is multiplied by a half-lambert shade from 0.58 in shade to 1 toward the sun. The hue grade still puts the luminance back first. Gloss, the sky and printed crew stay. NightFactor 1 leaves the colour. There is no shadow ray, so the road under a wall is not darkened.
+- Why it helped: Lighting was at 8. The shade wall and the sunlit wall were the same brightness, because the hue grade gives the luminance back.
+- Screenshots: before `docs/gauntlet/gta-graphics/round-40/before-frame.png`, after `docs/gauntlet/gta-graphics/round-40/after-frame.png`. Crops are `before-shade.png` and `after-shade.png`. Both use the walking camera (arm 420, socket Y 70, socket Z 110, pitch −12, horizontal FOV 90) on the brick street from the hue round. Not an Unreal capture. The shade-wall crop mean absolute delta is 0.076 and the max is 0.267. The full-frame mean is 0.026. The sunlit wall and the road are unchanged. `Scripts/test_key_shade.py` passed. The comic material was not applied in Unreal. `GET /gta/` returned 200. OpenSpec CLI is not installed, so the change files were not validated with `openspec`.
+- Next target: atmosphere, tied at 8 with character models and UI polish. Composition and particles stay at 6, because the walking socket and the rain displacement stay as they are. Animation smoothness stays at 3 and is skipped until a pose can be drawn.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 9 | The shade wall goes darker. The sunlit wall and the road stay. There is still no cast shadow on the street. |
+| Color palette | 9 | The hues are the round-38 grade. This multiply changes value. |
+| Detail density | 9 | The street mesh and the ladder are unchanged. |
+| Texture and material quality | 9 | The asphalt mix and the brick paper are unchanged. |
+| Composition and camera | 6 | The walking socket is unchanged. |
+| Atmosphere | 8 | The moon grade, the haze and the clouds are unchanged. |
+| Character models | 8 | No figure changed. |
+| Animation smoothness | 3 | Skipped. The blend space still cannot be posed here. |
+| Particles and VFX | 6 | Rain rings are unchanged. |
+| UI polish | 8 | The radar is unchanged. |
+| Responsiveness and input latency | 4 | Not measured this round. |
+| Controls feel | 4 | Not played. |
+| Mission clarity | 5 | The objective words are unchanged. |
+| Pacing | 4 | Unchanged mission slice. |
+| Fun factor | 3 | Not played. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 4 | No new juice. |
+| Sound design | 3 | Not listened to. |
+| Variety | 3 | One street, one sun direction. |
+| Performance stability | 5 | `Scripts/test_key_shade.py` passed. The shade is a scalar. Frame time was not remeasured. |
+
+- Aesthetics raw: 75 / 10 dimensions, index 75
+- Playability raw: 39 / 10 dimensions, index 39
+- Total: 114 / 200
+- Delta vs last round: +1
