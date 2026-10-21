@@ -1,0 +1,5 @@
+- [x] The ninth flush names a getaway car and does not say to flush the clogs
+- [x] The King is still asleep on that flush
+- [x] Stopping the car brings the clog card back at 9/12
+- [x] The tenth flush is still the roof fight
+- [x] The eleventh flush is still the clog card

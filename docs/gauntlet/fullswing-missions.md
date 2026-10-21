@@ -983,3 +983,40 @@ Loop: missions, playability, controls, feel, UX, pacing and fun for In Full Swin
 - Delta vs last round: +1 (round 25 was 126). Sound design 8 → 9. Every other score held.
 
 ![The purse snatcher pays off with its own sting](fullswing-r26/got.png)
+
+### Round 27 — 2026-10-21 — rubric v1
+
+- What changed: The ninth flush starts a getaway car to rope. The card names STOP THAT CAR and does not say to flush the clogs. The King still sleeps. Stopping the car brings the clog card back at 9/12. The tenth flush is still the roof fight. The first, the third, and the eleventh stay clogs.
+- Why it helped: The ninth flush was another clog, the same pump as the first and the third, just before the roof fight. Spider-Man 2 puts a different activity in front of a finale. A 1280×800 play read STOP THAT CAR, GETAWAY CAR, rope the car to stop it, 92 m, on a 38 s clock. The King was still asleep. Stopping the car returned FLUSH THE CLOGS 9/12, and the tenth flush was still the roof fight.
+- Screenshots: `docs/gauntlet/fullswing-r27/car.png`.
+- Next target: performance stability (6), the lowest playability score. This machine has no real GPU to time, so that score is not the next implementation round.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 5 | Held. Golden-hour sun and ink shadows. |
+| Color palette | 6 | Held. Yellow, red and sludge green still separate the HUD from the blocks. |
+| Detail density | 4 | Held. Open blocks more than a dressed borough. |
+| Texture and material quality | 3 | Held. Flat fills. |
+| Composition and camera | 4 | Held. The chase camera still sits behind the hero. This frame is the car card. |
+| Atmosphere | 5 | Held. The dusk skyline has a mood. The street under the card does not. |
+| Character models | 3 | Held. Simple comic figures. |
+| Animation smoothness | 4 | Scored from still frames in software GL. Continuous motion was not watched. |
+| Particles and VFX | 5 | Held. No new effect. The card is the change on screen. |
+| UI polish | 6 | Held. The same ink pill names the car. |
+| Responsiveness and input latency | 8 | Held. The clog card still rewrites its metres every frame. |
+| Controls feel | 9 | Held. The first web still hangs from a building at the real rope length. |
+| Mission clarity | 9 | Held. The King card still names the nearest pipe, and the compass still says The King's pipe. |
+| Pacing | 9 | Held. Eight of the twelve flushes are a different job, and the clog pump never runs three times in a row. Three flushes are still the same clog. |
+| Fun factor | 8 | Held. A win still hops the hero. This round changes the ninth flush, not the hop. |
+| Difficulty curve | 8 | Held. The eighth flush still counts from 36 s. The rescue still falls at the same rate. |
+| Feedback | 8 | Held. A chase that is pulling away still turns the card hot. |
+| Sound design | 9 | Held. A flush, a fight, a dash and a lift are still different stings, and the ring fanfare is still the trial. |
+| Variety | 9 | The ninth flush read STOP THAT CAR, rope the car, 92 m. The rescue, the chase, the mugging and the roof fight are still in the run, and this one is a car none of them ask for. Three flushes are still the same clog. |
+| Performance stability | 6 | The 1280×800 play passed with no page errors. Frame time on a real GPU was not measured. |
+
+- Aesthetics raw: 45 / 10 dimensions, index 45
+- Playability raw: 83 / 10 dimensions, index 83
+- Total: 128 / 200
+- Delta vs last round: +1 (round 26 was 127). Variety 8 → 9. Every other score held.
+
+![The ninth flush is a getaway car](fullswing-r27/car.png)
