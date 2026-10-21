@@ -70,6 +70,10 @@ bool FQuebecRaceResultTest::RunTest(const FString& Parameters)
     TestTrue(TEXT("A blank page opens the tour instead of the lap card"),
         Race->GetStatusText().Contains(TEXT("R recovers this tour")));
     Race->TourStep = AQuebecCampaign::TourBankedStep;
+    Race->HomeStep = 0;
+    TestTrue(TEXT("A banked tour opens the home beat instead of the lap card"),
+        Race->GetStatusText().Contains(TEXT("R recovers this home")));
+    Race->HomeStep = AQuebecCampaign::HomeBankedStep;
     const FString Status = Race->GetStatusText();
     TestTrue(TEXT("Result presents recovered time and clean session best"),
         Status.Contains(TEXT("10.0s")) && Status.Contains(TEXT("recovered")) && Status.Contains(TEXT("60.0s")));

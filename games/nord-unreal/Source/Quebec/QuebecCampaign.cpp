@@ -3,6 +3,7 @@
 #include "QuebecGTA.h" // Side jobs: QuebecJobs::IsJobActive for the race gate guard (JOBS).
 #include "QuebecBlankRules.h"
 #include "QuebecTour.h"
+#include "QuebecHome.h"
 #include "QuebecChain.h"
 #include "QuebecPace.h"
 #include "QuebecConvoyRules.h"
@@ -27,6 +28,8 @@ static_assert(QuebecBlankRules::StepBanked == AQuebecCampaign::BlankBankedStep,
     "mission 8 banks in the session only; the campaign and the rules share one banked index");
 static_assert(QuebecTour::StepBanked == AQuebecCampaign::TourBankedStep,
     "mission 9 banks in the session only; the campaign and the rules share one banked index");
+static_assert(QuebecHome::StepBanked == AQuebecCampaign::HomeBankedStep,
+    "mission 10 banks in the session only; the campaign and the rules share one banked index");
 
 static FString WithClose(const TCHAR* Line, int32 Bonus)
 {
@@ -487,6 +490,7 @@ void AQuebecCampaign::Tick(float DeltaSeconds)
             TickConvoy();
             TickBlank();
             TickTour();
+            TickHome();
         }
     }
     if (GetWorld()->GetTimeSeconds()-LastPresentationTime >= .1f)
@@ -1265,6 +1269,54 @@ bool AQuebecCampaign::NearTour(const AQuebecController* Controller, double X, do
     return FVector::Dist2D(Position, FVector(X, Y, 0.)) <= QuebecTour::Reach;
 }
 
+void AQuebecCampaign::TickHome()
+{
+    if (!IsHomeOpen()) return;
+    const QuebecHome::FSpot Spot = QuebecHome::Objective(HomeStep);
+    for (TActorIterator<AQuebecController> It(GetWorld()); It; ++It)
+    {
+        if (!NearHome(*It, Spot.X, Spot.Y)) continue;
+        const APawn* Pawn = It->GetPawn();
+        const AQuebecCar* Car = Cast<AQuebecCar>(Pawn);
+        const AQuebecCharacter* Walker = Cast<AQuebecCharacter>(Pawn);
+        const bool bBike = Car && Car->IsBike();
+        const bool bPedalo = Car && Car->IsPedalo();
+        const bool bWalking = Walker && !Walker->GetCharacterMovement()->IsSwimming();
+        const int32 Next = QuebecHome::Apply(HomeStep, bBike, bPedalo, bWalking,
+            HomeStep == QuebecHome::StepBike, HomeStep == QuebecHome::StepBoat, HomeStep == QuebecHome::StepWalk);
+        if (Next == HomeStep) continue;
+        const TCHAR* Message = Next == QuebecHome::StepBoat
+            ? TEXT("The stand is banked. The pedalo goes back to the bridge.")
+            : Next == QuebecHome::StepWalk
+                ? TEXT("The berth is banked. Walk the south bank.")
+                : TEXT("The day is home.");
+        AdvanceHome(Next, *It, Message, Next >= QuebecHome::StepBanked);
+        break;
+    }
+}
+
+void AQuebecCampaign::AdvanceHome(int32 Next, AQuebecController* Who, const TCHAR* Message, bool bFinished)
+{
+    if (Next == HomeStep) return;
+    HomeStep = Next;
+    // Link -1 is outside the seven banks, so the chain does not move. The purse is flat.
+    ShowStepMessage(Who, Message, bFinished, -1);
+    if (bFinished) GrantCash(QuebecHome::Pay);
+    for (TActorIterator<AQuebecController> It(GetWorld()); It; ++It)
+        It->PlayFeedback(bFinished ? EQuebecFeedbackCue::Complete : EQuebecFeedbackCue::Checkpoint);
+    UpdatePresentation();
+    ForceNetUpdate();
+}
+
+bool AQuebecCampaign::NearHome(const AQuebecController* Controller, double X, double Y) const
+{
+    const APawn* Pawn = Controller ? Controller->GetPawn() : nullptr;
+    if (!Pawn) return false;
+    const FVector Position = Pawn->GetActorLocation();
+    if (FMath::Abs(Position.Z) > 400.) return false;
+    return FVector::Dist2D(Position, FVector(X, Y, 0.)) <= QuebecHome::Reach;
+}
+
 void AQuebecCampaign::TickRace(float DeltaSeconds)
 {
     const float Now = GetWorld()->GetTimeSeconds();
@@ -1487,7 +1539,14 @@ void AQuebecCampaign::RequestRetry(AQuebecController* Controller)
                 Controller->ShowInteractionMessage(TEXT("This leg restored. The legs you finished stay finished."));
             return;
         }
-        Controller->ShowInteractionMessage(TEXT("The tour is home. T replays the race."));
+        if (IsHomeOpen())
+        {
+            const QuebecHome::FSpot Spot = QuebecHome::RecoverAt(HomeStep);
+            if (MoveToSafeCheckpoint(Controller, FVector(Spot.X, Spot.Y, 100.), FRotator(0., 90., 0.)))
+                Controller->ShowInteractionMessage(TEXT("This leg restored. The legs you finished stay finished."));
+            return;
+        }
+        Controller->ShowInteractionMessage(TEXT("The day is home. T replays the race."));
         return;
     }
     if (Phase <= EQuebecCampaignPhase::ReleaseTable)
@@ -1578,7 +1637,12 @@ void AQuebecCampaign::RequestReplay(AQuebecController* Controller)
         Controller->ShowInteractionMessage(TEXT("The tour is still open. T replays the race after the float."));
         return;
     }
-    // A race replay does not rewind PondStep, CourtStep, ShowStep, RescueMask, ConvoyStep, BlankStep, TourStep, or the chain. Banked scenes stay banked for this session.
+    if (IsHomeOpen())
+    {
+        Controller->ShowInteractionMessage(TEXT("The day is still out. T replays the race after the bank."));
+        return;
+    }
+    // A race replay does not rewind PondStep, CourtStep, ShowStep, RescueMask, ConvoyStep, BlankStep, TourStep, HomeStep, or the chain. Banked scenes stay banked for this session.
     RaceGateIndex = 0;
     RaceElapsed = 0.f;
     bRaceRetried = false;
@@ -1818,6 +1882,7 @@ FString AQuebecCampaign::GetMissionTitle() const
     if (IsConvoyOpen()) return TEXT("07 / CAN'T TOW TOMORROW");
     if (IsBlankOpen()) return TEXT("08 / LEAVE THE LAST PAGE BLANK");
     if (IsTourOpen()) return TEXT("09 / THREE WAYS ACROSS");
+    if (IsHomeOpen()) return TEXT("10 / PUT THEM AWAY");
     if (Phase == EQuebecCampaignPhase::Complete) return TEXT("THE PARK IS OPEN");
     return Phase <= EQuebecCampaignPhase::ReleaseTable ? TEXT("01 / A TABLE FOR ETERNITY") : TEXT("02 / NO SUCH THING AS A QUIET LAP");
 }
@@ -1902,6 +1967,16 @@ FString AQuebecCampaign::GetObjectiveText() const
         case QuebecTour::StepBike: return TEXT("Ride the park bike to the east mark");
         case QuebecTour::StepBoat: return TEXT("Paddle the pedalo to the north buoy");
         case QuebecTour::StepSwim: return TEXT("Swim to the south-pond float");
+        default: break;
+        }
+    }
+    if (IsHomeOpen())
+    {
+        switch (HomeStep)
+        {
+        case QuebecHome::StepBike: return TEXT("Ride the park bike back to the stand");
+        case QuebecHome::StepBoat: return TEXT("Paddle the pedalo back to the berth");
+        case QuebecHome::StepWalk: return TEXT("Walk onto the south bank");
         default: break;
         }
     }
@@ -1998,7 +2073,17 @@ FString AQuebecCampaign::GetBriefingText() const
         default: break;
         }
     }
-    if (Phase == EQuebecCampaignPhase::Complete && PondStep >= PondBankedStep && CourtStep >= CourtBankedStep && ShowStep >= ShowBankedStep && RescueMask >= RescueDone && ConvoyStep >= ConvoyBankedStep && BlankStep >= BlankBankedStep && TourStep >= TourBankedStep)
+    if (IsHomeOpen())
+    {
+        switch (HomeStep)
+        {
+        case QuebecHome::StepBike: return TEXT("MEMPHIS: The three ways are done. Put the bike on its stand.");
+        case QuebecHome::StepBoat: return TEXT("The pedalo belongs at the bridge. Paddle it home.");
+        case QuebecHome::StepWalk: return TEXT("Leave the boat. Walk the south bank. The purse is flat, and the seven banks stay shut.");
+        default: break;
+        }
+    }
+    if (Phase == EQuebecCampaignPhase::Complete && PondStep >= PondBankedStep && CourtStep >= CourtBankedStep && ShowStep >= ShowBankedStep && RescueMask >= RescueDone && ConvoyStep >= ConvoyBankedStep && BlankStep >= BlankBankedStep && TourStep >= TourBankedStep && HomeStep >= HomeBankedStep)
         return TEXT("The last page is blank. The park keeps the day that was not in his book.");
     switch (Phase)
     {
@@ -2023,6 +2108,7 @@ FString AQuebecCampaign::GetStatusText() const
     if (IsConvoyOpen()) return TEXT("R recovers this wagon");
     if (IsBlankOpen()) return TEXT("R recovers this page");
     if (IsTourOpen()) return TEXT("R recovers this tour");
+    if (IsHomeOpen()) return TEXT("R recovers this home");
     if (Phase == EQuebecCampaignPhase::AimWorklight) return FString::Printf(TEXT("Alignment %d%% / hold %d%%"),FMath::RoundToInt(LightAlignment*100.f),FMath::RoundToInt(LightHoldProgress*100.f));
     if (Phase == EQuebecCampaignPhase::CrossCable) return FString::Printf(TEXT("Sprint %s / jump %s / R: recover"),bSprintSeen?TEXT("banked"):TEXT("needed"),bJumpSeen?TEXT("banked"):TEXT("needed"));
     if (Phase == EQuebecCampaignPhase::PullClamp || Phase == EQuebecCampaignPhase::ReleaseTable) return bClampOpen ? TEXT("GREEN BEAT / pull now / R: recover") : TEXT("Press squeezing / wait for green / R: recover");
@@ -2072,6 +2158,11 @@ FVector AQuebecCampaign::GetObjectiveLocation() const
     if (IsTourOpen())
     {
         const QuebecTour::FSpot Spot = QuebecTour::Objective(TourStep);
+        return FVector(Spot.X, Spot.Y, 100.);
+    }
+    if (IsHomeOpen())
+    {
+        const QuebecHome::FSpot Spot = QuebecHome::Objective(HomeStep);
         return FVector(Spot.X, Spot.Y, 100.);
     }
     switch (Phase)
@@ -2131,6 +2222,13 @@ bool AQuebecCampaign::GetNextObjectiveLocation(FVector& Out) const
     {
         if (TourStep + 1 >= TourBankedStep) return false;
         const QuebecTour::FSpot Spot = QuebecTour::Objective(TourStep + 1);
+        Out = At(Spot.X, Spot.Y);
+        return true;
+    }
+    if (IsHomeOpen())
+    {
+        if (HomeStep + 1 >= HomeBankedStep) return false;
+        const QuebecHome::FSpot Spot = QuebecHome::Objective(HomeStep + 1);
         Out = At(Spot.X, Spot.Y);
         return true;
     }
@@ -2354,6 +2452,7 @@ void AQuebecCampaign::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutL
     DOREPLIFETIME(AQuebecCampaign,ConvoyStep);
     DOREPLIFETIME(AQuebecCampaign,BlankStep);
     DOREPLIFETIME(AQuebecCampaign,TourStep);
+    DOREPLIFETIME(AQuebecCampaign,HomeStep);
     DOREPLIFETIME(AQuebecCampaign,LightOperator);
     DOREPLIFETIME(AQuebecCampaign,LightYaw);
     DOREPLIFETIME(AQuebecCampaign,LightPitch);
