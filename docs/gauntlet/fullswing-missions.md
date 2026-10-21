@@ -1094,3 +1094,40 @@ Loop: missions, playability, controls, feel, UX, pacing and fun for In Full Swin
 - Delta vs last round: +1 (round 28 was 129). Fun factor 8 → 9. Every other score held.
 
 ![The roof fight hops higher than the chase](fullswing-r29/hop.png)
+
+### Round 30 — 2026-10-21 — rubric v1
+
+- What changed: A getaway started as a mission cruises at 24 m/s, and its clock is the length of the road at that pace plus the same 8 seconds of spare. An odd-job getaway stays at 17 m/s. The card still names STOP THAT CAR. The King still sleeps. The eighth flush still counts from 36 s, and the rescue still falls at the same rate.
+- Why it helped: The car before the roof fight drove at the same speed as a fare across town. Spider-Man 2 makes the chase in front of a finale pull away harder. A 1280×800 play read an odd-job getaway at 17 m/s, then STOP THAT CAR at 24 m/s, with the card saying to rope the car. On one shared road the faster car had less time on the clock.
+- Screenshots: `docs/gauntlet/fullswing-r30/car.png`.
+- Next target: performance stability (6), the lowest playability score. This machine has no real GPU to time, so that score is not the next implementation round.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 5 | Held. Golden-hour sun and ink shadows. |
+| Color palette | 6 | Held. Yellow, red and sludge green still separate the HUD from the blocks. |
+| Detail density | 4 | Held. Open blocks more than a dressed borough. |
+| Texture and material quality | 3 | Held. Flat fills. |
+| Composition and camera | 4 | Held. The chase camera still sits behind the hero. This frame is the faster car. |
+| Atmosphere | 5 | Held. The dusk skyline has a mood. The street under the card does not. |
+| Character models | 3 | Held. Simple comic figures. |
+| Animation smoothness | 4 | Scored from still frames in software GL. Continuous motion was not watched. |
+| Particles and VFX | 5 | Held. No new effect. The car is the change. |
+| UI polish | 6 | Held. The card still names the car in the ink pill. |
+| Responsiveness and input latency | 8 | Held. The clog card still rewrites its metres every frame. |
+| Controls feel | 9 | Held. The first web still hangs from a building at the real rope length. |
+| Mission clarity | 9 | Held. The King card still names the nearest pipe, and the compass still says The King's pipe. |
+| Pacing | 9 | Held. Eight of the twelve flushes are a different job, and the clog pump never runs three times in a row. Three flushes are still the same clog. |
+| Fun factor | 9 | Held. The roof fight still launches at 14 m/s and a chase still launches at 8. |
+| Difficulty curve | 9 | The ninth-flush car cruises at 24 m/s. An odd-job getaway stays at 17 m/s, and the same road gives the faster car less time. The eighth flush still counts from 36 s, and the rescue still falls at the same rate. |
+| Feedback | 9 | Held. Seven seconds left still turns the card hot, and time put back still brings the ink pill. |
+| Sound design | 9 | Held. A flush, a fight, a dash and a lift are still different stings, and the ring fanfare is still the trial. |
+| Variety | 9 | Held. The ninth flush is still the getaway car. This round changes its pace, not the job. |
+| Performance stability | 6 | The 1280×800 play passed with no page errors. Frame time on a real GPU was not measured. |
+
+- Aesthetics raw: 45 / 10 dimensions, index 45
+- Playability raw: 86 / 10 dimensions, index 86
+- Total: 131 / 200
+- Delta vs last round: +1 (round 29 was 130). Difficulty curve 8 → 9. Every other score held.
+
+![The ninth-flush car drives faster](fullswing-r30/car.png)
