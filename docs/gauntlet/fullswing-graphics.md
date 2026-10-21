@@ -592,3 +592,40 @@ Playability was scored from a flat boot and the city render check, not a full pl
 
 Playability was scored from a flat boot and the city render check, not a full playthrough. OpenSpec CLI validation was not run; the `openspec` command is not installed.
 
+### Round 17 — 2026-10-21 — rubric v1
+
+- What changed: The chase jacket keeps half its painted colour under the cel, and the map is sampled a little sharper. A cream belt is painted on the red cloth about 8 cm above the hip bone, the same belt the built-in figure already wears as geometry. The sun rim and the shade rim are a little stronger. No new mesh. The albedo warp and the rim follow Mitchell, Francke, and Eng, Illustrative Rendering in Team Fortress 2 (2007).
+- Why it helped: From behind, the jacket was one red. A cream band now breaks it at the hips, and more of the painted panels stay inside the bands. It is still a comic figure.
+- Screenshots: before `docs/gauntlet/shots/r17-before-play.png`, after `docs/gauntlet/shots/r17-after-play.png`. The street, where the hero is hidden: `docs/gauntlet/shots/r17-before-street.png`, `docs/gauntlet/shots/r17-after-street.png`.
+- Next target: Animation smoothness (5), tied with composition, particles and VFX, and UI. The chase still is one idle pose.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 6 | Unchanged. Shaded lower walls stay warm. The floors by the roof stay the cool band. |
+| Color palette | 6 | Unchanged. Cool shade stays teal and the step toward the sun stays rose. |
+| Detail density | 6 | Unchanged. The shop awnings from round 16. |
+| Texture and material quality | 6 | Unchanged. The masonry units from round 13. |
+| Composition and camera | 5 | Unchanged. Reported distance stayed 4.5 m and pitch stayed −0.349. |
+| Atmosphere | 6 | Unchanged. The far avenue still sits in the warm dust from round 15. |
+| Character models | 6 | A cream belt breaks the red jacket at the hips, and half the painted colour stays under the cel. The body is still a simple figure. Skinned triangles stayed at 12,468. |
+| Animation smoothness | 5 | Unchanged. The shot is a still of the idle pose. |
+| Particles and VFX | 5 | Unchanged. |
+| UI polish | 5 | Unchanged. The dotted score plate from round 11. |
+| Responsiveness and input latency | 6 | Unchanged. No new pass and no new draw. No input timing was measured. |
+| Controls feel | 5 | Unchanged. |
+| Mission clarity | 4 | Unchanged. Not played. |
+| Pacing | 4 | Unchanged. |
+| Fun factor | 4 | Unchanged. Not played as a session. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 5 | Unchanged. |
+| Sound design | 4 | Unchanged. |
+| Variety | 4 | Unchanged. |
+| Performance stability | 6 | `qa/vr/render.mjs` passed, including flat play, the painted-sky checks, and the lit-sphere cel check. Street mean 73.2, saturation 0.57. |
+
+- Aesthetics raw: 56 / 10 dimensions, index 56
+- Playability raw: 46 / 10 dimensions, index 46
+- Total: 102 / 200
+- Delta vs last round: +1 (101 → 102). Character models 5 → 6. Playability unchanged.
+
+Playability was scored from a flat boot and the city render check, not a full playthrough. OpenSpec CLI validation was not run; the `openspec` command is not installed.
+
