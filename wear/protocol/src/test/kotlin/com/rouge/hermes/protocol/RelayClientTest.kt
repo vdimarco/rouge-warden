@@ -10,7 +10,9 @@ class RelayClientTest {
     @Test
     fun emitsSmallSseDeltasBeforeTheResponseEnds() {
         val server = MockWebServer()
-        val first = "event: response.output_text.delta\ndata: {\"delta\":\"Hello. \"}\n\n"
+        // throttleBody also slows the request read. This chunk is longer than the JSON
+        // request, so the server finishes reading before it sleeps, then holds the completion.
+        val first = "event: response.output_text.delta\ndata: {\"delta\":\"Hello. This is the first spoken sentence. \"}\n\n"
         val completed = "event: response.completed\ndata: {}\n\n"
         server.enqueue(
             MockResponse()
