@@ -315,9 +315,41 @@ void AQuebecCharacter::ApplyCrewAppearance()
     USkeletalMesh* Body = LoadObject<USkeletalMesh>(nullptr, *(Folder + TEXT("SK_Body.SK_Body")));
     if (!Body)
     {
-        // The crew blend space cannot be posed here. The casual skeleton's own walk can:
-        // feet and arms come from that clip, and the body rock still leans the whole mesh.
-        // The prepared body faces the component's +X, the axis a pedestrian root walks along.
+        // The crew blend space cannot be posed here. The hoodie is the same CC0 family as the
+        // casual body, and its garment has a hood, sleeve cuffs, and a hem the t-shirt does not.
+        // Goons repaint that mesh one colour. The player keeps the imported slots. The mesh faces
+        // the component's +X, the axis a pedestrian root walks along. There is no hoodie run clip.
+        USkeletalMesh* HoodieBody = LoadObject<USkeletalMesh>(nullptr,
+            TEXT("/Game/Plateau/Life/Civilians/MenHoodie/SK_MenHoodie.SK_MenHoodie"),
+            nullptr, LOAD_NoWarn | LOAD_Quiet);
+        UAnimSequence* HoodieIdle = LoadObject<UAnimSequence>(nullptr,
+            TEXT("/Game/Plateau/Life/Civilians/MenHoodie/A_MenHoodie_Idle.A_MenHoodie_Idle"),
+            nullptr, LOAD_NoWarn | LOAD_Quiet);
+        UAnimSequence* HoodieWalk = LoadObject<UAnimSequence>(nullptr,
+            TEXT("/Game/Plateau/Life/Civilians/MenHoodie/A_MenHoodie_Walk.A_MenHoodie_Walk"),
+            nullptr, LOAD_NoWarn | LOAD_Quiet);
+        if (HoodieBody && HoodieIdle && HoodieWalk)
+        {
+            CasualStand->SetHiddenInGame(true);
+            CasualStand->SetVisibility(false);
+            GetMesh()->SetVisibility(true);
+            GetMesh()->SetAnimationMode(EAnimationMode::AnimationSingleNode);
+            GetMesh()->SetSkeletalMesh(HoodieBody);
+            GetMesh()->SetRelativeLocation(FVector(0., 0., -96.));
+            GetMesh()->SetRelativeRotation(FRotator(0., 0., 0.));
+            GetMesh()->SetRenderCustomDepth(true);
+            GetMesh()->SetCustomDepthStencilValue(255);
+            CrewIdle = HoodieIdle;
+            CrewWalk = HoodieWalk;
+            CrewRun = nullptr;
+            CrewJump = nullptr;
+            CrewLocomotion = nullptr;
+            CrewAnimation = nullptr;
+            CrewProp->SetVisibility(false);
+            return;
+        }
+        // The casual walk remains when the hoodie skeleton or its clips are missing.
+        // Feet and arms come from that clip, and the body rock still leans the whole mesh.
         USkeletalMesh* CasualBody = LoadObject<USkeletalMesh>(nullptr,
             TEXT("/Game/Plateau/Life/Civilians/MenCasual/SK_MenCasual.SK_MenCasual"),
             nullptr, LOAD_NoWarn | LOAD_Quiet);

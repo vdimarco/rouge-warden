@@ -1718,3 +1718,38 @@ Unreal is not available in this environment, so in-engine frames are the last co
 - Playability raw: 39 / 10 dimensions, index 39
 - Total: 123 / 200
 - Delta vs last round: +1
+
+### Round 50 — 2026-10-21 — rubric v1
+
+- What changed: when the crew body is missing and the hoodie skeleton, its idle, and its walk all load, the player mesh stays visible and plays that walk above a walk speed. Nearly still, it plays the idle. The imported cloth colours stay, so the hood, the sleeve cuffs, the hem, and the bare calves remain. A sprint has no hoodie run clip, so it keeps the walk. The casual walk remains when the hoodie assets are missing, and the static stand remains after that. The opening pitch, the socket, and the sway amplitudes stay. Goons still repaint their own copy of this mesh.
+- Why it helped: Character models were at 8. From the opening camera the lead was the back of a flat t-shirt.
+- Screenshots: before `docs/gauntlet/gta-graphics/round-50/before-frame.png`, after `docs/gauntlet/gta-graphics/round-50/after-frame.png`. Crops are `before-garment.png` and `after-garment.png`. Both are a walk at 0.75 s. The before frame is the casual body. The after frame is the hoodie. Both use the opening walk camera (arm 420, socket Y 70, socket Z 110, pitch −16, yaw about 110°, horizontal FOV 90) at the surveyed sidewalk spawn, with the same walk-peak rock (12° and 4 cm). Foot dust is left out of both frames. Not an Unreal capture. The figure crop mean absolute delta is 0.030 and the max is 0.396. The full-frame mean is 0.0011 and the max is 0.396. 4511 pixels change. The back shows a hood, sleeve cuffs, and a hem, and the calves are bare. `Scripts/test_garment.py`, `Scripts/test_stride.py`, and `Scripts/test_player_stand.py` passed. `QuebecGameplay.cpp` was not compiled. `GET /gta/` returned 200. OpenSpec CLI is not installed, so the change files were not validated with `openspec`.
+- Next target: composition, the lowest aesthetics score that can still move. Animation stays at 5. Another frame of this walk will not move it. The crew blend space still cannot be posed.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 9 | The street shade is unchanged. |
+| Color palette | 9 | The street hues are unchanged. The hoodie keeps its imported cloth colours. |
+| Detail density | 9 | The street mesh is unchanged. |
+| Texture and material quality | 9 | The asphalt mix is unchanged. |
+| Composition and camera | 8 | The opening aim is unchanged. |
+| Atmosphere | 9 | The street dust grade is unchanged. |
+| Character models | 9 | The back of the figure has a hood, sleeve cuffs, and a hem, and the calves are bare. It is still one CC0 body. |
+| Animation smoothness | 5 | The stride is the hoodie walk, the same kind of clip as before. The crew blend space still cannot be posed here. |
+| Particles and VFX | 9 | The shoe puffs are unchanged. They are left out of these frames. |
+| UI polish | 9 | The radar heading is unchanged. |
+| Responsiveness and input latency | 4 | Not measured this round. |
+| Controls feel | 4 | Not played. |
+| Mission clarity | 5 | The objective words are unchanged. |
+| Pacing | 4 | Unchanged mission slice. |
+| Fun factor | 3 | Not played. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 4 | The garment is the new mark. No new juice. |
+| Sound design | 3 | Not listened to. |
+| Variety | 3 | One lead outfit. The casual walk remains only when the hoodie is missing. |
+| Performance stability | 5 | `Scripts/test_garment.py` passed. The mesh is the existing hoodie. Frame time was not remeasured. |
+
+- Aesthetics raw: 85 / 10 dimensions, index 85
+- Playability raw: 39 / 10 dimensions, index 39
+- Total: 124 / 200
+- Delta vs last round: +1

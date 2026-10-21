@@ -1,0 +1,6 @@
+- [x] Prefer the hoodie idle and walk when the crew body is missing and those assets load
+- [x] Keep the imported cloth colours on the player hoodie
+- [x] Keep the casual walk, then the static stand, when the hoodie assets are missing
+- [x] Sample the casual body and the hoodie at the opening camera
+- [x] Run `Scripts/test_garment.py`, `Scripts/test_stride.py`, and `Scripts/test_player_stand.py`
+- [ ] Confirm the hoodie in Unreal (editor not available here)
