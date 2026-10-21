@@ -2202,3 +2202,48 @@ Unreal is not available here, so the native diamond was not captured. The title 
 ![Play client at 1280, host offline](gta-missions/r48-play-1280.png)
 
 ![Menu on a 390-wide screen, Recover visible](gta-missions/r48-play-menu-390.png)
+
+### Round 49 — 2026-10-21 — rubric v1
+
+- What changed: A caisse sits on the Sherbrooke sidewalk, eight metres south of Chez Lise. Walk up and take it. Pedal it on the park bike to a post in Parc Persillier-Lachapelle. The purse is 260 session cash, paid once to the person who took it. A driver does not take it. A walker does not drop it. A later place does not skip. A second pass does not pay. While the bike loop is still open, the bike card keeps naming that loop. After the loop is done, the card names Persillier while the parcel is still aboard. The posts are engine cylinders. The v1 save is untouched, and this is not a story mission.
+- Why it helped: The bike looped the lawn, and mission 9 crossed the pond. A walker can now pick something up and pedal it out of the neighbourhood.
+- Screenshots: title `docs/gauntlet/gta-missions/r49-title-1280.png`, `r49-title-390.png`, `r49-title-320.png`. Play client, host offline, `r49-play-1280.png`. Menu with Recover `r49-play-menu-390.png`. The title loaded with no page errors. The raw play page still logs the missing `@epicgames-ps/lib-pixelstreamingfrontend-ue5.8` specifier; the shell and Recover still draw. The parcel was not carried. `Scripts/test_crate.py` reports 105 assertions, 0 failures, on c++, g++, and clang++. The bike loop still reports 26, the tour 35, and the three-post walk 30. Syntax check `--both` passed for `QuebecCrateMark.cpp`, `QuebecRingMark.cpp`, and `QuebecGameplay.cpp`. OpenSpec CLI is not installed, so `openspec validate` did not run.
+- Next target: another district errand. The playable scores that can still move are capped offline, so the score stays. Mission clarity stays at 7 and stays out of reach offline. Responsiveness stays at 3 and stays out of scope. Performance stays at 4 and is not measurable here.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 3 | Unchanged. |
+| Color palette | 5 | Unchanged. |
+| Detail density | 3 | Unchanged. |
+| Texture and material quality | 3 | Unchanged. |
+| Composition and camera | 4 | Unchanged. |
+| Atmosphere | 4 | Unchanged. |
+| Character models | 3 | Unchanged. |
+| Animation smoothness | 3 | Unchanged. |
+| Particles and VFX | 2 | Unchanged. |
+| UI polish | 4 | Unchanged. The native card was not seen, and French and English still share the screen. |
+| Responsiveness and input latency | 3 | Unchanged. Still a lagged stream. Out of scope for this loop. |
+| Controls feel | 9 | Unchanged. Getting out faster than a walk still keeps that pace. The parcel was not carried. |
+| Mission clarity | 7 | Unchanged. The fare post still moves from the loaner to the quay. The native card was not seen, and this score stays out of reach offline. |
+| Pacing | 9 | Unchanged. Four seconds on foot after boarding still loses the passenger. |
+| Fun factor | 9 | Unchanged. Chez Lise still sells a kit, a vest, or one star. A parcel that was not carried is not the reference's spread of things to do. |
+| Difficulty curve | 9 | Unchanged. Selling the last page ends it for 200 and does not bank the chain. A wreck still costs more than the goon pay. |
+| Feedback | 9 | Unchanged. A failed side job still plays the falling sting. The sting was not heard. |
+| Sound design | 9 | Unchanged. The dent thud still marks a scrape as quiet. Nobody is voiced, so this is not the reference's city. |
+| Variety | 9 | A caisse waits on Sherbrooke. It was not carried, so this is not a delivery across the east side. |
+| Performance stability | 4 | Unchanged. Not measurable in this container. |
+
+- Aesthetics raw: 34 / 10 dimensions, index 34
+- Playability raw: 77 / 10 dimensions, index 77
+- Total: 111 / 200
+- Delta vs last round: 0 (round 48 was 111). The parcel was not carried, so every score held.
+
+![GTA title at 1280](gta-missions/r49-title-1280.png)
+
+![GTA title at 390](gta-missions/r49-title-390.png)
+
+![GTA title at 320](gta-missions/r49-title-320.png)
+
+![Play client at 1280, host offline](gta-missions/r49-play-1280.png)
+
+![Menu on a 390-wide screen, Recover visible](gta-missions/r49-play-menu-390.png)
