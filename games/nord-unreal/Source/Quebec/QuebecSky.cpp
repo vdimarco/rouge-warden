@@ -475,8 +475,9 @@ void AQuebecSky::StartPresentation()
         for (int32 Index = 0; Index < SkyRainStreaks; ++Index)
         {
             const FVector Pivot(Stream.FRandRange(-.5f, .5f) * SkyRainBox.X, Stream.FRandRange(-.5f, .5f) * SkyRainBox.Y, Stream.FRandRange(-.5f, .5f) * SkyRainBox.Z);
-            // The unit plane lies in X and Y; rolled upright it is a 1.2 cm wide, 45-80 cm long streak.
-            Streaks.Emplace(FRotator(0., Stream.FRandRange(0.f, 180.f), 90.), Pivot, FVector(.012, Stream.FRandRange(.45f, .8f), 1.));
+            // The unit plane lies in X and Y; rolled upright it is a 10 cm wide, 45-80 cm long streak.
+            // At 1.2 cm the core and the head were under a pixel past a few metres.
+            Streaks.Emplace(FRotator(0., Stream.FRandRange(0.f, 180.f), 90.), Pivot, FVector(0.10f, Stream.FRandRange(.45f, .8f), 1.));
         }
         Rain->AddInstances(Streaks, false);
     }

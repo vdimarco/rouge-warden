@@ -241,22 +241,55 @@ def rain_material(u, mpc):
     g.link(line, '', head, 'B')
     head_gain = g.node(u.MaterialExpressionMultiply, const_b=.7)
     g.link(head, '', head_gain, 'A')
+    # A round head on the 10 cm card. In UV the card is much longer than it is wide, so the
+    # circle is flat in v: 4 cm is 0.4 of the width and about 0.065 of a 62 cm streak.
+    u_off = g.node(u.MaterialExpressionSubtract, const_b=.5)
+    g.link(g.mask(uv, 'r'), '', u_off, 'A')
+    v_off = g.node(u.MaterialExpressionSubtract, const_b=.18)
+    g.link(g.mask(uv, 'g'), '', v_off, 'A')
+    u_n = g.node(u.MaterialExpressionMultiply, const_b=2.5)
+    g.link(u_off, '', u_n, 'A')
+    v_n = g.node(u.MaterialExpressionMultiply, const_b=15.4)
+    g.link(v_off, '', v_n, 'A')
+    u2 = g.node(u.MaterialExpressionMultiply)
+    g.link(u_n, '', u2, 'A')
+    g.link(u_n, '', u2, 'B')
+    v2 = g.node(u.MaterialExpressionMultiply)
+    g.link(v_n, '', v2, 'A')
+    g.link(v_n, '', v2, 'B')
+    rad = g.node(u.MaterialExpressionAdd)
+    g.link(u2, '', rad, 'A')
+    g.link(v2, '', rad, 'B')
+    rad_inv = g.node(u.MaterialExpressionOneMinus)
+    g.link(rad, '', rad_inv, '')
+    disc = g.node(u.MaterialExpressionClamp, min_default=0., max_default=1.)
+    g.link(rad_inv, '', disc, '')
+    disc_gain = g.node(u.MaterialExpressionMultiply, const_b=.95)
+    g.link(disc, '', disc_gain, 'A')
     skirt = g.node(u.MaterialExpressionAdd)
     g.link(core_gain, '', skirt, 'A')
     g.link(halo, '', skirt, 'B')
     body = g.node(u.MaterialExpressionAdd)
     g.link(skirt, '', body, 'A')
     g.link(head_gain, '', body, 'B')
+    with_head = g.node(u.MaterialExpressionAdd)
+    g.link(body, '', with_head, 'A')
+    g.link(disc_gain, '', with_head, 'B')
     opacity = g.node(u.MaterialExpressionMultiply)
-    g.link(body, '', opacity, 'A')
+    g.link(with_head, '', opacity, 'A')
     g.link(visible, '', opacity, 'B')
     g.connect(opacity, '', u.MaterialProperty.MP_OPACITY)
     mist = g.node(u.MaterialExpressionConstant3Vector, constant=u.LinearColor(.55, .64, .74, 1))
     hot = g.node(u.MaterialExpressionConstant3Vector, constant=u.LinearColor(.96, .97, 1, 1))
+    bright = g.node(u.MaterialExpressionAdd)
+    g.link(core, '', bright, 'A')
+    g.link(disc, '', bright, 'B')
+    bright_span = g.node(u.MaterialExpressionClamp, min_default=0., max_default=1.)
+    g.link(bright, '', bright_span, '')
     tint = g.node(u.MaterialExpressionLinearInterpolate)
     g.link(mist, '', tint, 'A')
     g.link(hot, '', tint, 'B')
-    g.link(core, '', tint, 'Alpha')
+    g.link(bright_span, '', tint, 'Alpha')
     g.connect(tint, '', u.MaterialProperty.MP_BASE_COLOR)
     g.library.set_base_material_usage(mat, u.MaterialUsage.MATUSAGE_INSTANCED_STATIC_MESHES, True)
     assert g.library.has_material_usage(mat, u.MaterialUsage.MATUSAGE_INSTANCED_STATIC_MESHES)
@@ -265,8 +298,8 @@ def rain_material(u, mpc):
     return mat, {'asset': RAIN, 'blend_mode': 'translucent', 'two_sided': True,
                  'translucency_lighting_mode': 'volumetric non-directional',
                  'max_world_position_offset_displacement_cm': RAIN_MAX_OFFSET, 'custom_inputs': list(RAIN_INPUTS),
-                 'hlsl_sha256': _sha256(RAIN_HLSL), 'base_color': 'lerp mist (.55, .64, .74) to white by the streak core',
-                 'opacity': 'bright core plus soft skirt plus leading knot, times the visible-instance mask'}
+                 'hlsl_sha256': _sha256(RAIN_HLSL), 'base_color': 'lerp mist (.55, .64, .74) to white by the streak core and the round head',
+                 'opacity': 'bright core plus soft skirt plus leading knot plus a round head, times the visible-instance mask'}
 
 
 def wet_ground(u, mat, mpc):

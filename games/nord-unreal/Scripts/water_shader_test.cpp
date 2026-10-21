@@ -679,8 +679,8 @@ namespace
             const float3 Last = Camera - float3(Random.Next(-160.f, 160.f), Random.Next(-160.f, 160.f), Random.Next(-160.f, 160.f));
             const float3 Component(Snap(Last.x, Box.x), Snap(Last.y, Box.y), Snap(Last.z, Box.z));
             const float3 Pivot = Component + float3(Random.Next(-.5f, .5f) * Box.x, Random.Next(-.5f, .5f) * Box.y, Random.Next(-.5f, .5f) * Box.z);
-            // Upright quads up to 1.2 cm wide and 80 cm long.
-            const float3 Vertex = Pivot + float3(Random.Next(-.6f, .6f), Random.Next(-.6f, .6f), Random.Next(-40.f, 40.f));
+            // Upright quads 10 cm wide and up to 80 cm long.
+            const float3 Vertex = Pivot + float3(Random.Next(-5.f, 5.f), Random.Next(-5.f, 5.f), Random.Next(-40.f, 40.f));
             const float Time = Sample % 7 == 0 ? Random.Next(0.f, 3.0e5f) : Random.Next(0.f, 1200.f);
             const float4 V = RainStreak(Pivot, Vertex, Camera, Time, Random.Next(0.f, 1.f), 1.f, Random.Next(0.f, 1.f), Random.Next(-1.f, 1.f), Random.Next(-1.f, 1.f));
             Largest[0] = std::fmax(Largest[0], std::fabs(V.x));

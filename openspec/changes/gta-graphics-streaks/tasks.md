@@ -1,0 +1,5 @@
+- [x] Widen the rain cards in `QuebecSky.cpp` to 10 cm
+- [x] Add a round leading head in `plateau_atmosphere.py`
+- [x] Shade the streaks before and after from a street camera
+- [x] Run `Scripts/test_plateau_atmosphere.py`, and compile `water_shader_test.cpp` with g++
+- [ ] Apply the rain material in Unreal (editor not available here)

@@ -388,3 +388,38 @@ Unreal is not available in this environment, so in-engine frames are the last co
 - Playability raw: 39 / 10 dimensions, index 39
 - Total: 85 / 200
 - Delta vs last round: +1
+
+### Round 12 — 2026-10-21 — rubric v1
+
+- What changed: rain cards go from 1.2 cm wide to 10 cm, and the streak material adds a round head on the leading end. `rain_streak.hlsl` is unchanged. The material updates when the atmosphere script runs in the editor.
+- Why it helped: Particles were tied at 4. The core and the knot were authored, then drawn on a card thinner than a pixel past a few metres, so every drop was the same hairline. A card wide enough for the head to separate from the tail is the first time that profile can show.
+- Screenshots: before `docs/gauntlet/gta-graphics/round-12/before-streaks.png`, after `docs/gauntlet/gta-graphics/round-12/after-streaks.png`. These are a perspective shade of the streak cards, not an Unreal capture. `Scripts/test_plateau_atmosphere.py` passed. `water_shader_test.cpp` passed under g++ (92 assertions). `python3 Scripts/test_water_shader.py` stops here because `c++` is clang and cannot see `<cmath>`. `GET /gta/` returned 200.
+- Next target: composition and camera. Animation smoothness stays at 3 and is skipped until a pose can be drawn.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 5 | Window lamps and the crew rim are unchanged. The rain head does not cast. |
+| Color palette | 5 | The head is the same white the core already used. |
+| Detail density | 5 | Rails and doors are unchanged. |
+| Texture and material quality | 5 | Mortar beds are unchanged. |
+| Composition and camera | 4 | Unchanged gameplay camera. |
+| Atmosphere | 5 | The depth fade is unchanged. |
+| Character models | 5 | The crew rim is unchanged. |
+| Animation smoothness | 3 | Skipped. The blend space still cannot be posed here. |
+| Particles and VFX | 5 | Near streaks have a round head and a tail, and far ones shrink. There is still no splash on the street. |
+| UI polish | 5 | Untouched. |
+| Responsiveness and input latency | 4 | Not measured this round. |
+| Controls feel | 4 | Not played. |
+| Mission clarity | 5 | Unchanged objective card. |
+| Pacing | 4 | Unchanged mission slice. |
+| Fun factor | 3 | Not played. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 4 | No new juice. |
+| Sound design | 3 | Not listened to. |
+| Variety | 3 | One district. The drops repeat one shape. |
+| Performance stability | 5 | The atmosphere test passed, and the streak-bounds test passed under g++. The head is extra arithmetic on the existing cards. Frame time was not remeasured. |
+
+- Aesthetics raw: 47 / 10 dimensions, index 47
+- Playability raw: 39 / 10 dimensions, index 39
+- Total: 86 / 200
+- Delta vs last round: +1
