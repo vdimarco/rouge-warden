@@ -537,3 +537,40 @@ Loop: missions, playability, controls, feel, UX, pacing and fun for In Full Swin
 ![The fourth flush is a balloon to bring back](fullswing-r14/balloon.png)
 
 ![The eighth flush is a washer to carry down](fullswing-r14/washer.png)
+
+### Round 15 — 2026-10-21 — rubric v1
+
+- What changed: The washer on the eighth flush hangs for 36 s when the tower is a swing away. The beat searches the towers in that band instead of sampling, so the carry is the nearby one. An odd-job washer still hangs for 60 s. A tower past a swing keeps a longer clock, up to that same minute. The balloon's slip and the falling rescue are unchanged.
+- Why it helped: The later breather had the same minute as a marker washer, and the nearby tower was often missed, so the carry could land across town on a clock you could stroll. Spider-Man 2 tightens a later activity and still leaves a way to do it. A 1280×800 play flushed eight clogs. The card read GET HIM DOWN, WINDOW WASHER, 36 s. The node check started that washer inside the band and read 36 s, started an odd-job washer and read 60 s, and left a far tower on the full minute past 40 s.
+- Screenshots: `docs/gauntlet/fullswing-r15/washer.png`.
+- Next target: mission clarity (7), tied with responsiveness, controls, and sound. Clarity is the one to change next: the clog card names a district and a distance, and the compass picks the nearest clog on its own, so the two can point at different pumps. Sound was not the round. Performance stays at 6. This machine has no real GPU to time, so that score is not the next round.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 5 | Held. Golden-hour sun and ink shadows. |
+| Color palette | 6 | Held. Yellow, red and sludge green still separate the HUD from the blocks. |
+| Detail density | 4 | Held. Open blocks more than a dressed borough. |
+| Texture and material quality | 3 | Held. Flat fills. |
+| Composition and camera | 4 | Held. The chase camera still sits behind the hero. This frame is the card. |
+| Atmosphere | 5 | Held. The dusk skyline has a mood. The street under the card does not. |
+| Character models | 3 | Held. Simple comic figures. |
+| Animation smoothness | 4 | Scored from still frames in software GL. Continuous motion was not watched. |
+| Particles and VFX | 5 | Held. No new effect. The clock is the change. |
+| UI polish | 6 | Held. The same ink pill shows the shorter count. |
+| Responsiveness and input latency | 7 | Held. The 36 s card was on the stepped frames after the eighth flush. |
+| Controls feel | 7 | Held. The swing carry is unchanged. |
+| Mission clarity | 7 | Held. The card already named the washer. The number on it changed. |
+| Pacing | 8 | Held. The fourth flush is still the balloon and the eighth is still the carry. |
+| Fun factor | 8 | Held. A win still hops the hero. This round changes the later clock, not the finish. |
+| Difficulty curve | 8 | The eighth flush counts from 36 s on a tower a swing away. An odd-job washer still has the minute. A tower past a swing is not cut to 36. |
+| Feedback | 8 | Held. A chase that is pulling away still turns the card hot. The clock did not add a new hit. |
+| Sound design | 7 | Held. Not listened to. The shorter hang uses the existing washer clock. |
+| Variety | 8 | Held. The washer was already the eighth-flush beat. |
+| Performance stability | 6 | The 1280×800 play passed with no page errors. Frame time on a real GPU was not measured. |
+
+- Aesthetics raw: 45 / 10 dimensions, index 45
+- Playability raw: 74 / 10 dimensions, index 74
+- Total: 119 / 200
+- Delta vs last round: +1 (round 14 was 118). Difficulty 7 → 8. Every other score held.
+
+![The eighth flush counts from 36 seconds](fullswing-r15/washer.png)
