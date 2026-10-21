@@ -1619,10 +1619,15 @@ function playerEasy(avoid) {
     if (!a || a.sky) { if (a && a.sky && !sky) sky = aimCopy(a); continue; }
     if (canHang(a) && !(avoid != null && a.bid === avoid)) return aimCopy(a);
   }
-  // The point ahead is the building already held. The lock-on knows another one; take that.
+  // The point ahead is the building already held. The lock-on knows another one; take it only when the hero can hang under it.
+  // A point past the ground-clearance cap would attach short and pull the hero in, so that shot goes to the sky instead.
   if (avoid != null && avoid >= 0 && pickerOn) {
     const res = picker.pick(TCTX, { avoidBid: avoid });
-    if (res && res.valid && res.tag === "building" && res.bid !== avoid) return aimCopy(res);
+    if (res && res.valid && res.tag === "building" && res.bid !== avoid) {
+      const copy = aimCopy(res);
+      if (copy.easyH == null) copy.easyH = (P.cfg && P.cfg.bodyH) || SWING.bodyH;
+      if (canHang(copy)) return copy;
+    }
   }
   if (!sky) sky = aimCopy(easyAnchor(P, easyDx, easyDz, avoid != null && avoid >= 0 ? { avoid } : undefined));
   if (sky.sky) { fillCam(); for (let n = 0; n < 8 && project(CAM, sky.x, sky.y, sky.z, PROJ).inView; n++) sky.y += sky.easyH * 3; }

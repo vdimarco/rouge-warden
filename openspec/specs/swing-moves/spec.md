@@ -89,7 +89,7 @@ In flat play with a mouse or a pad, the first easy web SHALL attach to a buildin
 - **THEN** the web attaches to the sky
 
 ### Requirement: A second web takes a different building
-In flat chase view, a second swing while one web is already on a building SHALL attach to a different building when one is in reach. Two swing inputs in the same frame SHALL do the same. That second web SHALL NOT add a kick while the first is already attached. The easy web's reported hand end SHALL be the hero's hand.
+In flat chase view, a second swing while one web is already on a building SHALL attach to a different building when one the hero can hang under is in reach. Two swing inputs in the same frame SHALL do the same. That second web SHALL NOT add a kick while the first is already attached. The easy web's reported hand end SHALL be the hero's hand. A building past the ground-clearance cap SHALL NOT be taken. The web SHALL go to the sky instead, and the attach SHALL NOT pull the hero toward that building.
 
 #### Scenario: The other hand
 - **WHEN** one web is on a building and the player fires the other hand
@@ -98,3 +98,7 @@ In flat chase view, a second swing while one web is already on a building SHALL 
 #### Scenario: Both inputs in one frame
 - **WHEN** the player presses both swing inputs in the same frame
 - **THEN** the two webs are on two different buildings
+
+#### Scenario: Too far to hang under
+- **WHEN** the only other building is farther than the hero can hang under
+- **THEN** the second web attaches to the sky and the hero is not pulled toward that building on the attach
