@@ -74,6 +74,15 @@ namespace QuebecShowRules
         }
     }
 
+    // The step that follows this one. The choice has two legal stations, so it has no single next stop.
+    // After either station, the curtain is next. The finished station is not.
+    inline int NextStep(int Step)
+    {
+        if (Step == StepArrive) return StepChoice;
+        if (Step == StepSpot || Step == StepDrop) return StepCue;
+        return -1;
+    }
+
     inline FSpot RecoverAt(int Step)
     {
         const FSpot Spot = Objective(Step);

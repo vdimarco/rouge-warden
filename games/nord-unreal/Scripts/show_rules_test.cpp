@@ -145,6 +145,15 @@ int main()
     }
     Expect(bDistinct, "the page matches the pond tick");
 
+    Expect(NextStep(StepArrive) == StepChoice, "the loading edge does not lead to the choice");
+    Expect(NextStep(StepChoice) < 0, "the either-order step picks one station");
+    Expect(NextStep(StepSpot) == StepCue, "after the followspot the route returns to the followspot");
+    Expect(NextStep(StepDrop) == StepCue, "after the backdrop the route returns to the backdrop");
+    Expect(NextStep(StepCue) < 0, "the curtain invents another stop");
+    const FSpot AfterSpot = Objective(NextStep(StepSpot));
+    Expect(AfterSpot.X == Loading.X && AfterSpot.Y == Loading.Y, "the curtain is not the loading edge");
+    Expect(AfterSpot.X != Followspot.X || AfterSpot.Y != Followspot.Y, "the next stroke still ends on the followspot");
+
     std::printf("%d assertions, %d failures\n", Assertions, Failures);
     return Failures == 0 ? 0 : 1;
 }

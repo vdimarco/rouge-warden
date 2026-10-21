@@ -33,6 +33,15 @@ The radar SHALL draw a gold stroke from the player toward the current diamond, s
 - **WHEN** the blank page is on its first gate
 - **THEN** the continuation leads toward the second gate
 
+#### Scenario: Either order
+- **WHEN** the ovation is on the choice, before either station
+- **THEN** no continuation is drawn
+
+#### Scenario: After one station
+- **WHEN** the followspot is already set and the backdrop is still open
+- **THEN** the continuation leads to the curtain
+- **AND** it does not lead back to the followspot
+
 #### Scenario: Rescue
 - **WHEN** a rescue group is open
 - **THEN** the card still names the turn to the current group

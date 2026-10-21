@@ -533,3 +533,48 @@ Unreal is not available here, so the native diamond was not captured. The title 
 ![Play client at 1280, host offline](gta-missions/r11-play-1280.png)
 
 ![Menu on a 390-wide screen, Recover visible](gta-missions/r11-play-menu-390.png)
+
+### Round 12 — 2026-10-21 — rubric v1
+
+- What changed: On the ovation, the faint route stroke no longer picks a station during the either-order choice. After the followspot, the stroke leads to the curtain, not back to the followspot. After the backdrop, it does the same. The loading edge still leads to the choice.
+- Why it helped: Fun was the tied target, and the new route line lied on mission 5. Either station is legal, but the stroke pointed only at the backdrop. Once the followspot was set, the next stroke pointed back at the followspot instead of the curtain.
+- Screenshots: title `docs/gauntlet/gta-missions/r12-title-1280.png`, `r12-title-390.png`, `r12-title-320.png`. Play client, host offline, `r12-play-1280.png`. Menu with Recover `r12-play-menu-390.png`. The title loaded with no page errors. The raw play page still logs the missing `@epicgames-ps/lib-pixelstreamingfrontend-ue5.8` specifier; the shell and Recover still draw. No native stroke: Unreal is not in this container. `Scripts/test_show_rules.py` reports 228 assertions, 0 failures, on c++, g++ and clang++. Syntax check `--both` passed for the campaign. OpenSpec CLI is not installed, so `openspec validate` did not run.
+- Next target: fun factor (4), still tied with controls, pacing, sound and performance. Responsiveness stays at 3 and stays out of scope. The ovation stroke now matches the either-order rule, and it was not played, so the feel score waits. The next round should keep changing how a beat plays, not add a chapter and not touch the stream.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 3 | Unchanged. |
+| Color palette | 5 | Unchanged. |
+| Detail density | 3 | Unchanged. |
+| Texture and material quality | 3 | Unchanged. |
+| Composition and camera | 4 | Unchanged. |
+| Atmosphere | 4 | Unchanged. |
+| Character models | 3 | Unchanged. |
+| Animation smoothness | 3 | Unchanged. |
+| Particles and VFX | 2 | Unchanged. |
+| UI polish | 4 | Unchanged. The native card was not seen, and French and English still share the screen. |
+| Responsiveness and input latency | 3 | Unchanged. Still a lagged stream. Out of scope for this loop. |
+| Controls feel | 4 | Unchanged. Steering was not driven. |
+| Mission clarity | 7 | The ovation no longer strokes a station that is already set, and the choice has no single next stop. The rules prove it. The native HUD was not seen. |
+| Pacing | 4 | Unchanged. The length of a beat was not played. |
+| Fun factor | 4 | The false stroke is gone. The ovation was not played, so the feel score stays. |
+| Difficulty curve | 6 | Unchanged. Either order is the same rule as before. |
+| Feedback | 6 | Unchanged. |
+| Sound design | 4 | Unchanged. The city still has two loops. Nobody is voiced. |
+| Variety | 9 | Unchanged. Eight of eight story missions, plus the four side jobs. |
+| Performance stability | 4 | Unchanged. |
+
+- Aesthetics raw: 34 / 10 dimensions, index 34
+- Playability raw: 51 / 10 dimensions, index 51
+- Total: 85 / 200
+- Delta vs last round: +1 (round 11 was 84). Mission clarity 6 → 7. Every other score held.
+
+![GTA title at 1280](gta-missions/r12-title-1280.png)
+
+![GTA title at 390](gta-missions/r12-title-390.png)
+
+![GTA title at 320](gta-missions/r12-title-320.png)
+
+![Play client at 1280, host offline](gta-missions/r12-play-1280.png)
+
+![Menu on a 390-wide screen, Recover visible](gta-missions/r12-play-menu-390.png)

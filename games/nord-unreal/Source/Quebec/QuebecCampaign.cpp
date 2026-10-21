@@ -1770,8 +1770,9 @@ bool AQuebecCampaign::GetNextObjectiveLocation(FVector& Out) const
     }
     if (IsShowOpen())
     {
-        if (ShowStep + 1 >= ShowBankedStep) return false;
-        const QuebecShowRules::FSpot Spot = QuebecShowRules::Objective(ShowStep + 1);
+        const int32 Next = QuebecShowRules::NextStep(ShowStep);
+        if (Next < 0) return false;
+        const QuebecShowRules::FSpot Spot = QuebecShowRules::Objective(Next);
         Out = At(Spot.X, Spot.Y);
         return true;
     }
