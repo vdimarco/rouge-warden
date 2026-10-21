@@ -1438,3 +1438,38 @@ Unreal is not available in this environment, so in-engine frames are the last co
 - Playability raw: 39 / 10 dimensions, index 39
 - Total: 115 / 200
 - Delta vs last round: +1
+
+### Round 42 — 2026-10-21 — rubric v1
+
+- What changed: the radar heading is filled. An ink wedge, the same triangle grown by 1.55 about its centre, is drawn first. The paper wedge is the original tip and tails. The three paper outline strokes stay. Avenue casing and the grey side streets stay.
+- Why it helped: UI polish was at 8. The heading was a paper outline and the avenue centre is paper, so the point of the arrow fell into the wide road.
+- Screenshots: before `docs/gauntlet/gta-graphics/round-42/before-frame.png`, after `docs/gauntlet/gta-graphics/round-42/after-frame.png`. Crops are `before-arrow.png` and `after-arrow.png`, a 4× nearest enlargement of the heading. The disc is scale 1. Not an Unreal capture. At scale 1, 59 pixels change. The heading crop mean absolute delta is 0.227 and the max is 0.967. The full disc mean is 0.0007. `Scripts/test_radar_arrow.py` passed. `Scripts/test_radar_rank.py` passed. `QuebecGameplay.cpp` was not compiled. `GET /gta/` returned 200. OpenSpec CLI is not installed, so the change files were not validated with `openspec`.
+- Next target: character models, the remaining aesthetics score at 8. Composition and particles stay at 6, because the walking socket and the rain displacement stay as they are. Animation smoothness stays at 3 and is skipped until a pose can be drawn.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 9 | The street shade is unchanged. |
+| Color palette | 9 | The arrow uses the existing ink and paper. |
+| Detail density | 9 | The street mesh is unchanged. |
+| Texture and material quality | 9 | The asphalt mix is unchanged. |
+| Composition and camera | 6 | The walking socket is unchanged. |
+| Atmosphere | 9 | The street dust is unchanged. |
+| Character models | 8 | No figure changed. |
+| Animation smoothness | 3 | Skipped. The blend space still cannot be posed here. |
+| Particles and VFX | 6 | Rain rings are unchanged. |
+| UI polish | 9 | The heading is a solid paper wedge, and the ink edge cuts the avenue. It is still a flat triangle. |
+| Responsiveness and input latency | 4 | Not measured this round. |
+| Controls feel | 4 | Not played. |
+| Mission clarity | 5 | The objective words are unchanged. The diamond is unchanged. |
+| Pacing | 4 | Unchanged mission slice. |
+| Fun factor | 3 | Not played. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 4 | The heading is easier to see. No new juice. |
+| Sound design | 3 | Not listened to. |
+| Variety | 3 | One disc, one heading. |
+| Performance stability | 5 | `Scripts/test_radar_arrow.py` passed. The fill is thirty line strokes. Frame time was not remeasured. |
+
+- Aesthetics raw: 77 / 10 dimensions, index 77
+- Playability raw: 39 / 10 dimensions, index 39
+- Total: 116 / 200
+- Delta vs last round: +1

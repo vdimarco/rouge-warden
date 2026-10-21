@@ -2964,6 +2964,27 @@ void AQuebecHUD::DrawHUD()
     const FVector2D Tip = Center + Nose * 10.f * Scale;
     const FVector2D TailA = Center - Nose * 5.f * Scale + Side * 5.f * Scale;
     const FVector2D TailB = Center - Nose * 5.f * Scale - Side * 5.f * Scale;
+    // Jacques Bertin, Semiology of Graphics (1983): a mark that shares its ground's value
+    // disappears. The avenue center is paper, and this arrow was a paper outline, so the
+    // heading broke up along a wide road. The ink wedge is larger. The paper wedge sits inside it.
+    const FVector2D ArrowMid = (Tip + TailA + TailB) / 3.f;
+    const FVector2D CaseTip = ArrowMid + (Tip - ArrowMid) * 1.55f;
+    const FVector2D CaseA = ArrowMid + (TailA - ArrowMid) * 1.55f;
+    const FVector2D CaseB = ArrowMid + (TailB - ArrowMid) * 1.55f;
+    for (int32 Row = 0; Row <= 14; ++Row)
+    {
+        const float Along = static_cast<float>(Row) / 14.f;
+        const FVector2D CaseLeft = FMath::Lerp(CaseTip, CaseA, Along);
+        const FVector2D CaseRight = FMath::Lerp(CaseTip, CaseB, Along);
+        DrawLine(CaseLeft.X, CaseLeft.Y, CaseRight.X, CaseRight.Y, Ink, 2.f * Scale);
+    }
+    for (int32 Row = 0; Row <= 14; ++Row)
+    {
+        const float Along = static_cast<float>(Row) / 14.f;
+        const FVector2D FillLeft = FMath::Lerp(Tip, TailA, Along);
+        const FVector2D FillRight = FMath::Lerp(Tip, TailB, Along);
+        DrawLine(FillLeft.X, FillLeft.Y, FillRight.X, FillRight.Y, Paper, 2.f * Scale);
+    }
     DrawLine(TailA.X, TailA.Y, Tip.X, Tip.Y, Paper, 2.f * Scale);
     DrawLine(Tip.X, Tip.Y, TailB.X, TailB.Y, Paper, 2.f * Scale);
     DrawLine(TailB.X, TailB.Y, TailA.X, TailA.Y, Paper, 2.f * Scale);
