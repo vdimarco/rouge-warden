@@ -213,7 +213,7 @@ Playability was scored from a flat boot and the city render check, not a full pl
 | Feedback | 5 | Unchanged. |
 | Sound design | 4 | Unchanged. |
 | Variety | 4 | Unchanged. |
-| Performance stability | 6 | Street draws stayed at 54. Street mean moved from 53 to 54. `qa/vr/render.mjs` is the load check. |
+| Performance stability | 6 | `qa/vr/render.mjs` passed, including flat play and the lit-sphere cel check. Street draws stayed at 54. Street mean moved from 53 to 54. |
 
 - Aesthetics raw: 45 / 10 dimensions, index 45
 - Playability raw: 46 / 10 dimensions, index 46
