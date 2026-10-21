@@ -1887,3 +1887,48 @@ Unreal is not available here, so the native diamond was not captured. The title 
 ![Play client at 1280, host offline](gta-missions/r41-play-1280.png)
 
 ![Menu on a 390-wide screen, Recover visible](gta-missions/r41-play-menu-390.png)
+
+### Round 42 — 2026-10-21 — rubric v1
+
+- What changed: One pedalo waits in the channel beside the north-pond footbridge, 280 cm off the deck and inside the door reach. On the water it tops out at 650 cm/s and reverses at 220 cm/s. Off the water it only creeps at 140 cm/s, so it can leave the berth and cannot tour the streets. Letting go coasts to a stop. It does not handbrake-slide, and a bump does not dent it. E on the deck boards it. E aboard steps ashore. Cars keep the driving model they already have. The body is still the car mesh. The v1 save is untouched.
+- Why it helped: The pond was only for swimming, and every vehicle was a car. The bridge now has a boat in the channel.
+- Screenshots: title `docs/gauntlet/gta-missions/r42-title-1280.png`, `r42-title-390.png`, `r42-title-320.png`. Play client, host offline, `r42-play-1280.png`. Menu with Recover `r42-play-menu-390.png`. The title loaded with no page errors. The raw play page still logs the missing `@epicgames-ps/lib-pixelstreamingfrontend-ue5.8` specifier; the shell and Recover still draw. The boat was not paddled. `Scripts/test_ride.py` reports 20 assertions, 0 failures, on c++, g++, and clang++. Syntax check `--both` passed for `QuebecGameplay.cpp`, `QuebecSwimming.cpp`, and `QuebecDrive.cpp`. OpenSpec CLI is not installed, so `openspec validate` did not run.
+- Next target: more district content. The playable scores that can still move are capped offline, so the score stays. Mission clarity stays at 7 and stays out of reach offline. Responsiveness stays at 3 and stays out of scope. Performance stays at 4 and is not measurable here.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 3 | Unchanged. |
+| Color palette | 5 | Unchanged. |
+| Detail density | 3 | Unchanged. |
+| Texture and material quality | 3 | Unchanged. |
+| Composition and camera | 4 | Unchanged. |
+| Atmosphere | 4 | Unchanged. |
+| Character models | 3 | Unchanged. |
+| Animation smoothness | 3 | Unchanged. |
+| Particles and VFX | 2 | Unchanged. |
+| UI polish | 4 | Unchanged. The native card was not seen, and French and English still share the screen. |
+| Responsiveness and input latency | 3 | Unchanged. Still a lagged stream. Out of scope for this loop. |
+| Controls feel | 9 | Unchanged. Getting out faster than a walk still keeps that pace. The paddle rules were not felt. |
+| Mission clarity | 7 | Unchanged. The fare post still moves from the loaner to the quay. The native card was not seen, and this score stays out of reach offline. |
+| Pacing | 9 | Unchanged. Four seconds on foot after boarding still loses the passenger. |
+| Fun factor | 9 | Unchanged. Chez Lise still sells a kit, a vest, or one star. A boat that was not paddled is not the reference's spread of things to do. |
+| Difficulty curve | 9 | Unchanged. Selling the last page ends it for 200 and does not bank the chain. A wreck still costs more than the goon pay. |
+| Feedback | 9 | Unchanged. A failed side job still plays the falling sting. The sting was not heard. |
+| Sound design | 9 | Unchanged. The dent thud still marks a scrape as quiet. Nobody is voiced, so this is not the reference's city. |
+| Variety | 9 | A pedalo waits beside the bridge. It was not paddled, and the body is still a car mesh, so this is not a garage of vehicles. |
+| Performance stability | 4 | Unchanged. Not measurable in this container. |
+
+- Aesthetics raw: 34 / 10 dimensions, index 34
+- Playability raw: 77 / 10 dimensions, index 77
+- Total: 111 / 200
+- Delta vs last round: 0 (round 41 was 111). The pedalo was not paddled, so every score held.
+
+![GTA title at 1280](gta-missions/r42-title-1280.png)
+
+![GTA title at 390](gta-missions/r42-title-390.png)
+
+![GTA title at 320](gta-missions/r42-title-320.png)
+
+![Play client at 1280, host offline](gta-missions/r42-play-1280.png)
+
+![Menu on a 390-wide screen, Recover visible](gta-missions/r42-play-menu-390.png)
