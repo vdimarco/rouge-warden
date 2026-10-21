@@ -1163,3 +1163,48 @@ Unreal is not available here, so the native diamond was not captured. The title 
 ![Play client at 1280, host offline](gta-missions/r25-play-1280.png)
 
 ![Menu on a 390-wide screen, Recover visible](gta-missions/r25-play-menu-390.png)
+
+### Round 26 — 2026-10-21 — rubric v1
+
+- What changed: The driving wheel's pedal uses the same three steps as the on-foot stick. A short push is a third of gas. A longer push is two thirds. The edge stays full gas, on W, and full brake, on S. A short brake drops auto gas. Full gas from the button or from Auto wins over a lighter wheel step, so the two do not add. WASD and the arrows stay full lock.
+- Why it helped: Controls feel was a 6 because the on-foot stick already had three steps, and the wheel still sent full gas or full brake as soon as the thumb left one edge.
+- Screenshots: title `docs/gauntlet/gta-missions/r26-title-1280.png`, `r26-title-390.png`, `r26-title-320.png`. Play client, host offline, `r26-play-1280.png`. Menu with Recover `r26-play-menu-390.png`. The title loaded with no page errors. The raw play page still logs the missing `@epicgames-ps/lib-pixelstreamingfrontend-ue5.8` specifier; the shell and Recover still draw. The pedal was not driven in Unreal. `node --test touch-controls.test.mjs` reports 40 tests, 0 failures. `Scripts/test_move_keys.py` reports 22 axis mappings and that the arrows still match WASD. OpenSpec CLI is not installed, so `openspec validate` did not run.
+- Next target: fun factor (7), tied with the other playability scores this loop can still change. Controls feel is now 7. Performance stays at 4 and is not measurable here. Responsiveness stays at 3 and stays out of scope. The steps are proven by the wheel and the input map. They were not driven, so the controls score waits at 7. The next round should keep to a change the tests can prove, and should not add a chapter or touch the stream.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 3 | Unchanged. |
+| Color palette | 5 | Unchanged. |
+| Detail density | 3 | Unchanged. |
+| Texture and material quality | 3 | Unchanged. |
+| Composition and camera | 4 | Unchanged. |
+| Atmosphere | 4 | Unchanged. |
+| Character models | 3 | Unchanged. |
+| Animation smoothness | 3 | Unchanged. |
+| Particles and VFX | 2 | Unchanged. |
+| UI polish | 4 | Unchanged. The native card was not seen, and French and English still share the screen. |
+| Responsiveness and input latency | 3 | Unchanged. Still a lagged stream. Out of scope for this loop. |
+| Controls feel | 7 | The driving pedal has three steps, on the same edges as the wheel. A short push is a third of gas, a longer push is two thirds, and the edge stays W. A short brake drops auto gas. Full gas does not add to a lighter step. It was not driven. |
+| Mission clarity | 7 | Unchanged. |
+| Pacing | 7 | Unchanged. On foot the card still names the time left to the diamond. |
+| Fun factor | 7 | Unchanged. A close call still pays on the front of a clear window. |
+| Difficulty curve | 7 | Unchanged. The court ink and the convoy beam still grow with the chain. |
+| Feedback | 7 | Unchanged. A bank still names its rank. |
+| Sound design | 7 | Unchanged. A bank still plays a pitch for its rank. |
+| Variety | 9 | Unchanged. Eight of eight story missions, plus the four side jobs. |
+| Performance stability | 4 | Unchanged. Not measurable in this container. |
+
+- Aesthetics raw: 34 / 10 dimensions, index 34
+- Playability raw: 65 / 10 dimensions, index 65
+- Total: 99 / 200
+- Delta vs last round: +1 (round 25 was 98). Controls feel 6 → 7. Every other score held.
+
+![GTA title at 1280](gta-missions/r26-title-1280.png)
+
+![GTA title at 390](gta-missions/r26-title-390.png)
+
+![GTA title at 320](gta-missions/r26-title-320.png)
+
+![Play client at 1280, host offline](gta-missions/r26-play-1280.png)
+
+![Menu on a 390-wide screen, Recover visible](gta-missions/r26-play-menu-390.png)

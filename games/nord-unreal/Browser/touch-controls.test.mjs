@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { setTimeout as wait } from 'node:timers/promises';
-import { setupTouchControls, gradedLevel, steerKeys, pedalEdges, walkKey, walkKeys } from './touch-controls.js';
+import { setupTouchControls, gradedLevel, steerKeys, steerEdges, pedalEdges, walkKey, walkKeys } from './touch-controls.js';
 
 function fixture() {
   const window = new EventTarget();
@@ -557,15 +557,40 @@ test('the wheel is a stick: up accelerates, down brakes then reverses, diagonals
   f.pointer('pointerdown', f.ui.steering, 1, 50, 50);
   assert.deepEqual(f.messages, [], 'the center is neutral');
   f.pointer('pointermove', f.ui.steering, 1, 50, 10);
-  assert.deepEqual(f.messages, [['KeyDown', 87, 0]], 'up accelerates');
+  assert.deepEqual(f.messages, [['KeyDown', 105, 0]], 'up accelerates at two thirds');
   assert.equal(f.ui.steering.styles.get('--steer-y'), '-7px');
   f.pointer('pointermove', f.ui.steering, 1, 10, 10);
   assert.deepEqual(f.messages.at(-1), ['KeyDown', 98, 0], 'up-left accelerates and steers left');
   f.pointer('pointermove', f.ui.steering, 1, 50, 90);
-  assert.deepEqual(f.messages.slice(-3), [['KeyUp', 98], ['KeyUp', 87], ['KeyDown', 83, 0]], 'down brakes, then the game reverses');
+  assert.deepEqual(f.messages.slice(-3), [['KeyUp', 98], ['KeyUp', 105], ['KeyDown', 102, 0]], 'down brakes at two thirds');
   f.pointer('pointerup', f.ui.steering, 1, 50, 90);
-  assert.deepEqual(f.messages.at(-1), ['KeyUp', 83]);
+  assert.deepEqual(f.messages.at(-1), ['KeyUp', 102]);
   assert.equal(f.ui.steering.styles.get('--steer-y'), '0px');
+});
+
+test('the wheel pedal has three steps, and full gas wins over a lighter step', () => {
+  const f = fixture(); f.setEnabled(true); f.setDriving(true);
+  f.pointer('pointerdown', f.ui.steering, 1, 50, 50);
+  f.pointer('pointermove', f.ui.steering, 1, 50, 30);
+  assert.deepEqual(f.messages, [['KeyDown', 104, 0]], 'a short push is a third of gas');
+  f.pointer('pointermove', f.ui.steering, 1, 50, 10);
+  assert.deepEqual(f.messages.slice(-2), [['KeyUp', 104], ['KeyDown', 105, 0]], 'a longer push is two thirds');
+  f.pointer('pointermove', f.ui.steering, 1, 50, -10);
+  assert.deepEqual(f.messages.slice(-2), [['KeyUp', 105], ['KeyDown', 87, 0]], 'the edge stays full gas');
+  f.pointer('pointermove', f.ui.steering, 1, 50, 70);
+  assert.deepEqual(f.messages.slice(-2), [['KeyUp', 87], ['KeyDown', 99, 0]], 'a short pull is a third of brake');
+  f.pointer('pointermove', f.ui.steering, 1, 50, 110);
+  assert.deepEqual(f.messages.slice(-2), [['KeyUp', 99], ['KeyDown', 83, 0]], 'the edge stays full brake');
+  f.pointer('pointerup', f.ui.steering, 1, 50, 110);
+  f.pointer('pointerdown', f.ui.gas, 2);
+  f.pointer('pointerdown', f.ui.steering, 1, 50, 50);
+  f.pointer('pointermove', f.ui.steering, 1, 50, 30);
+  assert.deepEqual(f.messages.slice(-1), [['KeyDown', 87, 0]], 'the short wheel step does not add to full gas');
+  f.pointer('pointerup', f.ui.gas, 2);
+  f.pointer('pointerdown', f.ui.auto, 4);
+  f.pointer('pointermove', f.ui.steering, 1, 50, 70);
+  assert.deepEqual(f.messages.slice(-2), [['KeyUp', 87], ['KeyDown', 99, 0]], 'a short brake drops auto gas');
+  assert.equal(f.ui.auto.getAttribute('aria-pressed'), 'false');
 });
 
 test('in a car the first finger anywhere drives from where it lands and a second finger looks', () => {
@@ -575,12 +600,12 @@ test('in a car the first finger anywhere drives from where it lands and a second
   assert.equal(f.ui.move.dataset.floating, undefined);
   assert.equal(f.ui.steering.styles.get('--float-x'), '300px');
   f.pointer('pointermove', f.surface, 1, 260, 350);
-  assert.deepEqual(f.messages, [['KeyDown', 98, 0], ['KeyDown', 87, 0]], 'up-left from the landing point accelerates and steers left');
+  assert.deepEqual(f.messages, [['KeyDown', 98, 0], ['KeyDown', 105, 0]], 'up-left from the landing point accelerates and steers left');
   f.pointer('pointerdown', f.surface, 2, 600, 200);
   f.pointer('pointermove', f.surface, 2, 610, 200);
   assert.deepEqual(f.deltas, [[10, 0]], 'the second finger turns the camera');
   f.pointer('pointerup', f.surface, 1, 260, 350);
-  assert.deepEqual(f.messages.slice(-2), [['KeyUp', 98], ['KeyUp', 87]]);
+  assert.deepEqual(f.messages.slice(-2), [['KeyUp', 98], ['KeyUp', 105]]);
   assert.equal(f.ui.steering.dataset.floating, undefined);
   f.releaseAll();
 });
@@ -641,11 +666,14 @@ test('steering hysteresis holds a level 0.06 below its edge and resets when the 
     [0, .17, 0], [1, .44, 1], [1, .45, 2], [1, .8, 3], [3, .3, 1],
     [3, -.2, -1], [-2, .3, 1], [-1, -.13, -1], [-1, -.1, 0], [-3, -.7, -3]
   ]) assert.equal(gradedLevel(x, previous), level, `level ${previous} at ${x}`);
-  // Gas and brake use the same rule with one edge.
-  assert.equal(gradedLevel(-.28, 0, pedalEdges), -1);
-  assert.equal(gradedLevel(-.24, -1, pedalEdges), -1);
-  assert.equal(gradedLevel(-.2, -1, pedalEdges), 0);
-  assert.equal(gradedLevel(.25, 0, pedalEdges), 0);
+  // The pedal uses the same three edges, so a short pull is not full gas.
+  assert.equal(pedalEdges, steerEdges);
+  assert.equal(gradedLevel(-.17, 0, pedalEdges), 0);
+  assert.equal(gradedLevel(-.18, 0, pedalEdges), -1);
+  assert.equal(gradedLevel(-.12, -1, pedalEdges), -1);
+  assert.equal(gradedLevel(-.11, -1, pedalEdges), 0);
+  assert.equal(gradedLevel(.45, 1, pedalEdges), 2);
+  assert.equal(gradedLevel(.75, 2, pedalEdges), 3);
 });
 
 test('dragging the wheel steps through graded levels, holds one steering key and ignores thumb jitter', () => {
@@ -736,7 +764,7 @@ test('Auto gas holds Gas until Brake, the toggle or the wheel pulled down turns 
   f.pointer('pointermove', f.ui.steering, 1, 70, 50);
   assert.deepEqual(f.messages.slice(-2), [['KeyDown', 87, 0], ['KeyDown', 100, 0]], 'steering keeps auto gas');
   f.pointer('pointermove', f.ui.steering, 1, 70, 90);
-  assert.deepEqual(f.messages.slice(-2), [['KeyUp', 87], ['KeyDown', 83, 0]], 'pulling the wheel down brakes');
+  assert.deepEqual(f.messages.slice(-2), [['KeyUp', 87], ['KeyDown', 102, 0]], 'pulling the wheel down brakes');
   f.pointer('pointerup', f.ui.steering, 1, 70, 90);
   assert.equal(f.ui.auto.getAttribute('aria-pressed'), 'false');
   assert.equal(heldInputs(f.messages).size, 0);

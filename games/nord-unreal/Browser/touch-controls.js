@@ -2,7 +2,8 @@
 // MoveRight -0.33/-0.66 and NumPad 4/5 to +0.33/+0.66 (JavaScript key codes 97, 98, 100, 101); A and D stay full lock.
 export const steerKeys = new Map([[-3, 65], [-2, 98], [-1, 97], [1, 100], [2, 101], [3, 68]]);
 const steeringKeys = new Set(steerKeys.values());
-// On-foot stick: the same three steps. WASD stay full lock. The shorter steps use numpad keys the wheel does not.
+// On-foot stick and the driving pedal: the same three steps. WASD stay full lock.
+// The shorter steps use numpad keys the steering wheel does not use for left and right.
 export const walkKeys = {
   forward: new Map([[1, 104], [2, 105], [3, 87]]),
   back: new Map([[1, 99], [2, 102], [3, 83]]),
@@ -17,9 +18,9 @@ export function walkKey(axis, level) {
     : (level < 0 ? walkKeys.back : walkKeys.forward);
   return table.get(size) || 0;
 }
-// Wheel deflection, as a fraction of its drag reach, where each steering level and the pedals engage.
+// Wheel deflection, as a fraction of its drag reach, where each steering level and each pedal step engages.
 export const steerEdges = [.18, .45, .75];
-export const pedalEdges = [.28];
+export const pedalEdges = steerEdges;
 // An engaged level holds until the thumb comes back this far below its edge, so a thumb resting on an edge cannot flicker.
 export const holdMargin = .06;
 // The wheel measures drags over 1.4 times its drawn radius, so small thumb jitter moves the steering less.
@@ -173,15 +174,22 @@ export function setupTouchControls({ root, surface, stream }) {
     const next = new Set([...activations.keys(), ...[...pointers.values()].flatMap(pointer => pointer.keys)]);
     if (!driving && sprintLatched && [65, 68, 87, 83].some(key => next.has(key))) next.add(16);
     if (driving) {
-      // Auto gas holds Gas until any brake input (button or wheel pulled down) turns it off.
-      if (next.has(83)) autoGas = false;
+      // Any brake step, including a short one, drops auto gas. Full gas from the button or Auto
+      // wins over a lighter wheel step so the two do not add.
+      const gasStep = [104, 105, 87];
+      const brakeStep = [99, 102, 83];
+      if (brakeStep.some(key => next.has(key))) autoGas = false;
       if (autoGas) next.add(87);
       // Exactly one steering key: a held wheel level wins over a keyboard-style Left/Right pulse.
       const wheel = [...pointers.values()].find(pointer => pointer.stick === 'steer')?.keys.find(key => steeringKeys.has(key));
       const steering = [...next].filter(key => steeringKeys.has(key));
       for (const key of steering) if (key !== (wheel ?? steering[0])) next.delete(key);
+      if (brakeStep.some(key => next.has(key))) for (const key of gasStep) next.delete(key);
+      for (const steps of [gasStep, brakeStep]) {
+        const held = steps.filter(key => next.has(key));
+        for (const key of held.slice(0, -1)) next.delete(key);
+      }
     } else autoGas = false;
-    if (driving && next.has(83)) next.delete(87);
     for (const key of heldKeys) if (!next.has(key)) lift(key);
     for (const key of next) if (!heldKeys.has(key)) press(key);
     heldKeys = next;
@@ -211,7 +219,8 @@ export function setupTouchControls({ root, surface, stream }) {
       const y = Math.max(-1, Math.min(1, (event.clientY - centerY) / (bounds.height / 2 * wheelReach)));
       pointer.steer = gradedLevel(x, pointer.steer);
       pointer.pedal = gradedLevel(y, pointer.pedal, pedalEdges);
-      pointer.keys = [steerKeys.get(pointer.steer), pointer.pedal < 0 && 87, pointer.pedal > 0 && 83].filter(Boolean);
+      // Up is gas. The three steps are the on-foot forward keys, and full lock stays W.
+      pointer.keys = [steerKeys.get(pointer.steer), walkKey('y', -pointer.pedal)].filter(Boolean);
       pointer.target.dataset.steer = String(pointer.steer);
       pointer.target.style.setProperty('--steer-angle', `${x * 60}deg`);
       pointer.target.style.setProperty('--steer-y', `${Math.round(y * 12)}px`);
