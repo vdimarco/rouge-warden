@@ -45,6 +45,16 @@ int main()
     Expect(std::fabs(std::fabs(BearingFromPlayer(East, West)) - 3.141592653589793) < 1e-9, "west of an east facing is not behind");
     Expect(Near(BearingFromPlayer({0., 0.}, East), BearingFromPlayer(North, East)), "a zero facing does not fall back to north");
 
+    const FVec2 WalkEast = RouteFacing(false, 0., North);
+    Expect(Near(WalkEast.X, 1.) && Near(WalkEast.Y, 0.), "yaw 0 does not face east, the forward walk");
+    Expect(TurnFor(BearingFromPlayer(WalkEast, {100., 0.}), 400.) == ETurn::Ahead, "a stop along the camera yaw is not ahead on foot");
+    const FVec2 WalkNorth = RouteFacing(false, 90., East);
+    Expect(Near(WalkNorth.X, 0.) && Near(WalkNorth.Y, 1.), "yaw 90 does not face north");
+    Expect(TurnFor(BearingFromPlayer(WalkNorth, {100., 0.}), 400.) == ETurn::Right, "east of a northward walk is not right");
+    const FVec2 Nose = RouteFacing(true, 0., North);
+    Expect(Near(Nose.X, North.X) && Near(Nose.Y, North.Y), "a car does not keep its nose when the camera yaws away");
+    Expect(TurnFor(BearingFromPlayer(Nose, {0., 100.}), 400.) == ETurn::Ahead, "a stop along the nose is not ahead in a car");
+
     Expect(TurnFor(0., 100.) == ETurn::Here, "a stop under 1.5 m is not here");
     Expect(TurnFor(0., 150.) == ETurn::Ahead, "1.5 m dead ahead is not ahead");
     Expect(TurnFor(0.2, 400.) == ETurn::Ahead, "a small clockwise angle is not ahead");

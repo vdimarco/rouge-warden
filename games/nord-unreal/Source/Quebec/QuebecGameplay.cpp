@@ -2524,9 +2524,13 @@ void AQuebecHUD::DrawHUD()
     {
         const FVector2D Goal = MapMarker(Target);
         const FVector ToStop = Target - Here;
-        const FVector FacingNow = Pawn->GetActorForwardVector();
+        const FVector PawnForward = Pawn->GetActorForwardVector();
+        const QuebecRouteLine::FVec2 RouteFace = QuebecRouteLine::RouteFacing(
+            Car != nullptr,
+            static_cast<double>(PlayerOwner->GetControlRotation().Yaw),
+            {PawnForward.X, PawnForward.Y});
         const double PlanCm = QuebecRouteLine::Length({ToStop.X, ToStop.Y});
-        RouteBearing = QuebecRouteLine::BearingFromPlayer({FacingNow.X, FacingNow.Y}, {ToStop.X, ToStop.Y});
+        RouteBearing = QuebecRouteLine::BearingFromPlayer(RouteFace, {ToStop.X, ToStop.Y});
         RouteTurn = QuebecRouteLine::TurnFor(RouteBearing, PlanCm);
         QuebecRouteLine::FVec2 StrokeA, StrokeB;
         if (QuebecRouteLine::RadarStroke({Center.X, Center.Y}, {Goal.X, Goal.Y}, 12. * Scale, 8. * Scale, StrokeA, StrokeB))

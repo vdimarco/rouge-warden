@@ -21,6 +21,15 @@ namespace QuebecRouteLine
         return std::hypot(Value.X, Value.Y);
     }
 
+    // The forward the turn word uses. On foot, walk input follows the camera yaw, so ahead means
+    // forward and right means strafe right. A car faces the way it drives, so the nose wins.
+    inline FVec2 RouteFacing(bool bDriving, double YawDegrees, FVec2 PawnForward)
+    {
+        if (bDriving) return PawnForward;
+        const double Rad = YawDegrees * 0.017453292519943295;
+        return {std::cos(Rad), std::sin(Rad)};
+    }
+
     // Clockwise radians from the player's forward to the target, in (-pi, pi].
     // 0 is ahead, +pi/2 is right, -pi/2 is left. A zero forward is treated as north.
     inline double BearingFromPlayer(FVec2 Forward, FVec2 To)

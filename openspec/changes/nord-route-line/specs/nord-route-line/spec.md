@@ -1,12 +1,16 @@
 ## ADDED Requirements
 
 ### Requirement: The card points the way to the diamond
-While the mission card is leading to a diamond, it SHALL name whether that stop is ahead, left, right, behind, or here, and SHALL draw a needle in that direction when the stop is not here. The words follow the player's facing. A stop under 1.5 m SHALL say here and SHALL NOT draw a needle.
+While the mission card is leading to a diamond, it SHALL name whether that stop is ahead, left, right, behind, or here, and SHALL draw a needle in that direction when the stop is not here. On foot the words follow the camera yaw, flattened, so ahead means walk forward and right means strafe right. In a car the words follow the nose. A stop under 1.5 m SHALL say here and SHALL NOT draw a needle.
 
 #### Scenario: Ahead
-- **WHEN** the player faces the current stop and it is at least 1.5 m away
+- **WHEN** the player is on foot, the camera yaw faces the current stop, and it is at least 1.5 m away
 - **THEN** the card says ahead
 - **AND** the needle points up
+
+#### Scenario: Car nose
+- **WHEN** the player is driving and the stop lies along the car's nose, even if the camera yaw points elsewhere
+- **THEN** the card says ahead
 
 #### Scenario: Right
 - **WHEN** the stop is to the player's right
