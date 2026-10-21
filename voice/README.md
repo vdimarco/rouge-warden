@@ -80,3 +80,9 @@ herdr agent wait codex --until blocked && node voice/call.mjs "Codex is waiting 
 - Anyone who answers your phone can talk to Hermes, with all of its tools.
 - Twilio charges for each minute of a call, and for the speech service.
 - People near you hear Hermes through the watch speaker.
+
+## Pixel Watch
+
+A Pixel Watch 3 and an Android phone are a second front end. The watch records audio and speaks. The phone transcribes. Both talk to this call server, which routes the turn to Hermes, the Pi CLI, or an OpenAI-compatible endpoint, and keeps a shared memory file. The Twilio path above is unchanged.
+
+`node voice/relay-key.mjs new pixel-watch` makes a bearer token. Install and the relay URL are in `wear/README.md`. The adapter and memory interfaces are in `voice/adapters.md`.

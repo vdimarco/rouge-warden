@@ -1,0 +1,57 @@
+name: Hermes watch and phone
+
+on:
+  pull_request:
+    paths:
+      - "wear/**"
+      - "mobile/**"
+      - "voice/**"
+      - "qa/voice/**"
+      - ".github/workflows/hermes-wear.yml"
+  push:
+    branches: [main]
+    paths:
+      - "wear/**"
+      - "mobile/**"
+      - "voice/**"
+      - "qa/voice/**"
+      - ".github/workflows/hermes-wear.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  apks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: voice/package-lock.json
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: android-actions/setup-android@v3
+      - name: Android SDK packages
+        run: sdkmanager "platforms;android-35" "build-tools;35.0.0"
+      - name: Relay tests
+        run: npm ci --prefix voice && npm test --prefix voice
+      - name: Protocol tests and debug APKs
+        working-directory: wear
+        run: ./gradlew :protocol:test :wear-app:assembleDebug :phone-app:assembleDebug --no-daemon
+      - uses: actions/upload-artifact@v4
+        with:
+          name: hermes-watch-debug
+          path: wear/app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+          retention-days: 14
+      - uses: actions/upload-artifact@v4
+        with:
+          name: hermes-phone-debug
+          path: mobile/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+          retention-days: 14

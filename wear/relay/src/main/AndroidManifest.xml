@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application>
+        <!-- Exported so adb can deliver the relay key once. It only writes the key. -->
+        <receiver
+            android:name="com.rouge.hermes.relay.RelayKeyReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.rouge.hermes.SET_RELAY" />
+            </intent-filter>
+        </receiver>
+    </application>
+</manifest>

@@ -16,6 +16,29 @@ export const VOICE_INSTRUCTIONS = [
   "Before a step that takes more than a few seconds, say in one short sentence what you are starting.",
 ].join(" ");
 
+// A meal note from the Pixel Watch. The spoken part stays short. The FOOD: line is for the relay log.
+export const FOOD_INSTRUCTIONS = [
+  VOICE_INSTRUCTIONS,
+  "This turn is a meal note to log as food.",
+  "Pull out each food, a rough portion, and the time the user means.",
+  "If the user gives no time, use the current time.",
+  "Confirm in one short sentence that names the foods.",
+  "Then add one final line that starts with FOOD: and a JSON object.",
+  "The object has items and time. items is an array of objects with name and portion. time is HH:MM.",
+  "Do not put the JSON on the confirmation line.",
+].join(" ");
+
+// The JSON body of POST /v1/responses. The call server and the watch relay both use this.
+export function hermesRequestBody(env, input, instructions = VOICE_INSTRUCTIONS) {
+  return {
+    input,
+    instructions,
+    conversation: env.HERMES_CONVERSATION || "watch-call",
+    stream: true,
+    store: true,
+  };
+}
+
 // Reads KEY=value lines from voice/.env. A value already in the environment wins.
 export function loadEnv(file = new URL("./.env", import.meta.url), base = process.env) {
   const env = { ...base };
@@ -112,13 +135,13 @@ export async function* readSse(body) {
 
 // Sends one spoken turn to the Hermes API server and yields the words to speak, as they arrive.
 // Hermes's progress notes ("commentary") are spoken too, so a long step is not silent.
-export async function* hermesSpeech(env, input, { signal, post = fetch } = {}) {
+export async function* hermesSpeech(env, input, { signal, post = fetch, instructions } = {}) {
   const base = String(env.HERMES_API_URL || "http://127.0.0.1:8642").replace(/\/+$/, "");
   const r = await post(base + "/v1/responses", {
     method: "POST",
     signal,
     headers: { Authorization: "Bearer " + env.HERMES_API_KEY, "Content-Type": "application/json", Accept: "text/event-stream" },
-    body: JSON.stringify({ input, instructions: VOICE_INSTRUCTIONS, conversation: env.HERMES_CONVERSATION || "watch-call", stream: true, store: true }),
+    body: JSON.stringify(hermesRequestBody(env, input, instructions)),
   });
   if (!r.ok || !r.body) throw new Error(`Hermes answered ${r.status}`);
   for await (const { event, data } of readSse(r.body)) {

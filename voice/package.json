@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node call-server.mjs",
     "call": "node call.mjs",
-    "test": "node ../qa/voice/call.test.mjs"
+    "test": "node ../qa/voice/call.test.mjs && node ../qa/voice/relay.test.mjs && node ../qa/voice/agents.test.mjs",
+    "relay-key": "node relay-key.mjs"
   },
   "dependencies": {
     "ws": "^8.18.3"
