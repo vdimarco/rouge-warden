@@ -14,6 +14,8 @@
 #include "Net/UnrealNetwork.h"
 #include "UObject/ConstructorHelpers.h"
 
+static_assert(QuebecRing::Done == 3, "IsOpen() follows Done");
+
 AQuebecRing::AQuebecRing()
 {
     PrimaryActorTick.bCanEverTick = true;

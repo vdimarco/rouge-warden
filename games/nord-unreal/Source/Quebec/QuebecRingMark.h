@@ -26,6 +26,8 @@ public:
     virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
     static AQuebecRing* Find(const UWorld* World);
+    // True while the lawn, the allée, or the stand is still the next mark. 3 is QuebecRing::Done.
+    bool IsOpen() const { return Leg < 3; }
     // The drive-HUD line for this leg. Portrait is the short speed caption.
     FString DriveLine(bool bPortrait) const;
 

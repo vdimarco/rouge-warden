@@ -8,6 +8,8 @@
 #include "QuebecCycle.h"
 #include "QuebecRingMark.h" // Two lawn marks. One bike lap pays session cash once.
 #include "QuebecRing.h"
+#include "QuebecCrateMark.h" // A Sherbrooke caisse. One bike run to Persillier pays once.
+#include "QuebecCrate.h"
 #include "QuebecRouteLine.h"
 #include "QuebecCourtRules.h"
 #include "QuebecCourtTone.h"
@@ -3147,7 +3149,20 @@ void AQuebecHUD::DrawHUD()
     }
     else if (Car && Car->IsBike())
     {
-        if (const AQuebecRing* Ring = AQuebecRing::Find(GetWorld()))
+        const AQuebecRing* Ring = AQuebecRing::Find(GetWorld());
+        const AQuebecCrate* Crate = AQuebecCrate::Find(GetWorld());
+        const FString Carry = Crate ? Crate->BikeLine(false) : FString();
+        if (Ring && Ring->IsOpen())
+        {
+            BikePortrait = Ring->DriveLine(true);
+            BikeLandscape = Ring->DriveLine(false);
+        }
+        else if (!Carry.IsEmpty())
+        {
+            BikePortrait = Crate->BikeLine(true);
+            BikeLandscape = Carry;
+        }
+        else if (Ring)
         {
             BikePortrait = Ring->DriveLine(true);
             BikeLandscape = Ring->DriveLine(false);
@@ -3175,6 +3190,11 @@ void AQuebecHUD::DrawHUD()
         {
             const FString TrioLine = Trio->WalkLine();
             if (!TrioLine.IsEmpty()) Text(TrioLine, Accent, LowerLeft, Canvas->SizeY - Margin - 90.f * Scale, .9f);
+        }
+        if (const AQuebecCrate* Crate = AQuebecCrate::Find(GetWorld()))
+        {
+            const FString CrateLine = Crate->WalkLine();
+            if (!CrateLine.IsEmpty()) Text(CrateLine, Accent, LowerLeft, Canvas->SizeY - Margin - 112.f * Scale, .9f);
         }
         if (Now - FirstHUDTime < 10.f)
             Text(TEXT("SPACE  Jump   /   SHIFT  Sprint"), Muted, LowerLeft, Canvas->SizeY - Margin - 68.f * Scale, .9f);
@@ -3354,6 +3374,7 @@ void AQuebecGameMode::BeginPlay()
             UE_LOG(LogTemp, Display, TEXT("NORD_BIKE stand x=%.0f y=%.0f"), BikePoint.X, BikePoint.Y);
         }
         GetWorld()->SpawnActor<AQuebecRing>(FVector(QuebecRing::GateAX, QuebecRing::GateAY, 0.), FRotator::ZeroRotator);
+        GetWorld()->SpawnActor<AQuebecCrate>(FVector(QuebecCrate::CurbX, QuebecCrate::CurbY, 0.), FRotator::ZeroRotator);
     }
     // Combat: weapon, vest and health pickups at street and park points, none near a QA anchor and no collision.
     if (!FParse::Param(FCommandLine::Get(), TEXT("NordNoCampaign"))) QuebecCombat::SpawnPickups(GetWorld());
