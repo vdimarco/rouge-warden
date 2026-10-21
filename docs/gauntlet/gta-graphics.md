@@ -1228,3 +1228,38 @@ Unreal is not available in this environment, so in-engine frames are the last co
 - Playability raw: 39 / 10 dimensions, index 39
 - Total: 109 / 200
 - Delta vs last round: +1
+
+### Round 36 — 2026-10-21 — rubric v1
+
+- What changed: The radar draws a road at least 9 m wide as an ink casing 5.2 scale units wide with a paper center 2.6 scale units wide, after the side streets. A narrower road keeps the grey stroke at 1.5 scale units. The clip that rejects a segment outside the disc is unchanged. On the expanded Montréal radar the park prefix uses the park widths and the surveyed suffix uses the extension widths.
+- Why it helped: UI polish was at 7. Every street on the radar was one grey hair, so the avenue beside the spawn did not read as a wider road.
+- Screenshots: before `docs/gauntlet/gta-graphics/round-36/before-frame.png`, after `docs/gauntlet/gta-graphics/round-36/after-frame.png`. Crops are `before-radar.png` and `after-radar.png`. Both are the landscape HUD radar (160 px, scale 1) centered on the park spawn. Not an Unreal capture. The radar crop mean absolute delta is 0.008 and the max is 0.808. The full-frame mean is 0.005 because the disc is a corner of the frame. The avenue is the pale cased spine through the disc. `Scripts/test_radar_rank.py` passed. `QuebecGameplay.cpp` was not compiled. `GET /gta/` returned 200. OpenSpec CLI is not installed, so the change files were not validated with `openspec`. The ranked radar was not confirmed in Unreal.
+- Next target: texture and material quality, tied at 8 with the other aesthetics a picture can still move. Composition and particles stay at 6, because the walking socket and the rain displacement stay as they are. Animation smoothness stays at 3 and is skipped until a pose can be drawn.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 8 | The sun and the night grade are unchanged. The radar is a HUD disc. |
+| Color palette | 8 | The avenue stroke is one warm paper line. The world colours are unchanged. |
+| Detail density | 8 | The street mesh is unchanged. This is a map stroke. |
+| Texture and material quality | 8 | World materials are unchanged. The radar stroke is flat. |
+| Composition and camera | 6 | The walking socket is unchanged. |
+| Atmosphere | 8 | The moon grade and the street sheen are unchanged. |
+| Character models | 8 | No figure changed. |
+| Animation smoothness | 3 | Skipped. The blend space still cannot be posed here. |
+| Particles and VFX | 6 | Rain rings are unchanged. |
+| UI polish | 8 | The avenue on the radar is now a cased stroke. Side streets stay the grey line. |
+| Responsiveness and input latency | 4 | Not measured this round. |
+| Controls feel | 4 | Not played. |
+| Mission clarity | 5 | The objective words are unchanged. |
+| Pacing | 4 | Unchanged mission slice. |
+| Fun factor | 3 | Not played. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 4 | No new juice. |
+| Sound design | 3 | Not listened to. |
+| Variety | 3 | One park radar. Toronto uses its own widths with the same gate. |
+| Performance stability | 5 | `Scripts/test_radar_rank.py` passed. The radar walks the road list three times. Frame time was not remeasured. |
+
+- Aesthetics raw: 71 / 10 dimensions, index 71
+- Playability raw: 39 / 10 dimensions, index 39
+- Total: 110 / 200
+- Delta vs last round: +1

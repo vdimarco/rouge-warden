@@ -2734,13 +2734,46 @@ void AQuebecHUD::DrawHUD()
         const FVector2D Offset = MapPoint(Position) - Center;
         return Center + Offset.GetClampedToMaxSize(MapRadius - 8.f * Scale);
     };
-    for (int32 Index = 0; Index < District.RoadCount; ++Index)
+    // Jacques Bertin, Semiology of Graphics (1983): size is the visual variable that
+    // orders a quantity. A 9 m avenue and a side street are ordered, so the avenue's
+    // stroke is wider. A dark edge keeps the light center readable on the panel.
+    // Side streets stay the grey line. The clip is unchanged.
+    const auto RoadWidthCm = [&District](int32 Index) -> float
     {
-        const auto& Segment = District.RoadSegments[Index];
-        FVector2D A = MapPoint(Segment[0]), B = MapPoint(Segment[1]);
-        // Clip the segment: clamping its endpoints invents roads along the radar border.
-        if (ClipHUDRadarSegment(A, B, Center, MapRadius))
-            DrawLine(A.X, A.Y, B.X, B.Y, FLinearColor(.53f, .58f, .59f, .85f), 1.5f * Scale);
+        if (District.RoadSegments == LaFontaineExtension::RadarRoadSegments)
+        {
+            const int32 ParkCount = UE_ARRAY_COUNT(LaFontaine::RoadSegments);
+            if (Index < ParkCount) return LaFontaine::RoadSegmentWidths[Index];
+            const int32 Extension = Index - ParkCount;
+            if (Extension < UE_ARRAY_COUNT(LaFontaineExtension::RoadSegmentWidths))
+                return LaFontaineExtension::RoadSegmentWidths[Extension];
+        }
+        else if (District.RoadSegments == LaFontaine::RoadSegments
+            && Index < UE_ARRAY_COUNT(LaFontaine::RoadSegmentWidths))
+            return LaFontaine::RoadSegmentWidths[Index];
+        else if (District.RoadSegments == CollegeBathurst::RoadSegments
+            && Index < UE_ARRAY_COUNT(CollegeBathurst::RoadSegmentWidths))
+            return CollegeBathurst::RoadSegmentWidths[Index];
+        return 400.f;
+    };
+    for (int32 Pass = 0; Pass < 3; ++Pass)
+    {
+        for (int32 Index = 0; Index < District.RoadCount; ++Index)
+        {
+            const bool bAvenue = RoadWidthCm(Index) >= 900.f;
+            if (Pass == 0 && bAvenue) continue;
+            if (Pass > 0 && !bAvenue) continue;
+            const auto& Segment = District.RoadSegments[Index];
+            FVector2D A = MapPoint(Segment[0]), B = MapPoint(Segment[1]);
+            // Clip the segment: clamping its endpoints invents roads along the radar border.
+            if (!ClipHUDRadarSegment(A, B, Center, MapRadius)) continue;
+            if (Pass == 0)
+                DrawLine(A.X, A.Y, B.X, B.Y, FLinearColor(.53f, .58f, .59f, .85f), 1.5f * Scale);
+            else if (Pass == 1)
+                DrawLine(A.X, A.Y, B.X, B.Y, Ink, 5.2f * Scale);
+            else
+                DrawLine(A.X, A.Y, B.X, B.Y, FLinearColor(.92f, .89f, .82f, .95f), 2.6f * Scale);
+        }
     }
     const float CreditRight = Right - 7.f * Scale;
     DrawRect(Panel, Right - 240.f * Scale, MapY + MapHeight + 4.f * Scale, 240.f * Scale, SkyStep + 3.f * CreditStep);

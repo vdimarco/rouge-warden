@@ -1,0 +1,4 @@
+- [x] Case avenues of at least 9 m on the radar
+- [x] Shade the radar before and after
+- [x] Run `Scripts/test_radar_rank.py`
+- [ ] Confirm the ranked radar in Unreal (editor not available here)
