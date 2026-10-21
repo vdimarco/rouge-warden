@@ -2022,7 +2022,24 @@ export function createGame({ scene, city, view, ropes, hands, ui, audio, P, save
     if (beamDirty) { beams.a.aLvl.needsUpdate = true; beamDirty = false; }
     if (ringDirty) { rings.a.aC.needsUpdate = rings.a.aN.needsUpdate = rings.a.aF.needsUpdate = true; ringDirty = false; }
     if (splatT > 0) { splatT = Math.max(0, splatT - dt); splatMat.uniforms.uAmt.value = splatT / 0.6; splat.visible = splatT > 0; }
+    swingWind(dt);
     fxUpdate();
+  }
+  // a fast rope leaves a few cream puffs behind the body. The puff and the pool are the ones already drawn.
+  let windT = 0;
+  function swingWind(dt) {
+    const vx = P.vel.x, vy = P.vel.y, vz = P.vel.z, sp = Math.hypot(vx, vy, vz);
+    let rope = false;
+    if (!P.onGround && !P.wall && sp > 10) for (const r of P.ropes) if (r.state === "attached") rope = true;
+    if (!rope) { windT = 0; return; }
+    windT += dt;
+    if (windT < 0.08) return;
+    windT -= 0.08;
+    const inv = 1 / sp, bx = -vx * inv, by = -vy * inv, bz = -vz * inv, sx = -bz, sz = bx;
+    const side = (rand() < 0.5 ? -1 : 1) * (0.9 + rand() * 0.9);
+    const back = 0.5 + rand() * 0.8;
+    const drift = 1.8 + rand() * 2.4;
+    spawn(T_PUFF, P.pos.x + bx * back + sx * side, P.pos.y + 0.85 + rand() * 1.35, P.pos.z + bz * back + sz * side, bx * drift, by * drift * 0.2 + (rand() - 0.5) * 0.5, bz * drift, 0.9, 1.05 + rand() * 0.55, rand() < 0.3 ? C_GOLD : C_CREAM, 0, 1.4, 0);
   }
   // "That's a clog. Plunge it.", once, when the first one is close
   function clogsHint() {
