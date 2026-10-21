@@ -1242,3 +1242,40 @@ Loop: missions, playability, controls, feel, UX, pacing and fun for In Full Swin
 - Delta vs last round: 0 (round 32 was 132). The eleventh flush is a new job. No score moved.
 
 ![The eleventh flush is a lid to stand on](fullswing-r33/lid.png)
+
+### Round 34 — 2026-10-21 — rubric v1
+
+- What changed: After a pipe comes off, the King throws, then stomps, then pulls, and then throws again. With every pipe on he only throws. During the pull the card says "He's pulling. Shoot a web". In the air with no rope he drags you 14 m toward him. Ending within 16 m takes a heart. Farther out, the drag still happens and the heart stays. On the ground, or with a rope attached, you stay put and lose no heart.
+- Why it helped: After the stomp the fight was the same two attacks again. Spider-Man 2 gives a boss a grab you answer by shooting a web. A 1280×800 play watched a throw while every pipe was on, then one pipe came off and the attack after the next throw was still a stomp. The attack after that stomp was a pull, and the card said to shoot a web. In the air with no web, 20 m out, that pull dragged the hero in and took a heart. At 40 m it dragged him and took none. On the deck, and in the air with a rope, he stayed put.
+- Screenshots: `docs/gauntlet/fullswing-r34/pull.png`.
+- Next target: performance stability (6). This machine has no real GPU to time, so that score is not the next implementation round.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 5 | Held. Golden-hour sun and ink shadows. |
+| Color palette | 6 | Held. Yellow, red and sludge green still separate the HUD from the blocks. |
+| Detail density | 4 | Held. Open blocks more than a dressed borough. |
+| Texture and material quality | 3 | Held. Flat fills. |
+| Composition and camera | 4 | Held. The chase camera still sits behind the hero. This frame is the pull card. |
+| Atmosphere | 5 | Held. The dusk skyline has a mood. The street under the card does not. |
+| Character models | 3 | Held. Simple comic figures. The King is still the same model. |
+| Animation smoothness | 4 | Scored from still frames in software GL. Continuous motion was not watched. |
+| Particles and VFX | 5 | Held. The pull uses the ring and the comic words that were already there. |
+| UI polish | 6 | Held. The card is still the ink pill. It names the pull for that wind-up. |
+| Responsiveness and input latency | 9 | Held. One frame after a clock drop, the pill still matches the objective. |
+| Controls feel | 9 | Held. The first web still hangs from a building at the real rope length. A rope that is still attached holds against the pull. |
+| Mission clarity | 9 | Held. During a pull the card says to shoot a web. The rest of the time it still names the nearest pipe. |
+| Pacing | 9 | Held. Nine of the twelve flushes are a different job. The first and the third are still the clog card, and the pump never runs three times in a row. Nine different jobs is not a 2023 mission list, so the score stays. |
+| Fun factor | 9 | Held. The roof fight still launches at 14 m/s and a chase still launches at 8. The King now has a third attack, and the fight is still one boss. |
+| Difficulty curve | 9 | Held. The ninth-flush car still cruises at 24 m/s. An odd-job getaway stays at 17 m/s. |
+| Feedback | 9 | Held. Seven seconds left still turns the card hot on that same frame. |
+| Sound design | 9 | Held. A flush, a fight, a dash and a lift are still different stings, and the ring fanfare is still the trial. |
+| Variety | 9 | Held. The King now pulls after a stomp, once a pipe is off, and with every pipe on he only throws. Three attacks on one boss is not the spread of a 2023 boss fight, so the score stays. |
+| Performance stability | 6 | The 1280×800 play passed with no page errors. Frame time on a real GPU was not measured. |
+
+- Aesthetics raw: 45 / 10 dimensions, index 45
+- Playability raw: 87 / 10 dimensions, index 87
+- Total: 132 / 200
+- Delta vs last round: 0 (round 33 was 132). The pull is a third King attack. No score moved.
+
+![The card says to shoot a web](fullswing-r34/pull.png)
