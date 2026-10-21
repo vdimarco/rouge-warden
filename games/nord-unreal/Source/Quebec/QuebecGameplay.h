@@ -595,6 +595,11 @@ private:
     void PlayRankTone(int32 ChainAfter, bool bWasSpoiled);
     UPROPERTY() TObjectPtr<class UAudioComponent> RankAudio;
     UPROPERTY() TObjectPtr<class USoundWaveProcedural> RankWave;
+    void TickSkid();
+    void PlaySkidTone();
+    UPROPERTY() TObjectPtr<class UAudioComponent> SkidAudio;
+    UPROPERTY() TObjectPtr<class USoundWaveProcedural> SkidWave;
+    bool bWasSkidLocked = false;
     void ExitCar(AQuebecCar* Car);
 };
 

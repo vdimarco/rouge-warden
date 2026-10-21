@@ -7,6 +7,7 @@
 #include "QuebecCourtRules.h"
 #include "QuebecCourtTone.h"
 #include "QuebecRankTone.h"
+#include "QuebecSkidTone.h"
 #include "QuebecStoryBed.h"
 #include "QuebecBarks.h"
 #include "QuebecPondRules.h"
@@ -1665,6 +1666,10 @@ AQuebecController::AQuebecController()
     RankAudio->bAutoActivate = false;
     RankAudio->bAllowSpatialization = false;
     RankAudio->VolumeMultiplier = .55f;
+    SkidAudio = CreateDefaultSubobject<UAudioComponent>(TEXT("SkidAudio"));
+    SkidAudio->bAutoActivate = false;
+    SkidAudio->bAllowSpatialization = false;
+    SkidAudio->VolumeMultiplier = .7f;
     StoryBedAudio = CreateDefaultSubobject<UAudioComponent>(TEXT("StoryBedAudio"));
     StoryBedAudio->bAutoActivate = false;
     StoryBedAudio->bAllowSpatialization = false;
@@ -1955,6 +1960,37 @@ void AQuebecController::PlayRankTone(int32 ChainAfter, bool bWasSpoiled)
     RankAudio->Play();
 }
 
+void AQuebecController::TickSkid()
+{
+    const AQuebecCar* Car = Cast<AQuebecCar>(GetPawn());
+    const bool bLocked = Car && Car->bHandbrake;
+    const double Speed = Car ? static_cast<double>(Car->Speed) : 0.;
+    if (QuebecSkidTone::Caught(bLocked, bWasSkidLocked, Speed)) PlaySkidTone();
+    bWasSkidLocked = bLocked;
+}
+
+void AQuebecController::PlaySkidTone()
+{
+    if (!SkidAudio || !GetWorld() || !GetWorld()->AllowAudioPlayback()) return;
+    if (!SkidWave)
+    {
+        SkidWave = NewObject<USoundWaveProcedural>(this);
+        SkidWave->SetSampleRate(static_cast<uint32>(QuebecSkidTone::SampleRate));
+        SkidWave->NumChannels = 1;
+        SkidWave->Duration = static_cast<float>(QuebecSkidTone::Frames) / static_cast<float>(QuebecSkidTone::SampleRate);
+        SkidAudio->SetSound(SkidWave);
+    }
+    SkidWave->ResetAudio();
+    int16 Pcm[QuebecSkidTone::Frames];
+    for (int32 Frame = 0; Frame < QuebecSkidTone::Frames; ++Frame)
+    {
+        const float Sample = FMath::Clamp(static_cast<float>(QuebecSkidTone::SampleAt(Frame)), -1.f, 1.f);
+        Pcm[Frame] = static_cast<int16>(Sample * 32767.f);
+    }
+    SkidWave->QueueAudio(reinterpret_cast<const uint8*>(Pcm), QuebecSkidTone::Frames * static_cast<int32>(sizeof(int16)));
+    SkidAudio->Play();
+}
+
 void AQuebecController::PlayCourtWave(UAudioComponent* Audio, TObjectPtr<USoundWaveProcedural>& Wave, int32 Frames, bool bWhistle)
 {
     if (!Audio || !GetWorld() || !GetWorld()->AllowAudioPlayback()) return;
@@ -2028,6 +2064,7 @@ void AQuebecController::PlayerTick(float DeltaTime)
     TickPondBlink();
     TickShowPage();
     TickCourtFeel();
+    TickSkid();
     BrowserStateElapsed += DeltaTime;
     if (BrowserStateElapsed >= .5f && !BrowserStreamerId.IsEmpty() && IPixelStreaming2Module::IsAvailable())
     {
@@ -2857,7 +2894,7 @@ void AQuebecHUD::DrawHUD()
     }
     if (bComic && Car)
     {
-        if (Car->bHandbrake && !bWasHandbrake && FMath::Abs(Car->Speed) > 300.f) TriggerSoundWord(TEXT("SKRRT!"));
+        if (QuebecSkidTone::Caught(Car->bHandbrake, bWasHandbrake, static_cast<double>(Car->Speed))) TriggerSoundWord(TEXT("SKRRT!"));
         if (LastCarSpeed < 900.f && Car->Speed >= 900.f) TriggerSoundWord(TEXT("VROOM!"));
     }
     bWasFalling = bFalling;
