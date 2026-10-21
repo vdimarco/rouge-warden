@@ -6,6 +6,8 @@
 #include "QuebecBail.h"
 #include "QuebecRide.h"
 #include "QuebecCycle.h"
+#include "QuebecRingMark.h" // Two lawn marks. One bike lap pays session cash once.
+#include "QuebecRing.h"
 #include "QuebecRouteLine.h"
 #include "QuebecCourtRules.h"
 #include "QuebecCourtTone.h"
@@ -3130,6 +3132,8 @@ void AQuebecHUD::DrawHUD()
     }
     FString PedaloPortrait = TEXT("km/h  /  PEDALO");
     FString PedaloLandscape = TEXT("Hold gas to paddle");
+    FString BikePortrait = TEXT("km/h  /  VELO");
+    FString BikeLandscape = TEXT("Hold gas to pedal");
     if (Car && Car->IsPedalo())
     {
         if (const AQuebecBuoy* Buoy = AQuebecBuoy::Find(GetWorld()))
@@ -3138,11 +3142,19 @@ void AQuebecHUD::DrawHUD()
             PedaloLandscape = Buoy->DriveLine(false);
         }
     }
+    else if (Car && Car->IsBike())
+    {
+        if (const AQuebecRing* Ring = AQuebecRing::Find(GetWorld()))
+        {
+            BikePortrait = Ring->DriveLine(true);
+            BikeLandscape = Ring->DriveLine(false);
+        }
+    }
     if (Car && bPortrait)
     {
         const float Y = ControlsTop - 66.f * Scale;
         Text(FString::Printf(TEXT("%03d"), FMath::RoundToInt(FMath::Abs(Car->Speed) * .036f)), Paper, Margin, Y, 1.8f);
-        Text(Car->IsBike() ? TEXT("km/h  /  VELO") : Car->IsPedalo() ? PedaloPortrait : (Car->bHandbrake ? TEXT("km/h  /  HANDBRAKE") : TEXT("km/h")), Car->IsBike() || Car->IsPedalo() ? Accent : (Car->bHandbrake ? Accent : Muted), Margin, Y + 38.f * Scale, .85f);
+        Text(Car->IsBike() ? BikePortrait : Car->IsPedalo() ? PedaloPortrait : (Car->bHandbrake ? TEXT("km/h  /  HANDBRAKE") : TEXT("km/h")), Car->IsBike() || Car->IsPedalo() ? Accent : (Car->bHandbrake ? Accent : Muted), Margin, Y + 38.f * Scale, .85f);
     }
     else if (Car)
     {
@@ -3152,7 +3164,7 @@ void AQuebecHUD::DrawHUD()
         RightText(FString::Printf(TEXT("%03d"), FMath::RoundToInt(FMath::Abs(Car->Speed) * .036f)), Paper, SpeedRight - 42.f * Scale, Y, 1.8f);
         RightText(TEXT("km/h"), Muted, SpeedRight, Y + 23.f * Scale, .85f);
         Text(TEXT("WASD or arrows  Drive / steer"), Muted, X, Y + 42.f * Scale, .85f);
-        Text(Car->IsBike() ? TEXT("Hold gas to pedal") : Car->IsPedalo() ? PedaloLandscape : (Car->bHandbrake ? TEXT("SPACE  HANDBRAKE ON") : TEXT("SPACE  Handbrake")), Car->IsBike() || Car->IsPedalo() || Car->bHandbrake ? Accent : Muted, X, Y + 59.f * Scale, .85f);
+        Text(Car->IsBike() ? BikeLandscape : Car->IsPedalo() ? PedaloLandscape : (Car->bHandbrake ? TEXT("SPACE  HANDBRAKE ON") : TEXT("SPACE  Handbrake")), Car->IsBike() || Car->IsPedalo() || Car->bHandbrake ? Accent : Muted, X, Y + 59.f * Scale, .85f);
     }
     else if (!bPortrait && !bTouchControls)
     {
@@ -3338,6 +3350,7 @@ void AQuebecGameMode::BeginPlay()
             Bike->FinishSpawning(BikeTransform);
             UE_LOG(LogTemp, Display, TEXT("NORD_BIKE stand x=%.0f y=%.0f"), BikePoint.X, BikePoint.Y);
         }
+        GetWorld()->SpawnActor<AQuebecRing>(FVector(QuebecRing::GateAX, QuebecRing::GateAY, 0.), FRotator::ZeroRotator);
     }
     // Combat: weapon, vest and health pickups at street and park points, none near a QA anchor and no collision.
     if (!FParse::Param(FCommandLine::Get(), TEXT("NordNoCampaign"))) QuebecCombat::SpawnPickups(GetWorld());
