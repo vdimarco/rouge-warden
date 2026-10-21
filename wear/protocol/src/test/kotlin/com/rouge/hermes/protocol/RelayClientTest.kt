@@ -8,6 +8,36 @@ import org.junit.Test
 
 class RelayClientTest {
     @Test
+    fun emitsSmallSseDeltasBeforeTheResponseEnds() {
+        val server = MockWebServer()
+        val first = "event: response.output_text.delta\ndata: {\"delta\":\"Hello. \"}\n\n"
+        val completed = "event: response.completed\ndata: {}\n\n"
+        server.enqueue(
+            MockResponse()
+                .setHeader("Content-Type", "text/event-stream")
+                .setBody(first + completed)
+                .throttleBody(first.toByteArray().size.toLong(), 2, java.util.concurrent.TimeUnit.SECONDS),
+        )
+        server.start()
+        val relay = HermesRelay()
+        val heard = java.util.concurrent.CountDownLatch(1)
+        val worker = kotlin.concurrent.thread {
+            runCatching {
+                relay.stream(server.url("/").toString(), "secret", "hello", "talk", "2026-10-21") {
+                    if (it is Speech.Words) heard.countDown()
+                }
+            }
+        }
+        try {
+            assertTrue("First delta must arrive before the delayed completion", heard.await(1, java.util.concurrent.TimeUnit.SECONDS))
+        } finally {
+            relay.cancel()
+            worker.join(5000)
+            server.shutdown()
+        }
+    }
+
+    @Test
     fun postsTheRelayBodyAndReadsSpeech() {
         val server = MockWebServer()
         server.enqueue(

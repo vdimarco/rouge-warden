@@ -103,7 +103,6 @@ class HermesRelay(
             val parser = SseParser()
             val spoken = SpokenAssembler()
             while (!source.exhausted()) {
-                source.request(8192)
                 if (source.buffer.size == 0L) break
                 emit(parser.push(source.readUtf8(source.buffer.size)), spoken, on)
             }
