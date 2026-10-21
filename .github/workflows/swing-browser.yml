@@ -157,6 +157,11 @@ jobs:
         env:
           NODE_PATH: ${{ github.workspace }}/qa/browser/node_modules
           SHOTS: ${{ github.workspace }}/test-results/flat
+      - name: The compass names the clog on the card
+        run: node qa/vr/clogcompass.e2e.mjs
+        env:
+          NODE_PATH: ${{ github.workspace }}/qa/browser/node_modules
+          SHOTS: ${{ github.workspace }}/test-results/flat
       - name: A win pays off
         run: node qa/vr/winpay.e2e.mjs
         env:

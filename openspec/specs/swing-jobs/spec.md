@@ -85,6 +85,17 @@ While the King is still asleep, the fourth flush SHALL start a balloon to bring 
 - **WHEN** the eighth flush starts that washer within a swing
 - **THEN** the card counts from 36 s, not from a minute
 
+### Requirement: The clog compass names the card's clog
+While the card says to flush the clogs and names a district, the compass SHALL point at that clog, and its title SHALL name that district. A running job SHALL still title the compass as the job.
+
+#### Scenario: The next clog
+- **WHEN** the card says FLUSH THE CLOGS and names a district
+- **THEN** the compass title names that same district, and it points at that clog
+
+#### Scenario: A job takes the compass back
+- **WHEN** a job starts
+- **THEN** the compass title says it is the job
+
 ### Requirement: Job markers
 After Mission 1, except while a story mission after the bomb is the current mission, up to four job markers (a light beam and a ring, coloured by job) SHALL wait 90 to 420 m from the player.
 Walking or swinging into a marker SHALL start its job, with a card, a timer where there is one, and the compass on its goal. A job

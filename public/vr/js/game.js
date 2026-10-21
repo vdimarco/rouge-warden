@@ -1846,6 +1846,8 @@ export function createGame({ scene, city, view, ropes, hands, ui, audio, P, save
       const dn = best && districts[best.d] ? districts[best.d].name : "";
       OBJ.title = "FLUSH THE CLOGS"; OBJ.n = done.size; OBJ.of = clogs.length;
       OBJ.detail = best ? "Next: " + dn + " clog, " + Math.round(bd) + " m" : ""; OBJ.short = best ? dn : "";
+      // the compass uses this same clog, so it cannot point at a different pump from the card
+      progress.goal = best ? { x: best.x, y: best.y, z: best.z, kind: "clog", name: dn } : null;
       // the first time you come near a district's clogs (not in the training): its briefing scene
       if (best && bd < 150 && !train.on && districts[best.d]) {
         const D = districts[best.d];
