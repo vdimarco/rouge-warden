@@ -2176,19 +2176,19 @@ function after(dt, inp, yawDelta) {
 }
 
 // The easy web. In the 3D scene it is a line in the world from the hand toward the anchor, ink #2B2A33,
-// about 2 CSS px wide at every distance (so a far anchor does not thin away). At the start the middle
-// sits about 16 px off the straight chord, toward the bottom of the screen, and tension pulls it
-// straight. That bow is unprojected into the world, so the line still runs past the edge of the view.
-// A world-down hang does not: on a sky web it lies along the rope. It fades over 150 ms on the let-go.
-// The paper speed lines stay a 2D overlay. A scene that is not the perspective view keeps the old
-// screen stroke, clipped to the edge.
+// about 2 CSS px wide at every distance (so a far anchor does not thin away). At the start, the middle
+// of the part you can see sits about 16 px off that chord, toward the bottom of the screen, and
+// tension pulls it straight. The bow is unprojected, and the line keeps going to the anchor past the
+// edge. A hang at the middle of the whole rope does not show: on a sky web that point is off the
+// screen. It fades over 150 ms on the let-go. The paper speed lines stay a 2D overlay. A scene that
+// is not the perspective view keeps the old screen stroke, clipped to the edge.
 let webCv = null, webCx = null, webW = 0, webH = 0, peakSp = 0;
 const webWas = [false, false], webFade = [0, 0], webSag = [0, 0];
 const webA = [{ x: 0, y: 0, z: 0 }, { x: 0, y: 0, z: 0 }];
 const WEB_A = { x: 0, y: 0, depth: 0, behind: false, inView: false };
 const WEB_B = { x: 0, y: 0, depth: 0, behind: false, inView: false };
 const SWING_VIEW = { attached: false, anchor: { x: 0, y: 0, z: 0, offscreen: false }, ropeLength: 0, speed: 0 };
-const WEB_MAX = 16, WEB_N = 8;
+const WEB_MAX = 16, WEB_N = 8, WEB_SCAN = 16;
 const WEB_PTS = Array.from({ length: WEB_N + 1 }, () => new THREE.Vector3());
 const WEB_HAND = new THREE.Vector3(), WEB_ANCH = new THREE.Vector3(), WEB_DIR = new THREE.Vector3();
 const WEB_G = new THREE.Vector3(), WEB_AXIS = new THREE.Vector3(), WEB_FROM = new THREE.Vector3();
@@ -2247,21 +2247,44 @@ function putWeb(hand, anchor, sagPx, alpha) {
   if (WEB_DIR.length() < 1e-3) return;
   camera.updateMatrixWorld();
   const w = innerWidth || 1, h = innerHeight || 1;
-  WEB_FROM.copy(WEB_HAND).project(camera);
-  const ax = (WEB_FROM.x * 0.5 + 0.5) * w, ay = (0.5 - WEB_FROM.y * 0.5) * h;
-  WEB_FROM.copy(WEB_ANCH).project(camera);
-  const bx = (WEB_FROM.x * 0.5 + 0.5) * w, by = (0.5 - WEB_FROM.y * 0.5) * h;
+  const inv = camera.matrixWorldInverse;
+  // Where the straight rope crosses the view. The belly of a sky web is often off the screen, so the
+  // sag is measured on the part you can see, then the line still runs out to the anchor.
+  let ua = 1, ub = 0, saw = false;
+  let ax = 0, ay = 0, bx = 0, by = 0;
+  for (let i = 0; i <= WEB_SCAN; i++) {
+    const u = i / WEB_SCAN;
+    WEB_AXIS.copy(WEB_HAND).lerp(WEB_ANCH, u);
+    WEB_FROM.copy(WEB_AXIS).applyMatrix4(inv);
+    const inFront = WEB_FROM.z < -0.05;
+    WEB_FROM.copy(WEB_AXIS).project(camera);
+    const sx = (WEB_FROM.x * 0.5 + 0.5) * w, sy = (0.5 - WEB_FROM.y * 0.5) * h;
+    const vis = inFront && sx > -40 && sy > -40 && sx < w + 40 && sy < h + 40;
+    if (vis) {
+      if (!saw || u < ua) { ua = u; ax = sx; ay = sy; }
+      if (!saw || u > ub) { ub = u; bx = sx; by = sy; }
+      saw = true;
+    }
+  }
   let tx = bx - ax, ty = by - ay, tl = Math.hypot(tx, ty);
-  if (tl < 1) { tx = 0; ty = 1; } else { tx /= tl; ty /= tl; }
-  // Off the chord, toward the bottom of the screen. A vertical web bows to the side, which is the
-  // only direction that still reads as a sag when the anchor is straight up the view.
+  if (!saw || ub - ua < 0.02 || tl < 8) { tx = 0; ty = 1; tl = 0; }
+  else { tx /= tl; ty /= tl; }
   let nx = -ty, ny = tx;
   if (ny < 0) { nx = -nx; ny = -ny; }
   const n = WEB_N;
   for (let k = 0; k <= n; k++) {
-    const u = k / n;
+    const t = k / n;
+    let u;
+    if (!saw || ub - ua < 0.02) u = t;
+    else if (t < 0.15) u = ua > 0 ? (t / 0.15) * ua : 0;
+    else if (t > 0.85) u = ub + ((t - 0.85) / 0.15) * (1 - ub);
+    else u = ua + ((t - 0.15) / 0.7) * (ub - ua);
     const p = WEB_PTS[k].copy(WEB_HAND).lerp(WEB_ANCH, u);
-    const drop = 4 * sagPx * u * (1 - u);
+    let drop = 0;
+    if (saw && u > ua + 1e-4 && u < ub - 1e-4 && tl >= 8) {
+      const s = (u - ua) / (ub - ua);
+      drop = sagPx * (0.5 - 0.5 * Math.cos(s * Math.PI * 2));
+    }
     if (drop > 0.05) {
       WEB_FROM.copy(p).project(camera);
       const nz = WEB_FROM.z;

@@ -97,14 +97,18 @@ try {
     }
     const near = hits[0] || { onScreen: false, width: 0, center: null, dist: 0 };
     const far = hits.length > 1 ? hits[hits.length - 1] : { onScreen: false, width: 0, center: null, dist: 0 };
-    const a = proj(hand.x, hand.y, hand.z), b = proj(A.x, A.y, A.z);
+    // The sag the player sees: how far the on-screen line leaves the straight chord through its own ends.
+    const shown = segs.filter((s) => !s.p.behind && s.p.x > 4 && s.p.y > 4 && s.p.x < innerWidth - 4 && s.p.y < innerHeight - 4);
     let sagPx = 0;
-    if (segs.length) {
-      const mid = segs[Math.floor((segs.length - 1) / 2)].p;
+    if (shown.length >= 3) {
+      const a = shown[0].p, b = shown[shown.length - 1].p;
       const dx = b.x - a.x, dy = b.y - a.y, len = Math.hypot(dx, dy) || 1;
       let nx = -dy / len, ny = dx / len;
       if (ny < 0) { nx = -nx; ny = -ny; }
-      sagPx = (mid.x - a.x) * nx + (mid.y - a.y) * ny;
+      for (let i = 1; i < shown.length - 1; i++) {
+        const p = shown[i].p;
+        sagPx = Math.max(sagPx, (p.x - a.x) * nx + (p.y - a.y) * ny);
+      }
     }
     return {
       spot, attached, state, easy: !!r.easy, tension: r.tension, offscreen: !!(window.__test && window.__test.swing && window.__test.swing.anchor.offscreen),
