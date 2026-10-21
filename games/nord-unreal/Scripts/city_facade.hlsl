@@ -42,7 +42,7 @@ float Recess = Glass * max(step(Cell.x, 0.5 - WindowWidth + 0.063), step(0.735, 
 Color *= 1.0 - Recess * 0.26;
 float Sash = Glass * max(step(P.x, 0.006), step(abs(Cell.y - 0.56), 0.008));
 Color = lerp(Color, float3(0.36, 0.355, 0.315), Sash);
-// Some rooms are lit. The warm pane is the glass colour, not a light that casts.
+// Some rooms are lit. The pane is the lamp colour. The brick under it takes the spill.
 float FloorId = floor((Z - 100.0) / 320.0);
 float Room = frac(sin(dot(floor(float2(UV.x + Seed, FloorId)), float2(19.13, 78.233))) * 43758.5453);
 float Lamp = Glass * (1.0 - Sash) * step(0.55, Room) * step(P.x, WindowWidth - 0.07) * step(P.y, 0.20);
@@ -78,5 +78,11 @@ float Gallery = step(DoorSpan, 0.22) * step(430.0, Z) * step(Z, 505.0);
 float Iron = Gallery * max(step(frac(DoorU * 7.0), 0.16), step(abs(Z - 498.0), 5.0));
 float Spout = step(abs(frac(Bay / 4.0) - 0.50), 0.008) * step(40.0, Z) * step(Z, Height - 70.0);
 Color = lerp(Color, float3(0.16, 0.17, 0.18), max(Iron, Spout));
+// A lit room throws a warm apron on the brick under the pane. The pane itself stays the lamp colour.
+float Lit = step(0.55, Room) * Wall * (1.0 - Glass);
+float Under = saturate((0.26 - Cell.y) / 0.22);
+float Reach = saturate(1.0 - max(P.x - WindowWidth, 0.0) / 0.28);
+float Spill = Lit * Under * Reach;
+Color = lerp(Color, Color * float3(1.55, 1.22, 0.70) + float3(0.06, 0.02, 0.0), Spill);
 float Cornice = step(Height - 65.0, Z);
 return lerp(Color, float3(0.19, 0.21, 0.195), Cornice);

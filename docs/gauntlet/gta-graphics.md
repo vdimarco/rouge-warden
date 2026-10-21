@@ -458,3 +458,38 @@ Unreal is not available in this environment, so in-engine frames are the last co
 - Playability raw: 39 / 10 dimensions, index 39
 - Total: 87 / 200
 - Delta vs last round: +1
+
+### Round 14 — 2026-10-21 — rubric v1
+
+- What changed: `Scripts/city_facade.hlsl` warms the brick under a lit window. The apron uses the same room hash as the orange pane, skips the glass, and falls off down the wall and a short way to either side. Dark windows are unchanged. The material updates when `apply_city_comic_style.py` runs in the editor.
+- Why it helped: Lighting was tied at the top of what this pass can still move. A lit room was only a pane. The brick under it matched the brick under a dark room, so the lamp did not land on the wall.
+- Screenshots: before `docs/gauntlet/gta-graphics/round-14/before-spill.png`, after `docs/gauntlet/gta-graphics/round-14/after-spill.png`. These are a direct port of the facade shader, not an Unreal capture. `Scripts/test_facade_spill.py` passed. `Scripts/test_environment_refresh.py` passed. `GET /gta/` returned 200.
+- Next target: particles and VFX. Rain still has no splash where a drop meets the street, and that can be shaded offline. Animation smoothness stays at 3 and is skipped until a pose can be drawn.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 6 | A lit pane now warms the brick under it. There is still no sun shadow and no bounce. |
+| Color palette | 5 | The apron is the lamp's amber on the existing brick. |
+| Detail density | 5 | Rails and doors are unchanged. |
+| Texture and material quality | 5 | Mortar beds are unchanged. The apron is a tint, not a new grain. |
+| Composition and camera | 5 | The shoulder camera is unchanged. |
+| Atmosphere | 5 | The depth fade is unchanged. |
+| Character models | 5 | The crew rim is unchanged. |
+| Animation smoothness | 3 | Skipped. The blend space still cannot be posed here. |
+| Particles and VFX | 5 | Rain heads are unchanged. There is still no splash on the street. |
+| UI polish | 5 | Untouched. |
+| Responsiveness and input latency | 4 | Not measured this round. |
+| Controls feel | 4 | Not played. |
+| Mission clarity | 5 | Unchanged objective card. |
+| Pacing | 4 | Unchanged mission slice. |
+| Fun factor | 3 | Not played. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 4 | No new juice. |
+| Sound design | 3 | Not listened to. |
+| Variety | 3 | One district. Lit and dark rooms already varied; the apron follows that hash. |
+| Performance stability | 5 | The facade source test passed. The apron is extra arithmetic, no samples. Frame time was not remeasured. |
+
+- Aesthetics raw: 49 / 10 dimensions, index 49
+- Playability raw: 39 / 10 dimensions, index 39
+- Total: 88 / 200
+- Delta vs last round: +1
