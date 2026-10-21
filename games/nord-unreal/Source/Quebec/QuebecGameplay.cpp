@@ -25,6 +25,7 @@
 #include "QuebecSideJobs.h" // Side jobs: markers, E, R and the game mode spawn (JOBS).
 #include "QuebecCart.h" // Chez Lise: the stall that spends session cash.
 #include "QuebecBow.h" // The stage bow after the goon fight.
+#include "QuebecBay.h" // The sidewalk atelier that spends cash on a dented car.
 #include "QuebecPolice.h" // Police: the dispatcher spawned by the game mode (POLICE).
 #include "LaFontaineMap.h"
 #include "LaFontaineExtensionMap.h"
@@ -2317,6 +2318,7 @@ void AQuebecController::ServerInteract_Implementation()
     if (AQuebecSideJobs* Jobs = AQuebecSideJobs::Find(GetWorld()); Jobs && Jobs->HandleInteract(this)) return;
     if (AQuebecCart* Cart = AQuebecCart::Find(GetWorld()); Cart && Cart->HandleInteract(this)) return;
     if (AQuebecBow* Bow = AQuebecBow::Find(GetWorld()); Bow && Bow->HandleInteract(this)) return;
+    if (AQuebecBay* Bay = AQuebecBay::Find(GetWorld()); Bay && Bay->HandleInteract(this)) return;
     if (AQuebecParkResident* Resident = FindInteractableResident())
     {
         Resident->Acknowledge(Character, true);
@@ -3007,7 +3009,7 @@ void AQuebecGameMode::BeginPlay()
                 Material && Material->GetName().Contains(TEXT("Beacon")))
                 It->SetActorHiddenInGame(true);
     }
-    // Side jobs (JOBS): five yellow markers, one shared job at a time. No cars spawn here, so population is unchanged.
+    // Side jobs (JOBS): six yellow markers, one shared job at a time. No cars spawn here, so population is unchanged.
     if (!FParse::Param(FCommandLine::Get(), TEXT("NordNoCampaign")) && !FParse::Param(FCommandLine::Get(), TEXT("NordNoSideJobs")))
         GetWorld()->SpawnActor<AQuebecSideJobs>();
     // Chez Lise, on the Sherbrooke sidewalk. E spends session cash. No population change.
@@ -3016,6 +3018,9 @@ void AQuebecGameMode::BeginPlay()
     // The stage bow. Hidden until the goon fight is won. No population change.
     if (!FParse::Param(FCommandLine::Get(), TEXT("NordNoCampaign")))
         GetWorld()->SpawnActor<AQuebecBow>();
+    // The atelier. E spends session cash to clear body damage on a nearby car. No population change.
+    if (!FParse::Param(FCommandLine::Get(), TEXT("NordNoCampaign")))
+        GetWorld()->SpawnActor<AQuebecBay>();
     // Combat: weapon, vest and health pickups at street and park points, none near a QA anchor and no collision.
     if (!FParse::Param(FCommandLine::Get(), TEXT("NordNoCampaign"))) QuebecCombat::SpawnPickups(GetWorld());
     // Police (POLICE): the dispatcher and its garage sign. Police cars and officers appear only while a player has stars.

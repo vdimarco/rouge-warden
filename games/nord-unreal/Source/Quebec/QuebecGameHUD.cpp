@@ -6,6 +6,7 @@
 #include "QuebecSideJobs.h"
 #include "QuebecCart.h"
 #include "QuebecBow.h"
+#include "QuebecBay.h"
 
 #include "CanvasItem.h"
 #include "Engine/Canvas.h"
@@ -117,6 +118,11 @@ FString AQuebecHUD::StreetPrompt() const
     {
         const FString Stall = Cart->GetPrompt(PlayerOwner->GetPawn());
         if (!Stall.IsEmpty()) return Stall;
+    }
+    if (const AQuebecBay* Bay = AQuebecBay::Find(GetWorld()); Bay && PlayerOwner)
+    {
+        const FString Mend = Bay->GetPrompt(PlayerOwner->GetPawn());
+        if (!Mend.IsEmpty()) return Mend;
     }
     const AQuebecBow* Bow = AQuebecBow::Find(GetWorld());
     return Bow && PlayerOwner ? Bow->GetPrompt(PlayerOwner->GetPawn()) : FString();
@@ -363,6 +369,25 @@ void AQuebecHUD::DrawStreetHUD(float UIScale, bool bTall, bool bTouch, float Rad
         constexpr double StandBlipRange = 8000.;
         const FVector Spot = Cart->GetSpot();
         if (FVector::DistSquared2D(Spot, Here) <= FMath::Square(StandBlipRange))
+        {
+            const FVector2D Dot = RadarPoint(Spot);
+            if (OnRadar(Dot))
+            {
+                FCanvasNGonItem Rim(Dot, FVector2D(5.f * S), 4, Ink);
+                Rim.BlendMode = SE_BLEND_Translucent;
+                Canvas->DrawItem(Rim);
+                FCanvasNGonItem Fill(Dot, FVector2D(3.2f * S), 4, CashTone);
+                Fill.BlendMode = SE_BLEND_Translucent;
+                Canvas->DrawItem(Fill);
+            }
+        }
+    }
+    // The atelier is a second cash diamond, and only inside 80 m.
+    if (const AQuebecBay* Bay = AQuebecBay::Find(World))
+    {
+        constexpr double BayBlipRange = 8000.;
+        const FVector Spot = Bay->GetSpot();
+        if (FVector::DistSquared2D(Spot, Here) <= FMath::Square(BayBlipRange))
         {
             const FVector2D Dot = RadarPoint(Spot);
             if (OnRadar(Dot))
