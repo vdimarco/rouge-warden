@@ -166,6 +166,37 @@ bool FQuebecCampaignSaveRoundTripTest::RunTest(const FString& Parameters)
     TestEqual(TEXT("The crossing stays banked beside the grab"),HeldReload->ShadeStep,2);
     Held->ShadeStep = 0;
     TestFalse(TEXT("A grab before the crossing is banked is rejected"),Held->IsSupported());
+    Held->ShadeStep = 2;
+    Held->CutStep = 1;
+    TestFalse(TEXT("A version-6 slot carrying the short way is rejected"),Held->IsSupported());
+    Held->CutStep = 0;
+
+    UQuebecCampaignSaveGame* Dared = NewObject<UQuebecCampaignSaveGame>();
+    Dared->Version = 7;
+    Dared->CompletedMissions = 2;
+    Dared->PondStep = 6;
+    Dared->CourtStep = 4;
+    Dared->ShowStep = 5;
+    Dared->RescueMask = 7;
+    Dared->ConvoyStep = 4;
+    Dared->BlankStep = 4;
+    Dared->TourStep = 3;
+    Dared->HomeStep = 3;
+    Dared->EscortStep = 2;
+    Dared->ShadeStep = 2;
+    Dared->GrabStep = 2;
+    Dared->CutStep = 1;
+    TestTrue(TEXT("Short-way tail is accepted before serialization"),Dared->IsSupported());
+    TArray<uint8> DaredBytes;
+    if (!TestTrue(TEXT("Short-way tail serializes using engine save format"),UGameplayStatics::SaveGameToMemory(Dared,DaredBytes))) return false;
+    const UQuebecCampaignSaveGame* DaredReload = Cast<UQuebecCampaignSaveGame>(UGameplayStatics::LoadGameFromMemory(DaredBytes));
+    if (!TestNotNull(TEXT("Short-way tail reloads using engine save format"),DaredReload)) return false;
+    TestTrue(TEXT("Reloaded short-way tail remains supported"),DaredReload->IsSupported());
+    TestEqual(TEXT("Short-way schema survives serialization"),DaredReload->Version,7);
+    TestEqual(TEXT("Short-way step survives serialization"),DaredReload->CutStep,1);
+    TestEqual(TEXT("The grab stays banked beside the short way"),DaredReload->GrabStep,2);
+    Dared->GrabStep = 0;
+    TestFalse(TEXT("A short way before the grab is banked is rejected"),Dared->IsSupported());
 
     UQuebecCampaignSaveGame* Skip = NewObject<UQuebecCampaignSaveGame>();
     Skip->Version = 3;

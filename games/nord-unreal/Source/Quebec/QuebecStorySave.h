@@ -4,11 +4,12 @@
 // No Unreal includes, so Scripts/test_story_save.py can build this with the system compiler.
 // Version 1 is the race boundary (completed missions 0–2) and has no story tail.
 // Version 2 is the unsupported fixture the story slice plants on disk. It is never written.
-// Version 3 keeps that same mission count and the eight story steps. It starts the escort and the crossing over.
-// Version 4 adds the escort step and starts the crossing over.
-// Version 5 adds the crossing and starts the grab over.
-// Version 6 adds the grab. The chain, the hold clocks, the court misses, cash,
-// the friend's place on the lawn, the lamp burn, the grab clock, and the side errands are not in this record.
+// Version 3 keeps that same mission count and the eight story steps. It starts the escort, the crossing, the grab, and the short way over.
+// Version 4 adds the escort step and starts the crossing, the grab, and the short way over.
+// Version 5 adds the crossing and starts the grab and the short way over.
+// Version 6 adds the grab and starts the short way over.
+// Version 7 adds the short way. The chain, the hold clocks, the court misses, cash,
+// the friend's place on the lawn, the lamp burn, the grab clock, the rival's clock, and the side errands are not in this record.
 
 namespace QuebecStorySave
 {
@@ -17,7 +18,8 @@ namespace QuebecStorySave
     inline constexpr int Story = 3;
     inline constexpr int Escort = 4;
     inline constexpr int Shade = 5;
-    inline constexpr int Current = 6;
+    inline constexpr int Grab = 6;
+    inline constexpr int Current = 7;
 
     inline constexpr int PondBanked = 6;
     inline constexpr int CourtBanked = 4;
@@ -30,6 +32,7 @@ namespace QuebecStorySave
     inline constexpr int EscortBanked = 2;
     inline constexpr int ShadeBanked = 2;
     inline constexpr int GrabBanked = 2;
+    inline constexpr int CutBanked = 2;
 
     struct FSteps
     {
@@ -44,6 +47,7 @@ namespace QuebecStorySave
         int Escort = 0;
         int Shade = 0;
         int Grab = 0;
+        int Cut = 0;
     };
 
     inline bool InRange(int Value, int Hi)
@@ -55,7 +59,7 @@ namespace QuebecStorySave
     {
         return Steps.Pond == 0 && Steps.Court == 0 && Steps.Show == 0 && Steps.Rescue == 0
             && Steps.Convoy == 0 && Steps.Blank == 0 && Steps.Tour == 0 && Steps.Home == 0
-            && Steps.Escort == 0 && Steps.Shade == 0 && Steps.Grab == 0;
+            && Steps.Escort == 0 && Steps.Shade == 0 && Steps.Grab == 0 && Steps.Cut == 0;
     }
 
     // A later beat may move only after the one before it is banked.
@@ -67,7 +71,8 @@ namespace QuebecStorySave
             || !InRange(Steps.Tour, TourBanked) || !InRange(Steps.Home, HomeBanked)
             || !InRange(Steps.Escort, EscortBanked)
             || !InRange(Steps.Shade, ShadeBanked)
-            || !InRange(Steps.Grab, GrabBanked))
+            || !InRange(Steps.Grab, GrabBanked)
+            || !InRange(Steps.Cut, CutBanked))
             return false;
         if (Steps.Court > 0 && Steps.Pond != PondBanked) return false;
         if (Steps.Show > 0 && (Steps.Pond != PondBanked || Steps.Court != CourtBanked)) return false;
@@ -80,6 +85,7 @@ namespace QuebecStorySave
         if (Steps.Escort > 0 && Steps.Home != HomeBanked) return false;
         if (Steps.Shade > 0 && Steps.Escort != EscortBanked) return false;
         if (Steps.Grab > 0 && Steps.Shade != ShadeBanked) return false;
+        if (Steps.Cut > 0 && Steps.Grab != GrabBanked) return false;
         return true;
     }
 
@@ -89,19 +95,25 @@ namespace QuebecStorySave
         if (Version == Legacy) return Fresh(Steps);
         if (Version == Story)
         {
-            if (Steps.Escort != 0 || Steps.Shade != 0 || Steps.Grab != 0) return false;
+            if (Steps.Escort != 0 || Steps.Shade != 0 || Steps.Grab != 0 || Steps.Cut != 0) return false;
             if (Completed < 2 && !Fresh(Steps)) return false;
             return StepsFit(Steps);
         }
         if (Version == Escort)
         {
-            if (Steps.Shade != 0 || Steps.Grab != 0) return false;
+            if (Steps.Shade != 0 || Steps.Grab != 0 || Steps.Cut != 0) return false;
             if (Completed < 2 && !Fresh(Steps)) return false;
             return StepsFit(Steps);
         }
         if (Version == Shade)
         {
-            if (Steps.Grab != 0) return false;
+            if (Steps.Grab != 0 || Steps.Cut != 0) return false;
+            if (Completed < 2 && !Fresh(Steps)) return false;
+            return StepsFit(Steps);
+        }
+        if (Version == Grab)
+        {
+            if (Steps.Cut != 0) return false;
             if (Completed < 2 && !Fresh(Steps)) return false;
             return StepsFit(Steps);
         }
@@ -110,9 +122,9 @@ namespace QuebecStorySave
         return StepsFit(Steps);
     }
 
-    // A legacy slot never copies a story tail. A version-3 slot never copies the escort, the crossing, or the grab.
-    // A version-4 slot never copies the crossing or the grab. A version-5 slot never copies the grab.
-    // Call this only after Accept.
+    // A legacy slot never copies a story tail. A version-3 slot never copies the escort, the crossing, the grab, or the short way.
+    // A version-4 slot never copies the crossing, the grab, or the short way. A version-5 slot never copies the grab or the short way.
+    // A version-6 slot never copies the short way. Call this only after Accept.
     inline FSteps Applied(int Version, const FSteps& Steps)
     {
         if (Version == Legacy) return {};
@@ -122,6 +134,7 @@ namespace QuebecStorySave
             Copy.Escort = 0;
             Copy.Shade = 0;
             Copy.Grab = 0;
+            Copy.Cut = 0;
             return Copy;
         }
         if (Version == Escort)
@@ -129,12 +142,20 @@ namespace QuebecStorySave
             FSteps Copy = Steps;
             Copy.Shade = 0;
             Copy.Grab = 0;
+            Copy.Cut = 0;
             return Copy;
         }
         if (Version == Shade)
         {
             FSteps Copy = Steps;
             Copy.Grab = 0;
+            Copy.Cut = 0;
+            return Copy;
+        }
+        if (Version == Grab)
+        {
+            FSteps Copy = Steps;
+            Copy.Cut = 0;
             return Copy;
         }
         return Steps;

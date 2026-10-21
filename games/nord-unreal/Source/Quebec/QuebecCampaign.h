@@ -49,10 +49,12 @@ public:
     UPROPERTY(VisibleAnywhere) int32 ShadeStep = 0;
     // Grab tail. Version 5 leaves this at 0. Version 6 writes it. The clock stays in the session.
     UPROPERTY(VisibleAnywhere) int32 GrabStep = 0;
+    // Short-way tail. Version 6 leaves this at 0. Version 7 writes it. The rival's clock stays in the session.
+    UPROPERTY(VisibleAnywhere) int32 CutStep = 0;
     bool IsSupported() const;
 };
 
-/** Story encounters. All objective decisions run on authority. Missions 3 through 10 persist on the version-3 tail. Mission 11 persists on version 4. Mission 12 persists on version 5. Mission 13 persists on version 6. Completed missions stay 0–2. */
+/** Story encounters. All objective decisions run on authority. Missions 3 through 10 persist on the version-3 tail. Mission 11 persists on version 4. Mission 12 persists on version 5. Mission 13 persists on version 6. Mission 14 persists on version 7. Completed missions stay 0–2. */
 UCLASS()
 class QUEBEC_API AQuebecCampaign : public AActor
 {
@@ -102,6 +104,7 @@ public:
     static constexpr int32 EscortBankedStep = 2;
     static constexpr int32 ShadeBankedStep = 2;
     static constexpr int32 GrabBankedStep = 2;
+    static constexpr int32 CutBankedStep = 2;
     bool IsPondOpen() const { return Phase == EQuebecCampaignPhase::Complete && PondStep < PondBankedStep; }
     bool IsCourtOpen() const { return Phase == EQuebecCampaignPhase::Complete && PondStep >= PondBankedStep && CourtStep < CourtBankedStep; }
     bool IsShowOpen() const { return Phase == EQuebecCampaignPhase::Complete && PondStep >= PondBankedStep && CourtStep >= CourtBankedStep && ShowStep < ShowBankedStep; }
@@ -155,7 +158,15 @@ public:
             && EscortStep >= EscortBankedStep && ShadeStep >= ShadeBankedStep
             && GrabStep >= 0 && GrabStep < GrabBankedStep;
     }
-    bool IsStoryBeatOpen() const { return IsPondOpen() || IsCourtOpen() || IsShowOpen() || IsRescueOpen() || IsConvoyOpen() || IsBlankOpen() || IsTourOpen() || IsHomeOpen() || IsEscortOpen() || IsShadeOpen() || IsGrabOpen(); }
+    bool IsCutOpen() const
+    {
+        return Phase == EQuebecCampaignPhase::Complete && PondStep >= PondBankedStep && CourtStep >= CourtBankedStep
+            && ShowStep >= ShowBankedStep && RescueMask >= RescueDone && ConvoyStep >= ConvoyBankedStep
+            && BlankStep >= BlankBankedStep && TourStep >= TourBankedStep && HomeStep >= HomeBankedStep
+            && EscortStep >= EscortBankedStep && ShadeStep >= ShadeBankedStep && GrabStep >= GrabBankedStep
+            && CutStep >= 0 && CutStep < CutBankedStep;
+    }
+    bool IsStoryBeatOpen() const { return IsPondOpen() || IsCourtOpen() || IsShowOpen() || IsRescueOpen() || IsConvoyOpen() || IsBlankOpen() || IsTourOpen() || IsHomeOpen() || IsEscortOpen() || IsShadeOpen() || IsGrabOpen() || IsCutOpen(); }
 
     UPROPERTY(VisibleAnywhere, ReplicatedUsing=UpdatePresentation) EQuebecCampaignPhase Phase = EQuebecCampaignPhase::AimWorklight;
     UPROPERTY(VisibleAnywhere, Replicated) int32 CompletedMissions = 0;
@@ -199,6 +210,10 @@ public:
     // The clock is not saved. A reload during the run gives the full window again.
     UPROPERTY(VisibleAnywhere, ReplicatedUsing=UpdatePresentation) int32 GrabStep = 0;
     UPROPERTY(VisibleAnywhere, Replicated) float GrabElapsed = 0.f;
+    // 0 the line, 1 the race, 2 banked. Written on the version-7 tail. Not a chain link.
+    // The rival's clock is not saved. A reload during the race puts them back on the line.
+    UPROPERTY(VisibleAnywhere, ReplicatedUsing=UpdatePresentation) int32 CutStep = 0;
+    UPROPERTY(VisibleAnywhere, Replicated) float CutElapsed = 0.f;
     UPROPERTY(VisibleAnywhere, Replicated) TObjectPtr<APlayerState> LightOperator;
     UPROPERTY(VisibleAnywhere, Replicated) float LightYaw = 0.f;
     UPROPERTY(VisibleAnywhere, Replicated) float LightPitch = 0.f;
@@ -277,6 +292,12 @@ private:
     UPROPERTY() TObjectPtr<UStaticMeshComponent> GrabDrop;
     UPROPERTY() TObjectPtr<UTextRenderComponent> GrabCaseCaption;
     UPROPERTY() TObjectPtr<UTextRenderComponent> GrabDropCaption;
+    UPROPERTY() TObjectPtr<UStaticMeshComponent> CutLine;
+    UPROPERTY() TObjectPtr<UStaticMeshComponent> CutFinish;
+    UPROPERTY() TObjectPtr<UStaticMeshComponent> CutRival;
+    UPROPERTY() TObjectPtr<UTextRenderComponent> CutLineCaption;
+    UPROPERTY() TObjectPtr<UTextRenderComponent> CutFinishCaption;
+    UPROPERTY() TObjectPtr<UTextRenderComponent> CutRivalCaption;
     UPROPERTY() TArray<TObjectPtr<UStaticMeshComponent>> ConvoyParts;
     UPROPERTY() TArray<TObjectPtr<UTextRenderComponent>> ConvoyCaptions;
     UPROPERTY() TArray<TObjectPtr<UStaticMeshComponent>> BlankParts;
@@ -343,6 +364,8 @@ private:
     void AdvanceShade(int32 Next, AQuebecController* Who, const TCHAR* Message, bool bFinished);
     void TickGrab(float DeltaSeconds);
     void AdvanceGrab(int32 Next, AQuebecController* Who, const TCHAR* Message, bool bFinished);
+    void TickCut(float DeltaSeconds);
+    void AdvanceCut(int32 Next, AQuebecController* Who, const TCHAR* Message, bool bFinished);
     void ChangePhase(EQuebecCampaignPhase Next, bool bFeedback = true);
     void StopAiming();
     void SaveBoundary();

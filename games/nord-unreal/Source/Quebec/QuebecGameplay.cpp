@@ -2860,6 +2860,8 @@ void AQuebecHUD::DrawHUD()
             Status = TEXT("Menu · Recover restores this dark");
         else if (Campaign->IsGrabOpen() && bTouchControls)
             Status = TEXT("Menu · Recover restores this window");
+        else if (Campaign->IsCutOpen() && bTouchControls)
+            Status = TEXT("Menu · Recover restores this cut");
         else if (Campaign->IsCampaignComplete() && !Campaign->IsStoryBeatOpen() && SideJobs)
         {
             const int32 Guide = SideJobs->GuideMarker(Here, true);
