@@ -149,6 +149,18 @@ bool heroGone() {
   return length(fract(q) - 0.5) > sqrt(uHeroOpa * 0.31831);
 }
 `;
+// A view-dependent rim after the cel bands, so the hero is not a flat cutout on the sunset.
+// Mitchell, Francke, Eng, "Illustrative Rendering in Team Fortress 2", 2007. Kept small so the bands stay.
+const HERO_RIM = /* glsl */ `
+vec3 heroRim(vec3 col, vec3 wn) {
+  vec3 N = normalize(wn);
+  float nd = clamp(dot(N, normalize(cameraPosition - vComicW)), 0.0, 1.0);
+  float rim = pow(1.0 - nd, 3.0);
+  float key = clamp(dot(N, normalize(uHeroSun)), 0.0, 1.0);
+  return col + vec3(1.0, 0.55, 0.28) * rim * mix(0.45, 1.0, key) * 0.32
+    + vec3(0.32, 0.46, 0.78) * rim * (1.0 - key) * 0.16;
+}
+`;
 function bodyMaterial(map, OPA, LIGHT) {
   const m = new THREE.MeshBasicMaterial(map ? { map } : { vertexColors: true });
   toonify(m, { dots: 0.035 });
@@ -161,7 +173,8 @@ function bodyMaterial(map, OPA, LIGHT) {
     shader.vertexShader = shader.vertexShader.replace("vec3 wn = normal;", "vec3 wn = objectNormal;");
     // and the light: the key light leans toward the camera side so the hero's back is never a dark shape against the sunset
     shader.fragmentShader = shader.fragmentShader.replace(/comicLight\(wn, vec3\([^)]*\)\)/, "comicLight(wn, uHeroSun)")
-      .replace("void main() {", "uniform vec3 uHeroSun;\n" + DITHER + "void main() {")
+      .replace("void main() {", "uniform vec3 uHeroSun;\n" + DITHER + HERO_RIM + "void main() {")
+      .replace("outgoingLight = col + ", "outgoingLight = heroRim(col, wn) + ")
       .replace("#include <clipping_planes_fragment>", "#include <clipping_planes_fragment>\n  if (heroGone()) discard;");
   };
   m.customProgramCacheKey = () => key() + (map ? "-hero-map" : "-hero-vc");

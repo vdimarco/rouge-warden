@@ -32,6 +32,7 @@ uniform float uTime;
 uniform float uHull; // 0 the body, 1 the ink hull
 uniform float uInkK, uInkPx;
 varying vec3 vN;
+varying vec3 vW;
 varying vec3 vCol;
 varying float vDist;
 mat3 rotX(float a) { float c = cos(a), s = sin(a); return mat3(1.0, 0.0, 0.0, 0.0, c, s, 0.0, -s, c); }
@@ -137,8 +138,10 @@ void main() {
   vDist = distance(w, cameraPosition);
   if (uHull > 0.5) w += wn * max(0.012, uInkPx * uInkK * vDist);
   vN = wn;
+  vW = w;
   vCol = part == 1 ? aC3 : (part == 2 || part == 3) ? aC2 : aC1.rgb;
-  if ((part == 4 || part == 5) && position.y < 0.95) vCol = aC3; // the hands
+  if (part == 0 && position.y < 1.0) vCol = aC2; // the waist, in the trouser colour
+  if ((part == 4 || part == 5) && position.y < 1.0) vCol = aC3; // the hands and the wrist
   if ((part == 2 || part == 3) && position.y < 0.09) vCol = vec3(0.12, 0.1, 0.12); // the shoes
   if (part == 1 && position.y > 1.63) vCol = vec3(0.16, 0.1, 0.08) + aC2 * 0.3; // the hair
   gl_Position = projectionMatrix * viewMatrix * vec4(w, 1.0);
@@ -147,14 +150,23 @@ void main() {
 const PEOPLE_FS = /* glsl */ `
 uniform float uHull;
 varying vec3 vN;
+varying vec3 vW;
 varying vec3 vCol;
 varying float vDist;
 ${GLSL.toon}
 ${FOG}
 void main() {
   if (uHull > 0.5) { gl_FragColor = vec4(streetFog(${hexv(INK)}, vDist), 1.0); return; }
-  float band = comicBand(comicLight(normalize(vN), ${SUN}), 0.14, 0.5);
-  gl_FragColor = vec4(streetFog(comicCel(vCol, band), vDist), 1.0);
+  vec3 N = normalize(vN);
+  float band = comicBand(comicLight(N, ${SUN}), 0.14, 0.5);
+  vec3 col = comicCel(vCol, band);
+  // a small rim so the figure lifts off the street (Mitchell, Francke, Eng, Team Fortress 2, 2007)
+  float nd = clamp(dot(N, normalize(cameraPosition - vW)), 0.0, 1.0);
+  float rim = pow(1.0 - nd, 3.0);
+  float key = clamp(dot(N, ${SUN}), 0.0, 1.0);
+  col += vec3(1.0, 0.55, 0.28) * rim * mix(0.45, 1.0, key) * 0.32;
+  col += vec3(0.32, 0.46, 0.78) * rim * (1.0 - key) * 0.16;
+  gl_FragColor = vec4(streetFog(col, vDist), 1.0);
 }
 `;
 
@@ -170,12 +182,24 @@ function figure() {
     for (const i of g.index.array) idx.push(base + i);
     g.dispose();
   };
-  box(-0.2, 0.84, -0.12, 0.2, 1.42, 0.12, 0); // torso
-  box(-0.11, 1.44, -0.12, 0.11, 1.7, 0.11, 1); // head
-  box(0.03, 0.0, -0.08, 0.17, 0.88, 0.08, 2); // right leg (+x)
-  box(-0.17, 0.0, -0.08, -0.03, 0.88, 0.08, 3); // left leg
-  box(0.21, 0.84, -0.06, 0.32, 1.42, 0.06, 4); // right arm
-  box(-0.32, 0.84, -0.06, -0.21, 1.42, 0.06, 5); // left arm
+  box(-0.16, 0.82, -0.10, 0.16, 1.05, 0.11, 0); // hips, painted as trousers below 1 m
+  box(-0.18, 1.02, -0.14, 0.18, 1.36, 0.10, 0); // chest
+  box(-0.32, 1.24, -0.08, 0.32, 1.44, 0.08, 0); // shoulders, wider than the waist
+  box(-0.09, 1.30, -0.16, 0.09, 1.40, -0.06, 0); // collar
+  box(-0.05, 1.34, -0.06, 0.05, 1.52, 0.05, 1); // neck
+  box(-0.11, 1.46, -0.12, 0.11, 1.68, 0.10, 1); // head
+  box(-0.125, 1.60, -0.08, 0.125, 1.80, 0.16, 1); // hair, up and toward the back
+  box(-0.10, 1.62, -0.16, 0.10, 1.74, -0.06, 1); // fringe
+  box(0.02, 0.40, -0.09, 0.18, 0.90, 0.09, 2); // right thigh
+  box(0.035, 0.06, -0.07, 0.155, 0.48, 0.07, 2); // right shin
+  box(-0.18, 0.40, -0.09, -0.02, 0.90, 0.09, 3); // left thigh
+  box(-0.155, 0.06, -0.07, -0.035, 0.48, 0.07, 3); // left shin
+  box(0.20, 1.02, -0.07, 0.34, 1.42, 0.07, 4); // right upper arm
+  box(0.18, 0.95, -0.06, 0.30, 1.10, 0.06, 4); // right forearm
+  box(0.16, 0.70, -0.16, 0.32, 0.98, 0.02, 4); // right hand, forward
+  box(-0.34, 1.02, -0.07, -0.20, 1.42, 0.07, 5); // left upper arm
+  box(-0.30, 0.95, -0.06, -0.18, 1.10, 0.06, 5); // left forearm
+  box(-0.32, 0.70, -0.16, -0.16, 0.98, 0.02, 5); // left hand
   box(0.04, 0.0, -0.17, 0.16, 0.08, 0.08, 2); // shoes stick out in front
   box(-0.16, 0.0, -0.17, -0.04, 0.08, 0.08, 3);
   const g = new THREE.BufferGeometry();
