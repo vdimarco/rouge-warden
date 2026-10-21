@@ -135,4 +135,4 @@ User target: improve both simultaneous players to a real sustained 30 FPS. This 
 - [x] Count touch receiver rates below29FPS as pressure and require35FPS headroom for recovery; test exact boundaries and update rendered fixtures.
 - [x] Run offline browser checks and real resized-video adaptation checks, distinguishing injected statistics from actual throughput. CPU81/81, offline UI/layout and3 focused real-media callbacks passed;15 unrelated mobile callbacks were explicitly skipped.
 - [x] Measure fresh simultaneous native/decoded rates and solo responsiveness with current service identities; retain resolution and desktop-workload limits. Solo58.12FPS at1412×652; simultaneous15–17FPS at706×326 with desktop ambience active,24.1FPS paused. Target remains open.
-- [ ] Review and deliver only verified changes, preserving current progress and the other task's restarted service/deployment.
+- [x] Review and deliver only verified changes, preserving current progress and the other task's restarted service/deployment. PR615 merged/deployed;25production assets match and8ordinary public checks pass. No native candidate retained; co-op30FPS remains open.

@@ -1,5 +1,5 @@
 {
-  "status": "Touch-policy candidate verified; delivery pending. Co-op30FPS remains open; no native candidate retained.",
+  "status": "Touch-policy improvement merged and deployed; simultaneous30FPS remains unmet; no native diagnostic retained.",
   "target": "Both simultaneous viewers sustain at least29 real native and decoded FPS over a common settled60-second interval, preserving visuals and solo responsiveness.",
   "evidence_root": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/CoopThroughput-20261019",
   "paid_generation_spend_usd": 0,
@@ -847,7 +847,7 @@
     "branch": "codex/nord-coop-stream-throughput",
     "integrated_main": "f5731974468c053caf4e9c912bd3f2a4e7ea48d5",
     "candidate": "Touch receiver pressure below29FPS; recovery requires15consecutive samples at least35FPS",
-    "deployed": false,
+    "deployed": true,
     "fresh_performance_pending": false,
     "persistent_native_source_asset_package_mutations": false,
     "original_source_art_preserved": true,
@@ -1357,6 +1357,32 @@
     "solo_performance_pending": false,
     "solo_29fps_target_achieved": true,
     "native_diagnostics_complete": true,
-    "accepted_native_recipe": "Existing Production60-v2/fps60_lifecycle.py,60FPS native/WebRTC ceiling,VP8,MediaCapture default and scheduling0; no diagnostic launch change retained."
+    "accepted_native_recipe": "Existing Production60-v2/fps60_lifecycle.py,60FPS native/WebRTC ceiling,VP8,MediaCapture default and scheduling0; no diagnostic launch change retained.",
+    "production_release": {
+      "pr": "https://github.com/vdimarco/rouge-warden/pull/615",
+      "merge_commit": "8c97618b3e3270bfe9bec75b3a36b9a98060d6ca",
+      "deployment_id": "dpl_7Sn4yXHhgTA3Ym1nhViujqEDkacC",
+      "deployment_target": "production",
+      "deployment_state": "READY",
+      "public_alias": "https://nord-montreal.vercel.app/",
+      "matched_files": 25,
+      "player_sha256": "44b561aa85691f8671cdb5c4f6edee64a737a70301f1a69091bcb2abc822b9cf",
+      "ready_receipt": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/CoopThroughput-20261021/Release-v1/Ready.json",
+      "ready_receipt_sha256": "b358f09dd37f60e55555976026b178a5e9b9f39e277007f693b099c5446ffb6c",
+      "public_qa_receipt": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/CoopThroughput-20261021/PublicFrontend-v1/Run-v1/Result.json",
+      "public_qa_receipt_sha256": "43b6f5510f889e7c76b004a99db58546b99b7934a8057aaceddaaa8a35e02f88",
+      "public_checks_passed": 8,
+      "public_qa_seconds": 33.97,
+      "native_source_package_saved_service_container_identities_preserved": true,
+      "owned_browser_processes_closed": true,
+      "root_directly_reviewed_both_input_image_pairs": true,
+      "local_static_servers_closed": true,
+      "native_recipe_changed": false,
+      "limits": [
+        "Real physical phones and off-LAN playback untested.",
+        "Passive FPS does not establish driving comfort or input-to-photon latency.",
+        "Simultaneous30FPS remains unmet."
+      ]
+    }
   }
 }
