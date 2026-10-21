@@ -2739,7 +2739,9 @@ G.test = {
   // the goon as the figures draw him (on threes in flat play)
   goonView(id) { const g = combat.goons.find((q) => q.id === id); if (!g) return null; const v = goonOnThrees(g); return { phase: v.phase, poseT: v.poseT, pose: v.pose, x: v.x, z: v.z }; },
   // start a job (type: sludge, catch, washer, pizza, balloon, brawl, taxi, thief) at the nearest offer of that type, or at the hero
-  job(type) { const o = jobs.offers.find((q) => q.type === type) || null; jobs.start(type, o, heroFight()); return jobs.info(); },
+  job(type, mission) { const o = jobs.offers.find((q) => q.type === type) || null; jobs.start(type, o, heroFight(), mission ? { mission } : undefined); return jobs.info(); },
+  // The live getaway's cruise speed, or 0 when the job has no car.
+  jobPace() { const c = jobs.active && jobs.active.data && jobs.active.data.car; return c && c.auto ? c.auto.speed : 0; },
   // Set the live job clock. The copy from action() is not the live one. Returns the timer, or false when nothing is running.
   jobClock(t) { const A = jobs.active; if (!A) return false; A.timer = +t; return A.timer; },
   // A free balloon, this many metres up. Returns false when the live job is not a balloon still in the air.

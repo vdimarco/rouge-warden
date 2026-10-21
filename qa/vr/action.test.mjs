@@ -866,5 +866,20 @@ test("a low balloon stays ink, and one at 140 m turns the card hot", () => {
   J.update(DT, 0, h);
   assert.equal(J.card.hot, false);
 });
+test("the ninth-flush car drives faster than an odd-job getaway", () => {
+  const C = createCombat(city), K = createCars(city), J = createJobs({ city, combat: C, cars: K, seed: 4 });
+  const h = hero(-150, 0, 14);
+  const path = [{ x: -150, y: 0, z: 14 }, { x: -150, y: 0, z: 184 }, { x: 20, y: 0, z: 184 }];
+  const offer = () => ({ id: 90, type: "getaway", name: "Getaway Car", x: path[0].x, y: 0, z: path[0].z, path: path.map((p) => ({ ...p })) });
+  J.start("getaway", offer(), h);
+  const slow = J.active.data.car.auto.speed, tSlow = J.active.timer;
+  J.start("getaway", offer(), h, { mission: "STOP THAT CAR" });
+  J.update(DT, 0, h);
+  assert.equal(slow, JOB.getaway.speed);
+  assert.equal(J.active.data.car.auto.speed, JOB.getaway.beat);
+  assert.ok(JOB.getaway.beat > JOB.getaway.speed + 5);
+  assert.ok(J.active.timer < tSlow, "clock " + J.active.timer.toFixed(1) + " vs " + tSlow.toFixed(1));
+  assert.match(J.card.title, /STOP THAT CAR/);
+});
 console.log(fails ? "FAIL: action (" + fails + " failed)" : "PASS: action");
 process.exitCode = fails ? 1 : 0;

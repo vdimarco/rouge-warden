@@ -1,0 +1,3 @@
+- [ ] An odd-job getaway cruises at 17 m/s
+- [ ] The ninth-flush car cruises at 24 m/s and the card names STOP THAT CAR
+- [ ] The same road gives the faster car less time on the clock
