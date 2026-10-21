@@ -7,5 +7,5 @@ Mark Haigh-Hutchinson, Real-Time Cameras (2009). The subject sits off the centre
 ## Decisions
 
 - The rise is a camera slide after the arm is placed. `FLATCAM.arm` stays 4.5 m and `FLATCAM.pitch0` stays −20°. The reported pitch and distance are the arm, measured before the slide.
-- It adds up to 1.15 m, faded in from 8 to 14 m/s, and only off the ground with a rope. The ceiling check still stops it.
+- It adds up to 1.15 m, faded in from 8 to 14 m/s, and only off the ground with a rope. It uses the same height fade as the standing lift, so looking up, when the camera is already down by the head, adds none of it. The ceiling check still stops it.
 - A stand, a run on the street, and first person do not take it.
