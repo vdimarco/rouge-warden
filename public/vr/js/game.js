@@ -1349,11 +1349,11 @@ export function createGame({ scene, city, view, ropes, hands, ui, audio, P, save
     state: save.king === "beaten" ? "gone" : save.king, // sleeping | awake | gone (flushed)
     t: 0, yaw: perch.yaw + Math.PI, wake: 9, windT: 0, cd: KING.firstDelay, grace: 0, recoil: 0, react: 0,
     snore: null, ball: null, zzz: 0, respawn: 0, whistle: null, lean: 0.16, rise: 0, stretch: 0.955, flash: 0, glow: 0,
-    kind: "throw", turn: 0, mark: null, lane: null, // after a pipe is off, attacks cycle: throw, stomp, pull, belch, sweep
+    kind: "throw", turn: 0, mark: null, lane: null, // after a pipe is off, attacks cycle: throw, stomp, pull, belch, sweep, grab
   };
   const deck = { x: nd.x, y: nd.deck.y, z: nd.z }; // where you go when the hearts run out: the deck, out of his sight
-  const kingLog = { balls: [], throws: 0, hits: 0, misses: 0, stomps: 0, pulls: 0, belches: 0, sweeps: 0 };
-  const KING_CYCLE = ["throw", "stomp", "pull", "belch", "sweep"];
+  const kingLog = { balls: [], throws: 0, hits: 0, misses: 0, stomps: 0, pulls: 0, belches: 0, sweeps: 0, grabs: 0 };
+  const KING_CYCLE = ["throw", "stomp", "pull", "belch", "sweep", "grab"];
   const mouthWorld = (out) => { kingRig.updateMatrixWorld(true); return out.copy(mouthLocal).applyMatrix4(kingRig.matrixWorld); };
   const losClear = (o, x, y, z) => {
     const dx = x - o.x, dy = y - o.y, dz = z - o.z, d = Math.sqrt(dx * dx + dy * dy + dz * dz);
@@ -1572,6 +1572,7 @@ export function createGame({ scene, city, view, ropes, hands, ui, audio, P, save
         else if (K.kind === "pull") releasePull();
         else if (K.kind === "belch") releaseBelch();
         else if (K.kind === "sweep") releaseSweep();
+        else if (K.kind === "grab") releaseGrab();
         else releaseBall();
       }
       return;
@@ -1598,6 +1599,9 @@ export function createGame({ scene, city, view, ropes, hands, ui, audio, P, save
           markSweep();
           word("SWEEP", perch.x, deck.y + 5, perch.z, { scale: 1.8 });
           ringWave({ x: perch.x, y: deck.y + 0.3, z: perch.z }, C_SLUDGE, 18, 0.9);
+        } else if (K.kind === "grab") {
+          word("GRAB", perch.x, deck.y + 6, perch.z, { scale: 1.8 });
+          ringWave({ x: perch.x, y: deck.y + 0.4, z: perch.z }, C_SLUDGE, 8, 0.9);
         } else ringWave(MOUTHP, C_SLUDGE, 9, 0.9);
       } else K.cd = 0.5;
     }
@@ -1690,6 +1694,18 @@ export function createGame({ scene, city, view, ropes, hands, ui, audio, P, save
     else { kingLog.misses++; word("SAFE", P.pos.x, P.pos.y + 2.2, P.pos.z, { scale: 1.2 }); }
     K.cd = KING.throwEvery;
     K.lane = null;
+    advanceTurn();
+    if (hit) hurt();
+  }
+  // Close to him, on the ground or in the air, a grab takes a heart. A rope does not hold. Farther out, it does not.
+  function releaseGrab() {
+    const dist = Math.hypot(P.pos.x - perch.x, P.pos.z - perch.z);
+    const hit = dist <= KING.grabRadius;
+    ringWave({ x: perch.x, y: deck.y + 0.3, z: perch.z }, C_SLUDGE, 10, 0.4);
+    kingLog.grabs++;
+    if (hit) word("GLUG", P.pos.x, P.pos.y + 1.6, P.pos.z, { scale: 1.3 });
+    else { kingLog.misses++; word("SAFE", P.pos.x, P.pos.y + 2.2, P.pos.z, { scale: 1.2 }); }
+    K.cd = KING.throwEvery;
     advanceTurn();
     if (hit) hurt();
   }
@@ -1972,6 +1988,7 @@ export function createGame({ scene, city, view, ropes, hands, ui, audio, P, save
       else if (K.kind === "pull" && K.windT > 0) { OBJ.detail = "He's pulling. Shoot a web"; OBJ.short = "WEB"; }
       else if (K.kind === "belch" && K.windT > 0) { OBJ.detail = "He's belching. Leave the spot"; OBJ.short = "MOVE"; }
       else if (K.kind === "sweep" && K.windT > 0) { OBJ.detail = "He's sweeping. Step aside"; OBJ.short = "SIDE"; }
+      else if (K.kind === "grab" && K.windT > 0) { OBJ.detail = "He's grabbing. Get back"; OBJ.short = "BACK"; }
       // the compass uses this same pipe, so a leftover clog cannot point somewhere else
       progress.goal = pipe ? { x: pipe.tip.x, y: pipe.tip.y, z: pipe.tip.z, kind: "pipe", name: "King" } : null;
     } else {
@@ -2232,7 +2249,7 @@ export function createGame({ scene, city, view, ropes, hands, ui, audio, P, save
     clearClog(id) { const c = clogs.find((q) => q.id === id); if (c) { lastFlushed = c; flush(c, -1, true); } },
     // a pipe comes off, the way three pumps would
     ripPipe(i = 0) { const p = pipes[i]; if (!p || p.ripped) return false; p.pumps = GAME.pumpsToFlush; ripPipe(p); return true; },
-    // the next frames may wind up at once (the fight still picks throw, stomp, pull, belch, or sweep)
+    // the next frames may wind up at once (the fight still picks throw, stomp, pull, belch, sweep, or grab)
     kingReady() {
       if (K.state !== "awake") return false;
       if (K.ball) endBall(null, false);
@@ -2244,7 +2261,7 @@ export function createGame({ scene, city, view, ropes, hands, ui, audio, P, save
       if (K.state !== "awake") return false;
       if (K.ball) endBall(null, false);
       K.wake = Math.max(K.wake, 3); K.grace = 0; K.respawn = 0; K.cd = KING.throwEvery;
-      K.kind = kind === "stomp" ? "stomp" : kind === "pull" ? "pull" : kind === "belch" ? "belch" : kind === "sweep" ? "sweep" : "throw";
+      K.kind = kind === "stomp" ? "stomp" : kind === "pull" ? "pull" : kind === "belch" ? "belch" : kind === "sweep" ? "sweep" : kind === "grab" ? "grab" : "throw";
       K.windT = KING.windUp;
       if (K.kind === "belch") markBelch();
       if (K.kind === "sweep") markSweep();
@@ -2257,7 +2274,7 @@ export function createGame({ scene, city, view, ropes, hands, ui, audio, P, save
         started, T, kind, model: kingModel, deck: { ...deck },
         clogs: clogs.map((c) => ({ id: c.id, pumps: c.pumps, done: c.done, level: c.level })),
         bonus: save.bonus, bank: progress.bank,
-        king: { state: K.state, wake: K.wake, windT: K.windT, cd: K.cd, grace: K.grace, hearts: progress.hearts, respawn: K.respawn, kind: K.kind, turn: K.turn, stomps: kingLog.stomps, pulls: kingLog.pulls, belches: kingLog.belches, sweeps: kingLog.sweeps, mark: K.mark ? [K.mark.x, K.mark.z] : null, lane: K.lane, perch: [perch.x, perch.y, perch.z], ball: K.ball ? { x: K.ball.pos.x, y: K.ball.pos.y, z: K.ball.pos.z, t: K.ball.t, cosmetic: K.ball.cosmetic } : null, throws: kingLog.throws, hits: kingLog.hits, misses: kingLog.misses, balls: kingLog.balls.map((b) => ({ ...b })), mouth: mouthWorld(new THREE.Vector3()).toArray(), visible: kingRig.visible, glow: kingUniforms.uGlow.value, react: K.react },
+        king: { state: K.state, wake: K.wake, windT: K.windT, cd: K.cd, grace: K.grace, hearts: progress.hearts, respawn: K.respawn, kind: K.kind, turn: K.turn, stomps: kingLog.stomps, pulls: kingLog.pulls, belches: kingLog.belches, sweeps: kingLog.sweeps, grabs: kingLog.grabs, mark: K.mark ? [K.mark.x, K.mark.z] : null, lane: K.lane, perch: [perch.x, perch.y, perch.z], ball: K.ball ? { x: K.ball.pos.x, y: K.ball.pos.y, z: K.ball.pos.z, t: K.ball.t, cosmetic: K.ball.cosmetic } : null, throws: kingLog.throws, hits: kingLog.hits, misses: kingLog.misses, balls: kingLog.balls.map((b) => ({ ...b })), mouth: mouthWorld(new THREE.Vector3()).toArray(), visible: kingRig.visible, glow: kingUniforms.uGlow.value, react: K.react },
         pipes: pipes.map((p) => ({ id: p.id, pumps: p.pumps, ripped: p.ripped, tip: p.tip.toArray() })),
         finale: { on: fin.on, t: fin.t, credits: fin.credits },
         trial: trial ? { id: trial.t.id, ring: trial.ring, time: trial.time } : null,
