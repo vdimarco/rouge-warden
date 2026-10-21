@@ -1752,3 +1752,48 @@ Unreal is not available here, so the native diamond was not captured. The title 
 ![Play client at 1280, host offline](gta-missions/r38-play-1280.png)
 
 ![Menu on a 390-wide screen, Recover visible](gta-missions/r38-play-menu-390.png)
+
+### Round 39 — 2026-10-21 — rubric v1
+
+- What changed: A hit that dents the body plays a short thud for that car's driver. A wall faster than 600 cm/s dents, and so does another car faster than 500 cm/s. A scrape under that stays quiet. The same car waits 0.35 seconds before the next thud, so a grind does not machine-gun. The other driver hears it when someone is at that wheel. The wave is a 48 Hz body under a short noise crack. It stays off the rank pitches, the lock chirp, the pond tick, the court whistle, the court rasp and the theatre page. The music path and the three feedback sounds are unchanged.
+- Why it helped: The body already kept the dent, and the engine hum kept going. Nothing marked the hit. The thud is the sound of that dent.
+- Screenshots: title `docs/gauntlet/gta-missions/r39-title-1280.png`, `r39-title-390.png`, `r39-title-320.png`. Play client, host offline, `r39-play-1280.png`. Menu with Recover `r39-play-menu-390.png`. The title loaded with no page errors. The raw play page still logs the missing `@epicgames-ps/lib-pixelstreamingfrontend-ue5.8` specifier; the shell and Recover still draw. The thud was not heard in a car. `Scripts/test_impact_tone.py` reports 35 assertions, 0 failures, on c++, g++, and clang++. Syntax check `--both` passed for `QuebecGameplay.cpp` and `QuebecDrive.cpp`. OpenSpec CLI is not installed, so `openspec validate` did not run.
+- Next target: controls feel, still 8, tied with feedback. Mission clarity stays at 7 and stays out of reach offline. Responsiveness stays at 3 and stays out of scope. Performance stays at 4 and is not measurable here. Fun, difficulty, variety, and pacing stay at 9.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 3 | Unchanged. |
+| Color palette | 5 | Unchanged. |
+| Detail density | 3 | Unchanged. |
+| Texture and material quality | 3 | Unchanged. |
+| Composition and camera | 4 | Unchanged. |
+| Atmosphere | 4 | Unchanged. |
+| Character models | 3 | Unchanged. |
+| Animation smoothness | 3 | Unchanged. |
+| Particles and VFX | 2 | Unchanged. |
+| UI polish | 4 | Unchanged. The native card was not seen, and French and English still share the screen. |
+| Responsiveness and input latency | 3 | Unchanged. Still a lagged stream. Out of scope for this loop. |
+| Controls feel | 8 | Unchanged. Lock still holds Space while driving. |
+| Mission clarity | 7 | Unchanged. The fare post still moves from the loaner to the quay. The native card was not seen, and this score stays out of reach offline. |
+| Pacing | 9 | Unchanged. Four seconds on foot after boarding still loses the passenger. |
+| Fun factor | 9 | Unchanged. Chez Lise still sells a kit, a vest, or one star. A thud is not the reference's spread of things to do. |
+| Difficulty curve | 9 | Unchanged. Selling the last page ends it for 200 and does not bank the chain. A wreck still costs more than the goon pay. |
+| Feedback | 8 | Unchanged. The dent was already on the body. The thud is the sound of that dent, and it was not heard. |
+| Sound design | 9 | A dent plays a low crack. A scrape stays quiet, and the same car waits 0.35 seconds. The wave stays off the chirp and the other stings. It was not heard. Nobody is voiced, so this is not the reference's city. |
+| Variety | 9 | Unchanged. La course is still a sixth job in the same district. |
+| Performance stability | 4 | Unchanged. Not measurable in this container. |
+
+- Aesthetics raw: 34 / 10 dimensions, index 34
+- Playability raw: 75 / 10 dimensions, index 75
+- Total: 109 / 200
+- Delta vs last round: +1 (round 38 was 108). Sound design 8 → 9. Every other score held.
+
+![GTA title at 1280](gta-missions/r39-title-1280.png)
+
+![GTA title at 390](gta-missions/r39-title-390.png)
+
+![GTA title at 320](gta-missions/r39-title-320.png)
+
+![Play client at 1280, host offline](gta-missions/r39-play-1280.png)
+
+![Menu on a 390-wide screen, Recover visible](gta-missions/r39-play-menu-390.png)
