@@ -119,7 +119,14 @@ try {
       G.test.teleport(m[0] + x, y, m[2]);
       G.P.frozen = true;
       G.P.onGround = ground;
-      if (rope) G.P.ropes[0].state = "attached";
+      if (rope) {
+        const r = G.P.ropes[0];
+        // sticky so the wind-up does not drop a web nobody is holding; a held web stays the same way
+        r.state = "attached";
+        r.sticky = true;
+        r.target = { tag: "building", id: 1 };
+        r.anchor.x = G.P.pos.x; r.anchor.y = G.P.pos.y + 40; r.anchor.z = G.P.pos.z;
+      }
     };
     const release = () => {
       const before = { hearts: G.game.progress.hearts, x: G.P.pos.x, z: G.P.pos.z, pulls: G.game.info().king.pulls };
