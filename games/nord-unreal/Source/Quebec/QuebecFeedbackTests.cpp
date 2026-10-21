@@ -42,6 +42,10 @@ bool FQuebecRaceResultTest::RunTest(const FString& Parameters)
         TestEqual(TEXT("Invalid or timed-out elapsed preserves last valid result"), Race->LastRaceTime, 10.f);
     }
     Race->Phase = EQuebecCampaignPhase::Complete;
+    Race->PondStep = 0;
+    TestTrue(TEXT("An open pond step names recover instead of the lap card"),
+        Race->GetStatusText().Contains(TEXT("R recovers this step")));
+    Race->PondStep = AQuebecCampaign::PondBankedStep;
     const FString Status = Race->GetStatusText();
     TestTrue(TEXT("Result presents recovered time and clean session best"),
         Status.Contains(TEXT("10.0s")) && Status.Contains(TEXT("recovered")) && Status.Contains(TEXT("60.0s")));

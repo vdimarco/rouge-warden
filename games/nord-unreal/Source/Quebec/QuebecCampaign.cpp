@@ -1,7 +1,11 @@
 #include "QuebecCampaign.h"
 #include "QuebecGameplay.h"
 #include "QuebecGTA.h" // Side jobs: QuebecJobs::IsJobActive for the race gate guard (JOBS).
+#include "QuebecPondRules.h"
 #include "QuebecSky.h"
+
+static_assert(QuebecPondRules::StepBanked == AQuebecCampaign::PondBankedStep,
+    "mission 3 banks in the session only; the campaign and the rules share one banked index");
 
 #include "Components/BoxComponent.h"
 #include "Components/CapsuleComponent.h"
@@ -306,6 +310,27 @@ void AQuebecCampaign::BuildEncounter()
     AddPart(TEXT("ProjectionBanner"),Cube,FVector(-30.,0.,120.),FVector(230.,15.,55.),Gold,false,Rival);
     for (int32 X : {-140,140}) for (int32 Y : {-95,95})
         AddPart(*FString::Printf(TEXT("ProjectionWheel%d_%d"),X,Y),Sphere,FVector(X,Y,-25.),FVector(65.,35.,65.),Ink,false,Rival);
+
+    // Mission 3 posts. Hidden until the race is banked; the blink itself is in QuebecPondRules::PartVisible.
+    const auto PondAt = [](const QuebecPondRules::FSpot& Spot, double Height)
+    {
+        return FVector(Spot.X, Spot.Y, Height);
+    };
+    PondParts.Add(AddPart(TEXT("PondShore"),Cylinder,PondAt(QuebecPondRules::ShoreLookout,6.),FVector(220.,220.,12.),Cream));
+    PondCaptions.Add(AddCaption(TEXT("PondShoreCaption"),PondAt(QuebecPondRules::ShoreLookout,160.),TEXT("NORTH SHORE"),18.f));
+    for (int32 Beam = 0; Beam < QuebecPondRules::BeamCount; ++Beam)
+    {
+        PondParts.Add(AddPart(*FString::Printf(TEXT("PondBeam%d"),Beam),Cylinder,PondAt(QuebecPondRules::Beams[Beam],160.),FVector(28.,28.,320.),Gold));
+        PondCaptions.Add(AddCaption(*FString::Printf(TEXT("PondBeamCaption%d"),Beam),PondAt(QuebecPondRules::Beams[Beam],340.),TEXT("BEAM"),18.f));
+    }
+    PondParts.Add(AddPart(TEXT("PondNearLock"),Cube,PondAt(QuebecPondRules::NearLock,70.),FVector(40.,40.,140.),Gold));
+    PondCaptions.Add(AddCaption(TEXT("PondNearCaption"),PondAt(QuebecPondRules::NearLock,180.),TEXT("NEAR LOCK"),18.f));
+    PondParts.Add(AddPart(TEXT("PondFarLock"),Cube,PondAt(QuebecPondRules::FarLock,70.),FVector(40.,40.,140.),Lime));
+    PondCaptions.Add(AddCaption(TEXT("PondFarCaption"),PondAt(QuebecPondRules::FarLock,180.),TEXT("FAR LOCK"),18.f));
+    PondParts.Add(AddPart(TEXT("PondDashPost"),Cylinder,PondAt(QuebecPondRules::DashEnd,90.),FVector(24.,24.,180.),Lime));
+    PondCaptions.Add(AddCaption(TEXT("PondDashCaption"),PondAt(QuebecPondRules::DashEnd,200.),TEXT("SPRINT"),18.f));
+    PondParts.Add(AddPart(TEXT("PondPicnicClamp"),Sphere,PondAt(QuebecPondRules::Picnic,80.),FVector(48.,48.,48.),Berry));
+    PondCaptions.Add(AddCaption(TEXT("PondPicnicCaption"),PondAt(QuebecPondRules::Picnic,180.),TEXT("PICNIC CLAMP"),18.f));
 }
 
 void AQuebecCampaign::Tick(float DeltaSeconds)
@@ -317,6 +342,7 @@ void AQuebecCampaign::Tick(float DeltaSeconds)
         bClampOpen = FMath::Fmod(GetWorld()->GetTimeSeconds(),6.f) < 2.5f;
         if (Phase <= EQuebecCampaignPhase::ReleaseTable) TickTerrace(DeltaSeconds);
         if (Phase == EQuebecCampaignPhase::RaceReady || Phase == EQuebecCampaignPhase::RaceRunning) TickRace(DeltaSeconds);
+        if (Phase == EQuebecCampaignPhase::Complete) TickPond();
     }
     if (GetWorld()->GetTimeSeconds()-LastPresentationTime >= .1f)
     {
@@ -477,7 +503,134 @@ bool AQuebecCampaign::HandleInteract(AQuebecController* Controller)
         }
         return true;
     }
+    if (IsPondOpen())
+    {
+        if (PondStep == QuebecPondRules::StepTag)
+        {
+            int32 BestBeam = -1;
+            double BestDistance = QuebecPondRules::Reach + 1.;
+            const AQuebecCharacter* Character = Cast<AQuebecCharacter>(Controller->GetPawn());
+            if (!Character) return false;
+            for (int32 Beam = 0; Beam < QuebecPondRules::BeamCount; ++Beam)
+            {
+                const QuebecPondRules::FSpot& Spot = QuebecPondRules::Beams[Beam];
+                if (!NearPond(Controller, Spot.X, Spot.Y)) continue;
+                const double Distance = FVector::Dist2D(Character->GetActorLocation(), FVector(Spot.X, Spot.Y, 0.));
+                if (Distance < BestDistance) { BestDistance = Distance; BestBeam = Beam; }
+            }
+            if (BestBeam < 0) return false;
+            const int32 Next = QuebecPondRules::Apply(PondStep, QuebecPondRules::EAct::Tag, BestBeam, false);
+            if (Next == PondStep)
+            {
+                Controller->ShowInteractionMessage(TEXT("That beam blinks with the sky. The postcard does not."));
+                return true;
+            }
+            AdvancePond(Next, Controller, TEXT("Worklight onto the near lock. The sheet is peeling."), false);
+            return true;
+        }
+        const QuebecPondRules::FSpot* UseSpot = nullptr;
+        const TCHAR* UseMessage = nullptr;
+        bool bFinish = false;
+        if (PondStep == QuebecPondRules::StepNear)
+        {
+            UseSpot = &QuebecPondRules::NearLock;
+            UseMessage = TEXT("The sheet peeled east. The far lock is on the new path.");
+        }
+        else if (PondStep == QuebecPondRules::StepFar)
+        {
+            UseSpot = &QuebecPondRules::FarLock;
+            UseMessage = TEXT("Sprint the exposed path. Walking leaves you in the picture.");
+        }
+        else if (PondStep == QuebecPondRules::StepPull)
+        {
+            UseSpot = &QuebecPondRules::Picnic;
+            UseMessage = TEXT("The picnic sits up. A third souvenir, for this session.");
+            bFinish = true;
+        }
+        if (UseSpot && NearPond(Controller, UseSpot->X, UseSpot->Y))
+        {
+            if (bFinish)
+            {
+                PlungerPoint = FVector(UseSpot->X, UseSpot->Y, 130.);
+                PlungerPullTime = GetWorld()->GetTimeSeconds();
+            }
+            // The picnic is session state. CompletedMissions stays 2 and the v1 slot is not rewritten.
+            AdvancePond(QuebecPondRules::Apply(PondStep, QuebecPondRules::EAct::Use, -1, false), Controller, UseMessage, bFinish);
+            return true;
+        }
+        return false;
+    }
     return false;
+}
+
+void AQuebecCampaign::TickPond()
+{
+    if (!IsPondOpen()) return;
+    int32 Next = PondStep;
+    AQuebecController* Who = nullptr;
+    const TCHAR* Message = nullptr;
+    for (TActorIterator<AQuebecController> It(GetWorld()); It; ++It)
+    {
+        AQuebecCharacter* Character = Cast<AQuebecCharacter>(It->GetPawn());
+        if (!Character)
+        {
+            PondSamples.Remove(*It);
+            continue;
+        }
+        FPondSample& Sample = PondSamples.FindOrAdd(*It);
+        const FVector Position = Character->GetActorLocation();
+        if (PondStep == QuebecPondRules::StepShore && NearPond(*It, QuebecPondRules::ShoreLookout.X, QuebecPondRules::ShoreLookout.Y))
+        {
+            Next = QuebecPondRules::Apply(PondStep, QuebecPondRules::EAct::Arrive, -1, false);
+            Who = *It;
+            Message = TEXT("The postcard is on. Tag the beam that never blinks.");
+        }
+        else if (PondStep == QuebecPondRules::StepDash && Sample.bSeen)
+        {
+            const QuebecPondRules::FSpot End = QuebecPondRules::DashEnd;
+            const double Previous = FVector::Dist2D(Sample.Where, FVector(End.X, End.Y, 0.));
+            const double Distance = FVector::Dist2D(Position, FVector(End.X, End.Y, 0.));
+            QuebecPondRules::NoteDash(Sample.bWasFar, Previous);
+            if (QuebecPondRules::SprintCross(Sample.bWasFar, Previous, Distance, Character->GetVelocity().Size2D()))
+            {
+                Next = QuebecPondRules::Apply(PondStep, QuebecPondRules::EAct::SprintIn, -1, true);
+                Who = *It;
+                Message = TEXT("The path is open. Pull the picnic clamp.");
+            }
+            QuebecPondRules::NoteDash(Sample.bWasFar, Distance);
+        }
+        else if (PondStep == QuebecPondRules::StepDash)
+        {
+            const QuebecPondRules::FSpot End = QuebecPondRules::DashEnd;
+            QuebecPondRules::NoteDash(Sample.bWasFar, FVector::Dist2D(Position, FVector(End.X, End.Y, 0.)));
+        }
+        Sample.Where = Position;
+        Sample.bSeen = true;
+        if (Next != PondStep) break;
+    }
+    for (auto It = PondSamples.CreateIterator(); It; ++It) if (!It.Key().IsValid()) It.RemoveCurrent();
+    if (Next != PondStep) AdvancePond(Next, Who, Message, false);
+}
+
+void AQuebecCampaign::AdvancePond(int32 Next, AQuebecController* Who, const TCHAR* Message, bool bFinished)
+{
+    if (Next == PondStep) return;
+    PondStep = Next;
+    PondSamples.Reset();
+    if (Who && Message) Who->ShowInteractionMessage(Message);
+    for (TActorIterator<AQuebecController> It(GetWorld()); It; ++It)
+        It->PlayFeedback(bFinished ? EQuebecFeedbackCue::Complete : EQuebecFeedbackCue::Checkpoint);
+    UpdatePresentation();
+    ForceNetUpdate();
+}
+
+bool AQuebecCampaign::NearPond(const AQuebecController* Controller, double X, double Y) const
+{
+    const AQuebecCharacter* Character = Controller ? Cast<AQuebecCharacter>(Controller->GetPawn()) : nullptr;
+    if (!Character) return false;
+    const FVector Position = Character->GetActorLocation();
+    if (FMath::Abs(Position.Z) > 400.) return false;
+    return FVector::Dist2D(Position, FVector(X, Y, 0.)) <= QuebecPondRules::Reach;
 }
 
 void AQuebecCampaign::TickRace(float DeltaSeconds)
@@ -633,7 +786,21 @@ bool AQuebecCampaign::MoveToSafeCheckpoint(AQuebecController* Controller, const 
 void AQuebecCampaign::RequestRetry(AQuebecController* Controller)
 {
     if (QuebecDistrict::IsToronto(GetWorld()) || !HasAuthority() || !Controller || !Controller->GetPawn()) return;
-    if (Phase == EQuebecCampaignPhase::Complete) { Controller->ShowInteractionMessage(TEXT("Both scenes are banked. T replays the race.")); return; }
+    if (Phase == EQuebecCampaignPhase::Complete)
+    {
+        if (IsPondOpen())
+        {
+            const QuebecPondRules::FSpot Spot = QuebecPondRules::RecoverAt(PondStep);
+            if (MoveToSafeCheckpoint(Controller, FVector(Spot.X, Spot.Y, 100.), FRotator(0., 90., 0.)))
+            {
+                PondSamples.Remove(Controller);
+                Controller->ShowInteractionMessage(TEXT("This step restored. The reflection stays where you left it."));
+            }
+            return;
+        }
+        Controller->ShowInteractionMessage(TEXT("Both scenes are banked. T replays the race."));
+        return;
+    }
     if (Phase <= EQuebecCampaignPhase::ReleaseTable)
     {
         if (IsAimingLight(Controller)) StopAiming();
@@ -686,6 +853,12 @@ void AQuebecCampaign::RequestRetry(AQuebecController* Controller)
 void AQuebecCampaign::RequestReplay(AQuebecController* Controller)
 {
     if (QuebecDistrict::IsToronto(GetWorld()) || !HasAuthority() || !Controller || Phase != EQuebecCampaignPhase::Complete) return;
+    if (IsPondOpen())
+    {
+        Controller->ShowInteractionMessage(TEXT("The picnic is still in the picture. T replays the race after it is free."));
+        return;
+    }
+    // A race replay does not rewind PondStep. A banked picnic stays banked for this session.
     RaceGateIndex = 0;
     RaceElapsed = 0.f;
     bRaceRetried = false;
@@ -709,6 +882,22 @@ void AQuebecCampaign::RecordRaceResult()
 
 FString AQuebecCampaign::GetInteractionPrompt(const AQuebecController* Controller) const
 {
+    if (IsPondOpen())
+    {
+        if (PondStep == QuebecPondRules::StepTag)
+        {
+            for (int32 Beam = 0; Beam < QuebecPondRules::BeamCount; ++Beam)
+                if (NearPond(Controller, QuebecPondRules::Beams[Beam].X, QuebecPondRules::Beams[Beam].Y))
+                    return TEXT("E: tag this beam");
+        }
+        else if (PondStep == QuebecPondRules::StepNear && NearPond(Controller, QuebecPondRules::NearLock.X, QuebecPondRules::NearLock.Y))
+            return TEXT("E: set the worklight");
+        else if (PondStep == QuebecPondRules::StepFar && NearPond(Controller, QuebecPondRules::FarLock.X, QuebecPondRules::FarLock.Y))
+            return TEXT("E: set the worklight");
+        else if (PondStep == QuebecPondRules::StepPull && NearPond(Controller, QuebecPondRules::Picnic.X, QuebecPondRules::Picnic.Y))
+            return TEXT("E: pull the picnic clamp");
+        return FString();
+    }
     if (Phase == EQuebecCampaignPhase::AimWorklight && CanReach(Controller,WorklightLocation,LightRadius))
         return IsAimingLight(Controller) ? TEXT("Mouse: aim / E: release worklight") : LightOperator ? TEXT("Friend aiming the worklight") : TEXT("E: aim worklight at gold seam");
     if (Phase == EQuebecCampaignPhase::PullClamp && CanReach(Controller,FirstClampLocation,ClampRadius))
@@ -720,11 +909,25 @@ FString AQuebecCampaign::GetInteractionPrompt(const AQuebecController* Controlle
 
 FString AQuebecCampaign::GetMissionTitle() const
 {
+    if (IsPondOpen()) return TEXT("03 / STILL LIFE, MOVING TARGET");
     return Phase <= EQuebecCampaignPhase::ReleaseTable ? TEXT("01 / A TABLE FOR ETERNITY") : TEXT("02 / NO SUCH THING AS A QUIET LAP");
 }
 
 FString AQuebecCampaign::GetObjectiveText() const
 {
+    if (IsPondOpen())
+    {
+        switch (PondStep)
+        {
+        case QuebecPondRules::StepShore: return TEXT("Walk to the north shore lookout");
+        case QuebecPondRules::StepTag: return TEXT("Tag the beam that never blinks");
+        case QuebecPondRules::StepNear: return TEXT("Set the worklight on the near lock");
+        case QuebecPondRules::StepFar: return TEXT("Set the worklight on the far lock");
+        case QuebecPondRules::StepDash: return TEXT("Sprint the exposed path");
+        case QuebecPondRules::StepPull: return TEXT("Pull the picnic clamp");
+        default: break;
+        }
+    }
     switch (Phase)
     {
     case EQuebecCampaignPhase::AimWorklight: return TEXT("Aim the worklight at the gold seam");
@@ -740,6 +943,19 @@ FString AQuebecCampaign::GetObjectiveText() const
 
 FString AQuebecCampaign::GetBriefingText() const
 {
+    if (IsPondOpen())
+    {
+        switch (PondStep)
+        {
+        case QuebecPondRules::StepShore: return TEXT("CURATOR: Every summer, held still. LIME JACKET: The pond is a postcard. Walk the north shore and watch it.");
+        case QuebecPondRules::StepTag: return TEXT("SKULL SHIRT: Two of those beams blink with the sky. The postcard does not. Tag the one that stays.");
+        case QuebecPondRules::StepNear: return TEXT("LIME JACKET: Worklight on the near lock. That perfect sheet should peel.");
+        case QuebecPondRules::StepFar: return TEXT("WHITE CAP: It peeled east. The far lock is on the new path. Check the people before you chase anyone.");
+        case QuebecPondRules::StepDash: return TEXT("TOPKNOT: Sprint. Walking leaves you in the picture with the toast.");
+        case QuebecPondRules::StepPull: return TEXT("LIME JACKET: That is the real clamp. Pull. They have been toasting the same glass for hours.");
+        default: break;
+        }
+    }
     switch (Phase)
     {
     case EQuebecCampaignPhase::AimWorklight: return TEXT("CURATOR: A moment this lovely should never move. LIME JACKET: The chairs disagree. Strongly. Find the seam in that picnic press.");
@@ -756,6 +972,7 @@ FString AQuebecCampaign::GetBriefingText() const
 FString AQuebecCampaign::GetStatusText() const
 {
     if (!SaveStatus.IsEmpty()) return SaveStatus;
+    if (IsPondOpen()) return TEXT("R recovers this step");
     if (Phase == EQuebecCampaignPhase::AimWorklight) return FString::Printf(TEXT("Alignment %d%% / hold %d%%"),FMath::RoundToInt(LightAlignment*100.f),FMath::RoundToInt(LightHoldProgress*100.f));
     if (Phase == EQuebecCampaignPhase::CrossCable) return FString::Printf(TEXT("Sprint %s / jump %s / R: recover"),bSprintSeen?TEXT("banked"):TEXT("needed"),bJumpSeen?TEXT("banked"):TEXT("needed"));
     if (Phase == EQuebecCampaignPhase::PullClamp || Phase == EQuebecCampaignPhase::ReleaseTable) return bClampOpen ? TEXT("GREEN BEAT / pull now / R: recover") : TEXT("Press squeezing / wait for green / R: recover");
@@ -772,6 +989,11 @@ FString AQuebecCampaign::GetStatusText() const
 
 FVector AQuebecCampaign::GetObjectiveLocation() const
 {
+    if (IsPondOpen())
+    {
+        const QuebecPondRules::FSpot Spot = QuebecPondRules::Objective(PondStep);
+        return FVector(Spot.X, Spot.Y, 100.);
+    }
     switch (Phase)
     {
     case EQuebecCampaignPhase::AimWorklight: return WorklightLocation;
@@ -839,6 +1061,18 @@ void AQuebecCampaign::UpdatePresentation()
     for (UTextRenderComponent* Caption : GateCaptions) Caption->SetVisibility(bRace);
     Rival->SetWorldLocationAndRotation(RivalLocation,FRotator(0.f,RivalYaw,0.f));
     Rival->SetVisibility(Phase == EQuebecCampaignPhase::RaceReady || Phase == EQuebecCampaignPhase::RaceRunning,true);
+    if (PondParts.Num() == QuebecPondRules::PartCount)
+    {
+        const AGameStateBase* PondState = GetWorld()->GetGameState();
+        const double PondTime = static_cast<double>(PondState ? PondState->GetServerWorldTimeSeconds() : GetWorld()->GetTimeSeconds());
+        const bool bPondWorld = Phase == EQuebecCampaignPhase::Complete;
+        for (int32 Index = 0; Index < PondParts.Num(); ++Index)
+        {
+            const bool bShow = bPondWorld && QuebecPondRules::PartVisible(PondStep, Index, PondTime);
+            PondParts[Index]->SetVisibility(bShow);
+            if (PondCaptions.IsValidIndex(Index)) PondCaptions[Index]->SetVisibility(bShow);
+        }
+    }
     // Every sign faces the local camera; the shared objective itself remains authoritative.
     if (APlayerController* Local = GetWorld()->GetFirstPlayerController())
     {
@@ -860,6 +1094,7 @@ void AQuebecCampaign::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutL
     Super::GetLifetimeReplicatedProps(OutLifetimeProps);
     DOREPLIFETIME(AQuebecCampaign,Phase);
     DOREPLIFETIME(AQuebecCampaign,CompletedMissions);
+    DOREPLIFETIME(AQuebecCampaign,PondStep);
     DOREPLIFETIME(AQuebecCampaign,LightOperator);
     DOREPLIFETIME(AQuebecCampaign,LightYaw);
     DOREPLIFETIME(AQuebecCampaign,LightPitch);

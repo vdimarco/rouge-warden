@@ -83,3 +83,48 @@ Unreal is not available here, so the native diamond was not captured. The title 
 ![Play client at 1280, host offline](gta-missions/r1-play-1280.png)
 
 ![Menu on a 390-wide screen, Recover visible](gta-missions/r1-play-menu-390.png)
+
+### Round 2 — 2026-10-21 — rubric v1
+
+- What changed: After the lap is banked, the mission card and the gold diamond lead mission 3, Still Life, Moving Target, along the north shore. The player tags the beam that never blinks, moves the worklight through a near lock and a far lock, sprints the opened path, and pulls the picnic clamp. The picnic is session state: the v1 save still stores CompletedMissions 0–2, and a reloaded finish offers the pond again. While it is open, side jobs and race replay wait. R, or Menu · Recover on touch, restores the current step and does not rewind it. Once the picnic is banked, the round 1 side-job guide returns.
+- Why it helped: The story stopped at mission 2 of 8, so variety and pacing both sat on "two beats, then free roam." A third beat with a watch, a wrong answer, a route change and a sprint sits between the lap and the side jobs.
+- Screenshots: title `docs/gauntlet/gta-missions/r2-title-1280.png`, `r2-title-390.png`, `r2-title-320.png`. Play client, host offline, `r2-play-1280.png`. Menu with Recover `r2-play-menu-390.png`. The title loaded with no page errors. The raw play page still logs the missing `@epicgames-ps/lib-pixelstreamingfrontend-ue5.8` specifier; the shell and the Recover button still draw. No native pond capture: Unreal is not in this container. `Scripts/test_pond_rules.py` reports 373 assertions, 0 failures, on c++, g++ and clang++. `Scripts/test_job_rules.py` still reports 126 assertions, 0 failures. Syntax check `--both` passed for the campaign, the HUD, side jobs and the race-result test.
+- Next target: sound design (3), tied with responsiveness. Responsiveness is the stream. This loop can put a cue on the pond beats.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 3 | Unchanged. Sky and worklight only. |
+| Color palette | 5 | Unchanged. The pond posts use the same ink, gold, cream, lime and berry. |
+| Detail density | 3 | Unchanged. The new posts are a few comic primitives on the north shore. |
+| Texture and material quality | 3 | Unchanged. |
+| Composition and camera | 4 | Unchanged. The diamond is the one the story already used. |
+| Atmosphere | 4 | Unchanged. The postcard copy is in the card; the shore was not played. |
+| Character models | 3 | Unchanged. |
+| Animation smoothness | 3 | Unchanged. |
+| Particles and VFX | 2 | Unchanged. The blink is a post turning on and off. |
+| UI polish | 4 | The card names mission 3, and touch says Menu · Recover. French and English still share the screen. |
+| Responsiveness and input latency | 3 | Unchanged. Still a lagged stream. |
+| Controls feel | 4 | Unchanged. The dash uses the existing sprint. |
+| Mission clarity | 4 | The card names the current pond step and the diamond marks it. There is still no route line, and the native card was not seen. |
+| Pacing | 4 | A third story beat now sits between the lap and free roam. |
+| Fun factor | 4 | The peel, the wrong beam and the irritated picnic are written. They were not played, so the feel score stays. |
+| Difficulty curve | 4 | Unchanged. The new step is a short puzzle in front of the same side jobs. |
+| Feedback | 4 | Unchanged. The pond reuses the checkpoint and complete cues. |
+| Sound design | 3 | Unchanged. Those cues are the same three one-shots. |
+| Variety | 4 | Three of eight story missions are now in the build, plus the four side jobs. The pond was not played in Unreal. |
+| Performance stability | 4 | Unchanged. |
+
+- Aesthetics raw: 34 / 10 dimensions, index 34
+- Playability raw: 38 / 10 dimensions, index 38
+- Total: 72 / 200
+- Delta vs last round: +2 (round 1 was 70). Pacing 3 → 4. Variety 3 → 4. Every other score held.
+
+![GTA title at 1280](gta-missions/r2-title-1280.png)
+
+![GTA title at 390](gta-missions/r2-title-390.png)
+
+![GTA title at 320](gta-missions/r2-title-320.png)
+
+![Play client at 1280, host offline](gta-missions/r2-play-1280.png)
+
+![Menu on a 390-wide screen, Recover visible](gta-missions/r2-play-menu-390.png)
