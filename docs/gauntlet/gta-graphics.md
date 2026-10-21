@@ -38,3 +38,38 @@ Unreal is not available in this environment, so in-engine frames are the last co
 - Playability raw: 39 / 10 dimensions, index 39
 - Total: 71 / 200
 - Delta vs last round: +1 (first scored row; color palette 4 on the pre-round crowns, 5 after)
+
+### Round 2 — 2026-10-21 — rubric v1
+
+- What changed: `Scripts/city_facade.hlsl` gives each brick or stone course its own tone, and darkens the base of the wall. Glass, trim, and the cornice stay as they were. The map material updates when `apply_city_comic_style.py` runs in the editor.
+- Why it helped: Texture and material quality was tied for the lowest aesthetics score. A flat paper wall reads as a cartoon fill. Course-by-course variation and street dirt are the first surface grain the shader can carry without a new texture.
+- Screenshots: before `docs/gauntlet/gta-graphics/round-02/before-facade.png`, after `docs/gauntlet/gta-graphics/round-02/after-facade.png`. These are a direct port of the facade shader, not an Unreal capture.
+- Next target: particles and VFX (still 2, the lowest aesthetics score).
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 3 | Still one hard sun. This round did not change lights. |
+| Color palette | 5 | Brick red and limestone stay. The new variation sits inside those colours. |
+| Detail density | 3 | Course units now read on the wall. The street is still thin on props. |
+| Texture and material quality | 4 | Per-unit tone and base dirt replace the flat fill. There is still no roughness or wear map. |
+| Composition and camera | 4 | Unchanged gameplay camera. |
+| Atmosphere | 3 | No fog or weather change. |
+| Character models | 3 | Untouched. |
+| Animation smoothness | 3 | No motion reviewed. |
+| Particles and VFX | 2 | None added. |
+| UI polish | 5 | Untouched. |
+| Responsiveness and input latency | 4 | Not measured this round. |
+| Controls feel | 4 | Not played. |
+| Mission clarity | 5 | Unchanged objective card. |
+| Pacing | 4 | Unchanged two-mission slice. |
+| Fun factor | 3 | Not played. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 4 | No new juice. |
+| Sound design | 3 | Not listened to. |
+| Variety | 3 | Two facade families, still one district. |
+| Performance stability | 5 | Source test passed. The shader adds no extra samples. Frame time was not remeasured. |
+
+- Aesthetics raw: 35 / 10 dimensions, index 35
+- Playability raw: 39 / 10 dimensions, index 39
+- Total: 74 / 200
+- Delta vs last round: +3

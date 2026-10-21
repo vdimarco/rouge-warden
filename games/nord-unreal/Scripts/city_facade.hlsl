@@ -17,6 +17,9 @@ float Trim = step(P.x, WindowWidth - 0.016) * step(P.y, 0.30) * Wall;
 float Glass = step(P.x, WindowWidth - 0.039) * step(P.y, 0.275) * Wall;
 float Course = max(step(frac(Z / 28.0), 0.025), step(frac(UV.x * 4.0 + floor(Z / 28.0) * 0.5), 0.018));
 float3 Color = Paper * (1.0 - Course * 0.12);
+// Each brick or stone unit shifts so a wall is not one flat paper colour.
+float BrickNoise = frac(sin(dot(floor(float2(UV.x * 8.0 + floor(Z / 28.0) * 0.5, Z / 28.0)), float2(12.9898, 78.233))) * 43758.5453);
+Color *= lerp(0.86, 1.12, BrickNoise);
 // Quiet limestone courses and unequal bay widths break up the long window grid.
 float Belt = step(abs(frac((Z - 100.0) / 320.0) - 0.015), 0.013) * Wall;
 float Pier = step(frac((UV.x + Seed * 0.3) / 3.0), 0.018) * Wall;
@@ -35,5 +38,7 @@ float Sill = step(P.x, WindowWidth + 0.018) * step(abs(Cell.y - 0.18), 0.018) * 
 Color = lerp(Color, float3(0.44, 0.425, 0.36), max(Lintel, Sill));
 float Basement = step(Z, 82.0) * step(28.0, Z) * step(P.x, 0.15);
 Color = lerp(Color, float3(0.045, 0.055, 0.05), Basement);
+float Dirt = clamp((160.0 - Z) / 160.0, 0.0, 1.0) * (1.0 - Glass);
+Color = lerp(Color, Color * float3(0.62, 0.56, 0.46), Dirt * 0.55);
 float Cornice = step(Height - 65.0, Z);
 return lerp(Color, float3(0.19, 0.21, 0.195), Cornice);
