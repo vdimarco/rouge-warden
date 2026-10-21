@@ -64,5 +64,10 @@ Color = lerp(Color, lerp(float3(0.11, 0.075, 0.05), float3(0.18, 0.16, 0.14), St
 Color = lerp(Color, float3(0.22, 0.13, 0.08), Panel);
 Color = lerp(Color, GlassTint, Transom);
 Color = lerp(Color, float3(0.62, 0.55, 0.32), Knob);
+// A gallery rail in front of the floor above each entrance, and a downspout between bay groups.
+float Gallery = step(DoorSpan, 0.22) * step(430.0, Z) * step(Z, 505.0);
+float Iron = Gallery * max(step(frac(DoorU * 7.0), 0.16), step(abs(Z - 498.0), 5.0));
+float Spout = step(abs(frac(Bay / 4.0) - 0.50), 0.008) * step(40.0, Z) * step(Z, Height - 70.0);
+Color = lerp(Color, float3(0.16, 0.17, 0.18), max(Iron, Spout));
 float Cornice = step(Height - 65.0, Z);
 return lerp(Color, float3(0.19, 0.21, 0.195), Cornice);

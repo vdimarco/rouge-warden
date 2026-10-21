@@ -1,0 +1,4 @@
+- [x] Add a gallery rail and a downspout to `city_facade.hlsl`
+- [x] Shade the facade before and after
+- [x] Run `Scripts/test_environment_refresh.py`
+- [ ] Apply the facade material in Unreal (editor not available here)
