@@ -2,7 +2,7 @@
 // Plain data with no imports, so the Node tests and the page share it.
 // Units are metres and seconds. Y is up, street level is y = 0, and the lake lies to the south (+z).
 
-export const VERSION = "1.24.1";
+export const VERSION = "1.24.2";
 export const SAVE_KEY = "plungerd.vr.v1";
 export const PACKAGE_ID = "com.cottagearcade.fullswing";
 
@@ -43,6 +43,7 @@ export const SWING = {
   lenRate: 15, // the rope length moves toward its target this fast, so a change never pops the body
   catchTime: 0.12, // a slack rope that goes taut catches the body over this time
   chestH: 1.25, // the rope pulls on the chest, at this height above the feet (scaled by calibrated height)
+  bodyH: 1.8, // the hero's height. Easy swing measures ahead, up, reach and the rope in these.
   reelSpeedMax: 9, // grip fully squeezed
   yank: { threshold: 1.2, gain: 2.2, maxDV: 7, cooldown: 0.35, shorten: 1.5 },
   handOverHandGain: 1.3,

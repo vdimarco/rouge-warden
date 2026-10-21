@@ -27,12 +27,15 @@ function makeRope(i) {
     rate: 0, // when above 0, the length moves toward lenTarget this fast instead of cfg.lenRate (a phone rope that pulls you up)
     // internal: the catch, the stretch it leaves, how fast the rope pulls in, last step's state
     stretch: 0, catchT: 0, catchV: 0, catchLen: 0, pull: 0, L0: 0, wasTaut: false, acc: 0, _t: { tag: "", id: null },
+    // easy swing: the player did not aim. The rope lands at once, stays at most 16 body-heights, and pumps once at the bottom.
+    easy: false, easyH: 0, pumped: false, prevY: 0,
   };
 }
 function idle(r) {
   r.state = "idle"; r.target = null; r.len = r.lenTarget = 0; r.flyT = r.flyDur = 0; r.rate = 0;
   r.taut = r.wasTaut = false; r.tension = 0; r.sticky = false; r.blockedT = 0; r.reeling = false;
   r.stretch = r.catchT = r.catchV = r.pull = r.acc = 0;
+  r.easy = false; r.easyH = 0; r.pumped = false; r.prevY = 0;
 }
 
 /* ---------------- API ---------------- */
@@ -93,6 +96,48 @@ export function fire(P, side, from, target) {
   r.flyT = 0;
   r.flyDur = Math.min(d / c.cupSpeed, c.flyMax);
   return r;
+}
+
+// Easy swing lands on this step. hgt is the hero's height, the unit of the rope cap and the ground clearance.
+export function armEasy(r, hgt) {
+  r.easy = true; r.easyH = hgt > 0 ? hgt : SWING.bodyH; r.pumped = false; r.prevY = 0; r.flyDur = 0;
+  return r;
+}
+
+// The point a held swing takes: 12h ahead along (dx, dz) and 14h above the feet. A building within 6h of that point
+// wins; otherwise the point itself, in the sky. One reused result, so a caller copies it before the next call.
+const EASY_OUT = { x: 0, y: 0, z: 0, nx: 0, ny: -1, nz: 0, tag: "sky", id: "sky", easy: true, easyH: 1.8, sky: true, valid: true, same: false, special: false };
+const EASY_DIRS = [];
+for (let y = -1; y <= 1; y++) for (let x = -1; x <= 1; x++) for (let z = -1; z <= 1; z++) if (x || y || z) EASY_DIRS.push(x, y, z);
+export function easyAnchor(P, dx, dz) {
+  const H = (P.cfg && P.cfg.bodyH) || SWING.bodyH;
+  const hl = len2(dx, dz) || 1;
+  dx /= hl; dz /= hl;
+  const ax = P.pos.x + dx * 12 * H, ay = P.pos.y + 14 * H, az = P.pos.z + dz * 12 * H, R = 6 * H;
+  const o = EASY_OUT;
+  o.easy = true; o.easyH = H; o.valid = true; o.same = false; o.special = false; o.sky = true;
+  o.x = ax; o.y = ay; o.z = az; o.nx = 0; o.ny = -1; o.nz = 0; o.tag = "sky"; o.id = "sky";
+  const city = P.city;
+  if (city.nearestSurface(ax, ay, az, R) <= R) {
+    let bt = R + 1, bx = 0, by = 0, bz = 0, bnx = 0, bny = 1, bnz = 0, bid = 0, hit = false;
+    for (let i = 0; i < EASY_DIRS.length; i += 3) {
+      const h = city.raycast(ax, ay, az, EASY_DIRS[i], EASY_DIRS[i + 1], EASY_DIRS[i + 2], R, HIT);
+      if (h && h.t <= R && h.t < bt && h.collider) {
+        bt = h.t; bx = h.x; by = h.y; bz = h.z; bnx = h.nx; bny = h.ny; bnz = h.nz; bid = h.collider.id; hit = true;
+      }
+    }
+    if (hit) { o.x = bx; o.y = by; o.z = bz; o.nx = bnx; o.ny = bny; o.nz = bnz; o.tag = "building"; o.id = bid; o.sky = false; }
+  }
+  return o;
+}
+
+// Let go of an easy swing: the speed stays, and 10% of it is added forward and up.
+export function easyBoost(P) {
+  const v = P.vel, sp = len3(v.x, v.y, v.z);
+  if (!(sp > 0.01)) return;
+  const hs = len2(v.x, v.z), add = 0.1 * sp;
+  if (hs > 0.05) { v.x += (v.x / hs) * add; v.z += (v.z / hs) * add; }
+  v.y += add;
 }
 
 // Let go of a rope. Always works, even on a sticky one (the portal calls it at the burst).
@@ -228,9 +273,22 @@ function aroundLip(P, x, y, z) {
 function attach(P, r) {
   const c = P.cfg, d = len3(r.anchor.x - C.x, r.anchor.y - C.y, r.anchor.z - C.z);
   r.state = "attached";
-  // the rope starts at the distance and settles 3 % shorter: a small tug, never a pop
-  r.len = Math.max(c.minRopeLen, d);
-  r.lenTarget = Math.max(c.minRopeLen, d * c.attachLengthFactor);
+  // the rope starts at the distance and settles 3 % shorter: a small tug, never a pop.
+  // An easy swing stays at that distance, and never longer than 16 body-heights. If the bottom of the
+  // arc would put the feet under 1.5 body-heights, the rope shortens until the bottom sits on that line.
+  let L = Math.max(c.minRopeLen, d), target = Math.max(c.minRopeLen, d * c.attachLengthFactor);
+  if (r.easy) {
+    const H = r.easyH || c.bodyH || SWING.bodyH;
+    const gy = P.city.isWater(P.pos.x, P.pos.z) ? 0 : P.city.groundY(P.pos.x, P.pos.z);
+    const maxL = r.anchor.y - P.chest - (gy + 1.5 * H);
+    L = Math.min(d, 16 * H);
+    if (L > maxL) L = maxL;
+    L = Math.max(c.minRopeLen, L);
+    target = L;
+    r.pumped = false;
+  }
+  r.len = L;
+  r.lenTarget = target;
   r.stretch = r.catchT = r.pull = r.acc = 0; r.taut = r.wasTaut = false; r.tension = 0; r.blockedT = 0;
   if (r.target.tag === "crack") r.sticky = true;
   P.events.push({ type: "attach", side: r.side, target: { tag: r.target.tag, id: r.target.id } });
@@ -291,10 +349,21 @@ function ropeInput(P, i, hand, h) {
 //   stretch coming back) it pulls the chest in at that speed. W is not momentum: it is gone next step, so
 //   the body stops moving in when the rope stops shortening (no yo-yo).
 // - Catch: a slack rope that goes taut with a jolt removes the outward speed over catchTime and gives up to 1 m.
+// While an easy rope holds, the feet stay at least 1.5 body-heights off the ground. Shortening is immediate:
+// a lenTarget that trails the length would let one arc scrape before the winch caught up.
+function keepClear(P, r) {
+  if (!r.easy) return;
+  const H = r.easyH || SWING.bodyH;
+  const gy = P.city.isWater(P.pos.x, P.pos.z) ? 0 : P.city.groundY(P.pos.x, P.pos.z);
+  const cap = Math.min(r.len, 16 * H, r.anchor.y - P.chest - (gy + 1.5 * H));
+  const L = Math.max(P.cfg.minRopeLen, cap);
+  if (r.len > L) { r.len = L; r.lenTarget = Math.min(r.lenTarget, L); r.stretch = 0; }
+}
 function constrain(P, h) {
   const c = P.cfg;
   for (const r of P.ropes) {
     if (r.state !== "attached") continue;
+    keepClear(P, r);
     const L0 = r.len + r.stretch;
     // the length holds still while a catch lasts, so the stretch it measures stays within 1 m
     if (r.catchT <= 0 && r.len > r.lenTarget) r.len = Math.max(r.lenTarget, r.len - (r.rate > 0 ? r.rate : c.lenRate) * h);
@@ -412,6 +481,19 @@ export function step(P, h, inp) {
 
   /* ---- ropes ---- */
   if (attached) constrain(P, h);
+  // Easy swing: holding forward adds 15% speed once, as the arc passes its bottom (falling, then rising).
+  if (attached && inp && inp.forward) {
+    let once = false;
+    for (const r of P.ropes) {
+      if (once || r.state !== "attached" || !r.easy || r.pumped) continue;
+      const ex = C.x - r.anchor.x, ey = C.y - r.anchor.y, ez = C.z - r.anchor.z, d = len3(ex, ey, ez);
+      // under the anchor, and the fall has turned into a rise: the bottom, not the tug of the catch
+      if (r.prevY < -1 && V.y + W.y >= 0 && len2(V.x, V.z) > 2 && d > 1 && -ey / d > 0.75) {
+        V.x *= 1.15; V.y *= 1.15; V.z *= 1.15; W.x *= 1.15; W.y *= 1.15; W.z *= 1.15;
+        r.pumped = true; once = true;
+      }
+    }
+  }
   if (P.onGround) {
     // a rope that pulls up hard enough lifts you off; otherwise it only drags you along the roof
     if (V.y + W.y > 0.5) { P.onGround = false; P.ground = null; } else { V.y = 0; W.y = 0; }
@@ -497,6 +579,7 @@ export function step(P, h, inp) {
   }
 
   P.vel.x = V.x + W.x; P.vel.y = V.y + W.y; P.vel.z = V.z + W.z;
+  for (const r of P.ropes) if (r.easy && r.state === "attached") r.prevY = P.vel.y;
   P.pullVel.x = W.x; P.pullVel.y = W.y; P.pullVel.z = W.z;
   P.airT = P.onGround ? 0 : P.airT + h;
   if (P.onGround && P.ground) { P.lastSafe.x = pos.x; P.lastSafe.y = pos.y; P.lastSafe.z = pos.z; }
