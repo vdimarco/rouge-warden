@@ -300,6 +300,35 @@ await test("an unknown agent is rejected before a backend runs", async () => {
   assert.equal(hermesCalls.length, before);
 });
 
+await test("revoking a key blocks new turns on an already-open socket", async () => {
+  const ws = new WebSocket(base.replace("http", "ws") + "/relay/v1/stream", {
+    headers: { Authorization: "Bearer " + TOKEN },
+  });
+  await new Promise((resolve, reject) => {
+    ws.once("open", resolve);
+    ws.once("error", reject);
+  });
+  const before = hermesCalls.length;
+  writeFileSync(keysFile, JSON.stringify({ keys: [{ id: "pixel", token: TOKEN, revoked: true }] }));
+  try {
+    const terminal = new Promise((resolve, reject) => {
+      ws.on("message", (raw) => {
+        const msg = JSON.parse(raw.toString());
+        if (msg.type === "done" || msg.type === "failed") resolve(msg);
+      });
+      ws.once("error", reject);
+    });
+    ws.send(JSON.stringify({ type: "turn", id: "revoked", input: "status", agent: "hermes" }));
+    const result = await terminal;
+    assert.equal(result.type, "failed");
+    assert.equal(result.message, "unauthorized");
+    assert.equal(hermesCalls.length, before);
+  } finally {
+    ws.close();
+    writeFileSync(keysFile, JSON.stringify({ keys: [{ id: "pixel", token: TOKEN, revoked: false }] }));
+  }
+});
+
 await test("prompt text carries instructions and the shared conversation id", () => {
   const text = promptMessage({ input: "hello", instructions: "Speak plainly.", conversation: "watch-call" });
   assert.match(text, /Speak plainly/);

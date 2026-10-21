@@ -191,6 +191,11 @@ export function createRelay({
       if (message.type !== "turn") return;
       const id = String(message.id || "");
       if (!id) return;
+      if (!matchBearer(activeKeys(env, keysFile), "Bearer " + key.token)) {
+        send({ type: "failed", id, message: "unauthorized" });
+        ws.close(1008, "unauthorized");
+        return;
+      }
       turns.get(id)?.abort();
       const ctl = new AbortController();
       turns.set(id, ctl);
