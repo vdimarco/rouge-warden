@@ -5,6 +5,7 @@
 #include "QuebecPace.h"
 #include "QuebecBail.h"
 #include "QuebecRide.h"
+#include "QuebecCycle.h"
 #include "QuebecRouteLine.h"
 #include "QuebecCourtRules.h"
 #include "QuebecCourtTone.h"
@@ -1356,11 +1357,33 @@ void AQuebecCar::SimulatePedalo(float Step, bool bFailsafe)
     MoveWithCollision(Step, Travel);
 }
 
+void AQuebecCar::SimulateBike(float Step, bool bFailsafe)
+{
+    const float ThrottleNow = bFailsafe ? 0.f : Throttle;
+    const bool bInWater = QuebecPondContains(static_cast<float>(GetActorLocation().X), static_cast<float>(GetActorLocation().Y));
+    Speed = QuebecCycle::Advance(Speed, ThrottleNow, bInWater, Step);
+    LateralSpeed = 0.f;
+    SteeringState = Steering;
+    if (FMath::Abs(Speed) > 15.f)
+    {
+        const float Turn = QuebecCycle::YawDegrees(Speed, Steering, Step);
+        const FQuat Rotation = (GetActorRotation() + FRotator(0., Turn, 0.)).Quaternion();
+        if (CanFitAt(GetActorLocation(), Rotation)) SetActorRotation(Rotation);
+    }
+    const FVector Travel = GetActorForwardVector().GetSafeNormal2D() * Speed * Step;
+    MoveWithCollision(Step, Travel);
+}
+
 void AQuebecCar::SimulateDrive(float Step, bool bFailsafe)
 {
     if (IsPedalo())
     {
         SimulatePedalo(Step, bFailsafe);
+        return;
+    }
+    if (IsBike())
+    {
+        SimulateBike(Step, bFailsafe);
         return;
     }
     if (KnockTime > 0.f)
@@ -2821,8 +2844,8 @@ void AQuebecHUD::DrawHUD()
     const bool bSwimming = Avatar && Avatar->GetCharacterMovement()->IsSwimming();
     // On a tall screen the Use button already says car; an always-on exit prompt would only cover the view.
     if (bSwimming) Prompt = TEXT("SWIMMING · Move toward shore");
-    else if (Car) Prompt = bPortrait ? FString() : (Car->IsPedalo() ? TEXT("[ E ]  STEP ASHORE") : TEXT("[ E ]  EXIT CAR"));
-    else if (NearbyCar) Prompt = NearbyCar->IsPedalo() ? TEXT("[ E ]  BOARD PEDALO") : TEXT("[ E ]  ENTER CAR");
+    else if (Car) Prompt = bPortrait ? FString() : (Car->IsPedalo() ? TEXT("[ E ]  STEP ASHORE") : Car->IsBike() ? TEXT("[ E ]  STEP OFF") : TEXT("[ E ]  EXIT CAR"));
+    else if (NearbyCar) Prompt = NearbyCar->IsPedalo() ? TEXT("[ E ]  BOARD PEDALO") : NearbyCar->IsBike() ? TEXT("[ E ]  BOARD BIKE") : TEXT("[ E ]  ENTER CAR");
     else if (bCanComplete) Prompt = TEXT("[ E ]  COMPLETE OBJECTIVE");
     else if (Controller)
     {
@@ -3119,7 +3142,7 @@ void AQuebecHUD::DrawHUD()
     {
         const float Y = ControlsTop - 66.f * Scale;
         Text(FString::Printf(TEXT("%03d"), FMath::RoundToInt(FMath::Abs(Car->Speed) * .036f)), Paper, Margin, Y, 1.8f);
-        Text(Car->IsPedalo() ? PedaloPortrait : (Car->bHandbrake ? TEXT("km/h  /  HANDBRAKE") : TEXT("km/h")), Car->IsPedalo() ? Accent : (Car->bHandbrake ? Accent : Muted), Margin, Y + 38.f * Scale, .85f);
+        Text(Car->IsBike() ? TEXT("km/h  /  VELO") : Car->IsPedalo() ? PedaloPortrait : (Car->bHandbrake ? TEXT("km/h  /  HANDBRAKE") : TEXT("km/h")), Car->IsBike() || Car->IsPedalo() ? Accent : (Car->bHandbrake ? Accent : Muted), Margin, Y + 38.f * Scale, .85f);
     }
     else if (Car)
     {
@@ -3129,7 +3152,7 @@ void AQuebecHUD::DrawHUD()
         RightText(FString::Printf(TEXT("%03d"), FMath::RoundToInt(FMath::Abs(Car->Speed) * .036f)), Paper, SpeedRight - 42.f * Scale, Y, 1.8f);
         RightText(TEXT("km/h"), Muted, SpeedRight, Y + 23.f * Scale, .85f);
         Text(TEXT("WASD or arrows  Drive / steer"), Muted, X, Y + 42.f * Scale, .85f);
-        Text(Car->IsPedalo() ? PedaloLandscape : (Car->bHandbrake ? TEXT("SPACE  HANDBRAKE ON") : TEXT("SPACE  Handbrake")), Car->IsPedalo() || Car->bHandbrake ? Accent : Muted, X, Y + 59.f * Scale, .85f);
+        Text(Car->IsBike() ? TEXT("Hold gas to pedal") : Car->IsPedalo() ? PedaloLandscape : (Car->bHandbrake ? TEXT("SPACE  HANDBRAKE ON") : TEXT("SPACE  Handbrake")), Car->IsBike() || Car->IsPedalo() || Car->bHandbrake ? Accent : Muted, X, Y + 59.f * Scale, .85f);
     }
     else if (!bPortrait && !bTouchControls)
     {
@@ -3295,6 +3318,26 @@ void AQuebecGameMode::BeginPlay()
         GetWorld()->SpawnActor<AQuebecBuoy>(FVector(QuebecLap::BuoyX, QuebecLap::BuoyY, 0.), FRotator::ZeroRotator);
         GetWorld()->SpawnActor<AQuebecWade>(FVector(QuebecWade::BuoyX, QuebecWade::BuoyY, 0.), FRotator::ZeroRotator);
         GetWorld()->SpawnActor<AQuebecTrio>(FVector(QuebecTrio::Stops[0].X, QuebecTrio::Stops[0].Y, 0.), FRotator::ZeroRotator);
+        // One bike in the dry park east of the spawn. It is not a parked street car.
+        static_assert(QuebecCycle::BikeKind == 2, "IsBike() follows BikeKind");
+        FVector BikePoint(static_cast<float>(QuebecCycle::StandX), static_cast<float>(QuebecCycle::StandY), 0.f);
+        FHitResult GroundHit;
+        FCollisionQueryParams GroundQuery(SCENE_QUERY_STAT(BikeStand), false);
+        const FVector TraceStart = BikePoint + FVector(0.f, 0.f, 200.f);
+        if (GetWorld()->LineTraceSingleByChannel(GroundHit, TraceStart, TraceStart - FVector(0.f, 0.f, 800.f), ECC_Visibility, GroundQuery))
+            BikePoint = GroundHit.ImpactPoint + FVector(0.f, 0.f, 102.f);
+        else
+            BikePoint.Z = QuebecCycle::StandZ;
+        const FRotator BikeYaw(0.f, QuebecCycle::StandYaw, 0.f);
+        const FTransform BikeTransform(BikeYaw, BikePoint);
+        AQuebecCar* Bike = GetWorld()->SpawnActorDeferred<AQuebecCar>(AQuebecCar::StaticClass(), BikeTransform, nullptr, nullptr, ESpawnActorCollisionHandlingMethod::AlwaysSpawn);
+        if (Bike)
+        {
+            Bike->RideKind = QuebecCycle::BikeKind;
+            Bike->Tags.Add(TEXT("Velo"));
+            Bike->FinishSpawning(BikeTransform);
+            UE_LOG(LogTemp, Display, TEXT("NORD_BIKE stand x=%.0f y=%.0f"), BikePoint.X, BikePoint.Y);
+        }
     }
     // Combat: weapon, vest and health pickups at street and park points, none near a QA anchor and no collision.
     if (!FParse::Param(FCommandLine::Get(), TEXT("NordNoCampaign"))) QuebecCombat::SpawnPickups(GetWorld());

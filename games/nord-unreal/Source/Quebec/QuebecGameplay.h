@@ -320,9 +320,10 @@ public:
     UPROPERTY(VisibleAnywhere, Replicated) bool bHandbrake = false;
     UPROPERTY(EditAnywhere, ReplicatedUsing=ApplyPaint) int32 PaintStyle = 0;
     UPROPERTY(EditAnywhere, ReplicatedUsing=ApplyPaint) int32 BodyProfile = 0;
-    // 0 is a car. 1 is the pond pedalo. Cars keep the driving model.
+    // 0 is a car. 1 is the pond pedalo. 2 is the park bike. Cars keep the driving model.
     UPROPERTY(VisibleAnywhere, Replicated) int32 RideKind = 0;
     bool IsPedalo() const { return RideKind == 1; }
+    bool IsBike() const { return RideKind == 2; }
     UPROPERTY(VisibleAnywhere, Replicated) bool bTraffic = false;
     void SetTrafficRoute(int32 Segment, bool bForward, const TArray<bool>& AllowedRoads);
     void StopInput();
@@ -389,6 +390,7 @@ private:
     void UpdateTraffic();
     void SimulateDrive(float Step, bool bFailsafe);
     void SimulatePedalo(float Step, bool bFailsafe);
+    void SimulateBike(float Step, bool bFailsafe);
     void MoveWithCollision(float Step, const FVector& Travel);
     bool WheelSupport(const FVector& Point, FRotator& Rotation, double& Height, bool& bTooHigh) const;
     bool bGrounded = false;
