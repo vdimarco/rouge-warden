@@ -55,6 +55,17 @@ class TalkTest {
     }
 
     @Test
+    fun missingPhoneModelFallsBackAfterAcknowledgement() {
+        val holding = reduce(TalkModel(), TalkEvent.Press(true, "s")).model
+        val acked = reduce(holding, TalkEvent.Ack("s")).model
+        val fallback = reduce(acked, TalkEvent.NeedRecognizer("s"))
+        assertEquals(Route.WATCH, fallback.model.session?.route)
+        assertEquals(Capture.RECOGNIZER, fallback.model.session?.capture)
+        assertTrue(fallback.actions.contains(TalkAction.StartRecognizer("s", Mode.TALK)))
+        assertTrue(fallback.actions.contains(TalkAction.StopMic("s")))
+    }
+
+    @Test
     fun newPressBargesIn() {
         var model = reduce(TalkModel(), TalkEvent.Press(true, "s")).model
         model = reduce(model, TalkEvent.Release).model

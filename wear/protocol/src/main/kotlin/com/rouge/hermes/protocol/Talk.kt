@@ -85,7 +85,7 @@ fun reduce(model: TalkModel, event: TalkEvent): Step = when (event) {
     }
     is TalkEvent.AckTimeout -> leavePhone(model, event.sessionId, "Phone unreachable, listening here", "Could not reach the phone")
     is TalkEvent.PhoneLost -> leavePhone(model, event.sessionId, "Phone unreachable, listening here", "Could not reach the phone")
-    is TalkEvent.NeedRecognizer -> leavePhone(model, event.sessionId, "Listening on the watch", "Speech model is not on the phone yet")
+    is TalkEvent.NeedRecognizer -> leavePhone(model, event.sessionId, "Listening on the watch", "Speech model is not on the phone yet", allowAcked = true)
     is TalkEvent.Delta -> {
         val live = model.session
         if (live == null || live.id != event.sessionId || model.phase != Phase.SENDING || event.text.isEmpty()) {
@@ -172,9 +172,9 @@ private fun release(model: TalkModel): Step {
     return Step(model.copy(phase = Phase.SENDING, status = "Sending"), actions)
 }
 
-private fun leavePhone(model: TalkModel, sessionId: String, holdingStatus: String, sentStatus: String): Step {
+private fun leavePhone(model: TalkModel, sessionId: String, holdingStatus: String, sentStatus: String, allowAcked: Boolean = false): Step {
     val live = model.session ?: return Step(model, emptyList())
-    if (live.id != sessionId || live.route != Route.PHONE || live.acked) return Step(model, emptyList())
+    if (live.id != sessionId || live.route != Route.PHONE || (live.acked && !allowAcked)) return Step(model, emptyList())
     if (model.phase == Phase.HOLDING) {
         return Step(
             model.copy(session = live.copy(route = Route.WATCH, capture = Capture.RECOGNIZER), status = holdingStatus),
