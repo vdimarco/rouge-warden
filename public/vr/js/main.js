@@ -775,10 +775,12 @@ function winSpot(out) {
   if (hit && WIN_HIT.t < dist + 0.3) dist = Math.max(1.45, WIN_HIT.t * 0.5);
   return out.copy(camera.position).addScaledVector(FXD, dist);
 }
+// A roof fight, a getaway, a tanker, and the bomb hop higher and hang longer than a chase, a rescue, or a delivery.
+const WIN_BIG = { sludge: 1, brawl: 1, getaway: 1, tanker: 1 };
 // The payoff: a comic word wider than a finisher, a cheer, a short slow moment, and a hop off the street. The next card waits.
-function winLaunch() {
+function winLaunch(job) {
   if (REDUCED || driving || !flatOn || isXR() || !P) return 0;
-  const B = MOVES.win, v = P.vel, hs = Math.hypot(v.x, v.z);
+  const B = WIN_BIG[job] ? MOVES.winBig : MOVES.win, v = P.vel, hs = Math.hypot(v.x, v.z);
   if (hs > 0.5) { v.x += (v.x / hs) * B.forward; v.z += (v.z / hs) * B.forward; }
   else { v.x += -Math.sin(G.rigYaw) * B.forward; v.z += -Math.cos(G.rigYaw) * B.forward; }
   v.y = Math.max(v.y, 0) + B.up;
@@ -793,14 +795,15 @@ function winPayoff(e) {
   const at = winSpot(FXP);
   const wide = flatOn && !isXR();
   const shown = !!fx.word(word, at, { scale: 2.4, size: wide ? screenWide(at, 0.62) : 0, life: 3.2 });
+  const big = !!WIN_BIG[e.job];
   audio.sfx(winCue(e.job));
   audio.sfx("cheer", { vol: 1.1 });
   haptic(0, 1, 160); haptic(1, 1, 160);
-  if (!REDUCED) { impact({ stop: 0.14, shake: 0.55, frame: true }); slowT = Math.max(slowT, 0.55); }
-  const up = winLaunch();
-  lastWin = { job: e.job, word, shown, up };
+  if (!REDUCED) { impact({ stop: 0.14, shake: 0.55, frame: true }); slowT = Math.max(slowT, big ? 0.9 : 0.55); }
+  const up = winLaunch(e.job);
+  lastWin = { job: e.job, word, shown, up, big };
   winCard = { title: "GOT IT", detail: (JOB_NAMES[e.job] || "Job") + " done. +" + (e.reward || 0) + " Loonies", short: "GOT IT", n: 0, of: 0, tag: "win", goal: null };
-  winHold = 1.35;
+  winHold = big ? 1.9 : 1.35;
   winStory = null;
 }
 // A miss is a lesson, not a cheer. The card names the miss and one thing to do, and the retry waits it out.

@@ -1057,3 +1057,40 @@ Loop: missions, playability, controls, feel, UX, pacing and fun for In Full Swin
 - Delta vs last round: +1 (round 27 was 128). Feedback 8 → 9. Every other score held.
 
 ![Seven seconds left turns the card hot](fullswing-r28/hot.png)
+
+### Round 29 — 2026-10-21 — rubric v1
+
+- What changed: A roof fight, a getaway, a sludge tanker, and the Sludge Run launch the hero at 14 m/s, hold the slow moment for 0.9 s, and keep the card up for 1.9 s. A chase, a rescue, and a delivery stay at 8 m/s, 0.55 s, and 1.35 s. Reduced motion still does not launch. A miss still does not. The comic word and the sting stay as they are.
+- Why it helped: Every win hopped the same height, so a roof fight ended like a pizza delivery. Spider-Man 2 makes a set-piece finish bigger than an errand. A 1280×800 play caught the purse snatcher at 8 m/s with the card under 1.5 s, and cleared the roof fight at 14 m/s with the card past 1.7 s. After the same 18 frames the roof fight was more than a metre higher, and its slow moment was longer. The word was still KASPLASH.
+- Screenshots: `docs/gauntlet/fullswing-r29/hop.png`.
+- Next target: performance stability (6), the lowest playability score. This machine has no real GPU to time, so that score is not the next implementation round.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 5 | Held. Golden-hour sun and ink shadows. |
+| Color palette | 6 | Held. Yellow, red and sludge green still separate the HUD from the blocks. |
+| Detail density | 4 | Held. Open blocks more than a dressed borough. |
+| Texture and material quality | 3 | Held. Flat fills. |
+| Composition and camera | 4 | Held. The chase camera still sits behind the hero. This frame is the higher hop. |
+| Atmosphere | 5 | Held. The dusk skyline has a mood. The street under the card does not. |
+| Character models | 3 | Held. Simple comic figures. |
+| Animation smoothness | 4 | Scored from still frames in software GL. Continuous motion was not watched. |
+| Particles and VFX | 5 | Held. No new effect. The hop is the change. |
+| UI polish | 6 | Held. The win card is still GOT IT. |
+| Responsiveness and input latency | 8 | Held. The clog card still rewrites its metres every frame. |
+| Controls feel | 9 | Held. The first web still hangs from a building at the real rope length. |
+| Mission clarity | 9 | Held. The King card still names the nearest pipe, and the compass still says The King's pipe. |
+| Pacing | 9 | Held. Eight of the twelve flushes are a different job, and the clog pump never runs three times in a row. Three flushes are still the same clog. |
+| Fun factor | 9 | The roof fight launched at 14 m/s and the card stayed past 1.7 s. The purse snatcher stayed at 8 m/s and under 1.5 s. After the same 18 frames the roof fight was more than a metre higher. |
+| Difficulty curve | 8 | Held. The eighth flush still counts from 36 s. The rescue still falls at the same rate. |
+| Feedback | 9 | Held. Seven seconds left still turns the card hot, and time put back still brings the ink pill. |
+| Sound design | 9 | Held. A flush, a fight, a dash and a lift are still different stings, and the ring fanfare is still the trial. |
+| Variety | 9 | Held. The ninth flush is still the getaway car. This round changes the hop, not the jobs. |
+| Performance stability | 6 | The 1280×800 play passed with no page errors. Frame time on a real GPU was not measured. |
+
+- Aesthetics raw: 45 / 10 dimensions, index 45
+- Playability raw: 85 / 10 dimensions, index 85
+- Total: 130 / 200
+- Delta vs last round: +1 (round 28 was 129). Fun factor 8 → 9. Every other score held.
+
+![The roof fight hops higher than the chase](fullswing-r29/hop.png)

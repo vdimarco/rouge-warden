@@ -70,7 +70,9 @@ export const MOVES = {
   // the finisher: the world runs at slow speed for time s (real time) after it, and the view narrows by zoom degrees
   finisher: { slow: 0.3, time: 0.7, zoom: 10 },
   // a won job in flat play: up m/s off the street, forward m/s along the flight, and the view widens by kick degrees. A miss does not.
+  // winBig: a roof fight, a getaway, a tanker, or the Sludge Run. An errand keeps win.
   win: { up: 8, forward: 3.5, kick: 6 },
+  winBig: { up: 14, forward: 5, kick: 9 },
   // the glide (hold jump in the air with no rope, after minAir s): the fall eases to sink m/s, lift of the fall it stops turns into
   // speed along the ground, which stays between min and max m/s; the move input turns it at turn rad/s
   glide: { sink: 3.2, min: 14, max: 32, lift: 0.6, turn: 1.6, minAir: 0.25, grow: 8 },
