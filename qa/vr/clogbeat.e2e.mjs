@@ -1,4 +1,4 @@
-// The fourth flush is a balloon, the eighth is a washer, and the clog card comes back after.
+// The fourth flush is a balloon, the sixth is a pizza, the eighth is a washer, and the clog card comes back after.
 import { mkdir } from "node:fs/promises";
 import { newPage, open, close, enterXR, checker, watchdog } from "./lib.mjs";
 
@@ -66,9 +66,56 @@ try {
   });
   check(back.killed && !back.job && back.title === "FLUSH THE CLOGS" && back.count === 4, "after the balloon the clog card returns", back);
 
+  const fifth = await page.evaluate(() => {
+    const ids = G.game.targets().filter((t) => t.kind === "clog" && !t.done).map((t) => t.id);
+    G.test.clearClog(ids[0]);
+    let n = 0;
+    for (; n < 80; n++) {
+      G.test.step(1 / 60, 1);
+      const ob = G.game.progress.objective;
+      if (ob && ob.n === 5 && /FLUSH THE CLOGS/.test(ob.title || "") && !G.test.action().jobs.active) break;
+    }
+    const ob = G.game.progress.objective;
+    return { n, title: ob && ob.title, count: ob && ob.n, job: G.test.action().jobs.active && G.test.action().jobs.active.type };
+  });
+  check(fifth.title === "FLUSH THE CLOGS" && fifth.count === 5 && !fifth.job, "five flushes are still the clog card", fifth);
+
+  const pie = await page.evaluate(() => {
+    const id = G.game.targets().find((t) => t.kind === "clog" && !t.done);
+    G.test.clearClog(id.id);
+    let n = 0;
+    for (; n < 180; n++) {
+      G.test.step(1 / 60, 1);
+      const job = G.test.action().jobs.active;
+      const ob = G.game.progress.objective;
+      if (job && job.type === "pizza" && ob && /HOT PIE/.test(ob.title || "") && /PIZZA/.test(ob.title || "")) break;
+    }
+    G.test.step(1 / 60, 4);
+    const ob = G.game.progress.objective;
+    const job = G.test.action().jobs.active;
+    G.test.render(0);
+    return { n, title: ob && ob.title, detail: ob && ob.detail, job: job && job.type };
+  });
+  await page.screenshot({ path: out + "/pie.png" });
+  check(pie.job === "pizza" && /HOT PIE/.test(pie.title || "") && /PIZZA/.test(pie.title || "") && /Deliver to the roof/.test(pie.detail || "") && !/FLUSH THE CLOGS/.test((pie.title || "") + " " + (pie.detail || "")), "the sixth flush is a pizza, not another clog", pie);
+
+  const afterPie = await page.evaluate(() => {
+    const killed = G.test.finishJob();
+    let n = 0;
+    for (; n < 240; n++) {
+      G.test.step(1 / 60, 1);
+      const ob = G.game.progress.objective;
+      const job = G.test.action().jobs.active;
+      if (!job && ob && /FLUSH THE CLOGS/.test(ob.title || "") && ob.n === 6) break;
+    }
+    const ob = G.game.progress.objective;
+    return { n, killed, title: ob && ob.title, count: ob && ob.n, job: G.test.action().jobs.active && G.test.action().jobs.active.type };
+  });
+  check(afterPie.killed && !afterPie.job && afterPie.title === "FLUSH THE CLOGS" && afterPie.count === 6, "after the pizza the clog card returns", afterPie);
+
   const down = await page.evaluate(() => {
     let ids = G.game.targets().filter((t) => t.kind === "clog" && !t.done).map((t) => t.id);
-    for (let i = 0; i < 3; i++) G.test.clearClog(ids[i]);
+    for (let i = 0; i < 1; i++) G.test.clearClog(ids[i]);
     let calm = 0;
     for (; calm < 80; calm++) {
       G.test.step(1 / 60, 1);
