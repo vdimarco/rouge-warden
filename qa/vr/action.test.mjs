@@ -5,7 +5,7 @@ import { generate } from "../../public/vr/js/city.js";
 import { createCombat, FIGHT } from "../../public/vr/js/combat.js";
 import { createCars, CAR, trafficAt, nearTraffic } from "../../public/vr/js/cars.js";
 import { createStreet } from "../../public/vr/js/street.js";
-import { createJobs, JOB, CRIME_LINES } from "../../public/vr/js/jobs.js";
+import { createJobs, JOB, CRIME_LINES, STORY_ROUTE, STORY_NEAR } from "../../public/vr/js/jobs.js";
 
 const city = generate();
 let fails = 0;
@@ -675,5 +675,37 @@ test("markers: four offers of different jobs round the player, and walking into 
   J.offersOn = true;
 });
 
+test("After the bomb the story is a thief, then a catch, then a brawl, and none of them is a clog", () => {
+  assert.deepEqual(STORY_ROUTE.map((s) => s.type), ["thief", "catch", "brawl"]);
+  const C = createCombat(city), J = createJobs({ city, combat: C, seed: 3 });
+  const h = hero(city.start.x, city.start.y, city.start.z);
+  assert.equal(J.storyNext(), null);
+  J.story.sludge = true;
+  const titles = [];
+  for (const step of STORY_ROUTE) {
+    assert.equal(J.storyNext().type, step.type);
+    assert.equal(J.storyAdvance("pizza").ok, false);
+    assert.equal(J.story.route, STORY_ROUTE.indexOf(step));
+    const o = J.prepare(step.type, h, STORY_NEAR[step.type]) || J.prepare(step.type, h, [20, 900]);
+    assert.ok(o && o.type === step.type, step.type);
+    J.start(step.type, o, h, { mission: step.mission, arrive: true });
+    J.update(DT, 0, h);
+    const text = J.card.title + " " + J.card.detail;
+    assert.ok(J.card.title.startsWith(step.mission), text);
+    assert.ok(!/clog/i.test(text), text);
+    if (step.type === "catch") assert.ok(J.active.timer > JOB.catch.delay, "time to arrive " + J.active.timer);
+    titles.push(text);
+    J.cancel();
+    const adv = J.storyAdvance(step.type);
+    assert.equal(adv.ok, true);
+    assert.equal(adv.next, STORY_ROUTE[J.story.route] || null);
+  }
+  assert.equal(J.storyNext(), null);
+  assert.equal(J.storyAdvance("brawl").ok, false);
+  assert.match(titles[0], /STOP, THIEF/);
+  assert.match(titles[1], /CATCH/);
+  assert.match(titles[2], /ROOFTOP BRAWL/);
+  assert.ok(titles.every((t) => !/FLUSH THE CLOGS/.test(t)));
+});
 console.log(fails ? "FAIL: action (" + fails + " failed)" : "PASS: action");
 process.exitCode = fails ? 1 : 0;

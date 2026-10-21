@@ -1,7 +1,8 @@
 // In Full Swing: missions and odd jobs. Mission 1, "Sludge Run" (the story's fast start): a gang runner with a clog bomb runs the
-// streets to the Market drain; catch him before the timer runs out, beat his crew, and the bomb is defused. Odd jobs wait at
-// markers round the city and pay Loonies: catch a falling person, carry a stranded window washer down, a pizza rush, a balloon
-// chase, a rooftop brawl, a taxi fare (drive a car into the marker) and a purse snatcher to run down.
+// streets to the Market drain; catch him before the timer runs out, beat his crew, and the bomb is defused. Missions 2, 3 and 4
+// (STORY_ROUTE) are a purse snatcher, a falling rescue and a roof fight. Odd jobs wait at markers after that route and pay
+// Loonies: catch a falling person, carry a stranded window washer down, a pizza rush, a balloon chase, a rooftop brawl, a taxi
+// fare (drive a car into the marker) and a purse snatcher to run down.
 // Crimes also start near the hero now and then with a shout (a mugging, a getaway car, a leaking sludge tanker, a purse
 // snatcher); swing close to take one, or it is over after a minute. One job runs at a time; walk or swing into a marker to take it. Nobody gets hurt when a job fails: it
 // is a cartoon city. Pure: no three, no DOM; streetview.js draws the people, jobsview the markers and the balloon.
@@ -44,6 +45,14 @@ export const CRIME_LINES = {
 };
 export const QUIPS = ["Nobody expects the plunger.", "That's a clean sweep.", "Flushed out!", "All in a day's plunge.", "Back to the sewer with you."];
 export const JOB_NAMES = { sludge: "Sludge Run", catch: "Catch!", washer: "Window Washer", pizza: "Pizza Rush", balloon: "Balloon Chase", brawl: "Rooftop Brawl", taxi: "Taxi!", thief: "Stop, Thief!", mugging: "Mugging", getaway: "Getaway Car", tanker: "Sludge Tanker" };
+// After the Sludge Run the story is three different jobs, in this order. The twelve clogs stay in the city and still wake the King.
+export const STORY_ROUTE = [
+  { type: "thief", mission: "MISSION 2", pending: "Stop the purse snatcher", scene: "mission2" },
+  { type: "catch", mission: "MISSION 3", pending: "Catch the person falling", scene: "mission3" },
+  { type: "brawl", mission: "MISSION 4", pending: "Clear the Sludge Gang off the roof", scene: "mission4" },
+];
+// How far from the hero a story job is placed, in metres. Close enough to reach, far enough to be a swing.
+export const STORY_NEAR = { thief: [18, 55], catch: [36, 130], brawl: [40, 170] };
 // what the marker says, and the toast when you take the job
 export const JOB_LINES = {
   catch: "Someone is falling off a roof! Catch them.",
@@ -71,7 +80,7 @@ const FALLER = { shirt: [0.95, 0.9, 0.3], pants: [0.3, 0.2, 0.15], skin: [0.96, 
 export function createJobs({ city, combat, cars = null, seed = 4711 }) {
   const r = rng(seed);
   const J = {
-    active: null, offers: [], events: [], crimesOn: false, people: [], balloons: [], done: {}, failed: {}, story: { sludge: false }, offersOn: true,
+    active: null, offers: [], events: [], crimesOn: false, people: [], balloons: [], done: {}, failed: {}, story: { sludge: false, route: 0 }, offersOn: true,
     stats: { started: 0, done: 0, failed: 0 },
   };
   let nextId = 1, offerAt = null, hailT = 0, crimeT = JOB.crime.first;
@@ -213,19 +222,44 @@ export function createJobs({ city, combat, cars = null, seed = 4711 }) {
 
   /* ---------------- starting and ending ---------------- */
   function card(title, detail, goal, extra = {}) {
-    return { title, detail, short: extra.short || title, n: extra.n || 0, of: extra.of || 0, tag: J.active ? J.active.type : "", goal: goal ? { x: goal.x, y: goal.y, z: goal.z } : null };
+    const mission = J.active && J.active.mission;
+    return { title: mission ? mission + " · " + title : title, detail, short: extra.short || title, n: extra.n || 0, of: extra.of || 0, tag: J.active ? J.active.type : "", goal: goal ? { x: goal.x, y: goal.y, z: goal.z } : null };
   }
-  // start a job of type at the offer o (or at the hero, for the story and the tests)
-  J.start = function start(type, o, h) {
+  // The next story mission after the bomb, or null when that route is done or has not started.
+  J.storyNext = function storyNext() {
+    if (!J.story.sludge) return null;
+    return STORY_ROUTE[J.story.route] || null;
+  };
+  // The current story mission was won. Returns the following step, or null when the route is finished. A different job does not move it.
+  J.storyAdvance = function storyAdvance(type) {
+    const step = J.storyNext();
+    if (!step || step.type !== type) return { ok: false, next: null };
+    J.story.route++;
+    return { ok: true, next: STORY_ROUTE[J.story.route] || null };
+  };
+  // An offer of this job near the hero, or null. near is [min, max] metres. A catch needs a clear roof edge.
+  J.prepare = function prepare(type, h, near) {
+    const o = makeOffer(type, h.x, h.z, near || JOB.near);
+    if (!o) return null;
+    if (type === "catch" && !(o.bid && o.edge)) return null;
+    if (type === "brawl" && !o.bid) return null;
+    return o;
+  };
+  // start a job of type at the offer o (or at the hero, for the story and the tests). opt.mission prefixes the card. opt.arrive gives a story Catch time to swing there.
+  J.start = function start(type, o, h, opt) {
     if (J.active) end(false, "dropped", true);
     hailT = 0;
     // with no offer (the story, the tests): one made round the hero, or the hero's own spot
     o = o || (type !== "sludge" && makeOffer(type, h.x, h.z)) || { id: nextId++, type, name: JOB_NAMES[type], x: h.x, y: h.y, z: h.z };
-    const A = { type, o, t: 0, phase: "go", timer: 0, data: {}, card: null };
+    const A = { type, o, t: 0, phase: "go", timer: 0, data: {}, card: null, mission: (opt && opt.mission) || "" };
     J.active = A;
     J.offers = J.offers.filter((q) => q !== o);
     J.stats.started++;
     setup[type](A, h);
+    if (type === "catch" && opt && opt.arrive && A.data && A.data.p && h) {
+      const d = Math.hypot(A.data.p.x - h.x, A.data.p.z - h.z);
+      A.timer = Math.max(A.timer, d / 14 + 6);
+    }
     emit({ type: "start", job: type, line: JOB_LINES[type] });
     return A;
   };

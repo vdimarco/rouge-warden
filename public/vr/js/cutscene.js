@@ -67,16 +67,22 @@ export const SCENES = {
     { dur: 1.8, shot: heroShot, art: { src: "hero", focus: [0.33, 0.25], face: [0.33, 0.12], low: true }, caption: "Not on your watch.", balloon: { text: "Plunger up.", at: (c) => V(c.hero.x, c.hero.y + 0.45, c.hero.z) } },
     { dur: 1.8, shot: lookOut, art: { src: "swing", focus: [0.4, 0.4] }, title: { big: "Mission 1", small: "Sludge Run: catch the bomb runner" } },
   ],
-  // the Sludge Run is won: on to the clogs
+  // the Sludge Run is won: three different jobs, then the clogs can wake the King
   mission2: [
-    { dur: 3.2, shot: (c) => needleShots(c).wide, art: { src: "clogs", focus: [0.52, 0.45] }, title: { big: "Mission 2", small: "Flush the twelve clogs" } },
+    { dur: 3.2, shot: (c) => needleShots(c).wide, art: { src: "swing", focus: [0.4, 0.4] }, title: { big: "Mission 2", small: "Stop the purse snatcher" } },
+  ],
+  mission3: [
+    { dur: 3.0, shot: heroShot, art: { src: "hero", focus: [0.33, 0.25], face: [0.33, 0.12], low: true }, title: { big: "Mission 3", small: "Catch the person falling" } },
+  ],
+  mission4: [
+    { dur: 3.0, shot: (c) => needleShots(c).wide, art: { src: "city", focus: [0.5, 0.4], low: true }, title: { big: "Mission 4", small: "Clear the roof" } },
   ],
   district: [
     { dur: 3.6, shot: clogShot, caption: (c) => c.district.name + ": " + c.district.left + (c.district.left === 1 ? " clog. " : " clogs. ") + (FLAVOUR[c.district.name] || "") },
   ],
   king: [
     { dur: 4.5, shot: (c) => needleShots(c).glow, art: { src: "king-awake", focus: [0.46, 0.25], face: [0.47, 0.2], low: true }, caption: "Twelve clogs flushed. The King is awake.", balloon: { text: "You dare? Come up and get me!", beside: true, at: kingMouth } },
-    { dur: 3.4, shot: (c) => needleShots(c).king, title: { big: "Mission 3", small: "Rip off his three pipes, then flush him" } },
+    { dur: 3.4, shot: (c) => needleShots(c).king, title: { big: "The King", small: "Rip off his three pipes, then flush him" } },
   ],
   finale: [
     { dur: 4.5, shot: (c) => needleShots(c).glow, art: { src: "finale", focus: [0.35, 0.4], low: true }, caption: "The King goes down the pipe. Port Loon breathes again." },

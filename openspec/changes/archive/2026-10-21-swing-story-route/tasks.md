@@ -1,0 +1,5 @@
+- [x] Place the three story missions and prefix their cards
+- [x] Start the next mission after a win, and the same one after a failure
+- [x] Keep the clog card when the route is not running
+- [x] Play Mission 2, 3 and 4 cards, and stop calling the King Mission 3
+- [x] Check the route in node and in a 1280×800 play
