@@ -31,8 +31,12 @@ The rope length SHALL be the distance to the anchor and SHALL NOT exceed 16 body
 - **THEN** the average speed across the chain is at least the speed at the start
 
 ### Requirement: The web is an ink line
-The web SHALL be drawn in code from the hand toward the anchor, in CSS pixels: ink `#2B2A33`, 2 px wide, clipped to the screen edge when the anchor is off screen, sagging slightly at the start and pulling straight under tension, fading out over 150 ms on release. At the top of the swing speed, 3 or 4 thin lines of paper `#F3E9D6` at 25% opacity SHALL trail the body. `window.__test.swing` SHALL be `{ attached, anchor: { x, y, z, offscreen }, ropeLength, speed }`.
+When the scene is 3D, the web SHALL be a line in world space from the hand toward the anchor, not a 2D stroke clipped to the screen edge. On a 1280-wide view it SHALL stay about 2 px wide at every distance, so a far anchor does not disappear. The ink SHALL be `#2B2A33`. It SHALL sag at the start of the swing and pull straight under tension, and SHALL fade out over 150 ms on release. At the top of the swing speed, 3 or 4 thin lines of paper `#F3E9D6` at 25% opacity SHALL still trail the body on the overlay. `window.__test.swing` SHALL be `{ attached, anchor: { x, y, z, offscreen }, ropeLength, speed }`.
 
 #### Scenario: An anchor off the screen
-- **WHEN** the web holds a sky anchor outside the view
-- **THEN** the ink line runs from the hand to the screen edge, and `window.__test.swing.anchor.offscreen` is true
+- **WHEN** the web holds a sky anchor outside the 3D view
+- **THEN** the ink line runs through the world from the hand toward that anchor, the part on screen is the projection of that line, and `window.__test.swing.anchor.offscreen` is true
+
+#### Scenario: The line stays readable far away
+- **WHEN** the web is out on a 1280-wide view and the anchor is much farther from the camera than the hand
+- **THEN** the line is about 2 px wide both near the hand and farther along it

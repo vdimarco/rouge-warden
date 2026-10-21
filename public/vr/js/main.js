@@ -181,6 +181,7 @@ function createWorld() {
   actionView = G.actionView = createActionView(scene, { cars, jobs, traffic: { cars: () => view.traffic && view.traffic(), hide: (i, on) => view.veilTraffic && view.veilTraffic(i, on) } });
   actHud = G.actHud = createActionHud();
   ropes = G.ropes = createRopes(scene, city, settings);
+  ensureWeb(); // the easy web's world-space line, compiled with the city so the first swing does not hitch
   hands = G.hands = createHands(rig, scene, settings);
   comfort = G.comfort = createComfort(camera, rig, settings);
   fx = G.fx = createFX(scene, renderer); // the comic sound words; game.js reaches it as G.fx
@@ -2174,15 +2175,103 @@ function after(dt, inp, yawDelta) {
   publishSwing();
 }
 
-// The easy web, drawn in CSS pixels over the view. Ink #2B2A33, 2 px, a slight sag that pulls
-// straight as the rope goes taut (the same parabola rope.js uses, here in screen space). It fades
-// in 150 ms on the let-go. At the top of the swing, 3 or 4 paper lines trail the body.
+// The easy web. In the 3D scene it is a line in the world from the hand toward the anchor, ink #2B2A33,
+// about 2 CSS px wide at every distance (so a far anchor does not thin away). The sag is the parabola
+// in putRope (rope.js): at the start of the swing it hangs about 16 px, and tension pulls it straight.
+// It fades over 150 ms on the let-go. The paper speed lines stay a 2D overlay. A scene that is not the
+// perspective view keeps the old screen stroke, clipped to the edge.
 let webCv = null, webCx = null, webW = 0, webH = 0, peakSp = 0;
 const webWas = [false, false], webFade = [0, 0], webSag = [0, 0];
 const webA = [{ x: 0, y: 0, z: 0 }, { x: 0, y: 0, z: 0 }];
 const WEB_A = { x: 0, y: 0, depth: 0, behind: false, inView: false };
 const WEB_B = { x: 0, y: 0, depth: 0, behind: false, inView: false };
 const SWING_VIEW = { attached: false, anchor: { x: 0, y: 0, z: 0, offscreen: false }, ropeLength: 0, speed: 0 };
+const WEB_MAX = 16, WEB_N = 8;
+const WEB_PTS = Array.from({ length: WEB_N + 1 }, () => new THREE.Vector3());
+const WEB_HAND = new THREE.Vector3(), WEB_ANCH = new THREE.Vector3(), WEB_DIR = new THREE.Vector3();
+const WEB_G = new THREE.Vector3(), WEB_AXIS = new THREE.Vector3(), WEB_FROM = new THREE.Vector3();
+const WEB_QT = new THREE.Quaternion(), WEB_M = new THREE.Matrix4(), WEB_SC = new THREE.Vector3(1, 1, 1);
+const WEB_Y = new THREE.Vector3(0, 1, 0);
+let webMesh = null, webFadeAttr = null, webSeg = 0;
+function webCss() {
+  const e5 = camera.projectionMatrix.elements[5];
+  const h = innerHeight || renderer.domElement.clientHeight || 1;
+  return e5 > 0 && h > 0 ? (2 / e5) / h : 0.001;
+}
+function ensureWeb() {
+  if (webMesh || !scene) return;
+  const geo = new THREE.CylinderGeometry(1, 1, 1, 6, 1, true).translate(0, 0.5, 0);
+  webFadeAttr = new THREE.InstancedBufferAttribute(new Float32Array(WEB_MAX), 1);
+  geo.setAttribute("aFade", webFadeAttr);
+  const mat = new THREE.ShaderMaterial({
+    transparent: true, depthWrite: false, toneMapped: false, fog: false,
+    uniforms: { uPix: { value: 0.001 } },
+    vertexShader: `
+      attribute float aFade;
+      uniform float uPix;
+      varying float vFade;
+      void main() {
+        mat4 m = modelMatrix * instanceMatrix;
+        vec3 axis = (m * vec4(0.0, position.y, 0.0, 1.0)).xyz;
+        vec3 rad = normalize(mat3(m) * vec3(position.x, 0.0, position.z));
+        float r = uPix * distance(axis, cameraPosition);
+        vFade = aFade;
+        gl_Position = projectionMatrix * viewMatrix * vec4(axis + rad * max(r, 1e-4), 1.0);
+      }`,
+    fragmentShader: `
+      varying float vFade;
+      void main() { gl_FragColor = vec4(${(0x2b / 255).toFixed(5)}, ${(0x2a / 255).toFixed(5)}, ${(0x33 / 255).toFixed(5)}, vFade); }`,
+  });
+  webMesh = new THREE.InstancedMesh(geo, mat, WEB_MAX);
+  webMesh.name = "easyWeb";
+  webMesh.frustumCulled = false;
+  webMesh.visible = false;
+  webMesh.count = 0;
+  webMesh.renderOrder = 2;
+  webMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+  webFadeAttr.setUsage(THREE.DynamicDrawUsage);
+  webMesh.onBeforeRender = () => { mat.uniforms.uPix.value = webCss(); };
+  scene.add(webMesh);
+}
+function webDrop(hand, anchor, tension) {
+  WEB_HAND.set(hand.x, hand.y, hand.z);
+  WEB_ANCH.set(anchor.x, anchor.y, anchor.z);
+  const dist = Math.max(0.5, camera.position.distanceTo(WEB_FROM.copy(WEB_HAND).lerp(WEB_ANCH, 0.5)));
+  const ten = tension < 0 ? 0 : tension > 1 ? 1 : tension;
+  return (1 - ten) * 16 * webCss() * dist;
+}
+function putWeb(hand, anchor, sag, alpha) {
+  if (!(alpha > 0.01) || !webMesh) return;
+  WEB_HAND.set(hand.x, hand.y, hand.z);
+  WEB_ANCH.set(anchor.x, anchor.y, anchor.z);
+  WEB_DIR.copy(WEB_ANCH).sub(WEB_HAND);
+  const len = WEB_DIR.length();
+  if (len < 1e-3) return;
+  WEB_DIR.multiplyScalar(1 / len);
+  WEB_G.set(0, -1, 0).addScaledVector(WEB_DIR, WEB_DIR.y);
+  const gLen = WEB_G.length();
+  if (gLen > 1e-4) WEB_G.multiplyScalar(1 / gLen);
+  const curved = sag > 0.02 && gLen > 1e-4;
+  const n = WEB_N;
+  for (let k = 0; k <= n; k++) {
+    const u = k / n;
+    const p = WEB_PTS[k].copy(WEB_HAND).lerp(WEB_ANCH, u);
+    if (curved) p.addScaledVector(WEB_G, 4 * sag * u * (1 - u));
+  }
+  for (let k = 0; k < n && webSeg < WEB_MAX; k++) {
+    const p = WEB_PTS[k], q = WEB_PTS[k + 1];
+    WEB_AXIS.copy(q).sub(p);
+    const l = WEB_AXIS.length();
+    if (l < 1e-5) continue;
+    WEB_AXIS.multiplyScalar(1 / l);
+    WEB_FROM.copy(p).addScaledVector(WEB_AXIS, -0.004);
+    WEB_QT.setFromUnitVectors(WEB_Y, WEB_AXIS);
+    WEB_M.compose(WEB_FROM, WEB_QT, WEB_SC.set(1, l + 0.008, 1));
+    webMesh.setMatrixAt(webSeg, WEB_M);
+    webFadeAttr.setX(webSeg, alpha);
+    webSeg++;
+  }
+}
 function webCanvas() {
   if (!webCv) {
     webCv = document.createElement("canvas");
@@ -2235,45 +2324,71 @@ function strokeWeb(ctx, hand, anchor, sag, alpha, w, h) {
 }
 function drawWeb(dt) {
   // An empty full-screen canvas, cleared every frame, sits in the compositor and can stall the next
-  // frame for seconds (the mouse-look resume timer). Leave it hidden until a web is actually drawn.
-  if (!flatOn || isXR() || !P) { if (webCv) webCv.hidden = true; return; }
+  // frame for seconds (the mouse-look resume timer). The 3D line is a mesh. The canvas stays hidden
+  // until the paper speed lines are actually drawn.
+  const threeD = !!(camera && camera.isPerspectiveCamera);
+  if (!flatOn || isXR() || !P) {
+    if (webCv) webCv.hidden = true;
+    if (webMesh) { webMesh.visible = false; webMesh.count = 0; }
+    return;
+  }
   let pending = false;
   for (let i = 0; i < 2; i++) {
     if (P.ropes[i].easy && P.ropes[i].state === "attached") pending = true;
     else if (webWas[i] || webFade[i] > 0) pending = true;
   }
-  if (!pending) { if (webCv) webCv.hidden = true; peakSp = 0; return; }
-  const ctx = webCanvas(), w = webW, h = webH;
-  webCv.hidden = false;
-  fillCam();
+  if (!pending) {
+    if (webCv) webCv.hidden = true;
+    if (webMesh) { webMesh.visible = false; webMesh.count = 0; }
+    peakSp = 0;
+    return;
+  }
+  if (threeD) ensureWeb();
+  else fillCam();
+  webSeg = 0;
+  const ctx2 = threeD ? null : webCanvas();
+  if (!threeD) webCv.hidden = false;
+  const w = webW, h = webH;
   let any = false;
+  const handOf = (i) => TIPS[i] || { x: P.pos.x, y: P.pos.y + P.chest, z: P.pos.z };
   for (let i = 0; i < 2; i++) {
     const r = P.ropes[i], on = !!(r.easy && r.state === "attached");
     if (on) {
       webWas[i] = true; webFade[i] = 0;
       webA[i].x = r.anchor.x; webA[i].y = r.anchor.y; webA[i].z = r.anchor.z;
       const ten = r.tension < 0 ? 0 : r.tension > 1 ? 1 : r.tension;
-      webSag[i] = (1 - ten) * 16;
-      const hand = TIPS[i] || { x: P.pos.x, y: P.pos.y + P.chest, z: P.pos.z };
-      strokeWeb(ctx, hand, webA[i], webSag[i], 1, w, h);
+      const hand = handOf(i);
+      webSag[i] = threeD ? webDrop(hand, webA[i], ten) : (1 - ten) * 16;
+      if (threeD) putWeb(hand, webA[i], webSag[i], 1);
+      else strokeWeb(ctx2, hand, webA[i], webSag[i], 1, w, h);
       any = true;
     } else if (webWas[i]) { webWas[i] = false; webFade[i] = 0.15; }
     if (!on && webFade[i] > 0) {
       webFade[i] = Math.max(0, webFade[i] - dt);
-      const hand = TIPS[i] || { x: P.pos.x, y: P.pos.y + P.chest, z: P.pos.z };
-      strokeWeb(ctx, hand, webA[i], webSag[i] * (webFade[i] / 0.15), webFade[i] / 0.15, w, h);
+      const k = webFade[i] / 0.15, hand = handOf(i);
+      if (threeD) putWeb(hand, webA[i], webSag[i] * k, k);
+      else strokeWeb(ctx2, hand, webA[i], webSag[i] * k, k, w, h);
     }
+  }
+  if (threeD && webMesh) {
+    webMesh.count = webSeg;
+    webMesh.visible = webSeg > 0;
+    if (webSeg) { webMesh.instanceMatrix.needsUpdate = true; webFadeAttr.needsUpdate = true; }
   }
   const sp = Math.hypot(P.vel.x, P.vel.y, P.vel.z);
   if (!any) peakSp = 0;
   else if (sp > peakSp) peakSp = sp;
   if (any && peakSp > 12 && sp > 0.88 * peakSp) {
+    fillCam();
     project(CAM, P.pos.x, P.pos.y + P.chest, P.pos.z, WEB_A);
     if (!WEB_A.behind) {
-      const bx = (WEB_A.x * 0.5 + 0.5) * w, by = (0.5 - WEB_A.y * 0.5) * h;
+      const ctx = threeD ? webCanvas() : ctx2;
+      if (threeD) webCv.hidden = false;
+      const bw = webW, bh = webH;
+      const bx = (WEB_A.x * 0.5 + 0.5) * bw, by = (0.5 - WEB_A.y * 0.5) * bh;
       const k = 2 / (sp || 1);
       project(CAM, P.pos.x - P.vel.x * k, P.pos.y + P.chest - P.vel.y * k, P.pos.z - P.vel.z * k, WEB_B);
-      let dx = ((WEB_B.x - WEB_A.x) * 0.5) * w, dy = ((WEB_A.y - WEB_B.y) * 0.5) * h;
+      let dx = ((WEB_B.x - WEB_A.x) * 0.5) * bw, dy = ((WEB_A.y - WEB_B.y) * 0.5) * bh;
       const len = Math.hypot(dx, dy) || 1; dx /= len; dy /= len;
       const n = sp > 0.95 * peakSp ? 4 : 3;
       ctx.strokeStyle = "#F3E9D6"; ctx.globalAlpha = 0.25; ctx.lineWidth = 1; ctx.lineCap = "round";
@@ -2282,8 +2397,8 @@ function drawWeb(dt) {
         ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x0 + dx * reach, y0 + dy * reach); ctx.stroke();
       }
       ctx.globalAlpha = 1;
-    }
-  }
+    } else if (threeD && webCv) webCv.hidden = true;
+  } else if (threeD && webCv) webCv.hidden = true;
 }
 function publishSwing() {
   window.__test = window.__test || {};

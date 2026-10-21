@@ -48,6 +48,11 @@ jobs:
         run: node qa/vr/mouse-look.e2e.mjs
         env:
           NODE_PATH: ${{ github.workspace }}/qa/browser/node_modules
+      - name: World-space web line
+        run: node qa/vr/web-line.e2e.mjs
+        env:
+          NODE_PATH: ${{ github.workspace }}/qa/browser/node_modules
+          SHOTS: ${{ github.workspace }}/test-results/swing
       - name: Training checklist, pump sticker and mission card
         run: node qa/vr/training.e2e.mjs
         env:
