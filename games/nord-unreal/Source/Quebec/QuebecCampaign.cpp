@@ -442,6 +442,8 @@ void AQuebecCampaign::BuildEncounter()
     ConvoyCaptions.Add(AddCaption(TEXT("ConvoyEscapeCaption"), ConvoyAt(QuebecConvoyRules::Escape, 250.), TEXT("ESCAPE"), 18.f));
     ConvoyParts.Add(AddPart(TEXT("ConvoyPlate"), Sphere, ConvoyAt(QuebecConvoyRules::Escape, 80.), FVector(48., 48., 48.), Cream));
     ConvoyCaptions.Add(AddCaption(TEXT("ConvoyPlateCaption"), ConvoyAt(QuebecConvoyRules::Escape, 180.), TEXT("BLANK PLATE"), 18.f));
+    ConvoyParts.Add(AddPart(TEXT("ConvoyCalled"), Cube, ConvoyAt(QuebecConvoyRules::Called, 110.), FVector(36., 36., 220.), Berry));
+    ConvoyCaptions.Add(AddCaption(TEXT("ConvoyCalledCaption"), ConvoyAt(QuebecConvoyRules::Called, 250.), TEXT("CALLED"), 18.f));
 
     // Mission 8 posts. Hidden until the convoy is banked. Order is gate A, B, C, cue, page.
     const auto BlankAt = [](const QuebecBlankRules::FSpot& Spot, double Height)
@@ -876,7 +878,20 @@ bool AQuebecCampaign::HandleInteract(AQuebecController* Controller)
         if (ConvoyStep == QuebecConvoyRules::StepInvert && NearConvoy(Controller, QuebecConvoyRules::Projector.X, QuebecConvoyRules::Projector.Y))
         {
             AdvanceConvoy(QuebecConvoyRules::Apply(ConvoyStep, QuebecConvoyRules::EAct::Use, ConvoyTime), Controller,
-                TEXT("The plate is inverted. Blank panels. Take the escape gate."), false);
+                TEXT("The plate is inverted. Blank panels. Two gates. One is still painted."), false);
+            return true;
+        }
+        if (ConvoyStep == QuebecConvoyRules::StepEscape
+            && NearConvoy(Controller, QuebecConvoyRules::Called.X, QuebecConvoyRules::Called.Y)
+            && !NearConvoy(Controller, QuebecConvoyRules::Escape.X, QuebecConvoyRules::Escape.Y))
+        {
+            const int32 Next = QuebecConvoyRules::Apply(ConvoyStep, QuebecConvoyRules::EAct::Use, ConvoyTime, Chain, QuebecConvoyRules::EWagon::Painted);
+            if (Next == ConvoyStep)
+            {
+                Controller->PlayFeedback(EQuebecFeedbackCue::Dialogue);
+                BreakChain();
+                Controller->ShowInteractionMessage(TEXT("GREEN CAP: That is the gate I called. TOPKNOT: It is still painted. The chain breaks."));
+            }
             return true;
         }
         if (ConvoyStep == QuebecConvoyRules::StepEscape && NearConvoy(Controller, QuebecConvoyRules::Escape.X, QuebecConvoyRules::Escape.Y))
@@ -884,7 +899,7 @@ bool AQuebecCampaign::HandleInteract(AQuebecController* Controller)
             PlungerPoint = FVector(QuebecConvoyRules::Escape.X, QuebecConvoyRules::Escape.Y, 130.);
             PlungerPullTime = GetWorld()->GetTimeSeconds();
             // The convoy is session state. CompletedMissions stays 2 and the v1 slot is not rewritten.
-            AdvanceConvoy(QuebecConvoyRules::Apply(ConvoyStep, QuebecConvoyRules::EAct::Use, ConvoyTime), Controller,
+            AdvanceConvoy(QuebecConvoyRules::Apply(ConvoyStep, QuebecConvoyRules::EAct::Use, ConvoyTime, Chain, QuebecConvoyRules::EWagon::Clear), Controller,
                 TEXT("GREEN CAP: That route was fine. TOPKNOT: This one is better. The border has a gap."), true);
             return true;
         }
@@ -1631,8 +1646,12 @@ FString AQuebecCampaign::GetInteractionPrompt(const AQuebecController* Controlle
             return TEXT("E: pull the feeder clamp");
         if (ConvoyStep == QuebecConvoyRules::StepInvert && NearConvoy(Controller, QuebecConvoyRules::Projector.X, QuebecConvoyRules::Projector.Y))
             return TEXT("E: invert the plate");
+        if (ConvoyStep == QuebecConvoyRules::StepEscape
+            && NearConvoy(Controller, QuebecConvoyRules::Called.X, QuebecConvoyRules::Called.Y)
+            && !NearConvoy(Controller, QuebecConvoyRules::Escape.X, QuebecConvoyRules::Escape.Y))
+            return TEXT("E: the gate he called");
         if (ConvoyStep == QuebecConvoyRules::StepEscape && NearConvoy(Controller, QuebecConvoyRules::Escape.X, QuebecConvoyRules::Escape.Y))
-            return TEXT("E: take the escape gate");
+            return TEXT("E: the clear gate");
         return FString();
     }
     if (IsBlankOpen())
@@ -1720,7 +1739,7 @@ FString AQuebecCampaign::GetObjectiveText() const
         case QuebecConvoyRules::StepArrive: return TEXT("Walk to the ink feeder's bay");
         case QuebecConvoyRules::StepGap: return TEXT("Pull the feeder clamp when the beam gap is open");
         case QuebecConvoyRules::StepInvert: return TEXT("Invert the projector plate");
-        case QuebecConvoyRules::StepEscape: return TEXT("Take the escape gate");
+        case QuebecConvoyRules::StepEscape: return TEXT("Take the clear gate. The one he called is still painted.");
         default: break;
         }
     }
@@ -1803,7 +1822,7 @@ FString AQuebecCampaign::GetBriefingText() const
         case QuebecConvoyRules::StepArrive: return TEXT("GREEN CAP: One wagon lays the border, one feeds it ink, one carries the projector. Walk to the feeder.");
         case QuebecConvoyRules::StepGap: return TEXT("The beam paints, then leaves a gap. Pull the clamp in the gap. The warning still lets the pull land.");
         case QuebecConvoyRules::StepInvert: return TEXT("The feed is stalled. Invert the plate. Blank panels are the opening.");
-        case QuebecConvoyRules::StepEscape: return TEXT("GREEN CAP: Take the gate I called. TOPKNOT: Or the one that is actually clear.");
+        case QuebecConvoyRules::StepEscape: return TEXT("GREEN CAP: Take the wagon I called. TOPKNOT: The clear gate is the one the card marks. His is still painted.");
         default: break;
         }
     }

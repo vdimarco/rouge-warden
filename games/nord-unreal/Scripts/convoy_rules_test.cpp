@@ -75,6 +75,11 @@ int main()
     Expect(SpotDistance(Feeder, Projector) > Reach * 2., "the feeder stands on the projector");
     Expect(SpotDistance(Feeder, Escape) > Reach * 2., "the feeder stands on the escape gate");
     Expect(SpotDistance(Projector, Escape) > Reach * 2., "the projector stands on the escape gate");
+    ExpectClear("called", Called);
+    const FSpot CalledAway[] = {Feeder, FeederRecover, Projector, ProjectorRecover, Escape, EscapeRecover};
+    const char* CalledAwayNames[] = {"feeder", "feeder recover", "projector", "projector recover", "clear gate", "clear recover"};
+    for (int Index = 0; Index < 6; ++Index)
+        Expect(SpotDistance(Called, CalledAway[Index]) > 800., "the called wagon stands on the %s", CalledAwayNames[Index]);
 
     Expect(Apply(StepArrive, EAct::Walk, 0.) == StepGap, "walking up does not open the gap");
     Expect(Apply(StepArrive, EAct::Pull, 1.5) == StepArrive, "the clamp accepts a pull before the gap is read");
@@ -98,6 +103,9 @@ int main()
     Expect(Apply(StepInvert, EAct::Use, 0.) == StepEscape, "inverting the plate does not isolate the escape");
     Expect(Apply(StepInvert, EAct::Pull, 1.5) == StepInvert, "pulling again skips the plate");
     Expect(Apply(StepEscape, EAct::Use, 0.) == StepBanked, "the escape gate does not bank the gap");
+    Expect(Apply(StepEscape, EAct::Use, 0., 0, EWagon::Clear) == StepBanked, "the clear wagon does not bank the gap");
+    Expect(Apply(StepEscape, EAct::Use, 0., 0, EWagon::Painted) == StepEscape, "the called wagon banks the gap");
+    Expect(Apply(StepEscape, EAct::Use, 0., 4, EWagon::Painted) == StepEscape, "a held chain lets the called wagon bank");
     Expect(Apply(StepBanked, EAct::Use, 0.) == StepBanked, "a second escape rewinds the mission");
 
     Expect(Objective(StepArrive).X == Feeder.X && Objective(StepGap).Y == Feeder.Y, "the gap leads somewhere else");
@@ -120,7 +128,11 @@ int main()
     Expect(PartVisible(StepArrive, PartFeeder, 0.), "the feeder hides on the walk-up");
     Expect(!PartVisible(StepArrive, PartProjector, 0.), "the projector shows before the feed stalls");
     Expect(PartVisible(StepInvert, PartProjector, 0.), "the projector hides when it is isolated");
+    Expect(PartCount == 6, "the called wagon is missing from the part list");
     Expect(PartVisible(StepEscape, PartEscape, 0.), "the escape gate hides on its step");
+    Expect(PartVisible(StepEscape, PartCalled, 0.), "the called wagon hides on the escape step");
+    Expect(!PartVisible(StepGap, PartCalled, 0.), "the called wagon shows before the gates");
+    Expect(!PartVisible(StepBanked, PartCalled, 0.), "the called wagon stays up after the gap is banked");
     Expect(PartVisible(StepBanked, PartPlate, 0.), "the inverted plate hides once the gap is banked");
     Expect(!PartVisible(StepBanked, PartFeeder, 0.), "the feeder stays up after the escape");
     Expect(!PartVisible(StepGap, 9, 0.), "an unknown part is visible");

@@ -3,7 +3,7 @@
 // Engine-independent rules for mission 7, Can't Tow Tomorrow.
 // No Unreal includes, so Scripts/test_convoy_rules.py can build this with the system compiler.
 // Three authored stops on the street ring, beside the race gates: read the beam, pull the feeder
-// in the gap, invert the plate, then take the escape gate.
+// in the gap, invert the plate, then choose a wagon. The clear gate banks. The one he called does not.
 // ConvoyStep is session state. The v1 save still stores CompletedMissions 0–2.
 
 #include <cmath>
@@ -31,18 +31,23 @@ namespace QuebecConvoyRules
     inline constexpr FSpot ProjectorRecover = {35942., -24728., 0.};
     inline constexpr FSpot Escape = {32789., -21585., 0.};
     inline constexpr FSpot EscapeRecover = {32227., -21167., 0.};
+    // North of the clear gate, off its recover post, and clear of the race gates. Still painted.
+    inline constexpr FSpot Called = {32546., -20206., 0.};
+
+    enum class EWagon : uint8_t { Painted = 0, Clear = 1 };
 
     inline constexpr double Reach = 200.;
     inline constexpr double BeamPeriod = 3.2;
     inline constexpr double BeamDangerSeconds = 1.0;
     inline constexpr double BeamTelegraphSeconds = 0.6;
 
-    inline constexpr int PartCount = 5;
+    inline constexpr int PartCount = 6;
     inline constexpr int PartFeeder = 0;
     inline constexpr int PartBeam = 1;
     inline constexpr int PartProjector = 2;
     inline constexpr int PartEscape = 3;
     inline constexpr int PartPlate = 4;
+    inline constexpr int PartCalled = 5;
 
     enum class EAct : uint8_t { Walk, Pull, Use };
 
@@ -99,12 +104,13 @@ namespace QuebecConvoyRules
         return Phase >= Start && Phase < Start + CloseSeconds;
     }
 
-    inline int Apply(int Step, EAct Action, double Time, int Chain = 0)
+    // Wagon defaults to the clear gate, so a Use on the escape step still banks.
+    inline int Apply(int Step, EAct Action, double Time, int Chain = 0, EWagon Wagon = EWagon::Clear)
     {
         if (Step == StepArrive && Action == EAct::Walk) return StepGap;
         if (Step == StepGap && Action == EAct::Pull && !BeamDanger(Time, Chain)) return StepInvert;
         if (Step == StepInvert && Action == EAct::Use) return StepEscape;
-        if (Step == StepEscape && Action == EAct::Use) return StepBanked;
+        if (Step == StepEscape && Action == EAct::Use && Wagon == EWagon::Clear) return StepBanked;
         return Step;
     }
 
@@ -152,6 +158,7 @@ namespace QuebecConvoyRules
         if (Part == PartBeam) return Step == StepGap && (BeamDanger(Time, Chain) || BeamTelegraph(Time));
         if (Part == PartProjector) return Step == StepInvert;
         if (Part == PartEscape) return Step == StepEscape;
+        if (Part == PartCalled) return Step == StepEscape;
         return false;
     }
 }
