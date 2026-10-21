@@ -1643,13 +1643,13 @@ function aimAndFire(dt, inp) {
     // a goon in reach: the swing input punches (punch, punch, kick) instead of firing a rope
     const tap = tapped(inp, i);
     if (actionOn() && G.state === "play" && (inp.easySwing ? tap : h.triggerDown) && tryAttack()) { h.triggerDown = false; fireWait[i] = 0; continue; }
-    // Chase view, no test aim, not on a wall: a held swing takes the auto anchor. A phone tap still
-    // aims (the building under the finger). A finger that holds the right half does not. First person
-    // keeps the crosshair. A headset and G.test.aimAt keep the old ray.
+    // Chase view, no test aim, not on a wall: a held mouse or pad swing takes the auto anchor.
+    // A phone finger aims at the building under it, tap or hold. First person keeps the crosshair.
+    // A headset and G.test.aimAt keep the old ray.
     const useEasy = flatOn && !isXR() && G.state === "play" && !ov.aim[i] && !P.wall
       && !(pickerOn && picker.result()?.special)
       && !(flatcam && flatcam.firstPerson)
-      && !(inp.easySwing && !(inp.phoneHeld && inp.phoneHeld[i]));
+      && !inp.easySwing;
     // phone: a tap on a side with that side's rope out moves it to the tapped building, or the next one ahead: one tap, one swing,
     // with no let-go between. With nothing new in reach the rope stays. A tap while the cup still flies (0.3 s at most) does
     // nothing: a new shot would cancel the cup before it lands.
