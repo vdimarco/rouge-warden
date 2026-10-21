@@ -329,6 +329,12 @@ for (int PoolI = 0; PoolI < 35; PoolI++)
 }
 float3 PoolCol = float3(0.45, 0.22, 0.07);
 Color = lerp(Color, saturate(Color + PoolCol * PoolW), RoadMask * saturate(NightFactor));
+// Cool fill on the road the pool did not claim. James Gurney, Color and Light
+// (2010): warm light, cool shadow. This node has no shadow ray, so the cool
+// colour is a flat add. NightFactor 0 leaves the colour.
+float3 MoonFill = float3(0.05, 0.07, 0.12);
+float MoonShare = (1.0 - saturate(PoolW * 4.0)) * RoadMask * saturate(NightFactor);
+Color = lerp(Color, saturate(Color + MoonFill), MoonShare);
 return Color;
 '''
 

@@ -1123,3 +1123,38 @@ Unreal is not available in this environment, so in-engine frames are the last co
 - Playability raw: 39 / 10 dimensions, index 39
 - Total: 106 / 200
 - Delta vs last round: +1
+
+### Round 33 — 2026-10-21 — rubric v1
+
+- What changed: after the lamp pool, road the pool did not claim gets a flat cool add of (0.05, 0.07, 0.12). A strong pool keeps the warm colour. The mix follows NightFactor, so a clear day stays as it was.
+- Why it helped: Color palette was at 7. The night road outside a pool was black, so the street was one warm brown.
+- Screenshots: before `docs/gauntlet/gta-graphics/round-33/before-frame.png`, after `docs/gauntlet/gta-graphics/round-33/after-frame.png`. Crops are `before-moonlit.png` and `after-moonlit.png`. Same walking camera and La Fontaine lamps as the pool round. Not an Unreal capture. Full-frame mean absolute delta is 0.042 and the max is 0.12. The crop mean is 0.039. The warm pools stay warm. `Scripts/test_pool.py` passed, and the comic regression tests passed. The comic material was not rebuilt. `GET /gta/` returned 200. OpenSpec CLI is not installed, so the change files were not validated with `openspec`.
+- Next target: character models. Detail stays off the facades. Composition and particles stay at 6, because the walking socket and the rain displacement stay as they are. Animation smoothness stays at 3 and is skipped until a pose can be drawn.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 8 | The lamp pool is unchanged. The blue is a flat add, not a new light. |
+| Color palette | 8 | Open night road goes cool and the pools stay warm. It is one flat blue, not a grade across the city. |
+| Detail density | 7 | The street meshes are unchanged. |
+| Texture and material quality | 8 | The clearcoat is unchanged. |
+| Composition and camera | 6 | The walking socket is unchanged. |
+| Atmosphere | 8 | The moon disc and the sheen are unchanged. |
+| Character models | 7 | The clothed idle fallback is unchanged. No figure is in this frame. |
+| Animation smoothness | 3 | Skipped. The blend space still cannot be posed here. |
+| Particles and VFX | 6 | Rain rings are unchanged. |
+| UI polish | 7 | The street column is unchanged. |
+| Responsiveness and input latency | 4 | Not measured this round. |
+| Controls feel | 4 | Not played. |
+| Mission clarity | 5 | The objective words are unchanged. |
+| Pacing | 4 | Unchanged mission slice. |
+| Fun factor | 3 | Not played. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 4 | No new juice. |
+| Sound design | 3 | Not listened to. |
+| Variety | 3 | One night street. The clear-day path is the same shader with NightFactor 0. |
+| Performance stability | 5 | The comic source tests passed. The fill is one lerp on the road. Frame time was not remeasured. |
+
+- Aesthetics raw: 68 / 10 dimensions, index 68
+- Playability raw: 39 / 10 dimensions, index 39
+- Total: 107 / 200
+- Delta vs last round: +1

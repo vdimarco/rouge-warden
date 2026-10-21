@@ -47,6 +47,8 @@ class LampPoolTests(unittest.TestCase):
         self.assertIn('for (int PoolI = 0; PoolI < 35; PoolI++)', hlsl)
         self.assertIn('float PoolHit = step(0.82, PoolPeak) * step(0.40, PoolWarm) * step(PoolWarm, 0.78);', hlsl)
         self.assertIn('float3 PoolCol = float3(0.45, 0.22, 0.07);', hlsl)
+        self.assertIn('float3 MoonFill = float3(0.05, 0.07, 0.12);', hlsl)
+        self.assertIn('float MoonShare = (1.0 - saturate(PoolW * 4.0)) * RoadMask * saturate(NightFactor);', hlsl)
         self.assertIn('RoadMask * saturate(NightFactor)', hlsl)
         self.assertIn('float MoonDisc = pow(MoonDot, 900.0);', hlsl)
         self.assertIn('float Coat = Clear * (0.62 + 0.38 * CoatEdge) * SkyHit;', hlsl)
@@ -87,6 +89,42 @@ class LampPoolTests(unittest.TestCase):
         warmed = pool(road, samples, normal_z=1.0, roughness=0.9, below=1.0, night=1.0)
         self.assertGreater(warmed[0], road[0] + 0.15)
         self.assertGreater(warmed[0], warmed[2] + 0.10)
+
+    def test_unlit_road_goes_cool_and_a_pool_stays_warm(self):
+        road = (0.025, 0.024, 0.028)
+        dark = [(0.02, 0.02, 0.03)] * 35
+        cool = moonlit(road, dark, normal_z=1.0, roughness=0.9, below=1.0, night=1.0)
+        self.assertGreater(cool[2], road[2] + 0.10)
+        self.assertGreater(cool[2], cool[0])
+        day = moonlit(road, dark, normal_z=1.0, roughness=0.9, below=1.0, night=0.0)
+        self.assertEqual(day, road)
+        wall = moonlit((0.06, 0.025, 0.018), dark, normal_z=0.0, roughness=0.9, below=1.0, night=1.0)
+        self.assertEqual(wall, (0.06, 0.025, 0.018))
+        lamp = (0.95, 0.72, 0.35)
+        lit = list(dark)
+        lit[22] = lamp
+        warmed = moonlit(road, lit, normal_z=1.0, roughness=0.9, below=1.0, night=1.0)
+        self.assertGreater(warmed[0], warmed[2])
+
+
+def moonlit(color, samples, **kwargs):
+    """Pool, then the cool fill on whatever the pool did not claim."""
+    weight = 0.0
+    for (tap_x, tap_y), sample in zip(TAPS, samples):
+        peak = max(sample)
+        warm = _sat((sample[0] - sample[2]) / max(peak, 1.0e-3))
+        hit = float(peak >= 0.82) * float(warm >= 0.40) * float(warm <= 0.78)
+        dist = math.hypot(tap_x, tap_y)
+        weight = max(weight, hit * _sat(1.0 - dist / 180.0))
+    pooled = pool(color, samples, **kwargs)
+    night = kwargs['night']
+    mask = (_smooth(0.85, 0.96, kwargs['normal_z']) * _smooth(0.55, 0.75, kwargs['roughness'])
+            * kwargs['below'] * (0.0 if kwargs.get('sky') else 1.0)
+            * (1.0 - kwargs.get('crew', 0.0)) * (1.0 - kwargs.get('foliage', 0.0))
+            * (1.0 - kwargs.get('smooth_reflection', 0.0)))
+    share = (1.0 - _sat(weight * 4.0)) * mask * _sat(night)
+    dest = tuple(_sat(c + f) for c, f in zip(pooled, (0.05, 0.07, 0.12)))
+    return tuple(c + (d - c) * share for c, d in zip(pooled, dest))
 
 
 if __name__ == '__main__':
