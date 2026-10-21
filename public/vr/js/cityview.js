@@ -472,9 +472,11 @@ vec3 wallColor(int k, float shop, float sd, float salt, float h1, float h2, floa
     float b00 = hash13(vec3(bid.x, bid.y, sd));
     float b10 = hash13(vec3(bid.x + 1.0, bid.y, sd));
     float b01 = hash13(vec3(bid.x, bid.y + 1.0, sd));
+    float b11 = hash13(vec3(bid.x + 1.0, bid.y + 1.0, sd));
     float ax = smoothstep(1.0 - bw.x * 2.0, 1.0, bf.x);
     float ay = smoothstep(1.0 - bw.y * 2.0, 1.0, bf.y);
-    float batch = mix(mix(b00, b10, ax), b01, ay);
+    // all four corners, so the seam matches the next cell when both axes are blending
+    float batch = mix(mix(b00, b10, ax), mix(b01, b11, ax), ay);
     float unit = hash13(vec3(floor(cx) + 17.0, floor(cy), sd + 4.0));
     vec3 batchT = st == 3 ? mix(vec3(0.72, 0.70, 0.66), vec3(1.28, 1.22, 1.12), batch)
       : st == 4 ? mix(vec3(0.70, 0.74, 0.80), vec3(1.24, 1.18, 1.10), batch)
