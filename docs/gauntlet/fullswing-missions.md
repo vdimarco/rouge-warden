@@ -159,3 +159,44 @@ Loop: missions, playability, controls, feel, UX, pacing and fun for In Full Swin
 ![On the roof, the hint says left mouse or E to swing](fullswing-r4/roof.png)
 
 ![A moment later the rope is out and the hero is off the roof](fullswing-r4/air.png)
+
+### Round 5 — 2026-10-21 — rubric v1
+
+- What changed: After the Sludge Run, Mission 2 is Stop, Thief!, Mission 3 is Catch!, and Mission 4 is a rooftop brawl. Each starts near the hero, a miss starts that same mission again, and odd-job markers wait until the three are done. The mission card names the current one. The twelve clogs stay in the city and still wake the King, and the card returns to them when Mission 4 is over. The King card no longer calls itself Mission 3.
+- Why it helped: The story after the bomb was twelve of the same plunge. Spider-Man 2 follows its opening with missions that change what you do. A 1280×800 play showed a street chase (THIEF, 51 m), a person on a roof edge (FALLING), and a roof fight (FIGHT, wave 1 of 2). None of those cards said to flush a clog. When the route ended, the clog card came back.
+- Screenshots: `docs/gauntlet/fullswing-r5/thief.png`, `docs/gauntlet/fullswing-r5/catch.png`, `docs/gauntlet/fullswing-r5/brawl.png`.
+- Next target: sound design (5). It is the lowest playability score. Variety is 7. The chase bed is still a click on the same groove.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 5 | Held. Golden-hour sun and ink shadows. |
+| Color palette | 6 | Held. Yellow, red and sludge green still separate the HUD from the blocks. |
+| Detail density | 4 | Held. Open blocks more than a dressed borough. |
+| Texture and material quality | 3 | Held. Flat fills. |
+| Composition and camera | 4 | Held. The chase camera still leaves the thief low in the frame. The catch and the brawl are wider, and still not a led fight camera. |
+| Atmosphere | 5 | Held. The dusk skyline has a mood. The street under the chase does not. |
+| Character models | 3 | Held. Simple comic figures. The faller and the goons read at this distance. |
+| Animation smoothness | 4 | Scored from still frames in software GL. Poses exist. Continuous motion was not watched. |
+| Particles and VFX | 4 | Held. Beams and the sticker. No hit or trail in these frames. |
+| UI polish | 6 | Held. The mission pill, the sticker and the training card share one ink-and-yellow system. |
+| Responsiveness and input latency | 7 | Held. The card and the sticker were on the stepped frame that started each mission. |
+| Controls feel | 6 | Held. One button still leaves the roof. These missions do not change the swing. |
+| Mission clarity | 7 | Held at 7. Each card names its own mission and the sticker names THIEF, FALLING or FIGHT. The training card can still sit beside them. |
+| Pacing | 7 | The lesson still waits. The next mission is a short chase, then a rescue, then a fight, not the clog list. The twelve clogs return after those three. |
+| Fun factor | 6 | Held. The three missions are on the card. This play started them. It did not play one through to the payoff. |
+| Difficulty curve | 6 | Held. The thief is a faster jog than the bomb runner, the catch gives time to swing there, and a miss retries. |
+| Feedback | 6 | Held. The sticker and the timer are the new mission's feedback. No new hit or cue. |
+| Sound design | 5 | Held. The chase clock is the click from round 3. This play ran with audio disabled. |
+| Variety | 7 | Missions 2, 3 and 4 are a street chase, a falling rescue and a roof fight. The clog set is still the path to the King after that. |
+| Performance stability | 6 | The 1280×800 play and the job checks passed with no page errors. Frame time on a real GPU was not measured. |
+
+- Aesthetics raw: 44 / 10 dimensions, index 44
+- Playability raw: 63 / 10 dimensions, index 63
+- Total: 107 / 200
+- Delta vs last round: +3 (round 4 was 104). Variety 5 → 7. Pacing 6 → 7. Every other score held.
+
+![Mission 2 is a purse snatcher on the street](fullswing-r5/thief.png)
+
+![Mission 3 is a person on a roof edge](fullswing-r5/catch.png)
+
+![Mission 4 is a fight on a roof](fullswing-r5/brawl.png)

@@ -23,7 +23,7 @@ import { createStreet, STREET } from "./street.js";
 import { createStreetView, createFigures } from "./streetview.js";
 import { createCombat, FIGHT } from "./combat.js";
 import { createCars, nearTraffic, trafficAt, CAR } from "./cars.js";
-import { createJobs, JOB_NAMES } from "./jobs.js";
+import { createJobs, JOB_NAMES, STORY_ROUTE, STORY_NEAR } from "./jobs.js";
 import { createActionView } from "./actionview.js";
 import { createActionHud, placeGoal } from "./actionhud.js";
 import { createBloom } from "./bloom.js";
@@ -54,7 +54,7 @@ function defaultSettings() {
   return { preset: COMFORT.defaultPreset, vignette: p.vignette, turn: p.turn, snap: p.snap, aim: p.aim, vignetteLook: "room", seated: false, height: 0, hand: "right", hold: "hold", cue: true, hz: PERF.hz, foveation: PERF.foveation, music: true, speedLines: true, verse: "full" };
 }
 // seen: the comic scenes already played (cutscene.js), so each plays once, and the phone's gesture card (mobile.js)
-function blankSave() { return { v: 1, intro: false, tutorial: false, clogs: [], loonies: [], bonus: 0, king: "sleeping", pipes: [], best: {}, seen: { opening: false, king: false, finale: false, mission2: false, phoneCoach: false, districts: [] }, jobs: { sludge: false, done: {} }, settings: defaultSettings() }; }
+function blankSave() { return { v: 1, intro: false, tutorial: false, clogs: [], loonies: [], bonus: 0, king: "sleeping", pipes: [], best: {}, seen: { opening: false, king: false, finale: false, mission2: false, mission3: false, mission4: false, phoneCoach: false, districts: [] }, jobs: { sludge: false, route: 0, done: {} }, settings: defaultSettings() }; }
 function loadSave() {
   const s = blankSave(), raw = store.get(SAVE_KEY, null);
   if (!raw || typeof raw !== "object" || raw.v !== 1) return s;
@@ -64,11 +64,12 @@ function loadSave() {
   s.bonus = Number.isFinite(raw.bonus) && raw.bonus >= 0 ? raw.bonus : 0;
   s.king = ["sleeping", "awake", "beaten"].includes(raw.king) ? raw.king : "sleeping";
   if (raw.seen && typeof raw.seen === "object") {
-    for (const k of ["opening", "king", "finale", "mission2", "phoneCoach"]) s.seen[k] = raw.seen[k] === true;
+    for (const k of ["opening", "king", "finale", "mission2", "mission3", "mission4", "phoneCoach"]) s.seen[k] = raw.seen[k] === true;
     s.seen.districts = ints(raw.seen.districts).filter((d) => d < 6);
   }
   if (raw.jobs && typeof raw.jobs === "object") {
     s.jobs.sludge = raw.jobs.sludge === true;
+    s.jobs.route = Number.isInteger(raw.jobs.route) && raw.jobs.route >= 0 && raw.jobs.route <= STORY_ROUTE.length ? raw.jobs.route : 0;
     if (raw.jobs.done && typeof raw.jobs.done === "object") for (const [k, v] of Object.entries(raw.jobs.done)) if (JOB_NAMES[k] && Number.isInteger(v) && v > 0) s.jobs.done[k] = v;
   }
   if (raw.best && typeof raw.best === "object") for (const [k, v] of Object.entries(raw.best)) if (Number.isFinite(v) && v > 0) s.best[k] = v;
@@ -324,8 +325,12 @@ function handOff() {
   resumable = true;
   saveNow();
   // Mission 1, the Sludge Run, starts at once (the King's comic played before the cottage room); a returning save that has not
-  // done it gets it too. The tests (?nocut, ?skipintro) start it only when they ask (G.test.job).
-  if (!FLAGS.nocut && !FLAGS.skipintro) { if (lakeDrop) lakeDrop.sludge = true; else startSludge(); }
+  // done it gets it too. A save that already won it continues Missions 2–4. The tests (?nocut, ?skipintro) start a job only when they ask.
+  if (!FLAGS.nocut && !FLAGS.skipintro) {
+    if (lakeDrop) lakeDrop.sludge = true;
+    else if (!save.jobs.sludge) startSludge();
+    else if ((save.jobs.route || 0) < STORY_ROUTE.length) routeRetry = 0.8;
+  }
 }
 function coldOpen() {
   save.seen.opening = true;
@@ -339,7 +344,13 @@ function coldOpen() {
 // A comic scene (cutscene.js) in flat play, once per save: the opening after the hand-off, a district's briefing the first
 // time you come near its clogs, the King waking, the finale. The game holds still while it plays (G.state "cutscene"); a
 // headset plays none and shows the mission as a toast. ?skipintro and ?nocut (the tests) play none.
-const STORY_TOAST = { mission2: () => "Mission 2: flush the twelve clogs.", king: () => "Mission 3: rip off the King's three pipes, then flush him.", finale: () => "All clear! Free roam: trials and Loonies." };
+const STORY_TOAST = {
+  mission2: () => "Mission 2: stop the purse snatcher.",
+  mission3: () => "Mission 3: catch the person falling.",
+  mission4: () => "Mission 4: clear the Sludge Gang off the roof.",
+  king: () => "The King: rip off his three pipes, then flush him.",
+  finale: () => "All clear! Free roam: trials and Loonies.",
+};
 function story(name, arg, force) {
   if (!force && (FLAGS.nocut || FLAGS.skipintro || !save.seen)) return;
   const seen = save.seen;
@@ -394,7 +405,9 @@ function streetFrame(dt, inPlay) {
 }
 /* ---------------- the city action: sprint, fights, cars and jobs (flat play) ---------------- */
 // The action runs in flat play once the game has started; a headset keeps its swinging game.
-let sprinting = false, energy = 1, energyWait = 0, driving = false, fightHints = 0, sludgeRetry = -1;
+let sprinting = false, energy = 1, energyWait = 0, driving = false, fightHints = 0, sludgeRetry = -1, routeRetry = -1;
+// A test can run the story route under ?nocut. Real play runs it only after Mission 1, and the tests leave it off.
+let routeForce = false;
 // The fall into the lake after the toilet erupts (flat screen): { t, sludge } while it lasts. The splash fishes the hero out on the
 // start roof (respawn from lastSafe), and Mission 1 starts then, or when he lands somewhere else, or after 12 s.
 let lakeDrop = null;
@@ -410,7 +423,10 @@ function launchIntoLake() {
 }
 function endLakeDrop() {
   if (!lakeDrop) return;
-  if (lakeDrop.sludge) sludgeRetry = 1.2;
+  if (lakeDrop.sludge) {
+    if (!save.jobs.sludge) sludgeRetry = 1.2;
+    else if ((save.jobs.route || 0) < STORY_ROUTE.length) routeRetry = 1.2;
+  }
   lakeDrop = null;
 }
 const HERO_FACE = { x: 0, z: -1 }, HERO_FIGHT = { x: 0, y: 0, z: 0, yaw: 0, onGround: false, safe: false, hidden: false, perch: false };
@@ -633,8 +649,10 @@ function actionFrame(dt, inp) {
     if (swung || !game.progress || game.progress.tutorial !== 0) jobs.holdChase(false);
   }
   combat.update(dt, hf);
-  jobs.offersOn = save.jobs.sludge; // while driving only a taxi marker starts (jobs.js)
-  jobs.crimesOn = save.jobs.sludge; // crimes start near the hero after Mission 1
+  syncStory();
+  const routing = routeOpen();
+  jobs.offersOn = !!save.jobs.sludge && !routing; // odd jobs wait until Missions 2–4 are done; while driving only a taxi marker starts
+  jobs.crimesOn = !!save.jobs.sludge && !routing;
   jobs.update(dt, G.time, hf);
   throwFrame(dt);
   audio.fight(combat.fighting > 0 && G.state === "play");
@@ -643,10 +661,12 @@ function actionFrame(dt, inp) {
   combat.events.length = 0;
   for (const e of jobs.events) jobEvent(e);
   jobs.events.length = 0;
-  game.setJob(jobs.card);
+  game.setJob(jobs.card || routeCard());
   syncRopeTargets();
   if (lakeDrop && ((lakeDrop.t += dt) > LAKE_DROP.max || (lakeDrop.t > 0.5 && P.onGround && !respawning))) endLakeDrop();
   if (sludgeRetry > 0 && (sludgeRetry -= dt) <= 0) { sludgeRetry = -1; startSludge(); }
+  if (routing && !jobs.active && routeRetry < 0) routeRetry = 0.8;
+  if (routeRetry > 0 && (routeRetry -= dt) <= 0) startStoryStep();
   hudFrame(dt, inp);
 }
 // two goons on each clogged roof near the hero, once (they come back after a reload)
@@ -707,9 +727,22 @@ function jobEvent(e) {
       game.reward(e.reward);
       if (e.job === "sludge") {
         save.jobs.sludge = true;
+        if (!Number.isInteger(save.jobs.route)) save.jobs.route = 0;
+        syncStory();
         ui.toast("Bomb defused! +" + e.reward + " Loonies");
-        story("mission2");
-      } else ui.toast(JOB_NAMES[e.job] + " done! +" + e.reward + " Loonies");
+        if (routeOpen()) { story(STORY_ROUTE[0].scene); routeRetry = 0.6; }
+      } else {
+        syncStory();
+        const adv = routeOpen() ? jobs.storyAdvance(e.job) : null;
+        if (adv && adv.ok) {
+          save.jobs.route = jobs.story.route;
+          if (adv.next) {
+            ui.toast(JOB_NAMES[e.job] + " done! +" + e.reward + " Loonies");
+            story(adv.next.scene);
+            routeRetry = 0.6;
+          } else ui.toast(JOB_NAMES[e.job] + " done! +" + e.reward + " Loonies. The districts are still clogged. Flush them to wake the King.");
+        } else ui.toast(JOB_NAMES[e.job] + " done! +" + e.reward + " Loonies");
+      }
       save.jobs.done[e.job] = (save.jobs.done[e.job] || 0) + 1;
       saveNow();
       break;
@@ -717,6 +750,7 @@ function jobEvent(e) {
     case "failed":
       ui.toast(FAIL_LINES[e.why] || "Job failed.");
       if (e.job === "sludge") sludgeRetry = 3.5;
+      else if (routeOpen() && jobs.storyNext() && jobs.storyNext().type === e.job) routeRetry = 3.5;
       break;
   }
 }
@@ -726,6 +760,32 @@ function startSludge() {
   jobs.start("sludge", null, heroFight());
   // the gold-ring row (or the spoken tutorial's first line) is still the lesson: the bomb waits
   if (game.progress && game.progress.tutorial === 0) jobs.holdChase(true);
+}
+function syncStory() {
+  jobs.story.sludge = !!save.jobs.sludge;
+  jobs.story.route = save.jobs.route || 0;
+}
+// Missions 2–4 run in real flat play after the bomb, and in a test that asks. They do not run under ?nocut or ?skipintro.
+function routeOpen() {
+  if (!routeForce && (FLAGS.nocut || FLAGS.skipintro)) return false;
+  syncStory();
+  return !!jobs.storyNext();
+}
+function routeCard() {
+  if (jobs.active || !routeOpen()) return null;
+  const step = jobs.storyNext();
+  if (!step) return null;
+  return { title: step.mission, detail: step.pending, short: step.mission, n: 0, of: 0, tag: step.type, goal: null };
+}
+function startStoryStep() {
+  routeRetry = -1;
+  if (!routeOpen() || G.state !== "play" || jobs.active) return;
+  const step = jobs.storyNext();
+  if (!step) return;
+  const h = heroFight();
+  const o = jobs.prepare(step.type, h, STORY_NEAR[step.type]) || jobs.prepare(step.type, h, [20, 900]);
+  if (!o) { routeRetry = 1.2; return; }
+  jobs.start(step.type, o, h, { mission: step.mission, arrive: true });
 }
 function hudFrame(dt, inp) {
   const phone = !!inp.easySwing, near = !driving ? carInReach() : null;
@@ -2311,6 +2371,18 @@ G.test = {
   goonView(id) { const g = combat.goons.find((q) => q.id === id); if (!g) return null; const v = goonOnThrees(g); return { phase: v.phase, poseT: v.poseT, pose: v.pose, x: v.x, z: v.z }; },
   // start a job (type: sludge, catch, washer, pizza, balloon, brawl, taxi, thief) at the nearest offer of that type, or at the hero
   job(type) { const o = jobs.offers.find((q) => q.type === type) || null; jobs.start(type, o, heroFight()); return jobs.info(); },
+  // Start story mission i (0 thief, 1 catch, 2 brawl). 3 or more ends the route and the clog card can show.
+  storyMission(i = 0) {
+    const n = Math.max(0, Math.min(STORY_ROUTE.length, i | 0));
+    routeForce = n < STORY_ROUTE.length;
+    save.jobs.sludge = true;
+    save.jobs.route = n;
+    syncStory();
+    if (jobs.active) jobs.cancel();
+    jobs.events.length = 0;
+    routeRetry = routeForce ? 0.02 : -1;
+    return n;
+  },
   jobOffers(on = true) { save.jobs.sludge = !!on; return jobs.info().offers; },
   spawnGoon(x, y, z, aggro = true) { const g = combat.spawn(x, y, z, "test"); g.aggro = aggro; return g.id; },
   // get into the nearest parked car (or the given one), and out
