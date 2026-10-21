@@ -298,6 +298,9 @@ private:
     UFUNCTION(NetMulticast, Unreliable) void MulticastImpact(FVector_NetQuantize Point, uint8 Slot);
 };
 
+// True in a pond, and false on a bridge deck or the street. Defined in QuebecSwimming.cpp.
+bool QuebecPondContains(float X, float Y);
+
 UCLASS()
 class QUEBEC_API AQuebecCar : public APawn
 {
@@ -317,6 +320,9 @@ public:
     UPROPERTY(VisibleAnywhere, Replicated) bool bHandbrake = false;
     UPROPERTY(EditAnywhere, ReplicatedUsing=ApplyPaint) int32 PaintStyle = 0;
     UPROPERTY(EditAnywhere, ReplicatedUsing=ApplyPaint) int32 BodyProfile = 0;
+    // 0 is a car. 1 is the pond pedalo. Cars keep the driving model.
+    UPROPERTY(VisibleAnywhere, Replicated) int32 RideKind = 0;
+    bool IsPedalo() const { return RideKind == 1; }
     UPROPERTY(VisibleAnywhere, Replicated) bool bTraffic = false;
     void SetTrafficRoute(int32 Segment, bool bForward, const TArray<bool>& AllowedRoads);
     void StopInput();
@@ -382,6 +388,7 @@ private:
     bool bJunctionEntered = false;
     void UpdateTraffic();
     void SimulateDrive(float Step, bool bFailsafe);
+    void SimulatePedalo(float Step, bool bFailsafe);
     void MoveWithCollision(float Step, const FVector& Travel);
     bool WheelSupport(const FVector& Point, FRotator& Rotation, double& Height, bool& bTooHigh) const;
     bool bGrounded = false;

@@ -4,6 +4,7 @@
 #include "QuebecChain.h"
 #include "QuebecPace.h"
 #include "QuebecBail.h"
+#include "QuebecRide.h"
 #include "QuebecRouteLine.h"
 #include "QuebecCourtRules.h"
 #include "QuebecCourtTone.h"
@@ -1332,8 +1333,30 @@ void AQuebecCar::Tick(float DeltaSeconds)
     FinishDriveTick(StrikeFrom,bStriker,DeltaSeconds);
 }
 
+void AQuebecCar::SimulatePedalo(float Step, bool bFailsafe)
+{
+    const float ThrottleNow = bFailsafe ? 0.f : Throttle;
+    const bool bOnWater = QuebecPondContains(static_cast<float>(GetActorLocation().X), static_cast<float>(GetActorLocation().Y));
+    Speed = QuebecRide::Advance(Speed, ThrottleNow, bOnWater, Step);
+    LateralSpeed = 0.f;
+    SteeringState = Steering;
+    if (FMath::Abs(Speed) > 15.f)
+    {
+        const float Turn = QuebecRide::YawDegrees(Speed, Steering, Step);
+        const FQuat Rotation = (GetActorRotation() + FRotator(0., Turn, 0.)).Quaternion();
+        if (CanFitAt(GetActorLocation(), Rotation)) SetActorRotation(Rotation);
+    }
+    const FVector Travel = GetActorForwardVector().GetSafeNormal2D() * Speed * Step;
+    MoveWithCollision(Step, Travel);
+}
+
 void AQuebecCar::SimulateDrive(float Step, bool bFailsafe)
 {
+    if (IsPedalo())
+    {
+        SimulatePedalo(Step, bFailsafe);
+        return;
+    }
     if (KnockTime > 0.f)
     {
         // Struck: tyres scrub instead of rolling, so the car slides, spins and bleeds speed until it settles.
@@ -1659,6 +1682,7 @@ void AQuebecCar::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifeti
     DOREPLIFETIME(AQuebecCar, VisualSteering);
     DOREPLIFETIME(AQuebecCar, PaintStyle);
     DOREPLIFETIME(AQuebecCar, BodyProfile);
+    DOREPLIFETIME(AQuebecCar, RideKind);
     DOREPLIFETIME(AQuebecCar, bTraffic);
     // Street contract.
     DOREPLIFETIME(AQuebecCar, bPolice);
@@ -2400,7 +2424,8 @@ AQuebecCar* AQuebecController::FindInteractableCar() const
             FHitResult Hit;
             FCollisionQueryParams Query(SCENE_QUERY_STAT(EnterCar), false, Character);
             Query.AddIgnoredActor(*It);
-            if (GetWorld()->LineTraceSingleByChannel(Hit, Character->GetActorLocation(), It->GetActorLocation(), ECC_Visibility, Query)) continue;
+            // The pedalo sits in the channel. The bridge rail is between the deck and the boat, and E on the deck still boards.
+            if (!It->IsPedalo() && GetWorld()->LineTraceSingleByChannel(Hit, Character->GetActorLocation(), It->GetActorLocation(), ECC_Visibility, Query)) continue;
             NearestDistance = Distance;
             NearestCar = *It;
         }
@@ -2790,8 +2815,8 @@ void AQuebecHUD::DrawHUD()
     const bool bSwimming = Avatar && Avatar->GetCharacterMovement()->IsSwimming();
     // On a tall screen the Use button already says car; an always-on exit prompt would only cover the view.
     if (bSwimming) Prompt = TEXT("SWIMMING · Move toward shore");
-    else if (Car) Prompt = bPortrait ? FString() : TEXT("[ E ]  EXIT CAR");
-    else if (NearbyCar) Prompt = TEXT("[ E ]  ENTER CAR");
+    else if (Car) Prompt = bPortrait ? FString() : (Car->IsPedalo() ? TEXT("[ E ]  STEP ASHORE") : TEXT("[ E ]  EXIT CAR"));
+    else if (NearbyCar) Prompt = NearbyCar->IsPedalo() ? TEXT("[ E ]  BOARD PEDALO") : TEXT("[ E ]  ENTER CAR");
     else if (bCanComplete) Prompt = TEXT("[ E ]  COMPLETE OBJECTIVE");
     else if (Controller)
     {
@@ -3057,7 +3082,7 @@ void AQuebecHUD::DrawHUD()
     {
         const float Y = ControlsTop - 66.f * Scale;
         Text(FString::Printf(TEXT("%03d"), FMath::RoundToInt(FMath::Abs(Car->Speed) * .036f)), Paper, Margin, Y, 1.8f);
-        Text(Car->bHandbrake ? TEXT("km/h  /  HANDBRAKE") : TEXT("km/h"), Car->bHandbrake ? Accent : Muted, Margin, Y + 38.f * Scale, .85f);
+        Text(Car->IsPedalo() ? TEXT("km/h  /  PEDALO") : (Car->bHandbrake ? TEXT("km/h  /  HANDBRAKE") : TEXT("km/h")), Car->IsPedalo() ? Accent : (Car->bHandbrake ? Accent : Muted), Margin, Y + 38.f * Scale, .85f);
     }
     else if (Car)
     {
@@ -3067,7 +3092,7 @@ void AQuebecHUD::DrawHUD()
         RightText(FString::Printf(TEXT("%03d"), FMath::RoundToInt(FMath::Abs(Car->Speed) * .036f)), Paper, SpeedRight - 42.f * Scale, Y, 1.8f);
         RightText(TEXT("km/h"), Muted, SpeedRight, Y + 23.f * Scale, .85f);
         Text(TEXT("WASD or arrows  Drive / steer"), Muted, X, Y + 42.f * Scale, .85f);
-        Text(Car->bHandbrake ? TEXT("SPACE  HANDBRAKE ON") : TEXT("SPACE  Handbrake"), Car->bHandbrake ? Accent : Muted, X, Y + 59.f * Scale, .85f);
+        Text(Car->IsPedalo() ? TEXT("Hold gas to paddle") : (Car->bHandbrake ? TEXT("SPACE  HANDBRAKE ON") : TEXT("SPACE  Handbrake")), Car->IsPedalo() || Car->bHandbrake ? Accent : Muted, X, Y + 59.f * Scale, .85f);
     }
     else if (!bPortrait && !bTouchControls && Now - FirstHUDTime < 10.f)
     {
@@ -3209,6 +3234,22 @@ void AQuebecGameMode::BeginPlay()
     // The atelier. E spends session cash to clear body damage on a nearby car. No population change.
     if (!FParse::Param(FCommandLine::Get(), TEXT("NordNoCampaign")))
         GetWorld()->SpawnActor<AQuebecBay>();
+    // One pedalo in the channel beside the north-pond bridge. It is not a parked street car.
+    if (!FParse::Param(FCommandLine::Get(), TEXT("NordNoCampaign")))
+    {
+        static_assert(QuebecRide::PedaloKind == 1, "IsPedalo() follows PedaloKind");
+        const FVector Point(static_cast<float>(QuebecRide::BerthX), static_cast<float>(QuebecRide::BerthY), QuebecRide::BerthZ);
+        const FRotator Facing(0.f, QuebecRide::BerthYaw, 0.f);
+        const FTransform Transform(Facing, Point);
+        AQuebecCar* Boat = GetWorld()->SpawnActorDeferred<AQuebecCar>(AQuebecCar::StaticClass(), Transform, nullptr, nullptr, ESpawnActorCollisionHandlingMethod::AlwaysSpawn);
+        if (Boat)
+        {
+            Boat->RideKind = QuebecRide::PedaloKind;
+            Boat->Tags.Add(TEXT("Pedalo"));
+            Boat->FinishSpawning(Transform);
+            UE_LOG(LogTemp, Display, TEXT("NORD_PEDALO berth x=%.0f y=%.0f"), Point.X, Point.Y);
+        }
+    }
     // Combat: weapon, vest and health pickups at street and park points, none near a QA anchor and no collision.
     if (!FParse::Param(FCommandLine::Get(), TEXT("NordNoCampaign"))) QuebecCombat::SpawnPickups(GetWorld());
     // Police (POLICE): the dispatcher and its garage sign. Police cars and officers appear only while a player has stars.
