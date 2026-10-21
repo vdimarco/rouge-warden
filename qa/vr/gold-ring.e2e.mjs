@@ -33,6 +33,7 @@ try {
     const up = (button) => document.dispatchEvent(new MouseEvent("mouseup", { button, bubbles: true }));
     const place = () => {
       up(0); up(2);
+      if (G.game && G.game.progress) G.game.progress.tutorial = 0;
       G.test.teleport(S.x, S.y, S.z);
       G.test.face(R.x, R.z);
       if (G.flatcam) { G.flatcam.bankOn = false; G.flatcam.shakeOn = false; G.flatcam.reset(G.rigYaw, -0.42); }
@@ -91,6 +92,7 @@ try {
     dispatchEvent(new Event("resize"));
     const S = G.city.start, R = G.city.goldRing;
     document.dispatchEvent(new MouseEvent("mouseup", { button: 0, bubbles: true }));
+    if (G.game && G.game.progress) G.game.progress.tutorial = 0;
     G.test.teleport(S.x, S.y, S.z);
     G.test.face(R.x, R.z);
     if (G.flatcam) G.flatcam.reset(G.rigYaw, -0.42);

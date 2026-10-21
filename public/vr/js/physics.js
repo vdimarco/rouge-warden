@@ -185,7 +185,7 @@ export function easyAnchor(P, dx, dz, opt) {
     }
     if (hit) { o.x = bx; o.y = by; o.z = bz; o.nx = bnx; o.ny = bny; o.nz = bnz; o.tag = btag; o.id = cid; o.bid = bld; o.sky = false; }
   }
-  // The gold-ring lesson: the marked tower is the anchor when nothing sits in the 6h ball.
+  // Nothing in the 6h ball. The gold-ring lesson names its tower. Otherwise the point stays sky.
   const lesson = o.sky && opt && opt.lesson;
   if (lesson && lesson.x != null) {
     o.x = lesson.x; o.y = lesson.y; o.z = lesson.z;

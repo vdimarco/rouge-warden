@@ -1601,7 +1601,9 @@ function canHang(a) {
 // The gold-ring lesson marks the tower. That face is the anchor when the 6h ball around the auto point is empty,
 // so the first ropes do not go to a sky point.
 function goldLesson() {
-  if (!pickerOn || !game || !game.progress || game.progress.tutorial !== 0) return null;
+  if (!pickerOn || !game || !game.progress || game.progress.tutorial !== 0 || !P.onGround) return null;
+  const S = city.start;
+  if (Math.hypot(P.pos.x - S.x, P.pos.z - S.z) > 20 || Math.abs(P.pos.y - S.y) > 3) return null;
   const res = picker.result();
   if (!res || !res.valid || res.kind !== "ring") return null;
   return { x: res.x, y: res.y, z: res.z, nx: res.nx, ny: res.ny, nz: res.nz, id: res.id };

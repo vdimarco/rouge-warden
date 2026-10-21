@@ -10,4 +10,4 @@
 - [x] Left swing button fires the left rope and the right button the right rope (`buttonHand`), including 10 of 10 at a 1280-wide view.
 - [ ] `openspec validate` — the CLI is not installed in this environment, so this check did not run.
 - [x] Browser: a swing chain at 390×844 and 1280×800, including an off-screen anchor line. Frame time at both widths is under a 60 Hz budget. Existing `qa/vr/*.test.mjs` and e2e scripts pass.
-- [ ] Browser: the gold-ring tower holds the rope at 390×844 and 1280×800, the left button fires the left rope 10 of 10 at 1280, and the page reports 0 errors.
+- [x] Browser: the gold-ring tower holds the rope at 390×844 and 1280×800, the left button fires the left rope 10 of 10 at 1280, and the page reports 0 errors. `qa/vr/gold-ring.e2e.mjs`.

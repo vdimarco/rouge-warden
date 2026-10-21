@@ -4,7 +4,7 @@ Body height `h` is `SWING.bodyH` (1.8), next to `chestH`.
 
 ## Anchor
 
-`easyAnchor` in `physics.js` places a point 12h along the horizontal velocity and 14h above the feet. `nearestSurface` within 6h, then the closest point on a collider in that ball, snaps to that face. A ray from inside a box does not hit it (`city.js`), which is why the old 26-ray search left the gold-ring tower as sky when the point sat inside the solid. With none, the point stays, tagged `sky`. On the gold-ring lesson, `playerEasy` passes the marked tower face, and that face wins when the 6h ball is empty. Otherwise `playerEasy` raises a sky anchor until `project()` says it is off the screen.
+`easyAnchor` in `physics.js` places a point 12h along the horizontal velocity and 14h above the feet. `nearestSurface` within 6h, then the closest point on a collider in that ball, snaps to that face. A ray from inside a box does not hit it (`city.js`), which is why the old 26-ray search left the gold-ring tower as sky when the point sat inside the solid. With none, the point stays, tagged `sky`, and `playerEasy` raises it until `project()` says it is off the screen. On the gold-ring lesson, `playerEasy` passes the marked tower face, and that face wins when the 6h ball is empty.
 
 Both ropes free: `buttonHand` maps the left swing button to the left rope and the right button to the right rope. The side of the target was sending the left button to the right rope when the ring sat near the middle of a 1280-wide view.
 
