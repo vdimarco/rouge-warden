@@ -96,9 +96,9 @@ In flat chase view, a second swing while one web is already on a building SHALL 
 - **THEN** the new web is on a different building and it does not kick
 
 #### Scenario: Both inputs in one frame
-- **WHEN** the player presses both swing inputs in the same frame
+- **WHEN** the player presses both swing inputs in the same frame and another building the hero can hang under is in reach
 - **THEN** the two webs are on two different buildings
 
-#### Scenario: Too far to hang under
-- **WHEN** the only other building is farther than the hero can hang under
-- **THEN** the second web attaches to the sky and the hero is not pulled toward that building on the attach
+#### Scenario: Both inputs, and nothing else to hang under
+- **WHEN** the player presses both swing inputs in the same frame and no other building can be hung under
+- **THEN** the second web attaches to the sky and the hero is not pulled toward a building on the attach
