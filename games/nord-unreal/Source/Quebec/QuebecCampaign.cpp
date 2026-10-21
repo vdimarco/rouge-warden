@@ -522,6 +522,7 @@ bool AQuebecCampaign::HandleInteract(AQuebecController* Controller)
             const int32 Next = QuebecPondRules::Apply(PondStep, QuebecPondRules::EAct::Tag, BestBeam, false);
             if (Next == PondStep)
             {
+                Controller->PlayFeedback(EQuebecFeedbackCue::Dialogue);
                 Controller->ShowInteractionMessage(TEXT("That beam blinks with the sky. The postcard does not."));
                 return true;
             }

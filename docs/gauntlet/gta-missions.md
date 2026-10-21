@@ -128,3 +128,48 @@ Unreal is not available here, so the native diamond was not captured. The title 
 ![Play client at 1280, host offline](gta-missions/r2-play-1280.png)
 
 ![Menu on a 390-wide screen, Recover visible](gta-missions/r2-play-menu-390.png)
+
+### Round 3 — 2026-10-21 — rubric v1
+
+- What changed: During mission 3's tag step, the local player hears a short original tick whenever the decoy beams change state. Tagging a blinking beam plays the existing dialogue cue. The neighborhood and race loops are unchanged.
+- Why it helped: The puzzle is "which beam never blinks," and that blink was silent. The tick gives the watch a rhythm. A miss sounds like dialogue, not like the blink.
+- Screenshots: title `docs/gauntlet/gta-missions/r3-title-1280.png`, `r3-title-390.png`, `r3-title-320.png`. Play client, host offline, `r3-play-1280.png`. Menu with Recover `r3-play-menu-390.png`. The title loaded with no page errors. The raw play page still logs the missing `@epicgames-ps/lib-pixelstreamingfrontend-ue5.8` specifier; the shell and Recover still draw. The tick was not heard: Unreal is not in this container. `Scripts/test_pond_rules.py` reports 385 assertions, 0 failures, on c++, g++ and clang++. Syntax check `--both` passed for the controller, the campaign and the music tests.
+- Next target: responsiveness and input latency (3), now the only playability score at 3. It is the stream. This loop should not invent a stream fix to move that number.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 3 | Unchanged. Sky and worklight only. |
+| Color palette | 5 | Unchanged. |
+| Detail density | 3 | Unchanged. |
+| Texture and material quality | 3 | Unchanged. |
+| Composition and camera | 4 | Unchanged. |
+| Atmosphere | 4 | Unchanged. The shore still was not played. |
+| Character models | 3 | Unchanged. |
+| Animation smoothness | 3 | Unchanged. |
+| Particles and VFX | 2 | Unchanged. The blink is still a post turning on and off. |
+| UI polish | 4 | Unchanged. |
+| Responsiveness and input latency | 3 | Unchanged. Still a lagged stream. |
+| Controls feel | 4 | Unchanged. |
+| Mission clarity | 4 | Unchanged. The tick marks the blink; the card is still one line and was not seen in Unreal. |
+| Pacing | 4 | Unchanged. |
+| Fun factor | 4 | Unchanged. The tick was not heard in play. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 4 | The blink now has a tick and a wrong tag has the dialogue cue. The hits still use the same three one-shots, and none of this was heard. |
+| Sound design | 4 | The tag step ticks with the decoys. The city still has two loops, and nobody is voiced. |
+| Variety | 4 | Unchanged. Three of eight story missions. |
+| Performance stability | 4 | Unchanged. |
+
+- Aesthetics raw: 34 / 10 dimensions, index 34
+- Playability raw: 39 / 10 dimensions, index 39
+- Total: 73 / 200
+- Delta vs last round: +1 (round 2 was 72). Sound design 3 → 4. Every other score held.
+
+![GTA title at 1280](gta-missions/r3-title-1280.png)
+
+![GTA title at 390](gta-missions/r3-title-390.png)
+
+![GTA title at 320](gta-missions/r3-title-320.png)
+
+![Play client at 1280, host offline](gta-missions/r3-play-1280.png)
+
+![Menu on a 390-wide screen, Recover visible](gta-missions/r3-play-menu-390.png)

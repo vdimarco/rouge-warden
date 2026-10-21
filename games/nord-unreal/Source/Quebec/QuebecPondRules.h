@@ -142,4 +142,12 @@ namespace QuebecPondRules
         if (Part == PartPicnic) return Step == StepPull;
         return false;
     }
+
+    // True when the decoy beams change state between two samples. Callers sample faster than
+    // BlinkOn, so one campaign tick crosses at most one edge. A backwards or equal clock does not tick.
+    inline bool BlinkEdge(double PreviousTime, double Time)
+    {
+        if (!(Time > PreviousTime)) return false;
+        return BeamLit(0, PreviousTime) != BeamLit(0, Time);
+    }
 }

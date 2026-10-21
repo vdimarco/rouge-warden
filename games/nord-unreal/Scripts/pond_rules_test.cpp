@@ -7,6 +7,7 @@
 #pragma GCC poison PI HALF_PI TWO_PI INV_PI UE_PI check checkf checkSlow verify verifyf ensure ensureMsgf TEXT SMALL_NUMBER KINDA_SMALL_NUMBER BIG_NUMBER DELTA FORCEINLINE UE_LOG FVector FString TArray
 #endif
 #include "../Source/Quebec/QuebecPondRules.h"
+#include "../Source/Quebec/QuebecPondTone.h"
 #include "../Source/Quebec/QuebecJobRules.h"
 
 #include <cstdarg>
@@ -174,6 +175,29 @@ int main()
     Expect(!GuidesSideJobs(true, StepPull), "side jobs lead while the picnic is in the picture");
     Expect(GuidesSideJobs(true, StepBanked), "a banked picnic did not return the side-job guide");
     Expect(!GuidesSideJobs(false, StepBanked), "side jobs lead before the race is banked");
+
+    Expect(!BlinkEdge(1.0, 1.0), "a frozen clock ticks");
+    Expect(!BlinkEdge(1.2, 1.0), "a backwards clock ticks");
+    Expect(!BlinkEdge(0.2, 0.4), "the on half ticks");
+    Expect(!BlinkEdge(1.4, 1.6), "the off half ticks");
+    Expect(BlinkEdge(BlinkOn - 0.05, BlinkOn + 0.05), "the decoys going dark did not tick");
+    Expect(BlinkEdge(BlinkPeriod - 0.05, BlinkPeriod + 0.05), "the decoys coming back did not tick");
+    Expect(BeamLit(FalseBeam, BlinkOn - 0.05) && BeamLit(FalseBeam, BlinkOn + 0.05), "the postcard itself ticked off");
+
+    Expect(QuebecPondTone::SampleAt(0) == 0., "the tick does not start at zero");
+    Expect(QuebecPondTone::SampleAt(-1) == 0. && QuebecPondTone::SampleAt(QuebecPondTone::TickFrames) == 0.,
+        "a sample outside the tick is audible");
+    double Loudest = 0.;
+    bool bInRange = true;
+    for (int Frame = 0; Frame < QuebecPondTone::TickFrames; ++Frame)
+    {
+        const double Sample = QuebecPondTone::SampleAt(Frame);
+        if (!(Sample <= QuebecPondTone::Peak && Sample >= -QuebecPondTone::Peak)) bInRange = false;
+        Loudest = std::fmax(Loudest, std::fabs(Sample));
+    }
+    Expect(bInRange, "a tick sample exceeds the peak");
+    Expect(Loudest > 0.05, "the tick is silent");
+    Expect(std::fabs(QuebecPondTone::SampleAt(QuebecPondTone::TickFrames - 1)) < 0.02, "the tick does not decay");
 
     std::printf("%d assertions, %d failures\n", Assertions, Failures);
     return Failures == 0 ? 0 : 1;

@@ -525,6 +525,11 @@ private:
     UPROPERTY() TObjectPtr<USoundBase> NeighborhoodMusic;
     UPROPERTY() TObjectPtr<USoundBase> RaceMusic;
     void UpdateMusic(bool bRacing);
+    void TickPondBlink();
+    void PlayPondTick();
+    UPROPERTY() TObjectPtr<class UAudioComponent> PondTickAudio;
+    UPROPERTY() TObjectPtr<class USoundWaveProcedural> PondTickWave;
+    double PondBlinkTime = -1.;
     UPROPERTY() TObjectPtr<AQuebecCharacter> WalkingCharacter;
     UPROPERTY() TObjectPtr<UMaterialInterface> ComicMaterial;
     bool bComicStyle = false;

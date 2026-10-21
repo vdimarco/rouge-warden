@@ -1,6 +1,8 @@
 #include "QuebecGameplay.h"
 #include "Misc/PackageName.h"
 #include "QuebecCampaign.h"
+#include "QuebecPondRules.h"
+#include "QuebecPondTone.h"
 #include "QuebecSky.h"
 #include "QuebecCrewAnimation.h"
 #include "QuebecGTA.h" // AQuebecCar: street traces each frame (DRIVE).
@@ -1615,6 +1617,10 @@ AQuebecController::AQuebecController()
     MusicAudio->bAutoActivate = false;
     MusicAudio->bAllowSpatialization = false;
     MusicAudio->VolumeMultiplier = .045f;
+    PondTickAudio = CreateDefaultSubobject<UAudioComponent>(TEXT("PondTickAudio"));
+    PondTickAudio->bAutoActivate = false;
+    PondTickAudio->bAllowSpatialization = false;
+    PondTickAudio->VolumeMultiplier = .55f;
 }
 
 void AQuebecController::PlayFeedback(EQuebecFeedbackCue Cue)
@@ -1733,6 +1739,38 @@ void AQuebecController::ServerChooseCrew_Implementation(int32 Style)
 
 void AQuebecController::ToggleComicStyle() { bComicStyle = !bComicStyle; }
 
+void AQuebecController::PlayPondTick()
+{
+    if (!PondTickAudio || !GetWorld() || !GetWorld()->AllowAudioPlayback()) return;
+    if (!PondTickWave)
+    {
+        PondTickWave = NewObject<USoundWaveProcedural>(this);
+        PondTickWave->SetSampleRate(static_cast<uint32>(QuebecPondTone::SampleRate));
+        PondTickWave->NumChannels = 1;
+        PondTickWave->Duration = static_cast<float>(QuebecPondTone::TickFrames) / static_cast<float>(QuebecPondTone::SampleRate);
+        PondTickAudio->SetSound(PondTickWave);
+    }
+    PondTickWave->ResetAudio();
+    int16 Pcm[QuebecPondTone::TickFrames];
+    for (int32 Frame = 0; Frame < QuebecPondTone::TickFrames; ++Frame)
+    {
+        const float Sample = FMath::Clamp(static_cast<float>(QuebecPondTone::SampleAt(Frame)), -1.f, 1.f);
+        Pcm[Frame] = static_cast<int16>(Sample * 32767.f);
+    }
+    PondTickWave->QueueAudio(reinterpret_cast<const uint8*>(Pcm), QuebecPondTone::TickFrames * static_cast<int32>(sizeof(int16)));
+    PondTickAudio->Play();
+}
+
+void AQuebecController::TickPondBlink()
+{
+    const AQuebecCampaign* Campaign = CampaignFor(GetWorld());
+    const bool bTag = IsLocalController() && Campaign && Campaign->IsPondOpen() && Campaign->PondStep == QuebecPondRules::StepTag;
+    const AGameStateBase* State = GetWorld() ? GetWorld()->GetGameState() : nullptr;
+    const double Now = static_cast<double>(State ? State->GetServerWorldTimeSeconds() : (GetWorld() ? GetWorld()->GetTimeSeconds() : 0.));
+    if (bTag && PondBlinkTime >= 0. && QuebecPondRules::BlinkEdge(PondBlinkTime, Now)) PlayPondTick();
+    PondBlinkTime = bTag ? Now : -1.;
+}
+
 void AQuebecController::PlayerTick(float DeltaTime)
 {
     AQuebecCampaign* Campaign = IsLocalController() ? CampaignFor(GetWorld()) : nullptr;
@@ -1745,6 +1783,7 @@ void AQuebecController::PlayerTick(float DeltaTime)
     Super::PlayerTick(DeltaTime);
     if (!IsLocalController()) return;
     UpdateMusic(Campaign && Campaign->Phase == EQuebecCampaignPhase::RaceRunning);
+    TickPondBlink();
     BrowserStateElapsed += DeltaTime;
     if (BrowserStateElapsed >= .5f && !BrowserStreamerId.IsEmpty() && IPixelStreaming2Module::IsAvailable())
     {
