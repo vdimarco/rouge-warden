@@ -2129,6 +2129,7 @@ function after(dt, inp, yawDelta) {
   if (flatOn && flatcam.opacity > 0.5) { TIPS[0] = hero.hand(0); TIPS[1] = hero.hand(1); }
   ropes.update(dt, P, TIPS, G.time);
   game.update(dt, G.time, P, inp); // before the hand-off it only lets the sleeping King breathe
+  ui.paintMission(); // the score-row card was drawn at the start of the frame, before this objective existed
   view.update(dt, G.time, vh.pos);
   streetFrame(dt, inPlay);
   // comfort: the 50 ms low-passed acceleration, the smooth-turn rate, and whether a snap happened

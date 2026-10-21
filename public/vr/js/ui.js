@@ -1601,13 +1601,8 @@ body:has(#phoneControls:not([hidden])) .fs-top:has(.fs-pill:not([hidden]):not(.f
       if (dd !== dh.dist) { dh.dist = dd; k.dist.textContent = dd >= 1000 ? (dd / 1000).toFixed(1) + " km" : dd + " m"; }
     }
     // the mission card, the training checklist and the pump sticker (game.progress objective, training, pump)
-    const ob = pg.objective, os = ob ? ob.title + "|" + ob.detail + "|" + ob.short + "|" + ob.n + "|" + ob.of + "|" + (ob.hot ? 1 : 0) : "";
-    if (dh.obj !== os) {
-      dh.obj = os; k.mission.hidden = !ob;
-      if (ob) { k.mTitle.textContent = ob.title + (ob.of ? " " + ob.n + "/" + ob.of : ""); k.mDetail.textContent = ob.detail; k.mDetail.hidden = !ob.detail; k.mShort.textContent = ob.short || ""; }
-      k.mission.classList.toggle("no-short", !(ob && ob.short));
-      k.mission.classList.toggle("fs-pull", !!(ob && (ob.hot || /pulling away/i.test(ob.detail || ""))));
-    }
+    // the objective is written later in the same frame (game.update): paintMission writes this card again then
+    const os = syncMission(pg, k);
     const trn = pg.training, ts = trn ? trn.now + "|" + (trn.done ? 1 : 0) + "|" + trn.items.map((r) => (r.done ? "1" : "0") + r.n).join("") : "";
     if (dh.train !== ts) { dh.train = ts; drawTraining(trn); }
     const pu = pg.pump, touch = !!(inp && inp.easySwing), ps = pu ? pu.kind + pu.n + "/" + pu.of + (touch ? "t" : "m") : "";
@@ -1639,6 +1634,23 @@ body:has(#phoneControls:not([hidden])) .fs-top:has(.fs-pill:not([hidden]):not(.f
       }
     }
     if (map.on) { map.root.updateMatrixWorld(true); tipPlace(); }
+  }
+
+  // The score-row card. Called at the start of the frame and again after the objective is written, so a clock,
+  // a hot state, or a clog's metres are the ones from this frame.
+  function syncMission(pg, k) {
+    const ob = pg.objective, os = ob ? ob.title + "|" + ob.detail + "|" + ob.short + "|" + ob.n + "|" + ob.of + "|" + (ob.hot ? 1 : 0) : "";
+    if (dh.obj !== os) {
+      dh.obj = os; k.mission.hidden = !ob;
+      if (ob) { k.mTitle.textContent = ob.title + (ob.of ? " " + ob.n + "/" + ob.of : ""); k.mDetail.textContent = ob.detail; k.mDetail.hidden = !ob.detail; k.mShort.textContent = ob.short || ""; }
+      k.mission.classList.toggle("no-short", !(ob && ob.short));
+      k.mission.classList.toggle("fs-pull", !!(ob && (ob.hot || /pulling away/i.test(ob.detail || ""))));
+    }
+    return os;
+  }
+  function paintMission() {
+    if (!dom.built || !dom.k) return;
+    syncMission(prog || NOPROG, dom.k);
   }
 
   /* ---------------- the frame ---------------- */
@@ -1694,6 +1706,7 @@ body:has(#phoneControls:not([hidden])) .fs-top:has(.fs-pill:not([hidden]):not(.f
     get hudVisible() { return hud.a > 0.5; },
     get hudShown() { return hud.shownFor; },
     update,
+    paintMission,
     blocking: (side) => blocked[sideOf(side)],
     say, sayLine, toast: toastSay, flash: domFlash,
     // draw the open pause page again (main.js after M changes the sound)
