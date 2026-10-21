@@ -761,6 +761,7 @@ function missPayoff(e) {
   missCard = { title: lesson.title, detail: lesson.detail, short: lesson.short, n: 0, of: 0, tag: "miss", goal: null };
   missHold = 1.7;
   missJob = e.job;
+  audio.sfx("miss");
 }
 const FAIL_LINES = {
   drain: "The Market drain blew! Sludge everywhere. Try again!",
@@ -898,13 +899,15 @@ function goalFrame(phone) {
   const crew = ob.tag === "sludge" && /crew/i.test(ob.detail || "");
   return { x: place.x, y: place.y, off: place.off, angle: place.angle, name: crew ? "CREW" : (GOAL_NAMES[ob.tag] || "GOAL"), dist: Math.round(dh), trend: GOAL_CHASE[ob.tag] && !crew ? goalTrack.trend : "" };
 }
-// The chase bed: quiet while you are gaining, a clock while the distance holds, faster once you fall behind.
-// The first lesson holds the runner, so the clock stays quiet until the chase actually starts. A fight keeps its own pulse.
+// The chase bed: quiet while you are gaining, a clock while the distance holds, faster once you fall behind
+// or the runner is already pulling away (a steady gap can still be a sprint). The first lesson holds the runner,
+// so the clock stays quiet until the chase actually starts. A fight keeps its own pulse.
 function chaseBed() {
   const A = jobs.active;
   if (!A || !GOAL_CHASE[A.type] || (A.data && A.data.hold)) return 0;
   if (A.type === "sludge" && A.data && A.data.crew) return 0;
-  if (goalTrack.trend === "FALLING BEHIND") return 1;
+  const pulling = !!(A.data && A.data.runner && (A.data.runner.heat || 0) >= 0.55);
+  if (pulling || goalTrack.trend === "FALLING BEHIND") return 1;
   if (goalTrack.trend === "CLOSING") return 0;
   return 0.4;
 }

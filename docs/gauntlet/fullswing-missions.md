@@ -350,3 +350,40 @@ Loop: missions, playability, controls, feel, UX, pacing and fun for In Full Swin
 ![Falling behind: the card says he is pulling away](fullswing-r9/pull.png)
 
 ![A miss holds GOT AWAY before the chase starts again](fullswing-r9/miss.png)
+
+### Round 10 — 2026-10-21 — rubric v1
+
+- What changed: While the purse snatcher or the sludge runner is pulling away, the chase clock stays on the fast tick even if the gap is holding steady. Closing still drops it. A miss plays a low falling sting (220 Hz down to 146 Hz, with a 73 Hz body) and does not play the win's rising brass.
+- Why it helped: A steady gap used to sound like keeping pace while the card said he was pulling away, and a miss was silent next to the win fanfare. Spider-Man 2 tightens the chase music when you lose them, and a fail has its own sting. A 1280×800 play held about 40 m behind the thief: the clock stayed at full while the card said he was pulling away, and it dropped once the jog returned and the gap closed. An offline buffer put the miss lower than the win fanfare. A speaker was not used.
+- Screenshots: `docs/gauntlet/fullswing-r10/clock.png`.
+- Next target: performance stability (6). It is the only playability score still at 6. Frame time on a real GPU was not measured. The next change should be something a SwiftShader play can time.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 5 | Held. Golden-hour sun and ink shadows. |
+| Color palette | 6 | Held. Yellow, red and sludge green still separate the HUD from the blocks. |
+| Detail density | 4 | Held. Open blocks more than a dressed borough. |
+| Texture and material quality | 3 | Held. Flat fills. |
+| Composition and camera | 4 | Held. The chase camera still sits behind the hero. This frame is the card and the clock. |
+| Atmosphere | 5 | Held. The dusk skyline has a mood. The street under the chase does not. |
+| Character models | 3 | Held. Simple comic figures. |
+| Animation smoothness | 4 | Scored from still frames in software GL. Continuous motion was not watched. |
+| Particles and VFX | 5 | Held. No new word. The win word is unchanged. |
+| UI polish | 6 | Held. The lesson and the chase still use the same ink pill. |
+| Responsiveness and input latency | 7 | Held. The clock value was on the stepped frame that held the gap. |
+| Controls feel | 7 | Held. The swing carry is unchanged. |
+| Mission clarity | 7 | Held. The card still says he is pulling away. |
+| Pacing | 7 | Held. The story route is unchanged. The clock follows the pull. |
+| Fun factor | 7 | Held. The win still lands on the big word. This round changes the chase music and the miss. |
+| Difficulty curve | 7 | Held. Falling behind still turns the jog into a run. The clock now follows that. |
+| Feedback | 7 | Held. The miss is still the lesson card. The new sting was measured, not heard on a speaker. |
+| Sound design | 7 | The fast clock stays on while he is pulling away, even with the gap held. A miss is a low falling sting, and the buffer puts it under the win's brass. A speaker was not used. |
+| Variety | 7 | Held. Missions 2, 3 and 4 are still a chase, a rescue and a fight. |
+| Performance stability | 6 | The 1280×800 play passed with no page errors. Frame time on a real GPU was not measured. |
+
+- Aesthetics raw: 45 / 10 dimensions, index 45
+- Playability raw: 69 / 10 dimensions, index 69
+- Total: 114 / 200
+- Delta vs last round: +1 (round 9 was 113). Sound design 6 → 7. Every other score held.
+
+![The fast clock stays on while he is pulling away](fullswing-r10/clock.png)
