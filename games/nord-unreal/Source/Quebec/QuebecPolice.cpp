@@ -354,7 +354,18 @@ void AQuebecOfficer::ApplyLook()
     USkeletalMesh* Skin = bGoon ? GoonBodyMesh : PoliceBodyMesh;
     if (!Skin)
     {
-        // Basic shapes when the civilian rigs are missing: a torso, a head and the cap or the mask.
+        // The clothed idle bake replaces the cylinder when it has been imported.
+        // Feet sit on the mesh origin; the pose pivot is the hip.
+        const TCHAR* StandPath = bGoon
+            ? TEXT("/Game/Plateau/Life/Civilians/MenHoodie/SM_MenHoodieStand.SM_MenHoodieStand")
+            : TEXT("/Game/Plateau/Life/Civilians/MenSuit/SM_MenSuitStand.SM_MenSuitStand");
+        if (UStaticMesh* Stand = LoadObject<UStaticMesh>(nullptr, StandPath, nullptr, LOAD_NoWarn | LOAD_Quiet))
+        {
+            AddShape(TEXT("FallbackStand"), Stand, Pose, FVector(0., 0., -QuebecKnock::HipHeight), FVector(100., 100., 100.), nullptr);
+            BodyHeight = bGoon ? 176.f : 182.f;
+            return;
+        }
+        // Basic shapes when the civilian rigs and the baked stand are both missing.
         const FVector Torso(0., 0., 0.), Head(0., 0., 72.);
         FallbackBody.Add(AddShape(TEXT("FallbackTorso"), CylinderMesh, Pose, Torso, FVector(46., 40., 120.), bGoon ? Ink : Navy));
         FallbackBody.Add(AddShape(TEXT("FallbackHead"), SphereMesh, Pose, Head, FVector(28., 28., 30.), bGoon ? White : PoliceMaterial(TEXT("/Game/ParkComic/M_Skin.M_Skin"))));

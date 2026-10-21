@@ -1018,3 +1018,38 @@ Unreal is not available in this environment, so in-engine frames are the last co
 - Playability raw: 39 / 10 dimensions, index 39
 - Total: 103 / 200
 - Delta vs last round: +1
+
+### Round 30 — 2026-10-21 — rubric v1
+
+- What changed: when the officer rig is missing, `AQuebecOfficer::ApplyLook` draws `SM_MenSuitStand` or `SM_MenHoodieStand` before the cylinder. `Scripts/bake_officer_stand.py` skins the CC0 civilian GLB at the first key of `Idle_Neutral`, feet on the origin, face toward +X, in centimetres. The cylinder, the sphere and the cap remain only when that mesh is also missing. The skeletal path is unchanged when the rig loads.
+- Why it helped: Character models were at 6, and the missing-rig figure was a cylinder with a ball for a head. The idle is a clothed person: hair, collar, arms, legs and shoes.
+- Screenshots: before `docs/gauntlet/gta-graphics/round-30/before-figures.png`, after `docs/gauntlet/gta-graphics/round-30/after-figures.png`. Both use the walking camera (arm 420, socket Y 70, socket Z 110, pitch −12, horizontal FOV 90). The after frame is the suit idle turned toward the camera. Not an Unreal capture. The figure occupies about 53×192 pixels. Inside that box the mean absolute delta is 0.088. The street outside it is unchanged. This is one authored idle frame, not the blend space. `Scripts/test_officer_stand.py` passed. `GET /gta/` returned 200. OpenSpec CLI is not installed, so the change files were not validated with `openspec`. The stand meshes were not imported.
+- Next target: UI polish. Composition and particles are tied at 6, and the walking socket and the rain displacement stay as they are. Animation smoothness stays at 3 and is skipped until a pose can be drawn.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 7 | The sun on the figure is the same key. No new light. |
+| Color palette | 7 | The suit is the source cloth colour. The street colours are unchanged. |
+| Detail density | 7 | The street is unchanged. The figure is one person, not a crowd. |
+| Texture and material quality | 8 | The clearcoat is unchanged. The suit uses the GLB material colours. |
+| Composition and camera | 6 | The walking socket is unchanged. |
+| Atmosphere | 8 | The moon grade and the street sheen are unchanged. |
+| Character models | 7 | The cylinder fallback is a clothed idle. It is a stylized CC0 body, one frame, not a lead character. |
+| Animation smoothness | 3 | Skipped. The blend space still cannot be posed here. The bake is a single idle key. |
+| Particles and VFX | 6 | Rain rings are unchanged. |
+| UI polish | 6 | The paper rule is unchanged. |
+| Responsiveness and input latency | 4 | Not measured this round. |
+| Controls feel | 4 | Not played. |
+| Mission clarity | 5 | The objective words are unchanged. |
+| Pacing | 4 | Unchanged mission slice. |
+| Fun factor | 3 | Not played. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 4 | No new juice. |
+| Sound design | 3 | Not listened to. |
+| Variety | 3 | One district. The hoodie bake uses the same path and is not in this frame. |
+| Performance stability | 5 | `Scripts/test_officer_stand.py` passed. The bake is an offline mesh, not a runtime skin. Frame time was not remeasured. |
+
+- Aesthetics raw: 65 / 10 dimensions, index 65
+- Playability raw: 39 / 10 dimensions, index 39
+- Total: 104 / 200
+- Delta vs last round: +1
