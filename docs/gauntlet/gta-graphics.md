@@ -493,3 +493,38 @@ Unreal is not available in this environment, so in-engine frames are the last co
 - Playability raw: 39 / 10 dimensions, index 39
 - Total: 88 / 200
 - Delta vs last round: +1
+
+### Round 15 — 2026-10-21 — rubric v1
+
+- What changed: wet ground composites `Scripts/rain_splash.hlsl`, an expanding ring on a 70 cm cell, scaled by rain intensity. `rain_streak.hlsl` and the puddle mask are unchanged. The material updates when the atmosphere script runs in the editor.
+- Why it helped: Particles were tied at 5. The streak now has a head and a tail, and it still never meets the street. A ring that opens and fades is the impact those drops were missing.
+- Screenshots: before `docs/gauntlet/gta-graphics/round-15/before-splash.png`, after `docs/gauntlet/gta-graphics/round-15/after-splash.png`. These are a perspective shade of the wet-ground colour, not an Unreal capture. `Scripts/test_plateau_atmosphere.py` passed. `water_shader_test.cpp` passed under g++ (98 assertions). `python3 Scripts/test_water_shader.py` still stops here because `c++` is clang and cannot see `<cmath>`. `GET /gta/` returned 200.
+- Next target: atmosphere. The depth fade is still a flat mix, and a height change in that fade can be shaded offline. Animation smoothness stays at 3 and is skipped until a pose can be drawn.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 6 | The window apron is unchanged. A splash ring does not cast. |
+| Color palette | 5 | The ring is a pale lift of the wet asphalt. |
+| Detail density | 5 | Rails and doors are unchanged. |
+| Texture and material quality | 5 | Mortar beds are unchanged. |
+| Composition and camera | 5 | The shoulder camera is unchanged. |
+| Atmosphere | 5 | The depth fade is unchanged. The ring is on the ground, not in the air. |
+| Character models | 5 | The crew rim is unchanged. |
+| Animation smoothness | 3 | Skipped. The blend space still cannot be posed here. |
+| Particles and VFX | 6 | Rain draws a ring where it meets the street, larger near the camera. There is still no spray sheet. |
+| UI polish | 5 | Untouched. |
+| Responsiveness and input latency | 4 | Not measured this round. |
+| Controls feel | 4 | Not played. |
+| Mission clarity | 5 | Unchanged objective card. |
+| Pacing | 4 | Unchanged mission slice. |
+| Fun factor | 3 | Not played. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 4 | No new juice. |
+| Sound design | 3 | Not listened to. |
+| Variety | 3 | One district. The rings repeat one shape. |
+| Performance stability | 5 | The atmosphere test passed, and the splash test passed under g++. The ring is extra arithmetic on the existing wet colour. Frame time was not remeasured. |
+
+- Aesthetics raw: 50 / 10 dimensions, index 50
+- Playability raw: 39 / 10 dimensions, index 39
+- Total: 89 / 200
+- Delta vs last round: +1

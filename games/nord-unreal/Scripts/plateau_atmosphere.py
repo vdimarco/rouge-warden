@@ -31,6 +31,7 @@ RAIN_HLSL = ROOT / 'Scripts/rain_streak.hlsl'
 # whose pivot is off screen. Scripts/water_shader_test.cpp checks that the offset stays inside it.
 RAIN_MAX_OFFSET = 3200.
 PUDDLE_HLSL = ROOT / 'Scripts/wet_puddles.hlsl'
+SPLASH_HLSL = ROOT / 'Scripts/rain_splash.hlsl'
 RAIN_INPUTS = ('Pivot', 'WorldPos', 'CameraPos', 'Time', 'Rand', 'Rain', 'Wind', 'WindDirX', 'WindDirY')
 WET = tuple('/Game/Plateau/Materials/M_' + name for name in ('Asphalt', 'Concrete', 'ConcreteDark', 'Gravel', 'ParkEarth'))
 WINDOWS = tuple('/Game/Plateau/Materials/M_' + name for name in ('Glow', 'InteriorWarm', 'Tail'))
@@ -40,7 +41,7 @@ UNLIT = ('/Game/Materials/M_Glow', '/Game/ParkComic/M_Paper', '/Game/ParkComic/M
 TOUCHED = (COLLECTION, plateau_water.TEXTURE, plateau_water.MATERIAL, RAIN) + WET + WINDOWS + UNLIT
 MARKER = 'NordSky'
 # Collection parameters each wrapper adds, by property name; verify() expects exactly one of each.
-WRAPPERS = {'wet': {'MP_BASE_COLOR': ('Wetness',), 'MP_ROUGHNESS': ('Wetness', 'Puddles'), 'MP_NORMAL': ('Puddles',)},
+WRAPPERS = {'wet': {'MP_BASE_COLOR': ('Wetness', 'RainIntensity'), 'MP_ROUGHNESS': ('Wetness', 'Puddles'), 'MP_NORMAL': ('Puddles',)},
             'window': {'MP_EMISSIVE_COLOR': ('WindowGlow',)},
             'exposure': {'MP_EMISSIVE_COLOR': ('ExposureScale', 'NightFactor')}}
 PROPERTIES = ('MP_BASE_COLOR', 'MP_NORMAL', 'MP_ROUGHNESS', 'MP_EMISSIVE_COLOR', 'MP_OPACITY',
@@ -303,7 +304,8 @@ def rain_material(u, mpc):
 
 
 def wet_ground(u, mat, mpc):
-    """Base colour x lerp(1, .5, Wetness); roughness to x.45 when wet and .03 in puddles; flat normal in puddles."""
+    """Base colour x lerp(1, .5, Wetness), plus a splash ring where RainIntensity is up.
+    Roughness to x.45 when wet and .03 in puddles; flat normal in puddles."""
     g, P, added = Graph(u, mat, mpc), u.MaterialProperty, []
     puddles = []
 
@@ -323,7 +325,20 @@ def wet_ground(u, mat, mpc):
         root = g.node(u.MaterialExpressionMultiply)
         g.link(source, output, root, 'A')
         g.link(darken, '', root, 'B')
-        g.connect(root, '', P.MP_BASE_COLOR)
+        splash = g.custom(SPLASH_HLSL, ('WorldPos', 'Time', 'Rain'), u.CustomMaterialOutputType.CMOT_FLOAT1, 'NordSky rain splash')
+        g.link(g.node(u.MaterialExpressionWorldPosition), '', splash, 'WorldPos')
+        g.link(g.node(u.MaterialExpressionTime), '', splash, 'Time')
+        g.link(g.parameter('RainIntensity'), '', splash, 'Rain')
+        # A pale lift. The ring stays off the streak material; this is the ground it lands on.
+        scaled = g.node(u.MaterialExpressionMultiply, const_b=1.45)
+        g.link(root, '', scaled, 'A')
+        lifted = g.node(u.MaterialExpressionAdd, const_b=.18)
+        g.link(scaled, '', lifted, 'A')
+        hit = g.node(u.MaterialExpressionLinearInterpolate)
+        g.link(root, '', hit, 'A')
+        g.link(lifted, '', hit, 'B')
+        g.link(splash, '', hit, 'Alpha')
+        g.connect(hit, '', P.MP_BASE_COLOR)
         added.append('MP_BASE_COLOR')
     source, output, wrapped = g.current(P.MP_ROUGHNESS)
     assert source is not None, mat.get_path_name()
