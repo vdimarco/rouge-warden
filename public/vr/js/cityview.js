@@ -1654,6 +1654,59 @@ void main() {
   gl_FragColor = vec4(mix(col, vFog.rgb, comicPoster(vFog.a, 4.0)), 1.0);
 }`;
 
+// Sidewalk steam. aP: x, y, z, phase. aS: size, rise, cycles per second, which puff.
+// Two cards share a grate, half a loop apart, so a still always has one rising.
+// William T. Reeves, SIGGRAPH 1983: a puff is born, lives, dies, and drifts up. The fill is this game's cel cloud.
+const STEAM_VS = /* glsl */ `
+${VERTEX_FOG}
+attribute vec4 aP;
+attribute vec4 aS;
+varying vec2 vUv;
+varying float vLife;
+varying float vSeed;
+void main() {
+  vUv = uv;
+  vSeed = aS.w;
+  float dist = length(aP.xyz - cameraPosition);
+  float away = (1.0 - smoothstep(8.0, 16.0, dist)) + smoothstep(70.0, 110.0, dist);
+  float ph = fract(uTime * aS.z + aP.w);
+  vLife = smoothstep(0.0, 0.1, ph) * (1.0 - smoothstep(0.55, 1.0, ph)) * (1.0 - clamp(away, 0.0, 1.0));
+  vec3 wp = aP.xyz + vec3(sin(ph * 6.28318 + aP.w * 12.0) * 0.35, ph * aS.y, 0.0);
+  float size = aS.x * (0.5 + 0.9 * ph);
+  vec3 right = vec3(viewMatrix[0][0], viewMatrix[1][0], viewMatrix[2][0]);
+  vec3 up = vec3(viewMatrix[0][1], viewMatrix[1][1], viewMatrix[2][1]);
+  vec3 w = wp + (right * position.x + up * position.y) * size;
+  fogVertex(w);
+  gl_Position = projectionMatrix * viewMatrix * vec4(w, 1.0);
+}`;
+const STEAM_FS = /* glsl */ `
+${COMMON_UNI}
+${GLSL.toon}
+${GLSL.halftone}
+${GLSL.posterize}
+varying vec4 vFog;
+varying vec2 vUv;
+varying float vLife;
+varying float vSeed;
+void main() {
+  vec2 p = vUv * 2.0 - 1.0;
+  float px = max(fwidth(p.x), fwidth(p.y)), aa = px * 0.8;
+  float r = length(p), ang = atan(p.y, p.x);
+  float rs = 0.62 + 0.1 * sin(ang * 5.0 + vSeed * 6.28) + 0.05 * sin(ang * 9.0 + vSeed * 37.0);
+  float sd = r - rs;
+  float side = dot(p, vec2(0.55, -0.75));
+  vec3 col = vec3(0.96, 0.91, 0.8);
+  col = mix(col, vec3(0.62, 0.56, 0.72), max(comicStep(0.1, side), comicDots(p * 1.5, 0.28, 0.4) * 0.5 * smoothstep(-0.2, 0.35, side)));
+  float fill = 1.0 - smoothstep(-aa, aa, sd);
+  float iw = clamp(px * 1.6, 0.08, 0.26);
+  float ink = 1.0 - smoothstep(iw - aa, iw + aa, sd);
+  float haze = comicPoster(vFog.a, 4.0);
+  float A = ink * vLife * (1.0 - haze);
+  if (A < 0.04) discard;
+  col = mix(INKC, col, fill);
+  gl_FragColor = vec4(mix(col, vFog.rgb, haze), A);
+}`;
+
 // Red aviation beacons on the Needle and the tall towers: they blink, and never shrink below a couple of pixels.
 const BEACON_VS = /* glsl */ `
 attribute vec4 aB; // x, y, z, size
@@ -2085,6 +2138,7 @@ export function createCityView(renderer, scene, city, opts = {}) {
   const tramMat = mat(CAR_VS, CAR_FS, tramU, { defines: { STREETCAR: 1 } });
   const tramInk = twinMat(CAR_VS, CAR_FS, tramU, { STREETCAR: 1 });
   const propMat = mat(PROP_VS, PROP_FS, pick(...COMMON_U));
+  const steamMat = mat(STEAM_VS, STEAM_FS, pick(...COMMON_U), { transparent: true, depthWrite: false, side: THREE.DoubleSide });
   const beaconMat = mat(BEACON_VS, BEACON_FS, pick(...COMMON_U, "uKing"));
   const farMat = mat(FAR_VS, FAR_FS, pick(...COMMON_U));
 
@@ -2705,7 +2759,7 @@ export function createCityView(renderer, scene, city, opts = {}) {
   /* ---- trees ---- */
   const AUTUMN = [[0.93, 0.46, 0.1, 5], [0.8, 0.2, 0.08, 3], [0.96, 0.74, 0.18, 4], [0.84, 0.58, 0.14, 3], [0.6, 0.28, 0.1, 2], [0.36, 0.48, 0.16, 2], [0.56, 0.54, 0.18, 1.5]];
   const autumnW = AUTUMN.reduce((s, c) => s + c[3], 0);
-  let trees = null;
+  let trees = null, steam = null;
   function treeGeometry() {
     const b = Buf({ aPart: 1 });
     const M = new THREE.Matrix4();
@@ -2756,6 +2810,23 @@ export function createCityView(renderer, scene, city, opts = {}) {
     };
     // bins, bollards and hydrants on both walks, further in than the lamp, off the carriageway
     const roadHalf = (q) => q.w / 2 - walkW(q.w) + 1.2;
+    // a grate on each walk, further in than the bins, with two puffs half a loop apart
+    const vents = (axis, l, from, to) => {
+      const inset = l.w / 2 - walkW(l.w) + 2.0;
+      let k = 0;
+      for (const side of [-1, 1]) {
+        for (let s = from + 22 + (side > 0 ? 20 : 0); s < to - 10; s += 40, k++) {
+          const x = axis === "x" ? l.at + side * inset : s, z = axis === "x" ? s : l.at + side * inset;
+          if (hAt(x, z) > 0.5 || inPark(x, z, 1)) continue;
+          const across = axis === "x" ? z : x;
+          if ((axis === "x" ? lines.z : lines.x).some((q) => Math.abs(across - q.at) < roadHalf(q))) continue;
+          if (partial.some((q) => q.axis !== axis && across > q.from && across < q.to && Math.abs(across - q.at) < roadHalf(q))) continue;
+          if (Math.hypot(x - N0.x, z - N0.z) < 36 || Math.hypot(x - D0.x, z - D0.z) < D0.r + 9) continue;
+          const size = l.w > 24 ? 4.2 : 3.6;
+          for (let p = 0; p < 2; p++) push(steam, { aP: [x, 0.15, z, (k * 0.17 + p * 0.5) % 1], aS: [size, 3.6, 0.38, p + (k % 5) * 0.2] });
+        }
+      }
+    };
     const curbs = (axis, l, from, to) => {
       const inset = l.w / 2 - walkW(l.w) + 1.15;
       let k = 0;
@@ -2776,6 +2847,7 @@ export function createCityView(renderer, scene, city, opts = {}) {
     const along = (axis, l, from, to, step) => {
       lamps(axis, l, from, to);
       curbs(axis, l, from, to);
+      vents(axis, l, from, to);
       const hw = l.w / 2, curb = hw - walkW(l.w) + 0.9;
       for (const side of [-1, 1]) {
         for (let s = from + r() * step; s < to; s += step * lerp(0.85, 1.2, r())) {
@@ -2813,9 +2885,13 @@ export function createCityView(renderer, scene, city, opts = {}) {
       if (lines.x.some((l) => Math.abs(x - l.at) < l.w / 2 + 2)) continue;
       if (r() < 0.85) put(x, city.shoreZ - 4.5, 1.1);
     }
+    if (part === 7) flush(steam);
   }
   function makeTrees() {
     trees = instancedMesh(treeGeometry(), { aT: 4, aTc: 4 }, 4200, treeMat, 0, treeInk);
+  }
+  function makeSteam() {
+    steam = instancedMesh(new THREE.PlaneGeometry(1, 1), { aP: 4, aS: 4 }, 3200, steamMat, 4);
   }
   // lamps: runs of 3 numbers (x, z, turn)
   function addLamps(c) {
@@ -2989,6 +3065,7 @@ export function createCityView(renderer, scene, city, opts = {}) {
   for (const t of PROP_TYPES) unit("props", 0.4, () => makeProps(t), true);
   unit("props", 0.5, makeBeacons, true);
   unit("trees", 1, makeTrees, true);
+  unit("steam", 0.4, makeSteam, true);
   for (let i = 0; i < 2; i++) unit("heights", 1, () => buildHeights(i), true);
   const SLICE = 36;
   for (let i = 0; i < Math.ceil(MAP.nz / SLICE); i++) unit("shadow", 0.4, () => buildShadowRows(i, SLICE), true);
