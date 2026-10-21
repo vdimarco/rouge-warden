@@ -6,6 +6,7 @@
 #include "QuebecCourtRules.h"
 #include "QuebecCourtTone.h"
 #include "QuebecStoryBed.h"
+#include "QuebecBarks.h"
 #include "QuebecPondRules.h"
 #include "QuebecPondTone.h"
 #include "QuebecShowRules.h"
@@ -1658,6 +1659,10 @@ AQuebecController::AQuebecController()
     StoryBedAudio->bAutoActivate = false;
     StoryBedAudio->bAllowSpatialization = false;
     StoryBedAudio->VolumeMultiplier = .05f;
+    BarkAudio = CreateDefaultSubobject<UAudioComponent>(TEXT("BarkAudio"));
+    BarkAudio->bAutoActivate = false;
+    BarkAudio->bAllowSpatialization = false;
+    BarkAudio->VolumeMultiplier = .85f;
 }
 
 void AQuebecController::PlayFeedback(EQuebecFeedbackCue Cue)
@@ -1826,6 +1831,33 @@ void AQuebecController::TickStoryBed(bool bPlay)
         StoryBedWave->QueueAudio(reinterpret_cast<const uint8*>(StoryBedPcm.GetData()), StoryBedPcm.Num() * static_cast<int32>(sizeof(int16)));
         StoryBedQueued += Loop;
     }
+}
+
+void AQuebecController::ClientPlayBark_Implementation(int32 Style)
+{
+    if (!IsLocalController() || !BarkAudio || !GetWorld() || !GetWorld()->AllowAudioPlayback()) return;
+    const QuebecBarks::FSpan Span = QuebecBarks::Span(Style);
+    if (Span.Count <= 0) return;
+    if (BarkPcm.Num() != QuebecBarks::PcmSamples)
+    {
+        BarkPcm.SetNumUninitialized(QuebecBarks::PcmSamples);
+        if (QuebecBarks::Decode(BarkPcm.GetData(), BarkPcm.Num()) != QuebecBarks::PcmSamples)
+        {
+            BarkPcm.Reset();
+            return;
+        }
+    }
+    if (!BarkWave)
+    {
+        BarkWave = NewObject<USoundWaveProcedural>(this);
+        BarkWave->SetSampleRate(static_cast<uint32>(QuebecBarks::SampleRate));
+        BarkWave->NumChannels = 1;
+        BarkAudio->SetSound(BarkWave);
+    }
+    BarkWave->Duration = static_cast<float>(Span.Count) / static_cast<float>(QuebecBarks::SampleRate);
+    BarkWave->ResetAudio();
+    BarkWave->QueueAudio(reinterpret_cast<const uint8*>(BarkPcm.GetData() + Span.Begin), Span.Count * static_cast<int32>(sizeof(int16)));
+    BarkAudio->Play();
 }
 
 void AQuebecController::PlayPondTick()
@@ -2207,7 +2239,7 @@ void AQuebecController::ServerInteract_Implementation()
     {
         Resident->Acknowledge(Character, true);
         ClientInteractionMessage(FString(AQuebecParkResident::NameForStyle(Resident->Style)) + TEXT("  /  ") + AQuebecParkResident::DialogueForStyle(Resident->Style));
-        PlayFeedback(EQuebecFeedbackCue::Dialogue);
+        ClientPlayBark(Resident->Style);
     }
 }
 

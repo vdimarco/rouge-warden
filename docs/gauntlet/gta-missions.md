@@ -713,3 +713,48 @@ Unreal is not available here, so the native diamond was not captured. The title 
 ![Play client at 1280, host offline](gta-missions/r15-play-1280.png)
 
 ![Menu on a 390-wide screen, Recover visible](gta-missions/r15-play-menu-390.png)
+
+### Round 16 — 2026-10-21 — rubric v1
+
+- What changed: Pressing E on a park resident plays that resident's own line, spoken. Eleven givers, eleven takes, each a different espeak-ng voice. The words are the lines already on the caption. The cooked dialogue sting still marks the other cues. The two loops and the story bed are unchanged.
+- Why it helped: Sound was a 5 because a beat had a bed and nobody spoke. Talking to a giver was a caption and a sting. The reply is now that giver's voice.
+- Screenshots: title `docs/gauntlet/gta-missions/r16-title-1280.png`, `r16-title-390.png`, `r16-title-320.png`. Play client, host offline, `r16-play-1280.png`. Menu with Recover `r16-play-menu-390.png`. The title loaded with no page errors. The raw play page still logs the missing `@epicgames-ps/lib-pixelstreamingfrontend-ue5.8` specifier; the shell and Recover still draw. The lines were not heard in Unreal. `Scripts/test_barks.py` reports 151 assertions, 0 failures, on c++, g++ and clang++, and the spoken words match the resident captions. Syntax check `--both` passed for the playback wiring. OpenSpec CLI is not installed, so `openspec validate` did not run.
+- Next target: fun factor (4), still tied with performance. Responsiveness stays at 3 and stays out of scope. The takes are proven. They were not heard in Unreal, and they are one line each, so the sound score waits at 6. The next round should keep to a change the tests can prove, and should not add a chapter or touch the stream.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 3 | Unchanged. |
+| Color palette | 5 | Unchanged. |
+| Detail density | 3 | Unchanged. |
+| Texture and material quality | 3 | Unchanged. |
+| Composition and camera | 4 | Unchanged. |
+| Atmosphere | 4 | Unchanged. |
+| Character models | 3 | Unchanged. |
+| Animation smoothness | 3 | Unchanged. |
+| Particles and VFX | 2 | Unchanged. |
+| UI polish | 4 | Unchanged. The caption is the same line the voice speaks. French and English still share the screen. |
+| Responsiveness and input latency | 3 | Unchanged. Still a lagged stream. Out of scope for this loop. |
+| Controls feel | 5 | Unchanged. Arrow keys still walk and drive on the same axes as WASD. |
+| Mission clarity | 7 | Unchanged. |
+| Pacing | 5 | Unchanged. The card still states the stop and the walk. |
+| Fun factor | 4 | The givers have voices. They were not heard, so the feel score stays. |
+| Difficulty curve | 6 | Unchanged. |
+| Feedback | 6 | Unchanged. The resident sting is now the spoken line. The other cues are the same. |
+| Sound design | 6 | Pressing E on a mission giver plays that giver's original spoken line. The rules prove eleven distinct takes, the words, the energy and the quiet edges. The cooked loops remain. It was not heard in Unreal. |
+| Variety | 9 | Unchanged. Eight of eight story missions, plus the four side jobs. |
+| Performance stability | 4 | Unchanged. |
+
+- Aesthetics raw: 34 / 10 dimensions, index 34
+- Playability raw: 55 / 10 dimensions, index 55
+- Total: 89 / 200
+- Delta vs last round: +1 (round 15 was 88). Sound design 5 → 6. Every other score held.
+
+![GTA title at 1280](gta-missions/r16-title-1280.png)
+
+![GTA title at 390](gta-missions/r16-title-390.png)
+
+![GTA title at 320](gta-missions/r16-title-320.png)
+
+![Play client at 1280, host offline](gta-missions/r16-play-1280.png)
+
+![Menu on a 390-wide screen, Recover visible](gta-missions/r16-play-menu-390.png)

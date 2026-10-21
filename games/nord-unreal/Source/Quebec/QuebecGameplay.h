@@ -531,6 +531,9 @@ private:
     TArray<int16> StoryBedPcm;
     double StoryBedOrigin = -1.;
     double StoryBedQueued = 0.;
+    UPROPERTY() TObjectPtr<class UAudioComponent> BarkAudio;
+    UPROPERTY() TObjectPtr<class USoundWaveProcedural> BarkWave;
+    TArray<int16> BarkPcm;
     void TickPondBlink();
     void PlayPondTick();
     UPROPERTY() TObjectPtr<class UAudioComponent> PondTickAudio;
@@ -586,6 +589,7 @@ private:
     UFUNCTION(Server, Reliable) void ServerInteract();
     UFUNCTION(Client, Reliable) void ClientInteractionMessage(const FString& Message);
     UFUNCTION(Client, Reliable) void ClientResidentGreeting(const FString& Message);
+    UFUNCTION(Client, Reliable) void ClientPlayBark(int32 Style);
     void ExitCar(AQuebecCar* Car);
 };
 
