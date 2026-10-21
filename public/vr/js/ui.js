@@ -647,6 +647,7 @@ export function createUI({ scene, camera, rig, renderer, city, view, save, setti
     if (!g || !g.targets || !Pl) return null;
     // a job's goal (jobs.js) first
     const jg = g.progress && g.progress.goal;
+    if (jg && jg.kind === "clog") return { kind: "clog", name: jg.name || "", x: jg.x, y: jg.y, z: jg.z };
     if (jg) return { kind: "job", x: jg.x, y: jg.y, z: jg.z };
     // in a trial the compass points to the next ring
     const tr = g.progress && g.progress.trial;
@@ -1589,7 +1590,7 @@ body:has(#phoneControls:not([hidden])) .fs-top:has(.fs-pill:not([hidden]):not(.f
     if (dh.trial !== tr) { dh.trial = tr; k.trialBox.hidden = !tr; if (tr) k.trial.textContent = tr; }
     const tg = nearestTarget();
     k.compassBox.hidden = !tg;
-    const compassTitle = !tg ? "" : tg.kind === "job" ? "Your job" : tg.kind === "ring" ? "The next ring" : "The nearest clog";
+    const compassTitle = !tg ? "" : tg.kind === "job" ? "Your job" : tg.kind === "ring" ? "The next ring" : (tg.name ? tg.name + " clog" : "The nearest clog");
     if (k.compassBox.title !== compassTitle) k.compassBox.title = compassTitle;
     if (tg && Pl) {
       const dx = tg.x - Pl.pos.x, dz = tg.z - Pl.pos.z, d = Math.sqrt(dx * dx + dz * dz), a = Math.round(wrap(Math.atan2(-dx, -dz) - HD.yaw) / DEG / 3) * 3;
