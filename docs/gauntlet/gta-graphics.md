@@ -563,3 +563,38 @@ Unreal is not available in this environment, so in-engine frames are the last co
 - Playability raw: 39 / 10 dimensions, index 39
 - Total: 90 / 200
 - Delta vs last round: +1
+
+### Round 17 — 2026-10-21 — rubric v1
+
+- What changed: brick paper in `city_facade.hlsl` moves to burnt orange, and stone paper moves to a cool grey. Course lines, mortar, rails, doors, and the lamp apron are unchanged. The material updates when the city comic script runs in the editor.
+- Why it helped: Color palette was tied at 5. Brick and stone were two stops in the same maroon-brown, so a stone row did not separate from the brick beside it.
+- Screenshots: before `docs/gauntlet/gta-graphics/round-17/before-palette.png`, after `docs/gauntlet/gta-graphics/round-17/after-palette.png`. These are a straight elevation of the facade shader, not an Unreal capture. `Scripts/test_facade_palette.py` passed. `Scripts/test_facade_spill.py` passed. `Scripts/test_environment_refresh.py` passed. `GET /gta/` returned 200. OpenSpec CLI is not installed, so the change files were not validated with `openspec`.
+- Next target: detail density. The wall bodies changed hue, and the courses, rails, and doors are the same marks as the last elevation. A new repeated mark on that elevation can be shaded offline. Animation smoothness stays at 3 and is skipped until a pose can be drawn.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 6 | The window apron is unchanged. The body hue does not cast. |
+| Color palette | 6 | Brick reads burnt orange and stone reads cool grey in the same elevation. It is still flat paper, not a photographed wall. |
+| Detail density | 5 | Rails, doors, and courses are the same marks. |
+| Texture and material quality | 5 | Grain and mortar beds are unchanged. The change is the body hue. |
+| Composition and camera | 5 | The shoulder camera is unchanged. |
+| Atmosphere | 6 | The horizon fade is unchanged. |
+| Character models | 5 | The crew rim is unchanged. |
+| Animation smoothness | 3 | Skipped. The blend space still cannot be posed here. |
+| Particles and VFX | 6 | Rain rings are unchanged. |
+| UI polish | 5 | Untouched. |
+| Responsiveness and input latency | 4 | Not measured this round. |
+| Controls feel | 4 | Not played. |
+| Mission clarity | 5 | Unchanged objective card. |
+| Pacing | 4 | Unchanged mission slice. |
+| Fun factor | 3 | Not played. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 4 | No new juice. |
+| Sound design | 3 | Not listened to. |
+| Variety | 3 | One district. Stone rows are the same block repeated. |
+| Performance stability | 5 | The facade source tests passed. The body colour is a constant swap. Frame time was not remeasured. |
+
+- Aesthetics raw: 52 / 10 dimensions, index 52
+- Playability raw: 39 / 10 dimensions, index 39
+- Total: 91 / 200
+- Delta vs last round: +1

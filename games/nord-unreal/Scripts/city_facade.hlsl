@@ -2,9 +2,10 @@
 float Seed = frac(sin(dot(Center.xy, float2(0.00113, 0.00197))) * 43758.5453);
 float Stone = step(0.72, Seed);
 float Tone = floor(saturate(dot(Brick, float3(0.299, 0.587, 0.114))) * 4.0) / 4.0;
-float3 Paper = lerp(float3(0.19, 0.085, 0.055), float3(0.31, 0.17, 0.105), Tone);
+// Brick and stone were one maroon-brown. Brick goes toward burnt orange, stone toward a cool grey.
+float3 Paper = lerp(float3(0.36, 0.14, 0.08), float3(0.62, 0.30, 0.14), Tone);
 Paper *= lerp(0.86, 1.10, frac(Seed * 7.13));
-Paper = lerp(Paper, lerp(float3(0.25, 0.265, 0.25), float3(0.40, 0.39, 0.345), Tone), Stone);
+Paper = lerp(Paper, lerp(float3(0.40, 0.44, 0.47), float3(0.62, 0.66, 0.68), Tone), Stone);
 if (abs(Normal.z) > 0.7) return Paper;
 float Height = max(200.0, Center.z + Bounds.z);
 float Z = Position.z;
