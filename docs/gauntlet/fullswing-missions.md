@@ -424,3 +424,40 @@ Loop: missions, playability, controls, feel, UX, pacing and fun for In Full Swin
 - Delta vs last round: +1 (round 10 was 114). Fun factor 7 → 8. Every other score held.
 
 ![Catching the thief hops the hero off the roof under GOT IT](fullswing-r11/hop.png)
+
+### Round 12 — 2026-10-21 — rubric v1
+
+- What changed: After the roof fight, Mission 5 is a pizza delivery. The card says to get it to a roof 70 to 160 m out, a swing or two. An odd-job pizza still runs across town. Odd-job markers stay hidden until that delivery is done, and then the clog card returns. The twelve clogs still wake the King.
+- Why it helped: After the bomb, every story mission was a chase, a rescue, or a fight. Spider-Man 2 changes what you do from one mission to the next. A 1280×800 play opened Mission 5. The pill read MISSION 5 and to get the pizza to the roof, the drop was 114 m, and no odd-job markers were out. Ending the route brought FLUSH THE CLOGS back. A skip-intro run that never wins the bomb still shows FLUSH THE CLOGS 1/12.
+- Screenshots: `docs/gauntlet/fullswing-r12/pizza.png`.
+- Next target: feedback (7). Variety just moved. The pull-away is still a line on the card, and the miss sting was measured, not heard. Performance stays at 6. This machine has no real GPU to time, so that score is not the next round.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 5 | Held. Golden-hour sun and ink shadows. |
+| Color palette | 6 | Held. Yellow, red and sludge green still separate the HUD from the blocks. |
+| Detail density | 4 | Held. Open blocks more than a dressed borough. |
+| Texture and material quality | 3 | Held. Flat fills. |
+| Composition and camera | 4 | Held. The chase camera still sits behind the hero. This frame is the roof and the card. |
+| Atmosphere | 5 | Held. The dusk skyline has a mood. The roof under the card does not. |
+| Character models | 3 | Held. Simple comic figures. |
+| Animation smoothness | 4 | Scored from still frames in software GL. Continuous motion was not watched. |
+| Particles and VFX | 5 | Held. No new effect. The win word is unchanged. |
+| UI polish | 6 | Held. Mission 5 uses the same ink pill. |
+| Responsiveness and input latency | 7 | Held. The card was on the stepped frame that started the delivery. |
+| Controls feel | 7 | Held. The swing carry is unchanged. |
+| Mission clarity | 7 | Held. The card names the delivery and the roof. The missions were already named. |
+| Pacing | 7 | Held. One more beat after the fight, then the clogs. The drop is a swing, not a hike across town. |
+| Fun factor | 8 | Held. A win still hops the hero. This round changes the next mission, not the finish. |
+| Difficulty curve | 7 | Held. Falling behind still turns the jog into a run. The delivery is a new job, not a new fail. |
+| Feedback | 7 | Held. The card is the same kind of line. No new hit on the delivery or the pull-away. |
+| Sound design | 7 | Held. Not listened to. The delivery uses the existing job start. |
+| Variety | 8 | After the chase, the rescue and the fight, Mission 5 is a delivery to a roof. The twelve clogs are still the path after that. |
+| Performance stability | 6 | The 1280×800 play passed with no page errors. Frame time on a real GPU was not measured. |
+
+- Aesthetics raw: 45 / 10 dimensions, index 45
+- Playability raw: 71 / 10 dimensions, index 71
+- Total: 116 / 200
+- Delta vs last round: +1 (round 11 was 115). Variety 7 → 8. Every other score held.
+
+![Mission 5 asks for a pizza on a roof, not another chase](fullswing-r12/pizza.png)

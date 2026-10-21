@@ -19,7 +19,7 @@ In flat play, after the cottage hand-off on a first run, a comic scene SHALL tel
 - **THEN** the balloon sits inside the screen with its tail toward its speaker
 
 ### Requirement: A scene for each mission
-A short scene SHALL play the first time the player comes within 150 m of a district's clogs (after the training), when Missions 2, 3 and 4 begin, when the King wakes, and at the finale ("All clear"). Each scene SHALL play once per save. The King scene SHALL NOT call itself Mission 2 or Mission 3.
+A short scene SHALL play the first time the player comes within 150 m of a district's clogs (after the training), when Missions 2, 3, 4 and 5 begin, when the King wakes, and at the finale ("All clear"). Each scene SHALL play once per save. The King scene SHALL NOT call itself Mission 2 or Mission 3.
 
 #### Scenario: A district briefing
 - **WHEN** the player first comes near a district's clogs
@@ -48,7 +48,7 @@ In a headset no scene SHALL play. The mission scenes SHALL show their mission as
 - **THEN** a toast says "The King: rip off his three pipes, then flush him."
 
 ### Requirement: Mission card
-In flat play a mission card in the score row SHALL show the current mission and what to do next. While the story route is not the current mission, the card SHALL show the clogs flushed out of twelve and the district and distance of the nearest clog. While Mission 2, 3 or 4 is current, the card SHALL name that mission and SHALL NOT say to flush the clogs. When the King is awake the card SHALL show the pipes ripped out of three. After the finale it SHALL say "ALL CLEAR". It SHALL hide during a trial.
+In flat play a mission card in the score row SHALL show the current mission and what to do next. While the story route is not the current mission, the card SHALL show the clogs flushed out of twelve and the district and distance of the nearest clog. While Mission 2, 3, 4 or 5 is current, the card SHALL name that mission and SHALL NOT say to flush the clogs. When the King is awake the card SHALL show the pipes ripped out of three. After the finale it SHALL say "ALL CLEAR". It SHALL hide during a trial.
 
 #### Scenario: Mission 1
 - **WHEN** the player has flushed one clog and the story route is not the current mission
