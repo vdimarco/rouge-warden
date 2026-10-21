@@ -623,3 +623,48 @@ Unreal is not available here, so the native diamond was not captured. The title 
 ![Play client at 1280, host offline](gta-missions/r13-play-1280.png)
 
 ![Menu on a 390-wide screen, Recover visible](gta-missions/r13-play-menu-390.png)
+
+### Round 14 — 2026-10-21 — rubric v1
+
+- What changed: Up and Down walk and drive forward and back at the same scale as W and S. Left and Right strafe at the same scale as D and A. The arrow keys are not also actions. The phone wheel's NumPad levels stay a third and two thirds of full lock. The drive hint and the play page name the arrows.
+- Why it helped: Controls feel was a 4 the input mapping can prove. Walk and drive were WASD only. The route line says left and right, and the arrow keys did nothing.
+- Screenshots: title `docs/gauntlet/gta-missions/r14-title-1280.png`, `r14-title-390.png`, `r14-title-320.png`. Play client, host offline, `r14-play-1280.png`. Menu with Recover `r14-play-menu-390.png`. The title loaded with no page errors. The raw play page still logs the missing `@epicgames-ps/lib-pixelstreamingfrontend-ue5.8` specifier; the shell and Recover still draw. The arrows were not driven in Unreal. `Scripts/test_move_keys.py` read the input file: 14 axis mappings, the arrows match WASD, none are actions, and the four graded wheel keys are unchanged. Syntax check `--both` passed for the HUD hint. OpenSpec CLI is not installed, so `openspec validate` did not run.
+- Next target: fun factor (4), still tied with sound and performance. Responsiveness stays at 3 and stays out of scope. The mapping is proven. Driving itself was not changed, and it was not driven, so the feel score waits. The next round should keep to a 4 the tests can prove, and should not add a chapter or touch the stream.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 3 | Unchanged. |
+| Color palette | 5 | Unchanged. |
+| Detail density | 3 | Unchanged. |
+| Texture and material quality | 3 | Unchanged. |
+| Composition and camera | 4 | Unchanged. |
+| Atmosphere | 4 | Unchanged. |
+| Character models | 3 | Unchanged. |
+| Animation smoothness | 3 | Unchanged. |
+| Particles and VFX | 2 | Unchanged. |
+| UI polish | 4 | The play page names the arrows. The native hint was not seen, and French and English still share the screen. |
+| Responsiveness and input latency | 3 | Unchanged. Still a lagged stream. Out of scope for this loop. |
+| Controls feel | 5 | Arrow keys walk and drive on the same axes as WASD. The mapping test proves the scales, and that the arrows are not also actions. Graded steering is unchanged, and it was not driven. |
+| Mission clarity | 7 | Unchanged. |
+| Pacing | 5 | Unchanged. The card still states the stop and the walk. |
+| Fun factor | 4 | The arrows are mapped. They were not driven, so the feel score stays. |
+| Difficulty curve | 6 | Unchanged. |
+| Feedback | 6 | Unchanged. |
+| Sound design | 4 | Unchanged. The city still has two loops. Nobody is voiced. |
+| Variety | 9 | Unchanged. Eight of eight story missions, plus the four side jobs. |
+| Performance stability | 4 | Unchanged. |
+
+- Aesthetics raw: 34 / 10 dimensions, index 34
+- Playability raw: 53 / 10 dimensions, index 53
+- Total: 87 / 200
+- Delta vs last round: +1 (round 13 was 86). Controls feel 4 → 5. Every other score held.
+
+![GTA title at 1280](gta-missions/r14-title-1280.png)
+
+![GTA title at 390](gta-missions/r14-title-390.png)
+
+![GTA title at 320](gta-missions/r14-title-320.png)
+
+![Play client at 1280, host offline](gta-missions/r14-play-1280.png)
+
+![Menu on a 390-wide screen, Recover visible](gta-missions/r14-play-menu-390.png)

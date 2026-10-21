@@ -2653,7 +2653,7 @@ void AQuebecHUD::DrawHUD()
         const float Y = Canvas->SizeY - Margin - 74.f * Scale;
         RightText(FString::Printf(TEXT("%03d"), FMath::RoundToInt(FMath::Abs(Car->Speed) * .036f)), Paper, SpeedRight - 42.f * Scale, Y, 1.8f);
         RightText(TEXT("km/h"), Muted, SpeedRight, Y + 23.f * Scale, .85f);
-        Text(TEXT("W/S Drive   A/D Steer"), Muted, X, Y + 42.f * Scale, .85f);
+        Text(TEXT("WASD or arrows  Drive / steer"), Muted, X, Y + 42.f * Scale, .85f);
         Text(Car->bHandbrake ? TEXT("SPACE  HANDBRAKE ON") : TEXT("SPACE  Handbrake"), Car->bHandbrake ? Accent : Muted, X, Y + 59.f * Scale, .85f);
     }
     else if (!bPortrait && !bTouchControls && Now - FirstHUDTime < 10.f)

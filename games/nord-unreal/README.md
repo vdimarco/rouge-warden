@@ -43,7 +43,7 @@ The local and browser Linux builds are in `Builds/Linux/` and `Builds/Browser/Li
 
 | Control | Action |
 | --- | --- |
-| WASD | Walk; drive and steer while in a car |
+| WASD or arrows | Walk; drive and steer while in a car |
 | Mouse | Look around; aim the worklight after E acquires it |
 | Left Shift | Sprint on foot |
 | Space | Jump on foot; hold handbrake while driving |
