@@ -152,6 +152,11 @@ jobs:
         run: node qa/vr/storyroute.e2e.mjs
         env:
           NODE_PATH: ${{ github.workspace }}/qa/browser/node_modules
+      - name: Clog beats break up the twelve
+        run: node qa/vr/clogbeat.e2e.mjs
+        env:
+          NODE_PATH: ${{ github.workspace }}/qa/browser/node_modules
+          SHOTS: ${{ github.workspace }}/test-results/flat
       - name: A win pays off
         run: node qa/vr/winpay.e2e.mjs
         env:

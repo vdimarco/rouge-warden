@@ -192,6 +192,7 @@ function createWorld() {
   ui = G.ui = createUI({ scene, camera, rig, renderer, city, view, save, settings, comfort, audio, xr: X, hands, saveNow, haptic, setWorldVisible });
   game = G.game = createGame({ scene, city, view, ropes, hands, ui, audio, P, save, settings, saveNow, haptic });
   game.onStory(story);
+  game.onClogBeat(noteClogBeat);
   portal = G.portal = createPortal({ scene, rig, camera, renderer, xr: X, city, view, ropes, audio, ui, P, placeRig, haptic });
   portal.onDone(handOff);
   ui.onExit(exitPlay);
@@ -412,6 +413,25 @@ let winHold = 0, winCard = null, winStory = null, lastWin = null;
 let missHold = 0, missCard = null, missJob = null, lastMiss = null;
 // A test can run the story route under ?nocut. Real play runs it only after Mission 1, and the tests leave it off.
 let routeForce = false;
+// The fourth flush and the eighth flush each break the clog run with a different job. The queue waits out a story mission.
+const CLOG_BEAT = {
+  4: { type: "balloon", mission: "UP FOR AIR", near: [18, 80] },
+  8: { type: "washer", mission: "GET HIM DOWN", near: [24, 140] },
+};
+const clogQueue = [];
+function noteClogBeat(n) {
+  const b = CLOG_BEAT[n];
+  if (!b || clogQueue.some((q) => q.type === b.type)) return;
+  clogQueue.push(b);
+}
+function startClogBeat() {
+  if (!clogQueue.length || jobs.active || routeOpen() || winHold > 0 || missHold > 0 || G.state !== "play") return;
+  const b = clogQueue[0], h = heroFight();
+  const o = jobs.prepare(b.type, h, b.near) || jobs.prepare(b.type, h, [16, 900]);
+  if (!o) return;
+  clogQueue.shift();
+  jobs.start(b.type, o, h, { mission: b.mission });
+}
 // The fall into the lake after the toilet erupts (flat screen): { t, sludge } while it lasts. The splash fishes the hero out on the
 // start roof (respawn from lastSafe), and Mission 1 starts then, or when he lands somewhere else, or after 12 s.
 let lakeDrop = null;
@@ -655,8 +675,9 @@ function actionFrame(dt, inp) {
   combat.update(dt, hf);
   syncStory();
   const routing = routeOpen();
-  jobs.offersOn = !!save.jobs.sludge && !routing; // odd jobs wait until Missions 2–4 are done; while driving only a taxi marker starts
+  jobs.offersOn = !!save.jobs.sludge && !routing; // odd jobs wait until the story route is done; while driving only a taxi marker starts
   jobs.crimesOn = !!save.jobs.sludge && !routing;
+  if (!routing && winHold <= 0 && missHold <= 0) startClogBeat();
   jobs.update(dt, G.time, hf);
   throwFrame(dt);
   audio.fight(combat.fighting > 0 && G.state === "play");
@@ -2654,6 +2675,10 @@ G.test = {
     else if (A.type === "tanker") { D.seals = 99; for (const g of combat.group("job")) down(g); }
     else if (A.type === "catch") { D.falling = true; D.caught = true; }
     else if (A.type === "washer") D.caught = true;
+    else if (A.type === "balloon") {
+      D.b.free = true; D.b.held = true;
+      if (D.kid) { D.kid.x = P.pos.x; D.kid.y = P.pos.y; D.kid.z = P.pos.z; }
+    }
     else return false;
     return true;
   },
