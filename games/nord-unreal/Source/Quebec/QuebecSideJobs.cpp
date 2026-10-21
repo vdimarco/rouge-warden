@@ -627,20 +627,27 @@ void AQuebecSideJobs::FinishJob(bool bSucceeded, const FString& Reason)
     if (!HasAuthority() || JobIndex == INDEX_NONE) return;
     const int32 Finished = JobIndex;
     const int32 Reward = bSucceeded ? QuebecJobRules::Rewards[Finished] : 0;
+    int32 Pay = Reward;
+    if (UWorld* World = GetWorld())
+        for (TActorIterator<AQuebecCampaign> It(World); It; ++It)
+        {
+            Pay = It->ApplyJobChain(Reward, bSucceeded);
+            break;
+        }
     ClearJobContent();
     if (bSucceeded)
     {
         CompletedMask |= 1 << Finished;
-        // Shared co-op: everyone in the session is paid.
+        // Shared co-op: everyone in the session is paid, at the chain's multiple.
         if (const AGameStateBase* Game = GetWorld() ? GetWorld()->GetGameState() : nullptr)
             for (APlayerState* Each : Game->PlayerArray)
-                if (AQuebecPlayerState* Stats = Cast<AQuebecPlayerState>(Each)) { Stats->Cash += Reward; Stats->Changed(); }
+                if (AQuebecPlayerState* Stats = Cast<AQuebecPlayerState>(Each)) { Stats->Cash += Pay; Stats->Changed(); }
         if (GetWorld())
             for (TActorIterator<AQuebecController> It(GetWorld()); It; ++It) It->PlayFeedback(EQuebecFeedbackCue::Complete);
     }
     LastJob = Finished;
     bLastSucceeded = bSucceeded;
-    LastReward = Reward;
+    LastReward = Pay;
     LastResult = Reason;
     // After MISSION RATÉE, R restarts the same job from its marker for a while instead of the campaign checkpoint.
     RetryUntil = bSucceeded ? 0.f : GetServerNow()+RetrySeconds;
@@ -653,7 +660,7 @@ void AQuebecSideJobs::FinishJob(bool bSucceeded, const FString& Reason)
     StarterState = nullptr;
     CarrierState = nullptr;
     SetObjective(FString(),FVector::ZeroVector,false);
-    UE_LOG(LogTemp,Display,TEXT("NORD_SIDEJOB end job=%d success=%d reward=%d reason=%s"),Finished,bSucceeded ? 1 : 0,Reward,*Reason);
+    UE_LOG(LogTemp,Display,TEXT("NORD_SIDEJOB end job=%d success=%d reward=%d reason=%s"),Finished,bSucceeded ? 1 : 0,Pay,*Reason);
     UpdatePresentation();
     ForceNetUpdate();
 }

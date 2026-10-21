@@ -36,12 +36,24 @@ namespace QuebecChain
         return -1;
     }
 
+    inline int Multiplier(int Chain, bool bSpoiled)
+    {
+        if (bSpoiled) return 1;
+        if (Chain < 0) Chain = 0;
+        const int Mult = Chain + 1;
+        return Mult > LinkCount ? LinkCount : Mult;
+    }
+
+    inline int Scaled(int Chain, bool bSpoiled, int Amount)
+    {
+        if (Amount <= 0) return 0;
+        return Amount * Multiplier(Chain, bSpoiled);
+    }
+
     inline int Stake(int Chain, bool bSpoiled, int Link)
     {
         if (Link < 0 || Link >= LinkCount) return 0;
-        if (Chain < 0) Chain = 0;
-        if (bSpoiled) return Base[Link];
-        return Base[Link] * (Chain + 1);
+        return Scaled(Chain, bSpoiled, Base[Link]);
     }
 
     inline FBank Bank(int Chain, int Mask, bool bSpoiled, int Link)
@@ -64,6 +76,25 @@ namespace QuebecChain
         Out.Pay = Base[Link] * (Out.Chain + 1);
         Out.Chain = Out.Chain + 1;
         if (Out.Chain > LinkCount) Out.Chain = LinkCount;
+        return Out;
+    }
+
+    // A side job can pay again. The story mask stays. A spoil pays the flat amount and clears the chain.
+    inline FBank Extend(int Chain, int Mask, bool bSpoiled, int Amount)
+    {
+        FBank Out;
+        Out.Chain = Chain < 0 ? 0 : Chain;
+        Out.Mask = Mask;
+        Out.bSpoiled = bSpoiled;
+        if (Amount <= 0) return Out;
+        Out.Pay = Scaled(Out.Chain, bSpoiled, Amount);
+        Out.bSpoiled = false;
+        if (bSpoiled)
+        {
+            Out.Chain = 0;
+            return Out;
+        }
+        if (Out.Chain < LinkCount) ++Out.Chain;
         return Out;
     }
 }

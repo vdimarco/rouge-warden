@@ -803,3 +803,48 @@ Unreal is not available here, so the native diamond was not captured. The title 
 ![Play client at 1280, host offline](gta-missions/r17-play-1280.png)
 
 ![Menu on a 390-wide screen, Recover visible](gta-missions/r17-play-menu-390.png)
+
+### Round 18 — 2026-10-21 — rubric v1
+
+- What changed: A side job pays on the same chain as the story. A clean job pays its reward times the chain already held, then the chain grows, and the multiple stops at seven. A spoiled chain pays the flat reward and starts over. A failed job breaks the chain. The card names that stake while a side job is the next thing to do. With the chain at zero, the pay is the reward the job already had. The story marks stay, and the v1 save still stores only CompletedMissions.
+- Why it helped: Fun was a 5 because the chain stopped when the last page banked. The four side jobs were still a flat payout, and failing one did not put the next attempt at risk.
+- Screenshots: title `docs/gauntlet/gta-missions/r18-title-1280.png`, `r18-title-390.png`, `r18-title-320.png`. Play client, host offline, `r18-play-1280.png`. Menu with Recover `r18-play-menu-390.png`. The title loaded with no page errors. The raw play page still logs the missing `@epicgames-ps/lib-pixelstreamingfrontend-ue5.8` specifier; the shell and Recover still draw. The chain was not played in Unreal. `Scripts/test_chain.py` reports 73 assertions, 0 failures, on c++, g++ and clang++. Syntax check `--both` passed for the campaign, the side jobs and the HUD. OpenSpec CLI is not installed, so `openspec validate` did not run.
+- Next target: performance stability (4), the lowest playability score this loop can still see. Responsiveness stays at 3 and stays out of scope. The job multiple is proven by the rules. It was not played, so the fun score waits at 6. The next round should keep to a change the tests can prove, and should not add a chapter or touch the stream.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 3 | Unchanged. |
+| Color palette | 5 | Unchanged. |
+| Detail density | 3 | Unchanged. |
+| Texture and material quality | 3 | Unchanged. |
+| Composition and camera | 4 | Unchanged. |
+| Atmosphere | 4 | Unchanged. |
+| Character models | 3 | Unchanged. |
+| Animation smoothness | 3 | Unchanged. |
+| Particles and VFX | 2 | Unchanged. |
+| UI polish | 4 | The stake shares the status line. The native card was not seen, and French and English still share the screen. |
+| Responsiveness and input latency | 3 | Unchanged. Still a lagged stream. Out of scope for this loop. |
+| Controls feel | 5 | Unchanged. Arrow keys still walk and drive on the same axes as WASD. |
+| Mission clarity | 7 | Unchanged. |
+| Pacing | 5 | Unchanged. The card still states the stop and the walk. |
+| Fun factor | 6 | A side job pays on the story chain. A clean job multiplies, a failure breaks it, and the multiple stops at seven. The rules prove the pays. With the chain at zero the reward is the one the job already had. It was not played in Unreal. |
+| Difficulty curve | 6 | Unchanged. A failed job breaks the chain. It does not add a new fail window. |
+| Feedback | 6 | The card names the job's stake. The hit is still the sting until it is heard. |
+| Sound design | 6 | Unchanged. |
+| Variety | 9 | Unchanged. Eight of eight story missions, plus the four side jobs. |
+| Performance stability | 4 | Unchanged. |
+
+- Aesthetics raw: 34 / 10 dimensions, index 34
+- Playability raw: 57 / 10 dimensions, index 57
+- Total: 91 / 200
+- Delta vs last round: +1 (round 17 was 90). Fun factor 5 → 6. Every other score held.
+
+![GTA title at 1280](gta-missions/r18-title-1280.png)
+
+![GTA title at 390](gta-missions/r18-title-390.png)
+
+![GTA title at 320](gta-missions/r18-title-320.png)
+
+![Play client at 1280, host offline](gta-missions/r18-play-1280.png)
+
+![Menu on a 390-wide screen, Recover visible](gta-missions/r18-play-menu-390.png)

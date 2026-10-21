@@ -93,6 +93,18 @@ int main()
     Expect(DirtyLap.Pay == Base[LinkTerrace] && DirtyLap.Chain == 0, "a retried lap pays the flat terrace");
     Expect(AfterDirty.Pay == Base[LinkPond], "the picnic after a retried lap is still at one");
 
+    const int Kept = Pond.Mask;
+    const FBank FirstJob = Extend(0, 0, false, 250);
+    Expect(FirstJob.Pay == 250 && FirstJob.Chain == 1, "a job with no chain pays its own reward");
+    const FBank Job = Extend(2, Kept, false, 300);
+    Expect(Job.Pay == 900 && Job.Chain == 3 && Job.Mask == Kept && !Job.bSpoiled, "a clean job pays the chain and keeps the story marks");
+    const FBank SpoiledJob = Extend(2, Kept, true, 300);
+    Expect(SpoiledJob.Pay == 300 && SpoiledJob.Chain == 0 && !SpoiledJob.bSpoiled, "a spoiled job pays flat and clears the chain");
+    const FBank Capped = Extend(LinkCount, Kept, false, 300);
+    Expect(Capped.Pay == 300 * LinkCount && Capped.Chain == LinkCount, "a full chain stays full and pays the top multiple");
+    const FBank Empty = Extend(4, Kept, false, 0);
+    Expect(Empty.Pay == 0 && Empty.Chain == 4 && Empty.bSpoiled == false, "a failed amount does not move the chain");
+
     std::printf("%d assertions, %d failures\n", Assertions, Failures);
     return Failures == 0 ? 0 : 1;
 }

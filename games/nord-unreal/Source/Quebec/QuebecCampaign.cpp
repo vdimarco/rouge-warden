@@ -1480,6 +1480,27 @@ bool AQuebecCampaign::GetChainStake(int32& OutChain, int32& OutPay, bool& bOutBr
     return OutPay > 0;
 }
 
+int32 AQuebecCampaign::JobStake(int32 BasePay) const
+{
+    return QuebecChain::Scaled(Chain, bChainSpoiled, BasePay);
+}
+
+int32 AQuebecCampaign::ApplyJobChain(int32 BasePay, bool bSucceeded)
+{
+    if (!bSucceeded)
+    {
+        BreakChain();
+        return 0;
+    }
+    const QuebecChain::FBank Bank = QuebecChain::Extend(Chain, ChainMask, bChainSpoiled, BasePay);
+    if (Bank.Pay <= 0) return 0;
+    Chain = Bank.Chain;
+    ChainMask = Bank.Mask;
+    bChainSpoiled = Bank.bSpoiled;
+    ForceNetUpdate();
+    return Bank.Pay;
+}
+
 void AQuebecCampaign::RecordRaceResult()
 {
     if (!HasAuthority() || !FMath::IsFinite(RaceElapsed) || RaceElapsed <= 0.f || RaceElapsed > RaceTimeLimit) return;

@@ -1,6 +1,7 @@
 #include "QuebecGameplay.h"
 #include "Misc/PackageName.h"
 #include "QuebecCampaign.h"
+#include "QuebecChain.h"
 #include "QuebecPace.h"
 #include "QuebecRouteLine.h"
 #include "QuebecCourtRules.h"
@@ -11,6 +12,7 @@
 #include "QuebecPondTone.h"
 #include "QuebecShowRules.h"
 #include "QuebecShowTone.h"
+#include "QuebecJobRules.h"
 #include "QuebecSky.h"
 #include "QuebecCrewAnimation.h"
 #include "QuebecGTA.h" // AQuebecCar: street traces each frame (DRIVE).
@@ -2460,6 +2462,12 @@ void AQuebecHUD::DrawHUD()
                     Status = Clock + (bTouchControls ? FString(TEXT("Menu · Recover restarts")) : FString(TEXT("R restarts")));
                 }
                 else Status = bTouchControls ? TEXT("Use at the yellow M · Menu · Race replay") : TEXT("E at the yellow M · T replays the race");
+                const int32 Offer = Campaign->JobStake(QuebecJobRules::Rewards[Guide]);
+                if (Offer > 0)
+                {
+                    if (Campaign->bChainSpoiled) Status += FString::Printf(TEXT(" · chain broken · +$%d"), Offer);
+                    else Status += FString::Printf(TEXT(" · chain %d · +$%d"), Campaign->Chain, Offer);
+                }
             }
         }
         int32 PaceIndex = 0, PaceCount = 0, PaceWalk = 0;

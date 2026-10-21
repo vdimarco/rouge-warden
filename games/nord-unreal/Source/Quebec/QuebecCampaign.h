@@ -65,6 +65,9 @@ public:
     bool GetBeatPace(int32& OutIndex, int32& OutCount, int32& OutWalkSeconds) const;
     // Session chain. Not written to the v1 slot. A miss spoils the open beat.
     bool GetChainStake(int32& OutChain, int32& OutPay, bool& bOutBroken) const;
+    int32 JobStake(int32 BasePay) const;
+    // A side job pays on the same chain. Failure breaks it. The story mask stays.
+    int32 ApplyJobChain(int32 BasePay, bool bSucceeded);
     int32 GetCompletedMissionCount() const { return CompletedMissions; }
     bool IsCampaignComplete() const { return Phase == EQuebecCampaignPhase::Complete; }
     // Banked indexes from the rules headers. Kept here so the save header stays free of those headers.
