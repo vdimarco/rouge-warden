@@ -953,16 +953,18 @@ function playStep(e, step, t) {
     if (s === 3 || s === 11) bass(e, at, mtof(C.root + 12), S16);
     if (s >= 13) tone(e, at, { type: "triangle", f: [196, 165, 131][s - 13], f2: [150, 120, 95][s - 13], dur: 0.16, att: 0.002, peak: 0.12, to: e.musIn });
   } else if ((e.st.chase || 0) > 0.08) {
-    // a bomb clock on the chase: quarters while you keep pace, eighths once you fall behind. A fight already has its own pulse.
-    const c = e.st.chase;
-    if (s % 4 === 0) clockTick(e, at, 0.45 + 0.55 * c);
-    else if (c > 0.7 && s % 2 === 0) clockTick(e, at, 0.55);
+    // a bomb clock on the chase: quarters while you keep pace, eighths and a heavier block once you fall behind.
+    // A fight already has its own pulse.
+    const c = e.st.chase, behind = c > 0.7;
+    // keeping pace is a light quarter. Falling behind is a heavier hit, and on the eighths.
+    if (s % 4 === 0) clockTick(e, at, behind ? 1.55 : 0.4 + 0.25 * c);
+    else if (behind && s % 2 === 0) clockTick(e, at, 0.95);
   }
 }
-// a dry click, higher than the hats, so a chase reads as a clock and not as another snare
+// a wood block under a short click. The old tick sat with the hats, so the chase sounded like the same groove.
 function clockTick(e, t, v) {
-  ring(e, t, [[2800, 0.22 * v, 0.012], [1700, 0.16 * v, 0.02]], { to: e.musIn });
-  hiss(e, t, { type: "highpass", f: 5000, dur: 0.018, att: 0.001, peak: 0.14 * v, to: e.musIn });
+  ring(e, t, [[740, 0.38 * v, 0.05], [2800, 0.18 * v, 0.012], [1700, 0.1 * v, 0.02]], { to: e.musIn });
+  hiss(e, t, { type: "highpass", f: 5000, dur: 0.018, att: 0.001, peak: 0.1 * v, to: e.musIn });
 }
 // an electric piano: one sine through another (FM), bright at the strike and mellow after
 function keys(e, t, f, dur, v) {
