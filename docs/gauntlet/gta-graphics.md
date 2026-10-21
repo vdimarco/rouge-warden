@@ -318,3 +318,38 @@ Unreal is not available in this environment, so in-engine frames are the last co
 - Playability raw: 39 / 10 dimensions, index 39
 - Total: 83 / 200
 - Delta vs last round: +1
+
+### Round 10 — 2026-10-21 — rubric v1
+
+- What changed: `city_facade.hlsl` draws courses as a pale mortar bed, darker toward the back of the joint, with a lit upper edge and a fine face mottle. Doors, lamps, and rails stay. The map material updates when `apply_city_comic_style.py` runs in the editor.
+- Why it helped: Texture and material quality was tied at 4. A course was the brick colour darkened by a hairline, so the wall was one fill. A joint that is its own material, and an edge that takes the sun, is the first surface relief the colour shader can show.
+- Screenshots: before `docs/gauntlet/gta-graphics/round-10/before-mortar.png`, after `docs/gauntlet/gta-graphics/round-10/after-mortar.png`. These are a direct port of the facade shader, not an Unreal capture. `Scripts/test_environment_refresh.py` passed. `GET /gta/` returned 200.
+- Next target: character models (tied at 4 with composition and particles). Animation smoothness stays at 3 and is skipped until a pose can be drawn.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 5 | Window lamps are unchanged. The arris is a lit edge on the course, not a new light. |
+| Color palette | 5 | The mortar is a pale limestone in the trim's range. |
+| Detail density | 5 | Rails and doors are unchanged. The joint is a material, not a new object. |
+| Texture and material quality | 5 | Courses have a pale bed and a lit upper edge, and the face is mottled. It is still one colour, not a scanned surface. |
+| Composition and camera | 4 | Unchanged gameplay camera. |
+| Atmosphere | 5 | The depth fade is unchanged. |
+| Character models | 4 | The crew key is unchanged. |
+| Animation smoothness | 3 | Skipped. The blend space still cannot be posed here. |
+| Particles and VFX | 4 | Rain streaks are unchanged. |
+| UI polish | 5 | Untouched. |
+| Responsiveness and input latency | 4 | Not measured this round. |
+| Controls feel | 4 | Not played. |
+| Mission clarity | 5 | Unchanged objective card. |
+| Pacing | 4 | Unchanged mission slice. |
+| Fun factor | 3 | Not played. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 4 | No new juice. |
+| Sound design | 3 | Not listened to. |
+| Variety | 3 | One district. The joint repeats on every course. |
+| Performance stability | 5 | The facade source test passed. The grain is extra arithmetic, no samples. Frame time was not remeasured. |
+
+- Aesthetics raw: 45 / 10 dimensions, index 45
+- Playability raw: 39 / 10 dimensions, index 39
+- Total: 84 / 200
+- Delta vs last round: +1

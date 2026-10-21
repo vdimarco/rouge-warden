@@ -15,11 +15,20 @@ float WindowWidth = lerp(0.18, 0.225, step(0.46, frac(Seed * 11.7)));
 float Outer = step(P.x, WindowWidth) * step(P.y, 0.32) * Wall;
 float Trim = step(P.x, WindowWidth - 0.016) * step(P.y, 0.30) * Wall;
 float Glass = step(P.x, WindowWidth - 0.039) * step(P.y, 0.275) * Wall;
-float Course = max(step(frac(Z / 28.0), 0.025), step(frac(UV.x * 4.0 + floor(Z / 28.0) * 0.5), 0.018));
-float3 Color = Paper * (1.0 - Course * 0.12);
+float Along = frac(Z / 28.0);
+float Across = frac(UV.x * 4.0 + floor(Z / 28.0) * 0.5);
+float Course = max(step(Along, 0.07), step(Across, 0.045));
+float3 Color = Paper;
 // Each brick or stone unit shifts so a wall is not one flat paper colour.
 float BrickNoise = frac(sin(dot(floor(float2(UV.x * 8.0 + floor(Z / 28.0) * 0.5, Z / 28.0)), float2(12.9898, 78.233))) * 43758.5453);
 Color *= lerp(0.86, 1.12, BrickNoise);
+float Grain = frac(sin(dot(floor(float2(UV.x * 32.0, Z / 6.0)), float2(12.9898, 78.233))) * 43758.5453);
+Color *= lerp(0.93, 1.06, Grain);
+// The joint is its own pale bed. The top of each course catches the afternoon sun.
+float3 Mortar = lerp(float3(0.50, 0.46, 0.40), float3(0.64, 0.60, 0.52), Stone);
+float Arris = step(0.86, Along) * step(0.045, Across);
+Color = lerp(Color, Color * float3(1.14, 1.08, 0.96), Arris);
+Color = lerp(Color, Mortar * lerp(0.78, 1.0, saturate(Along / 0.07)), Course);
 // Quiet limestone courses and unequal bay widths break up the long window grid.
 float Belt = step(abs(frac((Z - 100.0) / 320.0) - 0.015), 0.013) * Wall;
 float Pier = step(frac((UV.x + Seed * 0.3) / 3.0), 0.018) * Wall;
