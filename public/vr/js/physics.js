@@ -105,10 +105,11 @@ export function armEasy(r, hgt) {
   return r;
 }
 
-// The point a held swing takes: 12h ahead along (dx, dz) and 14h above the feet. A building within 6h of that point
-// wins, including when the point sits inside the solid (a ray from inside a box does not hit it). opt.avoid is the
-// building just left: another tier or its antenna is not a new anchor. Otherwise the point itself, in the sky,
-// unless opt.lesson names the gold-ring tower. One reused result, so a caller copies it before the next call.
+// The point a held swing takes: 12h ahead along (dx, dz) and 14h above the feet. Order: a marked tutorial or
+// mission point within 16h, else the nearest building within 6h (including a point inside the solid; a ray from
+// inside a box does not hit it), else sky. opt.avoid is the building just left: another tier or its antenna is
+// not a new anchor. opt.lesson is the gold-ring tower and wins over sky even past 16h.
+// One reused result, so a caller copies it.
 const EASY_OUT = { x: 0, y: 0, z: 0, nx: 0, ny: -1, nz: 0, tag: "sky", id: "sky", bid: -1, easy: true, easyH: 1.8, sky: true, valid: true, same: false, special: false };
 const EASY_DIRS = [];
 for (let y = -1; y <= 1; y++) for (let x = -1; x <= 1; x++) for (let z = -1; z <= 1; z++) if (x || y || z) EASY_DIRS.push(x, y, z);
@@ -153,6 +154,11 @@ function faceOf(c, x, y, z, R) {
   if (up <= down) return { d: 0, x, y: c.y1, z, nx: 0, ny: 1, nz: 0 };
   return { d: 0, x, y: c.y0, z, nx: 0, ny: -1, nz: 0 };
 }
+function takeFace(o, p) {
+  o.x = p.x; o.y = p.y; o.z = p.z;
+  o.nx = p.nx || 0; o.ny = p.ny || 0; o.nz = p.nz || 0;
+  o.tag = p.tag || "building"; o.id = p.id; o.bid = p.bid != null ? p.bid : -1; o.sky = false;
+}
 export function easyAnchor(P, dx, dz, opt) {
   const H = (P.cfg && P.cfg.bodyH) || SWING.bodyH;
   const hl = len2(dx, dz) || 1;
@@ -163,6 +169,14 @@ export function easyAnchor(P, dx, dz, opt) {
   const o = EASY_OUT;
   o.easy = true; o.easyH = H; o.valid = true; o.same = false; o.special = false; o.sky = true;
   o.x = ax; o.y = ay; o.z = az; o.nx = 0; o.ny = -1; o.nz = 0; o.tag = "sky"; o.id = "sky"; o.bid = -1;
+  // 1. A tutorial or mission point within 16h of the chest wins over the building search and over sky.
+  const marked = opt && opt.marked;
+  if (marked && marked.x != null) {
+    const cx = P.pos.x, cy = P.pos.y + (P.chest || 0), cz = P.pos.z;
+    const md = Math.hypot(marked.x - cx, marked.y - cy, marked.z - cz);
+    if (md <= 16 * H) { takeFace(o, marked); return o; }
+  }
+  // 2. The nearest building face within 6h of the auto point, including a point inside the solid.
   const city = P.city;
   if (city.nearestSurface(ax, ay, az, R) <= R) {
     let best = null;
@@ -185,13 +199,9 @@ export function easyAnchor(P, dx, dz, opt) {
     }
     if (hit) { o.x = bx; o.y = by; o.z = bz; o.nx = bnx; o.ny = bny; o.nz = bnz; o.tag = btag; o.id = cid; o.bid = bld; o.sky = false; }
   }
-  // Nothing in the 6h ball. The gold-ring lesson names its tower. Otherwise the point stays sky.
+  // 3. Sky, unless the gold-ring lesson names its tower. That face wins even past 16h, so the tower is never sky while it is in range.
   const lesson = o.sky && opt && opt.lesson;
-  if (lesson && lesson.x != null) {
-    o.x = lesson.x; o.y = lesson.y; o.z = lesson.z;
-    o.nx = lesson.nx || 0; o.ny = lesson.ny || 0; o.nz = lesson.nz || 0;
-    o.tag = "building"; o.id = lesson.id; o.sky = false;
-  }
+  if (lesson && lesson.x != null) takeFace(o, lesson);
   return o;
 }
 

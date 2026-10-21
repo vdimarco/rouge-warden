@@ -145,6 +145,16 @@ console.log("\ngold ring");
     if (!a.sky && a.tag === "building" && Math.abs(a.x - G.x) < 2) inside++;
   }
   check(inside === 30, `a point inside the tower still takes that face, 30 of 30 (${inside})`);
+
+  // A marked point within 16h wins over a building that also sits in the 6h ball.
+  P.pos.x = S.x + ux * 35; P.pos.z = S.z + uz * 35; P.pos.y = S.y;
+  const marked = { x: P.pos.x + ux * 8, y: P.pos.y + 6, z: P.pos.z + uz * 8, nx: -ux, ny: 0, nz: -uz, id: "mission", tag: "building" };
+  const beat = easyAnchor(P, dx, dz, { marked });
+  const md = Math.hypot(beat.x - marked.x, beat.y - marked.y, beat.z - marked.z);
+  check(!beat.sky && md < 0.01, `a mission point within 16h beats the 6h building (${md.toFixed(2)} m from the mark)`);
+  const farMark = { x: P.pos.x + ux * 40, y: P.pos.y + 20, z: P.pos.z + uz * 40, nx: -ux, ny: 0, nz: -uz, id: "far", tag: "building" };
+  const kept = easyAnchor(P, dx, dz, { marked: farMark });
+  check(!kept.sky && Math.abs(kept.x - G.x) < 2, "a mark past 16h does not steal the building inside the 6h ball");
 }
 
 console.log("\nheld building rope");
@@ -166,7 +176,7 @@ console.log("\nheld building rope");
     if (P.ropes[0].state === "idle" && i > 2) break;
   }
   saw = P.ropes[0].state === "attached";
-  const steps = Math.round(5 / dt);
+  const steps = Math.round(8 / dt);
   let attached = 0;
   for (let i = 0; i < steps; i++) {
     step(P, dt, hold());
@@ -174,7 +184,12 @@ console.log("\nheld building rope");
     if (P.events.some((e) => e.type === "snap")) snaps++;
     P.events.length = 0;
   }
-  check(saw && attached === steps && snaps === 0, `a held building rope stays attached for 5 s (${(attached * dt).toFixed(2)} s, ${snaps} snaps)`);
+  const up = () => ({ move: { x: 0, z: 0 }, jump: false, hands: [
+    { pos: { x: P.pos.x, y: P.pos.y + P.chest, z: P.pos.z }, velRel: { x: 0, y: 0, z: 0 }, yank: 0, grip: 0, holding: false, reeling: false },
+    { pos: { x: 0, y: 0, z: 0 }, velRel: { x: 0, y: 0, z: 0 }, yank: 0, grip: 0, holding: false, reeling: false },
+  ] });
+  step(P, dt, up());
+  check(saw && attached === steps && snaps === 0 && P.ropes[0].state === "idle", `a held building rope stays on for the whole hold and lets go when the button comes up (${(attached * dt).toFixed(2)} s, ${snaps} snaps)`);
 }
 
 console.log("\nrope cap");

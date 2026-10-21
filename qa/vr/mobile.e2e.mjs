@@ -2,7 +2,7 @@
 import assert from 'node:assert/strict';
 import { mkdir } from 'node:fs/promises';
 import {newPage,open,close,watchdog} from './lib.mjs';
-watchdog(180000,'phone swing');
+watchdog(420000,'phone swing');
 const page=await newPage({width:390,height:844});
 const out=process.env.SHOTS || '/tmp/swing-qa';await mkdir(out,{recursive:true});
 await page.addInitScript(()=>{
@@ -184,15 +184,40 @@ try {
  await page.setViewportSize({width:390,height:844});await page.waitForFunction(()=>G.camera.aspect<.6);
  const upright=await page.evaluate(()=>({w:innerWidth,h:innerHeight,aspect:G.camera.aspect}));
  assert(upright.w===390&&upright.h===844&&upright.aspect<.5,'the page is upright at 390x844 '+JSON.stringify(upright));
- const standAt=at=>page.evaluate(({roof,turn})=>{const s=G.city.safe[roof];G.test.press(1,false);G.test.aimAt(1,null);G.desktop.mobile.reset();G.test.teleport(s.x,s.y,s.z);G.rigYaw=G.city.start.yaw+turn*Math.PI/4;G.test.step(1/60,90);},at);
- const findAt=async()=>{
-  const roofs=await page.evaluate(()=>G.city.safe.length);
-  for(let roof=0;roof<roofs;roof++)for(let turn=0;turn<8;turn++){
-   await standAt({roof,turn});
-   const a=await pick([]);if(a&&await pick([a.id],.1))return {roof,turn};
+ const standAt=at=>page.evaluate(({roof,turn})=>{const s=G.city.safe[roof];G.renderer.setAnimationLoop(null);G.test.press(1,false);G.test.aimAt(1,null);G.desktop.mobile.reset();G.test.teleport(s.x,s.y,s.z);G.rigYaw=G.city.start.yaw+turn*Math.PI/4;G.test.step(1/60,24);},at);
+ // One pass inside the page. A round trip per roof blew the 180 s watch: each stop waited on a full city frame.
+ const findAt=()=>page.evaluate(()=>{
+  G.renderer.setAnimationLoop(null);
+  const cam=G.camera,V3=cam.position.constructor,c=G.city;
+  const rayAt=(nx,ny,far)=>{
+   cam.updateMatrixWorld(true);
+   const f=Math.tan(cam.fov*Math.PI/360),d=new V3(nx*f*cam.aspect,ny*f,-1).normalize().applyQuaternion(cam.quaternion);
+   return c.raycast(cam.position.x,cam.position.y,cam.position.z,d.x,d.y,d.z,far,{});
+  };
+  const ids=(skip,minA)=>{
+   const h0=G.test.state().head,cen=G.test.aim(1),mid=rayAt(0,0,400),ban=skip.concat(cen?[cen.id]:[],mid&&mid.collider?[mid.collider.id]:[]),found=[];
+   for(let a=minA;a<=.9;a+=.05)for(let ny=-.3;ny<=.7;ny+=.1){
+    const h=rayAt(a,ny,90);
+    if(!h||h.collider.tag!=='building'||ban.includes(h.collider.id)||Math.abs(h.ny)>.5||h.y<h0.y+4)continue;
+    const dx=h.x-h0.x,dy=h.y-h0.y,dz=h.z-h0.z,l=Math.hypot(dx,dy,dz);
+    if(l<20||l>80)continue;
+    const g=c.raycast(h0.x,h0.y,h0.z,dx/l,dy/l,dz/l,l+2,{});
+    if(!g||g.collider.id!==h.collider.id)continue;
+    const px=(a*.5+.5)*innerWidth,py=(.5-ny*.5)*innerHeight;
+    if(document.elementFromPoint(px,py)!==G.renderer.domElement)continue;
+    found.push(h.collider.id);
+   }
+   return found;
+  };
+  for(let roof=0;roof<c.safe.length;roof++)for(let turn=0;turn<8;turn++){
+   const s=c.safe[roof];
+   G.test.press(1,false);G.test.aimAt(1,null);G.desktop.mobile.reset();
+   G.test.teleport(s.x,s.y,s.z);G.rigYaw=c.start.yaw+turn*Math.PI/4;G.test.step(1/60,24);
+   const a=ids([],.4);
+   if(a.length&&ids([a[0]],.1).length)return {roof,turn};
   }
   return null;
- };
+ });
  const uprightTap=async(label,at)=>{
   await standAt(at);
   // the first tap starts from no rope: a tap with a rope out is the switch, which the next step checks

@@ -177,7 +177,7 @@ jobs:
         env:
           NODE_PATH: ${{ github.workspace }}/qa/browser/node_modules
           SHOTS: ${{ github.workspace }}/test-results/flat
-      - name: A held swing catches the next building
+      - name: A held swing stays until the button comes up
         run: node qa/vr/holdchain.e2e.mjs
         env:
           NODE_PATH: ${{ github.workspace }}/qa/browser/node_modules

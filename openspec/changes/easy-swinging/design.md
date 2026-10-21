@@ -4,11 +4,13 @@ Body height `h` is `SWING.bodyH` (1.8), next to `chestH`.
 
 ## Anchor
 
-`easyAnchor` in `physics.js` places a point 12h along the horizontal velocity and 14h above the feet. `nearestSurface` within 6h, then the closest point on a collider in that ball, snaps to that face. A ray from inside a box does not hit it (`city.js`), which is why the old 26-ray search left the gold-ring tower as sky when the point sat inside the solid. With none, the point stays, tagged `sky`, and `playerEasy` raises it until `project()` says it is off the screen. On the gold-ring lesson, `playerEasy` passes the marked tower face, and that face wins when the 6h ball is empty.
+`easyAnchor` in `physics.js` places a point 12h along the horizontal velocity and 14h above the feet. The order is the one in the spec. A marked tutorial or mission point within 16h is copied onto the result before the search. `nearestSurface` within 6h, then the closest point on a collider in that ball, snaps to that face. A ray from inside a box does not hit it (`city.js`), which is why the face search is there as well as the ray fan. `opt.avoid` skips that building id, including another tier and its antenna. With none, the point stays, tagged `sky`, and `playerEasy` raises it until `project()` says it is off the screen, unless `opt.lesson` names the gold-ring tower. That face wins over sky even past 16h.
+
+In the chase view the gold ring, and any tutorial or mission target within 16h, is fired by the picker as a normal cup (`aimAndFire` leaves easy off). An easy web would land on the same step and cap the rope, so an 80 ms click on the 65 m tower would not let go on the frame after the attach. Over open water an empty 6h ball stays sky, even when the aim can still see a building past the shore. Over the city that same empty ball uses the aimed building, so a roof shot and a kick in the air still land on it. On the ground with no target the cup dry-fires. No outside anchor write-up fit this order; it is the game's own reach rules.
 
 Both ropes free: `buttonHand` maps the left swing button to the left rope and the right button to the right rope. The side of the target was sending the left button to the right rope when the ring sat near the middle of a 1280-wide view.
 
-A held building rope is not released for the next-building catch until it has been attached for 5 seconds.
+A held building rope stays until that button comes up. `ropeInput` releases when the hand is no longer holding. The old catch, which let go on the GO cue and fired the next building, does not run.
 
 The result object is reused. `fire` copies it, then `armEasy` sets `flyDur` to 0 so the cup attaches on the next physics step while the hold is still down.
 

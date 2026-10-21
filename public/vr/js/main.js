@@ -1490,7 +1490,6 @@ function tick(dt, frame, time) {
   // 9. aim and fire. A held mouse or pad button that has seen the GO cue lets that rope go before physics,
   // so the let-go is the one the cue showed, and the next frame can catch the building ahead.
   if (!paused && (G.state === "play" || G.state === "intro")) aimAndFire(dt, inp);
-  if (!paused && G.state === "play") holdChainRelease(dt, inp);
   // 10. the body follows the head, then the physics substeps
   if (G.state === "intro") {
     P.pos.x = inp.head.pos.x; P.pos.y = city.start.y; P.pos.z = inp.head.pos.z;
@@ -1562,10 +1561,6 @@ function couple(inp) {
 // still fires if a target shows up within SWING.fireHold; with none it is a dry fire along the view. A test aim override on a hand
 // wins: for that hand ropes.aim decides, as before.
 const latch = [false, false], realWait = [false, false], swingCool = [0, 0];
-// A held swing lets go after the GO cue has been readable, then catches the next building. chainArm is that catch.
-// chainFrom is the building just left, so the next web does not grab it again. cueHold is how long this rope's cue has shown.
-const CHAIN_SEE = 0.33, CHAIN_HOLD = 5;
-const chainArm = [false, false], chainFrom = [null, null], cueHold = [0, 0], heldAge = [0, 0];
 let noneAt = -99;
 const PICK_OPTS = { avoidBid: -1 }; // reused: the options of the second pick when both swing inputs go down in one frame
 const PHONE_DIR = new THREE.Vector3(), PROJ = { x: 0, y: 0, depth: 0, behind: false, inView: false };
@@ -1587,31 +1582,28 @@ function easyDir() {
     easyDx = -Math.sin(yaw); easyDz = -Math.cos(yaw);
   }
 }
-function aimCopy(a) {
-  return { x: a.x, y: a.y, z: a.z, nx: a.nx, ny: a.ny, nz: a.nz, tag: a.tag, id: a.id, bid: a.bid, easy: true, easyH: a.easyH, sky: !!a.sky, valid: true, same: false, special: false };
+function bodyH() { return (P.cfg && P.cfg.bodyH) || SWING.bodyH; }
+// The mission card's goal, when the aim is already on it and it sits within `limit` metres of the chest.
+function goalNear(res, limit) {
+  const goal = game && game.progress && game.progress.goal;
+  if (!goal || goal.x == null || !res || !res.valid) return false;
+  const d = Math.hypot(goal.x - P.pos.x, (goal.y || 0) - (P.pos.y + P.chest), goal.z - P.pos.z);
+  if (!(d <= limit) || d < 1) return false;
+  return Math.hypot(res.x - goal.x, res.y - (goal.y == null ? res.y : goal.y), res.z - goal.z) < 15;
 }
-// A building the hero can hang under: the rope is the real distance, and the bottom of that arc stays 1.5 body-heights up.
-function canHang(a) {
-  if (!a || a.sky || a.tag !== "building") return false;
-  const H = a.easyH || SWING.bodyH;
-  const d = Math.hypot(a.x - P.pos.x, a.y - (P.pos.y + P.chest), a.z - P.pos.z);
-  const gy = city.isWater(P.pos.x, P.pos.z) ? 0 : city.groundY(P.pos.x, P.pos.z);
-  return d <= a.y - P.chest - (gy + 1.5 * H);
-}
-// The gold-ring lesson marks the tower. That face is the anchor when the 6h ball around the auto point is empty,
-// so the first ropes do not go to a sky point.
-function goldLesson() {
-  if (!pickerOn || !game || !game.progress || game.progress.tutorial !== 0 || !P.onGround) return null;
-  const S = city.start;
-  if (Math.hypot(P.pos.x - S.x, P.pos.z - S.z) > 20 || Math.abs(P.pos.y - S.y) > 3) return null;
+// A tutorial or mission target within 16h, or the gold ring while the picker still has it in range.
+// Those shots fly the aimed cup. An easy web would land at once and cap the rope at 16h.
+function markedCup() {
+  if (!pickerOn) return false;
   const res = picker.result();
-  if (!res || !res.valid || res.kind !== "ring") return null;
-  return { x: res.x, y: res.y, z: res.z, nx: res.nx, ny: res.ny, nz: res.nz, id: res.id };
+  if (!res || !res.valid || res.same) return false;
+  if (res.kind === "ring") return true;
+  const cap = 16 * bodyH();
+  return res.dist <= cap && (res.special || res.prio || goalNear(res, cap));
 }
 function playerEasy() {
   easyDir();
-  const lesson = goldLesson();
-  const a = easyAnchor(P, easyDx, easyDz, lesson ? { lesson } : undefined);
+  const a = easyAnchor(P, easyDx, easyDz);
   if (a.sky) { fillCam(); for (let n = 0; n < 8 && project(CAM, a.x, a.y, a.z, PROJ).inView; n++) a.y += a.easyH * 3; }
   return a;
 }
@@ -1628,10 +1620,26 @@ function aimAndFire(dt, inp) {
     // keeps the crosshair. A headset and G.test.aimAt keep the old ray.
     // A goon in reach makes this button a punch. An easy web here would carry the hero off the fight.
     const melee = actionOn() && combat.inReach(heroFight());
-    const useEasy = flatOn && !isXR() && G.state === "play" && !ov.aim[i] && !P.wall && !melee
+    let useEasy = flatOn && !isXR() && G.state === "play" && !ov.aim[i] && !P.wall && !melee
       && !(pickerOn && picker.result()?.special)
       && !(flatcam && flatcam.firstPerson)
       && !(inp.easySwing && !(inp.phoneHeld && inp.phoneHeld[i]));
+    // Mouse and pad: a tutorial or mission target within 16h, and the gold ring while it is in range, keep the aimed cup.
+    // A 6h building still takes the easy web. Over open water an empty 6h ball stays sky, even when the aim can still
+    // see a building across the shore. Over the city, that same empty ball uses the aimed building, and on the ground
+    // with nothing aimed the cup dry-fires.
+    if (useEasy && !inp.easySwing) {
+      if (markedCup()) useEasy = false;
+      else {
+        easyDir();
+        const probe = easyAnchor(P, easyDx, easyDz);
+        if (probe.sky) {
+          const res = pickerOn ? picker.result() : null;
+          const openWater = !P.onGround && P.city.isWater(P.pos.x, P.pos.z);
+          if (!openWater && ((res && res.valid && !res.same) || P.onGround)) useEasy = false;
+        }
+      }
+    }
     // phone: a tap on a side with that side's rope out moves it to the tapped building, or the next one ahead: one tap, one swing,
     // with no let-go between. With nothing new in reach the rope stays. A tap while the cup still flies (0.3 s at most) does
     // nothing: a new shot would cancel the cup before it lands.
@@ -1659,16 +1667,8 @@ function aimAndFire(dt, inp) {
       continue;
     }
     latch[i] = false; // an idle rope has nothing to keep
-    // A held button, after the GO cue let the last rope go, catches the next building. It does not dry-fire while none is ahead.
-    if (useEasy && chainArm[i] && h.holding && !h.triggerDown && settings.hold !== "toggle") {
-      if (swingCool[i] > 0) { lastAim[i] = null; continue; }
-      const next = chainAim(i);
-      lastAim[i] = next;
-      if (next && !ui.blocking(i)) { realWait[i] = true; shoot(i, h, next); }
-      continue;
-    }
-    // easy swing only looks for an anchor on the press. The rest of the time the old ray stays for a headset and for G.test.aimAt.
-    if (useEasy && !h.triggerDown && fireWait[i] <= 0) { lastAim[i] = null; continue; }
+    // easy swing only looks for an anchor on the press. The reticle still follows the aim, so the ring and the world mark agree.
+    if (useEasy && !h.triggerDown && fireWait[i] <= 0) { ropes.aim(i, h.aimPos, h.aimDir, P.vel); lastAim[i] = null; continue; }
     const pk = pickerOn && !ov.aim[i] && !useEasy;
     let a;
     if (useEasy) a = playerEasy();
@@ -1695,52 +1695,6 @@ function aimAndFire(dt, inp) {
         fireWait[i] = 0; realWait[i] = false;
       }
     }
-  }
-}
-// The next building after a let-go. The usual point first, then a lower, farther one, skipping every piece of the
-// building just left: another tier and its antenna count as that building.
-function chainAim(i) {
-  easyDir();
-  const avoid = chainFrom[i];
-  const tries = [{ avoid }, { avoid, up: 8, ahead: 20, reach: 10 }, { avoid, up: 4, ahead: 34, reach: 16 }];
-  for (let t = 0; t < tries.length; t++) {
-    const a = easyAnchor(P, easyDx, easyDz, tries[t]);
-    if (a && !a.sky && a.tag === "building" && a.bid !== avoid && canHang(a)) return a;
-  }
-  return null;
-}
-// Mouse and pad, flat play: a building rope that has shown the GO cue lets go while the button stays down, and the
-// next frame catches the building ahead. The cue stays long enough to read. A sky rope lets go only when a building
-// is already ahead to catch; over open water it stays. A clog, a pipe, the crack and a phone rope stay.
-function holdChainRelease(dt, inp) {
-  if (driving || !flatOn || isXR() || inp.easySwing || settings.hold === "toggle") {
-    cueHold[0] = cueHold[1] = 0;
-    heldAge[0] = heldAge[1] = 0;
-    return;
-  }
-  for (let i = 0; i < 2; i++) {
-    const h = inp.hands[i], r = P.ropes[i];
-    if (!h.holding) { chainArm[i] = false; cueHold[i] = 0; heldAge[i] = 0; continue; }
-    if (r.state !== "attached") { heldAge[i] = 0; cueHold[i] = 0; continue; }
-    heldAge[i] += dt;
-    // A held building rope stays on for at least 5 s. The catch of the next building waits until then.
-    if (heldAge[i] < CHAIN_HOLD) { cueHold[i] = 0; continue; }
-    const airborne = !P.onGround && !P.wall;
-    const building = r.state === "attached" && r.easy && !r.sticky && r.target && !SPECIAL_TAGS[r.target.tag];
-    const live = building && airborne && releaseWindow(P, r, 0);
-    if (live && cueAir[i]) {
-      cueHold[i] += dt;
-      if (cueHold[i] < CHAIN_SEE) continue;
-    } else if (!(cueHold[i] > 0 && building && airborne && cueAir[i] && !live)) {
-      cueHold[i] = 0;
-      continue;
-    }
-    const left = ropeBid(r);
-    if (left == null) { cueHold[i] = 0; continue; }
-    chainFrom[i] = left;
-    chainArm[i] = true;
-    cueHold[i] = 0;
-    release(P, i);
   }
 }
 // a phone tap on side i (0 the left half of the screen, 1 the right) this frame

@@ -1,4 +1,4 @@
-// A held swing button lets go on the GO cue and catches the next building. Letting go early does not.
+// A held swing button keeps the building rope until the player lets go. Letting go does not catch another building.
 import { mkdir } from "node:fs/promises";
 import { newPage, open, close, enterXR, checker, watchdog, SHOTS } from "./lib.mjs";
 
@@ -42,23 +42,22 @@ try {
       }
     };
     let frames = 0, cue = 0, wallAt = -1;
-    for (; frames < 900; frames++) {
+    for (; frames < 300; frames++) {
       G.test.step(1 / 60, 1);
       take();
       const act = G.test.action();
       if (act.cueAir[0] || act.cueAir[1]) cue++;
       if (G.P.wall && wallAt < 0) wallAt = frames;
-      const builds = log.filter((e) => e.t === "attach" && e.tag === "building");
-      const ids = [...new Set(builds.map((e) => e.id))];
-      if (ids.length >= 2 && log.some((e) => e.t === "detach")) break;
     }
+    const still = G.P.ropes.some((r) => r.state === "attached");
     G.test.render(0);
     window.dispatchEvent(new KeyboardEvent("keyup", { code: "KeyE" }));
     const attaches = log.filter((e) => e.t === "attach");
     const first = attaches[0] || null;
-    const building = attaches.find((e) => e.tag === "building" && first && e.id !== first.id) || null;
     return {
-      frames, cue, wallAt, first, building,
+      frames, cue, wallAt, first, still,
+      detaches: log.filter((e) => e.t === "detach").length,
+      buildings: new Set(attaches.filter((e) => e.tag === "building").map((e) => e.id)).size,
       ups: log.filter((e) => e.t === "input").length,
       drys: log.filter((e) => e.t === "dry").length,
       fires: log.filter((e) => e.t === "fire").length,
@@ -68,11 +67,9 @@ try {
     };
   });
   await page.screenshot({ path: out + "/chain.png" });
-  console.log("chain", JSON.stringify({ frames: held.frames, cue: held.cue, wallAt: held.wallAt, first: held.first, building: held.building, fires: held.fires, y: held.y, log: held.log }));
-  const gap = held.building && held.log ? held.building.frame - (held.log.find((e) => e.t === "detach") || {}).frame : null;
-  check(held.first && held.building && held.building.bid !== held.first.bid && gap != null && gap < 90, "holding E through the cue catches a different building", { ...held, gap });
-  check(held.first && held.first.tag === "building" && held.wallAt < 0, "the first web is a building and the swing does not hit the wall", held);
-  check(held.ups === 0 && held.drys === 0 && held.fires >= 2, "the next web is not a new press and not a dry fire", held);
+  console.log("chain", JSON.stringify({ frames: held.frames, cue: held.cue, wallAt: held.wallAt, first: held.first, still: held.still, fires: held.fires, y: held.y, log: held.log }));
+  check(held.first && held.first.tag === "building" && held.still && held.detaches === 0 && held.buildings === 1 && held.fires === 1 && held.wallAt < 0, "holding E keeps that building rope on until the button comes up", held);
+  check(held.ups === 0 && held.drys === 0, "a held rope does not dry-fire and does not take a second press", held);
 
   await page.keyboard.up("KeyE");
   await page.evaluate(() => {
