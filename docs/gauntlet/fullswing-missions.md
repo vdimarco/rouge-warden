@@ -1131,3 +1131,40 @@ Loop: missions, playability, controls, feel, UX, pacing and fun for In Full Swin
 - Delta vs last round: +1 (round 29 was 130). Difficulty curve 8 → 9. Every other score held.
 
 ![The ninth-flush car drives faster](fullswing-r30/car.png)
+
+### Round 31 — 2026-10-21 — rubric v1
+
+- What changed: The score-row card is painted again after the objective is written. A clock, the hot card, and a clog's metres are the ones from that frame. The HUD still reads input at the start of the frame.
+- Why it helped: The pill was a frame behind the objective. One step after a fight clock was set to 7 seconds, the pill still said ROOFTOP BRAWL 120 s and stayed ink, while the objective already said 7 s and was hot. Spider-Man 2 shows the objective on the frame it changes. A 1280×800 play stepped once toward a clog and the metres on the pill dropped in that frame, then set the fight to 7 seconds and that same frame painted 7 s with the hot card.
+- Screenshots: `docs/gauntlet/fullswing-r31/now.png`.
+- Next target: a new mission type, then more than one way for the King to fight. Performance stability stays at 6. This machine has no real GPU to time, so that score is not the next implementation round.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 5 | Held. Golden-hour sun and ink shadows. |
+| Color palette | 6 | Held. Yellow, red and sludge green still separate the HUD from the blocks. |
+| Detail density | 4 | Held. Open blocks more than a dressed borough. |
+| Texture and material quality | 3 | Held. Flat fills. |
+| Composition and camera | 4 | Held. The chase camera still sits behind the hero. This frame is the hot card. |
+| Atmosphere | 5 | Held. The dusk skyline has a mood. The street under the card does not. |
+| Character models | 3 | Held. Simple comic figures. |
+| Animation smoothness | 4 | Scored from still frames in software GL. Continuous motion was not watched. |
+| Particles and VFX | 5 | Held. No new effect. The card is the change. |
+| UI polish | 6 | Held. The hot card is still the warm fill with the magenta edge. |
+| Responsiveness and input latency | 9 | One frame after the clock dropped to 7 s, the pill said 7 s and was the hot card, matching the objective. One step toward a clog shortened the metres on that same pill. Before, that frame still said 120 s. |
+| Controls feel | 9 | Held. The first web still hangs from a building at the real rope length. |
+| Mission clarity | 9 | Held. The King card still names the nearest pipe, and the compass still says The King's pipe. |
+| Pacing | 9 | Held. Eight of the twelve flushes are a different job, and the clog pump never runs three times in a row. Three flushes are still the same clog. |
+| Fun factor | 9 | Held. The roof fight still launches at 14 m/s and a chase still launches at 8. |
+| Difficulty curve | 9 | Held. The ninth-flush car still cruises at 24 m/s. An odd-job getaway stays at 17 m/s. |
+| Feedback | 9 | Held. Seven seconds left still turns the card hot, and it does so on that same frame. |
+| Sound design | 9 | Held. A flush, a fight, a dash and a lift are still different stings, and the ring fanfare is still the trial. |
+| Variety | 9 | Held. The ninth flush is still the getaway car. This round changes when the card paints, not the jobs. |
+| Performance stability | 6 | The 1280×800 play passed with no page errors. Frame time on a real GPU was not measured. |
+
+- Aesthetics raw: 45 / 10 dimensions, index 45
+- Playability raw: 87 / 10 dimensions, index 87
+- Total: 132 / 200
+- Delta vs last round: +1 (round 30 was 131). Responsiveness and input latency 8 → 9. Every other score held.
+
+![Seven seconds is already on the card](fullswing-r31/now.png)

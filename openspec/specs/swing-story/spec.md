@@ -48,7 +48,7 @@ In a headset no scene SHALL play. The mission scenes SHALL show their mission as
 - **THEN** a toast says "The King: rip off his three pipes, then flush him."
 
 ### Requirement: Mission card
-In flat play a mission card in the score row SHALL show the current mission and what to do next. While the story route is not the current mission, the card SHALL show the clogs flushed out of twelve and the district and distance of the nearest clog. While Mission 2, 3, 4 or 5 is current, the card SHALL name that mission and SHALL NOT say to flush the clogs. When the King is awake the card SHALL show the pipes ripped out of three. After the finale it SHALL say "ALL CLEAR". It SHALL hide during a trial.
+In flat play a mission card in the score row SHALL show the current mission and what to do next. It SHALL show the objective written in that same frame, including a clock that just changed and whether the card is hot. While the story route is not the current mission, the card SHALL show the clogs flushed out of twelve and the district and distance of the nearest clog. While Mission 2, 3, 4 or 5 is current, the card SHALL name that mission and SHALL NOT say to flush the clogs. When the King is awake the card SHALL show the pipes ripped out of three. After the finale it SHALL say "ALL CLEAR". It SHALL hide during a trial.
 
 #### Scenario: Mission 1
 - **WHEN** the player has flushed one clog and the story route is not the current mission
@@ -61,6 +61,11 @@ In flat play a mission card in the score row SHALL show the current mission and 
 #### Scenario: Mission card on a phone or a small window
 - **WHEN** the player plays on a phone, or in a window under 820 by 520 pixels, after the training
 - **THEN** the score row shows a short label (the district of the next clog, or the pipes left) and stays one row
+
+#### Scenario: The card matches this frame
+- **WHEN** a fight's clock is set to seven seconds and one frame passes
+- **THEN** the card in the score row already says 7 s and uses the hot card
+- **AND** that text matches the objective from this frame, not the time from the frame before
 
 ### Requirement: Painted scene panels
 The opening, the King waking and the finale SHALL show painted pictures of the game's city, King and hero in their panels. A
