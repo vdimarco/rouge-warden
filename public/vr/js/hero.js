@@ -6,6 +6,9 @@ import { SUN_DIR } from "./config.js";
 import { toonify, INK, inkK, syncInk, smoothNormals, outlineOf } from "./comic.js";
 
 const MODEL_URL = "/wild/models/crew5.glb";
+const HERO_HIP = new THREE.Vector3();
+const HERO_UP = new THREE.Vector3(0, 1, 0);
+const HIP_Q = new THREE.Quaternion();
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
 const smooth = (a, b, x) => { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
 const ease = (dt, rate) => 1 - Math.exp(-dt * rate);
@@ -150,15 +153,24 @@ bool heroGone() {
 }
 `;
 // A view-dependent rim after the cel bands, so the hero is not a flat cutout on the sunset.
-// Mitchell, Francke, Eng, "Illustrative Rendering in Team Fortress 2", 2007. Kept small so the bands stay.
+// Mitchell, Francke, Eng, "Illustrative Rendering in Team Fortress 2", 2007. The rim stays inside the bands.
 const HERO_RIM = /* glsl */ `
 vec3 heroRim(vec3 col, vec3 wn) {
   vec3 N = normalize(wn);
   float nd = clamp(dot(N, normalize(cameraPosition - vComicW)), 0.0, 1.0);
   float rim = pow(1.0 - nd, 3.0);
   float key = clamp(dot(N, normalize(uHeroSun)), 0.0, 1.0);
-  return col + vec3(1.0, 0.55, 0.28) * rim * mix(0.45, 1.0, key) * 0.32
-    + vec3(0.32, 0.46, 0.78) * rim * (1.0 - key) * 0.16;
+  // The built-in figure has a cream belt on the hips. The mapped jacket's cel flattens that belt,
+  // so paint it back on the red cloth, in the hips' own up axis, and only near the torso.
+  // A world-Y test would stay horizontal through a roll.
+  vec3 rel = vComicW - uHeroHip;
+  float along = dot(rel, uHeroUp);
+  float radial = length(rel - uHeroUp * along);
+  float belt = (1.0 - smoothstep(0.04, 0.10, abs(along - 0.08))) * (1.0 - smoothstep(0.16, 0.28, radial));
+  float jacket = smoothstep(0.04, 0.14, col.r - max(col.g, col.b));
+  col = mix(col, vec3(0.95, 0.91, 0.82), belt * jacket);
+  return col + vec3(1.0, 0.55, 0.28) * rim * mix(0.45, 1.0, key) * 0.48
+    + vec3(0.32, 0.46, 0.78) * rim * (1.0 - key) * 0.28;
 }
 `;
 function bodyMaterial(map, OPA, LIGHT) {
@@ -169,16 +181,18 @@ function bodyMaterial(map, OPA, LIGHT) {
     base(shader, r);
     shader.uniforms.uHeroOpa = OPA;
     shader.uniforms.uHeroSun = LIGHT;
+    shader.uniforms.uHeroHip = { value: HERO_HIP };
+    shader.uniforms.uHeroUp = { value: HERO_UP };
     // toonify shades with the rest-pose normal; a posed body needs the skinned one
     shader.vertexShader = shader.vertexShader.replace("vec3 wn = normal;", "vec3 wn = objectNormal;");
     // The painted face, zipper and shoe panels are in the colour map. A full cel band, and the mip
-    // that a chase view picks, flatten them into one block. Keep a share of the paint, and sample a
-    // sharper mip. Mitchell, Francke and Eng, "Illustrative Rendering in Team Fortress 2" (2007):
+    // that a chase view picks, flatten them into one block. Half the colour stays the paint, and the
+    // sample is a sharper mip. Mitchell, Francke and Eng, "Illustrative Rendering in Team Fortress 2" (2007):
     // the warp stays a warp of the albedo, so the material still reads.
     shader.fragmentShader = shader.fragmentShader.replace(/comicLight\(wn, vec3\([^)]*\)\)/, "comicLight(wn, uHeroSun)")
-      .replace("texture2D( map, vMapUv )", "texture2D( map, vMapUv, -1.25 )")
-      .replace("vec3 col = comicCel(diffuseColor.rgb, b);", "vec3 col = mix(diffuseColor.rgb, comicCel(diffuseColor.rgb, b), 0.7);")
-      .replace("void main() {", "uniform vec3 uHeroSun;\n" + DITHER + HERO_RIM + "void main() {")
+      .replace("texture2D( map, vMapUv )", "texture2D( map, vMapUv, -1.6 )")
+      .replace("vec3 col = comicCel(diffuseColor.rgb, b);", "vec3 col = mix(diffuseColor.rgb, comicCel(diffuseColor.rgb, b), 0.5);")
+      .replace("void main() {", "uniform vec3 uHeroSun;\nuniform vec3 uHeroHip;\nuniform vec3 uHeroUp;\n" + DITHER + HERO_RIM + "void main() {")
       .replace("outgoingLight = col + ", "outgoingLight = heroRim(col, wn) + ")
       .replace("#include <clipping_planes_fragment>", "#include <clipping_planes_fragment>\n  if (heroGone()) discard;");
   };
@@ -444,6 +458,9 @@ export function createHero(scene, renderer) {
     if (!readMesh || !rig) return;
     const b = rig.I.Head.b;
     b.updateWorldMatrix(true, false);
+    rig.I.Hips.b.getWorldPosition(HERO_HIP);
+    rig.I.Hips.b.getWorldQuaternion(HIP_Q);
+    HERO_UP.set(0, 1, 0).applyQuaternion(HIP_Q);
     b.getWorldPosition(READ_P);
     b.getWorldQuaternion(TQ);
     // Flight on twos moves the head a whole pose between calls. 0.7 m is only about 8.5 m/s at 12 Hz,
