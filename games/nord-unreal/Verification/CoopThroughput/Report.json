@@ -588,6 +588,223 @@
           "report_sha256": "a8a5987fcc60cb03248bc618a873b328a956db3049f2c77f99b05b0606c40e9f"
         }
       }
+    },
+    "AmbienceOff-v1": {
+      "valid": true,
+      "target_met": false,
+      "receipt": "/home/von/Work/rouge-warden-codex-nord-unreal/games/nord-unreal/Saved/Tests/CoopThroughput-20261019/AmbienceOff-v1/Result.json",
+      "receipt_sha256": "61ae80bba7a32b5460c40c93a588294b73a7b228855781a38900252b44e938a4",
+      "elapsed_seconds": 447.02,
+      "phases": {
+        "A": {
+          "passed": true,
+          "target_met": false,
+          "viewers": {
+            "NordFriend1": {
+              "seconds": 63.461,
+              "decodedFps": 18.058335040418527,
+              "receivedMbps": 0.46415417342935034,
+              "width": 706,
+              "height": 326,
+              "requested": "706x326",
+              "codec": "video/VP8",
+              "candidate": {
+                "type": "host",
+                "protocol": "udp"
+              },
+              "decodeMsPerFrame": 0.6005436300174519,
+              "jitterBufferMsPerFrame": 95.43594415357767,
+              "whole_run_frame_gap_upper_bound_ms": 100.09999999999127,
+              "framesDropped": 0,
+              "framesReceived": 1146,
+              "freezeCount": 0,
+              "totalFreezesDuration": 0.0,
+              "packetsLost": 0,
+              "meanQuantizer": 18.820244328097733,
+              "one_second_fps_min": 16.848364717542122,
+              "one_second_fps_p10": 16.881827209533267
+            },
+            "NordHost": {
+              "seconds": 64.457,
+              "decodedFps": 17.779294723614193,
+              "receivedMbps": 0.46584532323874833,
+              "width": 706,
+              "height": 326,
+              "requested": "706x326",
+              "codec": "video/VP8",
+              "candidate": {
+                "type": "host",
+                "protocol": "udp"
+              },
+              "decodeMsPerFrame": 0.5638568935427574,
+              "jitterBufferMsPerFrame": 64.53504624781851,
+              "whole_run_frame_gap_upper_bound_ms": 83.40000000000873,
+              "framesDropped": 0,
+              "framesReceived": 1146,
+              "freezeCount": 0,
+              "totalFreezesDuration": 0.0,
+              "packetsLost": 0,
+              "meanQuantizer": 16.910994764397905,
+              "one_second_fps_min": 15.888778550148958,
+              "one_second_fps_p10": 16.881827209533267
+            }
+          },
+          "target_checks": {
+            "NordHost": {
+              "native_fps": 17.79365261415955,
+              "decoded_fps": 17.779294723614193,
+              "target_met": false
+            },
+            "NordFriend1": {
+              "native_fps": 18.081569772156005,
+              "decoded_fps": 18.058335040418527,
+              "target_met": false
+            }
+          }
+        },
+        "B": {
+          "passed": true,
+          "target_met": false,
+          "viewers": {
+            "NordFriend1": {
+              "seconds": 64.488,
+              "decodedFps": 24.14402679568292,
+              "receivedMbps": 1.3481292643592606,
+              "width": 1058,
+              "height": 488,
+              "requested": "1058x488",
+              "codec": "video/VP8",
+              "candidate": {
+                "type": "host",
+                "protocol": "udp"
+              },
+              "decodeMsPerFrame": 1.227003853564547,
+              "jitterBufferMsPerFrame": 75.50186705202312,
+              "whole_run_frame_gap_upper_bound_ms": 100,
+              "framesDropped": 0,
+              "framesReceived": 1557,
+              "freezeCount": 0,
+              "totalFreezesDuration": 0.0,
+              "packetsLost": 0,
+              "meanQuantizer": 15.465639049454078,
+              "one_second_fps_min": 22.840119165839127,
+              "one_second_fps_p10": 23.785926660059467
+            },
+            "NordHost": {
+              "seconds": 64.486,
+              "decodedFps": 24.160282852091925,
+              "receivedMbps": 1.3448129516484197,
+              "width": 1058,
+              "height": 488,
+              "requested": "1058x488",
+              "codec": "video/VP8",
+              "candidate": {
+                "type": "host",
+                "protocol": "udp"
+              },
+              "decodeMsPerFrame": 1.1977400513478818,
+              "jitterBufferMsPerFrame": 68.30309242618742,
+              "whole_run_frame_gap_upper_bound_ms": 100,
+              "framesDropped": 0,
+              "framesReceived": 1558,
+              "freezeCount": 0,
+              "totalFreezesDuration": 0.0,
+              "packetsLost": 0,
+              "meanQuantizer": 15.178433889602054,
+              "one_second_fps_min": 22.74975272007913,
+              "one_second_fps_p10": 23.785926660059467
+            }
+          },
+          "target_checks": {
+            "NordHost": {
+              "native_fps": 24.123613811951437,
+              "decoded_fps": 24.160282852091925,
+              "target_met": false
+            },
+            "NordFriend1": {
+              "native_fps": 24.14090605720239,
+              "decoded_fps": 24.14402679568292,
+              "target_met": false
+            }
+          }
+        },
+        "A2": {
+          "passed": true,
+          "target_met": false,
+          "viewers": {
+            "NordFriend1": {
+              "seconds": 64.483,
+              "decodedFps": 17.027743746413783,
+              "receivedMbps": 0.4689969139152955,
+              "width": 706,
+              "height": 326,
+              "requested": "706x326",
+              "codec": "video/VP8",
+              "candidate": {
+                "type": "host",
+                "protocol": "udp"
+              },
+              "decodeMsPerFrame": 0.5942923497267759,
+              "jitterBufferMsPerFrame": 82.9645209471767,
+              "whole_run_frame_gap_upper_bound_ms": 83.40000000000873,
+              "framesDropped": 0,
+              "framesReceived": 1097,
+              "freezeCount": 0,
+              "totalFreezesDuration": 0.0,
+              "packetsLost": 0,
+              "meanQuantizer": 16.99271402550091,
+              "one_second_fps_min": 15.857284440039644,
+              "one_second_fps_p10": 15.888778550148958
+            },
+            "NordHost": {
+              "seconds": 64.47,
+              "decodedFps": 16.627888940592523,
+              "receivedMbps": 0.47008555917481,
+              "width": 706,
+              "height": 326,
+              "requested": "706x326",
+              "codec": "video/VP8",
+              "candidate": {
+                "type": "host",
+                "protocol": "udp"
+              },
+              "decodeMsPerFrame": 0.5480988805970148,
+              "jitterBufferMsPerFrame": 83.59184608208956,
+              "whole_run_frame_gap_upper_bound_ms": 83.40000000000873,
+              "framesDropped": 0,
+              "framesReceived": 1072,
+              "freezeCount": 0,
+              "totalFreezesDuration": 0.0,
+              "packetsLost": 0,
+              "meanQuantizer": 15.086753731343284,
+              "one_second_fps_min": 15.857284440039644,
+              "one_second_fps_p10": 15.873015873015873
+            }
+          },
+          "target_checks": {
+            "NordHost": {
+              "native_fps": 16.62881245944192,
+              "decoded_fps": 16.627888940592523,
+              "target_met": false
+            },
+            "NordFriend1": {
+              "native_fps": 17.025465577897556,
+              "decoded_fps": 17.027743746413783,
+              "target_met": false
+            }
+          }
+        }
+      },
+      "owned_children_closed": true,
+      "native_identities_unchanged": true,
+      "package_preserved": true,
+      "saved_preserved_exactly": true,
+      "source_243_preserved": true,
+      "ambience_host_status_preserved": true,
+      "settings_file_unchanged": true,
+      "overlay_sources_unchanged": true,
+      "scoped_namespace_sequence_matches_visibility_original_after": true,
+      "restoration_limit": "Original/latest disk payload reapplied and exposed flags/status verified; full loaded state and animation phase have no independent readback. Layer sequence matched the original visibility reference after restoration."
     }
   },
   "limits": [
@@ -624,5 +841,15 @@
     },
     "root_directly_inspected": true,
     "observation": "Ambience remains visible with legacy copies disabled; no exact instantaneous-pixel or layer-order equivalence claimed. Private full-desktop images are not committed."
+  },
+  "recovery_2026_10_21": {
+    "worktree": "/home/von/Work/rouge-warden-nord-coop-throughput",
+    "branch": "codex/nord-coop-stream-throughput",
+    "integrated_main": "4c4f6b29",
+    "candidate": "Touch receiver pressure below29FPS; recovery requires15consecutive samples at least35FPS",
+    "deployed": false,
+    "fresh_performance_pending": true,
+    "native_mutations": false,
+    "original_source_art_preserved": true
   }
 }

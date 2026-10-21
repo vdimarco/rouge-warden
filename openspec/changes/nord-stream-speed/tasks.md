@@ -127,3 +127,12 @@ User target: improve both simultaneous players to a real sustained 30 FPS. This 
 - [ ] Test one scheduling or resource-contention hypothesis at a time with the strict resource guard, owned maintenance windows and exact current60 restoration.
 - [ ] Retain only a measured improvement with real native and decoded rates near30FPS on both peers, stable resolution, no new steady-state stalls and direct visual/control review. Preserve solo responsiveness.
 - [ ] Deliver verified source/operational changes, current operator recipes and a concise handoff; report physical-device/off-LAN and remaining throughput limits honestly.
+
+## Touch-stream recovery — 2026-10-21
+
+- [x] Recover the continuation branch in a durable isolated worktree, integrate current main, and retain the dirty source/art checkout and historical receipts.
+- [x] Record the completed all-ambience diagnostic separately from target achievement and persistent desktop settings.
+- [ ] Count touch receiver rates below29FPS as pressure and require35FPS headroom for recovery; test exact boundaries and update rendered fixtures.
+- [ ] Run offline browser checks and real resized-video adaptation checks, distinguishing injected statistics from actual throughput.
+- [ ] Measure fresh simultaneous native/decoded rates and solo responsiveness with current service identities; retain resolution and desktop-workload limits.
+- [ ] Review and deliver only verified changes, preserving current progress and the other task's restarted service/deployment.

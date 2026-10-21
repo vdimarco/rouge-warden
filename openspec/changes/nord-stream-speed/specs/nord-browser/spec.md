@@ -87,3 +87,20 @@ Under the recorded supported host configuration, simultaneous NordHost and NordF
 - **WHEN** a bounded scheduling, capture or resource-contention experiment misses the target or regresses delivery
 - **THEN** the prior accepted configuration is restored, and the report separates valid measurement and restoration from target achievement
 - **AND** any desktop diagnostic retains its observable restoration limits and does not persist unrelated user preferences.
+
+### Requirement: Touch playback prioritizes sustained 30 FPS
+The existing touch-stream adaptation SHALL treat decoded rates below29FPS as receiver pressure and require35FPS headroom before increasing its existing frame-size profile. Native art settings and non-touch desktop sizing SHALL retain their accepted behavior.
+
+#### Scenario: A touch receiver stays below the target
+- **WHEN** five consecutive eligible receiver samples report28FPS after the existing startup grace
+- **THEN** the player requests the next smaller existing frame profile and its matching bitrate cap
+- **AND** real video continues at the negotiated dimensions; controlled statistics establish adaptation behavior only, not measured performance.
+
+#### Scenario: Playback meets the target without recovery headroom
+- **WHEN** receiver samples report29 through34.999FPS without buffer or freeze pressure
+- **THEN** the current profile is held, including a sustained30FPS receiver.
+
+#### Scenario: Recovery has enough headroom
+- **WHEN** fifteen consecutive eligible samples report at least35FPS without buffer or freeze pressure
+- **THEN** the player requests the next larger existing profile
+- **AND** a lower sample resets that recovery count, with the existing grace period after each resize.
