@@ -93,6 +93,8 @@ for model in data['models']:
         assert sum(value*value for value in cross)>1.e-7, model['file']+' degenerate triangle'
     if model['file'].startswith('Canopy'):
         assert 's 1\n' in source
+        if not model['file'].startswith('Canopy2'):
+            assert {'Leaf0','Leaf1','Leaf2'} <= {line.split()[1] for line in source.splitlines() if line.startswith('usemtl ')}, 'Broadleaf crowns keep a shaded underside and a sunlit cap'
         assert len(normals)==len(vertices)
         assert all(abs(sum(v*v for v in normal)-1)<1.e-4 for normal in normals)
         assert 600<len(triangles)<12000, 'Bound tree rendering cost'
