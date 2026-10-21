@@ -4,7 +4,7 @@
 import * as THREE from "three";
 import { VERSION, SAVE_KEY, WORLD, SWING, COMFORT, PERF, COLORS, PHONE, CLIMB, TARGET, DESKTOP, PAD, HINT, MOVES, SUN_DIR } from "./config.js";
 import { generate } from "./city.js";
-import { createPlayer, fire, release, step, teleport } from "./physics.js";
+import { createPlayer, fire, release, step, teleport, easyAnchor, armEasy, easyBoost } from "./physics.js";
 import { createXR } from "./xr.js";
 import { createDesktop } from "./desktop.js";
 import { createCityView } from "./cityview.js";
@@ -1496,31 +1496,62 @@ function couple(inp) {
 // target and both hands aim at it: a mouse or pad press fires at it, and a phone tap goes through the tap rules. A held press
 // still fires if a target shows up within SWING.fireHold; with none it is a dry fire along the view. A test aim override on a hand
 // wins: for that hand ropes.aim decides, as before.
-const latch = [false, false], realWait = [false, false];
+const latch = [false, false], realWait = [false, false], swingCool = [0, 0];
 let noneAt = -99;
 const PICK_OPTS = { avoidBid: -1 }; // reused: the options of the second pick when both swing inputs go down in one frame
 const PHONE_DIR = new THREE.Vector3(), PROJ = { x: 0, y: 0, depth: 0, behind: false, inView: false };
+// Flat play never aims the web. Holding swing takes a point 12 body-heights ahead and 14 up; a building within 6
+// snaps, and open sky stays on that point, raised until it leaves the screen. A test aim (G.test.aimAt) and a headset
+// still use the old ray. A new web waits 150 ms after the last one let go.
+let easyDx = 0, easyDz = -1;
+const CAM = { cam: { x: 0, y: 0, z: 0 }, yaw: 0, pitch: 0, fov: 70, aspect: 1 };
+function fillCam() {
+  const c = camera.position;
+  CAM.cam.x = c.x; CAM.cam.y = c.y; CAM.cam.z = c.z;
+  CAM.yaw = flatcam ? flatcam.yaw : G.rigYaw; CAM.pitch = flatcam ? flatcam.pitch : 0; CAM.fov = camera.fov; CAM.aspect = camera.aspect;
+  return CAM;
+}
+function playerEasy() {
+  easyDx = P.vel.x; easyDz = P.vel.z;
+  if (Math.hypot(easyDx, easyDz) < 1) {
+    const yaw = G.rigYaw + yawOfQuat(G.input.head.local.quat);
+    easyDx = -Math.sin(yaw); easyDz = -Math.cos(yaw);
+  }
+  const a = easyAnchor(P, easyDx, easyDz);
+  if (a.sky) { fillCam(); for (let n = 0; n < 8 && project(CAM, a.x, a.y, a.z, PROJ).inView; n++) a.y += a.easyH * 3; }
+  return a;
+}
 function aimAndFire(dt, inp) {
   if (driving) return;
   for (let i = 0; i < 2; i++) {
+    if (swingCool[i] > 0) swingCool[i] = Math.max(0, swingCool[i] - dt);
     const h = inp.hands[i], r = P.ropes[i];
     // a goon in reach: the swing input punches (punch, punch, kick) instead of firing a rope
     const tap = tapped(inp, i);
     if (actionOn() && G.state === "play" && (inp.easySwing ? tap : h.triggerDown) && tryAttack()) { h.triggerDown = false; fireWait[i] = 0; continue; }
+    // Chase view, no test aim, not on a wall: a held swing takes the auto anchor. A phone tap still
+    // aims (the building under the finger). A finger that holds the right half does not. First person
+    // keeps the crosshair. A headset and G.test.aimAt keep the old ray.
+    const useEasy = flatOn && !isXR() && G.state === "play" && !ov.aim[i] && !P.wall
+      && !(pickerOn && picker.result()?.special)
+      && !(flatcam && flatcam.firstPerson)
+      && !(inp.easySwing && !(inp.phoneHeld && inp.phoneHeld[i]));
     // phone: a tap on a side with that side's rope out moves it to the tapped building, or the next one ahead: one tap, one swing,
     // with no let-go between. With nothing new in reach the rope stays. A tap while the cup still flies (0.3 s at most) does
     // nothing: a new shot would cancel the cup before it lands.
     if (tap && r.state !== "idle") {
       if (r.state === "flying") continue;
-      const next = phoneAim(i, h, inp);
-      if (next?.valid && !next.same && !ui.blocking(i)) shoot(i, h, next);
+      const next = useEasy ? playerEasy() : phoneAim(i, h, inp);
+      if (next?.valid && !next.same && !ui.blocking(i) && !(next.easy && swingCool[i] > 0)) shoot(i, h, next);
       else D.mobile.miss(i, true);
       continue;
     }
     if (tap && h.connected && !ui.blocking(i)) {
-      const a = (lastAim[i] = phoneAim(i, h, inp));
+      const a = (lastAim[i] = useEasy ? playerEasy() : phoneAim(i, h, inp));
       D.mobile.target(!!a?.valid && !a.same, false);
-      // only the building the other rope holds is in reach: that rope stays, and this plunger stays home
+      // only the building the other rope holds is in reach: that rope stays, and this plunger stays home.
+      // an easy web that just let go waits out its 150 ms before the next one
+      if (a?.easy && swingCool[i] > 0) { fireWait[i] = 0; continue; }
       if (a?.valid && !a.same) shoot(i, h, a); else if (a?.same) D.mobile.miss(i, false, true); else dryFire(i, h, PHONE_DIR);
       fireWait[i] = 0;
       continue;
@@ -1532,12 +1563,16 @@ function aimAndFire(dt, inp) {
       continue;
     }
     latch[i] = false; // an idle rope has nothing to keep
-    const pk = pickerOn && !ov.aim[i];
+    // easy swing only looks for an anchor on the press. The rest of the time the old ray stays for a headset and for G.test.aimAt.
+    if (useEasy && !h.triggerDown && fireWait[i] <= 0) { lastAim[i] = null; continue; }
+    const pk = pickerOn && !ov.aim[i] && !useEasy;
     let a;
-    if (pk) { ropes.aim(i, h.aimPos, h.aimDir, P.vel); a = picker.result(); } // the reticle follows the aim; the picker decides
+    if (useEasy) a = playerEasy();
+    else if (pk) { ropes.aim(i, h.aimPos, h.aimDir, P.vel); a = picker.result(); } // the reticle follows the aim; the picker decides
     else a = ropes.aim(i, h.aimPos, h.aimDir, P.vel);
     lastAim[i] = a;
-    const blocked = ui.blocking(i), ok = !!a && a.valid && !blocked && !(inp.easySwing && a.same);
+    const blocked = ui.blocking(i), cooling = !!(a && a.easy && swingCool[i] > 0);
+    const ok = !!a && a.valid && !blocked && !cooling && !(inp.easySwing && a.same);
     if (inp.easySwing && i === 1) D.mobile.target(ok, false);
     if (h.triggerDown && !blocked) {
       if (ok) {
@@ -1585,6 +1620,7 @@ function shoot(i, h, a) {
   if (flatOn && pickerOn && P.wall && flatcam.opacity > 0.5 && (phone || real)) turnToSwing(a); // before fire: it lets go of the wall
   firePerch[i] = heroFight().perch; // a rope fired from a roof or a wall: the takedown is judged from here, not where the cup lands
   fire(P, i, h.aimPos, a);
+  if (a.easy) armEasy(P.ropes[i], a.easyH);
   toggled[i] = true;
   if (phone) { firedAt[i] = G.time; handoffT[i] = -1; firedPair[i] = !!(G.input.phonePair && G.input.phonePair[i]); } // a rope thrown again is not the one that lets go
   latch[i] = real; // a real press keeps the cup in flight, and earns the kick
@@ -1626,6 +1662,7 @@ function physics(dt, inp) {
   const ml = Math.sqrt(mx * mx + mz * mz);
   if (ml > 1) { mx /= ml; mz /= ml; }
   physIn.move.x = mx; physIn.move.z = mz;
+  physIn.forward = !intro && inp.move.y > 0.2;
   // on a wall: W/S (or the phone's arrows) climb, and A/D go along it, toward the view's right
   physIn.climb.up = intro ? 0 : inp.move.y;
   physIn.climb.x = intro ? 0 : -fz * inp.move.x; physIn.climb.z = intro ? 0 : fx * inp.move.x;
@@ -1821,7 +1858,9 @@ function feedback(ev) {
       }
       catchFeedback(i, "attach");
       break;
-    case "detach": audio.sfx("release", { pos: G.input.hands[i].gripPos }); if (latch[i]) releaseBoost(i); latch[i] = false; break;
+    case "detach":
+      if (ev.easy) { easyBoost(P); swingCool[i] = 0.15; }
+      audio.sfx("release", { pos: G.input.hands[i].gripPos }); if (latch[i]) releaseBoost(i); latch[i] = false; break;
     case "yank":
       audio.sfx(ev.pump ? "pump" : "yank", { pos: G.input.hands[i].gripPos }); haptic(i, 0.6, 40);
       if (ev.pump) fx.word("SPLORT", r.anchor, { dir: FX_UP, scale: 1.2 }); else wordAtHand("YANK", i);
@@ -1979,6 +2018,125 @@ function after(dt, inp, yawDelta) {
     if (on && isXR()) { hapT[i] -= dt; if (hapT[i] <= 0) { hapT[i] = 0.05; haptic(i, 0.05 + 0.35 * r.tension, 40); } } else hapT[i] = 0;
   }
   audio.update(dt);
+  drawWeb(dt);
+  publishSwing();
+}
+
+// The easy web, drawn in CSS pixels over the view. Ink #2B2A33, 2 px, a slight sag that pulls
+// straight as the rope goes taut (the same parabola rope.js uses, here in screen space). It fades
+// in 150 ms on the let-go. At the top of the swing, 3 or 4 paper lines trail the body.
+let webCv = null, webCx = null, webW = 0, webH = 0, peakSp = 0;
+const webWas = [false, false], webFade = [0, 0], webSag = [0, 0];
+const webA = [{ x: 0, y: 0, z: 0 }, { x: 0, y: 0, z: 0 }];
+const WEB_A = { x: 0, y: 0, depth: 0, behind: false, inView: false };
+const WEB_B = { x: 0, y: 0, depth: 0, behind: false, inView: false };
+const SWING_VIEW = { attached: false, anchor: { x: 0, y: 0, z: 0, offscreen: false }, ropeLength: 0, speed: 0 };
+function webCanvas() {
+  if (!webCv) {
+    webCv = document.createElement("canvas");
+    webCv.id = "webLine";
+    webCv.style.cssText = "position:fixed;inset:0;z-index:8;pointer-events:none";
+    document.body.appendChild(webCv);
+    webCx = webCv.getContext("2d");
+  }
+  const dpr = Math.min(window.devicePixelRatio || 1, 2), w = innerWidth, h = innerHeight;
+  const bw = Math.floor(w * dpr), bh = Math.floor(h * dpr);
+  if (webCv.width !== bw || webCv.height !== bh) { webCv.width = bw; webCv.height = bh; webCv.style.width = w + "px"; webCv.style.height = h + "px"; }
+  webW = w; webH = h;
+  webCx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  webCx.clearRect(0, 0, w, h);
+  return webCx;
+}
+function clipSeg(x0, y0, x1, y1, w, h) {
+  const code = (x, y) => (y < 0 ? 8 : y > h ? 4 : 0) | (x > w ? 2 : x < 0 ? 1 : 0);
+  let c0 = code(x0, y0), c1 = code(x1, y1);
+  for (let n = 0; n < 8; n++) {
+    if (!(c0 | c1)) return { x0, y0, x1, y1, ok: true };
+    if (c0 & c1) return { ok: false };
+    const c = c0 || c1;
+    let x, y;
+    if (c & 8) { x = x0 + (x1 - x0) * (0 - y0) / ((y1 - y0) || 1e-6); y = 0; }
+    else if (c & 4) { x = x0 + (x1 - x0) * (h - y0) / ((y1 - y0) || 1e-6); y = h; }
+    else if (c & 2) { y = y0 + (y1 - y0) * (w - x0) / ((x1 - x0) || 1e-6); x = w; }
+    else { y = y0 + (y1 - y0) * (0 - x0) / ((x1 - x0) || 1e-6); x = 0; }
+    if (c === c0) { x0 = x; y0 = y; c0 = code(x0, y0); } else { x1 = x; y1 = y; c1 = code(x1, y1); }
+  }
+  return { ok: false };
+}
+function strokeWeb(ctx, hand, anchor, sag, alpha, w, h) {
+  project(CAM, hand.x, hand.y, hand.z, WEB_A);
+  project(CAM, anchor.x, anchor.y, anchor.z, WEB_B);
+  const x0 = (WEB_A.x * 0.5 + 0.5) * w, y0 = (0.5 - WEB_A.y * 0.5) * h;
+  const x1 = (WEB_B.x * 0.5 + 0.5) * w, y1 = (0.5 - WEB_B.y * 0.5) * h;
+  const seg = clipSeg(x0, y0, x1, y1, w, h);
+  if (!seg.ok) return;
+  ctx.strokeStyle = "#2B2A33";
+  ctx.globalAlpha = alpha;
+  ctx.lineWidth = 2;
+  ctx.lineCap = "round";
+  ctx.beginPath();
+  ctx.moveTo(seg.x0, seg.y0);
+  if (sag > 0.5) ctx.quadraticCurveTo((seg.x0 + seg.x1) / 2, (seg.y0 + seg.y1) / 2 + sag, seg.x1, seg.y1);
+  else ctx.lineTo(seg.x1, seg.y1);
+  ctx.stroke();
+  ctx.globalAlpha = 1;
+}
+function drawWeb(dt) {
+  if (!flatOn || isXR() || !P) { if (webCx) { webCx.setTransform(1, 0, 0, 1, 0, 0); webCx.clearRect(0, 0, webCv.width, webCv.height); } return; }
+  const ctx = webCanvas(), w = webW, h = webH;
+  fillCam();
+  let any = false;
+  for (let i = 0; i < 2; i++) {
+    const r = P.ropes[i], on = !!(r.easy && r.state === "attached");
+    if (on) {
+      webWas[i] = true; webFade[i] = 0;
+      webA[i].x = r.anchor.x; webA[i].y = r.anchor.y; webA[i].z = r.anchor.z;
+      const ten = r.tension < 0 ? 0 : r.tension > 1 ? 1 : r.tension;
+      webSag[i] = (1 - ten) * 16;
+      const hand = TIPS[i] || { x: P.pos.x, y: P.pos.y + P.chest, z: P.pos.z };
+      strokeWeb(ctx, hand, webA[i], webSag[i], 1, w, h);
+      any = true;
+    } else if (webWas[i]) { webWas[i] = false; webFade[i] = 0.15; }
+    if (!on && webFade[i] > 0) {
+      webFade[i] = Math.max(0, webFade[i] - dt);
+      const hand = TIPS[i] || { x: P.pos.x, y: P.pos.y + P.chest, z: P.pos.z };
+      strokeWeb(ctx, hand, webA[i], webSag[i] * (webFade[i] / 0.15), webFade[i] / 0.15, w, h);
+    }
+  }
+  const sp = Math.hypot(P.vel.x, P.vel.y, P.vel.z);
+  if (!any) peakSp = 0;
+  else if (sp > peakSp) peakSp = sp;
+  if (any && peakSp > 12 && sp > 0.88 * peakSp) {
+    project(CAM, P.pos.x, P.pos.y + P.chest, P.pos.z, WEB_A);
+    if (!WEB_A.behind) {
+      const bx = (WEB_A.x * 0.5 + 0.5) * w, by = (0.5 - WEB_A.y * 0.5) * h;
+      const k = 2 / (sp || 1);
+      project(CAM, P.pos.x - P.vel.x * k, P.pos.y + P.chest - P.vel.y * k, P.pos.z - P.vel.z * k, WEB_B);
+      let dx = ((WEB_B.x - WEB_A.x) * 0.5) * w, dy = ((WEB_A.y - WEB_B.y) * 0.5) * h;
+      const len = Math.hypot(dx, dy) || 1; dx /= len; dy /= len;
+      const n = sp > 0.95 * peakSp ? 4 : 3;
+      ctx.strokeStyle = "#F3E9D6"; ctx.globalAlpha = 0.25; ctx.lineWidth = 1; ctx.lineCap = "round";
+      for (let i = 0; i < n; i++) {
+        const off = (i - (n - 1) / 2) * 7, x0 = bx - dy * off, y0 = by + dx * off, reach = 28 + i * 6;
+        ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x0 + dx * reach, y0 + dy * reach); ctx.stroke();
+      }
+      ctx.globalAlpha = 1;
+    }
+  }
+}
+function publishSwing() {
+  window.__test = window.__test || {};
+  window.__test.swing = SWING_VIEW;
+  let r = null;
+  if (P) { if (P.ropes[0].easy && P.ropes[0].state === "attached") r = P.ropes[0]; else if (P.ropes[1].easy && P.ropes[1].state === "attached") r = P.ropes[1]; }
+  SWING_VIEW.attached = !!r;
+  SWING_VIEW.ropeLength = r ? r.len : 0;
+  SWING_VIEW.speed = P ? Math.hypot(P.vel.x, P.vel.y, P.vel.z) : 0;
+  if (r) {
+    SWING_VIEW.anchor.x = r.anchor.x; SWING_VIEW.anchor.y = r.anchor.y; SWING_VIEW.anchor.z = r.anchor.z;
+    if (flatOn && !isXR()) { fillCam(); project(CAM, r.anchor.x, r.anchor.y, r.anchor.z, WEB_B); SWING_VIEW.anchor.offscreen = !WEB_B.inView; }
+    else SWING_VIEW.anchor.offscreen = !!(r.target && r.target.tag === "sky");
+  } else { SWING_VIEW.anchor.x = SWING_VIEW.anchor.y = SWING_VIEW.anchor.z = 0; SWING_VIEW.anchor.offscreen = false; }
 }
 
 // The fight keys of flat play. Space (pad A, the phone's DODGE button) with a goon winding up near: a dodge, not a jump. F (pad RB) with a

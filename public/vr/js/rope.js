@@ -604,7 +604,8 @@ export function createRopes(scene, city, settings) {
       }
       cupOut[i] = r.state !== "idle" || st.cupOn;
       st.segs = 0;
-      if (st.cupOn && visible) {
+      // an easy swing draws its own ink line; the mesh rope stays for a headset and a test aim
+      if (st.cupOn && visible && !r.easy) {
         const tie = putCup(nCup++, st.cup, st.out, head);
         st.rope.a.copy(tie); st.rope.b.copy(tip);
         st.twT += dt; // before drawing, so a pluck bends the rope in the frame it starts

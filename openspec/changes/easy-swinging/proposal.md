@@ -1,0 +1,25 @@
+# Easy swinging
+
+A held swing in the chase view no longer waits for the player to pick a point. The web takes an anchor ahead of the hero and above them, on a building when one is close and in the sky when none is, so a swing works over open ground.
+
+## Why
+
+- The old web only landed when the aim found a building. Over a lake or an empty lot the cup dry-fired and the swing did nothing.
+- Choosing the point, with the crosshair or by holding still and hoping the marker was right, made a chain of swings a puzzle instead of a motion.
+
+## What changes
+
+- A held swing in the chase view (mouse, keys, pad, or a finger held on the right half of a phone) attaches by itself. The player does not pick the point.
+- The anchor sits 12 body-heights ahead along the velocity (along the facing when nearly stopped) and 14 body-heights above the feet. A building within 6 body-heights of that point takes the web. Otherwise the web holds the sky, raised until it is off the screen.
+- The rope is the distance to that anchor, and never longer than 16 body-heights. Gravity makes the arc. Holding forward adds 15% speed once, at the bottom. Letting go keeps the speed and adds 10% up and forward. The next web waits 150 ms.
+- If the arc would put the feet under 1.5 body-heights, the rope shortens so it does not.
+- The web is an ink line from the hand toward the anchor, 2 px, sagging a little at the start and pulling straight as it goes taut, fading out over 150 ms. At the top of the swing, three or four thin paper lines trail the body.
+- `window.__test.swing` reports whether a web is out, the anchor, the rope length and the speed.
+- Version 1.24.2 (Quest APK code 33).
+
+## Out of scope
+
+- Wall running.
+- A phone tap still aims at the building under the finger, and lets go by itself, as before.
+- First person still uses the crosshair. A headset still uses the controller ray. `G.test.aimAt` still shoots the point a test names.
+- No new buttons.
