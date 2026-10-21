@@ -2737,6 +2737,19 @@ G.test = {
   goonView(id) { const g = combat.goons.find((q) => q.id === id); if (!g) return null; const v = goonOnThrees(g); return { phase: v.phase, poseT: v.poseT, pose: v.pose, x: v.x, z: v.z }; },
   // start a job (type: sludge, catch, washer, pizza, balloon, brawl, taxi, thief) at the nearest offer of that type, or at the hero
   job(type) { const o = jobs.offers.find((q) => q.type === type) || null; jobs.start(type, o, heroFight()); return jobs.info(); },
+  // Set the live job clock. The copy from action() is not the live one. Returns the timer, or false when nothing is running.
+  jobClock(t) { const A = jobs.active; if (!A) return false; A.timer = +t; return A.timer; },
+  // A free balloon, this many metres up. Returns false when the live job is not a balloon still in the air.
+  jobFloat(y) { const A = jobs.active; if (!A || A.type !== "balloon" || !A.data || !A.data.b || A.data.b.held) return false; A.data.b.free = true; A.data.b.y = +y; return A.data.b.y; },
+  // The person on the edge lets go. Returns false when the live job is not a rescue still in the air.
+  jobFall() {
+    const A = jobs.active;
+    if (!A || A.type !== "catch" || !A.data || A.data.caught || A.data.falling) return false;
+    const D = A.data;
+    D.falling = true;
+    if (D.p && D.out) { D.p.x = D.out.x; D.p.z = D.out.z; D.p.pose = 12; }
+    return true;
+  },
   // Start story mission i (0 thief, 1 catch, 2 brawl, 3 pizza). 4 or more ends the route and the clog card can show.
   storyMission(i = 0) {
     const n = Math.max(0, Math.min(STORY_ROUTE.length, i | 0));
