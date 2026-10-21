@@ -893,3 +893,48 @@ Unreal is not available here, so the native diamond was not captured. The title 
 ![Play client at 1280, host offline](gta-missions/r19-play-1280.png)
 
 ![Menu on a 390-wide screen, Recover visible](gta-missions/r19-play-menu-390.png)
+
+### Round 20 — 2026-10-21 — rubric v1
+
+- What changed: A bank names its rank. A spoiled bank reads SCRAPE. A clean bank reads CLEAN at chain 1, CHAIN at 2 or 3, HEAT at 4, 5, or 6, and MAX at 7. The lap line and the story line show that word with the pay. The pay itself does not change.
+- Why it helped: Feedback was a 6 because a clean bank and a spoiled bank both ended on the amount and the chain count. They did not say how hard the hit was.
+- Screenshots: title `docs/gauntlet/gta-missions/r20-title-1280.png`, `r20-title-390.png`, `r20-title-320.png`. Play client, host offline, `r20-play-1280.png`. Menu with Recover `r20-play-menu-390.png`. The title loaded with no page errors. The raw play page still logs the missing `@epicgames-ps/lib-pixelstreamingfrontend-ue5.8` specifier; the shell and Recover still draw. The rank was not played in Unreal. `Scripts/test_chain.py` reports 85 assertions, 0 failures, on c++, g++ and clang++. Syntax check `--both` passed for the campaign. OpenSpec CLI is not installed, so `openspec validate` did not run.
+- Next target: fun factor (6), the lowest of the verifiable set this loop is lifting. Difficulty and feedback are now 7. Variety stays at 9. Performance stays at 4 and is not measurable here. Responsiveness stays at 3 and stays out of scope. The rank is proven by the rules. It was not played, so the feedback score waits at 7. The next round should add a mechanic the tests can prove, and should not add a chapter or touch the stream.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 3 | Unchanged. |
+| Color palette | 5 | Unchanged. |
+| Detail density | 3 | Unchanged. |
+| Texture and material quality | 3 | Unchanged. |
+| Composition and camera | 4 | Unchanged. |
+| Atmosphere | 4 | Unchanged. |
+| Character models | 3 | Unchanged. |
+| Animation smoothness | 3 | Unchanged. |
+| Particles and VFX | 2 | Unchanged. |
+| UI polish | 4 | The rank shares the bank line. The native line was not seen, and French and English still share the screen. |
+| Responsiveness and input latency | 3 | Unchanged. Still a lagged stream. Out of scope for this loop. |
+| Controls feel | 5 | Unchanged. Arrow keys still walk and drive on the same axes as WASD. |
+| Mission clarity | 7 | Unchanged. |
+| Pacing | 5 | Unchanged. The card still states the stop and the walk. |
+| Fun factor | 6 | Unchanged. The rank names the hit. It does not change the pay. |
+| Difficulty curve | 7 | Unchanged. The court ink and the convoy beam still grow with the chain. |
+| Feedback | 7 | A bank names SCRAPE, CLEAN, CHAIN, HEAT, or MAX. The rules pick the word from the chain after the bank, and a spoil outranks that chain. The pay stays put. It was not played. |
+| Sound design | 6 | Unchanged. |
+| Variety | 9 | Unchanged. Eight of eight story missions, plus the four side jobs. |
+| Performance stability | 4 | Unchanged. Not measurable in this container. |
+
+- Aesthetics raw: 34 / 10 dimensions, index 34
+- Playability raw: 59 / 10 dimensions, index 59
+- Total: 93 / 200
+- Delta vs last round: +1 (round 19 was 92). Feedback 6 → 7. Every other score held.
+
+![GTA title at 1280](gta-missions/r20-title-1280.png)
+
+![GTA title at 390](gta-missions/r20-title-390.png)
+
+![GTA title at 320](gta-missions/r20-title-320.png)
+
+![Play client at 1280, host offline](gta-missions/r20-play-1280.png)
+
+![Menu on a 390-wide screen, Recover visible](gta-missions/r20-play-menu-390.png)

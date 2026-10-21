@@ -7,6 +7,7 @@
 
 #include <cstdarg>
 #include <cstdio>
+#include <cstring>
 
 namespace
 {
@@ -104,6 +105,21 @@ int main()
     Expect(Capped.Pay == 300 * LinkCount && Capped.Chain == LinkCount, "a full chain stays full and pays the top multiple");
     const FBank Empty = Extend(4, Kept, false, 0);
     Expect(Empty.Pay == 0 && Empty.Chain == 4 && Empty.bSpoiled == false, "a failed amount does not move the chain");
+
+    Expect(std::strcmp(Callout(1, false), "CLEAN") == 0, "the first clean bank reads CLEAN");
+    Expect(std::strcmp(Callout(2, false), "CHAIN") == 0, "chain two reads CHAIN");
+    Expect(std::strcmp(Callout(3, false), "CHAIN") == 0, "chain three reads CHAIN");
+    Expect(std::strcmp(Callout(4, false), "HEAT") == 0, "chain four reads HEAT");
+    Expect(std::strcmp(Callout(6, false), "HEAT") == 0, "chain six reads HEAT");
+    Expect(std::strcmp(Callout(7, false), "MAX") == 0, "a full chain reads MAX");
+    Expect(std::strcmp(Callout(0, true), "SCRAPE") == 0, "a spoiled bank reads SCRAPE");
+    Expect(std::strcmp(Callout(4, true), "SCRAPE") == 0, "a spoil outranks the chain it broke");
+    const FBank Fresh = Bank(0, 0, false, LinkTerrace);
+    Expect(std::strcmp(Callout(Fresh.Chain, false), "CLEAN") == 0 && Fresh.Pay == Base[LinkTerrace], "a fresh terrace bank stays CLEAN and pays the base");
+    const FBank Hot = Bank(3, 0, false, LinkPond);
+    Expect(std::strcmp(Callout(Hot.Chain, false), "HEAT") == 0 && Hot.Pay == Base[LinkPond] * 4, "the pond at chain three stays HEAT and pays four times");
+    Expect(std::strcmp(Callout(Capped.Chain, false), "MAX") == 0 && Capped.Pay == 300 * LinkCount, "a capped job stays MAX and keeps the top pay");
+    Expect(std::strcmp(Callout(SpoiledJob.Chain, true), "SCRAPE") == 0 && SpoiledJob.Pay == 300, "a spoiled job stays SCRAPE and pays flat");
 
     std::printf("%d assertions, %d failures\n", Assertions, Failures);
     return Failures == 0 ? 0 : 1;

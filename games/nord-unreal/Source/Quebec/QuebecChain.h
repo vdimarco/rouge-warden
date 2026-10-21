@@ -97,4 +97,15 @@ namespace QuebecChain
         if (Out.Chain < LinkCount) ++Out.Chain;
         return Out;
     }
+
+    // The word on a bank. A spoil is a scrape even if a chain was held.
+    // After a clean bank the chain is 1..7: CLEAN, CHAIN, HEAT, then MAX.
+    inline const char* Callout(int ChainAfter, bool bWasSpoiled)
+    {
+        if (bWasSpoiled) return "SCRAPE";
+        if (ChainAfter < 2) return "CLEAN";
+        if (ChainAfter < 4) return "CHAIN";
+        if (ChainAfter < 7) return "HEAT";
+        return "MAX";
+    }
 }

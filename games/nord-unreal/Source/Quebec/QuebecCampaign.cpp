@@ -25,6 +25,14 @@ static_assert(QuebecConvoyRules::StepBanked == AQuebecCampaign::ConvoyBankedStep
 static_assert(QuebecBlankRules::StepBanked == AQuebecCampaign::BlankBankedStep,
     "mission 8 banks in the session only; the campaign and the rules share one banked index");
 
+static FString ChainHitText(int32 Pay, int32 ChainNow, bool bWasSpoiled, const TCHAR* Prefix)
+{
+    const TCHAR* Rank = ANSI_TO_TCHAR(QuebecChain::Callout(static_cast<int>(ChainNow), bWasSpoiled));
+    if (bWasSpoiled)
+        return FString::Printf(TEXT("%s+$%d · chain broken · %s"), Prefix, Pay, Rank);
+    return FString::Printf(TEXT("%s+$%d · chain %d · %s"), Prefix, Pay, ChainNow, Rank);
+}
+
 #include "Components/BoxComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/SceneComponent.h"
@@ -1183,9 +1191,7 @@ void AQuebecCampaign::TickRace(float DeltaSeconds)
                             BankChain(QuebecChain::LinkTerrace);
                             if (LastChainPay > 0)
                             {
-                                const FString Pay = bWasSpoiled
-                                    ? FString::Printf(TEXT("Lap in.  +$%d · chain broken"), LastChainPay)
-                                    : FString::Printf(TEXT("Lap in.  +$%d · chain %d"), LastChainPay, Chain);
+                                const FString Pay = ChainHitText(LastChainPay, Chain, bWasSpoiled, TEXT("Lap in.  "));
                                 for (TActorIterator<AQuebecController> Player(GetWorld()); Player; ++Player)
                                     Player->ShowInteractionMessage(Pay);
                             }
@@ -1460,10 +1466,7 @@ void AQuebecCampaign::ShowStepMessage(AQuebecController* Who, const TCHAR* Messa
     if (!Who || !Message) return;
     if (bFinished && LastChainPay > 0)
     {
-        if (bWasSpoiled)
-            Who->ShowInteractionMessage(FString(Message) + FString::Printf(TEXT("  +$%d · chain broken"), LastChainPay));
-        else
-            Who->ShowInteractionMessage(FString(Message) + FString::Printf(TEXT("  +$%d · chain %d"), LastChainPay, Chain));
+        Who->ShowInteractionMessage(FString(Message) + ChainHitText(LastChainPay, Chain, bWasSpoiled, TEXT("  ")));
         return;
     }
     Who->ShowInteractionMessage(Message);
