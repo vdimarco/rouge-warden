@@ -761,3 +761,40 @@ Loop: missions, playability, controls, feel, UX, pacing and fun for In Full Swin
 ![A held swing on the next building](fullswing-r20/chain.png)
 
 ![A held sky rope over open water](fullswing-r20/water.png)
+
+### Round 21 — 2026-10-21 — rubric v1
+
+- What changed: The first easy web attaches to a building the hero can hang under, even past 16 body-heights. The rope is the real distance, so the swing starts on the sphere. A building the arc cannot clear is skipped. A sky rope stays at most 16 body-heights. Over open water the web stays in the sky.
+- Why it helped: The first web over the roofs was the sky, because a farther building was a short rope and the hero flew into the wall. Spider-Man 2 swings from the building. A 1280×800 play held E in the air. The first web attached to a building (id 952). The rope was 39.7 m and the distance was 38.3 m. The hero was at 70.4 m and did not hit the wall. Holding through the cue then caught a different building (id 955) 57 frames later. Over open water the web stayed in the sky.
+- Screenshots: `docs/gauntlet/fullswing-r21/building.png`.
+- Next target: performance stability (6), the lowest playability score. This machine has no real GPU to time, so that score is not the next implementation round. Sound design (7) was not listened to and is not the next implementation round either.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 5 | Held. Golden-hour sun and ink shadows. |
+| Color palette | 6 | Held. Yellow, red and sludge green still separate the HUD from the blocks. |
+| Detail density | 4 | Held. Open blocks more than a dressed borough. |
+| Texture and material quality | 3 | Held. Flat fills. |
+| Composition and camera | 4 | Held. The chase camera still sits behind the hero. This frame is the swing. |
+| Atmosphere | 5 | Held. The dusk skyline has a mood. The street under the swing does not. |
+| Character models | 3 | Held. Simple comic figures. |
+| Animation smoothness | 4 | Scored from still frames in software GL. Continuous motion was not watched. |
+| Particles and VFX | 5 | Held. No new effect. The rope is the one already in the swing. |
+| UI polish | 6 | Held. The same ink pill and the GO cue. |
+| Responsiveness and input latency | 8 | Held. The clog card still rewrites its metres every frame. |
+| Controls feel | 9 | The first web attached to a building, rope 39.7 m against a distance of 38.3 m, and the hero did not hit the wall. A held button then caught a different building. Over open water the web stayed in the sky. It is still one pendulum. |
+| Mission clarity | 8 | Held. The compass still names the district on the clog card. |
+| Pacing | 8 | Held. The sixth flush is still the pizza, between the balloon and the washer. Nine clogs are still the same pump. |
+| Fun factor | 8 | Held. A win still hops the hero. This round changes the first web, not the finish. |
+| Difficulty curve | 8 | Held. The eighth flush still counts from 36 s. An odd-job washer still has the minute. |
+| Feedback | 8 | Held. A chase that is pulling away still turns the card hot. |
+| Sound design | 7 | Held. Not listened to. |
+| Variety | 8 | Held. The jobs are unchanged. |
+| Performance stability | 6 | The 1280×800 play passed with no page errors. Frame time on a real GPU was not measured. |
+
+- Aesthetics raw: 45 / 10 dimensions, index 45
+- Playability raw: 78 / 10 dimensions, index 78
+- Total: 123 / 200
+- Delta vs last round: +1 (round 20 was 122). Controls feel 8 → 9. Every other score held.
+
+![The first web hangs from a building](fullswing-r21/building.png)
