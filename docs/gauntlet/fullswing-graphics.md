@@ -740,3 +740,40 @@ Playability was scored from a flat boot and the city render check, not a full pl
 
 Playability was scored from a flat boot and the city render check, not a full playthrough. OpenSpec CLI validation was not run; the `openspec` command is not installed.
 
+### Round 21 — 2026-10-21 — rubric v1
+
+- What changed: The chase score plate keeps its box, its ink border, and its magenta dots. A cream lip runs along the top of the plate and of each sticker, and a rose hem runs along the bottom, painted in the same paper. The coin gains a lit spot and a dark crescent. Nothing moves, so the lock arrow still sits below the row. None of the dimensional HUD breakdowns fit this sticker, so the edge is painted in the paper the dots already use.
+- Why it helped: The row was one flat field from top to bottom. The lip and the hem give the card an edge a still can see. At 1280×720 the box stayed top 12, bottom 57, left 212, right 1068.
+- Screenshots: before `docs/gauntlet/shots/r21-before-play.png` (crop `docs/gauntlet/shots/r21-before-play-top.png`), after `docs/gauntlet/shots/r21-after-play.png` (crop `docs/gauntlet/shots/r21-after-play-top.png`). The street, where the HUD is hidden: `docs/gauntlet/shots/r21-before-street.png`, `docs/gauntlet/shots/r21-after-street.png`.
+- Next target: Animation smoothness. Every aesthetics score is now 6. A wide chase still still reads as one idle pose, so the next pass has to make the stride and the swing obvious in that frame.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 6 | Unchanged. Shaded lower walls stay warm. The floors by the roof stay the cool band. |
+| Color palette | 6 | Unchanged. Cool shade stays teal and the step toward the sun stays rose. |
+| Detail density | 6 | Unchanged. The shop awnings from round 16. |
+| Texture and material quality | 6 | Unchanged. The masonry units from round 13. |
+| Composition and camera | 6 | Unchanged. On a fast rope the head still sits lower. The reported pitch stayed −0.349 and the distance stayed 4.5 m. |
+| Atmosphere | 6 | Unchanged. The far avenue still sits in the warm dust from round 15. |
+| Character models | 6 | Unchanged. The cream belt from round 17. Skinned triangles stayed at 12,468. |
+| Animation smoothness | 6 | Unchanged. The swing still trails at the bottom, and the run is still the captured loop. A wide chase frame still reads as a stand. |
+| Particles and VFX | 6 | Unchanged. The cream trail from round 19. |
+| UI polish | 6 | The score plate and each sticker show a cream lip and a rose hem. The row box did not move. |
+| Responsiveness and input latency | 6 | Unchanged. CSS only. No input timing was measured. |
+| Controls feel | 5 | Unchanged. |
+| Mission clarity | 4 | Unchanged. Not played. |
+| Pacing | 4 | Unchanged. |
+| Fun factor | 4 | Unchanged. Not played as a session. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 5 | Unchanged. |
+| Sound design | 4 | Unchanged. |
+| Variety | 4 | Unchanged. |
+| Performance stability | 6 | `qa/vr/render.mjs` passed, including flat play, the painted-sky checks, and the lit-sphere cel check. Street mean 73.2, saturation 0.57. |
+
+- Aesthetics raw: 60 / 10 dimensions, index 60
+- Playability raw: 46 / 10 dimensions, index 46
+- Total: 106 / 200
+- Delta vs last round: +1 (105 → 106). UI polish 5 → 6. Playability unchanged.
+
+Playability was scored from a flat boot and the city render check, not a full playthrough. OpenSpec CLI validation was not run; the `openspec` command is not installed.
+
