@@ -3,6 +3,7 @@
 #include "QuebecGTA.h" // Side jobs: QuebecJobs::IsJobActive for the race gate guard (JOBS).
 #include "QuebecCourtRules.h"
 #include "QuebecPondRules.h"
+#include "QuebecRescueRules.h"
 #include "QuebecShowRules.h"
 #include "QuebecSky.h"
 
@@ -12,6 +13,8 @@ static_assert(QuebecCourtRules::StepBanked == AQuebecCampaign::CourtBankedStep,
     "mission 4 banks in the session only; the campaign and the rules share one banked index");
 static_assert(QuebecShowRules::StepBanked == AQuebecCampaign::ShowBankedStep,
     "mission 5 banks in the session only; the campaign and the rules share one banked index");
+static_assert(QuebecRescueRules::Done == AQuebecCampaign::RescueDone,
+    "mission 6 banks in the session only; the campaign and the rules share one done mask");
 
 #include "Components/BoxComponent.h"
 #include "Components/CapsuleComponent.h"
@@ -385,6 +388,21 @@ void AQuebecCampaign::BuildEncounter()
     }
     ShowParts.Add(AddPart(TEXT("ShowSouvenir"),Sphere,ShowAt(QuebecShowRules::Stage,80.),FVector(48.,48.,48.),Berry));
     ShowCaptions.Add(AddCaption(TEXT("ShowSouvenirCaption"),ShowAt(QuebecShowRules::Stage,180.),TEXT("THE PAGE"),18.f));
+
+    // Mission 6 posts. Hidden until the show is banked. Order is terrace, pond, court.
+    const auto RescueAt = [](const QuebecRescueRules::FSpot& Spot, double Height)
+    {
+        return FVector(Spot.X, Spot.Y, Height);
+    };
+    const TCHAR* RescueLabels[] = {TEXT("TERRACE"), TEXT("POND"), TEXT("COURT")};
+    const TCHAR* RescueInk[] = {Cream, Gold, Lime};
+    for (int32 Group = 0; Group < QuebecRescueRules::GroupCount; ++Group)
+    {
+        RescueParts.Add(AddPart(*FString::Printf(TEXT("RescuePost%d"), Group), Cylinder,
+            RescueAt(QuebecRescueRules::Posts[Group], 80.), FVector(40., 40., 160.), RescueInk[Group]));
+        RescueCaptions.Add(AddCaption(*FString::Printf(TEXT("RescueCaption%d"), Group),
+            RescueAt(QuebecRescueRules::Posts[Group], 200.), RescueLabels[Group], 18.f));
+    }
 }
 
 void AQuebecCampaign::Tick(float DeltaSeconds)
@@ -725,6 +743,51 @@ bool AQuebecCampaign::HandleInteract(AQuebecController* Controller)
         }
         return false;
     }
+    if (IsRescueOpen())
+    {
+        auto StillIn = [](int32 Next) -> const TCHAR*
+        {
+            const bool bTerrace = QuebecRescueRules::GroupOpen(Next, QuebecRescueRules::GroupTerrace);
+            const bool bPond = QuebecRescueRules::GroupOpen(Next, QuebecRescueRules::GroupPond);
+            const bool bCourt = QuebecRescueRules::GroupOpen(Next, QuebecRescueRules::GroupCourt);
+            if (bTerrace && bPond) return TEXT("The terrace and the pond are still in the picture.");
+            if (bTerrace && bCourt) return TEXT("The terrace and the court are still in the picture.");
+            if (bPond && bCourt) return TEXT("The pond and the court are still in the picture.");
+            if (bTerrace) return TEXT("The terrace is still in the picture.");
+            if (bPond) return TEXT("The pond is still in the picture.");
+            if (bCourt) return TEXT("The court is still in the picture.");
+            return TEXT("");
+        };
+        for (int32 Group = 0; Group < QuebecRescueRules::GroupCount; ++Group)
+        {
+            const QuebecRescueRules::FSpot& Spot = QuebecRescueRules::Posts[Group];
+            if (!NearRescue(Controller, Spot.X, Spot.Y)) continue;
+            if (!QuebecRescueRules::GroupOpen(RescueMask, Group))
+            {
+                Controller->ShowInteractionMessage(TEXT("That group is already out."));
+                return true;
+            }
+            const int32 Next = QuebecRescueRules::Apply(RescueMask, Group);
+            const bool bFinished = Next >= RescueDone;
+            const TCHAR* Lead = Group == QuebecRescueRules::GroupTerrace
+                ? TEXT("The terrace guest sits up.")
+                : Group == QuebecRescueRules::GroupPond
+                    ? TEXT("The reversed clamp lets them off the postcard.")
+                    : TEXT("The return loop breaks. That group walks off the line.");
+            const FString Message = bFinished
+                ? FString(TEXT("White Cap: that's the list. Memphis: Okay. Now we get our park back."))
+                : FString(Lead) + TEXT(" ") + StillIn(Next);
+            if (bFinished)
+            {
+                PlungerPoint = FVector(Spot.X, Spot.Y, 130.);
+                PlungerPullTime = GetWorld()->GetTimeSeconds();
+            }
+            // The groups are session state. CompletedMissions stays 2 and the v1 slot is not rewritten.
+            AdvanceRescue(Next, Controller, *Message, bFinished);
+            return true;
+        }
+        return false;
+    }
     return false;
 }
 
@@ -862,6 +925,26 @@ bool AQuebecCampaign::NearShow(const AQuebecController* Controller, double X, do
     const FVector Position = Character->GetActorLocation();
     if (FMath::Abs(Position.Z) > 400.) return false;
     return FVector::Dist2D(Position, FVector(X, Y, 0.)) <= QuebecShowRules::Reach;
+}
+
+void AQuebecCampaign::AdvanceRescue(int32 Next, AQuebecController* Who, const TCHAR* Message, bool bFinished)
+{
+    if (Next == RescueMask) return;
+    RescueMask = Next;
+    if (Who && Message) Who->ShowInteractionMessage(Message);
+    for (TActorIterator<AQuebecController> It(GetWorld()); It; ++It)
+        It->PlayFeedback(bFinished ? EQuebecFeedbackCue::Complete : EQuebecFeedbackCue::Checkpoint);
+    UpdatePresentation();
+    ForceNetUpdate();
+}
+
+bool AQuebecCampaign::NearRescue(const AQuebecController* Controller, double X, double Y) const
+{
+    const AQuebecCharacter* Character = Controller ? Cast<AQuebecCharacter>(Controller->GetPawn()) : nullptr;
+    if (!Character) return false;
+    const FVector Position = Character->GetActorLocation();
+    if (FMath::Abs(Position.Z) > 400.) return false;
+    return FVector::Dist2D(Position, FVector(X, Y, 0.)) <= QuebecRescueRules::Reach;
 }
 
 void AQuebecCampaign::TickRace(float DeltaSeconds)
@@ -1043,7 +1126,14 @@ void AQuebecCampaign::RequestRetry(AQuebecController* Controller)
                 Controller->ShowInteractionMessage(TEXT("This cue restored. The stations you finished stay set."));
             return;
         }
-        Controller->ShowInteractionMessage(TEXT("The page is banked. T replays the race."));
+        if (IsRescueOpen())
+        {
+            const QuebecRescueRules::FSpot Spot = QuebecRescueRules::RecoverAt(RescueMask);
+            if (MoveToSafeCheckpoint(Controller, FVector(Spot.X, Spot.Y, 100.), FRotator(0., 90., 0.)))
+                Controller->ShowInteractionMessage(TEXT("This group restored. The groups you freed stay out."));
+            return;
+        }
+        Controller->ShowInteractionMessage(TEXT("The groups are out. T replays the race."));
         return;
     }
     if (Phase <= EQuebecCampaignPhase::ReleaseTable)
@@ -1113,7 +1203,12 @@ void AQuebecCampaign::RequestReplay(AQuebecController* Controller)
         Controller->ShowInteractionMessage(TEXT("The ovation is still open. T replays the race after the curtain."));
         return;
     }
-    // A race replay does not rewind PondStep, CourtStep or ShowStep. Banked scenes stay banked for this session.
+    if (IsRescueOpen())
+    {
+        Controller->ShowInteractionMessage(TEXT("People are still in the picture. T replays the race after the last group is out."));
+        return;
+    }
+    // A race replay does not rewind PondStep, CourtStep, ShowStep or RescueMask. Banked scenes stay banked for this session.
     RaceGateIndex = 0;
     RaceElapsed = 0.f;
     bRaceRetried = false;
@@ -1185,6 +1280,18 @@ FString AQuebecCampaign::GetInteractionPrompt(const AQuebecController* Controlle
             return TEXT("E: call the curtain");
         return FString();
     }
+    if (IsRescueOpen())
+    {
+        for (int32 Group = 0; Group < QuebecRescueRules::GroupCount; ++Group)
+        {
+            const QuebecRescueRules::FSpot& Spot = QuebecRescueRules::Posts[Group];
+            if (!NearRescue(Controller, Spot.X, Spot.Y)) continue;
+            return QuebecRescueRules::GroupOpen(RescueMask, Group)
+                ? TEXT("E: free this group")
+                : TEXT("That group is already out.");
+        }
+        return FString();
+    }
     if (Phase == EQuebecCampaignPhase::AimWorklight && CanReach(Controller,WorklightLocation,LightRadius))
         return IsAimingLight(Controller) ? TEXT("Mouse: aim / E: release worklight") : LightOperator ? TEXT("Friend aiming the worklight") : TEXT("E: aim worklight at gold seam");
     if (Phase == EQuebecCampaignPhase::PullClamp && CanReach(Controller,FirstClampLocation,ClampRadius))
@@ -1199,6 +1306,7 @@ FString AQuebecCampaign::GetMissionTitle() const
     if (IsPondOpen()) return TEXT("03 / STILL LIFE, MOVING TARGET");
     if (IsCourtOpen()) return TEXT("04 / MATCH POINTLESS");
     if (IsShowOpen()) return TEXT("05 / STANDING OVATION");
+    if (IsRescueOpen()) return TEXT("06 / NOBODY LEFT IN THE PICTURE");
     if (Phase == EQuebecCampaignPhase::Complete) return TEXT("THE PARK IS OPEN");
     return Phase <= EQuebecCampaignPhase::ReleaseTable ? TEXT("01 / A TABLE FOR ETERNITY") : TEXT("02 / NO SUCH THING AS A QUIET LAP");
 }
@@ -1241,7 +1349,20 @@ FString AQuebecCampaign::GetObjectiveText() const
         default: break;
         }
     }
-    if (Phase == EQuebecCampaignPhase::Complete) return TEXT("The page is banked / T: replay the race");
+    if (IsRescueOpen())
+    {
+        const bool bTerrace = QuebecRescueRules::GroupOpen(RescueMask, QuebecRescueRules::GroupTerrace);
+        const bool bPond = QuebecRescueRules::GroupOpen(RescueMask, QuebecRescueRules::GroupPond);
+        const bool bCourt = QuebecRescueRules::GroupOpen(RescueMask, QuebecRescueRules::GroupCourt);
+        if (bTerrace && bPond && bCourt) return TEXT("Free the terrace, the pond, or the court. Any order.");
+        if (bTerrace && bPond) return TEXT("Free the terrace or the pond.");
+        if (bTerrace && bCourt) return TEXT("Free the terrace or the court.");
+        if (bPond && bCourt) return TEXT("Free the pond or the court.");
+        if (bTerrace) return TEXT("Free the terrace.");
+        if (bPond) return TEXT("Free the pond.");
+        if (bCourt) return TEXT("Free the court.");
+    }
+    if (Phase == EQuebecCampaignPhase::Complete) return TEXT("The groups are out / T: replay the race");
     switch (Phase)
     {
     case EQuebecCampaignPhase::AimWorklight: return TEXT("Aim the worklight at the gold seam");
@@ -1293,8 +1414,17 @@ FString AQuebecCampaign::GetBriefingText() const
         default: break;
         }
     }
-    if (Phase == EQuebecCampaignPhase::Complete && PondStep >= PondBankedStep && CourtStep >= CourtBankedStep && ShowStep >= ShowBankedStep)
-        return TEXT("The ovation was a page turning. Four panels around the stage. WHITE CAP: That mark is on this one too.");
+    if (IsRescueOpen())
+    {
+        const int32 Open = (QuebecRescueRules::GroupOpen(RescueMask, QuebecRescueRules::GroupTerrace) ? 1 : 0)
+            + (QuebecRescueRules::GroupOpen(RescueMask, QuebecRescueRules::GroupPond) ? 1 : 0)
+            + (QuebecRescueRules::GroupOpen(RescueMask, QuebecRescueRules::GroupCourt) ? 1 : 0);
+        if (Open >= 3) return TEXT("WHITE CAP: The earlier rescues were real. The captured endings survived. Three groups are still in the pictures.");
+        if (Open == 2) return TEXT("WHITE CAP: Two groups are still in the pictures. The ones you freed stay out.");
+        return TEXT("WHITE CAP: One group left. MEMPHIS: Then we get our park back.");
+    }
+    if (Phase == EQuebecCampaignPhase::Complete && PondStep >= PondBankedStep && CourtStep >= CourtBankedStep && ShowStep >= ShowBankedStep && RescueMask >= RescueDone)
+        return TEXT("The groups are out. WHITE CAP: That's the list. MEMPHIS: Okay. Now we get our park back.");
     switch (Phase)
     {
     case EQuebecCampaignPhase::AimWorklight: return TEXT("CURATOR: A moment this lovely should never move. LIME JACKET: The chairs disagree. Strongly. Find the seam in that picnic press.");
@@ -1314,6 +1444,7 @@ FString AQuebecCampaign::GetStatusText() const
     if (IsPondOpen()) return TEXT("R recovers this step");
     if (IsCourtOpen()) return TEXT("R recovers this rally");
     if (IsShowOpen()) return TEXT("R recovers this cue");
+    if (IsRescueOpen()) return TEXT("R recovers this group");
     if (Phase == EQuebecCampaignPhase::AimWorklight) return FString::Printf(TEXT("Alignment %d%% / hold %d%%"),FMath::RoundToInt(LightAlignment*100.f),FMath::RoundToInt(LightHoldProgress*100.f));
     if (Phase == EQuebecCampaignPhase::CrossCable) return FString::Printf(TEXT("Sprint %s / jump %s / R: recover"),bSprintSeen?TEXT("banked"):TEXT("needed"),bJumpSeen?TEXT("banked"):TEXT("needed"));
     if (Phase == EQuebecCampaignPhase::PullClamp || Phase == EQuebecCampaignPhase::ReleaseTable) return bClampOpen ? TEXT("GREEN BEAT / pull now / R: recover") : TEXT("Press squeezing / wait for green / R: recover");
@@ -1343,6 +1474,11 @@ FVector AQuebecCampaign::GetObjectiveLocation() const
     if (IsShowOpen())
     {
         const QuebecShowRules::FSpot Spot = QuebecShowRules::Objective(ShowStep);
+        return FVector(Spot.X, Spot.Y, 100.);
+    }
+    if (IsRescueOpen())
+    {
+        const QuebecRescueRules::FSpot Spot = QuebecRescueRules::Objective(RescueMask);
         return FVector(Spot.X, Spot.Y, 100.);
     }
     switch (Phase)
@@ -1448,6 +1584,17 @@ void AQuebecCampaign::UpdatePresentation()
             if (ShowCaptions.IsValidIndex(Index)) ShowCaptions[Index]->SetVisibility(bShow);
         }
     }
+    if (RescueParts.Num() == QuebecRescueRules::GroupCount)
+    {
+        const bool bRescueWorld = Phase == EQuebecCampaignPhase::Complete && PondStep >= PondBankedStep
+            && CourtStep >= CourtBankedStep && ShowStep >= ShowBankedStep;
+        for (int32 Index = 0; Index < RescueParts.Num(); ++Index)
+        {
+            const bool bShow = bRescueWorld && QuebecRescueRules::PartVisible(Index);
+            RescueParts[Index]->SetVisibility(bShow);
+            if (RescueCaptions.IsValidIndex(Index)) RescueCaptions[Index]->SetVisibility(bShow);
+        }
+    }
     // Every sign faces the local camera; the shared objective itself remains authoritative.
     if (APlayerController* Local = GetWorld()->GetFirstPlayerController())
     {
@@ -1473,6 +1620,7 @@ void AQuebecCampaign::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutL
     DOREPLIFETIME(AQuebecCampaign,CourtStep);
     DOREPLIFETIME(AQuebecCampaign,CourtMisses);
     DOREPLIFETIME(AQuebecCampaign,ShowStep);
+    DOREPLIFETIME(AQuebecCampaign,RescueMask);
     DOREPLIFETIME(AQuebecCampaign,LightOperator);
     DOREPLIFETIME(AQuebecCampaign,LightYaw);
     DOREPLIFETIME(AQuebecCampaign,LightPitch);

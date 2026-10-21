@@ -308,3 +308,48 @@ Unreal is not available here, so the native diamond was not captured. The title 
 ![Play client at 1280, host offline](gta-missions/r6-play-1280.png)
 
 ![Menu on a 390-wide screen, Recover visible](gta-missions/r6-play-menu-390.png)
+
+### Round 7 — 2026-10-21 — rubric v1
+
+- What changed: After the show is banked, mission 6 Nobody Left in the Picture leads through three short pulls, in any order, on dry ground at the terrace, the north pond and the court. Freeing one group does not clear the others. The mask is session state. The v1 save still stores CompletedMissions 0–2. Side jobs and T wait until every group is out. R restores the current group and does not clear a freed bit. The terrace recover steps east, away from the water. The pond and the court recover step south.
+- Why it helped: Fun was the tied target, and the story still stopped while three groups were in the pictures. The any-order pulls are that chapter's joke without NPC escorts. The diamond names the first unfinished group, and any unfinished post still accepts E.
+- Screenshots: title `docs/gauntlet/gta-missions/r7-title-1280.png`, `r7-title-390.png`, `r7-title-320.png`. Play client, host offline, `r7-play-1280.png`. Menu with Recover `r7-play-menu-390.png`. The title loaded with no page errors. The raw play page still logs the missing `@epicgames-ps/lib-pixelstreamingfrontend-ue5.8` specifier; the shell and Recover still draw. No native rescue capture: Unreal is not in this container. `Scripts/test_rescue_rules.py` reports 226 assertions, 0 failures, on c++, g++ and clang++. Show, court, pond and job rule tests still pass. Syntax check `--both` passed for the campaign, the controller and the race-result test. OpenSpec CLI is not installed, so `openspec validate` did not run.
+- Next target: fun factor (4), still tied with controls, mission clarity, pacing, sound and performance. Responsiveness stays at 3 and stays out of scope. The three pulls were not played, so the feel score waits. The next round should keep going into mission 7 rather than touch the stream.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 3 | Unchanged. Sky and worklight only. |
+| Color palette | 5 | Unchanged. The rescue posts use the same cream, gold and lime. |
+| Detail density | 3 | Unchanged. The new posts are three comic cylinders. |
+| Texture and material quality | 3 | Unchanged. |
+| Composition and camera | 4 | Unchanged. The diamond is the one the story already used. |
+| Atmosphere | 4 | Unchanged. The group copy is in the card; the pulls were not played. |
+| Character models | 3 | Unchanged. |
+| Animation smoothness | 3 | Unchanged. A freed group is a bit, not a walk. |
+| Particles and VFX | 2 | Unchanged. No new effect. |
+| UI polish | 4 | The card names mission 6, and touch says Menu · Recover. French and English still share the screen. |
+| Responsiveness and input latency | 3 | Unchanged. Still a lagged stream. Out of scope for this loop. |
+| Controls feel | 4 | Unchanged. Each group is still E. There is no escort. |
+| Mission clarity | 4 | The card names the open groups and any order. The native card was not seen, and there is still no route line. |
+| Pacing | 4 | Unchanged. A sixth beat exists on paper between the show and the side jobs. Its length was not played. |
+| Fun factor | 4 | The any-order rescues and Memphis's line are written. They were not played, so the feel score stays. |
+| Difficulty curve | 5 | Unchanged. Three pulls in any order do not add a tighter window than the ink. |
+| Feedback | 6 | Unchanged. A group uses the checkpoint cue and the last group uses complete. No new tone. |
+| Sound design | 4 | Unchanged. The city still has two loops. Nobody is voiced. |
+| Variety | 7 | Six of eight story missions are now in the build, plus the four side jobs. The rescue was not played in Unreal. |
+| Performance stability | 4 | Unchanged. |
+
+- Aesthetics raw: 34 / 10 dimensions, index 34
+- Playability raw: 45 / 10 dimensions, index 45
+- Total: 79 / 200
+- Delta vs last round: +1 (round 6 was 78). Variety 6 → 7. Every other score held.
+
+![GTA title at 1280](gta-missions/r7-title-1280.png)
+
+![GTA title at 390](gta-missions/r7-title-390.png)
+
+![GTA title at 320](gta-missions/r7-title-320.png)
+
+![Play client at 1280, host offline](gta-missions/r7-play-1280.png)
+
+![Menu on a 390-wide screen, Recover visible](gta-missions/r7-play-menu-390.png)

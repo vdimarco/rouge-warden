@@ -64,14 +64,20 @@ public:
     int32 GetCompletedMissionCount() const { return CompletedMissions; }
     bool IsCampaignComplete() const { return Phase == EQuebecCampaignPhase::Complete; }
     // Banked indexes from the rules headers. Kept here so the save header stays free of those headers.
-    // A boundary-2 save offers mission 3 again each session. PondStep, CourtStep and ShowStep are not written to the slot.
+    // A boundary-2 save offers mission 3 again each session. PondStep, CourtStep, ShowStep and RescueMask are not written to the slot.
     static constexpr int32 PondBankedStep = 6;
     static constexpr int32 CourtBankedStep = 4;
     static constexpr int32 ShowBankedStep = 5;
+    static constexpr int32 RescueDone = 7;
     bool IsPondOpen() const { return Phase == EQuebecCampaignPhase::Complete && PondStep < PondBankedStep; }
     bool IsCourtOpen() const { return Phase == EQuebecCampaignPhase::Complete && PondStep >= PondBankedStep && CourtStep < CourtBankedStep; }
     bool IsShowOpen() const { return Phase == EQuebecCampaignPhase::Complete && PondStep >= PondBankedStep && CourtStep >= CourtBankedStep && ShowStep < ShowBankedStep; }
-    bool IsStoryBeatOpen() const { return IsPondOpen() || IsCourtOpen() || IsShowOpen(); }
+    bool IsRescueOpen() const
+    {
+        return Phase == EQuebecCampaignPhase::Complete && PondStep >= PondBankedStep && CourtStep >= CourtBankedStep
+            && ShowStep >= ShowBankedStep && RescueMask >= 0 && RescueMask < RescueDone;
+    }
+    bool IsStoryBeatOpen() const { return IsPondOpen() || IsCourtOpen() || IsShowOpen() || IsRescueOpen(); }
 
     UPROPERTY(VisibleAnywhere, ReplicatedUsing=UpdatePresentation) EQuebecCampaignPhase Phase = EQuebecCampaignPhase::AimWorklight;
     UPROPERTY(VisibleAnywhere, Replicated) int32 CompletedMissions = 0;
@@ -80,6 +86,8 @@ public:
     // Session-only. A spoiled bank increments it so the local rasp can hear the miss. Not written to the v1 slot.
     UPROPERTY(VisibleAnywhere, Replicated) int32 CourtMisses = 0;
     UPROPERTY(VisibleAnywhere, ReplicatedUsing=UpdatePresentation) int32 ShowStep = 0;
+    // Session-only bitfield. Bits 0–2 are the terrace, the pond and the court. 7 means every group is out. Not written to the v1 slot.
+    UPROPERTY(VisibleAnywhere, ReplicatedUsing=UpdatePresentation) int32 RescueMask = 0;
     UPROPERTY(VisibleAnywhere, Replicated) TObjectPtr<APlayerState> LightOperator;
     UPROPERTY(VisibleAnywhere, Replicated) float LightYaw = 0.f;
     UPROPERTY(VisibleAnywhere, Replicated) float LightPitch = 0.f;
@@ -141,6 +149,8 @@ private:
     UPROPERTY() TArray<TObjectPtr<UTextRenderComponent>> CourtCaptions;
     UPROPERTY() TArray<TObjectPtr<UStaticMeshComponent>> ShowParts;
     UPROPERTY() TArray<TObjectPtr<UTextRenderComponent>> ShowCaptions;
+    UPROPERTY() TArray<TObjectPtr<UStaticMeshComponent>> RescueParts;
+    UPROPERTY() TArray<TObjectPtr<UTextRenderComponent>> RescueCaptions;
     UPROPERTY() TObjectPtr<UStaticMesh> Cube;
     UPROPERTY() TObjectPtr<UStaticMesh> Sphere;
     UPROPERTY() TObjectPtr<UStaticMesh> Cylinder;
@@ -177,6 +187,8 @@ private:
     void TickShow();
     void AdvanceShow(int32 Next, AQuebecController* Who, const TCHAR* Message, bool bFinished);
     bool NearShow(const AQuebecController* Controller, double X, double Y) const;
+    void AdvanceRescue(int32 Next, AQuebecController* Who, const TCHAR* Message, bool bFinished);
+    bool NearRescue(const AQuebecController* Controller, double X, double Y) const;
     void ChangePhase(EQuebecCampaignPhase Next, bool bFeedback = true);
     void StopAiming();
     void SaveBoundary();
