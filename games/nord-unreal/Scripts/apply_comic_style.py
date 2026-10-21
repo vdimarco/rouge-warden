@@ -112,6 +112,26 @@ Color = lerp(Color, saturate(Color + Rim), PrintedCrew);
 
 Color = lerp(Color, float3(0.025, 0.015, 0.05), saturate(Ink) * (Sky ? 0.0 : 1.0));
 
+// Contact where an upright surface meets the street. Eight taps, the same idea as
+// Mittring's SSAO (SIGGRAPH 2007) cut down to the ground: a nearer sample is the
+// silhouette, which the ink already draws, so the tap has to sit near this depth.
+float GroundHere = smoothstep(0.82, 0.94, NormalC.z) * (Sky ? 0.0 : 1.0);
+float Contact = 0.0;
+const float2 ContactTap[8] = {
+    float2(6, 0), float2(-6, 0), float2(0, 6), float2(0, -6),
+    float2(12, 0), float2(-12, 0), float2(0, 12), float2(0, -12)
+};
+for (int Tap = 0; Tap < 8; Tap++)
+{
+    float2 Offset = ContactTap[Tap] * Texel;
+    float NeighborDepth = SceneTextureLookup(GeometryUV + Offset, 1, false).r;
+    float3 NeighborN = normalize(SceneTextureLookup(GeometryUV + Offset, 8, false).rgb + 1.0e-4);
+    float Upright = 1.0 - smoothstep(0.35, 0.55, NeighborN.z);
+    float Close = 1.0 - smoothstep(40.0, 70.0, abs(NeighborDepth - DepthC));
+    Contact += Upright * Close;
+}
+Color *= lerp(1.0, 0.38, saturate(Contact / 3.0) * GroundHere);
+
 // Aerial perspective: distant surfaces take the afternoon sky. Near the camera the street stays.
 // Hoffman and Preetham, "Rendering Outdoor Light Scattering in Real-Time" (2002). A horizontal
 // ray spends more of its path in the haze than a steep ray at the same depth. The clear-day fog
