@@ -23,3 +23,7 @@ The hemp mesh rope is not drawn for an easy web. In the 3D scene the web is its 
 The paper speed lines stay on the 2D canvas `#webLine`, unchanged: at peak speed above 12 m/s, 4 lines (3 just under the peak) of `#F3E9D6` at 25% opacity trail the body. That canvas stays hidden until those lines are drawn. A view that is not the perspective scene still strokes the web in CSS pixels and clips it to the screen edge.
 
 `window.__test.swing` is one reused object: `attached`, `anchor: {x,y,z,offscreen}`, `ropeLength`, `speed`.
+
+## Headset
+
+A headset session (`G.mode` is `vr` or `ar`, or the input mode is `xr`) does not add swing follow to the rig yaw. `playYaw` in `playturn.js` returns the stick turn alone and ignores a follow amount. `phoneFollow` does not run, and `turnToSwing` does not run. The stick snap and the smooth turn stay, including while a rope is out: that yaw is the player asking to turn. Each hand starts its rope through `handFiresRope`, which is that hand's trigger edge. Grip reels and does not start a rope. The other hand is a separate call. The anchor distances, the rope cap, the 15% and 10% adds, the 150 ms wait, the ink, and `window.__test.swing` are unchanged. Flat play still adds its follow.

@@ -15,7 +15,8 @@ A held swing in the chase view no longer waits for the player to pick a point. T
 - If the arc would put the feet under 1.5 body-heights, the rope shortens so it does not.
 - The web is an ink line from the hand toward the anchor, 2 px, sagging a little at the start and pulling straight as it goes taut, fading out over 150 ms. At the top of the swing, three or four thin paper lines trail the body.
 - `window.__test.swing` reports whether a web is out, the anchor, the rope length and the speed.
-- Version 1.24.2 (Quest APK code 33).
+- In a headset the view stays the headset pose. A stick snap or smooth turn still yaws the rig when the player asks, including during a swing. A swing starts from the trigger of that hand. The other hand's trigger and the grip do not start it.
+- Version 1.24.2 (Quest APK code 33). The anchor distances, the rope cap, the speed adds, and the reswing wait are unchanged.
 
 ## Out of scope
 

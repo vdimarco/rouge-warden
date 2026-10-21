@@ -44,3 +44,22 @@ When the scene is 3D, the web SHALL be a line in world space from the hand towar
 #### Scenario: The line sags when the swing starts
 - **WHEN** an easy web has just attached in the 3D scene and the rope is not yet taut
 - **THEN** the middle of the part on screen sits about 16 px off the straight chord through that part, on a 1280-wide view
+
+### Requirement: A headset does not turn the view to follow a swing
+When a headset session is in play, the game SHALL NOT rotate the view to follow a swing, the velocity, or an anchor. The view SHALL stay the headset pose. A stick snap or smooth turn MAY still yaw the rig, including while a rope is out. A swing SHALL start from the trigger of the hand that fires it. The other hand's trigger SHALL NOT start that rope, and the grip SHALL NOT start it. The anchor distances, the rope cap, the speed adds, the reswing wait, the ink line, and `window.__test.swing` stay as specified above.
+
+#### Scenario: A swing with the stick centered
+- **WHEN** a headset player is swinging and the turn stick is centered
+- **THEN** the game adds no yaw this frame, even though the body has velocity and a follow amount is available
+
+#### Scenario: The player snaps during a swing
+- **WHEN** a headset player deflects the turn stick while a rope is out
+- **THEN** the yaw added this frame is the stick turn alone
+
+#### Scenario: The swinging hand's trigger
+- **WHEN** the player pulls the trigger on one hand in a headset
+- **THEN** that hand's rope may start, and the other hand's trigger and either grip do not start it
+
+#### Scenario: Flat play still follows
+- **WHEN** the chase view is in play and easy swing is on
+- **THEN** the phone's follow yaw is still added to the player's own turn

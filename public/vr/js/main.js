@@ -28,6 +28,7 @@ import { createActionView } from "./actionview.js";
 import { createActionHud, placeGoal } from "./actionhud.js";
 import { createBloom } from "./bloom.js";
 import { createTarget, bidOf, project, releaseWindow, kick } from "./target.js";
+import { playYaw, handFiresRope } from "./playturn.js";
 
 const $ = (s) => document.querySelector(s);
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
@@ -1502,8 +1503,11 @@ function tick(dt, frame, time) {
   // 12. turning, the rig, world poses again
   let yawDelta = 0;
   if (G.state === "play") {
-    yawDelta = inp.mode === "desktop" ? inp.turn : comfort.turn(inp, dt);
-    if (inp.easySwing) yawDelta += phoneFollow(dt, inp);
+    // A headset never yaws to follow a swing. The stick snap or smooth turn still does: that is the player.
+    const xrPlay = isXR() || inp.mode === "xr";
+    const turn = inp.mode === "desktop" && !xrPlay ? inp.turn : comfort.turn(inp, dt);
+    const follow = !xrPlay && inp.easySwing ? phoneFollow(dt, inp) : 0;
+    yawDelta = playYaw({ xr: xrPlay, turn, follow });
     G.rigYaw += yawDelta;
     syncRig();
     toWorld(inp);
@@ -1670,13 +1674,13 @@ function aimAndFire(dt, inp) {
     const blocked = ui.blocking(i), cooling = !!(a && a.easy && swingCool[i] > 0);
     const ok = !!a && a.valid && !blocked && !cooling && !(inp.easySwing && a.same);
     if (inp.easySwing && i === 1) D.mobile.target(ok, false);
-    if (h.triggerDown && !blocked) {
+    if (handFiresRope(h) && !blocked) {
       if (ok) {
         const bid = a.bid;
         shoot(i, h, a);
         // The other hand fires in this same frame (two swing inputs went down together). The picker learns of this rope only next
         // frame, so ask it again for a building that does not hold it. pick() rewrites the result in place: after shoot, never in it.
-        if (pk && i === 0 && bid >= 0 && inp.hands[1].triggerDown && P.ropes[1].state === "idle") { PICK_OPTS.avoidBid = bid; picker.pick(TCTX, PICK_OPTS); }
+        if (pk && i === 0 && bid >= 0 && handFiresRope(inp.hands[1]) && P.ropes[1].state === "idle") { PICK_OPTS.avoidBid = bid; picker.pick(TCTX, PICK_OPTS); }
       } else { fireWait[i] = SWING.fireHold; realWait[i] = !!h.swingDown; }
     } else if (fireWait[i] > 0) {
       if (blocked) fireWait[i] = 0;
@@ -1767,7 +1771,7 @@ function turnToSwing(a) {
 function shoot(i, h, a) {
   const phone = G.input.easySwing, real = !phone && !!(h.swingDown || realWait[i]);
   realWait[i] = false;
-  if (flatOn && pickerOn && P.wall && flatcam.opacity > 0.5 && (phone || real)) turnToSwing(a); // before fire: it lets go of the wall
+  if (flatOn && !isXR() && pickerOn && P.wall && flatcam.opacity > 0.5 && (phone || real)) turnToSwing(a); // before fire: it lets go of the wall. A headset does not turn the view.
   firePerch[i] = heroFight().perch; // a rope fired from a roof or a wall: the takedown is judged from here, not where the cup lands
   fire(P, i, h.aimPos, a);
   if (a.easy) armEasy(P.ropes[i], a.easyH);
