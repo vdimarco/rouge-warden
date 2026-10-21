@@ -82,6 +82,10 @@ bool FQuebecRaceResultTest::RunTest(const FString& Parameters)
     TestTrue(TEXT("A finished walk opens the crossing instead of the lap card"),
         Race->GetStatusText().Contains(TEXT("R recovers this dark")));
     Race->ShadeStep = AQuebecCampaign::ShadeBankedStep;
+    Race->GrabStep = 0;
+    TestTrue(TEXT("A dark lawn opens the window instead of the lap card"),
+        Race->GetStatusText().Contains(TEXT("R recovers this window")));
+    Race->GrabStep = AQuebecCampaign::GrabBankedStep;
     const FString Status = Race->GetStatusText();
     TestTrue(TEXT("Result presents recovered time and clean session best"),
         Status.Contains(TEXT("10.0s")) && Status.Contains(TEXT("recovered")) && Status.Contains(TEXT("60.0s")));

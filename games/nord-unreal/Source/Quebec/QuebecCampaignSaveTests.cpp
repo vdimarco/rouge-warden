@@ -134,8 +134,38 @@ bool FQuebecCampaignSaveRoundTripTest::RunTest(const FString& Parameters)
     TestEqual(TEXT("Crossing schema survives serialization"),DarkReload->Version,5);
     TestEqual(TEXT("Crossing step survives serialization"),DarkReload->ShadeStep,1);
     TestEqual(TEXT("The walk stays banked beside the crossing"),DarkReload->EscortStep,2);
+    TestEqual(TEXT("A version-5 tail starts the grab over"),DarkReload->GrabStep,0);
+    Dark->GrabStep = 1;
+    TestFalse(TEXT("A version-5 slot carrying the grab is rejected"),Dark->IsSupported());
     Dark->EscortStep = 0;
+    Dark->GrabStep = 0;
     TestFalse(TEXT("A crossing before the walk is banked is rejected"),Dark->IsSupported());
+
+    UQuebecCampaignSaveGame* Held = NewObject<UQuebecCampaignSaveGame>();
+    Held->Version = 6;
+    Held->CompletedMissions = 2;
+    Held->PondStep = 6;
+    Held->CourtStep = 4;
+    Held->ShowStep = 5;
+    Held->RescueMask = 7;
+    Held->ConvoyStep = 4;
+    Held->BlankStep = 4;
+    Held->TourStep = 3;
+    Held->HomeStep = 3;
+    Held->EscortStep = 2;
+    Held->ShadeStep = 2;
+    Held->GrabStep = 1;
+    TestTrue(TEXT("Grab tail is accepted before serialization"),Held->IsSupported());
+    TArray<uint8> HeldBytes;
+    if (!TestTrue(TEXT("Grab tail serializes using engine save format"),UGameplayStatics::SaveGameToMemory(Held,HeldBytes))) return false;
+    const UQuebecCampaignSaveGame* HeldReload = Cast<UQuebecCampaignSaveGame>(UGameplayStatics::LoadGameFromMemory(HeldBytes));
+    if (!TestNotNull(TEXT("Grab tail reloads using engine save format"),HeldReload)) return false;
+    TestTrue(TEXT("Reloaded grab tail remains supported"),HeldReload->IsSupported());
+    TestEqual(TEXT("Grab schema survives serialization"),HeldReload->Version,6);
+    TestEqual(TEXT("Grab step survives serialization"),HeldReload->GrabStep,1);
+    TestEqual(TEXT("The crossing stays banked beside the grab"),HeldReload->ShadeStep,2);
+    Held->ShadeStep = 0;
+    TestFalse(TEXT("A grab before the crossing is banked is rejected"),Held->IsSupported());
 
     UQuebecCampaignSaveGame* Skip = NewObject<UQuebecCampaignSaveGame>();
     Skip->Version = 3;

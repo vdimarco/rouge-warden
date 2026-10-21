@@ -49,7 +49,7 @@ namespace
 
 int main()
 {
-    Expect(Legacy == 1 && Rejected == 2 && Story == 3 && Escort == 4 && Current == 5, "the slot versions drifted");
+    Expect(Legacy == 1 && Rejected == 2 && Story == 3 && Escort == 4 && Shade == 5 && Current == 6, "the slot versions drifted");
     Expect(Current != Rejected, "the writer would plant the unsupported fixture");
     Expect(PondBanked == QuebecPondRules::StepBanked, "the pond bank left the save");
     Expect(CourtBanked == QuebecCourtRules::StepBanked, "the court bank left the save");
@@ -67,10 +67,12 @@ int main()
     {
         Expect(Accept(Legacy, Completed, None), "a legacy race boundary was rejected");
         Expect(Accept(Story, Completed, None), "a version-3 race boundary was rejected");
+        Expect(Accept(Escort, Completed, None), "a version-4 race boundary was rejected");
+        Expect(Accept(Shade, Completed, None), "a version-5 race boundary was rejected");
         Expect(Accept(Current, Completed, None), "a current race boundary with no story was rejected");
         Expect(!Accept(Rejected, Completed, None), "version 2 was accepted");
         Expect(!Accept(0, Completed, None), "version 0 was accepted");
-        Expect(!Accept(6, Completed, None), "a later schema was accepted");
+        Expect(!Accept(7, Completed, None), "a later schema was accepted");
     }
     Expect(!Accept(Legacy, -1, None), "a missing mission count was accepted");
     Expect(!Accept(Legacy, 3, None), "completed missions 3 were accepted on a legacy slot");
@@ -145,6 +147,21 @@ int main()
     Lit.Shade = 1;
     Lit.Escort = 0;
     Expect(!Accept(Current, 2, Lit), "the crossing started before the walk was banked");
+    FSteps Held = Banked();
+    Held.Escort = EscortBanked;
+    Held.Shade = ShadeBanked;
+    Held.Grab = 1;
+    Expect(Accept(Current, 2, Held), "a grab in progress was rejected");
+    Expect(!Accept(Shade, 2, Held), "a version-5 slot carried the grab");
+    const FSteps FromShade = Applied(Shade, Held);
+    Expect(FromShade.Shade == ShadeBanked && FromShade.Grab == 0, "a version-5 slot copied the grab");
+    Held.Grab = GrabBanked;
+    Expect(Accept(Current, 2, Held), "a finished grab was rejected");
+    Held.Grab = GrabBanked + 1;
+    Expect(!Accept(Current, 2, Held), "a grab past the bank was accepted");
+    Held.Grab = 1;
+    Held.Shade = 0;
+    Expect(!Accept(Current, 2, Held), "the grab started before the crossing was banked");
 
     std::printf("%d assertions, %d failures\n", Assertions, Failures);
     return Failures == 0 ? 0 : 1;
