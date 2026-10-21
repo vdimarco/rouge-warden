@@ -1433,3 +1433,48 @@ Unreal is not available here, so the native diamond was not captured. The title 
 ![Play client at 1280, host offline](gta-missions/r31-play-1280.png)
 
 ![Menu on a 390-wide screen, Recover visible](gta-missions/r31-play-menu-390.png)
+
+### Round 32 — 2026-10-21 — rubric v1
+
+- What changed: On the last page, a second post stands southeast of the blank page. E there sells the page for 200, ends the beat, and does not bank the chain. E on the blank page still banks the chain. 200 is less than the page's base of 780, so a chain at zero still pays more for leaving it blank. A sale on a gate does not end the page. A second sale pays nothing. The card still marks the blank page. The save still stores only Version and CompletedMissions.
+- Why it helped: The curator already wanted the moment kept, and the only ending was the pull Memphis asked for.
+- Screenshots: title `docs/gauntlet/gta-missions/r32-title-1280.png`, `r32-title-390.png`, `r32-title-320.png`. Play client, host offline, `r32-play-1280.png`. Menu with Recover `r32-play-menu-390.png`. The title loaded with no page errors. The raw play page still logs the missing `@epicgames-ps/lib-pixelstreamingfrontend-ue5.8` specifier; the shell and Recover still draw. The sale was not taken in Unreal. `Scripts/test_blank_rules.py` reports 152 assertions, 0 failures, on c++, g++, and clang++. Syntax check `--both` passed for `QuebecCampaign.cpp`. OpenSpec CLI is not installed, so `openspec validate` did not run.
+- Next target: controls feel, tied at 7 with mission clarity and sound. Clarity waits on the native card. The story beats now have a hold, a wrong wagon, and a sale, so the next round should be a control or a sound the tests can prove, not another fork on a page. Performance stays at 4 and is not measurable here. Responsiveness stays at 3 and stays out of scope. The sale is proven by the rules. It was not taken, so the difficulty score waits at 9.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 3 | Unchanged. |
+| Color palette | 5 | Unchanged. |
+| Detail density | 3 | Unchanged. |
+| Texture and material quality | 3 | Unchanged. |
+| Composition and camera | 4 | Unchanged. |
+| Atmosphere | 4 | Unchanged. |
+| Character models | 3 | Unchanged. |
+| Animation smoothness | 3 | Unchanged. |
+| Particles and VFX | 2 | Unchanged. |
+| UI polish | 4 | Unchanged. The native card was not seen, and French and English still share the screen. |
+| Responsiveness and input latency | 3 | Unchanged. Still a lagged stream. Out of scope for this loop. |
+| Controls feel | 7 | Unchanged. The driving pedal still has three steps. |
+| Mission clarity | 7 | Unchanged. The last page names the sale and the blank ending. The native card was not seen. |
+| Pacing | 8 | Unchanged. The postcard is still a four-second hold. |
+| Fun factor | 9 | Unchanged. Chez Lise still sells a kit, a vest, or one star. |
+| Difficulty curve | 9 | Selling the last page ends it for 200 and does not bank the chain. Leaving it blank still banks. 200 is less than the page's base of 780. It was not taken. |
+| Feedback | 8 | Unchanged. A blank page still names its rank. The sale does not play that sting. |
+| Sound design | 7 | Unchanged. A bank still plays a pitch for its rank. The sale uses no new cue. |
+| Variety | 9 | The sale is a second post on the last page the park already has. Still one district, so this is not the reference's spread. |
+| Performance stability | 4 | Unchanged. Not measurable in this container. |
+
+- Aesthetics raw: 34 / 10 dimensions, index 34
+- Playability raw: 71 / 10 dimensions, index 71
+- Total: 105 / 200
+- Delta vs last round: +1 (round 31 was 104). Difficulty curve 8 → 9. Every other score held.
+
+![GTA title at 1280](gta-missions/r32-title-1280.png)
+
+![GTA title at 390](gta-missions/r32-title-390.png)
+
+![GTA title at 320](gta-missions/r32-title-320.png)
+
+![Play client at 1280, host offline](gta-missions/r32-play-1280.png)
+
+![Menu on a 390-wide screen, Recover visible](gta-missions/r32-play-menu-390.png)
