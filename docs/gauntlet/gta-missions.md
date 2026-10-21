@@ -668,3 +668,48 @@ Unreal is not available here, so the native diamond was not captured. The title 
 ![Play client at 1280, host offline](gta-missions/r14-play-1280.png)
 
 ![Menu on a 390-wide screen, Recover visible](gta-missions/r14-play-menu-390.png)
+
+### Round 15 — 2026-10-21 — rubric v1
+
+- What changed: While a story beat is open and the race is not running, a third bed plays: an original four-bar loop at 84, about 11.4 seconds, stereo, and it restarts on the downbeat. The race still uses the race loop. With no beat and no race, the neighborhood loop is unchanged. The two cooked loops and their selection log are untouched.
+- Why it helped: Sound was a 4 because the city had two loops and nobody was voiced. Missions 3 through 8 were still the neighborhood bed. This is a third bed for those beats. Nobody is voiced, so the score moves one step.
+- Screenshots: title `docs/gauntlet/gta-missions/r15-title-1280.png`, `r15-title-390.png`, `r15-title-320.png`. Play client, host offline, `r15-play-1280.png`. Menu with Recover `r15-play-menu-390.png`. The title loaded with no page errors. The raw play page still logs the missing `@epicgames-ps/lib-pixelstreamingfrontend-ue5.8` specifier; the shell and Recover still draw. The native bed was not heard: Unreal is not in this container. `Scripts/test_story_bed.py` reports 13 assertions, 0 failures, on c++, g++ and clang++. Syntax check `--both` passed for the playback wiring. OpenSpec CLI is not installed, so `openspec validate` did not run.
+- Next target: fun factor (4), still tied with performance. Responsiveness stays at 3 and stays out of scope. The third bed is proven by the rules. It was not heard in Unreal, and nobody is voiced, so the sound score waits at 5. The next round should keep to a 4 the tests can prove, and should not add a chapter or touch the stream.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 3 | Unchanged. |
+| Color palette | 5 | Unchanged. |
+| Detail density | 3 | Unchanged. |
+| Texture and material quality | 3 | Unchanged. |
+| Composition and camera | 4 | Unchanged. |
+| Atmosphere | 4 | Unchanged. |
+| Character models | 3 | Unchanged. |
+| Animation smoothness | 3 | Unchanged. |
+| Particles and VFX | 2 | Unchanged. |
+| UI polish | 4 | Unchanged. The native card was not seen, and French and English still share the screen. |
+| Responsiveness and input latency | 3 | Unchanged. Still a lagged stream. Out of scope for this loop. |
+| Controls feel | 5 | Unchanged. Arrow keys still walk and drive on the same axes as WASD. |
+| Mission clarity | 7 | Unchanged. |
+| Pacing | 5 | Unchanged. The card still states the stop and the walk. |
+| Fun factor | 4 | The bed is a loop the rules prove. It was not heard, so the feel score stays. |
+| Difficulty curve | 6 | Unchanged. |
+| Feedback | 6 | Unchanged. |
+| Sound design | 5 | A story beat plays an original third bed, and the rules prove the wrap, the energy, the stereo image, and that a race still wins. The two cooked loops remain. Nobody is voiced. |
+| Variety | 9 | Unchanged. Eight of eight story missions, plus the four side jobs. |
+| Performance stability | 4 | Unchanged. |
+
+- Aesthetics raw: 34 / 10 dimensions, index 34
+- Playability raw: 54 / 10 dimensions, index 54
+- Total: 88 / 200
+- Delta vs last round: +1 (round 14 was 87). Sound design 4 → 5. Every other score held.
+
+![GTA title at 1280](gta-missions/r15-title-1280.png)
+
+![GTA title at 390](gta-missions/r15-title-390.png)
+
+![GTA title at 320](gta-missions/r15-title-320.png)
+
+![Play client at 1280, host offline](gta-missions/r15-play-1280.png)
+
+![Menu on a 390-wide screen, Recover visible](gta-missions/r15-play-menu-390.png)

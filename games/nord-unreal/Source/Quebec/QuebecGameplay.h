@@ -525,6 +525,12 @@ private:
     UPROPERTY() TObjectPtr<USoundBase> NeighborhoodMusic;
     UPROPERTY() TObjectPtr<USoundBase> RaceMusic;
     void UpdateMusic(bool bRacing);
+    void TickStoryBed(bool bPlay);
+    UPROPERTY() TObjectPtr<class UAudioComponent> StoryBedAudio;
+    UPROPERTY() TObjectPtr<class USoundWaveProcedural> StoryBedWave;
+    TArray<int16> StoryBedPcm;
+    double StoryBedOrigin = -1.;
+    double StoryBedQueued = 0.;
     void TickPondBlink();
     void PlayPondTick();
     UPROPERTY() TObjectPtr<class UAudioComponent> PondTickAudio;

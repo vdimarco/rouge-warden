@@ -5,6 +5,7 @@
 #include "QuebecRouteLine.h"
 #include "QuebecCourtRules.h"
 #include "QuebecCourtTone.h"
+#include "QuebecStoryBed.h"
 #include "QuebecPondRules.h"
 #include "QuebecPondTone.h"
 #include "QuebecShowRules.h"
@@ -1653,6 +1654,10 @@ AQuebecController::AQuebecController()
     CourtRaspAudio->bAutoActivate = false;
     CourtRaspAudio->bAllowSpatialization = false;
     CourtRaspAudio->VolumeMultiplier = .5f;
+    StoryBedAudio = CreateDefaultSubobject<UAudioComponent>(TEXT("StoryBedAudio"));
+    StoryBedAudio->bAutoActivate = false;
+    StoryBedAudio->bAllowSpatialization = false;
+    StoryBedAudio->VolumeMultiplier = .05f;
 }
 
 void AQuebecController::PlayFeedback(EQuebecFeedbackCue Cue)
@@ -1771,6 +1776,58 @@ void AQuebecController::ServerChooseCrew_Implementation(int32 Style)
 
 void AQuebecController::ToggleComicStyle() { bComicStyle = !bComicStyle; }
 
+void AQuebecController::TickStoryBed(bool bPlay)
+{
+    if (!StoryBedAudio || !GetWorld()) return;
+    if (!bPlay)
+    {
+        if (StoryBedOrigin >= 0.)
+        {
+            StoryBedAudio->Stop();
+            StoryBedOrigin = -1.;
+            StoryBedQueued = 0.;
+            if (MusicAudio && MusicAudio->Sound && GetWorld()->AllowAudioPlayback()) MusicAudio->FadeIn(.35f);
+        }
+        return;
+    }
+    if (!GetWorld()->AllowAudioPlayback()) return;
+    if (MusicAudio && MusicAudio->IsPlaying()) MusicAudio->Stop();
+    if (!StoryBedWave)
+    {
+        StoryBedWave = NewObject<USoundWaveProcedural>(this);
+        StoryBedWave->SetSampleRate(static_cast<uint32>(QuebecStoryBed::SampleRate));
+        StoryBedWave->NumChannels = 2;
+        StoryBedWave->Duration = static_cast<float>(QuebecStoryBed::LoopSeconds);
+        StoryBedAudio->SetSound(StoryBedWave);
+    }
+    if (StoryBedPcm.Num() == 0)
+    {
+        StoryBedPcm.SetNumUninitialized(QuebecStoryBed::Frames * 2);
+        for (int32 Frame = 0; Frame < QuebecStoryBed::Frames; ++Frame)
+        {
+            const QuebecStoryBed::FStereo Sample = QuebecStoryBed::SampleAt(Frame);
+            StoryBedPcm[Frame * 2] = static_cast<int16>(FMath::Clamp(static_cast<float>(Sample.L), -1.f, 1.f) * 32767.f);
+            StoryBedPcm[Frame * 2 + 1] = static_cast<int16>(FMath::Clamp(static_cast<float>(Sample.R), -1.f, 1.f) * 32767.f);
+        }
+    }
+    const double Now = static_cast<double>(GetWorld()->GetTimeSeconds());
+    const double Loop = QuebecStoryBed::LoopSeconds;
+    if (StoryBedOrigin < 0. || !StoryBedAudio->IsPlaying())
+    {
+        StoryBedWave->ResetAudio();
+        StoryBedWave->QueueAudio(reinterpret_cast<const uint8*>(StoryBedPcm.GetData()), StoryBedPcm.Num() * static_cast<int32>(sizeof(int16)));
+        StoryBedAudio->Play();
+        StoryBedOrigin = Now;
+        StoryBedQueued = Loop;
+        return;
+    }
+    if (Now - StoryBedOrigin > StoryBedQueued - 0.5)
+    {
+        StoryBedWave->QueueAudio(reinterpret_cast<const uint8*>(StoryBedPcm.GetData()), StoryBedPcm.Num() * static_cast<int32>(sizeof(int16)));
+        StoryBedQueued += Loop;
+    }
+}
+
 void AQuebecController::PlayPondTick()
 {
     if (!PondTickAudio || !GetWorld() || !GetWorld()->AllowAudioPlayback()) return;
@@ -1885,7 +1942,14 @@ void AQuebecController::PlayerTick(float DeltaTime)
     }
     Super::PlayerTick(DeltaTime);
     if (!IsLocalController()) return;
-    UpdateMusic(Campaign && Campaign->Phase == EQuebecCampaignPhase::RaceRunning);
+    const bool bRacing = Campaign && Campaign->Phase == EQuebecCampaignPhase::RaceRunning;
+    const bool bStory = Campaign && Campaign->IsStoryBeatOpen();
+    if (QuebecStoryBed::BedFor(bRacing, bStory) == QuebecStoryBed::EBed::Story) TickStoryBed(true);
+    else
+    {
+        TickStoryBed(false);
+        UpdateMusic(bRacing);
+    }
     TickPondBlink();
     TickShowPage();
     TickCourtFeel();
