@@ -1751,6 +1751,71 @@ FVector AQuebecCampaign::GetObjectiveLocation() const
     }
 }
 
+bool AQuebecCampaign::GetNextObjectiveLocation(FVector& Out) const
+{
+    const auto At = [](double X, double Y) { return FVector(X, Y, 100.); };
+    if (IsPondOpen())
+    {
+        if (PondStep + 1 >= PondBankedStep) return false;
+        const QuebecPondRules::FSpot Spot = QuebecPondRules::Objective(PondStep + 1);
+        Out = At(Spot.X, Spot.Y);
+        return true;
+    }
+    if (IsCourtOpen())
+    {
+        if (CourtStep + 1 >= CourtBankedStep) return false;
+        const QuebecCourtRules::FSpot Spot = QuebecCourtRules::Objective(CourtStep + 1);
+        Out = At(Spot.X, Spot.Y);
+        return true;
+    }
+    if (IsShowOpen())
+    {
+        if (ShowStep + 1 >= ShowBankedStep) return false;
+        const QuebecShowRules::FSpot Spot = QuebecShowRules::Objective(ShowStep + 1);
+        Out = At(Spot.X, Spot.Y);
+        return true;
+    }
+    if (IsRescueOpen()) return false;
+    if (IsConvoyOpen())
+    {
+        if (ConvoyStep + 1 >= ConvoyBankedStep) return false;
+        const QuebecConvoyRules::FSpot Spot = QuebecConvoyRules::Objective(ConvoyStep + 1);
+        Out = At(Spot.X, Spot.Y);
+        return true;
+    }
+    if (IsBlankOpen())
+    {
+        if (BlankStep + 1 >= BlankBankedStep) return false;
+        const QuebecBlankRules::FSpot Spot = QuebecBlankRules::Objective(BlankStep + 1);
+        Out = At(Spot.X, Spot.Y);
+        return true;
+    }
+    if (Phase == EQuebecCampaignPhase::Complete) return false;
+    switch (Phase)
+    {
+    case EQuebecCampaignPhase::AimWorklight: Out = JumpGateLocation; return true;
+    case EQuebecCampaignPhase::CrossCable: Out = FirstClampLocation; return true;
+    case EQuebecCampaignPhase::PullClamp: Out = CarLightLocation; return true;
+    case EQuebecCampaignPhase::ParkCarLight: Out = FinalClampLocation; return true;
+    case EQuebecCampaignPhase::ReleaseTable:
+        if (RaceGates.Num() == 0) return false;
+        Out = RaceGates[0];
+        return true;
+    case EQuebecCampaignPhase::RaceReady:
+        if (RaceGates.Num() < 2) return false;
+        Out = RaceGates[1];
+        return true;
+    case EQuebecCampaignPhase::RaceRunning:
+    {
+        const int32 Index = FMath::Clamp(RaceGateIndex, 0, FMath::Max(RaceGates.Num() - 1, 0)) + 1;
+        if (!RaceGates.IsValidIndex(Index)) return false;
+        Out = RaceGates[Index];
+        return true;
+    }
+    default: return false;
+    }
+}
+
 void AQuebecCampaign::UpdatePresentation()
 {
     if (!bBuilt || QuebecDistrict::IsToronto(GetWorld())) return;

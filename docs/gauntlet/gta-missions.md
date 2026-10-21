@@ -443,3 +443,48 @@ Unreal is not available here, so the native diamond was not captured. The title 
 ![Play client at 1280, host offline](gta-missions/r9-play-1280.png)
 
 ![Menu on a 390-wide screen, Recover visible](gta-missions/r9-play-menu-390.png)
+
+### Round 10 — 2026-10-21 — rubric v1
+
+- What changed: While a diamond is showing, the mission card names the turn (ahead, left, right, behind, or here) and draws a gold needle. The radar draws a gold stroke from the player to that diamond, inset past the arrow and short of the diamond. A linear beat also draws a fainter stroke toward the next stop. A rescue group and a side-job guide do not. When the world diamond is outside the safe view, a gold chevron sits on the inset edge and points at the stop. A stop behind the camera leaves through the bottom of the frame.
+- Why it helped: Fun was the tied target. Beats played as a name, a distance, and a diamond. The needle says which way to turn. The stroke is the way to the stop. The chevron keeps that way when the diamond leaves the frame.
+- Screenshots: title `docs/gauntlet/gta-missions/r10-title-1280.png`, `r10-title-390.png`, `r10-title-320.png`. Play client, host offline, `r10-play-1280.png`. Menu with Recover `r10-play-menu-390.png`. The title loaded with no page errors. The raw play page still logs the missing `@epicgames-ps/lib-pixelstreamingfrontend-ue5.8` specifier; the shell and Recover still draw. No native route line: Unreal is not in this container. `Scripts/test_route_line.py` reports 34 assertions, 0 failures, on c++, g++ and clang++. Syntax check `--both` passed for the campaign and the HUD. OpenSpec CLI is not installed, so `openspec validate` did not run.
+- Next target: fun factor (4), still tied with controls, pacing, sound and performance. Responsiveness stays at 3 and stays out of scope. The card now names the turn, and the rules prove ahead, left, right, behind, here, the radar insets and the edge chevron. The native HUD was not seen, so the feel score waits. The next round should keep changing how a beat plays, not add a chapter and not touch the stream.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 3 | Unchanged. |
+| Color palette | 5 | Unchanged. The needle, the stroke and the chevron use the same gold. |
+| Detail density | 3 | Unchanged. |
+| Texture and material quality | 3 | Unchanged. |
+| Composition and camera | 4 | Unchanged. The chevron sits on the existing view inset. It was not seen in the native frame. |
+| Atmosphere | 4 | Unchanged. |
+| Character models | 3 | Unchanged. |
+| Animation smoothness | 3 | Unchanged. |
+| Particles and VFX | 2 | Unchanged. |
+| UI polish | 4 | The turn word is on the card. The native card was not seen, and French and English still share the screen. |
+| Responsiveness and input latency | 3 | Unchanged. Still a lagged stream. Out of scope for this loop. |
+| Controls feel | 4 | Unchanged. The needle follows facing. Steering is the same. |
+| Mission clarity | 5 | The card names ahead, left, right, behind, or here, and the radar strokes the stop. The rules prove the needle, the insets, the next-stop stroke and the off-screen chevron. The native HUD was not seen. |
+| Pacing | 4 | Unchanged. The route is marked. The length of a beat was not played. |
+| Fun factor | 4 | The way to the stop is written. It was not played, so the feel score stays. |
+| Difficulty curve | 6 | Unchanged. The line does not add a tighter window. |
+| Feedback | 6 | Unchanged. The line is a mark, not a new hit. |
+| Sound design | 4 | Unchanged. The city still has two loops. Nobody is voiced. |
+| Variety | 9 | Unchanged. Eight of eight story missions, plus the four side jobs. |
+| Performance stability | 4 | Unchanged. |
+
+- Aesthetics raw: 34 / 10 dimensions, index 34
+- Playability raw: 49 / 10 dimensions, index 49
+- Total: 83 / 200
+- Delta vs last round: +1 (round 9 was 82). Mission clarity 4 → 5. Every other score held.
+
+![GTA title at 1280](gta-missions/r10-title-1280.png)
+
+![GTA title at 390](gta-missions/r10-title-390.png)
+
+![GTA title at 320](gta-missions/r10-title-320.png)
+
+![Play client at 1280, host offline](gta-missions/r10-play-1280.png)
+
+![Menu on a 390-wide screen, Recover visible](gta-missions/r10-play-menu-390.png)

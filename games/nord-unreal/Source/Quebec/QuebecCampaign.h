@@ -61,6 +61,7 @@ public:
     FString GetBriefingText() const;
     FString GetStatusText() const;
     FVector GetObjectiveLocation() const;
+    bool GetNextObjectiveLocation(FVector& Out) const;
     int32 GetCompletedMissionCount() const { return CompletedMissions; }
     bool IsCampaignComplete() const { return Phase == EQuebecCampaignPhase::Complete; }
     // Banked indexes from the rules headers. Kept here so the save header stays free of those headers.

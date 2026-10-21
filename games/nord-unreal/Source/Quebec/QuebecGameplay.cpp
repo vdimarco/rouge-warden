@@ -1,6 +1,7 @@
 #include "QuebecGameplay.h"
 #include "Misc/PackageName.h"
 #include "QuebecCampaign.h"
+#include "QuebecRouteLine.h"
 #include "QuebecCourtRules.h"
 #include "QuebecCourtTone.h"
 #include "QuebecPondRules.h"
@@ -103,6 +104,18 @@ namespace
         if (QuebecDistrict::IsToronto(World)) return nullptr;
         TActorIterator<AQuebecCampaign> It(World);
         return It ? *It : nullptr;
+    }
+
+    const TCHAR* RouteTurnWord(QuebecRouteLine::ETurn Turn)
+    {
+        switch (Turn)
+        {
+        case QuebecRouteLine::ETurn::Ahead: return TEXT("ahead");
+        case QuebecRouteLine::ETurn::Right: return TEXT("right");
+        case QuebecRouteLine::ETurn::Behind: return TEXT("behind");
+        case QuebecRouteLine::ETurn::Left: return TEXT("left");
+        default: return TEXT("here");
+        }
     }
 
     bool ClipHUDRadarSegment(FVector2D& A, FVector2D& B, const FVector2D& Center, float Radius)
@@ -2292,6 +2305,10 @@ void AQuebecHUD::DrawHUD()
     FString Title, Action, Status;
     FVector Target = FVector::ZeroVector;
     bool bHasObjective = false;
+    bool bHasNext = false;
+    FVector NextStop = FVector::ZeroVector;
+    double RouteBearing = 0.;
+    QuebecRouteLine::ETurn RouteTurn = QuebecRouteLine::ETurn::Here;
     if (bToronto)
     {
         Title = TEXT("TORONTO FREE ROAM");
@@ -2304,6 +2321,7 @@ void AQuebecHUD::DrawHUD()
         Action = Campaign->GetObjectiveText();
         Status = Campaign->GetStatusText();
         Target = Campaign->GetObjectiveLocation();
+        bHasNext = Campaign->GetNextObjectiveLocation(NextStop);
         bHasObjective = !Campaign->IsCampaignComplete() || Campaign->IsStoryBeatOpen();
         // After the open story beats the card used to say the city was finished, while the four side jobs
         // stayed off the radar until the player was within 100 m. The same gold diamond now leads to the
@@ -2337,6 +2355,7 @@ void AQuebecHUD::DrawHUD()
                 if (bGoal) Target = Goal;
                 else if (Guide < SideJobs->NumMarkers()) Target = SideJobs->GetMarker(Guide);
                 if (bGoal || Guide < SideJobs->NumMarkers()) bHasObjective = true;
+                bHasNext = false;
                 if (bThisJob)
                 {
                     const int32 Whole = FMath::Max(0, FMath::CeilToInt(SideJobs->GetRemainingSeconds()));
@@ -2504,15 +2523,32 @@ void AQuebecHUD::DrawHUD()
     if (bHasObjective)
     {
         const FVector2D Goal = MapMarker(Target);
+        const FVector ToStop = Target - Here;
+        const FVector FacingNow = Pawn->GetActorForwardVector();
+        const double PlanCm = QuebecRouteLine::Length({ToStop.X, ToStop.Y});
+        RouteBearing = QuebecRouteLine::BearingFromPlayer({FacingNow.X, FacingNow.Y}, {ToStop.X, ToStop.Y});
+        RouteTurn = QuebecRouteLine::TurnFor(RouteBearing, PlanCm);
+        QuebecRouteLine::FVec2 StrokeA, StrokeB;
+        if (QuebecRouteLine::RadarStroke({Center.X, Center.Y}, {Goal.X, Goal.Y}, 12. * Scale, 8. * Scale, StrokeA, StrokeB))
+            DrawLine(static_cast<float>(StrokeA.X), static_cast<float>(StrokeA.Y), static_cast<float>(StrokeB.X), static_cast<float>(StrokeB.Y), Accent, 2.2f * Scale);
+        if (bHasNext)
+        {
+            FVector2D From = MapPoint(Target);
+            FVector2D To = MapPoint(NextStop);
+            if (ClipHUDRadarSegment(From, To, Center, MapRadius - 6.f * Scale))
+                DrawLine(From.X, From.Y, To.X, To.Y, Accent.CopyWithNewOpacity(.4f), 1.4f * Scale);
+        }
         const float Radius = 5.f * Scale;
         DrawLine(Goal.X, Goal.Y - Radius, Goal.X + Radius, Goal.Y, Accent, 2.f * Scale);
         DrawLine(Goal.X + Radius, Goal.Y, Goal.X, Goal.Y + Radius, Accent, 2.f * Scale);
         DrawLine(Goal.X, Goal.Y + Radius, Goal.X - Radius, Goal.Y, Accent, 2.f * Scale);
         DrawLine(Goal.X - Radius, Goal.Y, Goal.X, Goal.Y - Radius, Accent, 2.f * Scale);
         FVector2D Marker;
-        if (PlayerOwner->ProjectWorldLocationToScreen(Target + FVector(0., 0., 220.), Marker) &&
+        const FVector Pin = Target + FVector(0., 0., 220.);
+        const float ViewBottom = bPortrait ? ControlsTop : Canvas->SizeY - 250.f * Scale;
+        if (PlayerOwner->ProjectWorldLocationToScreen(Pin, Marker) &&
             Marker.X > Margin + 20.f * Scale && Marker.X < Right - 20.f * Scale &&
-            Marker.Y > ViewTop && Marker.Y < (bPortrait ? ControlsTop : Canvas->SizeY - 250.f * Scale))
+            Marker.Y > ViewTop && Marker.Y < ViewBottom)
         {
             const float R = 10.f * Scale;
             DrawLine(Marker.X, Marker.Y - R, Marker.X + R, Marker.Y, Accent, 2.f * Scale);
@@ -2520,6 +2556,43 @@ void AQuebecHUD::DrawHUD()
             DrawLine(Marker.X, Marker.Y + R, Marker.X - R, Marker.Y, Accent, 2.f * Scale);
             DrawLine(Marker.X - R, Marker.Y, Marker.X, Marker.Y - R, Accent, 2.f * Scale);
             Text(FString::Printf(TEXT("%dm"), FMath::RoundToInt(Meters)), Paper, Marker.X - 15.f * Scale, Marker.Y + 15.f * Scale, .85f);
+        }
+        else
+        {
+            FVector Eye = FVector::ZeroVector;
+            FRotator View = FRotator::ZeroRotator;
+            PlayerOwner->GetPlayerViewPoint(Eye, View);
+            const FRotationMatrix Axes(View);
+            const FVector ToPin = Pin - Eye;
+            double DirX = 0., DirY = 0.;
+            QuebecRouteLine::ViewToScreen(
+                FVector::DotProduct(ToPin, Axes.GetUnitAxis(EAxis::X)),
+                FVector::DotProduct(ToPin, Axes.GetUnitAxis(EAxis::Y)),
+                FVector::DotProduct(ToPin, Axes.GetUnitAxis(EAxis::Z)),
+                DirX, DirY);
+            const double EdgeLeft = static_cast<double>(Margin + 28.f * Scale);
+            const double EdgeTop = static_cast<double>(ViewTop);
+            const double EdgeRight = static_cast<double>(Right - 28.f * Scale);
+            const double EdgeBottom = static_cast<double>(ViewBottom - 28.f * Scale);
+            QuebecRouteLine::FVec2 Edge;
+            if (EdgeRight - EdgeLeft >= 40. * Scale && EdgeBottom - EdgeTop >= 40. * Scale &&
+                QuebecRouteLine::EdgeArrow(DirX, DirY, EdgeLeft, EdgeTop, EdgeRight, EdgeBottom, Edge))
+            {
+                const double Span = std::hypot(DirX, DirY);
+                if (Span > 1e-6)
+                {
+                    const float Ux = static_cast<float>(DirX / Span);
+                    const float Uy = static_cast<float>(DirY / Span);
+                    const float Wing = 10.f * Scale;
+                    const float Spread = 6.f * Scale;
+                    const float TipX = static_cast<float>(Edge.X);
+                    const float TipY = static_cast<float>(Edge.Y);
+                    const float BackX = TipX - Ux * Wing;
+                    const float BackY = TipY - Uy * Wing;
+                    DrawLine(TipX, TipY, BackX - Uy * Spread, BackY + Ux * Spread, Accent, 2.f * Scale);
+                    DrawLine(TipX, TipY, BackX + Uy * Spread, BackY - Ux * Spread, Accent, 2.f * Scale);
+                }
+            }
         }
     }
 
@@ -2529,7 +2602,27 @@ void AQuebecHUD::DrawHUD()
     for (const FString& Line : Titles) { Text(Line, Accent, MissionX + 12.f * Scale, RowY, .9f); RowY += 20.f * Scale; }
     for (const FString& Line : Actions) { Text(Line, Paper, MissionX + 12.f * Scale, RowY, 1.15f); RowY += 25.f * Scale; }
     for (const FString& Line : Statuses) { Text(Line, Muted, MissionX + 12.f * Scale, RowY, .9f); RowY += 20.f * Scale; }
-    if (bHasObjective) Text(FString::Printf(TEXT("%dm"), FMath::RoundToInt(Meters)), Paper, MissionX + 12.f * Scale, RowY, .9f);
+    if (bHasObjective)
+    {
+        const FString Distance = RouteTurn == QuebecRouteLine::ETurn::Here
+            ? FString(TEXT("here"))
+            : FString::Printf(TEXT("%dm · %s"), FMath::RoundToInt(Meters), RouteTurnWord(RouteTurn));
+        Text(Distance, Paper, MissionX + 12.f * Scale, RowY, .9f);
+        if (RouteTurn != QuebecRouteLine::ETurn::Here)
+        {
+            float TextW = 0.f, TextH = 0.f;
+            GetTextSize(Distance, TextW, TextH, Font, .9f * Scale);
+            const float Box = 18.f * Scale;
+            const float BoxX = MissionX + 12.f * Scale + TextW + 8.f * Scale;
+            if (BoxX + Box <= MissionX + MissionWidth - 6.f * Scale)
+            {
+                QuebecRouteLine::FVec2 NeedleStart, NeedleTip;
+                QuebecRouteLine::CardNeedle(RouteBearing, static_cast<double>(Box), NeedleStart, NeedleTip);
+                DrawLine(BoxX + static_cast<float>(NeedleStart.X), RowY + static_cast<float>(NeedleStart.Y),
+                    BoxX + static_cast<float>(NeedleTip.X), RowY + static_cast<float>(NeedleTip.Y), Accent, 2.f * Scale);
+            }
+        }
+    }
 
     if (!Prompt.IsEmpty())
     {
