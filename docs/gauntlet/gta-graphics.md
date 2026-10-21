@@ -1648,3 +1648,38 @@ Unreal is not available in this environment, so in-engine frames are the last co
 - Playability raw: 39 / 10 dimensions, index 39
 - Total: 121 / 200
 - Delta vs last round: +1
+
+### Round 48 — 2026-10-21 — rubric v1
+
+- What changed: when the crew body is missing and the casual skeleton, its idle, and its walk all load, the player mesh stays visible and plays that walk above a walk speed. Nearly still, it plays the idle. The body rock still leans the whole mesh. The static clothed stand remains the fallback when those clips are missing, and that stand does not step. A sprint has no casual run clip, so it keeps the walk. The opening pitch, the socket, and the sway amplitudes stay.
+- Why it helped: Animation smoothness was at 4. The rock leaned the whole body, and the feet stayed together.
+- Screenshots: before `docs/gauntlet/gta-graphics/round-48/before-frame.png`, after `docs/gauntlet/gta-graphics/round-48/after-frame.png`. Crops are `before-stride.png` and `after-stride.png`. The before frame is the casual idle, first key. The after frame is the walk at 0.75 s, where the foot centers are about 79 cm apart. Both use the opening walk camera (arm 420, socket Y 70, socket Z 110, pitch −16, yaw about 110°, horizontal FOV 90) at the surveyed sidewalk spawn, with the same walk-peak rock (12° and 4 cm). Not an Unreal capture. The figure crop mean absolute delta is 0.040 and the max is 0.393. The full-frame mean is 0.0021 and the max is 0.393. 5042 pixels change. One foot is ahead and the near arm swings back. `Scripts/test_stride.py`, `Scripts/test_player_stand.py`, and `Scripts/test_sway.py` passed. `QuebecGameplay.cpp` was not compiled. `GET /gta/` returned 200. OpenSpec CLI is not installed, so the change files were not validated with `openspec`.
+- Next target: character models, tied at 8 with particles. Animation stays at 5. Another frame of this same walk will not move it. The crew blend space still cannot be posed.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 9 | The street shade is unchanged. |
+| Color palette | 9 | The civilian uses the casual cloth colors. The street hues are unchanged. |
+| Detail density | 9 | The street mesh is unchanged. |
+| Texture and material quality | 9 | The asphalt mix is unchanged. |
+| Composition and camera | 8 | The opening aim is unchanged. |
+| Atmosphere | 9 | The street dust is unchanged. |
+| Character models | 8 | The figure is the same casual civilian, now mid-stride. It is still one clothed mesh. |
+| Animation smoothness | 5 | The feet take a stride and the near arm swings back. It is one walk clip on the missing-rig path, and the crew blend space still cannot be posed here. |
+| Particles and VFX | 8 | The leaf cards are unchanged. Rain rings are unchanged. |
+| UI polish | 9 | The radar heading is unchanged. |
+| Responsiveness and input latency | 4 | Not measured this round. |
+| Controls feel | 4 | Not played. |
+| Mission clarity | 5 | The objective words are unchanged. |
+| Pacing | 4 | Unchanged mission slice. |
+| Fun factor | 3 | Not played. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 4 | The stride is the new mark. No new juice. |
+| Sound design | 3 | Not listened to. |
+| Variety | 3 | One civilian, idle and walk. |
+| Performance stability | 5 | `Scripts/test_stride.py` passed. The clip is the existing walk. Frame time was not remeasured. |
+
+- Aesthetics raw: 83 / 10 dimensions, index 83
+- Playability raw: 39 / 10 dimensions, index 39
+- Total: 122 / 200
+- Delta vs last round: +1

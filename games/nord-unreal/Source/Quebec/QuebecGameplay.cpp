@@ -314,6 +314,38 @@ void AQuebecCharacter::ApplyCrewAppearance()
     USkeletalMesh* Body = LoadObject<USkeletalMesh>(nullptr, *(Folder + TEXT("SK_Body.SK_Body")));
     if (!Body)
     {
+        // The crew blend space cannot be posed here. The casual skeleton's own walk can:
+        // feet and arms come from that clip, and the body rock still leans the whole mesh.
+        // The prepared body faces the component's +X, the axis a pedestrian root walks along.
+        USkeletalMesh* CasualBody = LoadObject<USkeletalMesh>(nullptr,
+            TEXT("/Game/Plateau/Life/Civilians/MenCasual/SK_MenCasual.SK_MenCasual"),
+            nullptr, LOAD_NoWarn | LOAD_Quiet);
+        UAnimSequence* CasualIdle = LoadObject<UAnimSequence>(nullptr,
+            TEXT("/Game/Plateau/Life/Civilians/MenCasual/A_MenCasual_Idle.A_MenCasual_Idle"),
+            nullptr, LOAD_NoWarn | LOAD_Quiet);
+        UAnimSequence* CasualWalk = LoadObject<UAnimSequence>(nullptr,
+            TEXT("/Game/Plateau/Life/Civilians/MenCasual/A_MenCasual_Walk.A_MenCasual_Walk"),
+            nullptr, LOAD_NoWarn | LOAD_Quiet);
+        if (CasualBody && CasualIdle && CasualWalk)
+        {
+            CasualStand->SetHiddenInGame(true);
+            CasualStand->SetVisibility(false);
+            GetMesh()->SetVisibility(true);
+            GetMesh()->SetAnimationMode(EAnimationMode::AnimationSingleNode);
+            GetMesh()->SetSkeletalMesh(CasualBody);
+            GetMesh()->SetRelativeLocation(FVector(0., 0., -96.));
+            GetMesh()->SetRelativeRotation(FRotator(0., 0., 0.));
+            GetMesh()->SetRenderCustomDepth(true);
+            GetMesh()->SetCustomDepthStencilValue(255);
+            CrewIdle = CasualIdle;
+            CrewWalk = CasualWalk;
+            CrewRun = nullptr;
+            CrewJump = nullptr;
+            CrewLocomotion = nullptr;
+            CrewAnimation = nullptr;
+            CrewProp->SetVisibility(false);
+            return;
+        }
         // The clothed casual idle replaces the mannequin when the crew rig is missing.
         // Feet sit on the mesh origin and the face points +X. A loaded rig hides this stand.
         if (UStaticMesh* Stand = LoadObject<UStaticMesh>(nullptr,
