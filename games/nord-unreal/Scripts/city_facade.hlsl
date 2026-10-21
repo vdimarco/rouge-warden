@@ -85,5 +85,10 @@ float Under = saturate((0.26 - Cell.y) / 0.22);
 float Reach = saturate(1.0 - max(P.x - WindowWidth, 0.0) / 0.28);
 float Spill = Lit * Under * Reach;
 Color = lerp(Color, Color * float3(1.55, 1.22, 0.70) + float3(0.06, 0.02, 0.0), Spill);
+// An iron trough under each window. The door opening stays clear. The lip is lighter so the trough reads at street scale.
+float Trough = Wall * step(P.x, WindowWidth + 0.02) * step(abs(Cell.y - 0.105), 0.042) * (1.0 - Opening);
+float Lip = Wall * step(P.x, WindowWidth + 0.02) * step(abs(Cell.y - 0.142), 0.008) * (1.0 - Opening);
+Color = lerp(Color, float3(0.16, 0.17, 0.18), Trough);
+Color = lerp(Color, float3(0.34, 0.36, 0.34), Lip);
 float Cornice = step(Height - 65.0, Z);
 return lerp(Color, float3(0.19, 0.21, 0.195), Cornice);

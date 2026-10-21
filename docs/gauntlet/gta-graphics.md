@@ -598,3 +598,38 @@ Unreal is not available in this environment, so in-engine frames are the last co
 - Playability raw: 39 / 10 dimensions, index 39
 - Total: 91 / 200
 - Delta vs last round: +1
+
+### Round 18 — 2026-10-21 — rubric v1
+
+- What changed: `city_facade.hlsl` draws an iron trough under each window, with a lighter lip. The door opening is excluded. The rail, the lamp apron, and the brick and stone colours are unchanged. The material updates when the city comic script runs in the editor.
+- Why it helped: Detail density was tied at 5. The elevation had courses, rails, and doors, and nothing repeated under the panes.
+- Screenshots: before `docs/gauntlet/gta-graphics/round-18/before-trough.png`, after `docs/gauntlet/gta-graphics/round-18/after-trough.png`. These are a straight elevation of the facade shader, not an Unreal capture. `Scripts/test_facade_trough.py` passed. `Scripts/test_facade_palette.py` passed. `Scripts/test_facade_spill.py` passed. `Scripts/test_environment_refresh.py` passed. `GET /gta/` returned 200. OpenSpec CLI is not installed, so the change files were not validated with `openspec`.
+- Next target: texture and material quality. The trough is a flat iron colour, and the brick grain is still a small multiply. A coarser break in the stone or brick face can be shaded offline. Animation smoothness stays at 3 and is skipped until a pose can be drawn.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 6 | The window apron still shows beside the trough. The trough does not cast. |
+| Color palette | 6 | Brick and stone hues are unchanged. The trough uses the rail's iron. |
+| Detail density | 6 | Each window has a trough and a lip. The door opening does not. It is still a flat bar, not a planted box. |
+| Texture and material quality | 5 | Grain and mortar beds are unchanged. The trough is a flat colour. |
+| Composition and camera | 5 | The shoulder camera is unchanged. |
+| Atmosphere | 6 | The horizon fade is unchanged. |
+| Character models | 5 | The crew rim is unchanged. |
+| Animation smoothness | 3 | Skipped. The blend space still cannot be posed here. |
+| Particles and VFX | 6 | Rain rings are unchanged. |
+| UI polish | 5 | Untouched. |
+| Responsiveness and input latency | 4 | Not measured this round. |
+| Controls feel | 4 | Not played. |
+| Mission clarity | 5 | Unchanged objective card. |
+| Pacing | 4 | Unchanged mission slice. |
+| Fun factor | 3 | Not played. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 4 | No new juice. |
+| Sound design | 3 | Not listened to. |
+| Variety | 3 | One district. The trough repeats one shape. |
+| Performance stability | 5 | The facade source tests passed. The trough is a few steps on the existing colour. Frame time was not remeasured. |
+
+- Aesthetics raw: 53 / 10 dimensions, index 53
+- Playability raw: 39 / 10 dimensions, index 39
+- Total: 92 / 200
+- Delta vs last round: +1
