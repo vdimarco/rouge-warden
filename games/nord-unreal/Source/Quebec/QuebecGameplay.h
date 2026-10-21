@@ -192,6 +192,8 @@ private:
     UPROPERTY(VisibleAnywhere) TObjectPtr<UCameraComponent> Camera;
     UPROPERTY(VisibleAnywhere, ReplicatedUsing=OnRep_InVehicle) bool bInVehicle = false;
     UPROPERTY() TObjectPtr<UStaticMeshComponent> CrewProp;
+    // Clothed idle drawn only when the crew rig is missing. Hidden once SK_Body loads.
+    UPROPERTY() TObjectPtr<UStaticMeshComponent> CasualStand;
     UPROPERTY() TObjectPtr<UAnimSequence> CrewWalk;
     UPROPERTY() TObjectPtr<UAnimSequence> CrewIdle;
     UPROPERTY() TObjectPtr<UAnimSequence> CrewRun;

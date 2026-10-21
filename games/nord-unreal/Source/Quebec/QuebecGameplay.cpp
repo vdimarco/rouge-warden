@@ -216,6 +216,13 @@ AQuebecCharacter::AQuebecCharacter()
     CrewProp->SetupAttachment(GetMesh(), TEXT("RightHand"));
     CrewProp->SetCollisionProfileName(TEXT("NoCollision"));
     CrewProp->SetUsingAbsoluteRotation(true);
+    // Feet on the capsule bottom. Stays hidden until a missing crew rig shows the casual idle.
+    CasualStand = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("CasualStand"));
+    CasualStand->SetupAttachment(GetCapsuleComponent());
+    CasualStand->SetRelativeLocation(FVector(0., 0., -96.));
+    CasualStand->SetCollisionProfileName(TEXT("NoCollision"));
+    CasualStand->SetVisibility(false);
+    CasualStand->SetHiddenInGame(true);
 }
 
 void AQuebecCharacter::BeginPlay()
@@ -280,7 +287,27 @@ void AQuebecCharacter::ApplyCrewAppearance()
         : bGraphicNovelCandidate ? TEXT("/Game/ParkComic/CrewGraphicNovel/Resident9/")
         : FString::Printf(TEXT("/Game/ParkComic/Crew/Resident%d/"), CrewStyle);
     USkeletalMesh* Body = LoadObject<USkeletalMesh>(nullptr, *(Folder + TEXT("SK_Body.SK_Body")));
-    if (!Body) return;
+    if (!Body)
+    {
+        // The clothed casual idle replaces the mannequin when the crew rig is missing.
+        // Feet sit on the mesh origin and the face points +X. A loaded rig hides this stand.
+        if (UStaticMesh* Stand = LoadObject<UStaticMesh>(nullptr,
+            TEXT("/Game/Plateau/Life/Civilians/MenCasual/SM_MenCasualStand.SM_MenCasualStand"),
+            nullptr, LOAD_NoWarn | LOAD_Quiet))
+        {
+            CasualStand->SetStaticMesh(Stand);
+            CasualStand->SetRelativeLocation(FVector(0., 0., -96.));
+            CasualStand->SetRelativeRotation(FRotator::ZeroRotator);
+            CasualStand->SetRelativeScale3D(FVector(1.));
+            CasualStand->SetHiddenInGame(false);
+            CasualStand->SetVisibility(true);
+            GetMesh()->SetVisibility(false);
+        }
+        return;
+    }
+    CasualStand->SetHiddenInGame(true);
+    CasualStand->SetVisibility(false);
+    GetMesh()->SetVisibility(true);
     GetMesh()->SetAnimationMode(EAnimationMode::AnimationSingleNode);
     GetMesh()->SetSkeletalMesh(Body);
     // Generated cast bodies face -Y; the retained Meshy pilot already faces +X.

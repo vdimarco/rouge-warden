@@ -1158,3 +1158,38 @@ Unreal is not available in this environment, so in-engine frames are the last co
 - Playability raw: 39 / 10 dimensions, index 39
 - Total: 107 / 200
 - Delta vs last round: +1
+
+### Round 34 — 2026-10-21 — rubric v1
+
+- What changed: when `SK_Body` is missing, `AQuebecCharacter::ApplyCrewAppearance` draws `SM_MenCasualStand` and hides the skeletal mesh. `Scripts/bake_officer_stand.py` skins the CC0 casual GLB at the first key of `Idle_Neutral`, feet on the origin, face toward +X, in centimetres. The mannequin stays only when that mesh is also missing. A loaded crew rig hides the stand and keeps the skeletal path.
+- Why it helped: Character models were at 7 because the clothed idle was an officer, not the lead. The missing-rig lead was still the white mannequin.
+- Screenshots: before `docs/gauntlet/gta-graphics/round-34/before-frame.png`, after `docs/gauntlet/gta-graphics/round-34/after-frame.png`. Crops are `before-casual.png` and `after-casual.png`. Both use the walking camera (arm 420, socket Y 70, socket Z 110, pitch −12, horizontal FOV 90). The after frame is the casual idle turned toward the camera. Not an Unreal capture. The figure crop is 123×252 pixels. Inside that box the mean absolute delta is 0.093 and the max is 0.859. The full-frame mean is 0.0056. Eyes sit closer to the camera than the hair. This is one authored idle frame, not the blend space. A normal session that has `SK_Body` still shows the crew rig. `Scripts/test_player_stand.py` passed. `Scripts/test_officer_stand.py` passed. `QuebecGameplay.cpp` was not compiled. `GET /gta/` returned 200. OpenSpec CLI is not installed, so the change files were not validated with `openspec`. The stand mesh was not imported.
+- Next target: detail density, off the facades. UI polish is tied at 7 and the street column just moved. Composition and particles stay at 6, because the walking socket and the rain displacement stay as they are. Animation smoothness stays at 3 and is skipped until a pose can be drawn.
+
+| Dimension | Score | Why |
+| --- | ---: | --- |
+| Lighting | 8 | The key on the figure is the same sun. No new light. |
+| Color palette | 8 | The clothes use the source colours. The street colours are unchanged. |
+| Detail density | 7 | The street meshes are unchanged. The figure is one person. |
+| Texture and material quality | 8 | The clearcoat is unchanged. The idle uses the GLB material colours. |
+| Composition and camera | 6 | The walking socket is unchanged. |
+| Atmosphere | 8 | The moon grade and the street sheen are unchanged. |
+| Character models | 8 | The missing crew rig is a clothed idle: hair, shirt, trousers and shoes. It is still one CC0 frame, and a loaded rig is unchanged. |
+| Animation smoothness | 3 | Skipped. The blend space still cannot be posed here. The bake is a single idle key. |
+| Particles and VFX | 6 | Rain rings are unchanged. |
+| UI polish | 7 | The street column is unchanged. |
+| Responsiveness and input latency | 4 | Not measured this round. |
+| Controls feel | 4 | Not played. |
+| Mission clarity | 5 | The objective words are unchanged. |
+| Pacing | 4 | Unchanged mission slice. |
+| Fun factor | 3 | Not played. |
+| Difficulty curve | 4 | Unchanged. |
+| Feedback | 4 | No new juice. |
+| Sound design | 3 | Not listened to. |
+| Variety | 3 | One casual idle. The crew rig, when it loads, is the same path as before. |
+| Performance stability | 5 | `Scripts/test_player_stand.py` passed. The bake is an offline mesh, not a runtime skin. Frame time was not remeasured. |
+
+- Aesthetics raw: 69 / 10 dimensions, index 69
+- Playability raw: 39 / 10 dimensions, index 39
+- Total: 108 / 200
+- Delta vs last round: +1

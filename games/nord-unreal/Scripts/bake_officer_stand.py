@@ -151,7 +151,7 @@ def write_obj(parts, path):
 
 
 def main():
-    for name in ("MenSuit", "MenHoodie"):
+    for name in ("MenSuit", "MenHoodie", "MenCasual"):
         parts = stand_mesh(SOURCE / f"{name}.glb")
         destination = OUT / f"SM_{name}Stand.obj"
         write_obj(parts, destination)
