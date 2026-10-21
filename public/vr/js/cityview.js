@@ -452,6 +452,11 @@ vec3 wallColor(int k, float shop, float sd, float salt, float h1, float h2, floa
   #endif
   // masonry joints on brick, stone, concrete and loft. A course smaller than a pixel fades out
   // so the far wall stays a flat comic tone. Glass towers are left alone.
+  // Each unit then keeps its own clay, stone or panel (Lake, Marshall, Harris, Blackstein, NPAR 2000:
+  // the cel ramp shades that colour). A coarser batch remains once a single course has faded.
+  vec3 mason = vec3(1.0);
+  vec3 batchM = vec3(1.0);
+  float masonOn = 0.0;
   if (st >= 2 && st <= 5) {
     float pitch = st == 3 ? 0.42 : st == 4 ? 0.85 : 0.16;
     float run = pitch * (st >= 4 ? 2.2 : 2.0);
@@ -461,6 +466,33 @@ vec3 wallColor(int k, float shop, float sd, float salt, float h1, float h2, floa
     float jy = 1.0 - smoothstep(0.07, 0.07 + wy * 2.2, fract(cy));
     float jx = 1.0 - smoothstep(0.06, 0.06 + wx * 2.2, fract(cx));
     float joint = max(jy, jx) * (1.0 - smoothstep(0.22, 0.5, max(wy, wx)));
+    vec2 buv = vec2(u / 1.7, y / 1.15);
+    vec2 bf = fract(buv), bw = max(fwidth(buv), vec2(0.004));
+    vec2 bid = floor(buv);
+    float b00 = hash13(vec3(bid.x, bid.y, sd));
+    float b10 = hash13(vec3(bid.x + 1.0, bid.y, sd));
+    float b01 = hash13(vec3(bid.x, bid.y + 1.0, sd));
+    float ax = smoothstep(1.0 - bw.x * 2.0, 1.0, bf.x);
+    float ay = smoothstep(1.0 - bw.y * 2.0, 1.0, bf.y);
+    float batch = mix(mix(b00, b10, ax), b01, ay);
+    float unit = hash13(vec3(floor(cx) + 17.0, floor(cy), sd + 4.0));
+    vec3 batchT = st == 3 ? mix(vec3(0.72, 0.70, 0.66), vec3(1.28, 1.22, 1.12), batch)
+      : st == 4 ? mix(vec3(0.70, 0.74, 0.80), vec3(1.24, 1.18, 1.10), batch)
+      : mix(vec3(0.48, 0.36, 0.32), vec3(1.42, 1.05, 0.78), batch);
+    vec3 unitT = st == 3 ? mix(vec3(0.86, 0.84, 0.80), vec3(1.16, 1.12, 1.06), unit)
+      : st == 4 ? mix(vec3(0.88, 0.90, 0.94), vec3(1.12, 1.08, 1.04), unit)
+      : mix(vec3(0.70, 0.56, 0.48), vec3(1.28, 1.04, 0.86), unit);
+    float e = max(wy, 0.02);
+    float fy = fract(cy);
+    float up = smoothstep(0.58 - e, 0.94, fy);
+    float down = 1.0 - smoothstep(0.08, 0.30 + e, fy);
+    float lip = mix(1.0, 1.18, up) * mix(1.0, 0.76, down);
+    float unitNear = 1.0 - smoothstep(0.18, 0.42, max(wy, wx));
+    float batchNear = 1.0 - smoothstep(0.45, 0.9, max(bw.x, bw.y));
+    batchM = mix(vec3(1.0), batchT, batchNear);
+    mason = batchM * mix(vec3(1.0), unitT * lip, unitNear);
+    masonOn = 1.0;
+    wallP *= mix(vec3(1.0), mason, 1.0 - joint);
     wallP = mix(wallP, vec3(0.2, 0.15, 0.17), joint * 0.82);
   }
   vec3 celWall = comicCelX(wallP, band, LITMUL, LITADD);
@@ -540,7 +572,11 @@ vec3 wallColor(int k, float shop, float sd, float salt, float h1, float h2, floa
     float yy = min(tc.r, tc.g) - tc.b;
     float e = lit * smoothstep(0.12, 0.34, yy);
     if (tl > 12.5 && tl < 13.5) e = max(e, smoothstep(0.3, 0.55, max(tc.r, max(tc.g, tc.b))));
-    if (painted) { if (!shopRow) tc = max(tc + wallShift * (1.0 - win) * (1.0 - e), 0.0); }
+    if (painted) {
+      if (!shopRow) tc = max(tc + wallShift * (1.0 - win) * (1.0 - e), 0.0);
+      // the painted tile is one flat brick. The same batch that colours the far wall tints the tile's wall, not its glass.
+      tc *= mix(vec3(1.0), batchM, (1.0 - win) * masonOn);
+    }
     else { e *= win; tc = mix(wallP, tc, win); }
     // the dark glass takes the building's tint, and shows the sky, the way the towers in the key art do
     tc = max(tc + (glassC - darkWin) * win * (1.0 - e) * 0.9, 0.0);
@@ -768,7 +804,7 @@ vec3 wallColor(int k, float shop, float sd, float salt, float h1, float h2, floa
   }
   // -- the building's own structure, which fades to its average tone: piers between window groups, pilasters on the
   // corners, a spandrel band in a contrasting tone every few floors, balcony rails, and a fire escape on some brick faces
-  vec3 pierCol = comicCelX(wallAlb * (grp > 1.5 ? 0.86 : 1.0), band, LITMUL, LITADD);
+  vec3 pierCol = comicCelX(wallAlb * (grp > 1.5 ? 0.86 : 1.0) * mix(vec3(1.0), mason, masonOn), band, LITMUL, LITADD);
   col = mix(col, pierCol, pier * upper);
   em *= 1.0 - pier * upper;
   float wl = dot(wallAlb, LUMW);
