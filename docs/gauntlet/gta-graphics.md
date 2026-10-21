@@ -1546,9 +1546,9 @@ Unreal is not available in this environment, so in-engine frames are the last co
 
 ### Round 45 — 2026-10-21 — rubric v1
 
-- What changed: the nearest tree within 18 m sheds eight autumn cards from the lower crown. A new card every 0.22 s lives 2.2 s, drifts across at 120 cm/s and down at 140 cm/s. A farther tree stays still. The rain streak shader stays.
+- What changed: the nearest tree within 18 m sheds ten autumn cards from the lower crown. A new card every 0.22 s lives 2.2 s, drifts across at 120 cm/s and down at 140 cm/s. Ten slots cover that life, so a card fades before its slot is reused. A farther tree stays still. The rain streak shader stays.
 - Why it helped: Particles were at 7. The tail column is the only loose smoke, and a crown did not shed.
-- Screenshots: before `docs/gauntlet/gta-graphics/round-45/before-frame.png`, after `docs/gauntlet/gta-graphics/round-45/after-frame.png`. Crops are `before-leaves.png` and `after-leaves.png`. Both use the opening walk camera (arm 420, socket Y 70, socket Z 110, pitch −16, horizontal FOV 90) with one sidewalk tree. Not an Unreal capture. The leaf crop mean absolute delta is 0.080 and the max is 0.350. The full-frame mean is 0.0032. 6811 pixels change. `Scripts/test_leaves.py` passed. `QuebecVegetation.cpp` was not compiled. `GET /gta/` returned 200. OpenSpec CLI is not installed, so the change files were not validated with `openspec`.
+- Screenshots: before `docs/gauntlet/gta-graphics/round-45/before-frame.png`, after `docs/gauntlet/gta-graphics/round-45/after-frame.png`. Crops are `before-leaves.png` and `after-leaves.png`. Both use the opening walk camera (arm 420, socket Y 70, socket Z 110, pitch −16, horizontal FOV 90) with one sidewalk tree. Not an Unreal capture. The leaf crop mean absolute delta is 0.069 and the max is 0.350. The full-frame mean is 0.0037. 8193 pixels change. `Scripts/test_leaves.py` passed. `QuebecVegetation.cpp` was not compiled. `GET /gta/` returned 200. OpenSpec CLI is not installed, so the change files were not validated with `openspec`.
 - Next target: composition, back to the lowest aesthetics score at 7. The opening pitch is in, and the socket stays. Animation smoothness stays at 3 and is skipped until a pose can be drawn.
 
 | Dimension | Score | Why |
@@ -1572,7 +1572,7 @@ Unreal is not available in this environment, so in-engine frames are the last co
 | Feedback | 4 | The cards are the new mark. No new juice. |
 | Sound design | 3 | Not listened to. |
 | Variety | 3 | One tree, one drift. Rain rings are unchanged. |
-| Performance stability | 5 | `Scripts/test_leaves.py` passed. Eight cards. Frame time was not remeasured. |
+| Performance stability | 5 | `Scripts/test_leaves.py` passed. Ten cards. Frame time was not remeasured. |
 
 - Aesthetics raw: 80 / 10 dimensions, index 80
 - Playability raw: 39 / 10 dimensions, index 39

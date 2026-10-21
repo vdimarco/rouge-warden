@@ -15,7 +15,7 @@ def leaf_block():
 class LeafTests(unittest.TestCase):
     def test_cards_leave_the_crown_and_the_rain_shader_stays(self):
         block = leaf_block()
-        self.assertIn("constexpr int32 LeafCount = 8;", VEG)
+        self.assertIn("constexpr int32 LeafCount = 10;", VEG)
         self.assertIn("constexpr float LeafLife = 2.2f;", VEG)
         self.assertIn("constexpr float LeafInterval = 0.22f;", VEG)
         self.assertIn("Leaf->AddWorldOffset(FVector(55.f, 120.f, -140.f) * DeltaSeconds);", block)
@@ -38,6 +38,7 @@ class LeafTests(unittest.TestCase):
         self.assertTrue(near(1799.0))
         self.assertFalse(near(1800.0))
         self.assertFalse(near(4000.0))
+        self.assertGreaterEqual(10 * 0.22, 2.2)
 
     def test_a_card_drops_away_from_the_crown(self):
         def card(index, age, tree=(0.0, 0.0, 0.0)):

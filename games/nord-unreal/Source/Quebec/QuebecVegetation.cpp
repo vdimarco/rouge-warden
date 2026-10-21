@@ -8,7 +8,8 @@
 
 namespace
 {
-    constexpr int32 LeafCount = 8;
+    // Ten slots at 0.22 s cover the 2.2 s life, so a card fades before its slot is reused.
+    constexpr int32 LeafCount = 10;
     constexpr float LeafLife = 2.2f;
     constexpr float LeafInterval = 0.22f;
 }
